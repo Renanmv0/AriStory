@@ -40,6 +40,7 @@ export class Game implements GameAPI {
   private transitioning = false;
   private elapsed = 0;
   private shadowSpan = 0;
+  private traje: 'normal' | 'banho' = 'normal';
 
   private readonly moveDir = new THREE.Vector3();
   private readonly camAim = new THREE.Vector3();
@@ -139,6 +140,9 @@ export class Game implements GameAPI {
     this.parceiro.setVisible(true);
     this.cameraTarget = null;
     this.hot = null;
+    this.parceiro.clearOrder();
+    this.setSitting(false);
+    this.setOutfit(def.outfit ?? 'normal');
     this.ui.hidePrompt();
     this.ui.sceneCard(def.name, def.subtitle);
     this.save.scene = id;
@@ -275,6 +279,10 @@ export class Game implements GameAPI {
     return this.ui.say(Array.isArray(lines) ? lines : [lines], speaker ?? this.player.name);
   }
 
+  ask(pergunta: string, opcoes: string[], speaker?: string): Promise<number> {
+    return this.ui.ask(pergunta, opcoes, speaker ?? this.player.name);
+  }
+
   toast(text: string, icon?: string): void {
     this.ui.toast(text, icon);
   }
@@ -332,6 +340,11 @@ export class Game implements GameAPI {
     }
   }
 
+  keyPressed(code: string): boolean {
+    if (this.ui.dialogueOpen || this.ui.journalOpen || this.player.locked) return false;
+    return this.input.justPressed(code);
+  }
+
   wait(seconds: number): Promise<void> {
     return new Promise((resolve) => window.setTimeout(resolve, seconds * 1000));
   }
@@ -362,6 +375,7 @@ export class Game implements GameAPI {
     const doJogador = this.player.rig;
     this.player.swapRig(this.parceiro.rig);
     this.parceiro.swapRig(doJogador);
+    this.setOutfit(this.traje);
     this.ui.toast(`Agora você é ${this.player.name}`, '🔁');
   }
 
@@ -373,12 +387,32 @@ export class Game implements GameAPI {
     this.parceiro.submersion = THREE.MathUtils.clamp(valor, 0, 1);
   }
 
-  rideCompanion(host: THREE.Object3D, local: THREE.Vector3, scale = 1): void {
+  rideCompanion(host: THREE.Object3D, local: THREE.Vector3, scale = 1, facing = Math.PI): void {
     host.add(this.parceiro.object);
     this.parceiro.object.position.copy(local);
     this.parceiro.object.scale.setScalar(scale);
-    this.parceiro.rig.group.rotation.y = Math.PI;
+    this.parceiro.rig.group.rotation.y = facing;
+    this.parceiro.rig.setFacing(facing);
     this.parceiro.riding = true;
+  }
+
+  commandCompanion(x: number, z: number): void {
+    this.parceiro.goTo(x, z);
+  }
+
+  freeCompanion(): void {
+    this.parceiro.clearOrder();
+  }
+
+  setSitting(sentados: boolean): void {
+    this.player.rig.setSitting(sentados);
+    this.parceiro.rig.setSitting(sentados);
+  }
+
+  setOutfit(traje: 'normal' | 'banho'): void {
+    this.player.rig.setOutfit(traje);
+    this.parceiro.rig.setOutfit(traje);
+    this.traje = traje;
   }
 
   releaseCompanion(x: number, z: number, facing = 0): void {

@@ -28,6 +28,8 @@ export const clube: SceneDef = {
   id: 'clube',
   name: 'Clube',
   subtitle: 'a piscina que a gente ainda não conhece',
+  // chegou no clube, já está de calção
+  outfit: 'banho',
   ambient: {
     sky: 0x9fdcff,
     fog: 0xd6f0ff,

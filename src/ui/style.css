@@ -280,3 +280,31 @@ body.touch-device .touch { display: block; }
   transition: opacity 0.35s ease;
 }
 .veil.on { opacity: 1; }
+
+/* -------------------------------------------------------------- escolhas */
+.dialogue .escolhas {
+  display: none;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.dialogue .escolhas.show { display: flex; }
+.dialogue .escolhas button {
+  flex: 1 1 auto;
+  min-width: 120px;
+  padding: 11px 18px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--paper-warm);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+.dialogue .escolhas button:hover { transform: translateY(-1px); }
+.dialogue .escolhas button.sel {
+  background: var(--accent);
+  border-color: var(--accent-deep);
+  color: #fff;
+}

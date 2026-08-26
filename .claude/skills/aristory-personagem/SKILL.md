@@ -30,6 +30,7 @@ export const ARI: CharacterSpec = {
   shirtAccent: undefined, // faixa/gola; omita para camiseta lisa
   pants: 0x5b7ba8,
   shoes: 0xf4f4f2,
+  swim: 0x5fb0d6,         // cor do calção de banho
   accessories: ['presilha', 'laco', 'cinto'],
   accessoryColor: 0x24222a,
 };
@@ -95,6 +96,20 @@ w.onUpdate((dt) => renan.update(dt, 0));   // 0 = parado; > 0 anima a caminhada
 ```
 
 `rig.setFacing(angulo)` gira suave. `rig.cheer()` dá um pulinho de alegria.
+
+## Traje de banho
+
+`rig.setOutfit('banho')` deixa a pessoa sem camisa e de calção: camiseta, calça
+e tênis viram pele, os acessórios de roupa somem e o calção aparece. É quase
+tudo troca de material, então não custa nada.
+
+Quem pede isso é a **cena**, com `outfit: 'banho'` no `SceneDef` — é assim que
+o clube funciona. Ao trocar de cena o motor volta para `'normal'` sozinho.
+
+## Sentar
+
+`rig.setSitting(true)` dobra as pernas para a frente e apoia os braços. Use
+sempre pelo `g.setSitting(true)`, que aplica nos dois de uma vez.
 
 ## A dupla
 

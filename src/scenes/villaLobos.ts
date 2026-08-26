@@ -95,7 +95,18 @@ export const villaLobos: SceneDef = {
     for (const [cx, cz] of [[8, -5], [26, -5], [8, 11], [26, 11]] as const) {
       w.add(w.place(cone(), cx, 0, cz));
     }
-    w.add(w.place(signBoard(P.wood, P.frisbee), 8.5, 0, 12.5, -0.4));
+    const placaCampinho = w.add(w.place(signBoard(P.wood, P.frisbee), 8.5, 0, 12.5, -0.4));
+    w.interact({
+      id: 'parque:campinho',
+      x: 8.5, z: 13.6, radius: 2,
+      label: 'Ler a placa', icon: '🪧',
+      highlight: placaCampinho,
+      onInteract: (api) =>
+        api.say([
+          'CAMPO LIVRE — não pisar no canteiro.',
+          `Aperte F pra jogar o frisbee pro ${api.companionName()}. Ele devolve.`,
+        ]),
+    });
 
     // -------------------------------------------------------- mobiliario
     const bancos: Array<[number, number, number]> = [
@@ -233,51 +244,131 @@ export const villaLobos: SceneDef = {
     disco.pickUp();
     w.root.add(disco.mesh);
 
+    /**
+     * Frisbee de dois: você joga pro parceiro, ele corre atrás se cair longe,
+     * pega e devolve. Se o disco cair perto de você, você pega sozinho; senão
+     * tem que ir buscar. Cada ida e volta completa conta uma troca.
+     */
+    type FaseDisco = 'comigo' | 'voando-pra-ele' | 'buscando' | 'com-ele' | 'voando-pra-mim' | 'no-chao';
+    let fase: FaseDisco = 'comigo';
+    let esperaDele = 0;
+    let trocasNaSessao = 0;
+
+    const contarTroca = async (api: typeof g): Promise<void> => {
+      trocasNaSessao += 1;
+      const total = api.bump('frisbee.trocas');
+      if (trocasNaSessao % 5 === 0) {
+        api.toast(`${trocasNaSessao} trocas seguidas!`, '🥏');
+      }
+      if (total >= 10 && !api.flag('memoria-frisbee')) {
+        api.setFlag('memoria-frisbee');
+        api.unlock({
+          id: 'frisbee-villa',
+          title: 'Frisbee no Villa',
+          place: 'Parque Villa Lobos',
+          note: 'Todo sábado a mesma cena: o disco vai longe demais e um dos dois corre atrás rindo.',
+          icon: '🥏',
+        });
+      }
+    };
+
     const jogar = w.interact({
       id: 'parque:frisbee-jogar',
-      x: 17, z: 3, radius: 2.6,
+      x: 17, z: 3, radius: 3,
       priority: -1, // segue o jogador, entao nunca deve roubar o prompt de outra coisa
-      label: 'Jogar o frisbee', icon: '🥏',
-      onInteract: (api) => {
-        disco.throwFrom(api.playerPosition(), api.playerFacing(), 1);
-        api.bump('frisbee.lancamentos');
-      },
+      label: 'Jogar o frisbee  (F)', icon: '🥏',
+      onInteract: () => lancar(),
     });
+
+    const lancar = (): void => {
+      if (fase !== 'comigo') return;
+      disco.throwToward(g.playerPosition(), g.companionPosition(), 0.22);
+      fase = 'voando-pra-ele';
+    };
 
     const pegar = w.interact({
       id: 'parque:frisbee-pegar',
-      x: 17, z: 3, radius: 1.6,
+      x: 17, z: 3, radius: 1.8,
       label: 'Pegar o frisbee', icon: '🥏',
       onInteract: async (api) => {
         disco.pickUp();
-        const n = api.bump('frisbee.pegadas');
-        api.toast(`${n} ${n === 1 ? 'pegada' : 'pegadas'}`, '🥏');
-        if (n === 3 && !api.flag('memoria-frisbee')) {
-          api.setFlag('memoria-frisbee');
-          await api.say(['Três pegadas seguidas. Já dá pra dizer que a gente treinou.']);
-          api.unlock({
-            id: 'frisbee-villa',
-            title: 'Frisbee no Villa',
-            place: 'Parque Villa Lobos',
-            note: 'Todo sábado a mesma cena: o disco vai longe demais e um dos dois corre atrás rindo.',
-            icon: '🥏',
-          });
-        }
+        fase = 'comigo';
+        await contarTroca(api);
       },
     });
 
     w.onUpdate((dt) => {
       disco.update(dt, w.bounds);
-      const guardado = disco.state === 'guardado';
-      jogar.enabled = guardado;
-      pegar.enabled = disco.state === 'chao';
-      if (guardado) {
-        const p = g.playerPosition();
-        jogar.moveTo(p.x, p.z);
-      } else {
-        pegar.moveTo(disco.position.x, disco.position.z);
+      // atalho dedicado: perto de uma porta ou de um banco o prompt do frisbee
+      // perde a vez (ele tem prioridade baixa de propósito), mas o F sempre vale
+      if (g.keyPressed('KeyF')) lancar();
+
+      const eu = g.playerPosition();
+      const ele = g.companionPosition();
+
+      switch (fase) {
+        case 'comigo':
+          disco.holdAt(eu, g.playerFacing());
+          break;
+
+        case 'com-ele':
+          disco.holdAt(ele, Math.atan2(eu.x - ele.x, eu.z - ele.z));
+          esperaDele -= dt;
+          if (esperaDele <= 0) {
+            disco.throwToward(ele, eu, 0.26);
+            fase = 'voando-pra-mim';
+          }
+          break;
+
+        case 'voando-pra-ele':
+          if (disco.state === 'chao') {
+            if (disco.position.distanceTo(ele) < 1.6) {
+              disco.pickUp();
+              esperaDele = 0.8;
+              fase = 'com-ele';
+            } else {
+              g.commandCompanion(disco.position.x, disco.position.z);
+              fase = 'buscando';
+            }
+          }
+          break;
+
+        case 'buscando':
+          if (disco.position.distanceTo(ele) < 1.1) {
+            g.freeCompanion();
+            disco.pickUp();
+            esperaDele = 0.9;
+            fase = 'com-ele';
+          }
+          break;
+
+        case 'voando-pra-mim':
+          if (disco.state === 'chao') {
+            fase = 'no-chao';
+            // caiu na sua mao: pega sozinho, sem precisar apertar nada
+            if (disco.position.distanceTo(eu) < 1.9) {
+              disco.pickUp();
+              fase = 'comigo';
+              void contarTroca(g);
+            }
+          }
+          break;
+
+        case 'no-chao':
+          if (disco.position.distanceTo(eu) < 1.2) {
+            disco.pickUp();
+            fase = 'comigo';
+            void contarTroca(g);
+          }
+          break;
       }
+
+      jogar.enabled = fase === 'comigo';
+      pegar.enabled = fase === 'no-chao';
+      if (fase === 'comigo') jogar.moveTo(eu.x, eu.z);
+      else pegar.moveTo(disco.position.x, disco.position.z);
     });
+
 
     // ----------------------------------------------------- outras interacoes
     w.interact({

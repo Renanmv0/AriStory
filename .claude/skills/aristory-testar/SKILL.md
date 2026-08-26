@@ -29,6 +29,7 @@ Os outros dois:
 |---|---|
 | `scripts/ride.mjs` | a cutscene da roda gigante ponta a ponta, com os dois na cabine |
 | `scripts/retrato.mjs` | câmera colada no personagem, para conferir cabelo e roupa |
+| `scripts/mecanicas.mjs` | a escolha Sim/Não, a cena do sofá e o frisbee de ida e volta |
 
 ## Ir direto a um ponto da cena
 

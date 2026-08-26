@@ -18,6 +18,7 @@ detalhe de cada vez.
 | `W A S D` / setas | andar |
 | `E` ou `espaço` | interagir · avançar diálogo |
 | `T` | trocar entre o Ari e o Renan |
+| `F` | jogar o frisbee (no parque) |
 | `Q` / `R` | girar a câmera 45° |
 | `J` | abrir o diário de memórias |
 | roda do mouse | zoom |
@@ -46,12 +47,14 @@ Para pular direto num cenário: `?cena=villa-lobos&entrada=roda`.
 
 - **Casa do Ari** — montada a partir do esboço da casa de verdade: cozinha,
   quarto, banheiro, a TV na parede da esquerda, o sofá de frente pra ela e a
-  máquina de lavar no cantinho.
+  máquina de lavar no cantinho. Sentar no sofá abre uma pergunta de verdade — e
+  se você aceitar, os dois sentam e ligam a TV.
 - **Parque Villa Lobos** — a roda gigante, com passeio de verdade: os dois
-  entram na mesma cabine e a câmera sobe junto. Tem também campinho de frisbee
-  jogável, lago com patos, quiosque de água de coco e mesa de piquenique.
-- **Clube** — a piscina. A água é um buraco de verdade no piso: quem entra
-  afunda e passa a nadar, e dá pra pular do trampolim.
+  entram na mesma cabine e a câmera sobe junto. E o **frisbee de dois**: você
+  joga (`F`), ele corre atrás se cair longe, pega e devolve — o jogo conta cada
+  ida e volta. Tem também lago com patos, quiosque de água de coco e piquenique.
+- **Clube** — a piscina, com os dois de calção. A água é um buraco de verdade no
+  piso: quem entra afunda e passa a nadar, e dá pra pular do trampolim.
 - **A dupla** — Ari e Renan andam juntos; `T` troca quem você controla.
 - **Diário de memórias** — dez memórias para desbloquear até agora.
 

@@ -43,6 +43,12 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 filhos entre os dois — ninguém sai do lugar, e por isso a rotação mora no rig,
 nunca no grupo externo.
 
+### Escolha no diálogo
+
+`g.ask(pergunta, opções)` devolve o índice escolhido. Os botões respondem a
+clique, a ← → e à própria tecla de ação, que durante a pergunta confirma em vez
+de avançar a fala.
+
 ### Água
 
 `submersion` (0 a 1) abaixa o corpo 72 cm, corta a velocidade quase pela metade,
@@ -66,6 +72,14 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 `spec.ts` define a ficha; `CharacterRig.ts` monta o corpo chibi (cabeça grande,
 membros em cápsula) e anima a caminhada por seno. Nenhum arquivo de modelo.
 Ver a skill `aristory-personagem`.
+
+### Roupa
+
+`rig.setOutfit('banho')` troca materiais registrados no construtor (camiseta e
+calça viram pele, tênis vira pé descalço), esconde os acessórios de roupa e
+mostra o calção. A cena pede pelo campo `outfit` do `SceneDef`; o motor volta
+para `'normal'` a cada troca de cena e reaplica o traje quando você troca de
+personagem.
 
 ## `ui/`
 

@@ -46,6 +46,18 @@ export class CharacterRig {
   private bounce = 0;
   private targetFacing = 0;
   private swimming = false;
+  private sitting = false;
+
+  /** peças que trocam de material entre roupa normal e traje de banho */
+  private readonly trocaMaterial: Array<{
+    mesh: THREE.Mesh;
+    normal: THREE.Material;
+    banho: THREE.Material;
+  }> = [];
+  /** some no traje de banho (laço, cinto, faixa da camiseta, mochila) */
+  private readonly soVestido: THREE.Object3D[] = [];
+  /** aparece só no traje de banho (o calção) */
+  private readonly soBanho: THREE.Object3D[] = [];
 
   constructor(spec: CharacterSpec) {
     this.spec = spec;
@@ -79,6 +91,7 @@ export class CharacterRig {
       );
       leg.position.y = -legH * 0.48;
       pivot.add(leg);
+      this.trocaMaterial.push({ mesh: leg, normal: pants, banho: skin });
 
       const foot = new THREE.Mesh(
         new THREE.BoxGeometry(h * 0.075 * w, h * 0.045, h * 0.11),
@@ -86,6 +99,7 @@ export class CharacterRig {
       );
       foot.position.set(0, -legH + h * 0.022, h * 0.018);
       pivot.add(foot);
+      this.trocaMaterial.push({ mesh: foot, normal: shoes, banho: skin });
       this.body.add(pivot);
     }
 
@@ -97,6 +111,7 @@ export class CharacterRig {
     torso.position.y = hipY + torsoH * 0.52;
     torso.scale.z = 0.82;
     this.body.add(torso);
+    this.trocaMaterial.push({ mesh: torso, normal: shirt, banho: skin });
 
     if (spec.shirtAccent !== undefined) {
       const stripe = new THREE.Mesh(
@@ -106,7 +121,19 @@ export class CharacterRig {
       stripe.position.y = hipY + torsoH * 0.72;
       stripe.scale.z = 0.82;
       this.body.add(stripe);
+      this.soVestido.push(stripe);
     }
+
+    // calção de banho: fica escondido até alguém entrar na água
+    const calcao = new THREE.Mesh(
+      new THREE.CylinderGeometry(h * 0.118 * w, h * 0.112 * w, h * 0.15, 14),
+      toon(spec.swim ?? spec.pants),
+    );
+    calcao.position.y = hipY + h * 0.03;
+    calcao.scale.z = 0.85;
+    calcao.visible = false;
+    this.body.add(calcao);
+    this.soBanho.push(calcao);
 
     // ------------------------------------------------------------- bracos
     for (const [pivot, side] of [
@@ -120,6 +147,7 @@ export class CharacterRig {
       );
       sleeve.position.y = -armLen * 0.24;
       pivot.add(sleeve);
+      this.trocaMaterial.push({ mesh: sleeve, normal: shirt, banho: skin });
 
       const forearm = new THREE.Mesh(
         new THREE.CapsuleGeometry(h * 0.032 * w, armLen * 0.28, 4, 10),
@@ -455,6 +483,7 @@ export class CharacterRig {
       }
       laco.position.set(0, shoulderY - torsoH * 0.1, raioTorso * 0.86);
       this.body.add(laco);
+      this.soVestido.push(laco);
     }
 
     if (acc.includes('cinto')) {
@@ -469,6 +498,7 @@ export class CharacterRig {
       tira.position.y = cintura;
       tira.scale.z = 0.84;
       this.body.add(tira);
+      this.soVestido.push(tira);
 
       const fivela = new THREE.Mesh(
         new THREE.BoxGeometry(h * 0.032, h * 0.03, h * 0.012),
@@ -476,6 +506,7 @@ export class CharacterRig {
       );
       fivela.position.set(0, cintura, raioTorso * 0.9);
       this.body.add(fivela);
+      this.soVestido.push(fivela);
 
       // correntinha com estrela, do jeito que aparece na referencia
       const corrente = new THREE.Mesh(
@@ -485,11 +516,13 @@ export class CharacterRig {
       corrente.position.set(raioTorso * 0.6, cintura - h * 0.012, raioTorso * 0.6);
       corrente.rotation.set(0, -0.7, Math.PI);
       this.body.add(corrente);
+      this.soVestido.push(corrente);
 
       const pingente = estrela(h * 0.016, h * 0.004, toon(0xd8d4cc));
       pingente.position.set(raioTorso * 0.76, cintura - h * 0.05, raioTorso * 0.66);
       pingente.rotation.y = -0.7;
       this.body.add(pingente);
+      this.soVestido.push(pingente);
     }
 
     if (acc.includes('mochila')) {
@@ -499,6 +532,7 @@ export class CharacterRig {
       );
       bag.position.set(0, hipY + torsoH * 0.6, -this.spec.height * 0.11 * w);
       this.body.add(bag);
+      this.soVestido.push(bag);
       const strapY = shoulderY;
       for (const side of [-1, 1]) {
         const strap = new THREE.Mesh(
@@ -507,6 +541,7 @@ export class CharacterRig {
         );
         strap.position.set(side * halfShoulder * 0.6, strapY - torsoH * 0.2, this.spec.height * 0.085 * w);
         this.body.add(strap);
+        this.soVestido.push(strap);
       }
     }
   }
@@ -527,6 +562,32 @@ export class CharacterRig {
     this.bounce = 1;
   }
 
+  /**
+   * Troca entre a roupa da ficha e o traje de banho (sem camisa e de calção).
+   * Quase tudo e troca de material: a camiseta e a calca viram pele, o tenis
+   * vira pe descalco, os acessorios de roupa somem e o calcao aparece.
+   */
+  setOutfit(traje: 'normal' | 'banho'): void {
+    const banho = traje === 'banho';
+    for (const troca of this.trocaMaterial) {
+      troca.mesh.material = banho ? troca.banho : troca.normal;
+    }
+    for (const peca of this.soVestido) peca.visible = !banho;
+    for (const peca of this.soBanho) peca.visible = banho;
+  }
+
+  /** Sentado: pernas para a frente e corpo mais baixo. */
+  setSitting(v: boolean): void {
+    this.sitting = v;
+    if (!v) {
+      this.body.position.y = 0;
+      this.legL.rotation.x = 0;
+      this.legR.rotation.x = 0;
+      this.armL.rotation.set(0, 0, 0.08);
+      this.armR.rotation.set(0, 0, -0.08);
+    }
+  }
+
   /** dentro da agua: bracada em vez de caminhada, e sem sombra no chao */
   setSwimming(v: boolean): void {
     if (this.swimming === v) return;
@@ -543,6 +604,19 @@ export class CharacterRig {
     let delta = this.targetFacing - this.group.rotation.y;
     delta = Math.atan2(Math.sin(delta), Math.cos(delta));
     this.group.rotation.y += delta * Math.min(1, dt * 14);
+
+    if (this.sitting) {
+      this.phase += dt * 0.9;
+      this.legL.rotation.x = -Math.PI / 2 + 0.06;
+      this.legR.rotation.x = -Math.PI / 2 - 0.02;
+      this.armL.rotation.set(-0.25, 0, 0.34);
+      this.armR.rotation.set(-0.2, 0, -0.34);
+      this.body.rotation.x = -0.05;
+      this.body.position.y = Math.sin(this.phase) * 0.012;
+      this.head.rotation.x = Math.sin(this.phase * 0.7) * 0.03;
+      this.head.rotation.z *= 1 - Math.min(1, dt * 8);
+      return;
+    }
 
     if (this.swimming) {
       this.phase += dt * (2.6 + speed * 1.2);

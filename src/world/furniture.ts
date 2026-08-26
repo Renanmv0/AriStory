@@ -63,6 +63,7 @@ export function tvSet(on = false): THREE.Group {
     new THREE.PlaneGeometry(1.36, 0.72),
     flat(on ? 0x8fd7ff : P.screen, 1),
   );
+  screen.name = 'tela'; // a cena troca o material desta malha para ligar a TV
   screen.position.set(0, 0.95, 0.05);
   g.add(screen);
   return g;

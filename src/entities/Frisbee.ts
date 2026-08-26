@@ -29,11 +29,64 @@ export class Frisbee {
     return this.mesh.position;
   }
 
-  /** Guarda o disco na mao do jogador (some do chao). */
+  /** Guarda o disco na mao de alguem. */
   pickUp(): void {
     this.state = 'guardado';
-    this.mesh.visible = false;
     this.velocity.set(0, 0, 0);
+  }
+
+  /** Enquanto guardado, o disco fica na mao de quem esta com ele. */
+  holdAt(pos: THREE.Vector3, facing: number): void {
+    this.mesh.visible = true;
+    // um pouco para o lado direito de quem segura
+    this.mesh.position.set(
+      pos.x + Math.sin(facing + Math.PI / 2) * 0.34,
+      1.02,
+      pos.z + Math.cos(facing + Math.PI / 2) * 0.34,
+    );
+    this.mesh.rotation.set(0, this.mesh.rotation.y, Math.PI / 2.4);
+  }
+
+  /**
+   * Lanca mirando num ponto. O voo tem sustentacao, entao nao ha formula
+   * fechada para o alcance: a forca sai de uma busca binaria sobre a propria
+   * simulacao do voo.
+   * @param imprecisao radianos de erro aleatorio; 0 acerta em cheio
+   */
+  throwToward(from: THREE.Vector3, alvo: THREE.Vector3, imprecisao = 0): void {
+    const dx = alvo.x - from.x;
+    const dz = alvo.z - from.z;
+    const dist = Math.hypot(dx, dz);
+    const erro = (Math.random() - 0.5) * imprecisao;
+    this.throwFrom(from, Math.atan2(dx, dz) + erro, this.powerFor(dist));
+  }
+
+  private powerFor(dist: number): number {
+    let baixo = 0.25;
+    let alto = 1.7;
+    for (let i = 0; i < 14; i++) {
+      const meio = (baixo + alto) / 2;
+      if (this.simulateRange(meio) < dist) baixo = meio;
+      else alto = meio;
+    }
+    return THREE.MathUtils.clamp((baixo + alto) / 2, 0.25, 1.7);
+  }
+
+  /** Repete a fisica de `update` so para medir onde o disco cairia. */
+  private simulateRange(power: number): number {
+    let y = 1.15;
+    let vy = 3.4 * power;
+    let vh = 11 * power;
+    let percorrido = 0;
+    const dt = 1 / 60;
+    for (let i = 0; i < 900 && y > 0.06; i++) {
+      const glide = vy > -1.2 ? this.lift : 0;
+      vy -= (this.gravity - glide) * dt;
+      vh *= 1 - 0.35 * dt;
+      percorrido += vh * dt;
+      y += vy * dt;
+    }
+    return percorrido;
   }
 
   /**
@@ -45,6 +98,7 @@ export class Frisbee {
     this.state = 'voando';
     this.mesh.visible = true;
     this.mesh.position.set(from.x, 1.15, from.z);
+    this.mesh.rotation.set(0, this.mesh.rotation.y, 0);
     const speed = 11 * power;
     this.velocity.set(Math.sin(facing) * speed, 3.4 * power, Math.cos(facing) * speed);
     this.spin = 22;

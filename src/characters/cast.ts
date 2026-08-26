@@ -27,6 +27,7 @@ export const ARI: CharacterSpec = {
   shirt: 0xf8f5f0,
   pants: 0x5b7ba8,
   shoes: 0xf4f4f2,
+  swim: 0x5fb0d6,
   accessories: ['presilha', 'laco', 'cinto'],
   accessoryColor: 0x24222a,
 };
@@ -48,6 +49,7 @@ export const RENAN: CharacterSpec = {
   shirtAccent: 0x2a3340,
   pants: 0x8a7a5c,
   shoes: 0x2f3440,
+  swim: 0x35414f,
   accessories: ['relogio'],
   accessoryColor: 0x2f3440,
 };

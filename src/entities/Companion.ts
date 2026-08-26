@@ -21,6 +21,8 @@ export class Companion {
 
   /** distancia em que ele para de seguir */
   readonly folga = 2.0;
+  /** quando definido, ele vai ate aqui em vez de seguir o jogador */
+  private ordem: THREE.Vector3 | null = null;
   riding = false;
   submersion = 0;
 
@@ -53,6 +55,7 @@ export class Companion {
     this.position.set(x, 0, z);
     this.velocity.set(0, 0, 0);
     this.submersion = 0;
+    this.ordem = null;
     this.body.group.rotation.y = facing;
     this.body.setFacing(facing);
   }
@@ -61,8 +64,21 @@ export class Companion {
     this.object.visible = visible;
   }
 
+  /** manda ele ate um ponto; enquanto durar, ele ignora o jogador */
+  goTo(x: number, z: number): void {
+    this.ordem = new THREE.Vector3(x, 0, z);
+  }
+
+  clearOrder(): void {
+    this.ordem = null;
+  }
+
+  get hasOrder(): boolean {
+    return this.ordem !== null;
+  }
+
   update(
-    alvo: THREE.Vector3,
+    seguindo: THREE.Vector3,
     dt: number,
     colliders: readonly Collider[],
     bounds: Bounds,
@@ -72,19 +88,22 @@ export class Companion {
       return;
     }
 
+    const alvo = this.ordem ?? seguindo;
+    // indo buscar alguma coisa ele encosta de verdade; seguindo, para antes
+    const folga = this.ordem ? 0.55 : this.folga;
     this.dir.set(alvo.x - this.position.x, 0, alvo.z - this.position.z);
     const dist = this.dir.length();
 
     // se ficou muito para tras (porta, cutscene, colisor chato), reaparece perto
-    if (dist > 22) {
+    if (!this.ordem && dist > 22) {
       this.teleport(alvo.x - 1.2, alvo.z - 1.2, Math.atan2(this.dir.x, this.dir.z));
       return;
     }
 
-    if (dist > this.folga) {
+    if (dist > folga) {
       this.dir.normalize();
       // acelera quando esta longe, para nao ficar pendurado no limite
-      const alvoVel = Math.min(this.maxSpeed, 1.6 + (dist - this.folga) * 2.2);
+      const alvoVel = Math.min(this.maxSpeed, 1.6 + (dist - folga) * 2.2);
       this.velocity.x += (this.dir.x * alvoVel - this.velocity.x) * Math.min(1, dt * 7);
       this.velocity.z += (this.dir.z * alvoVel - this.velocity.z) * Math.min(1, dt * 7);
       this.body.setFacing(Math.atan2(this.dir.x, this.dir.z));
@@ -102,8 +121,8 @@ export class Companion {
     clampToBounds(this.position, this.radius, bounds);
 
     // nunca fica em cima do jogador
-    const dx = this.position.x - alvo.x;
-    const dz = this.position.z - alvo.z;
+    const dx = this.position.x - seguindo.x;
+    const dz = this.position.z - seguindo.z;
     const perto = Math.hypot(dx, dz);
     const minimo = 0.86;
     if (perto < minimo && perto > 0.0001) {

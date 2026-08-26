@@ -11,13 +11,17 @@ export class Ui {
   private readonly dialogue: HTMLDivElement;
   private readonly dialogueWho: HTMLSpanElement;
   private readonly dialogueText: HTMLParagraphElement;
+  private readonly next: HTMLSpanElement;
   private readonly toasts: HTMLDivElement;
   private readonly journal: HTMLDivElement;
   private readonly journalGrid: HTMLDivElement;
   private readonly hints: HTMLDivElement;
   private readonly veil: HTMLDivElement;
+  private readonly escolhas: HTMLDivElement;
 
   private advance: (() => void) | null = null;
+  private escolher: ((i: number) => void) | null = null;
+  private selecionada = 0;
   private typing: number | null = null;
   private cardTimer: number | null = null;
 
@@ -40,7 +44,7 @@ export class Ui {
         <div>Q / R — girar a câmera · J — diário</div>
       </div>
       <div class="prompt"><span class="icon">✨</span><span class="label"></span><span class="key">E</span></div>
-      <div class="dialogue"><span class="who"></span><p class="text"></p><span class="next">clique / E ▸</span></div>
+      <div class="dialogue"><span class="who"></span><p class="text"></p><div class="escolhas"></div><span class="next">clique / E ▸</span></div>
       <div class="journal"><div class="sheet">
         <h2>Diário de memórias</h2>
         <p class="sub">Os momentos que a gente já viveu — e os que ainda faltam.</p>
@@ -66,13 +70,20 @@ export class Ui {
     this.dialogue = ui.querySelector('.dialogue')!;
     this.dialogueWho = ui.querySelector('.dialogue .who')!;
     this.dialogueText = ui.querySelector('.dialogue .text')!;
+    this.next = ui.querySelector('.dialogue .next')!;
     this.toasts = ui.querySelector('.toasts')!;
     this.journal = ui.querySelector('.journal')!;
     this.journalGrid = ui.querySelector('.journal .grid')!;
     this.hints = ui.querySelector('.hints')!;
     this.veil = ui.querySelector('.veil')!;
+    this.escolhas = ui.querySelector('.escolhas')!;
 
-    this.dialogue.addEventListener('click', () => this.advance?.());
+    this.dialogue.addEventListener('click', (e) => {
+      // clique num botão de escolha não deve avançar a fala junto
+      if ((e.target as HTMLElement).closest('.escolhas')) return;
+      this.advance?.();
+    });
+    window.addEventListener('keydown', this.navegarEscolha);
     ui.querySelector('.journal .close')!.addEventListener('click', () => this.closeJournal());
     this.journal.addEventListener('click', (e) => {
       if (e.target === this.journal) this.closeJournal();
@@ -182,6 +193,63 @@ export class Ui {
       }
     }, 18);
   }
+
+  /**
+   * Pergunta com botões. Resolve com o índice escolhido.
+   * Funciona no clique, e no teclado com ← → para mover e E para confirmar.
+   */
+  ask(pergunta: string, opcoes: string[], speaker = ''): Promise<number> {
+    return new Promise((resolve) => {
+      this.dialogueWho.textContent = speaker;
+      this.dialogueWho.style.display = speaker ? '' : 'none';
+      this.dialogue.classList.add('show');
+      this.next.style.display = 'none';
+      this.type(pergunta);
+
+      this.escolhas.innerHTML = '';
+      this.selecionada = 0;
+      this.escolher = (i: number) => {
+        this.escolher = null;
+        this.advance = null;
+        this.escolhas.innerHTML = '';
+        this.escolhas.classList.remove('show');
+        this.next.style.display = '';
+        this.dialogue.classList.remove('show');
+        resolve(i);
+      };
+
+      opcoes.forEach((texto, i) => {
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.textContent = texto;
+        botao.addEventListener('click', () => this.escolher?.(i));
+        this.escolhas.appendChild(botao);
+      });
+      this.escolhas.classList.add('show');
+      this.marcarEscolha();
+
+      // durante a pergunta, a tecla de ação confirma em vez de avançar
+      this.advance = () => this.escolher?.(this.selecionada);
+    });
+  }
+
+  private marcarEscolha(): void {
+    const botoes = [...this.escolhas.querySelectorAll('button')];
+    botoes.forEach((b, i) => b.classList.toggle('sel', i === this.selecionada));
+  }
+
+  private navegarEscolha = (e: KeyboardEvent): void => {
+    if (!this.escolher) return;
+    const total = this.escolhas.childElementCount;
+    if (total === 0) return;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+      this.selecionada = (this.selecionada - 1 + total) % total;
+      this.marcarEscolha();
+    } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+      this.selecionada = (this.selecionada + 1) % total;
+      this.marcarEscolha();
+    }
+  };
 
   /** Encaminha a tecla de acao para o dialogo. Retorna true se consumiu. */
   handleAction(): boolean {

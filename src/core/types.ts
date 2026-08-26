@@ -58,6 +58,8 @@ export interface SceneDef {
   name: string;
   subtitle?: string;
   ambient: SceneAmbient;
+  /** roupa dos dois nesta cena; 'banho' e sem camisa e de calcao (padrao 'normal') */
+  outfit?: 'normal' | 'banho';
   spawn: SpawnPoint;
   /** entradas nomeadas, usadas quando se chega por uma porta especifica */
   entries?: Record<string, SpawnPoint>;
@@ -95,6 +97,8 @@ export interface Memory {
 export interface GameAPI {
   /** mostra uma ou varias falas e resolve quando o jogador fecha a ultima */
   say(lines: string | string[], speaker?: string): Promise<void>;
+  /** pergunta com botoes; resolve com o indice escolhido */
+  ask(pergunta: string, opcoes: string[], speaker?: string): Promise<number>;
   /** aviso curto no canto da tela */
   toast(text: string, icon?: string): void;
   /** troca de cena; entry e o nome de uma entrada da cena destino */
@@ -115,12 +119,14 @@ export interface GameAPI {
   /** desbloqueia uma memoria no diario */
   unlock(memory: Memory): void;
   wait(seconds: number): Promise<void>;
+  /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */
+  keyPressed(code: string): boolean;
   /** posicao atual do jogador */
   playerPosition(): THREE.Vector3;
   /** angulo para onde o jogador esta olhando, em radianos */
   playerFacing(): number;
-  /** prende o jogador dentro de outro objeto (cabine, carro, barco) */
-  ridePlayer(host: THREE.Object3D, local: THREE.Vector3, scale?: number): void;
+  /** prende o jogador dentro de outro objeto (cabine, carro, sofa) */
+  ridePlayer(host: THREE.Object3D, local: THREE.Vector3, scale?: number, facing?: number): void;
   /** devolve o jogador para o chao da cena */
   releasePlayer(x: number, z: number, facing?: number): void;
 
@@ -130,7 +136,13 @@ export interface GameAPI {
   /** nome de quem esta acompanhando */
   companionName(): string;
   companionPosition(): THREE.Vector3;
-  rideCompanion(host: THREE.Object3D, local: THREE.Vector3, scale?: number): void;
+  rideCompanion(host: THREE.Object3D, local: THREE.Vector3, scale?: number, facing?: number): void;
+  /** manda o parceiro ate um ponto em vez de seguir voce */
+  commandCompanion(x: number, z: number): void;
+  /** devolve o parceiro ao comportamento de seguir */
+  freeCompanion(): void;
+  /** os dois sentam (ou levantam) */
+  setSitting(sentados: boolean): void;
   releaseCompanion(x: number, z: number, facing?: number): void;
   /** troca quem o jogador controla */
   swapCharacters(): void;
@@ -139,4 +151,6 @@ export interface GameAPI {
   /** 0 = seco, 1 = submerso ate o pescoco */
   submergePlayer(valor: number): void;
   submergeCompanion(valor: number): void;
+  /** troca a roupa dos dois: 'banho' e sem camisa e de calcao */
+  setOutfit(traje: 'normal' | 'banho'): void;
 }

@@ -97,6 +97,7 @@ w.rng() / w.range(min, max) / w.pick([...])   // determinístico: a mesma cena s
 
 ```ts
 await g.say(['linha 1', 'linha 2']);      // diálogo, resolve ao fechar
+const i = await g.ask('Sentar?', ['Sim', 'Não']);   // devolve o índice
 g.toast('Água de coco gelada', '🥥');
 g.goTo('villa-lobos', 'portao');
 g.flag('regou') / g.setFlag('regou')       // persistente
@@ -110,12 +111,20 @@ g.playerPosition() / g.playerFacing() / await g.wait(1.5)
 
 // a dupla
 g.playerName() / g.companionName() / g.companionPosition()
-g.rideCompanion(cabine, local, escala) / g.releaseCompanion(x, z, facing)
+g.rideCompanion(cabine, local, escala, facing) / g.releaseCompanion(x, z, facing)
+g.commandCompanion(x, z)   // manda ele buscar algo; freeCompanion() devolve o "seguir"
+g.setSitting(true)         // os dois sentam
 g.swapCharacters()
+
+// teclas próprias da cena (o frisbee usa F)
+if (g.keyPressed('KeyF')) { /* … */ }
 
 // água
 g.submergePlayer(0..1) / g.submergeCompanion(0..1)   // 1 = nadando
 ```
+
+Roupa da cena: `outfit: 'banho'` no `SceneDef` deixa os dois sem camisa e de
+calção (é o que o clube usa). O motor volta para `'normal'` ao trocar de cena.
 
 **Sempre há dois personagens em cena**: quem você controla e quem acompanha.
 Cutscene que carrega um tem que carregar o outro (a roda gigante leva os dois
@@ -129,6 +138,32 @@ submersão (sem interpolar, o corpo pula 70 cm de uma vez na borda):
 molhado += ((dentro ? 1 : 0) - molhado) * Math.min(1, dt * 5);
 g.submergePlayer(molhado);
 ```
+
+## Cutscene com os dois
+
+O padrão é sempre o mesmo: um `THREE.Object3D` vazio serve de âncora, os dois
+entram nele e saem no fim. A rotação mora na âncora, então o rig entra com
+`facing: 0`.
+
+```ts
+const assento = new THREE.Object3D();
+assento.position.set(-0.52, 0, 0.6);
+assento.rotation.y = -Math.PI / 2;      // virado para a TV
+w.root.add(assento);
+
+g.lockPlayer(true);
+g.ridePlayer(assento, new THREE.Vector3(-0.52, 0.02, 0), 1, 0);
+g.rideCompanion(assento, new THREE.Vector3(0.52, 0.02, 0), 1, 0);
+g.setSitting(true);
+g.focusCamera(foco); g.setZoom(7.2);
+await g.say([…]);
+g.setSitting(false); g.focusCamera(null); g.setZoom(10);
+g.releasePlayer(x, z, facing); g.releaseCompanion(x, z, facing);
+g.lockPlayer(false);
+```
+
+Cuidado com móvel na frente: numa câmera isométrica o encosto do sofá tapa quem
+senta colado nele. Sente **à frente** do encosto e confira com foto.
 
 ## Regras da casa
 
@@ -146,6 +181,8 @@ g.submergePlayer(molhado);
    fica leve e dá para ajustar qualquer coisa mudando número.
 7. **Diálogo em português, curto, específico.** Duas ou três linhas por interação.
    Cada cenário deve render pelo menos uma memória (`g.unlock`).
+8. **Fala que o Renan escreveu vai literal.** Quando ele der o texto de uma
+   interação, use exatamente aquilo — não reescreva nem "melhore".
 
 ## Antes de dizer que terminou
 

@@ -14,13 +14,16 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] A dupla: Ari e Renan juntos em cena, com troca pela tecla T
 - [x] Ari com referência de verdade (cachos, presilha de estrela, laço, cinto)
 - [x] Controles de celular (arrasta para andar, botão para interagir)
+- [x] Diálogo com escolha (Sim/Não) e cutscene dos dois sentados no sofá
+- [x] Frisbee de dois: você joga, ele busca e devolve, com contador de trocas
+- [x] Traje de banho por cenário
 
 ## Próximos passos naturais
 
 ### Personagens
 - [ ] Conferir o Renan com uma referência dele (hoje é dedução da ilustração)
 - [ ] Expressões simples (feliz, surpreso, dormindo)
-- [ ] Roupa por cenário: sunga na piscina, casaco no frio
+- [ ] Mais roupas por cenário (casaco no frio, pijama em casa)
 - [ ] O parceiro reagir ao que você faz (comentar, aplaudir, entrar na água junto)
 
 ### Cenários
@@ -34,7 +37,7 @@ Cenário de lugar onde vocês **ainda não foram** também vale: o clube foi o
 primeiro. A memória que ele desbloqueia assume isso na hora de escrever.
 
 ### Jogabilidade
-- [ ] Frisbee de verdade: o outro personagem pega e devolve
+- [ ] Frisbee: disputar o disco no ar, errar o passe, contar recorde
 - [ ] Ciclo dia/noite por cenário (o parque ao pôr do sol)
 - [ ] Mapa mundo para escolher para onde ir
 - [ ] Itens colecionáveis além das memórias (fotos, bilhetes)

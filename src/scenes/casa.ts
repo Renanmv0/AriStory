@@ -94,7 +94,7 @@ export const casa: SceneDef = {
     // ------------------------------------- sala: TV na esquerda, sofá de frente
     const tv = w.add(w.place(tvSet(false), x0 + 0.35, 0, 0.6, Math.PI / 2));
     w.blockBox(x0 + 0.35, 0.6, 0.3, 0.9);
-    const tela = tv.children.find((c) => (c as THREE.Mesh).isMesh && c.position.y > 0.9)!;
+    const tela = tv.getObjectByName('tela') as THREE.Mesh;
 
     w.add(w.place(rug(3.0, 2.6), -2.5, 0, 0.6));
     const sofaObj = w.add(w.place(sofa(P.fabricRed, 2.4), -0.3, 0, 0.6, -Math.PI / 2));
@@ -130,38 +130,85 @@ export const casa: SceneDef = {
     w.blockBox(3.4, zPorta, 0.5, 0.12);
     w.add(w.place(rug(1.4, 0.8, 0xc0a882), 3.4, 0, D / 2 - 1.0));
 
+    // ----------------------------------------------- âncoras da cena do sofá
+    // o "assento" carrega os dois durante a cutscene; a rotação mora nele,
+    // então o rig entra com facing 0 e sai olhando para a TV
+    const assento = new THREE.Object3D();
+    // à frente do encosto, senão o espaldar do sofá tapa os dois na câmera iso
+    assento.position.set(-0.52, 0, 0.6);
+    assento.rotation.y = -Math.PI / 2;
+    w.root.add(assento);
+
+    const focoSofa = new THREE.Object3D();
+    focoSofa.position.set(-1.9, 1.05, 0.6);
+    w.root.add(focoSofa);
+
+    let tvLigada = false;
+    const ligarTv = (ligada: boolean): void => {
+      tvLigada = ligada;
+      tela.material = toon(ligada ? 0x8fd7ff : P.screen, { glow: ligada ? 0.55 : 0 });
+    };
+
     // ------------------------------------------------------------ interações
     w.interact({
       id: 'casa:sofa',
-      x: -1.2, z: 0.6, radius: 1.5,
+      // centrado no próprio sofá: dá pra sentar chegando por qualquer lado
+      x: -0.3, z: 0.6, radius: 2.0,
       label: 'Sentar no sofá', icon: '🛋️',
       highlight: sofaObj,
       onInteract: async (g) => {
+        const sentar = await g.ask('Parece muito confortável, sentar?', ['Sim', 'Não']);
+        if (sentar !== 0) {
+          await g.say(['Depois. Se sentar agora, não levanta mais.']);
+          return;
+        }
+
+        g.lockPlayer(true);
+        g.ridePlayer(assento, new THREE.Vector3(-0.52, 0.02, 0), 1, 0);
+        g.rideCompanion(assento, new THREE.Vector3(0.52, 0.02, 0), 1, 0);
+        g.setSitting(true);
+        ligarTv(true);
+        g.focusCamera(focoSofa);
+        g.setZoom(7.2);
+        await g.wait(0.9);
+
+        await g.say(['Está passando Bo Burnham.']);
         await g.say([
-          'O sofá continua com aquele afundado do seu lado.',
-          'Dá pra ficar horas aqui sem fazer nada — e ainda parece pouco.',
+          'Você já sabe a letra inteira e mesmo assim espera a parte que gosta.',
+          `E aí olha pro lado pra ver se ${g.companionName()} tá rindo também.`,
         ]);
+
+        const ficar = await g.ask('Ficar mais um pouco?', ['Fica', 'Bora pro parque']);
+        if (ficar === 0) {
+          await g.say(['Mais um. Só mais um.', 'Nunca é só mais um.']);
+        }
+
+        g.setSitting(false);
+        g.focusCamera(null);
+        g.setZoom(10);
+        g.releasePlayer(-1.6, 0.4, -Math.PI / 2);
+        g.releaseCompanion(-1.6, 1.5, -Math.PI / 2);
+        g.lockPlayer(false);
+
         g.unlock({
           id: 'sofa-preguica',
           title: 'Domingo sem pressa',
           place: 'Casa do Ari',
-          note: 'Aquele domingo em que o plano era sair e a gente ficou no sofá o dia inteiro.',
+          note: 'Os dois no sofá, Bo Burnham na TV, e o plano de sair ficando pra depois.',
           icon: '🛋️',
         });
       },
     });
 
-    let tvLigada = false;
     w.interact({
       id: 'casa:tv',
       x: x0 + 1.4, z: 0.6, radius: 1.5,
       label: 'Ligar a TV', icon: '📺',
       highlight: tv,
       onInteract: async (g) => {
-        tvLigada = !tvLigada;
-        (tela as THREE.Mesh).material = toon(tvLigada ? 0x8fd7ff : P.screen, { glow: tvLigada ? 0.5 : 0 });
+        ligarTv(!tvLigada);
         g.toast(tvLigada ? 'TV ligada' : 'TV desligada', '📺');
-        if (tvLigada) await g.say(['De novo o mesmo filme. E de novo a gente vai assistir inteiro.']);
+        if (tvLigada) await g.say(['Está passando Bo Burnham.']);
       },
     });
 
@@ -169,14 +216,15 @@ export const casa: SceneDef = {
       id: 'casa:geladeira',
       x: -0.7, z: z0 + 1.5, radius: 1.4,
       label: 'Abrir a geladeira', icon: '🧊',
-      onInteract: async (g) => {
-        const achados = [
-          'Sobrou pizza.',
-          'Tem pudim. Escondido no fundo, como sempre.',
-          'Só um pote de azeitona e coragem.',
-        ];
-        await g.say([achados[Math.floor(Math.random() * achados.length)]]);
-      },
+      onInteract: (g) =>
+        g.say(['Tem queijo, presunto, suco de pêssego e algumas bebidas alcoólicas.']),
+    });
+
+    w.interact({
+      id: 'casa:pia',
+      x: -2.2, z: z0 + 1.3, radius: 1.4,
+      label: 'Olhar a pia', icon: '🚰',
+      onInteract: (g) => g.say(['Por algum milagre, a pia está limpa…']),
     });
 
     w.interact({
