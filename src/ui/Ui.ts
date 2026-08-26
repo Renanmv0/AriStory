@@ -23,6 +23,8 @@ export class Ui {
 
   /** chamado quando o jogador aperta o botao redondo no celular */
   onTouchAction: (() => void) | null = null;
+  /** chamado quando o jogador aperta o botao de trocar de personagem */
+  onTouchSwap: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
     const ui = document.createElement('div');
@@ -34,6 +36,7 @@ export class Ui {
       <div class="hints">
         <div>WASD / setas — andar</div>
         <div>E ou espaço — interagir</div>
+        <div>T — trocar de personagem</div>
         <div>Q / R — girar a câmera · J — diário</div>
       </div>
       <div class="prompt"><span class="icon">✨</span><span class="label"></span><span class="key">E</span></div>
@@ -46,6 +49,7 @@ export class Ui {
       </div></div>
       <div class="touch">
         <button class="action-btn" aria-label="interagir">✨</button>
+        <button class="swap-btn" aria-label="trocar de personagem">🔁</button>
         <button class="journal-btn" aria-label="diário">📖</button>
       </div>
     `;
@@ -77,6 +81,7 @@ export class Ui {
       if (this.dialogueOpen) this.advance?.();
       else this.onTouchAction?.();
     });
+    ui.querySelector('.swap-btn')!.addEventListener('click', () => this.onTouchSwap?.());
     ui.querySelector('.journal-btn')!.addEventListener('click', () => this.toggleJournal());
 
     if (matchMedia('(hover: none)').matches) document.body.classList.add('touch-device');

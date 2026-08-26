@@ -15,18 +15,23 @@ Personagem é **ficha declarativa**, não modelo 3D. Para mudar alguém você ed
 export const ARI: CharacterSpec = {
   id: 'ari',
   name: 'Ari',            // nome que aparece nos diálogos
-  height: 1.74,           // altura total em unidades (1.75 ≈ adulto)
-  build: 'medio',         // 'magro' | 'medio' | 'forte'
-  skin: 0xe8b48c,
-  blush: 0xff9aa8,        // bochecha
-  eyes: 0x3a2b26,
-  hair: { color: 0x3b2418, style: 'cacheado' },
-  shirt: 0x5fb0d6,
-  shirtAccent: 0xffffff,  // faixa/gola; omita para camiseta lisa
-  pants: 0x3f4a63,
+  height: 1.72,           // altura total em unidades (1.75 ≈ adulto)
+  build: 'magro',         // 'magro' | 'medio' | 'forte'
+  skin: 0xf2cfb2,
+  blush: 0xff8fa0,        // bochecha
+  eyes: 0x4a3328,
+  hair: {
+    color: 0x8f5c33,
+    style: 'cacheado',
+    volume: 1.28,      // 0.7 colado, 1.3 juba
+    tips: 0xa9713f,    // mechas mais claras (opcional)
+  },
+  shirt: 0xf8f5f0,
+  shirtAccent: undefined, // faixa/gola; omita para camiseta lisa
+  pants: 0x5b7ba8,
   shoes: 0xf4f4f2,
-  accessories: ['oculos'],
-  accessoryColor: 0x2f3440,
+  accessories: ['presilha', 'laco', 'cinto'],
+  accessoryColor: 0x24222a,
 };
 ```
 
@@ -34,17 +39,35 @@ export const ARI: CharacterSpec = {
 `raspado` · `curto` · `franja` · `ondulado` · `coque` · `cacheado`
 
 ### Acessórios (`accessories[]`)
-`oculos` · `bone` · `barba` · `relogio` · `mochila` · `corrente` · `fone`
+`oculos` · `bone` · `barba` · `relogio` · `mochila` · `corrente` · `fone` ·
+`presilha` (estrela no cabelo) · `laco` (fita no decote) · `cinto` (com
+correntinha de estrela)
 
-`accessoryColor` vale para óculos, boné, fone, mochila e corrente.
+`accessoryColor` vale para óculos, boné, fone, mochila, corrente, laço e cinto.
+A presilha é sempre creme.
+
+### Cuidado com cabelo volumoso
+
+A câmera olha de cima: cabelo grande tapa o rosto com facilidade. Duas defesas
+já embutidas no rig, mexa nelas se criar um estilo novo:
+
+- a calota base tem uma **janela na frente** (`cap(escala, y, desce, abertura)`);
+  sem abertura ela é uma esfera inteira e cobre os olhos;
+- os cachos com `theta > 0.72` e `z > 0.22` são pulados, e o volume cresce
+  para trás (`frente = 0.78`), não para cima da cara.
+
+Toda mudança de cabelo **precisa** de uma foto de retrato antes de ser dada
+como pronta: `node scripts/retrato.mjs /tmp/ari` e olhe `/tmp/ari-frente.png`.
 
 ## Como iterar de verdade
 
 Ajustar aparência é ida e volta com foto. O ciclo curto:
 
 1. edite `cast.ts`
-2. `npm run build && node scripts/smoke.mjs /tmp/ari`
-3. olhe `/tmp/ari-casa.png` e ajuste
+2. `npm run build && node scripts/retrato.mjs /tmp/ari`
+3. olhe `/tmp/ari-frente.png` e ajuste
+
+`?zoom=4` na URL aproxima a câmera em qualquer cena.
 
 **Pergunte antes de chutar.** Cor de pele, tipo de cabelo e formato de rosto são
 a pessoa real — quando faltar informação, pergunte (ou peça uma foto de
@@ -73,13 +96,23 @@ w.onUpdate((dt) => renan.update(dt, 0));   // 0 = parado; > 0 anima a caminhada
 
 `rig.setFacing(angulo)` gira suave. `rig.cheer()` dá um pulinho de alegria.
 
-## Trocar quem o jogador controla
+## A dupla
 
-`src/main.ts`: `new Game(root, SCENES, ARI)`. Passe outra ficha para jogar com
-outro personagem.
+Os dois andam juntos o tempo todo: quem você controla é o `Player`, o outro é o
+`Companion`, que segue a ~2 unidades e para de frente para você. A tecla **T**
+(ou o botão 🔁 no celular) troca quem é quem — na prática os dois corpos trocam
+de lugar, ninguém sai da posição.
+
+Quem entra em cena vem de `DUPLA` em `src/characters/cast.ts`:
+
+```ts
+export const DUPLA = [ARI, RENAN] as const;   // [controlado, acompanhante]
+```
+
+Trocar a ordem troca quem começa jogável. Passar só uma ficha esconde o parceiro.
 
 ## Limites conhecidos (candidatos a evoluir)
 
 - Sem expressões faciais além do sorriso fixo.
-- Sem troca de roupa em tempo de jogo.
-- Um jogador por vez: um segundo personagem hoje só existe como NPC.
+- Sem troca de roupa por cenário (sunga na piscina, casaco no frio).
+- O parceiro só segue: não interage com objetos nem responde no diálogo.

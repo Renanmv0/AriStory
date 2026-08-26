@@ -19,7 +19,13 @@ export type Accessory =
   | 'relogio'
   | 'mochila'
   | 'corrente'
-  | 'fone';
+  | 'fone'
+  /** presilha de estrela no cabelo */
+  | 'presilha'
+  /** laco de fita no decote */
+  | 'laco'
+  /** cinto com correntinha de estrela */
+  | 'cinto';
 
 export type BodyBuild = 'magro' | 'medio' | 'forte';
 
@@ -33,7 +39,14 @@ export interface CharacterSpec {
   skin: number;
   blush: number;
   eyes: number;
-  hair: { color: number; style: HairStyle };
+  hair: {
+    color: number;
+    style: HairStyle;
+    /** volume do cabelo, 0.6 = colado, 1.3 = bem armado (padrao 1) */
+    volume?: number;
+    /** cor das pontas/mechas mais claras (padrao: sem mechas) */
+    tips?: number;
+  };
   shirt: number;
   /** detalhe da camiseta: gola, listra, estampa */
   shirtAccent?: number;

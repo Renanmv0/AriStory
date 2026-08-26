@@ -4,6 +4,8 @@ import { Input } from './Input';
 import { SaveState } from './SaveState';
 import { Ui } from '../ui/Ui';
 import { Player } from '../entities/Player';
+import { Companion } from '../entities/Companion';
+import { CharacterRig } from '../characters/CharacterRig';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
 import type { GameAPI, Memory, SceneAmbient, SceneDef } from './types';
@@ -26,6 +28,7 @@ export class Game implements GameAPI {
   private readonly ui: Ui;
   private readonly save = new SaveState();
   private readonly player: Player;
+  private readonly parceiro: Companion;
   private readonly clock = new THREE.Clock();
 
   private readonly hemi: THREE.HemisphereLight;
@@ -44,7 +47,7 @@ export class Game implements GameAPI {
   constructor(
     private readonly root: HTMLElement,
     private readonly scenes: Record<string, SceneDef>,
-    playerSpec: CharacterSpec,
+    dupla: readonly CharacterSpec[],
   ) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -56,6 +59,7 @@ export class Game implements GameAPI {
     this.ui = new Ui(root);
     this.ui.setMemories(this.save.memories);
     this.ui.onTouchAction = () => this.input.tapAction();
+    this.ui.onTouchSwap = () => this.input.tapSwap();
     this.input = new Input(this.renderer.domElement);
 
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x8aa06a, 1.05);
@@ -77,8 +81,12 @@ export class Game implements GameAPI {
     this.scene.add(this.sun);
     this.scene.add(this.sun.target);
 
-    this.player = new Player(playerSpec);
+    this.player = new Player(new CharacterRig(dupla[0]));
     this.scene.add(this.player.object);
+
+    this.parceiro = new Companion(new CharacterRig(dupla[1] ?? dupla[0]));
+    this.parceiro.setVisible(dupla.length > 1);
+    this.scene.add(this.parceiro.object);
 
     window.addEventListener('resize', this.onResize);
     this.renderer.domElement.addEventListener('wheel', this.onWheel, { passive: false });
@@ -117,7 +125,18 @@ export class Game implements GameAPI {
     const spawn = (entry && def.entries?.[entry]) || def.spawn;
     this.player.teleport(spawn.x, spawn.z, spawn.facing ?? 0);
     this.player.locked = false;
+    this.player.riding = false;
     this.player.setVisible(true);
+
+    // o parceiro chega junto, um passo atras
+    const atras = (spawn.facing ?? 0) + Math.PI;
+    this.parceiro.riding = false;
+    this.parceiro.teleport(
+      spawn.x + Math.sin(atras) * 1.3,
+      spawn.z + Math.cos(atras) * 1.3,
+      spawn.facing ?? 0,
+    );
+    this.parceiro.setVisible(true);
     this.cameraTarget = null;
     this.hot = null;
     this.ui.hidePrompt();
@@ -175,6 +194,7 @@ export class Game implements GameAPI {
     this.input.blocked = busy || this.player.locked;
 
     if (this.input.justPressed('KeyJ')) this.ui.toggleJournal();
+    if (!busy && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
     if (!busy) {
       if (this.input.justPressed('KeyQ')) this.iso.rotate(-1);
       if (this.input.justPressed('KeyR')) this.iso.rotate(1);
@@ -191,6 +211,7 @@ export class Game implements GameAPI {
     const m = this.input.move();
     this.iso.screenToWorld(m.x, m.y, this.moveDir);
     this.player.update(this.moveDir, dt, world.colliders, world.bounds);
+    this.parceiro.update(this.player.position, dt, world.colliders, world.bounds);
 
     // ------------------------------------------------------- interativos
     this.updateHot(world, dt);
@@ -245,6 +266,10 @@ export class Game implements GameAPI {
   }
 
   // ------------------------------------------------------------- GameAPI
+
+  get companionObject(): THREE.Object3D {
+    return this.parceiro.object;
+  }
 
   say(lines: string | string[], speaker?: string): Promise<void> {
     return this.ui.say(Array.isArray(lines) ? lines : [lines], speaker ?? this.player.name);
@@ -316,14 +341,58 @@ export class Game implements GameAPI {
   }
 
   playerFacing(): number {
-    return this.player.object.rotation.y;
+    return this.player.rig.group.rotation.y;
+  }
+
+  playerName(): string {
+    return this.player.name;
+  }
+
+  companionName(): string {
+    return this.parceiro.name;
+  }
+
+  companionPosition(): THREE.Vector3 {
+    return this.parceiro.position.clone();
+  }
+
+  /** Troca os corpos entre quem anda e quem acompanha. Ninguem sai do lugar. */
+  swapCharacters(): void {
+    if (this.player.riding || this.parceiro.riding) return;
+    const doJogador = this.player.rig;
+    this.player.swapRig(this.parceiro.rig);
+    this.parceiro.swapRig(doJogador);
+    this.ui.toast(`Agora você é ${this.player.name}`, '🔁');
+  }
+
+  submergePlayer(valor: number): void {
+    this.player.submersion = THREE.MathUtils.clamp(valor, 0, 1);
+  }
+
+  submergeCompanion(valor: number): void {
+    this.parceiro.submersion = THREE.MathUtils.clamp(valor, 0, 1);
+  }
+
+  rideCompanion(host: THREE.Object3D, local: THREE.Vector3, scale = 1): void {
+    host.add(this.parceiro.object);
+    this.parceiro.object.position.copy(local);
+    this.parceiro.object.scale.setScalar(scale);
+    this.parceiro.rig.group.rotation.y = Math.PI;
+    this.parceiro.riding = true;
+  }
+
+  releaseCompanion(x: number, z: number, facing = 0): void {
+    this.scene.add(this.parceiro.object);
+    this.parceiro.object.scale.setScalar(1);
+    this.parceiro.riding = false;
+    this.parceiro.teleport(x, z, facing);
   }
 
   ridePlayer(host: THREE.Object3D, local: THREE.Vector3, scale = 1): void {
     host.add(this.player.object);
     this.player.object.position.copy(local);
     this.player.object.scale.setScalar(scale);
-    this.player.object.rotation.set(0, Math.PI, 0);
+    this.player.rig.group.rotation.y = Math.PI;
     this.player.riding = true;
     this.player.locked = true;
     this.ui.hidePrompt();

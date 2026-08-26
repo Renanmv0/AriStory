@@ -46,6 +46,10 @@ nas duas cenas (ida e volta).
 | `w.patch(x, z, w, d, cor, rotY?, y?)` | retângulo pintado: calçada, quadra, tapete |
 | `w.disc(x, z, raio, cor, y?)` | círculo pintado: lago, praça, canteiro |
 | `w.setBounds(minX, minZ, maxX, maxZ)` | limite invisível de caminhada |
+| `w.groundWithHoles({ …, holes: [{x,z,width,depth}] })` | piso com buraco (piscina, poço) |
+
+Buraco é para quem afunda: sem ele o personagem submerso some por baixo do
+piso. Grama e deck precisam do **mesmo** furo — ver `src/scenes/clube.ts`.
 
 ### Objetos
 | chamada | para quê |
@@ -103,6 +107,27 @@ g.focusCamera(objeto | null) / g.setZoom(30)
 g.ridePlayer(cabine, new THREE.Vector3(0, -0.34, 0), 0.6)
 g.releasePlayer(x, z, facing)
 g.playerPosition() / g.playerFacing() / await g.wait(1.5)
+
+// a dupla
+g.playerName() / g.companionName() / g.companionPosition()
+g.rideCompanion(cabine, local, escala) / g.releaseCompanion(x, z, facing)
+g.swapCharacters()
+
+// água
+g.submergePlayer(0..1) / g.submergeCompanion(0..1)   // 1 = nadando
+```
+
+**Sempre há dois personagens em cena**: quem você controla e quem acompanha.
+Cutscene que carrega um tem que carregar o outro (a roda gigante leva os dois
+na mesma cabine). Diálogo que cita um nome usa `g.companionName()`, nunca o
+nome cravado — o jogador pode ter trocado com a tecla T.
+
+Para uma zona de água, compare a posição no `w.onUpdate` e interpole a
+submersão (sem interpolar, o corpo pula 70 cm de uma vez na borda):
+
+```ts
+molhado += ((dentro ? 1 : 0) - molhado) * Math.min(1, dt * 5);
+g.submergePlayer(molhado);
 ```
 
 ## Regras da casa

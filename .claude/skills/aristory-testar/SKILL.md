@@ -19,8 +19,16 @@ node scripts/smoke.mjs /tmp/aristory
 
 `scripts/smoke.mjs` abre cada cena, espera assentar, salva os PNGs e devolve
 código 1 se houve erro de console. As imagens saem como
-`/tmp/aristory-casa.png`, `/tmp/aristory-villa-lobos-portao.png`, etc.
+`/tmp/aristory-casa.png`, `/tmp/aristory-villa-lobos-portao.png`,
+`/tmp/aristory-clube-beira.png`, etc.
 **Abra as imagens** — o script não julga composição, só erro de runtime.
+
+Os outros dois:
+
+| script | o que faz |
+|---|---|
+| `scripts/ride.mjs` | a cutscene da roda gigante ponta a ponta, com os dois na cabine |
+| `scripts/retrato.mjs` | câmera colada no personagem, para conferir cabelo e roupa |
 
 ## Ir direto a um ponto da cena
 
@@ -32,6 +40,8 @@ http://127.0.0.1:4173/?cena=villa-lobos&entrada=roda
 
 Use os nomes de `entries` do `SceneDef`. Cena nova? Adicione uma entrada e
 inclua a cena na lista de `scripts/smoke.mjs`.
+
+`?zoom=4` aproxima a câmera — bom para olhar personagem de perto.
 
 ## Ambiente
 
@@ -50,4 +60,5 @@ ruído. Qualquer outro erro de console é erro de verdade.
 - [ ] olhei as fotos: nada flutuando, nada atravessando parede, nada cortado
 - [ ] andei pela cena: não trava em colisor, não nasce dentro de móvel
 - [ ] os prompts de interação aparecem na distância certa
+- [ ] o parceiro consegue seguir sem ficar preso em colisor
 - [ ] no celular (janela estreita) o HUD não cobre o personagem

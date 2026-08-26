@@ -76,6 +76,46 @@ export class WorldBuilder {
     return mesh;
   }
 
+  /**
+   * Chao com buracos retangulares — piscina, poco, alcapao. Sem o furo o
+   * personagem submerso desapareceria por baixo do plano do piso.
+   */
+  groundWithHoles(
+    opts: GroundOptions & { holes: Array<{ x: number; z: number; width: number; depth: number }> },
+  ): THREE.Mesh {
+    const hw = opts.width / 2;
+    const hd = opts.depth / 2;
+    const forma = new THREE.Shape();
+    forma.moveTo(-hw, -hd);
+    forma.lineTo(hw, -hd);
+    forma.lineTo(hw, hd);
+    forma.lineTo(-hw, hd);
+    forma.closePath();
+
+    // a malha nasce no plano XY e e deitada com rotation.x = -PI/2,
+    // o que faz mundoZ === -formaY: por isso o Z dos furos entra invertido
+    for (const h of opts.holes) {
+      const buraco = new THREE.Path();
+      const x1 = h.x - h.width / 2;
+      const x2 = h.x + h.width / 2;
+      const y1 = -h.z - h.depth / 2;
+      const y2 = -h.z + h.depth / 2;
+      buraco.moveTo(x1, y1);
+      buraco.lineTo(x2, y1);
+      buraco.lineTo(x2, y2);
+      buraco.lineTo(x1, y2);
+      buraco.closePath();
+      forma.holes.push(buraco);
+    }
+
+    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(forma), toon(opts.color));
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(opts.x ?? 0, opts.y ?? 0, opts.z ?? 0);
+    mesh.receiveShadow = true;
+    this.root.add(mesh);
+    return mesh;
+  }
+
   /** Mancha de outra cor sobre o chao: caminho de terra, quadra, tapete. */
   patch(x: number, z: number, width: number, depth: number, color: number, rotY = 0, y = 0.01): THREE.Mesh {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), toon(color));

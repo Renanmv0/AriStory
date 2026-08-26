@@ -305,3 +305,69 @@ export function upperCabinets(width = 2.0): THREE.Group {
   }
   return g;
 }
+
+export function washingMachine(): THREE.Group {
+  const g = new THREE.Group();
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.9, 0.64), toon(P.metalWhite));
+  corpo.position.y = 0.45;
+  g.add(corpo);
+  const porta = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.06, 16), toon(0x9fb6c4));
+  porta.position.set(0, 0.5, 0.33);
+  porta.rotation.x = Math.PI / 2;
+  g.add(porta);
+  const vidro = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 16), toon(0x3b4650));
+  vidro.position.set(0, 0.5, 0.36);
+  vidro.rotation.x = Math.PI / 2;
+  g.add(vidro);
+  const painel = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.12, 0.03), toon(0xdfe4e8));
+  painel.position.set(0, 0.82, 0.33);
+  g.add(painel);
+  for (const x of [-0.2, 0, 0.2]) {
+    const botao = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.03, 8), toon(P.metalGrey));
+    botao.position.set(x, 0.82, 0.36);
+    botao.rotation.x = Math.PI / 2;
+    g.add(botao);
+  }
+  return g;
+}
+
+/** Porta com batente. Encaixe num vao de parede com w.place(). */
+export function interiorDoor(cor: number = P.wood, largura = 0.9, altura = 2.1): THREE.Group {
+  const g = new THREE.Group();
+  const folha = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.08), toon(cor));
+  folha.position.y = altura / 2;
+  g.add(folha);
+  for (const side of [-1, 1]) {
+    const batente = new THREE.Mesh(new THREE.BoxGeometry(0.09, altura + 0.1, 0.14), toon(P.woodDark));
+    batente.position.set((side * (largura + 0.09)) / 2, (altura + 0.1) / 2, 0);
+    g.add(batente);
+  }
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.2, 0.1, 0.14), toon(P.woodDark));
+  verga.position.y = altura + 0.05;
+  g.add(verga);
+  const maca = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), toon(P.gold, { glow: 0.15 }));
+  maca.position.set(largura / 2 - 0.14, altura * 0.45, 0.07);
+  g.add(maca);
+  return g;
+}
+
+/** Criado-mudo com abajur. */
+export function nightstand(): THREE.Group {
+  const g = new THREE.Group();
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.5, 0.4), toon(P.wood));
+  corpo.position.y = 0.25;
+  g.add(corpo);
+  const gaveta = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.14, 0.03), toon(P.woodDark));
+  gaveta.position.set(0, 0.32, 0.21);
+  g.add(gaveta);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.16, 8), toon(P.metalGrey));
+  base.position.y = 0.58;
+  g.add(base);
+  const cupula = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.11, 0.15, 0.18, 12, 1, true),
+    toon(0xfff0cc, { glow: 0.45, doubleSide: true }),
+  );
+  cupula.position.y = 0.75;
+  g.add(cupula);
+  return g;
+}

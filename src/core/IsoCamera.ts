@@ -46,7 +46,7 @@ export class IsoCamera {
   }
 
   zoomBy(delta: number): void {
-    this.targetViewSize = THREE.MathUtils.clamp(this.targetViewSize + delta, 7, 26);
+    this.targetViewSize = THREE.MathUtils.clamp(this.targetViewSize + delta, 4, 26);
   }
 
   /** enquadramento atual (ja suavizado) */
@@ -55,7 +55,7 @@ export class IsoCamera {
   }
 
   setViewSize(size: number): void {
-    this.targetViewSize = size;
+    this.targetViewSize = Math.max(3, size);
   }
 
   /** coloca a camera direto no alvo, sem animacao (usado ao trocar de cena) */

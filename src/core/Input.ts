@@ -95,6 +95,11 @@ export class Input {
     this.pressed.add('KeyE');
   }
 
+  /** botao virtual de trocar de personagem */
+  tapSwap(): void {
+    this.pressed.add('KeyT');
+  }
+
   endFrame(): void {
     this.pressed.clear();
   }
@@ -107,4 +112,4 @@ export class Input {
 }
 
 const MOVEMENT_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
-const ACTION_KEYS = new Set(['Space', 'KeyE', 'KeyQ', 'KeyR', 'KeyJ', 'KeyF']);
+const ACTION_KEYS = new Set(['Space', 'KeyE', 'KeyQ', 'KeyR', 'KeyJ', 'KeyT']);

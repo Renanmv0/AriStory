@@ -9,7 +9,8 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
                     ├── Input          teclado + joystick virtual
                     ├── SaveState      localStorage: flags, contadores, memórias
                     ├── Ui             HUD, diálogo, diário, transição
-                    ├── Player         física XZ + CharacterRig
+                    ├── Player         física XZ + CharacterRig (quem você guia)
+                    ├── Companion      segue o Player, mesmo rig trocável
                     └── WorldBuilder   a cena atual
 ```
 
@@ -34,6 +35,20 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 - **Viés vertical da câmera**: ao afastar o zoom a mira sobe
   (`(viewSize − 14) × 0.38`), senão coisas altas como a roda gigante saem
   cortadas no topo.
+
+### A dupla
+
+`Player` e `Companion` guardam a POSIÇÃO num grupo externo e o corpo
+(`CharacterRig`) como filho. Trocar de personagem (tecla `T`) é só trocar os
+filhos entre os dois — ninguém sai do lugar, e por isso a rotação mora no rig,
+nunca no grupo externo.
+
+### Água
+
+`submersion` (0 a 1) abaixa o corpo 72 cm, corta a velocidade quase pela metade,
+troca a animação para braçada e apaga a sombra do chão. A cena decide quem está
+molhado; o motor só aplica. O piso precisa de buraco de verdade
+(`w.groundWithHoles`), senão o corpo submerso some por baixo do plano.
 
 ## `world/`
 

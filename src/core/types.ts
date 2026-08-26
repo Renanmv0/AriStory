@@ -123,4 +123,20 @@ export interface GameAPI {
   ridePlayer(host: THREE.Object3D, local: THREE.Vector3, scale?: number): void;
   /** devolve o jogador para o chao da cena */
   releasePlayer(x: number, z: number, facing?: number): void;
+
+  // ------------------------------------------------------------- a dupla
+  /** nome de quem esta sendo controlado agora */
+  playerName(): string;
+  /** nome de quem esta acompanhando */
+  companionName(): string;
+  companionPosition(): THREE.Vector3;
+  rideCompanion(host: THREE.Object3D, local: THREE.Vector3, scale?: number): void;
+  releaseCompanion(x: number, z: number, facing?: number): void;
+  /** troca quem o jogador controla */
+  swapCharacters(): void;
+
+  // -------------------------------------------------------------- agua
+  /** 0 = seco, 1 = submerso ate o pescoco */
+  submergePlayer(valor: number): void;
+  submergeCompanion(valor: number): void;
 }

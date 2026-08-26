@@ -3,40 +3,50 @@ import type { CharacterSpec } from './spec';
 /**
  * O elenco do AriStory.
  *
- * ATENCAO: estes valores sao um PRIMEIRO RASCUNHO. A ideia e ajustar juntos:
- * abra docs/PERSONAGENS.md, veja o mapa de cores/estilos e troque so os campos
- * daqui. Nao precisa mexer em nenhum outro arquivo para mudar um personagem.
+ * O Ari foi montado a partir de foto e da ilustração de referência: cachos
+ * castanho-acobreado bem volumosos com franja, presilha de estrela, blusa
+ * branca felpuda com laço preto, jeans largo e tênis branco.
+ *
+ * Para ajustar alguém, mexa só aqui — ver docs/PERSONAGENS.md.
  */
 
 export const ARI: CharacterSpec = {
   id: 'ari',
   name: 'Ari',
-  height: 1.74,
-  build: 'medio',
-  skin: 0xe8b48c,
-  blush: 0xff9aa8,
-  eyes: 0x3a2b26,
-  hair: { color: 0x3b2418, style: 'cacheado' },
-  shirt: 0x5fb0d6,
-  shirtAccent: 0xffffff,
-  pants: 0x3f4a63,
+  height: 1.72,
+  build: 'magro',
+  skin: 0xf2cfb2,
+  blush: 0xff8fa0,
+  eyes: 0x4a3328,
+  hair: {
+    color: 0x8f5c33,
+    style: 'cacheado',
+    volume: 1.28,
+    tips: 0xa9713f, // mechas mais claras, como na foto
+  },
+  shirt: 0xf8f5f0,
+  pants: 0x5b7ba8,
   shoes: 0xf4f4f2,
-  accessories: ['oculos'],
-  accessoryColor: 0x2f3440,
+  accessories: ['presilha', 'laco', 'cinto'],
+  accessoryColor: 0x24222a,
 };
 
 export const RENAN: CharacterSpec = {
   id: 'renan',
   name: 'Renan',
-  height: 1.78,
+  height: 1.76,
   build: 'magro',
-  skin: 0xf0c39c,
+  skin: 0xf0c8a8,
   blush: 0xff9aa8,
-  eyes: 0x2f2a33,
-  hair: { color: 0x2a1e1a, style: 'ondulado' },
-  shirt: 0xe07a5f,
-  shirtAccent: 0xfff2d0,
-  pants: 0x2f3440,
+  eyes: 0x2f2620,
+  hair: {
+    color: 0x3a2a20,
+    style: 'cacheado',
+    volume: 0.72, // cachos curtos, colados
+  },
+  shirt: 0x35414f,
+  shirtAccent: 0x2a3340,
+  pants: 0x8a7a5c,
   shoes: 0x2f3440,
   accessories: ['relogio'],
   accessoryColor: 0x2f3440,
@@ -46,3 +56,6 @@ export const CAST: Record<string, CharacterSpec> = {
   ari: ARI,
   renan: RENAN,
 };
+
+/** Quem o jogo carrega no começo: o Ari é o principal, o Renan é o par. */
+export const DUPLA = [ARI, RENAN] as const;

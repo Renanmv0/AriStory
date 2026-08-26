@@ -1,5 +1,6 @@
 import type { SceneDef } from '../core/types';
 import { casa } from './casa';
+import { clube } from './clube';
 import { villaLobos } from './villaLobos';
 
 /**
@@ -11,6 +12,7 @@ import { villaLobos } from './villaLobos';
 export const SCENES: Record<string, SceneDef> = {
   [casa.id]: casa,
   [villaLobos.id]: villaLobos,
+  [clube.id]: clube,
 };
 
 export const CENA_INICIAL = casa.id;

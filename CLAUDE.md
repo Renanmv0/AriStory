@@ -29,14 +29,17 @@ elas; `docs/ARQUITETURA.md` só quando o assunto for o motor em si.
 - **Peça reutilizável vai para o kit** (`world/props.ts`, `world/furniture.ts`),
   não para dentro da cena.
 - Parâmetro com cor da paleta precisa de anotação: `cor: number = P.wood`.
+- **São sempre dois em cena.** Cutscene que carrega um tem que carregar o outro,
+  e diálogo que cita nome usa `g.companionName()` — o jogador troca com `T`.
 
 ## Validar
 
 ```bash
 npm run typecheck
 npm run build && npx vite preview --port 4173 &
-node scripts/smoke.mjs /tmp/aristory   # fotos das cenas + erros de console
-node scripts/ride.mjs   /tmp/ride      # cutscene da roda gigante ponta a ponta
+node scripts/smoke.mjs   /tmp/aristory  # fotos das cenas + erros de console
+node scripts/ride.mjs    /tmp/ride      # cutscene da roda gigante ponta a ponta
+node scripts/retrato.mjs /tmp/ari       # camera colada no personagem
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta.

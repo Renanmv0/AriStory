@@ -32,6 +32,7 @@ export const villaLobos: SceneDef = {
   entries: {
     portao: { x: 0, z: 26, facing: Math.PI },
     roda: { x: 0, z: -17, facing: 0 },
+    clube: { x: 30, z: 12, facing: Math.PI * 1.5 },
   },
 
   build(w) {
@@ -203,6 +204,22 @@ export const villaLobos: SceneDef = {
     w.blockBox(-10, 28, 8, 0.2);
     w.blockBox(10, 28, 8, 0.2);
 
+    // saida lateral: o clube fica a uns dez minutos a pe
+    const placaClube = w.add(w.place(signBoard(P.wood, 0x4ec1a8), 34, 0, 12, -Math.PI / 2));
+    w.add(w.place(fence(12, 1.4), 35, 0, 6, Math.PI / 2));
+    w.add(w.place(fence(12, 1.4), 35, 0, 19, Math.PI / 2));
+    w.blockBox(35, 6, 0.2, 6);
+    w.blockBox(35, 19, 0.2, 6);
+    w.patch(30, 12, 12, 5, P.asphalt);
+
+    w.door({
+      x: 33, z: 12,
+      to: 'clube', entry: 'portaria',
+      label: 'Ir pro clube', icon: '🏊',
+      highlight: placaClube,
+      radius: 2.4,
+    });
+
     w.door({
       x: 0, z: 27,
       to: 'casa', entry: 'da-rua',
@@ -357,12 +374,17 @@ export const villaLobos: SceneDef = {
         const cabine = wheel.boardingCabin();
         const velocidade = wheel.speed;
         wheel.speed = velocidade * 5; // a volta cenica dura ~12s, nao um minuto
-        api.ridePlayer(cabine, new THREE.Vector3(0, -0.34, 0), 0.6);
+        // os dois entram na mesma cabine, um de cada lado
+        api.ridePlayer(cabine, new THREE.Vector3(-0.3, -0.34, 0), 0.55);
+        api.rideCompanion(cabine, new THREE.Vector3(0.3, -0.34, 0), 0.55);
         api.focusCamera(cabine);
         api.setZoom(38);
 
         await esperarVoltas(0.25);
-        await api.say(['Daqui dá pra ver o parque inteiro.', 'E aquele pedacinho do rio ali atrás.']);
+        await api.say([
+          'Daqui dá pra ver o parque inteiro.',
+          'E aquele pedacinho do rio ali atrás.',
+        ]);
         await esperarVoltas(0.35);
         await api.say([
           'Toda vez que a gente passa aqui embaixo, você olha pra cima e diz "um dia a gente sobe".',
@@ -373,6 +395,7 @@ export const villaLobos: SceneDef = {
         wheel.speed = velocidade;
         api.focusCamera(null);
         api.releasePlayer(0, -17.6, 0);
+        api.releaseCompanion(-1.1, -17.9, 0);
         api.lockPlayer(false);
         zoomLivre = true;
 
@@ -380,7 +403,7 @@ export const villaLobos: SceneDef = {
           id: 'roda-gigante',
           title: 'A roda gigante',
           place: 'Parque Villa Lobos',
-          note: 'A roda branca gigante que aparece por cima das árvores. A gente sempre olha. Agora a gente subiu.',
+          note: 'A roda branca gigante que aparece por cima das árvores. A gente sempre olha. Agora a gente subiu — os dois na mesma cabine.',
           icon: '🎡',
         });
       },

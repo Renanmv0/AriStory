@@ -9,6 +9,24 @@ import { BUILD_WIDTH, type CharacterSpec } from './spec';
  *
  * Convencao: o personagem olha para +Z quando rotation.y === 0.
  */
+/** Estrela de 5 pontas, usada em presilha e pingente. */
+function estrela(raio: number, espessura: number, material: THREE.Material): THREE.Mesh {
+  const forma = new THREE.Shape();
+  const pontas = 5;
+  for (let i = 0; i < pontas * 2; i++) {
+    const r = i % 2 === 0 ? raio : raio * 0.46;
+    const a = (i / (pontas * 2)) * Math.PI * 2 - Math.PI / 2;
+    const x = Math.cos(a) * r;
+    const y = Math.sin(a) * r;
+    if (i === 0) forma.moveTo(x, y);
+    else forma.lineTo(x, y);
+  }
+  forma.closePath();
+  const geo = new THREE.ExtrudeGeometry(forma, { depth: espessura, bevelEnabled: false });
+  geo.center();
+  return new THREE.Mesh(geo, material);
+}
+
 export class CharacterRig {
   readonly group = new THREE.Group();
   readonly spec: CharacterSpec;
@@ -27,6 +45,7 @@ export class CharacterRig {
   private phase = 0;
   private bounce = 0;
   private targetFacing = 0;
+  private swimming = false;
 
   constructor(spec: CharacterSpec) {
     this.spec = spec;
@@ -126,19 +145,19 @@ export class CharacterRig {
     this.head.add(neck);
 
     const skull = new THREE.Mesh(new THREE.SphereGeometry(headR, 20, 16), skin);
-    skull.scale.set(1, 1.04, 0.94);
+    skull.scale.set(1, 1.04, 1.0);
     this.head.add(skull);
 
     // olhos e bochechas ficam na frente (+Z)
     const eyeMat = toon(spec.eyes);
     for (const side of [-1, 1]) {
       const eye = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.14, 10, 8), eyeMat);
-      eye.position.set(side * headR * 0.35, headR * 0.06, headR * 0.86);
+      eye.position.set(side * headR * 0.35, 0, headR * 0.9);
       eye.scale.set(1, 1.25, 0.6);
       this.head.add(eye);
 
       const blush = new THREE.Mesh(new THREE.CircleGeometry(headR * 0.16, 12), flat(spec.blush, 0.75));
-      blush.position.set(side * headR * 0.56, -headR * 0.22, headR * 0.8);
+      blush.position.set(side * headR * 0.56, -headR * 0.26, headR * 0.82);
       blush.rotation.y = side * 0.35;
       this.head.add(blush);
     }
@@ -147,7 +166,7 @@ export class CharacterRig {
       new THREE.TorusGeometry(headR * 0.16, headR * 0.035, 6, 14, Math.PI),
       eyeMat,
     );
-    mouth.position.set(0, -headR * 0.34, headR * 0.86);
+    mouth.position.set(0, -headR * 0.38, headR * 0.9);
     mouth.rotation.set(0, 0, Math.PI);
     this.head.add(mouth);
 
@@ -180,9 +199,22 @@ export class CharacterRig {
     const { style, color } = this.spec.hair;
     const mat = toon(color);
 
-    const cap = (scale: number, y: number) => {
+    /**
+     * Calota de cabelo. `abertura` deixa uma janela na frente do rosto: sem ela
+     * a calota e uma esfera inteira e cobre os olhos na visao isometrica.
+     * (no SphereGeometry do three, phi = PI/2 aponta para +Z, a frente)
+     */
+    const cap = (scale: number, y: number, desce = 0.62, abertura = 0) => {
       const m = new THREE.Mesh(
-        new THREE.SphereGeometry(headR * scale, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.62),
+        new THREE.SphereGeometry(
+          headR * scale,
+          18,
+          14,
+          Math.PI / 2 + abertura / 2,
+          Math.PI * 2 - abertura,
+          0,
+          Math.PI * desce,
+        ),
         mat,
       );
       m.position.y = y;
@@ -235,18 +267,67 @@ export class CharacterRig {
         break;
       }
       case 'cacheado': {
-        cap(0.98, headR * 0.02);
-        const curls = 14;
-        for (let i = 0; i < curls; i++) {
-          const a = (i / curls) * Math.PI * 2;
-          const ring = i % 2 === 0 ? 0.78 : 0.52;
-          const curl = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.3, 8, 7), mat);
-          curl.position.set(
-            Math.cos(a) * headR * ring,
-            headR * (0.42 + (i % 3) * 0.16),
-            Math.sin(a) * headR * ring * 0.92,
+        // Cachos em casca esferica, camada por camada. `volume` empurra a casca
+        // para fora: 0.7 fica colado na cabeca, 1.3 vira juba.
+        const vol = this.spec.hair.volume ?? 1;
+        const pontas = this.spec.hair.tips !== undefined ? toon(this.spec.hair.tips) : mat;
+        const base = cap(1.0 + (vol - 1) * 0.2, headR * 0.02, 0.66, 1.3);
+        base.scale.set(1.04, 1, 1.04);
+
+        // [angulo polar, quantos cachos, raio do cacho, raio da casca]
+        const camadas: Array<[number, number, number, number]> = [
+          [0.30, 7, 0.34, 1.02],
+          [0.72, 11, 0.33, 1.10],
+          [1.08, 13, 0.31, 1.15],
+          [1.44, 13, 0.28, 1.10],
+          [1.78, 11, 0.25, 0.98],
+        ];
+
+        let n = 0;
+        for (const [theta, quantos, rCacho, rCasca] of camadas) {
+          for (let i = 0; i < quantos; i++) {
+            const phi = (i / quantos) * Math.PI * 2 + theta * 2.3;
+            const x = Math.sin(theta) * Math.cos(phi);
+            const y = Math.cos(theta);
+            const z = Math.sin(theta) * Math.sin(phi);
+            // o rosto fica livre: nada na frente abaixo da linha da testa.
+            // A camera olha de cima, entao o corte precisa ser generoso —
+            // senao o cachao tapa a cara inteira na visao isometrica.
+            if (theta > 0.72 && z > 0.22) continue;
+            const escala = 1 + (vol - 1) * 0.55;
+            const curl = new THREE.Mesh(
+              new THREE.SphereGeometry(headR * rCacho * escala, 8, 7),
+              n % 4 === 0 ? pontas : mat,
+            );
+            const casca = rCasca * (1 + (vol - 1) * 0.28);
+            // o volume cresce para tras e para os lados, nao para cima do rosto
+            const frente = z > 0 ? 0.78 : 1.06;
+            curl.position.set(x * headR * casca, y * headR * casca, z * headR * casca * frente);
+            this.head.add(curl);
+            n++;
+          }
+        }
+
+        // franja na testa: fica acima da linha dos olhos, senao tapa o rosto
+        for (let i = 0; i < 4; i++) {
+          const franja = new THREE.Mesh(
+            new THREE.SphereGeometry(headR * 0.22 * (1 + (vol - 1) * 0.4), 8, 7),
+            i === 1 ? pontas : mat,
           );
-          this.head.add(curl);
+          franja.position.set(
+            (i - 1.5) * headR * 0.34,
+            headR * (0.62 - (i % 2) * 0.08),
+            headR * 0.62,
+          );
+          this.head.add(franja);
+        }
+
+        // mechas soltas na frente das orelhas, sem chegar no rosto
+        for (const side of [-1, 1]) {
+          const mecha = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.26 * vol, 8, 7), mat);
+          mecha.position.set(side * headR * 1.02 * vol, -headR * 0.34, headR * 0.28);
+          mecha.scale.set(0.8, 1.25, 0.9);
+          this.head.add(mecha);
         }
         break;
       }
@@ -341,6 +422,76 @@ export class CharacterRig {
       this.armL.add(watch);
     }
 
+    if (acc.includes('presilha')) {
+      // fica por cima dos cachos, senao some dentro do cabelo
+      const vol = this.spec.hair.volume ?? 1;
+      const presilha = estrela(headR * 0.3, headR * 0.06, toon(0xf2e6cf));
+      presilha.position.set(-headR * 0.78 * vol, headR * 0.92 * vol, headR * 0.62 * vol);
+      presilha.rotation.set(0.35, -0.6, 0.3);
+      this.head.add(presilha);
+    }
+
+    if (acc.includes('laco')) {
+      const h = this.spec.height;
+      const laco = new THREE.Group();
+      const raioTorso = h * 0.105 * w;
+
+      const no = new THREE.Mesh(new THREE.SphereGeometry(h * 0.018, 8, 6), accMat);
+      laco.add(no);
+      for (const side of [-1, 1]) {
+        const alca = new THREE.Mesh(new THREE.TorusGeometry(h * 0.026, h * 0.007, 6, 12), accMat);
+        alca.position.set(side * h * 0.03, h * 0.008, 0);
+        alca.rotation.set(0, side * 0.5, side * 0.35);
+        alca.scale.set(1, 0.7, 1);
+        laco.add(alca);
+
+        const fita = new THREE.Mesh(
+          new THREE.BoxGeometry(h * 0.012, h * 0.075, h * 0.006),
+          accMat,
+        );
+        fita.position.set(side * h * 0.016, -h * 0.045, 0);
+        fita.rotation.z = side * 0.22;
+        laco.add(fita);
+      }
+      laco.position.set(0, shoulderY - torsoH * 0.1, raioTorso * 0.86);
+      this.body.add(laco);
+    }
+
+    if (acc.includes('cinto')) {
+      const h = this.spec.height;
+      const raioTorso = h * 0.105 * w;
+      const cintura = hipY + torsoH * 0.08;
+
+      const tira = new THREE.Mesh(
+        new THREE.CylinderGeometry(raioTorso * 1.04, raioTorso * 1.04, h * 0.032, 16, 1, true),
+        accMat,
+      );
+      tira.position.y = cintura;
+      tira.scale.z = 0.84;
+      this.body.add(tira);
+
+      const fivela = new THREE.Mesh(
+        new THREE.BoxGeometry(h * 0.032, h * 0.03, h * 0.012),
+        toon(0xd8d4cc),
+      );
+      fivela.position.set(0, cintura, raioTorso * 0.9);
+      this.body.add(fivela);
+
+      // correntinha com estrela, do jeito que aparece na referencia
+      const corrente = new THREE.Mesh(
+        new THREE.TorusGeometry(h * 0.028, h * 0.004, 5, 12, Math.PI),
+        toon(0xd8d4cc),
+      );
+      corrente.position.set(raioTorso * 0.6, cintura - h * 0.012, raioTorso * 0.6);
+      corrente.rotation.set(0, -0.7, Math.PI);
+      this.body.add(corrente);
+
+      const pingente = estrela(h * 0.016, h * 0.004, toon(0xd8d4cc));
+      pingente.position.set(raioTorso * 0.76, cintura - h * 0.05, raioTorso * 0.66);
+      pingente.rotation.y = -0.7;
+      this.body.add(pingente);
+    }
+
     if (acc.includes('mochila')) {
       const bag = new THREE.Mesh(
         new THREE.BoxGeometry(halfShoulder * 1.7, torsoH * 0.62, this.spec.height * 0.09),
@@ -376,6 +527,13 @@ export class CharacterRig {
     this.bounce = 1;
   }
 
+  /** dentro da agua: bracada em vez de caminhada, e sem sombra no chao */
+  setSwimming(v: boolean): void {
+    if (this.swimming === v) return;
+    this.swimming = v;
+    this.blob.visible = !v;
+  }
+
   /**
    * @param dt delta em segundos
    * @param speed velocidade horizontal atual em unidades/s (0 = parado)
@@ -385,6 +543,22 @@ export class CharacterRig {
     let delta = this.targetFacing - this.group.rotation.y;
     delta = Math.atan2(Math.sin(delta), Math.cos(delta));
     this.group.rotation.y += delta * Math.min(1, dt * 14);
+
+    if (this.swimming) {
+      this.phase += dt * (2.6 + speed * 1.2);
+      const s = Math.sin(this.phase * 2);
+      // bracada alternada e pernada curtinha
+      this.armL.rotation.x = -1.1 + s * 0.9;
+      this.armR.rotation.x = -1.1 - s * 0.9;
+      this.armL.rotation.z = 0.5;
+      this.armR.rotation.z = -0.5;
+      this.legL.rotation.x = s * 0.28;
+      this.legR.rotation.x = -s * 0.28;
+      this.body.rotation.x = 0.16;
+      this.body.position.y = Math.sin(this.phase) * 0.03;
+      this.head.rotation.x = -0.14;
+      return;
+    }
 
     const walking = speed > 0.05;
     this.phase += dt * (walking ? 3.2 + speed * 1.9 : 1.4);

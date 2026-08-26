@@ -2,10 +2,11 @@
 
 Um jogo isométrico fofo sobre os lugares que a gente visitou de verdade.
 
-Você controla o **Ari** e anda por cenários reais da nossa vida — a casa dele, o
-Parque Villa Lobos com a roda gigante, e tudo o que vier depois. Cada coisa com
-que dá pra interagir guarda um pedaço de memória, e as memórias vão parar num
-diário dentro do jogo.
+Você controla o **Ari** e o **Renan** — os dois andam juntos, e a tecla `T`
+troca quem você está guiando. Dá pra passear pela casa do Ari, pelo Parque
+Villa Lobos com a roda gigante, e pela piscina do clube. Cada coisa com que dá
+pra interagir guarda um pedaço de memória, e as memórias vão parar num diário
+dentro do jogo.
 
 A ideia é construir isso **aos poucos, juntos**: um cenário de cada vez, um
 detalhe de cada vez.
@@ -16,10 +17,11 @@ detalhe de cada vez.
 |---|---|
 | `W A S D` / setas | andar |
 | `E` ou `espaço` | interagir · avançar diálogo |
+| `T` | trocar entre o Ari e o Renan |
 | `Q` / `R` | girar a câmera 45° |
 | `J` | abrir o diário de memórias |
 | roda do mouse | zoom |
-| celular | arraste em qualquer lugar da tela para andar; botão ✨ para interagir |
+| celular | arraste em qualquer lugar da tela para andar; ✨ interage, 🔁 troca, 📖 abre o diário |
 
 O progresso fica salvo no navegador.
 
@@ -42,13 +44,16 @@ Para pular direto num cenário: `?cena=villa-lobos&entrada=roda`.
 
 ## O que já tem
 
-- **Casa do Ari** — sala, cozinha, cantinho de dormir. Café, TV, plantinha,
-  porta-retrato, estante.
-- **Parque Villa Lobos** — a roda gigante (com passeio de verdade: você entra na
-  cabine e a câmera sobe junto), campinho de frisbee jogável, lago com patos,
-  quiosque de água de coco, mesa de piquenique.
-- **Diário de memórias** — sete memórias para desbloquear até agora.
-- **Ari** — personagem procedural, ajustável por ficha.
+- **Casa do Ari** — montada a partir do esboço da casa de verdade: cozinha,
+  quarto, banheiro, a TV na parede da esquerda, o sofá de frente pra ela e a
+  máquina de lavar no cantinho.
+- **Parque Villa Lobos** — a roda gigante, com passeio de verdade: os dois
+  entram na mesma cabine e a câmera sobe junto. Tem também campinho de frisbee
+  jogável, lago com patos, quiosque de água de coco e mesa de piquenique.
+- **Clube** — a piscina. A água é um buraco de verdade no piso: quem entra
+  afunda e passa a nadar, e dá pra pular do trampolim.
+- **A dupla** — Ari e Renan andam juntos; `T` troca quem você controla.
+- **Diário de memórias** — dez memórias para desbloquear até agora.
 
 ## Como isso é feito
 
