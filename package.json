@@ -1,0 +1,23 @@
+{
+  "name": "aristory",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "AriStory - um jogo isometrico fofo sobre lugares que a gente visitou juntos.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke.mjs ./smoke"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.180.0",
+    "playwright": "^1.49.1",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}
