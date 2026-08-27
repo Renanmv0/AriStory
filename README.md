@@ -18,7 +18,7 @@ detalhe de cada vez.
 | `W A S D` / setas | andar |
 | `E` ou `espaço` | interagir · avançar diálogo |
 | `T` | trocar entre o Ari e o Renan |
-| `F` | jogar o frisbee (no parque) |
+| `F` (segure) | lançar o frisbee — quanto mais tempo segurar, mais longe vai |
 | `Q` / `R` | girar a câmera 45° |
 | `J` | abrir o diário de memórias |
 | roda do mouse | zoom |

@@ -46,7 +46,10 @@ export function guardaSol(cor: number = P.fabricRed): THREE.Group {
    `IcosahedronGeometry(r, 1)`. O jogo roda em celular.
 5. **Estilo fofo**: cantos arredondados (cápsula e esfera antes de caixa),
    proporções exageradas, poucos detalhes e bem legíveis de longe.
-6. **Nada de textura ou arquivo externo** — o repositório é 100% procedural.
+6. **Nada de arquivo externo** — o repositório é 100% procedural. A única
+   textura permitida é a desenhada em tempo de execução num `<canvas>`, como
+   em `textSign()`: continua sendo código, nenhum `.png` entra no repositório.
+   Use `textSign('Clube!')` sempre que uma placa precisar ser legível.
 7. Escala: uma pessoa tem 1,75 unidade. Banco 0,48 de assento, porta 2,1 de altura.
 
 ## Peça animada

@@ -61,6 +61,7 @@ export class Game implements GameAPI {
     this.ui.setMemories(this.save.memories);
     this.ui.onTouchAction = () => this.input.tapAction();
     this.ui.onTouchSwap = () => this.input.tapSwap();
+    this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
     this.input = new Input(this.renderer.domElement);
 
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x8aa06a, 1.05);
@@ -353,6 +354,15 @@ export class Game implements GameAPI {
   keyPressed(code: string): boolean {
     if (this.ui.dialogueOpen || this.ui.journalOpen || this.player.locked) return false;
     return this.input.justPressed(code);
+  }
+
+  keyDown(code: string): boolean {
+    if (this.ui.dialogueOpen || this.ui.journalOpen || this.player.locked) return false;
+    return this.input.isDown(code);
+  }
+
+  showCharge(valor: number | null): void {
+    this.ui.showCharge(valor);
   }
 
   wait(seconds: number): Promise<void> {

@@ -121,6 +121,10 @@ export interface GameAPI {
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */
   keyPressed(code: string): boolean;
+  /** true enquanto a tecla estiver segurada; ignorada durante dialogo/diario */
+  keyDown(code: string): boolean;
+  /** barra de forca no HUD; 0..1, ou null para esconder */
+  showCharge(valor: number | null): void;
   /** posicao atual do jogador */
   playerPosition(): THREE.Vector3;
   /** angulo para onde o jogador esta olhando, em radianos */

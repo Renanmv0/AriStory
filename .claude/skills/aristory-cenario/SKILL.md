@@ -117,7 +117,9 @@ g.setSitting(true)         // os dois sentam
 g.swapCharacters()
 
 // teclas próprias da cena (o frisbee usa F)
-if (g.keyPressed('KeyF')) { /* … */ }
+if (g.keyPressed('KeyF')) { /* … */ }   // só no frame em que desceu
+if (g.keyDown('KeyF')) { /* … */ }      // enquanto estiver segurada
+g.showCharge(0.7);                      // barra de força no HUD; null esconde
 
 // água
 g.submergePlayer(0..1) / g.submergeCompanion(0..1)   // 1 = nadando
@@ -138,6 +140,23 @@ submersão (sem interpolar, o corpo pula 70 cm de uma vez na borda):
 molhado += ((dentro ? 1 : 0) - molhado) * Math.min(1, dt * 5);
 g.submergePlayer(molhado);
 ```
+
+## Zona que liga uma mecânica
+
+Quando uma mecânica só faz sentido num pedaço do cenário (a quadra de frisbee),
+defina o retângulo e ligue/desligue tudo na entrada e na saída — não deixe o
+objeto na mão do jogador pelo parque inteiro:
+
+```ts
+const QUADRA = { x: 18, z: -4.5, largura: 26, profundidade: 19 };
+const naQuadra = (x, z, margem = 0) =>
+  Math.abs(x - QUADRA.x) < QUADRA.largura / 2 - margem &&
+  Math.abs(z - QUADRA.z) < QUADRA.profundidade / 2 - margem;
+```
+
+No `w.onUpdate`, compare com o estado anterior para disparar entrada/saída uma
+vez só. Na entrada vale abrir a câmera (`g.setZoom`) e mandar o parceiro se
+posicionar (`g.commandCompanion`); na saída, desfazer os dois.
 
 ## Cutscene com os dois
 
@@ -185,7 +204,16 @@ senta colado nele. Sente **à frente** do encosto e confira com foto.
    uma conversa entre os dois, importe `ARI` e `RENAN` de `characters/cast` e
    passe `ARI.name` / `RENAN.name` — assim a fala não troca de dono quando o
    jogador aperta T.
-9. **Fala que o Renan escreveu vai literal.** Quando ele der o texto de uma
+9. **Toda interação é conversa entre os dois.** Uma fala solta é exceção, não
+   regra. Use um helper local e os nomes de `ARI`/`RENAN`:
+
+   ```ts
+   const conversa = async (falas: Array<readonly [string, string]>) => {
+     for (const [quem, texto] of falas) await g.say([texto], quem);
+   };
+   await conversa([[R, 'Que lago bonito…'], [A, 'Então vamos!'], [R, 'NÃAAOOO']]);
+   ```
+10. **Fala que o Renan escreveu vai literal.** Quando ele der o texto de uma
    interação, use exatamente aquilo — não reescreva nem "melhore".
 
 ## Depurar posição

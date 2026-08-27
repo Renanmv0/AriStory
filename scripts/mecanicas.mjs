@@ -38,15 +38,20 @@ await page.screenshot({ path: `${OUT}-sofa.png` });
 const sentados = (await page.locator('.dialogue.show').count()) > 0;
 
 // --------------------------------------------------------------- frisbee
-await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao`, { waitUntil: 'networkidle' });
-await page.waitForTimeout(3000);
+// o disco só existe dentro da quadra, então o teste começa lá dentro
+await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=18,-4.5&olhar=0.785`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(3200);
+const discoNaMao = (await page.locator('.prompt.show .label').textContent().catch(() => null)) ?? '';
 for (let i = 0; i < 6; i++) {
-  await page.keyboard.press('KeyF');
+  // segura para carregar e solta: é assim que se lança agora
+  await page.keyboard.down('KeyF');
+  await page.waitForTimeout(600);
+  await page.keyboard.up('KeyF');
   await page.waitForTimeout(2600);
   await page.keyboard.down('KeyW');
   await page.waitForTimeout(500);
   await page.keyboard.up('KeyW');
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(1700);
 }
 await page.screenshot({ path: `${OUT}-frisbee.png` });
 const trocas = await page.evaluate(() => {
@@ -92,6 +97,7 @@ const memorias = await page.evaluate(() => {
 console.log('prompt do sofá:', promptSofa);
 console.log('pergunta com botões:', temEscolha);
 console.log('cutscene rodou:', sentados);
+console.log('prompt na quadra:', discoNaMao);
 console.log('trocas de frisbee:', trocas);
 console.log('falantes do lago:', falantes.join(' → '));
 console.log('memórias:', memorias.join(', '));

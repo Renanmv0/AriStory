@@ -47,8 +47,8 @@ export const RENAN: CharacterSpec = {
   eyes: 0x241d18,
   hair: {
     color: 0x1f1712,
-    style: 'cacheado',
-    volume: 1.02, // volume no topo, mais curto nas laterais que o do Ari
+    style: 'cachos-curtos', // silhueta propria, nao so a do Ari com outra cor
+    volume: 1.0,
   },
   shirt: 0x8d8f97, // camiseta cinza, aparece pela fresta do moletom
   pants: 0x22232a,

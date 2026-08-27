@@ -4,8 +4,10 @@ import type { SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
 import { Frisbee } from '../entities/Frisbee';
 import {
-  bench, bin, building, bush, cloud, cone, duck, fence, flowers, iceCream,
-  kiosk, lamp, picnicTable, rock, signBoard, tree,
+  bench, bin, bleachers, building, bus, busStop, bush, cloud, cone, discBag,
+  discGolfBasket, duck, fence, floodlight, flowers, iceCream, kiosk, lamp,
+  picnicTable, rock, scoreboard, signBoard, textSign, tree, waterFountain,
+  windsock,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 
@@ -33,11 +35,24 @@ export const villaLobos: SceneDef = {
   entries: {
     portao: { x: 0, z: 26, facing: Math.PI },
     roda: { x: 0, z: -17, facing: 0 },
-    clube: { x: 30, z: 12, facing: Math.PI * 1.5 },
+    clube: { x: 33, z: 13, facing: Math.PI * 1.5 },
   },
 
   build(w) {
     const g = w.game;
+
+    /** Vai e volta de falas, com o nome certo em cada balão. */
+    const conversa = async (falas: Array<readonly [string, string]>): Promise<void> => {
+      for (const [quem, texto] of falas) await g.say([texto], quem);
+    };
+    const A = ARI.name;
+    const R = RENAN.name;
+
+    // A quadra de frisbee: fora dela o disco nem aparece na mão.
+    const QUADRA = { x: 18, z: -4.5, largura: 26, profundidade: 19 };
+    const naQuadra = (x: number, z: number, margem = 0): boolean =>
+      Math.abs(x - QUADRA.x) < QUADRA.largura / 2 - margem &&
+      Math.abs(z - QUADRA.z) < QUADRA.profundidade / 2 - margem;
 
     // ------------------------------------------------------------- terreno
     // bem maior que a area jogavel: la de cima da roda gigante da para ver longe
@@ -91,23 +106,75 @@ export const villaLobos: SceneDef = {
       w.add(w.place(bush(0.7, P.leafDark), -21 + Math.cos(a) * 9.8, 0, 11 + Math.sin(a) * 9.8));
     }
 
-    // ---------------------------------------------------- campinho de frisbee
-    w.patch(17, 3, 22, 18, P.grassDark, 0, 0.008);
-    for (const [cx, cz] of [[8, -5], [26, -5], [8, 11], [26, 11]] as const) {
+    // ------------------------------------------------- quadra de frisbee
+    const qx0 = QUADRA.x - QUADRA.largura / 2; // 5
+    const qx1 = QUADRA.x + QUADRA.largura / 2; // 31
+    const qz0 = QUADRA.z - QUADRA.profundidade / 2; // -14
+    const qz1 = QUADRA.z + QUADRA.profundidade / 2; // 5
+
+    // grama aparada e as linhas pintadas
+    w.patch(QUADRA.x, QUADRA.z, QUADRA.largura, QUADRA.profundidade, P.grassDark, 0, 0.008);
+    const linha = (x: number, z: number, larg: number, prof: number): void => {
+      w.patch(x, z, larg, prof, 0xf2f4f0, 0, 0.012);
+    };
+    linha(QUADRA.x, qz0 + 0.3, QUADRA.largura - 1.2, 0.28);
+    linha(QUADRA.x, qz1 - 0.3, QUADRA.largura - 1.2, 0.28);
+    linha(qx0 + 0.6, QUADRA.z, 0.28, QUADRA.profundidade - 0.6);
+    linha(qx1 - 0.6, QUADRA.z, 0.28, QUADRA.profundidade - 0.6);
+    linha(QUADRA.x, QUADRA.z, 0.28, QUADRA.profundidade - 0.6); // meio
+    linha(qx0 + 6, QUADRA.z, 0.22, QUADRA.profundidade - 0.6); // zonas de fundo
+    linha(qx1 - 6, QUADRA.z, 0.22, QUADRA.profundidade - 0.6);
+    w.disc(QUADRA.x, QUADRA.z, 2.2, 0xf2f4f0, 0.011);
+    w.disc(QUADRA.x, QUADRA.z, 1.9, P.grassDark, 0.012);
+
+    // alambrado, com a entrada aberta do lado do caminho principal
+    const alambrado = (x: number, z: number, comp: number, girado: boolean): void => {
+      w.add(w.place(fence(comp, 1.5, P.metalWhite), x, 0, z, girado ? Math.PI / 2 : 0));
+      if (girado) w.blockBox(x, z, 0.2, comp / 2);
+      else w.blockBox(x, z, comp / 2, 0.2);
+    };
+    alambrado(QUADRA.x, qz0, QUADRA.largura, false); // fundo
+    alambrado(QUADRA.x, qz1, QUADRA.largura, false); // frente
+    alambrado(qx1, QUADRA.z, QUADRA.profundidade, true); // leste
+    alambrado(qx0, qz0 + 3.75, 7.5, true); // oeste, parte de baixo
+    alambrado(qx0, qz1 - 3.75, 7.5, true); // oeste, parte de cima — o vão fica no meio
+
+    // as cestas de disc golf nas duas pontas: é o que diz "aqui é de frisbee"
+    w.add(w.place(discGolfBasket(), qx0 + 3, 0, QUADRA.z));
+    w.blockCircle(qx0 + 3, QUADRA.z, 0.5);
+    const cestaLeste = w.add(w.place(discGolfBasket(P.frisbee), qx1 - 3, 0, QUADRA.z));
+    w.blockCircle(qx1 - 3, QUADRA.z, 0.5);
+
+    const placar = w.add(w.place(scoreboard(), QUADRA.x, 0, qz0 + 1.2));
+    w.blockBox(QUADRA.x, qz0 + 1.2, 1, 0.2);
+
+    const arquibancada = w.add(w.place(bleachers(6), QUADRA.x, 0, qz1 - 1.2, Math.PI));
+    w.blockBox(QUADRA.x, qz1 - 1.4, 3, 0.8);
+
+    const bebedouro = w.add(w.place(waterFountain(), qx0 + 1.6, 0, QUADRA.z + 4.2, Math.PI / 2));
+    w.blockCircle(qx0 + 1.6, QUADRA.z + 4.2, 0.4);
+
+    const sacola = w.add(w.place(discBag(), qx0 + 1.8, 0, QUADRA.z - 3.4, 0.4));
+
+    const biruta = w.add(w.place(windsock(), qx1 - 1.6, 0, qz1 - 2.4));
+    w.blockCircle(qx1 - 1.6, qz1 - 2.4, 0.3);
+    const mangaBiruta = biruta.userData.manga as THREE.Object3D;
+    w.onUpdate((_dt, t) => {
+      biruta.rotation.y = Math.sin(t * 0.3) * 0.5 + 0.6;
+      mangaBiruta.rotation.z = Math.sin(t * 1.7) * 0.12 - 0.06;
+    });
+
+    for (const [fx, fz] of [[qx0 + 1, qz0 + 1], [qx1 - 1, qz0 + 1], [qx0 + 1, qz1 - 1], [qx1 - 1, qz1 - 1]] as const) {
+      w.add(w.place(floodlight(), fx, 0, fz, Math.atan2(QUADRA.x - fx, QUADRA.z - fz)));
+      w.blockCircle(fx, fz, 0.4);
+    }
+    for (const [cx, cz] of [[qx0 + 6, qz0 + 1.4], [qx0 + 6, qz1 - 1.4], [qx1 - 6, qz0 + 1.4], [qx1 - 6, qz1 - 1.4]] as const) {
       w.add(w.place(cone(), cx, 0, cz));
     }
-    const placaCampinho = w.add(w.place(signBoard(P.wood, P.frisbee), 8.5, 0, 12.5, -0.4));
-    w.interact({
-      id: 'parque:campinho',
-      x: 8.5, z: 13.6, radius: 2,
-      label: 'Ler a placa', icon: '🪧',
-      highlight: placaCampinho,
-      onInteract: (api) =>
-        api.say([
-          'CAMPO LIVRE — não pisar no canteiro.',
-          `Aperte F pra jogar o frisbee pro ${api.companionName()}. Ele devolve.`,
-        ]),
-    });
+
+    // placa da quadra, na entrada
+    const placaCampinho = w.add(w.place(textSign('Frisbee!', P.frisbee), qx0 - 1.8, 0, QUADRA.z + 3.4, Math.PI * 0.25));
+    w.blockCircle(qx0 - 1.8, QUADRA.z + 3.4, 0.3);
 
     // -------------------------------------------------------- mobiliario
     const bancos: Array<[number, number, number]> = [
@@ -141,7 +208,8 @@ export const villaLobos: SceneDef = {
 
     // ------------------------------------------------------------ vegetacao
     const proibido: Array<[number, number, number]> = [
-      [0, -26, 20], [-21, 11, 12], [17, 3, 14], [0, 4, 6], [0, 9, 6], [12, 19, 4], [-10, 20, 3],
+      [0, -26, 20], [-21, 11, 12], [18, -4.5, 17], [0, 4, 6], [0, 9, 6],
+      [12, 19, 4], [-10, 20, 3], [37, 13, 8],
     ];
     const livre = (x: number, z: number): boolean => {
       if (Math.abs(x) < 4 && z > -20 && z < 30) return false;
@@ -221,20 +289,33 @@ export const villaLobos: SceneDef = {
     w.blockBox(-10, 28, 8, 0.2);
     w.blockBox(10, 28, 8, 0.2);
 
-    // saida lateral: o clube fica a uns dez minutos a pe
-    const placaClube = w.add(w.place(signBoard(P.wood, 0x4ec1a8), 34, 0, 12, -Math.PI / 2));
-    w.add(w.place(fence(12, 1.4), 35, 0, 6, Math.PI / 2));
-    w.add(w.place(fence(12, 1.4), 35, 0, 19, Math.PI / 2));
-    w.blockBox(35, 6, 0.2, 6);
-    w.blockBox(35, 19, 0.2, 6);
-    w.patch(30, 12, 12, 5, P.asphalt);
+    // ---------------------------------------- ponto de ônibus para o clube
+    // a cerca do parque tem um vão aqui; do outro lado é a rua, com o ônibus
+    // parado esperando. A placa escrita deixa claro para onde ele vai.
+    w.add(w.place(fence(11, 1.4), 35, 0, 3.5, Math.PI / 2));
+    w.add(w.place(fence(11, 1.4), 35, 0, 22.5, Math.PI / 2));
+    w.blockBox(35, 3.5, 0.2, 5.5);
+    w.blockBox(35, 22.5, 0.2, 5.5);
+
+    w.patch(30, 13, 12, 5, P.asphalt); // caminho do parque até o vão
+    w.patch(40, 13, 12, 34, P.asphalt); // a rua
+    w.patch(35.6, 13, 1.6, 34, P.concrete, 0, 0.012); // calçada
+
+    const onibus = w.add(w.place(bus(0x3f7fd6), 39.5, 0, 13, -Math.PI / 2));
+    w.blockBox(39.5, 13, 1.5, 4.3);
+
+    const parada = w.add(w.place(busStop(), 36.4, 0, 13, -Math.PI / 2));
+    w.blockBox(35.9, 13, 0.3, 1.8);
+
+    const placaClube = w.add(w.place(textSign('Clube!', 0x4ec1a8), 36.4, 0, 8.6, Math.PI * 0.25));
+    w.blockCircle(36.4, 8.6, 0.3);
 
     w.door({
-      x: 33, z: 12,
+      x: 37.6, z: 13,
       to: 'clube', entry: 'portaria',
-      label: 'Ir pro clube', icon: '🏊',
-      highlight: placaClube,
-      radius: 2.4,
+      label: 'Pegar o ônibus pro clube', icon: '🚌',
+      highlight: onibus,
+      radius: 2.6,
     });
 
     w.door({
@@ -247,25 +328,48 @@ export const villaLobos: SceneDef = {
 
     // ------------------------------------------------------------- frisbee
     const disco = new Frisbee(P.frisbee);
-    disco.pickUp();
+    disco.mesh.visible = false;
     w.root.add(disco.mesh);
 
     /**
-     * Frisbee de dois: você joga pro parceiro, ele corre atrás se cair longe,
-     * pega e devolve. Se o disco cair perto de você, você pega sozinho; senão
-     * tem que ir buscar. Cada ida e volta completa conta uma troca.
+     * Frisbee de dois, dentro da quadra.
+     *
+     * O disco só existe na mão enquanto você está na quadra — fora dela some, e
+     * o Renan volta a andar do seu lado. Dentro, ele se posiciona do lado oposto
+     * e o lançamento é carregado: quanto mais tempo segurando F, mais longe o
+     * disco vai. A mira é para onde você está olhando, então errar o passe faz
+     * parte — ele corre atrás.
      */
-    type FaseDisco = 'comigo' | 'voando-pra-ele' | 'buscando' | 'com-ele' | 'voando-pra-mim' | 'no-chao';
-    let fase: FaseDisco = 'comigo';
-    let esperaDele = 0;
-    let trocasNaSessao = 0;
+    type FaseDisco =
+      | 'fora'
+      | 'comigo'
+      | 'voando-pra-ele'
+      | 'buscando'
+      | 'com-ele'
+      | 'voando-pra-mim'
+      | 'no-chao';
 
-    const contarTroca = async (api: typeof g): Promise<void> => {
+    const CARGA_CHEIA = 1.3; // segundos até a força total
+    const DIST_MIN = 6;
+    const DIST_MAX = 30;
+
+    let fase: FaseDisco = 'fora';
+    let esperaDele = 0;
+    let carga = 0;
+    let carregando = false;
+    let trocasNaSessao = 0;
+    let ultimoPosto: { x: number; z: number } | null = null;
+
+    const contarTroca = (api: typeof g, noAr: boolean): void => {
       trocasNaSessao += 1;
       const total = api.bump('frisbee.trocas');
-      if (trocasNaSessao % 5 === 0) {
-        api.toast(`${trocasNaSessao} trocas seguidas!`, '🥏');
-      }
+
+      const recorde = api.stat('frisbee.recorde');
+      if (trocasNaSessao > recorde) api.bump('frisbee.recorde', trocasNaSessao - recorde);
+
+      if (noAr) api.toast('Pegou no ar!', '🥏');
+      else if (trocasNaSessao % 5 === 0) api.toast(`${trocasNaSessao} trocas seguidas!`, '🥏');
+
       if (total >= 10 && !api.flag('memoria-frisbee')) {
         api.setFlag('memoria-frisbee');
         api.unlock({
@@ -278,40 +382,109 @@ export const villaLobos: SceneDef = {
       }
     };
 
-    const jogar = w.interact({
-      id: 'parque:frisbee-jogar',
-      x: 17, z: 3, radius: 3,
-      priority: -1, // segue o jogador, entao nunca deve roubar o prompt de outra coisa
-      label: 'Jogar o frisbee  (F)', icon: '🥏',
-      onInteract: () => lancar(),
-    });
+    const limitar = (v: number, min: number, max: number): number =>
+      Math.max(min, Math.min(max, v));
 
-    const lancar = (): void => {
+    /** Onde o parceiro se planta para receber: lado oposto, dentro das linhas. */
+    const postoDoParceiro = (eu: THREE.Vector3): { x: number; z: number } => {
+      const lado = eu.x < QUADRA.x ? 1 : -1;
+      return {
+        x: limitar(eu.x + lado * 11, qx0 + 2, qx1 - 2),
+        z: limitar(eu.z, qz0 + 2, qz1 - 2),
+      };
+    };
+
+    const soltarCarga = (): void => {
+      carregando = false;
+      carga = 0;
+      g.showCharge(null);
+    };
+
+    const entrarNaQuadra = (): void => {
+      fase = 'comigo';
+      disco.pickUp();
+      trocasNaSessao = 0;
+      ultimoPosto = null;
+      g.setZoom(19); // abre o enquadramento: dá pra ver o parceiro e mirar
+      g.toast('Segure F para lançar mais longe', '🥏');
+    };
+
+    const sairDaQuadra = (): void => {
+      fase = 'fora';
+      disco.mesh.visible = false;
+      soltarCarga();
+      g.freeCompanion();
+      g.setZoom(14);
+      ultimoPosto = null;
+    };
+
+    const lancar = (forca: number): void => {
       if (fase !== 'comigo') return;
-      disco.throwToward(g.playerPosition(), g.companionPosition(), 0.22);
+      const dist = DIST_MIN + (DIST_MAX - DIST_MIN) * limitar(forca, 0, 1);
+      disco.throwAt(g.playerPosition(), g.playerFacing(), dist);
       fase = 'voando-pra-ele';
     };
 
+    const jogar = w.interact({
+      id: 'parque:frisbee-jogar',
+      x: QUADRA.x, z: QUADRA.z, radius: 3,
+      priority: -1, // segue o jogador: nunca deve roubar o prompt de outra coisa
+      label: 'Lançar o frisbee  (segure F)', icon: '🥏',
+      onInteract: () => lancar(0.55),
+    });
+
     const pegar = w.interact({
       id: 'parque:frisbee-pegar',
-      x: 17, z: 3, radius: 1.8,
+      x: QUADRA.x, z: QUADRA.z, radius: 1.8,
       label: 'Pegar o frisbee', icon: '🥏',
-      onInteract: async (api) => {
+      onInteract: (api) => {
         disco.pickUp();
         fase = 'comigo';
-        await contarTroca(api);
+        contarTroca(api, false);
       },
     });
 
     w.onUpdate((dt) => {
       disco.update(dt, w.bounds);
-      // atalho dedicado: perto de uma porta ou de um banco o prompt do frisbee
-      // perde a vez (ele tem prioridade baixa de propósito), mas o F sempre vale
-      if (g.keyPressed('KeyF')) lancar();
 
       const eu = g.playerPosition();
       const ele = g.companionPosition();
+      const dentro = naQuadra(eu.x, eu.z, 0.4);
 
+      if (dentro && fase === 'fora') entrarNaQuadra();
+      else if (!dentro && fase !== 'fora') sairDaQuadra();
+
+      if (fase === 'fora') {
+        jogar.enabled = false;
+        pegar.enabled = false;
+        return;
+      }
+
+      // ---------------------------------------------------------- a carga
+      if (fase === 'comigo') {
+        if (g.keyDown('KeyF')) {
+          carregando = true;
+          carga = Math.min(1, carga + dt / CARGA_CHEIA);
+          g.showCharge(carga);
+        } else if (carregando) {
+          const forca = carga;
+          soltarCarga();
+          lancar(forca);
+        }
+      } else if (carregando) {
+        soltarCarga();
+      }
+
+      // ------------------------------------------------ o parceiro se posta
+      if (fase === 'comigo' || fase === 'no-chao') {
+        const posto = postoDoParceiro(eu);
+        if (!ultimoPosto || Math.hypot(posto.x - ultimoPosto.x, posto.z - ultimoPosto.z) > 2.5) {
+          g.commandCompanion(posto.x, posto.z);
+          ultimoPosto = posto;
+        }
+      }
+
+      // ------------------------------------------------------ o vai e volta
       switch (fase) {
         case 'comigo':
           disco.holdAt(eu, g.playerFacing());
@@ -321,12 +494,26 @@ export const villaLobos: SceneDef = {
           disco.holdAt(ele, Math.atan2(eu.x - ele.x, eu.z - ele.z));
           esperaDele -= dt;
           if (esperaDele <= 0) {
-            disco.throwToward(ele, eu, 0.26);
+            disco.throwToward(ele, eu, 0.2);
             fase = 'voando-pra-mim';
           }
           break;
 
-        case 'voando-pra-ele':
+        case 'voando-pra-ele': {
+          // pegada no ar: passou perto dele na altura certa, ele agarra
+          const noAr =
+            disco.state === 'voando' &&
+            disco.position.y < 2.3 &&
+            Math.hypot(disco.position.x - ele.x, disco.position.z - ele.z) < 1.5;
+          if (noAr) {
+            g.freeCompanion();
+            ultimoPosto = null;
+            disco.pickUp();
+            esperaDele = 0.7;
+            fase = 'com-ele';
+            g.toast('Ele pegou no ar!', '🙌');
+            break;
+          }
           if (disco.state === 'chao') {
             if (disco.position.distanceTo(ele) < 1.6) {
               disco.pickUp();
@@ -334,10 +521,12 @@ export const villaLobos: SceneDef = {
               fase = 'com-ele';
             } else {
               g.commandCompanion(disco.position.x, disco.position.z);
+              ultimoPosto = null;
               fase = 'buscando';
             }
           }
           break;
+        }
 
         case 'buscando':
           if (disco.position.distanceTo(ele) < 1.1) {
@@ -348,23 +537,33 @@ export const villaLobos: SceneDef = {
           }
           break;
 
-        case 'voando-pra-mim':
+        case 'voando-pra-mim': {
+          const noAr =
+            disco.state === 'voando' &&
+            disco.position.y < 2.3 &&
+            Math.hypot(disco.position.x - eu.x, disco.position.z - eu.z) < 1.6;
+          if (noAr) {
+            disco.pickUp();
+            fase = 'comigo';
+            contarTroca(g, true);
+            break;
+          }
           if (disco.state === 'chao') {
             fase = 'no-chao';
-            // caiu na sua mao: pega sozinho, sem precisar apertar nada
             if (disco.position.distanceTo(eu) < 1.9) {
               disco.pickUp();
               fase = 'comigo';
-              void contarTroca(g);
+              contarTroca(g, false);
             }
           }
           break;
+        }
 
         case 'no-chao':
           if (disco.position.distanceTo(eu) < 1.2) {
             disco.pickUp();
             fase = 'comigo';
-            void contarTroca(g);
+            contarTroca(g, false);
           }
           break;
       }
@@ -375,6 +574,126 @@ export const villaLobos: SceneDef = {
       else pegar.moveTo(disco.position.x, disco.position.z);
     });
 
+
+    // -------------------------------------------- interações da quadra
+    w.interact({
+      id: 'parque:placa-quadra',
+      x: qx0 - 1.8, z: QUADRA.z + 4.8, radius: 2.2,
+      label: 'Ler a placa', icon: '🪧',
+      highlight: placaCampinho,
+      onInteract: () =>
+        conversa([
+          [R, 'QUADRA LIVRE — respeite quem chegou primeiro.'],
+          [A, 'Hoje só tem a gente.'],
+          [R, 'Então segura o F e manda ver. Quanto mais tempo segurar, mais longe vai.'],
+        ]),
+    });
+
+    w.interact({
+      id: 'parque:placar',
+      x: QUADRA.x, z: qz0 + 2.6, radius: 2.2,
+      label: 'Ver o placar', icon: '🔢',
+      highlight: placar,
+      onInteract: (api) => {
+        const recorde = api.stat('frisbee.recorde');
+        const total = api.stat('frisbee.trocas');
+        return conversa([
+          [A, recorde > 0 ? `Nosso recorde é ${recorde} trocas seguidas.` : 'O placar tá zerado.'],
+          [R, total > 0 ? `E já foram ${total} no total. A gente não desiste fácil.` : 'Bora estrear isso então.'],
+        ]);
+      },
+    });
+
+    w.interact({
+      id: 'parque:arquibancada',
+      x: QUADRA.x, z: qz1 - 2.6, radius: 2.4,
+      label: 'Sentar na arquibancada', icon: '🪑',
+      highlight: arquibancada,
+      onInteract: () =>
+        conversa([
+          [R, 'Cansei. Cinco minutos.'],
+          [A, 'Você falou cinco minutos faz meia hora.'],
+          [R, 'E olha que descanso bem, hein.'],
+        ]),
+    });
+
+    w.interact({
+      id: 'parque:bebedouro',
+      x: qx0 + 2.8, z: QUADRA.z + 4.2, radius: 1.8,
+      label: 'Beber água', icon: '🚰',
+      highlight: bebedouro,
+      onInteract: async (api) => {
+        await conversa([
+          [A, 'A água daqui é sempre meio quente.'],
+          [R, 'Mas depois de correr atrás de disco, tá ótima.'],
+        ]);
+        api.toast('Água (meio quente)', '🚰');
+      },
+    });
+
+    w.interact({
+      id: 'parque:sacola',
+      x: qx0 + 2.8, z: QUADRA.z - 3.4, radius: 1.8,
+      label: 'Olhar os discos', icon: '🎒',
+      highlight: sacola,
+      onInteract: () =>
+        conversa([
+          [R, 'Tem uns três discos aqui de gente que esqueceu.'],
+          [A, 'Um deles é seu. Desde março.'],
+          [R, '…é, pode ser.'],
+        ]),
+    });
+
+    w.interact({
+      id: 'parque:cesta',
+      x: qx1 - 4.4, z: QUADRA.z, radius: 2.2,
+      label: 'Ver a cesta', icon: '🧺',
+      highlight: cestaLeste,
+      onInteract: () =>
+        conversa([
+          [A, 'Um dia a gente acerta essa cesta.'],
+          [R, 'Já acertei uma vez!'],
+          [A, 'Você acertou o poste. É diferente.'],
+        ]),
+    });
+
+    w.interact({
+      id: 'parque:biruta',
+      x: qx1 - 3, z: qz1 - 2.4, radius: 2,
+      label: 'Ver o vento', icon: '🎏',
+      highlight: biruta,
+      onInteract: () =>
+        conversa([
+          [R, 'O vento tá indo pra lá.'],
+          [A, 'Então joga contra que o disco fica no ar mais tempo.'],
+          [R, 'Ou joga a favor e ele vai parar no estacionamento. Já aconteceu.'],
+        ]),
+    });
+
+    // -------------------------------------------- interações do ponto
+    w.interact({
+      id: 'parque:ponto-onibus',
+      x: 36.4, z: 15.4, radius: 2.2,
+      label: 'Esperar no ponto', icon: '🚏',
+      highlight: parada,
+      onInteract: () =>
+        conversa([
+          [A, 'Esse é o que passa no clube?'],
+          [R, 'É esse. Já tá parado, é só subir.'],
+        ]),
+    });
+
+    w.interact({
+      id: 'parque:placa-clube',
+      x: 36.4, z: 7.0, radius: 2.2,
+      label: 'Ler a placa', icon: '🪧',
+      highlight: placaClube,
+      onInteract: () =>
+        conversa([
+          [R, '"Clube!" — com exclamação e tudo.'],
+          [A, 'Quem escreveu isso tava animado.'],
+        ]),
+    });
 
     // ----------------------------------------------------- outras interacoes
     w.interact({
@@ -440,7 +759,11 @@ export const villaLobos: SceneDef = {
       label: 'Comprar sorvete', icon: '🍦',
       highlight: quiosque,
       onInteract: async (api) => {
-        await api.say(['Dois, por favor.', 'Um de morango e um de maracujá.']);
+        await conversa([
+          [A, 'Dois, por favor.'],
+          [R, 'Um de morango e um de maracujá.'],
+          [A, 'Nunca pedimos diferente.'],
+        ]);
         sorveteRestante = 50;
         api.toast('Morango e maracujá', '🍦');
         api.unlock({
@@ -459,7 +782,11 @@ export const villaLobos: SceneDef = {
       label: 'Arrumar o piquenique', icon: '🧺',
       highlight: mesa,
       onInteract: async (api) => {
-        await api.say(['A toalha xadrez, o pão de queijo frio e o sol batendo de lado.']);
+        await conversa([
+          [R, 'A toalha xadrez de sempre.'],
+          [A, 'E o pão de queijo já frio.'],
+          [R, 'Frio é melhor. Aceita.'],
+        ]);
         api.unlock({
           id: 'piquenique',
           title: 'Piquenique de sábado',
@@ -475,7 +802,11 @@ export const villaLobos: SceneDef = {
       x: 9.5, z: -19, radius: 2.2,
       label: 'Bilheteria', icon: '🎟️',
       highlight: bilheteria,
-      onInteract: (api) => api.say(['Dois pra roda gigante. Sempre dois.']),
+      onInteract: () =>
+        conversa([
+          [A, 'Dois pra roda gigante.'],
+          [R, 'Sempre dois.'],
+        ]),
     });
 
     // ---------------------------------------------------- a roda gigante
@@ -516,7 +847,10 @@ export const villaLobos: SceneDef = {
       onInteract: async (api) => {
         zoomLivre = false;
         api.lockPlayer(true);
-        await api.say(['A fila tá curta hoje.', 'Bora subir?']);
+        await conversa([
+          [R, 'A fila tá curta hoje.'],
+          [A, 'Bora subir?'],
+        ]);
 
         const cabine = wheel.boardingCabin();
         const velocidade = wheel.speed;
@@ -528,14 +862,14 @@ export const villaLobos: SceneDef = {
         api.setZoom(38);
 
         await esperarVoltas(0.25);
-        await api.say([
-          'Daqui dá pra ver o parque inteiro.',
-          'E aquele pedacinho do rio ali atrás.',
+        await conversa([
+          [A, 'Daqui dá pra ver o parque inteiro.'],
+          [R, 'E aquele pedacinho do rio ali atrás.'],
         ]);
         await esperarVoltas(0.35);
-        await api.say([
-          'Toda vez que a gente passa aqui embaixo, você olha pra cima e diz "um dia a gente sobe".',
-          'Pronto. Subimos.',
+        await conversa([
+          [A, 'Toda vez que a gente passa aqui embaixo você olha pra cima e diz "um dia a gente sobe".'],
+          [R, 'Pronto. Subimos.'],
         ]);
         await esperarVoltas(0.4);
 

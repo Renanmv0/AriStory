@@ -38,7 +38,13 @@ export const ARI: CharacterSpec = {
 ```
 
 ### Cabelos (`hair.style`)
-`raspado` · `curto` · `franja` · `ondulado` · `coque` · `cacheado`
+`raspado` · `curto` · `franja` · `ondulado` · `coque` · `cacheado` ·
+`cachos-curtos`
+
+`cacheado` (Ari) e `cachos-curtos` (Renan) são de propósito silhuetas opostas:
+o primeiro é juba redonda e volumosa, o segundo tem volume só no topo com as
+laterais rentes e um topete na frente. **Dois personagens não devem usar o mesmo
+estilo só trocando a cor** — de longe eles viram a mesma pessoa.
 
 ### Acessórios (`accessories[]`)
 `oculos` · `bone` · `barba` · `relogio` · `mochila` · `corrente` · `fone` ·

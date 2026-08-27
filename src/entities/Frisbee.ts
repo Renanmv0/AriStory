@@ -61,6 +61,14 @@ export class Frisbee {
     this.throwFrom(from, Math.atan2(dx, dz) + erro, this.powerFor(dist));
   }
 
+  /**
+   * Lanca na direcao em que a pessoa esta olhando, mirando cair a `distancia`.
+   * E o que a barra de forca usa: mais carga, mais longe.
+   */
+  throwAt(from: THREE.Vector3, facing: number, distancia: number): void {
+    this.throwFrom(from, facing, this.powerFor(distancia));
+  }
+
   private powerFor(dist: number): number {
     let baixo = 0.25;
     let alto = 1.7;

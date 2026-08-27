@@ -73,6 +73,14 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 membros em cápsula) e anima a caminhada por seno. Nenhum arquivo de modelo.
 Ver a skill `aristory-personagem`.
 
+### Zonas de mecânica
+
+Uma mecânica pode valer só num pedaço do cenário. A quadra de frisbee é o
+exemplo: o disco só aparece na mão dentro dela, o parceiro sai do modo "seguir"
+e vai se postar do lado oposto (`commandCompanion`), e a câmera abre. Sair da
+zona desfaz tudo. O motor não sabe o que é uma quadra — quem guarda o retângulo
+e o estado é a cena.
+
 ### Roupa
 
 `rig.setOutfit('banho')` troca materiais registrados no construtor (camiseta e

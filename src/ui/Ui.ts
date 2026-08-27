@@ -18,6 +18,7 @@ export class Ui {
   private readonly hints: HTMLDivElement;
   private readonly veil: HTMLDivElement;
   private readonly escolhas: HTMLDivElement;
+  private readonly carga: HTMLDivElement;
 
   private advance: (() => void) | null = null;
   private escolher: ((i: number) => void) | null = null;
@@ -29,6 +30,8 @@ export class Ui {
   onTouchAction: (() => void) | null = null;
   /** chamado quando o jogador aperta o botao de trocar de personagem */
   onTouchSwap: (() => void) | null = null;
+  /** botao de acao segurado no celular: carrega o lancamento do frisbee */
+  onTouchHold: ((down: boolean) => void) | null = null;
 
   constructor(root: HTMLElement) {
     const ui = document.createElement('div');
@@ -43,6 +46,7 @@ export class Ui {
         <div>T — trocar de personagem</div>
         <div>Q / R — girar a câmera · J — diário</div>
       </div>
+      <div class="carga"><div class="barra"></div></div>
       <div class="prompt"><span class="icon">✨</span><span class="label"></span><span class="key">E</span></div>
       <div class="dialogue"><span class="who"></span><p class="text"></p><div class="escolhas"></div><span class="next">clique / E ▸</span></div>
       <div class="journal"><div class="sheet">
@@ -77,6 +81,7 @@ export class Ui {
     this.hints = ui.querySelector('.hints')!;
     this.veil = ui.querySelector('.veil')!;
     this.escolhas = ui.querySelector('.escolhas')!;
+    this.carga = ui.querySelector('.carga')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -88,10 +93,16 @@ export class Ui {
     this.journal.addEventListener('click', (e) => {
       if (e.target === this.journal) this.closeJournal();
     });
-    ui.querySelector('.action-btn')!.addEventListener('click', () => {
+    const acao = ui.querySelector('.action-btn')!;
+    acao.addEventListener('click', () => {
       if (this.dialogueOpen) this.advance?.();
       else this.onTouchAction?.();
     });
+    // segurar o botao carrega o lancamento; o clique acima continua valendo
+    acao.addEventListener('pointerdown', () => this.onTouchHold?.(true));
+    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
+      acao.addEventListener(ev, () => this.onTouchHold?.(false));
+    }
     ui.querySelector('.swap-btn')!.addEventListener('click', () => this.onTouchSwap?.());
     ui.querySelector('.journal-btn')!.addEventListener('click', () => this.toggleJournal());
 
@@ -128,6 +139,17 @@ export class Ui {
 
   hidePrompt(): void {
     this.prompt.classList.remove('show');
+  }
+
+  /** Barra de forca do lancamento. `null` esconde. */
+  showCharge(valor: number | null): void {
+    if (valor === null) {
+      this.carga.classList.remove('show');
+      return;
+    }
+    this.carga.classList.add('show');
+    const barra = this.carga.querySelector('.barra') as HTMLDivElement;
+    barra.style.width = `${Math.max(0, Math.min(1, valor)) * 100}%`;
   }
 
   // ---------------------------------------------------------------- toasts

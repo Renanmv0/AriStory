@@ -100,6 +100,16 @@ export class Input {
     this.pressed.add('KeyT');
   }
 
+  /** Segura/solta uma tecla virtual — usado pelo botao de acao no celular. */
+  setVirtualDown(code: string, down: boolean): void {
+    if (down) {
+      if (!this.down.has(code)) this.pressed.add(code);
+      this.down.add(code);
+    } else {
+      this.down.delete(code);
+    }
+  }
+
   endFrame(): void {
     this.pressed.clear();
   }

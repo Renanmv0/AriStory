@@ -20,6 +20,10 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Renan com referência de verdade (cachos escuros, moletom preto, mochila)
 - [x] Sobrancelhas e jaqueta com capuz no rig
 - [x] Sorveteria no parque, com os sorvetes na mão dos dois
+- [x] Quadra de frisbee dedicada, com lançamento carregado e pegada no ar
+- [x] Ponto de ônibus com placa escrita levando pro clube
+- [x] Renan com silhueta de cabelo própria
+- [x] Publicado no GitHub Pages
 
 ## Próximos passos naturais
 
@@ -39,7 +43,7 @@ Cenário de lugar onde vocês **ainda não foram** também vale: o clube foi o
 primeiro. A memória que ele desbloqueia assume isso na hora de escrever.
 
 ### Jogabilidade
-- [ ] Frisbee: disputar o disco no ar, errar o passe, contar recorde
+- [ ] Frisbee: disputar o mesmo disco, vento afetando o voo, modo cronometrado
 - [ ] Ciclo dia/noite por cenário (o parque ao pôr do sol)
 - [ ] Mapa mundo para escolher para onde ir
 - [ ] Itens colecionáveis além das memórias (fotos, bilhetes)
@@ -48,7 +52,6 @@ primeiro. A memória que ele desbloqueia assume isso na hora de escrever.
 ### Acabamento
 - [ ] Tela de início com o nome do jogo
 - [ ] Créditos/dedicatória no fim do diário
-- [ ] Publicar no GitHub Pages para abrir por link no celular
 
 ## Como adicionar um cenário
 

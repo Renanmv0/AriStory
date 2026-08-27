@@ -308,3 +308,27 @@ body.touch-device .touch { display: block; }
   border-color: var(--accent-deep);
   color: #fff;
 }
+
+/* --------------------------------------------------------- barra de força */
+.carga {
+  position: absolute;
+  left: 50%;
+  bottom: 150px;
+  transform: translate(-50%, 8px);
+  width: min(260px, 60vw);
+  height: 14px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.carga.show { opacity: 1; transform: translate(-50%, 0); }
+.carga .barra {
+  width: 0%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold), var(--accent));
+  transition: width 0.05s linear;
+}

@@ -7,6 +7,8 @@
 export type HairStyle =
   | 'curto'
   | 'cacheado'
+  /** cachos curtos e definidos, colados nas laterais, com topete na frente */
+  | 'cachos-curtos'
   | 'ondulado'
   | 'raspado'
   | 'coque'

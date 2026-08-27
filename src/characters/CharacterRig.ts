@@ -336,6 +336,62 @@ export class CharacterRig {
         this.head.add(bun);
         break;
       }
+      case 'cachos-curtos': {
+        // Silhueta oposta a do 'cacheado': volume so no topo, laterais rentes.
+        // Os cachos ficam colados no cranio e sao menores, o que da um recorte
+        // definido em vez da juba redonda.
+        const vol = this.spec.hair.volume ?? 1;
+        const pontas = this.spec.hair.tips !== undefined ? toon(this.spec.hair.tips) : mat;
+        const base = cap(1.0, headR * 0.02, 0.58, 1.25);
+        base.scale.set(1.02, 0.94, 1.02);
+
+        // [angulo polar, quantos cachos, raio do cacho, raio da casca]
+        const camadas: Array<[number, number, number, number]> = [
+          [0.26, 6, 0.3, 0.98],
+          [0.62, 10, 0.27, 1.02],
+          [0.98, 12, 0.23, 1.02],
+        ];
+
+        let n = 0;
+        for (const [theta, quantos, rCacho, rCasca] of camadas) {
+          for (let i = 0; i < quantos; i++) {
+            const phi = (i / quantos) * Math.PI * 2 + theta * 1.9;
+            const x = Math.sin(theta) * Math.cos(phi);
+            const y = Math.cos(theta);
+            const z = Math.sin(theta) * Math.sin(phi);
+            if (theta > 0.8 && z > 0.3) continue; // rosto livre
+            const curl = new THREE.Mesh(
+              new THREE.SphereGeometry(headR * rCacho * (1 + (vol - 1) * 0.4), 8, 7),
+              n % 5 === 0 ? pontas : mat,
+            );
+            const casca = rCasca * (1 + (vol - 1) * 0.14);
+            const frente = z > 0 ? 0.86 : 1.02;
+            curl.position.set(x * headR * casca, y * headR * casca, z * headR * casca * frente);
+            this.head.add(curl);
+            n++;
+          }
+        }
+
+        // topete: um tufo puxado para cima e para tras, bem na frente do topo
+        for (let i = 0; i < 3; i++) {
+          const tufo = new THREE.Mesh(
+            new THREE.SphereGeometry(headR * 0.24 * (1 + (vol - 1) * 0.4), 8, 7),
+            i === 1 ? pontas : mat,
+          );
+          tufo.position.set((i - 1) * headR * 0.32, headR * (0.86 + (i % 2) * 0.08), headR * 0.34);
+          this.head.add(tufo);
+        }
+
+        // costeleta curtinha na frente da orelha, so pra fechar a silhueta
+        for (const side of [-1, 1]) {
+          const costeleta = new THREE.Mesh(new THREE.SphereGeometry(headR * 0.17, 8, 7), mat);
+          costeleta.position.set(side * headR * 0.9, -headR * 0.12, headR * 0.22);
+          costeleta.scale.set(0.7, 1.1, 0.85);
+          this.head.add(costeleta);
+        }
+        break;
+      }
+
       case 'cacheado': {
         // Cachos em casca esferica, camada por camada. `volume` empurra a casca
         // para fora: 0.7 fica colado na cabeca, 1.3 vira juba.
