@@ -420,6 +420,10 @@ export class Game implements GameAPI {
     return this.parceiro.position.clone();
   }
 
+  companionFacing(): number {
+    return this.parceiro.rig.facing;
+  }
+
   /** Troca os corpos entre quem anda e quem acompanha. Ninguem sai do lugar. */
   swapCharacters(): void {
     if (this.player.riding || this.parceiro.riding) return;
@@ -453,6 +457,10 @@ export class Game implements GameAPI {
 
   freeCompanion(): void {
     this.parceiro.clearOrder();
+  }
+
+  holdCompanion(olharX: number, olharZ: number): void {
+    this.parceiro.hold(olharX, olharZ);
   }
 
   setSitting(sentados: boolean): void {

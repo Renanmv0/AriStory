@@ -26,6 +26,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Publicado no GitHub Pages
 - [x] Beijo rápido da dupla, com coraçãozinho de cada lado
 - [x] Quiosques de verdade: toldo listrado, letreiro escrito e vitrine (sorvete e sucos)
+- [x] Passe de volta do frisbee: ele para, mira e joga além, para dar pra pegar no ar
 
 ## Próximos passos naturais
 

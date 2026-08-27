@@ -114,9 +114,10 @@ g.releasePlayer(x, z, facing)
 g.playerPosition() / g.playerFacing() / await g.wait(1.5)
 
 // a dupla
-g.playerName() / g.companionName() / g.companionPosition()
+g.playerName() / g.companionName() / g.companionPosition() / g.companionFacing()
 g.rideCompanion(cabine, local, escala, facing) / g.releaseCompanion(x, z, facing)
 g.commandCompanion(x, z)   // manda ele buscar algo; freeCompanion() devolve o "seguir"
+g.holdCompanion(x, z)      // planta ele onde está, encarando esse ponto
 g.setSitting(true)         // os dois sentam
 g.swapCharacters()
 
@@ -146,6 +147,12 @@ g.submergePlayer(molhado);
 ```
 
 ## Zona que liga uma mecânica
+
+**Parceiro que age (buscar, mirar, jogar) faz uma coisa de cada vez.** Enquanto
+ele corre, `commandCompanion`; ao chegar, `holdCompanion(alvo)` para ele parar e
+virar; e só lançar quando `g.companionFacing()` já tiver fechado com o ângulo do
+alvo. Sem isso ele executa andando, e o resultado sai torto — foi o bug do passe
+de volta do frisbee.
 
 Quando uma mecânica só faz sentido num pedaço do cenário (a quadra de frisbee),
 defina o retângulo e ligue/desligue tudo na entrada e na saída — não deixe o

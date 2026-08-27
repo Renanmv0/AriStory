@@ -45,6 +45,7 @@ node scripts/retrato.mjs /tmp/ari       # camera colada no personagem
 node scripts/mecanicas.mjs /tmp/mec     # escolha, cena do sofa e frisbee
 node scripts/beijo.mjs   /tmp/beijo # o beijo da dupla e os coracoes
 node scripts/quiosque.mjs /tmp/q    # de perto: sorveteria, bilheteria e bar
+node scripts/frisbee.mjs /tmp/fr    # o passe de volta do parceiro, medido
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta.

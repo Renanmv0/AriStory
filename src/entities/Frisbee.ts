@@ -52,38 +52,41 @@ export class Frisbee {
    * fechada para o alcance: a forca sai de uma busca binaria sobre a propria
    * simulacao do voo.
    * @param imprecisao radianos de erro aleatorio; 0 acerta em cheio
+   * @param arco quanto o lancamento sobe. 1 e o passe reto; acima disso o disco
+   * faz parabola mais alta e chega mais devagar, o que alarga a janela de quem
+   * vai interceptar no ar
    */
-  throwToward(from: THREE.Vector3, alvo: THREE.Vector3, imprecisao = 0): void {
+  throwToward(from: THREE.Vector3, alvo: THREE.Vector3, imprecisao = 0, arco = 1): void {
     const dx = alvo.x - from.x;
     const dz = alvo.z - from.z;
     const dist = Math.hypot(dx, dz);
     const erro = (Math.random() - 0.5) * imprecisao;
-    this.throwFrom(from, Math.atan2(dx, dz) + erro, this.powerFor(dist));
+    this.throwFrom(from, Math.atan2(dx, dz) + erro, this.powerFor(dist, arco), arco);
   }
 
   /**
    * Lanca na direcao em que a pessoa esta olhando, mirando cair a `distancia`.
    * E o que a barra de forca usa: mais carga, mais longe.
    */
-  throwAt(from: THREE.Vector3, facing: number, distancia: number): void {
-    this.throwFrom(from, facing, this.powerFor(distancia));
+  throwAt(from: THREE.Vector3, facing: number, distancia: number, arco = 1): void {
+    this.throwFrom(from, facing, this.powerFor(distancia, arco), arco);
   }
 
-  private powerFor(dist: number): number {
+  private powerFor(dist: number, arco = 1): number {
     let baixo = 0.25;
     let alto = 1.7;
     for (let i = 0; i < 14; i++) {
       const meio = (baixo + alto) / 2;
-      if (this.simulateRange(meio) < dist) baixo = meio;
+      if (this.simulateRange(meio, arco) < dist) baixo = meio;
       else alto = meio;
     }
     return THREE.MathUtils.clamp((baixo + alto) / 2, 0.25, 1.7);
   }
 
   /** Repete a fisica de `update` so para medir onde o disco cairia. */
-  private simulateRange(power: number): number {
+  private simulateRange(power: number, arco = 1): number {
     let y = 1.15;
-    let vy = 3.4 * power;
+    let vy = 3.4 * power * arco;
     let vh = 11 * power;
     let percorrido = 0;
     const dt = 1 / 60;
@@ -101,14 +104,15 @@ export class Frisbee {
    * @param from posicao do jogador
    * @param facing angulo para onde ele olha (rad)
    * @param power 0..1
+   * @param arco multiplicador da subida; ver `throwToward`
    */
-  throwFrom(from: THREE.Vector3, facing: number, power = 1): void {
+  throwFrom(from: THREE.Vector3, facing: number, power = 1, arco = 1): void {
     this.state = 'voando';
     this.mesh.visible = true;
     this.mesh.position.set(from.x, 1.15, from.z);
     this.mesh.rotation.set(0, this.mesh.rotation.y, 0);
     const speed = 11 * power;
-    this.velocity.set(Math.sin(facing) * speed, 3.4 * power, Math.cos(facing) * speed);
+    this.velocity.set(Math.sin(facing) * speed, 3.4 * power * arco, Math.cos(facing) * speed);
     this.spin = 22;
   }
 

@@ -103,6 +103,24 @@ e vai se postar do lado oposto (`commandCompanion`), e a câmera abre. Sair da
 zona desfaz tudo. O motor não sabe o que é uma quadra — quem guarda o retângulo
 e o estado é a cena.
 
+### O passe de volta do frisbee
+
+O parceiro segue três passos, nessa ordem, e é isso que faz a mecânica ler:
+**para** (`holdCompanion`, que zera a velocidade e planta ele no lugar),
+**mira** (o passe só sai quando `companionFacing()` fecha com o ângulo do
+jogador) e **lança**. Antes ele arremessava correndo, e o disco saía torto.
+
+O alvo do passe não são os pés de quem recebe: é um ponto ~3,5 unidades ALÉM,
+na mesma linha, com arco mais alto (`throwToward(..., arco)`). Assim o disco
+cruza o jogador ainda voando, a uns 2,3 de altura, em vez de aterrissar em cima
+dele — a janela de interceptação medida na física dobra (~0,3 s → ~0,6 s), e o
+teto da pegada subiu para 3,0 porque agora o disco passa por cima da cabeça.
+Quem não intercepta corre atrás: o disco cai atrás dele, de propósito.
+
+`node scripts/frisbee.mjs /tmp/fr` mede isso de verdade — lê a posição do disco
+quadro a quadro e reprova se ele voltar rente ao chão ou se o parceiro andar com
+o disco na mão.
+
 ### Roupa
 
 `rig.setOutfit('banho')` troca materiais registrados no construtor (camiseta e

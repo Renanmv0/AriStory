@@ -73,6 +73,17 @@ export class Companion {
     this.ordem = null;
   }
 
+  /**
+   * Planta ele onde esta, parado, encarando um ponto. E o que o frisbee usa:
+   * ninguem lanca andando — primeiro para, depois mira, depois joga.
+   */
+  hold(olharX: number, olharZ: number): void {
+    if (this.ordem) this.ordem.set(this.position.x, 0, this.position.z);
+    else this.ordem = new THREE.Vector3(this.position.x, 0, this.position.z);
+    this.velocity.set(0, 0, 0);
+    this.body.setFacing(Math.atan2(olharX - this.position.x, olharZ - this.position.z));
+  }
+
   get hasOrder(): boolean {
     return this.ordem !== null;
   }

@@ -368,6 +368,32 @@ export const villaLobos: SceneDef = {
     const DIST_MIN = 6;
     const DIST_MAX = 30;
 
+    /**
+     * O passe de volta do parceiro.
+     *
+     * Ele não mira nos pés de quem vai receber: mira num ponto ALÉM, então o
+     * disco cruza a área do jogador ainda no ar, em vez de aterrissar em cima
+     * dele. Com o arco mais alto ele também chega mais devagar. As duas coisas
+     * juntas dobram a janela de interceptação (medida na física: ~0,3 s antes,
+     * ~0,6 s agora), que é o ponto da mecânica — pegar voando, não catar do chão.
+     */
+    const RETORNO = {
+      /** quanto o alvo passa do jogador, em unidades */
+      alem: 3.5,
+      /** multiplicador da subida; 1 é passe reto */
+      arco: 1.2,
+      /** erro de mira: pouco, senão ele nunca acerta a área */
+      erro: 0.06,
+      /** desvio lateral do alvo, em unidades */
+      desvio: 1.4,
+      /** altura máxima em que dá para agarrar (o disco passa por cima da cabeça) */
+      alcance: 3.0,
+      /** raio em volta de quem recebe */
+      raio: 2.1,
+      /** o quanto ele pode estar torto para considerar que já mirou (rad) */
+      mira: 0.12,
+    };
+
     // O disco não passa da grade: sem isso ele cai do lado de fora e o
     // parceiro fica batendo no alambrado tentando alcançar.
     const LIMITES_QUADRA = {
@@ -408,6 +434,10 @@ export const villaLobos: SceneDef = {
 
     const limitar = (v: number, min: number, max: number): number =>
       Math.max(min, Math.min(max, v));
+
+    /** diferença entre dois ângulos pelo caminho mais curto */
+    const desvioAngular = (a: number, b: number): number =>
+      Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
     /** Onde o parceiro se planta para receber: lado oposto, dentro das linhas. */
     const postoDoParceiro = (eu: THREE.Vector3): { x: number; z: number } => {
@@ -514,20 +544,40 @@ export const villaLobos: SceneDef = {
           disco.holdAt(eu, g.playerFacing());
           break;
 
-        case 'com-ele':
-          disco.holdAt(ele, Math.atan2(eu.x - ele.x, eu.z - ele.z));
+        case 'com-ele': {
+          // 1. parado: com o disco na mão ele não anda mais, fica plantado
+          // 2. mirando: vira para encarar onde o jogador está agora
+          const paraMim = Math.atan2(eu.x - ele.x, eu.z - ele.z);
+          g.holdCompanion(eu.x, eu.z);
+          disco.holdAt(ele, paraMim);
+
           esperaDele -= dt;
-          if (esperaDele <= 0) {
-            // Ele erra de propósito, mas pouco: o desvio tem que caber no raio
-            // da pegada no ar (1.9), senão o disco sempre cai longe e nunca dá
-            // para pegar voando — vira só corrida atrás do disco.
-            const alvo = eu.clone();
-            alvo.x += (Math.random() - 0.5) * 2.2;
-            alvo.z += (Math.random() - 0.5) * 2.2;
-            disco.throwToward(ele, alvo, 0.09);
+          const mirado = Math.abs(desvioAngular(g.companionFacing(), paraMim)) < RETORNO.mira;
+          // o `-1` é rede de segurança: se por algum motivo ele não fechar a
+          // mira, o passe sai mesmo assim em vez de travar a partida
+          if (esperaDele <= 0 && (mirado || esperaDele < -1)) {
+            // 3. o alvo fica ALÉM do jogador, na mesma linha: é isso que faz o
+            // disco passar voando por ele em vez de cair nos pés dele
+            const dx = eu.x - ele.x;
+            const dz = eu.z - ele.z;
+            const dist = Math.hypot(dx, dz) || 1;
+            const alvo = new THREE.Vector3(
+              limitar(
+                eu.x + (dx / dist) * RETORNO.alem + (Math.random() - 0.5) * RETORNO.desvio,
+                qx0 + 1.5, qx1 - 1.5,
+              ),
+              0,
+              limitar(
+                eu.z + (dz / dist) * RETORNO.alem + (Math.random() - 0.5) * RETORNO.desvio,
+                qz0 + 1.5, qz1 - 1.5,
+              ),
+            );
+            disco.throwToward(ele, alvo, RETORNO.erro, RETORNO.arco);
+            ultimoPosto = null; // ele volta a se postar assim que o disco for meu
             fase = 'voando-pra-mim';
           }
           break;
+        }
 
         case 'voando-pra-ele': {
           // pegada no ar: passou perto dele na altura certa, ele agarra
@@ -536,7 +586,7 @@ export const villaLobos: SceneDef = {
             disco.position.y < 2.3 &&
             Math.hypot(disco.position.x - ele.x, disco.position.z - ele.z) < 1.5;
           if (noAr) {
-            g.freeCompanion();
+            g.holdCompanion(eu.x, eu.z);
             ultimoPosto = null;
             disco.pickUp();
             esperaDele = 0.7;
@@ -546,6 +596,8 @@ export const villaLobos: SceneDef = {
           }
           if (disco.state === 'chao') {
             if (disco.position.distanceTo(ele) < 1.6) {
+              g.holdCompanion(eu.x, eu.z);
+              ultimoPosto = null;
               disco.pickUp();
               esperaDele = 0.8;
               fase = 'com-ele';
@@ -560,7 +612,9 @@ export const villaLobos: SceneDef = {
 
         case 'buscando':
           if (disco.position.distanceTo(ele) < 1.1) {
-            g.freeCompanion();
+            // parou de correr aqui: quem lança andando joga torto
+            g.holdCompanion(eu.x, eu.z);
+            ultimoPosto = null;
             disco.pickUp();
             esperaDele = 0.9;
             fase = 'com-ele';
@@ -568,10 +622,12 @@ export const villaLobos: SceneDef = {
           break;
 
         case 'voando-pra-mim': {
+          // o disco vem por cima da cabeça, então o teto da pegada é mais alto
+          // que o do passe raso — é a janela de interceptação da mecânica
           const noAr =
             disco.state === 'voando' &&
-            disco.position.y < 2.3 &&
-            Math.hypot(disco.position.x - eu.x, disco.position.z - eu.z) < 1.9;
+            disco.position.y < RETORNO.alcance &&
+            Math.hypot(disco.position.x - eu.x, disco.position.z - eu.z) < RETORNO.raio;
           if (noAr) {
             disco.pickUp();
             fase = 'comigo';

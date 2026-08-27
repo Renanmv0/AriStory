@@ -140,11 +140,15 @@ export interface GameAPI {
   /** nome de quem esta acompanhando */
   companionName(): string;
   companionPosition(): THREE.Vector3;
+  /** angulo para onde o parceiro esta olhando AGORA (o giro e suave) */
+  companionFacing(): number;
   rideCompanion(host: THREE.Object3D, local: THREE.Vector3, scale?: number, facing?: number): void;
   /** manda o parceiro ate um ponto em vez de seguir voce */
   commandCompanion(x: number, z: number): void;
   /** devolve o parceiro ao comportamento de seguir */
   freeCompanion(): void;
+  /** para o parceiro onde ele esta e vira ele para encarar um ponto */
+  holdCompanion(olharX: number, olharZ: number): void;
   /** os dois sentam (ou levantam) */
   setSitting(sentados: boolean): void;
   releaseCompanion(x: number, z: number, facing?: number): void;
