@@ -205,6 +205,10 @@ html, body {
   opacity: 0.85;
 }
 .hints.hide { opacity: 0; transition: opacity 0.4s ease; }
+/* no celular a lista de teclas não serve para nada: vale a dica do dedo */
+.hints .toque { display: none; }
+body.touch-device .hints .teclado { display: none; }
+body.touch-device .hints .toque { display: block; }
 
 /* --------------------------------------------------------------- diario */
 .journal {
@@ -298,6 +302,8 @@ html, body {
 .menu.show { opacity: 1; pointer-events: auto; }
 .menu .sheet {
   width: min(400px, calc(100% - 32px));
+  max-height: 86vh;
+  overflow: auto;
   background: var(--paper);
   border-radius: 22px;
   box-shadow: var(--shadow);
@@ -317,7 +323,9 @@ html, body {
   font-weight: 800;
   cursor: pointer;
 }
-.menu .som-btn {
+/* o rosa é só do "recomeçar", que é a ação com peso; o resto é neutro */
+.menu .som-btn,
+.menu .controles-btn {
   margin-bottom: 10px;
   background: var(--paper-warm);
   color: var(--ink);
@@ -341,27 +349,74 @@ html, body {
 }
 .menu .confirma .linha { display: flex; gap: 8px; }
 .menu .confirma .linha button { flex: 1; }
+
+/* lista de controles: mesma lógica da confirmação, toma o lugar dos botões */
+.menu .controles { display: none; text-align: left; }
+.menu.vendo-controles .som-btn,
+.menu.vendo-controles .controles-btn,
+.menu.vendo-controles .recomecar,
+.menu.vendo-controles .close { display: none; }
+.menu.vendo-controles .controles { display: block; }
+.menu .controles h3 {
+  margin: 14px 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.menu .controles ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+.menu .controles li { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+.menu .controles li b {
+  flex: none;
+  min-width: 34px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+}
+.menu .controles li span { color: var(--ink-soft); font-weight: 700; }
+.menu .controles .dica {
+  margin: 14px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.menu .controles .voltar { margin-top: 16px; }
 .menu .confirma .nao { background: var(--paper-warm); color: var(--ink-soft); }
 
 /* ---------------------------------------------------------------- toque */
 .touch { position: absolute; inset: 0; display: none; }
 body.touch-device .touch { display: block; }
+/* painel aberto (menu ou diário) esconde os botões de toque */
+body.tela-aberta .touch { display: none; }
+/* Menores e translúcidos de propósito: em tela de celular eles ficam por cima
+   do balão de fala e do prompt, e botão opaco grande esconde justamente o texto
+   que a pessoa está tentando ler. */
 .touch button {
   position: absolute;
-  right: 22px;
-  bottom: 28px;
-  width: 76px;
-  height: 76px;
+  right: 18px;
+  bottom: 26px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   border: none;
-  background: var(--paper);
-  box-shadow: var(--shadow);
-  font-size: 28px;
+  background: rgba(255, 250, 242, 0.58);
+  box-shadow: 0 6px 16px rgba(53, 48, 74, 0.16);
+  backdrop-filter: blur(3px);
+  font-size: 23px;
   pointer-events: auto;
   cursor: pointer;
 }
-.touch button.swap-btn { right: 22px; bottom: 118px; width: 58px; height: 58px; font-size: 22px; }
-.touch button.journal-btn { right: 22px; bottom: 190px; width: 50px; height: 50px; font-size: 19px; }
+.touch button:active { background: rgba(255, 250, 242, 0.9); }
+.touch button.swap-btn { right: 18px; bottom: 96px; width: 46px; height: 46px; font-size: 19px; }
+.touch button.journal-btn { right: 18px; bottom: 150px; width: 40px; height: 40px; font-size: 16px; }
+
+/* corredor livre à direita: o texto e os botões de escolha nunca correm por
+   baixo dos botões redondos */
+body.touch-device .dialogue { padding-right: 76px; }
+body.touch-device .dialogue .next { right: 84px; }
 
 /* ------------------------------------------------------------- transicao */
 .veil {

@@ -51,6 +51,7 @@ node scripts/frisbee.mjs /tmp/fr    # o passe de volta do parceiro, medido
 node scripts/menu.mjs    /tmp/menu  # o menu e o recomecar do zero
 node scripts/audio.mjs             # o som acorda e cada acao dispara o seu efeito
 node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para ouvir
+node scripts/celular.mjs /tmp/cel   # tela de celular: nenhum botao pode tapar texto
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

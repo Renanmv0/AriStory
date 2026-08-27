@@ -51,10 +51,12 @@ export class Ui {
       <div class="scene-card"><b></b><span></span></div>
       <div class="toasts"></div>
       <div class="hints">
-        <div>WASD / setas — andar</div>
-        <div>E ou espaço — interagir</div>
-        <div>T — trocar de personagem</div>
-        <div>Q / R — girar a câmera · J — diário</div>
+        <div class="teclado">WASD / setas — andar</div>
+        <div class="teclado">E ou espaço — interagir</div>
+        <div class="teclado">T — trocar de personagem</div>
+        <div class="teclado">Q / R — girar a câmera · J — diário</div>
+        <div class="toque">arraste para andar · ✨ interagir</div>
+        <div class="toque">☰ tem a lista de controles</div>
       </div>
       <div class="carga"><div class="barra"></div></div>
       <div class="prompt"><span class="icon">✨</span><span class="label"></span><span class="key">E</span></div>
@@ -70,6 +72,7 @@ export class Ui {
         <h2>AriStory</h2>
         <p class="sub">um passeio pelos lugares da gente</p>
         <button class="som-btn">🔊 Som ligado</button>
+        <button class="controles-btn">🎮 Controles</button>
         <button class="recomecar">🔄 Recomeçar o jogo</button>
         <div class="confirma">
           <p>Isso apaga o diário de memórias e leva os dois de volta pro começo, na casa do Ari.</p>
@@ -77,6 +80,27 @@ export class Ui {
             <button class="sim">Recomeçar</button>
             <button class="nao">Cancelar</button>
           </div>
+        </div>
+        <div class="controles">
+          <h3>No teclado</h3>
+          <ul>
+            <li><b>W A S D</b><span>andar (as setas também)</span></li>
+            <li><b>E</b><span>interagir e avançar a fala (espaço também)</span></li>
+            <li><b>T</b><span>trocar de personagem</span></li>
+            <li><b>Q</b> <b>R</b><span>girar a câmera</span></li>
+            <li><b>J</b><span>abrir o diário de memórias</span></li>
+            <li><b>F</b><span>segurar para lançar o frisbee, na quadra</span></li>
+            <li><b>roda</b><span>aproximar e afastar a câmera</span></li>
+          </ul>
+          <h3>No celular</h3>
+          <ul>
+            <li><b>arrastar</b><span>andar para onde o dedo puxar</span></li>
+            <li><b>✨</b><span>interagir — segure para carregar o frisbee</span></li>
+            <li><b>🔁</b><span>trocar de personagem</span></li>
+            <li><b>📖</b><span>abrir o diário</span></li>
+          </ul>
+          <p class="dica">Ah: fique de frente para o outro e aparece um 💋.</p>
+          <button class="voltar">voltar</button>
         </div>
         <button class="close">voltar pro jogo</button>
       </div></div>
@@ -136,6 +160,14 @@ export class Ui {
     // apaga o diário inteiro
     ui.querySelector('.menu-btn')!.addEventListener('click', () => this.toggleMenu());
     ui.querySelector('.menu .som-btn')!.addEventListener('click', () => this.onToggleSom?.());
+    ui.querySelector('.menu .controles-btn')!.addEventListener('click', () => {
+      this.som?.('escolha');
+      this.menu.classList.add('vendo-controles');
+    });
+    ui.querySelector('.menu .controles .voltar')!.addEventListener('click', () => {
+      this.som?.('escolha');
+      this.menu.classList.remove('vendo-controles');
+    });
     ui.querySelector('.menu .close')!.addEventListener('click', () => this.closeMenu());
     ui.querySelector('.menu .recomecar')!.addEventListener('click', () => {
       this.menu.classList.add('perguntando');
@@ -168,11 +200,22 @@ export class Ui {
       this.closeJournal();
       this.menu.classList.add('show');
     }
+    this.marcarTelaAberta();
   }
 
   closeMenu(): void {
     this.menu.classList.remove('show');
     this.menu.classList.remove('perguntando');
+    this.menu.classList.remove('vendo-controles');
+    this.marcarTelaAberta();
+  }
+
+  /**
+   * Com menu ou diário abertos os botões de toque somem: eles ficam por cima do
+   * painel (vêm depois no DOM) e dava para apertar o ✨ sem querer por trás.
+   */
+  private marcarTelaAberta(): void {
+    document.body.classList.toggle('tela-aberta', this.menuOpen || this.journalOpen);
   }
 
   /** Atualiza o botão de som do menu. */
@@ -394,9 +437,11 @@ export class Ui {
     this.som?.('diario');
     if (this.journalOpen) this.closeJournal();
     else this.journal.classList.add('show');
+    this.marcarTelaAberta();
   }
 
   closeJournal(): void {
     this.journal.classList.remove('show');
+    this.marcarTelaAberta();
   }
 }

@@ -154,11 +154,25 @@ desliga todo mundo é `:where(#ui) > *`, com especificidade zerada de propósito
 Escrita como `#ui > *` ela ganhava de qualquer regra de classe e os botões
 dentro dos painéis ficavam mortos.
 
+### Celular
+
+`matchMedia('(hover: none)')` põe `touch-device` no `body`, e é isso que liga os
+três botões redondos. Eles são **pequenos e translúcidos de propósito**: em tela
+de celular ficam por cima do balão de fala, e botão grande e opaco esconde
+justamente o texto que a pessoa está tentando ler. Além disso o balão ganha um
+corredor livre de 76px na direita (`padding-right`), e com menu ou diário
+abertos os botões somem — eles vêm depois no DOM, então dava para apertar o ✨
+por trás do painel.
+
+`node scripts/celular.mjs /tmp/cel` mede isso: reprova se qualquer botão cobrir
+um pixel do prompt, da fala ou dos botões de escolha.
+
 ### Menu e recomeçar
 
 O botão de três barrinhas no canto superior direito abre o menu. A única opção
-é **recomeçar o jogo**, em dois passos (o segundo clique confirma), porque ela
-apaga o diário. `Game.restart()` zera o `SaveState`, devolve o controle ao
+tem três opções: ligar/desligar o **som**, ver os **controles** (teclado e
+celular, no mesmo painel) e **recomeçar o jogo**, esta em dois passos (o segundo
+clique confirma), porque ela apaga o diário. `Game.restart()` zera o `SaveState`, devolve o controle ao
 primeiro da `DUPLA`, mostra as teclas de novo e volta para a cena inicial — que
 o `Game` recebe no construtor (`CENA_INICIAL`, a casa do Ari). Enquanto o menu
 está aberto o jogo não recebe entrada, igual ao diário.

@@ -29,6 +29,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Passe de volta do frisbee: ele para, mira e joga além, para dar pra pegar no ar
 - [x] Menu no canto com "recomeçar o jogo", que zera o diário e volta pra casa do Ari
 - [x] Som: música procedural com clima por cenário e um efeito para cada ação
+- [x] Interface de celular sem tapar texto, e tela de controles no menu
 
 ## Próximos passos naturais
 
