@@ -18,5 +18,12 @@ void game.start(pedida ?? (localStorage.getItem('aristory.save.v1') ? undefined 
 const zoom = Number(params.get('zoom'));
 if (Number.isFinite(zoom) && zoom > 0) game.setZoom(zoom);
 
+// ?em=-2,3 posiciona a dupla num ponto qualquer, util para retrato
+const em = params.get('em')?.split(',').map(Number);
+if (em && em.length === 2 && em.every(Number.isFinite)) {
+  const olhar = Number(params.get('olhar'));
+  game.debugPlace(em[0], em[1], Number.isFinite(olhar) ? olhar : Math.PI / 4);
+}
+
 // atalho de depuracao no console do navegador
 (window as unknown as { jogo: Game }).jogo = game;

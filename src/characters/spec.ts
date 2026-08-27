@@ -54,6 +54,8 @@ export interface CharacterSpec {
   shoes: number;
   /** cor do calção de banho; sem isso o traje de banho usa a cor da calça */
   swim?: number;
+  /** jaqueta/moletom aberto por cima da camiseta, com capuz */
+  jacket?: number;
   accessories?: Accessory[];
   /** cor do acessorio principal (armacao do oculos, aba do bone) */
   accessoryColor?: number;

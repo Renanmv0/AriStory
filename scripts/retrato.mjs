@@ -13,15 +13,17 @@ const browser = await chromium.launch({
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
 });
 const page = await browser.newPage({ viewport: { width: 800, height: 800 } });
-await page.goto(`${BASE}/?cena=casa&zoom=4.2`, { waitUntil: 'networkidle' });
+// a casa é a única cena sem ajuste automático de zoom, então ?zoom vale aqui.
+// ?em põe a dupla no meio da sala e ?olhar vira os dois para a câmera.
+await page.goto(`${BASE}/?cena=casa&zoom=4.6&em=-1.6,3.2&olhar=0.785`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2500);
 
-// anda um passo para +X+Z: e a direcao que deixa o personagem encarando a camera
-await page.keyboard.down('KeyS');
-await page.waitForTimeout(220);
-await page.keyboard.up('KeyS');
-await page.waitForTimeout(900);
 await page.screenshot({ path: `${OUT}-frente.png` });
+
+// T troca quem a câmera segue: assim o mesmo script retrata os dois
+await page.keyboard.press('KeyT');
+await page.waitForTimeout(1200);
+await page.screenshot({ path: `${OUT}-parceiro.png` });
 
 // gira a camera para ver de lado e de costas
 for (const [i, giros] of [[1, 2], [2, 2]]) {

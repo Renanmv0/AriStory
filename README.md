@@ -56,7 +56,7 @@ Para pular direto num cenário: `?cena=villa-lobos&entrada=roda`.
 - **Clube** — a piscina, com os dois de calção. A água é um buraco de verdade no
   piso: quem entra afunda e passa a nadar, e dá pra pular do trampolim.
 - **A dupla** — Ari e Renan andam juntos; `T` troca quem você controla.
-- **Diário de memórias** — dez memórias para desbloquear até agora.
+- **Diário de memórias** — doze memórias para desbloquear até agora.
 
 ## Como isso é feito
 

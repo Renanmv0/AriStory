@@ -181,8 +181,19 @@ senta colado nele. Sente **à frente** do encosto e confira com foto.
    fica leve e dá para ajustar qualquer coisa mudando número.
 7. **Diálogo em português, curto, específico.** Duas ou três linhas por interação.
    Cada cenário deve render pelo menos uma memória (`g.unlock`).
-8. **Fala que o Renan escreveu vai literal.** Quando ele der o texto de uma
+8. **Falante certo no diálogo.** `g.say(linhas, NOME)` escolhe quem fala. Para
+   uma conversa entre os dois, importe `ARI` e `RENAN` de `characters/cast` e
+   passe `ARI.name` / `RENAN.name` — assim a fala não troca de dono quando o
+   jogador aperta T.
+9. **Fala que o Renan escreveu vai literal.** Quando ele der o texto de uma
    interação, use exatamente aquilo — não reescreva nem "melhore".
+
+## Depurar posição
+
+`?em=x,z`, `?olhar=<rad>` e `?zoom=<n>` na URL põem a dupla onde você quiser e
+aproximam a câmera — é o jeito rápido de conferir uma interação sem atravessar
+o cenário andando. (O parque só força o zoom perto da roda gigante; no resto a
+URL manda.)
 
 ## Antes de dizer que terminou
 

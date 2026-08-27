@@ -32,26 +32,31 @@ export const ARI: CharacterSpec = {
   accessoryColor: 0x24222a,
 };
 
+/**
+ * Renan, montado a partir das fotos: cachos escuros e volumosos no topo com
+ * franja caindo, pele clara, camiseta cinza por baixo de um moletom preto
+ * aberto, calça e tênis pretos, mochila.
+ */
 export const RENAN: CharacterSpec = {
   id: 'renan',
   name: 'Renan',
-  height: 1.76,
+  height: 1.78,
   build: 'magro',
-  skin: 0xf0c8a8,
-  blush: 0xff9aa8,
-  eyes: 0x2f2620,
+  skin: 0xefc8a4,
+  blush: 0xf29a92,
+  eyes: 0x241d18,
   hair: {
-    color: 0x3a2a20,
+    color: 0x1f1712,
     style: 'cacheado',
-    volume: 0.72, // cachos curtos, colados
+    volume: 1.02, // volume no topo, mais curto nas laterais que o do Ari
   },
-  shirt: 0x35414f,
-  shirtAccent: 0x2a3340,
-  pants: 0x8a7a5c,
-  shoes: 0x2f3440,
-  swim: 0x35414f,
-  accessories: ['relogio'],
-  accessoryColor: 0x2f3440,
+  shirt: 0x8d8f97, // camiseta cinza, aparece pela fresta do moletom
+  pants: 0x22232a,
+  shoes: 0x1b1c20,
+  swim: 0x22232a,
+  jacket: 0x191a1f,
+  accessories: ['mochila'],
+  accessoryColor: 0x191a1f,
 };
 
 export const CAST: Record<string, CharacterSpec> = {

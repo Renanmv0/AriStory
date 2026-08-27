@@ -7,8 +7,9 @@ Os personagens são **fichas**, não modelos. Para mudar alguém, edite
 > cachos castanho-acobreado volumosos com franja, presilha de estrela, blusa
 > branca com laço preto, jeans largo, tênis branco.
 >
-> O **Renan** ainda é dedução (o de cabelo escuro encaracolado da ilustração
-> dos dois). Com uma referência dele, é uma ficha para ajustar.
+> O **Renan** também veio de foto: cachos escuros e volumosos no topo, pele
+> clara, camiseta cinza por baixo de um moletom preto aberto, calça e tênis
+> pretos, mochila.
 
 ## Campos
 
@@ -28,6 +29,8 @@ Os personagens são **fichas**, não modelos. Para mudar alguém, edite
 | `pants` / `shoes` | calça e tênis | |
 | `accessories` | ver abaixo | |
 | `accessoryColor` | armação, aba, fone, mochila | |
+| `jacket` | moletom/jaqueta aberta com capuz | mostra a camiseta pela fresta |
+| `swim` | cor do calção de banho | padrão: a cor da calça |
 
 ## Cabelos
 

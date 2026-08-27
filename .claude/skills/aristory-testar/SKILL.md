@@ -42,7 +42,13 @@ http://127.0.0.1:4173/?cena=villa-lobos&entrada=roda
 Use os nomes de `entries` do `SceneDef`. Cena nova? Adicione uma entrada e
 inclua a cena na lista de `scripts/smoke.mjs`.
 
-`?zoom=4` aproxima a câmera — bom para olhar personagem de perto.
+Outros parâmetros de depuração:
+
+| parâmetro | efeito |
+|---|---|
+| `?zoom=4.5` | aproxima a câmera |
+| `?em=12,20.8` | põe a dupla nesse ponto do mundo |
+| `?olhar=3.14` | ângulo que eles encaram |
 
 ## Ambiente
 

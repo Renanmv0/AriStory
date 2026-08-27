@@ -480,3 +480,19 @@ export function divingBoard(): THREE.Group {
   }
   return g;
 }
+
+/** Casquinha de sorvete. Use w.onUpdate + a posicao da mao para "entregar". */
+export function iceCream(sabor: number = P.flowerPink): THREE.Group {
+  const g = new THREE.Group();
+  const casquinha = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.22, 10), toon(0xd8a45c));
+  casquinha.position.y = -0.02;
+  casquinha.rotation.x = Math.PI;
+  g.add(casquinha);
+  const bola = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), toon(sabor));
+  bola.position.y = 0.13;
+  g.add(bola);
+  const bolinha = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 7), toon(sabor));
+  bolinha.position.set(0.03, 0.22, -0.02);
+  g.add(bolinha);
+  return g;
+}

@@ -31,6 +31,7 @@ export const ARI: CharacterSpec = {
   pants: 0x5b7ba8,
   shoes: 0xf4f4f2,
   swim: 0x5fb0d6,         // cor do calção de banho
+  jacket: undefined,      // moletom/jaqueta aberta por cima, com capuz
   accessories: ['presilha', 'laco', 'cinto'],
   accessoryColor: 0x24222a,
 };
@@ -68,7 +69,15 @@ Ajustar aparência é ida e volta com foto. O ciclo curto:
 2. `npm run build && node scripts/retrato.mjs /tmp/ari`
 3. olhe `/tmp/ari-frente.png` e ajuste
 
-`?zoom=4` na URL aproxima a câmera em qualquer cena.
+Parâmetros de URL que ajudam:
+
+| parâmetro | efeito |
+|---|---|
+| `?zoom=4.5` | aproxima a câmera |
+| `?em=-1.6,3.2` | põe a dupla nesse ponto (fugir de parede que corta o corpo) |
+| `?olhar=0.785` | ângulo que eles encaram; `0.785` = de frente para a câmera |
+
+`scripts/retrato.mjs` já usa os três e fotografa os dois (ele aperta `T`).
 
 **Pergunte antes de chutar.** Cor de pele, tipo de cabelo e formato de rosto são
 a pessoa real — quando faltar informação, pergunte (ou peça uma foto de
@@ -96,6 +105,13 @@ w.onUpdate((dt) => renan.update(dt, 0));   // 0 = parado; > 0 anima a caminhada
 ```
 
 `rig.setFacing(angulo)` gira suave. `rig.cheer()` dá um pulinho de alegria.
+
+## Jaqueta
+
+`jacket: 0x191a1f` põe um moletom aberto por cima da camiseta: as mangas ganham
+a cor da jaqueta, um cilindro vazado com fresta na frente envolve o torso (é
+pela fresta que a camiseta aparece — se a camiseta for escura demais, some) e um
+capuz cai nas costas. É o que o Renan usa.
 
 ## Traje de banho
 

@@ -57,11 +57,48 @@ const trocas = await page.evaluate(() => {
   }
 });
 
+// ------------------------------------------------------------- sorveteria
+await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=12,20.8&olhar=3.14`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2800);
+await page.keyboard.press('KeyE');
+for (let i = 0; i < 10; i++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(420);
+}
+await page.waitForTimeout(900);
+await page.screenshot({ path: `${OUT}-sorvete.png` });
+
+// ------------------------------------------------------------------- lago
+await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=-13,11&olhar=4.5`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2800);
+await page.keyboard.press('KeyE');
+const falantes = [];
+for (let i = 0; i < 8; i++) {
+  const quem = await page.locator('.dialogue.show .who').textContent().catch(() => null);
+  if (quem && falantes[falantes.length - 1] !== quem) falantes.push(quem);
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(420);
+}
+await page.screenshot({ path: `${OUT}-lago.png` });
+
+const memorias = await page.evaluate(() => {
+  try {
+    return (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').memories ?? []).map((m) => m.id);
+  } catch {
+    return [];
+  }
+});
+
 console.log('prompt do sofá:', promptSofa);
 console.log('pergunta com botões:', temEscolha);
 console.log('cutscene rodou:', sentados);
 console.log('trocas de frisbee:', trocas);
+console.log('falantes do lago:', falantes.join(' → '));
+console.log('memórias:', memorias.join(', '));
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
+const faltando = ['sorvete-villa', 'lago-pular'].filter((id) => !memorias.includes(id));
+if (faltando.length) console.log('memórias que não vieram:', faltando.join(', '));
+
 await browser.close();
-process.exit(erros.length || !temEscolha || !sentados || trocas < 1 ? 1 : 0);
+process.exit(erros.length || !temEscolha || !sentados || trocas < 1 || faltando.length ? 1 : 0);

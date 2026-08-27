@@ -124,6 +124,35 @@ export class CharacterRig {
       this.soVestido.push(stripe);
     }
 
+    // jaqueta aberta por cima da camiseta
+    if (spec.jacket !== undefined) {
+      const jaquetaMat = toon(spec.jacket, { doubleSide: true });
+      const raio = h * 0.105 * w;
+
+      // cilindro vazado com uma fresta na frente: e por ela que a camiseta aparece
+      const casco = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+          raio * 1.14, raio * 1.1, torsoH * 0.66, 16, 1, true,
+          Math.PI / 2 + 0.72, Math.PI * 2 - 1.44,
+        ),
+        jaquetaMat,
+      );
+      casco.position.y = hipY + torsoH * 0.56;
+      casco.scale.z = 0.84;
+      this.body.add(casco);
+      this.soVestido.push(casco);
+
+      const capuz = new THREE.Mesh(
+        new THREE.SphereGeometry(h * 0.088 * w, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.62),
+        toon(spec.jacket),
+      );
+      capuz.position.set(0, shoulderY + torsoH * 0.04, -raio * 0.75);
+      capuz.rotation.x = -0.7;
+      capuz.scale.set(1.15, 1, 0.8);
+      this.body.add(capuz);
+      this.soVestido.push(capuz);
+    }
+
     // calção de banho: fica escondido até alguém entrar na água
     const calcao = new THREE.Mesh(
       new THREE.CylinderGeometry(h * 0.118 * w, h * 0.112 * w, h * 0.15, 14),
@@ -141,13 +170,14 @@ export class CharacterRig {
       [this.armR, 1],
     ] as const) {
       pivot.position.set(side * halfShoulder, shoulderY, 0);
+      const manga = spec.jacket !== undefined ? toon(spec.jacket) : shirt;
       const sleeve = new THREE.Mesh(
-        new THREE.CapsuleGeometry(h * 0.036 * w, armLen * 0.34, 4, 10),
-        shirt,
+        new THREE.CapsuleGeometry(h * 0.038 * w, armLen * 0.34, 4, 10),
+        manga,
       );
       sleeve.position.y = -armLen * 0.24;
       pivot.add(sleeve);
-      this.trocaMaterial.push({ mesh: sleeve, normal: shirt, banho: skin });
+      this.trocaMaterial.push({ mesh: sleeve, normal: manga, banho: skin });
 
       const forearm = new THREE.Mesh(
         new THREE.CapsuleGeometry(h * 0.032 * w, armLen * 0.28, 4, 10),
@@ -188,6 +218,18 @@ export class CharacterRig {
       blush.position.set(side * headR * 0.56, -headR * 0.26, headR * 0.82);
       blush.rotation.y = side * 0.35;
       this.head.add(blush);
+    }
+
+    // sobrancelhas: e o que da expressao ao rosto de longe
+    const sobrancelha = toon(spec.hair.color);
+    for (const side of [-1, 1]) {
+      const cenho = new THREE.Mesh(
+        new THREE.BoxGeometry(headR * 0.3, headR * 0.075, headR * 0.06),
+        sobrancelha,
+      );
+      cenho.position.set(side * headR * 0.35, headR * 0.3, headR * 0.87);
+      cenho.rotation.z = side * -0.12;
+      this.head.add(cenho);
     }
 
     const mouth = new THREE.Mesh(

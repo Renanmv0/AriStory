@@ -17,11 +17,13 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Diálogo com escolha (Sim/Não) e cutscene dos dois sentados no sofá
 - [x] Frisbee de dois: você joga, ele busca e devolve, com contador de trocas
 - [x] Traje de banho por cenário
+- [x] Renan com referência de verdade (cachos escuros, moletom preto, mochila)
+- [x] Sobrancelhas e jaqueta com capuz no rig
+- [x] Sorveteria no parque, com os sorvetes na mão dos dois
 
 ## Próximos passos naturais
 
 ### Personagens
-- [ ] Conferir o Renan com uma referência dele (hoje é dedução da ilustração)
 - [ ] Expressões simples (feliz, surpreso, dormindo)
 - [ ] Mais roupas por cenário (casaco no frio, pijama em casa)
 - [ ] O parceiro reagir ao que você faz (comentar, aplaudir, entrar na água junto)

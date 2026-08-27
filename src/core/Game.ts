@@ -340,6 +340,16 @@ export class Game implements GameAPI {
     }
   }
 
+  /**
+   * Coloca a dupla num ponto da cena. Existe para depuracao: e o que o
+   * parametro ?em=x,z da URL usa para tirar retrato longe de parede.
+   */
+  debugPlace(x: number, z: number, facing = Math.PI / 4): void {
+    this.player.teleport(x, z, facing);
+    this.parceiro.teleport(x - 1.2, z - 0.4, facing);
+    this.iso.snapTo(this.player.chest);
+  }
+
   keyPressed(code: string): boolean {
     if (this.ui.dialogueOpen || this.ui.journalOpen || this.player.locked) return false;
     return this.input.justPressed(code);

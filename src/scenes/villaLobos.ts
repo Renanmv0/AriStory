@@ -4,9 +4,10 @@ import type { SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
 import { Frisbee } from '../entities/Frisbee';
 import {
-  bench, bin, building, bush, cloud, cone, duck, fence, flowers, kiosk, lamp,
-  picnicTable, rock, signBoard, tree,
+  bench, bin, building, bush, cloud, cone, duck, fence, flowers, iceCream,
+  kiosk, lamp, picnicTable, rock, signBoard, tree,
 } from '../world/props';
+import { ARI, RENAN } from '../characters/cast';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -130,8 +131,13 @@ export const villaLobos: SceneDef = {
     const mesa = w.add(w.place(picnicTable(), -10, 0, 20, 0.3));
     w.blockBox(-10, 20, 1, 0.9, 0.3);
 
-    const quiosque = w.add(w.place(kiosk(P.fabricRed), 12, 0, 19, -Math.PI * 0.85));
-    w.blockBox(12, 19, 1.3, 1);
+    // sorveteria
+    // balcão virado para +Z: assim quem compra fica na frente do quiosque na
+    // tela, e não escondido atrás dele
+    const quiosque = w.add(w.place(kiosk(0xf6a6c0), 12, 0, 18.6, 0.3));
+    w.blockBox(12, 18.6, 1.3, 0.9, 0.3);
+    const casquinhaPlaca = w.add(w.place(iceCream(P.morango), 12, 2.55, 18.4, 0.3));
+    casquinhaPlaca.scale.setScalar(3);
 
     // ------------------------------------------------------------ vegetacao
     const proibido: Array<[number, number, number]> = [
@@ -374,30 +380,76 @@ export const villaLobos: SceneDef = {
     w.interact({
       id: 'parque:lago',
       x: -13, z: 11, radius: 2.6,
-      label: 'Ver os patos', icon: '🦆',
+      label: 'Olhar o lago', icon: '🦆',
       onInteract: async (api) => {
-        await api.say([
-          'Os patos daqui não têm medo de ninguém.',
-          'Aquele cinzento ali sempre vem cobrar pedaço de pão.',
-        ]);
+        await api.say(['Que lago bonito... dá até vontade de pular'], RENAN.name);
+        await api.say(['Então vamos! Hahahha'], ARI.name);
+        await api.say(['NÃAAOOO'], RENAN.name);
         api.unlock({
-          id: 'patos-lago',
-          title: 'Os patos cobradores',
+          id: 'lago-pular',
+          title: 'Vontade de pular',
           place: 'Parque Villa Lobos',
-          note: 'A gente jurou que um dia traz pão. Nunca trouxe.',
+          note: 'Um dos dois sempre tem uma ideia. O outro sempre grita.',
           icon: '🦆',
         });
       },
     });
 
+    // ------------------------------------------------------------- sorvetes
+    // um morango para o Ari e um maracujá para o Renan; trocar de personagem
+    // com T troca a mão, não o sabor
+    const sorveteAri = iceCream(P.morango);
+    const sorveteRenan = iceCream(P.maracuja);
+    sorveteAri.visible = false;
+    sorveteRenan.visible = false;
+    w.root.add(sorveteAri, sorveteRenan);
+    let sorveteRestante = 0;
+
+    const segurarNaEsquerda = (obj: THREE.Object3D, pos: THREE.Vector3, facing: number): void => {
+      obj.visible = true;
+      // mão esquerda: a direita é onde o frisbee fica
+      obj.position.set(
+        pos.x + Math.sin(facing - Math.PI / 2) * 0.42,
+        1.14,
+        pos.z + Math.cos(facing - Math.PI / 2) * 0.42,
+      );
+      obj.rotation.y = facing;
+    };
+
+    w.onUpdate((dt) => {
+      if (sorveteRestante <= 0) return;
+      sorveteRestante -= dt;
+
+      const doJogador = g.playerName() === ARI.name ? sorveteAri : sorveteRenan;
+      const doParceiro = doJogador === sorveteAri ? sorveteRenan : sorveteAri;
+      const eu = g.playerPosition();
+      const ele = g.companionPosition();
+      segurarNaEsquerda(doJogador, eu, g.playerFacing());
+      segurarNaEsquerda(doParceiro, ele, Math.atan2(eu.x - ele.x, eu.z - ele.z));
+
+      if (sorveteRestante <= 0) {
+        sorveteAri.visible = false;
+        sorveteRenan.visible = false;
+        g.toast('Acabou o sorvete', '🍦');
+      }
+    });
+
     w.interact({
-      id: 'parque:quiosque',
-      x: 12, z: 17.4, radius: 2.4,
-      label: 'Água de coco', icon: '🥥',
+      id: 'parque:sorveteria',
+      x: 12, z: 20.6, radius: 2.4,
+      label: 'Comprar sorvete', icon: '🍦',
       highlight: quiosque,
       onInteract: async (api) => {
-        await api.say(['Duas, por favor.', 'Uma com canudo dobrado, do jeito que você gosta.']);
-        api.toast('Água de coco gelada', '🥥');
+        await api.say(['Dois, por favor.', 'Um de morango e um de maracujá.']);
+        sorveteRestante = 50;
+        api.toast('Morango e maracujá', '🍦');
+        api.unlock({
+          id: 'sorvete-villa',
+          title: 'Sorvete no parque',
+          place: 'Parque Villa Lobos',
+          note: 'Morango pro Ari, maracujá pro Renan. Nunca muda, e nem precisa.',
+          icon: '🍦',
+        });
       },
     });
 
@@ -437,11 +489,15 @@ export const villaLobos: SceneDef = {
     let zoomLivre = true;
     w.onUpdate((dt) => {
       wheel.update(dt);
+      // só manda na câmera perto da roda gigante; longe dela o jogador
+      // continua livre para dar zoom com a roda do mouse
       if (zoomLivre) {
         const p = g.playerPosition();
         const d = Math.hypot(p.x, p.z + 26);
-        const t = Math.max(0, Math.min(1, (d - 8) / 20));
-        g.setZoom(36 - t * 21);
+        if (d < 28) {
+          const t = Math.max(0, Math.min(1, (d - 8) / 20));
+          g.setZoom(36 - t * 21);
+        }
       }
       patos.forEach((d, i) => {
         d.position.y = 0.1 + Math.sin(performance.now() / 900 + i) * 0.05;
