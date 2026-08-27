@@ -333,17 +333,35 @@ export function washingMachine(): THREE.Group {
 }
 
 /** Porta com batente. Encaixe num vao de parede com w.place(). */
-export function interiorDoor(cor: number = P.wood, largura = 0.9, altura = 2.1): THREE.Group {
+/**
+ * Porta com batente, para encaixar num vão de parede.
+ *
+ * `profundidade` é a espessura do batente: mantenha MENOR que a espessura da
+ * parede (0.3 no `w.wall`) e centre a porta na linha da parede. Batente com a
+ * mesma espessura da parede deixa as faces coplanares e elas piscam.
+ */
+export function interiorDoor(
+  cor: number = P.wood,
+  largura = 0.9,
+  altura = 2.1,
+  profundidade = 0.24,
+): THREE.Group {
   const g = new THREE.Group();
   const folha = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.08), toon(cor));
   folha.position.y = altura / 2;
   g.add(folha);
   for (const side of [-1, 1]) {
-    const batente = new THREE.Mesh(new THREE.BoxGeometry(0.09, altura + 0.1, 0.14), toon(P.woodDark));
+    const batente = new THREE.Mesh(
+      new THREE.BoxGeometry(0.09, altura + 0.1, profundidade),
+      toon(P.woodDark),
+    );
     batente.position.set((side * (largura + 0.09)) / 2, (altura + 0.1) / 2, 0);
     g.add(batente);
   }
-  const verga = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.2, 0.1, 0.14), toon(P.woodDark));
+  const verga = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.2, 0.1, profundidade),
+    toon(P.woodDark),
+  );
   verga.position.y = altura + 0.05;
   g.add(verga);
   const maca = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), toon(P.gold, { glow: 0.15 }));

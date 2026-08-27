@@ -208,6 +208,12 @@ w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho
 Regra prática: comece em `0.004` e suba de `0.004` a cada camada que ficar por
 cima. Ordene do que está mais embaixo para o que está mais em cima.
 
+O mesmo vale **em pé**: porta encaixada num vão não pode ter a face do batente
+na mesma altura da face da parede. `w.wall()` usa espessura `0.3`; o batente da
+`interiorDoor` usa `0.24` e a porta vai **centrada na linha da parede**
+(`z = zParede`, não `zParede + algo`). Faces coplanares piscam igual, seja no
+chão ou na vertical.
+
 ## Regras da casa
 
 1. **Cor sempre da paleta** (`src/palette.ts`). Se falta uma cor, adicione lá.

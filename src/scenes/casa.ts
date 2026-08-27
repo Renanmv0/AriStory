@@ -63,48 +63,59 @@ export const casa: SceneDef = {
     w.wall(x0, z0, W / 2, z0, H, P.wallCream);
     w.wall(x0, z0, x0, D / 2, H, P.wallMint);
     w.wall(x0, D / 2, W / 2, D / 2, 0.45, P.wallCream);
-    w.wall(W / 2, z0, W / 2, D / 2, 0.45, P.wallCream);
+    w.wall(W / 2, -1.3, W / 2, D / 2, 0.45, P.wallCream);
 
-    // --------------------------------------- os quartos e o banheiro (fundo)
-    // Três cômodos fechados atrás de uma parede inteira: o quarto do Ari, o da
-    // Rubina (a roommate dele) e o banheiro. Não dá para ver dentro — em
-    // câmera isométrica, quarto aberto e vazio fica pior do que quarto fechado.
-    const qz2 = -1.3;
-    const portas = [
-      { x: 1.55, cor: P.woodDark }, // quarto do Ari
-      { x: 3.6, cor: 0xb47fc4 }, // quarto da Rubina
-      { x: 5.25, cor: P.gold }, // banheiro
-    ];
+    // ----------------------------------------- o quarto e o banheiro (fundo)
+    // Dois cômodos fechados, no mesmo tamanho de sempre: o quarto (que o Ari
+    // divide com a Rubina, a roommate) e o banheiro. Ficam com teto — é o teto
+    // que impede de ver dentro numa câmera que olha de cima.
+    const qx0 = 0.4; // lateral do bloco
+    const qx1 = 4.2; // divisória entre quarto e banheiro
+    const qz2 = -1.3; // frente do bloco
+    const xQuarto = (qx0 + qx1) / 2;
+    const xBanheiro = (qx1 + W / 2) / 2;
 
-    // parede da frente do bloco, com um vão para cada porta
+    // parede da frente, com um vão para cada porta
     const vao = 0.95;
-    const bordas = [0.4];
-    for (const porta of portas) {
-      bordas.push(porta.x - vao / 2, porta.x + vao / 2);
-    }
-    bordas.push(W / 2);
+    const bordas = [
+      qx0, xQuarto - vao / 2,
+      xQuarto + vao / 2, xBanheiro - vao / 2,
+      xBanheiro + vao / 2, W / 2,
+    ];
     for (let i = 0; i < bordas.length; i += 2) {
-      const a = bordas[i];
-      const b = bordas[i + 1];
-      if (b - a > 0.05) w.wall(a, qz2, b, qz2, H, P.wallCream);
+      if (bordas[i + 1] - bordas[i] > 0.05) {
+        w.wall(bordas[i], qz2, bordas[i + 1], qz2, H, P.wallCream);
+      }
     }
-    // lateral do bloco, para não se ver por dentro girando a câmera
-    w.wall(0.4, z0, 0.4, qz2, H, P.wallCream);
+    w.wall(qx0, z0, qx0, qz2, H, P.wallCream); // lateral esquerda
+    w.wall(qx1, z0, qx1, qz2, H, P.wallCream); // divisória
+    w.wall(W / 2, z0, W / 2, qz2, H, P.wallCream); // lateral direita, alta aqui
 
-    const portaAri = w.add(w.place(interiorDoor(portas[0].cor, 0.85, 2.05), portas[0].x, 0, qz2 + 0.08));
-    const portaRubina = w.add(w.place(interiorDoor(portas[1].cor, 0.85, 2.05), portas[1].x, 0, qz2 + 0.08));
-    const portaBanheiro = w.add(w.place(interiorDoor(portas[2].cor, 0.85, 2.05), portas[2].x, 0, qz2 + 0.08));
+    // teto: fecha os dois cômodos por cima
+    const teto = new THREE.Mesh(
+      new THREE.BoxGeometry(W / 2 - qx0, 0.16, qz2 - z0),
+      toon(0xe6d9c4),
+    );
+    teto.position.set((qx0 + W / 2) / 2, H + 0.08, (z0 + qz2) / 2);
+    w.add(teto);
 
-    // a parede do bloco é grande: uns enfeites quebram o bege
-    w.add(w.place(pictureFrame(0.6, 0.75, P.wallMint), 2.62, 1.75, qz2 + 0.1));
-    w.add(w.place(wallShelf(0.9), 4.5, 1.7, qz2 + 0.12));
+    // As portas ficam CENTRADAS na linha da parede. O batente é mais fino que
+    // a parede (0.24 contra 0.3): posta à frente, a face do batente encostava
+    // na face da parede e as duas piscavam.
+    const portaQuarto = w.add(w.place(interiorDoor(P.woodDark, 0.85, 2.05), xQuarto, 0, qz2));
+    const portaBanheiro = w.add(w.place(interiorDoor(P.gold, 0.85, 2.05), xBanheiro, 0, qz2));
+
+    // uns enfeites para o bege não ficar liso
+    w.add(w.place(pictureFrame(0.6, 0.75, P.wallMint), 3.55, 1.75, qz2 + 0.17));
+    w.add(w.place(wallShelf(0.9), 1.1, 1.7, qz2 + 0.19));
 
     // ------------------------------------------------------ cozinha (lilás)
     w.add(w.place(counter(3.6), -3.4, 0, z0 + 0.42));
     w.blockBox(-3.4, z0 + 0.42, 1.8, 0.4);
     w.add(w.place(upperCabinets(2.6), -3.4, 2.0, z0 + 0.2));
-    w.add(w.place(fridge(), -0.7, 0, z0 + 0.5));
-    w.blockBox(-0.7, z0 + 0.5, 0.42, 0.38);
+    // na parede da esquerda: no fundo ela ficava escondida atrás do bloco
+    w.add(w.place(fridge(), x0 + 0.45, 0, -2.6, Math.PI / 2));
+    w.blockBox(x0 + 0.45, -2.6, 0.38, 0.42);
 
     const mesa = w.add(w.place(diningTable(1.5, 0.9), -3.6, 0, -1.9, 0.08));
     w.blockBox(-3.6, -1.9, 0.8, 0.52, 0.08);
@@ -235,7 +246,7 @@ export const casa: SceneDef = {
 
     w.interact({
       id: 'casa:geladeira',
-      x: -0.7, z: z0 + 1.5, radius: 1.4,
+      x: x0 + 1.5, z: -2.6, radius: 1.4,
       label: 'Abrir a geladeira', icon: '🧊',
       onInteract: (g) =>
         g.say(['Tem queijo, presunto, suco de pêssego e algumas bebidas alcoólicas.']),
@@ -286,46 +297,34 @@ export const casa: SceneDef = {
 
     w.interact({
       id: 'casa:banheiro',
-      x: 5.25, z: qz2 + 1.15, radius: 1.2,
+      x: xBanheiro, z: qz2 + 1.2, radius: 1.3,
       label: 'Bater na porta do banheiro', icon: '🚪',
       highlight: portaBanheiro,
       onInteract: () =>
         conversa([
           [R, 'Tem alguém aí?'],
-          [A, 'É a Rubi. Ela entra rápido e sai em quarenta minutos.'],
+          [A, 'É o Guillermo. Ele vem tanto aqui que já tem horário no banheiro.'],
         ]),
     });
 
     w.interact({
-      id: 'casa:quarto-ari',
-      x: 1.55, z: qz2 + 1.15, radius: 1.2,
-      label: 'Espiar o quarto do Ari', icon: '🛏️',
-      highlight: portaAri,
+      id: 'casa:quarto',
+      x: xQuarto, z: qz2 + 1.2, radius: 1.4,
+      label: 'Porta do quarto', icon: '🎧',
+      highlight: portaQuarto,
       onInteract: async (g) => {
         await conversa([
-          [A, 'Cama arrumada. Hoje.'],
-          [R, 'Tirei foto. É prova.'],
+          [A, 'Acho que a Rubi está ouvindo kpop'],
+          [R, 'Para variar né'],
         ]);
         g.unlock({
           id: 'quarto-manha',
-          title: 'A cama arrumada',
+          title: 'Do outro lado da porta',
           place: 'Casa do Ari',
-          note: 'O quarto pequeno com a luz entrando de lado e o abajur ainda aceso.',
-          icon: '🛏️',
+          note: 'Sempre tem música saindo do quarto. Dá pra saber o humor da Rubi pela playlist.',
+          icon: '🎧',
         });
       },
-    });
-
-    w.interact({
-      id: 'casa:quarto-rubina',
-      x: 3.6, z: qz2 + 1.15, radius: 1.2,
-      label: 'Porta do quarto da Rubi', icon: '🎧',
-      highlight: portaRubina,
-      onInteract: () =>
-        conversa([
-          [A, 'Acho que a Rubi está ouvindo kpop'],
-          [R, 'Para variar né'],
-        ]),
     });
 
     w.interact({
