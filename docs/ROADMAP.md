@@ -24,6 +24,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Ponto de ônibus com placa escrita levando pro clube
 - [x] Renan com silhueta de cabelo própria
 - [x] Publicado no GitHub Pages
+- [x] Beijo rápido da dupla, com coraçãozinho de cada lado
 
 ## Próximos passos naturais
 
@@ -31,6 +32,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [ ] Expressões simples (feliz, surpreso, dormindo)
 - [ ] Mais roupas por cenário (casaco no frio, pijama em casa)
 - [ ] O parceiro reagir ao que você faz (comentar, aplaudir, entrar na água junto)
+- [ ] Mais carinho além do beijo (dar a mão andando, abraço)
 
 ### Cenários
 - [ ] Casa do Renan

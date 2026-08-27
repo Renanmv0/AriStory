@@ -43,6 +43,7 @@ node scripts/smoke.mjs   /tmp/aristory  # fotos das cenas + erros de console
 node scripts/ride.mjs    /tmp/ride      # cutscene da roda gigante ponta a ponta
 node scripts/retrato.mjs /tmp/ari       # camera colada no personagem
 node scripts/mecanicas.mjs /tmp/mec     # escolha, cena do sofa e frisbee
+node scripts/beijo.mjs   /tmp/beijo # o beijo da dupla e os coracoes
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta.

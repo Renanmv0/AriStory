@@ -5,6 +5,7 @@ import { SaveState } from './SaveState';
 import { Ui } from '../ui/Ui';
 import { Player } from '../entities/Player';
 import { Companion } from '../entities/Companion';
+import { Beijo } from '../entities/Beijo';
 import { CharacterRig } from '../characters/CharacterRig';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
@@ -30,6 +31,7 @@ export class Game implements GameAPI {
   private readonly player: Player;
   private readonly parceiro: Companion;
   private readonly clock = new THREE.Clock();
+  private readonly beijo: Beijo;
 
   private readonly hemi: THREE.HemisphereLight;
   private readonly sun: THREE.DirectionalLight;
@@ -38,6 +40,8 @@ export class Game implements GameAPI {
   private hot: Interactable | null = null;
   private cameraTarget: THREE.Object3D | null = null;
   private transitioning = false;
+  /** o beijo esta ao alcance neste frame (checado no fim do frame anterior) */
+  private podeBeijar = false;
   private elapsed = 0;
   private shadowSpan = 0;
   private traje: 'normal' | 'banho' = 'normal';
@@ -85,6 +89,8 @@ export class Game implements GameAPI {
 
     this.player = new Player(new CharacterRig(dupla[0]));
     this.scene.add(this.player.object);
+
+    this.beijo = new Beijo(this.scene);
 
     this.parceiro = new Companion(new CharacterRig(dupla[1] ?? dupla[0]));
     this.parceiro.setVisible(dupla.length > 1);
@@ -141,6 +147,8 @@ export class Game implements GameAPI {
     this.parceiro.setVisible(true);
     this.cameraTarget = null;
     this.hot = null;
+    this.beijo.cancelar(this.player, this.parceiro);
+    this.podeBeijar = false;
     this.parceiro.clearOrder();
     this.setSitting(false);
     this.setOutfit(def.outfit ?? 'normal');
@@ -210,7 +218,12 @@ export class Game implements GameAPI {
       // o dialogo consumiu a tecla
     } else if (acted && !busy && this.hot && !this.player.locked) {
       void this.hot.trigger(this);
+    } else if (acted && !busy && this.podeBeijar && !this.player.locked) {
+      this.beijo.iniciar(this.player, this.parceiro, this.iso.angle);
     }
+
+    // o beijo roda antes do movimento: e ele que segura os dois no lugar
+    this.beijo.update(dt, this.player, this.parceiro);
 
     // ---------------------------------------------------------- movimento
     const m = this.input.move();
@@ -220,6 +233,7 @@ export class Game implements GameAPI {
 
     // ------------------------------------------------------- interativos
     this.updateHot(world, dt);
+    this.updateBeijo();
 
     // ------------------------------------------------------------- cena
     for (const fn of world.updaters) fn(dt, this.elapsed);
@@ -238,6 +252,23 @@ export class Game implements GameAPI {
     this.renderer.render(this.scene, this.iso.camera);
     this.input.endFrame();
   };
+
+  /**
+   * Prompt do beijo. Ele so aparece quando nao ha interativo por perto — o
+   * cenario sempre ganha do carinho, senao o sofa e a geladeira ficam
+   * inalcancaveis quando os dois estao coladinhos.
+   */
+  private updateBeijo(): void {
+    this.podeBeijar =
+      !this.ui.dialogueOpen &&
+      !this.ui.journalOpen &&
+      !this.player.locked &&
+      this.beijo.disponivel(this.player, this.parceiro);
+
+    if (this.hot) return;
+    if (this.podeBeijar) this.ui.showPrompt('💋', `Beijar ${this.parceiro.name}`);
+    else this.ui.hidePrompt();
+  }
 
   private updateHot(world: WorldBuilder, dt: number): void {
     let best: Interactable | null = null;

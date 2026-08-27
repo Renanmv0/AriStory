@@ -43,6 +43,19 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 filhos entre os dois — ninguém sai do lugar, e por isso a rotação mora no rig,
 nunca no grupo externo.
 
+### O beijo
+
+`entities/Beijo.ts` é uma mecânica do motor, não de cena: quando o jogador e o
+parceiro são duas fichas com `casal: true`, estão a menos de 1,5 e de frente um
+para o outro, o prompt **💋 Beijar** aparece e o `E` inclina os dois, com um
+coração subindo de cada lado. O prompt só aparece quando não há interativo por
+perto — cenário ganha do carinho.
+
+Duas coisas que a câmera isométrica impõe: o par gira em torno do próprio meio
+até ficar de perfil (alinhado com o eixo da câmera, um esconde o outro), e os
+corações sobem pelo eixo do par, não pela perpendicular — pela perpendicular
+eles vêm na direção da câmera e passam por cima dos corpos.
+
 ### Escolha no diálogo
 
 `g.ask(pergunta, opções)` devolve o índice escolhido. Os botões respondem a
@@ -107,8 +120,11 @@ primeiro clique completa a linha, o segundo avança.
 ## Ciclo de um frame
 
 1. lê a entrada (bloqueada se há diálogo, diário ou transição aberta)
-2. resolve a tecla de ação: diálogo primeiro, senão o interativo mais próximo
-3. move o jogador e resolve colisão
-4. recalcula qual interativo está "quente" (prioridade, depois distância)
-5. roda os `w.onUpdate` da cena
-6. move a câmera e a luz, renderiza
+2. resolve a tecla de ação: diálogo primeiro, depois o interativo mais próximo,
+   e por último o beijo
+3. roda o beijo (é ele que segura os dois no lugar enquanto dura)
+4. move o jogador e resolve colisão
+5. recalcula qual interativo está "quente" (prioridade, depois distância) e,
+   se não houver nenhum, se o beijo está ao alcance
+6. roda os `w.onUpdate` da cena
+7. move a câmera e a luz, renderiza

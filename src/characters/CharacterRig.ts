@@ -44,6 +44,7 @@ export class CharacterRig {
 
   private phase = 0;
   private bounce = 0;
+  private beijo = 0;
   private targetFacing = 0;
   private swimming = false;
   private sitting = false;
@@ -214,10 +215,12 @@ export class CharacterRig {
       eye.scale.set(1, 1.25, 0.6);
       this.head.add(eye);
 
-      const blush = new THREE.Mesh(new THREE.CircleGeometry(headR * 0.16, 12), flat(spec.blush, 0.75));
-      blush.position.set(side * headR * 0.56, -headR * 0.26, headR * 0.82);
-      blush.rotation.y = side * 0.35;
-      this.head.add(blush);
+      if (spec.blush !== undefined) {
+        const blush = new THREE.Mesh(new THREE.CircleGeometry(headR * 0.16, 12), flat(spec.blush, 0.75));
+        blush.position.set(side * headR * 0.56, -headR * 0.26, headR * 0.82);
+        blush.rotation.y = side * 0.35;
+        this.head.add(blush);
+      }
     }
 
     // sobrancelhas: e o que da expressao ao rosto de longe
@@ -708,6 +711,18 @@ export class CharacterRig {
     }
   }
 
+  /**
+   * Inclinacao do beijo: 0 e parado normal, 1 e inclinado para a frente na
+   * pontinha do pe. Quem controla a curva e a mecanica em entities/Beijo.ts.
+   */
+  setKiss(valor: number): void {
+    this.beijo = Math.max(0, Math.min(1, valor));
+  }
+
+  get kissing(): boolean {
+    return this.beijo > 0.001;
+  }
+
   /** dentro da agua: bracada em vez de caminhada, e sem sombra no chao */
   setSwimming(v: boolean): void {
     if (this.swimming === v) return;
@@ -724,6 +739,22 @@ export class CharacterRig {
     let delta = this.targetFacing - this.group.rotation.y;
     delta = Math.atan2(Math.sin(delta), Math.cos(delta));
     this.group.rotation.y += delta * Math.min(1, dt * 14);
+
+    // o beijo manda em tudo enquanto dura: inclina o tronco e a cabeca para a
+    // frente e recolhe os bracos, sem passo nenhum
+    if (this.beijo > 0.001) {
+      const k = this.beijo;
+      this.phase += dt * 1.2;
+      this.legL.rotation.x = 0;
+      this.legR.rotation.x = 0;
+      this.body.rotation.x = k * 0.3;
+      this.body.position.y = k * 0.045; // na pontinha do pe
+      this.armL.rotation.set(-k * 0.55, 0, 0.08 + k * 0.16);
+      this.armR.rotation.set(-k * 0.55, 0, -0.08 - k * 0.16);
+      this.head.rotation.x = k * 0.18;
+      this.head.rotation.z *= 1 - Math.min(1, dt * 8);
+      return;
+    }
 
     if (this.sitting) {
       this.phase += dt * 0.9;
