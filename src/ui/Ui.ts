@@ -19,6 +19,7 @@ export class Ui {
   private readonly veil: HTMLDivElement;
   private readonly escolhas: HTMLDivElement;
   private readonly carga: HTMLDivElement;
+  private readonly menu: HTMLDivElement;
 
   private advance: (() => void) | null = null;
   private escolher: ((i: number) => void) | null = null;
@@ -32,6 +33,10 @@ export class Ui {
   onTouchSwap: (() => void) | null = null;
   /** botao de acao segurado no celular: carrega o lancamento do frisbee */
   onTouchHold: ((down: boolean) => void) | null = null;
+  /** o jogador confirmou "recomecar do zero" no menu */
+  onRestart: (() => void) | null = null;
+
+  private hintsTimer: number | null = null;
 
   constructor(root: HTMLElement) {
     const ui = document.createElement('div');
@@ -54,6 +59,20 @@ export class Ui {
         <p class="sub">Os momentos que a gente já viveu — e os que ainda faltam.</p>
         <div class="grid"></div>
         <button class="close">fechar</button>
+      </div></div>
+      <button class="menu-btn" aria-label="menu"><span></span><span></span><span></span></button>
+      <div class="menu"><div class="sheet">
+        <h2>AriStory</h2>
+        <p class="sub">um passeio pelos lugares da gente</p>
+        <button class="recomecar">🔄 Recomeçar o jogo</button>
+        <div class="confirma">
+          <p>Isso apaga o diário de memórias e leva os dois de volta pro começo, na casa do Ari.</p>
+          <div class="linha">
+            <button class="sim">Recomeçar</button>
+            <button class="nao">Cancelar</button>
+          </div>
+        </div>
+        <button class="close">voltar pro jogo</button>
       </div></div>
       <div class="touch">
         <button class="action-btn" aria-label="interagir">✨</button>
@@ -82,6 +101,7 @@ export class Ui {
     this.veil = ui.querySelector('.veil')!;
     this.escolhas = ui.querySelector('.escolhas')!;
     this.carga = ui.querySelector('.carga')!;
+    this.menu = ui.querySelector('.menu')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -106,8 +126,52 @@ export class Ui {
     ui.querySelector('.swap-btn')!.addEventListener('click', () => this.onTouchSwap?.());
     ui.querySelector('.journal-btn')!.addEventListener('click', () => this.toggleJournal());
 
+    // menu: o "recomeçar" pede confirmação antes, senão um clique sem querer
+    // apaga o diário inteiro
+    ui.querySelector('.menu-btn')!.addEventListener('click', () => this.toggleMenu());
+    ui.querySelector('.menu .close')!.addEventListener('click', () => this.closeMenu());
+    ui.querySelector('.menu .recomecar')!.addEventListener('click', () => {
+      this.menu.classList.add('perguntando');
+    });
+    ui.querySelector('.menu .nao')!.addEventListener('click', () => {
+      this.menu.classList.remove('perguntando');
+    });
+    ui.querySelector('.menu .sim')!.addEventListener('click', () => {
+      this.closeMenu();
+      this.onRestart?.();
+    });
+    this.menu.addEventListener('click', (e) => {
+      if (e.target === this.menu) this.closeMenu();
+    });
+
     if (matchMedia('(hover: none)').matches) document.body.classList.add('touch-device');
-    window.setTimeout(() => this.hints.classList.add('hide'), 12000);
+    this.showHints();
+  }
+
+  // ----------------------------------------------------------------- menu
+
+  get menuOpen(): boolean {
+    return this.menu.classList.contains('show');
+  }
+
+  toggleMenu(): void {
+    if (this.menuOpen) this.closeMenu();
+    else {
+      this.closeJournal();
+      this.menu.classList.add('show');
+    }
+  }
+
+  closeMenu(): void {
+    this.menu.classList.remove('show');
+    this.menu.classList.remove('perguntando');
+  }
+
+  /** Mostra as teclas de novo e recomeça a contagem para elas sumirem. */
+  showHints(): void {
+    this.hints.classList.remove('hide');
+    if (this.hintsTimer) window.clearTimeout(this.hintsTimer);
+    this.hintsTimer = window.setTimeout(() => this.hints.classList.add('hide'), 12000);
   }
 
   hideBoot(): void {

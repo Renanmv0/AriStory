@@ -52,7 +52,9 @@ export class Game implements GameAPI {
   constructor(
     private readonly root: HTMLElement,
     private readonly scenes: Record<string, SceneDef>,
-    dupla: readonly CharacterSpec[],
+    private readonly dupla: readonly CharacterSpec[],
+    /** onde o jogo começa quando não há progresso salvo */
+    private readonly cenaInicial = Object.keys(scenes)[0],
   ) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -66,6 +68,7 @@ export class Game implements GameAPI {
     this.ui.onTouchAction = () => this.input.tapAction();
     this.ui.onTouchSwap = () => this.input.tapSwap();
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
+    this.ui.onRestart = () => this.restart();
     this.input = new Input(this.renderer.domElement);
 
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x8aa06a, 1.05);
@@ -103,12 +106,26 @@ export class Game implements GameAPI {
   // ------------------------------------------------------------------ boot
 
   async start(sceneId?: string, entry?: string): Promise<void> {
-    const id = sceneId ?? (this.scenes[this.save.scene] ? this.save.scene : Object.keys(this.scenes)[0]);
+    const id = sceneId ?? (this.scenes[this.save.scene] ? this.save.scene : this.cenaInicial);
     this.build(id, entry);
     this.iso.snapTo(this.player.chest);
     this.renderer.render(this.scene, this.iso.camera);
     this.ui.hideBoot();
     this.renderer.setAnimationLoop(this.tick);
+  }
+
+  /**
+   * Apaga o progresso e volta para o começo — é o "recomeçar" do menu, para
+   * mostrar o jogo do zero para alguém. Zera diário, flags e contadores, põe o
+   * Ari de volta no comando e leva os dois para a cena inicial.
+   */
+  restart(): void {
+    this.save.reset();
+    this.ui.setMemories(this.save.memories);
+    if (this.player.rig.spec.id !== this.dupla[0].id) this.swapCharacters();
+    this.ui.showHints();
+    this.goTo(this.cenaInicial);
+    this.ui.toast('Do começo, então', '🔄');
   }
 
   // ---------------------------------------------------------------- cenas
@@ -203,10 +220,10 @@ export class Game implements GameAPI {
     if (!world) return;
 
     // ------------------------------------------------------------ entrada
-    const busy = this.ui.dialogueOpen || this.ui.journalOpen || this.transitioning;
+    const busy = this.ui.dialogueOpen || this.ui.journalOpen || this.ui.menuOpen || this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
-    if (this.input.justPressed('KeyJ')) this.ui.toggleJournal();
+    if (this.input.justPressed('KeyJ') && !this.ui.menuOpen) this.ui.toggleJournal();
     if (!busy && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
     if (!busy) {
       if (this.input.justPressed('KeyQ')) this.iso.rotate(-1);
@@ -262,6 +279,7 @@ export class Game implements GameAPI {
     this.podeBeijar =
       !this.ui.dialogueOpen &&
       !this.ui.journalOpen &&
+      !this.ui.menuOpen &&
       !this.player.locked &&
       this.beijo.disponivel(this.player, this.parceiro);
 
@@ -383,12 +401,12 @@ export class Game implements GameAPI {
   }
 
   keyPressed(code: string): boolean {
-    if (this.ui.dialogueOpen || this.ui.journalOpen || this.player.locked) return false;
+    if (this.ui.dialogueOpen || this.ui.journalOpen || this.ui.menuOpen || this.player.locked) return false;
     return this.input.justPressed(code);
   }
 
   keyDown(code: string): boolean {
-    if (this.ui.dialogueOpen || this.ui.journalOpen || this.player.locked) return false;
+    if (this.ui.dialogueOpen || this.ui.journalOpen || this.ui.menuOpen || this.player.locked) return false;
     return this.input.isDown(code);
   }
 

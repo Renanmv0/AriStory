@@ -34,7 +34,11 @@ html, body {
   user-select: none;
 }
 
-#ui > * { pointer-events: none; }
+/* Nada na UI captura clique por padrão — quem precisa liga com
+   `pointer-events: auto`. O `:where()` zera a especificidade do seletor, senão
+   este `#ui` ganharia de toda regra de classe e os botões dentro dos painéis
+   ficariam mortos (era o caso do "fechar" do diário e do clique no balão). */
+:where(#ui) > * { pointer-events: none; }
 
 /* ------------------------------------------------------------- carregando */
 .boot {
@@ -249,6 +253,89 @@ html, body {
   font-weight: 800;
   cursor: pointer;
 }
+
+/* ----------------------------------------------------------------- menu */
+.menu-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: none;
+  background: rgba(255, 250, 242, 0.92);
+  box-shadow: var(--shadow);
+  /* três barrinhas desenhadas, em vez do ☰: caractere de fonte some em
+     navegador que não tem o glifo */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.menu-btn span {
+  display: block;
+  width: 18px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--ink);
+}
+.menu-btn:hover { background: var(--paper); }
+
+.menu {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(53, 48, 74, 0.45);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.menu.show { opacity: 1; pointer-events: auto; }
+.menu .sheet {
+  width: min(400px, calc(100% - 32px));
+  background: var(--paper);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  text-align: center;
+}
+.menu h2 { margin: 0 0 4px; font-size: 26px; }
+.menu .sub { margin: 0 0 18px; color: var(--ink-soft); font-weight: 700; font-size: 14px; }
+.menu button {
+  width: 100%;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.menu .close {
+  margin-top: 10px;
+  background: var(--paper-warm);
+  color: var(--ink-soft);
+}
+/* a confirmação toma o lugar do botão: um clique não apaga o diário sozinho */
+.menu .confirma { display: none; }
+.menu.perguntando .recomecar { display: none; }
+.menu.perguntando .confirma { display: block; }
+.menu .confirma p {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+.menu .confirma .linha { display: flex; gap: 8px; }
+.menu .confirma .linha button { flex: 1; }
+.menu .confirma .nao { background: var(--paper-warm); color: var(--ink-soft); }
 
 /* ---------------------------------------------------------------- toque */
 .touch { position: absolute; inset: 0; display: none; }

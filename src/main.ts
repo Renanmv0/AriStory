@@ -6,13 +6,14 @@ import { DUPLA } from './characters/cast';
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
 
-const game = new Game(root, SCENES, DUPLA);
+const game = new Game(root, SCENES, DUPLA, CENA_INICIAL);
 
 // ?cena=villa-lobos&entrada=roda abre direto num ponto do cenario, util pra testar
 const params = new URLSearchParams(location.search);
 const pedida = params.get('cena') ?? undefined;
 const entrada = params.get('entrada') ?? undefined;
-void game.start(pedida ?? (localStorage.getItem('aristory.save.v1') ? undefined : CENA_INICIAL), entrada);
+// sem cena pedida o jogo continua de onde parou; sem progresso, começa na casa
+void game.start(pedida, entrada);
 
 // ?zoom=5 aproxima a camera: serve para conferir o visual dos personagens
 const zoom = Number(params.get('zoom'));

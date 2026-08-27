@@ -135,6 +135,20 @@ DOM sobre o canvas, dentro de `#ui` com `pointer-events: none`. `Ui.ts` é a
 única coisa que cria elemento de tela. Diálogo com efeito de máquina de escrever;
 primeiro clique completa a linha, o segundo avança.
 
+**Quem quiser receber clique liga `pointer-events: auto`** — e a regra que
+desliga todo mundo é `:where(#ui) > *`, com especificidade zerada de propósito.
+Escrita como `#ui > *` ela ganhava de qualquer regra de classe e os botões
+dentro dos painéis ficavam mortos.
+
+### Menu e recomeçar
+
+O botão de três barrinhas no canto superior direito abre o menu. A única opção
+é **recomeçar o jogo**, em dois passos (o segundo clique confirma), porque ela
+apaga o diário. `Game.restart()` zera o `SaveState`, devolve o controle ao
+primeiro da `DUPLA`, mostra as teclas de novo e volta para a cena inicial — que
+o `Game` recebe no construtor (`CENA_INICIAL`, a casa do Ari). Enquanto o menu
+está aberto o jogo não recebe entrada, igual ao diário.
+
 ## Ciclo de um frame
 
 1. lê a entrada (bloqueada se há diálogo, diário ou transição aberta)
