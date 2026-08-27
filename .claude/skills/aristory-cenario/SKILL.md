@@ -154,6 +154,10 @@ const naQuadra = (x, z, margem = 0) =>
   Math.abs(z - QUADRA.z) < QUADRA.profundidade / 2 - margem;
 ```
 
+Objeto que voa dentro da zona deve ser limitado à zona, não ao mundo: passe os
+limites da quadra para o `update` do projétil, senão ele cai do lado de fora da
+grade e o parceiro fica preso tentando alcançar.
+
 No `w.onUpdate`, compare com o estado anterior para disparar entrada/saída uma
 vez só. Na entrada vale abrir a câmera (`g.setZoom`) e mandar o parceiro se
 posicionar (`g.commandCompanion`); na saída, desfazer os dois.
@@ -183,6 +187,26 @@ g.lockPlayer(false);
 
 Cuidado com móvel na frente: numa câmera isométrica o encosto do sofá tapa quem
 senta colado nele. Sente **à frente** do encosto e confira com foto.
+
+## Chão empilhado: nunca dois decalques na mesma altura
+
+`w.patch()` e `w.disc()` desenham no chão. Duas dessas superfícies na **mesma
+altura** brigam pelo mesmo pixel e produzem manchas em ziguezague — foi o que
+aconteceu na praça da roda gigante e na borda do lago.
+
+O `WorldBuilder` já dá um `polygonOffset` próprio a cada decalque, então o
+empilhamento é determinístico mesmo em alturas iguais. Ainda assim, **declare
+alturas distintas** por camada — fica legível e à prova de futuro:
+
+```ts
+w.disc(x, z, r, P.grassDark, 0.004);   // manchas de grama
+w.disc(0, -16.5, 8.6, P.sand, 0.008);  // borda
+w.disc(0, -16.5, 8, P.concrete, 0.012);// praça
+w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho
+```
+
+Regra prática: comece em `0.004` e suba de `0.004` a cada camada que ficar por
+cima. Ordene do que está mais embaixo para o que está mais em cima.
 
 ## Regras da casa
 

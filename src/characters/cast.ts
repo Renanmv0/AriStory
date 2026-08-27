@@ -43,7 +43,7 @@ export const RENAN: CharacterSpec = {
   height: 1.78,
   build: 'magro',
   skin: 0xefc8a4,
-  blush: 0xf29a92,
+  blush: 0xefc8a4, // sem blush: fica só no Ari, combina mais com ele
   eyes: 0x241d18,
   hair: {
     color: 0x1f1712,

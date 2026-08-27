@@ -73,6 +73,15 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 membros em cápsula) e anima a caminhada por seno. Nenhum arquivo de modelo.
 Ver a skill `aristory-personagem`.
 
+### Decalques de chão
+
+`patch()` e `disc()` pintam sobre o chão. Superfícies coplanares brigam pelo
+mesmo pixel (z-fighting) e piscam em manchas. Cada decalque recebe do
+`WorldBuilder` um `polygonOffset` crescente e próprio (via `toon({ offset })`,
+que entra na chave do cache de material), o que torna o empilhamento
+determinístico independentemente da altura. As cenas ainda declaram alturas
+distintas por camada, por legibilidade.
+
 ### Zonas de mecânica
 
 Uma mecânica pode valer só num pedaço do cenário. A quadra de frisbee é o

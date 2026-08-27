@@ -10,6 +10,7 @@ import {
   windsock,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
+import { toon } from '../core/materials';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -59,16 +60,15 @@ export const villaLobos: SceneDef = {
     w.ground({ width: 240, depth: 240, color: P.grass });
     w.setBounds(-44, -34, 44, 32);
 
-    // caminhos
-    w.patch(0, 4, 5.5, 56, P.asphalt);
-    w.patch(0, 9, 62, 4.5, P.asphalt);
-    w.disc(0, -16.5, 8, P.concrete);
-    w.disc(0, -16.5, 8.6, P.sand, 0.005);
-
-    // manchas de grama mais clara, quebra a chapadao
+    // Ordem de empilhamento do chão. Cada decalque também recebe um
+    // polygonOffset próprio do WorldBuilder, então a altura aqui é só folga.
     for (let i = 0; i < 14; i++) {
-      w.disc(w.range(-40, 40), w.range(-30, 30), w.range(2, 6), P.grassDark, 0.005);
+      w.disc(w.range(-40, 40), w.range(-30, 30), w.range(2, 6), P.grassDark, 0.004);
     }
+    w.disc(0, -16.5, 8.6, P.sand, 0.008); // borda da praça
+    w.disc(0, -16.5, 8, P.concrete, 0.012); // praça
+    w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho principal
+    w.patch(0, 9, 62, 4.5, P.asphalt, 0, 0.02); // caminho transversal
 
     // ---------------------------------------------------------- roda gigante
     const wheel = new FerrisWheel({ radius: 12, cabins: 32, rpm: 1.0 });
@@ -81,11 +81,26 @@ export const villaLobos: SceneDef = {
       w.add(w.place(fence(9, 1.2, P.metalWhite), x, 0, -20, Math.PI / 2));
       w.blockBox(x, -20, 0.2, 4.5);
     }
-    const domo = new THREE.Mesh(
-      new THREE.SphereGeometry(2.6, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshToonMaterial({ color: 0xdff2fb, transparent: true, opacity: 0.55 }),
+    const domo = new THREE.Group();
+    const cupula = new THREE.Mesh(
+      new THREE.SphereGeometry(2.6, 14, 9, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshToonMaterial({ color: 0xdff2fb, transparent: true, opacity: 0.82 }),
     );
-    domo.position.set(-9.5, 0, -21);
+    domo.add(cupula);
+    // aro na base e meridianos: sem eles a cúpula translúcida lia como bolha
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.09, 6, 24), toon(P.metalWhite));
+    aro.rotation.x = Math.PI / 2;
+    aro.position.y = 0.05;
+    domo.add(aro);
+    for (let i = 0; i < 6; i++) {
+      const meridiano = new THREE.Mesh(
+        new THREE.TorusGeometry(2.6, 0.05, 5, 18, Math.PI),
+        toon(P.metalWhite),
+      );
+      meridiano.rotation.set(0, (i / 6) * Math.PI, 0);
+      domo.add(meridiano);
+    }
+    w.place(domo, -9.5, 0, -21);
     w.add(domo);
     w.blockCircle(-9.5, -21, 2.6);
 
@@ -93,8 +108,8 @@ export const villaLobos: SceneDef = {
     w.blockBox(9.5, -20.5, 1.3, 0.9);
 
     // ------------------------------------------------------------- o lago
-    w.disc(-21, 11, 8.5, P.water, 0.02);
-    w.disc(-21, 11, 9.2, P.sand, 0.01);
+    w.disc(-21, 11, 9.2, P.sand, 0.024); // acima do caminho, que encosta aqui
+    w.disc(-21, 11, 8.5, P.water, 0.028);
     w.blockCircle(-21, 11, 8.8);
     const patos = [duck(), duck(0xe8e2d0), duck()];
     patos.forEach((d, i) => {
@@ -353,6 +368,15 @@ export const villaLobos: SceneDef = {
     const DIST_MIN = 6;
     const DIST_MAX = 30;
 
+    // O disco não passa da grade: sem isso ele cai do lado de fora e o
+    // parceiro fica batendo no alambrado tentando alcançar.
+    const LIMITES_QUADRA = {
+      minX: qx0 + 0.7,
+      minZ: qz0 + 0.7,
+      maxX: qx1 - 0.7,
+      maxZ: qz1 - 0.7,
+    };
+
     let fase: FaseDisco = 'fora';
     let esperaDele = 0;
     let carga = 0;
@@ -445,7 +469,7 @@ export const villaLobos: SceneDef = {
     });
 
     w.onUpdate((dt) => {
-      disco.update(dt, w.bounds);
+      disco.update(dt, LIMITES_QUADRA);
 
       const eu = g.playerPosition();
       const ele = g.companionPosition();
@@ -494,7 +518,13 @@ export const villaLobos: SceneDef = {
           disco.holdAt(ele, Math.atan2(eu.x - ele.x, eu.z - ele.z));
           esperaDele -= dt;
           if (esperaDele <= 0) {
-            disco.throwToward(ele, eu, 0.2);
+            // Ele erra de propósito, mas pouco: o desvio tem que caber no raio
+            // da pegada no ar (1.9), senão o disco sempre cai longe e nunca dá
+            // para pegar voando — vira só corrida atrás do disco.
+            const alvo = eu.clone();
+            alvo.x += (Math.random() - 0.5) * 2.2;
+            alvo.z += (Math.random() - 0.5) * 2.2;
+            disco.throwToward(ele, alvo, 0.09);
             fase = 'voando-pra-mim';
           }
           break;
@@ -541,7 +571,7 @@ export const villaLobos: SceneDef = {
           const noAr =
             disco.state === 'voando' &&
             disco.position.y < 2.3 &&
-            Math.hypot(disco.position.x - eu.x, disco.position.z - eu.z) < 1.6;
+            Math.hypot(disco.position.x - eu.x, disco.position.z - eu.z) < 1.9;
           if (noAr) {
             disco.pickUp();
             fase = 'comigo';

@@ -27,12 +27,19 @@ export interface ToonOptions {
   opacity?: number;
   /** desenha os dois lados (bandeiras, folhas planas) */
   doubleSide?: boolean;
+  /**
+   * Decalque de chao. Duas superficies planas na mesma altura brigam pelo mesmo
+   * pixel e piscam (z-fighting). Um numero unico por decalque empurra o
+   * poligono para a frente e resolve de vez, sem depender de milimetros de
+   * diferenca de altura.
+   */
+  offset?: number;
 }
 
 const cache = new Map<string, THREE.MeshToonMaterial>();
 
 export function toon(color: number, opts: ToonOptions = {}): THREE.MeshToonMaterial {
-  const key = `${color}|${opts.glow ?? 0}|${opts.opacity ?? 1}|${opts.doubleSide ? 1 : 0}`;
+  const key = `${color}|${opts.glow ?? 0}|${opts.opacity ?? 1}|${opts.doubleSide ? 1 : 0}|${opts.offset ?? 0}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -46,6 +53,11 @@ export function toon(color: number, opts: ToonOptions = {}): THREE.MeshToonMater
   if (opts.glow) {
     mat.emissive = new THREE.Color(color);
     mat.emissiveIntensity = opts.glow;
+  }
+  if (opts.offset) {
+    mat.polygonOffset = true;
+    mat.polygonOffsetFactor = -1;
+    mat.polygonOffsetUnits = -opts.offset;
   }
   cache.set(key, mat);
   return mat;

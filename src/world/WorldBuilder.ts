@@ -38,6 +38,8 @@ export class WorldBuilder {
   bounds: Bounds = { minX: -40, minZ: -40, maxX: 40, maxZ: 40 };
 
   private seed = 1337;
+  /** cada decalque de chao ganha um offset proprio, para nunca piscarem entre si */
+  private decalque = 0;
 
   constructor(readonly game: GameAPI) {}
 
@@ -118,7 +120,10 @@ export class WorldBuilder {
 
   /** Mancha de outra cor sobre o chao: caminho de terra, quadra, tapete. */
   patch(x: number, z: number, width: number, depth: number, color: number, rotY = 0, y = 0.01): THREE.Mesh {
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), toon(color));
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, depth),
+      toon(color, { offset: ++this.decalque }),
+    );
     mesh.rotation.set(-Math.PI / 2, 0, 0);
     mesh.rotation.z = rotY;
     mesh.position.set(x, y, z);
@@ -129,7 +134,10 @@ export class WorldBuilder {
 
   /** Mancha redonda: lago, canteiro, sombra pintada. */
   disc(x: number, z: number, radius: number, color: number, y = 0.01): THREE.Mesh {
-    const mesh = new THREE.Mesh(new THREE.CircleGeometry(radius, 28), toon(color));
+    const mesh = new THREE.Mesh(
+      new THREE.CircleGeometry(radius, 28),
+      toon(color, { offset: ++this.decalque }),
+    );
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(x, y, z);
     mesh.receiveShadow = true;
@@ -236,5 +244,6 @@ export class WorldBuilder {
     this.colliders.length = 0;
     this.interactables.length = 0;
     this.updaters.length = 0;
+    this.decalque = 0;
   }
 }

@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
-  bed, bookshelf, chair, coffeeTable, counter, diningTable, floorLamp, fridge,
-  interiorDoor, mug, nightstand, pictureFrame, pottedPlant, rug, sofa, tvSet,
-  upperCabinets, wallShelf, washingMachine, windowFrame,
+  chair, coffeeTable, counter, diningTable, floorLamp, fridge, interiorDoor,
+  mug, pictureFrame, pottedPlant, rug, sofa, tvSet, upperCabinets, wallShelf,
+  washingMachine, windowFrame,
 } from '../world/furniture';
 import { heart } from '../world/props';
 import { toon } from '../core/materials';
+import { ARI, RENAN } from '../characters/cast';
 
 /**
  * Casa do Ari — apartamento pequeno, montado a partir do esboço do Renan.
@@ -40,6 +41,15 @@ export const casa: SceneDef = {
   },
 
   build(w) {
+    const g0 = w.game;
+
+    /** Vai e volta de falas, com o nome certo em cada balão. */
+    const conversa = async (falas: Array<readonly [string, string]>): Promise<void> => {
+      for (const [quem, texto] of falas) await g0.say([texto], quem);
+    };
+    const A = ARI.name;
+    const R = RENAN.name;
+
     const W = 12;
     const D = 9;
     const x0 = -W / 2;
@@ -55,29 +65,39 @@ export const casa: SceneDef = {
     w.wall(x0, D / 2, W / 2, D / 2, 0.45, P.wallCream);
     w.wall(W / 2, z0, W / 2, D / 2, 0.45, P.wallCream);
 
-    // ------------------------------------------------------- quarto (azul)
-    // piso próprio e mureta na frente, para dar pra ver a cama de fora
-    const qx1 = 0.4;
-    const qx2 = 4.2;
+    // --------------------------------------- os quartos e o banheiro (fundo)
+    // Três cômodos fechados atrás de uma parede inteira: o quarto do Ari, o da
+    // Rubina (a roommate dele) e o banheiro. Não dá para ver dentro — em
+    // câmera isométrica, quarto aberto e vazio fica pior do que quarto fechado.
     const qz2 = -1.3;
-    w.patch((qx1 + qx2) / 2, (z0 + qz2) / 2, qx2 - qx1, qz2 - z0, 0xb9c9e0, 0, 0.012);
+    const portas = [
+      { x: 1.55, cor: P.woodDark }, // quarto do Ari
+      { x: 3.6, cor: 0xb47fc4 }, // quarto da Rubina
+      { x: 5.25, cor: P.gold }, // banheiro
+    ];
 
-    // mureta da frente com um vão de passagem à esquerda
-    w.wall(1.7, qz2, qx2, qz2, 0.45, P.wallCream);
-    // divisória entre quarto e banheiro
-    w.wall(qx2, z0, qx2, qz2, H, P.wallCream);
+    // parede da frente do bloco, com um vão para cada porta
+    const vao = 0.95;
+    const bordas = [0.4];
+    for (const porta of portas) {
+      bordas.push(porta.x - vao / 2, porta.x + vao / 2);
+    }
+    bordas.push(W / 2);
+    for (let i = 0; i < bordas.length; i += 2) {
+      const a = bordas[i];
+      const b = bordas[i + 1];
+      if (b - a > 0.05) w.wall(a, qz2, b, qz2, H, P.wallCream);
+    }
+    // lateral do bloco, para não se ver por dentro girando a câmera
+    w.wall(0.4, z0, 0.4, qz2, H, P.wallCream);
 
-    w.add(w.place(bed(P.fabricBlue), 2.5, 0, -3.1, Math.PI));
-    w.blockBox(2.5, -3.1, 0.78, 1.08);
-    const abajur = w.add(w.place(nightstand(), 1.0, 0, -3.9));
-    w.blockBox(1.0, -3.9, 0.24, 0.22);
-    w.add(w.place(bookshelf(1.6, 1.0), 3.6, 0, -4.2, -Math.PI / 2));
-    w.blockBox(3.9, -4.2, 0.2, 0.5);
-    w.add(w.place(pictureFrame(0.6, 0.5, P.flowerPink), 2.5, 1.9, z0 + 0.17));
+    const portaAri = w.add(w.place(interiorDoor(portas[0].cor, 0.85, 2.05), portas[0].x, 0, qz2 + 0.08));
+    const portaRubina = w.add(w.place(interiorDoor(portas[1].cor, 0.85, 2.05), portas[1].x, 0, qz2 + 0.08));
+    const portaBanheiro = w.add(w.place(interiorDoor(portas[2].cor, 0.85, 2.05), portas[2].x, 0, qz2 + 0.08));
 
-    // --------------------------------------------- banheiro (porta amarela)
-    w.wall(qx2, qz2, W / 2, qz2, H, P.wallCream);
-    const portaBanheiro = w.add(w.place(interiorDoor(P.gold, 0.85, 2.05), 5.1, 0, qz2 + 0.1));
+    // a parede do bloco é grande: uns enfeites quebram o bege
+    w.add(w.place(pictureFrame(0.6, 0.75, P.wallMint), 2.62, 1.75, qz2 + 0.1));
+    w.add(w.place(wallShelf(0.9), 4.5, 1.7, qz2 + 0.12));
 
     // ------------------------------------------------------ cozinha (lilás)
     w.add(w.place(counter(3.6), -3.4, 0, z0 + 0.42));
@@ -107,8 +127,9 @@ export const casa: SceneDef = {
     w.blockCircle(-0.4, 2.3, 0.3);
 
     // --------------------------------------------- área de serviço (verde)
-    const maquina = w.add(w.place(washingMachine(), W / 2 - 0.7, 0, -0.4, -Math.PI / 2));
-    w.blockBox(W / 2 - 0.7, -0.4, 0.35, 0.4);
+    // longe das portas do fundo: aqui ela não tranca a passagem de ninguém
+    const maquina = w.add(w.place(washingMachine(), W / 2 - 0.65, 0, 2.9, -Math.PI / 2));
+    w.blockBox(W / 2 - 0.65, 2.9, 0.35, 0.4);
 
     // ------------------------------------------------ janela (rosa) e enfeites
     w.add(w.place(windowFrame(1.8, 1.3), x0 + 0.16, 1.75, 2.4, Math.PI / 2));
@@ -233,44 +254,57 @@ export const casa: SceneDef = {
       label: 'Pôr a mesa', icon: '🍽️',
       highlight: mesa,
       onInteract: async (g) => {
-        await g.say([`Dois pratos, duas canecas. Já virou automático.`]);
+        await conversa([
+          [A, 'Dois pratos, duas canecas. Já virou automático.'],
+          [R, 'Três, se a Rubi sair do quarto.'],
+        ]);
         g.toast('Mesa posta', '🍽️');
       },
     });
 
     w.interact({
       id: 'casa:maquina',
-      x: W / 2 - 1.6, z: -0.4, radius: 1.4,
+      x: W / 2 - 1.7, z: 2.9, radius: 1.4,
       label: 'Ver a máquina de lavar', icon: '🧺',
       highlight: maquina,
       onInteract: async (g) => {
         if (g.flag('roupa-lavando')) {
-          await g.say(['Ainda tá centrifugando. Aquele barulho de sempre.']);
+          await conversa([
+            [R, 'Ainda tá centrifugando.'],
+            [A, 'Esse barulho é a trilha sonora dessa casa.'],
+          ]);
           return;
         }
         g.setFlag('roupa-lavando');
         g.toast('Máquina ligada', '🫧');
-        await g.say(['Bota pra lavar agora que quando a gente voltar do parque já tá pronto.']);
+        await conversa([
+          [A, 'Bota pra lavar agora que quando a gente voltar do parque já tá pronto.'],
+          [R, 'Contanto que a Rubi não encha ela de novo antes.'],
+        ]);
       },
     });
 
     w.interact({
       id: 'casa:banheiro',
-      x: 5.1, z: qz2 + 1.2, radius: 1.5,
+      x: 5.25, z: qz2 + 1.15, radius: 1.2,
       label: 'Bater na porta do banheiro', icon: '🚪',
       highlight: portaBanheiro,
-      onInteract: (g) => g.say(['— Já vou! — Você sempre diz isso e demora mais quinze minutos.']),
+      onInteract: () =>
+        conversa([
+          [R, 'Tem alguém aí?'],
+          [A, 'É a Rubi. Ela entra rápido e sai em quarenta minutos.'],
+        ]),
     });
 
     w.interact({
-      id: 'casa:cama',
-      x: 2.5, z: -1.9, radius: 1.6,
-      label: 'Arrumar a cama', icon: '🛏️',
-      highlight: abajur,
+      id: 'casa:quarto-ari',
+      x: 1.55, z: qz2 + 1.15, radius: 1.2,
+      label: 'Espiar o quarto do Ari', icon: '🛏️',
+      highlight: portaAri,
       onInteract: async (g) => {
-        await g.say([
-          'Lençol esticado, travesseiro no lugar.',
-          'Dura até de noite, mas tudo bem.',
+        await conversa([
+          [A, 'Cama arrumada. Hoje.'],
+          [R, 'Tirei foto. É prova.'],
         ]);
         g.unlock({
           id: 'quarto-manha',
@@ -280,6 +314,18 @@ export const casa: SceneDef = {
           icon: '🛏️',
         });
       },
+    });
+
+    w.interact({
+      id: 'casa:quarto-rubina',
+      x: 3.6, z: qz2 + 1.15, radius: 1.2,
+      label: 'Porta do quarto da Rubi', icon: '🎧',
+      highlight: portaRubina,
+      onInteract: () =>
+        conversa([
+          [A, 'Acho que a Rubi está ouvindo kpop'],
+          [R, 'Para variar né'],
+        ]),
     });
 
     w.interact({
