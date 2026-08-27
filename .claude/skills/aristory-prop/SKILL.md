@@ -52,6 +52,18 @@ export function guardaSol(cor: number = P.fabricRed): THREE.Group {
    Use `textSign('Clube!')` sempre que uma placa precisar ser legível.
 7. Escala: uma pessoa tem 1,75 unidade. Banco 0,48 de assento, porta 2,1 de altura.
 
+## Peça com balcão
+
+Quiosque, banca, bar: a câmera olha de cima em 34°, então **toldo ou telhado
+avançado passa na frente do que está no balcão e esconde tudo**. A regra que
+funcionou no `kiosk()`: o toldo para *antes* da metade da frente do balcão, e a
+vitrine (as cubas de sorvete, as jarras de suco) fica na borda da frente, do
+lado de fora da sombra do toldo. Depois de mexer, confira com
+`node scripts/quiosque.mjs /tmp/q`.
+
+Vidro fechado por cima de comida é armadilha: some no toon shading e ainda
+tapa o que está dentro. Cuba aberta lê muito melhor de longe.
+
 ## Peça animada
 
 Devolva uma classe com `group` e `update(dt)`, como a `FerrisWheel`. A cena

@@ -44,6 +44,7 @@ node scripts/ride.mjs    /tmp/ride      # cutscene da roda gigante ponta a ponta
 node scripts/retrato.mjs /tmp/ari       # camera colada no personagem
 node scripts/mecanicas.mjs /tmp/mec     # escolha, cena do sofa e frisbee
 node scripts/beijo.mjs   /tmp/beijo # o beijo da dupla e os coracoes
+node scripts/quiosque.mjs /tmp/q    # de perto: sorveteria, bilheteria e bar
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta.

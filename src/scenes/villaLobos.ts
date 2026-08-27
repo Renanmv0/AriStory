@@ -104,8 +104,10 @@ export const villaLobos: SceneDef = {
     w.add(domo);
     w.blockCircle(-9.5, -21, 2.6);
 
-    const bilheteria = w.add(w.place(kiosk(P.fabricBlue), 9.5, 0, -20.5, Math.PI));
-    w.blockBox(9.5, -20.5, 1.3, 0.9);
+    // virada para +Z, como a sorveteria: a camera olha de +x/+z, entao quiosque
+    // de costas para ela vira uma caixa lisa
+    const bilheteria = w.add(w.place(kiosk(P.fabricBlue, { texto: 'Bilheteria' }), 9.5, 0, -20.5, -0.5));
+    w.blockBox(9.5, -20.5, 1.4, 0.95, -0.5);
 
     // ------------------------------------------------------------- o lago
     w.disc(-21, 11, 9.2, P.sand, 0.024); // acima do caminho, que encosta aqui
@@ -216,10 +218,8 @@ export const villaLobos: SceneDef = {
     // sorveteria
     // balcão virado para +Z: assim quem compra fica na frente do quiosque na
     // tela, e não escondido atrás dele
-    const quiosque = w.add(w.place(kiosk(0xf6a6c0), 12, 0, 18.6, 0.3));
-    w.blockBox(12, 18.6, 1.3, 0.9, 0.3);
-    const casquinhaPlaca = w.add(w.place(iceCream(P.morango), 12, 2.55, 18.4, 0.3));
-    casquinhaPlaca.scale.setScalar(3);
+    const quiosque = w.add(w.place(kiosk(0xf6a6c0, { tipo: 'sorvete' }), 12, 0, 18.6, 0.3));
+    w.blockBox(12, 18.6, 1.4, 0.95, 0.3);
 
     // ------------------------------------------------------------ vegetacao
     const proibido: Array<[number, number, number]> = [

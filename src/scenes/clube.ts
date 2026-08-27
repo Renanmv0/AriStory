@@ -118,8 +118,9 @@ export const clube: SceneDef = {
     const chuveiro = w.add(w.place(showerPost(), -11, 0, 2.5, -Math.PI / 2));
     w.blockCircle(-11, 2.5, 0.3);
 
-    const bar = w.add(w.place(kiosk(0x4ec1a8), -12.5, 0, 7.5, -Math.PI * 0.8));
-    w.blockBox(-12.5, 7.5, 1.3, 1);
+    // balcão virado para +Z: de costas para a câmera ninguém via o bar
+    const bar = w.add(w.place(kiosk(0x4ec1a8, { tipo: 'suco' }), -12.5, 0, 7.2, 0.35));
+    w.blockBox(-12.5, 7.2, 1.4, 1, 0.35);
 
     const vestiario = w.add(w.place(building(6, 3.2, 4, P.wallCream, 0x7aa6c4), 13, 0, -9));
     w.blockBox(13, -9, 3, 2);
@@ -295,7 +296,7 @@ export const clube: SceneDef = {
 
     w.interact({
       id: 'clube:bar',
-      x: -12.5, z: 6, radius: 2.2,
+      x: -12.2, z: 9.2, radius: 2.2,
       label: 'Pedir alguma coisa gelada', icon: '🍹',
       highlight: bar,
       onInteract: async (api) => {

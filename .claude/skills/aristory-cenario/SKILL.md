@@ -36,6 +36,10 @@ nas duas cenas (ida e volta).
   `-X` sobe para a **esquerda**, `+X` desce para a direita, `+Z` desce para a esquerda.
 - Uma pessoa tem ~1,75 unidade de altura. Use isso como régua para tudo.
 - O jogador olha para `+Z` quando `facing === 0`; `facing = Math.atan2(dx, dz)`.
+- **Peça com frente (quiosque, banca, bar) tem que olhar para `+Z`**, girada no
+  máximo meia volta de rádio para cada lado. A câmera padrão vem de `+X/+Z`:
+  virada para o outro lado, a peça mostra só o fundo liso e quem compra fica
+  escondido atrás dela. O ponto do `w.interact` vai na frente dela.
 
 ## API do WorldBuilder (`w`)
 

@@ -213,19 +213,233 @@ export function cloud(scale = 1): THREE.Group {
   return g;
 }
 
-export function kiosk(color: number = P.fabricRed): THREE.Group {
+/** O que o quiosque vende: muda a vitrine do balcão e o enfeite do letreiro. */
+export type KioskTipo = 'simples' | 'sorvete' | 'suco';
+
+export interface KioskOpts {
+  tipo?: KioskTipo;
+  /** texto do letreiro; sem isso, o tipo escolhe um */
+  texto?: string;
+}
+
+/**
+ * Toldo listrado de barril: meia-cana com faixas alternadas e babado na ponta.
+ *
+ * O cilindro nasce com o eixo em Y; girar `z = PI/2` deita ele ao longo do X,
+ * e aí o angulo do setor vira direto altura × profundidade — `theta = 0` aponta
+ * para a frente (+Z) e `theta = PI/2` para cima.
+ */
+function toldo(largura: number, raio: number, cor: number, claro: number): THREE.Group {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.7, 1.6), toon(P.wallCream));
-  body.position.y = 0.85;
-  g.add(body);
-  const counter = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.12, 0.5), toon(P.wood));
-  counter.position.set(0, 1.25, 0.95);
-  g.add(counter);
-  const roof = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.9, 14, 1, false, 0, Math.PI), toon(color));
-  roof.position.set(0, 1.75, 0.35);
-  roof.rotation.set(Math.PI / 2, 0, 0);
-  roof.scale.set(1, 1, 0.55);
-  g.add(roof);
+  const faixas = 9;
+  const passo = largura / faixas;
+  const de = 0.35;
+  const arco = 1.15;
+
+  const lona = new THREE.Group();
+  lona.rotation.z = Math.PI / 2;
+  for (let i = 0; i < faixas; i++) {
+    const faixa = new THREE.Mesh(
+      new THREE.CylinderGeometry(raio, raio, passo * 1.02, 10, 1, true, de, arco),
+      toon(i % 2 === 0 ? cor : claro, { doubleSide: true }),
+    );
+    faixa.position.y = -largura / 2 + passo * (i + 0.5);
+    lona.add(faixa);
+  }
+  g.add(lona);
+
+  // babado: as bolinhas da ponta da frente, que é o que deixa com cara de doce
+  const py = Math.sin(de) * raio;
+  const pz = Math.cos(de) * raio;
+  for (let i = 0; i < faixas; i++) {
+    const bola = new THREE.Mesh(
+      new THREE.SphereGeometry(passo * 0.36, 8, 6),
+      toon(i % 2 === 0 ? cor : claro),
+    );
+    bola.position.set(-largura / 2 + passo * (i + 0.5), py - passo * 0.2, pz);
+    bola.scale.set(1, 1.15, 0.7);
+    g.add(bola);
+  }
+  return g;
+}
+
+/**
+ * Quiosque de parque: cabine de madeira com balcão, toldo listrado, letreiro
+ * escrito e uma vitrine que muda com o que ele vende.
+ *
+ * A boca fica em +Z: posicione girado de forma que quem compra fique na frente
+ * dele na tela, e não escondido atrás.
+ */
+export function kiosk(color: number = P.fabricRed, opts: KioskOpts = {}): THREE.Group {
+  const g = new THREE.Group();
+  const tipo = opts.tipo ?? 'simples';
+  const claro = P.wallCream;
+  const madeira = toon(P.wood);
+  const madeiraEscura = toon(P.woodDark);
+
+  // ------------------------------------------------------------- estrutura
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.16, 1.9), madeiraEscura);
+  deck.position.y = 0.08;
+  g.add(deck);
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(2.35, 1.7, 1.4), toon(claro));
+  corpo.position.set(0, 1.01, -0.05);
+  g.add(corpo);
+
+  // ripado da frente, só nas beiradas: o miolo é a janela de atendimento
+  for (const lado of [-1, 1]) {
+    const pilar = new THREE.Mesh(new THREE.BoxGeometry(0.26, 1.7, 0.14), madeira);
+    pilar.position.set(lado * 1.045, 1.01, 0.68);
+    g.add(pilar);
+  }
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.22, 0.14), madeira);
+  verga.position.set(0, 1.75, 0.68);
+  g.add(verga);
+
+  // o vão escuro dá profundidade: sem ele a frente vira uma parede lisa. Ele
+  // fica entre o tampo do balcão e a verga — mais baixo que isso e some atrás
+  // do próprio balcão
+  const vao = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.44, 0.06), toon(0x5b4636));
+  vao.position.set(0, 1.42, 0.66);
+  g.add(vao);
+
+  const balcao = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.14, 0.78), madeira);
+  balcao.position.set(0, 1.12, 0.94);
+  g.add(balcao);
+  const bordo = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 2.5, 10), madeiraEscura);
+  bordo.rotation.z = Math.PI / 2;
+  bordo.position.set(0, 1.12, 1.32);
+  g.add(bordo);
+
+  for (const lado of [-1, 1]) {
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.05, 8), toon(P.metalWhite));
+    perna.position.set(lado * 1.18, 0.6, 1.24);
+    g.add(perna);
+  }
+
+  // ----------------------------------------------------------- toldo e teto
+  const cobertura = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.16, 1.55), madeiraEscura);
+  cobertura.position.set(0, 1.94, -0.05);
+  g.add(cobertura);
+
+  // o toldo é curto de propósito: a câmera olha de cima em 34°, então qualquer
+  // aba mais avançada que isto passa na frente da vitrine e esconde tudo
+  const lona = toldo(2.5, 0.44, color, claro);
+  lona.position.set(0, 1.54, 0.62);
+  g.add(lona);
+
+  // ------------------------------------------------------------- letreiro
+  const texto = opts.texto ?? (tipo === 'sorvete' ? 'Sorvete' : tipo === 'suco' ? 'Sucos' : '');
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.5, 0.12), toon(color));
+  placa.position.set(0, 2.3, -0.05);
+  g.add(placa);
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.62, 0.08), toon(claro));
+  moldura.position.set(0, 2.3, -0.09);
+  g.add(moldura);
+  if (texto) {
+    const escrito = letreiro(texto, 1.5, 0.34);
+    escrito.position.set(0, 2.3, 0.02);
+    g.add(escrito);
+  }
+
+  // ------------------------------------------------- vitrine e enfeite alto
+  if (tipo === 'sorvete') {
+    // casquinha gigante em cima do letreiro: é o que se vê de longe
+    const gigante = iceCream(P.morango);
+    gigante.scale.setScalar(2.6);
+    gigante.position.set(0, 2.78, -0.05);
+    g.add(gigante);
+
+    // cuba aberta, como gelateria de verdade: vidro por cima ficaria tapando
+    // as bolas justo de onde a câmera olha
+    const bandeja = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.16, 0.56), toon(P.metalWhite));
+    bandeja.position.set(-0.58, 1.26, 1.06);
+    g.add(bandeja);
+    const sabores = [P.morango, P.maracuja, P.chocolate];
+    sabores.forEach((sabor, i) => {
+      const cuba = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 0.22, 10), toon(P.metalWhite));
+      cuba.position.set(-1.0 + i * 0.36, 1.29, 1.06);
+      g.add(cuba);
+      const bola = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), toon(sabor));
+      bola.position.set(-1.0 + i * 0.36, 1.42, 1.06);
+      bola.scale.y = 0.8;
+      g.add(bola);
+    });
+
+    // pilha de casquinhas do outro lado do balcão
+    for (let i = 0; i < 3; i++) {
+      const casq = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 10), toon(0xd8a45c));
+      casq.position.set(0.72, 1.34 + i * 0.07, 1.04 + i * 0.02);
+      casq.rotation.x = Math.PI;
+      g.add(casq);
+    }
+  } else if (tipo === 'suco') {
+    // laranja gigante em cima do letreiro, com folhinha
+    const fruta = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 10), toon(P.laranja));
+    fruta.position.set(0, 2.85, -0.05);
+    g.add(fruta);
+    const folha = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), toon(P.leafMid));
+    folha.position.set(0.14, 3.12, -0.05);
+    folha.scale.set(1.5, 0.4, 0.8);
+    folha.rotation.z = 0.5;
+    g.add(folha);
+
+    // jarras com suco de verdade dentro
+    const sucos = [P.laranja, P.limao];
+    sucos.forEach((suco, i) => {
+      const jarra = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.14, 0.42, 12, 1, true),
+        toon(P.glass, { opacity: 0.45, doubleSide: true }),
+      );
+      jarra.position.set(-0.78 + i * 0.42, 1.4, 1.06);
+      g.add(jarra);
+      const dentro = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.12, 0.28, 12), toon(suco));
+      dentro.position.set(-0.78 + i * 0.42, 1.33, 1.06);
+      g.add(dentro);
+      const torneira = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 6), toon(P.metalGrey));
+      torneira.position.set(-0.78 + i * 0.42, 1.26, 1.2);
+      torneira.rotation.x = Math.PI / 2;
+      g.add(torneira);
+    });
+
+    // fruteira
+    const cesta = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.12, 12), toon(P.plantPot));
+    cesta.position.set(0.42, 1.25, 1.06);
+    g.add(cesta);
+    const frutas: Array<[number, number, number, number]> = [
+      [0.32, 1.34, 1.03, P.laranja],
+      [0.52, 1.34, 1.08, P.limao],
+      [0.42, 1.4, 1.05, P.morango],
+    ];
+    for (const [x, y, z, cor] of frutas) {
+      const fr = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), toon(cor));
+      fr.position.set(x, y, z);
+      g.add(fr);
+    }
+
+    // copo de canudos
+    const copo = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.2, 10), toon(claro));
+    copo.position.set(0.95, 1.29, 1.06);
+    g.add(copo);
+    const canudos = [P.morango, P.limao, P.fabricBlue];
+    canudos.forEach((cor, i) => {
+      const canudo = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.34, 6), toon(cor));
+      canudo.position.set(0.93 + i * 0.03, 1.44, 1.06 - i * 0.02);
+      canudo.rotation.z = (i - 1) * 0.18;
+      g.add(canudo);
+    });
+  }
+
+  // quadro de preços pendurado na lateral
+  const quadro = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.62, 0.5), toon(0x36302c));
+  quadro.position.set(1.2, 1.3, 0.15);
+  g.add(quadro);
+  for (let i = 0; i < 3; i++) {
+    const linha = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.045, 0.3 - i * 0.06), toon(claro));
+    linha.position.set(1.24, 1.46 - i * 0.16, 0.15);
+    g.add(linha);
+  }
+
   return g;
 }
 
@@ -655,10 +869,39 @@ export function windsock(): THREE.Group {
 }
 
 /**
- * Placa com texto de verdade. A textura é desenhada num canvas em tempo de
- * execução — continua sendo tudo procedural, nenhum arquivo de imagem entra
- * no repositório.
+ * Palavra escrita, como um plano solto olhando para +Z. A textura é desenhada
+ * num canvas em tempo de execução — continua sendo tudo procedural, nenhum
+ * arquivo de imagem entra no repositório.
+ *
+ * Quem usa: `textSign()` (a placa do ponto de ônibus) e o letreiro do quiosque.
  */
+export function letreiro(
+  texto: string,
+  largura: number,
+  altura: number,
+  corTexto = '#ffffff',
+): THREE.Mesh {
+  const canvas = document.createElement('canvas');
+  canvas.width = 384;
+  canvas.height = Math.max(64, Math.round((384 * altura) / largura));
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = corTexto;
+    ctx.font = `bold ${Math.round(canvas.height * 0.62)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(texto, canvas.width / 2, canvas.height / 2 + 4);
+  }
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(largura, altura),
+    new THREE.MeshBasicMaterial({ map: textura, transparent: true }),
+  );
+}
+
+/** Placa de rua com texto de verdade, num poste. */
 export function textSign(texto: string, corPlaca: number = P.fabricBlue, corTexto = '#ffffff'): THREE.Group {
   const g = new THREE.Group();
   const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.4, 8), toon(P.metalGrey));
@@ -675,26 +918,9 @@ export function textSign(texto: string, corPlaca: number = P.fabricBlue, corText
   moldura.position.set(0, 2.45, -0.03);
   g.add(moldura);
 
-  const canvas = document.createElement('canvas');
-  canvas.width = 384;
-  canvas.height = 160;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = corTexto;
-    ctx.font = 'bold 96px ui-rounded, "Nunito", system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(texto, canvas.width / 2, canvas.height / 2 + 4);
-  }
-  const textura = new THREE.CanvasTexture(canvas);
-  textura.colorSpace = THREE.SRGBColorSpace;
-  const letreiro = new THREE.Mesh(
-    new THREE.PlaneGeometry(largura * 0.86, altura * 0.68),
-    new THREE.MeshBasicMaterial({ map: textura, transparent: true }),
-  );
-  letreiro.position.set(0, 2.45, 0.06);
-  g.add(letreiro);
+  const texto3d = letreiro(texto, largura * 0.86, altura * 0.68, corTexto);
+  texto3d.position.set(0, 2.45, 0.06);
+  g.add(texto3d);
   return g;
 }
 

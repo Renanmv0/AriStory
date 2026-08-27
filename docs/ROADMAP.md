@@ -25,6 +25,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Renan com silhueta de cabelo própria
 - [x] Publicado no GitHub Pages
 - [x] Beijo rápido da dupla, com coraçãozinho de cada lado
+- [x] Quiosques de verdade: toldo listrado, letreiro escrito e vitrine (sorvete e sucos)
 
 ## Próximos passos naturais
 
