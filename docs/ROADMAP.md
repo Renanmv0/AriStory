@@ -28,6 +28,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Quiosques de verdade: toldo listrado, letreiro escrito e vitrine (sorvete e sucos)
 - [x] Passe de volta do frisbee: ele para, mira e joga além, para dar pra pegar no ar
 - [x] Menu no canto com "recomeçar o jogo", que zera o diário e volta pra casa do Ari
+- [x] Som: música procedural com clima por cenário e um efeito para cada ação
 
 ## Próximos passos naturais
 
@@ -52,7 +53,7 @@ primeiro. A memória que ele desbloqueia assume isso na hora de escrever.
 - [ ] Ciclo dia/noite por cenário (o parque ao pôr do sol)
 - [ ] Mapa mundo para escolher para onde ir
 - [ ] Itens colecionáveis além das memórias (fotos, bilhetes)
-- [ ] Som: passos, ambiente do parque, uma musiquinha
+- [ ] Som: mais camadas de ambiente (pássaros no parque, água na piscina)
 
 ### Acabamento
 - [ ] Tela de início com o nome do jogo

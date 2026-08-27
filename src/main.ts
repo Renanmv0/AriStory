@@ -2,6 +2,8 @@ import './ui/style.css';
 import { Game } from './core/Game';
 import { SCENES, CENA_INICIAL } from './scenes';
 import { DUPLA } from './characters/cast';
+import { CLIMAS, Musica } from './audio/musica';
+import { EFEITOS } from './audio/efeitos';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
@@ -26,5 +28,8 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
   game.debugPlace(em[0], em[1], Number.isFinite(olhar) ? olhar : Math.PI / 4);
 }
 
-// atalho de depuracao no console do navegador
+// atalhos de depuracao no console do navegador. O `aristoryAudio` existe para
+// scripts/musica.mjs renderizar a música num OfflineAudioContext: o .wav sai da
+// mesma classe que toca no jogo, não de uma cópia.
 (window as unknown as { jogo: Game }).jogo = game;
+(window as unknown as { aristoryAudio: unknown }).aristoryAudio = { Musica, CLIMAS, EFEITOS };

@@ -1,5 +1,6 @@
 import type * as THREE from 'three';
 import type { WorldBuilder } from '../world/WorldBuilder';
+import type { SomNome } from '../audio/efeitos';
 
 export interface CircleCollider {
   kind: 'circle';
@@ -101,6 +102,8 @@ export interface GameAPI {
   ask(pergunta: string, opcoes: string[], speaker?: string): Promise<number>;
   /** aviso curto no canto da tela */
   toast(text: string, icon?: string): void;
+  /** toca um efeito sonoro; a lista está em audio/efeitos.ts */
+  som(nome: SomNome): void;
   /** troca de cena; entry e o nome de uma entrada da cena destino */
   goTo(sceneId: string, entry?: string): void;
   /** camera passa a seguir outro objeto; null volta pro jogador */

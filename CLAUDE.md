@@ -14,6 +14,7 @@ acento — é o padrão do repositório, siga o que já está lá.
 | criar/editar um cenário | `.claude/skills/aristory-cenario/SKILL.md` |
 | aparência de um personagem | `.claude/skills/aristory-personagem/SKILL.md` |
 | criar uma peça de cenário | `.claude/skills/aristory-prop/SKILL.md` |
+| som, música ou efeito sonoro | `.claude/skills/aristory-som/SKILL.md` |
 | rodar, ver e validar | `.claude/skills/aristory-testar/SKILL.md` |
 
 Elas existem para você **não precisar varrer o código** a cada tarefa. Comece por
@@ -21,8 +22,9 @@ elas; `docs/ARQUITETURA.md` só quando o assunto for o motor em si.
 
 ## Invariantes
 
-- **Nada de asset externo.** Todo modelo é geometria procedural. Não adicione
-  `.glb`, `.png`, textura ou biblioteca de modelo.
+- **Nada de asset externo.** Todo modelo é geometria procedural, e todo som é
+  sintetizado na hora. Não adicione `.glb`, `.png`, `.mp3`, `.wav`, textura,
+  biblioteca de modelo nem de áudio.
 - **Cor sai de `src/palette.ts`; material sai de `toon()`/`flat()`.** Nunca
   instancie material dentro de uma cena.
 - **Cena não conhece o motor.** Ela só usa `WorldBuilder` e `GameAPI`.
@@ -47,10 +49,13 @@ node scripts/beijo.mjs   /tmp/beijo # o beijo da dupla e os coracoes
 node scripts/quiosque.mjs /tmp/q    # de perto: sorveteria, bilheteria e bar
 node scripts/frisbee.mjs /tmp/fr    # o passe de volta do parceiro, medido
 node scripts/menu.mjs    /tmp/menu  # o menu e o recomecar do zero
+node scripts/audio.mjs             # o som acorda e cada acao dispara o seu efeito
+node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para ouvir
 ```
 
-Mudança visual **precisa** de foto olhada antes de ser dada como pronta.
-O Chromium já está instalado; não rode `playwright install`.
+Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e
+mudança de som precisa do `.wav` ouvido. O Chromium já está instalado; não rode
+`playwright install`.
 
 ## Trabalhando junto
 

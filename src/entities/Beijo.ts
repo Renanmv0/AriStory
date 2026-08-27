@@ -48,6 +48,9 @@ export class Beijo {
   private readonly grupo = new THREE.Group();
   private soltouCoracao = false;
 
+  /** o Game liga isto no motor de audio */
+  onSom: ((nome: 'beijo' | 'coracao') => void) | null = null;
+
   constructor(private readonly cena: THREE.Scene) {
     this.cena.add(this.grupo);
   }
@@ -147,6 +150,9 @@ export class Beijo {
         const lz = Math.cos(eixo);
         this.solta(a.position, lx, lz, -1);
         this.solta(b.position, lx, lz, 1);
+        // o estalinho toca junto com os corações, na hora do encontro
+        this.onSom?.('beijo');
+        this.onSom?.('coracao');
       }
 
       if (this.t >= TOTAL) {

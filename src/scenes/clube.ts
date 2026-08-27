@@ -174,6 +174,7 @@ export const clube: SceneDef = {
     }
     const respingos: Respingo[] = [];
     const espirrar = (x: number, z: number, quantos = 12): void => {
+      g.som('agua'); // todo respingo faz barulho: piscina, trampolim e chuveiro
       for (let i = 0; i < quantos; i++) {
         const gota = new THREE.Mesh(
           new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 6, 5),
@@ -300,6 +301,7 @@ export const clube: SceneDef = {
       label: 'Pedir alguma coisa gelada', icon: '🍹',
       highlight: bar,
       onInteract: async (api) => {
+        api.som('sorvete'); // a mesma sineta de "toma, é seu" da sorveteria
         await api.say(['Dois sucos. Um sem gelo, que é como você gosta.']);
         api.toast('Suco gelado', '🍹');
       },

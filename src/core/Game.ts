@@ -6,6 +6,8 @@ import { Ui } from '../ui/Ui';
 import { Player } from '../entities/Player';
 import { Companion } from '../entities/Companion';
 import { Beijo } from '../entities/Beijo';
+import { Som } from '../audio/Som';
+import type { SomNome } from '../audio/efeitos';
 import { CharacterRig } from '../characters/CharacterRig';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
@@ -32,6 +34,7 @@ export class Game implements GameAPI {
   private readonly parceiro: Companion;
   private readonly clock = new THREE.Clock();
   private readonly beijo: Beijo;
+  private readonly audio = new Som();
 
   private readonly hemi: THREE.HemisphereLight;
   private readonly sun: THREE.DirectionalLight;
@@ -42,6 +45,8 @@ export class Game implements GameAPI {
   private transitioning = false;
   /** o beijo esta ao alcance neste frame (checado no fim do frame anterior) */
   private podeBeijar = false;
+  /** distância andada desde o último passo ouvido */
+  private trilha = 0;
   private elapsed = 0;
   private shadowSpan = 0;
   private traje: 'normal' | 'banho' = 'normal';
@@ -69,6 +74,13 @@ export class Game implements GameAPI {
     this.ui.onTouchSwap = () => this.input.tapSwap();
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
     this.ui.onRestart = () => this.restart();
+    this.ui.som = (nome) => this.audio.play(nome);
+    this.ui.onToggleSom = () => {
+      this.audio.setMudo(this.audio.ligado);
+      this.ui.setSom(this.audio.ligado);
+      if (this.audio.ligado) this.audio.play('menu');
+    };
+    this.ui.setSom(this.audio.ligado);
     this.input = new Input(this.renderer.domElement);
 
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x8aa06a, 1.05);
@@ -94,6 +106,7 @@ export class Game implements GameAPI {
     this.scene.add(this.player.object);
 
     this.beijo = new Beijo(this.scene);
+    this.beijo.onSom = (nome) => this.audio.play(nome);
 
     this.parceiro = new Companion(new CharacterRig(dupla[1] ?? dupla[0]));
     this.parceiro.setVisible(dupla.length > 1);
@@ -125,6 +138,7 @@ export class Game implements GameAPI {
     if (this.player.rig.spec.id !== this.dupla[0].id) this.swapCharacters();
     this.ui.showHints();
     this.goTo(this.cenaInicial);
+    this.audio.play('recomecar');
     this.ui.toast('Do começo, então', '🔄');
   }
 
@@ -171,6 +185,7 @@ export class Game implements GameAPI {
     this.setOutfit(def.outfit ?? 'normal');
     this.ui.hidePrompt();
     this.ui.sceneCard(def.name, def.subtitle);
+    this.audio.setClima(id);
     this.save.scene = id;
   }
 
@@ -234,6 +249,7 @@ export class Game implements GameAPI {
     if (acted && this.ui.handleAction()) {
       // o dialogo consumiu a tecla
     } else if (acted && !busy && this.hot && !this.player.locked) {
+      this.audio.play('interagir');
       void this.hot.trigger(this);
     } else if (acted && !busy && this.podeBeijar && !this.player.locked) {
       this.beijo.iniciar(this.player, this.parceiro, this.iso.angle);
@@ -245,7 +261,9 @@ export class Game implements GameAPI {
     // ---------------------------------------------------------- movimento
     const m = this.input.move();
     this.iso.screenToWorld(m.x, m.y, this.moveDir);
+    const antes = this.player.position.clone();
     this.player.update(this.moveDir, dt, world.colliders, world.bounds);
+    this.ouvirPassos(antes);
     this.parceiro.update(this.player.position, dt, world.colliders, world.bounds);
 
     // ------------------------------------------------------- interativos
@@ -286,6 +304,25 @@ export class Game implements GameAPI {
     if (this.hot) return;
     if (this.podeBeijar) this.ui.showPrompt('💋', `Beijar ${this.parceiro.name}`);
     else this.ui.hidePrompt();
+  }
+
+  /**
+   * Passo por distância andada, não por tempo: assim o som acompanha a
+   * velocidade sozinho e não sai passo nenhum quando o jogador está parado.
+   */
+  private ouvirPassos(antes: THREE.Vector3): void {
+    if (this.player.riding || this.player.locked) return;
+    const andou = Math.hypot(this.player.position.x - antes.x, this.player.position.z - antes.z);
+    if (andou < 0.0005) {
+      this.trilha = 0;
+      return;
+    }
+    this.trilha += andou;
+    const passada = this.player.submersion > 0.05 ? 1.05 : 0.62;
+    if (this.trilha >= passada) {
+      this.trilha = 0;
+      this.audio.play(this.player.submersion > 0.05 ? 'nadar' : 'passo');
+    }
   }
 
   private updateHot(world: WorldBuilder, dt: number): void {
@@ -334,12 +371,18 @@ export class Game implements GameAPI {
   }
 
   toast(text: string, icon?: string): void {
+    this.audio.play('toast');
     this.ui.toast(text, icon);
+  }
+
+  som(nome: SomNome): void {
+    this.audio.play(nome);
   }
 
   goTo(sceneId: string, entry?: string): void {
     if (this.transitioning) return;
     this.transitioning = true;
+    this.audio.play('porta');
     void (async () => {
       await this.ui.fade(true);
       this.build(sceneId, entry);
@@ -384,6 +427,7 @@ export class Game implements GameAPI {
 
   unlock(memory: Memory): void {
     if (this.save.addMemory(memory)) {
+      this.audio.play('memoria');
       this.ui.setMemories(this.save.memories);
       this.ui.toast(`Nova memória: ${memory.title}`, memory.icon);
       this.player.rig.cheer();
@@ -411,6 +455,7 @@ export class Game implements GameAPI {
   }
 
   showCharge(valor: number | null): void {
+    this.audio.carga(valor);
     this.ui.showCharge(valor);
   }
 
@@ -449,6 +494,7 @@ export class Game implements GameAPI {
     this.player.swapRig(this.parceiro.rig);
     this.parceiro.swapRig(doJogador);
     this.setOutfit(this.traje);
+    this.audio.play('trocar');
     this.ui.toast(`Agora você é ${this.player.name}`, '🔁');
   }
 
@@ -482,6 +528,7 @@ export class Game implements GameAPI {
   }
 
   setSitting(sentados: boolean): void {
+    if (sentados) this.audio.play('sentar');
     this.player.rig.setSitting(sentados);
     this.parceiro.rig.setSitting(sentados);
   }

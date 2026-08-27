@@ -344,6 +344,7 @@ export const villaLobos: SceneDef = {
     // ------------------------------------------------------------- frisbee
     const disco = new Frisbee(P.frisbee);
     disco.mesh.visible = false;
+    disco.onLand = () => g.som('quicar');
     w.root.add(disco.mesh);
 
     /**
@@ -411,6 +412,7 @@ export const villaLobos: SceneDef = {
     let ultimoPosto: { x: number; z: number } | null = null;
 
     const contarTroca = (api: typeof g, noAr: boolean): void => {
+      api.som('pegar');
       trocasNaSessao += 1;
       const total = api.bump('frisbee.trocas');
 
@@ -476,6 +478,7 @@ export const villaLobos: SceneDef = {
       if (fase !== 'comigo') return;
       const dist = DIST_MIN + (DIST_MAX - DIST_MIN) * limitar(forca, 0, 1);
       disco.throwAt(g.playerPosition(), g.playerFacing(), dist);
+      g.som('lancar');
       fase = 'voando-pra-ele';
     };
 
@@ -573,6 +576,7 @@ export const villaLobos: SceneDef = {
               ),
             );
             disco.throwToward(ele, alvo, RETORNO.erro, RETORNO.arco);
+            g.som('lancar');
             ultimoPosto = null; // ele volta a se postar assim que o disco for meu
             fase = 'voando-pra-mim';
           }
@@ -586,6 +590,7 @@ export const villaLobos: SceneDef = {
             disco.position.y < 2.3 &&
             Math.hypot(disco.position.x - ele.x, disco.position.z - ele.z) < 1.5;
           if (noAr) {
+            g.som('pegar');
             g.holdCompanion(eu.x, eu.z);
             ultimoPosto = null;
             disco.pickUp();
@@ -787,6 +792,7 @@ export const villaLobos: SceneDef = {
       x: -13, z: 11, radius: 2.6,
       label: 'Olhar o lago', icon: '🦆',
       onInteract: async (api) => {
+        api.som('pato');
         await api.say(['Que lago bonito... dá até vontade de pular'], RENAN.name);
         await api.say(['Então vamos! Hahahha'], ARI.name);
         await api.say(['NÃAAOOO'], RENAN.name);
@@ -851,6 +857,7 @@ export const villaLobos: SceneDef = {
           [A, 'Nunca pedimos diferente.'],
         ]);
         sorveteRestante = 50;
+        api.som('sorvete');
         api.toast('Morango e maracujá', '🍦');
         api.unlock({
           id: 'sorvete-villa',
@@ -942,6 +949,7 @@ export const villaLobos: SceneDef = {
         const velocidade = wheel.speed;
         wheel.speed = velocidade * 5; // a volta cenica dura ~12s, nao um minuto
         // os dois entram na mesma cabine, um de cada lado
+        api.som('sino'); // a sineta de "vai começar" antes de a cabine subir
         api.ridePlayer(cabine, new THREE.Vector3(-0.3, -0.34, 0), 0.55);
         api.rideCompanion(cabine, new THREE.Vector3(0.3, -0.34, 0), 0.55);
         api.focusCamera(cabine);

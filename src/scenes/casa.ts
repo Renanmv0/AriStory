@@ -239,6 +239,7 @@ export const casa: SceneDef = {
       highlight: tv,
       onInteract: async (g) => {
         ligarTv(!tvLigada);
+        if (tvLigada) g.som('tv');
         g.toast(tvLigada ? 'TV ligada' : 'TV desligada', '📺');
         if (tvLigada) await g.say(['Está passando Bo Burnham.']);
       },

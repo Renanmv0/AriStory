@@ -129,6 +129,20 @@ mostra o calção. A cena pede pelo campo `outfit` do `SceneDef`; o motor volta
 para `'normal'` a cada troca de cena e reaplica o traje quando você troca de
 personagem.
 
+## `audio/`
+
+Som 100% sintetizado — nenhum arquivo de áudio no repositório, mesma regra dos
+modelos. `nucleo.ts` tem os tijolos (`tom`, `chiado`), `efeitos.ts` guarda uma
+receita por ação, `musica.ts` é um sequenciador que escreve a trilha compasso a
+compasso (acordes maj7/m7, marimba na pentatônica, suingue) com um clima por
+cenário, e `Som.ts` é a fachada com mudo e volume.
+
+Duas coisas mandam no desenho: o navegador só libera áudio depois que a pessoa
+encosta na página (o `AudioContext` nasce no primeiro clique, e antes disso
+tocar som é um no-op), e todo agendamento usa o relógio do próprio
+`AudioContext` — som marcado por `requestAnimationFrame` engasga a cada quadro
+perdido. Detalhes e como criar som novo: `.claude/skills/aristory-som`.
+
 ## `ui/`
 
 DOM sobre o canvas, dentro de `#ui` com `pointer-events: none`. `Ui.ts` é a

@@ -1,4 +1,5 @@
 import type { SavedMemory } from '../core/SaveState';
+import type { SomNome } from '../audio/efeitos';
 
 /**
  * Toda a interface em DOM sobre o canvas. O jogo fala com a UI so por estes
@@ -35,6 +36,10 @@ export class Ui {
   onTouchHold: ((down: boolean) => void) | null = null;
   /** o jogador confirmou "recomecar do zero" no menu */
   onRestart: (() => void) | null = null;
+  /** ligar/desligar o som pelo menu */
+  onToggleSom: (() => void) | null = null;
+  /** a UI pede sons por aqui; o Game liga isto no motor de audio */
+  som: ((nome: SomNome) => void) | null = null;
 
   private hintsTimer: number | null = null;
 
@@ -64,6 +69,7 @@ export class Ui {
       <div class="menu"><div class="sheet">
         <h2>AriStory</h2>
         <p class="sub">um passeio pelos lugares da gente</p>
+        <button class="som-btn">🔊 Som ligado</button>
         <button class="recomecar">🔄 Recomeçar o jogo</button>
         <div class="confirma">
           <p>Isso apaga o diário de memórias e leva os dois de volta pro começo, na casa do Ari.</p>
@@ -129,6 +135,7 @@ export class Ui {
     // menu: o "recomeçar" pede confirmação antes, senão um clique sem querer
     // apaga o diário inteiro
     ui.querySelector('.menu-btn')!.addEventListener('click', () => this.toggleMenu());
+    ui.querySelector('.menu .som-btn')!.addEventListener('click', () => this.onToggleSom?.());
     ui.querySelector('.menu .close')!.addEventListener('click', () => this.closeMenu());
     ui.querySelector('.menu .recomecar')!.addEventListener('click', () => {
       this.menu.classList.add('perguntando');
@@ -155,6 +162,7 @@ export class Ui {
   }
 
   toggleMenu(): void {
+    this.som?.('menu');
     if (this.menuOpen) this.closeMenu();
     else {
       this.closeJournal();
@@ -165,6 +173,13 @@ export class Ui {
   closeMenu(): void {
     this.menu.classList.remove('show');
     this.menu.classList.remove('perguntando');
+  }
+
+  /** Atualiza o botão de som do menu. */
+  setSom(ligado: boolean): void {
+    const botao = this.menu.querySelector('.som-btn')!;
+    botao.textContent = ligado ? '🔊 Som ligado' : '🔇 Som desligado';
+    botao.classList.toggle('desligado', !ligado);
   }
 
   /** Mostra as teclas de novo e recomeça a contagem para elas sumirem. */
@@ -196,8 +211,11 @@ export class Ui {
 
   // ---------------------------------------------------------------- prompt
   showPrompt(icon: string, label: string): void {
+    const antes = this.prompt.querySelector('.label')!.textContent;
     this.prompt.querySelector('.icon')!.textContent = icon;
     this.prompt.querySelector('.label')!.textContent = label;
+    // a gotinha toca quando o prompt entra ou troca de alvo, não a cada quadro
+    if (!this.prompt.classList.contains('show') || antes !== label) this.som?.('prompt');
     this.prompt.classList.add('show');
   }
 
@@ -272,6 +290,8 @@ export class Ui {
     let n = 0;
     this.typing = window.setInterval(() => {
       n += 1;
+      // uma nota a cada três letras: uma por letra vira metralhadora
+      if (n % 3 === 1 && text[n - 1] !== ' ') this.som?.('fala');
       this.dialogueText.textContent = text.slice(0, n);
       if (n >= text.length) {
         window.clearInterval(this.typing!);
@@ -295,6 +315,7 @@ export class Ui {
       this.escolhas.innerHTML = '';
       this.selecionada = 0;
       this.escolher = (i: number) => {
+        this.som?.('confirma');
         this.escolher = null;
         this.advance = null;
         this.escolhas.innerHTML = '';
@@ -330,9 +351,11 @@ export class Ui {
     if (total === 0) return;
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
       this.selecionada = (this.selecionada - 1 + total) % total;
+      this.som?.('escolha');
       this.marcarEscolha();
     } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
       this.selecionada = (this.selecionada + 1) % total;
+      this.som?.('escolha');
       this.marcarEscolha();
     }
   };
@@ -368,6 +391,7 @@ export class Ui {
   }
 
   toggleJournal(): void {
+    this.som?.('diario');
     if (this.journalOpen) this.closeJournal();
     else this.journal.classList.add('show');
   }
