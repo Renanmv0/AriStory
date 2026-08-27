@@ -50,13 +50,18 @@ Os personagens são **fichas**, não modelos. Para mudar alguém, edite
 
 Podem ser combinados: `accessories: ['presilha', 'laco', 'cinto']`.
 
-## Cabelo grande e a câmera
+## Cabelo e a câmera de cima
 
-A câmera olha de cima, então cabelo volumoso tapa o rosto num piscar de olhos.
-O rig se defende de dois jeitos — mantenha os dois se mexer num estilo:
+A câmera olha de cima, então cabelo adiantado projeta para baixo na tela. Dá
+para errar para os dois lados: cachos muito à frente **tapam os olhos**, e uma
+janela larga demais na calota deixa a testa nua — o personagem fica com cara de
+**careca**. O equilíbrio está em três peças:
 
-1. a calota base tem uma janela aberta na frente (parâmetro `abertura` do `cap`);
-2. os cachos frontais abaixo da testa são pulados, e o volume cresce para trás.
+1. a `abertura` da calota entre 1,15 e 1,3 (larga o bastante para os olhos);
+2. uma **franja** em `y ≈ 0.62`, `z ≈ 0.62` fechando a linha do cabelo;
+3. os cachos frontais descartados quando `y < 0.72 && z > 0.24`.
+
+Confira sempre girando a câmera, não só de frente.
 
 ## Como ajustar olhando
 

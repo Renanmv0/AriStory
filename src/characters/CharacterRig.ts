@@ -342,14 +342,19 @@ export class CharacterRig {
         // definido em vez da juba redonda.
         const vol = this.spec.hair.volume ?? 1;
         const pontas = this.spec.hair.tips !== undefined ? toon(this.spec.hair.tips) : mat;
-        const base = cap(1.0, headR * 0.02, 0.58, 1.25);
-        base.scale.set(1.02, 0.94, 1.02);
+        // A janela da calota tem que ser larga o bastante para os olhos (que
+        // ficam a ~21 graus do eixo da frente) e estreita o bastante para nao
+        // sobrar couro cabeludo acima da sobrancelha. Quem fecha a testa e a
+        // franja, logo abaixo.
+        const base = cap(1.0, headR * 0.02, 0.64, 1.15);
+        base.scale.set(1.02, 0.96, 1.02);
 
         // [angulo polar, quantos cachos, raio do cacho, raio da casca]
         const camadas: Array<[number, number, number, number]> = [
           [0.26, 6, 0.3, 0.98],
           [0.62, 10, 0.27, 1.02],
-          [0.98, 12, 0.23, 1.02],
+          [0.98, 12, 0.24, 1.02],
+          [1.28, 12, 0.2, 1.0],
         ];
 
         let n = 0;
@@ -359,26 +364,43 @@ export class CharacterRig {
             const x = Math.sin(theta) * Math.cos(phi);
             const y = Math.cos(theta);
             const z = Math.sin(theta) * Math.sin(phi);
-            if (theta > 0.8 && z > 0.3) continue; // rosto livre
+            // a camera olha de cima: cacho adiantado projeta para BAIXO na
+            // tela. So passa da metade da cabeca para a frente quem estiver
+            // bem alto — mesmo limite que o 'cacheado' usa.
+            if (y < 0.72 && z > 0.24) continue;
             const curl = new THREE.Mesh(
               new THREE.SphereGeometry(headR * rCacho * (1 + (vol - 1) * 0.4), 8, 7),
               n % 5 === 0 ? pontas : mat,
             );
             const casca = rCasca * (1 + (vol - 1) * 0.14);
-            const frente = z > 0 ? 0.86 : 1.02;
+            const frente = z > 0 ? 0.9 : 1.02;
             curl.position.set(x * headR * casca, y * headR * casca, z * headR * casca * frente);
             this.head.add(curl);
             n++;
           }
         }
 
-        // topete: um tufo puxado para cima e para tras, bem na frente do topo
+        // linha do cabelo: fecha a testa logo acima das sobrancelhas
+        for (let i = 0; i < 5; i++) {
+          const franja = new THREE.Mesh(
+            new THREE.SphereGeometry(headR * 0.2 * (1 + (vol - 1) * 0.3), 8, 7),
+            i === 2 ? pontas : mat,
+          );
+          franja.position.set(
+            (i - 2) * headR * 0.3,
+            headR * (0.62 - (i % 2) * 0.07),
+            headR * 0.62,
+          );
+          this.head.add(franja);
+        }
+
+        // topete: puxado para cima e para tras, encostando na franja
         for (let i = 0; i < 3; i++) {
           const tufo = new THREE.Mesh(
             new THREE.SphereGeometry(headR * 0.24 * (1 + (vol - 1) * 0.4), 8, 7),
             i === 1 ? pontas : mat,
           );
-          tufo.position.set((i - 1) * headR * 0.32, headR * (0.86 + (i % 2) * 0.08), headR * 0.34);
+          tufo.position.set((i - 1) * headR * 0.3, headR * (0.84 + (i % 2) * 0.07), headR * 0.44);
           this.head.add(tufo);
         }
 

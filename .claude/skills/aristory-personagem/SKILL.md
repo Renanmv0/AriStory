@@ -54,15 +54,30 @@ correntinha de estrela)
 `accessoryColor` vale para óculos, boné, fone, mochila, corrente, laço e cinto.
 A presilha é sempre creme.
 
-### Cuidado com cabelo volumoso
+### Cabelo: a régua da câmera isométrica
 
-A câmera olha de cima: cabelo grande tapa o rosto com facilidade. Duas defesas
-já embutidas no rig, mexa nelas se criar um estilo novo:
+A câmera olha de cima em 34°, então **cacho adiantado projeta para BAIXO na
+tela**. Isso cria duas falhas opostas, e as duas já aconteceram neste projeto:
 
-- a calota base tem uma **janela na frente** (`cap(escala, y, desce, abertura)`);
-  sem abertura ela é uma esfera inteira e cobre os olhos;
-- os cachos com `theta > 0.72` e `z > 0.22` são pulados, e o volume cresce
-  para trás (`frente = 0.78`), não para cima da cara.
+| falha | causa | conserto |
+|---|---|---|
+| tapa os olhos | franja/cachos muito à frente ou muito baixos | subir o `y`, recuar o `z` |
+| **parece careca** | janela da calota larga demais e nada preenchendo a testa | estreitar a `abertura` e **acrescentar franja** |
+
+Números que funcionam (use como ponto de partida, em múltiplos de `headR`):
+
+- **abertura da calota**: entre `1.15` e `1.3`. Menos que ~`0.9` a borda corta o
+  canto dos olhos, que ficam a ~21° do eixo da frente. Mais que `1.4` deixa
+  testa nua.
+- **franja**: `y ≈ 0.62`, `z ≈ 0.62`, raio `≈ 0.20`. É ela que fecha a linha do
+  cabelo — a calota sozinha não fecha.
+- **corte dos cachos frontais**: descartar quando `y < 0.72 && z > 0.24`. Repare
+  que o corte olha a **altura**, não o ângulo polar.
+- o volume cresce para trás (`frente ≈ 0.78–0.9` multiplicando o `z`), nunca
+  para cima do rosto.
+
+**Sempre confira de vários ângulos.** `scripts/retrato.mjs` fotografa de frente
+e girando; uma falha no topo ou na nuca só aparece girando a câmera.
 
 Toda mudança de cabelo **precisa** de uma foto de retrato antes de ser dada
 como pronta: `node scripts/retrato.mjs /tmp/ari` e olhe `/tmp/ari-frente.png`.
