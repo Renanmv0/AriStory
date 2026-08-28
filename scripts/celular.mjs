@@ -88,7 +88,7 @@ console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 const opacidade = Number(/[\d.]+\)$/.exec(visual.fundo)?.[0]?.replace(')', '') ?? '1');
 const ok =
   !erros.length &&
-  botoes === 3 &&
+  botoes === 4 && // ✨ 🔁 🎒 📖
   visual.largura <= 64 &&
   opacidade <= 0.7 && // translúcido, não opaco
   noPrompt === 0 &&

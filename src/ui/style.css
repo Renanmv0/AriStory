@@ -258,6 +258,108 @@ body.touch-device .hints .toque { display: block; }
   cursor: pointer;
 }
 
+/* -------------------------------------------------------------- mochila */
+/* Vidro fosco em vez do véu escuro do diário: a mochila é para consultar
+   DURANTE o passeio, e ver o cenário atrás dela é metade da graça. */
+.mochila {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(53, 48, 74, 0.28);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.mochila.show { opacity: 1; pointer-events: auto; }
+.mochila .sheet {
+  width: min(560px, calc(100% - 32px));
+  max-height: 82vh;
+  overflow: auto;
+  padding: 22px;
+  border-radius: 22px;
+  background: rgba(255, 250, 242, 0.88);
+  box-shadow: var(--shadow);
+}
+.mochila h2 { margin: 0 0 2px; font-size: 24px; }
+.mochila .sub { margin: 0 0 16px; color: var(--ink-soft); font-weight: 700; }
+.mochila h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+.mochila h3 small {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+  opacity: 0.75;
+  margin-left: 6px;
+}
+.mochila .slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.mochila .slot {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border: 2px dashed rgba(106, 99, 130, 0.35);
+  border-radius: 14px;
+  background: rgba(255, 242, 224, 0.5);
+  font: inherit;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.mochila .slot .icone { font-size: 24px; line-height: 1.1; }
+.mochila .slot .icone.vazio { opacity: 0.35; }
+.mochila .slot b { font-size: 12px; font-weight: 800; text-align: center; }
+.mochila .slot small { font-size: 11px; font-weight: 700; opacity: 0.75; text-align: center; }
+.mochila .slot.cheio {
+  border-style: solid;
+  border-color: rgba(226, 85, 124, 0.35);
+  background: var(--paper);
+  color: var(--ink);
+}
+.mochila .slot:hover { transform: translateY(-2px); }
+/* o slot principal é o que está DE FATO na mão: anel cheio e uma etiqueta,
+   porque só a cor não sobrevive a quem não distingue rosa de bege */
+.mochila .slot.principal {
+  border-color: var(--accent-deep);
+  background: var(--paper);
+  box-shadow: 0 0 0 3px rgba(255, 122, 156, 0.35);
+}
+.mochila .slot.principal::after {
+  content: 'na mão';
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: var(--accent-deep);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.mochila .vestiveis .slot { cursor: default; }
+.mochila .vestiveis .slot:hover { transform: none; }
+.mochila .close {
+  margin-top: 4px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 /* --------------------------------------------------------------- placar */
 .placar {
   position: absolute;
@@ -449,7 +551,10 @@ body.tela-aberta .touch { display: none; }
 }
 .touch button:active { background: rgba(255, 250, 242, 0.9); }
 .touch button.swap-btn { right: 18px; bottom: 96px; width: 46px; height: 46px; font-size: 19px; }
-.touch button.journal-btn { right: 18px; bottom: 150px; width: 40px; height: 40px; font-size: 16px; }
+/* A pilha sobe pela direita, e CADA botão precisa da sua altura: sem uma
+   regra própria ele cai no `bottom: 26px` da base e senta em cima do ✨. */
+.touch button.bag-btn { right: 18px; bottom: 150px; width: 40px; height: 40px; font-size: 16px; }
+.touch button.journal-btn { right: 18px; bottom: 198px; width: 40px; height: 40px; font-size: 16px; }
 
 /* corredor livre à direita: o texto e os botões de escolha nunca correm por
    baixo dos botões redondos */

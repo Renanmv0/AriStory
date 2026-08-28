@@ -86,6 +86,29 @@ export interface InteractableDef {
   onInteract(g: GameAPI): void | Promise<void>;
 }
 
+/**
+ * Uma coisa que da para carregar ou vestir.
+ *
+ * O `icone` e um EMOJI, nao um arquivo — a regra de zero asset externo vale
+ * aqui igual: nada de .png de item. Quando um item ganhar corpo no mundo, o
+ * modelo vem de `world/props.ts` como qualquer outra peca, e o emoji continua
+ * sendo o rosto dele no painel.
+ */
+export interface ItemDef {
+  id: string;
+  nome: string;
+  /** emoji, sempre — ver o comentario acima */
+  icone: string;
+  /**
+   * Onde ele mora: `mao` ocupa uma das 5 vagas da mochila, `vestivel` ocupa
+   * uma das 4 de acessorio. E o proprio item que diz, para ninguem precisar
+   * decorar em qual lista cada coisa entra.
+   */
+  tipo: 'mao' | 'vestivel';
+  /** linha curta que o painel mostra ao passar o olho */
+  nota?: string;
+}
+
 export interface Memory {
   id: string;
   title: string;
@@ -131,6 +154,25 @@ export interface GameAPI {
   stat(key: string): number;
   /** desbloqueia uma memoria no diario */
   unlock(memory: Memory): void;
+
+  // --------------------------------------------------------- mochila
+  /** Guarda um item. Falso se ja tinha esse id ou se nao sobrou vaga. */
+  addItem(item: ItemDef): boolean;
+  /** Tira um item da mochila ou dos acessorios, onde quer que ele esteja. */
+  removeItem(id: string): boolean;
+  hasItem(id: string): boolean;
+  /** O que esta DE FATO na mao: o item do slot principal, ou null. */
+  getActiveHandItem(): ItemDef | null;
+  /** Escolhe qual das 5 vagas e a principal. */
+  setActiveHandSlot(indice: number): void;
+  activeHandSlot(): number;
+  /** Veste um acessorio. Sem `slot`, entra na primeira vaga livre. */
+  equipWearable(item: ItemDef, slot?: number): boolean;
+  unequipWearable(slot: number): void;
+  /** As 5 vagas da mochila, na ordem da tela; null e vaga vazia. */
+  handItems(): ReadonlyArray<ItemDef | null>;
+  /** As 4 vagas de acessorio, na ordem da tela. */
+  wearables(): ReadonlyArray<ItemDef | null>;
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */
   keyPressed(code: string): boolean;

@@ -138,4 +138,4 @@ export class Input {
 }
 
 const MOVEMENT_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
-const ACTION_KEYS = new Set(['Space', 'KeyE', 'KeyQ', 'KeyR', 'KeyJ', 'KeyT', 'KeyF', 'KeyH']);
+const ACTION_KEYS = new Set(['Space', 'KeyE', 'KeyQ', 'KeyR', 'KeyJ', 'KeyT', 'KeyF', 'KeyH', 'KeyI', 'Tab']);

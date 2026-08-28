@@ -13,7 +13,7 @@ import type { SomNome } from '../audio/efeitos';
 import { CharacterRig } from '../characters/CharacterRig';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
-import type { GameAPI, Memory, SceneAmbient, SceneDef } from './types';
+import type { GameAPI, ItemDef, Memory, SceneAmbient, SceneDef } from './types';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -78,6 +78,8 @@ export class Game implements GameAPI {
     this.ui.setMemories(this.save.memories);
     this.ui.onTouchAction = () => this.input.tapAction();
     this.ui.onTouchSwap = () => this.input.tapSwap();
+    // clique numa vaga da mochila escolhe qual item fica na mao
+    this.ui.onEscolherSlot = (i) => this.setActiveHandSlot(i);
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
     this.ui.onRestart = () => this.restart();
     this.ui.som = (nome) => this.audio.play(nome);
@@ -260,10 +262,23 @@ export class Game implements GameAPI {
     if (!world) return;
 
     // ------------------------------------------------------------ entrada
-    const busy = this.ui.dialogueOpen || this.ui.journalOpen || this.ui.menuOpen || this.transitioning;
+    const busy =
+      this.ui.dialogueOpen ||
+      this.ui.journalOpen ||
+      this.ui.menuOpen ||
+      this.ui.mochilaOpen ||
+      this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
     if (this.input.justPressed('KeyJ') && !this.ui.menuOpen) this.ui.toggleJournal();
+    if (
+      (this.input.justPressed('KeyI') || this.input.justPressed('Tab')) &&
+      !this.ui.menuOpen &&
+      !this.ui.dialogueOpen
+    ) {
+      if (this.ui.mochilaOpen) this.ui.closeMochila();
+      else this.abrirMochila();
+    }
     if (!busy && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
     if (!busy) {
       if (this.input.justPressed('KeyQ')) this.iso.rotate(-1);
@@ -498,6 +513,71 @@ export class Game implements GameAPI {
 
   stat(key: string): number {
     return this.save.stat(key);
+  }
+
+  // --------------------------------------------------------------- mochila
+  // O motor so guarda e devolve; nenhum item FAZ nada ainda. Quando fizer,
+  // quem age e a cena ou a mecanica, lendo `getActiveHandItem()`.
+
+  addItem(item: ItemDef): boolean {
+    const entrou = this.save.guardar(item);
+    if (entrou) this.repintarMochila();
+    return entrou;
+  }
+
+  removeItem(id: string): boolean {
+    const saiu = this.save.largar(id);
+    if (saiu) this.repintarMochila();
+    return saiu;
+  }
+
+  hasItem(id: string): boolean {
+    return this.save.achouItem(id);
+  }
+
+  getActiveHandItem(): ItemDef | null {
+    return this.save.itemAtivo;
+  }
+
+  setActiveHandSlot(indice: number): void {
+    this.save.slotAtivo = indice;
+    this.repintarMochila();
+  }
+
+  activeHandSlot(): number {
+    return this.save.slotAtivo;
+  }
+
+  equipWearable(item: ItemDef, slot?: number): boolean {
+    const vestiu = this.save.vestir(item, slot);
+    if (vestiu) this.repintarMochila();
+    return vestiu;
+  }
+
+  unequipWearable(slot: number): void {
+    this.save.despir(slot);
+    this.repintarMochila();
+  }
+
+  handItems(): ReadonlyArray<ItemDef | null> {
+    return this.save.maos;
+  }
+
+  wearables(): ReadonlyArray<ItemDef | null> {
+    return this.save.vestiveis;
+  }
+
+  /** Redesenha as vagas. So custa alguma coisa com o painel aberto. */
+  private repintarMochila(): void {
+    if (!this.ui.mochilaOpen) return;
+    this.ui.renderMochila(this.save.maos, this.save.vestiveis, this.save.slotAtivo);
+  }
+
+  private abrirMochila(): void {
+    // pinta ANTES de abrir: painel que aparece vazio e depois se preenche
+    // pisca feio
+    this.ui.renderMochila(this.save.maos, this.save.vestiveis, this.save.slotAtivo);
+    this.ui.toggleMochila();
   }
 
   unlock(memory: Memory): void {

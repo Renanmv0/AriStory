@@ -56,6 +56,7 @@ node scripts/parque.mjs  /tmp/pq    # praca da roda, cupula e margem do lago
 node scripts/pingpong.mjs /tmp/pp   # a partida de ping pong ate o quinto ponto
 node scripts/maos.mjs    /tmp/mao   # de maos dadas: emparelhados e o coracao
 node scripts/suco.mjs    /tmp/su    # os sucos do clube: cada sabor com o seu dono
+node scripts/mochila.mjs /tmp/mo    # as 9 vagas, o slot principal e o F5
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

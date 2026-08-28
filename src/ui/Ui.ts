@@ -1,4 +1,5 @@
 import type { SavedMemory } from '../core/SaveState';
+import type { ItemDef } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 
 /**
@@ -22,6 +23,9 @@ export class Ui {
   private readonly carga: HTMLDivElement;
   private readonly menu: HTMLDivElement;
   private readonly placar: HTMLDivElement;
+  private readonly mochila: HTMLDivElement;
+  private readonly slotsMao: HTMLDivElement;
+  private readonly slotsVestivel: HTMLDivElement;
 
   private advance: (() => void) | null = null;
   private escolher: ((i: number) => void) | null = null;
@@ -91,6 +95,7 @@ export class Ui {
             <li><b>T</b><span>trocar de personagem</span></li>
             <li><b>Q</b> <b>R</b><span>girar a câmera</span></li>
             <li><b>H</b><span>dar a mão para quem está com você</span></li>
+            <li><b>I</b> <b>Tab</b><span>abrir a mochila</span></li>
             <li><b>J</b><span>abrir o diário de memórias</span></li>
             <li><b>F</b><span>segurar para lançar o frisbee, na quadra</span></li>
             <li><b>roda</b><span>aproximar e afastar a câmera</span></li>
@@ -100,6 +105,7 @@ export class Ui {
             <li><b>arrastar</b><span>andar para onde o dedo puxar</span></li>
             <li><b>✨</b><span>interagir — segure para carregar o frisbee</span></li>
             <li><b>🔁</b><span>trocar de personagem</span></li>
+            <li><b>🎒</b><span>abrir a mochila</span></li>
             <li><b>📖</b><span>abrir o diário</span></li>
           </ul>
           <div class="carinho">
@@ -115,9 +121,19 @@ export class Ui {
         </div>
         <button class="close">voltar pro jogo</button>
       </div></div>
+      <div class="mochila"><div class="sheet">
+        <h2>Mochila</h2>
+        <p class="sub">o que a gente carrega</p>
+        <h3>Na mão <small>toque para escolher o que fica na mão</small></h3>
+        <div class="slots maos"></div>
+        <h3>Vestindo</h3>
+        <div class="slots vestiveis"></div>
+        <button class="close">voltar pro jogo</button>
+      </div></div>
       <div class="touch">
         <button class="action-btn" aria-label="interagir">✨</button>
         <button class="swap-btn" aria-label="trocar de personagem">🔁</button>
+        <button class="bag-btn" aria-label="mochila">🎒</button>
         <button class="journal-btn" aria-label="diário">📖</button>
       </div>
     `;
@@ -144,6 +160,9 @@ export class Ui {
     this.carga = ui.querySelector('.carga')!;
     this.menu = ui.querySelector('.menu')!;
     this.placar = ui.querySelector('.placar')!;
+    this.mochila = ui.querySelector('.mochila')!;
+    this.slotsMao = ui.querySelector('.mochila .maos')!;
+    this.slotsVestivel = ui.querySelector('.mochila .vestiveis')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -167,6 +186,19 @@ export class Ui {
     }
     ui.querySelector('.swap-btn')!.addEventListener('click', () => this.onTouchSwap?.());
     ui.querySelector('.journal-btn')!.addEventListener('click', () => this.toggleJournal());
+    ui.querySelector('.bag-btn')!.addEventListener('click', () => this.toggleMochila());
+    ui.querySelector('.mochila .close')!.addEventListener('click', () => this.closeMochila());
+    this.mochila.addEventListener('click', (e) => {
+      if (e.target === this.mochila) this.closeMochila();
+    });
+    // delegação: as vagas são redesenhadas a cada abertura, então o ouvinte
+    // fica no pai e não em cada botão
+    this.slotsMao.addEventListener('click', (e) => {
+      const vaga = (e.target as HTMLElement).closest('.slot') as HTMLElement | null;
+      if (!vaga?.dataset.slot) return;
+      this.som?.('escolha');
+      this.onEscolherSlot?.(Number(vaga.dataset.slot));
+    });
 
     // menu: o "recomeçar" pede confirmação antes, senão um clique sem querer
     // apaga o diário inteiro
@@ -210,6 +242,7 @@ export class Ui {
     if (this.menuOpen) this.closeMenu();
     else {
       this.closeJournal();
+      this.closeMochila();
       this.menu.classList.add('show');
     }
     this.marcarTelaAberta();
@@ -227,7 +260,10 @@ export class Ui {
    * painel (vêm depois no DOM) e dava para apertar o ✨ sem querer por trás.
    */
   private marcarTelaAberta(): void {
-    document.body.classList.toggle('tela-aberta', this.menuOpen || this.journalOpen);
+    document.body.classList.toggle(
+      'tela-aberta',
+      this.menuOpen || this.journalOpen || this.mochilaOpen,
+    );
   }
 
   /** Atualiza o botão de som do menu. */
@@ -460,7 +496,10 @@ export class Ui {
   toggleJournal(): void {
     this.som?.('diario');
     if (this.journalOpen) this.closeJournal();
-    else this.journal.classList.add('show');
+    else {
+      this.closeMochila();
+      this.journal.classList.add('show');
+    }
     this.marcarTelaAberta();
   }
 
@@ -468,4 +507,64 @@ export class Ui {
     this.journal.classList.remove('show');
     this.marcarTelaAberta();
   }
+
+  // -------------------------------------------------------------- mochila
+
+  get mochilaOpen(): boolean {
+    return this.mochila.classList.contains('show');
+  }
+
+  toggleMochila(): void {
+    this.som?.('diario');
+    if (this.mochilaOpen) this.closeMochila();
+    else {
+      this.closeJournal();
+      this.mochila.classList.add('show');
+    }
+    this.marcarTelaAberta();
+  }
+
+  closeMochila(): void {
+    this.mochila.classList.remove('show');
+    this.marcarTelaAberta();
+  }
+
+  /**
+   * Desenha as 9 vagas. Cada vaga existe SEMPRE, cheia ou vazia: a grade
+   * parada e o que faz a mochila ser lida de relance, e e o que da endereco
+   * fixo ao slot principal.
+   *
+   * @param ativo indice da vaga de mao que esta na mao
+   */
+  renderMochila(
+    maos: ReadonlyArray<ItemDef | null>,
+    vestiveis: ReadonlyArray<ItemDef | null>,
+    ativo: number,
+  ): void {
+    const desenhar = (
+      onde: HTMLElement,
+      vagas: ReadonlyArray<ItemDef | null>,
+      principal: number,
+    ): void => {
+      onde.innerHTML = '';
+      vagas.forEach((item, i) => {
+        const vaga = document.createElement('button');
+        vaga.className = 'slot';
+        vaga.dataset.slot = String(i);
+        vaga.classList.toggle('cheio', item !== null);
+        vaga.classList.toggle('principal', i === principal);
+        vaga.innerHTML = item
+          ? `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
+            (item.nota ? `<small>${item.nota}</small>` : '')
+          : `<span class="icone vazio">·</span><b>vazio</b>`;
+        onde.appendChild(vaga);
+      });
+    };
+    desenhar(this.slotsMao, maos, ativo);
+    // acessorio nao tem "principal": vestido e vestido
+    desenhar(this.slotsVestivel, vestiveis, -1);
+  }
+
+  /** Clique numa vaga da mão: quem decide o que fazer é o Game. */
+  onEscolherSlot: ((indice: number) => void) | null = null;
 }
