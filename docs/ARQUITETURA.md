@@ -121,6 +121,33 @@ Quem não intercepta corre atrás: o disco cai atrás dele, de propósito.
 quadro a quadro e reprova se ele voltar rente ao chão ou se o parceiro andar com
 o disco na mão.
 
+### Minigame de ping pong
+
+`entities/PingPong.ts` guarda a partida inteira, e a decisão que a faz caber
+numa cabeça só é **viver em coordenada LOCAL da mesa**: o grupo do minigame
+entra como filho do `Object3D` da mesa, então o giro dela sai de graça e
+nenhuma conta usa seno ou cosseno. Dentro da mesa, `x` é o comprimento (a
+direção da bolinha), `y` a altura e `z` a largura; o jogador fica em `x`
+negativo e o parceiro em positivo.
+
+Três amarrações com o motor: `setCameraOmbro(de, para)` troca a isométrica por
+uma **perspectiva** parada (perspectiva de propósito — é a convergência das
+linhas que diz se a bolinha está perto ou longe, coisa que ortográfica não
+mostra); `pointer()` entrega a posição do mouse ou do dedo em -1..1, e é ela
+que move a raquete; e `showPlacar()` põe o placar no alto da tela.
+
+O parceiro persegue o `z` da bolinha com atraso e com um erro sorteado a cada
+troca — é o atraso que o faz errar, perseguição instantânea seria uma parede.
+O prêmio é o chapéu de campeão, que vive no **rig** (viaja junto quando o `T`
+troca os corpos) e é ligado por `aplicarPremios()` a partir da flag
+`chapeu-ping-pong:<id>`.
+
+Três coisas que a foto cobrou: câmera na altura dos olhos deixa a juba do Ari
+tapando a mesa inteira (a câmera subiu e o corpo de quem joga fica invisível
+durante a partida); mirar no parceiro em vez de no meio da mesa joga a mesa
+para fora do quadro; e girar a raquete em `z` só roda o cabo e deixa o disco
+de perfil — quem vira a face para o eixo da bolinha é `rotation.y`.
+
 ### Roupa
 
 `rig.setOutfit('banho')` troca materiais registrados no construtor (camiseta e

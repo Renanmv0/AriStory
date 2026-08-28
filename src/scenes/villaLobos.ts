@@ -3,6 +3,7 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
 import { Frisbee } from '../entities/Frisbee';
+import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
   bench, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
   cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
@@ -296,6 +297,8 @@ export const villaLobos: SceneDef = {
 
     w.add(w.place(mesaPing, PING.x, 0, PING.z, PING.giro));
     w.blockBox(PING.x, PING.z, 1.45, 0.85, PING.giro);
+    // as raquetes e a bolinha de enfeite somem quando a partida começa
+    const enfeitesPing = [raqueteA, raqueteB, bolinha];
 
     // sorveteria
     // balcão virado para +Z: assim quem compra fica na frente do quiosque na
@@ -926,6 +929,132 @@ export const villaLobos: SceneDef = {
         g.toast('Acabou o sorvete', '🍦');
       }
     });
+
+    // ------------------------------------------------------- ping pong
+    /**
+     * A partida roda inteira em coordenada LOCAL da mesa (ver PingPong.ts): o
+     * grupo do minigame entra como filho da mesa, então o giro dela sai de
+     * graça e nenhuma conta aqui precisa de seno e cosseno.
+     */
+    const partida = new PingPong(5);
+    partida.guardar();
+    mesaPing.add(partida.grupo);
+    partida.onSom = (nome) => g.som(nome);
+    // pendurada na mesa para scripts/pingpong.mjs conseguir ler o placar e a
+    // posição da bolinha de fora — mesmo espírito do `window.jogo`
+    mesaPing.userData.pingpong = partida;
+
+    /** ponto do mundo a partir de coordenada local da mesa */
+    const naMesa = (x: number, z: number): THREE.Vector3 => {
+      const v = new THREE.Vector3(x, 0, z);
+      mesaPing.localToWorld(v);
+      return v;
+    };
+
+    let jogando = false;
+    const LADO = MESA_PING.plano + 0.55; // onde cada um fica de pé
+
+    const encerrarPing = (): void => {
+      jogando = false;
+      partida.guardar();
+      for (const e of enfeitesPing) e.visible = true;
+      g.showPlacar(null);
+      g.setCameraOmbro(null);
+      g.setPlayerVisible(true);
+      g.lockPlayer(false);
+      g.freeCompanion();
+    };
+
+    w.onUpdate((dt) => {
+      if (!jogando) return;
+      partida.update(dt, g.pointer());
+      // o update pode ter terminado a partida (onFim → encerrarPing), e aí o
+      // placar já foi escondido: pintar de novo aqui o traria de volta na tela
+      if (!jogando) return;
+      g.showPlacar({
+        eu: g.playerName(),
+        ele: g.companionName(),
+        meus: partida.meus,
+        dele: partida.dele,
+      });
+    });
+
+    w.interact({
+      id: 'parque:pingpong',
+      x: PING.x, z: PING.z, radius: 2.6,
+      label: 'Jogar ping pong', icon: '🏓',
+      highlight: mesaPing,
+      onInteract: async (api) => {
+        if (jogando) return;
+        await conversa([
+          [A, 'Cinco pontos?'],
+          [R, 'Cinco pontos. E o perdedor carrega a bolsa até em casa.'],
+        ]);
+
+        // cada um de um lado, olhando para o outro
+        const meu = naMesa(-LADO, 0);
+        const dele = naMesa(LADO, 0);
+        api.releasePlayer(meu.x, meu.z, Math.atan2(dele.x - meu.x, dele.z - meu.z));
+        api.releaseCompanion(dele.x, dele.z, Math.atan2(meu.x - dele.x, meu.z - dele.z));
+        api.holdCompanion(meu.x, meu.z);
+        api.lockPlayer(true);
+
+        // Falsa primeira pessoa: atrás e ACIMA da cabeça, olhando para o
+        // centro da mesa. Duas correções que a foto cobrou: câmera na altura
+        // dos olhos deixa a juba do Ari tapando metade da tela, e mirar no
+        // parceiro (que está longe) joga a mesa para fora do quadro — o alvo
+        // certo é o meio da mesa.
+        const atras = naMesa(-LADO - 1.6, 0);
+        const meio = naMesa(0, 0);
+        api.setCameraOmbro(
+          new THREE.Vector3(atras.x, 2.35, atras.z),
+          new THREE.Vector3(meio.x, 0.9, meio.z),
+        );
+        // O corpo de quem joga sai de cena: é primeira pessoa, e a juba do Ari
+        // tapa a mesa inteira e a própria raquete se ficar na frente da câmera.
+        // Quem continua em cena é o parceiro, do outro lado.
+        api.setPlayerVisible(false);
+
+        for (const e of enfeitesPing) e.visible = false;
+        partida.comecar();
+        jogando = true;
+        api.toast('Mexa o mouse para mover a raquete', '🏓');
+      },
+    });
+
+    partida.onPonto = (meu) => {
+      g.som(meu ? 'confirma' : 'quicar');
+    };
+
+    partida.onFim = (ganhei) => {
+      void (async () => {
+        encerrarPing();
+        if (ganhei) {
+          g.som('memoria');
+          g.toast('Campeão de ping pong!', '🏆');
+          // o chapéu é do personagem que estava jogando, não do "slot"
+          g.setFlag('chapeu-ping-pong');
+          g.setFlag(`chapeu-ping-pong:${g.playerId()}`);
+          g.vestirPremios();
+          await conversa([
+            [A, 'Cinco a ' + partida.dele + '.'],
+            [R, 'Você ganhou o chapéu. Vai ter que usar.'],
+          ]);
+          g.unlock({
+            id: 'memoria-ping-pong',
+            title: 'A mesa do parque',
+            place: 'Parque Villa Lobos',
+            note: 'Cinco pontos e um chapéu ridículo de campeão. A gente joga mal, mas joga rindo.',
+            icon: '🏓',
+          });
+        } else {
+          await conversa([
+            [R, 'Cinco a ' + partida.meus + '. Revanche?'],
+            [A, 'Sempre revanche.'],
+          ]);
+        }
+      })();
+    };
 
     w.interact({
       id: 'parque:sorveteria',

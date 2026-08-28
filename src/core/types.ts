@@ -108,6 +108,16 @@ export interface GameAPI {
   goTo(sceneId: string, entry?: string): void;
   /** camera passa a seguir outro objeto; null volta pro jogador */
   focusCamera(target: THREE.Object3D | null): void;
+  /**
+   * Camera "por cima do ombro": perspectiva colocada em `de` olhando para
+   * `para`. Passar `null` devolve a isometrica de sempre. E o que o ping pong
+   * usa para virar uma falsa primeira pessoa.
+   */
+  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3): void;
+  /** posicao do ponteiro (mouse ou dedo) em -1..1, y para cima */
+  pointer(): { x: number; y: number };
+  /** placar do minigame; null esconde */
+  showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void;
   /** muda o enquadramento: valores maiores afastam a camera */
   setZoom(viewSize: number): void;
   /** trava/destrava o controle do jogador (usado em cutscenes) */
@@ -140,6 +150,10 @@ export interface GameAPI {
   // ------------------------------------------------------------- a dupla
   /** nome de quem esta sendo controlado agora */
   playerName(): string;
+  /** id da ficha de quem esta sendo controlado ('ari', 'renan') */
+  playerId(): string;
+  /** reaplica premios (chapeu de campeao) a partir das flags do save */
+  vestirPremios(): void;
   /** nome de quem esta acompanhando */
   companionName(): string;
   companionPosition(): THREE.Vector3;

@@ -21,6 +21,7 @@ export class Ui {
   private readonly escolhas: HTMLDivElement;
   private readonly carga: HTMLDivElement;
   private readonly menu: HTMLDivElement;
+  private readonly placar: HTMLDivElement;
 
   private advance: (() => void) | null = null;
   private escolher: ((i: number) => void) | null = null;
@@ -59,6 +60,7 @@ export class Ui {
         <div class="toque">☰ tem a lista de controles</div>
       </div>
       <div class="carga"><div class="barra"></div></div>
+      <div class="placar"><b class="eu"></b><span class="nums"></span><b class="ele"></b></div>
       <div class="prompt"><span class="icon">✨</span><span class="label"></span><span class="key">E</span></div>
       <div class="dialogue"><span class="who"></span><p class="text"></p><div class="escolhas"></div><span class="next">clique / E ▸</span></div>
       <div class="journal"><div class="sheet">
@@ -132,6 +134,7 @@ export class Ui {
     this.escolhas = ui.querySelector('.escolhas')!;
     this.carga = ui.querySelector('.carga')!;
     this.menu = ui.querySelector('.menu')!;
+    this.placar = ui.querySelector('.placar')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -264,6 +267,18 @@ export class Ui {
 
   hidePrompt(): void {
     this.prompt.classList.remove('show');
+  }
+
+  /** Placar do minigame, no alto da tela. `null` esconde. */
+  showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void {
+    if (!dados) {
+      this.placar.classList.remove('show');
+      return;
+    }
+    this.placar.querySelector('.eu')!.textContent = dados.eu;
+    this.placar.querySelector('.ele')!.textContent = dados.ele;
+    this.placar.querySelector('.nums')!.textContent = `${dados.meus} × ${dados.dele}`;
+    this.placar.classList.add('show');
   }
 
   /** Barra de forca do lancamento. `null` esconde. */

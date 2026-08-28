@@ -258,6 +258,34 @@ body.touch-device .hints .toque { display: block; }
   cursor: pointer;
 }
 
+/* --------------------------------------------------------------- placar */
+.placar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  font-weight: 800;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.placar.show { opacity: 1; transform: translate(-50%, 0); }
+.placar .nums {
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 19px;
+  letter-spacing: 0.03em;
+}
+.placar b { font-size: 14px; color: var(--ink-soft); }
+
 /* ----------------------------------------------------------------- menu */
 .menu-btn {
   position: absolute;

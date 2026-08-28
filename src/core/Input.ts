@@ -9,6 +9,8 @@ export class Input {
   private stickY = 0;
   private stickId: number | null = null;
   private stickOrigin = { x: 0, y: 0 };
+  /** ponteiro em coordenada de tela normalizada: -1..1, y para cima */
+  private ponteiro = { x: 0, y: 0 };
 
   /** true enquanto o dialogo/menu esta aberto: movimento e ignorado */
   blocked = false;
@@ -49,6 +51,12 @@ export class Input {
   };
 
   private onPointerMove = (e: PointerEvent): void => {
+    // a posição do ponteiro é anotada sempre, mouse ou dedo: quem usa é o
+    // minigame de ping pong, que move a raquete com ela
+    const r = this.surface.getBoundingClientRect();
+    this.ponteiro.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    this.ponteiro.y = 1 - ((e.clientY - r.top) / r.height) * 2;
+
     if (e.pointerId !== this.stickId) return;
     const max = 60;
     const dx = Math.max(-max, Math.min(max, e.clientX - this.stickOrigin.x));
@@ -63,6 +71,14 @@ export class Input {
     this.stickX = 0;
     this.stickY = 0;
   };
+
+  /**
+   * Onde o ponteiro está, em coordenada de tela: -1..1 nos dois eixos, com
+   * `y` para cima. Serve para mira contínua — no ping pong é a raquete.
+   */
+  pointer(): { x: number; y: number } {
+    return { x: this.ponteiro.x, y: this.ponteiro.y };
+  }
 
   /** Vetor de movimento na tela: x = direita, y = para cima da tela. */
   move(): { x: number; y: number } {

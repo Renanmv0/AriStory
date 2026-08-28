@@ -31,10 +31,12 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Som: música procedural com clima por cenário e um efeito para cada ação
 - [x] Interface de celular sem tapar texto, e tela de controles no menu
 - [x] Praça da roda gigante povoada, cúpula com estrutura e margem do lago viva
+- [x] Minigame de ping pong até 5 pontos, com chapéu de campeão de prêmio
 
 ## Próximos passos naturais
 
 ### Personagens
+- [ ] Mais prêmios vestíveis, no molde do chapéu de campeão
 - [ ] Expressões simples (feliz, surpreso, dormindo)
 - [ ] Mais roupas por cenário (casaco no frio, pijama em casa)
 - [ ] O parceiro reagir ao que você faz (comentar, aplaudir, entrar na água junto)

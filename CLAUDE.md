@@ -53,6 +53,7 @@ node scripts/audio.mjs             # o som acorda e cada acao dispara o seu efei
 node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para ouvir
 node scripts/celular.mjs /tmp/cel   # tela de celular: nenhum botao pode tapar texto
 node scripts/parque.mjs  /tmp/pq    # praca da roda, cupula e margem do lago
+node scripts/pingpong.mjs /tmp/pp   # a partida de ping pong ate o quinto ponto
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

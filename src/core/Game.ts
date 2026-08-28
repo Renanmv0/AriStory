@@ -53,6 +53,8 @@ export class Game implements GameAPI {
 
   private readonly moveDir = new THREE.Vector3();
   private readonly camAim = new THREE.Vector3();
+  /** camera de perspectiva do ping pong; só nasce quando alguém pede */
+  private camOmbro: THREE.PerspectiveCamera | null = null;
 
   constructor(
     private readonly root: HTMLElement,
@@ -180,6 +182,8 @@ export class Game implements GameAPI {
     this.hot = null;
     this.beijo.cancelar(this.player, this.parceiro);
     this.podeBeijar = false;
+    this.camOmbro = null; // nenhum minigame sobrevive a uma troca de cena
+    this.ui.showPlacar(null);
     this.parceiro.clearOrder();
     this.setSitting(false);
     this.setOutfit(def.outfit ?? 'normal');
@@ -296,7 +300,7 @@ export class Game implements GameAPI {
     this.sun.target.position.copy(this.camAim);
     this.sun.position.set(this.camAim.x + 14 * k, this.camAim.y + 20 * k, this.camAim.z + 9 * k);
 
-    this.renderer.render(this.scene, this.iso.camera);
+    this.renderer.render(this.scene, this.camOmbro ?? this.iso.camera);
     this.input.endFrame();
   };
 
@@ -408,6 +412,36 @@ export class Game implements GameAPI {
     this.cameraTarget = target;
   }
 
+  /**
+   * Troca a isométrica por uma perspectiva parada em `de`, olhando para `para`.
+   *
+   * Perspectiva (e não ortográfica) de propósito: num jogo em que a bolinha vem
+   * na sua direção, é a convergência das linhas que diz se ela está perto ou
+   * longe — em ortográfica a bolinha do outro lado da mesa tem exatamente o
+   * mesmo tamanho da que está no seu nariz.
+   */
+  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3): void {
+    if (!de) {
+      this.camOmbro = null;
+      return;
+    }
+    if (!this.camOmbro) {
+      this.camOmbro = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 400);
+    }
+    this.camOmbro.aspect = window.innerWidth / window.innerHeight;
+    this.camOmbro.position.copy(de);
+    if (para) this.camOmbro.lookAt(para);
+    this.camOmbro.updateProjectionMatrix();
+  }
+
+  pointer(): { x: number; y: number } {
+    return this.input.pointer();
+  }
+
+  showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void {
+    this.ui.showPlacar(dados);
+  }
+
   setZoom(viewSize: number): void {
     this.iso.setViewSize(viewSize);
   }
@@ -485,6 +519,14 @@ export class Game implements GameAPI {
 
   playerName(): string {
     return this.player.name;
+  }
+
+  playerId(): string {
+    return this.player.rig.spec.id;
+  }
+
+  vestirPremios(): void {
+    this.aplicarPremios();
   }
 
   companionName(): string {
@@ -581,6 +623,10 @@ export class Game implements GameAPI {
   private onResize = (): void => {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.iso.resize(window.innerWidth, window.innerHeight);
+    if (this.camOmbro) {
+      this.camOmbro.aspect = window.innerWidth / window.innerHeight;
+      this.camOmbro.updateProjectionMatrix();
+    }
   };
 
   private onWheel = (e: WheelEvent): void => {
