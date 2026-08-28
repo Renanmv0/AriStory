@@ -6,8 +6,9 @@ import { Frisbee } from '../entities/Frisbee';
 import {
   bench, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
   cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
-  iceCream, junco, kiosk, lamp, nenufar, picnicTable, rock, scoreboard,
-  signBoard, textSign, tree, waterFountain, windsock,
+  iceCream, junco, kiosk, lamp, mesaPingPong, nenufar, picnicTable, raquete,
+  rock, scoreboard, signBoard, textSign, tree, waterFountain, windsock,
+  bolinhaPingPong,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 
@@ -50,6 +51,10 @@ export const villaLobos: SceneDef = {
 
     // A quadra de frisbee: fora dela o disco nem aparece na mão.
     const QUADRA = { x: 18, z: -4.5, largura: 26, profundidade: 19 };
+    /** onde a mesa de ping pong mora, e para que lado o tampo aponta */
+    // longe da areia do lago (raio 9,2 a partir de -21,11) e sem esbarrar na
+    // mesa de piquenique
+    const PING = { x: -15.5, z: 20.5, giro: 0.35 };
     const naQuadra = (x: number, z: number, margem = 0): boolean =>
       Math.abs(x - QUADRA.x) < QUADRA.largura / 2 - margem &&
       Math.abs(z - QUADRA.z) < QUADRA.profundidade / 2 - margem;
@@ -271,6 +276,26 @@ export const villaLobos: SceneDef = {
 
     const mesa = w.add(w.place(picnicTable(), -10, 0, 20, 0.3));
     w.blockBox(-10, 20, 1, 0.9, 0.3);
+
+    // ------------------------------------------------ mesa de ping pong
+    // O tampo fica ao longo do X local: é nessa direção que a bolinha viaja, e
+    // é por isso que a mesa entra girada mas tudo dentro dela usa coordenada
+    // local — a física do minigame não precisa saber o giro da mesa.
+    const mesaPing = mesaPingPong();
+    const raqueteA = raquete(P.metalRed);
+    raqueteA.position.set(-0.78, 0.82, 0.3);
+    raqueteA.rotation.set(-Math.PI / 2, 0, 0.7);
+    mesaPing.add(raqueteA);
+    const raqueteB = raquete(P.fabricBlue);
+    raqueteB.position.set(0.82, 0.82, -0.28);
+    raqueteB.rotation.set(-Math.PI / 2, 0, -2.3);
+    mesaPing.add(raqueteB);
+    const bolinha = bolinhaPingPong();
+    bolinha.position.set(0.36, 0.845, 0.42);
+    mesaPing.add(bolinha);
+
+    w.add(w.place(mesaPing, PING.x, 0, PING.z, PING.giro));
+    w.blockBox(PING.x, PING.z, 1.45, 0.85, PING.giro);
 
     // sorveteria
     // balcão virado para +Z: assim quem compra fica na frente do quiosque na

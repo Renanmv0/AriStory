@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { toon, flat } from '../core/materials';
 import { BUILD_WIDTH, type CharacterSpec } from './spec';
+import { PALETTE as P } from '../palette';
 
 /**
  * Monta um personagem chibi (cabeca grande, corpo pequeno) a partir de uma
@@ -41,6 +42,8 @@ export class CharacterRig {
   private readonly legL = new THREE.Group();
   private readonly legR = new THREE.Group();
   private readonly blob: THREE.Mesh;
+  /** troféu de ping pong: montado sempre, escondido até alguém ganhar */
+  private readonly chapeu = new THREE.Group();
 
   private phase = 0;
   private bounce = 0;
@@ -499,6 +502,34 @@ export class CharacterRig {
     const acc = this.spec.accessories ?? [];
     const accMat = toon(this.spec.accessoryColor ?? 0x2f3440);
 
+    // Chapéu de campeão do ping pong. Não entra na ficha do personagem porque
+    // não é jeitão dele: é prêmio, e quem liga é a flag do jogo (setCampeao).
+    {
+      // A altura é medida pelo CABELO, não pelo crânio: a juba do Ari sobe até
+      // ~1.35 × headR, e chapéu apoiado no crânio simplesmente some dentro dela.
+      const aba = new THREE.Mesh(
+        new THREE.CylinderGeometry(headR * 0.7, headR * 0.7, headR * 0.11, 16),
+        toon(0xfff3d0),
+      );
+      aba.position.y = headR * 1.42;
+      this.chapeu.add(aba);
+
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(headR * 0.58, headR * 1.05, 14),
+        toon(P.gold),
+      );
+      cone.position.y = headR * 1.98;
+      this.chapeu.add(cone);
+
+      const pompom = estrela(headR * 0.3, headR * 0.07, toon(0xfff3d0));
+      pompom.position.y = headR * 2.62;
+      this.chapeu.add(pompom);
+
+      this.chapeu.rotation.z = -0.14; // torto, que é mais engraçado que reto
+      this.chapeu.visible = false;
+      this.head.add(this.chapeu);
+    }
+
     if (acc.includes('oculos')) {
       for (const side of [-1, 1]) {
         const lens = new THREE.Mesh(
@@ -683,6 +714,15 @@ export class CharacterRig {
   /** faz o personagem pular de alegria uma vez */
   cheer(): void {
     this.bounce = 1;
+  }
+
+  /** Liga o chapéu de campeão do ping pong (prêmio, não parte da ficha). */
+  setCampeao(v: boolean): void {
+    this.chapeu.visible = v;
+  }
+
+  get campeao(): boolean {
+    return this.chapeu.visible;
   }
 
   /**

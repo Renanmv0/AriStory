@@ -43,6 +43,7 @@ export const PALETTE = {
   roofTile: 0xc4573f,
   fabricRed: 0xe0524a,
   fabricBlue: 0x4a7fe0,
+  mesaVerde: 0x2f6f57,
 
   // interiores
   floorWood: 0xc9975c,

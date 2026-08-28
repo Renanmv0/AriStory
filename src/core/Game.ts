@@ -186,7 +186,19 @@ export class Game implements GameAPI {
     this.ui.hidePrompt();
     this.ui.sceneCard(def.name, def.subtitle);
     this.audio.setClima(id);
+    this.aplicarPremios();
     this.save.scene = id;
+  }
+
+  /**
+   * Prêmios que ficam no corpo do personagem. O chapéu de campeão do ping pong
+   * é do RIG, não do slot: ele viaja junto quando o T troca os corpos, porque
+   * quem ganhou foi o personagem, não "o jogador".
+   */
+  private aplicarPremios(): void {
+    for (const rig of [this.player.rig, this.parceiro.rig]) {
+      rig.setCampeao(this.save.flag(`chapeu-ping-pong:${rig.spec.id}`));
+    }
   }
 
   private indoor = false;

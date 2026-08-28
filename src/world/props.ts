@@ -728,6 +728,103 @@ export function building(
   return g;
 }
 
+/**
+ * Mesa de ping pong. Medidas em escala de jogo (uma pessoa tem 1,75): tampo de
+ * 2,6 × 1,4 a 76cm do chão, que é a proporção da mesa de verdade sem ficar
+ * gigante ao lado dos personagens chibi.
+ *
+ * As linhas brancas são caixas com altura própria, não planos colados no tampo:
+ * plano coplanar com o tampo pisca (z-fighting), e caixa de 8mm nunca pisca.
+ */
+export function mesaPingPong(cor: number = P.mesaVerde): THREE.Group {
+  const g = new THREE.Group();
+  const larg = 2.6; // ao longo de X — é a direção em que a bolinha viaja
+  const prof = 1.4;
+  const alturaTampo = 0.76;
+  const linha = toon(0xf4f7f5);
+
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.06, prof), toon(cor));
+  tampo.position.y = alturaTampo;
+  g.add(tampo);
+
+  // borda pintada + linha do meio, no comprimento
+  for (const z of [-prof / 2 + 0.05, prof / 2 - 0.05, 0]) {
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(larg - 0.02, 0.008, 0.05), linha);
+    risco.position.set(0, alturaTampo + 0.032, z);
+    g.add(risco);
+  }
+  for (const x of [-larg / 2 + 0.04, larg / 2 - 0.04]) {
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.008, prof - 0.02), linha);
+    risco.position.set(x, alturaTampo + 0.032, 0);
+    g.add(risco);
+  }
+
+  // ------------------------------------------------------------- a rede
+  const rede = new THREE.Mesh(
+    new THREE.BoxGeometry(0.03, 0.19, prof + 0.16),
+    toon(0xfbfdfc, { opacity: 0.72, doubleSide: true }),
+  );
+  rede.position.y = alturaTampo + 0.13;
+  g.add(rede);
+  const fita = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.035, prof + 0.18), toon(0xffffff));
+  fita.position.y = alturaTampo + 0.225;
+  g.add(fita);
+  for (const z of [-(prof + 0.16) / 2, (prof + 0.16) / 2]) {
+    const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.24, 8), toon(P.metalGrey));
+    poste.position.set(0, alturaTampo + 0.12, z);
+    g.add(poste);
+  }
+
+  // ------------------------------------------------------------- pernas
+  for (const x of [-larg / 2 + 0.22, larg / 2 - 0.22]) {
+    for (const z of [-prof / 2 + 0.18, prof / 2 - 0.18]) {
+      const perna = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.045, alturaTampo, 8),
+        toon(P.metalGrey),
+      );
+      perna.position.set(x, alturaTampo / 2, z);
+      g.add(perna);
+    }
+    // travessa unindo o par, como as mesas dobráveis de parque
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, prof - 0.36), toon(P.metalGrey));
+    travessa.position.set(x, alturaTampo * 0.35, 0);
+    g.add(travessa);
+  }
+
+  return g;
+}
+
+/** Bolinha de ping pong. Pequena de verdade: some se for muito maior. */
+export function bolinhaPingPong(): THREE.Mesh {
+  const bola = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), toon(0xfff8e6, { glow: 0.12 }));
+  bola.castShadow = true;
+  return bola;
+}
+
+/** Raquete: cilindro achatado com cabo, do jeito que a memória desenha. */
+export function raquete(cor: number = P.metalRed): THREE.Group {
+  const g = new THREE.Group();
+
+  const borracha = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.035, 20), toon(cor));
+  borracha.rotation.x = Math.PI / 2;
+  g.add(borracha);
+
+  // a madeira aparece como um aro fino em volta da borracha
+  const madeira = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.022, 20), toon(P.wood));
+  madeira.rotation.x = Math.PI / 2;
+  g.add(madeira);
+
+  const cabo = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.16, 4, 8), toon(P.woodDark));
+  cabo.position.y = -0.25;
+  g.add(cabo);
+
+  g.traverse((n) => {
+    const m = n as THREE.Mesh;
+    if (m.isMesh) m.castShadow = true;
+  });
+  return g;
+}
+
 /** Frisbee: usado como prop parado e como projetil no minigame. */
 export function frisbee(color: number = P.frisbee): THREE.Mesh {
   const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.07, 20), toon(color));
