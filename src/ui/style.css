@@ -411,6 +411,16 @@ body.touch-device .hints .toque { display: block; }
   font-weight: 700;
   color: var(--ink-soft);
 }
+/* o carinho da dupla nao tem botao nem balao na tela: e aqui que ele se
+   explica, entao ganha um bloco proprio em vez de virar mais um item da lista */
+.menu .controles .carinho { margin-top: 16px; }
+.menu .controles .carinho p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.menu .controles .carinho p:last-child { margin: 8px 0 0; }
 .menu .controles .voltar { margin-top: 16px; }
 .menu .confirma .nao { background: var(--paper-warm); color: var(--ink-soft); }
 

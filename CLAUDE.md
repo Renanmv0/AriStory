@@ -54,6 +54,7 @@ node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para o
 node scripts/celular.mjs /tmp/cel   # tela de celular: nenhum botao pode tapar texto
 node scripts/parque.mjs  /tmp/pq    # praca da roda, cupula e margem do lago
 node scripts/pingpong.mjs /tmp/pp   # a partida de ping pong ate o quinto ponto
+node scripts/maos.mjs    /tmp/mao   # de maos dadas: emparelhados e o coracao
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

@@ -90,6 +90,7 @@ export class Ui {
             <li><b>E</b><span>interagir e avançar a fala (espaço também)</span></li>
             <li><b>T</b><span>trocar de personagem</span></li>
             <li><b>Q</b> <b>R</b><span>girar a câmera</span></li>
+            <li><b>H</b><span>dar a mão para quem está com você</span></li>
             <li><b>J</b><span>abrir o diário de memórias</span></li>
             <li><b>F</b><span>segurar para lançar o frisbee, na quadra</span></li>
             <li><b>roda</b><span>aproximar e afastar a câmera</span></li>
@@ -101,7 +102,15 @@ export class Ui {
             <li><b>🔁</b><span>trocar de personagem</span></li>
             <li><b>📖</b><span>abrir o diário</span></li>
           </ul>
-          <p class="dica">Ah: fique de frente para o outro e aparece um 💋.</p>
+          <div class="carinho">
+            <h3>Os dois juntos</h3>
+            <p>Perto do outro, sem nada por perto para interagir, o <b>E</b> (ou o <b>✨</b>) vira carinho:</p>
+            <ul>
+              <li><b>💋</b><span>de frente um para o outro, um beijinho</span></li>
+              <li><b>🤝</b><span>lado a lado, saem de mãos dadas — e a cada tanto sobe um coração</span></li>
+            </ul>
+            <p>Para soltar as mãos, é só apertar de novo.</p>
+          </div>
           <button class="voltar">voltar</button>
         </div>
         <button class="close">voltar pro jogo</button>

@@ -4,6 +4,15 @@ import { BUILD_WIDTH, type CharacterSpec } from './spec';
 import { PALETTE as P } from '../palette';
 
 /**
+ * Abertura do braco que segura a mao do outro, em radianos (~43°).
+ *
+ * Nao e gosto: a mao fica a ~0.44 abaixo do ombro, e com os dois a 0.95 um do
+ * outro sobra ~0.30 de vao para cada mao cobrir. `asin(0.30 / 0.44)` da isto.
+ * Mexer aqui sem mexer em LADO (entities/MaosDadas.ts) descola as maos.
+ */
+const ABRE_MAO = 0.75;
+
+/**
  * Monta um personagem chibi (cabeca grande, corpo pequeno) a partir de uma
  * CharacterSpec e anima a caminhada. Nenhum arquivo de modelo envolvido:
  * tudo e primitiva, entao da para iterar o visual so mexendo na ficha.
@@ -48,6 +57,8 @@ export class CharacterRig {
   private phase = 0;
   private bounce = 0;
   private beijo = 0;
+  /** -1 segura com o braco em -X, 1 com o de +X, 0 nao esta de maos dadas */
+  private maos: -1 | 0 | 1 = 0;
   private targetFacing = 0;
   private swimming = false;
   private sitting = false;
@@ -752,6 +763,22 @@ export class CharacterRig {
   }
 
   /**
+   * De maos dadas: qual braco esta "por dentro", segurando a mao do outro.
+   *
+   * `-1` = o parceiro esta a esquerda do personagem, entao quem segura e o
+   * braco em `-X` (o `armL`); `1` = esta a direita e segura o `armR`; `0`
+   * desliga. Quem decide o lado e a mecanica em entities/MaosDadas.ts, que sabe
+   * onde os dois estao; o rig so obedece.
+   */
+  setHoldingHands(lado: -1 | 0 | 1): void {
+    this.maos = lado;
+  }
+
+  get holdingHands(): boolean {
+    return this.maos !== 0;
+  }
+
+  /**
    * Inclinacao do beijo: 0 e parado normal, 1 e inclinado para a frente na
    * pontinha do pe. Quem controla a curva e a mecanica em entities/Beijo.ts.
    */
@@ -837,6 +864,20 @@ export class CharacterRig {
     this.armR.rotation.x = walking ? s * swing * 0.85 : -Math.sin(this.phase) * 0.05;
     this.armL.rotation.z = 0.08;
     this.armR.rotation.z = -0.08;
+
+    // De maos dadas o braco de dentro para de balancar e abre para o lado do
+    // outro, ate as duas maos se encontrarem no meio do vao. O braco de fora
+    // continua a caminhada, com metade da amplitude — e esse contraste que faz
+    // ler como "estao de maos dadas" e nao como "estao engessados".
+    if (this.maos !== 0) {
+      const dentro = this.maos < 0 ? this.armL : this.armR;
+      const fora = this.maos < 0 ? this.armR : this.armL;
+      // z positivo joga a mao para +X; o braco de dentro sempre abre na
+      // direcao do parceiro
+      dentro.rotation.z = ABRE_MAO * this.maos;
+      dentro.rotation.x = -0.1;
+      fora.rotation.x *= 0.5;
+    }
 
     // pulinho de comemoracao
     if (this.bounce > 0) {

@@ -6,6 +6,8 @@ import { Ui } from '../ui/Ui';
 import { Player } from '../entities/Player';
 import { Companion } from '../entities/Companion';
 import { Beijo } from '../entities/Beijo';
+import { Coracoes } from '../entities/Coracoes';
+import { MaosDadas } from '../entities/MaosDadas';
 import { Som } from '../audio/Som';
 import type { SomNome } from '../audio/efeitos';
 import { CharacterRig } from '../characters/CharacterRig';
@@ -33,7 +35,9 @@ export class Game implements GameAPI {
   private readonly player: Player;
   private readonly parceiro: Companion;
   private readonly clock = new THREE.Clock();
+  private readonly coracoes: Coracoes;
   private readonly beijo: Beijo;
+  private readonly maos: MaosDadas;
   private readonly audio = new Som();
 
   private readonly hemi: THREE.HemisphereLight;
@@ -107,8 +111,11 @@ export class Game implements GameAPI {
     this.player = new Player(new CharacterRig(dupla[0]));
     this.scene.add(this.player.object);
 
-    this.beijo = new Beijo(this.scene);
+    this.coracoes = new Coracoes(this.scene);
+    this.beijo = new Beijo(this.coracoes);
     this.beijo.onSom = (nome) => this.audio.play(nome);
+    this.maos = new MaosDadas(this.coracoes);
+    this.maos.onSom = (nome) => this.audio.play(nome);
 
     this.parceiro = new Companion(new CharacterRig(dupla[1] ?? dupla[0]));
     this.parceiro.setVisible(dupla.length > 1);
@@ -181,6 +188,8 @@ export class Game implements GameAPI {
     this.cameraTarget = null;
     this.hot = null;
     this.beijo.cancelar(this.player, this.parceiro);
+    this.maos.soltar(this.player, this.parceiro);
+    this.coracoes.limpar();
     this.podeBeijar = false;
     this.camOmbro = null; // nenhum minigame sobrevive a uma troca de cena
     this.ui.showPlacar(null);
@@ -261,18 +270,30 @@ export class Game implements GameAPI {
       if (this.input.justPressed('KeyR')) this.iso.rotate(1);
     }
 
+    if (!busy && !this.player.locked && this.input.justPressed('KeyH')) this.maoNaMao();
+
     const acted = this.input.justPressed('KeyE') || this.input.justPressed('Space');
     if (acted && this.ui.handleAction()) {
       // o dialogo consumiu a tecla
     } else if (acted && !busy && this.hot && !this.player.locked) {
+      // qualquer interacao do cenario solta as maos: nao da para abrir a
+      // geladeira com as duas maos ocupadas
+      this.maos.soltar(this.player, this.parceiro);
       this.audio.play('interagir');
       void this.hot.trigger(this);
     } else if (acted && !busy && this.podeBeijar && !this.player.locked) {
+      this.maos.soltar(this.player, this.parceiro);
       this.beijo.iniciar(this.player, this.parceiro, this.iso.angle);
+    } else if (acted && !busy && !this.player.locked) {
+      // sem interativo por perto e sem estar de frente um para o outro, o E
+      // vira o carinho de contexto: de lado a lado, da a mao. E o que permite
+      // a mecanica existir no celular sem mais um botao na tela.
+      this.maoNaMao();
     }
 
-    // o beijo roda antes do movimento: e ele que segura os dois no lugar
+    // os dois rodam antes do movimento: sao eles que mandam nos corpos
     this.beijo.update(dt, this.player, this.parceiro);
+    this.maos.update(dt, this.player, this.parceiro);
 
     // ---------------------------------------------------------- movimento
     const m = this.input.move();
@@ -281,6 +302,8 @@ export class Game implements GameAPI {
     this.player.update(this.moveDir, dt, world.colliders, world.bounds);
     this.ouvirPassos(antes);
     this.parceiro.update(this.player.position, dt, world.colliders, world.bounds);
+
+    this.coracoes.update(dt);
 
     // ------------------------------------------------------- interativos
     this.updateHot(world, dt);
@@ -305,9 +328,9 @@ export class Game implements GameAPI {
   };
 
   /**
-   * Prompt do beijo. Ele so aparece quando nao ha interativo por perto — o
-   * cenario sempre ganha do carinho, senao o sofa e a geladeira ficam
-   * inalcancaveis quando os dois estao coladinhos.
+   * O beijo esta ao alcance? Sem prompt na tela: carinho nao anuncia, e mais um
+   * balao ali competindo com o dos interativos so polui. Quem nao souber
+   * descobre na aba Controles do menu.
    */
   private updateBeijo(): void {
     this.podeBeijar =
@@ -316,10 +339,16 @@ export class Game implements GameAPI {
       !this.ui.menuOpen &&
       !this.player.locked &&
       this.beijo.disponivel(this.player, this.parceiro);
+  }
 
-    if (this.hot) return;
-    if (this.podeBeijar) this.ui.showPrompt('💋', `Beijar ${this.parceiro.name}`);
-    else this.ui.hidePrompt();
+  /** Liga ou solta as maos. E o toggle, do H e do E de contexto. */
+  private maoNaMao(): void {
+    if (this.maos.ativo) {
+      this.maos.soltar(this.player, this.parceiro);
+      this.audio.play('escolha');
+    } else if (this.maos.disponivel(this.player, this.parceiro)) {
+      this.maos.ligar(this.player, this.parceiro);
+    }
   }
 
   /**
@@ -548,6 +577,7 @@ export class Game implements GameAPI {
     this.player.swapRig(this.parceiro.rig);
     this.parceiro.swapRig(doJogador);
     this.setOutfit(this.traje);
+    this.maos.trocouCorpos(this.player, this.parceiro);
     this.audio.play('trocar');
     this.ui.toast(`Agora você é ${this.player.name}`, '🔁');
   }

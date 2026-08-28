@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { Player } from './Player';
 import type { Companion } from './Companion';
-import { heart } from '../world/props';
+import { Coracoes } from './Coracoes';
 
 /** distancia maxima entre os dois para o beijo aparecer */
 const PERTO = 1.5;
@@ -20,15 +20,6 @@ const TOTAL = INCLINA + SEGURA + VOLTA;
 /** respiro depois do beijo, para o E nao disparar outro na hora */
 const DESCANSO = 0.5;
 
-interface Coracaozinho {
-  obj: THREE.Group;
-  vida: number;
-  giro: number;
-  /** direcao para fora do par, no plano do chao */
-  fx: number;
-  fz: number;
-}
-
 /**
  * O beijo rapido da dupla.
  *
@@ -44,16 +35,12 @@ export class Beijo {
   /** onde cada um tem que estar para o beijo aparecer de perfil na tela */
   private readonly alvoA = new THREE.Vector3();
   private readonly alvoB = new THREE.Vector3();
-  private readonly coracoes: Coracaozinho[] = [];
-  private readonly grupo = new THREE.Group();
   private soltouCoracao = false;
 
   /** o Game liga isto no motor de audio */
   onSom: ((nome: 'beijo' | 'coracao') => void) | null = null;
 
-  constructor(private readonly cena: THREE.Scene) {
-    this.cena.add(this.grupo);
-  }
+  constructor(private readonly coracoes: Coracoes) {}
 
   get rodando(): boolean {
     return this.t >= 0;
@@ -116,8 +103,6 @@ export class Beijo {
     this.descanso = 0;
     a.rig.setKiss(0);
     b.rig.setKiss(0);
-    for (const c of this.coracoes) this.grupo.remove(c.obj);
-    this.coracoes.length = 0;
   }
 
   /** Roda antes do movimento: e ele que segura os dois parados no lugar. */
@@ -148,8 +133,8 @@ export class Beijo {
         const eixo = Math.atan2(b.position.x - a.position.x, b.position.z - a.position.z);
         const lx = Math.sin(eixo);
         const lz = Math.cos(eixo);
-        this.solta(a.position, lx, lz, -1);
-        this.solta(b.position, lx, lz, 1);
+        this.coracoes.soltar(a.position, -lx, -lz);
+        this.coracoes.soltar(b.position, lx, lz);
         // o estalinho toca junto com os corações, na hora do encontro
         this.onSom?.('beijo');
         this.onSom?.('coracao');
@@ -162,41 +147,6 @@ export class Beijo {
         b.rig.setKiss(0);
         a.locked = false;
       }
-    }
-
-    this.animaCoracoes(dt);
-  }
-
-  private solta(onde: THREE.Vector3, lx: number, lz: number, lado: number): void {
-    const fx = lx * lado;
-    const fz = lz * lado;
-    const c = heart(0.6);
-    c.position.set(onde.x + fx * 1.0, 1.62, onde.z + fz * 1.0);
-    this.grupo.add(c);
-    this.coracoes.push({ obj: c, vida: 0, giro: Math.random() * Math.PI, fx, fz });
-  }
-
-  private animaCoracoes(dt: number): void {
-    const VIDA = 1.7;
-    for (let i = this.coracoes.length - 1; i >= 0; i--) {
-      const c = this.coracoes[i];
-      c.vida += dt;
-      const p = c.vida / VIDA;
-      if (p >= 1) {
-        this.grupo.remove(c.obj);
-        this.coracoes.splice(i, 1);
-        continue;
-      }
-      c.obj.position.y += dt * 0.72;
-      // sobe afastando do par, com um gingado leve: assim nenhum coracao fica
-      // preso atras da cabeca de ninguem
-      const deriva = (0.7 + Math.sin(c.vida * 3 + c.giro) * 0.25) * dt;
-      c.obj.position.x += c.fx * deriva;
-      c.obj.position.z += c.fz * deriva;
-      c.obj.rotation.y = c.giro + c.vida * 1.4;
-      // aparece num pop e some encolhendo, sem mexer no material compartilhado
-      const escala = p < 0.18 ? p / 0.18 : Math.min(1, (1 - p) / 0.35);
-      c.obj.scale.setScalar(0.25 + escala * 0.9);
     }
   }
 }
