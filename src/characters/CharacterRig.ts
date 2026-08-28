@@ -16,17 +16,32 @@ const ABRE_MAO = 0.75;
 /**
  * As duas poses de segurar.
  *
- * `braco` e a rotacao imposta ao braco direito; `balanco` e quanto sobra do
- * balanco da caminhada NAQUELE braco — zero deixaria o boneco engessado, cheio
- * faria o sorvete voar. `item` e a pose do objeto dentro da mao.
+ * ## O sinal do Z
+ *
+ * O braco direito nasce em `x = +halfShoulder` (0.148), e `rotation.z`
+ * POSITIVO joga a mao para +X, ou seja para FORA do corpo. Negativo joga para
+ * dentro — foi esse o bug que fazia o frisbee atravessar o tronco inteiro.
+ *
+ * `bracoX` negativo levanta o braco para a frente; `balanco` e quanto sobra do
+ * balanco da caminhada NAQUELE braco (zero engessa o boneco, cheio faz o
+ * sorvete voar); `itemZ` inclina o objeto dentro da mao e `itemX` o afasta
+ * lateralmente.
  */
 const POSES = {
   // esticado para a frente, com o objeto em pe: sorvete, suco
-  upright: { bracoX: -1.38, bracoZ: -0.16, balanco: 0.15, itemZ: 0 },
-  // so descolado do tronco, objeto pendurado na mao: frisbee
-  // 0.9 rad e nao PI/2.4: de perfil o disco vira um risco na tela, e a essa
-  // distancia de camera ninguem reconhece um frisbee de canto
-  relaxed: { bracoX: 0, bracoZ: -0.34, balanco: 0.6, itemZ: 0.9 },
+  upright: { bracoX: -1.38, bracoZ: 0.16, balanco: 0.15, itemZ: 0, itemX: 0 },
+  /**
+   * Frisbee: braco levemente para FORA e um tico para a frente.
+   *
+   * O disco tem raio 0.28 e o ombro esta a 0.148 do eixo do corpo. So girar o
+   * braco nao basta: com z = 0.46 a mao chega a x = 0.37, e a metade de dentro
+   * do disco (0.28 x cos 0.9 = 0.17) ainda raspa no tronco. Dai o `itemX`, que
+   * empurra o disco mais para fora dentro da propria mao.
+   *
+   * `itemZ` 0.9 e nao PI/2.4: de perfil o disco vira um risco na tela, e a essa
+   * distancia de camera ninguem reconhece um frisbee de canto.
+   */
+  relaxed: { bracoX: -0.22, bracoZ: 0.46, balanco: 0.6, itemZ: 0.9, itemX: 0.13 },
 } as const;
 
 /**
@@ -956,6 +971,7 @@ export class CharacterRig {
   private aplicarPose(): void {
     if (this.pose === 'none' || this.maos > 0) {
       this.maoDir.rotation.set(0, 0, 0);
+      this.maoDir.position.x = 0;
       return;
     }
     const p = POSES[this.pose];
@@ -964,6 +980,7 @@ export class CharacterRig {
     // o objeto desfaz a rotacao do braco: e assim que o sorvete continua em pe
     // com o braco esticado para a frente
     this.maoDir.rotation.set(-this.armR.rotation.x, 0, p.itemZ - this.armR.rotation.z);
+    this.maoDir.position.x = p.itemX;
   }
 
   dispose(): void {

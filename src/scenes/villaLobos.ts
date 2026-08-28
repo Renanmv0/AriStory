@@ -1051,9 +1051,9 @@ export const villaLobos: SceneDef = {
           g.som('memoria');
           g.toast('Campeão de ping pong!', '🏆');
           // o chapéu é do personagem que estava jogando, não do "slot"
-          g.setFlag('chapeu-ping-pong');
-          g.setFlag(`chapeu-ping-pong:${g.playerId()}`);
-          g.vestirPremios();
+          // o chapéu é um ITEM: entra na primeira vaga de acessório livre de
+          // quem ganhou, e some da cabeça se for arrastado para fora dela
+          g.equipWearable(ITENS.chapeuPingPong);
           await conversa([
             [A, 'Cinco a ' + partida.dele + '.'],
             [R, 'Você ganhou o chapéu. Vai ter que usar.'],

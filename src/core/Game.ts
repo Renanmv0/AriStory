@@ -14,7 +14,7 @@ import { CharacterRig } from '../characters/CharacterRig';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
 import type { Coleta, GameAPI, ItemDef, Memory, SceneAmbient, SceneDef, Vaga } from './types';
-import { modeloDoItem } from '../world/itens';
+import { ITENS, modeloDoItem } from '../world/itens';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -205,6 +205,7 @@ export class Game implements GameAPI {
     this.ui.hidePrompt();
     this.ui.sceneCard(def.name, def.subtitle);
     this.audio.setClima(id);
+    this.migrarPremios();
     this.aplicarPremios();
     this.save.scene = id;
   }
@@ -215,8 +216,22 @@ export class Game implements GameAPI {
    * quem ganhou foi o personagem, não "o jogador".
    */
   private aplicarPremios(): void {
+    this.sincronizarVestiveis();
+  }
+
+  /**
+   * Migracao de quem ja tinha o chapeu antes de ele virar item.
+   *
+   * A flag `chapeu-ping-pong:<id>` era o jeito antigo. Ela nao manda mais em
+   * nada; roda uma vez para o chapeu ganho ontem virar item hoje, e depois
+   * disso o inventario e a unica verdade.
+   */
+  private migrarPremios(): void {
     for (const rig of [this.player.rig, this.parceiro.rig]) {
-      rig.setCampeao(this.save.flag(`chapeu-ping-pong:${rig.spec.id}`));
+      const quem = rig.spec.id;
+      if (!this.save.flag(`chapeu-ping-pong:${quem}`)) continue;
+      if (this.save.achouItem(quem, ITENS.chapeuPingPong.id)) continue;
+      this.save.vestir(quem, ITENS.chapeuPingPong);
     }
   }
 
@@ -324,6 +339,7 @@ export class Game implements GameAPI {
 
     this.coracoes.update(dt);
     this.sincronizarMaos();
+    this.sincronizarVestiveis();
 
     // ------------------------------------------------------- interativos
     this.updateHot(world, dt);
@@ -609,6 +625,21 @@ export class Game implements GameAPI {
    * faz o T funcionar de graca: o modelo e filho do RIG, e o rig viaja junto com
    * a pessoa quando os corpos trocam de lugar.
    */
+  /**
+   * O chapeu de campeao aparece SE, E SO SE, estiver numa vaga de acessorio.
+   *
+   * E o que faz o arrastar valer para vestimenta tambem: tirou o chapeu da
+   * vaga de acessorio na tela, ele sai da cabeca no mesmo quadro.
+   */
+  private sincronizarVestiveis(): void {
+    for (const rig of [this.player.rig, this.parceiro.rig]) {
+      const vestindo = this.save
+        .vestiveis(rig.spec.id)
+        .some((i) => i?.id === ITENS.chapeuPingPong.id);
+      if (rig.campeao !== vestindo) rig.setCampeao(vestindo);
+    }
+  }
+
   private sincronizarMaos(): void {
     for (const rig of [this.player.rig, this.parceiro.rig]) {
       const quem = rig.spec.id;
@@ -672,10 +703,6 @@ export class Game implements GameAPI {
 
   playerId(): string {
     return this.player.rig.spec.id;
-  }
-
-  vestirPremios(): void {
-    this.aplicarPremios();
   }
 
   companionName(): string {

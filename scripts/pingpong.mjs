@@ -139,6 +139,23 @@ await page.waitForTimeout(900);
 const fim = await estado();
 await page.screenshot({ path: `${OUT}-fim.png` });
 
+// O chapéu virou ITEM: ele aparece na cabeça se, e só se, estiver numa vaga
+// de acessório. Tirar dali pela UI tem que apagá-lo do corpo no mesmo quadro.
+const premio = await page.evaluate(() => {
+  const j = window.jogo;
+  const quem = j.playerId();
+  const vestindo = j.wearables(quem).map((i) => i?.id ?? null);
+  const slot = vestindo.indexOf('chapeu-ping-pong');
+  if (slot < 0) return { vestindo, slot, naCabecaAntes: j.player.rig.campeao, naCabecaDepois: null };
+  const naCabecaAntes = j.player.rig.campeao;
+  const vaga = j.handItems(quem).findIndex((x) => x === null);
+  j.moveItem({ lista: 'vestivel', indice: slot }, { lista: 'mao', indice: vaga }, quem);
+  return { vestindo, slot, naCabecaAntes, vaga };
+});
+await page.waitForTimeout(700);
+const naCabecaDepois = await page.evaluate(() => window.jogo.player.rig.campeao);
+await page.screenshot({ path: `${OUT}-sem-chapeu.png` });
+
 const save = await page.evaluate(() => {
   try {
     return JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}');
@@ -160,7 +177,8 @@ console.log('placar na tela:', comecou.placar);
 console.log('placar final:', `${ultimo.meus} × ${ultimo.dele}`, '· fase', ultimo.fase);
 console.log('voltou para a isométrica:', !fim.perspectiva);
 console.log('chapéu na cabeça:', fim.chapeu);
-console.log('flags:', Object.keys(save.flags ?? {}).filter((f) => f.startsWith('chapeu')).join(', ') || '(nenhuma)');
+console.log('acessórios do vencedor:', JSON.stringify(premio.vestindo));
+console.log('tirou o chapéu da vaga de acessório · na cabeça antes:', premio.naCabecaAntes, '→ depois:', naCabecaDepois);
 console.log('memórias:', (save.memories ?? []).map((m) => m.id).join(', ') || '(nenhuma)');
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
@@ -173,7 +191,12 @@ const ok =
   Math.max(ultimo.meus, ultimo.dele) === 5 &&
   !fim.perspectiva &&
   // o prêmio só é cobrado quando o jogador de fato ganhou
-  (!ganhou || (fim.chapeu && (save.memories ?? []).some((m) => m.id === 'memoria-ping-pong')));
+  (!ganhou ||
+    (fim.chapeu &&
+      premio.vestindo.includes('chapeu-ping-pong') &&
+      // desequipado pela UI, some da cabeça na hora
+      naCabecaDepois === false &&
+      (save.memories ?? []).some((m) => m.id === 'memoria-ping-pong')));
 
 await browser.close();
 process.exit(ok ? 0 : 1);

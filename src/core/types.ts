@@ -226,8 +226,6 @@ export interface GameAPI {
   playerName(): string;
   /** id da ficha de quem esta sendo controlado ('ari', 'renan') */
   playerId(): string;
-  /** reaplica premios (chapeu de campeao) a partir das flags do save */
-  vestirPremios(): void;
   /** nome de quem esta acompanhando */
   companionName(): string;
   companionPosition(): THREE.Vector3;

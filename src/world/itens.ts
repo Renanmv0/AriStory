@@ -49,6 +49,13 @@ export const ITENS = {
     nota: 'do Renan',
     holdPose: 'upright',
   },
+  chapeuPingPong: {
+    id: 'chapeu-ping-pong',
+    nome: 'Chapéu de campeão',
+    icone: '👑',
+    tipo: 'vestivel',
+    nota: 'ping pong, 5 a 0',
+  },
   frisbee: {
     id: 'frisbee',
     nome: 'Frisbee',
@@ -60,7 +67,11 @@ export const ITENS = {
 } as const satisfies Record<string, ItemDef>;
 
 /**
- * O corpo de cada item, na mao.
+ * O corpo de cada item, na MAO.
+ *
+ * O que se veste nao entra aqui: acessorio e parte do corpo (o chapeu de
+ * campeao ja nasce dentro do `CharacterRig`), e o inventario so decide se ele
+ * aparece ou nao.
  *
  * Cada chamada devolve uma malha NOVA: o mesmo `Object3D` nao pode ter dois
  * pais, e a mesma ficha pode acabar na mao de duas pessoas em cenas diferentes.
