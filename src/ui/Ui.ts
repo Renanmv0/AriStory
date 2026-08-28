@@ -1,5 +1,5 @@
 import type { SavedMemory } from '../core/SaveState';
-import type { ItemDef } from '../core/types';
+import type { ItemDef, Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 
 /**
@@ -26,6 +26,9 @@ export class Ui {
   private readonly mochila: HTMLDivElement;
   private readonly slotsMao: HTMLDivElement;
   private readonly slotsVestivel: HTMLDivElement;
+  private readonly dono: HTMLElement;
+  /** vaga escolhida no toque, esperando o destino */
+  private pegou: Vaga | null = null;
 
   private advance: (() => void) | null = null;
   private escolher: ((i: number) => void) | null = null;
@@ -122,8 +125,8 @@ export class Ui {
         <button class="close">voltar pro jogo</button>
       </div></div>
       <div class="mochila"><div class="sheet">
-        <h2>Mochila</h2>
-        <p class="sub">o que a gente carrega</p>
+        <h2>Mochila <span class="dono"></span></h2>
+        <p class="sub">arraste para trocar de vaga · <b>T</b> vê a do outro</p>
         <h3>Na mão <small>toque para escolher o que fica na mão</small></h3>
         <div class="slots maos"></div>
         <h3>Vestindo</h3>
@@ -163,6 +166,7 @@ export class Ui {
     this.mochila = ui.querySelector('.mochila')!;
     this.slotsMao = ui.querySelector('.mochila .maos')!;
     this.slotsVestivel = ui.querySelector('.mochila .vestiveis')!;
+    this.dono = ui.querySelector('.mochila .dono')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -191,14 +195,18 @@ export class Ui {
     this.mochila.addEventListener('click', (e) => {
       if (e.target === this.mochila) this.closeMochila();
     });
-    // delegação: as vagas são redesenhadas a cada abertura, então o ouvinte
-    // fica no pai e não em cada botão
-    this.slotsMao.addEventListener('click', (e) => {
-      const vaga = (e.target as HTMLElement).closest('.slot') as HTMLElement | null;
-      if (!vaga?.dataset.slot) return;
-      this.som?.('escolha');
-      this.onEscolherSlot?.(Number(vaga.dataset.slot));
-    });
+    // Delegação: as vagas são redesenhadas a cada mudança, então os ouvintes
+    // ficam nos dois contêineres e não em cada botão.
+    for (const caixa of [this.slotsMao, this.slotsVestivel]) {
+      caixa.addEventListener('click', (e) => this.tocarVaga(e));
+      caixa.addEventListener('dragstart', (e) => this.comecarArrasto(e as DragEvent));
+      caixa.addEventListener('dragover', (e) => this.arrastarSobre(e as DragEvent));
+      caixa.addEventListener('dragleave', (e) => {
+        (e.target as HTMLElement).closest('.slot')?.classList.remove('alvo');
+      });
+      caixa.addEventListener('drop', (e) => this.soltarArrasto(e as DragEvent));
+      caixa.addEventListener('dragend', () => this.limparArrasto());
+    }
 
     // menu: o "recomeçar" pede confirmação antes, senão um clique sem querer
     // apaga o diário inteiro
@@ -540,7 +548,11 @@ export class Ui {
     maos: ReadonlyArray<ItemDef | null>,
     vestiveis: ReadonlyArray<ItemDef | null>,
     ativo: number,
+    dono: string,
   ): void {
+    this.dono.textContent = `de ${dono}`;
+    this.pegou = null;
+    this.mochila.classList.remove('movendo');
     const desenhar = (
       onde: HTMLElement,
       vagas: ReadonlyArray<ItemDef | null>,
@@ -553,6 +565,7 @@ export class Ui {
         vaga.dataset.slot = String(i);
         vaga.classList.toggle('cheio', item !== null);
         vaga.classList.toggle('principal', i === principal);
+        vaga.draggable = item !== null;
         vaga.innerHTML = item
           ? `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
             (item.nota ? `<small>${item.nota}</small>` : '')
@@ -567,4 +580,107 @@ export class Ui {
 
   /** Clique numa vaga da mão: quem decide o que fazer é o Game. */
   onEscolherSlot: ((indice: number) => void) | null = null;
+  /** Item arrastado (ou tocado) de uma vaga para outra. */
+  onMoverItem: ((de: Vaga, para: Vaga) => boolean) | null = null;
+
+  // ------------------------------------------------ arrastar e tocar
+
+  private endereco(el: HTMLElement): Vaga | null {
+    const vaga = el.closest('.slot') as HTMLElement | null;
+    if (!vaga?.dataset.slot) return null;
+    return {
+      lista: vaga.closest('.vestiveis') ? 'vestivel' : 'mao',
+      indice: Number(vaga.dataset.slot),
+    };
+  }
+
+  /**
+   * O caminho do DEDO.
+   *
+   * A API de drag-and-drop do HTML5 não existe no toque — `dragstart` nunca
+   * dispara num celular. Sem este toca-pega/toca-solta, desequipar um item
+   * seria impossível no telefone, que é onde o jogo mais é mostrado.
+   *
+   * Na lista da mão o toque tem dois papéis: sem nada na pinça, ele escolhe o
+   * slot principal; com algo na pinça, ele solta ali.
+   */
+  private tocarVaga(e: Event): void {
+    const onde = this.endereco(e.target as HTMLElement);
+    if (!onde) return;
+
+    if (this.pegou) {
+      const de = this.pegou;
+      this.pegou = null;
+      this.marcarPego(null);
+      if (de.lista === onde.lista && de.indice === onde.indice) return;
+      if (this.onMoverItem?.(de, onde)) this.som?.('escolha');
+      return;
+    }
+
+    const vaga = (e.target as HTMLElement).closest('.slot') as HTMLElement;
+    // vaga vazia da mão continua servindo para escolher o slot principal
+    if (onde.lista === 'mao' && !vaga.classList.contains('cheio')) {
+      this.som?.('escolha');
+      this.onEscolherSlot?.(onde.indice);
+      return;
+    }
+    if (!vaga.classList.contains('cheio')) return;
+
+    // vaga cheia da mão: um toque põe na mão, o segundo entra no modo mover
+    if (onde.lista === 'mao' && !vaga.classList.contains('principal')) {
+      this.som?.('escolha');
+      this.onEscolherSlot?.(onde.indice);
+      return;
+    }
+    this.pegou = onde;
+    this.marcarPego(vaga);
+    this.som?.('escolha');
+  }
+
+  private marcarPego(vaga: HTMLElement | null): void {
+    for (const el of this.mochila.querySelectorAll('.slot.pego')) el.classList.remove('pego');
+    vaga?.classList.add('pego');
+    this.mochila.classList.toggle('movendo', vaga !== null);
+  }
+
+  private comecarArrasto(e: DragEvent): void {
+    const onde = this.endereco(e.target as HTMLElement);
+    const vaga = (e.target as HTMLElement).closest('.slot') as HTMLElement | null;
+    if (!onde || !vaga?.classList.contains('cheio')) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer?.setData('text/plain', JSON.stringify(onde));
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+    vaga.classList.add('pego');
+  }
+
+  private arrastarSobre(e: DragEvent): void {
+    const vaga = (e.target as HTMLElement).closest('.slot');
+    if (!vaga) return;
+    // sem o preventDefault o navegador recusa a solta e o drop nunca chega
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    vaga.classList.add('alvo');
+  }
+
+  private soltarArrasto(e: DragEvent): void {
+    e.preventDefault();
+    const para = this.endereco(e.target as HTMLElement);
+    const cru = e.dataTransfer?.getData('text/plain');
+    this.limparArrasto();
+    if (!para || !cru) return;
+    try {
+      const de = JSON.parse(cru) as Vaga;
+      if (this.onMoverItem?.(de, para)) this.som?.('escolha');
+    } catch {
+      /* arrasto de fora da mochila: ignora */
+    }
+  }
+
+  private limparArrasto(): void {
+    for (const el of this.mochila.querySelectorAll('.slot.pego, .slot.alvo')) {
+      el.classList.remove('pego', 'alvo');
+    }
+  }
 }

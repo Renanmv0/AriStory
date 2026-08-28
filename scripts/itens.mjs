@@ -1,0 +1,192 @@
+/**
+ * Itens de verdade: mochila por pessoa, auto-stash, arrastar e as poses.
+ *
+ * A parte que este teste existe para provar é a POSSE: o sorvete de morango
+ * tem que estar na mochila do Ari e o de maracujá na do Renan, e o modelo tem
+ * que ficar na mão certa mesmo depois do T. O resto (arrastar, encher a
+ * mochila, o frisbee guardado não voar) vem junto.
+ *
+ * Uso: node scripts/itens.mjs /caminho/prefixo
+ */
+import { chromium } from 'playwright';
+
+const OUT = process.argv[2] ?? './itens';
+const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
+const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+
+const browser = await chromium.launch({
+  executablePath: CHROME,
+  args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+});
+const page = await browser.newPage({ viewport: { width: 900, height: 620 } });
+const erros = [];
+page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
+
+await page.goto(`${BASE}/?cena=villa-lobos&em=12,22.4&olhar=3.14`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(3000);
+await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));
+
+/** o que cada um tem, e o que cada RIG está de fato segurando no mundo */
+const estado = () =>
+  page.evaluate(() => {
+    const j = window.jogo;
+    const mao = (quem) => j.getActiveHandItem(quem)?.id ?? null;
+    const segurando = (rig) => {
+      let achou = null;
+      rig.group.traverse((o) => {
+        if (!achou && o.userData?.item) achou = o.userData.item;
+      });
+      return achou;
+    };
+    return {
+      controlando: j.playerId(),
+      maoAri: mao('ari'),
+      maoRenan: mao('renan'),
+      rigDoJogador: [j.player.rig.spec.id, segurando(j.player.rig)],
+      rigDoParceiro: [j.parceiro.rig.spec.id, segurando(j.parceiro.rig)],
+    };
+  });
+
+// ------------------------------------------------------------- a compra
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(600);
+for (let i = 0; i < 6; i++) {
+  if (!(await page.locator('.dialogue.show').count())) break;
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(600);
+}
+await page.waitForTimeout(1200);
+
+// De FRENTE para a câmera, não de costas: a pose `upright` estica o braço
+// para a frente, e de costas o braço esticado fica escondido atrás do corpo.
+const enquadrar = () =>
+  page.evaluate(() => {
+    window.jogo.iso.setViewSize(3.4);
+    window.jogo.player.rig.setFacing(window.jogo.iso.angle);
+  });
+await enquadrar();
+await page.waitForTimeout(1400);
+
+const comprou = await estado();
+await page.screenshot({ path: `${OUT}-sorvetes.png` });
+
+await page.keyboard.press('KeyT');
+await page.waitForTimeout(1200);
+await enquadrar();
+await page.waitForTimeout(1400);
+const trocado = await estado();
+await page.screenshot({ path: `${OUT}-depois-do-T.png` });
+
+// -------------------------------------------------------- o auto-stash
+const cascata = await page.evaluate(() => {
+  const j = window.jogo;
+  const quem = j.playerId();
+  const enche = [];
+  // a mão já tem o sorvete; os próximos vão para as vagas seguintes
+  for (let i = 0; i < 5; i++) {
+    enche.push(j.addItem({ id: `teste-${i}`, nome: `Teste ${i}`, icone: '📦', tipo: 'mao' }, quem));
+  }
+  return { enche, maos: j.handItems(quem).map((x) => x?.id ?? null) };
+});
+
+// ---------------------------------------------------------- arrastar
+await page.keyboard.press('KeyI');
+await page.waitForTimeout(700);
+await page.screenshot({ path: `${OUT}-mochila.png` });
+
+const arrastou = await page.evaluate(() => {
+  const j = window.jogo;
+  const quem = j.playerId();
+  // veste um acessório e depois manda ele de volta para uma vaga de mão vazia,
+  // que é o caso de uso que o Renan pediu: desequipar e guardar
+  j.equipWearable({ id: 'patins', nome: 'Patins', icone: '🛼', tipo: 'vestivel' }, 0, quem);
+  j.removeItem('teste-3', quem); // abre uma vaga na mão
+  const vagaLivre = j.handItems(quem).findIndex((x) => x === null);
+  const ok = j.moveItem({ lista: 'vestivel', indice: 0 }, { lista: 'mao', indice: vagaLivre }, quem);
+  return {
+    ok,
+    vagaLivre,
+    naMao: j.handItems(quem).map((x) => x?.id ?? null),
+    vestindo: j.wearables(quem).map((x) => x?.id ?? null),
+    tipoDepois: j.handItems(quem)[vagaLivre]?.tipo ?? null,
+  };
+});
+await page.screenshot({ path: `${OUT}-desequipado.png` });
+
+// ------------------------------------------------------- o frisbee
+// Entrar na quadra é PEGAR o disco, e pegar passa pelo auto-stash. Com a
+// mochila cheia a quadra não arma.
+//
+// Quem enche é o ARI: o reload volta o controle para ele, e a mochila que
+// importa é sempre a de quem está andando.
+await page.evaluate(() => {
+  const j = window.jogo;
+  for (let i = 0; i < 5; i++) {
+    j.addItem({ id: `entulho-${i}`, nome: `Entulho ${i}`, icone: '📦', tipo: 'mao' }, 'ari');
+  }
+});
+await page.goto(`${BASE}/?cena=villa-lobos&em=18,-4.5&olhar=0.785`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(3200);
+const comMochilaCheia = await page.evaluate(() => window.jogo.hasItem('frisbee'));
+
+// abre uma vaga e volta: agora ele entra
+await page.evaluate(() => {
+  const j = window.jogo;
+  const quem = j.playerId();
+  // esvazia TUDO, inclusive o sorvete da vaga principal: com a mão livre o
+  // frisbee tem que ir direto para ela, e não para o fundo da mochila
+  for (const i of j.handItems(quem)) if (i) j.removeItem(i.id, quem);
+  j.setActiveHandSlot(0, quem);
+});
+await page.goto(`${BASE}/?cena=villa-lobos&em=18,-4.5&olhar=0.785`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(3200);
+const comVaga = await page.evaluate(() => ({
+  tem: window.jogo.hasItem('frisbee'),
+  naMao: window.jogo.getActiveHandItem()?.id ?? null,
+}));
+await enquadrar();
+await page.waitForTimeout(1500);
+await page.screenshot({ path: `${OUT}-frisbee.png` });
+
+console.log('depois da compra · controlando', comprou.controlando);
+console.log('  mão do Ari:', comprou.maoAri, '· mão do Renan:', comprou.maoRenan);
+console.log('  rig do jogador:', JSON.stringify(comprou.rigDoJogador));
+console.log('  rig do parceiro:', JSON.stringify(comprou.rigDoParceiro));
+console.log('depois do T · controlando', trocado.controlando);
+console.log('  rig do jogador:', JSON.stringify(trocado.rigDoJogador));
+console.log('  rig do parceiro:', JSON.stringify(trocado.rigDoParceiro));
+console.log('auto-stash:', JSON.stringify(cascata.enche));
+console.log('  mochila cheia:', JSON.stringify(cascata.maos));
+console.log('desequipar arrastando:', arrastou.ok, '→ vaga', arrastou.vagaLivre, '· tipo virou', arrastou.tipoDepois);
+console.log('  na mão:', JSON.stringify(arrastou.naMao));
+console.log('  vestindo:', JSON.stringify(arrastou.vestindo));
+console.log('frisbee com a mochila cheia:', comMochilaCheia, '(tem que ser false)');
+console.log('frisbee com vaga livre:', comVaga.tem, '· na mão:', comVaga.naMao);
+console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
+
+const paresCertos = (e) =>
+  (e.rigDoJogador[0] === 'ari' ? e.rigDoJogador[1] : e.rigDoParceiro[1]) === 'sorvete-morango' &&
+  (e.rigDoJogador[0] === 'renan' ? e.rigDoJogador[1] : e.rigDoParceiro[1]) === 'sorvete-maracuja';
+
+const ok =
+  !erros.length &&
+  comprou.maoAri === 'sorvete-morango' &&
+  comprou.maoRenan === 'sorvete-maracuja' &&
+  paresCertos(comprou) &&
+  trocado.controlando !== comprou.controlando &&
+  // o T trocou os corpos e cada sorvete continua com o seu dono
+  paresCertos(trocado) &&
+  // 4 vagas livres depois do sorvete: as 4 primeiras entram, a 5ª não cabe
+  JSON.stringify(cascata.enche) ===
+    JSON.stringify(['guardado', 'guardado', 'guardado', 'guardado', 'cheio']) &&
+  arrastou.ok &&
+  arrastou.tipoDepois === 'mao' &&
+  arrastou.naMao.includes('patins') &&
+  !arrastou.vestindo.includes('patins') &&
+  // sem vaga não há disco; com vaga ele vai direto para a mão
+  !comMochilaCheia &&
+  comVaga.tem &&
+  comVaga.naMao === 'frisbee';
+
+await browser.close();
+process.exit(ok ? 0 : 1);

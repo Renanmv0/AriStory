@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { toon, flat } from '../core/materials';
 import { BUILD_WIDTH, type CharacterSpec } from './spec';
+import type { HoldPose } from '../core/types';
 import { PALETTE as P } from '../palette';
 
 /**
@@ -11,6 +12,22 @@ import { PALETTE as P } from '../palette';
  * Mexer aqui sem mexer em LADO (entities/MaosDadas.ts) descola as maos.
  */
 const ABRE_MAO = 0.75;
+
+/**
+ * As duas poses de segurar.
+ *
+ * `braco` e a rotacao imposta ao braco direito; `balanco` e quanto sobra do
+ * balanco da caminhada NAQUELE braco — zero deixaria o boneco engessado, cheio
+ * faria o sorvete voar. `item` e a pose do objeto dentro da mao.
+ */
+const POSES = {
+  // esticado para a frente, com o objeto em pe: sorvete, suco
+  upright: { bracoX: -1.38, bracoZ: -0.16, balanco: 0.15, itemZ: 0 },
+  // so descolado do tronco, objeto pendurado na mao: frisbee
+  // 0.9 rad e nao PI/2.4: de perfil o disco vira um risco na tela, e a essa
+  // distancia de camera ninguem reconhece um frisbee de canto
+  relaxed: { bracoX: 0, bracoZ: -0.34, balanco: 0.6, itemZ: 0.9 },
+} as const;
 
 /**
  * Monta um personagem chibi (cabeca grande, corpo pequeno) a partir de uma
@@ -48,6 +65,8 @@ export class CharacterRig {
   private readonly head = new THREE.Group();
   private readonly armL = new THREE.Group();
   private readonly armR = new THREE.Group();
+  /** encaixe do objeto segurado, na ponta do braco direito */
+  private readonly maoDir = new THREE.Group();
   private readonly legL = new THREE.Group();
   private readonly legR = new THREE.Group();
   private readonly blob: THREE.Mesh;
@@ -59,6 +78,8 @@ export class CharacterRig {
   private beijo = 0;
   /** -1 segura com o braco em -X, 1 com o de +X, 0 nao esta de maos dadas */
   private maos: -1 | 0 | 1 = 0;
+  /** pose do item que a mao direita esta segurando */
+  private pose: HoldPose = 'none';
   private targetFacing = 0;
   private swimming = false;
   private sitting = false;
@@ -206,6 +227,12 @@ export class CharacterRig {
       pivot.add(hand);
       this.body.add(pivot);
     }
+
+    // O que a pessoa segura vira FILHO da mao direita. E essa a diferenca para
+    // o jeito antigo (a cena recalculava a posicao do sorvete a cada quadro):
+    // pendurado no braco, o item herda a caminhada e a pose de graca.
+    this.maoDir.position.y = -armLen * 0.98;
+    this.armR.add(this.maoDir);
 
     // ------------------------------------------------------------- cabeca
     this.head.position.y = legH + torsoH + headR * 0.92;
@@ -763,6 +790,24 @@ export class CharacterRig {
   }
 
   /**
+   * Poe (ou tira) o objeto que a pessoa segura na mao direita.
+   *
+   * Chamar com `null` esvazia a mao. Quem constroi a malha e `world/itens.ts`;
+   * o rig so a pendura e cuida da pose.
+   */
+  segurar(obj: THREE.Object3D | null, pose: HoldPose = 'none'): void {
+    for (let i = this.maoDir.children.length - 1; i >= 0; i--) {
+      this.maoDir.remove(this.maoDir.children[i]);
+    }
+    this.pose = obj ? pose : 'none';
+    if (obj) this.maoDir.add(obj);
+  }
+
+  get segurando(): boolean {
+    return this.maoDir.children.length > 0;
+  }
+
+  /**
    * De maos dadas: qual braco esta "por dentro", segurando a mao do outro.
    *
    * `-1` = o parceiro esta a esquerda do personagem, entao quem segura e o
@@ -879,6 +924,8 @@ export class CharacterRig {
       fora.rotation.x *= 0.5;
     }
 
+    this.aplicarPose();
+
     // pulinho de comemoracao
     if (this.bounce > 0) {
       this.bounce = Math.max(0, this.bounce - dt * 1.6);
@@ -893,6 +940,30 @@ export class CharacterRig {
 
     this.body.rotation.x = walking ? 0.06 : 0;
     this.head.rotation.x = walking ? -0.05 : Math.sin(this.phase * 0.6) * 0.03;
+  }
+
+  /**
+   * Mistura a pose de segurar com a caminhada que acabou de ser calculada.
+   *
+   * Nao substitui o balanco: MULTIPLICA o que ja estava la. Braco travado num
+   * angulo fixo enquanto as pernas andam e o que faz personagem parecer boneco
+   * de vitrine.
+   *
+   * Se a mao direita ja esta ocupada segurando a mao do outro, a pose do item
+   * nao roda — senao o braco tenta obedecer duas coisas e o objeto atravessa o
+   * parceiro.
+   */
+  private aplicarPose(): void {
+    if (this.pose === 'none' || this.maos > 0) {
+      this.maoDir.rotation.set(0, 0, 0);
+      return;
+    }
+    const p = POSES[this.pose];
+    this.armR.rotation.x = p.bracoX + this.armR.rotation.x * p.balanco;
+    this.armR.rotation.z = p.bracoZ;
+    // o objeto desfaz a rotacao do braco: e assim que o sorvete continua em pe
+    // com o braco esticado para a frente
+    this.maoDir.rotation.set(-this.armR.rotation.x, 0, p.itemZ - this.armR.rotation.z);
   }
 
   dispose(): void {

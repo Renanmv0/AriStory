@@ -1,4 +1,4 @@
-import type { ItemDef } from './types';
+import type { Coleta, ItemDef, Vaga } from './types';
 
 /** vagas da mochila (o que se carrega na mao) */
 export const SLOTS_MAO = 5;
@@ -38,7 +38,8 @@ interface SaveData {
   flags: Record<string, boolean>;
   memories: SavedMemory[];
   stats: Record<string, number>;
-  inventario: SaveInventario;
+  /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
+  inventarios: Record<string, SaveInventario>;
 }
 
 function vagasVazias(quantas: number): (ItemDef | null)[] {
@@ -56,6 +57,15 @@ function inventarioVazio(): SaveInventario {
  * pode ter array de tamanho errado. Nos dois casos o jogo tem que abrir, e nao
  * explodir num `.length` — entao aqui as vagas sao sempre recortadas para 5 e 4.
  */
+function normalizarTodos(
+  bruto: Record<string, Partial<SaveInventario>> | undefined,
+): Record<string, SaveInventario> {
+  const todos: Record<string, SaveInventario> = {};
+  if (!bruto || typeof bruto !== 'object') return todos;
+  for (const [quem, inv] of Object.entries(bruto)) todos[quem] = normalizar(inv);
+  return todos;
+}
+
 function normalizar(bruto: Partial<SaveInventario> | undefined): SaveInventario {
   const vazio = inventarioVazio();
   if (!bruto) return vazio;
@@ -84,7 +94,7 @@ const EMPTY: SaveData = {
   flags: {},
   memories: [],
   stats: {},
-  inventario: inventarioVazio(),
+  inventarios: {},
 };
 
 /** Progresso guardado no proprio navegador: flags, memorias e contadores. */
@@ -106,7 +116,7 @@ export class SaveState {
         flags: parsed.flags ?? {},
         memories: parsed.memories ?? [],
         stats: parsed.stats ?? {},
-        inventario: normalizar(parsed.inventario),
+        inventarios: normalizarTodos(parsed.inventarios),
       };
     } catch {
       return structuredClone(EMPTY);
@@ -165,72 +175,135 @@ export class SaveState {
   }
 
   // ------------------------------------------------------------- mochila
+  //
+  // Tudo aqui pede `quem`: o id da ficha do dono. Nao ha mochila "do jogador" —
+  // ha a do Ari e a do Renan, e o T so muda qual delas a tela mostra. E o que
+  // deixa o morango na mao do Renan mesmo quando quem anda e o Ari.
 
-  get maos(): ReadonlyArray<ItemDef | null> {
-    return this.data.inventario.mao;
+  /** A mochila de alguem, criada vazia na primeira vez que e pedida. */
+  private de(quem: string): SaveInventario {
+    let inv = this.data.inventarios[quem];
+    if (!inv) {
+      inv = inventarioVazio();
+      this.data.inventarios[quem] = inv;
+    }
+    return inv;
   }
 
-  get vestiveis(): ReadonlyArray<ItemDef | null> {
-    return this.data.inventario.vestiveis;
+  maos(quem: string): ReadonlyArray<ItemDef | null> {
+    return this.de(quem).mao;
   }
 
-  get slotAtivo(): number {
-    return this.data.inventario.ativo;
+  vestiveis(quem: string): ReadonlyArray<ItemDef | null> {
+    return this.de(quem).vestiveis;
+  }
+
+  slotAtivo(quem: string): number {
+    return this.de(quem).ativo;
   }
 
   /** Fora de 0..4 e ignorado: a vaga principal sempre existe. */
-  set slotAtivo(i: number) {
+  setSlotAtivo(quem: string, i: number): void {
     if (i < 0 || i >= SLOTS_MAO) return;
-    this.data.inventario.ativo = i;
+    this.de(quem).ativo = i;
     this.persist();
   }
 
   /** O item da vaga principal, que e o que esta de fato na mao. */
-  get itemAtivo(): ItemDef | null {
-    return this.data.inventario.mao[this.data.inventario.ativo] ?? null;
+  itemAtivo(quem: string): ItemDef | null {
+    const inv = this.de(quem);
+    return inv.mao[inv.ativo] ?? null;
   }
 
-  achouItem(id: string): boolean {
-    const inv = this.data.inventario;
+  achouItem(quem: string, id: string): boolean {
+    const inv = this.de(quem);
     return inv.mao.some((i) => i?.id === id) || inv.vestiveis.some((i) => i?.id === id);
   }
 
   /**
-   * Guarda na primeira vaga livre da lista que o TIPO do item manda.
-   * @returns false se ja tinha esse id ou se nao sobrou vaga
+   * Coleta com auto-stash.
+   *
+   * A vaga principal tem prioridade; ocupada, a varredura comeca na VIZINHA
+   * dela e da a volta — `(ativo + n) % 5`. Isso visita as outras quatro exatamente
+   * uma vez, sem precisar pular a principal no meio do laco, e faz o item novo
+   * cair ao lado do que ja esta na mao em vez de sempre no comeco da lista.
+   *
+   * Nada e escrito antes de haver vaga confirmada: nao existe caminho em que um
+   * item entre por cima de outro.
    */
-  guardar(item: ItemDef): boolean {
-    if (this.achouItem(item.id)) return false;
-    const vagas = item.tipo === 'vestivel'
-      ? this.data.inventario.vestiveis
-      : this.data.inventario.mao;
-    const livre = vagas.indexOf(null);
-    if (livre < 0) return false;
-    vagas[livre] = item;
-    this.persist();
-    return true;
+  pegar(quem: string, item: ItemDef): Coleta {
+    if (this.achouItem(quem, item.id)) return 'repetido';
+    const inv = this.de(quem);
+
+    if (inv.mao[inv.ativo] === null) {
+      inv.mao[inv.ativo] = item;
+      this.persist();
+      return 'mao';
+    }
+
+    for (let n = 1; n < SLOTS_MAO; n++) {
+      const i = (inv.ativo + n) % SLOTS_MAO;
+      if (inv.mao[i] === null) {
+        inv.mao[i] = item;
+        this.persist();
+        return 'guardado';
+      }
+    }
+    return 'cheio';
   }
 
   /** Veste numa vaga escolhida (ou na primeira livre). */
-  vestir(item: ItemDef, slot?: number): boolean {
-    const vagas = this.data.inventario.vestiveis;
-    if (slot === undefined) return this.guardar({ ...item, tipo: 'vestivel' });
-    if (slot < 0 || slot >= SLOTS_VESTIVEL) return false;
-    if (this.achouItem(item.id)) return false;
-    vagas[slot] = { ...item, tipo: 'vestivel' };
+  vestir(quem: string, item: ItemDef, slot?: number): boolean {
+    if (this.achouItem(quem, item.id)) return false;
+    const vagas = this.de(quem).vestiveis;
+    const onde = slot ?? vagas.indexOf(null);
+    if (onde < 0 || onde >= SLOTS_VESTIVEL || vagas[onde] !== null) return false;
+    vagas[onde] = { ...item, tipo: 'vestivel' };
     this.persist();
     return true;
   }
 
-  despir(slot: number): void {
+  despir(quem: string, slot: number): void {
     if (slot < 0 || slot >= SLOTS_VESTIVEL) return;
-    this.data.inventario.vestiveis[slot] = null;
+    this.de(quem).vestiveis[slot] = null;
     this.persist();
   }
 
+  /**
+   * Move um item de uma vaga para outra, dentro da mesma mochila.
+   *
+   * Destino ocupado TROCA os dois em vez de apagar — e a mesma regra do
+   * auto-stash: nada se perde por acidente. Atravessando as listas, o `tipo` e
+   * reescrito para casar com a lista onde o item parou.
+   *
+   * O `ativo` nao precisa de manutencao: ele e um indice, nao uma copia. Sair
+   * da vaga principal esvazia a mao sozinho; entrar nela enche.
+   */
+  mover(quem: string, de: Vaga, para: Vaga): boolean {
+    const inv = this.de(quem);
+    const lista = (v: Vaga): (ItemDef | null)[] =>
+      v.lista === 'mao' ? inv.mao : inv.vestiveis;
+    const cabe = (v: Vaga): boolean =>
+      v.indice >= 0 && v.indice < (v.lista === 'mao' ? SLOTS_MAO : SLOTS_VESTIVEL);
+
+    if (!cabe(de) || !cabe(para)) return false;
+    if (de.lista === para.lista && de.indice === para.indice) return false;
+
+    const origem = lista(de);
+    const destino = lista(para);
+    const item = origem[de.indice];
+    if (!item) return false; // arrastar vaga vazia nao faz nada
+
+    const trocado = destino[para.indice];
+    destino[para.indice] = { ...item, tipo: para.lista === 'mao' ? 'mao' : 'vestivel' };
+    origem[de.indice] = trocado ? { ...trocado, tipo: de.lista === 'mao' ? 'mao' : 'vestivel' } : null;
+    this.persist();
+    return true;
+  }
+
   /** Tira o item de onde quer que ele esteja. */
-  largar(id: string): boolean {
-    const inv = this.data.inventario;
+  largar(quem: string, id: string): boolean {
+    const inv = this.de(quem);
     let achou = false;
     for (const vagas of [inv.mao, inv.vestiveis]) {
       const i = vagas.findIndex((item) => item?.id === id);

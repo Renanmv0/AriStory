@@ -25,21 +25,25 @@ page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
 await page.goto(`${BASE}/?cena=clube&em=-12.2,10.8&olhar=3.14`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(3000);
 
-/** de quem esta cada copo, pela cor do liquido e pela distancia ate cada um */
+/**
+ * De quem é cada copo — perguntado ao RIG, não à cena.
+ *
+ * Desde que os sucos viraram itens, o copo é filho da mão do personagem. Então
+ * a prova de posse é literal: procurar a malha dentro do corpo de cada um.
+ */
 const copos = () =>
   page.evaluate(() => {
     const j = window.jogo;
-    const eu = j.player.position;
-    const ele = j.parceiro.position;
     const achados = [];
-    j.current.world.root.traverse((o) => {
-      if (!o.userData?.suco || !o.visible) return;
-      // o primeiro filho e o corpo do copo, que e o proprio suco
-      const cor = '#' + o.children[0].material.color.getHexString();
-      const dEu = Math.hypot(o.position.x - eu.x, o.position.z - eu.z);
-      const dEle = Math.hypot(o.position.x - ele.x, o.position.z - ele.z);
-      achados.push({ cor, de: dEu < dEle ? j.player.name : j.parceiro.name });
-    });
+    const olhar = (rig, nome) => {
+      rig.group.traverse((o) => {
+        if (!o.userData?.suco) return;
+        // o primeiro filho é o corpo do copo, que é o próprio suco
+        achados.push({ cor: '#' + o.children[0].material.color.getHexString(), de: nome });
+      });
+    };
+    olhar(j.player.rig, j.player.name);
+    olhar(j.parceiro.rig, j.parceiro.name);
     return { achados, controlando: j.player.name };
   });
 

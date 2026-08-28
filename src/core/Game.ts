@@ -13,7 +13,8 @@ import type { SomNome } from '../audio/efeitos';
 import { CharacterRig } from '../characters/CharacterRig';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
-import type { GameAPI, ItemDef, Memory, SceneAmbient, SceneDef } from './types';
+import type { Coleta, GameAPI, ItemDef, Memory, SceneAmbient, SceneDef, Vaga } from './types';
+import { modeloDoItem } from '../world/itens';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -49,6 +50,8 @@ export class Game implements GameAPI {
   private transitioning = false;
   /** o beijo esta ao alcance neste frame (checado no fim do frame anterior) */
   private podeBeijar = false;
+  /** id do item que cada rig esta segurando agora, para nao reconstruir a malha */
+  private readonly naMao = new Map<string, string | null>();
   /** distância andada desde o último passo ouvido */
   private trilha = 0;
   private elapsed = 0;
@@ -80,6 +83,7 @@ export class Game implements GameAPI {
     this.ui.onTouchSwap = () => this.input.tapSwap();
     // clique numa vaga da mochila escolhe qual item fica na mao
     this.ui.onEscolherSlot = (i) => this.setActiveHandSlot(i);
+    this.ui.onMoverItem = (de, para) => this.moveItem(de, para);
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
     this.ui.onRestart = () => this.restart();
     this.ui.som = (nome) => this.audio.play(nome);
@@ -319,6 +323,7 @@ export class Game implements GameAPI {
     this.parceiro.update(this.player.position, dt, world.colliders, world.bounds);
 
     this.coracoes.update(dt);
+    this.sincronizarMaos();
 
     // ------------------------------------------------------- interativos
     this.updateHot(world, dt);
@@ -516,68 +521,103 @@ export class Game implements GameAPI {
   }
 
   // --------------------------------------------------------------- mochila
-  // O motor so guarda e devolve; nenhum item FAZ nada ainda. Quando fizer,
-  // quem age e a cena ou a mecanica, lendo `getActiveHandItem()`.
+  // Cada personagem tem a sua. `quem` omitido = quem esta sendo controlado.
+  // Nenhum item FAZ nada aqui: quem age e a cena, lendo `getActiveHandItem()`.
 
-  addItem(item: ItemDef): boolean {
-    const entrou = this.save.guardar(item);
-    if (entrou) this.repintarMochila();
-    return entrou;
+  addItem(item: ItemDef, quem = this.playerId()): Coleta {
+    const como = this.save.pegar(quem, item);
+    if (como === 'cheio') this.ui.toast('Mochila cheia', '🎒');
+    if (como === 'mao' || como === 'guardado') this.repintarMochila();
+    return como;
   }
 
-  removeItem(id: string): boolean {
-    const saiu = this.save.largar(id);
+  removeItem(id: string, quem = this.playerId()): boolean {
+    const saiu = this.save.largar(quem, id);
     if (saiu) this.repintarMochila();
     return saiu;
   }
 
-  hasItem(id: string): boolean {
-    return this.save.achouItem(id);
+  hasItem(id: string, quem = this.playerId()): boolean {
+    return this.save.achouItem(quem, id);
   }
 
-  getActiveHandItem(): ItemDef | null {
-    return this.save.itemAtivo;
+  getActiveHandItem(quem = this.playerId()): ItemDef | null {
+    return this.save.itemAtivo(quem);
   }
 
-  setActiveHandSlot(indice: number): void {
-    this.save.slotAtivo = indice;
+  setActiveHandSlot(indice: number, quem = this.playerId()): void {
+    this.save.setSlotAtivo(quem, indice);
     this.repintarMochila();
   }
 
-  activeHandSlot(): number {
-    return this.save.slotAtivo;
+  activeHandSlot(quem = this.playerId()): number {
+    return this.save.slotAtivo(quem);
   }
 
-  equipWearable(item: ItemDef, slot?: number): boolean {
-    const vestiu = this.save.vestir(item, slot);
+  equipWearable(item: ItemDef, slot?: number, quem = this.playerId()): boolean {
+    const vestiu = this.save.vestir(quem, item, slot);
     if (vestiu) this.repintarMochila();
     return vestiu;
   }
 
-  unequipWearable(slot: number): void {
-    this.save.despir(slot);
+  unequipWearable(slot: number, quem = this.playerId()): void {
+    this.save.despir(quem, slot);
     this.repintarMochila();
   }
 
-  handItems(): ReadonlyArray<ItemDef | null> {
-    return this.save.maos;
+  moveItem(de: Vaga, para: Vaga, quem = this.playerId()): boolean {
+    const mexeu = this.save.mover(quem, de, para);
+    if (mexeu) this.repintarMochila();
+    return mexeu;
   }
 
-  wearables(): ReadonlyArray<ItemDef | null> {
-    return this.save.vestiveis;
+  handItems(quem = this.playerId()): ReadonlyArray<ItemDef | null> {
+    return this.save.maos(quem);
+  }
+
+  wearables(quem = this.playerId()): ReadonlyArray<ItemDef | null> {
+    return this.save.vestiveis(quem);
   }
 
   /** Redesenha as vagas. So custa alguma coisa com o painel aberto. */
   private repintarMochila(): void {
     if (!this.ui.mochilaOpen) return;
-    this.ui.renderMochila(this.save.maos, this.save.vestiveis, this.save.slotAtivo);
+    this.pintarMochila();
+  }
+
+  private pintarMochila(): void {
+    const quem = this.playerId();
+    this.ui.renderMochila(
+      this.save.maos(quem),
+      this.save.vestiveis(quem),
+      this.save.slotAtivo(quem),
+      this.player.name,
+    );
   }
 
   private abrirMochila(): void {
     // pinta ANTES de abrir: painel que aparece vazio e depois se preenche
     // pisca feio
-    this.ui.renderMochila(this.save.maos, this.save.vestiveis, this.save.slotAtivo);
+    this.pintarMochila();
     this.ui.toggleMochila();
+  }
+
+  /**
+   * Poe na mao de cada um o que estiver na vaga principal DELE.
+   *
+   * Roda todo quadro, mas so mexe em alguma coisa quando o id muda — e isso que
+   * faz o T funcionar de graca: o modelo e filho do RIG, e o rig viaja junto com
+   * a pessoa quando os corpos trocam de lugar.
+   */
+  private sincronizarMaos(): void {
+    for (const rig of [this.player.rig, this.parceiro.rig]) {
+      const quem = rig.spec.id;
+      const item = this.save.itemAtivo(quem);
+      const id = item?.id ?? null;
+      if (this.naMao.get(quem) === id) continue;
+      this.naMao.set(quem, id);
+      rig.segurar(id ? modeloDoItem(id) : null, item?.holdPose ?? 'none');
+    }
   }
 
   unlock(memory: Memory): void {

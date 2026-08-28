@@ -95,7 +95,7 @@ console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const ok =
   !erros.length &&
-  JSON.stringify(guardou) === JSON.stringify([true, true, true, false, true, true]) &&
+  JSON.stringify(guardou) === JSON.stringify(['mao', 'guardado', 'guardado', 'repetido', true, true]) &&
   aberta.caixas === 9 &&
   aberta.principais === 1 &&
   JSON.stringify(aberta.vestiveis) === JSON.stringify(['patins', null, 'oculos', null]) &&

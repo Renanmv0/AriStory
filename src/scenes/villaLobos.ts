@@ -7,11 +7,12 @@ import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
   bench, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
   cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
-  iceCream, junco, kiosk, lamp, mesaPingPong, nenufar, picnicTable, raquete,
+  junco, kiosk, lamp, mesaPingPong, nenufar, picnicTable, raquete,
   rock, scoreboard, signBoard, textSign, tree, waterFountain, windsock,
   bolinhaPingPong,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
+import { ITENS } from '../world/itens';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -541,17 +542,43 @@ export const villaLobos: SceneDef = {
       g.showCharge(null);
     };
 
-    const entrarNaQuadra = (): void => {
+    /** o disco só é meu se estiver na MINHA vaga principal */
+    const naMinhaMao = (): boolean => g.getActiveHandItem()?.id === ITENS.frisbee.id;
+
+    /** avisou que a mochila estava cheia; zera ao sair da quadra */
+    let avisouCheio = false;
+
+    /**
+     * Entrar na quadra é PEGAR o disco, e pegar passa pelo auto-stash.
+     *
+     * Mochila cheia não arma a quadra: sem vaga não há disco, e o aviso sai uma
+     * vez só — o teste de entrada roda todo quadro.
+     */
+    const entrarNaQuadra = (): boolean => {
+      const como = g.addItem(ITENS.frisbee);
+      if (como === 'cheio') {
+        if (!avisouCheio) {
+          avisouCheio = true;
+          g.toast('Sem vaga pro frisbee', '🥏');
+        }
+        return false;
+      }
       fase = 'comigo';
       disco.pickUp();
       trocasNaSessao = 0;
       ultimoPosto = null;
       g.setZoom(19); // abre o enquadramento: dá pra ver o parceiro e mirar
-      g.toast('Segure F para lançar mais longe', '🥏');
+      g.toast(
+        como === 'mao' ? 'Segure F para lançar mais longe' : 'Frisbee guardado na mochila',
+        '🥏',
+      );
+      return true;
     };
 
     const sairDaQuadra = (): void => {
       fase = 'fora';
+      avisouCheio = false;
+      g.removeItem(ITENS.frisbee.id);
       disco.mesh.visible = false;
       soltarCarga();
       g.freeCompanion();
@@ -561,6 +588,9 @@ export const villaLobos: SceneDef = {
 
     const lancar = (forca: number): void => {
       if (fase !== 'comigo') return;
+      // guardado no fundo da mochila ele não voa: só o item da mão é lançável
+      if (!naMinhaMao()) return;
+      g.removeItem(ITENS.frisbee.id);
       const dist = DIST_MIN + (DIST_MAX - DIST_MIN) * limitar(forca, 0, 1);
       disco.throwAt(g.playerPosition(), g.playerFacing(), dist);
       g.som('lancar');
@@ -580,6 +610,7 @@ export const villaLobos: SceneDef = {
       x: QUADRA.x, z: QUADRA.z, radius: 1.8,
       label: 'Pegar o frisbee', icon: '🥏',
       onInteract: (api) => {
+        if (api.addItem(ITENS.frisbee) === 'cheio') return;
         disco.pickUp();
         fase = 'comigo';
         contarTroca(api, false);
@@ -603,7 +634,7 @@ export const villaLobos: SceneDef = {
       }
 
       // ---------------------------------------------------------- a carga
-      if (fase === 'comigo') {
+      if (fase === 'comigo' && naMinhaMao()) {
         if (g.keyDown('KeyF')) {
           carregando = true;
           carga = Math.min(1, carga + dt / CARGA_CHEIA);
@@ -629,7 +660,12 @@ export const villaLobos: SceneDef = {
       // ------------------------------------------------------ o vai e volta
       switch (fase) {
         case 'comigo':
+          // Quem o jogador VÊ na mão é o modelo pendurado no rig. O objeto de
+          // física continua acompanhando a mão, só invisível: assim ele não
+          // teleporta no lançamento e continua sendo a fonte de verdade de
+          // onde o disco está.
           disco.holdAt(eu, g.playerFacing());
+          disco.mesh.visible = false;
           break;
 
         case 'com-ele': {
@@ -719,6 +755,7 @@ export const villaLobos: SceneDef = {
             disco.position.y < RETORNO.alcance &&
             Math.hypot(disco.position.x - eu.x, disco.position.z - eu.z) < RETORNO.raio;
           if (noAr) {
+            if (g.addItem(ITENS.frisbee) === 'cheio') break;
             disco.pickUp();
             fase = 'comigo';
             contarTroca(g, true);
@@ -726,7 +763,7 @@ export const villaLobos: SceneDef = {
           }
           if (disco.state === 'chao') {
             fase = 'no-chao';
-            if (disco.position.distanceTo(eu) < 1.9) {
+            if (disco.position.distanceTo(eu) < 1.9 && g.addItem(ITENS.frisbee) !== 'cheio') {
               disco.pickUp();
               fase = 'comigo';
               contarTroca(g, false);
@@ -892,40 +929,17 @@ export const villaLobos: SceneDef = {
     });
 
     // ------------------------------------------------------------- sorvetes
-    // um morango para o Ari e um maracujá para o Renan; trocar de personagem
-    // com T troca a mão, não o sabor
-    const sorveteAri = iceCream(P.morango);
-    const sorveteRenan = iceCream(P.maracuja);
-    sorveteAri.visible = false;
-    sorveteRenan.visible = false;
-    w.root.add(sorveteAri, sorveteRenan);
+    // Morango do Ari, maracujá do Renan. Agora são ITENS, cada um na mochila do
+    // seu dono: quem põe o modelo na mão é o motor, e o T não muda nada porque
+    // a malha é filha do rig, que viaja com a pessoa.
     let sorveteRestante = 0;
-
-    const segurarNaEsquerda = (obj: THREE.Object3D, pos: THREE.Vector3, facing: number): void => {
-      obj.visible = true;
-      // mão esquerda: a direita é onde o frisbee fica
-      obj.position.set(
-        pos.x + Math.sin(facing - Math.PI / 2) * 0.42,
-        1.14,
-        pos.z + Math.cos(facing - Math.PI / 2) * 0.42,
-      );
-      obj.rotation.y = facing;
-    };
 
     w.onUpdate((dt) => {
       if (sorveteRestante <= 0) return;
       sorveteRestante -= dt;
-
-      const doJogador = g.playerName() === ARI.name ? sorveteAri : sorveteRenan;
-      const doParceiro = doJogador === sorveteAri ? sorveteRenan : sorveteAri;
-      const eu = g.playerPosition();
-      const ele = g.companionPosition();
-      segurarNaEsquerda(doJogador, eu, g.playerFacing());
-      segurarNaEsquerda(doParceiro, ele, Math.atan2(eu.x - ele.x, eu.z - ele.z));
-
       if (sorveteRestante <= 0) {
-        sorveteAri.visible = false;
-        sorveteRenan.visible = false;
+        g.removeItem(ITENS.sorveteMorango.id, ARI.id);
+        g.removeItem(ITENS.sorveteMaracuja.id, RENAN.id);
         g.toast('Acabou o sorvete', '🍦');
       }
     });
@@ -1072,6 +1086,9 @@ export const villaLobos: SceneDef = {
           [A, 'Nunca pedimos diferente.'],
         ]);
         sorveteRestante = 50;
+        // cada casquinha vai para a mochila do dono, não para uma bolsa comum
+        api.addItem(ITENS.sorveteMorango, ARI.id);
+        api.addItem(ITENS.sorveteMaracuja, RENAN.id);
         api.som('sorvete');
         api.toast('Morango e maracujá', '🍦');
         api.unlock({

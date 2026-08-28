@@ -107,7 +107,31 @@ export interface ItemDef {
   tipo: 'mao' | 'vestivel';
   /** linha curta que o painel mostra ao passar o olho */
   nota?: string;
+  /**
+   * Como o personagem segura isto na mao.
+   *
+   * - `upright`: braco esticado para a frente e o objeto em pe — sorvete, suco;
+   * - `relaxed`: braco so descolado do tronco, objeto pendurado na mao — frisbee;
+   * - `none`: nao muda a pose (padrao para o que nem aparece na mao).
+   */
+  holdPose?: HoldPose;
 }
+
+export type HoldPose = 'upright' | 'relaxed' | 'none';
+
+/** Endereco de uma vaga do inventario. E o que o arrastar move de um lado para outro. */
+export interface Vaga {
+  lista: 'mao' | 'vestivel';
+  indice: number;
+}
+
+/**
+ * O que aconteceu ao tentar pegar um item.
+ *
+ * E um enum e nao um boolean porque quem chama precisa saber POR QUE falhou
+ * para dizer a coisa certa na tela.
+ */
+export type Coleta = 'mao' | 'guardado' | 'repetido' | 'cheio';
 
 export interface Memory {
   id: string;
@@ -156,23 +180,31 @@ export interface GameAPI {
   unlock(memory: Memory): void;
 
   // --------------------------------------------------------- mochila
-  /** Guarda um item. Falso se ja tinha esse id ou se nao sobrou vaga. */
-  addItem(item: ItemDef): boolean;
+  // Cada personagem tem a SUA mochila. `quem` e o id da ficha ('ari',
+  // 'renan'); omitido, vale quem esta sendo controlado agora.
+  /**
+   * Coleta com auto-stash: tenta a vaga principal, depois as outras quatro.
+   * Nada e sobrescrito nunca — mochila cheia devolve 'cheio' e o item fica onde
+   * estava.
+   */
+  addItem(item: ItemDef, quem?: string): Coleta;
   /** Tira um item da mochila ou dos acessorios, onde quer que ele esteja. */
-  removeItem(id: string): boolean;
-  hasItem(id: string): boolean;
+  removeItem(id: string, quem?: string): boolean;
+  hasItem(id: string, quem?: string): boolean;
   /** O que esta DE FATO na mao: o item do slot principal, ou null. */
-  getActiveHandItem(): ItemDef | null;
+  getActiveHandItem(quem?: string): ItemDef | null;
   /** Escolhe qual das 5 vagas e a principal. */
-  setActiveHandSlot(indice: number): void;
-  activeHandSlot(): number;
+  setActiveHandSlot(indice: number, quem?: string): void;
+  activeHandSlot(quem?: string): number;
   /** Veste um acessorio. Sem `slot`, entra na primeira vaga livre. */
-  equipWearable(item: ItemDef, slot?: number): boolean;
-  unequipWearable(slot: number): void;
+  equipWearable(item: ItemDef, slot?: number, quem?: string): boolean;
+  unequipWearable(slot: number, quem?: string): void;
+  /** Move (ou troca) um item entre duas vagas. E o que o arrastar usa. */
+  moveItem(de: Vaga, para: Vaga, quem?: string): boolean;
   /** As 5 vagas da mochila, na ordem da tela; null e vaga vazia. */
-  handItems(): ReadonlyArray<ItemDef | null>;
+  handItems(quem?: string): ReadonlyArray<ItemDef | null>;
   /** As 4 vagas de acessorio, na ordem da tela. */
-  wearables(): ReadonlyArray<ItemDef | null>;
+  wearables(quem?: string): ReadonlyArray<ItemDef | null>;
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */
   keyPressed(code: string): boolean;

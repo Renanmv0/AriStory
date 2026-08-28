@@ -3,10 +3,11 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import { flat } from '../core/materials';
 import {
-  bench, building, bush, cloud, copoDeSuco, divingBoard, fence, floatRing, flowers,
+  bench, building, bush, cloud, divingBoard, fence, floatRing, flowers,
   kiosk, parasol, poolLadder, poolShell, poolWater, showerPost, sunLounger, tree,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
+import { ITENS } from '../world/itens';
 
 /**
  * Clube — a piscina.
@@ -304,41 +305,16 @@ export const clube: SceneDef = {
     });
 
     // ---------------------------------------------------------------- sucos
-    // Mesmo desenho do sorvete no Villa Lobos: os dois copos existem desde o
-    // começo, escondidos, e o sabor é AMARRADO NA PESSOA, não em quem está
-    // sendo controlado. Trocar com T troca a mão que segura, nunca o sabor.
-    const sucoRenan = copoDeSuco(P.morango);
-    const sucoAri = copoDeSuco(P.pessego);
-    sucoRenan.visible = false;
-    sucoAri.visible = false;
-    w.root.add(sucoRenan, sucoAri);
+    // Morango do Renan, pêssego do Ari — cada um na mochila do seu dono. Quem
+    // põe o copo na mão é o motor, e o T não muda nada: a malha é filha do rig.
     let sucoRestante = 0;
-
-    const segurarNaEsquerda = (obj: THREE.Object3D, pos: THREE.Vector3, facing: number): void => {
-      obj.visible = true;
-      // mão esquerda: a direita é a que fica livre
-      obj.position.set(
-        pos.x + Math.sin(facing - Math.PI / 2) * 0.42,
-        1.05,
-        pos.z + Math.cos(facing - Math.PI / 2) * 0.42,
-      );
-      obj.rotation.y = facing;
-    };
 
     w.onUpdate((dt) => {
       if (sucoRestante <= 0) return;
       sucoRestante -= dt;
-
-      const doJogador = g.playerName() === ARI.name ? sucoAri : sucoRenan;
-      const doParceiro = doJogador === sucoAri ? sucoRenan : sucoAri;
-      const eu = g.playerPosition();
-      const ele = g.companionPosition();
-      segurarNaEsquerda(doJogador, eu, g.playerFacing());
-      segurarNaEsquerda(doParceiro, ele, Math.atan2(eu.x - ele.x, eu.z - ele.z));
-
       if (sucoRestante <= 0) {
-        sucoRenan.visible = false;
-        sucoAri.visible = false;
+        g.removeItem(ITENS.sucoMorango.id, RENAN.id);
+        g.removeItem(ITENS.sucoPessego.id, ARI.id);
         g.toast('Acabou o suco', '🍹');
       }
     });
@@ -354,6 +330,8 @@ export const clube: SceneDef = {
           [A, 'Awnn gracias amorzito'],
         ]);
         sucoRestante = 50;
+        api.addItem(ITENS.sucoMorango, RENAN.id);
+        api.addItem(ITENS.sucoPessego, ARI.id);
         api.som('sorvete'); // a mesma sineta de "toma, é seu" da sorveteria
         api.toast('Morango e pêssego', '🍹');
       },

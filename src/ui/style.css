@@ -284,6 +284,7 @@ body.touch-device .hints .toque { display: block; }
   box-shadow: var(--shadow);
 }
 .mochila h2 { margin: 0 0 2px; font-size: 24px; }
+.mochila h2 .dono { font-size: 15px; color: var(--ink-soft); }
 .mochila .sub { margin: 0 0 16px; color: var(--ink-soft); font-weight: 700; }
 .mochila h3 {
   margin: 0 0 8px;
@@ -346,8 +347,17 @@ body.touch-device .hints .toque { display: block; }
   padding: 1px 7px;
   border-radius: 999px;
 }
-.mochila .vestiveis .slot { cursor: default; }
-.mochila .vestiveis .slot:hover { transform: none; }
+/* a vaga de onde o item saiu, e a que está prestes a recebê-lo */
+.mochila .slot.pego {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255, 201, 77, 0.5);
+  opacity: 0.75;
+}
+.mochila .slot.alvo { border-color: var(--accent-deep); background: var(--paper-warm); }
+/* com um item na pinça, TODA vaga vira alvo — inclusive as vazias, que é como
+   se desequipa um acessório para a mochila */
+.mochila.movendo .slot { border-style: solid; }
+.mochila.movendo .slots::after { content: ''; }
 .mochila .close {
   margin-top: 4px;
   padding: 10px 18px;
