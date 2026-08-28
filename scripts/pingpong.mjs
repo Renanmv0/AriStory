@@ -34,6 +34,12 @@ const estado = () =>
   page.evaluate(() => {
     const jogo = window.jogo;
     const p = window.__ping;
+    // a altura da mesa é amostrada aqui junto, e não numa segunda chamada: em
+    // headless o jogo roda em câmera lenta e cada ida ao browser custa quadro
+    // só enquanto a partida corre: encerrada, a mesa volta a ser um
+    // interativo normal e pode respirar de novo à vontade
+    const emJogo = p && p.fase !== 'parado' && p.fase !== 'fim';
+    if (window.__mesa && emJogo) window.__balanco.push(window.__mesa.position.y);
     return {
       perspectiva: jogo.camOmbro !== null,
       placar: document.querySelector('.placar')?.classList.contains('show') ?? false,
@@ -75,13 +81,36 @@ await page.evaluate(() => {
   window.__ping = achado;
 });
 
+// espiona o motivo de cada ponto: é o que prova que as regras de quique estão
+// valendo, e não "quem isolou a bola ganha"
+await page.evaluate(() => {
+  window.__motivos = [];
+  const p = window.__ping;
+  const antes = p.onPonto;
+  p.onPonto = (meu, motivo) => {
+    window.__motivos.push(`${meu ? 'eu' : 'ele'}: ${motivo}`);
+    antes?.(meu, motivo);
+  };
+  // e a mesa não pode balançar durante a partida
+  window.__balanco = [];
+  const mundo = window.jogo.current.world.root;
+  let mesa = null;
+  mundo.traverse((o) => {
+    if (!mesa && o.userData?.pingpong) mesa = o;
+  });
+  window.__mesa = mesa;
+});
+
 const comecou = await estado();
 await page.screenshot({ path: `${OUT}-mesa.png` });
 
 // joga: o mouse persegue o Z da bolinha, que é o que a mão faz
 const inicio = Date.now();
 let ultimo = comecou;
-while (Date.now() - inicio < 240000) {
+// Uma partida até 5 leva tempo: o headless roda o jogo a ~7 fps, então cada
+// ponto disputado custa dezenas de segundos de relógio. O orçamento é generoso
+// de propósito — o laço sai sozinho assim que a partida fecha.
+while (Date.now() - inicio < 600000) {
   const e = await estado();
   ultimo = e;
   // 'parado' = a partida acabou e o minigame se recolheu
@@ -94,7 +123,7 @@ while (Date.now() - inicio < 240000) {
   if (e.meus + e.dele === 1 && e.fase === 'jogando') {
     await page.screenshot({ path: `${OUT}-jogando.png` });
   }
-  await page.waitForTimeout(90);
+  await page.waitForTimeout(60);
 }
 
 // avança a conversa final — e SÓ enquanto houver balão aberto, senão o E
@@ -118,6 +147,14 @@ const save = await page.evaluate(() => {
   }
 });
 
+const motivos = await page.evaluate(() => window.__motivos ?? []);
+const balanco = await page.evaluate(() => {
+  const b = window.__balanco ?? [];
+  return b.length ? Math.max(...b) - Math.min(...b) : -1;
+});
+
+console.log('motivos dos pontos:', motivos.join(' | ') || '(nenhum)');
+console.log('balanço da mesa durante a partida:', balanco.toFixed(4), '(tem que ser 0)');
 console.log('perspectiva ligada ao começar:', comecou.perspectiva);
 console.log('placar na tela:', comecou.placar);
 console.log('placar final:', `${ultimo.meus} × ${ultimo.dele}`, '· fase', ultimo.fase);
@@ -132,6 +169,7 @@ const ok =
   !erros.length &&
   comecou.perspectiva &&
   comecou.placar &&
+  balanco === 0 &&
   Math.max(ultimo.meus, ultimo.dele) === 5 &&
   !fim.perspectiva &&
   // o prêmio só é cobrado quando o jogador de fato ganhou

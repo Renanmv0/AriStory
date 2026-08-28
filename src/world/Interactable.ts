@@ -63,6 +63,17 @@ export class Interactable {
 
   update(dt: number): void {
     if (!this.highlight) return;
+    // Desligado volta para a pose de fábrica NA HORA, sem esperar o respiro
+    // decair. Minigame que usa o próprio objeto como palco — a mesa de ping
+    // pong, que é o pai da bolinha e das raquetes — não pode ter o palco
+    // balançando debaixo da partida.
+    if (!this.enabled) {
+      this.hot = false;
+      this.pulse = 0;
+      this.highlight.position.y = this.baseY;
+      this.highlight.scale.y = this.baseScale;
+      return;
+    }
     const target = this.hot ? 1 : 0;
     this.pulse += (target - this.pulse) * Math.min(1, dt * 8);
     if (this.pulse < 0.001) {

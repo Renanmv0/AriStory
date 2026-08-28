@@ -963,6 +963,7 @@ export const villaLobos: SceneDef = {
       g.setPlayerVisible(true);
       g.lockPlayer(false);
       g.freeCompanion();
+      jogarPing.enabled = true;
     };
 
     w.onUpdate((dt) => {
@@ -979,7 +980,7 @@ export const villaLobos: SceneDef = {
       });
     });
 
-    w.interact({
+    const jogarPing = w.interact({
       id: 'parque:pingpong',
       x: PING.x, z: PING.z, radius: 2.6,
       label: 'Jogar ping pong', icon: '🏓',
@@ -1016,6 +1017,9 @@ export const villaLobos: SceneDef = {
         api.setPlayerVisible(false);
 
         for (const e of enfeitesPing) e.visible = false;
+        // desliga o interativo: sem isso a mesa continua com o "respiro" do
+        // destaque, e como ela é o pai da bolinha a partida inteira balança
+        jogarPing.enabled = false;
         partida.comecar();
         jogando = true;
         api.toast('Mexa o mouse para mover a raquete', '🏓');
