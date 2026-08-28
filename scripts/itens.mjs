@@ -148,6 +148,37 @@ await enquadrar();
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${OUT}-frisbee.png` });
 
+// -------------------------------- o chapéu salvo pela versão antiga
+// A versão que reescrevia o `tipo` ao mover de lista deixava o chapéu gravado
+// como item de MÃO. Carregado hoje, o catálogo tem que devolver a categoria
+// certa, senão ele fica preso na mochila para sempre.
+await page.evaluate(() => {
+  const cru = JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}');
+  cru.inventarios = cru.inventarios ?? {};
+  cru.inventarios.ari = {
+    ativo: 0,
+    // repare no `tipo: 'mao'`: é exatamente o dado estragado
+    mao: [{ id: 'chapeu-ping-pong', nome: 'Chapéu de campeão', icone: '👑', tipo: 'mao' },
+          null, null, null, null],
+    vestiveis: [null, null, null, null],
+  };
+  localStorage.setItem('aristory.save.v1', JSON.stringify(cru));
+});
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(3200);
+const remendo = await page.evaluate(() => {
+  const j = window.jogo;
+  const antes = j.handItems('ari')[0]?.tipo ?? null;
+  const foi = j.moveItem({ lista: 'mao', indice: 0 }, { lista: 'vestivel', indice: 0 }, 'ari');
+  return { antes, foi, vestindo: j.wearables('ari').map((i) => i?.id ?? null) };
+});
+await page.waitForTimeout(600);
+const chapeuNaCabeca = await page.evaluate(() => {
+  const j = window.jogo;
+  const rig = j.player.rig.spec.id === 'ari' ? j.player.rig : j.parceiro.rig;
+  return rig.campeao;
+});
+
 // --------------------------------------------------- a trava de categoria
 // Sorvete não se veste. A recusa é do SaveState; a tela só dá voz a ela.
 const trava = await page.evaluate(() => {
@@ -180,6 +211,8 @@ console.log('  mochila cheia:', JSON.stringify(cascata.maos));
 console.log('desequipar arrastando:', arrastou.ok, '→ vaga', arrastou.vagaLivre, '· tipo continua', arrastou.tipoDepois);
 console.log('  na mão:', JSON.stringify(arrastou.naMao));
 console.log('  vestindo:', JSON.stringify(arrastou.vestindo));
+console.log('chapéu de save antigo · tipo depois de carregar:', remendo.antes, '· deu pra vestir:', remendo.foi);
+console.log('  vestindo:', JSON.stringify(remendo.vestindo), '· na cabeça:', chapeuNaCabeca);
 console.log('trava · arrastar sorvete para vestimenta:', trava.paraVestimenta, '· equipWearable direto:', trava.vestirDireto);
 console.log('  vagas de vestimenta depois das tentativas:', JSON.stringify(trava.vestindoDepois));
 console.log('frisbee com a mochila cheia:', comMochilaCheia, '(tem que ser false)');
@@ -207,10 +240,17 @@ const ok =
   arrastou.tipoDepois === 'vestivel' &&
   arrastou.naMao.includes('patins') &&
   !arrastou.vestindo.includes('patins') &&
+  // o chapéu estragado se conserta sozinho ao carregar, e volta a ser vestível
+  remendo.antes === 'vestivel' &&
+  remendo.foi === true &&
+  remendo.vestindo[0] === 'chapeu-ping-pong' &&
+  chapeuNaCabeca === true &&
   // sorvete não se veste, por nenhum dos dois caminhos
   trava.paraVestimenta === false &&
   trava.vestirDireto === false &&
-  trava.vestindoDepois.every((x) => x === null) &&
+  // o chapéu (legítimo) segue lá; o que não pode é o sorvete ter entrado
+  !trava.vestindoDepois.includes('sorvete-teste') &&
+  trava.vestindoDepois[0] === 'chapeu-ping-pong' &&
   // sem vaga não há disco; com vaga ele vai direto para a mão
   !comMochilaCheia &&
   comVaga.tem &&

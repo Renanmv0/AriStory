@@ -84,6 +84,24 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'frisbee': () => frisbee(P.frisbee),
 };
 
+const PORID: Record<string, ItemDef> = Object.fromEntries(
+  Object.values(ITENS).map((i) => [i.id, i as ItemDef]),
+);
+
+/**
+ * A ficha oficial de um item, pelo id.
+ *
+ * O save guarda uma COPIA do item dentro da vaga, e copia envelhece: uma versao
+ * antiga do jogo chegou a reescrever o `tipo` ao mover de lista, e o chapeu
+ * salvo naquele dia virou um item de mao que nao dava mais para vestir. Por
+ * isso o catalogo, e nao o save, e quem manda na categoria.
+ *
+ * Devolve null para id que nao esta no catalogo (item de teste, por exemplo).
+ */
+export function fichaDoItem(id: string): ItemDef | null {
+  return PORID[id] ?? null;
+}
+
 /** Modelo do item para pendurar na mao, ou null se ele nao tem corpo. */
 export function modeloDoItem(id: string): THREE.Object3D | null {
   const obj = MODELOS[id]?.();

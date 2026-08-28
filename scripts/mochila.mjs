@@ -87,6 +87,21 @@ const recusa = await page.evaluate(() => ({
 }));
 await page.screenshot({ path: `${OUT}-recusa.png` });
 
+// O DESCARTE, pelo dedo. A toalha CONTINUA na pinça desde a recusa acima —
+// é a regra: categoria errada não desfaz a seleção. Daí basta confirmar.
+const botaoDescarte = await page.locator('.mochila .descartar').textContent();
+await page.screenshot({ path: `${OUT}-botao-descarte.png` });
+await page.locator('.mochila .descartar').click();
+await page.waitForTimeout(250);
+await page.screenshot({ path: `${OUT}-confirmando.png` });
+await page.locator('.mochila .descartar-sim').click();
+await page.waitForTimeout(500);
+const descartou = await page.evaluate(() => ({
+  maos: window.jogo.handItems().map((i) => i?.id ?? null),
+  aviso: document.querySelector('.toast')?.textContent ?? null,
+}));
+await page.screenshot({ path: `${OUT}-descarte.png` });
+
 await page.keyboard.press('KeyI');
 await page.waitForTimeout(500);
 const fechada = await page.evaluate(() => document.querySelector('.mochila').classList.contains('show'));
@@ -104,8 +119,10 @@ console.log('andou com o painel aberto:', andou.toFixed(3), '(tem que ser 0)');
 console.log('depois de clicar na vaga 3 · ativo:', depoisDoClique.ativo, '· na mão:', depoisDoClique.naMao);
 console.log('tocar item de mão numa vaga de vestimenta · aviso:', JSON.stringify(recusa.aviso));
 console.log('  vestíveis intactos:', JSON.stringify(recusa.vestindo), '· item segue na pinça:', recusa.aindaNaPinca === 1);
+console.log('botão de descarte:', JSON.stringify(botaoDescarte));
+console.log('depois de descartar · mãos:', JSON.stringify(descartou.maos), '· aviso:', JSON.stringify(descartou.aviso));
 console.log('o I fechou:', !fechada);
-console.log('depois do F5 · ativo:', depoisDoF5.ativo, '· na mão:', depoisDoF5.naMao, '· mãos:', JSON.stringify(depoisDoF5.maos));
+console.log('depois do F5 · ativo:', depoisDoF5.ativo, '· na mão:', depoisDoF5.naMao, '(descartada) · mãos:', JSON.stringify(depoisDoF5.maos));
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const ok =
@@ -120,9 +137,13 @@ const ok =
   /(não pode ser vestido)/.test(recusa.aviso ?? '') &&
   JSON.stringify(recusa.vestindo) === JSON.stringify(['patins', null, 'oculos', null]) &&
   recusa.aindaNaPinca === 1 &&
+  /Descartar Toalha/.test(botaoDescarte ?? '') &&
+  descartou.maos[2] === null &&
+  /descartado/.test(descartou.aviso ?? '') &&
   !fechada &&
   depoisDoF5.ativo === 2 &&
-  depoisDoF5.naMao === 'Toalha';
+  // a toalha foi descartada, então a vaga principal ficou vazia
+  depoisDoF5.naMao === null;
 
 await browser.close();
 process.exit(ok ? 0 : 1);

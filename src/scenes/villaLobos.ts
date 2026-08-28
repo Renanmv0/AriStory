@@ -568,8 +568,13 @@ export const villaLobos: SceneDef = {
       trocasNaSessao = 0;
       ultimoPosto = null;
       g.setZoom(19); // abre o enquadramento: dá pra ver o parceiro e mirar
+      // Mão ocupada: o disco vai para a mochila e o F não faz nada até ele ser
+      // escolhido. Sem dizer isso, a pessoa fica apertando F na quadra achando
+      // que quebrou.
       g.toast(
-        como === 'mao' ? 'Segure F para lançar mais longe' : 'Frisbee guardado na mochila',
+        como === 'mao'
+          ? 'Segure F para lançar mais longe'
+          : 'Frisbee guardado — escolha ele na mochila (I)',
         '🥏',
       );
       return true;
@@ -656,6 +661,10 @@ export const villaLobos: SceneDef = {
           ultimoPosto = posto;
         }
       }
+
+      // a fase fica legível de fora: é por ela que o teste do frisbee sabe de
+      // quem é o disco sem ter que adivinhar pela altura da malha
+      disco.mesh.userData.fase = fase;
 
       // ------------------------------------------------------ o vai e volta
       switch (fase) {

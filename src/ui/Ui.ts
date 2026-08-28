@@ -27,6 +27,7 @@ export class Ui {
   private readonly slotsMao: HTMLDivElement;
   private readonly slotsVestivel: HTMLDivElement;
   private readonly dono: HTMLElement;
+  private readonly descarte: HTMLElement;
   /** vaga escolhida no toque, esperando o destino */
   private pegou: Vaga | null = null;
   /** categoria do item na pinça, para a trava saber o que recusar */
@@ -133,6 +134,10 @@ export class Ui {
         <div class="slots maos"></div>
         <h3>Vestindo</h3>
         <div class="slots vestiveis"></div>
+        <div class="descarte">
+          <button class="descartar">🗑 Descartar</button>
+          <button class="descartar-sim">Descartar mesmo?</button>
+        </div>
         <button class="close">voltar pro jogo</button>
       </div></div>
       <div class="touch">
@@ -169,6 +174,7 @@ export class Ui {
     this.slotsMao = ui.querySelector('.mochila .maos')!;
     this.slotsVestivel = ui.querySelector('.mochila .vestiveis')!;
     this.dono = ui.querySelector('.mochila .dono')!;
+    this.descarte = ui.querySelector('.mochila .descarte')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -194,6 +200,19 @@ export class Ui {
     ui.querySelector('.journal-btn')!.addEventListener('click', () => this.toggleJournal());
     ui.querySelector('.bag-btn')!.addEventListener('click', () => this.toggleMochila());
     ui.querySelector('.mochila .close')!.addEventListener('click', () => this.closeMochila());
+    // Descartar pede dois toques. Perder o chapéu de campeão num toque sem
+    // querer seria irreversível — o item não volta de lugar nenhum.
+    ui.querySelector('.mochila .descartar')!.addEventListener('click', () => {
+      this.som?.('escolha');
+      this.descarte.classList.add('confirmando');
+    });
+    ui.querySelector('.mochila .descartar-sim')!.addEventListener('click', () => {
+      const de = this.pegou;
+      this.pegou = null;
+      this.tipoNaPinca = undefined;
+      this.marcarPego(null);
+      if (de) this.onDescartar?.(de);
+    });
     this.mochila.addEventListener('click', (e) => {
       if (e.target === this.mochila) this.closeMochila();
     });
@@ -556,6 +575,7 @@ export class Ui {
     this.pegou = null;
     this.tipoNaPinca = undefined;
     this.mochila.classList.remove('movendo');
+    this.descarte.classList.remove('show', 'confirmando');
     const desenhar = (
       onde: HTMLElement,
       vagas: ReadonlyArray<ItemDef | null>,
@@ -589,6 +609,8 @@ export class Ui {
   onEscolherSlot: ((indice: number) => void) | null = null;
   /** Item arrastado (ou tocado) de uma vaga para outra. */
   onMoverItem: ((de: Vaga, para: Vaga) => boolean) | null = null;
+  /** Jogar fora o item de uma vaga. Não volta. */
+  onDescartar: ((de: Vaga) => void) | null = null;
 
   // ------------------------------------------------ arrastar e tocar
 
@@ -673,6 +695,13 @@ export class Ui {
     for (const el of this.mochila.querySelectorAll('.slot.pego')) el.classList.remove('pego');
     vaga?.classList.add('pego');
     this.mochila.classList.toggle('movendo', vaga !== null);
+    // o descarte só existe com um item na pinça: sem seleção não há o que jogar
+    // fora, e um botão solto ali só assusta
+    this.descarte.classList.toggle('show', vaga !== null);
+    this.descarte.classList.remove('confirmando');
+    const alvo = this.descarte.querySelector('.descartar')!;
+    const nome = vaga?.querySelector('b')?.textContent ?? '';
+    alvo.textContent = nome ? `🗑 Descartar ${nome}` : '🗑 Descartar';
   }
 
   private comecarArrasto(e: DragEvent): void {

@@ -84,6 +84,7 @@ export class Game implements GameAPI {
     // clique numa vaga da mochila escolhe qual item fica na mao
     this.ui.onEscolherSlot = (i) => this.setActiveHandSlot(i);
     this.ui.onMoverItem = (de, para) => this.moveItem(de, para);
+    this.ui.onDescartar = (de) => this.descartarDaVaga(de);
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
     this.ui.onRestart = () => this.restart();
     this.ui.som = (nome) => this.audio.play(nome);
@@ -593,6 +594,18 @@ export class Game implements GameAPI {
 
   wearables(quem = this.playerId()): ReadonlyArray<ItemDef | null> {
     return this.save.vestiveis(quem);
+  }
+
+  /** Joga fora o item de uma vaga. Nao volta de lugar nenhum. */
+  private descartarDaVaga(de: Vaga): void {
+    const quem = this.playerId();
+    const vagas = de.lista === 'mao' ? this.save.maos(quem) : this.save.vestiveis(quem);
+    const item = vagas[de.indice];
+    if (!item) return;
+    this.save.largar(quem, item.id);
+    this.audio.play('escolha');
+    this.ui.toast(`${item.nome} foi descartado`, '🗑');
+    this.pintarMochila();
   }
 
   /** Redesenha as vagas. So custa alguma coisa com o painel aberto. */

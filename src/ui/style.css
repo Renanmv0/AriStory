@@ -361,6 +361,23 @@ body.touch-device .hints .toque { display: block; }
    se desequipa um acessório para a mochila */
 .mochila.movendo .slot { border-style: solid; }
 .mochila.movendo .slots::after { content: ''; }
+/* o descarte só aparece com um item na pinça */
+.mochila .descarte { display: none; margin-bottom: 12px; }
+.mochila .descarte.show { display: block; }
+.mochila .descarte button {
+  padding: 9px 16px;
+  border: 2px solid rgba(226, 85, 124, 0.4);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--accent-deep);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.mochila .descarte .descartar-sim { display: none; background: var(--accent-deep); color: #fff; border-color: transparent; }
+.mochila .descarte.confirmando .descartar { display: none; }
+.mochila .descarte.confirmando .descartar-sim { display: inline-block; }
+
 .mochila .close {
   margin-top: 4px;
   padding: 10px 18px;

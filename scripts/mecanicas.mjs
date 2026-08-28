@@ -42,16 +42,33 @@ const sentados = (await page.locator('.dialogue.show').count()) > 0;
 await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=18,-4.5&olhar=0.785`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(3200);
 const discoNaMao = (await page.locator('.prompt.show .label').textContent().catch(() => null)) ?? '';
-for (let i = 0; i < 6; i++) {
-  // segura para carregar e solta: é assim que se lança agora
+
+// O sorvete comprado acima ocupa a vaga principal, então o disco entrou na
+// mochila e o F não lança até ele ser escolhido — é a regra. Aqui o teste faz
+// o que a pessoa faria: abre a mochila e toca no frisbee.
+await page.keyboard.press('KeyI');
+await page.waitForTimeout(700);
+const vagaDoDisco = await page.evaluate(() =>
+  window.jogo.handItems().findIndex((i) => i?.id === 'frisbee'),
+);
+if (vagaDoDisco >= 0) await page.locator('.mochila .maos .slot').nth(vagaDoDisco).click();
+await page.waitForTimeout(400);
+await page.keyboard.press('KeyI');
+await page.waitForTimeout(600);
+
+// Carga curtinha de propósito: com F segurado o disco vai a 20+ unidades, e o
+// parceiro busca A PÉ. Em câmera lenta (headless roda o jogo a ~7 fps) uma ida
+// dessas passa de 10 s de relógio e o teste estourava o tempo antes da volta.
+for (let i = 0; i < 4; i++) {
   await page.keyboard.down('KeyF');
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(120);
   await page.keyboard.up('KeyF');
-  await page.waitForTimeout(2600);
-  await page.keyboard.down('KeyW');
-  await page.waitForTimeout(500);
-  await page.keyboard.up('KeyW');
-  await page.waitForTimeout(1700);
+  // espera a ida, a busca e a volta inteiras
+  for (let k = 0; k < 24; k++) {
+    await page.waitForTimeout(500);
+    const fase = await page.evaluate(() => window.jogo.getActiveHandItem()?.id ?? null);
+    if (fase === 'frisbee') break; // o disco voltou pra minha mão
+  }
 }
 await page.screenshot({ path: `${OUT}-frisbee.png` });
 const trocas = await page.evaluate(() => {

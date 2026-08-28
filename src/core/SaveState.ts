@@ -1,4 +1,5 @@
 import type { Coleta, ItemDef, Vaga } from './types';
+import { fichaDoItem } from '../world/itens';
 
 /** vagas da mochila (o que se carrega na mao) */
 export const SLOTS_MAO = 5;
@@ -84,20 +85,31 @@ function normalizarTodos(
 function normalizar(bruto: Partial<SaveInventario> | undefined): SaveInventario {
   const vazio = inventarioVazio();
   if (!bruto) return vazio;
-  const encaixar = (lista: unknown, quantas: number): (ItemDef | null)[] => {
+  const encaixar = (lista: unknown, quantas: number, qual: 'mao' | 'vestivel'): (ItemDef | null)[] => {
     const vagas = vagasVazias(quantas);
     if (!Array.isArray(lista)) return vagas;
     for (let i = 0; i < quantas; i++) {
       const item = lista[i] as ItemDef | null | undefined;
-      vagas[i] = item && typeof item.id === 'string' ? item : null;
+      if (!item || typeof item.id !== 'string') {
+        vagas[i] = null;
+        continue;
+      }
+      // A CATEGORIA VEM DO CATALOGO, nunca do que estava salvo. Save gravado
+      // por uma versao que reescrevia o `tipo` ao mover de lista deixaria o
+      // chapeu preso como item de mao para sempre.
+      const ficha = fichaDoItem(item.id);
+      const certo = ficha ? { ...item, ...ficha } : item;
+      // e, pela mesma razao, sorvete carimbado de vestivel por aquela versao
+      // antiga nao continua ocupando uma vaga de acessorio
+      vagas[i] = podeMorarEm(certo, qual) ? certo : null;
     }
     return vagas;
   };
   const ativo = typeof bruto.ativo === 'number' ? Math.floor(bruto.ativo) : 0;
   return {
-    mao: encaixar(bruto.mao, SLOTS_MAO),
+    mao: encaixar(bruto.mao, SLOTS_MAO, 'mao'),
     ativo: ativo >= 0 && ativo < SLOTS_MAO ? ativo : 0,
-    vestiveis: encaixar(bruto.vestiveis, SLOTS_VESTIVEL),
+    vestiveis: encaixar(bruto.vestiveis, SLOTS_VESTIVEL, 'vestivel'),
   };
 }
 
