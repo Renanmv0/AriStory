@@ -85,6 +85,7 @@ export class Game implements GameAPI {
     this.ui.onEscolherSlot = (i) => this.setActiveHandSlot(i);
     this.ui.onMoverItem = (de, para) => this.moveItem(de, para);
     this.ui.onDescartar = (de) => this.descartarDaVaga(de);
+    this.ui.onAbrirMochila = () => this.pintarMochila();
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
     this.ui.onRestart = () => this.restart();
     this.ui.som = (nome) => this.audio.play(nome);
@@ -625,9 +626,8 @@ export class Game implements GameAPI {
   }
 
   private abrirMochila(): void {
-    // pinta ANTES de abrir: painel que aparece vazio e depois se preenche
-    // pisca feio
-    this.pintarMochila();
+    // quem pinta e a propria Ui, ao abrir: assim o botao 🎒 do celular e a
+    // tecla I passam exatamente pelo mesmo caminho
     this.ui.toggleMochila();
   }
 

@@ -548,6 +548,10 @@ export class Ui {
     if (this.mochilaOpen) this.closeMochila();
     else {
       this.closeJournal();
+      // Pinta AQUI, e não em quem chamou. O painel tem duas portas — a tecla I
+      // e o botão 🎒 — e enquanto o desenho morava no lado do teclado, abrir
+      // pelo dedo mostrava um painel sem vaga nenhuma.
+      this.onAbrirMochila?.();
       this.mochila.classList.add('show');
     }
     this.marcarTelaAberta();
@@ -611,6 +615,8 @@ export class Ui {
   onMoverItem: ((de: Vaga, para: Vaga) => boolean) | null = null;
   /** Jogar fora o item de uma vaga. Não volta. */
   onDescartar: ((de: Vaga) => void) | null = null;
+  /** Chamado toda vez que a mochila vai abrir, para o Game desenhar as vagas. */
+  onAbrirMochila: (() => void) | null = null;
 
   // ------------------------------------------------ arrastar e tocar
 

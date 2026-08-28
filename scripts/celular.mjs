@@ -6,6 +6,10 @@
  * encolheram, ficaram translúcidos e o balão de fala ganhou um corredor livre
  * na direita.
  *
+ * E que cada botão do HUD ABRE o que promete. O 🎒 já abriu uma mochila sem
+ * vaga nenhuma porque o desenho das vagas morava no caminho do teclado; no
+ * computador estava certo e no celular não.
+ *
  * Uso: node scripts/celular.mjs /caminho/prefixo
  */
 import { chromium } from 'playwright';
@@ -82,6 +86,21 @@ console.log('botões de toque:', botoes, `· ${Math.round(visual.largura)}px · 
 console.log('prompt tapado:', noPrompt + '%');
 console.log('fala tapada:', naFala + '%');
 console.log('botões de escolha tapados:', nasEscolhas + '%');
+// o 🎒 abre a mochila DE VERDADE: painel na tela e as 9 vagas desenhadas
+// recarrega para sair do menu: na tela de controles o "voltar pro jogo" fica
+// escondido, e com o menu aberto os botões de toque somem
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2600);
+await page.locator('.bag-btn').tap();
+await page.waitForTimeout(700);
+const mochila = await page.evaluate(() => ({
+  aberta: document.querySelector('.mochila')?.classList.contains('show') ?? false,
+  vagas: document.querySelectorAll('.mochila .slot').length,
+  altura: document.querySelector('.mochila .sheet')?.getBoundingClientRect().height ?? 0,
+}));
+await page.screenshot({ path: `${OUT}-mochila.png` });
+
+console.log('🎒 abriu a mochila:', mochila.aberta, '· vagas desenhadas:', mochila.vagas);
 console.log('linhas na tela de controles:', linhas);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
@@ -94,7 +113,9 @@ const ok =
   noPrompt === 0 &&
   naFala === 0 &&
   nasEscolhas === 0 &&
-  linhas >= 10;
+  linhas >= 10 &&
+  mochila.aberta &&
+  mochila.vagas === 9;
 
 await browser.close();
 process.exit(ok ? 0 : 1);
