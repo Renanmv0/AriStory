@@ -6,6 +6,21 @@ export const SLOTS_MAO = 5;
 export const SLOTS_VESTIVEL = 4;
 
 /**
+ * Um item pode morar nesta lista?
+ *
+ * A regra e ASSIMETRICA de proposito:
+ * - a mochila de mao aceita qualquer coisa — e o que faz "desequipar e guardar
+ *   pra usar depois" existir; um chapeu na mochila e um chapeu na mochila;
+ * - a vaga de acessorio so aceita `vestivel`. Sorvete nao se veste.
+ *
+ * Tratar as duas listas com a mesma regra e o erro obvio aqui: ele conserta a
+ * vestimenta e quebra o desequipar no mesmo movimento.
+ */
+function podeMorarEm(item: ItemDef, lista: 'mao' | 'vestivel'): boolean {
+  return lista === 'mao' || item.tipo === 'vestivel';
+}
+
+/**
  * As 9 vagas, guardadas do jeito mais burro possivel: dois arrays de tamanho
  * FIXO em que `null` e vaga vazia.
  *
@@ -233,6 +248,9 @@ export class SaveState {
    */
   pegar(quem: string, item: ItemDef): Coleta {
     if (this.achouItem(quem, item.id)) return 'repetido';
+    // acessorio tenta vestir primeiro; com as 4 vagas cheias ele ainda cabe na
+    // mochila de mao, que aceita qualquer coisa
+    if (item.tipo === 'vestivel' && this.vestir(quem, item)) return 'guardado';
     const inv = this.de(quem);
 
     if (inv.mao[inv.ativo] === null) {
@@ -253,12 +271,20 @@ export class SaveState {
   }
 
   /** Veste numa vaga escolhida (ou na primeira livre). */
+  /**
+   * Veste um acessorio numa vaga escolhida (ou na primeira livre).
+   *
+   * Item de mao e RECUSADO, nao convertido. A versao antiga carimbava
+   * `tipo: 'vestivel'` no que chegasse, e era por isso que dava para vestir
+   * sorvete: o dado mentia sobre o proprio item para caber na vaga.
+   */
   vestir(quem: string, item: ItemDef, slot?: number): boolean {
+    if (!podeMorarEm(item, 'vestivel')) return false;
     if (this.achouItem(quem, item.id)) return false;
     const vagas = this.de(quem).vestiveis;
     const onde = slot ?? vagas.indexOf(null);
     if (onde < 0 || onde >= SLOTS_VESTIVEL || vagas[onde] !== null) return false;
-    vagas[onde] = { ...item, tipo: 'vestivel' };
+    vagas[onde] = item;
     this.persist();
     return true;
   }
@@ -273,8 +299,9 @@ export class SaveState {
    * Move um item de uma vaga para outra, dentro da mesma mochila.
    *
    * Destino ocupado TROCA os dois em vez de apagar — e a mesma regra do
-   * auto-stash: nada se perde por acidente. Atravessando as listas, o `tipo` e
-   * reescrito para casar com a lista onde o item parou.
+   * auto-stash: nada se perde por acidente. Mas a troca so acontece se AS DUAS
+   * pontas couberem: sorvete nao vira acessorio por ter caido numa vaga de
+   * vestimenta.
    *
    * O `ativo` nao precisa de manutencao: ele e um indice, nao uma copia. Sair
    * da vaga principal esvazia a mao sozinho; entrar nela enche.
@@ -294,9 +321,14 @@ export class SaveState {
     const item = origem[de.indice];
     if (!item) return false; // arrastar vaga vazia nao faz nada
 
+    // A TRAVA DE CATEGORIA. O item tem que caber na lista de destino pelo que
+    // ELE e, e a troca so vale se o item deslocado tambem couber de volta.
+    if (!podeMorarEm(item, para.lista)) return false;
     const trocado = destino[para.indice];
-    destino[para.indice] = { ...item, tipo: para.lista === 'mao' ? 'mao' : 'vestivel' };
-    origem[de.indice] = trocado ? { ...trocado, tipo: de.lista === 'mao' ? 'mao' : 'vestivel' } : null;
+    if (trocado && !podeMorarEm(trocado, de.lista)) return false;
+
+    destino[para.indice] = item;
+    origem[de.indice] = trocado ?? null;
     this.persist();
     return true;
   }

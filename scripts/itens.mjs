@@ -148,6 +148,26 @@ await enquadrar();
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${OUT}-frisbee.png` });
 
+// --------------------------------------------------- a trava de categoria
+// Sorvete não se veste. A recusa é do SaveState; a tela só dá voz a ela.
+const trava = await page.evaluate(() => {
+  const j = window.jogo;
+  const quem = j.playerId();
+  const sorvete = { id: 'sorvete-teste', nome: 'Sorvete', icone: '🍦', tipo: 'mao' };
+  const naMao = j.handItems(quem).findIndex((x) => x === null);
+  j.addItem(sorvete, quem);
+  const onde = j.handItems(quem).findIndex((x) => x?.id === 'sorvete-teste');
+  return {
+    naMao,
+    // 1. arrastar item de mão para vaga de vestimenta
+    paraVestimenta: j.moveItem({ lista: 'mao', indice: onde }, { lista: 'vestivel', indice: 0 }, quem),
+    // 2. tentar vestir direto pela API
+    vestirDireto: j.equipWearable(sorvete, 1, quem),
+    // 3. e o caminho que TEM que continuar valendo: desequipar
+    vestindoDepois: j.wearables(quem).map((x) => x?.id ?? null),
+  };
+});
+
 console.log('depois da compra · controlando', comprou.controlando);
 console.log('  mão do Ari:', comprou.maoAri, '· mão do Renan:', comprou.maoRenan);
 console.log('  rig do jogador:', JSON.stringify(comprou.rigDoJogador));
@@ -157,9 +177,11 @@ console.log('  rig do jogador:', JSON.stringify(trocado.rigDoJogador));
 console.log('  rig do parceiro:', JSON.stringify(trocado.rigDoParceiro));
 console.log('auto-stash:', JSON.stringify(cascata.enche));
 console.log('  mochila cheia:', JSON.stringify(cascata.maos));
-console.log('desequipar arrastando:', arrastou.ok, '→ vaga', arrastou.vagaLivre, '· tipo virou', arrastou.tipoDepois);
+console.log('desequipar arrastando:', arrastou.ok, '→ vaga', arrastou.vagaLivre, '· tipo continua', arrastou.tipoDepois);
 console.log('  na mão:', JSON.stringify(arrastou.naMao));
 console.log('  vestindo:', JSON.stringify(arrastou.vestindo));
+console.log('trava · arrastar sorvete para vestimenta:', trava.paraVestimenta, '· equipWearable direto:', trava.vestirDireto);
+console.log('  vagas de vestimenta depois das tentativas:', JSON.stringify(trava.vestindoDepois));
 console.log('frisbee com a mochila cheia:', comMochilaCheia, '(tem que ser false)');
 console.log('frisbee com vaga livre:', comVaga.tem, '· na mão:', comVaga.naMao);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
@@ -180,9 +202,15 @@ const ok =
   JSON.stringify(cascata.enche) ===
     JSON.stringify(['guardado', 'guardado', 'guardado', 'guardado', 'cheio']) &&
   arrastou.ok &&
-  arrastou.tipoDepois === 'mao' &&
+  // guardado na mochila o patins CONTINUA sendo vestível: o item não mente
+  // sobre a própria categoria só porque mudou de vaga
+  arrastou.tipoDepois === 'vestivel' &&
   arrastou.naMao.includes('patins') &&
   !arrastou.vestindo.includes('patins') &&
+  // sorvete não se veste, por nenhum dos dois caminhos
+  trava.paraVestimenta === false &&
+  trava.vestirDireto === false &&
+  trava.vestindoDepois.every((x) => x === null) &&
   // sem vaga não há disco; com vaga ele vai direto para a mão
   !comMochilaCheia &&
   comVaga.tem &&

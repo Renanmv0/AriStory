@@ -29,6 +29,8 @@ export class Ui {
   private readonly dono: HTMLElement;
   /** vaga escolhida no toque, esperando o destino */
   private pegou: Vaga | null = null;
+  /** categoria do item na pinça, para a trava saber o que recusar */
+  private tipoNaPinca: string | undefined;
 
   private advance: (() => void) | null = null;
   private escolher: ((i: number) => void) | null = null;
@@ -552,6 +554,7 @@ export class Ui {
   ): void {
     this.dono.textContent = `de ${dono}`;
     this.pegou = null;
+    this.tipoNaPinca = undefined;
     this.mochila.classList.remove('movendo');
     const desenhar = (
       onde: HTMLElement,
@@ -566,6 +569,10 @@ export class Ui {
         vaga.classList.toggle('cheio', item !== null);
         vaga.classList.toggle('principal', i === principal);
         vaga.draggable = item !== null;
+        // a categoria viaja no DOM: é ela que a trava do toque consulta sem
+        // precisar perguntar ao save
+        if (item) vaga.dataset.tipo = item.tipo;
+        else delete vaga.dataset.tipo;
         vaga.innerHTML = item
           ? `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
             (item.nota ? `<small>${item.nota}</small>` : '')
@@ -584,6 +591,23 @@ export class Ui {
   onMoverItem: ((de: Vaga, para: Vaga) => boolean) | null = null;
 
   // ------------------------------------------------ arrastar e tocar
+
+  /**
+   * A trava de categoria, do lado da tela.
+   *
+   * O `SaveState` já recusa sozinho — é ele quem manda. Isto existe só para a
+   * recusa ter VOZ: sem o aviso, tocar o sorvete numa vaga de vestimenta não
+   * fazia nada e parecia um toque que não pegou.
+   */
+  private podeIrPara(tipo: string | undefined, lista: 'mao' | 'vestivel'): boolean {
+    if (!tipo) return true;
+    if (tipo === 'vestivel' && lista === 'mao') return true; // desequipar sempre vale
+    if (tipo === 'mao' && lista === 'vestivel') {
+      this.toast('Este item não pode ser vestido', '🚫');
+      return false;
+    }
+    return true;
+  }
 
   private endereco(el: HTMLElement): Vaga | null {
     const vaga = el.closest('.slot') as HTMLElement | null;
@@ -610,9 +634,16 @@ export class Ui {
 
     if (this.pegou) {
       const de = this.pegou;
+      if (de.lista === onde.lista && de.indice === onde.indice) {
+        this.pegou = null;
+        this.marcarPego(null);
+        return;
+      }
+      // categoria errada: o item CONTINUA na pinça, para a pessoa poder tocar
+      // numa vaga válida em seguida em vez de recomeçar
+      if (!this.podeIrPara(this.tipoNaPinca, onde.lista)) return;
       this.pegou = null;
       this.marcarPego(null);
-      if (de.lista === onde.lista && de.indice === onde.indice) return;
       if (this.onMoverItem?.(de, onde)) this.som?.('escolha');
       return;
     }
@@ -633,6 +664,7 @@ export class Ui {
       return;
     }
     this.pegou = onde;
+    this.tipoNaPinca = vaga.dataset.tipo;
     this.marcarPego(vaga);
     this.som?.('escolha');
   }
@@ -650,7 +682,7 @@ export class Ui {
       e.preventDefault();
       return;
     }
-    e.dataTransfer?.setData('text/plain', JSON.stringify(onde));
+    e.dataTransfer?.setData('text/plain', JSON.stringify({ vaga: onde, tipo: vaga.dataset.tipo }));
     if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
     vaga.classList.add('pego');
   }
@@ -671,8 +703,9 @@ export class Ui {
     this.limparArrasto();
     if (!para || !cru) return;
     try {
-      const de = JSON.parse(cru) as Vaga;
-      if (this.onMoverItem?.(de, para)) this.som?.('escolha');
+      const { vaga, tipo } = JSON.parse(cru) as { vaga: Vaga; tipo?: string };
+      if (!this.podeIrPara(tipo, para.lista)) return;
+      if (this.onMoverItem?.(vaga, para)) this.som?.('escolha');
     } catch {
       /* arrasto de fora da mochila: ignora */
     }

@@ -74,6 +74,19 @@ await page.waitForTimeout(400);
 const depoisDoClique = await vagas();
 await page.screenshot({ path: `${OUT}-slot-3.png` });
 
+// A trava de categoria pelo DEDO: pega o sorvete na pinça (segundo toque na
+// vaga principal) e tenta soltar numa vaga de vestimenta.
+await page.locator('.mochila .maos .slot').nth(2).click();
+await page.waitForTimeout(300);
+await page.locator('.mochila .vestiveis .slot').nth(1).click();
+await page.waitForTimeout(400);
+const recusa = await page.evaluate(() => ({
+  aviso: document.querySelector('.toast')?.textContent ?? null,
+  vestindo: window.jogo.wearables().map((i) => i?.id ?? null),
+  aindaNaPinca: document.querySelectorAll('.mochila .slot.pego').length,
+}));
+await page.screenshot({ path: `${OUT}-recusa.png` });
+
 await page.keyboard.press('KeyI');
 await page.waitForTimeout(500);
 const fechada = await page.evaluate(() => document.querySelector('.mochila').classList.contains('show'));
@@ -89,6 +102,8 @@ console.log('vestíveis:', JSON.stringify(aberta.vestiveis));
 console.log('caixas na tela:', aberta.caixas, '· com anel de principal:', aberta.principais);
 console.log('andou com o painel aberto:', andou.toFixed(3), '(tem que ser 0)');
 console.log('depois de clicar na vaga 3 · ativo:', depoisDoClique.ativo, '· na mão:', depoisDoClique.naMao);
+console.log('tocar item de mão numa vaga de vestimenta · aviso:', JSON.stringify(recusa.aviso));
+console.log('  vestíveis intactos:', JSON.stringify(recusa.vestindo), '· item segue na pinça:', recusa.aindaNaPinca === 1);
 console.log('o I fechou:', !fechada);
 console.log('depois do F5 · ativo:', depoisDoF5.ativo, '· na mão:', depoisDoF5.naMao, '· mãos:', JSON.stringify(depoisDoF5.maos));
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
@@ -102,6 +117,9 @@ const ok =
   andou === 0 &&
   depoisDoClique.ativo === 2 &&
   depoisDoClique.naMao === 'Toalha' &&
+  /(não pode ser vestido)/.test(recusa.aviso ?? '') &&
+  JSON.stringify(recusa.vestindo) === JSON.stringify(['patins', null, 'oculos', null]) &&
+  recusa.aindaNaPinca === 1 &&
   !fechada &&
   depoisDoF5.ativo === 2 &&
   depoisDoF5.naMao === 'Toalha';

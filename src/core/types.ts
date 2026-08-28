@@ -100,9 +100,12 @@ export interface ItemDef {
   /** emoji, sempre — ver o comentario acima */
   icone: string;
   /**
-   * Onde ele mora: `mao` ocupa uma das 5 vagas da mochila, `vestivel` ocupa
-   * uma das 4 de acessorio. E o proprio item que diz, para ninguem precisar
-   * decorar em qual lista cada coisa entra.
+   * A CATEGORIA do item, e a trava do inventario.
+   *
+   * `mao` ocupa uma das 5 vagas da mochila, `vestivel` uma das 4 de acessorio.
+   * E o proprio item que diz — obrigatorio, sem padrao — e nenhum caminho de
+   * escrita converte um no outro: `SaveState.mover()` e `vestir()` RECUSAM o
+   * que nao couber, em vez de carimbar um tipo novo para caber.
    */
   tipo: 'mao' | 'vestivel';
   /** linha curta que o painel mostra ao passar o olho */

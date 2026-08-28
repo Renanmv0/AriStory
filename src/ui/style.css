@@ -168,6 +168,9 @@ html, body {
 /* ---------------------------------------------------------------- toasts */
 .toasts {
   position: absolute;
+  /* acima de qualquer painel: o aviso que a mochila dispara nasce DEBAIXO do
+     vidro fosco dela (é irmão anterior no DOM) e sai ilegível sem isto */
+  z-index: 30;
   top: 18px;
   left: 50%;
   transform: translateX(-50%);
