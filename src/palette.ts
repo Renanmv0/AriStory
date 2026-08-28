@@ -61,6 +61,7 @@ export const PALETTE = {
   chocolate: 0x7a4a2b,
   laranja: 0xff9b3d,
   limao: 0xc7de52,
+  pessego: 0xffb066,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

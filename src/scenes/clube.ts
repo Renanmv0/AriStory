@@ -3,9 +3,10 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import { flat } from '../core/materials';
 import {
-  bench, building, bush, cloud, divingBoard, fence, floatRing, flowers, kiosk,
-  parasol, poolLadder, poolShell, poolWater, showerPost, sunLounger, tree,
+  bench, building, bush, cloud, copoDeSuco, divingBoard, fence, floatRing, flowers,
+  kiosk, parasol, poolLadder, poolShell, poolWater, showerPost, sunLounger, tree,
 } from '../world/props';
+import { ARI, RENAN } from '../characters/cast';
 
 /**
  * Clube — a piscina.
@@ -49,6 +50,13 @@ export const clube: SceneDef = {
 
   build(w) {
     const g = w.game;
+
+    /** Vai e volta de falas, com o nome certo em cada balão. */
+    const conversa = async (falas: Array<readonly [string, string]>): Promise<void> => {
+      for (const [quem, texto] of falas) await g.say([texto], quem);
+    };
+    const A = ARI.name;
+    const R = RENAN.name;
     const buraco = {
       x: PISCINA.x,
       z: PISCINA.z,
@@ -295,15 +303,59 @@ export const clube: SceneDef = {
       },
     });
 
+    // ---------------------------------------------------------------- sucos
+    // Mesmo desenho do sorvete no Villa Lobos: os dois copos existem desde o
+    // começo, escondidos, e o sabor é AMARRADO NA PESSOA, não em quem está
+    // sendo controlado. Trocar com T troca a mão que segura, nunca o sabor.
+    const sucoRenan = copoDeSuco(P.morango);
+    const sucoAri = copoDeSuco(P.pessego);
+    sucoRenan.visible = false;
+    sucoAri.visible = false;
+    w.root.add(sucoRenan, sucoAri);
+    let sucoRestante = 0;
+
+    const segurarNaEsquerda = (obj: THREE.Object3D, pos: THREE.Vector3, facing: number): void => {
+      obj.visible = true;
+      // mão esquerda: a direita é a que fica livre
+      obj.position.set(
+        pos.x + Math.sin(facing - Math.PI / 2) * 0.42,
+        1.05,
+        pos.z + Math.cos(facing - Math.PI / 2) * 0.42,
+      );
+      obj.rotation.y = facing;
+    };
+
+    w.onUpdate((dt) => {
+      if (sucoRestante <= 0) return;
+      sucoRestante -= dt;
+
+      const doJogador = g.playerName() === ARI.name ? sucoAri : sucoRenan;
+      const doParceiro = doJogador === sucoAri ? sucoRenan : sucoAri;
+      const eu = g.playerPosition();
+      const ele = g.companionPosition();
+      segurarNaEsquerda(doJogador, eu, g.playerFacing());
+      segurarNaEsquerda(doParceiro, ele, Math.atan2(eu.x - ele.x, eu.z - ele.z));
+
+      if (sucoRestante <= 0) {
+        sucoRenan.visible = false;
+        sucoAri.visible = false;
+        g.toast('Acabou o suco', '🍹');
+      }
+    });
+
     w.interact({
       id: 'clube:bar',
       x: -12.2, z: 9.2, radius: 2.2,
       label: 'Pedir alguma coisa gelada', icon: '🍹',
       highlight: bar,
       onInteract: async (api) => {
+        await conversa([
+          [R, 'Vou pedir um de morango pra mim e um de pêssego pra você, que é o seu favorito.'],
+          [A, 'Awnn gracias amorzito'],
+        ]);
+        sucoRestante = 50;
         api.som('sorvete'); // a mesma sineta de "toma, é seu" da sorveteria
-        await api.say(['Dois sucos. Um sem gelo, que é como você gosta.']);
-        api.toast('Suco gelado', '🍹');
+        api.toast('Morango e pêssego', '🍹');
       },
     });
 

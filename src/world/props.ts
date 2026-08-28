@@ -1060,6 +1060,49 @@ export function iceCream(sabor: number = P.flowerPink): THREE.Group {
 }
 
 /**
+ * Copo de suco com canudo. Irmao da `iceCream()`: nasce na origem, com o
+ * fundo do copo em y = 0, para a cena so precisar poe-lo na altura da mao.
+ *
+ * @param sabor cor do suco (P.morango, P.pessego...)
+ */
+export function copoDeSuco(sabor: number = P.laranja): THREE.Group {
+  const g = new THREE.Group();
+  // etiqueta para o teste conseguir achar os copos na cena
+  g.userData.suco = true;
+
+  // O CORPO DO COPO E O PROPRIO SUCO. A tentacao e fazer um copo claro com o
+  // suco por dentro — em toon shading isso da um cilindro branco e pronto: a
+  // parede e opaca, esconde o liquido e ninguem descobre o sabor. Quem tem que
+  // ser visto de longe e a cor da fruta, entao ela fica por fora.
+  const suco = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.062, 0.26, 12), toon(sabor));
+  suco.position.y = 0.13;
+  g.add(suco);
+
+  // aro claro na boca do copo: e o que faz ler "copo" e nao "cilindro colorido"
+  const aro = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.09, 0.035, 12), toon(0xfdfbf6));
+  aro.position.y = 0.25;
+  g.add(aro);
+
+  const fundo = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.066, 0.025, 12), toon(0xfdfbf6));
+  fundo.position.y = 0.012;
+  g.add(fundo);
+
+  const canudo = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 6), toon(0xfdfbf6));
+  canudo.position.set(0.04, 0.31, 0.014);
+  canudo.rotation.z = -0.34;
+  g.add(canudo);
+
+  // rodela de fruta espetada na borda, um tom acima do suco
+  const rodela = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.014, 10), toon(P.gold));
+  rodela.position.set(-0.085, 0.26, 0);
+  rodela.rotation.x = Math.PI / 2;
+  rodela.rotation.z = 0.3;
+  g.add(rodela);
+
+  return g;
+}
+
+/**
  * Cesta de disc golf: poste, aro e as correntes penduradas.
  * É o marco visual que diz "aqui é lugar de jogar frisbee".
  */
