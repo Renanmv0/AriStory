@@ -87,13 +87,264 @@ export function flowers(count = 6, radius = 0.9, colors: number[] = [P.flowerPin
   return g;
 }
 
-export function rock(scale = 1): THREE.Group {
+/**
+ * Pedra. A `semente` amassa os vértices e muda as proporções, então duas pedras
+ * do mesmo tamanho não saem iguais — sem isso a margem do lago vira uma fileira
+ * de clones.
+ */
+export function rock(scale = 1, semente = 0.5, cor = 0x9aa0a6): THREE.Group {
   const g = new THREE.Group();
-  const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5 * scale, 0), toon(0x9aa0a6));
-  r.position.y = 0.3 * scale;
-  r.rotation.set(0.4, 0.8, 0.2);
-  r.scale.set(1, 0.75, 1.1);
+  const geo = new THREE.DodecahedronGeometry(0.5 * scale, 0);
+  const pos = geo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    // O ruído é sorteado pela POSIÇÃO, não pelo índice: a geometria não é
+    // indexada, cada triângulo tem os próprios vértices, e amassar por índice
+    // rasga os cantos compartilhados — vira caco de vidro em vez de pedra.
+    const n =
+      Math.sin(
+        Math.round(x * 1000) * 12.9898 +
+          Math.round(y * 1000) * 78.233 +
+          Math.round(z * 1000) * 37.719 +
+          semente * 53.1,
+      ) * 43758.5453;
+    const k = 1 + (n - Math.floor(n) - 0.5) * 0.3;
+    pos.setXYZ(i, x * k, y * k, z * k);
+  }
+  geo.computeVertexNormals();
+
+  const r = new THREE.Mesh(geo, toon(cor));
+  r.position.y = 0.3 * scale * (0.8 + semente * 0.4);
+  r.rotation.set(semente * 6.28, semente * 4.1, semente * 2.2);
+  r.scale.set(1 + semente * 0.3, 0.6 + semente * 0.4, 1.1 - semente * 0.3);
   g.add(r);
+  return g;
+}
+
+/** Tufo de mato rasteiro: quebra o chão liso da beira do lago e do gramado. */
+export function capim(escala = 1, cor: number = P.leafMid): THREE.Group {
+  const g = new THREE.Group();
+  const folhas = 6;
+  for (let i = 0; i < folhas; i++) {
+    const a = (i / folhas) * Math.PI * 2 + i * 0.7;
+    const alto = (0.28 + ((i * 37) % 10) / 40) * escala;
+    const folha = new THREE.Mesh(
+      new THREE.ConeGeometry(0.035 * escala, alto, 5),
+      toon(i % 3 === 0 ? P.leafDark : i % 3 === 1 ? cor : P.grassDry),
+    );
+    folha.position.set(Math.cos(a) * 0.11 * escala, alto * 0.45, Math.sin(a) * 0.11 * escala);
+    folha.rotation.set(Math.sin(a) * 0.35, 0, Math.cos(a) * 0.35);
+    g.add(folha);
+  }
+  return g;
+}
+
+/** Junco de beira d'água, com a taboa marrom na ponta. */
+export function junco(altura = 1.2, hastes = 7): THREE.Group {
+  const g = new THREE.Group();
+  for (let i = 0; i < hastes; i++) {
+    const a = (i / hastes) * Math.PI * 2 + i * 1.3;
+    const raio = 0.06 + ((i * 53) % 10) / 55;
+    const h = altura * (0.7 + ((i * 29) % 10) / 22);
+    const haste = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.028, h, 5),
+      toon(i % 2 ? P.leafDark : P.leafMid),
+    );
+    const inclina = 0.12 + ((i * 17) % 10) / 60;
+    haste.position.set(Math.cos(a) * raio, h / 2, Math.sin(a) * raio);
+    haste.rotation.set(Math.sin(a) * inclina, 0, Math.cos(a) * inclina);
+    g.add(haste);
+
+    // uma em cada três ganha a taboa
+    if (i % 3 === 0) {
+      const taboa = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, h * 0.16, 4, 8), toon(0x8a6a3a));
+      taboa.position.set(
+        Math.cos(a) * (raio + Math.cos(a) * inclina * h * 0.5),
+        h * 0.97,
+        Math.sin(a) * (raio + Math.sin(a) * inclina * h * 0.5),
+      );
+      g.add(taboa);
+    }
+  }
+  return g;
+}
+
+/**
+ * Vitória-régia. É uma calota, não um plano: fica de fato ACIMA da água e com
+ * a superfície curva, então não tem como brigar com o decalque do lago.
+ */
+export function nenufar(escala = 1, flor = true): THREE.Group {
+  const g = new THREE.Group();
+  // duas calotas sobrepostas e deslocadas: lê como folha com fenda, e não como
+  // uma bolacha verde no meio da água
+  for (const [dx, dz, r] of [[0, 0, 0.62], [0.34, 0.2, 0.44]] as const) {
+    const folha = new THREE.Mesh(
+      new THREE.SphereGeometry(r * escala, 14, 6, 0, Math.PI * 2, 0, 0.5),
+      toon(P.leafLight),
+    );
+    folha.scale.y = 0.3;
+    folha.position.set(dx * escala, 0.03, dz * escala);
+    g.add(folha);
+  }
+
+  if (flor) {
+    const miolo = new THREE.Mesh(new THREE.SphereGeometry(0.08 * escala, 8, 6), toon(P.flowerYellow));
+    miolo.position.set(0.16 * escala, 0.14 * escala, 0.08 * escala);
+    g.add(miolo);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      const petala = new THREE.Mesh(new THREE.SphereGeometry(0.06 * escala, 7, 5), toon(0xfff0f5));
+      petala.position.set(
+        0.16 * escala + Math.cos(a) * 0.08 * escala,
+        0.12 * escala,
+        0.08 * escala + Math.sin(a) * 0.08 * escala,
+      );
+      petala.scale.set(1.3, 0.6, 1.3);
+      g.add(petala);
+    }
+  }
+  return g;
+}
+
+/**
+ * Canteiro de flores: borda de alvenaria, terra e maços de flores.
+ *
+ * A borda é elevada de propósito — assim o canteiro é geometria de pé e não
+ * decalque de chão, que é onde mora o risco de z-fighting.
+ */
+export function canteiro(
+  raio = 1.1,
+  cores: number[] = [P.flowerPink, P.flowerYellow, 0xffffff, 0xb98fe0],
+  semente = 0.5,
+): THREE.Group {
+  const g = new THREE.Group();
+  const altura = 0.24;
+
+  const borda = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio, raio * 1.05, altura, 18, 1, true),
+    toon(P.brick, { doubleSide: true }),
+  );
+  borda.position.y = altura / 2;
+  g.add(borda);
+
+  const tampa = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.05, 6, 20), toon(P.wallCream));
+  tampa.rotation.x = Math.PI / 2;
+  tampa.position.y = altura;
+  g.add(tampa);
+
+  const terra = new THREE.Mesh(new THREE.CylinderGeometry(raio * 0.96, raio * 0.96, 0.08, 18), toon(P.dirt));
+  terra.position.y = altura - 0.03;
+  g.add(terra);
+
+  // maços: cada um é um punhado de esferas da mesma cor, com alturas diferentes
+  const macos = 7;
+  for (let i = 0; i < macos; i++) {
+    const a = (i / macos) * Math.PI * 2 + semente * 6.28;
+    const d = raio * (0.25 + ((i * 41 + semente * 100) % 10) / 18);
+    const cor = cores[i % cores.length];
+    const cx = Math.cos(a) * d;
+    const cz = Math.sin(a) * d;
+
+    const folhagem = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), toon(P.leafDark));
+    folhagem.position.set(cx, altura + 0.06, cz);
+    folhagem.scale.y = 0.55;
+    g.add(folhagem);
+
+    for (let k = 0; k < 4; k++) {
+      const b = (k / 4) * Math.PI * 2 + i;
+      const flor = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), toon(cor));
+      flor.position.set(
+        cx + Math.cos(b) * 0.12,
+        altura + 0.16 + ((k + i) % 3) * 0.05,
+        cz + Math.sin(b) * 0.12,
+      );
+      flor.scale.y = 0.8;
+      g.add(flor);
+    }
+  }
+  return g;
+}
+
+/**
+ * Domo geodésico de vidro da praça da roda gigante.
+ *
+ * O truque para vidro translúcido não virar bolha: a estrutura. São os
+ * paralelos cruzando com os meridianos que dão a grelha, e os pilares de dentro
+ * que dão o que iluminar — sem eles o toon shading não tem em que pegar.
+ */
+export function domoDeVidro(raio = 2.6): THREE.Group {
+  const g = new THREE.Group();
+  const metal = toon(P.metalWhite);
+  const base = 0.26;
+
+  // rodapé de concreto: levanta o vidro do chão e some com a linha rente à grama
+  const rodape = new THREE.Mesh(new THREE.CylinderGeometry(raio * 1.03, raio * 1.06, base, 20), toon(P.concrete));
+  rodape.position.y = base / 2;
+  g.add(rodape);
+
+  const cupula = new THREE.Mesh(
+    new THREE.SphereGeometry(raio, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+    toon(0xdff2fb, { opacity: 0.72, doubleSide: true }),
+  );
+  cupula.position.y = base;
+  g.add(cupula);
+
+  // meridianos (de polo a polo) e paralelos (as faixas horizontais)
+  for (let i = 0; i < 8; i++) {
+    const meridiano = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.045, 5, 20, Math.PI), metal);
+    meridiano.rotation.set(0, (i / 8) * Math.PI, 0);
+    meridiano.position.y = base;
+    g.add(meridiano);
+  }
+  for (const altura of [0.34, 0.62, 0.85]) {
+    const r = raio * Math.sqrt(Math.max(0.02, 1 - altura * altura));
+    const paralelo = new THREE.Mesh(new THREE.TorusGeometry(r, 0.038, 5, 22), metal);
+    paralelo.rotation.x = Math.PI / 2;
+    paralelo.position.y = base + raio * altura;
+    g.add(paralelo);
+  }
+
+  // aro da base em duas metades: a fresta na frente lê como entrada
+  for (const lado of [0, 1]) {
+    const aro = new THREE.Mesh(
+      new THREE.TorusGeometry(raio, 0.09, 6, 18, Math.PI - 0.5),
+      metal,
+    );
+    aro.rotation.x = Math.PI / 2;
+    aro.rotation.z = lado ? Math.PI + 0.25 : 0.25;
+    aro.position.y = base + 0.04;
+    g.add(aro);
+  }
+
+  const topo = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), metal);
+  topo.position.y = base + raio;
+  g.add(topo);
+
+  // pilares por dentro: é o que dá volume quando a luz atravessa o vidro
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.3;
+    const alt = raio * 0.62;
+    const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, alt, 6), toon(P.metalGrey));
+    pilar.position.set(Math.cos(a) * raio * 0.84, base + alt / 2, Math.sin(a) * raio * 0.84);
+    g.add(pilar);
+  }
+
+  // um banco lá dentro, visto através do vidro
+  const bancoInterno = bench(P.wood);
+  bancoInterno.scale.setScalar(0.72);
+  bancoInterno.position.set(0, base, -raio * 0.35);
+  bancoInterno.rotation.y = 0.25;
+  g.add(bancoInterno);
+
+  const vaso = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.36, 10), toon(P.plantPot));
+  vaso.position.set(raio * 0.4, base + 0.18, raio * 0.35);
+  g.add(vaso);
+  const planta = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 0), toon(P.leafMid));
+  planta.position.set(raio * 0.4, base + 0.55, raio * 0.35);
+  g.add(planta);
+
   return g;
 }
 

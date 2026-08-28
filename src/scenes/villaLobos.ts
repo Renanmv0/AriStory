@@ -4,13 +4,12 @@ import type { SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
 import { Frisbee } from '../entities/Frisbee';
 import {
-  bench, bin, bleachers, building, bus, busStop, bush, cloud, cone, discBag,
-  discGolfBasket, duck, fence, floodlight, flowers, iceCream, kiosk, lamp,
-  picnicTable, rock, scoreboard, signBoard, textSign, tree, waterFountain,
-  windsock,
+  bench, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
+  cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
+  iceCream, junco, kiosk, lamp, nenufar, picnicTable, rock, scoreboard,
+  signBoard, textSign, tree, waterFountain, windsock,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
-import { toon } from '../core/materials';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -81,33 +80,55 @@ export const villaLobos: SceneDef = {
       w.add(w.place(fence(9, 1.2, P.metalWhite), x, 0, -20, Math.PI / 2));
       w.blockBox(x, -20, 0.2, 4.5);
     }
-    const domo = new THREE.Group();
-    const cupula = new THREE.Mesh(
-      new THREE.SphereGeometry(2.6, 14, 9, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshToonMaterial({ color: 0xdff2fb, transparent: true, opacity: 0.82 }),
-    );
-    domo.add(cupula);
-    // aro na base e meridianos: sem eles a cúpula translúcida lia como bolha
-    const aro = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.09, 6, 24), toon(P.metalWhite));
-    aro.rotation.x = Math.PI / 2;
-    aro.position.y = 0.05;
-    domo.add(aro);
-    for (let i = 0; i < 6; i++) {
-      const meridiano = new THREE.Mesh(
-        new THREE.TorusGeometry(2.6, 0.05, 5, 18, Math.PI),
-        toon(P.metalWhite),
-      );
-      meridiano.rotation.set(0, (i / 6) * Math.PI, 0);
-      domo.add(meridiano);
-    }
-    w.place(domo, -9.5, 0, -21);
-    w.add(domo);
-    w.blockCircle(-9.5, -21, 2.6);
+    // a cúpula virou peça do kit: estrutura completa (meridianos, paralelos,
+    // pilares por dentro) mora em props.ts, a cena só posiciona
+    w.add(w.place(domoDeVidro(2.6), -9.5, 0, -21, 0.4));
+    w.blockCircle(-9.5, -21, 2.7);
 
     // virada para +Z, como a sorveteria: a camera olha de +x/+z, entao quiosque
     // de costas para ela vira uma caixa lisa
     const bilheteria = w.add(w.place(kiosk(P.fabricBlue, { texto: 'Bilheteria' }), 9.5, 0, -20.5, -0.5));
     w.blockBox(9.5, -20.5, 1.4, 0.95, -0.5);
+
+    // ------------------------------------------- entorno da roda gigante
+    // Tudo aqui é posicionado na mão de propósito: o espalhador de vegetação
+    // (`livre()`, mais abaixo) proíbe 20 unidades em volta da roda, para não
+    // nascer árvore no meio da praça. Sem isto a praça fica um prato de
+    // concreto com a roda em cima.
+    const canteirosPraca: Array<[number, number, number]> = [
+      [-6.4, -13.6, 1.15], [6.4, -13.6, 1.15], [-8.6, -17.4, 0.95], [8.6, -17.4, 0.95],
+    ];
+    for (const [x, z, r] of canteirosPraca) {
+      w.add(w.place(canteiro(r, undefined, w.rng()), x, 0, z, w.range(0, 6.28)));
+      w.blockCircle(x, z, r + 0.1);
+    }
+
+    for (const [x, z] of [[-7.6, -11.4], [7.6, -11.4], [-12.2, -19], [12.2, -19]] as const) {
+      w.add(w.place(lamp(false), x, 0, z));
+      w.blockCircle(x, z, 0.35);
+    }
+
+    for (const [x, z, r] of [[-3.6, -12.2, 0.1], [3.6, -12.2, -0.1], [-13.2, -22.5, 1.1]] as const) {
+      w.add(w.place(bench(), x, 0, z, r));
+      w.blockBox(x, z, 1, 0.35, r);
+    }
+
+    for (const [x, z] of [[6.9, -18.9], [-5.2, -11.6]] as const) {
+      w.add(w.place(bin(), x, 0, z));
+      w.blockCircle(x, z, 0.35);
+    }
+
+    // mato e pedra rente à praça, para a clareira não terminar numa linha reta
+    for (let i = 0; i < 22; i++) {
+      const a = (i / 22) * Math.PI * 2 + w.range(-0.1, 0.1);
+      const d = w.range(10.5, 13.5);
+      const x = Math.cos(a) * d;
+      const z = -18 + Math.sin(a) * d * 0.7;
+      if (Math.abs(x) < 4.5 && z > -14) continue; // deixa o caminho principal livre
+      if (i % 3 === 0) w.add(w.place(bush(w.range(0.6, 1), P.leafDark), x, 0, z));
+      else if (i % 3 === 1) w.add(w.place(capim(w.range(0.9, 1.4)), x, 0, z, w.range(0, 6.28)));
+      else w.add(w.place(rock(w.range(0.4, 0.8), w.rng()), x, 0, z, w.range(0, 6.28)));
+    }
 
     // ------------------------------------------------------------- o lago
     w.disc(-21, 11, 9.2, P.sand, 0.024); // acima do caminho, que encosta aqui
@@ -118,9 +139,45 @@ export const villaLobos: SceneDef = {
       w.place(d, -21 + Math.cos(i * 2.1) * 4.5, 0.1, 11 + Math.sin(i * 2.1) * 3.5, i * 1.7);
       w.add(d);
     });
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2;
-      w.add(w.place(bush(0.7, P.leafDark), -21 + Math.cos(a) * 9.8, 0, 11 + Math.sin(a) * 9.8));
+
+    // Margem: o anel regular de arbustos de antes lia como cerca viva plantada
+    // por régua. Agora é sorteio na faixa da beira, misturando pedra de tamanhos
+    // bem diferentes, capim e arbusto — e a distância varia, então a silhueta
+    // da margem deixa de ser um círculo perfeito.
+    const NO_LAGO = { x: -21, z: 11 };
+    for (let i = 0; i < 34; i++) {
+      const a = (i / 34) * Math.PI * 2 + w.range(-0.09, 0.09);
+      const d = w.range(9.1, 11.4);
+      const x = NO_LAGO.x + Math.cos(a) * d;
+      const z = NO_LAGO.z + Math.sin(a) * d;
+      const sorte = i % 4;
+      if (sorte === 0) w.add(w.place(bush(w.range(0.6, 1), P.leafDark), x, 0, z));
+      else if (sorte === 1) w.add(w.place(capim(w.range(0.9, 1.5)), x, 0, z, w.range(0, 6.28)));
+      else if (sorte === 2) w.add(w.place(rock(w.range(0.45, 1.5), w.rng()), x, 0, z, w.range(0, 6.28)));
+      else w.add(w.place(flowers(5, 0.8), x, 0, z));
+    }
+
+    // pedras grandes meio dentro d'água, que é o que dá profundidade à borda
+    for (const [a, d, esc] of [[0.9, 8.4, 1.6], [2.6, 8.7, 1.1], [4.3, 8.3, 1.9], [5.6, 8.9, 1.2]] as const) {
+      const x = NO_LAGO.x + Math.cos(a) * d;
+      const z = NO_LAGO.z + Math.sin(a) * d;
+      w.add(w.place(rock(esc, (a % 1), 0x8f959b), x, -0.12, z, a));
+      w.blockCircle(x, z, 0.4 * esc);
+    }
+
+    // juncos na beira e vitórias-régias boiando (calotas acima da água: não
+    // encostam no decalque do lago, então não há z-fighting)
+    for (const [a, d] of [[1.5, 8.2], [3.4, 8.4], [5.1, 8.1], [0.2, 8.5]] as const) {
+      w.add(w.place(junco(w.range(1.1, 1.6)), NO_LAGO.x + Math.cos(a) * d, 0, NO_LAGO.z + Math.sin(a) * d));
+    }
+    const lirios = [
+      [1.1, 6.6, 1, true], [2.9, 7.2, 0.8, false], [4.6, 6.1, 1.15, true],
+      [0.4, 7.4, 0.9, true], [3.8, 5.2, 1.05, false], [5.9, 6.8, 0.85, true],
+    ] as const;
+    for (const [a, d, esc, flor] of lirios) {
+      const lirio = w.place(nenufar(esc, flor), NO_LAGO.x + Math.cos(a) * d, 0.045, NO_LAGO.z + Math.sin(a) * d);
+      lirio.rotation.y = a;
+      w.add(lirio);
     }
 
     // ------------------------------------------------- quadra de frisbee

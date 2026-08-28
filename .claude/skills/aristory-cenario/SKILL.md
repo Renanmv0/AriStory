@@ -199,6 +199,13 @@ g.lockPlayer(false);
 Cuidado com móvel na frente: numa câmera isométrica o encosto do sofá tapa quem
 senta colado nele. Sente **à frente** do encosto e confira com foto.
 
+## Decoração que não é decalque
+
+Canteiro, vitória-régia, pedra na beira d'água: sempre que der, faça a peça ter
+**volume** em vez de pintar o chão. Canteiro com borda elevada e vitória-régia
+em calota nunca brigam com a grama nem com a água, porque não são coplanares com
+nada — some com o risco de z-fighting antes de ele existir.
+
 ## Chão empilhado: nunca dois decalques na mesma altura
 
 `w.patch()` e `w.disc()` desenham no chão. Duas dessas superfícies na **mesma

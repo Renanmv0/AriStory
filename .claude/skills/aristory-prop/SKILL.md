@@ -64,6 +64,14 @@ lado de fora da sombra do toldo. Depois de mexer, confira com
 Vidro fechado por cima de comida é armadilha: some no toon shading e ainda
 tapa o que está dentro. Cuba aberta lê muito melhor de longe.
 
+## Peça amassada (pedra, terreno)
+
+Geometria de sólido do three (`DodecahedronGeometry` e companhia) **não é
+indexada**: cada triângulo tem os próprios vértices. Amassar vértice por
+**índice** rasga os cantos que deviam ser compartilhados e a pedra vira caco de
+vidro. Sorteie o ruído pela **posição** arredondada — assim o mesmo canto recebe
+o mesmo empurrão em todos os triângulos que o usam. É o que `rock()` faz.
+
 ## Peça animada
 
 Devolva uma classe com `group` e `update(dt)`, como a `FerrisWheel`. A cena

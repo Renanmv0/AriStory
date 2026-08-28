@@ -30,6 +30,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Menu no canto com "recomeçar o jogo", que zera o diário e volta pra casa do Ari
 - [x] Som: música procedural com clima por cenário e um efeito para cada ação
 - [x] Interface de celular sem tapar texto, e tela de controles no menu
+- [x] Praça da roda gigante povoada, cúpula com estrutura e margem do lago viva
 
 ## Próximos passos naturais
 
