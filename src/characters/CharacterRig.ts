@@ -1002,11 +1002,16 @@ export class CharacterRig {
       // o tronco cai para o lado da perna que esta deslizando, nao para o da
       // que empurra — e o peso indo para o pe de apoio
       this.body.rotation.z = s * abre * 0.34;
-      // bracos abertos, buscando o equilibrio
+      // Bracos abertos, buscando o equilibrio — para FORA, e nao para dentro.
+      // Mesma pegadinha de sinal das pernas: o braco esquerdo nasce em -X, e
+      // `rotation.z` positivo joga a mao para +X, ou seja para o meio do corpo.
+      // Com os dois positivos/negativos como na caminhada (que usa 0.08, um
+      // valor pequeno demais para incomodar) o patinador abraca a si mesmo.
+      const braco = 0.34 + Math.abs(s) * 0.14;
       this.armL.rotation.x = walking ? -s * swing * 0.9 : 0;
       this.armR.rotation.x = walking ? s * swing * 0.9 : 0;
-      this.armL.rotation.z = 0.34;
-      this.armR.rotation.z = -0.34;
+      this.armL.rotation.z = -braco;
+      this.armR.rotation.z = braco;
     } else {
       this.legL.rotation.z = 0;
       this.legR.rotation.z = 0;
