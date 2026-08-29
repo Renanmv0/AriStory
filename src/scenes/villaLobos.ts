@@ -60,8 +60,14 @@ export const villaLobos: SceneDef = {
      * dela, no -Z, e para de sobra antes do caminho principal (x ≈ 0).
      */
     const LOJA = { x: -10, z: 3.5, giro: 0.25 };
-    /** oval: duas retas de `reta` para cada lado e uma calota de `raio` na ponta */
-    const PISTA = { x: -14, z: -8, reta: 5, raio: 5, miolo: 2.4 };
+    /**
+     * Oval: duas retas de `reta` para cada lado e uma calota de `raio` na ponta.
+     *
+     * Plantada no MEIO do gramado, e não encostada na praça da roda: a primeira
+     * posição deixava a ponta a 8 unidades da cúpula, e de cima (a câmera olha
+     * o -Z subindo para a direita) a pista parecia colada nela. Agora são 12.
+     */
+    const PISTA = { x: -20, z: -4, reta: 5, raio: 5, miolo: 2.4 };
     /** onde fica o balcão de entrega, no lado +X da loja já girada */
     const BALCAO = {
       x: LOJA.x + Math.cos(LOJA.giro) * 6.4,
@@ -109,11 +115,49 @@ export const villaLobos: SceneDef = {
       w.disc(PISTA.x - PISTA.reta, PISTA.z, raio, cor, altura);
       w.disc(PISTA.x + PISTA.reta, PISTA.z, raio, cor, altura);
     };
-    oval(PISTA.raio, P.asphalt, 0.024);
-    oval(PISTA.miolo, P.grass, 0.03);
+    /**
+     * As camadas, de baixo para cima. Cada faixa branca e' o oval de baixo
+     * aparecendo por uma beirada: pinta-se branco e cobre-se o miolo com a cor
+     * de cima, sobrando um anel de `FAIXA` de largura. Sai mais barato do que
+     * desenhar dois aneis de verdade, e casa exatamente com a curva.
+     */
+    const FAIXA = 0.3;
+    oval(PISTA.raio, P.metalWhite, 0.022); // borda externa
+    oval(PISTA.raio - FAIXA, P.asphalt, 0.026);
+    oval(PISTA.miolo + FAIXA, P.metalWhite, 0.03); // borda interna
+    oval(PISTA.miolo, P.grass, 0.034);
+
+    /**
+     * Tracejado do meio da raia, como risco de rua.
+     *
+     * Nas retas os traços são paralelos ao eixo X; nas curvas eles giram junto
+     * com a tangente. Um retângulo deitado tem o lado maior no X local, e girar
+     * em Y por `-(ângulo + 90°)` é o que alinha esse lado com a tangente do
+     * círculo — sem isso os traços da curva apontam para o centro.
+     */
+    const rMeio = (PISTA.raio + PISTA.miolo) / 2;
+    const TRACO: [number, number] = [1.15, 0.17];
+    for (const lado of [-1, 1]) {
+      for (let i = 0; i < 5; i++) {
+        const x = PISTA.x - PISTA.reta + 1 + (i * (PISTA.reta * 2 - 2)) / 4;
+        w.patch(x, PISTA.z + lado * rMeio, TRACO[0], TRACO[1], P.metalWhite, 0, 0.038);
+      }
+      const cx = PISTA.x + lado * PISTA.reta;
+      for (let i = 0; i < 6; i++) {
+        const meia = -Math.PI / 2 + ((i + 0.5) / 6) * Math.PI;
+        const ang = lado > 0 ? meia : meia + Math.PI;
+        w.patch(
+          cx + Math.cos(ang) * rMeio,
+          PISTA.z + Math.sin(ang) * rMeio,
+          TRACO[0], TRACO[1], P.metalWhite,
+          -(ang + Math.PI / 2), 0.038,
+        );
+      }
+    }
+
     // linha de largada, atravessando a raia da frente
-    w.patch(PISTA.x + PISTA.reta * 0.6, PISTA.z + (PISTA.raio + PISTA.miolo) / 2,
-      0.3, PISTA.raio - PISTA.miolo, P.concrete, 0, 0.034);
+    w.patch(PISTA.x + PISTA.reta * 0.55, PISTA.z + rMeio,
+      0.32, PISTA.raio - PISTA.miolo - FAIXA * 2, P.metalWhite, 0, 0.04);
 
     // calçada da loja e a trilha que sobe até o caminho transversal
     w.patch(LOJA.x + 0.4, LOJA.z + 0.3, 9.6, 6.4, P.concrete, LOJA.giro, 0.02);
@@ -422,7 +466,7 @@ export const villaLobos: SceneDef = {
       [12, 19, 4], [-10, 20, 3], [37, 13, 8],
       // a pista e a loja entram na lista pelo mesmo motivo da praça da roda:
       // sem isto o espalhador planta árvore em cima do asfalto
-      [-14, -8, 12], [-10, 3.5, 8],
+      [-20, -4, 12], [-10, 3.5, 8],
     ];
     const livre = (x: number, z: number): boolean => {
       if (Math.abs(x) < 4 && z > -20 && z < 30) return false;
