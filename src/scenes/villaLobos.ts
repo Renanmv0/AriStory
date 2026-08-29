@@ -59,7 +59,12 @@ export const villaLobos: SceneDef = {
      * plantou o prédio com um canto dentro da praia. A pista ocupa os fundos
      * dela, no -Z, e para de sobra antes do caminho principal (x ≈ 0).
      */
-    const LOJA = { x: -10, z: 3.5, giro: 0.25 };
+    /**
+     * A loja fica RETA (sem giro): com a fachada torta em relação ao gramado e
+     * às calçadas, que são todos alinhados aos eixos, ela lê como um prédio
+     * caído. E reta a colisão também fica simples de acertar.
+     */
+    const LOJA = { x: -8.6, z: 2.5 };
     /**
      * Oval: duas retas de `reta` para cada lado e uma calota de `raio` na ponta.
      *
@@ -67,12 +72,16 @@ export const villaLobos: SceneDef = {
      * posição deixava a ponta a 8 unidades da cúpula, e de cima (a câmera olha
      * o -Z subindo para a direita) a pista parecia colada nela. Agora são 12.
      */
-    const PISTA = { x: -20, z: -4, reta: 5, raio: 5, miolo: 2.4 };
-    /** onde fica o balcão de entrega, no lado +X da loja já girada */
-    const BALCAO = {
-      x: LOJA.x + Math.cos(LOJA.giro) * 6.4,
-      z: LOJA.z - Math.sin(LOJA.giro) * 6.4,
-    };
+    const PISTA = { x: -21, z: -5, reta: 5, raio: 5, miolo: 2.4 };
+    /**
+     * O balcão de entrega, no lado +X da loja.
+     *
+     * Estes números saem da geometria de `skateShop()`, e é por não terem saído
+     * que a colisão estava quebrada: a caixa antiga ficava a 5,9 do centro
+     * enquanto o balcão de verdade está a 4,65 — dava para atravessar o móvel e
+     * esbarrar no vazio ao lado dele.
+     */
+    const BALCAO = { x: LOJA.x + 4.72, z: LOJA.z + 0.2 };
 
     // A quadra de frisbee: fora dela o disco nem aparece na mão.
     const QUADRA = { x: 18, z: -4.5, largura: 26, profundidade: 19 };
@@ -160,8 +169,10 @@ export const villaLobos: SceneDef = {
       0.32, PISTA.raio - PISTA.miolo - FAIXA * 2, P.metalWhite, 0, 0.04);
 
     // calçada da loja e a trilha que sobe até o caminho transversal
-    w.patch(LOJA.x + 0.4, LOJA.z + 0.3, 9.6, 6.4, P.concrete, LOJA.giro, 0.02);
-    w.patch(LOJA.x + 1.4, 7.4, 3, 7, P.asphalt, 0, 0.022);
+    // colada no prédio de propósito: mais larga que isto e o canto de cima
+    // invade a areia do lago, que chega a 9,2 do centro em (-21, 11)
+    w.patch(LOJA.x + 0.4, LOJA.z + 0.2, 10, 6.4, P.concrete, 0, 0.02);
+    w.patch(LOJA.x + 1.6, 7.2, 3, 7, P.asphalt, 0, 0.022);
 
     // ---------------------------------------------------------- roda gigante
     const wheel = new FerrisWheel({ radius: 12, cabins: 32, rpm: 1.0 });
@@ -395,16 +406,28 @@ export const villaLobos: SceneDef = {
     w.blockBox(12, 18.6, 1.4, 0.95, 0.3);
 
     // --------------------------------------------------- loja de patins
-    const loja = w.add(w.place(skateShop(P.fabricBlue), LOJA.x, 0, LOJA.z, LOJA.giro));
-    // duas caixas: o prédio e o balcão lateral, que avança para fora dele
-    w.blockBox(LOJA.x, LOJA.z, 3.8, 2.3, LOJA.giro);
-    w.blockBox(BALCAO.x - 0.5, BALCAO.z, 0.7, 1.6, LOJA.giro);
-
-    // bancos de calçar, virados para a pista
+    const loja = w.add(w.place(skateShop(P.fabricBlue), LOJA.x, 0, LOJA.z));
+    // o teste acha a loja por aqui para comparar o colisor com o desenho
+    loja.userData.loja = true;
+    /**
+     * A colisão, decalcada da geometria de `skateShop()`:
+     *  - o prédio vai de x −3,7 a 3,7 e de z −2,33 (parede do fundo) a 2,2
+     *    (a vitrine);
+     *  - o balcão e os pés do abrigo ocupam x 4,08 a 5,32 e z −1,4 a 1,8;
+     *  - as duas colunas da frente ficam nos cantos do beiral.
+     * A laje e o toldo não entram: passam bem acima da cabeça.
+     */
+    w.blockBox(LOJA.x, LOJA.z - 0.05, 3.7, 2.3);
+    w.blockBox(BALCAO.x, BALCAO.z, 0.65, 1.6);
     for (const lado of [-1, 1]) {
-      const bx = LOJA.x + lado * 6.2;
-      w.add(w.place(bench(), bx, 0, LOJA.z - 3.4, Math.PI + lado * 0.2));
-      w.blockBox(bx, LOJA.z - 3.4, 1, 0.35, Math.PI + lado * 0.2);
+      w.blockCircle(LOJA.x + lado * 4.05, LOJA.z + 2.82, 0.16);
+    }
+
+    // bancos de calçar, na lateral livre da loja — e não mais perto do lago
+    // que isto, senão eles sentam na areia
+    for (const dz of [-1.4, 1.0]) {
+      w.add(w.place(bench(), LOJA.x - 5.6, 0, LOJA.z + dz, Math.PI / 2));
+      w.blockBox(LOJA.x - 5.6, LOJA.z + dz, 0.35, 1, 0);
     }
 
     for (const [x, z] of [
@@ -431,7 +454,7 @@ export const villaLobos: SceneDef = {
 
     w.interact({
       id: 'parque:patins',
-      x: BALCAO.x + 1.5, z: BALCAO.z + 0.3, radius: 2.4,
+      x: BALCAO.x + 1.8, z: BALCAO.z, radius: 2.4,
       label: 'Alugar patins', icon: '🛼',
       highlight: loja,
       onInteract: async (api) => {
@@ -466,7 +489,7 @@ export const villaLobos: SceneDef = {
       [12, 19, 4], [-10, 20, 3], [37, 13, 8],
       // a pista e a loja entram na lista pelo mesmo motivo da praça da roda:
       // sem isto o espalhador planta árvore em cima do asfalto
-      [-20, -4, 12], [-10, 3.5, 8],
+      [-21, -5, 12], [-8.6, 2.5, 9],
     ];
     const livre = (x: number, z: number): boolean => {
       if (Math.abs(x) < 4 && z > -20 && z < 30) return false;
