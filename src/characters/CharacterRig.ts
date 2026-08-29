@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { toon, flat } from '../core/materials';
 import { BUILD_WIDTH, type CharacterSpec } from './spec';
+import { patins as patinsMesh } from '../world/props';
 import type { HoldPose } from '../core/types';
 import { PALETTE as P } from '../palette';
 
@@ -12,6 +13,14 @@ import { PALETTE as P } from '../palette';
  * Mexer aqui sem mexer em LADO (entities/MaosDadas.ts) descola as maos.
  */
 const ABRE_MAO = 0.75;
+
+/**
+ * Altura da sola do patins, na escala nativa da peca em `props.ts`.
+ *
+ * As rodas ficam entre 0 e 0.09 e o chassi vai ate 0.13 — e desse ultimo que a
+ * bota parte. E quanto a pessoa cresce ao calcar.
+ */
+const SOLA_PATINS = 0.13;
 
 /**
  * As duas poses de segurar.
@@ -95,6 +104,14 @@ export class CharacterRig {
   private maos: -1 | 0 | 1 = 0;
   /** pose do item que a mao direita esta segurando */
   private pose: HoldPose = 'none';
+  /** de patins: muda a caminhada e levanta o corpo em `altoDoPatins` */
+  private patinando = false;
+  /** quanto a sola do patins levanta a pessoa do chao */
+  private altoDoPatins = 0;
+  /** comprimento da perna, guardado para o patins achar o chao */
+  private alturaDaPerna = 0;
+  private readonly pes: THREE.Mesh[] = [];
+  private readonly patins: THREE.Group[] = [];
   private targetFacing = 0;
   private swimming = false;
   private sitting = false;
@@ -116,6 +133,11 @@ export class CharacterRig {
     const w = BUILD_WIDTH[spec.build];
 
     const legH = h * 0.28;
+    // o patins tem 0.405 de altura na escala nativa; a peca acompanha o tamanho
+    // da pessoa para nao virar sapato de palhaco em quem e mais baixo
+    const escalaPatins = h / 1.7;
+    this.altoDoPatins = SOLA_PATINS * escalaPatins;
+    this.alturaDaPerna = legH;
     const torsoH = h * 0.3;
     const headR = h * 0.17;
     const hipY = legH;
@@ -151,6 +173,18 @@ export class CharacterRig {
       foot.position.set(0, -legH + h * 0.022, h * 0.018);
       pivot.add(foot);
       this.trocaMaterial.push({ mesh: foot, normal: shoes, banho: skin });
+      this.pes.push(foot);
+
+      // O patins nasce escondido e SUBSTITUI o pe: a bota engole o tornozelo,
+      // entao o tenis por dentro apareceria pela costura. A peca tem a sola das
+      // rodas em y = 0, e por isso ela desce ate o chao do rig — que, de
+      // patins, esta `this.altoDoPatins` abaixo do pe.
+      const roda = patinsMesh(spec.shoes);
+      roda.scale.setScalar(escalaPatins);
+      roda.visible = false;
+      pivot.add(roda);
+      this.patins.push(roda);
+
       this.body.add(pivot);
     }
 
@@ -796,12 +830,32 @@ export class CharacterRig {
   setSitting(v: boolean): void {
     this.sitting = v;
     if (!v) {
-      this.body.position.y = 0;
+      this.poeAltura(0);
       this.legL.rotation.x = 0;
       this.legR.rotation.x = 0;
       this.armL.rotation.set(0, 0, 0.08);
       this.armR.rotation.set(0, 0, -0.08);
     }
+  }
+
+  /**
+   * Calca (ou tira) os patins.
+   *
+   * Quem manda e o inventario: o `Game` le a vaga de acessorio e carimba isto
+   * todo quadro. O rig so obedece — nao ha estado de patins fora do save.
+   */
+  setPatins(v: boolean): void {
+    if (this.patinando === v) return;
+    this.patinando = v;
+    for (const p of this.patins) p.visible = v;
+    for (const pe of this.pes) pe.visible = !v;
+    // a peca desce ate o chao novo: o corpo sobe `altoDoPatins`, entao no
+    // referencial da perna o chao ficou essa distancia mais para baixo
+    for (const p of this.patins) p.position.y = -this.alturaDaPerna - this.altoDoPatins;
+  }
+
+  get patinandoAgora(): boolean {
+    return this.patinando;
   }
 
   /**
@@ -875,7 +929,7 @@ export class CharacterRig {
       this.legL.rotation.x = 0;
       this.legR.rotation.x = 0;
       this.body.rotation.x = k * 0.3;
-      this.body.position.y = k * 0.045; // na pontinha do pe
+      this.poeAltura(k * 0.045); // na pontinha do pe
       this.armL.rotation.set(-k * 0.55, 0, 0.08 + k * 0.16);
       this.armR.rotation.set(-k * 0.55, 0, -0.08 - k * 0.16);
       this.head.rotation.x = k * 0.18;
@@ -890,7 +944,7 @@ export class CharacterRig {
       this.armL.rotation.set(-0.25, 0, 0.34);
       this.armR.rotation.set(-0.2, 0, -0.34);
       this.body.rotation.x = -0.05;
-      this.body.position.y = Math.sin(this.phase) * 0.012;
+      this.poeAltura(Math.sin(this.phase) * 0.012);
       this.head.rotation.x = Math.sin(this.phase * 0.7) * 0.03;
       this.head.rotation.z *= 1 - Math.min(1, dt * 8);
       return;
@@ -907,7 +961,7 @@ export class CharacterRig {
       this.legL.rotation.x = s * 0.28;
       this.legR.rotation.x = -s * 0.28;
       this.body.rotation.x = 0.16;
-      this.body.position.y = Math.sin(this.phase) * 0.03;
+      this.poeAltura(Math.sin(this.phase) * 0.03);
       this.head.rotation.x = -0.14;
       return;
     }
@@ -918,12 +972,39 @@ export class CharacterRig {
     const swing = walking ? Math.min(0.62, 0.16 + speed * 0.14) : 0.04;
     const s = Math.sin(this.phase * (walking ? 2 : 1));
 
-    this.legL.rotation.x = walking ? s * swing : 0;
-    this.legR.rotation.x = walking ? -s * swing : 0;
-    this.armL.rotation.x = walking ? -s * swing * 0.85 : Math.sin(this.phase) * 0.05;
-    this.armR.rotation.x = walking ? s * swing * 0.85 : -Math.sin(this.phase) * 0.05;
-    this.armL.rotation.z = 0.08;
-    this.armR.rotation.z = -0.08;
+    if (this.patinando) {
+      // PATINAR NAO E ANDAR. O pe mal sai do chao: o que se alterna e a perna
+      // abrindo para o LADO (rotacao em Z, que gira o quadril e joga o pe para
+      // fora) enquanto a outra empurra. A parcela em X fica em 25% da
+      // caminhada, so o bastante para nao virar um par de pernas rigidas.
+      const abre = walking ? Math.min(0.34, 0.12 + speed * 0.05) : 0.03;
+      // Uma perna de cada vez. `rotation.z` positivo joga o pe para +X, entao
+      // a perna da esquerda (que nasce em -X) abre com Z NEGATIVO e a da
+      // direita com positivo. Com o mesmo sinal nas duas o corpo inteiro
+      // balanca junto, que e gingado, nao patinacao.
+      this.legL.rotation.z = -Math.max(0, s) * abre * 1.7;
+      this.legR.rotation.z = Math.max(0, -s) * abre * 1.7;
+      this.legL.rotation.x = walking ? s * swing * 0.25 : 0;
+      this.legR.rotation.x = walking ? -s * swing * 0.25 : 0;
+      // o tronco cai para o lado da perna que esta deslizando, nao para o da
+      // que empurra — e o peso indo para o pe de apoio
+      this.body.rotation.z = s * abre * 0.5;
+      // bracos abertos, buscando o equilibrio, e balancando mais que andando
+      this.armL.rotation.x = walking ? -s * swing * 1.15 : 0;
+      this.armR.rotation.x = walking ? s * swing * 1.15 : 0;
+      this.armL.rotation.z = 0.34;
+      this.armR.rotation.z = -0.34;
+    } else {
+      this.legL.rotation.z = 0;
+      this.legR.rotation.z = 0;
+      this.body.rotation.z = 0;
+      this.legL.rotation.x = walking ? s * swing : 0;
+      this.legR.rotation.x = walking ? -s * swing : 0;
+      this.armL.rotation.x = walking ? -s * swing * 0.85 : Math.sin(this.phase) * 0.05;
+      this.armR.rotation.x = walking ? s * swing * 0.85 : -Math.sin(this.phase) * 0.05;
+      this.armL.rotation.z = 0.08;
+      this.armR.rotation.z = -0.08;
+    }
 
     // De maos dadas o braco de dentro para de balancar e abre para o lado do
     // outro, ate as duas maos se encontrarem no meio do vao. O braco de fora
@@ -945,15 +1026,15 @@ export class CharacterRig {
     if (this.bounce > 0) {
       this.bounce = Math.max(0, this.bounce - dt * 1.6);
       const b = Math.sin((1 - this.bounce) * Math.PI) * 0.28;
-      this.body.position.y = b;
+      this.poeAltura(b);
       this.head.rotation.z = Math.sin((1 - this.bounce) * Math.PI * 2) * 0.12;
     } else {
       const bob = walking ? Math.abs(Math.cos(this.phase * 2)) * 0.035 : Math.sin(this.phase) * 0.012;
-      this.body.position.y = bob;
+      this.poeAltura(bob);
       this.head.rotation.z *= 1 - Math.min(1, dt * 8);
     }
 
-    this.body.rotation.x = walking ? 0.06 : 0;
+    this.body.rotation.x = walking ? (this.patinando ? 0.16 : 0.06) : 0;
     this.head.rotation.x = walking ? -0.05 : Math.sin(this.phase * 0.6) * 0.03;
   }
 
@@ -968,6 +1049,17 @@ export class CharacterRig {
    * nao roda — senao o braco tenta obedecer duas coisas e o objeto atravessa o
    * parceiro.
    */
+  /**
+   * Toda altura do corpo passa por aqui.
+   *
+   * De patins a pessoa fica `altoDoPatins` mais alta, e esse offset tem que
+   * valer para o respiro, o pulinho, o beijo e o sentar — senao o corpo afunda
+   * de volta no chao na primeira animacao que mexer no y.
+   */
+  private poeAltura(v: number): void {
+    this.body.position.y = v + this.altoDoPatins * (this.patinando ? 1 : 0);
+  }
+
   private aplicarPose(): void {
     if (this.pose === 'none' || this.maos > 0) {
       this.maoDir.rotation.set(0, 0, 0);

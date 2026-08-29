@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { CharacterRig } from '../characters/CharacterRig';
 import { clampToBounds, resolveCollisions } from '../world/collision';
+import { BONUS_PATINS } from './Player';
 import type { Bounds, Collider } from '../core/types';
 
 /**
@@ -27,6 +28,11 @@ export class Companion {
   private ordem: THREE.Vector3 | null = null;
   riding = false;
   submersion = 0;
+  /**
+   * De patins ele tambem corre mais. Sem isto, o jogador de patins deixa o
+   * parceiro para tras em dez passos e a dupla vira um so.
+   */
+  patins = false;
 
   /**
    * Reboque: enquanto vale, ele nao segue nem olha para o jogador — anda
@@ -194,7 +200,8 @@ export class Companion {
     if (dist > folga) {
       this.dir.normalize();
       // acelera quando esta longe, para nao ficar pendurado no limite
-      const alvoVel = Math.min(this.maxSpeed, 1.6 + (dist - folga) * 2.2);
+      const teto = this.maxSpeed * (this.patins ? BONUS_PATINS : 1);
+      const alvoVel = Math.min(teto, 1.6 + (dist - folga) * 2.2);
       this.velocity.x += (this.dir.x * alvoVel - this.velocity.x) * Math.min(1, dt * 7);
       this.velocity.z += (this.dir.z * alvoVel - this.velocity.z) * Math.min(1, dt * 7);
       this.body.setFacing(Math.atan2(this.dir.x, this.dir.z));

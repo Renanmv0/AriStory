@@ -645,11 +645,16 @@ export class Game implements GameAPI {
    * vaga de acessorio na tela, ele sai da cabeca no mesmo quadro.
    */
   private sincronizarVestiveis(): void {
-    for (const rig of [this.player.rig, this.parceiro.rig]) {
-      const vestindo = this.save
-        .vestiveis(rig.spec.id)
-        .some((i) => i?.id === ITENS.chapeuPingPong.id);
-      if (rig.campeao !== vestindo) rig.setCampeao(vestindo);
+    // percorre as PESSOAS, não os rigs: os patins mexem no corpo (o rig) e na
+    // física (o Player/Companion), e as duas pontas leem a mesma vaga
+    for (const quem of [this.player, this.parceiro]) {
+      const vagas = this.save.vestiveis(quem.rig.spec.id);
+      const chapeu = vagas.some((i) => i?.id === ITENS.chapeuPingPong.id);
+      if (quem.rig.campeao !== chapeu) quem.rig.setCampeao(chapeu);
+
+      const patins = vagas.some((i) => i?.id === ITENS.patins.id);
+      quem.patins = patins;
+      quem.rig.setPatins(patins);
     }
   }
 

@@ -58,6 +58,7 @@ node scripts/maos.mjs    /tmp/mao   # de maos dadas: emparelhados e o coracao
 node scripts/suco.mjs    /tmp/su    # os sucos do clube: cada sabor com o seu dono
 node scripts/mochila.mjs /tmp/mo    # as 9 vagas, o slot principal e o F5
 node scripts/itens.mjs   /tmp/it    # posse por pessoa, auto-stash, arrastar e poses
+node scripts/patins.mjs  /tmp/pat   # patins no corpo, 1,3x de velocidade e o parceiro
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

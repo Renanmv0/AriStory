@@ -880,6 +880,8 @@ export function duck(color = 0xf6f2e8): THREE.Group {
  */
 export function patins(cor: number = P.wallCream): THREE.Group {
   const g = new THREE.Group();
+  // etiqueta para o teste conseguir contar os pes calcados
+  g.userData.patins = true;
   const RODA = 0.045;
 
   // a bota fica ACIMA das rodas: o eixo delas e o chao da peca
