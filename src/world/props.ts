@@ -868,6 +868,167 @@ export function duck(color = 0xf6f2e8): THREE.Group {
   return g;
 }
 
+/**
+ * Um patins de rodinha, sozinho.
+ *
+ * Nasce com a sola em y = 0 e a ponta para +Z, do tamanho de um pe de
+ * personagem (~0.28 de comprimento). E a mesma peca que serve de amostra no
+ * balcao da lojinha e, mais tarde, de calcado no `CharacterRig` — por isso ela
+ * mora no kit e nao dentro de nenhum dos dois.
+ *
+ * @param cor cor do cano da bota
+ */
+export function patins(cor: number = P.wallCream): THREE.Group {
+  const g = new THREE.Group();
+  const RODA = 0.045;
+
+  // a bota fica ACIMA das rodas: o eixo delas e o chao da peca
+  const bota = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.15, 0.26), toon(cor));
+  bota.position.set(0, RODA * 2 + 0.115, 0.01);
+  g.add(bota);
+
+  const cano = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.13, 0.15), toon(cor));
+  cano.position.set(0, RODA * 2 + 0.25, -0.04);
+  g.add(cano);
+
+  const cadarco = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.04, 0.13), toon(P.frisbee));
+  cadarco.position.set(0, RODA * 2 + 0.235, 0.02);
+  g.add(cadarco);
+
+  const chassi = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.28), toon(P.metalGrey));
+  chassi.position.set(0, RODA * 2 + 0.015, 0.01);
+  g.add(chassi);
+
+  // duas rodas de cada lado, como patins de quatro rodinhas
+  for (const lado of [-1, 1]) {
+    for (const frente of [-1, 1]) {
+      const roda = new THREE.Mesh(
+        new THREE.CylinderGeometry(RODA, RODA, 0.035, 10),
+        toon(P.frisbee),
+      );
+      roda.rotation.z = Math.PI / 2;
+      roda.position.set(lado * 0.062, RODA, 0.01 + frente * 0.095);
+      g.add(roda);
+    }
+  }
+  return g;
+}
+
+/**
+ * A lojinha de patins do parque.
+ *
+ * Irma do `kiosk()` no espirito, mas nao no corpo: e mais baixa e mais larga,
+ * com uma prateleira aberta ao lado do balcao em vez de vitrine fechada. A
+ * frente olha para +Z, como todo balcao do parque — a camera vem de +X/+Z e
+ * quiosque de costas para ela vira uma caixa lisa.
+ */
+export function skateShop(cor: number = P.fabricBlue): THREE.Group {
+  const g = new THREE.Group();
+  const claro = P.wallCream;
+  const madeira = toon(P.wood);
+  const madeiraEscura = toon(P.woodDark);
+
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.16, 2.1), madeiraEscura);
+  deck.position.y = 0.08;
+  g.add(deck);
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(2.9, 1.6, 1.5), toon(claro));
+  corpo.position.set(0, 0.96, -0.1);
+  g.add(corpo);
+
+  // ripado nas beiradas e vao escuro no meio: e o vao que da profundidade,
+  // senao a frente vira uma parede lisa
+  for (const lado of [-1, 1]) {
+    const pilar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.6, 0.16), madeira);
+    pilar.position.set(lado * 1.33, 0.96, 0.6);
+    g.add(pilar);
+  }
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.22, 0.16), madeira);
+  verga.position.set(0, 1.65, 0.6);
+  g.add(verga);
+  const vao = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.42, 0.06), toon(0x5b4636));
+  vao.position.set(0, 1.32, 0.58);
+  g.add(vao);
+
+  // ------------------------------------------------------------- balcao
+  const balcao = new THREE.Mesh(new THREE.BoxGeometry(3.05, 0.14, 0.82), madeira);
+  balcao.position.set(0, 1.04, 0.92);
+  g.add(balcao);
+  const bordo = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 3.05, 10), madeiraEscura);
+  bordo.rotation.z = Math.PI / 2;
+  bordo.position.set(0, 1.04, 1.32);
+  g.add(bordo);
+  for (const lado of [-1, 1]) {
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.97, 8), toon(P.metalWhite));
+    perna.position.set(lado * 1.4, 0.55, 1.22);
+    g.add(perna);
+  }
+
+  // ----------------------------------------------------------- toldo e teto
+  const cobertura = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.16, 1.65), madeiraEscura);
+  cobertura.position.set(0, 1.84, -0.1);
+  g.add(cobertura);
+  // curto de propósito: a camera olha de cima em 34°, e aba mais avancada que
+  // isto passa na frente do balcao e esconde as amostras
+  const lona = toldo(3.0, 0.44, cor, claro);
+  lona.position.set(0, 1.44, 0.54);
+  g.add(lona);
+
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.5, 0.12), toon(cor));
+  placa.position.set(0, 2.2, -0.1);
+  g.add(placa);
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.62, 0.08), toon(claro));
+  moldura.position.set(0, 2.2, -0.14);
+  g.add(moldura);
+  const escrito = letreiro('Patins', 1.8, 0.34);
+  escrito.position.set(0, 2.2, -0.03);
+  g.add(escrito);
+
+  // Patins gigante em cima do letreiro: e o que se ve de longe. De PERFIL, com
+  // o bico para +X — de frente ele vira uma caixa e as rodinhas, que sao o que
+  // diz "patins", ficam escondidas embaixo.
+  const gigante = patins(cor);
+  gigante.scale.setScalar(2.4);
+  gigante.position.set(0, 2.62, -0.1);
+  gigante.rotation.y = Math.PI / 2 + 0.25;
+  gigante.rotation.x = -0.12;
+  g.add(gigante);
+
+  // ---------------------------------------------------- amostras no balcao
+  // pares de verdade, virados um tico para fora, como quem expõe
+  const cores = [P.morango, P.fabricBlue, P.gold];
+  cores.forEach((c, i) => {
+    const par = new THREE.Group();
+    for (const lado of [-1, 1]) {
+      const pe = patins(c);
+      pe.position.x = lado * 0.09;
+      par.add(pe);
+    }
+    par.scale.setScalar(0.72);
+    // na BEIRA do balcao (z 1.05, e ele vai ate 1.33): mais para tras o toldo
+    // passa na frente e as amostras somem na camera de 34°
+    par.position.set((i - 1) * 0.95, 1.11, 1.05);
+    par.rotation.y = 0.35 - i * 0.35;
+    g.add(par);
+  });
+
+  // prateleira aberta na lateral, com mais um par
+  const prateleira = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.1, 0.5), madeira);
+  prateleira.position.set(1.9, 1.05, 0.1);
+  g.add(prateleira);
+  for (const lado of [-1, 1]) {
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.08), toon(P.metalWhite));
+    pe.position.set(1.9 + lado * 0.35, 0.55, 0.1);
+    g.add(pe);
+  }
+  const naPrateleira = patins(P.maracuja);
+  naPrateleira.position.set(1.9, 1.1, 0.1);
+  naPrateleira.rotation.y = -0.6;
+  g.add(naPrateleira);
+
+  return g;
+}
+
 /** Cone laranja: marca o campinho, a quadra, a obra. */
 export function cone(): THREE.Group {
   const g = new THREE.Group();

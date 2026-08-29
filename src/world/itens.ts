@@ -56,6 +56,13 @@ export const ITENS = {
     tipo: 'vestivel',
     nota: 'ping pong, 5 a 0',
   },
+  patins: {
+    id: 'patins',
+    nome: 'Patins',
+    icone: '🛼',
+    tipo: 'vestivel',
+    nota: 'da lojinha do parque',
+  },
   frisbee: {
     id: 'frisbee',
     nome: 'Frisbee',

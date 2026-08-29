@@ -7,7 +7,7 @@ import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
   bench, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
   cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
-  junco, kiosk, lamp, mesaPingPong, nenufar, picnicTable, raquete,
+  junco, kiosk, lamp, mesaPingPong, nenufar, picnicTable, raquete, skateShop,
   rock, scoreboard, signBoard, textSign, tree, waterFountain, windsock,
   bolinhaPingPong,
 } from '../world/props';
@@ -51,6 +51,16 @@ export const villaLobos: SceneDef = {
     const A = ARI.name;
     const R = RENAN.name;
 
+    /**
+     * A pista de patinação e a lojinha, a oeste do lago.
+     *
+     * Fica longe da areia (o lago tem raio 9,2 a partir de -21,11) e ao sul do
+     * caminho transversal, que passa em z ≈ 9. A loja se planta na borda de
+     * cima da pista, virada para +Z: quem compra fica na frente dela na tela.
+     */
+    const PISTA = { x: -31, z: 25.5, largura: 17, profundidade: 8.5 };
+    const LOJA = { x: -31, z: 19.6 };
+
     // A quadra de frisbee: fora dela o disco nem aparece na mão.
     const QUADRA = { x: 18, z: -4.5, largura: 26, profundidade: 19 };
     /** onde a mesa de ping pong mora, e para que lado o tampo aponta */
@@ -75,6 +85,13 @@ export const villaLobos: SceneDef = {
     w.disc(0, -16.5, 8, P.concrete, 0.012); // praça
     w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho principal
     w.patch(0, 9, 62, 4.5, P.asphalt, 0, 0.02); // caminho transversal
+
+    // A pista de patinação, a oeste do lago. Duas camadas: o asfalto e a linha
+    // clara do miolo, que é o que faz ler como pista e não como pátio.
+    w.patch(PISTA.x, PISTA.z, PISTA.largura, PISTA.profundidade, P.asphalt, 0, 0.024);
+    w.patch(PISTA.x, PISTA.z, PISTA.largura - 1.6, 0.24, P.concrete, 0, 0.028);
+    // trilha de acesso, ligando o caminho transversal à lojinha
+    w.patch(PISTA.x + 2, 15.5, 3, 11, P.asphalt, 0, 0.022);
 
     // ---------------------------------------------------------- roda gigante
     const wheel = new FerrisWheel({ radius: 12, cabins: 32, rpm: 1.0 });
@@ -307,10 +324,72 @@ export const villaLobos: SceneDef = {
     const quiosque = w.add(w.place(kiosk(0xf6a6c0, { tipo: 'sorvete' }), 12, 0, 18.6, 0.3));
     w.blockBox(12, 18.6, 1.4, 0.95, 0.3);
 
+    // --------------------------------------------------- lojinha de patins
+    const loja = w.add(w.place(skateShop(P.fabricBlue), LOJA.x, 0, LOJA.z, 0.12));
+    w.blockBox(LOJA.x, LOJA.z, 1.75, 1.05, 0.12);
+
+    // dois bancos para calçar os patins, virados para a pista
+    for (const lado of [-1, 1]) {
+      const bx = LOJA.x + lado * 4.6;
+      w.add(w.place(bench(), bx, 0, LOJA.z + 0.6, lado * 0.25));
+      w.blockBox(bx, LOJA.z + 0.6, 1, 0.35, lado * 0.25);
+    }
+
+    for (const [x, z] of [[PISTA.x - 8.9, 21.6], [PISTA.x + 8.9, 21.6]] as const) {
+      w.add(w.place(lamp(false), x, 0, z));
+      w.blockCircle(x, z, 0.35);
+    }
+
+    // Circuito de zigue-zague: os cones alternam entre as duas metades da
+    // pista, então patinar direto de ponta a ponta não passa por dentro deles.
+    // SEM colisor de propósito — cone que barra o passo vira parede, e a graça
+    // é desviar.
+    const CONES = 9;
+    for (let i = 0; i < CONES; i++) {
+      const t = i / (CONES - 1);
+      const x = PISTA.x - PISTA.largura / 2 + 1.4 + t * (PISTA.largura - 2.8);
+      const z = PISTA.z + (i % 2 === 0 ? -1 : 1) * 2.1;
+      w.add(w.place(cone(), x, 0, z, w.range(0, 6.28)));
+    }
+
+    w.interact({
+      id: 'parque:patins',
+      x: LOJA.x, z: LOJA.z + 2.1, radius: 2.4,
+      label: 'Alugar patins', icon: '🛼',
+      highlight: loja,
+      onInteract: async (api) => {
+        if (api.hasItem(ITENS.patins.id)) {
+          await conversa([
+            [R, 'A gente já pegou um par.'],
+            [A, 'É, e eu ainda não caí. Ainda.'],
+          ]);
+          return;
+        }
+        await conversa([
+          [R, 'Um par pra cada um, moço.'],
+          [A, 'Eu não sei patinar direito, hein.'],
+          [R, 'Por isso eu vou do seu lado.'],
+        ]);
+        api.equipWearable(ITENS.patins);
+        api.som('sorvete'); // a mesma sineta de "toma, é seu" dos quiosques
+        api.toast('Patins calçados', '🛼');
+        api.unlock({
+          id: 'patins-villa',
+          title: 'Patins no Villa',
+          place: 'Parque Villa Lobos',
+          note: 'A pista tem cone pra desviar e a gente desviou de quase todos.',
+          icon: '🛼',
+        });
+      },
+    });
+
     // ------------------------------------------------------------ vegetacao
     const proibido: Array<[number, number, number]> = [
       [0, -26, 20], [-21, 11, 12], [18, -4.5, 17], [0, 4, 6], [0, 9, 6],
       [12, 19, 4], [-10, 20, 3], [37, 13, 8],
+      // a pista e a lojinha entram na lista pelo mesmo motivo da praça da roda:
+      // sem isto o espalhador planta árvore em cima do asfalto
+      [-31, 23, 13],
     ];
     const livre = (x: number, z: number): boolean => {
       if (Math.abs(x) < 4 && z > -20 && z < 30) return false;
