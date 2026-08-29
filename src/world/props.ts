@@ -915,116 +915,168 @@ export function patins(cor: number = P.wallCream): THREE.Group {
 }
 
 /**
- * A lojinha de patins do parque.
+ * A loja de patins do parque.
  *
- * Irma do `kiosk()` no espirito, mas nao no corpo: e mais baixa e mais larga,
- * com uma prateleira aberta ao lado do balcao em vez de vitrine fechada. A
- * frente olha para +Z, como todo balcao do parque — a camera vem de +X/+Z e
- * quiosque de costas para ela vira uma caixa lisa.
+ * Nao e um quiosque: e um PREDIO pequeno, com vitrine de vidro de verdade,
+ * telhado inclinado que avanca sobre a calcada e um balcao lateral so para
+ * entregar os patins. O quiosque do sorvete e uma barraca de 2,8 de largura;
+ * esta loja tem 7,4 e altura de porta, e a diferenca de escala e o ponto.
+ *
+ * Nasce com a VITRINE virada para +Z e o balcao de entrega no lado +X, que e
+ * de onde a camera isometrica olha — assim a fachada e o atendimento aparecem
+ * os dois, em vez de um esconder o outro.
  */
 export function skateShop(cor: number = P.fabricBlue): THREE.Group {
   const g = new THREE.Group();
-  const claro = P.wallCream;
+  const LARG = 7.4;
+  const PROF = 4.4;
+  const ALT = 2.9;
+  const claro = toon(P.wallCream);
   const madeira = toon(P.wood);
   const madeiraEscura = toon(P.woodDark);
+  const metal = toon(P.metalWhite);
 
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.16, 2.1), madeiraEscura);
-  deck.position.y = 0.08;
-  g.add(deck);
+  // ------------------------------------------------------------- fundacao
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(LARG + 1.6, 0.18, PROF + 1.4),
+    toon(P.concrete),
+  );
+  base.position.set(0.4, 0.09, 0.3);
+  g.add(base);
 
-  const corpo = new THREE.Mesh(new THREE.BoxGeometry(2.9, 1.6, 1.5), toon(claro));
-  corpo.position.set(0, 0.96, -0.1);
-  g.add(corpo);
-
-  // ripado nas beiradas e vao escuro no meio: e o vao que da profundidade,
-  // senao a frente vira uma parede lisa
+  // ---------------------------------------------------------------- caixa
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(LARG, ALT, 0.26), claro);
+  fundo.position.set(0, 0.18 + ALT / 2, -PROF / 2);
+  g.add(fundo);
   for (const lado of [-1, 1]) {
-    const pilar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.6, 0.16), madeira);
-    pilar.position.set(lado * 1.33, 0.96, 0.6);
-    g.add(pilar);
-  }
-  const verga = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.22, 0.16), madeira);
-  verga.position.set(0, 1.65, 0.6);
-  g.add(verga);
-  const vao = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.42, 0.06), toon(0x5b4636));
-  vao.position.set(0, 1.32, 0.58);
-  g.add(vao);
-
-  // ------------------------------------------------------------- balcao
-  const balcao = new THREE.Mesh(new THREE.BoxGeometry(3.05, 0.14, 0.82), madeira);
-  balcao.position.set(0, 1.04, 0.92);
-  g.add(balcao);
-  const bordo = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 3.05, 10), madeiraEscura);
-  bordo.rotation.z = Math.PI / 2;
-  bordo.position.set(0, 1.04, 1.32);
-  g.add(bordo);
-  for (const lado of [-1, 1]) {
-    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.97, 8), toon(P.metalWhite));
-    perna.position.set(lado * 1.4, 0.55, 1.22);
-    g.add(perna);
+    const parede = new THREE.Mesh(new THREE.BoxGeometry(0.26, ALT, PROF), claro);
+    parede.position.set(lado * (LARG / 2 - 0.13), 0.18 + ALT / 2, 0);
+    g.add(parede);
   }
 
-  // ----------------------------------------------------------- toldo e teto
-  const cobertura = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.16, 1.65), madeiraEscura);
-  cobertura.position.set(0, 1.84, -0.1);
-  g.add(cobertura);
-  // curto de propósito: a camera olha de cima em 34°, e aba mais avancada que
-  // isto passa na frente do balcao e esconde as amostras
-  const lona = toldo(3.0, 0.44, cor, claro);
-  lona.position.set(0, 1.44, 0.54);
-  g.add(lona);
+  // ------------------------------------------------------------- vitrine
+  // peitoril baixo + tres panos de vidro. O vidro e translucido de verdade
+  // (`opacity`), entao da para ver as prateleiras la dentro.
+  const peitoril = new THREE.Mesh(new THREE.BoxGeometry(LARG, 0.6, 0.3), madeiraEscura);
+  peitoril.position.set(0, 0.48, PROF / 2 - 0.1);
+  g.add(peitoril);
 
-  const placa = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.5, 0.12), toon(cor));
-  placa.position.set(0, 2.2, -0.1);
-  g.add(placa);
-  const moldura = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.62, 0.08), toon(claro));
-  moldura.position.set(0, 2.2, -0.14);
-  g.add(moldura);
-  const escrito = letreiro('Patins', 1.8, 0.34);
-  escrito.position.set(0, 2.2, -0.03);
+  const vidro = toon(P.glass, { opacity: 0.5, doubleSide: true });
+  const PANOS = 3;
+  const vaoTotal = LARG - 0.5;
+  const largPano = vaoTotal / PANOS - 0.16;
+  for (let i = 0; i < PANOS; i++) {
+    const x = -vaoTotal / 2 + vaoTotal / PANOS * (i + 0.5);
+    const pano = new THREE.Mesh(new THREE.BoxGeometry(largPano, 1.75, 0.08), vidro);
+    pano.position.set(x, 1.68, PROF / 2 - 0.1);
+    g.add(pano);
+  }
+  // montantes: e o caixilho que faz o vidro ler como vitrine e nao como parede
+  for (let i = 0; i <= PANOS; i++) {
+    const x = -vaoTotal / 2 + (vaoTotal / PANOS) * i;
+    const montante = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.05, 0.22), metal);
+    montante.position.set(x, 1.68, PROF / 2 - 0.1);
+    g.add(montante);
+  }
+  const travessa = new THREE.Mesh(new THREE.BoxGeometry(LARG, 0.18, 0.24), metal);
+  travessa.position.set(0, 2.68, PROF / 2 - 0.1);
+  g.add(travessa);
+
+  // prateleiras atras do vidro, com os pares expostos
+  for (const [altura, cores] of [
+    [1.15, [P.morango, P.fabricBlue, P.gold]],
+    [1.95, [P.maracuja, P.wallCream]],
+  ] as const) {
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(LARG - 1.2, 0.1, 0.6), madeira);
+    tabua.position.set(0, altura, PROF / 2 - 0.75);
+    g.add(tabua);
+    cores.forEach((c, i) => {
+      const par = new THREE.Group();
+      for (const lado of [-1, 1]) {
+        const pe = patins(c);
+        pe.position.x = lado * 0.09;
+        par.add(pe);
+      }
+      par.scale.setScalar(0.8);
+      par.position.set((i - (cores.length - 1) / 2) * 1.5, altura + 0.05, PROF / 2 - 0.75);
+      par.rotation.y = 0.3;
+      g.add(par);
+    });
+  }
+
+  // ------------------------------------------------------------- telhado
+  // Laje inclinada que AVANCA sobre a calcada: e a sombra dela no chao que da
+  // volume a loja de longe.
+  const laje = new THREE.Mesh(
+    new THREE.BoxGeometry(LARG + 1.1, 0.24, PROF + 1.3),
+    madeiraEscura,
+  );
+  laje.position.set(0, ALT + 0.42, 0.35);
+  laje.rotation.x = -0.07;
+  g.add(laje);
+  // friso claro por baixo: sem ele a laje vira um retangulo marrom chapado, que
+  // e o que mais pesa na silhueta vista de cima
+  const friso = new THREE.Mesh(
+    new THREE.BoxGeometry(LARG + 1.34, 0.08, PROF + 1.54),
+    metal,
+  );
+  friso.position.set(0, ALT + 0.29, 0.35);
+  friso.rotation.x = -0.07;
+  g.add(friso);
+
+  // A testeira sobe ACIMA da laje, na beirada da frente. Embaixo do beiral ela
+  // fica escondida: a camera olha de 34° e o telhado passa por cima do nome.
+  // Ela precisa passar A FRENTE da beirada da laje (que chega a PROF/2 + 1.0):
+  // 10 cm atras dela ja bastavam para o beiral cortar o nome numa camera que
+  // olha de cima.
+  const testeira = new THREE.Mesh(new THREE.BoxGeometry(LARG + 1.34, 0.74, 0.22), toon(cor));
+  testeira.position.set(0, ALT + 0.46, PROF / 2 + 1.18);
+  g.add(testeira);
+  const escrito = letreiro('Patins', 3.2, 0.46);
+  escrito.position.set(0, ALT + 0.46, PROF / 2 + 1.31);
   g.add(escrito);
 
-  // Patins gigante em cima do letreiro: e o que se ve de longe. De PERFIL, com
-  // o bico para +X — de frente ele vira uma caixa e as rodinhas, que sao o que
-  // diz "patins", ficam escondidas embaixo.
-  const gigante = patins(cor);
-  gigante.scale.setScalar(2.4);
-  gigante.position.set(0, 2.62, -0.1);
-  gigante.rotation.y = Math.PI / 2 + 0.25;
-  gigante.rotation.x = -0.12;
-  g.add(gigante);
+  for (const lado of [-1, 1]) {
+    const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, ALT + 0.3, 8), metal);
+    coluna.position.set(lado * (LARG / 2 + 0.35), (ALT + 0.3) / 2, PROF / 2 + 0.62);
+    g.add(coluna);
+  }
 
-  // ---------------------------------------------------- amostras no balcao
-  // pares de verdade, virados um tico para fora, como quem expõe
-  const cores = [P.morango, P.fabricBlue, P.gold];
-  cores.forEach((c, i) => {
+  // ------------------------------------------------ balcao lateral (+X)
+  // E aqui que os patins sao entregues: fica de lado, virado para +X, para nao
+  // disputar espaco com a vitrine.
+  const bx = LARG / 2 + 0.95;
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.16, 3.0), madeira);
+  tampo.position.set(bx, 1.06, 0.2);
+  g.add(tampo);
+  const bordo = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 3.0, 10), madeiraEscura);
+  bordo.position.set(bx + 0.55, 1.06, 0.2);
+  g.add(bordo);
+  const saia = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 2.8), claro);
+  saia.position.set(bx - 0.1, 0.6, 0.2);
+  g.add(saia);
+
+  const abrigo = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.16, 3.2), toon(cor));
+  abrigo.position.set(bx + 0.1, 2.35, 0.2);
+  g.add(abrigo);
+  for (const z of [-1.2, 1.5]) {
+    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.35, 8), metal);
+    pe.position.set(bx + 0.6, 1.17, 0.2 + z);
+    g.add(pe);
+  }
+
+  // dois pares no tampo, prontos para levar
+  [P.morango, P.gold].forEach((c, i) => {
     const par = new THREE.Group();
     for (const lado of [-1, 1]) {
       const pe = patins(c);
       pe.position.x = lado * 0.09;
       par.add(pe);
     }
-    par.scale.setScalar(0.72);
-    // na BEIRA do balcao (z 1.05, e ele vai ate 1.33): mais para tras o toldo
-    // passa na frente e as amostras somem na camera de 34°
-    par.position.set((i - 1) * 0.95, 1.11, 1.05);
-    par.rotation.y = 0.35 - i * 0.35;
+    par.position.set(bx, 1.14, -0.55 + i * 1.4);
+    par.rotation.y = Math.PI / 2 + 0.2;
     g.add(par);
   });
-
-  // prateleira aberta na lateral, com mais um par
-  const prateleira = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.1, 0.5), madeira);
-  prateleira.position.set(1.9, 1.05, 0.1);
-  g.add(prateleira);
-  for (const lado of [-1, 1]) {
-    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.08), toon(P.metalWhite));
-    pe.position.set(1.9 + lado * 0.35, 0.55, 0.1);
-    g.add(pe);
-  }
-  const naPrateleira = patins(P.maracuja);
-  naPrateleira.position.set(1.9, 1.1, 0.1);
-  naPrateleira.rotation.y = -0.6;
-  g.add(naPrateleira);
 
   return g;
 }

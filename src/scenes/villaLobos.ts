@@ -52,14 +52,21 @@ export const villaLobos: SceneDef = {
     const R = RENAN.name;
 
     /**
-     * A pista de patinação e a lojinha, a oeste do lago.
+     * A loja de patins e a pista oval, no gramado entre o lago e a cúpula.
      *
-     * Fica longe da areia (o lago tem raio 9,2 a partir de -21,11) e ao sul do
-     * caminho transversal, que passa em z ≈ 9. A loja se planta na borda de
-     * cima da pista, virada para +Z: quem compra fica na frente dela na tela.
+     * A loja fica ao alcance de quem desce do caminho transversal (z ≈ 9) e
+     * LONGE da areia do lago (raio 9,2 a partir de -21,11): a primeira tentativa
+     * plantou o prédio com um canto dentro da praia. A pista ocupa os fundos
+     * dela, no -Z, e para de sobra antes do caminho principal (x ≈ 0).
      */
-    const PISTA = { x: -31, z: 25.5, largura: 17, profundidade: 8.5 };
-    const LOJA = { x: -31, z: 19.6 };
+    const LOJA = { x: -10, z: 3.5, giro: 0.25 };
+    /** oval: duas retas de `reta` para cada lado e uma calota de `raio` na ponta */
+    const PISTA = { x: -14, z: -8, reta: 5, raio: 5, miolo: 2.4 };
+    /** onde fica o balcão de entrega, no lado +X da loja já girada */
+    const BALCAO = {
+      x: LOJA.x + Math.cos(LOJA.giro) * 6.4,
+      z: LOJA.z - Math.sin(LOJA.giro) * 6.4,
+    };
 
     // A quadra de frisbee: fora dela o disco nem aparece na mão.
     const QUADRA = { x: 18, z: -4.5, largura: 26, profundidade: 19 };
@@ -86,12 +93,31 @@ export const villaLobos: SceneDef = {
     w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho principal
     w.patch(0, 9, 62, 4.5, P.asphalt, 0, 0.02); // caminho transversal
 
-    // A pista de patinação, a oeste do lago. Duas camadas: o asfalto e a linha
-    // clara do miolo, que é o que faz ler como pista e não como pátio.
-    w.patch(PISTA.x, PISTA.z, PISTA.largura, PISTA.profundidade, P.asphalt, 0, 0.024);
-    w.patch(PISTA.x, PISTA.z, PISTA.largura - 1.6, 0.24, P.concrete, 0, 0.028);
-    // trilha de acesso, ligando o caminho transversal à lojinha
-    w.patch(PISTA.x + 2, 15.5, 3, 11, P.asphalt, 0, 0.022);
+    /**
+     * A pista oval, composta à mão.
+     *
+     * O `WorldBuilder` não tem anel oval, e não precisa ter: a forma sai de um
+     * retângulo com uma calota em cada ponta. Primeiro o asfalto inteiro, e por
+     * cima a MESMA forma menor pintada de grama — é o miolo vazado que faz ler
+     * como pista de corrida em vez de pátio.
+     *
+     * Cada `patch`/`disc` já recebe o seu próprio `polygonOffset` do
+     * WorldBuilder; as alturas abaixo são a folga declarada por cima disso.
+     */
+    const oval = (raio: number, cor: number, altura: number): void => {
+      w.patch(PISTA.x, PISTA.z, PISTA.reta * 2, raio * 2, cor, 0, altura);
+      w.disc(PISTA.x - PISTA.reta, PISTA.z, raio, cor, altura);
+      w.disc(PISTA.x + PISTA.reta, PISTA.z, raio, cor, altura);
+    };
+    oval(PISTA.raio, P.asphalt, 0.024);
+    oval(PISTA.miolo, P.grass, 0.03);
+    // linha de largada, atravessando a raia da frente
+    w.patch(PISTA.x + PISTA.reta * 0.6, PISTA.z + (PISTA.raio + PISTA.miolo) / 2,
+      0.3, PISTA.raio - PISTA.miolo, P.concrete, 0, 0.034);
+
+    // calçada da loja e a trilha que sobe até o caminho transversal
+    w.patch(LOJA.x + 0.4, LOJA.z + 0.3, 9.6, 6.4, P.concrete, LOJA.giro, 0.02);
+    w.patch(LOJA.x + 1.4, 7.4, 3, 7, P.asphalt, 0, 0.022);
 
     // ---------------------------------------------------------- roda gigante
     const wheel = new FerrisWheel({ radius: 12, cabins: 32, rpm: 1.0 });
@@ -324,37 +350,44 @@ export const villaLobos: SceneDef = {
     const quiosque = w.add(w.place(kiosk(0xf6a6c0, { tipo: 'sorvete' }), 12, 0, 18.6, 0.3));
     w.blockBox(12, 18.6, 1.4, 0.95, 0.3);
 
-    // --------------------------------------------------- lojinha de patins
-    const loja = w.add(w.place(skateShop(P.fabricBlue), LOJA.x, 0, LOJA.z, 0.12));
-    w.blockBox(LOJA.x, LOJA.z, 1.75, 1.05, 0.12);
+    // --------------------------------------------------- loja de patins
+    const loja = w.add(w.place(skateShop(P.fabricBlue), LOJA.x, 0, LOJA.z, LOJA.giro));
+    // duas caixas: o prédio e o balcão lateral, que avança para fora dele
+    w.blockBox(LOJA.x, LOJA.z, 3.8, 2.3, LOJA.giro);
+    w.blockBox(BALCAO.x - 0.5, BALCAO.z, 0.7, 1.6, LOJA.giro);
 
-    // dois bancos para calçar os patins, virados para a pista
+    // bancos de calçar, virados para a pista
     for (const lado of [-1, 1]) {
-      const bx = LOJA.x + lado * 4.6;
-      w.add(w.place(bench(), bx, 0, LOJA.z + 0.6, lado * 0.25));
-      w.blockBox(bx, LOJA.z + 0.6, 1, 0.35, lado * 0.25);
+      const bx = LOJA.x + lado * 6.2;
+      w.add(w.place(bench(), bx, 0, LOJA.z - 3.4, Math.PI + lado * 0.2));
+      w.blockBox(bx, LOJA.z - 3.4, 1, 0.35, Math.PI + lado * 0.2);
     }
 
-    for (const [x, z] of [[PISTA.x - 8.9, 21.6], [PISTA.x + 8.9, 21.6]] as const) {
+    for (const [x, z] of [
+      [PISTA.x - PISTA.reta - PISTA.raio - 1.4, PISTA.z],
+      [PISTA.x + PISTA.reta + PISTA.raio + 1.4, PISTA.z],
+    ] as const) {
       w.add(w.place(lamp(false), x, 0, z));
       w.blockCircle(x, z, 0.35);
     }
 
-    // Circuito de zigue-zague: os cones alternam entre as duas metades da
-    // pista, então patinar direto de ponta a ponta não passa por dentro deles.
-    // SEM colisor de propósito — cone que barra o passo vira parede, e a graça
-    // é desviar.
-    const CONES = 9;
+    // Circuito de zigue-zague na raia, alternando entre a borda de fora e a de
+    // dentro. SEM colisor de propósito — cone que barra o passo vira parede, e
+    // a graça é desviar.
+    const CONES = 14;
     for (let i = 0; i < CONES; i++) {
-      const t = i / (CONES - 1);
-      const x = PISTA.x - PISTA.largura / 2 + 1.4 + t * (PISTA.largura - 2.8);
-      const z = PISTA.z + (i % 2 === 0 ? -1 : 1) * 2.1;
+      const a = (i / CONES) * Math.PI * 2;
+      // o raio alterna, e o comprimento da reta entra só no eixo X: é o que
+      // espalha os cones ao longo do oval e não em volta de um círculo
+      const r = i % 2 === 0 ? PISTA.miolo + 0.9 : PISTA.raio - 0.9;
+      const x = PISTA.x + Math.cos(a) * r + Math.sign(Math.cos(a)) * PISTA.reta * Math.abs(Math.cos(a));
+      const z = PISTA.z + Math.sin(a) * r;
       w.add(w.place(cone(), x, 0, z, w.range(0, 6.28)));
     }
 
     w.interact({
       id: 'parque:patins',
-      x: LOJA.x, z: LOJA.z + 2.1, radius: 2.4,
+      x: BALCAO.x + 1.5, z: BALCAO.z + 0.3, radius: 2.4,
       label: 'Alugar patins', icon: '🛼',
       highlight: loja,
       onInteract: async (api) => {
@@ -387,9 +420,9 @@ export const villaLobos: SceneDef = {
     const proibido: Array<[number, number, number]> = [
       [0, -26, 20], [-21, 11, 12], [18, -4.5, 17], [0, 4, 6], [0, 9, 6],
       [12, 19, 4], [-10, 20, 3], [37, 13, 8],
-      // a pista e a lojinha entram na lista pelo mesmo motivo da praça da roda:
+      // a pista e a loja entram na lista pelo mesmo motivo da praça da roda:
       // sem isto o espalhador planta árvore em cima do asfalto
-      [-31, 23, 13],
+      [-14, -8, 12], [-10, 3.5, 8],
     ];
     const livre = (x: number, z: number): boolean => {
       if (Math.abs(x) < 4 && z > -20 && z < 30) return false;
