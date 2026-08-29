@@ -68,8 +68,46 @@ const teto = async () => {
   return pico;
 };
 
+/**
+ * A CADÊNCIA da passada, em ciclos por segundo de relógio.
+ *
+ * Andando, o sinal que oscila é o balanço da perna (`rotation.x`); patinando é
+ * o tronco caindo para o lado (`rotation.z`) — a perna de patinar só abre num
+ * sentido, então ela não cruza o zero duas vezes por ciclo e serviria mal de
+ * régua. A comparação entre os dois é o que este número existe para guardar:
+ * a primeira versão patinava MAIS rápido do que andava.
+ */
+const cadencia = async () => {
+  await page.keyboard.down('KeyD');
+  const amostras = await page.evaluate(
+    () =>
+      new Promise((ok) => {
+        const rig = window.jogo.player.rig;
+        const fora = [];
+        const t0 = performance.now();
+        const passo = () => {
+          const t = (performance.now() - t0) / 1000;
+          fora.push(rig.patinandoAgora ? rig.body.rotation.z : rig.legL.rotation.x);
+          if (t > 5) ok({ fora, dur: t });
+          else requestAnimationFrame(passo);
+        };
+        passo();
+      }),
+  );
+  await page.keyboard.up('KeyD');
+  await page.waitForTimeout(400);
+  let viradas = 0;
+  for (let i = 1; i < amostras.fora.length; i++) {
+    const a = amostras.fora[i - 1];
+    const b = amostras.fora[i];
+    if ((a <= 0 && b > 0) || (a >= 0 && b < 0)) viradas++;
+  }
+  return viradas / 2 / amostras.dur;
+};
+
 const descalco = await estado();
 const semPatins = await teto();
+const ritmoAndando = await cadencia();
 
 // a loja entrega para quem está comprando; aqui os dois calçam de uma vez
 await page.evaluate(() => {
@@ -85,6 +123,7 @@ await page.waitForTimeout(700);
 await page.screenshot({ path: `${OUT}-calcado.png` });
 
 const comPatins = await teto();
+const ritmoPatinando = await cadencia();
 
 // andando de lado, para a passada aparecer de perfil
 await page.keyboard.down('KeyD');
@@ -109,6 +148,7 @@ console.log('descalço · vestindo:', JSON.stringify(descalco.vestindoAri), '· 
 console.log('calçado · vestindo:', JSON.stringify(calcado.vestindoAri));
 console.log('  no corpo — jogador:', calcado.pesDoJogador, '· parceiro:', calcado.pesDoParceiro);
 console.log('  na física — jogador:', calcado.jogadorCalcado, '· parceiro:', calcado.parceiroCalcado);
+console.log('cadência da passada:', ritmoAndando.toFixed(2), 'andando →', ritmoPatinando.toFixed(2), 'patinando (ciclos/s)');
 console.log('teto de velocidade:', semPatins.toFixed(2), '→', comPatins.toFixed(2), '· razão', razao.toFixed(3), `(alvo ${BONUS})`);
 console.log('depois de tirar · no corpo:', tirou.pesDoJogador, '· na física:', tirou.jogadorCalcado);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
@@ -122,6 +162,8 @@ const ok =
   calcado.jogadorCalcado === true &&
   calcado.parceiroCalcado === true &&
   Math.abs(razao - BONUS) < 0.02 &&
+  // patinar tem que ser VISIVELMENTE mais calmo que andar, e não mais agitado
+  ritmoPatinando < ritmoAndando * 0.45 &&
   tirou.pesDoJogador === 0 &&
   tirou.jogadorCalcado === false;
 

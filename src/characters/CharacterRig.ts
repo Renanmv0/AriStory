@@ -967,9 +967,21 @@ export class CharacterRig {
     }
 
     const walking = speed > 0.05;
-    this.phase += dt * (walking ? 3.2 + speed * 1.9 : 1.4);
+    /**
+     * A CADENCIA. De patins a passada e longa: um empurrao, e o resto do tempo
+     * deslizando. A cadencia da caminhada da ~3,7 ciclos por segundo, e com o
+     * teto de velocidade 30% mais alto por cima disso o boneco vira um
+     * chacoalho. Patinando fica em ~0,9 ciclo por segundo na velocidade cheia,
+     * que e o ritmo de quem de fato patina.
+     */
+    const cadencia = this.patinando ? 0.9 + speed * 0.33 : 3.2 + speed * 1.9;
+    this.phase += dt * (walking ? cadencia : 1.4);
 
-    const swing = walking ? Math.min(0.62, 0.16 + speed * 0.14) : 0.04;
+    const swing = walking
+      ? this.patinando
+        ? Math.min(0.34, 0.12 + speed * 0.06)
+        : Math.min(0.62, 0.16 + speed * 0.14)
+      : 0.04;
     const s = Math.sin(this.phase * (walking ? 2 : 1));
 
     if (this.patinando) {
@@ -977,21 +989,22 @@ export class CharacterRig {
       // abrindo para o LADO (rotacao em Z, que gira o quadril e joga o pe para
       // fora) enquanto a outra empurra. A parcela em X fica em 25% da
       // caminhada, so o bastante para nao virar um par de pernas rigidas.
-      const abre = walking ? Math.min(0.34, 0.12 + speed * 0.05) : 0.03;
+      const abre = walking ? Math.min(0.28, 0.1 + speed * 0.04) : 0.03;
       // Uma perna de cada vez. `rotation.z` positivo joga o pe para +X, entao
       // a perna da esquerda (que nasce em -X) abre com Z NEGATIVO e a da
       // direita com positivo. Com o mesmo sinal nas duas o corpo inteiro
       // balanca junto, que e gingado, nao patinacao.
       this.legL.rotation.z = -Math.max(0, s) * abre * 1.7;
       this.legR.rotation.z = Math.max(0, -s) * abre * 1.7;
+      // pe da frente um tico erguido no empurrao, so para nao raspar
       this.legL.rotation.x = walking ? s * swing * 0.25 : 0;
       this.legR.rotation.x = walking ? -s * swing * 0.25 : 0;
       // o tronco cai para o lado da perna que esta deslizando, nao para o da
       // que empurra — e o peso indo para o pe de apoio
-      this.body.rotation.z = s * abre * 0.5;
-      // bracos abertos, buscando o equilibrio, e balancando mais que andando
-      this.armL.rotation.x = walking ? -s * swing * 1.15 : 0;
-      this.armR.rotation.x = walking ? s * swing * 1.15 : 0;
+      this.body.rotation.z = s * abre * 0.34;
+      // bracos abertos, buscando o equilibrio
+      this.armL.rotation.x = walking ? -s * swing * 0.9 : 0;
+      this.armR.rotation.x = walking ? s * swing * 0.9 : 0;
       this.armL.rotation.z = 0.34;
       this.armR.rotation.z = -0.34;
     } else {
