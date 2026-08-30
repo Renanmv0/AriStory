@@ -5,7 +5,7 @@ import { FerrisWheel } from '../world/ferrisWheel';
 import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
-  bench, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
+  bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
   cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
   junco, kiosk, lamp, mesaPingPong, nenufar, picnicTable, raquete, skateShop,
   rock, scoreboard, signBoard, textSign, tree, waterFountain, windsock,
@@ -214,8 +214,7 @@ export const villaLobos: SceneDef = {
     }
 
     for (const [x, z, r] of [[-3.6, -12.2, 0.1], [3.6, -12.2, -0.1], [-13.2, -22.5, 1.1]] as const) {
-      w.add(w.place(bench(), x, 0, z, r));
-      w.blockBox(x, z, 1, 0.35, r);
+      w.banco(x, z, r);
     }
 
     for (const [x, z] of [[6.9, -18.9], [-5.2, -11.6]] as const) {
@@ -360,10 +359,7 @@ export const villaLobos: SceneDef = {
       [-4.2, 14, 0], [4.2, 14, Math.PI], [-4.2, -2, 0], [4.2, -6, Math.PI],
       [-12, 9.5, Math.PI / 2],
     ];
-    for (const [x, z, r] of bancos) {
-      w.add(w.place(bench(), x, 0, z, r));
-      w.blockBox(x, z, 1, 0.35, r);
-    }
+    for (const [x, z, r] of bancos) w.banco(x, z, r);
 
     for (const [x, z] of [[-4, 20], [4, 6], [-4, -8], [4, 22], [-4, 2]] as const) {
       w.add(w.place(lamp(false), x, 0, z));
@@ -425,10 +421,7 @@ export const villaLobos: SceneDef = {
 
     // bancos de calçar, na lateral livre da loja — e não mais perto do lago
     // que isto, senão eles sentam na areia
-    for (const dz of [-1.4, 1.0]) {
-      w.add(w.place(bench(), LOJA.x - 5.6, 0, LOJA.z + dz, Math.PI / 2));
-      w.blockBox(LOJA.x - 5.6, LOJA.z + dz, 0.35, 1, 0);
-    }
+    for (const dz of [-1.4, 1.0]) w.banco(LOJA.x - 5.6, LOJA.z + dz, Math.PI / 2);
 
     for (const [x, z] of [
       [PISTA.x - PISTA.reta - PISTA.raio - 1.4, PISTA.z],

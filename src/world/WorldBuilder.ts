@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../core/materials';
 import { Interactable } from './Interactable';
 import type { Bounds, Collider, GameAPI, InteractableDef } from '../core/types';
+import { bench } from './props';
 
 export type Updater = (dt: number, elapsed: number) => void;
 
@@ -209,6 +210,91 @@ export class WorldBuilder {
       highlight: opts.highlight,
       onInteract: (g) => g.goTo(opts.to, opts.entry),
     });
+  }
+
+  /**
+   * Um banco em que a dupla senta JUNTA.
+   *
+   * A peca, o colisor, a ancora de sentar e a interacao saem daqui de uma vez:
+   * "todo banco da para sentar" so e verdade se sentar nao depender de a cena
+   * lembrar de escrever a interacao. Quem quiser um banco de enfeite usa
+   * `bench()` direto.
+   *
+   * @param rot para onde o banco olha. 0 = encosto no -Z, assento para +Z.
+   */
+  banco(x: number, z: number, rot = 0, cor?: number): THREE.Group {
+    const peca = this.add(this.place(bench(cor), x, 0, z, rot));
+    this.blockBox(x, z, 0.95, 0.35, rot);
+
+    /**
+     * A ancora carrega os dois durante a cena de sentar; a rotacao mora nela,
+     * entao os rigs entram com facing 0. O `+ Math.PI` esta ali porque
+     * `ridePlayer` poe o rig virado para o -Z local da ancora — sem ele os dois
+     * sentam de costas para quem olha.
+     */
+    const assento = new THREE.Object3D();
+    assento.position.set(x, 0, z);
+    assento.rotation.y = rot + Math.PI;
+    this.root.add(assento);
+
+    // Alvo da camera enquanto durar. Sentado, a posicao do jogador passa a ser
+    // LOCAL a ancora, e a camera, que mira no peito dele, iria parar perto da
+    // origem do mundo. Foi o que aconteceu na primeira tentativa.
+    const foco = new THREE.Object3D();
+    foco.position.set(x, 0.9, z);
+    this.root.add(foco);
+
+    /**
+     * Altura em que o objeto do personagem entra na ancora.
+     *
+     * O assento do banco esta a 0,53 e o quadril do rig fica ~0,45 acima da
+     * origem dele — daí este 0,06. Mais alto e a dupla flutua sobre a tabua.
+     */
+    const ALTURA = 0.06;
+    /** meia distancia entre os dois no banco, que tem 1,9 de largura */
+    const LADO = 0.46;
+
+    this.interact({
+      id: `banco:${x.toFixed(1)},${z.toFixed(1)}`,
+      x, z, radius: 1.9,
+      label: 'Sentar no banco', icon: '🪑',
+      highlight: peca,
+      onInteract: async (api) => {
+        api.lockPlayer(true);
+        api.ridePlayer(assento, new THREE.Vector3(-LADO, ALTURA, 0.02), 1, 0);
+        // Math.PI e nao 0: `ridePlayer` vira o rig para o -Z local da ancora e
+        // nao aceita parametro, entao o parceiro tem que receber o MESMO angulo
+        // na mao. Com 0 ele senta de costas para quem olha.
+        api.rideCompanion(assento, new THREE.Vector3(LADO, ALTURA, 0.02), 1, Math.PI);
+        api.setSitting(true);
+        api.focusCamera(foco);
+        await api.wait(0.5);
+
+        // quem fala e quem esta em cena, e nao um nome cravado: banco e peca
+        // generica, e a tecla T pode ter trocado os dois de lugar
+        await api.say(['Senta aqui um pouco.'], api.companionName());
+        await api.say(['Só um pouquinho.'], api.playerName());
+
+        // fica sentado enquanto quiser: o `wait` deixa a tela livre, com os
+        // dois de maos dadas e as pernas balancando
+        let escolha = 0;
+        while (escolha === 0) {
+          escolha = await api.ask('Ficar mais um pouco?', ['Ficar', 'Levantar']);
+          if (escolha === 0) await api.wait(4);
+        }
+
+        api.setSitting(false);
+        api.focusCamera(null);
+        // sai pela frente do banco, que e o lado do assento
+        const frente = rot;
+        const fx = Math.sin(frente) * 1.5;
+        const fz = Math.cos(frente) * 1.5;
+        api.releasePlayer(x + fx - Math.cos(frente) * 0.5, z + fz + Math.sin(frente) * 0.5, frente);
+        api.releaseCompanion(x + fx + Math.cos(frente) * 0.5, z + fz - Math.sin(frente) * 0.5, frente);
+        api.lockPlayer(false);
+      },
+    });
+    return peca;
   }
 
   onUpdate(fn: Updater): void {

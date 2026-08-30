@@ -3,7 +3,7 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import { flat } from '../core/materials';
 import {
-  bench, building, bush, cloud, divingBoard, fence, floatRing, flowers,
+  building, bush, cloud, divingBoard, fence, floatRing, flowers,
   kiosk, parasol, poolLadder, poolShell, poolWater, showerPost, sunLounger, tree,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
@@ -133,8 +133,7 @@ export const clube: SceneDef = {
 
     const vestiario = w.add(w.place(building(6, 3.2, 4, P.wallCream, 0x7aa6c4), 13, 0, -9));
     w.blockBox(13, -9, 3, 2);
-    w.add(w.place(bench(), 13, 0, -6.6));
-    w.blockBox(13, -6.6, 1, 0.35);
+    w.banco(13, -6.6);
 
     // ------------------------------------------------------------ jardim
     w.setSeed(90210);

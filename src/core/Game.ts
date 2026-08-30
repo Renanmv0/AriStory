@@ -707,8 +707,19 @@ export class Game implements GameAPI {
     return new Promise((resolve) => window.setTimeout(resolve, seconds * 1000));
   }
 
+  /**
+   * Onde o jogador esta NO MUNDO.
+   *
+   * Dentro de um veiculo, banco ou cabine o objeto dele passa a ser filho da
+   * ancora, e `position` vira coordenada local — perto da origem. Devolver isso
+   * fazia a cena achar que ele estava em outro lugar: sentado num banco do
+   * parque, a regra de camera da roda gigante disparava como se ele estivesse
+   * na praca dela.
+   */
   playerPosition(): THREE.Vector3 {
-    return this.player.position.clone();
+    if (!this.player.riding) return this.player.position.clone();
+    this.player.object.updateWorldMatrix(true, false);
+    return this.player.object.getWorldPosition(new THREE.Vector3());
   }
 
   playerFacing(): number {
@@ -728,7 +739,9 @@ export class Game implements GameAPI {
   }
 
   companionPosition(): THREE.Vector3 {
-    return this.parceiro.position.clone();
+    if (!this.parceiro.riding) return this.parceiro.position.clone();
+    this.parceiro.object.updateWorldMatrix(true, false);
+    return this.parceiro.object.getWorldPosition(new THREE.Vector3());
   }
 
   companionFacing(): number {
@@ -776,10 +789,40 @@ export class Game implements GameAPI {
     this.parceiro.hold(olharX, olharZ);
   }
 
+  /**
+   * Os dois sentam — e sentam sempre DE MAOS DADAS.
+   *
+   * De que lado cada um esta sai da geometria, e nao de quem chamou: sentados
+   * numa ancora (banco, sofa) a posicao de mundo vem da matriz do pai, e o
+   * `facing` do rig e local. Por isso o eixo lateral e tirado do quaternion de
+   * mundo do proprio rig, que ja carrega a rotacao da ancora junto.
+   */
   setSitting(sentados: boolean): void {
     if (sentados) this.audio.play('sentar');
     this.player.rig.setSitting(sentados);
     this.parceiro.rig.setSitting(sentados);
+
+    if (!sentados) {
+      // de pe as maos so ficam dadas se a mecanica propria estiver ligada
+      if (!this.maos.ativo) {
+        this.player.rig.setHoldingHands(0);
+        this.parceiro.rig.setHoldingHands(0);
+      }
+      return;
+    }
+
+    const a = this.player.rig.group;
+    const b = this.parceiro.rig.group;
+    a.updateWorldMatrix(true, false);
+    b.updateWorldMatrix(true, false);
+    const pa = new THREE.Vector3();
+    const pb = new THREE.Vector3();
+    a.getWorldPosition(pa);
+    b.getWorldPosition(pb);
+    const paraOLado = new THREE.Vector3(1, 0, 0).applyQuaternion(a.getWorldQuaternion(new THREE.Quaternion()));
+    const lado = paraOLado.dot(pb.sub(pa)) < 0 ? -1 : 1;
+    this.player.rig.setHoldingHands(lado);
+    this.parceiro.rig.setHoldingHands(lado === 1 ? -1 : 1);
   }
 
   setOutfit(traje: 'normal' | 'banho'): void {

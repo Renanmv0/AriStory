@@ -36,6 +36,11 @@ await page.keyboard.press('KeyE'); // confirma "Sim"
 await page.waitForTimeout(2800);
 await page.screenshot({ path: `${OUT}-sofa.png` });
 const sentados = (await page.locator('.dialogue.show').count()) > 0;
+// no sofá a dupla também senta de mãos dadas: o `setSitting` do motor vale
+// para qualquer assento, não só para o banco do parque
+const maosNoSofa = await page.evaluate(
+  () => window.jogo.player.rig.holdingHands && window.jogo.parceiro.rig.holdingHands,
+);
 
 // --------------------------------------------------------------- frisbee
 // o disco só existe dentro da quadra, então o teste começa lá dentro
@@ -113,7 +118,7 @@ const memorias = await page.evaluate(() => {
 
 console.log('prompt do sofá:', promptSofa);
 console.log('pergunta com botões:', temEscolha);
-console.log('cutscene rodou:', sentados);
+console.log('cutscene rodou:', sentados, '· de mãos dadas no sofá:', maosNoSofa);
 console.log('prompt na quadra:', discoNaMao);
 console.log('trocas de frisbee:', trocas);
 console.log('falantes do lago:', falantes.join(' → '));
@@ -124,4 +129,4 @@ const faltando = ['sorvete-villa', 'lago-pular'].filter((id) => !memorias.includ
 if (faltando.length) console.log('memórias que não vieram:', faltando.join(', '));
 
 await browser.close();
-process.exit(erros.length || !temEscolha || !sentados || trocas < 1 || faltando.length ? 1 : 0);
+process.exit(erros.length || !temEscolha || !sentados || !maosNoSofa || trocas < 1 || faltando.length ? 1 : 0);

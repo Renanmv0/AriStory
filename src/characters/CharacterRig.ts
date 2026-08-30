@@ -939,10 +939,19 @@ export class CharacterRig {
 
     if (this.sitting) {
       this.phase += dt * 0.9;
-      this.legL.rotation.x = -Math.PI / 2 + 0.06;
-      this.legR.rotation.x = -Math.PI / 2 - 0.02;
+      // Pernas balancando BEM devagar: um vaivem a cada ~3 s. E o gesto de quem
+      // senta no banco e deixa o pe solto, e ele so le como calma se a
+      // frequencia for baixa — mais rapido que isto vira perna nervosa.
+      const balanco = Math.sin(this.phase * 2.2) * 0.17;
+      this.legL.rotation.x = -Math.PI / 2 + 0.06 + balanco;
+      this.legR.rotation.x = -Math.PI / 2 - 0.02 - balanco;
       this.armL.rotation.set(-0.25, 0, 0.34);
       this.armR.rotation.set(-0.2, 0, -0.34);
+      // sentados de maos dadas, o braco de dentro desce e abre para o outro
+      if (this.maos !== 0) {
+        const dentro = this.maos < 0 ? this.armL : this.armR;
+        dentro.rotation.set(0.12, 0, ABRE_MAO * 0.8 * this.maos);
+      }
       this.body.rotation.x = -0.05;
       this.poeAltura(Math.sin(this.phase) * 0.012);
       this.head.rotation.x = Math.sin(this.phase * 0.7) * 0.03;
