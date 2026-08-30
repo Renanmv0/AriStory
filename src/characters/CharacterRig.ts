@@ -5,12 +5,12 @@ import { patins as patinsMesh } from '../world/props';
 import {
   SLOTS_ROUPA,
   type HoldPose,
+  type ItemDef,
   type Loadout,
   type MedidasCorpo,
-  type PecaRoupa,
   type SlotRoupa,
 } from '../core/types';
-import { fichaDaPeca } from '../world/roupas';
+import { fichaDoItem } from '../world/itens';
 import { PALETTE as P } from '../palette';
 
 /**
@@ -147,7 +147,7 @@ export class CharacterRig {
   /** traje da cena, guardado em vez de aplicado direto — ver `aplicarVisual` */
   private traje: 'normal' | 'banho' = 'normal';
   /** o loadout já resolvido pelo catálogo */
-  private roupa: Partial<Record<SlotRoupa, PecaRoupa>> = {};
+  private roupa: Partial<Record<SlotRoupa, ItemDef>> = {};
   /** a geometria extra de cada slot que tem uma (só cabeça e pés) */
   private readonly extras = new Map<SlotRoupa, THREE.Object3D[]>();
   private readonly medidas: MedidasCorpo;
@@ -909,9 +909,11 @@ export class CharacterRig {
         t.mesh.material = t.normal;
         continue;
       }
-      t.mesh.material = toon(
-        t.parte === 'detalhe' ? (peca.corDetalhe ?? peca.cor) : peca.cor,
-      );
+      // vestivel sem cor (o chapeu de campeao, os patins) nao pinta o corpo:
+      // ele so acrescenta peca. Sem esta saida, calcar patins apagaria a cor
+      // da calca.
+      const cor = t.parte === 'detalhe' ? (peca.corDetalhe ?? peca.cor) : peca.cor;
+      t.mesh.material = cor === undefined ? t.normal : toon(cor);
     }
 
     for (const peca of this.soVestido) peca.visible = !banho;
@@ -952,7 +954,7 @@ export class CharacterRig {
       const id = novo[slot] ?? null;
       if ((this.roupa[slot]?.id ?? null) === id) continue;
       this.tirarExtras(slot);
-      const peca = id ? fichaDaPeca(id) : null;
+      const peca = id ? fichaDoItem(id) : null;
       this.roupa[slot] = peca ?? undefined;
       if (peca?.extra) this.porExtras(slot, peca);
     }
@@ -976,7 +978,7 @@ export class CharacterRig {
    * perna — os mesmos pontos onde o chapeu de campeao e o patins ja moram —
    * para andar junto com a animacao sem que ninguem toque nos pivos.
    */
-  private porExtras(slot: SlotRoupa, peca: PecaRoupa): void {
+  private porExtras(slot: SlotRoupa, peca: ItemDef): void {
     if (!peca.extra) return;
     const pais: THREE.Object3D[] = slot === 'pes'
       ? [this.legL, this.legR]
@@ -990,7 +992,7 @@ export class CharacterRig {
       obj.userData.roupa = peca.id;
       // o `traverse` que liga sombra roda no CONSTRUTOR, entao nada criado
       // depois herda isso sozinho
-      obj.traverse((n) => {
+      obj.traverse((n: THREE.Object3D) => {
         if ((n as THREE.Mesh).isMesh) {
           n.castShadow = true;
           n.receiveShadow = false;
@@ -1007,7 +1009,7 @@ export class CharacterRig {
     if (!objs) return;
     for (const obj of objs) {
       obj.parent?.remove(obj);
-      obj.traverse((n) => {
+      obj.traverse((n: THREE.Object3D) => {
         // so a geometria. O material e o objeto cacheado de `materials.ts`,
         // compartilhado com o jogo inteiro — dar dispose nele apaga a cor de
         // todo mundo que a usa

@@ -24,6 +24,11 @@ export class Ui {
   private readonly menu: HTMLDivElement;
   private readonly placar: HTMLDivElement;
   private readonly mochila: HTMLDivElement;
+  private readonly armario: HTMLDivElement;
+  private readonly boneco: HTMLCanvasElement;
+  private readonly corpo: HTMLDivElement;
+  private readonly acervo: HTMLDivElement;
+  private readonly donoArmario: HTMLSpanElement;
   private readonly slotsMao: HTMLDivElement;
   private readonly slotsVestivel: HTMLDivElement;
   private readonly dono: HTMLElement;
@@ -140,6 +145,17 @@ export class Ui {
         </div>
         <button class="close">voltar pro jogo</button>
       </div></div>
+      <div class="armario"><div class="sheet">
+        <h2>Guarda-roupa <span class="dono"></span></h2>
+        <p class="sub">clique numa peça para vestir ou tirar · arraste o boneco para girar</p>
+        <div class="prova">
+          <canvas class="boneco"></canvas>
+          <div class="corpo"></div>
+        </div>
+        <h3>O que você tem</h3>
+        <div class="acervo"></div>
+        <button class="close">fechar</button>
+      </div></div>
       <div class="touch">
         <button class="action-btn" aria-label="interagir">✨</button>
         <button class="swap-btn" aria-label="trocar de personagem">🔁</button>
@@ -175,6 +191,11 @@ export class Ui {
     this.slotsVestivel = ui.querySelector('.mochila .vestiveis')!;
     this.dono = ui.querySelector('.mochila .dono')!;
     this.descarte = ui.querySelector('.mochila .descarte')!;
+    this.armario = ui.querySelector('.armario')!;
+    this.boneco = ui.querySelector('.armario .boneco')!;
+    this.corpo = ui.querySelector('.armario .corpo')!;
+    this.acervo = ui.querySelector('.armario .acervo')!;
+    this.donoArmario = ui.querySelector('.armario .dono')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -200,6 +221,11 @@ export class Ui {
     ui.querySelector('.journal-btn')!.addEventListener('click', () => this.toggleJournal());
     ui.querySelector('.bag-btn')!.addEventListener('click', () => this.toggleMochila());
     ui.querySelector('.mochila .close')!.addEventListener('click', () => this.closeMochila());
+    ui.querySelector('.armario .close')!.addEventListener('click', () => this.fecharArmario());
+    this.armario.addEventListener('click', (e) => {
+      if (e.target === this.armario) this.fecharArmario();
+    });
+    this.ligarGiroDoBoneco();
     // Descartar pede dois toques. Perder o chapéu de campeão num toque sem
     // querer seria irreversível — o item não volta de lugar nenhum.
     ui.querySelector('.mochila .descartar')!.addEventListener('click', () => {
@@ -291,7 +317,7 @@ export class Ui {
   private marcarTelaAberta(): void {
     document.body.classList.toggle(
       'tela-aberta',
-      this.menuOpen || this.journalOpen || this.mochilaOpen,
+      this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen,
     );
   }
 
@@ -607,6 +633,131 @@ export class Ui {
     desenhar(this.slotsMao, maos, ativo);
     // acessorio nao tem "principal": vestido e vestido
     desenhar(this.slotsVestivel, vestiveis, -1);
+  }
+
+  // ------------------------------------------------------------ guarda-roupa
+
+  get armarioOpen(): boolean {
+    return this.armario.classList.contains('show');
+  }
+
+  abrirArmario(): void {
+    if (this.armarioOpen) return;
+    this.som?.('escolha');
+    this.onAbrirArmario?.();
+    this.armario.classList.add('show');
+    this.marcarTelaAberta();
+  }
+
+  fecharArmario(): void {
+    if (!this.armarioOpen) return;
+    this.armario.classList.remove('show');
+    this.marcarTelaAberta();
+    this.onFecharArmario?.();
+  }
+
+  /**
+   * O canvas do boneco 3D.
+   *
+   * O painel e HTML e o boneco e WebGL, e o boneco desenha no PROPRIO canvas,
+   * dentro do painel. A primeira versao recortava um retangulo do canvas do
+   * jogo com tesoura e o boneco saia fantasma, porque o canvas do jogo fica
+   * atras do HTML e a folha translucida do painel passava por cima.
+   */
+  canvasDoBoneco(): HTMLCanvasElement {
+    return this.boneco;
+  }
+
+  /**
+   * Desenha o painel: as 4 partes do corpo e o que a pessoa tem para vestir.
+   *
+   * As 4 vagas aparecem SEMPRE, cheias ou vazias, pela mesma razao da mochila:
+   * grade parada se le de relance, e a vaga vazia diz o que falta.
+   */
+  renderArmario(
+    vestindo: ReadonlyArray<ItemDef | null>,
+    guardados: ReadonlyArray<ItemDef>,
+    dono: string,
+  ): void {
+    this.donoArmario.textContent = `de ${dono}`;
+
+    const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés'];
+    this.corpo.innerHTML = '';
+    vestindo.forEach((item, i) => {
+      const vaga = document.createElement('button');
+      vaga.className = 'parte';
+      vaga.classList.toggle('cheio', item !== null);
+      vaga.dataset.parte = String(i);
+      vaga.innerHTML =
+        `<small>${PARTES[i]}</small>` +
+        (item
+          ? `<span class="icone">${item.icone}</span><b>${item.nome}</b><em>tirar</em>`
+          : `<span class="icone vazio">·</span><b>vazio</b>`);
+      this.corpo.appendChild(vaga);
+    });
+
+    this.acervo.innerHTML = '';
+    if (guardados.length === 0) {
+      const vazio = document.createElement('p');
+      vazio.className = 'nada';
+      vazio.textContent = 'Nada guardado — está tudo no corpo.';
+      this.acervo.appendChild(vazio);
+    }
+    for (const item of guardados) {
+      const peca = document.createElement('button');
+      peca.className = 'peca';
+      peca.dataset.id = item.id;
+      peca.innerHTML =
+        `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
+        (item.nota ? `<small>${item.nota}</small>` : '');
+      this.acervo.appendChild(peca);
+    }
+  }
+
+  /** Clicou numa das 4 partes do corpo para TIRAR o que está lá. */
+  onTirarParte: ((indice: number) => void) | null = null;
+  /** Clicou numa peça guardada para VESTIR. */
+  onVestirPeca: ((id: string) => void) | null = null;
+  /** O painel vai abrir: o Game desenha e prepara o boneco. */
+  onAbrirArmario: (() => void) | null = null;
+  onFecharArmario: (() => void) | null = null;
+  /** Arrastou o boneco: quanto girar, em radianos. */
+  onGirarBoneco: ((delta: number) => void) | null = null;
+
+  /**
+   * Arrastar o boneco para girar.
+   *
+   * `pointer*` e nao `mouse*`: e o mesmo caminho para dedo e para mouse, e o
+   * jogo e mostrado no celular tanto quanto no computador. A captura garante
+   * que soltar fora do buraco ainda encerre o giro.
+   */
+  private ligarGiroDoBoneco(): void {
+    let arrastando = false;
+    let ultimoX = 0;
+    this.boneco.addEventListener('pointerdown', (e) => {
+      arrastando = true;
+      ultimoX = e.clientX;
+      this.boneco.setPointerCapture(e.pointerId);
+    });
+    this.boneco.addEventListener('pointermove', (e) => {
+      if (!arrastando) return;
+      this.onGirarBoneco?.((e.clientX - ultimoX) * 0.012);
+      ultimoX = e.clientX;
+    });
+    for (const ev of ['pointerup', 'pointercancel']) {
+      this.boneco.addEventListener(ev, () => { arrastando = false; });
+    }
+
+    this.corpo.addEventListener('click', (e) => {
+      const vaga = (e.target as HTMLElement).closest('.parte') as HTMLElement | null;
+      if (!vaga?.dataset.parte || !vaga.classList.contains('cheio')) return;
+      this.onTirarParte?.(Number(vaga.dataset.parte));
+    });
+    this.acervo.addEventListener('click', (e) => {
+      const peca = (e.target as HTMLElement).closest('.peca') as HTMLElement | null;
+      if (!peca?.dataset.id) return;
+      this.onVestirPeca?.(peca.dataset.id);
+    });
   }
 
   /** Clique numa vaga da mão: quem decide o que fazer é o Game. */

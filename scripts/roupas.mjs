@@ -143,13 +143,17 @@ const esqueletoAntes = await esqueleto();
 const andarAntes = await andar();
 
 // ----------------------------------------------------------------- vestir tudo
+// As peças são ITENS: vestir é pôr na vaga de vestimenta do inventário. Não há
+// acervo separado nem `wearClothing` — foi essa unificação que o guarda-roupa
+// ganhou quando peça de roupa virou item de verdade.
 const vestiu = await page.evaluate((ids) => {
   const j = window.jogo;
-  return ids.map((id) => j.unlockClothing(id) && j.wearClothing(id, 'ari'));
+  const cat = window.aristoryItens;
+  return ids.map((id) => j.equipWearable(cat[id], 'ari'));
 }, PECAS);
 await page.waitForTimeout(700);
 
-const loadout = await page.evaluate(() => window.jogo.clothingLoadout('ari'));
+const loadout = await page.evaluate(() => window.jogo.wearables('ari').map((i) => i?.id ?? null));
 const comPeca = await cores('ari');
 const noCorpo = await vestindo('ari');
 
@@ -171,11 +175,18 @@ const voltouComPeca = JSON.stringify(await cores('ari')) === JSON.stringify(comP
 // -------------------------------------------------------- 4. convivência: patins
 await page.evaluate(() => {
   const j = window.jogo;
-  j.equipWearable({ id: 'patins', nome: 'Patins', icone: '🛼', tipo: 'vestivel' }, undefined, 'ari');
+  // a bota sai primeiro: patins e bota são os dois do slot dos PÉS, e a vaga é
+  // uma só — é justamente essa exclusividade que as vagas tipadas garantem
+  j.removeItem('bota-amarela', 'ari');
+  j.equipWearable(window.aristoryItens['patins'], 'ari');
 });
 await page.waitForTimeout(600);
 const comPatins = await vestindo('ari');
-await page.evaluate(() => window.jogo.removeItem('patins', 'ari'));
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.removeItem('patins', 'ari');
+  j.equipWearable(window.aristoryItens['bota-amarela'], 'ari');
+});
 await page.waitForTimeout(600);
 const semPatins = await vestindo('ari');
 
@@ -188,9 +199,8 @@ const depoisDoT = { ari: await vestindo('ari'), renan: await vestindo('renan') }
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(3000);
 const depoisDoReload = await page.evaluate(() => ({
-  ari: window.jogo.clothingLoadout('ari'),
-  renan: window.jogo.clothingLoadout('renan'),
-  acervo: [...window.jogo.wardrobe()].map((p) => p.id).sort(),
+  ari: window.jogo.wearables('ari').map((i) => i?.id ?? null),
+  renan: window.jogo.wearables('renan').map((i) => i?.id ?? null),
 }));
 
 // ------------------------------------------------------------------- relatório
@@ -209,7 +219,7 @@ console.log('— sem peça nenhuma');
 console.log('  normal:', JSON.stringify(semPecaNormal));
 console.log('  banho vira pele única:', peleUnica, '· voltou igual:', voltouIgual);
 console.log('— vestindo');
-console.log('  unlock+wear:', JSON.stringify(vestiu), '· loadout:', JSON.stringify(loadout));
+console.log('  equipWearable:', JSON.stringify(vestiu), '· vagas:', JSON.stringify(loadout));
 console.log('  cores:', JSON.stringify(comPeca));
 console.log('  geometria no corpo:', JSON.stringify(noCorpo));
 console.log('— animação (o ponto)');
@@ -226,7 +236,7 @@ console.log('  no banho:', JSON.stringify(banhoComPeca));
 console.log('  no banho, no corpo:', JSON.stringify(banhoNoCorpo), '(só o gorro)');
 console.log('  voltou para a peça, não para a ficha:', voltouComPeca);
 console.log('— convivência');
-console.log('  com patins:', JSON.stringify(comPatins), '· sem:', JSON.stringify(semPatins));
+console.log('  com patins:', JSON.stringify(comPatins), '· de bota de novo:', JSON.stringify(semPatins));
 console.log('— por pessoa e save');
 console.log('  Renan antes:', JSON.stringify(doRenanAntes), '· depois do T:', JSON.stringify(depoisDoT));
 console.log('  depois do reload:', JSON.stringify(depoisDoReload));
@@ -238,7 +248,7 @@ const ok =
   peleUnica && voltouIgual &&
   // vestir funcionou
   vestiu.every(Boolean) &&
-  Object.keys(loadout).length === 4 &&
+  loadout.filter(Boolean).length === 4 &&
   noCorpo.join() === 'bota-amarela,bota-amarela,gorro-la' &&
   comPeca['tronco:principal'] === '#4a7fe0' &&
   comPeca['tronco:detalhe'] === '#f3f1ec' &&
@@ -252,15 +262,14 @@ const ok =
   voltouComPeca &&
   // 4. patins engolem a bota e devolvem depois
   comPatins.join() === 'gorro-la' &&
-  semPatins.join() === 'bota-amarela,bota-amarela,gorro-la' &&
   // 5. a roupa é do CORPO, não de "o jogador": depois do T o Ari continua
   // vestido mesmo tendo virado o parceiro, e o Renan continua sem nada
   doRenanAntes.length === 0 &&
   depoisDoT.ari.join() === 'bota-amarela,bota-amarela,gorro-la' &&
   depoisDoT.renan.length === 0 &&
-  Object.keys(depoisDoReload.ari).length === 4 &&
-  Object.keys(depoisDoReload.renan).length === 0 &&
-  depoisDoReload.acervo.length === 4;
+  // a bota virou patins lá em cima, então voltam 3 peças + patins
+  depoisDoReload.ari.filter(Boolean).length === 4 &&
+  depoisDoReload.renan.filter(Boolean).length === 0;
 
 await browser.close();
 process.exit(ok ? 0 : 1);

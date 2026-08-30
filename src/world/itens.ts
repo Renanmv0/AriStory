@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { copoDeSuco, frisbee, iceCream } from './props';
+import { canoDaBota, gorroDeLa } from './roupas';
 
 /**
  * O catalogo de itens do jogo.
@@ -49,11 +50,16 @@ export const ITENS = {
     nota: 'do Renan',
     holdPose: 'upright',
   },
+  // ------------------------------------------------------------ vestiveis
+  // Todo vestivel declara o `slot`, porque as 4 vagas de vestimenta SAO as 4
+  // partes do corpo. E o que faz chapeu e patins conviverem (cabeca e pe sao
+  // vagas diferentes) e dois chapeus nao conviverem.
   chapeuPingPong: {
     id: 'chapeu-ping-pong',
     nome: 'Chapéu de campeão',
     icone: '👑',
     tipo: 'vestivel',
+    slot: 'cabeca',
     nota: 'ping pong, 5 a 0',
   },
   patins: {
@@ -61,7 +67,50 @@ export const ITENS = {
     nome: 'Patins',
     icone: '🛼',
     tipo: 'vestivel',
+    slot: 'pes',
     nota: 'da lojinha do parque',
+  },
+  gorroDeLa: {
+    id: 'gorro-la',
+    nome: 'Gorro de lã',
+    icone: '🧢',
+    tipo: 'vestivel',
+    slot: 'cabeca',
+    cor: P.roupaLa,
+    corDetalhe: P.roupaLaBarra,
+    nota: 'para o frio que nunca faz',
+    cobreCabelo: true,
+    extra: gorroDeLa,
+  },
+  camisaListrada: {
+    id: 'camisa-listrada',
+    nome: 'Camisa listrada',
+    icone: '👕',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.roupaListra,
+    corDetalhe: P.roupaListraManga,
+    nota: 'mangas claras',
+  },
+  calcaJeans: {
+    id: 'calca-jeans',
+    nome: 'Calça jeans',
+    icone: '👖',
+    tipo: 'vestivel',
+    slot: 'pernas',
+    cor: P.roupaJeans,
+    nota: 'a de sempre',
+  },
+  botaAmarela: {
+    id: 'bota-amarela',
+    nome: 'Bota amarela',
+    icone: '🥾',
+    tipo: 'vestivel',
+    slot: 'pes',
+    cor: P.roupaBota,
+    corDetalhe: P.roupaBotaCano,
+    nota: 'chama atenção de longe',
+    extra: canoDaBota,
   },
   frisbee: {
     id: 'frisbee',

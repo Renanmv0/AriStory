@@ -1,23 +1,14 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import { toon } from '../core/materials';
-import type { MedidasCorpo, PecaRoupa, SlotRoupa } from '../core/types';
+import type { MedidasCorpo } from '../core/types';
 
 /**
- * O acervo de roupas do jogo.
+ * O CORPO das pecas de roupa que tem geometria propria.
  *
- * Mesma ideia do catalogo de itens em `itens.ts`, e pelo mesmo motivo: o save
- * guarda o ID da peca, nunca uma copia da ficha. Copia envelhece — foi assim
- * que o chapeu de campeao ficou preso como item de mao numa versao antiga — e
- * aqui e o catalogo, e so ele, que diz em que slot a peca mora e de que cor
- * ela e.
- *
- * Este e um sistema PARALELO ao inventario: nada aqui ocupa vaga de mochila
- * nem de acessorio, e os patins e o chapeu de campeao continuam sendo `ItemDef`
- * como sempre foram.
- *
- * Zero asset externo, como todo o resto: a peca e primitiva do Three.js e o
- * material vem de `toon()`.
+ * Zero asset externo, como todo o resto: primitiva do Three.js e material de
+ * `toon()`. Cada funcao devolve uma malha nova a cada chamada — o slot dos pes
+ * pendura uma copia em cada perna, e o mesmo Object3D nao pode ter dois pais.
  */
 
 // ------------------------------------------------------------------ geometria
@@ -98,69 +89,7 @@ function canoDaBota(m: MedidasCorpo): THREE.Object3D {
   return g;
 }
 
-// ------------------------------------------------------------------- catalogo
-
-/** so para nao escrever a mesma string em quatro lugares */
-export const ROUPAS = {
-  gorroDeLa: {
-    id: 'gorro-la',
-    nome: 'Gorro de lã',
-    icone: '🧢',
-    slot: 'cabeca',
-    cor: P.roupaLa,
-    corDetalhe: P.roupaLaBarra,
-    nota: 'para o frio que nunca faz',
-    cobreCabelo: true,
-    extra: gorroDeLa,
-  },
-  camisaListrada: {
-    id: 'camisa-listrada',
-    nome: 'Camisa listrada',
-    icone: '👕',
-    slot: 'tronco',
-    cor: P.roupaListra,
-    corDetalhe: P.roupaListraManga,
-    nota: 'mangas claras',
-  },
-  calcaJeans: {
-    id: 'calca-jeans',
-    nome: 'Calça jeans',
-    icone: '👖',
-    slot: 'pernas',
-    cor: P.roupaJeans,
-  },
-  botaAmarela: {
-    id: 'bota-amarela',
-    nome: 'Bota amarela',
-    icone: '🥾',
-    slot: 'pes',
-    cor: P.roupaBota,
-    corDetalhe: P.roupaBotaCano,
-    extra: canoDaBota,
-  },
-} as const satisfies Record<string, PecaRoupa>;
-
-const PORID: Record<string, PecaRoupa> = Object.fromEntries(
-  Object.values(ROUPAS).map((p) => [p.id, p as PecaRoupa]),
-);
-
-/**
- * A ficha oficial de uma peca, pelo id.
- *
- * Autoridade unica: o save guarda id, e tudo o mais — slot, cor, geometria —
- * sai daqui na hora de usar. Devolve null para id desconhecido, que e como uma
- * peca tirada do catalogo some sozinha de um save antigo.
- */
-export function fichaDaPeca(id: string): PecaRoupa | null {
-  return PORID[id] ?? null;
-}
-
-/** Todas as pecas de um slot, para a tela do armario montar a prateleira. */
-export function pecasDoSlot(slot: SlotRoupa): PecaRoupa[] {
-  return Object.values(PORID).filter((p) => p.slot === slot);
-}
-
-/** O acervo inteiro, na ordem do catalogo. */
-export function todasAsPecas(): PecaRoupa[] {
-  return Object.values(PORID);
-}
+// As FICHAS das pecas moram em `itens.ts`, junto com o resto do acervo: peca de
+// roupa e item como qualquer outro, e mora numa vaga de vestimenta do
+// inventario. Aqui fica so o corpo delas.
+export { gorroDeLa, canoDaBota };

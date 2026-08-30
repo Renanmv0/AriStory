@@ -34,8 +34,10 @@ const guardou = await page.evaluate(() => {
     j.addItem({ id: 'toalha', nome: 'Toalha', icone: '🧺', tipo: 'mao' }),
     // o mesmo id duas vezes tem que ser recusado
     j.addItem({ id: 'camera', nome: 'Câmera', icone: '📷', tipo: 'mao' }),
-    j.equipWearable({ id: 'patins', nome: 'Patins', icone: '🛼', tipo: 'vestivel' }),
-    j.equipWearable({ id: 'oculos', nome: 'Óculos de sol', icone: '🕶️', tipo: 'vestivel' }, 2),
+    // fichas DE VERDADE, do catálogo: um vestível precisa declarar em que
+    // parte do corpo mora, e ficha inventada aqui não teria `slot`
+    j.equipWearable(window.aristoryItens['patins']),
+    j.equipWearable(window.aristoryItens['chapeu-ping-pong']),
   ];
   return r;
 });
@@ -130,12 +132,14 @@ const ok =
   JSON.stringify(guardou) === JSON.stringify(['mao', 'guardado', 'guardado', 'repetido', true, true]) &&
   aberta.caixas === 9 &&
   aberta.principais === 1 &&
-  JSON.stringify(aberta.vestiveis) === JSON.stringify(['patins', null, 'oculos', null]) &&
+  // as vagas são TIPADAS: chapéu na 0 (cabeça), patins na 3 (pés). A ordem não é
+  // a de chegada, é a do corpo
+  JSON.stringify(aberta.vestiveis) === JSON.stringify(['chapeu-ping-pong', null, null, 'patins']) &&
   andou === 0 &&
   depoisDoClique.ativo === 2 &&
   depoisDoClique.naMao === 'Toalha' &&
   /(não pode ser vestido)/.test(recusa.aviso ?? '') &&
-  JSON.stringify(recusa.vestindo) === JSON.stringify(['patins', null, 'oculos', null]) &&
+  JSON.stringify(recusa.vestindo) === JSON.stringify(['chapeu-ping-pong', null, null, 'patins']) &&
   recusa.aindaNaPinca === 1 &&
   /Descartar Toalha/.test(botaoDescarte ?? '') &&
   descartou.maos[2] === null &&

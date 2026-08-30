@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
-import type { PecaRoupa, SceneDef, SlotRoupa } from '../core/types';
+import type { SceneDef } from '../core/types';
 import {
   armario, bed, bookshelf, chair, desk, espelho, nightstand,
   pictureFrame, pottedPlant, rug, wallShelf, windowFrame,
 } from '../world/furniture';
 import { toon } from '../core/materials';
 import { ARI, RENAN } from '../characters/cast';
-import { todasAsPecas } from '../world/roupas';
+import { ITENS } from '../world/itens';
 
 /**
  * Quarto do Ari.
@@ -32,12 +32,10 @@ const H = 2.8;
 /** onde o armário encosta na parede do fundo */
 const ARMARIO = { x: 2.65, z: z0 + 0.36 };
 
-const NOMES: Record<SlotRoupa, string> = {
-  cabeca: 'Cabeça',
-  tronco: 'Tronco',
-  pernas: 'Pernas',
-  pes: 'Pés',
-};
+/** o que mora dentro do armário na primeira vez que ele é aberto */
+const ROUPAS_DO_ARI = [
+  ITENS.gorroDeLa, ITENS.camisaListrada, ITENS.calcaJeans, ITENS.botaAmarela,
+];
 
 export const quarto: SceneDef = {
   id: 'quarto',
@@ -147,21 +145,19 @@ export const quarto: SceneDef = {
     });
 
     // ------------------------------------------------------------- o armário
-    //
-    // Enquanto o painel do guarda-roupa não existe, a escolha é por diálogo:
-    // um `ask` para o slot e outro para a peça. Quando o painel chegar, esta
-    // interação passa a abri-lo e o resto daqui não muda.
     w.interact({
       id: 'quarto:armario',
       x: ARMARIO.x, z: ARMARIO.z + 1.25, radius: 1.8,
       label: 'Abrir o armário', icon: '🚪',
       highlight: movel,
       onInteract: async (g) => {
-        // Primeira vez: as roupas que já estavam lá dentro entram no acervo. É
-        // o armário dele — as peças não precisam ser "ganhas" em lugar nenhum.
+        // Primeira vez: as roupas que já estavam lá dentro entram no
+        // inventário. É o armário dele — as peças não precisam ser ganhas em
+        // lugar nenhum, e a partir daqui elas se tiram e se põem em qualquer
+        // lugar do jogo, porque são itens como qualquer outro.
         if (!g.flag('armario-aberto')) {
           g.setFlag('armario-aberto');
-          for (const peca of todasAsPecas()) g.unlockClothing(peca.id);
+          for (const peca of ROUPAS_DO_ARI) g.storeItem(peca);
           await conversa([
             [A, 'Pode mexer, fica à vontade.'],
             [R, 'Tem mais roupa aqui do que no meu apartamento inteiro.'],
@@ -174,43 +170,7 @@ export const quarto: SceneDef = {
             icon: '👕',
           });
         }
-
-        const acervo = g.wardrobe();
-        if (acervo.length === 0) {
-          await conversa([[A, 'Tá vazio. Nem eu sei o que aconteceu aqui.']]);
-          return;
-        }
-
-        const slots: SlotRoupa[] = ['cabeca', 'tronco', 'pernas', 'pes'];
-        const qual = await g.ask(
-          `Vestir o quê, ${g.playerName()}?`,
-          slots.map((s) => NOMES[s]),
-        );
-        const slot = slots[qual];
-
-        const doSlot = acervo.filter((p: PecaRoupa) => p.slot === slot);
-        if (doSlot.length === 0) {
-          await conversa([[A, `Não tenho nada de ${NOMES[slot].toLowerCase()} aqui.`]]);
-          return;
-        }
-
-        const vestido = g.clothingLoadout()[slot];
-        const opcoes = [...doSlot.map((p) => p.nome), vestido ? 'Tirar' : 'Deixar assim'];
-        const escolha = await g.ask(NOMES[slot], opcoes);
-
-        if (escolha >= doSlot.length) {
-          if (vestido) {
-            g.removeClothing(slot);
-            g.som('escolha');
-            g.toast('Tirou a peça', '🧺');
-          }
-          return;
-        }
-
-        const peca = doSlot[escolha];
-        g.wearClothing(peca.id);
-        g.som('escolha');
-        g.toast(peca.nome, peca.icone);
+        g.abrirGuardaRoupa();
       },
     });
 
@@ -221,9 +181,8 @@ export const quarto: SceneDef = {
       label: 'Se olhar no espelho', icon: '🪞',
       highlight: espelhoObj,
       onInteract: async (g) => {
-        const l = g.clothingLoadout();
-        const quantas = Object.keys(l).length;
-        if (quantas === 0) {
+        const vestindo = g.wearables().filter((i) => i !== null).length;
+        if (vestindo === 0) {
           await conversa([
             [R, 'Tô bem assim?'],
             [A, 'Tá. Mas tem um armário inteiro logo ali.'],

@@ -1,6 +1,6 @@
 import { SLOTS_ROUPA, type Coleta, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
+
 import { fichaDoItem } from '../world/itens';
-import { fichaDaPeca } from '../world/roupas';
 
 /** vagas da mochila (o que se carrega na mao) */
 export const SLOTS_MAO = 5;
@@ -20,6 +20,19 @@ export const SLOTS_VESTIVEL = 4;
  */
 function podeMorarEm(item: ItemDef, lista: 'mao' | 'vestivel'): boolean {
   return lista === 'mao' || item.tipo === 'vestivel';
+}
+
+/**
+ * A vaga de vestimenta em que uma peca mora, pelo corpo.
+ *
+ * As 4 vagas SAO as 4 partes, na ordem de `SLOTS_ROUPA`. Nao ha escolha: um
+ * gorro so pode ir para a vaga da cabeca. E isso que faz o painel conseguir
+ * dizer "o que esta na cabeca" sem procurar, e que impede duas calcas.
+ *
+ * Devolve -1 para vestivel de catalogo antigo, sem `slot` declarado.
+ */
+function vagaDoCorpo(item: ItemDef): number {
+  return item.slot ? SLOTS_ROUPA.indexOf(item.slot) : -1;
 }
 
 /**
@@ -57,14 +70,6 @@ interface SaveData {
   stats: Record<string, number>;
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
-  // --- guarda-roupa
-  /**
-   * Ids das pecas desbloqueadas. GLOBAL de proposito: o que a dupla ganhou, os
-   * dois podem vestir — o acervo e do casal, o loadout e de cada um.
-   */
-  acervo: string[];
-  /** o que cada pessoa esta vestindo, chaveado pelo id da ficha */
-  loadouts: Record<string, Loadout>;
 }
 
 function vagasVazias(quantas: number): (ItemDef | null)[] {
@@ -84,16 +89,23 @@ function inventarioVazio(): SaveInventario {
  */
 function normalizarTodos(
   bruto: Record<string, Partial<SaveInventario>> | undefined,
+  loadoutsAntigos: Record<string, unknown> | undefined,
 ): Record<string, SaveInventario> {
   const todos: Record<string, SaveInventario> = {};
-  if (!bruto || typeof bruto !== 'object') return todos;
-  for (const [quem, inv] of Object.entries(bruto)) todos[quem] = normalizar(inv);
+  const antigos = (loadoutsAntigos && typeof loadoutsAntigos === 'object') ? loadoutsAntigos : {};
+  const quemTodos = new Set([...Object.keys(bruto ?? {}), ...Object.keys(antigos)]);
+  for (const quem of quemTodos) {
+    todos[quem] = normalizar((bruto ?? {})[quem], antigos[quem]);
+  }
   return todos;
 }
 
-function normalizar(bruto: Partial<SaveInventario> | undefined): SaveInventario {
+function normalizar(
+  bruto: Partial<SaveInventario> | undefined,
+  loadoutAntigo?: unknown,
+): SaveInventario {
   const vazio = inventarioVazio();
-  if (!bruto) return vazio;
+  if (!bruto && !loadoutAntigo) return vazio;
   const encaixar = (lista: unknown, quantas: number, qual: 'mao' | 'vestivel'): (ItemDef | null)[] => {
     const vagas = vagasVazias(quantas);
     if (!Array.isArray(lista)) return vagas;
@@ -114,56 +126,38 @@ function normalizar(bruto: Partial<SaveInventario> | undefined): SaveInventario 
     }
     return vagas;
   };
-  const ativo = typeof bruto.ativo === 'number' ? Math.floor(bruto.ativo) : 0;
+  const ativo = typeof bruto?.ativo === 'number' ? Math.floor(bruto.ativo) : 0;
+  const vestiveis = encaixar(bruto?.vestiveis, SLOTS_VESTIVEL, 'vestivel');
+
+  // As vagas de vestimenta viraram TIPADAS: a 0 e a cabeca, a 1 o tronco... Um
+  // save gravado antes disso tem o chapeu na vaga 0 por acaso e os patins na 1.
+  // Recoloca cada um na vaga do seu corpo; quem nao tem `slot` no catalogo cai
+  // fora, em vez de ficar ocupando a vaga de outra parte.
+  const arrumado = vagasVazias(SLOTS_VESTIVEL);
+  for (const item of vestiveis) {
+    if (!item) continue;
+    const vaga = vagaDoCorpo(item);
+    if (vaga >= 0 && arrumado[vaga] === null) arrumado[vaga] = item;
+  }
+
+  // Migracao do guarda-roupa que morava fora do inventario: quem estava de
+  // camisa listrada continua de camisa listrada, agora como item na vaga do
+  // tronco. Roda uma vez; depois disso o inventario e a unica verdade.
+  if (loadoutAntigo && typeof loadoutAntigo === 'object') {
+    for (const [slot, id] of Object.entries(loadoutAntigo as Record<string, unknown>)) {
+      if (typeof id !== 'string') continue;
+      const ficha = fichaDoItem(id);
+      if (!ficha || ficha.slot !== slot) continue;
+      const vaga = SLOTS_ROUPA.indexOf(slot as SlotRoupa);
+      if (vaga >= 0 && arrumado[vaga] === null) arrumado[vaga] = ficha;
+    }
+  }
+
   return {
-    mao: encaixar(bruto.mao, SLOTS_MAO, 'mao'),
+    mao: encaixar(bruto?.mao, SLOTS_MAO, 'mao'),
     ativo: ativo >= 0 && ativo < SLOTS_MAO ? ativo : 0,
-    vestiveis: encaixar(bruto.vestiveis, SLOTS_VESTIVEL, 'vestivel'),
+    vestiveis: arrumado,
   };
-}
-
-// --- guarda-roupa: normalizacao na leitura
-//
-// Mesma severidade do `normalizar` de inventario, e pelo mesmo motivo: o
-// catalogo manda, o save so guarda id. Peca tirada do catalogo, id escrito a
-// mao ou peca que mudou de slot somem sozinhos em vez de virar estado torto.
-
-function normalizarAcervo(bruto: unknown): string[] {
-  if (!Array.isArray(bruto)) return [];
-  const vistos = new Set<string>();
-  for (const id of bruto) {
-    if (typeof id === 'string' && fichaDaPeca(id)) vistos.add(id);
-  }
-  return [...vistos];
-}
-
-function normalizarLoadouts(
-  bruto: unknown,
-  acervo: readonly string[],
-): Record<string, Loadout> {
-  const todos: Record<string, Loadout> = {};
-  if (!bruto || typeof bruto !== 'object') return todos;
-  for (const [quem, cru] of Object.entries(bruto as Record<string, unknown>)) {
-    todos[quem] = normalizarLoadout(cru, acervo);
-  }
-  return todos;
-}
-
-function normalizarLoadout(bruto: unknown, acervo: readonly string[]): Loadout {
-  const limpo: Loadout = {};
-  if (!bruto || typeof bruto !== 'object') return limpo;
-  const cru = bruto as Record<string, unknown>;
-  for (const slot of SLOTS_ROUPA) {
-    const id = cru[slot];
-    if (typeof id !== 'string') continue;
-    const ficha = fichaDaPeca(id);
-    // tres condicoes, e as tres importam: a peca existe, ela e DAQUELE slot
-    // (uma calca nao fica presa na cabeca se o catalogo mudar) e ela foi mesmo
-    // desbloqueada
-    if (!ficha || ficha.slot !== slot || !acervo.includes(id)) continue;
-    limpo[slot] = id;
-  }
-  return limpo;
 }
 
 const KEY = 'aristory.save.v1';
@@ -175,8 +169,6 @@ const EMPTY: SaveData = {
   memories: [],
   stats: {},
   inventarios: {},
-  acervo: [],
-  loadouts: {},
 };
 
 /** Progresso guardado no proprio navegador: flags, memorias e contadores. */
@@ -192,18 +184,16 @@ export class SaveState {
       const raw = localStorage.getItem(KEY);
       if (!raw) return structuredClone(EMPTY);
       const parsed = JSON.parse(raw) as Partial<SaveData>;
-      // o acervo e lido ANTES dos loadouts: e ele que decide se uma peca
-      // vestida ainda vale
-      const acervo = normalizarAcervo(parsed.acervo);
+      // `loadouts` era o guarda-roupa paralelo; hoje ele so serve de entrada
+      // para a migracao, e some do save na primeira gravacao
+      const antigos = (parsed as { loadouts?: Record<string, unknown> }).loadouts;
       return {
         version: 1,
         scene: parsed.scene ?? '',
         flags: parsed.flags ?? {},
         memories: parsed.memories ?? [],
         stats: parsed.stats ?? {},
-        inventarios: normalizarTodos(parsed.inventarios),
-        acervo,
-        loadouts: normalizarLoadouts(parsed.loadouts, acervo),
+        inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
     } catch {
       return structuredClone(EMPTY);
@@ -285,6 +275,20 @@ export class SaveState {
     return this.de(quem).vestiveis;
   }
 
+  /**
+   * O que a pessoa esta vestindo, lido das vagas.
+   *
+   * Nao ha estado separado: a vaga E o loadout. Foi assim que o guarda-roupa
+   * deixou de ser um segundo armazenamento paralelo ao inventario.
+   */
+  loadout(quem: string): Loadout {
+    const l: Loadout = {};
+    this.de(quem).vestiveis.forEach((item, i) => {
+      if (item) l[SLOTS_ROUPA[i]] = item.id;
+    });
+    return l;
+  }
+
   slotAtivo(quem: string): number {
     return this.de(quem).ativo;
   }
@@ -342,6 +346,33 @@ export class SaveState {
     return 'cheio';
   }
 
+  /**
+   * Guarda na mochila SEM vestir.
+   *
+   * O `pegar` veste o acessorio na hora, e e o certo para um premio ou uma
+   * compra — ninguem ganha patins para deixar na mochila. Mas o armario
+   * ENTREGA: as pecas tem que chegar na mao para a pessoa escolher o que vestir,
+   * senao abrir o armario ja veste tudo sozinho e nao sobra nada para olhar.
+   */
+  guardar(quem: string, item: ItemDef): Coleta {
+    if (this.achouItem(quem, item.id)) return 'repetido';
+    const inv = this.de(quem);
+    if (inv.mao[inv.ativo] === null) {
+      inv.mao[inv.ativo] = item;
+      this.persist();
+      return 'mao';
+    }
+    for (let n = 1; n < SLOTS_MAO; n++) {
+      const i = (inv.ativo + n) % SLOTS_MAO;
+      if (inv.mao[i] === null) {
+        inv.mao[i] = item;
+        this.persist();
+        return 'guardado';
+      }
+    }
+    return 'cheio';
+  }
+
   /** Veste numa vaga escolhida (ou na primeira livre). */
   /**
    * Veste um acessorio numa vaga escolhida (ou na primeira livre).
@@ -350,12 +381,14 @@ export class SaveState {
    * `tipo: 'vestivel'` no que chegasse, e era por isso que dava para vestir
    * sorvete: o dado mentia sobre o proprio item para caber na vaga.
    */
-  vestir(quem: string, item: ItemDef, slot?: number): boolean {
+  vestir(quem: string, item: ItemDef): boolean {
     if (!podeMorarEm(item, 'vestivel')) return false;
     if (this.achouItem(quem, item.id)) return false;
+    // a vaga NAO e escolhida por quem chama: ela vem do corpo
+    const onde = vagaDoCorpo(item);
+    if (onde < 0) return false;
     const vagas = this.de(quem).vestiveis;
-    const onde = slot ?? vagas.indexOf(null);
-    if (onde < 0 || onde >= SLOTS_VESTIVEL || vagas[onde] !== null) return false;
+    if (vagas[onde] !== null) return false;
     vagas[onde] = item;
     this.persist();
     return true;
@@ -396,8 +429,12 @@ export class SaveState {
     // A TRAVA DE CATEGORIA. O item tem que caber na lista de destino pelo que
     // ELE e, e a troca so vale se o item deslocado tambem couber de volta.
     if (!podeMorarEm(item, para.lista)) return false;
+    // e, na vestimenta, tem que ser A vaga daquela parte do corpo: bota nao
+    // entra na vaga da cabeca so porque o dedo soltou ali
+    if (para.lista === 'vestivel' && vagaDoCorpo(item) !== para.indice) return false;
     const trocado = destino[para.indice];
     if (trocado && !podeMorarEm(trocado, de.lista)) return false;
+    if (de.lista === 'vestivel' && trocado && vagaDoCorpo(trocado) !== de.indice) return false;
 
     destino[para.indice] = item;
     origem[de.indice] = trocado ?? null;
@@ -418,62 +455,6 @@ export class SaveState {
     }
     if (achou) this.persist();
     return achou;
-  }
-
-  // ---------------------------------------------------------- guarda-roupa
-  //
-  // Eixo separado do de cima. Nada aqui toca em `inventarios`: o chapeu de
-  // campeao e os patins continuam sendo vaga de acessorio, e uma peca de roupa
-  // nunca ocupa vaga de mochila.
-
-  /** O que a dupla ja desbloqueou. Vale para os dois. */
-  get acervo(): readonly string[] {
-    return this.data.acervo;
-  }
-
-  temPeca(id: string): boolean {
-    return this.data.acervo.includes(id);
-  }
-
-  /** Poe uma peca no acervo. false se ela ja estava la ou nao existe. */
-  desbloquear(id: string): boolean {
-    if (!fichaDaPeca(id)) return false;
-    if (this.data.acervo.includes(id)) return false;
-    this.data.acervo.push(id);
-    this.persist();
-    return true;
-  }
-
-  /**
-   * O que alguem esta vestindo. Devolve COPIA: quem chama nao consegue mexer
-   * no save por baixo, e o `Game` compara a copia com a anterior para saber se
-   * precisa reconstruir alguma coisa.
-   */
-  loadout(quem: string): Loadout {
-    return { ...(this.data.loadouts[quem] ?? {}) };
-  }
-
-  /**
-   * Veste uma peca. O slot NAO e escolhido por quem chama: ele vem da ficha,
-   * que e a mesma razao de `mover()` recusar sorvete em vaga de acessorio —
-   * o dado nao pode mentir sobre o proprio item para caber onde quer.
-   */
-  vestirPeca(quem: string, id: string): boolean {
-    const ficha = fichaDaPeca(id);
-    if (!ficha) return false;
-    if (!this.temPeca(id)) return false;
-    const atual = this.data.loadouts[quem] ?? {};
-    atual[ficha.slot] = id;
-    this.data.loadouts[quem] = atual;
-    this.persist();
-    return true;
-  }
-
-  tirarPeca(quem: string, slot: SlotRoupa): void {
-    const atual = this.data.loadouts[quem];
-    if (!atual || atual[slot] === undefined) return;
-    delete atual[slot];
-    this.persist();
   }
 
   reset(): void {

@@ -99,10 +99,12 @@ const arrastou = await page.evaluate(() => {
   const quem = j.playerId();
   // veste um acessório e depois manda ele de volta para uma vaga de mão vazia,
   // que é o caso de uso que o Renan pediu: desequipar e guardar
-  j.equipWearable({ id: 'patins', nome: 'Patins', icone: '🛼', tipo: 'vestivel' }, 0, quem);
+  j.equipWearable(window.aristoryItens['patins'], quem);
   j.removeItem('teste-3', quem); // abre uma vaga na mão
   const vagaLivre = j.handItems(quem).findIndex((x) => x === null);
-  const ok = j.moveItem({ lista: 'vestivel', indice: 0 }, { lista: 'mao', indice: vagaLivre }, quem);
+  // os patins moram na vaga dos PÉS, que é a 3 — as 4 vagas são as 4 partes
+  const dosPes = j.wearables(quem).findIndex((x) => x?.id === 'patins');
+  const ok = j.moveItem({ lista: 'vestivel', indice: dosPes }, { lista: 'mao', indice: vagaLivre }, quem);
   return {
     ok,
     vagaLivre,
@@ -193,7 +195,7 @@ const trava = await page.evaluate(() => {
     // 1. arrastar item de mão para vaga de vestimenta
     paraVestimenta: j.moveItem({ lista: 'mao', indice: onde }, { lista: 'vestivel', indice: 0 }, quem),
     // 2. tentar vestir direto pela API
-    vestirDireto: j.equipWearable(sorvete, 1, quem),
+    vestirDireto: j.equipWearable(sorvete, quem),
     // 3. e o caminho que TEM que continuar valendo: desequipar
     vestindoDepois: j.wearables(quem).map((x) => x?.id ?? null),
   };

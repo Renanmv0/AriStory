@@ -110,6 +110,43 @@ export interface ItemDef {
   tipo: 'mao' | 'vestivel';
   /** linha curta que o painel mostra ao passar o olho */
   nota?: string;
+
+  // --- guarda-roupa: so para `tipo: 'vestivel'`
+  /**
+   * Que parte do corpo este vestivel ocupa.
+   *
+   * As 4 vagas de vestimenta SAO as 4 partes, na ordem de `SLOTS_ROUPA`: a
+   * vaga 0 e a cabeca, a 1 o tronco, e assim por diante. E por isso que o
+   * chapeu de campeao e os patins convivem — cabeca e pe sao vagas
+   * diferentes — e por isso que dois chapeus nao convivem.
+   */
+  slot?: SlotRoupa;
+  /** cor da parte principal (torso, perna, pe, calota do gorro) */
+  cor?: number;
+  /** cor da parte secundaria (manga, barra, cano); sem isto usa `cor` */
+  corDetalhe?: number;
+  /**
+   * So `cabeca`: esconde o cabelo enquanto a peca estiver vestida.
+   *
+   * Existe porque cabelo aqui tem VOLUME de verdade — a juba do Ari chega a
+   * ~1,6 x headR — e um gorro que a envolvesse por fora viraria um capacete.
+   * Gorro de verdade achata o cabelo, e esconder e o mesmo caminho que o
+   * patins ja usa para o pe que ele substitui. Um bone de aba, que so pousa
+   * em cima, deixa isto desligado.
+   */
+  cobreCabelo?: boolean;
+  /**
+   * Geometria adicional no corpo.
+   *
+   * SO `cabeca` e `pes` podem ter. Tronco e pernas se limitam a repintar as
+   * capsulas que ja existem: recriar um membro quebraria a matematica de
+   * rotacao da caminhada e da natacao, que depende dos pivos montados no
+   * construtor do rig.
+   *
+   * Devolve uma malha NOVA a cada chamada — o mesmo `Object3D` nao pode ter
+   * dois pais, e o slot `pes` pendura uma copia em cada perna.
+   */
+  extra?(m: MedidasCorpo): THREE.Object3D;
   /**
    * Como o personagem segura isto na mao.
    *
@@ -124,10 +161,11 @@ export type HoldPose = 'upright' | 'relaxed' | 'none';
 
 // --- guarda-roupa -----------------------------------------------------------
 //
-// Sistema PARALELO ao inventario. As 4 vagas de acessorio (`vestiveis`) e as 5
-// de mao continuam existindo e funcionando exatamente como antes; o chapeu de
-// campeao e os patins nao passam por aqui. Isto e um segundo eixo: roupa que se
-// troca, com acervo global e loadout por pessoa.
+// Roupa NAO tem armazenamento proprio: peca de roupa e um `ItemDef` como
+// qualquer outro e mora numa das 4 vagas de vestimenta do inventario. E por
+// isso que se troca de roupa em qualquer lugar, e nao so na frente do armario.
+//
+// As 4 vagas SAO estas 4 partes, nesta ordem. A vaga e o loadout.
 
 export type SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes';
 
@@ -151,46 +189,7 @@ export interface MedidasCorpo {
   torsoH: number;
 }
 
-/**
- * Uma peca de roupa do acervo.
- *
- * Como o `ItemDef`, o `icone` e um EMOJI — zero asset externo vale aqui igual.
- */
-export interface PecaRoupa {
-  id: string;
-  nome: string;
-  icone: string;
-  slot: SlotRoupa;
-  /** cor da parte principal (torso, perna, pe, calota do gorro) */
-  cor: number;
-  /** cor da parte secundaria (manga, barra, cano); sem isto usa `cor` */
-  corDetalhe?: number;
-  nota?: string;
-  /**
-   * So `cabeca`: esconde o cabelo enquanto a peca estiver vestida.
-   *
-   * Existe porque cabelo aqui tem VOLUME de verdade — a juba do Ari chega a
-   * ~1,6 x headR — e um gorro que a envolvesse por fora viraria um capacete.
-   * Gorro de verdade achata o cabelo, e esconder e o mesmo caminho que o
-   * patins ja usa para o pe que ele substitui. Um bone de aba, que so pousa
-   * em cima, deixa isto desligado.
-   */
-  cobreCabelo?: boolean;
-  /**
-   * Geometria adicional.
-   *
-   * SO `cabeca` e `pes` podem ter. Tronco e pernas se limitam a repintar as
-   * capsulas que ja existem: recriar um membro quebraria a matematica de
-   * rotacao da caminhada e da natacao, que depende dos pivos montados no
-   * construtor do rig.
-   *
-   * Devolve uma malha NOVA a cada chamada — o mesmo `Object3D` nao pode ter
-   * dois pais, e o slot `pes` pendura uma copia em cada perna.
-   */
-  extra?(m: MedidasCorpo): THREE.Object3D;
-}
-
-/** O que uma pessoa esta vestindo: slot -> id da peca. */
+/** O que uma pessoa esta vestindo: slot -> id da peca. Sai das vagas. */
 export type Loadout = Partial<Record<SlotRoupa, string>>;
 // --- fim guarda-roupa -------------------------------------------------------
 
@@ -263,6 +262,11 @@ export interface GameAPI {
    * estava.
    */
   addItem(item: ItemDef, quem?: string): Coleta;
+  /**
+   * Poe na mochila SEM vestir. E o que o armario usa para entregar as pecas:
+   * `addItem` vestiria na hora e nao sobraria nada para escolher no painel.
+   */
+  storeItem(item: ItemDef, quem?: string): Coleta;
   /** Tira um item da mochila ou dos acessorios, onde quer que ele esteja. */
   removeItem(id: string, quem?: string): boolean;
   hasItem(id: string, quem?: string): boolean;
@@ -271,28 +275,24 @@ export interface GameAPI {
   /** Escolhe qual das 5 vagas e a principal. */
   setActiveHandSlot(indice: number, quem?: string): void;
   activeHandSlot(quem?: string): number;
-  /** Veste um acessorio. Sem `slot`, entra na primeira vaga livre. */
-  equipWearable(item: ItemDef, slot?: number, quem?: string): boolean;
+  /**
+   * Veste um acessorio. A vaga NAO e escolhida: ela vem do `slot` da ficha,
+   * porque as 4 vagas de vestimenta sao as 4 partes do corpo.
+   */
+  equipWearable(item: ItemDef, quem?: string): boolean;
   unequipWearable(slot: number, quem?: string): void;
   /** Move (ou troca) um item entre duas vagas. E o que o arrastar usa. */
   moveItem(de: Vaga, para: Vaga, quem?: string): boolean;
   /** As 5 vagas da mochila, na ordem da tela; null e vaga vazia. */
   handItems(quem?: string): ReadonlyArray<ItemDef | null>;
-  /** As 4 vagas de acessorio, na ordem da tela. */
+  /** As 4 vagas de acessorio, na ordem da tela (= a ordem de `SLOTS_ROUPA`). */
   wearables(quem?: string): ReadonlyArray<ItemDef | null>;
+  /**
+   * Abre o painel do guarda-roupa, com o boneco 3D de quem esta sendo
+   * controlado. O movimento fica travado enquanto ele estiver aberto.
+   */
+  abrirGuardaRoupa(): void;
 
-  // --- guarda-roupa
-  // Eixo separado do de cima: o acervo e GLOBAL (o que a dupla desbloqueou, os
-  // dois podem usar) e o loadout e por pessoa.
-  /** Desbloqueia uma peca no acervo global. true so se ela era nova. */
-  unlockClothing(id: string): boolean;
-  hasClothing(id: string): boolean;
-  /** Veste uma peca do acervo; ela entra no slot que a propria peca declara. */
-  wearClothing(id: string, quem?: string): boolean;
-  removeClothing(slot: SlotRoupa, quem?: string): void;
-  clothingLoadout(quem?: string): Loadout;
-  /** As pecas ja desbloqueadas, resolvidas pelo catalogo. */
-  wardrobe(): readonly PecaRoupa[];
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */
   keyPressed(code: string): boolean;

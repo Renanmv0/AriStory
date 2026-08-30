@@ -112,9 +112,10 @@ const ritmoAndando = await cadencia();
 // a loja entrega para quem está comprando; aqui os dois calçam de uma vez
 await page.evaluate(() => {
   const j = window.jogo;
-  const par = { id: 'patins', nome: 'Patins', icone: '🛼', tipo: 'vestivel' };
-  j.equipWearable(par, 0, 'ari');
-  j.equipWearable(par, 0, 'renan');
+  // ficha DE VERDADE: o vestível declara a parte do corpo, e a vaga sai dela
+  const par = window.aristoryItens['patins'];
+  j.equipWearable(par, 'ari');
+  j.equipWearable(par, 'renan');
 });
 await page.waitForTimeout(900);
 const calcado = await estado();

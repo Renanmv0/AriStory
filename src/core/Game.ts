@@ -11,6 +11,7 @@ import { MaosDadas } from '../entities/MaosDadas';
 import { Som } from '../audio/Som';
 import type { SomNome } from '../audio/efeitos';
 import { CharacterRig } from '../characters/CharacterRig';
+import { Previa } from '../characters/Previa';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
 import {
@@ -18,16 +19,12 @@ import {
   type Coleta,
   type GameAPI,
   type ItemDef,
-  type Loadout,
   type Memory,
-  type PecaRoupa,
   type SceneAmbient,
   type SceneDef,
-  type SlotRoupa,
   type Vaga,
 } from './types';
 import { ITENS, modeloDoItem } from '../world/itens';
-import { fichaDaPeca } from '../world/roupas';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -46,6 +43,8 @@ export class Game implements GameAPI {
   private readonly input: Input;
   private readonly ui: Ui;
   private readonly save = new SaveState();
+  /** o boneco do painel do guarda-roupa; corpo proprio, cena e canvas proprios */
+  private readonly previa: Previa;
   private readonly player: Player;
   private readonly parceiro: Companion;
   private readonly clock = new THREE.Clock();
@@ -91,6 +90,7 @@ export class Game implements GameAPI {
     root.appendChild(this.renderer.domElement);
 
     this.ui = new Ui(root);
+    this.previa = new Previa(this.ui.canvasDoBoneco());
     this.ui.setMemories(this.save.memories);
     this.ui.onTouchAction = () => this.input.tapAction();
     this.ui.onTouchSwap = () => this.input.tapSwap();
@@ -99,6 +99,43 @@ export class Game implements GameAPI {
     this.ui.onMoverItem = (de, para) => this.moveItem(de, para);
     this.ui.onDescartar = (de) => this.descartarDaVaga(de);
     this.ui.onAbrirMochila = () => this.pintarMochila();
+    this.ui.onAbrirArmario = () => this.pintarArmario();
+    this.ui.onGirarBoneco = (d) => this.previa.girar(d);
+    this.ui.onTirarParte = (i) => {
+      // tirar NAO joga fora: a peca vai para a mochila, de onde da para vestir
+      // de novo em qualquer lugar. Mochila cheia recusa, em vez de sumir.
+      const quem = this.playerId();
+      const peca = this.save.vestiveis(quem)[i];
+      if (!peca) return;
+      this.save.despir(quem, i);
+      // `guardar` e nao `pegar`: o `pegar` VESTE o acessorio de volta na hora,
+      // entao tirar pelo painel nao tirava nada — a peca saia da vaga e
+      // voltava para ela no mesmo clique
+      if (this.save.guardar(quem, peca) === 'cheio') {
+        this.save.vestir(quem, peca); // desfaz: nada se perde
+        this.ui.toast('Mochila cheia', '🎒');
+        return;
+      }
+      this.audio.play('escolha');
+      this.pintarArmario();
+    };
+    this.ui.onVestirPeca = (id) => {
+      const quem = this.playerId();
+      const peca = this.save.maos(quem).find((i) => i?.id === id);
+      if (!peca) return;
+      // a vaga ja pode estar ocupada: tira o que esta la primeiro, e o que sai
+      // toma o lugar do que entrou na mochila
+      const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
+      if (vaga < 0) return;
+      const antigo = this.save.vestiveis(quem)[vaga];
+      this.save.largar(quem, id);
+      if (antigo) this.save.despir(quem, vaga);
+      this.save.vestir(quem, peca);
+      // idem: o que sai do corpo vai para a mochila, nao volta a se vestir
+      if (antigo) this.save.guardar(quem, antigo);
+      this.audio.play('escolha');
+      this.pintarArmario();
+    };
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
     this.ui.onRestart = () => this.restart();
     this.ui.som = (nome) => this.audio.play(nome);
@@ -222,7 +259,6 @@ export class Game implements GameAPI {
     this.audio.setClima(id);
     this.migrarPremios();
     this.aplicarPremios();
-    this.sincronizarRoupas();
     this.save.scene = id;
   }
 
@@ -302,6 +338,7 @@ export class Game implements GameAPI {
       this.ui.journalOpen ||
       this.ui.menuOpen ||
       this.ui.mochilaOpen ||
+      this.ui.armarioOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
@@ -311,9 +348,13 @@ export class Game implements GameAPI {
       !this.ui.menuOpen &&
       !this.ui.dialogueOpen
     ) {
-      if (this.ui.mochilaOpen) this.ui.closeMochila();
+      if (this.ui.armarioOpen) this.ui.fecharArmario();
+      else if (this.ui.mochilaOpen) this.ui.closeMochila();
       else this.abrirMochila();
     }
+    // Esc fecha o guarda-roupa: ele trava o movimento, então precisa de uma
+    // saída de teclado além do botão
+    if (this.ui.armarioOpen && this.input.justPressed('Escape')) this.ui.fecharArmario();
     if (!busy && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
     if (!busy) {
       if (this.input.justPressed('KeyQ')) this.iso.rotate(-1);
@@ -356,7 +397,6 @@ export class Game implements GameAPI {
     this.coracoes.update(dt);
     this.sincronizarMaos();
     this.sincronizarVestiveis();
-    this.sincronizarRoupas();
 
     // ------------------------------------------------------- interativos
     this.updateHot(world, dt);
@@ -377,6 +417,14 @@ export class Game implements GameAPI {
     this.sun.position.set(this.camAim.x + 14 * k, this.camAim.y + 20 * k, this.camAim.z + 9 * k);
 
     this.renderer.render(this.scene, this.camOmbro ?? this.iso.camera);
+
+    // O boneco tem canvas proprio, dentro do painel; so gasta quadro quando o
+    // painel esta aberto
+    if (this.ui.armarioOpen) {
+      this.previa.update(dt);
+      this.previa.desenhar();
+    }
+
     this.input.endFrame();
   };
 
@@ -564,6 +612,12 @@ export class Game implements GameAPI {
     return como;
   }
 
+  storeItem(item: ItemDef, quem = this.playerId()): Coleta {
+    const r = this.save.guardar(quem, item);
+    if (r !== 'cheio' && r !== 'repetido') this.repintarMochila();
+    return r;
+  }
+
   removeItem(id: string, quem = this.playerId()): boolean {
     const saiu = this.save.largar(quem, id);
     if (saiu) this.repintarMochila();
@@ -587,8 +641,8 @@ export class Game implements GameAPI {
     return this.save.slotAtivo(quem);
   }
 
-  equipWearable(item: ItemDef, slot?: number, quem = this.playerId()): boolean {
-    const vestiu = this.save.vestir(quem, item, slot);
+  equipWearable(item: ItemDef, quem = this.playerId()): boolean {
+    const vestiu = this.save.vestir(quem, item);
     if (vestiu) this.repintarMochila();
     return vestiu;
   }
@@ -610,41 +664,6 @@ export class Game implements GameAPI {
 
   wearables(quem = this.playerId()): ReadonlyArray<ItemDef | null> {
     return this.save.vestiveis(quem);
-  }
-
-  // --- guarda-roupa
-  // Mesmo formato do bloco de cima (`quem` com padrao de quem esta sendo
-  // controlado), mas armazenamento proprio: nada aqui mexe nas vagas de
-  // mochila nem nas de acessorio.
-
-  unlockClothing(id: string): boolean {
-    if (!this.save.desbloquear(id)) return false;
-    const peca = fichaDaPeca(id);
-    if (peca) this.ui.toast(`${peca.nome} desbloqueado`, peca.icone);
-    return true;
-  }
-
-  hasClothing(id: string): boolean {
-    return this.save.temPeca(id);
-  }
-
-  wearClothing(id: string, quem = this.playerId()): boolean {
-    return this.save.vestirPeca(quem, id);
-  }
-
-  removeClothing(slot: SlotRoupa, quem = this.playerId()): void {
-    this.save.tirarPeca(quem, slot);
-  }
-
-  clothingLoadout(quem = this.playerId()): Loadout {
-    return this.save.loadout(quem);
-  }
-
-  wardrobe(): readonly PecaRoupa[] {
-    // o catalogo resolve; o save so guarda id
-    return this.save.acervo
-      .map((id) => fichaDaPeca(id))
-      .filter((p): p is PecaRoupa => p !== null);
   }
 
   /** Joga fora o item de uma vaga. Nao volta de lugar nenhum. */
@@ -698,13 +717,24 @@ export class Game implements GameAPI {
     // percorre as PESSOAS, não os rigs: os patins mexem no corpo (o rig) e na
     // física (o Player/Companion), e as duas pontas leem a mesma vaga
     for (const quem of [this.player, this.parceiro]) {
-      const vagas = this.save.vestiveis(quem.rig.spec.id);
+      const id = quem.rig.spec.id;
+      const vagas = this.save.vestiveis(id);
+
       const chapeu = vagas.some((i) => i?.id === ITENS.chapeuPingPong.id);
       if (quem.rig.campeao !== chapeu) quem.rig.setCampeao(chapeu);
 
       const patins = vagas.some((i) => i?.id === ITENS.patins.id);
       quem.patins = patins;
       quem.rig.setPatins(patins);
+
+      // A roupa sai das MESMAS vagas: a vaga é o loadout, não há um segundo
+      // armazenamento. Com o cache, `vestirRoupa` só roda quando algo mudou —
+      // sem ele a geometria do gorro e das botas seria refeita a 60 fps.
+      const loadout = this.save.loadout(id);
+      const chave = SLOTS_ROUPA.map((s) => loadout[s] ?? '').join('|');
+      if (this.roupaAplicada.get(id) === chave) continue;
+      this.roupaAplicada.set(id, chave);
+      quem.rig.vestirRoupa(loadout);
     }
   }
 
@@ -719,29 +749,31 @@ export class Game implements GameAPI {
     }
   }
 
-  // --- guarda-roupa
   /** o loadout que cada corpo ja esta vestindo, serializado, para o diff */
   private readonly roupaAplicada = new Map<string, string>();
 
   /**
-   * Espelha o `sincronizarMaos`: le o save e carimba no rig, com cache.
+   * Abre o painel do guarda-roupa.
    *
-   * O cache nao e otimizacao: `vestirRoupa` constroi geometria, e sem o diff
-   * isto reconstruiria o gorro e as duas botas a 60 fps.
-   *
-   * Percorre os RIGS, nao as pessoas: a roupa e do corpo, entao ela acompanha o
-   * personagem sozinha quando o T troca quem anda — sem nada em
-   * `swapCharacters`.
+   * O armario da cena chama isto, mas o painel nao depende dele: ele mostra o
+   * inventario, e as pecas sao itens. Um dia o `I` pode abrir daqui tambem.
    */
-  private sincronizarRoupas(): void {
-    for (const rig of [this.player.rig, this.parceiro.rig]) {
-      const quem = rig.spec.id;
-      const loadout = this.save.loadout(quem);
-      const chave = SLOTS_ROUPA.map((s) => loadout[s] ?? '').join('|');
-      if (this.roupaAplicada.get(quem) === chave) continue;
-      this.roupaAplicada.set(quem, chave);
-      rig.vestirRoupa(loadout);
-    }
+  abrirGuardaRoupa(): void {
+    this.previa.mostrar(this.player.rig.spec);
+    this.pintarArmario();
+    this.ui.abrirArmario();
+  }
+
+  /** Redesenha o painel e o boneco a partir do save. */
+  private pintarArmario(): void {
+    const quem = this.playerId();
+    const vestindo = this.save.vestiveis(quem);
+    // o que da para vestir e o que esta na MOCHILA: peca de roupa e item, e
+    // tirar uma poe ela na mochila como qualquer outra coisa
+    const guardados = this.save.maos(quem)
+      .filter((i): i is ItemDef => i !== null && i.tipo === 'vestivel');
+    this.ui.renderArmario(vestindo, guardados, this.player.name);
+    this.previa.vestir(this.save.loadout(quem));
   }
 
   unlock(memory: Memory): void {

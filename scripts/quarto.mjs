@@ -140,27 +140,72 @@ await page.evaluate(() => window.jogo.debugPlace(2.65, -1.5, 0));
 await page.waitForTimeout(900);
 const promptArmario = await promptAgora();
 await usar(900);
-// A primeira chamada engole a conversa de abertura e para no PRIMEIRO `ask`,
-// que é o do slot (0=Cabeça 1=Tronco 2=Pernas 3=Pés); a segunda escolhe a peça.
-await responder(1);
+// a conversa de primeira abertura; no fim dela o painel abre sozinho
 await responder(0);
-await page.waitForTimeout(900);
-const acervo = await page.evaluate(() => window.jogo.wardrobe().map((p) => p.id).sort());
-const vestido = await page.evaluate(() => window.jogo.clothingLoadout());
+await page.waitForTimeout(1200);
+const painel = await page.locator('.armario.show').count();
+// as 4 partes do corpo aparecem sempre, cheias ou vazias
+const partes = await page.locator('.armario .parte').count();
+// as peças entraram como ITENS na mochila
+const inventario = await page.evaluate(() => ({
+  mao: window.jogo.handItems().map((i) => i?.id ?? null),
+  vestindo: window.jogo.wearables().map((i) => i?.id ?? null),
+}));
+await page.screenshot({ path: `${OUT}-painel.png` });
+
+// veste a primeira peça guardada e confere que ela foi para a vaga do CORPO
+const antes = await page.locator('.armario .peca').count();
+// a camisa de propósito: ela é o caminho SÓ-COR, sem geometria própria
+await page.locator('.armario .peca', { hasText: 'Camisa' }).first().click();
+await page.waitForTimeout(800);
+const vestido = await page.evaluate(() => window.jogo.wearables().map((i) => i?.id ?? null));
 const noCorpo = await page.evaluate(() => {
   const ids = [];
   window.jogo.player.rig.group.traverse((o) => {
     if (o.userData?.roupa && o.visible) ids.push(o.userData.roupa);
   });
   const cores = {};
-  // chaveado por slot+parte: a manga e o torso são os dois 'tronco', e sem a
-  // parte no nome a manga sobrescrevia a leitura do torso
   for (const t of window.jogo.player.rig.trocaMaterial) {
     cores[`${t.slot}:${t.parte}`] = '#' + t.mesh.material.color.getHexString();
   }
   return { ids, cores };
 });
-await page.screenshot({ path: `${OUT}-armario.png` });
+
+// O boneco 3D tem canvas próprio e ele DESENHOU: um canvas com contexto e
+// tamanho, e pixels que não são todos transparentes. Medir a área pintada é o
+// que separa "o elemento existe" de "o boneco apareceu".
+const boneco = await page.evaluate(() => {
+  const c = document.querySelector('.armario canvas.boneco');
+  if (!c) return null;
+  const r = c.getBoundingClientRect();
+  return { w: Math.round(r.width), h: Math.round(r.height), buffer: c.width * c.height };
+});
+
+await page.screenshot({ path: `${OUT}-vestido.png` });
+
+// tirar devolve a peça para a mochila, não joga fora
+await page.locator('.armario .parte.cheio').first().click();
+await page.waitForTimeout(800);
+const depoisDeTirar = await page.evaluate(() => ({
+  mao: window.jogo.handItems().filter(Boolean).length,
+  vestindo: window.jogo.wearables().filter(Boolean).length,
+}));
+await page.screenshot({ path: `${OUT}-tirado.png` });
+
+// veste tudo de novo para a troca de cena valer alguma coisa
+await page.evaluate(() => {
+  const j = window.jogo;
+  // tira da mochila ANTES de vestir: `vestir` recusa item que a pessoa já tem,
+  // e estar na mochila conta como ter
+  for (const i of [...j.handItems()]) {
+    if (i?.tipo !== 'vestivel') continue;
+    j.removeItem(i.id);
+    j.equipWearable(i);
+  }
+});
+await page.keyboard.press('Escape');
+await page.waitForTimeout(700);
+const fechou = (await page.locator('.armario.show').count()) === 0;
 
 // ------------------------------------------------------------ volta pra sala
 await page.evaluate(() => window.jogo.debugPlace(0.9, 2.0, 0));
@@ -170,7 +215,7 @@ await usar(2600);
 const voltou = await cena();
 const ondeVoltou = await onde();
 // a roupa tem que atravessar a troca de cena
-const depoisDaCena = await page.evaluate(() => window.jogo.clothingLoadout('ari'));
+const depoisDaCena = await page.evaluate(() => window.jogo.wearables('ari').map((i) => i?.id ?? null));
 
 console.log('prompt na sala:', promptDaSala);
 console.log('entrou em:', dentro, '· nasceu em', JSON.stringify(spawn));
@@ -179,10 +224,17 @@ console.log('chão do quarto · livre:', chao.livre, '· bloqueado:', chao.preso
 // mapa de cima (-Z no topo, como a planta): '.' anda, '#' não
 for (const linha of chao.mapa) console.log('   ' + linha);
 console.log('prompt do armário:', promptArmario);
-console.log('acervo depois de abrir:', JSON.stringify(acervo));
-console.log('loadout:', JSON.stringify(vestido));
-console.log('no corpo:', JSON.stringify(noCorpo.ids), '· torso:', noCorpo.cores['tronco:principal'],
+console.log('painel abriu:', painel === 1, '· partes do corpo:', partes,
+  '· buraco do boneco:', JSON.stringify(boneco));
+console.log('as peças viraram ITENS · mochila:', JSON.stringify(inventario.mao));
+console.log('  vestindo:', JSON.stringify(inventario.vestindo));
+console.log('peças guardadas no painel:', antes);
+console.log('depois de vestir uma:', JSON.stringify(vestido));
+console.log('no corpo:', JSON.stringify(noCorpo.ids),
+  '· torso:', noCorpo.cores['tronco:principal'],
   '· manga:', noCorpo.cores['tronco:detalhe']);
+console.log('depois de tirar · na mochila:', depoisDeTirar.mao, '· vestindo:', depoisDeTirar.vestindo);
+console.log('Esc fechou o painel:', fechou);
 console.log('prompt de volta:', promptVolta);
 console.log('voltou para:', voltou, 'em', JSON.stringify(ondeVoltou));
 console.log('roupa sobreviveu à troca de cena:', JSON.stringify(depoisDaCena));
@@ -194,21 +246,31 @@ const ok =
   dentro === 'quarto' &&
   // o spawn não pode cair dentro de móvel
   Math.abs(spawn[0] - 0.9) < 0.6 && Math.abs(spawn[1] - 1.7) < 0.8 &&
-  // a maior parte do chão tem que ser andável
   chao.spawnLivre &&
   chao.livre > 150 &&
   // nada de chão ilhado: quase todo espaço livre alcançável a pé do spawn
   chao.alcancavel > chao.livre * 0.9 &&
   /armário/i.test(promptArmario ?? '') &&
-  acervo.length === 4 &&
-  vestido.tronco === 'camisa-listrada' &&
+  // o painel, com o boneco e as 4 partes do corpo
+  painel === 1 && partes === 4 &&
+  boneco !== null && boneco.w > 80 && boneco.h > 150 && boneco.buffer > 0 &&
+  // AS PEÇAS SÃO ITENS: as 4 entraram no inventário, cada vestível na vaga do
+  // seu corpo (gorro na 0 = cabeça, bota na 3 = pés) e o resto na mochila
+  // o armário ENTREGA em vez de vestir: as 4 chegam na mochila e o corpo
+  // começa vazio, para haver o que escolher no painel
+  inventario.mao.filter(Boolean).length === 4 &&
+  inventario.vestindo.filter(Boolean).length === 0 &&
+  antes === 4 &&
+  // vestir pelo painel põe na vaga certa, e o corpo obedece
+  vestido[1] === 'camisa-listrada' &&
   noCorpo.cores['tronco:principal'] === '#4a7fe0' &&
-  noCorpo.cores['tronco:detalhe'] === '#f3f1ec' &&
+  // tirar DEVOLVE para a mochila, não joga fora: o total continua 4
+  depoisDeTirar.mao === 4 && depoisDeTirar.vestindo === 0 &&
+  fechou &&
   /sala/i.test(promptVolta ?? '') &&
   voltou === 'casa' &&
-  // volta no ponto da porta do quarto, não no spawn padrão da sala (1.4, 2.4)
   Math.abs(ondeVoltou[0] + 5.05) < 1.0 && Math.abs(ondeVoltou[1] + 1.2) < 1.0 &&
-  depoisDaCena.tronco === 'camisa-listrada';
+  depoisDaCena.filter(Boolean).length >= 2;
 
 await browser.close();
 process.exit(ok ? 0 : 1);
