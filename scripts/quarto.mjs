@@ -192,6 +192,36 @@ const depoisDeTirar = await page.evaluate(() => ({
 }));
 await page.screenshot({ path: `${OUT}-tirado.png` });
 
+// ---------------------------------------------------- os DOIS se vestem
+// O armário abastece o parceiro também: o T troca quem o painel mostra, e o
+// outro tem que ter as mesmas peças para vestir.
+const doParceiroAntes = await page.evaluate(() => ({
+  quem: window.jogo.companionId(),
+  mao: window.jogo.handItems(window.jogo.companionId()).filter(Boolean).length,
+}));
+// veste o gorro no PRIMEIRO antes de trocar: sem isso o teste não prova que os
+// dois ficam vestidos ao mesmo tempo, só que o segundo consegue se vestir
+await page.locator('.armario .peca', { hasText: 'Gorro' }).first().click();
+await page.waitForTimeout(700);
+await page.keyboard.press('KeyT');
+await page.waitForTimeout(1200);
+const depoisDoT = {
+  aindaAberto: (await page.locator('.armario.show').count()) === 1,
+  dono: await page.locator('.armario .dono').textContent(),
+  pecas: await page.locator('.armario .peca').count(),
+  controlando: await page.evaluate(() => window.jogo.playerId()),
+};
+// veste no segundo personagem e confere que o PRIMEIRO não perdeu nada
+await page.locator('.armario .peca', { hasText: 'Calça' }).first().click();
+await page.waitForTimeout(800);
+const osDois = await page.evaluate(() => ({
+  ari: window.jogo.wearables('ari').map((i) => i?.id ?? null),
+  renan: window.jogo.wearables('renan').map((i) => i?.id ?? null),
+}));
+await page.screenshot({ path: `${OUT}-os-dois.png` });
+await page.keyboard.press('KeyT');
+await page.waitForTimeout(1000);
+
 // veste tudo de novo para a troca de cena valer alguma coisa
 await page.evaluate(() => {
   const j = window.jogo;
@@ -234,6 +264,11 @@ console.log('no corpo:', JSON.stringify(noCorpo.ids),
   '· torso:', noCorpo.cores['tronco:principal'],
   '· manga:', noCorpo.cores['tronco:detalhe']);
 console.log('depois de tirar · na mochila:', depoisDeTirar.mao, '· vestindo:', depoisDeTirar.vestindo);
+console.log('o parceiro também recebeu · vagas de mão:', doParceiroAntes.mao);
+console.log('depois do T · painel segue aberto:', depoisDoT.aindaAberto,
+  '· dono:', depoisDoT.dono, '· peças:', depoisDoT.pecas);
+console.log('os dois vestidos · ari:', JSON.stringify(osDois.ari));
+console.log('                   renan:', JSON.stringify(osDois.renan));
 console.log('Esc fechou o painel:', fechou);
 console.log('prompt de volta:', promptVolta);
 console.log('voltou para:', voltou, 'em', JSON.stringify(ondeVoltou));
@@ -266,6 +301,15 @@ const ok =
   noCorpo.cores['tronco:principal'] === '#4a7fe0' &&
   // tirar DEVOLVE para a mochila, não joga fora: o total continua 4
   depoisDeTirar.mao === 4 && depoisDeTirar.vestindo === 0 &&
+  // o armário abastece OS DOIS: o parceiro tem as 4 peças sem nunca ter aberto
+  doParceiroAntes.mao === 4 &&
+  // o T troca o dono do painel sem fechá-lo
+  depoisDoT.aindaAberto && depoisDoT.pecas === 4 &&
+  /Renan/.test(depoisDoT.dono ?? '') &&
+  depoisDoT.controlando === 'renan' &&
+  // e os DOIS ficam vestidos ao mesmo tempo, cada um com a sua peça
+  osDois.renan[2] === 'calca-jeans' &&
+  osDois.ari[0] === 'gorro-la' &&
   fechou &&
   /sala/i.test(promptVolta ?? '') &&
   voltou === 'casa' &&

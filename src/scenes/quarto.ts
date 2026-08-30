@@ -32,8 +32,8 @@ const H = 2.8;
 /** onde o armário encosta na parede do fundo */
 const ARMARIO = { x: 2.65, z: z0 + 0.36 };
 
-/** o que mora dentro do armário na primeira vez que ele é aberto */
-const ROUPAS_DO_ARI = [
+/** o que mora dentro do armário */
+const ROUPAS_DO_ARMARIO = [
   ITENS.gorroDeLa, ITENS.camisaListrada, ITENS.calcaJeans, ITENS.botaAmarela,
 ];
 
@@ -155,9 +155,22 @@ export const quarto: SceneDef = {
         // inventário. É o armário dele — as peças não precisam ser ganhas em
         // lugar nenhum, e a partir daqui elas se tiram e se põem em qualquer
         // lugar do jogo, porque são itens como qualquer outro.
+        // O armário abastece OS DOIS, não só quem abriu.
+        //
+        // Cada peça vira um item na mochila de cada um: as mochilas são
+        // separadas, então o gorro do Ari e o gorro do Renan são dois gorros e
+        // os dois podem se vestir ao mesmo tempo. Sem isto, quem tirasse a peça
+        // do armário ficava com ela e o outro não tinha o que vestir.
+        //
+        // E abastece a CADA abertura, não uma vez só: `storeItem` recusa o que
+        // a pessoa já tem, então repor é de graça, e assim o armário também
+        // repõe o que foi descartado — é o armário dele, a roupa mora ali.
+        for (const quem of [g.playerId(), g.companionId()]) {
+          for (const peca of ROUPAS_DO_ARMARIO) g.storeItem(peca, quem);
+        }
+
         if (!g.flag('armario-aberto')) {
           g.setFlag('armario-aberto');
-          for (const peca of ROUPAS_DO_ARI) g.storeItem(peca);
           await conversa([
             [A, 'Pode mexer, fica à vontade.'],
             [R, 'Tem mais roupa aqui do que no meu apartamento inteiro.'],

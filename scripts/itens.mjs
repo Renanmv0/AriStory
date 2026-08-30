@@ -82,11 +82,14 @@ const cascata = await page.evaluate(() => {
   const j = window.jogo;
   const quem = j.playerId();
   const enche = [];
-  // a mão já tem o sorvete; os próximos vão para as vagas seguintes
-  for (let i = 0; i < 5; i++) {
+  // A mão já tem o sorvete; os próximos vão para as vagas seguintes. O laço
+  // conta as vagas em vez de cravar um número: a mochila cresceu de 5 para 10
+  // e o que este teste guarda é o COMPORTAMENTO — enche tudo, depois recusa.
+  const vagas = j.handItems(quem).length;
+  for (let i = 0; i < vagas; i++) {
     enche.push(j.addItem({ id: `teste-${i}`, nome: `Teste ${i}`, icone: '📦', tipo: 'mao' }, quem));
   }
-  return { enche, maos: j.handItems(quem).map((x) => x?.id ?? null) };
+  return { enche, vagas, maos: j.handItems(quem).map((x) => x?.id ?? null) };
 });
 
 // ---------------------------------------------------------- arrastar
@@ -123,7 +126,9 @@ await page.screenshot({ path: `${OUT}-desequipado.png` });
 // importa é sempre a de quem está andando.
 await page.evaluate(() => {
   const j = window.jogo;
-  for (let i = 0; i < 5; i++) {
+  // enche ATÉ o fim em vez de contar até um número: a mochila já cresceu de 5
+  // para 10, e um 5 cravado aqui deixaria de encher sem ninguém perceber
+  for (let i = 0; i < j.handItems('ari').length; i++) {
     j.addItem({ id: `entulho-${i}`, nome: `Entulho ${i}`, icone: '📦', tipo: 'mao' }, 'ari');
   }
 });
@@ -233,9 +238,11 @@ const ok =
   trocado.controlando !== comprou.controlando &&
   // o T trocou os corpos e cada sorvete continua com o seu dono
   paresCertos(trocado) &&
-  // 4 vagas livres depois do sorvete: as 4 primeiras entram, a 5ª não cabe
-  JSON.stringify(cascata.enche) ===
-    JSON.stringify(['guardado', 'guardado', 'guardado', 'guardado', 'cheio']) &&
+  // A regra, e não o tamanho: com o sorvete já na mão sobram `vagas - 1`
+  // livres, então tudo entra até acabar e só a última tentativa dá 'cheio'.
+  cascata.enche.length === cascata.vagas &&
+  cascata.enche.slice(0, cascata.vagas - 1).every((r) => r === 'guardado') &&
+  cascata.enche[cascata.vagas - 1] === 'cheio' &&
   arrastou.ok &&
   // guardado na mochila o patins CONTINUA sendo vestível: o item não mente
   // sobre a própria categoria só porque mudou de vaga

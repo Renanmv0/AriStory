@@ -86,7 +86,7 @@ console.log('botões de toque:', botoes, `· ${Math.round(visual.largura)}px · 
 console.log('prompt tapado:', noPrompt + '%');
 console.log('fala tapada:', naFala + '%');
 console.log('botões de escolha tapados:', nasEscolhas + '%');
-// o 🎒 abre a mochila DE VERDADE: painel na tela e as 9 vagas desenhadas
+// o 🎒 abre a mochila DE VERDADE: painel na tela e todas as vagas desenhadas
 // recarrega para sair do menu: na tela de controles o "voltar pro jogo" fica
 // escondido, e com o menu aberto os botões de toque somem
 await page.reload({ waitUntil: 'networkidle' });
@@ -96,6 +96,8 @@ await page.waitForTimeout(700);
 const mochila = await page.evaluate(() => ({
   aberta: document.querySelector('.mochila')?.classList.contains('show') ?? false,
   vagas: document.querySelectorAll('.mochila .slot').length,
+  // de mão + as 4 de vestimenta; deriva do jogo em vez de cravar o número
+  esperadas: window.jogo.handItems().length + 4,
   altura: document.querySelector('.mochila .sheet')?.getBoundingClientRect().height ?? 0,
 }));
 await page.screenshot({ path: `${OUT}-mochila.png` });
@@ -115,7 +117,7 @@ const ok =
   nasEscolhas === 0 &&
   linhas >= 10 &&
   mochila.aberta &&
-  mochila.vagas === 9;
+  mochila.vagas === mochila.esperadas;
 
 await browser.close();
 process.exit(ok ? 0 : 1);

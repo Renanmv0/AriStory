@@ -785,3 +785,13 @@ body.touch-device .dialogue .next { right: 84px; }
   .armario .prova { grid-template-columns: 1fr; }
   .armario .boneco { min-height: 220px; }
 }
+
+/* rótulo da parte do corpo nas vagas de vestimenta da mochila */
+.mochila .slot .parte {
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}

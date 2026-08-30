@@ -316,6 +316,8 @@ export interface GameAPI {
   playerId(): string;
   /** nome de quem esta acompanhando */
   companionName(): string;
+  /** id da ficha de quem esta acompanhando */
+  companionId(): string;
   companionPosition(): THREE.Vector3;
   /** angulo para onde o parceiro esta olhando AGORA (o giro e suave) */
   companionFacing(): number;

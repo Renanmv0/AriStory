@@ -147,7 +147,7 @@ export class Ui {
       </div></div>
       <div class="armario"><div class="sheet">
         <h2>Guarda-roupa <span class="dono"></span></h2>
-        <p class="sub">clique numa peça para vestir ou tirar · arraste o boneco para girar</p>
+        <p class="sub">clique numa peça para vestir ou tirar · arraste o boneco para girar · <b>T</b> veste o outro</p>
         <div class="prova">
           <canvas class="boneco"></canvas>
           <div class="corpo"></div>
@@ -606,10 +606,14 @@ export class Ui {
     this.tipoNaPinca = undefined;
     this.mochila.classList.remove('movendo');
     this.descarte.classList.remove('show', 'confirmando');
+    // as 4 vagas de vestimenta SÃO as 4 partes do corpo, nesta ordem; sem o
+    // rótulo, duas vagas vazias no meio não dizem o que falta
+    const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés'];
     const desenhar = (
       onde: HTMLElement,
       vagas: ReadonlyArray<ItemDef | null>,
       principal: number,
+      partes = false,
     ): void => {
       onde.innerHTML = '';
       vagas.forEach((item, i) => {
@@ -623,16 +627,17 @@ export class Ui {
         // precisar perguntar ao save
         if (item) vaga.dataset.tipo = item.tipo;
         else delete vaga.dataset.tipo;
-        vaga.innerHTML = item
+        const rotulo = partes ? `<em class="parte">${PARTES[i]}</em>` : '';
+        vaga.innerHTML = rotulo + (item
           ? `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
             (item.nota ? `<small>${item.nota}</small>` : '')
-          : `<span class="icone vazio">·</span><b>vazio</b>`;
+          : `<span class="icone vazio">·</span><b>vazio</b>`);
         onde.appendChild(vaga);
       });
     };
     desenhar(this.slotsMao, maos, ativo);
     // acessorio nao tem "principal": vestido e vestido
-    desenhar(this.slotsVestivel, vestiveis, -1);
+    desenhar(this.slotsVestivel, vestiveis, -1, true);
   }
 
   // ------------------------------------------------------------ guarda-roupa

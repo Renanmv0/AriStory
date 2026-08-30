@@ -1,5 +1,5 @@
 /**
- * A mochila: as 9 vagas, o slot principal e a persistência.
+ * A mochila: as vagas, o slot principal e a persistência.
  *
  * O que este teste prova, além de a tela abrir: que o movimento fica travado
  * com o painel aberto (é a parte que quebra o jogo se falhar), que o clique
@@ -53,6 +53,7 @@ const vagas = () =>
     ativo: window.jogo.activeHandSlot(),
     naMao: window.jogo.getActiveHandItem()?.nome ?? null,
     caixas: document.querySelectorAll('.mochila .slot').length,
+    deMao: window.jogo.handItems().length,
     principais: document.querySelectorAll('.mochila .slot.principal').length,
   }));
 const aberta = await vagas();
@@ -130,7 +131,9 @@ console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 const ok =
   !erros.length &&
   JSON.stringify(guardou) === JSON.stringify(['mao', 'guardado', 'guardado', 'repetido', true, true]) &&
-  aberta.caixas === 9 &&
+  // 10 de mão + 4 de vestimenta; conta a grade em vez de cravar, porque o
+  // número de vagas de mão é uma constante do jogo e já mudou uma vez
+  aberta.caixas === aberta.deMao + 4 &&
   aberta.principais === 1 &&
   // as vagas são TIPADAS: chapéu na 0 (cabeça), patins na 3 (pés). A ordem não é
   // a de chegada, é a do corpo

@@ -355,7 +355,16 @@ export class Game implements GameAPI {
     // Esc fecha o guarda-roupa: ele trava o movimento, então precisa de uma
     // saída de teclado além do botão
     if (this.ui.armarioOpen && this.input.justPressed('Escape')) this.ui.fecharArmario();
-    if (!busy && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
+    // O T vale TAMBÉM com a mochila ou o guarda-roupa abertos.
+    //
+    // As duas telas mostram o inventário de quem está sendo controlado, então
+    // trocar é como se vê — e se veste — o outro. O subtítulo da mochila já
+    // prometia "T vê a do outro" e não funcionava: o `busy` engolia a tecla.
+    const emTela = this.ui.mochilaOpen || this.ui.armarioOpen;
+    const podeTrocar = emTela
+      ? !this.ui.dialogueOpen && !this.ui.menuOpen && !this.transitioning
+      : !busy;
+    if (podeTrocar && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
     if (!busy) {
       if (this.input.justPressed('KeyQ')) this.iso.rotate(-1);
       if (this.input.justPressed('KeyR')) this.iso.rotate(1);
@@ -841,6 +850,10 @@ export class Game implements GameAPI {
     return this.player.rig.spec.id;
   }
 
+  companionId(): string {
+    return this.parceiro.rig.spec.id;
+  }
+
   companionName(): string {
     return this.parceiro.name;
   }
@@ -865,6 +878,14 @@ export class Game implements GameAPI {
     this.maos.trocouCorpos(this.player, this.parceiro);
     this.audio.play('trocar');
     this.ui.toast(`Agora você é ${this.player.name}`, '🔁');
+
+    // as telas abertas mostram o inventário de quem é controlado, então elas
+    // trocam de dono junto — inclusive o boneco do guarda-roupa
+    if (this.ui.mochilaOpen) this.pintarMochila();
+    if (this.ui.armarioOpen) {
+      this.previa.mostrar(this.player.rig.spec);
+      this.pintarArmario();
+    }
   }
 
   submergePlayer(valor: number): void {

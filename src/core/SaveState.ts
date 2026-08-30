@@ -2,8 +2,15 @@ import { SLOTS_ROUPA, type Coleta, type ItemDef, type Loadout, type SlotRoupa, t
 
 import { fichaDoItem } from '../world/itens';
 
-/** vagas da mochila (o que se carrega na mao) */
-export const SLOTS_MAO = 5;
+/**
+ * Vagas da mochila (o que se carrega na mao).
+ *
+ * Nada no codigo supoe um numero: o auto-stash, o slot principal e a leitura do
+ * save saem todos daqui, e a grade da tela e `auto-fit`. Mexer neste numero e a
+ * unica coisa que precisa acontecer para a mochila crescer — foi de 5 para 10
+ * quando o guarda-roupa passou a por peca de roupa na mao.
+ */
+export const SLOTS_MAO = 10;
 /** vagas de acessorio (o que se veste) */
 export const SLOTS_VESTIVEL = 4;
 
