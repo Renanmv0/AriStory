@@ -838,11 +838,22 @@ export class Game implements GameAPI {
     this.parceiro.teleport(x, z, facing);
   }
 
-  ridePlayer(host: THREE.Object3D, local: THREE.Vector3, scale = 1): void {
+  /**
+   * @param facing angulo do rig DENTRO da ancora (padrao Math.PI, que e o
+   * -Z local dela)
+   *
+   * O `setFacing` nao e enfeite: sem ele so a rotacao atual e escrita, e no
+   * quadro seguinte o `update` do rig puxa tudo de volta para o angulo-alvo
+   * antigo — o de antes de sentar. Era por isso que a dupla sentava no banco
+   * olhando cada um para um lado: o parceiro ja fixava o alvo aqui e o jogador
+   * nao.
+   */
+  ridePlayer(host: THREE.Object3D, local: THREE.Vector3, scale = 1, facing = Math.PI): void {
     host.add(this.player.object);
     this.player.object.position.copy(local);
     this.player.object.scale.setScalar(scale);
-    this.player.rig.group.rotation.y = Math.PI;
+    this.player.rig.group.rotation.y = facing;
+    this.player.rig.setFacing(facing);
     this.player.riding = true;
     this.player.locked = true;
     this.ui.hidePrompt();

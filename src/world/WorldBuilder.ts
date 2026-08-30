@@ -261,10 +261,9 @@ export class WorldBuilder {
       highlight: peca,
       onInteract: async (api) => {
         api.lockPlayer(true);
-        api.ridePlayer(assento, new THREE.Vector3(-LADO, ALTURA, 0.02), 1, 0);
-        // Math.PI e nao 0: `ridePlayer` vira o rig para o -Z local da ancora e
-        // nao aceita parametro, entao o parceiro tem que receber o MESMO angulo
-        // na mao. Com 0 ele senta de costas para quem olha.
+        api.ridePlayer(assento, new THREE.Vector3(-LADO, ALTURA, 0.02), 1, Math.PI);
+        // os DOIS com o mesmo angulo: e o -Z local da ancora, que ja esta
+        // girada para o encosto ficar atras deles
         api.rideCompanion(assento, new THREE.Vector3(LADO, ALTURA, 0.02), 1, Math.PI);
         api.setSitting(true);
         api.focusCamera(foco);

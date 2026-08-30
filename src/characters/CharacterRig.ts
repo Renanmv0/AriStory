@@ -945,8 +945,12 @@ export class CharacterRig {
       const balanco = Math.sin(this.phase * 2.2) * 0.17;
       this.legL.rotation.x = -Math.PI / 2 + 0.06 + balanco;
       this.legR.rotation.x = -Math.PI / 2 - 0.02 - balanco;
-      this.armL.rotation.set(-0.25, 0, 0.34);
-      this.armR.rotation.set(-0.2, 0, -0.34);
+      // Bracos apoiados, abertos para FORA. Mesma pegadinha de sinal de sempre:
+      // o braco esquerdo nasce em -X e `rotation.z` positivo joga a mao para
+      // +X, ou seja para dentro do corpo — sentado, isso vira um abraco em si
+      // mesmo.
+      this.armL.rotation.set(-0.25, 0, -0.34);
+      this.armR.rotation.set(-0.2, 0, 0.34);
       // sentados de maos dadas, o braco de dentro desce e abre para o outro
       if (this.maos !== 0) {
         const dentro = this.maos < 0 ? this.armL : this.armR;
