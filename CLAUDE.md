@@ -61,6 +61,7 @@ node scripts/itens.mjs   /tmp/it    # posse por pessoa, auto-stash, arrastar e p
 node scripts/patins.mjs  /tmp/pat   # patins no corpo, 1,3x de velocidade e o parceiro
 node scripts/banco.mjs   /tmp/bn    # sentar nos bancos: de maos dadas e pernas balancando
 node scripts/roupas.mjs  /tmp/rp    # guarda-roupa: 4 slots sem mexer na animacao
+node scripts/quarto.mjs  /tmp/qt    # quarto do Ari: porta nos dois sentidos e o armario
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

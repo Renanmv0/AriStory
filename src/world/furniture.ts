@@ -371,6 +371,100 @@ export function interiorDoor(
 }
 
 /** Criado-mudo com abajur. */
+/**
+ * Armario de duas portas. A frente e o lado +Z, como todo movel do kit.
+ *
+ * A porta da direita fica entreaberta: um bloco liso de 1,6 x 2,1 na camera
+ * isometrica vira um paralelepipedo sem leitura, e a fresta e o que diz que
+ * aquilo abre.
+ */
+export function armario(cor: number = P.wood, largura = 1.6, altura = 2.1): THREE.Group {
+  const g = new THREE.Group();
+  const prof = 0.62;
+
+  const corpo = new THREE.Mesh(
+    new THREE.BoxGeometry(largura, altura, prof),
+    toon(P.woodDark),
+  );
+  corpo.position.y = altura / 2;
+  g.add(corpo);
+
+  // o vao escuro que aparece pela fresta
+  const dentro = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - 0.12, altura - 0.16, 0.04),
+    toon(0x3a2b1f),
+  );
+  dentro.position.set(0, altura / 2, prof / 2 - 0.05);
+  g.add(dentro);
+
+  const meia = largura / 2 - 0.05;
+  for (const lado of [-1, 1] as const) {
+    // pivo na dobradica, para a porta girar a partir da lateral
+    const eixo = new THREE.Group();
+    eixo.position.set(lado * meia, altura / 2, prof / 2);
+    if (lado > 0) eixo.rotation.y = -0.62; // a da direita, entreaberta
+    g.add(eixo);
+
+    const folha = new THREE.Mesh(
+      new THREE.BoxGeometry(meia, altura - 0.1, 0.06),
+      toon(cor),
+    );
+    folha.position.x = -lado * meia / 2;
+    eixo.add(folha);
+
+    const puxador = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.022, 0.022, 0.16, 8),
+      toon(P.metalGrey),
+    );
+    puxador.position.set(-lado * (meia - 0.12), 0, 0.06);
+    eixo.add(puxador);
+  }
+
+  // pezinhos, para nao parecer que nasce do chao
+  for (const x of [-1, 1] as const) {
+    for (const z of [-1, 1] as const) {
+      const pe = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.1, 0.1),
+        toon(P.woodDark),
+      );
+      pe.position.set(x * (largura / 2 - 0.1), 0.05, z * (prof / 2 - 0.1));
+      g.add(pe);
+    }
+  }
+
+  return g;
+}
+
+/**
+ * Espelho de corpo inteiro, encostado na parede.
+ *
+ * Nao reflete nada: reflexao de verdade pede uma segunda passada de render, e o
+ * jogo inteiro e toon chapado. O vidro e um plano claro e translucido, que na
+ * luz do quarto le como espelho sem custar nada.
+ */
+export function espelho(cor: number = P.wood, altura = 1.7): THREE.Group {
+  const g = new THREE.Group();
+  const larg = 0.62;
+
+  const moldura = new THREE.Mesh(
+    new THREE.BoxGeometry(larg, altura, 0.07),
+    toon(cor),
+  );
+  moldura.position.y = altura / 2;
+  g.add(moldura);
+
+  const vidro = new THREE.Mesh(
+    new THREE.BoxGeometry(larg - 0.14, altura - 0.16, 0.03),
+    toon(P.glass, { opacity: 0.72, glow: 0.12 }),
+  );
+  vidro.position.set(0, altura / 2, 0.04);
+  g.add(vidro);
+
+  // encosta na parede com uma inclinacao de leve
+  g.rotation.x = -0.05;
+  return g;
+}
+
 export function nightstand(): THREE.Group {
   const g = new THREE.Group();
   const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.5, 0.4), toon(P.wood));

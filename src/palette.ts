@@ -40,6 +40,7 @@ export const PALETTE = {
   brick: 0xc76a52,
   wallCream: 0xf3e7d3,
   wallMint: 0xd6ece0,
+  wallAzul: 0xcfe4f5,
   roofTile: 0xc4573f,
   fabricRed: 0xe0524a,
   fabricBlue: 0x4a7fe0,
