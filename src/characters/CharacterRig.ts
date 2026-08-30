@@ -2,7 +2,15 @@ import * as THREE from 'three';
 import { toon, flat } from '../core/materials';
 import { BUILD_WIDTH, type CharacterSpec } from './spec';
 import { patins as patinsMesh } from '../world/props';
-import type { HoldPose } from '../core/types';
+import {
+  SLOTS_ROUPA,
+  type HoldPose,
+  type Loadout,
+  type MedidasCorpo,
+  type PecaRoupa,
+  type SlotRoupa,
+} from '../core/types';
+import { fichaDaPeca } from '../world/roupas';
 import { PALETTE as P } from '../palette';
 
 /**
@@ -116,16 +124,41 @@ export class CharacterRig {
   private swimming = false;
   private sitting = false;
 
-  /** peças que trocam de material entre roupa normal e traje de banho */
+  /**
+   * Peças que trocam de material entre roupa normal e traje de banho.
+   *
+   * O `slot` e a `parte` são do guarda-roupa: dizem qual peça do acervo pinta
+   * esta malha, quando houver uma. Sem peça vestida, os dois campos não fazem
+   * nada e a lista se comporta exatamente como antes.
+   */
   private readonly trocaMaterial: Array<{
     mesh: THREE.Mesh;
     normal: THREE.Material;
     banho: THREE.Material;
+    slot: SlotRoupa;
+    parte: 'principal' | 'detalhe';
   }> = [];
   /** some no traje de banho (laço, cinto, faixa da camiseta, mochila) */
   private readonly soVestido: THREE.Object3D[] = [];
   /** aparece só no traje de banho (o calção) */
   private readonly soBanho: THREE.Object3D[] = [];
+
+  // --- guarda-roupa
+  /** traje da cena, guardado em vez de aplicado direto — ver `aplicarVisual` */
+  private traje: 'normal' | 'banho' = 'normal';
+  /** o loadout já resolvido pelo catálogo */
+  private roupa: Partial<Record<SlotRoupa, PecaRoupa>> = {};
+  /** a geometria extra de cada slot que tem uma (só cabeça e pés) */
+  private readonly extras = new Map<SlotRoupa, THREE.Object3D[]>();
+  private readonly medidas: MedidasCorpo;
+  /**
+   * Peças de tronco da FICHA que uma camisa do acervo cobre: a listra, o casco
+   * da jaqueta e o capuz. Sem isto, vestir uma camisa no Renan repinta o torso
+   * e o moletom continua por cima, tapando tudo.
+   */
+  private readonly sobreTronco: THREE.Object3D[] = [];
+  /** o cabelo inteiro, para um gorro poder achatá-lo */
+  private readonly cabelo: THREE.Object3D[];
 
   constructor(spec: CharacterSpec) {
     this.spec = spec;
@@ -146,6 +179,8 @@ export class CharacterRig {
     const armLen = h * 0.3;
 
     this.headTop = legH + torsoH + headR * 2.1;
+    // o que as fábricas de roupa recebem; elas não veem o rig, só números
+    this.medidas = { h, w, headR, legH, torsoH };
 
     const skin = toon(spec.skin);
     const shirt = toon(spec.shirt);
@@ -164,7 +199,9 @@ export class CharacterRig {
       );
       leg.position.y = -legH * 0.48;
       pivot.add(leg);
-      this.trocaMaterial.push({ mesh: leg, normal: pants, banho: skin });
+      this.trocaMaterial.push({
+        mesh: leg, normal: pants, banho: skin, slot: 'pernas', parte: 'principal',
+      });
 
       const foot = new THREE.Mesh(
         new THREE.BoxGeometry(h * 0.075 * w, h * 0.045, h * 0.11),
@@ -172,7 +209,9 @@ export class CharacterRig {
       );
       foot.position.set(0, -legH + h * 0.022, h * 0.018);
       pivot.add(foot);
-      this.trocaMaterial.push({ mesh: foot, normal: shoes, banho: skin });
+      this.trocaMaterial.push({
+        mesh: foot, normal: shoes, banho: skin, slot: 'pes', parte: 'principal',
+      });
       this.pes.push(foot);
 
       // O patins nasce escondido e SUBSTITUI o pe: a bota engole o tornozelo,
@@ -196,7 +235,9 @@ export class CharacterRig {
     torso.position.y = hipY + torsoH * 0.52;
     torso.scale.z = 0.82;
     this.body.add(torso);
-    this.trocaMaterial.push({ mesh: torso, normal: shirt, banho: skin });
+    this.trocaMaterial.push({
+      mesh: torso, normal: shirt, banho: skin, slot: 'tronco', parte: 'principal',
+    });
 
     if (spec.shirtAccent !== undefined) {
       const stripe = new THREE.Mesh(
@@ -207,6 +248,7 @@ export class CharacterRig {
       stripe.scale.z = 0.82;
       this.body.add(stripe);
       this.soVestido.push(stripe);
+      this.sobreTronco.push(stripe);
     }
 
     // jaqueta aberta por cima da camiseta
@@ -226,6 +268,7 @@ export class CharacterRig {
       casco.scale.z = 0.84;
       this.body.add(casco);
       this.soVestido.push(casco);
+      this.sobreTronco.push(casco);
 
       const capuz = new THREE.Mesh(
         new THREE.SphereGeometry(h * 0.088 * w, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.62),
@@ -236,6 +279,7 @@ export class CharacterRig {
       capuz.scale.set(1.15, 1, 0.8);
       this.body.add(capuz);
       this.soVestido.push(capuz);
+      this.sobreTronco.push(capuz);
     }
 
     // calção de banho: fica escondido até alguém entrar na água
@@ -262,7 +306,9 @@ export class CharacterRig {
       );
       sleeve.position.y = -armLen * 0.24;
       pivot.add(sleeve);
-      this.trocaMaterial.push({ mesh: sleeve, normal: manga, banho: skin });
+      this.trocaMaterial.push({
+        mesh: sleeve, normal: manga, banho: skin, slot: 'tronco', parte: 'detalhe',
+      });
 
       const forearm = new THREE.Mesh(
         new THREE.CapsuleGeometry(h * 0.032 * w, armLen * 0.28, 4, 10),
@@ -333,7 +379,13 @@ export class CharacterRig {
     mouth.rotation.set(0, 0, Math.PI);
     this.head.add(mouth);
 
+    // O cabelo é recortado por FATIA em vez de por 20 `push` dentro do
+    // `buildHair`: tudo que ele acrescenta vira filho da cabeça, então o que
+    // entrou entre estas duas marcas é cabelo e nada mais. Assim `buildHair`
+    // continua sem saber que existe um guarda-roupa.
+    const antesDoCabelo = this.head.children.length;
     this.buildHair(headR);
+    this.cabelo = this.head.children.slice(antesDoCabelo);
     this.buildAccessories(headR, armLen, shoulderY, halfShoulder, torsoH, hipY, w);
 
     this.body.add(this.head);
@@ -816,15 +868,157 @@ export class CharacterRig {
    * Troca entre a roupa da ficha e o traje de banho (sem camisa e de calção).
    * Quase tudo e troca de material: a camiseta e a calca viram pele, o tenis
    * vira pe descalco, os acessorios de roupa somem e o calcao aparece.
+   *
+   * O traje agora e GUARDADO em vez de aplicado direto. Quem escreve material e
+   * so o `aplicarVisual`; ver o comentario la embaixo para o porque.
    */
   setOutfit(traje: 'normal' | 'banho'): void {
-    const banho = traje === 'banho';
-    for (const troca of this.trocaMaterial) {
-      troca.mesh.material = banho ? troca.banho : troca.normal;
+    this.traje = traje;
+    this.aplicarVisual();
+  }
+
+  // --- guarda-roupa ---------------------------------------------------------
+
+  /**
+   * O ÚNICO lugar que escreve material e visibilidade de roupa.
+   *
+   * O erro obvio deste sistema seria o guarda-roupa tambem escrever
+   * `mesh.material` direto. Ele e o `setOutfit` brigariam pelo mesmo campo e
+   * quem rodasse por ultimo ganharia: sair da piscina chama `setOutfit(
+   * 'normal')`, que restaura a cor da FICHA, e a camisa vestida sumiria.
+   *
+   * Entao ninguem aplica nada: `traje`, `roupa` e `patinando` sao tres estados
+   * guardados, e este metodo compoe os tres. A propriedade que isso da e que a
+   * ORDEM DAS CHAMADAS deixa de importar — `setOutfit`, `setPatins` e
+   * `vestirRoupa` convergem todos aqui, entao o quadro termina no mesmo estado
+   * venha na ordem que vier.
+   */
+  private aplicarVisual(): void {
+    const banho = this.traje === 'banho';
+
+    // Nunca mutar `mat.color`: os materiais de `materials.ts` sao CACHEADOS POR
+    // COR e compartilhados com o mundo inteiro — repintar um material repinta
+    // todo objeto do jogo que usa aquela cor. Sempre trocar a referencia.
+    for (const t of this.trocaMaterial) {
+      if (banho) {
+        t.mesh.material = t.banho;
+        continue;
+      }
+      const peca = this.roupa[t.slot];
+      if (!peca) {
+        t.mesh.material = t.normal;
+        continue;
+      }
+      t.mesh.material = toon(
+        t.parte === 'detalhe' ? (peca.corDetalhe ?? peca.cor) : peca.cor,
+      );
     }
+
     for (const peca of this.soVestido) peca.visible = !banho;
     for (const peca of this.soBanho) peca.visible = banho;
+    // camisa do acervo cobre a roupa de tronco da ficha
+    if (!banho && this.roupa.tronco) {
+      for (const peca of this.sobreTronco) peca.visible = false;
+    }
+
+    for (const [slot, objs] of this.extras) {
+      const liga = this.roupa[slot] !== undefined
+        // gorro sobrevive ao banho — e o mesmo precedente do chapeu de campeao,
+        // que ja fica na cabeca dentro da agua. Bota, nao.
+        && (slot === 'cabeca' || !banho)
+        // o patins engole o tornozelo inteiro: o cano da bota apareceria pela
+        // costura, igual ao tenis apareceria
+        && !(slot === 'pes' && this.patinando);
+      for (const o of objs) o.visible = liga;
+    }
+
+    for (const pe of this.pes) pe.visible = !this.patinando;
+    for (const p of this.patins) p.visible = this.patinando;
+
+    // gorro achata o cabelo, pelo mesmo motivo que o patins engole o pe
+    const daCabeca = this.roupa.cabeca;
+    const some = daCabeca?.cobreCabelo === true;
+    for (const fio of this.cabelo) fio.visible = !some;
   }
+
+  /**
+   * Veste o loadout inteiro de uma vez.
+   *
+   * O diff e POR SLOT: um slot que nao mudou nao derruba nem reconstroi nada.
+   * Sem isso o `Game`, que chama isto todo quadro, recriaria geometria a 60 fps.
+   */
+  vestirRoupa(novo: Loadout): void {
+    for (const slot of SLOTS_ROUPA) {
+      const id = novo[slot] ?? null;
+      if ((this.roupa[slot]?.id ?? null) === id) continue;
+      this.tirarExtras(slot);
+      const peca = id ? fichaDaPeca(id) : null;
+      this.roupa[slot] = peca ?? undefined;
+      if (peca?.extra) this.porExtras(slot, peca);
+    }
+    this.aplicarVisual();
+  }
+
+  /** O que este corpo esta vestindo agora. */
+  get roupaAtual(): Loadout {
+    const l: Loadout = {};
+    for (const slot of SLOTS_ROUPA) {
+      const peca = this.roupa[slot];
+      if (peca) l[slot] = peca.id;
+    }
+    return l;
+  }
+
+  /**
+   * Pendura a geometria da peca.
+   *
+   * Onde ela entra nao e detalhe: a peca vira FILHA da cabeca ou dos pivos de
+   * perna — os mesmos pontos onde o chapeu de campeao e o patins ja moram —
+   * para andar junto com a animacao sem que ninguem toque nos pivos.
+   */
+  private porExtras(slot: SlotRoupa, peca: PecaRoupa): void {
+    if (!peca.extra) return;
+    const pais: THREE.Object3D[] = slot === 'pes'
+      ? [this.legL, this.legR]
+      : [this.head];
+    const postos: THREE.Object3D[] = [];
+    for (const pai of pais) {
+      // uma malha NOVA por pai: o mesmo Object3D nao pode ter dois pais, que e
+      // a mesma razao de `modeloDoItem` nunca devolver a mesma instancia
+      const obj = peca.extra(this.medidas);
+      // etiqueta para o teste conseguir dizer o que cada corpo esta vestindo
+      obj.userData.roupa = peca.id;
+      // o `traverse` que liga sombra roda no CONSTRUTOR, entao nada criado
+      // depois herda isso sozinho
+      obj.traverse((n) => {
+        if ((n as THREE.Mesh).isMesh) {
+          n.castShadow = true;
+          n.receiveShadow = false;
+        }
+      });
+      pai.add(obj);
+      postos.push(obj);
+    }
+    this.extras.set(slot, postos);
+  }
+
+  private tirarExtras(slot: SlotRoupa): void {
+    const objs = this.extras.get(slot);
+    if (!objs) return;
+    for (const obj of objs) {
+      obj.parent?.remove(obj);
+      obj.traverse((n) => {
+        // so a geometria. O material e o objeto cacheado de `materials.ts`,
+        // compartilhado com o jogo inteiro — dar dispose nele apaga a cor de
+        // todo mundo que a usa
+        const m = n as THREE.Mesh;
+        if (m.isMesh) m.geometry.dispose();
+      });
+    }
+    this.extras.delete(slot);
+  }
+
+  // --- fim guarda-roupa -----------------------------------------------------
 
   /** Sentado: pernas para a frente e corpo mais baixo. */
   setSitting(v: boolean): void {
@@ -847,11 +1041,12 @@ export class CharacterRig {
   setPatins(v: boolean): void {
     if (this.patinando === v) return;
     this.patinando = v;
-    for (const p of this.patins) p.visible = v;
-    for (const pe of this.pes) pe.visible = !v;
     // a peca desce ate o chao novo: o corpo sobe `altoDoPatins`, entao no
     // referencial da perna o chao ficou essa distancia mais para baixo
     for (const p of this.patins) p.position.y = -this.alturaDaPerna - this.altoDoPatins;
+    // quem liga e desliga a visibilidade do pe, do patins e da bota do acervo e
+    // o `aplicarVisual`, para os tres nao brigarem pelo mesmo campo
+    this.aplicarVisual();
   }
 
   get patinandoAgora(): boolean {

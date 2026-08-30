@@ -52,6 +52,17 @@ export const PALETTE = {
   screen: 0x2a2f3a,
   plantPot: 0xd08a5f,
 
+  // roupas do guarda-roupa (peca de acervo e item de mundo, entao a cor sai
+  // daqui; as cores das fichas em cast.ts sao hex solto por serem identidade
+  // de pessoa, nao peca trocavel)
+  roupaLa: 0xd96b7a,
+  roupaLaBarra: 0xf6e3c8,
+  roupaListra: 0x4a7fe0,
+  roupaListraManga: 0xf3f1ec,
+  roupaJeans: 0x3f5a86,
+  roupaBota: 0xffc94d,
+  roupaBotaCano: 0x8a5a2a,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

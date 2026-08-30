@@ -1,5 +1,6 @@
-import type { Coleta, ItemDef, Vaga } from './types';
+import { SLOTS_ROUPA, type Coleta, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
 import { fichaDoItem } from '../world/itens';
+import { fichaDaPeca } from '../world/roupas';
 
 /** vagas da mochila (o que se carrega na mao) */
 export const SLOTS_MAO = 5;
@@ -56,6 +57,14 @@ interface SaveData {
   stats: Record<string, number>;
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
+  // --- guarda-roupa
+  /**
+   * Ids das pecas desbloqueadas. GLOBAL de proposito: o que a dupla ganhou, os
+   * dois podem vestir — o acervo e do casal, o loadout e de cada um.
+   */
+  acervo: string[];
+  /** o que cada pessoa esta vestindo, chaveado pelo id da ficha */
+  loadouts: Record<string, Loadout>;
 }
 
 function vagasVazias(quantas: number): (ItemDef | null)[] {
@@ -113,6 +122,50 @@ function normalizar(bruto: Partial<SaveInventario> | undefined): SaveInventario 
   };
 }
 
+// --- guarda-roupa: normalizacao na leitura
+//
+// Mesma severidade do `normalizar` de inventario, e pelo mesmo motivo: o
+// catalogo manda, o save so guarda id. Peca tirada do catalogo, id escrito a
+// mao ou peca que mudou de slot somem sozinhos em vez de virar estado torto.
+
+function normalizarAcervo(bruto: unknown): string[] {
+  if (!Array.isArray(bruto)) return [];
+  const vistos = new Set<string>();
+  for (const id of bruto) {
+    if (typeof id === 'string' && fichaDaPeca(id)) vistos.add(id);
+  }
+  return [...vistos];
+}
+
+function normalizarLoadouts(
+  bruto: unknown,
+  acervo: readonly string[],
+): Record<string, Loadout> {
+  const todos: Record<string, Loadout> = {};
+  if (!bruto || typeof bruto !== 'object') return todos;
+  for (const [quem, cru] of Object.entries(bruto as Record<string, unknown>)) {
+    todos[quem] = normalizarLoadout(cru, acervo);
+  }
+  return todos;
+}
+
+function normalizarLoadout(bruto: unknown, acervo: readonly string[]): Loadout {
+  const limpo: Loadout = {};
+  if (!bruto || typeof bruto !== 'object') return limpo;
+  const cru = bruto as Record<string, unknown>;
+  for (const slot of SLOTS_ROUPA) {
+    const id = cru[slot];
+    if (typeof id !== 'string') continue;
+    const ficha = fichaDaPeca(id);
+    // tres condicoes, e as tres importam: a peca existe, ela e DAQUELE slot
+    // (uma calca nao fica presa na cabeca se o catalogo mudar) e ela foi mesmo
+    // desbloqueada
+    if (!ficha || ficha.slot !== slot || !acervo.includes(id)) continue;
+    limpo[slot] = id;
+  }
+  return limpo;
+}
+
 const KEY = 'aristory.save.v1';
 
 const EMPTY: SaveData = {
@@ -122,6 +175,8 @@ const EMPTY: SaveData = {
   memories: [],
   stats: {},
   inventarios: {},
+  acervo: [],
+  loadouts: {},
 };
 
 /** Progresso guardado no proprio navegador: flags, memorias e contadores. */
@@ -137,6 +192,9 @@ export class SaveState {
       const raw = localStorage.getItem(KEY);
       if (!raw) return structuredClone(EMPTY);
       const parsed = JSON.parse(raw) as Partial<SaveData>;
+      // o acervo e lido ANTES dos loadouts: e ele que decide se uma peca
+      // vestida ainda vale
+      const acervo = normalizarAcervo(parsed.acervo);
       return {
         version: 1,
         scene: parsed.scene ?? '',
@@ -144,6 +202,8 @@ export class SaveState {
         memories: parsed.memories ?? [],
         stats: parsed.stats ?? {},
         inventarios: normalizarTodos(parsed.inventarios),
+        acervo,
+        loadouts: normalizarLoadouts(parsed.loadouts, acervo),
       };
     } catch {
       return structuredClone(EMPTY);
@@ -358,6 +418,62 @@ export class SaveState {
     }
     if (achou) this.persist();
     return achou;
+  }
+
+  // ---------------------------------------------------------- guarda-roupa
+  //
+  // Eixo separado do de cima. Nada aqui toca em `inventarios`: o chapeu de
+  // campeao e os patins continuam sendo vaga de acessorio, e uma peca de roupa
+  // nunca ocupa vaga de mochila.
+
+  /** O que a dupla ja desbloqueou. Vale para os dois. */
+  get acervo(): readonly string[] {
+    return this.data.acervo;
+  }
+
+  temPeca(id: string): boolean {
+    return this.data.acervo.includes(id);
+  }
+
+  /** Poe uma peca no acervo. false se ela ja estava la ou nao existe. */
+  desbloquear(id: string): boolean {
+    if (!fichaDaPeca(id)) return false;
+    if (this.data.acervo.includes(id)) return false;
+    this.data.acervo.push(id);
+    this.persist();
+    return true;
+  }
+
+  /**
+   * O que alguem esta vestindo. Devolve COPIA: quem chama nao consegue mexer
+   * no save por baixo, e o `Game` compara a copia com a anterior para saber se
+   * precisa reconstruir alguma coisa.
+   */
+  loadout(quem: string): Loadout {
+    return { ...(this.data.loadouts[quem] ?? {}) };
+  }
+
+  /**
+   * Veste uma peca. O slot NAO e escolhido por quem chama: ele vem da ficha,
+   * que e a mesma razao de `mover()` recusar sorvete em vaga de acessorio —
+   * o dado nao pode mentir sobre o proprio item para caber onde quer.
+   */
+  vestirPeca(quem: string, id: string): boolean {
+    const ficha = fichaDaPeca(id);
+    if (!ficha) return false;
+    if (!this.temPeca(id)) return false;
+    const atual = this.data.loadouts[quem] ?? {};
+    atual[ficha.slot] = id;
+    this.data.loadouts[quem] = atual;
+    this.persist();
+    return true;
+  }
+
+  tirarPeca(quem: string, slot: SlotRoupa): void {
+    const atual = this.data.loadouts[quem];
+    if (!atual || atual[slot] === undefined) return;
+    delete atual[slot];
+    this.persist();
   }
 
   reset(): void {

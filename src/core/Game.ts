@@ -13,8 +13,21 @@ import type { SomNome } from '../audio/efeitos';
 import { CharacterRig } from '../characters/CharacterRig';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
-import type { Coleta, GameAPI, ItemDef, Memory, SceneAmbient, SceneDef, Vaga } from './types';
+import {
+  SLOTS_ROUPA,
+  type Coleta,
+  type GameAPI,
+  type ItemDef,
+  type Loadout,
+  type Memory,
+  type PecaRoupa,
+  type SceneAmbient,
+  type SceneDef,
+  type SlotRoupa,
+  type Vaga,
+} from './types';
 import { ITENS, modeloDoItem } from '../world/itens';
+import { fichaDaPeca } from '../world/roupas';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -209,6 +222,7 @@ export class Game implements GameAPI {
     this.audio.setClima(id);
     this.migrarPremios();
     this.aplicarPremios();
+    this.sincronizarRoupas();
     this.save.scene = id;
   }
 
@@ -342,6 +356,7 @@ export class Game implements GameAPI {
     this.coracoes.update(dt);
     this.sincronizarMaos();
     this.sincronizarVestiveis();
+    this.sincronizarRoupas();
 
     // ------------------------------------------------------- interativos
     this.updateHot(world, dt);
@@ -597,6 +612,41 @@ export class Game implements GameAPI {
     return this.save.vestiveis(quem);
   }
 
+  // --- guarda-roupa
+  // Mesmo formato do bloco de cima (`quem` com padrao de quem esta sendo
+  // controlado), mas armazenamento proprio: nada aqui mexe nas vagas de
+  // mochila nem nas de acessorio.
+
+  unlockClothing(id: string): boolean {
+    if (!this.save.desbloquear(id)) return false;
+    const peca = fichaDaPeca(id);
+    if (peca) this.ui.toast(`${peca.nome} desbloqueado`, peca.icone);
+    return true;
+  }
+
+  hasClothing(id: string): boolean {
+    return this.save.temPeca(id);
+  }
+
+  wearClothing(id: string, quem = this.playerId()): boolean {
+    return this.save.vestirPeca(quem, id);
+  }
+
+  removeClothing(slot: SlotRoupa, quem = this.playerId()): void {
+    this.save.tirarPeca(quem, slot);
+  }
+
+  clothingLoadout(quem = this.playerId()): Loadout {
+    return this.save.loadout(quem);
+  }
+
+  wardrobe(): readonly PecaRoupa[] {
+    // o catalogo resolve; o save so guarda id
+    return this.save.acervo
+      .map((id) => fichaDaPeca(id))
+      .filter((p): p is PecaRoupa => p !== null);
+  }
+
   /** Joga fora o item de uma vaga. Nao volta de lugar nenhum. */
   private descartarDaVaga(de: Vaga): void {
     const quem = this.playerId();
@@ -666,6 +716,31 @@ export class Game implements GameAPI {
       if (this.naMao.get(quem) === id) continue;
       this.naMao.set(quem, id);
       rig.segurar(id ? modeloDoItem(id) : null, item?.holdPose ?? 'none');
+    }
+  }
+
+  // --- guarda-roupa
+  /** o loadout que cada corpo ja esta vestindo, serializado, para o diff */
+  private readonly roupaAplicada = new Map<string, string>();
+
+  /**
+   * Espelha o `sincronizarMaos`: le o save e carimba no rig, com cache.
+   *
+   * O cache nao e otimizacao: `vestirRoupa` constroi geometria, e sem o diff
+   * isto reconstruiria o gorro e as duas botas a 60 fps.
+   *
+   * Percorre os RIGS, nao as pessoas: a roupa e do corpo, entao ela acompanha o
+   * personagem sozinha quando o T troca quem anda — sem nada em
+   * `swapCharacters`.
+   */
+  private sincronizarRoupas(): void {
+    for (const rig of [this.player.rig, this.parceiro.rig]) {
+      const quem = rig.spec.id;
+      const loadout = this.save.loadout(quem);
+      const chave = SLOTS_ROUPA.map((s) => loadout[s] ?? '').join('|');
+      if (this.roupaAplicada.get(quem) === chave) continue;
+      this.roupaAplicada.set(quem, chave);
+      rig.vestirRoupa(loadout);
     }
   }
 

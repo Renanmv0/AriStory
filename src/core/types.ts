@@ -122,6 +122,78 @@ export interface ItemDef {
 
 export type HoldPose = 'upright' | 'relaxed' | 'none';
 
+// --- guarda-roupa -----------------------------------------------------------
+//
+// Sistema PARALELO ao inventario. As 4 vagas de acessorio (`vestiveis`) e as 5
+// de mao continuam existindo e funcionando exatamente como antes; o chapeu de
+// campeao e os patins nao passam por aqui. Isto e um segundo eixo: roupa que se
+// troca, com acervo global e loadout por pessoa.
+
+export type SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes';
+
+/** ordem canonica dos slots; usada no diff por slot e, depois, na tela */
+export const SLOTS_ROUPA: readonly SlotRoupa[] = ['cabeca', 'tronco', 'pernas', 'pes'];
+
+/**
+ * As medidas do corpo de que a fabrica de geometria precisa.
+ *
+ * A peca NAO conhece o rig: ela recebe numeros e devolve um `Object3D`, como
+ * qualquer peca de `props.ts`. E o que impede uma roupa de sair mexendo em
+ * pivo de animacao.
+ */
+export interface MedidasCorpo {
+  /** altura total da pessoa */
+  h: number;
+  /** multiplicador de largura do build (BUILD_WIDTH) */
+  w: number;
+  headR: number;
+  legH: number;
+  torsoH: number;
+}
+
+/**
+ * Uma peca de roupa do acervo.
+ *
+ * Como o `ItemDef`, o `icone` e um EMOJI — zero asset externo vale aqui igual.
+ */
+export interface PecaRoupa {
+  id: string;
+  nome: string;
+  icone: string;
+  slot: SlotRoupa;
+  /** cor da parte principal (torso, perna, pe, calota do gorro) */
+  cor: number;
+  /** cor da parte secundaria (manga, barra, cano); sem isto usa `cor` */
+  corDetalhe?: number;
+  nota?: string;
+  /**
+   * So `cabeca`: esconde o cabelo enquanto a peca estiver vestida.
+   *
+   * Existe porque cabelo aqui tem VOLUME de verdade — a juba do Ari chega a
+   * ~1,6 x headR — e um gorro que a envolvesse por fora viraria um capacete.
+   * Gorro de verdade achata o cabelo, e esconder e o mesmo caminho que o
+   * patins ja usa para o pe que ele substitui. Um bone de aba, que so pousa
+   * em cima, deixa isto desligado.
+   */
+  cobreCabelo?: boolean;
+  /**
+   * Geometria adicional.
+   *
+   * SO `cabeca` e `pes` podem ter. Tronco e pernas se limitam a repintar as
+   * capsulas que ja existem: recriar um membro quebraria a matematica de
+   * rotacao da caminhada e da natacao, que depende dos pivos montados no
+   * construtor do rig.
+   *
+   * Devolve uma malha NOVA a cada chamada — o mesmo `Object3D` nao pode ter
+   * dois pais, e o slot `pes` pendura uma copia em cada perna.
+   */
+  extra?(m: MedidasCorpo): THREE.Object3D;
+}
+
+/** O que uma pessoa esta vestindo: slot -> id da peca. */
+export type Loadout = Partial<Record<SlotRoupa, string>>;
+// --- fim guarda-roupa -------------------------------------------------------
+
 /** Endereco de uma vaga do inventario. E o que o arrastar move de um lado para outro. */
 export interface Vaga {
   lista: 'mao' | 'vestivel';
@@ -208,6 +280,19 @@ export interface GameAPI {
   handItems(quem?: string): ReadonlyArray<ItemDef | null>;
   /** As 4 vagas de acessorio, na ordem da tela. */
   wearables(quem?: string): ReadonlyArray<ItemDef | null>;
+
+  // --- guarda-roupa
+  // Eixo separado do de cima: o acervo e GLOBAL (o que a dupla desbloqueou, os
+  // dois podem usar) e o loadout e por pessoa.
+  /** Desbloqueia uma peca no acervo global. true so se ela era nova. */
+  unlockClothing(id: string): boolean;
+  hasClothing(id: string): boolean;
+  /** Veste uma peca do acervo; ela entra no slot que a propria peca declara. */
+  wearClothing(id: string, quem?: string): boolean;
+  removeClothing(slot: SlotRoupa, quem?: string): void;
+  clothingLoadout(quem?: string): Loadout;
+  /** As pecas ja desbloqueadas, resolvidas pelo catalogo. */
+  wardrobe(): readonly PecaRoupa[];
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */
   keyPressed(code: string): boolean;
