@@ -150,8 +150,13 @@ export interface ItemDef {
    *
    * Devolve uma malha NOVA a cada chamada — o mesmo `Object3D` nao pode ter
    * dois pais, e o slot `pes` pendura uma copia em cada perna.
+   *
+   * `lado` e -1 no membro de -X e 1 no de +X. Peca simetrica ignora; peca que
+   * se desloca para FORA do corpo precisa multiplicar por ele, senao a copia
+   * da esquerda vai para dentro. Vale 1 para cabeca e tronco, que tem copia
+   * unica.
    */
-  extra?(m: MedidasCorpo): THREE.Object3D;
+  extra?(m: MedidasCorpo, lado: -1 | 1): THREE.Object3D;
   /**
    * Geometria pendurada em CADA BRACO, uma copia por lado.
    *
@@ -164,8 +169,9 @@ export interface ItemDef {
    * continua sendo a unica coisa proibida.
    *
    * REFERENCIAL: o pivo do braco, y = 0 no ombro, com o braco pendendo em -Y.
+   * `lado` e -1 no braco de -X e 1 no de +X — ver a nota em `extra`.
    */
-  extraBraco?(m: MedidasCorpo): THREE.Object3D;
+  extraBraco?(m: MedidasCorpo, lado: -1 | 1): THREE.Object3D;
   /**
    * Deixa o braco nu: a manga vira pele em vez da cor da peca.
    *

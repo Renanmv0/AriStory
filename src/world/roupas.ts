@@ -908,7 +908,7 @@ function maidJapones(m: MedidasCorpo): THREE.Object3D {
  * O deslocamento em X e para FORA: com a boca larga centrada no eixo do braco,
  * a manga entraria no tronco, que esta a menos de um raio de distancia.
  */
-function mangaDeQuimono(m: MedidasCorpo): THREE.Object3D {
+function mangaDeQuimono(m: MedidasCorpo, lado: -1 | 1): THREE.Object3D {
   const g = new THREE.Group();
   const { h, w } = m;
   const armLen = h * 0.3;
@@ -918,7 +918,11 @@ function mangaDeQuimono(m: MedidasCorpo): THREE.Object3D {
   // larga centrada no braco cobre o corpo inteiro, e foi o que a primeira
   // versao fez — a manga virou uma capa e engoliu a roupa toda. Deslocada para
   // fora, a borda de dentro passa RENTE ao tronco e a silhueta fica ao lado.
-  const paraFora = h * 0.052 * w;
+  //
+  // E `lado` MULTIPLICA esse deslocamento. O braco esquerdo nasce em -X: sem o
+  // sinal, a copia dele empurrava a manga para +X, ou seja para dentro do
+  // corpo, e um dos dois bracos ficava torto. Mesma pegadinha do frisbee.
+  const paraFora = lado * h * 0.052 * w;
   const bocaR = h * 0.068 * w;
 
   // ATE ONDE ELA DESCE, que e a medida que mais se erra aqui.

@@ -278,6 +278,33 @@ const vestidoNoBanho = await vestindo('ari');
 await page.evaluate(() => window.jogo.setOutfit('normal'));
 await page.waitForTimeout(600);
 
+// ------------------------------------- 7. o que vai nos DOIS membros e espelhado
+//
+// A manga de quimono se desloca para FORA do corpo, e a mesma geometria vai nos
+// dois bracos. Sem multiplicar pelo lado, a copia da esquerda empurra para +X —
+// ou seja, para dentro — e um dos bracos fica torto. E a mesma pegadinha de
+// sinal do frisbee e dos bracos sentados, e por isso ela vira teste.
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.removeItem('vestido-rosa', 'ari');
+  j.equipWearable(window.aristoryItens['maid-japones'], 'ari');
+});
+await page.waitForTimeout(900);
+const mangas = await page.evaluate(() => {
+  const rig = window.jogo.player.rig;
+  // No referencial LOCAL do braço, e não em coordenada de mundo: o X de mundo
+  // depende de para onde o personagem está virado, e o sinal inverte sozinho
+  // quando a cena muda o facing. Dentro do pivô, o deslocamento é o próprio
+  // `paraFora` da peça.
+  const centro = (pivo) => {
+    const manga = pivo.children.find((o) => o.userData?.roupa === 'maid-japones');
+    if (!manga) return null;
+    const xs = manga.children.map((o) => o.position.x);
+    return xs.length ? +(xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(3) : null;
+  };
+  return { esquerda: centro(rig.armL), direita: centro(rig.armR) };
+});
+
 // ------------------------------------------------------------------- relatório
 const perto = (a, b, tol) => Math.abs(a - b) <= tol;
 /**
@@ -334,6 +361,9 @@ console.log('  torso:', vestido.torso, '· manga:', vestido.manga, '· pernas:',
 console.log('  laço/cinto da ficha visíveis:', vestido.fichaVisivel, '(tem que ser 0)');
 console.log('  no banho, no corpo:', JSON.stringify(vestidoNoBanho), '(só a gargantilha)');
 console.log('  com a meia por baixo, a perna fica:', comMeia, '(a meia ganha do "perna nua")');
+console.log('— manga de quimono, um lado em cada braço');
+console.log('  centro em X · esquerda:', mangas.esquerda, '· direita:', mangas.direita,
+  '(têm que ser opostos)');
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const ok =
@@ -377,7 +407,10 @@ const ok =
   // no banho o vestido some e a gargantilha fica
   vestidoNoBanho.join() === 'gargantilha-laco' &&
   // a peça de pernas ganha do "perna nua" do vestido
-  comMeia === '#fdfaf5';
+  comMeia === '#fdfaf5' &&
+  // 7. espelhadas: mesma distância do eixo, sinais opostos
+  mangas.esquerda < -0.05 && mangas.direita > 0.05 &&
+  Math.abs(mangas.esquerda + mangas.direita) < 0.02;
 
 await browser.close();
 process.exit(ok ? 0 : 1);

@@ -1031,27 +1031,35 @@ export class CharacterRig {
    */
   private porExtras(slot: SlotRoupa, peca: ItemDef): void {
     if (!peca.extra && !peca.extraBraco) return;
-    const pais: Array<[THREE.Object3D, 'corpo' | 'braco']> = [];
+    // Cada pai leva o LADO junto: -1 no membro de -X, 1 no de +X.
+    //
+    // Sem isso a mesma geometria vai nos dois membros, e uma peca que se
+    // desloca para fora do corpo entra para DENTRO do lado esquerdo — foi o que
+    // torceu a manga de quimono. E a mesma pegadinha de sinal do frisbee e dos
+    // bracos sentados.
+    const pais: Array<[THREE.Object3D, 'corpo' | 'braco', -1 | 1]> = [];
     if (peca.extra) {
-      const onde: THREE.Object3D[] =
-        // pernas E pes vao para os pivos das pernas, uma copia em cada: a liga
-        // de uma meia tem que dobrar junto com a coxa, igual ao cano da bota
-        slot === 'pes' || slot === 'pernas' ? [this.legL, this.legR]
-        : slot === 'cabeca' ? [this.head]
-        : [this.body];
-      for (const o of onde) pais.push([o, 'corpo']);
+      // pernas E pes vao para os pivos das pernas, uma copia em cada: a liga
+      // de uma meia tem que dobrar junto com a coxa, igual ao cano da bota
+      if (slot === 'pes' || slot === 'pernas') {
+        pais.push([this.legL, 'corpo', -1], [this.legR, 'corpo', 1]);
+      } else if (slot === 'cabeca') {
+        pais.push([this.head, 'corpo', 1]);
+      } else {
+        pais.push([this.body, 'corpo', 1]);
+      }
     }
     // a manga vai no PIVO do braco, para acompanhar o balanco
     if (peca.extraBraco) {
-      pais.push([this.armL, 'braco'], [this.armR, 'braco']);
+      pais.push([this.armL, 'braco', -1], [this.armR, 'braco', 1]);
     }
     const postos: THREE.Object3D[] = [];
-    for (const [pai, tipo] of pais) {
+    for (const [pai, tipo, lado] of pais) {
       // uma malha NOVA por pai: o mesmo Object3D nao pode ter dois pais, que e
       // a mesma razao de `modeloDoItem` nunca devolver a mesma instancia
       const obj = tipo === 'braco'
-        ? peca.extraBraco!(this.medidas)
-        : peca.extra!(this.medidas);
+        ? peca.extraBraco!(this.medidas, lado)
+        : peca.extra!(this.medidas, lado);
       // etiqueta para o teste conseguir dizer o que cada corpo esta vestindo
       obj.userData.roupa = peca.id;
       // o `traverse` que liga sombra roda no CONSTRUTOR, entao nada criado
