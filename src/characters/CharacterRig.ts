@@ -159,7 +159,9 @@ export class CharacterRig {
    * o laço e o cinto do Ari: sobre um vestido rosa, um laço preto e uma
    * correntinha de estrela ficariam flutuando sem dono.
    *
-   * A mochila NÃO entra: mochila por cima de roupa é acessório, não conflito.
+   * A MOCHILA entra também. Eu tinha deixado ela de fora achando que mochila
+   * por cima de roupa é acessório e não conflito — mas as alças dela cruzam o
+   * PEITO, e por cima de um vestido elas atravessam o pano em vez de pousar.
    */
   private readonly sobreTronco: THREE.Object3D[] = [];
   /** o cabelo inteiro, para um gorro poder achatá-lo */
@@ -836,6 +838,7 @@ export class CharacterRig {
       bag.position.set(0, hipY + torsoH * 0.6, -this.spec.height * 0.11 * w);
       this.body.add(bag);
       this.soVestido.push(bag);
+      this.sobreTronco.push(bag);
       const strapY = shoulderY;
       for (const side of [-1, 1]) {
         const strap = new THREE.Mesh(
@@ -845,6 +848,7 @@ export class CharacterRig {
         strap.position.set(side * halfShoulder * 0.6, strapY - torsoH * 0.2, this.spec.height * 0.085 * w);
         this.body.add(strap);
         this.soVestido.push(strap);
+        this.sobreTronco.push(strap);
       }
     }
   }

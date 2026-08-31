@@ -215,9 +215,13 @@ const depoisDoReload = await page.evaluate(() => ({
 await page.evaluate(() => {
   const j = window.jogo;
   const cat = window.aristoryItens;
-  // tira o que está nas vagas de cabeça e tronco para o vestido caber
+  // tira o que está nas vagas de cabeça e tronco para o vestido caber. E a
+  // CALÇA também: "perna nua" quer dizer que o vestido não cobre a perna, não
+  // que nada possa cobrir — com a calça vestida é ela que aparece, e é essa
+  // regra que faz a meia sobreviver por baixo do vestido.
   j.removeItem('gorro-la', 'ari');
   j.removeItem('camisa-listrada', 'ari');
+  j.removeItem('calca-jeans', 'ari');
   j.equipWearable(cat['vestido-rosa'], 'ari');
   j.equipWearable(cat['gargantilha-laco'], 'ari');
 });
@@ -248,6 +252,24 @@ const vestido = await page.evaluate(() => {
   };
 });
 await page.screenshot({ path: `${OUT}-o-vestido.png` });
+
+// E agora a regra ao contrário: com uma peça de PERNAS vestida, ela ganha do
+// "perna nua" do vestido. É o que deixa a meia de coxa aparecer por baixo do
+// maid japonês, em vez de o vestido apagar a meia do próprio conjunto.
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.equipWearable(window.aristoryItens['meia-de-coxa'], 'ari');
+});
+await page.waitForTimeout(700);
+const comMeia = await page.evaluate(() => {
+  const rig = window.jogo.player.rig;
+  return [...new Set(
+    rig.trocaMaterial.filter((t) => t.slot === 'pernas')
+      .map((t) => '#' + t.mesh.material.color.getHexString()),
+  )].join('/');
+});
+await page.evaluate(() => window.jogo.removeItem('meia-de-coxa', 'ari'));
+await page.waitForTimeout(600);
 
 // no banho o vestido some e a gargantilha fica, a mesma regra do gorro
 await page.evaluate(() => window.jogo.setOutfit('banho'));
@@ -311,6 +333,7 @@ console.log('  torso:', vestido.torso, '· manga:', vestido.manga, '· pernas:',
   '· pele:', vestido.pele);
 console.log('  laço/cinto da ficha visíveis:', vestido.fichaVisivel, '(tem que ser 0)');
 console.log('  no banho, no corpo:', JSON.stringify(vestidoNoBanho), '(só a gargantilha)');
+console.log('  com a meia por baixo, a perna fica:', comMeia, '(a meia ganha do "perna nua")');
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const ok =
@@ -352,7 +375,9 @@ const ok =
   // e o laço preto e o cinto de estrela do Ari somem por baixo dele
   vestido.fichaVisivel === 0 &&
   // no banho o vestido some e a gargantilha fica
-  vestidoNoBanho.join() === 'gargantilha-laco';
+  vestidoNoBanho.join() === 'gargantilha-laco' &&
+  // a peça de pernas ganha do "perna nua" do vestido
+  comMeia === '#fdfaf5';
 
 await browser.close();
 process.exit(ok ? 0 : 1);
