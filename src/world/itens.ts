@@ -2,7 +2,10 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { copoDeSuco, frisbee, iceCream } from './props';
-import { canoDaBota, gargantilhaDeLaco, gorroDeLa, vestidoRosa } from './roupas';
+import {
+  canoDaBota, gargantilhaDeLaco, gorroDeLa,
+  vestidoGatinho, vestidoMarinheiro, vestidoRosa,
+} from './roupas';
 
 /**
  * O catalogo de itens do jogo.
@@ -114,6 +117,32 @@ export const ITENS = {
     bracosNus: true,
     pernasNuas: true,
     extra: vestidoRosa,
+  },
+  maidMarinheiro: {
+    id: 'maid-marinheiro',
+    nome: 'Maid marinheiro',
+    icone: '🖤',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.maidPreto,
+    // a manga bufante da foto e BRANCA, e a manga do rig e o `detalhe`
+    corDetalhe: P.maidCreme,
+    nota: 'gola de marinheiro e cadarço',
+    pernasNuas: true,
+    extra: vestidoMarinheiro,
+  },
+  maidGatinho: {
+    id: 'maid-gatinho',
+    nome: 'Maid gatinho',
+    icone: '🐱',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.maidPreto,
+    // neste a manga bufante e preta, igual ao corpo
+    corDetalhe: P.maidPreto,
+    nota: 'com guizo e cara de gato',
+    pernasNuas: true,
+    extra: vestidoGatinho,
   },
   gargantilhaDeLaco: {
     id: 'gargantilha-laco',

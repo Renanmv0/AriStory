@@ -68,6 +68,12 @@ export const PALETTE = {
   vestidoRosa: 0xf6d3d8,
   vestidoRenda: 0xfdf7f0,
   vestidoFita: 0xf0aebd,
+  // os dois maid da mesma loja: preto lavado (preto puro come o degrade do toon
+  // e vira silhueta chapada), creme do avental e a fita preta do debrum
+  maidPreto: 0x2b2a33,
+  maidCreme: 0xfaf6ee,
+  maidFita: 0x17161c,
+  maidLacoVermelho: 0xc23444,
 
   // ui / afeto
   heart: 0xff6b8b,
