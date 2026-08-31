@@ -116,6 +116,17 @@ export class Input {
     this.pressed.add('KeyT');
   }
 
+  /**
+   * Botao virtual de girar a camera. -1 gira para um lado, 1 para o outro.
+   *
+   * Injeta a MESMA tecla do teclado em vez de chamar a camera direto: assim as
+   * travas que ja existem (dialogo aberto, menu, troca de cena) valem para o
+   * dedo sem precisar de uma segunda copia da regra.
+   */
+  tapGirar(dir: -1 | 1): void {
+    this.pressed.add(dir < 0 ? 'KeyQ' : 'KeyR');
+  }
+
   /** Segura/solta uma tecla virtual — usado pelo botao de acao no celular. */
   setVirtualDown(code: string, down: boolean): void {
     if (down) {

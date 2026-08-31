@@ -795,3 +795,31 @@ body.touch-device .dialogue .next { right: 84px; }
   text-transform: uppercase;
   color: var(--ink-soft);
 }
+
+/* ------------------------------------------------- girar a câmera no celular
+ *
+ * No computador o Q e o R giram; no celular não havia caminho nenhum. Estes
+ * dois vão logo ABAIXO do botão de menu, no alto à direita, e não na pilha de
+ * baixo: girar a câmera é do mesmo naipe que abrir o menu — mexe na moldura do
+ * jogo, não no que o personagem faz.
+ *
+ * A seta é SVG desenhado, e não um caractere. Glifo de rotação some em fonte
+ * que não o tem, que é a mesma razão de o botão de menu desenhar as três
+ * barrinhas em vez de usar o ☰.
+ */
+.touch button.girar-btn {
+  /* a regra base da pilha usa `bottom`; aqui quem manda é o `top` */
+  bottom: auto;
+  top: 64px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+.touch button.girar-btn.dir { right: 14px; }
+.touch button.girar-btn.esq { right: 52px; }
+.touch button.girar-btn svg { width: 19px; height: 19px; display: block; }
+/* a mesma seta espelhada: uma peça só, dois sentidos */
+.touch button.girar-btn.esq svg { transform: scaleX(-1); }

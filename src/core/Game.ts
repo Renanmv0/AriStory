@@ -94,6 +94,7 @@ export class Game implements GameAPI {
     this.ui.setMemories(this.save.memories);
     this.ui.onTouchAction = () => this.input.tapAction();
     this.ui.onTouchSwap = () => this.input.tapSwap();
+    this.ui.onTouchGirar = (dir) => this.input.tapGirar(dir);
     // clique numa vaga da mochila escolhe qual item fica na mao
     this.ui.onEscolherSlot = (i) => this.setActiveHandSlot(i);
     this.ui.onMoverItem = (de, para) => this.moveItem(de, para);

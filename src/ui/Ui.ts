@@ -48,6 +48,8 @@ export class Ui {
   onTouchAction: (() => void) | null = null;
   /** chamado quando o jogador aperta o botao de trocar de personagem */
   onTouchSwap: (() => void) | null = null;
+  /** girar a camera no celular; -1 para um lado, 1 para o outro */
+  onTouchGirar: ((dir: -1 | 1) => void) | null = null;
   /** botao de acao segurado no celular: carrega o lancamento do frisbee */
   onTouchHold: ((down: boolean) => void) | null = null;
   /** o jogador confirmou "recomecar do zero" no menu */
@@ -118,6 +120,7 @@ export class Ui {
             <li><b>🔁</b><span>trocar de personagem</span></li>
             <li><b>🎒</b><span>abrir a mochila</span></li>
             <li><b>📖</b><span>abrir o diário</span></li>
+            <li><b>↺ ↻</b><span>girar a câmera — no alto, abaixo do menu</span></li>
           </ul>
           <div class="carinho">
             <h3>Os dois juntos</h3>
@@ -161,6 +164,8 @@ export class Ui {
         <button class="swap-btn" aria-label="trocar de personagem">🔁</button>
         <button class="bag-btn" aria-label="mochila">🎒</button>
         <button class="journal-btn" aria-label="diário">📖</button>
+        <button class="girar-btn esq" aria-label="girar a câmera para a esquerda"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5a6.5 6.5 0 1 0 6.2 4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12 1.6v7.6l-4.2-3.8z" fill="currentColor"/></svg></button>
+        <button class="girar-btn dir" aria-label="girar a câmera para a direita"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5a6.5 6.5 0 1 0 6.2 4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12 1.6v7.6l-4.2-3.8z" fill="currentColor"/></svg></button>
       </div>
     `;
     root.appendChild(ui);
@@ -218,6 +223,8 @@ export class Ui {
       acao.addEventListener(ev, () => this.onTouchHold?.(false));
     }
     ui.querySelector('.swap-btn')!.addEventListener('click', () => this.onTouchSwap?.());
+    ui.querySelector('.girar-btn.esq')!.addEventListener('click', () => this.onTouchGirar?.(-1));
+    ui.querySelector('.girar-btn.dir')!.addEventListener('click', () => this.onTouchGirar?.(1));
     ui.querySelector('.journal-btn')!.addEventListener('click', () => this.toggleJournal());
     ui.querySelector('.bag-btn')!.addEventListener('click', () => this.toggleMochila());
     ui.querySelector('.mochila .close')!.addEventListener('click', () => this.closeMochila());

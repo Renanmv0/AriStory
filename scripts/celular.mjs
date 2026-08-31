@@ -6,6 +6,9 @@
  * encolheram, ficaram translúcidos e o balão de fala ganhou um corredor livre
  * na direita.
  *
+ * E que cada botão do HUD FAZ o que promete — inclusive os dois de girar a
+ * câmera, que no celular são o único caminho: o Q e o R não existem lá.
+ *
  * E que cada botão do HUD ABRE o que promete. O 🎒 já abriu uma mochila sem
  * vaga nenhuma porque o desenho das vagas morava no caminho do teclado; no
  * computador estava certo e no celular não.
@@ -71,6 +74,26 @@ const visual = await page.evaluate(() => {
   };
 });
 
+// Girar a câmera pelo HUD, que no celular é o único caminho — sem teclado não
+// há Q nem R. Mede a POSIÇÃO da câmera, e não só o clique: botão que dispara e
+// não move nada passaria despercebido.
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(2600);
+const ondeAcamera = () =>
+  page.evaluate(() => {
+    const c = window.jogo.iso.camera;
+    return [+c.position.x.toFixed(2), +c.position.z.toFixed(2)];
+  });
+const camAntes = await ondeAcamera();
+await page.locator('.girar-btn.dir').tap();
+await page.waitForTimeout(1400);
+const camDepois = await ondeAcamera();
+await page.locator('.girar-btn.esq').tap();
+await page.waitForTimeout(1400);
+const camVoltou = await ondeAcamera();
+const girou = Math.hypot(camDepois[0] - camAntes[0], camDepois[1] - camAntes[1]);
+const desfez = Math.hypot(camVoltou[0] - camAntes[0], camVoltou[1] - camAntes[1]);
+
 // o menu e a lista de controles
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(2600);
@@ -102,6 +125,7 @@ const mochila = await page.evaluate(() => ({
 }));
 await page.screenshot({ path: `${OUT}-mochila.png` });
 
+console.log('girar pelo HUD · andou', girou.toFixed(1), 'e o outro botão desfez para', desfez.toFixed(1));
 console.log('🎒 abriu a mochila:', mochila.aberta, '· vagas desenhadas:', mochila.vagas);
 console.log('linhas na tela de controles:', linhas);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
@@ -109,7 +133,7 @@ console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 const opacidade = Number(/[\d.]+\)$/.exec(visual.fundo)?.[0]?.replace(')', '') ?? '1');
 const ok =
   !erros.length &&
-  botoes === 4 && // ✨ 🔁 🎒 📖
+  botoes === 6 && // ✨ 🔁 🎒 📖 e os dois de girar
   visual.largura <= 64 &&
   opacidade <= 0.7 && // translúcido, não opaco
   noPrompt === 0 &&
@@ -117,7 +141,10 @@ const ok =
   nasEscolhas === 0 &&
   linhas >= 10 &&
   mochila.aberta &&
-  mochila.vagas === mochila.esperadas;
+  mochila.vagas === mochila.esperadas &&
+  // um botão gira de verdade e o outro traz de volta ao ponto de partida
+  girou > 5 &&
+  desfez < 1;
 
 await browser.close();
 process.exit(ok ? 0 : 1);
