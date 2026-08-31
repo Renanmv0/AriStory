@@ -15,9 +15,10 @@ import type { MedidasCorpo } from '../core/types';
 //
 // O REFERENCIAL muda por slot, e e a primeira coisa a saber antes de escrever
 // uma fabrica:
-//   cabeca -> nasce dentro da cabeca, y = 0 no centro do cranio
-//   pes    -> nasce no pivo da perna, y = 0 no quadril
-//   tronco -> nasce no corpo, y = 0 no CHAO
+//   cabeca        -> dentro da cabeca, y = 0 no centro do cranio
+//   pernas e pes  -> no pivo da perna, y = 0 no quadril
+//   tronco        -> no corpo, y = 0 no CHAO
+//   extraBraco    -> no pivo do braco, y = 0 no ombro
 // Em nenhum caso a peca recria membro: ela entra como IRMA do que ja existe, e
 // os pivos de rotacao da caminhada continuam intocados.
 
@@ -691,6 +692,296 @@ function vestidoGatinho(m: MedidasCorpo): THREE.Object3D {
 }
 
 /**
+ * Coracao chato, apontando para baixo.
+ *
+ * O `heart` de `props.ts` nao serve aqui: ele tem material rosa com brilho
+ * cravado, porque nasceu para os coracoes que sobem no beijo. Este aceita cor e
+ * e achatado, para virar festao de renda na barra da saia.
+ */
+function coracaoChato(raio: number, cor: number): THREE.Group {
+  const g = new THREE.Group();
+  const mat = toon(cor);
+  for (const lado of [-1, 1] as const) {
+    const lobo = new THREE.Mesh(new THREE.SphereGeometry(raio * 0.56, 8, 6), mat);
+    lobo.position.set(lado * raio * 0.44, raio * 0.34, 0);
+    lobo.scale.z = 0.34;
+    g.add(lobo);
+  }
+  const bico = new THREE.Mesh(new THREE.ConeGeometry(raio * 0.78, raio * 1.2, 10), mat);
+  bico.position.y = -raio * 0.34;
+  bico.rotation.x = Math.PI;
+  bico.scale.z = 0.34;
+  g.add(bico);
+  return g;
+}
+
+/**
+ * Maid japones (wa-maid), rosa e preto, das duas ilustracoes de referencia.
+ *
+ * REFERENCIAL: o corpo, y = 0 no CHAO. A MANGA nao esta aqui — ela e
+ * `mangaDeQuimono` e mora no pivo do braco, senao fica parada enquanto o braco
+ * balanca.
+ *
+ * A leitura, de cima para baixo: quimono rosa cruzado no peito, corselete preto
+ * alto com a fivela prateada, laco rosa grande com as fitas caindo, avental
+ * branco, saia preta plissada e, na barra, o festao de coracoes que e o que
+ * mais identifica esta roupa nas duas referencias.
+ */
+function maidJapones(m: MedidasCorpo): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const hipY = m.legH;
+  const raioTorso = h * 0.105 * w;
+  const ombroY = hipY + m.torsoH * 0.86;
+  const ACHATA = 0.85;
+
+  const rosa = toon(P.waRosa);
+  const rosaDuplo = toon(P.waRosa, { doubleSide: true });
+  const rosaForte = toon(P.waRosaForte);
+  const escuro = toon(P.waEscuro);
+  const escuroDuplo = toon(P.waEscuro, { doubleSide: true });
+  const branco = toon(P.waBranco, { doubleSide: true });
+
+  // ------------------------------------------------------- saia plissada
+  const topoSaia = hipY + m.torsoH * 0.1;
+  const barra = hipY - h * 0.135;
+  const raioBarra = raioTorso * 2.0;
+
+  const saia = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.02, raioBarra, topoSaia - barra, 22, 1, true),
+    escuroDuplo,
+  );
+  saia.position.y = (topoSaia + barra) / 2;
+  saia.scale.z = ACHATA;
+  g.add(saia);
+
+  // as PREGAS: quinas verticais em volta do cone. Sem elas a saia e um funil
+  // liso, e plissado e o que as duas referencias mostram.
+  // Cada prega mora num PIVO girado em Y, e a inclinacao vai dentro dele.
+  //
+  // A primeira versao somava um `rotation.x` e um `rotation.z` calculados com
+  // seno e cosseno do angulo. Rotacao de Euler nao se compoe assim: as pregas
+  // sairam da parede do cone e furaram o avental como espetos pretos. Com o
+  // pivo, o giro e a inclinacao ficam em niveis separados e nao se misturam.
+  const pregas = 16;
+  const raioTopo = raioTorso * 1.02;
+  const altura = topoSaia - barra;
+  const inclinacao = -Math.atan2(raioBarra - raioTopo, altura);
+  for (let i = 0; i < pregas; i++) {
+    const pivo = new THREE.Group();
+    pivo.rotation.y = (i / pregas) * Math.PI * 2;
+    const prega = new THREE.Mesh(
+      new THREE.BoxGeometry(h * 0.011, altura * 0.94, h * 0.009),
+      escuro,
+    );
+    prega.position.set(0, (topoSaia + barra) / 2, (raioTopo + raioBarra) / 2);
+    prega.rotation.x = inclinacao;
+    pivo.add(prega);
+    pivo.scale.z = ACHATA;
+    g.add(pivo);
+  }
+
+  // festao de coracoes na barra — a marca da roupa
+  const quantosCoracoes = 13;
+  for (let i = 0; i < quantosCoracoes; i++) {
+    const a = (i / quantosCoracoes) * Math.PI * 2;
+    const c = coracaoChato(h * 0.034, P.waEscuro);
+    c.position.set(
+      Math.sin(a) * raioBarra * 1.03,
+      barra - h * 0.016,
+      Math.cos(a) * raioBarra * 1.03 * ACHATA,
+    );
+    c.rotation.y = a;
+    g.add(c);
+  }
+
+  // --------------------------------------------------------------- avental
+  const aventalTopo = hipY + m.torsoH * 0.16;
+  const aventalBarra = hipY - h * 0.095;
+  const avental = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      raioTorso * 1.02, raioBarra * 0.9, aventalTopo - aventalBarra, 16, 1, true,
+      -1.25, 2.5,
+    ),
+    branco,
+  );
+  avental.position.y = (aventalTopo + aventalBarra) / 2;
+  avental.scale.z = ACHATA;
+  g.add(avental);
+  const babadoAvental = babado(raioBarra * 0.92, h * 0.03, P.waBranco, ACHATA);
+  babadoAvental.position.y = aventalBarra;
+  g.add(babadoAvental);
+
+  // ------------------------------------------------------------- corselete
+  // alto e preto, cobrindo da cintura ate embaixo do peito
+  const cinturaBaixo = hipY + m.torsoH * 0.14;
+  const cinturaAlto = hipY + m.torsoH * 0.5;
+  const corselete = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.07, raioTorso * 1.1, cinturaAlto - cinturaBaixo, 18, 1, true),
+    escuroDuplo,
+  );
+  corselete.position.y = (cinturaAlto + cinturaBaixo) / 2;
+  corselete.scale.z = ACHATA;
+  g.add(corselete);
+
+  // a tira preta que sobe pelo peito, com a fivela prateada
+  const tiraPeito = new THREE.Mesh(
+    new THREE.BoxGeometry(raioTorso * 0.62, m.torsoH * 0.26, h * 0.012),
+    escuro,
+  );
+  tiraPeito.position.set(0, hipY + m.torsoH * 0.6, raioTorso * 0.82);
+  g.add(tiraPeito);
+  const fivela = new THREE.Mesh(
+    new THREE.TorusGeometry(h * 0.019, h * 0.005, 6, 12),
+    toon(P.waFivela),
+  );
+  fivela.position.set(0, hipY + m.torsoH * 0.56, raioTorso * 0.89);
+  fivela.scale.set(1.25, 1, 1);
+  g.add(fivela);
+
+  // ------------------------------------------------------- quimono cruzado
+  // duas abas rosa cruzando uma sobre a outra, que e a frente de um quimono
+  for (const lado of [-1, 1] as const) {
+    const aba = new THREE.Mesh(
+      new THREE.BoxGeometry(raioTorso * 1.15, m.torsoH * 0.42, h * 0.013),
+      rosa,
+    );
+    aba.position.set(lado * raioTorso * 0.24, hipY + m.torsoH * 0.68, raioTorso * 0.76);
+    aba.rotation.z = lado * 0.52;
+    g.add(aba);
+  }
+  // gola do quimono, subindo pela nuca
+  const gola = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 0.78, raioTorso * 0.92, m.torsoH * 0.2, 16, 1, true),
+    rosaDuplo,
+  );
+  gola.position.y = ombroY - m.torsoH * 0.02;
+  gola.scale.z = ACHATA;
+  g.add(gola);
+
+  // ----------------------------------------------------- laco e fitas rosa
+  const lacoCintura = laco(h * 0.05, P.waRosaForte);
+  lacoCintura.position.set(0, cinturaBaixo + h * 0.014, raioTorso * 1.12);
+  g.add(lacoCintura);
+
+  // as duas fitas COMPRIDAS, que nas referencias descem quase ate a barra
+  for (const lado of [-1, 1] as const) {
+    const fitaLonga = new THREE.Mesh(
+      new THREE.BoxGeometry(h * 0.026, h * 0.2, h * 0.008),
+      rosaForte,
+    );
+    fitaLonga.position.set(lado * h * 0.022, cinturaBaixo - h * 0.09, raioBarra * 0.78);
+    fitaLonga.rotation.z = lado * 0.1;
+    g.add(fitaLonga);
+    // a ponta em bico da fita
+    const ponta = new THREE.Mesh(
+      new THREE.ConeGeometry(h * 0.018, h * 0.03, 4),
+      rosaForte,
+    );
+    ponta.position.set(lado * h * 0.024, cinturaBaixo - h * 0.2, raioBarra * 0.8);
+    ponta.rotation.set(Math.PI, Math.PI / 4, 0);
+    ponta.scale.z = 0.3;
+    g.add(ponta);
+  }
+
+  // gargantilha preta com fivelinha, que aparece nas duas referencias
+  const coleira = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.043, h * 0.045, h * 0.022, 14, 1, true),
+    escuroDuplo,
+  );
+  coleira.position.y = ombroY + m.torsoH * 0.12;
+  g.add(coleira);
+
+  return g;
+}
+
+/**
+ * A manga de quimono, pendurada em CADA braco.
+ *
+ * REFERENCIAL: o pivo do braco, y = 0 no ombro, braco pendendo em -Y.
+ *
+ * Ela e o que faz esta roupa ser esta roupa nas referencias: enorme, preta por
+ * fora, com o punho branco de babado, caindo bem abaixo da mao. Por isso ela
+ * mora no braco e nao no corpo — desse tamanho, parada enquanto o braco
+ * balanca, ela denunciaria na primeira passada.
+ *
+ * O deslocamento em X e para FORA: com a boca larga centrada no eixo do braco,
+ * a manga entraria no tronco, que esta a menos de um raio de distancia.
+ */
+function mangaDeQuimono(m: MedidasCorpo): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const armLen = h * 0.3;
+  // Para FORA, e nao centrada no braco.
+  //
+  // O ombro esta a `h*0.1*w` do eixo e o torso tem raio `h*0.105*w`: uma boca
+  // larga centrada no braco cobre o corpo inteiro, e foi o que a primeira
+  // versao fez — a manga virou uma capa e engoliu a roupa toda. Deslocada para
+  // fora, a borda de dentro passa RENTE ao tronco e a silhueta fica ao lado.
+  const paraFora = h * 0.052 * w;
+  const bocaR = h * 0.068 * w;
+
+  const corpo = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.045 * w, bocaR, armLen * 1.1, 14, 1, true),
+    toon(P.waEscuro, { doubleSide: true }),
+  );
+  corpo.position.set(paraFora * 0.45, -armLen * 0.48, 0);
+  corpo.scale.z = 0.78;
+  g.add(corpo);
+
+  // a aba que cai abaixo da mao, o pedaco mais marcante da silhueta
+  const aba = new THREE.Mesh(
+    new THREE.CylinderGeometry(bocaR, bocaR * 0.86, armLen * 0.5, 14, 1, true),
+    toon(P.waEscuro, { doubleSide: true }),
+  );
+  aba.position.set(paraFora, -armLen * 1.28, 0);
+  aba.scale.z = 0.78;
+  g.add(aba);
+
+  // punho branco de babado na boca
+  const punho = babado(bocaR * 0.9, h * 0.024, P.waBranco, 0.78);
+  punho.position.set(paraFora, -armLen * 1.52, 0);
+  g.add(punho);
+
+  return g;
+}
+
+/**
+ * Meia branca de coxa, com a liga rosa.
+ *
+ * REFERENCIAL: o pivo da perna, y = 0 no quadril — o mesmo do cano da bota.
+ * A meia e uma peca de PERNAS, entao a cor da propria perna ja vem da ficha; o
+ * que esta aqui e so o que a cor nao da: a liga e a barra de renda.
+ */
+function meiaDeCoxa(m: MedidasCorpo): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const alturaDaMeia = -m.legH * 0.28;
+
+  // a barra da meia, um pouco mais grossa que a perna
+  const barra = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.047 * w, h * 0.047 * w, h * 0.022, 14, 1, true),
+    toon(P.waBranco, { doubleSide: true }),
+  );
+  barra.position.y = alturaDaMeia;
+  g.add(barra);
+
+  // a liga rosa logo acima
+  const liga = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.049 * w, h * 0.049 * w, h * 0.014, 14, 1, true),
+    toon(P.waRosaForte, { doubleSide: true }),
+  );
+  liga.position.y = alturaDaMeia + h * 0.026;
+  g.add(liga);
+
+  const lacinho = laco(h * 0.013, P.waRosaForte);
+  lacinho.position.set(0, alturaDaMeia + h * 0.026, h * 0.05 * w);
+  g.add(lacinho);
+
+  return g;
+}
+
+/**
  * Gargantilha de laco, a que aparece no pescoco da vitrine.
  *
  * REFERENCIAL: a cabeca, y = 0 no centro do cranio — por isso os numeros sao
@@ -722,4 +1013,7 @@ function gargantilhaDeLaco(m: MedidasCorpo): THREE.Object3D {
 // As FICHAS das pecas moram em `itens.ts`, junto com o resto do acervo: peca de
 // roupa e item como qualquer outro, e mora numa vaga de vestimenta do
 // inventario. Aqui fica so o corpo delas.
-export { gorroDeLa, canoDaBota, vestidoRosa, gargantilhaDeLaco, vestidoMarinheiro, vestidoGatinho };
+export {
+  gorroDeLa, canoDaBota, vestidoRosa, gargantilhaDeLaco,
+  vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
+};

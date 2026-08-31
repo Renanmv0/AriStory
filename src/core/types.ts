@@ -144,14 +144,28 @@ export interface ItemDef {
    *
    * O REFERENCIAL muda por slot, e e o que a fabrica precisa saber:
    * - `cabeca` nasce dentro da cabeca, com y = 0 no centro do cranio;
-   * - `pes` nasce no pivo da perna, com y = 0 no quadril;
-   * - `tronco` e `pernas` nascem no corpo, com y = 0 no CHAO — e onde a
-   *   jaqueta e o calcao de banho ja moram.
+   * - `pernas` e `pes` nascem no pivo da perna, com y = 0 no quadril;
+   * - `tronco` nasce no corpo, com y = 0 no CHAO — e onde a jaqueta e o
+   *   calcao de banho ja moram.
    *
    * Devolve uma malha NOVA a cada chamada — o mesmo `Object3D` nao pode ter
    * dois pais, e o slot `pes` pendura uma copia em cada perna.
    */
   extra?(m: MedidasCorpo): THREE.Object3D;
+  /**
+   * Geometria pendurada em CADA BRACO, uma copia por lado.
+   *
+   * Existe porque manga grande nao pode morar no corpo: uma manga de quimono
+   * cai bem abaixo da mao, e parada enquanto o braco balanca ela denuncia na
+   * primeira passada. Pendurada no pivo do braco ela acompanha o movimento.
+   *
+   * E seguro pelo mesmo motivo que o patins e: ele ja e filho do pivo da
+   * PERNA. Virar filho de um pivo nao o recria nem o move — recriar membro
+   * continua sendo a unica coisa proibida.
+   *
+   * REFERENCIAL: o pivo do braco, y = 0 no ombro, com o braco pendendo em -Y.
+   */
+  extraBraco?(m: MedidasCorpo): THREE.Object3D;
   /**
    * Deixa o braco nu: a manga vira pele em vez da cor da peca.
    *

@@ -3,7 +3,7 @@ import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { copoDeSuco, frisbee, iceCream } from './props';
 import {
-  canoDaBota, gargantilhaDeLaco, gorroDeLa,
+  canoDaBota, gargantilhaDeLaco, gorroDeLa, maidJapones, mangaDeQuimono, meiaDeCoxa,
   vestidoGatinho, vestidoMarinheiro, vestidoRosa,
 } from './roupas';
 
@@ -143,6 +143,31 @@ export const ITENS = {
     nota: 'com guizo e cara de gato',
     pernasNuas: true,
     extra: vestidoGatinho,
+  },
+  maidJapones: {
+    id: 'maid-japones',
+    nome: 'Maid japonês',
+    icone: '🌸',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.waRosa,
+    // a manga da ficha some por baixo da manga de quimono, entao ela fica na
+    // cor do quimono para nao aparecer uma faixa estranha no ombro
+    corDetalhe: P.waRosa,
+    nota: 'manga de quimono e festão de corações',
+    pernasNuas: true,
+    extra: maidJapones,
+    extraBraco: mangaDeQuimono,
+  },
+  meiaDeCoxa: {
+    id: 'meia-de-coxa',
+    nome: 'Meia de coxa',
+    icone: '🧦',
+    tipo: 'vestivel',
+    slot: 'pernas',
+    cor: P.waBranco,
+    nota: 'com a liga rosa',
+    extra: meiaDeCoxa,
   },
   gargantilhaDeLaco: {
     id: 'gargantilha-laco',

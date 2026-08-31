@@ -969,7 +969,10 @@ export class CharacterRig {
   private mostraPele(slot: SlotRoupa, parte: 'principal' | 'detalhe'): boolean {
     for (const peca of Object.values(this.roupa)) {
       if (!peca) continue;
-      if (peca.pernasNuas && slot === 'pernas') return true;
+      // "perna nua" quer dizer que o VESTIDO nao cobre a perna — nao que nada
+      // possa cobrir. Uma meia vestida ganha da marca, senao o vestido
+      // apagaria a meia que veio junto com ele no mesmo conjunto.
+      if (peca.pernasNuas && slot === 'pernas' && !this.roupa.pernas) return true;
       // a manga e o `detalhe` do tronco; o torso continua vestido
       if (peca.bracosNus && slot === 'tronco' && parte === 'detalhe') return true;
     }
@@ -1010,8 +1013,10 @@ export class CharacterRig {
    * Onde ela entra nao e detalhe — cada slot pendura no ponto que ja tem dono:
    *
    * - `cabeca` na cabeca, onde o chapeu de campeao mora;
-   * - `pes` nos pivos das pernas, onde o patins mora, uma copia em cada;
-   * - `tronco` e `pernas` no CORPO, onde a jaqueta e o calcao de banho moram.
+   * - `pernas` e `pes` nos pivos das pernas, onde o patins mora, uma copia em
+   *   cada, para dobrarem junto com a perna;
+   * - `tronco` no CORPO, onde a jaqueta e o calcao de banho moram;
+   * - e o `extraBraco`, quando houver, nos dois pivos de braco.
    *
    * O corpo nao e pivo de membro: ele so gira um pouco em X e sobe e desce em
    * Y. Uma saia pendurada nele acompanha o quadril e nao encosta na matematica
@@ -1021,16 +1026,28 @@ export class CharacterRig {
    * cabeca: um vestido teria nascido no pescoco.
    */
   private porExtras(slot: SlotRoupa, peca: ItemDef): void {
-    if (!peca.extra) return;
-    const pais: THREE.Object3D[] =
-      slot === 'pes' ? [this.legL, this.legR]
-      : slot === 'cabeca' ? [this.head]
-      : [this.body];
+    if (!peca.extra && !peca.extraBraco) return;
+    const pais: Array<[THREE.Object3D, 'corpo' | 'braco']> = [];
+    if (peca.extra) {
+      const onde: THREE.Object3D[] =
+        // pernas E pes vao para os pivos das pernas, uma copia em cada: a liga
+        // de uma meia tem que dobrar junto com a coxa, igual ao cano da bota
+        slot === 'pes' || slot === 'pernas' ? [this.legL, this.legR]
+        : slot === 'cabeca' ? [this.head]
+        : [this.body];
+      for (const o of onde) pais.push([o, 'corpo']);
+    }
+    // a manga vai no PIVO do braco, para acompanhar o balanco
+    if (peca.extraBraco) {
+      pais.push([this.armL, 'braco'], [this.armR, 'braco']);
+    }
     const postos: THREE.Object3D[] = [];
-    for (const pai of pais) {
+    for (const [pai, tipo] of pais) {
       // uma malha NOVA por pai: o mesmo Object3D nao pode ter dois pais, que e
       // a mesma razao de `modeloDoItem` nunca devolver a mesma instancia
-      const obj = peca.extra(this.medidas);
+      const obj = tipo === 'braco'
+        ? peca.extraBraco!(this.medidas)
+        : peca.extra!(this.medidas);
       // etiqueta para o teste conseguir dizer o que cada corpo esta vestindo
       obj.userData.roupa = peca.id;
       // o `traverse` que liga sombra roda no CONSTRUTOR, entao nada criado

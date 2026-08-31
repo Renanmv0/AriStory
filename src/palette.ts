@@ -74,6 +74,13 @@ export const PALETTE = {
   maidCreme: 0xfaf6ee,
   maidFita: 0x17161c,
   maidLacoVermelho: 0xc23444,
+  // o wa-maid da ilustracao: o preto dele puxa para o roxo, e sao dois rosas —
+  // o claro do quimono e o forte da fita e das fivelas
+  waRosa: 0xf0b6c8,
+  waRosaForte: 0xd9738f,
+  waEscuro: 0x3b3547,
+  waBranco: 0xfdfaf5,
+  waFivela: 0xb9b6c0,
 
   // ui / afeto
   heart: 0xff6b8b,
