@@ -152,9 +152,14 @@ export class CharacterRig {
   private readonly extras = new Map<SlotRoupa, THREE.Object3D[]>();
   private readonly medidas: MedidasCorpo;
   /**
-   * Peças de tronco da FICHA que uma camisa do acervo cobre: a listra, o casco
-   * da jaqueta e o capuz. Sem isto, vestir uma camisa no Renan repinta o torso
-   * e o moletom continua por cima, tapando tudo.
+   * Peças de tronco da FICHA que uma roupa do acervo cobre.
+   *
+   * A listra, o casco da jaqueta e o capuz — sem isto, vestir uma camisa no
+   * Renan repinta o torso e o moletom continua por cima, tapando tudo. E também
+   * o laço e o cinto do Ari: sobre um vestido rosa, um laço preto e uma
+   * correntinha de estrela ficariam flutuando sem dono.
+   *
+   * A mochila NÃO entra: mochila por cima de roupa é acessório, não conflito.
    */
   private readonly sobreTronco: THREE.Object3D[] = [];
   /** o cabelo inteiro, para um gorro poder achatá-lo */
@@ -777,6 +782,7 @@ export class CharacterRig {
       laco.position.set(0, shoulderY - torsoH * 0.1, raioTorso * 0.86);
       this.body.add(laco);
       this.soVestido.push(laco);
+      this.sobreTronco.push(laco);
     }
 
     if (acc.includes('cinto')) {
@@ -792,6 +798,7 @@ export class CharacterRig {
       tira.scale.z = 0.84;
       this.body.add(tira);
       this.soVestido.push(tira);
+      this.sobreTronco.push(tira);
 
       const fivela = new THREE.Mesh(
         new THREE.BoxGeometry(h * 0.032, h * 0.03, h * 0.012),
@@ -800,6 +807,7 @@ export class CharacterRig {
       fivela.position.set(0, cintura, raioTorso * 0.9);
       this.body.add(fivela);
       this.soVestido.push(fivela);
+      this.sobreTronco.push(fivela);
 
       // correntinha com estrela, do jeito que aparece na referencia
       const corrente = new THREE.Mesh(
@@ -810,12 +818,14 @@ export class CharacterRig {
       corrente.rotation.set(0, -0.7, Math.PI);
       this.body.add(corrente);
       this.soVestido.push(corrente);
+      this.sobreTronco.push(corrente);
 
       const pingente = estrela(h * 0.016, h * 0.004, toon(0xd8d4cc));
       pingente.position.set(raioTorso * 0.76, cintura - h * 0.05, raioTorso * 0.66);
       pingente.rotation.y = -0.7;
       this.body.add(pingente);
       this.soVestido.push(pingente);
+      this.sobreTronco.push(pingente);
     }
 
     if (acc.includes('mochila')) {
@@ -904,6 +914,13 @@ export class CharacterRig {
         t.mesh.material = t.banho;
         continue;
       }
+      // A pele a mostra e decidida pelo LOADOUT INTEIRO, nao pela peca daquele
+      // slot: quem manda deixar a perna nua e o vestido, que mora no tronco.
+      // `t.banho` ja e `toon(spec.skin)` — a mesma pele do traje de banho.
+      if (this.mostraPele(t.slot, t.parte)) {
+        t.mesh.material = t.banho;
+        continue;
+      }
       const peca = this.roupa[t.slot];
       if (!peca) {
         t.mesh.material = t.normal;
@@ -944,6 +961,22 @@ export class CharacterRig {
   }
 
   /**
+   * Esta parte do corpo fica nua?
+   *
+   * Varre o loadout inteiro porque a marca mora numa peca e o efeito cai em
+   * outra parte: o vestido e do tronco e e ele que deixa a PERNA nua.
+   */
+  private mostraPele(slot: SlotRoupa, parte: 'principal' | 'detalhe'): boolean {
+    for (const peca of Object.values(this.roupa)) {
+      if (!peca) continue;
+      if (peca.pernasNuas && slot === 'pernas') return true;
+      // a manga e o `detalhe` do tronco; o torso continua vestido
+      if (peca.bracosNus && slot === 'tronco' && parte === 'detalhe') return true;
+    }
+    return false;
+  }
+
+  /**
    * Veste o loadout inteiro de uma vez.
    *
    * O diff e POR SLOT: um slot que nao mudou nao derruba nem reconstroi nada.
@@ -974,15 +1007,25 @@ export class CharacterRig {
   /**
    * Pendura a geometria da peca.
    *
-   * Onde ela entra nao e detalhe: a peca vira FILHA da cabeca ou dos pivos de
-   * perna — os mesmos pontos onde o chapeu de campeao e o patins ja moram —
-   * para andar junto com a animacao sem que ninguem toque nos pivos.
+   * Onde ela entra nao e detalhe — cada slot pendura no ponto que ja tem dono:
+   *
+   * - `cabeca` na cabeca, onde o chapeu de campeao mora;
+   * - `pes` nos pivos das pernas, onde o patins mora, uma copia em cada;
+   * - `tronco` e `pernas` no CORPO, onde a jaqueta e o calcao de banho moram.
+   *
+   * O corpo nao e pivo de membro: ele so gira um pouco em X e sobe e desce em
+   * Y. Uma saia pendurada nele acompanha o quadril e nao encosta na matematica
+   * de rotacao da perna — que continua sendo a unica coisa proibida aqui.
+   *
+   * Antes isto era um ternario de duas vias e TUDO que nao fosse `pes` caia na
+   * cabeca: um vestido teria nascido no pescoco.
    */
   private porExtras(slot: SlotRoupa, peca: ItemDef): void {
     if (!peca.extra) return;
-    const pais: THREE.Object3D[] = slot === 'pes'
-      ? [this.legL, this.legR]
-      : [this.head];
+    const pais: THREE.Object3D[] =
+      slot === 'pes' ? [this.legL, this.legR]
+      : slot === 'cabeca' ? [this.head]
+      : [this.body];
     const postos: THREE.Object3D[] = [];
     for (const pai of pais) {
       // uma malha NOVA por pai: o mesmo Object3D nao pode ter dois pais, que e

@@ -35,6 +35,7 @@ const ARMARIO = { x: 2.65, z: z0 + 0.36 };
 /** o que mora dentro do armário */
 const ROUPAS_DO_ARMARIO = [
   ITENS.gorroDeLa, ITENS.camisaListrada, ITENS.calcaJeans, ITENS.botaAmarela,
+  ITENS.vestidoRosa, ITENS.gargantilhaDeLaco,
 ];
 
 export const quarto: SceneDef = {

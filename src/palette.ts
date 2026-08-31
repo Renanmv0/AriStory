@@ -63,6 +63,11 @@ export const PALETTE = {
   roupaJeans: 0x3f5a86,
   roupaBota: 0xffc94d,
   roupaBotaCano: 0x8a5a2a,
+  // o vestido da vitrine: rosa bem lavado, renda quase branca e a fita um tom
+  // acima, que e o que separa o laco do resto na foto
+  vestidoRosa: 0xf6d3d8,
+  vestidoRenda: 0xfdf7f0,
+  vestidoFita: 0xf0aebd,
 
   // ui / afeto
   heart: 0xff6b8b,

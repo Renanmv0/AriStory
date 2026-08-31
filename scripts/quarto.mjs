@@ -154,6 +154,10 @@ const inventario = await page.evaluate(() => ({
 await page.screenshot({ path: `${OUT}-painel.png` });
 
 // veste a primeira peça guardada e confere que ela foi para a vaga do CORPO
+// Quantas peças o armário guarda é decisão da CENA e já mudou de 4 para 6.
+// O teste mede a partir do que ele mesmo viu chegar, e não de um número
+// cravado — o que ele guarda é a regra, não o tamanho do acervo.
+const NO_ARMARIO = inventario.mao.filter(Boolean).length;
 const antes = await page.locator('.armario .peca').count();
 // a camisa de propósito: ela é o caminho SÓ-COR, sem geometria própria
 await page.locator('.armario .peca', { hasText: 'Camisa' }).first().click();
@@ -293,18 +297,18 @@ const ok =
   // seu corpo (gorro na 0 = cabeça, bota na 3 = pés) e o resto na mochila
   // o armário ENTREGA em vez de vestir: as 4 chegam na mochila e o corpo
   // começa vazio, para haver o que escolher no painel
-  inventario.mao.filter(Boolean).length === 4 &&
+  NO_ARMARIO >= 4 &&
   inventario.vestindo.filter(Boolean).length === 0 &&
-  antes === 4 &&
+  antes === NO_ARMARIO &&
   // vestir pelo painel põe na vaga certa, e o corpo obedece
   vestido[1] === 'camisa-listrada' &&
   noCorpo.cores['tronco:principal'] === '#4a7fe0' &&
   // tirar DEVOLVE para a mochila, não joga fora: o total continua 4
-  depoisDeTirar.mao === 4 && depoisDeTirar.vestindo === 0 &&
+  depoisDeTirar.mao === NO_ARMARIO && depoisDeTirar.vestindo === 0 &&
   // o armário abastece OS DOIS: o parceiro tem as 4 peças sem nunca ter aberto
-  doParceiroAntes.mao === 4 &&
+  doParceiroAntes.mao === NO_ARMARIO &&
   // o T troca o dono do painel sem fechá-lo
-  depoisDoT.aindaAberto && depoisDoT.pecas === 4 &&
+  depoisDoT.aindaAberto && depoisDoT.pecas === NO_ARMARIO &&
   /Renan/.test(depoisDoT.dono ?? '') &&
   depoisDoT.controlando === 'renan' &&
   // e os DOIS ficam vestidos ao mesmo tempo, cada um com a sua peça

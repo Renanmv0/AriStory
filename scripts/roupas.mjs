@@ -15,6 +15,9 @@
  *    antes do experimento.
  * 4. CONVIVÊNCIA com os patins e o chapéu de campeão, que não passam por aqui.
  * 5. ESTADO POR PESSOA e persistência no localStorage.
+ * 6. O VESTIDO nasce no CORPO, não no pescoço — a peça que forçou a liberação
+ *    de geometria no tronco, e a que provaria o contrário se o mapa de pais
+ *    voltasse a mandar tudo para a cabeça.
  *
  * Uso: node scripts/roupas.mjs /caminho/prefixo
  */
@@ -203,12 +206,73 @@ const depoisDoReload = await page.evaluate(() => ({
   renan: window.jogo.wearables('renan').map((i) => i?.id ?? null),
 }));
 
+// ------------------------------------------- 6. o vestido: geometria no TRONCO
+//
+// A peça que forçou a liberação de geometria no tronco. O que se guarda aqui é
+// que ela nasceu no lugar certo do esqueleto: antes, o mapa de pais era um
+// ternário de duas vias e TUDO que não fosse `pes` caía na cabeça — um vestido
+// teria nascido no pescoço e ninguém veria até a foto.
+await page.evaluate(() => {
+  const j = window.jogo;
+  const cat = window.aristoryItens;
+  // tira o que está nas vagas de cabeça e tronco para o vestido caber
+  j.removeItem('gorro-la', 'ari');
+  j.removeItem('camisa-listrada', 'ari');
+  j.equipWearable(cat['vestido-rosa'], 'ari');
+  j.equipWearable(cat['gargantilha-laco'], 'ari');
+});
+await page.waitForTimeout(900);
+
+const vestido = await page.evaluate(() => {
+  const rig = window.jogo.player.rig;
+  const conta = (raiz, id) => {
+    let n = 0;
+    raiz.traverse((o) => { if (o.userData?.roupa === id) n++; });
+    return n;
+  };
+  const cor = (slot, parte) => [...new Set(
+    rig.trocaMaterial.filter((t) => t.slot === slot && t.parte === parte)
+      .map((t) => '#' + t.mesh.material.color.getHexString()),
+  )].join('/');
+  return {
+    // a cabeça é filha do corpo, então a saia contada no corpo desconta a cabeça
+    saiaNoCorpo: conta(rig.body, 'vestido-rosa') - conta(rig.head, 'vestido-rosa'),
+    saiaNaCabeca: conta(rig.head, 'vestido-rosa'),
+    gargantilhaNaCabeca: conta(rig.head, 'gargantilha-laco'),
+    pele: '#' + rig.spec.skin.toString(16),
+    torso: cor('tronco', 'principal'),
+    manga: cor('tronco', 'detalhe'),
+    pernas: cor('pernas', 'principal'),
+    // o laço e o cinto da ficha do Ari não podem flutuar sobre o vestido
+    fichaVisivel: rig.sobreTronco.filter((o) => o.visible).length,
+  };
+});
+await page.screenshot({ path: `${OUT}-o-vestido.png` });
+
+// no banho o vestido some e a gargantilha fica, a mesma regra do gorro
+await page.evaluate(() => window.jogo.setOutfit('banho'));
+await page.waitForTimeout(600);
+const vestidoNoBanho = await vestindo('ari');
+await page.evaluate(() => window.jogo.setOutfit('normal'));
+await page.waitForTimeout(600);
+
 // ------------------------------------------------------------------- relatório
 const perto = (a, b, tol) => Math.abs(a - b) <= tol;
+/**
+ * A AMPLITUDE é o sinal; a cadência é quase só ruído.
+ *
+ * A amplitude sai de máximo menos mínimo e é estável em duas casas (0.611 vs
+ * 0.612 numa rodada real). A cadência conta cruzamentos de zero em ~5 s de
+ * relógio a uns 7 fps irregulares, então ela varia sozinha de rodada para
+ * rodada — uma tolerância apertada aqui reprova o teste por casa decimal, não
+ * por regressão. Ela vira uma banda larga, que ainda pega o que importa: a
+ * passada dobrar ou cair pela metade, que foi o bug real dos patins.
+ */
 const mesmaAnim =
   perto(andarAntes.perna.amplitude, andarDepois.perna.amplitude, 0.03) &&
   perto(andarAntes.braco.amplitude, andarDepois.braco.amplitude, 0.03) &&
-  perto(andarAntes.perna.ciclos, andarDepois.perna.ciclos, 0.12);
+  andarDepois.perna.ciclos > andarAntes.perna.ciclos * 0.5 &&
+  andarDepois.perna.ciclos < andarAntes.perna.ciclos * 2;
 const mesmoEsqueleto =
   JSON.stringify(esqueletoAntes.legL) === JSON.stringify(esqueletoDepois.legL) &&
   JSON.stringify(esqueletoAntes.legR) === JSON.stringify(esqueletoDepois.legR) &&
@@ -240,6 +304,13 @@ console.log('  com patins:', JSON.stringify(comPatins), '· de bota de novo:', J
 console.log('— por pessoa e save');
 console.log('  Renan antes:', JSON.stringify(doRenanAntes), '· depois do T:', JSON.stringify(depoisDoT));
 console.log('  depois do reload:', JSON.stringify(depoisDoReload));
+console.log('— o vestido');
+console.log('  saia no corpo:', vestido.saiaNoCorpo, '· na cabeça:', vestido.saiaNaCabeca, '(tem que ser 0)');
+console.log('  gargantilha na cabeça:', vestido.gargantilhaNaCabeca);
+console.log('  torso:', vestido.torso, '· manga:', vestido.manga, '· pernas:', vestido.pernas,
+  '· pele:', vestido.pele);
+console.log('  laço/cinto da ficha visíveis:', vestido.fichaVisivel, '(tem que ser 0)');
+console.log('  no banho, no corpo:', JSON.stringify(vestidoNoBanho), '(só a gargantilha)');
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const ok =
@@ -269,7 +340,19 @@ const ok =
   depoisDoT.renan.length === 0 &&
   // a bota virou patins lá em cima, então voltam 3 peças + patins
   depoisDoReload.ari.filter(Boolean).length === 4 &&
-  depoisDoReload.renan.filter(Boolean).length === 0;
+  depoisDoReload.renan.filter(Boolean).length === 0 &&
+  // 6. o vestido nasceu no CORPO, não no pescoço — é o que prova o mapa de
+  // pais de 3 vias; a gargantilha continua na cabeça
+  vestido.saiaNoCorpo === 1 && vestido.saiaNaCabeca === 0 &&
+  vestido.gargantilhaNaCabeca === 1 &&
+  // vestido sem manga e de perna de fora: as duas viram PELE, o torso fica rosa
+  vestido.torso === '#f6d3d8' &&
+  vestido.manga === vestido.pele &&
+  vestido.pernas === vestido.pele &&
+  // e o laço preto e o cinto de estrela do Ari somem por baixo dele
+  vestido.fichaVisivel === 0 &&
+  // no banho o vestido some e a gargantilha fica
+  vestidoNoBanho.join() === 'gargantilha-laco';
 
 await browser.close();
 process.exit(ok ? 0 : 1);

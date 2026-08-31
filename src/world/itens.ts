@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { copoDeSuco, frisbee, iceCream } from './props';
-import { canoDaBota, gorroDeLa } from './roupas';
+import { canoDaBota, gargantilhaDeLaco, gorroDeLa, vestidoRosa } from './roupas';
 
 /**
  * O catalogo de itens do jogo.
@@ -100,6 +100,30 @@ export const ITENS = {
     slot: 'pernas',
     cor: P.roupaJeans,
     nota: 'a de sempre',
+  },
+  vestidoRosa: {
+    id: 'vestido-rosa',
+    nome: 'Vestido rosa de babados',
+    icone: '👗',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.vestidoRosa,
+    corDetalhe: P.vestidoRenda,
+    nota: 'da vitrine que o Renan viu',
+    // sem manga e com a perna de fora, como na foto
+    bracosNus: true,
+    pernasNuas: true,
+    extra: vestidoRosa,
+  },
+  gargantilhaDeLaco: {
+    id: 'gargantilha-laco',
+    nome: 'Gargantilha de laço',
+    icone: '🎀',
+    tipo: 'vestivel',
+    slot: 'cabeca',
+    cor: P.vestidoFita,
+    nota: 'combina com o vestido',
+    extra: gargantilhaDeLaco,
   },
   botaAmarela: {
     id: 'bota-amarela',

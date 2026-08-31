@@ -138,15 +138,30 @@ export interface ItemDef {
   /**
    * Geometria adicional no corpo.
    *
-   * SO `cabeca` e `pes` podem ter. Tronco e pernas se limitam a repintar as
-   * capsulas que ja existem: recriar um membro quebraria a matematica de
-   * rotacao da caminhada e da natacao, que depende dos pivos montados no
-   * construtor do rig.
+   * A peca entra como IRMA das pecas que ja existem, nunca recriando membro:
+   * a caminhada e a natacao dependem dos pivos montados no construtor do rig,
+   * e mexer neles e a unica coisa de fato proibida aqui.
+   *
+   * O REFERENCIAL muda por slot, e e o que a fabrica precisa saber:
+   * - `cabeca` nasce dentro da cabeca, com y = 0 no centro do cranio;
+   * - `pes` nasce no pivo da perna, com y = 0 no quadril;
+   * - `tronco` e `pernas` nascem no corpo, com y = 0 no CHAO — e onde a
+   *   jaqueta e o calcao de banho ja moram.
    *
    * Devolve uma malha NOVA a cada chamada — o mesmo `Object3D` nao pode ter
    * dois pais, e o slot `pes` pendura uma copia em cada perna.
    */
   extra?(m: MedidasCorpo): THREE.Object3D;
+  /**
+   * Deixa o braco nu: a manga vira pele em vez da cor da peca.
+   *
+   * Para top sem manga e vestido de alca. Nao da para a ficha dizer "cor de
+   * pele" — a pele e de cada personagem (`spec.skin`), nao da peca —, entao
+   * quem resolve e o rig, reaproveitando o material que o traje de banho ja usa.
+   */
+  bracosNus?: boolean;
+  /** Idem para a perna: vestido, saia e short. */
+  pernasNuas?: boolean;
   /**
    * Como o personagem segura isto na mao.
    *
