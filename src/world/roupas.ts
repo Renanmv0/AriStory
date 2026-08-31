@@ -921,26 +921,34 @@ function mangaDeQuimono(m: MedidasCorpo): THREE.Object3D {
   const paraFora = h * 0.052 * w;
   const bocaR = h * 0.068 * w;
 
+  // ATE ONDE ELA DESCE, que e a medida que mais se erra aqui.
+  //
+  // O ombro esta a `legH + torsoH*0.86` do chao e a mao a `armLen*0.92` abaixo
+  // dele. A primeira versao levava a boca a `1.52 x armLen`, o que no Ari poe a
+  // barra em y ≈ 0,13 — quase raspando o chao. Ela para em `1.2`, um palmo
+  // abaixo da mao, que e a meia-coxa das referencias.
+  const ATE = 1.2;
+
   const corpo = new THREE.Mesh(
-    new THREE.CylinderGeometry(h * 0.045 * w, bocaR, armLen * 1.1, 14, 1, true),
+    new THREE.CylinderGeometry(h * 0.045 * w, bocaR, armLen * 0.94, 14, 1, true),
     toon(P.waEscuro, { doubleSide: true }),
   );
-  corpo.position.set(paraFora * 0.45, -armLen * 0.48, 0);
+  corpo.position.set(paraFora * 0.45, -armLen * 0.44, 0);
   corpo.scale.z = 0.78;
   g.add(corpo);
 
   // a aba que cai abaixo da mao, o pedaco mais marcante da silhueta
   const aba = new THREE.Mesh(
-    new THREE.CylinderGeometry(bocaR, bocaR * 0.86, armLen * 0.5, 14, 1, true),
+    new THREE.CylinderGeometry(bocaR, bocaR * 0.86, armLen * 0.38, 14, 1, true),
     toon(P.waEscuro, { doubleSide: true }),
   );
-  aba.position.set(paraFora, -armLen * 1.28, 0);
+  aba.position.set(paraFora, -armLen * (ATE - 0.19), 0);
   aba.scale.z = 0.78;
   g.add(aba);
 
   // punho branco de babado na boca
   const punho = babado(bocaR * 0.9, h * 0.024, P.waBranco, 0.78);
-  punho.position.set(paraFora, -armLen * 1.52, 0);
+  punho.position.set(paraFora, -armLen * ATE, 0);
   g.add(punho);
 
   return g;
