@@ -333,8 +333,12 @@ export interface GameAPI {
   keyPressed(code: string): boolean;
   /** true enquanto a tecla estiver segurada; ignorada durante dialogo/diario */
   keyDown(code: string): boolean;
-  /** barra de forca no HUD; 0..1, ou null para esconder */
-  showCharge(valor: number | null): void;
+  /**
+   * Barra de forca no HUD; 0..1, ou null para esconder. `alvo` marca um ponto
+   * da barra (a forca que acerta o parceiro) e `zona` e a largura da faixa de
+   * acerto em volta dele.
+   */
+  showCharge(valor: number | null, alvo?: number | null, zona?: number): void;
   /** posicao atual do jogador */
   playerPosition(): THREE.Vector3;
   /** angulo para onde o jogador esta olhando, em radianos */

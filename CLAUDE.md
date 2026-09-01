@@ -48,6 +48,7 @@ node scripts/mecanicas.mjs /tmp/mec     # escolha, cena do sofa e frisbee
 node scripts/beijo.mjs   /tmp/beijo # o beijo da dupla e os coracoes
 node scripts/quiosque.mjs /tmp/q    # de perto: sorveteria, bilheteria e bar
 node scripts/frisbee.mjs /tmp/fr    # o passe de volta do parceiro, medido
+node scripts/forca.mjs   /tmp/fo    # a barra de forca: mais tempo, mais longe
 node scripts/menu.mjs    /tmp/menu  # o menu e o recomecar do zero
 node scripts/audio.mjs             # o som acorda e cada acao dispara o seu efeito
 node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para ouvir

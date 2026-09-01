@@ -1350,6 +1350,92 @@ export function discGolfBasket(cor: number = P.metalGrey): THREE.Group {
   return g;
 }
 
+/**
+ * Aro de frisbee: um alvo para acertar de longe.
+ *
+ * O buraco fica no eixo Z do grupo, entao `w.place(..., giro)` aponta o aro
+ * para o lado de onde o disco vem. `userData.aro` volta a rosca de fora, que a
+ * cena gira quando alguem acerta.
+ */
+export function aroDeFrisbee(cor: number = P.frisbee, altura = 1.9, raio = 0.62): THREE.Group {
+  const g = new THREE.Group();
+  const lado = raio + 0.34;
+
+  // o poste sai na cor do alvo, não em branco: branco em cima do alambrado
+  // branco desaparece, e alvo que não se vê não é alvo
+  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, altura + raio, 10), toon(cor));
+  poste.position.set(-lado, (altura + raio) / 2, 0);
+  g.add(poste);
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 0.12, 12), toon(P.metalGrey));
+  base.position.set(-lado, 0.06, 0);
+  g.add(base);
+
+  // o bracinho que segura o aro pelo lado
+  const braco = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.07, 0.07), toon(cor));
+  braco.position.set(-lado + 0.18, altura, 0);
+  g.add(braco);
+
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.06, 8, 26), toon(cor));
+  aro.position.y = altura;
+  g.add(aro);
+
+  // fitinhas penduradas: dao o vento e deixam o alvo visivel de longe
+  for (const a of [-0.9, -0.3, 0.3, 0.9]) {
+    const fita = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.34, 0.02), flat(P.gold));
+    fita.position.set(Math.sin(a) * raio, altura - Math.cos(a) * raio - 0.17, 0);
+    g.add(fita);
+  }
+
+  g.traverse((n) => {
+    const m = n as THREE.Mesh;
+    if (m.isMesh) m.castShadow = true;
+  });
+  g.userData.aro = aro;
+  return g;
+}
+
+/**
+ * A marca de onde o disco vai cair.
+ *
+ * Fica na grama, entao quem usa so mexe em `position.x/z` e em `scale`.
+ *
+ * Duas escolhas que parecem detalhe e nao sao. Primeiro, o anel e um TORO de
+ * verdade e nao um disco chapado: decalque coplanar com a grama perde a briga
+ * de profundidade com as linhas pintadas da quadra e simplesmente some — foi o
+ * que aconteceu na primeira versao. Segundo, a haste em pe: em camera
+ * isometrica um desenho deitado no chao se esconde atras de qualquer coisa e
+ * some na distancia, e a haste e o que faz a marca ser achada de relance.
+ */
+export function marcaDeMira(cor: number = P.frisbee): THREE.Group {
+  const g = new THREE.Group();
+  const mat = flat(cor, 0.92);
+
+  const anel = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.075, 8, 28), mat);
+  anel.rotation.x = -Math.PI / 2;
+  anel.position.y = 0.08;
+  g.add(anel);
+
+  const miolo = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.07, 14), mat);
+  miolo.position.y = 0.08;
+  g.add(miolo);
+
+  // quatro tracinhos nas pontas: dao o giro e ajudam a ler a distancia
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.36), mat);
+    risco.rotation.y = a;
+    risco.position.set(Math.sin(a) * 1.3, 0.08, Math.cos(a) * 1.3);
+    g.add(risco);
+  }
+
+  const haste = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.5, 0.07), mat);
+  haste.position.y = 0.75;
+  g.add(haste);
+
+  return g;
+}
+
 /** Placar de madeira da quadra. */
 export function scoreboard(): THREE.Group {
   const g = new THREE.Group();

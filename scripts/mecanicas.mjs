@@ -61,9 +61,10 @@ await page.waitForTimeout(400);
 await page.keyboard.press('KeyI');
 await page.waitForTimeout(600);
 
-// Carga curtinha de propósito: com F segurado o disco vai a 20+ unidades, e o
-// parceiro busca A PÉ. Em câmera lenta (headless roda o jogo a ~7 fps) uma ida
-// dessas passa de 10 s de relógio e o teste estourava o tempo antes da volta.
+// Toque em vez de carga: abaixo da carga mínima o jogo entende que foi um
+// tapinha e manda o passe limpo, direto na mão dele. Carregado o disco vai a
+// 20+ unidades e o parceiro tem que correr, e em câmera lenta (headless roda o
+// jogo a ~7 fps) uma ida dessas estoura o tempo do teste antes da volta.
 for (let i = 0; i < 4; i++) {
   await page.keyboard.down('KeyF');
   await page.waitForTimeout(120);

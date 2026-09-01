@@ -815,9 +815,9 @@ export class Game implements GameAPI {
     return this.input.isDown(code);
   }
 
-  showCharge(valor: number | null): void {
+  showCharge(valor: number | null, alvo?: number | null, zona?: number): void {
     this.audio.carga(valor);
-    this.ui.showCharge(valor);
+    this.ui.showCharge(valor, alvo, zona);
   }
 
   wait(seconds: number): Promise<void> {

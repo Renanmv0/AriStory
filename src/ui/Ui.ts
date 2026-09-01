@@ -76,7 +76,7 @@ export class Ui {
         <div class="toque">arraste para andar · ✨ interagir</div>
         <div class="toque">☰ tem a lista de controles</div>
       </div>
-      <div class="carga"><div class="barra"></div></div>
+      <div class="carga"><div class="barra"></div><i class="zona"></i><i class="alvo"></i></div>
       <div class="placar"><b class="eu"></b><span class="nums"></span><b class="ele"></b></div>
       <div class="prompt"><span class="icon">✨</span><span class="label"></span><span class="key">E</span></div>
       <div class="dialogue"><span class="who"></span><p class="text"></p><div class="escolhas"></div><span class="next">clique / E ▸</span></div>
@@ -110,7 +110,7 @@ export class Ui {
             <li><b>H</b><span>dar a mão para quem está com você</span></li>
             <li><b>I</b> <b>Tab</b><span>abrir a mochila</span></li>
             <li><b>J</b><span>abrir o diário de memórias</span></li>
-            <li><b>F</b><span>segurar para lançar o frisbee, na quadra</span></li>
+            <li><b>F</b><span>segurar para carregar o frisbee — solte no traço da barra</span></li>
             <li><b>roda</b><span>aproximar e afastar a câmera</span></li>
           </ul>
           <h3>No celular</h3>
@@ -388,8 +388,14 @@ export class Ui {
     this.placar.classList.add('show');
   }
 
-  /** Barra de forca do lancamento. `null` esconde. */
-  showCharge(valor: number | null): void {
+  /**
+   * Barra de forca do lancamento. `null` esconde.
+   *
+   * `alvo` e onde na barra o parceiro esta: sem ele a barra so enche, e a
+   * pessoa nao tem como saber quanta forca e a certa. A faixa em volta e a
+   * zona do passe perfeito, e a largura dela tem que bater com a da cena.
+   */
+  showCharge(valor: number | null, alvo?: number | null, zona = 0.06): void {
     if (valor === null) {
       this.carga.classList.remove('show');
       return;
@@ -397,6 +403,25 @@ export class Ui {
     this.carga.classList.add('show');
     const barra = this.carga.querySelector('.barra') as HTMLDivElement;
     barra.style.width = `${Math.max(0, Math.min(1, valor)) * 100}%`;
+
+    const marca = this.carga.querySelector('.alvo') as HTMLElement;
+    const faixa = this.carga.querySelector('.zona') as HTMLElement;
+    // fora da barra o alvo nao existe: e o caso de mirar para a grade que esta
+    // logo ali, em que nenhuma carga alcanca o parceiro
+    const vale = alvo != null && alvo > 0.02 && alvo < 0.99;
+    marca.style.display = vale ? 'block' : 'none';
+    faixa.style.display = vale ? 'block' : 'none';
+    if (!vale) {
+      // sem alvo nao ha zona certa: a moldura dourada tem que sair junto
+      this.carga.classList.remove('certa');
+      return;
+    }
+    const em = (v: number): string => `calc(3px + (100% - 6px) * ${Math.max(0, Math.min(1, v))})`;
+    marca.style.left = em(alvo);
+    faixa.style.left = em(alvo - zona);
+    faixa.style.right = `calc(3px + (100% - 6px) * ${1 - Math.max(0, Math.min(1, alvo + zona))})`;
+    const dentro = Math.abs(valor - alvo) <= zona;
+    this.carga.classList.toggle('certa', dentro);
   }
 
   // ---------------------------------------------------------------- toasts

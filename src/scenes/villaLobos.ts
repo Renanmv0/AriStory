@@ -5,9 +5,9 @@ import { FerrisWheel } from '../world/ferrisWheel';
 import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
-  bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
+  aroDeFrisbee, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
   cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
-  junco, kiosk, lamp, mesaPingPong, nenufar, picnicTable, raquete, skateShop,
+  junco, kiosk, lamp, marcaDeMira, mesaPingPong, nenufar, picnicTable, raquete, skateShop,
   rock, scoreboard, signBoard, textSign, tree, waterFountain, windsock,
   bolinhaPingPong,
 } from '../world/props';
@@ -605,14 +605,22 @@ export const villaLobos: SceneDef = {
     disco.onLand = () => g.som('quicar');
     w.root.add(disco.mesh);
 
+    // A marca de onde o disco vai cair, enquanto a barra enche. Sem ela
+    // "segure F" é adivinhação: não há como saber o que a barra vale em metros
+    // de grama.
+    const mira = marcaDeMira();
+    mira.visible = false;
+    mira.userData.mira = true; // é por aqui que o teste da força acha a marca
+    w.root.add(mira);
+
     /**
      * Frisbee de dois, dentro da quadra.
      *
      * O disco só existe na mão enquanto você está na quadra — fora dela some, e
-     * o Renan volta a andar do seu lado. Dentro, ele se posiciona do lado oposto
-     * e o lançamento é carregado: quanto mais tempo segurando F, mais longe o
-     * disco vai. A mira é para onde você está olhando, então errar o passe faz
-     * parte — ele corre atrás.
+     * o parceiro volta a andar do seu lado. Dentro, ele se posiciona do lado
+     * oposto e o lançamento é carregado: quanto mais tempo segurando F, mais
+     * longe o disco vai. A mira é para onde você está olhando, então errar o
+     * passe faz parte — ele corre atrás, agora com o disco ainda no ar.
      */
     type FaseDisco =
       | 'fora'
@@ -624,8 +632,14 @@ export const villaLobos: SceneDef = {
       | 'no-chao';
 
     const CARGA_CHEIA = 1.3; // segundos até a força total
-    const DIST_MIN = 6;
-    const DIST_MAX = 30;
+    /** abaixo disto foi um toque, não uma carga: vira passe limpo */
+    const CARGA_MINIMA = 0.12;
+    /** distância do arremesso mais fraco possível */
+    const DIST_MIN = 4;
+    /** nenhum lançamento passa disto, nem com a barra cheia */
+    const TETO = 22;
+    /** meia-largura da faixa do passe perfeito, na escala da barra */
+    const ZONA = 0.06;
 
     /**
      * O passe de volta do parceiro.
@@ -653,21 +667,188 @@ export const villaLobos: SceneDef = {
       mira: 0.12,
     };
 
-    // O disco não passa da grade: sem isso ele cai do lado de fora e o
-    // parceiro fica batendo no alambrado tentando alcançar.
+    /**
+     * Onde o disco deixa de existir.
+     *
+     * São os limites FINAIS: o `Frisbee` grampeia exatamente aqui, sem folga
+     * própria. Tem que ser assim, senão a barra prometeria uma distância que a
+     * grade não deixa cumprir — que era o bug. A escala antiga ia até 30 numa
+     * quadra de 26, então de 60% de carga para cima todo arremesso morria no
+     * mesmo alambrado e não havia força nenhuma para dosar.
+     */
     const LIMITES_QUADRA = {
-      minX: qx0 + 0.7,
-      minZ: qz0 + 0.7,
-      maxX: qx1 - 0.7,
-      maxZ: qz1 - 0.7,
+      minX: qx0 + 1.7,
+      minZ: qz0 + 1.7,
+      maxX: qx1 - 1.7,
+      maxZ: qz1 - 1.7,
     };
 
+    const limitar = (v: number, min: number, max: number): number =>
+      Math.max(min, Math.min(max, v));
+
+    /** diferença entre dois ângulos pelo caminho mais curto */
+    const desvioAngular = (a: number, b: number): number =>
+      Math.atan2(Math.sin(a - b), Math.cos(a - b));
+
+    /**
+     * Distância no chão, ignorando a altura.
+     *
+     * Quase toda medida aqui compara gente (y = 0) com o disco (y = 1 a 3), e
+     * `distanceTo` somaria essa altura: o passe pareceria um metro maior do
+     * que foi, e o recorde ficaria mentindo.
+     */
+    const noChao = (a: THREE.Vector3, b: THREE.Vector3): number =>
+      Math.hypot(a.x - b.x, a.z - b.z);
+
+    // ------------------------------------------------------- alvos da quadra
+    /**
+     * Aro ou cesta que vale ponto quando o disco passa por dentro.
+     *
+     * `recarga` faz dois papéis: é a comemoração (o aro girando) e a trava que
+     * impede um voo lento de contar duas vezes no mesmo buraco.
+     */
+    interface Alvo {
+      centro: THREE.Vector3;
+      raio: number;
+      pontos: number;
+      /** a rosca que gira quando acerta */
+      roda: THREE.Object3D | null;
+      recarga: number;
+    }
+
+    const alvos: Alvo[] = [];
+
+    const porAro = (
+      x: number, z: number, altura: number, pontos: number, cor: number,
+    ): void => {
+      // o buraco do aro fica no Z local, então a meia-volta aponta ele para o
+      // eixo em que a dupla troca passes
+      const peca = w.add(w.place(aroDeFrisbee(cor, altura), x, 0, z, Math.PI / 2));
+      w.blockCircle(x, z + 0.96, 0.36); // o poste
+      w.blockCircle(x, z, 0.75); // e o vão: ninguém fica de pé dentro do aro
+      alvos.push({
+        centro: new THREE.Vector3(x, altura, z),
+        raio: 0.58,
+        pontos,
+        roda: (peca.userData.aro as THREE.Object3D | undefined) ?? null,
+        recarga: 0,
+      });
+    };
+
+    // Os três ficam FORA da linha do meio, que é por onde os passes passam: um
+    // alvo em cima da linha de passe seria acertado sem querer o tempo todo, e
+    // ponto que cai sozinho não é ponto. Quanto mais alto, mais vale.
+    porAro(13, -9.4, 1.9, 1, P.frisbee);
+    porAro(23, 1.4, 2.1, 2, P.gold);
+    porAro(18, -0.6, 2.5, 3, P.frisbee);
+
+    /** distância do centro de um alvo ao trecho que o disco percorreu no quadro */
+    const distanciaAoTrecho = (a: THREE.Vector3, b: THREE.Vector3, p: THREE.Vector3): number => {
+      const abx = b.x - a.x;
+      const aby = b.y - a.y;
+      const abz = b.z - a.z;
+      const len2 = abx * abx + aby * aby + abz * abz;
+      if (len2 < 1e-8) return p.distanceTo(a);
+      const s = limitar(
+        ((p.x - a.x) * abx + (p.y - a.y) * aby + (p.z - a.z) * abz) / len2, 0, 1,
+      );
+      return Math.hypot(p.x - (a.x + abx * s), p.y - (a.y + aby * s), p.z - (a.z + abz * s));
+    };
+
+    /**
+     * O teste é contra o TRECHO do quadro, não contra a posição.
+     *
+     * Num quadro ruim o disco anda 0,75 — mais que o buraco do aro — e um teste
+     * de ponto simplesmente atravessaria o alvo sem ver.
+     */
+    const conferirAlvos = (de: THREE.Vector3, ate: THREE.Vector3): void => {
+      for (const alvo of alvos) {
+        if (alvo.recarga > 0) continue;
+        if (distanciaAoTrecho(de, ate, alvo.centro) > alvo.raio) continue;
+        alvo.recarga = 1.6;
+        g.som('sino');
+        g.bump('frisbee.alvos', alvo.pontos);
+        g.toast(`+${alvo.pontos} no alvo!`, '🎯');
+      }
+    };
+
+    const animarAlvos = (dt: number): void => {
+      for (const alvo of alvos) {
+        if (alvo.recarga <= 0) continue;
+        alvo.recarga = Math.max(0, alvo.recarga - dt);
+        if (alvo.roda) alvo.roda.rotation.z += dt * 9 * alvo.recarga;
+      }
+    };
+
+    // --------------------------------------------------------- estado do jogo
     let fase: FaseDisco = 'fora';
     let esperaDele = 0;
     let carga = 0;
     let carregando = false;
     let trocasNaSessao = 0;
     let ultimoPosto: { x: number; z: number } | null = null;
+    /** de onde saiu o último lançamento: é a régua do tamanho do passe */
+    const saidaDoPasse = new THREE.Vector3();
+    /** onde ele estava quando o disco saiu: mede o quanto teve que correr */
+    const posDeleNoLancamento = new THREE.Vector3();
+    /** o último lançamento saiu dentro da zona certa da barra */
+    let passePerfeito = false;
+    /** para onde ele corre para interceptar, e quanto falta para recalcular */
+    let alvoDaCorrida: THREE.Vector3 | null = null;
+    let recalcular = 0;
+    /** o sorteio da pegada é UM por voo, senão ele tentaria de novo a cada quadro */
+    let sorteado = false;
+    let vaiPegar = true;
+    /** giro do jogador no quadro anterior: é dele que sai a curva do disco */
+    let olharAnterior = 0;
+
+    /** uma fala curta no canto da tela; diálogo modal cortaria o jogo no meio */
+    const falar = (linhas: string[]): void => {
+      g.toast(linhas[Math.floor(Math.random() * linhas.length)], '💬');
+    };
+
+    /**
+     * Até onde dá para jogar nesta direção sem bater na grade.
+     *
+     * É o que faz a barra medir a QUADRA e não um número inventado: 100% de
+     * carga é sempre o último ponto útil daquele rumo.
+     */
+    const alcanceNaDirecao = (de: THREE.Vector3, ang: number): number => {
+      const dx = Math.sin(ang);
+      const dz = Math.cos(ang);
+      const tx =
+        dx > 0.001 ? (LIMITES_QUADRA.maxX - de.x) / dx
+        : dx < -0.001 ? (LIMITES_QUADRA.minX - de.x) / dx
+        : Infinity;
+      const tz =
+        dz > 0.001 ? (LIMITES_QUADRA.maxZ - de.z) / dz
+        : dz < -0.001 ? (LIMITES_QUADRA.minZ - de.z) / dz
+        : Infinity;
+      return limitar(Math.min(tx, tz) - 1, DIST_MIN + 3, TETO);
+    };
+
+    const distDaCarga = (de: THREE.Vector3, ang: number, c: number): number =>
+      DIST_MIN + (alcanceNaDirecao(de, ang) - DIST_MIN) * limitar(c, 0, 1);
+
+    /** o inverso: que pedaço da barra cai a esta distância */
+    const cargaParaDistancia = (de: THREE.Vector3, ang: number, dist: number): number => {
+      const alcance = alcanceNaDirecao(de, ang);
+      return limitar((dist - DIST_MIN) / Math.max(0.01, alcance - DIST_MIN), 0, 1);
+    };
+
+    /** quanta carga cai na mão dele; `null` quando ele está fora de alcance */
+    const cargaDoParceiro = (
+      de: THREE.Vector3, ang: number, ele: THREE.Vector3,
+    ): number | null => {
+      const c = cargaParaDistancia(de, ang, Math.hypot(ele.x - de.x, ele.z - de.z));
+      return c > 0.02 && c < 0.99 ? c : null;
+    };
+
+    /**
+     * Tapinha vira balão lento e fácil de agarrar; força total vira passe reto
+     * e rasteiro. É o que dá jeito a cada arremesso sem pedir tecla nova.
+     */
+    const arcoDaCarga = (c: number): number => 1.35 - 0.45 * limitar(c, 0, 1);
 
     const contarTroca = (api: typeof g, noAr: boolean): void => {
       api.som('pegar');
@@ -690,14 +871,19 @@ export const villaLobos: SceneDef = {
           icon: '🥏',
         });
       }
+
+      // a meta de verdade: dez SEGUIDAS, sem o disco encostar no chão
+      if (trocasNaSessao >= 10 && !api.flag('memoria-frisbee-dez')) {
+        api.setFlag('memoria-frisbee-dez');
+        api.unlock({
+          id: 'frisbee-dez',
+          title: 'Dez sem deixar cair',
+          place: 'Parque Villa Lobos',
+          note: 'Dez trocas seguidas e nenhuma no chão. A gente parou porque deu fome, não porque errou.',
+          icon: '🏆',
+        });
+      }
     };
-
-    const limitar = (v: number, min: number, max: number): number =>
-      Math.max(min, Math.min(max, v));
-
-    /** diferença entre dois ângulos pelo caminho mais curto */
-    const desvioAngular = (a: number, b: number): number =>
-      Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
     /** Onde o parceiro se planta para receber: lado oposto, dentro das linhas. */
     const postoDoParceiro = (eu: THREE.Vector3): { x: number; z: number } => {
@@ -711,6 +897,7 @@ export const villaLobos: SceneDef = {
     const soltarCarga = (): void => {
       carregando = false;
       carga = 0;
+      mira.visible = false;
       g.showCharge(null);
     };
 
@@ -745,7 +932,7 @@ export const villaLobos: SceneDef = {
       // que quebrou.
       g.toast(
         como === 'mao'
-          ? 'Segure F para lançar mais longe'
+          ? 'Segure F e solte no traço da barra'
           : 'Frisbee guardado — escolha ele na mochila (I)',
         '🥏',
       );
@@ -761,17 +948,40 @@ export const villaLobos: SceneDef = {
       g.freeCompanion();
       g.setZoom(14);
       ultimoPosto = null;
+      alvoDaCorrida = null;
     };
 
-    const lancar = (forca: number): void => {
+    /**
+     * @param forca 0..1 da barra
+     * @param curva aceleração lateral; sai do quanto o jogador estava girando
+     * @param mirado só a carga solta na mão conta como passe perfeito — o toque
+     * já sai na medida certa, então premiá-lo seria premiar não ter mirado
+     */
+    const lancar = (forca: number, curva = 0, mirado = true): void => {
       if (fase !== 'comigo') return;
       // guardado no fundo da mochila ele não voa: só o item da mão é lançável
       if (!naMinhaMao()) return;
       g.removeItem(ITENS.frisbee.id);
-      const dist = DIST_MIN + (DIST_MAX - DIST_MIN) * limitar(forca, 0, 1);
-      disco.throwAt(g.playerPosition(), g.playerFacing(), dist);
+      const eu = g.playerPosition();
+      const olhar = g.playerFacing();
+      const c = limitar(forca, 0, 1);
+      const alvo = cargaDoParceiro(eu, olhar, g.companionPosition());
+      passePerfeito = mirado && alvo !== null && Math.abs(c - alvo) <= ZONA;
+      saidaDoPasse.copy(eu);
+      posDeleNoLancamento.copy(g.companionPosition());
+      disco.throwAt(eu, olhar, distDaCarga(eu, olhar, c), arcoDaCarga(c), curva);
       g.som('lancar');
+      sorteado = false;
+      vaiPegar = true;
+      alvoDaCorrida = null;
+      recalcular = 0;
       fase = 'voando-pra-ele';
+    };
+
+    /** o toque no celular e o E são sempre o passe limpo: sem dosar, sem errar */
+    const passeSimples = (): void => {
+      const alvo = cargaDoParceiro(g.playerPosition(), g.playerFacing(), g.companionPosition());
+      lancar(alvo ?? 0.5, 0, false);
     };
 
     const jogar = w.interact({
@@ -779,7 +989,7 @@ export const villaLobos: SceneDef = {
       x: QUADRA.x, z: QUADRA.z, radius: 3,
       priority: -1, // segue o jogador: nunca deve roubar o prompt de outra coisa
       label: 'Lançar o frisbee  (segure F)', icon: '🥏',
-      onInteract: () => lancar(0.55),
+      onInteract: () => passeSimples(),
     });
 
     const pegar = w.interact({
@@ -794,11 +1004,13 @@ export const villaLobos: SceneDef = {
       },
     });
 
-    w.onUpdate((dt) => {
+    w.onUpdate((dt, t) => {
+      const trechoDe = disco.position.clone();
       disco.update(dt, LIMITES_QUADRA);
 
       const eu = g.playerPosition();
       const ele = g.companionPosition();
+      const olhar = g.playerFacing();
       const dentro = naQuadra(eu.x, eu.z, 0.4);
 
       if (dentro && fase === 'fora') entrarNaQuadra();
@@ -807,23 +1019,37 @@ export const villaLobos: SceneDef = {
       if (fase === 'fora') {
         jogar.enabled = false;
         pegar.enabled = false;
+        mira.visible = false;
+        olharAnterior = olhar;
         return;
       }
+
+      if (disco.state === 'voando') conferirAlvos(trechoDe, disco.position);
+      animarAlvos(dt);
 
       // ---------------------------------------------------------- a carga
       if (fase === 'comigo' && naMinhaMao()) {
         if (g.keyDown('KeyF')) {
           carregando = true;
           carga = Math.min(1, carga + dt / CARGA_CHEIA);
-          g.showCharge(carga);
+          g.showCharge(carga, cargaDoParceiro(eu, olhar, ele), ZONA);
+          // a marca anda junto: é a tradução de "força" em metros de grama
+          const d = distDaCarga(eu, olhar, carga);
+          mira.position.set(eu.x + Math.sin(olhar) * d, 0, eu.z + Math.cos(olhar) * d);
+          mira.scale.setScalar(1 + Math.sin(t * 9) * 0.06);
+          mira.visible = true;
         } else if (carregando) {
           const forca = carga;
+          // girar no instante de soltar manda o disco em banana; parado sai reto
+          const giro = dt > 0.0001 ? desvioAngular(olhar, olharAnterior) / dt : 0;
           soltarCarga();
-          lancar(forca);
+          if (forca < CARGA_MINIMA) passeSimples();
+          else lancar(forca, limitar(giro * 0.18, -2.5, 2.5));
         }
       } else if (carregando) {
         soltarCarga();
       }
+      olharAnterior = olhar;
 
       // ------------------------------------------------ o parceiro se posta
       if (fase === 'comigo' || fase === 'no-chao') {
@@ -845,7 +1071,7 @@ export const villaLobos: SceneDef = {
           // física continua acompanhando a mão, só invisível: assim ele não
           // teleporta no lançamento e continua sendo a fonte de verdade de
           // onde o disco está.
-          disco.holdAt(eu, g.playerFacing());
+          disco.holdAt(eu, olhar);
           disco.mesh.visible = false;
           break;
 
@@ -866,6 +1092,11 @@ export const villaLobos: SceneDef = {
             const dx = eu.x - ele.x;
             const dz = eu.z - ele.z;
             const dist = Math.hypot(dx, dz) || 1;
+            // ele não joga sempre igual: às vezes solta um balão alto, às vezes
+            // um passe reto, e de vez em quando põe caprichado demais e erra
+            const sorte = Math.random();
+            const arco = sorte < 0.3 ? RETORNO.arco * 1.35 : sorte > 0.85 ? 0.95 : RETORNO.arco;
+            const erro = sorte > 0.85 ? RETORNO.erro * 2.5 : RETORNO.erro;
             const alvo = new THREE.Vector3(
               limitar(
                 eu.x + (dx / dist) * RETORNO.alem + (Math.random() - 0.5) * RETORNO.desvio,
@@ -877,7 +1108,9 @@ export const villaLobos: SceneDef = {
                 qz0 + 1.5, qz1 - 1.5,
               ),
             );
-            disco.throwToward(ele, alvo, RETORNO.erro, RETORNO.arco);
+            // curva de leve no passe dele: dá vida sem tirar o disco da área de
+            // pegada, que já tem o erro de mira e o desvio lateral somados
+            disco.throwToward(ele, alvo, erro, arco, (Math.random() - 0.5) * 1.0);
             g.som('lancar');
             ultimoPosto = null; // ele volta a se postar assim que o disco for meu
             fase = 'voando-pra-mim';
@@ -886,25 +1119,81 @@ export const villaLobos: SceneDef = {
         }
 
         case 'voando-pra-ele': {
-          // pegada no ar: passou perto dele na altura certa, ele agarra
-          const noAr =
+          // Ele corre atrás do disco ENQUANTO ele voa, mirando onde a física diz
+          // que vai cair. Antes só reagia com o disco já no chão, e por isso
+          // todo passe torto virava caminhada.
+          recalcular -= dt;
+          if (disco.state === 'voando' && recalcular <= 0) {
+            recalcular = 0.25;
+            const queda = disco.ondeVaiCair(LIMITES_QUADRA);
+            if (!alvoDaCorrida || alvoDaCorrida.distanceTo(queda) > 0.8) {
+              alvoDaCorrida = queda;
+              g.commandCompanion(queda.x, queda.z);
+              ultimoPosto = null;
+            }
+          }
+
+          // o disco tem que ter SAÍDO antes de alguém agarrar. Sem isto, lançar
+          // com o parceiro coladinho é ele pegar de volta no mesmo quadro.
+          const perto =
             disco.state === 'voando' &&
             disco.position.y < 2.3 &&
+            noChao(saidaDoPasse, disco.position) > 2 &&
             Math.hypot(disco.position.x - ele.x, disco.position.z - ele.z) < 1.5;
-          if (noAr) {
+
+          if (perto && !sorteado) {
+            // UM sorteio por voo. Passe na medida ele agarra quase sempre;
+            // foguete torto, que chega rápido e longe do posto dele, escapa.
+            sorteado = true;
+            const correu = noChao(posDeleNoLancamento, disco.position);
+            const chance = limitar(
+              0.98 - disco.rasante * 0.022 - correu * 0.02 + (passePerfeito ? 0.2 : 0),
+              0.35, 0.98,
+            );
+            vaiPegar = Math.random() < chance;
+          }
+
+          if (perto && vaiPegar) {
             g.som('pegar');
             g.holdCompanion(eu.x, eu.z);
             ultimoPosto = null;
+            alvoDaCorrida = null;
+            const passe = Math.round(noChao(saidaDoPasse, disco.position));
             disco.pickUp();
             esperaDele = 0.7;
             fase = 'com-ele';
-            g.toast('Ele pegou no ar!', '🙌');
+            if (passePerfeito) {
+              g.som('confirma');
+              g.bump('frisbee.perfeitos');
+              g.toast('Passe perfeito!', '🎯');
+              falar(['Na mão! Perfeito.', 'Esse foi bonito, hein.', 'Assim fica fácil.']);
+            } else {
+              g.toast('Ele pegou no ar!', '🙌');
+              falar(['Peguei!', 'Isso! Manda de novo.', 'Tá vendo? Sou bom nisso.']);
+            }
+            const recorde = g.stat('frisbee.maiorPasse');
+            if (passe > recorde) {
+              g.bump('frisbee.maiorPasse', passe - recorde);
+              g.toast(`Novo recorde: ${passe} m`, '📏');
+            }
             break;
           }
+
           if (disco.state === 'chao') {
+            if (sorteado && !vaiPegar) {
+              falar(['Ah, escapou!', 'Raspou na minha mão!', 'Essa eu deixei, admito.']);
+            } else if (noChao(saidaDoPasse, disco.position) > 16) {
+              falar([
+                'Calma, não sou cachorro!',
+                'Jogou pra longe demais.',
+                'Vou ter que correr até lá?',
+              ]);
+            }
+            trocasNaSessao = 0; // encostou no chão, a série morre
             if (disco.position.distanceTo(ele) < 1.6) {
               g.holdCompanion(eu.x, eu.z);
               ultimoPosto = null;
+              alvoDaCorrida = null;
               disco.pickUp();
               esperaDele = 0.8;
               fase = 'com-ele';
@@ -922,6 +1211,7 @@ export const villaLobos: SceneDef = {
             // parou de correr aqui: quem lança andando joga torto
             g.holdCompanion(eu.x, eu.z);
             ultimoPosto = null;
+            alvoDaCorrida = null;
             disco.pickUp();
             esperaDele = 0.9;
             fase = 'com-ele';
@@ -944,6 +1234,7 @@ export const villaLobos: SceneDef = {
           }
           if (disco.state === 'chao') {
             fase = 'no-chao';
+            trocasNaSessao = 0;
             if (disco.position.distanceTo(eu) < 1.9 && g.addItem(ITENS.frisbee) !== 'cheio') {
               disco.pickUp();
               fase = 'comigo';
@@ -962,7 +1253,9 @@ export const villaLobos: SceneDef = {
           break;
       }
 
-      jogar.enabled = fase === 'comigo';
+      // carregando, o balão do E sai da tela: ele fica bem em cima do chão que
+      // a marca de mira ocupa, e enquanto se mira ele não serve para nada
+      jogar.enabled = fase === 'comigo' && !carregando;
       pegar.enabled = fase === 'no-chao';
       if (fase === 'comigo') jogar.moveTo(eu.x, eu.z);
       else pegar.moveTo(disco.position.x, disco.position.z);
@@ -979,7 +1272,9 @@ export const villaLobos: SceneDef = {
         conversa([
           [R, 'QUADRA LIVRE — respeite quem chegou primeiro.'],
           [A, 'Hoje só tem a gente.'],
-          [R, 'Então segura o F e manda ver. Quanto mais tempo segurar, mais longe vai.'],
+          [R, 'Então segura o F. A marca no chão mostra onde o disco vai cair, e o traço na barra é onde eu estou.'],
+          [A, 'E se eu quiser mostrar serviço?'],
+          [R, 'Acerta um dos aros. Ou uma cesta, se estiver se achando.'],
         ]),
     });
 
@@ -991,10 +1286,19 @@ export const villaLobos: SceneDef = {
       onInteract: (api) => {
         const recorde = api.stat('frisbee.recorde');
         const total = api.stat('frisbee.trocas');
-        return conversa([
+        const perfeitos = api.stat('frisbee.perfeitos');
+        const pontos = api.stat('frisbee.alvos');
+        const maior = api.stat('frisbee.maiorPasse');
+        const linhas: Array<[typeof A, string]> = [
           [A, recorde > 0 ? `Nosso recorde é ${recorde} trocas seguidas.` : 'O placar tá zerado.'],
           [R, total > 0 ? `E já foram ${total} no total. A gente não desiste fácil.` : 'Bora estrear isso então.'],
-        ]);
+        ];
+        if (maior > 0) linhas.push([A, `O passe mais longo que colou foi de ${maior} metros.`]);
+        if (perfeitos > 0) {
+          linhas.push([R, `${perfeitos} ${perfeitos === 1 ? 'passe caiu' : 'passes caíram'} certinho na minha mão.`]);
+        }
+        if (pontos > 0) linhas.push([A, `E ${pontos} ${pontos === 1 ? 'ponto' : 'pontos'} nos alvos. Anota aí.`]);
+        return conversa(linhas);
       },
     });
 
