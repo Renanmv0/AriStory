@@ -103,8 +103,8 @@ export class Game implements GameAPI {
     this.ui.onAbrirArmario = () => this.pintarArmario();
     this.ui.onGirarBoneco = (d) => this.previa.girar(d);
     this.ui.onTirarParte = (i) => {
-      // tirar NAO joga fora: a peca vai para a mochila, de onde da para vestir
-      // de novo em qualquer lugar. Mochila cheia recusa, em vez de sumir.
+      // tirar NAO joga fora: a peca volta para o armario (ou, se for
+      // funcional, para a mochila). Mochila cheia recusa, em vez de sumir.
       const quem = this.playerId();
       const peca = this.save.vestiveis(quem)[i];
       if (!peca) return;
@@ -122,17 +122,20 @@ export class Game implements GameAPI {
     };
     this.ui.onVestirPeca = (id) => {
       const quem = this.playerId();
-      const peca = this.save.maos(quem).find((i) => i?.id === id);
+      // a peca vem do ARMARIO; a funcional (patins) pode estar na mochila
+      const peca = this.save.acervo(quem).find((i) => i.id === id)
+        ?? this.save.maos(quem).find((i) => i?.id === id)
+        ?? null;
       if (!peca) return;
       // a vaga ja pode estar ocupada: tira o que esta la primeiro, e o que sai
-      // toma o lugar do que entrou na mochila
+      // volta para o armario
       const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
       if (vaga < 0) return;
       const antigo = this.save.vestiveis(quem)[vaga];
       this.save.largar(quem, id);
       if (antigo) this.save.despir(quem, vaga);
       this.save.vestir(quem, peca);
-      // idem: o que sai do corpo vai para a mochila, nao volta a se vestir
+      // idem: o que sai do corpo volta para o armario, nao se veste de novo
       if (antigo) this.save.guardar(quem, antigo);
       this.audio.play('escolha');
       this.pintarArmario();
@@ -676,6 +679,10 @@ export class Game implements GameAPI {
     return this.save.vestiveis(quem);
   }
 
+  wardrobeItems(quem = this.playerId()): ReadonlyArray<ItemDef> {
+    return this.save.acervo(quem);
+  }
+
   /** Joga fora o item de uma vaga. Nao volta de lugar nenhum. */
   private descartarDaVaga(de: Vaga): void {
     const quem = this.playerId();
@@ -778,10 +785,13 @@ export class Game implements GameAPI {
   private pintarArmario(): void {
     const quem = this.playerId();
     const vestindo = this.save.vestiveis(quem);
-    // o que da para vestir e o que esta na MOCHILA: peca de roupa e item, e
-    // tirar uma poe ela na mochila como qualquer outra coisa
-    const guardados = this.save.maos(quem)
-      .filter((i): i is ItemDef => i !== null && i.tipo === 'vestivel');
+    // O que da para vestir sai do ARMARIO. A vestimenta funcional que estiver
+    // na mochila entra junto: os patins tambem sao dos pes, e escondê-los aqui
+    // faria a vaga dos pes parecer quebrada quando eles estao na mochila.
+    const guardados: ItemDef[] = [
+      ...this.save.acervo(quem),
+      ...this.save.maos(quem).filter((i): i is ItemDef => i !== null && i.tipo === 'vestivel'),
+    ];
     this.ui.renderArmario(vestindo, guardados, this.player.name);
     this.previa.vestir(this.save.loadout(quem));
   }

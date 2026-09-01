@@ -15,11 +15,52 @@ pipeline inteiro:
 4. `src/scenes/quarto.ts` — `ROUPAS_DO_ARMARIO` estoca a peça; o armário
    abastece os DOIS personagens a cada abertura, então uma entrada só já
    basta para os dois poderem vestir.
-5. `scripts/roupas.mjs` — asserções que provam que a roupa não quebrou a
-   animação nem nasceu no lugar errado.
+5. `scripts/roupas.mjs` e `scripts/vestimenta.mjs` — asserções que provam que a
+   roupa não quebrou a animação, não nasceu no lugar errado e não escapou das
+   regras de armazenamento.
 
 Nenhuma peça de roupa é modelada dentro de uma cena, e nenhuma tem estado
 próprio: tirar e recolocar já vem de graça do sistema de inventário.
+
+## Onde uma peça pode morar — são TRÊS lugares
+
+| lugar | o que aceita | quem mexe |
+|---|---|---|
+| **mochila** (10 vagas) | item de mão e vestimenta **funcional** | o jogador, em qualquer lugar |
+| **corpo** (4 vagas) | qualquer vestível, na vaga da parte dele | o painel do armário |
+| **guarda-roupa** (lista) | roupa **cosmética** que não está no corpo | o painel do armário |
+
+A regra em uma frase: **roupa cosmética nunca ocupa vaga de mão.** Ela vive no
+armário ou no corpo, e só se troca no móvel. Fora do armário, a única coisa que
+dá para fazer com uma roupa vestida é **descartar** — o painel da mochila marca
+essas vagas com um cadeado e recusa o arrasto com um aviso.
+
+Isso é o que resolveu os bugs de peça duplicada, de sumiço e de mochila entupida
+de vestido: antes a mesma peça transitava entre as vagas de mão e o corpo, e
+cada caminho de escrita tinha a sua própria ideia de onde ela estava.
+
+### A exceção: `funcional: true`
+
+Vestimenta que muda o JOGO, e não só a aparência, é equipamento e viaja na
+mochila. Hoje são os patins (1,3x de velocidade). Na ficha:
+
+```ts
+patins: {
+  id: 'patins', nome: 'Patins', icone: '🛼',
+  tipo: 'vestivel', slot: 'pes',
+  funcional: true,   // por isso cabe na mochila e se calça em qualquer lugar
+},
+```
+
+Sem a marca, a peça nasce **cosmética** — que é o caso comum e o certo para
+qualquer roupa nova vinda de foto.
+
+### O que isso muda para quem escreve uma peça nova
+
+Quase nada: `g.storeItem(peca, quem)` continua sendo a chamada, e é ELE quem
+sabe se a peça vai para o armário ou para a mochila. Por isso `quarto.ts` não
+mudou uma linha quando a regra mudou. Do lado do motor, quem lê o armário é
+`g.wardrobeItems(quem)`.
 
 ## As 4 vagas SÃO as 4 partes do corpo
 
@@ -156,13 +197,19 @@ Quando o Renan mandar uma foto ou ilustração:
 ```bash
 npm run typecheck
 npm run build && npx vite preview --port 4173 &
-node scripts/roupas.mjs /tmp/rp
+node scripts/roupas.mjs     /tmp/rp
+node scripts/vestimenta.mjs /tmp/vt
 ```
 
-O script mede, não só fotografa: confere que a geometria nasceu sob o pai
+`roupas.mjs` mede, não só fotografa: confere que a geometria nasceu sob o pai
 certo (nenhuma peça de tronco aparece sob a cabeça), que os slots com
 `pernasNuas`/`bracosNus` realmente viram a cor de pele, e que amplitude de
 braço/perna na caminhada não mudou.
+
+`vestimenta.mjs` guarda as regras de armazenamento: que a peça cosmética não
+encosta numa vaga de mão, que vestida ela só sai por descarte, que os patins
+continuam sendo a exceção, e que o painel do armário separa tudo por parte do
+corpo.
 
 **Fotos obrigatórias antes de dar a peça como pronta** (regra do
 `CLAUDE.md`): o boneco do painel (`Previa.ts` — canvas próprio, não é o
@@ -174,6 +221,7 @@ uma olhada rápida de frente.
 ## Regressão
 
 `sobreTronco`, `porExtras` e `aplicarVisual` (`CharacterRig.ts`) são
-compartilhados por todo o jogo. Depois de mexer neles (não só ao acrescentar
-peça simples), rode também: `quarto.mjs`, `mochila.mjs`, `itens.mjs`,
+compartilhados por todo o jogo, e `SaveState`/`Ui` são compartilhados com a
+mochila inteira. Depois de mexer neles (não só ao acrescentar peça simples),
+rode também: `quarto.mjs`, `vestimenta.mjs`, `mochila.mjs`, `itens.mjs`,
 `patins.mjs`, `celular.mjs`, `smoke.mjs`, `mecanicas.mjs`, `banco.mjs`.

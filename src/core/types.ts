@@ -102,12 +102,28 @@ export interface ItemDef {
   /**
    * A CATEGORIA do item, e a trava do inventario.
    *
-   * `mao` ocupa uma das 5 vagas da mochila, `vestivel` uma das 4 de acessorio.
+   * `mao` ocupa uma das 10 vagas da mochila, `vestivel` uma das 4 de acessorio.
    * E o proprio item que diz — obrigatorio, sem padrao — e nenhum caminho de
    * escrita converte um no outro: `SaveState.mover()` e `vestir()` RECUSAM o
    * que nao couber, em vez de carimbar um tipo novo para caber.
    */
   tipo: 'mao' | 'vestivel';
+  /**
+   * Vestimenta FUNCIONAL: a que muda o JOGO, nao so a aparencia.
+   *
+   * E a excecao da regra "roupa nao entra na mochila de mao". Os patins dao
+   * 1,3x de velocidade — sao equipamento, e equipamento se carrega e se calca
+   * onde a pessoa estiver, sem voltar em casa. Ja um vestido nao faz nada
+   * alem de ser bonito, entao ele vive no guarda-roupa e so se troca la.
+   *
+   * Sem esta separacao as duas coisas brigam: ou a roupa polui as 10 vagas da
+   * mochila, ou os patins viram um item que so da para calcar no quarto do
+   * Ari — e o parque, que e onde se anda de patins, fica do outro lado do
+   * mapa.
+   *
+   * So faz sentido em `tipo: 'vestivel'`; num item de mao e ignorado.
+   */
+  funcional?: boolean;
   /** linha curta que o painel mostra ao passar o olho */
   nota?: string;
 
@@ -298,8 +314,12 @@ export interface GameAPI {
    */
   addItem(item: ItemDef, quem?: string): Coleta;
   /**
-   * Poe na mochila SEM vestir. E o que o armario usa para entregar as pecas:
+   * Guarda SEM vestir. E o que o armario usa para entregar as pecas:
    * `addItem` vestiria na hora e nao sobraria nada para escolher no painel.
+   *
+   * ONDE guarda depende da categoria, e nao de quem chama: roupa cosmetica vai
+   * para o guarda-roupa (`wardrobeItems`), item de mao e vestimenta funcional
+   * vao para as vagas da mochila.
    */
   storeItem(item: ItemDef, quem?: string): Coleta;
   /** Tira um item da mochila ou dos acessorios, onde quer que ele esteja. */
@@ -322,6 +342,14 @@ export interface GameAPI {
   handItems(quem?: string): ReadonlyArray<ItemDef | null>;
   /** As 4 vagas de acessorio, na ordem da tela (= a ordem de `SLOTS_ROUPA`). */
   wearables(quem?: string): ReadonlyArray<ItemDef | null>;
+  /**
+   * O guarda-roupa: as pecas cosmeticas que a pessoa tem e NAO esta vestindo.
+   *
+   * E uma lista propria, fora das 10 vagas da mochila, porque roupa cosmetica
+   * nao ocupa vaga de mao — era o que enchia o inventario de vestido e fazia a
+   * mesma peca aparecer em dois lugares.
+   */
+  wardrobeItems(quem?: string): ReadonlyArray<ItemDef>;
   /**
    * Abre o painel do guarda-roupa, com o boneco 3D de quem esta sendo
    * controlado. O movimento fica travado enquanto ele estiver aberto.

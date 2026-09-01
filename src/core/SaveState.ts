@@ -15,18 +15,32 @@ export const SLOTS_MAO = 10;
 export const SLOTS_VESTIVEL = 4;
 
 /**
+ * Roupa que so muda a aparencia — a que mora no guarda-roupa e so se troca la.
+ *
+ * A conta e por exclusao de proposito: `vestivel` sem `funcional` e cosmetico.
+ * Assim uma peca nova nasce cosmetica por padrao (que e o caso comum) e so
+ * vira equipamento quem declarar isso na ficha.
+ */
+export function ehCosmetico(item: ItemDef): boolean {
+  return item.tipo === 'vestivel' && item.funcional !== true;
+}
+
+/**
  * Um item pode morar nesta lista?
  *
- * A regra e ASSIMETRICA de proposito:
- * - a mochila de mao aceita qualquer coisa — e o que faz "desequipar e guardar
- *   pra usar depois" existir; um chapeu na mochila e um chapeu na mochila;
- * - a vaga de acessorio so aceita `vestivel`. Sorvete nao se veste.
- *
- * Tratar as duas listas com a mesma regra e o erro obvio aqui: ele conserta a
- * vestimenta e quebra o desequipar no mesmo movimento.
+ * Sao TRES lugares, nao dois, e cada um com a sua regra:
+ * - `mao`: item de mao e vestimenta FUNCIONAL (os patins). Roupa cosmetica nao
+ *   entra — era ela que enchia as 10 vagas de vestido e deixava a mesma peca
+ *   aparecendo na mochila e no corpo ao mesmo tempo;
+ * - `vestivel`: qualquer `vestivel`, na vaga da parte do corpo dele. Sorvete
+ *   nao se veste;
+ * - `acervo` (o guarda-roupa): so cosmetico. Patins nao mora no armario, mora
+ *   com a pessoa.
  */
-function podeMorarEm(item: ItemDef, lista: 'mao' | 'vestivel'): boolean {
-  return lista === 'mao' || item.tipo === 'vestivel';
+function podeMorarEm(item: ItemDef, lista: 'mao' | 'vestivel' | 'acervo'): boolean {
+  if (lista === 'vestivel') return item.tipo === 'vestivel';
+  if (lista === 'acervo') return ehCosmetico(item);
+  return !ehCosmetico(item);
 }
 
 /**
@@ -52,12 +66,21 @@ function vagaDoCorpo(item: ItemDef): number {
  * do lugar sozinha na primeira vez que a lista fosse reordenada.
  */
 export interface SaveInventario {
-  /** 5 vagas; a de indice `ativo` e a que esta de fato na mao */
+  /** 10 vagas; a de indice `ativo` e a que esta de fato na mao */
   mao: (ItemDef | null)[];
-  /** 0..4 */
+  /** 0..9 */
   ativo: number;
   /** 4 vagas de acessorio vestido */
   vestiveis: (ItemDef | null)[];
+  /**
+   * O guarda-roupa: roupa cosmetica que a pessoa tem e nao esta usando.
+   *
+   * E uma LISTA que cresce, e nao vagas com endereco, porque aqui nao existe
+   * "slot principal" nem arrastar: o painel do armario so precisa mostrar tudo
+   * separado por parte do corpo. Sem tamanho maximo de proposito — armario nao
+   * enche, e a peca que nao coubesse teria que sumir em algum lugar.
+   */
+  acervo: ItemDef[];
 }
 
 export interface SavedMemory {
@@ -84,7 +107,12 @@ function vagasVazias(quantas: number): (ItemDef | null)[] {
 }
 
 function inventarioVazio(): SaveInventario {
-  return { mao: vagasVazias(SLOTS_MAO), ativo: 0, vestiveis: vagasVazias(SLOTS_VESTIVEL) };
+  return {
+    mao: vagasVazias(SLOTS_MAO),
+    ativo: 0,
+    vestiveis: vagasVazias(SLOTS_VESTIVEL),
+    acervo: [],
+  };
 }
 
 /**
@@ -113,6 +141,16 @@ function normalizar(
 ): SaveInventario {
   const vazio = inventarioVazio();
   if (!bruto && !loadoutAntigo) return vazio;
+
+  /**
+   * Roupa cosmetica achada num lugar que ela nao pode mais morar.
+   *
+   * Ela NAO some: vai para o guarda-roupa. Antes desta refatoracao as pecas
+   * moravam nas vagas de mao, entao todo save existente tem vestido ocupando
+   * vaga de item — descartar seria apagar o armario de quem ja jogou.
+   */
+  const resgatadas: ItemDef[] = [];
+
   const encaixar = (lista: unknown, quantas: number, qual: 'mao' | 'vestivel'): (ItemDef | null)[] => {
     const vagas = vagasVazias(quantas);
     if (!Array.isArray(lista)) return vagas;
@@ -127,9 +165,14 @@ function normalizar(
       // chapeu preso como item de mao para sempre.
       const ficha = fichaDoItem(item.id);
       const certo = ficha ? { ...item, ...ficha } : item;
+      if (podeMorarEm(certo, qual)) {
+        vagas[i] = certo;
+        continue;
+      }
       // e, pela mesma razao, sorvete carimbado de vestivel por aquela versao
       // antiga nao continua ocupando uma vaga de acessorio
-      vagas[i] = podeMorarEm(certo, qual) ? certo : null;
+      vagas[i] = null;
+      if (qual === 'mao' && ehCosmetico(certo)) resgatadas.push(certo);
     }
     return vagas;
   };
@@ -160,10 +203,29 @@ function normalizar(
     }
   }
 
+  const mao = encaixar(bruto?.mao, SLOTS_MAO, 'mao');
+
+  // O acervo salvo, mais o que foi resgatado das vagas de mao acima. Peca
+  // repetida entra uma vez so: o mesmo id nao pode estar em dois lugares.
+  const acervo: ItemDef[] = [];
+  const jaTem = (id: string): boolean =>
+    acervo.some((i) => i.id === id) ||
+    arrumado.some((i) => i?.id === id) ||
+    mao.some((i) => i?.id === id);
+  const crus = Array.isArray(bruto?.acervo) ? (bruto.acervo as ItemDef[]) : [];
+  for (const item of [...crus, ...resgatadas]) {
+    if (!item || typeof item.id !== 'string') continue;
+    const ficha = fichaDoItem(item.id);
+    const certo = ficha ? { ...item, ...ficha } : item;
+    if (!podeMorarEm(certo, 'acervo') || jaTem(certo.id)) continue;
+    acervo.push(certo);
+  }
+
   return {
-    mao: encaixar(bruto?.mao, SLOTS_MAO, 'mao'),
+    mao,
     ativo: ativo >= 0 && ativo < SLOTS_MAO ? ativo : 0,
     vestiveis: arrumado,
+    acervo,
   };
 }
 
@@ -282,6 +344,11 @@ export class SaveState {
     return this.de(quem).vestiveis;
   }
 
+  /** O guarda-roupa: o que a pessoa tem de roupa e nao esta vestindo. */
+  acervo(quem: string): ReadonlyArray<ItemDef> {
+    return this.de(quem).acervo;
+  }
+
   /**
    * O que a pessoa esta vestindo, lido das vagas.
    *
@@ -315,7 +382,9 @@ export class SaveState {
 
   achouItem(quem: string, id: string): boolean {
     const inv = this.de(quem);
-    return inv.mao.some((i) => i?.id === id) || inv.vestiveis.some((i) => i?.id === id);
+    return inv.mao.some((i) => i?.id === id)
+      || inv.vestiveis.some((i) => i?.id === id)
+      || inv.acervo.some((i) => i.id === id);
   }
 
   /**
@@ -331,9 +400,12 @@ export class SaveState {
    */
   pegar(quem: string, item: ItemDef): Coleta {
     if (this.achouItem(quem, item.id)) return 'repetido';
-    // acessorio tenta vestir primeiro; com as 4 vagas cheias ele ainda cabe na
-    // mochila de mao, que aceita qualquer coisa
+    // acessorio tenta vestir primeiro: ganhou o chapeu de campeao, ja sai com
+    // ele na cabeca
     if (item.tipo === 'vestivel' && this.vestir(quem, item)) return 'guardado';
+    // vaga do corpo ocupada: roupa cosmetica cai no guarda-roupa, nao na mao.
+    // E a diferenca entre "guardei a peca" e "estou carregando um vestido".
+    if (ehCosmetico(item)) return this.guardarNoAcervo(quem, item);
     const inv = this.de(quem);
 
     if (inv.mao[inv.ativo] === null) {
@@ -363,6 +435,9 @@ export class SaveState {
    */
   guardar(quem: string, item: ItemDef): Coleta {
     if (this.achouItem(quem, item.id)) return 'repetido';
+    // roupa nao ocupa vaga de mao: ela vai para o armario, que e de onde o
+    // painel do guarda-roupa tira o que mostrar
+    if (ehCosmetico(item)) return this.guardarNoAcervo(quem, item);
     const inv = this.de(quem);
     if (inv.mao[inv.ativo] === null) {
       inv.mao[inv.ativo] = item;
@@ -380,22 +455,54 @@ export class SaveState {
     return 'cheio';
   }
 
-  /** Veste numa vaga escolhida (ou na primeira livre). */
+  /**
+   * Poe uma peca no guarda-roupa.
+   *
+   * Nunca devolve `cheio`: o armario nao tem tamanho. Devolve `guardado` para
+   * quem chama poder dizer "foi pro armario" sem saber onde o armario mora.
+   */
+  guardarNoAcervo(quem: string, item: ItemDef): Coleta {
+    if (!podeMorarEm(item, 'acervo')) return 'cheio';
+    if (this.achouItem(quem, item.id)) return 'repetido';
+    this.de(quem).acervo.push(item);
+    this.persist();
+    return 'guardado';
+  }
+
+  /** Tira uma peca do guarda-roupa e devolve a ficha dela, se estava la. */
+  tirarDoAcervo(quem: string, id: string): ItemDef | null {
+    const acervo = this.de(quem).acervo;
+    const i = acervo.findIndex((item) => item.id === id);
+    if (i < 0) return null;
+    const [item] = acervo.splice(i, 1);
+    this.persist();
+    return item;
+  }
+
   /**
    * Veste um acessorio numa vaga escolhida (ou na primeira livre).
    *
    * Item de mao e RECUSADO, nao convertido. A versao antiga carimbava
    * `tipo: 'vestivel'` no que chegasse, e era por isso que dava para vestir
    * sorvete: o dado mentia sobre o proprio item para caber na vaga.
+   *
+   * Peca que a pessoa JA TEM so entra se ela estiver no armario — vestir uma
+   * roupa guardada e tirar ela de la e por no corpo, e e o caminho normal do
+   * painel. O que nao pode existir e a mesma peca em dois lugares, e e por
+   * isso que a saida do armario acontece aqui dentro, no mesmo movimento.
    */
   vestir(quem: string, item: ItemDef): boolean {
     if (!podeMorarEm(item, 'vestivel')) return false;
-    if (this.achouItem(quem, item.id)) return false;
     // a vaga NAO e escolhida por quem chama: ela vem do corpo
     const onde = vagaDoCorpo(item);
     if (onde < 0) return false;
     const vagas = this.de(quem).vestiveis;
     if (vagas[onde] !== null) return false;
+    if (this.achouItem(quem, item.id) && !this.tirarDoAcervo(quem, item.id)) {
+      // ja esta no corpo ou na mochila: quem move de la e o `mover`, que sabe
+      // esvaziar a vaga de origem
+      return false;
+    }
     vagas[onde] = item;
     this.persist();
     return true;
@@ -435,6 +542,10 @@ export class SaveState {
 
     // A TRAVA DE CATEGORIA. O item tem que caber na lista de destino pelo que
     // ELE e, e a troca so vale se o item deslocado tambem couber de volta.
+    //
+    // E aqui que "roupa so troca no armario" acontece de verdade: um vestido
+    // na vaga do tronco nao cabe na lista `mao`, entao arrastar ele para fora
+    // do corpo simplesmente nao vale. Os patins cabem, porque sao funcionais.
     if (!podeMorarEm(item, para.lista)) return false;
     // e, na vestimenta, tem que ser A vaga daquela parte do corpo: bota nao
     // entra na vaga da cabeca so porque o dedo soltou ali
@@ -449,7 +560,7 @@ export class SaveState {
     return true;
   }
 
-  /** Tira o item de onde quer que ele esteja. */
+  /** Tira o item de onde quer que ele esteja — vaga, corpo ou armario. */
   largar(quem: string, id: string): boolean {
     const inv = this.de(quem);
     let achou = false;
@@ -459,6 +570,11 @@ export class SaveState {
         vagas[i] = null;
         achou = true;
       }
+    }
+    const noArmario = inv.acervo.findIndex((item) => item.id === id);
+    if (noArmario >= 0) {
+      inv.acervo.splice(noArmario, 1);
+      achou = true;
     }
     if (achou) this.persist();
     return achou;

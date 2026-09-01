@@ -156,19 +156,19 @@ export const quarto: SceneDef = {
       highlight: movel,
       onInteract: async (g) => {
         // Primeira vez: as roupas que já estavam lá dentro entram no
-        // inventário. É o armário dele — as peças não precisam ser ganhas em
-        // lugar nenhum, e a partir daqui elas se tiram e se põem em qualquer
-        // lugar do jogo, porque são itens como qualquer outro.
-        // O armário abastece OS DOIS, não só quem abriu.
+        // guarda-roupa de cada um. É o armário dele — as peças não precisam ser
+        // ganhas em lugar nenhum. O armário abastece OS DOIS, não só quem abriu.
         //
-        // Cada peça vira um item na mochila de cada um: as mochilas são
-        // separadas, então o gorro do Ari e o gorro do Renan são dois gorros e
+        // Cada peça vira uma peça do armário de cada um: os armários são
+        // separados, então o gorro do Ari e o gorro do Renan são dois gorros e
         // os dois podem se vestir ao mesmo tempo. Sem isto, quem tirasse a peça
-        // do armário ficava com ela e o outro não tinha o que vestir.
+        // ficava com ela e o outro não tinha o que vestir.
         //
-        // E abastece a CADA abertura, não uma vez só: `storeItem` recusa o que
-        // a pessoa já tem, então repor é de graça, e assim o armário também
-        // repõe o que foi descartado — é o armário dele, a roupa mora ali.
+        // `storeItem` põe roupa no ARMÁRIO, não nas vagas de mão — é ele quem
+        // sabe a diferença, e por isso esta cena não mudou quando a regra
+        // mudou. E abastece a CADA abertura, não uma vez só: ele recusa o que a
+        // pessoa já tem, então repor é de graça, e assim o armário também repõe
+        // o que foi descartado — é o armário dele, a roupa mora ali.
         for (const quem of [g.playerId(), g.companionId()]) {
           for (const peca of ROUPAS_DO_ARMARIO) g.storeItem(peca, quem);
         }

@@ -71,7 +71,11 @@ export const ITENS = {
     icone: '🛼',
     tipo: 'vestivel',
     slot: 'pes',
-    nota: 'da lojinha do parque',
+    // FUNCIONAL: dao 1,3x de velocidade, entao sao equipamento e nao roupa.
+    // E o que deixa eles viajarem na mochila e serem calcados no parque, sem
+    // ter que voltar no armario do quarto do Ari.
+    funcional: true,
+    nota: 'da lojinha do parque · +velocidade',
   },
   gorroDeLa: {
     id: 'gorro-la',

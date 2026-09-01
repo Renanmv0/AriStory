@@ -157,8 +157,9 @@ await page.screenshot({ path: `${OUT}-frisbee.png` });
 
 // -------------------------------- o chapéu salvo pela versão antiga
 // A versão que reescrevia o `tipo` ao mover de lista deixava o chapéu gravado
-// como item de MÃO. Carregado hoje, o catálogo tem que devolver a categoria
-// certa, senão ele fica preso na mochila para sempre.
+// como item de MÃO. Carregado hoje, quem manda na categoria é o CATÁLOGO — e,
+// como roupa cosmética não mora mais em vaga de mão, a peça não some nem fica
+// presa: ela é resgatada para o guarda-roupa, de onde dá para vestir.
 await page.evaluate(() => {
   const cru = JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}');
   cru.inventarios = cru.inventarios ?? {};
@@ -175,9 +176,18 @@ await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(3200);
 const remendo = await page.evaluate(() => {
   const j = window.jogo;
-  const antes = j.handItems('ari')[0]?.tipo ?? null;
-  const foi = j.moveItem({ lista: 'mao', indice: 0 }, { lista: 'vestivel', indice: 0 }, 'ari');
-  return { antes, foi, vestindo: j.wearables('ari').map((i) => i?.id ?? null) };
+  const CHAPEU = 'chapeu-ping-pong';
+  // procura por ID, e não pela vaga 0: a cena pode ter posto outra coisa na
+  // mão nesse meio tempo (na quadra, o frisbee entra sozinho)
+  const naMao = j.handItems('ari').some((i) => i?.id === CHAPEU);
+  const noArmario = j.wardrobeItems('ari').find((i) => i.id === CHAPEU) ?? null;
+  const foi = noArmario ? j.equipWearable(noArmario, 'ari') : false;
+  return {
+    naMao,
+    antes: noArmario?.tipo ?? null,
+    foi,
+    vestindo: j.wearables('ari').map((i) => i?.id ?? null),
+  };
 });
 await page.waitForTimeout(600);
 const chapeuNaCabeca = await page.evaluate(() => {
@@ -218,7 +228,7 @@ console.log('  mochila cheia:', JSON.stringify(cascata.maos));
 console.log('desequipar arrastando:', arrastou.ok, '→ vaga', arrastou.vagaLivre, '· tipo continua', arrastou.tipoDepois);
 console.log('  na mão:', JSON.stringify(arrastou.naMao));
 console.log('  vestindo:', JSON.stringify(arrastou.vestindo));
-console.log('chapéu de save antigo · tipo depois de carregar:', remendo.antes, '· deu pra vestir:', remendo.foi);
+console.log('chapéu de save antigo · na mão:', remendo.naMao, '(tem que ser false) · no armário como:', remendo.antes, '· deu pra vestir:', remendo.foi);
 console.log('  vestindo:', JSON.stringify(remendo.vestindo), '· na cabeça:', chapeuNaCabeca);
 console.log('trava · arrastar sorvete para vestimenta:', trava.paraVestimenta, '· equipWearable direto:', trava.vestirDireto);
 console.log('  vagas de vestimenta depois das tentativas:', JSON.stringify(trava.vestindoDepois));
@@ -249,7 +259,9 @@ const ok =
   arrastou.tipoDepois === 'vestivel' &&
   arrastou.naMao.includes('patins') &&
   !arrastou.vestindo.includes('patins') &&
-  // o chapéu estragado se conserta sozinho ao carregar, e volta a ser vestível
+  // o chapéu estragado se conserta sozinho ao carregar: sai da vaga de mão,
+  // vai parar no guarda-roupa e volta a ser vestível
+  remendo.naMao === false &&
   remendo.antes === 'vestivel' &&
   remendo.foi === true &&
   remendo.vestindo[0] === 'chapeu-ping-pong' &&

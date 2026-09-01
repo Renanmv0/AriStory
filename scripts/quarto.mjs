@@ -146,9 +146,11 @@ await page.waitForTimeout(1200);
 const painel = await page.locator('.armario.show').count();
 // as 4 partes do corpo aparecem sempre, cheias ou vazias
 const partes = await page.locator('.armario .parte').count();
-// as peças entraram como ITENS na mochila
+// as peças entraram no GUARDA-ROUPA — não nas vagas de mão, que continuam
+// sendo só para item de mão e para vestimenta funcional
 const inventario = await page.evaluate(() => ({
   mao: window.jogo.handItems().map((i) => i?.id ?? null),
+  armario: window.jogo.wardrobeItems().map((i) => i.id),
   vestindo: window.jogo.wearables().map((i) => i?.id ?? null),
 }));
 await page.screenshot({ path: `${OUT}-painel.png` });
@@ -157,7 +159,7 @@ await page.screenshot({ path: `${OUT}-painel.png` });
 // Quantas peças o armário guarda é decisão da CENA e já mudou de 4 para 6.
 // O teste mede a partir do que ele mesmo viu chegar, e não de um número
 // cravado — o que ele guarda é a regra, não o tamanho do acervo.
-const NO_ARMARIO = inventario.mao.filter(Boolean).length;
+const NO_ARMARIO = inventario.armario.length;
 const antes = await page.locator('.armario .peca').count();
 // a camisa de propósito: ela é o caminho SÓ-COR, sem geometria própria
 await page.locator('.armario .peca', { hasText: 'Camisa' }).first().click();
@@ -187,11 +189,12 @@ const boneco = await page.evaluate(() => {
 
 await page.screenshot({ path: `${OUT}-vestido.png` });
 
-// tirar devolve a peça para a mochila, não joga fora
+// tirar devolve a peça para o ARMÁRIO, não joga fora nem entope a mochila
 await page.locator('.armario .parte.cheio').first().click();
 await page.waitForTimeout(800);
 const depoisDeTirar = await page.evaluate(() => ({
   mao: window.jogo.handItems().filter(Boolean).length,
+  armario: window.jogo.wardrobeItems().length,
   vestindo: window.jogo.wearables().filter(Boolean).length,
 }));
 await page.screenshot({ path: `${OUT}-tirado.png` });
@@ -201,7 +204,7 @@ await page.screenshot({ path: `${OUT}-tirado.png` });
 // outro tem que ter as mesmas peças para vestir.
 const doParceiroAntes = await page.evaluate(() => ({
   quem: window.jogo.companionId(),
-  mao: window.jogo.handItems(window.jogo.companionId()).filter(Boolean).length,
+  armario: window.jogo.wardrobeItems(window.jogo.companionId()).length,
 }));
 // veste o gorro no PRIMEIRO antes de trocar: sem isso o teste não prova que os
 // dois ficam vestidos ao mesmo tempo, só que o segundo consegue se vestir
@@ -229,10 +232,9 @@ await page.waitForTimeout(1000);
 // veste tudo de novo para a troca de cena valer alguma coisa
 await page.evaluate(() => {
   const j = window.jogo;
-  // tira da mochila ANTES de vestir: `vestir` recusa item que a pessoa já tem,
-  // e estar na mochila conta como ter
-  for (const i of [...j.handItems()]) {
-    if (i?.tipo !== 'vestivel') continue;
+  // tira do ARMÁRIO antes de vestir: `vestir` recusa item que a pessoa já tem,
+  // e estar guardado conta como ter
+  for (const i of [...j.wardrobeItems()]) {
     j.removeItem(i.id);
     j.equipWearable(i);
   }
@@ -260,15 +262,17 @@ for (const linha of chao.mapa) console.log('   ' + linha);
 console.log('prompt do armário:', promptArmario);
 console.log('painel abriu:', painel === 1, '· partes do corpo:', partes,
   '· buraco do boneco:', JSON.stringify(boneco));
-console.log('as peças viraram ITENS · mochila:', JSON.stringify(inventario.mao));
+console.log('as peças foram pro ARMÁRIO:', inventario.armario.length,
+  '· mochila intacta:', JSON.stringify(inventario.mao));
 console.log('  vestindo:', JSON.stringify(inventario.vestindo));
 console.log('peças guardadas no painel:', antes);
 console.log('depois de vestir uma:', JSON.stringify(vestido));
 console.log('no corpo:', JSON.stringify(noCorpo.ids),
   '· torso:', noCorpo.cores['tronco:principal'],
   '· manga:', noCorpo.cores['tronco:detalhe']);
-console.log('depois de tirar · na mochila:', depoisDeTirar.mao, '· vestindo:', depoisDeTirar.vestindo);
-console.log('o parceiro também recebeu · vagas de mão:', doParceiroAntes.mao);
+console.log('depois de tirar · no armário:', depoisDeTirar.armario, '· na mochila:', depoisDeTirar.mao,
+  '· vestindo:', depoisDeTirar.vestindo);
+console.log('o parceiro também recebeu · peças no armário dele:', doParceiroAntes.armario);
 console.log('depois do T · painel segue aberto:', depoisDoT.aindaAberto,
   '· dono:', depoisDoT.dono, '· peças:', depoisDoT.pecas);
 console.log('os dois vestidos · ari:', JSON.stringify(osDois.ari));
@@ -293,20 +297,22 @@ const ok =
   // o painel, com o boneco e as 4 partes do corpo
   painel === 1 && partes === 4 &&
   boneco !== null && boneco.w > 80 && boneco.h > 150 && boneco.buffer > 0 &&
-  // AS PEÇAS SÃO ITENS: as 4 entraram no inventário, cada vestível na vaga do
-  // seu corpo (gorro na 0 = cabeça, bota na 3 = pés) e o resto na mochila
-  // o armário ENTREGA em vez de vestir: as 4 chegam na mochila e o corpo
-  // começa vazio, para haver o que escolher no painel
+  // As peças entram no GUARDA-ROUPA, e nenhuma encosta nas vagas de mão: era
+  // exatamente isso que entupia o inventário de vestido. O armário ENTREGA em
+  // vez de vestir, então o corpo começa vazio e há o que escolher no painel.
   NO_ARMARIO >= 4 &&
+  inventario.mao.every((id) => id === null) &&
   inventario.vestindo.filter(Boolean).length === 0 &&
   antes === NO_ARMARIO &&
   // vestir pelo painel põe na vaga certa, e o corpo obedece
   vestido[1] === 'camisa-listrada' &&
   noCorpo.cores['tronco:principal'] === '#4a7fe0' &&
-  // tirar DEVOLVE para a mochila, não joga fora: o total continua 4
-  depoisDeTirar.mao === NO_ARMARIO && depoisDeTirar.vestindo === 0 &&
-  // o armário abastece OS DOIS: o parceiro tem as 4 peças sem nunca ter aberto
-  doParceiroAntes.mao === NO_ARMARIO &&
+  // tirar DEVOLVE para o armário, não joga fora nem ocupa vaga de mão
+  depoisDeTirar.armario === NO_ARMARIO &&
+  depoisDeTirar.mao === 0 &&
+  depoisDeTirar.vestindo === 0 &&
+  // o armário abastece OS DOIS: o parceiro tem as peças sem nunca ter aberto
+  doParceiroAntes.armario === NO_ARMARIO &&
   // o T troca o dono do painel sem fechá-lo
   depoisDoT.aindaAberto && depoisDoT.pecas === NO_ARMARIO &&
   /Renan/.test(depoisDoT.dono ?? '') &&

@@ -310,6 +310,7 @@ body.touch-device .hints .toque { display: block; }
   margin-bottom: 18px;
 }
 .mochila .slot {
+  position: relative; /* o cadeado da roupa presa se pendura aqui */
   display: grid;
   justify-items: center;
   gap: 2px;
@@ -357,6 +358,21 @@ body.touch-device .hints .toque { display: block; }
   opacity: 0.75;
 }
 .mochila .slot.alvo { border-color: var(--accent-deep); background: var(--paper-warm); }
+/*
+ * Roupa cosmética vestida: fica onde está. Aqui ela só pode ser descartada —
+ * trocar é no guarda-roupa. O cadeado diz isso antes de a pessoa tentar
+ * arrastar e ouvir um "não".
+ */
+.mochila .slot.preso { cursor: default; }
+.mochila .slot.preso::before {
+  content: '🔒';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 11px;
+  opacity: 0.55;
+}
+.mochila .slot.preso:hover { transform: none; }
 /* com um item na pinça, TODA vaga vira alvo — inclusive as vazias, que é como
    se desequipa um acessório para a mochila */
 .mochila.movendo .slot { border-style: solid; }
@@ -783,13 +799,43 @@ body.touch-device .dialogue .next { right: 84px; }
 .armario .parte.cheio:hover,
 .armario .peca:hover { transform: translateY(-2px); border-color: var(--accent-deep); }
 
-.armario .acervo {
+/*
+ * O acervo vem SEPARADO POR PARTE DO CORPO: uma seção por parte, cada uma com
+ * a sua grade. Antes era uma grade só com tudo dentro, e achar a calça no meio
+ * de seis vestidos virava caçada.
+ */
+.armario .acervo .grupo + .grupo { margin-top: 14px; }
+.armario .acervo h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+/* o traço que separa uma parte da outra sem gastar altura */
+.armario .acervo h4::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(120, 105, 150, 0.18);
+}
+.armario .acervo h4 span {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(120, 105, 150, 0.14);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.armario .acervo .pecas {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
   gap: 10px;
 }
 .armario .acervo .nada {
-  grid-column: 1 / -1;
   margin: 0;
   color: var(--ink-soft);
   font-weight: 700;

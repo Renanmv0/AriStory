@@ -1,6 +1,15 @@
 import type { SavedMemory } from '../core/SaveState';
-import type { ItemDef, Vaga } from '../core/types';
+import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
+
+/**
+ * O nome de cada parte do corpo na tela, na ORDEM de `SLOTS_ROUPA`.
+ *
+ * Um lugar so: a mochila rotula as 4 vagas de vestimenta com isto, o armario
+ * titula as divisoes do acervo com isto, e as duas telas nao tem como
+ * discordar sobre qual vaga e a do tronco.
+ */
+const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés'];
 
 /**
  * Toda a interface em DOM sobre o canvas. O jogo fala com a UI so por estes
@@ -37,6 +46,8 @@ export class Ui {
   private pegou: Vaga | null = null;
   /** categoria do item na pinça, para a trava saber o que recusar */
   private tipoNaPinca: string | undefined;
+  /** o item na pinça é vestimenta funcional (patins)? só ela sai do corpo */
+  private funcionalNaPinca = false;
 
   private advance: (() => void) | null = null;
   private escolher: ((i: number) => void) | null = null;
@@ -140,7 +151,7 @@ export class Ui {
         <p class="sub">arraste para trocar de vaga · <b>T</b> vê a do outro</p>
         <h3>Na mão <small>toque para escolher o que fica na mão</small></h3>
         <div class="slots maos"></div>
-        <h3>Vestindo</h3>
+        <h3>Vestindo <small>roupa só se troca no guarda-roupa — aqui só dá pra descartar</small></h3>
         <div class="slots vestiveis"></div>
         <div class="descarte">
           <button class="descartar">🗑 Descartar</button>
@@ -636,11 +647,11 @@ export class Ui {
     this.dono.textContent = `de ${dono}`;
     this.pegou = null;
     this.tipoNaPinca = undefined;
+    this.funcionalNaPinca = false;
     this.mochila.classList.remove('movendo');
     this.descarte.classList.remove('show', 'confirmando');
-    // as 4 vagas de vestimenta SÃO as 4 partes do corpo, nesta ordem; sem o
-    // rótulo, duas vagas vazias no meio não dizem o que falta
-    const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés'];
+    // as 4 vagas de vestimenta SÃO as 4 partes do corpo, na ordem de PARTES;
+    // sem o rótulo, duas vagas vazias no meio não dizem o que falta
     const desenhar = (
       onde: HTMLElement,
       vagas: ReadonlyArray<ItemDef | null>,
@@ -654,11 +665,21 @@ export class Ui {
         vaga.dataset.slot = String(i);
         vaga.classList.toggle('cheio', item !== null);
         vaga.classList.toggle('principal', i === principal);
-        vaga.draggable = item !== null;
+        // Roupa cosmética vestida não sai daqui: só se troca no guarda-roupa.
+        // Deixar ela arrastável seria oferecer um gesto que o save recusa.
+        const preso = item !== null && item.tipo === 'vestivel' && item.funcional !== true;
+        vaga.draggable = item !== null && !preso;
+        vaga.classList.toggle('preso', preso);
         // a categoria viaja no DOM: é ela que a trava do toque consulta sem
         // precisar perguntar ao save
-        if (item) vaga.dataset.tipo = item.tipo;
-        else delete vaga.dataset.tipo;
+        if (item) {
+          vaga.dataset.tipo = item.tipo;
+          if (item.funcional) vaga.dataset.funcional = 'sim';
+          else delete vaga.dataset.funcional;
+        } else {
+          delete vaga.dataset.tipo;
+          delete vaga.dataset.funcional;
+        }
         const rotulo = partes ? `<em class="parte">${PARTES[i]}</em>` : '';
         vaga.innerHTML = rotulo + (item
           ? `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
@@ -718,7 +739,6 @@ export class Ui {
   ): void {
     this.donoArmario.textContent = `de ${dono}`;
 
-    const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés'];
     this.corpo.innerHTML = '';
     vestindo.forEach((item, i) => {
       const vaga = document.createElement('button');
@@ -733,22 +753,41 @@ export class Ui {
       this.corpo.appendChild(vaga);
     });
 
+    // O acervo sai SEPARADO POR PARTE DO CORPO, na mesma ordem das 4 vagas
+    // acima. Tudo misturado numa grade só, achar a calça no meio de seis
+    // vestidos era caçada; em divisões, a pessoa olha direto para a parte que
+    // quer trocar. Parte sem nenhuma peça nem aparece — seção vazia é ruído.
     this.acervo.innerHTML = '';
     if (guardados.length === 0) {
       const vazio = document.createElement('p');
       vazio.className = 'nada';
       vazio.textContent = 'Nada guardado — está tudo no corpo.';
       this.acervo.appendChild(vazio);
+      return;
     }
-    for (const item of guardados) {
-      const peca = document.createElement('button');
-      peca.className = 'peca';
-      peca.dataset.id = item.id;
-      peca.innerHTML =
-        `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
-        (item.nota ? `<small>${item.nota}</small>` : '');
-      this.acervo.appendChild(peca);
-    }
+    SLOTS_ROUPA.forEach((slot, i) => {
+      const doSlot = guardados.filter((item) => item.slot === slot);
+      if (doSlot.length === 0) return;
+      const secao = document.createElement('section');
+      secao.className = 'grupo';
+      secao.dataset.slot = slot;
+      const titulo = document.createElement('h4');
+      titulo.innerHTML = `${PARTES[i]} <span>${doSlot.length}</span>`;
+      secao.appendChild(titulo);
+      const grade = document.createElement('div');
+      grade.className = 'pecas';
+      for (const item of doSlot) {
+        const peca = document.createElement('button');
+        peca.className = 'peca';
+        peca.dataset.id = item.id;
+        peca.innerHTML =
+          `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
+          (item.nota ? `<small>${item.nota}</small>` : '');
+        grade.appendChild(peca);
+      }
+      secao.appendChild(grade);
+      this.acervo.appendChild(secao);
+    });
   }
 
   /** Clicou numa das 4 partes do corpo para TIRAR o que está lá. */
@@ -815,9 +854,19 @@ export class Ui {
    * recusa ter VOZ: sem o aviso, tocar o sorvete numa vaga de vestimenta não
    * fazia nada e parecia um toque que não pegou.
    */
-  private podeIrPara(tipo: string | undefined, lista: 'mao' | 'vestivel'): boolean {
+  private podeIrPara(
+    tipo: string | undefined,
+    lista: 'mao' | 'vestivel',
+    funcional = false,
+  ): boolean {
     if (!tipo) return true;
-    if (tipo === 'vestivel' && lista === 'mao') return true; // desequipar sempre vale
+    if (tipo === 'vestivel' && lista === 'mao') {
+      // desequipar para a mochila só vale para vestimenta FUNCIONAL: roupa
+      // cosmética não ocupa vaga de mão, e aqui a única saída dela é o descarte
+      if (funcional) return true;
+      this.toast('Roupa só se troca no guarda-roupa', '👗');
+      return false;
+    }
     if (tipo === 'mao' && lista === 'vestivel') {
       this.toast('Este item não pode ser vestido', '🚫');
       return false;
@@ -857,7 +906,7 @@ export class Ui {
       }
       // categoria errada: o item CONTINUA na pinça, para a pessoa poder tocar
       // numa vaga válida em seguida em vez de recomeçar
-      if (!this.podeIrPara(this.tipoNaPinca, onde.lista)) return;
+      if (!this.podeIrPara(this.tipoNaPinca, onde.lista, this.funcionalNaPinca)) return;
       this.pegou = null;
       this.marcarPego(null);
       if (this.onMoverItem?.(de, onde)) this.som?.('escolha');
@@ -881,6 +930,7 @@ export class Ui {
     }
     this.pegou = onde;
     this.tipoNaPinca = vaga.dataset.tipo;
+    this.funcionalNaPinca = vaga.dataset.funcional === 'sim';
     this.marcarPego(vaga);
     this.som?.('escolha');
   }
@@ -905,7 +955,11 @@ export class Ui {
       e.preventDefault();
       return;
     }
-    e.dataTransfer?.setData('text/plain', JSON.stringify({ vaga: onde, tipo: vaga.dataset.tipo }));
+    e.dataTransfer?.setData('text/plain', JSON.stringify({
+      vaga: onde,
+      tipo: vaga.dataset.tipo,
+      funcional: vaga.dataset.funcional === 'sim',
+    }));
     if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
     vaga.classList.add('pego');
   }
@@ -926,8 +980,9 @@ export class Ui {
     this.limparArrasto();
     if (!para || !cru) return;
     try {
-      const { vaga, tipo } = JSON.parse(cru) as { vaga: Vaga; tipo?: string };
-      if (!this.podeIrPara(tipo, para.lista)) return;
+      const { vaga, tipo, funcional } = JSON.parse(cru) as
+        { vaga: Vaga; tipo?: string; funcional?: boolean };
+      if (!this.podeIrPara(tipo, para.lista, funcional === true)) return;
       if (this.onMoverItem?.(vaga, para)) this.som?.('escolha');
     } catch {
       /* arrasto de fora da mochila: ignora */
