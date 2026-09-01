@@ -3,8 +3,8 @@ import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { copoDeSuco, frisbee, iceCream } from './props';
 import {
-  canoDaBota, gargantilhaDeLaco, gorroDeLa, maidJapones, mangaDeQuimono, meiaDeCoxa,
-  vestidoGatinho, vestidoMarinheiro, vestidoRosa,
+  canoDaBota, gargantilhaDeLaco, gorroDeLa, maidJapones, mangaDeMoletom, mangaDeQuimono,
+  meiaDeCoxa, moletomComCapuz, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
 } from './roupas';
 
 /**
@@ -158,6 +158,22 @@ export const ITENS = {
     pernasNuas: true,
     extra: maidJapones,
     extraBraco: mangaDeQuimono,
+  },
+  moletomPreto: {
+    id: 'moletom-preto',
+    nome: 'Moletom preto',
+    icone: '🧥',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.moletomPreto,
+    // a manga da ficha fica por baixo da manga do moletom: preta, para nao
+    // aparecer uma faixa de outra cor entre a bola do ombro e o punho
+    corDetalhe: P.moletomPreto,
+    nota: 'com capuz e zíper, o da foto no espelho',
+    // nada de perna nem de braco nu: ele veste por CIMA, e a calca e o que
+    // estiver na vaga das pernas continua aparecendo
+    extra: moletomComCapuz,
+    extraBraco: mangaDeMoletom,
   },
   meiaDeCoxa: {
     id: 'meia-de-coxa',

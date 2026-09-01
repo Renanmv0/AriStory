@@ -305,6 +305,91 @@ const mangas = await page.evaluate(() => {
   return { esquerda: centro(rig.armL), direita: centro(rig.armR) };
 });
 
+// ---------------------------------- 8. o moletom: casca por cima, sem tapar a cara
+//
+// A peça que o Renan pediu como CASCA e não como repintura: casco no corpo,
+// manga em cada braço. Duas coisas medidas aqui que a foto de frente não pega:
+//
+// - a peça não sobe até o rosto. A gola e o capuz nascem perto de uma cabeça que
+//   é MAIOR que o tronco (raio 0.17·h contra 0.105·h), e é fácil um capuz alto
+//   demais nascer por cima do queixo — então o ponto mais alto da peça tem que
+//   ficar abaixo dos olhos;
+// - a barra para ACIMA DA MÃO. O braço deste rig é curto e fica colado no
+//   corpo: uma barra mais comprida passa por fora da mão, e a mão vira um
+//   calombo cor de pele no meio do pano — foi assim que a primeira versão saiu,
+//   e só a foto de trás mostrou;
+// - a perna continua vestida. Ele não declara `pernasNuas`: quem veste um
+//   moletom não fica sem calça, e a perna tem que manter a cor da ficha em vez
+//   de virar pele como acontece por baixo do vestido.
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.removeItem('maid-japones', 'ari');
+  j.equipWearable(window.aristoryItens['moletom-preto'], 'ari');
+});
+await page.waitForTimeout(900);
+
+const moletom = await page.evaluate(() => {
+  const rig = window.jogo.player.rig;
+  const ID = 'moletom-preto';
+  const dele = (pai) => pai.children.filter((o) => o.userData?.roupa === ID);
+
+  // O ponto mais alto e mais baixo da peça, em altura de VERDADE: percorre os
+  // vértices e leva cada um para o mundo. Ler a `position` do objeto daria só o
+  // centro dele, e o que interessa aqui é justamente a borda.
+  const v = rig.group.position.clone();
+  const chao = rig.group.position.clone();
+  rig.group.getWorldPosition(chao);
+  let topo = -Infinity;
+  let base = Infinity;
+  for (const peca of dele(rig.body)) {
+    peca.traverse((n) => {
+      if (!n.isMesh) return;
+      const pos = n.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        v.set(pos.getX(i), pos.getY(i), pos.getZ(i));
+        n.localToWorld(v);
+        if (v.y > topo) topo = v.y;
+        if (v.y < base) base = v.y;
+      }
+    });
+  }
+  const olhos = rig.group.position.clone();
+  rig.head.getWorldPosition(olhos);
+  // a MÃO, que é a medida que dita o comprimento da peça
+  const mao = rig.group.position.clone();
+  rig.maoDir.getWorldPosition(mao);
+
+  // o centro em X da manga dentro do PIVÔ do braço: simétrica, tem que ser ~0
+  // nos dois lados — ver a nota de `mangaDeMoletom`
+  const centro = (pivo) => {
+    const manga = dele(pivo)[0];
+    if (!manga) return null;
+    const xs = manga.children.map((o) => o.position.x);
+    return xs.length ? +(xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(3) : null;
+  };
+  const cor = (slot, parte) => [...new Set(
+    rig.trocaMaterial.filter((t) => t.slot === slot && t.parte === parte)
+      .map((t) => '#' + t.mesh.material.color.getHexString()),
+  )].join('/');
+
+  return {
+    noCorpo: dele(rig.body).length,
+    naCabeca: dele(rig.head).length,
+    mangas: [dele(rig.armL).length, dele(rig.armR).length],
+    centroEsq: centro(rig.armL),
+    centroDir: centro(rig.armR),
+    topo: +(topo - chao.y).toFixed(3),
+    base: +(base - chao.y).toFixed(3),
+    olhos: +(olhos.y - chao.y).toFixed(3),
+    mao: +(mao.y - chao.y).toFixed(3),
+    pernas: cor('pernas', 'principal'),
+    calcaDaFicha: '#' + rig.spec.pants.toString(16),
+    pele: '#' + rig.spec.skin.toString(16),
+    fichaVisivel: rig.sobreTronco.filter((o) => o.visible).length,
+  };
+});
+await page.screenshot({ path: `${OUT}-moletom.png` });
+
 // ------------------------------------------------------------------- relatório
 const perto = (a, b, tol) => Math.abs(a - b) <= tol;
 /**
@@ -364,6 +449,16 @@ console.log('  com a meia por baixo, a perna fica:', comMeia, '(a meia ganha do 
 console.log('— manga de quimono, um lado em cada braço');
 console.log('  centro em X · esquerda:', mangas.esquerda, '· direita:', mangas.direita,
   '(têm que ser opostos)');
+console.log('— o moletom preto');
+console.log('  casco no corpo:', moletom.noCorpo, '· na cabeça:', moletom.naCabeca, '(tem que ser 0)',
+  '· mangas:', JSON.stringify(moletom.mangas));
+console.log('  manga centrada no braço · esquerda:', moletom.centroEsq, '· direita:', moletom.centroDir);
+console.log('  do chão: base', moletom.base, '· topo', moletom.topo,
+  '· olhos', moletom.olhos, '(o topo tem que ficar abaixo dos olhos)');
+console.log('  a mão pende em', moletom.mao, '— a barra tem que parar acima dela');
+console.log('  perna:', moletom.pernas, '(a calça da ficha,', moletom.calcaDaFicha,
+  '— não a pele,', moletom.pele + ')');
+console.log('  laço/cinto da ficha visíveis:', moletom.fichaVisivel, '(tem que ser 0)');
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const ok =
@@ -410,7 +505,18 @@ const ok =
   comMeia === '#fdfaf5' &&
   // 7. espelhadas: mesma distância do eixo, sinais opostos
   mangas.esquerda < -0.05 && mangas.direita > 0.05 &&
-  Math.abs(mangas.esquerda + mangas.direita) < 0.02;
+  Math.abs(mangas.esquerda + mangas.direita) < 0.02 &&
+  // 8. o moletom: casca no corpo e uma manga em cada braço
+  moletom.noCorpo === 1 && moletom.naCabeca === 0 &&
+  moletom.mangas.join() === '1,1' &&
+  // simétrica: nenhum dos dois lados desloca em X
+  Math.abs(moletom.centroEsq) < 0.005 && Math.abs(moletom.centroDir) < 0.005 &&
+  // não sobe até a cara, e a barra para acima da mão em vez de engoli-la
+  moletom.topo < moletom.olhos && moletom.base > moletom.mao &&
+  // a perna continua com a calça da ficha: ele não deixa perna nua
+  moletom.pernas === moletom.calcaDaFicha &&
+  // e o laço e o cinto do Ari somem por baixo dele, como por baixo do vestido
+  moletom.fichaVisivel === 0;
 
 await browser.close();
 process.exit(ok ? 0 : 1);

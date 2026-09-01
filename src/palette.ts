@@ -74,6 +74,16 @@ export const PALETTE = {
   maidCreme: 0xfaf6ee,
   maidFita: 0x17161c,
   maidLacoVermelho: 0xc23444,
+  // o moletom preto da foto do provador: preto lavado puxando para o cinza (o
+  // mesmo motivo do maid — preto puro come o degrade do toon), a costura um
+  // degrau abaixo dele, o ziper um degrau acima para virar uma linha visivel no
+  // meio do peito, o forro do capuz mais claro e as ponteiras do cordao da barra
+  // quase brancas, como aparecem na foto
+  moletomPreto: 0x26262c,
+  moletomCostura: 0x141418,
+  moletomZiper: 0x45464f,
+  moletomForro: 0x53545e,
+  moletomPonteira: 0xd9d6cd,
   // o wa-maid da ilustracao: o preto dele puxa para o roxo, e sao dois rosas —
   // o claro do quimono e o forte da fita e das fivelas
   waRosa: 0xf0b6c8,

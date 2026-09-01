@@ -38,6 +38,7 @@ const ROUPAS_DO_ARMARIO = [
   ITENS.vestidoRosa, ITENS.gargantilhaDeLaco,
   ITENS.maidMarinheiro, ITENS.maidGatinho,
   ITENS.maidJapones, ITENS.meiaDeCoxa,
+  ITENS.moletomPreto,
 ];
 
 export const quarto: SceneDef = {

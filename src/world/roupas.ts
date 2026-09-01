@@ -994,6 +994,269 @@ function meiaDeCoxa(m: MedidasCorpo): THREE.Object3D {
 }
 
 /**
+ * Moletom preto com capuz, da foto no espelho da loja.
+ *
+ * REFERENCIAL: o corpo, y = 0 no CHAO — o mesmo do vestido e da jaqueta.
+ *
+ * O pedido era explicito: uma CASCA por cima do boneco, como o vestido, e nao
+ * uma repintura do torso. Entao ela nao acompanha a silhueta — o casco e mais
+ * largo que o tronco, tem ombro, gola e barra proprios. Quem so repinta o torso
+ * e a camisa listrada, que nem geometria tem.
+ *
+ * ## Onde a barra para, e por que nao mais embaixo
+ *
+ * Ela para na altura da MAO, um dedo acima dela. Nao e gosto: o braco deste rig
+ * e curto, e a mao pende a `0.262·h` do chao, com o quadril logo acima, a
+ * `0.28·h`. Qualquer barra mais comprida que isso passa POR FORA da mao, e como
+ * o braco fica colado no corpo a mao nao tem para onde escapar — ela vira um
+ * calombo cor de pele no meio do pano, que foi exatamente como saiu a primeira
+ * versao, com a barra a `0.085·h` abaixo do quadril. E o jeito de descer mais
+ * seria alargar o casco ate engolir a mao inteira, e ai a dupla fica sem mao.
+ *
+ * Na foto a barra tambem bate na mao dele, entao a peca nao perde nada: e um
+ * moletom que termina no quadril, com o cordao franzindo a barra.
+ *
+ * ## As tampas do cilindro nao sao desperdicio
+ *
+ * O casco e FECHADO em cima e embaixo. Aberto, a camera baixa enxerga o lado de
+ * dentro dele e o torso da ficha la dentro pela boca da barra; fechado, a tampa
+ * de baixo vira o forro e as pernas saem por ela.
+ *
+ * ## O capuz fica ATRAS
+ *
+ * Na foto ele esta caido, entao o que aparece na frente e so a GOLA acolchoada
+ * em volta do pescoco — o volume do capuz mesmo empilha atras da nuca. Por isso
+ * a calota nasce em z negativo: trazida para o meio, ela sairia pela cara.
+ *
+ * A MANGA nao esta aqui — ela e `mangaDeMoletom` e mora no pivo do braco, senao
+ * ficaria parada enquanto o braco balanca.
+ */
+function moletomComCapuz(m: MedidasCorpo): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const hipY = m.legH;
+  const raioTorso = h * 0.105 * w;
+  const ombroY = hipY + m.torsoH * 0.86;
+  const topoTorso = hipY + m.torsoH;
+  // Quase redondo, e nao achatado como o torso (que tem `scale.z = 0.82`):
+  // jaqueta acolchoada enche o peito e as costas. O volume dela vem da
+  // PROFUNDIDADE, e nao da largura — ver a conta do raio logo abaixo.
+  const ACHATA = 0.95;
+
+  const preto = toon(P.moletomPreto);
+  const pretoDuplo = toon(P.moletomPreto, { doubleSide: true });
+  const costura = toon(P.moletomCostura);
+  const ziperMat = toon(P.moletomZiper);
+  const forro = toon(P.moletomForro, { doubleSide: true });
+
+  // O RAIO NAO PODE CRESCER A VONTADE, e essa foi a primeira versao errada.
+  //
+  // O braco deste rig fica colado no corpo: o pivo esta a `0.086·h` do eixo e a
+  // manga tem `0.048·h` de raio, entao o braco ocupa de `0.038·h` a `0.134·h`.
+  // Um casco de `0.114·h` (o que da um `raioTorso * 1.26`) cobre quase tudo
+  // isso, e a silhueta vira um bloco unico sem braco nenhum. Com `1.1` a manga
+  // passa por FORA e o braco reaparece.
+  //
+  // A barra fecha um degrau (`1.04`, mais estreita que o peito) porque o cordao
+  // franze ela — e a silhueta reta da foto, e nao uma capa rodada.
+  const RAIO = raioTorso * 1.1;
+  const RAIO_BARRA = raioTorso * 1.04;
+  // um dedo acima da mao, que pende a `0.262·h` — ver o cabecalho
+  const BARRA = hipY + h * 0.012;
+  const TOPO = ombroY + m.torsoH * 0.03;
+  const frenteZ = RAIO * ACHATA;
+
+  // ------------------------------------------------------------------ casco
+  const casco = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO, RAIO_BARRA, TOPO - BARRA, 22),
+    preto,
+  );
+  casco.position.y = (TOPO + BARRA) / 2;
+  casco.scale.z = ACHATA;
+  g.add(casco);
+
+  // ombro acolchoado: a calota que arredonda o topo do casco. Baixa de
+  // proposito (`scale.y` 0.42) — uma meia-esfera inteira sobe ate o queixo e
+  // engole a mandibula, que fica a `0.566·h` do chao.
+  const ombro = new THREE.Mesh(
+    new THREE.SphereGeometry(RAIO, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+    preto,
+  );
+  ombro.position.y = TOPO;
+  ombro.scale.set(1, 0.42, ACHATA);
+  g.add(ombro);
+
+  // barra: o canal do cordao, um anel um degrau mais largo na boca de baixo
+  const bainha = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO_BARRA * 1.03, RAIO_BARRA * 1.01, h * 0.022, 22, 1, true),
+    pretoDuplo,
+  );
+  bainha.position.y = BARRA + h * 0.011;
+  bainha.scale.z = ACHATA;
+  g.add(bainha);
+
+  // ------------------------------------------------------------------ gola
+  //
+  // Ela ABRE para cima, como a gola de capuz da foto, e nao e um colarinho reto.
+  // A conta que manda aqui e o CRANIO, que neste rig e maior que o tronco
+  // (`0.17·h` de raio contra `0.105·h`): na boca da gola, a `0.63·h` do chao, a
+  // cabeca ainda tem `0.136·h` de raio. Uma gola mais estreita que isso nasce
+  // INTEIRA por tras da cabeca e nao aparece de frente — foi o que aconteceu na
+  // primeira versao, com `1.42`. Com `1.75` sobra um anel em volta do queixo, e
+  // e ele que faz a peca ler como capuz caido em vez de casaco de gola careca.
+  const golaY = topoTorso + h * 0.015;
+  const gola = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.75, raioTorso * 1.15, h * 0.07, 20, 1, true),
+    pretoDuplo,
+  );
+  gola.position.y = golaY;
+  gola.scale.z = 0.95;
+  g.add(gola);
+
+  // o forro cinza, um degrau para dentro: e ele que aparece na dobra da gola na
+  // foto, e o que da profundidade a boca do capuz
+  const forroGola = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.62, raioTorso * 1.05, h * 0.066, 20, 1, true),
+    forro,
+  );
+  forroGola.position.y = golaY - h * 0.003;
+  forroGola.scale.z = 0.95;
+  g.add(forroGola);
+
+  // ------------------------------------------------------------------ capuz
+  //
+  // DEITADO nas costas, e nao empilhado atras da nuca: na primeira versao ele
+  // era quase uma esfera e saia como uma bola presa entre as omoplatas. Achatado
+  // em Z (`0.62`) e alargado em X (`1.4`) ele vira o pano dobrado que a foto
+  // mostra caindo por cima das costas.
+  const capuz = new THREE.Mesh(
+    new THREE.SphereGeometry(raioTorso * 1.15, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.6),
+    pretoDuplo,
+  );
+  capuz.position.set(0, ombroY + m.torsoH * 0.14, -raioTorso * 0.72);
+  capuz.rotation.x = -1.25;
+  capuz.scale.set(1.4, 0.95, 0.62);
+  g.add(capuz);
+
+  // ------------------------------------------------------------------ ziper
+  // Sobe do quadril ate dentro da gola, fechado — na foto ele esta fechado ate
+  // em cima. E a unica linha vertical da peca, e sem ela a frente e uma parede
+  // preta lisa.
+  const ziperTopo = golaY + h * 0.005;
+  const ziperBaixo = BARRA + h * 0.014;
+  const ziper = new THREE.Mesh(
+    new THREE.BoxGeometry(h * 0.014, ziperTopo - ziperBaixo, h * 0.018),
+    ziperMat,
+  );
+  ziper.position.set(0, (ziperTopo + ziperBaixo) / 2, frenteZ * 0.99);
+  g.add(ziper);
+
+  // o cursor, na altura do peito, como na foto
+  const cursor = new THREE.Mesh(
+    new THREE.BoxGeometry(h * 0.02, h * 0.026, h * 0.012),
+    costura,
+  );
+  cursor.position.set(0, hipY + m.torsoH * 0.5, frenteZ * 1.03);
+  g.add(cursor);
+
+  // ------------------------------------------------- costura do peito (canga)
+  // a linha horizontal que cruza o peito na altura da axila
+  const canga = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO * 1.012, RAIO * 1.012, h * 0.007, 22, 1, true),
+    toon(P.moletomCostura, { doubleSide: true }),
+  );
+  canga.position.y = hipY + m.torsoH * 0.68;
+  canga.scale.z = ACHATA;
+  g.add(canga);
+
+  // ---------------------------------------------------------------- bolsos
+  // Cada bolso mora num PIVO girado em Y, e a inclinacao da boca vai DENTRO
+  // dele. E o mesmo cuidado das pregas do maid japones: somar um `rotation.y`
+  // com um `rotation.z` no mesmo objeto nao compoe do jeito que parece, e a
+  // peca sai da parede do casco.
+  for (const lado of [-1, 1] as const) {
+    const pivo = new THREE.Group();
+    pivo.rotation.y = lado * 0.62;
+    pivo.scale.z = ACHATA;
+
+    const boca = new THREE.Mesh(
+      new THREE.BoxGeometry(h * 0.013, h * 0.062, h * 0.012),
+      costura,
+    );
+    // acima da barra: com a barra no quadril, um bolso mais baixo sairia pela
+    // boca do casco
+    boca.position.set(0, hipY + m.torsoH * 0.2, RAIO * 1.0);
+    // a boca do bolso e inclinada, como na foto — e o sinal segue o lado, senao
+    // os dois bolsos apontam para o mesmo canto
+    boca.rotation.z = lado * 0.36;
+    pivo.add(boca);
+
+    g.add(pivo);
+  }
+
+  // ------------------------------------------------- ponteiras do cordao
+  // os dois cadarcos claros que pendem na barra, dos dois lados do ziper
+  for (const lado of [-1, 1] as const) {
+    const ponta = new THREE.Mesh(
+      new THREE.CylinderGeometry(h * 0.006, h * 0.006, h * 0.016, 8),
+      toon(P.moletomPonteira),
+    );
+    ponta.position.set(lado * h * 0.022, BARRA + h * 0.006, RAIO_BARRA * ACHATA * 0.99);
+    g.add(ponta);
+  }
+
+  return g;
+}
+
+/**
+ * A manga do moletom, pendurada em CADA braco.
+ *
+ * REFERENCIAL: o pivo do braco, y = 0 no ombro, braco pendendo em -Y.
+ *
+ * Ela e SIMETRICA e por isso nao pede `lado`: e um tubo centrado no eixo do
+ * braco, e nao ha deslocamento lateral cujo sinal possa inverter — que e a
+ * pegadinha que torceu a manga de quimono. Se um dia ela ganhar deslocamento em
+ * X, o parametro volta junto.
+ *
+ * Ela para em `0.82 x armLen`, um dedo acima da mao (que esta em `0.92`): na
+ * foto o punho fica de fora, e uma manga que passasse da mao engoliria o que a
+ * pessoa estivesse segurando.
+ */
+function mangaDeMoletom(m: MedidasCorpo): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const armLen = h * 0.3;
+  const ATE = 0.82;
+
+  // a bola do ombro fecha a juncao com o casco: sem ela, o braco levantado abre
+  // uma fresta entre a manga e o corpo
+  const ombro = new THREE.Mesh(
+    new THREE.SphereGeometry(h * 0.058 * w, 12, 10),
+    toon(P.moletomPreto),
+  );
+  ombro.position.y = -armLen * 0.03;
+  ombro.scale.set(1, 0.92, 0.95);
+  g.add(ombro);
+
+  const tubo = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.056 * w, h * 0.046 * w, armLen * ATE, 14, 1, true),
+    toon(P.moletomPreto, { doubleSide: true }),
+  );
+  tubo.position.y = -armLen * ATE * 0.5;
+  g.add(tubo);
+
+  // o punho fecha a boca do tubo — e a mao sai por ele
+  const punho = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.047 * w, h * 0.045 * w, h * 0.022, 14),
+    toon(P.moletomCostura),
+  );
+  punho.position.y = -armLen * ATE;
+  g.add(punho);
+
+  return g;
+}
+
+/**
  * Gargantilha de laco, a que aparece no pescoco da vitrine.
  *
  * REFERENCIAL: a cabeca, y = 0 no centro do cranio — por isso os numeros sao
@@ -1028,4 +1291,5 @@ function gargantilhaDeLaco(m: MedidasCorpo): THREE.Object3D {
 export {
   gorroDeLa, canoDaBota, vestidoRosa, gargantilhaDeLaco,
   vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
+  moletomComCapuz, mangaDeMoletom,
 };
