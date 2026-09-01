@@ -14,11 +14,20 @@ acento — é o padrão do repositório, siga o que já está lá.
 | criar/editar um cenário | `.claude/skills/aristory-cenario/SKILL.md` |
 | aparência de um personagem | `.claude/skills/aristory-personagem/SKILL.md` |
 | criar uma peça de cenário | `.claude/skills/aristory-prop/SKILL.md` |
+| adicionar/ajustar roupa do guarda-roupa | `.claude/skills/aristory-roupa/SKILL.md` |
 | som, música ou efeito sonoro | `.claude/skills/aristory-som/SKILL.md` |
 | rodar, ver e validar | `.claude/skills/aristory-testar/SKILL.md` |
 
-Elas existem para você **não precisar varrer o código** a cada tarefa. Comece por
-elas; `docs/ARQUITETURA.md` só quando o assunto for o motor em si.
+Elas existem para você **não precisar varrer o código** a cada tarefa. Comece
+por elas.
+
+Fora do código, tem mais três documentos em `docs/`: `PERSONAGENS.md` diz
+como o Ari e o Renan são de verdade (cabelo, roupa de referência, os NPCs já
+mencionados mas nunca modelados) — leia antes de perguntar ao Renan algo que
+já está respondido ali. `ARQUITETURA.md` é o motor por dentro.
+`CONTEXTO-INTEGRAL.md` e `ROADMAP.md` são um retrato do projeto e do que
+falta — **úteis para se situar rápido, mas podem estar desatualizados**; o
+`git log` é a fonte da verdade para o que mudou por último.
 
 ## Invariantes
 
@@ -35,6 +44,10 @@ elas; `docs/ARQUITETURA.md` só quando o assunto for o motor em si.
   e diálogo que cita nome usa `g.companionName()` — o jogador troca com `T`.
 - **Fala escrita pelo Renan vai literal.** Se ele deu o texto de uma interação,
   use exatamente aquele texto.
+- **Perna e braço esquerdos nascem em `x` negativo**: `rotation.z` positivo
+  neles empurra para DENTRO do corpo, não para fora. Já causou bug real
+  quatro vezes (frisbee, sentado, patinação, manga de quimono) — ver a skill
+  de roupa para o padrão certo.
 
 ## Validar
 
@@ -57,7 +70,7 @@ node scripts/parque.mjs  /tmp/pq    # praca da roda, cupula e margem do lago
 node scripts/pingpong.mjs /tmp/pp   # a partida de ping pong ate o quinto ponto
 node scripts/maos.mjs    /tmp/mao   # de maos dadas: emparelhados e o coracao
 node scripts/suco.mjs    /tmp/su    # os sucos do clube: cada sabor com o seu dono
-node scripts/mochila.mjs /tmp/mo    # as 9 vagas, o slot principal e o F5
+node scripts/mochila.mjs /tmp/mo    # as 10 vagas, o slot principal e o F5
 node scripts/itens.mjs   /tmp/it    # posse por pessoa, auto-stash, arrastar e poses
 node scripts/patins.mjs  /tmp/pat   # patins no corpo, 1,3x de velocidade e o parceiro
 node scripts/banco.mjs   /tmp/bn    # sentar nos bancos: de maos dadas e pernas balancando
@@ -68,6 +81,14 @@ node scripts/quarto.mjs  /tmp/qt    # quarto do Ari: porta nos dois sentidos e o
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e
 mudança de som precisa do `.wav` ouvido. O Chromium já está instalado; não rode
 `playwright install`.
+
+## Git e publicação
+
+`main` publica sozinho no GitHub Pages a cada push
+(`.github/workflows/deploy.yml`). Termine o pedaço na branch de
+desenvolvimento da tarefa, valide, e **funda para `main`** — sem isso a
+mudança nunca aparece pro Renan, mesmo commitada. `ci.yml` roda
+typecheck+build em toda branch; o deploy real só dispara em `main`.
 
 ## Trabalhando junto
 
