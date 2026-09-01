@@ -1245,7 +1245,10 @@ export const villaLobos: SceneDef = {
         }
 
         case 'no-chao':
-          if (disco.position.distanceTo(eu) < 1.2) {
+          // sem o addItem o jogo troca a fase pra 'comigo' e o disco some da
+          // tela, mas o item nunca entra na mochila: nada pra lancar, nenhum
+          // prompt, disco irrecuperavel ate sair e voltar da quadra
+          if (disco.position.distanceTo(eu) < 1.2 && g.addItem(ITENS.frisbee) !== 'cheio') {
             disco.pickUp();
             fase = 'comigo';
             contarTroca(g, false);
