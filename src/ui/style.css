@@ -970,6 +970,129 @@ body.touch-device .dialogue .next { right: 84px; }
   .armario .boneco { min-height: 220px; }
 }
 
+/* ------------------------------------------------------ vestiário do clube
+ *
+ * O painel encolhido da moda praia. Duas diferenças deliberadas para o
+ * guarda-roupa, e as duas pelo mesmo motivo: aqui o corpo de verdade está na
+ * tela, de calção, a dois passos da piscina. Ele não tem boneco 3D, e a folha
+ * encosta no LADO em vez de tapar o meio — a câmera mantém o personagem no
+ * centro da tela, então é o centro que precisa ficar livre. Trocar a cor da
+ * bermuda muda o corpo de verdade na mesma hora, e é essa a graça.
+ */
+.vestiario {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center end;
+  padding: 0 18px;
+  background: linear-gradient(90deg, rgba(53, 48, 74, 0) 45%, rgba(53, 48, 74, 0.22));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.vestiario.show { opacity: 1; pointer-events: auto; }
+.vestiario .sheet {
+  width: min(340px, calc(100% - 32px));
+  max-height: 82vh;
+  overflow: auto;
+  padding: 18px 22px 20px;
+  border-radius: 22px;
+  background: rgba(255, 250, 242, 0.94);
+  box-shadow: var(--shadow);
+}
+.vestiario h2 { margin: 0 0 2px; font-size: 22px; }
+.vestiario h2 .dono { font-size: 15px; color: var(--ink-soft); }
+.vestiario .sub { margin: 0 0 12px; color: var(--ink-soft); font-weight: 700; }
+.vestiario h3 {
+  margin: 14px 0 8px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.vestiario .oculos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 2px solid rgba(120, 105, 150, 0.22);
+  background: rgba(255, 255, 255, 0.5);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.vestiario .oculos .icone { font-size: 24px; line-height: 1.1; }
+.vestiario .oculos b { font-size: 13px; font-weight: 800; }
+.vestiario .oculos em {
+  margin-left: auto;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+  color: var(--accent-deep);
+}
+.vestiario .oculos.ligado {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.86);
+}
+.vestiario .oculos:hover { transform: translateY(-2px); border-color: var(--accent-deep); }
+
+.vestiario .bermudas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 10px;
+}
+.vestiario .bermuda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  border-radius: 16px;
+  border: 2px solid rgba(120, 105, 150, 0.22);
+  background: rgba(255, 255, 255, 0.5);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+/* a amostra É o botão: na beira da piscina o que se escolhe é a cor */
+.vestiario .bermuda i {
+  width: 100%;
+  height: 34px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+.vestiario .bermuda b { font-size: 12px; font-weight: 800; text-align: center; }
+.vestiario .bermuda.vestida {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.86);
+}
+.vestiario .bermuda:hover { transform: translateY(-2px); border-color: var(--accent-deep); }
+.vestiario .close {
+  margin-top: 16px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* no celular não há lado nenhum para sobrar: a folha desce para o rodapé */
+@media (max-width: 620px) {
+  .vestiario {
+    place-items: end center;
+    padding: 0 0 18px;
+    background: linear-gradient(180deg, rgba(53, 48, 74, 0) 45%, rgba(53, 48, 74, 0.22));
+  }
+  .vestiario .sheet { width: calc(100% - 24px); max-height: 62vh; }
+}
+
 /* rótulo da parte do corpo nas vagas de vestimenta da mochila */
 .mochila .slot .parte {
   font-size: 10px;

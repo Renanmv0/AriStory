@@ -24,7 +24,7 @@ import {
   type SceneDef,
   type Vaga,
 } from './types';
-import { ITENS, modeloDoItem } from '../world/itens';
+import { ITENS, MODA_PRAIA, modeloDoItem } from '../world/itens';
 import { MEMORIAS } from '../world/memoriasData';
 import type { CharacterSpec } from '../characters/spec';
 
@@ -104,42 +104,38 @@ export class Game implements GameAPI {
     this.ui.onAbrirArmario = () => this.pintarArmario();
     this.ui.onGirarBoneco = (d) => this.previa.girar(d);
     this.ui.onTirarParte = (i) => {
-      // tirar NAO joga fora: a peca volta para o armario (ou, se for
-      // funcional, para a mochila). Mochila cheia recusa, em vez de sumir.
-      const quem = this.playerId();
-      const peca = this.save.vestiveis(quem)[i];
-      if (!peca) return;
-      this.save.despir(quem, i);
-      // `guardar` e nao `pegar`: o `pegar` VESTE o acessorio de volta na hora,
-      // entao tirar pelo painel nao tirava nada — a peca saia da vaga e
-      // voltava para ela no mesmo clique
-      if (this.save.guardar(quem, peca) === 'cheio') {
-        this.save.vestir(quem, peca); // desfaz: nada se perde
-        this.ui.toast('Mochila cheia', '🎒');
-        return;
-      }
+      if (!this.tirarPeca(this.playerId(), i)) return;
       this.audio.play('escolha');
       this.pintarArmario();
     };
     this.ui.onVestirPeca = (id) => {
-      const quem = this.playerId();
-      // a peca vem do ARMARIO; a funcional (patins) pode estar na mochila
-      const peca = this.save.acervo(quem).find((i) => i.id === id)
-        ?? this.save.maos(quem).find((i) => i?.id === id)
-        ?? null;
-      if (!peca) return;
-      // a vaga ja pode estar ocupada: tira o que esta la primeiro, e o que sai
-      // volta para o armario
-      const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
-      if (vaga < 0) return;
-      const antigo = this.save.vestiveis(quem)[vaga];
-      this.save.largar(quem, id);
-      if (antigo) this.save.despir(quem, vaga);
-      this.save.vestir(quem, peca);
-      // idem: o que sai do corpo volta para o armario, nao se veste de novo
-      if (antigo) this.save.guardar(quem, antigo);
+      if (!this.vestirPeca(this.playerId(), id)) return;
       this.audio.play('escolha');
       this.pintarArmario();
+    };
+
+    // O vestiario do clube mexe nas MESMAS vagas do guarda-roupa — ele so
+    // pergunta menos. Por isso os dois paineis passam pelos mesmos dois
+    // metodos: um jeito so de vestir, um jeito so de tirar.
+    this.ui.onAbrirVestiario = () => this.pintarVestiario();
+    this.ui.onAlternarOculos = () => {
+      const quem = this.playerId();
+      const posto = SLOTS_ROUPA.indexOf('cabeca');
+      const jaEsta = this.save.vestiveis(quem)[posto]?.id === ITENS.oculosEscuros.id;
+      if (jaEsta ? this.tirarPeca(quem, posto) : this.vestirPeca(quem, ITENS.oculosEscuros.id)) {
+        this.audio.play('escolha');
+      }
+      this.pintarVestiario();
+    };
+    this.ui.onEscolherBermuda = (id) => {
+      const quem = this.playerId();
+      const posto = SLOTS_ROUPA.indexOf('pernas');
+      // a mesma cor de novo TIRA a bermuda: o botao que veste e o que despe
+      const jaEsta = this.save.vestiveis(quem)[posto]?.id === id;
+      if (jaEsta ? this.tirarPeca(quem, posto) : this.vestirPeca(quem, id)) {
+        this.audio.play('escolha');
+      }
+      this.pintarVestiario();
     };
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
     this.ui.onRestart = () => this.restart();
@@ -344,6 +340,7 @@ export class Game implements GameAPI {
       this.ui.menuOpen ||
       this.ui.mochilaOpen ||
       this.ui.armarioOpen ||
+      this.ui.vestiarioOpen ||
       this.ui.memoriasOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
@@ -361,6 +358,8 @@ export class Game implements GameAPI {
     // Esc fecha o guarda-roupa: ele trava o movimento, então precisa de uma
     // saída de teclado além do botão
     if (this.ui.armarioOpen && this.input.justPressed('Escape')) this.ui.fecharArmario();
+    // o vestiário trava o movimento pelo mesmo motivo, e sai pela mesma tecla
+    if (this.ui.vestiarioOpen && this.input.justPressed('Escape')) this.ui.fecharVestiario();
     // o quadro trava o movimento igual ao guarda-roupa, então precisa da mesma
     // saída de teclado
     if (this.ui.memoriasOpen && this.input.justPressed('Escape')) this.ui.fecharMemorias();
@@ -374,7 +373,7 @@ export class Game implements GameAPI {
     // As duas telas mostram o inventário de quem está sendo controlado, então
     // trocar é como se vê — e se veste — o outro. O subtítulo da mochila já
     // prometia "T vê a do outro" e não funcionava: o `busy` engolia a tecla.
-    const emTela = this.ui.mochilaOpen || this.ui.armarioOpen;
+    const emTela = this.ui.mochilaOpen || this.ui.armarioOpen || this.ui.vestiarioOpen;
     const podeTrocar = emTela
       ? !this.ui.dialogueOpen && !this.ui.menuOpen && !this.transitioning
       : !busy;
@@ -780,6 +779,53 @@ export class Game implements GameAPI {
   private readonly roupaAplicada = new Map<string, string>();
 
   /**
+   * Veste uma peca que a pessoa TEM, trocando o que estiver naquela vaga.
+   *
+   * O `save.vestir` recusa vaga ocupada de proposito — ele nao sobrescreve
+   * nada —, entao quem quer TROCAR tira a antiga antes. E o que sai do corpo
+   * volta para o armario: trocar de roupa nunca joga peca fora.
+   *
+   * O painel do armario e o do vestiario passam os dois por aqui.
+   */
+  private vestirPeca(quem: string, id: string): boolean {
+    // a peca vem do ARMARIO; a funcional (patins) pode estar na mochila
+    const peca = this.save.acervo(quem).find((i) => i.id === id)
+      ?? this.save.maos(quem).find((i) => i?.id === id)
+      ?? null;
+    if (!peca) return false;
+    const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
+    if (vaga < 0) return false;
+    const antigo = this.save.vestiveis(quem)[vaga];
+    this.save.largar(quem, id);
+    if (antigo) this.save.despir(quem, vaga);
+    this.save.vestir(quem, peca);
+    if (antigo) this.save.guardar(quem, antigo);
+    return true;
+  }
+
+  /**
+   * Tira o que esta numa vaga do corpo.
+   *
+   * Tirar NAO joga fora: a peca volta para o armario (ou, se for funcional,
+   * para a mochila). Mochila cheia recusa e desfaz, em vez de sumir com ela.
+   *
+   * `guardar` e nao `pegar`: o `pegar` VESTE o acessorio de volta na hora,
+   * entao tirar pelo painel nao tirava nada — a peca saia da vaga e voltava
+   * para ela no mesmo clique.
+   */
+  private tirarPeca(quem: string, vaga: number): boolean {
+    const peca = this.save.vestiveis(quem)[vaga];
+    if (!peca) return false;
+    this.save.despir(quem, vaga);
+    if (this.save.guardar(quem, peca) === 'cheio') {
+      this.save.vestir(quem, peca);
+      this.ui.toast('Mochila cheia', '🎒');
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * Abre o painel do guarda-roupa.
    *
    * O armario da cena chama isto, mas o painel nao depende dele: ele mostra o
@@ -804,6 +850,47 @@ export class Game implements GameAPI {
     ];
     this.ui.renderArmario(vestindo, guardados, this.player.name);
     this.previa.vestir(this.save.loadout(quem));
+  }
+
+  /**
+   * Abre o vestiario do clube: o guarda-roupa encolhido na moda praia.
+   *
+   * Nao ha um segundo armazenamento nenhum aqui. O oculos e as bermudas sao
+   * itens de acervo como qualquer outro, e as escolhas moram nas vagas do
+   * corpo — as MESMAS que o armario do quarto usa. E por isso que o Ari e o
+   * Renan tem estilos de praia independentes de graca: cada um tem o seu
+   * inventario, e o `T` troca de quem o painel esta falando.
+   */
+  abrirVestiario(): void {
+    this.pintarVestiario();
+    this.ui.abrirVestiario();
+  }
+
+  /** Redesenha o painel do vestiario a partir do save. */
+  private pintarVestiario(): void {
+    const quem = this.playerId();
+    const vestindo = this.save.vestiveis(quem);
+    const naCabeca = vestindo[SLOTS_ROUPA.indexOf('cabeca')];
+    const nasPernas = vestindo[SLOTS_ROUPA.indexOf('pernas')];
+    // a paleta e numero e o CSS quer texto; a traducao mora aqui, e nao na Ui,
+    // porque e o Game quem conhece a ficha da peca
+    const css = (cor: number): string => `#${cor.toString(16).padStart(6, '0')}`;
+    this.ui.renderVestiario({
+      dono: this.player.name,
+      oculos: naCabeca?.id === ITENS.oculosEscuros.id,
+      // so as cores DESBLOQUEADAS: a lista e o que a pessoa tem, e nao o
+      // catalogo inteiro. Hoje o vestiario abastece as quatro ao abrir, mas
+      // quem manda continua sendo o inventario dela.
+      bermudas: MODA_PRAIA
+        .filter((b) => this.save.achouItem(quem, b.id))
+        .map((b) => ({
+          id: b.id,
+          nome: b.nome,
+          cor: css(b.corBanho ?? 0xffffff),
+          faixa: b.estampaBanho === undefined ? undefined : css(b.estampaBanho),
+          vestida: nasPernas?.id === b.id,
+        })),
+    });
   }
 
   /**
@@ -931,6 +1018,7 @@ export class Game implements GameAPI {
       this.previa.mostrar(this.player.rig.spec);
       this.pintarArmario();
     }
+    if (this.ui.vestiarioOpen) this.pintarVestiario();
   }
 
   submergePlayer(valor: number): void {

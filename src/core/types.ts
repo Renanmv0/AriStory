@@ -142,6 +142,22 @@ export interface ItemDef {
   /** cor da parte secundaria (manga, barra, cano); sem isto usa `cor` */
   corDetalhe?: number;
   /**
+   * So `pernas`: a cor do CALCAO, no traje de banho.
+   *
+   * Existe porque no `banho` o corpo inteiro vira pele e a unica peca que
+   * sobra e o calcao, que ate agora tinha a cor fixa da ficha da pessoa
+   * (`spec.swim`). E a peca das pernas que manda nele, que e o mesmo lugar de
+   * onde sai a calca — so que num traje diferente.
+   *
+   * Uma bermuda de praia declara SO isto e nao declara `cor`: sem `cor`, a
+   * perna continua com a calca da ficha fora d'agua (o resolvedor ja trata
+   * `cor === undefined` como "esta peca nao pinta o corpo"), entao a peca
+   * simplesmente nao aparece vestida na rua. Nada de estado novo para isso.
+   */
+  corBanho?: number;
+  /** Idem: as duas faixas da bermuda estampada. Sem isto, o calcao e liso. */
+  estampaBanho?: number;
+  /**
    * So `cabeca`: esconde o cabelo enquanto a peca estiver vestida.
    *
    * Existe porque cabelo aqui tem VOLUME de verdade — a juba do Ari chega a
@@ -355,6 +371,14 @@ export interface GameAPI {
    * controlado. O movimento fica travado enquanto ele estiver aberto.
    */
   abrirGuardaRoupa(): void;
+  /**
+   * Abre o vestiario do clube: o guarda-roupa encolhido na moda praia — o
+   * oculos escuros e a cor da bermuda. Trava o movimento igual ao armario.
+   *
+   * Nao e um segundo sistema de roupa: ele mexe nas mesmas vagas do corpo, com
+   * os mesmos itens, no mesmo save. Cada pessoa tem o seu.
+   */
+  abrirVestiario(): void;
   /**
    * Abre o quadro de memorias e pinta a memoria de `id` (as do catalogo em
    * `world/memoriasData.ts`). O movimento fica travado enquanto ele estiver

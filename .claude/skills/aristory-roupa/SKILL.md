@@ -128,6 +128,35 @@ um dos dois braços fica torto — o tipo de bug que passa direto pela foto de
 frente e só aparece girando a câmera. Aconteceu no frisbee, no personagem
 sentado, na patinação e na manga do quimono nesta mesma base de código.
 
+## Moda praia: `corBanho` e `estampaBanho`
+
+No traje de banho (`outfit: 'banho'`, hoje só o clube) o corpo inteiro vira
+pele e a única peça que sobra é o **calção**. Quem manda na cor dele é a peça
+da vaga `pernas` — a mesma vaga da calça, só que noutro traje:
+
+```ts
+bermudaEstampada: {
+  id: 'bermuda-estampada', nome: 'Bermuda estampada', icone: '🌺',
+  tipo: 'vestivel', slot: 'pernas',
+  corBanho: P.bermudaEstampa,        // o calção
+  estampaBanho: P.bermudaEstampaFaixa, // as duas faixas
+  // repare: SEM `cor`
+},
+```
+
+A ausência de `cor` é o truque, e não um esquecimento: sem ela o resolvedor
+deixa a perna com a calça da ficha fora d'água, então a bermuda simplesmente
+não aparece na rua. É o que dispensou um segundo sistema de roupa para a
+praia — zero estado novo, zero geometria nova, e o guarda-roupa do quarto
+continua listando a peça em "Pernas" como qualquer outra.
+
+O painel que troca isso é o **vestiário do clube** (`clube:vestiario` →
+`g.abrirVestiario()`): o guarda-roupa encolhido em duas perguntas, óculos e
+cor. Ele mexe nas MESMAS vagas, pelos mesmos `vestirPeca`/`tirarPeca` do
+`Game`, então cada pessoa guarda o seu traje de praia de graça. Cor nova de
+bermuda é uma entrada em `ITENS` e outra em `MODA_PRAIA` (`world/itens.ts`) —
+a cena abastece por essa lista e o painel desenha por ela.
+
 ## Pele à mostra: `bracosNus` e `pernasNuas`
 
 A peça não pode dizer "cor de pele" — a pele é do personagem
@@ -199,6 +228,7 @@ npm run typecheck
 npm run build && npx vite preview --port 4173 &
 node scripts/roupas.mjs     /tmp/rp
 node scripts/vestimenta.mjs /tmp/vt
+node scripts/vestiario.mjs  /tmp/vs   # só se a peça mexer na moda praia
 ```
 
 `roupas.mjs` mede, não só fotografa: confere que a geometria nasceu sob o pai

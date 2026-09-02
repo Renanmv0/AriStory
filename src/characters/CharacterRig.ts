@@ -143,6 +143,17 @@ export class CharacterRig {
   private readonly soVestido: THREE.Object3D[] = [];
   /** aparece só no traje de banho (o calção) */
   private readonly soBanho: THREE.Object3D[] = [];
+  /**
+   * O calção, guardado à parte porque ele TROCA DE COR.
+   *
+   * Ele não entra em `trocaMaterial`: aquela lista é de peças que viram pele no
+   * traje de banho, e o calção é justamente a que faz o contrário.
+   */
+  private readonly calcao: THREE.Mesh;
+  /** a cor de calção da ficha da pessoa, quando não há bermuda escolhida */
+  private readonly calcaoDaFicha: THREE.Material;
+  /** as duas faixas da bermuda estampada; só aparecem se a peça pedir */
+  private readonly estampa: THREE.Mesh[] = [];
 
   // --- guarda-roupa
   /** traje da cena, guardado em vez de aplicado direto — ver `aplicarVisual` */
@@ -291,15 +302,36 @@ export class CharacterRig {
     }
 
     // calção de banho: fica escondido até alguém entrar na água
+    const raioCalcao = h * 0.118 * w;
+    this.calcaoDaFicha = toon(spec.swim ?? spec.pants);
     const calcao = new THREE.Mesh(
-      new THREE.CylinderGeometry(h * 0.118 * w, h * 0.112 * w, h * 0.15, 14),
-      toon(spec.swim ?? spec.pants),
+      new THREE.CylinderGeometry(raioCalcao, h * 0.112 * w, h * 0.15, 14),
+      this.calcaoDaFicha,
     );
     calcao.position.y = hipY + h * 0.03;
     calcao.scale.z = 0.85;
     calcao.visible = false;
     this.body.add(calcao);
     this.soBanho.push(calcao);
+    this.calcao = calcao;
+
+    // As duas faixas da bermuda estampada. Elas nascem FILHAS do calção, então
+    // a visibilidade do traje de banho já vale para elas de graça e sobra só a
+    // pergunta "esta peça é estampada?".
+    //
+    // O raio é 3% maior em vez de igual: duas faces cilíndricas na mesma
+    // superfície brigam pelo mesmo pixel, e um vão de 3% do raio é folga de
+    // sobra para a faixa ficar por cima sem descolar do pano.
+    for (const yFaixa of [0.3, -0.12]) {
+      const faixa = new THREE.Mesh(
+        new THREE.CylinderGeometry(raioCalcao * 1.03, raioCalcao * 1.03, h * 0.019, 14, 1, true),
+        this.calcaoDaFicha,
+      );
+      faixa.position.y = yFaixa * h * 0.15;
+      faixa.visible = false;
+      calcao.add(faixa);
+      this.estampa.push(faixa);
+    }
 
     // ------------------------------------------------------------- bracos
     for (const [pivot, side] of [
@@ -948,6 +980,19 @@ export class CharacterRig {
 
     for (const peca of this.soVestido) peca.visible = !banho;
     for (const peca of this.soBanho) peca.visible = banho;
+
+    // A MODA PRAIA. No banho o corpo inteiro vira pele e sobra só o calção, e
+    // quem manda na cor dele é a peça das PERNAS — a mesma vaga de onde sai a
+    // calça, só que noutro traje. Sem bermuda escolhida vale a cor da ficha,
+    // que é como era antes de o vestiário existir.
+    const bermuda = this.roupa.pernas;
+    this.calcao.material = bermuda?.corBanho === undefined
+      ? this.calcaoDaFicha
+      : toon(bermuda.corBanho);
+    for (const faixa of this.estampa) {
+      faixa.visible = bermuda?.estampaBanho !== undefined;
+      if (bermuda?.estampaBanho !== undefined) faixa.material = toon(bermuda.estampaBanho);
+    }
     // camisa do acervo cobre a roupa de tronco da ficha
     if (!banho && this.roupa.tronco) {
       for (const peca of this.sobreTronco) peca.visible = false;

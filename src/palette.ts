@@ -104,6 +104,19 @@ export const PALETTE = {
   waEscuro: 0x3b3547,
   waBranco: 0xfdfaf5,
   waFivela: 0xb9b6c0,
+  // moda praia do vestiário do clube. O calção é a única peça que aparece no
+  // traje de banho, então as cores precisam se separar de longe na beira da
+  // piscina — daí três tons cheios em vez de três lavados.
+  bermudaAzul: 0x2f7fd0,
+  bermudaVermelha: 0xd8453f,
+  bermudaAmarela: 0xf2b829,
+  // a estampada: fundo turquesa com duas faixas cor de areia
+  bermudaEstampa: 0x2fb5a8,
+  bermudaEstampaFaixa: 0xfdf0d5,
+  // óculos de sol: lente quase preta (preto puro come o degradê do toon) e a
+  // armação um degrau acima, para a lente não virar uma mancha só
+  oculosLente: 0x23212b,
+  oculosArmacao: 0x3d3b48,
 
   // ui / afeto
   heart: 0xff6b8b,
