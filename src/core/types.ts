@@ -355,6 +355,12 @@ export interface GameAPI {
    * controlado. O movimento fica travado enquanto ele estiver aberto.
    */
   abrirGuardaRoupa(): void;
+  /**
+   * Abre o quadro de memorias e pinta a memoria de `id` (as do catalogo em
+   * `world/memoriasData.ts`). O movimento fica travado enquanto ele estiver
+   * aberto. Nao faz nada se o id nao existir.
+   */
+  abrirMemoria(id: string): void;
 
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */

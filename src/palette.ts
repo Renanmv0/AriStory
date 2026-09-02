@@ -47,6 +47,8 @@ export const PALETTE = {
   mesaVerde: 0x2f6f57,
 
   // interiores
+  cortica: 0xd7a76a,
+  corticaEscura: 0xb9884f,
   floorWood: 0xc9975c,
   rug: 0xd98fa6,
   sofa: 0x6d8fd6,

@@ -77,6 +77,7 @@ node scripts/banco.mjs   /tmp/bn    # sentar nos bancos: de maos dadas e pernas 
 node scripts/roupas.mjs  /tmp/rp    # guarda-roupa: 4 slots sem mexer na animacao
 node scripts/vestimenta.mjs /tmp/vt # onde cada roupa pode morar, e o armario por parte
 node scripts/quarto.mjs  /tmp/qt    # quarto do Ari: porta nos dois sentidos e o armario
+node scripts/memorias.mjs /tmp/me   # o quadro de memorias: pintado, vivo e travando o jogo
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

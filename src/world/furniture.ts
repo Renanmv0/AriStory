@@ -207,6 +207,85 @@ export function pictureFrame(width = 0.7, height = 0.55, art: number = P.skyDusk
   return g;
 }
 
+/**
+ * O quadro de memorias: placa de cortica com fotos pregadas por cima.
+ *
+ * As "fotos" nao mostram nada — sao retangulos brancos com um miolo colorido,
+ * porque a esta distancia e do angulo da camera isometrica nada mais se leria.
+ * O que a memoria mostra de verdade e o painel que abre no `w.interact`; aqui
+ * o que importa e o objeto dizer de longe "tem lembranca pendurada nesta
+ * parede", e para isso bastam quatro retangulos tortos e uma tachinha em cada.
+ */
+export function muralDeMemorias(largura = 1.3, altura = 1.0): THREE.Group {
+  const g = new THREE.Group();
+
+  const moldura = new THREE.Mesh(
+    new THREE.BoxGeometry(largura, altura, 0.05),
+    toon(P.woodDark),
+  );
+  g.add(moldura);
+
+  const placa = new THREE.Mesh(
+    new THREE.PlaneGeometry(largura - 0.1, altura - 0.1),
+    flat(P.cortica),
+  );
+  placa.position.z = 0.03;
+  g.add(placa);
+
+  // os furos da cortica: so uns riscos escuros, para a placa nao ficar chapada
+  for (let i = 0; i < 14; i++) {
+    const furo = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.018, 0.018),
+      flat(P.corticaEscura),
+    );
+    // espalhados por uma conta fixa: mural montado duas vezes tem que sair
+    // igual, senao a foto do teste muda sozinha a cada build
+    furo.position.set(
+      (((i * 37) % 100) / 100 - 0.5) * (largura - 0.24),
+      (((i * 61) % 100) / 100 - 0.5) * (altura - 0.24),
+      0.035,
+    );
+    g.add(furo);
+  }
+
+  // as fotos pregadas, cada uma com a sua tachinha
+  const fotos: Array<[number, number, number, number, number, number]> = [
+    // x, y, largura, altura, giro, cor do miolo
+    [-0.3, 0.2, 0.34, 0.28, 0.06, P.skyDusk],
+    [0.26, 0.24, 0.3, 0.26, -0.09, P.water],
+    [-0.24, -0.22, 0.3, 0.26, -0.05, P.flowerPink],
+    [0.3, -0.2, 0.32, 0.24, 0.08, P.leafMid],
+  ];
+  const tachinhas = [P.heart, P.gold, P.frisbee, P.heart];
+
+  fotos.forEach(([x, y, lw, lh, giro, cor], i) => {
+    const foto = new THREE.Group();
+
+    const papel = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh), flat(P.metalWhite));
+    foto.add(papel);
+    // a margem larga embaixo e o que faz o retangulo virar polaroide
+    const miolo = new THREE.Mesh(
+      new THREE.PlaneGeometry(lw - 0.06, lh - 0.1),
+      flat(cor),
+    );
+    miolo.position.set(0, 0.02, 0.002);
+    foto.add(miolo);
+
+    const tachinha = new THREE.Mesh(
+      new THREE.SphereGeometry(0.018, 8, 6),
+      toon(tachinhas[i]),
+    );
+    tachinha.position.set(0, lh / 2 - 0.03, 0.012);
+    foto.add(tachinha);
+
+    foto.position.set(x, y, 0.04);
+    foto.rotation.z = giro;
+    g.add(foto);
+  });
+
+  return g;
+}
+
 /** Janela vazada numa parede: moldura + vidro translucido. */
 export function windowFrame(width = 1.2, height = 1.2): THREE.Group {
   const g = new THREE.Group();

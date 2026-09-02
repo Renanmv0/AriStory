@@ -25,6 +25,7 @@ import {
   type Vaga,
 } from './types';
 import { ITENS, modeloDoItem } from '../world/itens';
+import { MEMORIAS } from '../world/memoriasData';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -343,6 +344,7 @@ export class Game implements GameAPI {
       this.ui.menuOpen ||
       this.ui.mochilaOpen ||
       this.ui.armarioOpen ||
+      this.ui.memoriasOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
@@ -359,6 +361,9 @@ export class Game implements GameAPI {
     // Esc fecha o guarda-roupa: ele trava o movimento, então precisa de uma
     // saída de teclado além do botão
     if (this.ui.armarioOpen && this.input.justPressed('Escape')) this.ui.fecharArmario();
+    // o quadro trava o movimento igual ao guarda-roupa, então precisa da mesma
+    // saída de teclado
+    if (this.ui.memoriasOpen && this.input.justPressed('Escape')) this.ui.fecharMemorias();
     // O T vale TAMBÉM com a mochila ou o guarda-roupa abertos.
     //
     // As duas telas mostram o inventário de quem está sendo controlado, então
@@ -796,6 +801,18 @@ export class Game implements GameAPI {
     this.previa.vestir(this.save.loadout(quem));
   }
 
+  /**
+   * Abre o quadro de memorias numa memoria.
+   *
+   * O Game nao sabe desenhar memoria nenhuma: ele so acha a ficha no catalogo e
+   * entrega para a UI, que e quem tem o canvas. A pintura em si mora inteira em
+   * `world/memoriasData.ts`.
+   */
+  abrirMemoria(id: string): void {
+    const memoria = MEMORIAS.find((m) => m.id === id);
+    if (memoria) this.ui.abrirMemorias(memoria);
+  }
+
   unlock(memory: Memory): void {
     if (this.save.addMemory(memory)) {
       this.audio.play('memoria');
@@ -815,13 +832,25 @@ export class Game implements GameAPI {
     this.iso.snapTo(this.player.chest);
   }
 
+  /**
+   * Alguma tela de LER esta por cima do jogo.
+   *
+   * As duas teclas que a cena le passam por aqui: com uma delas aberta, o F do
+   * frisbee nao pode carregar por tras do painel.
+   */
+  private get telaDeLeitura(): boolean {
+    return (
+      this.ui.dialogueOpen || this.ui.journalOpen || this.ui.menuOpen || this.ui.memoriasOpen
+    );
+  }
+
   keyPressed(code: string): boolean {
-    if (this.ui.dialogueOpen || this.ui.journalOpen || this.ui.menuOpen || this.player.locked) return false;
+    if (this.telaDeLeitura || this.player.locked) return false;
     return this.input.justPressed(code);
   }
 
   keyDown(code: string): boolean {
-    if (this.ui.dialogueOpen || this.ui.journalOpen || this.ui.menuOpen || this.player.locked) return false;
+    if (this.telaDeLeitura || this.player.locked) return false;
     return this.input.isDown(code);
   }
 

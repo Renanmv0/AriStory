@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
-  armario, bed, bookshelf, chair, desk, espelho, nightstand,
+  armario, bed, bookshelf, chair, desk, espelho, muralDeMemorias, nightstand,
   pictureFrame, pottedPlant, rug, wallShelf, windowFrame,
 } from '../world/furniture';
 import { toon } from '../core/materials';
@@ -31,6 +31,9 @@ const H = 2.8;
 
 /** onde o armário encosta na parede do fundo */
 const ARMARIO = { x: 2.65, z: z0 + 0.36 };
+
+/** o quadro de memórias, na parede do fundo */
+const MURAL = { x: -1.15 };
 
 /** o que mora dentro do armário */
 const ROUPAS_DO_ARMARIO = [
@@ -141,6 +144,12 @@ export const quarto: SceneDef = {
     w.add(w.place(pictureFrame(0.6, 0.75, P.flowerPink), -2.2, 1.85, z0 + 0.17));
     w.add(w.place(wallShelf(0.9), 1.05, 1.9, z0 + 0.19));
 
+    // O quadro de memórias mora no único trecho de parede do fundo que sobrou:
+    // entre o quadrinho da cabeceira (acaba em -1.9) e a estante (começa em
+    // -0.4). Fica de frente para quem entra, e dá para chegar nele pelo vão
+    // entre a cama e a estante, na frente do criado-mudo.
+    const mural = w.add(w.place(muralDeMemorias(1.3, 1.0), MURAL.x, 1.72, z0 + 0.17));
+
     // ------------------------------------------------------- porta pra sala
     w.door({
       x: xPorta, z: D / 2 - 0.7,
@@ -188,6 +197,32 @@ export const quarto: SceneDef = {
           });
         }
         g.abrirGuardaRoupa();
+      },
+    });
+
+    // ------------------------------------------------- o quadro de memórias
+    w.interact({
+      id: 'quarto:memorias',
+      x: MURAL.x, z: -2.15, radius: 1.35,
+      label: 'Ver memórias', icon: '📌',
+      highlight: mural,
+      onInteract: async (g) => {
+        if (!g.flag('quadro-visto')) {
+          g.setFlag('quadro-visto');
+          await conversa([
+            [A, 'Eu queria um lugar pra pendurar as nossas.'],
+            [R, 'Um quadro de memórias.'],
+            [A, 'Esse. Cada uma que a gente viver, entra aqui.'],
+          ]);
+          g.unlock({
+            id: 'quadro-de-memorias',
+            title: 'O quadro de memórias',
+            place: 'Quarto do Ari',
+            note: 'Ideia dele. A primeira já estava pregada quando eu vi.',
+            icon: '📌',
+          });
+        }
+        g.abrirMemoria('corredor-de-luzes');
       },
     });
 

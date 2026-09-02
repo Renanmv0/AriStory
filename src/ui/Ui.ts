@@ -1,6 +1,7 @@
 import type { SavedMemory } from '../core/SaveState';
 import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
+import type { MemoriaPintada } from '../world/memoriasData';
 
 /**
  * O nome de cada parte do corpo na tela, na ORDEM de `SLOTS_ROUPA`.
@@ -42,6 +43,12 @@ export class Ui {
   private readonly slotsVestivel: HTMLDivElement;
   private readonly dono: HTMLElement;
   private readonly descarte: HTMLElement;
+  private readonly memorias: HTMLDivElement;
+  private readonly quadro: HTMLCanvasElement;
+  /** a memoria sendo pintada agora, e a volta do rAF que a mantem viva */
+  private memoriaAberta: MemoriaPintada | null = null;
+  private pintura: number | null = null;
+  private abriuEm = 0;
   /** vaga escolhida no toque, esperando o destino */
   private pegou: Vaga | null = null;
   /** categoria do item na pinça, para a trava saber o que recusar */
@@ -170,6 +177,13 @@ export class Ui {
         <div class="acervo"></div>
         <button class="close">fechar</button>
       </div></div>
+      <div class="memorias"><div class="sheet">
+        <h2></h2>
+        <p class="sub"></p>
+        <canvas class="quadro"></canvas>
+        <p class="legenda"></p>
+        <button class="close">fechar</button>
+      </div></div>
       <div class="touch">
         <button class="action-btn" aria-label="interagir">✨</button>
         <button class="swap-btn" aria-label="trocar de personagem">🔁</button>
@@ -212,6 +226,8 @@ export class Ui {
     this.corpo = ui.querySelector('.armario .corpo')!;
     this.acervo = ui.querySelector('.armario .acervo')!;
     this.donoArmario = ui.querySelector('.armario .dono')!;
+    this.memorias = ui.querySelector('.memorias')!;
+    this.quadro = ui.querySelector('.memorias .quadro')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -242,6 +258,10 @@ export class Ui {
     ui.querySelector('.armario .close')!.addEventListener('click', () => this.fecharArmario());
     this.armario.addEventListener('click', (e) => {
       if (e.target === this.armario) this.fecharArmario();
+    });
+    ui.querySelector('.memorias .close')!.addEventListener('click', () => this.fecharMemorias());
+    this.memorias.addEventListener('click', (e) => {
+      if (e.target === this.memorias) this.fecharMemorias();
     });
     this.ligarGiroDoBoneco();
     // Descartar pede dois toques. Perder o chapéu de campeão num toque sem
@@ -335,7 +355,8 @@ export class Ui {
   private marcarTelaAberta(): void {
     document.body.classList.toggle(
       'tela-aberta',
-      this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen,
+      this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
+      this.memoriasOpen,
     );
   }
 
@@ -605,6 +626,74 @@ export class Ui {
     this.journal.classList.remove('show');
     this.marcarTelaAberta();
   }
+
+  // ------------------------------------------------------ quadro de memorias
+
+  get memoriasOpen(): boolean {
+    return this.memorias.classList.contains('show');
+  }
+
+  /**
+   * Abre o quadro e comeca a pintar a memoria.
+   *
+   * O desenho e ao vivo, nao uma imagem pronta guardada: as luzinhas piscam, e
+   * uma memoria parada nao piscaria. Custa uma volta de `requestAnimationFrame`
+   * enquanto o painel esta aberto, e nenhuma depois — a volta se desliga
+   * sozinha ao fechar.
+   */
+  abrirMemorias(memoria: MemoriaPintada): void {
+    if (this.memoriasOpen) return;
+    this.som?.('diario');
+    this.closeJournal();
+    this.closeMochila();
+    this.memoriaAberta = memoria;
+    this.memorias.querySelector('h2')!.textContent = memoria.titulo;
+    this.memorias.querySelector('.sub')!.textContent = memoria.lugar;
+    this.memorias.querySelector('.legenda')!.textContent = memoria.legenda;
+    // a folha reserva o espaco do quadro pela proporcao da propria memoria: uma
+    // foto em pe e uma deitada nao cabem na mesma moldura
+    this.quadro.style.aspectRatio = String(memoria.proporcao);
+    this.memorias.classList.add('show');
+    this.marcarTelaAberta();
+    this.abriuEm = performance.now();
+    this.pintura = requestAnimationFrame(this.pintarQuadro);
+  }
+
+  fecharMemorias(): void {
+    if (!this.memoriasOpen) return;
+    this.memorias.classList.remove('show');
+    this.memoriaAberta = null;
+    if (this.pintura !== null) cancelAnimationFrame(this.pintura);
+    this.pintura = null;
+    this.marcarTelaAberta();
+  }
+
+  /**
+   * Uma volta da pintura.
+   *
+   * O canvas segue o tamanho que o CSS deu, na densidade da tela — sem os dois
+   * o desenho sai borrado no retina e esticado quando a janela muda. Redimensiona
+   * so quando o numero muda, porque mexer em `width` limpa o canvas inteiro.
+   */
+  private pintarQuadro = (agora: number): void => {
+    const memoria = this.memoriaAberta;
+    if (!memoria || !this.memoriasOpen) {
+      this.pintura = null;
+      return;
+    }
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const larg = Math.round(this.quadro.clientWidth * dpr);
+    const alt = Math.round(this.quadro.clientHeight * dpr);
+    if (larg > 0 && alt > 0) {
+      if (this.quadro.width !== larg || this.quadro.height !== alt) {
+        this.quadro.width = larg;
+        this.quadro.height = alt;
+      }
+      const ctx = this.quadro.getContext('2d');
+      if (ctx) memoria.pintar(ctx, larg, alt, (agora - this.abriuEm) / 1000);
+    }
+    this.pintura = requestAnimationFrame(this.pintarQuadro);
+  };
 
   // -------------------------------------------------------------- mochila
 
