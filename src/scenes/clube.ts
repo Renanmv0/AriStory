@@ -7,7 +7,7 @@ import {
   kiosk, parasol, poolLadder, poolShell, poolWater, showerPost, sunLounger, tree,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
-import { ITENS } from '../world/itens';
+import { ITENS, MODA_PRAIA } from '../world/itens';
 
 /**
  * Clube — a piscina.
@@ -138,7 +138,11 @@ export const clube: SceneDef = {
 
     const vestiario = w.add(w.place(building(6, 3.2, 4, P.wallCream, 0x7aa6c4), 13, 0, -9));
     w.blockBox(13, -9, 3, 2);
-    w.banco(13, -6.6);
+    // O banco saiu da frente da porta. Ele estava em (13, -6.6), exatamente em
+    // cima do ponto do vestiário e com raio maior — quem chegasse na porta só
+    // via "Sentar no banco", e a interação do vestiário não tinha como
+    // aparecer. Aqui ele fica ao lado, virado para a piscina.
+    w.banco(9, -6.6);
 
     // ------------------------------------------------------------ jardim
     w.setSeed(90210);
@@ -354,10 +358,27 @@ export const clube: SceneDef = {
 
     w.interact({
       id: 'clube:vestiario',
-      x: 13, z: -6.6, radius: 2.2,
+      x: 13, z: -6.9, radius: 2, priority: 1,
       label: 'Vestiário', icon: '🩳',
       highlight: vestiario,
-      onInteract: (api) => api.say(['Cinco minutos pra trocar de roupa. Você demora quinze.']),
+      onInteract: async (api) => {
+        // Abastece os DOIS a cada abertura, como o armário do quarto: as peças
+        // são de cada pessoa, e o `storeItem` recusa o que ela já tem, então
+        // repor sai de graça e o vestiário também repõe o que foi descartado.
+        for (const quem of [api.playerId(), api.companionId()]) {
+          api.storeItem(ITENS.oculosEscuros, quem);
+          for (const peca of MODA_PRAIA) api.storeItem(peca, quem);
+        }
+
+        if (!api.flag('vestiario-clube')) {
+          api.setFlag('vestiario-clube');
+          await conversa([
+            [A, 'Cinco minutos pra trocar de roupa. Você demora quinze.'],
+            [R, 'Eu demoro porque escolho. Você só pega a primeira que vê.'],
+          ]);
+        }
+        api.abrirVestiario();
+      },
     });
   },
 };

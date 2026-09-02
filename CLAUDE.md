@@ -78,6 +78,7 @@ node scripts/patins.mjs  /tmp/pat   # patins no corpo, 1,3x de velocidade e o pa
 node scripts/banco.mjs   /tmp/bn    # sentar nos bancos: de maos dadas e pernas balancando
 node scripts/roupas.mjs  /tmp/rp    # guarda-roupa: 4 slots sem mexer na animacao
 node scripts/vestimenta.mjs /tmp/vt # onde cada roupa pode morar, e o armario por parte
+node scripts/vestiario.mjs /tmp/vs  # o vestiario do clube: oculos, cor da bermuda e um estilo por pessoa
 node scripts/quarto.mjs  /tmp/qt    # quarto do Ari: porta nos dois sentidos e o armario
 node scripts/memorias.mjs /tmp/me   # o quadro de memorias: pintado, vivo e travando o jogo
 node scripts/cama.mjs    /tmp/cm    # deitar junto: lado a lado, e os bracos balancando

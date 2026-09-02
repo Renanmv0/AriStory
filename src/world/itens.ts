@@ -4,7 +4,7 @@ import type { ItemDef } from '../core/types';
 import { copoDeSuco, frisbee, iceCream } from './props';
 import {
   canoDaBota, gargantilhaDeLaco, gorroDeLa, maidJapones, mangaDeMoletom, mangaDeQuimono,
-  meiaDeCoxa, moletomComCapuz, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
+  meiaDeCoxa, moletomComCapuz, oculosDeSol, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
 } from './roupas';
 
 /**
@@ -210,6 +210,56 @@ export const ITENS = {
     nota: 'chama atenção de longe',
     extra: canoDaBota,
   },
+  // ------------------------------------------------------- moda praia
+  // Do vestiario do clube. As bermudas declaram `corBanho` e NAO declaram
+  // `cor`: elas pintam o calcao dentro d'agua e nao pintam nada fora dele — a
+  // ficha inteira em quatro linhas, sem geometria e sem estado novo.
+  oculosEscuros: {
+    id: 'oculos-escuros',
+    nome: 'Óculos escuros',
+    icone: '🕶️',
+    tipo: 'vestivel',
+    slot: 'cabeca',
+    nota: 'do vestiário do clube',
+    extra: oculosDeSol,
+  },
+  bermudaAzul: {
+    id: 'bermuda-azul',
+    nome: 'Bermuda azul',
+    icone: '🩳',
+    tipo: 'vestivel',
+    slot: 'pernas',
+    corBanho: P.bermudaAzul,
+    nota: 'a cor da própria piscina',
+  },
+  bermudaVermelha: {
+    id: 'bermuda-vermelha',
+    nome: 'Bermuda vermelha',
+    icone: '🩳',
+    tipo: 'vestivel',
+    slot: 'pernas',
+    corBanho: P.bermudaVermelha,
+    nota: 'dá pra achar de longe',
+  },
+  bermudaAmarela: {
+    id: 'bermuda-amarela',
+    nome: 'Bermuda amarela',
+    icone: '🩳',
+    tipo: 'vestivel',
+    slot: 'pernas',
+    corBanho: P.bermudaAmarela,
+    nota: 'sol de tarde',
+  },
+  bermudaEstampada: {
+    id: 'bermuda-estampada',
+    nome: 'Bermuda estampada',
+    icone: '🌺',
+    tipo: 'vestivel',
+    slot: 'pernas',
+    corBanho: P.bermudaEstampa,
+    estampaBanho: P.bermudaEstampaFaixa,
+    nota: 'duas faixas cor de areia',
+  },
   frisbee: {
     id: 'frisbee',
     nome: 'Frisbee',
@@ -219,6 +269,17 @@ export const ITENS = {
     holdPose: 'relaxed',
   },
 } as const satisfies Record<string, ItemDef>;
+
+/**
+ * O que o vestiario do clube tem para vestir.
+ *
+ * Um lugar so: a cena ABASTECE por esta lista e o painel DESENHA por ela, e as
+ * duas nao tem como discordar sobre quais cores existem. Na ordem em que
+ * aparecem na fileira.
+ */
+export const MODA_PRAIA: readonly ItemDef[] = [
+  ITENS.bermudaAzul, ITENS.bermudaVermelha, ITENS.bermudaAmarela, ITENS.bermudaEstampada,
+];
 
 /**
  * O corpo de cada item, na MAO.

@@ -1285,11 +1285,95 @@ function gargantilhaDeLaco(m: MedidasCorpo): THREE.Object3D {
   return g;
 }
 
+/**
+ * Oculos de sol do vestiario do clube.
+ *
+ * REFERENCIAL: a cabeca, y = 0 no centro do cranio — o mesmo do gorro. Os
+ * olhos do rig ficam em `(±0.35·headR, 0, 0.9·headR)`, e a lente pousa em
+ * cima deles.
+ *
+ * A CONTA que importa e a PROFUNDIDADE, e e a que derrubou a primeira versao:
+ * ela punha a lente em `z = 0.9·headR`, que parecia a frente do rosto e nao
+ * era. O cranio e uma esfera de raio `headR`, entao a superficie recua com o
+ * afastamento do eixo: em `x = 0.36·headR`, ela ja esta em `0.93·headR`, e a
+ * lente ficou inteira DENTRO da cabeca — invisivel. Os olhos do rig chegam a
+ * `0.98·headR` (esfera achatada em Z, empurrada para fora), e um oculos que os
+ * cobre precisa passar disso. Daí `0.96·headR` de centro com `0.09` de
+ * espessura: a face da frente sai em `1.005`, na frente do olho, e a de tras
+ * afunda no cranio em vez de flutuar.
+ *
+ * A HASTE segue a mesma logica ao contrario: ela sai da dobradica INCLINADA
+ * para fora e AFUNDA no cranio antes da orelha. Afundar e o certo — a esfera
+ * cresce mais rapido que qualquer reta, e uma haste que tentasse acompanhar a
+ * curva por fora ficaria boiando na frente da orelha.
+ *
+ * Esta peca e de cabeca e tem copia UNICA, entao o lado nao vem de fora: os
+ * dois lados sao montados aqui dentro, e o espelho e `x · side` com o angulo
+ * da haste negado junto — sem negar o angulo, a haste da esquerda apontaria
+ * para dentro da cabeca, que e a mesma pegadinha de sinal de sempre.
+ */
+function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
+  const g = new THREE.Group();
+  const r = m.headR;
+  const lente = toon(P.oculosLente);
+  const armacao = toon(P.oculosArmacao);
+
+  // altura dos olhos, um fio acima: oculos escorregado no nariz e outro visual
+  const Y = r * 0.04;
+  /** o quanto a lente gira para acompanhar a curva do rosto */
+  const ABRE = 0.2;
+
+  for (const side of [-1, 1] as const) {
+    const vidro = new THREE.Mesh(
+      new THREE.BoxGeometry(r * 0.4, r * 0.3, r * 0.09),
+      lente,
+    );
+    vidro.position.set(side * r * 0.35, Y, r * 0.96);
+    // a borda de fora recua; a de dentro afunda no rosto, que e o certo
+    vidro.rotation.y = -side * ABRE;
+    g.add(vidro);
+
+    // aro fino por cima da lente, so para ela nao ficar uma mancha chapada
+    const aro = new THREE.Mesh(
+      new THREE.BoxGeometry(r * 0.44, r * 0.06, r * 0.09),
+      armacao,
+    );
+    aro.position.set(side * r * 0.35, Y + r * 0.16, r * 0.97);
+    aro.rotation.y = -side * ABRE;
+    g.add(aro);
+
+    // A HASTE, da dobradica ate sumir na altura da orelha — ver o cabecalho.
+    const ax = r * 0.53;
+    const az = r * 0.94;
+    const bx = r * 0.78;
+    const bz = r * 0.4;
+    const dx = bx - ax;
+    const dz = bz - az;
+    const haste = new THREE.Mesh(
+      new THREE.BoxGeometry(r * 0.05, r * 0.07, Math.hypot(dx, dz)),
+      armacao,
+    );
+    haste.position.set(side * (ax + bx) / 2, Y + r * 0.07, (az + bz) / 2);
+    haste.rotation.y = side * Math.atan2(dx, dz);
+    g.add(haste);
+  }
+
+  // a ponte, entre as duas lentes
+  const ponte = new THREE.Mesh(
+    new THREE.BoxGeometry(r * 0.32, r * 0.055, r * 0.07),
+    armacao,
+  );
+  ponte.position.set(0, Y + r * 0.09, r * 1.0);
+  g.add(ponte);
+
+  return g;
+}
+
 // As FICHAS das pecas moram em `itens.ts`, junto com o resto do acervo: peca de
 // roupa e item como qualquer outro, e mora numa vaga de vestimenta do
 // inventario. Aqui fica so o corpo delas.
 export {
   gorroDeLa, canoDaBota, vestidoRosa, gargantilhaDeLaco,
   vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
-  moletomComCapuz, mangaDeMoletom,
+  moletomComCapuz, mangaDeMoletom, oculosDeSol,
 };

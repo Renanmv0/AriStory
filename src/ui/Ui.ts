@@ -39,6 +39,10 @@ export class Ui {
   private readonly corpo: HTMLDivElement;
   private readonly acervo: HTMLDivElement;
   private readonly donoArmario: HTMLSpanElement;
+  private readonly vestiario: HTMLDivElement;
+  private readonly oculos: HTMLButtonElement;
+  private readonly bermudas: HTMLDivElement;
+  private readonly donoVestiario: HTMLSpanElement;
   private readonly slotsMao: HTMLDivElement;
   private readonly slotsVestivel: HTMLDivElement;
   private readonly dono: HTMLElement;
@@ -180,6 +184,15 @@ export class Ui {
         <div class="acervo"></div>
         <button class="close">fechar</button>
       </div></div>
+      <div class="vestiario"><div class="sheet">
+        <h2>Vestiário <span class="dono"></span></h2>
+        <p class="sub">o traje de praia de cada um · <b>T</b> troca de pessoa</p>
+        <h3>Óculos escuros</h3>
+        <button class="oculos"></button>
+        <h3>Cor da bermuda</h3>
+        <div class="bermudas"></div>
+        <button class="close">voltar pra piscina</button>
+      </div></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
         <p class="sub"></p>
@@ -234,6 +247,10 @@ export class Ui {
     this.corpo = ui.querySelector('.armario .corpo')!;
     this.acervo = ui.querySelector('.armario .acervo')!;
     this.donoArmario = ui.querySelector('.armario .dono')!;
+    this.vestiario = ui.querySelector('.vestiario')!;
+    this.oculos = ui.querySelector('.vestiario .oculos')!;
+    this.bermudas = ui.querySelector('.vestiario .bermudas')!;
+    this.donoVestiario = ui.querySelector('.vestiario .dono')!;
     this.memorias = ui.querySelector('.memorias')!;
     this.quadro = ui.querySelector('.memorias .quadro')!;
     this.pontos = ui.querySelector('.memorias .pontos')!;
@@ -267,6 +284,15 @@ export class Ui {
     ui.querySelector('.armario .close')!.addEventListener('click', () => this.fecharArmario());
     this.armario.addEventListener('click', (e) => {
       if (e.target === this.armario) this.fecharArmario();
+    });
+    ui.querySelector('.vestiario .close')!.addEventListener('click', () => this.fecharVestiario());
+    this.vestiario.addEventListener('click', (e) => {
+      if (e.target === this.vestiario) this.fecharVestiario();
+    });
+    this.oculos.addEventListener('click', () => this.onAlternarOculos?.());
+    this.bermudas.addEventListener('click', (e) => {
+      const peca = (e.target as HTMLElement).closest('.bermuda') as HTMLElement | null;
+      if (peca?.dataset.id) this.onEscolherBermuda?.(peca.dataset.id);
     });
     ui.querySelector('.memorias .close')!.addEventListener('click', () => this.fecharMemorias());
     ui.querySelector('.memorias .antes')!.addEventListener('click', () => this.folhear(-1));
@@ -367,7 +393,7 @@ export class Ui {
     document.body.classList.toggle(
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
-      this.memoriasOpen,
+      this.memoriasOpen || this.vestiarioOpen,
     );
   }
 
@@ -979,6 +1005,79 @@ export class Ui {
       this.onVestirPeca?.(peca.dataset.id);
     });
   }
+
+  // --------------------------------------------------------------- vestiário
+  //
+  // O vestiário do clube é o guarda-roupa ENCOLHIDO na moda praia: as mesmas
+  // vagas do corpo e o mesmo save, só que com duas perguntas em vez do acervo
+  // inteiro. Ele não tem boneco 3D de propósito — a folha é baixa e estreita, e
+  // o corpo de verdade continua aparecendo atrás dela na beira da piscina. É o
+  // único painel em que dá para ver a peça no lugar certo enquanto se escolhe.
+
+  get vestiarioOpen(): boolean {
+    return this.vestiario.classList.contains('show');
+  }
+
+  abrirVestiario(): void {
+    if (this.vestiarioOpen) return;
+    this.som?.('escolha');
+    this.onAbrirVestiario?.();
+    this.vestiario.classList.add('show');
+    this.marcarTelaAberta();
+  }
+
+  fecharVestiario(): void {
+    if (!this.vestiarioOpen) return;
+    this.vestiario.classList.remove('show');
+    this.marcarTelaAberta();
+    this.onFecharVestiario?.();
+  }
+
+  /**
+   * Desenha o painel: o botão do óculos e a fileira de bermudas.
+   *
+   * `cor` e `faixa` são cores CSS, e não da paleta: quem traduz da peça para a
+   * tela é o Game. A amostra tem a cor DA PEÇA, e não um emoji colorido — na
+   * beira da piscina o que se escolhe é a cor, então ela tem que ser o botão.
+   */
+  renderVestiario(dados: {
+    dono: string;
+    oculos: boolean;
+    bermudas: ReadonlyArray<{ id: string; nome: string; cor: string; faixa?: string; vestida: boolean }>;
+  }): void {
+    this.donoVestiario.textContent = `de ${dados.dono}`;
+
+    this.oculos.classList.toggle('ligado', dados.oculos);
+    this.oculos.innerHTML =
+      `<span class="icone">🕶️</span><b>Óculos escuros</b>` +
+      `<em>${dados.oculos ? 'tirar' : 'colocar'}</em>`;
+
+    this.bermudas.innerHTML = '';
+    for (const b of dados.bermudas) {
+      const botao = document.createElement('button');
+      botao.className = 'bermuda';
+      botao.classList.toggle('vestida', b.vestida);
+      botao.dataset.id = b.id;
+      const amostra = document.createElement('i');
+      // estampada: a faixa entra como duas listras na própria amostra, que é
+      // como ela aparece no calção
+      amostra.style.background = b.faixa
+        ? `repeating-linear-gradient(160deg, ${b.cor} 0 12px, ${b.faixa} 12px 18px)`
+        : b.cor;
+      botao.appendChild(amostra);
+      const nome = document.createElement('b');
+      nome.textContent = b.nome;
+      botao.appendChild(nome);
+      this.bermudas.appendChild(botao);
+    }
+  }
+
+  /** Clicou no botão do óculos: liga se estiver desligado, e vice-versa. */
+  onAlternarOculos: (() => void) | null = null;
+  /** Clicou numa cor de bermuda. A mesma de novo tira a bermuda. */
+  onEscolherBermuda: ((id: string) => void) | null = null;
+  onAbrirVestiario: (() => void) | null = null;
+  onFecharVestiario: (() => void) | null = null;
 
   /** Clique numa vaga da mão: quem decide o que fazer é o Game. */
   onEscolherSlot: ((indice: number) => void) | null = null;
