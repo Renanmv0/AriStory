@@ -76,6 +76,8 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 - `Interactable.ts` — ponto de interação: prompt, destaque pulsante, `enabled`,
   `priority`, `moveTo()` para objetos que andam.
 - `props.ts` / `furniture.ts` — kits de peças. Ver a skill `aristory-prop`.
+- `memoriasData.ts` — o acervo do quadro de memórias: cada memória é uma função
+  que pinta uma foto em Canvas 2D. Ver a skill `aristory-memoria`.
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**
   do grupo que gira e são reposicionadas por frame, para nunca virarem de cabeça
   para baixo.
@@ -193,6 +195,29 @@ por trás do painel.
 
 `node scripts/celular.mjs /tmp/cel` mede isso: reprova se qualquer botão cobrir
 um pixel do prompt, da fala ou dos botões de escolha.
+
+### Quadro de memórias
+
+Duas coisas parecidas com nomes parecidos, e não são a mesma:
+
+- **Diário** (`J`): a lista de texto do que já aconteceu, alimentada por
+  `g.unlock()`. Persiste no `SaveState`.
+- **Quadro** (o mural no quarto do Ari): fotos da vida real deles, **pintadas
+  em Canvas 2D** na hora em que o painel abre. Não persiste nada — o acervo é
+  fixo, em `world/memoriasData.ts`.
+
+O painel é DOM com um `<canvas>` dentro, e a pintura roda numa volta de
+`requestAnimationFrame` que **só vive enquanto o painel está aberto** (o
+desenho é vivo: as luzinhas piscam, as bandeirinhas balançam). `Ui` recebe a
+lista inteira e o índice, não uma memória só — é o que deixa folhear sem
+fechar e reabrir; com uma peça só, setas e pontinhos somem.
+
+Duas pegadinhas de CSS que já morderam e o `#ui .memorias .quadro` guarda:
+o seletor precisa do `#ui` porque `#app canvas { width:100%; height:100% }`
+— a regra que estica o canvas do jogo — pega neste canvas e ganha por ter um
+id; e o canvas é `inline-block`, porque num bloco `width: auto` significa
+"toda a largura do pai" e a `proporcao` da memória passaria a sair da largura
+da folha em vez da altura.
 
 ### Menu e recomeçar
 

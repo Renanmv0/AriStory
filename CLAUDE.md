@@ -14,6 +14,7 @@ acento — é o padrão do repositório, siga o que já está lá.
 | criar/editar um cenário | `.claude/skills/aristory-cenario/SKILL.md` |
 | aparência de um personagem | `.claude/skills/aristory-personagem/SKILL.md` |
 | criar uma peça de cenário | `.claude/skills/aristory-prop/SKILL.md` |
+| pintar uma memória para o quadro (a partir de uma foto) | `.claude/skills/aristory-memoria/SKILL.md` |
 | adicionar/ajustar roupa do guarda-roupa | `.claude/skills/aristory-roupa/SKILL.md` |
 | som, música ou efeito sonoro | `.claude/skills/aristory-som/SKILL.md` |
 | rodar, ver e validar | `.claude/skills/aristory-testar/SKILL.md` |

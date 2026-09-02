@@ -32,6 +32,8 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Interface de celular sem tapar texto, e tela de controles no menu
 - [x] Praça da roda gigante povoada, cúpula com estrutura e margem do lago viva
 - [x] Minigame de ping pong até 5 pontos, com chapéu de campeão de prêmio
+- [x] Guarda-roupa: armário no quarto do Ari, com as peças feitas a partir de foto
+- [x] Quadro de memórias no quarto: fotos da vida real deles pintadas em Canvas 2D
 
 ## Próximos passos naturais
 
@@ -52,6 +54,11 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 Cenário de lugar onde vocês **ainda não foram** também vale: o clube foi o
 primeiro. A memória que ele desbloqueia assume isso na hora de escrever.
 
+### Quadro de memórias
+- [ ] Mais memórias — cada foto que o Renan mandar vira uma; a navegação já aguenta
+- [ ] Uma memória que só destrava depois de visitar o cenário correspondente
+- [ ] Som próprio ao abrir uma memória (o clima daquele lugar, em dois acordes)
+
 ### Jogabilidade
 - [ ] Frisbee: disputar o mesmo disco, vento afetando o voo, modo cronometrado
 - [ ] Ciclo dia/noite por cenário (o parque ao pôr do sol)
@@ -68,3 +75,11 @@ primeiro. A memória que ele desbloqueia assume isso na hora de escrever.
 Leia `.claude/skills/aristory-cenario/SKILL.md`. Resumo: um arquivo em
 `src/scenes/`, registrar em `src/scenes/index.ts`, ligar as portas nos dois
 sentidos, rodar o smoke test e olhar as fotos.
+
+## Como adicionar uma memória ao quadro
+
+Leia `.claude/skills/aristory-memoria/SKILL.md`. Resumo: uma função de pintura
+e uma entrada no array `MEMORIAS`, os dois em `src/world/memoriasData.ts` — o
+quadro, a interação e o painel não mudam. Depois `node scripts/memorias.mjs
+/tmp/me` e **olhe a foto**: as armadilhas desse desenho aparecem na imagem,
+não no código.

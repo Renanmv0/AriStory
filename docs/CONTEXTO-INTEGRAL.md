@@ -30,8 +30,11 @@ repositório. Toda a geometria é procedural — primitivas do Three.js
 etc.) montadas em código. A única "textura" do jogo é texto desenhado num
 `<canvas>` 2D em tempo de execução e aplicado como `CanvasTexture` (usado nas
 placas de rua e nos letreiros dos quiosques) — ainda assim é código, nunca um
-arquivo. Essa regra está em `CLAUDE.md` como invariante de projeto e é
-repetida em todas as skills internas (`.claude/skills/aristory-*`).
+arquivo. O mesmo princípio sustenta o **quadro de memórias**: as fotos da vida
+real do casal viram funções que pintam a cena em Canvas 2D na hora em que o
+painel abre (`world/memoriasData.ts`) — desenho é código, não imagem. Essa
+regra está em `CLAUDE.md` como invariante de projeto e é repetida em todas as
+skills internas (`.claude/skills/aristory-*`).
 
 **Papéis centrais — `Player` e `Companion`.** O jogo sempre carrega **dois**
 personagens em cena: quem o jogador controla (`Player`) e quem o acompanha
@@ -56,7 +59,7 @@ src/
   world/       API de construção de cenário + kits de peças reutilizáveis
   characters/  Ficha declarativa de personagem + montador procedural do corpo
   entities/    Atores com física própria (Player, Companion, Frisbee, Beijo)
-  scenes/      Um arquivo por cenário (casa, parque, clube), cada um um SceneDef
+  scenes/      Um arquivo por cenário (casa, quarto, parque, clube), um SceneDef cada
   audio/       Motor de som 100% sintetizado (núcleo, efeitos, música, fachada)
   ui/          Toda a interface DOM (diálogo, prompts, menu, diário, HUD)
   main.ts      Bootstrap: lê a URL, instancia Game, expõe hooks de debug
@@ -130,7 +133,16 @@ src/
   rodada — canteiro de flores, capim, junco, vitória-régia e o domo de vidro
   geodésico.
 - **`furniture.ts`** (kit **interno**) — sofá, cama, geladeira, fogão, pia,
-  mesa de jantar, porta, TV, planta em vaso, máquina de lavar etc.
+  mesa de jantar, porta, TV, planta em vaso, máquina de lavar, armário,
+  espelho e o mural de memórias (cortiça com polaroides pregados).
+- **`memoriasData.ts`** — o acervo do quadro de memórias. Cada memória é uma
+  ficha (`MemoriaPintada`: id, título, lugar, legenda, proporção) mais uma
+  **função que pinta a cena em Canvas 2D** — foto da vida real deles virando
+  código, sem nenhum `.png`. Hoje são duas: *O pedido* (o corredor de
+  luzinhas, resolvido inteiro por um ponto de fuga) e *O arraiá da Hello
+  Kitty* (frontal, em faixas horizontais). A estrutura é escolhida por foto, e
+  é por isso que a pintura é uma função por memória e não um motor só. Ver a
+  skill `aristory-memoria`.
 - **`ferrisWheel.ts`** — a roda gigante: classe `FerrisWheel` com `update(dt)`
   próprio (rotação do aro), cabines posicionadas fora do grupo que gira (para
   nunca ficarem de cabeça para baixo), trama de vigas/cabos desenhada como
@@ -216,8 +228,17 @@ cena, prompt de interação, diálogo com efeito de máquina de escrever
 (`say`/`ask` com botões de escolha), toasts, diário de memórias (grid de
 cards), barra de carga do frisbee, HUD de dicas (teclado ou toque, conforme
 `matchMedia('(hover: none)')`), botões de toque para celular (pequenos e
-translúcidos por design, para não cobrir texto) e o menu (som, controles,
-recomeçar).
+translúcidos por design, para não cobrir texto), a mochila e o guarda-roupa,
+o quadro de memórias e o menu (som, controles, recomeçar).
+
+Dois painéis levam um `<canvas>` próprio dentro do DOM, e pelo mesmo motivo:
+recortar um pedaço do canvas do jogo os deixaria fantasmas, porque aquele
+canvas fica atrás do HTML. São o **boneco do guarda-roupa** (WebGL, com
+renderer próprio em `characters/Previa.ts`) e o **quadro de memórias** (Canvas
+2D, pintado por `world/memoriasData.ts` numa volta de `requestAnimationFrame`
+que só vive enquanto o painel está aberto). Cuidado herdado: a regra
+`#app canvas { width:100%; height:100% }` alcança os dois e ganha por ter um
+id, então quem quiser tamanho próprio precisa de `#ui` no seletor.
 
 ---
 
@@ -339,44 +360,55 @@ tipo `suco`, som `sorvete` reaproveitado como "toma, é seu"),
 
 ## 4. Últimas Modificações (estado exato do código)
 
-Sessão mais recente, em ordem cronológica real:
+> Esta seção envelhece rápido. O `git log` é a fonte da verdade sobre o que
+> mudou por último; o que está aqui é o mapa das últimas rodadas grandes, para
+> se situar sem ler o histórico inteiro.
 
-1. **Beijo da dupla** — mecânica nova de motor (`entities/Beijo.ts`),
-   restrita a personagens com `casal: true` na ficha (só Ari/Renan hoje,
-   NPCs futuros nascem sem a flag e portanto sem beijo).
-2. **Blush opcional** — `CharacterSpec.blush?: number`; sem o campo a
-   bochecha nem é montada (era um bug do Renan estar "sem blush" apenas por
-   cor igual à pele).
-3. **Quiosques redesenhados** — `kiosk()` em `props.ts` ganhou toldo
-   listrado, letreiro em canvas, e vitrines por `tipo` (`'sorvete' | 'suco' |
-   'simples'`); duas peças que estavam de costas para a câmera padrão
-   (bilheteria, bar) foram giradas.
-4. **Frisbee: correção do passe de retorno do parceiro** (detalhada na
-   seção 3) — `Companion.hold()`, `GameAPI.holdCompanion`/`companionFacing`,
-   `Frisbee.throwToward(..., arco)`.
-5. **Menu com "Recomeçar o jogo"** — botão de 3 barras no canto superior
-   direito; confirmação em dois passos; `Game.restart()` zera `SaveState`,
-   devolve o controle ao primeiro da `DUPLA` (Ari) e volta para
-   `CENA_INICIAL`. Bug de CSS corrigido junto (`#ui > *` → `:where(#ui) > *`).
-6. **Sistema de áudio completo** — os quatro arquivos de `audio/`, 25
-   efeitos, música proceduralcom clima por cenário, botão de mudo no menu.
-7. **UI de celular** — botões de toque menores (60/46/40px) e translúcidos
-   (58% opacidade + blur), corredor reservado no balão de diálogo, botões
-   somem com painel aberto.
-8. **Tela de "Controles" no menu** — lista teclado + gestos de toque no
-   mesmo painel.
-9. **Villa Lobos: cúpula e ambientação (a mudança mais recente)** —
-   `domoDeVidro()` virou peça do kit com estrutura geodésica completa; praça
-   da roda gigante povoada manualmente (canteiros, postes, bancos, lixeiras,
-   vegetação rasteira); margem do lago com pedras de forma variável (via
-   semente, evitando o bug de "amassar por índice" em geometria não
-   indexada — o ruído é aplicado por posição arredondada do vértice, não por
-   índice, para não rasgar cantos compartilhados), capim, junco e
-   vitórias-régias. Nenhum decalque de chão novo — tudo geometria de pé,
-   portanto fora do sistema de `polygonOffset`.
+### Rodada mais recente: o quadro de memórias
+
+Um mural de cortiça na parede do quarto do Ari (`muralDeMemorias` em
+`furniture.ts`) abre um painel que **pinta a memória na hora, em Canvas 2D** —
+nenhum `.png` entra no repositório, igual ao resto do jogo.
+
+- `world/memoriasData.ts` (novo) — o acervo. Duas memórias hoje: *O pedido*
+  (o corredor de luzinhas onde os dois começaram a namorar, resolvido inteiro
+  por um ponto de fuga: `encolhe` + `projetar` dão posição e tamanho de cada
+  viga, pilar, lâmpada e junta do chão) e *O arraiá da Hello Kitty* (o Villa-
+  Lobos em junho, frontal, em faixas horizontais empilhadas com os varais de
+  bandeirinha por cima). **A estrutura é escolhida pela foto** — por isso a
+  pintura é uma função por memória, não um motor só.
+- `GameAPI.abrirMemoria(id)` → `Ui.abrirMemorias(lista, índice)`. A UI recebe
+  o acervo inteiro, e não uma memória só: é o que deixa folhear com as setas
+  ‹ ›, os pontinhos e as teclas ← → sem fechar e reabrir. Com uma peça só,
+  os controles somem.
+- O painel trava o movimento como o guarda-roupa e sai no `Esc`.
+- `scripts/memorias.mjs` (novo) mede o desenho, não só fotografa: cores
+  distintas, fração de pixel aceso, e a comparação de dois instantes que prova
+  que a pintura está *viva*.
+
+### Antes dela: guarda-roupa e roupa vinda de foto
+
+- `world/roupas.ts` + o `slot` no `ItemDef`: as 4 vagas de vestimenta são as 4
+  partes do corpo. Seis peças construídas a partir de foto (vestido rosa, dois
+  maids, wa-maid com manga de quimono, moletom preto, meia de coxa).
+- **Três lugares, não dois**: mochila (10 vagas, item de mão + vestimenta
+  funcional como os patins), corpo (4 vagas) e guarda-roupa (roupa cosmética
+  fora do corpo). Confundi-los era a origem dos bugs de peça duplicada e
+  mochila entupida de vestido.
+- `scenes/quarto.ts` — o cômodo novo onde o armário mora, porque a casa não
+  tinha parede livre. O armário abastece **os dois** a cada abertura.
+- Skills novas: `aristory-roupa` e `aristory-memoria`.
+
+### Antes: frisbee e celular
+
+- A barra de força obedece, a quadra virou jogo com placar, e o disco no chão
+  volta para a mão sem precisar sair e voltar da quadra (faltava o `addItem`
+  num dos três caminhos de pegada).
+- Dois botões de girar a câmera no celular, abaixo do menu.
+- Sentar nos bancos, de mãos dadas e com as pernas balançando.
 
 Todas as mudanças foram fundidas em `main` (que publica automaticamente via
-GitHub Pages, branch `gh-pages`, workflow `deploy.yml`).
+GitHub Pages, workflow `deploy.yml`).
 
 ---
 
@@ -395,9 +427,16 @@ de base:
   para qualquer mecânica de troca de objeto/interação sincronizada entre os
   dois personagens.
 - **Diário de memórias (`unlock`/`Memory`)** é um sistema de conquistas sem
-  UI de progresso agregado — hoje só lista cards. Não há "porcentagem
-  completa", "categoria de memória" nem memórias com fotos/ilustração
-  própria (usa só `icon` emoji). Espaço aberto para curadoria/filtro/álbum.
+  UI de progresso agregado — hoje só lista cards, com `icon` emoji. Não há
+  "porcentagem completa" nem categoria. Espaço aberto para curadoria/filtro.
+- **Acervo do quadro (`MEMORIAS` em `memoriasData.ts`)** — o desenhado, que é
+  outra coisa do diário: fotos da vida real deles pintadas em Canvas 2D. Uma
+  memória nova é **uma função de pintura e uma entrada no array**, e nada
+  mais: a interação da parede, o painel e a navegação por setas/pontinhos já
+  aguentam quantas vierem. As duas peças de hoje usam estruturas diferentes
+  (ponto de fuga e faixas frontais), então o arquivo já provou que suporta a
+  próxima foto seja ela qual for. Ainda em aberto: memória que só destrava
+  depois de visitar o cenário correspondente, e som próprio ao abrir uma.
 - **NPCs mencionados, nunca modelados:** Rubina (roommate do Ari, gosta de
   k-pop, quarto sempre fechado) e Guillermo (amigo que "tem horário no
   banheiro"). O código já teria onde colocá-los (`CharacterSpec` sem
