@@ -69,25 +69,92 @@ export function tvSet(on = false): THREE.Group {
   return g;
 }
 
-export function bookshelf(height = 2.1, width = 1.2): THREE.Group {
+/**
+ * Estante de livros: carcaca com vao de verdade, e os livros DENTRO dele.
+ *
+ * A primeira versao era um bloco macico de 0,32 de profundidade com os livros
+ * enfiados nele, e a face da frente dos dois caia no mesmo z (0,16). Duas
+ * superficies coplanares brigam pelo mesmo pixel: as lombadas serrilhavam e
+ * piscavam conforme a camera girava, e o resto do livro ficava enterrado na
+ * madeira. Nao adianta empurrar o livro para a frente — ele so passaria a
+ * flutuar colado numa parede. A peca precisa ser oca.
+ *
+ * Entao: duas laterais, um fundo recuado e as tabuas. O vao util vai de
+ * `-prof/2 + espessura` (o fundo) ate `+prof/2` (a boca), e os livros vivem
+ * com folga no meio dele — nenhuma face encosta em nenhuma outra.
+ */
+export function bookshelf(height = 2.1, width = 1.2, cor: number = P.woodDark): THREE.Group {
   const g = new THREE.Group();
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.32), toon(P.woodDark));
-  frame.position.y = height / 2;
-  g.add(frame);
-  const shelves = Math.max(2, Math.floor(height / 0.5));
-  const colors = [0xd9603f, 0x4a7fe0, 0xffc94d, 0x5cb04f, 0xff8fb1];
-  for (let s = 1; s < shelves; s++) {
-    const y = (height / shelves) * s;
-    for (let b = 0; b < 5; b++) {
-      const book = new THREE.Mesh(
-        new THREE.BoxGeometry(0.09, 0.3 + (b % 3) * 0.05, 0.2),
-        toon(colors[(s + b) % colors.length]),
+  // etiqueta para o teste achar a peca na cena e medir a folga das lombadas
+  g.userData.peca = 'estante';
+  const prof = 0.32;
+  const esp = 0.04;
+
+  const fundo = new THREE.Mesh(
+    new THREE.BoxGeometry(width, height, esp),
+    toon(P.estanteFundo),
+  );
+  fundo.position.set(0, height / 2, -prof / 2 + esp / 2);
+  g.add(fundo);
+
+  for (const lado of [-1, 1]) {
+    const lateral = new THREE.Mesh(new THREE.BoxGeometry(esp, height, prof), toon(cor));
+    lateral.position.set((lado * (width - esp)) / 2, height / 2, 0);
+    g.add(lateral);
+  }
+
+  // as tabuas: `vaos + 1` delas, contando a base e o topo
+  const vaos = Math.max(2, Math.floor(height / 0.5));
+  const alturaDoVao = height / vaos;
+  for (let i = 0; i <= vaos; i++) {
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(width - esp * 2, esp, prof), toon(cor));
+    // base e topo encostam na ponta; o resto fica no meio da divisao
+    const y = i === 0 ? esp / 2 : i === vaos ? height - esp / 2 : alturaDoVao * i;
+    tabua.position.set(0, y, 0);
+    g.add(tabua);
+  }
+
+  const cores = [P.metalRed, P.fabricBlue, P.gold, P.bush, P.flowerPink];
+  for (let v = 0; v < vaos; v++) {
+    const chao = alturaDoVao * v + esp / 2;
+    const teto = alturaDoVao * (v + 1) - esp / 2;
+    const livre = teto - chao;
+
+    // Enche a prateleira da esquerda para a direita ate acabar o espaco, com
+    // larguras variadas — cinco livros iguais espacados na mao saem com cara de
+    // grade. O ultimo vai tombado, apoiado na quina, como estante de verdade.
+    let x = -width / 2 + esp + 0.03;
+    let n = 0;
+    const limite = width / 2 - esp - 0.03;
+    while (n < 7) {
+      const larg = 0.05 + ((v * 3 + n * 5) % 4) * 0.018;
+      const alt = Math.min(livre * 0.92, 0.26 + ((v + n * 2) % 4) * 0.035);
+      if (x + larg > limite) break;
+      // o ultimo cabe deitado? entao ele tomba
+      const tomba = n >= 3 && x + larg + alt * 0.5 > limite;
+
+      const livro = new THREE.Mesh(
+        new THREE.BoxGeometry(larg, alt, 0.17),
+        toon(cores[(v * 2 + n) % cores.length]),
       );
-      book.position.set(-width / 2 + 0.18 + b * 0.13, y + 0.16, 0.06);
-      book.rotation.z = b === 4 ? 0.2 : 0;
-      g.add(book);
+      // z = 0.02: sobra folga para o fundo (-0.12) e para a boca (0.16), entao
+      // nenhuma face do livro encosta na carcaca
+      livro.position.set(0, alt / 2, 0.02);
+      livro.userData.livro = true;
+
+      // O giro mora num pivo na BASE do livro. Girando a malha direto, ela roda
+      // em torno do proprio centro e a quina de baixo afunda na prateleira.
+      const pivo = new THREE.Group();
+      pivo.position.set(x + larg / 2, chao, 0);
+      if (tomba) pivo.rotation.z = -0.42;
+      pivo.add(livro);
+      g.add(pivo);
+
+      x += tomba ? larg + alt * 0.42 : larg + 0.012;
+      n++;
     }
   }
+
   return g;
 }
 

@@ -49,6 +49,9 @@ export const PALETTE = {
   // interiores
   cortica: 0xd7a76a,
   corticaEscura: 0xb9884f,
+  // o fundo da estante, um degrau abaixo da madeira dela: e o que da a sombra
+  // do vao e faz os livros parecerem DENTRO da peca
+  estanteFundo: 0x6b4520,
   floorWood: 0xc9975c,
   rug: 0xd98fa6,
   sofa: 0x6d8fd6,

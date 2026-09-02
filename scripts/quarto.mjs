@@ -243,6 +243,72 @@ await page.keyboard.press('Escape');
 await page.waitForTimeout(700);
 const fechou = (await page.locator('.armario.show').count()) === 0;
 
+// ------------------------------------------------------------------ estante
+// A estante era um bloco maciço com os livros enfiados dentro, e a face da
+// frente dos dois caía no mesmo z: as lombadas serrilhavam. O que este bloco
+// guarda é a FOLGA — nenhum livro pode encostar na boca nem no fundo da peça.
+const estante = await page.evaluate(() => {
+  let peca = null;
+  window.jogo.scene.traverse((o) => {
+    if (o.userData?.peca === 'estante') peca = o;
+  });
+  if (!peca) return null;
+
+  // a face mais à frente da carcaça, e a de cada livro, no espaço da peça
+  const frenteDe = (m, extra = 0) =>
+    m.position.z + extra + (m.geometry?.parameters?.depth ?? 0) / 2;
+  const fundoDe = (m, extra = 0) =>
+    m.position.z + extra - (m.geometry?.parameters?.depth ?? 0) / 2;
+
+  let bocaDaPeca = -Infinity;
+  let fundoDaPeca = Infinity;
+  const livros = [];
+  for (const filho of peca.children) {
+    if (filho.isMesh && !filho.userData?.livro) {
+      bocaDaPeca = Math.max(bocaDaPeca, frenteDe(filho));
+      fundoDaPeca = Math.min(fundoDaPeca, fundoDe(filho));
+    }
+    // os livros moram num pivô (é ele que dá o tombo girando pela base)
+    for (const neto of filho.children ?? []) {
+      if (neto.userData?.livro) {
+        livros.push({ frente: frenteDe(neto, filho.position.z), fundo: fundoDe(neto, filho.position.z) });
+      }
+    }
+  }
+  return {
+    bocaDaPeca, fundoDaPeca,
+    quantos: livros.length,
+    folgaNaFrente: Math.min(...livros.map((l) => bocaDaPeca - l.frente)),
+    folgaNoFundo: Math.min(...livros.map((l) => l.fundo - fundoDaPeca)),
+    // a peça é OCA: alguma tábua tem que estar recuada em relação à boca
+    temVao: peca.children.some((c) => c.isMesh && frenteDe(c) < bocaDaPeca - 0.05),
+  };
+});
+
+// e a conversa cita os dois livros favoritos, cada um na boca de quem é dono
+await page.evaluate(() => window.jogo.debugPlace(0.35, -1.8, 0));
+await page.waitForTimeout(900);
+const promptEstante = await promptAgora();
+const falas = [];
+await page.keyboard.press('KeyE');
+for (let i = 0; i < 24; i++) {
+  if (!(await page.locator('.dialogue.show').count())) break;
+  // espera a máquina de escrever terminar antes de ler, senão sai meia frase
+  await page.waitForTimeout(900);
+  const t = await page.locator('.dialogue .text').textContent().catch(() => '');
+  const quem = await page.locator('.dialogue .who').textContent().catch(() => '');
+  if (t) falas.push(`${quem}: ${t}`);
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(350);
+}
+await page.waitForTimeout(700);
+const conversaDaEstante = falas.join(' | ');
+const dialogoFechou = (await page.locator('.dialogue.show').count()) === 0;
+const noDiario = await page.evaluate(() =>
+  (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').memories ?? [])
+    .some((m) => m.id === 'os-dois-livros'),
+);
+
 // ------------------------------------------------------------ volta pra sala
 await page.evaluate(() => window.jogo.debugPlace(0.9, 2.0, 0));
 await page.waitForTimeout(900);
@@ -278,6 +344,10 @@ console.log('depois do T · painel segue aberto:', depoisDoT.aindaAberto,
 console.log('os dois vestidos · ari:', JSON.stringify(osDois.ari));
 console.log('                   renan:', JSON.stringify(osDois.renan));
 console.log('Esc fechou o painel:', fechou);
+console.log('estante:', JSON.stringify(estante));
+console.log('prompt da estante:', promptEstante);
+console.log('conversa:', conversaDaEstante);
+console.log('memória dos dois livros:', noDiario, '· diálogo fechou:', dialogoFechou);
 console.log('prompt de volta:', promptVolta);
 console.log('voltou para:', voltou, 'em', JSON.stringify(ondeVoltou));
 console.log('roupa sobreviveu à troca de cena:', JSON.stringify(depoisDaCena));
@@ -321,6 +391,18 @@ const ok =
   osDois.renan[2] === 'calca-jeans' &&
   osDois.ari[0] === 'gorro-la' &&
   fechou &&
+  // a estante é oca e nenhum livro encosta na carcaça (era o z-fighting)
+  estante !== null &&
+  estante.temVao &&
+  estante.quantos >= 6 &&
+  estante.folgaNaFrente > 0.02 &&
+  estante.folgaNoFundo > 0.02 &&
+  // e a conversa cita os dois favoritos, cada um pelo nome inteiro
+  /estante/i.test(promptEstante ?? '') &&
+  /Aristóteles e Dante Descobrem os Segredos do Universo/.test(conversaDaEstante) &&
+  /A Toca das Raposas/.test(conversaDaEstante) &&
+  noDiario &&
+  dialogoFechou &&
   /sala/i.test(promptVolta ?? '') &&
   voltou === 'casa' &&
   Math.abs(ondeVoltou[0] + 5.05) < 1.0 && Math.abs(ondeVoltou[1] + 1.2) < 1.0 &&

@@ -278,11 +278,27 @@ export const quarto: SceneDef = {
       x: 0.35, z: -2.2, radius: 1.4,
       label: 'Olhar a estante', icon: '📚',
       highlight: estante,
-      onInteract: () =>
-        conversa([
+      onInteract: async (g) => {
+        await conversa([
           [R, 'Você leu todos esses?'],
           [A, 'Comecei todos esses.'],
-        ]),
+          [A, 'Menos esse. Esse eu li três vezes: Aristóteles e Dante Descobrem os Segredos do Universo.'],
+          [R, 'Eu sei. Você me contou o final antes de eu chegar na metade.'],
+          [A, 'E o seu tá aqui do lado. A Toca das Raposas.'],
+          [R, 'Você guardou.'],
+          [A, 'Guardei.'],
+        ]);
+        if (!g.flag('estante-favoritos')) {
+          g.setFlag('estante-favoritos');
+          g.unlock({
+            id: 'os-dois-livros',
+            title: 'Os dois livros',
+            place: 'Quarto do Ari',
+            note: 'O Aristóteles e Dante é dele. A Toca das Raposas é meu. Ficam na mesma prateleira.',
+            icon: '📚',
+          });
+        }
+      },
     });
   },
 };
