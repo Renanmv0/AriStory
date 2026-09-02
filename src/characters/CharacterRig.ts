@@ -237,13 +237,16 @@ export class CharacterRig {
       // Cônica (mais larga embaixo) e com folga de ~40% sobre o raio da coxa:
       // dois cilindros concêntricos de raios diferentes não brigam por pixel, e
       // a boca aberta é o que dá a silhueta de bermuda em vez de calça justa.
-      // Vai do quadril até ~40% da coxa, deixando a metade de baixo da perna
-      // com o material de pele que o traje de banho já aplica.
+      // Vai do quadril até ~1/3 da coxa, deixando a maior parte da perna com o
+      // material de pele que o traje de banho já aplica. O centro acompanha a
+      // altura (metade dela menos os `0.02·legH` de sobreposição no cós), senão
+      // encurtar o tubo o descola da cintura em vez de subir a barra.
+      const alturaDoShort = legH * 0.36;
       const pernaDoShort = new THREE.Mesh(
-        new THREE.CylinderGeometry(h * 0.052 * w, h * 0.064 * w, legH * 0.44, 14, 1, true),
+        new THREE.CylinderGeometry(h * 0.052 * w, h * 0.064 * w, alturaDoShort, 14, 1, true),
         this.calcaoDaFicha,
       );
-      pernaDoShort.position.y = -legH * 0.2;
+      pernaDoShort.position.y = legH * 0.02 - alturaDoShort / 2;
       pernaDoShort.visible = false;
       pivot.add(pernaDoShort);
       this.soBanho.push(pernaDoShort);
@@ -328,13 +331,19 @@ export class CharacterRig {
       this.sobreTronco.push(capuz);
     }
 
-    // calção de banho: fica escondido até alguém entrar na água
+    // calção de banho: fica escondido até alguém entrar na água.
+    //
+    // A altura é a CINTURA da bermuda, não a bermuda inteira — quem faz o
+    // comprimento são os dois tubos pendurados nas pernas. Cintura alta demais
+    // sobe pro peito: `hipY + 0.012h` de centro com `0.105h` de altura deixa o
+    // cós logo acima do quadril, que é onde bermuda de verdade fica.
     const raioCalcao = h * 0.118 * w;
+    const alturaCalcao = h * 0.105;
     const calcao = new THREE.Mesh(
-      new THREE.CylinderGeometry(raioCalcao, h * 0.112 * w, h * 0.15, 14),
+      new THREE.CylinderGeometry(raioCalcao, h * 0.112 * w, alturaCalcao, 14),
       this.calcaoDaFicha,
     );
-    calcao.position.y = hipY + h * 0.03;
+    calcao.position.y = hipY + h * 0.012;
     calcao.scale.z = 0.85;
     calcao.visible = false;
     this.body.add(calcao);
@@ -353,7 +362,7 @@ export class CharacterRig {
         new THREE.CylinderGeometry(raioCalcao * 1.03, raioCalcao * 1.03, h * 0.019, 14, 1, true),
         this.calcaoDaFicha,
       );
-      faixa.position.y = yFaixa * h * 0.15;
+      faixa.position.y = yFaixa * alturaCalcao;
       faixa.visible = false;
       calcao.add(faixa);
       this.estampa.push(faixa);

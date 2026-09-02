@@ -1322,6 +1322,16 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
   const Y = r * 0.04;
   /** o quanto a lente gira para acompanhar a curva do rosto */
   const ABRE = 0.2;
+  /** raio da lente */
+  const RL = r * 0.26;
+  /**
+   * O quanto a peca inteira se afasta do centro do cranio. A lente fica LONGE
+   * do meio do rosto (`x = ±0.35·r`), e a esfera ja recuou ali — no eixo dela a
+   * superficie passa perto de `0.94·r`, nao de `r`. Com a lente maior, a borda
+   * de baixo recua ainda mais. Daí `1.07`: a peca toda flutua um fio na frente
+   * do rosto em vez de cortar a bochecha.
+   */
+  const FRENTE = r * 1.07;
 
   for (const side of [-1, 1] as const) {
     // LENTE REDONDA: cilindro achatado, deitado.
@@ -1334,28 +1344,28 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
     // em X para nao rodar a lente no proprio plano — por isso a ordem
     // 'YXZ': lida da direita para a esquerda, deita primeiro e abre depois.
     const vidro = new THREE.Mesh(
-      new THREE.CylinderGeometry(r * 0.2, r * 0.2, r * 0.07, 20),
+      new THREE.CylinderGeometry(RL, RL, r * 0.07, 20),
       lente,
     );
     vidro.rotation.order = 'YXZ';
     vidro.rotation.set(Math.PI / 2, -side * ABRE, 0);
-    vidro.position.set(side * r * 0.35, Y, r * 0.96);
+    vidro.position.set(side * r * 0.38, Y, FRENTE);
     g.add(vidro);
 
     // o aro: um anel fino em volta da lente, um fio maior que ela. Torus e a
     // forma certa aqui — ele ja e o contorno, sem precisar de duas pecas.
     const aro = new THREE.Mesh(
-      new THREE.TorusGeometry(r * 0.2, r * 0.028, 8, 20),
+      new THREE.TorusGeometry(RL, r * 0.03, 8, 20),
       armacao,
     );
     aro.rotation.order = 'YXZ';
     aro.rotation.set(0, -side * ABRE, 0);
-    aro.position.set(side * r * 0.35, Y, r * 0.965);
+    aro.position.set(side * r * 0.38, Y, FRENTE + r * 0.005);
     g.add(aro);
 
     // A HASTE, da dobradica ate sumir na altura da orelha — ver o cabecalho.
-    const ax = r * 0.53;
-    const az = r * 0.94;
+    const ax = r * 0.6;
+    const az = FRENTE - r * 0.06;
     const bx = r * 0.78;
     const bz = r * 0.4;
     const dx = bx - ax;
@@ -1376,7 +1386,7 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
     armacao,
   );
   ponte.rotation.z = Math.PI / 2;
-  ponte.position.set(0, Y + r * 0.07, r * 0.99);
+  ponte.position.set(0, Y + r * 0.07, FRENTE + r * 0.02);
   g.add(ponte);
 
   return g;
