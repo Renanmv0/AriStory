@@ -309,6 +309,51 @@ body.touch-device .hints .toque { display: block; }
   padding: 0;
   box-shadow: 0 0 0 10px #fff, 0 10px 24px rgba(20, 16, 40, 0.35);
 }
+/* a moldura segura as setas nas laterais do quadro, sem empurrá-lo do centro */
+.memorias .moldura {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.memorias .folhear {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: var(--paper-warm);
+  box-shadow: 0 2px 8px rgba(53, 48, 74, 0.18);
+  color: var(--ink);
+  font: inherit;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  /* com uma memória só as setas não levam a lugar nenhum: somem, e o quadro
+     volta a ficar centrado sozinho pelo flex */
+  display: none;
+}
+.memorias.tem-mais .folhear { display: block; }
+.memorias .folhear:hover { background: var(--accent); color: #fff; }
+.memorias .pontos {
+  display: flex;
+  gap: 7px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.memorias .ponto {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(106, 99, 130, 0.32);
+  cursor: pointer;
+}
+.memorias .ponto.agora { background: var(--accent); }
+
 .memorias .legenda {
   margin: 20px auto 0;
   max-width: 42ch;

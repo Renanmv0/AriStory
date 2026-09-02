@@ -364,6 +364,11 @@ export class Game implements GameAPI {
     // o quadro trava o movimento igual ao guarda-roupa, então precisa da mesma
     // saída de teclado
     if (this.ui.memoriasOpen && this.input.justPressed('Escape')) this.ui.fecharMemorias();
+    // as setas folheiam o quadro; com ele fechado elas continuam sendo andar
+    if (this.ui.memoriasOpen) {
+      if (this.input.justPressed('ArrowLeft')) this.ui.folhear(-1);
+      if (this.input.justPressed('ArrowRight')) this.ui.folhear(1);
+    }
     // O T vale TAMBÉM com a mochila ou o guarda-roupa abertos.
     //
     // As duas telas mostram o inventário de quem está sendo controlado, então
@@ -809,8 +814,8 @@ export class Game implements GameAPI {
    * `world/memoriasData.ts`.
    */
   abrirMemoria(id: string): void {
-    const memoria = MEMORIAS.find((m) => m.id === id);
-    if (memoria) this.ui.abrirMemorias(memoria);
+    const onde = MEMORIAS.findIndex((m) => m.id === id);
+    if (onde >= 0) this.ui.abrirMemorias(MEMORIAS, onde);
   }
 
   unlock(memory: Memory): void {

@@ -45,8 +45,11 @@ export class Ui {
   private readonly descarte: HTMLElement;
   private readonly memorias: HTMLDivElement;
   private readonly quadro: HTMLCanvasElement;
-  /** a memoria sendo pintada agora, e a volta do rAF que a mantem viva */
-  private memoriaAberta: MemoriaPintada | null = null;
+  private readonly pontos: HTMLDivElement;
+  /** o acervo do quadro e qual peca esta na moldura */
+  private acervoDoQuadro: readonly MemoriaPintada[] = [];
+  private naMoldura = 0;
+  /** a volta do rAF que mantem a pintura viva */
   private pintura: number | null = null;
   private abriuEm = 0;
   /** vaga escolhida no toque, esperando o destino */
@@ -180,8 +183,13 @@ export class Ui {
       <div class="memorias"><div class="sheet">
         <h2></h2>
         <p class="sub"></p>
-        <canvas class="quadro"></canvas>
+        <div class="moldura">
+          <button class="folhear antes" aria-label="memória anterior">‹</button>
+          <canvas class="quadro"></canvas>
+          <button class="folhear depois" aria-label="próxima memória">›</button>
+        </div>
         <p class="legenda"></p>
+        <div class="pontos"></div>
         <button class="close">fechar</button>
       </div></div>
       <div class="touch">
@@ -228,6 +236,7 @@ export class Ui {
     this.donoArmario = ui.querySelector('.armario .dono')!;
     this.memorias = ui.querySelector('.memorias')!;
     this.quadro = ui.querySelector('.memorias .quadro')!;
+    this.pontos = ui.querySelector('.memorias .pontos')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -260,6 +269,8 @@ export class Ui {
       if (e.target === this.armario) this.fecharArmario();
     });
     ui.querySelector('.memorias .close')!.addEventListener('click', () => this.fecharMemorias());
+    ui.querySelector('.memorias .antes')!.addEventListener('click', () => this.folhear(-1));
+    ui.querySelector('.memorias .depois')!.addEventListener('click', () => this.folhear(1));
     this.memorias.addEventListener('click', (e) => {
       if (e.target === this.memorias) this.fecharMemorias();
     });
@@ -634,25 +645,24 @@ export class Ui {
   }
 
   /**
-   * Abre o quadro e comeca a pintar a memoria.
+   * Abre o quadro no acervo inteiro, na peca `indice`.
    *
-   * O desenho e ao vivo, nao uma imagem pronta guardada: as luzinhas piscam, e
-   * uma memoria parada nao piscaria. Custa uma volta de `requestAnimationFrame`
-   * enquanto o painel esta aberto, e nenhuma depois — a volta se desliga
-   * sozinha ao fechar.
+   * Recebe a LISTA, e nao uma memoria so: quem abre escolhe por onde comecar,
+   * mas quem abriu o quadro veio ver o quadro — folhear dali sem fechar e
+   * reabrir e o que faz dele um mural, e nao um cartaz.
+   *
+   * O desenho e ao vivo, nao uma imagem guardada: as luzinhas piscam e as
+   * bandeirinhas balancam. Custa uma volta de `requestAnimationFrame` enquanto
+   * o painel esta aberto, e nenhuma depois — ela se desliga sozinha ao fechar.
    */
-  abrirMemorias(memoria: MemoriaPintada): void {
-    if (this.memoriasOpen) return;
+  abrirMemorias(acervo: readonly MemoriaPintada[], indice = 0): void {
+    if (this.memoriasOpen || acervo.length === 0) return;
     this.som?.('diario');
     this.closeJournal();
     this.closeMochila();
-    this.memoriaAberta = memoria;
-    this.memorias.querySelector('h2')!.textContent = memoria.titulo;
-    this.memorias.querySelector('.sub')!.textContent = memoria.lugar;
-    this.memorias.querySelector('.legenda')!.textContent = memoria.legenda;
-    // a folha reserva o espaco do quadro pela proporcao da propria memoria: uma
-    // foto em pe e uma deitada nao cabem na mesma moldura
-    this.quadro.style.aspectRatio = String(memoria.proporcao);
+    this.acervoDoQuadro = acervo;
+    this.naMoldura = Math.min(Math.max(indice, 0), acervo.length - 1);
+    this.mostrarMemoria();
     this.memorias.classList.add('show');
     this.marcarTelaAberta();
     this.abriuEm = performance.now();
@@ -662,10 +672,55 @@ export class Ui {
   fecharMemorias(): void {
     if (!this.memoriasOpen) return;
     this.memorias.classList.remove('show');
-    this.memoriaAberta = null;
+    this.acervoDoQuadro = [];
     if (this.pintura !== null) cancelAnimationFrame(this.pintura);
     this.pintura = null;
     this.marcarTelaAberta();
+  }
+
+  /**
+   * Passa para a memoria seguinte (1) ou anterior (-1), dando a volta.
+   *
+   * Da a volta de proposito: sao poucas pecas, e travar na ponta obrigaria a
+   * voltar clicando tudo de novo para rever a primeira.
+   */
+  folhear(passo: number): void {
+    if (!this.memoriasOpen || this.acervoDoQuadro.length < 2) return;
+    const n = this.acervoDoQuadro.length;
+    this.naMoldura = (this.naMoldura + passo + n) % n;
+    this.som?.('escolha');
+    this.mostrarMemoria();
+    // o tempo recomeça: a memória nova entra do início da própria animação
+    this.abriuEm = performance.now();
+  }
+
+  /** Põe na moldura o que `naMoldura` aponta: texto, proporção e os pontinhos. */
+  private mostrarMemoria(): void {
+    const memoria = this.acervoDoQuadro[this.naMoldura];
+    if (!memoria) return;
+    this.memorias.querySelector('h2')!.textContent = memoria.titulo;
+    this.memorias.querySelector('.sub')!.textContent = memoria.lugar;
+    this.memorias.querySelector('.legenda')!.textContent = memoria.legenda;
+    // a folha reserva o espaco do quadro pela proporcao da propria memoria: uma
+    // foto em pe e uma deitada nao cabem na mesma moldura
+    this.quadro.style.aspectRatio = String(memoria.proporcao);
+
+    // com uma peça só, seta e pontinho seriam controle que não leva a lugar
+    // nenhum — some com os dois em vez de deixá-los inertes
+    const varias = this.acervoDoQuadro.length > 1;
+    this.memorias.classList.toggle('tem-mais', varias);
+    this.pontos.innerHTML = '';
+    if (varias) {
+      this.acervoDoQuadro.forEach((m, i) => {
+        const ponto = document.createElement('button');
+        ponto.className = 'ponto';
+        ponto.classList.toggle('agora', i === this.naMoldura);
+        ponto.title = m.titulo;
+        ponto.setAttribute('aria-label', m.titulo);
+        ponto.addEventListener('click', () => this.folhear(i - this.naMoldura));
+        this.pontos.appendChild(ponto);
+      });
+    }
   }
 
   /**
@@ -676,7 +731,7 @@ export class Ui {
    * so quando o numero muda, porque mexer em `width` limpa o canvas inteiro.
    */
   private pintarQuadro = (agora: number): void => {
-    const memoria = this.memoriaAberta;
+    const memoria = this.acervoDoQuadro[this.naMoldura];
     if (!memoria || !this.memoriasOpen) {
       this.pintura = null;
       return;

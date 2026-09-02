@@ -96,13 +96,44 @@ const depois = await page.evaluate(() => {
   return soma;
 });
 
-// --------------------------------------------------- 3. o jogo fica travado
+// ------------------------------------------------ 3. folhear entre as memórias
+// O quadro é um mural: com mais de uma peça dá para trocar sem fechar e
+// reabrir. As setas e os pontinhos só existem quando há o que folhear.
+const acervo = await page.evaluate(() => window.aristoryMemorias?.length ?? 0);
+const pontos = await page.locator('.memorias .ponto').count();
+const setaVisivel = await page.locator('.memorias .folhear.depois').isVisible();
+
+await page.locator('.memorias .folhear.depois').click();
+await page.waitForTimeout(900);
+const tituloDepois = await page.locator('.memorias h2').textContent();
+const pintouOutra = await page.evaluate(() => {
+  const cv = document.querySelector('.memorias .quadro');
+  const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+  let soma = 0;
+  for (let i = 0; i < d.length; i += 4 * 31) soma += d[i] + d[i + 1] + d[i + 2];
+  return soma;
+});
+await page.screenshot({ path: `${OUT}-segunda.png` });
+
+// a volta pela seta de trás tem que cair na mesma de antes
+await page.locator('.memorias .folhear.antes').click();
+await page.waitForTimeout(700);
+const voltou = await page.locator('.memorias h2').textContent();
+
+// e as setas do teclado fazem o mesmo
+await page.keyboard.press('ArrowRight');
+await page.waitForTimeout(700);
+const comSeta = await page.locator('.memorias h2').textContent();
+await page.keyboard.press('ArrowLeft');
+await page.waitForTimeout(700);
+
+// --------------------------------------------------- 4. o jogo fica travado
 await page.keyboard.down('KeyW');
 await page.waitForTimeout(700);
 await page.keyboard.up('KeyW');
 const travou = await page.evaluate(() => document.body.classList.contains('tela-aberta'));
 
-// ------------------------------------------------- 4. fechar pelo Esc e pelo X
+// ------------------------------------------------- 5. fechar pelo Esc e pelo X
 await page.keyboard.press('Escape');
 await page.waitForTimeout(600);
 const fechouNoEsc = (await page.locator('.memorias.show').count()) === 0;
@@ -122,8 +153,11 @@ console.log('   quadro abriu:', abriu > 0, '·', JSON.stringify(titulo));
 console.log('   legenda:', JSON.stringify(legenda));
 console.log('2. canvas:', JSON.stringify(pintou), '(luzes em % do quadro)');
 console.log('   piscou (as somas têm que diferir):', antes, '→', depois);
-console.log('3. travou o jogo:', travou);
-console.log('4. fechou no Esc:', fechouNoEsc, '· reabriu:', reabriu,
+console.log('3. acervo:', acervo, '· pontinhos:', pontos, '· seta à mostra:', setaVisivel);
+console.log('   folheou para:', JSON.stringify(tituloDepois), '· voltou para:', JSON.stringify(voltou));
+console.log('   pela seta do teclado:', JSON.stringify(comSeta));
+console.log('4. travou o jogo:', travou);
+console.log('5. fechou no Esc:', fechouNoEsc, '· reabriu:', reabriu,
   '· fechou no botão:', fechouNoBotao, '· destravou:', destravou);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
@@ -139,6 +173,13 @@ else {
   if (pintou.luzes < 0.1) problemas.push(`quase nenhuma luz acesa (${pintou.luzes}% do quadro)`);
 }
 if (antes === depois) problemas.push('o desenho está parado — as luzinhas não piscam');
+if (acervo < 2) problemas.push('o acervo não chegou às duas memórias');
+if (pontos !== acervo) problemas.push(`${pontos} pontinhos para ${acervo} memórias`);
+if (!setaVisivel) problemas.push('a seta de folhear não apareceu com duas memórias');
+if (tituloDepois === titulo) problemas.push('a seta não trocou de memória');
+if (pintouOutra === depois) problemas.push('trocou o título mas o desenho continuou o mesmo');
+if (voltou !== titulo) problemas.push('a seta de trás não voltou para a memória de antes');
+if (comSeta === titulo) problemas.push('a seta do teclado não folheou');
 if (!travou) problemas.push('o jogo não travou com o quadro aberto');
 if (!fechouNoEsc) problemas.push('o Esc não fechou o quadro');
 if (!reabriu) problemas.push('o quadro não reabriu na segunda interação');

@@ -5,6 +5,7 @@ import { DUPLA } from './characters/cast';
 import { CLIMAS, Musica } from './audio/musica';
 import { EFEITOS } from './audio/efeitos';
 import { ITENS } from './world/itens';
+import { MEMORIAS } from './world/memoriasData';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
@@ -38,4 +39,9 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 // ao jogo em vez de inventarem uma ficha parecida
 (window as unknown as { aristoryItens: unknown }).aristoryItens = Object.fromEntries(
   Object.values(ITENS).map((i) => [i.id, i]),
+);
+// o acervo do quadro de memorias, para o teste conferir quantas pecas existem
+// sem ter que contar os pontinhos da tela
+(window as unknown as { aristoryMemorias: unknown }).aristoryMemorias = MEMORIAS.map(
+  (m) => ({ id: m.id, titulo: m.titulo }),
 );
