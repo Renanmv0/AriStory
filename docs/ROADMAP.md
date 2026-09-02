@@ -35,6 +35,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Guarda-roupa: armário no quarto do Ari, com as peças feitas a partir de foto
 - [x] Quadro de memórias no quarto: fotos da vida real deles pintadas em Canvas 2D
 - [x] Deitar junto na cama do Ari, lado a lado, com os braços balançando devagar
+- [x] O Pelusa, o gato do Ari: passeia pelo quarto, mia sozinho e aceita carinho
 
 ## Próximos passos naturais
 
@@ -44,6 +45,11 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [ ] Mais roupas por cenário (casaco no frio, pijama em casa)
 - [ ] O parceiro reagir ao que você faz (comentar, aplaudir, entrar na água junto)
 - [ ] Mais carinho além do beijo (abraço; a mão e o deitar junto já existem)
+
+### O Pelusa
+- [ ] Ele subir na cama quando os dois deitam
+- [ ] Reagir a quem entra no quarto (vir andando, ou fugir)
+- [ ] Um ronronado próprio, diferente do miado
 
 ### Cenários
 - [ ] Casa do Renan

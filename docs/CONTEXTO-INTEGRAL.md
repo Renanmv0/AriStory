@@ -135,6 +135,11 @@ src/
 - **`furniture.ts`** (kit **interno**) — sofá, cama, geladeira, fogão, pia,
   mesa de jantar, porta, TV, planta em vaso, máquina de lavar, armário,
   espelho e o mural de memórias (cortiça com polaroides pregados).
+- **`pelusa.ts`** — o Pelusa, gato do Ari, no molde da `FerrisWheel` mas com
+  máquina de estados (`andando` / `parado` / `sentado`), sorteio com semente
+  (mesmo build, mesmo passeio), miado espontâneo espaçado e uma pose de
+  carinho. Modelado a partir da foto: branco creme com sela e máscara
+  cinza-taupe, rabo listrado de três gomos encadeados.
 - **`memoriasData.ts`** — o acervo do quadro de memórias. Cada memória é uma
   ficha (`MemoriaPintada`: id, título, lugar, legenda, proporção) mais uma
   **função que pinta a cena em Canvas 2D** — foto da vida real deles virando

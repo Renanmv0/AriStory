@@ -8,6 +8,7 @@ import {
 import { toon } from '../core/materials';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
+import { Pelusa } from '../world/pelusa';
 
 /**
  * Quarto do Ari.
@@ -34,6 +35,20 @@ const ARMARIO = { x: 2.65, z: z0 + 0.36 };
 
 /** o quadro de memórias, na parede do fundo */
 const MURAL = { x: -1.15 };
+
+/**
+ * O que o Ari diz a cada carinho, depois do primeiro.
+ *
+ * Uma lista, e não uma fala só: fazer carinho é o tipo de coisa que se repete,
+ * e a mesma frase na décima vez estraga o gesto.
+ */
+const FALAS_DO_CARINHO = [
+  'Ele só ronrona assim pra quem ele gosta.',
+  'Cuidado que ele dorme em cima de você.',
+  'Ó, fechou o olhinho.',
+  'Ele te adotou.',
+  'Esse aí é o dono do quarto. A gente só mora junto.',
+];
 
 /** o que mora dentro do armário */
 const ROUPAS_DO_ARMARIO = [
@@ -219,6 +234,63 @@ export const quarto: SceneDef = {
         }
         g.abrirGuardaRoupa();
       },
+    });
+
+    // ------------------------------------------------------------- o Pelusa
+    // A área dele é o miolo do quarto, e os círculos proibidos são os mesmos
+    // móveis que bloqueiam a dupla — repetidos aqui, e não lidos do colisor,
+    // porque o gato é menor e passa em vão que gente não passa: ele contorna a
+    // cama de perto, mas não pode subir no armário nem sumir dentro da planta.
+    const pelusa = new Pelusa({
+      minX: x0 + 0.8, maxX: W / 2 - 0.8,
+      minZ: z0 + 0.9, maxZ: D / 2 - 0.8,
+      proibido: [
+        { x: -2.2, z: -1.75, r: 1.05 },      // a cama
+        { x: -1.05, z: -2.72, r: 0.45 },     // o criado-mudo
+        { x: 0.15, z: z0 + 0.22, r: 0.7 },   // a estante
+        { x: ARMARIO.x, z: ARMARIO.z, r: 1.0 }, // o armário
+        { x: x0 + 0.5, z: 2.0, r: 0.9 },     // a escrivaninha
+        { x: W / 2 - 0.75, z: 0.9, r: 0.6 }, // o vaso de planta
+      ],
+    });
+    w.add(pelusa.group);
+    // o miado sai do gato, mas quem toca é o motor: a peça não conhece o áudio
+    pelusa.aoMiar = () => g0.som('miado');
+
+    const carinho = w.interact({
+      id: 'quarto:pelusa',
+      x: pelusa.x, z: pelusa.z, radius: 1.15,
+      label: 'Fazer carinho no Pelusa', icon: '🐈',
+      highlight: pelusa.group,
+      onInteract: async (g) => {
+        pelusa.receberCarinho();
+        g.som('miado');
+        if (!g.flag('pelusa-conhecido')) {
+          g.setFlag('pelusa-conhecido');
+          await conversa([
+            [R, 'Esse é o Pelusa?'],
+            [A, 'Esse é o Pelusa.'],
+            [R, 'Ele deixa pegar?'],
+            [A, 'Ele decide na hora. Hoje ele tá deixando.'],
+          ]);
+          g.unlock({
+            id: 'pelusa',
+            title: 'O Pelusa',
+            place: 'Quarto do Ari',
+            note: 'O gato do Ari. Branco, cinza no lombo, e some pelo quarto até você sentar no chão.',
+            icon: '🐈',
+          });
+          return;
+        }
+        await g.say([w.pick(FALAS_DO_CARINHO)], A);
+      },
+    });
+
+    // o prompt anda junto com ele — sem isto o balão fica onde ele estava
+    // quando a cena foi montada, e o carinho vira um ponto morto no chão
+    w.onUpdate((dt) => {
+      pelusa.update(dt);
+      carinho.moveTo(pelusa.x, pelusa.z);
     });
 
     // ------------------------------------------------- o quadro de memórias

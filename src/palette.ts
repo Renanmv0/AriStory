@@ -52,6 +52,14 @@ export const PALETTE = {
   // o fundo da estante, um degrau abaixo da madeira dela: e o que da a sombra
   // do vao e faz os livros parecerem DENTRO da peca
   estanteFundo: 0x6b4520,
+
+  // o Pelusa, da foto: branco creme no peito e nas patas, e o cinza-taupe da
+  // mascara, do dorso e da cauda listrada
+  pelusaBranco: 0xf6f2ea,
+  pelusaCinza: 0xa89e91,
+  pelusaCinzaEscuro: 0x8a8074,
+  pelusaFocinho: 0xe8a7ad,
+  pelusaOrelha: 0xdba9a8,
   floorWood: 0xc9975c,
   rug: 0xd98fa6,
   sofa: 0x6d8fd6,

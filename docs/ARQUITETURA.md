@@ -78,6 +78,11 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 - `props.ts` / `furniture.ts` — kits de peças. Ver a skill `aristory-prop`.
 - `memoriasData.ts` — o acervo do quadro de memórias: cada memória é uma função
   que pinta uma foto em Canvas 2D. Ver a skill `aristory-memoria`.
+- `pelusa.ts` — o gato do Ari: peça animada com **comportamento** próprio
+  (anda, para, senta, mia). A cena diz onde ele pode pisar (retângulo + círculos
+  proibidos) e liga o miado no `g.som`; o resto mora na classe. O ponto de
+  interação acompanha ele por `Interactable.moveTo`, senão o carinho ficaria
+  onde ele nasceu.
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**
   do grupo que gira e são reposicionadas por frame, para nunca virarem de cabeça
   para baixo.

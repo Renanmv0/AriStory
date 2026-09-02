@@ -31,6 +31,7 @@ export type SomNome =
   | 'tv'
   | 'sino'
   | 'sentar'
+  | 'miado'
   | 'menu'
   | 'diario'
   | 'recomecar';
@@ -179,6 +180,45 @@ export const EFEITOS: Record<SomNome, Receita> = {
         vol: 0.1,
         tipo: 'triangle',
       });
+    });
+  },
+
+  // O miado do Pelusa. Duas vogais coladas ("mi-au"): a primeira sobe, a
+  // segunda desce e é a que fecha a boca. Um tom só, plano, sai como apito de
+  // brinquedo — é a CURVA que faz virar bicho. O `n` alterna entre um miado
+  // curto e um mais arrastado, senão o gato repete a mesma frase a vida toda.
+  miado: ({ ctx, destino, t, n }) => {
+    const manhoso = n % 2 === 1;
+    const base = nota(DO + PENTA[manhoso ? 2 : 3]);
+    tom(ctx, destino, {
+      freq: base * 0.82,
+      glide: base,
+      quando: t,
+      dur: manhoso ? 0.2 : 0.15,
+      vol: 0.075,
+      tipo: 'sawtooth',
+      abafo: 1500,
+    });
+    tom(ctx, destino, {
+      freq: base,
+      glide: base * 0.68,
+      quando: t + (manhoso ? 0.15 : 0.1),
+      // a segunda sílaba é a longa: o decaimento exponencial come o fim, e com
+      // 0,3 s o "au" sumia em 0,13 s de áudio audível — saía um pio, não um miado
+      dur: manhoso ? 0.55 : 0.4,
+      vol: 0.085,
+      ataque: 0.02,
+      tipo: 'sawtooth',
+      abafo: 1200,
+    });
+    // o sopro do ar, que tira o ar de sintetizador
+    chiado(ctx, destino, {
+      quando: t,
+      dur: manhoso ? 0.4 : 0.28,
+      vol: 0.022,
+      freq: 1100,
+      glide: 700,
+      q: 2.2,
     });
   },
 
