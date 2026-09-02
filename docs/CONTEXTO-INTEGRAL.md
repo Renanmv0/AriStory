@@ -59,6 +59,7 @@ src/
   world/       API de construção de cenário + kits de peças reutilizáveis
   characters/  Ficha declarativa de personagem + montador procedural do corpo
   entities/    Atores com física própria (Player, Companion, Frisbee, Beijo)
+               e entities/bichos/ — os animais (Pelusa)
   scenes/      Um arquivo por cenário (casa, quarto, parque, clube), um SceneDef cada
   audio/       Motor de som 100% sintetizado (núcleo, efeitos, música, fachada)
   ui/          Toda a interface DOM (diálogo, prompts, menu, diário, HUD)
@@ -135,11 +136,6 @@ src/
 - **`furniture.ts`** (kit **interno**) — sofá, cama, geladeira, fogão, pia,
   mesa de jantar, porta, TV, planta em vaso, máquina de lavar, armário,
   espelho e o mural de memórias (cortiça com polaroides pregados).
-- **`pelusa.ts`** — o Pelusa, gato do Ari, no molde da `FerrisWheel` mas com
-  máquina de estados (`andando` / `parado` / `sentado`), sorteio com semente
-  (mesmo build, mesmo passeio), miado espontâneo espaçado e uma pose de
-  carinho. Modelado a partir da foto: branco creme com sela e máscara
-  cinza-taupe, rabo listrado de três gomos encadeados.
 - **`memoriasData.ts`** — o acervo do quadro de memórias. Cada memória é uma
   ficha (`MemoriaPintada`: id, título, lugar, legenda, proporção) mais uma
   **função que pinta a cena em Canvas 2D** — foto da vida real deles virando
@@ -175,6 +171,13 @@ src/
   constante `DUPLA = [ARI, RENAN]` que define quem começa jogável.
 
 ### `entities/` — atores com física própria
+
+Inclui `entities/bichos/`, a categoria dos animais: `Bicho.ts` guarda o cérebro
+(máquina de estados `andando`/`parado`/`sentado`, passeio por área com
+obstáculos, som espontâneo espaçado, carinho, sorteio com semente) e a subclasse
+entrega só corpo e pose. `Pelusa.ts`, o gato do Ari, é o primeiro — modelado da
+foto: branco creme com sela e máscara cinza-taupe, rabo listrado de três gomos
+encadeados. Ver a skill `aristory-bicho`.
 
 - **`Player.ts`** / **`Companion.ts`** — cada um é um `Group` externo (guarda
   a posição) + um `CharacterRig` filho (guarda a rotação). `swapRig()` troca

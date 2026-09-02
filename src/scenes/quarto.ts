@@ -8,7 +8,7 @@ import {
 import { toon } from '../core/materials';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
-import { Pelusa } from '../world/pelusa';
+import { Pelusa } from '../entities/bichos/Pelusa';
 
 /**
  * Quarto do Ari.
@@ -255,7 +255,7 @@ export const quarto: SceneDef = {
     });
     w.add(pelusa.group);
     // o miado sai do gato, mas quem toca é o motor: a peça não conhece o áudio
-    pelusa.aoMiar = () => g0.som('miado');
+    pelusa.aoSoar = () => g0.som('miado');
 
     const carinho = w.interact({
       id: 'quarto:pelusa',

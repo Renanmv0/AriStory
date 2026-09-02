@@ -78,14 +78,34 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 - `props.ts` / `furniture.ts` — kits de peças. Ver a skill `aristory-prop`.
 - `memoriasData.ts` — o acervo do quadro de memórias: cada memória é uma função
   que pinta uma foto em Canvas 2D. Ver a skill `aristory-memoria`.
-- `pelusa.ts` — o gato do Ari: peça animada com **comportamento** próprio
-  (anda, para, senta, mia). A cena diz onde ele pode pisar (retângulo + círculos
-  proibidos) e liga o miado no `g.som`; o resto mora na classe. O ponto de
-  interação acompanha ele por `Interactable.moveTo`, senão o carinho ficaria
-  onde ele nasceu.
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**
   do grupo que gira e são reposicionadas por frame, para nunca virarem de cabeça
   para baixo.
+
+## `entities/`
+
+Atores: coisas com estado próprio, que mudam sozinhas de um quadro para o
+outro. Do motor (`Player`, `Companion`, `Beijo`, `Coracoes`, `MaosDadas`) e de
+cena (`Frisbee`, `PingPong`).
+
+### `entities/bichos/` — os animais
+
+`Bicho.ts` é a base e guarda o **cérebro**: passear por uma área contornando
+móveis, parar, sentar, virar para onde anda, fazer barulho espaçado e receber
+carinho, tudo com sorteio por semente (mesmo build, mesmo passeio — a foto do
+teste não muda sozinha). A subclasse entrega só o **corpo** (`montar`) e a
+**pose** (`animar`); `Pelusa.ts` é o primeiro e serve de molde.
+
+Três amarrações que a cena faz e o bicho não adivinha: a área e os círculos
+proibidos (ele é menor que gente e passa em vão que gente não passa, então quem
+decide o que é obstáculo *para ele* é quem monta a cena); o `aoSoar` ligado no
+`g.som` (o bicho sabe quando fazer barulho, não conhece o áudio); e
+`Interactable.moveTo` dentro do `onUpdate`, senão o prompt fica onde ele nasceu.
+
+`montar()` é chamado pela subclasse, nunca pela base: método abstrato chamado
+do construtor da base roda antes de os campos da subclasse existirem.
+
+Ver a skill `aristory-bicho`.
 
 ## `characters/`
 

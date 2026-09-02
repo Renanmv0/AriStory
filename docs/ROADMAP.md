@@ -46,9 +46,10 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [ ] O parceiro reagir ao que você faz (comentar, aplaudir, entrar na água junto)
 - [ ] Mais carinho além do beijo (abraço; a mão e o deitar junto já existem)
 
-### O Pelusa
-- [ ] Ele subir na cama quando os dois deitam
-- [ ] Reagir a quem entra no quarto (vir andando, ou fugir)
+### Bichos
+- [ ] Mais um bicho: com `entities/bichos/Bicho.ts` pronto, é só corpo e pose
+- [ ] O Pelusa subir na cama quando os dois deitam
+- [ ] Reagir a quem entra no cômodo (vir andando, ou fugir)
 - [ ] Um ronronado próprio, diferente do miado
 
 ### Cenários
