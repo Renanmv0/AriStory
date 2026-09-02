@@ -360,7 +360,13 @@ export class CharacterRig {
       this.head.add(eye);
 
       if (spec.blush !== undefined) {
-        const blush = new THREE.Mesh(new THREE.CircleGeometry(headR * 0.16, 12), flat(spec.blush, 0.75));
+        // Decalque: nesta altura do rosto a superficie da cabeca passa a
+        // 0,83·headR, praticamente rente ao disco. Sem o modo decalque as duas
+        // faces disputam o mesmo pixel e a bochecha pisca quando a cabeca gira.
+        const blush = new THREE.Mesh(
+          new THREE.CircleGeometry(headR * 0.16, 12),
+          flat(spec.blush, 0.75, true),
+        );
         blush.position.set(side * headR * 0.56, -headR * 0.26, headR * 0.82);
         blush.rotation.y = side * 0.35;
         this.head.add(blush);
@@ -399,10 +405,12 @@ export class CharacterRig {
     this.body.add(this.head);
     this.group.add(this.body);
 
-    // sombra fofa desenhada, alem da sombra real do sol
+    // Sombra fofa desenhada, alem da sombra real do sol. E decalque: ela pousa
+    // em cima do chao e das linhas pintadas, e 2 cm de folga nao bastam num
+    // buffer de profundidade de celular.
     this.blob = new THREE.Mesh(
       new THREE.CircleGeometry(h * 0.16 * w, 18),
-      flat(0x2b3a2b, 0.22),
+      flat(0x2b3a2b, 0.22, true),
     );
     this.blob.rotation.x = -Math.PI / 2;
     this.blob.position.y = 0.02;

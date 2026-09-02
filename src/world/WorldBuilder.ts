@@ -39,7 +39,16 @@ export class WorldBuilder {
   bounds: Bounds = { minX: -40, minZ: -40, maxX: 40, maxZ: 40 };
 
   private seed = 1337;
-  /** cada decalque de chao ganha um offset proprio, para nunca piscarem entre si */
+  /**
+   * Ordem de pintura dos decalques de chao. Eles nao gravam profundidade (ver
+   * `ToonOptions.decal`), entao nao ha disputa de pixel entre eles: quem for
+   * criado depois e desenhado depois e fica por cima. E por isso que a cena
+   * deve montar o chao de baixo para cima — grama, depois a mancha de terra,
+   * depois a linha pintada em cima da mancha.
+   *
+   * Comeca em 1 porque `renderOrder` 0 e o resto do mundo: o decalque precisa
+   * vir depois dele para ser tapado corretamente pelo personagem e pelos moveis.
+   */
   private decalque = 0;
 
   constructor(readonly game: GameAPI) {}
@@ -69,11 +78,22 @@ export class WorldBuilder {
 
   // ----------------------------------------------------------------- chao
 
+  /**
+   * Um chao empilhado sobre outro (o deck do clube sobre a grama) e decalque
+   * como qualquer outro: sem isto a briga acontece no piso inteiro, e nao so
+   * numa linha pintada.
+   */
+  private chaoAcimaDeOutro(y: number | undefined): boolean {
+    return (y ?? 0) > 0;
+  }
+
   ground(opts: GroundOptions): THREE.Mesh {
     const geo = new THREE.PlaneGeometry(opts.width, opts.depth, 1, 1);
-    const mesh = new THREE.Mesh(geo, toon(opts.color));
+    const empilhado = this.chaoAcimaDeOutro(opts.y);
+    const mesh = new THREE.Mesh(geo, toon(opts.color, { decal: empilhado }));
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(opts.x ?? 0, opts.y ?? 0, opts.z ?? 0);
+    if (empilhado) return this.decalar(mesh);
     mesh.receiveShadow = true;
     this.root.add(mesh);
     return mesh;
@@ -111,9 +131,25 @@ export class WorldBuilder {
       forma.holes.push(buraco);
     }
 
-    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(forma), toon(opts.color));
+    const empilhado = this.chaoAcimaDeOutro(opts.y);
+    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(forma), toon(opts.color, { decal: empilhado }));
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(opts.x ?? 0, opts.y ?? 0, opts.z ?? 0);
+    if (empilhado) return this.decalar(mesh);
+    mesh.receiveShadow = true;
+    this.root.add(mesh);
+    return mesh;
+  }
+
+  /**
+   * Registra a malha como decalque de chao: entra na fila de pintura depois do
+   * mundo solido e na ordem em que a cena a criou.
+   *
+   * O `y` continua existindo por gosto (é bom ler a pilha do chao no codigo),
+   * mas nao e mais ele que decide quem fica por cima — e a ordem de criacao.
+   */
+  private decalar(mesh: THREE.Mesh): THREE.Mesh {
+    mesh.renderOrder = ++this.decalque;
     mesh.receiveShadow = true;
     this.root.add(mesh);
     return mesh;
@@ -121,29 +157,28 @@ export class WorldBuilder {
 
   /** Mancha de outra cor sobre o chao: caminho de terra, quadra, tapete. */
   patch(x: number, z: number, width: number, depth: number, color: number, rotY = 0, y = 0.01): THREE.Mesh {
-    const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(width, depth),
-      toon(color, { offset: ++this.decalque }),
-    );
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), toon(color, { decal: true }));
     mesh.rotation.set(-Math.PI / 2, 0, 0);
     mesh.rotation.z = rotY;
     mesh.position.set(x, y, z);
-    mesh.receiveShadow = true;
-    this.root.add(mesh);
-    return mesh;
+    return this.decalar(mesh);
   }
 
   /** Mancha redonda: lago, canteiro, sombra pintada. */
   disc(x: number, z: number, radius: number, color: number, y = 0.01): THREE.Mesh {
-    const mesh = new THREE.Mesh(
-      new THREE.CircleGeometry(radius, 28),
-      toon(color, { offset: ++this.decalque }),
-    );
+    const mesh = new THREE.Mesh(new THREE.CircleGeometry(radius, 28), toon(color, { decal: true }));
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(x, y, z);
-    mesh.receiveShadow = true;
-    this.root.add(mesh);
-    return mesh;
+    return this.decalar(mesh);
+  }
+
+  /** Anel pintado no chao: circulo central da quadra, marca de mira, poca. */
+  ring(x: number, z: number, raio: number, largura: number, color: number, y = 0.01): THREE.Mesh {
+    const geo = new THREE.RingGeometry(Math.max(0, raio - largura), raio, 40);
+    const mesh = new THREE.Mesh(geo, toon(color, { decal: true }));
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(x, y, z);
+    return this.decalar(mesh);
   }
 
   // ------------------------------------------------------------- colisores

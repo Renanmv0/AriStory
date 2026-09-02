@@ -49,6 +49,7 @@ nas duas cenas (ida e volta).
 | `w.ground({ width, depth, color, x?, z?, y? })` | o piso da cena |
 | `w.patch(x, z, w, d, cor, rotY?, y?)` | retângulo pintado: calçada, quadra, tapete |
 | `w.disc(x, z, raio, cor, y?)` | círculo pintado: lago, praça, canteiro |
+| `w.ring(x, z, raio, largura, cor, y?)` | anel pintado: círculo central da quadra, marca no chão |
 | `w.setBounds(minX, minZ, maxX, maxZ)` | limite invisível de caminhada |
 | `w.groundWithHoles({ …, holes: [{x,z,width,depth}] })` | piso com buraco (piscina, poço) |
 
@@ -206,25 +207,38 @@ Canteiro, vitória-régia, pedra na beira d'água: sempre que der, faça a peça
 em calota nunca brigam com a grama nem com a água, porque não são coplanares com
 nada — some com o risco de z-fighting antes de ele existir.
 
-## Chão empilhado: nunca dois decalques na mesma altura
+## Chão empilhado: quem manda é a ORDEM DE CRIAÇÃO
 
-`w.patch()` e `w.disc()` desenham no chão. Duas dessas superfícies na **mesma
-altura** brigam pelo mesmo pixel e produzem manchas em ziguezague — foi o que
-aconteceu na praça da roda gigante e na borda do lago.
+`w.patch()`, `w.disc()` e `w.ring()` desenham no chão. Eles são **decalques**:
+não gravam profundidade e são pintados depois do mundo sólido, na ordem em que a
+cena os criou. Duas consequências:
 
-O `WorldBuilder` já dá um `polygonOffset` próprio a cada decalque, então o
-empilhamento é determinístico mesmo em alturas iguais. Ainda assim, **declare
-alturas distintas** por camada — fica legível e à prova de futuro:
+1. **Decalque nunca briga com decalque.** Pode empilhar quantas camadas quiser
+   na mesma altura sem piscar. Milímetros de `y` não resolviam nada — o buffer de
+   profundidade do celular é bem mais pobre que o do desktop e engolia a folga.
+   Foi assim que a linha do meio da quadra e as manchas da praça piscaram.
+2. **Quem é criado por último fica por cima.** Monte o chão de baixo para cima:
+   grama, mancha de terra, calçada, linha pintada.
 
 ```ts
 w.disc(x, z, r, P.grassDark, 0.004);   // manchas de grama
 w.disc(0, -16.5, 8.6, P.sand, 0.008);  // borda
 w.disc(0, -16.5, 8, P.concrete, 0.012);// praça
-w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho
+w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho, por cima de tudo
 ```
 
-Regra prática: comece em `0.004` e suba de `0.004` a cada camada que ficar por
-cima. Ordene do que está mais embaixo para o que está mais em cima.
+O `y` continua sendo escrito porque deixa a pilha legível no código; ele já não
+decide nada. Suba `0.004` por camada e mantenha a ordem coerente com a leitura.
+
+Anel pintado (círculo central da quadra, poça, marca no chão) é `w.ring()`, e
+não dois discos concêntricos: com dois discos a borda de um cai exatamente em
+cima da borda do outro, e aí a briga volta — agora entre as *bordas*, que é uma
+coisa que ordem de pintura não conserta.
+
+Fora do chão, superfícies coladas (foto na parede, bochecha no rosto, linha no
+fundo da piscina) pedem o mesmo tratamento à mão: material com `{ decal: true }`
+(ou `flat(cor, opacidade, true)`) **mais** um `mesh.renderOrder` que a ponha
+depois da base. Ver `ToonOptions.decal` em `src/core/materials.ts`.
 
 O mesmo vale **em pé**: porta encaixada num vão não pode ter a face do batente
 na mesma altura da face da parede. `w.wall()` usa espessura `0.3`; o batente da

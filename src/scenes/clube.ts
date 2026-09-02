@@ -84,11 +84,16 @@ export const clube: SceneDef = {
     agua.position.set(PISCINA.x, -0.12, PISCINA.z);
     w.root.add(agua);
 
-    // linhas de raia pintadas no fundo
+    // linhas de raia pintadas no fundo — decalque: colada no piso da piscina,
+    // ela so nao briga com ele porque nao grava profundidade
     for (const x of [-5.2, -1.8, 1.8, 5.2]) {
-      const raia = new THREE.Mesh(new THREE.PlaneGeometry(0.24, PISCINA.profundidade - 1.4), flat(0x3f8ab0));
+      const raia = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.24, PISCINA.profundidade - 1.4),
+        flat(0x3f8ab0, 1, true),
+      );
       raia.rotation.x = -Math.PI / 2;
       raia.position.set(PISCINA.x + x, -PISCINA.fundo + 0.08, PISCINA.z);
+      raia.renderOrder = 1;
       w.root.add(raia);
     }
 

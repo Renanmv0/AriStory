@@ -290,7 +290,12 @@ export const villaLobos: SceneDef = {
     const qz0 = QUADRA.z - QUADRA.profundidade / 2; // -14
     const qz1 = QUADRA.z + QUADRA.profundidade / 2; // 5
 
-    // grama aparada e as linhas pintadas
+    // Grama aparada e as linhas pintadas, montadas de baixo para cima: a ordem
+    // de criacao e que decide quem fica por cima (ver `WorldBuilder.decalar`).
+    // O circulo central e um ANEL, e nao dois discos concentricos: com dois
+    // discos a borda de um caia em cima da borda do outro e piscava. A risca do
+    // meio vem depois do anel, porque em quadra de verdade ela atravessa o
+    // circulo.
     w.patch(QUADRA.x, QUADRA.z, QUADRA.largura, QUADRA.profundidade, P.grassDark, 0, 0.008);
     const linha = (x: number, z: number, larg: number, prof: number): void => {
       w.patch(x, z, larg, prof, 0xf2f4f0, 0, 0.012);
@@ -299,11 +304,10 @@ export const villaLobos: SceneDef = {
     linha(QUADRA.x, qz1 - 0.3, QUADRA.largura - 1.2, 0.28);
     linha(qx0 + 0.6, QUADRA.z, 0.28, QUADRA.profundidade - 0.6);
     linha(qx1 - 0.6, QUADRA.z, 0.28, QUADRA.profundidade - 0.6);
-    linha(QUADRA.x, QUADRA.z, 0.28, QUADRA.profundidade - 0.6); // meio
     linha(qx0 + 6, QUADRA.z, 0.22, QUADRA.profundidade - 0.6); // zonas de fundo
     linha(qx1 - 6, QUADRA.z, 0.22, QUADRA.profundidade - 0.6);
-    w.disc(QUADRA.x, QUADRA.z, 2.2, 0xf2f4f0, 0.011);
-    w.disc(QUADRA.x, QUADRA.z, 1.9, P.grassDark, 0.012);
+    w.ring(QUADRA.x, QUADRA.z, 2.2, 0.3, 0xf2f4f0, 0.012);
+    linha(QUADRA.x, QUADRA.z, 0.28, QUADRA.profundidade - 0.6); // meio
 
     // alambrado, com a entrada aberta do lado do caminho principal
     const alambrado = (x: number, z: number, comp: number, girado: boolean): void => {
@@ -570,9 +574,12 @@ export const villaLobos: SceneDef = {
     w.blockBox(35, 3.5, 0.2, 5.5);
     w.blockBox(35, 22.5, 0.2, 5.5);
 
-    w.patch(30, 13, 12, 5, P.asphalt); // caminho do parque até o vão
-    w.patch(40, 13, 12, 34, P.asphalt); // a rua
-    w.patch(35.6, 13, 1.6, 34, P.concrete, 0, 0.012); // calçada
+    // A rua e o caminho que chega nela sao a MESMA cor e se cruzavam em x 34~36:
+    // dois asfaltos colados no mesmo lugar, piscando um por cima do outro. O
+    // caminho agora para na calçada, e a rua começa depois dela.
+    w.patch(29.5, 13, 11, 5, P.asphalt, 0, 0.01); // caminho do parque até o vão
+    w.patch(35.6, 13, 1.6, 34, P.concrete, 0, 0.014); // calçada
+    w.patch(40.8, 13, 8.8, 34, P.asphalt, 0, 0.018); // a rua
 
     const onibus = w.add(w.place(bus(0x3f7fd6), 39.5, 0, 13, -Math.PI / 2));
     w.blockBox(39.5, 13, 1.5, 4.3);

@@ -268,8 +268,11 @@ export function pictureFrame(width = 0.7, height = 0.55, art: number = P.skyDusk
   const g = new THREE.Group();
   const frame = new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.05), toon(P.woodDark));
   g.add(frame);
-  const canvas = new THREE.Mesh(new THREE.PlaneGeometry(width - 0.1, height - 0.1), flat(art));
+  // decalque: a tela fica a 5 mm da frente da moldura, folga curta demais para
+  // o buffer de profundidade decidir sozinho (ver `ToonOptions.decal`)
+  const canvas = new THREE.Mesh(new THREE.PlaneGeometry(width - 0.1, height - 0.1), flat(art, 1, true));
   canvas.position.z = 0.03;
+  canvas.renderOrder = 1;
   g.add(canvas);
   return g;
 }
@@ -292,19 +295,31 @@ export function muralDeMemorias(largura = 1.3, altura = 1.0): THREE.Group {
   );
   g.add(moldura);
 
+  /**
+   * Daqui para baixo e tudo decalque, empilhado por `renderOrder`.
+   *
+   * O mural e a peca mais fina do jogo: a cortica fica a 5 mm da moldura, o
+   * furo a 5 mm da cortica e o miolo da polaroide a 2 MM do papel. Nenhuma
+   * dessas folgas sobrevive a um buffer de profundidade de celular — e a briga
+   * por pixel aparece justo de perto, que e como se olha o quadro. Como
+   * decalque nao grava profundidade, quem manda e a ordem de pintura abaixo, e
+   * a tachinha (solida, `renderOrder` 0) continua tapando o que esta atras.
+   */
   const placa = new THREE.Mesh(
     new THREE.PlaneGeometry(largura - 0.1, altura - 0.1),
-    flat(P.cortica),
+    flat(P.cortica, 1, true),
   );
   placa.position.z = 0.03;
+  placa.renderOrder = 1;
   g.add(placa);
 
   // os furos da cortica: so uns riscos escuros, para a placa nao ficar chapada
   for (let i = 0; i < 14; i++) {
     const furo = new THREE.Mesh(
       new THREE.PlaneGeometry(0.018, 0.018),
-      flat(P.corticaEscura),
+      flat(P.corticaEscura, 1, true),
     );
+    furo.renderOrder = 2;
     // espalhados por uma conta fixa: mural montado duas vezes tem que sair
     // igual, senao a foto do teste muda sozinha a cada build
     furo.position.set(
@@ -328,14 +343,16 @@ export function muralDeMemorias(largura = 1.3, altura = 1.0): THREE.Group {
   fotos.forEach(([x, y, lw, lh, giro, cor], i) => {
     const foto = new THREE.Group();
 
-    const papel = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh), flat(P.metalWhite));
+    const papel = new THREE.Mesh(new THREE.PlaneGeometry(lw, lh), flat(P.metalWhite, 1, true));
+    papel.renderOrder = 3;
     foto.add(papel);
     // a margem larga embaixo e o que faz o retangulo virar polaroide
     const miolo = new THREE.Mesh(
       new THREE.PlaneGeometry(lw - 0.06, lh - 0.1),
-      flat(cor),
+      flat(cor, 1, true),
     );
     miolo.position.set(0, 0.02, 0.002);
+    miolo.renderOrder = 4;
     foto.add(miolo);
 
     const tachinha = new THREE.Mesh(
