@@ -150,6 +150,8 @@ export class CharacterRig {
    * traje de banho, e o calção é justamente a que faz o contrário.
    */
   private readonly calcao: THREE.Mesh;
+  /** os dois tubos do shorts, um por perna — pintados junto com o calcao */
+  private readonly pernasDoShort: THREE.Mesh[] = [];
   /** a cor de calção da ficha da pessoa, quando não há bermuda escolhida */
   private readonly calcaoDaFicha: THREE.Material;
   /** as duas faixas da bermuda estampada; só aparecem se a peça pedir */
@@ -205,6 +207,9 @@ export class CharacterRig {
     const shirt = toon(spec.shirt);
     const pants = toon(spec.pants);
     const shoes = toon(spec.shoes);
+    // sobe para ca porque as PERNAS do shorts, montadas logo abaixo, ja pintam
+    // com ele — antes ele so nascia junto do calcao do quadril
+    this.calcaoDaFicha = toon(spec.swim ?? spec.pants);
 
     // ------------------------------------------------------------- pernas
     for (const [pivot, side] of [
@@ -221,6 +226,28 @@ export class CharacterRig {
       this.trocaMaterial.push({
         mesh: leg, normal: pants, banho: skin, slot: 'pernas', parte: 'principal',
       });
+
+      // A PERNA DO SHORTS.
+      //
+      // Ela é filha do PIVÔ DA PERNA, e não do corpo: assim ela herda de graça
+      // toda a matemática de rotação da caminhada, da natação e do sentar, sem
+      // tocar em nenhum pivô. É a mesma razão pela qual o patins e o cano da
+      // bota moram aqui.
+      //
+      // Cônica (mais larga embaixo) e com folga de ~40% sobre o raio da coxa:
+      // dois cilindros concêntricos de raios diferentes não brigam por pixel, e
+      // a boca aberta é o que dá a silhueta de bermuda em vez de calça justa.
+      // Vai do quadril até ~40% da coxa, deixando a metade de baixo da perna
+      // com o material de pele que o traje de banho já aplica.
+      const pernaDoShort = new THREE.Mesh(
+        new THREE.CylinderGeometry(h * 0.052 * w, h * 0.064 * w, legH * 0.44, 14, 1, true),
+        this.calcaoDaFicha,
+      );
+      pernaDoShort.position.y = -legH * 0.2;
+      pernaDoShort.visible = false;
+      pivot.add(pernaDoShort);
+      this.soBanho.push(pernaDoShort);
+      this.pernasDoShort.push(pernaDoShort);
 
       const foot = new THREE.Mesh(
         new THREE.BoxGeometry(h * 0.075 * w, h * 0.045, h * 0.11),
@@ -303,7 +330,6 @@ export class CharacterRig {
 
     // calção de banho: fica escondido até alguém entrar na água
     const raioCalcao = h * 0.118 * w;
-    this.calcaoDaFicha = toon(spec.swim ?? spec.pants);
     const calcao = new THREE.Mesh(
       new THREE.CylinderGeometry(raioCalcao, h * 0.112 * w, h * 0.15, 14),
       this.calcaoDaFicha,
@@ -986,9 +1012,13 @@ export class CharacterRig {
     // calça, só que noutro traje. Sem bermuda escolhida vale a cor da ficha,
     // que é como era antes de o vestiário existir.
     const bermuda = this.roupa.pernas;
-    this.calcao.material = bermuda?.corBanho === undefined
+    const panoDaBermuda = bermuda?.corBanho === undefined
       ? this.calcaoDaFicha
       : toon(bermuda.corBanho);
+    this.calcao.material = panoDaBermuda;
+    // as pernas sao do mesmo pano: sem isto elas ficavam na cor da ficha
+    // enquanto o quadril mudava de cor no vestiario
+    for (const p of this.pernasDoShort) p.material = panoDaBermuda;
     for (const faixa of this.estampa) {
       faixa.visible = bermuda?.estampaBanho !== undefined;
       if (bermuda?.estampaBanho !== undefined) faixa.material = toon(bermuda.estampaBanho);
