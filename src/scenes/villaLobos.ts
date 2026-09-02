@@ -192,8 +192,12 @@ export const villaLobos: SceneDef = {
 
     // virada para +Z, como a sorveteria: a camera olha de +x/+z, entao quiosque
     // de costas para ela vira uma caixa lisa
-    const bilheteria = w.add(w.place(kiosk(P.fabricBlue, { texto: 'Bilheteria' }), 9.5, 0, -20.5, -0.5));
-    w.blockBox(9.5, -20.5, 1.4, 0.95, -0.5);
+    // x = 8.9, e não 9.5: com o giro de -0,5 rad o canto da direita do quiosque
+    // chega 1,68 além do centro dele, e a cerca da praça está em x = 11 — em
+    // 9,5 o tapume atravessava a bilheteria de lado a lado. Aqui sobra ~0,4 de
+    // folga entre a quina e a cerca.
+    const bilheteria = w.add(w.place(kiosk(P.fabricBlue, { texto: 'Bilheteria' }), 8.9, 0, -20.5, -0.5));
+    w.blockBox(8.9, -20.5, 1.4, 0.95, -0.5);
 
     // ------------------------------------------- entorno da roda gigante
     // Tudo aqui é posicionado na mão de propósito: o espalhador de vegetação
@@ -1619,7 +1623,7 @@ export const villaLobos: SceneDef = {
 
     w.interact({
       id: 'parque:bilheteria',
-      x: 9.5, z: -19, radius: 2.2,
+      x: 8.9, z: -19, radius: 2.2,
       label: 'Bilheteria', icon: '🎟️',
       highlight: bilheteria,
       onInteract: () =>

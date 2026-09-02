@@ -64,6 +64,37 @@ lado de fora da sombra do toldo. Depois de mexer, confira com
 Vidro fechado por cima de comida é armadilha: some no toon shading e ainda
 tapa o que está dentro. Cuba aberta lê muito melhor de longe.
 
+## Z-fighting: nunca encoste face com face
+
+Duas superfícies opacas no MESMO plano, com área em comum, brigam pelo mesmo
+pixel: a GPU não tem como desempatar e a peça serrilha e pisca conforme a
+câmera gira. É o defeito visual mais comum do kit, e ele **não aparece de
+longe** — só com a câmera colada.
+
+O par perigoso é o que aponta para o MESMO lado (as duas faces `min`, ou as
+duas `max`). Face contra face oposta — uma caixa terminando onde a outra
+começa — é empilhamento normal e não serrilha.
+
+A correção é sempre a mesma família: **sobrepor de leve em vez de encostar.**
+
+- peça de dentro (detalhe, letreiro, listra): avance ou recue 1–2 cm da face
+  que ela decora;
+- peça em cima (laje, tampo): desça um pouco para dentro do que ela cobre;
+- peças com a mesma dimensão (moldura e parede, degrau e apoio): dê 4–5 cm de
+  diferença, para fora ou para dentro, em vez de casar o número.
+
+Já mordeu em: livros na estante, listras do quadro de preços do quiosque,
+moldura de madeira contra a parede do quiosque, laje contra o topo da parede,
+degrau contra apoio na arquibancada, e fundo contra laterais da estante.
+
+**`node scripts/zfighting.mjs` acha isso sozinho.** Ele mede as caixas de cada
+peça etiquetada (`g.userData.peca = 'nome'`) em espaço local e lista os pares
+coplanares com a área compartilhada. Etiquete a peça nova e rode: é mais
+barato que caçar na foto.
+
+Decalque de chão é o caso em que coplanar é o mecanismo, e não o bug — ali o
+`polygonOffset` do `WorldBuilder` resolve, e o detector ignora quem o tem.
+
 ## Peça amassada (pedra, terreno)
 
 Geometria de sólido do three (`DodecahedronGeometry` e companhia) **não é

@@ -82,6 +82,7 @@ node scripts/quarto.mjs  /tmp/qt    # quarto do Ari: porta nos dois sentidos e o
 node scripts/memorias.mjs /tmp/me   # o quadro de memorias: pintado, vivo e travando o jogo
 node scripts/cama.mjs    /tmp/cm    # deitar junto: lado a lado, e os bracos balancando
 node scripts/pelusa.mjs  /tmp/pe    # o gato: passeia sem entrar em movel, mia e recebe carinho
+node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

@@ -523,6 +523,8 @@ function toldo(largura: number, raio: number, cor: number, claro: number): THREE
  */
 export function kiosk(color: number = P.fabricRed, opts: KioskOpts = {}): THREE.Group {
   const g = new THREE.Group();
+  // etiqueta para o caçador de z-fighting achar a peça na cena
+  g.userData.peca = 'quiosque';
   const tipo = opts.tipo ?? 'simples';
   const claro = P.wallCream;
   const madeira = toon(P.wood);
@@ -537,14 +539,25 @@ export function kiosk(color: number = P.fabricRed, opts: KioskOpts = {}): THREE.
   corpo.position.set(0, 1.01, -0.05);
   g.add(corpo);
 
-  // ripado da frente, só nas beiradas: o miolo é a janela de atendimento
+  // Ripado da frente, só nas beiradas: o miolo é a janela de atendimento.
+  //
+  // A moldura de madeira é 5 cm mais LARGA que o corpo, de propósito. Antes ela
+  // tinha exatamente a mesma largura (2,35), então as faces laterais dos dois
+  // caíam no mesmo plano e serrilhavam numa faixa vertical na quina — e nem dá
+  // para resolver estreitando, porque aí a madeira sumiria dentro do bege.
+  // Saliente resolve o brilho E fica melhor: vira um batente de verdade.
+  //
+  // A verga é 1 cm mais funda e 4 cm mais larga que os pilares, e os dois param
+  // 2 cm abaixo do topo da parede. Sem essas três folgas eles compartilhavam
+  // face com face em CINCO planos (as duas laterais, a frente, o fundo e o
+  // topo), porque tinham exatamente a mesma espessura e a mesma altura.
   for (const lado of [-1, 1]) {
     const pilar = new THREE.Mesh(new THREE.BoxGeometry(0.26, 1.7, 0.14), madeira);
-    pilar.position.set(lado * 1.045, 1.01, 0.68);
+    pilar.position.set(lado * 1.1, 0.99, 0.68);
     g.add(pilar);
   }
-  const verga = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.22, 0.14), madeira);
-  verga.position.set(0, 1.75, 0.68);
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.22, 0.16), madeira);
+  verga.position.set(0, 1.715, 0.68);
   g.add(verga);
 
   // o vão escuro dá profundidade: sem ele a frente vira uma parede lisa. Ele
@@ -569,8 +582,10 @@ export function kiosk(color: number = P.fabricRed, opts: KioskOpts = {}): THREE.
   }
 
   // ----------------------------------------------------------- toldo e teto
+  // desce 2 cm para dentro do corpo: em y = 1,94 a base da laje caía exatamente
+  // no topo da parede (1,86), e a linha do beiral piscava
   const cobertura = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.16, 1.55), madeiraEscura);
-  cobertura.position.set(0, 1.94, -0.05);
+  cobertura.position.set(0, 1.92, -0.05);
   g.add(cobertura);
 
   // o toldo é curto de propósito: a câmera olha de cima em 34°, então qualquer
@@ -681,13 +696,20 @@ export function kiosk(color: number = P.fabricRed, opts: KioskOpts = {}): THREE.
     });
   }
 
-  // quadro de preços pendurado na lateral
+  // Quadro de preços pendurado na lateral.
+  //
+  // As distâncias aqui são todas contra Z-FIGHTING, e cada uma já apareceu
+  // serrilhando na tela:
+  // - o quadro entra 4 cm no corpo (que acaba em x = 1,175), em vez de encostar;
+  // - as linhas nascem à FRENTE da face do quadro, sem tocá-la. Antes a face de
+  //   trás da linha (1,23) caía exatamente na face da frente do quadro (1,23), e
+  //   as listras brancas piscavam em faixa toda vez que a câmera girava.
   const quadro = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.62, 0.5), toon(0x36302c));
-  quadro.position.set(1.2, 1.3, 0.15);
+  quadro.position.set(1.16, 1.3, 0.15);
   g.add(quadro);
   for (let i = 0; i < 3; i++) {
     const linha = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.045, 0.3 - i * 0.06), toon(claro));
-    linha.position.set(1.24, 1.46 - i * 0.16, 0.15);
+    linha.position.set(1.205, 1.46 - i * 0.16, 0.15);
     g.add(linha);
   }
 
@@ -1460,17 +1482,44 @@ export function scoreboard(): THREE.Group {
 }
 
 /** Arquibancada de três degraus. */
+/**
+ * Arquibancada de tres degraus.
+ *
+ * A versao antiga encostava tudo em tudo e serrilhava a lateral inteira: eram
+ * TRES pares de faces coplanares brigando pelo mesmo pixel.
+ *
+ *   1. a face de tras de cada degrau caia exatamente na face de tras do proprio
+ *      apoio (as duas em `z = -0,5i - 0,25`);
+ *   2. a face da frente do degrau de cima caia na face de tras do de baixo,
+ *      porque a profundidade (0,5) era igual ao passo entre eles (0,5);
+ *   3. degrau e apoio tinham a MESMA largura, entao as duas faces laterais
+ *      coincidiam de ponta a ponta.
+ *
+ * A correcao e a mesma nos tres: sobrepor de leve em vez de encostar. O degrau
+ * ficou mais fundo que o passo, e o apoio entrou para dentro nos dois eixos —
+ * ele e o suporte, entao viver na sombra do degrau e onde ele deveria estar.
+ */
 export function bleachers(largura = 4): THREE.Group {
   const g = new THREE.Group();
+  g.userData.peca = 'arquibancada';
+  const PASSO = 0.5;
   for (let i = 0; i < 3; i++) {
+    const alto = 0.25 + i * 0.34;
+    // 0,54 de profundidade para 0,5 de passo: 4 cm de sobreposicao entre um
+    // degrau e o seguinte, e nenhuma face compartilhada
     const degrau = new THREE.Mesh(
-      new THREE.BoxGeometry(largura, 0.16, 0.5),
+      new THREE.BoxGeometry(largura, 0.16, PASSO + 0.04),
       toon(i % 2 === 0 ? P.metalWhite : P.metalGrey),
     );
-    degrau.position.set(0, 0.25 + i * 0.34, -i * 0.5);
+    degrau.position.set(0, alto, -i * PASSO);
     g.add(degrau);
-    const apoio = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.25 + i * 0.34, 0.1), toon(P.metalGrey));
-    apoio.position.set(0, (0.25 + i * 0.34) / 2, -i * 0.5 - 0.2);
+
+    // mais estreito e recuado: fica inteiro dentro da projecao do degrau
+    const apoio = new THREE.Mesh(
+      new THREE.BoxGeometry(largura - 0.08, alto, 0.1),
+      toon(P.metalGrey),
+    );
+    apoio.position.set(0, alto / 2, -i * PASSO - 0.19);
     g.add(apoio);
   }
   return g;

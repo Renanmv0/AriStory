@@ -90,11 +90,19 @@ export function bookshelf(height = 2.1, width = 1.2, cor: number = P.woodDark): 
   const prof = 0.32;
   const esp = 0.04;
 
+  // O fundo sai 1 cm POR TRÁS das laterais, e para 1 cm antes do topo e da base.
+  //
+  // Alinhado com elas, ele dividia SEIS planos de face — as duas laterais, o
+  // topo, a base e a traseira — e a estante serrilhava na quina toda vez que a
+  // câmera girava. Sobressair também é como estante de verdade é: a costa passa
+  // por trás dos montantes.
+  // `width - esp` (e não `- esp * 2`): assim ele entra 2 cm em cada lateral, em
+  // vez de terminar no mesmo x das tábuas
   const fundo = new THREE.Mesh(
-    new THREE.BoxGeometry(width, height, esp),
+    new THREE.BoxGeometry(width - esp, height - 0.02, esp),
     toon(P.estanteFundo),
   );
-  fundo.position.set(0, height / 2, -prof / 2 + esp / 2);
+  fundo.position.set(0, height / 2, -prof / 2 - 0.005);
   g.add(fundo);
 
   for (const lado of [-1, 1]) {
