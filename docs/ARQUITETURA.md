@@ -122,6 +122,27 @@ que entra na chave do cache de material), o que torna o empilhamento
 determinístico independentemente da altura. As cenas ainda declaram alturas
 distintas por camada, por legibilidade.
 
+### Z-fighting entre peças (não confundir com o do chão)
+
+São dois problemas com o mesmo nome, e a solução de um não serve para o outro:
+
+- **Chão empilhado** (calçada sobre grama, linha sobre quadra): decalque, e o
+  `WorldBuilder` resolve — `polygonOffset` mais não gravar profundidade, com a
+  ordem de criação decidindo quem fica por cima.
+- **Dentro de uma peça** (a listra no quadro de preços, o degrau contra o apoio,
+  o fundo da estante contra as laterais): aqui não há decalque nenhum, são dois
+  sólidos com uma face no mesmo plano. A correção é geométrica: **sobrepor de
+  leve em vez de encostar.**
+
+O par que serrilha é o que aponta para o MESMO lado (as duas faces `min`, ou as
+duas `max`). Face contra face oposta — uma caixa terminando onde a outra começa
+— é empilhamento normal e some sozinho.
+
+`node scripts/zfighting.mjs` acha o segundo caso sozinho: mede as caixas de
+cada peça etiquetada (`g.userData.peca`) em espaço local, e lista os pares
+coplanares com a área compartilhada. Ele achou dois que a foto não tinha
+denunciado. Peça nova ganha etiqueta e entra na lista do script.
+
 ### Sentar e deitar: a âncora faz o trabalho
 
 Duas poses de "estar apoiado em algo" e o mesmo truque nas duas: quem posiciona
