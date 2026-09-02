@@ -229,7 +229,7 @@ function silhueta(
 // -------------------------------------------------------- a memoria da foto
 
 /**
- * O corredor de luzinhas, a noite.
+ * O corredor de luzinhas, a noite: onde os dois comecaram a namorar.
  *
  * Pintado de tras para a frente, como quem monta um cenario: ceu, chao,
  * vegetacao, pilares, teto, os varais, e por ultimo os dois andando. A ordem
@@ -503,9 +503,9 @@ function corredorDeLuzes(
  */
 export const MEMORIAS: readonly MemoriaPintada[] = [
   {
-    id: 'corredor-de-luzes',
-    titulo: 'O corredor de luzinhas',
-    lugar: 'uma noite, os dois andando',
+    id: 'o-pedido',
+    titulo: 'O pedido',
+    lugar: 'onde a gente começou, oficialmente',
     legenda: 'As luzinhas iam até onde a gente não enxergava mais. A gente foi junto.',
     proporcao: 3 / 4,
     pintar: corredorDeLuzes,

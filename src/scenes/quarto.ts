@@ -222,7 +222,7 @@ export const quarto: SceneDef = {
             icon: '📌',
           });
         }
-        g.abrirMemoria('corredor-de-luzes');
+        g.abrirMemoria('o-pedido');
       },
     });
 
