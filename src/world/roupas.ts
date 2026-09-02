@@ -1320,8 +1320,6 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
 
   // altura dos olhos, um fio acima: oculos escorregado no nariz e outro visual
   const Y = r * 0.04;
-  /** o quanto a lente gira para acompanhar a curva do rosto */
-  const ABRE = 0.2;
   /** raio da lente */
   const RL = r * 0.26;
   /**
@@ -1340,15 +1338,15 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
     // 90° em X leva esse eixo para Z, que e para onde o rosto olha. So assim a
     // face CIRCULAR fica de frente; sem o giro se veria a lateral do tubo.
     //
-    // O `rotation.y` que acompanha a curva do rosto tem que vir DEPOIS do giro
-    // em X para nao rodar a lente no proprio plano — por isso a ordem
-    // 'YXZ': lida da direita para a esquerda, deita primeiro e abre depois.
+    // As duas lentes ficam RETAS, no MESMO plano — sem giro em Y. Ja teve um
+    // `rotation.y` aqui para "acompanhar a curva do rosto", e o efeito era o
+    // contrario do pretendido: cada lente apontava para um lado, o oculos
+    // deixava de ter uma frente unica e de perto lia como concavo.
     const vidro = new THREE.Mesh(
       new THREE.CylinderGeometry(RL, RL, r * 0.07, 20),
       lente,
     );
-    vidro.rotation.order = 'YXZ';
-    vidro.rotation.set(Math.PI / 2, -side * ABRE, 0);
+    vidro.rotation.x = Math.PI / 2;
     vidro.position.set(side * r * 0.38, Y, FRENTE);
     g.add(vidro);
 
@@ -1358,8 +1356,6 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
       new THREE.TorusGeometry(RL, r * 0.03, 8, 20),
       armacao,
     );
-    aro.rotation.order = 'YXZ';
-    aro.rotation.set(0, -side * ABRE, 0);
     aro.position.set(side * r * 0.38, Y, FRENTE + r * 0.005);
     g.add(aro);
 
