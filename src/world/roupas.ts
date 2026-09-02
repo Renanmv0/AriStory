@@ -1324,22 +1324,33 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
   const ABRE = 0.2;
 
   for (const side of [-1, 1] as const) {
+    // LENTE REDONDA: cilindro achatado, deitado.
+    //
+    // `rotation.x = PI/2` deita o cilindro — o eixo dele nasce em Y, e girar
+    // 90° em X leva esse eixo para Z, que e para onde o rosto olha. So assim a
+    // face CIRCULAR fica de frente; sem o giro se veria a lateral do tubo.
+    //
+    // O `rotation.y` que acompanha a curva do rosto tem que vir DEPOIS do giro
+    // em X para nao rodar a lente no proprio plano — por isso a ordem
+    // 'YXZ': lida da direita para a esquerda, deita primeiro e abre depois.
     const vidro = new THREE.Mesh(
-      new THREE.BoxGeometry(r * 0.4, r * 0.3, r * 0.09),
+      new THREE.CylinderGeometry(r * 0.2, r * 0.2, r * 0.07, 20),
       lente,
     );
+    vidro.rotation.order = 'YXZ';
+    vidro.rotation.set(Math.PI / 2, -side * ABRE, 0);
     vidro.position.set(side * r * 0.35, Y, r * 0.96);
-    // a borda de fora recua; a de dentro afunda no rosto, que e o certo
-    vidro.rotation.y = -side * ABRE;
     g.add(vidro);
 
-    // aro fino por cima da lente, so para ela nao ficar uma mancha chapada
+    // o aro: um anel fino em volta da lente, um fio maior que ela. Torus e a
+    // forma certa aqui — ele ja e o contorno, sem precisar de duas pecas.
     const aro = new THREE.Mesh(
-      new THREE.BoxGeometry(r * 0.44, r * 0.06, r * 0.09),
+      new THREE.TorusGeometry(r * 0.2, r * 0.028, 8, 20),
       armacao,
     );
-    aro.position.set(side * r * 0.35, Y + r * 0.16, r * 0.97);
-    aro.rotation.y = -side * ABRE;
+    aro.rotation.order = 'YXZ';
+    aro.rotation.set(0, -side * ABRE, 0);
+    aro.position.set(side * r * 0.35, Y, r * 0.965);
     g.add(aro);
 
     // A HASTE, da dobradica ate sumir na altura da orelha — ver o cabecalho.
@@ -1358,12 +1369,14 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
     g.add(haste);
   }
 
-  // a ponte, entre as duas lentes
+  // A ponte sobre o nariz: um cilindro fino DEITADO no eixo X, ligando as duas
+  // lentes. Deitar no X e `rotation.z = PI/2` (o eixo do cilindro nasce em Y).
   const ponte = new THREE.Mesh(
-    new THREE.BoxGeometry(r * 0.32, r * 0.055, r * 0.07),
+    new THREE.CylinderGeometry(r * 0.025, r * 0.025, r * 0.34, 8),
     armacao,
   );
-  ponte.position.set(0, Y + r * 0.09, r * 1.0);
+  ponte.rotation.z = Math.PI / 2;
+  ponte.position.set(0, Y + r * 0.07, r * 0.99);
   g.add(ponte);
 
   return g;
