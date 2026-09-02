@@ -34,6 +34,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Minigame de ping pong até 5 pontos, com chapéu de campeão de prêmio
 - [x] Guarda-roupa: armário no quarto do Ari, com as peças feitas a partir de foto
 - [x] Quadro de memórias no quarto: fotos da vida real deles pintadas em Canvas 2D
+- [x] Deitar junto na cama do Ari, lado a lado, com os braços balançando devagar
 
 ## Próximos passos naturais
 
@@ -42,7 +43,7 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [ ] Expressões simples (feliz, surpreso, dormindo)
 - [ ] Mais roupas por cenário (casaco no frio, pijama em casa)
 - [ ] O parceiro reagir ao que você faz (comentar, aplaudir, entrar na água junto)
-- [ ] Mais carinho além do beijo (dar a mão andando, abraço)
+- [ ] Mais carinho além do beijo (abraço; a mão e o deitar junto já existem)
 
 ### Cenários
 - [ ] Casa do Renan

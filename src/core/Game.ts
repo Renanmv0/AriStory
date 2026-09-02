@@ -998,6 +998,23 @@ export class Game implements GameAPI {
     this.parceiro.rig.setHoldingHands(lado === 1 ? -1 : 1);
   }
 
+  /**
+   * Os dois deitam — e deitam JUNTOS, como o `setSitting`.
+   *
+   * Aqui nao ha o calculo de lado do sentar, porque deitados eles nao ficam de
+   * maos dadas: o gesto e o balanco dos bracos ao longo do corpo. Levantar
+   * devolve as maos ao estado da mecanica propria, e nao ao chao.
+   */
+  setLying(deitados: boolean): void {
+    if (deitados) this.audio.play('sentar');
+    this.player.rig.setLying(deitados);
+    this.parceiro.rig.setLying(deitados);
+    if (!deitados && !this.maos.ativo) {
+      this.player.rig.setHoldingHands(0);
+      this.parceiro.rig.setHoldingHands(0);
+    }
+  }
+
   setOutfit(traje: 'normal' | 'banho'): void {
     this.player.rig.setOutfit(traje);
     this.parceiro.rig.setOutfit(traje);

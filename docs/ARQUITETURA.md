@@ -97,6 +97,26 @@ que entra na chave do cache de material), o que torna o empilhamento
 determinístico independentemente da altura. As cenas ainda declaram alturas
 distintas por camada, por legibilidade.
 
+### Sentar e deitar: a âncora faz o trabalho
+
+Duas poses de "estar apoiado em algo" e o mesmo truque nas duas: quem posiciona
+(e no caso do deitar, quem **vira**) é uma âncora da cena, um `Object3D` passado
+ao `ridePlayer`/`rideCompanion`. O rig vira filho dela e continua animando em
+espaço local exatamente como em pé.
+
+Deitar é o caso que mostra por que isso vale: a âncora tem `rotation.x = -π/2`,
+e com isso o `+Y` local do rig passa a apontar para a cabeceira e o `+Z` local
+para o teto. Nenhuma pose precisou ser reescrita membro a membro — `setLying`
+no `CharacterRig` só troca a **animação** (pernas retas, corpo parado, o balanço
+lento dos braços). O contra-exemplo está no próprio bloco: `poeAltura()` não
+serve deitado, porque o Y local ali empurra a pessoa para o travesseiro em vez
+de fazer o peito subir.
+
+A cutscene da cama também troca a câmera por `setCameraOmbro`, e não pelo
+`focusCamera` isométrico: deitados, os dois apontam para o fundo da cena, e é
+justamente essa direção que a isométrica encurta — os corpos viravam dois tocos
+ao lado das cabeças.
+
 ### Zonas de mecânica
 
 Uma mecânica pode valer só num pedaço do cenário. A quadra de frisbee é o

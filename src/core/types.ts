@@ -403,6 +403,12 @@ export interface GameAPI {
   holdCompanion(olharX: number, olharZ: number): void;
   /** os dois sentam (ou levantam) */
   setSitting(sentados: boolean): void;
+  /**
+   * Os dois deitam (ou levantam). Quem VIRA o corpo e a ancora da cena — um
+   * `Object3D` com `rotation.x = -PI/2` passado ao `ridePlayer`/`rideCompanion`;
+   * isto so troca a animacao para a pose de descanso, com o balanco dos bracos.
+   */
+  setLying(deitados: boolean): void;
   releaseCompanion(x: number, z: number, facing?: number): void;
   /** troca quem o jogador controla */
   swapCharacters(): void;

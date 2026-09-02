@@ -123,6 +123,7 @@ export class CharacterRig {
   private targetFacing = 0;
   private swimming = false;
   private sitting = false;
+  private deitado = false;
 
   /**
    * Peças que trocam de material entre roupa normal e traje de banho.
@@ -1107,6 +1108,27 @@ export class CharacterRig {
   }
 
   /**
+   * Deitado.
+   *
+   * O corpo NAO vira aqui: quem deita a pessoa e a ancora da cena, um
+   * `Object3D` com `rotation.x = -PI/2` do qual o rig e filho. Assim a
+   * animacao continua toda em espaco local, como em pe — foi o que dispensou
+   * reescrever a pose membro por membro. Este estado so troca a ANIMACAO:
+   * pernas retas, corpo parado e o balanco leve dos bracos.
+   */
+  setLying(v: boolean): void {
+    this.deitado = v;
+    if (!v) {
+      this.poeAltura(0);
+      this.legL.rotation.set(0, 0, 0);
+      this.legR.rotation.set(0, 0, 0);
+      this.armL.rotation.set(0, 0, 0.08);
+      this.armR.rotation.set(0, 0, -0.08);
+      this.body.rotation.x = 0;
+    }
+  }
+
+  /**
    * Calca (ou tira) os patins.
    *
    * Quem manda e o inventario: o `Game` le a vaga de acessorio e carimba isto
@@ -1202,6 +1224,32 @@ export class CharacterRig {
       this.armL.rotation.set(-k * 0.55, 0, 0.08 + k * 0.16);
       this.armR.rotation.set(-k * 0.55, 0, -0.08 - k * 0.16);
       this.head.rotation.x = k * 0.18;
+      this.head.rotation.z *= 1 - Math.min(1, dt * 8);
+      return;
+    }
+
+    if (this.deitado) {
+      // Devagar de proposito — meio ciclo a cada ~6 s. Deitado, o unico
+      // movimento e o de quem esta descansando; mais rapido que isto o corpo
+      // parece inquieto em vez de a vontade.
+      this.phase += dt * 0.55;
+      // pernas retas e um pouco abertas. MESMA PEGADINHA DE SINAL de sempre: a
+      // perna esquerda nasce em -X, entao `rotation.z` NEGATIVO nela e que abre
+      // para fora — com o sinal trocado as duas cruzam para dentro.
+      this.legL.rotation.set(0, 0, -0.05);
+      this.legR.rotation.set(0, 0, 0.05);
+      // O balanco dos bracos, que e o ponto da pose: eles abrem e fecham de
+      // leve ao longo do corpo, com um giro lento defasado para os dois lados
+      // nao ficarem em espelho perfeito.
+      const balanco = Math.sin(this.phase) * 0.07;
+      const solto = Math.sin(this.phase * 0.73) * 0.05;
+      this.armL.rotation.set(solto, 0, -0.14 - balanco);
+      this.armR.rotation.set(-solto, 0, 0.14 + balanco);
+      // o peito subindo e descendo. Nada de `poeAltura` aqui: deitado, o Y
+      // local aponta para a cabeceira, entao ele empurraria a pessoa para o
+      // travesseiro em vez de fazer o peito respirar.
+      this.body.rotation.x = Math.sin(this.phase) * 0.02;
+      this.head.rotation.x = Math.sin(this.phase * 0.6) * 0.025;
       this.head.rotation.z *= 1 - Math.min(1, dt * 8);
       return;
     }

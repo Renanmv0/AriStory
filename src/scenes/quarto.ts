@@ -114,6 +114,27 @@ export const quarto: SceneDef = {
     const cama = w.add(w.place(bed(P.fabricBlue), -2.2, 0, -1.75));
     w.blockBox(-2.2, -1.75, 0.78, 1.08);
 
+    // A âncora que DEITA os dois.
+    //
+    // Ela é o truque inteiro da mecânica: um `Object3D` girado -90° em X, do
+    // qual os dois viram filhos. Como quem vira é o pai, o rig continua
+    // animando em espaço local exatamente como em pé — nada de reescrever a
+    // pose membro por membro.
+    //
+    // Depois do giro, os eixos locais dela apontam assim no mundo:
+    //   +Y local → -Z (a cabeceira, então a pessoa deita com a cabeça lá)
+    //   +Z local → +Y (para cima, então eles olham para o teto)
+    //   +X local → +X (inalterado, e é ele que separa um do outro na largura)
+    //
+    // O `y` da âncora é a altura do colchão MAIS meio corpo: o rig nasce com os
+    // pés em `y = 0`, e deitado esse plano vira o plano das costas — sem a
+    // folga, metade do corpo afunda no edredom.
+    const DEITAR = { x: -2.2, y: 0.86, z: -1.02 };
+    const deitados = new THREE.Object3D();
+    deitados.position.set(DEITAR.x, DEITAR.y, DEITAR.z);
+    deitados.rotation.x = -Math.PI / 2;
+    w.add(deitados);
+
     w.add(w.place(nightstand(), -1.05, 0, -2.72));
     w.blockBox(-1.05, -2.72, 0.24, 0.22);
 
@@ -251,14 +272,64 @@ export const quarto: SceneDef = {
     w.interact({
       id: 'quarto:cama',
       x: -2.2, z: -0.5, radius: 1.6,
-      label: 'Olhar a cama', icon: '🛏️',
+      label: 'Deitar na cama', icon: '🛏️',
       highlight: cama,
-      onInteract: () =>
-        conversa([
+      onInteract: async (g) => {
+        const quer = await g.ask('Deitar um pouco?', ['Deitar', 'Agora não']);
+        if (quer !== 0) {
+          await conversa([
+            [R, 'Essa cama é bem melhor que a minha.'],
+            [A, 'É a mesma cama de sempre.'],
+            [R, 'Não é a cama então.'],
+          ]);
+          return;
+        }
+
+        g.lockPlayer(true);
+        // lado a lado, cada um numa metade da largura da cama
+        g.ridePlayer(deitados, new THREE.Vector3(-0.36, 0, 0), 1, 0);
+        g.rideCompanion(deitados, new THREE.Vector3(0.36, 0, 0), 1, 0);
+        g.setLying(true);
+        // Câmera de cima, e não a isométrica de sempre: deitados, os dois
+        // apontam para o fundo da cena, e a isométrica encurta justamente essa
+        // direção — os corpos viravam dois tocos ao lado das cabeças. De cima
+        // eles aparecem inteiros, lado a lado, que é o que a pose tem de bonito.
+        g.setCameraOmbro(
+          new THREE.Vector3(-0.95, 3.75, 0.35),
+          new THREE.Vector3(-2.2, 0.72, -1.75),
+        );
+        await g.wait(1.1);
+
+        await conversa([
           [R, 'Essa cama é bem melhor que a minha.'],
           [A, 'É a mesma cama de sempre.'],
           [R, 'Não é a cama então.'],
-        ]),
+        ]);
+
+        const ficar = await g.ask('Ficar mais um pouco?', ['Fica', 'Levantar']);
+        if (ficar === 0) {
+          await conversa([
+            [A, 'A gente não precisa fazer nada agora.'],
+            [R, 'Eu sei.'],
+          ]);
+          // um tempo parado, só para o balanço dos braços aparecer
+          await g.wait(2.4);
+        }
+
+        g.setLying(false);
+        g.setCameraOmbro(null);
+        g.releasePlayer(-1.3, -0.4, 0);
+        g.releaseCompanion(-1.3, 0.25, 0);
+        g.lockPlayer(false);
+
+        g.unlock({
+          id: 'deitar-junto',
+          title: 'Deitar sem motivo',
+          place: 'Quarto do Ari',
+          note: 'Os dois na cama dele, olhando o teto, sem plano nenhum para o resto da tarde.',
+          icon: '🛏️',
+        });
+      },
     });
 
     w.interact({
