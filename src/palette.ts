@@ -118,6 +118,32 @@ export const PALETTE = {
   oculosLente: 0x23212b,
   oculosArmacao: 0x3d3b48,
 
+  // a comida servida na mesa do restaurante. São as MESMAS cores da miniatura
+  // 2D do cardápio (`world/cardapioData.ts`), agora em hex de material: o prato
+  // que o cachorro traz tem que ser reconhecível como o que foi escolhido no
+  // papel, e cor diferente quebraria justamente isso.
+  arepaMilho: 0xe9c179,
+  arepaTostada: 0xcf9a48,
+  arepaQueijo: 0xfbe6a6,
+  hamburguerPao: 0xe2a961,
+  hamburguerGergelim: 0xf8ebcf,
+  hamburguerCarne: 0x7c4423,
+  hamburguerCarneEscura: 0x5e3018,
+  hamburguerAlface: 0x77c05a,
+  hamburguerBatata: 0xf2c14e,
+  perroSalsicha: 0xd5654b,
+  perroKetchup: 0xd63b34,
+  perroMostarda: 0xf0b429,
+
+  // o garçom canino: pelo caramelo, peito e patas cor de creme, e a gravata
+  // borboleta vinho que é o que o transforma de cachorro em garçom
+  cachorroPelo: 0xc98b52,
+  cachorroPeito: 0xf3e0c4,
+  cachorroOrelha: 0xa96f3c,
+  cachorroFocinho: 0x4a3a33,
+  gravataBorboleta: 0xa8324a,
+  gravataNo: 0x86243a,
+
   // o vestiário do clube: a faixa de azulejo que todo vestiário de piscina tem
   // na meia parede, o rejunte um degrau abaixo dela, a porta de veneziana e a
   // caixa d'água azul do telhado

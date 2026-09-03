@@ -448,6 +448,19 @@ body.touch-device .hints .toque { display: block; }
   letter-spacing: 0.04em;
 }
 
+/* o prato marcado, esperando o segundo clique */
+.cardapio .prato { cursor: pointer; transition: background 0.15s ease; }
+.cardapio .prato:hover { background: rgba(180, 134, 58, 0.1); }
+.cardapio .prato.marcado {
+  background: rgba(180, 134, 58, 0.3);
+  box-shadow: inset 0 0 0 2px var(--dourado);
+}
+/* o ✓ que aparece na ponta do prato marcado */
+.cardapio .prato.marcado .titulo em::after {
+  content: ' ✓';
+  color: var(--tinta);
+}
+
 .cardapio .rodape {
   margin: 6px 0 14px;
   font-size: 11px;
@@ -455,18 +468,42 @@ body.touch-device .hints .toque { display: block; }
   letter-spacing: 0.12em;
   color: var(--dourado);
 }
-.cardapio .close {
+/* o botão de pedir é o principal: dourado e cheio. O de fechar é a saída sem
+   pedir, e fica discreto — dois botões do mesmo peso deixariam a escolha ambígua */
+.cardapio .pedir {
   pointer-events: auto;
+  display: block;
+  margin: 0 auto 8px;
   border: 0;
-  padding: 11px 20px;
+  padding: 12px 26px;
   border-radius: 999px;
-  background: var(--tinta);
-  color: #fdf6e6;
+  background: var(--dourado);
+  color: #fff9ec;
   font: inherit;
+  font-size: 15px;
   font-weight: 800;
   cursor: pointer;
 }
-.cardapio .close:hover { background: #6b4c31; }
+.cardapio .pedir:hover:not(:disabled) { background: #966d2c; }
+.cardapio .pedir:disabled {
+  background: rgba(122, 90, 48, 0.2);
+  color: var(--tinta-fraca);
+  cursor: default;
+}
+.cardapio .close {
+  pointer-events: auto;
+  border: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--tinta-fraca);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.cardapio .close:hover { color: var(--tinta); }
 
 @media (max-width: 640px) {
   .cardapio .papel { width: calc(100vw - 28px); padding: 20px 18px 16px; }
