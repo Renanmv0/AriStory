@@ -1907,15 +1907,9 @@ export function mesaDePatio(cor: number = P.restauranteToldo): THREE.Group {
   pe.position.y = 0.03;
   g.add(pe);
 
-  // vasinho no centro, que é o detalhe que diz "mesa posta" de longe
-  const vaso = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.16, 10), toon(P.plantPot));
-  vaso.position.y = 0.855;
-  g.add(vaso);
-  for (const [dx, dz, alto] of [[0, 0, 0.16], [0.05, 0.03, 0.12], [-0.04, -0.04, 0.13]] as const) {
-    const flor = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), toon(P.flowerPink));
-    flor.position.set(dx, 0.93 + alto * 0.5, dz);
-    g.add(flor);
-  }
+  // O CENTRO DA MESA FICA VAZIO. Já teve um vasinho de flor aqui, e ele
+  // disputava espaço com o prato que o garçom serve — a comida chega
+  // exatamente neste ponto. Mesa de restaurante é para pôr comida em cima.
 
   for (let i = 0; i < 4; i++) {
     const cadeira = cadeiraDePatio(cor);
