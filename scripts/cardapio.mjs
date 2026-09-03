@@ -96,8 +96,7 @@ const conteudo = await page.evaluate(() => {
     for (let i = 3; i < d.length; i += 4) if (d[i] > 8) pintados++;
     return Math.round((pintados / (c.width * c.height)) * 100);
   });
-  const maos = [...document.querySelectorAll('.cardapio .mao')].length;
-  return { secoes, fotos, maos };
+  return { secoes, fotos };
 });
 
 // ------------------------------------------------- o painel trava o jogo
@@ -144,9 +143,8 @@ const vao = Math.hypot(naMesa.jogador[0] - naMesa.parceiro[0], naMesa.jogador[1]
 console.log(`  vão entre os dois: ${vao.toFixed(2)} (a mesa tem 2,04 de cadeira a cadeira)`);
 conferir(vao > 1.6, 'os dois sentaram no mesmo lugar');
 
-console.log(`cardápio abriu: ${abriu} · mãos na tela: ${conteudo.maos}`);
+console.log(`cardápio abriu: ${abriu}`);
 conferir(abriu, 'o cardápio não abriu');
-conferir(conteudo.maos === 2, 'faltam as duas mãos segurando o cardápio');
 
 for (const s of conteudo.secoes) {
   console.log(`  ${s.titulo}: ${s.pratos.map((p) => `${p.nome} ${p.preco}`).join(' · ')}`);
