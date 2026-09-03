@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
-import type { SceneDef } from '../core/types';
+import type { GameAPI, SceneDef } from '../core/types';
 import { flat } from '../core/materials';
 import {
   bin, bleachers, bus, busStop, bush, canteiro, canteiroComPalmeira,
@@ -8,9 +8,11 @@ import {
   floatRing, floodlight, flowers, kiosk, lamp, parasol, poolLadder,
   mesaDePatio, poolShell, poolWater, restaurante, showerPost, sunLounger, textSign,
   tree, vestiario as predioDoVestiario, waterFountain,
+  dogWaiter, pratoServido,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
+import { pratoPorId } from '../world/cardapioData';
 
 /**
  * Clube — a piscina.
@@ -251,6 +253,106 @@ export const clube: SceneDef = {
     const CADEIRA = 1.02;
     const ALTURA = 0.02;
 
+    /**
+     * O GARÇOM CANINO leva o prato da porta do restaurante até a mesa.
+     *
+     * O prato viaja como FILHO da bandeja nas costas do cachorro, e não copiado
+     * frame a frame: assim ele acompanha o passo de graça, sem tremer. Na
+     * entrega, o `attach` do three troca o pai para a âncora da mesa MANTENDO a
+     * posição no mundo — é isso que faz o prato pousar em vez de saltar.
+     *
+     * Tudo nasce e morre dentro desta função. O cachorro é criado no pedido e
+     * `dispose`ado ao sair de cena: peça de cutscene que fica pendurada no
+     * mundo depois vira lixo que ninguém lembra de limpar.
+     */
+    /** o passo do garçom no frame atual; o loop do mundo empurra ele */
+    let passoDoGarcom: ((dt: number) => void) | null = null;
+    w.onUpdate((dt) => passoDoGarcom?.(dt));
+
+    const servir = async (api: GameAPI, idDoPrato: string): Promise<void> => {
+      const comida = pratoServido(idDoPrato);
+      if (!comida) return;
+
+      const cachorro = dogWaiter();
+      const bandeja = cachorro.userData.bandeja as THREE.Object3D;
+      bandeja.add(comida);
+
+      // A porta do restaurante, que é de onde ele sai, e o lado da mesa em que
+      // ele para.
+      //
+      // Ele encosta pelo `+X` da mesa, e não pelo `-X`. A câmera vem de
+      // `+X/+Z` e desenha na frente o que tem soma maior: parado do lado de lá,
+      // o cachorro ficava atrás de quem senta na cadeira de perto e a entrega
+      // inteira acontecia escondida por uma cabeça.
+      const PORTA = { x: RESTAURANTE.x, z: fachadaZ + 0.9 };
+      const CHEGADA = { x: MESA.x + 1.5, z: MESA.z };
+      cachorro.position.set(PORTA.x, 0, PORTA.z);
+      w.add(cachorro);
+      api.som('latido');
+
+      /**
+       * Anda de um ponto ao outro, virado para onde vai, e balançando.
+       *
+       * A caminhada mora no LOOP DE FRAMES (`passoDoGarcom`), e não numa fila de
+       * `await wait(1/60)`. A primeira versão era a fila, e ela derrete: cada
+       * `wait` é um `setTimeout`, e navegador com a aba fora de foco trava
+       * timer curto em 1 por segundo — os 2,2 s de caminhada viravam mais de
+       * dois minutos, com o cachorro se arrastando pelo deque. `dt` de frame
+       * não tem esse problema, e ainda dá um passo suave em qualquer taxa.
+       */
+      const caminhar = (
+        de: { x: number; z: number },
+        para: { x: number; z: number },
+        segundos: number,
+      ): Promise<void> => new Promise<void>((pronto) => {
+        cachorro.rotation.y = Math.atan2(para.x - de.x, para.z - de.z);
+        let t = 0;
+        passoDoGarcom = (dt) => {
+          t = Math.min(segundos, t + dt);
+          const k = t / segundos;
+          cachorro.position.x = de.x + (para.x - de.x) * k;
+          cachorro.position.z = de.z + (para.z - de.z) * k;
+          // o gingado: um sobe-e-desce curto no passo, que é o que separa
+          // "cachorro andando" de "caixa deslizando pelo chão"
+          cachorro.position.y = Math.abs(Math.sin(t * 11)) * 0.045;
+          cachorro.rotation.z = Math.sin(t * 11) * 0.05;
+          if (t >= segundos) {
+            passoDoGarcom = null;
+            cachorro.position.set(para.x, 0, para.z);
+            cachorro.rotation.z = 0;
+            pronto();
+          }
+        };
+      });
+
+      await caminhar(PORTA, CHEGADA, 2.2);
+      api.som('latido');
+
+      // A ENTREGA: o prato troca de pai sem sair do lugar, e só então é posto
+      // na mesa. `attach` preserva a posição no mundo; `add` a jogaria para a
+      // origem da mesa e o prato pularia na tela.
+      mesaPosta.attach(comida);
+      comida.position.set(0, 0.78, 0);
+      comida.rotation.set(0, 0, 0);
+      api.som('sorvete'); // a mesma sineta de "toma, é seu" da sorveteria
+
+      // meia-volta e embora, e aí a instância morre
+      await api.wait(0.4);
+      await caminhar(CHEGADA, PORTA, 2.0);
+      w.root.remove(cachorro);
+      cachorro.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).geometry.dispose();
+      });
+
+      // o tempo comendo
+      await api.wait(4.5);
+      mesaPosta.remove(comida);
+      comida.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).geometry.dispose();
+      });
+      api.toast('Estava ótimo', '😌');
+    };
+
     w.interact({
       id: 'clube:mesa-do-restaurante',
       x: MESA.x, z: MESA.z, radius: 2.2,
@@ -271,8 +373,23 @@ export const clube: SceneDef = {
           [A, 'Se tiver arepa, acabou a leitura pra mim.'],
         ]);
 
-        // o cardápio abre e a cena PARA aqui até ele fechar
-        await api.abrirCardapio();
+        // o cardápio abre e a cena PARA aqui até ele fechar. Ele devolve o id
+        // do prato escolhido, ou `null` se a pessoa saiu sem pedir.
+        const escolhido = await api.abrirCardapio();
+        const prato = escolhido ? pratoPorId(escolhido) : null;
+
+        if (prato) {
+          // Quem PEDE é quem está sendo controlado. Os dois estão travados na
+          // cadeira, então o T não trocou ninguém no meio do caminho: o dono da
+          // voz aqui é o mesmo que sentou.
+          await api.say([`Um(a) ${prato.nome}, por favor!`], api.playerName());
+          await servir(api, escolhido!);
+          await conversa([
+            [R, 'Isso aqui salvou o meu dia.'],
+            [A, 'A gente volta semana que vem?'],
+            [R, 'A gente volta amanhã.'],
+          ]);
+        }
 
         api.setSitting(false);
         api.focusCamera(null);
@@ -281,13 +398,15 @@ export const clube: SceneDef = {
         api.releasePlayer(MESA.x, MESA.z + 2, Math.PI);
         api.releaseCompanion(MESA.x, MESA.z - 2, 0);
         api.lockPlayer(false);
-        api.unlock({
-          id: 'cardapio-do-clube',
-          title: 'O cardápio do restaurante',
-          place: 'Clube',
-          note: 'Você leu o cardápio inteiro, de cabo a rabo, e pediu arepa. Como sempre.',
-          icon: '📖',
-        });
+        if (prato) {
+          api.unlock({
+            id: 'cardapio-do-clube',
+            title: 'O almoço no clube',
+            place: 'Clube',
+            note: 'Você leu o cardápio inteiro, de cabo a rabo. E um cachorrinho de gravata trouxe a comida.',
+            icon: '🍽️',
+          });
+        }
       },
     });
     for (const x of [-20.6, -12.4]) {

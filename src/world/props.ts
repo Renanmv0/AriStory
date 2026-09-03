@@ -2435,3 +2435,274 @@ export function vestiario(largura = 8, profundidade = 5): THREE.Group {
 
   return g;
 }
+
+/* ------------------------------------------------------------------------ *
+ *                   OS PRATOS SERVIDOS, E O GARÇOM
+ * ------------------------------------------------------------------------ */
+
+/**
+ * A louça que todo prato servido divide: um disco raso com a beirada erguida.
+ *
+ * Ela é pequena de propósito — 0,26 de raio. O prato fica em cima de uma mesa
+ * de 0,74 e é visto de longe, e uma louça de tamanho "realista" ao lado de um
+ * boneco chibi lê como uma tampa de bueiro.
+ */
+function pratoDeLouca(raio = 0.26): THREE.Group {
+  const g = new THREE.Group();
+  const fundo = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio * 0.82, raio * 0.7, 0.02, 16),
+    toon(P.metalWhite),
+  );
+  fundo.position.y = 0.012;
+  g.add(fundo);
+  // a beirada é um toro, e não um segundo cilindro: cilindro sobre cilindro
+  // dividiria a face de cima com o fundo e serrilharia
+  const borda = new THREE.Mesh(new THREE.TorusGeometry(raio * 0.88, 0.022, 6, 18), toon(P.metalWhite));
+  borda.rotation.x = Math.PI / 2;
+  borda.position.y = 0.03;
+  g.add(borda);
+  return g;
+}
+
+/** A AREPA servida: o disco de milho na louça, com o queijo saindo da boca. */
+export function arepaServida(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'arepa-queijo';
+  g.add(pratoDeLouca());
+
+  const disco = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.15, 0.075, 14), toon(P.arepaMilho));
+  disco.position.y = 0.08;
+  g.add(disco);
+  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.018, 14), toon(P.arepaTostada));
+  tampo.position.y = 0.125;
+  g.add(tampo);
+
+  // o queijo escorrendo pela boca, no lado que olha para a câmera
+  const fio = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, 0.06), toon(P.arepaQueijo));
+  fio.position.set(0, 0.08, 0.13);
+  g.add(fio);
+  const pingo = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), toon(P.arepaQueijo));
+  pingo.position.set(0.05, 0.055, 0.16);
+  g.add(pingo);
+  return g;
+}
+
+/** A AREPA RECHEADA: a mesma, com carne desfiada por cima. */
+export function arepaRecheadaServida(): THREE.Group {
+  const g = arepaServida();
+  g.userData.peca = 'arepa-recheada';
+  for (const [x, z, giro] of [[-0.05, 0.1, 0.3], [0.04, 0.12, -0.4], [0, 0.07, 0.1]] as const) {
+    const fiapo = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.022, 0.03), toon(P.hamburguerCarne));
+    fiapo.position.set(x, 0.14, z);
+    fiapo.rotation.y = giro;
+    g.add(fiapo);
+  }
+  return g;
+}
+
+/**
+ * O HAMBÚRGUER servido: a pilha, e as batatas ao lado.
+ *
+ * Cada camada é mais estreita ou mais larga que a vizinha de propósito. Duas
+ * camadas do MESMO raio dividiriam a face de cima de uma com a de baixo da
+ * outra — e é aí que a pilha começa a serrilhar quando a câmera gira.
+ */
+export function hamburguerServido(andares = 2): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = andares > 1 ? 'duplo-queijo' : 'quarteirao';
+  g.add(pratoDeLouca(0.3));
+
+  let y = 0.045;
+  const camada = (altura: number, raio: number, cor: number, lados = 14): void => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio, altura, lados), toon(cor));
+    m.position.y = y + altura / 2;
+    g.add(m);
+    y += altura;
+  };
+
+  camada(0.045, 0.135, P.hamburguerPao);
+  for (let i = 0; i < andares; i++) {
+    camada(0.04, 0.145, i % 2 ? P.hamburguerCarneEscura : P.hamburguerCarne);
+    camada(0.014, 0.152, P.arepaQueijo, 4); // o queijo, quadrado como fatia
+  }
+  camada(0.022, 0.148, P.hamburguerAlface, 16);
+
+  // o pão de cima é meia esfera achatada, com gergelim
+  const topo = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), toon(P.hamburguerPao));
+  topo.scale.y = 0.62;
+  topo.position.y = y;
+  g.add(topo);
+  for (const [dx, dz] of [[-0.05, 0.03], [0.04, -0.02], [0.01, 0.06], [-0.02, -0.05]] as const) {
+    const semente = new THREE.Mesh(new THREE.SphereGeometry(0.011, 6, 4), toon(P.hamburguerGergelim));
+    semente.position.set(dx, y + 0.06, dz);
+    g.add(semente);
+  }
+
+  // as batatas, espetadas na borda da louça
+  for (const [dx, dz, giro] of [[0.2, 0.06, 0.4], [0.23, -0.02, -0.2], [0.18, -0.08, 0.15]] as const) {
+    const batata = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.13, 0.03), toon(P.hamburguerBatata));
+    batata.position.set(dx, 0.11, dz);
+    batata.rotation.set(0.3, giro, giro);
+    g.add(batata);
+  }
+  return g;
+}
+
+/** O PERRO CALIENTE servido: pão, salsicha sobrando dos dois lados e molhos. */
+export function perroServido(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'perro-tradicional';
+  g.add(pratoDeLouca(0.3));
+
+  const pao = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.28, 4, 10), toon(P.hamburguerPao));
+  pao.rotation.z = Math.PI / 2;
+  pao.position.y = 0.1;
+  g.add(pao);
+
+  const salsicha = new THREE.Mesh(new THREE.CapsuleGeometry(0.042, 0.34, 4, 10), toon(P.perroSalsicha));
+  salsicha.rotation.z = Math.PI / 2;
+  salsicha.position.y = 0.15;
+  g.add(salsicha);
+
+  // os molhos: três fitas finas por cima da salsicha, em alturas diferentes
+  for (const [i, cor] of [P.perroMostarda, P.perroKetchup, P.metalWhite].entries()) {
+    const fita = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.012, 0.02), toon(cor));
+    fita.position.set(0, 0.186 + i * 0.014, -0.028 + i * 0.028);
+    g.add(fita);
+  }
+  // a batata palha
+  for (const [dx, dz, giro] of [[-0.1, 0.02, 0.5], [-0.02, -0.03, -0.3], [0.07, 0.03, 0.8], [0.13, -0.02, 0.1]] as const) {
+    const palha = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.008, 0.008), toon(P.hamburguerBatata));
+    palha.position.set(dx, 0.215, dz);
+    palha.rotation.y = giro;
+    g.add(palha);
+  }
+  return g;
+}
+
+/* ---- fim dos pratos servidos ---- */
+
+/**
+ * A peça 3D de um prato do cardápio, pelo ID DA FICHA.
+ *
+ * É esta função que amarra as duas metades do prato: a ficha em
+ * `world/cardapioData.ts` (nome, preço, miniatura) e o modelo que o garçom
+ * entrega. Prato sem linha aqui aparece no cardápio, é pedido em voz alta, e o
+ * cachorro chega na mesa de costas vazias — por isso o `scripts/novo-prato.mjs`
+ * escreve a linha junto com o resto.
+ *
+ * As bebidas reaproveitam o `copoDeSuco()` que já existe no kit: o copo do
+ * clube serve inteiro, e só a cor da fruta muda.
+ */
+export function pratoServido(id: string): THREE.Group | null {
+  switch (id) {
+    case 'arepa-queijo': return arepaServida();
+    case 'arepa-recheada': return arepaRecheadaServida();
+    case 'duplo-queijo': return hamburguerServido(2);
+    case 'quarteirao': return hamburguerServido(1);
+    case 'perro-tradicional': return perroServido();
+    case 'suco-morango': return copoDeSuco(P.morango);
+    case 'smoothie-manga-banana': return copoDeSuco(P.maracuja);
+    /* ---- novos pratos entram acima ---- */
+    default: return null;
+  }
+}
+
+/**
+ * O GARÇOM CANINO: um cachorrinho de quatro patas, de gravata borboleta, com
+ * uma bandeja plana nas costas.
+ *
+ * A BANDEJA É UM `Object3D` VAZIO, e não uma malha. O prato entra nela como
+ * filho, então acompanha o cachorro de graça enquanto ele anda; na hora de
+ * servir, a cena só troca o prato de pai para a mesa. Sem a âncora, entregar
+ * viraria copiar posição frame a frame, e o prato tremeria no caminho.
+ *
+ * Ela está exposta em `g.userData.bandeja` e também tem `name = 'bandeja'`:
+ * duas portas para a mesma coisa, porque quem procura no runtime (o teste)
+ * costuma preferir o nome, e quem escreve a cutscene prefere o userData.
+ *
+ * O cachorro olha para `+Z` como toda peça, o que aqui quer dizer: o focinho
+ * aponta para `+Z` e o rabo fica no `-Z`.
+ */
+export function dogWaiter(cor: number = P.cachorroPelo): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'garcom-canino';
+
+  const pelo = toon(cor);
+  const peloClaro = toon(P.cachorroPeito);
+
+  // ---------------------------------------------------------------- corpo
+  const tronco = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.4), pelo);
+  tronco.position.set(0, 0.3, -0.02);
+  g.add(tronco);
+  // o peito claro, um fio mais estreito para não dividir face com o tronco
+  const peito = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.12, 0.14), peloClaro);
+  peito.position.set(0, 0.27, 0.16);
+  g.add(peito);
+
+  // ---------------------------------------------------------------- patas
+  for (const [x, z] of [[-0.075, 0.13], [0.075, 0.13], [-0.075, -0.15], [0.075, -0.15]] as const) {
+    const perna = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.07), pelo);
+    perna.position.set(x, 0.11, z);
+    g.add(perna);
+    const patinha = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.05, 0.095), peloClaro);
+    patinha.position.set(x, 0.025, z + 0.012);
+    g.add(patinha);
+  }
+
+  // --------------------------------------------------------------- cabeça
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.18, 0.19), pelo);
+  cabeca.position.set(0, 0.45, 0.2);
+  g.add(cabeca);
+  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.085, 0.1), peloClaro);
+  focinho.position.set(0, 0.41, 0.31);
+  g.add(focinho);
+  const nariz = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.04, 0.03), toon(P.cachorroFocinho));
+  nariz.position.set(0, 0.425, 0.365);
+  g.add(nariz);
+  for (const lado of [-1, 1] as const) {
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), toon(0x2b2a33));
+    olho.position.set(lado * 0.055, 0.48, 0.295);
+    g.add(olho);
+    // a orelha caída, que é o que faz o cachorro parecer fofo e não lobo
+    const orelha = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.15, 0.06), toon(P.cachorroOrelha));
+    orelha.position.set(lado * 0.115, 0.44, 0.17);
+    orelha.rotation.z = lado * 0.28;
+    g.add(orelha);
+  }
+
+  // --------------------------------------------------------------- gravata
+  // Duas asas e o nó: é o que transforma o cachorro em GARÇOM. Ela fica no
+  // pescoço, entre a cabeça e o peito, virada para a frente.
+  for (const lado of [-1, 1] as const) {
+    const asa = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.06, 0.03), toon(P.gravataBorboleta));
+    asa.position.set(lado * 0.05, 0.345, 0.245);
+    asa.rotation.z = lado * 0.35;
+    g.add(asa);
+  }
+  const no = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.04), toon(P.gravataNo));
+  no.position.set(0, 0.345, 0.255);
+  g.add(no);
+
+  // ----------------------------------------------------------------- rabo
+  const rabo = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.16), pelo);
+  rabo.position.set(0, 0.38, -0.24);
+  rabo.rotation.x = 0.7;
+  g.add(rabo);
+  const ponta = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), peloClaro);
+  ponta.position.set(0, 0.45, -0.3);
+  g.add(ponta);
+
+  // -------------------------------------------------------------- bandeja
+  const tabua = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.02, 0.3), toon(P.wood));
+  tabua.position.set(0, 0.41, -0.02);
+  g.add(tabua);
+
+  const bandeja = new THREE.Object3D();
+  bandeja.name = 'bandeja';
+  bandeja.position.set(0, 0.42, -0.02);
+  g.add(bandeja);
+  g.userData.bandeja = bandeja;
+
+  return g;
+}

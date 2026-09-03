@@ -17,6 +17,7 @@ acento — é o padrão do repositório, siga o que já está lá.
 | criar um bicho (gato, cachorro, passarinho) | `.claude/skills/aristory-bicho/SKILL.md` |
 | pintar uma memória para o quadro (a partir de uma foto) | `.claude/skills/aristory-memoria/SKILL.md` |
 | adicionar/ajustar roupa do guarda-roupa | `.claude/skills/aristory-roupa/SKILL.md` |
+| pôr um prato novo no cardápio do restaurante | `.claude/skills/aristory-prato/SKILL.md` |
 | som, música ou efeito sonoro | `.claude/skills/aristory-som/SKILL.md` |
 | rodar, ver e validar | `.claude/skills/aristory-testar/SKILL.md` |
 
@@ -81,7 +82,7 @@ node scripts/vestimenta.mjs /tmp/vt # onde cada roupa pode morar, e o armario po
 node scripts/vestiario.mjs /tmp/vs  # o vestiario do clube: oculos, cor da bermuda e um estilo por pessoa
 node scripts/quarto.mjs  /tmp/qt    # quarto do Ari: porta nos dois sentidos e o armario
 node scripts/memorias.mjs /tmp/me   # o quadro de memorias: pintado, vivo e travando o jogo
-node scripts/cardapio.mjs /tmp/cd   # a mesa do restaurante: sentar de frente e ler o cardapio
+node scripts/cardapio.mjs /tmp/cd   # a mesa do restaurante: sentar, pedir, o garcom entregar e comer
 node scripts/cama.mjs    /tmp/cm    # deitar junto: lado a lado, e os bracos balancando
 node scripts/pelusa.mjs  /tmp/pe    # o gato: passeia sem entrar em movel, mia e recebe carinho
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)

@@ -915,7 +915,7 @@ export class Game implements GameAPI {
    * catalogo para a UI, que tem os canvas. A pintura mora inteira em
    * `world/cardapioData.ts`, do mesmo jeito que a das memorias.
    */
-  abrirCardapio(): Promise<void> {
+  abrirCardapio(): Promise<string | null> {
     return this.ui.abrirCardapio(CARDAPIO);
   }
 

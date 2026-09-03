@@ -389,9 +389,13 @@ export interface GameAPI {
    * Abre o cardapio do restaurante em primeira pessoa (o acervo mora em
    * `world/cardapioData.ts`). Trava o movimento enquanto estiver aberto, e a
    * promessa so resolve quando ele FECHA — e o que deixa a cutscene da mesa
-   * escrever "senta, conversa, le o cardapio, levanta" em linha reta.
+   * escrever "senta, conversa, le o cardapio, pede, levanta" em linha reta.
+   *
+   * Resolve com o ID do prato escolhido, ou `null` se a pessoa saiu sem pedir.
+   * O id serve para duas coisas: o nome que sai na fala (`pratoPorId`) e a peca
+   * 3D que o garcom entrega (`pratoServido`).
    */
-  abrirCardapio(): Promise<void>;
+  abrirCardapio(): Promise<string | null>;
 
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */

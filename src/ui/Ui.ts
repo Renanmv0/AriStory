@@ -50,8 +50,13 @@ export class Ui {
   private readonly descarte: HTMLElement;
   private readonly cardapio: HTMLDivElement;
   private readonly secoesDoCardapio: HTMLDivElement;
-  /** quem espera o cardapio fechar; a cutscene da mesa segura nele */
-  private fecharCardapioResolve: (() => void) | null = null;
+  /**
+   * Quem espera o cardapio fechar; a cutscene da mesa segura nele. Resolve com
+   * o ID do prato escolhido, ou `null` se a pessoa saiu sem pedir.
+   */
+  private fecharCardapioResolve: ((escolha: string | null) => void) | null = null;
+  /** o prato marcado no cardapio, esperando o segundo clique */
+  private pratoMarcado: string | null = null;
   private readonly memorias: HTMLDivElement;
   private readonly quadro: HTMLCanvasElement;
   private readonly pontos: HTMLDivElement;
@@ -205,7 +210,8 @@ export class Ui {
           <p class="sub">a gente lê tudo e pede o de sempre</p>
           <div class="secoes"></div>
           <p class="rodape">serviço não incluso · sorriso incluso</p>
-          <button class="close">fechar o cardápio</button>
+          <button class="pedir" disabled>escolha um prato</button>
+          <button class="close">só olhando, obrigado</button>
         </div>
       </div>
       <div class="memorias"><div class="sheet">
@@ -310,6 +316,9 @@ export class Ui {
     this.bermudas.addEventListener('click', (e) => {
       const peca = (e.target as HTMLElement).closest('.bermuda') as HTMLElement | null;
       if (peca?.dataset.id) this.onEscolherBermuda?.(peca.dataset.id);
+    });
+    ui.querySelector('.cardapio .pedir')!.addEventListener('click', () => {
+      if (this.pratoMarcado) this.fecharCardapio(this.pratoMarcado);
     });
     ui.querySelector('.cardapio .close')!.addEventListener('click', () => this.fecharCardapio());
     this.cardapio.addEventListener('click', (e) => {
@@ -699,27 +708,67 @@ export class Ui {
    * virar máquina de estados só para saber quando o painel sumiu — é o mesmo
    * motivo pelo qual `ask()` também devolve promessa.
    */
-  abrirCardapio(secoes: readonly SecaoDoCardapio[]): Promise<void> {
+  abrirCardapio(secoes: readonly SecaoDoCardapio[]): Promise<string | null> {
     return new Promise((resolve) => {
       if (this.cardapioOpen) {
-        resolve();
+        resolve(null);
         return;
       }
       this.som?.('escolha');
+      this.pratoMarcado = null;
       this.desenharCardapio(secoes);
+      this.pintarBotaoDePedir();
       this.cardapio.classList.add('show');
       this.marcarTelaAberta();
       this.fecharCardapioResolve = resolve;
     });
   }
 
-  fecharCardapio(): void {
+  /**
+   * Fecha o cardápio, resolvendo com o prato escolhido (ou `null`).
+   *
+   * O `null` NÃO é um caso de erro: é sair sem pedir, pelo botão de baixo ou
+   * pelo Escape. A cutscene precisa saber a diferença — com prato ela chama o
+   * garçom, sem prato ela só levanta os dois da mesa.
+   */
+  fecharCardapio(escolha: string | null = null): void {
     if (!this.cardapioOpen) return;
     this.cardapio.classList.remove('show');
     this.marcarTelaAberta();
     const avisar = this.fecharCardapioResolve;
     this.fecharCardapioResolve = null;
-    avisar?.();
+    avisar?.(escolha);
+  }
+
+  /**
+   * O clique num prato: o PRIMEIRO marca, o SEGUNDO pede.
+   *
+   * Dois tempos em vez de um porque pedir fecha a tela — com um clique só, quem
+   * estivesse rolando a lista e encostasse num prato já teria pedido, sem
+   * chance de ler o resto. Marcado, o prato acende e o botão de baixo passa a
+   * dizer o nome dele, que é a segunda porta para a mesma confirmação.
+   */
+  private marcarPrato(id: string): void {
+    if (this.pratoMarcado === id) {
+      this.fecharCardapio(id);
+      return;
+    }
+    this.pratoMarcado = id;
+    this.som?.('escolha');
+    for (const linha of this.secoesDoCardapio.querySelectorAll('.prato')) {
+      linha.classList.toggle('marcado', (linha as HTMLElement).dataset.id === id);
+    }
+    this.pintarBotaoDePedir();
+  }
+
+  /** O botão de pedir conta o que está marcado, e só liga quando há algo. */
+  private pintarBotaoDePedir(): void {
+    const botao = this.cardapio.querySelector('.pedir') as HTMLButtonElement;
+    const linha = this.pratoMarcado
+      ? this.secoesDoCardapio.querySelector(`.prato[data-id="${this.pratoMarcado}"] b`)
+      : null;
+    botao.disabled = !linha;
+    botao.textContent = linha ? `Pedir ${linha.textContent}` : 'escolha um prato';
   }
 
   /**
@@ -777,6 +826,7 @@ export class Ui {
           (prato.selo ? `<span class="selo">★ ${prato.selo}</span>` : '');
 
         linha.append(foto, texto);
+        linha.addEventListener('click', () => this.marcarPrato(prato.id));
         bloco.appendChild(linha);
       }
       this.secoesDoCardapio.appendChild(bloco);

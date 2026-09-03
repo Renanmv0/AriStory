@@ -32,6 +32,7 @@ export type SomNome =
   | 'sino'
   | 'sentar'
   | 'miado'
+  | 'latido'
   | 'menu'
   | 'diario'
   | 'recomecar';
@@ -181,6 +182,32 @@ export const EFEITOS: Record<SomNome, Receita> = {
         tipo: 'triangle',
       });
     });
+  },
+
+  // O latido do garçom canino. Duas sílabas curtas e SECAS ("au-au"), o oposto
+  // do miado: lá a curva é longa e escorregada, aqui cada uma tem 0,1 s e cai
+  // rápido. Latido comprido vira uivo. O `n` alterna o grau da pentatônica,
+  // senão o cachorro late a mesma nota a vida inteira.
+  latido: ({ ctx, destino, t, n }) => {
+    const base = nota(DO + PENTA[n % 2 === 0 ? 0 : 1] - 12);
+    for (const [i, atraso] of [0, 0.14].entries()) {
+      tom(ctx, destino, {
+        freq: base * (i === 0 ? 1.12 : 1),
+        glide: base * 0.72,
+        quando: t + atraso,
+        dur: 0.11,
+        vol: 0.09,
+        tipo: 'sawtooth',
+        abafo: 1100,
+      });
+      // o estalo do ar, que tira o som de sintetizador e bota focinho
+      chiado(ctx, destino, {
+        quando: t + atraso,
+        dur: 0.05,
+        vol: 0.035,
+        freq: 2400,
+      });
+    }
   },
 
   // O miado do Pelusa. Duas vogais coladas ("mi-au"): a primeira sobe, a

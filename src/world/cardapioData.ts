@@ -567,3 +567,18 @@ export const CARDAPIO: readonly SecaoDoCardapio[] = [
     ],
   },
 ];
+
+/**
+ * A ficha de um prato pelo id.
+ *
+ * A cena precisa dela para duas coisas: o NOME que sai na fala do pedido, e
+ * saber que o id existe antes de mandar o garçom. O `switch` que devolve a peça
+ * 3D é o par desta função, e mora em `world/props.ts` (`pratoServido`).
+ */
+export function pratoPorId(id: string): PratoDoCardapio | null {
+  for (const secao of CARDAPIO) {
+    const achado = secao.pratos.find((p) => p.id === id);
+    if (achado) return achado;
+  }
+  return null;
+}
