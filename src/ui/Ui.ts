@@ -2,6 +2,7 @@ import type { SavedMemory } from '../core/SaveState';
 import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import type { MemoriaPintada } from '../world/memoriasData';
+import type { SecaoDoCardapio } from '../world/cardapioData';
 
 /**
  * O nome de cada parte do corpo na tela, na ORDEM de `SLOTS_ROUPA`.
@@ -47,6 +48,10 @@ export class Ui {
   private readonly slotsVestivel: HTMLDivElement;
   private readonly dono: HTMLElement;
   private readonly descarte: HTMLElement;
+  private readonly cardapio: HTMLDivElement;
+  private readonly secoesDoCardapio: HTMLDivElement;
+  /** quem espera o cardapio fechar; a cutscene da mesa segura nele */
+  private fecharCardapioResolve: (() => void) | null = null;
   private readonly memorias: HTMLDivElement;
   private readonly quadro: HTMLCanvasElement;
   private readonly pontos: HTMLDivElement;
@@ -193,6 +198,18 @@ export class Ui {
         <div class="bermudas"></div>
         <button class="close">voltar pra piscina</button>
       </div></div>
+      <div class="cardapio"><div class="segurando">
+        <div class="mao esq"><i></i><i></i><i></i><i></i><span class="polegar"></span></div>
+        <div class="papel">
+          <p class="casa">Restaurante do Clube</p>
+          <h2>Cardápio</h2>
+          <p class="sub">a gente lê tudo e pede o de sempre</p>
+          <div class="secoes"></div>
+          <p class="rodape">serviço não incluso · sorriso incluso</p>
+          <button class="close">fechar o cardápio</button>
+        </div>
+        <div class="mao dir"><i></i><i></i><i></i><i></i><span class="polegar"></span></div>
+      </div></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
         <p class="sub"></p>
@@ -251,6 +268,8 @@ export class Ui {
     this.oculos = ui.querySelector('.vestiario .oculos')!;
     this.bermudas = ui.querySelector('.vestiario .bermudas')!;
     this.donoVestiario = ui.querySelector('.vestiario .dono')!;
+    this.cardapio = ui.querySelector('.cardapio')!;
+    this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
     this.memorias = ui.querySelector('.memorias')!;
     this.quadro = ui.querySelector('.memorias .quadro')!;
     this.pontos = ui.querySelector('.memorias .pontos')!;
@@ -293,6 +312,10 @@ export class Ui {
     this.bermudas.addEventListener('click', (e) => {
       const peca = (e.target as HTMLElement).closest('.bermuda') as HTMLElement | null;
       if (peca?.dataset.id) this.onEscolherBermuda?.(peca.dataset.id);
+    });
+    ui.querySelector('.cardapio .close')!.addEventListener('click', () => this.fecharCardapio());
+    this.cardapio.addEventListener('click', (e) => {
+      if (e.target === this.cardapio) this.fecharCardapio();
     });
     ui.querySelector('.memorias .close')!.addEventListener('click', () => this.fecharMemorias());
     ui.querySelector('.memorias .antes')!.addEventListener('click', () => this.folhear(-1));
@@ -393,7 +416,7 @@ export class Ui {
     document.body.classList.toggle(
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
-      this.memoriasOpen || this.vestiarioOpen,
+      this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen,
     );
   }
 
@@ -662,6 +685,104 @@ export class Ui {
   closeJournal(): void {
     this.journal.classList.remove('show');
     this.marcarTelaAberta();
+  }
+
+  // -------------------------------------------------------------- cardapio
+
+  get cardapioOpen(): boolean {
+    return this.cardapio.classList.contains('show');
+  }
+
+  /**
+   * Abre o cardápio e SÓ RESOLVE quando ele fecha.
+   *
+   * A promessa é o que deixa a cutscene da mesa escrever a cena em linha reta:
+   * senta, conversa, `await abrirCardapio()`, levanta. Sem ela a cena teria que
+   * virar máquina de estados só para saber quando o painel sumiu — é o mesmo
+   * motivo pelo qual `ask()` também devolve promessa.
+   */
+  abrirCardapio(secoes: readonly SecaoDoCardapio[]): Promise<void> {
+    return new Promise((resolve) => {
+      if (this.cardapioOpen) {
+        resolve();
+        return;
+      }
+      this.som?.('escolha');
+      this.desenharCardapio(secoes);
+      this.cardapio.classList.add('show');
+      this.marcarTelaAberta();
+      this.fecharCardapioResolve = resolve;
+    });
+  }
+
+  fecharCardapio(): void {
+    if (!this.cardapioOpen) return;
+    this.cardapio.classList.remove('show');
+    this.marcarTelaAberta();
+    const avisar = this.fecharCardapioResolve;
+    this.fecharCardapioResolve = null;
+    avisar?.();
+  }
+
+  /**
+   * Monta as seções, e pinta a miniatura de cada prato no canvas dela.
+   *
+   * A miniatura é desenhada UMA VEZ, na abertura, e não num rAF como o quadro
+   * de memórias: prato não se mexe, e um laço de animação por linha do cardápio
+   * só gastaria bateria.
+   *
+   * O canvas nasce QUADRADO em pixels de dispositivo (`LADO * dpr`) e o CSS o
+   * encolhe para o tamanho da linha. É o mesmo cuidado do quadro: sem a
+   * densidade da tela o desenho sai borrado no retina.
+   */
+  private desenharCardapio(secoes: readonly SecaoDoCardapio[]): void {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const LADO = Math.round(64 * dpr);
+    this.secoesDoCardapio.innerHTML = '';
+
+    for (const secao of secoes) {
+      const bloco = document.createElement('section');
+      bloco.className = 'secao';
+      bloco.innerHTML =
+        `<h3><span>${secao.titulo}</span></h3><p class="nota">${secao.nota}</p>`;
+
+      for (const prato of secao.pratos) {
+        const linha = document.createElement('div');
+        linha.className = 'prato';
+        linha.classList.toggle('destaque', !!prato.selo);
+        linha.dataset.id = prato.id;
+
+        const foto = document.createElement('canvas');
+        foto.className = 'foto';
+        foto.width = LADO;
+        foto.height = LADO;
+        const ctx = foto.getContext('2d');
+        if (ctx) {
+          // O desenho é AMPLIADO em torno do centro antes de pintar. As funções
+          // de `cardapioData` desenham a comida com folga nas bordas (para dar
+          // para usá-las grandes um dia); num thumbnail de 58 px essa folga era
+          // metade do espaço, e a comida ficava minúscula. O zoom resolve isso
+          // sem mexer em nenhum número lá dentro.
+          ctx.translate(LADO / 2, LADO / 2);
+          ctx.scale(1.22, 1.22);
+          ctx.translate(-LADO / 2, -LADO / 2);
+          prato.pintar(ctx, LADO);
+        }
+
+        const texto = document.createElement('div');
+        texto.className = 'texto';
+        // o "leader" pontilhado entre o nome e o preço é o que faz a linha
+        // parecer cardápio de verdade, e ele é um <i> que estica sozinho
+        texto.innerHTML =
+          `<div class="titulo"><b>${prato.nome}</b><i></i><em>${prato.preco}</em></div>` +
+          `<p>${prato.descricao}</p>` +
+          (prato.selo ? `<span class="selo">★ ${prato.selo}</span>` : '');
+
+        linha.append(foto, texto);
+        bloco.appendChild(linha);
+      }
+      this.secoesDoCardapio.appendChild(bloco);
+    }
   }
 
   // ------------------------------------------------------ quadro de memorias

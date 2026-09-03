@@ -26,6 +26,7 @@ import {
 } from './types';
 import { ITENS, MODA_PRAIA, modeloDoItem } from '../world/itens';
 import { MEMORIAS } from '../world/memoriasData';
+import { CARDAPIO } from '../world/cardapioData';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -342,6 +343,7 @@ export class Game implements GameAPI {
       this.ui.armarioOpen ||
       this.ui.vestiarioOpen ||
       this.ui.memoriasOpen ||
+      this.ui.cardapioOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
@@ -363,6 +365,9 @@ export class Game implements GameAPI {
     // o quadro trava o movimento igual ao guarda-roupa, então precisa da mesma
     // saída de teclado
     if (this.ui.memoriasOpen && this.input.justPressed('Escape')) this.ui.fecharMemorias();
+    // o cardapio tambem trava o movimento, e quem espera por ele e uma cutscene:
+    // fechar no Escape e o que impede a dupla de ficar presa sentada na mesa
+    if (this.ui.cardapioOpen && this.input.justPressed('Escape')) this.ui.fecharCardapio();
     // as setas folheiam o quadro; com ele fechado elas continuam sendo andar
     if (this.ui.memoriasOpen) {
       if (this.input.justPressed('ArrowLeft')) this.ui.folhear(-1);
@@ -903,6 +908,15 @@ export class Game implements GameAPI {
   abrirMemoria(id: string): void {
     const onde = MEMORIAS.findIndex((m) => m.id === id);
     if (onde >= 0) this.ui.abrirMemorias(MEMORIAS, onde);
+  }
+
+  /**
+   * Abre o cardapio. O Game nao sabe desenhar prato nenhum: ele so entrega o
+   * catalogo para a UI, que tem os canvas. A pintura mora inteira em
+   * `world/cardapioData.ts`, do mesmo jeito que a das memorias.
+   */
+  abrirCardapio(): Promise<void> {
+    return this.ui.abrirCardapio(CARDAPIO);
   }
 
   unlock(memory: Memory): void {

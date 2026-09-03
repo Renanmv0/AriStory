@@ -261,6 +261,293 @@ body.touch-device .hints .toque { display: block; }
   cursor: pointer;
 }
 
+
+/* ------------------------------------------------------------- cardapio */
+/* A ideia é PRIMEIRA PESSOA: a tela inteira vira "o que você está vendo",
+   e o que você está vendo é um cardápio nas suas mãos.
+
+   Três camadas fazem isso funcionar, e nenhuma delas é imagem:
+
+   1. O VÉU. Escurece de leve o mundo 3D e desfoca um fio, sem apagar — o jogo
+      continua visível atrás, que é o que diz "você está na mesa, agora".
+      Ele é mais claro que o do quadro de memórias de propósito: ali a cena era
+      de noite, aqui é meio-dia na beira da piscina.
+   2. O PAPEL. Um retângulo creme com moldura dupla feita de `inset` no
+      box-shadow, textura de fibra em `repeating-linear-gradient` e uma leve
+      inclinação em `rotate` — papel na mão nunca está perfeitamente reto.
+   3. AS MÃOS. Duas de cada lado, coladas nas bordas: a palma é um pseudo
+      elemento arredondado FORA do papel, e os quatro dedos são <i> que entram
+      POR CIMA dele. Só a da esquerda é desenhada — a da direita é a MESMA
+      com `scaleX(-1)`, senão seriam duas listas de números espelhadas à mão. */
+.cardapio {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(28, 20, 14, 0.42);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+  --pele: #e7bd9b;
+  --pele-luz: #f6d6b8;
+  --pele-sombra: #c99a78;
+  --tinta: #4a3524;
+  --tinta-fraca: #8a6f56;
+  --dourado: #b4863a;
+}
+.cardapio.show { opacity: 1; pointer-events: auto; }
+
+/* o conjunto papel + mãos; as mãos se posicionam por ele, e não pela tela */
+.cardapio .segurando {
+  position: relative;
+  display: block;
+}
+
+.cardapio .papel {
+  position: relative;
+  z-index: 2;
+  width: min(600px, calc(100vw - 132px));
+  max-height: 86vh;
+  overflow: auto;
+  padding: 26px 30px 22px;
+  border-radius: 4px;
+  color: var(--tinta);
+  text-align: center;
+  transform: rotate(-0.5deg);
+  /* fibra do papel por cima da cor, e a moldura dupla por dentro da borda */
+  background:
+    repeating-linear-gradient(92deg, rgba(120, 84, 40, 0.035) 0 1px, transparent 1px 4px),
+    linear-gradient(170deg, #fdf6e6 0%, #f7ecd6 55%, #f2e3c8 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(180, 134, 58, 0.55),
+    inset 0 0 0 3px transparent,
+    inset 0 0 0 6px rgba(180, 134, 58, 0.28),
+    0 18px 40px rgba(24, 14, 6, 0.45);
+}
+.cardapio .casa {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 12px;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--dourado);
+}
+.cardapio h2 {
+  margin: 2px 0 2px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 40px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+.cardapio .sub {
+  margin: 0 0 18px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--tinta-fraca);
+}
+/* o filete que fecha o cabeçalho */
+.cardapio .sub::after {
+  content: '❦';
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--dourado);
+  font-style: normal;
+}
+
+.cardapio .secao { margin-bottom: 20px; }
+/* título de seção com um fio saindo dos dois lados da palavra */
+.cardapio .secao h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 2px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dourado);
+}
+.cardapio .secao h3::before,
+.cardapio .secao h3::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(180, 134, 58, 0.45);
+}
+.cardapio .secao .nota {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--tinta-fraca);
+}
+
+.cardapio .prato {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  align-items: start;
+  text-align: left;
+  padding: 8px 6px;
+  border-radius: 8px;
+}
+.cardapio .prato + .prato { border-top: 1px dotted rgba(122, 90, 48, 0.3); }
+/* o prato da casa: fundo quente, moldura dourada e o selo embaixo */
+.cardapio .prato.destaque {
+  background: rgba(240, 196, 108, 0.22);
+  box-shadow: inset 0 0 0 1.5px rgba(180, 134, 58, 0.6);
+  padding: 12px 10px;
+  border-top: 0;
+}
+/* O `#ui` no seletor NÃO é enfeite. A UI mora dentro do #app, e a regra lá de
+   cima `#app canvas { width: 100%; height: 100% }` — a que estica o canvas do
+   JOGO — pega neste canvas também e ganha de `.cardapio .foto` por ter um id.
+   Sem o prefixo a miniatura herdava a altura da linha inteira e o prato saía
+   esticado. É a mesma pedra em que o quadro de memórias já tropeçou. */
+#ui .cardapio .foto {
+  width: 64px;
+  height: 64px;
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(74, 53, 36, 0.22), 0 0 0 1.5px rgba(180, 134, 58, 0.4);
+}
+/* nome — pontilhado — preço, na mesma linha de base */
+.cardapio .prato .titulo {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.cardapio .prato .titulo b {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 16px;
+  font-weight: 700;
+}
+.cardapio .prato .titulo i {
+  flex: 1;
+  height: 0;
+  border-bottom: 1.5px dotted rgba(122, 90, 48, 0.5);
+  transform: translateY(-3px);
+}
+.cardapio .prato .titulo em {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--dourado);
+  white-space: nowrap;
+}
+.cardapio .prato p {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--tinta-fraca);
+}
+.cardapio .prato .selo {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--dourado);
+  color: #fff9ec;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.cardapio .rodape {
+  margin: 6px 0 14px;
+  font-size: 11px;
+  font-style: italic;
+  letter-spacing: 0.12em;
+  color: var(--dourado);
+}
+.cardapio .close {
+  pointer-events: auto;
+  border: 0;
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: var(--tinta);
+  color: #fdf6e6;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.cardapio .close:hover { background: #6b4c31; }
+
+/* ------------------------------------------------------------- as mãos */
+/* Só a da esquerda tem números. A da direita é ela espelhada. */
+.cardapio .mao {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  width: 118px;
+  height: 168px;
+  pointer-events: none;
+  transform: translateY(-46%);
+  filter: drop-shadow(-6px 12px 14px rgba(20, 10, 4, 0.42));
+}
+.cardapio .mao.esq { left: -62px; }
+.cardapio .mao.dir { right: -62px; transform: translateY(-46%) scaleX(-1); }
+
+/* a PALMA: fica FORA da borda do papel, e é ela que dá o volume da mão */
+.cardapio .mao::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 74px;
+  height: 156px;
+  border-radius: 48% 26% 26% 48% / 32% 22% 22% 32%;
+  background: linear-gradient(96deg, var(--pele-luz) 0%, var(--pele) 62%, var(--pele-sombra) 100%);
+}
+/* os DEDOS: entram por cima do papel, e vão encurtando do indicador ao mínimo */
+.cardapio .mao i {
+  position: absolute;
+  left: 44px;
+  height: 22px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--pele-luz), var(--pele));
+  box-shadow: inset -6px 0 0 rgba(201, 154, 120, 0.35);
+}
+.cardapio .mao i:nth-child(1) { top: 22px; width: 52px; }
+.cardapio .mao i:nth-child(2) { top: 52px; width: 58px; }
+.cardapio .mao i:nth-child(3) { top: 82px; width: 54px; }
+.cardapio .mao i:nth-child(4) { top: 112px; width: 44px; }
+/* o POLEGAR fica atrás do papel: é ele que faz a mão "pinçar" a folha em vez
+   de só encostar nela */
+.cardapio .mao .polegar {
+  position: absolute;
+  left: 6px;
+  top: 118px;
+  width: 30px;
+  height: 62px;
+  border-radius: 18px;
+  background: linear-gradient(140deg, var(--pele) 0%, var(--pele-sombra) 100%);
+  transform: rotate(24deg);
+  z-index: -1;
+}
+
+@media (max-width: 640px) {
+  /* no celular o papel ocupa quase tudo, e as mãos encolhem para não comer a
+     largura do texto */
+  .cardapio .papel { width: calc(100vw - 96px); padding: 20px 18px 16px; }
+  .cardapio h2 { font-size: 30px; }
+  .cardapio .mao { width: 86px; height: 128px; }
+  .cardapio .mao.esq { left: -44px; }
+  .cardapio .mao.dir { right: -44px; }
+  .cardapio .mao::before { width: 54px; height: 118px; top: 5px; }
+  .cardapio .mao i { left: 32px; height: 17px; border-radius: 11px; }
+  .cardapio .mao i:nth-child(1) { top: 16px; width: 40px; }
+  .cardapio .mao i:nth-child(2) { top: 39px; width: 44px; }
+  .cardapio .mao i:nth-child(3) { top: 62px; width: 41px; }
+  .cardapio .mao i:nth-child(4) { top: 85px; width: 33px; }
+  .cardapio .mao .polegar { left: 4px; top: 90px; width: 23px; height: 46px; }
+  .cardapio .prato { grid-template-columns: 46px 1fr; gap: 9px; }
+  #ui .cardapio .foto { width: 46px; height: 46px; }
+}
+
 /* ------------------------------------------------------ quadro de memorias */
 /* Véu bem mais escuro que o do diário, de propósito: a memória é uma cena de
    noite, e num fundo claro as luzinhas do desenho perdiam o brilho. */
