@@ -385,6 +385,13 @@ export interface GameAPI {
    * aberto. Nao faz nada se o id nao existir.
    */
   abrirMemoria(id: string): void;
+  /**
+   * Abre o cardapio do restaurante em primeira pessoa (o acervo mora em
+   * `world/cardapioData.ts`). Trava o movimento enquanto estiver aberto, e a
+   * promessa so resolve quando ele FECHA — e o que deixa a cutscene da mesa
+   * escrever "senta, conversa, le o cardapio, levanta" em linha reta.
+   */
+  abrirCardapio(): Promise<void>;
 
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */

@@ -81,6 +81,7 @@ node scripts/vestimenta.mjs /tmp/vt # onde cada roupa pode morar, e o armario po
 node scripts/vestiario.mjs /tmp/vs  # o vestiario do clube: oculos, cor da bermuda e um estilo por pessoa
 node scripts/quarto.mjs  /tmp/qt    # quarto do Ari: porta nos dois sentidos e o armario
 node scripts/memorias.mjs /tmp/me   # o quadro de memorias: pintado, vivo e travando o jogo
+node scripts/cardapio.mjs /tmp/cd   # a mesa do restaurante: sentar de frente e ler o cardapio
 node scripts/cama.mjs    /tmp/cm    # deitar junto: lado a lado, e os bracos balancando
 node scripts/pelusa.mjs  /tmp/pe    # o gato: passeia sem entrar em movel, mia e recebe carinho
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)

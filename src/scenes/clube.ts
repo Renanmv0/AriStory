@@ -223,14 +223,73 @@ export const clube: SceneDef = {
 
     // As mesas, em duas fileiras desencontradas — enfileirar tudo em grade
     // deixa com cara de refeitório, e não de área externa.
+    /** a mesa em que a dupla senta; as outras quatro são cenário */
+    const MESA = { x: -16.5, z: -6.6 };
     for (const [x, z] of [
-      [-20.6, -8.6], [-16.5, -8.6], [-12.4, -8.6], [-18.6, -4.8], [-14.4, -4.8],
+      [-20.6, -8.6], [MESA.x, MESA.z], [-12.4, -8.6], [-18.6, -4.2], [-13.6, -4.2],
     ] as const) {
       w.add(w.place(mesaDePatio(), x, 0, z));
       // o raio pega a mesa mais as quatro cadeiras; sobra 1,4 de vão entre uma
       // mesa e a vizinha, e o jogador tem 0,42 de raio
       w.blockCircle(x, z, 1.25);
     }
+
+    // ---------------------------------------------- a mesa em que se senta
+    /**
+     * A âncora carrega os dois durante a cena. A rotação dela é `0`, e quem
+     * decide para onde cada um olha é o `facing` do `ride*`: `PI` para quem
+     * senta na cadeira do `+Z` e `0` para quem senta na do `-Z`. Uma âncora só
+     * não pode olhar para dois lados — é a mesma solução da mesa de piquenique.
+     */
+    const mesaPosta = new THREE.Object3D();
+    mesaPosta.position.set(MESA.x, 0, MESA.z);
+    w.root.add(mesaPosta);
+    const foco = new THREE.Object3D();
+    foco.position.set(MESA.x, 1.0, MESA.z);
+    w.root.add(foco);
+    /** as cadeiras nascem a 1,02 do centro, e o assento tem o topo em 0,485 */
+    const CADEIRA = 1.02;
+    const ALTURA = 0.02;
+
+    w.interact({
+      id: 'clube:mesa-do-restaurante',
+      x: MESA.x, z: MESA.z, radius: 2.2,
+      label: 'Sentar e ver o cardápio', icon: '📖',
+      onInteract: async (api) => {
+        api.lockPlayer(true);
+        api.ridePlayer(mesaPosta, new THREE.Vector3(0, ALTURA, CADEIRA), 1, Math.PI);
+        api.rideCompanion(mesaPosta, new THREE.Vector3(0, ALTURA, -CADEIRA), 1, 0);
+        api.setSitting(true);
+        api.focusCamera(foco);
+        api.setZoom(7.4);
+        await api.wait(0.6);
+
+        await conversa([
+          [R, 'Tá bom, deixa eu ver o que tem.'],
+          [A, 'Você já sabe o que vai pedir.'],
+          [R, 'Sei. Mas eu gosto de ler tudo antes.'],
+          [A, 'Se tiver arepa, acabou a leitura pra mim.'],
+        ]);
+
+        // o cardápio abre e a cena PARA aqui até ele fechar
+        await api.abrirCardapio();
+
+        api.setSitting(false);
+        api.focusCamera(null);
+        api.setZoom(10);
+        // cada um se levanta para trás da sua cadeira, e vira para a mesa
+        api.releasePlayer(MESA.x, MESA.z + 2, Math.PI);
+        api.releaseCompanion(MESA.x, MESA.z - 2, 0);
+        api.lockPlayer(false);
+        api.unlock({
+          id: 'cardapio-do-clube',
+          title: 'O cardápio do restaurante',
+          place: 'Clube',
+          note: 'Você leu o cardápio inteiro, de cabo a rabo, e pediu arepa. Como sempre.',
+          icon: '📖',
+        });
+      },
+    });
     for (const x of [-20.6, -12.4]) {
       w.add(w.place(parasol(P.restauranteToldo), x, 0, -4.8));
       w.blockCircle(x, -4.8, 0.3);
