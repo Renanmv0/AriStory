@@ -6,6 +6,35 @@ import { bench, picnicTable } from './props';
 
 export type Updater = (dt: number, elapsed: number) => void;
 
+/**
+ * A PILHA DO CHAO MORA ABAIXO DE ZERO.
+ *
+ * Toda peca do kit nasce com a base em `y = 0` — e o contrato do kit. O chao e
+ * as manchas dele estavam em `y >= 0`, e isso dava dois defeitos que so viraram
+ * visiveis quando o chao ganhou textura:
+ *
+ *  1. o chao de base ficava no MESMO plano da base de cada arvore, poste, banco
+ *     e cerca. Dois planos iguais e a definicao de z-fighting; enquanto os dois
+ *     eram verde chapado, a briga dava verde e ninguem via.
+ *  2. pior: o decalque (o caminho de asfalto, a calcada, as manchas de grama) e
+ *     desenhado DEPOIS do mundo solido e fica ACIMA da base das pecas — a
+ *     calcada em `y = 0,012` pintava por cima dos 12 mm de baixo de todo poste
+ *     plantado nela. Com a calcada texturizada, essa faixa passou a ter desenho
+ *     e virou chiado no pe da peca.
+ *
+ * A correcao poe a pilha inteira abaixo de zero: o chao de base no fundo, os
+ * decalques numa faixa fina acima dele, e `y = 0` livre para as pecas. Quem
+ * decide a ordem de pintura entre decalques continua sendo o `renderOrder` (eles
+ * nao gravam profundidade), entao comprimir o `y` deles nao muda nada.
+ *
+ * A faixa e MINUSCULA de proposito: 6 mm do fundo ate o topo. Uma pessoa tem
+ * 1,75, e a camera isometrica projeta 6 mm em menos de meio pixel — ninguem ve
+ * a peca flutuar, e nao ha mais plano compartilhado.
+ */
+const CHAO_FUNDO = 0.006;
+const DECALQUE_TETO = 0.001;
+const DECALQUE_PASSO = 0.00004;
+
 export interface GroundOptions {
   width: number;
   depth: number;
@@ -97,6 +126,29 @@ export class WorldBuilder {
   }
 
   /**
+   * O chao de base afunda 5 mm.
+   *
+   * TODA peca do kit nasce com a base em `y = 0` — e o contrato do kit. O chao
+   * tambem estava em `y = 0`, entao o tronco de cada arvore, o pe de cada
+   * poste, de cada banco e de cada cerca dividia EXATAMENTE o plano do chao.
+   * Duas superficies no mesmo plano e a definicao de z-fighting, e a regra do
+   * projeto proibe isso desde sempre — dentro das pecas, o `zfighting.mjs` ja
+   * cacava; entre peca e chao, ninguem estava olhando.
+   *
+   * Isso nunca apareceu enquanto o chao era uma cor chapada: dois verdes iguais
+   * brigando dao um verde igual. Com a grama texturizada, o vencedor de cada
+   * pixel passou a ter desenho, e a briga virou chiado na base das pecas — pior
+   * ainda em tela de celular, cujo buffer de profundidade e bem mais pobre.
+   *
+   * 5 mm resolve por construcao e nao custa nada: uma pessoa tem 1,75, e a
+   * camera isometrica projeta esses 5 mm em menos de um terco de pixel. Nao da
+   * para ver a peca flutuar, e nao ha mais plano compartilhado.
+   */
+  private afundarChaoDeBase(y: number | undefined): number {
+    return (y ?? 0) > 0 ? -DECALQUE_TETO - this.decalque * DECALQUE_PASSO : -CHAO_FUNDO;
+  }
+
+  /**
    * Uma copia da textura com o `repeat` corrigido para UV normalizado.
    *
    * E COPIA, e nao a textura original: ela e compartilhada entre as cenas, e
@@ -119,7 +171,7 @@ export class WorldBuilder {
     const mapa = opts.textura ? this.escalarPeloChao(opts.textura, opts.width, opts.depth) : undefined;
     const mesh = new THREE.Mesh(geo, toon(opts.color, { decal: empilhado, mapa }));
     mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set(opts.x ?? 0, opts.y ?? 0, opts.z ?? 0);
+    mesh.position.set(opts.x ?? 0, this.afundarChaoDeBase(opts.y), opts.z ?? 0);
     if (empilhado) return this.decalar(mesh);
     mesh.receiveShadow = true;
     this.root.add(mesh);
@@ -164,7 +216,7 @@ export class WorldBuilder {
       toon(opts.color, { decal: empilhado, mapa: opts.textura }),
     );
     mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set(opts.x ?? 0, opts.y ?? 0, opts.z ?? 0);
+    mesh.position.set(opts.x ?? 0, this.afundarChaoDeBase(opts.y), opts.z ?? 0);
     if (empilhado) return this.decalar(mesh);
     mesh.receiveShadow = true;
     this.root.add(mesh);
@@ -180,6 +232,9 @@ export class WorldBuilder {
    */
   private decalar(mesh: THREE.Mesh): THREE.Mesh {
     mesh.renderOrder = ++this.decalque;
+    // e o `renderOrder` que decide quem fica por cima, entao o `y` do decalque
+    // so precisa caber na faixa abaixo das pecas — ver `afundarChaoDeBase`
+    mesh.position.y = -DECALQUE_TETO - this.decalque * DECALQUE_PASSO;
     mesh.receiveShadow = true;
     this.root.add(mesh);
     return mesh;
