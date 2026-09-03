@@ -27,6 +27,9 @@ const PECAS = [
   ['quiosque', 'villa-lobos'],
   ['arquibancada', 'villa-lobos'],
   ['estante', 'quarto'],
+  ['restaurante', 'clube'],
+  ['mesa-de-patio', 'clube'],
+  ['cadeira-de-patio', 'clube'],
 ];
 
 const browser = await chromium.launch({
