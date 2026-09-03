@@ -377,7 +377,11 @@ export const villaLobos: SceneDef = {
     ];
     for (const [x, z, r] of bancos) w.banco(x, z, r);
 
-    for (const [x, z] of [[-4, 20], [4, 6], [-4, -8], [4, 22], [-4, 2]] as const) {
+    // O poste de `[-4, 2]` saiu daqui: ele caia DENTRO da lojinha de patins, com
+    // o pé atravessando o balcão e a cabeça saindo por cima do toldo. O balcão
+    // fica em `(-3,88, 2,7)` — 72 cm dali. Em `[-4, 8]` ele volta para a fila da
+    // alameda (20, 8, -8, espaçados por 12) e fica livre da loja.
+    for (const [x, z] of [[-4, 20], [4, 6], [-4, -8], [4, 22], [-4, 8]] as const) {
       w.add(w.place(lamp(false), x, 0, z));
       w.blockCircle(x, z, 0.35);
     }
