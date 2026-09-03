@@ -1749,3 +1749,368 @@ export function busStop(cor: number = P.metalGrey): THREE.Group {
   }
   return g;
 }
+
+/* ------------------------------------------------------------------------ *
+ *                       O RESTAURANTE DO CLUBE
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Cadeira de área externa: assento, encosto de ripas e quatro pés tortos.
+ *
+ * Fica em `props.ts` e não em `furniture.ts` de propósito — a do kit de
+ * interior (`chair()`) é uma cadeira de sala, com pé grosso de madeira. Esta é
+ * de pátio: mais leve, de tubo, e a mesma cor do toldo.
+ */
+export function cadeiraDePatio(cor: number = P.restauranteToldo): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cadeira-de-patio';
+  const tubo = toon(P.metalWhite);
+
+  const assento = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.07, 0.44), toon(cor));
+  assento.position.y = 0.45;
+  g.add(assento);
+
+  // Encosto: três ripas com folga entre elas. A folga é o que faz a cadeira
+  // parecer de pátio em vez de um bloco — e nenhuma ripa encosta na outra.
+  for (let i = 0; i < 3; i++) {
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.08, 0.05), toon(cor));
+    ripa.position.set(0, 0.62 + i * 0.13, -0.2);
+    g.add(ripa);
+  }
+  for (const lado of [-1, 1] as const) {
+    const montante = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.55, 6), tubo);
+    montante.position.set(lado * 0.21, 0.7, -0.21);
+    g.add(montante);
+  }
+
+  // pés: os de trás sobem até o encosto, os da frente param no assento
+  for (const [x, z] of [[-0.19, 0.18], [0.19, 0.18], [-0.19, -0.18], [0.19, -0.18]] as const) {
+    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.45, 6), tubo);
+    pe.position.set(x, 0.22, z);
+    // abre um fio para fora: cadeira de perna reta parece banquinho
+    pe.rotation.z = -Math.sign(x) * 0.05;
+    pe.rotation.x = Math.sign(z) * 0.05;
+    g.add(pe);
+  }
+  return g;
+}
+
+/**
+ * Mesa redonda de área externa com quatro cadeiras e um vasinho no meio.
+ *
+ * As cadeiras nascem giradas em `lado * PI/2` em volta do tampo, e a rotação
+ * entra ANTES da posição no código só por leitura — quem manda é a matriz, e
+ * `position` e `rotation` são independentes num `Object3D`.
+ */
+export function mesaDePatio(cor: number = P.restauranteToldo): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesa-de-patio';
+
+  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.07, 20), toon(P.metalWhite));
+  tampo.position.y = 0.74;
+  g.add(tampo);
+  // aro da borda, um fio abaixo do tampo para não brigar de face com ele
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.035, 6, 20), toon(cor));
+  aro.rotation.x = Math.PI / 2;
+  aro.position.y = 0.72;
+  g.add(aro);
+
+  const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.72, 10), toon(P.metalGrey));
+  coluna.position.y = 0.36;
+  g.add(coluna);
+  const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 0.06, 14), toon(P.metalGrey));
+  pe.position.y = 0.03;
+  g.add(pe);
+
+  // vasinho no centro, que é o detalhe que diz "mesa posta" de longe
+  const vaso = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.16, 10), toon(P.plantPot));
+  vaso.position.y = 0.855;
+  g.add(vaso);
+  for (const [dx, dz, alto] of [[0, 0, 0.16], [0.05, 0.03, 0.12], [-0.04, -0.04, 0.13]] as const) {
+    const flor = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), toon(P.flowerPink));
+    flor.position.set(dx, 0.93 + alto * 0.5, dz);
+    g.add(flor);
+  }
+
+  for (let i = 0; i < 4; i++) {
+    const cadeira = cadeiraDePatio(cor);
+    const a = (i * Math.PI) / 2;
+    cadeira.position.set(Math.sin(a) * 1.02, 0, Math.cos(a) * 1.02);
+    // a cadeira olha para o centro da mesa: `a + PI`
+    cadeira.rotation.y = a + Math.PI;
+    g.add(cadeira);
+  }
+  return g;
+}
+
+/**
+ * O restaurante do clube. Prédio grande, com fachada envidraçada, toldo
+ * listrado, letreiro de verdade e telhado de duas águas.
+ *
+ * TUDO OLHA PARA `+Z`, que é de onde a câmera vem. É a regra de peça com
+ * frente: virada para o outro lado ela mostraria só a empena lisa.
+ *
+ * O TOLDO É A ARMADILHA DESTA PEÇA. A câmera olha de cima em 34°, então um
+ * toldo fundo demais passa na frente da porta e engole a entrada. O raio que
+ * sai da ponta do toldo desce `tan(34°) ≈ 0,67` por unidade de profundidade:
+ * com o toldo a `3,5` e avançando `0,85`, na linha da fachada ele já está em
+ * `3,5 - 0,57 = 2,93` — bem acima do topo da porta, em `2,3`. É a mesma conta
+ * que o `kiosk()` teve que aprender na marca.
+ *
+ * @param largura vão da fachada em X
+ * @param profundidade quanto o prédio avança em Z
+ */
+export function restaurante(largura = 13, profundidade = 7): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'restaurante';
+
+  const hx = largura / 2;
+  const hz = profundidade / 2;
+  const altura = 4.2;
+
+  const parede = toon(P.restauranteParede);
+  const esquadria = toon(P.restauranteEsquadria);
+  const vidro = toon(P.glass, { glow: 0.14 });
+
+  // ------------------------------------------------------------ embasamento
+  // Um soco de concreto meio palmo mais largo que o prédio. Ele resolve duas
+  // coisas: dá o degrau que todo salão de festas tem, e afasta a parede do
+  // chão — parede terminando exatamente no piso serrilha na beirada.
+  const soco = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.5, 0.34, profundidade + 0.5),
+    toon(P.concrete),
+  );
+  soco.position.y = 0.17;
+  g.add(soco);
+
+  // --------------------------------------------------------------- corpo
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, profundidade), parede);
+  corpo.position.y = 0.34 + altura / 2;
+  g.add(corpo);
+
+  // faixa horizontal de um tom abaixo, na altura do peitoril: sem ela a
+  // fachada vira um paredão chapado de 13 metros
+  const faixa = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.06, 0.28, profundidade + 0.06),
+    toon(P.restauranteFaixa),
+  );
+  faixa.position.y = 1.16;
+  g.add(faixa);
+
+  // ------------------------------------------------------------- fachada
+  const zF = hz + 0.03;
+  const PORTA = 2.4;
+
+  /** Um pano de vidro com caixilho de madeira, colado na fachada. */
+  const janelao = (x: number, larg: number, alt: number, y: number, z = zF): void => {
+    const moldura = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, 0.1), esquadria);
+    moldura.position.set(x, y, z);
+    g.add(moldura);
+    // o vidro avança 3 cm da moldura: face contra face na mesma altura pisca
+    const pano = new THREE.Mesh(new THREE.BoxGeometry(larg - 0.22, alt - 0.22, 0.08), vidro);
+    pano.position.set(x, y, z + 0.03);
+    g.add(pano);
+    // Montante central, dividindo o pano em dois. Ele é 6 cm MAIS ALTO que o
+    // pano de propósito: com a mesma altura os dois dividiriam as faces de cima
+    // e de baixo, e face contra face na mesma altura pisca.
+    const meio = new THREE.Mesh(new THREE.BoxGeometry(0.09, alt - 0.16, 0.12), esquadria);
+    meio.position.set(x, y, z + 0.04);
+    g.add(meio);
+  };
+
+  // dois janelões de cada lado da porta
+  for (const lado of [-1, 1] as const) {
+    janelao(lado * (PORTA / 2 + 1.55), 2.5, 2.0, 2.1);
+    janelao(lado * (PORTA / 2 + 4.35), 2.5, 2.0, 2.1);
+
+    // FLOREIRA sob cada janelão — o detalhe que faz o prédio parecer cuidado
+    for (const dx of [PORTA / 2 + 1.55, PORTA / 2 + 4.35]) {
+      const caixa = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.3, 0.34), toon(P.plantPot));
+      caixa.position.set(lado * dx, 1.02, zF + 0.16);
+      g.add(caixa);
+      for (let i = 0; i < 5; i++) {
+        const moita = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 6), toon(P.bush));
+        moita.position.set(lado * dx - 0.85 + i * 0.42, 1.24, zF + 0.16);
+        g.add(moita);
+        const flor = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5),
+          toon(i % 2 ? P.flowerYellow : P.flowerPink));
+        flor.position.set(lado * dx - 0.85 + i * 0.42, 1.38, zF + 0.2);
+        g.add(flor);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- porta
+  // Porta dupla de vidro, recuada 6 cm para dentro do batente.
+  // O batente e as folhas MERGULHAM no soco, e em alturas diferentes (0,28 e
+  // 0,32). Se os três terminassem no mesmo 0,34 em que a parede começa, as três
+  // faces de baixo cairiam no mesmo plano.
+  const batente = new THREE.Mesh(new THREE.BoxGeometry(PORTA + 0.34, 2.5, 0.14), esquadria);
+  batente.position.set(0, 1.53, zF);
+  g.add(batente);
+  for (const lado of [-1, 1] as const) {
+    const folha = new THREE.Mesh(new THREE.BoxGeometry(PORTA / 2 - 0.07, 2.3, 0.07), vidro);
+    folha.position.set(lado * (PORTA / 4 + 0.02), 1.47, zF + 0.02);
+    g.add(folha);
+    const puxador = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 6), toon(P.metalGrey));
+    puxador.position.set(lado * 0.16, 1.35, zF + 0.09);
+    g.add(puxador);
+  }
+  // soleira: dois degraus que descem do soco até o piso
+  for (const [i, larg] of [[0, PORTA + 1.4], [1, PORTA + 2.0]] as const) {
+    const degrau = new THREE.Mesh(
+      new THREE.BoxGeometry(larg, 0.17 + i * 0.02, 0.42),
+      toon(P.concrete),
+    );
+    degrau.position.set(0, 0.25 - i * 0.17, hz + 0.28 + i * 0.4);
+    g.add(degrau);
+  }
+
+  // --------------------------------------------------------------- toldo
+  // Listrado, com babado recortado na ponta. Ver a conta no cabeçalho: a 3,5
+  // de altura e avançando 0,85, ele não alcança o topo da porta.
+  const yToldo = 3.15;
+  const avanco = 0.7;
+  const larguraToldo = largura - 1.2;
+  const listras = 13;
+  const passo = larguraToldo / listras;
+  for (let i = 0; i < listras; i++) {
+    const lona = new THREE.Mesh(
+      new THREE.BoxGeometry(passo, 0.12, avanco),
+      toon(i % 2 ? P.metalWhite : P.restauranteToldo),
+    );
+    lona.position.set(-larguraToldo / 2 + passo * (i + 0.5), yToldo, hz + avanco / 2);
+    lona.rotation.x = -0.12; // caimento para a frente
+    g.add(lona);
+    // o babado: um triangulinho pendurado na ponta de cada listra
+    const babado = new THREE.Mesh(
+      new THREE.ConeGeometry(passo * 0.5, 0.26, 3),
+      toon(i % 2 ? P.metalWhite : P.restauranteToldo),
+    );
+    babado.rotation.x = Math.PI;
+    babado.position.set(-larguraToldo / 2 + passo * (i + 0.5), yToldo - 0.13, hz + avanco - 0.02);
+    g.add(babado);
+  }
+  // as duas mãos-francesas que seguram o toldo
+  for (const lado of [-1, 1] as const) {
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.95, 6), toon(P.metalGrey));
+    braco.position.set(lado * (larguraToldo / 2 - 0.1), yToldo - 0.35, hz + 0.4);
+    braco.rotation.x = Math.PI / 2.6;
+    g.add(braco);
+  }
+
+  // ------------------------------------------------------------ letreiro
+  // A placa fica ACIMA do toldo, senão ele a esconde. O texto sai de um canvas
+  // em tempo de execução — é a única "textura" que o projeto permite.
+  const yPlaca = 4.05;
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.7, 0.16), toon(P.restauranteEsquadria));
+  placa.position.set(0, yPlaca, hz + 0.06);
+  g.add(placa);
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(5.36, 0.84, 0.1), toon(P.restauranteToldo));
+  moldura.position.set(0, yPlaca, hz + 0.02);
+  g.add(moldura);
+  const texto = letreiro('Restaurante', 4.5, 0.56, '#fdf6e8');
+  texto.position.set(0, yPlaca, hz + 0.15);
+  g.add(texto);
+
+  // arandelas dos dois lados da porta
+  for (const lado of [-1, 1] as const) {
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 6), toon(P.metalGrey));
+    braco.rotation.x = Math.PI / 2;
+    braco.position.set(lado * (PORTA / 2 + 0.42), 2.5, hz + 0.13);
+    g.add(braco);
+    const lampiao = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), toon(P.gold, { glow: 0.5 }));
+    lampiao.position.set(lado * (PORTA / 2 + 0.42), 2.44, hz + 0.24);
+    g.add(lampiao);
+  }
+
+  // ------------------------------------------------------------- telhado
+  // Duas águas com beiral, e a conta importa: a cumeeira fica em `CUMEEIRA`
+  // acima do topo da parede, o beiral desce até a altura da parede a `balanco`
+  // além dela. Daí saem a inclinação e o comprimento da água — e as duas se
+  // encontram exatamente na linha do meio.
+  //
+  // O SINAL DA INCLINAÇÃO já mordeu aqui: a água da FRENTE (`lado = +1`) tem
+  // que descer para `+Z`, e `rotation.x` positivo é que leva o `+Z` local para
+  // baixo. Com o sinal trocado o telhado sobe para a frente e vira um funil.
+  const yBeiral = 0.34 + altura;
+  const CUMEEIRA = 1.1;
+  const balanco = 0.55;
+  const corrida = hz + balanco;
+  const inclinacao = Math.atan2(CUMEEIRA, corrida);
+  const agua = Math.hypot(corrida, CUMEEIRA);
+  for (const lado of [-1, 1] as const) {
+    const telha = new THREE.Mesh(
+      new THREE.BoxGeometry(largura + 1.0, 0.18, agua),
+      toon(P.roofTile),
+    );
+    telha.position.set(0, yBeiral + CUMEEIRA / 2, lado * corrida / 2);
+    telha.rotation.x = lado * inclinacao;
+    g.add(telha);
+  }
+  const cumeeira = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 1.06, 0.2, 0.42),
+    toon(P.roofTile),
+  );
+  cumeeira.position.set(0, yBeiral + CUMEEIRA + 0.06, 0);
+  g.add(cumeeira);
+
+  // As EMPENAS, os dois triângulos que fecham as laterais debaixo do telhado.
+  //
+  // Elas são um prisma triangular de verdade (`ExtrudeGeometry` de um
+  // triângulo), e não um cone de 3 lados: cone de 3 segmentos é uma pirâmide,
+  // que de perfil não é triângulo nenhum. A forma nasce no plano XY e o giro de
+  // `PI/2` em Y leva a espessura da extrusão para o X do mundo.
+  const perfil = new THREE.Shape();
+  perfil.moveTo(-hz, 0);
+  perfil.lineTo(hz, 0);
+  perfil.lineTo(0, CUMEEIRA);
+  perfil.closePath();
+  const formaEmpena = new THREE.ExtrudeGeometry(perfil, { depth: 0.3, bevelEnabled: false });
+  for (const lado of [-1, 1] as const) {
+    const empena = new THREE.Mesh(formaEmpena, parede);
+    empena.rotation.y = Math.PI / 2;
+    // a extrusão cresce para o `+X` do mundo depois do giro, então a da direita
+    // precisa começar 0,3 antes da parede para terminar nela
+    empena.position.set(lado > 0 ? hx - 0.3 : -hx, yBeiral, 0);
+    g.add(empena);
+  }
+
+  // --------------------------------------------------- cozinha, no telhado
+  const chamine = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.5, 0.7), toon(P.brick));
+  chamine.position.set(hx - 2.2, yBeiral + 1.2, -hz * 0.35);
+  g.add(chamine);
+  const capa = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.14, 0.9), toon(P.concrete));
+  capa.position.set(hx - 2.2, yBeiral + 2.0, -hz * 0.35);
+  g.add(capa);
+  // a coifa da cozinha: cilindro deitado com um chapéu
+  const coifa = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.85, 10), toon(P.metalGrey));
+  coifa.position.set(hx - 4.0, yBeiral + 0.95, -hz * 0.2);
+  g.add(coifa);
+  const chapeu = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.3, 10), toon(P.metalGrey));
+  chapeu.position.set(hx - 4.0, yBeiral + 1.5, -hz * 0.2);
+  g.add(chapeu);
+
+  // ------------------------------------------------- lateral e fundos
+  // Janelinhas altas na lateral que a câmera vê (+X) e os condensadores do
+  // ar-condicionado, que é o que todo restaurante de clube tem pendurado.
+  for (let i = 0; i < 3; i++) {
+    const jan = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 1.0), vidro);
+    jan.position.set(hx + 0.03, 2.5, -hz + 1.4 + i * 1.9);
+    g.add(jan);
+    const cx = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.94, 1.14), esquadria);
+    cx.position.set(hx + 0.005, 2.5, -hz + 1.4 + i * 1.9);
+    g.add(cx);
+  }
+  for (const dz of [-1.3, 0.9]) {
+    const cond = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.78), toon(P.metalWhite));
+    cond.position.set(hx + 0.24, 1.7, dz);
+    g.add(cond);
+    const helice = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.05, 12), toon(P.metalGrey));
+    helice.rotation.z = Math.PI / 2;
+    helice.position.set(hx + 0.46, 1.72, dz);
+    g.add(helice);
+  }
+
+  return g;
+}

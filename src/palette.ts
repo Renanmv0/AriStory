@@ -118,6 +118,16 @@ export const PALETTE = {
   oculosLente: 0x23212b,
   oculosArmacao: 0x3d3b48,
 
+  // o restaurante do clube: parede de massa clara puxando para o pêssego, o
+  // verde do toldo listrado (irmão do teal do bar de sucos, para o clube ter
+  // uma cor só), a madeira dos caixilhos e o piso do deque da área externa
+  restauranteParede: 0xf3e3cf,
+  restauranteFaixa: 0xe2c9ab,
+  restauranteToldo: 0x2f9e79,
+  restauranteEsquadria: 0x6b4a2c,
+  restauranteDeck: 0xc08a52,
+  restauranteDeckRipa: 0xb07c46,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,
