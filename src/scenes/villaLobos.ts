@@ -13,6 +13,7 @@ import {
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
+import { calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -95,7 +96,11 @@ export const villaLobos: SceneDef = {
 
     // ------------------------------------------------------------- terreno
     // bem maior que a area jogavel: la de cima da roda gigante da para ver longe
-    w.ground({ width: 240, depth: 240, color: P.grass });
+    // A MESMA grama do clube, para os dois cenários serem o mesmo mundo. Já a
+    // calçada é OUTRA textura de propósito: os dois são chão claro de área
+    // pública, e o que separa um do outro é a escala da unidade — placa grande
+    // de borda de piscina lá, pedrinha miúda de praça aqui.
+    w.ground({ width: 240, depth: 240, color: P.grass, textura: tapeteDeGrama(9) });
     w.setBounds(-44, -34, 44, 32);
 
     // Ordem de empilhamento do chão. Cada decalque também recebe um
@@ -104,7 +109,7 @@ export const villaLobos: SceneDef = {
       w.disc(w.range(-40, 40), w.range(-30, 30), w.range(2, 6), P.grassDark, 0.004);
     }
     w.disc(0, -16.5, 8.6, P.sand, 0.008); // borda da praça
-    w.disc(0, -16.5, 8, P.concrete, 0.012); // praça
+    w.disc(0, -16.5, 8, P.concrete, 0.012, calcadaDePedrinha()); // praça
     w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho principal
     w.patch(0, 9, 62, 4.5, P.asphalt, 0, 0.02); // caminho transversal
 
@@ -171,7 +176,7 @@ export const villaLobos: SceneDef = {
     // calçada da loja e a trilha que sobe até o caminho transversal
     // colada no prédio de propósito: mais larga que isto e o canto de cima
     // invade a areia do lago, que chega a 9,2 do centro em (-21, 11)
-    w.patch(LOJA.x + 0.4, LOJA.z + 0.2, 10, 6.4, P.concrete, 0, 0.02);
+    w.patch(LOJA.x + 0.4, LOJA.z + 0.2, 10, 6.4, P.concrete, 0, 0.02, calcadaDePedrinha());
     w.patch(LOJA.x + 1.6, 7.2, 3, 7, P.asphalt, 0, 0.022);
 
     // ---------------------------------------------------------- roda gigante
@@ -300,7 +305,10 @@ export const villaLobos: SceneDef = {
     // discos a borda de um caia em cima da borda do outro e piscava. A risca do
     // meio vem depois do anel, porque em quadra de verdade ela atravessa o
     // circulo.
-    w.patch(QUADRA.x, QUADRA.z, QUADRA.largura, QUADRA.profundidade, P.grassDark, 0, 0.008);
+    // a MESMA grama do resto do parque, senão a quadra fica um retângulo liso
+    // no meio de um gramado texturizado
+    w.patch(QUADRA.x, QUADRA.z, QUADRA.largura, QUADRA.profundidade, P.grassDark, 0, 0.008,
+      tapeteDeGrama(9));
     const linha = (x: number, z: number, larg: number, prof: number): void => {
       w.patch(x, z, larg, prof, 0xf2f4f0, 0, 0.012);
     };
@@ -520,7 +528,7 @@ export const villaLobos: SceneDef = {
     // ---------------------------------------------------------- horizonte
     // o rio, os predios e a mata que aparecem quando a roda gigante sobe
     w.patch(-66, -10, 18, 220, P.water, 0, 0.02);
-    w.patch(-55, -10, 6, 220, P.concrete, 0, 0.03);
+    w.patch(-55, -10, 6, 220, P.concrete, 0, 0.03, calcadaDePedrinha());
 
     for (let i = 0; i < 22; i++) {
       const alto = w.range(7, 20);
@@ -582,7 +590,7 @@ export const villaLobos: SceneDef = {
     // dois asfaltos colados no mesmo lugar, piscando um por cima do outro. O
     // caminho agora para na calçada, e a rua começa depois dela.
     w.patch(29.5, 13, 11, 5, P.asphalt, 0, 0.01); // caminho do parque até o vão
-    w.patch(35.6, 13, 1.6, 34, P.concrete, 0, 0.014); // calçada
+    w.patch(35.6, 13, 1.6, 34, P.concrete, 0, 0.014, calcadaDePedrinha()); // calçada
     w.patch(40.8, 13, 8.8, 34, P.asphalt, 0, 0.018); // a rua
 
     const onibus = w.add(w.place(bus(0x3f7fd6), 39.5, 0, 13, -Math.PI / 2));
