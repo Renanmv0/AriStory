@@ -32,6 +32,8 @@ const PECAS = [
   ['vestiario', 'clube'],
   ['mesa-de-patio', 'clube'],
   ['cadeira-de-patio', 'clube'],
+  ['pergolado', 'clube'],
+  ['mesinha-de-deque', 'clube'],
 ];
 
 const browser = await chromium.launch({

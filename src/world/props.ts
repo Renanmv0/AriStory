@@ -1292,6 +1292,130 @@ export function sunLounger(cor: number = P.fabricBlue): THREE.Group {
   return g;
 }
 
+/**
+ * PERGOLADO do deque de descanso: seis pilares, duas vigas e um ripado por cima,
+ * com uma trepadeira crescendo nas ripas.
+ *
+ * A ALTURA DELE É UMA CONTA, NÃO UM CHUTE. A câmera olha de cima em 34°, então
+ * uma cobertura de altura `h` esconde tudo que estiver a `h / tan(34°) ≈ 1,5·h`
+ * de distância NA DIREÇÃO DA CÂMERA (`+Z`) — foi assim que o guarda-sol acabou
+ * aparecendo por cima de quem sentava na mesa de piquenique. Com o ripado a
+ * 2,91, ele engole qualquer coisa até 4,3 à frente. Por isso a cena planta o
+ * pergolado no FUNDO do deque, com as espreguiçadeiras à frente dele: para trás
+ * a cobertura não tapa nada, e é de lá que ela dá sombra sem sumir com ninguém.
+ *
+ * O ripado é vazado de propósito: ripa fina com vão de ripa entre elas deixa o
+ * céu passar e é o que faz ler "pergolado" em vez de "telheiro".
+ */
+export function pergolado(
+  largura = 8, profundidade = 3.2,
+  cor: number = P.dequeViga, corRipa: number = P.dequeRipa,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'pergolado';
+
+  const madeira = toon(cor);
+  const ripado = toon(corRipa);
+
+  const ALTURA = 2.5;
+  const PILAR = 0.16;
+  /**
+   * O pilar NASCE 5 CM ACIMA DO CHÃO, dentro da sapata. Nascendo em `y = 0`
+   * como a sapata, as duas bases caem no mesmo plano olhando para o mesmo lado
+   * — que é a definição de z-fighting, e o detector pegou os seis pares.
+   */
+  const PE = 0.05;
+  /** o topo do pilar, de onde a viga e o ripado sobem */
+  const TOPO = PE + ALTURA;
+  /** o pilar recua do canto para a viga sobrar um pouco em balanço */
+  const px = largura / 2 - 0.25;
+  const pz = profundidade / 2 - 0.25;
+
+  for (const x of [-px, 0, px]) {
+    for (const z of [-pz, pz]) {
+      const pilar = new THREE.Mesh(new THREE.BoxGeometry(PILAR, ALTURA, PILAR), madeira);
+      pilar.position.set(x, PE + ALTURA / 2, z);
+      g.add(pilar);
+      // sapata: o pé do pilar num deque de madeira sempre tem um calço, e ele
+      // também esconde a emenda do pilar com o piso
+      const sapata = new THREE.Mesh(new THREE.BoxGeometry(PILAR + 0.12, 0.1, PILAR + 0.12), ripado);
+      sapata.position.set(x, 0.05, z);
+      g.add(sapata);
+    }
+  }
+
+  // as duas vigas correm no X e nascem exatamente no topo dos pilares: face
+  // contra face OPOSTA é empilhamento normal, e não briga por pixel
+  for (const z of [-pz, pz]) {
+    const viga = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.24, 0.2), madeira);
+    viga.position.set(0, TOPO + 0.12, z);
+    g.add(viga);
+  }
+
+  // o ripado, atravessando as vigas. Ripa de 10 cm com vão de 30: metade céu
+  const passo = 0.4;
+  const quantas = Math.floor(largura / passo);
+  for (let i = 0; i <= quantas; i++) {
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, profundidade), ripado);
+    ripa.position.set(-largura / 2 + 0.2 + i * passo, TOPO + 0.3, 0);
+    g.add(ripa);
+  }
+
+  // A TREPADEIRA. Ela é o que tira a cara de estrutura crua: umas folhagens
+  // achatadas pousadas no ripado, sempre nos mesmos lugares (nada de sorteio —
+  // a peça tem que sair igual em toda partida).
+  const folha = toon(P.dequeTrepadeira);
+  for (const [t, dz, esc] of [
+    [-0.42, -0.2, 1.0], [-0.16, 0.28, 0.78], [0.12, -0.3, 0.9], [0.38, 0.16, 0.72],
+  ] as const) {
+    const moita = new THREE.Mesh(new THREE.SphereGeometry(0.42 * esc, 8, 6), folha);
+    moita.position.set(t * largura, TOPO + 0.42, dz * profundidade);
+    moita.scale.set(1.5, 0.5, 1.2);
+    g.add(moita);
+  }
+  // e uma gavinha descendo por um dos pilares, para a planta ter de onde vir
+  const gavinha = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.03, 1.5, 6), folha);
+  gavinha.position.set(-px - 0.09, TOPO - 0.6, pz);
+  g.add(gavinha);
+
+  return g;
+}
+
+/**
+ * MESINHA DE APOIO do deque: tampo redondo baixo, na altura da espreguiçadeira,
+ * com dois copos de suco em cima — um de cada, porque são sempre dois em cena.
+ */
+export function mesinhaDeDeque(cor: number = P.dequeViga): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesinha-de-deque';
+
+  const madeira = toon(cor);
+  const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.46, 10), madeira);
+  pe.position.y = 0.23;
+  g.add(pe);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.05, 12), madeira);
+  base.position.y = 0.025;
+  g.add(base);
+  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.07, 16), toon(P.dequeTabua));
+  tampo.position.y = 0.49;
+  g.add(tampo);
+  // o aro fica 1 cm para dentro do tampo: encostar as duas faces no mesmo plano
+  // é o que serrilha
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.37, 0.03, 6, 20), madeira);
+  aro.position.y = 0.47;
+  aro.rotation.x = Math.PI / 2;
+  g.add(aro);
+
+  const suco = copoDeSuco(P.morango);
+  suco.position.set(-0.14, 0.525, 0.05);
+  g.add(suco);
+  const outro = copoDeSuco(P.laranja);
+  outro.position.set(0.15, 0.525, -0.07);
+  g.add(outro);
+
+  return g;
+}
+
 export function parasol(cor: number = P.fabricRed): THREE.Group {
   const g = new THREE.Group();
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 0.12, 12), toon(P.concrete));

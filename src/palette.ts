@@ -162,6 +162,15 @@ export const PALETTE = {
   restauranteDeck: 0xc08a52,
   restauranteDeckRipa: 0xb07c46,
 
+  // o deque de descanso da beira da piscina. A madeira é mais clara e mais
+  // acinzentada que a do deque do restaurante de propósito: aqui é tábua que
+  // vive molhada e pega sol o dia inteiro, e a diferença de tom é o que separa
+  // "área de comer" de "área de secar ao sol" sem precisar de placa.
+  dequeTabua: 0xd8ac7a,
+  dequeRipa: 0xc79a68,
+  dequeViga: 0xa9763f,
+  dequeTrepadeira: 0x4f9b46,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

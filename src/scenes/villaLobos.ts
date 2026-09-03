@@ -13,7 +13,7 @@ import {
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
-import { calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
+import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -110,8 +110,8 @@ export const villaLobos: SceneDef = {
     }
     w.disc(0, -16.5, 8.6, P.sand, 0.008); // borda da praça
     w.disc(0, -16.5, 8, P.concrete, 0.012, calcadaDePedrinha()); // praça
-    w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho principal
-    w.patch(0, 9, 62, 4.5, P.asphalt, 0, 0.02); // caminho transversal
+    w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016, asfalto()); // caminho principal
+    w.patch(0, 9, 62, 4.5, P.asphalt, 0, 0.02, asfalto()); // caminho transversal
 
     /**
      * A pista oval, composta à mão.
@@ -124,10 +124,10 @@ export const villaLobos: SceneDef = {
      * Cada `patch`/`disc` já recebe o seu próprio `polygonOffset` do
      * WorldBuilder; as alturas abaixo são a folga declarada por cima disso.
      */
-    const oval = (raio: number, cor: number, altura: number): void => {
-      w.patch(PISTA.x, PISTA.z, PISTA.reta * 2, raio * 2, cor, 0, altura);
-      w.disc(PISTA.x - PISTA.reta, PISTA.z, raio, cor, altura);
-      w.disc(PISTA.x + PISTA.reta, PISTA.z, raio, cor, altura);
+    const oval = (raio: number, cor: number, altura: number, textura?: THREE.Texture): void => {
+      w.patch(PISTA.x, PISTA.z, PISTA.reta * 2, raio * 2, cor, 0, altura, textura);
+      w.disc(PISTA.x - PISTA.reta, PISTA.z, raio, cor, altura, textura);
+      w.disc(PISTA.x + PISTA.reta, PISTA.z, raio, cor, altura, textura);
     };
     /**
      * As camadas, de baixo para cima. Cada faixa branca e' o oval de baixo
@@ -137,9 +137,12 @@ export const villaLobos: SceneDef = {
      */
     const FAIXA = 0.3;
     oval(PISTA.raio, P.metalWhite, 0.022); // borda externa
-    oval(PISTA.raio - FAIXA, P.asphalt, 0.026);
+    // o asfalto da pista é o mesmo dos caminhos; as três peças do oval não
+    // alinham o azulejo entre si, e não precisam: asfalto é grão solto, sem
+    // junta nem fiada para denunciar a emenda
+    oval(PISTA.raio - FAIXA, P.asphalt, 0.026, asfalto());
     oval(PISTA.miolo + FAIXA, P.metalWhite, 0.03); // borda interna
-    oval(PISTA.miolo, P.grass, 0.034);
+    oval(PISTA.miolo, P.grass, 0.034, tapeteDeGrama(9));
 
     /**
      * Tracejado do meio da raia, como risco de rua.
@@ -177,7 +180,7 @@ export const villaLobos: SceneDef = {
     // colada no prédio de propósito: mais larga que isto e o canto de cima
     // invade a areia do lago, que chega a 9,2 do centro em (-21, 11)
     w.patch(LOJA.x + 0.4, LOJA.z + 0.2, 10, 6.4, P.concrete, 0, 0.02, calcadaDePedrinha());
-    w.patch(LOJA.x + 1.6, 7.2, 3, 7, P.asphalt, 0, 0.022);
+    w.patch(LOJA.x + 1.6, 7.2, 3, 7, P.asphalt, 0, 0.022, asfalto());
 
     // ---------------------------------------------------------- roda gigante
     const wheel = new FerrisWheel({ radius: 12, cabins: 32, rpm: 1.0 });
@@ -593,9 +596,16 @@ export const villaLobos: SceneDef = {
     // A rua e o caminho que chega nela sao a MESMA cor e se cruzavam em x 34~36:
     // dois asfaltos colados no mesmo lugar, piscando um por cima do outro. O
     // caminho agora para na calçada, e a rua começa depois dela.
-    w.patch(29.5, 13, 11, 5, P.asphalt, 0, 0.01); // caminho do parque até o vão
+    w.patch(29.5, 13, 11, 5, P.asphalt, 0, 0.01, asfalto()); // caminho do parque até o vão
     w.patch(35.6, 13, 1.6, 34, P.concrete, 0, 0.014, calcadaDePedrinha()); // calçada
-    w.patch(40.8, 13, 8.8, 34, P.asphalt, 0, 0.018); // a rua
+    w.patch(40.8, 13, 8.8, 34, P.asphalt, 0, 0.018, asfalto()); // a rua
+
+    // o tracejado do meio da rua. Sem ele o asfalto texturizado continua lendo
+    // como pátio: é a faixa que diz "isto é uma rua, o ônibus passa por aqui".
+    // Um traço de 2 m a cada 5 m, ao longo dos 34 de rua.
+    for (let z = 13 - 15; z <= 13 + 15; z += 5) {
+      w.patch(40.8, z, 0.22, 2, P.metalWhite, 0, 0.022);
+    }
 
     const onibus = w.add(w.place(bus(0x3f7fd6), 39.5, 0, 13, -Math.PI / 2));
     w.blockBox(39.5, 13, 1.5, 4.3);

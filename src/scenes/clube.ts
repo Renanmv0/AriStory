@@ -5,7 +5,7 @@ import { flat } from '../core/materials';
 import {
   bin, bleachers, bus, busStop, bush, canteiro, canteiroComPalmeira,
   cloud, divingBoard,
-  floatRing, floodlight, flowers, kiosk, lamp, parasol, poolLadder,
+  floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
   mesaDePatio, poolShell, poolWater, restaurante, showerPost, sunLounger, textSign,
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
@@ -208,6 +208,140 @@ export const clube: SceneDef = {
     // uma vez — quem chegasse na porta só via "Sentar no banco" — e agora que a
     // porta mudou de lugar ele continua longe dela.
     w.banco(14, -3, -Math.PI / 2);
+
+    // ------------------------------------------- deque de descanso da piscina
+    /**
+     * O lado LESTE da piscina era o pedaço mais vazio do deck: só o banco e uma
+     * espreguiçadeira solta num campo de concreto. Ele virou o deque de
+     * descanso — tábua corrida, pergolado no fundo, duas espreguiçadeiras de
+     * frente para a água e uma mesinha com os sucos.
+     *
+     * O CHÃO É DECALQUE, e não um estrado levantado. O jogo não tem altura de
+     * caminhada: um deque de 18 cm de verdade deixaria a dupla andando no ar em
+     * cima dele. Tábua pintada no chão resolve a leitura e não quebra nada — é
+     * o mesmo caminho do deque do restaurante.
+     */
+    const DESCANSO = { x: 14.5, z: -2.1, largura: 9, profundidade: 10.4 };
+    w.patch(DESCANSO.x, DESCANSO.z, DESCANSO.largura, DESCANSO.profundidade, P.dequeTabua, 0, 0.02);
+    for (let i = 0; i < 12; i++) {
+      const z = DESCANSO.z - DESCANSO.profundidade / 2 + 0.5 + i * 0.85;
+      w.patch(DESCANSO.x, z, DESCANSO.largura - 0.4, 0.1, P.dequeRipa, 0, 0.024);
+    }
+
+    /**
+     * O PERGOLADO vai no fundo (`z` menor), com as espreguiçadeiras à frente.
+     * A cobertura fica a 2,91 e a câmera olha em 34°: ela esconderia qualquer
+     * coisa até 4,3 à frente dela. Atrás não esconde nada — por isso ele é
+     * fundo de cena, e não teto de quem está deitado.
+     */
+    const PERGOLA = { x: 14.5, z: -5.6, largura: 8, profundidade: 3.2 };
+    w.add(w.place(pergolado(PERGOLA.largura, PERGOLA.profundidade), PERGOLA.x, 0, PERGOLA.z));
+    for (const dx of [-3.75, 0, 3.75]) {
+      for (const dz of [-1.35, 1.35]) {
+        w.blockCircle(PERGOLA.x + dx, PERGOLA.z + dz, 0.26);
+      }
+    }
+
+    /**
+     * As duas espreguiçadeiras, lado a lado e com a cabeceira no `+X` — de pé
+     * para a piscina, que é a única coisa que faz sentido olhar daqui.
+     */
+    const DEITAR = { x: 13.8, z: -0.2, vao: 0.7 };
+    for (const dz of [-DEITAR.vao, DEITAR.vao]) {
+      w.add(w.place(sunLounger(dz < 0 ? P.fabricBlue : 0xff8fb1), DEITAR.x, 0, DEITAR.z + dz, -Math.PI / 2));
+      w.blockBox(DEITAR.x, DEITAR.z + dz, 0.85, 0.36);
+    }
+    w.add(w.place(mesinhaDeDeque(), 15.5, 0, DEITAR.z));
+    w.blockCircle(15.5, DEITAR.z, 0.42);
+
+    /**
+     * A âncora de deitar, em DOIS objetos encaixados de propósito.
+     *
+     * O rig deitado é o rig em pé girado: `rotation.x = -PI/2` leva o `+Y` local
+     * (a cabeça) para o `-Z` do mundo, e é assim que a cama do quarto funciona.
+     * Aqui a cabeceira aponta para o `+X`, então falta um giro a mais — e
+     * escrever os dois numa Euler só depende da ordem em que o three aplica os
+     * eixos. Dois objetos aninhados não deixam dúvida: o de fora vira, o de
+     * dentro deita.
+     *
+     * Depois dos dois giros, no referencial de dentro:
+     *   `+Y` → `+X` (a cabeceira)   `+Z` → `+Y` (eles olham para o céu)
+     *   `+X` → `+Z` (é ele que separa um do outro)
+     *
+     * O `y` é o pano da espreguiçadeira (0,45) mais a folga de meio corpo
+     * (0,25) — a mesma da cama, e sem ela metade do corpo afunda na lona.
+     */
+    const viradaDoDeque = new THREE.Object3D();
+    viradaDoDeque.position.set(DEITAR.x, 0.7, DEITAR.z);
+    viradaDoDeque.rotation.y = -Math.PI / 2;
+    w.root.add(viradaDoDeque);
+    const deitadosNoDeque = new THREE.Object3D();
+    deitadosNoDeque.rotation.x = -Math.PI / 2;
+    viradaDoDeque.add(deitadosNoDeque);
+
+    w.interact({
+      id: 'clube:deque',
+      x: DEITAR.x, z: DEITAR.z, radius: 2.4,
+      label: 'Descansar no deque', icon: '🌴',
+      onInteract: async (g) => {
+        const quer = await g.ask('Deitar um pouco ao sol?', ['Deitar', 'Agora não']);
+        if (quer !== 0) {
+          await conversa([
+            [R, 'Se eu deitar agora eu durmo.'],
+            [A, 'É esse o plano.'],
+          ]);
+          return;
+        }
+
+        g.lockPlayer(true);
+        // O `-0,5` no `y` local (que é o eixo do corpo) EMPURRA OS DOIS PARA OS
+        // PÉS DA ESPREGUIÇADEIRA. O rig deitado nasce quase todo à frente da
+        // âncora — a cabeça fica a 1,28 dela e os pés a 0,26 atrás —, então
+        // ancorar no meio do móvel deixava a cabeça 43 cm para fora, boiando
+        // sobre o deque. É o mesmo recuo que a cama do quarto faz na posição da
+        // âncora; aqui ele mora no offset porque a âncora é a mesma para os dois.
+        g.ridePlayer(deitadosNoDeque, new THREE.Vector3(-DEITAR.vao, -0.5, 0), 1, 0);
+        g.rideCompanion(deitadosNoDeque, new THREE.Vector3(DEITAR.vao, -0.5, 0), 1, 0);
+        g.setLying(true);
+        // Câmera quase de cima, e não a isométrica: deitados, os dois ficam
+        // deitados NA direção que a isométrica encurta, e viram dois tocos ao
+        // lado das cabeças. De cima aparecem inteiros, lado a lado.
+        g.setCameraOmbro(
+          new THREE.Vector3(DEITAR.x - 1.4, 4.6, DEITAR.z + 2.6),
+          new THREE.Vector3(DEITAR.x + 0.3, 0.5, DEITAR.z),
+        );
+        await g.wait(1.1);
+
+        await conversa([
+          [R, 'O sol tá bom demais.'],
+          [A, 'A gente veio pra nadar.'],
+          [R, 'A gente veio pra ficar. Nadar foi ideia sua.'],
+        ]);
+
+        const ficar = await g.ask('Ficar mais um pouco?', ['Fica', 'Levantar']);
+        if (ficar === 0) {
+          await conversa([
+            [A, 'Nem precisa falar nada.'],
+            [R, 'Tô só ouvindo a água.'],
+          ]);
+          await g.wait(2.4);
+        }
+
+        g.setLying(false);
+        g.setCameraOmbro(null);
+        g.releasePlayer(DEITAR.x, DEITAR.z + 2.4, 0);
+        g.releaseCompanion(DEITAR.x + 1.2, DEITAR.z + 2.4, 0);
+        g.lockPlayer(false);
+
+        g.unlock({
+          id: 'deque-do-clube',
+          title: 'A tarde no deque',
+          place: 'Clube',
+          note: 'Duas espreguiçadeiras, dois sucos e a sombra do pergolado chegando devagar.',
+          icon: '🌴',
+        });
+      },
+    });
 
     // -------------------------------------------------------- restaurante
     // Ele fica no fundo à ESQUERDA, o canto mais vazio do deck. Com `x` e `z`
