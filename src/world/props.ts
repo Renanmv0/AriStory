@@ -1037,6 +1037,7 @@ export function patins(cor: number = P.wallCream): THREE.Group {
  */
 export function skateShop(cor: number = P.fabricBlue): THREE.Group {
   const g = new THREE.Group();
+  g.userData.peca = 'loja-de-patins';
   const LARG = 7.4;
   const PROF = 4.4;
   const ALT = 2.9;
@@ -1054,19 +1055,34 @@ export function skateShop(cor: number = P.fabricBlue): THREE.Group {
   g.add(base);
 
   // ---------------------------------------------------------------- caixa
-  const fundo = new THREE.Mesh(new THREE.BoxGeometry(LARG, ALT, 0.26), claro);
+  //
+  // AS PAREDES LATERAIS SAO O ENVELOPE, e tudo que corre entre elas termina na
+  // face de DENTRO delas — nao na de fora.
+  //
+  // Antes o fundo, o peitoril e a travessa tinham `LARG` de largura cheia, igual
+  // as laterais: as quatro pecas terminavam no mesmo `x = ±3,7`, e face contra
+  // face no mesmo plano e exatamente o que serrilha. Era o defeito que aparecia
+  // na madeira escura do peitoril, que e a peca de baixo da fachada.
+  //
+  // `VAO` e a distancia entre as faces internas das laterais. Quem termina nele
+  // encosta na parede em vez de dividir plano com ela — o par vira `max × min`,
+  // que e empilhamento normal e nao briga.
+  const ESPESSURA = 0.26;
+  const VAO = LARG - ESPESSURA * 2;
+
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(VAO, ALT, ESPESSURA), claro);
   fundo.position.set(0, 0.18 + ALT / 2, -PROF / 2);
   g.add(fundo);
   for (const lado of [-1, 1]) {
-    const parede = new THREE.Mesh(new THREE.BoxGeometry(0.26, ALT, PROF), claro);
-    parede.position.set(lado * (LARG / 2 - 0.13), 0.18 + ALT / 2, 0);
+    const parede = new THREE.Mesh(new THREE.BoxGeometry(ESPESSURA, ALT, PROF), claro);
+    parede.position.set(lado * (LARG / 2 - ESPESSURA / 2), 0.18 + ALT / 2, 0);
     g.add(parede);
   }
 
   // ------------------------------------------------------------- vitrine
   // peitoril baixo + tres panos de vidro. O vidro e translucido de verdade
   // (`opacity`), entao da para ver as prateleiras la dentro.
-  const peitoril = new THREE.Mesh(new THREE.BoxGeometry(LARG, 0.6, 0.3), madeiraEscura);
+  const peitoril = new THREE.Mesh(new THREE.BoxGeometry(VAO, 0.6, 0.3), madeiraEscura);
   peitoril.position.set(0, 0.48, PROF / 2 - 0.1);
   g.add(peitoril);
 
@@ -1087,7 +1103,7 @@ export function skateShop(cor: number = P.fabricBlue): THREE.Group {
     montante.position.set(x, 1.68, PROF / 2 - 0.1);
     g.add(montante);
   }
-  const travessa = new THREE.Mesh(new THREE.BoxGeometry(LARG, 0.18, 0.24), metal);
+  const travessa = new THREE.Mesh(new THREE.BoxGeometry(VAO, 0.18, 0.24), metal);
   travessa.position.set(0, 2.68, PROF / 2 - 0.1);
   g.add(travessa);
 
