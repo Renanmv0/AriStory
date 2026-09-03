@@ -207,6 +207,29 @@ Canteiro, vitória-régia, pedra na beira d'água: sempre que der, faça a peça
 em calota nunca brigam com a grama nem com a água, porque não são coplanares com
 nada — some com o risco de z-fighting antes de ele existir.
 
+## A pilha do chão mora ABAIXO de zero
+
+Toda peça do kit nasce com a base em `y = 0` — é o contrato do kit. Por isso o
+`WorldBuilder` põe o chão e todos os decalques dele **abaixo** de zero: o chão
+de base no fundo (`-0,006`), os decalques numa faixa fina acima dele, e `y = 0`
+livre para as peças. A cena continua escrevendo o `y` que quiser em
+`patch()`/`disc()` — ele só serve para a pilha ficar legível no código, e o
+`WorldBuilder` reescreve.
+
+Dois defeitos moravam aí, e os dois só ficaram visíveis quando o chão ganhou
+textura:
+
+1. **O chão de base ficava no MESMO plano da base de cada árvore, poste, banco
+   e cerca.** Dois planos iguais é a definição de z-fighting. Enquanto os dois
+   eram verde chapado, a briga dava verde e ninguém via.
+2. **O decalque é desenhado DEPOIS do mundo sólido e ficava ACIMA da base das
+   peças** — a calçada em `y = 0,012` pintava por cima dos 12 mm de baixo de
+   todo poste plantado nela. Com a calçada texturizada, essa faixa passou a ter
+   desenho e virou chiado no pé da peça.
+
+Se um dia precisar de um chão acima de zero, lembre que ele vai comer o pé de
+tudo que estiver plantado nele.
+
 ## Chão empilhado: quem manda é a ORDEM DE CRIAÇÃO
 
 `w.patch()`, `w.disc()` e `w.ring()` desenham no chão. Eles são **decalques**:
