@@ -214,13 +214,23 @@ export function nenufar(escala = 1, flor = true): THREE.Group {
  * A borda é elevada de propósito — assim o canteiro é geometria de pé e não
  * decalque de chão, que é onde mora o risco de z-fighting.
  */
-export function canteiro(
-  raio = 1.1,
-  cores: number[] = [P.flowerPink, P.flowerYellow, 0xffffff, 0xb98fe0],
-  semente = 0.5,
-): THREE.Group {
+const ALTURA_DO_CANTEIRO = 0.24;
+
+/**
+ * A alvenaria do canteiro: mureta, tampa e a terra dentro. É a parte que as
+ * duas variantes (o de flor e o de palmeira) dividem.
+ *
+ * A FORRAÇÃO é o que faz o canteiro parecer plantado em vez de meio vazio: uma
+ * calota rasa de verde cobrindo quase todo o vão, com os maços de flor por
+ * cima. Sem ela sobra terra marrom aparecendo entre um maço e outro, e o
+ * canteiro lê como um vaso que ninguém regou.
+ *
+ * Ela é CALOTA e não disco por um motivo: disco na altura da terra ficaria
+ * coplanar com ela e piscaria. Superfície curva não tem esse problema.
+ */
+function baseDeCanteiro(raio: number): THREE.Group {
   const g = new THREE.Group();
-  const altura = 0.24;
+  const altura = ALTURA_DO_CANTEIRO;
 
   const borda = new THREE.Mesh(
     new THREE.CylinderGeometry(raio, raio * 1.05, altura, 18, 1, true),
@@ -238,31 +248,106 @@ export function canteiro(
   terra.position.y = altura - 0.03;
   g.add(terra);
 
-  // maços: cada um é um punhado de esferas da mesma cor, com alturas diferentes
-  const macos = 7;
-  for (let i = 0; i < macos; i++) {
-    const a = (i / macos) * Math.PI * 2 + semente * 6.28;
-    const d = raio * (0.25 + ((i * 41 + semente * 100) % 10) / 18);
-    const cor = cores[i % cores.length];
-    const cx = Math.cos(a) * d;
-    const cz = Math.sin(a) * d;
+  const forracao = new THREE.Mesh(new THREE.SphereGeometry(raio * 0.9, 16, 8), toon(P.leafMid));
+  forracao.scale.y = 0.11;
+  forracao.position.y = altura - 0.04;
+  g.add(forracao);
 
-    const folhagem = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), toon(P.leafDark));
-    folhagem.position.set(cx, altura + 0.06, cz);
+  return g;
+}
+
+/**
+ * Canteiro de flores com borda de alvenaria.
+ *
+ * TUDO ESCALA COM O RAIO. Antes o maço tinha 0,2 fixo, então um canteiro de
+ * 1,4 ganhava as mesmas sete moitinhas de um de 1,1 e ficava ralo — quanto
+ * maior o canteiro, mais vazio ele parecia. Aqui o tamanho da moita, o da flor
+ * e o número de maços saem todos do raio.
+ *
+ * Os maços vêm em DOIS ANÉIS mais um no meio, e não num anel só: um anel
+ * sozinho deixa o miolo pelado, que era o que mais chamava atenção de cima.
+ */
+export function canteiro(
+  raio = 1.1,
+  cores: number[] = [P.flowerPink, P.flowerYellow, 0xffffff, 0xb98fe0],
+  semente = 0.5,
+): THREE.Group {
+  const g = baseDeCanteiro(raio);
+  const altura = ALTURA_DO_CANTEIRO;
+  const giro = semente * 6.28;
+
+  /** [ângulo, distância do centro] de cada maço */
+  const lugares: Array<[number, number]> = [[giro * 1.7, 0]];
+  const externos = Math.round(9 * raio);
+  const internos = Math.round(5 * raio);
+  for (let i = 0; i < externos; i++) {
+    lugares.push([(i / externos) * Math.PI * 2 + giro, raio * 0.68]);
+  }
+  for (let i = 0; i < internos; i++) {
+    lugares.push([(i / internos) * Math.PI * 2 + giro + 0.7, raio * 0.36]);
+  }
+
+  const rMoita = raio * 0.2;
+  const rFlor = raio * 0.068;
+
+  lugares.forEach(([a, d], i) => {
+    const cor = cores[i % cores.length];
+    // um empurrãozinho pseudoaleatório, senão os dois anéis viram alvo de tiro
+    const solto = ((i * 37 + semente * 100) % 10) / 10 - 0.5;
+    const cx = Math.cos(a) * d + solto * raio * 0.08;
+    const cz = Math.sin(a) * d - solto * raio * 0.08;
+
+    const folhagem = new THREE.Mesh(new THREE.SphereGeometry(rMoita, 8, 6), toon(P.leafDark));
+    folhagem.position.set(cx, altura + rMoita * 0.3, cz);
     folhagem.scale.y = 0.55;
     g.add(folhagem);
 
-    for (let k = 0; k < 4; k++) {
-      const b = (k / 4) * Math.PI * 2 + i;
-      const flor = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), toon(cor));
+    // seis flores por maço, em duas alturas: quatro na roda de fora e duas
+    // espetadas mais no alto, no meio
+    for (let k = 0; k < 6; k++) {
+      const naBorda = k < 4;
+      const b = (k / (naBorda ? 4 : 2)) * Math.PI * 2 + i + (naBorda ? 0 : 0.8);
+      const dFlor = naBorda ? rMoita * 0.62 : rMoita * 0.24;
+      const flor = new THREE.Mesh(new THREE.SphereGeometry(rFlor, 8, 6), toon(cor));
       flor.position.set(
-        cx + Math.cos(b) * 0.12,
-        altura + 0.16 + ((k + i) % 3) * 0.05,
-        cz + Math.sin(b) * 0.12,
+        cx + Math.cos(b) * dFlor,
+        altura + rMoita * (naBorda ? 0.72 : 1.05) + ((k + i) % 3) * raio * 0.04,
+        cz + Math.sin(b) * dFlor,
       );
       flor.scale.y = 0.8;
       g.add(flor);
     }
+  });
+  return g;
+}
+
+/**
+ * A mesma jardineira, mas com uma PALMEIRA plantada no meio em vez de flores.
+ *
+ * É o canteiro de calçadão de clube: mureta redonda, forração verde no vão e
+ * uma palmeira saindo do meio. As moitas em volta do tronco escondem a base
+ * dele — palmeira nascendo direto da terra lisa parece espetada.
+ *
+ * @param escala tamanho da palmeira; 1 dá uma de ~3,5 de altura
+ */
+export function canteiroComPalmeira(raio = 1.3, escala = 1, semente = 0.5): THREE.Group {
+  const g = baseDeCanteiro(raio);
+  const altura = ALTURA_DO_CANTEIRO;
+
+  const palmeira = tree('palmeira', escala, semente);
+  // ela nasce na TERRA, não no chão: a base da peça fica no topo da mureta
+  palmeira.position.y = altura;
+  g.add(palmeira);
+
+  const moitas = Math.round(7 * raio);
+  for (let i = 0; i < moitas; i++) {
+    const a = (i / moitas) * Math.PI * 2 + semente * 6.28;
+    const d = raio * (0.45 + (((i * 53 + semente * 100) % 10) / 10) * 0.28);
+    const r = raio * (0.15 + (((i * 29) % 7) / 7) * 0.07);
+    const moita = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), toon(i % 2 ? P.leafDark : P.bush));
+    moita.position.set(Math.cos(a) * d, altura + r * 0.3, Math.sin(a) * d);
+    moita.scale.y = 0.6;
+    g.add(moita);
   }
   return g;
 }
