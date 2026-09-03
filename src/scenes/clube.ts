@@ -3,8 +3,9 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import { flat } from '../core/materials';
 import {
-  building, bus, bush, cloud, divingBoard, floatRing, flowers,
-  kiosk, parasol, poolLadder, poolShell, poolWater, showerPost, sunLounger, tree,
+  bin, bleachers, building, bus, busStop, bush, canteiro, cloud, divingBoard,
+  floatRing, floodlight, flowers, kiosk, lamp, parasol, picnicTable, poolLadder,
+  poolShell, poolWater, showerPost, sunLounger, textSign, tree, waterFountain,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
@@ -191,6 +192,75 @@ export const clube: SceneDef = {
     // uma vez — quem chegasse na porta só via "Sentar no banco" — e agora que a
     // porta mudou de lugar ele continua longe dela.
     w.banco(14, -3, -Math.PI / 2);
+
+    // ------------------------------------------------- ocupando o deck novo
+    // Nada aqui é atração: é o mobiliário que faz um pátio de concreto parecer
+    // um clube. Tudo sai do kit, e a única regra é a de sempre — peça com
+    // frente olha para `+Z`, senão a câmera pega só o fundo liso dela.
+
+    // A ARQUIBANCADA da piscina, uma de cada lado do trampolim. Os degraus
+    // sobem para `-Z` e o assento olha para `+Z`, ou seja, para a água.
+    for (const x of [-7, 7]) {
+      w.add(w.place(bleachers(6), x, 0, -12.5));
+      w.blockBox(x, -13.2, 3, 1);
+    }
+
+    // A ÁREA DE MESAS, no fundo à esquerda — o canto que ficou mais vazio com
+    // o deck novo. Guarda-sol em duas delas, que é o que sempre tem.
+    for (const [x, z, comSol] of [[-17, -7, true], [-13, -12, false], [-18, -15, true]] as const) {
+      w.add(w.place(picnicTable(), x, 0, z));
+      w.blockBox(x, z, 1.1, 0.8);
+      if (comSol) {
+        w.add(w.place(parasol(0x5cb04f), x + 1.7, 0, z + 1.2));
+        w.blockCircle(x + 1.7, z + 1.2, 0.3);
+      }
+    }
+    w.add(w.place(bin(), -11.5, 0, -6.5));
+    w.blockCircle(-11.5, -6.5, 0.3);
+
+    // CANTEIROS quebrando o concreto. Eles têm borda elevada de propósito:
+    // mancha pintada no chão brigaria com o deck, calota com volume não briga
+    // com nada.
+    for (const [x, z, r] of [
+      [-20, -3, 1.3], [-4, -17, 1.1], [12, 6, 1.2], [19, -8, 1.4], [8, 12, 1.1],
+    ] as const) {
+      w.add(w.place(canteiro(r), x, 0, z));
+      w.blockCircle(x, z, r);
+    }
+
+    // O CALÇADÃO da frente: postes em fila, bebedouro e lixeira. É a faixa por
+    // onde todo mundo entra, e era só concreto liso.
+    for (const x of [-9, -2, 5, 12]) {
+      w.add(w.place(lamp(), x, 0, 12));
+      w.blockCircle(x, 12, 0.25);
+    }
+    w.add(w.place(waterFountain(), 11.5, 0, 3.4));
+    w.blockBox(11.5, 3.4, 0.3, 0.25);
+    w.add(w.place(bin(), 6.5, 0, 11.4));
+    w.blockCircle(6.5, 11.4, 0.3);
+
+    // O PONTO DE ÔNIBUS, ao lado de quem já está parado ali. A cobertura abre
+    // para `+Z`; a fila fica de frente para a câmera.
+    w.add(w.place(busStop(), -17, 0, 12.5));
+    w.blockBox(-17, 11.9, 1.9, 1);
+
+    // PLACAS. É o que mais faz um lugar parecer clube de verdade: o texto sai
+    // de um canvas em tempo de execução, que é a única "textura" que o projeto
+    // permite.
+    for (const [texto, cor, x, z] of [
+      ['Piscina', P.fabricBlue, 3, 9.6],
+      ['Sucos', 0x4ec1a8, -15.5, 10.2],
+      ['Vestiário', 0x7aa6c4, 15, -12.6],
+    ] as const) {
+      w.add(w.place(textSign(texto, cor), x, 0, z));
+      w.blockCircle(x, z, 0.25);
+    }
+
+    // REFLETORES nos dois cantos do fundo — clube que fecha tarde tem.
+    for (const x of [-20, 21]) {
+      w.add(w.place(floodlight(), x, 0, -19));
+      w.blockCircle(x, -19, 0.35);
+    }
 
     // ------------------------------------------------------------ jardim
     // A vegetação seguiu o deck para fora: com o piso em 48×38, as palmeiras
