@@ -3,7 +3,8 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import { flat } from '../core/materials';
 import {
-  bin, bleachers, building, bus, busStop, bush, canteiro, cloud, divingBoard,
+  bin, bleachers, building, bus, busStop, bush, canteiro, canteiroComPalmeira,
+  cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, parasol, picnicTable, poolLadder,
   mesaDePatio, poolShell, poolWater, restaurante, showerPost, sunLounger, textSign,
   tree, waterFountain,
@@ -283,10 +284,15 @@ export const clube: SceneDef = {
     // CANTEIROS quebrando o concreto. Eles têm borda elevada de propósito:
     // mancha pintada no chão brigaria com o deck, calota com volume não briga
     // com nada.
-    for (const [x, z, r] of [
-      [-20, -3, 1.3], [-4, -17, 1.1], [12, 6, 1.2], [19, -8, 1.4], [8, 12, 1.1],
-    ] as const) {
+    // O que ficava em (-20, -3) caiu dentro do deque do restaurante e saiu.
+    for (const [x, z, r] of [[12, 6, 1.2], [8, 12, 1.1]] as const) {
       w.add(w.place(canteiro(r), x, 0, z));
+      w.blockCircle(x, z, r);
+    }
+    // Os dois de palmeira ficam nos FUNDOS (`z` e `x` que a câmera desenha
+    // atrás): palmeira tem 3,5 de altura, e na frente ela taparia a piscina.
+    for (const [x, z, r, esc] of [[-4, -17, 1.3, 1.05], [19, -8, 1.4, 0.95]] as const) {
+      w.add(w.place(canteiroComPalmeira(r, esc, x), x, 0, z));
       w.blockCircle(x, z, r);
     }
 
