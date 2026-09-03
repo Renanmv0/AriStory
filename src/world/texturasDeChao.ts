@@ -191,3 +191,71 @@ export function tapeteDeGrama(lado = 9): THREE.CanvasTexture {
     }
   });
 }
+
+/**
+ * CALÇADA DE PEDRINHA, para o Villa-Lobos.
+ *
+ * Ela existe para NÃO ser o piso do clube. Os dois são chão claro de área
+ * pública, e se usassem a mesma textura os dois cenários iam parecer o mesmo
+ * lugar — o que separa um do outro é a ESCALA da unidade: no clube são poucas
+ * placas grandes de borda de piscina, aqui são muitas pedrinhas miúdas, como
+ * calçada de praça.
+ *
+ * A pedra é assentada em FIADAS DESENCONTRADAS (cada linha ímpar anda meia
+ * pedra), que é como se assenta de verdade e é o que quebra a leitura de grade.
+ * Cada pedra ganha um tom próprio e uma sobrinha na quina de baixo — sem esse
+ * degrau de luz elas viram quadradinhos chapados e o olho lê xadrez.
+ *
+ * A PEDRA É MAIOR QUE A DE VERDADE. Comecei com 18 cm, que é a medida real da
+ * pedra portuguesa, e na tela ela virou chiado cinza: a esta distância de
+ * câmera não dá para distinguir uma pedra da outra. Com 40 cm o assentamento
+ * aparece, que é o que importa aqui — o jogo é estilizado, e ler ganha de medir.
+ */
+export function calcadaDePedrinha(lado = 2.4, porLinha = 6): THREE.CanvasTexture {
+  return novaTextura(`pedrinha:${lado}:${porLinha}`, lado, (ctx, s) => {
+    const rnd = sorteio(31415926);
+    const passo = s / porLinha;
+    const folga = passo * 0.13;
+
+    // a argamassa entre as pedras
+    ctx.fillStyle = 'rgba(196,190,178,1)';
+    ctx.fillRect(0, 0, s, s);
+
+    for (let linha = 0; linha < porLinha; linha++) {
+      // as fiadas ímpares andam meia pedra — e a pedra que sai por um lado
+      // entra pelo outro, senão a emenda do azulejo aparece
+      const desvio = (linha % 2) * passo * 0.5;
+      for (let col = -1; col <= porLinha; col++) {
+        const x = col * passo + desvio;
+        const y = linha * passo;
+        // cada pedra com o seu tom, entre 0,88 e 1,0 de luz
+        const luz = 0.88 + rnd() * 0.12;
+        const v = Math.round(255 * luz);
+        ctx.fillStyle = `rgb(${v},${v - 3},${v - 8})`;
+        ctx.beginPath();
+        ctx.roundRect(x + folga, y + folga, passo - folga * 2, passo - folga * 2, passo * 0.16);
+        ctx.fill();
+        // a sombrinha na quina de baixo, que dá o degrau de assentamento
+        ctx.fillStyle = 'rgba(150,144,132,0.22)';
+        ctx.fillRect(x + folga, y + passo - folga * 2.4, passo - folga * 2, folga * 1.2);
+      }
+    }
+
+    // manchas largas por cima de tudo: calçada de praça não tem tom uniforme,
+    // e são elas que impedem o campo de pedrinha de virar ruído parelho
+    for (let i = 0; i < 6; i++) {
+      const x = rnd() * s;
+      const y = rnd() * s;
+      const r = s * (0.16 + rnd() * 0.2);
+      for (const dx of [-s, 0, s]) {
+        for (const dy of [-s, 0, s]) {
+          const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+          g.addColorStop(0, rnd() > 0.5 ? 'rgba(255,255,255,0.32)' : 'rgba(148,142,128,0.14)');
+          g.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+        }
+      }
+    }
+  });
+}

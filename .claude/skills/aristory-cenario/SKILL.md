@@ -251,9 +251,10 @@ chão ou na vertical.
 Decalque resolve MANCHA (um caminho de terra, uma quadra). Ele não resolve
 TEXTURA: um piso de placas de 2 m num deque de 48 × 38 daria mais de 400 malhas
 só para desenhar as juntas. Para isso existe `src/world/texturasDeChao.ts` —
-`pisoDePlacas(lado)` e `tapeteDeGrama(lado)`, desenhadas em `<canvas>` na hora
-em que o jogo sobe e passadas em `textura:` para `ground()` /
-`groundWithHoles()`:
+`pisoDePlacas(lado)`, `calcadaDePedrinha(lado, porLinha)` e
+`tapeteDeGrama(lado)`, desenhadas em `<canvas>` na hora em que o jogo sobe e
+passadas em `textura:` para `ground()`, `groundWithHoles()`, `patch()` e
+`disc()`:
 
 ```ts
 w.groundWithHoles({
@@ -277,6 +278,18 @@ Três coisas que essa parte cobra:
 - **Grama repete e vira xadrez.** Azulejo grande (9 unidades), nenhuma borda
   desenhada, e as manchas largas pintadas em 3 × 3 cópias para atravessarem a
   emenda. Com 6 unidades dava para pegar a grade na vista de longe do clube.
+- **A unidade tem que LER, não medir certo.** A pedra portuguesa de verdade
+  tem 18 cm, e nessa medida a calçada do parque virou chiado cinza — a esta
+  distância de câmera não dá para separar uma pedra da outra. Com 40 cm o
+  assentamento aparece. O jogo é estilizado: ler ganha de medir.
+- **A MESMA grama nos dois cenários**, para o clube e o parque serem o mesmo
+  mundo. Já o piso claro é DIFERENTE de propósito: placa grande de borda de
+  piscina no clube, pedrinha miúda de praça no parque. O que separa os dois é a
+  escala da unidade, e é ela que diz de que lugar você está falando.
+- **Chão texturizado ao lado de chão liso denuncia os dois.** A quadra de
+  frisbee era um `patch` de grama sem textura no meio de um gramado com — o
+  retângulo liso saltava. Se um pedaço do chão ganhou textura, os vizinhos da
+  mesma matéria precisam ganhar também.
 
 ## Regras da casa
 

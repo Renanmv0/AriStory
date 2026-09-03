@@ -185,18 +185,35 @@ export class WorldBuilder {
     return mesh;
   }
 
-  /** Mancha de outra cor sobre o chao: caminho de terra, quadra, tapete. */
-  patch(x: number, z: number, width: number, depth: number, color: number, rotY = 0, y = 0.01): THREE.Mesh {
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), toon(color, { decal: true }));
+  /**
+   * Mancha de outra cor sobre o chao: caminho de terra, quadra, tapete.
+   *
+   * `textura` e opcional e serve para a mancha que e PISO, e nao tinta — a
+   * calcada do parque. `PlaneGeometry` da UV de 0 a 1, entao o repeat entra
+   * corrigido pelo tamanho da mancha.
+   */
+  patch(
+    x: number, z: number, width: number, depth: number, color: number,
+    rotY = 0, y = 0.01, textura?: THREE.Texture,
+  ): THREE.Mesh {
+    const mapa = textura ? this.escalarPeloChao(textura, width, depth) : undefined;
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), toon(color, { decal: true, mapa }));
     mesh.rotation.set(-Math.PI / 2, 0, 0);
     mesh.rotation.z = rotY;
     mesh.position.set(x, y, z);
     return this.decalar(mesh);
   }
 
-  /** Mancha redonda: lago, canteiro, sombra pintada. */
-  disc(x: number, z: number, radius: number, color: number, y = 0.01): THREE.Mesh {
-    const mesh = new THREE.Mesh(new THREE.CircleGeometry(radius, 28), toon(color, { decal: true }));
+  /**
+   * Mancha redonda: lago, canteiro, sombra pintada, praca.
+   *
+   * O UV do `CircleGeometry` tambem vai de 0 a 1, mas espalhado sobre o
+   * QUADRADO que envolve o circulo — por isso o repeat sai do DIAMETRO, e nao
+   * do raio. Com o raio o azulejo sairia com o dobro do tamanho.
+   */
+  disc(x: number, z: number, radius: number, color: number, y = 0.01, textura?: THREE.Texture): THREE.Mesh {
+    const mapa = textura ? this.escalarPeloChao(textura, radius * 2, radius * 2) : undefined;
+    const mesh = new THREE.Mesh(new THREE.CircleGeometry(radius, 28), toon(color, { decal: true, mapa }));
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(x, y, z);
     return this.decalar(mesh);
