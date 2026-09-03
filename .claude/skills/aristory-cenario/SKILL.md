@@ -246,6 +246,38 @@ na mesma altura da face da parede. `w.wall()` usa espessura `0.3`; o batente da
 (`z = zParede`, não `zParede + algo`). Faces coplanares piscam igual, seja no
 chão ou na vertical.
 
+## Texturar o chão sem trazer imagem
+
+Decalque resolve MANCHA (um caminho de terra, uma quadra). Ele não resolve
+TEXTURA: um piso de placas de 2 m num deque de 48 × 38 daria mais de 400 malhas
+só para desenhar as juntas. Para isso existe `src/world/texturasDeChao.ts` —
+`pisoDePlacas(lado)` e `tapeteDeGrama(lado)`, desenhadas em `<canvas>` na hora
+em que o jogo sobe e passadas em `textura:` para `ground()` /
+`groundWithHoles()`:
+
+```ts
+w.groundWithHoles({
+  width: 160, depth: 160, color: P.grass, holes: [buraco],
+  textura: tapeteDeGrama(9),
+});
+```
+
+Isso continua sendo zero asset: nenhum arquivo de imagem entra no repositório,
+o desenho é código — o mesmo princípio do texto das placas e das memórias.
+
+Três coisas que essa parte cobra:
+
+- **O desenho tem que ser quase branco.** O material toon MULTIPLICA a cor
+  base pela textura. Qualquer coisa escura ali vira uma segunda demão de tinta
+  e o chão perde o tom da paleta. Trabalhe entre 0,88 e 1,0 de luminosidade.
+- **O tamanho do azulejo é em unidades de MUNDO.** `ShapeGeometry` (o do
+  `groundWithHoles`) gera UV a partir da posição do vértice, em metros — por
+  isso `repeat = 1/lado` basta. `PlaneGeometry` (o do `ground`) dá UV de 0 a 1,
+  e o `WorldBuilder` corrige sozinho multiplicando pelo tamanho do chão.
+- **Grama repete e vira xadrez.** Azulejo grande (9 unidades), nenhuma borda
+  desenhada, e as manchas largas pintadas em 3 × 3 cópias para atravessarem a
+  emenda. Com 6 unidades dava para pegar a grade na vista de longe do clube.
+
 ## Regras da casa
 
 1. **Cor sempre da paleta** (`src/palette.ts`). Se falta uma cor, adicione lá.

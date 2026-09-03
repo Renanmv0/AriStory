@@ -52,6 +52,15 @@ export interface ToonOptions {
    * `patch()`/`disc()`.
    */
   decal?: boolean;
+  /**
+   * Mapa de cor. Hoje so o chao usa: as texturas de piso e de grama, pintadas
+   * em canvas em `world/texturasDeChao.ts`.
+   *
+   * A cor do material MULTIPLICA o mapa, entao o desenho tem que ser quase
+   * branco — textura escura aqui vira uma segunda demao de tinta por cima da
+   * cor da paleta, e o chao perde o tom.
+   */
+  mapa?: THREE.Texture;
 }
 
 /**
@@ -63,7 +72,7 @@ const DECAL_OFFSET = 4;
 const cache = new Map<string, THREE.MeshToonMaterial>();
 
 export function toon(color: number, opts: ToonOptions = {}): THREE.MeshToonMaterial {
-  const key = `${color}|${opts.glow ?? 0}|${opts.opacity ?? 1}|${opts.doubleSide ? 1 : 0}|${opts.decal ? 1 : 0}`;
+  const key = `${color}|${opts.glow ?? 0}|${opts.opacity ?? 1}|${opts.doubleSide ? 1 : 0}|${opts.decal ? 1 : 0}|${opts.mapa?.uuid ?? ''}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -73,6 +82,7 @@ export function toon(color: number, opts: ToonOptions = {}): THREE.MeshToonMater
     transparent: (opts.opacity ?? 1) < 1,
     opacity: opts.opacity ?? 1,
     side: opts.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
+    map: opts.mapa ?? null,
   });
   if (opts.glow) {
     mat.emissive = new THREE.Color(color);

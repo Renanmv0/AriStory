@@ -14,6 +14,15 @@ export interface GroundOptions {
   x?: number;
   z?: number;
   y?: number;
+  /**
+   * Textura de superficie, das pintadas em `world/texturasDeChao.ts`.
+   *
+   * Ela MULTIPLICA a `color`, entao o desenho tem que ser quase branco. E o
+   * tamanho do azulejo ja vem embutido no `repeat` dela: `ShapeGeometry` gera
+   * UV em unidades de mundo, e `PlaneGeometry` em 0..1, entao o `ground()`
+   * ajusta o repeat pelo tamanho do chao e o `groundWithHoles()` nao precisa.
+   */
+  textura?: THREE.Texture;
 }
 
 export interface DoorOptions {
@@ -87,10 +96,28 @@ export class WorldBuilder {
     return (y ?? 0) > 0;
   }
 
+  /**
+   * Uma copia da textura com o `repeat` corrigido para UV normalizado.
+   *
+   * E COPIA, e nao a textura original: ela e compartilhada entre as cenas, e
+   * mexer no `repeat` dela aqui mudaria o chao de todo mundo. `clone()` de
+   * textura divide a mesma imagem na GPU, entao a copia nao custa memoria.
+   */
+  private escalarPeloChao(tex: THREE.Texture, largura: number, profundidade: number): THREE.Texture {
+    const copia = tex.clone();
+    copia.needsUpdate = true;
+    copia.repeat.set(tex.repeat.x * largura, tex.repeat.y * profundidade);
+    return copia;
+  }
+
   ground(opts: GroundOptions): THREE.Mesh {
     const geo = new THREE.PlaneGeometry(opts.width, opts.depth, 1, 1);
     const empilhado = this.chaoAcimaDeOutro(opts.y);
-    const mesh = new THREE.Mesh(geo, toon(opts.color, { decal: empilhado }));
+    // `PlaneGeometry` da UV de 0 a 1, e nao em metros como o `ShapeGeometry`:
+    // aqui o repeat precisa ser multiplicado pelo tamanho do chao para o
+    // azulejo sair do mesmo tamanho nos dois caminhos
+    const mapa = opts.textura ? this.escalarPeloChao(opts.textura, opts.width, opts.depth) : undefined;
+    const mesh = new THREE.Mesh(geo, toon(opts.color, { decal: empilhado, mapa }));
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(opts.x ?? 0, opts.y ?? 0, opts.z ?? 0);
     if (empilhado) return this.decalar(mesh);
@@ -132,7 +159,10 @@ export class WorldBuilder {
     }
 
     const empilhado = this.chaoAcimaDeOutro(opts.y);
-    const mesh = new THREE.Mesh(new THREE.ShapeGeometry(forma), toon(opts.color, { decal: empilhado }));
+    const mesh = new THREE.Mesh(
+      new THREE.ShapeGeometry(forma),
+      toon(opts.color, { decal: empilhado, mapa: opts.textura }),
+    );
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(opts.x ?? 0, opts.y ?? 0, opts.z ?? 0);
     if (empilhado) return this.decalar(mesh);
