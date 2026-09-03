@@ -1274,16 +1274,29 @@ export function poolWater(width: number, depth: number): THREE.Mesh {
 
 export function sunLounger(cor: number = P.fabricBlue): THREE.Group {
   const g = new THREE.Group();
+  g.userData.peca = 'espreguicadeira';
   const quadro = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.07, 1.7), toon(P.metalWhite));
   quadro.position.y = 0.36;
   g.add(quadro);
   const tecido = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 1.5), toon(cor));
   tecido.position.y = 0.42;
   g.add(tecido);
-  const encosto = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 0.7), toon(cor));
-  encosto.position.set(0, 0.6, -0.75);
-  encosto.rotation.x = -0.75;
-  g.add(encosto);
+  /**
+   * NO LUGAR DO ENCOSTO, UM TRAVESSEIRO.
+   *
+   * A espreguiçadeira tinha o encosto levantado em 43°, como as de verdade. Só
+   * que o rig deitado é COMPLETAMENTE RETO — ele não dobra na cintura —, então
+   * a tábua do encosto subia bem na altura do pescoço e atravessava a cabeça de
+   * quem estava deitado. Não é caso de girar mais ou menos: qualquer inclinação
+   * corta um corpo reto em algum lugar.
+   *
+   * O travesseiro deitado resolve os dois lados: continua lendo como cabeceira
+   * (é ele que diz de que lado fica a cabeça) e mora ABAIXO da linha das costas,
+   * onde nunca encosta em ninguém.
+   */
+  const travesseiro = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.09, 0.36), toon(cor));
+  travesseiro.position.set(0, 0.495, -0.62);
+  g.add(travesseiro);
   for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
     const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.36, 6), toon(P.metalWhite));
     pe.position.set(x * 0.3, 0.18, z * 0.72);
