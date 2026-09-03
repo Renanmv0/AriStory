@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../core/materials';
 import { Interactable } from './Interactable';
 import type { Bounds, Collider, GameAPI, InteractableDef } from '../core/types';
-import { bench } from './props';
+import { bench, picnicTable } from './props';
 
 export type Updater = (dt: number, elapsed: number) => void;
 
@@ -325,6 +325,79 @@ export class WorldBuilder {
         const fz = Math.cos(frente) * 1.5;
         api.releasePlayer(x + fx - Math.cos(frente) * 0.5, z + fz + Math.sin(frente) * 0.5, frente);
         api.releaseCompanion(x + fx + Math.cos(frente) * 0.5, z + fz - Math.sin(frente) * 0.5, frente);
+        api.lockPlayer(false);
+      },
+    });
+    return peca;
+  }
+
+  /**
+   * Uma mesa de piquenique em que a dupla senta UM DE FRENTE PARA O OUTRO.
+   *
+   * A diferença para o `banco()` é o que os dois olham. No banco eles sentam
+   * lado a lado, com o mesmo `facing`; aqui cada um pega um dos dois assentos e
+   * os `facing` são OPOSTOS — `PI` para quem senta no `+Z` da âncora e `0` para
+   * quem senta no `-Z`. É o `facing` do `ridePlayer` que resolve isso, e não a
+   * rotação da âncora: a âncora é uma só, e ela não pode olhar para dois lados.
+   *
+   * @param rot para onde o comprimento da mesa aponta. Com `0` os dois sentam
+   *   em `±Z` e a mesa se estende em X.
+   */
+  mesaDePiquenique(x: number, z: number, rot = 0): THREE.Group {
+    const peca = this.add(this.place(picnicTable(), x, 0, z, rot));
+    this.blockBox(x, z, 1.05, 0.75, rot);
+
+    const assento = new THREE.Object3D();
+    assento.position.set(x, 0, z);
+    assento.rotation.y = rot;
+    this.root.add(assento);
+
+    const foco = new THREE.Object3D();
+    foco.position.set(x, 0.95, z);
+    this.root.add(foco);
+
+    /**
+     * Altura do rig dentro da âncora.
+     *
+     * A tábua do assento tem o topo em 0,49 e o banco de praça, em 0,53, pedia
+     * `0,06` — daí este `0,02`: a diferença entre os dois assentos. O quadril do
+     * rig fica ~0,45 acima da origem dele.
+     */
+    const ALTURA = 0.02;
+    /** distância do centro até cada tábua de assento */
+    const BANCO = 0.78;
+
+    this.interact({
+      id: `piquenique:${x.toFixed(1)},${z.toFixed(1)}`,
+      x, z, radius: 2.1,
+      label: 'Sentar na mesa', icon: '🧺',
+      highlight: peca,
+      onInteract: async (api) => {
+        api.lockPlayer(true);
+        api.ridePlayer(assento, new THREE.Vector3(0, ALTURA, BANCO), 1, Math.PI);
+        api.rideCompanion(assento, new THREE.Vector3(0, ALTURA, -BANCO), 1, 0);
+        api.setSitting(true);
+        api.focusCamera(foco);
+        await api.wait(0.5);
+
+        // mesa é peça genérica: quem fala é quem está em cena, porque o T pode
+        // ter trocado os dois de lugar
+        await api.say(['De frente pra você é melhor.'], api.companionName());
+        await api.say(['É. Dá pra ver você falando.'], api.playerName());
+
+        let escolha = 0;
+        while (escolha === 0) {
+          escolha = await api.ask('Ficar mais um pouco?', ['Ficar', 'Levantar']);
+          if (escolha === 0) await api.wait(4);
+        }
+
+        api.setSitting(false);
+        api.focusCamera(null);
+        // cada um sai para trás do SEU banco, e vira para a mesa
+        const dx = Math.sin(rot);
+        const dz = Math.cos(rot);
+        api.releasePlayer(x + dx * 1.7, z + dz * 1.7, rot + Math.PI);
+        api.releaseCompanion(x - dx * 1.7, z - dz * 1.7, rot);
         api.lockPlayer(false);
       },
     });
