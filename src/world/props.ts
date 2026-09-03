@@ -2199,3 +2199,239 @@ export function restaurante(largura = 13, profundidade = 7): THREE.Group {
 
   return g;
 }
+
+/**
+ * O vestiário do clube.
+ *
+ * Trocou o `building()` genérico, que era uma caixa com janelinhas. O que faz
+ * um vestiário de piscina parecer um vestiário de piscina, em ordem de
+ * importância: a MEIA PAREDE DE AZULEJO, o COBOGÓ (o tijolo vazado que ventila
+ * sem deixar ver de fora), a MARQUISE sobre as duas portas e a CAIXA D'ÁGUA no
+ * telhado. Nenhum dos quatro existe em prédio nenhum do resto do jogo.
+ *
+ * A frente olha para `+Z`, como toda peça com frente.
+ *
+ * A MARQUISE tem a mesma armadilha do toldo do restaurante: a câmera olha de
+ * cima em 34°, e o raio que sai da ponta dela desce `0,67` por unidade de
+ * profundidade. A 2,75 de altura e avançando 0,7, na linha da fachada ela está
+ * em 2,28 — logo acima do topo da porta, em 2,2. Um palmo a mais de avanço e a
+ * entrada some.
+ */
+export function vestiario(largura = 8, profundidade = 5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'vestiario';
+
+  const hx = largura / 2;
+  const hz = profundidade / 2;
+  const altura = 3.0;
+  const ySoco = 0.25;
+  const yTopo = ySoco + altura;
+
+  const parede = toon(P.wallCream);
+  const azulejo = toon(P.vestiarioAzulejo);
+  const concreto = toon(P.concrete);
+
+  // --------------------------------------------------------------- base
+  const soco = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.4, ySoco, profundidade + 0.4),
+    concreto,
+  );
+  soco.position.y = ySoco / 2;
+  g.add(soco);
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, profundidade), parede);
+  corpo.position.y = ySoco + altura / 2;
+  g.add(corpo);
+
+  // ------------------------------------------------------- meia parede
+  // A faixa de azulejo é uma casca 8 cm maior que o prédio: assim as faces
+  // dela ficam FORA das faces da parede, e nenhuma das duas briga por pixel.
+  // O pé dela mergulha no soco pelo mesmo motivo.
+  const yAzulejo = 1.15;
+  const faixa = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.08, yAzulejo, profundidade + 0.08),
+    azulejo,
+  );
+  faixa.position.y = 0.18 + yAzulejo / 2;
+  g.add(faixa);
+  // duas fiadas de rejunte, e o acabamento de cima
+  for (const y of [0.58, 0.92]) {
+    const linha = new THREE.Mesh(
+      new THREE.BoxGeometry(largura + 0.12, 0.05, profundidade + 0.12),
+      toon(P.vestiarioRejunte),
+    );
+    linha.position.y = y;
+    g.add(linha);
+  }
+  const arremate = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.16, 0.09, profundidade + 0.16),
+    toon(P.metalWhite),
+  );
+  arremate.position.y = 1.33;
+  g.add(arremate);
+
+  // ------------------------------------------------------------- portas
+  // Duas, lado a lado. A metade de baixo é veneziana — as ripas são o detalhe
+  // que diz "porta de vestiário" mesmo de longe.
+  const zF = hz + 0.03;
+  const LARG_PORTA = 1.05;
+  for (const lado of [-1, 1] as const) {
+    const cx = lado * 1.15;
+
+    const batente = new THREE.Mesh(
+      new THREE.BoxGeometry(LARG_PORTA + 0.26, 2.36, 0.13),
+      concreto,
+    );
+    batente.position.set(cx, 1.16, zF);
+    g.add(batente);
+
+    const folha = new THREE.Mesh(
+      new THREE.BoxGeometry(LARG_PORTA, 2.16, 0.09),
+      toon(P.vestiarioPorta),
+    );
+    folha.position.set(cx, 1.12, zF + 0.04);
+    g.add(folha);
+
+    for (let i = 0; i < 6; i++) {
+      const ripa = new THREE.Mesh(
+        new THREE.BoxGeometry(LARG_PORTA - 0.18, 0.08, 0.05),
+        toon(P.vestiarioRejunte),
+      );
+      ripa.position.set(cx, 0.42 + i * 0.16, zF + 0.09);
+      ripa.rotation.x = 0.35; // inclinada, como veneziana de verdade
+      g.add(ripa);
+    }
+
+    const macaneta = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055, 8, 6),
+      toon(P.metalGrey),
+    );
+    macaneta.position.set(cx - lado * (LARG_PORTA / 2 - 0.14), 1.05, zF + 0.11);
+    g.add(macaneta);
+
+    // a plaquinha acima de cada porta
+    const plaqueta = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.05), toon(P.metalWhite));
+    plaqueta.position.set(cx, 2.44, zF + 0.05);
+    g.add(plaqueta);
+  }
+
+  // ----------------------------------------------------------- marquise
+  const yMarquise = 2.75;
+  const avanco = 0.7;
+  const laje = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - 1.0, 0.16, avanco),
+    concreto,
+  );
+  laje.position.set(0, yMarquise, hz + avanco / 2);
+  g.add(laje);
+  // A testeira, onde vai o nome — é onde fica no vestiário de verdade. Ela é
+  // 10 cm mais estreita que a laje e o topo dela para 4 cm abaixo do dela: com
+  // as duas do mesmo tamanho, as faces de cima e as das pontas caíam no mesmo
+  // plano e serrilhavam.
+  const testeira = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - 1.1, 0.42, 0.1),
+    toon(P.vestiarioPorta),
+  );
+  testeira.position.set(0, yMarquise - 0.17, hz + avanco);
+  g.add(testeira);
+  const nome = letreiro('Vestiário', 2.6, 0.3, '#fdf6e8');
+  nome.position.set(0, yMarquise - 0.13, hz + avanco + 0.06);
+  g.add(nome);
+  for (const lado of [-1, 1] as const) {
+    const mao = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.62, 0.1), concreto);
+    mao.position.set(lado * (largura / 2 - 0.85), yMarquise - 0.38, hz + 0.14);
+    mao.rotation.x = -0.6;
+    g.add(mao);
+  }
+
+  // ------------------------------------------------------------ cobogó
+  // Tijolo vazado: uma fileira de blocos com vão entre eles, alto na parede.
+  // É o que ventila o vestiário sem deixar ninguém ver de fora.
+  const cobogo = (x: number, y: number, z: number, girado: boolean): void => {
+    const bloco = new THREE.Mesh(
+      new THREE.BoxGeometry(girado ? 0.14 : 0.34, 0.34, girado ? 0.34 : 0.14),
+      parede,
+    );
+    bloco.position.set(x, y, z);
+    g.add(bloco);
+    const miolo = new THREE.Mesh(
+      new THREE.TorusGeometry(0.1, 0.035, 6, 10),
+      toon(P.wallAzul),
+    );
+    miolo.position.set(x + (girado ? 0.02 : 0), y, z + (girado ? 0 : 0.02));
+    if (girado) miolo.rotation.y = Math.PI / 2;
+    g.add(miolo);
+  };
+  // na fachada, dos dois lados da marquise
+  for (const lado of [-1, 1] as const) {
+    for (let i = 0; i < 2; i++) {
+      cobogo(lado * (hx - 0.45 - i * 0.42), 2.52, zF + 0.05, false);
+    }
+  }
+  // na lateral que a câmera vê
+  for (let i = 0; i < 6; i++) {
+    cobogo(hx + 0.05, 2.52, -hz + 0.7 + i * 0.7, true);
+  }
+
+  // ------------------------------------------------------------ telhado
+  // Laje plana com platibanda — o vestiário de clube não tem telhado aparente,
+  // tem mureta escondendo a caixa d'água (que aparece assim mesmo).
+  const lajeTopo = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.5, 0.22, profundidade + 0.5),
+    concreto,
+  );
+  lajeTopo.position.y = yTopo + 0.11;
+  g.add(lajeTopo);
+  // As duas da frente e do fundo vão de ponta a ponta; as das laterais param
+  // ANTES delas (`profundidade - 0.1`), senão as quatro se cruzam nos cantos
+  // dividindo as faces de cima e de baixo — quatro pares serrilhando de uma vez.
+  // Quem fecha o canto é a peça da frente, que passa por cima.
+  for (const [dx, dz, lx, lz] of [
+    [0, hz + 0.1, largura + 0.5, 0.14],
+    [0, -hz - 0.1, largura + 0.5, 0.14],
+    [hx + 0.13, 0, 0.14, profundidade - 0.1],
+    [-hx - 0.13, 0, 0.14, profundidade - 0.1],
+  ] as const) {
+    const platibanda = new THREE.Mesh(new THREE.BoxGeometry(lx, 0.4, lz), parede);
+    platibanda.position.set(dx, yTopo + 0.42, dz);
+    g.add(platibanda);
+  }
+
+  // -------------------------------------------------- caixa d'água e prumada
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 1.5), concreto);
+  base.position.set(-hx + 1.6, yTopo + 0.42, -hz + 1.5);
+  g.add(base);
+  const caixa = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.72, 0.62, 0.95, 14),
+    toon(P.vestiarioCaixa),
+  );
+  caixa.position.set(-hx + 1.6, yTopo + 1.1, -hz + 1.5);
+  g.add(caixa);
+  const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.14, 12), toon(P.metalGrey));
+  tampa.position.set(-hx + 1.6, yTopo + 1.63, -hz + 1.5);
+  g.add(tampa);
+
+  // a descida de água, encostada na lateral
+  const prumada = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.07, yTopo + 0.3, 8),
+    toon(P.metalWhite),
+  );
+  prumada.position.set(-hx - 0.14, (yTopo + 0.3) / 2, hz - 0.5);
+  g.add(prumada);
+  const joelho = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.4, 8), toon(P.metalWhite));
+  joelho.rotation.z = Math.PI / 2;
+  joelho.position.set(-hx - 0.3, 0.28, hz - 0.5);
+  g.add(joelho);
+
+  // ----------------------------------------------------- torneira e ralo
+  // A torneirinha de lavar o pé, do lado da porta. Todo clube tem.
+  const bica = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.34, 6), toon(P.metalGrey));
+  bica.position.set(hx - 0.6, 0.62, zF + 0.16);
+  bica.rotation.x = 0.9;
+  g.add(bica);
+  const registro = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), toon(P.metalRed));
+  registro.position.set(hx - 0.6, 0.82, zF + 0.06);
+  g.add(registro);
+
+  return g;
+}

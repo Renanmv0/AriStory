@@ -3,11 +3,11 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import { flat } from '../core/materials';
 import {
-  bin, bleachers, building, bus, busStop, bush, canteiro, canteiroComPalmeira,
+  bin, bleachers, bus, busStop, bush, canteiro, canteiroComPalmeira,
   cloud, divingBoard,
-  floatRing, floodlight, flowers, kiosk, lamp, parasol, picnicTable, poolLadder,
+  floatRing, floodlight, flowers, kiosk, lamp, parasol, poolLadder,
   mesaDePatio, poolShell, poolWater, restaurante, showerPost, sunLounger, textSign,
-  tree, waterFountain,
+  tree, vestiario as predioDoVestiario, waterFountain,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
@@ -185,10 +185,12 @@ export const clube: SceneDef = {
     w.blockBox(-12.5, 7.2, 1.4, 1, 0.35);
 
     // O vestiário foi para o FUNDO do deck (era `13, -9`), encostado no limite
-    // novo. Ele tem 3,2 de altura: no meio do cenário ele tapava a piscina, e
-    // lá atrás a câmera pega a fachada dele de frente sem esconder nada.
-    const vestiario = w.add(w.place(building(6, 3.2, 4, P.wallCream, 0x7aa6c4), 15, 0, -18));
-    w.blockBox(15, -18, 3, 2);
+    // novo: no meio do cenário ele tapava a piscina, e lá atrás a câmera pega a
+    // fachada dele de frente sem esconder nada. A peça genérica `building()`
+    // deu lugar ao `vestiario()`, que tem a meia parede de azulejo, o cobogó, a
+    // marquise sobre as portas e a caixa d'água.
+    const vestiario = w.add(w.place(predioDoVestiario(8, 5), 15, 0, -18));
+    w.blockBox(15, -18, 4.2, 2.7);
     // O banco saiu de perto da piscina e foi para a lateral direita, virado
     // para a água (`-X`). Ele já tinha saído da frente da porta do vestiário
     // uma vez — quem chegasse na porta só via "Sentar no banco" — e agora que a
@@ -270,13 +272,16 @@ export const clube: SceneDef = {
 
     // As mesas de piquenique saíram do fundo à esquerda — aquele canto virou o
     // restaurante. Elas foram para o fundo à direita, ao lado do vestiário.
-    for (const [x, z, comSol] of [[12, -13, true], [20, -11, false], [21, -16, true]] as const) {
-      w.add(w.place(picnicTable(), x, 0, z));
-      w.blockBox(x, z, 1.1, 0.8);
-      if (comSol) {
-        w.add(w.place(parasol(0x5cb04f), x + 1.7, 0, z + 1.2));
-        w.blockCircle(x + 1.7, z + 1.2, 0.3);
-      }
+    //
+    // SEM GUARDA-SOL EM CIMA DELAS. A lona tem 1,15 de raio e fica a 2,35 do
+    // chão, e a câmera isométrica sobe o que é alto na tela: um guarda-sol ao
+    // lado da mesa aparece POR CIMA de quem está sentado. E como a câmera gira
+    // de 45 em 45, não existe deslocamento que resolva nos quatro ângulos —
+    // ele sempre tapa em algum. Quem faz sombra aqui são as palmeiras.
+    for (const [x, z] of [[12, -13], [20, -11], [21, -16]] as const) {
+      // `mesaDePiquenique` já traz peça, colisor e o sentar de frente um para o
+      // outro — do mesmo jeito que todo `banco()` já dá para sentar
+      w.mesaDePiquenique(x, z);
     }
     w.add(w.place(bin(), -9, 0, -5));
     w.blockCircle(-9, -5, 0.3);
@@ -318,7 +323,6 @@ export const clube: SceneDef = {
     for (const [texto, cor, x, z] of [
       ['Piscina', P.fabricBlue, 3, 9.6],
       ['Sucos', 0x4ec1a8, -15.5, 10.2],
-      ['Vestiário', 0x7aa6c4, 15, -12.6],
     ] as const) {
       w.add(w.place(textSign(texto, cor), x, 0, z));
       w.blockCircle(x, z, 0.25);
@@ -557,7 +561,7 @@ export const clube: SceneDef = {
 
     w.interact({
       id: 'clube:vestiario',
-      x: 15, z: -15.4, radius: 2, priority: 1,
+      x: 15, z: -14.2, radius: 2.2, priority: 1,
       label: 'Vestiário', icon: '🩳',
       highlight: vestiario,
       onInteract: async (api) => {

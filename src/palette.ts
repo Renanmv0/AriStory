@@ -118,6 +118,14 @@ export const PALETTE = {
   oculosLente: 0x23212b,
   oculosArmacao: 0x3d3b48,
 
+  // o vestiário do clube: a faixa de azulejo que todo vestiário de piscina tem
+  // na meia parede, o rejunte um degrau abaixo dela, a porta de veneziana e a
+  // caixa d'água azul do telhado
+  vestiarioAzulejo: 0x8ec3dd,
+  vestiarioRejunte: 0x6ba8cc,
+  vestiarioPorta: 0x2f6f8f,
+  vestiarioCaixa: 0x3f6fb0,
+
   // o restaurante do clube: parede de massa clara puxando para o pêssego, o
   // verde do toldo listrado (irmão do teal do bar de sucos, para o clube ter
   // uma cor só), a madeira dos caixilhos e o piso do deque da área externa
