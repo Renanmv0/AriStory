@@ -268,11 +268,13 @@ export const clube: SceneDef = {
      *   `+Y` → `+X` (a cabeceira)   `+Z` → `+Y` (eles olham para o céu)
      *   `+X` → `+Z` (é ele que separa um do outro)
      *
-     * O `y` é o pano da espreguiçadeira (0,45) mais a folga de meio corpo
-     * (0,25) — a mesma da cama, e sem ela metade do corpo afunda na lona.
+     * O `y` é o pano da espreguiçadeira (0,45) mais a folga de meio corpo.
+     * A folga da cama (0,25) deixava os dois BOIANDO um palmo acima da lona —
+     * um colchão é fofo e afunda, uma lona esticada não. Com 0,17 as costas
+     * encostam no pano.
      */
     const viradaDoDeque = new THREE.Object3D();
-    viradaDoDeque.position.set(DEITAR.x, 0.7, DEITAR.z);
+    viradaDoDeque.position.set(DEITAR.x, 0.62, DEITAR.z);
     viradaDoDeque.rotation.y = -Math.PI / 2;
     w.root.add(viradaDoDeque);
     const deitadosNoDeque = new THREE.Object3D();
@@ -294,14 +296,14 @@ export const clube: SceneDef = {
         }
 
         g.lockPlayer(true);
-        // O `-0,5` no `y` local (que é o eixo do corpo) EMPURRA OS DOIS PARA OS
-        // PÉS DA ESPREGUIÇADEIRA. O rig deitado nasce quase todo à frente da
+        // O `-0,65` no `y` local (que é o eixo do corpo) EMPURRA OS DOIS PARA
+        // OS PÉS DA ESPREGUIÇADEIRA. O rig deitado nasce quase todo à frente da
         // âncora — a cabeça fica a 1,28 dela e os pés a 0,26 atrás —, então
-        // ancorar no meio do móvel deixava a cabeça 43 cm para fora, boiando
+        // ancorar no meio do móvel deixava a cabeça para fora do móvel, boiando
         // sobre o deque. É o mesmo recuo que a cama do quarto faz na posição da
         // âncora; aqui ele mora no offset porque a âncora é a mesma para os dois.
-        g.ridePlayer(deitadosNoDeque, new THREE.Vector3(-DEITAR.vao, -0.5, 0), 1, 0);
-        g.rideCompanion(deitadosNoDeque, new THREE.Vector3(DEITAR.vao, -0.5, 0), 1, 0);
+        g.ridePlayer(deitadosNoDeque, new THREE.Vector3(-DEITAR.vao, -0.65, 0), 1, 0);
+        g.rideCompanion(deitadosNoDeque, new THREE.Vector3(DEITAR.vao, -0.65, 0), 1, 0);
         g.setLying(true);
         // Câmera quase de cima, e não a isométrica: deitados, os dois ficam
         // deitados NA direção que a isométrica encurta, e viram dois tocos ao

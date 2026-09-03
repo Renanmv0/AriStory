@@ -144,8 +144,9 @@ for (const [nome, p] of [['jogador', deitado.jogador], ['parceiro', deitado.parc
   if (!(p.cabeca[0] > p.quadril[0] + 0.4)) {
     problemas.push(`${nome}: não está deitado ao comprimento da espreguiçadeira`);
   }
-  // acima da lona (topo em 0,45) e sem flutuar longe dela
-  if (!(p.raiz[1] > 0.55 && p.raiz[1] < 0.9)) {
+  // encostado na lona (topo em 0,45): nem afundado nela, nem boiando um palmo
+  // acima — foi assim que a folga da cama, que é de colchão fofo, chegou aqui
+  if (!(p.raiz[1] > 0.55 && p.raiz[1] < 0.7)) {
     problemas.push(`${nome}: altura ${p.raiz[1]} não bate com a lona`);
   }
 }
