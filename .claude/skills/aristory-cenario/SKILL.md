@@ -274,7 +274,7 @@ chão ou na vertical.
 Decalque resolve MANCHA (um caminho de terra, uma quadra). Ele não resolve
 TEXTURA: um piso de placas de 2 m num deque de 48 × 38 daria mais de 400 malhas
 só para desenhar as juntas. Para isso existe `src/world/texturasDeChao.ts` —
-`pisoDePlacas(lado)`, `calcadaDePedrinha(lado, porLinha)` e
+`pisoDePlacas(lado)`, `calcadaDePedrinha(lado, porLinha)`, `asfalto(lado)` e
 `tapeteDeGrama(lado)`, desenhadas em `<canvas>` na hora em que o jogo sobe e
 passadas em `textura:` para `ground()`, `groundWithHoles()`, `patch()` e
 `disc()`:
@@ -309,6 +309,10 @@ Três coisas que essa parte cobra:
   mundo. Já o piso claro é DIFERENTE de propósito: placa grande de borda de
   piscina no clube, pedrinha miúda de praça no parque. O que separa os dois é a
   escala da unidade, e é ela que diz de que lugar você está falando.
+- **O grão tem que sobreviver ao mipmap.** O agregado do asfalto nasceu com um
+  pixel e sumia no jogo: a esta distância de câmera o mipmap come qualquer
+  coisa desse tamanho, e sobrava asfalto liso. Grão de 2 a 3 px aguenta um
+  nível e continua lendo de longe.
 - **Chão texturizado ao lado de chão liso denuncia os dois.** A quadra de
   frisbee era um `patch` de grama sem textura no meio de um gramado com — o
   retângulo liso saltava. Se um pedaço do chão ganhou textura, os vizinhos da

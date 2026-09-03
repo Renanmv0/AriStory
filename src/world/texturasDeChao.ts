@@ -193,6 +193,70 @@ export function tapeteDeGrama(lado = 9): THREE.CanvasTexture {
 }
 
 /**
+ * ASFALTO, para as ruas e os caminhos do Villa-Lobos.
+ *
+ * Asfalto não tem junta nem assentamento: o que o olho lê nele é o AGREGADO —
+ * a brita miúda misturada no piche, que pega a luz de um jeito diferente do
+ * ligante em volta. Então aqui não existe borda nenhuma; é tudo grão solto, o
+ * que também é a defesa contra a emenda do azulejo (mesmo princípio da grama).
+ *
+ * A base é o cinza da paleta e a textura MULTIPLICA, então quem desenha o grão
+ * é o CLARO: cada pedrinha é um pontinho quase branco, e o escuro entra só de
+ * leve para a pedra ter sombra e não virar sal derramado.
+ *
+ * `lado = 5` põe umas 50 px por unidade de mundo, o que faz a brita cair em
+ * 1 a 2 px — do tamanho em que ela some quando você anda e aparece quando você
+ * para, que é exatamente o que asfalto faz na vida real. Maior que isso ele
+ * lê como cascalho solto, e o caminho do parque vira estrada de terra.
+ */
+export function asfalto(lado = 5): THREE.CanvasTexture {
+  return novaTextura(`asfalto:${lado}`, lado, (ctx, s) => {
+    const rnd = sorteio(9081977);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s, s);
+
+    // manchas largas, em 3×3 cópias para atravessarem a emenda: é o remendo
+    // velho, a parte que pegou mais sol, a poça que secou
+    for (let i = 0; i < 8; i++) {
+      const x = rnd() * s;
+      const y = rnd() * s;
+      const r = s * (0.12 + rnd() * 0.2);
+      const clara = rnd() > 0.45;
+      for (const dx of [-s, 0, s]) {
+        for (const dy of [-s, 0, s]) {
+          const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+          g.addColorStop(0, clara ? 'rgba(255,255,255,0.46)' : 'rgba(96,92,88,0.2)');
+          g.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+        }
+      }
+    }
+
+    // o agregado: cada grão é uma pedrinha clara com uma sombra colada embaixo,
+    // e é o par dos dois que dá volume. Só o ponto claro faria neve.
+    //
+    // O grão nasceu com 0,5 a 1,8 px e SUMIA no jogo: a esta distância de
+    // câmera o mipmap come qualquer coisa de um pixel, e sobrava asfalto liso.
+    // Com 0,7 a 2,4 ele aguenta um nível de mipmap e continua lendo de longe.
+    for (let i = 0; i < 4200; i++) {
+      const x = rnd() * s;
+      const y = rnd() * s;
+      const r = 0.7 + rnd() * 1.7;
+      ctx.fillStyle = `rgba(80,76,72,${0.06 + rnd() * 0.09})`;
+      ctx.beginPath();
+      ctx.arc(x + r * 0.5, y + r * 0.6, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255,255,255,${0.3 + rnd() * 0.45})`;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+/**
  * CALÇADA DE PEDRINHA, para o Villa-Lobos.
  *
  * Ela existe para NÃO ser o piso do clube. Os dois são chão claro de área
