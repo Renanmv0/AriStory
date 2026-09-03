@@ -198,8 +198,7 @@ export class Ui {
         <div class="bermudas"></div>
         <button class="close">voltar pra piscina</button>
       </div></div>
-      <div class="cardapio"><div class="segurando">
-        <div class="mao esq"><i></i><i></i><i></i><i></i><span class="polegar"></span></div>
+      <div class="cardapio">
         <div class="papel">
           <p class="casa">Restaurante do Clube</p>
           <h2>Cardápio</h2>
@@ -208,8 +207,7 @@ export class Ui {
           <p class="rodape">serviço não incluso · sorriso incluso</p>
           <button class="close">fechar o cardápio</button>
         </div>
-        <div class="mao dir"><i></i><i></i><i></i><i></i><span class="polegar"></span></div>
-      </div></div>
+      </div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
         <p class="sub"></p>
