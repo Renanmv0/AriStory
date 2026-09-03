@@ -13,6 +13,7 @@ import {
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
+import { pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
 
 /**
  * Clube — a piscina.
@@ -106,7 +107,14 @@ export const clube: SceneDef = {
 
     // -------------------------------------------------------------- terreno
     // grama e deck precisam do MESMO furo, senao a grama aparece no fundo da piscina
-    w.groundWithHoles({ width: 160, depth: 160, color: P.grass, holes: [buraco] });
+    // As texturas são desenhadas em canvas na hora (`world/texturasDeChao.ts`)
+    // e MULTIPLICAM a cor: elas dão junta de placa e tufo de grama sem trocar o
+    // tom nem custar uma malha a mais. Antes o clube era duas cores chapadas,
+    // e de longe parecia papel colorido.
+    w.groundWithHoles({
+      width: 160, depth: 160, color: P.grass, holes: [buraco],
+      textura: tapeteDeGrama(9),
+    });
     // O furo do `groundWithHoles` é LOCAL à malha: ele acaba em
     // `opts.z + hole.z` no mundo. A grama nasce em `z = 0`, então para ela o
     // furo já cai no lugar; o deck nasce deslocado, e o furo dele precisa
@@ -123,6 +131,8 @@ export const clube: SceneDef = {
       y: 0.015,
       z: DECK.z,
       holes: [{ ...buraco, z: buraco.z - DECK.z }],
+      // placa de 2 m, que é o tamanho de piso de borda de piscina de verdade
+      textura: pisoDePlacas(2),
     });
     // o limite de caminhada fica DENTRO do deck: assim ninguém pisa na grama,
     // que agora é só a moldura de fora

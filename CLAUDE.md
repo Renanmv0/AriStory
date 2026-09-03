@@ -36,7 +36,9 @@ falta — **úteis para se situar rápido, mas podem estar desatualizados**; o
 
 - **Nada de asset externo.** Todo modelo é geometria procedural, e todo som é
   sintetizado na hora. Não adicione `.glb`, `.png`, `.mp3`, `.wav`, textura,
-  biblioteca de modelo nem de áudio.
+  biblioteca de modelo nem de áudio. A única textura permitida é a desenhada em
+  tempo de execução num `<canvas>` — o texto das placas, as memórias do quadro,
+  as miniaturas do cardápio e o chão do clube (`world/texturasDeChao.ts`).
 - **Cor sai de `src/palette.ts`; material sai de `toon()`/`flat()`.** Nunca
   instancie material dentro de uma cena.
 - **Cena não conhece o motor.** Ela só usa `WorldBuilder` e `GameAPI`.
