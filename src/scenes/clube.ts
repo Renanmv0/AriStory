@@ -3,7 +3,7 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import { flat } from '../core/materials';
 import {
-  building, bush, cloud, divingBoard, fence, floatRing, flowers,
+  building, bus, bush, cloud, divingBoard, floatRing, flowers,
   kiosk, parasol, poolLadder, poolShell, poolWater, showerPost, sunLounger, tree,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
@@ -18,6 +18,37 @@ import { ITENS, MODA_PRAIA } from '../world/itens';
  */
 
 const PISCINA = { x: 0, z: -3, largura: 16, profundidade: 10, fundo: 1.6 };
+
+/**
+ * O piso do clube. Ele cresceu de 34×26 para 48×38 — a grama virou uma moldura
+ * fina em volta em vez de metade da tela, e sobrou deck para as atrações que
+ * ainda vão entrar.
+ *
+ * A PISCINA NÃO SE MEXE. O furo que o `groundWithHoles` abre no piso é o que
+ * deixa quem afunda continuar visível; ele sai de `PISCINA`, não daqui, então
+ * mexer no deck nunca arrasta o buraco junto.
+ */
+const DECK = { z: -2, largura: 48, profundidade: 38 };
+
+/**
+ * Onde o ônibus encosta: canto de baixo à ESQUERDA, deitado ao longo do Z.
+ *
+ * Ele tem 2,9 de altura, e a câmera isométrica vem de `+X/+Z` — o que estiver
+ * com x ou z maior que o jogador é desenhado NA FRENTE dele. Na borda de baixo
+ * (`+Z`, onde estava a cerca) um ônibus taparia quem fosse embarcar; na borda
+ * da esquerda ele fica ATRÁS de quem chega, e ainda mostra a porta, que é o
+ * lado interessante.
+ */
+const PARADA = { x: -21, z: 9 };
+
+/**
+ * O ponto de embarque, na frente da porta do ônibus.
+ *
+ * Depois do giro de `PI/2` a porta (local `x = 2,6`, `z = 1,25`) cai em
+ * `(+1,25, -2,6)` do centro da peça. O `+2,4` em X é ela mais a folga do corpo,
+ * senão quem nasce aqui já nasce dentro do colisor.
+ */
+const EMBARQUE = { x: PARADA.x + 2.4, z: PARADA.z - 2.6 };
 
 function dentroDaPiscina(x: number, z: number, margem = 0): boolean {
   return (
@@ -43,9 +74,12 @@ export const clube: SceneDef = {
     ambientIntensity: 1.05,
     sunDir: [15, 22, 11],
   },
-  spawn: { x: 0, z: 12, facing: Math.PI },
+  // Quem chega, chega DE ÔNIBUS: o ponto de entrada é a porta dele, virado
+  // para dentro do clube (+X). Antes era o portão da cerca, no meio da borda
+  // de baixo — a cerca saiu e o ônibus tomou o lugar dela.
+  spawn: { x: EMBARQUE.x, z: EMBARQUE.z, facing: Math.PI / 2 },
   entries: {
-    portaria: { x: 0, z: 12, facing: Math.PI },
+    portaria: { x: EMBARQUE.x, z: EMBARQUE.z, facing: Math.PI / 2 },
     beira: { x: 0, z: 3.5, facing: Math.PI },
   },
 
@@ -68,15 +102,26 @@ export const clube: SceneDef = {
     // -------------------------------------------------------------- terreno
     // grama e deck precisam do MESMO furo, senao a grama aparece no fundo da piscina
     w.groundWithHoles({ width: 160, depth: 160, color: P.grass, holes: [buraco] });
+    // O furo do `groundWithHoles` é LOCAL à malha: ele acaba em
+    // `opts.z + hole.z` no mundo. A grama nasce em `z = 0`, então para ela o
+    // furo já cai no lugar; o deck nasce deslocado, e o furo dele precisa
+    // descontar esse deslocamento.
+    //
+    // Isso já estava errado por 1 unidade antes desta mudança (deck em `-1`,
+    // piscina em `-3`) — é a faixa de grama que aparecia colada na borda de
+    // trás da piscina, com o trampolim em cima dela. Com o deck maior o erro
+    // ia dobrar, então ele morre aqui.
     w.groundWithHoles({
-      width: 34,
-      depth: 26,
+      width: DECK.largura,
+      depth: DECK.profundidade,
       color: 0xe4e0d6,
       y: 0.015,
-      z: -1,
-      holes: [buraco],
+      z: DECK.z,
+      holes: [{ ...buraco, z: buraco.z - DECK.z }],
     });
-    w.setBounds(-22, -18, 22, 16);
+    // o limite de caminhada fica DENTRO do deck: assim ninguém pisa na grama,
+    // que agora é só a moldura de fora
+    w.setBounds(-22, -19, 22, 16);
 
     // ------------------------------------------------------------- piscina
     w.add(w.place(poolShell(PISCINA.largura, PISCINA.profundidade, PISCINA.fundo), PISCINA.x, 0, PISCINA.z));
@@ -136,24 +181,37 @@ export const clube: SceneDef = {
     const bar = w.add(w.place(kiosk(0x4ec1a8, { tipo: 'suco' }), -12.5, 0, 7.2, 0.35));
     w.blockBox(-12.5, 7.2, 1.4, 1, 0.35);
 
-    const vestiario = w.add(w.place(building(6, 3.2, 4, P.wallCream, 0x7aa6c4), 13, 0, -9));
-    w.blockBox(13, -9, 3, 2);
-    // O banco saiu da frente da porta. Ele estava em (13, -6.6), exatamente em
-    // cima do ponto do vestiário e com raio maior — quem chegasse na porta só
-    // via "Sentar no banco", e a interação do vestiário não tinha como
-    // aparecer. Aqui ele fica ao lado, virado para a piscina.
-    w.banco(9, -6.6);
+    // O vestiário foi para o FUNDO do deck (era `13, -9`), encostado no limite
+    // novo. Ele tem 3,2 de altura: no meio do cenário ele tapava a piscina, e
+    // lá atrás a câmera pega a fachada dele de frente sem esconder nada.
+    const vestiario = w.add(w.place(building(6, 3.2, 4, P.wallCream, 0x7aa6c4), 15, 0, -18));
+    w.blockBox(15, -18, 3, 2);
+    // O banco saiu de perto da piscina e foi para a lateral direita, virado
+    // para a água (`-X`). Ele já tinha saído da frente da porta do vestiário
+    // uma vez — quem chegasse na porta só via "Sentar no banco" — e agora que a
+    // porta mudou de lugar ele continua longe dela.
+    w.banco(14, -3, -Math.PI / 2);
 
     // ------------------------------------------------------------ jardim
+    // A vegetação seguiu o deck para fora: com o piso em 48×38, as palmeiras
+    // que estavam em `±18` nasceriam no meio do concreto. Elas voltam a ser a
+    // moldura verde da cena, agora na beirada do piso novo.
     w.setSeed(90210);
-    for (const [x, z] of [[-18, -8], [-17, 1], [18, 2], [19, -6], [-19, 10], [18, 11]] as const) {
+    const bordaX = DECK.largura / 2 + 1.5;
+    const bordaZ = DECK.profundidade / 2 + 1.5;
+    for (const [x, z] of [
+      [-bordaX, -8], [-bordaX, 4], [bordaX, 2], [bordaX, -10],
+      [-9, -bordaZ + DECK.z], [11, -bordaZ + DECK.z], [-4, bordaZ + DECK.z],
+    ] as const) {
       w.add(w.place(tree('palmeira', w.range(0.95, 1.2), w.rng()), x, 0, z));
       w.blockCircle(x, z, 0.5);
     }
     for (let i = 0; i < 26; i++) {
-      const x = w.range(-20, 20);
-      const z = w.range(-16, 14);
-      if (Math.abs(x) < 18 && z > -14 && z < 12) continue;
+      const x = w.range(-34, 34);
+      const z = w.range(-32, 28);
+      // nada de arbusto brotando no deck
+      if (Math.abs(x) < DECK.largura / 2 + 1 &&
+        Math.abs(z - DECK.z) < DECK.profundidade / 2 + 1) continue;
       w.add(w.place(i % 2 ? bush(w.range(0.7, 1.1)) : flowers(6, 1.1), x, 0, z));
     }
     for (let i = 0; i < 6; i++) {
@@ -167,20 +225,23 @@ export const clube: SceneDef = {
       });
     }
 
-    // --------------------------------------------------------- cerca e saida
-    w.add(w.place(fence(30, 1.4, P.metalWhite), -6, 0, 14));
-    w.add(w.place(fence(14, 1.4, P.metalWhite), 12, 0, 14));
-    w.blockBox(-6, 14, 15, 0.2);
-    w.blockBox(12, 14, 7, 0.2);
-
-    const portao = w.add(w.place(fence(4, 1.6, P.gold), 3.5, 0, 14));
+    // ------------------------------------------------------------ a saida
+    // A cerca da borda de baixo saiu inteira (as duas brancas e o portão
+    // dourado): quem fecha o clube agora é o limite invisível, e quem leva
+    // embora é o ônibus.
+    //
+    // `rotation.y = PI/2` deita o ônibus ao longo do Z e leva a porta dele (que
+    // nasce no `+Z` local) para o `+X` do mundo — virada para dentro do clube,
+    // que é de onde a dupla chega.
+    const onibus = w.add(w.place(bus(), PARADA.x, 0, PARADA.z, Math.PI / 2));
+    w.blockBox(PARADA.x, PARADA.z, 1.3, 4.3);
 
     w.door({
-      x: 3.5, z: 13,
+      x: EMBARQUE.x, z: EMBARQUE.z,
       to: 'villa-lobos', entry: 'clube',
-      label: 'Voltar pro parque', icon: '🌳',
-      highlight: portao,
-      radius: 2.2,
+      label: 'Pegar o ônibus pro parque', icon: '🚌',
+      highlight: onibus,
+      radius: 2.4,
     });
 
     // -------------------------------------------------------------- respingos
@@ -358,7 +419,7 @@ export const clube: SceneDef = {
 
     w.interact({
       id: 'clube:vestiario',
-      x: 13, z: -6.9, radius: 2, priority: 1,
+      x: 15, z: -15.4, radius: 2, priority: 1,
       label: 'Vestiário', icon: '🩳',
       highlight: vestiario,
       onInteract: async (api) => {

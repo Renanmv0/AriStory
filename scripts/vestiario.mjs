@@ -39,7 +39,8 @@ const erros = [];
 page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
 
 const abrirCena = async () => {
-  await page.goto(`${BASE}/?cena=clube&em=12.4,-5.4&olhar=0`, { waitUntil: 'networkidle' });
+  // o vestiário foi para o fundo do deck (15, -18); a dupla nasce na frente dele
+  await page.goto(`${BASE}/?cena=clube&em=15,-14&olhar=3.14`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(3000);
 };
 
