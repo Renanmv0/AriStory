@@ -23,9 +23,9 @@ const poses = [
   ['parque-porta', 'cena=villa-lobos&em=37.4,13&olhar=1.6&zoom=6'],
   ['parque-rua', 'cena=villa-lobos&em=34,13&olhar=1.6&zoom=13'],
   ['parque-longe', 'cena=villa-lobos&em=30,6&olhar=1.6&zoom=30'],
-  ['clube-porta', 'cena=clube&em=-27.2,9&olhar=4.7&zoom=6'],
-  ['clube-rua', 'cena=clube&em=-25,9&olhar=4.7&zoom=15'],
-  ['clube-longe', 'cena=clube&em=-18,4&olhar=4.7&zoom=26'],
+  ['clube-porta', 'cena=clube&em=-29.4,9&olhar=4.7&zoom=6'],
+  ['clube-rua', 'cena=clube&em=-27,9&olhar=4.7&zoom=15'],
+  ['clube-longe', 'cena=clube&em=-20,4&olhar=4.7&zoom=28'],
 ];
 
 for (const [nome, query] of poses) {

@@ -45,16 +45,16 @@ const DECK = { z: -2, largura: 48, profundidade: 38 };
  * da esquerda ele fica ATRÁS de quem chega, e ainda mostra a porta, que é o
  * lado interessante.
  */
-const PARADA = { x: -29.7, z: 9 };
+const PARADA = { x: -31.9, z: 9 };
 
 /**
  * A rua do clube, do mesmo jeito que a do Villa-Lobos: calçada, asfalto com
  * tracejado no meio e a guia entre os dois.
  *
- * Ela vive FORA do clube. O piso de placas acaba em `x = -24`, e a calçada
- * encosta nessa beirada (`-23,8`) e segue para a grama; do meio-fio em diante
- * é asfalto, e o ônibus para lá — antes ele ficava estacionado em cima do piso
- * da piscina.
+ * Ela vive FORA do clube, e com FOLGA: entre a beirada do piso de placas
+ * (`x = -24`) e a calçada (que começa em `-26`) sobram 2 m de grama. É onde um
+ * dia entra o que fecha o clube — cerca, muro, sebe —, e é o que impede a rua
+ * de encostar no restaurante.
  *
  * O comprimento é o do cenário inteiro (80 contra os 44 de área jogável): rua
  * que começa e acaba dentro da tela vira pátio. Como ela passa por fora do
@@ -62,9 +62,9 @@ const PARADA = { x: -29.7, z: 9 };
  * de ponta a ponta.
  */
 const RUA = {
-  calcada: -25.2, larguraCalcada: 2.8,
-  asfalto: -31, larguraAsfalto: 8.8,
-  guia: -26.6,
+  calcada: -27.4, larguraCalcada: 2.8,
+  asfalto: -33.2, larguraAsfalto: 8.8,
+  guia: -28.8,
   z: 0, comprimento: 80,
 };
 
@@ -166,19 +166,15 @@ export const clube: SceneDef = {
     }
     w.add(w.place(meioFio(RUA.comprimento), RUA.guia, 0, RUA.z));
 
-    // A guia também é parede, menos no vão da parada: o asfalto é do ônibus, e
-    // só se pisa nele para embarcar. O vão vai de `z = 4,5` a `z = 8`, que é a
-    // frente da porta (`EMBARQUE`).
-    //
-    // O limite geral NÃO pode fechar em `-20`: as mesas do restaurante vivem em
-    // `x = -20,6`, e ninguém mais sentaria nelas.
-    w.blockBox(RUA.guia, -16, 0.15, 20.5);
-    w.blockBox(RUA.guia, 22, 0.15, 14);
+    // A GUIA NÃO TEM COLISÃO. Ela já foi parede com um vão na frente da parada,
+    // e na prática só atrapalhava: um degrau de 14 cm parando a dupla no meio
+    // do caminho do ônibus. Ela continua desenhada, e se atravessa por cima
+    // dela em qualquer ponto.
 
     // O limite de caminhada segue DENTRO do deck nos outros três lados; na
-    // esquerda ele foi até a guia, senão ninguém alcança a porta do ônibus, que
-    // agora para do lado de fora do clube.
-    w.setBounds(-27.8, -19, 22, 16);
+    // esquerda ele vai até a beira do asfalto, senão ninguém alcança a porta do
+    // ônibus, que agora para do lado de fora do clube.
+    w.setBounds(-30, -19, 22, 16);
 
     // ------------------------------------------------------------- piscina
     w.add(w.place(poolShell(PISCINA.largura, PISCINA.profundidade, PISCINA.fundo), PISCINA.x, 0, PISCINA.z));
@@ -713,7 +709,7 @@ export const clube: SceneDef = {
     for (const [x, z] of [
       // as duas da esquerda atravessaram a rua: em `-25,5` elas nasciam dentro
       // da calçada, e do outro lado do asfalto viram o fundo verde da parada
-      [-37, -8], [-37, 4], [bordaX, 2], [bordaX, -10],
+      [-41, -8], [-41, 4], [bordaX, 2], [bordaX, -10],
       [-9, -bordaZ + DECK.z], [11, -bordaZ + DECK.z], [-4, bordaZ + DECK.z],
     ] as const) {
       w.add(w.place(tree('palmeira', w.range(0.95, 1.2), w.rng()), x, 0, z));
@@ -725,9 +721,9 @@ export const clube: SceneDef = {
       // nada de arbusto brotando no deck
       if (Math.abs(x) < DECK.largura / 2 + 1 &&
         Math.abs(z - DECK.z) < DECK.profundidade / 2 + 1) continue;
-      // nem na rua: ela atravessa o cenário inteiro, da calçada ao outro lado
-      // do asfalto
-      if (x > -36 && x < -23.5) continue;
+      // nem na rua: ela atravessa o cenário inteiro, do outro lado do asfalto
+      // até a faixa de grama que separa a calçada do piso do clube
+      if (x > -38 && x < -23.5) continue;
       w.add(w.place(i % 2 ? bush(w.range(0.7, 1.1)) : flowers(6, 1.1), x, 0, z));
     }
     for (let i = 0; i < 6; i++) {
