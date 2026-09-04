@@ -6,7 +6,7 @@ import {
   bin, bleachers, bus, busStop, bush, canteiro, canteiroComPalmeira,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
-  guarita, meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante,
+  guarita, meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante, sebe,
   showerPost, sunLounger, textSign,
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
@@ -28,15 +28,22 @@ import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../worl
 const PISCINA = { x: 0, z: -3, largura: 16, profundidade: 10, fundo: 1.6 };
 
 /**
- * O piso do clube. Ele cresceu de 34×26 para 48×38 — a grama virou uma moldura
- * fina em volta em vez de metade da tela, e sobrou deck para as atrações que
- * ainda vão entrar.
+ * O piso do clube. Ele já foi 34×26 e 48×38; agora é 56×46, e ANDOU PARA O
+ * LESTE (`x = 4`) em vez de crescer para os dois lados.
+ *
+ * O motivo é que o oeste está cheio: o muro fica em `-25`, e logo depois dele
+ * vêm a calçada, a guia e a rua. Crescendo simétrico, o piso nasceria embaixo
+ * do asfalto. Empurrando o centro, a beirada oeste fica onde sempre esteve
+ * (`-24`, colada na faixa de grama do muro) e todo o espaço novo aparece do
+ * outro lado, que é justamente o canto vazio.
  *
  * A PISCINA NÃO SE MEXE. O furo que o `groundWithHoles` abre no piso é o que
  * deixa quem afunda continuar visível; ele sai de `PISCINA`, não daqui, então
- * mexer no deck nunca arrasta o buraco junto.
+ * mexer no deck nunca arrasta o buraco junto — mas o furo é LOCAL à malha, e
+ * agora o deck está deslocado nos DOIS eixos: quem não descontar o `x` também
+ * abre o buraco no lugar errado.
  */
-const DECK = { z: -2, largura: 48, profundidade: 38 };
+const DECK = { x: 4, z: -3, largura: 56, profundidade: 46 };
 
 /**
  * Onde o ônibus encosta: canto de baixo à ESQUERDA, deitado ao longo do Z.
@@ -152,11 +159,20 @@ export const clube: SceneDef = {
       depth: DECK.profundidade,
       color: 0xe4e0d6,
       y: 0.015,
+      x: DECK.x,
       z: DECK.z,
-      holes: [{ ...buraco, z: buraco.z - DECK.z }],
+      holes: [{ ...buraco, x: buraco.x - DECK.x, z: buraco.z - DECK.z }],
       // placa de 2 m, que é o tamanho de piso de borda de piscina de verdade
       textura: pisoDePlacas(2),
     });
+
+    /**
+     * O GRAMADO DO FUNDO LESTE. O piso novo é grande, e piso grande e vazio lê
+     * como estacionamento — esta mancha de grama por cima dele quebra o campo de
+     * concreto e já marca onde as próximas atrações vão morar. É decalque: entra
+     * DEPOIS do deck, então aparece por cima dele sem brigar por profundidade.
+     */
+    w.patch(23, -14, 12, 20, P.grass, 0, 0.018, tapeteDeGrama(9));
     // A RUA, na borda esquerda: o ônibus não podia continuar estacionado em
     // cima do piso do clube. Vem por cima do deck e da grama, na mesma ordem do
     // Villa-Lobos — calçada, guia, asfalto — para os dois lados da viagem
@@ -173,10 +189,45 @@ export const clube: SceneDef = {
     // do caminho do ônibus. Ela continua desenhada, e se atravessa por cima
     // dela em qualquer ponto.
 
-    // O limite de caminhada segue DENTRO do deck nos outros três lados; na
-    // esquerda ele vai até a beira do asfalto, senão ninguém alcança a porta do
-    // ônibus, que agora para do lado de fora do clube.
-    w.setBounds(-30, -19, 22, 16);
+    /**
+     * A SEBE, e o limite de caminhada COLADO NELA.
+     *
+     * Este é o conserto da reclamação: o limite estava dois metros antes da
+     * beirada do piso, e invisível — a dupla batia numa parede no meio do
+     * concreto. Agora a cerca viva fica em cima da beirada, o limite para 90 cm
+     * antes dela (o corpo tem 42 cm de raio), e quem para, para porque tem uma
+     * moita na frente.
+     *
+     * Ela fecha os TRÊS lados abertos; o oeste é o muro, que já fecha.
+     */
+    const BORDA = {
+      leste: DECK.x + DECK.largura / 2,
+      fundo: DECK.z - DECK.profundidade / 2,
+      frente: DECK.z + DECK.profundidade / 2,
+      oeste: DECK.x - DECK.largura / 2,
+    };
+    for (const [x, z, comprimento, rot] of [
+      [BORDA.leste, DECK.z, DECK.profundidade, Math.PI / 2],
+      [(BORDA.oeste + BORDA.leste) / 2, BORDA.fundo, DECK.largura, 0],
+      [(BORDA.oeste + BORDA.leste) / 2, BORDA.frente, DECK.largura, 0],
+    ] as const) {
+      w.add(w.place(sebe(comprimento), x, 0, z, rot));
+      const meia = comprimento / 2;
+      w.blockBox(x, z, rot ? 0.55 : meia, rot ? meia : 0.55);
+    }
+
+    /**
+     * O LIMITE DE CAMINHADA ACOMPANHA O PISO NOVO.
+     *
+     * Ele estava em `22 / -19 / 16` enquanto o deck ia até `24 / -21 / 17`: a
+     * dupla batia numa parede invisível dois metros antes da beirada, nos três
+     * lados. Agora ele para na sebe, e a área jogável passa de 52×35 para
+     * 62×45.
+     *
+     * Na esquerda ele continua indo até a beira do asfalto (`-30`), senão
+     * ninguém alcança a porta do ônibus, que para do lado de fora do clube.
+     */
+    w.setBounds(-30, BORDA.fundo + 0.9, BORDA.leste - 0.9, BORDA.frente - 0.9);
 
     // --------------------------------------------------- o muro e o portão
     /**
@@ -216,15 +267,15 @@ export const clube: SceneDef = {
 
     /**
      * Os dois trechos de muro, um de cada lado do portão. Eles passam do limite
-     * de caminhada (`z` de -19 a 16) e vão até -23 e 20: muro que acaba antes do
+     * de caminhada (`z` de -24 a 18) e vão até -27 e 21: muro que acaba antes do
      * limite não fecha nada — sobra um vão por onde se sai andando pela grama —,
      * e muro que acaba EXATAMENTE nele fica com cara de cenário de teatro,
      * parando no ar no meio da grama. Passando das quinas do piso, ele sai do
      * enquadramento em vez de terminar.
      */
     for (const [z0, z1] of [
-      [-23, MURO.z - PILAR - MEIA_PILASTRA],
-      [MURO.z + PILAR + MEIA_PILASTRA, 20],
+      [-27, MURO.z - PILAR - MEIA_PILASTRA],
+      [MURO.z + PILAR + MEIA_PILASTRA, 21],
     ] as const) {
       const comprimento = z1 - z0;
       const meio = (z0 + z1) / 2;
@@ -834,10 +885,13 @@ export const clube: SceneDef = {
       w.blockCircle(x, z, 0.25);
     }
 
-    // REFLETORES nos dois cantos do fundo — clube que fecha tarde tem.
-    for (const x of [-20, 21]) {
-      w.add(w.place(floodlight(), x, 0, -19));
-      w.blockCircle(x, -19, 0.35);
+    // REFLETORES nos dois cantos do fundo — clube que fecha tarde tem. Eles
+    // seguem a beirada do piso: com o deck maior, o `z = -19` de antes ficou no
+    // meio da área jogável, e refletor no meio do pátio não ilumina, atrapalha.
+    const fundoDoDeck = DECK.z - DECK.profundidade / 2 + 1.4;
+    for (const x of [-20, 12, 29]) {
+      w.add(w.place(floodlight(), x, 0, fundoDoDeck));
+      w.blockCircle(x, fundoDoDeck, 0.35);
     }
 
     // ------------------------------------------------------------ jardim
@@ -845,22 +899,24 @@ export const clube: SceneDef = {
     // que estavam em `±18` nasceriam no meio do concreto. Elas voltam a ser a
     // moldura verde da cena, agora na beirada do piso novo.
     w.setSeed(90210);
-    const bordaX = DECK.largura / 2 + 1.5;
+    const bordaX = DECK.x + DECK.largura / 2 + 1.5;
     const bordaZ = DECK.profundidade / 2 + 1.5;
     for (const [x, z] of [
       // as duas da esquerda atravessaram a rua: em `-25,5` elas nasciam dentro
       // da calçada, e do outro lado do asfalto viram o fundo verde da parada
-      [-41, -8], [-41, 4], [bordaX, 2], [bordaX, -10],
-      [-9, -bordaZ + DECK.z], [11, -bordaZ + DECK.z], [-4, bordaZ + DECK.z],
+      [-41, -8], [-41, 4],
+      [bordaX, 4], [bordaX, -8], [bordaX, -20],
+      [-9, -bordaZ + DECK.z], [11, -bordaZ + DECK.z], [26, -bordaZ + DECK.z],
+      [-4, bordaZ + DECK.z], [18, bordaZ + DECK.z],
     ] as const) {
       w.add(w.place(tree('palmeira', w.range(0.95, 1.2), w.rng()), x, 0, z));
       w.blockCircle(x, z, 0.5);
     }
-    for (let i = 0; i < 26; i++) {
-      const x = w.range(-34, 34);
-      const z = w.range(-32, 28);
+    for (let i = 0; i < 32; i++) {
+      const x = w.range(-42, 44);
+      const z = w.range(-40, 34);
       // nada de arbusto brotando no deck
-      if (Math.abs(x) < DECK.largura / 2 + 1 &&
+      if (Math.abs(x - DECK.x) < DECK.largura / 2 + 1 &&
         Math.abs(z - DECK.z) < DECK.profundidade / 2 + 1) continue;
       // nem na rua: ela atravessa o cenário inteiro, do outro lado do asfalto
       // até a faixa de grama que separa a calçada do piso do clube
