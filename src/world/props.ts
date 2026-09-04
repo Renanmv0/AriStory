@@ -3570,3 +3570,96 @@ export function dogWaiter(cor: number = P.cachorroPelo): THREE.Group {
 
   return g;
 }
+
+/**
+ * A CADEIRA DE SALVA-VIDAS da beira da piscina.
+ *
+ * Ela e ALTA de proposito — 1,7 ate o assento — porque e disso que ela serve:
+ * quem toma conta da agua tem que ver por cima das cabecas.
+ *
+ * ELA NAO TEM TOLDO, e a primeira versao tinha.
+ *
+ * Cadeira de salva-vidas de verdade tem cobertura, e ela ficou linda — e apagou
+ * a capivara inteira. A camera olha em 34°: tudo que fica ACIMA e A FRENTE de
+ * quem senta engole quem senta, e na foto de longe sobrava um telhado vermelho
+ * com ninguem embaixo. E o mesmo erro que o beiral da guarita cometeu com a
+ * Gina, so que pior, porque aqui a peca inteira era a cobertura.
+ *
+ * O ENCOSTO passa da cabeca dela em altura, e esse PODE: ele fica em `-Z`,
+ * atras dela, e serve de fundo em vez de tampa. O que separa os dois nao e a
+ * altura, e de que lado da pessoa a peca esta.
+ *
+ * O que faz a peca ler como posto de salva-vidas sem tapar nada e a FAIXA
+ * vermelha do estrado e a BOIA pendurada — as duas na altura do olho da camera
+ * em vez de acima dele. `scripts/salvavidas.mjs` mede isso e falha se alguem
+ * puser um teto aqui de novo.
+ */
+export function cadeiraDeSalvaVidas(altura = 1.7): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cadeira-de-salva-vidas';
+
+  const madeira = toon(P.cadeiraDeGuarda);
+  const vermelho = toon(P.salvaVidasVermelho);
+
+  // ------------------------------------------------------------- as pernas
+  // Elas ABREM para baixo: cadeira alta de perna reta parece uma banqueta
+  // esquecida, e a abertura e o que faz a peca ler como torre.
+  const ABRE = 0.38;
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+    const perna = new THREE.Mesh(new THREE.BoxGeometry(0.09, altura + 0.08, 0.09), madeira);
+    perna.position.set(sx * (0.42 + ABRE / 2), (altura + 0.08) / 2, sz * (0.42 + ABRE / 2));
+    perna.rotation.z = -sx * 0.11;
+    perna.rotation.x = sz * 0.11;
+    g.add(perna);
+  }
+  // as travessas que amarram as pernas, na altura do joelho de quem sobe
+  for (const z of [-0.62, 0.62]) {
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.07, 0.07), madeira);
+    travessa.position.set(0, altura * 0.42, z);
+    g.add(travessa);
+  }
+
+  // -------------------------------------------------------------- o estrado
+  const assento = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.1, 1.0), madeira);
+  assento.position.y = altura;
+  g.add(assento);
+  // a faixa vermelha na frente do estrado: o unico jeito de quem olha de longe
+  // saber que aquilo e posto de salva-vidas, e nao uma cadeira alta qualquer
+  const faixa = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.14, 0.05), vermelho);
+  faixa.position.set(0, altura - 0.02, 0.5);
+  g.add(faixa);
+
+  // --------------------------------------------------------- encosto e bracos
+  const encosto = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.62, 0.08), madeira);
+  encosto.position.set(0, altura + 0.36, -0.46);
+  g.add(encosto);
+  for (const sx of [-1, 1] as const) {
+    const braco = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.07, 0.9), madeira);
+    braco.position.set(sx * 0.54, altura + 0.27, 0.02);
+    g.add(braco);
+  }
+
+  // ------------------------------------------------------------ a escadinha
+  // encostada no lado `-X`, que e o que a camera nao mostra de frente
+  for (let i = 0; i < 4; i++) {
+    const degrau = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.14), madeira);
+    degrau.position.set(-0.9, 0.34 + i * 0.38, 0.2);
+    g.add(degrau);
+  }
+  for (const sz of [-1, 1] as const) {
+    const montante = new THREE.Mesh(new THREE.BoxGeometry(0.07, altura, 0.07), madeira);
+    montante.position.set(-0.9, altura / 2, 0.2 + sz * 0.2);
+    g.add(montante);
+  }
+
+  // ------------------------------------------------------ a boia pendurada
+  const boia = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.075, 8, 16), vermelho);
+  boia.position.set(0.62, altura * 0.6, 0.5);
+  boia.rotation.y = Math.PI / 2;
+  g.add(boia);
+  const cruz = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.34, 0.1), toon(P.salvaVidasBranco));
+  cruz.position.set(0.62, altura * 0.6, 0.5);
+  g.add(cruz);
+
+  return g;
+}

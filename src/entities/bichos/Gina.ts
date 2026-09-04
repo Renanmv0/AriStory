@@ -4,7 +4,7 @@ import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
 
 /**
- * A girafa porteira da guarita do clube.
+ * A GINA, a girafa porteira da guarita do clube. O nome e do Ari.
  *
  * ELA NÃO PASSEIA, e é de propósito: é a primeira bicho do jogo que tem POSTO.
  * O cérebro do `Bicho` continua servindo inteiro — respirar, olhar em volta,
@@ -28,7 +28,7 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * parede da guarita e ficar do lado de fora da sombra do telhado, que a 34° de
  * câmera come tudo que fica para dentro.
  */
-export class Girafa extends Bicho {
+export class Gina extends Bicho {
   private readonly corpo = new THREE.Group();
   private readonly pescoco = new THREE.Group();
   private readonly cabeca = new THREE.Group();
@@ -191,7 +191,7 @@ export class Girafa extends Bicho {
       gomo.add(tufo);
 
       gomo.position.y = i === 0 ? 0 : 0.3;
-      gomo.rotation.x = Girafa.CURVA[i];
+      gomo.rotation.x = Gina.CURVA[i];
       pai.add(gomo);
       pai = gomo;
       this.gomos.push(gomo);
@@ -381,7 +381,7 @@ export class Girafa extends Bicho {
     for (let i = 0; i < this.gomos.length; i++) {
       const g = this.gomos[i];
       const amp = (0.02 + i * 0.014) * balanco;
-      g.rotation.x = Girafa.CURVA[i] + carinho * 0.09 + Math.sin(fase * (0.8 + i * 0.45)) * amp;
+      g.rotation.x = Gina.CURVA[i] + carinho * 0.09 + Math.sin(fase * (0.8 + i * 0.45)) * amp;
       g.rotation.z = Math.sin(fase * (0.5 + i * 0.3) + i) * amp * 0.8;
     }
 

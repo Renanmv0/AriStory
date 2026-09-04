@@ -3,7 +3,7 @@ import { PALETTE as P } from '../palette';
 import type { GameAPI, SceneDef } from '../core/types';
 import { flat, toon } from '../core/materials';
 import {
-  bin, bleachers, bus, busStop, bush, canteiro, canteiroComPalmeira,
+  bin, bleachers, bus, busStop, bush, cadeiraDeSalvaVidas, canteiro, canteiroComPalmeira,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
   guarita, meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante, sebe,
@@ -12,7 +12,8 @@ import {
   dogWaiter, pratoServido,
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
-import { Girafa } from '../entities/bichos/Girafa';
+import { Gina } from '../entities/bichos/Gina';
+import { Capivara } from '../entities/bichos/Capivara';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
@@ -27,6 +28,19 @@ import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../worl
  */
 
 const PISCINA = { x: 0, z: -3, largura: 16, profundidade: 10, fundo: 1.6 };
+
+/**
+ * O que a salva-vidas diz nas conversas seguintes. A primeira e a apresentacao
+ * dela, e so acontece uma vez — funcionaria que repete o mesmo texto de boas
+ * vindas toda vez deixa de ser gente e vira placa.
+ */
+const FALAS_DA_SALVA_VIDAS = [
+  'Tá tudo tranquilo. Do jeito que eu gosto.',
+  'Se afundarem, eu desço. Mas prefiro que não afundem.',
+  'Já contei vocês dois. Podem ir.',
+  'O sol vira nessa hora. Daqui a pouco a sombra chega na espreguiçadeira.',
+  'Bebam água. Piscina engana, viu?',
+];
 
 /**
  * O piso do clube. Ele já foi 34×26 e 48×38; agora é 56×46, e ANDOU PARA O
@@ -320,23 +334,28 @@ export const clube: SceneDef = {
      * telhado, que a 34° come tudo que fica mais de meio metro para dentro. Com
      * o corpo no meio da casinha, a cabeça aparecia escura por uma fresta.
      */
-    const girafa = new Girafa({
+    const gina = new Gina({
       minX: GUARITA.x - 0.15, maxX: GUARITA.x + 0.15,
       minZ: GUARITA.z + 0.2, maxZ: GUARITA.z + 0.5,
     });
-    w.add(girafa.group);
-    girafa.aoSoar = () => g.som('apito');
+    w.add(gina.group);
+    gina.aoSoar = () => g.som('apito');
 
     const falarComOPorteiro = w.interact({
       id: 'clube:portaria',
       x: GUARITA.x, z: GUARITA.z + 1.9, radius: 2.2,
-      label: 'Falar com o porteiro', icon: '🦒',
-      highlight: girafa.group,
+      label: 'Falar com a Gina', icon: '🦒',
+      highlight: gina.group,
       onInteract: async (api) => {
-        girafa.receberCarinho();
+        gina.receberCarinho();
         api.som('apito');
-        const G = 'Girafa da portaria';
+        // O NOME É DO ARI, e as falas são as mesmas de antes: o Renan pediu
+        // para batizá-la sem mexer nelas. O nome entra por uma linha nova, dela
+        // mesma se apresentando — trocar as falas por causa de um nome seria
+        // reescrever a coisa fofa para caber a etiqueta.
+        const G = 'Gina';
         await api.say(['Bom diaaa! Carteirinha na mão? …Brincadeira, pode entrar.'], G);
+        await api.say(['Sou a Gina, viu? Qualquer coisa é comigo.'], G);
         await conversa([
           [R, 'Ela é bem mais alta de perto.'],
           [A, 'Ela é bem mais simpática de perto.'],
@@ -351,9 +370,9 @@ export const clube: SceneDef = {
         ]);
         api.unlock({
           id: 'girafa-da-portaria',
-          title: 'A girafa da portaria',
+          title: 'A Gina da portaria',
           place: 'Clube',
-          note: 'Um porteiro de quepe, pescoço de três metros e apito no peito, mandando a gente aproveitar o dia.',
+          note: 'A porteira do clube: quepe, pescoço de três metros e apito no peito, mandando a gente aproveitar o dia.',
           icon: '🦒',
         });
       },
@@ -361,8 +380,8 @@ export const clube: SceneDef = {
 
     // sem isto o balão fica onde ela nasceu — e ela se mexe, mesmo no posto
     w.onUpdate((dt) => {
-      girafa.update(dt);
-      falarComOPorteiro.moveTo(girafa.x, girafa.z + 1.9);
+      gina.update(dt);
+      falarComOPorteiro.moveTo(gina.x, gina.z + 1.9);
     });
 
     // ------------------------------------------------------------- piscina
@@ -397,6 +416,89 @@ export const clube: SceneDef = {
     boias.forEach((b, i) => {
       w.place(b, -4.5 + i * 4.6, -0.05, PISCINA.z - 1.6 + (i % 2) * 2.6);
       w.root.add(b);
+    });
+
+    /**
+     * A SALVA-VIDAS DA PISCINA, e a segunda funcionária do clube depois da
+     * Gina. A piscina é o centro deste cenário e não tinha ninguém tomando
+     * conta dela — clube com piscina cheia e nenhum salva-vidas é a coisa que
+     * mais denuncia que o lugar é cenário e não lugar.
+     *
+     * ONDE ELA FICA, e por que aqui — foi a segunda tentativa. A primeira punha
+     * a cadeira em `(-9,5, -8,5)`, que na planta parece a quina da piscina e na
+     * foto era o DEQUE DE MADEIRA DO RESTAURANTE: a salva-vidas ficava sentada
+     * entre as cadeiras de pátio, de costas para a água.
+     *
+     * Agora ela fica na borda do FUNDO (`z = -9,8`), olhando a piscina de
+     * frente para a câmera. O `x = 4,6` é o vão entre as duas arquibancadas
+     * (que ocupam `x -8..-2` e `4..10` em `z ≈ -13`): a cadeira tem 2,3 e a 34°
+     * esconde 3,5 m atrás de si, e é nesse vão que essa faixa cai sem comer
+     * nada. E longe do trampolim, que mora em `x = 0`.
+     *
+     * ELA SOBE NA CADEIRA de um jeito que não custou nada ao motor: o cérebro
+     * do `Bicho` só mexe em `x` e `z`, então o `y` que a cena escreve uma vez
+     * fica. A área minúscula é a coleira, como na Gina.
+     */
+    const GUARDA = { x: 4.6, z: -9.8 };
+    w.add(w.place(cadeiraDeSalvaVidas(1.7), GUARDA.x, 0, GUARDA.z));
+    w.blockCircle(GUARDA.x, GUARDA.z, 0.95);
+
+    const salvaVidas = new Capivara({
+      minX: GUARDA.x - 0.12, maxX: GUARDA.x + 0.12,
+      minZ: GUARDA.z - 0.12, maxZ: GUARDA.z + 0.12,
+    });
+    // o estrado está em 1,7 e a capivara tem o corpo em 0,27: sentada no
+    // estrado, e não flutuando acima dele
+    salvaVidas.group.position.y = 1.75;
+    // ela olha para `+Z`: a piscina E a câmera estão do mesmo lado dela, que é
+    // o único jeito de a cara dela aparecer sem ela virar as costas para a água
+    salvaVidas.group.rotation.y = 0;
+    w.add(salvaVidas.group);
+    salvaVidas.aoSoar = () => g.som('apito');
+
+    const falarComOGuarda = w.interact({
+      id: 'clube:salva-vidas',
+      // o ponto fica no PÉ da cadeira, do lado da piscina: é de onde se fala
+      // com quem está lá em cima
+      x: GUARDA.x + 1.4, z: GUARDA.z + 0.9, radius: 2.0,
+      label: 'Falar com a salva-vidas', icon: '🛟',
+      highlight: salvaVidas.group,
+      onInteract: async (api) => {
+        salvaVidas.receberCarinho();
+        api.som('apito');
+        const S = 'Salva-vidas';
+        if (!api.flag('salva-vidas-conhecida')) {
+          api.setFlag('salva-vidas-conhecida');
+          await api.say(['Oi! Tudo bem por aí embaixo?'], S);
+          await conversa([
+            [R, 'Ela é uma capivara.'],
+            [A, 'Ela é uma capivara SALVA-VIDAS.'],
+            [R, 'Faz sentido. Ninguém entende mais de água que ela.'],
+          ]);
+          await api.say([
+            'Regra da casa: nada de correr na borda molhada, e nada de mergulhar na parte rasa.',
+          ], S);
+          await api.say(['Fora isso, fiquem o tempo que quiserem. Eu não saio daqui mesmo.'], S);
+          await conversa([
+            [A, 'Ela tirou o óculos pra falar com a gente.'],
+            [R, 'Isso é praticamente um abraço.'],
+          ]);
+          api.unlock({
+            id: 'salva-vidas-do-clube',
+            title: 'A salva-vidas da piscina',
+            place: 'Clube',
+            note: 'Uma capivara de regata vermelha e apito, na cadeira alta, olhando a piscina de um lado ao outro o dia inteiro.',
+            icon: '🛟',
+          });
+          return;
+        }
+        await api.say([w.pick(FALAS_DA_SALVA_VIDAS)], S);
+      },
+    });
+
+    w.onUpdate((dt) => {
+      salvaVidas.update(dt);
+      falarComOGuarda.moveTo(GUARDA.x + 1.4, GUARDA.z + 0.9);
     });
 
     // ----------------------------------------------------------- espreguicadeiras
@@ -831,7 +933,7 @@ export const clube: SceneDef = {
           await conversa([
             [R, 'Peraí. Essa porta dá pra dentro do restaurante.'],
             [A, 'A gente pode entrar?'],
-            [R, 'A girafa mandou a gente aproveitar o dia. Isso conta.'],
+            [R, 'A Gina mandou a gente aproveitar o dia. Isso conta.'],
           ]);
           api.setFlag('achou-a-porta-do-mania');
           api.unlock({

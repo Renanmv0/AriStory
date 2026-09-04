@@ -1,8 +1,8 @@
 /**
- * A portaria do clube: a guarita e a girafa que toma conta dela.
+ * A portaria do clube: a guarita e a Gina, a girafa que toma conta dela.
  *
  * O que este teste guarda:
- * - a girafa FICA NO POSTO. Ela usa o mesmo cérebro do Pelusa, que passeia — o
+ * - a Gina FICA NO POSTO. Ela usa o mesmo cérebro do Pelusa, que passeia — o
  *   que a segura é a área que a cena passa, menor que o passo mínimo que o
  *   cérebro exige de um destino. Se um dia alguém alargar essa área, a porteira
  *   sai andando pelo clube e este teste cai;
@@ -11,7 +11,8 @@
  *   fora da parede, fora da sombra do telhado (a câmera olha em 34°);
  * - ela está VIVA: o pescoço muda de pose entre duas leituras;
  * - ela apita sozinha, sem ninguém pedir;
- * - o prompt aparece, e a conversa dela manda a dupla aproveitar o dia;
+ * - o prompt aparece com o NOME dela, ela se apresenta, e a conversa manda a
+ *   dupla aproveitar o dia;
  * - a memória entra no diário.
  *
  * Uso: node scripts/guarita.mjs /caminho/prefixo
@@ -160,7 +161,8 @@ else {
 if (andou > 0.25) problemas.push(`a porteira saiu do posto (andou ${andou.toFixed(2)})`);
 if (mexeu < 0.002) problemas.push('a girafa está congelada — o pescoço não mexe');
 if (apitosDepois - apitosAntes < 1) problemas.push('ela não apitou sozinha');
-if (!/porteiro/i.test(prompt ?? '')) problemas.push('o prompt da portaria não apareceu');
+if (!/gina/i.test(prompt ?? '')) problemas.push('o prompt da portaria não traz o nome da Gina');
+if (!falas.some((f) => /Gina/.test(f))) problemas.push('ela não diz o próprio nome na conversa');
 if (!falas.some((f) => /aproveit/i.test(f))) {
   problemas.push('a girafa não mandou a dupla aproveitar o dia');
 }

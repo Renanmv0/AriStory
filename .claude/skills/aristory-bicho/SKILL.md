@@ -160,6 +160,20 @@ para o próximo:
 O teste mede exatamente isso (`scripts/guarita.mjs`): o `z` da cabeça contra a
 parede da frente, e a altura dela contra o tampo do balcão.
 
+**A mesma regra, dita de outro jeito, para qualquer posto: nada pode ficar
+ACIMA e À FRENTE de quem trabalha ali.** "À frente" é `+X/+Z`, que é de onde a
+câmera olha. A cadeira da salva-vidas nasceu com um toldo — cadeira de
+salva-vidas de verdade tem — e a foto de longe voltou com um telhado vermelho e
+ninguém embaixo. O encosto da mesma cadeira passa da cabeça dela e PODE ficar:
+ele está em `-Z`, atrás, e vira fundo em vez de tampa. O que decide não é a
+altura da peça, é de que lado da pessoa ela está.
+
+`scripts/salvavidas.mjs` guarda isso medindo a geometria, e não a foto: procura
+qualquer malha da cadeira acima da cabeça dela e do lado da câmera. A primeira
+versão do teste tentava sumir com o bicho e comparar duas capturas — não
+funciona, porque o cenário é vivo (a dupla respira, a água mexe) e duas fotos do
+mesmo quadro já saem diferentes. O controle do próprio teste acusou isso.
+
 ## O sinal de `rotation.x` numa corrente de gomos
 
 `rotation.x` POSITIVO leva o `+Y` local para o `+Z` — ou seja, INCLINA PARA A

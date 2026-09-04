@@ -89,7 +89,8 @@ node scripts/cama.mjs    /tmp/cm    # deitar junto: lado a lado, e os bracos bal
 node scripts/pelusa.mjs  /tmp/pe    # o gato: passeia sem entrar em movel, mia e recebe carinho
 node scripts/deque.mjs   /tmp/dq    # o deque de descanso: deitar nas espreguicadeiras a beira da piscina
 node scripts/muro.mjs    /tmp/mu    # o muro da rua do clube fecha, e o portao grande deixa passar
-node scripts/guarita.mjs /tmp/gu    # a portaria: a girafa fica no posto, apita e manda aproveitar o dia
+node scripts/guarita.mjs /tmp/gu    # a portaria: a Gina fica no posto, apita e manda aproveitar o dia
+node scripts/salvavidas.mjs /tmp/sv # a capivara salva-vidas: fica na cadeira, varre a piscina e tira o oculos
 node scripts/mania.mjs   /tmp/mn    # a porta dos fundos e o Mania de Churrasco: cozinha e salao separados
 node scripts/garcom.mjs  /tmp/gc    # o cao garcom passeando pelo salao, e a porta de servico sem movel na frente
 node scripts/mesas.mjs   /tmp/ms    # sentar em qualquer mesa do Mania, pedir, e o Walter buscar na cozinha
