@@ -101,6 +101,8 @@ export const villaLobos: SceneDef = {
     // pública, e o que separa um do outro é a escala da unidade — placa grande
     // de borda de piscina lá, pedrinha miúda de praça aqui.
     w.ground({ width: 240, depth: 240, color: P.grass, textura: tapeteDeGrama(9) });
+    /** comprimento da rua do ponto de ônibus: o cenário todo, e mais um pouco */
+    const RUA_COMP = 80;
     w.setBounds(-44, -34, 44, 32);
 
     // Ordem de empilhamento do chão. Cada decalque também recebe um
@@ -502,13 +504,17 @@ export const villaLobos: SceneDef = {
     // ------------------------------------------------------------ vegetacao
     const proibido: Array<[number, number, number]> = [
       [0, -26, 20], [-21, 11, 12], [18, -4.5, 17], [0, 4, 6], [0, 9, 6],
-      [12, 19, 4], [-10, 20, 3], [37, 13, 8],
+      [12, 19, 4], [-10, 20, 3],
       // a pista e a loja entram na lista pelo mesmo motivo da praça da roda:
       // sem isto o espalhador planta árvore em cima do asfalto
       [-21, -5, 12], [-8.6, 2.5, 9],
     ];
     const livre = (x: number, z: number): boolean => {
       if (Math.abs(x) < 4 && z > -20 && z < 30) return false;
+      // A RUA INTEIRA, e não um círculo em volta do ponto: o espalhador vai até
+      // `x = 42`, e a calçada começa em `33,6` — era isso que plantava árvore no
+      // meio do asfalto longe do ponto de ônibus.
+      if (x > 33.2) return false;
       return !proibido.some(([px, pz, r]) => Math.hypot(x - px, z - pz) < r);
     };
 
@@ -561,6 +567,9 @@ export const villaLobos: SceneDef = {
       const x = Math.cos(a) * raio;
       const z = Math.sin(a) * raio * 0.9;
       if (x < -50) continue; // do outro lado do rio nao tem mata
+      // e a rua passa por baixo da mata: sem isto a silhueta planta árvore no
+      // asfalto nas duas pontas, onde o anel cruza a faixa da rua
+      if (x > 33.2 && Math.abs(z) < 44) continue;
       w.add(w.place(tree(w.pick(kinds), w.range(1.2, 2.2), w.rng()), x, 0, z, w.range(0, 6.28)));
     }
 
@@ -588,10 +597,13 @@ export const villaLobos: SceneDef = {
     // ---------------------------------------- ponto de ônibus para o clube
     // a cerca do parque tem um vão aqui; do outro lado é a rua, com o ônibus
     // parado esperando. A placa escrita deixa claro para onde ele vai.
-    w.add(w.place(fence(11, 1.4), 35, 0, 3.5, Math.PI / 2));
-    w.add(w.place(fence(11, 1.4), 35, 0, 22.5, Math.PI / 2));
-    w.blockBox(35, 3.5, 0.2, 5.5);
-    w.blockBox(35, 22.5, 0.2, 5.5);
+    // A cerca recuou de `35` para `33,5`: com a calçada alargada, em `35` ela
+    // ficava plantada no MEIO dela. Agora é a divisa entre o parque e a
+    // calçada, que é onde cerca de parque fica.
+    w.add(w.place(fence(11, 1.4), 33.5, 0, 3.5, Math.PI / 2));
+    w.add(w.place(fence(11, 1.4), 33.5, 0, 22.5, Math.PI / 2));
+    w.blockBox(33.5, 3.5, 0.2, 5.5);
+    w.blockBox(33.5, 22.5, 0.2, 5.5);
 
     // A rua e o caminho que chega nela sao a MESMA cor e se cruzavam em x 34~36:
     // dois asfaltos colados no mesmo lugar, piscando um por cima do outro. O
@@ -599,17 +611,20 @@ export const villaLobos: SceneDef = {
     // A calçada alargou de 1,6 para 2,8: o abrigo do ponto tem 2,3 de fundo, e
     // na faixa antiga metade dele nasceria dentro da rua.
     w.patch(28.8, 13, 9.6, 5, P.asphalt, 0, 0.01, asfalto()); // caminho do parque até o vão
-    w.patch(35, 13, 2.8, 34, P.concrete, 0, 0.014, calcadaDePedrinha()); // calçada
-    w.patch(40.8, 13, 8.8, 34, P.asphalt, 0, 0.018, asfalto()); // a rua
+    // A rua atravessa o cenário INTEIRO (80 de comprimento, contra os 44 de
+    // área jogável): rua que começa e acaba dentro da tela vira pátio. Ela
+    // some no horizonte nas duas pontas, como rua de verdade.
+    w.patch(35, 0, 2.8, RUA_COMP, P.concrete, 0, 0.014, calcadaDePedrinha()); // calçada
+    w.patch(40.8, 0, 8.8, RUA_COMP, P.asphalt, 0, 0.018, asfalto()); // a rua
 
     // o tracejado do meio da rua. Sem ele o asfalto texturizado continua lendo
     // como pátio: é a faixa que diz "isto é uma rua, o ônibus passa por aqui".
-    // Um traço de 2 m a cada 5 m, ao longo dos 34 de rua.
-    for (let z = 13 - 15; z <= 13 + 15; z += 5) {
+    // Um traço de 2 m a cada 5 m, de ponta a ponta.
+    for (let z = -RUA_COMP / 2 + 2; z <= RUA_COMP / 2 - 2; z += 5) {
       w.patch(40.8, z, 0.22, 2, P.metalWhite, 0, 0.022);
     }
     // a guia: o degrau entre a calçada e o asfalto
-    w.add(w.place(meioFio(34), 36.4, 0, 13));
+    w.add(w.place(meioFio(RUA_COMP), 36.4, 0, 0));
 
     // O ônibus deita ao longo do Z com `-PI/2`, que leva a porta (o `+Z` da
     // peça) para o `-X` do mundo — virada para a calçada, que é de onde a

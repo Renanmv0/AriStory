@@ -45,22 +45,27 @@ const DECK = { z: -2, largura: 48, profundidade: 38 };
  * da esquerda ele fica ATRÁS de quem chega, e ainda mostra a porta, que é o
  * lado interessante.
  */
-const PARADA = { x: -21.9, z: 9 };
+const PARADA = { x: -29.7, z: 9 };
 
 /**
  * A rua do clube, do mesmo jeito que a do Villa-Lobos: calçada, asfalto com
  * tracejado no meio e a guia entre os dois.
  *
- * Ela só desce até `z = -2` porque abaixo disso já é o restaurante (em
- * `x = -17, z = -14`) e o deque das mesas — uma rua de ponta a ponta passaria
- * por dentro deles. O trecho que existe é o que a câmera vê de quem está no
- * ponto, que é onde ela precisa existir.
+ * Ela vive FORA do clube. O piso de placas acaba em `x = -24`, e a calçada
+ * encosta nessa beirada (`-23,8`) e segue para a grama; do meio-fio em diante
+ * é asfalto, e o ônibus para lá — antes ele ficava estacionado em cima do piso
+ * da piscina.
+ *
+ * O comprimento é o do cenário inteiro (80 contra os 44 de área jogável): rua
+ * que começa e acaba dentro da tela vira pátio. Como ela passa por fora do
+ * deck, não esbarra mais no restaurante (`x = -17, z = -14`) e pode atravessar
+ * de ponta a ponta.
  */
 const RUA = {
-  calcada: -17.4, larguraCalcada: 2.8,
-  asfalto: -23.2, larguraAsfalto: 8.8,
-  guia: -18.8,
-  z: 9, comprimento: 22,
+  calcada: -25.2, larguraCalcada: 2.8,
+  asfalto: -31, larguraAsfalto: 8.8,
+  guia: -26.6,
+  z: 0, comprimento: 80,
 };
 
 /**
@@ -156,7 +161,7 @@ export const clube: SceneDef = {
     // parecerem o mesmo lugar.
     w.patch(RUA.calcada, RUA.z, RUA.larguraCalcada, RUA.comprimento, P.concrete, 0, 0.02, calcadaDePedrinha());
     w.patch(RUA.asfalto, RUA.z, RUA.larguraAsfalto, RUA.comprimento, P.asphalt, 0, 0.024, asfalto());
-    for (let z = RUA.z - 9; z <= RUA.z + 9; z += 5) {
+    for (let z = RUA.z - RUA.comprimento / 2 + 2; z <= RUA.z + RUA.comprimento / 2 - 2; z += 5) {
       w.patch(RUA.asfalto, z, 0.22, 2, P.metalWhite, 0, 0.028);
     }
     w.add(w.place(meioFio(RUA.comprimento), RUA.guia, 0, RUA.z));
@@ -167,12 +172,13 @@ export const clube: SceneDef = {
     //
     // O limite geral NÃO pode fechar em `-20`: as mesas do restaurante vivem em
     // `x = -20,6`, e ninguém mais sentaria nelas.
-    w.blockBox(RUA.guia, 1.25, 0.15, 3.25);
-    w.blockBox(RUA.guia, 14, 0.15, 6);
+    w.blockBox(RUA.guia, -16, 0.15, 20.5);
+    w.blockBox(RUA.guia, 22, 0.15, 14);
 
-    // o limite de caminhada fica DENTRO do deck: assim ninguém pisa na grama,
-    // que agora é só a moldura de fora
-    w.setBounds(-22, -19, 22, 16);
+    // O limite de caminhada segue DENTRO do deck nos outros três lados; na
+    // esquerda ele foi até a guia, senão ninguém alcança a porta do ônibus, que
+    // agora para do lado de fora do clube.
+    w.setBounds(-27.8, -19, 22, 16);
 
     // ------------------------------------------------------------- piscina
     w.add(w.place(poolShell(PISCINA.largura, PISCINA.profundidade, PISCINA.fundo), PISCINA.x, 0, PISCINA.z));
@@ -685,9 +691,7 @@ export const clube: SceneDef = {
     // permite.
     for (const [texto, cor, x, z] of [
       ['Piscina', P.fabricBlue, 3, 9.6],
-      // a placa dos sucos saiu de `-15,5` para não ficar plantada na frente do
-      // abrigo do ponto, que agora vive na calçada ao lado dela
-      ['Sucos', 0x4ec1a8, -13.4, 12.6],
+      ['Sucos', 0x4ec1a8, -15.5, 10.2],
     ] as const) {
       w.add(w.place(textSign(texto, cor), x, 0, z));
       w.blockCircle(x, z, 0.25);
@@ -707,9 +711,9 @@ export const clube: SceneDef = {
     const bordaX = DECK.largura / 2 + 1.5;
     const bordaZ = DECK.profundidade / 2 + 1.5;
     for (const [x, z] of [
-      // a que ficava em `[-bordaX, 4]` caiu no meio da rua nova e atravessou
-      // para o outro lado dela, onde virou a moldura verde do fundo da parada
-      [-bordaX, -8], [-30, 4], [bordaX, 2], [bordaX, -10],
+      // as duas da esquerda atravessaram a rua: em `-25,5` elas nasciam dentro
+      // da calçada, e do outro lado do asfalto viram o fundo verde da parada
+      [-37, -8], [-37, 4], [bordaX, 2], [bordaX, -10],
       [-9, -bordaZ + DECK.z], [11, -bordaZ + DECK.z], [-4, bordaZ + DECK.z],
     ] as const) {
       w.add(w.place(tree('palmeira', w.range(0.95, 1.2), w.rng()), x, 0, z));
@@ -721,9 +725,9 @@ export const clube: SceneDef = {
       // nada de arbusto brotando no deck
       if (Math.abs(x) < DECK.largura / 2 + 1 &&
         Math.abs(z - DECK.z) < DECK.profundidade / 2 + 1) continue;
-      // nem no asfalto: a rua vai de `-28` a `-17` na largura
-      if (x > -28.5 && x < -16.5 &&
-        Math.abs(z - RUA.z) < RUA.comprimento / 2 + 1) continue;
+      // nem na rua: ela atravessa o cenário inteiro, da calçada ao outro lado
+      // do asfalto
+      if (x > -36 && x < -23.5) continue;
       w.add(w.place(i % 2 ? bush(w.range(0.7, 1.1)) : flowers(6, 1.1), x, 0, z));
     }
     for (let i = 0; i < 6; i++) {
