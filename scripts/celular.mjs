@@ -85,11 +85,15 @@ const ondeAcamera = () =>
     return [+c.position.x.toFixed(2), +c.position.z.toFixed(2)];
   });
 const camAntes = await ondeAcamera();
+// 2,6 s por giro, e não 1,4: a câmera não salta para o ângulo novo, ela
+// interpola até lá. Com 1,4 s a medida caía no meio do movimento e a volta ao
+// ponto de partida dava 1,2 de sobra — o teste acusava um giro torto que não
+// existe. Medido: em 2,5 s a diferença é 0,15, e em 4 s é 0,00.
 await page.locator('.girar-btn.dir').tap();
-await page.waitForTimeout(1400);
+await page.waitForTimeout(2600);
 const camDepois = await ondeAcamera();
 await page.locator('.girar-btn.esq').tap();
-await page.waitForTimeout(1400);
+await page.waitForTimeout(2600);
 const camVoltou = await ondeAcamera();
 const girou = Math.hypot(camDepois[0] - camAntes[0], camDepois[1] - camAntes[1]);
 const desfez = Math.hypot(camVoltou[0] - camAntes[0], camVoltou[1] - camAntes[1]);
@@ -105,7 +109,38 @@ await page.waitForTimeout(400);
 await page.screenshot({ path: `${OUT}-controles.png` });
 const linhas = await page.locator('.menu .controles li').count();
 
+/**
+ * DOIS TOQUES NUM BOTÃO NÃO PODEM SELECIONAR NADA.
+ *
+ * No Safari do iPhone era isso que deixava a tela azul: o duplo toque disparava
+ * o "selecionar palavra", a seleção se espalhava pelo bloco e só um toque fora
+ * devolvia o jogo. Aqui o gesto entra como duplo clique, que é o equivalente do
+ * Chromium — se a seleção sair vazia, é porque o `user-select: none` pegou.
+ *
+ * A segunda medida é o valor calculado do `-webkit-user-select`: é ele que o
+ * Safari lê (a propriedade sem prefixo só vale de lá do 16.4 em diante), e era
+ * justamente ele que faltava.
+ */
+const selecao = await page.evaluate(async () => {
+  const alvo = document.querySelector('.menu-btn');
+  const lido = (el, prop) => getComputedStyle(el).getPropertyValue(prop);
+  const evento = (tipo) =>
+    alvo.dispatchEvent(new MouseEvent(tipo, { bubbles: true, detail: 2 }));
+  window.getSelection()?.removeAllRanges();
+  evento('mousedown'); evento('mouseup'); evento('click');
+  evento('mousedown'); evento('mouseup'); evento('click'); evento('dblclick');
+  return {
+    texto: (window.getSelection()?.toString() ?? '').trim(),
+    corpo: lido(document.body, '-webkit-user-select') || lido(document.body, 'user-select'),
+    botao: lido(alvo, '-webkit-user-select') || lido(alvo, 'user-select'),
+    toque: lido(alvo, 'touch-action'),
+  };
+});
+
 console.log('botões de toque:', botoes, `· ${Math.round(visual.largura)}px · ${visual.fundo}`);
+console.log('duplo toque no HUD · selecionou:', JSON.stringify(selecao.texto),
+  '· user-select corpo/botão:', selecao.corpo + '/' + selecao.botao,
+  '· touch-action:', selecao.toque);
 console.log('prompt tapado:', noPrompt + '%');
 console.log('fala tapada:', naFala + '%');
 console.log('botões de escolha tapados:', nasEscolhas + '%');
@@ -144,7 +179,12 @@ const ok =
   mochila.vagas === mochila.esperadas &&
   // um botão gira de verdade e o outro traz de volta ao ponto de partida
   girou > 5 &&
-  desfez < 1;
+  desfez < 1 &&
+  // e o duplo toque não seleciona nada — o bug da tela azul no iPhone
+  selecao.texto === '' &&
+  selecao.corpo === 'none' &&
+  selecao.botao === 'none' &&
+  selecao.toque === 'manipulation';
 
 await browser.close();
 process.exit(ok ? 0 : 1);

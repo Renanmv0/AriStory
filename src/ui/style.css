@@ -13,6 +13,23 @@
 
 * { box-sizing: border-box; }
 
+/**
+ * NADA NESTA PÁGINA É TEXTO PARA SELECIONAR — é um jogo.
+ *
+ * No Safari do iPhone, dois toques seguidos em qualquer botão do HUD disparam o
+ * "selecionar palavra" do navegador. Como o HUD é HTML de verdade (e não desenho
+ * no canvas), a seleção se espalhava pelo bloco inteiro e a tela ficava azul,
+ * só voltando ao jogo com um toque fora. No computador o gesto existe igual, mas
+ * é raro com mouse e o realce cabe numa palavra — por isso só o celular sofria.
+ *
+ * O PREFIXO `-webkit-` NÃO É ENFEITE: a versão sem prefixo do `user-select` só
+ * passou a valer no Safari a partir do 16.4, e é justamente o Safari do iPhone
+ * que precisa da outra. O `#ui` já tinha a regra sem prefixo, e era por isso que
+ * ela não pegava lá.
+ *
+ * `-webkit-touch-callout` mata o menu de "copiar/compartilhar" do toque longo —
+ * mesmo problema, gesto diferente.
+ */
 html, body {
   margin: 0;
   height: 100%;
@@ -21,6 +38,9 @@ html, body {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 #app { position: fixed; inset: 0; }
@@ -31,7 +51,25 @@ html, body {
   inset: 0;
   pointer-events: none;
   z-index: 10;
+  -webkit-user-select: none;
   user-select: none;
+}
+
+/**
+ * Todo botão e todo painel que aceita toque responde NA HORA.
+ *
+ * Sem `touch-action: manipulation` o Safari segura cada toque por ~300 ms
+ * esperando para ver se vem um segundo — o duplo toque de zoom. Como o zoom já
+ * está desligado no `<meta viewport>` do `index.html`, essa espera é só atraso.
+ * Não confundir com o `touch-action: none` do canvas e do boneco do armário:
+ * aqueles precisam do gesto CRU para arrastar a câmera; aqui a gente só quer
+ * clique, e `manipulation` é exatamente "clique sim, gesto de zoom não".
+ */
+#ui button,
+#ui .prompt,
+#ui .dialogue,
+#ui .escolhas button {
+  touch-action: manipulation;
 }
 
 /* Nada na UI captura clique por padrão — quem precisa liga com
@@ -295,6 +333,17 @@ body.touch-device .hints .toque { display: block; }
   --dourado: #b4863a;
 }
 .cardapio.show { opacity: 1; pointer-events: auto; }
+/**
+ * OS BOTÕES SÓ EXISTEM COM O CARDÁPIO ABERTO.
+ *
+ * Eles tinham `pointer-events: auto` solto na própria regra, e isso vale mesmo
+ * com o painel invisível: o botão de pedir continuava plantado no meio da tela
+ * pegando clique. Era ele que engolia o "Recomeçar" do menu — o `menu.mjs`
+ * acusava "a <button class=pedir> intercepta o clique" e ninguém conseguia
+ * apertar o botão de baixo. Preso ao `.show`, ele some junto com o painel.
+ */
+.cardapio.show .pedir,
+.cardapio.show .close { pointer-events: auto; }
 
 .cardapio .papel {
   position: relative;
@@ -471,7 +520,6 @@ body.touch-device .hints .toque { display: block; }
 /* o botão de pedir é o principal: dourado e cheio. O de fechar é a saída sem
    pedir, e fica discreto — dois botões do mesmo peso deixariam a escolha ambígua */
 .cardapio .pedir {
-  pointer-events: auto;
   display: block;
   margin: 0 auto 8px;
   border: 0;
@@ -491,7 +539,6 @@ body.touch-device .hints .toque { display: block; }
   cursor: default;
 }
 .cardapio .close {
-  pointer-events: auto;
   border: 0;
   padding: 8px 16px;
   border-radius: 999px;
