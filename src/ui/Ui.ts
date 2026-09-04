@@ -288,15 +288,66 @@ export class Ui {
     this.journal.addEventListener('click', (e) => {
       if (e.target === this.journal) this.closeJournal();
     });
+    /**
+     * O BOTAO DE ACAO E TOQUE **OU** SEGURADA, NUNCA OS DOIS.
+     *
+     * Ele estava fazendo as duas coisas no mesmo dedo: o `pointerdown` ja
+     * apertava o `KeyF` (a carga do frisbee) e o `click`, no fim, disparava o
+     * `KeyE` (interagir). Quem tocasse o botao para beber agua, ler o placar ou
+     * olhar a sacola DENTRO da quadra dava, sem querer, um aperta-e-solta de
+     * `F` — e a cena le solta abaixo de `CARGA_MINIMA` como passe simples. O
+     * disco saia da mao a cada interacao, e com ele a sequencia de trocas.
+     * Foi o Renan quem viu: "quero poder interagir sem soltar o frisbee".
+     *
+     * Agora o `pointerdown` so ARMA. Se o dedo sair antes de `SEGURAR`, foi
+     * toque: vale interagir, e o `KeyF` nunca chega a ser apertado. Se passar
+     * de `SEGURAR`, virou carga: o `KeyF` desce e, ao soltar, NAO interage —
+     * senao a mesma segurada que lanca o disco ainda dispararia a interacao de
+     * qualquer coisa que estivesse por perto.
+     *
+     * 200 ms fica logo acima dos 156 ms que a cena precisa para chegar em
+     * `CARGA_MINIMA` (0,12 de 1,3 s), entao nao existe faixa morta entre "isto
+     * foi um toque" e "isto foi uma carga de verdade".
+     */
     const acao = ui.querySelector('.action-btn')!;
-    acao.addEventListener('click', () => {
+    const SEGURAR = 200;
+    let armado = false;
+    let virouCarga = false;
+    let relogio: number | undefined;
+
+    acao.addEventListener('pointerdown', () => {
+      armado = true;
+      virouCarga = false;
+      relogio = window.setTimeout(() => {
+        if (!armado) return;
+        virouCarga = true;
+        this.onTouchHold?.(true);
+      }, SEGURAR);
+    });
+    acao.addEventListener('pointerup', () => {
+      if (!armado) return;
+      window.clearTimeout(relogio);
+      armado = false;
+      if (virouCarga) {
+        virouCarga = false;
+        this.onTouchHold?.(false);
+        return;
+      }
       if (this.dialogueOpen) this.advance?.();
       else this.onTouchAction?.();
     });
-    // segurar o botao carrega o lancamento; o clique acima continua valendo
-    acao.addEventListener('pointerdown', () => this.onTouchHold?.(true));
-    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
-      acao.addEventListener(ev, () => this.onTouchHold?.(false));
+    // dedo que escorrega para fora do botao NAO vale como toque: solta a carga
+    // (se houver) e nao interage com nada
+    for (const ev of ['pointercancel', 'pointerleave']) {
+      acao.addEventListener(ev, () => {
+        if (!armado) return;
+        window.clearTimeout(relogio);
+        armado = false;
+        if (virouCarga) {
+          virouCarga = false;
+          this.onTouchHold?.(false);
+        }
+      });
     }
     ui.querySelector('.swap-btn')!.addEventListener('click', () => this.onTouchSwap?.());
     ui.querySelector('.girar-btn.esq')!.addEventListener('click', () => this.onTouchGirar?.(-1));
