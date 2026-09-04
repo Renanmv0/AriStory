@@ -7,7 +7,7 @@ import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
   aroDeFrisbee, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
   cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
-  junco, kiosk, lamp, marcaDeMira, mesaPingPong, nenufar, picnicTable, raquete, skateShop,
+  junco, kiosk, lamp, marcaDeMira, meioFio, mesaPingPong, nenufar, picnicTable, raquete, skateShop,
   rock, scoreboard, signBoard, textSign, tree, waterFountain, windsock,
   bolinhaPingPong,
 } from '../world/props';
@@ -596,8 +596,10 @@ export const villaLobos: SceneDef = {
     // A rua e o caminho que chega nela sao a MESMA cor e se cruzavam em x 34~36:
     // dois asfaltos colados no mesmo lugar, piscando um por cima do outro. O
     // caminho agora para na calçada, e a rua começa depois dela.
-    w.patch(29.5, 13, 11, 5, P.asphalt, 0, 0.01, asfalto()); // caminho do parque até o vão
-    w.patch(35.6, 13, 1.6, 34, P.concrete, 0, 0.014, calcadaDePedrinha()); // calçada
+    // A calçada alargou de 1,6 para 2,8: o abrigo do ponto tem 2,3 de fundo, e
+    // na faixa antiga metade dele nasceria dentro da rua.
+    w.patch(28.8, 13, 9.6, 5, P.asphalt, 0, 0.01, asfalto()); // caminho do parque até o vão
+    w.patch(35, 13, 2.8, 34, P.concrete, 0, 0.014, calcadaDePedrinha()); // calçada
     w.patch(40.8, 13, 8.8, 34, P.asphalt, 0, 0.018, asfalto()); // a rua
 
     // o tracejado do meio da rua. Sem ele o asfalto texturizado continua lendo
@@ -606,15 +608,24 @@ export const villaLobos: SceneDef = {
     for (let z = 13 - 15; z <= 13 + 15; z += 5) {
       w.patch(40.8, z, 0.22, 2, P.metalWhite, 0, 0.022);
     }
+    // a guia: o degrau entre a calçada e o asfalto
+    w.add(w.place(meioFio(34), 36.4, 0, 13));
 
-    const onibus = w.add(w.place(bus(0x3f7fd6), 39.5, 0, 13, -Math.PI / 2));
-    w.blockBox(39.5, 13, 1.5, 4.3);
+    // O ônibus deita ao longo do Z com `-PI/2`, que leva a porta (o `+Z` da
+    // peça) para o `-X` do mundo — virada para a calçada, que é de onde a
+    // dupla embarca.
+    const onibus = w.add(w.place(bus(P.onibusAzul, 'Clube'), 39.5, 0, 13, -Math.PI / 2));
+    w.blockBox(39.5, 13, 1.4, 4.5);
 
-    const parada = w.add(w.place(busStop(), 36.4, 0, 13, -Math.PI / 2));
-    w.blockBox(35.9, 13, 0.3, 1.8);
+    // O abrigo abre para o `+Z` da peça; `+PI/2` põe essa boca virada para a
+    // rua. O colisor pega só o fundo e o banco — a frente é vazada, e quem
+    // espera precisa poder entrar embaixo do teto.
+    const parada = w.add(w.place(busStop(), 35, 0, 13, Math.PI / 2));
+    w.blockBox(34.3, 13, 0.4, 2.4);
+    w.blockCircle(35.5, 15.65, 0.25); // o totem da parada
 
-    const placaClube = w.add(w.place(textSign('Clube!', 0x4ec1a8), 36.4, 0, 8.6, Math.PI * 0.25));
-    w.blockCircle(36.4, 8.6, 0.3);
+    const placaClube = w.add(w.place(textSign('Clube!', 0x4ec1a8), 34.4, 0, 8.6, Math.PI * 0.25));
+    w.blockCircle(34.4, 8.6, 0.3);
 
     w.door({
       x: 37.6, z: 13,

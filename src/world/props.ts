@@ -1903,88 +1903,359 @@ export function textSign(texto: string, corPlaca: number = P.fabricBlue, corText
   return g;
 }
 
-/** Ônibus urbano parado no ponto. */
-export function bus(cor: number = 0x3f7fd6): THREE.Group {
+/**
+ * Ônibus urbano parado no ponto.
+ *
+ * Eixo do comprimento é o X, o nariz aponta para `+X` e as PORTAS ficam no
+ * `+Z` — quem gira a peça na cena precisa saber disso para a porta cair
+ * virada para a calçada (ver `bus()` no Villa-Lobos e no clube).
+ *
+ * O corpo é uma caixa só, e todo o resto é aplique: o que faz ler como ônibus
+ * de verdade é o teto abaulado, a fita de janela cortada por colunas, a saia
+ * do chassi, o para-choque saliente e o letreiro com o destino escrito. O
+ * `destino` vai no letreiro da frente e no da lateral, como no ônibus de
+ * cidade — é ele que diz para onde a dupla está indo.
+ */
+export function bus(cor: number = P.onibusAzul, destino = 'Circular'): THREE.Group {
   const g = new THREE.Group();
-  const comp = 8.4;
-  const alt = 2.6;
-  const larg = 2.5;
+  g.userData.peca = 'onibus';
+  const comp = 9;
+  const larg = 2.55;
+  const meio = larg / 2;
+  const pintura = toon(cor);
+  const chassi = toon(P.onibusChassi);
+  const vidro = toon(P.glass, { glow: 0.12 });
 
-  const corpo = new THREE.Mesh(new THREE.BoxGeometry(comp, alt, larg), toon(cor));
-  corpo.position.y = 1.55;
+  // ------------------------------------------------------------- carroceria
+  // A saia nasce mais estreita que o corpo: é o degrau de sombra que separa a
+  // carroceria do chão e faz a roda parecer entrar por dentro dela.
+  const saia = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.5, 0.5, larg - 0.14), chassi);
+  saia.position.y = 0.85;
+  g.add(saia);
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(comp, 1.9, larg), pintura);
+  corpo.position.y = 1.85;
   g.add(corpo);
 
-  const teto = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.2, 0.22, larg - 0.15), toon(P.metalWhite));
-  teto.position.y = 2.9;
+  /**
+   * Teto abaulado: um cilindro deitado ao longo do X e ACHATADO na vertical.
+   *
+   * A escala entra antes da rotação na matriz, então quem esmaga a altura é o
+   * `scale.x` — depois do `rotation.z = PI/2` o X local é que aponta para
+   * cima. Trocar por `scale.y` encolheria o comprimento do ônibus.
+   */
+  const teto = new THREE.Mesh(new THREE.CylinderGeometry(meio, meio, comp - 0.06, 16), pintura);
+  teto.rotation.z = Math.PI / 2;
+  teto.scale.x = 0.3;
+  teto.position.y = 2.8;
   g.add(teto);
 
-  const faixa = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.04, 0.3, larg + 0.04), toon(P.metalWhite));
-  faixa.position.y = 0.6;
-  g.add(faixa);
+  // ------------------------------------------------------- fita de janelas
+  // Uma faixa de vidro contínua e, por cima dela, as colunas na cor da
+  // pintura: sai mais barato que oito janelas e ainda deixa as duas laterais
+  // sempre iguais.
+  const fita = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.5, 1, larg + 0.04), vidro);
+  fita.position.y = 2.15;
+  g.add(fita);
+  for (let x = -comp / 2 + 0.55; x <= comp / 2 - 0.5; x += 1.55) {
+    const coluna = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.08, larg + 0.07), pintura);
+    coluna.position.set(x, 2.15, 0);
+    g.add(coluna);
+  }
 
-  // janelas dos dois lados
-  for (const z of [larg / 2 + 0.02, -larg / 2 - 0.02]) {
-    for (let i = 0; i < 4; i++) {
-      const janela = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.05), toon(P.glass, { glow: 0.12 }));
-      janela.position.set(-comp / 2 + 1.4 + i * 1.85, 2.1, z);
-      g.add(janela);
+  // frisos: o largo branco na cintura e o fino escuro logo abaixo dele
+  const friso = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.02, 0.18, larg + 0.06), toon(P.onibusFaixa));
+  friso.position.y = 1.36;
+  g.add(friso);
+  const frisoFino = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.02, 0.07, larg + 0.09), toon(P.onibusFriso));
+  frisoFino.position.y = 1.18;
+  g.add(frisoFino);
+
+  // ------------------------------------------------------------ as portas
+  // Duas, como em ônibus urbano: a da frente (por onde se embarca) e a do
+  // meio. A da frente fica em `x = comp/2 - 1.9`, e é dela que as cenas tiram
+  // o ponto de embarque — mexer aqui move onde a dupla nasce ao desembarcar.
+  for (const [x, larguraPorta] of [[comp / 2 - 1.9, 1.2], [-comp / 2 + 2.4, 1.4]] as const) {
+    const batente = new THREE.Mesh(new THREE.BoxGeometry(larguraPorta + 0.12, 2.05, 0.07), toon(P.onibusPorta));
+    batente.position.set(x, 1.5, meio + 0.02);
+    g.add(batente);
+    // as duas folhas de vidro, com o vão da junta no meio
+    for (const lado of [-1, 1] as const) {
+      const folha = new THREE.Mesh(new THREE.BoxGeometry(larguraPorta / 2 - 0.12, 1.55, 0.05), vidro);
+      folha.position.set(x + lado * (larguraPorta / 4 + 0.02), 1.72, meio + 0.06);
+      g.add(folha);
     }
+    // o degrau que aparece por baixo da porta aberta
+    const degrau = new THREE.Mesh(new THREE.BoxGeometry(larguraPorta, 0.12, 0.34), chassi);
+    degrau.position.set(x, 0.5, meio + 0.14);
+    g.add(degrau);
   }
 
-  // para-brisa e traseira
-  for (const [x, rot] of [[comp / 2 + 0.02, 0], [-comp / 2 - 0.02, 0]] as const) {
-    const vidro = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.1, larg - 0.5), toon(P.glass, { glow: 0.12 }));
-    vidro.position.set(x, 2.1, 0);
-    vidro.rotation.y = rot;
-    g.add(vidro);
+  // --------------------------------------------------------------- a frente
+  const paraBrisa = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.3, larg - 0.3), vidro);
+  paraBrisa.position.set(comp / 2 + 0.04, 2.14, 0);
+  paraBrisa.rotation.z = 0.12; // o topo cai para trás, como para-brisa de ônibus
+  g.add(paraBrisa);
+
+  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.95, larg - 0.06), pintura);
+  focinho.position.set(comp / 2 + 0.06, 1.35, 0);
+  g.add(focinho);
+
+  const grade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, larg - 1), toon(P.onibusPainel));
+  grade.position.set(comp / 2 + 0.21, 1.3, 0);
+  g.add(grade);
+
+  const paraChoque = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.36, larg + 0.06), chassi);
+  paraChoque.position.set(comp / 2 + 0.12, 0.66, 0);
+  g.add(paraChoque);
+
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.52), toon(P.metalWhite));
+  placa.position.set(comp / 2 + 0.31, 0.7, 0);
+  g.add(placa);
+
+  for (const lado of [-1, 1] as const) {
+    const farol = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.14, 12), toon(P.onibusFarol, { glow: 0.5 }));
+    farol.rotation.z = Math.PI / 2;
+    farol.position.set(comp / 2 + 0.2, 1, lado * (meio - 0.45));
+    g.add(farol);
+    const pisca = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.24), toon(P.onibusPisca, { glow: 0.3 }));
+    pisca.position.set(comp / 2 + 0.22, 1, lado * (meio - 0.1));
+    g.add(pisca);
+    // espelho retrovisor: um braço de tubo e a lâmina virada para trás
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.42, 6), chassi);
+    braco.rotation.x = Math.PI / 2;
+    braco.position.set(comp / 2 - 0.08, 2.55, lado * (meio + 0.2));
+    g.add(braco);
+    const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.44, 0.2), toon(P.onibusPainel));
+    lamina.position.set(comp / 2 - 0.08, 2.4, lado * (meio + 0.42));
+    g.add(lamina);
+    // limpador: um risco escuro atravessado no para-brisa
+    const limpador = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.95, 6), toon(P.onibusPainel));
+    limpador.rotation.z = Math.PI / 2 - 0.5;
+    limpador.rotation.y = Math.PI / 2;
+    limpador.position.set(comp / 2 + 0.13, 1.85, lado * 0.45);
+    g.add(limpador);
   }
 
-  // porta sanfonada
-  const porta = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.9, 1.0), toon(0x2b3440));
-  porta.position.set(comp / 2 - 1.6, 1.2, larg / 2 + 0.02);
-  g.add(porta);
+  // ------------------------------------------------- letreiros de destino
+  // O da frente e o da lateral, os dois com o texto escrito num canvas.
+  const painelFrente = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.42, larg - 0.6), toon(P.onibusPainel));
+  painelFrente.position.set(comp / 2 + 0.06, 2.72, 0);
+  g.add(painelFrente);
+  const textoFrente = letreiro(destino, larg - 0.8, 0.3, '#ffd24a');
+  textoFrente.rotation.y = Math.PI / 2;
+  textoFrente.position.set(comp / 2 + 0.13, 2.72, 0);
+  g.add(textoFrente);
 
-  // letreiro de destino
-  const letreiro = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.34, 0.05), toon(0x1f2229));
-  letreiro.position.set(comp / 2 - 0.4, 2.75, larg / 2 + 0.02);
-  g.add(letreiro);
+  const painelLado = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.36, 0.06), toon(P.onibusPainel));
+  painelLado.position.set(comp / 2 - 1.5, 2.72, meio + 0.02);
+  g.add(painelLado);
+  const textoLado = letreiro(destino, 1.5, 0.26, '#ffd24a');
+  textoLado.position.set(comp / 2 - 1.5, 2.72, meio + 0.07);
+  g.add(textoLado);
 
-  for (const [x, z] of [[comp / 2 - 1.9, larg / 2], [comp / 2 - 1.9, -larg / 2], [-comp / 2 + 1.6, larg / 2], [-comp / 2 + 1.6, -larg / 2]] as const) {
-    const roda = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.35, 14), toon(0x22242a));
-    roda.position.set(x, 0.5, z);
+  // ------------------------------------------------------------- a traseira
+  const vidroTras = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.95, larg - 0.5), vidro);
+  vidroTras.position.set(-comp / 2 - 0.03, 2.2, 0);
+  g.add(vidroTras);
+
+  // A tampa do motor é da COR DA PINTURA, com três frestas escuras. Escura
+  // inteira ela virava um buraco preto no meio da traseira.
+  //
+  // A 0,09 de espessura e recuada: a 0,08 a face de trás dela caía no mesmo
+  // plano da do vidro traseiro, e as duas serrilhavam uma na outra.
+  const tampaMotor = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.55, larg - 1.1), pintura);
+  tampaMotor.position.set(-comp / 2 - 0.06, 1.55, 0);
+  g.add(tampaMotor);
+  for (let i = 0; i < 3; i++) {
+    const fresta = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, larg - 1.3), toon(P.onibusPainel));
+    fresta.position.set(-comp / 2 - 0.12, 1.7 - i * 0.15, 0);
+    g.add(fresta);
+  }
+
+  const paraChoqueTras = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.34, larg + 0.04), chassi);
+  paraChoqueTras.position.set(-comp / 2 - 0.1, 0.66, 0);
+  g.add(paraChoqueTras);
+
+  for (const lado of [-1, 1] as const) {
+    const lanterna = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.22), toon(P.onibusLanterna, { glow: 0.3 }));
+    lanterna.position.set(-comp / 2 - 0.06, 1.08, lado * (meio - 0.32));
+    g.add(lanterna);
+  }
+
+  const escapamento = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8), toon(P.metalGrey));
+  escapamento.rotation.z = Math.PI / 2;
+  escapamento.position.set(-comp / 2 - 0.2, 0.5, -(meio - 0.5));
+  g.add(escapamento);
+
+  // ---------------------------------------------------------------- o teto
+  const arCondicionado = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.3, 1.5), toon(P.metalWhite));
+  arCondicionado.position.set(0.9, 3.02, 0);
+  g.add(arCondicionado);
+  const escotilha = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.12, 0.75), toon(P.onibusFaixa));
+  escotilha.position.set(-2.3, 3.1, 0);
+  g.add(escotilha);
+
+  // ---------------------------------------------------------------- rodas
+  // Eixo da frente com uma roda de cada lado; o de trás é de rodagem dupla,
+  // que é o que faz a traseira parecer pesada como a de ônibus.
+  const eixos: [number, number][] = [];
+  for (const lado of [-1, 1] as const) {
+    eixos.push([comp / 2 - 1.35, lado * (meio - 0.12)]);
+    eixos.push([-comp / 2 + 2, lado * (meio - 0.12)]);
+    eixos.push([-comp / 2 + 2, lado * (meio - 0.46)]);
+  }
+  for (const [x, z] of eixos) {
+    const roda = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.3, 14), toon(P.onibusPneu));
     roda.rotation.x = Math.PI / 2;
+    roda.position.set(x, 0.56, z);
     g.add(roda);
-    const calota = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.38, 12), toon(P.metalGrey));
-    calota.position.set(x, 0.5, z);
+    const calota = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.34, 12), toon(P.onibusCalota));
     calota.rotation.x = Math.PI / 2;
+    calota.position.set(x, 0.56, z);
     g.add(calota);
+  }
+  // paralama: meia rosca por cima de cada roda externa, na cor da pintura
+  for (const lado of [-1, 1] as const) {
+    for (const x of [comp / 2 - 1.35, -comp / 2 + 2]) {
+      const paralama = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.07, 6, 12, Math.PI), pintura);
+      paralama.position.set(x, 0.56, lado * (meio + 0.02));
+      g.add(paralama);
+    }
   }
   return g;
 }
 
-/** Ponto de ônibus com cobertura e banco. */
-export function busStop(cor: number = P.metalGrey): THREE.Group {
+/**
+ * Ponto de ônibus: abrigo de tubo com teto, vidro de fundo, banco de ripa,
+ * quadro de horário e o totem com a palavra ÔNIBUS.
+ *
+ * A boca do abrigo olha para o `+Z` local: quem gira a peça na cena tem que
+ * deixar esse lado virado para a rua, senão a dupla espera de costas para o
+ * ônibus.
+ */
+export function busStop(cor: number = P.abrigoEstrutura): THREE.Group {
   const g = new THREE.Group();
-  for (const x of [-1.5, 1.5]) {
-    const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.5, 8), toon(cor));
-    poste.position.set(x, 1.25, -0.6);
-    g.add(poste);
+  g.userData.peca = 'ponto-de-onibus';
+  const tubo = toon(cor);
+  const comp = 4.6;
+
+  // a plataforma de concreto por baixo — é o que "assenta" o abrigo na calçada
+  const piso = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.2, 0.08, 2.3), toon(P.concrete));
+  piso.position.set(0, 0.04, -0.2);
+  g.add(piso);
+
+  // quatro montantes: os de trás seguram o vidro, os da frente só o teto
+  for (const x of [-comp / 2 + 0.25, comp / 2 - 0.25]) {
+    for (const z of [-1, 0.6]) {
+      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.55, 10), tubo);
+      poste.position.set(x, 1.27, z);
+      g.add(poste);
+    }
   }
-  const cobertura = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.12, 1.6), toon(cor));
-  cobertura.position.set(0, 2.5, -0.2);
-  cobertura.rotation.x = -0.06;
-  g.add(cobertura);
-  const fundo = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.6, 0.08), toon(P.glass, { glow: 0.08 }));
-  fundo.position.set(0, 1.35, -1.15);
+  // as travessas que amarram os montantes em cima
+  for (const z of [-1, 0.6]) {
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.3, 0.1, 0.08), tubo);
+    travessa.position.set(0, 2.5, z);
+    g.add(travessa);
+  }
+
+  // teto: caído para a frente, com a testeira pintada na cor do clube
+  const telhado = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.12, 2.4), toon(P.abrigoTeto));
+  telhado.position.set(0, 2.62, -0.15);
+  telhado.rotation.x = -0.07;
+  g.add(telhado);
+  const testeira = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.06, 0.2, 0.08), toon(P.abrigoTeto));
+  testeira.position.set(0, 2.5, 1.02);
+  g.add(testeira);
+  // a luminária embutida, que é o que deixa o ponto aceso à noite
+  const luz = new THREE.Mesh(new THREE.BoxGeometry(comp - 1.2, 0.06, 0.24), toon(P.metalWhite, { glow: 0.45 }));
+  luz.position.set(0, 2.44, -0.15);
+  g.add(luz);
+
+  // fechamento: vidro no fundo e numa lateral, cartaz na outra
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.35, 1.85, 0.06), toon(P.abrigoVidro, { glow: 0.08, opacity: 0.85 }));
+  fundo.position.set(0, 1.45, -1.06);
   g.add(fundo);
-  const banco = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.1, 0.4), toon(P.wood));
-  banco.position.set(0, 0.5, -0.9);
-  g.add(banco);
-  for (const x of [-1.2, 1.2]) {
-    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.36), toon(cor));
-    pe.position.set(x, 0.25, -0.9);
+  const lateral = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.85, 1.5), toon(P.abrigoVidro, { glow: 0.08, opacity: 0.85 }));
+  lateral.position.set(comp / 2 - 0.26, 1.45, -0.2);
+  g.add(lateral);
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.9, 1.6), tubo);
+  moldura.position.set(-comp / 2 + 0.26, 1.45, -0.2);
+  g.add(moldura);
+  const cartaz = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.5, 1.2), toon(P.abrigoCartaz));
+  cartaz.position.set(-comp / 2 + 0.2, 1.45, -0.2);
+  g.add(cartaz);
+
+  // quadro de horário colado no vidro do fundo, com as linhas do papel
+  const quadro = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.05), toon(P.metalWhite));
+  quadro.position.set(comp / 2 - 1.1, 1.6, -0.99);
+  g.add(quadro);
+  for (let i = 0; i < 4; i++) {
+    const linha = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.02), toon(P.onibusPainel));
+    linha.position.set(comp / 2 - 1.1, 1.86 - i * 0.16, -0.955);
+    g.add(linha);
+  }
+
+  // banco: quatro ripas com folga, encosto de duas e dois pés de tubo
+  for (let i = 0; i < 4; i++) {
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(comp - 1.2, 0.08, 0.15), toon(P.abrigoBanco));
+    ripa.position.set(0, 0.52, -1 + 0.22 + i * 0.22);
+    g.add(ripa);
+  }
+  for (const y of [0.85, 1.03]) {
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(comp - 1.2, 0.13, 0.06), toon(P.abrigoBanco));
+    ripa.position.set(0, y, -0.94);
+    g.add(ripa);
+  }
+  for (const x of [-comp / 2 + 0.9, comp / 2 - 0.9]) {
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.5, 0.5), tubo);
+    pe.position.set(x, 0.26, -0.62);
     g.add(pe);
   }
+  // uma lixeirinha no canto, que todo ponto tem
+  const lixeira = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.16, 0.6, 10), tubo);
+  lixeira.position.set(comp / 2 - 0.55, 0.34, 0.35);
+  g.add(lixeira);
+  const boca = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.06, 10), toon(P.onibusPainel));
+  boca.position.set(comp / 2 - 0.55, 0.66, 0.35);
+  g.add(boca);
+
+  // O totem da parada, na ponta. Ele nasce FORA do abrigo (`-comp/2 - 0.75`):
+  // colado, a bandeira entrava no painel do cartaz.
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.9, 8), tubo);
+  mastro.position.set(-comp / 2 - 0.75, 1.45, 0.5);
+  g.add(mastro);
+  const bandeira = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.46, 0.07), toon(P.fabricBlue));
+  bandeira.position.set(-comp / 2 - 0.75, 2.6, 0.5);
+  g.add(bandeira);
+  for (const [z, giro] of [[0.545, 0], [0.455, Math.PI]] as const) {
+    const texto = letreiro('ÔNIBUS', 0.76, 0.28);
+    texto.rotation.y = giro;
+    texto.position.set(-comp / 2 - 0.75, 2.6, z);
+    g.add(texto);
+  }
+  return g;
+}
+
+/**
+ * Meio-fio: a guia de concreto que separa a calçada da rua.
+ *
+ * É só uma barra baixa, mas sem ela o asfalto e a calçada ficam duas manchas
+ * chapadas no mesmo plano — é este degrau que faz a rua ter beira. Nasce
+ * deitada ao longo do Z, com a face de cima em `y = 0.14`.
+ */
+export function meioFio(comprimento: number, cor: number = P.concrete): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'meio-fio';
+  const guia = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, comprimento), toon(cor));
+  guia.position.y = 0.07;
+  g.add(guia);
+  // a pintura da guia, um fio mais claro na quina de cima. Ela passa POR CIMA
+  // da guia (topo em 0,15 contra 0,14): no mesmo topo as duas serrilhavam.
+  const quina = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.05, comprimento - 0.1), toon(P.metalWhite));
+  quina.position.y = 0.125;
+  g.add(quina);
   return g;
 }
 

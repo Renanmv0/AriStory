@@ -6,14 +6,14 @@ import {
   bin, bleachers, bus, busStop, bush, canteiro, canteiroComPalmeira,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
-  mesaDePatio, poolShell, poolWater, restaurante, showerPost, sunLounger, textSign,
+  meioFio, mesaDePatio, poolShell, poolWater, restaurante, showerPost, sunLounger, textSign,
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
-import { pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
+import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
 
 /**
  * Clube — a piscina.
@@ -39,13 +39,29 @@ const DECK = { z: -2, largura: 48, profundidade: 38 };
 /**
  * Onde o ônibus encosta: canto de baixo à ESQUERDA, deitado ao longo do Z.
  *
- * Ele tem 2,9 de altura, e a câmera isométrica vem de `+X/+Z` — o que estiver
+ * Ele tem 3,2 de altura, e a câmera isométrica vem de `+X/+Z` — o que estiver
  * com x ou z maior que o jogador é desenhado NA FRENTE dele. Na borda de baixo
  * (`+Z`, onde estava a cerca) um ônibus taparia quem fosse embarcar; na borda
  * da esquerda ele fica ATRÁS de quem chega, e ainda mostra a porta, que é o
  * lado interessante.
  */
-const PARADA = { x: -21, z: 9 };
+const PARADA = { x: -21.9, z: 9 };
+
+/**
+ * A rua do clube, do mesmo jeito que a do Villa-Lobos: calçada, asfalto com
+ * tracejado no meio e a guia entre os dois.
+ *
+ * Ela só desce até `z = -2` porque abaixo disso já é o restaurante (em
+ * `x = -17, z = -14`) e o deque das mesas — uma rua de ponta a ponta passaria
+ * por dentro deles. O trecho que existe é o que a câmera vê de quem está no
+ * ponto, que é onde ela precisa existir.
+ */
+const RUA = {
+  calcada: -17.4, larguraCalcada: 2.8,
+  asfalto: -23.2, larguraAsfalto: 8.8,
+  guia: -18.8,
+  z: 9, comprimento: 22,
+};
 
 /**
  * O ponto de embarque, na frente da porta do ônibus.
@@ -134,6 +150,26 @@ export const clube: SceneDef = {
       // placa de 2 m, que é o tamanho de piso de borda de piscina de verdade
       textura: pisoDePlacas(2),
     });
+    // A RUA, na borda esquerda: o ônibus não podia continuar estacionado em
+    // cima do piso do clube. Vem por cima do deck e da grama, na mesma ordem do
+    // Villa-Lobos — calçada, guia, asfalto — para os dois lados da viagem
+    // parecerem o mesmo lugar.
+    w.patch(RUA.calcada, RUA.z, RUA.larguraCalcada, RUA.comprimento, P.concrete, 0, 0.02, calcadaDePedrinha());
+    w.patch(RUA.asfalto, RUA.z, RUA.larguraAsfalto, RUA.comprimento, P.asphalt, 0, 0.024, asfalto());
+    for (let z = RUA.z - 9; z <= RUA.z + 9; z += 5) {
+      w.patch(RUA.asfalto, z, 0.22, 2, P.metalWhite, 0, 0.028);
+    }
+    w.add(w.place(meioFio(RUA.comprimento), RUA.guia, 0, RUA.z));
+
+    // A guia também é parede, menos no vão da parada: o asfalto é do ônibus, e
+    // só se pisa nele para embarcar. O vão vai de `z = 4,5` a `z = 8`, que é a
+    // frente da porta (`EMBARQUE`).
+    //
+    // O limite geral NÃO pode fechar em `-20`: as mesas do restaurante vivem em
+    // `x = -20,6`, e ninguém mais sentaria nelas.
+    w.blockBox(RUA.guia, 1.25, 0.15, 3.25);
+    w.blockBox(RUA.guia, 14, 0.15, 6);
+
     // o limite de caminhada fica DENTRO do deck: assim ninguém pisa na grama,
     // que agora é só a moldura de fora
     w.setBounds(-22, -19, 22, 16);
@@ -636,17 +672,22 @@ export const clube: SceneDef = {
     w.add(w.place(bin(), 6.5, 0, 11.4));
     w.blockCircle(6.5, 11.4, 0.3);
 
-    // O PONTO DE ÔNIBUS, ao lado de quem já está parado ali. A cobertura abre
-    // para `+Z`; a fila fica de frente para a câmera.
-    w.add(w.place(busStop(), -17, 0, 12.5));
-    w.blockBox(-17, 11.9, 1.9, 1);
+    // O PONTO DE ÔNIBUS, na calçada, do lado do ônibus. O abrigo abre para o
+    // `+Z` da peça, e `-PI/2` leva essa boca para o `-X` do mundo — virada para
+    // a rua, com o fundo de vidro de costas para o clube. O colisor pega só o
+    // fundo e o banco: por baixo do teto se anda.
+    w.add(w.place(busStop(), RUA.calcada, 0, PARADA.z, -Math.PI / 2));
+    w.blockBox(RUA.calcada + 0.7, PARADA.z, 0.4, 2.4);
+    w.blockCircle(RUA.calcada - 0.5, PARADA.z - 2.65, 0.25); // o totem da parada
 
     // PLACAS. É o que mais faz um lugar parecer clube de verdade: o texto sai
     // de um canvas em tempo de execução, que é a única "textura" que o projeto
     // permite.
     for (const [texto, cor, x, z] of [
       ['Piscina', P.fabricBlue, 3, 9.6],
-      ['Sucos', 0x4ec1a8, -15.5, 10.2],
+      // a placa dos sucos saiu de `-15,5` para não ficar plantada na frente do
+      // abrigo do ponto, que agora vive na calçada ao lado dela
+      ['Sucos', 0x4ec1a8, -13.4, 12.6],
     ] as const) {
       w.add(w.place(textSign(texto, cor), x, 0, z));
       w.blockCircle(x, z, 0.25);
@@ -666,7 +707,9 @@ export const clube: SceneDef = {
     const bordaX = DECK.largura / 2 + 1.5;
     const bordaZ = DECK.profundidade / 2 + 1.5;
     for (const [x, z] of [
-      [-bordaX, -8], [-bordaX, 4], [bordaX, 2], [bordaX, -10],
+      // a que ficava em `[-bordaX, 4]` caiu no meio da rua nova e atravessou
+      // para o outro lado dela, onde virou a moldura verde do fundo da parada
+      [-bordaX, -8], [-30, 4], [bordaX, 2], [bordaX, -10],
       [-9, -bordaZ + DECK.z], [11, -bordaZ + DECK.z], [-4, bordaZ + DECK.z],
     ] as const) {
       w.add(w.place(tree('palmeira', w.range(0.95, 1.2), w.rng()), x, 0, z));
@@ -678,6 +721,9 @@ export const clube: SceneDef = {
       // nada de arbusto brotando no deck
       if (Math.abs(x) < DECK.largura / 2 + 1 &&
         Math.abs(z - DECK.z) < DECK.profundidade / 2 + 1) continue;
+      // nem no asfalto: a rua vai de `-28` a `-17` na largura
+      if (x > -28.5 && x < -16.5 &&
+        Math.abs(z - RUA.z) < RUA.comprimento / 2 + 1) continue;
       w.add(w.place(i % 2 ? bush(w.range(0.7, 1.1)) : flowers(6, 1.1), x, 0, z));
     }
     for (let i = 0; i < 6; i++) {
@@ -699,8 +745,8 @@ export const clube: SceneDef = {
     // `rotation.y = PI/2` deita o ônibus ao longo do Z e leva a porta dele (que
     // nasce no `+Z` local) para o `+X` do mundo — virada para dentro do clube,
     // que é de onde a dupla chega.
-    const onibus = w.add(w.place(bus(), PARADA.x, 0, PARADA.z, Math.PI / 2));
-    w.blockBox(PARADA.x, PARADA.z, 1.3, 4.3);
+    const onibus = w.add(w.place(bus(P.onibusAzul, 'Parque'), PARADA.x, 0, PARADA.z, Math.PI / 2));
+    w.blockBox(PARADA.x, PARADA.z, 1.4, 4.5);
 
     w.door({
       x: EMBARQUE.x, z: EMBARQUE.z,

@@ -171,6 +171,29 @@ export const PALETTE = {
   dequeViga: 0xa9763f,
   dequeTrepadeira: 0x4f9b46,
 
+  // o ônibus que liga o parque ao clube. O azul é o do transporte urbano de
+  // São Paulo; o chassi é escuro para a carroceria "flutuar" sobre a sombra da
+  // saia, e o cinza do pneu é lavado porque preto puro come o degradê do toon.
+  onibusAzul: 0x3f7fd6,
+  onibusFaixa: 0xf2f5f7,
+  onibusFriso: 0x2a5aa0,
+  onibusChassi: 0x33383f,
+  onibusPneu: 0x2b2d33,
+  onibusCalota: 0xb6bec6,
+  onibusPorta: 0x2b3440,
+  onibusPainel: 0x1f2229,
+  onibusFarol: 0xfff3cc,
+  onibusPisca: 0xf2a63b,
+  onibusLanterna: 0xd63b34,
+
+  // o abrigo do ponto: estrutura de tubo pintado, teto de telha metálica,
+  // vidro fumê nas laterais e o banco de ripa que todo ponto tem
+  abrigoEstrutura: 0x5c6874,
+  abrigoTeto: 0x2f9e79,
+  abrigoVidro: 0xcfe6ef,
+  abrigoBanco: 0xb5793a,
+  abrigoCartaz: 0xf6d3d8,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

@@ -88,6 +88,7 @@ node scripts/cardapio.mjs /tmp/cd   # a mesa do restaurante: sentar, pedir, o ga
 node scripts/cama.mjs    /tmp/cm    # deitar junto: lado a lado, e os bracos balancando
 node scripts/pelusa.mjs  /tmp/pe    # o gato: passeia sem entrar em movel, mia e recebe carinho
 node scripts/deque.mjs   /tmp/dq    # o deque de descanso: deitar nas espreguicadeiras a beira da piscina
+node scripts/onibus.mjs  /tmp/ob    # o onibus e o ponto de perto, nas duas ruas (parque e clube)
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```
 
