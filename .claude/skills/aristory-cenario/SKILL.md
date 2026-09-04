@@ -81,7 +81,7 @@ w.interact({
   radius: 2,               // distância em que o prompt aparece
   label: 'Sentar no banco',
   icon: '🪑',
-  highlight: objeto,       // balança de leve quando você chega perto
+  highlight: objeto,       // a que objeto a interação se refere (não anima)
   once: false,
   priority: 0,             // maior ganha quando dois prompts se sobrepõem
   onInteract: async (g) => { /* … */ },

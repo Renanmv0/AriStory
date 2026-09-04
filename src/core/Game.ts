@@ -426,7 +426,7 @@ export class Game implements GameAPI {
     this.sincronizarVestiveis();
 
     // ------------------------------------------------------- interativos
-    this.updateHot(world, dt);
+    this.updateHot(world);
     this.updateBeijo();
 
     // ------------------------------------------------------------- cena
@@ -498,7 +498,7 @@ export class Game implements GameAPI {
     }
   }
 
-  private updateHot(world: WorldBuilder, dt: number): void {
+  private updateHot(world: WorldBuilder): void {
     let best: Interactable | null = null;
     let bestDist = Infinity;
     let bestPriority = -Infinity;
@@ -517,16 +517,12 @@ export class Game implements GameAPI {
     }
 
     if (best !== this.hot) {
-      this.hot?.setHot(false);
-      best?.setHot(true);
       this.hot = best;
       if (best && !this.player.locked) this.ui.showPrompt(best.icon, best.label);
       else this.ui.hidePrompt();
     }
     if (this.player.locked || this.ui.dialogueOpen) this.ui.hidePrompt();
     else if (this.hot) this.ui.showPrompt(this.hot.icon, this.hot.label);
-
-    for (const it of world.interactables) it.update(dt);
   }
 
   // ------------------------------------------------------------- GameAPI
