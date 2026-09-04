@@ -4,17 +4,17 @@ import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
 
 /**
- * A SALVA-VIDAS DA PISCINA DO CLUBE, uma capivara.
+ * O CAPY, a capivara salva-vidas da piscina do clube. O nome e do Renan.
  *
- * Ela e a segunda funcionaria do clube com POSTO, depois da Gina da portaria, e
+ * Ele e o segundo funcionario do clube com POSTO, depois da Gina da portaria, e
  * o mecanismo e o mesmo: a cena passa uma area menor que os 70 cm de distancia
- * minima que o `novoDestino` exige, as doze tentativas falham e ela fica onde
+ * minima que o `novoDestino` exige, as doze tentativas falham e ele fica onde
  * esta — respirando, olhando a agua e apitando de vez em quando. Nenhuma linha
- * de cerebro precisou mudar para ela nao sair da cadeira.
+ * de cerebro precisou mudar para ele nao sair da cadeira.
  *
- * ELA MORA EM CIMA DA CADEIRA, e isso e a cena quem resolve, nao ela: o `y` do
+ * ELE MORA EM CIMA DA CADEIRA, e isso e a cena quem resolve, nao ele: o `y` do
  * grupo nunca e tocado pelo cerebro (so `x` e `z` mudam), entao a cena levanta
- * ela ate o estrado uma vez e pronto. Foi de graca, e e o mesmo motivo pelo
+ * ele ate o estrado uma vez e pronto. Foi de graca, e e o mesmo motivo pelo
  * qual a Gina cabe dentro da guarita.
  *
  * CAPIVARA NAO TEM MANCHA NEM RABO, e e isso que a torna dificil: tirando o
@@ -26,12 +26,12 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * 2. os OLHOS E AS ORELHAS FICAM NO ALTO DA CABECA, quase na linha de cima:
  *    e o corpo de bicho que passa o dia com o resto submerso;
  * 3. as PERNAS SAO CURTAS e o corpo quase encosta no chao. Perna longa demais
- *    ja deixou ela com cara de bezerro.
+ *    ja deixou ele com cara de bezerro.
  *
  * O uniforme (a regata, o apito e o oculos) e o que transforma capivara em
- * FUNCIONARIA. Sem ele ela seria um bicho que subiu na cadeira.
+ * FUNCIONARIO. Sem ele o Capy seria um bicho que subiu numa cadeira.
  */
-export class Capivara extends Bicho {
+export class Capy extends Bicho {
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly orelhas: THREE.Group[] = [];
@@ -41,11 +41,11 @@ export class Capivara extends Bicho {
 
   constructor(area: AreaDoBicho) {
     super(area, {
-      // devagar: e capivara, e ela esta trabalhando sentada
+      // devagar: e capivara, e ele esta trabalhando sentado
       velocidade: 0.45,
       descansoMin: 2.2,
       descansoMax: 5.0,
-      // no posto ela passa o tempo sentada, olhando a agua
+      // no posto ele passa o tempo sentado, olhando a agua
       chanceDeSentar: 0.75,
       somCadaMin: 16,
       somCadaMax: 30,
@@ -53,7 +53,7 @@ export class Capivara extends Bicho {
       semente: 20260905,
     });
     this.montar();
-    this.prontoParaAparecer('capivara-salva-vidas');
+    this.prontoParaAparecer('capy');
   }
 
   // ----------------------------------------------------------------- corpo
@@ -107,7 +107,7 @@ export class Capivara extends Bicho {
     // que especie e aquilo.
     // etiqueta: e por ela que o teste acha a cabeca para medir a varredura,
     // em vez de adivinhar qual grupo e qual (a Gina faz igual)
-    this.cabeca.name = 'cabeca-da-capivara';
+    this.cabeca.name = 'cabeca-do-capy';
     this.cabeca.position.set(0, 0.4, 0.235);
     const cranio = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), pelo);
     cranio.scale.set(0.145, 0.128, 0.15);
@@ -152,11 +152,11 @@ export class Capivara extends Bicho {
     }
 
     /**
-     * O OCULOS ESCURO, num grupo proprio para poder SUMIR no carinho: ela tira
-     * o oculos quando alguem chega perto, e e o unico jeito de os olhos dela
+     * O OCULOS ESCURO, num grupo proprio para poder SUMIR no carinho: ele tira
+     * o oculos quando alguem chega perto, e e o unico jeito de os olhos dele
      * aparecerem. Bicho de oculos escuro nao consegue fazer cara de contente.
      */
-    this.oculos.name = 'oculos-da-capivara';
+    this.oculos.name = 'oculos-do-capy';
     const lente = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.038, 0.028), toon(0x2b2a33));
     lente.position.set(0, 0.064, 0.118);
     this.oculos.add(lente);
@@ -174,7 +174,7 @@ export class Capivara extends Bicho {
      *
      * Ela era mais BAIXA que o tronco (0,115 contra 0,155 de meia-altura),
      * entao sobrava so uma tira vermelha nas laterais — e a camera isometrica
-     * olha o lombo do bicho, nao o flanco. Da vista de jogo a salva-vidas era
+     * olha o lombo do bicho, nao o flanco. Da vista de jogo o salva-vidas era
      * uma capivara marrom sem uniforme nenhum, e o uniforme e o que transforma
      * bicho em funcionaria.
      *
@@ -212,7 +212,7 @@ export class Capivara extends Bicho {
   // ------------------------------------------------------------------ pose
 
   /**
-   * Ela e um bicho de POSTO: passa quase todo o tempo sentada, e o que tem que
+   * Ele e um bicho de POSTO: passa quase todo o tempo sentado, e o que tem que
    * estar vivo e a VARREDURA — a cabeca indo de um lado ao outro da piscina,
    * devagar. Bicho de guarda parado de cabeca fixa lê como estatua.
    */
@@ -233,9 +233,9 @@ export class Capivara extends Bicho {
       }
       this.corpo.rotation.z *= 1 - Math.min(1, dt * 8);
       /**
-       * Sentada, o peito SOBE e o traseiro desce. Rotacao em X positiva leva a
+       * Sentado, o peito SOBE e o traseiro desce. Rotacao em X positiva leva a
        * frente para BAIXO, entao sentar e angulo NEGATIVO — com o sinal trocado
-       * ela faz reverencia em vez de sentar.
+       * ele faz reverencia em vez de sentar.
        */
       const alvoX = sentado ? -0.26 : 0;
       this.corpo.rotation.x += (alvoX - this.corpo.rotation.x) * Math.min(1, dt * 5);
@@ -251,7 +251,7 @@ export class Capivara extends Bicho {
     /**
      * A VARREDURA DA PISCINA: a cabeca vai de um lado ao outro num seno LENTO
      * (0,45), com uma parada no meio de cada ponta. Rapido demais vira bicho
-     * nervoso; parado, vira estatua. No carinho ela para de varrer e olha para
+     * nervoso; parado, vira estatua. No carinho ele para de varrer e olha para
      * quem chegou.
      */
     const varre = Math.sin(fase * 0.45) * 0.62;
@@ -265,8 +265,8 @@ export class Capivara extends Bicho {
       this.orelhas[i].rotation.z = lado * (0.3 + carinho * 0.16) + tique * 0.06 * lado;
     }
 
-    // NO CARINHO ELA TIRA O OCULOS. É o unico jeito de os olhos aparecerem, e
-    // e o que faz a funcionaria virar bicho por um instante.
+    // NO CARINHO ELE TIRA O OCULOS. É o unico jeito de os olhos aparecerem, e
+    // e o que faz o funcionario virar bicho por um instante.
     this.oculos.visible = carinho < 0.25;
     const abertura = 1 - carinho * 0.75;
     for (const olho of this.olhos) olho.scale.y = Math.max(0.15, abertura);

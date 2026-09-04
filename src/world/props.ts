@@ -3601,21 +3601,60 @@ export function cadeiraDeSalvaVidas(altura = 1.7): THREE.Group {
   const madeira = toon(P.cadeiraDeGuarda);
   const vermelho = toon(P.salvaVidasVermelho);
 
-  // ------------------------------------------------------------- as pernas
-  // Elas ABREM para baixo: cadeira alta de perna reta parece uma banqueta
-  // esquecida, e a abertura e o que faz a peca ler como torre.
-  const ABRE = 0.38;
+  /**
+   * AS PERNAS ABREM PARA BAIXO, e a primeira versao errou isso de dois jeitos ao
+   * mesmo tempo — a cadeira parecia quebrada, e foi o Renan quem viu.
+   *
+   * 1. O PIVO ESTAVA NO MEIO DA PERNA. Girar uma caixa em volta do proprio
+   *    centro afasta o topo tanto quanto a base: as quatro pernas saiam de
+   *    debaixo do estrado e o assento ficava boiando entre elas. Agora cada
+   *    perna e um GRUPO com pivo LA EM CIMA, sob o estrado, e a malha pendura
+   *    para baixo — assim o topo nao sai do lugar e so o pe abre.
+   * 2. OS SINAIS ESTAVAM TROCADOS. Girando em Z, o ponto de baixo `(0, -L)` vai
+   *    para `(L·sen θ, -L·cos θ)`: θ POSITIVO leva o pe para `+x`. Com
+   *    `-sx` os pes fechavam e os joelhos e que abriam, que e exatamente o "as
+   *    pernas apontando para fora" da reclamacao. Em X e ao contrario, porque
+   *    ali o ponto de baixo vai para `z = -L·sen φ`: o pe abre com φ NEGATIVO.
+   *
+   * `bitola(y)` devolve a meia-largura das pernas em cada altura, e e dela que
+   * saem as travessas e os degraus. Antes eram numeros cravados, e por isso nao
+   * encostavam nas pernas.
+   */
+  const ABRE = 0.14;                 // radianos de abertura, por eixo
+  const TOPO_Y = altura + 0.02;      // onde as pernas encontram o estrado
+  const BITOLA = 0.42;               // meia-bitola no topo
+  const COMPRIMENTO = altura + 0.1;
+  const bitola = (y: number): number => BITOLA + Math.max(0, TOPO_Y - y) * Math.tan(ABRE);
+
   for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
-    const perna = new THREE.Mesh(new THREE.BoxGeometry(0.09, altura + 0.08, 0.09), madeira);
-    perna.position.set(sx * (0.42 + ABRE / 2), (altura + 0.08) / 2, sz * (0.42 + ABRE / 2));
-    perna.rotation.z = -sx * 0.11;
-    perna.rotation.x = sz * 0.11;
+    const perna = new THREE.Group();
+    perna.position.set(sx * BITOLA, TOPO_Y, sz * BITOLA);
+    perna.rotation.z = sx * ABRE;
+    perna.rotation.x = -sz * ABRE;
+    const osso = new THREE.Mesh(new THREE.BoxGeometry(0.09, COMPRIMENTO, 0.09), madeira);
+    osso.position.y = -COMPRIMENTO / 2;
+    perna.add(osso);
     g.add(perna);
   }
-  // as travessas que amarram as pernas, na altura do joelho de quem sobe
-  for (const z of [-0.62, 0.62]) {
-    const travessa = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.07, 0.07), madeira);
-    travessa.position.set(0, altura * 0.42, z);
+
+  // as travessas que amarram as pernas, na altura do joelho de quem sobe. A
+  // largura sai de `bitola`, senao elas ficam curtas e nao encostam em nada.
+  // AS DUAS DIRECOES FICAM EM ALTURAS DIFERENTES, e nao e capricho: cruzadas na
+  // mesma altura, as quatro travessas dividem topo e base nos pontos em que se
+  // encontram — sao oito pares de faces coplanares, e coplanar serrilha. Uma
+  // marcenaria de verdade tambem cruza assim, uma barra por cima da outra.
+  const TRAVESSA_Z = altura * 0.42;
+  const TRAVESSA_X = TRAVESSA_Z + 0.12;
+  const VAO_Z = bitola(TRAVESSA_Z);
+  const VAO_X = bitola(TRAVESSA_X);
+  for (const sz of [-1, 1] as const) {
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(VAO_Z * 2 + 0.09, 0.07, 0.07), madeira);
+    travessa.position.set(0, TRAVESSA_Z, sz * VAO_Z);
+    g.add(travessa);
+  }
+  for (const sx of [-1, 1] as const) {
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, VAO_X * 2 + 0.09), madeira);
+    travessa.position.set(sx * VAO_X, TRAVESSA_X, 0);
     g.add(travessa);
   }
 
@@ -3625,8 +3664,10 @@ export function cadeiraDeSalvaVidas(altura = 1.7): THREE.Group {
   g.add(assento);
   // a faixa vermelha na frente do estrado: o unico jeito de quem olha de longe
   // saber que aquilo e posto de salva-vidas, e nao uma cadeira alta qualquer
-  const faixa = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.14, 0.05), vermelho);
-  faixa.position.set(0, altura - 0.02, 0.5);
+  // mais estreita que o estrado e com o topo abaixo dele: encostar a faixa nos
+  // dois planos do assento (largura e topo) daria dois pares coplanares
+  const faixa = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.14, 0.05), vermelho);
+  faixa.position.set(0, altura - 0.04, 0.5);
   g.add(faixa);
 
   // --------------------------------------------------------- encosto e bracos
@@ -3634,31 +3675,35 @@ export function cadeiraDeSalvaVidas(altura = 1.7): THREE.Group {
   encosto.position.set(0, altura + 0.36, -0.46);
   g.add(encosto);
   for (const sx of [-1, 1] as const) {
+    // recuado 4 cm: com o braco em 0,54 a face de fora dele caia no mesmo plano
+    // da lateral do encosto, que tem a mesma largura do estrado
     const braco = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.07, 0.9), madeira);
-    braco.position.set(sx * 0.54, altura + 0.27, 0.02);
+    braco.position.set(sx * 0.5, altura + 0.27, 0.02);
     g.add(braco);
   }
 
-  // ------------------------------------------------------------ a escadinha
-  // encostada no lado `-X`, que e o que a camera nao mostra de frente
+  /**
+   * A ESCADA E A PROPRIA FACE DA FRENTE: os degraus vao de uma perna a outra,
+   * e a largura de cada um sai de `bitola` na altura dele. A primeira versao
+   * pendurava uma escadinha solta em `x = -0,9`, com montantes proprios, e ela
+   * flutuava ao lado da cadeira sem encostar em nada.
+   */
   for (let i = 0; i < 4; i++) {
-    const degrau = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.14), madeira);
-    degrau.position.set(-0.9, 0.34 + i * 0.38, 0.2);
+    const y = 0.3 + i * 0.36;
+    const meia = bitola(y);
+    const degrau = new THREE.Mesh(new THREE.BoxGeometry(meia * 2 - 0.02, 0.06, 0.12), madeira);
+    degrau.position.set(0, y, bitola(y) * 0.98);
     g.add(degrau);
-  }
-  for (const sz of [-1, 1] as const) {
-    const montante = new THREE.Mesh(new THREE.BoxGeometry(0.07, altura, 0.07), madeira);
-    montante.position.set(-0.9, altura / 2, 0.2 + sz * 0.2);
-    g.add(montante);
   }
 
   // ------------------------------------------------------ a boia pendurada
+  // ela sai do lado `+X`, e nao da frente: a frente agora e a escada
+  const boiaY = altura * 0.66;
   const boia = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.075, 8, 16), vermelho);
-  boia.position.set(0.62, altura * 0.6, 0.5);
-  boia.rotation.y = Math.PI / 2;
+  boia.position.set(bitola(boiaY) + 0.12, boiaY, 0);
   g.add(boia);
-  const cruz = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.34, 0.1), toon(P.salvaVidasBranco));
-  cruz.position.set(0.62, altura * 0.6, 0.5);
+  const cruz = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.1, 0.03), toon(P.salvaVidasBranco));
+  cruz.position.set(bitola(boiaY) + 0.12, boiaY, 0);
   g.add(cruz);
 
   return g;
