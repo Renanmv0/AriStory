@@ -4,7 +4,7 @@ import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
 
 /**
- * O GARCOM CANINO, agora passeando pelo salao do Mania de Churrasco.
+ * O WALTER, o garcom canino do Mania de Churrasco. O nome e do Renan.
  *
  * Ele ja existia como `dogWaiter()` em `world/props.ts`, e continua existindo:
  * la ele e PECA DE CUTSCENE — nasce na porta do restaurante do clube, leva o
@@ -23,7 +23,7 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * mais a gravata, que faz o bicho ler como funcionario da casa e nao como
  * cachorro que entrou da rua.
  */
-export class Cachorro extends Bicho {
+export class Walter extends Bicho {
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly rabo = new THREE.Group();

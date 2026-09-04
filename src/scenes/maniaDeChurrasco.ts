@@ -8,7 +8,7 @@ import {
   upperCabinets, wallShelf,
 } from '../world/furniture';
 import { letreiro } from '../world/props';
-import { Cachorro } from '../entities/bichos/Cachorro';
+import { Walter } from '../entities/bichos/Walter';
 import { toon } from '../core/materials';
 import { assoalhoDeMadeira, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
@@ -66,6 +66,15 @@ const LATERAL = { x: 0.5, zIni: z0 + 0.2, zFim: -2 };
  * ver `PIA`, e a conta de folga que está lá.
  */
 const PORTA = { z: -4.4 };
+
+/** o que o Ari diz nos carinhos seguintes: o primeiro é a apresentação dele */
+const FALAS_DO_WALTER = [
+  'Ele fica de bandeja e tudo. Nem tira pra receber carinho.',
+  'Ó o rabo. Isso é rabo de quem gosta do emprego.',
+  'Walter, você é o melhor funcionário daqui.',
+  'Ele já entendeu que a gente volta sempre.',
+  'Se ele pudesse falar, já tinha anotado nosso pedido.',
+];
 
 export const maniaDeChurrasco: SceneDef = {
   id: 'mania-de-churrasco',
@@ -314,7 +323,7 @@ export const maniaDeChurrasco: SceneDef = {
      * ele não existisse, e o garçom entraria na cozinha pela parede. A coleira
      * é a área, como na girafa da portaria.
      */
-    const cachorro = new Cachorro({
+    const cachorro = new Walter({
       minX: x0 + 1.2, maxX: W / 2 - 1.2,
       // do balcão de passagem até a mureta da frente
       minZ: PASSAGEM.z + 1.1, maxZ: D / 2 - 1.2,
@@ -323,19 +332,41 @@ export const maniaDeChurrasco: SceneDef = {
     w.add(cachorro.group);
     cachorro.aoSoar = () => g.som('latido');
 
-    const carinhoNoGarcom = w.interact({
-      id: 'mania:garcom',
+    /**
+     * O CARINHO NO WALTER, e a MEMÓRIA SÓ NA PRIMEIRA VEZ.
+     *
+     * O padrão é o mesmo do Pelusa: a `flag` guarda que eles já se conheceram,
+     * então a conversa de apresentação e o desbloqueio da memória acontecem uma
+     * vez só. Da segunda em diante ele responde com uma fala sorteada — carinho
+     * tem que continuar valendo a pena depois que a memória já entrou, senão o
+     * bicho vira um botão que só funciona uma vez.
+     */
+    const carinhoNoWalter = w.interact({
+      id: 'mania:walter',
       x: cachorro.x, z: cachorro.z, radius: 1.15,
-      label: 'Fazer carinho no garçom', icon: '🐕',
+      label: 'Fazer carinho no Walter', icon: '🐕',
       highlight: cachorro.group,
       onInteract: async (api) => {
         cachorro.receberCarinho();
         api.som('latido');
-        await conversa([
-          [A, 'Ele trabalha aqui, não trabalha?'],
-          [R, 'Gravata borboleta e bandeja nas costas. Trabalha.'],
-          [A, 'Bom funcionário. Merece o carinho.'],
-        ]);
+        if (!api.flag('walter-conhecido')) {
+          api.setFlag('walter-conhecido');
+          await conversa([
+            [A, 'Ele trabalha aqui, não trabalha?'],
+            [R, 'Gravata borboleta e bandeja nas costas. Trabalha.'],
+            [A, 'Tem plaquinha na coleira? …Walter.'],
+            [R, 'Prazer, Walter. A gente entrou pela porta dos fundos, mas é de paz.'],
+          ]);
+          api.unlock({
+            id: 'walter',
+            title: 'O Walter',
+            place: 'Mania de Churrasco',
+            note: 'O garçom do restaurante: gravata borboleta, bandeja de inox nas costas e um rabo que não para.',
+            icon: '🐕',
+          });
+          return;
+        }
+        await api.say([w.pick(FALAS_DO_WALTER)], A);
       },
     });
 
@@ -343,7 +374,7 @@ export const maniaDeChurrasco: SceneDef = {
     // chão: ele passeia, e o ponto de interação tem que passear junto
     w.onUpdate((dt) => {
       cachorro.update(dt);
-      carinhoNoGarcom.moveTo(cachorro.x, cachorro.z);
+      carinhoNoWalter.moveTo(cachorro.x, cachorro.z);
     });
 
     // ------------------------------------------------------------- enfeites
