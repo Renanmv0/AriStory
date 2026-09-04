@@ -573,6 +573,61 @@ export function muroDoClube(comprimento = 8): THREE.Group {
 }
 
 /**
+ * SEBE — a cerca viva que fecha o clube nos lados que não têm muro.
+ *
+ * Ela existe para resolver um problema que não é de decoração: o limite de
+ * caminhada é invisível, e bater nele no meio de um pátio vazio é a coisa que
+ * mais denuncia que aquilo é um cenário e não um lugar. A sebe fica EM CIMA do
+ * limite — o jogador para porque tem uma moita na frente dele, não porque o
+ * mundo acabou.
+ *
+ * Por isso ela é BAIXA (1,05). A conta de sempre: a câmera olha em 34° e esconde
+ * o chão até uma vez e meia a altura da peça na direção dela. Uma sebe de 1,8
+ * comeria dois metros e meio do piso na beirada inteira; com 1,05 a faixa
+ * escondida é a grama de fora, que não interessa a ninguém.
+ *
+ * O topo é RECORTADO em calotas, e não uma tampa reta: cerca viva aparada tem
+ * a linha ondulada das moitas que a formam, e é ela que separa uma sebe de uma
+ * caixa verde.
+ */
+export function sebe(comprimento = 8, altura = 1.05): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'sebe';
+
+  const folha = toon(P.bush);
+  const folhaClara = toon(P.leafLight);
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(comprimento, altura, 0.9), folha);
+  corpo.position.y = altura / 2;
+  g.add(corpo);
+
+  // O pé de terra, que impede a sebe de parecer plantada no ar. Ele AFUNDA 3 cm
+  // no chão: nascendo em `y = 0` como o corpo, as duas faces de baixo caem no
+  // mesmo plano olhando para o mesmo lado, que é z-fighting puro.
+  const canteiro = new THREE.Mesh(new THREE.BoxGeometry(comprimento + 0.1, 0.14, 1.02), toon(P.dirt));
+  canteiro.position.y = 0.04;
+  g.add(canteiro);
+
+  /**
+   * As calotas do topo. Uma a cada ~0,8, com raio e altura sorteados por uma
+   * conta determinística (`i`, e não `Math.random`): a mesma sebe tem que sair
+   * igual em todo build, senão a foto do teste muda sozinha.
+   */
+  const quantas = Math.max(2, Math.round(comprimento / 0.8));
+  for (let i = 0; i < quantas; i++) {
+    const t = (i + 0.5) / quantas;
+    const onda = Math.sin(i * 2.399) * 0.5 + 0.5;
+    const raio = 0.5 + onda * 0.09;
+    const moita = new THREE.Mesh(new THREE.SphereGeometry(raio, 8, 6), i % 3 === 0 ? folhaClara : folha);
+    moita.scale.set(1, 0.42 + onda * 0.16, 0.92);
+    moita.position.set(-comprimento / 2 + t * comprimento, altura - 0.04, 0);
+    g.add(moita);
+  }
+
+  return g;
+}
+
+/**
  * GUARITA DA PORTARIA — a casinha do porteiro, ao lado do portão.
  *
  * Ela é uma PEÇA DE BALCÃO, e peça de balcão tem uma armadilha só, sempre a

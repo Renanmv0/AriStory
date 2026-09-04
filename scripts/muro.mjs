@@ -1,7 +1,10 @@
 /**
- * O muro e o portão da entrada do clube.
+ * Os limites do clube: o muro e o portão a oeste, e a sebe nos outros três lados.
  *
  * O que este teste guarda:
+ * - a área jogável VAI ATÉ A SEBE. O limite já esteve dois metros antes da
+ *   beirada do piso e invisível, e a dupla batia numa parede no meio do
+ *   concreto — é a reclamação que a sebe veio resolver;
  * - o muro FECHA: andando contra ele fora do portão, em três alturas de `z`
  *   diferentes, ninguém atravessa para dentro do clube;
  * - o portão ABRE: pelo vão, a mesma caminhada entra;
@@ -75,7 +78,20 @@ const saiu = await empurrar(-23, 7, PARA_A_RUA, 5.5);
 // cancelam o `x` e sobra o `+z` puro, que é o que bate nela de frente
 const naFolha = await empurrar(-23.5, 2.0, ['KeyA', 'KeyS'], 2.2);
 
-// ------------------------------------------------- 4. a peça, medida na cena
+// -------------------------------------- 4. a área jogável chega até a sebe
+/**
+ * A sebe fica em cima da beirada do piso e tem 0,55 de meia-espessura; o corpo
+ * tem 0,42 de raio. Quem anda contra ela para colado nela — e é isso que se
+ * mede aqui, em vez de "o limite é tal número": o que interessa é que o jogador
+ * pare NUMA MOITA, e não num plano invisível metros antes dela.
+ */
+const naSebe = {
+  leste: await empurrar(27, -3, PARA_DENTRO, 6),
+  frente: await empurrar(4, 15.5, ['KeyA', 'KeyS'], 6),
+  fundo: await empurrar(4, -21.5, ['KeyW', 'KeyD'], 6),
+};
+
+// ------------------------------------------------- 5. a peça, medida na cena
 const pecas = await page.evaluate(() => {
   const achar = (nome) => {
     const todos = [];
@@ -88,7 +104,11 @@ const pecas = await page.evaluate(() => {
     });
     return todos;
   };
-  return { portao: achar('portao-do-clube'), muros: achar('muro-do-clube') };
+  return {
+    portao: achar('portao-do-clube'),
+    muros: achar('muro-do-clube'),
+    sebes: achar('sebe'),
+  };
 });
 
 // ------------------------------------------------------------------ relatório
@@ -97,7 +117,10 @@ console.log('1. muro fecha · x final em cada z:',
 console.log('2. portão · de fora para dentro:', JSON.stringify(entrou),
   '· de dentro para a rua:', JSON.stringify(saiu));
 console.log('3. folha aberta segura · parou em:', JSON.stringify(naFolha));
-console.log('4. portão em', JSON.stringify(pecas.portao), '· trechos de muro:', pecas.muros.length);
+console.log('4. parou na sebe · leste x', naSebe.leste[0],
+  '· frente z', naSebe.frente[1], '· fundo z', naSebe.fundo[1]);
+console.log('5. portão em', JSON.stringify(pecas.portao),
+  '· trechos de muro:', pecas.muros.length, '· sebes:', pecas.sebes.length);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const problemas = [];
@@ -112,6 +135,18 @@ if (saiu[0] > -26) problemas.push(`não deu para sair pelo portão (parou em x $
 // o colisor da folha vai de z 3,4 a 3,6 e o corpo tem 0,42 de raio: quem bate
 // nela para pouco antes de 3
 if (naFolha[1] > 3.3) problemas.push(`a folha aberta não segurou (foi até z ${naFolha[1]})`);
+// a face de dentro de cada sebe: piso 56×46 centrado em (4, -3), meia-espessura
+// 0,55 e o corpo com 0,42 de raio — quem encosta nela para a menos de 1 m
+if (naSebe.leste[0] < 30.4) {
+  problemas.push(`parede invisível antes da sebe leste (parou em x ${naSebe.leste[0]})`);
+}
+if (naSebe.frente[1] < 18.4) {
+  problemas.push(`parede invisível antes da sebe da frente (parou em z ${naSebe.frente[1]})`);
+}
+if (naSebe.fundo[1] > -24.4) {
+  problemas.push(`parede invisível antes da sebe do fundo (parou em z ${naSebe.fundo[1]})`);
+}
+if (pecas.sebes.length !== 3) problemas.push('as três sebes não estão na cena');
 if (pecas.portao.length !== 1) problemas.push('o portão não está na cena uma vez só');
 if (pecas.muros.length !== 2) problemas.push('faltou um dos dois trechos de muro');
 
