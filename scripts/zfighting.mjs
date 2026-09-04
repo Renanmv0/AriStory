@@ -35,6 +35,9 @@ const PECAS = [
   ['pergolado', 'clube'],
   ['espreguicadeira', 'clube'],
   ['mesinha-de-deque', 'clube'],
+  ['onibus', 'clube'],
+  ['ponto-de-onibus', 'clube'],
+  ['meio-fio', 'clube'],
 ];
 
 const browser = await chromium.launch({
