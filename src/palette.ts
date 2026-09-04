@@ -174,6 +174,20 @@ export const PALETTE = {
   portaoFerro: 0x24564c,
   luzDoPortao: 0xfff3c8,
 
+  // a guarita da entrada e a girafa que toma conta dela. O pelo é o amarelo
+  // queimado de girafa de verdade, e a mancha um tom de canela bem mais escuro
+  // — sem essa distância as manchas somem no toon shading. O quepe é o mesmo
+  // teal do portão, para o porteiro pertencer ao clube.
+  girafaPelo: 0xf0c46a,
+  girafaMancha: 0xa9702c,
+  girafaClaro: 0xfae7bd,
+  girafaCasco: 0x5b432c,
+  girafaCrina: 0x8a5a2a,
+  guaritaParede: 0xf5ead6,
+  guaritaFaixa: 0x2f7d6b,
+  guaritaBalcao: 0xb07c46,
+  guaritaTelhado: 0xc4553f,
+
   // o deque de descanso da beira da piscina. A madeira é mais clara e mais
   // acinzentada que a do deque do restaurante de propósito: aqui é tábua que
   // vive molhada e pega sol o dia inteiro, e a diferença de tom é o que separa

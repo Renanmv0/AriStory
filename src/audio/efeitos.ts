@@ -33,6 +33,7 @@ export type SomNome =
   | 'sentar'
   | 'miado'
   | 'latido'
+  | 'apito'
   | 'menu'
   | 'diario'
   | 'recomecar';
@@ -247,6 +248,35 @@ export const EFEITOS: Record<SomNome, Receita> = {
       glide: 700,
       q: 2.2,
     });
+  },
+
+  /**
+   * O APITO DA GIRAFA PORTEIRA — dois "fiu" subindo, de boas-vindas.
+   *
+   * Apito de guarda de verdade é estridente porque é ordem; este é convite,
+   * então são duas notas curtas da pentatônica em onda triangular, e não um
+   * ruído agudo. O sopro por baixo (`chiado`) é o que faz virar apito em vez de
+   * flauta: sem ele o som sai limpo demais e lê como alerta de micro-ondas.
+   */
+  apito: ({ ctx, destino, t }) => {
+    const um = nota(DO + PENTA[3]);
+    const dois = nota(DO + PENTA[5]);
+    // A SEGUNDA NOTA É MAIS LONGA E MAIS FORTE. O decaimento é exponencial: com
+    // 0,16 e 0,26 o apito rendia 0,18 s de áudio audível e o segundo "fiu"
+    // simplesmente não chegava — saía um bipe só. Medido no .wav, não no olho.
+    for (const [freq, quando, dur, vol] of [[um, t, 0.2, 0.055], [dois, t + 0.17, 0.46, 0.075]] as const) {
+      tom(ctx, destino, {
+        freq: freq * 0.94,
+        glide: freq,
+        quando,
+        dur,
+        vol,
+        ataque: 0.012,
+        tipo: 'triangle',
+        abafo: 3200,
+      });
+      chiado(ctx, destino, { quando, dur: dur * 0.7, vol: 0.014, freq: freq * 1.6, q: 6 });
+    }
   },
 
   pato: ({ ctx, destino, t }) => {

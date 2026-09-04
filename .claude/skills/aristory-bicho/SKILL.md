@@ -98,6 +98,51 @@ Três coisas que a cena declara e o bicho não adivinha:
    áudio — a cena liga `aoSoar` no `g.som(...)`.
 3. **O `moveTo` no `onUpdate`.** É o que faz o prompt andar junto.
 
+## Bicho com POSTO, que não passeia
+
+A girafa da portaria do clube fica parada na guarita, e isso **não pediu uma
+linha de cérebro nova**. O `novoDestino` só aceita um destino a mais de 0,7 do
+lugar onde o bicho está; a cena passa uma área menor que isso, as doze
+tentativas falham, e ele volta para `parado` — respirando, olhando em volta e
+fazendo barulho, que é tudo o que um porteiro precisa fazer.
+
+```ts
+const girafa = new Girafa({
+  minX: GUARITA.x - 0.15, maxX: GUARITA.x + 0.15,
+  minZ: GUARITA.z + 0.2,  maxZ: GUARITA.z + 0.5,
+});
+```
+
+Nada de `enabled = false` nem de uma subclasse "BichoParado": a área é a
+coleira.
+
+## Bicho dentro de peça de balcão
+
+Quem atende numa guarita, quiosque ou bilheteria some duas vezes: o telhado
+tapa (a câmera olha em 34°, e cada 10 cm de beiral engole 15 cm de interior) e
+a sombra dele escurece o que sobra. Três medidas resolveram a girafa, e valem
+para o próximo:
+
+1. a peça é RASA e o beiral avança pouco — 0,14 em vez dos 0,28 de um telhado
+   bonito;
+2. o vão da janela é grande, e o peitoril fica na altura do peito de quem tem
+   1,75;
+3. **a cabeça do bicho fica do lado de FORA da parede da frente**, debruçada
+   sobre o balcão. Fora da parede é fora da sombra.
+
+O teste mede exatamente isso (`scripts/guarita.mjs`): o `z` da cabeça contra a
+parede da frente, e a altura dela contra o tampo do balcão.
+
+## O sinal de `rotation.x` numa corrente de gomos
+
+`rotation.x` POSITIVO leva o `+Y` local para o `+Z` — ou seja, INCLINA PARA A
+FRENTE, para onde o bicho olha. Negativo deita para trás.
+
+O pescoço da girafa nasceu com os quatro gomos negativos e se deitava por cima
+do próprio lombo. Na foto isso não salta: bicho é simétrico, e a curva errada
+parece só uma curva estranha. Quem pegou foi a MEDIDA — o `z` da cabeça estava
+57 cm atrás da base do pescoço em vez de 60 à frente. Meça, não olhe.
+
 ## Modelar o corpo — o que o Pelusa já pagou em foto olhada
 
 1. **Elipsoide, não cápsula girada.** `CapsuleGeometry` com

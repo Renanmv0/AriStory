@@ -573,6 +573,176 @@ export function muroDoClube(comprimento = 8): THREE.Group {
 }
 
 /**
+ * GUARITA DA PORTARIA — a casinha do porteiro, ao lado do portão.
+ *
+ * Ela é uma PEÇA DE BALCÃO, e peça de balcão tem uma armadilha só, sempre a
+ * mesma: a câmera olha de cima em 34°, então teto e toldo passam na frente de
+ * quem está no balcão e escondem tudo. Aqui isso foi resolvido em três
+ * decisões, e nenhuma é enfeite:
+ *
+ *  1. ela é RASA (2,2 de profundidade). Cada metro a mais de teto é 1,5 m de
+ *     interior engolido;
+ *  2. o beiral avança só 0,25, e não os 0,6 de um telhado bonito;
+ *  3. o vão da janela é ENORME — do peitoril até quase o teto, e a largura
+ *     inteira da frente. O que se tem que ver aqui é o porteiro, não a parede.
+ *
+ * Vidro só nas laterais, e translúcido: vidro fechado por cima de quem atende
+ * some no toon shading e ainda tapa o que está dentro (foi a lição do quiosque).
+ * A frente fica ABERTA, como guarita de clube de verdade em dia de sol.
+ */
+export function guarita(largura = 2.6, profundidade = 2.2): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'guarita';
+
+  const massa = toon(P.guaritaParede);
+  const faixa = toon(P.guaritaFaixa);
+  const madeira = toon(P.guaritaBalcao);
+  // vidro BEM lavado (0,22): com 0,34 a girafa vista pela janela lateral virava
+  // um vulto pálido, e o que esta peça existe para mostrar é justamente ela
+  const vidro = flat(P.glass, 0.22);
+
+  const ESP = 0.16;
+  /**
+   * A GUARITA É ALTA (3 m de parede) porque o porteiro é uma girafa.
+   *
+   * Com 2,3 ela cabia, mas só: a cabeça dela raspava no forro e o vão da janela
+   * virava uma fresta. Aqui a janela vai de 1,31 a 2,94 — a dupla encosta no
+   * balcão na altura do peito e a cabeça da girafa fica emoldurada por ele,
+   * olhando os dois de cima, que é a graça de ter uma girafa na portaria.
+   */
+  const ALT = 3.0;
+  /**
+   * O peitoril fica na altura do peito de quem tem 1,75, e a bandeira é fina:
+   * o que sobra entre os dois é o vão, e é ele que decide se dá para ver o
+   * porteiro. Vão apertado esconde a cabeça da girafa, que é a única coisa que
+   * esta peça precisa mostrar.
+   */
+  const PEITORIL = 1.15;
+  const BASE = 0.16;
+  const hx = largura / 2;
+  const hz = profundidade / 2;
+  /** o que corre ENTRE as duas paredes laterais morre na face de dentro delas */
+  const VAO = largura - ESP * 2;
+
+  // -------------------------------------------------------------- alicerce
+  const plinto = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.18, BASE, profundidade + 0.18), toon(P.muroBase));
+  plinto.position.y = BASE / 2;
+  g.add(plinto);
+
+  // ---------------------------------------------------------------- paredes
+  /**
+   * As laterais são partidas em três: peitoril, vidro e bandeira. É o que faz
+   * a guarita ter janela dos dois lados sem precisar furar caixa nenhuma —
+   * three não recorta geometria, então "janela" aqui é o vão que se deixa.
+   */
+  for (const lado of [-1, 1]) {
+    const x = lado * (hx - ESP / 2);
+    const baixo = new THREE.Mesh(new THREE.BoxGeometry(ESP, PEITORIL, profundidade), massa);
+    baixo.position.set(x, BASE + PEITORIL / 2, 0);
+    g.add(baixo);
+
+    const vaoJanela = ALT - PEITORIL - 0.26;
+    const janela = new THREE.Mesh(new THREE.BoxGeometry(ESP * 0.45, vaoJanela, profundidade - 0.34), vidro);
+    janela.position.set(x, BASE + PEITORIL + vaoJanela / 2, 0);
+    g.add(janela);
+
+    const alto = new THREE.Mesh(new THREE.BoxGeometry(ESP, 0.26, profundidade), massa);
+    alto.position.set(x, BASE + ALT - 0.13, 0);
+    g.add(alto);
+  }
+
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(VAO, ALT, ESP), massa);
+  fundo.position.set(0, BASE + ALT / 2, -hz + ESP / 2);
+  g.add(fundo);
+  // a porta dos fundos, por onde o porteiro entra
+  // ela nasce 3 cm acima do piso (a soleira): nascendo em `BASE` como a parede,
+  // as duas faces de baixo caem no mesmo plano e brigam por pixel
+  const porta = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.92, 0.06), toon(P.vestiarioPorta));
+  porta.position.set(0, BASE + 0.03 + 0.96, -hz + ESP + 0.02);
+  g.add(porta);
+  const macaneta = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), toon(P.gold));
+  macaneta.position.set(0.3, BASE + 1.03, -hz + ESP + 0.07);
+  g.add(macaneta);
+
+  // ------------------------------------------------------------- a frente
+  // peitoril baixo, vão grande, e a bandeira em cima com o letreiro
+  const peitoril = new THREE.Mesh(new THREE.BoxGeometry(VAO, PEITORIL, ESP), massa);
+  peitoril.position.set(0, BASE + PEITORIL / 2, hz - ESP / 2);
+  g.add(peitoril);
+
+  const bandeira = new THREE.Mesh(new THREE.BoxGeometry(VAO, 0.26, ESP), faixa);
+  bandeira.position.set(0, BASE + ALT - 0.13, hz - ESP / 2);
+  g.add(bandeira);
+  const letras = letreiro('Portaria', VAO * 0.7, 0.18, '#fdf6e3');
+  letras.position.set(0, BASE + ALT - 0.13, hz + 0.012);
+  g.add(letras);
+
+  /**
+   * O BALCÃO avança 0,3 para fora, e é por onde a girafa se debruça. Ele é
+   * madeira, e não a massa da parede: é o único plano em que a dupla vai
+   * encostar, e madeira diz "atendimento" de longe.
+   */
+  const balcao = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.26, 0.11, 0.62), madeira);
+  balcao.position.set(0, BASE + PEITORIL + 0.055, hz + 0.06);
+  g.add(balcao);
+  // a testeira recua 2 cm da borda do tampo: casar as duas faces no mesmo plano
+  // é o par que serrilha
+  const testeira = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.2, 0.09, 0.06), faixa);
+  testeira.position.set(0, BASE + PEITORIL - 0.02, hz + 0.32);
+  g.add(testeira);
+
+  /**
+   * A faixa de cor no pé da parede, que toda guarita tem. Ela é MAIS ESTREITA
+   * e mais BAIXA que a parede de propósito: nascendo na mesma altura e com a
+   * mesma largura, o pé e as pontas dela caem nos mesmos planos da parede e o
+   * detector de z-fighting acusa — foi assim que ela nasceu, com nove pares.
+   */
+  for (const z of [hz - ESP / 2, -hz + ESP / 2]) {
+    const rodape = new THREE.Mesh(new THREE.BoxGeometry(VAO - 0.06, 0.18, ESP + 0.04), faixa);
+    rodape.position.set(0, BASE + 0.03, z);
+    g.add(rodape);
+  }
+
+  // ------------------------------------------------------------- cobertura
+  /**
+   * O BEIRAL AVANÇA SÓ 0,14. Ele nasceu com 0,28, que é o avanço bonito de um
+   * telhado — e a 34° de câmera cada centímetro de beiral é um centímetro e
+   * meio de sombra caindo para dentro: a sombra passava exatamente na cabeça da
+   * girafa, e ela aparecia verde-oliva em vez de amarela. Com 0,14 a linha da
+   * sombra cai atrás dela e o porteiro fica no sol.
+   */
+  const cinta = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.28, 0.14, profundidade + 0.28), toon(P.muroChapim),
+  );
+  cinta.position.y = BASE + ALT + 0.07;
+  g.add(cinta);
+
+  /**
+   * Telhado de quatro águas: um cone de QUATRO lados é uma pirâmide, e girado
+   * 45° as arestas caem nos cantos da casinha. A escala acerta a base
+   * retangular — o cone nasce de base quadrada.
+   */
+  const meiaDiagonal = 2.0;
+  const telhado = new THREE.Mesh(new THREE.ConeGeometry(meiaDiagonal, 0.62, 4), toon(P.guaritaTelhado));
+  telhado.rotation.y = Math.PI / 4;
+  telhado.scale.set((largura / 2 + 0.16) / (meiaDiagonal / Math.SQRT2), 1, (profundidade / 2 + 0.16) / (meiaDiagonal / Math.SQRT2));
+  telhado.position.y = BASE + ALT + 0.14 + 0.31;
+  g.add(telhado);
+
+  const pinaculo = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), toon(P.gold));
+  pinaculo.position.y = BASE + ALT + 0.14 + 0.66;
+  g.add(pinaculo);
+
+  // a luminária sob o beiral, olhando para quem chega
+  const luminaria = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), toon(P.luzDoPortao, { glow: 0.4 }));
+  luminaria.scale.y = 0.7;
+  luminaria.position.set(0, BASE + ALT + 0.02, hz + 0.1);
+  g.add(luminaria);
+
+  return g;
+}
+
+/**
  * PORTÃO DO CLUBE — a entrada inteira, e não uma porta.
  *
  * Duas pilastras de 3,3 com luminária em cima, um vão de `vao` metros (7 por
