@@ -313,8 +313,23 @@ export class SaveState {
     return this.data.memories.some((m) => m.id === id);
   }
 
+  /**
+   * Guarda uma memoria nova. Devolve `false` se ela ja existia — e e esse
+   * `false` que impede o jogo de anunciar duas vezes a mesma lembranca.
+   *
+   * MEMORIA JA GUARDADA TEM O TEXTO ATUALIZADO. O titulo e a legenda ficam
+   * congelados no save no instante em que a lembranca entrou, entao renomear
+   * um personagem deixava o diario com o nome velho para sempre: a girafa
+   * virou Gina e a entrada continuava dizendo "A girafa da portaria". A `at`
+   * NAO muda — o dia em que aquilo aconteceu continua sendo aquele.
+   */
   addMemory(m: Omit<SavedMemory, 'at'>): boolean {
-    if (this.hasMemory(m.id)) return false;
+    const jaTem = this.data.memories.find((x) => x.id === m.id);
+    if (jaTem) {
+      Object.assign(jaTem, m, { at: jaTem.at });
+      this.persist();
+      return false;
+    }
     this.data.memories.push({ ...m, at: Date.now() });
     this.persist();
     return true;

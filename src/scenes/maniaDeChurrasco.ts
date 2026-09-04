@@ -341,7 +341,7 @@ export const maniaDeChurrasco: SceneDef = {
      * colide: ele NÃO colide para o bicho. Se a área cruzasse o `z = -2`, o
      * caminho reto até um destino do outro lado atravessaria o balcão como se
      * ele não existisse, e o garçom entraria na cozinha pela parede. A coleira
-     * é a área, como na girafa da portaria.
+     * é a área, como na Gina da portaria.
      */
     const cachorro = new Walter({
       minX: x0 + 1.2, maxX: W / 2 - 1.2,
@@ -667,7 +667,7 @@ export const maniaDeChurrasco: SceneDef = {
         await conversa([
           [R, 'Olha o tanto de garrafa.'],
           [A, 'E o caixa aberto. Confiam mesmo na gente.'],
-          [R, 'Confiam na girafa, que deixou a gente entrar.'],
+          [R, 'Confiam na Gina, que deixou a gente entrar.'],
         ]);
         api.som('sino');
       },

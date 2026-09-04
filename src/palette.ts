@@ -183,6 +183,19 @@ export const PALETTE = {
   girafaClaro: 0xfae7bd,
   girafaCasco: 0x5b432c,
   girafaCrina: 0x8a5a2a,
+  // a salva-vidas da piscina: capivara. O pelo e o castanho-avermelhado dela de
+  // verdade, e o focinho um tom mais escuro — capivara nao tem mancha, entao o
+  // que separa cabeca de corpo aqui e so o focinho e a orelhinha.
+  capivaraPelo: 0x9c6a44,
+  capivaraEscuro: 0x74492c,
+  capivaraClaro: 0xc39468,
+  capivaraFocinho: 0x4a3128,
+  // o vermelho de salva-vidas: uniforme, boia e a faixa da cadeira. E o mesmo
+  // tom em tudo de propósito — e ele que diz "esta e a pessoa do resgate".
+  salvaVidasVermelho: 0xd8382f,
+  salvaVidasBranco: 0xf7f2e8,
+  cadeiraDeGuarda: 0xe8d9b8,
+
   guaritaParede: 0xf5ead6,
   guaritaFaixa: 0x2f7d6b,
   guaritaBalcao: 0xb07c46,
