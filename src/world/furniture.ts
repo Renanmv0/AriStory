@@ -419,14 +419,28 @@ export function diningTable(width = 1.5, depth = 0.9): THREE.Group {
     leg.position.set(x * (width / 2 - 0.14), 0.37, z * (depth / 2 - 0.14));
     g.add(leg);
   }
+  /**
+   * A FLOREIRA VAI NUM GRUPO SEPARADO, e nao solta na mesa, porque ela DISPUTA
+   * O CENTRO com o prato: a comida que o garcom serve pousa exatamente aqui, e
+   * sem tirar o vaso o prato atravessa as flores.
+   *
+   * A mesa de patio do clube resolveu isso tirando o vasinho de vez. Aqui nao
+   * dava: sao onze mesas, e um salao inteiro de mesas peladas fica pobre. Entao
+   * a floreira fica, com nome e atalho em `userData` — quem serve comida nesta
+   * mesa esconde ela enquanto dura a refeicao.
+   */
+  const floreira = new THREE.Group();
+  floreira.name = 'floreira';
   const vaso = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.16, 10), toon(P.wallMint));
   vaso.position.y = 0.87;
-  g.add(vaso);
+  floreira.add(vaso);
   for (const side of [-1, 1]) {
     const flor = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), toon(side < 0 ? P.flowerPink : P.flowerYellow));
     flor.position.set(side * 0.05, 1.03, 0);
-    g.add(flor);
+    floreira.add(flor);
   }
+  g.add(floreira);
+  g.userData.floreira = floreira;
   return g;
 }
 

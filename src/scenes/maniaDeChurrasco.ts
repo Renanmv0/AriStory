@@ -288,10 +288,13 @@ export const maniaDeChurrasco: SceneDef = {
      * e o foco para onde a câmera olha. São 11, e é barato: `Object3D` vazio
      * não desenha nada.
      */
-    const postas: Array<{ x: number; z: number; posta: THREE.Object3D; foco: THREE.Object3D }> = [];
+    const postas: Array<{
+      x: number; z: number;
+      posta: THREE.Object3D; foco: THREE.Object3D; floreira: THREE.Object3D;
+    }> = [];
 
     for (const [x, z] of MESAS) {
-      w.add(w.place(diningTable(1.5, 1.0), x, 0, z));
+      const mesa = w.add(w.place(diningTable(1.5, 1.0), x, 0, z));
       w.blockBox(x, z, 0.8, 0.55);
       const posta = new THREE.Object3D();
       posta.position.set(x, 0, z);
@@ -299,7 +302,7 @@ export const maniaDeChurrasco: SceneDef = {
       const foco = new THREE.Object3D();
       foco.position.set(x, 1.0, z);
       w.root.add(foco);
-      postas.push({ x, z, posta, foco });
+      postas.push({ x, z, posta, foco, floreira: mesa.userData.floreira as THREE.Object3D });
       /**
        * A TOALHA COBRE O TAMPO E CAI 12 CM DOS LADOS. A primeira versão era um
        * decalque de 2 cm em `y = 0,755` — dentro do tampo, que vai de 0,705 a
@@ -424,7 +427,7 @@ export const maniaDeChurrasco: SceneDef = {
     const servir = async (
       api: GameAPI,
       idDoPrato: string,
-      alvo: { x: number; z: number; posta: THREE.Object3D; foco: THREE.Object3D },
+      alvo: { x: number; z: number; posta: THREE.Object3D; foco: THREE.Object3D; floreira: THREE.Object3D },
     ): Promise<void> => {
       const comida = pratoServido(idDoPrato);
       if (!comida) return;
@@ -453,6 +456,14 @@ export const maniaDeChurrasco: SceneDef = {
       api.focusCamera(alvo.foco);
       api.setZoom(7.4);
       await api.wait(0.5);
+      /**
+       * O VASO SAI DA MESA ANTES DO PRATO ENTRAR. Os dois ocupam o mesmo ponto
+       * — o centro do tampo — e sem isto a comida atravessa as flores. Foi o
+       * Renan quem viu. É o mesmo problema que a mesa de pátio do clube
+       * resolveu tirando o vasinho de vez; aqui ele só se retira enquanto dura
+       * a refeição, e volta no fim.
+       */
+      alvo.floreira.visible = false;
       alvo.posta.attach(comida);
       comida.position.set(0, 0.82, 0);
       comida.rotation.set(0, 0, 0);
@@ -467,6 +478,8 @@ export const maniaDeChurrasco: SceneDef = {
       comida.traverse((o) => {
         if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).geometry.dispose();
       });
+      // a mesa volta a ser mesa posta: prato fora, flores de volta
+      alvo.floreira.visible = true;
       api.toast('Estava ótimo', '😌');
     };
 

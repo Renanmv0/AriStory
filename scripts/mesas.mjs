@@ -13,6 +13,10 @@
  *   confere que ela passou do outro lado, e que o prato aparece na bandeja
  *   antes de ele voltar;
  * - o prato POUSA na mesa em que a dupla sentou, e não em outra;
+ * - O VASO DE FLOR SAI DA MESA enquanto o prato está nela. Os dois ocupam o
+ *   mesmo ponto — o centro do tampo — e a comida atravessava as flores; foi o
+ *   Renan quem viu. E ele VOLTA no fim: esconder para sempre deixaria o salão
+ *   pelado depois da primeira refeição;
  * - ele VOLTA A PASSEAR sozinho depois de servir — bicho que fica de serviço
  *   para sempre depois de uma cutscene é bicho quebrado;
  * - o QUADRO DE EMPREGADO DO MÊS existe, tem o retrato pintado (o canvas não
@@ -122,6 +126,8 @@ const almocar = async (id, mx, mz, comFoto) => {
   const trilha = [];
   let comPrato = false;
   let pratoNaMesa = false;
+  let vasoNoPrato = false;
+  let floreiraNoFim = null;
   let deLevantar = false;
   for (let i = 0; i < 120; i++) {
     const passo = await page.evaluate(([x, z]) => {
@@ -137,16 +143,28 @@ const almocar = async (id, mx, mz, comFoto) => {
         const e = o.matrixWorld.elements;
         if (Math.hypot(e[12] - x, e[14] - z) < 1.2 && e[13] > 0.6) naMesa = true;
       });
+      // a floreira DESTA mesa: a mais próxima do centro dela
+      let floreiraVisivel = null;
+      window.jogo.scene.traverse((o) => {
+        if (o.name !== 'floreira') return;
+        o.updateWorldMatrix(true, false);
+        const e = o.matrixWorld.elements;
+        if (Math.hypot(e[12] - x, e[14] - z) < 0.3) floreiraVisivel = o.visible;
+      });
       return {
         onde: cao ? [+cao.position.x.toFixed(2), +cao.position.z.toFixed(2)] : null,
         naBandeja: !!bandeja && bandeja.children.length > 0,
         naMesa,
+        floreiraVisivel,
         sentado: !!window.jogo.player.riding,
       };
     }, [mx, mz]);
     if (passo.onde) trilha.push(passo.onde);
     comPrato = comPrato || passo.naBandeja;
     pratoNaMesa = pratoNaMesa || passo.naMesa;
+    // com o prato na mesa, o vaso NÃO pode estar visível
+    if (passo.naMesa && passo.floreiraVisivel) vasoNoPrato = true;
+    floreiraNoFim = passo.floreiraVisivel;
     if (comFoto && passo.naBandeja && !deLevantar) {
       await page.screenshot({ path: `${OUT}-cozinha.png` });
       deLevantar = true;
@@ -168,7 +186,22 @@ const almocar = async (id, mx, mz, comFoto) => {
   await page.waitForTimeout(1200);
   const sentado = await page.evaluate(() => !!window.jogo.player.riding);
 
-  return { prompt, cardapioAbriu, naCozinha, comPrato, pratoNaMesa, sentado };
+  // e no fim, com o prato já retirado, o vaso tem que ter voltado
+  const floreiraVoltou = await page.evaluate(([x, z]) => {
+    let visivel = null;
+    window.jogo.scene.traverse((o) => {
+      if (o.name !== 'floreira') return;
+      o.updateWorldMatrix(true, false);
+      const e = o.matrixWorld.elements;
+      if (Math.hypot(e[12] - x, e[14] - z) < 0.3) visivel = o.visible;
+    });
+    return visivel;
+  }, [mx, mz]);
+
+  return {
+    prompt, cardapioAbriu, naCozinha, comPrato, pratoNaMesa, sentado,
+    vasoNoPrato, floreiraNoFim, floreiraVoltou,
+  };
 };
 
 const primeira = await almocar(...MESAS_TESTADAS[0], true);
@@ -253,6 +286,8 @@ for (const [nome, r] of [['1ª', primeira], ['2ª', segunda], ['3ª', terceira]]
   if (!r.naCozinha) problemas.push(`${nome} mesa: o Walter não cruzou o balcão para a cozinha`);
   if (!r.comPrato) problemas.push(`${nome} mesa: o prato nunca apareceu na bandeja dele`);
   if (!r.pratoNaMesa) problemas.push(`${nome} mesa: o prato não pousou nesta mesa`);
+  if (r.vasoNoPrato) problemas.push(`${nome} mesa: o vaso de flor ficou na mesa com o prato em cima`);
+  if (r.floreiraVoltou !== true) problemas.push(`${nome} mesa: o vaso não voltou depois da refeição`);
   if (r.sentado) problemas.push(`${nome} mesa: a dupla não levantou no fim`);
 }
 if (voltouAPassear < 0.4) problemas.push('o Walter ficou de serviço para sempre: não voltou a passear');
