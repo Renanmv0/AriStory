@@ -54,18 +54,6 @@ export class IsoCamera {
     return this.yaw;
   }
 
-  /**
-   * A inclinacao da camera, em radianos.
-   *
-   * Ela e METADE de toda conta de oclusao do jogo: a 34°, uma peca de altura
-   * `h` esconde tudo que estiver a `h / tan(34°)` na direcao da camera. Quem
-   * precisa dessa conta numa cena (um predio que some com quem passa atras)
-   * precisa do numero, e nao de uma constante copiada.
-   */
-  get tilt(): number {
-    return this.pitch;
-  }
-
   /** enquadramento atual (ja suavizado) */
   get currentViewSize(): number {
     return this.viewSize;
