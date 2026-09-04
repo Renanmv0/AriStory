@@ -1,23 +1,26 @@
 /**
- * A salva-vidas da piscina do clube: a capivara na cadeira alta.
+ * O Capy, o salva-vidas da piscina do clube: a capivara na cadeira alta.
  *
- * Ela é a segunda funcionária do clube, e este teste guarda o que a foto sozinha
+ * Ele é o segundo funcionário do clube, e este teste guarda o que a foto sozinha
  * não pega:
  *
- * - ela FICA NO POSTO. Mesmo cérebro do Pelusa, que passeia; o que a segura é a
- *   área minúscula que a cena passa. Alargue essa área e a capivara sai andando
+ * - ele FICA NO POSTO. Mesmo cérebro do Pelusa, que passeia; o que o segura é a
+ *   área minúscula que a cena passa. Alargue essa área e o Capy sai andando
  *   pelo deque — a mesma coleira da Gina;
- * - ela está EM CIMA DA CADEIRA, e não ao lado nem flutuando. Mede o `y` dela
+ * - ele está EM CIMA DA CADEIRA, e não ao lado nem flutuando. Mede o `y` dele
  *   contra o estrado, que fica em 1,7;
- * - ela está VIVA: a cabeça varre a piscina, então a pose muda entre duas
+ * - ele está VIVA: a cabeça varre a piscina, então a pose muda entre duas
  *   leituras;
- * - ela apita sozinha;
- * - A CADEIRA NÃO TEM TETO SOBRE ELA. Este é o ponto que já falhou: a primeira
+ * - ele apita sozinho;
+ * - A CADEIRA NÃO TEM TETO SOBRE ELE. Este é o ponto que já falhou: a primeira
  *   versão tinha toldo, e a 34° de câmera a cobertura apagava a capivara
  *   inteira — sobrava um telhado vermelho com ninguém embaixo. O teste procura
- *   qualquer peça da cadeira acima E à frente dela;
- * - conversar funciona, a memória entra no diário, e ela TIRA O ÓCULOS no
- *   carinho (é o único jeito de os olhos dela aparecerem).
+ *   qualquer peça da cadeira acima E à frente dele;
+ * - AS PERNAS DA CADEIRA ABREM PARA BAIXO, e não para cima. Elas nasceram com o
+ *   pivô no meio e o sinal trocado: o topo saía de debaixo do estrado e a
+ *   cadeira parecia quebrada. Foi o Renan quem viu;
+ * - conversar funciona, a memória entra no diário, e ele TIRA O ÓCULOS no
+ *   carinho (é o único jeito de os olhos dele aparecerem).
  *
  * Uso: node scripts/salvavidas.mjs /caminho/prefixo
  */
@@ -48,7 +51,7 @@ const medir = () =>
   page.evaluate(() => {
     let cap = null;
     window.jogo.scene.traverse((o) => {
-      if (!cap && o.userData?.peca === 'capivara-salva-vidas') cap = o;
+      if (!cap && o.userData?.peca === 'capy') cap = o;
     });
     let cadeira = null;
     window.jogo.scene.traverse((o) => {
@@ -59,8 +62,8 @@ const medir = () =>
     const e = cap.matrixWorld.elements;
     // a pose viva: a cabeça varrendo, e o óculos. As duas peças são achadas
     // pelo NOME, e não por adivinhação de forma — o mesmo que a Gina faz.
-    const cabeca = cap.getObjectByName('cabeca-da-capivara');
-    const oculos = cap.getObjectByName('oculos-da-capivara');
+    const cabeca = cap.getObjectByName('cabeca-do-capy');
+    const oculos = cap.getObjectByName('oculos-do-capy');
     return {
       onde: [+e[12].toFixed(3), +e[13].toFixed(3), +e[14].toFixed(3)],
       cadeira: cadeira ? [+cadeira.position.x.toFixed(2), +cadeira.position.z.toFixed(2)] : null,
@@ -109,12 +112,12 @@ const teto = await page.evaluate(() => {
   let cap = null;
   let cadeira = null;
   window.jogo.scene.traverse((o) => {
-    if (!cap && o.userData?.peca === 'capivara-salva-vidas') cap = o;
+    if (!cap && o.userData?.peca === 'capy') cap = o;
     if (!cadeira && o.userData?.peca === 'cadeira-de-salva-vidas') cadeira = o;
   });
   if (!cap || !cadeira) return null;
 
-  // o alto da capivara, em mundo
+  // o alto do Capy, em mundo
   cap.updateWorldMatrix(true, true);
   let topo = -Infinity;
   cap.traverse((o) => {
@@ -136,12 +139,54 @@ const teto = await page.evaluate(() => {
     const min = o.geometry.boundingBox.min.clone();
     o.updateWorldMatrix(true, false);
     min.applyMatrix4(o.matrixWorld);
-    // acima da cabeça dela E do lado da câmera (`+X/+Z`) do eixo da cadeira
+    // acima da cabeça dele E do lado da câmera (`+X/+Z`) do eixo da cadeira
     if (min.y > topo - 0.05 && (o.position.x > -0.2 || o.position.z > -0.2)) {
       tampas.push({ y: +min.y.toFixed(2), x: +(cx + o.position.x).toFixed(2), z: +(cz + o.position.z).toFixed(2) });
     }
   }
-  return { topoDaCapivara: +topo.toFixed(2), tampas };
+  return { topoDoCapy: +topo.toFixed(2), tampas };
+});
+
+/**
+ * ================== 2b. as pernas da cadeira abrem para BAIXO, não para cima
+ *
+ * O defeito que o Renan viu: as pernas nasceram com o pivô NO MEIO da malha e
+ * com o sinal da rotação trocado, então o pé fechava e o joelho é que abria —
+ * as quatro pernas saíam de debaixo do estrado e a cadeira parecia quebrada.
+ *
+ * A medida é a bitola em duas alturas: embaixo tem que ser MAIOR que em cima.
+ * É a definição de "abre para baixo", e não depende de quanto abre.
+ */
+const pernas = await page.evaluate(() => {
+  let cadeira = null;
+  window.jogo.scene.traverse((o) => {
+    if (!cadeira && o.userData?.peca === 'cadeira-de-salva-vidas') cadeira = o;
+  });
+  if (!cadeira) return null;
+  cadeira.updateWorldMatrix(true, true);
+  // as pernas são os grupos filhos diretos que penduram uma caixa comprida
+  const pontos = [];
+  for (const o of cadeira.children) {
+    if (!o.isGroup) continue;
+    const osso = o.children.find((c) => c.isMesh && c.geometry?.parameters?.height > 1);
+    if (!osso) continue;
+    o.updateWorldMatrix(true, true);
+    osso.geometry.computeBoundingBox();
+    const alto = osso.geometry.boundingBox.max.clone().applyMatrix4(osso.matrixWorld);
+    const baixo = osso.geometry.boundingBox.min.clone().applyMatrix4(osso.matrixWorld);
+    pontos.push({
+      topo: [+alto.x.toFixed(3), +alto.y.toFixed(3), +alto.z.toFixed(3)],
+      pe: [+baixo.x.toFixed(3), +baixo.y.toFixed(3), +baixo.z.toFixed(3)],
+    });
+  }
+  const eixo = [cadeira.position.x, cadeira.position.z];
+  const raio = (p) => Math.hypot(p[0] - eixo[0], p[2] - eixo[1]);
+  return {
+    quantas: pontos.length,
+    noTopo: +(pontos.reduce((m, p) => m + raio(p.topo), 0) / (pontos.length || 1)).toFixed(3),
+    noPe: +(pontos.reduce((m, p) => m + raio(p.pe), 0) / (pontos.length || 1)).toFixed(3),
+    peNoChao: +Math.min(...pontos.map((p) => p.pe[1])).toFixed(3),
+  };
 });
 
 // ------------------------------------------------- 3. falar com ela
@@ -195,8 +240,9 @@ for (let i = 0; i < 70 && depoisDoApito === antesDoApito; i++) {
 console.log('1. posto · capivara em', JSON.stringify(inicio?.onde),
   '· cadeira em', JSON.stringify(inicio?.cadeira), '· andou em 7 s:', andou.toFixed(3));
 console.log('   varredura da cabeça mexeu:', varreu.toFixed(4));
-console.log('2. topo da capivara:', teto?.topoDaCapivara,
-  '· peças da cadeira acima e à frente dela:', JSON.stringify(teto?.tampas));
+console.log('2. topo do Capy:', teto?.topoDoCapy,
+  '· peças da cadeira acima e à frente dele:', JSON.stringify(teto?.tampas));
+console.log('   pernas:', JSON.stringify(pernas));
 console.log('3. prompt:', JSON.stringify(prompt));
 for (const f of falas) console.log('   ', f);
 console.log('   óculos · no posto:', inicio?.comOculos, '· no carinho:', oculosNoCarinho?.comOculos);
@@ -206,29 +252,39 @@ console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const problemas = [];
 if (erros.length) problemas.push('erros de console');
-if (!inicio) problemas.push('a salva-vidas não está na cena');
+if (!inicio) problemas.push('o Capy não está na cena');
 else {
   // o estrado está em 1,7 e o corpo dela em ~0,27 acima da própria base
   if (Math.abs(inicio.onde[1] - CADEIRA.estrado) > 0.25) {
-    problemas.push(`ela não está no estrado da cadeira (y ${inicio.onde[1]}, estrado ${CADEIRA.estrado})`);
+    problemas.push(`ele não está no estrado da cadeira (y ${inicio.onde[1]}, estrado ${CADEIRA.estrado})`);
   }
   const emCima = Math.hypot(inicio.onde[0] - CADEIRA.x, inicio.onde[2] - CADEIRA.z);
-  if (emCima > 0.4) problemas.push(`ela não está em cima da cadeira (${emCima.toFixed(2)} de distância)`);
+  if (emCima > 0.4) problemas.push(`ele não está em cima da cadeira (${emCima.toFixed(2)} de distância)`);
   if (!inicio.cadeira) problemas.push('a cadeira de salva-vidas não está na cena');
 }
-if (andou > 0.25) problemas.push(`a salva-vidas saiu do posto (andou ${andou.toFixed(2)})`);
-if (varreu < 0.01) problemas.push('ela está congelada — a cabeça não varre a piscina');
-if (!teto) problemas.push('não achei a capivara e a cadeira juntas para medir a cobertura');
+if (andou > 0.25) problemas.push(`o Capy saiu do posto (andou ${andou.toFixed(2)})`);
+if (varreu < 0.01) problemas.push('ele está congelado — a cabeça não varre a piscina');
+if (!teto) problemas.push('não achei o Capy e a cadeira juntos para medir a cobertura');
 else if (teto.tampas.length) {
-  problemas.push(`a cadeira tem teto sobre a salva-vidas: ${JSON.stringify(teto.tampas[0])} — a 34° isso a apaga`);
+  problemas.push(`a cadeira tem teto sobre o Capy: ${JSON.stringify(teto.tampas[0])} — a 34° isso a apaga`);
 }
-if (!/salva-vidas/i.test(prompt ?? '')) problemas.push('o prompt da salva-vidas não apareceu');
+if (!pernas || pernas.quantas !== 4) problemas.push('não achei as quatro pernas da cadeira');
+else {
+  if (pernas.noPe <= pernas.noTopo + 0.05) {
+    problemas.push(`as pernas não abrem para baixo (topo ${pernas.noTopo}, pé ${pernas.noPe})`);
+  }
+  if (Math.abs(pernas.peNoChao) > 0.12) {
+    problemas.push(`o pé da cadeira não encosta no chão (y ${pernas.peNoChao})`);
+  }
+}
+if (!/capy/i.test(prompt ?? '')) problemas.push('o prompt do Capy não apareceu');
+if (!falas.some((f) => /Capy/.test(f))) problemas.push('ele não diz o próprio nome na conversa');
 if (falas.length < 4) problemas.push('a conversa de apresentação não aconteceu');
 if (!falas.some((f) => /capivara/i.test(f))) problemas.push('a conversa não diz que ela é uma capivara');
-if (inicio?.comOculos !== true) problemas.push('ela não está de óculos escuros no posto');
-if (oculosNoCarinho?.comOculos !== false) problemas.push('ela não tirou o óculos no carinho');
-if (!noDiario) problemas.push('a memória da salva-vidas não entrou no diário');
-if (depoisDoApito - antesDoApito < 1) problemas.push('ela não apitou sozinha');
+if (inicio?.comOculos !== true) problemas.push('ele não está de óculos escuros no posto');
+if (oculosNoCarinho?.comOculos !== false) problemas.push('ele não tirou o óculos no carinho');
+if (!noDiario) problemas.push('a memória do Capy não entrou no diário');
+if (depoisDoApito - antesDoApito < 1) problemas.push('ele não apitou sozinho');
 
 await browser.close();
 if (problemas.length) {

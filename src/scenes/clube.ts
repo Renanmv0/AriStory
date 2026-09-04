@@ -13,7 +13,7 @@ import {
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
 import { Gina } from '../entities/bichos/Gina';
-import { Capivara } from '../entities/bichos/Capivara';
+import { Capy } from '../entities/bichos/Capy';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
@@ -30,11 +30,11 @@ import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../worl
 const PISCINA = { x: 0, z: -3, largura: 16, profundidade: 10, fundo: 1.6 };
 
 /**
- * O que a salva-vidas diz nas conversas seguintes. A primeira e a apresentacao
- * dela, e so acontece uma vez — funcionaria que repete o mesmo texto de boas
- * vindas toda vez deixa de ser gente e vira placa.
+ * O que o Capy diz nas conversas seguintes. A primeira e a apresentacao dele, e
+ * so acontece uma vez — funcionario que repete o mesmo texto de boas-vindas
+ * toda vez deixa de ser gente e vira placa.
  */
-const FALAS_DA_SALVA_VIDAS = [
+const FALAS_DO_CAPY = [
   'Tá tudo tranquilo. Do jeito que eu gosto.',
   'Se afundarem, eu desço. Mas prefiro que não afundem.',
   'Já contei vocês dois. Podem ir.',
@@ -419,23 +419,23 @@ export const clube: SceneDef = {
     });
 
     /**
-     * A SALVA-VIDAS DA PISCINA, e a segunda funcionária do clube depois da
-     * Gina. A piscina é o centro deste cenário e não tinha ninguém tomando
+     * O CAPY, o salva-vidas da piscina, e o segundo funcionário do clube depois
+     * da Gina. A piscina é o centro deste cenário e não tinha ninguém tomando
      * conta dela — clube com piscina cheia e nenhum salva-vidas é a coisa que
      * mais denuncia que o lugar é cenário e não lugar.
      *
      * ONDE ELA FICA, e por que aqui — foi a segunda tentativa. A primeira punha
      * a cadeira em `(-9,5, -8,5)`, que na planta parece a quina da piscina e na
-     * foto era o DEQUE DE MADEIRA DO RESTAURANTE: a salva-vidas ficava sentada
+     * foto era o DEQUE DE MADEIRA DO RESTAURANTE: o salva-vidas ficava sentado
      * entre as cadeiras de pátio, de costas para a água.
      *
-     * Agora ela fica na borda do FUNDO (`z = -9,8`), olhando a piscina de
+     * Agora ele fica na borda do FUNDO (`z = -9,8`), olhando a piscina de
      * frente para a câmera. O `x = 4,6` é o vão entre as duas arquibancadas
      * (que ocupam `x -8..-2` e `4..10` em `z ≈ -13`): a cadeira tem 2,3 e a 34°
      * esconde 3,5 m atrás de si, e é nesse vão que essa faixa cai sem comer
      * nada. E longe do trampolim, que mora em `x = 0`.
      *
-     * ELA SOBE NA CADEIRA de um jeito que não custou nada ao motor: o cérebro
+     * ELE SOBE NA CADEIRA de um jeito que não custou nada ao motor: o cérebro
      * do `Bicho` só mexe em `x` e `z`, então o `y` que a cena escreve uma vez
      * fica. A área minúscula é a coleira, como na Gina.
      */
@@ -443,61 +443,62 @@ export const clube: SceneDef = {
     w.add(w.place(cadeiraDeSalvaVidas(1.7), GUARDA.x, 0, GUARDA.z));
     w.blockCircle(GUARDA.x, GUARDA.z, 0.95);
 
-    const salvaVidas = new Capivara({
+    const capy = new Capy({
       minX: GUARDA.x - 0.12, maxX: GUARDA.x + 0.12,
       minZ: GUARDA.z - 0.12, maxZ: GUARDA.z + 0.12,
     });
-    // o estrado está em 1,7 e a capivara tem o corpo em 0,27: sentada no
+    // o estrado está em 1,7 e a capivara tem o corpo em 0,27: sentado no
     // estrado, e não flutuando acima dele
-    salvaVidas.group.position.y = 1.75;
-    // ela olha para `+Z`: a piscina E a câmera estão do mesmo lado dela, que é
-    // o único jeito de a cara dela aparecer sem ela virar as costas para a água
-    salvaVidas.group.rotation.y = 0;
-    w.add(salvaVidas.group);
-    salvaVidas.aoSoar = () => g.som('apito');
+    capy.group.position.y = 1.75;
+    // ele olha para `+Z`: a piscina E a câmera estão do mesmo lado dele, que é
+    // o único jeito de a cara dele aparecer sem ele virar as costas para a água
+    capy.group.rotation.y = 0;
+    w.add(capy.group);
+    capy.aoSoar = () => g.som('apito');
 
     const falarComOGuarda = w.interact({
       id: 'clube:salva-vidas',
       // o ponto fica no PÉ da cadeira, do lado da piscina: é de onde se fala
       // com quem está lá em cima
       x: GUARDA.x + 1.4, z: GUARDA.z + 0.9, radius: 2.0,
-      label: 'Falar com a salva-vidas', icon: '🛟',
-      highlight: salvaVidas.group,
+      label: 'Falar com o Capy', icon: '🛟',
+      highlight: capy.group,
       onInteract: async (api) => {
-        salvaVidas.receberCarinho();
+        capy.receberCarinho();
         api.som('apito');
-        const S = 'Salva-vidas';
-        if (!api.flag('salva-vidas-conhecida')) {
-          api.setFlag('salva-vidas-conhecida');
+        const S = 'Capy';
+        if (!api.flag('capy-conhecido')) {
+          api.setFlag('capy-conhecido');
           await api.say(['Oi! Tudo bem por aí embaixo?'], S);
+          await api.say(['Capy, salva-vidas. Se afundar, grita.'], S);
           await conversa([
-            [R, 'Ela é uma capivara.'],
-            [A, 'Ela é uma capivara SALVA-VIDAS.'],
-            [R, 'Faz sentido. Ninguém entende mais de água que ela.'],
+            [R, 'Ele é uma capivara.'],
+            [A, 'Ele é uma capivara SALVA-VIDAS.'],
+            [R, 'Faz sentido. Ninguém entende mais de água que ele.'],
           ]);
           await api.say([
             'Regra da casa: nada de correr na borda molhada, e nada de mergulhar na parte rasa.',
           ], S);
           await api.say(['Fora isso, fiquem o tempo que quiserem. Eu não saio daqui mesmo.'], S);
           await conversa([
-            [A, 'Ela tirou o óculos pra falar com a gente.'],
+            [A, 'Ele tirou o óculos pra falar com a gente.'],
             [R, 'Isso é praticamente um abraço.'],
           ]);
           api.unlock({
             id: 'salva-vidas-do-clube',
-            title: 'A salva-vidas da piscina',
+            title: 'O Capy da piscina',
             place: 'Clube',
-            note: 'Uma capivara de regata vermelha e apito, na cadeira alta, olhando a piscina de um lado ao outro o dia inteiro.',
+            note: 'O salva-vidas: uma capivara de regata vermelha e apito, na cadeira alta, varrendo a piscina de um lado ao outro o dia inteiro.',
             icon: '🛟',
           });
           return;
         }
-        await api.say([w.pick(FALAS_DA_SALVA_VIDAS)], S);
+        await api.say([w.pick(FALAS_DO_CAPY)], S);
       },
     });
 
     w.onUpdate((dt) => {
-      salvaVidas.update(dt);
+      capy.update(dt);
       falarComOGuarda.moveTo(GUARDA.x + 1.4, GUARDA.z + 0.9);
     });
 
