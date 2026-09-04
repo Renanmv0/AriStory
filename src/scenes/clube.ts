@@ -120,7 +120,7 @@ export const clube: SceneDef = {
     beira: { x: 0, z: 3.5, facing: Math.PI },
     // quem volta do Mania de Churrasco sai pela porta de serviço, atrás do
     // prédio: um passo para fora dela, já de costas para a parede
-    'dos-fundos-do-restaurante': { x: -9.2, z: -16.2, facing: Math.PI / 2 },
+    'dos-fundos-do-restaurante': { x: -14.6, z: -18.9, facing: Math.PI },
   },
 
   build(w) {
@@ -788,42 +788,53 @@ export const clube: SceneDef = {
     }
 
     /**
-     * A PORTA DE SERVIÇO, no fundo da lateral do restaurante.
+     * A PORTA DE SERVIÇO, na parede DOS FUNDOS — que é onde o Renan quis, e é
+     * o lugar certo para uma entrada escondida: essa parede não tem janela, não
+     * tem toldo e não dá para lugar nenhum. Só se chega nela dando a volta.
      *
-     * ELA NÃO PODE FICAR NA PAREDE DE TRÁS, e isso não é gosto: é a câmera. O
-     * prédio tem 5,5 de altura, e a 34° ele engole quase 4 m atrás de si — a
-     * faixa colada na parede do fundo é um ponto cego onde some a porta E some
-     * a dupla. Um lugar onde o jogador não se vê é um lugar onde ele não anda.
-     *
-     * Então ela foi para a face LESTE (`x = -10,5`), na ponta de trás: é a
-     * única cara do prédio que a câmera enxerga sem ser a fachada. Continua
-     * sendo porta de fundos — para chegar nela é preciso dar a volta no prédio
-     * inteiro, passando pelas caixas e pela lixeira do serviço.
+     * O PREÇO DISSO É UM PONTO CEGO, e ele é real: o prédio tem 5,5 de altura,
+     * e a 34° de câmera ele engole quase 4 m da faixa de trás — quem anda ali
+     * some da tela junto com a porta. A resposta não foi fugir da parede: foi
+     * `transparenteQuandoAtras()`, logo abaixo, que faz o prédio ficar
+     * translúcido enquanto a dupla está atrás dele. Aí aparecem os dois E a
+     * porta, vista através da parede.
      */
     const FUNDO_DO_RESTAURANTE = {
-      x: RESTAURANTE.x + RESTAURANTE.largura / 2,
-      z: RESTAURANTE.z - 2.2,
+      x: RESTAURANTE.x + 2.4,
+      z: RESTAURANTE.z - RESTAURANTE.profundidade / 2,
     };
     const portaDeServico = w.add(w.place(
       interiorDoor(P.restauranteEsquadria, 1.0, 2.15),
-      FUNDO_DO_RESTAURANTE.x + 0.06, 0, FUNDO_DO_RESTAURANTE.z, Math.PI / 2,
+      FUNDO_DO_RESTAURANTE.x, 0, FUNDO_DO_RESTAURANTE.z - 0.06, Math.PI,
     ));
-    // duas caixas e uma lixeira: é o que faz uma porta na lateral virar "entrada
+    // duas caixas e uma lixeira: é o que faz uma porta no fundo virar "entrada
     // de serviço" em vez de porta esquecida
-    for (const [dz, larg, alt] of [[-1.6, 0.6, 0.5], [-1.25, 0.45, 0.36]] as const) {
+    for (const [dx, larg, alt] of [[-1.9, 0.6, 0.5], [-1.55, 0.45, 0.36]] as const) {
       const caixa = new THREE.Mesh(
-        new THREE.BoxGeometry(larg * 0.8, alt, larg), toon(P.restauranteDeck),
+        new THREE.BoxGeometry(larg, alt, larg * 0.8), toon(P.restauranteDeck),
       );
-      caixa.position.set(FUNDO_DO_RESTAURANTE.x + 0.45, alt / 2, FUNDO_DO_RESTAURANTE.z + dz);
+      caixa.position.set(FUNDO_DO_RESTAURANTE.x + dx, alt / 2, FUNDO_DO_RESTAURANTE.z - 0.4);
       w.add(caixa);
     }
-    w.blockBox(FUNDO_DO_RESTAURANTE.x + 0.45, FUNDO_DO_RESTAURANTE.z - 1.45, 0.35, 0.55);
-    w.add(w.place(bin(), FUNDO_DO_RESTAURANTE.x + 0.6, 0, FUNDO_DO_RESTAURANTE.z + 2.0));
-    w.blockCircle(FUNDO_DO_RESTAURANTE.x + 0.6, FUNDO_DO_RESTAURANTE.z + 2.0, 0.3);
+    w.blockBox(FUNDO_DO_RESTAURANTE.x - 1.7, FUNDO_DO_RESTAURANTE.z - 0.4, 0.55, 0.35);
+    w.add(w.place(bin(), FUNDO_DO_RESTAURANTE.x + 2.2, 0, FUNDO_DO_RESTAURANTE.z - 0.5));
+    w.blockCircle(FUNDO_DO_RESTAURANTE.x + 2.2, FUNDO_DO_RESTAURANTE.z - 0.5, 0.3);
+
+    /**
+     * E É AQUI QUE O PONTO CEGO MORRE. O prédio inteiro (e a porta com ele)
+     * fica translúcido enquanto um dos dois estiver na sombra dele. A conta usa
+     * o giro atual da câmera, então girando com Q/R o prédio volta a ser sólido
+     * sozinho — porque dali ele já não tapa ninguém.
+     */
+    w.transparenteQuandoAtras(predio, {
+      x: RESTAURANTE.x, z: RESTAURANTE.z,
+      largura: RESTAURANTE.largura, profundidade: RESTAURANTE.profundidade,
+      altura: 5.5,
+    });
 
     w.interact({
       id: 'clube:porta-de-servico',
-      x: FUNDO_DO_RESTAURANTE.x + 1.2, z: FUNDO_DO_RESTAURANTE.z, radius: 1.9,
+      x: FUNDO_DO_RESTAURANTE.x, z: FUNDO_DO_RESTAURANTE.z - 1.1, radius: 1.9,
       label: 'Entrar pela porta dos fundos', icon: '🚪',
       highlight: portaDeServico,
       onInteract: async (api) => {
