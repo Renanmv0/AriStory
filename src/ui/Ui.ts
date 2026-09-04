@@ -708,12 +708,15 @@ export class Ui {
    * virar máquina de estados só para saber quando o painel sumiu — é o mesmo
    * motivo pelo qual `ask()` também devolve promessa.
    */
-  abrirCardapio(secoes: readonly SecaoDoCardapio[]): Promise<string | null> {
+  abrirCardapio(secoes: readonly SecaoDoCardapio[], casa?: string): Promise<string | null> {
     return new Promise((resolve) => {
       if (this.cardapioOpen) {
         resolve(null);
         return;
       }
+      // o nome da casa no alto da folha: o mesmo cardapio serve as duas salas
+      const nomeDaCasa = this.cardapio.querySelector<HTMLElement>('.casa');
+      if (nomeDaCasa) nomeDaCasa.textContent = casa ?? 'Restaurante do Clube';
       this.som?.('escolha');
       this.pratoMarcado = null;
       this.desenharCardapio(secoes);

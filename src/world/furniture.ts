@@ -1148,3 +1148,212 @@ export function caixaRegistradora(): THREE.Group {
   g.add(brilho);
   return g;
 }
+
+/**
+ * O QUADRO DE EMPREGADO DO MES, com o retrato do Walter.
+ *
+ * O retrato e PINTADO NUM CANVAS na hora em que a cena sobe — mesmo principio
+ * do texto das placas e das memorias do quarto: nenhuma imagem entra no
+ * repositorio. Aqui o canvas ganha ainda outro papel: e a unica forma de o
+ * Walter aparecer de FRENTE no jogo. O modelo 3D dele so e visto de cima, na
+ * isometrica; um retrato olhando para quem passa e uma cara nova do mesmo
+ * personagem, e e o que faz o quadro ter graca.
+ *
+ * A moldura tem VIDRO de verdade (um decalque claro por cima da arte, com
+ * `renderOrder` para nao brigar com ela): sem o reflexo, quadro na parede lia
+ * como adesivo.
+ */
+export function quadroDoEmpregadoDoMes(largura = 0.82, altura = 1.02): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'quadro-empregado-do-mes';
+  const css = (cor: number): string => `#${cor.toString(16).padStart(6, '0')}`;
+
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.055), toon(P.woodDark));
+  g.add(moldura);
+  // o filete dourado por dentro da moldura, que e o que separa "quadro" de
+  // "tabua pregada na parede"
+  const filete = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - 0.07, altura - 0.07, 0.06), toon(P.churrascoBrasaViva),
+  );
+  filete.position.z = 0.004;
+  g.add(filete);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = Math.round((512 * altura) / largura);
+  const ctx = canvas.getContext('2d');
+  if (ctx) pintarOWalter(ctx, canvas.width, canvas.height, css);
+
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  const arte = new THREE.Mesh(
+    new THREE.PlaneGeometry(largura - 0.12, altura - 0.12),
+    new THREE.MeshBasicMaterial({ map: textura }),
+  );
+  /**
+   * A ARTE VAI NA FRENTE DO FILETE, e essa altura já esteve errada: com a arte
+   * em `z = 0,031` e o filete terminando em `0,037`, o retrato ficava ENTERRADO
+   * dentro da moldura dourada e o quadro aparecia como um retângulo de ouro
+   * chapado. As três camadas sobem em ordem: filete até 0,034, arte em 0,038,
+   * vidro em 0,040.
+   */
+  arte.position.z = 0.038;
+  arte.renderOrder = 1;
+  g.add(arte);
+
+  // o vidro: uma faixa clara na diagonal, de canto a canto do alto
+  const vidro = new THREE.Mesh(
+    new THREE.PlaneGeometry(largura - 0.12, (altura - 0.12) * 0.42),
+    flat(0xffffff, 0.09, true),
+  );
+  vidro.position.set(0, altura * 0.22, 0.04);
+  vidro.renderOrder = 2;
+  g.add(vidro);
+
+  return g;
+}
+
+/** O retrato: a cabeca do Walter de frente, com a faixa e o nome. */
+function pintarOWalter(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  css: (cor: number) => string,
+): void {
+  // ------------------------------------------------------------ o fundo
+  ctx.fillStyle = css(P.churrascoParede);
+  ctx.fillRect(0, 0, w, h);
+
+  // a faixa do titulo, no alto
+  ctx.fillStyle = css(P.churrascoQuadroNegro);
+  ctx.fillRect(0, 0, w, h * 0.13);
+  ctx.fillStyle = css(P.churrascoBrasaViva);
+  ctx.font = `bold ${Math.round(h * 0.052)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('EMPREGADO DO MÊS', w / 2, h * 0.066);
+
+  // o oval do retrato, num tom quente
+  const cx = w / 2;
+  const cy = h * 0.45;
+  const rx = w * 0.37;
+  const ry = h * 0.25;
+  ctx.fillStyle = css(P.churrascoTijolo);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#00000018';
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + h * 0.012, rx * 0.94, ry * 0.94, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ---------------------------------------------------------- o cachorro
+  const R = w * 0.19;   // o raio da cabeca, e a regua de tudo abaixo
+
+  /**
+   * A GRAVATA VEM PRIMEIRO, porque ela fica atras do queixo — e vem BAIXA, em
+   * `R * 1,08`. Na primeira versao ela estava em `0,92` e a linguinha, que vai
+   * ate `R * 0,81`, cobria o no e as duas asas: sobrava um borrao vermelho onde
+   * era para ter uma gravata borboleta.
+   */
+  ctx.fillStyle = css(P.gravataBorboleta);
+  for (const lado of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + R * 1.08);
+    ctx.lineTo(cx + lado * R * 0.66, cy + R * 0.84);
+    ctx.lineTo(cx + lado * R * 0.66, cy + R * 1.32);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = css(P.gravataNo);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + R * 1.08, R * 0.15, R * 0.18, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // as orelhas caidas, uma de cada lado, ANTES da cabeca para ficarem atras
+  ctx.fillStyle = css(P.cachorroOrelha);
+  for (const lado of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(cx + lado * R * 0.9, cy + R * 0.2, R * 0.34, R * 0.68, lado * 0.24, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // a cabeca
+  ctx.fillStyle = css(P.cachorroPelo);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - R * 0.06, R * 0.86, R * 0.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // o focinho claro
+  ctx.fillStyle = css(P.cachorroPeito);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + R * 0.36, R * 0.44, R * 0.32, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // a linguinha de fora, que e o que faz o retrato ser FOFO e nao 3x4
+  ctx.fillStyle = css(P.churrascoToalha);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + R * 0.62, R * 0.15, R * 0.19, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // o nariz
+  ctx.fillStyle = css(P.cachorroFocinho);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + R * 0.22, R * 0.17, R * 0.13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = Math.max(1, R * 0.055);
+  ctx.strokeStyle = css(P.cachorroFocinho);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + R * 0.33);
+  ctx.lineTo(cx, cy + R * 0.46);
+  ctx.stroke();
+
+  // os olhos, com o brilhinho
+  for (const lado of [-1, 1]) {
+    ctx.fillStyle = css(P.cachorroFocinho);
+    ctx.beginPath();
+    ctx.ellipse(cx + lado * R * 0.34, cy - R * 0.16, R * 0.12, R * 0.14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(cx + lado * R * 0.3, cy - R * 0.22, R * 0.045, R * 0.05, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // as sobrancelhas claras: sao elas que dao EXPRESSAO a um focinho simetrico
+  ctx.fillStyle = css(P.cachorroPeito);
+  for (const lado of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(cx + lado * R * 0.36, cy - R * 0.42, R * 0.14, R * 0.07, lado * 0.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ------------------------------------------------------------- o nome
+  ctx.fillStyle = css(P.churrascoQuadroNegro);
+  ctx.font = `bold ${Math.round(h * 0.085)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+  ctx.fillText('WALTER', w / 2, h * 0.795);
+  ctx.font = `${Math.round(h * 0.037)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+  ctx.fillStyle = css(P.churrascoFaixa);
+  ctx.fillText('garçom · atendimento nota 10', w / 2, h * 0.862);
+
+  // as estrelinhas embaixo, o carimbo de que ele ganhou
+  ctx.fillStyle = css(P.churrascoBrasaViva);
+  for (let i = 0; i < 5; i++) {
+    estrela(ctx, w * (0.3 + i * 0.1), h * 0.94, h * 0.023);
+  }
+}
+
+/** Uma estrela de cinco pontas, cheia. */
+function estrela(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const ang = -Math.PI / 2 + (i * Math.PI) / 5;
+    const raio = i % 2 === 0 ? r : r * 0.45;
+    const x = cx + Math.cos(ang) * raio;
+    const y = cy + Math.sin(ang) * raio;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}

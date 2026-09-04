@@ -97,6 +97,14 @@ export abstract class Bicho {
   private carinho = 0;
   private semente: number;
 
+  /**
+   * A ORDEM QUE A CENA DEU: um ponto para onde ir e a promessa que resolve
+   * quando ele chegar. Enquanto existe, o passeio nao decide nada.
+   */
+  private missao: { x: number; z: number; velocidade: number; pronto: () => void } | null = null;
+  /** de servico: ele fica parado esperando a proxima ordem em vez de passear */
+  private servindo = false;
+
   constructor(area: AreaDoBicho, jeito: JeitoDoBicho = {}) {
     this.area = area;
     this.jeito = {
@@ -189,6 +197,48 @@ export abstract class Bicho {
     this.ateSoar = Math.min(this.ateSoar, 2.2);
   }
 
+  // ------------------------------------------------- o bicho a servico da cena
+
+  /**
+   * TIRA ELE DO PASSEIO e poe a cena no comando.
+   *
+   * Existe porque bicho que participa de cutscene nao pode continuar decidindo
+   * para onde vai: o garcom do Mania de Churrasco precisa ir a cozinha e voltar
+   * na hora certa, e o cerebro dele sortearia um destino no meio do caminho.
+   *
+   * A cena chama `entrarEmServico()`, encadeia quantos `irPara()` quiser, e
+   * devolve ele com `voltarAPassear()`. Enquanto esta de servico ele NAO senta
+   * nem sorteia destino — mas continua respirando, virando e fazendo barulho,
+   * porque parar de viver no meio de uma cutscene e o que faz boneco parecer
+   * boneco.
+   */
+  entrarEmServico(): void {
+    this.servindo = true;
+    this.missao = null;
+    this.humor = 'parado';
+  }
+
+  voltarAPassear(): void {
+    this.servindo = false;
+    this.missao = null;
+    this.humor = 'parado';
+    this.aguarda = 0.4;
+  }
+
+  /**
+   * Manda ele a um ponto; a promessa resolve quando ele chega.
+   *
+   * O caminho e RETO e ignora a area e os obstaculos de propósito: aqui quem
+   * conhece o cenario e a cena, e ela desvia por partes (ate o vao de serviço,
+   * depois para dentro da cozinha). Passeio e uma coisa, ordem e outra.
+   */
+  irPara(x: number, z: number, velocidade = this.jeito.velocidade): Promise<void> {
+    this.servindo = true;
+    return new Promise<void>((pronto) => {
+      this.missao = { x, z, velocidade, pronto };
+    });
+  }
+
   update(dt: number): void {
     this.fase += dt;
     this.aguarda -= dt;
@@ -210,7 +260,8 @@ export abstract class Bicho {
     }
 
     // ------------------------------------------------------- o que fazer
-    if (this.aguarda <= 0) {
+    // De servico ele nao sorteia nada: quem manda e a cena, via `irPara`.
+    if (this.aguarda <= 0 && !this.servindo) {
       if (this.humor === 'andando') {
         const j = this.jeito;
         this.humor = this.sorte() < j.chanceDeSentar ? 'sentado' : 'parado';
@@ -221,7 +272,18 @@ export abstract class Bicho {
     }
 
     let andando = false;
-    if (this.humor === 'andando') {
+    if (this.missao) {
+      const dx = this.missao.x - this.x;
+      const dz = this.missao.z - this.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < 0.08) {
+        const pronto = this.missao.pronto;
+        this.missao = null;
+        pronto();
+      } else {
+        andando = this.passo(dx, dz, dist, this.missao.velocidade, dt);
+      }
+    } else if (this.humor === 'andando') {
       const dx = this.alvo.x - this.x;
       const dz = this.alvo.z - this.z;
       const dist = Math.hypot(dx, dz);
@@ -229,16 +291,7 @@ export abstract class Bicho {
         this.humor = 'parado';
         this.aguarda = 1.2 + this.sorte() * 2.5;
       } else {
-        const passo = Math.min(dist, this.jeito.velocidade * dt);
-        this.group.position.x += (dx / dist) * passo;
-        this.group.position.z += (dz / dist) * passo;
-        // vira para onde anda, sem estalo
-        const alvoAng = Math.atan2(dx, dz);
-        let d = alvoAng - this.group.rotation.y;
-        while (d > Math.PI) d -= Math.PI * 2;
-        while (d < -Math.PI) d += Math.PI * 2;
-        this.group.rotation.y += d * Math.min(1, dt * 7);
-        andando = true;
+        andando = this.passo(dx, dz, dist, this.jeito.velocidade, dt);
       }
     }
 
@@ -248,5 +301,18 @@ export abstract class Bicho {
       carinho: this.carinho,
       fase: this.fase,
     });
+  }
+
+  /** Um passo na direcao dada, virando para onde anda sem estalo. */
+  private passo(dx: number, dz: number, dist: number, velocidade: number, dt: number): boolean {
+    const anda = Math.min(dist, velocidade * dt);
+    this.group.position.x += (dx / dist) * anda;
+    this.group.position.z += (dz / dist) * anda;
+    const alvoAng = Math.atan2(dx, dz);
+    let d = alvoAng - this.group.rotation.y;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    this.group.rotation.y += d * Math.min(1, dt * 7);
+    return true;
   }
 }

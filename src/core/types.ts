@@ -394,8 +394,12 @@ export interface GameAPI {
    * Resolve com o ID do prato escolhido, ou `null` se a pessoa saiu sem pedir.
    * O id serve para duas coisas: o nome que sai na fala (`pratoPorId`) e a peca
    * 3D que o garcom entrega (`pratoServido`).
+   *
+   * `casa` e o nome que sai no alto da folha. E a MESMA cozinha nos dois lados
+   * da parede — o cardapio nao muda —, mas quem senta na area externa esta no
+   * "Restaurante do Clube" e quem senta la dentro esta no "Mania de Churrasco".
    */
-  abrirCardapio(): Promise<string | null>;
+  abrirCardapio(casa?: string): Promise<string | null>;
 
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */

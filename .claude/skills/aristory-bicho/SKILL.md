@@ -116,6 +116,33 @@ const girafa = new Girafa({
 Nada de `enabled = false` nem de uma subclasse "BichoParado": a área é a
 coleira.
 
+## Bicho que entra numa cutscene
+
+Bicho que participa de uma cena marcada **não pode continuar decidindo para
+onde vai** — o cérebro sortearia um destino no meio da entrega. Para isso a base
+tem três métodos, e nenhum deles mexe no passeio:
+
+```ts
+cachorro.entrarEmServico();                 // sai do passeio, a cena assume
+await cachorro.irPara(VAO.x, VAO.z, 2.3);   // resolve quando ele CHEGA
+await cachorro.irPara(COZINHA.x, COZINHA.z, 2.3);
+cachorro.voltarAPassear();                  // devolve ele para a vida dele
+```
+
+De serviço ele não senta nem sorteia destino, **mas continua respirando,
+virando e fazendo barulho**: parar de viver no meio de uma cutscene é o que faz
+boneco parecer boneco.
+
+`irPara()` anda em LINHA RETA e ignora a área e os `proibido`, de propósito:
+quem conhece a planta é a cena. O Walter não vai reto do salão para a cozinha —
+a cena o leva primeiro ao vão de serviço e só depois para dentro, porque em
+linha reta ele atravessaria o balcão de passagem como fantasma. Passeio é uma
+coisa; ordem é outra.
+
+**Sempre devolva o bicho.** Se um caminho da cutscene puder terminar sem
+`voltarAPassear()`, ele fica parado para o resto da sessão — o teste do garçom
+mede exatamente isso, comparando a posição dele antes e depois de servir.
+
 ## Bicho dentro de peça de balcão
 
 Quem atende numa guarita, quiosque ou bilheteria some duas vezes: o telhado

@@ -3451,6 +3451,14 @@ export function perroServido(): THREE.Group {
  * clube serve inteiro, e só a cor da fruta muda.
  */
 export function pratoServido(id: string): THREE.Group | null {
+  const g = montarOPrato(id);
+  // a etiqueta serve para o teste achar o prato no mundo — e para a proxima
+  // mecanica saber O QUE esta na mesa sem guardar isso em paralelo
+  if (g) g.userData.prato = id;
+  return g;
+}
+
+function montarOPrato(id: string): THREE.Group | null {
   switch (id) {
     case 'arepa-queijo': return arepaServida();
     case 'arepa-recheada': return arepaRecheadaServida();
