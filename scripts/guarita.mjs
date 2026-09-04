@@ -92,11 +92,12 @@ const apitos = () =>
  * segundo de relógio: o Chromium sem GPU renderiza a uns 10 quadros por
  * segundo, e o `dt` de cada quadro é limitado — o relógio do bicho anda a
  * menos de um terço da velocidade. Por isso o teste ESPERA ACONTECER em vez de
- * cronometrar: pergunta de três em três segundos até um minuto.
+ * cronometrar: pergunta de três em três segundos até dois minutos — o pior
+ * caso (26 s de jogo) passa de 78 s de relógio aqui dentro.
  */
 const apitosAntes = await apitos();
 let apitosDepois = apitosAntes;
-for (let i = 0; i < 20 && apitosDepois === apitosAntes; i++) {
+for (let i = 0; i < 40 && apitosDepois === apitosAntes; i++) {
   await page.waitForTimeout(3000);
   apitosDepois = await apitos();
 }

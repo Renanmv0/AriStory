@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, SceneDef } from '../core/types';
-import { flat } from '../core/materials';
+import { flat, toon } from '../core/materials';
 import {
   bin, bleachers, bus, busStop, bush, canteiro, canteiroComPalmeira,
   cloud, divingBoard,
@@ -11,6 +11,7 @@ import {
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
 } from '../world/props';
+import { interiorDoor } from '../world/furniture';
 import { Girafa } from '../entities/bichos/Girafa';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
@@ -117,6 +118,9 @@ export const clube: SceneDef = {
   entries: {
     portaria: { x: EMBARQUE.x, z: EMBARQUE.z, facing: Math.PI / 2 },
     beira: { x: 0, z: 3.5, facing: Math.PI },
+    // quem volta do Mania de Churrasco sai pela porta de serviço, atrás do
+    // prédio: um passo para fora dela, já de costas para a parede
+    'dos-fundos-do-restaurante': { x: -9.2, z: -16.2, facing: Math.PI / 2 },
   },
 
   build(w) {
@@ -782,6 +786,65 @@ export const clube: SceneDef = {
       w.add(w.place(parasol(P.restauranteToldo), x, 0, -4.8));
       w.blockCircle(x, -4.8, 0.3);
     }
+
+    /**
+     * A PORTA DE SERVIÇO, no fundo da lateral do restaurante.
+     *
+     * ELA NÃO PODE FICAR NA PAREDE DE TRÁS, e isso não é gosto: é a câmera. O
+     * prédio tem 5,5 de altura, e a 34° ele engole quase 4 m atrás de si — a
+     * faixa colada na parede do fundo é um ponto cego onde some a porta E some
+     * a dupla. Um lugar onde o jogador não se vê é um lugar onde ele não anda.
+     *
+     * Então ela foi para a face LESTE (`x = -10,5`), na ponta de trás: é a
+     * única cara do prédio que a câmera enxerga sem ser a fachada. Continua
+     * sendo porta de fundos — para chegar nela é preciso dar a volta no prédio
+     * inteiro, passando pelas caixas e pela lixeira do serviço.
+     */
+    const FUNDO_DO_RESTAURANTE = {
+      x: RESTAURANTE.x + RESTAURANTE.largura / 2,
+      z: RESTAURANTE.z - 2.2,
+    };
+    const portaDeServico = w.add(w.place(
+      interiorDoor(P.restauranteEsquadria, 1.0, 2.15),
+      FUNDO_DO_RESTAURANTE.x + 0.06, 0, FUNDO_DO_RESTAURANTE.z, Math.PI / 2,
+    ));
+    // duas caixas e uma lixeira: é o que faz uma porta na lateral virar "entrada
+    // de serviço" em vez de porta esquecida
+    for (const [dz, larg, alt] of [[-1.6, 0.6, 0.5], [-1.25, 0.45, 0.36]] as const) {
+      const caixa = new THREE.Mesh(
+        new THREE.BoxGeometry(larg * 0.8, alt, larg), toon(P.restauranteDeck),
+      );
+      caixa.position.set(FUNDO_DO_RESTAURANTE.x + 0.45, alt / 2, FUNDO_DO_RESTAURANTE.z + dz);
+      w.add(caixa);
+    }
+    w.blockBox(FUNDO_DO_RESTAURANTE.x + 0.45, FUNDO_DO_RESTAURANTE.z - 1.45, 0.35, 0.55);
+    w.add(w.place(bin(), FUNDO_DO_RESTAURANTE.x + 0.6, 0, FUNDO_DO_RESTAURANTE.z + 2.0));
+    w.blockCircle(FUNDO_DO_RESTAURANTE.x + 0.6, FUNDO_DO_RESTAURANTE.z + 2.0, 0.3);
+
+    w.interact({
+      id: 'clube:porta-de-servico',
+      x: FUNDO_DO_RESTAURANTE.x + 1.2, z: FUNDO_DO_RESTAURANTE.z, radius: 1.9,
+      label: 'Entrar pela porta dos fundos', icon: '🚪',
+      highlight: portaDeServico,
+      onInteract: async (api) => {
+        if (!api.flag('achou-a-porta-do-mania')) {
+          await conversa([
+            [R, 'Peraí. Essa porta dá pra dentro do restaurante.'],
+            [A, 'A gente pode entrar?'],
+            [R, 'A girafa mandou a gente aproveitar o dia. Isso conta.'],
+          ]);
+          api.setFlag('achou-a-porta-do-mania');
+          api.unlock({
+            id: 'porta-dos-fundos',
+            title: 'A porta dos fundos',
+            place: 'Clube',
+            note: 'Deram a volta no restaurante sem motivo nenhum e acharam uma porta que ninguém tinha aberto.',
+            icon: '🚪',
+          });
+        }
+        api.goTo('mania-de-churrasco', 'dos-fundos');
+      },
+    });
 
     w.interact({
       id: 'clube:restaurante',
