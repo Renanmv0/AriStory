@@ -3,11 +3,12 @@
  *
  * O que este teste guarda:
  * - a porta de serviço fica na parede do FUNDO do restaurante, escondida, como
- *   o Renan pediu. A parede do fundo é ponto cego da câmera isométrica: o
- *   prédio tem 5,5 de altura e a 34° engole quase 4 m atrás de si. Quem resolve
- *   isso é `w.transparenteQuandoAtras()` — o prédio fica translúcido enquanto
- *   a dupla estiver escondida atrás dele, e volta a ser sólido quando não
- *   estiver. Sem isso a porta é invisível, e pior, a dupla também some;
+ *   o Renan pediu. A parede do fundo é ponto cego da câmera isométrica (o
+ *   prédio tem 5,5 e a 34° engole quase 4 m atrás de si) e AQUI ISSO É A
+ *   GRAÇA: a porta é para ser descoberta girando a câmera ou dando a volta;
+ * - o prédio fica SÓLIDO o tempo todo, inclusive com a dupla atrás dele. Já
+ *   existiu aqui um prédio que ficava translúcido nessa hora, e o Renan cortou:
+ *   entregava o segredo. Esta asserção existe para ninguém trazer de volta;
  * - entrar leva para a cena nova, e a conversa da descoberta acontece uma vez;
  * - o restaurante tem as DUAS salas: a cozinha (grelha, fogão, pia, bancadas) e
  *   o salão (mesas e bar), com o balcão de passagem entre elas;
@@ -84,7 +85,7 @@ const opacidadeDoPredio = () =>
   });
 
 // ------------------------------------------- 1. achar a porta e entrar
-// longe do prédio ele é sólido; atrás dele, translúcido
+// o prédio é sólido de longe E com a dupla atrás dele: o esconderijo é o ponto
 await page.evaluate(() => window.jogo.debugPlace(0, 6, 0));
 await page.waitForTimeout(1600);
 const opacidadeLonge = await opacidadeDoPredio();
@@ -164,10 +165,10 @@ const problemas = [];
 if (erros.length) problemas.push('erros de console');
 if (!/fundos/i.test(promptDaPorta ?? '')) problemas.push('o prompt da porta de serviço não apareceu');
 if (opacidadeLonge !== 1) problemas.push(`o prédio não está sólido de longe (${opacidadeLonge})`);
-// o fade é interpolado: em ~1,8 s de relógio ele chega a ~0,44 e continua
-// descendo até 0,26. O que importa é ter saído de 1 com folga.
-if (opacidadeAtras === null || opacidadeAtras > 0.8)
-  problemas.push(`o prédio não ficou translúcido com a dupla atrás dele (${opacidadeAtras})`);
+if (opacidadeAtras !== 1) {
+  problemas.push(`o prédio ficou translúcido com a dupla atrás dele (${opacidadeAtras}) — ` +
+    'a porta dos fundos é para ser descoberta jogando, não entregue por um efeito');
+}
 if (cenaDepois !== 'mania-de-churrasco') problemas.push(`a porta não levou para dentro (caiu em ${cenaDepois})`);
 if (!descoberta.length) problemas.push('a conversa da descoberta não aconteceu');
 if (inventario.churrasqueira !== 1) problemas.push('a churrasqueira não está na cozinha');

@@ -792,12 +792,13 @@ export const clube: SceneDef = {
      * o lugar certo para uma entrada escondida: essa parede não tem janela, não
      * tem toldo e não dá para lugar nenhum. Só se chega nela dando a volta.
      *
-     * O PREÇO DISSO É UM PONTO CEGO, e ele é real: o prédio tem 5,5 de altura,
-     * e a 34° de câmera ele engole quase 4 m da faixa de trás — quem anda ali
-     * some da tela junto com a porta. A resposta não foi fugir da parede: foi
-     * `transparenteQuandoAtras()`, logo abaixo, que faz o prédio ficar
-     * translúcido enquanto a dupla está atrás dele. Aí aparecem os dois E a
-     * porta, vista através da parede.
+     * O PONTO CEGO AQUI NÃO É DEFEITO, É A GRAÇA. O prédio tem 5,5 de altura, e
+     * a 34° de câmera ele engole quase 4 m da faixa de trás: do ângulo padrão a
+     * porta não aparece. Chegou a existir aqui um prédio que ficava translúcido
+     * quando a dupla passava atrás — o Renan cortou, e com razão: **a câmera
+     * gira**, e a porta é para ser DESCOBERTA jogando. Quem der a volta pelo
+     * fundo ou girar com Q/E acha; quem nunca girar, nunca acha. Não ponha nada
+     * aqui que o jogo exija para andar para a frente.
      */
     const FUNDO_DO_RESTAURANTE = {
       x: RESTAURANTE.x + 2.4,
@@ -819,18 +820,6 @@ export const clube: SceneDef = {
     w.blockBox(FUNDO_DO_RESTAURANTE.x - 1.7, FUNDO_DO_RESTAURANTE.z - 0.4, 0.55, 0.35);
     w.add(w.place(bin(), FUNDO_DO_RESTAURANTE.x + 2.2, 0, FUNDO_DO_RESTAURANTE.z - 0.5));
     w.blockCircle(FUNDO_DO_RESTAURANTE.x + 2.2, FUNDO_DO_RESTAURANTE.z - 0.5, 0.3);
-
-    /**
-     * E É AQUI QUE O PONTO CEGO MORRE. O prédio inteiro (e a porta com ele)
-     * fica translúcido enquanto um dos dois estiver na sombra dele. A conta usa
-     * o giro atual da câmera, então girando com Q/R o prédio volta a ser sólido
-     * sozinho — porque dali ele já não tapa ninguém.
-     */
-    w.transparenteQuandoAtras(predio, {
-      x: RESTAURANTE.x, z: RESTAURANTE.z,
-      largura: RESTAURANTE.largura, profundidade: RESTAURANTE.profundidade,
-      altura: 5.5,
-    });
 
     w.interact({
       id: 'clube:porta-de-servico',

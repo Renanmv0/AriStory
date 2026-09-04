@@ -41,33 +41,26 @@ nas duas cenas (ida e volta).
   virada para o outro lado, a peça mostra só o fundo liso e quem compra fica
   escondido atrás dela. O ponto do `w.interact` vai na frente dela.
 
-### O ponto cego atrás de um prédio, e como resolver
+### O ponto cego atrás de um prédio
 
 A câmera olha em **34°** de inclinação. A conta que decide tudo: uma peça de
 altura `h` esconde **`h / tan(34°) ≈ 1,5 · h`** de chão atrás dela, na direção
 da câmera — que é a diagonal `(sen giro, cos giro)`, e o giro muda quando o
 jogador aperta `Q`/`E`. Um prédio de 5,5 come quase 8 m.
 
-A saída antiga era só uma: **não ponha nada atrás de peça alta**. Hoje tem
-outra, para quando o lugar é o certo justamente por ser escondido (a porta de
-serviço do restaurante do clube):
+Duas saídas, e **nenhuma delas é fazer a peça sumir**:
 
-```ts
-w.transparenteQuandoAtras(predio, {
-  x: RESTAURANTE.x, z: RESTAURANTE.z,
-  largura: 13, profundidade: 7, altura: 5.5,
-});
-```
+1. **Não ponha nada atrás de peça alta** — é a regra normal, e vale para
+   qualquer coisa que o jogo espere que o jogador ache sem procurar.
+2. **Ponha ali de propósito, como segredo.** É o caso da porta de serviço do
+   restaurante do clube: o ponto cego é o esconderijo. Quem gira a câmera ou dá
+   a volta acha; quem não gira, não acha. Só nunca deixe o caminho principal do
+   jogo depender de uma coisa escondida assim.
 
-A cada quadro ela marcha da posição de CADA um dos dois em direção à câmera
-(usando `g.anguloDaCamera()`, o giro de verdade, não 45° fixo) e, se a caixa
-cobrir alguém, interpola a peça até `0,26` de opacidade; sólida de novo quando
-não cobre. Ela **clona os materiais da peça** de propósito: `toon()` guarda
-material por cor, e mexer no compartilhado desbotaria todo objeto daquela cor
-no cenário.
-
-Use com parcimônia — é um custo por quadro e um efeito que chama atenção. Peça
-alta que não esconde nada continua sem precisar disto.
+**Peça translúcida está descartada** — chegou a existir aqui um prédio que
+desbotava quando a dupla passava atrás, e o Renan cortou: a câmera gira, e o
+que é para ser descoberto tem que ser descoberto jogando, não entregue por um
+efeito. Não reintroduza.
 
 ## API do WorldBuilder (`w`)
 
