@@ -1,5 +1,6 @@
 /**
- * O garçom canino passeando pelo salão, e a porta de serviço desobstruída.
+ * O Walter — o garçom canino — passeando pelo salão, e a porta de serviço
+ * desobstruída.
  *
  * O que este teste guarda:
  * - A PORTA DE SERVIÇO NÃO TEM MÓVEL NA FRENTE. Foi reclamação do Renan: a pia
@@ -7,13 +8,16 @@
  *   porta, então quem entrava do clube esbarrava nela antes de dar um passo. O
  *   teste mede duas coisas: nenhum colisor invade o retângulo de entrada, e a
  *   dupla larga da porta e caminha para dentro da cozinha sem travar;
- * - O GARÇOM PASSEIA. Ele é o mesmo cachorro que serve a mesa lá fora, e agora
+ * - O WALTER PASSEIA. Ele é o mesmo cachorro que serve a mesa lá fora, e agora
  *   mora aqui: a trilha tem que somar distância de verdade (o bug clássico de
  *   bicho é dar um passo de um quadro e congelar);
  * - ele fica DENTRO do salão e não atravessa mesa nem o balcão de passagem —
  *   o balcão não colide para bicho, quem segura ele é a área;
  * - o prompt de carinho ANDA JUNTO com ele;
- * - ele LATE sozinho, e o carinho faz ele parar.
+ * - ele LATE sozinho, e o carinho faz ele parar;
+ * - o PRIMEIRO carinho apresenta ele e destranca a memória; do segundo em
+ *   diante a memória não entra de novo, e o Ari responde com uma fala solta —
+ *   bicho que só funciona uma vez vira botão gasto.
  *
  * Uso: node scripts/garcom.mjs /caminho/prefixo
  */
@@ -142,7 +146,7 @@ for (const [x, z] of trilha) {
 
 // ============================================ 3. o prompt anda junto com ele
 const grudado = await page.evaluate(() => {
-  const it = window.jogo.current.world.interactables.find((i) => i.id === 'mania:garcom');
+  const it = window.jogo.current.world.interactables.find((i) => i.id === 'mania:walter');
   let g = null;
   window.jogo.scene.traverse((o) => {
     if (o.userData?.peca === 'garcom-canino') g = o;
@@ -183,6 +187,14 @@ for (let i = 0; i < 10; i++) {
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${OUT}-carinho.png` });
 
+/** as memórias do diário agora, na ordem em que entraram */
+const noDiario = () =>
+  page.evaluate(() =>
+    (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').memories ?? [])
+      .filter((m) => m.id === 'walter').length,
+  );
+const memoriasDepoisDoPrimeiro = await noDiario();
+
 const antesDoRepouso = await onde();
 await page.waitForTimeout(1600);
 const depoisDoRepouso = await onde();
@@ -193,6 +205,29 @@ const andouNoCarinho = Math.hypot(
 const latidosDepois = await page.evaluate(
   () => Object.fromEntries(window.jogo.audio.contagem).latido ?? 0,
 );
+
+// =========================== 5. o segundo carinho: fala solta, memória nenhuma
+/**
+ * A memória é da PRIMEIRA vez, e só. O que este bloco prova são as duas metades
+ * disso: a memória não entra duas vezes, e mesmo assim o carinho continua
+ * respondendo — sem a segunda metade, o Walter viraria um botão que só funciona
+ * uma vez, que é o oposto de bicho de estimação.
+ */
+const p2 = await onde();
+await page.evaluate(([x, z]) => window.jogo.debugPlace(x + 0.55, z + 0.55, 0), p2);
+await page.waitForTimeout(900);
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(1000);
+const falasDeNovo = [];
+for (let i = 0; i < 6; i++) {
+  if (!(await page.locator('.dialogue.show').count())) break;
+  await page.waitForTimeout(800);
+  const t = await page.locator('.dialogue .text').textContent().catch(() => '');
+  if (t) falasDeNovo.push(t);
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(300);
+}
+const memoriasDepoisDoSegundo = await noDiario();
 
 // ------------------------------------------------------------------ relatório
 console.log('1. porta · colisores dentro do vão de entrada:', invasores.length,
@@ -212,6 +247,9 @@ console.log('   prompt ao chegar perto:', JSON.stringify(promptPerto));
 console.log('4. latidos:', latidosAntes, '→', latidosDepois);
 console.log('   falas do carinho:', JSON.stringify(falas));
 console.log('   andou durante o carinho:', andouNoCarinho.toFixed(2), '(tem que ser pouco)');
+console.log('5. memória "walter" no diário · depois do 1º carinho:', memoriasDepoisDoPrimeiro,
+  '· depois do 2º:', memoriasDepoisDoSegundo);
+console.log('   fala do segundo carinho:', JSON.stringify(falasDeNovo));
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const problemas = [];
@@ -235,10 +273,25 @@ else {
     problemas.push(`o ponto de interação ficou ${distancia.toFixed(2)} atrás dele (faltou moveTo)`);
   }
 }
-if (!/garçom|garcom/i.test(promptPerto ?? '')) problemas.push('o prompt do carinho não apareceu');
+if (!/walter/i.test(promptPerto ?? '')) problemas.push('o prompt do carinho não apareceu');
 if (falas.length < 3) problemas.push('a conversa do carinho não aconteceu');
 if (latidosDepois <= latidosAntes) problemas.push('ele não latiu nem no carinho');
 if (andouNoCarinho > 0.5) problemas.push('ele saiu andando em vez de ficar quieto no carinho');
+if (!falas.some((f) => /Walter/.test(f))) problemas.push('a conversa do primeiro carinho não diz o nome dele');
+if (memoriasDepoisDoPrimeiro !== 1) {
+  problemas.push(`o primeiro carinho não virou memória (${memoriasDepoisDoPrimeiro} no diário)`);
+}
+if (memoriasDepoisDoSegundo !== 1) {
+  problemas.push(`a memória do Walter entrou ${memoriasDepoisDoSegundo}× — era para ser só na primeira`);
+}
+if (!falasDeNovo.length) problemas.push('o segundo carinho não respondeu nada: ele virou botão gasto');
+// Compara só as falas INTEIRAS: o balão escreve à máquina, então a leitura
+// pega fragmentos ("Ele", "Gr") que aparecem nos dois carinhos por acidente de
+// timing e nada provam.
+const inteiras = falas.filter((f) => f.length > 14);
+if (falasDeNovo.filter((f) => f.length > 14).some((f) => inteiras.includes(f))) {
+  problemas.push('o segundo carinho repetiu a conversa de apresentação');
+}
 
 await browser.close();
 if (problemas.length) {
