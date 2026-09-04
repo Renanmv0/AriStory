@@ -6,7 +6,8 @@ import {
   bin, bleachers, bus, busStop, bush, canteiro, canteiroComPalmeira,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
-  meioFio, mesaDePatio, poolShell, poolWater, restaurante, showerPost, sunLounger, textSign,
+  meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante,
+  showerPost, sunLounger, textSign,
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
 } from '../world/props';
@@ -175,6 +176,60 @@ export const clube: SceneDef = {
     // esquerda ele vai até a beira do asfalto, senão ninguém alcança a porta do
     // ônibus, que agora para do lado de fora do clube.
     w.setBounds(-30, -19, 22, 16);
+
+    // --------------------------------------------------- o muro e o portão
+    /**
+     * O MURO FICA EM CIMA DA FAIXA DE GRAMA que a rua deixou entre a calçada
+     * (`-26`) e a beirada do piso (`-24`) — os 2 m que estavam reservados
+     * exatamente para "o que fecha o clube". Ele fecha SÓ ESTE LADO, o da rua;
+     * os outros três continuam no limite invisível, como sempre foram.
+     *
+     * A entrada não é uma porta: são 7 m de vão entre duas pilastras de 3,3
+     * com luminária em cima, e as duas folhas de ferro abertas para dentro. Sete
+     * metros é o que faz a dupla entrar lado a lado sem se espremer — e é o que
+     * separa um portão de clube de um portãozinho de quintal.
+     */
+    const MURO = { x: -25, z: 7, vao: 7 };
+    /** as pilastras ficam meio metro para fora do vão, e têm 1,24 de base */
+    const PILAR = MURO.vao / 2 + 0.5;
+    const MEIA_PILASTRA = 0.62;
+
+    // A SOLEIRA: a grama não chega até o portão. Quem entra pisa em pedrinha
+    // desde a calçada, que é o que amarra a rua na entrada do clube.
+    w.patch(MURO.x, MURO.z, 2, MURO.vao + 1.4, P.concrete, 0, 0.026, calcadaDePedrinha());
+
+    w.add(w.place(portaoDoClube(MURO.vao), MURO.x, 0, MURO.z, Math.PI / 2));
+    for (const dz of [-PILAR, PILAR]) {
+      w.blockBox(MURO.x, MURO.z + dz, MEIA_PILASTRA, MEIA_PILASTRA);
+    }
+    /**
+     * As folhas abertas são 3,4 m de ferro deitados para dentro do clube, e
+     * precisam de colisão própria: sem ela dá para atravessar o portão aberto
+     * como se fosse fumaça. Elas abrem 90° cheios justamente para a caixa sair
+     * reta — folha em 100° pediria colisor girado.
+     */
+    const FOLHA = MURO.vao / 2 - 0.08;
+    for (const dz of [-MURO.vao / 2, MURO.vao / 2]) {
+      w.blockBox(MURO.x + FOLHA / 2 + 0.07, MURO.z + dz, FOLHA / 2, 0.1);
+    }
+
+    /**
+     * Os dois trechos de muro, um de cada lado do portão. Eles passam do limite
+     * de caminhada (`z` de -19 a 16) e vão até -23 e 20: muro que acaba antes do
+     * limite não fecha nada — sobra um vão por onde se sai andando pela grama —,
+     * e muro que acaba EXATAMENTE nele fica com cara de cenário de teatro,
+     * parando no ar no meio da grama. Passando das quinas do piso, ele sai do
+     * enquadramento em vez de terminar.
+     */
+    for (const [z0, z1] of [
+      [-23, MURO.z - PILAR - MEIA_PILASTRA],
+      [MURO.z + PILAR + MEIA_PILASTRA, 20],
+    ] as const) {
+      const comprimento = z1 - z0;
+      const meio = (z0 + z1) / 2;
+      w.add(w.place(muroDoClube(comprimento), MURO.x, 0, meio, Math.PI / 2));
+      w.blockBox(MURO.x, meio, 0.31, comprimento / 2);
+    }
 
     // ------------------------------------------------------------- piscina
     w.add(w.place(poolShell(PISCINA.largura, PISCINA.profundidade, PISCINA.fundo), PISCINA.x, 0, PISCINA.z));
@@ -678,9 +733,16 @@ export const clube: SceneDef = {
     // `+Z` da peça, e `-PI/2` leva essa boca para o `-X` do mundo — virada para
     // a rua, com o fundo de vidro de costas para o clube. O colisor pega só o
     // fundo e o banco: por baixo do teto se anda.
-    w.add(w.place(busStop(), RUA.calcada, 0, PARADA.z, -Math.PI / 2));
-    w.blockBox(RUA.calcada + 0.7, PARADA.z, 0.4, 2.4);
-    w.blockCircle(RUA.calcada - 0.5, PARADA.z - 2.65, 0.25); // o totem da parada
+    //
+    // ELE SUBIU 3,8 EM `z` QUANDO O PORTÃO CHEGOU. O abrigo estava bem na
+    // frente do vão: o fundo dele barrava a caminhada da porta do ônibus até a
+    // entrada do clube, e o teste do muro pegou a dupla parando em `-25,88`, que
+    // é exatamente a face do colisor do abrigo. Em `z = 12,8` ele continua
+    // encostado no ônibus (que vai de 4,5 a 13,5) e libera o caminho.
+    const ABRIGO = PARADA.z + 3.8;
+    w.add(w.place(busStop(), RUA.calcada, 0, ABRIGO, -Math.PI / 2));
+    w.blockBox(RUA.calcada + 0.7, ABRIGO, 0.4, 2.4);
+    w.blockCircle(RUA.calcada - 0.5, ABRIGO - 2.65, 0.25); // o totem da parada
 
     // PLACAS. É o que mais faz um lugar parecer clube de verdade: o texto sai
     // de um canvas em tempo de execução, que é a única "textura" que o projeto

@@ -33,6 +33,8 @@ const PECAS = [
   ['mesa-de-patio', 'clube'],
   ['cadeira-de-patio', 'clube'],
   ['pergolado', 'clube'],
+  ['muro-do-clube', 'clube'],
+  ['portao-do-clube', 'clube'],
   ['espreguicadeira', 'clube'],
   ['mesinha-de-deque', 'clube'],
   ['onibus', 'clube'],

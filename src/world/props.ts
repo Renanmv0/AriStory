@@ -502,6 +502,219 @@ export function picnicTable(): THREE.Group {
   return g;
 }
 
+/**
+ * MURO DO CLUBE — o trecho reto, que a cena repete quantas vezes precisar.
+ *
+ * Nasce deitado no X (o comprimento) e olhando para o +Z, como toda peça do
+ * kit; quem quiser um muro correndo no Z gira meia volta de rádio na cena.
+ *
+ * A ALTURA É UMA ESCOLHA, NÃO UM PADRÃO. Muro de clube de verdade tem 2 m e
+ * mais, e aqui isso seria um paredão: a câmera olha de cima em 34°, e tudo que
+ * é alto sobe na tela e tapa o que está atrás. Com 1,41 no pano e 1,70 nas
+ * pilastras, ele bate no peito de quem tem 1,75 — fecha o clube, dá para ver o
+ * outro lado por cima, e o que ele esconde do chão é uma faixa de 1,7 que é
+ * justamente a grama onde ele está plantado.
+ *
+ * As quatro camadas (base, pano, painel e chapim) têm larguras DIFERENTES de
+ * propósito: é o degrau entre elas que dá o relevo, e é ele que evita que duas
+ * faces caiam no mesmo plano e briguem por pixel.
+ */
+export function muroDoClube(comprimento = 8): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'muro-do-clube';
+
+  const massa = toon(P.muroCorpo);
+  const reboco = toon(P.muroBase);
+
+  const base = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 0.22, 0.5), reboco);
+  base.position.y = 0.11;
+  g.add(base);
+
+  const pano = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 1.05, 0.36), massa);
+  pano.position.y = 0.745;
+  g.add(pano);
+
+  const chapim = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 0.14, 0.5), toon(P.muroChapim));
+  chapim.position.y = 1.34;
+  g.add(chapim);
+
+  /**
+   * As pilastras, uma a cada ~5 m e sempre nas duas pontas — é o ritmo que
+   * transforma uma fita comprida em muro construído. Elas nascem 3 cm acima do
+   * chão, dentro da base: nascendo em `y = 0` como ela, as duas faces de baixo
+   * cairiam no mesmo plano olhando para o mesmo lado (z-fighting puro).
+   */
+  const vaos = Math.max(1, Math.round(comprimento / 5));
+  const passo = comprimento / vaos;
+  for (let i = 0; i <= vaos; i++) {
+    const x = -comprimento / 2 + i * passo;
+    const pilastra = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.55, 0.52), reboco);
+    pilastra.position.set(x, 0.03 + 1.55 / 2, 0);
+    g.add(pilastra);
+    const capa = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.12, 0.62), toon(P.muroChapim));
+    capa.position.set(x, 1.64, 0);
+    g.add(capa);
+  }
+
+  // o painel rebaixado de cada vão — na verdade ele é SALIENTE 4 cm, o que dá
+  // o mesmo desenho e não exige furar o pano
+  for (let i = 0; i < vaos; i++) {
+    const x = -comprimento / 2 + (i + 0.5) * passo;
+    for (const lado of [-1, 1]) {
+      const painel = new THREE.Mesh(
+        new THREE.BoxGeometry(passo - 0.9, 0.62, 0.04), toon(P.muroPainel),
+      );
+      painel.position.set(x, 0.78, lado * 0.2);
+      g.add(painel);
+    }
+  }
+
+  return g;
+}
+
+/**
+ * PORTÃO DO CLUBE — a entrada inteira, e não uma porta.
+ *
+ * Duas pilastras de 3,3 com luminária em cima, um vão de `vao` metros (7 por
+ * padrão, largo o bastante para os dois passarem lado a lado com folga) e as
+ * duas folhas de ferro ABERTAS, cada uma girada 90° para dentro do clube.
+ *
+ * POR QUE NÃO TEM ARCO EM CIMA DO VÃO. Era o desenho óbvio, e ele quebra na
+ * câmera do jogo: uma travessa a 3,4 esconde tudo que estiver a 2,4 na direção
+ * da câmera, e quem atravessa o portão passa exatamente por aí — a viga cortaria
+ * a cabeça dos dois no caminho, do mesmo jeito que o encosto da espreguiçadeira
+ * cortava o pescoço de quem deitava. O nome do clube foi para uma placa na
+ * pilastra, nas duas faces, que é onde ele fica legível sem tapar ninguém.
+ *
+ * As folhas abrem exatamente 90°, e não 100° ou 110°: assim elas ficam
+ * alinhadas aos eixos e a cena consegue fechar a colisão delas com uma caixa
+ * reta em vez de uma girada.
+ */
+export function portaoDoClube(vao = 7, nome = 'Clube'): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'portao-do-clube';
+
+  const reboco = toon(P.muroBase);
+  const pedra = toon(P.muroChapim);
+  const ferro = toon(P.portaoFerro);
+  const metal = toon(P.portaoMetal);
+  const ouro = toon(P.gold);
+
+  // ------------------------------------------------------------- pilastras
+  for (const lado of [-1, 1]) {
+    const px = lado * (vao / 2 + 0.5);
+
+    const plinto = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.3, 1.24), pedra);
+    plinto.position.set(px, 0.15, 0);
+    g.add(plinto);
+
+    const fuste = new THREE.Mesh(new THREE.BoxGeometry(1, 2.1, 1), reboco);
+    fuste.position.set(px, 1.35, 0);
+    g.add(fuste);
+
+    // as duas molduras do fuste: saem 3 cm dele, que é o que as separa do plano
+    // da parede e dá a sombra
+    for (const y of [0.62, 1.96]) {
+      const moldura = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.12, 1.06), pedra);
+      moldura.position.set(px, y, 0);
+      g.add(moldura);
+    }
+
+    const capitel = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.18, 1.22), pedra);
+    capitel.position.set(px, 2.49, 0);
+    g.add(capitel);
+    const abaco = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.14, 1.04), reboco);
+    abaco.position.set(px, 2.65, 0);
+    g.add(abaco);
+
+    // a luminária de cima: é ela que diz "isto é uma entrada", e não um pilar
+    const pescoco = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.2, 8), ferro);
+    pescoco.position.set(px, 2.82, 0);
+    g.add(pescoco);
+    const globo = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 8), toon(P.luzDoPortao, { glow: 0.35 }));
+    globo.position.set(px, 3.14, 0);
+    g.add(globo);
+    const bico = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.16, 8), ouro);
+    bico.position.set(px, 3.44, 0);
+    g.add(bico);
+
+    // A PLACA COM O NOME, nas duas faces: uma olha para a rua e a outra para
+    // dentro. A chapa sai 3 cm do fuste e as letras 2 cm da chapa — encostar
+    // qualquer uma delas na face de trás poria duas superfícies no mesmo plano.
+    for (const frente of [-1, 1]) {
+      const chapa = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.38, 0.06), metal);
+      chapa.position.set(px, 1.35, frente * 0.53);
+      g.add(chapa);
+      const letras = letreiro(nome, 0.72, 0.26, '#fdf6e3');
+      letras.position.set(px, 1.35, frente * 0.58);
+      if (frente < 0) letras.rotation.y = Math.PI;
+      g.add(letras);
+    }
+  }
+
+  // ---------------------------------------------------------------- folhas
+  /**
+   * Cada folha nasce na dobradiça, encostada na face de dentro da pilastra, e
+   * cresce para o MEIO do vão. O pivô é um objeto vazio: girar ele é abrir o
+   * portão, e é assim que um dia dá para animar a abertura sem refazer nada.
+   */
+  const folha = vao / 2 - 0.08;
+  for (const lado of [-1, 1]) {
+    const pivo = new THREE.Object3D();
+    pivo.position.set(lado * (vao / 2), 0, 0);
+    /**
+     * Fechada, a folha aponta para o MEIO do vão — ou seja, para `-lado`.
+     * Girando o pivô em `lado · 90°`, essa direção vai parar no `+Z`: as duas
+     * abrem para dentro do clube.
+     *
+     * O `dir` multiplica cada `x` em vez de um `scale.x = -1` no braço: escala
+     * negativa inverte a orientação das faces, e uma das folhas sairia com a
+     * geometria virada do avesso.
+     */
+    pivo.rotation.y = lado * Math.PI / 2;
+    g.add(pivo);
+    const dir = -lado;
+
+    const monte = new THREE.Mesh(new THREE.BoxGeometry(0.13, 2.05, 0.13), ferro);
+    monte.position.set(dir * 0.07, 1.03, 0);
+    pivo.add(monte);
+
+    for (const [y, alt] of [[0.28, 0.12], [1.02, 0.09], [1.78, 0.11]] as const) {
+      const travessa = new THREE.Mesh(new THREE.BoxGeometry(folha, alt, 0.07), ferro);
+      travessa.position.set(dir * (folha / 2 + 0.07), y, 0);
+      pivo.add(travessa);
+    }
+
+    /**
+     * As barras. A altura sobe conforme se aproxima do meio do vão — é o que
+     * dá o desenho de leque quando as duas folhas estão fechadas, e é o que
+     * separa um portão de clube de uma grade de quintal.
+     */
+    const barras = Math.max(6, Math.round(folha / 0.26));
+    for (let i = 1; i <= barras; i++) {
+      const t = i / (barras + 1);
+      const x = dir * (0.07 + t * folha);
+      const altura = 1.86 + 0.42 * t;
+      const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, altura, 6), ferro);
+      barra.position.set(x, 0.24 + altura / 2, 0);
+      pivo.add(barra);
+      const lanca = new THREE.Mesh(new THREE.ConeGeometry(0.062, 0.17, 6), ouro);
+      lanca.position.set(x, 0.24 + altura + 0.085, 0);
+      pivo.add(lanca);
+    }
+
+    // o losango no meio da folha, o único ornamento — dois quadrados girados
+    for (const d of [0, 1]) {
+      const losango = new THREE.Mesh(new THREE.BoxGeometry(0.3 - d * 0.1, 0.3 - d * 0.1, 0.05), d ? ouro : metal);
+      losango.position.set(dir * (0.07 + folha * 0.55), 1.02, 0.03 + d * 0.02);
+      losango.rotation.z = Math.PI / 4;
+      pivo.add(losango);
+    }
+  }
+
+  return g;
+}
+
 export function fence(length = 4, height = 1.1, color: number = P.metalGrey): THREE.Group {
   const g = new THREE.Group();
   const posts = Math.max(2, Math.round(length / 1.2));
