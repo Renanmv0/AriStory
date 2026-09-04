@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
-import type { SceneDef } from '../core/types';
+import type { GameAPI, SceneDef } from '../core/types';
 import {
   arandela, balcaoDePassagem, bancadaInox, banquetaAlta, caixaRegistradora, chair,
   churrasqueira, diningTable, estanteDeBebidas, fogaoIndustrial, fridge, interiorDoor,
-  luminariaPendente, pictureFrame, piaIndustrial, pottedPlant, quadroDeGiz, rug,
+  luminariaPendente, pictureFrame, piaIndustrial, pottedPlant, quadroDeGiz, quadroDoEmpregadoDoMes, rug,
   upperCabinets, wallShelf,
 } from '../world/furniture';
-import { letreiro } from '../world/props';
+import { letreiro, pratoServido } from '../world/props';
+import { pratoPorId } from '../world/cardapioData';
 import { Walter } from '../entities/bichos/Walter';
 import { toon } from '../core/materials';
 import { assoalhoDeMadeira, pisoDePlacas } from '../world/texturasDeChao';
@@ -280,9 +281,25 @@ export const maniaDeChurrasco: SceneDef = {
       [-9.2, 1.2], [-4.6, 1.2], [0.2, 1.2], [5.2, 1.2], [10.0, 1.2],
       [-7.2, 5.6], [-2.4, 5.6], [2.6, 5.6], [7.6, 5.6],
     ] as const;
+    /**
+     * A ÂNCORA DE CADA MESA. Toda mesa do salão é uma mesa em que dá para
+     * sentar — o Renan pediu "qualquer mesa que eu quiser" —, então cada uma
+     * ganha o par de objetos que a cutscene usa: a âncora onde os dois montam
+     * e o foco para onde a câmera olha. São 11, e é barato: `Object3D` vazio
+     * não desenha nada.
+     */
+    const postas: Array<{ x: number; z: number; posta: THREE.Object3D; foco: THREE.Object3D }> = [];
+
     for (const [x, z] of MESAS) {
       w.add(w.place(diningTable(1.5, 1.0), x, 0, z));
       w.blockBox(x, z, 0.8, 0.55);
+      const posta = new THREE.Object3D();
+      posta.position.set(x, 0, z);
+      w.root.add(posta);
+      const foco = new THREE.Object3D();
+      foco.position.set(x, 1.0, z);
+      w.root.add(foco);
+      postas.push({ x, z, posta, foco });
       /**
        * A TOALHA COBRE O TAMPO E CAI 12 CM DOS LADOS. A primeira versão era um
        * decalque de 2 cm em `y = 0,755` — dentro do tampo, que vai de 0,705 a
@@ -377,6 +394,150 @@ export const maniaDeChurrasco: SceneDef = {
       carinhoNoWalter.moveTo(cachorro.x, cachorro.z);
     });
 
+    // ======================================== SENTAR, PEDIR E O WALTER SERVIR
+    /**
+     * O CAMINHO DO WALTER ATÉ A COZINHA, em dois trechos.
+     *
+     * Ele não vai em linha reta, e não é firula: o balcão de passagem corre em
+     * `z = -2` de `x = -11,5` a `-2`, e o único buraco nele é o VÃO DE SERVIÇO
+     * entre `x = -2` e `x = 0,5`. Reto, ele atravessaria o balcão como fantasma
+     * — `irPara()` ignora colisão de propósito, porque quem conhece a planta é
+     * a cena, não o bicho. Então a cena o leva pelo vão, como um garçom de
+     * verdade faria.
+     */
+    const VAO = { x: -0.8, z: -1.0 };
+    const COZINHA = { x: -1.4, z: -4.2 };
+
+    /**
+     * O Walter vai à cozinha e volta com o prato.
+     *
+     * O PRATO VIAJA COMO FILHO DA BANDEJA, e não copiado quadro a quadro: assim
+     * ele acompanha o gingado do passo de graça, sem tremer. Na entrega, o
+     * `attach` do three troca o pai para a âncora da mesa MANTENDO a posição no
+     * mundo — é isso que faz o prato pousar em vez de saltar.
+     *
+     * A CÂMERA SEGUE ELE, e não a mesa. Com o foco na mesa e o zoom de 7,4, a
+     * ida à cozinha acontecia inteira fora da tela — e a ida à cozinha é
+     * justamente o que o Renan pediu para ver. Ela volta para a mesa no momento
+     * em que ele chega com o prato.
+     */
+    const servir = async (
+      api: GameAPI,
+      idDoPrato: string,
+      alvo: { x: number; z: number; posta: THREE.Object3D; foco: THREE.Object3D },
+    ): Promise<void> => {
+      const comida = pratoServido(idDoPrato);
+      if (!comida) return;
+
+      // ele encosta pelo `+X` da mesa. A câmera vem de `+X/+Z` e desenha na
+      // frente quem tem soma maior: parado do outro lado, ele ficaria atrás de
+      // quem senta e a entrega inteira aconteceria escondida por uma cabeça.
+      const CHEGADA = { x: alvo.x + 1.45, z: alvo.z };
+
+      cachorro.entrarEmServico();
+      api.focusCamera(cachorro.group);
+      api.setZoom(9.5);
+      api.som('latido');
+
+      const TROTE = 2.3;   // ele TROTA em serviço; o passeio dele é 0,78
+      await cachorro.irPara(VAO.x, VAO.z, TROTE);
+      await cachorro.irPara(COZINHA.x, COZINHA.z, TROTE);
+      // o tempo de pegar o prato na cozinha, e o prato aparece na bandeja
+      await api.wait(1.1);
+      cachorro.bandeja.add(comida);
+      await api.wait(0.4);
+
+      await cachorro.irPara(VAO.x, VAO.z, TROTE);
+      await cachorro.irPara(CHEGADA.x, CHEGADA.z, TROTE);
+
+      api.focusCamera(alvo.foco);
+      api.setZoom(7.4);
+      await api.wait(0.5);
+      alvo.posta.attach(comida);
+      comida.position.set(0, 0.82, 0);
+      comida.rotation.set(0, 0, 0);
+      api.som('sorvete');   // a mesma sineta de "toma, é seu" da sorveteria
+
+      // meia-volta e de volta ao passeio
+      await api.wait(0.5);
+      void cachorro.irPara(VAO.x, VAO.z, TROTE).then(() => cachorro.voltarAPassear());
+
+      await api.wait(4.5);
+      alvo.posta.remove(comida);
+      comida.traverse((o) => {
+        if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).geometry.dispose();
+      });
+      api.toast('Estava ótimo', '😌');
+    };
+
+    /**
+     * TODA MESA SENTA. São 11 interações iguais, montadas em laço a partir das
+     * âncoras — repetir o bloco 11 vezes seria a mesma coisa escrita 11 vezes.
+     *
+     * A dupla senta nas cadeiras da ESQUERDA (`dx = -0,55`), uma de frente para
+     * a outra: são as duas cadeiras que já existem alinhadas no mesmo `x`. As
+     * da direita ficam vazias, como mesa de restaurante de verdade.
+     */
+    const ASSENTO = 0.03;   // o topo do assento da `chair()` está em 0,50
+    for (let i = 0; i < postas.length; i++) {
+      const alvo = postas[i];
+      w.interact({
+        id: `mania:mesa-${i}`,
+        x: alvo.x, z: alvo.z + 1.9, radius: 1.7,
+        label: 'Sentar e ver o cardápio', icon: '📖',
+        onInteract: async (api) => {
+          api.lockPlayer(true);
+          api.ridePlayer(alvo.posta, new THREE.Vector3(-0.55, ASSENTO, 0.95), 1, Math.PI);
+          api.rideCompanion(alvo.posta, new THREE.Vector3(-0.55, ASSENTO, -0.95), 1, 0);
+          api.setSitting(true);
+          api.focusCamera(alvo.foco);
+          api.setZoom(7.4);
+          await api.wait(0.6);
+
+          if (!api.flag('comeu-no-mania')) {
+            await conversa([
+              [R, 'A gente pode simplesmente sentar? A casa tá aberta.'],
+              [A, 'Tem cardápio na mesa e um garçom de gravata. Tá aberta.'],
+            ]);
+          }
+
+          // o mesmo cardápio do restaurante de fora — é a mesma cozinha, só do
+          // outro lado da parede —, mas com o nome desta casa no alto da folha
+          const escolhido = await api.abrirCardapio('Mania de Churrasco');
+          const prato = escolhido ? pratoPorId(escolhido) : null;
+
+          if (prato) {
+            // Quem PEDE é quem está sendo controlado. Os dois estão travados na
+            // cadeira, então o T não trocou ninguém no meio do caminho.
+            await api.say([`Um(a) ${prato.nome}, por favor!`], api.playerName());
+            await servir(api, escolhido!, alvo);
+            if (!api.flag('comeu-no-mania')) {
+              api.setFlag('comeu-no-mania');
+              await conversa([
+                [A, 'Ele foi na cozinha e voltou com o prato. Sozinho.'],
+                [R, 'Eu não sei quem cozinha aqui, e prefiro não saber.'],
+              ]);
+              api.unlock({
+                id: 'almoco-no-mania',
+                title: 'Almoço no Mania de Churrasco',
+                place: 'Mania de Churrasco',
+                note: 'Sentaram numa mesa de um restaurante que descobriram pela porta dos fundos, e o Walter serviu.',
+                icon: '🍽️',
+              });
+            }
+          }
+
+          api.setSitting(false);
+          api.focusCamera(null);
+          api.setZoom(10);
+          // cada um se levanta para trás da sua cadeira, e vira para a mesa
+          api.releasePlayer(alvo.x - 0.55, alvo.z + 2.1, Math.PI);
+          api.releaseCompanion(alvo.x - 0.55, alvo.z - 2.1, 0);
+          api.lockPlayer(false);
+        },
+      });
+    }
+
     // ------------------------------------------------------------- enfeites
     // o letreiro do nome, em cima do bar: é a primeira coisa que se lê ao entrar
     const placaFundo = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.9, 0.08), toon(P.churrascoQuadroNegro));
@@ -403,7 +564,36 @@ export const maniaDeChurrasco: SceneDef = {
       w.add(w.place(arandela(), x, 2.15, z, rot));
     }
 
-    w.add(w.place(pictureFrame(0.9, 0.7, P.churrascoTijolo), 11.4, 1.9, z0 + 0.16));
+    /**
+     * O QUADRO DE EMPREGADO DO MÊS, no lugar onde antes tinha um retângulo
+     * vermelho sem nada dentro. Ele fica na parede do fundo, ao lado da
+     * registradora — que é onde uma churrascaria de verdade pendura o troféu
+     * do funcionário: onde o cliente paga a conta e lê o nome de quem serviu.
+     */
+    const quadroDoWalter = w.add(w.place(quadroDoEmpregadoDoMes(), 11.4, 1.95, z0 + 0.16));
+    w.interact({
+      id: 'mania:empregado-do-mes',
+      // o balcão do bar vai até z = -7,6; o ponto fica na frente dele
+      x: 11.4, z: z0 + 1.5, radius: 1.8,
+      label: 'Ler o quadro de empregado do mês', icon: '🏆',
+      highlight: quadroDoWalter,
+      onInteract: async (api) => {
+        await conversa([
+          [R, '"Empregado do mês: Walter."'],
+          [A, 'Tem foto e tudo. Ele tá de gravata na foto.'],
+          [R, 'Ele tá de gravata sempre.'],
+          [A, 'Contra quem ele concorreu? Ele é o único funcionário daqui.'],
+          [R, 'Ganhou limpo, então.'],
+        ]);
+        api.unlock({
+          id: 'empregado-do-mes',
+          title: 'Empregado do mês',
+          place: 'Mania de Churrasco',
+          note: 'Um quadro na parede, ao lado da registradora, com a foto do Walter de gravata e cinco estrelinhas.',
+          icon: '🏆',
+        });
+      },
+    });
     w.add(w.place(pictureFrame(0.7, 0.9, P.grassDark), -0.6, 1.95, z0 + 0.16));
 
     for (const [x, z] of [[W / 2 - 1.0, D / 2 - 1.2], [x0 + 1.1, D / 2 - 1.2], [11.2, -1.4]] as const) {
