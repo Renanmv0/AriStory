@@ -91,6 +91,7 @@ node scripts/deque.mjs   /tmp/dq    # o deque de descanso: deitar nas espreguica
 node scripts/muro.mjs    /tmp/mu    # o muro da rua do clube fecha, e o portao grande deixa passar
 node scripts/guarita.mjs /tmp/gu    # a portaria: a girafa fica no posto, apita e manda aproveitar o dia
 node scripts/mania.mjs   /tmp/mn    # a porta dos fundos e o Mania de Churrasco: cozinha e salao separados
+node scripts/garcom.mjs  /tmp/gc    # o cao garcom passeando pelo salao, e a porta de servico sem movel na frente
 node scripts/onibus.mjs  /tmp/ob    # o onibus e o ponto de perto, nas duas ruas (parque e clube)
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```

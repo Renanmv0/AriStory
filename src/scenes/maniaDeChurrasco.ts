@@ -8,6 +8,7 @@ import {
   upperCabinets, wallShelf,
 } from '../world/furniture';
 import { letreiro } from '../world/props';
+import { Cachorro } from '../entities/bichos/Cachorro';
 import { toon } from '../core/materials';
 import { assoalhoDeMadeira, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
@@ -55,8 +56,16 @@ const H = 3.3;
 const PASSAGEM = { z: -2, xIni: -11.5, xFim: -2 };
 /** o balcão que fecha a cozinha do lado do bar */
 const LATERAL = { x: 0.5, zIni: z0 + 0.2, zFim: -2 };
-/** a porta de serviço, na parede da esquerda: é por onde se entra */
-const PORTA = { z: -5 };
+/**
+ * A porta de serviço, na parede da esquerda: é por onde se entra.
+ *
+ * ELA E A PIA DISPUTAM A MESMA PAREDE, e a primeira versão perdeu a disputa: a
+ * pia de 2,6 ficava centrada em `z = -6,1` e o colisor dela ia até `-4,75`,
+ * bem na frente do vão da porta. Quem entrava do clube esbarrava na pia antes
+ * de dar o primeiro passo. Agora a porta subiu 0,6 e a pia encurtou e recuou —
+ * ver `PIA`, e a conta de folga que está lá.
+ */
+const PORTA = { z: -4.4 };
 
 export const maniaDeChurrasco: SceneDef = {
   id: 'mania-de-churrasco',
@@ -192,10 +201,19 @@ export const maniaDeChurrasco: SceneDef = {
     w.blockBox(x0 + 10.4, z0 + 0.5, 1.6, 0.4);
     w.add(w.place(upperCabinets(2.4), x0 + 10.4, 1.75, z0 + 0.2));
 
-    // a pia e a bancada da parede da esquerda, viradas para dentro da cozinha
-    const pia = w.add(w.place(piaIndustrial(2.6), x0 + 0.5, 0, z0 + 2.9, Math.PI / 2));
-    w.blockBox(x0 + 0.5, z0 + 2.9, 0.42, 1.35);
-    w.add(w.place(wallShelf(1.2), x0 + 0.16, 1.75, z0 + 2.9, Math.PI / 2));
+    /**
+     * A PIA, na parede da esquerda, entre a geladeira e a porta de serviço.
+     *
+     * As duas folgas que ela tem que respeitar, e por isso ela é de 2,2 e não
+     * de 2,6: a geladeira termina em `z = -8,0` e o vão da porta começa em
+     * `PORTA.z - 1,1 = -5,5`. Sobram 2,5 de parede, e o colisor da pia ocupa
+     * 2,2 deles — 0,15 de cada lado. Foi a reclamação do Renan: com a pia
+     * comprida, sair da porta era esbarrar nela.
+     */
+    const PIA = { x: x0 + 0.5, z: z0 + 2.25 };
+    const pia = w.add(w.place(piaIndustrial(2.2), PIA.x, 0, PIA.z, Math.PI / 2));
+    w.blockBox(PIA.x, PIA.z, 0.42, 1.1);
+    w.add(w.place(wallShelf(1.2), x0 + 0.16, 1.75, PIA.z, Math.PI / 2));
 
     /**
      * A ILHA DE MONTAGEM, solta no meio da cozinha. É a bancada onde o prato
@@ -275,6 +293,58 @@ export const maniaDeChurrasco: SceneDef = {
         w.blockCircle(x + dx, z + dz, 0.26);
       }
     }
+
+    /**
+     * O GARÇOM CANINO, passeando pelo salão. Ele trabalha aqui — é o mesmo
+     * cachorro que leva o prato à mesa lá fora, no restaurante do clube.
+     *
+     * A ÁREA É O SALÃO INTEIRO, e o que ele contorna vem daqui, não do colisor
+     * do mundo: o bicho tem 25 cm de raio e passa em vão que gente não passa,
+     * então quem decide o que é obstáculo PARA ELE é quem monta a cena.
+     *
+     * O raio de 1,45 em volta de cada mesa não é o tampo (0,8): é o tampo mais
+     * as quatro cadeiras (que ficam a 0,95 no `z`) mais o corpo dele. Com o
+     * raio do tampo ele atravessaria cadeira, que é pior do que não passear.
+     * Sobram 1,7 de corredor entre uma mesa e a vizinha da mesma fileira e 1,5
+     * entre as fileiras — passagem de sobra para um bicho deste tamanho.
+     *
+     * A ÁREA PARA NO BALCÃO DE PASSAGEM de propósito, e não porque o balcão
+     * colide: ele NÃO colide para o bicho. Se a área cruzasse o `z = -2`, o
+     * caminho reto até um destino do outro lado atravessaria o balcão como se
+     * ele não existisse, e o garçom entraria na cozinha pela parede. A coleira
+     * é a área, como na girafa da portaria.
+     */
+    const cachorro = new Cachorro({
+      minX: x0 + 1.2, maxX: W / 2 - 1.2,
+      // do balcão de passagem até a mureta da frente
+      minZ: PASSAGEM.z + 1.1, maxZ: D / 2 - 1.2,
+      proibido: MESAS.map(([x, z]) => ({ x, z, r: 1.45 })),
+    });
+    w.add(cachorro.group);
+    cachorro.aoSoar = () => g.som('latido');
+
+    const carinhoNoGarcom = w.interact({
+      id: 'mania:garcom',
+      x: cachorro.x, z: cachorro.z, radius: 1.15,
+      label: 'Fazer carinho no garçom', icon: '🐕',
+      highlight: cachorro.group,
+      onInteract: async (api) => {
+        cachorro.receberCarinho();
+        api.som('latido');
+        await conversa([
+          [A, 'Ele trabalha aqui, não trabalha?'],
+          [R, 'Gravata borboleta e bandeja nas costas. Trabalha.'],
+          [A, 'Bom funcionário. Merece o carinho.'],
+        ]);
+      },
+    });
+
+    // SEM ISTO o balão fica onde ele nasceu e o carinho vira um ponto morto no
+    // chão: ele passeia, e o ponto de interação tem que passear junto
+    w.onUpdate((dt) => {
+      cachorro.update(dt);
+      carinhoNoGarcom.moveTo(cachorro.x, cachorro.z);
+    });
 
     // ------------------------------------------------------------- enfeites
     // o letreiro do nome, em cima do bar: é a primeira coisa que se lê ao entrar
@@ -399,7 +469,7 @@ export const maniaDeChurrasco: SceneDef = {
 
     w.interact({
       id: 'mania:pia',
-      x: x0 + 1.5, z: z0 + 2.9, radius: 1.8,
+      x: PIA.x + 1.0, z: PIA.z, radius: 1.6,
       label: 'Olhar a pia', icon: '🚰',
       highlight: pia,
       onInteract: async () => {
