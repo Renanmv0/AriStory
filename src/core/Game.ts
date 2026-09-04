@@ -974,6 +974,10 @@ export class Game implements GameAPI {
    * parque, a regra de camera da roda gigante disparava como se ele estivesse
    * na praca dela.
    */
+  anguloDaCamera(): { giro: number; inclinacao: number } {
+    return { giro: this.iso.angle, inclinacao: this.iso.tilt };
+  }
+
   playerPosition(): THREE.Vector3 {
     if (!this.player.riding) return this.player.position.clone();
     this.player.object.updateWorldMatrix(true, false);

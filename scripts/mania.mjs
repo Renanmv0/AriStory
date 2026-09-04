@@ -2,10 +2,12 @@
  * O Mania de Churrasco: a porta de serviço do clube e o restaurante por dentro.
  *
  * O que este teste guarda:
- * - a porta de serviço aparece na LATERAL do restaurante, e não na parede do
- *   fundo. A parede do fundo é ponto cego: o prédio tem 5,5 e a 34° de câmera
- *   ele engole quase 4 m atrás de si — porta ali é porta invisível, e pior, é
- *   um lugar onde a dupla também some;
+ * - a porta de serviço fica na parede do FUNDO do restaurante, escondida, como
+ *   o Renan pediu. A parede do fundo é ponto cego da câmera isométrica: o
+ *   prédio tem 5,5 de altura e a 34° engole quase 4 m atrás de si. Quem resolve
+ *   isso é `w.transparenteQuandoAtras()` — o prédio fica translúcido enquanto
+ *   a dupla estiver escondida atrás dele, e volta a ser sólido quando não
+ *   estiver. Sem isso a porta é invisível, e pior, a dupla também some;
  * - entrar leva para a cena nova, e a conversa da descoberta acontece uma vez;
  * - o restaurante tem as DUAS salas: a cozinha (grelha, fogão, pia, bancadas) e
  *   o salão (mesas e bar), com o balcão de passagem entre elas;
@@ -66,9 +68,30 @@ const venceAFala = async (voltas = 16) => {
   return ditas;
 };
 
+/** a menor opacidade de qualquer malha do prédio do restaurante */
+const opacidadeDoPredio = () =>
+  page.evaluate(() => {
+    let predio = null;
+    window.jogo.scene.traverse((o) => {
+      if (!predio && o.userData?.peca === 'restaurante') predio = o;
+    });
+    if (!predio) return null;
+    let op = 1;
+    predio.traverse((o) => {
+      if (o.isMesh && o.material) op = Math.min(op, o.material.opacity ?? 1);
+    });
+    return +op.toFixed(2);
+  });
+
 // ------------------------------------------- 1. achar a porta e entrar
-await page.evaluate(() => window.jogo.debugPlace(-9.2, -16.2, -Math.PI / 2));
-await page.waitForTimeout(1200);
+// longe do prédio ele é sólido; atrás dele, translúcido
+await page.evaluate(() => window.jogo.debugPlace(0, 6, 0));
+await page.waitForTimeout(1600);
+const opacidadeLonge = await opacidadeDoPredio();
+
+await page.evaluate(() => window.jogo.debugPlace(-14.6, -18.9, Math.PI));
+await page.waitForTimeout(1800);
+const opacidadeAtras = await opacidadeDoPredio();
 const promptDaPorta = await page.locator('.prompt .label').textContent().catch(() => '');
 await page.screenshot({ path: `${OUT}-porta.png` });
 
@@ -127,6 +150,7 @@ const noDiario = await page.evaluate(() =>
 );
 
 // ------------------------------------------------------------------ relatório
+console.log('0. prédio · opacidade longe:', opacidadeLonge, '· atrás dele:', opacidadeAtras);
 console.log('1. prompt da porta:', JSON.stringify(promptDaPorta), '· cena depois:', cenaDepois);
 for (const f of descoberta) console.log('   ', f);
 console.log('2. dentro:', JSON.stringify(inventario));
@@ -139,6 +163,11 @@ console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 const problemas = [];
 if (erros.length) problemas.push('erros de console');
 if (!/fundos/i.test(promptDaPorta ?? '')) problemas.push('o prompt da porta de serviço não apareceu');
+if (opacidadeLonge !== 1) problemas.push(`o prédio não está sólido de longe (${opacidadeLonge})`);
+// o fade é interpolado: em ~1,8 s de relógio ele chega a ~0,44 e continua
+// descendo até 0,26. O que importa é ter saído de 1 com folga.
+if (opacidadeAtras === null || opacidadeAtras > 0.8)
+  problemas.push(`o prédio não ficou translúcido com a dupla atrás dele (${opacidadeAtras})`);
 if (cenaDepois !== 'mania-de-churrasco') problemas.push(`a porta não levou para dentro (caiu em ${cenaDepois})`);
 if (!descoberta.length) problemas.push('a conversa da descoberta não aconteceu');
 if (inventario.churrasqueira !== 1) problemas.push('a churrasqueira não está na cozinha');
@@ -152,6 +181,9 @@ if (noBalcao[1] < -1.1) problemas.push(`o balcão de passagem deixou passar (foi
 if (peloVao[1] > -2.6) problemas.push(`o vão de serviço não deixa entrar na cozinha (parou em z ${peloVao[1]})`);
 if (!/clube/i.test(promptDeVolta ?? '')) problemas.push('o prompt de voltar pro clube não apareceu');
 if (cenaDeVolta !== 'clube') problemas.push(`a volta não levou para o clube (caiu em ${cenaDeVolta})`);
+// a entrada 'dos-fundos-do-restaurante' devolve a dupla atrás do prédio, não na frente
+if (cenaDeVolta === 'clube' && ondeVoltou[1] > -17)
+  problemas.push(`a volta não caiu atrás do restaurante (z ${ondeVoltou[1]})`);
 if (!noDiario) problemas.push('a memória da porta dos fundos não entrou no diário');
 
 await browser.close();

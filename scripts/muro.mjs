@@ -69,9 +69,9 @@ for (const z of [-6, 0, 14]) {
 // 5,5 s de caminhada, e não 3: a dupla anda ~0,7 por segundo depois da arrancada
 // e são 3,5 m da calçada até o piso do clube. Com 3 s o teste acusava um portão
 // fechado que estava aberto — ela só não tinha chegado ainda.
-const entrou = await empurrar(-27.5, 7, PARA_DENTRO, 5.5);
+const entrou = await empurrar(-27.5, 7, PARA_DENTRO, 7);
 await page.screenshot({ path: `${OUT}-entrou.png` });
-const saiu = await empurrar(-23, 7, PARA_A_RUA, 5.5);
+const saiu = await empurrar(-23, 7, PARA_A_RUA, 7);
 
 // -------------------------------------------- 3. as folhas abertas seguram
 // a folha de baixo fica em z = 3,5, deitada para dentro do clube. `A`+`S`
@@ -130,12 +130,13 @@ if (erros.length) problemas.push('erros de console');
 for (const b of barrado) {
   if (b.x > -25.2) problemas.push(`o muro deixou passar em z ${b.z} (parou em x ${b.x})`);
 }
-// O QUE SE MEDE É TER PASSADO DO MURO (`x = -25`), e não ter chegado a um ponto
-// exato: quanto a dupla anda em 5,5 s depende do quadro por segundo da máquina,
-// e o teste já acusou portão fechado duas vezes só porque a caminhada rendeu 40
-// cm a menos. Passar de -24,6 é estar do lado de dentro, que é a pergunta.
+// O QUE SE MEDE É TER PASSADO DO MURO (`x = -25`, faces em -25,31 e -24,69), e
+// não ter chegado a um ponto exato: quanto a dupla anda em 7 s depende do quadro
+// por segundo da máquina, e o teste já acusou portão fechado três vezes só
+// porque a caminhada rendeu 40 cm a menos. As duas asserções são simétricas:
+// ter cruzado a face de lá do muro é a pergunta, em cada sentido.
 if (entrou[0] < -24.6) problemas.push(`não deu para entrar pelo portão (parou em x ${entrou[0]})`);
-if (saiu[0] > -26) problemas.push(`não deu para sair pelo portão (parou em x ${saiu[0]})`);
+if (saiu[0] > -25.4) problemas.push(`não deu para sair pelo portão (parou em x ${saiu[0]})`);
 // o colisor da folha vai de z 3,4 a 3,6 e o corpo tem 0,42 de raio: quem bate
 // nela para pouco antes de 3
 if (naFolha[1] > 3.3) problemas.push(`a folha aberta não segurou (foi até z ${naFolha[1]})`);

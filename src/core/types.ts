@@ -409,6 +409,14 @@ export interface GameAPI {
    */
   showCharge(valor: number | null, alvo?: number | null, zona?: number): void;
   /** posicao atual do jogador */
+  /**
+   * Giro e inclinacao da camera isometrica, em radianos.
+   *
+   * Serve para a cena fazer conta de oclusao — saber se alguma coisa esta
+   * ENTRE a camera e um ponto. Como o jogador gira a camera de 45 em 45, essa
+   * conta nao pode usar uma direcao fixa.
+   */
+  anguloDaCamera(): { giro: number; inclinacao: number };
   playerPosition(): THREE.Vector3;
   /** angulo para onde o jogador esta olhando, em radianos */
   playerFacing(): number;
