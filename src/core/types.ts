@@ -77,7 +77,7 @@ export interface InteractableDef {
   label: string;
   /** emoji do prompt */
   icon?: string;
-  /** objeto que balanca de leve quando voce chega perto */
+  /** a que objeto a interacao se refere; hoje nao anima nada, ver Interactable */
   highlight?: THREE.Object3D;
   /** so pode ser usado uma vez por visita */
   once?: boolean;
