@@ -257,6 +257,59 @@ export function asfalto(lado = 5): THREE.CanvasTexture {
 }
 
 /**
+ * ASSOALHO DE MADEIRA, para o salão do Mania de Churrasco.
+ *
+ * Piso de tábua é uma coisa só: JUNTA. A tábua em si é quase lisa, e o que o
+ * olho lê são as linhas escuras entre elas e as emendas de topo, que num
+ * assoalho de verdade NUNCA caem alinhadas — cada fiada começa num ponto
+ * diferente. Sem esse desencontro sai um papel quadriculado.
+ *
+ * O veio é o segundo detalhe: dois ou três riscos claros por tábua, no
+ * comprimento. É pouca coisa, e é o que separa madeira de plástico marrom.
+ */
+export function assoalhoDeMadeira(lado = 2.4, tabuas = 8): THREE.CanvasTexture {
+  return novaTextura(`assoalho:${lado}:${tabuas}`, lado, (ctx, s) => {
+    const rnd = sorteio(19870704);
+    const passo = s / tabuas;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s, s);
+
+    for (let i = 0; i < tabuas; i++) {
+      const y = i * passo;
+      // cada tábua com o seu tom, entre 0,9 e 1,0 de luz
+      const luz = 0.9 + rnd() * 0.1;
+      const v = Math.round(255 * luz);
+      ctx.fillStyle = `rgb(${v},${v - 4},${v - 10})`;
+      ctx.fillRect(0, y, s, passo);
+
+      // o veio: riscos claros no comprimento
+      for (let k = 0; k < 3; k++) {
+        ctx.strokeStyle = `rgba(255,255,255,${0.35 + rnd() * 0.3})`;
+        ctx.lineWidth = 0.8 + rnd() * 0.7;
+        ctx.beginPath();
+        const yy = y + passo * (0.2 + k * 0.28) + rnd() * 2;
+        ctx.moveTo(0, yy);
+        ctx.bezierCurveTo(s * 0.3, yy + (rnd() - 0.5) * 2.5, s * 0.7, yy + (rnd() - 0.5) * 2.5, s, yy);
+        ctx.stroke();
+      }
+
+      // a junta entre esta tábua e a de baixo
+      ctx.fillStyle = 'rgba(120,92,62,0.3)';
+      ctx.fillRect(0, y + passo - 1.4, s, 1.4);
+
+      // as emendas de topo, desencontradas fiada a fiada
+      const quantas = 2 + Math.floor(rnd() * 2);
+      for (let e = 0; e < quantas; e++) {
+        const x = ((e + rnd()) / quantas) * s;
+        ctx.fillStyle = 'rgba(120,92,62,0.34)';
+        ctx.fillRect(x, y + 1, 1.6, passo - 2.4);
+      }
+    }
+  });
+}
+
+/**
  * CALÇADA DE PEDRINHA, para o Villa-Lobos.
  *
  * Ela existe para NÃO ser o piso do clube. Os dois são chão claro de área

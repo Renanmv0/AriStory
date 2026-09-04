@@ -220,6 +220,25 @@ export const PALETTE = {
   abrigoBanco: 0xb5793a,
   abrigoCartaz: 0xf6d3d8,
 
+  // o Mania de Churrasco, o restaurante por dentro. Churrascaria de verdade é
+  // tijolo, inox e madeira escura: o tijolo atrás da grelha, o inox das
+  // bancadas de trabalho, a madeira quente do salão. O laranja da brasa é a
+  // única cor saturada da cena, e é de propósito — é para onde o olho vai.
+  churrascoTijolo: 0xb5573f,
+  churrascoRejunte: 0xe0cdb6,
+  churrascoParede: 0xf3e2c8,
+  churrascoFaixa: 0x8a5a2a,
+  churrascoPiso: 0xb07c46,
+  churrascoLadrilho: 0xdfe4e2,
+  churrascoInox: 0xc3ccd2,
+  churrascoInoxEscuro: 0x9aa5ad,
+  churrascoBrasa: 0xff6a2b,
+  churrascoBrasaViva: 0xffb347,
+  churrascoCarvao: 0x33302e,
+  churrascoGrelha: 0x5b5f63,
+  churrascoToalha: 0xd94f43,
+  churrascoQuadroNegro: 0x2f3b33,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

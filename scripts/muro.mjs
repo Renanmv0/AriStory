@@ -130,7 +130,11 @@ if (erros.length) problemas.push('erros de console');
 for (const b of barrado) {
   if (b.x > -25.2) problemas.push(`o muro deixou passar em z ${b.z} (parou em x ${b.x})`);
 }
-if (entrou[0] < -24) problemas.push(`não deu para entrar pelo portão (parou em x ${entrou[0]})`);
+// O QUE SE MEDE É TER PASSADO DO MURO (`x = -25`), e não ter chegado a um ponto
+// exato: quanto a dupla anda em 5,5 s depende do quadro por segundo da máquina,
+// e o teste já acusou portão fechado duas vezes só porque a caminhada rendeu 40
+// cm a menos. Passar de -24,6 é estar do lado de dentro, que é a pergunta.
+if (entrou[0] < -24.6) problemas.push(`não deu para entrar pelo portão (parou em x ${entrou[0]})`);
 if (saiu[0] > -26) problemas.push(`não deu para sair pelo portão (parou em x ${saiu[0]})`);
 // o colisor da folha vai de z 3,4 a 3,6 e o corpo tem 0,42 de raio: quem bate
 // nela para pouco antes de 3

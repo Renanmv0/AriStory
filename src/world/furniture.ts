@@ -655,3 +655,496 @@ export function nightstand(): THREE.Group {
   g.add(cupula);
   return g;
 }
+
+/* ========================================================================
+ * MANIA DE CHURRASCO — o kit do restaurante por dentro.
+ *
+ * Tudo aqui obedece à mesma conta que já mordeu o quiosque, o restaurante do
+ * clube e a guarita: a câmera olha de cima em 34°, então QUALQUER coisa que
+ * avance por cima de alguém esconde essa pessoa. Por isso a coifa da grelha
+ * não passa da frente dela, as luminárias só existem onde ninguém senta, e as
+ * bancadas são baixas. Cozinha bonita que esconde o cozinheiro não serve.
+ * ===================================================================== */
+
+/**
+ * A CHURRASQUEIRA — o coração do lugar, e a única cor saturada da cena.
+ *
+ * Ela é alvenaria de tijolo com a boca de brasa em cima, grelha de barras e
+ * uma coifa de inox subindo até o teto. A brasa usa `glow`, que é o que faz
+ * ela puxar o olho no meio de uma sala de madeira e creme.
+ *
+ * A COIFA PARA NA FRENTE DA GRELHA, e não meio metro além. Quem cozinha fica
+ * a ~0,9 na frente da peça; a 34°, uma coifa a 2,0 esconde tudo que estiver a
+ * 0,37 na direção da câmera. Parando na boca, ela nunca alcança a cabeça de
+ * quem está grelhando.
+ */
+export function churrasqueira(largura = 4): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'churrasqueira';
+
+  const tijolo = toon(P.churrascoTijolo);
+  const rejunte = toon(P.churrascoRejunte);
+  const inox = toon(P.churrascoInox);
+  const ferro = toon(P.churrascoGrelha);
+
+  const ALT = 0.95;
+  const PROF = 1.0;
+
+  // a base de alvenaria, com uma faixa de rejunte por fiada
+  const base = new THREE.Mesh(new THREE.BoxGeometry(largura, ALT, PROF), tijolo);
+  base.position.y = ALT / 2;
+  g.add(base);
+  for (const y of [0.22, 0.46, 0.7]) {
+    const fiada = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.02, 0.035, PROF + 0.02), rejunte);
+    fiada.position.y = y;
+    g.add(fiada);
+  }
+  // o vão da lenha, embaixo: um buraco escuro é o que faz ler alvenaria
+  const boca = new THREE.Mesh(new THREE.BoxGeometry(largura * 0.5, 0.3, 0.08), toon(P.churrascoCarvao));
+  boca.position.set(0, 0.34, PROF / 2 + 0.01);
+  g.add(boca);
+  for (let i = 0; i < 3; i++) {
+    const lenha = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, largura * 0.42, 6), toon(P.woodDark));
+    lenha.rotation.z = Math.PI / 2;
+    lenha.position.set(0, 0.26 + i * 0.055, PROF / 2 - 0.02 - i * 0.03);
+    g.add(lenha);
+  }
+
+  // o tampo de pedra, avançando 4 cm de cada lado
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.12, 0.1, PROF + 0.12), toon(P.muroChapim));
+  tampo.position.y = ALT + 0.05;
+  g.add(tampo);
+
+  // a caixa de brasa, rebaixada dentro do tampo
+  const cinzas = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.5, 0.12, PROF - 0.4), toon(P.churrascoCarvao));
+  cinzas.position.y = ALT + 0.09;
+  g.add(cinzas);
+  for (let i = 0; i < 14; i++) {
+    const t = (i + 0.5) / 14;
+    const viva = i % 3 === 0;
+    const brasa = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055 + (i % 4) * 0.008, 6, 5),
+      toon(viva ? P.churrascoBrasaViva : P.churrascoBrasa, { glow: viva ? 0.6 : 0.35 }),
+    );
+    brasa.scale.y = 0.6;
+    brasa.position.set(
+      -(largura - 0.7) / 2 + t * (largura - 0.7),
+      ALT + 0.14,
+      ((i % 3) - 1) * 0.16,
+    );
+    g.add(brasa);
+  }
+
+  // a grelha: barras finas atravessando a boca, 12 cm acima da brasa
+  const quantas = Math.round((largura - 0.5) / 0.13);
+  for (let i = 0; i <= quantas; i++) {
+    const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, PROF - 0.34, 6), ferro);
+    barra.rotation.x = Math.PI / 2;
+    barra.position.set(-(largura - 0.5) / 2 + (i * (largura - 0.5)) / quantas, ALT + 0.26, 0);
+    g.add(barra);
+  }
+  for (const z of [-(PROF - 0.4) / 2, (PROF - 0.4) / 2]) {
+    const aro = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.44, 0.03, 0.05), ferro);
+    aro.position.set(0, ALT + 0.26, z);
+    g.add(aro);
+  }
+
+  // A COIFA. Ela nasce em 1,95 e vai até 2,45, e a chaminé sobe daí — nada
+  // avança para a frente da grelha, que é onde o cozinheiro fica.
+  const coifa = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.2, 0.5, PROF + 0.06), inox);
+  coifa.position.set(0, 2.2, -0.02);
+  g.add(coifa);
+  const saia = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.3, 0.09, PROF + 0.16), toon(P.churrascoInoxEscuro));
+  saia.position.set(0, 1.94, -0.02);
+  g.add(saia);
+  const chamine = new THREE.Mesh(new THREE.BoxGeometry(largura * 0.4, 1.1, PROF - 0.2), inox);
+  chamine.position.set(0, 3.0, -0.02);
+  g.add(chamine);
+
+  // os espetos encostados na lateral, que é o que diz "churrascaria" de longe
+  for (let i = 0; i < 4; i++) {
+    const espeto = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.5, 6), toon(P.metalGrey));
+    espeto.position.set(largura / 2 - 0.1 - i * 0.11, 1.2, -PROF / 2 + 0.18);
+    espeto.rotation.z = 0.18 + i * 0.02;
+    g.add(espeto);
+    const cabo = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.22, 0.05), toon(P.woodDark));
+    cabo.position.set(largura / 2 - 0.24 - i * 0.11, 1.9, -PROF / 2 + 0.18);
+    g.add(cabo);
+  }
+
+  return g;
+}
+
+/**
+ * BANCADA DE INOX — a mesa de trabalho da cozinha, e a estação de montagem
+ * quando o minijogo entrar.
+ *
+ * Inox de cozinha profissional é chapa sobre pés tubulares com uma prateleira
+ * embaixo: é essa prateleira vazada que separa a peça de um armário fechado.
+ */
+export function bancadaInox(largura = 3, comEspelho = true): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'bancada-inox';
+
+  const inox = toon(P.churrascoInox);
+  const escuro = toon(P.churrascoInoxEscuro);
+  const ALT = 0.92;
+  const PROF = 0.75;
+
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.07, PROF), inox);
+  tampo.position.y = ALT;
+  g.add(tampo);
+  // O friso da beirada, que dá a espessura da chapa dobrada. Ele é 4 cm mais
+  // ESTREITO que o tampo: com a mesma largura, as duas pontas caem no mesmo
+  // plano e brigam por pixel — o detector pega, o olho só vê serrilhando.
+  const friso = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.04, 0.05, 0.04), escuro);
+  friso.position.set(0, ALT - 0.05, PROF / 2 - 0.01);
+  g.add(friso);
+
+  const prateleira = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.16, 0.05, PROF - 0.14), escuro);
+  prateleira.position.y = 0.26;
+  g.add(prateleira);
+
+  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, ALT, 8), escuro);
+    pe.position.set(x * (largura / 2 - 0.12), ALT / 2, z * (PROF / 2 - 0.1));
+    g.add(pe);
+  }
+
+  // o espelho d'água: a chapa que sobe na parede atrás, contra respingo
+  if (comEspelho) {
+    const costa = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.04, 0.34, 0.04), inox);
+    costa.position.set(0, ALT + 0.17, -PROF / 2 + 0.05);
+    g.add(costa);
+  }
+
+  return g;
+}
+
+/** FOGÃO INDUSTRIAL: quatro bocas de ferro, botões e uma panela em cima. */
+export function fogaoIndustrial(largura = 2.2): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'fogao-industrial';
+
+  const inox = toon(P.churrascoInox);
+  const ferro = toon(P.churrascoGrelha);
+  const ALT = 0.92;
+  const PROF = 0.8;
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(largura, ALT, PROF), inox);
+  corpo.position.y = ALT / 2;
+  g.add(corpo);
+  // as duas portas do forno, com puxador
+  for (const lado of [-1, 1]) {
+    const porta = new THREE.Mesh(new THREE.BoxGeometry(largura / 2 - 0.12, 0.5, 0.04), toon(P.churrascoInoxEscuro));
+    porta.position.set(lado * largura / 4, 0.42, PROF / 2 + 0.01);
+    g.add(porta);
+    const puxador = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, largura / 2 - 0.3, 6), ferro);
+    puxador.rotation.z = Math.PI / 2;
+    puxador.position.set(lado * largura / 4, 0.6, PROF / 2 + 0.06);
+    g.add(puxador);
+  }
+
+  const chapa = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.06, 0.06, PROF + 0.06), ferro);
+  chapa.position.y = ALT + 0.03;
+  g.add(chapa);
+
+  for (const [bx, bz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+    const boca = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.21, 0.05, 10), toon(P.churrascoCarvao));
+    boca.position.set(bx * largura * 0.24, ALT + 0.08, bz * 0.19);
+    g.add(boca);
+    const chama = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.05, 0.05, 8), toon(P.churrascoBrasaViva, { glow: 0.5 }));
+    chama.position.set(bx * largura * 0.24, ALT + 0.09, bz * 0.19);
+    g.add(chama);
+    const botao = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.05, 8), ferro);
+    botao.rotation.x = Math.PI / 2;
+    botao.position.set(bx * largura * 0.24 + (bz > 0 ? 0.1 : -0.1), ALT - 0.12, PROF / 2 + 0.02);
+    g.add(botao);
+  }
+
+  // uma panela numa das bocas, para a cozinha não parecer desligada
+  const panela = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.17, 0.24, 14), toon(P.churrascoInoxEscuro));
+  panela.position.set(-largura * 0.24, ALT + 0.22, 0.19);
+  g.add(panela);
+  const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.035, 14), inox);
+  tampa.position.set(-largura * 0.24, ALT + 0.35, 0.19);
+  g.add(tampa);
+  const pegador = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), toon(P.churrascoCarvao));
+  pegador.position.set(-largura * 0.24, ALT + 0.39, 0.19);
+  g.add(pegador);
+
+  return g;
+}
+
+/** PIA INDUSTRIAL: cuba funda, torneira alta de mola e a louça escorrendo. */
+export function piaIndustrial(largura = 2.4): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'pia-industrial';
+
+  const inox = toon(P.churrascoInox);
+  const escuro = toon(P.churrascoInoxEscuro);
+  const ALT = 0.92;
+  const PROF = 0.75;
+
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.07, PROF), inox);
+  tampo.position.y = ALT;
+  g.add(tampo);
+  const saia = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.1, 0.5, PROF - 0.08), escuro);
+  saia.position.y = ALT - 0.32;
+  g.add(saia);
+  for (const x of [-1, 1]) {
+    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, ALT - 0.55, 8), escuro);
+    pe.position.set(x * (largura / 2 - 0.15), (ALT - 0.55) / 2, 0);
+    g.add(pe);
+  }
+
+  // a cuba, afundada no tampo
+  const cuba = new THREE.Mesh(new THREE.BoxGeometry(largura * 0.42, 0.1, PROF - 0.24), toon(P.churrascoInoxEscuro));
+  cuba.position.set(-largura * 0.22, ALT + 0.01, 0);
+  g.add(cuba);
+  const agua = new THREE.Mesh(new THREE.BoxGeometry(largura * 0.38, 0.02, PROF - 0.3), flat(P.glass, 0.5));
+  agua.position.set(-largura * 0.22, ALT + 0.045, 0);
+  g.add(agua);
+
+  // a torneira alta, de cozinha profissional
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.1, 8), inox);
+  base.position.set(-largura * 0.22, ALT + 0.08, -PROF / 2 + 0.14);
+  g.add(base);
+  const cano = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.62, 8), inox);
+  cano.position.set(-largura * 0.22, ALT + 0.42, -PROF / 2 + 0.14);
+  g.add(cano);
+  const curva = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.028, 6, 12, Math.PI), inox);
+  curva.position.set(-largura * 0.22, ALT + 0.72, -PROF / 2 + 0.27);
+  curva.rotation.y = Math.PI / 2;
+  g.add(curva);
+
+  // o escorredor: pratos em pé, do lado seco
+  for (let i = 0; i < 5; i++) {
+    const prato = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.022, 14), toon(0xfdfaf3));
+    prato.rotation.x = Math.PI / 2;
+    prato.rotation.z = 0.12;
+    prato.position.set(largura * 0.16 + i * 0.07, ALT + 0.17, 0);
+    g.add(prato);
+  }
+
+  return g;
+}
+
+/**
+ * BALCÃO DE PASSAGEM — a praça, onde o prato pronto espera o garçom.
+ *
+ * É a peça mais importante do restaurante para o que vem depois: ela é a
+ * fronteira entre a cozinha e o salão, e vai ser onde o cozinheiro larga e o
+ * garçom pega. Por isso o tampo é generoso e VAZIO — o que aparece nele é o
+ * prato, não o enfeite.
+ */
+export function balcaoDePassagem(largura = 6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'balcao-de-passagem';
+
+  const madeira = toon(P.churrascoFaixa);
+  const ALT = 1.06;
+  const PROF = 0.7;
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(largura, ALT, PROF), madeira);
+  corpo.position.y = ALT / 2;
+  g.add(corpo);
+
+  // as almofadas de madeira da frente: painéis salientes, o mesmo desenho do
+  // muro do clube, para o restaurante pertencer ao mesmo mundo
+  const vaos = Math.max(1, Math.round(largura / 1.6));
+  for (let i = 0; i < vaos; i++) {
+    const painel = new THREE.Mesh(
+      new THREE.BoxGeometry(largura / vaos - 0.24, 0.56, 0.04), toon(P.churrascoPiso),
+    );
+    painel.position.set(-largura / 2 + (i + 0.5) * (largura / vaos), 0.52, PROF / 2 + 0.02);
+    g.add(painel);
+  }
+  // o rodapé afunda 2 cm no piso: nascendo em `y = 0` como o corpo, as duas
+  // faces de baixo caem no mesmo plano
+  const rodape = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.04, 0.1, PROF + 0.06), toon(P.woodDark));
+  rodape.position.y = 0.03;
+  g.add(rodape);
+
+  // o tampo de pedra, avançando dos dois lados
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.2, 0.09, PROF + 0.3), toon(P.muroChapim));
+  tampo.position.y = ALT + 0.045;
+  g.add(tampo);
+
+  // a prateleira de apoio do lado da cozinha, na altura da bancada
+  const apoio = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.3, 0.05, 0.3), toon(P.churrascoInox));
+  apoio.position.set(0, 0.72, -PROF / 2 - 0.1);
+  g.add(apoio);
+
+  return g;
+}
+
+/** BANQUETA ALTA do balcão: assento redondo, apoio de pé e pés de tubo. */
+export function banquetaAlta(cor: number = P.churrascoFaixa): THREE.Group {
+  const g = new THREE.Group();
+  const metal = toon(P.churrascoInoxEscuro);
+  const assento = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.09, 14), toon(cor));
+  assento.position.y = 0.68;
+  g.add(assento);
+  const almofada = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.185, 0.05, 14), toon(P.churrascoToalha));
+  almofada.position.y = 0.735;
+  g.add(almofada);
+  const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.64, 8), metal);
+  coluna.position.y = 0.32;
+  g.add(coluna);
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.02, 6, 14), metal);
+  aro.position.y = 0.22;
+  aro.rotation.x = Math.PI / 2;
+  g.add(aro);
+  const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.23, 0.04, 14), metal);
+  pe.position.y = 0.02;
+  g.add(pe);
+  return g;
+}
+
+/**
+ * LUMINÁRIA PENDENTE — e ela só pode existir ONDE NINGUÉM SENTA.
+ *
+ * Pendente é a armadilha clássica desta câmera: a 34°, uma cúpula a 2,3
+ * esconde a cabeça de quem estiver a 40 cm dela na direção da câmera, e a
+ * cabeça de quem está SENTADO a mais de um metro. Sobre mesa, ela apaga
+ * justamente quem está jantando. Sobre o balcão, onde as pessoas ficam de pé
+ * e afastadas, ela é só bonita.
+ */
+export function luminariaPendente(cor: number = P.churrascoTijolo, altura = 2.35): THREE.Group {
+  const g = new THREE.Group();
+  const fio = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.9, 6), toon(P.churrascoCarvao));
+  fio.position.y = altura + 0.45;
+  g.add(fio);
+  const cupula = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.13, 0.26, 14, 1, true),
+    toon(cor, { doubleSide: true }),
+  );
+  cupula.position.y = altura;
+  g.add(cupula);
+  const lampada = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), toon(0xfff2cf, { glow: 0.65 }));
+  lampada.position.y = altura - 0.11;
+  g.add(lampada);
+  return g;
+}
+
+/** ARANDELA de parede: a luz que não tapa ninguém, porque mora colada no reboco. */
+export function arandela(): THREE.Group {
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.2, 0.06), toon(P.churrascoCarvao));
+  g.add(base);
+  const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.18, 6), toon(P.churrascoCarvao));
+  braco.rotation.x = Math.PI / 2;
+  braco.position.z = 0.11;
+  g.add(braco);
+  const cupula = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.13, 0.08, 0.16, 12, 1, true),
+    toon(0xfff0cc, { glow: 0.5, doubleSide: true }),
+  );
+  cupula.position.set(0, 0.06, 0.2);
+  g.add(cupula);
+  return g;
+}
+
+/**
+ * QUADRO DE GIZ com o cardápio do dia. O texto sai de um canvas em tempo de
+ * execução — a mesma exceção do letreiro das placas, nenhum arquivo entra.
+ */
+export function quadroDeGiz(linhas: readonly string[], largura = 1.6, altura = 1.2): THREE.Group {
+  const g = new THREE.Group();
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.06), toon(P.woodDark));
+  g.add(moldura);
+  const lousa = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - 0.12, altura - 0.12, 0.03), toon(P.churrascoQuadroNegro),
+  );
+  lousa.position.z = 0.03;
+  g.add(lousa);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 384;
+  canvas.height = Math.round((384 * (altura - 0.16)) / (largura - 0.16));
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const passo = canvas.height / (linhas.length + 0.6);
+    linhas.forEach((linha, i) => {
+      const titulo = i === 0;
+      ctx.fillStyle = titulo ? '#ffe9a8' : '#f4f1e6';
+      ctx.font = `${titulo ? 'bold ' : ''}${Math.round(passo * (titulo ? 0.62 : 0.46))}px ui-rounded, "Nunito", system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(linha, canvas.width / 2, passo * (i + 0.7));
+    });
+  }
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  const escrita = new THREE.Mesh(
+    new THREE.PlaneGeometry(largura - 0.16, altura - 0.16),
+    new THREE.MeshBasicMaterial({ map: textura, transparent: true }),
+  );
+  escrita.position.z = 0.05;
+  g.add(escrita);
+  return g;
+}
+
+/** ESTANTE DE BEBIDAS do bar: prateleiras com garrafas de cores variadas. */
+export function estanteDeBebidas(largura = 2.4, altura = 1.6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'estante-de-bebidas';
+  const madeira = toon(P.churrascoFaixa);
+
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.05), toon(P.estanteFundo));
+  fundo.position.y = altura / 2;
+  g.add(fundo);
+  // As laterais moram DENTRO do fundo, nos três eixos: mesma largura, mesma
+  // altura e mesmo pé fariam seis pares de faces coplanares — a peça inteira
+  // serrilhando nas bordas.
+  for (const lado of [-1, 1]) {
+    const lateral = new THREE.Mesh(new THREE.BoxGeometry(0.07, altura - 0.06, 0.26), madeira);
+    lateral.position.set(lado * (largura / 2 - 0.05), altura / 2, 0.13);
+    g.add(lateral);
+  }
+
+  const CORES = [0x8ec3dd, 0xd94f43, 0xf0b429, 0x77c05a, 0xb98a54, 0xd9738f];
+  for (let p = 0; p < 3; p++) {
+    const y = 0.34 + p * 0.44;
+    const prateleira = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.14, 0.05, 0.24), madeira);
+    prateleira.position.set(0, y, 0.13);
+    g.add(prateleira);
+    const quantas = Math.floor((largura - 0.4) / 0.19);
+    for (let i = 0; i < quantas; i++) {
+      const cor = CORES[(p * 3 + i) % CORES.length];
+      const alturaGarrafa = 0.24 + ((i + p) % 3) * 0.04;
+      const garrafa = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.055, alturaGarrafa, 8), toon(cor),
+      );
+      garrafa.position.set(-largura / 2 + 0.24 + i * 0.19, y + 0.025 + alturaGarrafa / 2, 0.13);
+      g.add(garrafa);
+      const gargalo = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.028, 0.08, 6), toon(cor));
+      gargalo.position.set(-largura / 2 + 0.24 + i * 0.19, y + 0.025 + alturaGarrafa + 0.04, 0.13);
+      g.add(gargalo);
+    }
+  }
+  return g;
+}
+
+/** CAIXA REGISTRADORA, para o balcão do bar ter função. */
+export function caixaRegistradora(): THREE.Group {
+  const g = new THREE.Group();
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.22, 0.34), toon(P.churrascoInoxEscuro));
+  corpo.position.y = 0.11;
+  g.add(corpo);
+  const teclado = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.03, 0.2), toon(P.churrascoCarvao));
+  teclado.position.set(0, 0.23, 0.06);
+  teclado.rotation.x = -0.16;
+  g.add(teclado);
+  const tela = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.04), toon(P.churrascoCarvao));
+  tela.position.set(0, 0.34, -0.09);
+  tela.rotation.x = 0.2;
+  g.add(tela);
+  const brilho = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.13), toon(0x9fe6c8, { glow: 0.4 }));
+  brilho.position.set(0, 0.34, -0.06);
+  brilho.rotation.x = 0.2;
+  g.add(brilho);
+  return g;
+}
