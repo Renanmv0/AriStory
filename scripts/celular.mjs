@@ -13,6 +13,12 @@
  * vaga nenhuma porque o desenho das vagas morava no caminho do teclado; no
  * computador estava certo e no celular não.
  *
+ * E que o botão de ação é TOQUE **OU** SEGURADA, nunca os dois. Ele fazia as
+ * duas: o `pointerdown` já apertava o `KeyF` (a carga do frisbee) e o `click`
+ * disparava o `KeyE` (interagir). Dentro da quadra do Villa-Lobos, tocar o
+ * botão para beber água ou ler o placar lançava o disco junto, e ia embora a
+ * sequência de trocas. Foi o Renan quem viu.
+ *
  * Uso: node scripts/celular.mjs /caminho/prefixo
  */
 import { chromium } from 'playwright';
@@ -160,6 +166,83 @@ const mochila = await page.evaluate(() => ({
 }));
 await page.screenshot({ path: `${OUT}-mochila.png` });
 
+/**
+ * ===================== o botão de ação: tocar não pode lançar o frisbee
+ *
+ * Dentro da quadra, com o disco na mão, um TOQUE curto tem que interagir com o
+ * objeto de perto e deixar o disco onde está; uma SEGURADA longa tem que
+ * continuar lançando. O estado do disco sai do `userData.fase` que a cena
+ * publica na malha dele.
+ */
+await page.goto(`${BASE}/?cena=villa-lobos`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(3400);
+
+const faseDoDisco = () =>
+  page.evaluate(() => {
+    let d = null;
+    window.jogo.scene.traverse((o) => {
+      if (o.userData?.fase !== undefined) d = o;
+    });
+    return {
+      fase: d?.userData?.fase ?? null,
+      naMao: window.jogo.getActiveHandItem()?.id ?? null,
+      prompt: document.querySelector('.prompt .label')?.textContent ?? null,
+    };
+  });
+
+/** aperta o botão de ação por `ms` e devolve o estado depois */
+const apertarAcao = async (ms) => {
+  const caixa = await page.locator('.action-btn').boundingBox();
+  await page.mouse.move(caixa.x + caixa.width / 2, caixa.y + caixa.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(ms);
+  await page.mouse.up();
+  await page.waitForTimeout(1300);
+  return faseDoDisco();
+};
+
+/** vence o diálogo que estiver aberto */
+const fecharFala = async () => {
+  for (let i = 0; i < 8; i++) {
+    if (!(await page.locator('.dialogue.show').count())) break;
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(500);
+  }
+};
+
+// entra na quadra: é isso que põe o disco na mão
+await page.evaluate(() => window.jogo.debugPlace(18, -4.5, 0));
+await page.waitForTimeout(2600);
+const comODisco = await faseDoDisco();
+
+// três objetos DENTRO da quadra: bebedouro, placar e sacola
+const toques = [];
+for (const [nome, x, z] of [['bebedouro', 7.8, -0.3], ['placar', 18, -13.4], ['sacola', 7.8, -7.9]]) {
+  await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, 0), [x, z]);
+  await page.waitForTimeout(1700);
+  const antes = await faseDoDisco();
+  const depois = await apertarAcao(90);
+  toques.push({
+    nome,
+    prompt: antes.prompt,
+    fase: depois.fase,
+    falou: (await page.locator('.dialogue.show').count()) > 0,
+  });
+  await fecharFala();
+  await page.waitForTimeout(600);
+}
+
+// e a segurada longa TEM que continuar lançando
+await page.evaluate(() => window.jogo.debugPlace(18, -4.5, 0));
+await page.waitForTimeout(2200);
+const segurada = await apertarAcao(1400);
+
+console.log('botão de ação · com o disco na mão:', JSON.stringify(comODisco));
+for (const t of toques) {
+  console.log(`   toque perto do ${t.nome} · prompt ${JSON.stringify(t.prompt)}`,
+    `· fase ${t.fase} · abriu fala: ${t.falou}`);
+}
+console.log('   segurada longa · fase:', segurada.fase);
 console.log('girar pelo HUD · andou', girou.toFixed(1), 'e o outro botão desfez para', desfez.toFixed(1));
 console.log('🎒 abriu a mochila:', mochila.aberta, '· vagas desenhadas:', mochila.vagas);
 console.log('linhas na tela de controles:', linhas);
@@ -184,7 +267,15 @@ const ok =
   selecao.texto === '' &&
   selecao.corpo === 'none' &&
   selecao.botao === 'none' &&
-  selecao.toque === 'manipulation';
+  selecao.toque === 'manipulation' &&
+  // o disco tem que estar na mão para a medida abaixo valer alguma coisa
+  comODisco.fase === 'comigo' &&
+  comODisco.naMao === 'frisbee' &&
+  // TOCAR interage e NÃO lança: o disco continua na mão nos três objetos
+  toques.length === 3 &&
+  toques.every((t) => t.fase === 'comigo' && t.falou) &&
+  // e SEGURAR continua lançando
+  segurada.fase !== 'comigo';
 
 await browser.close();
 process.exit(ok ? 0 : 1);
