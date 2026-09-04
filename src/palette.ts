@@ -162,6 +162,18 @@ export const PALETTE = {
   restauranteDeck: 0xc08a52,
   restauranteDeckRipa: 0xb07c46,
 
+  // o muro e o portão da entrada do clube. O corpo é a mesma massa clara do
+  // restaurante, meio tom acima; a base e o chapim são o reboco mais queimado
+  // que toda mureta de rua tem. O portão é o teal do clube (irmão do toldo do
+  // restaurante e do bar de sucos) com as pontas de lança douradas.
+  muroCorpo: 0xf0e4d0,
+  muroPainel: 0xf7eee0,
+  muroBase: 0xd6c3a4,
+  muroChapim: 0xcbb493,
+  portaoMetal: 0x2f7d6b,
+  portaoFerro: 0x24564c,
+  luzDoPortao: 0xfff3c8,
+
   // o deque de descanso da beira da piscina. A madeira é mais clara e mais
   // acinzentada que a do deque do restaurante de propósito: aqui é tábua que
   // vive molhada e pega sol o dia inteiro, e a diferença de tom é o que separa
