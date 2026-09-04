@@ -6,11 +6,12 @@ import {
   bin, bleachers, bus, busStop, bush, canteiro, canteiroComPalmeira,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
-  meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante,
+  guarita, meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante,
   showerPost, sunLounger, textSign,
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
 } from '../world/props';
+import { Girafa } from '../entities/bichos/Girafa';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
@@ -230,6 +231,84 @@ export const clube: SceneDef = {
       w.add(w.place(muroDoClube(comprimento), MURO.x, 0, meio, Math.PI / 2));
       w.blockBox(MURO.x, meio, 0.31, comprimento / 2);
     }
+
+    // ----------------------------------------------------- a portaria
+    /**
+     * A GUARITA fica do lado de DENTRO e ao SUL do portão. A janela olha para o
+     * `+Z`, que é ao mesmo tempo o lado por onde a dupla chega e o lado de onde
+     * a câmera vem — as duas coisas que uma peça de balcão precisa acertar.
+     *
+     * ELA NÃO PODE ENCOSTAR NO MURO, e a primeira versão encostava. A folha
+     * aberta do portão é 3,4 m de grade a 2,3 de altura em `z = 3,5`: numa
+     * câmera de 34° ela joga uma faixa listrada por cima de tudo que estiver
+     * até 3,4 atrás dela, e a guarita apanhava a faixa inteira na cara. Aqui,
+     * quatro metros para dentro e com a frente em `z = 3,7`, a guarita fica NA
+     * FRENTE da folha em vez de atrás — quem passa a ser tapado é a grade, que
+     * é fundo de cena.
+     */
+    const GUARITA = { x: -20.6, z: 2.6, largura: 2.6, profundidade: 2.2 };
+    w.add(w.place(guarita(GUARITA.largura, GUARITA.profundidade), GUARITA.x, 0, GUARITA.z));
+    // a caixa engole o balcão, que avança 0,37 além da parede da frente
+    w.blockBox(GUARITA.x, GUARITA.z + 0.2, GUARITA.largura / 2 + 0.2, GUARITA.profundidade / 2 + 0.25);
+
+    /**
+     * A GIRAFA PORTEIRA.
+     *
+     * A área dela é MENOR que os 70 cm de deslocamento mínimo que o cérebro do
+     * `Bicho` exige de um destino — é assim que ela fica no posto sem uma linha
+     * de código nova: as doze tentativas de destino falham e ele a devolve para
+     * `parado`, respirando e olhando a rua. Nada de `enabled = false`.
+     *
+     * Ela nasce ADIANTADA em `z` dentro da guarita, e não no meio dela: o
+     * pescoço se debruça 0,93 para a frente, e é essa soma que põe a cabeça em
+     * cima do balcão — do lado de fora da parede E do lado de fora da sombra do
+     * telhado, que a 34° come tudo que fica mais de meio metro para dentro. Com
+     * o corpo no meio da casinha, a cabeça aparecia escura por uma fresta.
+     */
+    const girafa = new Girafa({
+      minX: GUARITA.x - 0.15, maxX: GUARITA.x + 0.15,
+      minZ: GUARITA.z + 0.2, maxZ: GUARITA.z + 0.5,
+    });
+    w.add(girafa.group);
+    girafa.aoSoar = () => g.som('apito');
+
+    const falarComOPorteiro = w.interact({
+      id: 'clube:portaria',
+      x: GUARITA.x, z: GUARITA.z + 1.9, radius: 2.2,
+      label: 'Falar com o porteiro', icon: '🦒',
+      highlight: girafa.group,
+      onInteract: async (api) => {
+        girafa.receberCarinho();
+        api.som('apito');
+        const G = 'Girafa da portaria';
+        await api.say(['Bom diaaa! Carteirinha na mão? …Brincadeira, pode entrar.'], G);
+        await conversa([
+          [R, 'Ela é bem mais alta de perto.'],
+          [A, 'Ela é bem mais simpática de perto.'],
+        ]);
+        await api.say([
+          'Aproveitem o dia, viu? A piscina tá uma delícia, o sol tá de graça e o almoço sai até as três.',
+        ], G);
+        await api.say(['E se molharem o cabelo, sequem antes de sentar no restaurante. Ordem da casa.'], G);
+        await conversa([
+          [A, 'Pode deixar.'],
+          [R, 'Ela é a melhor coisa deste clube.'],
+        ]);
+        api.unlock({
+          id: 'girafa-da-portaria',
+          title: 'A girafa da portaria',
+          place: 'Clube',
+          note: 'Um porteiro de quepe, pescoço de três metros e apito no peito, mandando a gente aproveitar o dia.',
+          icon: '🦒',
+        });
+      },
+    });
+
+    // sem isto o balão fica onde ela nasceu — e ela se mexe, mesmo no posto
+    w.onUpdate((dt) => {
+      girafa.update(dt);
+      falarComOPorteiro.moveTo(girafa.x, girafa.z + 1.9);
+    });
 
     // ------------------------------------------------------------- piscina
     w.add(w.place(poolShell(PISCINA.largura, PISCINA.profundidade, PISCINA.fundo), PISCINA.x, 0, PISCINA.z));

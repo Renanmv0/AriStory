@@ -89,6 +89,7 @@ node scripts/cama.mjs    /tmp/cm    # deitar junto: lado a lado, e os bracos bal
 node scripts/pelusa.mjs  /tmp/pe    # o gato: passeia sem entrar em movel, mia e recebe carinho
 node scripts/deque.mjs   /tmp/dq    # o deque de descanso: deitar nas espreguicadeiras a beira da piscina
 node scripts/muro.mjs    /tmp/mu    # o muro da rua do clube fecha, e o portao grande deixa passar
+node scripts/guarita.mjs /tmp/gu    # a portaria: a girafa fica no posto, apita e manda aproveitar o dia
 node scripts/onibus.mjs  /tmp/ob    # o onibus e o ponto de perto, nas duas ruas (parque e clube)
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```
