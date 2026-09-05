@@ -5,10 +5,28 @@ import { SaveState } from './SaveState';
 import { Ui } from '../ui/Ui';
 import { Player } from '../entities/Player';
 import { Companion } from '../entities/Companion';
+import { Beijo } from '../entities/Beijo';
+import { Coracoes } from '../entities/Coracoes';
+import { MaosDadas } from '../entities/MaosDadas';
+import { Som } from '../audio/Som';
+import type { SomNome } from '../audio/efeitos';
 import { CharacterRig } from '../characters/CharacterRig';
+import { Previa } from '../characters/Previa';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
-import type { GameAPI, Memory, SceneAmbient, SceneDef } from './types';
+import {
+  SLOTS_ROUPA,
+  type Coleta,
+  type GameAPI,
+  type ItemDef,
+  type Memory,
+  type SceneAmbient,
+  type SceneDef,
+  type Vaga,
+} from './types';
+import { ITENS, MODA_PRAIA, modeloDoItem } from '../world/itens';
+import { MEMORIAS } from '../world/memoriasData';
+import { CARDAPIO } from '../world/cardapioData';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -27,9 +45,15 @@ export class Game implements GameAPI {
   private readonly input: Input;
   private readonly ui: Ui;
   private readonly save = new SaveState();
+  /** o boneco do painel do guarda-roupa; corpo proprio, cena e canvas proprios */
+  private readonly previa: Previa;
   private readonly player: Player;
   private readonly parceiro: Companion;
   private readonly clock = new THREE.Clock();
+  private readonly coracoes: Coracoes;
+  private readonly beijo: Beijo;
+  private readonly maos: MaosDadas;
+  private readonly audio = new Som();
 
   private readonly hemi: THREE.HemisphereLight;
   private readonly sun: THREE.DirectionalLight;
@@ -38,17 +62,27 @@ export class Game implements GameAPI {
   private hot: Interactable | null = null;
   private cameraTarget: THREE.Object3D | null = null;
   private transitioning = false;
+  /** o beijo esta ao alcance neste frame (checado no fim do frame anterior) */
+  private podeBeijar = false;
+  /** id do item que cada rig esta segurando agora, para nao reconstruir a malha */
+  private readonly naMao = new Map<string, string | null>();
+  /** distância andada desde o último passo ouvido */
+  private trilha = 0;
   private elapsed = 0;
   private shadowSpan = 0;
   private traje: 'normal' | 'banho' = 'normal';
 
   private readonly moveDir = new THREE.Vector3();
   private readonly camAim = new THREE.Vector3();
+  /** camera de perspectiva do ping pong; só nasce quando alguém pede */
+  private camOmbro: THREE.PerspectiveCamera | null = null;
 
   constructor(
     private readonly root: HTMLElement,
     private readonly scenes: Record<string, SceneDef>,
-    dupla: readonly CharacterSpec[],
+    private readonly dupla: readonly CharacterSpec[],
+    /** onde o jogo começa quando não há progresso salvo */
+    private readonly cenaInicial = Object.keys(scenes)[0],
   ) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -58,10 +92,61 @@ export class Game implements GameAPI {
     root.appendChild(this.renderer.domElement);
 
     this.ui = new Ui(root);
+    this.previa = new Previa(this.ui.canvasDoBoneco());
     this.ui.setMemories(this.save.memories);
     this.ui.onTouchAction = () => this.input.tapAction();
     this.ui.onTouchSwap = () => this.input.tapSwap();
+    this.ui.onTouchGirar = (dir) => this.input.tapGirar(dir);
+    // clique numa vaga da mochila escolhe qual item fica na mao
+    this.ui.onEscolherSlot = (i) => this.setActiveHandSlot(i);
+    this.ui.onMoverItem = (de, para) => this.moveItem(de, para);
+    this.ui.onDescartar = (de) => this.descartarDaVaga(de);
+    this.ui.onAbrirMochila = () => this.pintarMochila();
+    this.ui.onAbrirArmario = () => this.pintarArmario();
+    this.ui.onGirarBoneco = (d) => this.previa.girar(d);
+    this.ui.onTirarParte = (i) => {
+      if (!this.tirarPeca(this.playerId(), i)) return;
+      this.audio.play('escolha');
+      this.pintarArmario();
+    };
+    this.ui.onVestirPeca = (id) => {
+      if (!this.vestirPeca(this.playerId(), id)) return;
+      this.audio.play('escolha');
+      this.pintarArmario();
+    };
+
+    // O vestiario do clube mexe nas MESMAS vagas do guarda-roupa — ele so
+    // pergunta menos. Por isso os dois paineis passam pelos mesmos dois
+    // metodos: um jeito so de vestir, um jeito so de tirar.
+    this.ui.onAbrirVestiario = () => this.pintarVestiario();
+    this.ui.onAlternarOculos = () => {
+      const quem = this.playerId();
+      const posto = SLOTS_ROUPA.indexOf('cabeca');
+      const jaEsta = this.save.vestiveis(quem)[posto]?.id === ITENS.oculosEscuros.id;
+      if (jaEsta ? this.tirarPeca(quem, posto) : this.vestirPeca(quem, ITENS.oculosEscuros.id)) {
+        this.audio.play('escolha');
+      }
+      this.pintarVestiario();
+    };
+    this.ui.onEscolherBermuda = (id) => {
+      const quem = this.playerId();
+      const posto = SLOTS_ROUPA.indexOf('pernas');
+      // a mesma cor de novo TIRA a bermuda: o botao que veste e o que despe
+      const jaEsta = this.save.vestiveis(quem)[posto]?.id === id;
+      if (jaEsta ? this.tirarPeca(quem, posto) : this.vestirPeca(quem, id)) {
+        this.audio.play('escolha');
+      }
+      this.pintarVestiario();
+    };
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
+    this.ui.onRestart = () => this.restart();
+    this.ui.som = (nome) => this.audio.play(nome);
+    this.ui.onToggleSom = () => {
+      this.audio.setMudo(this.audio.ligado);
+      this.ui.setSom(this.audio.ligado);
+      if (this.audio.ligado) this.audio.play('menu');
+    };
+    this.ui.setSom(this.audio.ligado);
     this.input = new Input(this.renderer.domElement);
 
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x8aa06a, 1.05);
@@ -86,6 +171,12 @@ export class Game implements GameAPI {
     this.player = new Player(new CharacterRig(dupla[0]));
     this.scene.add(this.player.object);
 
+    this.coracoes = new Coracoes(this.scene);
+    this.beijo = new Beijo(this.coracoes);
+    this.beijo.onSom = (nome) => this.audio.play(nome);
+    this.maos = new MaosDadas(this.coracoes);
+    this.maos.onSom = (nome) => this.audio.play(nome);
+
     this.parceiro = new Companion(new CharacterRig(dupla[1] ?? dupla[0]));
     this.parceiro.setVisible(dupla.length > 1);
     this.scene.add(this.parceiro.object);
@@ -97,12 +188,27 @@ export class Game implements GameAPI {
   // ------------------------------------------------------------------ boot
 
   async start(sceneId?: string, entry?: string): Promise<void> {
-    const id = sceneId ?? (this.scenes[this.save.scene] ? this.save.scene : Object.keys(this.scenes)[0]);
+    const id = sceneId ?? (this.scenes[this.save.scene] ? this.save.scene : this.cenaInicial);
     this.build(id, entry);
     this.iso.snapTo(this.player.chest);
     this.renderer.render(this.scene, this.iso.camera);
     this.ui.hideBoot();
     this.renderer.setAnimationLoop(this.tick);
+  }
+
+  /**
+   * Apaga o progresso e volta para o começo — é o "recomeçar" do menu, para
+   * mostrar o jogo do zero para alguém. Zera diário, flags e contadores, põe o
+   * Ari de volta no comando e leva os dois para a cena inicial.
+   */
+  restart(): void {
+    this.save.reset();
+    this.ui.setMemories(this.save.memories);
+    if (this.player.rig.spec.id !== this.dupla[0].id) this.swapCharacters();
+    this.ui.showHints();
+    this.goTo(this.cenaInicial);
+    this.audio.play('recomecar');
+    this.ui.toast('Do começo, então', '🔄');
   }
 
   // ---------------------------------------------------------------- cenas
@@ -141,12 +247,46 @@ export class Game implements GameAPI {
     this.parceiro.setVisible(true);
     this.cameraTarget = null;
     this.hot = null;
+    this.beijo.cancelar(this.player, this.parceiro);
+    this.maos.soltar(this.player, this.parceiro);
+    this.coracoes.limpar();
+    this.podeBeijar = false;
+    this.camOmbro = null; // nenhum minigame sobrevive a uma troca de cena
+    this.ui.showPlacar(null);
     this.parceiro.clearOrder();
     this.setSitting(false);
     this.setOutfit(def.outfit ?? 'normal');
     this.ui.hidePrompt();
     this.ui.sceneCard(def.name, def.subtitle);
+    this.audio.setClima(id);
+    this.migrarPremios();
+    this.aplicarPremios();
     this.save.scene = id;
+  }
+
+  /**
+   * Prêmios que ficam no corpo do personagem. O chapéu de campeão do ping pong
+   * é do RIG, não do slot: ele viaja junto quando o T troca os corpos, porque
+   * quem ganhou foi o personagem, não "o jogador".
+   */
+  private aplicarPremios(): void {
+    this.sincronizarVestiveis();
+  }
+
+  /**
+   * Migracao de quem ja tinha o chapeu antes de ele virar item.
+   *
+   * A flag `chapeu-ping-pong:<id>` era o jeito antigo. Ela nao manda mais em
+   * nada; roda uma vez para o chapeu ganho ontem virar item hoje, e depois
+   * disso o inventario e a unica verdade.
+   */
+  private migrarPremios(): void {
+    for (const rig of [this.player.rig, this.parceiro.rig]) {
+      const quem = rig.spec.id;
+      if (!this.save.flag(`chapeu-ping-pong:${quem}`)) continue;
+      if (this.save.achouItem(quem, ITENS.chapeuPingPong.id)) continue;
+      this.save.vestir(quem, ITENS.chapeuPingPong);
+    }
   }
 
   private indoor = false;
@@ -195,31 +335,99 @@ export class Game implements GameAPI {
     if (!world) return;
 
     // ------------------------------------------------------------ entrada
-    const busy = this.ui.dialogueOpen || this.ui.journalOpen || this.transitioning;
+    const busy =
+      this.ui.dialogueOpen ||
+      this.ui.journalOpen ||
+      this.ui.menuOpen ||
+      this.ui.mochilaOpen ||
+      this.ui.armarioOpen ||
+      this.ui.vestiarioOpen ||
+      this.ui.memoriasOpen ||
+      this.ui.cardapioOpen ||
+      this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
-    if (this.input.justPressed('KeyJ')) this.ui.toggleJournal();
-    if (!busy && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
+    if (this.input.justPressed('KeyJ') && !this.ui.menuOpen) this.ui.toggleJournal();
+    if (
+      (this.input.justPressed('KeyI') || this.input.justPressed('Tab')) &&
+      !this.ui.menuOpen &&
+      !this.ui.dialogueOpen
+    ) {
+      if (this.ui.armarioOpen) this.ui.fecharArmario();
+      else if (this.ui.mochilaOpen) this.ui.closeMochila();
+      else this.abrirMochila();
+    }
+    // Esc fecha o guarda-roupa: ele trava o movimento, então precisa de uma
+    // saída de teclado além do botão
+    if (this.ui.armarioOpen && this.input.justPressed('Escape')) this.ui.fecharArmario();
+    // o vestiário trava o movimento pelo mesmo motivo, e sai pela mesma tecla
+    if (this.ui.vestiarioOpen && this.input.justPressed('Escape')) this.ui.fecharVestiario();
+    // o quadro trava o movimento igual ao guarda-roupa, então precisa da mesma
+    // saída de teclado
+    if (this.ui.memoriasOpen && this.input.justPressed('Escape')) this.ui.fecharMemorias();
+    // o cardapio tambem trava o movimento, e quem espera por ele e uma cutscene:
+    // fechar no Escape e o que impede a dupla de ficar presa sentada na mesa
+    if (this.ui.cardapioOpen && this.input.justPressed('Escape')) this.ui.fecharCardapio();
+    // as setas folheiam o quadro; com ele fechado elas continuam sendo andar
+    if (this.ui.memoriasOpen) {
+      if (this.input.justPressed('ArrowLeft')) this.ui.folhear(-1);
+      if (this.input.justPressed('ArrowRight')) this.ui.folhear(1);
+    }
+    // O T vale TAMBÉM com a mochila ou o guarda-roupa abertos.
+    //
+    // As duas telas mostram o inventário de quem está sendo controlado, então
+    // trocar é como se vê — e se veste — o outro. O subtítulo da mochila já
+    // prometia "T vê a do outro" e não funcionava: o `busy` engolia a tecla.
+    const emTela = this.ui.mochilaOpen || this.ui.armarioOpen || this.ui.vestiarioOpen;
+    const podeTrocar = emTela
+      ? !this.ui.dialogueOpen && !this.ui.menuOpen && !this.transitioning
+      : !busy;
+    if (podeTrocar && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
     if (!busy) {
       if (this.input.justPressed('KeyQ')) this.iso.rotate(-1);
       if (this.input.justPressed('KeyR')) this.iso.rotate(1);
     }
 
+    if (!busy && !this.player.locked && this.input.justPressed('KeyH')) this.maoNaMao();
+
     const acted = this.input.justPressed('KeyE') || this.input.justPressed('Space');
     if (acted && this.ui.handleAction()) {
       // o dialogo consumiu a tecla
     } else if (acted && !busy && this.hot && !this.player.locked) {
+      // qualquer interacao do cenario solta as maos: nao da para abrir a
+      // geladeira com as duas maos ocupadas
+      this.maos.soltar(this.player, this.parceiro);
+      this.audio.play('interagir');
       void this.hot.trigger(this);
+    } else if (acted && !busy && this.podeBeijar && !this.player.locked) {
+      this.maos.soltar(this.player, this.parceiro);
+      this.beijo.iniciar(this.player, this.parceiro, this.iso.angle);
+    } else if (acted && !busy && !this.player.locked) {
+      // sem interativo por perto e sem estar de frente um para o outro, o E
+      // vira o carinho de contexto: de lado a lado, da a mao. E o que permite
+      // a mecanica existir no celular sem mais um botao na tela.
+      this.maoNaMao();
     }
+
+    // os dois rodam antes do movimento: sao eles que mandam nos corpos
+    this.beijo.update(dt, this.player, this.parceiro);
+    this.maos.update(dt, this.player, this.parceiro);
 
     // ---------------------------------------------------------- movimento
     const m = this.input.move();
     this.iso.screenToWorld(m.x, m.y, this.moveDir);
+    const antes = this.player.position.clone();
     this.player.update(this.moveDir, dt, world.colliders, world.bounds);
+    this.ouvirPassos(antes);
     this.parceiro.update(this.player.position, dt, world.colliders, world.bounds);
 
+    this.coracoes.update(dt);
+    this.sincronizarMaos();
+    this.sincronizarVestiveis();
+
     // ------------------------------------------------------- interativos
-    this.updateHot(world, dt);
+    this.updateHot(world);
+    this.updateBeijo();
 
     // ------------------------------------------------------------- cena
     for (const fn of world.updaters) fn(dt, this.elapsed);
@@ -235,11 +443,62 @@ export class Game implements GameAPI {
     this.sun.target.position.copy(this.camAim);
     this.sun.position.set(this.camAim.x + 14 * k, this.camAim.y + 20 * k, this.camAim.z + 9 * k);
 
-    this.renderer.render(this.scene, this.iso.camera);
+    this.renderer.render(this.scene, this.camOmbro ?? this.iso.camera);
+
+    // O boneco tem canvas proprio, dentro do painel; so gasta quadro quando o
+    // painel esta aberto
+    if (this.ui.armarioOpen) {
+      this.previa.update(dt);
+      this.previa.desenhar();
+    }
+
     this.input.endFrame();
   };
 
-  private updateHot(world: WorldBuilder, dt: number): void {
+  /**
+   * O beijo esta ao alcance? Sem prompt na tela: carinho nao anuncia, e mais um
+   * balao ali competindo com o dos interativos so polui. Quem nao souber
+   * descobre na aba Controles do menu.
+   */
+  private updateBeijo(): void {
+    this.podeBeijar =
+      !this.ui.dialogueOpen &&
+      !this.ui.journalOpen &&
+      !this.ui.menuOpen &&
+      !this.player.locked &&
+      this.beijo.disponivel(this.player, this.parceiro);
+  }
+
+  /** Liga ou solta as maos. E o toggle, do H e do E de contexto. */
+  private maoNaMao(): void {
+    if (this.maos.ativo) {
+      this.maos.soltar(this.player, this.parceiro);
+      this.audio.play('escolha');
+    } else if (this.maos.disponivel(this.player, this.parceiro)) {
+      this.maos.ligar(this.player, this.parceiro);
+    }
+  }
+
+  /**
+   * Passo por distância andada, não por tempo: assim o som acompanha a
+   * velocidade sozinho e não sai passo nenhum quando o jogador está parado.
+   */
+  private ouvirPassos(antes: THREE.Vector3): void {
+    if (this.player.riding || this.player.locked) return;
+    const andou = Math.hypot(this.player.position.x - antes.x, this.player.position.z - antes.z);
+    if (andou < 0.0005) {
+      this.trilha = 0;
+      return;
+    }
+    this.trilha += andou;
+    const passada = this.player.submersion > 0.05 ? 1.05 : 0.62;
+    if (this.trilha >= passada) {
+      this.trilha = 0;
+      this.audio.play(this.player.submersion > 0.05 ? 'nadar' : 'passo');
+    }
+  }
+
+  private updateHot(world: WorldBuilder): void {
     let best: Interactable | null = null;
     let bestDist = Infinity;
     let bestPriority = -Infinity;
@@ -258,16 +517,12 @@ export class Game implements GameAPI {
     }
 
     if (best !== this.hot) {
-      this.hot?.setHot(false);
-      best?.setHot(true);
       this.hot = best;
       if (best && !this.player.locked) this.ui.showPrompt(best.icon, best.label);
       else this.ui.hidePrompt();
     }
     if (this.player.locked || this.ui.dialogueOpen) this.ui.hidePrompt();
     else if (this.hot) this.ui.showPrompt(this.hot.icon, this.hot.label);
-
-    for (const it of world.interactables) it.update(dt);
   }
 
   // ------------------------------------------------------------- GameAPI
@@ -285,12 +540,18 @@ export class Game implements GameAPI {
   }
 
   toast(text: string, icon?: string): void {
+    this.audio.play('toast');
     this.ui.toast(text, icon);
+  }
+
+  som(nome: SomNome): void {
+    this.audio.play(nome);
   }
 
   goTo(sceneId: string, entry?: string): void {
     if (this.transitioning) return;
     this.transitioning = true;
+    this.audio.play('porta');
     void (async () => {
       await this.ui.fade(true);
       this.build(sceneId, entry);
@@ -302,6 +563,36 @@ export class Game implements GameAPI {
 
   focusCamera(target: THREE.Object3D | null): void {
     this.cameraTarget = target;
+  }
+
+  /**
+   * Troca a isométrica por uma perspectiva parada em `de`, olhando para `para`.
+   *
+   * Perspectiva (e não ortográfica) de propósito: num jogo em que a bolinha vem
+   * na sua direção, é a convergência das linhas que diz se ela está perto ou
+   * longe — em ortográfica a bolinha do outro lado da mesa tem exatamente o
+   * mesmo tamanho da que está no seu nariz.
+   */
+  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3): void {
+    if (!de) {
+      this.camOmbro = null;
+      return;
+    }
+    if (!this.camOmbro) {
+      this.camOmbro = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 400);
+    }
+    this.camOmbro.aspect = window.innerWidth / window.innerHeight;
+    this.camOmbro.position.copy(de);
+    if (para) this.camOmbro.lookAt(para);
+    this.camOmbro.updateProjectionMatrix();
+  }
+
+  pointer(): { x: number; y: number } {
+    return this.input.pointer();
+  }
+
+  showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void {
+    this.ui.showPlacar(dados);
   }
 
   setZoom(viewSize: number): void {
@@ -333,8 +624,300 @@ export class Game implements GameAPI {
     return this.save.stat(key);
   }
 
+  // --------------------------------------------------------------- mochila
+  // Cada personagem tem a sua. `quem` omitido = quem esta sendo controlado.
+  // Nenhum item FAZ nada aqui: quem age e a cena, lendo `getActiveHandItem()`.
+
+  addItem(item: ItemDef, quem = this.playerId()): Coleta {
+    const como = this.save.pegar(quem, item);
+    if (como === 'cheio') this.ui.toast('Mochila cheia', '🎒');
+    if (como === 'mao' || como === 'guardado') this.repintarMochila();
+    return como;
+  }
+
+  storeItem(item: ItemDef, quem = this.playerId()): Coleta {
+    const r = this.save.guardar(quem, item);
+    if (r !== 'cheio' && r !== 'repetido') this.repintarMochila();
+    return r;
+  }
+
+  removeItem(id: string, quem = this.playerId()): boolean {
+    const saiu = this.save.largar(quem, id);
+    if (saiu) this.repintarMochila();
+    return saiu;
+  }
+
+  hasItem(id: string, quem = this.playerId()): boolean {
+    return this.save.achouItem(quem, id);
+  }
+
+  getActiveHandItem(quem = this.playerId()): ItemDef | null {
+    return this.save.itemAtivo(quem);
+  }
+
+  setActiveHandSlot(indice: number, quem = this.playerId()): void {
+    this.save.setSlotAtivo(quem, indice);
+    this.repintarMochila();
+  }
+
+  activeHandSlot(quem = this.playerId()): number {
+    return this.save.slotAtivo(quem);
+  }
+
+  equipWearable(item: ItemDef, quem = this.playerId()): boolean {
+    const vestiu = this.save.vestir(quem, item);
+    if (vestiu) this.repintarMochila();
+    return vestiu;
+  }
+
+  unequipWearable(slot: number, quem = this.playerId()): void {
+    this.save.despir(quem, slot);
+    this.repintarMochila();
+  }
+
+  moveItem(de: Vaga, para: Vaga, quem = this.playerId()): boolean {
+    const mexeu = this.save.mover(quem, de, para);
+    if (mexeu) this.repintarMochila();
+    return mexeu;
+  }
+
+  handItems(quem = this.playerId()): ReadonlyArray<ItemDef | null> {
+    return this.save.maos(quem);
+  }
+
+  wearables(quem = this.playerId()): ReadonlyArray<ItemDef | null> {
+    return this.save.vestiveis(quem);
+  }
+
+  wardrobeItems(quem = this.playerId()): ReadonlyArray<ItemDef> {
+    return this.save.acervo(quem);
+  }
+
+  /** Joga fora o item de uma vaga. Nao volta de lugar nenhum. */
+  private descartarDaVaga(de: Vaga): void {
+    const quem = this.playerId();
+    const vagas = de.lista === 'mao' ? this.save.maos(quem) : this.save.vestiveis(quem);
+    const item = vagas[de.indice];
+    if (!item) return;
+    this.save.largar(quem, item.id);
+    this.audio.play('escolha');
+    this.ui.toast(`${item.nome} foi descartado`, '🗑');
+    this.pintarMochila();
+  }
+
+  /** Redesenha as vagas. So custa alguma coisa com o painel aberto. */
+  private repintarMochila(): void {
+    if (!this.ui.mochilaOpen) return;
+    this.pintarMochila();
+  }
+
+  private pintarMochila(): void {
+    const quem = this.playerId();
+    this.ui.renderMochila(
+      this.save.maos(quem),
+      this.save.vestiveis(quem),
+      this.save.slotAtivo(quem),
+      this.player.name,
+    );
+  }
+
+  private abrirMochila(): void {
+    // quem pinta e a propria Ui, ao abrir: assim o botao 🎒 do celular e a
+    // tecla I passam exatamente pelo mesmo caminho
+    this.ui.toggleMochila();
+  }
+
+  /**
+   * Poe na mao de cada um o que estiver na vaga principal DELE.
+   *
+   * Roda todo quadro, mas so mexe em alguma coisa quando o id muda — e isso que
+   * faz o T funcionar de graca: o modelo e filho do RIG, e o rig viaja junto com
+   * a pessoa quando os corpos trocam de lugar.
+   */
+  /**
+   * O chapeu de campeao aparece SE, E SO SE, estiver numa vaga de acessorio.
+   *
+   * E o que faz o arrastar valer para vestimenta tambem: tirou o chapeu da
+   * vaga de acessorio na tela, ele sai da cabeca no mesmo quadro.
+   */
+  private sincronizarVestiveis(): void {
+    // percorre as PESSOAS, não os rigs: os patins mexem no corpo (o rig) e na
+    // física (o Player/Companion), e as duas pontas leem a mesma vaga
+    for (const quem of [this.player, this.parceiro]) {
+      const id = quem.rig.spec.id;
+      const vagas = this.save.vestiveis(id);
+
+      const chapeu = vagas.some((i) => i?.id === ITENS.chapeuPingPong.id);
+      if (quem.rig.campeao !== chapeu) quem.rig.setCampeao(chapeu);
+
+      const patins = vagas.some((i) => i?.id === ITENS.patins.id);
+      quem.patins = patins;
+      quem.rig.setPatins(patins);
+
+      // A roupa sai das MESMAS vagas: a vaga é o loadout, não há um segundo
+      // armazenamento. Com o cache, `vestirRoupa` só roda quando algo mudou —
+      // sem ele a geometria do gorro e das botas seria refeita a 60 fps.
+      const loadout = this.save.loadout(id);
+      const chave = SLOTS_ROUPA.map((s) => loadout[s] ?? '').join('|');
+      if (this.roupaAplicada.get(id) === chave) continue;
+      this.roupaAplicada.set(id, chave);
+      quem.rig.vestirRoupa(loadout);
+    }
+  }
+
+  private sincronizarMaos(): void {
+    for (const rig of [this.player.rig, this.parceiro.rig]) {
+      const quem = rig.spec.id;
+      const item = this.save.itemAtivo(quem);
+      const id = item?.id ?? null;
+      if (this.naMao.get(quem) === id) continue;
+      this.naMao.set(quem, id);
+      rig.segurar(id ? modeloDoItem(id) : null, item?.holdPose ?? 'none');
+    }
+  }
+
+  /** o loadout que cada corpo ja esta vestindo, serializado, para o diff */
+  private readonly roupaAplicada = new Map<string, string>();
+
+  /**
+   * Veste uma peca que a pessoa TEM, trocando o que estiver naquela vaga.
+   *
+   * O `save.vestir` recusa vaga ocupada de proposito — ele nao sobrescreve
+   * nada —, entao quem quer TROCAR tira a antiga antes. E o que sai do corpo
+   * volta para o armario: trocar de roupa nunca joga peca fora.
+   *
+   * O painel do armario e o do vestiario passam os dois por aqui.
+   */
+  private vestirPeca(quem: string, id: string): boolean {
+    // a peca vem do ARMARIO; a funcional (patins) pode estar na mochila
+    const peca = this.save.acervo(quem).find((i) => i.id === id)
+      ?? this.save.maos(quem).find((i) => i?.id === id)
+      ?? null;
+    if (!peca) return false;
+    const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
+    if (vaga < 0) return false;
+    const antigo = this.save.vestiveis(quem)[vaga];
+    this.save.largar(quem, id);
+    if (antigo) this.save.despir(quem, vaga);
+    this.save.vestir(quem, peca);
+    if (antigo) this.save.guardar(quem, antigo);
+    return true;
+  }
+
+  /**
+   * Tira o que esta numa vaga do corpo.
+   *
+   * Tirar NAO joga fora: a peca volta para o armario (ou, se for funcional,
+   * para a mochila). Mochila cheia recusa e desfaz, em vez de sumir com ela.
+   *
+   * `guardar` e nao `pegar`: o `pegar` VESTE o acessorio de volta na hora,
+   * entao tirar pelo painel nao tirava nada — a peca saia da vaga e voltava
+   * para ela no mesmo clique.
+   */
+  private tirarPeca(quem: string, vaga: number): boolean {
+    const peca = this.save.vestiveis(quem)[vaga];
+    if (!peca) return false;
+    this.save.despir(quem, vaga);
+    if (this.save.guardar(quem, peca) === 'cheio') {
+      this.save.vestir(quem, peca);
+      this.ui.toast('Mochila cheia', '🎒');
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Abre o painel do guarda-roupa.
+   *
+   * O armario da cena chama isto, mas o painel nao depende dele: ele mostra o
+   * inventario, e as pecas sao itens. Um dia o `I` pode abrir daqui tambem.
+   */
+  abrirGuardaRoupa(): void {
+    this.previa.mostrar(this.player.rig.spec);
+    this.pintarArmario();
+    this.ui.abrirArmario();
+  }
+
+  /** Redesenha o painel e o boneco a partir do save. */
+  private pintarArmario(): void {
+    const quem = this.playerId();
+    const vestindo = this.save.vestiveis(quem);
+    // O que da para vestir sai do ARMARIO. A vestimenta funcional que estiver
+    // na mochila entra junto: os patins tambem sao dos pes, e escondê-los aqui
+    // faria a vaga dos pes parecer quebrada quando eles estao na mochila.
+    const guardados: ItemDef[] = [
+      ...this.save.acervo(quem),
+      ...this.save.maos(quem).filter((i): i is ItemDef => i !== null && i.tipo === 'vestivel'),
+    ];
+    this.ui.renderArmario(vestindo, guardados, this.player.name);
+    this.previa.vestir(this.save.loadout(quem));
+  }
+
+  /**
+   * Abre o vestiario do clube: o guarda-roupa encolhido na moda praia.
+   *
+   * Nao ha um segundo armazenamento nenhum aqui. O oculos e as bermudas sao
+   * itens de acervo como qualquer outro, e as escolhas moram nas vagas do
+   * corpo — as MESMAS que o armario do quarto usa. E por isso que o Ari e o
+   * Renan tem estilos de praia independentes de graca: cada um tem o seu
+   * inventario, e o `T` troca de quem o painel esta falando.
+   */
+  abrirVestiario(): void {
+    this.pintarVestiario();
+    this.ui.abrirVestiario();
+  }
+
+  /** Redesenha o painel do vestiario a partir do save. */
+  private pintarVestiario(): void {
+    const quem = this.playerId();
+    const vestindo = this.save.vestiveis(quem);
+    const naCabeca = vestindo[SLOTS_ROUPA.indexOf('cabeca')];
+    const nasPernas = vestindo[SLOTS_ROUPA.indexOf('pernas')];
+    // a paleta e numero e o CSS quer texto; a traducao mora aqui, e nao na Ui,
+    // porque e o Game quem conhece a ficha da peca
+    const css = (cor: number): string => `#${cor.toString(16).padStart(6, '0')}`;
+    this.ui.renderVestiario({
+      dono: this.player.name,
+      oculos: naCabeca?.id === ITENS.oculosEscuros.id,
+      // so as cores DESBLOQUEADAS: a lista e o que a pessoa tem, e nao o
+      // catalogo inteiro. Hoje o vestiario abastece as quatro ao abrir, mas
+      // quem manda continua sendo o inventario dela.
+      bermudas: MODA_PRAIA
+        .filter((b) => this.save.achouItem(quem, b.id))
+        .map((b) => ({
+          id: b.id,
+          nome: b.nome,
+          cor: css(b.corBanho ?? 0xffffff),
+          faixa: b.estampaBanho === undefined ? undefined : css(b.estampaBanho),
+          vestida: nasPernas?.id === b.id,
+        })),
+    });
+  }
+
+  /**
+   * Abre o quadro de memorias numa memoria.
+   *
+   * O Game nao sabe desenhar memoria nenhuma: ele so acha a ficha no catalogo e
+   * entrega para a UI, que e quem tem o canvas. A pintura em si mora inteira em
+   * `world/memoriasData.ts`.
+   */
+  abrirMemoria(id: string): void {
+    const onde = MEMORIAS.findIndex((m) => m.id === id);
+    if (onde >= 0) this.ui.abrirMemorias(MEMORIAS, onde);
+  }
+
+  /**
+   * Abre o cardapio. O Game nao sabe desenhar prato nenhum: ele so entrega o
+   * catalogo para a UI, que tem os canvas. A pintura mora inteira em
+   * `world/cardapioData.ts`, do mesmo jeito que a das memorias.
+   */
+  abrirCardapio(casa?: string): Promise<string | null> {
+    return this.ui.abrirCardapio(CARDAPIO, casa);
+  }
+
   unlock(memory: Memory): void {
     if (this.save.addMemory(memory)) {
+      this.audio.play('memoria');
       this.ui.setMemories(this.save.memories);
       this.ui.toast(`Nova memória: ${memory.title}`, memory.icon);
       this.player.rig.cheer();
@@ -351,26 +934,50 @@ export class Game implements GameAPI {
     this.iso.snapTo(this.player.chest);
   }
 
+  /**
+   * Alguma tela de LER esta por cima do jogo.
+   *
+   * As duas teclas que a cena le passam por aqui: com uma delas aberta, o F do
+   * frisbee nao pode carregar por tras do painel.
+   */
+  private get telaDeLeitura(): boolean {
+    return (
+      this.ui.dialogueOpen || this.ui.journalOpen || this.ui.menuOpen || this.ui.memoriasOpen
+    );
+  }
+
   keyPressed(code: string): boolean {
-    if (this.ui.dialogueOpen || this.ui.journalOpen || this.player.locked) return false;
+    if (this.telaDeLeitura || this.player.locked) return false;
     return this.input.justPressed(code);
   }
 
   keyDown(code: string): boolean {
-    if (this.ui.dialogueOpen || this.ui.journalOpen || this.player.locked) return false;
+    if (this.telaDeLeitura || this.player.locked) return false;
     return this.input.isDown(code);
   }
 
-  showCharge(valor: number | null): void {
-    this.ui.showCharge(valor);
+  showCharge(valor: number | null, alvo?: number | null, zona?: number): void {
+    this.audio.carga(valor);
+    this.ui.showCharge(valor, alvo, zona);
   }
 
   wait(seconds: number): Promise<void> {
     return new Promise((resolve) => window.setTimeout(resolve, seconds * 1000));
   }
 
+  /**
+   * Onde o jogador esta NO MUNDO.
+   *
+   * Dentro de um veiculo, banco ou cabine o objeto dele passa a ser filho da
+   * ancora, e `position` vira coordenada local — perto da origem. Devolver isso
+   * fazia a cena achar que ele estava em outro lugar: sentado num banco do
+   * parque, a regra de camera da roda gigante disparava como se ele estivesse
+   * na praca dela.
+   */
   playerPosition(): THREE.Vector3 {
-    return this.player.position.clone();
+    if (!this.player.riding) return this.player.position.clone();
+    this.player.object.updateWorldMatrix(true, false);
+    return this.player.object.getWorldPosition(new THREE.Vector3());
   }
 
   playerFacing(): number {
@@ -381,12 +988,26 @@ export class Game implements GameAPI {
     return this.player.name;
   }
 
+  playerId(): string {
+    return this.player.rig.spec.id;
+  }
+
+  companionId(): string {
+    return this.parceiro.rig.spec.id;
+  }
+
   companionName(): string {
     return this.parceiro.name;
   }
 
   companionPosition(): THREE.Vector3 {
-    return this.parceiro.position.clone();
+    if (!this.parceiro.riding) return this.parceiro.position.clone();
+    this.parceiro.object.updateWorldMatrix(true, false);
+    return this.parceiro.object.getWorldPosition(new THREE.Vector3());
+  }
+
+  companionFacing(): number {
+    return this.parceiro.rig.facing;
   }
 
   /** Troca os corpos entre quem anda e quem acompanha. Ninguem sai do lugar. */
@@ -396,7 +1017,18 @@ export class Game implements GameAPI {
     this.player.swapRig(this.parceiro.rig);
     this.parceiro.swapRig(doJogador);
     this.setOutfit(this.traje);
+    this.maos.trocouCorpos(this.player, this.parceiro);
+    this.audio.play('trocar');
     this.ui.toast(`Agora você é ${this.player.name}`, '🔁');
+
+    // as telas abertas mostram o inventário de quem é controlado, então elas
+    // trocam de dono junto — inclusive o boneco do guarda-roupa
+    if (this.ui.mochilaOpen) this.pintarMochila();
+    if (this.ui.armarioOpen) {
+      this.previa.mostrar(this.player.rig.spec);
+      this.pintarArmario();
+    }
+    if (this.ui.vestiarioOpen) this.pintarVestiario();
   }
 
   submergePlayer(valor: number): void {
@@ -424,9 +1056,61 @@ export class Game implements GameAPI {
     this.parceiro.clearOrder();
   }
 
+  holdCompanion(olharX: number, olharZ: number): void {
+    this.parceiro.hold(olharX, olharZ);
+  }
+
+  /**
+   * Os dois sentam — e sentam sempre DE MAOS DADAS.
+   *
+   * De que lado cada um esta sai da geometria, e nao de quem chamou: sentados
+   * numa ancora (banco, sofa) a posicao de mundo vem da matriz do pai, e o
+   * `facing` do rig e local. Por isso o eixo lateral e tirado do quaternion de
+   * mundo do proprio rig, que ja carrega a rotacao da ancora junto.
+   */
   setSitting(sentados: boolean): void {
+    if (sentados) this.audio.play('sentar');
     this.player.rig.setSitting(sentados);
     this.parceiro.rig.setSitting(sentados);
+
+    if (!sentados) {
+      // de pe as maos so ficam dadas se a mecanica propria estiver ligada
+      if (!this.maos.ativo) {
+        this.player.rig.setHoldingHands(0);
+        this.parceiro.rig.setHoldingHands(0);
+      }
+      return;
+    }
+
+    const a = this.player.rig.group;
+    const b = this.parceiro.rig.group;
+    a.updateWorldMatrix(true, false);
+    b.updateWorldMatrix(true, false);
+    const pa = new THREE.Vector3();
+    const pb = new THREE.Vector3();
+    a.getWorldPosition(pa);
+    b.getWorldPosition(pb);
+    const paraOLado = new THREE.Vector3(1, 0, 0).applyQuaternion(a.getWorldQuaternion(new THREE.Quaternion()));
+    const lado = paraOLado.dot(pb.sub(pa)) < 0 ? -1 : 1;
+    this.player.rig.setHoldingHands(lado);
+    this.parceiro.rig.setHoldingHands(lado === 1 ? -1 : 1);
+  }
+
+  /**
+   * Os dois deitam — e deitam JUNTOS, como o `setSitting`.
+   *
+   * Aqui nao ha o calculo de lado do sentar, porque deitados eles nao ficam de
+   * maos dadas: o gesto e o balanco dos bracos ao longo do corpo. Levantar
+   * devolve as maos ao estado da mecanica propria, e nao ao chao.
+   */
+  setLying(deitados: boolean): void {
+    if (deitados) this.audio.play('sentar');
+    this.player.rig.setLying(deitados);
+    this.parceiro.rig.setLying(deitados);
+    if (!deitados && !this.maos.ativo) {
+      this.player.rig.setHoldingHands(0);
+      this.parceiro.rig.setHoldingHands(0);
+    }
   }
 
   setOutfit(traje: 'normal' | 'banho'): void {
@@ -442,11 +1126,22 @@ export class Game implements GameAPI {
     this.parceiro.teleport(x, z, facing);
   }
 
-  ridePlayer(host: THREE.Object3D, local: THREE.Vector3, scale = 1): void {
+  /**
+   * @param facing angulo do rig DENTRO da ancora (padrao Math.PI, que e o
+   * -Z local dela)
+   *
+   * O `setFacing` nao e enfeite: sem ele so a rotacao atual e escrita, e no
+   * quadro seguinte o `update` do rig puxa tudo de volta para o angulo-alvo
+   * antigo — o de antes de sentar. Era por isso que a dupla sentava no banco
+   * olhando cada um para um lado: o parceiro ja fixava o alvo aqui e o jogador
+   * nao.
+   */
+  ridePlayer(host: THREE.Object3D, local: THREE.Vector3, scale = 1, facing = Math.PI): void {
     host.add(this.player.object);
     this.player.object.position.copy(local);
     this.player.object.scale.setScalar(scale);
-    this.player.rig.group.rotation.y = Math.PI;
+    this.player.rig.group.rotation.y = facing;
+    this.player.rig.setFacing(facing);
     this.player.riding = true;
     this.player.locked = true;
     this.ui.hidePrompt();
@@ -465,6 +1160,10 @@ export class Game implements GameAPI {
   private onResize = (): void => {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.iso.resize(window.innerWidth, window.innerHeight);
+    if (this.camOmbro) {
+      this.camOmbro.aspect = window.innerWidth / window.innerHeight;
+      this.camOmbro.updateProjectionMatrix();
+    }
   };
 
   private onWheel = (e: WheelEvent): void => {

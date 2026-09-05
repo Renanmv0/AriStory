@@ -1,4 +1,17 @@
 import type { SavedMemory } from '../core/SaveState';
+import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
+import type { SomNome } from '../audio/efeitos';
+import type { MemoriaPintada } from '../world/memoriasData';
+import type { SecaoDoCardapio } from '../world/cardapioData';
+
+/**
+ * O nome de cada parte do corpo na tela, na ORDEM de `SLOTS_ROUPA`.
+ *
+ * Um lugar so: a mochila rotula as 4 vagas de vestimenta com isto, o armario
+ * titula as divisoes do acervo com isto, e as duas telas nao tem como
+ * discordar sobre qual vaga e a do tronco.
+ */
+const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés'];
 
 /**
  * Toda a interface em DOM sobre o canvas. O jogo fala com a UI so por estes
@@ -19,6 +32,46 @@ export class Ui {
   private readonly veil: HTMLDivElement;
   private readonly escolhas: HTMLDivElement;
   private readonly carga: HTMLDivElement;
+  private readonly menu: HTMLDivElement;
+  private readonly placar: HTMLDivElement;
+  private readonly mochila: HTMLDivElement;
+  private readonly armario: HTMLDivElement;
+  private readonly boneco: HTMLCanvasElement;
+  private readonly corpo: HTMLDivElement;
+  private readonly acervo: HTMLDivElement;
+  private readonly donoArmario: HTMLSpanElement;
+  private readonly vestiario: HTMLDivElement;
+  private readonly oculos: HTMLButtonElement;
+  private readonly bermudas: HTMLDivElement;
+  private readonly donoVestiario: HTMLSpanElement;
+  private readonly slotsMao: HTMLDivElement;
+  private readonly slotsVestivel: HTMLDivElement;
+  private readonly dono: HTMLElement;
+  private readonly descarte: HTMLElement;
+  private readonly cardapio: HTMLDivElement;
+  private readonly secoesDoCardapio: HTMLDivElement;
+  /**
+   * Quem espera o cardapio fechar; a cutscene da mesa segura nele. Resolve com
+   * o ID do prato escolhido, ou `null` se a pessoa saiu sem pedir.
+   */
+  private fecharCardapioResolve: ((escolha: string | null) => void) | null = null;
+  /** o prato marcado no cardapio, esperando o segundo clique */
+  private pratoMarcado: string | null = null;
+  private readonly memorias: HTMLDivElement;
+  private readonly quadro: HTMLCanvasElement;
+  private readonly pontos: HTMLDivElement;
+  /** o acervo do quadro e qual peca esta na moldura */
+  private acervoDoQuadro: readonly MemoriaPintada[] = [];
+  private naMoldura = 0;
+  /** a volta do rAF que mantem a pintura viva */
+  private pintura: number | null = null;
+  private abriuEm = 0;
+  /** vaga escolhida no toque, esperando o destino */
+  private pegou: Vaga | null = null;
+  /** categoria do item na pinça, para a trava saber o que recusar */
+  private tipoNaPinca: string | undefined;
+  /** o item na pinça é vestimenta funcional (patins)? só ela sai do corpo */
+  private funcionalNaPinca = false;
 
   private advance: (() => void) | null = null;
   private escolher: ((i: number) => void) | null = null;
@@ -30,8 +83,18 @@ export class Ui {
   onTouchAction: (() => void) | null = null;
   /** chamado quando o jogador aperta o botao de trocar de personagem */
   onTouchSwap: (() => void) | null = null;
+  /** girar a camera no celular; -1 para um lado, 1 para o outro */
+  onTouchGirar: ((dir: -1 | 1) => void) | null = null;
   /** botao de acao segurado no celular: carrega o lancamento do frisbee */
   onTouchHold: ((down: boolean) => void) | null = null;
+  /** o jogador confirmou "recomecar do zero" no menu */
+  onRestart: (() => void) | null = null;
+  /** ligar/desligar o som pelo menu */
+  onToggleSom: (() => void) | null = null;
+  /** a UI pede sons por aqui; o Game liga isto no motor de audio */
+  som: ((nome: SomNome) => void) | null = null;
+
+  private hintsTimer: number | null = null;
 
   constructor(root: HTMLElement) {
     const ui = document.createElement('div');
@@ -41,12 +104,15 @@ export class Ui {
       <div class="scene-card"><b></b><span></span></div>
       <div class="toasts"></div>
       <div class="hints">
-        <div>WASD / setas — andar</div>
-        <div>E ou espaço — interagir</div>
-        <div>T — trocar de personagem</div>
-        <div>Q / R — girar a câmera · J — diário</div>
+        <div class="teclado">WASD / setas — andar</div>
+        <div class="teclado">E ou espaço — interagir</div>
+        <div class="teclado">T — trocar de personagem</div>
+        <div class="teclado">Q / R — girar a câmera · J — diário</div>
+        <div class="toque">arraste para andar · ✨ interagir</div>
+        <div class="toque">☰ tem a lista de controles</div>
       </div>
-      <div class="carga"><div class="barra"></div></div>
+      <div class="carga"><div class="barra"></div><i class="zona"></i><i class="alvo"></i></div>
+      <div class="placar"><b class="eu"></b><span class="nums"></span><b class="ele"></b></div>
       <div class="prompt"><span class="icon">✨</span><span class="label"></span><span class="key">E</span></div>
       <div class="dialogue"><span class="who"></span><p class="text"></p><div class="escolhas"></div><span class="next">clique / E ▸</span></div>
       <div class="journal"><div class="sheet">
@@ -55,10 +121,118 @@ export class Ui {
         <div class="grid"></div>
         <button class="close">fechar</button>
       </div></div>
+      <button class="menu-btn" aria-label="menu"><span></span><span></span><span></span></button>
+      <div class="menu"><div class="sheet">
+        <h2>AriStory</h2>
+        <p class="sub">um passeio pelos lugares da gente</p>
+        <button class="som-btn">🔊 Som ligado</button>
+        <button class="controles-btn">🎮 Controles</button>
+        <button class="recomecar">🔄 Recomeçar o jogo</button>
+        <div class="confirma">
+          <p>Isso apaga o diário de memórias e leva os dois de volta pro começo, na casa do Ari.</p>
+          <div class="linha">
+            <button class="sim">Recomeçar</button>
+            <button class="nao">Cancelar</button>
+          </div>
+        </div>
+        <div class="controles">
+          <h3>No teclado</h3>
+          <ul>
+            <li><b>W A S D</b><span>andar (as setas também)</span></li>
+            <li><b>E</b><span>interagir e avançar a fala (espaço também)</span></li>
+            <li><b>T</b><span>trocar de personagem</span></li>
+            <li><b>Q</b> <b>R</b><span>girar a câmera</span></li>
+            <li><b>H</b><span>dar a mão para quem está com você</span></li>
+            <li><b>I</b> <b>Tab</b><span>abrir a mochila</span></li>
+            <li><b>J</b><span>abrir o diário de memórias</span></li>
+            <li><b>F</b><span>segurar para carregar o frisbee — solte no traço da barra</span></li>
+            <li><b>roda</b><span>aproximar e afastar a câmera</span></li>
+          </ul>
+          <h3>No celular</h3>
+          <ul>
+            <li><b>arrastar</b><span>andar para onde o dedo puxar</span></li>
+            <li><b>✨</b><span>interagir — segure para carregar o frisbee</span></li>
+            <li><b>🔁</b><span>trocar de personagem</span></li>
+            <li><b>🎒</b><span>abrir a mochila</span></li>
+            <li><b>📖</b><span>abrir o diário</span></li>
+            <li><b>↺ ↻</b><span>girar a câmera — no alto, abaixo do menu</span></li>
+          </ul>
+          <div class="carinho">
+            <h3>Os dois juntos</h3>
+            <p>Perto do outro, sem nada por perto para interagir, o <b>E</b> (ou o <b>✨</b>) vira carinho:</p>
+            <ul>
+              <li><b>💋</b><span>de frente um para o outro, um beijinho</span></li>
+              <li><b>🤝</b><span>lado a lado, saem de mãos dadas — e a cada tanto sobe um coração</span></li>
+            </ul>
+            <p>Para soltar as mãos, é só apertar de novo.</p>
+          </div>
+          <button class="voltar">voltar</button>
+        </div>
+        <button class="close">voltar pro jogo</button>
+      </div></div>
+      <div class="mochila"><div class="sheet">
+        <h2>Mochila <span class="dono"></span></h2>
+        <p class="sub">arraste para trocar de vaga · <b>T</b> vê a do outro</p>
+        <h3>Na mão <small>toque para escolher o que fica na mão</small></h3>
+        <div class="slots maos"></div>
+        <h3>Vestindo <small>roupa só se troca no guarda-roupa — aqui só dá pra descartar</small></h3>
+        <div class="slots vestiveis"></div>
+        <div class="descarte">
+          <button class="descartar">🗑 Descartar</button>
+          <button class="descartar-sim">Descartar mesmo?</button>
+        </div>
+        <button class="close">voltar pro jogo</button>
+      </div></div>
+      <div class="armario"><div class="sheet">
+        <h2>Guarda-roupa <span class="dono"></span></h2>
+        <p class="sub">clique numa peça para vestir ou tirar · arraste o boneco para girar · <b>T</b> veste o outro</p>
+        <div class="prova">
+          <canvas class="boneco"></canvas>
+          <div class="corpo"></div>
+        </div>
+        <h3>O que você tem</h3>
+        <div class="acervo"></div>
+        <button class="close">fechar</button>
+      </div></div>
+      <div class="vestiario"><div class="sheet">
+        <h2>Vestiário <span class="dono"></span></h2>
+        <p class="sub">o traje de praia de cada um · <b>T</b> troca de pessoa</p>
+        <h3>Óculos escuros</h3>
+        <button class="oculos"></button>
+        <h3>Cor da bermuda</h3>
+        <div class="bermudas"></div>
+        <button class="close">voltar pra piscina</button>
+      </div></div>
+      <div class="cardapio">
+        <div class="papel">
+          <p class="casa">Restaurante do Clube</p>
+          <h2>Cardápio</h2>
+          <p class="sub">a gente lê tudo e pede o de sempre</p>
+          <div class="secoes"></div>
+          <p class="rodape">serviço não incluso · sorriso incluso</p>
+          <button class="pedir" disabled>escolha um prato</button>
+          <button class="close">só olhando, obrigado</button>
+        </div>
+      </div>
+      <div class="memorias"><div class="sheet">
+        <h2></h2>
+        <p class="sub"></p>
+        <div class="moldura">
+          <button class="folhear antes" aria-label="memória anterior">‹</button>
+          <canvas class="quadro"></canvas>
+          <button class="folhear depois" aria-label="próxima memória">›</button>
+        </div>
+        <p class="legenda"></p>
+        <div class="pontos"></div>
+        <button class="close">fechar</button>
+      </div></div>
       <div class="touch">
         <button class="action-btn" aria-label="interagir">✨</button>
         <button class="swap-btn" aria-label="trocar de personagem">🔁</button>
+        <button class="bag-btn" aria-label="mochila">🎒</button>
         <button class="journal-btn" aria-label="diário">📖</button>
+        <button class="girar-btn esq" aria-label="girar a câmera para a esquerda"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5a6.5 6.5 0 1 0 6.2 4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12 1.6v7.6l-4.2-3.8z" fill="currentColor"/></svg></button>
+        <button class="girar-btn dir" aria-label="girar a câmera para a direita"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5.5a6.5 6.5 0 1 0 6.2 4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12 1.6v7.6l-4.2-3.8z" fill="currentColor"/></svg></button>
       </div>
     `;
     root.appendChild(ui);
@@ -82,6 +256,27 @@ export class Ui {
     this.veil = ui.querySelector('.veil')!;
     this.escolhas = ui.querySelector('.escolhas')!;
     this.carga = ui.querySelector('.carga')!;
+    this.menu = ui.querySelector('.menu')!;
+    this.placar = ui.querySelector('.placar')!;
+    this.mochila = ui.querySelector('.mochila')!;
+    this.slotsMao = ui.querySelector('.mochila .maos')!;
+    this.slotsVestivel = ui.querySelector('.mochila .vestiveis')!;
+    this.dono = ui.querySelector('.mochila .dono')!;
+    this.descarte = ui.querySelector('.mochila .descarte')!;
+    this.armario = ui.querySelector('.armario')!;
+    this.boneco = ui.querySelector('.armario .boneco')!;
+    this.corpo = ui.querySelector('.armario .corpo')!;
+    this.acervo = ui.querySelector('.armario .acervo')!;
+    this.donoArmario = ui.querySelector('.armario .dono')!;
+    this.vestiario = ui.querySelector('.vestiario')!;
+    this.oculos = ui.querySelector('.vestiario .oculos')!;
+    this.bermudas = ui.querySelector('.vestiario .bermudas')!;
+    this.donoVestiario = ui.querySelector('.vestiario .dono')!;
+    this.cardapio = ui.querySelector('.cardapio')!;
+    this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
+    this.memorias = ui.querySelector('.memorias')!;
+    this.quadro = ui.querySelector('.memorias .quadro')!;
+    this.pontos = ui.querySelector('.memorias .pontos')!;
 
     this.dialogue.addEventListener('click', (e) => {
       // clique num botão de escolha não deve avançar a fala junto
@@ -93,21 +288,208 @@ export class Ui {
     this.journal.addEventListener('click', (e) => {
       if (e.target === this.journal) this.closeJournal();
     });
+    /**
+     * O BOTAO DE ACAO E TOQUE **OU** SEGURADA, NUNCA OS DOIS.
+     *
+     * Ele estava fazendo as duas coisas no mesmo dedo: o `pointerdown` ja
+     * apertava o `KeyF` (a carga do frisbee) e o `click`, no fim, disparava o
+     * `KeyE` (interagir). Quem tocasse o botao para beber agua, ler o placar ou
+     * olhar a sacola DENTRO da quadra dava, sem querer, um aperta-e-solta de
+     * `F` — e a cena le solta abaixo de `CARGA_MINIMA` como passe simples. O
+     * disco saia da mao a cada interacao, e com ele a sequencia de trocas.
+     * Foi o Renan quem viu: "quero poder interagir sem soltar o frisbee".
+     *
+     * Agora o `pointerdown` so ARMA. Se o dedo sair antes de `SEGURAR`, foi
+     * toque: vale interagir, e o `KeyF` nunca chega a ser apertado. Se passar
+     * de `SEGURAR`, virou carga: o `KeyF` desce e, ao soltar, NAO interage —
+     * senao a mesma segurada que lanca o disco ainda dispararia a interacao de
+     * qualquer coisa que estivesse por perto.
+     *
+     * 200 ms fica logo acima dos 156 ms que a cena precisa para chegar em
+     * `CARGA_MINIMA` (0,12 de 1,3 s), entao nao existe faixa morta entre "isto
+     * foi um toque" e "isto foi uma carga de verdade".
+     */
     const acao = ui.querySelector('.action-btn')!;
-    acao.addEventListener('click', () => {
+    const SEGURAR = 200;
+    let armado = false;
+    let virouCarga = false;
+    let relogio: number | undefined;
+
+    acao.addEventListener('pointerdown', () => {
+      armado = true;
+      virouCarga = false;
+      relogio = window.setTimeout(() => {
+        if (!armado) return;
+        virouCarga = true;
+        this.onTouchHold?.(true);
+      }, SEGURAR);
+    });
+    acao.addEventListener('pointerup', () => {
+      if (!armado) return;
+      window.clearTimeout(relogio);
+      armado = false;
+      if (virouCarga) {
+        virouCarga = false;
+        this.onTouchHold?.(false);
+        return;
+      }
       if (this.dialogueOpen) this.advance?.();
       else this.onTouchAction?.();
     });
-    // segurar o botao carrega o lancamento; o clique acima continua valendo
-    acao.addEventListener('pointerdown', () => this.onTouchHold?.(true));
-    for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
-      acao.addEventListener(ev, () => this.onTouchHold?.(false));
+    // dedo que escorrega para fora do botao NAO vale como toque: solta a carga
+    // (se houver) e nao interage com nada
+    for (const ev of ['pointercancel', 'pointerleave']) {
+      acao.addEventListener(ev, () => {
+        if (!armado) return;
+        window.clearTimeout(relogio);
+        armado = false;
+        if (virouCarga) {
+          virouCarga = false;
+          this.onTouchHold?.(false);
+        }
+      });
     }
     ui.querySelector('.swap-btn')!.addEventListener('click', () => this.onTouchSwap?.());
+    ui.querySelector('.girar-btn.esq')!.addEventListener('click', () => this.onTouchGirar?.(-1));
+    ui.querySelector('.girar-btn.dir')!.addEventListener('click', () => this.onTouchGirar?.(1));
     ui.querySelector('.journal-btn')!.addEventListener('click', () => this.toggleJournal());
+    ui.querySelector('.bag-btn')!.addEventListener('click', () => this.toggleMochila());
+    ui.querySelector('.mochila .close')!.addEventListener('click', () => this.closeMochila());
+    ui.querySelector('.armario .close')!.addEventListener('click', () => this.fecharArmario());
+    this.armario.addEventListener('click', (e) => {
+      if (e.target === this.armario) this.fecharArmario();
+    });
+    ui.querySelector('.vestiario .close')!.addEventListener('click', () => this.fecharVestiario());
+    this.vestiario.addEventListener('click', (e) => {
+      if (e.target === this.vestiario) this.fecharVestiario();
+    });
+    this.oculos.addEventListener('click', () => this.onAlternarOculos?.());
+    this.bermudas.addEventListener('click', (e) => {
+      const peca = (e.target as HTMLElement).closest('.bermuda') as HTMLElement | null;
+      if (peca?.dataset.id) this.onEscolherBermuda?.(peca.dataset.id);
+    });
+    ui.querySelector('.cardapio .pedir')!.addEventListener('click', () => {
+      if (this.pratoMarcado) this.fecharCardapio(this.pratoMarcado);
+    });
+    ui.querySelector('.cardapio .close')!.addEventListener('click', () => this.fecharCardapio());
+    this.cardapio.addEventListener('click', (e) => {
+      if (e.target === this.cardapio) this.fecharCardapio();
+    });
+    ui.querySelector('.memorias .close')!.addEventListener('click', () => this.fecharMemorias());
+    ui.querySelector('.memorias .antes')!.addEventListener('click', () => this.folhear(-1));
+    ui.querySelector('.memorias .depois')!.addEventListener('click', () => this.folhear(1));
+    this.memorias.addEventListener('click', (e) => {
+      if (e.target === this.memorias) this.fecharMemorias();
+    });
+    this.ligarGiroDoBoneco();
+    // Descartar pede dois toques. Perder o chapéu de campeão num toque sem
+    // querer seria irreversível — o item não volta de lugar nenhum.
+    ui.querySelector('.mochila .descartar')!.addEventListener('click', () => {
+      this.som?.('escolha');
+      this.descarte.classList.add('confirmando');
+    });
+    ui.querySelector('.mochila .descartar-sim')!.addEventListener('click', () => {
+      const de = this.pegou;
+      this.pegou = null;
+      this.tipoNaPinca = undefined;
+      this.marcarPego(null);
+      if (de) this.onDescartar?.(de);
+    });
+    this.mochila.addEventListener('click', (e) => {
+      if (e.target === this.mochila) this.closeMochila();
+    });
+    // Delegação: as vagas são redesenhadas a cada mudança, então os ouvintes
+    // ficam nos dois contêineres e não em cada botão.
+    for (const caixa of [this.slotsMao, this.slotsVestivel]) {
+      caixa.addEventListener('click', (e) => this.tocarVaga(e));
+      caixa.addEventListener('dragstart', (e) => this.comecarArrasto(e as DragEvent));
+      caixa.addEventListener('dragover', (e) => this.arrastarSobre(e as DragEvent));
+      caixa.addEventListener('dragleave', (e) => {
+        (e.target as HTMLElement).closest('.slot')?.classList.remove('alvo');
+      });
+      caixa.addEventListener('drop', (e) => this.soltarArrasto(e as DragEvent));
+      caixa.addEventListener('dragend', () => this.limparArrasto());
+    }
+
+    // menu: o "recomeçar" pede confirmação antes, senão um clique sem querer
+    // apaga o diário inteiro
+    ui.querySelector('.menu-btn')!.addEventListener('click', () => this.toggleMenu());
+    ui.querySelector('.menu .som-btn')!.addEventListener('click', () => this.onToggleSom?.());
+    ui.querySelector('.menu .controles-btn')!.addEventListener('click', () => {
+      this.som?.('escolha');
+      this.menu.classList.add('vendo-controles');
+    });
+    ui.querySelector('.menu .controles .voltar')!.addEventListener('click', () => {
+      this.som?.('escolha');
+      this.menu.classList.remove('vendo-controles');
+    });
+    ui.querySelector('.menu .close')!.addEventListener('click', () => this.closeMenu());
+    ui.querySelector('.menu .recomecar')!.addEventListener('click', () => {
+      this.menu.classList.add('perguntando');
+    });
+    ui.querySelector('.menu .nao')!.addEventListener('click', () => {
+      this.menu.classList.remove('perguntando');
+    });
+    ui.querySelector('.menu .sim')!.addEventListener('click', () => {
+      this.closeMenu();
+      this.onRestart?.();
+    });
+    this.menu.addEventListener('click', (e) => {
+      if (e.target === this.menu) this.closeMenu();
+    });
 
     if (matchMedia('(hover: none)').matches) document.body.classList.add('touch-device');
-    window.setTimeout(() => this.hints.classList.add('hide'), 12000);
+    this.showHints();
+  }
+
+  // ----------------------------------------------------------------- menu
+
+  get menuOpen(): boolean {
+    return this.menu.classList.contains('show');
+  }
+
+  toggleMenu(): void {
+    this.som?.('menu');
+    if (this.menuOpen) this.closeMenu();
+    else {
+      this.closeJournal();
+      this.closeMochila();
+      this.menu.classList.add('show');
+    }
+    this.marcarTelaAberta();
+  }
+
+  closeMenu(): void {
+    this.menu.classList.remove('show');
+    this.menu.classList.remove('perguntando');
+    this.menu.classList.remove('vendo-controles');
+    this.marcarTelaAberta();
+  }
+
+  /**
+   * Com menu ou diário abertos os botões de toque somem: eles ficam por cima do
+   * painel (vêm depois no DOM) e dava para apertar o ✨ sem querer por trás.
+   */
+  private marcarTelaAberta(): void {
+    document.body.classList.toggle(
+      'tela-aberta',
+      this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
+      this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen,
+    );
+  }
+
+  /** Atualiza o botão de som do menu. */
+  setSom(ligado: boolean): void {
+    const botao = this.menu.querySelector('.som-btn')!;
+    botao.textContent = ligado ? '🔊 Som ligado' : '🔇 Som desligado';
+    botao.classList.toggle('desligado', !ligado);
+  }
+
+  /** Mostra as teclas de novo e recomeça a contagem para elas sumirem. */
+  showHints(): void {
+    this.hints.classList.remove('hide');
+    if (this.hintsTimer) window.clearTimeout(this.hintsTimer);
+    this.hintsTimer = window.setTimeout(() => this.hints.classList.add('hide'), 12000);
   }
 
   hideBoot(): void {
@@ -132,8 +514,11 @@ export class Ui {
 
   // ---------------------------------------------------------------- prompt
   showPrompt(icon: string, label: string): void {
+    const antes = this.prompt.querySelector('.label')!.textContent;
     this.prompt.querySelector('.icon')!.textContent = icon;
     this.prompt.querySelector('.label')!.textContent = label;
+    // a gotinha toca quando o prompt entra ou troca de alvo, não a cada quadro
+    if (!this.prompt.classList.contains('show') || antes !== label) this.som?.('prompt');
     this.prompt.classList.add('show');
   }
 
@@ -141,8 +526,26 @@ export class Ui {
     this.prompt.classList.remove('show');
   }
 
-  /** Barra de forca do lancamento. `null` esconde. */
-  showCharge(valor: number | null): void {
+  /** Placar do minigame, no alto da tela. `null` esconde. */
+  showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void {
+    if (!dados) {
+      this.placar.classList.remove('show');
+      return;
+    }
+    this.placar.querySelector('.eu')!.textContent = dados.eu;
+    this.placar.querySelector('.ele')!.textContent = dados.ele;
+    this.placar.querySelector('.nums')!.textContent = `${dados.meus} × ${dados.dele}`;
+    this.placar.classList.add('show');
+  }
+
+  /**
+   * Barra de forca do lancamento. `null` esconde.
+   *
+   * `alvo` e onde na barra o parceiro esta: sem ele a barra so enche, e a
+   * pessoa nao tem como saber quanta forca e a certa. A faixa em volta e a
+   * zona do passe perfeito, e a largura dela tem que bater com a da cena.
+   */
+  showCharge(valor: number | null, alvo?: number | null, zona = 0.06): void {
     if (valor === null) {
       this.carga.classList.remove('show');
       return;
@@ -150,6 +553,25 @@ export class Ui {
     this.carga.classList.add('show');
     const barra = this.carga.querySelector('.barra') as HTMLDivElement;
     barra.style.width = `${Math.max(0, Math.min(1, valor)) * 100}%`;
+
+    const marca = this.carga.querySelector('.alvo') as HTMLElement;
+    const faixa = this.carga.querySelector('.zona') as HTMLElement;
+    // fora da barra o alvo nao existe: e o caso de mirar para a grade que esta
+    // logo ali, em que nenhuma carga alcanca o parceiro
+    const vale = alvo != null && alvo > 0.02 && alvo < 0.99;
+    marca.style.display = vale ? 'block' : 'none';
+    faixa.style.display = vale ? 'block' : 'none';
+    if (!vale) {
+      // sem alvo nao ha zona certa: a moldura dourada tem que sair junto
+      this.carga.classList.remove('certa');
+      return;
+    }
+    const em = (v: number): string => `calc(3px + (100% - 6px) * ${Math.max(0, Math.min(1, v))})`;
+    marca.style.left = em(alvo);
+    faixa.style.left = em(alvo - zona);
+    faixa.style.right = `calc(3px + (100% - 6px) * ${1 - Math.max(0, Math.min(1, alvo + zona))})`;
+    const dentro = Math.abs(valor - alvo) <= zona;
+    this.carga.classList.toggle('certa', dentro);
   }
 
   // ---------------------------------------------------------------- toasts
@@ -208,6 +630,8 @@ export class Ui {
     let n = 0;
     this.typing = window.setInterval(() => {
       n += 1;
+      // uma nota a cada três letras: uma por letra vira metralhadora
+      if (n % 3 === 1 && text[n - 1] !== ' ') this.som?.('fala');
       this.dialogueText.textContent = text.slice(0, n);
       if (n >= text.length) {
         window.clearInterval(this.typing!);
@@ -231,6 +655,7 @@ export class Ui {
       this.escolhas.innerHTML = '';
       this.selecionada = 0;
       this.escolher = (i: number) => {
+        this.som?.('confirma');
         this.escolher = null;
         this.advance = null;
         this.escolhas.innerHTML = '';
@@ -266,9 +691,11 @@ export class Ui {
     if (total === 0) return;
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
       this.selecionada = (this.selecionada - 1 + total) % total;
+      this.som?.('escolha');
       this.marcarEscolha();
     } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
       this.selecionada = (this.selecionada + 1) % total;
+      this.som?.('escolha');
       this.marcarEscolha();
     }
   };
@@ -304,11 +731,733 @@ export class Ui {
   }
 
   toggleJournal(): void {
+    this.som?.('diario');
     if (this.journalOpen) this.closeJournal();
-    else this.journal.classList.add('show');
+    else {
+      this.closeMochila();
+      this.journal.classList.add('show');
+    }
+    this.marcarTelaAberta();
   }
 
   closeJournal(): void {
     this.journal.classList.remove('show');
+    this.marcarTelaAberta();
+  }
+
+  // -------------------------------------------------------------- cardapio
+
+  get cardapioOpen(): boolean {
+    return this.cardapio.classList.contains('show');
+  }
+
+  /**
+   * Abre o cardápio e SÓ RESOLVE quando ele fecha.
+   *
+   * A promessa é o que deixa a cutscene da mesa escrever a cena em linha reta:
+   * senta, conversa, `await abrirCardapio()`, levanta. Sem ela a cena teria que
+   * virar máquina de estados só para saber quando o painel sumiu — é o mesmo
+   * motivo pelo qual `ask()` também devolve promessa.
+   */
+  abrirCardapio(secoes: readonly SecaoDoCardapio[], casa?: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      if (this.cardapioOpen) {
+        resolve(null);
+        return;
+      }
+      // o nome da casa no alto da folha: o mesmo cardapio serve as duas salas
+      const nomeDaCasa = this.cardapio.querySelector<HTMLElement>('.casa');
+      if (nomeDaCasa) nomeDaCasa.textContent = casa ?? 'Restaurante do Clube';
+      this.som?.('escolha');
+      this.pratoMarcado = null;
+      this.desenharCardapio(secoes);
+      this.pintarBotaoDePedir();
+      this.cardapio.classList.add('show');
+      this.marcarTelaAberta();
+      this.fecharCardapioResolve = resolve;
+    });
+  }
+
+  /**
+   * Fecha o cardápio, resolvendo com o prato escolhido (ou `null`).
+   *
+   * O `null` NÃO é um caso de erro: é sair sem pedir, pelo botão de baixo ou
+   * pelo Escape. A cutscene precisa saber a diferença — com prato ela chama o
+   * garçom, sem prato ela só levanta os dois da mesa.
+   */
+  fecharCardapio(escolha: string | null = null): void {
+    if (!this.cardapioOpen) return;
+    this.cardapio.classList.remove('show');
+    this.marcarTelaAberta();
+    const avisar = this.fecharCardapioResolve;
+    this.fecharCardapioResolve = null;
+    avisar?.(escolha);
+  }
+
+  /**
+   * O clique num prato: o PRIMEIRO marca, o SEGUNDO pede.
+   *
+   * Dois tempos em vez de um porque pedir fecha a tela — com um clique só, quem
+   * estivesse rolando a lista e encostasse num prato já teria pedido, sem
+   * chance de ler o resto. Marcado, o prato acende e o botão de baixo passa a
+   * dizer o nome dele, que é a segunda porta para a mesma confirmação.
+   */
+  private marcarPrato(id: string): void {
+    if (this.pratoMarcado === id) {
+      this.fecharCardapio(id);
+      return;
+    }
+    this.pratoMarcado = id;
+    this.som?.('escolha');
+    for (const linha of this.secoesDoCardapio.querySelectorAll('.prato')) {
+      linha.classList.toggle('marcado', (linha as HTMLElement).dataset.id === id);
+    }
+    this.pintarBotaoDePedir();
+  }
+
+  /** O botão de pedir conta o que está marcado, e só liga quando há algo. */
+  private pintarBotaoDePedir(): void {
+    const botao = this.cardapio.querySelector('.pedir') as HTMLButtonElement;
+    const linha = this.pratoMarcado
+      ? this.secoesDoCardapio.querySelector(`.prato[data-id="${this.pratoMarcado}"] b`)
+      : null;
+    botao.disabled = !linha;
+    botao.textContent = linha ? `Pedir ${linha.textContent}` : 'escolha um prato';
+  }
+
+  /**
+   * Monta as seções, e pinta a miniatura de cada prato no canvas dela.
+   *
+   * A miniatura é desenhada UMA VEZ, na abertura, e não num rAF como o quadro
+   * de memórias: prato não se mexe, e um laço de animação por linha do cardápio
+   * só gastaria bateria.
+   *
+   * O canvas nasce QUADRADO em pixels de dispositivo (`LADO * dpr`) e o CSS o
+   * encolhe para o tamanho da linha. É o mesmo cuidado do quadro: sem a
+   * densidade da tela o desenho sai borrado no retina.
+   */
+  private desenharCardapio(secoes: readonly SecaoDoCardapio[]): void {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const LADO = Math.round(64 * dpr);
+    this.secoesDoCardapio.innerHTML = '';
+
+    for (const secao of secoes) {
+      const bloco = document.createElement('section');
+      bloco.className = 'secao';
+      bloco.innerHTML =
+        `<h3><span>${secao.titulo}</span></h3><p class="nota">${secao.nota}</p>`;
+
+      for (const prato of secao.pratos) {
+        const linha = document.createElement('div');
+        linha.className = 'prato';
+        linha.classList.toggle('destaque', !!prato.selo);
+        linha.dataset.id = prato.id;
+
+        const foto = document.createElement('canvas');
+        foto.className = 'foto';
+        foto.width = LADO;
+        foto.height = LADO;
+        const ctx = foto.getContext('2d');
+        if (ctx) {
+          // O desenho é AMPLIADO em torno do centro antes de pintar. As funções
+          // de `cardapioData` desenham a comida com folga nas bordas (para dar
+          // para usá-las grandes um dia); num thumbnail de 58 px essa folga era
+          // metade do espaço, e a comida ficava minúscula. O zoom resolve isso
+          // sem mexer em nenhum número lá dentro.
+          ctx.translate(LADO / 2, LADO / 2);
+          ctx.scale(1.22, 1.22);
+          ctx.translate(-LADO / 2, -LADO / 2);
+          prato.pintar(ctx, LADO);
+        }
+
+        const texto = document.createElement('div');
+        texto.className = 'texto';
+        // o "leader" pontilhado entre o nome e o preço é o que faz a linha
+        // parecer cardápio de verdade, e ele é um <i> que estica sozinho
+        texto.innerHTML =
+          `<div class="titulo"><b>${prato.nome}</b><i></i><em>${prato.preco}</em></div>` +
+          `<p>${prato.descricao}</p>` +
+          (prato.selo ? `<span class="selo">★ ${prato.selo}</span>` : '');
+
+        linha.append(foto, texto);
+        linha.addEventListener('click', () => this.marcarPrato(prato.id));
+        bloco.appendChild(linha);
+      }
+      this.secoesDoCardapio.appendChild(bloco);
+    }
+  }
+
+  // ------------------------------------------------------ quadro de memorias
+
+  get memoriasOpen(): boolean {
+    return this.memorias.classList.contains('show');
+  }
+
+  /**
+   * Abre o quadro no acervo inteiro, na peca `indice`.
+   *
+   * Recebe a LISTA, e nao uma memoria so: quem abre escolhe por onde comecar,
+   * mas quem abriu o quadro veio ver o quadro — folhear dali sem fechar e
+   * reabrir e o que faz dele um mural, e nao um cartaz.
+   *
+   * O desenho e ao vivo, nao uma imagem guardada: as luzinhas piscam e as
+   * bandeirinhas balancam. Custa uma volta de `requestAnimationFrame` enquanto
+   * o painel esta aberto, e nenhuma depois — ela se desliga sozinha ao fechar.
+   */
+  abrirMemorias(acervo: readonly MemoriaPintada[], indice = 0): void {
+    if (this.memoriasOpen || acervo.length === 0) return;
+    this.som?.('diario');
+    this.closeJournal();
+    this.closeMochila();
+    this.acervoDoQuadro = acervo;
+    this.naMoldura = Math.min(Math.max(indice, 0), acervo.length - 1);
+    this.mostrarMemoria();
+    this.memorias.classList.add('show');
+    this.marcarTelaAberta();
+    this.abriuEm = performance.now();
+    this.pintura = requestAnimationFrame(this.pintarQuadro);
+  }
+
+  fecharMemorias(): void {
+    if (!this.memoriasOpen) return;
+    this.memorias.classList.remove('show');
+    this.acervoDoQuadro = [];
+    if (this.pintura !== null) cancelAnimationFrame(this.pintura);
+    this.pintura = null;
+    this.marcarTelaAberta();
+  }
+
+  /**
+   * Passa para a memoria seguinte (1) ou anterior (-1), dando a volta.
+   *
+   * Da a volta de proposito: sao poucas pecas, e travar na ponta obrigaria a
+   * voltar clicando tudo de novo para rever a primeira.
+   */
+  folhear(passo: number): void {
+    if (!this.memoriasOpen || this.acervoDoQuadro.length < 2) return;
+    const n = this.acervoDoQuadro.length;
+    this.naMoldura = (this.naMoldura + passo + n) % n;
+    this.som?.('escolha');
+    this.mostrarMemoria();
+    // o tempo recomeça: a memória nova entra do início da própria animação
+    this.abriuEm = performance.now();
+  }
+
+  /** Põe na moldura o que `naMoldura` aponta: texto, proporção e os pontinhos. */
+  private mostrarMemoria(): void {
+    const memoria = this.acervoDoQuadro[this.naMoldura];
+    if (!memoria) return;
+    this.memorias.querySelector('h2')!.textContent = memoria.titulo;
+    this.memorias.querySelector('.sub')!.textContent = memoria.lugar;
+    this.memorias.querySelector('.legenda')!.textContent = memoria.legenda;
+    // a folha reserva o espaco do quadro pela proporcao da propria memoria: uma
+    // foto em pe e uma deitada nao cabem na mesma moldura
+    this.quadro.style.aspectRatio = String(memoria.proporcao);
+
+    // com uma peça só, seta e pontinho seriam controle que não leva a lugar
+    // nenhum — some com os dois em vez de deixá-los inertes
+    const varias = this.acervoDoQuadro.length > 1;
+    this.memorias.classList.toggle('tem-mais', varias);
+    this.pontos.innerHTML = '';
+    if (varias) {
+      this.acervoDoQuadro.forEach((m, i) => {
+        const ponto = document.createElement('button');
+        ponto.className = 'ponto';
+        ponto.classList.toggle('agora', i === this.naMoldura);
+        ponto.title = m.titulo;
+        ponto.setAttribute('aria-label', m.titulo);
+        ponto.addEventListener('click', () => this.folhear(i - this.naMoldura));
+        this.pontos.appendChild(ponto);
+      });
+    }
+  }
+
+  /**
+   * Uma volta da pintura.
+   *
+   * O canvas segue o tamanho que o CSS deu, na densidade da tela — sem os dois
+   * o desenho sai borrado no retina e esticado quando a janela muda. Redimensiona
+   * so quando o numero muda, porque mexer em `width` limpa o canvas inteiro.
+   */
+  private pintarQuadro = (agora: number): void => {
+    const memoria = this.acervoDoQuadro[this.naMoldura];
+    if (!memoria || !this.memoriasOpen) {
+      this.pintura = null;
+      return;
+    }
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const larg = Math.round(this.quadro.clientWidth * dpr);
+    const alt = Math.round(this.quadro.clientHeight * dpr);
+    if (larg > 0 && alt > 0) {
+      if (this.quadro.width !== larg || this.quadro.height !== alt) {
+        this.quadro.width = larg;
+        this.quadro.height = alt;
+      }
+      const ctx = this.quadro.getContext('2d');
+      if (ctx) memoria.pintar(ctx, larg, alt, (agora - this.abriuEm) / 1000);
+    }
+    this.pintura = requestAnimationFrame(this.pintarQuadro);
+  };
+
+  // -------------------------------------------------------------- mochila
+
+  get mochilaOpen(): boolean {
+    return this.mochila.classList.contains('show');
+  }
+
+  toggleMochila(): void {
+    this.som?.('diario');
+    if (this.mochilaOpen) this.closeMochila();
+    else {
+      this.closeJournal();
+      // Pinta AQUI, e não em quem chamou. O painel tem duas portas — a tecla I
+      // e o botão 🎒 — e enquanto o desenho morava no lado do teclado, abrir
+      // pelo dedo mostrava um painel sem vaga nenhuma.
+      this.onAbrirMochila?.();
+      this.mochila.classList.add('show');
+    }
+    this.marcarTelaAberta();
+  }
+
+  closeMochila(): void {
+    this.mochila.classList.remove('show');
+    this.marcarTelaAberta();
+  }
+
+  /**
+   * Desenha as 9 vagas. Cada vaga existe SEMPRE, cheia ou vazia: a grade
+   * parada e o que faz a mochila ser lida de relance, e e o que da endereco
+   * fixo ao slot principal.
+   *
+   * @param ativo indice da vaga de mao que esta na mao
+   */
+  renderMochila(
+    maos: ReadonlyArray<ItemDef | null>,
+    vestiveis: ReadonlyArray<ItemDef | null>,
+    ativo: number,
+    dono: string,
+  ): void {
+    this.dono.textContent = `de ${dono}`;
+    this.pegou = null;
+    this.tipoNaPinca = undefined;
+    this.funcionalNaPinca = false;
+    this.mochila.classList.remove('movendo');
+    this.descarte.classList.remove('show', 'confirmando');
+    // as 4 vagas de vestimenta SÃO as 4 partes do corpo, na ordem de PARTES;
+    // sem o rótulo, duas vagas vazias no meio não dizem o que falta
+    const desenhar = (
+      onde: HTMLElement,
+      vagas: ReadonlyArray<ItemDef | null>,
+      principal: number,
+      partes = false,
+    ): void => {
+      onde.innerHTML = '';
+      vagas.forEach((item, i) => {
+        const vaga = document.createElement('button');
+        vaga.className = 'slot';
+        vaga.dataset.slot = String(i);
+        vaga.classList.toggle('cheio', item !== null);
+        vaga.classList.toggle('principal', i === principal);
+        // Roupa cosmética vestida não sai daqui: só se troca no guarda-roupa.
+        // Deixar ela arrastável seria oferecer um gesto que o save recusa.
+        const preso = item !== null && item.tipo === 'vestivel' && item.funcional !== true;
+        vaga.draggable = item !== null && !preso;
+        vaga.classList.toggle('preso', preso);
+        // a categoria viaja no DOM: é ela que a trava do toque consulta sem
+        // precisar perguntar ao save
+        if (item) {
+          vaga.dataset.tipo = item.tipo;
+          if (item.funcional) vaga.dataset.funcional = 'sim';
+          else delete vaga.dataset.funcional;
+        } else {
+          delete vaga.dataset.tipo;
+          delete vaga.dataset.funcional;
+        }
+        const rotulo = partes ? `<em class="parte">${PARTES[i]}</em>` : '';
+        vaga.innerHTML = rotulo + (item
+          ? `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
+            (item.nota ? `<small>${item.nota}</small>` : '')
+          : `<span class="icone vazio">·</span><b>vazio</b>`);
+        onde.appendChild(vaga);
+      });
+    };
+    desenhar(this.slotsMao, maos, ativo);
+    // acessorio nao tem "principal": vestido e vestido
+    desenhar(this.slotsVestivel, vestiveis, -1, true);
+  }
+
+  // ------------------------------------------------------------ guarda-roupa
+
+  get armarioOpen(): boolean {
+    return this.armario.classList.contains('show');
+  }
+
+  abrirArmario(): void {
+    if (this.armarioOpen) return;
+    this.som?.('escolha');
+    this.onAbrirArmario?.();
+    this.armario.classList.add('show');
+    this.marcarTelaAberta();
+  }
+
+  fecharArmario(): void {
+    if (!this.armarioOpen) return;
+    this.armario.classList.remove('show');
+    this.marcarTelaAberta();
+    this.onFecharArmario?.();
+  }
+
+  /**
+   * O canvas do boneco 3D.
+   *
+   * O painel e HTML e o boneco e WebGL, e o boneco desenha no PROPRIO canvas,
+   * dentro do painel. A primeira versao recortava um retangulo do canvas do
+   * jogo com tesoura e o boneco saia fantasma, porque o canvas do jogo fica
+   * atras do HTML e a folha translucida do painel passava por cima.
+   */
+  canvasDoBoneco(): HTMLCanvasElement {
+    return this.boneco;
+  }
+
+  /**
+   * Desenha o painel: as 4 partes do corpo e o que a pessoa tem para vestir.
+   *
+   * As 4 vagas aparecem SEMPRE, cheias ou vazias, pela mesma razao da mochila:
+   * grade parada se le de relance, e a vaga vazia diz o que falta.
+   */
+  renderArmario(
+    vestindo: ReadonlyArray<ItemDef | null>,
+    guardados: ReadonlyArray<ItemDef>,
+    dono: string,
+  ): void {
+    this.donoArmario.textContent = `de ${dono}`;
+
+    this.corpo.innerHTML = '';
+    vestindo.forEach((item, i) => {
+      const vaga = document.createElement('button');
+      vaga.className = 'parte';
+      vaga.classList.toggle('cheio', item !== null);
+      vaga.dataset.parte = String(i);
+      vaga.innerHTML =
+        `<small>${PARTES[i]}</small>` +
+        (item
+          ? `<span class="icone">${item.icone}</span><b>${item.nome}</b><em>tirar</em>`
+          : `<span class="icone vazio">·</span><b>vazio</b>`);
+      this.corpo.appendChild(vaga);
+    });
+
+    // O acervo sai SEPARADO POR PARTE DO CORPO, na mesma ordem das 4 vagas
+    // acima. Tudo misturado numa grade só, achar a calça no meio de seis
+    // vestidos era caçada; em divisões, a pessoa olha direto para a parte que
+    // quer trocar. Parte sem nenhuma peça nem aparece — seção vazia é ruído.
+    this.acervo.innerHTML = '';
+    if (guardados.length === 0) {
+      const vazio = document.createElement('p');
+      vazio.className = 'nada';
+      vazio.textContent = 'Nada guardado — está tudo no corpo.';
+      this.acervo.appendChild(vazio);
+      return;
+    }
+    SLOTS_ROUPA.forEach((slot, i) => {
+      const doSlot = guardados.filter((item) => item.slot === slot);
+      if (doSlot.length === 0) return;
+      const secao = document.createElement('section');
+      secao.className = 'grupo';
+      secao.dataset.slot = slot;
+      const titulo = document.createElement('h4');
+      titulo.innerHTML = `${PARTES[i]} <span>${doSlot.length}</span>`;
+      secao.appendChild(titulo);
+      const grade = document.createElement('div');
+      grade.className = 'pecas';
+      for (const item of doSlot) {
+        const peca = document.createElement('button');
+        peca.className = 'peca';
+        peca.dataset.id = item.id;
+        peca.innerHTML =
+          `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
+          (item.nota ? `<small>${item.nota}</small>` : '');
+        grade.appendChild(peca);
+      }
+      secao.appendChild(grade);
+      this.acervo.appendChild(secao);
+    });
+  }
+
+  /** Clicou numa das 4 partes do corpo para TIRAR o que está lá. */
+  onTirarParte: ((indice: number) => void) | null = null;
+  /** Clicou numa peça guardada para VESTIR. */
+  onVestirPeca: ((id: string) => void) | null = null;
+  /** O painel vai abrir: o Game desenha e prepara o boneco. */
+  onAbrirArmario: (() => void) | null = null;
+  onFecharArmario: (() => void) | null = null;
+  /** Arrastou o boneco: quanto girar, em radianos. */
+  onGirarBoneco: ((delta: number) => void) | null = null;
+
+  /**
+   * Arrastar o boneco para girar.
+   *
+   * `pointer*` e nao `mouse*`: e o mesmo caminho para dedo e para mouse, e o
+   * jogo e mostrado no celular tanto quanto no computador. A captura garante
+   * que soltar fora do buraco ainda encerre o giro.
+   */
+  private ligarGiroDoBoneco(): void {
+    let arrastando = false;
+    let ultimoX = 0;
+    this.boneco.addEventListener('pointerdown', (e) => {
+      arrastando = true;
+      ultimoX = e.clientX;
+      this.boneco.setPointerCapture(e.pointerId);
+    });
+    this.boneco.addEventListener('pointermove', (e) => {
+      if (!arrastando) return;
+      this.onGirarBoneco?.((e.clientX - ultimoX) * 0.012);
+      ultimoX = e.clientX;
+    });
+    for (const ev of ['pointerup', 'pointercancel']) {
+      this.boneco.addEventListener(ev, () => { arrastando = false; });
+    }
+
+    this.corpo.addEventListener('click', (e) => {
+      const vaga = (e.target as HTMLElement).closest('.parte') as HTMLElement | null;
+      if (!vaga?.dataset.parte || !vaga.classList.contains('cheio')) return;
+      this.onTirarParte?.(Number(vaga.dataset.parte));
+    });
+    this.acervo.addEventListener('click', (e) => {
+      const peca = (e.target as HTMLElement).closest('.peca') as HTMLElement | null;
+      if (!peca?.dataset.id) return;
+      this.onVestirPeca?.(peca.dataset.id);
+    });
+  }
+
+  // --------------------------------------------------------------- vestiário
+  //
+  // O vestiário do clube é o guarda-roupa ENCOLHIDO na moda praia: as mesmas
+  // vagas do corpo e o mesmo save, só que com duas perguntas em vez do acervo
+  // inteiro. Ele não tem boneco 3D de propósito — a folha é baixa e estreita, e
+  // o corpo de verdade continua aparecendo atrás dela na beira da piscina. É o
+  // único painel em que dá para ver a peça no lugar certo enquanto se escolhe.
+
+  get vestiarioOpen(): boolean {
+    return this.vestiario.classList.contains('show');
+  }
+
+  abrirVestiario(): void {
+    if (this.vestiarioOpen) return;
+    this.som?.('escolha');
+    this.onAbrirVestiario?.();
+    this.vestiario.classList.add('show');
+    this.marcarTelaAberta();
+  }
+
+  fecharVestiario(): void {
+    if (!this.vestiarioOpen) return;
+    this.vestiario.classList.remove('show');
+    this.marcarTelaAberta();
+    this.onFecharVestiario?.();
+  }
+
+  /**
+   * Desenha o painel: o botão do óculos e a fileira de bermudas.
+   *
+   * `cor` e `faixa` são cores CSS, e não da paleta: quem traduz da peça para a
+   * tela é o Game. A amostra tem a cor DA PEÇA, e não um emoji colorido — na
+   * beira da piscina o que se escolhe é a cor, então ela tem que ser o botão.
+   */
+  renderVestiario(dados: {
+    dono: string;
+    oculos: boolean;
+    bermudas: ReadonlyArray<{ id: string; nome: string; cor: string; faixa?: string; vestida: boolean }>;
+  }): void {
+    this.donoVestiario.textContent = `de ${dados.dono}`;
+
+    this.oculos.classList.toggle('ligado', dados.oculos);
+    this.oculos.innerHTML =
+      `<span class="icone">🕶️</span><b>Óculos escuros</b>` +
+      `<em>${dados.oculos ? 'tirar' : 'colocar'}</em>`;
+
+    this.bermudas.innerHTML = '';
+    for (const b of dados.bermudas) {
+      const botao = document.createElement('button');
+      botao.className = 'bermuda';
+      botao.classList.toggle('vestida', b.vestida);
+      botao.dataset.id = b.id;
+      const amostra = document.createElement('i');
+      // estampada: a faixa entra como duas listras na própria amostra, que é
+      // como ela aparece no calção
+      amostra.style.background = b.faixa
+        ? `repeating-linear-gradient(160deg, ${b.cor} 0 12px, ${b.faixa} 12px 18px)`
+        : b.cor;
+      botao.appendChild(amostra);
+      const nome = document.createElement('b');
+      nome.textContent = b.nome;
+      botao.appendChild(nome);
+      this.bermudas.appendChild(botao);
+    }
+  }
+
+  /** Clicou no botão do óculos: liga se estiver desligado, e vice-versa. */
+  onAlternarOculos: (() => void) | null = null;
+  /** Clicou numa cor de bermuda. A mesma de novo tira a bermuda. */
+  onEscolherBermuda: ((id: string) => void) | null = null;
+  onAbrirVestiario: (() => void) | null = null;
+  onFecharVestiario: (() => void) | null = null;
+
+  /** Clique numa vaga da mão: quem decide o que fazer é o Game. */
+  onEscolherSlot: ((indice: number) => void) | null = null;
+  /** Item arrastado (ou tocado) de uma vaga para outra. */
+  onMoverItem: ((de: Vaga, para: Vaga) => boolean) | null = null;
+  /** Jogar fora o item de uma vaga. Não volta. */
+  onDescartar: ((de: Vaga) => void) | null = null;
+  /** Chamado toda vez que a mochila vai abrir, para o Game desenhar as vagas. */
+  onAbrirMochila: (() => void) | null = null;
+
+  // ------------------------------------------------ arrastar e tocar
+
+  /**
+   * A trava de categoria, do lado da tela.
+   *
+   * O `SaveState` já recusa sozinho — é ele quem manda. Isto existe só para a
+   * recusa ter VOZ: sem o aviso, tocar o sorvete numa vaga de vestimenta não
+   * fazia nada e parecia um toque que não pegou.
+   */
+  private podeIrPara(
+    tipo: string | undefined,
+    lista: 'mao' | 'vestivel',
+    funcional = false,
+  ): boolean {
+    if (!tipo) return true;
+    if (tipo === 'vestivel' && lista === 'mao') {
+      // desequipar para a mochila só vale para vestimenta FUNCIONAL: roupa
+      // cosmética não ocupa vaga de mão, e aqui a única saída dela é o descarte
+      if (funcional) return true;
+      this.toast('Roupa só se troca no guarda-roupa', '👗');
+      return false;
+    }
+    if (tipo === 'mao' && lista === 'vestivel') {
+      this.toast('Este item não pode ser vestido', '🚫');
+      return false;
+    }
+    return true;
+  }
+
+  private endereco(el: HTMLElement): Vaga | null {
+    const vaga = el.closest('.slot') as HTMLElement | null;
+    if (!vaga?.dataset.slot) return null;
+    return {
+      lista: vaga.closest('.vestiveis') ? 'vestivel' : 'mao',
+      indice: Number(vaga.dataset.slot),
+    };
+  }
+
+  /**
+   * O caminho do DEDO.
+   *
+   * A API de drag-and-drop do HTML5 não existe no toque — `dragstart` nunca
+   * dispara num celular. Sem este toca-pega/toca-solta, desequipar um item
+   * seria impossível no telefone, que é onde o jogo mais é mostrado.
+   *
+   * Na lista da mão o toque tem dois papéis: sem nada na pinça, ele escolhe o
+   * slot principal; com algo na pinça, ele solta ali.
+   */
+  private tocarVaga(e: Event): void {
+    const onde = this.endereco(e.target as HTMLElement);
+    if (!onde) return;
+
+    if (this.pegou) {
+      const de = this.pegou;
+      if (de.lista === onde.lista && de.indice === onde.indice) {
+        this.pegou = null;
+        this.marcarPego(null);
+        return;
+      }
+      // categoria errada: o item CONTINUA na pinça, para a pessoa poder tocar
+      // numa vaga válida em seguida em vez de recomeçar
+      if (!this.podeIrPara(this.tipoNaPinca, onde.lista, this.funcionalNaPinca)) return;
+      this.pegou = null;
+      this.marcarPego(null);
+      if (this.onMoverItem?.(de, onde)) this.som?.('escolha');
+      return;
+    }
+
+    const vaga = (e.target as HTMLElement).closest('.slot') as HTMLElement;
+    // vaga vazia da mão continua servindo para escolher o slot principal
+    if (onde.lista === 'mao' && !vaga.classList.contains('cheio')) {
+      this.som?.('escolha');
+      this.onEscolherSlot?.(onde.indice);
+      return;
+    }
+    if (!vaga.classList.contains('cheio')) return;
+
+    // vaga cheia da mão: um toque põe na mão, o segundo entra no modo mover
+    if (onde.lista === 'mao' && !vaga.classList.contains('principal')) {
+      this.som?.('escolha');
+      this.onEscolherSlot?.(onde.indice);
+      return;
+    }
+    this.pegou = onde;
+    this.tipoNaPinca = vaga.dataset.tipo;
+    this.funcionalNaPinca = vaga.dataset.funcional === 'sim';
+    this.marcarPego(vaga);
+    this.som?.('escolha');
+  }
+
+  private marcarPego(vaga: HTMLElement | null): void {
+    for (const el of this.mochila.querySelectorAll('.slot.pego')) el.classList.remove('pego');
+    vaga?.classList.add('pego');
+    this.mochila.classList.toggle('movendo', vaga !== null);
+    // o descarte só existe com um item na pinça: sem seleção não há o que jogar
+    // fora, e um botão solto ali só assusta
+    this.descarte.classList.toggle('show', vaga !== null);
+    this.descarte.classList.remove('confirmando');
+    const alvo = this.descarte.querySelector('.descartar')!;
+    const nome = vaga?.querySelector('b')?.textContent ?? '';
+    alvo.textContent = nome ? `🗑 Descartar ${nome}` : '🗑 Descartar';
+  }
+
+  private comecarArrasto(e: DragEvent): void {
+    const onde = this.endereco(e.target as HTMLElement);
+    const vaga = (e.target as HTMLElement).closest('.slot') as HTMLElement | null;
+    if (!onde || !vaga?.classList.contains('cheio')) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer?.setData('text/plain', JSON.stringify({
+      vaga: onde,
+      tipo: vaga.dataset.tipo,
+      funcional: vaga.dataset.funcional === 'sim',
+    }));
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+    vaga.classList.add('pego');
+  }
+
+  private arrastarSobre(e: DragEvent): void {
+    const vaga = (e.target as HTMLElement).closest('.slot');
+    if (!vaga) return;
+    // sem o preventDefault o navegador recusa a solta e o drop nunca chega
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    vaga.classList.add('alvo');
+  }
+
+  private soltarArrasto(e: DragEvent): void {
+    e.preventDefault();
+    const para = this.endereco(e.target as HTMLElement);
+    const cru = e.dataTransfer?.getData('text/plain');
+    this.limparArrasto();
+    if (!para || !cru) return;
+    try {
+      const { vaga, tipo, funcional } = JSON.parse(cru) as
+        { vaga: Vaga; tipo?: string; funcional?: boolean };
+      if (!this.podeIrPara(tipo, para.lista, funcional === true)) return;
+      if (this.onMoverItem?.(vaga, para)) this.som?.('escolha');
+    } catch {
+      /* arrasto de fora da mochila: ignora */
+    }
+  }
+
+  private limparArrasto(): void {
+    for (const el of this.mochila.querySelectorAll('.slot.pego, .slot.alvo')) {
+      el.classList.remove('pego', 'alvo');
+    }
   }
 }
