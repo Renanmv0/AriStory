@@ -14,6 +14,7 @@ import {
 import { interiorDoor } from '../world/furniture';
 import { Gina } from '../entities/bichos/Gina';
 import { Capy } from '../entities/bichos/Capy';
+import { Noel } from '../entities/bichos/Noel';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
@@ -34,6 +35,15 @@ const PISCINA = { x: 0, z: -3, largura: 16, profundidade: 10, fundo: 1.6 };
  * so acontece uma vez — funcionario que repete o mesmo texto de boas-vindas
  * toda vez deixa de ser gente e vira placa.
  */
+const FALAS_DO_NOEL = [
+  'Suco gelado com esse sol? É quase obrigatório.',
+  'Hoje o abacaxi tá doce sem precisar de açúcar. SEM AÇÚCAR!',
+  'Provaram o de maracujá? Não? Ai. Ai, ai, ai.',
+  'Eu tomo uns seis por dia. Seis! É trabalho de campo.',
+  'A laranja de hoje veio da feira de sábado. Eu escolhi uma por uma.',
+  'Fruta boa não precisa de truque, viu? Só de gelo.',
+];
+
 const FALAS_DO_CAPY = [
   'Tá tudo tranquilo. Do jeito que eu gosto.',
   'Se afundarem, eu desço. Mas prefiro que não afundem.',
@@ -1279,6 +1289,88 @@ export const clube: SceneDef = {
         api.som('sorvete'); // a mesma sineta de "toma, é seu" da sorveteria
         api.toast('Morango e pêssego', '🍹');
       },
+    });
+
+    /**
+     * O NOEL, o peru do bar de sucos — o terceiro funcionário do clube.
+     *
+     * ELE É O PRIMEIRO QUE NÃO FICA PARADO. A Gina e o Capy têm posto, e o que
+     * os segura é uma área menor que o passo mínimo do cérebro. O Noel ganha
+     * uma FAIXA de 1,6 × 1 na frente do quiosque, que é maior que esse mínimo:
+     * ele anda de um lado para o outro sem sair da frente do bar. É a
+     * personalidade que o Renan pediu — um entusiasta não fica quieto.
+     *
+     * ONDE A FAIXA FICA, e ela mudou de lugar depois da primeira foto. Ela
+     * começou ao LADO do quiosque (`z ≈ 8,4`), e de longe o quiosque comia o
+     * Noel: ele tem `z` maior que o balcão mas `x` bem menor, e nessa diagonal
+     * a peça de 2,4 de altura passa na frente dele. Agora a faixa está na
+     * FRENTE do quiosque (`z ≈ 9,9`), no concreto aberto, onde nada o tapa.
+     *
+     * E A FAIXA É COMPRIDA (2,4), porque curta ele não anda. O `novoDestino` do
+     * cérebro só aceita um destino a mais de 0,7 de onde o bicho está: numa
+     * faixa de 1,4 quase todo sorteio caía perto demais, as doze tentativas
+     * falhavam e o peru mais elétrico do clube passava o dia parado. Medido:
+     * 0,9 de caminhada em 17 s, contra 3,5 com a faixa deste tamanho.
+     *
+     * ELA CRESCEU PARA LONGE DO BALCÃO, e não para perto. O ponto de pedir
+     * suco fica em `(-12,2 / 9,2)`; a ponta mais próxima da faixa está a 2,6
+     * dele, mais que o raio de 1,4 do Noel. Assim ele nunca chega perto o
+     * bastante para cobrir aquela interação — um ponto que anda pode encobrir
+     * um ponto parado sem quebrar nada, e aí o balcão simplesmente para de
+     * responder sem ninguém entender por quê.
+     */
+    const noel = new Noel({
+      minX: -17.2, maxX: -14.8,
+      minZ: 9.4, maxZ: 10.4,
+    });
+    w.add(noel.group);
+    noel.aoSoar = () => g.som('gluglu');
+
+    const falarComONoel = w.interact({
+      id: 'clube:noel',
+      x: noel.x, z: noel.z, radius: 1.4,
+      label: 'Falar com o Noel', icon: '🦃',
+      highlight: noel.group,
+      onInteract: async (api) => {
+        noel.receberCarinho();
+        api.som('gluglu');
+        const N = 'Noel';
+        if (!api.flag('noel-conhecido')) {
+          api.setFlag('noel-conhecido');
+          await api.say(['BOM DIA! Vocês vieram pro suco, né? Claro que vieram.'], N);
+          await api.say(['Noel, prazer. Eu cuido dos sucos daqui. Eu AMO os sucos daqui.'], N);
+          await conversa([
+            [R, 'Ele é um peru.'],
+            [A, 'Ele é um peru muito feliz.'],
+          ]);
+          await api.say([
+            'Olha, laranja é clássico, ninguém discute. Mas o de maracujá com hortelã… gente. GENTE.',
+          ], N);
+          await api.say(['E o de morango a gente bate na hora. Na HORA. Não é polpa.'], N);
+          await conversa([
+            [R, 'Ele fala de suco desse jeito o dia inteiro?'],
+          ]);
+          await api.say(['O dia inteiro! Por quê, tem coisa melhor?'], N);
+          await conversa([
+            [A, 'Não tem, não.'],
+          ]);
+          api.unlock({
+            id: 'noel-do-bar',
+            title: 'O Noel do bar de sucos',
+            place: 'Clube',
+            note: 'Um peru de avental e viseira que abre o leque de tanta felicidade quando fala do suco de maracujá.',
+            icon: '🦃',
+          });
+          return;
+        }
+        await api.say([w.pick(FALAS_DO_NOEL)], N);
+      },
+    });
+
+    // ele passeia, então o balão passeia junto
+    w.onUpdate((dt) => {
+      noel.update(dt);
+      falarComONoel.moveTo(noel.x, noel.z);
     });
 
     w.interact({

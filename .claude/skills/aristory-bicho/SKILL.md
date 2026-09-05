@@ -98,6 +98,22 @@ Três coisas que a cena declara e o bicho não adivinha:
    áudio — a cena liga `aoSoar` no `g.som(...)`.
 3. **O `moveTo` no `onUpdate`.** É o que faz o prompt andar junto.
 
+## Quanto o bicho anda sai do `descanso`, não da velocidade
+
+`descansoMin`/`descansoMax` são o número que mais decide se o bicho parece
+inquieto ou preguiçoso — mais que `velocidade`. Quase toda caminhada termina
+chegando ao destino, e é a pausa DE CHEGADA que domina o relógio dele.
+
+Essa pausa já foi um número cravado na base (`1,2 + sorte × 2,5`), e por isso a
+ficha quase não valia: o Noel, configurado como elétrico com 0,2-0,7 s, ficava
+parado os mesmos 1,2-3,7 s do gato — mediu 1,06 de caminhada em 17 s. Hoje ela
+usa a ficha, e o mesmo Noel anda 2,0.
+
+**A área também limita.** `novoDestino` só aceita destino a mais de 0,7 de onde
+o bicho está: numa faixa curta demais, quase todo sorteio cai perto, as doze
+tentativas falham e ele fica parado. É o mesmo mecanismo que segura um bicho de
+posto — só que aí é de propósito.
+
 ## Bicho com POSTO, que não passeia
 
 A girafa da portaria do clube fica parada na guarita, e isso **não pediu uma

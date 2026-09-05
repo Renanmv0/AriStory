@@ -34,6 +34,7 @@ export type SomNome =
   | 'miado'
   | 'latido'
   | 'apito'
+  | 'gluglu'
   | 'menu'
   | 'diario'
   | 'recomecar';
@@ -299,6 +300,51 @@ export const EFEITOS: Record<SomNome, Receita> = {
       tipo: 'sawtooth',
       abafo: 1200,
     });
+  },
+
+  /**
+   * O GLUGLU DO NOEL, o peru do bar de sucos.
+   *
+   * Peru nao faz UM som: faz uma RAJADA. O gluglu de verdade e uma sequencia
+   * rapida de estalos graves que sobe de tom e acelera no fim, e e essa curva
+   * que faz o ouvido reconhecer "peru" em vez de "passaro generico".
+   *
+   * Cada estalo e curtissimo (0,05 s) e dente-de-serra com filtro fechado, que
+   * e o que da o timbre encatarrado. O tom sobe de 210 para 330 Hz ao longo da
+   * rajada e o intervalo entre eles encolhe — sem essa aceleracao sai um motor
+   * de barco, e nao um bicho.
+   */
+  gluglu: ({ ctx, destino, t }) => {
+    const ESTALOS = 7;
+    let quando = t;
+    for (let i = 0; i < ESTALOS; i++) {
+      const k = i / (ESTALOS - 1);
+      const freq = 210 + k * 120;
+      tom(ctx, destino, {
+        freq,
+        glide: freq * 0.72,
+        quando,
+        dur: 0.05,
+        vol: 0.085 - k * 0.02,
+        ataque: 0.004,
+        tipo: 'sawtooth',
+        abafo: 900 + k * 500,
+      });
+      // o intervalo encolhe de 90 para 45 ms: a rajada acelera
+      quando += 0.09 - k * 0.045;
+    }
+    // o arremate: a nota mais aberta que fecha o gluglu
+    tom(ctx, destino, {
+      freq: 360,
+      glide: 250,
+      quando: quando + 0.02,
+      dur: 0.16,
+      vol: 0.075,
+      ataque: 0.008,
+      tipo: 'sawtooth',
+      abafo: 1500,
+    });
+    chiado(ctx, destino, { quando: t, dur: 0.4, vol: 0.01, freq: 1800, q: 3 });
   },
 
   tv: ({ ctx, destino, t }) => {
