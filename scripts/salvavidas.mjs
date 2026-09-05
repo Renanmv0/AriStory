@@ -9,7 +9,7 @@
  *   pelo deque — a mesma coleira da Gina;
  * - ele está EM CIMA DA CADEIRA, e não ao lado nem flutuando. Mede o `y` dele
  *   contra o estrado, que fica em 1,7;
- * - ele está VIVA: a cabeça varre a piscina, então a pose muda entre duas
+ * - ele está VIVO: a cabeça varre a piscina, então a pose muda entre duas
  *   leituras;
  * - ele apita sozinho;
  * - A CADEIRA NÃO TEM TETO SOBRE ELE. Este é o ponto que já falhou: a primeira

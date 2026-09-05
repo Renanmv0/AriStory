@@ -288,8 +288,18 @@ export abstract class Bicho {
       const dz = this.alvo.z - this.z;
       const dist = Math.hypot(dx, dz);
       if (dist < 0.08) {
+        /**
+         * A PAUSA DE CHEGADA USA O `descanso` DA FICHA, e nao um numero cravado.
+         *
+         * Ela era `1,2 + sorte * 2,5`, fixa para todo bicho — e essa e a pausa
+         * que mais acontece, porque quase toda caminhada termina chegando. O
+         * efeito: `descansoMin`/`descansoMax` quase nao valiam nada, e um bicho
+         * configurado como eletrico (o Noel, com 0,2-0,7) descansava os mesmos
+         * 1,2-3,7 s do gato. Media do Noel antes: 1,06 de caminhada em 17 s.
+         */
+        const j = this.jeito;
         this.humor = 'parado';
-        this.aguarda = 1.2 + this.sorte() * 2.5;
+        this.aguarda = j.descansoMin + this.sorte() * (j.descansoMax - j.descansoMin);
       } else {
         andando = this.passo(dx, dz, dist, this.jeito.velocidade, dt);
       }

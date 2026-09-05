@@ -196,6 +196,22 @@ export const PALETTE = {
   salvaVidasBranco: 0xf7f2e8,
   cadeiraDeGuarda: 0xe8d9b8,
 
+  // o Noel, o peru do bar de sucos. A pena e marrom-escuro com brilho de
+  // bronze; o leque da cauda alterna essa base com a barra clara da ponta, que
+  // e o que faz o leque LER como leque em vez de mancha. A cabeca e pescoco sao
+  // pelados: azul-acinzentado com a carúncula e o barbelo vermelhos.
+  peruPena: 0x6b4a34,
+  peruPenaClara: 0xb98d5e,
+  peruBarra: 0xf0dcb4,
+  peruCabeca: 0x8ba3b8,
+  peruCarunculo: 0xd44a3f,
+  peruBico: 0xe8c073,
+  peruPata: 0xe09a3c,
+  // a roupinha de vendedor: o avental no mesmo teal do quiosque de suco, para
+  // ele pertencer ao bar, e a viseira clara
+  aventalDoNoel: 0x4ec1a8,
+  aventalFaixa: 0xf7f2e8,
+
   guaritaParede: 0xf5ead6,
   guaritaFaixa: 0x2f7d6b,
   guaritaBalcao: 0xb07c46,
