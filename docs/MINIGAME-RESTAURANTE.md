@@ -293,18 +293,21 @@ melhorias, e possível com elas**. Sem esse eixo, "difícil" vira "injusto".
 
 ---
 
-## 10. A pergunta de design que precisa da resposta do Renan
+## 10. Não dá para perder — decidido pelo Renan
 
-**Dá pra PERDER um turno?**
+**Nenhum turno é perdido.** O turno sempre vai até o fim, sempre chega na conta
+do dia; o que muda é **quanto você pontua e quanto ganha**. Turno ruim paga
+menos e dá menos estrela, e dá pra refazer quantas vezes quiser.
 
-Minha recomendação: **não**. Turno ruim paga menos, dá menos estrela, e dá pra
-refazer quantas vezes quiser. O jogo é um presente — a graça é querer tirar as
-três estrelas, não ter medo de perder. O turno ruim ganha só um fecho gentil: o
-último cliente sai com o coração apagado e o Ari diz alguma coisa boa.
+Isso é uma regra de implementação, não uma intenção: **não existe estado de
+derrota em lugar nenhum da máquina de estados**. Cliente irritado vai embora
+com o coração apagado e leva o dinheiro dele junto — e é só. Não existe contador
+de "irritados" que encerre nada, não existe tela de "você perdeu", e nenhuma
+mecânica nova pode introduzir uma.
 
-Se ele quiser a pressão de verdade, ela entra como **Modo domingo**, destravado
-depois do primeiro 3 estrelas: lá, três clientes irritados encerram o turno na
-hora.
+O jogo é um presente: a graça é querer tirar as três estrelas, não ter medo de
+perder. O turno ruim ganha só um fecho gentil — o Ari diz alguma coisa boa e a
+escala continua ali para amanhã.
 
 ---
 
@@ -316,7 +319,7 @@ numa mesa.
 
 | # | etapa | o que fica em pé no fim |
 |---|---|---|
-| 1 | **O osso** | o montinho de terra no jardim, a dica da Josefina, o item, o Walter aceitando o osso, a pergunta dele e a escala aparecendo. Nada de turno ainda — mas a descoberta inteira já se joga |
+| 1 ✅ | **O osso** | o montinho de terra no jardim, a dica da Josefina, o item, o Walter aceitando o osso, a pergunta dele e a escala aparecendo. Nada de turno ainda — mas a descoberta inteira já se joga. **Feito** — `scripts/osso.mjs` |
 | 2 | **O esqueleto do turno** | um cliente (a Josefina, que perdoa tudo), levar à mesa, anotar, entregar, receber, recolher a louça, devolver no balcão. Sem tempo e sem paciência. Prova o laço |
 | 3 | **Paciência e comandas** | os drenos por fase, os balões, o arco de paciência, o HUD do turno, e o `T` passando a ter custo de verdade |
 | 4 | **O balcão e a bandeja** | as 3 vagas de saída, o prato esfriando, a bandeja dividida entre limpo e sujo, o Walter na cozinha |

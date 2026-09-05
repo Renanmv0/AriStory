@@ -220,6 +220,14 @@ export const PALETTE = {
   barroDoVaso: 0xc2703f,
   barroDaBorda: 0xa85b32,
   cercaDeJardim: 0xd9c08a,
+  // o montinho de terra remexida entre dois canteiros, e o buraco que sobra
+  // depois de cavar. O buraco e QUASE preto de proposito: e a unica coisa do
+  // jardim que precisa ler como "vazio" numa camera que achata tudo.
+  terraSolta: 0x7a5539,
+  buracoDeTerra: 0x2b1c14,
+  // o osso enterrado. Osso velho nao e branco: e creme, e amarela nas pontas.
+  osso: 0xf0e4c8,
+  ossoPonta: 0xd8c39a,
   // as plantas, por tipo. Elas precisam ser DIFERENTES entre si em cor E em
   // forma: um jardim inteiro no mesmo verde vira um tapete so.
   folhaAlface: 0x8fc45a,

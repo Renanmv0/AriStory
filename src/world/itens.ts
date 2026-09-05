@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
-import { copoDeSuco, frisbee, iceCream } from './props';
+import { copoDeSuco, frisbee, iceCream, osso } from './props';
 import {
   canoDaBota, gargantilhaDeLaco, gorroDeLa, maidJapones, mangaDeMoletom, mangaDeQuimono,
   meiaDeCoxa, moletomComCapuz, oculosDeSol, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
@@ -268,6 +268,21 @@ export const ITENS = {
     nota: 'do parque',
     holdPose: 'relaxed',
   },
+  /**
+   * O osso desenterrado no jardim da Josefina.
+   *
+   * Ele nao serve para nada sozinho — e uma CHAVE: existe para ser entregue ao
+   * Walter, no Mania de Churrasco. A `nota` diz de onde ele veio porque, entre
+   * achar e entregar, pode passar muito tempo e muita cena.
+   */
+  osso: {
+    id: 'osso',
+    nome: 'Osso',
+    icone: '🦴',
+    tipo: 'mao',
+    nota: 'desenterrado no jardim do clube',
+    holdPose: 'relaxed',
+  },
 } as const satisfies Record<string, ItemDef>;
 
 /**
@@ -297,6 +312,7 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'suco-pessego': () => copoDeSuco(P.pessego),
   'suco-morango': () => copoDeSuco(P.morango),
   'frisbee': () => frisbee(P.frisbee),
+  'osso': () => osso(P.osso),
 };
 
 const PORID: Record<string, ItemDef> = Object.fromEntries(

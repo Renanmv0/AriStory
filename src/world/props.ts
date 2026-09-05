@@ -4014,3 +4014,108 @@ export function regador(cor: number = P.metalGrey): THREE.Group {
   g.add(alca);
   return g;
 }
+
+/**
+ * O MONTINHO DE TERRA REMEXIDA, entre dois canteiros do jardim da Josefina.
+ *
+ * Ele existe para ser DESCOBERTO, e por isso e discreto de proposito: 12 cm de
+ * altura, cor de terra no meio de um jardim de terra. Quem acha, acha porque
+ * saiu do caminho de pedrinha e foi olhar — que e exatamente o que o Renan
+ * pediu ("algo que ele descubra ao jogar").
+ *
+ * O que denuncia o montinho de perto sao os TORROES soltos em volta e as duas
+ * unhadas: terra so nao lê como "alguem cavou aqui", terra espalhada lê.
+ *
+ * A peca ja nasce com os dois estados montados — o monte e o buraco — e o
+ * buraco comeca escondido. Cavar e trocar a visibilidade dos dois
+ * (`userData.monte` e `userData.buraco`); nao ha peca nova para instanciar no
+ * meio do jogo, e a cena nao precisa saber como nenhum dos dois e feito.
+ */
+export function terraRemexida(semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'terra-remexida';
+  const giro = semente * 6.283;
+
+  // ---------------------------------------------------------------- o monte
+  const monte = new THREE.Group();
+  // a calota: uma esfera achatada, que é o que dá a silhueta de terra jogada
+  const cupula = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    toon(P.terraSolta),
+  );
+  cupula.scale.y = 0.42;
+  monte.add(cupula);
+  // os torroes em volta, em raio e altura diferentes: iguais viram enfeite
+  for (let i = 0; i < 5; i++) {
+    const a = giro + (i * 6.283) / 5;
+    const r = 0.3 + ((i * 0.37) % 1) * 0.16;
+    const s = 0.05 + ((i * 0.61) % 1) * 0.035;
+    const torrao = new THREE.Mesh(new THREE.BoxGeometry(s * 2, s * 1.3, s * 1.7), toon(P.terraUmida));
+    torrao.position.set(Math.cos(a) * r, s * 0.65, Math.sin(a) * r);
+    torrao.rotation.y = a * 1.7;
+    monte.add(torrao);
+  }
+  // as duas unhadas no alto do monte. Elas ficam ACIMA da calota (0,128 contra
+  // os 0,126 do topo dela) — decalque colado no mesmo plano serrilha.
+  for (const sx of [-1, 1] as const) {
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.012, 0.035), toon(P.terraUmida));
+    risco.position.set(sx * 0.05, 0.128, sx * 0.06);
+    risco.rotation.y = giro * 0.5 + sx * 0.3;
+    monte.add(risco);
+  }
+  g.add(monte);
+  g.userData.monte = monte;
+
+  // --------------------------------------------------------------- o buraco
+  // depois de cavar sobra o buraco: um disco quase preto rente ao chao, com a
+  // terra tirada empilhada de um lado so — cova, e nao cratera simetrica
+  const buraco = new THREE.Group();
+  buraco.visible = false;
+  const cova = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.19, 0.05, 14), toon(P.buracoDeTerra));
+  cova.position.y = 0.024;
+  buraco.add(cova);
+  const borda = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.045, 6, 16), toon(P.terraSolta));
+  borda.position.y = 0.03;
+  borda.rotation.x = Math.PI / 2;
+  borda.scale.y = 0.6;
+  buraco.add(borda);
+  for (let i = 0; i < 3; i++) {
+    const a = giro + 0.9 + i * 0.5;
+    const torrao = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.07, 0.1), toon(P.terraUmida));
+    torrao.position.set(Math.cos(a) * 0.42, 0.035, Math.sin(a) * 0.42);
+    torrao.rotation.y = a;
+    buraco.add(torrao);
+  }
+  g.add(buraco);
+  g.userData.buraco = buraco;
+
+  return g;
+}
+
+/**
+ * O OSSO — o de desenho animado, com os dois nos em cada ponta.
+ *
+ * Ele e o modelo de mao do item `osso`, entao a escala e a de uma coisa que
+ * cabe na mao: 26 cm de ponta a ponta. Deitado no eixo X, que e como a mao
+ * segura na pose `relaxed`.
+ *
+ * As pontas sao mais ESCURAS que o corpo. Osso todo de uma cor so vira um
+ * halter de academia; o que faz ler como osso e o no da ponta destacado.
+ */
+export function osso(cor: number = P.osso): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'osso';
+
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.17, 8), toon(cor));
+  haste.rotation.z = Math.PI / 2;
+  g.add(haste);
+
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      const no = new THREE.Mesh(new THREE.SphereGeometry(0.043, 8, 6), toon(P.ossoPonta));
+      no.position.set(sx * 0.088, 0, sz * 0.036);
+      g.add(no);
+    }
+  }
+  return g;
+}
