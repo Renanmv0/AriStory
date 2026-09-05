@@ -36,6 +36,7 @@ export type SomNome =
   | 'apito'
   | 'gluglu'
   | 'cantarolar'
+  | 'cavar'
   | 'menu'
   | 'diario'
   | 'recomecar';
@@ -375,6 +376,40 @@ export const EFEITOS: Record<SomNome, Receita> = {
         abafo: 1600,
       });
     });
+  },
+
+  /**
+   * CAVAR: tres pas de terra, e nada mais.
+   *
+   * Terra nao tem NOTA — tem so ruido. Por isso a receita e quase toda
+   * `chiado`, com o filtro caindo de 900 para 240 Hz: e a queda do filtro que
+   * faz o ouvido ouvir "colher raspando e terra caindo" em vez de "chuveiro".
+   * O tom grave por baixo de cada pa e o baque da terra no chao, curto demais
+   * para virar nota (0,07 s) — sem ele o som fica leve como areia de praia.
+   *
+   * As tres pas ficam mais FRACAS e mais graves a cada uma: a primeira e a que
+   * quebra a terra dura, e dali em diante e so tirar o que ja esta solto.
+   */
+  cavar: ({ ctx, destino, t }) => {
+    for (let i = 0; i < 3; i++) {
+      const quando = t + i * 0.19;
+      chiado(ctx, destino, {
+        quando,
+        dur: 0.16,
+        vol: 0.11 - i * 0.02,
+        freq: 900 - i * 180,
+        glide: 240,
+        q: 0.8,
+      });
+      tom(ctx, destino, {
+        freq: 130 - i * 14,
+        glide: 70,
+        quando: quando + 0.03,
+        dur: 0.07,
+        vol: 0.06 - i * 0.012,
+        tipo: 'sine',
+      });
+    }
   },
 
   tv: ({ ctx, destino, t }) => {

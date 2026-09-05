@@ -7,7 +7,7 @@ import {
   luminariaPendente, pictureFrame, piaIndustrial, pottedPlant, quadroDeGiz, quadroDoEmpregadoDoMes, rug,
   upperCabinets, wallShelf,
 } from '../world/furniture';
-import { letreiro, pratoServido } from '../world/props';
+import { letreiro, osso, pratoServido } from '../world/props';
 import { pratoPorId } from '../world/cardapioData';
 import { Walter } from '../entities/bichos/Walter';
 import { toon } from '../core/materials';
@@ -67,6 +67,13 @@ const LATERAL = { x: 0.5, zIni: z0 + 0.2, zFim: -2 };
  * ver `PIA`, e a conta de folga que está lá.
  */
 const PORTA = { z: -4.4 };
+/**
+ * Onde o Walter guarda o osso: em cima do balcão de passagem, do lado do salão.
+ *
+ * O `y` é o tampo do balcão (1,06 de corpo + 0,09 de pedra) mais o raio do nó
+ * do osso, para ele POUSAR e não afundar meio centímetro na pedra.
+ */
+const GUARDADO = { x: -3.4, y: 1.193, z: -2 };
 
 /** o que o Ari diz nos carinhos seguintes: o primeiro é a apresentação dele */
 const FALAS_DO_WALTER = [
@@ -242,6 +249,13 @@ export const maniaDeChurrasco: SceneDef = {
     ));
     w.blockBox((PASSAGEM.xIni + PASSAGEM.xFim) / 2, PASSAGEM.z, larguraPassagem / 2, 0.5);
 
+    // O OSSO GUARDADO fica no balcão para sempre, depois de entregue: é o
+    // rastro visível de uma coisa que a dupla fez, e ele volta a cada visita
+    // porque a cena é remontada do zero (a `flag` é o que atravessa).
+    if (g.flag('osso-entregue')) {
+      w.add(w.place(osso(), GUARDADO.x, GUARDADO.y, GUARDADO.z, 0.4));
+    }
+
     // o trecho que corre no Z e fecha a cozinha do lado do bar
     const comprimentoLateral = LATERAL.zFim - LATERAL.zIni;
     w.add(w.place(
@@ -366,6 +380,13 @@ export const maniaDeChurrasco: SceneDef = {
       x: cachorro.x, z: cachorro.z, radius: 1.15,
       label: 'Fazer carinho no Walter', icon: '🐕',
       highlight: cachorro.group,
+      /**
+       * O WALTER GANHA DA MESA. O ponto dele tem 1,15 de raio e o de sentar
+       * tem 1,7: quando ele passeia perto de uma mesa, o prompt que aparece é
+       * o da mesa, e o cachorro em pé na sua frente vira cenário. O alvo mais
+       * específico ganha — e o mesmo vale para a entrega do osso, logo abaixo.
+       */
+      priority: 1,
       onInteract: async (api) => {
         cachorro.receberCarinho();
         api.som('latido');
@@ -386,15 +407,164 @@ export const maniaDeChurrasco: SceneDef = {
           });
           return;
         }
+        /**
+         * O CONVITE RECUSADO NÃO SOME. Quem disse "hoje não" encontra o Walter
+         * perguntando de novo no carinho seguinte — recusar é adiar, não fechar
+         * a porta. Sem isto, um toque em "Hoje não" trancaria o minigame
+         * inteiro para sempre.
+         */
+        if (api.flag('osso-entregue') && !api.flag('turno-aceito')) {
+          await convidar(api);
+          return;
+        }
         await api.say([w.pick(FALAS_DO_WALTER)], A);
       },
     });
+
+    /**
+     * ======================================= O OSSO, E O CONVITE PARA O TURNO
+     *
+     * Esta é a porta de entrada do minigame de servir as mesas
+     * (`docs/MINIGAME-RESTAURANTE.md`). O caminho inteiro é:
+     * terra remexida no jardim da Josefina → cavar → osso na mochila → dar o
+     * osso ao Walter → ele convida a dupla para o próximo turno dele.
+     *
+     * SÃO DUAS INTERAÇÕES NO MESMO PONTO, e não uma com dois caminhos por
+     * dentro: `Interactable.label` é fixo, e o rótulo aqui é metade da graça —
+     * quem chega com o osso lê "Dar o osso para o Walter" no HUD e entende
+     * sozinho que as duas coisas se ligam. Só uma das duas fica ligada por vez
+     * (`enabled`), então elas nunca disputam o prompt.
+     *
+     * O OSSO PODE ESTAR COM QUALQUER UM DOS DOIS. `hasItem` olha a mochila de
+     * quem está sendo controlado, e o `T` troca isso a qualquer momento — quem
+     * cavou pode não ser quem entrou no restaurante.
+     */
+    const quemTemOsso = (api: GameAPI): string | null => {
+      if (api.hasItem('osso')) return api.playerId();
+      if (api.hasItem('osso', api.companionId())) return api.companionId();
+      return null;
+    };
+
+    /** O convite dele, feito duas vezes se preciso: recusar não fecha porta. */
+    const convidar = async (api: GameAPI): Promise<void> => {
+      await conversa([
+        [A, 'Ele tá olhando pra gente e olhando pro salão. Alternado.'],
+        [R, 'Acho que ele quer perguntar alguma coisa.'],
+      ]);
+      const topa = await api.ask(
+        'Ajudar o Walter no próximo dia de trabalho dele?',
+        ['Topo', 'Hoje não'],
+        A,
+      );
+      if (topa !== 0) {
+        await conversa([
+          [A, 'Hoje não, Walter. Mas a gente volta.'],
+          [R, 'Ele abanou mesmo assim.'],
+        ]);
+        return;
+      }
+      api.setFlag('turno-aceito');
+      api.som('confirma');
+      escala.visible = true;
+      lerAEscala.enabled = true;
+      await conversa([
+        [R, 'Topamos. A gente vem no seu próximo turno.'],
+        [A, 'Ele foi na parede e voltou. Acho que ele já anotou a gente na escala.'],
+      ]);
+      api.toast('Escala de amanhã: vocês dois', '📋');
+    };
+
+    const darOOsso = w.interact({
+      id: 'mania:dar-o-osso',
+      x: cachorro.x, z: cachorro.z, radius: 1.15,
+      label: 'Dar o osso para o Walter', icon: '🦴',
+      highlight: cachorro.group,
+      priority: 1,
+      onInteract: async (api) => {
+        const dono = quemTemOsso(api);
+        if (!dono) return;
+        api.removeItem('osso', dono);
+        api.som('latido');
+        cachorro.receberCarinho();
+
+        await conversa([
+          [R, 'Walter. Olha o que a gente achou no jardim.'],
+          [A, 'Ele congelou.'],
+        ]);
+
+        /**
+         * A VOLTA OLÍMPICA. Ele entra em serviço (para de passear sozinho), dá
+         * uma volta pelo salão com o osso na bandeja e guarda no balcão de
+         * passagem — que é onde ele guarda o que importa. O prato da cutscene
+         * de servir já viaja assim: filho da bandeja, e `attach` na chegada,
+         * que troca o pai mantendo a posição no mundo.
+         */
+        const premio = osso();
+        cachorro.entrarEmServico();
+        api.focusCamera(cachorro.group);
+        api.setZoom(9.5);
+        cachorro.bandeja.add(premio);
+        api.som('latido');
+        await cachorro.irPara(4.5, 3.4, 3.0);
+        await cachorro.irPara(-5.0, 3.0, 3.0);
+        await cachorro.irPara(GUARDADO.x, GUARDADO.z + 1.1, 2.6);
+
+        w.root.attach(premio);
+        premio.position.set(GUARDADO.x, GUARDADO.y, GUARDADO.z);
+        premio.rotation.set(0, 0.4, 0);
+        api.som('sino');
+        await api.wait(0.6);
+
+        /**
+         * ELE VOLTA PARA PERTO ANTES DE PERGUNTAR. A primeira versão mandava o
+         * Walter embora e só então fazia a pergunta — e o convite acontecia com
+         * o cachorro fora da tela, o que é o mesmo que ninguém perguntar nada.
+         * Ele guarda o osso, volta, e é aí que a pergunta aparece.
+         */
+        const eu = api.playerPosition();
+        await cachorro.irPara(eu.x + 1.4, eu.z + 1.3, 2.6);
+        /**
+         * A CÂMERA FICA NELE ATÉ A PERGUNTA SER RESPONDIDA. Encostar o Walter
+         * na dupla não basta: ele tem meio metro de altura e os dois têm 1,7 —
+         * numa câmera que desenha na frente quem tem `x + z` maior, ele some
+         * atrás de um ombro na primeira parada infeliz. Com o foco nele, quem
+         * pergunta está sempre no meio da tela.
+         */
+        api.setZoom(7.6);
+
+        api.setFlag('osso-entregue');
+        darOOsso.enabled = false;
+        carinhoNoWalter.enabled = true;
+        api.unlock({
+          id: 'osso-do-walter',
+          title: 'O osso do Walter',
+          place: 'Mania de Churrasco',
+          note: 'Um osso enterrado no jardim do clube, devolvido ao dono. Ele guardou no balcão, que é onde ele guarda o que importa.',
+          icon: '🦴',
+        });
+        await convidar(api);
+        api.focusCamera(null);
+        api.setZoom(9.5);
+        cachorro.voltarAPassear();
+      },
+    });
+
+    /**
+     * Quem já cavou e ainda não entregou chega com a interação certa acesa. As
+     * duas trocam de lugar a cada quadro, porque o osso pode entrar e sair da
+     * mochila a qualquer momento (o painel move item, e o `T` troca de dono).
+     */
+    const podeEntregar = (): boolean => !g.flag('osso-entregue') && quemTemOsso(g) !== null;
 
     // SEM ISTO o balão fica onde ele nasceu e o carinho vira um ponto morto no
     // chão: ele passeia, e o ponto de interação tem que passear junto
     w.onUpdate((dt) => {
       cachorro.update(dt);
       carinhoNoWalter.moveTo(cachorro.x, cachorro.z);
+      darOOsso.moveTo(cachorro.x, cachorro.z);
+      const entrega = podeEntregar();
+      darOOsso.enabled = entrega;
+      carinhoNoWalter.enabled = !entrega;
     });
 
     // ======================================== SENTAR, PEDIR E O WALTER SERVIR
@@ -608,6 +778,43 @@ export const maniaDeChurrasco: SceneDef = {
       },
     });
     w.add(w.place(pictureFrame(0.7, 0.9, P.grassDark), -0.6, 1.95, z0 + 0.16));
+
+    /**
+     * A ESCALA DE TRABALHO, ao lado do quadro do Empregado do Mês.
+     *
+     * Ela só EXISTE depois que a dupla aceita o convite do Walter — antes
+     * disso é uma parede vazia, e é isso que faz o convite valer alguma coisa:
+     * a resposta muda o cenário. Como a cena é remontada a cada visita, quem
+     * decide se ela nasce visível é a `flag`, não o que aconteceu nesta sessão.
+     *
+     * É um quadro de giz, como o do cardápio do dia do outro lado do salão: a
+     * casa escreve as coisas a giz, e isso é do lugar. Ela vai a `x = 9,6`,
+     * entre a registradora (8,9) e o quadro do Walter (11,4 e 0,82 de largura,
+     * começando em 10,99) — 0,94 de folga para o quadro, e nada encosta.
+     */
+    const escala = w.add(w.place(
+      quadroDeGiz(['Escala de amanhã', 'Walter', ARI.name, RENAN.name], 1.0, 1.0),
+      9.6, 1.9, z0 + 0.18,
+    ));
+    escala.visible = g.flag('turno-aceito');
+
+    const lerAEscala = w.interact({
+      id: 'mania:escala',
+      x: 9.6, z: z0 + 1.5, radius: 1.6,
+      label: 'Ler a escala de amanhã', icon: '📋',
+      highlight: escala,
+      onInteract: async (api) => {
+        await conversa([
+          [A, '"Escala de amanhã: Walter." E os nossos dois nomes embaixo.'],
+          [R, 'Ele escreveu com giz. Com a boca, imagino.'],
+          [A, 'Então é sério mesmo. A gente vai trabalhar amanhã.'],
+          [R, 'A gente vai servir as mesas e ele vai cuidar da cozinha.'],
+          [A, 'Eu vou ser a melhor garçonete que esse salão já viu.'],
+        ]);
+        api.toast('Amanhã, no Mania', '📋');
+      },
+    });
+    lerAEscala.enabled = g.flag('turno-aceito');
 
     for (const [x, z] of [[W / 2 - 1.0, D / 2 - 1.2], [x0 + 1.1, D / 2 - 1.2], [11.2, -1.4]] as const) {
       w.add(w.place(pottedPlant(1.2), x, 0, z));

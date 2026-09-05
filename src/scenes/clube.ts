@@ -4,7 +4,7 @@ import type { GameAPI, SceneDef } from '../core/types';
 import { flat, toon } from '../core/materials';
 import {
   bin, bleachers, bus, busStop, bush, cadeiraDeSalvaVidas, canteiro, canteiroComPalmeira,
-  canteiroDeHorta, planta, regador, vasoDePlanta,
+  canteiroDeHorta, planta, regador, terraRemexida, vasoDePlanta,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
   guarita, meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante, sebe,
@@ -1154,6 +1154,87 @@ export const clube: SceneDef = {
     w.add(w.place(regador(), JARDIM.caminho + 0.4, 0, -17.6, 0.6));
 
     /**
+     * ============================================ O OSSO ENTERRADO NO JARDIM
+     *
+     * ONDE ELE ESTÁ, e por quê exatamente aqui. O montinho fica em
+     * `(27,5; -17,25)`: na coluna DIREITA de canteiros, no vão entre o de
+     * `z = -19` e o de `z = -15,5` — 1,1 de folga para cada um, então ninguém
+     * esbarra nele sem querer. E, sobretudo, ele fica FORA do caminho de
+     * pedrinha (que vai até `x = 26,15`): quem acha o osso achou porque saiu do
+     * caminho e foi olhar o fundo do jardim. Era o pedido do Renan — uma coisa
+     * que se descobre jogando, e não uma que o jogo aponta.
+     *
+     * O RAIO É PEQUENO (1,0 contra os 1,6 da Josefina) pelo mesmo motivo: o
+     * prompt não pode acender de longe e entregar o segredo. Tem que chegar em
+     * cima.
+     *
+     * A Josefina nunca pisa aqui — ela passeia no corredor entre as colunas —,
+     * então o montinho não precisa de colisor: ele tem 12 cm, e cercar isso
+     * transformaria o jardim num labirinto (a mesma conta das lavandas).
+     */
+    const CAVA = { x: JARDIM.xDir, z: -17.25 };
+    const montinho = w.add(w.place(terraRemexida(0.37), CAVA.x, 0, CAVA.z));
+    const monte = montinho.userData.monte as THREE.Object3D;
+    const cova = montinho.userData.buraco as THREE.Object3D;
+
+    /**
+     * QUEM JÁ CAVOU CHEGA E ENCONTRA O BURACO. A cena é remontada do zero a
+     * cada visita, então sem esta linha o montinho voltaria inteiro toda vez
+     * que a dupla saísse e entrasse no clube — e o osso viraria uma fonte
+     * infinita. A `flag` é o que atravessa a reconstrução.
+     */
+    const jaCavou = g.flag('osso-cavado');
+    monte.visible = !jaCavou;
+    cova.visible = jaCavou;
+
+    const cavar = w.interact({
+      id: 'clube:cavar',
+      x: CAVA.x, z: CAVA.z, radius: 1.0,
+      // o rótulo não entrega o que tem embaixo: entrega que ALGUÉM cavou aqui
+      label: 'Cavar a terra remexida', icon: '🐾',
+      highlight: montinho,
+      onInteract: async (api) => {
+        await conversa([
+          [A, 'A terra aqui tá remexida. E tem risco de unha.'],
+          [R, 'Isso não foi a Josefina. Isso foi bicho.'],
+        ]);
+        api.som('cavar');
+        await api.wait(0.5);
+
+        /**
+         * A MOCHILA CHEIA NÃO PODE PERDER O OSSO. Ele é a chave do turno do
+         * Mania: se `addItem` recusasse e o montinho já tivesse virado buraco,
+         * o jogo trancaria a porta com a chave do lado de fora. Por isso o
+         * buraco só aparece DEPOIS de o osso entrar de verdade na mochila — e
+         * por isso a interação não é `once`: quem chegou de mochila cheia
+         * arruma a mochila e volta a cavar.
+         */
+        if (api.addItem(ITENS.osso) === 'cheio') {
+          await conversa([
+            [A, 'Tem alguma coisa aí embaixo, mas eu não tenho onde pôr.'],
+            [R, 'Guarda alguma coisa e volta aqui.'],
+          ]);
+          return;
+        }
+
+        // o monte vira buraco: os dois estados já nasceram montados na peça
+        monte.visible = false;
+        cova.visible = true;
+        cavar.enabled = false;
+        api.setFlag('osso-cavado');
+
+        await conversa([
+          [R, 'Um osso. Um osso inteiro, enterrado no jardim do clube.'],
+          [A, 'Quem enterra osso? Cachorro enterra osso.'],
+          [R, 'A gente conhece um cachorro.'],
+          [A, 'A gente conhece o cachorro.'],
+        ]);
+        api.toast('Osso', '🦴');
+      },
+    });
+    cavar.enabled = !jaCavou;
+
+    /**
      * A JOSEFINA, a jardineira. Ela passeia PELO CAMINHO, e não pelo gramado
      * inteiro: a faixa é o corredor entre as duas colunas de canteiros, então
      * ela nunca pisa numa horta — sem precisar de uma lista de obstáculos, que
@@ -1209,6 +1290,27 @@ export const clube: SceneDef = {
           });
           return;
         }
+        /**
+         * A DICA DO OSSO É A PRIMEIRA HISTÓRIA DA SEGUNDA VISITA, e não uma
+         * das sorteadas. Sorteada, ela poderia não sair nunca — e uma pista que
+         * o jogo pode esconder para sempre não é pista, é loteria. Ela sai uma
+         * vez, na primeira volta ao jardim, e some assim que o osso é
+         * desenterrado (quem já achou não precisa de dica).
+         */
+        if (!api.flag('osso-cavado') && !api.flag('josefina-dica-osso')) {
+          api.setFlag('josefina-dica-osso');
+          await api.say([
+            'Ah, antes que eu esqueça. Anda aparecendo terra remexida lá no fundo, na fileira da direita.',
+          ], J);
+          await conversa([
+            [A, 'Alguém andou mexendo no seu jardim?'],
+          ]);
+          await api.say([
+            'Sete anos cuidando daqui e eu nunca descobri o quê. Se vocês olharem, me contem.',
+          ], J);
+          return;
+        }
+
         // toda visita seguinte rende uma historinha dela — é o que ela mais
         // gosta de fazer, e o que faz valer a pena voltar no jardim
         await api.say([w.pick(HISTORIAS_DA_JOSEFINA)], J);
