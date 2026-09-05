@@ -4,6 +4,7 @@ import type { GameAPI, SceneDef } from '../core/types';
 import { flat, toon } from '../core/materials';
 import {
   bin, bleachers, bus, busStop, bush, cadeiraDeSalvaVidas, canteiro, canteiroComPalmeira,
+  canteiroDeHorta, planta, regador, vasoDePlanta,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
   guarita, meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante, sebe,
@@ -15,6 +16,7 @@ import { interiorDoor } from '../world/furniture';
 import { Gina } from '../entities/bichos/Gina';
 import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
+import { Josefina } from '../entities/bichos/Josefina';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, MODA_PRAIA } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
@@ -35,6 +37,17 @@ const PISCINA = { x: 0, z: -3, largura: 16, profundidade: 10, fundo: 1.6 };
  * so acontece uma vez — funcionario que repete o mesmo texto de boas-vindas
  * toda vez deixa de ser gente e vira placa.
  */
+/** o que a Josefina conta nas visitas seguintes: uma historinha por vez */
+const HISTORIAS_DA_JOSEFINA = [
+  'A lavanda foi a primeira. Plantei ela sozinha, num copo, antes de existir canteiro aqui.',
+  'O girassol não olha pro sol, sabia? Ele olha pro lado que dá menos trabalho. Eu respeito.',
+  'Já tive um tomateiro que deu um tomate só. Um. A gente comemorou igual.',
+  'A samambaia é a mais dramática. Se eu esqueço um dia, ela finge que morreu.',
+  'Alface a gente colhe de fora pra dentro. Assim ela continua crescendo pelo meio.',
+  'Quando chove forte eu fico aqui, olhando. Não tem por que correr, já tá tudo regado.',
+  'Essa daqui no meu casco eu levo comigo. É que ela ainda é pequenininha.',
+];
+
 const FALAS_DO_NOEL = [
   'Suco gelado com esse sol? É quase obrigatório.',
   'Hoje o abacaxi tá doce sem precisar de açúcar. SEM AÇÚCAR!',
@@ -1067,6 +1080,145 @@ export const clube: SceneDef = {
       w.add(w.place(textSign(texto, cor), x, 0, z));
       w.blockCircle(x, z, 0.25);
     }
+
+    /**
+     * ======================= O JARDIM DA JOSEFINA, no gramado do fundo leste
+     *
+     * O gramado era uma mancha verde vazia com duas mesas de piquenique em
+     * cima. Vira um jardim ORGANIZADO, que é o que o Renan pediu — e organizado
+     * aqui quer dizer três coisas concretas: canteiros retangulares alinhados
+     * em duas colunas, um caminho de pedrinha entre elas, e UM tipo de planta
+     * por canteiro.
+     *
+     * ONDE ELE COUBE. O gramado vai de `x 17` a `29`; as mesas de piquenique
+     * ocupam até `x 22,4` e a jardineira com palmeira até `20,4`. Sobra a faixa
+     * de `22,6` a `29`, e é exatamente nela que o jardim entra — sem mexer em
+     * nada do que já estava lá.
+     */
+    const JARDIM = { xEsq: 23.7, xDir: 27.5, caminho: 25.6 };
+
+    // o caminho de pedrinha entre as duas colunas de canteiros. Decalque, então
+    // entra por cima da grama sem brigar por profundidade.
+    w.patch(JARDIM.caminho, -13.8, 1.3, 15, P.concrete, 0, 0.022, calcadaDePedrinha(0.4, 5));
+
+    /**
+     * OS CANTEIROS, quatro fileiras em duas colunas. Cada um com uma espécie
+     * só: misturar tudo em todo lugar desfaz a leitura de "alguém plantou isto
+     * aqui" — passa a parecer mato bonito.
+     */
+    for (const [z, esquerda, direita] of [
+      [-19, 'alface', 'tomate'],
+      [-15.5, 'lavanda', 'suculenta'],
+      [-12, 'girassol', 'samambaia'],
+      [-8.5, 'tomate', 'alface'],
+    ] as const) {
+      for (const [x, tipo] of [[JARDIM.xEsq, esquerda], [JARDIM.xDir, direita]] as const) {
+        w.add(w.place(canteiroDeHorta(tipo, 2.2, 1.3, (x + z) / 11 % 1), x, 0, z));
+        w.blockBox(x, z, 1.1, 0.65);
+      }
+    }
+
+    /**
+     * AS PLANTAS DIRETO NA TERRA, no fundo do jardim — o Renan pediu que
+     * algumas fossem plantadas no chão, e não em canteiro. Uma fileira de
+     * lavanda alinhada em `z = -21,2`, sem mureta e sem colisor: são 30 cm de
+     * altura, e cercar isso faria o jardim virar um labirinto.
+     */
+    for (let i = 0; i < 5; i++) {
+      const x = 22.8 + i * 1.4;
+      w.add(w.place(planta('lavanda', 1.15, (i * 0.27) % 1), x, 0, -21.2));
+    }
+    // e uma fileira de suculentas na frente, que é a borda baixa do jardim
+    for (let i = 0; i < 6; i++) {
+      const x = 22.9 + i * 1.15;
+      w.add(w.place(planta('suculenta', 1.1, (i * 0.41) % 1), x, 0, -6.6));
+    }
+
+    /**
+     * OS VASOS ladeando a boca do caminho. Eles existem porque um jardim só de
+     * canteiros no chão fica TODO na mesma altura, e a câmera isométrica achata
+     * isso — os vasos levantam parte das plantas e dão relevo à área.
+     */
+    for (const [x, z, tipo, alto] of [
+      [JARDIM.caminho - 1.15, -6.4, 'samambaia', 0.34],
+      [JARDIM.caminho + 1.15, -6.4, 'girassol', 0.3],
+      [JARDIM.caminho - 1.15, -21.2, 'alface', 0.3],
+      [JARDIM.caminho + 1.15, -21.2, 'tomate', 0.34],
+    ] as const) {
+      w.add(w.place(vasoDePlanta(tipo, alto, (x * z) / 13 % 1), x, 0, z));
+      w.blockCircle(x, z, 0.24);
+    }
+
+    // o regador largado no meio do caminho: é o que diz que alguém TRABALHA
+    // aqui, e não que o jardim se cuida sozinho
+    w.add(w.place(regador(), JARDIM.caminho + 0.4, 0, -17.6, 0.6));
+
+    /**
+     * A JOSEFINA, a jardineira. Ela passeia PELO CAMINHO, e não pelo gramado
+     * inteiro: a faixa é o corredor entre as duas colunas de canteiros, então
+     * ela nunca pisa numa horta — sem precisar de uma lista de obstáculos, que
+     * é o mesmo truque da coleira dos outros bichos, usado ao contrário.
+     *
+     * Ela é a MAIS LENTA do jogo (0,3 contra 0,85 do Noel) e descansa de 3 a
+     * 7 s. É a personalidade que o Renan pediu, e ela mora inteira nesses dois
+     * números.
+     */
+    const josefina = new Josefina({
+      minX: JARDIM.caminho - 0.55, maxX: JARDIM.caminho + 0.55,
+      minZ: -20, maxZ: -7.4,
+    });
+    w.add(josefina.group);
+    josefina.aoSoar = () => g.som('cantarolar');
+
+    const falarComAJosefina = w.interact({
+      id: 'clube:josefina',
+      x: josefina.x, z: josefina.z, radius: 1.6,
+      label: 'Falar com a Josefina', icon: '🐢',
+      highlight: josefina.group,
+      onInteract: async (api) => {
+        josefina.receberCarinho();
+        api.som('cantarolar');
+        const J = 'Josefina';
+        if (!api.flag('josefina-conhecida')) {
+          api.setFlag('josefina-conhecida');
+          await api.say(['Ah, oi. Podem chegar, só não pisem na lavanda.'], J);
+          await conversa([
+            [A, 'Ela tem um vasinho nas costas.'],
+            [R, 'Ela tem um laço rosa e um vasinho nas costas.'],
+          ]);
+          await api.say(['Josefina. Eu cuido daqui.'], J);
+          await api.say([
+            'Esse jardim tem sete anos. Começou com um pé de lavanda num copo de requeijão.',
+          ], J);
+          await conversa([
+            [A, 'Sete anos?'],
+          ]);
+          await api.say([
+            'Eu sou devagar, meu bem. Mas eu chego. Planta também é assim: ninguém consegue apressar.',
+          ], J);
+          await conversa([
+            [R, 'Acho que ela acabou de dar um conselho pra gente.'],
+            [A, 'Acho que sim.'],
+          ]);
+          api.unlock({
+            id: 'josefina-do-jardim',
+            title: 'A Josefina do jardim',
+            place: 'Clube',
+            note: 'Uma tartaruga de laço rosa e vasinho nas costas, que cuida do jardim do clube e conta história enquanto rega.',
+            icon: '🐢',
+          });
+          return;
+        }
+        // toda visita seguinte rende uma historinha dela — é o que ela mais
+        // gosta de fazer, e o que faz valer a pena voltar no jardim
+        await api.say([w.pick(HISTORIAS_DA_JOSEFINA)], J);
+      },
+    });
+
+    w.onUpdate((dt) => {
+      josefina.update(dt);
+      falarComAJosefina.moveTo(josefina.x, josefina.z);
+    });
 
     // REFLETORES nos dois cantos do fundo — clube que fecha tarde tem. Eles
     // seguem a beirada do piso: com o deck maior, o `z = -19` de antes ficou no

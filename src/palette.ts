@@ -212,6 +212,32 @@ export const PALETTE = {
   aventalDoNoel: 0x4ec1a8,
   aventalFaixa: 0xf7f2e8,
 
+  // o jardim da Josefina, no gramado do fundo. A terra e escura e umida (ela
+  // rega); o barro dos vasos e o mesmo terracota das jardineiras do resto do
+  // jogo, para o jardim pertencer ao clube.
+  terraDeCanteiro: 0x6b4a33,
+  terraUmida: 0x54382a,
+  barroDoVaso: 0xc2703f,
+  barroDaBorda: 0xa85b32,
+  cercaDeJardim: 0xd9c08a,
+  // as plantas, por tipo. Elas precisam ser DIFERENTES entre si em cor E em
+  // forma: um jardim inteiro no mesmo verde vira um tapete so.
+  folhaAlface: 0x8fc45a,
+  folhaSuculenta: 0x6fae86,
+  folhaSamambaia: 0x3f7a45,
+  florLavanda: 0x9d7ede,
+  florGirassol: 0xf2c14b,
+  florCamelia: 0xf2909f,
+  tomateMaduro: 0xd8402f,
+
+  // a Josefina, a tartaruga jardineira. O casco e verde-oliva com as placas
+  // (escudos) mais escuras; a pele e um verde mais claro e amarelado.
+  tartarugaCasco: 0x6d8a3f,
+  tartarugaEscudo: 0x53692f,
+  tartarugaBarriga: 0xc9b878,
+  tartarugaPele: 0x92ab5c,
+  lacoDaJosefina: 0xf58bb0,
+
   guaritaParede: 0xf5ead6,
   guaritaFaixa: 0x2f7d6b,
   guaritaBalcao: 0xb07c46,
