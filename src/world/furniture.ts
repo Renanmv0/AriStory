@@ -1371,3 +1371,91 @@ function estrela(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numbe
   ctx.closePath();
   ctx.fill();
 }
+
+/**
+ * A PLACA DE FACHADA do restaurante — o letreiro com o nome da casa.
+ *
+ * A primeira versão era uma caixa verde chapada com o texto colado em cima: de
+ * longe lia como adesivo na parede, e não como a placa de que a casa se
+ * orgulha. Uma placa de churrascaria de verdade tem MOLDURA, tem cornija em
+ * cima e embaixo, tem filete dourado por dentro e tem pilastra nas pontas — é
+ * a soma dessas quatro coisas que faz a peça ganhar espessura numa câmera que
+ * achata tudo.
+ *
+ * AS CAMADAS SOBEM EM ORDEM, e nenhuma divide plano com a de baixo — duas
+ * faces opacas coplanares olhando para o mesmo lado serrilham:
+ *
+ *   moldura  -0,050 … 0,050   (a madeira por trás de tudo)
+ *   fundo    -0,015 … 0,075   (o verde do quadro)
+ *   filete    0,079 … 0,091   (as quatro barras douradas)
+ *   texto     0,100           (o plano do letreiro)
+ *
+ * As pilastras são mais LARGAS que a placa (nascem centradas na ponta, e não
+ * encostadas por dentro): coladas por dentro, a face externa delas cairia no
+ * mesmo plano da lateral da moldura, que é o caso `max × max` que serrilha.
+ *
+ * O texto vem de fora, em `letreiro()`, para esta peça não conhecer canvas.
+ */
+export function placaDeFachada(
+  texto: THREE.Mesh,
+  largura = 6.2,
+  altura = 1.0,
+  corFundo: number = P.churrascoQuadroNegro,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'placa-de-fachada';
+  const madeira = toon(P.woodDark);
+  const ouro = toon(P.churrascoBrasaViva);
+
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.1), madeira);
+  g.add(moldura);
+
+  const fundo = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - 0.22, altura - 0.22, 0.09), toon(corFundo),
+  );
+  fundo.position.z = 0.03;
+  g.add(fundo);
+
+  // o filete dourado: quatro barras finas formando um retângulo por dentro do
+  // verde. Retângulo cheio viraria uma chapa de ouro — o que se quer é o fio
+  const fx = largura - 0.42;
+  const fy = altura - 0.42;
+  for (const sy of [-1, 1] as const) {
+    const barra = new THREE.Mesh(new THREE.BoxGeometry(fx, 0.035, 0.012), ouro);
+    barra.position.set(0, (sy * fy) / 2, 0.085);
+    g.add(barra);
+  }
+  for (const sx of [-1, 1] as const) {
+    const barra = new THREE.Mesh(new THREE.BoxGeometry(0.035, fy - 0.035, 0.012), ouro);
+    barra.position.set((sx * fx) / 2, 0, 0.085);
+    g.add(barra);
+  }
+
+  // as cornijas: o beiral em cima e o rodapé embaixo. São mais FUNDAS que a
+  // moldura, e é essa saliência que faz a placa ter volume de longe.
+  for (const sy of [-1, 1] as const) {
+    const cornija = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.3, 0.13, 0.26), madeira);
+    cornija.position.set(0, (sy * altura) / 2 + sy * 0.065, 0.06);
+    g.add(cornija);
+    // o friso claro colado na cornija, do lado de fora: o risco que separa a
+    // madeira da parede quando as duas pegam a mesma luz
+    const friso = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.3, 0.03, 0.02), ouro);
+    friso.position.set(0, (sy * altura) / 2 + sy * 0.065, 0.2);
+    g.add(friso);
+  }
+
+  // as pilastras das pontas, com o medalhão de latão no meio de cada uma
+  for (const sx of [-1, 1] as const) {
+    const pilastra = new THREE.Mesh(new THREE.BoxGeometry(0.2, altura + 0.06, 0.16), madeira);
+    pilastra.position.set((sx * largura) / 2, 0, 0.04);
+    g.add(pilastra);
+    const medalhao = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 12), ouro);
+    medalhao.rotation.x = Math.PI / 2;
+    medalhao.position.set((sx * largura) / 2, 0, 0.14);
+    g.add(medalhao);
+  }
+
+  texto.position.z = 0.1;
+  g.add(texto);
+  return g;
+}
