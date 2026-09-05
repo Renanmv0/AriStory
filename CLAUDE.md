@@ -31,6 +31,8 @@ já está respondido ali. `ARQUITETURA.md` é o motor por dentro.
 `CONTEXTO-INTEGRAL.md` e `ROADMAP.md` são um retrato do projeto e do que
 falta — **úteis para se situar rápido, mas podem estar desatualizados**; o
 `git log` é a fonte da verdade para o que mudou por último.
+`MINIGAME-RESTAURANTE.md` é o plano do turno do Mania de Churrasco: projeto,
+não código — nada dele está no jogo até o `git log` dizer que está.
 
 ## Invariantes
 
