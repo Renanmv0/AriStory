@@ -257,7 +257,7 @@ const escala = await page.evaluate(() => {
   return e;
 });
 
-await page.evaluate(() => window.jogo.debugPlace(9.6, -9 + 1.5, 0));
+await page.evaluate(() => window.jogo.debugPlace(2.4, -9 + 1.5, 0));
 await page.waitForTimeout(1300);
 const promptDaEscala = await prompt();
 await page.screenshot({ path: `${OUT}-escala.png` });

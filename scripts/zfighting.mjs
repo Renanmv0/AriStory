@@ -49,6 +49,7 @@ const PECAS = [
   ['pia-industrial', 'mania-de-churrasco'],
   ['balcao-de-passagem', 'mania-de-churrasco'],
   ['estante-de-bebidas', 'mania-de-churrasco'],
+  ['placa-de-fachada', 'mania-de-churrasco'],
 ];
 
 const browser = await chromium.launch({

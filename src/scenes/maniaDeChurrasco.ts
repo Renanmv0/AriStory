@@ -4,8 +4,8 @@ import type { GameAPI, SceneDef } from '../core/types';
 import {
   arandela, balcaoDePassagem, bancadaInox, banquetaAlta, caixaRegistradora, chair,
   churrasqueira, diningTable, estanteDeBebidas, fogaoIndustrial, fridge, interiorDoor,
-  luminariaPendente, pictureFrame, piaIndustrial, pottedPlant, quadroDeGiz, quadroDoEmpregadoDoMes, rug,
-  upperCabinets, wallShelf,
+  luminariaPendente, pictureFrame, piaIndustrial, placaDeFachada, pottedPlant, quadroDeGiz,
+  quadroDoEmpregadoDoMes, rug, upperCabinets, wallShelf,
 } from '../world/furniture';
 import { letreiro, osso, pratoServido } from '../world/props';
 import { pratoPorId } from '../world/cardapioData';
@@ -722,13 +722,11 @@ export const maniaDeChurrasco: SceneDef = {
     }
 
     // ------------------------------------------------------------- enfeites
-    // o letreiro do nome, em cima do bar: é a primeira coisa que se lê ao entrar
-    const placaFundo = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.9, 0.08), toon(P.churrascoQuadroNegro));
-    placaFundo.position.set(BAR.x, 2.5, z0 + 0.2);
-    w.add(placaFundo);
-    const nome = letreiro('Mania de Churrasco', 5.6, 0.62, '#ffd88a');
-    nome.position.set(BAR.x, 2.52, z0 + 0.26);
-    w.add(nome);
+    // a placa do nome, em cima do bar: é a primeira coisa que se lê ao entrar
+    w.add(w.place(
+      placaDeFachada(letreiro('Mania de Churrasco', 5.4, 0.6, '#ffd88a'), 6.2, 0.98),
+      BAR.x, 2.5, z0 + 0.22,
+    ));
 
     const lousa = w.add(w.place(
       quadroDeGiz(['Hoje', 'picanha na brasa', 'arepa recheada', 'suco de morango'], 1.7, 1.35),
@@ -788,19 +786,24 @@ export const maniaDeChurrasco: SceneDef = {
      * decide se ela nasce visível é a `flag`, não o que aconteceu nesta sessão.
      *
      * É um quadro de giz, como o do cardápio do dia do outro lado do salão: a
-     * casa escreve as coisas a giz, e isso é do lugar. Ela vai a `x = 9,6`,
-     * entre a registradora (8,9) e o quadro do Walter (11,4 e 0,82 de largura,
-     * começando em 10,99) — 0,94 de folga para o quadro, e nada encosta.
+     * casa escreve as coisas a giz, e isso é do lugar.
+     *
+     * ONDE ELA FICA: à ESQUERDA da placa do nome, a pedido do Renan. Ela
+     * estava em `x = 9,6`, e ali a placa passava POR CIMA dela — as duas se
+     * cruzavam entre `y 2,05` e `2,25`, e no celular a escala aparecia meio
+     * comida. A placa ocupa de 3,3 a 9,7 com as pilastras, então a escala vai
+     * para `x = 2,4` (1,9 a 2,9): 0,4 de folga para a placa, e a arandela de
+     * `x = 1,6` fica do outro lado sem encostar.
      */
     const escala = w.add(w.place(
-      quadroDeGiz(['Escala de amanhã', 'Walter', ARI.name, RENAN.name], 1.0, 1.0),
-      9.6, 1.9, z0 + 0.18,
+      quadroDeGiz(['Escala de amanhã', 'Walter', ARI.name, RENAN.name], 1.2, 1.05),
+      2.4, 1.7, z0 + 0.18,
     ));
     escala.visible = g.flag('turno-aceito');
 
     const lerAEscala = w.interact({
       id: 'mania:escala',
-      x: 9.6, z: z0 + 1.5, radius: 1.6,
+      x: 2.4, z: z0 + 1.5, radius: 1.6,
       label: 'Ler a escala de amanhã', icon: '📋',
       highlight: escala,
       onInteract: async (api) => {
@@ -809,7 +812,7 @@ export const maniaDeChurrasco: SceneDef = {
           [R, 'Ele escreveu com giz. Com a boca, imagino.'],
           [A, 'Então é sério mesmo. A gente vai trabalhar amanhã.'],
           [R, 'A gente vai servir as mesas e ele vai cuidar da cozinha.'],
-          [A, 'Eu vou ser a melhor garçonete que esse salão já viu.'],
+          [A, 'Eu vou ser o melhor garçom que esse salão já viu.'],
         ]);
         api.toast('Amanhã, no Mania', '📋');
       },
