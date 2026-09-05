@@ -128,6 +128,24 @@ await page.waitForTimeout(800);
 await page.keyboard.press('KeyE');
 await page.waitForTimeout(900);
 
+/**
+ * O QUANTO ELE ANDA DURANTE O CARINHO É MEDIDO AGORA, no começo da conversa, e
+ * não depois dela.
+ *
+ * `duracaoDoCarinho` do Pelusa é 3,4 SEGUNDOS DE JOGO, e aqui dentro o relógio
+ * do jogo anda a menos de um terço do relógio de parede: a conversa inteira já
+ * consome quase todo esse tempo. Medindo no fim, o teste às vezes pegava o gato
+ * DEPOIS de o carinho ter passado — e acusava um defeito que era só uma corrida
+ * entre dois relógios. A janela abaixo cabe inteira dentro do carinho.
+ */
+const antesDoRepouso = await onde();
+await page.waitForTimeout(1600);
+const depoisDoRepouso = await onde();
+const andouNoCarinho = Math.hypot(
+  depoisDoRepouso[0] - antesDoRepouso[0],
+  depoisDoRepouso[1] - antesDoRepouso[1],
+);
+
 const falas = [];
 for (let i = 0; i < 10; i++) {
   if (!(await page.locator('.dialogue.show').count())) break;
@@ -139,15 +157,6 @@ for (let i = 0; i < 10; i++) {
 }
 await page.waitForTimeout(600);
 await page.screenshot({ path: `${OUT}-carinho.png` });
-
-// depois do carinho ele fica sentado um tempo: quase não sai do lugar
-const antesDoRepouso = await onde();
-await page.waitForTimeout(1600);
-const depoisDoRepouso = await onde();
-const andouNoCarinho = Math.hypot(
-  depoisDoRepouso[0] - antesDoRepouso[0],
-  depoisDoRepouso[1] - antesDoRepouso[1],
-);
 
 const noDiario = await page.evaluate(() =>
   (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').memories ?? [])

@@ -3708,3 +3708,309 @@ export function cadeiraDeSalvaVidas(altura = 1.7): THREE.Group {
 
   return g;
 }
+
+/* =========================================================================
+ *                       O JARDIM DA JOSEFINA
+ *
+ * Um jardim organizado nao e um monte de plantas espalhadas: e FILEIRA. O que
+ * faz o gramado do fundo parecer jardim cuidado, e nao mato bonito, sao tres
+ * coisas, e todas sao arrumacao:
+ *
+ * 1. os canteiros sao RETANGULARES e alinhados entre si;
+ * 2. dentro de cada canteiro as plantas ficam em GRADE, com espacamento igual;
+ * 3. cada canteiro tem UM tipo de planta so — misturar tudo em todo lugar
+ *    desfaz a leitura de "alguem plantou isto aqui".
+ *
+ * As especies precisam diferir em COR **e** em FORMA. So a cor nao basta: a
+ * esta distancia de camera, dois verdes proximos viram o mesmo verde, e o
+ * jardim volta a ser tapete.
+ * ========================================================================= */
+
+/** o que se planta num canteiro do jardim */
+export type TipoDePlanta = 'alface' | 'suculenta' | 'samambaia' | 'lavanda' | 'girassol' | 'tomate';
+
+/**
+ * Uma muda, do tipo pedido, plantada com a base em `y = 0`.
+ *
+ * `semente` desencontra as folhas: sem ela a fileira vira uma linha de clones,
+ * que e o oposto do que uma horta de verdade parece.
+ */
+export function planta(tipo: TipoDePlanta, escala = 1, semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  const giro = semente * 6.283;
+  const e = escala;
+
+  const caule = (altura: number, raio = 0.022 * e, cor: number = P.leafDark): THREE.Mesh => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 1.2, altura, 6), toon(cor));
+    m.position.y = altura / 2;
+    return m;
+  };
+
+  if (tipo === 'alface') {
+    // ROSETA BAIXA E LARGA: folhas abertas em volta de um miolo, quase rente ao
+    // chao. E a silhueta que diz "horta".
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + giro;
+      const folha = new THREE.Mesh(new THREE.SphereGeometry(0.11 * e, 8, 6), toon(P.folhaAlface));
+      folha.scale.set(1, 0.42, 1.25);
+      folha.position.set(Math.cos(a) * 0.075 * e, 0.05 * e, Math.sin(a) * 0.075 * e);
+      folha.rotation.y = a;
+      g.add(folha);
+    }
+    const miolo = new THREE.Mesh(new THREE.SphereGeometry(0.075 * e, 8, 6), toon(0xa8d472));
+    miolo.scale.y = 0.8;
+    miolo.position.y = 0.085 * e;
+    g.add(miolo);
+  } else if (tipo === 'suculenta') {
+    // ESTRELA DE PONTAS GROSSAS, em duas coroas. Compacta e azulada: e o
+    // contraste de forma com a alface, que e larga e mole.
+    for (const [coroa, quantas, comp, inclina] of [[0, 6, 0.13, 0.9], [1, 5, 0.085, 0.45]] as const) {
+      for (let i = 0; i < quantas; i++) {
+        const a = (i / quantas) * Math.PI * 2 + giro + coroa * 0.5;
+        const petala = new THREE.Mesh(new THREE.ConeGeometry(0.035 * e, comp * e, 5), toon(P.folhaSuculenta));
+        petala.position.set(
+          Math.cos(a) * comp * 0.42 * e,
+          0.03 * e + comp * 0.42 * e,
+          Math.sin(a) * comp * 0.42 * e,
+        );
+        petala.rotation.z = -Math.cos(a) * inclina;
+        petala.rotation.x = Math.sin(a) * inclina;
+        g.add(petala);
+      }
+    }
+  } else if (tipo === 'samambaia') {
+    // FRONDES ARQUEADAS saindo de um ponto: alta, aberta e escura. E a unica
+    // que passa dos 40 cm, entao ela e o "fundo" das fileiras.
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + giro;
+      const fronde = new THREE.Group();
+      fronde.rotation.y = a;
+      fronde.rotation.x = 0.55;
+      for (let k = 0; k < 4; k++) {
+        const folha = new THREE.Mesh(
+          new THREE.SphereGeometry(0.055 * e - k * 0.008 * e, 6, 5),
+          toon(P.folhaSamambaia),
+        );
+        folha.scale.set(0.7, 0.35, 2.2);
+        folha.position.set(0, 0.16 * e - k * 0.03 * e, 0.09 * e + k * 0.11 * e);
+        fronde.add(folha);
+      }
+      g.add(fronde);
+    }
+  } else if (tipo === 'lavanda') {
+    // ESPIGAS FINAS EM PE: cinco hastes com a ponta roxa. A forma e vertical e
+    // rala, o oposto das moitas cheias.
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 + giro;
+      const alto = (0.24 + ((i * 31) % 7) * 0.012) * e;
+      const haste = caule(alto);
+      haste.position.set(Math.cos(a) * 0.05 * e, alto / 2, Math.sin(a) * 0.05 * e);
+      haste.rotation.z = -Math.cos(a) * 0.18;
+      haste.rotation.x = Math.sin(a) * 0.18;
+      g.add(haste);
+      const espiga = new THREE.Mesh(new THREE.CapsuleGeometry(0.026 * e, 0.09 * e, 4, 6), toon(P.florLavanda));
+      espiga.position.set(Math.cos(a) * 0.075 * e, alto + 0.045 * e, Math.sin(a) * 0.075 * e);
+      g.add(espiga);
+    }
+  } else if (tipo === 'girassol') {
+    // UMA HASTE SO, ALTA, com a flor virada para `+Z` — que e de onde a camera
+    // olha. Girassol de costas e um disco marrom.
+    const alto = 0.42 * e;
+    g.add(caule(alto, 0.03 * e));
+    for (let k = 0; k < 2; k++) {
+      const folha = new THREE.Mesh(new THREE.SphereGeometry(0.06 * e, 6, 5), toon(P.leafMid));
+      folha.scale.set(1.6, 0.25, 0.9);
+      folha.position.set((k ? 1 : -1) * 0.07 * e, alto * (0.45 + k * 0.22), 0);
+      g.add(folha);
+    }
+    const flor = new THREE.Group();
+    flor.position.set(0, alto + 0.02 * e, 0.02 * e);
+    flor.rotation.x = -0.5;
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      const petala = new THREE.Mesh(new THREE.BoxGeometry(0.045 * e, 0.012 * e, 0.075 * e), toon(P.florGirassol));
+      petala.position.set(Math.cos(a) * 0.075 * e, 0, Math.sin(a) * 0.075 * e);
+      petala.rotation.y = -a;
+      flor.add(petala);
+    }
+    const miolo = new THREE.Mesh(new THREE.CylinderGeometry(0.05 * e, 0.05 * e, 0.022 * e, 10), toon(0x6b4a33));
+    flor.add(miolo);
+    g.add(flor);
+  } else {
+    // TOMATE: moita media com bolinhas vermelhas. E a unica cor quente das
+    // fileiras, e e ela que faz a horta parecer horta e nao jardineira.
+    const mata = new THREE.Mesh(new THREE.SphereGeometry(0.15 * e, 8, 6), toon(P.leafMid));
+    mata.scale.y = 0.85;
+    mata.position.y = 0.13 * e;
+    g.add(mata);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 + giro;
+      const fruta = new THREE.Mesh(new THREE.SphereGeometry(0.035 * e, 7, 6), toon(P.tomateMaduro));
+      fruta.position.set(
+        Math.cos(a) * 0.11 * e,
+        0.1 * e + ((i * 23) % 5) * 0.02 * e,
+        Math.sin(a) * 0.11 * e,
+      );
+      g.add(fruta);
+    }
+  }
+  return g;
+}
+
+/**
+ * CANTEIRO RETANGULAR do jardim: mureta de madeira, terra dentro e as plantas
+ * em GRADE.
+ *
+ * A mureta e de madeira e nao de alvenaria porque horta de clube e horta de
+ * caixote — e porque a madeira clara separa o canteiro do verde do gramado sem
+ * competir com as plantas.
+ *
+ * A TERRA FICA ACIMA DO GRAMADO (0,1) e a mureta sobe ate 0,2: assim a terra
+ * nao e coplanar com o chao, que e o jeito de nao serrilhar. Ver a regra da
+ * pilha do chao na skill de cenario.
+ */
+export function canteiroDeHorta(
+  tipo: TipoDePlanta,
+  largura = 2.4,
+  profundidade = 1.2,
+  semente = 0.5,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'canteiro-de-horta';
+  // a especie fica na etiqueta: e por ela que o teste confere que cada canteiro
+  // tem UM tipo so, que e o que faz o jardim parecer organizado
+  g.userData.planta = tipo;
+  const ALTURA = 0.2;
+  const TABUA = 0.09;
+
+  // as quatro tabuas da mureta. As duas do `z` sao mais CURTAS que a largura,
+  // para as pontas nao caírem no mesmo plano das outras duas — quina de caixa
+  // com face compartilhada serrilha.
+  for (const sz of [-1, 1] as const) {
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura, ALTURA, TABUA), toon(P.cercaDeJardim));
+    tabua.position.set(0, ALTURA / 2, sz * (profundidade / 2 - TABUA / 2));
+    g.add(tabua);
+  }
+  for (const sx of [-1, 1] as const) {
+    const tabua = new THREE.Mesh(
+      new THREE.BoxGeometry(TABUA, ALTURA, profundidade - TABUA * 2 - 0.01),
+      toon(P.barroDaBorda),
+    );
+    tabua.position.set(sx * (largura / 2 - TABUA / 2), ALTURA / 2, 0);
+    g.add(tabua);
+  }
+
+  // a terra, um degrau abaixo do topo da mureta
+  const terra = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - TABUA * 2, 0.12, profundidade - TABUA * 2),
+    toon(P.terraDeCanteiro),
+  );
+  terra.position.y = 0.1;
+  g.add(terra);
+  // os sulcos: duas faixas de terra mais escura, que e o que diz "isto foi
+  // capinado", e nao "isto e uma caixa de areia"
+  for (const sz of [-1, 1] as const) {
+    const sulco = new THREE.Mesh(
+      new THREE.BoxGeometry(largura - TABUA * 2 - 0.14, 0.02, 0.07),
+      toon(P.terraUmida),
+    );
+    sulco.position.set(0, 0.165, sz * profundidade * 0.19);
+    g.add(sulco);
+  }
+
+  /**
+   * AS PLANTAS EM GRADE. O numero de colunas sai do comprimento, para um
+   * canteiro maior nao ficar com as mesmas quatro mudas mais espalhadas.
+   */
+  /**
+   * DUAS FILEIRAS, e nao uma. A primeira versao punha tres mudas em linha unica
+   * e o canteiro aparecia com mais terra que planta — de longe lia como caixa
+   * de areia, e nao como horta. Canteiro cheio e o que faz o jardim parecer
+   * cuidado.
+   */
+  const colunas = Math.max(3, Math.round((largura - 0.45) / 0.45));
+  const linhas = profundidade > 1.0 ? 2 : 1;
+  const vaoX = largura - 0.62;
+  for (let c = 0; c < colunas; c++) {
+    for (let l = 0; l < linhas; l++) {
+      // as duas fileiras saem DESENCONTRADAS meio passo, como canteiro de
+      // verdade: em grade perfeita elas viram um tabuleiro de xadrez
+      const desencontro = linhas === 1 ? 0 : (l === 1 ? 0.5 : 0);
+      const muda = planta(tipo, 1, (semente + c * 0.19 + l * 0.41) % 1);
+      muda.position.set(
+        -vaoX / 2 + ((c + desencontro) * vaoX) / Math.max(1, colunas - 1 + desencontro),
+        0.16,
+        linhas === 1 ? 0 : -profundidade * 0.17 + l * profundidade * 0.34,
+      );
+      g.add(muda);
+    }
+  }
+  return g;
+}
+
+/**
+ * VASO DE BARRO com uma planta dentro, para a fileira da beirada do jardim.
+ *
+ * Ele existe alem dos canteiros porque um jardim so de canteiros no chao fica
+ * TODO na mesma altura, e a camera isometrica achata isso: os vasos levantam
+ * parte das plantas e dao relevo a area.
+ */
+export function vasoDePlanta(tipo: TipoDePlanta, altura = 0.32, semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'vaso-de-planta';
+  const raio = altura * 0.55;
+
+  const corpo = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio, raio * 0.72, altura, 12),
+    toon(P.barroDoVaso),
+  );
+  corpo.position.y = altura / 2;
+  g.add(corpo);
+  // o colarinho do vaso: mais LARGO que o corpo, senao as duas faces laterais
+  // caem no mesmo plano e a borda serrilha
+  const colar = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio * 1.1, raio * 1.1, altura * 0.13, 12),
+    toon(P.barroDaBorda),
+  );
+  colar.position.y = altura * 0.955;
+  g.add(colar);
+  const terra = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio * 0.95, raio * 0.95, 0.03, 10),
+    toon(P.terraUmida),
+  );
+  terra.position.y = altura * 0.99;
+  g.add(terra);
+
+  const muda = planta(tipo, 0.85, semente);
+  muda.position.y = altura;
+  g.add(muda);
+  return g;
+}
+
+/**
+ * O REGADOR da Josefina, largado no jardim. Peca pequena e sem colisor: e um
+ * sinal de que alguem trabalha aqui, que e o que separa um jardim de um
+ * canteiro decorativo.
+ */
+export function regador(cor: number = P.metalGrey): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'regador';
+  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.2, 10), toon(cor));
+  corpo.position.y = 0.1;
+  g.add(corpo);
+  // o bico, subindo em diagonal, e o chuveirinho da ponta
+  const bico = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.035, 0.3, 8), toon(cor));
+  bico.position.set(0.16, 0.17, 0);
+  bico.rotation.z = -0.75;
+  g.add(bico);
+  const crivo = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.04, 0.05, 8), toon(P.metalWhite));
+  crivo.position.set(0.27, 0.26, 0);
+  crivo.rotation.z = -0.75;
+  g.add(crivo);
+  // a alca por cima
+  const alca = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.016, 6, 12, Math.PI), toon(cor));
+  alca.position.set(-0.03, 0.2, 0);
+  alca.rotation.y = Math.PI / 2;
+  g.add(alca);
+  return g;
+}

@@ -35,6 +35,7 @@ export type SomNome =
   | 'latido'
   | 'apito'
   | 'gluglu'
+  | 'cantarolar'
   | 'menu'
   | 'diario'
   | 'recomecar';
@@ -345,6 +346,35 @@ export const EFEITOS: Record<SomNome, Receita> = {
       abafo: 1500,
     });
     chiado(ctx, destino, { quando: t, dur: 0.4, vol: 0.01, freq: 1800, q: 3 });
+  },
+
+  /**
+   * O CANTAROLAR DA JOSEFINA, a tartaruga jardineira.
+   *
+   * Ela nao late nem apita: ela cantarola enquanto cuida das plantas. Sao tres
+   * notas em onda SENOIDAL — a unica onda limpa da lista, e e ela que faz o som
+   * parecer voz humana fechada em vez de instrumento.
+   *
+   * O ATAQUE E LENTO (0,1 s) e as notas se SOBREPOEM. Ataque rapido faria um
+   * bipe; a sobreposicao e o que amarra as tres num trecho de melodia so, em
+   * vez de tres sons soltos. Um vibrato leve, feito com o `glide` de meio tom
+   * para cima, tira o ar de sintetizador.
+   */
+  cantarolar: ({ ctx, destino, t }) => {
+    const NOTAS = [PENTA[2], PENTA[4], PENTA[3]];
+    NOTAS.forEach((grau, i) => {
+      const freq = nota(DO + 12 + grau);
+      tom(ctx, destino, {
+        freq,
+        glide: freq * 1.03,
+        quando: t + i * 0.34,
+        dur: 0.52,
+        vol: 0.055 - i * 0.006,
+        ataque: 0.1,
+        tipo: 'sine',
+        abafo: 1600,
+      });
+    });
   },
 
   tv: ({ ctx, destino, t }) => {
