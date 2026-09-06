@@ -200,14 +200,32 @@ if (!fotografou) await page.screenshot({ path: `${OUT}-danca.png` });
  * da dança. As falas do fim (a entrega) vêm daqui.
  */
 for (const f of await venceAFala()) if (!falas.includes(f)) falas.push(f);
-await page.waitForTimeout(1400);
 
-const depois = await page.evaluate(() => ({
+/**
+ * E ESPERA PELO SORVETE, não pelo relógio.
+ *
+ * A cena tem `wait`s de dança no meio, e `venceAFala` desiste no primeiro
+ * silêncio — um `waitForTimeout` fixo depois dela dava certo por sorte e
+ * falhava sempre que a máquina estava um pouco mais lenta. Aqui o laço
+ * insiste no E até a cena FECHAR — e o que fecha a cena é a memória entrando
+ * no diário, que é a última coisa que ela faz, depois dos sorvetes e das duas
+ * falas de despedida.
+ */
+const seEntregou = () => page.evaluate(() => ({
   morangoDoAri: window.jogo.hasItem('sorvete-morango', 'ari'),
   maracujaDoRenan: window.jogo.hasItem('sorvete-maracuja', 'renan'),
   memoria: (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').memories ?? [])
     .some((m) => m.id === 'sorvete-villa'),
 }));
+let depois = await seEntregou();
+for (let i = 0; i < 50 && !depois.memoria; i++) {
+  const t = await page.locator('.dialogue .text').textContent().catch(() => '');
+  if (t && t.length > 12 && !falas.includes(t)) falas.push(t);
+  if (await page.locator('.dialogue.show').count()) await page.keyboard.press('KeyE');
+  await page.waitForTimeout(420);
+  depois = await seEntregou();
+}
+await page.waitForTimeout(600);
 
 /**
  * O CONTROLE VOLTOU? A prova é andar: se `lockPlayer(true)` tiver ficado de pé,

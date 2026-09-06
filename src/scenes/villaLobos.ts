@@ -458,6 +458,26 @@ export const villaLobos: SceneDef = {
     mano.aoSoar = () => g.som('pinguim');
 
     /**
+     * O POSTO DE CIMA — onde o Mano fica enquanto a dupla está na roda gigante.
+     *
+     * Uma das falas lá de cima é sobre ele ("olha o Mano lá embaixo"), e do
+     * alto da roda ele estava ATRÁS do quiosque: a roda fica em (0; −26) e o
+     * quiosque em (12; 18,6), então quem olha de lá vê o telhado, e o Mano —
+     * que atende pela FRENTE, em (12,9; 20,3) — some por trás dele.
+     *
+     * Este ponto é o LADO do quiosque, 2,8 pelo eixo lateral dele (a normal da
+     * frente é `(sen 0,3; cos 0,3)`, então o lado é `(cos 0,3; −sen 0,3)`).
+     * Daqui ele fica 2,7 fora da silhueta do quiosque visto da roda — folga de
+     * sobra sobre a meia-largura de 1,4 — e o caminho até lá passa raspando
+     * POR FORA do colisor, sem atravessar a peça.
+     *
+     * E ele fica OLHANDO PARA A RODA: se a fala é sobre ele, que ele esteja
+     * olhando de volta.
+     */
+    const MANO_DE_LADO = { x: 14.8, z: 18.2 };
+    const OLHANDO_A_RODA = Math.atan2(-MANO_DE_LADO.x, -26 - MANO_DE_LADO.z);
+
+    /**
      * O CARINHO NO MANO tem PRIORIDADE sobre "Comprar sorvete".
      *
      * Os dois pontos se sobrepõem — o de comprar tem raio 2,4 e o Mano está
@@ -1978,7 +1998,7 @@ export const villaLobos: SceneDef = {
       });
 
     let cabineDoPasseio: THREE.Group | null = null;
-    let olharGiro = 1.57; // começa virado para o parceiro (ver o embarque)
+    let olharGiro = 0.3; // começa olhando o parque (ver o embarque)
     let olharAltura = -0.3;
     const LADO_DO_JOGADOR = -0.38;
     const olho = new THREE.Vector3();
@@ -2088,6 +2108,12 @@ export const villaLobos: SceneDef = {
         // olhando para fora (-Z) — que é justamente para onde o parque está
         api.som('sino'); // a sineta de "vai começar" antes de a cabine subir
         wheel.abrirCabine(cabine);
+        // o Mano sai da frente do quiosque e vai para o lado dele, para dar
+        // para ver quando a fala lá de cima falar dele
+        mano.entrarEmServico();
+        void mano.irPara(MANO_DE_LADO.x, MANO_DE_LADO.z).then(() => {
+          mano.group.rotation.y = OLHANDO_A_RODA;
+        });
         // OS DOIS OLHAM PARA O PARQUE, que é +Z: `facing` gira a partir de +Z,
         // então a frente é o zero. O parceiro senta um dedo mais atrás e virado
         // para o lado do jogador (x negativo, daí o giro NEGATIVO): assim,
@@ -2102,10 +2128,19 @@ export const villaLobos: SceneDef = {
         api.setPlayerVisible(false);
         // a volta ABRE com ele em quadro, e não com a paisagem: a primeira
         // coisa que se vê lá dentro é o outro sentadinho ali do lado
-        // 1,57 rad (meia volta de quarto) aponta exatamente para o banco dele:
-        // é a conta do vetor do olho até a cabeça do parceiro, que senta na
-        // mesma profundidade, e não um número escolhido no olho
-        olharGiro = 1.57;
+        /*
+         * A VOLTA ABRE OLHANDO PARA O PARQUE, e não para o parceiro.
+         *
+         * Ele senta a 76 cm, de lado — e num celular EM PÉ a janela é estreita
+         * (uns 33° de campo na horizontal): abrindo virado para ele, a primeira
+         * coisa da volta era um rosto ocupando a tela inteira. Olhando para a
+         * frente o parque aparece, e ele está a um giro de distância — que é o
+         * que o passeio pede para o jogador fazer de qualquer jeito.
+         *
+         * 0,3 rad é a direção do quiosque do Mano, que é para onde uma das
+         * falas lá de cima aponta.
+         */
+        olharGiro = 0.3;
         // e o olhar começa INCLINADO PARA BAIXO: o parque fica embaixo, e na
         // horizontal a cabine mostra o céu e o skyline em vez dele
         olharAltura = -0.3;
@@ -2164,6 +2199,11 @@ export const villaLobos: SceneDef = {
         cabineDoPasseio = null;
         g.setCameraOmbro(null);
         wheel.fecharCabine();
+        // e o Mano volta para o balcão, olhando para quem chega
+        void mano.irPara(MANO.x, MANO.z).then(() => {
+          mano.group.rotation.y = 0.3;
+          mano.voltarAPassear();
+        });
         wheel.speed = velocidade;
         api.setSitting(false);
         api.setPlayerVisible(true);
