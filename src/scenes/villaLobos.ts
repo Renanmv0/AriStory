@@ -14,6 +14,7 @@ import {
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
 import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
+import { Mano } from '../entities/bichos/Mano';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -426,6 +427,37 @@ export const villaLobos: SceneDef = {
     const quiosque = w.add(w.place(kiosk(0xf6a6c0, { tipo: 'sorvete' }), 12, 0, 18.6, 0.3));
     w.blockBox(12, 18.6, 1.4, 0.95, 0.3);
 
+    /**
+     * O MANO, o pinguim sorveteiro — o primeiro bicho do parque.
+     *
+     * ONDE ELE FICA: na frente do balcão, do lado direito. O quiosque está
+     * girado 0,3 rad, então a normal da frente dele é `(sen 0,3; cos 0,3)` =
+     * `(0,30; 0,95)`; ele fica a 1,7 por essa normal, bem fora do colisor
+     * (0,95 de meia profundidade), e desviado para `+X` para não ficar na
+     * linha entre o jogador e o balcão.
+     *
+     * A PRIMEIRA POSIÇÃO ERA COLADA DEMAIS (`13,0; 19,75`): dali o pilar da
+     * direita do quiosque cortava metade dele no zoom de jogo. Um bicho de
+     * posto tem que aparecer INTEIRO do lugar de onde se compra.
+     *
+     * ELE OLHA PARA O MESMO LADO QUE O BALCÃO (`rotation.y = 0,3`), que é para
+     * `+Z` — de onde a câmera olha e de onde o cliente chega. De costas para o
+     * quiosque e de frente para quem compra, como todo sorveteiro.
+     *
+     * A ÁREA É MENOR QUE O PASSO MÍNIMO do cérebro (0,7), então ele não sai do
+     * posto: é a mesma coleira da Gina na portaria, e nenhuma linha de cérebro
+     * mudou por causa disso.
+     */
+    const MANO = { x: 12.6, z: 20.1 };
+    const mano = new Mano({
+      minX: MANO.x - 0.12, maxX: MANO.x + 0.12,
+      minZ: MANO.z - 0.1, maxZ: MANO.z + 0.1,
+    });
+    mano.group.rotation.y = 0.3;
+    w.add(mano.group);
+    mano.aoSoar = () => g.som('pinguim');
+    w.onUpdate((dt) => mano.update(dt));
+
     // --------------------------------------------------- loja de patins
     const loja = w.add(w.place(skateShop(P.fabricBlue), LOJA.x, 0, LOJA.z));
     // o teste acha a loja por aqui para comparar o colisor com o desenho
@@ -504,7 +536,18 @@ export const villaLobos: SceneDef = {
     // ------------------------------------------------------------ vegetacao
     const proibido: Array<[number, number, number]> = [
       [0, -26, 20], [-21, 11, 12], [18, -4.5, 17], [0, 4, 6], [0, 9, 6],
-      [12, 19, 4], [-10, 20, 3],
+      /**
+       * O CÍRCULO DA SORVETERIA FOI DE 4 PARA 6,5 quando o Mano chegou.
+       *
+       * Com 4, uma palmeira caía em `(14,2; 22,5)` — a 4,13 do centro, escapando
+       * por treze centímetros — e ela ficava bem NA FRENTE do quiosque. Copa de
+       * palmeira a 3,5 de altura esconde 1,5 × (3,5 − 1) ≈ 3,7 de tudo o que
+       * tiver um metro atrás dela, e o Mano tem exatamente um metro: ele sumia
+       * inteiro atrás da folha, sobrando só a bolinha de sorvete do chapéu.
+       * O quiosque continuava aparecendo porque ele é alto — a regra é a altura
+       * do que está atrás, não a distância.
+       */
+      [12, 19, 6.5], [-10, 20, 3],
       // a pista e a loja entram na lista pelo mesmo motivo da praça da roda:
       // sem isto o espalhador planta árvore em cima do asfalto
       [-21, -5, 12], [-8.6, 2.5, 9],

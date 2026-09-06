@@ -39,6 +39,7 @@ export type SomNome =
   | 'cavar'
   | 'caixa'
   | 'louca'
+  | 'pinguim'
   | 'menu'
   | 'diario'
   | 'recomecar';
@@ -444,6 +445,35 @@ export const EFEITOS: Record<SomNome, Receita> = {
       });
     });
     tom(ctx, destino, { freq: 190, glide: 110, quando: t + 0.07, dur: 0.12, vol: 0.075, tipo: 'sine' });
+  },
+
+  /**
+   * O GRASNADO DO MANO, o pinguim do quiosque.
+   *
+   * Pinguim de verdade zurra: duas notas NASAIS e curtas, a primeira mais alta
+   * que a segunda. O que faz soar nasal e o `abafo` baixo (900 Hz) sobre uma
+   * onda `sawtooth` — a serra tem harmonico de sobra, e o filtro derruba tudo
+   * o que passa dali, que e exatamente o que um nariz faz.
+   *
+   * O GLIDE PARA BAIXO em cada silaba e o que separa bicho de apito: tom plano
+   * sai como brinquedo, foi o que o miado ensinou.
+   */
+  pinguim: ({ ctx, destino, t }) => {
+    for (const [i, atraso] of [0, 0.19].entries()) {
+      const base = i === 0 ? 520 : 430;
+      tom(ctx, destino, {
+        freq: base,
+        glide: base * 0.68,
+        quando: t + atraso,
+        dur: 0.17,
+        vol: 0.085 - i * 0.012,
+        ataque: 0.008,
+        tipo: 'sawtooth',
+        abafo: 900,
+      });
+      // o sopro de ar por cima, que tira o resto do ar de sintetizador
+      chiado(ctx, destino, { quando: t + atraso, dur: 0.09, vol: 0.03, freq: 1800, glide: 900, q: 1.2 });
+    }
   },
 
   tv: ({ ctx, destino, t }) => {

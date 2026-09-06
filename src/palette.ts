@@ -212,6 +212,25 @@ export const PALETTE = {
   aventalDoNoel: 0x4ec1a8,
   aventalFaixa: 0xf7f2e8,
 
+  // O MANO, o pinguim sorveteiro do quiosque do Villa Lobos. O casaco NAO e
+  // preto: preto chapado some na sombra do toon e o bicho vira um buraco. E um
+  // azul-ardosia bem escuro, que ainda mostra volume.
+  pinguimCasaco: 0x39415a,
+  pinguimCasacoLuz: 0x4c5573,
+  pinguimBarriga: 0xfbf4e8,
+  pinguimBico: 0xf0a340,
+  pinguimBicoEscuro: 0xd07f22,
+  pinguimBochecha: 0xf2a0a8,
+  // o chapeuzinho de casquinha: o mesmo bege de waffle do sorvete do jogo, com
+  // o quadriculado num tom so um degrau mais escuro — mais que isso vira grade
+  casquinhaWaffle: 0xe3ab63,
+  casquinhaGrelha: 0xc08640,
+  cerejaDoMano: 0xcf3a4e,
+  // a roupinha de sorveteiro: o MESMO rosa do quiosque de sorvete (0xf6a6c0),
+  // para ele pertencer ao lugar — a mesma regra do avental teal do Noel
+  aventalDoMano: 0xf6a6c0,
+  aventalDoManoFaixa: 0xfbf4e8,
+
   // o jardim da Josefina, no gramado do fundo. A terra e escura e umida (ela
   // rega); o barro dos vasos e o mesmo terracota das jardineiras do resto do
   // jogo, para o jardim pertencer ao clube.
