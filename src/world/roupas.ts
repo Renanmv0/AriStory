@@ -1316,44 +1316,71 @@ function gravataDoWalter(m: MedidasCorpo): THREE.Object3D {
   // a tira é do MESMO vermelho das asas, e não do tom escuro do nó: escura,
   // ela virava o desenho todo e a gravata lia como uma coleira preta no boneco
   // de camisa branca. O tom escuro fica só no nó, que é onde ele diz "dobra"
+  /**
+   * ONDE O PEITO ESTÁ, medido — e não chutado.
+   *
+   * A primeira versão media a peça pelo PESCOÇO (raio `0,042·h`) e nasceu
+   * inteira dentro do tronco: nesta altura quem está na frente não é o
+   * pescoço, é o alto da cápsula do torso, que tem `0,105·h·w` de raio. Só o
+   * bico do laço escapava, e a gravata lia como um risquinho escuro no
+   * pescoço do boneco.
+   *
+   * A conta: a cápsula do torso tem o cilindro até `legH + 0,77·torsoH` e daí
+   * para cima é um capuz esférico de raio `raioTorso`. A gravata mora acima
+   * desse topo, então a superfície na altura dela é o cateto que sobra.
+   */
+  const raioTorso = m.h * 0.105 * m.w;
+  const alturaDaGravata = m.legH + m.torsoH + m.headR * 0.92 + y;
+  const topoDoCilindro = m.legH + m.torsoH * 0.77;
+  const acima = Math.max(0, alturaDaGravata - topoDoCilindro);
+  const peito = Math.max(
+    raioTorso * 0.45, // piso: nem numa pessoa mais alta a gravata encolhe até o pescoço
+    Math.sqrt(Math.max(0, raioTorso * raioTorso - acima * acima)),
+  );
+
+  // a tira em volta do pescoco, aberta (casca de cilindro) para nao virar um
+  // colar macico visto de cima
+  // a tira é do MESMO vermelho das asas, e não do tom escuro do nó: escura,
+  // ela virava o desenho todo e a gravata lia como uma coleira preta no boneco
+  // de camisa branca. O tom escuro fica só no nó, que é onde ele diz "dobra"
   const colarinho = new THREE.Mesh(
-    new THREE.CylinderGeometry(m.h * 0.042, m.h * 0.044, m.h * 0.022, 14, 1, true),
+    new THREE.CylinderGeometry(peito * 1.06, peito * 1.1, m.h * 0.024, 16, 1, true),
     toon(P.gravataBorboleta, { doubleSide: true }),
   );
   colarinho.position.y = y;
   g.add(colarinho);
 
-  // as duas asas: cunhas deitadas, apontando para fora e para a FRENTE do
-  // pescoco. O `lado` multiplica o deslocamento — sem ele as duas caem no
-  // mesmo x e a gravata vira um no solto
   /**
-   * A FRENTE DO COLARINHO, e não o eixo do pescoço.
+   * As duas asas, POR FORA do peito. O `lado` multiplica o deslocamento — sem
+   * ele as duas caem no mesmo x e a gravata vira um nó solto.
    *
-   * A tira tem raio `0,042·h`, então a superfície dela na frente já está em
-   * `z = 0,042·h`: um laço centrado em `0,038` nasceria DENTRO do colarinho e
-   * a gravata apareceria como um vinco na fita. `0,052` põe a asa encostada
-   * por fora, e o nó um fio à frente dela.
+   * `frente` sai da superfície medida acima mais a metade da espessura da asa:
+   * é o que garante que ela apareça inteira em vez de meio enterrada. E a asa
+   * é ACHATADA em z (`scale.z`), como laço de fita de verdade — chapada, ela
+   * avança menos para dentro do corpo e sobra mais para fora.
    */
-  const frente = m.h * 0.052;
+  const achatamento = 0.55;
+  const frente = peito + m.h * 0.032 * achatamento + m.h * 0.004;
   for (const lado of [-1, 1] as const) {
     const asa = new THREE.Mesh(
-      new THREE.CylinderGeometry(m.h * 0.032, m.h * 0.009, m.h * 0.062, 4),
+      new THREE.CylinderGeometry(m.h * 0.034, m.h * 0.009, m.h * 0.066, 4),
       fita,
     );
     // o cilindro de 4 lados nasce em pe: deitar no X e girar 90 graus em Z, e
     // o `lado` decide para que lado a ponta larga aponta
     asa.rotation.z = lado * Math.PI / 2;
     asa.rotation.y = Math.PI / 4;
-    asa.position.set(lado * m.h * 0.038, y + m.h * 0.004, frente);
+    asa.scale.z = achatamento;
+    asa.position.set(lado * m.h * 0.04, y + m.h * 0.004, frente);
     g.add(asa);
   }
 
   // o no, no meio das duas asas e um fio a frente delas
   const no = new THREE.Mesh(
-    new THREE.BoxGeometry(m.h * 0.021, m.h * 0.026, m.h * 0.02),
+    new THREE.BoxGeometry(m.h * 0.022, m.h * 0.028, m.h * 0.022),
     toon(P.gravataNo),
   );
-  no.position.set(0, y + m.h * 0.004, frente + m.h * 0.004);
+  no.position.set(0, y + m.h * 0.004, frente + m.h * 0.008);
   g.add(no);
 
   return g;
