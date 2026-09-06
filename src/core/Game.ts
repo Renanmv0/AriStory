@@ -657,6 +657,22 @@ export class Game implements GameAPI {
     return saiu;
   }
 
+  carteira(): number {
+    return this.save.carteira;
+  }
+
+  ganhar(quanto: number): number {
+    const saldo = this.save.ganhar(quanto);
+    this.repintarMochila();
+    return saldo;
+  }
+
+  gastar(quanto: number): boolean {
+    const deu = this.save.gastar(quanto);
+    if (deu) this.repintarMochila();
+    return deu;
+  }
+
   hasItem(id: string, quem = this.playerId()): boolean {
     return this.save.achouItem(quem, id);
   }
@@ -728,6 +744,7 @@ export class Game implements GameAPI {
       this.save.vestiveis(quem),
       this.save.slotAtivo(quem),
       this.player.name,
+      this.save.carteira,
     );
   }
 

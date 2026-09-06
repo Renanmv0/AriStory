@@ -1492,3 +1492,25 @@ body.touch-device .dialogue .next { right: 84px; }
   font-size: 19px;
   font-style: normal;
 }
+
+/* ------------------------------------------------- a carteira, na mochila */
+/* O saldo é dos DOIS — a mochila do Ari e a do Renan mostram o mesmo número —
+   e o subtítulo diz isso, porque duas mochilas com o mesmo valor parecem bug
+   até alguém explicar que não são duas carteiras. */
+.mochila .carteira {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 9px 14px;
+  border-radius: 14px;
+  background: var(--paper-2, rgba(0, 0, 0, 0.04));
+  font-variant-numeric: tabular-nums;
+}
+.mochila .carteira .moeda { font-size: 18px; }
+.mochila .carteira b { font-size: 19px; }
+.mochila .carteira small {
+  margin-left: auto;
+  color: var(--ink-soft);
+  font-size: 11px;
+}

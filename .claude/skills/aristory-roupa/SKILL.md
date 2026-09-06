@@ -15,6 +15,11 @@ pipeline inteiro:
 4. `src/scenes/quarto.ts` — `ROUPAS_DO_ARMARIO` estoca a peça; o armário
    abastece os DOIS personagens a cada abertura, então uma entrada só já
    basta para os dois poderem vestir.
+   **Peça que se GANHA jogando fica fora dessa lista** e entra por `flag` no
+   mesmo laço (a gravatinha do Walter, `gravata-do-walter`): a lista é o que o
+   Ari já tinha, e prêmio que aparece de graça deixa de ser prêmio. Quem dá o
+   prêmio chama `g.storeItem(peca, quem)` para os dois na hora, para a peça
+   não sumir até a próxima visita ao quarto.
 5. `scripts/roupas.mjs` e `scripts/vestimenta.mjs` — asserções que provam que a
    roupa não quebrou a animação, não nasceu no lugar errado e não escapou das
    regras de armazenamento.

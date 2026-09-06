@@ -277,6 +277,35 @@ da porta, quantos pratos esfriaram, quantos o Pelusa levou).
 
 ---
 
+## 8.1 O que as três estrelas dão
+
+**A gravatinha do Walter.** Fechar um turno com três estrelas faz ele dar três
+(quatro) voltas em volta da mesa, parar, mexer na gravata e tirá-la do próprio
+pescoço para dar de presente — e sacar outra igual da gaveta no quadro
+seguinte, porque tirar a gravata do Walter para sempre seria tirar o que faz
+ele ser o Walter.
+
+Ela é a **única peça do guarda-roupa que se ganha jogando**: entra na vaga de
+cabeça dos dois personagens, e o armário do quarto do Ari só passa a repô-la
+depois da flag. Uma vez só — da segunda vez em diante ele comemora sem repetir
+o presente.
+
+## 8.2 A carteira
+
+O dinheiro do turno **cai na carteira do casal na hora de cada pagamento**, e
+não no fim: `dinheiro` é o caixa do dia (é dele que saem as estrelas), a
+carteira é o saldo que atravessa turnos e cenários.
+
+**É uma carteira só para os dois.** Ela mora no nível de cima do save
+(`SaveState.carteira`), e não dentro de `inventarios` — a regra escrita na
+estrutura, e não num comentário: não existe "a carteira do Ari" para ficar
+fora de sincronia com "a do Renan". A mochila dos dois mostra o mesmo número.
+
+As únicas portas são `g.ganhar(n)` e `g.gastar(n)`. `gastar` devolve `false` e
+não tira nada quando falta, para uma loja futura poder perguntar e pagar na
+mesma chamada em vez de ler o saldo e debitar em dois passos que podem
+discordar. É o cofre de todo minigame que pagar daqui para a frente.
+
 ## 9. Progressão: o quadro de melhorias
 
 Entre turnos, o dinheiro compra melhorias num quadro ao lado da escala:

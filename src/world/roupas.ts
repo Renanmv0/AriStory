@@ -1286,6 +1286,80 @@ function gargantilhaDeLaco(m: MedidasCorpo): THREE.Object3D {
 }
 
 /**
+ * A GRAVATINHA DO WALTER — a que ele mesmo tira do pescoco e da de presente
+ * quando o turno do Mania fecha com tres estrelas.
+ *
+ * REFERENCIAL: a cabeca, y = 0 no centro do cranio. E o mesmo endereco da
+ * gargantilha, e pela mesma razao: o pescoco fica LOGO ABAIXO da cabeca, e a
+ * peca precisa acompanhar a cabeca quando ela vira. Slot `cabeca` foi pedido
+ * do Renan — o preco e que ela nao convive com chapeu, que e a outra peca dessa
+ * vaga.
+ *
+ * O LACO DA GRAVATA NAO E O `laco()` da fita. Aquele tem as duas pontas
+ * caindo, que e o laco de presente; gravata borboleta nao tem ponta solta — sao
+ * duas asas em CUNHA (estreitas no no, largas na ponta) e um no no meio. Usar
+ * o `laco` aqui daria uma fitinha de embrulho no pescoco.
+ *
+ * As cores sao as MESMAS do Walter (`P.gravataBorboleta`/`P.gravataNo`), e nao
+ * um vermelho parecido: e para ser a gravata dele, e nao uma igual.
+ */
+function gravataDoWalter(m: MedidasCorpo): THREE.Object3D {
+  const g = new THREE.Group();
+  const r = m.headR;
+  // a mesma altura da gargantilha: na BASE do pescoco. Mais acima e o cabelo
+  // do Ari, que cai ate o ombro, engole a peca inteira
+  const y = -r * 0.98;
+  const fita = toon(P.gravataBorboleta);
+
+  // a tira em volta do pescoco, aberta (casca de cilindro) para nao virar um
+  // colar macico visto de cima
+  // a tira é do MESMO vermelho das asas, e não do tom escuro do nó: escura,
+  // ela virava o desenho todo e a gravata lia como uma coleira preta no boneco
+  // de camisa branca. O tom escuro fica só no nó, que é onde ele diz "dobra"
+  const colarinho = new THREE.Mesh(
+    new THREE.CylinderGeometry(m.h * 0.042, m.h * 0.044, m.h * 0.022, 14, 1, true),
+    toon(P.gravataBorboleta, { doubleSide: true }),
+  );
+  colarinho.position.y = y;
+  g.add(colarinho);
+
+  // as duas asas: cunhas deitadas, apontando para fora e para a FRENTE do
+  // pescoco. O `lado` multiplica o deslocamento — sem ele as duas caem no
+  // mesmo x e a gravata vira um no solto
+  /**
+   * A FRENTE DO COLARINHO, e não o eixo do pescoço.
+   *
+   * A tira tem raio `0,042·h`, então a superfície dela na frente já está em
+   * `z = 0,042·h`: um laço centrado em `0,038` nasceria DENTRO do colarinho e
+   * a gravata apareceria como um vinco na fita. `0,052` põe a asa encostada
+   * por fora, e o nó um fio à frente dela.
+   */
+  const frente = m.h * 0.052;
+  for (const lado of [-1, 1] as const) {
+    const asa = new THREE.Mesh(
+      new THREE.CylinderGeometry(m.h * 0.032, m.h * 0.009, m.h * 0.062, 4),
+      fita,
+    );
+    // o cilindro de 4 lados nasce em pe: deitar no X e girar 90 graus em Z, e
+    // o `lado` decide para que lado a ponta larga aponta
+    asa.rotation.z = lado * Math.PI / 2;
+    asa.rotation.y = Math.PI / 4;
+    asa.position.set(lado * m.h * 0.038, y + m.h * 0.004, frente);
+    g.add(asa);
+  }
+
+  // o no, no meio das duas asas e um fio a frente delas
+  const no = new THREE.Mesh(
+    new THREE.BoxGeometry(m.h * 0.021, m.h * 0.026, m.h * 0.02),
+    toon(P.gravataNo),
+  );
+  no.position.set(0, y + m.h * 0.004, frente + m.h * 0.004);
+  g.add(no);
+
+  return g;
+}
+
+/**
  * Oculos de sol do vestiario do clube.
  *
  * REFERENCIAL: a cabeca, y = 0 no centro do cranio — o mesmo do gorro. Os
@@ -1392,7 +1466,7 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
 // roupa e item como qualquer outro, e mora numa vaga de vestimenta do
 // inventario. Aqui fica so o corpo delas.
 export {
-  gorroDeLa, canoDaBota, vestidoRosa, gargantilhaDeLaco,
+  gorroDeLa, canoDaBota, vestidoRosa, gargantilhaDeLaco, gravataDoWalter,
   vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
   moletomComCapuz, mangaDeMoletom, oculosDeSol,
 };

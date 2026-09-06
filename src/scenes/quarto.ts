@@ -216,6 +216,14 @@ export const quarto: SceneDef = {
         // o que foi descartado — é o armário dele, a roupa mora ali.
         for (const quem of [g.playerId(), g.companionId()]) {
           for (const peca of ROUPAS_DO_ARMARIO) g.storeItem(peca, quem);
+          /**
+           * A GRAVATINHA DO WALTER NÃO É ESTOQUE DA CASA: ela é presente, e só
+           * entra no armário depois que o turno do Mania fecha com três
+           * estrelas. É a única peça do guarda-roupa que se ganha jogando, e
+           * por isso ela mora aqui fora da lista — a lista é o que o Ari já
+           * tinha, e isto é o que os dois conquistaram.
+           */
+          if (g.flag('gravata-do-walter')) g.storeItem(ITENS.gravataDoWalter, quem);
         }
 
         if (!g.flag('armario-aberto')) {
