@@ -90,12 +90,13 @@ await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=12,20.8&olhar=3.14`
 await page.waitForTimeout(2800);
 /**
  * A COMPRA VIROU CENA quando o Mano chegou: ele fala, dança 2,5 s e só então
- * entrega. As dez teclas de antes acabavam antes da dança e a memória não
- * chegava a entrar — daí as trinta. Os `wait` da dança não respondem ao E, e
+ * entrega, e na PRIMEIRA vez ele ainda conta por que um pinguim foi parar numa
+ * sorveteria. As dez teclas de antes acabavam no meio e a memória não chegava
+ * a entrar — daí as quarenta e seis. Os `wait` da dança não respondem ao E, e
  * no Chromium sem tela o tempo de jogo corre a um terço do relógio.
  */
 await page.keyboard.press('KeyE');
-for (let i = 0; i < 30; i++) {
+for (let i = 0; i < 46; i++) {
   await page.keyboard.press('KeyE');
   await page.waitForTimeout(420);
 }

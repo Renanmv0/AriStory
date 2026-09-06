@@ -424,7 +424,7 @@ export const villaLobos: SceneDef = {
     // sorveteria
     // balcão virado para +Z: assim quem compra fica na frente do quiosque na
     // tela, e não escondido atrás dele
-    const quiosque = w.add(w.place(kiosk(0xf6a6c0, { tipo: 'sorvete' }), 12, 0, 18.6, 0.3));
+    w.add(w.place(kiosk(0xf6a6c0, { tipo: 'sorvete' }), 12, 0, 18.6, 0.3));
     w.blockBox(12, 18.6, 1.4, 0.95, 0.3);
 
     /**
@@ -1724,47 +1724,76 @@ export const villaLobos: SceneDef = {
       })();
     };
 
+    /**
+     * O SORVETE AGORA SE PEDE AO MANO, e não ao quiosque.
+     *
+     * Antes a dupla falava entre si e as casquinhas apareciam; agora tem alguém
+     * do outro lado do balcão, e a conversa é com ele. Da primeira vez ele
+     * conta por que um pinguim foi parar numa sorveteria — o friozinho —, e é
+     * dessa conversa que sai a dança: ele fica feliz de falar disso.
+     *
+     * O JOGADOR FICA TRAVADO a cena inteira, e a trava sai num `finally`: se
+     * qualquer `await` daqui de dentro estourar, o jogo não pode ficar com a
+     * dupla congelada no meio do parque para o resto da sessão.
+     *
+     * A DANÇA NÃO É ESPERADA COM PROMESSA. `mano.dancar(2,6)` só liga o
+     * contador do bicho, e a cena espera com `api.wait`. São dois relógios que
+     * andam juntos porque recebem o mesmo `dt`, e nenhum segura o outro.
+     */
+    const PEDIDOS_DO_MANO = [
+      'Morango e maracujá, já sei de cor!',
+      'Deixa comigo! Acabei de abrir o freezer, tá geladinho.',
+      'Vocês pedem sempre igual. Eu gosto disso.',
+      'Dois! Adoro quando é dois.',
+    ];
+
     w.interact({
       id: 'parque:sorveteria',
       x: 12, z: 20.6, radius: 2.4,
-      label: 'Comprar sorvete', icon: '🍦',
-      highlight: quiosque,
-      /**
-       * QUEM ATENDE AGORA É O MANO, e a compra virou cena: o pedido, a fala
-       * dele, a dancinha e só então as casquinhas.
-       *
-       * O JOGADOR FICA TRAVADO o tempo todo (`lockPlayer`), e a trava é
-       * desfeita num `finally`: se qualquer `await` daqui de dentro estourar —
-       * uma fala, o `wait` —, o jogo não pode ficar com a dupla congelada no
-       * meio do parque para o resto da sessão.
-       *
-       * A DANÇA NÃO É ESPERADA COM PROMESSA. `mano.dancar(2,5)` só liga o
-       * contador do bicho, e a cena espera o mesmo tempo com `api.wait`. São
-       * dois relógios que andam juntos porque recebem o mesmo `dt`, e nenhum
-       * dos dois segura o outro — se um dia a cena quiser continuar enquanto
-       * ele dança, é só não esperar.
-       */
+      label: 'Pedir sorvete pro Mano', icon: '🍦',
+      highlight: mano.group,
       onInteract: async (api) => {
         api.lockPlayer(true);
         try {
-          await conversa([
-            [A, 'Dois, por favor.'],
-            [R, 'Um de morango e um de maracujá.'],
-            [A, 'Nunca pedimos diferente.'],
-          ]);
-
           // ele vira para quem pediu antes de responder: atender de lado é o
           // que faz NPC parecer poste
           const eu = api.playerPosition();
           mano.group.rotation.y = Math.atan2(eu.x - mano.x, eu.z - mano.z);
-          api.som('pinguim');
-          await api.say(['Saindo um geladinho caprichado!'], 'Mano');
 
-          mano.dancar(2.5);
+          const primeira = !api.flag('mano-atendeu');
+          if (primeira) {
+            api.setFlag('mano-atendeu');
+            await conversa([
+              [R, 'Oi. Dois, por favor.'],
+              [A, 'Um de morango e um de maracujá.'],
+            ]);
+            api.som('pinguim');
+            await api.say(['Morango e maracujá! Boa escolha, boa escolha.'], 'Mano');
+            await conversa([
+              [A, 'Posso perguntar uma coisa? Por que um pinguim numa sorveteria?'],
+            ]);
+            await api.say([
+              'Ah, é o friozinho. Eu abro a tampa do freezer e fico ali pertinho.',
+              'Um dia me deram o avental. Disseram que, já que eu ia ficar mesmo, era melhor eu trabalhar.',
+            ], 'Mano');
+            await conversa([
+              [R, 'Faz sentido.'],
+            ]);
+            await api.say(['E eu adoro isso aqui. Fico tão feliz que às vezes eu…'], 'Mano');
+          } else {
+            await conversa([
+              [R, 'Mano, os dois de sempre.'],
+            ]);
+            api.som('pinguim');
+            await api.say([w.pick(PEDIDOS_DO_MANO)], 'Mano');
+          }
+
+          // …que às vezes ele dança. A frase de cima termina aqui, dançando.
+          mano.dancar(2.6);
           api.focusCamera(mano.group);
           api.setZoom(6.4);
           await api.wait(1.1);
-          await api.say(['Ele tá dançando. Ele DANÇA.'], A);
+          await api.say([primeira ? 'Ele tá dançando. Ele DANÇA.' : 'Lá vem a dancinha.'], A);
           await api.wait(1.2);
           api.focusCamera(null);
           // 13 é o enquadramento com que a câmera nasce (`IsoCamera.viewSize`),
@@ -1772,17 +1801,25 @@ export const villaLobos: SceneDef = {
           // qualquer deixaria a cena inteira mais perto para sempre
           api.setZoom(13);
 
+          await api.say(['Toma! Um de cada, do jeito que vocês pediram.'], 'Mano');
+
           sorveteRestante = 50;
           // cada casquinha vai para a mochila do dono, não para uma bolsa comum
           api.addItem(ITENS.sorveteMorango, ARI.id);
           api.addItem(ITENS.sorveteMaracuja, RENAN.id);
           api.som('sorvete');
           api.toast('Morango e maracujá', '🍦');
+          if (primeira) {
+            await conversa([
+              [A, 'Obrigado, Mano.'],
+              [R, 'Ele já voltou pro freezer.'],
+            ]);
+          }
           api.unlock({
             id: 'sorvete-villa',
             title: 'Sorvete no parque',
             place: 'Parque Villa Lobos',
-            note: 'Morango pro Ari, maracujá pro Renan, servidos por um pinguim de chapéu de casquinha que dança enquanto entrega.',
+            note: 'Morango pro Ari, maracujá pro Renan, pedidos pro Mano — o pinguim que trabalha ali porque gosta do friozinho, e que dança de felicidade quando fala nisso.',
             icon: '🍦',
           });
         } finally {
