@@ -101,7 +101,11 @@ export abstract class Bicho {
    * A ORDEM QUE A CENA DEU: um ponto para onde ir e a promessa que resolve
    * quando ele chegar. Enquanto existe, o passeio nao decide nada.
    */
-  private missao: { x: number; z: number; velocidade: number; pronto: () => void } | null = null;
+  private missao: {
+    x: number; z: number; velocidade: number;
+    /** `null` em missao de SEGUIR: chegar so limpa a missao, sem avisar ninguem */
+    pronto: (() => void) | null;
+  } | null = null;
   /** de servico: ele fica parado esperando a proxima ordem em vez de passear */
   private servindo = false;
 
@@ -159,14 +163,49 @@ export abstract class Bicho {
     return true;
   }
 
+  /**
+   * O CAMINHO ATE LA TAMBEM PRECISA CABER, e nao so o destino.
+   *
+   * O passeio anda em LINHA RETA do ponto atual ate o alvo. Testar so o alvo
+   * deixa passar a reta que corta um obstaculo pelo meio: dois pontos livres
+   * dos dois lados de uma mesa, e o bicho atravessa a mesa para ir de um ao
+   * outro. Era assim que o Walter raspava as cadeiras do Mania — o
+   * `scripts/garcom.mjs` pegava, e a culpa nunca foi da area dele.
+   *
+   * A conta e a distancia do centro do circulo ao SEGMENTO (e nao a reta
+   * infinita, que acusaria obstaculo atras das costas dele).
+   *
+   * O circulo que ja contem o ponto de partida e IGNORADO: se ele acordou
+   * dentro de um (a cena o pos la com `irPara`, ou o movel nasceu depois),
+   * exigir caminho livre o trancaria ali para sempre. Melhor deixar sair.
+   */
+  private caminhoLivre(x: number, z: number): boolean {
+    const x0 = this.x;
+    const z0 = this.z;
+    const dx = x - x0;
+    const dz = z - z0;
+    const comprimento = dx * dx + dz * dz;
+    for (const p of this.area.proibido ?? []) {
+      // ja estou dentro deste: ele nao pode me prender
+      if (Math.hypot(x0 - p.x, z0 - p.z) < p.r) continue;
+      const t = comprimento > 0
+        ? Math.max(0, Math.min(1, ((p.x - x0) * dx + (p.z - z0) * dz) / comprimento))
+        : 0;
+      if (Math.hypot(x0 + t * dx - p.x, z0 + t * dz - p.z) < p.r) return false;
+    }
+    return true;
+  }
+
   /** Escolhe o proximo destino, ou desiste e fica parado mais um pouco. */
   private novoDestino(): void {
-    for (let tentativa = 0; tentativa < 12; tentativa++) {
+    // 24 tentativas, e nao 12: exigir tambem o caminho livre derruba metade dos
+    // sorteios num salao cheio de mesa, e bicho que desiste demais vira estatua
+    for (let tentativa = 0; tentativa < 24; tentativa++) {
       const x = this.area.minX + this.sorte() * (this.area.maxX - this.area.minX);
       const z = this.area.minZ + this.sorte() * (this.area.maxZ - this.area.minZ);
       // um destino colado onde ele ja esta nao vira caminhada nenhuma
       const dist = Math.hypot(x - this.x, z - this.z);
-      if (this.cabe(x, z) && dist > 0.7) {
+      if (this.cabe(x, z) && dist > 0.7 && this.caminhoLivre(x, z)) {
         this.alvo.set(x, 0, z);
         this.humor = 'andando';
         // O RELOGIO PRECISA SER RENOVADO AQUI. Sem isto `aguarda` continua
@@ -218,6 +257,32 @@ export abstract class Bicho {
     this.humor = 'parado';
   }
 
+  /**
+   * SENTA ELE NUM PONTO e o deixa la ate mandarem levantar.
+   *
+   * E o que o turno do Mania precisa para os clientes: sentar numa cadeira,
+   * olhando para a mesa, e ficar. Sem isto o unico jeito de um bicho sentar e
+   * ele mesmo sortear `chanceDeSentar` — que e o contrario de uma ordem.
+   *
+   * `aguarda` vai para um numero absurdo de proposito: de servico o relogio nao
+   * decide nada, mas se alguem devolver o bicho ao passeio sem chamar
+   * `levantar()`, ele nao acorda no quadro seguinte achando que descansou.
+   */
+  sentarEm(x: number, z: number, olhandoPara: number, altura = 0): void {
+    this.servindo = true;
+    this.missao = null;
+    this.group.position.set(x, altura, z);
+    this.group.rotation.y = olhandoPara;
+    this.humor = 'sentado';
+    this.aguarda = 1e9;
+  }
+
+  /** Tira ele da cadeira, mas continua de servico: quem manda ainda e a cena. */
+  levantar(): void {
+    this.humor = 'parado';
+    this.aguarda = 0;
+  }
+
   voltarAPassear(): void {
     this.servindo = false;
     this.missao = null;
@@ -237,6 +302,20 @@ export abstract class Bicho {
     return new Promise<void>((pronto) => {
       this.missao = { x, z, velocidade, pronto };
     });
+  }
+
+  /**
+   * Anda em direcao a um ponto SEM promessa: e o que serve para seguir alguem.
+   *
+   * `irPara` nao serve: ele devolve uma promessa por chamada, e seguir um
+   * jogador que anda quer dizer trocar o destino a cada poucos quadros — seriam
+   * dezenas de promessas por segundo, todas menos a ultima sem nunca resolver.
+   * Aqui chegar so limpa a missao, e quem segue manda de novo no quadro
+   * seguinte.
+   */
+  seguir(x: number, z: number, velocidade = this.jeito.velocidade): void {
+    this.servindo = true;
+    this.missao = { x, z, velocidade, pronto: null };
   }
 
   update(dt: number): void {
@@ -279,7 +358,7 @@ export abstract class Bicho {
       if (dist < 0.08) {
         const pronto = this.missao.pronto;
         this.missao = null;
-        pronto();
+        pronto?.();
       } else {
         andando = this.passo(dx, dz, dist, this.missao.velocidade, dt);
       }

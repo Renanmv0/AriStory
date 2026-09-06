@@ -34,6 +34,7 @@ export class Ui {
   private readonly carga: HTMLDivElement;
   private readonly menu: HTMLDivElement;
   private readonly placar: HTMLDivElement;
+  private readonly turno: HTMLDivElement;
   private readonly mochila: HTMLDivElement;
   private readonly armario: HTMLDivElement;
   private readonly boneco: HTMLCanvasElement;
@@ -113,6 +114,14 @@ export class Ui {
       </div>
       <div class="carga"><div class="barra"></div><i class="zona"></i><i class="alvo"></i></div>
       <div class="placar"><b class="eu"></b><span class="nums"></span><b class="ele"></b></div>
+      <div class="turno">
+        <div class="linha">
+          <span class="relogio">3:00</span>
+          <span class="grana">R$ 0</span>
+          <span class="coracoes">💛 0</span>
+        </div>
+        <div class="bandeja"></div>
+      </div>
       <div class="prompt"><span class="icon">✨</span><span class="label"></span><span class="key">E</span></div>
       <div class="dialogue"><span class="who"></span><p class="text"></p><div class="escolhas"></div><span class="next">clique / E ▸</span></div>
       <div class="journal"><div class="sheet">
@@ -258,6 +267,7 @@ export class Ui {
     this.carga = ui.querySelector('.carga')!;
     this.menu = ui.querySelector('.menu')!;
     this.placar = ui.querySelector('.placar')!;
+    this.turno = ui.querySelector('.turno')!;
     this.mochila = ui.querySelector('.mochila')!;
     this.slotsMao = ui.querySelector('.mochila .maos')!;
     this.slotsVestivel = ui.querySelector('.mochila .vestiveis')!;
@@ -536,6 +546,50 @@ export class Ui {
     this.placar.querySelector('.ele')!.textContent = dados.ele;
     this.placar.querySelector('.nums')!.textContent = `${dados.meus} × ${dados.dele}`;
     this.placar.classList.add('show');
+  }
+
+  /**
+   * O PAINEL DO TURNO do Mania de Churrasco. `null` esconde.
+   *
+   * O `placar` nao servia: ele e "eu x ele", de partida entre dois. Aqui sao
+   * tres numeros que mudam o tempo todo (relogio, dinheiro, coracoes) e uma
+   * BANDEJA, que e a informacao mais importante da tela — o jogador precisa
+   * saber o que esta carregando sem olhar para o boneco.
+   *
+   * A bandeja e redesenhada por inteiro a cada chamada porque ela tem no maximo
+   * tres vagas: diffar tres `<i>` custaria mais linhas do que refazer.
+   */
+  showTurno(dados: {
+    tempo: number;
+    dinheiro: number;
+    coracoes: number;
+    bandeja: readonly { icone: string; titulo: string }[];
+  } | null): void {
+    if (!dados) {
+      this.turno.classList.remove('show');
+      return;
+    }
+    this.turno.classList.add('show');
+    const seg = Math.max(0, Math.ceil(dados.tempo));
+    const mm = Math.floor(seg / 60);
+    const ss = `${seg % 60}`.padStart(2, '0');
+    const relogio = this.turno.querySelector('.relogio') as HTMLElement;
+    relogio.textContent = `${mm}:${ss}`;
+    // o relogio fica vermelho no ultimo meio minuto: e o unico aviso de que a
+    // porta vai fechar, e ele tem que dar para ver sem ler
+    relogio.classList.toggle('acabando', seg <= 30);
+    (this.turno.querySelector('.grana') as HTMLElement).textContent = `R$ ${dados.dinheiro}`;
+    (this.turno.querySelector('.coracoes') as HTMLElement).textContent = `💛 ${dados.coracoes}`;
+
+    const bandeja = this.turno.querySelector('.bandeja') as HTMLElement;
+    bandeja.innerHTML = '';
+    for (const vaga of dados.bandeja) {
+      const el = document.createElement('i');
+      el.textContent = vaga.icone;
+      el.title = vaga.titulo;
+      bandeja.appendChild(el);
+    }
+    bandeja.classList.toggle('vazia', dados.bandeja.length === 0);
   }
 
   /**

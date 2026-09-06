@@ -306,6 +306,16 @@ export interface GameAPI {
   pointer(): { x: number; y: number };
   /** placar do minigame; null esconde */
   showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void;
+  /**
+   * Painel do turno do Mania de Churrasco: relogio, dinheiro, coracoes e a
+   * bandeja de quem esta sendo controlado. `null` esconde.
+   */
+  showTurno(dados: {
+    tempo: number;
+    dinheiro: number;
+    coracoes: number;
+    bandeja: readonly { icone: string; titulo: string }[];
+  } | null): void;
   /** muda o enquadramento: valores maiores afastam a camera */
   setZoom(viewSize: number): void;
   /** trava/destrava o controle do jogador (usado em cutscenes) */

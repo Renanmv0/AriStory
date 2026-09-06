@@ -37,6 +37,8 @@ export type SomNome =
   | 'gluglu'
   | 'cantarolar'
   | 'cavar'
+  | 'caixa'
+  | 'louca'
   | 'menu'
   | 'diario'
   | 'recomecar';
@@ -410,6 +412,38 @@ export const EFEITOS: Record<SomNome, Receita> = {
         tipo: 'sine',
       });
     }
+  },
+
+  /**
+   * A REGISTRADORA fechando: o "tlim" da gaveta e o baque dela voltando.
+   *
+   * O tlim tem que soar METALICO, e metal aqui e duas senoides desafinadas de
+   * proposito (a segunda com `detune`): afinadas viram flauta.
+   */
+  caixa: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: nota(DO + 19), quando: t, dur: 0.42, vol: 0.1, tipo: 'sine' });
+    tom(ctx, destino, { freq: nota(DO + 24), quando: t, dur: 0.3, vol: 0.05, tipo: 'sine', detune: 22 });
+    chiado(ctx, destino, { quando: t + 0.16, dur: 0.14, vol: 0.06, freq: 500, glide: 180, q: 1.2 });
+    tom(ctx, destino, { freq: 150, glide: 80, quando: t + 0.2, dur: 0.12, vol: 0.07, tipo: 'sine' });
+  },
+
+  /**
+   * A PILHA DE LOUCA batendo no balcao. Tres tinidos quase juntos e um baque —
+   * prato nunca cai sozinho, cai a pilha. Espacados demais viram xilofone,
+   * entao os intervalos sao de 40 e 30 ms, no limite do que o ouvido separa.
+   */
+  louca: ({ ctx, destino, t }) => {
+    [0, 0.05, 0.09].forEach((atraso, i) => {
+      tom(ctx, destino, {
+        freq: nota(DO + 16 + i * 3),
+        quando: t + atraso,
+        dur: 0.15,
+        vol: 0.085 - i * 0.016,
+        tipo: 'triangle',
+        abafo: 3600,
+      });
+    });
+    tom(ctx, destino, { freq: 190, glide: 110, quando: t + 0.07, dur: 0.12, vol: 0.075, tipo: 'sine' });
   },
 
   tv: ({ ctx, destino, t }) => {

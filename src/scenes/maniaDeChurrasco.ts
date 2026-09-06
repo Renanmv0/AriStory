@@ -13,6 +13,7 @@ import { Walter } from '../entities/bichos/Walter';
 import { toon } from '../core/materials';
 import { assoalhoDeMadeira, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
+import { TurnoDoMania, type MesaDoTurno, type PlantaDoTurno } from '../minigames/turnoDoMania';
 
 /**
  * Mania de Churrasco — o restaurante do clube POR DENTRO.
@@ -75,6 +76,40 @@ const PORTA = { z: -4.4 };
  */
 const GUARDADO = { x: -3.4, y: 1.193, z: -2 };
 
+/**
+ * A PLANTA DO TURNO — onde cada coisa do minigame acontece no salão.
+ *
+ * Ela mora aqui, e não dentro do minigame, pela mesma razão de sempre: quem
+ * conhece o cenário é a cena. O `turnoDoMania` recebe pontos e não sabe que
+ * existe um balcão de passagem.
+ *
+ * As contas que amarram cada número:
+ * - a ENTRADA é o canto da frente à direita, fora das fileiras de mesa (a
+ *   última vai até `z = 6,15` com o colisor), e é por onde entra e sai todo
+ *   cliente;
+ * - a FILA corre na faixa livre da frente, entre as mesas e a mureta;
+ * - as SAÍDAS são três vagas em cima do balcão de passagem, e o `tampo` é a
+ *   altura dele (1,06 de corpo + 0,09 de pedra);
+ * - a COPA fica na outra ponta do mesmo balcão: é de propósito que largar a
+ *   louça e pegar o prato sejam duas viagens diferentes;
+ * - a COZINHA é onde o Walter fica durante o turno, e a JANELA é onde ele
+ *   encosta para deixar o prato. Os dois do lado de lá do balcão.
+ */
+const ENTRADA = { x: 10.15 };
+
+const TURNO: PlantaDoTurno = {
+  entrada: { x: ENTRADA.x, z: 9.4 },
+  fila: [{ x: ENTRADA.x, z: 7.2 }, { x: ENTRADA.x - 1.8, z: 7.9 }, { x: ENTRADA.x + 1.5, z: 7.9 }],
+  recepcao: { x: ENTRADA.x, z: 6.5 },
+  saidas: [{ x: -2.6, z: -2 }, { x: -3.6, z: -2 }, { x: -4.6, z: -2 }],
+  balcao: { x: -3.6, z: -1.0 },
+  pilha: [{ x: -6.2, z: -2 }, { x: -7.0, z: -2 }, { x: -7.8, z: -2 }, { x: -8.6, z: -2 }],
+  copa: { x: -7.0, z: -1.0 },
+  tampo: 1.15,
+  cozinha: { x: -1.6, z: -3.9 },
+  janela: { x: -3.6, z: -2.9 },
+};
+
 /** o que o Ari diz nos carinhos seguintes: o primeiro é a apresentação dele */
 const FALAS_DO_WALTER = [
   'Ele fica de bandeja e tudo. Nem tira pra receber carinho.',
@@ -135,7 +170,15 @@ export const maniaDeChurrasco: SceneDef = {
     // mureta: parede alta ali taparia o salão inteiro.
     w.wall(x0, z0, W / 2, z0, H, P.churrascoParede);
     w.wall(W / 2, z0, W / 2, D / 2, 0.5, P.churrascoParede);
-    w.wall(x0, D / 2, W / 2, D / 2, 0.5, P.churrascoParede);
+    /**
+     * A MURETA DA FRENTE VEM EM DOIS TRECHOS, com o VÃO DA ENTRADA entre eles.
+     *
+     * É por ali que o cliente do turno entra e sai. Sem o vão, os bichos
+     * apareciam do nada num canto do salão — e "apareceu do nada" é a coisa que
+     * mais rápido desfaz a ilusão de que aquele lugar existe.
+     */
+    w.wall(x0, D / 2, ENTRADA.x - 0.85, D / 2, 0.5, P.churrascoParede);
+    w.wall(ENTRADA.x + 0.85, D / 2, W / 2, D / 2, 0.5, P.churrascoParede);
     // a parede da esquerda vem em dois trechos, com o vão da porta no meio
     w.wall(x0, z0, x0, PORTA.z - 1.1, H, P.churrascoParede);
     w.wall(x0, PORTA.z + 1.1, x0, D / 2, H, P.churrascoParede);
@@ -563,8 +606,13 @@ export const maniaDeChurrasco: SceneDef = {
       carinhoNoWalter.moveTo(cachorro.x, cachorro.z);
       darOOsso.moveTo(cachorro.x, cachorro.z);
       const entrega = podeEntregar();
-      darOOsso.enabled = entrega;
-      carinhoNoWalter.enabled = !entrega;
+      // durante o turno quem manda nos pontos e o minigame: o carinho e a
+      // entrega do osso ficam suspensos junto com o resto do salao
+      if (!turno.rodando) {
+        darOOsso.enabled = entrega;
+        carinhoNoWalter.enabled = !entrega;
+      }
+      turno.atualizar(dt);
     });
 
     // ======================================== SENTAR, PEDIR E O WALTER SERVIR
@@ -721,6 +769,53 @@ export const maniaDeChurrasco: SceneDef = {
       });
     }
 
+    /**
+     * ================================================= O TURNO (o minigame)
+     *
+     * Ele é montado sempre, e fica desligado até a escala mandar começar. As
+     * mesas dele são as MESMAS 11 em que a dupla senta fora do turno — o salão
+     * não tem dois conjuntos de mesa, um para cada modo.
+     */
+    const paraOTurno: MesaDoTurno[] = postas.map((p) => ({
+      x: p.x, z: p.z, posta: p.posta, floreira: p.floreira,
+    }));
+    const turno = new TurnoDoMania(w, g, paraOTurno, TURNO, cachorro);
+
+    /**
+     * A CONTA DO DIA. Ela vem depois de o salão esvaziar, e não quando o
+     * relógio zera: quem está dentro tem que ser servido, e é isso que
+     * transforma um corte seco num fim com respiração.
+     */
+    turno.aoAcabar = async () => {
+      const { dinheiro, coracoes, estrelas } = turno.conta;
+      await conversa([
+        [R, `Fechou. R$ ${dinheiro} no caixa.`],
+        [A, coracoes >= 4
+          ? `E ${coracoes} clientes saíram daqui felizes. Eu sou bom nisso.`
+          : coracoes > 0
+            ? `${coracoes} saíram felizes. Dá pra melhorar.`
+            : 'Ninguém saiu pulando de alegria. Mas ninguém passou fome.'],
+      ]);
+      await g.say([`${'⭐'.repeat(estrelas)}  — ${estrelas} de 3`], 'Walter');
+      await conversa([
+        [R, 'Ele tá abanando. Acho que a gente pode voltar amanhã.'],
+        [A, 'A escala tá ali na parede.'],
+      ]);
+      // o recorde: `stat` guarda o melhor turno, e só sobe quando é melhor
+      const antes = g.stat('turno-recorde');
+      if (dinheiro > antes) g.bump('turno-recorde', dinheiro - antes);
+      if (!g.flag('primeiro-turno-feito')) {
+        g.setFlag('primeiro-turno-feito');
+        g.unlock({
+          id: 'turno-no-mania',
+          title: 'O primeiro turno',
+          place: 'Mania de Churrasco',
+          note: 'Os dois de garçom no Mania de Churrasco, revezando o salão enquanto o Walter dava conta da cozinha.',
+          icon: '📋',
+        });
+      }
+    };
+
     // ------------------------------------------------------------- enfeites
     // a placa do nome, em cima do bar: é a primeira coisa que se lê ao entrar
     w.add(w.place(
@@ -807,25 +902,52 @@ export const maniaDeChurrasco: SceneDef = {
       label: 'Ler a escala de amanhã', icon: '📋',
       highlight: escala,
       onInteract: async (api) => {
-        await conversa([
-          [A, '"Escala de amanhã: Walter." E os nossos dois nomes embaixo.'],
-          [R, 'Ele escreveu com giz. Com a boca, imagino.'],
-          [A, 'Então é sério mesmo. A gente vai trabalhar amanhã.'],
-          [R, 'A gente vai servir as mesas e ele vai cuidar da cozinha.'],
-          [A, 'Eu vou ser o melhor garçom que esse salão já viu.'],
-        ]);
-        api.toast('Amanhã, no Mania', '📋');
+        if (turno.rodando) return;
+        if (!api.flag('primeiro-turno')) {
+          await conversa([
+            [A, '"Escala de amanhã: Walter." E os nossos dois nomes embaixo.'],
+            [R, 'Ele escreveu com giz. Com a boca, imagino.'],
+            [A, 'Então é sério mesmo. A gente vai trabalhar.'],
+            [R, 'A gente serve as mesas e ele cuida da cozinha.'],
+            [A, 'Eu vou ser o melhor garçom que esse salão já viu.'],
+          ]);
+        }
+        const vai = await api.ask('Começar o turno?', ['Bora', 'Ainda não'], A);
+        if (vai !== 0) return;
+
+        if (!api.flag('primeiro-turno')) {
+          api.setFlag('primeiro-turno');
+          await conversa([
+            [R, 'Como é que funciona?'],
+            [A, 'A gente leva quem chega até uma mesa, anota o pedido e leva pro Walter.'],
+            [R, 'E quando eles acabam de comer?'],
+            [A, 'A gente recebe e leva a louça de volta pro balcão. Mesa suja não recebe ninguém.'],
+            [R, 'A gente é dois. Aperta T e você vira o outro.'],
+            [A, 'Mas o que você largar fica parado onde estava. Pensa em onde larga.'],
+          ]);
+        }
+        await turno.comecar();
       },
     });
     lerAEscala.enabled = g.flag('turno-aceito');
 
-    for (const [x, z] of [[W / 2 - 1.0, D / 2 - 1.2], [x0 + 1.1, D / 2 - 1.2], [11.2, -1.4]] as const) {
+    // o vaso que estava em `(11; 7,8)` saiu do caminho: ele nasceu antes do vão
+    // da entrada, e depois passou a ficar plantado bem na soleira
+    for (const [x, z] of [[W / 2 - 1.0, 3.2], [x0 + 1.1, D / 2 - 1.2], [11.2, -1.4]] as const) {
       w.add(w.place(pottedPlant(1.2), x, 0, z));
       w.blockCircle(x, z, 0.32);
     }
 
     // o capacho da entrada de serviço, para a porta não abrir no vazio
     w.add(w.place(rug(1.6, 1.1, P.churrascoTijolo), x0 + 1.5, 0, PORTA.z));
+    // e o capacho da ENTRADA DA FRENTE, no vão da mureta: é por onde entra
+    // quem vem comer, e ele marca a soleira sem construir porta nenhuma
+    w.add(w.place(rug(1.5, 1.0, P.churrascoToalha), ENTRADA.x, 0, D / 2 - 0.62));
+    for (const dx of [-0.85, 0.85]) {
+      const balaustre = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.78, 0.16), toon(P.woodDark));
+      balaustre.position.set(ENTRADA.x + dx, 0.39, D / 2);
+      w.add(balaustre);
+    }
 
     // ========================================================= interações
 
