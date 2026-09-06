@@ -588,6 +588,16 @@ export class Game implements GameAPI {
     this.camOmbro.updateProjectionMatrix();
   }
 
+  /**
+   * A câmera de cena (a perspectiva) quando alguma cutscene está no comando, e
+   * `null` com a isométrica no ar. Gancho de teste, como o `debugPlace`: é por
+   * aqui que o teste da roda gigante prova que a volta é mesmo em primeira
+   * pessoa, e que a câmera foi DEVOLVIDA quando os dois desceram.
+   */
+  cameraDeCena(): THREE.PerspectiveCamera | null {
+    return this.camOmbro;
+  }
+
   pointer(): { x: number; y: number } {
     return this.input.pointer();
   }
@@ -981,6 +991,18 @@ export class Game implements GameAPI {
   keyDown(code: string): boolean {
     if (this.telaDeLeitura || this.player.locked) return false;
     return this.input.isDown(code);
+  }
+
+  /**
+   * O manche cru, para a cutscene que devolve ALGUM controle ao jogador.
+   *
+   * Existe por causa da cabine da roda gigante: lá o jogador está travado (não
+   * anda) mas olha em volta, e olhar tem que funcionar inclusive com uma fala
+   * na tela — é justamente enquanto os dois conversam que dá vontade de virar
+   * a cabeça para ver o parque.
+   */
+  olharLivre(): { x: number; y: number } {
+    return this.input.moveCru();
   }
 
   showCharge(valor: number | null, alvo?: number | null, zona?: number): void {

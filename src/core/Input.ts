@@ -83,6 +83,18 @@ export class Input {
   /** Vetor de movimento na tela: x = direita, y = para cima da tela. */
   move(): { x: number; y: number } {
     if (this.blocked) return { x: 0, y: 0 };
+    return this.moveCru();
+  }
+
+  /**
+   * O mesmo manche, lido CRU: chega mesmo com o movimento travado.
+   *
+   * O `move()` cala durante dialogo e cutscene — e o que impede de sair
+   * andando no meio de uma fala. Mas na cabine da roda gigante a cutscene TIRA
+   * o andar e devolve o OLHAR, no mesmo manche: setas, WASD ou o dedo no
+   * joystick. Quem chama aqui esta assumindo que sabe o que fazer com isso.
+   */
+  moveCru(): { x: number; y: number } {
     let x = this.stickX;
     let y = -this.stickY;
     if (this.down.has('KeyA') || this.down.has('ArrowLeft')) x -= 1;

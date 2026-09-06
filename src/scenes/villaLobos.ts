@@ -1956,10 +1956,61 @@ export const villaLobos: SceneDef = {
         voltaAtual = { resolve, de: wheel.angle, voltas };
       });
 
+    /**
+     * ======================================= A VOLTA EM PRIMEIRA PESSOA
+     *
+     * Enquanto `cabineDoPasseio` existe, a câmera do jogo é uma perspectiva
+     * parada DENTRO da cabine, na altura dos olhos de quem está sentado. O
+     * jogador não anda — mas continua com o manche, e o manche vira o olhar:
+     * para os lados o parque passa pela janela que dá a volta inteira, e para
+     * o lado do parceiro ele está ali, sentadinho, de mão dada.
+     *
+     * O olhar é acumulado num ângulo próprio (não é a câmera isométrica): a
+     * câmera é recolocada do zero a cada quadro a partir da matriz de mundo da
+     * cabine, então ela acompanha a subida sem ninguém precisar animá-la.
+     */
+    // espera por uma condição do mundo (a cabine chegar ao alto), e não por um
+    // relógio: a roda anda pelo `dt`, e um `setTimeout` erraria o ponto
+    let esperaAtual: { resolve: () => void; condicao: () => boolean } | null = null;
+    const esperarQue = (condicao: () => boolean): Promise<void> =>
+      new Promise((resolve) => {
+        esperaAtual = { resolve, condicao };
+      });
+
+    let cabineDoPasseio: THREE.Group | null = null;
+    let olharGiro = 1.55; // começa virado para o parceiro (ver o embarque)
+    let olharAltura = -0.1;
+    const LADO_DO_JOGADOR = -0.38;
+    const olho = new THREE.Vector3();
+    const miraDaCabine = new THREE.Vector3();
+
+    const olharNaCabine = (dt: number): void => {
+      const cabine = cabineDoPasseio;
+      if (!cabine) return;
+      const m = g.olharLivre();
+      olharGiro -= m.x * 1.5 * dt;
+      olharAltura = Math.max(-0.75, Math.min(0.6, olharAltura + m.y * 0.9 * dt));
+      // o pescoço tem limite: nem de costas para a janela, nem de costas para
+      // o parceiro. 2,1 rad para cada lado cobre a cabine inteira e ainda
+      // deixa claro para onde é "a frente".
+      olharGiro = Math.max(Math.PI - 2.2, Math.min(Math.PI + 2.2, olharGiro));
+
+      olho.set(LADO_DO_JOGADOR, FerrisWheel.PISO + 0.74, 0.18);
+      cabine.localToWorld(olho);
+      miraDaCabine.set(
+        LADO_DO_JOGADOR + Math.sin(olharGiro) * 6,
+        FerrisWheel.PISO + 0.74 + olharAltura * 6,
+        0.18 + Math.cos(olharGiro) * 6,
+      );
+      cabine.localToWorld(miraDaCabine);
+      g.setCameraOmbro(olho, miraDaCabine);
+    };
+
     // perto da roda a camera abre, para caber a coisa toda na tela
     let zoomLivre = true;
     w.onUpdate((dt) => {
       wheel.update(dt);
+      olharNaCabine(dt);
       // só manda na câmera perto da roda gigante; longe dela o jogador
       // continua livre para dar zoom com a roda do mouse
       if (zoomLivre) {
@@ -1976,6 +2027,11 @@ export const villaLobos: SceneDef = {
       if (voltaAtual && wheel.turnsSince(voltaAtual.de) >= voltaAtual.voltas) {
         const done = voltaAtual.resolve;
         voltaAtual = null;
+        done();
+      }
+      if (esperaAtual && esperaAtual.condicao()) {
+        const done = esperaAtual.resolve;
+        esperaAtual = null;
         done();
       }
     });
@@ -2015,29 +2071,96 @@ export const villaLobos: SceneDef = {
         api.som('caixa');
         api.toast('Bilhete picotado', '🎟️');
 
+        /*
+         * A VOLTA É LENTA DE PROPÓSITO. A versão antiga multiplicava a
+         * velocidade por 5 para despachar a cena em doze segundos; aqui ela
+         * anda quase no passo normal da roda (uma volta em ~45s), porque o
+         * tempo é metade da coisa. Ninguém sobe numa roda gigante com pressa.
+         */
         const cabine = wheel.boardingCabin();
         const velocidade = wheel.speed;
-        wheel.speed = velocidade * 5; // a volta cenica dura ~12s, nao um minuto
-        // os dois entram na mesma cabine, um de cada lado
+        wheel.speed = velocidade * 1.35;
+
+        // os dois entram na mesma cabine, lado a lado no banco de trás,
+        // olhando para fora (-Z) — que é justamente para onde o parque está
         api.som('sino'); // a sineta de "vai começar" antes de a cabine subir
-        api.ridePlayer(cabine, new THREE.Vector3(-0.3, -0.34, 0), 0.55);
-        api.rideCompanion(cabine, new THREE.Vector3(0.3, -0.34, 0), 0.55);
-        api.focusCamera(cabine);
-        api.setZoom(38);
+        wheel.abrirCabine(cabine);
+        api.ridePlayer(cabine, new THREE.Vector3(LADO_DO_JOGADOR, FerrisWheel.PISO, 0.18), 0.55);
+        // o parceiro senta um dedo mais atrás e virado para o lado do jogador:
+        // assim, quando o jogador vira a cabeça, ele encontra o ROSTO dele, e
+        // não uma orelha colada na lente
+        // `facing` gira a partir de +Z: PI olha para fora (o parque), e é
+        // SOMANDO que ele vira para o lado do jogador, que está em x negativo
+        api.rideCompanion(cabine, new THREE.Vector3(0.38, FerrisWheel.PISO, 0.34), 0.55, Math.PI + 0.8);
+        api.setSitting(true); // sentadinhos, e de mão dada — o `setSitting` faz as duas coisas
+        api.focusCamera(cabine); // o sol e a sombra seguem a cabine
 
-        await esperarVoltas(0.25);
+        // primeira pessoa: o corpo do jogador sairia dentro da lente
+        api.setPlayerVisible(false);
+        // a volta ABRE com ele em quadro, e não com a paisagem: a primeira
+        // coisa que se vê lá dentro é o outro sentadinho ali do lado
+        // 1,55 rad aponta exatamente para o banco dele: é a conta do vetor do
+        // olho até a cabeça do parceiro, não um número escolhido no olho
+        olharGiro = 1.55;
+        olharAltura = -0.1;
+        cabineDoPasseio = cabine;
+        api.toast('Olhe em volta — setas ou WASD', '👀');
+
         await conversa([
-          [A, 'Daqui dá pra ver o parque inteiro.'],
-          [R, 'E aquele pedacinho do rio ali atrás.'],
+          [A, 'Que janela...'],
+          [R, 'Dá a volta inteira. Não tem canto sem vista.'],
         ]);
-        await esperarVoltas(0.35);
+        await esperarVoltas(0.12);
         await conversa([
-          [A, 'Toda vez que a gente passa aqui embaixo você olha pra cima e diz "um dia a gente sobe".'],
+          [A, 'Olha o Mano lá embaixo. Do tamanho de um pinguinzinho de geladeira.'],
+          [R, 'Ele é do tamanho de um pinguim, amor.'],
+          [A, 'Você entendeu.'],
+        ]);
+        await esperarVoltas(0.13);
+
+        /*
+         * A PARADA NO ALTO. É o motivo de a volta existir: a roda trava com a
+         * cabine no ponto mais alto, e por uns segundos não acontece nada —
+         * dá tempo de girar o olhar, ver o parque inteiro, e voltar para o
+         * outro, que está sentado bem ali do lado.
+         */
+        await esperarQue(() => cabine.position.y > wheel.hubHeight + wheel.radius * 0.94);
+        wheel.speed = 0;
+        api.som('sino');
+        await api.wait(1.6);
+        await conversa([
+          [R, 'Parou.'],
+          [A, 'Parou no alto. Sempre para no alto.'],
+        ]);
+        await api.wait(2.2);
+        await conversa([
+          [A, 'Toda vez que a gente passava aqui embaixo você olhava pra cima e dizia "um dia a gente sobe".'],
           [R, 'Pronto. Subimos.'],
+          [A, 'Eu ia dizer que daqui dá pra ver o parque inteiro.'],
+          [A, 'Mas eu tô olhando pra você.'],
         ]);
-        await esperarVoltas(0.4);
+        api.som('coracao');
+        await api.wait(2.4);
+        await conversa([
+          [R, 'A gente pode ficar mais um pouquinho.'],
+          [A, 'A roda é que decide.'],
+        ]);
 
+        wheel.speed = velocidade * 1.35;
+        await esperarVoltas(0.2);
+        await conversa([
+          [R, 'Descendo já é saudade.'],
+          [A, 'A gente sobe de novo.'],
+        ]);
+        // até a cabine encostar embaixo de novo — a volta fecha inteira
+        await esperarQue(() => cabine.position.y < wheel.hubHeight - wheel.radius * 0.94);
+
+        cabineDoPasseio = null;
+        g.setCameraOmbro(null);
+        wheel.fecharCabine();
         wheel.speed = velocidade;
+        api.setSitting(false);
+        api.setPlayerVisible(true);
         api.focusCamera(null);
         api.releasePlayer(0, -17.6, 0);
         api.releaseCompanion(-1.1, -17.9, 0);

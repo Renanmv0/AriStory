@@ -62,7 +62,7 @@ não código — nada dele está no jogo até o `git log` dizer que está.
 npm run typecheck
 npm run build && npx vite preview --port 4173 &
 node scripts/smoke.mjs   /tmp/aristory  # fotos das cenas + erros de console
-node scripts/ride.mjs    /tmp/ride      # cutscene da roda gigante ponta a ponta
+node scripts/ride.mjs    /tmp/ride      # roda gigante: bilhete, primeira pessoa na cabine e olhar em volta
 node scripts/retrato.mjs /tmp/ari       # camera colada no personagem
 node scripts/mecanicas.mjs /tmp/mec     # escolha, cena do sofa e frisbee
 node scripts/beijo.mjs   /tmp/beijo # o beijo da dupla e os coracoes

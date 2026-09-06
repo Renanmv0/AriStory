@@ -51,12 +51,45 @@ await page.waitForTimeout(400);
 
 await page.keyboard.press('KeyE'); // embarca
 
-// o dialogo tem efeito de maquina de escrever: a primeira tecla completa a
-// linha e a segunda avanca, entao e mais simples martelar E ate o fim.
+/*
+ * A volta e LENTA de proposito (~45s de tempo de jogo), e no Chromium headless
+ * o tempo de jogo anda mais devagar que o relogio. Por isso o laco e longo e
+ * espera por EVENTO (a memoria salva no fim), nunca por tempo.
+ *
+ * De quebra ele olha em volta: a cabine devolve o manche como olhar, entao as
+ * setas tem que mexer a camera mesmo com o jogador travado e com fala na tela.
+ */
+const alturaDaCamera = () =>
+  page.evaluate(() => {
+    const c = window.jogo.cameraDeCena?.();
+    return c ? [c.position.y, c.rotation.y] : null;
+  });
+
 let subiu = false;
-for (let i = 0; i < 200; i++) {
+let primeiraPessoa = false;
+let olhouEmVolta = false;
+let giroInicial = null;
+let subindo = null;
+for (let i = 0; i < 620; i++) {
   if (await dialogoAberto()) await page.keyboard.press('KeyE');
   await page.waitForTimeout(250);
+
+  const cam = await alturaDaCamera();
+  if (cam) {
+    primeiraPessoa = true;
+    if (giroInicial === null) giroInicial = cam[1];
+    else if (Math.abs(cam[1] - giroInicial) > 0.25) olhouEmVolta = true;
+    if (subindo === null && cam[0] > 6) {
+      subindo = cam[0];
+      await page.screenshot({ path: `${OUT}-cabine.png` });
+    }
+    // olhar para os lados: 10 quadros para um lado, 10 para o outro
+    await page.keyboard.down(i % 40 < 20 ? 'ArrowLeft' : 'ArrowRight');
+    await page.waitForTimeout(120);
+    await page.keyboard.up(i % 40 < 20 ? 'ArrowLeft' : 'ArrowRight');
+    if (cam[0] > 20) await page.screenshot({ path: `${OUT}-alto.png` });
+  }
+
   if (i === 20) await page.screenshot({ path: `${OUT}-subindo.png` });
   if ((await memorias()) >= 1 && !(await dialogoAberto())) {
     subiu = true;
@@ -65,6 +98,9 @@ for (let i = 0; i < 200; i++) {
 }
 await page.waitForTimeout(800);
 await page.screenshot({ path: `${OUT}-fim.png` });
+
+// a camera de cena tem que ter sido DEVOLVIDA: no chao volta a isometrica
+const voltouAIsometrica = (await alturaDaCamera()) === null;
 
 // o passeio terminou? o prompt tem que voltar e o jogador andar de novo
 const promptVisivel = (await page.locator('.prompt.show').count()) > 0;
@@ -78,11 +114,23 @@ const bilheteGasto = await page.evaluate(() => {
 
 console.log('recusou sem bilhete:', recusouSemBilhete);
 console.log('bilhete picotado:', bilheteGasto);
+console.log('primeira pessoa na cabine:', primeiraPessoa, '· altura maxima vista:', subindo);
+console.log('olhou em volta com as setas:', olhouEmVolta);
+console.log('camera devolvida no chao:', voltouAIsometrica);
 console.log('passeio concluido:', subiu);
 console.log('prompt de volta:', promptVisivel);
 console.log('memorias salvas:', total);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 await browser.close();
 process.exit(
-  erros.length || !subiu || !promptVisivel || !recusouSemBilhete || !bilheteGasto ? 1 : 0,
+  erros.length ||
+    !subiu ||
+    !promptVisivel ||
+    !recusouSemBilhete ||
+    !bilheteGasto ||
+    !primeiraPessoa ||
+    !olhouEmVolta ||
+    !voltouAIsometrica
+    ? 1
+    : 0,
 );

@@ -321,6 +321,16 @@ export const PALETTE = {
   churrascoToalha: 0xd94f43,
   churrascoQuadroNegro: 0x2f3b33,
 
+  // por dentro da cabine da roda gigante. Este interior só existe durante os
+  // quarenta segundos de primeira pessoa lá em cima, e é a ÚNICA coisa que se
+  // vê além do parque: piso de borracha escura, banco estofado azul, esquadria
+  // branca da janela que dá a volta inteira, e a lâmpada morna do teto.
+  cabinePiso: 0x4c545c,
+  cabineBanco: 0xa06b34,
+  cabineEstofado: 0x5b8fd6,
+  cabineEsquadria: 0xeef3f6,
+  cabineLuz: 0xffe9b8,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

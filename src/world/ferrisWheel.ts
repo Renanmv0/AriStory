@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { toon, line } from '../core/materials';
+import { toon, flat, line } from '../core/materials';
 import { letreiro } from './props';
 import { PALETTE as P } from '../palette';
 
@@ -51,6 +51,8 @@ export class FerrisWheel {
   private readonly pneus: THREE.Group[] = [];
   /** a catraca do embarque; a cena gira o braço quando alguém passa */
   private catraca: THREE.Group | null = null;
+  /** o interior da cabine: um só, que muda de cabine na hora do passeio */
+  private readonly interior: THREE.Group;
 
   constructor(opts: FerrisWheelOptions = {}) {
     // etiqueta para o caçador de z-fighting e para os testes acharem a peça
@@ -140,6 +142,8 @@ export class FerrisWheel {
       this.cabins.push(cabin);
       this.group.add(cabin);
     }
+    this.interior = this.montarOInterior();
+    this.group.add(this.interior);
 
     // ------------------------------------------------------------- pernas
     const legSpan = R * 0.42;
@@ -482,6 +486,170 @@ export class FerrisWheel {
       pontos.push(x, 0.72, z, Math.cos(b) * raioDaCerca, 0.72, Math.sin(b) * raioDaCerca);
     }
     this.group.add(new THREE.LineSegments(buildLines(pontos), line(P.metalGrey)));
+  }
+
+  /**
+   * ================================================ O INTERIOR DA CABINE
+   *
+   * Só se vê de dentro, e só durante os quarenta segundos de primeira pessoa
+   * lá em cima — por isso ele é UM só e muda de cabine (`abrirCabine`) em vez
+   * de existir 32 vezes. A casca da cabine é `FrontSide`: de dentro ela some
+   * sozinha e o parque aparece inteiro, o que faz do vão entre o peitoril e o
+   * teto uma janela que dá a volta completa sem custar um único polígono.
+   *
+   * O que este método desenha é a MOLDURA dessa janela: piso, peitoril,
+   * montantes, aro de cima, teto e a lâmpada. O piso fica na altura em que os
+   * pés dos dois pousam (`PISO`), que é a mesma que a cena usa no `ridePlayer`.
+   *
+   * AS MEDIDAS SÃO AS DA GENTE DE DENTRO, não as da cápsula. Os dois viajam em
+   * escala 0,55 e sentados o olho deles fica 0,72 acima do piso — um interior
+   * do tamanho da casca (1,55 de largura por 1,0 de altura) lia como um salão
+   * baixo e largo, não como uma cabine. Este aqui é da largura deles, e a
+   * casca por fora não denuncia nada: ela é invisível de dentro.
+   */
+  static readonly PISO = -0.34;
+
+  private montarOInterior(): THREE.Group {
+    const g = new THREE.Group();
+    const piso = FerrisWheel.PISO;
+    const raio = 0.54;
+    const achatado = 0.92; // a cápsula é espremida em z; a moldura acompanha
+
+    const chao = new THREE.Mesh(
+      new THREE.CylinderGeometry(raio * 0.94, raio * 0.94, 0.05, 20),
+      toon(P.cabinePiso),
+    );
+    chao.scale.z = achatado;
+    chao.position.y = piso - 0.025;
+    g.add(chao);
+
+    // saia opaca do peitoril: fecha o pé da janela para não se ver o vazio
+    const saia = new THREE.Mesh(
+      new THREE.CylinderGeometry(raio, raio, 0.13, 22, 1, true),
+      toon(P.cabineEsquadria, { doubleSide: true }),
+    );
+    saia.scale.z = achatado;
+    saia.position.y = piso + 0.065;
+    g.add(saia);
+
+    // ------------------------------------------------------------- bancos
+    // O de trás é onde os dois sentam; o da frente é baixo e SEM encosto de
+    // propósito: um encosto na frente cortaria a vista bem na linha do olho.
+    const madeira = toon(P.cabineBanco);
+    const estofo = toon(P.cabineEstofado);
+    for (const [z, comEncosto] of [[0.28, true], [-0.28, false]] as const) {
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.27, 0.24), madeira);
+      base.position.set(0, piso + 0.135, z);
+      g.add(base);
+      const almofada = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.07, 0.22), estofo);
+      almofada.position.set(0, piso + 0.305, z);
+      g.add(almofada);
+      if (!comEncosto) continue;
+      const encosto = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.34, 0.06), madeira);
+      encosto.position.set(0, piso + 0.5, z + 0.12);
+      encosto.rotation.x = 0.14;
+      g.add(encosto);
+      const forro = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.28, 0.04), estofo);
+      forro.position.set(0, piso + 0.5, z + 0.08);
+      forro.rotation.x = 0.14;
+      g.add(forro);
+    }
+
+    // ---------------------------------------------------- esquadria da janela
+    const esquadria = toon(P.cabineEsquadria);
+    const topo = piso + 0.94; // o aro da janela para logo abaixo da borda da calota
+    const MONTANTES = 8;
+    for (let i = 0; i < MONTANTES; i++) {
+      // meio passo de rotação: assim nenhum montante nasce bem no meio da
+      // vista de quem está sentado olhando para fora
+      const a = ((i + 0.5) / MONTANTES) * Math.PI * 2;
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.04, topo - piso - 0.13, 0.04), esquadria);
+      m.position.set(Math.cos(a) * raio, (piso + 0.13 + topo) / 2, Math.sin(a) * raio * achatado);
+      m.rotation.y = -a;
+      g.add(m);
+    }
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.03, 6, 22), esquadria);
+    aro.rotation.x = Math.PI / 2;
+    aro.scale.y = achatado;
+    aro.position.y = topo;
+    g.add(aro);
+
+    /*
+     * O TETO É `flat()`, e não `toon()`: virado para baixo ele não pega nada
+     * do sol e o material sombreado saía verde-oliva escuro, com cara de
+     * caverna. Sem luz, chapado, ele fica creme — que é a cor que ele tem.
+     */
+    /*
+     * O TETO É UMA CALOTA, e não um disco. Com um disco do tamanho do aro
+     * sobrava uma fresta entre a borda dele e a casca, e por essa fresta se via
+     * o braço da cabine: uma caixa preta pendurada no céu bem no alto da tela.
+     * A calota tem o raio da própria cápsula (0,80 contra 0,816) e o mesmo
+     * centro do capuz dela, então ela forra a casca por dentro sem furo nenhum
+     * — e começa acima do aro da janela, para não comer a vista de lado.
+     */
+    const teto = new THREE.Mesh(
+      new THREE.SphereGeometry(0.8, 20, 10, 0, Math.PI * 2, 0, 1.0),
+      flat(P.cabineEsquadria),
+    );
+    teto.scale.z = achatado;
+    teto.position.y = 0.204;
+    g.add(teto);
+
+    // a lâmpada: a única luz do lado de dentro, e o que faz a cabine parecer
+    // um lugar em vez de um buraco
+    // a haste também é chapada: virada para baixo, sombreada, ela saía preta
+    const haste = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.01, 0.01, 0.06, 6),
+      flat(P.cabineEsquadria),
+    );
+    haste.position.y = 0.83;
+    g.add(haste);
+    const lampada = new THREE.Mesh(
+      new THREE.SphereGeometry(0.04, 12, 10),
+      toon(P.cabineLuz, { glow: 0.7 }),
+    );
+    lampada.position.y = 0.775;
+    g.add(lampada);
+
+    g.visible = false;
+    return g;
+  }
+
+  /**
+   * Põe o interior dentro de `cabine` e o acende. A cabine some da física e da
+   * lógica do resto: quem chama é a cutscene do passeio.
+   */
+  abrirCabine(cabine: THREE.Group): void {
+    cabine.add(this.interior);
+    this.interior.visible = true;
+    /*
+     * E A CASCA PARA DE FAZER SOMBRA. Ela envolve os dois por todos os lados,
+     * então enquanto ela projetava sombra os dois viajavam dentro do próprio
+     * escuro: o parceiro saía preto, sem rosto. De fora ninguém sente falta —
+     * a essa altura a sombra dela no chão é um borrão a trinta metros.
+     */
+    cabine.traverse((n) => {
+      if ((n as THREE.Mesh).isMesh) n.castShadow = false;
+    });
+    // e o braço some: ele nasce ACIMA da calota do teto e aparecia como uma
+    // caixinha cinza pendurada no céu, no alto da tela. De dentro ninguém
+    // precisa dele; de fora, nesses quarenta segundos, ninguém está olhando.
+    const braco = cabine.children[0];
+    if (braco) braco.visible = false;
+  }
+
+  /** Recolhe o interior; a cabine volta a ser uma cápsula fechada como as outras. */
+  fecharCabine(): void {
+    const cabine = this.interior.parent;
+    this.interior.visible = false;
+    this.group.add(this.interior);
+    if (cabine && cabine !== this.group) {
+      cabine.traverse((n) => {
+        if ((n as THREE.Mesh).isMesh) n.castShadow = true;
+      });
+      const braco = cabine.children[0];
+      if (braco) braco.visible = true;
+    }
   }
 
   /** angulo (rad) da cabine i no plano da roda */
