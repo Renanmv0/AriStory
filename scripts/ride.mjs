@@ -65,8 +65,28 @@ const alturaDaCamera = () =>
     return c ? [c.position.y, c.rotation.y] : null;
   });
 
+/*
+ * A ESTRUTURA VIRA VIDRO enquanto alguem esta dentro: os dois olham para +Z, o
+ * lado do parque, e entre a cabine e o parque passa metade da roda. O teste
+ * conta quantas pecas da roda estao translucidas — tem que ser muitas durante
+ * o passeio e NENHUMA depois, senao a roda fica de vidro para sempre.
+ */
+const pecasDeVidro = () =>
+  page.evaluate(() => {
+    let n = 0;
+    window.jogo.scene.traverse((o) => {
+      if (o.userData?.peca !== 'roda-gigante') return;
+      o.traverse((f) => {
+        const mat = f.material;
+        if (mat && !Array.isArray(mat) && mat.transparent && mat.opacity < 0.3) n++;
+      });
+    });
+    return n;
+  });
+
 let subiu = false;
 let primeiraPessoa = false;
+let vidroNoPasseio = 0;
 let olhouEmVolta = false;
 let giroInicial = null;
 let subindo = null;
@@ -77,6 +97,7 @@ for (let i = 0; i < 620; i++) {
   const cam = await alturaDaCamera();
   if (cam) {
     primeiraPessoa = true;
+    vidroNoPasseio = Math.max(vidroNoPasseio, await pecasDeVidro());
     if (giroInicial === null) giroInicial = cam[1];
     else if (Math.abs(cam[1] - giroInicial) > 0.25) olhouEmVolta = true;
     if (subindo === null && cam[0] > 6) {
@@ -101,6 +122,8 @@ await page.screenshot({ path: `${OUT}-fim.png` });
 
 // a camera de cena tem que ter sido DEVOLVIDA: no chao volta a isometrica
 const voltouAIsometrica = (await alturaDaCamera()) === null;
+// e a roda tem que ter voltado a ser solida
+const vidroDepois = await pecasDeVidro();
 
 // o passeio terminou? o prompt tem que voltar e o jogador andar de novo
 const promptVisivel = (await page.locator('.prompt.show').count()) > 0;
@@ -116,6 +139,7 @@ console.log('recusou sem bilhete:', recusouSemBilhete);
 console.log('bilhete picotado:', bilheteGasto);
 console.log('primeira pessoa na cabine:', primeiraPessoa, '· altura maxima vista:', subindo);
 console.log('olhou em volta com as setas:', olhouEmVolta);
+console.log('estrutura de vidro durante:', vidroNoPasseio, '· depois:', vidroDepois, '(tem que ser 0)');
 console.log('camera devolvida no chao:', voltouAIsometrica);
 console.log('passeio concluido:', subiu);
 console.log('prompt de volta:', promptVisivel);
@@ -130,7 +154,9 @@ process.exit(
     !bilheteGasto ||
     !primeiraPessoa ||
     !olhouEmVolta ||
-    !voltouAIsometrica
+    !voltouAIsometrica ||
+    vidroNoPasseio < 10 ||
+    vidroDepois !== 0
     ? 1
     : 0,
 );
