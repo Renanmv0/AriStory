@@ -9,6 +9,8 @@ export class Input {
   private stickY = 0;
   private stickId: number | null = null;
   private stickOrigin = { x: 0, y: 0 };
+  /** ponteiro em coordenada de tela normalizada: -1..1, y para cima */
+  private ponteiro = { x: 0, y: 0 };
 
   /** true enquanto o dialogo/menu esta aberto: movimento e ignorado */
   blocked = false;
@@ -49,6 +51,12 @@ export class Input {
   };
 
   private onPointerMove = (e: PointerEvent): void => {
+    // a posição do ponteiro é anotada sempre, mouse ou dedo: quem usa é o
+    // minigame de ping pong, que move a raquete com ela
+    const r = this.surface.getBoundingClientRect();
+    this.ponteiro.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    this.ponteiro.y = 1 - ((e.clientY - r.top) / r.height) * 2;
+
     if (e.pointerId !== this.stickId) return;
     const max = 60;
     const dx = Math.max(-max, Math.min(max, e.clientX - this.stickOrigin.x));
@@ -64,9 +72,29 @@ export class Input {
     this.stickY = 0;
   };
 
+  /**
+   * Onde o ponteiro está, em coordenada de tela: -1..1 nos dois eixos, com
+   * `y` para cima. Serve para mira contínua — no ping pong é a raquete.
+   */
+  pointer(): { x: number; y: number } {
+    return { x: this.ponteiro.x, y: this.ponteiro.y };
+  }
+
   /** Vetor de movimento na tela: x = direita, y = para cima da tela. */
   move(): { x: number; y: number } {
     if (this.blocked) return { x: 0, y: 0 };
+    return this.moveCru();
+  }
+
+  /**
+   * O mesmo manche, lido CRU: chega mesmo com o movimento travado.
+   *
+   * O `move()` cala durante dialogo e cutscene — e o que impede de sair
+   * andando no meio de uma fala. Mas na cabine da roda gigante a cutscene TIRA
+   * o andar e devolve o OLHAR, no mesmo manche: setas, WASD ou o dedo no
+   * joystick. Quem chama aqui esta assumindo que sabe o que fazer com isso.
+   */
+  moveCru(): { x: number; y: number } {
     let x = this.stickX;
     let y = -this.stickY;
     if (this.down.has('KeyA') || this.down.has('ArrowLeft')) x -= 1;
@@ -100,6 +128,17 @@ export class Input {
     this.pressed.add('KeyT');
   }
 
+  /**
+   * Botao virtual de girar a camera. -1 gira para um lado, 1 para o outro.
+   *
+   * Injeta a MESMA tecla do teclado em vez de chamar a camera direto: assim as
+   * travas que ja existem (dialogo aberto, menu, troca de cena) valem para o
+   * dedo sem precisar de uma segunda copia da regra.
+   */
+  tapGirar(dir: -1 | 1): void {
+    this.pressed.add(dir < 0 ? 'KeyQ' : 'KeyR');
+  }
+
   /** Segura/solta uma tecla virtual — usado pelo botao de acao no celular. */
   setVirtualDown(code: string, down: boolean): void {
     if (down) {
@@ -122,4 +161,4 @@ export class Input {
 }
 
 const MOVEMENT_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
-const ACTION_KEYS = new Set(['Space', 'KeyE', 'KeyQ', 'KeyR', 'KeyJ', 'KeyT', 'KeyF']);
+const ACTION_KEYS = new Set(['Space', 'KeyE', 'KeyQ', 'KeyR', 'KeyJ', 'KeyT', 'KeyF', 'KeyH', 'KeyI', 'Tab']);

@@ -18,6 +18,7 @@ export const ARI: CharacterSpec = {
   skin: 0xf2cfb2,
   blush: 0xff8fa0,
   eyes: 0x4a3328,
+  casal: true,
   hair: {
     color: 0x8f5c33,
     style: 'cacheado',
@@ -43,8 +44,9 @@ export const RENAN: CharacterSpec = {
   height: 1.78,
   build: 'magro',
   skin: 0xefc8a4,
-  blush: 0xefc8a4, // sem blush: fica só no Ari, combina mais com ele
+  // sem blush nenhum: o rosto dele não leva bochecha rosada
   eyes: 0x241d18,
+  casal: true,
   hair: {
     color: 0x1f1712,
     style: 'cachos-curtos', // silhueta propria, nao so a do Ari com outra cor

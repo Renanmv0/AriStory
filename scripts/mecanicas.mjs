@@ -36,22 +36,45 @@ await page.keyboard.press('KeyE'); // confirma "Sim"
 await page.waitForTimeout(2800);
 await page.screenshot({ path: `${OUT}-sofa.png` });
 const sentados = (await page.locator('.dialogue.show').count()) > 0;
+// no sofá a dupla também senta de mãos dadas: o `setSitting` do motor vale
+// para qualquer assento, não só para o banco do parque
+const maosNoSofa = await page.evaluate(
+  () => window.jogo.player.rig.holdingHands && window.jogo.parceiro.rig.holdingHands,
+);
 
 // --------------------------------------------------------------- frisbee
 // o disco só existe dentro da quadra, então o teste começa lá dentro
 await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=18,-4.5&olhar=0.785`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(3200);
 const discoNaMao = (await page.locator('.prompt.show .label').textContent().catch(() => null)) ?? '';
-for (let i = 0; i < 6; i++) {
-  // segura para carregar e solta: é assim que se lança agora
+
+// O sorvete comprado acima ocupa a vaga principal, então o disco entrou na
+// mochila e o F não lança até ele ser escolhido — é a regra. Aqui o teste faz
+// o que a pessoa faria: abre a mochila e toca no frisbee.
+await page.keyboard.press('KeyI');
+await page.waitForTimeout(700);
+const vagaDoDisco = await page.evaluate(() =>
+  window.jogo.handItems().findIndex((i) => i?.id === 'frisbee'),
+);
+if (vagaDoDisco >= 0) await page.locator('.mochila .maos .slot').nth(vagaDoDisco).click();
+await page.waitForTimeout(400);
+await page.keyboard.press('KeyI');
+await page.waitForTimeout(600);
+
+// Toque em vez de carga: abaixo da carga mínima o jogo entende que foi um
+// tapinha e manda o passe limpo, direto na mão dele. Carregado o disco vai a
+// 20+ unidades e o parceiro tem que correr, e em câmera lenta (headless roda o
+// jogo a ~7 fps) uma ida dessas estoura o tempo do teste antes da volta.
+for (let i = 0; i < 4; i++) {
   await page.keyboard.down('KeyF');
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(120);
   await page.keyboard.up('KeyF');
-  await page.waitForTimeout(2600);
-  await page.keyboard.down('KeyW');
-  await page.waitForTimeout(500);
-  await page.keyboard.up('KeyW');
-  await page.waitForTimeout(1700);
+  // espera a ida, a busca e a volta inteiras
+  for (let k = 0; k < 24; k++) {
+    await page.waitForTimeout(500);
+    const fase = await page.evaluate(() => window.jogo.getActiveHandItem()?.id ?? null);
+    if (fase === 'frisbee') break; // o disco voltou pra minha mão
+  }
 }
 await page.screenshot({ path: `${OUT}-frisbee.png` });
 const trocas = await page.evaluate(() => {
@@ -65,12 +88,19 @@ const trocas = await page.evaluate(() => {
 // ------------------------------------------------------------- sorveteria
 await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=12,20.8&olhar=3.14`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2800);
+/**
+ * A COMPRA VIROU CENA quando o Mano chegou: ele fala, dança 2,5 s e só então
+ * entrega, e na PRIMEIRA vez ele ainda conta por que um pinguim foi parar numa
+ * sorveteria. As dez teclas de antes acabavam no meio e a memória não chegava
+ * a entrar — daí as quarenta e seis. Os `wait` da dança não respondem ao E, e
+ * no Chromium sem tela o tempo de jogo corre a um terço do relógio.
+ */
 await page.keyboard.press('KeyE');
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 46; i++) {
   await page.keyboard.press('KeyE');
   await page.waitForTimeout(420);
 }
-await page.waitForTimeout(900);
+await page.waitForTimeout(1200);
 await page.screenshot({ path: `${OUT}-sorvete.png` });
 
 // ------------------------------------------------------------------- lago
@@ -96,7 +126,7 @@ const memorias = await page.evaluate(() => {
 
 console.log('prompt do sofá:', promptSofa);
 console.log('pergunta com botões:', temEscolha);
-console.log('cutscene rodou:', sentados);
+console.log('cutscene rodou:', sentados, '· de mãos dadas no sofá:', maosNoSofa);
 console.log('prompt na quadra:', discoNaMao);
 console.log('trocas de frisbee:', trocas);
 console.log('falantes do lago:', falantes.join(' → '));
@@ -107,4 +137,4 @@ const faltando = ['sorvete-villa', 'lago-pular'].filter((id) => !memorias.includ
 if (faltando.length) console.log('memórias que não vieram:', faltando.join(', '));
 
 await browser.close();
-process.exit(erros.length || !temEscolha || !sentados || trocas < 1 || faltando.length ? 1 : 0);
+process.exit(erros.length || !temEscolha || !sentados || !maosNoSofa || trocas < 1 || faltando.length ? 1 : 0);

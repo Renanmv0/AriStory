@@ -3,6 +3,9 @@ import type { CharacterRig } from '../characters/CharacterRig';
 import { clampToBounds, resolveCollisions } from '../world/collision';
 import type { Bounds, Collider } from '../core/types';
 
+/** o quanto os patins multiplicam a velocidade de quem os calca */
+export const BONUS_PATINS = 1.3;
+
 /**
  * O personagem controlado: fisica simples no plano XZ.
  *
@@ -27,6 +30,11 @@ export class Player {
   riding = false;
   /** 0 = seco, 1 = submerso ate o pescoco */
   submersion = 0;
+  /**
+   * De patins anda mais rapido. Quem liga isto e o `Game`, lendo a vaga de
+   * acessorio — o Player nao conhece inventario.
+   */
+  patins = false;
 
   constructor(rig: CharacterRig) {
     this.body = rig;
@@ -79,7 +87,9 @@ export class Player {
     }
 
     const naAgua = this.submersion > 0.05;
-    const teto = naAgua ? this.maxSpeed * 0.55 : this.maxSpeed;
+    // na agua o patins nao ajuda em nada: roda nao empurra agua
+    const rodas = this.patins && !naAgua ? BONUS_PATINS : 1;
+    const teto = naAgua ? this.maxSpeed * 0.55 : this.maxSpeed * rodas;
     const wants = !this.locked && dir.lengthSq() > 0.0001;
 
     if (wants) {

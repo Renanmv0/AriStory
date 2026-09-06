@@ -36,6 +36,31 @@ nas duas cenas (ida e volta).
   `-X` sobe para a **esquerda**, `+X` desce para a direita, `+Z` desce para a esquerda.
 - Uma pessoa tem ~1,75 unidade de altura. Use isso como régua para tudo.
 - O jogador olha para `+Z` quando `facing === 0`; `facing = Math.atan2(dx, dz)`.
+- **Peça com frente (quiosque, banca, bar) tem que olhar para `+Z`**, girada no
+  máximo meia volta de rádio para cada lado. A câmera padrão vem de `+X/+Z`:
+  virada para o outro lado, a peça mostra só o fundo liso e quem compra fica
+  escondido atrás dela. O ponto do `w.interact` vai na frente dela.
+
+### O ponto cego atrás de um prédio
+
+A câmera olha em **34°** de inclinação. A conta que decide tudo: uma peça de
+altura `h` esconde **`h / tan(34°) ≈ 1,5 · h`** de chão atrás dela, na direção
+da câmera — que é a diagonal `(sen giro, cos giro)`, e o giro muda quando o
+jogador aperta `Q`/`E`. Um prédio de 5,5 come quase 8 m.
+
+Duas saídas, e **nenhuma delas é fazer a peça sumir**:
+
+1. **Não ponha nada atrás de peça alta** — é a regra normal, e vale para
+   qualquer coisa que o jogo espere que o jogador ache sem procurar.
+2. **Ponha ali de propósito, como segredo.** É o caso da porta de serviço do
+   restaurante do clube: o ponto cego é o esconderijo. Quem gira a câmera ou dá
+   a volta acha; quem não gira, não acha. Só nunca deixe o caminho principal do
+   jogo depender de uma coisa escondida assim.
+
+**Peça translúcida está descartada** — chegou a existir aqui um prédio que
+desbotava quando a dupla passava atrás, e o Renan cortou: a câmera gira, e o
+que é para ser descoberto tem que ser descoberto jogando, não entregue por um
+efeito. Não reintroduza.
 
 ## API do WorldBuilder (`w`)
 
@@ -45,6 +70,7 @@ nas duas cenas (ida e volta).
 | `w.ground({ width, depth, color, x?, z?, y? })` | o piso da cena |
 | `w.patch(x, z, w, d, cor, rotY?, y?)` | retângulo pintado: calçada, quadra, tapete |
 | `w.disc(x, z, raio, cor, y?)` | círculo pintado: lago, praça, canteiro |
+| `w.ring(x, z, raio, largura, cor, y?)` | anel pintado: círculo central da quadra, marca no chão |
 | `w.setBounds(minX, minZ, maxX, maxZ)` | limite invisível de caminhada |
 | `w.groundWithHoles({ …, holes: [{x,z,width,depth}] })` | piso com buraco (piscina, poço) |
 
@@ -76,7 +102,7 @@ w.interact({
   radius: 2,               // distância em que o prompt aparece
   label: 'Sentar no banco',
   icon: '🪑',
-  highlight: objeto,       // balança de leve quando você chega perto
+  highlight: objeto,       // a que objeto a interação se refere (não anima)
   once: false,
   priority: 0,             // maior ganha quando dois prompts se sobrepõem
   onInteract: async (g) => { /* … */ },
@@ -110,9 +136,10 @@ g.releasePlayer(x, z, facing)
 g.playerPosition() / g.playerFacing() / await g.wait(1.5)
 
 // a dupla
-g.playerName() / g.companionName() / g.companionPosition()
+g.playerName() / g.companionName() / g.companionPosition() / g.companionFacing()
 g.rideCompanion(cabine, local, escala, facing) / g.releaseCompanion(x, z, facing)
 g.commandCompanion(x, z)   // manda ele buscar algo; freeCompanion() devolve o "seguir"
+g.holdCompanion(x, z)      // planta ele onde está, encarando esse ponto
 g.setSitting(true)         // os dois sentam
 g.swapCharacters()
 
@@ -142,6 +169,12 @@ g.submergePlayer(molhado);
 ```
 
 ## Zona que liga uma mecânica
+
+**Parceiro que age (buscar, mirar, jogar) faz uma coisa de cada vez.** Enquanto
+ele corre, `commandCompanion`; ao chegar, `holdCompanion(alvo)` para ele parar e
+virar; e só lançar quando `g.companionFacing()` já tiver fechado com o ângulo do
+alvo. Sem isso ele executa andando, e o resultado sai torto — foi o bug do passe
+de volta do frisbee.
 
 Quando uma mecânica só faz sentido num pedaço do cenário (a quadra de frisbee),
 defina o retângulo e ligue/desligue tudo na entrada e na saída — não deixe o
@@ -188,31 +221,123 @@ g.lockPlayer(false);
 Cuidado com móvel na frente: numa câmera isométrica o encosto do sofá tapa quem
 senta colado nele. Sente **à frente** do encosto e confira com foto.
 
-## Chão empilhado: nunca dois decalques na mesma altura
+## Decoração que não é decalque
 
-`w.patch()` e `w.disc()` desenham no chão. Duas dessas superfícies na **mesma
-altura** brigam pelo mesmo pixel e produzem manchas em ziguezague — foi o que
-aconteceu na praça da roda gigante e na borda do lago.
+Canteiro, vitória-régia, pedra na beira d'água: sempre que der, faça a peça ter
+**volume** em vez de pintar o chão. Canteiro com borda elevada e vitória-régia
+em calota nunca brigam com a grama nem com a água, porque não são coplanares com
+nada — some com o risco de z-fighting antes de ele existir.
 
-O `WorldBuilder` já dá um `polygonOffset` próprio a cada decalque, então o
-empilhamento é determinístico mesmo em alturas iguais. Ainda assim, **declare
-alturas distintas** por camada — fica legível e à prova de futuro:
+## A pilha do chão mora ABAIXO de zero
+
+Toda peça do kit nasce com a base em `y = 0` — é o contrato do kit. Por isso o
+`WorldBuilder` põe o chão e todos os decalques dele **abaixo** de zero: o chão
+de base no fundo (`-0,006`), os decalques numa faixa fina acima dele, e `y = 0`
+livre para as peças. A cena continua escrevendo o `y` que quiser em
+`patch()`/`disc()` — ele só serve para a pilha ficar legível no código, e o
+`WorldBuilder` reescreve.
+
+Dois defeitos moravam aí, e os dois só ficaram visíveis quando o chão ganhou
+textura:
+
+1. **O chão de base ficava no MESMO plano da base de cada árvore, poste, banco
+   e cerca.** Dois planos iguais é a definição de z-fighting. Enquanto os dois
+   eram verde chapado, a briga dava verde e ninguém via.
+2. **O decalque é desenhado DEPOIS do mundo sólido e ficava ACIMA da base das
+   peças** — a calçada em `y = 0,012` pintava por cima dos 12 mm de baixo de
+   todo poste plantado nela. Com a calçada texturizada, essa faixa passou a ter
+   desenho e virou chiado no pé da peça.
+
+Se um dia precisar de um chão acima de zero, lembre que ele vai comer o pé de
+tudo que estiver plantado nele.
+
+## Chão empilhado: quem manda é a ORDEM DE CRIAÇÃO
+
+`w.patch()`, `w.disc()` e `w.ring()` desenham no chão. Eles são **decalques**:
+não gravam profundidade e são pintados depois do mundo sólido, na ordem em que a
+cena os criou. Duas consequências:
+
+1. **Decalque nunca briga com decalque.** Pode empilhar quantas camadas quiser
+   na mesma altura sem piscar. Milímetros de `y` não resolviam nada — o buffer de
+   profundidade do celular é bem mais pobre que o do desktop e engolia a folga.
+   Foi assim que a linha do meio da quadra e as manchas da praça piscaram.
+2. **Quem é criado por último fica por cima.** Monte o chão de baixo para cima:
+   grama, mancha de terra, calçada, linha pintada.
 
 ```ts
 w.disc(x, z, r, P.grassDark, 0.004);   // manchas de grama
 w.disc(0, -16.5, 8.6, P.sand, 0.008);  // borda
 w.disc(0, -16.5, 8, P.concrete, 0.012);// praça
-w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho
+w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016); // caminho, por cima de tudo
 ```
 
-Regra prática: comece em `0.004` e suba de `0.004` a cada camada que ficar por
-cima. Ordene do que está mais embaixo para o que está mais em cima.
+O `y` continua sendo escrito porque deixa a pilha legível no código; ele já não
+decide nada. Suba `0.004` por camada e mantenha a ordem coerente com a leitura.
+
+Anel pintado (círculo central da quadra, poça, marca no chão) é `w.ring()`, e
+não dois discos concêntricos: com dois discos a borda de um cai exatamente em
+cima da borda do outro, e aí a briga volta — agora entre as *bordas*, que é uma
+coisa que ordem de pintura não conserta.
+
+Fora do chão, superfícies coladas (foto na parede, bochecha no rosto, linha no
+fundo da piscina) pedem o mesmo tratamento à mão: material com `{ decal: true }`
+(ou `flat(cor, opacidade, true)`) **mais** um `mesh.renderOrder` que a ponha
+depois da base. Ver `ToonOptions.decal` em `src/core/materials.ts`.
 
 O mesmo vale **em pé**: porta encaixada num vão não pode ter a face do batente
 na mesma altura da face da parede. `w.wall()` usa espessura `0.3`; o batente da
 `interiorDoor` usa `0.24` e a porta vai **centrada na linha da parede**
 (`z = zParede`, não `zParede + algo`). Faces coplanares piscam igual, seja no
 chão ou na vertical.
+
+## Texturar o chão sem trazer imagem
+
+Decalque resolve MANCHA (um caminho de terra, uma quadra). Ele não resolve
+TEXTURA: um piso de placas de 2 m num deque de 48 × 38 daria mais de 400 malhas
+só para desenhar as juntas. Para isso existe `src/world/texturasDeChao.ts` —
+`pisoDePlacas(lado)`, `calcadaDePedrinha(lado, porLinha)`, `asfalto(lado)` e
+`tapeteDeGrama(lado)`, desenhadas em `<canvas>` na hora em que o jogo sobe e
+passadas em `textura:` para `ground()`, `groundWithHoles()`, `patch()` e
+`disc()`:
+
+```ts
+w.groundWithHoles({
+  width: 160, depth: 160, color: P.grass, holes: [buraco],
+  textura: tapeteDeGrama(9),
+});
+```
+
+Isso continua sendo zero asset: nenhum arquivo de imagem entra no repositório,
+o desenho é código — o mesmo princípio do texto das placas e das memórias.
+
+Três coisas que essa parte cobra:
+
+- **O desenho tem que ser quase branco.** O material toon MULTIPLICA a cor
+  base pela textura. Qualquer coisa escura ali vira uma segunda demão de tinta
+  e o chão perde o tom da paleta. Trabalhe entre 0,88 e 1,0 de luminosidade.
+- **O tamanho do azulejo é em unidades de MUNDO.** `ShapeGeometry` (o do
+  `groundWithHoles`) gera UV a partir da posição do vértice, em metros — por
+  isso `repeat = 1/lado` basta. `PlaneGeometry` (o do `ground`) dá UV de 0 a 1,
+  e o `WorldBuilder` corrige sozinho multiplicando pelo tamanho do chão.
+- **Grama repete e vira xadrez.** Azulejo grande (9 unidades), nenhuma borda
+  desenhada, e as manchas largas pintadas em 3 × 3 cópias para atravessarem a
+  emenda. Com 6 unidades dava para pegar a grade na vista de longe do clube.
+- **A unidade tem que LER, não medir certo.** A pedra portuguesa de verdade
+  tem 18 cm, e nessa medida a calçada do parque virou chiado cinza — a esta
+  distância de câmera não dá para separar uma pedra da outra. Com 40 cm o
+  assentamento aparece. O jogo é estilizado: ler ganha de medir.
+- **A MESMA grama nos dois cenários**, para o clube e o parque serem o mesmo
+  mundo. Já o piso claro é DIFERENTE de propósito: placa grande de borda de
+  piscina no clube, pedrinha miúda de praça no parque. O que separa os dois é a
+  escala da unidade, e é ela que diz de que lugar você está falando.
+- **O grão tem que sobreviver ao mipmap.** O agregado do asfalto nasceu com um
+  pixel e sumia no jogo: a esta distância de câmera o mipmap come qualquer
+  coisa desse tamanho, e sobrava asfalto liso. Grão de 2 a 3 px aguenta um
+  nível e continua lendo de longe.
+- **Chão texturizado ao lado de chão liso denuncia os dois.** A quadra de
+  frisbee era um `patch` de grama sem textura no meio de um gramado com — o
+  retângulo liso saltava. Se um pedaço do chão ganhou textura, os vizinhos da
+  mesma matéria precisam ganhar também.
 
 ## Regras da casa
 

@@ -1,6 +1,65 @@
 import * as THREE from 'three';
 import { toon, flat } from '../core/materials';
 import { BUILD_WIDTH, type CharacterSpec } from './spec';
+import { patins as patinsMesh } from '../world/props';
+import {
+  SLOTS_ROUPA,
+  type HoldPose,
+  type ItemDef,
+  type Loadout,
+  type MedidasCorpo,
+  type SlotRoupa,
+} from '../core/types';
+import { fichaDoItem } from '../world/itens';
+import { PALETTE as P } from '../palette';
+
+/**
+ * Abertura do braco que segura a mao do outro, em radianos (~43°).
+ *
+ * Nao e gosto: a mao fica a ~0.44 abaixo do ombro, e com os dois a 0.95 um do
+ * outro sobra ~0.30 de vao para cada mao cobrir. `asin(0.30 / 0.44)` da isto.
+ * Mexer aqui sem mexer em LADO (entities/MaosDadas.ts) descola as maos.
+ */
+const ABRE_MAO = 0.75;
+
+/**
+ * Altura da sola do patins, na escala nativa da peca em `props.ts`.
+ *
+ * As rodas ficam entre 0 e 0.09 e o chassi vai ate 0.13 — e desse ultimo que a
+ * bota parte. E quanto a pessoa cresce ao calcar.
+ */
+const SOLA_PATINS = 0.13;
+
+/**
+ * As duas poses de segurar.
+ *
+ * ## O sinal do Z
+ *
+ * O braco direito nasce em `x = +halfShoulder` (0.148), e `rotation.z`
+ * POSITIVO joga a mao para +X, ou seja para FORA do corpo. Negativo joga para
+ * dentro — foi esse o bug que fazia o frisbee atravessar o tronco inteiro.
+ *
+ * `bracoX` negativo levanta o braco para a frente; `balanco` e quanto sobra do
+ * balanco da caminhada NAQUELE braco (zero engessa o boneco, cheio faz o
+ * sorvete voar); `itemZ` inclina o objeto dentro da mao e `itemX` o afasta
+ * lateralmente.
+ */
+const POSES = {
+  // esticado para a frente, com o objeto em pe: sorvete, suco
+  upright: { bracoX: -1.38, bracoZ: 0.16, balanco: 0.15, itemZ: 0, itemX: 0 },
+  /**
+   * Frisbee: braco levemente para FORA e um tico para a frente.
+   *
+   * O disco tem raio 0.28 e o ombro esta a 0.148 do eixo do corpo. So girar o
+   * braco nao basta: com z = 0.46 a mao chega a x = 0.37, e a metade de dentro
+   * do disco (0.28 x cos 0.9 = 0.17) ainda raspa no tronco. Dai o `itemX`, que
+   * empurra o disco mais para fora dentro da propria mao.
+   *
+   * `itemZ` 0.9 e nao PI/2.4: de perfil o disco vira um risco na tela, e a essa
+   * distancia de camera ninguem reconhece um frisbee de canto.
+   */
+  relaxed: { bracoX: -0.22, bracoZ: 0.46, balanco: 0.6, itemZ: 0.9, itemX: 0.13 },
+} as const;
 
 /**
  * Monta um personagem chibi (cabeca grande, corpo pequeno) a partir de uma
@@ -38,26 +97,89 @@ export class CharacterRig {
   private readonly head = new THREE.Group();
   private readonly armL = new THREE.Group();
   private readonly armR = new THREE.Group();
+  /** encaixe do objeto segurado, na ponta do braco direito */
+  private readonly maoDir = new THREE.Group();
   private readonly legL = new THREE.Group();
   private readonly legR = new THREE.Group();
   private readonly blob: THREE.Mesh;
+  /** troféu de ping pong: montado sempre, escondido até alguém ganhar */
+  private readonly chapeu = new THREE.Group();
 
   private phase = 0;
   private bounce = 0;
+  private beijo = 0;
+  /** -1 segura com o braco em -X, 1 com o de +X, 0 nao esta de maos dadas */
+  private maos: -1 | 0 | 1 = 0;
+  /** pose do item que a mao direita esta segurando */
+  private pose: HoldPose = 'none';
+  /** de patins: muda a caminhada e levanta o corpo em `altoDoPatins` */
+  private patinando = false;
+  /** quanto a sola do patins levanta a pessoa do chao */
+  private altoDoPatins = 0;
+  /** comprimento da perna, guardado para o patins achar o chao */
+  private alturaDaPerna = 0;
+  private readonly pes: THREE.Mesh[] = [];
+  private readonly patins: THREE.Group[] = [];
   private targetFacing = 0;
   private swimming = false;
   private sitting = false;
+  private deitado = false;
 
-  /** peças que trocam de material entre roupa normal e traje de banho */
+  /**
+   * Peças que trocam de material entre roupa normal e traje de banho.
+   *
+   * O `slot` e a `parte` são do guarda-roupa: dizem qual peça do acervo pinta
+   * esta malha, quando houver uma. Sem peça vestida, os dois campos não fazem
+   * nada e a lista se comporta exatamente como antes.
+   */
   private readonly trocaMaterial: Array<{
     mesh: THREE.Mesh;
     normal: THREE.Material;
     banho: THREE.Material;
+    slot: SlotRoupa;
+    parte: 'principal' | 'detalhe';
   }> = [];
   /** some no traje de banho (laço, cinto, faixa da camiseta, mochila) */
   private readonly soVestido: THREE.Object3D[] = [];
   /** aparece só no traje de banho (o calção) */
   private readonly soBanho: THREE.Object3D[] = [];
+  /**
+   * O calção, guardado à parte porque ele TROCA DE COR.
+   *
+   * Ele não entra em `trocaMaterial`: aquela lista é de peças que viram pele no
+   * traje de banho, e o calção é justamente a que faz o contrário.
+   */
+  private readonly calcao: THREE.Mesh;
+  /** os dois tubos do shorts, um por perna — pintados junto com o calcao */
+  private readonly pernasDoShort: THREE.Mesh[] = [];
+  /** a cor de calção da ficha da pessoa, quando não há bermuda escolhida */
+  private readonly calcaoDaFicha: THREE.Material;
+  /** as duas faixas da bermuda estampada; só aparecem se a peça pedir */
+  private readonly estampa: THREE.Mesh[] = [];
+
+  // --- guarda-roupa
+  /** traje da cena, guardado em vez de aplicado direto — ver `aplicarVisual` */
+  private traje: 'normal' | 'banho' = 'normal';
+  /** o loadout já resolvido pelo catálogo */
+  private roupa: Partial<Record<SlotRoupa, ItemDef>> = {};
+  /** a geometria extra de cada slot que tem uma (só cabeça e pés) */
+  private readonly extras = new Map<SlotRoupa, THREE.Object3D[]>();
+  private readonly medidas: MedidasCorpo;
+  /**
+   * Peças de tronco da FICHA que uma roupa do acervo cobre.
+   *
+   * A listra, o casco da jaqueta e o capuz — sem isto, vestir uma camisa no
+   * Renan repinta o torso e o moletom continua por cima, tapando tudo. E também
+   * o laço e o cinto do Ari: sobre um vestido rosa, um laço preto e uma
+   * correntinha de estrela ficariam flutuando sem dono.
+   *
+   * A MOCHILA entra também. Eu tinha deixado ela de fora achando que mochila
+   * por cima de roupa é acessório e não conflito — mas as alças dela cruzam o
+   * PEITO, e por cima de um vestido elas atravessam o pano em vez de pousar.
+   */
+  private readonly sobreTronco: THREE.Object3D[] = [];
+  /** o cabelo inteiro, para um gorro poder achatá-lo */
+  private readonly cabelo: THREE.Object3D[];
 
   constructor(spec: CharacterSpec) {
     this.spec = spec;
@@ -65,6 +187,11 @@ export class CharacterRig {
     const w = BUILD_WIDTH[spec.build];
 
     const legH = h * 0.28;
+    // o patins tem 0.405 de altura na escala nativa; a peca acompanha o tamanho
+    // da pessoa para nao virar sapato de palhaco em quem e mais baixo
+    const escalaPatins = h / 1.7;
+    this.altoDoPatins = SOLA_PATINS * escalaPatins;
+    this.alturaDaPerna = legH;
     const torsoH = h * 0.3;
     const headR = h * 0.17;
     const hipY = legH;
@@ -73,11 +200,16 @@ export class CharacterRig {
     const armLen = h * 0.3;
 
     this.headTop = legH + torsoH + headR * 2.1;
+    // o que as fábricas de roupa recebem; elas não veem o rig, só números
+    this.medidas = { h, w, headR, legH, torsoH };
 
     const skin = toon(spec.skin);
     const shirt = toon(spec.shirt);
     const pants = toon(spec.pants);
     const shoes = toon(spec.shoes);
+    // sobe para ca porque as PERNAS do shorts, montadas logo abaixo, ja pintam
+    // com ele — antes ele so nascia junto do calcao do quadril
+    this.calcaoDaFicha = toon(spec.swim ?? spec.pants);
 
     // ------------------------------------------------------------- pernas
     for (const [pivot, side] of [
@@ -91,7 +223,34 @@ export class CharacterRig {
       );
       leg.position.y = -legH * 0.48;
       pivot.add(leg);
-      this.trocaMaterial.push({ mesh: leg, normal: pants, banho: skin });
+      this.trocaMaterial.push({
+        mesh: leg, normal: pants, banho: skin, slot: 'pernas', parte: 'principal',
+      });
+
+      // A PERNA DO SHORTS.
+      //
+      // Ela é filha do PIVÔ DA PERNA, e não do corpo: assim ela herda de graça
+      // toda a matemática de rotação da caminhada, da natação e do sentar, sem
+      // tocar em nenhum pivô. É a mesma razão pela qual o patins e o cano da
+      // bota moram aqui.
+      //
+      // Cônica (mais larga embaixo) e com folga de ~40% sobre o raio da coxa:
+      // dois cilindros concêntricos de raios diferentes não brigam por pixel, e
+      // a boca aberta é o que dá a silhueta de bermuda em vez de calça justa.
+      // Vai do quadril até ~1/3 da coxa, deixando a maior parte da perna com o
+      // material de pele que o traje de banho já aplica. O centro acompanha a
+      // altura (metade dela menos os `0.02·legH` de sobreposição no cós), senão
+      // encurtar o tubo o descola da cintura em vez de subir a barra.
+      const alturaDoShort = legH * 0.36;
+      const pernaDoShort = new THREE.Mesh(
+        new THREE.CylinderGeometry(h * 0.052 * w, h * 0.064 * w, alturaDoShort, 14, 1, true),
+        this.calcaoDaFicha,
+      );
+      pernaDoShort.position.y = legH * 0.02 - alturaDoShort / 2;
+      pernaDoShort.visible = false;
+      pivot.add(pernaDoShort);
+      this.soBanho.push(pernaDoShort);
+      this.pernasDoShort.push(pernaDoShort);
 
       const foot = new THREE.Mesh(
         new THREE.BoxGeometry(h * 0.075 * w, h * 0.045, h * 0.11),
@@ -99,7 +258,21 @@ export class CharacterRig {
       );
       foot.position.set(0, -legH + h * 0.022, h * 0.018);
       pivot.add(foot);
-      this.trocaMaterial.push({ mesh: foot, normal: shoes, banho: skin });
+      this.trocaMaterial.push({
+        mesh: foot, normal: shoes, banho: skin, slot: 'pes', parte: 'principal',
+      });
+      this.pes.push(foot);
+
+      // O patins nasce escondido e SUBSTITUI o pe: a bota engole o tornozelo,
+      // entao o tenis por dentro apareceria pela costura. A peca tem a sola das
+      // rodas em y = 0, e por isso ela desce ate o chao do rig — que, de
+      // patins, esta `this.altoDoPatins` abaixo do pe.
+      const roda = patinsMesh(spec.shoes);
+      roda.scale.setScalar(escalaPatins);
+      roda.visible = false;
+      pivot.add(roda);
+      this.patins.push(roda);
+
       this.body.add(pivot);
     }
 
@@ -111,7 +284,9 @@ export class CharacterRig {
     torso.position.y = hipY + torsoH * 0.52;
     torso.scale.z = 0.82;
     this.body.add(torso);
-    this.trocaMaterial.push({ mesh: torso, normal: shirt, banho: skin });
+    this.trocaMaterial.push({
+      mesh: torso, normal: shirt, banho: skin, slot: 'tronco', parte: 'principal',
+    });
 
     if (spec.shirtAccent !== undefined) {
       const stripe = new THREE.Mesh(
@@ -122,6 +297,7 @@ export class CharacterRig {
       stripe.scale.z = 0.82;
       this.body.add(stripe);
       this.soVestido.push(stripe);
+      this.sobreTronco.push(stripe);
     }
 
     // jaqueta aberta por cima da camiseta
@@ -141,6 +317,7 @@ export class CharacterRig {
       casco.scale.z = 0.84;
       this.body.add(casco);
       this.soVestido.push(casco);
+      this.sobreTronco.push(casco);
 
       const capuz = new THREE.Mesh(
         new THREE.SphereGeometry(h * 0.088 * w, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.62),
@@ -151,18 +328,45 @@ export class CharacterRig {
       capuz.scale.set(1.15, 1, 0.8);
       this.body.add(capuz);
       this.soVestido.push(capuz);
+      this.sobreTronco.push(capuz);
     }
 
-    // calção de banho: fica escondido até alguém entrar na água
+    // calção de banho: fica escondido até alguém entrar na água.
+    //
+    // A altura é a CINTURA da bermuda, não a bermuda inteira — quem faz o
+    // comprimento são os dois tubos pendurados nas pernas. Cintura alta demais
+    // sobe pro peito: `hipY + 0.012h` de centro com `0.105h` de altura deixa o
+    // cós logo acima do quadril, que é onde bermuda de verdade fica.
+    const raioCalcao = h * 0.118 * w;
+    const alturaCalcao = h * 0.105;
     const calcao = new THREE.Mesh(
-      new THREE.CylinderGeometry(h * 0.118 * w, h * 0.112 * w, h * 0.15, 14),
-      toon(spec.swim ?? spec.pants),
+      new THREE.CylinderGeometry(raioCalcao, h * 0.112 * w, alturaCalcao, 14),
+      this.calcaoDaFicha,
     );
-    calcao.position.y = hipY + h * 0.03;
+    calcao.position.y = hipY + h * 0.012;
     calcao.scale.z = 0.85;
     calcao.visible = false;
     this.body.add(calcao);
     this.soBanho.push(calcao);
+    this.calcao = calcao;
+
+    // As duas faixas da bermuda estampada. Elas nascem FILHAS do calção, então
+    // a visibilidade do traje de banho já vale para elas de graça e sobra só a
+    // pergunta "esta peça é estampada?".
+    //
+    // O raio é 3% maior em vez de igual: duas faces cilíndricas na mesma
+    // superfície brigam pelo mesmo pixel, e um vão de 3% do raio é folga de
+    // sobra para a faixa ficar por cima sem descolar do pano.
+    for (const yFaixa of [0.3, -0.12]) {
+      const faixa = new THREE.Mesh(
+        new THREE.CylinderGeometry(raioCalcao * 1.03, raioCalcao * 1.03, h * 0.019, 14, 1, true),
+        this.calcaoDaFicha,
+      );
+      faixa.position.y = yFaixa * alturaCalcao;
+      faixa.visible = false;
+      calcao.add(faixa);
+      this.estampa.push(faixa);
+    }
 
     // ------------------------------------------------------------- bracos
     for (const [pivot, side] of [
@@ -177,7 +381,9 @@ export class CharacterRig {
       );
       sleeve.position.y = -armLen * 0.24;
       pivot.add(sleeve);
-      this.trocaMaterial.push({ mesh: sleeve, normal: manga, banho: skin });
+      this.trocaMaterial.push({
+        mesh: sleeve, normal: manga, banho: skin, slot: 'tronco', parte: 'detalhe',
+      });
 
       const forearm = new THREE.Mesh(
         new THREE.CapsuleGeometry(h * 0.032 * w, armLen * 0.28, 4, 10),
@@ -191,6 +397,12 @@ export class CharacterRig {
       pivot.add(hand);
       this.body.add(pivot);
     }
+
+    // O que a pessoa segura vira FILHO da mao direita. E essa a diferenca para
+    // o jeito antigo (a cena recalculava a posicao do sorvete a cada quadro):
+    // pendurado no braco, o item herda a caminhada e a pose de graca.
+    this.maoDir.position.y = -armLen * 0.98;
+    this.armR.add(this.maoDir);
 
     // ------------------------------------------------------------- cabeca
     this.head.position.y = legH + torsoH + headR * 0.92;
@@ -214,10 +426,18 @@ export class CharacterRig {
       eye.scale.set(1, 1.25, 0.6);
       this.head.add(eye);
 
-      const blush = new THREE.Mesh(new THREE.CircleGeometry(headR * 0.16, 12), flat(spec.blush, 0.75));
-      blush.position.set(side * headR * 0.56, -headR * 0.26, headR * 0.82);
-      blush.rotation.y = side * 0.35;
-      this.head.add(blush);
+      if (spec.blush !== undefined) {
+        // Decalque: nesta altura do rosto a superficie da cabeca passa a
+        // 0,83·headR, praticamente rente ao disco. Sem o modo decalque as duas
+        // faces disputam o mesmo pixel e a bochecha pisca quando a cabeca gira.
+        const blush = new THREE.Mesh(
+          new THREE.CircleGeometry(headR * 0.16, 12),
+          flat(spec.blush, 0.75, true),
+        );
+        blush.position.set(side * headR * 0.56, -headR * 0.26, headR * 0.82);
+        blush.rotation.y = side * 0.35;
+        this.head.add(blush);
+      }
     }
 
     // sobrancelhas: e o que da expressao ao rosto de longe
@@ -240,16 +460,24 @@ export class CharacterRig {
     mouth.rotation.set(0, 0, Math.PI);
     this.head.add(mouth);
 
+    // O cabelo é recortado por FATIA em vez de por 20 `push` dentro do
+    // `buildHair`: tudo que ele acrescenta vira filho da cabeça, então o que
+    // entrou entre estas duas marcas é cabelo e nada mais. Assim `buildHair`
+    // continua sem saber que existe um guarda-roupa.
+    const antesDoCabelo = this.head.children.length;
     this.buildHair(headR);
+    this.cabelo = this.head.children.slice(antesDoCabelo);
     this.buildAccessories(headR, armLen, shoulderY, halfShoulder, torsoH, hipY, w);
 
     this.body.add(this.head);
     this.group.add(this.body);
 
-    // sombra fofa desenhada, alem da sombra real do sol
+    // Sombra fofa desenhada, alem da sombra real do sol. E decalque: ela pousa
+    // em cima do chao e das linhas pintadas, e 2 cm de folga nao bastam num
+    // buffer de profundidade de celular.
     this.blob = new THREE.Mesh(
       new THREE.CircleGeometry(h * 0.16 * w, 18),
-      flat(0x2b3a2b, 0.22),
+      flat(0x2b3a2b, 0.22, true),
     );
     this.blob.rotation.x = -Math.PI / 2;
     this.blob.position.y = 0.02;
@@ -496,6 +724,34 @@ export class CharacterRig {
     const acc = this.spec.accessories ?? [];
     const accMat = toon(this.spec.accessoryColor ?? 0x2f3440);
 
+    // Chapéu de campeão do ping pong. Não entra na ficha do personagem porque
+    // não é jeitão dele: é prêmio, e quem liga é a flag do jogo (setCampeao).
+    {
+      // A altura é medida pelo CABELO, não pelo crânio: a juba do Ari sobe até
+      // ~1.35 × headR, e chapéu apoiado no crânio simplesmente some dentro dela.
+      const aba = new THREE.Mesh(
+        new THREE.CylinderGeometry(headR * 0.7, headR * 0.7, headR * 0.11, 16),
+        toon(0xfff3d0),
+      );
+      aba.position.y = headR * 1.42;
+      this.chapeu.add(aba);
+
+      const cone = new THREE.Mesh(
+        new THREE.ConeGeometry(headR * 0.58, headR * 1.05, 14),
+        toon(P.gold),
+      );
+      cone.position.y = headR * 1.98;
+      this.chapeu.add(cone);
+
+      const pompom = estrela(headR * 0.3, headR * 0.07, toon(0xfff3d0));
+      pompom.position.y = headR * 2.62;
+      this.chapeu.add(pompom);
+
+      this.chapeu.rotation.z = -0.14; // torto, que é mais engraçado que reto
+      this.chapeu.visible = false;
+      this.head.add(this.chapeu);
+    }
+
     if (acc.includes('oculos')) {
       for (const side of [-1, 1]) {
         const lens = new THREE.Mesh(
@@ -604,6 +860,7 @@ export class CharacterRig {
       laco.position.set(0, shoulderY - torsoH * 0.1, raioTorso * 0.86);
       this.body.add(laco);
       this.soVestido.push(laco);
+      this.sobreTronco.push(laco);
     }
 
     if (acc.includes('cinto')) {
@@ -619,6 +876,7 @@ export class CharacterRig {
       tira.scale.z = 0.84;
       this.body.add(tira);
       this.soVestido.push(tira);
+      this.sobreTronco.push(tira);
 
       const fivela = new THREE.Mesh(
         new THREE.BoxGeometry(h * 0.032, h * 0.03, h * 0.012),
@@ -627,6 +885,7 @@ export class CharacterRig {
       fivela.position.set(0, cintura, raioTorso * 0.9);
       this.body.add(fivela);
       this.soVestido.push(fivela);
+      this.sobreTronco.push(fivela);
 
       // correntinha com estrela, do jeito que aparece na referencia
       const corrente = new THREE.Mesh(
@@ -637,12 +896,14 @@ export class CharacterRig {
       corrente.rotation.set(0, -0.7, Math.PI);
       this.body.add(corrente);
       this.soVestido.push(corrente);
+      this.sobreTronco.push(corrente);
 
       const pingente = estrela(h * 0.016, h * 0.004, toon(0xd8d4cc));
       pingente.position.set(raioTorso * 0.76, cintura - h * 0.05, raioTorso * 0.66);
       pingente.rotation.y = -0.7;
       this.body.add(pingente);
       this.soVestido.push(pingente);
+      this.sobreTronco.push(pingente);
     }
 
     if (acc.includes('mochila')) {
@@ -653,6 +914,7 @@ export class CharacterRig {
       bag.position.set(0, hipY + torsoH * 0.6, -this.spec.height * 0.11 * w);
       this.body.add(bag);
       this.soVestido.push(bag);
+      this.sobreTronco.push(bag);
       const strapY = shoulderY;
       for (const side of [-1, 1]) {
         const strap = new THREE.Mesh(
@@ -662,6 +924,7 @@ export class CharacterRig {
         strap.position.set(side * halfShoulder * 0.6, strapY - torsoH * 0.2, this.spec.height * 0.085 * w);
         this.body.add(strap);
         this.soVestido.push(strap);
+        this.sobreTronco.push(strap);
       }
     }
   }
@@ -682,30 +945,346 @@ export class CharacterRig {
     this.bounce = 1;
   }
 
+  /** Liga o chapéu de campeão do ping pong (prêmio, não parte da ficha). */
+  setCampeao(v: boolean): void {
+    this.chapeu.visible = v;
+  }
+
+  get campeao(): boolean {
+    return this.chapeu.visible;
+  }
+
   /**
    * Troca entre a roupa da ficha e o traje de banho (sem camisa e de calção).
    * Quase tudo e troca de material: a camiseta e a calca viram pele, o tenis
    * vira pe descalco, os acessorios de roupa somem e o calcao aparece.
+   *
+   * O traje agora e GUARDADO em vez de aplicado direto. Quem escreve material e
+   * so o `aplicarVisual`; ver o comentario la embaixo para o porque.
    */
   setOutfit(traje: 'normal' | 'banho'): void {
-    const banho = traje === 'banho';
-    for (const troca of this.trocaMaterial) {
-      troca.mesh.material = banho ? troca.banho : troca.normal;
+    this.traje = traje;
+    this.aplicarVisual();
+  }
+
+  // --- guarda-roupa ---------------------------------------------------------
+
+  /**
+   * O ÚNICO lugar que escreve material e visibilidade de roupa.
+   *
+   * O erro obvio deste sistema seria o guarda-roupa tambem escrever
+   * `mesh.material` direto. Ele e o `setOutfit` brigariam pelo mesmo campo e
+   * quem rodasse por ultimo ganharia: sair da piscina chama `setOutfit(
+   * 'normal')`, que restaura a cor da FICHA, e a camisa vestida sumiria.
+   *
+   * Entao ninguem aplica nada: `traje`, `roupa` e `patinando` sao tres estados
+   * guardados, e este metodo compoe os tres. A propriedade que isso da e que a
+   * ORDEM DAS CHAMADAS deixa de importar — `setOutfit`, `setPatins` e
+   * `vestirRoupa` convergem todos aqui, entao o quadro termina no mesmo estado
+   * venha na ordem que vier.
+   */
+  private aplicarVisual(): void {
+    const banho = this.traje === 'banho';
+
+    // Nunca mutar `mat.color`: os materiais de `materials.ts` sao CACHEADOS POR
+    // COR e compartilhados com o mundo inteiro — repintar um material repinta
+    // todo objeto do jogo que usa aquela cor. Sempre trocar a referencia.
+    for (const t of this.trocaMaterial) {
+      if (banho) {
+        t.mesh.material = t.banho;
+        continue;
+      }
+      // A pele a mostra e decidida pelo LOADOUT INTEIRO, nao pela peca daquele
+      // slot: quem manda deixar a perna nua e o vestido, que mora no tronco.
+      // `t.banho` ja e `toon(spec.skin)` — a mesma pele do traje de banho.
+      if (this.mostraPele(t.slot, t.parte)) {
+        t.mesh.material = t.banho;
+        continue;
+      }
+      const peca = this.roupa[t.slot];
+      if (!peca) {
+        t.mesh.material = t.normal;
+        continue;
+      }
+      // vestivel sem cor (o chapeu de campeao, os patins) nao pinta o corpo:
+      // ele so acrescenta peca. Sem esta saida, calcar patins apagaria a cor
+      // da calca.
+      const cor = t.parte === 'detalhe' ? (peca.corDetalhe ?? peca.cor) : peca.cor;
+      t.mesh.material = cor === undefined ? t.normal : toon(cor);
     }
+
     for (const peca of this.soVestido) peca.visible = !banho;
     for (const peca of this.soBanho) peca.visible = banho;
+
+    // A MODA PRAIA. No banho o corpo inteiro vira pele e sobra só o calção, e
+    // quem manda na cor dele é a peça das PERNAS — a mesma vaga de onde sai a
+    // calça, só que noutro traje. Sem bermuda escolhida vale a cor da ficha,
+    // que é como era antes de o vestiário existir.
+    const bermuda = this.roupa.pernas;
+    const panoDaBermuda = bermuda?.corBanho === undefined
+      ? this.calcaoDaFicha
+      : toon(bermuda.corBanho);
+    this.calcao.material = panoDaBermuda;
+    // as pernas sao do mesmo pano: sem isto elas ficavam na cor da ficha
+    // enquanto o quadril mudava de cor no vestiario
+    for (const p of this.pernasDoShort) p.material = panoDaBermuda;
+    for (const faixa of this.estampa) {
+      faixa.visible = bermuda?.estampaBanho !== undefined;
+      if (bermuda?.estampaBanho !== undefined) faixa.material = toon(bermuda.estampaBanho);
+    }
+    // camisa do acervo cobre a roupa de tronco da ficha
+    if (!banho && this.roupa.tronco) {
+      for (const peca of this.sobreTronco) peca.visible = false;
+    }
+
+    for (const [slot, objs] of this.extras) {
+      const liga = this.roupa[slot] !== undefined
+        // gorro sobrevive ao banho — e o mesmo precedente do chapeu de campeao,
+        // que ja fica na cabeca dentro da agua. Bota, nao.
+        && (slot === 'cabeca' || !banho)
+        // o patins engole o tornozelo inteiro: o cano da bota apareceria pela
+        // costura, igual ao tenis apareceria
+        && !(slot === 'pes' && this.patinando);
+      for (const o of objs) o.visible = liga;
+    }
+
+    for (const pe of this.pes) pe.visible = !this.patinando;
+    for (const p of this.patins) p.visible = this.patinando;
+
+    // gorro achata o cabelo, pelo mesmo motivo que o patins engole o pe
+    const daCabeca = this.roupa.cabeca;
+    const some = daCabeca?.cobreCabelo === true;
+    for (const fio of this.cabelo) fio.visible = !some;
   }
+
+  /**
+   * Esta parte do corpo fica nua?
+   *
+   * Varre o loadout inteiro porque a marca mora numa peca e o efeito cai em
+   * outra parte: o vestido e do tronco e e ele que deixa a PERNA nua.
+   */
+  private mostraPele(slot: SlotRoupa, parte: 'principal' | 'detalhe'): boolean {
+    for (const peca of Object.values(this.roupa)) {
+      if (!peca) continue;
+      // "perna nua" quer dizer que o VESTIDO nao cobre a perna — nao que nada
+      // possa cobrir. Uma meia vestida ganha da marca, senao o vestido
+      // apagaria a meia que veio junto com ele no mesmo conjunto.
+      if (peca.pernasNuas && slot === 'pernas' && !this.roupa.pernas) return true;
+      // a manga e o `detalhe` do tronco; o torso continua vestido
+      if (peca.bracosNus && slot === 'tronco' && parte === 'detalhe') return true;
+    }
+    return false;
+  }
+
+  /**
+   * Veste o loadout inteiro de uma vez.
+   *
+   * O diff e POR SLOT: um slot que nao mudou nao derruba nem reconstroi nada.
+   * Sem isso o `Game`, que chama isto todo quadro, recriaria geometria a 60 fps.
+   */
+  vestirRoupa(novo: Loadout): void {
+    for (const slot of SLOTS_ROUPA) {
+      const id = novo[slot] ?? null;
+      if ((this.roupa[slot]?.id ?? null) === id) continue;
+      this.tirarExtras(slot);
+      const peca = id ? fichaDoItem(id) : null;
+      this.roupa[slot] = peca ?? undefined;
+      if (peca?.extra) this.porExtras(slot, peca);
+    }
+    this.aplicarVisual();
+  }
+
+  /** O que este corpo esta vestindo agora. */
+  get roupaAtual(): Loadout {
+    const l: Loadout = {};
+    for (const slot of SLOTS_ROUPA) {
+      const peca = this.roupa[slot];
+      if (peca) l[slot] = peca.id;
+    }
+    return l;
+  }
+
+  /**
+   * Pendura a geometria da peca.
+   *
+   * Onde ela entra nao e detalhe — cada slot pendura no ponto que ja tem dono:
+   *
+   * - `cabeca` na cabeca, onde o chapeu de campeao mora;
+   * - `pernas` e `pes` nos pivos das pernas, onde o patins mora, uma copia em
+   *   cada, para dobrarem junto com a perna;
+   * - `tronco` no CORPO, onde a jaqueta e o calcao de banho moram;
+   * - e o `extraBraco`, quando houver, nos dois pivos de braco.
+   *
+   * O corpo nao e pivo de membro: ele so gira um pouco em X e sobe e desce em
+   * Y. Uma saia pendurada nele acompanha o quadril e nao encosta na matematica
+   * de rotacao da perna — que continua sendo a unica coisa proibida aqui.
+   *
+   * Antes isto era um ternario de duas vias e TUDO que nao fosse `pes` caia na
+   * cabeca: um vestido teria nascido no pescoco.
+   */
+  private porExtras(slot: SlotRoupa, peca: ItemDef): void {
+    if (!peca.extra && !peca.extraBraco) return;
+    // Cada pai leva o LADO junto: -1 no membro de -X, 1 no de +X.
+    //
+    // Sem isso a mesma geometria vai nos dois membros, e uma peca que se
+    // desloca para fora do corpo entra para DENTRO do lado esquerdo — foi o que
+    // torceu a manga de quimono. E a mesma pegadinha de sinal do frisbee e dos
+    // bracos sentados.
+    const pais: Array<[THREE.Object3D, 'corpo' | 'braco', -1 | 1]> = [];
+    if (peca.extra) {
+      // pernas E pes vao para os pivos das pernas, uma copia em cada: a liga
+      // de uma meia tem que dobrar junto com a coxa, igual ao cano da bota
+      if (slot === 'pes' || slot === 'pernas') {
+        pais.push([this.legL, 'corpo', -1], [this.legR, 'corpo', 1]);
+      } else if (slot === 'cabeca') {
+        pais.push([this.head, 'corpo', 1]);
+      } else {
+        pais.push([this.body, 'corpo', 1]);
+      }
+    }
+    // a manga vai no PIVO do braco, para acompanhar o balanco
+    if (peca.extraBraco) {
+      pais.push([this.armL, 'braco', -1], [this.armR, 'braco', 1]);
+    }
+    const postos: THREE.Object3D[] = [];
+    for (const [pai, tipo, lado] of pais) {
+      // uma malha NOVA por pai: o mesmo Object3D nao pode ter dois pais, que e
+      // a mesma razao de `modeloDoItem` nunca devolver a mesma instancia
+      const obj = tipo === 'braco'
+        ? peca.extraBraco!(this.medidas, lado)
+        : peca.extra!(this.medidas, lado);
+      // etiqueta para o teste conseguir dizer o que cada corpo esta vestindo
+      obj.userData.roupa = peca.id;
+      // o `traverse` que liga sombra roda no CONSTRUTOR, entao nada criado
+      // depois herda isso sozinho
+      obj.traverse((n: THREE.Object3D) => {
+        if ((n as THREE.Mesh).isMesh) {
+          n.castShadow = true;
+          n.receiveShadow = false;
+        }
+      });
+      pai.add(obj);
+      postos.push(obj);
+    }
+    this.extras.set(slot, postos);
+  }
+
+  private tirarExtras(slot: SlotRoupa): void {
+    const objs = this.extras.get(slot);
+    if (!objs) return;
+    for (const obj of objs) {
+      obj.parent?.remove(obj);
+      obj.traverse((n: THREE.Object3D) => {
+        // so a geometria. O material e o objeto cacheado de `materials.ts`,
+        // compartilhado com o jogo inteiro — dar dispose nele apaga a cor de
+        // todo mundo que a usa
+        const m = n as THREE.Mesh;
+        if (m.isMesh) m.geometry.dispose();
+      });
+    }
+    this.extras.delete(slot);
+  }
+
+  // --- fim guarda-roupa -----------------------------------------------------
 
   /** Sentado: pernas para a frente e corpo mais baixo. */
   setSitting(v: boolean): void {
     this.sitting = v;
     if (!v) {
-      this.body.position.y = 0;
+      this.poeAltura(0);
       this.legL.rotation.x = 0;
       this.legR.rotation.x = 0;
       this.armL.rotation.set(0, 0, 0.08);
       this.armR.rotation.set(0, 0, -0.08);
     }
+  }
+
+  /**
+   * Deitado.
+   *
+   * O corpo NAO vira aqui: quem deita a pessoa e a ancora da cena, um
+   * `Object3D` com `rotation.x = -PI/2` do qual o rig e filho. Assim a
+   * animacao continua toda em espaco local, como em pe — foi o que dispensou
+   * reescrever a pose membro por membro. Este estado so troca a ANIMACAO:
+   * pernas retas, corpo parado e o balanco leve dos bracos.
+   */
+  setLying(v: boolean): void {
+    this.deitado = v;
+    if (!v) {
+      this.poeAltura(0);
+      this.legL.rotation.set(0, 0, 0);
+      this.legR.rotation.set(0, 0, 0);
+      this.armL.rotation.set(0, 0, 0.08);
+      this.armR.rotation.set(0, 0, -0.08);
+      this.body.rotation.x = 0;
+    }
+  }
+
+  /**
+   * Calca (ou tira) os patins.
+   *
+   * Quem manda e o inventario: o `Game` le a vaga de acessorio e carimba isto
+   * todo quadro. O rig so obedece — nao ha estado de patins fora do save.
+   */
+  setPatins(v: boolean): void {
+    if (this.patinando === v) return;
+    this.patinando = v;
+    // a peca desce ate o chao novo: o corpo sobe `altoDoPatins`, entao no
+    // referencial da perna o chao ficou essa distancia mais para baixo
+    for (const p of this.patins) p.position.y = -this.alturaDaPerna - this.altoDoPatins;
+    // quem liga e desliga a visibilidade do pe, do patins e da bota do acervo e
+    // o `aplicarVisual`, para os tres nao brigarem pelo mesmo campo
+    this.aplicarVisual();
+  }
+
+  get patinandoAgora(): boolean {
+    return this.patinando;
+  }
+
+  /**
+   * Poe (ou tira) o objeto que a pessoa segura na mao direita.
+   *
+   * Chamar com `null` esvazia a mao. Quem constroi a malha e `world/itens.ts`;
+   * o rig so a pendura e cuida da pose.
+   */
+  segurar(obj: THREE.Object3D | null, pose: HoldPose = 'none'): void {
+    for (let i = this.maoDir.children.length - 1; i >= 0; i--) {
+      this.maoDir.remove(this.maoDir.children[i]);
+    }
+    this.pose = obj ? pose : 'none';
+    if (obj) this.maoDir.add(obj);
+  }
+
+  get segurando(): boolean {
+    return this.maoDir.children.length > 0;
+  }
+
+  /**
+   * De maos dadas: qual braco esta "por dentro", segurando a mao do outro.
+   *
+   * `-1` = o parceiro esta a esquerda do personagem, entao quem segura e o
+   * braco em `-X` (o `armL`); `1` = esta a direita e segura o `armR`; `0`
+   * desliga. Quem decide o lado e a mecanica em entities/MaosDadas.ts, que sabe
+   * onde os dois estao; o rig so obedece.
+   */
+  setHoldingHands(lado: -1 | 0 | 1): void {
+    this.maos = lado;
+  }
+
+  get holdingHands(): boolean {
+    return this.maos !== 0;
+  }
+
+  /**
+   * Inclinacao do beijo: 0 e parado normal, 1 e inclinado para a frente na
+   * pontinha do pe. Quem controla a curva e a mecanica em entities/Beijo.ts.
+   */
+  setKiss(valor: number): void {
+    this.beijo = Math.max(0, Math.min(1, valor));
+  }
+
+  get kissing(): boolean {
+    return this.beijo > 0.001;
   }
 
   /** dentro da agua: bracada em vez de caminhada, e sem sombra no chao */
@@ -725,14 +1304,69 @@ export class CharacterRig {
     delta = Math.atan2(Math.sin(delta), Math.cos(delta));
     this.group.rotation.y += delta * Math.min(1, dt * 14);
 
+    // o beijo manda em tudo enquanto dura: inclina o tronco e a cabeca para a
+    // frente e recolhe os bracos, sem passo nenhum
+    if (this.beijo > 0.001) {
+      const k = this.beijo;
+      this.phase += dt * 1.2;
+      this.legL.rotation.x = 0;
+      this.legR.rotation.x = 0;
+      this.body.rotation.x = k * 0.3;
+      this.poeAltura(k * 0.045); // na pontinha do pe
+      this.armL.rotation.set(-k * 0.55, 0, 0.08 + k * 0.16);
+      this.armR.rotation.set(-k * 0.55, 0, -0.08 - k * 0.16);
+      this.head.rotation.x = k * 0.18;
+      this.head.rotation.z *= 1 - Math.min(1, dt * 8);
+      return;
+    }
+
+    if (this.deitado) {
+      // Devagar de proposito — meio ciclo a cada ~6 s. Deitado, o unico
+      // movimento e o de quem esta descansando; mais rapido que isto o corpo
+      // parece inquieto em vez de a vontade.
+      this.phase += dt * 0.55;
+      // pernas retas e um pouco abertas. MESMA PEGADINHA DE SINAL de sempre: a
+      // perna esquerda nasce em -X, entao `rotation.z` NEGATIVO nela e que abre
+      // para fora — com o sinal trocado as duas cruzam para dentro.
+      this.legL.rotation.set(0, 0, -0.05);
+      this.legR.rotation.set(0, 0, 0.05);
+      // O balanco dos bracos, que e o ponto da pose: eles abrem e fecham de
+      // leve ao longo do corpo, com um giro lento defasado para os dois lados
+      // nao ficarem em espelho perfeito.
+      const balanco = Math.sin(this.phase) * 0.07;
+      const solto = Math.sin(this.phase * 0.73) * 0.05;
+      this.armL.rotation.set(solto, 0, -0.14 - balanco);
+      this.armR.rotation.set(-solto, 0, 0.14 + balanco);
+      // o peito subindo e descendo. Nada de `poeAltura` aqui: deitado, o Y
+      // local aponta para a cabeceira, entao ele empurraria a pessoa para o
+      // travesseiro em vez de fazer o peito respirar.
+      this.body.rotation.x = Math.sin(this.phase) * 0.02;
+      this.head.rotation.x = Math.sin(this.phase * 0.6) * 0.025;
+      this.head.rotation.z *= 1 - Math.min(1, dt * 8);
+      return;
+    }
+
     if (this.sitting) {
       this.phase += dt * 0.9;
-      this.legL.rotation.x = -Math.PI / 2 + 0.06;
-      this.legR.rotation.x = -Math.PI / 2 - 0.02;
-      this.armL.rotation.set(-0.25, 0, 0.34);
-      this.armR.rotation.set(-0.2, 0, -0.34);
+      // Pernas balancando BEM devagar: um vaivem a cada ~3 s. E o gesto de quem
+      // senta no banco e deixa o pe solto, e ele so le como calma se a
+      // frequencia for baixa — mais rapido que isto vira perna nervosa.
+      const balanco = Math.sin(this.phase * 2.2) * 0.17;
+      this.legL.rotation.x = -Math.PI / 2 + 0.06 + balanco;
+      this.legR.rotation.x = -Math.PI / 2 - 0.02 - balanco;
+      // Bracos apoiados, abertos para FORA. Mesma pegadinha de sinal de sempre:
+      // o braco esquerdo nasce em -X e `rotation.z` positivo joga a mao para
+      // +X, ou seja para dentro do corpo — sentado, isso vira um abraco em si
+      // mesmo.
+      this.armL.rotation.set(-0.25, 0, -0.34);
+      this.armR.rotation.set(-0.2, 0, 0.34);
+      // sentados de maos dadas, o braco de dentro desce e abre para o outro
+      if (this.maos !== 0) {
+        const dentro = this.maos < 0 ? this.armL : this.armR;
+        dentro.rotation.set(0.12, 0, ABRE_MAO * 0.8 * this.maos);
+      }
       this.body.rotation.x = -0.05;
-      this.body.position.y = Math.sin(this.phase) * 0.012;
+      this.poeAltura(Math.sin(this.phase) * 0.012);
       this.head.rotation.x = Math.sin(this.phase * 0.7) * 0.03;
       this.head.rotation.z *= 1 - Math.min(1, dt * 8);
       return;
@@ -749,38 +1383,136 @@ export class CharacterRig {
       this.legL.rotation.x = s * 0.28;
       this.legR.rotation.x = -s * 0.28;
       this.body.rotation.x = 0.16;
-      this.body.position.y = Math.sin(this.phase) * 0.03;
+      this.poeAltura(Math.sin(this.phase) * 0.03);
       this.head.rotation.x = -0.14;
       return;
     }
 
     const walking = speed > 0.05;
-    this.phase += dt * (walking ? 3.2 + speed * 1.9 : 1.4);
+    /**
+     * A CADENCIA. De patins a passada e longa: um empurrao, e o resto do tempo
+     * deslizando. A cadencia da caminhada da ~3,7 ciclos por segundo, e com o
+     * teto de velocidade 30% mais alto por cima disso o boneco vira um
+     * chacoalho. Patinando fica em ~0,9 ciclo por segundo na velocidade cheia,
+     * que e o ritmo de quem de fato patina.
+     */
+    const cadencia = this.patinando ? 0.9 + speed * 0.33 : 3.2 + speed * 1.9;
+    this.phase += dt * (walking ? cadencia : 1.4);
 
-    const swing = walking ? Math.min(0.62, 0.16 + speed * 0.14) : 0.04;
+    const swing = walking
+      ? this.patinando
+        ? Math.min(0.34, 0.12 + speed * 0.06)
+        : Math.min(0.62, 0.16 + speed * 0.14)
+      : 0.04;
     const s = Math.sin(this.phase * (walking ? 2 : 1));
 
-    this.legL.rotation.x = walking ? s * swing : 0;
-    this.legR.rotation.x = walking ? -s * swing : 0;
-    this.armL.rotation.x = walking ? -s * swing * 0.85 : Math.sin(this.phase) * 0.05;
-    this.armR.rotation.x = walking ? s * swing * 0.85 : -Math.sin(this.phase) * 0.05;
-    this.armL.rotation.z = 0.08;
-    this.armR.rotation.z = -0.08;
+    if (this.patinando) {
+      // PATINAR NAO E ANDAR. O pe mal sai do chao: o que se alterna e a perna
+      // abrindo para o LADO (rotacao em Z, que gira o quadril e joga o pe para
+      // fora) enquanto a outra empurra. A parcela em X fica em 25% da
+      // caminhada, so o bastante para nao virar um par de pernas rigidas.
+      const abre = walking ? Math.min(0.28, 0.1 + speed * 0.04) : 0.03;
+      // Uma perna de cada vez. `rotation.z` positivo joga o pe para +X, entao
+      // a perna da esquerda (que nasce em -X) abre com Z NEGATIVO e a da
+      // direita com positivo. Com o mesmo sinal nas duas o corpo inteiro
+      // balanca junto, que e gingado, nao patinacao.
+      this.legL.rotation.z = -Math.max(0, s) * abre * 1.7;
+      this.legR.rotation.z = Math.max(0, -s) * abre * 1.7;
+      // pe da frente um tico erguido no empurrao, so para nao raspar
+      this.legL.rotation.x = walking ? s * swing * 0.25 : 0;
+      this.legR.rotation.x = walking ? -s * swing * 0.25 : 0;
+      // o tronco cai para o lado da perna que esta deslizando, nao para o da
+      // que empurra — e o peso indo para o pe de apoio
+      this.body.rotation.z = s * abre * 0.34;
+      // Bracos abertos, buscando o equilibrio — para FORA, e nao para dentro.
+      // Mesma pegadinha de sinal das pernas: o braco esquerdo nasce em -X, e
+      // `rotation.z` positivo joga a mao para +X, ou seja para o meio do corpo.
+      // Com os dois positivos/negativos como na caminhada (que usa 0.08, um
+      // valor pequeno demais para incomodar) o patinador abraca a si mesmo.
+      const braco = 0.34 + Math.abs(s) * 0.14;
+      this.armL.rotation.x = walking ? -s * swing * 0.9 : 0;
+      this.armR.rotation.x = walking ? s * swing * 0.9 : 0;
+      this.armL.rotation.z = -braco;
+      this.armR.rotation.z = braco;
+    } else {
+      this.legL.rotation.z = 0;
+      this.legR.rotation.z = 0;
+      this.body.rotation.z = 0;
+      this.legL.rotation.x = walking ? s * swing : 0;
+      this.legR.rotation.x = walking ? -s * swing : 0;
+      this.armL.rotation.x = walking ? -s * swing * 0.85 : Math.sin(this.phase) * 0.05;
+      this.armR.rotation.x = walking ? s * swing * 0.85 : -Math.sin(this.phase) * 0.05;
+      this.armL.rotation.z = 0.08;
+      this.armR.rotation.z = -0.08;
+    }
+
+    // De maos dadas o braco de dentro para de balancar e abre para o lado do
+    // outro, ate as duas maos se encontrarem no meio do vao. O braco de fora
+    // continua a caminhada, com metade da amplitude — e esse contraste que faz
+    // ler como "estao de maos dadas" e nao como "estao engessados".
+    if (this.maos !== 0) {
+      const dentro = this.maos < 0 ? this.armL : this.armR;
+      const fora = this.maos < 0 ? this.armR : this.armL;
+      // z positivo joga a mao para +X; o braco de dentro sempre abre na
+      // direcao do parceiro
+      dentro.rotation.z = ABRE_MAO * this.maos;
+      dentro.rotation.x = -0.1;
+      fora.rotation.x *= 0.5;
+    }
+
+    this.aplicarPose();
 
     // pulinho de comemoracao
     if (this.bounce > 0) {
       this.bounce = Math.max(0, this.bounce - dt * 1.6);
       const b = Math.sin((1 - this.bounce) * Math.PI) * 0.28;
-      this.body.position.y = b;
+      this.poeAltura(b);
       this.head.rotation.z = Math.sin((1 - this.bounce) * Math.PI * 2) * 0.12;
     } else {
       const bob = walking ? Math.abs(Math.cos(this.phase * 2)) * 0.035 : Math.sin(this.phase) * 0.012;
-      this.body.position.y = bob;
+      this.poeAltura(bob);
       this.head.rotation.z *= 1 - Math.min(1, dt * 8);
     }
 
-    this.body.rotation.x = walking ? 0.06 : 0;
+    this.body.rotation.x = walking ? (this.patinando ? 0.16 : 0.06) : 0;
     this.head.rotation.x = walking ? -0.05 : Math.sin(this.phase * 0.6) * 0.03;
+  }
+
+  /**
+   * Mistura a pose de segurar com a caminhada que acabou de ser calculada.
+   *
+   * Nao substitui o balanco: MULTIPLICA o que ja estava la. Braco travado num
+   * angulo fixo enquanto as pernas andam e o que faz personagem parecer boneco
+   * de vitrine.
+   *
+   * Se a mao direita ja esta ocupada segurando a mao do outro, a pose do item
+   * nao roda — senao o braco tenta obedecer duas coisas e o objeto atravessa o
+   * parceiro.
+   */
+  /**
+   * Toda altura do corpo passa por aqui.
+   *
+   * De patins a pessoa fica `altoDoPatins` mais alta, e esse offset tem que
+   * valer para o respiro, o pulinho, o beijo e o sentar — senao o corpo afunda
+   * de volta no chao na primeira animacao que mexer no y.
+   */
+  private poeAltura(v: number): void {
+    this.body.position.y = v + this.altoDoPatins * (this.patinando ? 1 : 0);
+  }
+
+  private aplicarPose(): void {
+    if (this.pose === 'none' || this.maos > 0) {
+      this.maoDir.rotation.set(0, 0, 0);
+      this.maoDir.position.x = 0;
+      return;
+    }
+    const p = POSES[this.pose];
+    this.armR.rotation.x = p.bracoX + this.armR.rotation.x * p.balanco;
+    this.armR.rotation.z = p.bracoZ;
+    // o objeto desfaz a rotacao do braco: e assim que o sorvete continua em pe
+    // com o braco esticado para a frente
+    this.maoDir.rotation.set(-this.armR.rotation.x, 0, p.itemZ - this.armR.rotation.z);
+    this.maoDir.position.x = p.itemX;
   }
 
   dispose(): void {

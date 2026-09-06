@@ -87,13 +87,349 @@ export function flowers(count = 6, radius = 0.9, colors: number[] = [P.flowerPin
   return g;
 }
 
-export function rock(scale = 1): THREE.Group {
+/**
+ * Pedra. A `semente` amassa os vértices e muda as proporções, então duas pedras
+ * do mesmo tamanho não saem iguais — sem isso a margem do lago vira uma fileira
+ * de clones.
+ */
+export function rock(scale = 1, semente = 0.5, cor = 0x9aa0a6): THREE.Group {
   const g = new THREE.Group();
-  const r = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5 * scale, 0), toon(0x9aa0a6));
-  r.position.y = 0.3 * scale;
-  r.rotation.set(0.4, 0.8, 0.2);
-  r.scale.set(1, 0.75, 1.1);
+  const geo = new THREE.DodecahedronGeometry(0.5 * scale, 0);
+  const pos = geo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    // O ruído é sorteado pela POSIÇÃO, não pelo índice: a geometria não é
+    // indexada, cada triângulo tem os próprios vértices, e amassar por índice
+    // rasga os cantos compartilhados — vira caco de vidro em vez de pedra.
+    const n =
+      Math.sin(
+        Math.round(x * 1000) * 12.9898 +
+          Math.round(y * 1000) * 78.233 +
+          Math.round(z * 1000) * 37.719 +
+          semente * 53.1,
+      ) * 43758.5453;
+    const k = 1 + (n - Math.floor(n) - 0.5) * 0.3;
+    pos.setXYZ(i, x * k, y * k, z * k);
+  }
+  geo.computeVertexNormals();
+
+  const r = new THREE.Mesh(geo, toon(cor));
+  r.position.y = 0.3 * scale * (0.8 + semente * 0.4);
+  r.rotation.set(semente * 6.28, semente * 4.1, semente * 2.2);
+  r.scale.set(1 + semente * 0.3, 0.6 + semente * 0.4, 1.1 - semente * 0.3);
   g.add(r);
+  return g;
+}
+
+/** Tufo de mato rasteiro: quebra o chão liso da beira do lago e do gramado. */
+export function capim(escala = 1, cor: number = P.leafMid): THREE.Group {
+  const g = new THREE.Group();
+  const folhas = 6;
+  for (let i = 0; i < folhas; i++) {
+    const a = (i / folhas) * Math.PI * 2 + i * 0.7;
+    const alto = (0.28 + ((i * 37) % 10) / 40) * escala;
+    const folha = new THREE.Mesh(
+      new THREE.ConeGeometry(0.035 * escala, alto, 5),
+      toon(i % 3 === 0 ? P.leafDark : i % 3 === 1 ? cor : P.grassDry),
+    );
+    folha.position.set(Math.cos(a) * 0.11 * escala, alto * 0.45, Math.sin(a) * 0.11 * escala);
+    folha.rotation.set(Math.sin(a) * 0.35, 0, Math.cos(a) * 0.35);
+    g.add(folha);
+  }
+  return g;
+}
+
+/** Junco de beira d'água, com a taboa marrom na ponta. */
+export function junco(altura = 1.2, hastes = 7): THREE.Group {
+  const g = new THREE.Group();
+  for (let i = 0; i < hastes; i++) {
+    const a = (i / hastes) * Math.PI * 2 + i * 1.3;
+    const raio = 0.06 + ((i * 53) % 10) / 55;
+    const h = altura * (0.7 + ((i * 29) % 10) / 22);
+    const haste = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.02, 0.028, h, 5),
+      toon(i % 2 ? P.leafDark : P.leafMid),
+    );
+    const inclina = 0.12 + ((i * 17) % 10) / 60;
+    haste.position.set(Math.cos(a) * raio, h / 2, Math.sin(a) * raio);
+    haste.rotation.set(Math.sin(a) * inclina, 0, Math.cos(a) * inclina);
+    g.add(haste);
+
+    // uma em cada três ganha a taboa
+    if (i % 3 === 0) {
+      const taboa = new THREE.Mesh(new THREE.CapsuleGeometry(0.045, h * 0.16, 4, 8), toon(0x8a6a3a));
+      taboa.position.set(
+        Math.cos(a) * (raio + Math.cos(a) * inclina * h * 0.5),
+        h * 0.97,
+        Math.sin(a) * (raio + Math.sin(a) * inclina * h * 0.5),
+      );
+      g.add(taboa);
+    }
+  }
+  return g;
+}
+
+/**
+ * Vitória-régia. É uma calota, não um plano: fica de fato ACIMA da água e com
+ * a superfície curva, então não tem como brigar com o decalque do lago.
+ */
+export function nenufar(escala = 1, flor = true): THREE.Group {
+  const g = new THREE.Group();
+  // duas calotas sobrepostas e deslocadas: lê como folha com fenda, e não como
+  // uma bolacha verde no meio da água
+  for (const [dx, dz, r] of [[0, 0, 0.62], [0.34, 0.2, 0.44]] as const) {
+    const folha = new THREE.Mesh(
+      new THREE.SphereGeometry(r * escala, 14, 6, 0, Math.PI * 2, 0, 0.5),
+      toon(P.leafLight),
+    );
+    folha.scale.y = 0.3;
+    folha.position.set(dx * escala, 0.03, dz * escala);
+    g.add(folha);
+  }
+
+  if (flor) {
+    const miolo = new THREE.Mesh(new THREE.SphereGeometry(0.08 * escala, 8, 6), toon(P.flowerYellow));
+    miolo.position.set(0.16 * escala, 0.14 * escala, 0.08 * escala);
+    g.add(miolo);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2;
+      const petala = new THREE.Mesh(new THREE.SphereGeometry(0.06 * escala, 7, 5), toon(0xfff0f5));
+      petala.position.set(
+        0.16 * escala + Math.cos(a) * 0.08 * escala,
+        0.12 * escala,
+        0.08 * escala + Math.sin(a) * 0.08 * escala,
+      );
+      petala.scale.set(1.3, 0.6, 1.3);
+      g.add(petala);
+    }
+  }
+  return g;
+}
+
+/**
+ * Canteiro de flores: borda de alvenaria, terra e maços de flores.
+ *
+ * A borda é elevada de propósito — assim o canteiro é geometria de pé e não
+ * decalque de chão, que é onde mora o risco de z-fighting.
+ */
+const ALTURA_DO_CANTEIRO = 0.24;
+
+/**
+ * A alvenaria do canteiro: mureta, tampa e a terra dentro. É a parte que as
+ * duas variantes (o de flor e o de palmeira) dividem.
+ *
+ * A FORRAÇÃO é o que faz o canteiro parecer plantado em vez de meio vazio: uma
+ * calota rasa de verde cobrindo quase todo o vão, com os maços de flor por
+ * cima. Sem ela sobra terra marrom aparecendo entre um maço e outro, e o
+ * canteiro lê como um vaso que ninguém regou.
+ *
+ * Ela é CALOTA e não disco por um motivo: disco na altura da terra ficaria
+ * coplanar com ela e piscaria. Superfície curva não tem esse problema.
+ */
+function baseDeCanteiro(raio: number): THREE.Group {
+  const g = new THREE.Group();
+  const altura = ALTURA_DO_CANTEIRO;
+
+  const borda = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio, raio * 1.05, altura, 18, 1, true),
+    toon(P.brick, { doubleSide: true }),
+  );
+  borda.position.y = altura / 2;
+  g.add(borda);
+
+  const tampa = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.05, 6, 20), toon(P.wallCream));
+  tampa.rotation.x = Math.PI / 2;
+  tampa.position.y = altura;
+  g.add(tampa);
+
+  const terra = new THREE.Mesh(new THREE.CylinderGeometry(raio * 0.96, raio * 0.96, 0.08, 18), toon(P.dirt));
+  terra.position.y = altura - 0.03;
+  g.add(terra);
+
+  const forracao = new THREE.Mesh(new THREE.SphereGeometry(raio * 0.9, 16, 8), toon(P.leafMid));
+  forracao.scale.y = 0.11;
+  forracao.position.y = altura - 0.04;
+  g.add(forracao);
+
+  return g;
+}
+
+/**
+ * Canteiro de flores com borda de alvenaria.
+ *
+ * TUDO ESCALA COM O RAIO. Antes o maço tinha 0,2 fixo, então um canteiro de
+ * 1,4 ganhava as mesmas sete moitinhas de um de 1,1 e ficava ralo — quanto
+ * maior o canteiro, mais vazio ele parecia. Aqui o tamanho da moita, o da flor
+ * e o número de maços saem todos do raio.
+ *
+ * Os maços vêm em DOIS ANÉIS mais um no meio, e não num anel só: um anel
+ * sozinho deixa o miolo pelado, que era o que mais chamava atenção de cima.
+ */
+export function canteiro(
+  raio = 1.1,
+  cores: number[] = [P.flowerPink, P.flowerYellow, 0xffffff, 0xb98fe0],
+  semente = 0.5,
+): THREE.Group {
+  const g = baseDeCanteiro(raio);
+  const altura = ALTURA_DO_CANTEIRO;
+  const giro = semente * 6.28;
+
+  /** [ângulo, distância do centro] de cada maço */
+  const lugares: Array<[number, number]> = [[giro * 1.7, 0]];
+  const externos = Math.round(9 * raio);
+  const internos = Math.round(5 * raio);
+  for (let i = 0; i < externos; i++) {
+    lugares.push([(i / externos) * Math.PI * 2 + giro, raio * 0.68]);
+  }
+  for (let i = 0; i < internos; i++) {
+    lugares.push([(i / internos) * Math.PI * 2 + giro + 0.7, raio * 0.36]);
+  }
+
+  const rMoita = raio * 0.2;
+  const rFlor = raio * 0.068;
+
+  lugares.forEach(([a, d], i) => {
+    const cor = cores[i % cores.length];
+    // um empurrãozinho pseudoaleatório, senão os dois anéis viram alvo de tiro
+    const solto = ((i * 37 + semente * 100) % 10) / 10 - 0.5;
+    const cx = Math.cos(a) * d + solto * raio * 0.08;
+    const cz = Math.sin(a) * d - solto * raio * 0.08;
+
+    const folhagem = new THREE.Mesh(new THREE.SphereGeometry(rMoita, 8, 6), toon(P.leafDark));
+    folhagem.position.set(cx, altura + rMoita * 0.3, cz);
+    folhagem.scale.y = 0.55;
+    g.add(folhagem);
+
+    // seis flores por maço, em duas alturas: quatro na roda de fora e duas
+    // espetadas mais no alto, no meio
+    for (let k = 0; k < 6; k++) {
+      const naBorda = k < 4;
+      const b = (k / (naBorda ? 4 : 2)) * Math.PI * 2 + i + (naBorda ? 0 : 0.8);
+      const dFlor = naBorda ? rMoita * 0.62 : rMoita * 0.24;
+      const flor = new THREE.Mesh(new THREE.SphereGeometry(rFlor, 8, 6), toon(cor));
+      flor.position.set(
+        cx + Math.cos(b) * dFlor,
+        altura + rMoita * (naBorda ? 0.72 : 1.05) + ((k + i) % 3) * raio * 0.04,
+        cz + Math.sin(b) * dFlor,
+      );
+      flor.scale.y = 0.8;
+      g.add(flor);
+    }
+  });
+  return g;
+}
+
+/**
+ * A mesma jardineira, mas com uma PALMEIRA plantada no meio em vez de flores.
+ *
+ * É o canteiro de calçadão de clube: mureta redonda, forração verde no vão e
+ * uma palmeira saindo do meio. As moitas em volta do tronco escondem a base
+ * dele — palmeira nascendo direto da terra lisa parece espetada.
+ *
+ * @param escala tamanho da palmeira; 1 dá uma de ~3,5 de altura
+ */
+export function canteiroComPalmeira(raio = 1.3, escala = 1, semente = 0.5): THREE.Group {
+  const g = baseDeCanteiro(raio);
+  const altura = ALTURA_DO_CANTEIRO;
+
+  const palmeira = tree('palmeira', escala, semente);
+  // ela nasce na TERRA, não no chão: a base da peça fica no topo da mureta
+  palmeira.position.y = altura;
+  g.add(palmeira);
+
+  const moitas = Math.round(7 * raio);
+  for (let i = 0; i < moitas; i++) {
+    const a = (i / moitas) * Math.PI * 2 + semente * 6.28;
+    const d = raio * (0.45 + (((i * 53 + semente * 100) % 10) / 10) * 0.28);
+    const r = raio * (0.15 + (((i * 29) % 7) / 7) * 0.07);
+    const moita = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), toon(i % 2 ? P.leafDark : P.bush));
+    moita.position.set(Math.cos(a) * d, altura + r * 0.3, Math.sin(a) * d);
+    moita.scale.y = 0.6;
+    g.add(moita);
+  }
+  return g;
+}
+
+/**
+ * Domo geodésico de vidro da praça da roda gigante.
+ *
+ * O truque para vidro translúcido não virar bolha: a estrutura. São os
+ * paralelos cruzando com os meridianos que dão a grelha, e os pilares de dentro
+ * que dão o que iluminar — sem eles o toon shading não tem em que pegar.
+ */
+export function domoDeVidro(raio = 2.6): THREE.Group {
+  const g = new THREE.Group();
+  const metal = toon(P.metalWhite);
+  const base = 0.26;
+
+  // rodapé de concreto: levanta o vidro do chão e some com a linha rente à grama
+  const rodape = new THREE.Mesh(new THREE.CylinderGeometry(raio * 1.03, raio * 1.06, base, 20), toon(P.concrete));
+  rodape.position.y = base / 2;
+  g.add(rodape);
+
+  const cupula = new THREE.Mesh(
+    new THREE.SphereGeometry(raio, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+    toon(0xdff2fb, { opacity: 0.72, doubleSide: true }),
+  );
+  cupula.position.y = base;
+  g.add(cupula);
+
+  // meridianos (de polo a polo) e paralelos (as faixas horizontais)
+  for (let i = 0; i < 8; i++) {
+    const meridiano = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.045, 5, 20, Math.PI), metal);
+    meridiano.rotation.set(0, (i / 8) * Math.PI, 0);
+    meridiano.position.y = base;
+    g.add(meridiano);
+  }
+  for (const altura of [0.34, 0.62, 0.85]) {
+    const r = raio * Math.sqrt(Math.max(0.02, 1 - altura * altura));
+    const paralelo = new THREE.Mesh(new THREE.TorusGeometry(r, 0.038, 5, 22), metal);
+    paralelo.rotation.x = Math.PI / 2;
+    paralelo.position.y = base + raio * altura;
+    g.add(paralelo);
+  }
+
+  // aro da base em duas metades: a fresta na frente lê como entrada
+  for (const lado of [0, 1]) {
+    const aro = new THREE.Mesh(
+      new THREE.TorusGeometry(raio, 0.09, 6, 18, Math.PI - 0.5),
+      metal,
+    );
+    aro.rotation.x = Math.PI / 2;
+    aro.rotation.z = lado ? Math.PI + 0.25 : 0.25;
+    aro.position.y = base + 0.04;
+    g.add(aro);
+  }
+
+  const topo = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), metal);
+  topo.position.y = base + raio;
+  g.add(topo);
+
+  // pilares por dentro: é o que dá volume quando a luz atravessa o vidro
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.3;
+    const alt = raio * 0.62;
+    const pilar = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, alt, 6), toon(P.metalGrey));
+    pilar.position.set(Math.cos(a) * raio * 0.84, base + alt / 2, Math.sin(a) * raio * 0.84);
+    g.add(pilar);
+  }
+
+  // um banco lá dentro, visto através do vidro
+  const bancoInterno = bench(P.wood);
+  bancoInterno.scale.setScalar(0.72);
+  bancoInterno.position.set(0, base, -raio * 0.35);
+  bancoInterno.rotation.y = 0.25;
+  g.add(bancoInterno);
+
+  const vaso = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.36, 10), toon(P.plantPot));
+  vaso.position.set(raio * 0.4, base + 0.18, raio * 0.35);
+  g.add(vaso);
+  const planta = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34, 0), toon(P.leafMid));
+  planta.position.set(raio * 0.4, base + 0.55, raio * 0.35);
+  g.add(planta);
+
   return g;
 }
 
@@ -166,6 +502,444 @@ export function picnicTable(): THREE.Group {
   return g;
 }
 
+/**
+ * MURO DO CLUBE — o trecho reto, que a cena repete quantas vezes precisar.
+ *
+ * Nasce deitado no X (o comprimento) e olhando para o +Z, como toda peça do
+ * kit; quem quiser um muro correndo no Z gira meia volta de rádio na cena.
+ *
+ * A ALTURA É UMA ESCOLHA, NÃO UM PADRÃO. Muro de clube de verdade tem 2 m e
+ * mais, e aqui isso seria um paredão: a câmera olha de cima em 34°, e tudo que
+ * é alto sobe na tela e tapa o que está atrás. Com 1,41 no pano e 1,70 nas
+ * pilastras, ele bate no peito de quem tem 1,75 — fecha o clube, dá para ver o
+ * outro lado por cima, e o que ele esconde do chão é uma faixa de 1,7 que é
+ * justamente a grama onde ele está plantado.
+ *
+ * As quatro camadas (base, pano, painel e chapim) têm larguras DIFERENTES de
+ * propósito: é o degrau entre elas que dá o relevo, e é ele que evita que duas
+ * faces caiam no mesmo plano e briguem por pixel.
+ */
+export function muroDoClube(comprimento = 8): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'muro-do-clube';
+
+  const massa = toon(P.muroCorpo);
+  const reboco = toon(P.muroBase);
+
+  const base = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 0.22, 0.5), reboco);
+  base.position.y = 0.11;
+  g.add(base);
+
+  const pano = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 1.05, 0.36), massa);
+  pano.position.y = 0.745;
+  g.add(pano);
+
+  const chapim = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 0.14, 0.5), toon(P.muroChapim));
+  chapim.position.y = 1.34;
+  g.add(chapim);
+
+  /**
+   * As pilastras, uma a cada ~5 m e sempre nas duas pontas — é o ritmo que
+   * transforma uma fita comprida em muro construído. Elas nascem 3 cm acima do
+   * chão, dentro da base: nascendo em `y = 0` como ela, as duas faces de baixo
+   * cairiam no mesmo plano olhando para o mesmo lado (z-fighting puro).
+   */
+  const vaos = Math.max(1, Math.round(comprimento / 5));
+  const passo = comprimento / vaos;
+  for (let i = 0; i <= vaos; i++) {
+    const x = -comprimento / 2 + i * passo;
+    const pilastra = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.55, 0.52), reboco);
+    pilastra.position.set(x, 0.03 + 1.55 / 2, 0);
+    g.add(pilastra);
+    const capa = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.12, 0.62), toon(P.muroChapim));
+    capa.position.set(x, 1.64, 0);
+    g.add(capa);
+  }
+
+  // o painel rebaixado de cada vão — na verdade ele é SALIENTE 4 cm, o que dá
+  // o mesmo desenho e não exige furar o pano
+  for (let i = 0; i < vaos; i++) {
+    const x = -comprimento / 2 + (i + 0.5) * passo;
+    for (const lado of [-1, 1]) {
+      const painel = new THREE.Mesh(
+        new THREE.BoxGeometry(passo - 0.9, 0.62, 0.04), toon(P.muroPainel),
+      );
+      painel.position.set(x, 0.78, lado * 0.2);
+      g.add(painel);
+    }
+  }
+
+  return g;
+}
+
+/**
+ * SEBE — a cerca viva que fecha o clube nos lados que não têm muro.
+ *
+ * Ela existe para resolver um problema que não é de decoração: o limite de
+ * caminhada é invisível, e bater nele no meio de um pátio vazio é a coisa que
+ * mais denuncia que aquilo é um cenário e não um lugar. A sebe fica EM CIMA do
+ * limite — o jogador para porque tem uma moita na frente dele, não porque o
+ * mundo acabou.
+ *
+ * Por isso ela é BAIXA (1,05). A conta de sempre: a câmera olha em 34° e esconde
+ * o chão até uma vez e meia a altura da peça na direção dela. Uma sebe de 1,8
+ * comeria dois metros e meio do piso na beirada inteira; com 1,05 a faixa
+ * escondida é a grama de fora, que não interessa a ninguém.
+ *
+ * O topo é RECORTADO em calotas, e não uma tampa reta: cerca viva aparada tem
+ * a linha ondulada das moitas que a formam, e é ela que separa uma sebe de uma
+ * caixa verde.
+ */
+export function sebe(comprimento = 8, altura = 1.05): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'sebe';
+
+  const folha = toon(P.bush);
+  const folhaClara = toon(P.leafLight);
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(comprimento, altura, 0.9), folha);
+  corpo.position.y = altura / 2;
+  g.add(corpo);
+
+  // O pé de terra, que impede a sebe de parecer plantada no ar. Ele AFUNDA 3 cm
+  // no chão: nascendo em `y = 0` como o corpo, as duas faces de baixo caem no
+  // mesmo plano olhando para o mesmo lado, que é z-fighting puro.
+  const canteiro = new THREE.Mesh(new THREE.BoxGeometry(comprimento + 0.1, 0.14, 1.02), toon(P.dirt));
+  canteiro.position.y = 0.04;
+  g.add(canteiro);
+
+  /**
+   * As calotas do topo. Uma a cada ~0,8, com raio e altura sorteados por uma
+   * conta determinística (`i`, e não `Math.random`): a mesma sebe tem que sair
+   * igual em todo build, senão a foto do teste muda sozinha.
+   */
+  const quantas = Math.max(2, Math.round(comprimento / 0.8));
+  for (let i = 0; i < quantas; i++) {
+    const t = (i + 0.5) / quantas;
+    const onda = Math.sin(i * 2.399) * 0.5 + 0.5;
+    const raio = 0.5 + onda * 0.09;
+    const moita = new THREE.Mesh(new THREE.SphereGeometry(raio, 8, 6), i % 3 === 0 ? folhaClara : folha);
+    moita.scale.set(1, 0.42 + onda * 0.16, 0.92);
+    moita.position.set(-comprimento / 2 + t * comprimento, altura - 0.04, 0);
+    g.add(moita);
+  }
+
+  return g;
+}
+
+/**
+ * GUARITA DA PORTARIA — a casinha do porteiro, ao lado do portão.
+ *
+ * Ela é uma PEÇA DE BALCÃO, e peça de balcão tem uma armadilha só, sempre a
+ * mesma: a câmera olha de cima em 34°, então teto e toldo passam na frente de
+ * quem está no balcão e escondem tudo. Aqui isso foi resolvido em três
+ * decisões, e nenhuma é enfeite:
+ *
+ *  1. ela é RASA (2,2 de profundidade). Cada metro a mais de teto é 1,5 m de
+ *     interior engolido;
+ *  2. o beiral avança só 0,25, e não os 0,6 de um telhado bonito;
+ *  3. o vão da janela é ENORME — do peitoril até quase o teto, e a largura
+ *     inteira da frente. O que se tem que ver aqui é o porteiro, não a parede.
+ *
+ * Vidro só nas laterais, e translúcido: vidro fechado por cima de quem atende
+ * some no toon shading e ainda tapa o que está dentro (foi a lição do quiosque).
+ * A frente fica ABERTA, como guarita de clube de verdade em dia de sol.
+ */
+export function guarita(largura = 2.6, profundidade = 2.2): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'guarita';
+
+  const massa = toon(P.guaritaParede);
+  const faixa = toon(P.guaritaFaixa);
+  const madeira = toon(P.guaritaBalcao);
+  // vidro BEM lavado (0,22): com 0,34 a girafa vista pela janela lateral virava
+  // um vulto pálido, e o que esta peça existe para mostrar é justamente ela
+  const vidro = flat(P.glass, 0.22);
+
+  const ESP = 0.16;
+  /**
+   * A GUARITA É ALTA (3 m de parede) porque o porteiro é uma girafa.
+   *
+   * Com 2,3 ela cabia, mas só: a cabeça dela raspava no forro e o vão da janela
+   * virava uma fresta. Aqui a janela vai de 1,31 a 2,94 — a dupla encosta no
+   * balcão na altura do peito e a cabeça da girafa fica emoldurada por ele,
+   * olhando os dois de cima, que é a graça de ter uma girafa na portaria.
+   */
+  const ALT = 3.0;
+  /**
+   * O peitoril fica na altura do peito de quem tem 1,75, e a bandeira é fina:
+   * o que sobra entre os dois é o vão, e é ele que decide se dá para ver o
+   * porteiro. Vão apertado esconde a cabeça da girafa, que é a única coisa que
+   * esta peça precisa mostrar.
+   */
+  const PEITORIL = 1.15;
+  const BASE = 0.16;
+  const hx = largura / 2;
+  const hz = profundidade / 2;
+  /** o que corre ENTRE as duas paredes laterais morre na face de dentro delas */
+  const VAO = largura - ESP * 2;
+
+  // -------------------------------------------------------------- alicerce
+  const plinto = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.18, BASE, profundidade + 0.18), toon(P.muroBase));
+  plinto.position.y = BASE / 2;
+  g.add(plinto);
+
+  // ---------------------------------------------------------------- paredes
+  /**
+   * As laterais são partidas em três: peitoril, vidro e bandeira. É o que faz
+   * a guarita ter janela dos dois lados sem precisar furar caixa nenhuma —
+   * three não recorta geometria, então "janela" aqui é o vão que se deixa.
+   */
+  for (const lado of [-1, 1]) {
+    const x = lado * (hx - ESP / 2);
+    const baixo = new THREE.Mesh(new THREE.BoxGeometry(ESP, PEITORIL, profundidade), massa);
+    baixo.position.set(x, BASE + PEITORIL / 2, 0);
+    g.add(baixo);
+
+    const vaoJanela = ALT - PEITORIL - 0.26;
+    const janela = new THREE.Mesh(new THREE.BoxGeometry(ESP * 0.45, vaoJanela, profundidade - 0.34), vidro);
+    janela.position.set(x, BASE + PEITORIL + vaoJanela / 2, 0);
+    g.add(janela);
+
+    const alto = new THREE.Mesh(new THREE.BoxGeometry(ESP, 0.26, profundidade), massa);
+    alto.position.set(x, BASE + ALT - 0.13, 0);
+    g.add(alto);
+  }
+
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(VAO, ALT, ESP), massa);
+  fundo.position.set(0, BASE + ALT / 2, -hz + ESP / 2);
+  g.add(fundo);
+  // a porta dos fundos, por onde o porteiro entra
+  // ela nasce 3 cm acima do piso (a soleira): nascendo em `BASE` como a parede,
+  // as duas faces de baixo caem no mesmo plano e brigam por pixel
+  const porta = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.92, 0.06), toon(P.vestiarioPorta));
+  porta.position.set(0, BASE + 0.03 + 0.96, -hz + ESP + 0.02);
+  g.add(porta);
+  const macaneta = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), toon(P.gold));
+  macaneta.position.set(0.3, BASE + 1.03, -hz + ESP + 0.07);
+  g.add(macaneta);
+
+  // ------------------------------------------------------------- a frente
+  // peitoril baixo, vão grande, e a bandeira em cima com o letreiro
+  const peitoril = new THREE.Mesh(new THREE.BoxGeometry(VAO, PEITORIL, ESP), massa);
+  peitoril.position.set(0, BASE + PEITORIL / 2, hz - ESP / 2);
+  g.add(peitoril);
+
+  const bandeira = new THREE.Mesh(new THREE.BoxGeometry(VAO, 0.26, ESP), faixa);
+  bandeira.position.set(0, BASE + ALT - 0.13, hz - ESP / 2);
+  g.add(bandeira);
+  const letras = letreiro('Portaria', VAO * 0.7, 0.18, '#fdf6e3');
+  letras.position.set(0, BASE + ALT - 0.13, hz + 0.012);
+  g.add(letras);
+
+  /**
+   * O BALCÃO avança 0,3 para fora, e é por onde a girafa se debruça. Ele é
+   * madeira, e não a massa da parede: é o único plano em que a dupla vai
+   * encostar, e madeira diz "atendimento" de longe.
+   */
+  const balcao = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.26, 0.11, 0.62), madeira);
+  balcao.position.set(0, BASE + PEITORIL + 0.055, hz + 0.06);
+  g.add(balcao);
+  // a testeira recua 2 cm da borda do tampo: casar as duas faces no mesmo plano
+  // é o par que serrilha
+  const testeira = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.2, 0.09, 0.06), faixa);
+  testeira.position.set(0, BASE + PEITORIL - 0.02, hz + 0.32);
+  g.add(testeira);
+
+  /**
+   * A faixa de cor no pé da parede, que toda guarita tem. Ela é MAIS ESTREITA
+   * e mais BAIXA que a parede de propósito: nascendo na mesma altura e com a
+   * mesma largura, o pé e as pontas dela caem nos mesmos planos da parede e o
+   * detector de z-fighting acusa — foi assim que ela nasceu, com nove pares.
+   */
+  for (const z of [hz - ESP / 2, -hz + ESP / 2]) {
+    const rodape = new THREE.Mesh(new THREE.BoxGeometry(VAO - 0.06, 0.18, ESP + 0.04), faixa);
+    rodape.position.set(0, BASE + 0.03, z);
+    g.add(rodape);
+  }
+
+  // ------------------------------------------------------------- cobertura
+  /**
+   * O BEIRAL AVANÇA SÓ 0,14. Ele nasceu com 0,28, que é o avanço bonito de um
+   * telhado — e a 34° de câmera cada centímetro de beiral é um centímetro e
+   * meio de sombra caindo para dentro: a sombra passava exatamente na cabeça da
+   * girafa, e ela aparecia verde-oliva em vez de amarela. Com 0,14 a linha da
+   * sombra cai atrás dela e o porteiro fica no sol.
+   */
+  const cinta = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.28, 0.14, profundidade + 0.28), toon(P.muroChapim),
+  );
+  cinta.position.y = BASE + ALT + 0.07;
+  g.add(cinta);
+
+  /**
+   * Telhado de quatro águas: um cone de QUATRO lados é uma pirâmide, e girado
+   * 45° as arestas caem nos cantos da casinha. A escala acerta a base
+   * retangular — o cone nasce de base quadrada.
+   */
+  const meiaDiagonal = 2.0;
+  const telhado = new THREE.Mesh(new THREE.ConeGeometry(meiaDiagonal, 0.62, 4), toon(P.guaritaTelhado));
+  telhado.rotation.y = Math.PI / 4;
+  telhado.scale.set((largura / 2 + 0.16) / (meiaDiagonal / Math.SQRT2), 1, (profundidade / 2 + 0.16) / (meiaDiagonal / Math.SQRT2));
+  telhado.position.y = BASE + ALT + 0.14 + 0.31;
+  g.add(telhado);
+
+  const pinaculo = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), toon(P.gold));
+  pinaculo.position.y = BASE + ALT + 0.14 + 0.66;
+  g.add(pinaculo);
+
+  // a luminária sob o beiral, olhando para quem chega
+  const luminaria = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), toon(P.luzDoPortao, { glow: 0.4 }));
+  luminaria.scale.y = 0.7;
+  luminaria.position.set(0, BASE + ALT + 0.02, hz + 0.1);
+  g.add(luminaria);
+
+  return g;
+}
+
+/**
+ * PORTÃO DO CLUBE — a entrada inteira, e não uma porta.
+ *
+ * Duas pilastras de 3,3 com luminária em cima, um vão de `vao` metros (7 por
+ * padrão, largo o bastante para os dois passarem lado a lado com folga) e as
+ * duas folhas de ferro ABERTAS, cada uma girada 90° para dentro do clube.
+ *
+ * POR QUE NÃO TEM ARCO EM CIMA DO VÃO. Era o desenho óbvio, e ele quebra na
+ * câmera do jogo: uma travessa a 3,4 esconde tudo que estiver a 2,4 na direção
+ * da câmera, e quem atravessa o portão passa exatamente por aí — a viga cortaria
+ * a cabeça dos dois no caminho, do mesmo jeito que o encosto da espreguiçadeira
+ * cortava o pescoço de quem deitava. O nome do clube foi para uma placa na
+ * pilastra, nas duas faces, que é onde ele fica legível sem tapar ninguém.
+ *
+ * As folhas abrem exatamente 90°, e não 100° ou 110°: assim elas ficam
+ * alinhadas aos eixos e a cena consegue fechar a colisão delas com uma caixa
+ * reta em vez de uma girada.
+ */
+export function portaoDoClube(vao = 7, nome = 'Clube'): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'portao-do-clube';
+
+  const reboco = toon(P.muroBase);
+  const pedra = toon(P.muroChapim);
+  const ferro = toon(P.portaoFerro);
+  const metal = toon(P.portaoMetal);
+  const ouro = toon(P.gold);
+
+  // ------------------------------------------------------------- pilastras
+  for (const lado of [-1, 1]) {
+    const px = lado * (vao / 2 + 0.5);
+
+    const plinto = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.3, 1.24), pedra);
+    plinto.position.set(px, 0.15, 0);
+    g.add(plinto);
+
+    const fuste = new THREE.Mesh(new THREE.BoxGeometry(1, 2.1, 1), reboco);
+    fuste.position.set(px, 1.35, 0);
+    g.add(fuste);
+
+    // as duas molduras do fuste: saem 3 cm dele, que é o que as separa do plano
+    // da parede e dá a sombra
+    for (const y of [0.62, 1.96]) {
+      const moldura = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.12, 1.06), pedra);
+      moldura.position.set(px, y, 0);
+      g.add(moldura);
+    }
+
+    const capitel = new THREE.Mesh(new THREE.BoxGeometry(1.22, 0.18, 1.22), pedra);
+    capitel.position.set(px, 2.49, 0);
+    g.add(capitel);
+    const abaco = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.14, 1.04), reboco);
+    abaco.position.set(px, 2.65, 0);
+    g.add(abaco);
+
+    // a luminária de cima: é ela que diz "isto é uma entrada", e não um pilar
+    const pescoco = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.2, 8), ferro);
+    pescoco.position.set(px, 2.82, 0);
+    g.add(pescoco);
+    const globo = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 8), toon(P.luzDoPortao, { glow: 0.35 }));
+    globo.position.set(px, 3.14, 0);
+    g.add(globo);
+    const bico = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.16, 8), ouro);
+    bico.position.set(px, 3.44, 0);
+    g.add(bico);
+
+    // A PLACA COM O NOME, nas duas faces: uma olha para a rua e a outra para
+    // dentro. A chapa sai 3 cm do fuste e as letras 2 cm da chapa — encostar
+    // qualquer uma delas na face de trás poria duas superfícies no mesmo plano.
+    for (const frente of [-1, 1]) {
+      const chapa = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.38, 0.06), metal);
+      chapa.position.set(px, 1.35, frente * 0.53);
+      g.add(chapa);
+      const letras = letreiro(nome, 0.72, 0.26, '#fdf6e3');
+      letras.position.set(px, 1.35, frente * 0.58);
+      if (frente < 0) letras.rotation.y = Math.PI;
+      g.add(letras);
+    }
+  }
+
+  // ---------------------------------------------------------------- folhas
+  /**
+   * Cada folha nasce na dobradiça, encostada na face de dentro da pilastra, e
+   * cresce para o MEIO do vão. O pivô é um objeto vazio: girar ele é abrir o
+   * portão, e é assim que um dia dá para animar a abertura sem refazer nada.
+   */
+  const folha = vao / 2 - 0.08;
+  for (const lado of [-1, 1]) {
+    const pivo = new THREE.Object3D();
+    pivo.position.set(lado * (vao / 2), 0, 0);
+    /**
+     * Fechada, a folha aponta para o MEIO do vão — ou seja, para `-lado`.
+     * Girando o pivô em `lado · 90°`, essa direção vai parar no `+Z`: as duas
+     * abrem para dentro do clube.
+     *
+     * O `dir` multiplica cada `x` em vez de um `scale.x = -1` no braço: escala
+     * negativa inverte a orientação das faces, e uma das folhas sairia com a
+     * geometria virada do avesso.
+     */
+    pivo.rotation.y = lado * Math.PI / 2;
+    g.add(pivo);
+    const dir = -lado;
+
+    const monte = new THREE.Mesh(new THREE.BoxGeometry(0.13, 2.05, 0.13), ferro);
+    monte.position.set(dir * 0.07, 1.03, 0);
+    pivo.add(monte);
+
+    for (const [y, alt] of [[0.28, 0.12], [1.02, 0.09], [1.78, 0.11]] as const) {
+      const travessa = new THREE.Mesh(new THREE.BoxGeometry(folha, alt, 0.07), ferro);
+      travessa.position.set(dir * (folha / 2 + 0.07), y, 0);
+      pivo.add(travessa);
+    }
+
+    /**
+     * As barras. A altura sobe conforme se aproxima do meio do vão — é o que
+     * dá o desenho de leque quando as duas folhas estão fechadas, e é o que
+     * separa um portão de clube de uma grade de quintal.
+     */
+    const barras = Math.max(6, Math.round(folha / 0.26));
+    for (let i = 1; i <= barras; i++) {
+      const t = i / (barras + 1);
+      const x = dir * (0.07 + t * folha);
+      const altura = 1.86 + 0.42 * t;
+      const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, altura, 6), ferro);
+      barra.position.set(x, 0.24 + altura / 2, 0);
+      pivo.add(barra);
+      const lanca = new THREE.Mesh(new THREE.ConeGeometry(0.062, 0.17, 6), ouro);
+      lanca.position.set(x, 0.24 + altura + 0.085, 0);
+      pivo.add(lanca);
+    }
+
+    // o losango no meio da folha, o único ornamento — dois quadrados girados
+    for (const d of [0, 1]) {
+      const losango = new THREE.Mesh(new THREE.BoxGeometry(0.3 - d * 0.1, 0.3 - d * 0.1, 0.05), d ? ouro : metal);
+      losango.position.set(dir * (0.07 + folha * 0.55), 1.02, 0.03 + d * 0.02);
+      losango.rotation.z = Math.PI / 4;
+      pivo.add(losango);
+    }
+  }
+
+  return g;
+}
+
 export function fence(length = 4, height = 1.1, color: number = P.metalGrey): THREE.Group {
   const g = new THREE.Group();
   const posts = Math.max(2, Math.round(length / 1.2));
@@ -213,19 +987,255 @@ export function cloud(scale = 1): THREE.Group {
   return g;
 }
 
-export function kiosk(color: number = P.fabricRed): THREE.Group {
+/** O que o quiosque vende: muda a vitrine do balcão e o enfeite do letreiro. */
+export type KioskTipo = 'simples' | 'sorvete' | 'suco';
+
+export interface KioskOpts {
+  tipo?: KioskTipo;
+  /** texto do letreiro; sem isso, o tipo escolhe um */
+  texto?: string;
+}
+
+/**
+ * Toldo listrado de barril: meia-cana com faixas alternadas e babado na ponta.
+ *
+ * O cilindro nasce com o eixo em Y; girar `z = PI/2` deita ele ao longo do X,
+ * e aí o angulo do setor vira direto altura × profundidade — `theta = 0` aponta
+ * para a frente (+Z) e `theta = PI/2` para cima.
+ */
+function toldo(largura: number, raio: number, cor: number, claro: number): THREE.Group {
   const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.7, 1.6), toon(P.wallCream));
-  body.position.y = 0.85;
-  g.add(body);
-  const counter = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.12, 0.5), toon(P.wood));
-  counter.position.set(0, 1.25, 0.95);
-  g.add(counter);
-  const roof = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 0.9, 14, 1, false, 0, Math.PI), toon(color));
-  roof.position.set(0, 1.75, 0.35);
-  roof.rotation.set(Math.PI / 2, 0, 0);
-  roof.scale.set(1, 1, 0.55);
-  g.add(roof);
+  const faixas = 9;
+  const passo = largura / faixas;
+  const de = 0.35;
+  const arco = 1.15;
+
+  const lona = new THREE.Group();
+  lona.rotation.z = Math.PI / 2;
+  for (let i = 0; i < faixas; i++) {
+    const faixa = new THREE.Mesh(
+      new THREE.CylinderGeometry(raio, raio, passo * 1.02, 10, 1, true, de, arco),
+      toon(i % 2 === 0 ? cor : claro, { doubleSide: true }),
+    );
+    faixa.position.y = -largura / 2 + passo * (i + 0.5);
+    lona.add(faixa);
+  }
+  g.add(lona);
+
+  // babado: as bolinhas da ponta da frente, que é o que deixa com cara de doce
+  const py = Math.sin(de) * raio;
+  const pz = Math.cos(de) * raio;
+  for (let i = 0; i < faixas; i++) {
+    const bola = new THREE.Mesh(
+      new THREE.SphereGeometry(passo * 0.36, 8, 6),
+      toon(i % 2 === 0 ? cor : claro),
+    );
+    bola.position.set(-largura / 2 + passo * (i + 0.5), py - passo * 0.2, pz);
+    bola.scale.set(1, 1.15, 0.7);
+    g.add(bola);
+  }
+  return g;
+}
+
+/**
+ * Quiosque de parque: cabine de madeira com balcão, toldo listrado, letreiro
+ * escrito e uma vitrine que muda com o que ele vende.
+ *
+ * A boca fica em +Z: posicione girado de forma que quem compra fique na frente
+ * dele na tela, e não escondido atrás.
+ */
+export function kiosk(color: number = P.fabricRed, opts: KioskOpts = {}): THREE.Group {
+  const g = new THREE.Group();
+  // etiqueta para o caçador de z-fighting achar a peça na cena
+  g.userData.peca = 'quiosque';
+  const tipo = opts.tipo ?? 'simples';
+  const claro = P.wallCream;
+  const madeira = toon(P.wood);
+  const madeiraEscura = toon(P.woodDark);
+
+  // ------------------------------------------------------------- estrutura
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.16, 1.9), madeiraEscura);
+  deck.position.y = 0.08;
+  g.add(deck);
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(2.35, 1.7, 1.4), toon(claro));
+  corpo.position.set(0, 1.01, -0.05);
+  g.add(corpo);
+
+  // Ripado da frente, só nas beiradas: o miolo é a janela de atendimento.
+  //
+  // A moldura de madeira é 5 cm mais LARGA que o corpo, de propósito. Antes ela
+  // tinha exatamente a mesma largura (2,35), então as faces laterais dos dois
+  // caíam no mesmo plano e serrilhavam numa faixa vertical na quina — e nem dá
+  // para resolver estreitando, porque aí a madeira sumiria dentro do bege.
+  // Saliente resolve o brilho E fica melhor: vira um batente de verdade.
+  //
+  // A verga é 1 cm mais funda e 4 cm mais larga que os pilares, e os dois param
+  // 2 cm abaixo do topo da parede. Sem essas três folgas eles compartilhavam
+  // face com face em CINCO planos (as duas laterais, a frente, o fundo e o
+  // topo), porque tinham exatamente a mesma espessura e a mesma altura.
+  for (const lado of [-1, 1]) {
+    const pilar = new THREE.Mesh(new THREE.BoxGeometry(0.26, 1.7, 0.14), madeira);
+    pilar.position.set(lado * 1.1, 0.99, 0.68);
+    g.add(pilar);
+  }
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.22, 0.16), madeira);
+  verga.position.set(0, 1.715, 0.68);
+  g.add(verga);
+
+  // o vão escuro dá profundidade: sem ele a frente vira uma parede lisa. Ele
+  // fica entre o tampo do balcão e a verga — mais baixo que isso e some atrás
+  // do próprio balcão
+  const vao = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.44, 0.06), toon(0x5b4636));
+  vao.position.set(0, 1.42, 0.66);
+  g.add(vao);
+
+  const balcao = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.14, 0.78), madeira);
+  balcao.position.set(0, 1.12, 0.94);
+  g.add(balcao);
+  const bordo = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 2.5, 10), madeiraEscura);
+  bordo.rotation.z = Math.PI / 2;
+  bordo.position.set(0, 1.12, 1.32);
+  g.add(bordo);
+
+  for (const lado of [-1, 1]) {
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.05, 8), toon(P.metalWhite));
+    perna.position.set(lado * 1.18, 0.6, 1.24);
+    g.add(perna);
+  }
+
+  // ----------------------------------------------------------- toldo e teto
+  // desce 2 cm para dentro do corpo: em y = 1,94 a base da laje caía exatamente
+  // no topo da parede (1,86), e a linha do beiral piscava
+  const cobertura = new THREE.Mesh(new THREE.BoxGeometry(2.55, 0.16, 1.55), madeiraEscura);
+  cobertura.position.set(0, 1.92, -0.05);
+  g.add(cobertura);
+
+  // o toldo é curto de propósito: a câmera olha de cima em 34°, então qualquer
+  // aba mais avançada que isto passa na frente da vitrine e esconde tudo
+  const lona = toldo(2.5, 0.44, color, claro);
+  lona.position.set(0, 1.54, 0.62);
+  g.add(lona);
+
+  // ------------------------------------------------------------- letreiro
+  const texto = opts.texto ?? (tipo === 'sorvete' ? 'Sorvete' : tipo === 'suco' ? 'Sucos' : '');
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.5, 0.12), toon(color));
+  placa.position.set(0, 2.3, -0.05);
+  g.add(placa);
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.62, 0.08), toon(claro));
+  moldura.position.set(0, 2.3, -0.09);
+  g.add(moldura);
+  if (texto) {
+    const escrito = letreiro(texto, 1.5, 0.34);
+    escrito.position.set(0, 2.3, 0.02);
+    g.add(escrito);
+  }
+
+  // ------------------------------------------------- vitrine e enfeite alto
+  if (tipo === 'sorvete') {
+    // casquinha gigante em cima do letreiro: é o que se vê de longe
+    const gigante = iceCream(P.morango);
+    gigante.scale.setScalar(2.6);
+    gigante.position.set(0, 2.78, -0.05);
+    g.add(gigante);
+
+    // cuba aberta, como gelateria de verdade: vidro por cima ficaria tapando
+    // as bolas justo de onde a câmera olha
+    const bandeja = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.16, 0.56), toon(P.metalWhite));
+    bandeja.position.set(-0.58, 1.26, 1.06);
+    g.add(bandeja);
+    const sabores = [P.morango, P.maracuja, P.chocolate];
+    sabores.forEach((sabor, i) => {
+      const cuba = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 0.22, 10), toon(P.metalWhite));
+      cuba.position.set(-1.0 + i * 0.36, 1.29, 1.06);
+      g.add(cuba);
+      const bola = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), toon(sabor));
+      bola.position.set(-1.0 + i * 0.36, 1.42, 1.06);
+      bola.scale.y = 0.8;
+      g.add(bola);
+    });
+
+    // pilha de casquinhas do outro lado do balcão
+    for (let i = 0; i < 3; i++) {
+      const casq = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 10), toon(0xd8a45c));
+      casq.position.set(0.72, 1.34 + i * 0.07, 1.04 + i * 0.02);
+      casq.rotation.x = Math.PI;
+      g.add(casq);
+    }
+  } else if (tipo === 'suco') {
+    // laranja gigante em cima do letreiro, com folhinha
+    const fruta = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 10), toon(P.laranja));
+    fruta.position.set(0, 2.85, -0.05);
+    g.add(fruta);
+    const folha = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), toon(P.leafMid));
+    folha.position.set(0.14, 3.12, -0.05);
+    folha.scale.set(1.5, 0.4, 0.8);
+    folha.rotation.z = 0.5;
+    g.add(folha);
+
+    // jarras com suco de verdade dentro
+    const sucos = [P.laranja, P.limao];
+    sucos.forEach((suco, i) => {
+      const jarra = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.14, 0.42, 12, 1, true),
+        toon(P.glass, { opacity: 0.45, doubleSide: true }),
+      );
+      jarra.position.set(-0.78 + i * 0.42, 1.4, 1.06);
+      g.add(jarra);
+      const dentro = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.12, 0.28, 12), toon(suco));
+      dentro.position.set(-0.78 + i * 0.42, 1.33, 1.06);
+      g.add(dentro);
+      const torneira = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.12, 6), toon(P.metalGrey));
+      torneira.position.set(-0.78 + i * 0.42, 1.26, 1.2);
+      torneira.rotation.x = Math.PI / 2;
+      g.add(torneira);
+    });
+
+    // fruteira
+    const cesta = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.17, 0.12, 12), toon(P.plantPot));
+    cesta.position.set(0.42, 1.25, 1.06);
+    g.add(cesta);
+    const frutas: Array<[number, number, number, number]> = [
+      [0.32, 1.34, 1.03, P.laranja],
+      [0.52, 1.34, 1.08, P.limao],
+      [0.42, 1.4, 1.05, P.morango],
+    ];
+    for (const [x, y, z, cor] of frutas) {
+      const fr = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), toon(cor));
+      fr.position.set(x, y, z);
+      g.add(fr);
+    }
+
+    // copo de canudos
+    const copo = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.2, 10), toon(claro));
+    copo.position.set(0.95, 1.29, 1.06);
+    g.add(copo);
+    const canudos = [P.morango, P.limao, P.fabricBlue];
+    canudos.forEach((cor, i) => {
+      const canudo = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.34, 6), toon(cor));
+      canudo.position.set(0.93 + i * 0.03, 1.44, 1.06 - i * 0.02);
+      canudo.rotation.z = (i - 1) * 0.18;
+      g.add(canudo);
+    });
+  }
+
+  // Quadro de preços pendurado na lateral.
+  //
+  // As distâncias aqui são todas contra Z-FIGHTING, e cada uma já apareceu
+  // serrilhando na tela:
+  // - o quadro entra 4 cm no corpo (que acaba em x = 1,175), em vez de encostar;
+  // - as linhas nascem à FRENTE da face do quadro, sem tocá-la. Antes a face de
+  //   trás da linha (1,23) caía exatamente na face da frente do quadro (1,23), e
+  //   as listras brancas piscavam em faixa toda vez que a câmera girava.
+  const quadro = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.62, 0.5), toon(0x36302c));
+  quadro.position.set(1.16, 1.3, 0.15);
+  g.add(quadro);
+  for (let i = 0; i < 3; i++) {
+    const linha = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.045, 0.3 - i * 0.06), toon(claro));
+    linha.position.set(1.205, 1.46 - i * 0.16, 0.15);
+    g.add(linha);
+  }
+
   return g;
 }
 
@@ -260,6 +1270,103 @@ export function building(
       g.add(back);
     }
   }
+  return g;
+}
+
+/**
+ * Mesa de ping pong. Medidas em escala de jogo (uma pessoa tem 1,75): tampo de
+ * 2,6 × 1,4 a 76cm do chão, que é a proporção da mesa de verdade sem ficar
+ * gigante ao lado dos personagens chibi.
+ *
+ * As linhas brancas são caixas com altura própria, não planos colados no tampo:
+ * plano coplanar com o tampo pisca (z-fighting), e caixa de 8mm nunca pisca.
+ */
+export function mesaPingPong(cor: number = P.mesaVerde): THREE.Group {
+  const g = new THREE.Group();
+  const larg = 2.6; // ao longo de X — é a direção em que a bolinha viaja
+  const prof = 1.4;
+  const alturaTampo = 0.76;
+  const linha = toon(0xf4f7f5);
+
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.06, prof), toon(cor));
+  tampo.position.y = alturaTampo;
+  g.add(tampo);
+
+  // borda pintada + linha do meio, no comprimento
+  for (const z of [-prof / 2 + 0.05, prof / 2 - 0.05, 0]) {
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(larg - 0.02, 0.008, 0.05), linha);
+    risco.position.set(0, alturaTampo + 0.032, z);
+    g.add(risco);
+  }
+  for (const x of [-larg / 2 + 0.04, larg / 2 - 0.04]) {
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.008, prof - 0.02), linha);
+    risco.position.set(x, alturaTampo + 0.032, 0);
+    g.add(risco);
+  }
+
+  // ------------------------------------------------------------- a rede
+  const rede = new THREE.Mesh(
+    new THREE.BoxGeometry(0.03, 0.19, prof + 0.16),
+    toon(0xfbfdfc, { opacity: 0.72, doubleSide: true }),
+  );
+  rede.position.y = alturaTampo + 0.13;
+  g.add(rede);
+  const fita = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.035, prof + 0.18), toon(0xffffff));
+  fita.position.y = alturaTampo + 0.225;
+  g.add(fita);
+  for (const z of [-(prof + 0.16) / 2, (prof + 0.16) / 2]) {
+    const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.24, 8), toon(P.metalGrey));
+    poste.position.set(0, alturaTampo + 0.12, z);
+    g.add(poste);
+  }
+
+  // ------------------------------------------------------------- pernas
+  for (const x of [-larg / 2 + 0.22, larg / 2 - 0.22]) {
+    for (const z of [-prof / 2 + 0.18, prof / 2 - 0.18]) {
+      const perna = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.035, 0.045, alturaTampo, 8),
+        toon(P.metalGrey),
+      );
+      perna.position.set(x, alturaTampo / 2, z);
+      g.add(perna);
+    }
+    // travessa unindo o par, como as mesas dobráveis de parque
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, prof - 0.36), toon(P.metalGrey));
+    travessa.position.set(x, alturaTampo * 0.35, 0);
+    g.add(travessa);
+  }
+
+  return g;
+}
+
+/** Bolinha de ping pong. Pequena de verdade: some se for muito maior. */
+export function bolinhaPingPong(): THREE.Mesh {
+  const bola = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), toon(0xfff8e6, { glow: 0.12 }));
+  bola.castShadow = true;
+  return bola;
+}
+
+/** Raquete: cilindro achatado com cabo, do jeito que a memória desenha. */
+export function raquete(cor: number = P.metalRed): THREE.Group {
+  const g = new THREE.Group();
+
+  const borracha = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.035, 20), toon(cor));
+  borracha.rotation.x = Math.PI / 2;
+  g.add(borracha);
+
+  // a madeira aparece como um aro fino em volta da borracha
+  const madeira = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.022, 20), toon(P.wood));
+  madeira.rotation.x = Math.PI / 2;
+  g.add(madeira);
+
+  const cabo = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.16, 4, 8), toon(P.woodDark));
+  cabo.position.y = -0.25;
+  g.add(cabo);
+
+  g.traverse((n) => {
+    const m = n as THREE.Mesh;
+    if (m.isMesh) m.castShadow = true;
+  });
   return g;
 }
 
@@ -303,6 +1410,237 @@ export function duck(color = 0xf6f2e8): THREE.Group {
   beak.position.set(0, 0.39, 0.28);
   beak.rotation.x = Math.PI / 2;
   g.add(beak);
+  return g;
+}
+
+/**
+ * Um patins de rodinha, sozinho.
+ *
+ * Nasce com a sola em y = 0 e a ponta para +Z, do tamanho de um pe de
+ * personagem (~0.28 de comprimento). E a mesma peca que serve de amostra no
+ * balcao da lojinha e, mais tarde, de calcado no `CharacterRig` — por isso ela
+ * mora no kit e nao dentro de nenhum dos dois.
+ *
+ * @param cor cor do cano da bota
+ */
+export function patins(cor: number = P.wallCream): THREE.Group {
+  const g = new THREE.Group();
+  // etiqueta para o teste conseguir contar os pes calcados
+  g.userData.patins = true;
+  const RODA = 0.045;
+
+  // a bota fica ACIMA das rodas: o eixo delas e o chao da peca
+  const bota = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.15, 0.26), toon(cor));
+  bota.position.set(0, RODA * 2 + 0.115, 0.01);
+  g.add(bota);
+
+  const cano = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.13, 0.15), toon(cor));
+  cano.position.set(0, RODA * 2 + 0.25, -0.04);
+  g.add(cano);
+
+  const cadarco = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.04, 0.13), toon(P.frisbee));
+  cadarco.position.set(0, RODA * 2 + 0.235, 0.02);
+  g.add(cadarco);
+
+  const chassi = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.28), toon(P.metalGrey));
+  chassi.position.set(0, RODA * 2 + 0.015, 0.01);
+  g.add(chassi);
+
+  // duas rodas de cada lado, como patins de quatro rodinhas
+  for (const lado of [-1, 1]) {
+    for (const frente of [-1, 1]) {
+      const roda = new THREE.Mesh(
+        new THREE.CylinderGeometry(RODA, RODA, 0.035, 10),
+        toon(P.frisbee),
+      );
+      roda.rotation.z = Math.PI / 2;
+      roda.position.set(lado * 0.062, RODA, 0.01 + frente * 0.095);
+      g.add(roda);
+    }
+  }
+  return g;
+}
+
+/**
+ * A loja de patins do parque.
+ *
+ * Nao e um quiosque: e um PREDIO pequeno, com vitrine de vidro de verdade,
+ * telhado inclinado que avanca sobre a calcada e um balcao lateral so para
+ * entregar os patins. O quiosque do sorvete e uma barraca de 2,8 de largura;
+ * esta loja tem 7,4 e altura de porta, e a diferenca de escala e o ponto.
+ *
+ * Nasce com a VITRINE virada para +Z e o balcao de entrega no lado +X, que e
+ * de onde a camera isometrica olha — assim a fachada e o atendimento aparecem
+ * os dois, em vez de um esconder o outro.
+ */
+export function skateShop(cor: number = P.fabricBlue): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'loja-de-patins';
+  const LARG = 7.4;
+  const PROF = 4.4;
+  const ALT = 2.9;
+  const claro = toon(P.wallCream);
+  const madeira = toon(P.wood);
+  const madeiraEscura = toon(P.woodDark);
+  const metal = toon(P.metalWhite);
+
+  // ------------------------------------------------------------- fundacao
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(LARG + 1.6, 0.18, PROF + 1.4),
+    toon(P.concrete),
+  );
+  base.position.set(0.4, 0.09, 0.3);
+  g.add(base);
+
+  // ---------------------------------------------------------------- caixa
+  //
+  // AS PAREDES LATERAIS SAO O ENVELOPE, e tudo que corre entre elas termina na
+  // face de DENTRO delas — nao na de fora.
+  //
+  // Antes o fundo, o peitoril e a travessa tinham `LARG` de largura cheia, igual
+  // as laterais: as quatro pecas terminavam no mesmo `x = ±3,7`, e face contra
+  // face no mesmo plano e exatamente o que serrilha. Era o defeito que aparecia
+  // na madeira escura do peitoril, que e a peca de baixo da fachada.
+  //
+  // `VAO` e a distancia entre as faces internas das laterais. Quem termina nele
+  // encosta na parede em vez de dividir plano com ela — o par vira `max × min`,
+  // que e empilhamento normal e nao briga.
+  const ESPESSURA = 0.26;
+  const VAO = LARG - ESPESSURA * 2;
+
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(VAO, ALT, ESPESSURA), claro);
+  fundo.position.set(0, 0.18 + ALT / 2, -PROF / 2);
+  g.add(fundo);
+  for (const lado of [-1, 1]) {
+    const parede = new THREE.Mesh(new THREE.BoxGeometry(ESPESSURA, ALT, PROF), claro);
+    parede.position.set(lado * (LARG / 2 - ESPESSURA / 2), 0.18 + ALT / 2, 0);
+    g.add(parede);
+  }
+
+  // ------------------------------------------------------------- vitrine
+  // peitoril baixo + tres panos de vidro. O vidro e translucido de verdade
+  // (`opacity`), entao da para ver as prateleiras la dentro.
+  const peitoril = new THREE.Mesh(new THREE.BoxGeometry(VAO, 0.6, 0.3), madeiraEscura);
+  peitoril.position.set(0, 0.48, PROF / 2 - 0.1);
+  g.add(peitoril);
+
+  const vidro = toon(P.glass, { opacity: 0.5, doubleSide: true });
+  const PANOS = 3;
+  const vaoTotal = LARG - 0.5;
+  const largPano = vaoTotal / PANOS - 0.16;
+  for (let i = 0; i < PANOS; i++) {
+    const x = -vaoTotal / 2 + vaoTotal / PANOS * (i + 0.5);
+    const pano = new THREE.Mesh(new THREE.BoxGeometry(largPano, 1.75, 0.08), vidro);
+    pano.position.set(x, 1.68, PROF / 2 - 0.1);
+    g.add(pano);
+  }
+  // montantes: e o caixilho que faz o vidro ler como vitrine e nao como parede
+  for (let i = 0; i <= PANOS; i++) {
+    const x = -vaoTotal / 2 + (vaoTotal / PANOS) * i;
+    const montante = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.05, 0.22), metal);
+    montante.position.set(x, 1.68, PROF / 2 - 0.1);
+    g.add(montante);
+  }
+  const travessa = new THREE.Mesh(new THREE.BoxGeometry(VAO, 0.18, 0.24), metal);
+  travessa.position.set(0, 2.68, PROF / 2 - 0.1);
+  g.add(travessa);
+
+  // prateleiras atras do vidro, com os pares expostos
+  for (const [altura, cores] of [
+    [1.15, [P.morango, P.fabricBlue, P.gold]],
+    [1.95, [P.maracuja, P.wallCream]],
+  ] as const) {
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(LARG - 1.2, 0.1, 0.6), madeira);
+    tabua.position.set(0, altura, PROF / 2 - 0.75);
+    g.add(tabua);
+    cores.forEach((c, i) => {
+      const par = new THREE.Group();
+      for (const lado of [-1, 1]) {
+        const pe = patins(c);
+        pe.position.x = lado * 0.09;
+        par.add(pe);
+      }
+      par.scale.setScalar(0.8);
+      par.position.set((i - (cores.length - 1) / 2) * 1.5, altura + 0.05, PROF / 2 - 0.75);
+      par.rotation.y = 0.3;
+      g.add(par);
+    });
+  }
+
+  // ------------------------------------------------------------- telhado
+  // Laje inclinada que AVANCA sobre a calcada: e a sombra dela no chao que da
+  // volume a loja de longe.
+  const laje = new THREE.Mesh(
+    new THREE.BoxGeometry(LARG + 1.1, 0.24, PROF + 1.3),
+    madeiraEscura,
+  );
+  laje.position.set(0, ALT + 0.42, 0.35);
+  laje.rotation.x = -0.07;
+  g.add(laje);
+  // friso claro por baixo: sem ele a laje vira um retangulo marrom chapado, que
+  // e o que mais pesa na silhueta vista de cima
+  const friso = new THREE.Mesh(
+    new THREE.BoxGeometry(LARG + 1.34, 0.08, PROF + 1.54),
+    metal,
+  );
+  friso.position.set(0, ALT + 0.29, 0.35);
+  friso.rotation.x = -0.07;
+  g.add(friso);
+
+  // A testeira sobe ACIMA da laje, na beirada da frente. Embaixo do beiral ela
+  // fica escondida: a camera olha de 34° e o telhado passa por cima do nome.
+  // Ela precisa passar A FRENTE da beirada da laje (que chega a PROF/2 + 1.0):
+  // 10 cm atras dela ja bastavam para o beiral cortar o nome numa camera que
+  // olha de cima.
+  const testeira = new THREE.Mesh(new THREE.BoxGeometry(LARG + 1.34, 0.74, 0.22), toon(cor));
+  testeira.position.set(0, ALT + 0.46, PROF / 2 + 1.18);
+  g.add(testeira);
+  const escrito = letreiro('Patins', 3.2, 0.46);
+  escrito.position.set(0, ALT + 0.46, PROF / 2 + 1.31);
+  g.add(escrito);
+
+  for (const lado of [-1, 1]) {
+    const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, ALT + 0.3, 8), metal);
+    coluna.position.set(lado * (LARG / 2 + 0.35), (ALT + 0.3) / 2, PROF / 2 + 0.62);
+    g.add(coluna);
+  }
+
+  // ------------------------------------------------ balcao lateral (+X)
+  // E aqui que os patins sao entregues: fica de lado, virado para +X, para nao
+  // disputar espaco com a vitrine.
+  const bx = LARG / 2 + 0.95;
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.16, 3.0), madeira);
+  tampo.position.set(bx, 1.06, 0.2);
+  g.add(tampo);
+  const bordo = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 3.0, 10), madeiraEscura);
+  bordo.position.set(bx + 0.55, 1.06, 0.2);
+  g.add(bordo);
+  const saia = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 2.8), claro);
+  saia.position.set(bx - 0.1, 0.6, 0.2);
+  g.add(saia);
+
+  const abrigo = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.16, 3.2), toon(cor));
+  abrigo.position.set(bx + 0.1, 2.35, 0.2);
+  g.add(abrigo);
+  for (const z of [-1.2, 1.5]) {
+    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.35, 8), metal);
+    pe.position.set(bx + 0.6, 1.17, 0.2 + z);
+    g.add(pe);
+  }
+
+  // dois pares no tampo, prontos para levar
+  [P.morango, P.gold].forEach((c, i) => {
+    const par = new THREE.Group();
+    for (const lado of [-1, 1]) {
+      const pe = patins(c);
+      pe.position.x = lado * 0.09;
+      par.add(pe);
+    }
+    par.position.set(bx, 1.14, -0.55 + i * 1.4);
+    par.rotation.y = Math.PI / 2 + 0.2;
+    g.add(par);
+  });
+
   return g;
 }
 
@@ -374,21 +1712,158 @@ export function poolWater(width: number, depth: number): THREE.Mesh {
 
 export function sunLounger(cor: number = P.fabricBlue): THREE.Group {
   const g = new THREE.Group();
+  g.userData.peca = 'espreguicadeira';
   const quadro = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.07, 1.7), toon(P.metalWhite));
   quadro.position.y = 0.36;
   g.add(quadro);
   const tecido = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 1.5), toon(cor));
   tecido.position.y = 0.42;
   g.add(tecido);
-  const encosto = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 0.7), toon(cor));
-  encosto.position.set(0, 0.6, -0.75);
-  encosto.rotation.x = -0.75;
-  g.add(encosto);
+  /**
+   * NO LUGAR DO ENCOSTO, UM TRAVESSEIRO.
+   *
+   * A espreguiçadeira tinha o encosto levantado em 43°, como as de verdade. Só
+   * que o rig deitado é COMPLETAMENTE RETO — ele não dobra na cintura —, então
+   * a tábua do encosto subia bem na altura do pescoço e atravessava a cabeça de
+   * quem estava deitado. Não é caso de girar mais ou menos: qualquer inclinação
+   * corta um corpo reto em algum lugar.
+   *
+   * O travesseiro deitado resolve os dois lados: continua lendo como cabeceira
+   * (é ele que diz de que lado fica a cabeça) e mora ABAIXO da linha das costas,
+   * onde nunca encosta em ninguém.
+   */
+  const travesseiro = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.09, 0.36), toon(cor));
+  travesseiro.position.set(0, 0.495, -0.62);
+  g.add(travesseiro);
   for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
     const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.36, 6), toon(P.metalWhite));
     pe.position.set(x * 0.3, 0.18, z * 0.72);
     g.add(pe);
   }
+  return g;
+}
+
+/**
+ * PERGOLADO do deque de descanso: seis pilares, duas vigas e um ripado por cima,
+ * com uma trepadeira crescendo nas ripas.
+ *
+ * A ALTURA DELE É UMA CONTA, NÃO UM CHUTE. A câmera olha de cima em 34°, então
+ * uma cobertura de altura `h` esconde tudo que estiver a `h / tan(34°) ≈ 1,5·h`
+ * de distância NA DIREÇÃO DA CÂMERA (`+Z`) — foi assim que o guarda-sol acabou
+ * aparecendo por cima de quem sentava na mesa de piquenique. Com o ripado a
+ * 2,91, ele engole qualquer coisa até 4,3 à frente. Por isso a cena planta o
+ * pergolado no FUNDO do deque, com as espreguiçadeiras à frente dele: para trás
+ * a cobertura não tapa nada, e é de lá que ela dá sombra sem sumir com ninguém.
+ *
+ * O ripado é vazado de propósito: ripa fina com vão de ripa entre elas deixa o
+ * céu passar e é o que faz ler "pergolado" em vez de "telheiro".
+ */
+export function pergolado(
+  largura = 8, profundidade = 3.2,
+  cor: number = P.dequeViga, corRipa: number = P.dequeRipa,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'pergolado';
+
+  const madeira = toon(cor);
+  const ripado = toon(corRipa);
+
+  const ALTURA = 2.5;
+  const PILAR = 0.16;
+  /**
+   * O pilar NASCE 5 CM ACIMA DO CHÃO, dentro da sapata. Nascendo em `y = 0`
+   * como a sapata, as duas bases caem no mesmo plano olhando para o mesmo lado
+   * — que é a definição de z-fighting, e o detector pegou os seis pares.
+   */
+  const PE = 0.05;
+  /** o topo do pilar, de onde a viga e o ripado sobem */
+  const TOPO = PE + ALTURA;
+  /** o pilar recua do canto para a viga sobrar um pouco em balanço */
+  const px = largura / 2 - 0.25;
+  const pz = profundidade / 2 - 0.25;
+
+  for (const x of [-px, 0, px]) {
+    for (const z of [-pz, pz]) {
+      const pilar = new THREE.Mesh(new THREE.BoxGeometry(PILAR, ALTURA, PILAR), madeira);
+      pilar.position.set(x, PE + ALTURA / 2, z);
+      g.add(pilar);
+      // sapata: o pé do pilar num deque de madeira sempre tem um calço, e ele
+      // também esconde a emenda do pilar com o piso
+      const sapata = new THREE.Mesh(new THREE.BoxGeometry(PILAR + 0.12, 0.1, PILAR + 0.12), ripado);
+      sapata.position.set(x, 0.05, z);
+      g.add(sapata);
+    }
+  }
+
+  // as duas vigas correm no X e nascem exatamente no topo dos pilares: face
+  // contra face OPOSTA é empilhamento normal, e não briga por pixel
+  for (const z of [-pz, pz]) {
+    const viga = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.24, 0.2), madeira);
+    viga.position.set(0, TOPO + 0.12, z);
+    g.add(viga);
+  }
+
+  // o ripado, atravessando as vigas. Ripa de 10 cm com vão de 30: metade céu
+  const passo = 0.4;
+  const quantas = Math.floor(largura / passo);
+  for (let i = 0; i <= quantas; i++) {
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, profundidade), ripado);
+    ripa.position.set(-largura / 2 + 0.2 + i * passo, TOPO + 0.3, 0);
+    g.add(ripa);
+  }
+
+  // A TREPADEIRA. Ela é o que tira a cara de estrutura crua: umas folhagens
+  // achatadas pousadas no ripado, sempre nos mesmos lugares (nada de sorteio —
+  // a peça tem que sair igual em toda partida).
+  const folha = toon(P.dequeTrepadeira);
+  for (const [t, dz, esc] of [
+    [-0.42, -0.2, 1.0], [-0.16, 0.28, 0.78], [0.12, -0.3, 0.9], [0.38, 0.16, 0.72],
+  ] as const) {
+    const moita = new THREE.Mesh(new THREE.SphereGeometry(0.42 * esc, 8, 6), folha);
+    moita.position.set(t * largura, TOPO + 0.42, dz * profundidade);
+    moita.scale.set(1.5, 0.5, 1.2);
+    g.add(moita);
+  }
+  // e uma gavinha descendo por um dos pilares, para a planta ter de onde vir
+  const gavinha = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.03, 1.5, 6), folha);
+  gavinha.position.set(-px - 0.09, TOPO - 0.6, pz);
+  g.add(gavinha);
+
+  return g;
+}
+
+/**
+ * MESINHA DE APOIO do deque: tampo redondo baixo, na altura da espreguiçadeira,
+ * com dois copos de suco em cima — um de cada, porque são sempre dois em cena.
+ */
+export function mesinhaDeDeque(cor: number = P.dequeViga): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesinha-de-deque';
+
+  const madeira = toon(cor);
+  const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 0.46, 10), madeira);
+  pe.position.y = 0.23;
+  g.add(pe);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.05, 12), madeira);
+  base.position.y = 0.025;
+  g.add(base);
+  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.07, 16), toon(P.dequeTabua));
+  tampo.position.y = 0.49;
+  g.add(tampo);
+  // o aro fica 1 cm para dentro do tampo: encostar as duas faces no mesmo plano
+  // é o que serrilha
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.37, 0.03, 6, 20), madeira);
+  aro.position.y = 0.47;
+  aro.rotation.x = Math.PI / 2;
+  g.add(aro);
+
+  const suco = copoDeSuco(P.morango);
+  suco.position.set(-0.14, 0.525, 0.05);
+  g.add(suco);
+  const outro = copoDeSuco(P.laranja);
+  outro.position.set(0.15, 0.525, -0.07);
+  g.add(outro);
+
   return g;
 }
 
@@ -498,6 +1973,49 @@ export function iceCream(sabor: number = P.flowerPink): THREE.Group {
 }
 
 /**
+ * Copo de suco com canudo. Irmao da `iceCream()`: nasce na origem, com o
+ * fundo do copo em y = 0, para a cena so precisar poe-lo na altura da mao.
+ *
+ * @param sabor cor do suco (P.morango, P.pessego...)
+ */
+export function copoDeSuco(sabor: number = P.laranja): THREE.Group {
+  const g = new THREE.Group();
+  // etiqueta para o teste conseguir achar os copos na cena
+  g.userData.suco = true;
+
+  // O CORPO DO COPO E O PROPRIO SUCO. A tentacao e fazer um copo claro com o
+  // suco por dentro — em toon shading isso da um cilindro branco e pronto: a
+  // parede e opaca, esconde o liquido e ninguem descobre o sabor. Quem tem que
+  // ser visto de longe e a cor da fruta, entao ela fica por fora.
+  const suco = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.062, 0.26, 12), toon(sabor));
+  suco.position.y = 0.13;
+  g.add(suco);
+
+  // aro claro na boca do copo: e o que faz ler "copo" e nao "cilindro colorido"
+  const aro = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.09, 0.035, 12), toon(0xfdfbf6));
+  aro.position.y = 0.25;
+  g.add(aro);
+
+  const fundo = new THREE.Mesh(new THREE.CylinderGeometry(0.066, 0.066, 0.025, 12), toon(0xfdfbf6));
+  fundo.position.y = 0.012;
+  g.add(fundo);
+
+  const canudo = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 6), toon(0xfdfbf6));
+  canudo.position.set(0.04, 0.31, 0.014);
+  canudo.rotation.z = -0.34;
+  g.add(canudo);
+
+  // rodela de fruta espetada na borda, um tom acima do suco
+  const rodela = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.014, 10), toon(P.gold));
+  rodela.position.set(-0.085, 0.26, 0);
+  rodela.rotation.x = Math.PI / 2;
+  rodela.rotation.z = 0.3;
+  g.add(rodela);
+
+  return g;
+}
+
+/**
  * Cesta de disc golf: poste, aro e as correntes penduradas.
  * É o marco visual que diz "aqui é lugar de jogar frisbee".
  */
@@ -530,6 +2048,92 @@ export function discGolfBasket(cor: number = P.metalGrey): THREE.Group {
   return g;
 }
 
+/**
+ * Aro de frisbee: um alvo para acertar de longe.
+ *
+ * O buraco fica no eixo Z do grupo, entao `w.place(..., giro)` aponta o aro
+ * para o lado de onde o disco vem. `userData.aro` volta a rosca de fora, que a
+ * cena gira quando alguem acerta.
+ */
+export function aroDeFrisbee(cor: number = P.frisbee, altura = 1.9, raio = 0.62): THREE.Group {
+  const g = new THREE.Group();
+  const lado = raio + 0.34;
+
+  // o poste sai na cor do alvo, não em branco: branco em cima do alambrado
+  // branco desaparece, e alvo que não se vê não é alvo
+  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, altura + raio, 10), toon(cor));
+  poste.position.set(-lado, (altura + raio) / 2, 0);
+  g.add(poste);
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 0.12, 12), toon(P.metalGrey));
+  base.position.set(-lado, 0.06, 0);
+  g.add(base);
+
+  // o bracinho que segura o aro pelo lado
+  const braco = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.07, 0.07), toon(cor));
+  braco.position.set(-lado + 0.18, altura, 0);
+  g.add(braco);
+
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.06, 8, 26), toon(cor));
+  aro.position.y = altura;
+  g.add(aro);
+
+  // fitinhas penduradas: dao o vento e deixam o alvo visivel de longe
+  for (const a of [-0.9, -0.3, 0.3, 0.9]) {
+    const fita = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.34, 0.02), flat(P.gold));
+    fita.position.set(Math.sin(a) * raio, altura - Math.cos(a) * raio - 0.17, 0);
+    g.add(fita);
+  }
+
+  g.traverse((n) => {
+    const m = n as THREE.Mesh;
+    if (m.isMesh) m.castShadow = true;
+  });
+  g.userData.aro = aro;
+  return g;
+}
+
+/**
+ * A marca de onde o disco vai cair.
+ *
+ * Fica na grama, entao quem usa so mexe em `position.x/z` e em `scale`.
+ *
+ * Duas escolhas que parecem detalhe e nao sao. Primeiro, o anel e um TORO de
+ * verdade e nao um disco chapado: decalque coplanar com a grama perde a briga
+ * de profundidade com as linhas pintadas da quadra e simplesmente some — foi o
+ * que aconteceu na primeira versao. Segundo, a haste em pe: em camera
+ * isometrica um desenho deitado no chao se esconde atras de qualquer coisa e
+ * some na distancia, e a haste e o que faz a marca ser achada de relance.
+ */
+export function marcaDeMira(cor: number = P.frisbee): THREE.Group {
+  const g = new THREE.Group();
+  const mat = flat(cor, 0.92);
+
+  const anel = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.075, 8, 28), mat);
+  anel.rotation.x = -Math.PI / 2;
+  anel.position.y = 0.08;
+  g.add(anel);
+
+  const miolo = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.07, 14), mat);
+  miolo.position.y = 0.08;
+  g.add(miolo);
+
+  // quatro tracinhos nas pontas: dao o giro e ajudam a ler a distancia
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.36), mat);
+    risco.rotation.y = a;
+    risco.position.set(Math.sin(a) * 1.3, 0.08, Math.cos(a) * 1.3);
+    g.add(risco);
+  }
+
+  const haste = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.5, 0.07), mat);
+  haste.position.y = 0.75;
+  g.add(haste);
+
+  return g;
+}
+
 /** Placar de madeira da quadra. */
 export function scoreboard(): THREE.Group {
   const g = new THREE.Group();
@@ -554,17 +2158,44 @@ export function scoreboard(): THREE.Group {
 }
 
 /** Arquibancada de três degraus. */
+/**
+ * Arquibancada de tres degraus.
+ *
+ * A versao antiga encostava tudo em tudo e serrilhava a lateral inteira: eram
+ * TRES pares de faces coplanares brigando pelo mesmo pixel.
+ *
+ *   1. a face de tras de cada degrau caia exatamente na face de tras do proprio
+ *      apoio (as duas em `z = -0,5i - 0,25`);
+ *   2. a face da frente do degrau de cima caia na face de tras do de baixo,
+ *      porque a profundidade (0,5) era igual ao passo entre eles (0,5);
+ *   3. degrau e apoio tinham a MESMA largura, entao as duas faces laterais
+ *      coincidiam de ponta a ponta.
+ *
+ * A correcao e a mesma nos tres: sobrepor de leve em vez de encostar. O degrau
+ * ficou mais fundo que o passo, e o apoio entrou para dentro nos dois eixos —
+ * ele e o suporte, entao viver na sombra do degrau e onde ele deveria estar.
+ */
 export function bleachers(largura = 4): THREE.Group {
   const g = new THREE.Group();
+  g.userData.peca = 'arquibancada';
+  const PASSO = 0.5;
   for (let i = 0; i < 3; i++) {
+    const alto = 0.25 + i * 0.34;
+    // 0,54 de profundidade para 0,5 de passo: 4 cm de sobreposicao entre um
+    // degrau e o seguinte, e nenhuma face compartilhada
     const degrau = new THREE.Mesh(
-      new THREE.BoxGeometry(largura, 0.16, 0.5),
+      new THREE.BoxGeometry(largura, 0.16, PASSO + 0.04),
       toon(i % 2 === 0 ? P.metalWhite : P.metalGrey),
     );
-    degrau.position.set(0, 0.25 + i * 0.34, -i * 0.5);
+    degrau.position.set(0, alto, -i * PASSO);
     g.add(degrau);
-    const apoio = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.25 + i * 0.34, 0.1), toon(P.metalGrey));
-    apoio.position.set(0, (0.25 + i * 0.34) / 2, -i * 0.5 - 0.2);
+
+    // mais estreito e recuado: fica inteiro dentro da projecao do degrau
+    const apoio = new THREE.Mesh(
+      new THREE.BoxGeometry(largura - 0.08, alto, 0.1),
+      toon(P.metalGrey),
+    );
+    apoio.position.set(0, alto / 2, -i * PASSO - 0.19);
     g.add(apoio);
   }
   return g;
@@ -655,10 +2286,39 @@ export function windsock(): THREE.Group {
 }
 
 /**
- * Placa com texto de verdade. A textura é desenhada num canvas em tempo de
- * execução — continua sendo tudo procedural, nenhum arquivo de imagem entra
- * no repositório.
+ * Palavra escrita, como um plano solto olhando para +Z. A textura é desenhada
+ * num canvas em tempo de execução — continua sendo tudo procedural, nenhum
+ * arquivo de imagem entra no repositório.
+ *
+ * Quem usa: `textSign()` (a placa do ponto de ônibus) e o letreiro do quiosque.
  */
+export function letreiro(
+  texto: string,
+  largura: number,
+  altura: number,
+  corTexto = '#ffffff',
+): THREE.Mesh {
+  const canvas = document.createElement('canvas');
+  canvas.width = 384;
+  canvas.height = Math.max(64, Math.round((384 * altura) / largura));
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = corTexto;
+    ctx.font = `bold ${Math.round(canvas.height * 0.62)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(texto, canvas.width / 2, canvas.height / 2 + 4);
+  }
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(largura, altura),
+    new THREE.MeshBasicMaterial({ map: textura, transparent: true }),
+  );
+}
+
+/** Placa de rua com texto de verdade, num poste. */
 export function textSign(texto: string, corPlaca: number = P.fabricBlue, corTexto = '#ffffff'): THREE.Group {
   const g = new THREE.Group();
   const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.4, 8), toon(P.metalGrey));
@@ -675,110 +2335,1827 @@ export function textSign(texto: string, corPlaca: number = P.fabricBlue, corText
   moldura.position.set(0, 2.45, -0.03);
   g.add(moldura);
 
-  const canvas = document.createElement('canvas');
-  canvas.width = 384;
-  canvas.height = 160;
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = corTexto;
-    ctx.font = 'bold 96px ui-rounded, "Nunito", system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(texto, canvas.width / 2, canvas.height / 2 + 4);
-  }
-  const textura = new THREE.CanvasTexture(canvas);
-  textura.colorSpace = THREE.SRGBColorSpace;
-  const letreiro = new THREE.Mesh(
-    new THREE.PlaneGeometry(largura * 0.86, altura * 0.68),
-    new THREE.MeshBasicMaterial({ map: textura, transparent: true }),
-  );
-  letreiro.position.set(0, 2.45, 0.06);
-  g.add(letreiro);
+  const texto3d = letreiro(texto, largura * 0.86, altura * 0.68, corTexto);
+  texto3d.position.set(0, 2.45, 0.06);
+  g.add(texto3d);
   return g;
 }
 
-/** Ônibus urbano parado no ponto. */
-export function bus(cor: number = 0x3f7fd6): THREE.Group {
+/**
+ * Ônibus urbano parado no ponto.
+ *
+ * Eixo do comprimento é o X, o nariz aponta para `+X` e as PORTAS ficam no
+ * `+Z` — quem gira a peça na cena precisa saber disso para a porta cair
+ * virada para a calçada (ver `bus()` no Villa-Lobos e no clube).
+ *
+ * O corpo é uma caixa só, e todo o resto é aplique: o que faz ler como ônibus
+ * de verdade é o teto abaulado, a fita de janela cortada por colunas, a saia
+ * do chassi, o para-choque saliente e o letreiro com o destino escrito. O
+ * `destino` vai no letreiro da frente e no da lateral, como no ônibus de
+ * cidade — é ele que diz para onde a dupla está indo.
+ */
+export function bus(cor: number = P.onibusAzul, destino = 'Circular'): THREE.Group {
   const g = new THREE.Group();
-  const comp = 8.4;
-  const alt = 2.6;
-  const larg = 2.5;
+  g.userData.peca = 'onibus';
+  const comp = 9;
+  const larg = 2.55;
+  const meio = larg / 2;
+  const pintura = toon(cor);
+  const chassi = toon(P.onibusChassi);
+  const vidro = toon(P.glass, { glow: 0.12 });
 
-  const corpo = new THREE.Mesh(new THREE.BoxGeometry(comp, alt, larg), toon(cor));
-  corpo.position.y = 1.55;
+  // ------------------------------------------------------------- carroceria
+  // A saia nasce mais estreita que o corpo: é o degrau de sombra que separa a
+  // carroceria do chão e faz a roda parecer entrar por dentro dela.
+  const saia = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.5, 0.5, larg - 0.14), chassi);
+  saia.position.y = 0.85;
+  g.add(saia);
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(comp, 1.9, larg), pintura);
+  corpo.position.y = 1.85;
   g.add(corpo);
 
-  const teto = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.2, 0.22, larg - 0.15), toon(P.metalWhite));
-  teto.position.y = 2.9;
+  /**
+   * Teto abaulado: um cilindro deitado ao longo do X e ACHATADO na vertical.
+   *
+   * A escala entra antes da rotação na matriz, então quem esmaga a altura é o
+   * `scale.x` — depois do `rotation.z = PI/2` o X local é que aponta para
+   * cima. Trocar por `scale.y` encolheria o comprimento do ônibus.
+   */
+  const teto = new THREE.Mesh(new THREE.CylinderGeometry(meio, meio, comp - 0.06, 16), pintura);
+  teto.rotation.z = Math.PI / 2;
+  teto.scale.x = 0.3;
+  teto.position.y = 2.8;
   g.add(teto);
 
-  const faixa = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.04, 0.3, larg + 0.04), toon(P.metalWhite));
-  faixa.position.y = 0.6;
+  // ------------------------------------------------------- fita de janelas
+  // Uma faixa de vidro contínua e, por cima dela, as colunas na cor da
+  // pintura: sai mais barato que oito janelas e ainda deixa as duas laterais
+  // sempre iguais.
+  const fita = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.5, 1, larg + 0.04), vidro);
+  fita.position.y = 2.15;
+  g.add(fita);
+  for (let x = -comp / 2 + 0.55; x <= comp / 2 - 0.5; x += 1.55) {
+    const coluna = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.08, larg + 0.07), pintura);
+    coluna.position.set(x, 2.15, 0);
+    g.add(coluna);
+  }
+
+  // frisos: o largo branco na cintura e o fino escuro logo abaixo dele
+  const friso = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.02, 0.18, larg + 0.06), toon(P.onibusFaixa));
+  friso.position.y = 1.36;
+  g.add(friso);
+  const frisoFino = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.02, 0.07, larg + 0.09), toon(P.onibusFriso));
+  frisoFino.position.y = 1.18;
+  g.add(frisoFino);
+
+  // ------------------------------------------------------------ as portas
+  // Duas, como em ônibus urbano: a da frente (por onde se embarca) e a do
+  // meio. A da frente fica em `x = comp/2 - 1.9`, e é dela que as cenas tiram
+  // o ponto de embarque — mexer aqui move onde a dupla nasce ao desembarcar.
+  for (const [x, larguraPorta] of [[comp / 2 - 1.9, 1.2], [-comp / 2 + 2.4, 1.4]] as const) {
+    const batente = new THREE.Mesh(new THREE.BoxGeometry(larguraPorta + 0.12, 2.05, 0.07), toon(P.onibusPorta));
+    batente.position.set(x, 1.5, meio + 0.02);
+    g.add(batente);
+    // as duas folhas de vidro, com o vão da junta no meio
+    for (const lado of [-1, 1] as const) {
+      const folha = new THREE.Mesh(new THREE.BoxGeometry(larguraPorta / 2 - 0.12, 1.55, 0.05), vidro);
+      folha.position.set(x + lado * (larguraPorta / 4 + 0.02), 1.72, meio + 0.06);
+      g.add(folha);
+    }
+    // o degrau que aparece por baixo da porta aberta
+    const degrau = new THREE.Mesh(new THREE.BoxGeometry(larguraPorta, 0.12, 0.34), chassi);
+    degrau.position.set(x, 0.5, meio + 0.14);
+    g.add(degrau);
+  }
+
+  // --------------------------------------------------------------- a frente
+  const paraBrisa = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.3, larg - 0.3), vidro);
+  paraBrisa.position.set(comp / 2 + 0.04, 2.14, 0);
+  paraBrisa.rotation.z = 0.12; // o topo cai para trás, como para-brisa de ônibus
+  g.add(paraBrisa);
+
+  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.95, larg - 0.06), pintura);
+  focinho.position.set(comp / 2 + 0.06, 1.35, 0);
+  g.add(focinho);
+
+  const grade = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, larg - 1), toon(P.onibusPainel));
+  grade.position.set(comp / 2 + 0.21, 1.3, 0);
+  g.add(grade);
+
+  const paraChoque = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.36, larg + 0.06), chassi);
+  paraChoque.position.set(comp / 2 + 0.12, 0.66, 0);
+  g.add(paraChoque);
+
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.52), toon(P.metalWhite));
+  placa.position.set(comp / 2 + 0.31, 0.7, 0);
+  g.add(placa);
+
+  for (const lado of [-1, 1] as const) {
+    const farol = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.14, 12), toon(P.onibusFarol, { glow: 0.5 }));
+    farol.rotation.z = Math.PI / 2;
+    farol.position.set(comp / 2 + 0.2, 1, lado * (meio - 0.45));
+    g.add(farol);
+    const pisca = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.24), toon(P.onibusPisca, { glow: 0.3 }));
+    pisca.position.set(comp / 2 + 0.22, 1, lado * (meio - 0.1));
+    g.add(pisca);
+    // espelho retrovisor: um braço de tubo e a lâmina virada para trás
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.42, 6), chassi);
+    braco.rotation.x = Math.PI / 2;
+    braco.position.set(comp / 2 - 0.08, 2.55, lado * (meio + 0.2));
+    g.add(braco);
+    const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.44, 0.2), toon(P.onibusPainel));
+    lamina.position.set(comp / 2 - 0.08, 2.4, lado * (meio + 0.42));
+    g.add(lamina);
+    // limpador: um risco escuro atravessado no para-brisa
+    const limpador = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.95, 6), toon(P.onibusPainel));
+    limpador.rotation.z = Math.PI / 2 - 0.5;
+    limpador.rotation.y = Math.PI / 2;
+    limpador.position.set(comp / 2 + 0.13, 1.85, lado * 0.45);
+    g.add(limpador);
+  }
+
+  // ------------------------------------------------- letreiros de destino
+  // O da frente e o da lateral, os dois com o texto escrito num canvas.
+  const painelFrente = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.42, larg - 0.6), toon(P.onibusPainel));
+  painelFrente.position.set(comp / 2 + 0.06, 2.72, 0);
+  g.add(painelFrente);
+  const textoFrente = letreiro(destino, larg - 0.8, 0.3, '#ffd24a');
+  textoFrente.rotation.y = Math.PI / 2;
+  textoFrente.position.set(comp / 2 + 0.13, 2.72, 0);
+  g.add(textoFrente);
+
+  const painelLado = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.36, 0.06), toon(P.onibusPainel));
+  painelLado.position.set(comp / 2 - 1.5, 2.72, meio + 0.02);
+  g.add(painelLado);
+  const textoLado = letreiro(destino, 1.5, 0.26, '#ffd24a');
+  textoLado.position.set(comp / 2 - 1.5, 2.72, meio + 0.07);
+  g.add(textoLado);
+
+  // ------------------------------------------------------------- a traseira
+  const vidroTras = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.95, larg - 0.5), vidro);
+  vidroTras.position.set(-comp / 2 - 0.03, 2.2, 0);
+  g.add(vidroTras);
+
+  // A tampa do motor é da COR DA PINTURA, com três frestas escuras. Escura
+  // inteira ela virava um buraco preto no meio da traseira.
+  //
+  // A 0,09 de espessura e recuada: a 0,08 a face de trás dela caía no mesmo
+  // plano da do vidro traseiro, e as duas serrilhavam uma na outra.
+  const tampaMotor = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.55, larg - 1.1), pintura);
+  tampaMotor.position.set(-comp / 2 - 0.06, 1.55, 0);
+  g.add(tampaMotor);
+  for (let i = 0; i < 3; i++) {
+    const fresta = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, larg - 1.3), toon(P.onibusPainel));
+    fresta.position.set(-comp / 2 - 0.12, 1.7 - i * 0.15, 0);
+    g.add(fresta);
+  }
+
+  const paraChoqueTras = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.34, larg + 0.04), chassi);
+  paraChoqueTras.position.set(-comp / 2 - 0.1, 0.66, 0);
+  g.add(paraChoqueTras);
+
+  for (const lado of [-1, 1] as const) {
+    const lanterna = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.22), toon(P.onibusLanterna, { glow: 0.3 }));
+    lanterna.position.set(-comp / 2 - 0.06, 1.08, lado * (meio - 0.32));
+    g.add(lanterna);
+  }
+
+  const escapamento = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8), toon(P.metalGrey));
+  escapamento.rotation.z = Math.PI / 2;
+  escapamento.position.set(-comp / 2 - 0.2, 0.5, -(meio - 0.5));
+  g.add(escapamento);
+
+  // ---------------------------------------------------------------- o teto
+  const arCondicionado = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.3, 1.5), toon(P.metalWhite));
+  arCondicionado.position.set(0.9, 3.02, 0);
+  g.add(arCondicionado);
+  const escotilha = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.12, 0.75), toon(P.onibusFaixa));
+  escotilha.position.set(-2.3, 3.1, 0);
+  g.add(escotilha);
+
+  // ---------------------------------------------------------------- rodas
+  // Eixo da frente com uma roda de cada lado; o de trás é de rodagem dupla,
+  // que é o que faz a traseira parecer pesada como a de ônibus.
+  const eixos: [number, number][] = [];
+  for (const lado of [-1, 1] as const) {
+    eixos.push([comp / 2 - 1.35, lado * (meio - 0.12)]);
+    eixos.push([-comp / 2 + 2, lado * (meio - 0.12)]);
+    eixos.push([-comp / 2 + 2, lado * (meio - 0.46)]);
+  }
+  for (const [x, z] of eixos) {
+    const roda = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.56, 0.3, 14), toon(P.onibusPneu));
+    roda.rotation.x = Math.PI / 2;
+    roda.position.set(x, 0.56, z);
+    g.add(roda);
+    const calota = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.34, 12), toon(P.onibusCalota));
+    calota.rotation.x = Math.PI / 2;
+    calota.position.set(x, 0.56, z);
+    g.add(calota);
+  }
+  // paralama: meia rosca por cima de cada roda externa, na cor da pintura
+  for (const lado of [-1, 1] as const) {
+    for (const x of [comp / 2 - 1.35, -comp / 2 + 2]) {
+      const paralama = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.07, 6, 12, Math.PI), pintura);
+      paralama.position.set(x, 0.56, lado * (meio + 0.02));
+      g.add(paralama);
+    }
+  }
+  return g;
+}
+
+/**
+ * Ponto de ônibus: abrigo de tubo com teto, vidro de fundo, banco de ripa,
+ * quadro de horário e o totem com a palavra ÔNIBUS.
+ *
+ * A boca do abrigo olha para o `+Z` local: quem gira a peça na cena tem que
+ * deixar esse lado virado para a rua, senão a dupla espera de costas para o
+ * ônibus.
+ */
+export function busStop(cor: number = P.abrigoEstrutura): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'ponto-de-onibus';
+  const tubo = toon(cor);
+  const comp = 4.6;
+
+  // a plataforma de concreto por baixo — é o que "assenta" o abrigo na calçada
+  const piso = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.2, 0.08, 2.3), toon(P.concrete));
+  piso.position.set(0, 0.04, -0.2);
+  g.add(piso);
+
+  // quatro montantes: os de trás seguram o vidro, os da frente só o teto
+  for (const x of [-comp / 2 + 0.25, comp / 2 - 0.25]) {
+    for (const z of [-1, 0.6]) {
+      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.55, 10), tubo);
+      poste.position.set(x, 1.27, z);
+      g.add(poste);
+    }
+  }
+  // as travessas que amarram os montantes em cima
+  for (const z of [-1, 0.6]) {
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.3, 0.1, 0.08), tubo);
+    travessa.position.set(0, 2.5, z);
+    g.add(travessa);
+  }
+
+  // teto: caído para a frente, com a testeira pintada na cor do clube
+  const telhado = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.12, 2.4), toon(P.abrigoTeto));
+  telhado.position.set(0, 2.62, -0.15);
+  telhado.rotation.x = -0.07;
+  g.add(telhado);
+  const testeira = new THREE.Mesh(new THREE.BoxGeometry(comp + 0.06, 0.2, 0.08), toon(P.abrigoTeto));
+  testeira.position.set(0, 2.5, 1.02);
+  g.add(testeira);
+  // a luminária embutida, que é o que deixa o ponto aceso à noite
+  const luz = new THREE.Mesh(new THREE.BoxGeometry(comp - 1.2, 0.06, 0.24), toon(P.metalWhite, { glow: 0.45 }));
+  luz.position.set(0, 2.44, -0.15);
+  g.add(luz);
+
+  // fechamento: vidro no fundo e numa lateral, cartaz na outra
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(comp - 0.35, 1.85, 0.06), toon(P.abrigoVidro, { glow: 0.08, opacity: 0.85 }));
+  fundo.position.set(0, 1.45, -1.06);
+  g.add(fundo);
+  const lateral = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.85, 1.5), toon(P.abrigoVidro, { glow: 0.08, opacity: 0.85 }));
+  lateral.position.set(comp / 2 - 0.26, 1.45, -0.2);
+  g.add(lateral);
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.9, 1.6), tubo);
+  moldura.position.set(-comp / 2 + 0.26, 1.45, -0.2);
+  g.add(moldura);
+  const cartaz = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.5, 1.2), toon(P.abrigoCartaz));
+  cartaz.position.set(-comp / 2 + 0.2, 1.45, -0.2);
+  g.add(cartaz);
+
+  // quadro de horário colado no vidro do fundo, com as linhas do papel
+  const quadro = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.05), toon(P.metalWhite));
+  quadro.position.set(comp / 2 - 1.1, 1.6, -0.99);
+  g.add(quadro);
+  for (let i = 0; i < 4; i++) {
+    const linha = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.02), toon(P.onibusPainel));
+    linha.position.set(comp / 2 - 1.1, 1.86 - i * 0.16, -0.955);
+    g.add(linha);
+  }
+
+  // banco: quatro ripas com folga, encosto de duas e dois pés de tubo
+  for (let i = 0; i < 4; i++) {
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(comp - 1.2, 0.08, 0.15), toon(P.abrigoBanco));
+    ripa.position.set(0, 0.52, -1 + 0.22 + i * 0.22);
+    g.add(ripa);
+  }
+  for (const y of [0.85, 1.03]) {
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(comp - 1.2, 0.13, 0.06), toon(P.abrigoBanco));
+    ripa.position.set(0, y, -0.94);
+    g.add(ripa);
+  }
+  for (const x of [-comp / 2 + 0.9, comp / 2 - 0.9]) {
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.5, 0.5), tubo);
+    pe.position.set(x, 0.26, -0.62);
+    g.add(pe);
+  }
+  // uma lixeirinha no canto, que todo ponto tem
+  const lixeira = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.16, 0.6, 10), tubo);
+  lixeira.position.set(comp / 2 - 0.55, 0.34, 0.35);
+  g.add(lixeira);
+  const boca = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.06, 10), toon(P.onibusPainel));
+  boca.position.set(comp / 2 - 0.55, 0.66, 0.35);
+  g.add(boca);
+
+  // O totem da parada, na ponta. Ele nasce FORA do abrigo (`-comp/2 - 0.75`):
+  // colado, a bandeira entrava no painel do cartaz.
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.9, 8), tubo);
+  mastro.position.set(-comp / 2 - 0.75, 1.45, 0.5);
+  g.add(mastro);
+  const bandeira = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.46, 0.07), toon(P.fabricBlue));
+  bandeira.position.set(-comp / 2 - 0.75, 2.6, 0.5);
+  g.add(bandeira);
+  for (const [z, giro] of [[0.545, 0], [0.455, Math.PI]] as const) {
+    const texto = letreiro('ÔNIBUS', 0.76, 0.28);
+    texto.rotation.y = giro;
+    texto.position.set(-comp / 2 - 0.75, 2.6, z);
+    g.add(texto);
+  }
+  return g;
+}
+
+/**
+ * Meio-fio: a guia de concreto que separa a calçada da rua.
+ *
+ * É só uma barra baixa, mas sem ela o asfalto e a calçada ficam duas manchas
+ * chapadas no mesmo plano — é este degrau que faz a rua ter beira. Nasce
+ * deitada ao longo do Z, com a face de cima em `y = 0.14`.
+ */
+export function meioFio(comprimento: number, cor: number = P.concrete): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'meio-fio';
+  const guia = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, comprimento), toon(cor));
+  guia.position.y = 0.07;
+  g.add(guia);
+  // a pintura da guia, um fio mais claro na quina de cima. Ela passa POR CIMA
+  // da guia (topo em 0,15 contra 0,14): no mesmo topo as duas serrilhavam.
+  const quina = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.05, comprimento - 0.1), toon(P.metalWhite));
+  quina.position.y = 0.125;
+  g.add(quina);
+  return g;
+}
+
+/* ------------------------------------------------------------------------ *
+ *                       O RESTAURANTE DO CLUBE
+ * ------------------------------------------------------------------------ */
+
+/**
+ * Cadeira de área externa: assento, encosto de ripas e quatro pés tortos.
+ *
+ * Fica em `props.ts` e não em `furniture.ts` de propósito — a do kit de
+ * interior (`chair()`) é uma cadeira de sala, com pé grosso de madeira. Esta é
+ * de pátio: mais leve, de tubo, e a mesma cor do toldo.
+ */
+export function cadeiraDePatio(cor: number = P.restauranteToldo): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cadeira-de-patio';
+  const tubo = toon(P.metalWhite);
+
+  const assento = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.07, 0.44), toon(cor));
+  assento.position.y = 0.45;
+  g.add(assento);
+
+  // Encosto: três ripas com folga entre elas. A folga é o que faz a cadeira
+  // parecer de pátio em vez de um bloco — e nenhuma ripa encosta na outra.
+  for (let i = 0; i < 3; i++) {
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.08, 0.05), toon(cor));
+    ripa.position.set(0, 0.62 + i * 0.13, -0.2);
+    g.add(ripa);
+  }
+  for (const lado of [-1, 1] as const) {
+    const montante = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.55, 6), tubo);
+    montante.position.set(lado * 0.21, 0.7, -0.21);
+    g.add(montante);
+  }
+
+  // pés: os de trás sobem até o encosto, os da frente param no assento
+  for (const [x, z] of [[-0.19, 0.18], [0.19, 0.18], [-0.19, -0.18], [0.19, -0.18]] as const) {
+    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.45, 6), tubo);
+    pe.position.set(x, 0.22, z);
+    // abre um fio para fora: cadeira de perna reta parece banquinho
+    pe.rotation.z = -Math.sign(x) * 0.05;
+    pe.rotation.x = Math.sign(z) * 0.05;
+    g.add(pe);
+  }
+  return g;
+}
+
+/**
+ * Mesa redonda de área externa com quatro cadeiras e um vasinho no meio.
+ *
+ * As cadeiras nascem giradas em `lado * PI/2` em volta do tampo, e a rotação
+ * entra ANTES da posição no código só por leitura — quem manda é a matriz, e
+ * `position` e `rotation` são independentes num `Object3D`.
+ */
+export function mesaDePatio(cor: number = P.restauranteToldo): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesa-de-patio';
+
+  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.07, 20), toon(P.metalWhite));
+  tampo.position.y = 0.74;
+  g.add(tampo);
+  // aro da borda, um fio abaixo do tampo para não brigar de face com ele
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.035, 6, 20), toon(cor));
+  aro.rotation.x = Math.PI / 2;
+  aro.position.y = 0.72;
+  g.add(aro);
+
+  const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.72, 10), toon(P.metalGrey));
+  coluna.position.y = 0.36;
+  g.add(coluna);
+  const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 0.06, 14), toon(P.metalGrey));
+  pe.position.y = 0.03;
+  g.add(pe);
+
+  // O CENTRO DA MESA FICA VAZIO. Já teve um vasinho de flor aqui, e ele
+  // disputava espaço com o prato que o garçom serve — a comida chega
+  // exatamente neste ponto. Mesa de restaurante é para pôr comida em cima.
+
+  for (let i = 0; i < 4; i++) {
+    const cadeira = cadeiraDePatio(cor);
+    const a = (i * Math.PI) / 2;
+    cadeira.position.set(Math.sin(a) * 1.02, 0, Math.cos(a) * 1.02);
+    // a cadeira olha para o centro da mesa: `a + PI`
+    cadeira.rotation.y = a + Math.PI;
+    g.add(cadeira);
+  }
+  return g;
+}
+
+/**
+ * O restaurante do clube. Prédio grande, com fachada envidraçada, toldo
+ * listrado, letreiro de verdade e telhado de duas águas.
+ *
+ * TUDO OLHA PARA `+Z`, que é de onde a câmera vem. É a regra de peça com
+ * frente: virada para o outro lado ela mostraria só a empena lisa.
+ *
+ * O TOLDO É A ARMADILHA DESTA PEÇA. A câmera olha de cima em 34°, então um
+ * toldo fundo demais passa na frente da porta e engole a entrada. O raio que
+ * sai da ponta do toldo desce `tan(34°) ≈ 0,67` por unidade de profundidade:
+ * com o toldo a `3,5` e avançando `0,85`, na linha da fachada ele já está em
+ * `3,5 - 0,57 = 2,93` — bem acima do topo da porta, em `2,3`. É a mesma conta
+ * que o `kiosk()` teve que aprender na marca.
+ *
+ * @param largura vão da fachada em X
+ * @param profundidade quanto o prédio avança em Z
+ */
+export function restaurante(largura = 13, profundidade = 7): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'restaurante';
+
+  const hx = largura / 2;
+  const hz = profundidade / 2;
+  const altura = 4.2;
+
+  const parede = toon(P.restauranteParede);
+  const esquadria = toon(P.restauranteEsquadria);
+  const vidro = toon(P.glass, { glow: 0.14 });
+
+  // ------------------------------------------------------------ embasamento
+  // Um soco de concreto meio palmo mais largo que o prédio. Ele resolve duas
+  // coisas: dá o degrau que todo salão de festas tem, e afasta a parede do
+  // chão — parede terminando exatamente no piso serrilha na beirada.
+  const soco = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.5, 0.34, profundidade + 0.5),
+    toon(P.concrete),
+  );
+  soco.position.y = 0.17;
+  g.add(soco);
+
+  // --------------------------------------------------------------- corpo
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, profundidade), parede);
+  corpo.position.y = 0.34 + altura / 2;
+  g.add(corpo);
+
+  // faixa horizontal de um tom abaixo, na altura do peitoril: sem ela a
+  // fachada vira um paredão chapado de 13 metros
+  const faixa = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.06, 0.28, profundidade + 0.06),
+    toon(P.restauranteFaixa),
+  );
+  faixa.position.y = 1.16;
   g.add(faixa);
 
-  // janelas dos dois lados
-  for (const z of [larg / 2 + 0.02, -larg / 2 - 0.02]) {
-    for (let i = 0; i < 4; i++) {
-      const janela = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.05), toon(P.glass, { glow: 0.12 }));
-      janela.position.set(-comp / 2 + 1.4 + i * 1.85, 2.1, z);
-      g.add(janela);
+  // ------------------------------------------------------------- fachada
+  const zF = hz + 0.03;
+  const PORTA = 2.4;
+
+  /** Um pano de vidro com caixilho de madeira, colado na fachada. */
+  const janelao = (x: number, larg: number, alt: number, y: number, z = zF): void => {
+    const moldura = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, 0.1), esquadria);
+    moldura.position.set(x, y, z);
+    g.add(moldura);
+    // o vidro avança 3 cm da moldura: face contra face na mesma altura pisca
+    const pano = new THREE.Mesh(new THREE.BoxGeometry(larg - 0.22, alt - 0.22, 0.08), vidro);
+    pano.position.set(x, y, z + 0.03);
+    g.add(pano);
+    // Montante central, dividindo o pano em dois. Ele é 6 cm MAIS ALTO que o
+    // pano de propósito: com a mesma altura os dois dividiriam as faces de cima
+    // e de baixo, e face contra face na mesma altura pisca.
+    const meio = new THREE.Mesh(new THREE.BoxGeometry(0.09, alt - 0.16, 0.12), esquadria);
+    meio.position.set(x, y, z + 0.04);
+    g.add(meio);
+  };
+
+  // dois janelões de cada lado da porta
+  for (const lado of [-1, 1] as const) {
+    janelao(lado * (PORTA / 2 + 1.55), 2.5, 2.0, 2.1);
+    janelao(lado * (PORTA / 2 + 4.35), 2.5, 2.0, 2.1);
+
+    // FLOREIRA sob cada janelão — o detalhe que faz o prédio parecer cuidado
+    for (const dx of [PORTA / 2 + 1.55, PORTA / 2 + 4.35]) {
+      const caixa = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.3, 0.34), toon(P.plantPot));
+      caixa.position.set(lado * dx, 1.02, zF + 0.16);
+      g.add(caixa);
+      for (let i = 0; i < 5; i++) {
+        const moita = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 6), toon(P.bush));
+        moita.position.set(lado * dx - 0.85 + i * 0.42, 1.24, zF + 0.16);
+        g.add(moita);
+        const flor = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5),
+          toon(i % 2 ? P.flowerYellow : P.flowerPink));
+        flor.position.set(lado * dx - 0.85 + i * 0.42, 1.38, zF + 0.2);
+        g.add(flor);
+      }
     }
   }
 
-  // para-brisa e traseira
-  for (const [x, rot] of [[comp / 2 + 0.02, 0], [-comp / 2 - 0.02, 0]] as const) {
-    const vidro = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.1, larg - 0.5), toon(P.glass, { glow: 0.12 }));
-    vidro.position.set(x, 2.1, 0);
-    vidro.rotation.y = rot;
-    g.add(vidro);
+  // ---------------------------------------------------------------- porta
+  // Porta dupla de vidro, recuada 6 cm para dentro do batente.
+  // O batente e as folhas MERGULHAM no soco, e em alturas diferentes (0,28 e
+  // 0,32). Se os três terminassem no mesmo 0,34 em que a parede começa, as três
+  // faces de baixo cairiam no mesmo plano.
+  const batente = new THREE.Mesh(new THREE.BoxGeometry(PORTA + 0.34, 2.5, 0.14), esquadria);
+  batente.position.set(0, 1.53, zF);
+  g.add(batente);
+  for (const lado of [-1, 1] as const) {
+    const folha = new THREE.Mesh(new THREE.BoxGeometry(PORTA / 2 - 0.07, 2.3, 0.07), vidro);
+    folha.position.set(lado * (PORTA / 4 + 0.02), 1.47, zF + 0.02);
+    g.add(folha);
+    const puxador = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 6), toon(P.metalGrey));
+    puxador.position.set(lado * 0.16, 1.35, zF + 0.09);
+    g.add(puxador);
+  }
+  // soleira: dois degraus que descem do soco até o piso
+  for (const [i, larg] of [[0, PORTA + 1.4], [1, PORTA + 2.0]] as const) {
+    const degrau = new THREE.Mesh(
+      new THREE.BoxGeometry(larg, 0.17 + i * 0.02, 0.42),
+      toon(P.concrete),
+    );
+    degrau.position.set(0, 0.25 - i * 0.17, hz + 0.28 + i * 0.4);
+    g.add(degrau);
   }
 
-  // porta sanfonada
-  const porta = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.9, 1.0), toon(0x2b3440));
-  porta.position.set(comp / 2 - 1.6, 1.2, larg / 2 + 0.02);
-  g.add(porta);
+  // --------------------------------------------------------------- toldo
+  // Listrado, com babado recortado na ponta. Ver a conta no cabeçalho: a 3,5
+  // de altura e avançando 0,85, ele não alcança o topo da porta.
+  const yToldo = 3.15;
+  const avanco = 0.7;
+  const larguraToldo = largura - 1.2;
+  const listras = 13;
+  const passo = larguraToldo / listras;
+  for (let i = 0; i < listras; i++) {
+    const lona = new THREE.Mesh(
+      new THREE.BoxGeometry(passo, 0.12, avanco),
+      toon(i % 2 ? P.metalWhite : P.restauranteToldo),
+    );
+    lona.position.set(-larguraToldo / 2 + passo * (i + 0.5), yToldo, hz + avanco / 2);
+    lona.rotation.x = -0.12; // caimento para a frente
+    g.add(lona);
+    // o babado: um triangulinho pendurado na ponta de cada listra
+    const babado = new THREE.Mesh(
+      new THREE.ConeGeometry(passo * 0.5, 0.26, 3),
+      toon(i % 2 ? P.metalWhite : P.restauranteToldo),
+    );
+    babado.rotation.x = Math.PI;
+    babado.position.set(-larguraToldo / 2 + passo * (i + 0.5), yToldo - 0.13, hz + avanco - 0.02);
+    g.add(babado);
+  }
+  // as duas mãos-francesas que seguram o toldo
+  for (const lado of [-1, 1] as const) {
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.95, 6), toon(P.metalGrey));
+    braco.position.set(lado * (larguraToldo / 2 - 0.1), yToldo - 0.35, hz + 0.4);
+    braco.rotation.x = Math.PI / 2.6;
+    g.add(braco);
+  }
 
-  // letreiro de destino
-  const letreiro = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.34, 0.05), toon(0x1f2229));
-  letreiro.position.set(comp / 2 - 0.4, 2.75, larg / 2 + 0.02);
-  g.add(letreiro);
+  // ------------------------------------------------------------ letreiro
+  // A placa fica ACIMA do toldo, senão ele a esconde. O texto sai de um canvas
+  // em tempo de execução — é a única "textura" que o projeto permite.
+  const yPlaca = 4.05;
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.7, 0.16), toon(P.restauranteEsquadria));
+  placa.position.set(0, yPlaca, hz + 0.06);
+  g.add(placa);
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(5.36, 0.84, 0.1), toon(P.restauranteToldo));
+  moldura.position.set(0, yPlaca, hz + 0.02);
+  g.add(moldura);
+  const texto = letreiro('Restaurante', 4.5, 0.56, '#fdf6e8');
+  texto.position.set(0, yPlaca, hz + 0.15);
+  g.add(texto);
 
-  for (const [x, z] of [[comp / 2 - 1.9, larg / 2], [comp / 2 - 1.9, -larg / 2], [-comp / 2 + 1.6, larg / 2], [-comp / 2 + 1.6, -larg / 2]] as const) {
-    const roda = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.35, 14), toon(0x22242a));
-    roda.position.set(x, 0.5, z);
-    roda.rotation.x = Math.PI / 2;
-    g.add(roda);
-    const calota = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.38, 12), toon(P.metalGrey));
-    calota.position.set(x, 0.5, z);
-    calota.rotation.x = Math.PI / 2;
-    g.add(calota);
+  // arandelas dos dois lados da porta
+  for (const lado of [-1, 1] as const) {
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 6), toon(P.metalGrey));
+    braco.rotation.x = Math.PI / 2;
+    braco.position.set(lado * (PORTA / 2 + 0.42), 2.5, hz + 0.13);
+    g.add(braco);
+    const lampiao = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), toon(P.gold, { glow: 0.5 }));
+    lampiao.position.set(lado * (PORTA / 2 + 0.42), 2.44, hz + 0.24);
+    g.add(lampiao);
+  }
+
+  // ------------------------------------------------------------- telhado
+  // Duas águas com beiral, e a conta importa: a cumeeira fica em `CUMEEIRA`
+  // acima do topo da parede, o beiral desce até a altura da parede a `balanco`
+  // além dela. Daí saem a inclinação e o comprimento da água — e as duas se
+  // encontram exatamente na linha do meio.
+  //
+  // O SINAL DA INCLINAÇÃO já mordeu aqui: a água da FRENTE (`lado = +1`) tem
+  // que descer para `+Z`, e `rotation.x` positivo é que leva o `+Z` local para
+  // baixo. Com o sinal trocado o telhado sobe para a frente e vira um funil.
+  const yBeiral = 0.34 + altura;
+  const CUMEEIRA = 1.1;
+  const balanco = 0.55;
+  const corrida = hz + balanco;
+  const inclinacao = Math.atan2(CUMEEIRA, corrida);
+  const agua = Math.hypot(corrida, CUMEEIRA);
+  for (const lado of [-1, 1] as const) {
+    const telha = new THREE.Mesh(
+      new THREE.BoxGeometry(largura + 1.0, 0.18, agua),
+      toon(P.roofTile),
+    );
+    telha.position.set(0, yBeiral + CUMEEIRA / 2, lado * corrida / 2);
+    telha.rotation.x = lado * inclinacao;
+    g.add(telha);
+  }
+  const cumeeira = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 1.06, 0.2, 0.42),
+    toon(P.roofTile),
+  );
+  cumeeira.position.set(0, yBeiral + CUMEEIRA + 0.06, 0);
+  g.add(cumeeira);
+
+  // As EMPENAS, os dois triângulos que fecham as laterais debaixo do telhado.
+  //
+  // Elas são um prisma triangular de verdade (`ExtrudeGeometry` de um
+  // triângulo), e não um cone de 3 lados: cone de 3 segmentos é uma pirâmide,
+  // que de perfil não é triângulo nenhum. A forma nasce no plano XY e o giro de
+  // `PI/2` em Y leva a espessura da extrusão para o X do mundo.
+  const perfil = new THREE.Shape();
+  perfil.moveTo(-hz, 0);
+  perfil.lineTo(hz, 0);
+  perfil.lineTo(0, CUMEEIRA);
+  perfil.closePath();
+  const formaEmpena = new THREE.ExtrudeGeometry(perfil, { depth: 0.3, bevelEnabled: false });
+  for (const lado of [-1, 1] as const) {
+    const empena = new THREE.Mesh(formaEmpena, parede);
+    empena.rotation.y = Math.PI / 2;
+    // a extrusão cresce para o `+X` do mundo depois do giro, então a da direita
+    // precisa começar 0,3 antes da parede para terminar nela
+    empena.position.set(lado > 0 ? hx - 0.3 : -hx, yBeiral, 0);
+    g.add(empena);
+  }
+
+  // --------------------------------------------------- cozinha, no telhado
+  const chamine = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.5, 0.7), toon(P.brick));
+  chamine.position.set(hx - 2.2, yBeiral + 1.2, -hz * 0.35);
+  g.add(chamine);
+  const capa = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.14, 0.9), toon(P.concrete));
+  capa.position.set(hx - 2.2, yBeiral + 2.0, -hz * 0.35);
+  g.add(capa);
+  // a coifa da cozinha: cilindro deitado com um chapéu
+  const coifa = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.85, 10), toon(P.metalGrey));
+  coifa.position.set(hx - 4.0, yBeiral + 0.95, -hz * 0.2);
+  g.add(coifa);
+  const chapeu = new THREE.Mesh(new THREE.ConeGeometry(0.46, 0.3, 10), toon(P.metalGrey));
+  chapeu.position.set(hx - 4.0, yBeiral + 1.5, -hz * 0.2);
+  g.add(chapeu);
+
+  // ------------------------------------------------- lateral e fundos
+  // Janelinhas altas na lateral que a câmera vê (+X) e os condensadores do
+  // ar-condicionado, que é o que todo restaurante de clube tem pendurado.
+  for (let i = 0; i < 3; i++) {
+    const jan = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.8, 1.0), vidro);
+    jan.position.set(hx + 0.03, 2.5, -hz + 1.4 + i * 1.9);
+    g.add(jan);
+    const cx = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.94, 1.14), esquadria);
+    cx.position.set(hx + 0.005, 2.5, -hz + 1.4 + i * 1.9);
+    g.add(cx);
+  }
+  for (const dz of [-1.3, 0.9]) {
+    const cond = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.78), toon(P.metalWhite));
+    cond.position.set(hx + 0.24, 1.7, dz);
+    g.add(cond);
+    const helice = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.05, 12), toon(P.metalGrey));
+    helice.rotation.z = Math.PI / 2;
+    helice.position.set(hx + 0.46, 1.72, dz);
+    g.add(helice);
+  }
+
+  return g;
+}
+
+/**
+ * O vestiário do clube.
+ *
+ * Trocou o `building()` genérico, que era uma caixa com janelinhas. O que faz
+ * um vestiário de piscina parecer um vestiário de piscina, em ordem de
+ * importância: a MEIA PAREDE DE AZULEJO, o COBOGÓ (o tijolo vazado que ventila
+ * sem deixar ver de fora), a MARQUISE sobre as duas portas e a CAIXA D'ÁGUA no
+ * telhado. Nenhum dos quatro existe em prédio nenhum do resto do jogo.
+ *
+ * A frente olha para `+Z`, como toda peça com frente.
+ *
+ * A MARQUISE tem a mesma armadilha do toldo do restaurante: a câmera olha de
+ * cima em 34°, e o raio que sai da ponta dela desce `0,67` por unidade de
+ * profundidade. A 2,75 de altura e avançando 0,7, na linha da fachada ela está
+ * em 2,28 — logo acima do topo da porta, em 2,2. Um palmo a mais de avanço e a
+ * entrada some.
+ */
+export function vestiario(largura = 8, profundidade = 5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'vestiario';
+
+  const hx = largura / 2;
+  const hz = profundidade / 2;
+  const altura = 3.0;
+  const ySoco = 0.25;
+  const yTopo = ySoco + altura;
+
+  const parede = toon(P.wallCream);
+  const azulejo = toon(P.vestiarioAzulejo);
+  const concreto = toon(P.concrete);
+
+  // --------------------------------------------------------------- base
+  const soco = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.4, ySoco, profundidade + 0.4),
+    concreto,
+  );
+  soco.position.y = ySoco / 2;
+  g.add(soco);
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, profundidade), parede);
+  corpo.position.y = ySoco + altura / 2;
+  g.add(corpo);
+
+  // ------------------------------------------------------- meia parede
+  // A faixa de azulejo é uma casca 8 cm maior que o prédio: assim as faces
+  // dela ficam FORA das faces da parede, e nenhuma das duas briga por pixel.
+  // O pé dela mergulha no soco pelo mesmo motivo.
+  const yAzulejo = 1.15;
+  const faixa = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.08, yAzulejo, profundidade + 0.08),
+    azulejo,
+  );
+  faixa.position.y = 0.18 + yAzulejo / 2;
+  g.add(faixa);
+  // duas fiadas de rejunte, e o acabamento de cima
+  for (const y of [0.58, 0.92]) {
+    const linha = new THREE.Mesh(
+      new THREE.BoxGeometry(largura + 0.12, 0.05, profundidade + 0.12),
+      toon(P.vestiarioRejunte),
+    );
+    linha.position.y = y;
+    g.add(linha);
+  }
+  const arremate = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.16, 0.09, profundidade + 0.16),
+    toon(P.metalWhite),
+  );
+  arremate.position.y = 1.33;
+  g.add(arremate);
+
+  // ------------------------------------------------------------- portas
+  // Duas, lado a lado. A metade de baixo é veneziana — as ripas são o detalhe
+  // que diz "porta de vestiário" mesmo de longe.
+  const zF = hz + 0.03;
+  const LARG_PORTA = 1.05;
+  for (const lado of [-1, 1] as const) {
+    const cx = lado * 1.15;
+
+    const batente = new THREE.Mesh(
+      new THREE.BoxGeometry(LARG_PORTA + 0.26, 2.36, 0.13),
+      concreto,
+    );
+    batente.position.set(cx, 1.16, zF);
+    g.add(batente);
+
+    const folha = new THREE.Mesh(
+      new THREE.BoxGeometry(LARG_PORTA, 2.16, 0.09),
+      toon(P.vestiarioPorta),
+    );
+    folha.position.set(cx, 1.12, zF + 0.04);
+    g.add(folha);
+
+    for (let i = 0; i < 6; i++) {
+      const ripa = new THREE.Mesh(
+        new THREE.BoxGeometry(LARG_PORTA - 0.18, 0.08, 0.05),
+        toon(P.vestiarioRejunte),
+      );
+      ripa.position.set(cx, 0.42 + i * 0.16, zF + 0.09);
+      ripa.rotation.x = 0.35; // inclinada, como veneziana de verdade
+      g.add(ripa);
+    }
+
+    const macaneta = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055, 8, 6),
+      toon(P.metalGrey),
+    );
+    macaneta.position.set(cx - lado * (LARG_PORTA / 2 - 0.14), 1.05, zF + 0.11);
+    g.add(macaneta);
+
+    // a plaquinha acima de cada porta
+    const plaqueta = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.3, 0.05), toon(P.metalWhite));
+    plaqueta.position.set(cx, 2.44, zF + 0.05);
+    g.add(plaqueta);
+  }
+
+  // ----------------------------------------------------------- marquise
+  const yMarquise = 2.75;
+  const avanco = 0.7;
+  const laje = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - 1.0, 0.16, avanco),
+    concreto,
+  );
+  laje.position.set(0, yMarquise, hz + avanco / 2);
+  g.add(laje);
+  // A testeira, onde vai o nome — é onde fica no vestiário de verdade. Ela é
+  // 10 cm mais estreita que a laje e o topo dela para 4 cm abaixo do dela: com
+  // as duas do mesmo tamanho, as faces de cima e as das pontas caíam no mesmo
+  // plano e serrilhavam.
+  const testeira = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - 1.1, 0.42, 0.1),
+    toon(P.vestiarioPorta),
+  );
+  testeira.position.set(0, yMarquise - 0.17, hz + avanco);
+  g.add(testeira);
+  const nome = letreiro('Vestiário', 2.6, 0.3, '#fdf6e8');
+  nome.position.set(0, yMarquise - 0.13, hz + avanco + 0.06);
+  g.add(nome);
+  for (const lado of [-1, 1] as const) {
+    const mao = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.62, 0.1), concreto);
+    mao.position.set(lado * (largura / 2 - 0.85), yMarquise - 0.38, hz + 0.14);
+    mao.rotation.x = -0.6;
+    g.add(mao);
+  }
+
+  // ------------------------------------------------------------ cobogó
+  // Tijolo vazado: uma fileira de blocos com vão entre eles, alto na parede.
+  // É o que ventila o vestiário sem deixar ninguém ver de fora.
+  const cobogo = (x: number, y: number, z: number, girado: boolean): void => {
+    const bloco = new THREE.Mesh(
+      new THREE.BoxGeometry(girado ? 0.14 : 0.34, 0.34, girado ? 0.34 : 0.14),
+      parede,
+    );
+    bloco.position.set(x, y, z);
+    g.add(bloco);
+    const miolo = new THREE.Mesh(
+      new THREE.TorusGeometry(0.1, 0.035, 6, 10),
+      toon(P.wallAzul),
+    );
+    miolo.position.set(x + (girado ? 0.02 : 0), y, z + (girado ? 0 : 0.02));
+    if (girado) miolo.rotation.y = Math.PI / 2;
+    g.add(miolo);
+  };
+  // na fachada, dos dois lados da marquise
+  for (const lado of [-1, 1] as const) {
+    for (let i = 0; i < 2; i++) {
+      cobogo(lado * (hx - 0.45 - i * 0.42), 2.52, zF + 0.05, false);
+    }
+  }
+  // na lateral que a câmera vê
+  for (let i = 0; i < 6; i++) {
+    cobogo(hx + 0.05, 2.52, -hz + 0.7 + i * 0.7, true);
+  }
+
+  // ------------------------------------------------------------ telhado
+  // Laje plana com platibanda — o vestiário de clube não tem telhado aparente,
+  // tem mureta escondendo a caixa d'água (que aparece assim mesmo).
+  const lajeTopo = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.5, 0.22, profundidade + 0.5),
+    concreto,
+  );
+  lajeTopo.position.y = yTopo + 0.11;
+  g.add(lajeTopo);
+  // As duas da frente e do fundo vão de ponta a ponta; as das laterais param
+  // ANTES delas (`profundidade - 0.1`), senão as quatro se cruzam nos cantos
+  // dividindo as faces de cima e de baixo — quatro pares serrilhando de uma vez.
+  // Quem fecha o canto é a peça da frente, que passa por cima.
+  for (const [dx, dz, lx, lz] of [
+    [0, hz + 0.1, largura + 0.5, 0.14],
+    [0, -hz - 0.1, largura + 0.5, 0.14],
+    [hx + 0.13, 0, 0.14, profundidade - 0.1],
+    [-hx - 0.13, 0, 0.14, profundidade - 0.1],
+  ] as const) {
+    const platibanda = new THREE.Mesh(new THREE.BoxGeometry(lx, 0.4, lz), parede);
+    platibanda.position.set(dx, yTopo + 0.42, dz);
+    g.add(platibanda);
+  }
+
+  // -------------------------------------------------- caixa d'água e prumada
+  const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 1.5), concreto);
+  base.position.set(-hx + 1.6, yTopo + 0.42, -hz + 1.5);
+  g.add(base);
+  const caixa = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.72, 0.62, 0.95, 14),
+    toon(P.vestiarioCaixa),
+  );
+  caixa.position.set(-hx + 1.6, yTopo + 1.1, -hz + 1.5);
+  g.add(caixa);
+  const tampa = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.14, 12), toon(P.metalGrey));
+  tampa.position.set(-hx + 1.6, yTopo + 1.63, -hz + 1.5);
+  g.add(tampa);
+
+  // a descida de água, encostada na lateral
+  const prumada = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.07, yTopo + 0.3, 8),
+    toon(P.metalWhite),
+  );
+  prumada.position.set(-hx - 0.14, (yTopo + 0.3) / 2, hz - 0.5);
+  g.add(prumada);
+  const joelho = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.4, 8), toon(P.metalWhite));
+  joelho.rotation.z = Math.PI / 2;
+  joelho.position.set(-hx - 0.3, 0.28, hz - 0.5);
+  g.add(joelho);
+
+  // ----------------------------------------------------- torneira e ralo
+  // A torneirinha de lavar o pé, do lado da porta. Todo clube tem.
+  const bica = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.34, 6), toon(P.metalGrey));
+  bica.position.set(hx - 0.6, 0.62, zF + 0.16);
+  bica.rotation.x = 0.9;
+  g.add(bica);
+  const registro = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), toon(P.metalRed));
+  registro.position.set(hx - 0.6, 0.82, zF + 0.06);
+  g.add(registro);
+
+  return g;
+}
+
+/* ------------------------------------------------------------------------ *
+ *                   OS PRATOS SERVIDOS, E O GARÇOM
+ * ------------------------------------------------------------------------ */
+
+/**
+ * A louça que todo prato servido divide: um disco raso com a beirada erguida.
+ *
+ * Ela é pequena de propósito — 0,26 de raio. O prato fica em cima de uma mesa
+ * de 0,74 e é visto de longe, e uma louça de tamanho "realista" ao lado de um
+ * boneco chibi lê como uma tampa de bueiro.
+ */
+function pratoDeLouca(raio = 0.26): THREE.Group {
+  const g = new THREE.Group();
+  const fundo = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio * 0.82, raio * 0.7, 0.02, 16),
+    toon(P.metalWhite),
+  );
+  fundo.position.y = 0.012;
+  g.add(fundo);
+  // a beirada é um toro, e não um segundo cilindro: cilindro sobre cilindro
+  // dividiria a face de cima com o fundo e serrilharia
+  const borda = new THREE.Mesh(new THREE.TorusGeometry(raio * 0.88, 0.022, 6, 18), toon(P.metalWhite));
+  borda.rotation.x = Math.PI / 2;
+  borda.position.y = 0.03;
+  g.add(borda);
+  return g;
+}
+
+/** A AREPA servida: o disco de milho na louça, com o queijo saindo da boca. */
+export function arepaServida(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'arepa-queijo';
+  g.add(pratoDeLouca());
+
+  const disco = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.15, 0.075, 14), toon(P.arepaMilho));
+  disco.position.y = 0.08;
+  g.add(disco);
+  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.155, 0.018, 14), toon(P.arepaTostada));
+  tampo.position.y = 0.125;
+  g.add(tampo);
+
+  // o queijo escorrendo pela boca, no lado que olha para a câmera
+  const fio = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.03, 0.06), toon(P.arepaQueijo));
+  fio.position.set(0, 0.08, 0.13);
+  g.add(fio);
+  const pingo = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), toon(P.arepaQueijo));
+  pingo.position.set(0.05, 0.055, 0.16);
+  g.add(pingo);
+  return g;
+}
+
+/** A AREPA RECHEADA: a mesma, com carne desfiada por cima. */
+export function arepaRecheadaServida(): THREE.Group {
+  const g = arepaServida();
+  g.userData.peca = 'arepa-recheada';
+  for (const [x, z, giro] of [[-0.05, 0.1, 0.3], [0.04, 0.12, -0.4], [0, 0.07, 0.1]] as const) {
+    const fiapo = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.022, 0.03), toon(P.hamburguerCarne));
+    fiapo.position.set(x, 0.14, z);
+    fiapo.rotation.y = giro;
+    g.add(fiapo);
   }
   return g;
 }
 
-/** Ponto de ônibus com cobertura e banco. */
-export function busStop(cor: number = P.metalGrey): THREE.Group {
+/**
+ * O HAMBÚRGUER servido: a pilha, e as batatas ao lado.
+ *
+ * Cada camada é mais estreita ou mais larga que a vizinha de propósito. Duas
+ * camadas do MESMO raio dividiriam a face de cima de uma com a de baixo da
+ * outra — e é aí que a pilha começa a serrilhar quando a câmera gira.
+ */
+export function hamburguerServido(andares = 2): THREE.Group {
   const g = new THREE.Group();
-  for (const x of [-1.5, 1.5]) {
-    const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.5, 8), toon(cor));
-    poste.position.set(x, 1.25, -0.6);
-    g.add(poste);
+  g.userData.peca = andares > 1 ? 'duplo-queijo' : 'quarteirao';
+  g.add(pratoDeLouca(0.3));
+
+  let y = 0.045;
+  const camada = (altura: number, raio: number, cor: number, lados = 14): void => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio, altura, lados), toon(cor));
+    m.position.y = y + altura / 2;
+    g.add(m);
+    y += altura;
+  };
+
+  camada(0.045, 0.135, P.hamburguerPao);
+  for (let i = 0; i < andares; i++) {
+    camada(0.04, 0.145, i % 2 ? P.hamburguerCarneEscura : P.hamburguerCarne);
+    camada(0.014, 0.152, P.arepaQueijo, 4); // o queijo, quadrado como fatia
   }
-  const cobertura = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.12, 1.6), toon(cor));
-  cobertura.position.set(0, 2.5, -0.2);
-  cobertura.rotation.x = -0.06;
-  g.add(cobertura);
-  const fundo = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.6, 0.08), toon(P.glass, { glow: 0.08 }));
-  fundo.position.set(0, 1.35, -1.15);
-  g.add(fundo);
-  const banco = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.1, 0.4), toon(P.wood));
-  banco.position.set(0, 0.5, -0.9);
-  g.add(banco);
-  for (const x of [-1.2, 1.2]) {
-    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.36), toon(cor));
-    pe.position.set(x, 0.25, -0.9);
-    g.add(pe);
+  camada(0.022, 0.148, P.hamburguerAlface, 16);
+
+  // o pão de cima é meia esfera achatada, com gergelim
+  const topo = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), toon(P.hamburguerPao));
+  topo.scale.y = 0.62;
+  topo.position.y = y;
+  g.add(topo);
+  for (const [dx, dz] of [[-0.05, 0.03], [0.04, -0.02], [0.01, 0.06], [-0.02, -0.05]] as const) {
+    const semente = new THREE.Mesh(new THREE.SphereGeometry(0.011, 6, 4), toon(P.hamburguerGergelim));
+    semente.position.set(dx, y + 0.06, dz);
+    g.add(semente);
   }
+
+  // as batatas, espetadas na borda da louça
+  for (const [dx, dz, giro] of [[0.2, 0.06, 0.4], [0.23, -0.02, -0.2], [0.18, -0.08, 0.15]] as const) {
+    const batata = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.13, 0.03), toon(P.hamburguerBatata));
+    batata.position.set(dx, 0.11, dz);
+    batata.rotation.set(0.3, giro, giro);
+    g.add(batata);
+  }
+  return g;
+}
+
+/** O PERRO CALIENTE servido: pão, salsicha sobrando dos dois lados e molhos. */
+export function perroServido(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'perro-tradicional';
+  g.add(pratoDeLouca(0.3));
+
+  const pao = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.28, 4, 10), toon(P.hamburguerPao));
+  pao.rotation.z = Math.PI / 2;
+  pao.position.y = 0.1;
+  g.add(pao);
+
+  const salsicha = new THREE.Mesh(new THREE.CapsuleGeometry(0.042, 0.34, 4, 10), toon(P.perroSalsicha));
+  salsicha.rotation.z = Math.PI / 2;
+  salsicha.position.y = 0.15;
+  g.add(salsicha);
+
+  // os molhos: três fitas finas por cima da salsicha, em alturas diferentes
+  for (const [i, cor] of [P.perroMostarda, P.perroKetchup, P.metalWhite].entries()) {
+    const fita = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.012, 0.02), toon(cor));
+    fita.position.set(0, 0.186 + i * 0.014, -0.028 + i * 0.028);
+    g.add(fita);
+  }
+  // a batata palha
+  for (const [dx, dz, giro] of [[-0.1, 0.02, 0.5], [-0.02, -0.03, -0.3], [0.07, 0.03, 0.8], [0.13, -0.02, 0.1]] as const) {
+    const palha = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.008, 0.008), toon(P.hamburguerBatata));
+    palha.position.set(dx, 0.215, dz);
+    palha.rotation.y = giro;
+    g.add(palha);
+  }
+  return g;
+}
+
+/* ---- fim dos pratos servidos ---- */
+
+/**
+ * A peça 3D de um prato do cardápio, pelo ID DA FICHA.
+ *
+ * É esta função que amarra as duas metades do prato: a ficha em
+ * `world/cardapioData.ts` (nome, preço, miniatura) e o modelo que o garçom
+ * entrega. Prato sem linha aqui aparece no cardápio, é pedido em voz alta, e o
+ * cachorro chega na mesa de costas vazias — por isso o `scripts/novo-prato.mjs`
+ * escreve a linha junto com o resto.
+ *
+ * As bebidas reaproveitam o `copoDeSuco()` que já existe no kit: o copo do
+ * clube serve inteiro, e só a cor da fruta muda.
+ */
+export function pratoServido(id: string): THREE.Group | null {
+  const g = montarOPrato(id);
+  // a etiqueta serve para o teste achar o prato no mundo — e para a proxima
+  // mecanica saber O QUE esta na mesa sem guardar isso em paralelo
+  if (g) g.userData.prato = id;
+  return g;
+}
+
+function montarOPrato(id: string): THREE.Group | null {
+  switch (id) {
+    case 'arepa-queijo': return arepaServida();
+    case 'arepa-recheada': return arepaRecheadaServida();
+    case 'duplo-queijo': return hamburguerServido(2);
+    case 'quarteirao': return hamburguerServido(1);
+    case 'perro-tradicional': return perroServido();
+    case 'suco-morango': return copoDeSuco(P.morango);
+    case 'smoothie-manga-banana': return copoDeSuco(P.maracuja);
+    /* ---- novos pratos entram acima ---- */
+    default: return null;
+  }
+}
+
+/**
+ * O GARÇOM CANINO: um cachorrinho de quatro patas, de gravata borboleta, com
+ * uma bandeja plana nas costas.
+ *
+ * A BANDEJA É UM `Object3D` VAZIO, e não uma malha. O prato entra nela como
+ * filho, então acompanha o cachorro de graça enquanto ele anda; na hora de
+ * servir, a cena só troca o prato de pai para a mesa. Sem a âncora, entregar
+ * viraria copiar posição frame a frame, e o prato tremeria no caminho.
+ *
+ * Ela está exposta em `g.userData.bandeja` e também tem `name = 'bandeja'`:
+ * duas portas para a mesma coisa, porque quem procura no runtime (o teste)
+ * costuma preferir o nome, e quem escreve a cutscene prefere o userData.
+ *
+ * O cachorro olha para `+Z` como toda peça, o que aqui quer dizer: o focinho
+ * aponta para `+Z` e o rabo fica no `-Z`.
+ */
+export function dogWaiter(cor: number = P.cachorroPelo): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'garcom-canino';
+
+  const pelo = toon(cor);
+  const peloClaro = toon(P.cachorroPeito);
+
+  // ---------------------------------------------------------------- corpo
+  const tronco = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.4), pelo);
+  tronco.position.set(0, 0.3, -0.02);
+  g.add(tronco);
+  // o peito claro, um fio mais estreito para não dividir face com o tronco
+  const peito = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.12, 0.14), peloClaro);
+  peito.position.set(0, 0.27, 0.16);
+  g.add(peito);
+
+  // ---------------------------------------------------------------- patas
+  for (const [x, z] of [[-0.075, 0.13], [0.075, 0.13], [-0.075, -0.15], [0.075, -0.15]] as const) {
+    const perna = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.07), pelo);
+    perna.position.set(x, 0.11, z);
+    g.add(perna);
+    const patinha = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.05, 0.095), peloClaro);
+    patinha.position.set(x, 0.025, z + 0.012);
+    g.add(patinha);
+  }
+
+  // --------------------------------------------------------------- cabeça
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.18, 0.19), pelo);
+  cabeca.position.set(0, 0.45, 0.2);
+  g.add(cabeca);
+  const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.085, 0.1), peloClaro);
+  focinho.position.set(0, 0.41, 0.31);
+  g.add(focinho);
+  const nariz = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.04, 0.03), toon(P.cachorroFocinho));
+  nariz.position.set(0, 0.425, 0.365);
+  g.add(nariz);
+  for (const lado of [-1, 1] as const) {
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), toon(0x2b2a33));
+    olho.position.set(lado * 0.055, 0.48, 0.295);
+    g.add(olho);
+    // a orelha caída, que é o que faz o cachorro parecer fofo e não lobo
+    const orelha = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.15, 0.06), toon(P.cachorroOrelha));
+    orelha.position.set(lado * 0.115, 0.44, 0.17);
+    orelha.rotation.z = lado * 0.28;
+    g.add(orelha);
+  }
+
+  // --------------------------------------------------------------- gravata
+  // Duas asas e o nó: é o que transforma o cachorro em GARÇOM. Ela fica no
+  // pescoço, entre a cabeça e o peito, virada para a frente.
+  for (const lado of [-1, 1] as const) {
+    const asa = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.06, 0.03), toon(P.gravataBorboleta));
+    asa.position.set(lado * 0.05, 0.345, 0.245);
+    asa.rotation.z = lado * 0.35;
+    g.add(asa);
+  }
+  const no = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.04), toon(P.gravataNo));
+  no.position.set(0, 0.345, 0.255);
+  g.add(no);
+
+  // ----------------------------------------------------------------- rabo
+  const rabo = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.16), pelo);
+  rabo.position.set(0, 0.38, -0.24);
+  rabo.rotation.x = 0.7;
+  g.add(rabo);
+  const ponta = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), peloClaro);
+  ponta.position.set(0, 0.45, -0.3);
+  g.add(ponta);
+
+  // -------------------------------------------------------------- bandeja
+  const tabua = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.02, 0.3), toon(P.wood));
+  tabua.position.set(0, 0.41, -0.02);
+  g.add(tabua);
+
+  const bandeja = new THREE.Object3D();
+  bandeja.name = 'bandeja';
+  bandeja.position.set(0, 0.42, -0.02);
+  g.add(bandeja);
+  g.userData.bandeja = bandeja;
+
+  return g;
+}
+
+/**
+ * A CADEIRA DE SALVA-VIDAS da beira da piscina.
+ *
+ * Ela e ALTA de proposito — 1,7 ate o assento — porque e disso que ela serve:
+ * quem toma conta da agua tem que ver por cima das cabecas.
+ *
+ * ELA NAO TEM TOLDO, e a primeira versao tinha.
+ *
+ * Cadeira de salva-vidas de verdade tem cobertura, e ela ficou linda — e apagou
+ * a capivara inteira. A camera olha em 34°: tudo que fica ACIMA e A FRENTE de
+ * quem senta engole quem senta, e na foto de longe sobrava um telhado vermelho
+ * com ninguem embaixo. E o mesmo erro que o beiral da guarita cometeu com a
+ * Gina, so que pior, porque aqui a peca inteira era a cobertura.
+ *
+ * O ENCOSTO passa da cabeca dela em altura, e esse PODE: ele fica em `-Z`,
+ * atras dela, e serve de fundo em vez de tampa. O que separa os dois nao e a
+ * altura, e de que lado da pessoa a peca esta.
+ *
+ * O que faz a peca ler como posto de salva-vidas sem tapar nada e a FAIXA
+ * vermelha do estrado e a BOIA pendurada — as duas na altura do olho da camera
+ * em vez de acima dele. `scripts/salvavidas.mjs` mede isso e falha se alguem
+ * puser um teto aqui de novo.
+ */
+export function cadeiraDeSalvaVidas(altura = 1.7): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cadeira-de-salva-vidas';
+
+  const madeira = toon(P.cadeiraDeGuarda);
+  const vermelho = toon(P.salvaVidasVermelho);
+
+  /**
+   * AS PERNAS ABREM PARA BAIXO, e a primeira versao errou isso de dois jeitos ao
+   * mesmo tempo — a cadeira parecia quebrada, e foi o Renan quem viu.
+   *
+   * 1. O PIVO ESTAVA NO MEIO DA PERNA. Girar uma caixa em volta do proprio
+   *    centro afasta o topo tanto quanto a base: as quatro pernas saiam de
+   *    debaixo do estrado e o assento ficava boiando entre elas. Agora cada
+   *    perna e um GRUPO com pivo LA EM CIMA, sob o estrado, e a malha pendura
+   *    para baixo — assim o topo nao sai do lugar e so o pe abre.
+   * 2. OS SINAIS ESTAVAM TROCADOS. Girando em Z, o ponto de baixo `(0, -L)` vai
+   *    para `(L·sen θ, -L·cos θ)`: θ POSITIVO leva o pe para `+x`. Com
+   *    `-sx` os pes fechavam e os joelhos e que abriam, que e exatamente o "as
+   *    pernas apontando para fora" da reclamacao. Em X e ao contrario, porque
+   *    ali o ponto de baixo vai para `z = -L·sen φ`: o pe abre com φ NEGATIVO.
+   *
+   * `bitola(y)` devolve a meia-largura das pernas em cada altura, e e dela que
+   * saem as travessas e os degraus. Antes eram numeros cravados, e por isso nao
+   * encostavam nas pernas.
+   */
+  const ABRE = 0.14;                 // radianos de abertura, por eixo
+  const TOPO_Y = altura + 0.02;      // onde as pernas encontram o estrado
+  const BITOLA = 0.42;               // meia-bitola no topo
+  const COMPRIMENTO = altura + 0.1;
+  const bitola = (y: number): number => BITOLA + Math.max(0, TOPO_Y - y) * Math.tan(ABRE);
+
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+    const perna = new THREE.Group();
+    perna.position.set(sx * BITOLA, TOPO_Y, sz * BITOLA);
+    perna.rotation.z = sx * ABRE;
+    perna.rotation.x = -sz * ABRE;
+    const osso = new THREE.Mesh(new THREE.BoxGeometry(0.09, COMPRIMENTO, 0.09), madeira);
+    osso.position.y = -COMPRIMENTO / 2;
+    perna.add(osso);
+    g.add(perna);
+  }
+
+  // as travessas que amarram as pernas, na altura do joelho de quem sobe. A
+  // largura sai de `bitola`, senao elas ficam curtas e nao encostam em nada.
+  // AS DUAS DIRECOES FICAM EM ALTURAS DIFERENTES, e nao e capricho: cruzadas na
+  // mesma altura, as quatro travessas dividem topo e base nos pontos em que se
+  // encontram — sao oito pares de faces coplanares, e coplanar serrilha. Uma
+  // marcenaria de verdade tambem cruza assim, uma barra por cima da outra.
+  const TRAVESSA_Z = altura * 0.42;
+  const TRAVESSA_X = TRAVESSA_Z + 0.12;
+  const VAO_Z = bitola(TRAVESSA_Z);
+  const VAO_X = bitola(TRAVESSA_X);
+  for (const sz of [-1, 1] as const) {
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(VAO_Z * 2 + 0.09, 0.07, 0.07), madeira);
+    travessa.position.set(0, TRAVESSA_Z, sz * VAO_Z);
+    g.add(travessa);
+  }
+  for (const sx of [-1, 1] as const) {
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, VAO_X * 2 + 0.09), madeira);
+    travessa.position.set(sx * VAO_X, TRAVESSA_X, 0);
+    g.add(travessa);
+  }
+
+  // -------------------------------------------------------------- o estrado
+  const assento = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.1, 1.0), madeira);
+  assento.position.y = altura;
+  g.add(assento);
+  // a faixa vermelha na frente do estrado: o unico jeito de quem olha de longe
+  // saber que aquilo e posto de salva-vidas, e nao uma cadeira alta qualquer
+  // mais estreita que o estrado e com o topo abaixo dele: encostar a faixa nos
+  // dois planos do assento (largura e topo) daria dois pares coplanares
+  const faixa = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.14, 0.05), vermelho);
+  faixa.position.set(0, altura - 0.04, 0.5);
+  g.add(faixa);
+
+  // --------------------------------------------------------- encosto e bracos
+  const encosto = new THREE.Mesh(new THREE.BoxGeometry(1.16, 0.62, 0.08), madeira);
+  encosto.position.set(0, altura + 0.36, -0.46);
+  g.add(encosto);
+  for (const sx of [-1, 1] as const) {
+    // recuado 4 cm: com o braco em 0,54 a face de fora dele caia no mesmo plano
+    // da lateral do encosto, que tem a mesma largura do estrado
+    const braco = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.07, 0.9), madeira);
+    braco.position.set(sx * 0.5, altura + 0.27, 0.02);
+    g.add(braco);
+  }
+
+  /**
+   * A ESCADA E A PROPRIA FACE DA FRENTE: os degraus vao de uma perna a outra,
+   * e a largura de cada um sai de `bitola` na altura dele. A primeira versao
+   * pendurava uma escadinha solta em `x = -0,9`, com montantes proprios, e ela
+   * flutuava ao lado da cadeira sem encostar em nada.
+   */
+  for (let i = 0; i < 4; i++) {
+    const y = 0.3 + i * 0.36;
+    const meia = bitola(y);
+    const degrau = new THREE.Mesh(new THREE.BoxGeometry(meia * 2 - 0.02, 0.06, 0.12), madeira);
+    degrau.position.set(0, y, bitola(y) * 0.98);
+    g.add(degrau);
+  }
+
+  // ------------------------------------------------------ a boia pendurada
+  // ela sai do lado `+X`, e nao da frente: a frente agora e a escada
+  const boiaY = altura * 0.66;
+  const boia = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.075, 8, 16), vermelho);
+  boia.position.set(bitola(boiaY) + 0.12, boiaY, 0);
+  g.add(boia);
+  const cruz = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.1, 0.03), toon(P.salvaVidasBranco));
+  cruz.position.set(bitola(boiaY) + 0.12, boiaY, 0);
+  g.add(cruz);
+
+  return g;
+}
+
+/* =========================================================================
+ *                       O JARDIM DA JOSEFINA
+ *
+ * Um jardim organizado nao e um monte de plantas espalhadas: e FILEIRA. O que
+ * faz o gramado do fundo parecer jardim cuidado, e nao mato bonito, sao tres
+ * coisas, e todas sao arrumacao:
+ *
+ * 1. os canteiros sao RETANGULARES e alinhados entre si;
+ * 2. dentro de cada canteiro as plantas ficam em GRADE, com espacamento igual;
+ * 3. cada canteiro tem UM tipo de planta so — misturar tudo em todo lugar
+ *    desfaz a leitura de "alguem plantou isto aqui".
+ *
+ * As especies precisam diferir em COR **e** em FORMA. So a cor nao basta: a
+ * esta distancia de camera, dois verdes proximos viram o mesmo verde, e o
+ * jardim volta a ser tapete.
+ * ========================================================================= */
+
+/** o que se planta num canteiro do jardim */
+export type TipoDePlanta = 'alface' | 'suculenta' | 'samambaia' | 'lavanda' | 'girassol' | 'tomate';
+
+/**
+ * Uma muda, do tipo pedido, plantada com a base em `y = 0`.
+ *
+ * `semente` desencontra as folhas: sem ela a fileira vira uma linha de clones,
+ * que e o oposto do que uma horta de verdade parece.
+ */
+export function planta(tipo: TipoDePlanta, escala = 1, semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  const giro = semente * 6.283;
+  const e = escala;
+
+  const caule = (altura: number, raio = 0.022 * e, cor: number = P.leafDark): THREE.Mesh => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 1.2, altura, 6), toon(cor));
+    m.position.y = altura / 2;
+    return m;
+  };
+
+  if (tipo === 'alface') {
+    // ROSETA BAIXA E LARGA: folhas abertas em volta de um miolo, quase rente ao
+    // chao. E a silhueta que diz "horta".
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + giro;
+      const folha = new THREE.Mesh(new THREE.SphereGeometry(0.11 * e, 8, 6), toon(P.folhaAlface));
+      folha.scale.set(1, 0.42, 1.25);
+      folha.position.set(Math.cos(a) * 0.075 * e, 0.05 * e, Math.sin(a) * 0.075 * e);
+      folha.rotation.y = a;
+      g.add(folha);
+    }
+    const miolo = new THREE.Mesh(new THREE.SphereGeometry(0.075 * e, 8, 6), toon(0xa8d472));
+    miolo.scale.y = 0.8;
+    miolo.position.y = 0.085 * e;
+    g.add(miolo);
+  } else if (tipo === 'suculenta') {
+    // ESTRELA DE PONTAS GROSSAS, em duas coroas. Compacta e azulada: e o
+    // contraste de forma com a alface, que e larga e mole.
+    for (const [coroa, quantas, comp, inclina] of [[0, 6, 0.13, 0.9], [1, 5, 0.085, 0.45]] as const) {
+      for (let i = 0; i < quantas; i++) {
+        const a = (i / quantas) * Math.PI * 2 + giro + coroa * 0.5;
+        const petala = new THREE.Mesh(new THREE.ConeGeometry(0.035 * e, comp * e, 5), toon(P.folhaSuculenta));
+        petala.position.set(
+          Math.cos(a) * comp * 0.42 * e,
+          0.03 * e + comp * 0.42 * e,
+          Math.sin(a) * comp * 0.42 * e,
+        );
+        petala.rotation.z = -Math.cos(a) * inclina;
+        petala.rotation.x = Math.sin(a) * inclina;
+        g.add(petala);
+      }
+    }
+  } else if (tipo === 'samambaia') {
+    // FRONDES ARQUEADAS saindo de um ponto: alta, aberta e escura. E a unica
+    // que passa dos 40 cm, entao ela e o "fundo" das fileiras.
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + giro;
+      const fronde = new THREE.Group();
+      fronde.rotation.y = a;
+      fronde.rotation.x = 0.55;
+      for (let k = 0; k < 4; k++) {
+        const folha = new THREE.Mesh(
+          new THREE.SphereGeometry(0.055 * e - k * 0.008 * e, 6, 5),
+          toon(P.folhaSamambaia),
+        );
+        folha.scale.set(0.7, 0.35, 2.2);
+        folha.position.set(0, 0.16 * e - k * 0.03 * e, 0.09 * e + k * 0.11 * e);
+        fronde.add(folha);
+      }
+      g.add(fronde);
+    }
+  } else if (tipo === 'lavanda') {
+    // ESPIGAS FINAS EM PE: cinco hastes com a ponta roxa. A forma e vertical e
+    // rala, o oposto das moitas cheias.
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 + giro;
+      const alto = (0.24 + ((i * 31) % 7) * 0.012) * e;
+      const haste = caule(alto);
+      haste.position.set(Math.cos(a) * 0.05 * e, alto / 2, Math.sin(a) * 0.05 * e);
+      haste.rotation.z = -Math.cos(a) * 0.18;
+      haste.rotation.x = Math.sin(a) * 0.18;
+      g.add(haste);
+      const espiga = new THREE.Mesh(new THREE.CapsuleGeometry(0.026 * e, 0.09 * e, 4, 6), toon(P.florLavanda));
+      espiga.position.set(Math.cos(a) * 0.075 * e, alto + 0.045 * e, Math.sin(a) * 0.075 * e);
+      g.add(espiga);
+    }
+  } else if (tipo === 'girassol') {
+    // UMA HASTE SO, ALTA, com a flor virada para `+Z` — que e de onde a camera
+    // olha. Girassol de costas e um disco marrom.
+    const alto = 0.42 * e;
+    g.add(caule(alto, 0.03 * e));
+    for (let k = 0; k < 2; k++) {
+      const folha = new THREE.Mesh(new THREE.SphereGeometry(0.06 * e, 6, 5), toon(P.leafMid));
+      folha.scale.set(1.6, 0.25, 0.9);
+      folha.position.set((k ? 1 : -1) * 0.07 * e, alto * (0.45 + k * 0.22), 0);
+      g.add(folha);
+    }
+    const flor = new THREE.Group();
+    flor.position.set(0, alto + 0.02 * e, 0.02 * e);
+    flor.rotation.x = -0.5;
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      const petala = new THREE.Mesh(new THREE.BoxGeometry(0.045 * e, 0.012 * e, 0.075 * e), toon(P.florGirassol));
+      petala.position.set(Math.cos(a) * 0.075 * e, 0, Math.sin(a) * 0.075 * e);
+      petala.rotation.y = -a;
+      flor.add(petala);
+    }
+    const miolo = new THREE.Mesh(new THREE.CylinderGeometry(0.05 * e, 0.05 * e, 0.022 * e, 10), toon(0x6b4a33));
+    flor.add(miolo);
+    g.add(flor);
+  } else {
+    // TOMATE: moita media com bolinhas vermelhas. E a unica cor quente das
+    // fileiras, e e ela que faz a horta parecer horta e nao jardineira.
+    const mata = new THREE.Mesh(new THREE.SphereGeometry(0.15 * e, 8, 6), toon(P.leafMid));
+    mata.scale.y = 0.85;
+    mata.position.y = 0.13 * e;
+    g.add(mata);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 + giro;
+      const fruta = new THREE.Mesh(new THREE.SphereGeometry(0.035 * e, 7, 6), toon(P.tomateMaduro));
+      fruta.position.set(
+        Math.cos(a) * 0.11 * e,
+        0.1 * e + ((i * 23) % 5) * 0.02 * e,
+        Math.sin(a) * 0.11 * e,
+      );
+      g.add(fruta);
+    }
+  }
+  return g;
+}
+
+/**
+ * CANTEIRO RETANGULAR do jardim: mureta de madeira, terra dentro e as plantas
+ * em GRADE.
+ *
+ * A mureta e de madeira e nao de alvenaria porque horta de clube e horta de
+ * caixote — e porque a madeira clara separa o canteiro do verde do gramado sem
+ * competir com as plantas.
+ *
+ * A TERRA FICA ACIMA DO GRAMADO (0,1) e a mureta sobe ate 0,2: assim a terra
+ * nao e coplanar com o chao, que e o jeito de nao serrilhar. Ver a regra da
+ * pilha do chao na skill de cenario.
+ */
+export function canteiroDeHorta(
+  tipo: TipoDePlanta,
+  largura = 2.4,
+  profundidade = 1.2,
+  semente = 0.5,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'canteiro-de-horta';
+  // a especie fica na etiqueta: e por ela que o teste confere que cada canteiro
+  // tem UM tipo so, que e o que faz o jardim parecer organizado
+  g.userData.planta = tipo;
+  const ALTURA = 0.2;
+  const TABUA = 0.09;
+
+  // as quatro tabuas da mureta. As duas do `z` sao mais CURTAS que a largura,
+  // para as pontas nao caírem no mesmo plano das outras duas — quina de caixa
+  // com face compartilhada serrilha.
+  for (const sz of [-1, 1] as const) {
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura, ALTURA, TABUA), toon(P.cercaDeJardim));
+    tabua.position.set(0, ALTURA / 2, sz * (profundidade / 2 - TABUA / 2));
+    g.add(tabua);
+  }
+  for (const sx of [-1, 1] as const) {
+    const tabua = new THREE.Mesh(
+      new THREE.BoxGeometry(TABUA, ALTURA, profundidade - TABUA * 2 - 0.01),
+      toon(P.barroDaBorda),
+    );
+    tabua.position.set(sx * (largura / 2 - TABUA / 2), ALTURA / 2, 0);
+    g.add(tabua);
+  }
+
+  // a terra, um degrau abaixo do topo da mureta
+  const terra = new THREE.Mesh(
+    new THREE.BoxGeometry(largura - TABUA * 2, 0.12, profundidade - TABUA * 2),
+    toon(P.terraDeCanteiro),
+  );
+  terra.position.y = 0.1;
+  g.add(terra);
+  // os sulcos: duas faixas de terra mais escura, que e o que diz "isto foi
+  // capinado", e nao "isto e uma caixa de areia"
+  for (const sz of [-1, 1] as const) {
+    const sulco = new THREE.Mesh(
+      new THREE.BoxGeometry(largura - TABUA * 2 - 0.14, 0.02, 0.07),
+      toon(P.terraUmida),
+    );
+    sulco.position.set(0, 0.165, sz * profundidade * 0.19);
+    g.add(sulco);
+  }
+
+  /**
+   * AS PLANTAS EM GRADE. O numero de colunas sai do comprimento, para um
+   * canteiro maior nao ficar com as mesmas quatro mudas mais espalhadas.
+   */
+  /**
+   * DUAS FILEIRAS, e nao uma. A primeira versao punha tres mudas em linha unica
+   * e o canteiro aparecia com mais terra que planta — de longe lia como caixa
+   * de areia, e nao como horta. Canteiro cheio e o que faz o jardim parecer
+   * cuidado.
+   */
+  const colunas = Math.max(3, Math.round((largura - 0.45) / 0.45));
+  const linhas = profundidade > 1.0 ? 2 : 1;
+  const vaoX = largura - 0.62;
+  for (let c = 0; c < colunas; c++) {
+    for (let l = 0; l < linhas; l++) {
+      // as duas fileiras saem DESENCONTRADAS meio passo, como canteiro de
+      // verdade: em grade perfeita elas viram um tabuleiro de xadrez
+      const desencontro = linhas === 1 ? 0 : (l === 1 ? 0.5 : 0);
+      const muda = planta(tipo, 1, (semente + c * 0.19 + l * 0.41) % 1);
+      muda.position.set(
+        -vaoX / 2 + ((c + desencontro) * vaoX) / Math.max(1, colunas - 1 + desencontro),
+        0.16,
+        linhas === 1 ? 0 : -profundidade * 0.17 + l * profundidade * 0.34,
+      );
+      g.add(muda);
+    }
+  }
+  return g;
+}
+
+/**
+ * VASO DE BARRO com uma planta dentro, para a fileira da beirada do jardim.
+ *
+ * Ele existe alem dos canteiros porque um jardim so de canteiros no chao fica
+ * TODO na mesma altura, e a camera isometrica achata isso: os vasos levantam
+ * parte das plantas e dao relevo a area.
+ */
+export function vasoDePlanta(tipo: TipoDePlanta, altura = 0.32, semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'vaso-de-planta';
+  const raio = altura * 0.55;
+
+  const corpo = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio, raio * 0.72, altura, 12),
+    toon(P.barroDoVaso),
+  );
+  corpo.position.y = altura / 2;
+  g.add(corpo);
+  // o colarinho do vaso: mais LARGO que o corpo, senao as duas faces laterais
+  // caem no mesmo plano e a borda serrilha
+  const colar = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio * 1.1, raio * 1.1, altura * 0.13, 12),
+    toon(P.barroDaBorda),
+  );
+  colar.position.y = altura * 0.955;
+  g.add(colar);
+  const terra = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio * 0.95, raio * 0.95, 0.03, 10),
+    toon(P.terraUmida),
+  );
+  terra.position.y = altura * 0.99;
+  g.add(terra);
+
+  const muda = planta(tipo, 0.85, semente);
+  muda.position.y = altura;
+  g.add(muda);
+  return g;
+}
+
+/**
+ * O REGADOR da Josefina, largado no jardim. Peca pequena e sem colisor: e um
+ * sinal de que alguem trabalha aqui, que e o que separa um jardim de um
+ * canteiro decorativo.
+ */
+export function regador(cor: number = P.metalGrey): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'regador';
+  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.2, 10), toon(cor));
+  corpo.position.y = 0.1;
+  g.add(corpo);
+  // o bico, subindo em diagonal, e o chuveirinho da ponta
+  const bico = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.035, 0.3, 8), toon(cor));
+  bico.position.set(0.16, 0.17, 0);
+  bico.rotation.z = -0.75;
+  g.add(bico);
+  const crivo = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.04, 0.05, 8), toon(P.metalWhite));
+  crivo.position.set(0.27, 0.26, 0);
+  crivo.rotation.z = -0.75;
+  g.add(crivo);
+  // a alca por cima
+  const alca = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.016, 6, 12, Math.PI), toon(cor));
+  alca.position.set(-0.03, 0.2, 0);
+  alca.rotation.y = Math.PI / 2;
+  g.add(alca);
+  return g;
+}
+
+/**
+ * O MONTINHO DE TERRA REMEXIDA, entre dois canteiros do jardim da Josefina.
+ *
+ * Ele existe para ser DESCOBERTO, e por isso e discreto de proposito: 12 cm de
+ * altura, cor de terra no meio de um jardim de terra. Quem acha, acha porque
+ * saiu do caminho de pedrinha e foi olhar — que e exatamente o que o Renan
+ * pediu ("algo que ele descubra ao jogar").
+ *
+ * O que denuncia o montinho de perto sao os TORROES soltos em volta e as duas
+ * unhadas: terra so nao lê como "alguem cavou aqui", terra espalhada lê.
+ *
+ * A peca ja nasce com os dois estados montados — o monte e o buraco — e o
+ * buraco comeca escondido. Cavar e trocar a visibilidade dos dois
+ * (`userData.monte` e `userData.buraco`); nao ha peca nova para instanciar no
+ * meio do jogo, e a cena nao precisa saber como nenhum dos dois e feito.
+ */
+export function terraRemexida(semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'terra-remexida';
+  const giro = semente * 6.283;
+
+  // ---------------------------------------------------------------- o monte
+  const monte = new THREE.Group();
+  // a calota: uma esfera achatada, que é o que dá a silhueta de terra jogada
+  const cupula = new THREE.Mesh(
+    new THREE.SphereGeometry(0.3, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    toon(P.terraSolta),
+  );
+  cupula.scale.y = 0.42;
+  monte.add(cupula);
+  // os torroes em volta, em raio e altura diferentes: iguais viram enfeite
+  for (let i = 0; i < 5; i++) {
+    const a = giro + (i * 6.283) / 5;
+    const r = 0.3 + ((i * 0.37) % 1) * 0.16;
+    const s = 0.05 + ((i * 0.61) % 1) * 0.035;
+    const torrao = new THREE.Mesh(new THREE.BoxGeometry(s * 2, s * 1.3, s * 1.7), toon(P.terraUmida));
+    torrao.position.set(Math.cos(a) * r, s * 0.65, Math.sin(a) * r);
+    torrao.rotation.y = a * 1.7;
+    monte.add(torrao);
+  }
+  // as duas unhadas no alto do monte. Elas ficam ACIMA da calota (0,128 contra
+  // os 0,126 do topo dela) — decalque colado no mesmo plano serrilha.
+  for (const sx of [-1, 1] as const) {
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.012, 0.035), toon(P.terraUmida));
+    risco.position.set(sx * 0.05, 0.128, sx * 0.06);
+    risco.rotation.y = giro * 0.5 + sx * 0.3;
+    monte.add(risco);
+  }
+  g.add(monte);
+  g.userData.monte = monte;
+
+  // --------------------------------------------------------------- o buraco
+  // depois de cavar sobra o buraco: um disco quase preto rente ao chao, com a
+  // terra tirada empilhada de um lado so — cova, e nao cratera simetrica
+  const buraco = new THREE.Group();
+  buraco.visible = false;
+  const cova = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.19, 0.05, 14), toon(P.buracoDeTerra));
+  cova.position.y = 0.024;
+  buraco.add(cova);
+  const borda = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.045, 6, 16), toon(P.terraSolta));
+  borda.position.y = 0.03;
+  borda.rotation.x = Math.PI / 2;
+  borda.scale.y = 0.6;
+  buraco.add(borda);
+  for (let i = 0; i < 3; i++) {
+    const a = giro + 0.9 + i * 0.5;
+    const torrao = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.07, 0.1), toon(P.terraUmida));
+    torrao.position.set(Math.cos(a) * 0.42, 0.035, Math.sin(a) * 0.42);
+    torrao.rotation.y = a;
+    buraco.add(torrao);
+  }
+  g.add(buraco);
+  g.userData.buraco = buraco;
+
+  return g;
+}
+
+/**
+ * O OSSO — o de desenho animado, com os dois nos em cada ponta.
+ *
+ * Ele e o modelo de mao do item `osso`, entao a escala e a de uma coisa que
+ * cabe na mao: 26 cm de ponta a ponta. Deitado no eixo X, que e como a mao
+ * segura na pose `relaxed`.
+ *
+ * As pontas sao mais ESCURAS que o corpo. Osso todo de uma cor so vira um
+ * halter de academia; o que faz ler como osso e o no da ponta destacado.
+ */
+export function osso(cor: number = P.osso): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'osso';
+
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.17, 8), toon(cor));
+  haste.rotation.z = Math.PI / 2;
+  g.add(haste);
+
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      const no = new THREE.Mesh(new THREE.SphereGeometry(0.043, 8, 6), toon(P.ossoPonta));
+      no.position.set(sx * 0.088, 0, sz * 0.036);
+      g.add(no);
+    }
+  }
+  return g;
+}
+
+/**
+ * A PILHA DE LOUÇA SUJA que fica na mesa depois que o cliente vai embora.
+ *
+ * É o que o turno do Mania de Churrasco pede de volta ao balcão, e por isso
+ * precisa ler como "trabalho pendente" de longe: três pratos empilhados
+ * DESALINHADOS (empilhados retos viram um bolo de casamento), talher jogado
+ * por cima e o guardanapo amassado ao lado. Prato limpo é redondo e centrado;
+ * prato sujo é torto.
+ */
+export function loucaSuja(semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'louca-suja';
+  const giro = semente * 6.283;
+
+  for (let i = 0; i < 3; i++) {
+    const prato = pratoDeLouca(0.2 - i * 0.012);
+    prato.position.set(Math.cos(giro + i * 2.1) * 0.022, i * 0.028, Math.sin(giro + i * 2.1) * 0.022);
+    prato.rotation.y = giro + i * 0.8;
+    g.add(prato);
+  }
+  // a sujeira: um disco escuro no prato de cima, que é o que diz "comeram aqui"
+  const resto = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.012, 12), toon(P.churrascoCarvao));
+  resto.position.set(0, 0.098, 0.01);
+  g.add(resto);
+
+  // o talher atravessado por cima, e o cabo passando da borda
+  const garfo = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.012, 0.022), toon(P.churrascoInox));
+  garfo.position.set(0.01, 0.112, -0.02);
+  garfo.rotation.y = giro * 0.6 + 0.5;
+  g.add(garfo);
+
+  // o guardanapo amassado ao lado: uma bolinha achatada, e não um cubo
+  const guardanapo = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), toon(P.churrascoParede));
+  guardanapo.scale.set(1, 0.62, 1);
+  guardanapo.position.set(Math.cos(giro) * 0.24, 0.032, Math.sin(giro) * 0.24);
+  g.add(guardanapo);
+
   return g;
 }
