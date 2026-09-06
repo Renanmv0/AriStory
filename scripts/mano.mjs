@@ -17,6 +17,9 @@
  *   por que trabalha ali (o friozinho), DANÇA de verdade (o corpo tem que ter
  *   mexido no eixo Z enquanto a cena roda) e entrega as duas casquinhas, cada
  *   uma na mochila do dono;
+ * - COM SORVETE NA MÃO ele não vende outro: o rótulo do prompt deixa de
+ *   prometer sorvete e vira "Falar com o Mano", ele repara que vocês ainda
+ *   estão com o de antes, e nenhuma casquinha nova aparece;
  * - e o controle VOLTA no fim. Cutscene que trava o jogador e esquece de
  *   soltar é o pior defeito possível — o `finally` da cena existe por isso, e
  *   esta é a asserção que prova que ele funciona.
@@ -224,7 +227,28 @@ const depoisDeAndar = await page.evaluate(() => {
 });
 const andou = Math.hypot(depoisDeAndar[0] - antesDeAndar[0], depoisDeAndar[1] - antesDeAndar[1]);
 
-// ================================================ 4. ele não sai do posto
+// ============================ 4. com sorvete na mão ele repara, e não vende
+/**
+ * O RÓTULO É A PRIMEIRA METADE DA ASSERÇÃO. Prompt que promete um sorvete que
+ * não vai vir é pior do que prompt nenhum, e ele só pode mudar porque
+ * `Interactable.label` deixou de ser `readonly`.
+ */
+await irPara(12, 20.6);
+await page.waitForTimeout(1000);
+const comSorveteNaMao = await prompt();
+
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(800);
+const falasDoReparo = await venceAFala(16);
+await page.waitForTimeout(800);
+
+const naoVendeuDeNovo = await page.evaluate(() => ({
+  // as vagas de mão de cada um: uma casquinha só por pessoa, e não duas
+  maosDoAri: window.jogo.handItems('ari').filter((i) => i?.id?.startsWith('sorvete')).length,
+  maosDoRenan: window.jogo.handItems('renan').filter((i) => i?.id?.startsWith('sorvete')).length,
+}));
+
+// ================================================ 5. ele não sai do posto
 const trilha = [];
 for (let i = 0; i < 12; i++) {
   const m = await oMano();
@@ -270,6 +294,15 @@ if (!depois.morangoDoAri) falhas.push('o morango nao entrou na mochila do Ari');
 if (!depois.maracujaDoRenan) falhas.push('o maracuja nao entrou na mochila do Renan');
 if (!depois.memoria) falhas.push('a memoria do sorvete nao entrou no diario');
 if (andou < 0.4) falhas.push(`o jogador ficou travado depois da cutscene (andou ${andou.toFixed(2)})`);
+if (!/falar/i.test(comSorveteNaMao)) {
+  falhas.push(`com sorvete na mao o prompt ainda promete sorvete: "${comSorveteNaMao}"`);
+}
+if (!falasDoReparo.some((f) => /ainda est/i.test(f))) {
+  falhas.push('ele nao reparou que a dupla ja estava com sorvete');
+}
+if (naoVendeuDeNovo.maosDoAri !== 1 || naoVendeuDeNovo.maosDoRenan !== 1) {
+  falhas.push(`ele vendeu sorvete de novo: ${JSON.stringify(naoVendeuDeNovo)}`);
+}
 if (longeDoPosto.length) falhas.push(`ele saiu do posto: ${JSON.stringify(longeDoPosto[0])}`);
 falhas.push(...erros);
 
@@ -280,7 +313,9 @@ console.log('3. falas da compra:', JSON.stringify(falas.filter((f) => f.length >
 console.log('   tombo antes da compra:', tomboAntesDaCompra.toFixed(3), '(tem que ser ~0)',
   '· maior tombo NA compra:', maiorTombo.toFixed(3), '(tem que ser > 0,05)');
 console.log('   ', JSON.stringify(depois), '· andou depois:', andou.toFixed(2));
-console.log('4. pontos da trilha fora do posto:', longeDoPosto.length, 'de', trilha.length);
+console.log('4. com sorvete na mao:', JSON.stringify(comSorveteNaMao),
+  '·', JSON.stringify(falasDoReparo.slice(0, 3)), '·', JSON.stringify(naoVendeuDeNovo));
+console.log('5. pontos da trilha fora do posto:', longeDoPosto.length, 'de', trilha.length);
 
 await browser.close();
 if (falhas.length) {

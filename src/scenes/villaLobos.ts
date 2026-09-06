@@ -516,6 +516,14 @@ export const villaLobos: SceneDef = {
       // ele quase não sai do lugar, mas "quase" não é "nunca": sem isto o ponto
       // fica onde ele nasceu e o carinho vira um buraco no chão
       carinhoNoMano.moveTo(mano.x, mano.z);
+      /**
+       * O RÓTULO NÃO PODE PROMETER O QUE ELE NÃO VAI DAR. Com sorvete na mão
+       * ele não vende outro, então o prompt deixa de dizer "pedir sorvete" e
+       * passa a dizer "falar" — a pessoa aperta E sabendo o que vai acontecer.
+       */
+      const conversando = aindaTemSorvete();
+      pedirSorvete.label = conversando ? 'Falar com o Mano' : 'Pedir sorvete pro Mano';
+      pedirSorvete.icon = conversando ? '🐧' : '🍦';
     });
 
     // --------------------------------------------------- loja de patins
@@ -1747,7 +1755,25 @@ export const villaLobos: SceneDef = {
       'Dois! Adoro quando é dois.',
     ];
 
-    w.interact({
+    /**
+     * COM SORVETE NA MÃO ELE NÃO VENDE OUTRO — ele repara.
+     *
+     * É a única resposta honesta: `addItem` recusaria o repetido de qualquer
+     * jeito, e a cena inteira aconteceria para não entregar nada. Em vez disso
+     * ele nota que vocês ainda estão comendo o de antes, faz uma graça e
+     * guarda o próximo no gelo.
+     */
+    const AINDA_COMENDO = [
+      'Come esse primeiro, vai! O próximo eu deixo geladinho aqui.',
+      'Sorvete é um de cada vez. Senão o segundo derrete esperando.',
+      'Eu guardo o de vocês no gelo. Pode voltar quando acabar esse.',
+      'Tá bom esse? Tá bom, né. Eu escolhi.',
+    ];
+    /** algum dos dois ainda está com a casquinha na mochila */
+    const aindaTemSorvete = (): boolean =>
+      g.hasItem(ITENS.sorveteMorango.id, ARI.id) || g.hasItem(ITENS.sorveteMaracuja.id, RENAN.id);
+
+    const pedirSorvete = w.interact({
       id: 'parque:sorveteria',
       x: 12, z: 20.6, radius: 2.4,
       label: 'Pedir sorvete pro Mano', icon: '🍦',
@@ -1759,6 +1785,20 @@ export const villaLobos: SceneDef = {
           // que faz NPC parecer poste
           const eu = api.playerPosition();
           mano.group.rotation.y = Math.atan2(eu.x - mano.x, eu.z - mano.z);
+
+          if (aindaTemSorvete()) {
+            api.som('pinguim');
+            await api.say(['Opa! Mas vocês ainda estão com o de antes.'], 'Mano');
+            await api.say([w.pick(AINDA_COMENDO)], 'Mano');
+            // uma batidinha de asa curta: ele fica contente de ver vocês
+            // comendo o que ele entregou, mas não é a dança inteira
+            mano.dancar(1.0);
+            await conversa([
+              [A, 'Ele reparou.'],
+              [R, 'Ele repara em tudo.'],
+            ]);
+            return;
+          }
 
           const primeira = !api.flag('mano-atendeu');
           if (primeira) {
