@@ -88,12 +88,18 @@ const trocas = await page.evaluate(() => {
 // ------------------------------------------------------------- sorveteria
 await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=12,20.8&olhar=3.14`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2800);
+/**
+ * A COMPRA VIROU CENA quando o Mano chegou: ele fala, dança 2,5 s e só então
+ * entrega. As dez teclas de antes acabavam antes da dança e a memória não
+ * chegava a entrar — daí as trinta. Os `wait` da dança não respondem ao E, e
+ * no Chromium sem tela o tempo de jogo corre a um terço do relógio.
+ */
 await page.keyboard.press('KeyE');
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 30; i++) {
   await page.keyboard.press('KeyE');
   await page.waitForTimeout(420);
 }
-await page.waitForTimeout(900);
+await page.waitForTimeout(1200);
 await page.screenshot({ path: `${OUT}-sorvete.png` });
 
 // ------------------------------------------------------------------- lago

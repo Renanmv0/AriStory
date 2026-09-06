@@ -448,7 +448,7 @@ export const villaLobos: SceneDef = {
      * posto: é a mesma coleira da Gina na portaria, e nenhuma linha de cérebro
      * mudou por causa disso.
      */
-    const MANO = { x: 12.6, z: 20.1 };
+    const MANO = { x: 12.9, z: 20.3 };
     const mano = new Mano({
       minX: MANO.x - 0.12, maxX: MANO.x + 0.12,
       minZ: MANO.z - 0.1, maxZ: MANO.z + 0.1,
@@ -456,7 +456,67 @@ export const villaLobos: SceneDef = {
     mano.group.rotation.y = 0.3;
     w.add(mano.group);
     mano.aoSoar = () => g.som('pinguim');
-    w.onUpdate((dt) => mano.update(dt));
+
+    /**
+     * O CARINHO NO MANO tem PRIORIDADE sobre "Comprar sorvete".
+     *
+     * Os dois pontos se sobrepõem — o de comprar tem raio 2,4 e o Mano está
+     * dentro dele —, e sem o desempate o cachorrinho na sua frente vira
+     * cenário. O alvo mais específico ganha: é a mesma regra que o Walter e as
+     * mesas do Mania já pagaram.
+     *
+     * MAS O RAIO PRECISA SER MENOR QUE A DISTÂNCIA ATÉ O PONTO DE COMPRAR, e a
+     * primeira versão errou isso: com 1,05 de raio e o Mano a 0,92 da âncora de
+     * "Comprar sorvete" (`12; 20,6`), o carinho roubava o prompt de quem só
+     * queria comprar — a ação principal do quiosque virava a difícil de achar.
+     * Agora ele está a 0,95 da âncora e o raio é 0,8: parado onde se compra,
+     * o prompt é comprar; um passo para cima dele, é o carinho.
+     */
+    const FALAS_DO_MANO = [
+      'Ele bateu as asinhas. Acho que isso é oi.',
+      'Ó o chapéu. O sorvete de cima parece de verdade.',
+      'Mano, você é o melhor sorveteiro deste parque.',
+      'Ele fica na ponta dos pés quando a gente chega.',
+      'Se deixar, acho que ele dança de novo.',
+    ];
+    const carinhoNoMano = w.interact({
+      id: 'parque:mano',
+      x: mano.x, z: mano.z, radius: 0.8,
+      label: 'Fazer carinho no Mano', icon: '🐧',
+      highlight: mano.group,
+      priority: 1,
+      onInteract: async (api) => {
+        mano.receberCarinho();
+        api.som('pinguim');
+        if (!api.flag('mano-conhecido')) {
+          api.setFlag('mano-conhecido');
+          await conversa([
+            [R, 'Tem um pinguim atendendo o quiosque.'],
+            [A, 'Tem um pinguim DE CHAPÉU DE CASQUINHA atendendo o quiosque.'],
+            [R, 'Crachá e tudo. "Mano".'],
+            [A, 'Oi, Mano.'],
+          ]);
+          // ele responde do jeito dele: uma dancinha curta de apresentação
+          mano.dancar(1.8);
+          api.unlock({
+            id: 'mano-do-quiosque',
+            title: 'O Mano',
+            place: 'Parque Villa Lobos',
+            note: 'O pinguim do quiosque de sorvete, de avental rosa e chapéu de casquinha. Ele dança quando fica feliz, e ele fica feliz sempre.',
+            icon: '🐧',
+          });
+          return;
+        }
+        await api.say([w.pick(FALAS_DO_MANO)], A);
+      },
+    });
+
+    w.onUpdate((dt) => {
+      mano.update(dt);
+      // ele quase não sai do lugar, mas "quase" não é "nunca": sem isto o ponto
+      // fica onde ele nasceu e o carinho vira um buraco no chão
+      carinhoNoMano.moveTo(mano.x, mano.z);
+    });
 
     // --------------------------------------------------- loja de patins
     const loja = w.add(w.place(skateShop(P.fabricBlue), LOJA.x, 0, LOJA.z));
@@ -1669,25 +1729,65 @@ export const villaLobos: SceneDef = {
       x: 12, z: 20.6, radius: 2.4,
       label: 'Comprar sorvete', icon: '🍦',
       highlight: quiosque,
+      /**
+       * QUEM ATENDE AGORA É O MANO, e a compra virou cena: o pedido, a fala
+       * dele, a dancinha e só então as casquinhas.
+       *
+       * O JOGADOR FICA TRAVADO o tempo todo (`lockPlayer`), e a trava é
+       * desfeita num `finally`: se qualquer `await` daqui de dentro estourar —
+       * uma fala, o `wait` —, o jogo não pode ficar com a dupla congelada no
+       * meio do parque para o resto da sessão.
+       *
+       * A DANÇA NÃO É ESPERADA COM PROMESSA. `mano.dancar(2,5)` só liga o
+       * contador do bicho, e a cena espera o mesmo tempo com `api.wait`. São
+       * dois relógios que andam juntos porque recebem o mesmo `dt`, e nenhum
+       * dos dois segura o outro — se um dia a cena quiser continuar enquanto
+       * ele dança, é só não esperar.
+       */
       onInteract: async (api) => {
-        await conversa([
-          [A, 'Dois, por favor.'],
-          [R, 'Um de morango e um de maracujá.'],
-          [A, 'Nunca pedimos diferente.'],
-        ]);
-        sorveteRestante = 50;
-        // cada casquinha vai para a mochila do dono, não para uma bolsa comum
-        api.addItem(ITENS.sorveteMorango, ARI.id);
-        api.addItem(ITENS.sorveteMaracuja, RENAN.id);
-        api.som('sorvete');
-        api.toast('Morango e maracujá', '🍦');
-        api.unlock({
-          id: 'sorvete-villa',
-          title: 'Sorvete no parque',
-          place: 'Parque Villa Lobos',
-          note: 'Morango pro Ari, maracujá pro Renan. Nunca muda, e nem precisa.',
-          icon: '🍦',
-        });
+        api.lockPlayer(true);
+        try {
+          await conversa([
+            [A, 'Dois, por favor.'],
+            [R, 'Um de morango e um de maracujá.'],
+            [A, 'Nunca pedimos diferente.'],
+          ]);
+
+          // ele vira para quem pediu antes de responder: atender de lado é o
+          // que faz NPC parecer poste
+          const eu = api.playerPosition();
+          mano.group.rotation.y = Math.atan2(eu.x - mano.x, eu.z - mano.z);
+          api.som('pinguim');
+          await api.say(['Saindo um geladinho caprichado!'], 'Mano');
+
+          mano.dancar(2.5);
+          api.focusCamera(mano.group);
+          api.setZoom(6.4);
+          await api.wait(1.1);
+          await api.say(['Ele tá dançando. Ele DANÇA.'], A);
+          await api.wait(1.2);
+          api.focusCamera(null);
+          // 13 é o enquadramento com que a câmera nasce (`IsoCamera.viewSize`),
+          // e é para ele que o parque tem que voltar: fechar num número
+          // qualquer deixaria a cena inteira mais perto para sempre
+          api.setZoom(13);
+
+          sorveteRestante = 50;
+          // cada casquinha vai para a mochila do dono, não para uma bolsa comum
+          api.addItem(ITENS.sorveteMorango, ARI.id);
+          api.addItem(ITENS.sorveteMaracuja, RENAN.id);
+          api.som('sorvete');
+          api.toast('Morango e maracujá', '🍦');
+          api.unlock({
+            id: 'sorvete-villa',
+            title: 'Sorvete no parque',
+            place: 'Parque Villa Lobos',
+            note: 'Morango pro Ari, maracujá pro Renan, servidos por um pinguim de chapéu de casquinha que dança enquanto entrega.',
+            icon: '🍦',
+          });
+        } finally {
+          api.lockPlayer(false);
+        }
       },
     });
 
