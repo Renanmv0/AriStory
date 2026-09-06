@@ -4159,3 +4159,252 @@ export function loucaSuja(semente = 0.5): THREE.Group {
 
   return g;
 }
+
+/**
+ * ================================== A BILHETERIA DA RODA GIGANTE
+ *
+ * Cabine FECHADA de parque de diversões, e não um quiosque de balcão aberto:
+ * quem trabalha aqui fica dentro dela, atrás do vidro, e entrega o bilhete por
+ * um guichê. Por isso ela é uma peça própria, e não mais uma variação do
+ * `kiosk()` — o quiosque é um balcão com toldo, o oposto disto.
+ *
+ * A CONTA QUE MANDA NAS PROPORÇÕES é a câmera de 34°: uma peça de altura `h`
+ * esconde `h / tan(34°) ≈ 1,5·h` atrás dela. Quem está DENTRO da cabine só
+ * aparece se o beiral não o comer:
+ *
+ *   - o telhado vai a 2,62 e o beiral avança só 0,17 além da parede;
+ *   - a cabeça de quem atende fica por volta de 1,60;
+ *   - 2,62 − 1,60 = 1,02, que a 34° esconde 1,5 — e o beiral está a 1,07 da
+ *     frente, então tudo com `z > 0,05` aparece. O piso útil vai até 0,7.
+ *
+ * É a mesma armadilha do toldo do quiosque, resolvida com beiral curto em vez
+ * de marquise comprida: marquise bonita, atendente invisível.
+ *
+ * A JANELA É UM VÃO DE VERDADE — quatro peças de parede em volta, e não um
+ * retângulo pintado. O vidro fica no meio da espessura da parede, e embaixo
+ * dele sobra a fresta do guichê, com o balcãozinho de mármore avançando para
+ * fora: é por ali que o bilhete passa.
+ */
+export function ticketBooth(
+  corTelhado: number = P.fabricRed,
+  texto = 'BILHETERIA',
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'bilheteria';
+
+  const parede = toon(P.wallCream);
+  const faixa = toon(P.fabricBlue);
+  const telha = toon(corTelhado);
+  const madeira = toon(P.woodDark);
+
+  const LARG = 2.9;   // de parede a parede
+  const FUNDO = 2.0;
+  const ALTO = 2.4;   // até o forro
+  const ESP = 0.12;   // espessura de parede
+  const meio = LARG / 2 - ESP / 2;
+  const frente = FUNDO / 2 - ESP / 2;
+
+  // ------------------------------------------------------------- alicerce
+  // 6 cm mais largo que a parede: encostar na mesma medida põe duas faces no
+  // mesmo plano e a quina serrilha quando a câmera gira
+  const base = new THREE.Mesh(new THREE.BoxGeometry(LARG + 0.16, 0.16, FUNDO + 0.16), toon(P.concrete));
+  base.position.y = 0.08;
+  g.add(base);
+
+  /*
+   * ---------------------------------------------------------------- paredes
+   *
+   * FRENTE E FUNDO CABEM ENTRE AS LATERAIS (`LARG − 2·ESP`), e não de ponta a
+   * ponta: com a largura cheia as pontas delas terminavam no MESMO plano da
+   * face de fora das laterais, duas faces olhando para o mesmo lado sobre uma
+   * tira de 6 cm — z-fighting de manual, e a quina piscava com a câmera
+   * girando. Encaixadas, é topo contra face oposta, que é empilhamento normal.
+   */
+  const VAO_LARG = LARG - ESP * 2;
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(VAO_LARG, ALTO, ESP), parede);
+  fundo.position.set(0, 0.16 + ALTO / 2, -frente);
+  g.add(fundo);
+
+  for (const lado of [-1, 1] as const) {
+    const lateral = new THREE.Mesh(new THREE.BoxGeometry(ESP, ALTO, FUNDO - ESP), parede);
+    lateral.position.set(lado * meio, 0.16 + ALTO / 2, 0);
+    g.add(lateral);
+  }
+
+  /*
+   * A FRENTE É QUATRO PEÇAS EM VOLTA DO VÃO: peitoril, verga e as duas ombreiras.
+   * O vão fica em x −1,0…1,0 e y 1,05…2,05 (medidos do chão), que é altura de
+   * balcão e de rosto — não de vitrine.
+   */
+  const VAO_X = 1.0;
+  const VAO_Y0 = 1.05;
+  const VAO_Y1 = 2.05;
+  const zFrente = frente;
+
+  const peitoril = new THREE.Mesh(new THREE.BoxGeometry(VAO_LARG, VAO_Y0 - 0.16, ESP), parede);
+  peitoril.position.set(0, 0.16 + (VAO_Y0 - 0.16) / 2, zFrente);
+  g.add(peitoril);
+
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(VAO_LARG, 0.16 + ALTO - VAO_Y1, ESP), parede);
+  verga.position.set(0, (VAO_Y1 + 0.16 + ALTO) / 2, zFrente);
+  g.add(verga);
+
+  for (const lado of [-1, 1] as const) {
+    const ombreira = new THREE.Mesh(
+      new THREE.BoxGeometry(VAO_LARG / 2 - VAO_X, VAO_Y1 - VAO_Y0, ESP),
+      parede,
+    );
+    ombreira.position.set(lado * (VAO_X + (VAO_LARG / 2 - VAO_X) / 2), (VAO_Y0 + VAO_Y1) / 2, zFrente);
+    g.add(ombreira);
+  }
+
+  /*
+   * A faixa azul de parque de diversão é UM anel maciço 1,5 cm mais largo que a
+   * parede, e não quatro tiras coladas em cada face: quatro tiras encostam
+   * face contra face nas quinas e brigam pelo mesmo pixel. Um bloco proeminente
+   * não tem como brigar com nada.
+   */
+  // e ela AFUNDA 2 cm no alicerce: nascendo exatamente em `y = 0,16` o pé dela
+  // ficava no mesmo plano do pé das quatro paredes — quatro brigas de uma vez
+  const cinta = new THREE.Mesh(new THREE.BoxGeometry(LARG + 0.03, 0.28, FUNDO + 0.03), faixa);
+  cinta.position.y = 0.28;
+  g.add(cinta);
+
+  /*
+   * ---------------------------------------------------------------- por dentro
+   *
+   * As paredes são `FrontSide`: de fora são sólidas, mas de dentro somem — e
+   * pela janela se via a paisagem ATRAVÉS da cabine, como se ela fosse um vão
+   * vazado. Estas duas peças são o que se vê pelo guichê: o forro do fundo e o
+   * piso. Elas também são o cenário de quem vai trabalhar aqui.
+   */
+  const forro = new THREE.Mesh(
+    new THREE.BoxGeometry(LARG - ESP * 2 - 0.04, ALTO - 0.3, 0.05),
+    toon(P.bilheteriaDentro),
+  );
+  forro.position.set(0, 0.16 + (ALTO - 0.3) / 2, -frente + 0.11);
+  g.add(forro);
+
+  // 4 cm mais estreito que o forro: com a mesma largura os dois dividiam as
+  // faces laterais no ponto em que se cruzam, e a quina do rodapé serrilhava
+  const piso = new THREE.Mesh(
+    new THREE.BoxGeometry(LARG - ESP * 2 - 0.08, 0.06, FUNDO - ESP * 2 - 0.04),
+    toon(P.bilheteriaDentro),
+  );
+  piso.position.y = 0.2;
+  g.add(piso);
+
+  // ------------------------------------------------------------------ vidro
+  /*
+   * O VIDRO NÃO CHEGA AO PEITORIL: os 14 cm de baixo do vão ficam ABERTOS, e é
+   * essa fresta que faz a peça ler como guichê em vez de janela. O fundo escuro
+   * atrás dela dá a profundidade que uma fresta vazia não teria.
+   */
+  const vidro = new THREE.Mesh(
+    new THREE.BoxGeometry(VAO_X * 2, VAO_Y1 - VAO_Y0 - 0.14, 0.05),
+    toon(P.glass, { opacity: 0.42 }),
+  );
+  vidro.position.set(0, VAO_Y0 + 0.14 + (VAO_Y1 - VAO_Y0 - 0.14) / 2, zFrente);
+  g.add(vidro);
+
+  const sombraDoGuiche = new THREE.Mesh(
+    new THREE.BoxGeometry(VAO_X * 2 - 0.1, 0.14, 0.04),
+    toon(P.churrascoCarvao),
+  );
+  sombraDoGuiche.position.set(0, VAO_Y0 + 0.07, zFrente - 0.16);
+  g.add(sombraDoGuiche);
+
+  // caixilho: dois montantes finos dividindo o vidro em três, um fio à frente
+  for (const x of [-VAO_X / 3, VAO_X / 3]) {
+    const montante = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, VAO_Y1 - VAO_Y0, 0.06),
+      toon(P.metalWhite),
+    );
+    montante.position.set(x, (VAO_Y0 + VAO_Y1) / 2, zFrente + 0.045);
+    g.add(montante);
+  }
+
+  // ---------------------------------------------------------- balcão do guichê
+  /*
+   * O TAMPO NÃO CASA NÚMERO COM O PEITORIL: 3 cm abaixo do topo dele e 3 cm à
+   * frente da face dele. Alinhado, dividia dois planos com a parede (o de cima
+   * e o de trás) e serrilhava nos dois.
+   */
+  const balcao = new THREE.Mesh(new THREE.BoxGeometry(VAO_X * 2 + 0.3, 0.09, 0.44), toon(P.concrete));
+  balcao.position.set(0, VAO_Y0 - 0.075, zFrente + 0.19);
+  g.add(balcao);
+  // a bandejinha de metal onde o bilhete pousa, pousada no tampo
+  const bandeja = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.24), toon(P.metalGrey));
+  bandeja.position.set(0, VAO_Y0 - 0.015, zFrente + 0.2);
+  g.add(bandeja);
+  // duas mãos-francesas segurando o balcão
+  for (const lado of [-1, 1] as const) {
+    const apoio = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.3, 0.26), madeira);
+    apoio.position.set(lado * (VAO_X - 0.12), VAO_Y0 - 0.24, zFrente + 0.14);
+    apoio.rotation.x = -0.5;
+    g.add(apoio);
+  }
+
+  // --------------------------------------------------------------- letreiro
+  /*
+   * A PLACA CABE ENTRE A VERGA E O FESTÃO, e não em cima dele: na primeira
+   * versão ela nasceu na mesma altura das ripas listradas, que ficam 11 cm à
+   * frente — o letreiro existia e ninguém lia, porque o festão estava na
+   * frente. Aqui ela ocupa a faixa livre de 2,16 a 2,38 da parede.
+   */
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(LARG - 0.34, 0.26, 0.06), faixa);
+  placa.position.set(0, VAO_Y1 + 0.19, zFrente + 0.05);
+  g.add(placa);
+  const nome = letreiro(texto, LARG - 0.5, 0.19);
+  nome.position.set(0, VAO_Y1 + 0.19, zFrente + 0.09);
+  g.add(nome);
+
+  // ----------------------------------------------------------------- telhado
+  /*
+   * BEIRAL CURTO (0,17) POR CONTA DA CÂMERA — ver o bloco de cima. E o telhado
+   * é uma pirâmide de 4 águas: cone de 4 lados girado meio passo, com o raio
+   * escolhido para a base pousar exatamente sobre a laje.
+   */
+  const laje = new THREE.Mesh(
+    new THREE.BoxGeometry(LARG + 0.34, 0.14, FUNDO + 0.34),
+    toon(P.wallCream),
+  );
+  laje.position.y = 0.16 + ALTO + 0.07;
+  g.add(laje);
+
+  const raio = Math.hypot(LARG + 0.3, FUNDO + 0.3) / 2;
+  const agua = new THREE.Mesh(new THREE.ConeGeometry(raio, 0.9, 4), telha);
+  agua.rotation.y = Math.PI / 4;
+  agua.position.y = 0.16 + ALTO + 0.14 + 0.45;
+  g.add(agua);
+
+  // o festão listrado pendurado no beiral: é o que diz "parque de diversão"
+  const RIPAS = 11;
+  const passo = (LARG + 0.28) / RIPAS;
+  for (let i = 0; i < RIPAS; i++) {
+    const ripa = new THREE.Mesh(
+      new THREE.BoxGeometry(passo * 0.92, 0.17, 0.05),
+      i % 2 === 0 ? telha : toon(P.wallCream),
+    );
+    ripa.position.set(
+      -(LARG + 0.28) / 2 + passo * (i + 0.5),
+      0.16 + ALTO - 0.05,
+      frente + 0.2,
+    );
+    g.add(ripa);
+  }
+
+  // pináculo: uma bolinha e uma bandeirola, para o telhado não terminar em bico
+  const bola = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), toon(P.gold));
+  bola.position.y = 0.16 + ALTO + 0.14 + 0.94;
+  g.add(bola);
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.34, 6), toon(P.metalGrey));
+  mastro.position.y = 0.16 + ALTO + 0.14 + 1.14;
+  g.add(mastro);
+  const bandeirola = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.3, 3), telha);
+  bandeirola.rotation.z = -Math.PI / 2;
+  bandeirola.position.set(0.14, 0.16 + ALTO + 0.14 + 1.22, 0);
+  g.add(bandeirola);
+
+  return g;
+}
