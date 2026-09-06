@@ -428,6 +428,12 @@ export interface GameAPI {
   /** true enquanto a tecla estiver segurada; ignorada durante dialogo/diario */
   keyDown(code: string): boolean;
   /**
+   * O manche CRU (setas, WASD ou o joystick do celular), que chega mesmo com o
+   * jogador travado e com uma fala na tela. E o olhar em volta da cabine da
+   * roda gigante: la a cutscene tira o andar e devolve o olhar.
+   */
+  olharLivre(): { x: number; y: number };
+  /**
    * Barra de forca no HUD; 0..1, ou null para esconder. `alvo` marca um ponto
    * da barra (a forca que acerta o parceiro) e `zona` e a largura da faixa de
    * acerto em volta dele.
