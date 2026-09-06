@@ -1889,16 +1889,64 @@ export const villaLobos: SceneDef = {
       },
     });
 
+    /**
+     * ========================================== A BILHETERIA VENDE DE VERDADE
+     *
+     * Este é o primeiro lugar do jogo que GASTA a carteira do casal. Ela nasceu
+     * no turno do Mania de Churrasco e até agora só enchia; aqui ela esvazia, e
+     * o dinheiro passa a querer dizer alguma coisa.
+     *
+     * SEM DINHEIRO NÃO TRAVA NADA: o bilheteiro manda a dupla trabalhar um
+     * turno no Mania, que é uma volta de trinta segundos de caminhada e um
+     * minigame que já existe. Um jogo-presente não pode ter beco sem saída —
+     * mas pode ter um caminho.
+     */
+    const PRECO_DO_BILHETE = 24;
+
     w.interact({
       id: 'parque:bilheteria',
       x: 8.9, z: -19, radius: 2.2,
       label: 'Bilheteria', icon: '🎟️',
       highlight: bilheteria,
-      onInteract: () =>
-        conversa([
+      onInteract: async (api) => {
+        if (api.hasItem(ITENS.bilheteDaRoda.id) || api.hasItem(ITENS.bilheteDaRoda.id, api.companionId())) {
+          await conversa([
+            [A, 'A gente já tem o bilhete.'],
+            [R, 'Tá aqui na mochila. Vamos logo.'],
+          ]);
+          return;
+        }
+
+        await conversa([
           [A, 'Dois pra roda gigante.'],
           [R, 'Sempre dois.'],
-        ]),
+        ]);
+        if (api.carteira() < PRECO_DO_BILHETE) {
+          await conversa([
+            [A, `São R$ ${PRECO_DO_BILHETE} e a gente tem R$ ${api.carteira()}.`],
+            [R, 'O Walter tá contratando lá no Mania de Churrasco.'],
+            [A, 'Um turno e a gente volta.'],
+          ]);
+          api.toast(`Faltam R$ ${PRECO_DO_BILHETE - api.carteira()}`, '🎟️');
+          return;
+        }
+
+        const vai = await api.ask(
+          `Dois lugares na mesma cabine — R$ ${PRECO_DO_BILHETE}?`,
+          ['Comprar', 'Agora não'],
+          A,
+        );
+        if (vai !== 0) return;
+        if (!api.gastar(PRECO_DO_BILHETE)) return;
+
+        api.addItem(ITENS.bilheteDaRoda);
+        api.som('caixa');
+        api.toast(`Bilhete comprado · R$ ${api.carteira()} na carteira`, '🎟️');
+        await conversa([
+          [R, 'Guardei aqui.'],
+          [A, 'A catraca é ali na plataforma.'],
+        ]);
+      },
     });
 
     // ---------------------------------------------------- a roda gigante
@@ -1937,12 +1985,35 @@ export const villaLobos: SceneDef = {
       x: 0, z: -18.6, radius: 3,
       label: 'Andar na roda gigante', icon: '🎡',
       onInteract: async (api) => {
+        /*
+         * A CATRACA COBRA. Um bilhete vale a cabine inteira — os dois lugares
+         * — então basta que ele esteja na mochila de QUALQUER um dos dois; o
+         * casal divide carteira, divide bilhete. Quem carrega é quem entrega.
+         */
+        const dono = api.hasItem(ITENS.bilheteDaRoda.id)
+          ? undefined
+          : api.hasItem(ITENS.bilheteDaRoda.id, api.companionId())
+            ? api.companionId()
+            : null;
+        if (dono === null) {
+          await conversa([
+            [A, 'A catraca não abre sem bilhete.'],
+            [R, 'A bilheteria é aquela ali do lado do lago.'],
+          ]);
+          api.toast('Compre o bilhete na bilheteria', '🎟️');
+          return;
+        }
+
         zoomLivre = false;
         api.lockPlayer(true);
         await conversa([
           [R, 'A fila tá curta hoje.'],
           [A, 'Bora subir?'],
         ]);
+        api.removeItem(ITENS.bilheteDaRoda.id, dono);
+        wheel.girarACatraca();
+        api.som('caixa');
+        api.toast('Bilhete picotado', '🎟️');
 
         const cabine = wheel.boardingCabin();
         const velocidade = wheel.speed;

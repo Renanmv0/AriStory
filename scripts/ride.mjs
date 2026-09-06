@@ -31,6 +31,24 @@ const memorias = () =>
     }
   });
 
+/*
+ * A CATRACA COBRA: sem bilhete na mochila a roda recusa. O teste prova as duas
+ * metades — primeiro esbarra na recusa, depois compra (direto pela carteira,
+ * que a bilheteria fica do outro lado do lago) e sobe.
+ */
+await page.keyboard.press('KeyE');
+for (let i = 0; i < 12; i++) {
+  if (await dialogoAberto()) await page.keyboard.press('KeyE');
+  await page.waitForTimeout(200);
+}
+const recusouSemBilhete = (await memorias()) === 0;
+
+await page.evaluate(() => {
+  const itens = window.aristoryItens;
+  window.jogo.addItem(itens['bilhete-roda']);
+});
+await page.waitForTimeout(400);
+
 await page.keyboard.press('KeyE'); // embarca
 
 // o dialogo tem efeito de maquina de escrever: a primeira tecla completa a
@@ -52,9 +70,19 @@ await page.screenshot({ path: `${OUT}-fim.png` });
 const promptVisivel = (await page.locator('.prompt.show').count()) > 0;
 const total = await memorias();
 
+// o bilhete e picotado na entrada: nao pode sobrar na mochila
+const bilheteGasto = await page.evaluate(() => {
+  const j = window.jogo;
+  return !j.hasItem('bilhete-roda') && !j.hasItem('bilhete-roda', j.companionId());
+});
+
+console.log('recusou sem bilhete:', recusouSemBilhete);
+console.log('bilhete picotado:', bilheteGasto);
 console.log('passeio concluido:', subiu);
 console.log('prompt de volta:', promptVisivel);
 console.log('memorias salvas:', total);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 await browser.close();
-process.exit(erros.length || !subiu || !promptVisivel ? 1 : 0);
+process.exit(
+  erros.length || !subiu || !promptVisivel || !recusouSemBilhete || !bilheteGasto ? 1 : 0,
+);

@@ -286,6 +286,22 @@ export const ITENS = {
     holdPose: 'relaxed',
   },
   /**
+   * O BILHETE DA RODA GIGANTE, comprado na bilheteria do Villa Lobos.
+   *
+   * Ele é o primeiro item do jogo que CUSTA dinheiro — a carteira do casal
+   * existe desde o turno do Mania, e este é o primeiro lugar que gasta dela.
+   * Um bilhete vale a dupla inteira (é sempre uma cabine para os dois), e ele
+   * é consumido ao passar pela catraca.
+   */
+  bilheteDaRoda: {
+    id: 'bilhete-roda',
+    nome: 'Bilhete da roda gigante',
+    icone: '🎟️',
+    tipo: 'mao',
+    nota: 'dois lugares na mesma cabine',
+    holdPose: 'relaxed',
+  },
+  /**
    * O osso desenterrado no jardim da Josefina.
    *
    * Ele nao serve para nada sozinho — e uma CHAVE: existe para ser entregue ao

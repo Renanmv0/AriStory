@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { toon, line } from '../core/materials';
+import { letreiro } from './props';
 import { PALETTE as P } from '../palette';
 
 export interface FerrisWheelOptions {
@@ -46,8 +47,14 @@ export class FerrisWheel {
 
   private readonly rim = new THREE.Group();
   private readonly cabinCount: number;
+  /** as duas rodas de atrito que empurram o aro: elas giram junto */
+  private readonly pneus: THREE.Group[] = [];
+  /** a catraca do embarque; a cena gira o braço quando alguém passa */
+  private catraca: THREE.Group | null = null;
 
   constructor(opts: FerrisWheelOptions = {}) {
+    // etiqueta para o caçador de z-fighting e para os testes acharem a peça
+    this.group.userData.peca = 'roda-gigante';
     const R = (this.radius = opts.radius ?? 12);
     const count = (this.cabinCount = opts.cabins ?? 32);
     this.speed = ((opts.rpm ?? 0.9) * Math.PI * 2) / 60;
@@ -157,43 +164,324 @@ export class FerrisWheel {
       this.group.add(cross);
     }
 
-    // ------------------------------------------------- base e contrapesos
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.62, R * 0.67, 0.35, 26), toon(P.concrete));
+    this.montarABase(R, legSpan);
+
+    this.layout();
+  }
+
+  /**
+   * ================================================== A BASE, E COMO ELA ANDA
+   *
+   * A roda em si já estava boa; o chão dela era uma laje, quatro tambores lisos
+   * e uma caixa cinza. O que faltava era o que uma roda gigante de verdade tem
+   * embaixo — e, sobretudo, o que a faz GIRAR: nada ali explicava o movimento.
+   *
+   * O QUE FOI ACRESCENTADO, e por que cada coisa:
+   *
+   * - as RODAS DE ATRITO. É assim que roda gigante de verdade anda: dois pneus
+   *   pressionam o aro por baixo e empurram. Eles giram de verdade no `update`,
+   *   na velocidade certa (`v = ω·R / r`), então quem olhar para o pé da roda vê
+   *   a máquina funcionando em vez de um aro girando por mágica;
+   * - a CASA DE MÁQUINAS ao lado deles, com respiro e porta: é de onde a força
+   *   sai;
+   * - os BLOCOS DE FUNDAÇÃO com chumbadores, um por pé. Perna de aço que
+   *   encosta no gramado não sustenta sessenta toneladas, e a falta deles era o
+   *   que mais fazia a roda parecer pousada em cima do parque;
+   * - os CONTRAPESOS deixaram de ser cilindros lisos: cinta, tampa e parafuso;
+   * - a PLATAFORMA DE EMBARQUE virou plataforma mesmo — tábuas, degrau, corrimão
+   *   de fila, CATRACA e o posto do bilheteiro. É por ela que se entra, e é ela
+   *   que dá sentido ao bilhete;
+   * - a CERCA DE CORRENTE em volta da laje, com o vão na frente da plataforma:
+   *   ela diz onde a pessoa pode pisar sem precisar de nenhum aviso.
+   *
+   * A ORIENTAÇÃO: `+Z` é a frente (de onde a câmera olha e por onde o jogador
+   * chega), e é para lá que vai tudo o que precisa ser visto — a plataforma, a
+   * catraca, o toldo. A casa de máquinas fica do lado, em `-X`, para não
+   * disputar espaço com o embarque.
+   */
+  private montarABase(R: number, legSpan: number): void {
+    const concreto = toon(P.concrete);
+    const madeira = toon(P.wood);
+    const madeiraEscura = toon(P.woodDark);
+    const metal = toon(P.metalWhite);
+    const metalEscuro = toon(P.metalGrey);
+
+    // ---------------------------------------------------------- a laje
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.62, R * 0.67, 0.35, 26), concreto);
     base.position.y = 0.16;
     base.receiveShadow = true;
     this.group.add(base);
+    // a faixa amarela pintada na borda: decalque ACIMA do topo da laje
+    // (0,335 contra 0,335 — sobe 1 cm) para não brigar por profundidade
+    const faixa = new THREE.Mesh(new THREE.TorusGeometry(R * 0.56, 0.055, 5, 30), toon(P.roupaBota));
+    faixa.rotation.x = Math.PI / 2;
+    faixa.position.y = 0.345;
+    this.group.add(faixa);
 
+    // -------------------------------------------- fundação de cada pé
+    for (const [x, z] of [
+      [-R * 0.2, -legSpan], [R * 0.2, -legSpan],
+      [-R * 0.2, legSpan], [R * 0.2, legSpan],
+    ] as const) {
+      const bloco = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.92, 0.72, 4), concreto);
+      bloco.rotation.y = Math.PI / 4;
+      bloco.position.set(x, 0.36, z);
+      bloco.castShadow = true;
+      this.group.add(bloco);
+      // os quatro chumbadores: sem eles o bloco é um cubo de concreto qualquer
+      for (const [dx, dz] of [[-0.44, -0.44], [0.44, -0.44], [-0.44, 0.44], [0.44, 0.44]] as const) {
+        const parafuso = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.12, 6), metalEscuro);
+        parafuso.position.set(x + dx, 0.75, z + dz);
+        this.group.add(parafuso);
+      }
+    }
+
+    // ------------------------------------------------------ contrapesos
     const dx = R * 0.4;
     const dz = legSpan * 0.92;
     for (const [x, z] of [[-dx, -dz], [dx, -dz], [-dx, dz], [dx, dz]] as const) {
-      const drum = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.055, R * 0.055, R * 0.16, 12), toon(P.metalRed));
-      drum.position.set(x, R * 0.08, z);
-      drum.castShadow = true;
-      this.group.add(drum);
+      /**
+       * MENORES DO QUE ERAM. Com `R·0,055` de raio e `R·0,16` de altura eles
+       * ficavam do tamanho da porta da casa de máquinas — quatro tonéis de óleo
+       * espalhados pela laje. Contrapeso é baixo e atarracado: ele existe para
+       * ficar embaixo, e não para competir com a plataforma.
+       */
+      const alto = R * 0.105;
+      const tambor = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.042, R * 0.046, alto, 12), toon(P.metalRed));
+      tambor.position.set(x, alto / 2, z);
+      tambor.castShadow = true;
+      this.group.add(tambor);
+      // as duas cintas e a tampa: é o que separa "tambor" de "cilindro"
+      for (const k of [0.32, 0.68] as const) {
+        const cinta = new THREE.Mesh(new THREE.TorusGeometry(R * 0.045, 0.03, 5, 14), toon(P.woodDark));
+        cinta.rotation.x = Math.PI / 2;
+        cinta.position.set(x, alto * k, z);
+        this.group.add(cinta);
+      }
+      const tampa = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.048, R * 0.048, 0.09, 12), metalEscuro);
+      tampa.position.set(x, alto + 0.04, z);
+      this.group.add(tampa);
     }
 
-    // cabine de embarque
-    const dock = new THREE.Mesh(new THREE.BoxGeometry(R * 0.55, 0.55, R * 0.3), toon(P.metalGrey));
-    dock.position.set(0, 0.4, legSpan * 0.9);
-    dock.castShadow = true;
-    dock.receiveShadow = true;
-    this.group.add(dock);
+    // ----------------------------------------------- as rodas de atrito
+    /**
+     * ELAS ENCOSTAM NO ARO POR BAIXO, e é daí que sai o movimento.
+     *
+     * O ponto mais baixo do aro está em `hubHeight − R`; o pneu de raio `r`
+     * tocando ali tem o centro em `hubHeight − R − r`. Errar essa conta deixa o
+     * pneu ou flutuando ou enterrado no aro, e a peça inteira perde o sentido.
+     */
+    const raioDoPneu = R * 0.075;
+    const alturaDoPneu = this.hubHeight - R - raioDoPneu;
+    for (const z of [-R * 0.075, R * 0.075]) {
+      const pneu = new THREE.Group();
+      const borracha = new THREE.Mesh(
+        new THREE.CylinderGeometry(raioDoPneu, raioDoPneu, R * 0.05, 14), toon(P.churrascoCarvao),
+      );
+      borracha.rotation.x = Math.PI / 2;
+      pneu.add(borracha);
+      // o cubo claro no meio: é ele que deixa a rotação VISÍVEL. Um pneu preto
+      // liso girando parece um pneu preto parado.
+      const cubo = new THREE.Mesh(
+        new THREE.CylinderGeometry(raioDoPneu * 0.38, raioDoPneu * 0.38, R * 0.056, 10), metal,
+      );
+      cubo.rotation.x = Math.PI / 2;
+      pneu.add(cubo);
+      for (const giro of [0, Math.PI / 2] as const) {
+        const raio = new THREE.Mesh(
+          new THREE.BoxGeometry(raioDoPneu * 1.5, 0.05, R * 0.058), toon(P.metalGrey),
+        );
+        raio.rotation.z = giro;
+        pneu.add(raio);
+      }
+      pneu.position.set(0, alturaDoPneu, z);
+      this.group.add(pneu);
+      this.pneus.push(pneu);
+      // o braço que segura o pneu contra o aro
+      const braco = new THREE.Mesh(new THREE.BoxGeometry(0.16, alturaDoPneu, 0.16), metalEscuro);
+      braco.position.set(0, alturaDoPneu / 2, z);
+      this.group.add(braco);
+    }
 
-    const toldo = new THREE.Mesh(
-      new THREE.CylinderGeometry(R * 0.13, R * 0.13, R * 0.34, 14, 1, false, 0, Math.PI),
-      toon(P.fabricRed),
-    );
-    toldo.position.set(0, 1.9, legSpan * 0.9);
-    toldo.rotation.set(0, 0, Math.PI / 2);
-    toldo.scale.z = 0.6;
-    this.group.add(toldo);
-    for (const x of [-R * 0.15, R * 0.15]) {
-      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.8, 8), toon(P.metalWhite));
-      poste.position.set(x, 0.9, legSpan * 0.9);
+    // -------------------------------------------------- casa de máquinas
+    const casa = new THREE.Group();
+    casa.position.set(-R * 0.5, 0, legSpan * 0.25);
+    const corpo = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.5, 1.5), toon(P.wallCream));
+    corpo.position.y = 0.75;
+    corpo.castShadow = true;
+    casa.add(corpo);
+    // o telhado é mais LARGO que o corpo, senão as faces laterais dos dois
+    // caem no mesmo plano e serrilham na quina
+    const telhado = new THREE.Mesh(new THREE.BoxGeometry(2.34, 0.16, 1.74), madeiraEscura);
+    telhado.position.y = 1.58;
+    casa.add(telhado);
+    const porta = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.1, 0.06), madeira);
+    porta.position.set(0.45, 0.55, 0.78);
+    casa.add(porta);
+    // o respiro: três lâminas, que é o que diz "tem motor aqui dentro"
+    for (let i = 0; i < 3; i++) {
+      const lamina = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.07, 0.05), metalEscuro);
+      lamina.position.set(-0.45, 1.0 - i * 0.14, 0.78);
+      casa.add(lamina);
+    }
+    this.group.add(casa);
+
+    // ------------------------------------------------------ a plataforma
+    /**
+     * A PLATAFORMA FICA NA BORDA DA LAJE, e não colada nas pernas: é onde o
+     * jogador de fato chega. O colisor da cena bloqueia um círculo de 7,2 em
+     * volta do centro, então a frente do deque tem que parar um fio dentro
+     * dele — senão a pessoa anda por dentro da madeira.
+     */
+    const plataforma = new THREE.Group();
+    plataforma.position.set(0, 0, 6.0);
+
+    const deque = new THREE.Mesh(new THREE.BoxGeometry(R * 0.62, 0.42, 2.2), madeiraEscura);
+    deque.position.y = 0.21;
+    deque.receiveShadow = true;
+    plataforma.add(deque);
+    // as tábuas, um decalque fino por cima do deque
+    for (let i = 0; i < 9; i++) {
+      const tabua = new THREE.Mesh(new THREE.BoxGeometry(R * 0.6, 0.03, 0.2), madeira);
+      tabua.position.set(0, 0.435, -0.96 + i * 0.24);
+      plataforma.add(tabua);
+    }
+    /**
+     * DOIS DEGRAUS, e não um. O deque tem 42 cm; um degrau só de 20 deixava um
+     * paredão de 22 cm no meio do caminho, que lê como tropeço e não como
+     * escada.
+     */
+    for (const [i, z] of [1.24, 1.56].entries()) {
+      const alturaDoDegrau = 0.28 - i * 0.14;
+      const degrau = new THREE.Mesh(new THREE.BoxGeometry(2.2, alturaDoDegrau, 0.32), madeiraEscura);
+      degrau.position.set(0, alturaDoDegrau / 2, z);
+      plataforma.add(degrau);
+    }
+
+    // o corrimão da fila: dois trilhos paralelos formando o corredor
+    for (const lado of [-1, 1] as const) {
+      for (const z of [-0.7, 0.1, 0.9] as const) {
+        const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.95, 8), metal);
+        poste.position.set(lado * 1.5, 0.9, z);
+        plataforma.add(poste);
+      }
+      const trilho = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 1.75), metal);
+      trilho.position.set(lado * 1.5, 1.3, 0.1);
+      plataforma.add(trilho);
+    }
+
+    /**
+     * A CATRACA, no meio do corredor. Três braços a 120°, e é ela que faz o
+     * bilhete existir: sem uma catraca no caminho, "comprar bilhete" seria uma
+     * regra escrita em lugar nenhum.
+     */
+    const catraca = new THREE.Group();
+    catraca.position.set(0, 0.42, 1.0);
+    const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.21, 0.95, 12), metalEscuro);
+    pedestal.position.y = 0.48;
+    catraca.add(pedestal);
+    const cabeca = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.16, 12), metal);
+    cabeca.position.y = 1.02;
+    catraca.add(cabeca);
+    for (let i = 0; i < 3; i++) {
+      const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 8), metal);
+      braco.rotation.z = Math.PI / 2;
+      braco.position.set(Math.cos((i * Math.PI * 2) / 3) * 0.45, 0.95, Math.sin((i * Math.PI * 2) / 3) * 0.45);
+      braco.rotation.y = -(i * Math.PI * 2) / 3;
+      catraca.add(braco);
+    }
+    plataforma.add(catraca);
+    this.catraca = catraca;
+
+    // o posto do bilheteiro, do lado da catraca: um púlpito com uma luminária
+    const pulpito = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.05, 0.6), madeira);
+    pulpito.position.set(-1.95, 0.52, 0.9);
+    plataforma.add(pulpito);
+    const tampoDoPulpito = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.08, 0.74), madeiraEscura);
+    tampoDoPulpito.position.set(-1.95, 1.09, 0.9);
+    plataforma.add(tampoDoPulpito);
+
+    /**
+     * O PÓRTICO, e não um toldo por cima.
+     *
+     * Aqui havia uma meia-cana vermelha de três metros pairando sobre o
+     * embarque, e ela cometia o erro que a cadeira do salva-vidas já pagou:
+     * numa câmera de 34°, o que está ACIMA E À FRENTE esconde o que está
+     * atrás — o toldo comia a catraca, o púlpito e quem estivesse embarcando,
+     * e de longe a plataforma era um tijolo vermelho. Cobertura só ficaria
+     * bem numa câmera que olha de lado.
+     *
+     * O pórtico resolve as duas coisas: ele é VERTICAL, então não tapa nada, e
+     * ainda diz o nome da atração — que é o que um toldo tentava dizer.
+     */
+    const portico = new THREE.Group();
+    portico.position.set(0, 0, 1.25);
+    for (const lado of [-1, 1] as const) {
+      const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 3.0, 10), metal);
+      coluna.position.set(lado * 2.3, 1.5, 0);
+      portico.add(coluna);
+      // a lâmpada no alto de cada coluna
+      const luz = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), toon(P.luzDoPortao));
+      luz.position.set(lado * 2.3, 3.16, 0);
+      portico.add(luz);
+    }
+    const viga = new THREE.Mesh(new THREE.BoxGeometry(4.9, 0.15, 0.18), metal);
+    viga.position.y = 2.9;
+    portico.add(viga);
+    // a placa pendurada na viga, com a fita vermelha da casa
+    const placa = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.75, 0.1), toon(P.fabricRed));
+    placa.position.y = 2.42;
+    portico.add(placa);
+    const filete = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 0.11), toon(P.wallCream));
+    filete.position.set(0, 2.42, 0.01);
+    portico.add(filete);
+    // o nome, desenhado num canvas como todas as placas do jogo
+    const nome = letreiro('RODA GIGANTE', 2.35, 0.34, '#c0392b');
+    nome.position.set(0, 2.42, 0.07);
+    portico.add(nome);
+    // as lampadinhas da moldura, como em parque de verdade
+    for (let i = 0; i < 7; i++) {
+      const bulbo = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), toon(P.luzDoPortao));
+      bulbo.position.set(-1.35 + i * 0.45, 2.85, 0.12);
+      portico.add(bulbo);
+    }
+    plataforma.add(portico);
+
+    // a coberturinha do púlpito do bilheteiro: pequena, e SÓ sobre ele
+    const chapeuDoPulpito = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.1, 0.95), toon(P.fabricRed));
+    chapeuDoPulpito.position.set(-1.95, 1.95, 0.9);
+    plataforma.add(chapeuDoPulpito);
+    const hasteDoPulpito = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.9, 8), metal);
+    hasteDoPulpito.position.set(-1.95, 1.5, 0.62);
+    plataforma.add(hasteDoPulpito);
+
+    this.group.add(plataforma);
+
+    // --------------------------------------------- a cerca de corrente
+    /**
+     * Ela contorna a laje e ABRE na frente da plataforma. O vão não é enfeite:
+     * cerca fechada em volta de uma coisa em que se entra é uma contradição que
+     * o olho percebe antes da cabeça.
+     */
+    const raioDaCerca = R * 0.72;
+    const POSTES = 18;
+    const pontos: number[] = [];
+    for (let i = 0; i < POSTES; i++) {
+      const a = (i / POSTES) * Math.PI * 2;
+      // o vão da frente: pula os postes que caem na boca da plataforma
+      const naFrente = Math.sin(a) > 0.72;
+      if (naFrente) continue;
+      const x = Math.cos(a) * raioDaCerca;
+      const z = Math.sin(a) * raioDaCerca;
+      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.85, 8), metalEscuro);
+      poste.position.set(x, 0.42, z);
       this.group.add(poste);
+      // a corrente pendurada até o próximo poste, desenhada como linha
+      const b = ((i + 1) / POSTES) * Math.PI * 2;
+      if (Math.sin(b) > 0.72) continue;
+      pontos.push(x, 0.72, z, Math.cos(b) * raioDaCerca, 0.72, Math.sin(b) * raioDaCerca);
     }
-
-    this.layout();
+    this.group.add(new THREE.LineSegments(buildLines(pontos), line(P.metalGrey)));
   }
 
   /** angulo (rad) da cabine i no plano da roda */
@@ -215,7 +503,20 @@ export class FerrisWheel {
   update(dt: number): void {
     this.angle += this.speed * dt;
     this.rim.rotation.z = this.angle;
+    /**
+     * OS PNEUS GIRAM NA VELOCIDADE CERTA, e não numa qualquer: quem encosta no
+     * aro anda com ele, então `v = ω·R` na borda, e o pneu de raio `r` gira a
+     * `ω·R/r`. Com um número inventado a roda de atrito patinaria à vista de
+     * todo mundo — e o detalhe existe justamente para mostrar como ela anda.
+     */
+    const giroDoPneu = (this.speed * this.radius) / (this.radius * 0.075);
+    for (const pneu of this.pneus) pneu.rotation.z -= giroDoPneu * dt;
     this.layout();
+  }
+
+  /** Dá um terço de volta na catraca: alguém acabou de passar. */
+  girarACatraca(): void {
+    if (this.catraca) this.catraca.rotation.y -= (Math.PI * 2) / 3;
   }
 
   /** A cabine que esta passando mais perto do ponto de embarque (embaixo). */
