@@ -532,12 +532,22 @@ export class FerrisWheel {
     saia.position.y = piso + 0.065;
     g.add(saia);
 
-    // ------------------------------------------------------------- bancos
-    // O de trás é onde os dois sentam; o da frente é baixo e SEM encosto de
-    // propósito: um encosto na frente cortaria a vista bem na linha do olho.
+    /*
+     * OS BANCOS OLHAM PARA +Z, que é onde o parque está.
+     *
+     * A primeira versão sentava os dois de costas para ele: da cabine se via a
+     * grama vazia e o skyline da cidade, e o parque — o lago, a cúpula, o
+     * quiosque do Mano — ficava atrás da nuca. Aqui o banco com encosto é o de
+     * `z` NEGATIVO, e quem senta nele olha para a frente da roda.
+     *
+     * E É UM BANCO SÓ. Tinha um segundo, baixo, na frente — mas o parque, visto
+     * do alto, fica LÁ EMBAIXO: o olhar desce uns 30° para achar o lago e a
+     * cúpula, e a essa inclinação o banco da frente era a única coisa na tela.
+     * Sem ele dá para olhar até uns 48°, que é onde o peitoril começa.
+     */
     const madeira = toon(P.cabineBanco);
     const estofo = toon(P.cabineEstofado);
-    for (const [z, comEncosto] of [[0.28, true], [-0.28, false]] as const) {
+    for (const [z, comEncosto] of [[-0.28, true]] as const) {
       const base = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.27, 0.24), madeira);
       base.position.set(0, piso + 0.135, z);
       g.add(base);
@@ -546,12 +556,12 @@ export class FerrisWheel {
       g.add(almofada);
       if (!comEncosto) continue;
       const encosto = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.34, 0.06), madeira);
-      encosto.position.set(0, piso + 0.5, z + 0.12);
-      encosto.rotation.x = 0.14;
+      encosto.position.set(0, piso + 0.5, z - 0.12);
+      encosto.rotation.x = -0.14;
       g.add(encosto);
       const forro = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.28, 0.04), estofo);
-      forro.position.set(0, piso + 0.5, z + 0.08);
-      forro.rotation.x = 0.14;
+      forro.position.set(0, piso + 0.5, z - 0.08);
+      forro.rotation.x = -0.14;
       g.add(forro);
     }
 
@@ -622,6 +632,7 @@ export class FerrisWheel {
   abrirCabine(cabine: THREE.Group): void {
     cabine.add(this.interior);
     this.interior.visible = true;
+    this.atravessarAEstrutura(true);
     /*
      * E A CASCA PARA DE FAZER SOMBRA. Ela envolve os dois por todos os lados,
      * então enquanto ela projetava sombra os dois viajavam dentro do próprio
@@ -638,11 +649,70 @@ export class FerrisWheel {
     if (braco) braco.visible = false;
   }
 
+  /**
+   * ======================== A ESTRUTURA VIRA VIDRO ENQUANTO ALGUÉM ESTÁ DENTRO
+   *
+   * Os dois olham para o PARQUE, que fica em +Z — e entre a cabine e o parque
+   * está a metade da frente da roda: um aro, a treliça e o leque de cabos. De
+   * dentro isso corta a vista em fatias.
+   *
+   * A solução não é sumir com a roda (sem ela não se está numa roda gigante):
+   * é deixá-la quase invisível, um fantasma de vidro por onde o parque
+   * aparece inteiro e a estrutura continua sendo lida. `depthWrite = false` é
+   * o que faz de verdade a diferença — sem isso ela some da imagem mas
+   * continua tapando tudo no buffer de profundidade.
+   *
+   * Os materiais são CÓPIAS, e não o original com a opacidade mexida: o
+   * `toon()` guarda material em cache, e mexer no branco da roda apagaria
+   * meio parque junto.
+   */
+  private readonly fantasmas = new Map<THREE.Material, THREE.Material>();
+  private readonly trocados: Array<{
+    alvo: THREE.Object3D & { material: THREE.Material };
+    original: THREE.Material;
+    sombra: boolean;
+  }> = [];
+
+  private atravessarAEstrutura(ligado: boolean): void {
+    if (!ligado) {
+      for (const t of this.trocados) {
+        t.alvo.material = t.original;
+        t.alvo.castShadow = t.sombra;
+      }
+      this.trocados.length = 0;
+      return;
+    }
+    this.rim.traverse((n) => {
+      const alvo = n as THREE.Object3D & { material?: THREE.Material | THREE.Material[] };
+      if (!alvo.material || Array.isArray(alvo.material)) return;
+      const original = alvo.material;
+      let copia = this.fantasmas.get(original);
+      if (!copia) {
+        copia = original.clone();
+        copia.transparent = true;
+        // a linha some mais que a barra: um leque de 64 cabos soma opacidade e
+        // vira névoa se cada fio for tão visível quanto uma viga
+        copia.opacity = (original as THREE.LineBasicMaterial).isLineBasicMaterial ? 0.05 : 0.1;
+        copia.depthWrite = false;
+        this.fantasmas.set(original, copia);
+      }
+      this.trocados.push({
+        alvo: alvo as THREE.Object3D & { material: THREE.Material },
+        original,
+        sombra: alvo.castShadow,
+      });
+      alvo.material = copia;
+      // e para de fazer sombra: a treliça riscava o rosto dos dois lá dentro
+      alvo.castShadow = false;
+    });
+  }
+
   /** Recolhe o interior; a cabine volta a ser uma cápsula fechada como as outras. */
   fecharCabine(): void {
     const cabine = this.interior.parent;
     this.interior.visible = false;
     this.group.add(this.interior);
+    this.atravessarAEstrutura(false);
     if (cabine && cabine !== this.group) {
       cabine.traverse((n) => {
         if ((n as THREE.Mesh).isMesh) n.castShadow = true;

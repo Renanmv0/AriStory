@@ -1978,8 +1978,8 @@ export const villaLobos: SceneDef = {
       });
 
     let cabineDoPasseio: THREE.Group | null = null;
-    let olharGiro = 1.55; // começa virado para o parceiro (ver o embarque)
-    let olharAltura = -0.1;
+    let olharGiro = 1.57; // começa virado para o parceiro (ver o embarque)
+    let olharAltura = -0.3;
     const LADO_DO_JOGADOR = -0.38;
     const olho = new THREE.Vector3();
     const miraDaCabine = new THREE.Vector3();
@@ -1991,16 +1991,19 @@ export const villaLobos: SceneDef = {
       olharGiro -= m.x * 1.5 * dt;
       olharAltura = Math.max(-0.75, Math.min(0.6, olharAltura + m.y * 0.9 * dt));
       // o pescoço tem limite: nem de costas para a janela, nem de costas para
-      // o parceiro. 2,1 rad para cada lado cobre a cabine inteira e ainda
-      // deixa claro para onde é "a frente".
-      olharGiro = Math.max(Math.PI - 2.2, Math.min(Math.PI + 2.2, olharGiro));
+      // o parceiro. A frente é o giro ZERO (+Z, o lado do parque), e 2,2 rad
+      // para cada lado cobrem a cabine inteira sem perder onde é a frente.
+      olharGiro = Math.max(-2.2, Math.min(2.2, olharGiro));
 
-      olho.set(LADO_DO_JOGADOR, FerrisWheel.PISO + 0.74, 0.18);
+      // ENCOSTADO NO BANCO, e não na beirada: 10 cm à frente do encosto o topo
+      // dele cortava a tela no meio quando o jogador virava para o parceiro.
+      // Sentado até o fundo, ele fica onde encosto tem que ficar — no rodapé.
+      olho.set(LADO_DO_JOGADOR, FerrisWheel.PISO + 0.74, -0.28);
       cabine.localToWorld(olho);
       miraDaCabine.set(
         LADO_DO_JOGADOR + Math.sin(olharGiro) * 6,
         FerrisWheel.PISO + 0.74 + olharAltura * 6,
-        0.18 + Math.cos(olharGiro) * 6,
+        -0.28 + Math.cos(olharGiro) * 6,
       );
       cabine.localToWorld(miraDaCabine);
       g.setCameraOmbro(olho, miraDaCabine);
@@ -2085,13 +2088,13 @@ export const villaLobos: SceneDef = {
         // olhando para fora (-Z) — que é justamente para onde o parque está
         api.som('sino'); // a sineta de "vai começar" antes de a cabine subir
         wheel.abrirCabine(cabine);
-        api.ridePlayer(cabine, new THREE.Vector3(LADO_DO_JOGADOR, FerrisWheel.PISO, 0.18), 0.55);
-        // o parceiro senta um dedo mais atrás e virado para o lado do jogador:
-        // assim, quando o jogador vira a cabeça, ele encontra o ROSTO dele, e
-        // não uma orelha colada na lente
-        // `facing` gira a partir de +Z: PI olha para fora (o parque), e é
-        // SOMANDO que ele vira para o lado do jogador, que está em x negativo
-        api.rideCompanion(cabine, new THREE.Vector3(0.38, FerrisWheel.PISO, 0.34), 0.55, Math.PI + 0.8);
+        // OS DOIS OLHAM PARA O PARQUE, que é +Z: `facing` gira a partir de +Z,
+        // então a frente é o zero. O parceiro senta um dedo mais atrás e virado
+        // para o lado do jogador (x negativo, daí o giro NEGATIVO): assim,
+        // quando o jogador vira a cabeça, ele encontra o ROSTO dele, e não uma
+        // orelha colada na lente.
+        api.ridePlayer(cabine, new THREE.Vector3(LADO_DO_JOGADOR, FerrisWheel.PISO, -0.28), 0.55, 0);
+        api.rideCompanion(cabine, new THREE.Vector3(0.38, FerrisWheel.PISO, -0.28), 0.55, -0.8);
         api.setSitting(true); // sentadinhos, e de mão dada — o `setSitting` faz as duas coisas
         api.focusCamera(cabine); // o sol e a sombra seguem a cabine
 
@@ -2099,10 +2102,13 @@ export const villaLobos: SceneDef = {
         api.setPlayerVisible(false);
         // a volta ABRE com ele em quadro, e não com a paisagem: a primeira
         // coisa que se vê lá dentro é o outro sentadinho ali do lado
-        // 1,55 rad aponta exatamente para o banco dele: é a conta do vetor do
-        // olho até a cabeça do parceiro, não um número escolhido no olho
-        olharGiro = 1.55;
-        olharAltura = -0.1;
+        // 1,57 rad (meia volta de quarto) aponta exatamente para o banco dele:
+        // é a conta do vetor do olho até a cabeça do parceiro, que senta na
+        // mesma profundidade, e não um número escolhido no olho
+        olharGiro = 1.57;
+        // e o olhar começa INCLINADO PARA BAIXO: o parque fica embaixo, e na
+        // horizontal a cabine mostra o céu e o skyline em vez dele
+        olharAltura = -0.3;
         cabineDoPasseio = cabine;
         api.toast('Olhe em volta — setas ou WASD', '👀');
 
