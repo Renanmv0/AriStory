@@ -1257,29 +1257,61 @@ function mangaDeMoletom(m: MedidasCorpo): THREE.Object3D {
 }
 
 /**
+ * ============================== A ALTURA E O RAIO DAS PECAS DE PESCOCO
+ *
+ * As duas pecas de pescoco (a gargantilha e a gravatinha do Walter) moram na
+ * CABECA e sofrem do mesmo problema geometrico, entao a conta e uma so.
+ *
+ * ESTE RIG NAO TEM PESCOCO A MOSTRA. O cilindro de pescoco vai ate `-0,1695·h`
+ * e o topo da capsula do torso chega a `-0,120·h` (em espaco de cabeca): o
+ * torso literalmente encosta no queixo. Quem esta na frente de uma peca de
+ * pescoco nao e o pescoco de raio `0,04·h` — e o alto do peito, de
+ * `0,105·h·w`. Medir pelo pescoco foi o que fez a gravatinha nascer inteira
+ * dentro do corpo, com so o bico do laco escapando.
+ *
+ * ALTURA (`Y_PESCOCO`): `-1,18·headR`, e nao `-0,98`. O cranio e uma esfera de
+ * raio `headR` (achatada 1,04 em y), entao a `-0,98·headR` ele ainda tem
+ * `0,116·h` de raio na altura do TOPO do laco — e o laco, que precisa estar a
+ * `0,12·h` da frente para escapar do peito, raspava o queixo. Descendo para
+ * `-1,18` o cranio ali ja tem so `0,067·h`, e a peca passa longe.
+ */
+const Y_PESCOCO = -1.18;
+
+/** Onde a superficie do peito esta, na altura de uma peca de pescoco. */
+function peitoNaAlturaDoPescoco(m: MedidasCorpo): number {
+  const raioTorso = m.h * 0.105 * m.w;
+  // a capsula do torso e cilindro ate `legH + 0,77·torsoH`; dali para cima e um
+  // capuz esferico, e a superficie na altura da peca e o cateto que sobra
+  const altura = m.legH + m.torsoH + m.headR * 0.92 + m.headR * Y_PESCOCO;
+  const acima = Math.max(0, altura - (m.legH + m.torsoH * 0.77));
+  return Math.max(
+    raioTorso * 0.45, // piso: nem numa pessoa mais alta a peca encolhe ate o pescoco
+    Math.sqrt(Math.max(0, raioTorso * raioTorso - acima * acima)),
+  );
+}
+
+/**
  * Gargantilha de laco, a que aparece no pescoco da vitrine.
  *
  * REFERENCIAL: a cabeca, y = 0 no centro do cranio — por isso os numeros sao
- * negativos. O pescoco do rig esta em `-headR * 0.85`, e o acessorio de
- * corrente da ficha ja mora nessa mesma altura.
+ * negativos. A altura e o raio saem de `Y_PESCOCO` e `peitoNaAlturaDoPescoco`,
+ * pelo mesmo motivo que a gravatinha do Walter: medida pelo pescoco ela nascia
+ * enterrada no peito e so o laco aparecia, solto no ar.
  */
 function gargantilhaDeLaco(m: MedidasCorpo): THREE.Object3D {
   const g = new THREE.Group();
-  const r = m.headR;
-  // na BASE do pescoco, e nao no meio: mais acima o cabelo do Ari, que cai ate
-  // o ombro, engole a gargantilha inteira. E a mesma altura do acessorio de
-  // corrente da ficha.
-  const y = -r * 0.98;
+  const y = m.headR * Y_PESCOCO;
+  const peito = peitoNaAlturaDoPescoco(m);
 
   const fita = new THREE.Mesh(
-    new THREE.CylinderGeometry(m.h * 0.043, m.h * 0.045, m.h * 0.026, 14, 1, true),
+    new THREE.CylinderGeometry(peito * 1.03, peito * 1.06, m.h * 0.02, 16, 1, true),
     toon(P.vestidoRenda, { doubleSide: true }),
   );
   fita.position.y = y;
   g.add(fita);
 
   const l = laco(m.h * 0.026, P.vestidoFita, P.vestidoRenda);
-  l.position.set(0, y, m.h * 0.044);
+  l.position.set(0, y, peito + m.h * 0.012);
   g.add(l);
 
   return g;
@@ -1305,10 +1337,10 @@ function gargantilhaDeLaco(m: MedidasCorpo): THREE.Object3D {
  */
 function gravataDoWalter(m: MedidasCorpo): THREE.Object3D {
   const g = new THREE.Group();
-  const r = m.headR;
-  // a mesma altura da gargantilha: na BASE do pescoco. Mais acima e o cabelo
-  // do Ari, que cai ate o ombro, engole a peca inteira
-  const y = -r * 0.98;
+  // a mesma altura e a mesma medida de peito da gargantilha — as duas contas
+  // moram no bloco de `Y_PESCOCO`, logo acima
+  const y = m.headR * Y_PESCOCO;
+  const peito = peitoNaAlturaDoPescoco(m);
   const fita = toon(P.gravataBorboleta);
 
   // a tira em volta do pescoco, aberta (casca de cilindro) para nao virar um
@@ -1316,35 +1348,10 @@ function gravataDoWalter(m: MedidasCorpo): THREE.Object3D {
   // a tira é do MESMO vermelho das asas, e não do tom escuro do nó: escura,
   // ela virava o desenho todo e a gravata lia como uma coleira preta no boneco
   // de camisa branca. O tom escuro fica só no nó, que é onde ele diz "dobra"
-  /**
-   * ONDE O PEITO ESTÁ, medido — e não chutado.
-   *
-   * A primeira versão media a peça pelo PESCOÇO (raio `0,042·h`) e nasceu
-   * inteira dentro do tronco: nesta altura quem está na frente não é o
-   * pescoço, é o alto da cápsula do torso, que tem `0,105·h·w` de raio. Só o
-   * bico do laço escapava, e a gravata lia como um risquinho escuro no
-   * pescoço do boneco.
-   *
-   * A conta: a cápsula do torso tem o cilindro até `legH + 0,77·torsoH` e daí
-   * para cima é um capuz esférico de raio `raioTorso`. A gravata mora acima
-   * desse topo, então a superfície na altura dela é o cateto que sobra.
-   */
-  const raioTorso = m.h * 0.105 * m.w;
-  const alturaDaGravata = m.legH + m.torsoH + m.headR * 0.92 + y;
-  const topoDoCilindro = m.legH + m.torsoH * 0.77;
-  const acima = Math.max(0, alturaDaGravata - topoDoCilindro);
-  const peito = Math.max(
-    raioTorso * 0.45, // piso: nem numa pessoa mais alta a gravata encolhe até o pescoço
-    Math.sqrt(Math.max(0, raioTorso * raioTorso - acima * acima)),
-  );
-
-  // a tira em volta do pescoco, aberta (casca de cilindro) para nao virar um
-  // colar macico visto de cima
-  // a tira é do MESMO vermelho das asas, e não do tom escuro do nó: escura,
-  // ela virava o desenho todo e a gravata lia como uma coleira preta no boneco
-  // de camisa branca. O tom escuro fica só no nó, que é onde ele diz "dobra"
   const colarinho = new THREE.Mesh(
-    new THREE.CylinderGeometry(peito * 1.06, peito * 1.1, m.h * 0.024, 16, 1, true),
+    // baixa e justa: alta e larga ela lia como uma bandana no peito, e quem
+    // tem que puxar o olho aqui e o laco, nao a tira
+    new THREE.CylinderGeometry(peito * 1.04, peito * 1.07, m.h * 0.018, 16, 1, true),
     toon(P.gravataBorboleta, { doubleSide: true }),
   );
   colarinho.position.y = y;
