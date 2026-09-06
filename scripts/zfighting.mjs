@@ -25,6 +25,7 @@ const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome
 /** cada peça, e em que cena ela aparece */
 const PECAS = [
   ['quiosque', 'villa-lobos'],
+  ['bilheteria', 'villa-lobos'],
   ['arquibancada', 'villa-lobos'],
   ['estante', 'quarto'],
   ['loja-de-patins', 'villa-lobos'],

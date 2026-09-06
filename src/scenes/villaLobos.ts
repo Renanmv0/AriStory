@@ -8,7 +8,7 @@ import {
   aroDeFrisbee, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
   cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
   junco, kiosk, lamp, marcaDeMira, meioFio, mesaPingPong, nenufar, picnicTable, raquete, skateShop,
-  rock, scoreboard, signBoard, textSign, tree, waterFountain, windsock,
+  rock, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
   bolinhaPingPong,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
@@ -191,39 +191,73 @@ export const villaLobos: SceneDef = {
     w.add(wheel.group);
     w.blockCircle(0, -26, 7.2);
 
-    // tapume e domo geodesico da praca da roda, como na foto
-    for (const x of [-11, 11]) {
-      w.add(w.place(fence(9, 1.2, P.metalWhite), x, 0, -20, Math.PI / 2));
-      w.blockBox(x, -20, 0.2, 4.5);
-    }
+    /*
+     * Tapume e domo geodésico da praça da roda, como na foto.
+     *
+     * SÓ O DA ESQUERDA. O de `x = 11` passava rente ao fundo da bilheteria e
+     * cortava a cabine ao meio na câmera de 34° — e é justamente por ali que
+     * agora corre o corredor calçado até o campinho de frisbee. Do lado de lá
+     * ele continua: é o que fecha a praça contra o mato.
+     */
+    w.add(w.place(fence(9, 1.2, P.metalWhite), -11, 0, -20, Math.PI / 2));
+    w.blockBox(-11, -20, 0.2, 4.5);
     // a cúpula virou peça do kit: estrutura completa (meridianos, paralelos,
     // pilares por dentro) mora em props.ts, a cena só posiciona
     w.add(w.place(domoDeVidro(2.6), -9.5, 0, -21, 0.4));
     w.blockCircle(-9.5, -21, 2.7);
 
-    // virada para +Z, como a sorveteria: a camera olha de +x/+z, entao quiosque
-    // de costas para ela vira uma caixa lisa
-    // x = 8.9, e não 9.5: com o giro de -0,5 rad o canto da direita do quiosque
-    // chega 1,68 além do centro dele, e a cerca da praça está em x = 11 — em
-    // 9,5 o tapume atravessava a bilheteria de lado a lado. Aqui sobra ~0,4 de
-    // folga entre a quina e a cerca.
-    const bilheteria = w.add(w.place(kiosk(P.fabricBlue, { texto: 'Bilheteria' }), 8.9, 0, -20.5, -0.5));
-    w.blockBox(8.9, -20.5, 1.4, 0.95, -0.5);
+    /*
+     * ===================================== A BILHETERIA, E O CORREDOR ATÉ ELA
+     *
+     * PARALELA À RODA: o aro gira no plano XY, então a roda é uma parede
+     * virada para ±Z. A cabine sem giro nenhum (`rotY = 0`, fachada para +Z)
+     * fica exatamente no mesmo alinhamento — as duas se olham do mesmo jeito, e
+     * quem chega pelo caminho principal vê a fachada inteira em vez de uma
+     * quina. Era o giro de −0,5 rad da versão de quiosque que quebrava isso.
+     *
+     * ONDE: `x = 10,6`, fora do disco de pedrinha da praça (raio 8) e fora do
+     * caminho de quem vai para a roda. O tapume que passava aqui saiu.
+     *
+     * O CORREDOR é o vão entre a fachada dela (`z = −19,5`) e a borda do
+     * campinho de frisbee (`z = −14`): 5,5 de passagem calçada, a mesma largura
+     * do caminho principal do parque. Ele encosta na praça de um lado e no
+     * campo do outro, então dá para ir da roda ao frisbee sem pisar na grama.
+     */
+    const BILHETERIA = { x: 10.6, z: -20.4 };
+    w.patch(BILHETERIA.x, -16.9, 6.4, 6.6, P.concrete, 0, 0.014, calcadaDePedrinha());
+    const bilheteria = w.add(w.place(ticketBooth(), BILHETERIA.x, 0, BILHETERIA.z));
+    w.blockBox(BILHETERIA.x, BILHETERIA.z, 1.53, 1.08);
 
     // ------------------------------------------- entorno da roda gigante
     // Tudo aqui é posicionado na mão de propósito: o espalhador de vegetação
     // (`livre()`, mais abaixo) proíbe 20 unidades em volta da roda, para não
     // nascer árvore no meio da praça. Sem isto a praça fica um prato de
     // concreto com a roda em cima.
+    /*
+     * OS DOIS DO LADO DA BILHETERIA SAÍRAM: (6,4; −13,6) e (8,6; −17,4).
+     * Os dois pousavam na pedrinha, um na boca da praça e o outro bem na
+     * frente do guichê — canteiro de 1 de raio COM COLISOR no meio da
+     * passagem. Os dois do lado de lá ficam: aquele lado não tem cabine nem
+     * corredor, e sem nenhum canteiro a praça vira um prato de concreto.
+     */
     const canteirosPraca: Array<[number, number, number]> = [
-      [-6.4, -13.6, 1.15], [6.4, -13.6, 1.15], [-8.6, -17.4, 0.95], [8.6, -17.4, 0.95],
+      [-6.4, -13.6, 1.15], [-8.6, -17.4, 0.95],
     ];
     for (const [x, z, r] of canteirosPraca) {
       w.add(w.place(canteiro(r, undefined, w.rng()), x, 0, z, w.range(0, 6.28)));
       w.blockCircle(x, z, r + 0.1);
     }
 
-    for (const [x, z] of [[-7.6, -11.4], [7.6, -11.4], [-12.2, -19], [12.2, -19]] as const) {
+    /*
+    /*
+     * O POSTE DE (12,2; −19) VIROU (7; −14,5): a 2,1 da bilheteria ele subia
+     * bem no meio da fachada e cortava o letreiro em duas. E o que decide não é
+     * a distância, é o DESVIO da diagonal da câmera — `(x − z)/√2`: em
+     * (12,2; −19) ele desviava só 0,7 da bilheteria, ou seja, estava na linha
+     * de visada dela. Daqui ele desvia 6,7, ilumina a boca do corredor, e a
+     * fachada fica limpa.
+     */
+    for (const [x, z] of [[-7.6, -11.4], [7.6, -11.4], [-12.2, -19], [7, -14.5]] as const) {
       w.add(w.place(lamp(false), x, 0, z));
       w.blockCircle(x, z, 0.35);
     }
@@ -1925,7 +1959,8 @@ export const villaLobos: SceneDef = {
 
     w.interact({
       id: 'parque:bilheteria',
-      x: 8.9, z: -19, radius: 2.2,
+      // na frente do guichê, e não no centro da cabine: agora ela é fechada
+      x: BILHETERIA.x, z: BILHETERIA.z + 2.1, radius: 2.4,
       label: 'Bilheteria', icon: '🎟️',
       highlight: bilheteria,
       onInteract: async (api) => {
