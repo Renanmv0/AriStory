@@ -159,14 +159,49 @@ export abstract class Bicho {
     return true;
   }
 
+  /**
+   * O CAMINHO ATE LA TAMBEM PRECISA CABER, e nao so o destino.
+   *
+   * O passeio anda em LINHA RETA do ponto atual ate o alvo. Testar so o alvo
+   * deixa passar a reta que corta um obstaculo pelo meio: dois pontos livres
+   * dos dois lados de uma mesa, e o bicho atravessa a mesa para ir de um ao
+   * outro. Era assim que o Walter raspava as cadeiras do Mania — o
+   * `scripts/garcom.mjs` pegava, e a culpa nunca foi da area dele.
+   *
+   * A conta e a distancia do centro do circulo ao SEGMENTO (e nao a reta
+   * infinita, que acusaria obstaculo atras das costas dele).
+   *
+   * O circulo que ja contem o ponto de partida e IGNORADO: se ele acordou
+   * dentro de um (a cena o pos la com `irPara`, ou o movel nasceu depois),
+   * exigir caminho livre o trancaria ali para sempre. Melhor deixar sair.
+   */
+  private caminhoLivre(x: number, z: number): boolean {
+    const x0 = this.x;
+    const z0 = this.z;
+    const dx = x - x0;
+    const dz = z - z0;
+    const comprimento = dx * dx + dz * dz;
+    for (const p of this.area.proibido ?? []) {
+      // ja estou dentro deste: ele nao pode me prender
+      if (Math.hypot(x0 - p.x, z0 - p.z) < p.r) continue;
+      const t = comprimento > 0
+        ? Math.max(0, Math.min(1, ((p.x - x0) * dx + (p.z - z0) * dz) / comprimento))
+        : 0;
+      if (Math.hypot(x0 + t * dx - p.x, z0 + t * dz - p.z) < p.r) return false;
+    }
+    return true;
+  }
+
   /** Escolhe o proximo destino, ou desiste e fica parado mais um pouco. */
   private novoDestino(): void {
-    for (let tentativa = 0; tentativa < 12; tentativa++) {
+    // 24 tentativas, e nao 12: exigir tambem o caminho livre derruba metade dos
+    // sorteios num salao cheio de mesa, e bicho que desiste demais vira estatua
+    for (let tentativa = 0; tentativa < 24; tentativa++) {
       const x = this.area.minX + this.sorte() * (this.area.maxX - this.area.minX);
       const z = this.area.minZ + this.sorte() * (this.area.maxZ - this.area.minZ);
       // um destino colado onde ele ja esta nao vira caminhada nenhuma
       const dist = Math.hypot(x - this.x, z - this.z);
-      if (this.cabe(x, z) && dist > 0.7) {
+      if (this.cabe(x, z) && dist > 0.7 && this.caminhoLivre(x, z)) {
         this.alvo.set(x, 0, z);
         this.humor = 'andando';
         // O RELOGIO PRECISA SER RENOVADO AQUI. Sem isto `aguarda` continua
