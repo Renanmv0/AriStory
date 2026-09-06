@@ -576,6 +576,29 @@ export class TurnoDoMania {
     // a comanda dele não vale mais nada: cozinhar para uma cadeira vazia é o
     // pior desperdício possível de um Walter que só faz um prato por vez
     this.comandas = this.comandas.filter((p) => p !== c);
+    this.recolherOPratoOrfao(c);
+  }
+
+  /**
+   * O PRATO DE QUEM FOI EMBORA SOME — do balcão E de dentro da bandeja.
+   *
+   * Sem isto, um prato já pronto na hora em que o dono desiste vira um ÓRFÃO,
+   * e órfão é veneno: ele ocupa uma das três vagas do balcão para sempre, e se
+   * alguém o pegar ocupa uma das DUAS vagas da bandeja para sempre — nenhuma
+   * mesa aceita (ninguém mais espera aquele prato) e a copa só recebia louça
+   * suja. Dois órfãos e a bandeja fica inutilizável até o fim do turno: o
+   * jogador vê pratos no balcão e o prompt de pegar simplesmente não acende.
+   * Foi exatamente o que o Renan viu jogando.
+   */
+  private recolherOPratoOrfao(c: Cliente): void {
+    for (const p of this.prontos.filter((p) => p.para === c)) this.apagar(p.malha);
+    this.prontos = this.prontos.filter((p) => p.para !== c);
+    for (const [quem, bandeja] of this.bandejas) {
+      const fora = bandeja.filter((v) => v.tipo === 'prato' && v.para === c);
+      if (!fora.length) continue;
+      for (const v of fora) this.apagar(v.malha);
+      this.bandejas.set(quem, bandeja.filter((v) => !(v.tipo === 'prato' && v.para === c)));
+    }
   }
 
   /**
@@ -696,7 +719,7 @@ export class TurnoDoMania {
     if (!c && this.sujeira.has(mesa)) {
       const bandeja = this.minhaBandeja();
       if (bandeja.length >= BANDEJA) {
-        this.g.toast('A bandeja tá cheia', '🖐');
+        this.g.toast('Bandeja cheia — larga a louça na copa', '🖐');
         return;
       }
       const louca = this.sujeira.get(mesa)!;
@@ -775,7 +798,7 @@ export class TurnoDoMania {
   private pegarOPrato(): void {
     const bandeja = this.minhaBandeja();
     if (bandeja.length >= BANDEJA) {
-      this.g.toast('A bandeja tá cheia', '🖐');
+      this.g.toast('Bandeja cheia — larga a louça na copa', '🖐');
       return;
     }
     const pronto = this.prontos.shift();
@@ -785,12 +808,23 @@ export class TurnoDoMania {
     this.g.som('pegar');
   }
 
+  /**
+   * A COPA ACEITA TUDO O QUE NÃO SERVE MAIS: a louça suja, e também qualquer
+   * prato cujo dono já foi embora.
+   *
+   * O prato órfão não deveria nem chegar aqui — `recolherOPratoOrfao` o tira da
+   * bandeja no instante em que o cliente desiste. Isto é a rede embaixo: se um
+   * dia sobrar um jeito de a bandeja guardar um prato sem dono, a copa desatola,
+   * em vez de a bandeja ficar travada até o fim do turno.
+   */
   private largarALouca(): void {
     const bandeja = this.minhaBandeja();
-    const sujas = bandeja.filter((v) => v.tipo === 'louca');
+    const inutil = (v: Vaga): boolean =>
+      v.tipo === 'louca' || !this.clientes.includes(v.para);
+    const sujas = bandeja.filter(inutil);
     if (!sujas.length) return;
     for (const v of sujas) this.apagar(v.malha);
-    this.bandejas.set(this.g.playerId(), bandeja.filter((v) => v.tipo !== 'louca'));
+    this.bandejas.set(this.g.playerId(), bandeja.filter((v) => !inutil(v)));
 
     // a pilha na copa cresce: é o placar visível de um trabalho que ninguém
     // aplaude, e some no fim do turno
@@ -819,12 +853,22 @@ export class TurnoDoMania {
 
     this.pontoDaRecepcao.enabled = fila.length > 0 && !this.guiado;
 
-    this.pontoDoBalcao.enabled = this.prontos.length > 0 && bandeja.length < BANDEJA;
-    this.pontoDoBalcao.label = this.prontos.length
-      ? `Pegar ${this.prontos[0].prato.nome}`
-      : 'Pegar o prato';
+    /**
+     * O PONTO CONTINUA ACESO COM A BANDEJA CHEIA, e o rótulo diz por quê.
+     *
+     * Desligado, o jogo ficava MUDO na hora em que mais precisava falar: o
+     * prato estava ali no balcão, o prompt não acendia, e não havia nada na
+     * tela explicando que o problema eram as duas mãos ocupadas. Prompt que
+     * some é a pior forma de dizer "não dá".
+     */
+    const cheia = bandeja.length >= BANDEJA;
+    this.pontoDoBalcao.enabled = this.prontos.length > 0;
+    this.pontoDoBalcao.label = !this.prontos.length
+      ? 'Pegar o prato'
+      : cheia ? 'Bandeja cheia — larga a louça na copa' : `Pegar ${this.prontos[0].prato.nome}`;
+    this.pontoDoBalcao.icon = cheia ? '🖐' : '🍽️';
 
-    this.pontoDaCopa.enabled = bandeja.some((v) => v.tipo === 'louca');
+    this.pontoDaCopa.enabled = bandeja.some((v) => v.tipo === 'louca' || !this.clientes.includes(v.para));
 
     for (let i = 0; i < this.mesas.length; i++) {
       const mesa = this.mesas[i];
@@ -835,9 +879,11 @@ export class TurnoDoMania {
         ponto.label = 'Sentar aqui';
         ponto.icon = '🪑';
       } else if (!c && this.sujeira.has(mesa)) {
-        ponto.enabled = bandeja.length < BANDEJA;
-        ponto.label = 'Recolher a louça';
-        ponto.icon = '🧽';
+        // pelo mesmo motivo do balcão: com a bandeja cheia o ponto continua
+        // aceso e diz o que falta fazer, em vez de sumir sem explicação
+        ponto.enabled = true;
+        ponto.label = cheia ? 'Bandeja cheia — larga a louça na copa' : 'Recolher a louça';
+        ponto.icon = cheia ? '🖐' : '🧽';
       } else if (c?.fase === 'quer-pedir') {
         ponto.enabled = true;
         ponto.label = 'Anotar o pedido';

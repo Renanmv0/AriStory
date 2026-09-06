@@ -780,6 +780,10 @@ export const maniaDeChurrasco: SceneDef = {
       x: p.x, z: p.z, posta: p.posta, floreira: p.floreira,
     }));
     const turno = new TurnoDoMania(w, g, paraOTurno, TURNO, cachorro);
+    // o `scripts/turno.mjs` precisa olhar por dentro do turno para provar
+    // coisas que não aparecem na tela (prato órfão, vaga de bandeja presa).
+    // É o mesmo caminho do `debugPlace`: gancho de teste, não de jogo.
+    w.root.userData.turno = turno;
 
     /**
      * A CONTA DO DIA. Ela vem depois de o salão esvaziar, e não quando o

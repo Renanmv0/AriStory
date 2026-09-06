@@ -19,6 +19,12 @@
  * - MESA SUJA NÃO RECEBE NINGUÉM: o rótulo dela é "Recolher a louça", e nunca
  *   "Sentar aqui";
  * - a BANDEJA tem duas vagas, e prato limpo e louça suja disputam as mesmas;
+ * - O PRATO DE QUEM FOI EMBORA SOME — do balcão e de dentro da bandeja. Prato
+ *   órfão preso numa vaga era o bug que o Renan viu: com as duas vagas tomadas
+ *   por pratos que nenhuma mesa aceita, os pratos ficam no balcão e o prompt de
+ *   pegar não acende mais o turno inteiro;
+ * - COM A BANDEJA CHEIA O JOGO FALA. O ponto do balcão continua aceso e diz o
+ *   que falta fazer, em vez de sumir e deixar o jogador sem saber o que houve;
  * - NÃO EXISTE DERROTA: mesmo deixando um cliente estourar a paciência, o turno
  *   continua rodando. Foi decisão do Renan, e é a única coisa aqui que nenhuma
  *   mecânica futura pode desfazer.
@@ -77,6 +83,22 @@ const agir = async (x, z, padrao, voltas = 60) => {
   return null;
 };
 
+/** o turno por dentro: o que não dá para ver na tela */
+const dentro = () => page.evaluate(() => {
+  const t = window.jogo.current.world.root.userData.turno;
+  if (!t) return null;
+  let noBalcao = 0;
+  window.jogo.scene.traverse((o) => {
+    if (o.userData?.prato && o.visible && o.position.y > 1 && o.position.z < -1.5) noBalcao += 1;
+  });
+  return {
+    prontos: t.prontos.length,
+    noBalcao,
+    clientes: t.clientes.length,
+    bandejas: [...t.bandejas.values()].map((b) => b.map((v) => v.tipo)),
+  };
+});
+
 const estado = () => page.evaluate(() => ({
   painel: !!document.querySelector('.turno.show'),
   relogio: document.querySelector('.turno .relogio')?.textContent ?? '',
@@ -130,7 +152,39 @@ for (let i = 0; i < 40; i++) {
   await page.waitForTimeout(700);
 }
 
-// ============================================ 3. o laço inteiro, uma volta
+/**
+ * ============ 3. O PRATO ÓRFÃO: o cliente vai embora com o prato já na mão
+ *
+ * É o bug que o Renan viu jogando. Este bloco monta a pior versão dele: o prato
+ * já saiu do balcão e está numa vaga da bandeja quando o dono desiste. Sem a
+ * correção a vaga fica presa até o fim do turno, e o prompt de pegar prato
+ * some para sempre — os pratos ficam no balcão e não dá para fazer nada.
+ *
+ * A paciência é zerada por dentro em vez de esperada: `esperando` leva 62 s de
+ * tempo de jogo vezes a calma do bicho, o que no Chromium sem tela seriam
+ * minutos de relógio.
+ */
+const MESA_ORFA = { x: 0.2, z: 1.2 };
+const orfao = {};
+orfao.levar = await agir(9.4, 5.4, /levar à mesa/i);
+orfao.sentar = await agir(MESA_ORFA.x, MESA_ORFA.z + 1.4, /sentar aqui/i);
+await venceAFala(6);
+orfao.anotar = await agir(MESA_ORFA.x, MESA_ORFA.z + 1.4, /anotar o pedido/i);
+orfao.pegar = await agir(-3.6, -0.6, /pegar /i, 90);
+const comOOrfao = await dentro();
+
+await page.evaluate(() => {
+  const t = window.jogo.current.world.root.userData.turno;
+  for (const c of t.clientes) if (c.fase === 'esperando') c.paciencia = 0.001;
+});
+for (let i = 0; i < 40; i++) {
+  const d = await dentro();
+  if (d.bandejas.every((b) => b.length === 0)) break;
+  await page.waitForTimeout(500);
+}
+const depoisDoOrfao = await dentro();
+
+// ============================================ 4. o laço inteiro, uma volta
 const MESA = { x: 5.2, z: 1.2 };
 const passos = {};
 passos.levar = await agir(9.4, 5.4, /levar à mesa/i);
@@ -165,7 +219,40 @@ passos.largar = await agir(-7.0, -0.6, /largar a louça/i, 30);
 const depoisDaCopa = await estado();
 await page.screenshot({ path: `${OUT}-salao.png` });
 
-// ============================== 4. deixar um cliente estourar não perde nada
+// ================== 5. bandeja cheia: o ponto do balcão continua falando
+await page.evaluate(() => {
+  const t = window.jogo.current.world.root.userData.turno;
+  const b = t.bandejas.get(window.jogo.playerId()) ?? [];
+  t.bandejas.set(window.jogo.playerId(), b);
+  while (b.length < 2) b.push({ tipo: 'louca', malha: { parent: null, traverse() {} } });
+});
+/**
+ * O PRATO PRONTO É INJETADO em vez de esperado: o que este bloco prova é a
+ * REGRA DO RÓTULO (bandeja cheia + prato no balcão = o ponto fala), e esperar a
+ * cozinha aqui só acrescentaria uma espera que às vezes não chega a tempo — e
+ * uma asserção que não roda é pior do que asserção nenhuma.
+ */
+await page.evaluate(() => {
+  const t = window.jogo.current.world.root.userData.turno;
+  t.prontos.push({
+    prato: { id: 'de-mentira', nome: 'Prato de teste' },
+    para: null,
+    malha: { parent: null, traverse() {} },
+    vaga: 2,
+  });
+});
+await irPara(-3.6, -0.6);
+await page.waitForTimeout(600);
+const comBandejaCheia = await prompt();
+await page.evaluate(() => {
+  const t = window.jogo.current.world.root.userData.turno;
+  t.prontos = t.prontos.filter((p) => p.prato.id !== 'de-mentira');
+});
+// e a copa desatola: largar esvazia as duas vagas
+await agir(-7.0, -0.6, /largar a louça/i, 20);
+const depoisDeDesatolar = await estado();
+
+// ============================== 6. deixar um cliente estourar não perde nada
 await page.waitForTimeout(9000);
 const continuaRodando = await estado();
 
@@ -187,6 +274,24 @@ const falhas = [];
 if (!/escala/i.test(promptDaEscala ?? '')) falhas.push('a escala nao ofereceu comecar o turno');
 if (!comecou.painel) falhas.push('o painel do turno nao apareceu');
 if (!chegou) falhas.push('nenhum cliente chegou no salao');
+for (const [nome, valor] of Object.entries(orfao)) {
+  if (!valor) falhas.push(`o passo "${nome}" do prato orfao nunca ficou disponivel`);
+}
+if (comOOrfao && !comOOrfao.bandejas.some((b) => b.includes('prato'))) {
+  falhas.push('o prato nem chegou a entrar na bandeja: o teste do orfao nao provou nada');
+}
+if (depoisDoOrfao && depoisDoOrfao.bandejas.some((b) => b.includes('prato'))) {
+  falhas.push('o prato do cliente que foi embora ficou preso na bandeja');
+}
+if (depoisDoOrfao && depoisDoOrfao.noBalcao > depoisDoOrfao.prontos) {
+  falhas.push(`sobrou prato fantasma no balcao: ${depoisDoOrfao.noBalcao} malhas para ${depoisDoOrfao.prontos} pratos`);
+}
+if (!/cheia/i.test(comBandejaCheia ?? '')) {
+  falhas.push(`com a bandeja cheia o balcao nao avisou nada: "${comBandejaCheia}"`);
+}
+if (depoisDeDesatolar && depoisDeDesatolar.bandeja.length !== 0) {
+  falhas.push('a copa nao desatolou a bandeja cheia');
+}
 for (const [nome, valor] of Object.entries(passos)) {
   if (!valor) falhas.push(`o passo "${nome}" nunca ficou disponivel`);
 }
@@ -210,7 +315,11 @@ falhas.push(...erros);
 console.log('1. escala:', JSON.stringify(promptDaEscala), '· painel:', comecou.painel,
   '· relogio:', comecou.relogio);
 console.log('2. primeiro cliente:', chegou ? `${chegou.clientes} no salao` : 'nenhum');
-console.log('3. o laco:', JSON.stringify(passos, null, 0));
+console.log('3. prato orfao:', JSON.stringify(orfao), '· com o prato:',
+  JSON.stringify(comOOrfao), '→ depois:', JSON.stringify(depoisDoOrfao));
+console.log('5. bandeja cheia diz:', JSON.stringify(comBandejaCheia),
+  '· depois de desatolar:', JSON.stringify(depoisDeDesatolar.bandeja));
+console.log('4. o laco:', JSON.stringify(passos, null, 0));
 console.log('   bandeja com o prato:', JSON.stringify(comPrato.bandeja),
   '· caixa depois de pagar:', depoisDePagar.grana);
 console.log('   bandeja com a louca:', JSON.stringify(comLouca.bandeja),
