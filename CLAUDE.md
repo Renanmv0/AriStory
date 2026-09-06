@@ -102,6 +102,7 @@ node scripts/onibus.mjs  /tmp/ob    # o onibus e o ponto de perto, nas duas ruas
 node scripts/osso.mjs    /tmp/os    # o osso: cavar no jardim, dar ao Walter e ele convidar pro turno
 node scripts/turno.mjs   /tmp/tn    # o turno do Mania: levar a mesa, anotar, servir, receber e a louca
 node scripts/premio.mjs  /tmp/pr    # a carteira do casal (uma so para os dois) e a gravatinha das 3 estrelas
+node scripts/mano.mjs    /tmp/pg    # o Mano no quiosque: fica no posto, aparece inteiro, fala, danca e entrega
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```
 
