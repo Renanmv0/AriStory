@@ -565,15 +565,31 @@ export class FerrisWheel {
       g.add(forro);
     }
 
-    // ---------------------------------------------------- esquadria da janela
+    /*
+     * ------------------------------------------- esquadria da janela, DE VIDRO
+     *
+     * Os montantes são a única coisa da cabine que fica ENTRE o olho e o
+     * parque, e a menos de 20 cm do rosto: num celular em pé, onde a janela é
+     * estreita, um deles sozinho tapava metade da tela. Eles ficam
+     * translúcidos (0,3) e mais finos, então continuam desenhando a moldura da
+     * janela sem ser a janela.
+     *
+     * `depthWrite = false` no material clonado é o que faz a diferença de
+     * verdade: transparente e escrevendo profundidade, o montante some da
+     * imagem mas continua apagando o que está atrás dele. E é CLONE porque o
+     * `toon()` guarda material em cache — mexer no original mudaria toda peça
+     * creme do jogo.
+     */
     const esquadria = toon(P.cabineEsquadria);
+    const vidro = toon(P.cabineEsquadria, { opacity: 0.3 }).clone();
+    vidro.depthWrite = false;
     const topo = piso + 0.94; // o aro da janela para logo abaixo da borda da calota
     const MONTANTES = 8;
     for (let i = 0; i < MONTANTES; i++) {
       // meio passo de rotação: assim nenhum montante nasce bem no meio da
       // vista de quem está sentado olhando para fora
       const a = ((i + 0.5) / MONTANTES) * Math.PI * 2;
-      const m = new THREE.Mesh(new THREE.BoxGeometry(0.04, topo - piso - 0.13, 0.04), esquadria);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.032, topo - piso - 0.13, 0.032), vidro);
       m.position.set(Math.cos(a) * raio, (piso + 0.13 + topo) / 2, Math.sin(a) * raio * achatado);
       m.rotation.y = -a;
       g.add(m);
