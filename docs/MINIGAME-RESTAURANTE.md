@@ -1,8 +1,8 @@
 # Turno no Mania de Churrasco — plano do minigame
 
-> Documento de PROJETO, não de implementação. Nada disto está no jogo ainda.
-> Quando uma etapa for construída, marque-a aqui e deixe o `git log` ser a
-> fonte da verdade do que de fato existe.
+> Documento de PROJETO. As etapas 1 e 2 já estão no jogo (§11); daí para a
+> frente ainda é plano. Quando uma etapa for construída, marque-a aqui — e
+> deixe o `git log` ser a fonte da verdade do que de fato existe.
 
 O pedido do Renan: um minigame de servir clientes no Mania de Churrasco,
 **100% focado em cuidar das mesas** — levar à mesa, anotar o pedido, entregar o
@@ -73,8 +73,8 @@ se falam.
    pergunta de novo, sem ressentimento.
 5. Aceitando, aparece a **escala de trabalho** pregada ao lado da registradora,
    vizinha do quadro do Empregado do Mês. Ela é o botão do turno dali em
-   diante: interagir = os dois vestem o **avental do Mania** (peça nova de
-   `slot: 'tronco'`, seguindo a skill de roupa) e o turno começa.
+   diante: interagir e o turno começa. *(O avental do Mania, peça de roupa
+   nova, ficou para depois — não entrou na etapa 2.)*
 
 Uma memória entra no diário no momento em que o Walter aceita o osso.
 
@@ -141,9 +141,11 @@ A consequência prática: **o que mata você não é a entrega, é a mão levant
 Um prato que demora custa pouco; um cliente com a mão levantada enquanto você
 atravessa o salão custa caro. O jogo ensina a **largar o que está fazendo**.
 
-A paciência aparece como um **arco por cima do balão** — um toro com
-`thetaLength` encolhendo, cor da paleta indo do verde ao âmbar ao vermelho.
-Geometria pura, sem textura.
+A paciência aparece como um **arco por cima do balão**, encolhendo do verde ao
+âmbar ao vermelho. Ele acabou saindo pintado no mesmo canvas do balão, e não
+como toro de geometria: o balão já é um sprite (para não virar lâmina quando a
+câmera gira), e um anel de geometria em volta de um sprite brigaria com ele a
+cada volta de câmera.
 
 No fim da visita a paciência restante vira **coração**: 💛 dourado, 🤍 prateado
 ou 🩶 apagado. O dinheiro é o preço do prato × o multiplicador do coração, e a
@@ -320,10 +322,10 @@ numa mesa.
 | # | etapa | o que fica em pé no fim |
 |---|---|---|
 | 1 ✅ | **O osso** | o montinho de terra no jardim, a dica da Josefina, o item, o Walter aceitando o osso, a pergunta dele e a escala aparecendo. Nada de turno ainda — mas a descoberta inteira já se joga. **Feito** — `scripts/osso.mjs` |
-| 2 | **O esqueleto do turno** | um cliente (a Josefina, que perdoa tudo), levar à mesa, anotar, entregar, receber, recolher a louça, devolver no balcão. Sem tempo e sem paciência. Prova o laço |
-| 3 | **Paciência e comandas** | os drenos por fase, os balões, o arco de paciência, o HUD do turno, e o `T` passando a ter custo de verdade |
+| 2 ✅ | **O turno jogável** | as etapas 2 e 3 do plano original saíram juntas, a pedido do Renan ("foque em deixar o minigame divertido e dinâmico"): o laço inteiro, os drenos por fase, os balões com o arco de paciência, o HUD e quatro clientes com traço. **Feito** — `scripts/turno.mjs` |
+| 3 ✅ | (fundida na etapa 2) | |
 | 4 | **O balcão e a bandeja** | as 3 vagas de saída, o prato esfriando, a bandeja dividida entre limpo e sujo, o Walter na cozinha |
-| 5 | **O elenco** | a tabela `CLIENTES`, os cinco traços, a estratégia de onde sentar cada um, e o Pelusa |
+| 5 | **O elenco** | o Pelusa, a porção dupla da Gina e a bebida em dois tempos do Noel — o que ficou de fora da etapa 2 para a dificuldade subir aos poucos |
 | 6 | **Levas, estrelas e melhorias** | as três levas, o último cliente, a conta do dia, o quadro de melhorias e a memória no diário |
 
 ---

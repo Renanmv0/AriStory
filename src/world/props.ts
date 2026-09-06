@@ -4119,3 +4119,43 @@ export function osso(cor: number = P.osso): THREE.Group {
   }
   return g;
 }
+
+/**
+ * A PILHA DE LOUÇA SUJA que fica na mesa depois que o cliente vai embora.
+ *
+ * É o que o turno do Mania de Churrasco pede de volta ao balcão, e por isso
+ * precisa ler como "trabalho pendente" de longe: três pratos empilhados
+ * DESALINHADOS (empilhados retos viram um bolo de casamento), talher jogado
+ * por cima e o guardanapo amassado ao lado. Prato limpo é redondo e centrado;
+ * prato sujo é torto.
+ */
+export function loucaSuja(semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'louca-suja';
+  const giro = semente * 6.283;
+
+  for (let i = 0; i < 3; i++) {
+    const prato = pratoDeLouca(0.2 - i * 0.012);
+    prato.position.set(Math.cos(giro + i * 2.1) * 0.022, i * 0.028, Math.sin(giro + i * 2.1) * 0.022);
+    prato.rotation.y = giro + i * 0.8;
+    g.add(prato);
+  }
+  // a sujeira: um disco escuro no prato de cima, que é o que diz "comeram aqui"
+  const resto = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.012, 12), toon(P.churrascoCarvao));
+  resto.position.set(0, 0.098, 0.01);
+  g.add(resto);
+
+  // o talher atravessado por cima, e o cabo passando da borda
+  const garfo = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.012, 0.022), toon(P.churrascoInox));
+  garfo.position.set(0.01, 0.112, -0.02);
+  garfo.rotation.y = giro * 0.6 + 0.5;
+  g.add(garfo);
+
+  // o guardanapo amassado ao lado: uma bolinha achatada, e não um cubo
+  const guardanapo = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), toon(P.churrascoParede));
+  guardanapo.scale.set(1, 0.62, 1);
+  guardanapo.position.set(Math.cos(giro) * 0.24, 0.032, Math.sin(giro) * 0.24);
+  g.add(guardanapo);
+
+  return g;
+}

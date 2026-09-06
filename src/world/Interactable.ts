@@ -18,8 +18,15 @@ export class Interactable {
   x: number;
   z: number;
   readonly radius: number;
-  readonly label: string;
-  readonly icon: string;
+  /**
+   * O QUE O HUD ESCREVE. Nao e `readonly` porque um MESMO ponto pode significar
+   * coisas diferentes conforme o estado: a mesa do turno do Mania e "Sentar
+   * aqui", "Anotar o pedido", "Entregar o prato", "Receber a conta" e "Recolher
+   * a louca" — cinco rotulos num ponto so. A alternativa era cinco pontos
+   * empilhados por mesa, que e a mesma coisa escrita cinco vezes.
+   */
+  label: string;
+  icon: string;
   readonly once: boolean;
   readonly priority: number;
   readonly highlight?: THREE.Object3D;

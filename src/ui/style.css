@@ -1428,3 +1428,67 @@ body.touch-device .dialogue .next { right: 84px; }
 .touch button.girar-btn svg { width: 19px; height: 19px; display: block; }
 /* a mesma seta espelhada: uma peça só, dois sentidos */
 .touch button.girar-btn.esq svg { transform: scaleX(-1); }
+
+/* ------------------------------------------------------- painel do turno */
+/* Ele mora no alto, no lugar do placar — os dois nunca aparecem juntos. */
+.turno {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.turno.show { opacity: 1; transform: translate(-50%, 0); }
+.turno .linha {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  /* no celular estreito o "R$ 0" quebrava em duas linhas e o painel virava um
+     bloco de duas alturas: cada número é uma peça só, e nenhuma quebra */
+  white-space: nowrap;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.turno .relogio {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 17px;
+}
+/* o último meio minuto: o relógio pulsa, e é o único aviso de que vai fechar */
+.turno .relogio.acabando {
+  background: #d94f43;
+  animation: turno-pisca 1s ease-in-out infinite;
+}
+@keyframes turno-pisca {
+  50% { transform: scale(1.08); }
+}
+.turno .grana { color: var(--ink-soft); }
+/* a bandeja: uma vaga por coisa carregada, e nada quando as mãos estão livres */
+.turno .bandeja {
+  display: flex;
+  gap: 6px;
+}
+.turno .bandeja.vazia { display: none; }
+.turno .bandeja i {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  font-size: 19px;
+  font-style: normal;
+}

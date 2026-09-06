@@ -253,6 +253,7 @@ export class Game implements GameAPI {
     this.podeBeijar = false;
     this.camOmbro = null; // nenhum minigame sobrevive a uma troca de cena
     this.ui.showPlacar(null);
+    this.ui.showTurno(null);
     this.parceiro.clearOrder();
     this.setSitting(false);
     this.setOutfit(def.outfit ?? 'normal');
@@ -589,6 +590,15 @@ export class Game implements GameAPI {
 
   pointer(): { x: number; y: number } {
     return this.input.pointer();
+  }
+
+  showTurno(dados: {
+    tempo: number;
+    dinheiro: number;
+    coracoes: number;
+    bandeja: readonly { icone: string; titulo: string }[];
+  } | null): void {
+    this.ui.showTurno(dados);
   }
 
   showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void {

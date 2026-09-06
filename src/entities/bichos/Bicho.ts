@@ -101,7 +101,11 @@ export abstract class Bicho {
    * A ORDEM QUE A CENA DEU: um ponto para onde ir e a promessa que resolve
    * quando ele chegar. Enquanto existe, o passeio nao decide nada.
    */
-  private missao: { x: number; z: number; velocidade: number; pronto: () => void } | null = null;
+  private missao: {
+    x: number; z: number; velocidade: number;
+    /** `null` em missao de SEGUIR: chegar so limpa a missao, sem avisar ninguem */
+    pronto: (() => void) | null;
+  } | null = null;
   /** de servico: ele fica parado esperando a proxima ordem em vez de passear */
   private servindo = false;
 
@@ -253,6 +257,32 @@ export abstract class Bicho {
     this.humor = 'parado';
   }
 
+  /**
+   * SENTA ELE NUM PONTO e o deixa la ate mandarem levantar.
+   *
+   * E o que o turno do Mania precisa para os clientes: sentar numa cadeira,
+   * olhando para a mesa, e ficar. Sem isto o unico jeito de um bicho sentar e
+   * ele mesmo sortear `chanceDeSentar` — que e o contrario de uma ordem.
+   *
+   * `aguarda` vai para um numero absurdo de proposito: de servico o relogio nao
+   * decide nada, mas se alguem devolver o bicho ao passeio sem chamar
+   * `levantar()`, ele nao acorda no quadro seguinte achando que descansou.
+   */
+  sentarEm(x: number, z: number, olhandoPara: number, altura = 0): void {
+    this.servindo = true;
+    this.missao = null;
+    this.group.position.set(x, altura, z);
+    this.group.rotation.y = olhandoPara;
+    this.humor = 'sentado';
+    this.aguarda = 1e9;
+  }
+
+  /** Tira ele da cadeira, mas continua de servico: quem manda ainda e a cena. */
+  levantar(): void {
+    this.humor = 'parado';
+    this.aguarda = 0;
+  }
+
   voltarAPassear(): void {
     this.servindo = false;
     this.missao = null;
@@ -272,6 +302,20 @@ export abstract class Bicho {
     return new Promise<void>((pronto) => {
       this.missao = { x, z, velocidade, pronto };
     });
+  }
+
+  /**
+   * Anda em direcao a um ponto SEM promessa: e o que serve para seguir alguem.
+   *
+   * `irPara` nao serve: ele devolve uma promessa por chamada, e seguir um
+   * jogador que anda quer dizer trocar o destino a cada poucos quadros — seriam
+   * dezenas de promessas por segundo, todas menos a ultima sem nunca resolver.
+   * Aqui chegar so limpa a missao, e quem segue manda de novo no quadro
+   * seguinte.
+   */
+  seguir(x: number, z: number, velocidade = this.jeito.velocidade): void {
+    this.servindo = true;
+    this.missao = { x, z, velocidade, pronto: null };
   }
 
   update(dt: number): void {
@@ -314,7 +358,7 @@ export abstract class Bicho {
       if (dist < 0.08) {
         const pronto = this.missao.pronto;
         this.missao = null;
-        pronto();
+        pronto?.();
       } else {
         andando = this.passo(dx, dz, dist, this.missao.velocidade, dt);
       }
