@@ -98,6 +98,19 @@ interface SaveData {
   flags: Record<string, boolean>;
   memories: SavedMemory[];
   stats: Record<string, number>;
+  /**
+   * A CARTEIRA — em reais, e UMA SÓ para os dois.
+   *
+   * Ela mora no nível de cima do save, e não dentro de `inventarios`, e isso é
+   * a regra escrita na estrutura em vez de escrita num comentário: não existe
+   * "a carteira do Ari" para ficar fora de sincronia com "a carteira do
+   * Renan". Os dois são um casal; o dinheiro é do casal.
+   *
+   * É o cofre de TODO minigame que pagar daqui para a frente, e a moeda de
+   * TODA loja que o jogo vier a ter — por isso ela é um número simples e as
+   * únicas portas são `ganhar` e `gastar`, que nunca deixam o saldo negativo.
+   */
+  carteira: number;
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -237,6 +250,7 @@ const EMPTY: SaveData = {
   flags: {},
   memories: [],
   stats: {},
+  carteira: 0,
   inventarios: {},
 };
 
@@ -262,6 +276,9 @@ export class SaveState {
         flags: parsed.flags ?? {},
         memories: parsed.memories ?? [],
         stats: parsed.stats ?? {},
+        // save antigo não tem carteira: quem já jogava começa com zero, e não
+        // com `NaN` — que envenenaria toda soma dali para a frente
+        carteira: Math.max(0, Math.floor(Number(parsed.carteira) || 0)),
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
     } catch {
@@ -293,6 +310,32 @@ export class SaveState {
   setFlag(key: string, value = true): void {
     this.data.flags[key] = value;
     this.persist();
+  }
+
+  // ------------------------------------------------------------- carteira
+
+  get carteira(): number {
+    return this.data.carteira;
+  }
+
+  /** Entra dinheiro. Devolve o saldo novo. */
+  ganhar(quanto: number): number {
+    this.data.carteira += Math.max(0, Math.round(quanto));
+    this.persist();
+    return this.data.carteira;
+  }
+
+  /**
+   * Sai dinheiro, e SÓ se tiver. Devolve `false` sem tirar nada quando falta —
+   * é o que deixa a loja perguntar "dá para comprar?" e pagar na mesma chamada,
+   * sem duas leituras que podem discordar entre si.
+   */
+  gastar(quanto: number): boolean {
+    const preco = Math.max(0, Math.round(quanto));
+    if (preco > this.data.carteira) return false;
+    this.data.carteira -= preco;
+    this.persist();
+    return true;
   }
 
   bump(key: string, by = 1): number {

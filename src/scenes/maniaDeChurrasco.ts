@@ -13,6 +13,7 @@ import { Walter } from '../entities/bichos/Walter';
 import { toon } from '../core/materials';
 import { assoalhoDeMadeira, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
+import { ITENS } from '../world/itens';
 import { TurnoDoMania, type MesaDoTurno, type PlantaDoTurno } from '../minigames/turnoDoMania';
 
 /**
@@ -801,6 +802,47 @@ export const maniaDeChurrasco: SceneDef = {
             : 'Ninguém saiu pulando de alegria. Mas ninguém passou fome.'],
       ]);
       await g.say([`${'⭐'.repeat(estrelas)}  — ${estrelas} de 3`], 'Walter');
+
+      /**
+       * AS TRÊS ESTRELAS TÊM PRÊMIO, e o prêmio é a gravatinha dele.
+       *
+       * Ele tira do próprio pescoço — e saca outra igual da gaveta no quadro
+       * seguinte, porque tirar a gravata do Walter para sempre seria tirar o
+       * que faz ele ser o Walter. Uma vez só: da segunda vez em diante ele
+       * comemora sem repetir o presente, senão o gesto vira máquina de gravata.
+       */
+      if (estrelas === 3 && !g.flag('gravata-do-walter')) {
+        g.setFlag('gravata-do-walter');
+        g.som('latido');
+        cachorro.receberCarinho();
+        await conversa([
+          [A, 'Ele tá dando três voltas em volta da mesa.'],
+          [R, 'Quatro. Ele deu quatro.'],
+        ]);
+        await g.say(['Ele parou. Tá mexendo na gravata.'], A);
+        await conversa([
+          [R, 'Walter, não precisa.'],
+          [A, 'Renan. Ele quer dar.'],
+        ]);
+        g.som('memoria');
+        for (const quem of [g.playerId(), g.companionId()]) {
+          g.storeItem(ITENS.gravataDoWalter, quem);
+        }
+        await conversa([
+          [R, 'Obrigado, Walter.'],
+          [A, '…ele tirou outra igual da gaveta e já botou.'],
+          [R, 'Claro que ele tem mais de uma.'],
+        ]);
+        g.toast('Gravatinha do Walter — no guarda-roupa', '🎀');
+        g.unlock({
+          id: 'gravata-do-walter',
+          title: 'A gravatinha do Walter',
+          place: 'Mania de Churrasco',
+          note: 'Três estrelas no turno, e ele tirou a própria gravata do pescoço para dar de presente. Tinha outra igual na gaveta.',
+          icon: '🎀',
+        });
+      }
+
       await conversa([
         [R, 'Ele tá abanando. Acho que a gente pode voltar amanhã.'],
         [A, 'A escala tá ali na parede.'],

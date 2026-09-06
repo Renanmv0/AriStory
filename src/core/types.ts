@@ -321,6 +321,17 @@ export interface GameAPI {
   /** trava/destrava o controle do jogador (usado em cutscenes) */
   lockPlayer(locked: boolean): void;
   setPlayerVisible(visible: boolean): void;
+  /**
+   * A CARTEIRA do casal, em reais. UMA SÓ para os dois — a mochila do Ari e a
+   * do Renan mostram sempre o mesmo número.
+   *
+   * `ganhar` devolve o saldo novo. `gastar` devolve `false` e NÃO tira nada
+   * quando falta dinheiro, para uma loja poder perguntar e pagar na mesma
+   * chamada em vez de ler o saldo e debitar em dois passos que podem discordar.
+   */
+  carteira(): number;
+  ganhar(quanto: number): number;
+  gastar(quanto: number): boolean;
   /** flags persistentes, ex: ja regou a planta */
   flag(key: string): boolean;
   setFlag(key: string, value?: boolean): void;

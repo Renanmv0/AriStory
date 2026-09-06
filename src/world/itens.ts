@@ -3,7 +3,7 @@ import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { copoDeSuco, frisbee, iceCream, osso } from './props';
 import {
-  canoDaBota, gargantilhaDeLaco, gorroDeLa, maidJapones, mangaDeMoletom, mangaDeQuimono,
+  canoDaBota, gargantilhaDeLaco, gorroDeLa, gravataDoWalter, maidJapones, mangaDeMoletom, mangaDeQuimono,
   meiaDeCoxa, moletomComCapuz, oculosDeSol, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
 } from './roupas';
 
@@ -198,6 +198,23 @@ export const ITENS = {
     cor: P.vestidoFita,
     nota: 'combina com o vestido',
     extra: gargantilhaDeLaco,
+  },
+  /**
+   * A gravatinha do Walter — presente dele, e nao peca de vitrine.
+   *
+   * Ela SO existe no armario depois que o turno do Mania fecha com tres
+   * estrelas (a flag `gravata-do-walter`): e a unica peca do guarda-roupa que
+   * se ganha jogando, e por isso a `nota` diz de quem ela veio.
+   */
+  gravataDoWalter: {
+    id: 'gravata-do-walter',
+    nome: 'Gravatinha do Walter',
+    icone: '🎀',
+    tipo: 'vestivel',
+    slot: 'cabeca',
+    cor: P.gravataBorboleta,
+    nota: 'presente dele, depois das três estrelas',
+    extra: gravataDoWalter,
   },
   botaAmarela: {
     id: 'bota-amarela',

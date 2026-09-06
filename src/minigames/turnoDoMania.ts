@@ -764,6 +764,15 @@ export class TurnoDoMania {
       const bom = c.paciencia > 0.6 ? 1.5 : c.paciencia > 0.25 ? 1 : 0.5;
       const pago = Math.round(valor(c.prato) * bom * (c.ficha.gorjeta ? 2 : 1));
       this.dinheiro += pago;
+      /**
+       * O DINHEIRO CAI NA CARTEIRA NA HORA, e não no fim do turno.
+       *
+       * `this.dinheiro` é o caixa DO DIA — é dele que saem as estrelas e a
+       * conta no fim. A carteira é outra coisa: é o saldo do casal, que
+       * atravessa turnos e cenários e um dia vai pagar as compras. Somar os
+       * dois no fim faria o jogador perder tudo se saísse no meio do turno.
+       */
+      this.g.ganhar(pago);
       if (bom === 1.5) this.coracoes += 1;
       this.g.som('caixa');
       this.g.toast(`+ R$ ${pago}`, bom === 1.5 ? '💛' : bom === 1 ? '🤍' : '🩶');

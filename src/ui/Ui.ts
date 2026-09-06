@@ -182,6 +182,7 @@ export class Ui {
       <div class="mochila"><div class="sheet">
         <h2>Mochila <span class="dono"></span></h2>
         <p class="sub">arraste para trocar de vaga · <b>T</b> vê a do outro</p>
+        <div class="carteira"><span class="moeda">💰</span><b class="saldo">R$ 0</b><small>a carteira é dos dois</small></div>
         <h3>Na mão <small>toque para escolher o que fica na mão</small></h3>
         <div class="slots maos"></div>
         <h3>Vestindo <small>roupa só se troca no guarda-roupa — aqui só dá pra descartar</small></h3>
@@ -1090,8 +1091,16 @@ export class Ui {
     vestiveis: ReadonlyArray<ItemDef | null>,
     ativo: number,
     dono: string,
+    carteira = 0,
   ): void {
     this.dono.textContent = `de ${dono}`;
+    /**
+     * A CARTEIRA APARECE NAS DUAS MOCHILAS COM O MESMO NÚMERO, porque é uma
+     * carteira só (`SaveState.carteira`). Ela fica no alto do painel, antes das
+     * vagas: é o dado que o jogador vai querer conferir antes de qualquer
+     * compra, e não um detalhe no rodapé.
+     */
+    (this.mochila.querySelector('.saldo') as HTMLElement).textContent = `R$ ${carteira}`;
     this.pegou = null;
     this.tipoNaPinca = undefined;
     this.funcionalNaPinca = false;
