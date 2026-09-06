@@ -13,9 +13,10 @@
  *   e duas capturas do mesmo quadro já saem diferentes;
  * - o CARINHO ganha do "Comprar sorvete" quando se chega colado nele, e só aí:
  *   os dois pontos se sobrepõem, e sem o desempate o pinguim vira cenário;
- * - a CUTSCENE DA COMPRA acontece inteira: a fala dele, a DANÇA de verdade (o
- *   corpo tem que ter mexido no eixo Z enquanto ela roda) e as duas casquinhas
- *   na mochila de cada dono;
+ * - a CUTSCENE DA COMPRA acontece inteira: o pedido é feito A ELE, ele conta
+ *   por que trabalha ali (o friozinho), DANÇA de verdade (o corpo tem que ter
+ *   mexido no eixo Z enquanto a cena roda) e entrega as duas casquinhas, cada
+ *   uma na mochila do dono;
  * - e o controle VOLTA no fim. Cutscene que trava o jogador e esquece de
  *   soltar é o pior defeito possível — o `finally` da cena existe por isso, e
  *   esta é a asserção que prova que ele funciona.
@@ -174,7 +175,7 @@ await page.waitForTimeout(900);
 const falas = [];
 let maiorTombo = 0;
 let fotografou = false;
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 60; i++) {
   const m = await oMano();
   if (m) maiorTombo = Math.max(maiorTombo, Math.abs(m.tombo));
   // a foto sai NO PICO do rebolado, e não no fim da cena: no fim ele já está
@@ -186,11 +187,16 @@ for (let i = 0; i < 40; i++) {
   const t = await page.locator('.dialogue .text').textContent().catch(() => '');
   if (t && t.length > 12 && !falas.includes(t)) falas.push(t);
   if (await page.locator('.dialogue.show').count()) await page.keyboard.press('KeyE');
-  else if (i > 12) break;   // sem diálogo e já passou da dança: a cena acabou
+  else if (i > 16) break;   // sem diálogo e já passou da dança: a cena acabou
   await page.waitForTimeout(420);
 }
 if (!fotografou) await page.screenshot({ path: `${OUT}-danca.png` });
-await venceAFala();
+/**
+ * O RESTO DA CENA TAMBÉM CONTA. O laço acima para de coletar quando fica um
+ * tempo sem diálogo na tela — e é exatamente o que acontece durante os `wait`
+ * da dança. As falas do fim (a entrega) vêm daqui.
+ */
+for (const f of await venceAFala()) if (!falas.includes(f)) falas.push(f);
 await page.waitForTimeout(1400);
 
 const depois = await page.evaluate(() => ({
@@ -243,11 +249,19 @@ if (tapando.length) {
   falhas.push(`tem coisa alta na frente do Mano, escondendo ele: ${JSON.stringify(tapando[0])}`);
 }
 if (!/carinho/i.test(deColado)) falhas.push(`colado nele o prompt nao e o carinho: "${deColado}"`);
-if (!/comprar/i.test(deLonge)) falhas.push(`de longe o prompt nao voltou a ser comprar: "${deLonge}"`);
+if (!/pedir sorvete/i.test(deLonge)) {
+  falhas.push(`da ancora de comprar o prompt nao e o de pedir sorvete: "${deLonge}"`);
+}
 if (!apresentacao.some((f) => /pinguim/i.test(f))) {
   falhas.push('a apresentacao do Mano nao aconteceu');
 }
-if (!falas.some((f) => /geladinho/i.test(f))) falhas.push('o Mano nao falou na compra');
+if (!falas.some((f) => /Mano|escolha|freezer|friozinho/i.test(f))) {
+  falhas.push('o Mano nao falou na compra');
+}
+if (!falas.some((f) => /friozinho|freezer/i.test(f))) {
+  falhas.push('ele nao contou por que trabalha na sorveteria');
+}
+if (!falas.some((f) => /Toma!/i.test(f))) falhas.push('ele nao entregou os sorvetes falando');
 if (tomboAntesDaCompra > 0.01) {
   falhas.push(`ele ainda estava dancando a apresentacao quando a compra comecou (${tomboAntesDaCompra}) — o pico medido nao prova nada`);
 }
