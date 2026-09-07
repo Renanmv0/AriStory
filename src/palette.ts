@@ -338,6 +338,23 @@ export const PALETTE = {
   lojaDentro: 0xd9c7c4,
   lojaManequim: 0xdcc3a4,
 
+  // A OVELHA da lojinha de roupas. A la e CREME, e nao branca: branco puro
+  // estoura o degrade do toon e a bolota de la vira uma mancha chapada — e la
+  // e feita de bolota, entao ela precisa do degrade para existir. A cara e as
+  // pernas sao MARROM ESCURO, e sao elas que desenham a ovelha: sem o
+  // contraste, um monte de bolotas creme nao le como bicho nenhum.
+  ovelhaLa: 0xf6efe2,
+  ovelhaLaSombra: 0xe2d7c4,
+  ovelhaCara: 0x5b4a46,
+  ovelhaCaraClara: 0x76625c,
+  ovelhaCasco: 0x3d3330,
+  ovelhaFocinho: 0xc78e93,
+  // as ferramentas de alfaiate dela: a fita metrica amarelada com os tracinhos
+  // escuros, a almofada de alfinete e a armacao dourada do oculos
+  ovelhaFita: 0xf0d79a,
+  ovelhaAlfineteira: 0xc4565a,
+  ovelhaOculos: 0xd8b45e,
+
   // o Cookie, o elefante da bilheteria. Cinza de elefante de verdade puxa para
   // o ROXO, e nao para o azul — cinza azulado sai como pedra. A orelha por
   // dentro e o dentro da tromba sao rosados, e e dai que vem o "fofo" que um

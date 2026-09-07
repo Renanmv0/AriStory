@@ -40,6 +40,7 @@ export type SomNome =
   | 'caixa'
   | 'louca'
   | 'pinguim'
+  | 'balido'
   | 'menu'
   | 'diario'
   | 'recomecar';
@@ -473,6 +474,46 @@ export const EFEITOS: Record<SomNome, Receita> = {
       });
       // o sopro de ar por cima, que tira o resto do ar de sintetizador
       chiado(ctx, destino, { quando: t + atraso, dur: 0.09, vol: 0.03, freq: 1800, glide: 900, q: 1.2 });
+    }
+  },
+
+  /**
+   * O BALIDO DA OVELHA da lojinha — o "bêêê".
+   *
+   * O QUE FAZ SER OVELHA E O TREMIDO, e não a nota. Um "bê" liso é um berrante;
+   * o que o ouvido reconhece é a voz VIBRANDO em cima da nota. Não há vibrato no
+   * `tom`, então ele é montado à mão: seis pedacinhos de 0,07 s em fila, cada um
+   * alternando 6% acima e 6% abaixo da nota que está descendo. O ouvido cola os
+   * seis num som só e ouve o tremido.
+   *
+   * O ATAQUE É O "B": um sopro curtinho antes da nota, senão a voz começa do
+   * nada e sai "êêê", sem a consoante que abre o balido.
+   *
+   * `sawtooth` com `abafo` baixo, pelo mesmo motivo do pinguim: serra tem
+   * harmônico de sobra e o filtro fechado faz ela soar pelo nariz.
+   */
+  balido: ({ ctx, destino, t, n }) => {
+    // duas vozes, para ela não repetir igual toda vez: uma mais aguda e curta
+    const manso = n % 2 === 0;
+    const base = manso ? 430 : 380;
+    chiado(ctx, destino, { quando: t, dur: 0.06, vol: 0.03, freq: 1400, glide: 700, q: 1 });
+    const PEDACOS = manso ? 6 : 7;
+    for (let i = 0; i < PEDACOS; i++) {
+      const caindo = base * (1 - i * 0.022);
+      const tremido = i % 2 === 0 ? 1.06 : 0.94;
+      tom(ctx, destino, {
+        freq: caindo * tremido,
+        glide: caindo * (i % 2 === 0 ? 0.94 : 1.06),
+        quando: t + 0.03 + i * 0.068,
+        // cada pedaço dura um pouco mais que o passo, para eles se emendarem:
+        // com 0,068 cravado sobra um buraco entre um e outro e sai um tremolo
+        // picotado em vez de voz
+        dur: 0.1,
+        vol: (i === 0 ? 0.085 : 0.075) * (1 - i * 0.06),
+        ataque: 0.01,
+        tipo: 'sawtooth',
+        abafo: 1000,
+      });
     }
   },
 

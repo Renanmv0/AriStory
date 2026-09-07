@@ -18,6 +18,7 @@ import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
 import { asfalto, calcadaDePedrinha, gelo, tapeteDeGrama } from '../world/texturasDeChao';
 import { Mano } from '../entities/bichos/Mano';
+import { Ovelha } from '../entities/bichos/Ovelha';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -1117,6 +1118,99 @@ export const villaLobos: SceneDef = {
      * contorna a pista de patins e sai de frente para a vitrine.
      */
     w.patch(-33.2, -15, 4.4, 16, P.concrete, 0, 0.015, calcadaDePedrinha());
+
+    /**
+     * ------------------------------------------- A OVELHA QUE CUIDA DA LOJA
+     *
+     * Pedido do Renan: "quem vai cuidar dessa loja vai ficar na frente parado,
+     * será uma ovelha". O NOME dela ele ainda não escolheu — por isso nada aqui
+     * escreve nome nenhum, nem o rótulo, nem a fala, nem o diário.
+     *
+     * ONDE ELA FICA saiu de uma conta que já estava escrita no prédio: o toldo
+     * avança 1,05 da fachada, e a câmera de 34° faz cada peça esconder 1,5 vez
+     * a própria altura de chão atrás dela — quem ficar debaixo do toldo aparece
+     * decapitado. A fachada está em `x = −34,8`, então qualquer coisa a mais de
+     * 2 dali aparece inteira. Ela está a 2,2, na calçada (que vai de −35,4 a
+     * −31), bem na frente da porta.
+     *
+     * ELA OLHA PARA `+X`, que é para o resto do parque: de costas para a
+     * vitrine e de frente para quem chega, como todo lojista de porta de loja.
+     *
+     * A ÁREA É MENOR QUE O PASSO MÍNIMO do cérebro (0,7), e é só isso que a
+     * segura no posto — a mesma coleira da Gina na portaria e do Mano no
+     * quiosque. Nenhuma linha de cérebro mudou por causa dela.
+     */
+    const OVELHA = { x: -32.6, z: -16.5 };
+    const ovelha = new Ovelha({
+      minX: OVELHA.x - 0.12, maxX: OVELHA.x + 0.12,
+      minZ: OVELHA.z - 0.12, maxZ: OVELHA.z + 0.12,
+    });
+    ovelha.group.rotation.y = Math.PI / 2;
+    w.add(ovelha.group);
+    ovelha.aoSoar = () => g.som('balido');
+
+    /*
+     * AS FALAS SÃO MINHAS, e provisórias: as do Renan vão literais quando ele
+     * mandar, e o nome dela entra aqui junto. Elas dizem duas coisas de
+     * propósito — que ela é a costureira (é o que o modelo mostra) e que a loja
+     * AINDA não abriu, porque entrar para comprar roupa é o próximo pedaço.
+     */
+    const FALAS_DA_OVELHA = [
+      'Ela mediu você com os olhos. Do ombro até o pulso.',
+      'A fita métrica no pescoço dela balançou junto.',
+      'Ó o óculos escorregando no focinho.',
+      'Ela ficou tão fofinha que eu quase esqueci da loja.',
+      'Acho que ela já sabe o seu número.',
+    ];
+    const carinhoNaOvelha = w.interact({
+      id: 'parque:ovelha',
+      x: ovelha.x, z: ovelha.z, radius: 1.3,
+      label: 'Falar com a ovelha da loja', icon: '🐑',
+      highlight: ovelha.group,
+      onInteract: async (api) => {
+        const eu = api.playerPosition();
+        ovelha.encarar(eu.x, eu.z);
+        ovelha.receberCarinho();
+        api.som('balido');
+        if (!api.flag('ovelha-conhecida')) {
+          api.setFlag('ovelha-conhecida');
+          await conversa([
+            [R, 'Tem uma loja de roupas no meio do parque.'],
+            [A, 'Tem uma OVELHA na porta da loja de roupas.'],
+            [R, 'De óculos. E com fita métrica no pescoço.'],
+            [A, 'Ela é a costureira, Renan. Olha a almofada de alfinete nas costas dela.'],
+            [R, 'A loja ainda está fechada.'],
+            [A, 'Ela balançou a cabeça. Acho que é "logo, logo".'],
+          ]);
+          api.unlock({
+            id: 'ovelha-da-lojinha',
+            title: 'A ovelha da lojinha',
+            place: 'Parque Villa Lobos',
+            note: 'A costureira que cuida da loja de roupas do parque: óculos de meia-lua, fita métrica no pescoço e uma almofada de alfinete espetada na lã. Ela ainda não nos disse o nome dela.',
+            icon: '🐑',
+          });
+          return;
+        }
+        await api.say([w.pick(FALAS_DA_OVELHA)], A);
+      },
+    });
+
+    w.onUpdate((dt) => {
+      ovelha.update(dt);
+      // ela quase não sai do lugar, mas "quase" não é "nunca": sem isto o ponto
+      // fica onde ela nasceu e a conversa vira um buraco na calçada
+      carinhoNaOvelha.moveTo(ovelha.x, ovelha.z);
+      /*
+       * LONGE DELA, ELA VOLTA A OLHAR A RUA — e o jeito de fazer isso é mandar
+       * ela encarar um ponto lá no `+X`, e não largar o alvo: `pararDeEncarar`
+       * só solta o volante, e ela ficaria torta para sempre no ângulo em que o
+       * último cliente a deixou. Foi o que o Mano já pagou no quiosque.
+       */
+      const eu = g.playerPosition();
+      if (Math.hypot(eu.x - ovelha.x, eu.z - ovelha.z) > 4) {
+        ovelha.encarar(OVELHA.x + 5, OVELHA.z);
+      }
+    });
 
     // ------------------------------------------------------------ vegetacao
     const proibido: Array<[number, number, number]> = [
