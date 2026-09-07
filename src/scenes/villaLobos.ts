@@ -1079,41 +1079,37 @@ export const villaLobos: SceneDef = {
     /**
      * ============================ A LOJINHA DE ROUPAS (o "mini shopping")
      *
-     * ONDE, e por que aqui: a faixa `x 22…33 · z 12…19` foi MEDIDA, e não
-     * escolhida no olho — varrendo as peças da cena, ali só existiam árvores
-     * do espalhador. É a esquina do caminho transversal (que termina em
-     * `z = 11,25`) com a calçada da rua (que começa em `x = 33,6`), e o ponto
-     * de ônibus fica em `(35; 13)`: dá para descer do ônibus e a loja está do
-     * lado, que é onde loja de rua deve estar.
+     * ONDE: a ponta oeste do parque, atrás da pista de patins, de costas para o
+     * rio. A faixa `x −46…−30 · z −16…6` foi MEDIDA — varrendo as peças da
+     * cena, ali só existiam catorze árvores do espalhador e nada construído.
      *
-     * SEM GIRO NENHUM (`rotY = 0`), alinhada aos eixos como as ruas. A fachada
-     * olha para `+Z`, que é de onde a câmera e o jogador chegam; à frente dela
-     * sobram 13 unidades de gramado até a borda do mundo.
+     * ELA É A ÚNICA PEÇA DO JOGO COM A FACHADA EM `+X`, e é de propósito. A
+     * convenção do repositório é fachada para `+Z` porque a câmera vem da
+     * diagonal `+X/+Z` — mas quem decide se uma fachada aparece é o produto
+     * escalar com essa diagonal, e ele dá 0,707 tanto para `+Z` quanto para
+     * `+X`: as duas são vistas de meio perfil, do mesmo jeito. O que manda aqui
+     * é o mundo: o rio corre ao longo do `Z`, então uma loja PARALELA AO RIO
+     * tem as costas em `−X` (a água) e a porta em `+X` (o resto do parque).
      *
-     * E O `z` SAIU DE UMA CONTA, e não do gosto: 8,2 de altura escondem
-     * `8,2 / tan(34°) ≈ 12,2` de chão na diagonal da câmera. Em `z = 15,5` essa
-     * faixa cega caía em cima do caminho transversal (que vai de `z = 6,75` a
-     * `11,25`), e quem passasse por ali sumia atrás do prédio por dois
-     * segundos. Empurrando para `18,6`, a sombra dela morre em `z ≈ 11,4` —
-     * rente ao caminho, sem entrar nele. Atrás só sobra gramado.
+     * A CONTA DA CÂMERA fica até mais folgada que na esquina da rua: 8,2 de
+     * altura escondem 12,2 de chão na diagonal, e a partir daqui essa faixa
+     * cega cai em `(−48,6; −13,6)` — fora do mundo caminhável, que termina em
+     * `x = −44`. Não há nada atrás dela para esconder.
      *
-     * E A LARGURA CAIU DE 12 PARA 11 pela mesma régua: entre a borda do rinque
-     * (`x = 20,4`) e a calçada da rua (`33,6`) há 13,2, e o prédio de 12 —
-     * 12,6 com a platibanda — encostava nos dois. Com 11 sobram 80 cm de cada
-     * lado, que é folga de andar.
+     * A FOLGA ATÉ A PISTA é o que decidiu o `x`: o oval de patins chega a
+     * `x = −31`, e o prédio (que avança 5,2 pela frente a partir do centro)
+     * para em `−34,8`. Sobram 3,8 de calçada entre a vitrine e o asfalto —
+     * espaço para a dupla parar na frente e para a ovelha ficar no posto.
      */
-    const LOJINHA = { x: 27, z: 18.6 };
-    w.add(w.place(lojaDeRoupas(), LOJINHA.x, 0, LOJINHA.z));
-    w.blockBox(LOJINHA.x, LOJINHA.z, 5.7, 4.2);
+    const LOJINHA = { x: -40, z: -5 };
+    w.add(w.place(lojaDeRoupas(), LOJINHA.x, 0, LOJINHA.z, Math.PI / 2));
+    w.blockBox(LOJINHA.x, LOJINHA.z, 5.7, 4.2, Math.PI / 2);
     /*
-     * A CALÇADA VAI SÓ NA FRENTE, e liga a borda do rinque à ponta do prédio.
-     *
-     * Chegar por trás não dá: entre a loja e a calçada da rua sobram 80 cm, e o
-     * jogador tem 42 de raio. Isso não é defeito — é uma quadra: quem vem do
-     * caminho transversal sobe pelo rinque e sai NA FRENTE da loja, que é onde
-     * a fachada está virada. O acesso é o passeio, e não o beco.
+     * A CALÇADA CORRE NA FRENTE, ao longo do `Z` como a loja: da esquina do
+     * prédio até a beira da pista. É por ela que se chega — quem vem do parque
+     * contorna a pista de patins e sai de frente para a vitrine.
      */
-    w.patch(26, 25.2, 15, 5.8, P.concrete, 0, 0.015, calcadaDePedrinha());
+    w.patch(-33.2, LOJINHA.z, 4.4, 13.6, P.concrete, 0, 0.015, calcadaDePedrinha());
 
     // ------------------------------------------------------------ vegetacao
     const proibido: Array<[number, number, number]> = [
@@ -1137,9 +1133,9 @@ export const villaLobos: SceneDef = {
       // a pista e a loja entram na lista pelo mesmo motivo da praça da roda:
       // sem isto o espalhador planta árvore em cima do asfalto
       [-21, -5, 12], [-8.6, 2.5, 9],
-      // a lojinha: 11 de raio cobre o prédio (12 × 8) e a calçada dele. Sem
-      // isto o espalhador planta árvore dentro da vitrine
-      [27, 19, 11],
+      // a lojinha: 11 de raio cobre o prédio (11,6 × 9,5) e a calçada dele.
+      // Sem isto o espalhador planta árvore dentro da vitrine
+      [-40, -5, 11],
     ];
     const livre = (x: number, z: number): boolean => {
       if (Math.abs(x) < 4 && z > -20 && z < 30) return false;

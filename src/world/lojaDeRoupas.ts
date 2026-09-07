@@ -26,10 +26,15 @@ import { PALETTE as P } from '../palette';
  *    manequins existem por isso — e sao o que da o que olhar enquanto a porta
  *    ainda nao abre.
  *
- * A CONTA DA CAMERA: 6,9 de altura escondem `6,9 / tan(34°) ≈ 10,3` de chao
+ * A CONTA DA CAMERA: 8,2 de altura escondem `8,2 / tan(34°) ≈ 12,2` de chao
  * atras dela. A cena tem que plantar isso num canto onde nao haja nada nessa
- * faixa — no Villa Lobos ela fica na esquina do caminho transversal com a rua,
- * e atras dela so tem gramado.
+ * faixa — no Villa Lobos ela fica na ponta oeste, de costas para o rio, e a
+ * faixa cega dela cai fora do mundo caminhavel.
+ *
+ * ELA E CONSTRUIDA OLHANDO PARA `+Z`, como toda peca do kit, e a cena gira. No
+ * Villa Lobos ela leva `rotY = PI/2` para ficar paralela ao rio: quem decide se
+ * uma fachada aparece e o produto escalar com a diagonal da camera, e ele da
+ * 0,707 tanto para `+Z` quanto para `+X`.
  *
  * O TOLDO AVANCA POUCO (1,05) DE PROPOSITO. E a mesma armadilha do toldo do
  * quiosque: quem for ficar na calcada, na frente da vitrine — a ovelha que vai
