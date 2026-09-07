@@ -321,6 +321,18 @@ export const PALETTE = {
   churrascoToalha: 0xd94f43,
   churrascoQuadroNegro: 0x2f3b33,
 
+  // o Cookie, o elefante da bilheteria. Cinza de elefante de verdade puxa para
+  // o ROXO, e nao para o azul — cinza azulado sai como pedra. A orelha por
+  // dentro e o dentro da tromba sao rosados, e e dai que vem o "fofo" que um
+  // bloco cinza nao tem sozinho. A presa e creme: branco puro estoura o degrade
+  // do toon e vira uma mancha chapada.
+  elefantePele: 0x9a94a3,
+  elefanteEscuro: 0x7a7585,
+  elefanteClaro: 0xb5aebd,
+  elefanteOrelha: 0xc79aa6,
+  elefantePresa: 0xf3ead6,
+  elefanteUnha: 0xe4dbc9,
+
   // o fundo da bilheteria, visto pelo guiche: o creme da parede um degrau
   // abaixo. Sem ele a cabine e um vao vazado — as paredes sao `FrontSide`, e
   // pela janela se via a paisagem ATRAVES da cabine
