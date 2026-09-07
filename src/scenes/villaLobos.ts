@@ -735,7 +735,17 @@ export const villaLobos: SceneDef = {
     const dePatins = (): boolean => g.wearables().some((i) => i?.id === ITENS.patins.id);
     let escorregando = 0;
     let ultimoNoGelo: THREE.Vector3 | null = null;
-    let contandoAPrimeira = false;
+    /**
+     * A velocidade da dupla no quadro, publicada para quem vier depois.
+     *
+     * O motor não publica velocidade e não precisa publicar: aqui ela sai da
+     * posição de um quadro para o outro. Quem também lê isto é a reação do
+     * Mano, mais abaixo — e ela pode ler porque este `onUpdate` foi registrado
+     * ANTES, e os `onUpdate` rodam na ordem em que a cena os criou.
+     */
+    let velocidadeNoGelo = 0;
+    /** uma cutscene do gelo por vez: a primeira volta e o grito do Mano */
+    let cenaDoGelo = false;
 
     w.onUpdate((dt) => {
       const onde = g.playerPosition();
@@ -743,15 +753,13 @@ export const villaLobos: SceneDef = {
       escorregando += (alvo - escorregando) * Math.min(1, dt * 6);
       g.setEscorregadio(escorregando);
 
-      // a velocidade sai da posição de um quadro para o outro: o motor não
-      // publica velocidade, e a cena não precisa que ele publique
-      const veloz = ultimoNoGelo && dt > 0
+      velocidadeNoGelo = ultimoNoGelo && dt > 0
         ? Math.hypot(onde.x - ultimoNoGelo.x, onde.z - ultimoNoGelo.z) / dt
         : 0;
       ultimoNoGelo = onde.clone();
 
-      if (contandoAPrimeira || g.flag('patinou-no-gelo')) return;
-      if (escorregando < 0.75 || !dePatins() || veloz < 3.2) return;
+      if (cenaDoGelo || g.flag('patinou-no-gelo')) return;
+      if (escorregando < 0.75 || !dePatins() || velocidadeNoGelo < 3.2) return;
       /**
        * A PRIMEIRA VOLTA DE PATINS NO GELO, uma vez só na vida do save.
        *
@@ -759,7 +767,7 @@ export const villaLobos: SceneDef = {
        * enquanto a primeira fala aparece entrariam aqui de novo e a conversa
        * começaria três vezes por cima de si mesma.
        */
-      contandoAPrimeira = true;
+      cenaDoGelo = true;
       void (async () => {
         g.setFlag('patinou-no-gelo');
         g.lockPlayer(true);
@@ -776,6 +784,7 @@ export const villaLobos: SceneDef = {
           note: 'Os patins da lojinha viraram outra coisa quando pisaram no rinque do Mano: no gelo a lâmina crava e dá para correr de verdade. Descalço ali só dá para escorregar.',
           icon: '⛸️',
         });
+        cenaDoGelo = false;
       })();
     });
 
@@ -903,6 +912,92 @@ export const villaLobos: SceneDef = {
       const conversando = aindaTemSorvete();
       pedirSorvete.label = conversando ? 'Falar com o Mano' : 'Pedir sorvete pro Mano';
       pedirSorvete.icon = conversando ? '🐧' : '🍦';
+    });
+
+    /* ============================ O MANO REAGE A QUEM PASSA PATINANDO
+     *
+     * Ele trabalha ali porque gosta do friozinho; ver a dupla cruzando o
+     * rinque de patins na frente do balcão é a melhor coisa do dia dele. Então
+     * ele VIRA para acompanhar, bate as asas e grita.
+     *
+     * O GRITO É TOAST, e não diálogo: quem está patinando a 7 por segundo não
+     * pode ser parado por um balão a cada volta — em três voltas a mecânica que
+     * o Renan pediu viraria uma sala de espera. A ÚNICA vez em que ele para a
+     * dupla de verdade é a primeira, que é quando há o que dizer.
+     *
+     * E ele volta a olhar para a frente depois. Sem isso o pinguim fica torto
+     * para sempre, encarando um ponto onde já não tem ninguém.
+     */
+    const GRITOS_DO_MANO = [
+      'Isso! Mais uma volta!',
+      'Curva bonita, hein!',
+      'Devagar na quina! Devagar!',
+      'Eu não patino: eu escorrego. É diferente.',
+      'Vai, vai, vai!',
+      'Se cair, cai rindo!',
+    ];
+    /**
+     * Quanto falta para ele poder gritar de novo, e quanto falta para desvirar.
+     *
+     * SEIS SEGUNDOS E MEIO entre um grito e outro: é o tempo de uma volta no
+     * rinque. Menos que isso e ele vira alarme — a mesma razão pela qual o
+     * barulho espontâneo dos bichos é espaçado.
+     */
+    let esperaDoGrito = 0;
+    let olhandoAte = 0;
+
+    w.onUpdate((dt) => {
+      if (esperaDoGrito > 0) esperaDoGrito -= dt;
+      if (olhandoAte > 0) {
+        olhandoAte -= dt;
+        // de volta ao balcão: o posto dele olha para +Z, que é de onde o
+        // cliente chega
+        if (olhandoAte <= 0) mano.group.rotation.y = 0;
+      }
+
+      if (cenaDoGelo || esperaDoGrito > 0) return;
+      if (escorregando < 0.7 || !dePatins() || velocidadeNoGelo < 3.2) return;
+      const onde = g.playerPosition();
+      // 5,5 é o alcance de um grito de balcão: passar pelo outro lado do
+      // rinque (13 de largura) não puxa reação nenhuma
+      if (Math.hypot(onde.x - mano.x, onde.z - mano.z) > 5.5) return;
+
+      esperaDoGrito = 6.5;
+      olhandoAte = 2.8;
+      mano.group.rotation.y = Math.atan2(onde.x - mano.x, onde.z - mano.z);
+      mano.dancar(1.1);
+      g.som('pinguim');
+
+      /**
+       * A PRIMEIRA VEZ ELE PARA A DUPLA — e só depois que a primeira volta já
+       * aconteceu (`patinou-no-gelo`). As duas cenas moram no mesmo rinque e
+       * disparam com a mesma condição; sem esta ordem elas se atropelariam na
+       * mesma passada, uma conversa por cima da outra.
+       */
+      if (!g.flag('mano-viu-patinar') && g.flag('patinou-no-gelo')) {
+        cenaDoGelo = true;
+        void (async () => {
+          g.setFlag('mano-viu-patinar');
+          g.lockPlayer(true);
+          await g.say(['VOCÊS PATINAM!'], 'Mano');
+          await conversa([
+            [A, 'A gente alugou na lojinha ali.'],
+            [R, 'No gelo eles pegam de verdade.'],
+          ]);
+          await g.say([
+            'Eu tenho pé de pato. Eu escorrego, que não é a mesma coisa.',
+            'Mas eu fico olhando. É o melhor dia quando tem gente patinando aqui.',
+          ], 'Mano');
+          mano.dancar(2.2);
+          await conversa([[A, 'Depois a gente te ensina.']]);
+          await g.say(['EU VOU QUERER.'], 'Mano');
+          g.lockPlayer(false);
+          cenaDoGelo = false;
+        })();
+        return;
+      }
+
+      g.toast(`Mano: ${w.pick(GRITOS_DO_MANO)}`, '🐧');
     });
 
     // --------------------------------------------------- loja de patins

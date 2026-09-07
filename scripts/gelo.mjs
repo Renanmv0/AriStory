@@ -102,7 +102,7 @@ const oMano = () => page.evaluate(() => {
   });
   if (!m) return null;
   const bandeja = m.getObjectByName('bandeja-do-mano');
-  return { x: m.position.x, z: m.position.z, bandeja: !!bandeja?.visible };
+  return { x: m.position.x, z: m.position.z, giro: m.rotation.y, bandeja: !!bandeja?.visible };
 });
 
 await page.goto(`${BASE}/?cena=villa-lobos`, { waitUntil: 'networkidle' });
@@ -306,6 +306,71 @@ const noCorpo = await page.evaluate(() => ({
   parceiroDePatins: window.jogo.parceiro.patins,
   memorias: (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').memories ?? []).map((m) => m.id),
 }));
+
+/* ------------------------------------------------------------------ *
+ * 4b. O MANO VÊ A DUPLA PATINANDO
+ *
+ * Ele vira para acompanhar, bate as asas e fala. Na PRIMEIRA vez ele para a
+ * dupla de verdade (uma conversa e a flag `mano-viu-patinar`); nas outras é
+ * só um grito de toast, que não pode travar quem está patinando.
+ *
+ * Esta parte roda ANTES da medida de velocidade de propósito: com a primeira
+ * conversa já gasta, as passadas seguintes não travam o jogador e a medida sai
+ * limpa.
+ * ------------------------------------------------------------------ */
+await page.evaluate(([x, z]) => window.jogo.debugPlace(x, z, Math.PI), [10.5, 17.5]);
+await page.waitForTimeout(1500);
+let maiorGiro = 0;
+await page.keyboard.down('KeyS');
+for (let i = 0; i < 8; i++) {
+  await page.waitForTimeout(450);
+  const m = await oMano();
+  if (m) maiorGiro = Math.max(maiorGiro, Math.abs(m.giro));
+}
+await page.keyboard.up('KeyS');
+await page.screenshot({ path: `${OUT}-mano-ve.png` });
+for (let i = 0; i < 16; i++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(450);
+}
+const viuPatinar = await page.evaluate(
+  () => (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').flags ?? {})['mano-viu-patinar'] === true,
+);
+
+/**
+ * E A SEGUNDA PASSADA, que já é só o grito.
+ *
+ * ANTES DELA, UM MINUTO PARADO: entre um grito e outro ele espera 6,5 segundos
+ * DE JOGO, e neste renderizador por software um segundo de jogo leva quase
+ * oito de relógio. Sem a espera, a segunda passada cai dentro do intervalo do
+ * primeiro grito e o teste conclui que a reação não existe.
+ */
+await page.waitForTimeout(60000);
+await page.evaluate(([x, z]) => window.jogo.debugPlace(x, z, Math.PI), [10.5, 17.5]);
+await page.waitForTimeout(1500);
+/**
+ * O GRITO É AMOSTRADO DURANTE A PASSADA, e não depois: o toast some sozinho
+ * depois de alguns segundos, e medir no fim pega a tela ja limpa.
+ */
+const avisos = new Set();
+let travou = false;
+await page.keyboard.down('KeyS');
+for (let i = 0; i < 14; i++) {
+  await page.waitForTimeout(450);
+  for (const t of await page.locator('.toast').allTextContents()) avisos.add(t);
+  travou = travou || (await page.evaluate(() => window.jogo.player.locked));
+}
+await page.keyboard.up('KeyS');
+// o sorvete da mesinha derrete durante esta janela e também vira toast: o que
+// interessa é se ALGUM deles é o grito do pinguim
+const grito = [...avisos].find((t) => /Mano:/.test(t)) ?? [...avisos].join(' | ');
+
+if (!viuPatinar) erros.push('o Mano não reagiu à primeira passada de patins');
+if (maiorGiro < 0.2) erros.push(`o Mano não virou para olhar (giro máximo ${maiorGiro.toFixed(2)})`);
+if (!/Mano:/.test(grito)) erros.push(`a segunda passada não rendeu grito: "${grito}"`);
+if (travou) erros.push('o grito do Mano travou o jogador — ele só pode parar a dupla na primeira vez');
+console.log('o Mano vendo patinar — primeira conversa:', viuPatinar,
+  '· giro máximo:', maiorGiro.toFixed(2), '· grito:', JSON.stringify(grito));
 
 const dePatins = await medirDeslize(10.5, 17.5);
 
