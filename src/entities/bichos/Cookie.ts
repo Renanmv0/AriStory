@@ -38,7 +38,7 @@ export class Cookie extends Bicho {
   private readonly tromba: THREE.Group[] = [];
   private readonly orelhas: THREE.Group[] = [];
   private readonly patas: THREE.Group[] = [];
-  private readonly olhos: THREE.Mesh[] = [];
+  private readonly olhos: THREE.Group[] = [];
   private readonly rabo: THREE.Group[] = [];
 
   /**
@@ -202,20 +202,52 @@ export class Cookie extends Bicho {
       this.orelhas.push(orelha);
     }
 
-    // -------------------------------------------------------------- os olhos
+    /**
+     * -------------------------------------------------------------- os olhos
+     *
+     * A PUPILA OLHA PARA A FRENTE, e nao para cima. A primeira versao era uma
+     * bola escura so, centrada em `z = 0,28` — dentro do cranio, que nessa
+     * altura tem 0,337 de raio em z. Sobrava a CALOTA DE CIMA da bola para
+     * fora, e uma calota de cima e exatamente o desenho de um olho revirado:
+     * o Cookie ficava olhando para o teto.
+     *
+     * Agora sao tres peças, cada uma um degrau a frente da outra, e a direcao
+     * do olhar vira geometria em vez de acidente: o globo claro encostado na
+     * face, a PUPILA escura na frente dele (apontando para `+Z`, que e para
+     * onde ele olha) e o brilho na frente da pupila.
+     *
+     * Elas moram num grupo por olho porque a piscada do carinho escala o olho
+     * inteiro em `y` — escalando so a bola escura, a pupila afundava no globo.
+     */
     for (const lado of [-1, 1] as const) {
-      const olho = new THREE.Mesh(new THREE.SphereGeometry(0.056, 10, 8), toon(0x2b2733));
-      olho.position.set(lado * 0.2, 0.05, 0.28);
+      const olho = new THREE.Group();
+      olho.position.set(lado * 0.19, 0, 0.29);
+      olho.rotation.y = lado * 0.24; // acompanhando a curva da cara
+
+      // as duas peças sao ACHATADAS em z (`scale.z`): disco deitado na cara, e
+      // nao bola espetada nela. Bola mostra a calota de cima e le como olho
+      // revirado; disco mostra a face inteira e le como olho olhando
+      const globo = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), toon(0xf7f2ea));
+      globo.scale.z = 0.5;
+      olho.add(globo);
+
+      // a pupila come quase todo o globo: sobra um fio de branco em volta, que
+      // e o suficiente para dizer para onde ele olha sem virar olho de boneco
+      const pupila = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), toon(0x2b2733));
+      pupila.scale.z = 0.5;
+      pupila.position.z = 0.014;
+      olho.add(pupila);
+
+      const brilho = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 6), toon(0xfdfbf6));
+      brilho.position.set(lado * 0.014, 0.016, 0.036);
+      olho.add(brilho);
+
       this.cabeca.add(olho);
       this.olhos.push(olho);
 
-      const brilho = new THREE.Mesh(new THREE.SphereGeometry(0.019, 6, 6), toon(0xfdfbf6));
-      brilho.position.set(lado * 0.22, 0.09, 0.31);
-      this.cabeca.add(brilho);
-
       // a sobrancelha de elefante triste-bonzinho: um risco fino por cima
       const sobrancelha = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.022, 0.02), escuro);
-      sobrancelha.position.set(lado * 0.2, 0.16, 0.3);
+      sobrancelha.position.set(lado * 0.2, 0.12, 0.31);
       sobrancelha.rotation.z = lado * 0.22;
       this.cabeca.add(sobrancelha);
     }
@@ -279,6 +311,7 @@ export class Cookie extends Bicho {
     ponta.position.y = -0.2;
     this.tromba[GOMOS - 1].add(ponta);
 
+    this.uniforme();
     this.corpo.add(this.cabeca);
 
     // --------------------------------------------------------------- o rabo
@@ -300,6 +333,169 @@ export class Cookie extends Bicho {
     this.rabo[2].add(tufo);
 
     this.group.add(this.corpo);
+  }
+
+
+  /**
+   * ================================================== O UNIFORME DE BILHETEIRO
+   *
+   * Ele TRABALHA ali, e sem uniforme era um elefante que por acaso estava do
+   * lado de uma cabine. O mesmo que o avental fez pelo Mano: e a roupa que
+   * transforma bicho em funcionario.
+   *
+   * AS CORES SAO AS DA BILHETERIA — o azul da cinta, o creme da parede e o
+   * vermelho do telhado —, e nao um azul parecido: e o uniforme DAQUELA
+   * cabine, e e assim que quem olha entende que ele pertence a ela.
+   *
+   * Sao quatro peças, e cada uma existe por um motivo diferente:
+   *  - o QUEPE, que e o que se le de longe, e o unico que aparece por cima da
+   *    silhueta dele;
+   *  - o COLETE, dois painos no peito, que e o que se le de perto;
+   *  - o CRACHA, que e o que diz que ele tem nome e cargo;
+   *  - a BOLSA DE BILHETES a tiracolo, que e o que diz o que ele VENDE.
+   */
+  private uniforme(): void {
+    const pano = toon(P.fabricBlue);
+    const debrum = toon(P.wallCream);
+    const fita = toon(P.fabricRed);
+    const couro = toon(P.woodDark);
+
+    // ------------------------------------------------------------- o quepe
+    /*
+     * ELE POUSA ENTRE AS DUAS BOSSAS DA TESTA, que sobem ate 0,45: mais baixo
+     * que isso o quepe nasce DENTRO do cranio e vira uma faixa azul na careca.
+     * E ele tomba um pouco para a frente, que e como bone de trabalho fica.
+     */
+    const quepe = new THREE.Group();
+    quepe.position.set(0, 0.4, 0.09);
+    quepe.rotation.x = 0.18;
+
+    const copa = new THREE.Mesh(new THREE.SphereGeometry(0.26, 14, 10, 0, Math.PI * 2, 0, 1.25), pano);
+    copa.scale.set(1, 0.72, 0.95);
+    quepe.add(copa);
+
+    // a faixa vermelha na base da copa, 1 cm mais gorda que ela: encostada no
+    // mesmo raio, as duas superficies brigam pelo mesmo pixel
+    const faixa = new THREE.Mesh(new THREE.CylinderGeometry(0.253, 0.258, 0.06, 14, 1, true), fita);
+    faixa.scale.z = 0.95;
+    faixa.position.y = 0.012;
+    quepe.add(faixa);
+
+    // a aba, achatada e avancando so para a frente
+    /*
+     * A ABA AVANÇA DE VERDADE (`z = 0,17` com 1,5 de esticada), senao ela nasce
+     * dentro da copa e o quepe vira touca. Meia esfera achatada: `phiLength`
+     * de meia volta girada para a frente da um leque, e nao um disco inteiro.
+     */
+    const aba = new THREE.Mesh(new THREE.SphereGeometry(0.23, 12, 8, 0, Math.PI, 0, Math.PI / 2), pano);
+    aba.scale.set(1, 0.09, 1.5);
+    aba.rotation.y = -Math.PI / 2;
+    aba.position.set(0, -0.012, 0.17);
+    quepe.add(aba);
+
+    // o botãozinho do alto
+    const botao = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 6), debrum);
+    botao.position.y = 0.19;
+    quepe.add(botao);
+
+    this.cabeca.add(quepe);
+
+    // -------------------------------------------------------------- a manta
+    /*
+     * A ROUPA DELE VAI NAS COSTAS, e nao no peito, e o motivo e a CAMERA.
+     *
+     * A primeira versao era um colete de dois painos no peito: num bicho de
+     * quatro patas, a cabeca fica logo acima do peito e a camera olha de cima
+     * em 34° — o colete inteiro ficava na sombra do proprio queixo dele, e da
+     * distancia de jogo nao existia. O que esta camera enxerga de um quadrupede
+     * e o LOMBO, entao a roupa que se ve e a manta.
+     *
+     * Ela e uma casca de cilindro com o eixo em Z (o comprimento do corpo),
+     * aberta de 75° a 284° a partir de baixo: passa por cima e desce um palmo
+     * dos dois lados. Raio 0,63 contra os 0,6 do tronco — 3 cm de folga, que e
+     * pano caindo em cima de corpo em vez de tatuagem.
+     */
+    const manta = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.63, 0.63, 1.06, 20, 1, true, Math.PI * 0.42, Math.PI * 1.16),
+      toon(P.fabricBlue, { doubleSide: true }),
+    );
+    manta.rotation.x = Math.PI / 2; // poe o eixo do cilindro no Z
+    manta.position.set(0, 1.26, 0.06);
+    this.corpo.add(manta);
+
+    // os debruns creme nas duas bordas, um fio maiores que a manta para nao
+    // dividirem superficie com ela
+    for (const z of [-0.46, 0.58]) {
+      const borda = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.645, 0.645, 0.07, 20, 1, true, Math.PI * 0.42, Math.PI * 1.16),
+        toon(P.wallCream, { doubleSide: true }),
+      );
+      borda.rotation.x = Math.PI / 2;
+      borda.position.set(0, 1.26, z);
+      this.corpo.add(borda);
+    }
+
+    // a faixa vermelha no meio do lombo, na mesma familia do telhado da cabine
+    const faixaDaManta = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.652, 0.652, 0.12, 20, 1, true, Math.PI * 0.42, Math.PI * 1.16),
+      toon(P.fabricRed, { doubleSide: true }),
+    );
+    faixaDaManta.rotation.x = Math.PI / 2;
+    faixaDaManta.position.set(0, 1.26, 0.06);
+    this.corpo.add(faixaDaManta);
+
+    // a peitoral que segura a manta: uma tira por cima do ombro de cada lado
+    for (const lado of [-1, 1] as const) {
+      const tira = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.5, 0.055), toon(P.wallCream));
+      tira.position.set(lado * 0.42, 1.42, 0.38);
+      tira.rotation.x = -0.5;
+      tira.rotation.z = lado * 0.3;
+      this.corpo.add(tira);
+    }
+
+    // ------------------------------------------------------------- o cracha
+    // na tira do ombro direito, virado para a camera, e nao no peito escondido
+    const cracha = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.03), debrum);
+    cracha.position.set(0.47, 1.36, 0.5);
+    cracha.rotation.set(-0.5, 0, 0.3);
+    this.corpo.add(cracha);
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.018, 0.014), fita);
+    risco.position.set(0.482, 1.335, 0.516);
+    risco.rotation.set(-0.5, 0, 0.3);
+    this.corpo.add(risco);
+
+    // ------------------------------------------------ a bolsa de bilhetes
+    /*
+     * A TIRACOLO, do lado esquerdo, na altura em que a tromba alcança: e dali
+     * que sai o bilhete. A alca e um toro inclinado em volta do peito — o
+     * mesmo truque do cordao do apito do Capy.
+     */
+    const alca = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.028, 6, 18), couro);
+    alca.position.set(0, 1.3, 0.2);
+    alca.rotation.x = 1.32;
+    alca.rotation.y = 0.42;
+    this.corpo.add(alca);
+
+    const bolsa = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.16), couro);
+    bolsa.position.set(-0.58, 1.0, 0.24);
+    bolsa.rotation.y = 0.3;
+    this.corpo.add(bolsa);
+    const tampa = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.12, 0.175), toon(P.wood));
+    tampa.position.set(-0.58, 1.11, 0.24);
+    tampa.rotation.y = 0.3;
+    this.corpo.add(tampa);
+
+    // o rolo de bilhetes espiando para fora da bolsa: e o que diz o que ele vende
+    const rolo = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.09, 10), debrum);
+    rolo.position.set(-0.52, 1.17, 0.28);
+    rolo.rotation.z = Math.PI / 2;
+    rolo.rotation.y = 0.3;
+    this.corpo.add(rolo);
+    const miolo = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.095, 8), fita);
+    miolo.position.set(-0.52, 1.17, 0.28);
+    miolo.rotation.z = Math.PI / 2;
+    miolo.rotation.y = 0.3;
+    this.corpo.add(miolo);
   }
 
   // ------------------------------------------------------- ordens da cena
