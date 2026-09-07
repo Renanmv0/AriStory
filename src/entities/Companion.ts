@@ -207,16 +207,23 @@ export class Companion {
       return;
     }
 
-    // no gelo as duas molas afrouxam: ele demora a pegar embalo e demora a
-    // parar. Os numeros sao os mesmos da conta do jogador, so que aqui elas
-    // sao taxas de interpolacao em vez de aceleracao e atrito.
-    const puxao = 7 * (1 - 0.6 * this.derrapagem);
-    const freio = 9 * (1 - 0.85 * this.derrapagem);
+    /**
+     * No gelo as duas molas afrouxam: ele demora a pegar embalo e demora a
+     * parar. Os numeros sao os mesmos da conta do jogador, so que aqui elas
+     * sao taxas de interpolacao em vez de aceleracao e atrito.
+     *
+     * DE PATINS NO GELO a lamina crava e as duas voltam quase ao normal — ele
+     * precisa disso para acompanhar quem esta patinando na frente, que ali
+     * anda 60% mais rapido que a pe.
+     */
+    const lamina = this.patins ? this.derrapagem : 0;
+    const puxao = 7 * (1 - 0.6 * this.derrapagem + 0.55 * lamina);
+    const freio = 9 * (1 - 0.85 * this.derrapagem + 0.7 * lamina);
 
     if (dist > folga) {
       this.dir.normalize();
       // acelera quando esta longe, para nao ficar pendurado no limite
-      const teto = this.maxSpeed * (this.patins ? BONUS_PATINS : 1);
+      const teto = this.maxSpeed * (this.patins ? BONUS_PATINS : 1) * (1 + 0.25 * lamina);
       const alvoVel = Math.min(teto, 1.6 + (dist - folga) * 2.2);
       this.velocity.x += (this.dir.x * alvoVel - this.velocity.x) * Math.min(1, dt * puxao);
       this.velocity.z += (this.dir.z * alvoVel - this.velocity.z) * Math.min(1, dt * puxao);

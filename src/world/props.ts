@@ -2305,7 +2305,23 @@ export function letreiro(
   if (ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = corTexto;
-    ctx.font = `bold ${Math.round(canvas.height * 0.62)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+    /**
+     * O TAMANHO DA LETRA ENCOLHE ATE CABER.
+     *
+     * Antes ele saia so da altura da placa, e texto comprido vazava pelos dois
+     * lados do canvas: a placa da pista de gelo entrou no jogo escrita
+     * "sta de ge". Agora a fonte comeca no tamanho de sempre — placa curta
+     * continua exatamente como era — e desce de dois em dois pontos ate a
+     * medida caber na largura, com uma margem de 6% de cada lado.
+     */
+    const margem = canvas.width * 0.06;
+    let tamanho = Math.round(canvas.height * 0.62);
+    const fonte = (px: number): string => `bold ${px}px ui-rounded, "Nunito", system-ui, sans-serif`;
+    ctx.font = fonte(tamanho);
+    while (tamanho > 10 && ctx.measureText(texto).width > canvas.width - margem * 2) {
+      tamanho -= 2;
+      ctx.font = fonte(tamanho);
+    }
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(texto, canvas.width / 2, canvas.height / 2 + 4);

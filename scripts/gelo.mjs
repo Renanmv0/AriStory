@@ -238,7 +238,12 @@ const medirDeslize = async (x, z) => {
   await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, Math.PI), [x, z]);
   await page.waitForTimeout(2200);
   await page.keyboard.down('KeyS');
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(2400);
+  // a velocidade de cruzeiro, medida com a tecla AINDA apertada
+  const [vx, vz] = await onde();
+  await page.waitForTimeout(600);
+  const [wx, wz] = await onde();
+  const velocidade = Math.hypot(wx - vx, wz - vz);
   /**
    * O PRIMEIRO PONTO É LIDO DEPOIS DE SOLTAR, e não antes: entre a leitura e o
    * `keyboard.up` passa uma ida e volta de `page.evaluate`, e nessa fresta a
@@ -253,7 +258,7 @@ const medirDeslize = async (x, z) => {
   const [ax, az, derrapagem] = await onde();
   await page.waitForTimeout(4000);
   const [bx, bz] = await onde();
-  return { deslize: Math.hypot(bx - ax, bz - az), derrapagem };
+  return { deslize: Math.hypot(bx - ax, bz - az), velocidade, derrapagem };
 };
 
 const noGelo = await medirDeslize(10.5, 17.5);
@@ -267,6 +272,52 @@ if (noGelo.deslize < naGrama.deslize * 2.5) {
 }
 console.log('deslize depois de soltar a tecla — gelo:', noGelo.deslize.toFixed(2),
   '· grama:', naGrama.deslize.toFixed(2));
+
+/* ==================================================================== *
+ *                  4. DE PATINS, o gelo vira pista
+ *
+ * Descalço no gelo a pessoa escorrega: o pé patina no lugar e ela quase não
+ * sai do lugar. De patins a lâmina crava de lado — a aceleração volta, o
+ * freio existe e o teto de velocidade sobe. É essa diferença que se mede
+ * aqui, no MESMO ponto de partida e com o MESMO empurrão.
+ * ==================================================================== */
+
+await page.evaluate(() => {
+  const par = window.aristoryItens['patins'];
+  window.jogo.equipWearable(par, 'ari');
+  window.jogo.equipWearable(par, 'renan');
+});
+await page.waitForTimeout(800);
+
+// a primeira volta de patins no gelo tem conversa e memória próprias: o teste
+// dispara, vence as falas e confere que a lembrança entrou
+await page.evaluate(([x, z]) => window.jogo.debugPlace(x, z, Math.PI), [10.5, 17.5]);
+await page.waitForTimeout(1500);
+await page.keyboard.down('KeyS');
+await page.waitForTimeout(4000);
+await page.keyboard.up('KeyS');
+await page.screenshot({ path: `${OUT}-patinando.png` });
+for (let i = 0; i < 12; i++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(450);
+}
+const noCorpo = await page.evaluate(() => ({
+  patinando: window.jogo.player.rig.patinandoAgora,
+  parceiroDePatins: window.jogo.parceiro.patins,
+  memorias: (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').memories ?? []).map((m) => m.id),
+}));
+
+const dePatins = await medirDeslize(10.5, 17.5);
+
+if (!noCorpo.patinando) erros.push('os patins não entraram no corpo');
+if (!noCorpo.parceiroDePatins) erros.push('o parceiro ficou sem patins — ele não acompanha');
+if (!noCorpo.memorias.includes('patinar-no-gelo')) erros.push('a memória de patinar no gelo não entrou');
+if (dePatins.velocidade < noGelo.velocidade * 1.35) {
+  erros.push(`de patins não anda mais rápido no gelo: ${dePatins.velocidade.toFixed(2)} contra ${noGelo.velocidade.toFixed(2)} descalço`);
+}
+console.log('no gelo, velocidade de cruzeiro — descalço:', noGelo.velocidade.toFixed(2),
+  '· de patins:', dePatins.velocidade.toFixed(2),
+  '· deslize de patins:', dePatins.deslize.toFixed(2));
 
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'praça montada, mesa servida, gelo escorregando');
 await browser.close();

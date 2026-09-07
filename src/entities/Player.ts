@@ -105,7 +105,6 @@ export class Player {
     const naAgua = this.submersion > 0.05;
     // na agua o patins nao ajuda em nada: roda nao empurra agua
     const rodas = this.patins && !naAgua ? BONUS_PATINS : 1;
-    const teto = naAgua ? this.maxSpeed * 0.55 : this.maxSpeed * rodas;
     const wants = !this.locked && dir.lengthSq() > 0.0001;
 
     /**
@@ -115,8 +114,24 @@ export class Player {
      * nada para escorregar.
      */
     const gelo = naAgua ? 0 : this.derrapagem;
-    const empurrao = this.accel * (1 - 0.72 * gelo);
-    const freio = this.friction * (1 - 0.86 * gelo);
+    /**
+     * A LAMINA: patins EM CIMA DO GELO sao outra coisa.
+     *
+     * De sapato no gelo a pessoa nao anda, ela escorrega: o pe patina no lugar
+     * (pouca aceleracao) e nada freia (quase nenhum atrito). Com o patins a
+     * lamina CRAVA de lado, e e isso que devolve o controle — quase toda a
+     * aceleracao de terra firme de volta, e um freio que existe. O que sobra
+     * de gelo e o deslize longo, que ali passa a ser a graca e nao o castigo.
+     *
+     * E ela so vale NO GELO. Patins no asfalto ja tem o bonus de velocidade
+     * (`BONUS_PATINS`) e nada mais: e no gelo que a lamina faz sentido.
+     */
+    const lamina = this.patins ? gelo : 0;
+    // no gelo com patins o teto sobe mais um quarto: e a passada longa de quem
+    // patina de verdade, e sem ela patinar seria so andar com outra animacao
+    const teto = naAgua ? this.maxSpeed * 0.55 : this.maxSpeed * rodas * (1 + 0.25 * lamina);
+    const empurrao = this.accel * (1 - 0.72 * gelo + 0.67 * lamina);
+    const freio = this.friction * (1 - 0.86 * gelo + 0.34 * lamina);
 
     if (wants) {
       const d = dir.clone().normalize();

@@ -721,13 +721,70 @@ export const villaLobos: SceneDef = {
         dx * dx + dz * dz <= RAIO_QUINA * RAIO_QUINA
       );
     };
+    /**
+     * DE PATINS O GELO VIRA PISTA.
+     *
+     * Quem entra no rinque a pé escorrega e pronto: o pé patina no lugar e nada
+     * freia. Com os patins da lojinha calçados, a lâmina crava de lado — a
+     * aceleração volta quase toda, o freio existe e o teto de velocidade sobe
+     * mais um quarto (ver `Player.derrapagem` e a `lamina` que mora lá).
+     * Nenhuma linha disso está aqui: a cena só diz ONDE tem gelo, e quem calça
+     * o patins é o inventário. Esta parte é só a primeira vez, que merece uma
+     * fala.
+     */
+    const dePatins = (): boolean => g.wearables().some((i) => i?.id === ITENS.patins.id);
     let escorregando = 0;
+    let ultimoNoGelo: THREE.Vector3 | null = null;
+    let contandoAPrimeira = false;
+
     w.onUpdate((dt) => {
       const onde = g.playerPosition();
       const alvo = noGelo(onde.x, onde.z) ? 1 : 0;
       escorregando += (alvo - escorregando) * Math.min(1, dt * 6);
       g.setEscorregadio(escorregando);
+
+      // a velocidade sai da posição de um quadro para o outro: o motor não
+      // publica velocidade, e a cena não precisa que ele publique
+      const veloz = ultimoNoGelo && dt > 0
+        ? Math.hypot(onde.x - ultimoNoGelo.x, onde.z - ultimoNoGelo.z) / dt
+        : 0;
+      ultimoNoGelo = onde.clone();
+
+      if (contandoAPrimeira || g.flag('patinou-no-gelo')) return;
+      if (escorregando < 0.75 || !dePatins() || veloz < 3.2) return;
+      /**
+       * A PRIMEIRA VOLTA DE PATINS NO GELO, uma vez só na vida do save.
+       *
+       * A trava é ligada ANTES do `await`: sem ela, os quadros que rodam
+       * enquanto a primeira fala aparece entrariam aqui de novo e a conversa
+       * começaria três vezes por cima de si mesma.
+       */
+      contandoAPrimeira = true;
+      void (async () => {
+        g.setFlag('patinou-no-gelo');
+        g.lockPlayer(true);
+        await conversa([
+          [R, 'Ó, no gelo o patins pega!'],
+          [A, 'PEGA MESMO. Olha eu indo.'],
+          [R, 'Vai devagar que eu vou atrás.'],
+        ]);
+        g.lockPlayer(false);
+        g.unlock({
+          id: 'patinar-no-gelo',
+          title: 'Patinando no gelo',
+          place: 'Parque Villa Lobos',
+          note: 'Os patins da lojinha viraram outra coisa quando pisaram no rinque do Mano: no gelo a lâmina crava e dá para correr de verdade. Descalço ali só dá para escorregar.',
+          icon: '⛸️',
+        });
+      })();
     });
+
+    /**
+     * A placa da pista, ao lado do vão da borda — do lado de FORA da praça, na
+     * neve pisada, para não virar obstáculo no meio da porta.
+     */
+    w.add(w.place(textSign('Pista de gelo', P.geloFundo), 11.4, 0, 26.7, 0.2));
+    w.blockCircle(11.4, 26.7, 0.3);
 
     /**
      * O MANO, o pinguim sorveteiro — o primeiro bicho do parque.
