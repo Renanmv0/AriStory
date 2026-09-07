@@ -1079,9 +1079,9 @@ export const villaLobos: SceneDef = {
     /**
      * ============================ A LOJINHA DE ROUPAS (o "mini shopping")
      *
-     * ONDE: a ponta oeste do parque, atrás da pista de patins, de costas para o
-     * rio. A faixa `x −46…−30 · z −16…6` foi MEDIDA — varrendo as peças da
-     * cena, ali só existiam catorze árvores do espalhador e nada construído.
+     * ONDE: a ponta oeste do parque, de costas para o rio. A faixa
+     * `x −48…−28 · z −30…−6` foi MEDIDA — varrendo as peças da cena, ali só
+     * existiam árvores do espalhador (e uma nuvem, a 66 de altura).
      *
      * ELA É A ÚNICA PEÇA DO JOGO COM A FACHADA EM `+X`, e é de propósito. A
      * convenção do repositório é fachada para `+Z` porque a câmera vem da
@@ -1096,12 +1096,19 @@ export const villaLobos: SceneDef = {
      * cega cai em `(−48,6; −13,6)` — fora do mundo caminhável, que termina em
      * `x = −44`. Não há nada atrás dela para esconder.
      *
-     * A FOLGA ATÉ A PISTA é o que decidiu o `x`: o oval de patins chega a
-     * `x = −31`, e o prédio (que avança 5,2 pela frente a partir do centro)
-     * para em `−34,8`. Sobram 3,8 de calçada entre a vitrine e o asfalto —
-     * espaço para a dupla parar na frente e para a ovelha ficar no posto.
+     * A FOLGA ATÉ A PISTA decidiu as DUAS coordenadas:
+     *
+     *  - o `x`, porque o oval de patins chega a `x = −31` e o prédio (que
+     *    avança 5,2 pela frente a partir do centro) para em `−34,8`: sobram
+     *    3,8 de calçada entre a vitrine e o asfalto — espaço para a dupla
+     *    parar na frente e para a ovelha ficar no posto;
+     *  - o `z`, que saiu de `−5` para `−16,5`. Em `−5` a loja ficava bem de
+     *    frente para a pista, e não havia meio-termo: ela tem 11,6 de
+     *    comprimento e a pista ocupa `z −10…0`, então qualquer deslocamento
+     *    menor que onze deixaria metade dela ainda na frente. Daqui a ponta
+     *    dela para em `−10,7`, com 70 cm de folga da boca da pista.
      */
-    const LOJINHA = { x: -40, z: -5 };
+    const LOJINHA = { x: -40, z: -16.5 };
     w.add(w.place(lojaDeRoupas(), LOJINHA.x, 0, LOJINHA.z, Math.PI / 2));
     w.blockBox(LOJINHA.x, LOJINHA.z, 5.7, 4.2, Math.PI / 2);
     /*
@@ -1109,7 +1116,7 @@ export const villaLobos: SceneDef = {
      * prédio até a beira da pista. É por ela que se chega — quem vem do parque
      * contorna a pista de patins e sai de frente para a vitrine.
      */
-    w.patch(-33.2, LOJINHA.z, 4.4, 13.6, P.concrete, 0, 0.015, calcadaDePedrinha());
+    w.patch(-33.2, -15, 4.4, 16, P.concrete, 0, 0.015, calcadaDePedrinha());
 
     // ------------------------------------------------------------ vegetacao
     const proibido: Array<[number, number, number]> = [
@@ -1135,7 +1142,7 @@ export const villaLobos: SceneDef = {
       [-21, -5, 12], [-8.6, 2.5, 9],
       // a lojinha: 11 de raio cobre o prédio (11,6 × 9,5) e a calçada dele.
       // Sem isto o espalhador planta árvore dentro da vitrine
-      [-40, -5, 11],
+      [-40, -16.5, 11],
     ];
     const livre = (x: number, z: number): boolean => {
       if (Math.abs(x) < 4 && z > -20 && z < 30) return false;
