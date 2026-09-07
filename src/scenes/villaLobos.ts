@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
+import { Cookie } from '../entities/bichos/Cookie';
 import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
@@ -227,6 +228,27 @@ export const villaLobos: SceneDef = {
     w.patch(BILHETERIA.x, -16.9, 6.4, 6.6, P.concrete, 0, 0.014, calcadaDePedrinha());
     const bilheteria = w.add(w.place(ticketBooth(), BILHETERIA.x, 0, BILHETERIA.z));
     w.blockBox(BILHETERIA.x, BILHETERIA.z, 1.53, 1.08);
+
+    /**
+     * O COOKIE, o elefante da bilheteria.
+     *
+     * AO LADO DA CABINE, e nao na frente: a janela de atendimento fica em
+     * `x = 9,6…11,6`, e ele tem 1,2 de largura — plantado na frente dela, ele
+     * seria a bilheteria. Aqui ele fica encostado na parede lateral de `+X`,
+     * fora do vao da janela e fora do corredor que leva ao campinho.
+     *
+     * A AREA E MENOR QUE O PASSO MINIMO do cerebro (0,7), entao por enquanto
+     * ele fica no lugar — e a mesma coleira da Gina na portaria. A patrulha
+     * dele entra depois, quando o Renan aprovar a conta da caminhada.
+     */
+    const COOKIE = { x: 13.5, z: -20.6 };
+    const cookie = new Cookie({
+      minX: COOKIE.x - 0.12, maxX: COOKIE.x + 0.12,
+      minZ: COOKIE.z - 0.1, maxZ: COOKIE.z + 0.1,
+    });
+    cookie.group.rotation.y = 0.5; // olhando para a boca do corredor
+    w.add(cookie.group);
+    w.onUpdate((dt) => cookie.update(dt));
 
     // ------------------------------------------- entorno da roda gigante
     // Tudo aqui é posicionado na mão de propósito: o espalhador de vegetação
