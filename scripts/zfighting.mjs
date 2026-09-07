@@ -26,6 +26,7 @@ const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome
 const PECAS = [
   ['quiosque', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],
+  ['loja-de-roupas', 'villa-lobos'],
   ['arquibancada', 'villa-lobos'],
   ['estante', 'quarto'],
   ['loja-de-patins', 'villa-lobos'],

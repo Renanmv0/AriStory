@@ -321,6 +321,23 @@ export const PALETTE = {
   churrascoToalha: 0xd94f43,
   churrascoQuadroNegro: 0x2f3b33,
 
+  // A LOJINHA DE ROUPAS do Villa Lobos — o "mini shopping". As cores sao dela,
+  // e nao as do vestido do guarda-roupa, porque ela e um PREDIO: um rosa
+  // saturado que fica fofo num laco de fita cansa a vista em sete metros de
+  // parede. Daqui sai uma massa rosada quase creme, com a esquadria branca, o
+  // toldo listrado num rosa cheio (a unica cor forte, e e a que puxa o olho de
+  // longe) e tijolinho no rodape, que e o que impede o predio de flutuar.
+  lojaParede: 0xf3dfe0,
+  lojaParedeAlta: 0xfaeef0,
+  lojaFaixa: 0xdcb9c0,
+  lojaEsquadria: 0xfdfaf6,
+  lojaToldo: 0xd4788c,
+  lojaTijolo: 0xb9736c,
+  lojaLetreiro: 0x5c3a44,
+  lojaVitrine: 0xd6ebf2,
+  lojaDentro: 0xd9c7c4,
+  lojaManequim: 0xdcc3a4,
+
   // o Cookie, o elefante da bilheteria. Cinza de elefante de verdade puxa para
   // o ROXO, e nao para o azul — cinza azulado sai como pedra. A orelha por
   // dentro e o dentro da tromba sao rosados, e e dai que vem o "fofo" que um
