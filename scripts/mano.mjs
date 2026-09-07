@@ -236,8 +236,15 @@ const antesDeAndar = await page.evaluate(() => {
   const p = window.jogo.playerPosition();
   return [+p.x.toFixed(2), +p.z.toFixed(2)];
 });
+/**
+ * O TEMPO DE ANDAR DOBROU quando a praça de gelo nasceu debaixo do quiosque: no
+ * gelo o empurrão do pé pega 28% do que pega na grama, e em 1,4 s de relógio
+ * (menos de meio segundo de jogo neste renderizador) a dupla mal saía do lugar
+ * — o teste lia isso como jogador travado. O que ele quer provar é que o
+ * `lockPlayer` saiu, e para isso basta a dupla SAIR DO LUGAR.
+ */
 await page.keyboard.down('KeyW');
-await page.waitForTimeout(1400);
+await page.waitForTimeout(3000);
 await page.keyboard.up('KeyW');
 const depoisDeAndar = await page.evaluate(() => {
   const p = window.jogo.playerPosition();

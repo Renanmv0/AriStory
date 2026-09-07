@@ -4774,10 +4774,16 @@ export function cadeirinhaDeSorveteria(cor: number = P.sorveteriaRosa): THREE.Gr
  * quiosque, então as duas cadeiras ficam de perfil para a câmera e nenhuma
  * delas tapa a outra nem o tampo.
  *
- * O GUARDA-SOL É BAIXO DE PROPÓSITO (2,05 no topo, 0,82 de raio). A conta é a
- * mesma do toldo do quiosque: a câmera olha em 34°, e a lona esconde
- * `1,5 × (altura − altura do que está atrás)` de chão. Com 2,05 ela come 1,5
- * de gramado vazio e passa POR CIMA da cabeça de quem estiver na cadeira.
+ * A ALTURA DO GUARDA-SOL É A CONTA DA PEÇA, e a primeira versão errou para
+ * baixo. A lona começava em 1,71 — mais baixa que uma pessoa em pé (1,75) —, e
+ * com a dupla SENTADA na mesa ela passava na frente dos dois: a câmera olha em
+ * 34°, o raio que sai da cabeça de quem senta (1,3) sobe 0,67 por unidade
+ * andada, e nesse ângulo ele batia na lona antes de sair de baixo dela.
+ *
+ * Agora a borda fica em 2,25, que é a altura de um guarda-sol de verdade
+ * (2,3 para gente de 1,75), e o raio da cabeça de quem senta escapa por baixo
+ * dela. Mais alto que isso a lona vira toldo de posto de gasolina; mais baixo,
+ * ela come a cabeça de quem está do lado de lá da mesa.
  *
  * O babado da ponta são bolinhas alternadas, a mesma receita do toldo do
  * `kiosk()` — é o detalhe que faz a lona ler como doce em vez de barraca.
@@ -4805,12 +4811,12 @@ export function mesaDeSorveteria(cor: number = P.sorveteriaRosa, sabor: number |
   g.add(beira);
 
   // ---------------------------------------------------------- guarda-sol
-  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.42, 8), toon(P.sorveteriaCreme));
-  haste.position.y = 1.33;
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.78, 8), toon(P.sorveteriaCreme));
+  haste.position.y = 1.5;
   g.add(haste);
 
   const FATIAS = 10;
-  const RAIO = 0.82;
+  const RAIO = 0.86;
   const ALTURA = 0.34;
   // A lona é feita em GOMOS abertos, um a um: um cone listrado precisaria de
   // textura, e um cone chapado perde o ar de guarda-sol. Cada gomo é uma fatia
@@ -4820,7 +4826,7 @@ export function mesaDeSorveteria(cor: number = P.sorveteriaRosa, sabor: number |
       new THREE.ConeGeometry(RAIO, ALTURA, 3, 1, true, (i / FATIAS) * Math.PI * 2, (Math.PI * 2) / FATIAS),
       toon(i % 2 === 0 ? cor : P.sorveteriaCreme, { doubleSide: true }),
     );
-    gomo.position.y = 1.88;
+    gomo.position.y = 2.42;
     g.add(gomo);
   }
   // babado: uma bolinha por gomo, na ponta da lona
@@ -4830,12 +4836,12 @@ export function mesaDeSorveteria(cor: number = P.sorveteriaRosa, sabor: number |
       new THREE.SphereGeometry(0.075, 8, 6),
       toon(i % 2 === 0 ? cor : P.sorveteriaCreme),
     );
-    bolinha.position.set(Math.cos(a) * (RAIO - 0.05), 1.71, Math.sin(a) * (RAIO - 0.05));
+    bolinha.position.set(Math.cos(a) * (RAIO - 0.05), 2.25, Math.sin(a) * (RAIO - 0.05));
     bolinha.scale.set(1, 1.1, 1);
     g.add(bolinha);
   }
   const ponteira = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), toon(P.gold));
-  ponteira.position.y = 2.09;
+  ponteira.position.y = 2.63;
   g.add(ponteira);
 
   // -------------------------------------------------------------- a taça

@@ -45,6 +45,18 @@ export class Mano extends Bicho {
   private readonly cabeca = new THREE.Group();
   private readonly chapeu = new THREE.Group();
   private readonly asas: THREE.Group[] = [];
+  /** a bandeja inteira (tampo + borda), escondida enquanto ele não atende mesa */
+  private readonly tabuleiro = new THREE.Group();
+  /**
+   * Onde a carga da bandeja viaja.
+   *
+   * A cena pendura os sorvetes AQUI e eles acompanham o passo dele de graça,
+   * como filhos — copiar posição quadro a quadro faria a casquinha tremer em
+   * cima da bandeja. É o mesmo contrato da bandeja do Walter.
+   */
+  readonly bandeja = new THREE.Object3D();
+  /** ele está com a bandeja na frente, a caminho de uma mesa */
+  private comBandeja = false;
   private readonly pes: THREE.Group[] = [];
   private readonly olhos: THREE.Mesh[] = [];
 
@@ -224,6 +236,42 @@ export class Mano extends Bicho {
     cracha.position.set(0.07, 0.315, 0.205);
     this.corpo.add(cracha);
 
+    // ---------------------------------------------------------- a bandeja
+    /**
+     * A BANDEJA DE ATENDER A MESA, presa na frente da barriga.
+     *
+     * ELA NASCE ESCONDIDA, e isso é a decisão: atrás do balcão ele não tem
+     * bandeja nenhuma — o Renan já aprovou o Mano como ele é, e um pinguim com
+     * bandeja permanente seria outro bicho. Ela só aparece na viagem até a
+     * mesa, com `levarBandeja(true)`.
+     *
+     * ELA É CREME, e não de inox como a do Walter: o casaco dele é
+     * azul-ardósia, o avental é rosa, e o inox cinza ficaria uma terceira cor
+     * fria em cima de duas. O creme é o mesmo da barriga e do debrum.
+     *
+     * Ela fica À FRENTE do peitilho (que termina em `z = 0,22`) e ABAIXO do
+     * bico, para a câmera de 34° ver o que está em cima dela.
+     */
+    this.tabuleiro.name = 'bandeja-do-mano';
+    this.tabuleiro.position.set(0, 0.33, 0.3);
+    this.tabuleiro.visible = false;
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.022, 0.2), debrum);
+    this.tabuleiro.add(tabua);
+    // a borda, em quatro barrinhas: sem ela a bandeja lê como uma tábua
+    // atravessada no bicho
+    for (const [dx, dz, larg, prof] of [
+      [0, 0.095, 0.26, 0.022], [0, -0.095, 0.26, 0.022],
+      [0.125, 0, 0.022, 0.2], [-0.125, 0, 0.022, 0.2],
+    ] as const) {
+      const borda = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.028, prof), uniforme);
+      borda.position.set(dx, 0.014, dz);
+      this.tabuleiro.add(borda);
+    }
+    // o ponto onde a carga viaja: 1 cm acima do tampo
+    this.bandeja.position.y = 0.022;
+    this.tabuleiro.add(this.bandeja);
+    this.corpo.add(this.tabuleiro);
+
     // ------------------------------------------------------------- a cabeça
     /**
      * QUASE SEM PESCOÇO: a cabeça encaixa direto no peito. Pinguim com pescoço
@@ -364,6 +412,23 @@ export class Mano extends Bicho {
     return this.dancando > 0;
   }
 
+  /**
+   * Põe (ou tira) a bandeja de atender mesa.
+   *
+   * Com ela na frente as nadadeiras vêm para a frente segurando o tampo, e ele
+   * para de balançar as asas no passo: quem carrega bandeja não balança o
+   * braço, senão o sorvete vai ao chão.
+   */
+  levarBandeja(v: boolean): void {
+    this.comBandeja = v;
+    this.tabuleiro.visible = v;
+  }
+
+  /** ele está com a bandeja na frente (o teste pergunta isto) */
+  get servindoMesa(): boolean {
+    return this.comBandeja;
+  }
+
   // ------------------------------------------------------------------- pose
 
   protected animar(dt: number, { andando, carinho, fase }: PoseDoBicho): void {
@@ -408,6 +473,20 @@ export class Mano extends Bicho {
       const balancoDoPasso = andando ? Math.sin(fase * 7) * 0.12 : 0;
       const alvo = lado * (0.14 + bater + abertoNoCarinho) + balancoDoPasso;
       asa.rotation.z += (alvo - asa.rotation.z) * Math.min(1, dt * 12);
+      /**
+       * COM A BANDEJA as duas nadadeiras vêm para a FRENTE e param quietas: é
+       * o `rotation.x` que gira o ombro para frente, e o balanço do passo sai
+       * de cena. A asa fica na altura da borda da bandeja, segurando.
+       *
+       * A dança ganha de tudo: se ele resolver dançar de bandeja na mão, que
+       * ele dance — mas aí a bandeja já foi entregue, porque a cena só o faz
+       * dançar depois de servir.
+       */
+      const paraAFrente = this.comBandeja && !dancando ? -1.15 : 0;
+      asa.rotation.x += (paraAFrente - asa.rotation.x) * Math.min(1, dt * 8);
+      if (this.comBandeja && !dancando) {
+        asa.rotation.z += (lado * 0.32 - asa.rotation.z) * Math.min(1, dt * 8);
+      }
     }
 
     // os pés: passinho miúdo andando, e na dança eles marcam o compasso

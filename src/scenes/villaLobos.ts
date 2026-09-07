@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
-import type { SceneDef } from '../core/types';
+import type { GameAPI, ItemDef, SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
 import { Cookie } from '../entities/bichos/Cookie';
 import { Frisbee } from '../entities/Frisbee';
@@ -8,7 +8,7 @@ import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
   aroDeFrisbee, bin, bleachers, bonecoDeNeve, bordaDeGelo, building, bus, busStop, bush,
   canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro, duck,
-  fence, floodlight, flowers, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
+  fence, floodlight, flowers, iceCream, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
   mesaPingPong, nenufar, picnicTable, posteDeGelo, raquete, skateShop,
   rock, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
   bolinhaPingPong,
@@ -648,10 +648,18 @@ export const villaLobos: SceneDef = {
       [11.2, 24.1, P.chocolate],
       [16.6, 23.8, P.limao],
     ];
+    /**
+     * As mesinhas ficam guardadas: é NELAS que a dupla senta, e o grupo de cada
+     * uma é a âncora da cutscene. Sentar num objeto que já carrega posição e
+     * giro dispensa qualquer conta de seno e cosseno na hora de acomodar os
+     * dois — o padrão de cutscene do jogo inteiro.
+     */
+    const MESINHAS: THREE.Group[] = [];
     for (const [mx, mz, sabor] of MESAS) {
       const mesinha = mesaDeSorveteria(P.sorveteriaRosa, sabor);
       w.add(w.place(mesinha, mx, 0, mz, Math.atan2(SORVETERIA.x - mx, SORVETERIA.z - mz)));
       w.blockCircle(mx, mz, 1);
+      MESINHAS.push(mesinha);
     }
 
     // os postes das quinas. Baixos (2,3) para não apagarem as mesinhas: cada
@@ -687,6 +695,39 @@ export const villaLobos: SceneDef = {
       w.add(w.place(cristalDeGelo(esc, sem), cx, 0, cz, sem * 6.28));
       w.blockCircle(cx, cz, 0.45 * esc);
     }
+
+    /* ---------------------------------------------------- O GELO ESCORREGA
+     *
+     * Dentro do rinque o chão deixa de agarrar: o empurrão do pé pega menos e
+     * quase nada freia quem já está em movimento (ver `Player.derrapagem`).
+     * Solte a tecla correndo e a dupla desliza sozinha por uns metros; faça a
+     * curva e ela sai aberta, olhando para onde está indo.
+     *
+     * A CONTA É A DO RETÂNGULO DE CANTOS REDONDOS, a mesma forma que o piso
+     * desenha: recua meia largura menos o raio em cada eixo, e o que sobra é
+     * medido contra o raio da quina. Sem isso as quatro quinas escorregariam
+     * fora do gelo, em cima da grama.
+     *
+     * E ENTRA INTERPOLADO. Ligar de um quadro para o outro dá um tranco na
+     * borda do rinque — é a mesma lição da submersão na beira do lago. Com
+     * `dt × 6` a passagem leva menos de dois décimos: o tempo de um passo, e
+     * curto o bastante para quem entra correndo já entrar escorregando.
+     */
+    const noGelo = (x: number, z: number): boolean => {
+      const dx = Math.max(0, Math.abs(x - PRACA.x) - (bx - RAIO_QUINA));
+      const dz = Math.max(0, Math.abs(z - PRACA.z) - (bz - RAIO_QUINA));
+      return (
+        Math.abs(x - PRACA.x) <= bx && Math.abs(z - PRACA.z) <= bz &&
+        dx * dx + dz * dz <= RAIO_QUINA * RAIO_QUINA
+      );
+    };
+    let escorregando = 0;
+    w.onUpdate((dt) => {
+      const onde = g.playerPosition();
+      const alvo = noGelo(onde.x, onde.z) ? 1 : 0;
+      escorregando += (alvo - escorregando) * Math.min(1, dt * 6);
+      g.setEscorregadio(escorregando);
+    });
 
     /**
      * O MANO, o pinguim sorveteiro — o primeiro bicho do parque.
@@ -1876,13 +1917,31 @@ export const villaLobos: SceneDef = {
     // seu dono: quem põe o modelo na mão é o motor, e o T não muda nada porque
     // a malha é filha do rig, que viaja com a pessoa.
     let sorveteRestante = 0;
+    /**
+     * O QUE FOI ENTREGUE DESTA VEZ, e para quem.
+     *
+     * Antes o relógio do derretimento apagava dois ids cravados no código —
+     * morango do Ari, maracujá do Renan. Na mesinha dá para pedir "o que o
+     * Mano escolher", e aí vêm chocolate e limão: com os ids cravados, esses
+     * dois nunca derreteriam e a dupla ficaria de casquinha na mão para sempre.
+     * Agora quem entrega anota aqui o que entregou.
+     */
+    let naMaoDeles: Array<{ item: ItemDef; dono: string }> = [];
+
+    /** entrega um par de sorvetes e liga o relógio do derretimento */
+    const entregarSorvetes = (doAri: ItemDef, doRenan: ItemDef): void => {
+      naMaoDeles = [{ item: doAri, dono: ARI.id }, { item: doRenan, dono: RENAN.id }];
+      g.addItem(doAri, ARI.id);
+      g.addItem(doRenan, RENAN.id);
+      sorveteRestante = 50;
+    };
 
     w.onUpdate((dt) => {
       if (sorveteRestante <= 0) return;
       sorveteRestante -= dt;
       if (sorveteRestante <= 0) {
-        g.removeItem(ITENS.sorveteMorango.id, ARI.id);
-        g.removeItem(ITENS.sorveteMaracuja.id, RENAN.id);
+        for (const { item, dono } of naMaoDeles) g.removeItem(item.id, dono);
+        naMaoDeles = [];
         g.toast('Acabou o sorvete', '🍦');
       }
     });
@@ -2054,9 +2113,15 @@ export const villaLobos: SceneDef = {
       'Eu guardo o de vocês no gelo. Pode voltar quando acabar esse.',
       'Tá bom esse? Tá bom, né. Eu escolhi.',
     ];
-    /** algum dos dois ainda está com a casquinha na mochila */
+    /**
+     * Algum dos dois ainda está com casquinha na mão.
+     *
+     * Pergunta pela LISTA do que foi entregue, e não por dois ids fixos: na
+     * mesinha o sabor pode ser outro, e um teste cravado em morango diria que a
+     * mão está vazia com o chocolate derretendo nela.
+     */
     const aindaTemSorvete = (): boolean =>
-      g.hasItem(ITENS.sorveteMorango.id, ARI.id) || g.hasItem(ITENS.sorveteMaracuja.id, RENAN.id);
+      naMaoDeles.some(({ item, dono }) => g.hasItem(item.id, dono));
 
     const pedirSorvete = w.interact({
       id: 'parque:sorveteria',
@@ -2128,10 +2193,8 @@ export const villaLobos: SceneDef = {
 
           await api.say(['Toma! Um de cada, do jeito que vocês pediram.'], 'Mano');
 
-          sorveteRestante = 50;
           // cada casquinha vai para a mochila do dono, não para uma bolsa comum
-          api.addItem(ITENS.sorveteMorango, ARI.id);
-          api.addItem(ITENS.sorveteMaracuja, RENAN.id);
+          entregarSorvetes(ITENS.sorveteMorango, ITENS.sorveteMaracuja);
           api.som('sorvete');
           api.toast('Morango e maracujá', '🍦');
           if (primeira) {
@@ -2152,6 +2215,235 @@ export const villaLobos: SceneDef = {
         }
       },
     });
+
+    /* ==================================================================== *
+     *        A MESINHA: sentar, pedir da mesa e o Mano servir na mesa
+     *
+     * O balcão continua existindo — quem quer sorvete rápido pede lá. Aqui é a
+     * outra coisa: sentar na sombra, ele VIR até a mesa anotar, voltar ao
+     * quiosque, trazer as duas casquinhas na bandeja, e uns segundos dos dois
+     * comendo antes de levantar.
+     *
+     * TUDO ACONTECE NA ÂNCORA DA MESA. O grupo da peça já carrega posição e
+     * giro, então sentar é `ridePlayer(mesa, (-0,78; 0; 0))` — exatamente onde
+     * fica a cadeirinha da esquerda — e nenhuma conta de seno e cosseno entra
+     * aqui. É o mesmo padrão das mesas do Mania de Churrasco.
+     *
+     * ELE ANDA POR ORDEM DA CENA (`entrarEmServico` + `irPara`), e não pelo
+     * cérebro: a área dele é uma coleira de 24 cm em volta do posto, e o
+     * passeio nunca o levaria à mesa. Ao voltar, a cena PRECISA mandá-lo de
+     * volta ao posto antes de `voltarAPassear()` — a coleira é menor que o
+     * passo mínimo do cérebro, então largar ele solto na mesa o deixaria
+     * plantado ali para sempre.
+     * ==================================================================== */
+
+    /** o Mano TROTA atendendo mesa; o passeio dele é 0,5 */
+    const TROTE_DO_MANO = 1.45;
+
+    /** ponto do mundo a partir de coordenada local da mesinha */
+    const naMesinha = (mesa: THREE.Group, x: number, z: number): THREE.Vector3 =>
+      mesa.localToWorld(new THREE.Vector3(x, 0, z));
+
+    /**
+     * As falas de quem já sentou aqui antes. A primeira vez tem conversa
+     * própria; da segunda em diante ele varia, senão a mesinha vira gravação.
+     */
+    const CHEGADA_DO_MANO = [
+      'Mesa na sombra! Boa escolha.',
+      'Oi de novo! Já vou anotar.',
+      'Essa mesa é a melhor. Não conta pras outras.',
+      'Cheguei! Podem falar.',
+    ];
+    const ENTREGA_DO_MANO = [
+      'Dois! Do jeitinho que vocês pediram.',
+      'Aqui está. Antes que derreta!',
+      'Serviço de mesa. Eu adoro fazer isso.',
+    ];
+
+    const sentarNaMesinha = async (api: GameAPI, mesa: THREE.Group): Promise<void> => {
+      api.lockPlayer(true);
+      // onde ele para para atender: na frente da mesa pelo lado da CÂMERA (a
+      // mesa olha para o quiosque, então a frente dela é `-Z` local). Atrás,
+      // ele atenderia escondido pelo guarda-sol e por quem está sentado.
+      const posto = naMesinha(mesa, 0, -1.3);
+      const olhandoPraMesa = Math.atan2(mesa.position.x - posto.x, mesa.position.z - posto.z);
+
+      try {
+        // os dois se sentam nas duas cadeirinhas, um de frente para o outro
+        api.ridePlayer(mesa, new THREE.Vector3(-0.78, 0, 0), 1, Math.PI / 2);
+        api.rideCompanion(mesa, new THREE.Vector3(0.78, 0, 0), 1, -Math.PI / 2);
+        api.setSitting(true);
+        api.focusCamera(mesa);
+        api.setZoom(7.6);
+        await api.wait(0.7);
+
+        // com casquinha na mão não se pede outra: senta, come e conversa
+        if (aindaTemSorvete()) {
+          await conversa([
+            [R, 'Senta aqui. Tem sombra e tem mesa.'],
+            [A, 'E a gente já tem o que comer.'],
+          ]);
+          api.setSaboreando(true);
+          await api.wait(3.4);
+          api.setSaboreando(false);
+          return;
+        }
+
+        const primeira = !api.flag('mesinha-atendida');
+        if (primeira) {
+          await conversa([
+            [A, 'A gente pode sentar aqui e esperar?'],
+            [R, 'Tem mesa, tem guarda-sol e tem um pinguim de avental. Pode.'],
+          ]);
+        }
+
+        // --------------------------------------------- ele vem até a mesa
+        mano.entrarEmServico();
+        api.som('pinguim');
+        await mano.irPara(posto.x, posto.z, TROTE_DO_MANO);
+        mano.group.rotation.y = olhandoPraMesa;
+        await api.wait(0.3);
+        await api.say([primeira ? 'Mesa na sombra! Boa escolha.' : w.pick(CHEGADA_DO_MANO)], 'Mano');
+
+        const escolha = await api.ask('O que vai ser?', [
+          'Os dois de sempre',
+          'O que o Mano escolher',
+          'Só sentar um pouco',
+        ]);
+
+        if (escolha === 2) {
+          await api.say(['Fica à vontade! Quando bater vontade é só chamar.'], 'Mano');
+          await conversa([[A, 'A gente só queria sentar mesmo.']]);
+          void mano.irPara(MANO.x, MANO.z, TROTE_DO_MANO).then(() => {
+            mano.group.rotation.y = 0;
+            mano.voltarAPassear();
+          });
+          await api.wait(1.2);
+          return;
+        }
+
+        // o pedido: o de sempre, ou o que ele escolher — e ele escolhe
+        // chocolate e limão, que são os dois sabores da casa
+        const pedido = escolha === 0
+          ? [
+              { item: ITENS.sorveteMorango, cor: P.morango },
+              { item: ITENS.sorveteMaracuja, cor: P.maracuja },
+            ]
+          : [
+              { item: ITENS.sorveteChocolate, cor: P.chocolate },
+              { item: ITENS.sorveteLimao, cor: P.limao },
+            ];
+        await api.say([
+          escolha === 0
+            ? 'Morango e maracujá. Anotado — mas eu já sabia.'
+            : 'Ah, essa eu gosto. Confia em mim.',
+        ], 'Mano');
+
+        // ------------------------------------- ele volta ao quiosque e serve
+        /**
+         * A CÂMERA VAI COM ELE. Focada na mesa, a viagem até o quiosque
+         * aconteceria inteira fora da tela — e a viagem é justamente o que se
+         * quer ver. Ela volta para a mesa quando ele chega com a bandeja. É a
+         * mesma escolha que a ida do Walter à cozinha já tinha feito.
+         */
+        api.focusCamera(mano.group);
+        api.setZoom(9);
+        await mano.irPara(MANO.x, MANO.z, TROTE_DO_MANO);
+        mano.group.rotation.y = 0;
+        // o tempo de montar as duas casquinhas atrás do balcão
+        await api.wait(1.2);
+        mano.levarBandeja(true);
+        const casquinhas = pedido.map(({ cor }, i) => {
+          const c = iceCream(cor);
+          c.position.set(i === 0 ? -0.06 : 0.06, 0.1, 0);
+          mano.bandeja.add(c);
+          return c;
+        });
+        api.som('sorvete');
+        await api.wait(0.6);
+
+        await mano.irPara(posto.x, posto.z, TROTE_DO_MANO);
+        mano.group.rotation.y = olhandoPraMesa;
+        api.focusCamera(mesa);
+        api.setZoom(7.6);
+        await api.wait(0.5);
+        await api.say([w.pick(ENTREGA_DO_MANO)], 'Mano');
+
+        // as casquinhas da bandeja somem no mesmo quadro em que as de verdade
+        // aparecem na mão de cada um: para o olho, é a mesma casquinha passando
+        for (const c of casquinhas) {
+          mano.bandeja.remove(c);
+          c.traverse((o) => {
+            if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).geometry.dispose();
+          });
+        }
+        mano.levarBandeja(false);
+        entregarSorvetes(pedido[0].item, pedido[1].item);
+        api.som('sorvete');
+        api.toast(`${pedido[0].item.nome} e ${pedido[1].item.nome.toLowerCase()}`, '🍦');
+        mano.dancar(1.4);
+
+        // ele volta para o posto enquanto os dois comem: a cena não espera por
+        // ele, e é isso que faz a praça parecer viva em vez de encenada
+        void mano.irPara(MANO.x, MANO.z, TROTE_DO_MANO).then(() => {
+          mano.group.rotation.y = 0;
+          mano.voltarAPassear();
+        });
+
+        // --------------------------------------------------- e eles comem
+        api.setSaboreando(true);
+        await api.wait(1.6);
+        await conversa(primeira
+          ? [
+              [A, 'Ele trouxe na mesa. Na MESA.'],
+              [R, 'Eu vou querer sentar aqui todo sábado.'],
+            ]
+          : [[R, w.pick(['Esse tá melhor que o de ontem.', 'Deixa eu provar o seu.', 'A sombra daqui é boa.'])]]);
+        await api.wait(2.6);
+        api.setSaboreando(false);
+
+        if (primeira) {
+          api.setFlag('mesinha-atendida');
+          api.unlock({
+            id: 'mesinha-do-gelo',
+            title: 'Serviço de mesa',
+            place: 'Parque Villa Lobos',
+            note: 'Sentaram numa mesinha da praça de gelo e o Mano foi até lá anotar o pedido, voltou ao quiosque e trouxe as duas casquinhas na bandeja.',
+            icon: '⛱️',
+          });
+        }
+      } finally {
+        api.setSaboreando(false);
+        api.setSitting(false);
+        api.focusCamera(null);
+        // 13 é o enquadramento com que a câmera nasce (`IsoCamera.viewSize`)
+        api.setZoom(13);
+        // cada um levanta para trás da sua cadeira, do lado da câmera, longe do
+        // colisor da mesa (raio 1) — 1,7 do centro é folga de sobra para o 0,42
+        // do corpo
+        const saiEu = naMesinha(mesa, -1.05, -1.35);
+        const saiEle = naMesinha(mesa, 1.05, -1.35);
+        api.releasePlayer(saiEu.x, saiEu.z, Math.atan2(mesa.position.x - saiEu.x, mesa.position.z - saiEu.z));
+        api.releaseCompanion(saiEle.x, saiEle.z, Math.atan2(mesa.position.x - saiEle.x, mesa.position.z - saiEle.z));
+        api.lockPlayer(false);
+      }
+    };
+
+    /**
+     * TODA MESINHA SENTA. O ponto do prompt fica na frente dela, do lado da
+     * câmera, e tem raio 1,6: menor que a distância até a mesa vizinha (4), e
+     * fora do ponto de comprar no balcão.
+     */
+    for (const [i, mesa] of MESINHAS.entries()) {
+      const chegada = naMesinha(mesa, 0, -1.5);
+      w.interact({
+        id: `parque:mesinha-${i}`,
+        x: chegada.x, z: chegada.z, radius: 1.6,
+        label: 'Sentar na mesinha', icon: '⛱️',
+        highlight: mesa,
+        onInteract: (api) => sentarNaMesinha(api, mesa),
+      });
+    }
 
     w.interact({
       id: 'parque:piquenique',

@@ -37,6 +37,30 @@ export const ITENS = {
     nota: 'do Renan',
     holdPose: 'upright',
   },
+  /**
+   * Os dois sabores da CASA. Eles só existem porque a mesinha da praça de gelo
+   * deixa pedir "o que o Mano escolher", e ele escolhe estes — no balcão o
+   * pedido continua sendo o de sempre, morango e maracujá.
+   *
+   * O dono de cada um segue a mesma regra dos de sempre: um para cada, e o que
+   * decide não é o sabor, é de quem é a mão.
+   */
+  sorveteChocolate: {
+    id: 'sorvete-chocolate',
+    nome: 'Sorvete de chocolate',
+    icone: '🍫',
+    tipo: 'mao',
+    nota: 'do Ari',
+    holdPose: 'upright',
+  },
+  sorveteLimao: {
+    id: 'sorvete-limao',
+    nome: 'Sorvete de limão',
+    icone: '🍋',
+    tipo: 'mao',
+    nota: 'do Renan',
+    holdPose: 'upright',
+  },
   sucoPessego: {
     id: 'suco-pessego',
     nome: 'Suco de pêssego',
@@ -342,6 +366,8 @@ export const MODA_PRAIA: readonly ItemDef[] = [
 const MODELOS: Record<string, () => THREE.Object3D> = {
   'sorvete-morango': () => iceCream(P.morango),
   'sorvete-maracuja': () => iceCream(P.maracuja),
+  'sorvete-chocolate': () => iceCream(P.chocolate),
+  'sorvete-limao': () => iceCream(P.limao),
   'suco-pessego': () => copoDeSuco(P.pessego),
   'suco-morango': () => copoDeSuco(P.morango),
   'frisbee': () => frisbee(P.frisbee),

@@ -256,6 +256,9 @@ export class Game implements GameAPI {
     this.ui.showTurno(null);
     this.parceiro.clearOrder();
     this.setSitting(false);
+    // nenhuma pose de cutscene atravessa uma troca de cena: sair da praca de
+    // gelo comendo nao pode deixar os dois lambendo o ar no cenario seguinte
+    this.setSaboreando(false);
     this.setOutfit(def.outfit ?? 'normal');
     this.ui.hidePrompt();
     this.ui.sceneCard(def.name, def.subtitle);
@@ -1078,6 +1081,17 @@ export class Game implements GameAPI {
       this.pintarArmario();
     }
     if (this.ui.vestiarioOpen) this.pintarVestiario();
+  }
+
+  setSaboreando(ativo: boolean): void {
+    this.player.rig.setSaboreando(ativo);
+    this.parceiro.rig.setSaboreando(ativo);
+  }
+
+  setEscorregadio(valor: number): void {
+    const v = THREE.MathUtils.clamp(valor, 0, 1);
+    this.player.derrapagem = v;
+    this.parceiro.derrapagem = v;
   }
 
   submergePlayer(valor: number): void {
