@@ -376,3 +376,111 @@ export function calcadaDePedrinha(lado = 2.4, porLinha = 6): THREE.CanvasTexture
     }
   });
 }
+
+/**
+ * GELO, para o piso da praça de sorvete do Villa-Lobos.
+ *
+ * Gelo é o contrário do asfalto: ali o olho lê GRÃO, aqui ele lê BRILHO. Uma
+ * lâmina de rinque é quase lisa, e o que denuncia a superfície são três coisas,
+ * e só três:
+ *
+ *  1. o VÉU — manchas largas e leitosas, onde o gelo é mais grosso ou foi
+ *     raspado. Elas vêm em 3×3 cópias, como as da grama, para atravessarem a
+ *     emenda do azulejo (a repetição é a inimiga de sempre);
+ *  2. os RISCOS de patim — traços longos, finos e quase brancos, todos na mesma
+ *     família de direção com uma curva de leve. Sem eles o chão fica leitoso e
+ *     lê como mármore, não como rinque;
+ *  3. as TRINCAS — poucas, cheias de ramificação, um fio mais AZUL que o resto.
+ *     São a única coisa escura do desenho, e são escuras de mentirinha: o toon
+ *     multiplica, então tudo aqui vive entre 0,9 e 1,0 de luminosidade.
+ *
+ * O azulejo é grande (6 unidades) pelo mesmo motivo da grama: menos que isso e
+ * o veio começa a fazer xadrez no enquadramento da câmera.
+ */
+export function gelo(lado = 6): THREE.CanvasTexture {
+  return novaTextura(`gelo:${lado}`, lado, (ctx, s) => {
+    const rnd = sorteio(20260907);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s, s);
+
+    // o véu leitoso
+    for (let i = 0; i < 10; i++) {
+      const x = rnd() * s;
+      const y = rnd() * s;
+      const r = s * (0.16 + rnd() * 0.22);
+      const clara = rnd() > 0.4;
+      for (const dx of [-s, 0, s]) {
+        for (const dy of [-s, 0, s]) {
+          const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+          g.addColorStop(0, clara ? 'rgba(255,255,255,0.55)' : 'rgba(150,190,210,0.13)');
+          g.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+        }
+      }
+    }
+
+    // os riscos de patim: arcos longos, quase brancos, sempre na mesma
+    // vizinhança de ângulo — patinador nenhum risca o gelo em todas as direções
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 90; i++) {
+      const x = rnd() * s;
+      const y = rnd() * s;
+      const a = -0.5 + (rnd() - 0.5) * 0.9;
+      const comp = s * (0.12 + rnd() * 0.35);
+      const curva = (rnd() - 0.5) * comp * 0.5;
+      ctx.strokeStyle = `rgba(255,255,255,${0.35 + rnd() * 0.5})`;
+      ctx.lineWidth = 0.7 + rnd() * 1.6;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(
+        x + Math.cos(a) * comp * 0.5 - Math.sin(a) * curva,
+        y + Math.sin(a) * comp * 0.5 + Math.cos(a) * curva,
+        x + Math.cos(a) * comp,
+        y + Math.sin(a) * comp,
+      );
+      ctx.stroke();
+    }
+
+    // as trincas, com galho: uma linha reta sozinha lê como arranhão de
+    // ferramenta; o que faz gelo trincado é a bifurcação
+    for (let i = 0; i < 7; i++) {
+      let x = rnd() * s;
+      let y = rnd() * s;
+      let a = rnd() * Math.PI * 2;
+      ctx.strokeStyle = `rgba(120,170,200,${0.16 + rnd() * 0.12})`;
+      ctx.lineWidth = 0.6 + rnd() * 0.7;
+      for (let p = 0; p < 5; p++) {
+        const comp = s * (0.03 + rnd() * 0.06);
+        const nx = x + Math.cos(a) * comp;
+        const ny = y + Math.sin(a) * comp;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(nx, ny);
+        ctx.stroke();
+        // o galho sai da junta e morre curto
+        if (rnd() > 0.55) {
+          const b = a + (rnd() - 0.5) * 1.8;
+          ctx.beginPath();
+          ctx.moveTo(nx, ny);
+          ctx.lineTo(nx + Math.cos(b) * comp * 0.6, ny + Math.sin(b) * comp * 0.6);
+          ctx.stroke();
+        }
+        x = nx;
+        y = ny;
+        a += (rnd() - 0.5) * 0.7;
+      }
+    }
+
+    // o cintilar: pontinhos brancos esparsos, do tamanho que sobrevive ao
+    // mipmap (a lição do agregado do asfalto)
+    for (let i = 0; i < 260; i++) {
+      const r = 0.8 + rnd() * 1.4;
+      ctx.fillStyle = `rgba(255,255,255,${0.4 + rnd() * 0.5})`;
+      ctx.beginPath();
+      ctx.arc(rnd() * s, rnd() * s, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}

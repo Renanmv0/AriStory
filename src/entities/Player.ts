@@ -35,6 +35,19 @@ export class Player {
    * acessorio — o Player nao conhece inventario.
    */
   patins = false;
+  /**
+   * 0 = chao seco, 1 = gelo.
+   *
+   * O que muda no gelo nao e a velocidade, e o CONTROLE: o empurrao do pe pega
+   * menos (menos aceleracao) e nada segura quem ja esta em movimento (quase
+   * nenhum atrito). Solte a tecla no gelo e a dupla desliza sozinha por uns
+   * metros; mude de direcao correndo e ela faz a curva aberta.
+   *
+   * Quem liga isto e a CENA, quadro a quadro, comparando a posicao com o piso
+   * — do mesmo jeito que a agua liga a submersao. O motor nao sabe onde tem
+   * gelo, e nao precisa saber.
+   */
+  derrapagem = 0;
 
   constructor(rig: CharacterRig) {
     this.body = rig;
@@ -71,6 +84,9 @@ export class Player {
     this.position.set(x, 0, z);
     this.velocity.set(0, 0, 0);
     this.submersion = 0;
+    // trocar de cena com o pe no gelo nao pode deixar a cena seguinte
+    // escorregadia: quem liga a derrapagem e a cena, quadro a quadro
+    this.derrapagem = 0;
     this.body.group.rotation.y = facing;
     this.body.setFacing(facing);
   }
@@ -89,23 +105,58 @@ export class Player {
     const naAgua = this.submersion > 0.05;
     // na agua o patins nao ajuda em nada: roda nao empurra agua
     const rodas = this.patins && !naAgua ? BONUS_PATINS : 1;
-    const teto = naAgua ? this.maxSpeed * 0.55 : this.maxSpeed * rodas;
     const wants = !this.locked && dir.lengthSq() > 0.0001;
+
+    /**
+     * O GELO: menos pega no empurrao e quase nenhum atrito para frear.
+     *
+     * Na agua a derrapagem nao conta — quem esta nadando nao esta apoiado em
+     * nada para escorregar.
+     */
+    const gelo = naAgua ? 0 : this.derrapagem;
+    /**
+     * A LAMINA: patins EM CIMA DO GELO sao outra coisa.
+     *
+     * De sapato no gelo a pessoa nao anda, ela escorrega: o pe patina no lugar
+     * (pouca aceleracao) e nada freia (quase nenhum atrito). Com o patins a
+     * lamina CRAVA de lado, e e isso que devolve o controle — quase toda a
+     * aceleracao de terra firme de volta, e um freio que existe. O que sobra
+     * de gelo e o deslize longo, que ali passa a ser a graca e nao o castigo.
+     *
+     * E ela so vale NO GELO. Patins no asfalto ja tem o bonus de velocidade
+     * (`BONUS_PATINS`) e nada mais: e no gelo que a lamina faz sentido.
+     */
+    const lamina = this.patins ? gelo : 0;
+    // no gelo com patins o teto sobe mais um quarto: e a passada longa de quem
+    // patina de verdade, e sem ela patinar seria so andar com outra animacao
+    const teto = naAgua ? this.maxSpeed * 0.55 : this.maxSpeed * rodas * (1 + 0.25 * lamina);
+    const empurrao = this.accel * (1 - 0.72 * gelo + 0.67 * lamina);
+    const freio = this.friction * (1 - 0.86 * gelo + 0.34 * lamina);
 
     if (wants) {
       const d = dir.clone().normalize();
-      this.velocity.x += d.x * this.accel * dt;
-      this.velocity.z += d.z * this.accel * dt;
+      this.velocity.x += d.x * empurrao * dt;
+      this.velocity.z += d.z * empurrao * dt;
       const speed = Math.hypot(this.velocity.x, this.velocity.z);
       if (speed > teto) {
         this.velocity.x = (this.velocity.x / speed) * teto;
         this.velocity.z = (this.velocity.z / speed) * teto;
       }
-      this.body.setFacing(Math.atan2(d.x, d.z));
+      // No gelo o corpo olha para onde ESTA INDO, e nao para onde a tecla
+      // aponta: e a diferenca entre virar de costas no meio da curva (que e o
+      // que patinador faz) e girar no lugar como pino.
+      const derrapando = gelo > 0.35 && speed > 0.8;
+      this.body.setFacing(derrapando
+        ? Math.atan2(this.velocity.x, this.velocity.z)
+        : Math.atan2(d.x, d.z));
     } else {
-      const drop = Math.max(0, 1 - (this.friction * dt) / Math.max(0.001, this.velocity.length()));
+      const drop = Math.max(0, 1 - (freio * dt) / Math.max(0.001, this.velocity.length()));
       this.velocity.multiplyScalar(drop);
       if (this.velocity.lengthSq() < 0.0004) this.velocity.set(0, 0, 0);
+      // deslizando solto ele continua olhando para a frente do deslize
+      if (gelo > 0.35 && this.velocity.lengthSq() > 0.64) {
+        this.body.setFacing(Math.atan2(this.velocity.x, this.velocity.z));
+      }
     }
 
     this.position.x += this.velocity.x * dt;

@@ -18,7 +18,7 @@ const erros = [];
 page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
 
 const poses = [
-  ['sorveteria', 'cena=villa-lobos&em=12,16.4&olhar=0&zoom=6'],
+  ['sorveteria', 'cena=villa-lobos&em=13.8,18.4&olhar=3.14&zoom=6'],
   ['bilheteria', 'cena=villa-lobos&em=10.4,-18.4&olhar=3.6&zoom=6'],
   ['bar', 'cena=clube&em=-12.2,10.4&olhar=3.5&zoom=6'],
 ];

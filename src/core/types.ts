@@ -479,6 +479,25 @@ export interface GameAPI {
   /** troca quem o jogador controla */
   swapCharacters(): void;
 
+  /**
+   * Os dois levam a boca, de vez em quando, o que estiverem segurando.
+   *
+   * E o "alguns segundos tomando sorvete" da mesinha da praca de gelo: quem
+   * nao esta com nada na mao continua parado normal. A cena liga, espera, e
+   * desliga — como o `setSitting`.
+   */
+  setSaboreando(ativo: boolean): void;
+
+  // --------------------------------------------------- piso escorregadio
+  /**
+   * O quanto o chao debaixo da dupla escorrega: 0 = seco, 1 = gelo.
+   *
+   * Vale para os DOIS, e e a cena que decide — quadro a quadro, comparando a
+   * posicao com o piso, e interpolando na borda (do mesmo jeito que a agua faz
+   * com a submersao). Sem interpolar, entrar no rinque vira um tranco.
+   */
+  setEscorregadio(valor: number): void;
+
   // -------------------------------------------------------------- agua
   /** 0 = seco, 1 = submerso ate o pescoco */
   submergePlayer(valor: number): void;

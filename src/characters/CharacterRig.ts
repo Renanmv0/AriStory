@@ -124,6 +124,16 @@ export class CharacterRig {
   private swimming = false;
   private sitting = false;
   private deitado = false;
+  /**
+   * Levando o que segura a boca, de vez em quando: comer o sorvete, beber o
+   * suco.
+   *
+   * E um ESTADO e nao uma animacao com fim, pelo mesmo motivo da danca do
+   * Mano: quem liga diz "agora eles estao comendo" e segue a vida; cada quadro
+   * so olha para este bool e desenha a pose. Sem isto, "alguns segundos
+   * tomando sorvete" seriam dois bonecos parados com uma casquinha na mao.
+   */
+  private saboreando = false;
 
   /**
    * Peças que trocam de material entre roupa normal e traje de banho.
@@ -1260,6 +1270,16 @@ export class CharacterRig {
   }
 
   /**
+   * Liga (ou desliga) o gesto de levar o que esta na mao a boca.
+   *
+   * So faz efeito em quem esta SEGURANDO alguma coisa com pose — de mao vazia
+   * nao ha o que saborear, e a pose de item e que diz onde o braco comeca.
+   */
+  setSaboreando(v: boolean): void {
+    this.saboreando = v;
+  }
+
+  /**
    * De maos dadas: qual braco esta "por dentro", segurando a mao do outro.
    *
    * `-1` = o parceiro esta a esquerda do personagem, entao quem segura e o
@@ -1369,6 +1389,16 @@ export class CharacterRig {
       this.poeAltura(Math.sin(this.phase) * 0.012);
       this.head.rotation.x = Math.sin(this.phase * 0.7) * 0.03;
       this.head.rotation.z *= 1 - Math.min(1, dt * 8);
+      /**
+       * SENTADO A POSE DE ITEM NAO ENTRA — o braco fica apoiado, e e assim que
+       * tem que ser: quem senta no banco com o sorvete descansa a mao.
+       *
+       * MENOS quando esta comendo. Ai o braco volta a obedecer a pose e sobe
+       * ate a boca, que e o unico jeito de a mesinha da praca de gelo ter uma
+       * cena de "tomando sorvete" em vez de dois bonecos sentados olhando para
+       * a frente com uma casquinha pendurada no quadril.
+       */
+      if (this.saboreando) this.aplicarPose();
       return;
     }
 
@@ -1501,7 +1531,14 @@ export class CharacterRig {
   }
 
   private aplicarPose(): void {
-    if (this.pose === 'none' || this.maos > 0) {
+    /**
+     * De mãos dadas o braço de +X está ocupado, e a pose do item cede — MENOS
+     * quando a pessoa está comendo. Sentados na mesinha da praça de gelo os
+     * dois ficam de mãos dadas por cima da mesa, e sem esta exceção justamente
+     * quem segura com a direita não conseguiria levar o sorvete à boca. O braço
+     * de fora continua dado; o de dentro come.
+     */
+    if (this.pose === 'none' || (this.maos > 0 && !this.saboreando)) {
       this.maoDir.rotation.set(0, 0, 0);
       this.maoDir.position.x = 0;
       return;
@@ -1509,6 +1546,22 @@ export class CharacterRig {
     const p = POSES[this.pose];
     this.armR.rotation.x = p.bracoX + this.armR.rotation.x * p.balanco;
     this.armR.rotation.z = p.bracoZ;
+
+    /**
+     * A LAMBIDA. O braco sobe da pose de segurar ate a altura da boca e volta,
+     * num vaivem lento — uma mordida a cada tres segundos, que e o ritmo de
+     * quem esta comendo devagar e conversando. O quadrado da senoide e o que
+     * faz ele DEMORAR embaixo e passar rapido por cima: comer nao e metronomo.
+     *
+     * A cabeca desce um tico junto. Sem ela o braco sobe sozinho e parece que
+     * a pessoa esta erguendo um brinde, e nao comendo.
+     */
+    if (this.saboreando) {
+      const leva = ((Math.sin(this.phase * 1.8) + 1) / 2) ** 2;
+      this.armR.rotation.x = p.bracoX - 0.85 * leva;
+      this.armR.rotation.z = p.bracoZ - 0.12 * leva;
+      this.head.rotation.x = 0.17 * leva;
+    }
     // o objeto desfaz a rotacao do braco: e assim que o sorvete continua em pe
     // com o braco esticado para a frente
     this.maoDir.rotation.set(-this.armR.rotation.x, 0, p.itemZ - this.armR.rotation.z);

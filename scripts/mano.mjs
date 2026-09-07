@@ -33,7 +33,7 @@ const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /** tem que bater com o `MANO` da cena */
-const POSTO = { x: 12.9, z: 20.3 };
+const POSTO = { x: 14.7, z: 17.8 };
 
 const browser = await chromium.launch({
   executablePath: CHROME,
@@ -158,11 +158,11 @@ for (let i = 0; i < 25; i++) {
 /**
  * E DA ÂNCORA DE COMPRAR o prompt tem que ser o de comprar.
  *
- * Este é o ponto exato para onde a pessoa anda quando quer sorvete (`12; 20,6`
+ * Este é o ponto exato para onde a pessoa anda quando quer sorvete (`13,8; 18,1`
  * é o centro da interação). Se o carinho ganhar AQUI, a ação principal do
  * quiosque virou a difícil de achar — foi o que aconteceu com o raio de 1,05.
  */
-await irPara(12, 20.6);
+await irPara(13.8, 18.1);
 await page.waitForTimeout(900);
 const deLonge = await prompt();
 
@@ -236,8 +236,15 @@ const antesDeAndar = await page.evaluate(() => {
   const p = window.jogo.playerPosition();
   return [+p.x.toFixed(2), +p.z.toFixed(2)];
 });
+/**
+ * O TEMPO DE ANDAR DOBROU quando a praça de gelo nasceu debaixo do quiosque: no
+ * gelo o empurrão do pé pega 28% do que pega na grama, e em 1,4 s de relógio
+ * (menos de meio segundo de jogo neste renderizador) a dupla mal saía do lugar
+ * — o teste lia isso como jogador travado. O que ele quer provar é que o
+ * `lockPlayer` saiu, e para isso basta a dupla SAIR DO LUGAR.
+ */
 await page.keyboard.down('KeyW');
-await page.waitForTimeout(1400);
+await page.waitForTimeout(3000);
 await page.keyboard.up('KeyW');
 const depoisDeAndar = await page.evaluate(() => {
   const p = window.jogo.playerPosition();
@@ -251,7 +258,7 @@ const andou = Math.hypot(depoisDeAndar[0] - antesDeAndar[0], depoisDeAndar[1] - 
  * não vai vir é pior do que prompt nenhum, e ele só pode mudar porque
  * `Interactable.label` deixou de ser `readonly`.
  */
-await irPara(12, 20.6);
+await irPara(13.8, 18.1);
 await page.waitForTimeout(1000);
 const comSorveteNaMao = await prompt();
 

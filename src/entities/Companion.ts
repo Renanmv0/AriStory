@@ -33,6 +33,15 @@ export class Companion {
    * parceiro para tras em dez passos e a dupla vira um so.
    */
   patins = false;
+  /**
+   * 0 = chao seco, 1 = gelo. Ver `Player.derrapagem` — aqui ela mexe nas duas
+   * molas do seguir: a que acelera atras do jogador e a que freia ao chegar.
+   *
+   * Ele PRECISA escorregar junto. A dupla anda lado a lado o tempo todo, e um
+   * deslizando enquanto o outro para de estalo seria o parceiro colado num
+   * trilho no meio de uma praca de gelo.
+   */
+  derrapagem = 0;
 
   /**
    * Reboque: enquanto vale, ele nao segue nem olha para o jogador — anda
@@ -73,6 +82,7 @@ export class Companion {
     this.position.set(x, 0, z);
     this.velocity.set(0, 0, 0);
     this.submersion = 0;
+    this.derrapagem = 0;
     this.ordem = null;
     this.body.group.rotation.y = facing;
     this.body.setFacing(facing);
@@ -197,16 +207,29 @@ export class Companion {
       return;
     }
 
+    /**
+     * No gelo as duas molas afrouxam: ele demora a pegar embalo e demora a
+     * parar. Os numeros sao os mesmos da conta do jogador, so que aqui elas
+     * sao taxas de interpolacao em vez de aceleracao e atrito.
+     *
+     * DE PATINS NO GELO a lamina crava e as duas voltam quase ao normal — ele
+     * precisa disso para acompanhar quem esta patinando na frente, que ali
+     * anda 60% mais rapido que a pe.
+     */
+    const lamina = this.patins ? this.derrapagem : 0;
+    const puxao = 7 * (1 - 0.6 * this.derrapagem + 0.55 * lamina);
+    const freio = 9 * (1 - 0.85 * this.derrapagem + 0.7 * lamina);
+
     if (dist > folga) {
       this.dir.normalize();
       // acelera quando esta longe, para nao ficar pendurado no limite
-      const teto = this.maxSpeed * (this.patins ? BONUS_PATINS : 1);
+      const teto = this.maxSpeed * (this.patins ? BONUS_PATINS : 1) * (1 + 0.25 * lamina);
       const alvoVel = Math.min(teto, 1.6 + (dist - folga) * 2.2);
-      this.velocity.x += (this.dir.x * alvoVel - this.velocity.x) * Math.min(1, dt * 7);
-      this.velocity.z += (this.dir.z * alvoVel - this.velocity.z) * Math.min(1, dt * 7);
+      this.velocity.x += (this.dir.x * alvoVel - this.velocity.x) * Math.min(1, dt * puxao);
+      this.velocity.z += (this.dir.z * alvoVel - this.velocity.z) * Math.min(1, dt * puxao);
       this.body.setFacing(Math.atan2(this.dir.x, this.dir.z));
     } else {
-      this.velocity.multiplyScalar(Math.max(0, 1 - dt * 9));
+      this.velocity.multiplyScalar(Math.max(0, 1 - dt * freio));
       if (this.velocity.lengthSq() < 0.0004) this.velocity.set(0, 0, 0);
       // parado, fica de frente para o outro
       if (dist > 0.2) this.body.setFacing(Math.atan2(this.dir.x, this.dir.z));

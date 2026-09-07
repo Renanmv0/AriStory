@@ -2305,7 +2305,23 @@ export function letreiro(
   if (ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = corTexto;
-    ctx.font = `bold ${Math.round(canvas.height * 0.62)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+    /**
+     * O TAMANHO DA LETRA ENCOLHE ATE CABER.
+     *
+     * Antes ele saia so da altura da placa, e texto comprido vazava pelos dois
+     * lados do canvas: a placa da pista de gelo entrou no jogo escrita
+     * "sta de ge". Agora a fonte comeca no tamanho de sempre — placa curta
+     * continua exatamente como era — e desce de dois em dois pontos ate a
+     * medida caber na largura, com uma margem de 6% de cada lado.
+     */
+    const margem = canvas.width * 0.06;
+    let tamanho = Math.round(canvas.height * 0.62);
+    const fonte = (px: number): string => `bold ${px}px ui-rounded, "Nunito", system-ui, sans-serif`;
+    ctx.font = fonte(tamanho);
+    while (tamanho > 10 && ctx.measureText(texto).width > canvas.width - margem * 2) {
+      tamanho -= 2;
+      ctx.font = fonte(tamanho);
+    }
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(texto, canvas.width / 2, canvas.height / 2 + 4);
@@ -4405,6 +4421,474 @@ export function ticketBooth(
   bandeirola.rotation.z = -Math.PI / 2;
   bandeirola.position.set(0.14, 0.16 + ALTO + 0.14 + 1.22, 0);
   g.add(bandeirola);
+
+  return g;
+}
+
+/* ------------------------------------------------------------------------ *
+ *                       A PRAÇA DE GELO DO MANO
+ *
+ * O quiosque de sorvete do parque estava sozinho num gramado vazio. Estas
+ * peças montam a praça em volta dele: a borda de neve que fecha o rinque, o
+ * cristal que enfeita as quinas, o poste baixo que ilumina, o boneco de neve
+ * do canto e a mesinha de guarda-sol onde se senta para comer.
+ *
+ * O GELO SÓLIDO É UM MATERIAL SÓ, e é `geloSolido()` logo abaixo: quase
+ * branco, translúcido e com um fio de luz própria. Ele NÃO serve para o chão —
+ * chão translúcido deixaria a grama aparecer por baixo do rinque. Lá o gelo é
+ * decalque opaco com textura (`gelo()` em `world/texturasDeChao.ts`).
+ * ------------------------------------------------------------------------ */
+
+/**
+ * O gelo de verdade: translúcido e com brilho próprio.
+ *
+ * Duas coisas juntas, e as duas são necessárias. A OPACIDADE dá a leitura de
+ * "dá para ver através" — sem ela um cristal branco fica igual a uma pedra
+ * pintada de branco. O `glow` baixo devolve o que a transparência tira: um
+ * corpo transparente recebe menos sombra visível e murcha no toon shading, e
+ * um fio de emissivo faz ele voltar a acender na sombra do quiosque.
+ *
+ * Mais opaco que 0,7 e o efeito some; mais transparente e a peça vira um
+ * fantasma que ninguém vê de longe.
+ */
+function geloSolido(cor: number = P.geloCristal, opacidade = 0.68): THREE.MeshToonMaterial {
+  return toon(cor, { opacity: opacidade, glow: 0.16 });
+}
+
+/**
+ * A borda do rinque: um banco de neve pisada, baixo e de topo redondo.
+ *
+ * Nasce deitada ao longo do Z, como o `meioFio()`, e tem 23 cm no ponto mais
+ * alto — é degrau de tropeçar, não muro: a praça precisa ter beira sem ficar
+ * cercada, e ninguém colide com ela. A primeira versão era mais alta e mais
+ * estreita, e na foto de perto lia como um cano branco caído no chão; baixa e
+ * larga, ela lê como neve empurrada para a beirada.
+ *
+ * O topo redondo é um cilindro deitado MAIS ESTREITO que a base (0,24 contra
+ * 0,46 de largura), e ele desce um pouco abaixo do chão, então nenhuma face
+ * dos dois cai no mesmo plano — é a regra de nunca encostar face com face,
+ * resolvida por construção.
+ *
+ * @param comprimento quanto ela corre pelo Z
+ */
+export function bordaDeGelo(comprimento = 6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'borda-de-gelo';
+
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.1, comprimento), toon(P.geloFundo));
+  base.position.y = 0.05;
+  g.add(base);
+
+  const lombo = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.12, comprimento - 0.06, 8),
+    toon(P.neveFofa),
+  );
+  lombo.rotation.x = Math.PI / 2;
+  lombo.position.y = 0.11;
+  g.add(lombo);
+
+  // pedaços de gelo encostados na neve, espaçados pelo comprimento: é o que
+  // tira a cara de tubo extrudado e diz que aquilo ali é gelo raspado
+  const pedras = Math.max(2, Math.round(comprimento / 2.2));
+  for (let i = 0; i < pedras; i++) {
+    const t = -comprimento / 2 + (comprimento * (i + 0.5)) / pedras;
+    const chanfro = 0.08 + ((i * 37) % 7) / 60;
+    const caco = new THREE.Mesh(new THREE.IcosahedronGeometry(chanfro, 0), geloSolido());
+    caco.position.set(((i % 2) - 0.5) * 0.2, 0.18, t);
+    caco.rotation.set(i * 1.1, i * 0.7, i * 0.4);
+    g.add(caco);
+  }
+  return g;
+}
+
+/**
+ * Tufo de cristais de gelo, para as quinas da praça e os cantos do quiosque.
+ *
+ * Três lascas compridas espetadas num montinho de neve. O montinho existe por
+ * dois motivos: ele esconde o pé das lascas (cristal saindo direto do chão
+ * plano parece colado) e dá VOLUME em vez de mancha pintada — a regra de
+ * decoração que não é decalque.
+ *
+ * A semente muda a inclinação e a altura de cada lasca, então dois tufos lado
+ * a lado não saem gêmeos.
+ *
+ * @param escala tamanho geral (1 ≈ 70 cm de altura)
+ * @param semente 0..1, a variação
+ */
+export function cristalDeGelo(escala = 1, semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cristal-de-gelo';
+
+  const monte = new THREE.Mesh(new THREE.SphereGeometry(0.36 * escala, 10, 7), toon(P.neveFofa));
+  monte.scale.set(1, 0.4, 0.92);
+  monte.position.y = 0.02;
+  g.add(monte);
+
+  const lascas = 3;
+  for (let i = 0; i < lascas; i++) {
+    const a = (i / lascas) * Math.PI * 2 + semente * 2.4;
+    const alto = (0.34 + ((i + semente) % 1) * 0.3) * escala;
+    // Octaedro esticado no Y: é a forma mais barata que ainda tem ponta e
+    // facetas, e faceta é o que faz gelo parecer gelo em toon shading.
+    const lasca = new THREE.Mesh(new THREE.OctahedronGeometry(0.13 * escala, 0), geloSolido());
+    lasca.scale.set(1, alto / (0.13 * escala) / 1.6, 1);
+    lasca.position.set(
+      Math.cos(a) * 0.13 * escala,
+      alto * 0.62,
+      Math.sin(a) * 0.13 * escala,
+    );
+    lasca.rotation.set(Math.cos(a) * 0.22, a, -Math.sin(a) * 0.22);
+    g.add(lasca);
+  }
+
+  // duas lasquinhas caídas ao pé, um degrau mais azul: sem elas o tufo fica
+  // simétrico demais e lê como enfeite de mesa
+  for (const [dx, dz, r] of [[0.3, -0.16, 1.1], [-0.26, 0.24, 2.3]] as const) {
+    const chip = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.07 * escala, 0),
+      geloSolido(P.geloSombra, 0.75),
+    );
+    chip.position.set(dx * escala, 0.06 * escala, dz * escala);
+    chip.rotation.set(r, r * 1.7, 0.4);
+    g.add(chip);
+  }
+  return g;
+}
+
+/**
+ * Poste baixo da praça: haste de gelo, lanterna acesa e um capuz de neve.
+ *
+ * É metade do `lamp()` da rua (2,3 contra 3,4 de altura), e de propósito: a
+ * câmera olha em 34°, então cada metro de poste come 1,5 de chão atrás dele.
+ * Quatro postes de rua em volta de uma praça de 13 apagariam as mesinhas.
+ *
+ * A bola é a MESMA receita do farol do `lamp()` aceso — `glow` alto no dourado
+ * —, e o capuz de neve por cima é o que traz o poste para o tema.
+ *
+ * @param aceso a bola acende (num parque de dia ela continua lendo como luz)
+ */
+export function posteDeGelo(aceso = true): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'poste-de-gelo';
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.16, 12), toon(P.geloFundo));
+  base.position.y = 0.08;
+  g.add(base);
+  // a neve acumulada no pé: uma calota mais larga que a base, para as duas não
+  // dividirem a face de cima
+  const pe = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 6), toon(P.neveFofa));
+  pe.scale.set(1, 0.34, 1);
+  pe.position.y = 0.14;
+  g.add(pe);
+
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.075, 2.0, 8), geloSolido(P.geloSombra, 0.82));
+  haste.position.y = 1.1;
+  g.add(haste);
+
+  const luminaria = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.11, 0.1, 10), toon(P.geloFundo));
+  luminaria.position.y = 2.12;
+  g.add(luminaria);
+  const bola = new THREE.Mesh(
+    new THREE.SphereGeometry(0.19, 10, 8),
+    toon(aceso ? P.gold : 0xe8e8e0, { glow: aceso ? 0.9 : 0 }),
+  );
+  bola.position.y = 2.02;
+  g.add(bola);
+
+  // o capuz: uma calota de neve pousada em cima da luminária, 2 cm para dentro
+  // dela para não brigar de face
+  const capuz = new THREE.Mesh(
+    new THREE.SphereGeometry(0.17, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    toon(P.neveFofa),
+  );
+  capuz.position.y = 2.15;
+  g.add(capuz);
+  const pingente = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 6), geloSolido());
+  pingente.position.set(0.14, 2.04, 0.02);
+  pingente.rotation.x = Math.PI;
+  g.add(pingente);
+
+  return g;
+}
+
+/**
+ * O boneco de neve do canto da praça.
+ *
+ * TRÊS BOLAS, e não três cubos: o kit inteiro é de canto arredondado, e um
+ * boneco de blocos ao lado do quiosque de bolinha ficaria de outro jogo. O que
+ * dá o ar de "montado à mão" é o desalinho — cada bola entra um fio deslocada
+ * no X e no Z, e nenhuma delas divide plano com a de baixo.
+ *
+ * O CHAPÉU É UMA CASQUINHA DE SORVETE, igual ao do Mano. Ele mora na praça
+ * dele: o boneco é freguês da casa.
+ *
+ * @param escala 1 ≈ 1,5 de altura, o tamanho de uma criança
+ */
+export function bonecoDeNeve(escala = 1): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'boneco-de-neve';
+
+  const corpo = new THREE.Group();
+  corpo.scale.setScalar(escala);
+  g.add(corpo);
+
+  const neve = toon(P.neveFofa);
+  const bolas: Array<[number, number, number, number]> = [
+    // raio, altura do centro, desvio em X, desvio em Z
+    [0.44, 0.40, 0, 0],
+    [0.32, 1.02, 0.04, -0.03],
+    [0.24, 1.5, -0.03, 0.02],
+  ];
+  for (const [r, y, dx, dz] of bolas) {
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 9), neve);
+    bola.position.set(dx, y, dz);
+    corpo.add(bola);
+  }
+  // a saia de neve no pé, para ele não parecer uma bola pousada no chão
+  const saia = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 6), toon(P.neveSombra));
+  saia.scale.set(1, 0.24, 1);
+  saia.position.y = 0.05;
+  corpo.add(saia);
+
+  // rosto: dois olhos de carvão, o nariz de cenoura e um sorriso de cinco
+  // pedrinhas — carvão puro sumiria na sombra, então é o cinza do carvão do
+  // Mania, que é escuro mas ainda tem degradê
+  const carvao = toon(P.churrascoCarvao);
+  for (const lado of [-1, 1]) {
+    const olho = new THREE.Mesh(new THREE.SphereGeometry(0.035, 7, 6), carvao);
+    olho.position.set(lado * 0.09, 1.56, 0.21);
+    corpo.add(olho);
+  }
+  const nariz = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.24, 7), toon(P.laranja));
+  nariz.position.set(-0.03, 1.5, 0.28);
+  nariz.rotation.x = Math.PI / 2;
+  corpo.add(nariz);
+  for (let i = 0; i < 5; i++) {
+    const a = -0.6 + (i / 4) * 1.2;
+    const ponto = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 5), carvao);
+    ponto.position.set(Math.sin(a) * 0.12, 1.4 - Math.cos(a) * 0.04, 0.215);
+    corpo.add(ponto);
+  }
+
+  /*
+   * Braços de galho, com dois dedos cada.
+   *
+   * O SINAL DO `rotation.z` É A ARMADILHA DE SEMPRE. O galho nasce deitado ao
+   * longo do +Y; girar em Z por θ leva a ponta dele para `(−sen θ; cos θ)`.
+   * Então para o braço da DIREITA (x positivo) apontar para FORA, θ tem que ser
+   * NEGATIVO — o sinal invertido enfia os dois braços para dentro da barriga, e
+   * foi exatamente o que a primeira foto mostrou.
+   */
+  for (const lado of [-1, 1]) {
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.02, 0.62, 5), toon(P.woodDark));
+    braco.position.set(lado * 0.42, 1.16, 0.02);
+    braco.rotation.z = -lado * 1.15;
+    braco.rotation.x = -0.2;
+    corpo.add(braco);
+    // a ponta do braço, de onde saem os dedos: 31 cm (meio galho) na direção
+    // dele, que é `(sen 1,15; cos 1,15)` = `(0,91; 0,41)`
+    const px = lado * (0.42 + 0.28);
+    const py = 1.16 + 0.13;
+    for (const dedo of [-1, 1]) {
+      const galho = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.012, 0.2, 5), toon(P.woodDark));
+      galho.position.set(px + lado * 0.05, py + dedo * 0.05, 0.02);
+      galho.rotation.z = -lado * (0.9 + dedo * 0.5);
+      corpo.add(galho);
+    }
+  }
+
+  // botões e o cachecol rosa da casa
+  for (let i = 0; i < 3; i++) {
+    const botao = new THREE.Mesh(new THREE.SphereGeometry(0.032, 7, 6), carvao);
+    botao.position.set(0.04, 1.06 - i * 0.16, 0.29 - i * 0.02);
+    corpo.add(botao);
+  }
+  const cachecol = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.06, 7, 16), toon(P.sorveteriaRosa));
+  cachecol.rotation.x = Math.PI / 2;
+  cachecol.position.set(0, 1.26, 0);
+  corpo.add(cachecol);
+  const ponta = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.4, 0.08), toon(P.sorveteriaRosa));
+  ponta.position.set(0.24, 1.06, 0.12);
+  ponta.rotation.z = 0.25;
+  corpo.add(ponta);
+
+  // o chapéu de casquinha, o mesmo do Mano: cone invertido, quadriculado num
+  // tom só um degrau mais escuro, e a bola de sorvete em cima
+  const casquinha = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.4, 10), toon(P.casquinhaWaffle));
+  casquinha.position.set(-0.03, 1.86, 0.02);
+  corpo.add(casquinha);
+  for (let i = 0; i < 3; i++) {
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(0.155 - i * 0.045, 0.012, 5, 12), toon(P.casquinhaGrelha));
+    aro.rotation.x = Math.PI / 2;
+    aro.position.set(-0.03, 1.76 + i * 0.11, 0.02);
+    corpo.add(aro);
+  }
+  const bolaDeSorvete = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), toon(P.morango));
+  bolaDeSorvete.position.set(-0.03, 2.1, 0.02);
+  corpo.add(bolaDeSorvete);
+  const cereja = new THREE.Mesh(new THREE.SphereGeometry(0.05, 7, 6), toon(P.cerejaDoMano));
+  cereja.position.set(-0.03, 2.24, 0.02);
+  corpo.add(cereja);
+
+  return g;
+}
+
+/**
+ * Cadeirinha da praça de gelo: assento redondo, encosto de arco e três pés.
+ *
+ * Três pés e não quatro — é o que faz uma cadeira de sorveteria parecer leve
+ * em vez de móvel de sala —, e o encosto é meio toro, que é a cadeira de ferro
+ * torcido de padaria em uma malha só.
+ */
+export function cadeirinhaDeSorveteria(cor: number = P.sorveteriaRosa): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cadeirinha-de-sorveteria';
+  const ferro = toon(cor);
+
+  const assento = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.19, 0.06, 12), toon(P.sorveteriaCreme));
+  assento.position.y = 0.44;
+  g.add(assento);
+  // o aro do assento entra 1 cm abaixo do tampo: no mesmo topo os dois
+  // serrilhariam
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.195, 0.025, 6, 16), ferro);
+  aro.rotation.x = Math.PI / 2;
+  aro.position.y = 0.42;
+  g.add(aro);
+
+  const encosto = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.025, 6, 14, Math.PI * 1.1), ferro);
+  encosto.position.set(0, 0.63, -0.14);
+  encosto.rotation.set(-0.22, 0, 0);
+  g.add(encosto);
+  for (const lado of [-1, 1]) {
+    const montante = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.24, 6), ferro);
+    montante.position.set(lado * 0.15, 0.54, -0.15);
+    g.add(montante);
+  }
+
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + Math.PI / 3;
+    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.018, 0.44, 6), ferro);
+    pe.position.set(Math.cos(a) * 0.13, 0.22, Math.sin(a) * 0.13);
+    pe.rotation.set(-Math.sin(a) * 0.18, 0, Math.cos(a) * 0.18);
+    g.add(pe);
+  }
+  // o pezinho de borracha, para a cadeira não terminar em corte seco no chão
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + Math.PI / 3;
+    const sapata = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 5), toon(P.geloFundo));
+    sapata.position.set(Math.cos(a) * 0.17, 0.03, Math.sin(a) * 0.17);
+    g.add(sapata);
+  }
+  return g;
+}
+
+/**
+ * A mesinha de sorveteria: tampo redondo, guarda-sol de babado e duas
+ * cadeirinhas, uma de frente para a outra.
+ *
+ * DUAS CADEIRAS, e nos lados ±X: a peça entra na cena girada de frente para o
+ * quiosque, então as duas cadeiras ficam de perfil para a câmera e nenhuma
+ * delas tapa a outra nem o tampo.
+ *
+ * A ALTURA DO GUARDA-SOL É A CONTA DA PEÇA, e a primeira versão errou para
+ * baixo. A lona começava em 1,71 — mais baixa que uma pessoa em pé (1,75) —, e
+ * com a dupla SENTADA na mesa ela passava na frente dos dois: a câmera olha em
+ * 34°, o raio que sai da cabeça de quem senta (1,3) sobe 0,67 por unidade
+ * andada, e nesse ângulo ele batia na lona antes de sair de baixo dela.
+ *
+ * Agora a borda fica em 2,25, que é a altura de um guarda-sol de verdade
+ * (2,3 para gente de 1,75), e o raio da cabeça de quem senta escapa por baixo
+ * dela. Mais alto que isso a lona vira toldo de posto de gasolina; mais baixo,
+ * ela come a cabeça de quem está do lado de lá da mesa.
+ *
+ * O babado da ponta são bolinhas alternadas, a mesma receita do toldo do
+ * `kiosk()` — é o detalhe que faz a lona ler como doce em vez de barraca.
+ *
+ * @param cor a cor da loja (o rosa do quiosque, por padrão)
+ * @param sabor a bola da taça em cima da mesa; `null` deixa a mesa vazia
+ */
+export function mesaDeSorveteria(cor: number = P.sorveteriaRosa, sabor: number | null = P.morango): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesa-de-sorveteria';
+
+  // ----------------------------------------------------------------- mesa
+  const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.3, 0.07, 14), toon(P.geloFundo));
+  pe.position.y = 0.035;
+  g.add(pe);
+  const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.68, 10), toon(cor));
+  coluna.position.y = 0.36;
+  g.add(coluna);
+  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.07, 18), toon(P.sorveteriaCreme));
+  tampo.position.y = 0.72;
+  g.add(tampo);
+  const beira = new THREE.Mesh(new THREE.TorusGeometry(0.455, 0.03, 6, 20), toon(cor));
+  beira.rotation.x = Math.PI / 2;
+  beira.position.y = 0.70;
+  g.add(beira);
+
+  // ---------------------------------------------------------- guarda-sol
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.78, 8), toon(P.sorveteriaCreme));
+  haste.position.y = 1.5;
+  g.add(haste);
+
+  const FATIAS = 10;
+  const RAIO = 0.86;
+  const ALTURA = 0.34;
+  // A lona é feita em GOMOS abertos, um a um: um cone listrado precisaria de
+  // textura, e um cone chapado perde o ar de guarda-sol. Cada gomo é uma fatia
+  // de cone sem tampa, e as fatias alternam rosa e creme.
+  for (let i = 0; i < FATIAS; i++) {
+    const gomo = new THREE.Mesh(
+      new THREE.ConeGeometry(RAIO, ALTURA, 3, 1, true, (i / FATIAS) * Math.PI * 2, (Math.PI * 2) / FATIAS),
+      toon(i % 2 === 0 ? cor : P.sorveteriaCreme, { doubleSide: true }),
+    );
+    gomo.position.y = 2.42;
+    g.add(gomo);
+  }
+  // babado: uma bolinha por gomo, na ponta da lona
+  for (let i = 0; i < FATIAS; i++) {
+    const a = ((i + 0.5) / FATIAS) * Math.PI * 2;
+    const bolinha = new THREE.Mesh(
+      new THREE.SphereGeometry(0.075, 8, 6),
+      toon(i % 2 === 0 ? cor : P.sorveteriaCreme),
+    );
+    bolinha.position.set(Math.cos(a) * (RAIO - 0.05), 2.25, Math.sin(a) * (RAIO - 0.05));
+    bolinha.scale.set(1, 1.1, 1);
+    g.add(bolinha);
+  }
+  const ponteira = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), toon(P.gold));
+  ponteira.position.y = 2.63;
+  g.add(ponteira);
+
+  // -------------------------------------------------------------- a taça
+  if (sabor !== null) {
+    const taca = new THREE.Group();
+    taca.position.set(0.13, 0.755, -0.06);
+    const cuba = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.055, 0.09, 12), geloSolido(P.geloCristal, 0.8));
+    cuba.position.y = 0.045;
+    taca.add(cuba);
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(0.075, 9, 7), toon(sabor));
+    bola.position.y = 0.115;
+    taca.add(bola);
+    const bolinha = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), toon(P.maracuja));
+    bolinha.position.set(0.05, 0.17, -0.03);
+    taca.add(bolinha);
+    const colher = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.16, 0.02), toon(P.metalGrey));
+    colher.position.set(-0.06, 0.13, 0.04);
+    colher.rotation.z = 0.4;
+    taca.add(colher);
+    g.add(taca);
+  }
+
+  // ---------------------------------------------------------- cadeirinhas
+  for (const lado of [-1, 1] as const) {
+    const cadeira = cadeirinhaDeSorveteria(cor);
+    cadeira.position.set(lado * 0.78, 0, 0);
+    // olhando para o centro da mesa: a cadeira nasce de frente para +Z, e o
+    // caminho dela até o centro é -X vezes o lado
+    cadeira.rotation.y = -lado * Math.PI * 0.5;
+    g.add(cadeira);
+  }
 
   return g;
 }
