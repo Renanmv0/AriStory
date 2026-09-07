@@ -6,15 +6,16 @@ import { Cookie } from '../entities/bichos/Cookie';
 import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
-  aroDeFrisbee, bin, bleachers, building, bus, busStop, bush, canteiro, capim, cloud,
-  cone, discBag, discGolfBasket, domoDeVidro, duck, fence, floodlight, flowers,
-  junco, kiosk, lamp, marcaDeMira, meioFio, mesaPingPong, nenufar, picnicTable, raquete, skateShop,
+  aroDeFrisbee, bin, bleachers, bonecoDeNeve, bordaDeGelo, building, bus, busStop, bush,
+  canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro, duck,
+  fence, floodlight, flowers, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
+  mesaPingPong, nenufar, picnicTable, posteDeGelo, raquete, skateShop,
   rock, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
   bolinhaPingPong,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
-import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
+import { asfalto, calcadaDePedrinha, gelo, tapeteDeGrama } from '../world/texturasDeChao';
 import { Mano } from '../entities/bichos/Mano';
 
 /**
@@ -525,26 +526,181 @@ export const villaLobos: SceneDef = {
     // as raquetes e a bolinha de enfeite somem quando a partida começa
     const enfeitesPing = [raqueteA, raqueteB, bolinha];
 
-    // sorveteria
+    /* ================================================= A PRAÇA DE GELO
+     *
+     * O quiosque do Mano estava sozinho no meio do gramado. Agora ele é o
+     * fundo de uma pracinha inteira: uma lâmina de gelo com borda de neve,
+     * quatro mesinhas de guarda-sol de frente para o balcão, postes baixos nas
+     * quinas e um boneco de neve no canto.
+     *
+     * O QUIOSQUE FOI PARA A PONTA DE -Z, encostado na borda de trás, e ficou
+     * RETO (sem os 0,3 rad de giro que tinha). Duas razões: com a peça na
+     * ponta a arena inteira sobra livre na frente dela, que é o que faz uma
+     * praça ser praça; e com o piso alinhado aos eixos, um quiosque torto lê
+     * como prédio caído — é a mesma lição que a loja de patins já tinha dado.
+     *
+     * ONDE ELA CABE: `x` de 7,2 a 20,4 e `z` de 14,8 a 26. Fica fora do banco
+     * de (4,2; 14), da lixeira de (3,4; 17) e do poste de (4; 22) do lado de
+     * -X; a 2 do gradil do portão (`z = 28`); e bem longe do alambrado do
+     * campinho, que termina em `z = 5`.
+     */
+    const PRACA = { x: 13.8, z: 20.4, largura: 13.2, profundidade: 11.2 };
+    /** o quiosque, na borda de trás da praça, de frente para a arena (+Z) */
+    const SORVETERIA = { x: PRACA.x, z: 16.1 };
+
+    /**
+     * Retângulo de cantos redondos, montado com dois `patch` cruzados e quatro
+     * `disc` nas quinas.
+     *
+     * Rinque não tem quina viva, e um retângulo seco no meio do gramado lê como
+     * tapete jogado. São seis decalques por camada — e decalque nunca briga com
+     * decalque, então empilhar as camadas não custa piscada nenhuma.
+     */
+    const lamina = (
+      larg: number, prof: number, cor: number, altura: number, raio: number,
+      textura?: THREE.Texture,
+    ): void => {
+      w.patch(PRACA.x, PRACA.z, larg, prof - raio * 2, cor, 0, altura, textura);
+      w.patch(PRACA.x, PRACA.z, larg - raio * 2, prof, cor, 0, altura, textura);
+      for (const sx of [-1, 1]) {
+        for (const sz of [-1, 1]) {
+          w.disc(
+            PRACA.x + sx * (larg / 2 - raio), PRACA.z + sz * (prof / 2 - raio),
+            raio, cor, altura, textura,
+          );
+        }
+      }
+    };
+
+    /*
+     * O CHÃO DE GELO É DECALQUE OPACO, e não caixa translúcida.
+     *
+     * A tentação era um palco baixo de material transparente. Duas coisas
+     * matam a ideia: uma caixa com topo acima de zero enterra o pé de todo
+     * mundo que pisa nela (o kit inteiro nasce com a base em `y = 0`), e um
+     * chão translúcido deixa a GRAMA aparecer por baixo do rinque — verde por
+     * dentro do gelo. O brilho vem da textura (`gelo()`, riscos de patim e véu
+     * leitoso pintados em canvas), e o gelo com transparência de verdade mora
+     * nas peças que têm volume: o cristal, o caco da borda, a haste do poste.
+     *
+     * Duas camadas: a neve pisada da beirada, e a lâmina por cima dela.
+     */
+    lamina(PRACA.largura + 1.5, PRACA.profundidade + 1.5, P.geloSombra, 0.006, 2.9, gelo());
+    lamina(PRACA.largura, PRACA.profundidade, P.geloPiso, 0.01, 2.4, gelo());
+    // os riscos de quem já patinou aqui: dois arcos que se cruzam, no meio da
+    // arena. Anel pintado, e não dois discos — dois discos brigariam na borda
+    w.ring(PRACA.x - 0.9, PRACA.z + 1.3, 2.4, 0.11, 0xf4fdff, 0.014);
+    w.ring(PRACA.x + 1.4, PRACA.z + 0.3, 1.6, 0.09, 0xf4fdff, 0.016);
+
+    /*
+     * A BORDA: banco de neve baixo, com as quinas abertas.
+     *
+     * Ela contorna a praça inteira, quinas incluídas — as quinas são um pedaço
+     * curto na diagonal, apoiado no meio do arco de 2,4 de raio. Sem eles a
+     * borda vira quatro barras soltas no gelo em vez de uma beirada. Só a
+     * FRENTE tem um vão de 3,6 no meio: a porta da praça, virada para quem
+     * chega do portão do parque.
+     *
+     * A peça tem 23 cm e NÃO ganha colisor: é beira, não muro.
+     */
+    const bx = PRACA.largura / 2;
+    const bz = PRACA.profundidade / 2;
+    const RAIO_QUINA = 2.4;
+    for (const lado of [-1, 1] as const) {
+      w.add(w.place(bordaDeGelo(6), PRACA.x + lado * bx, 0, PRACA.z));
+      w.add(w.place(bordaDeGelo(4), PRACA.x + lado * 3.5, 0, PRACA.z + bz, Math.PI / 2));
+    }
+    w.add(w.place(bordaDeGelo(8), PRACA.x, 0, PRACA.z - bz, Math.PI / 2));
+    /*
+     * As quinas. O centro do arco fica a `(larg/2 − raio; prof/2 − raio)` do
+     * meio da praça, e o meio do arco, mais `raio × √½` na diagonal. A peça
+     * nasce deitada ao longo do Z, então o giro que a alinha com a tangente é
+     * 45° numa diagonal e 135° na outra — quem decide é o sinal do produto
+     * `sx · sz`.
+     */
+    for (const sx of [-1, 1] as const) {
+      for (const sz of [-1, 1] as const) {
+        const cx = PRACA.x + sx * (bx - RAIO_QUINA + RAIO_QUINA * 0.707);
+        const cz = PRACA.z + sz * (bz - RAIO_QUINA + RAIO_QUINA * 0.707);
+        w.add(w.place(bordaDeGelo(2.6), cx, 0, cz, sx * sz > 0 ? Math.PI * 0.75 : Math.PI * 0.25));
+      }
+    }
+
     // balcão virado para +Z: assim quem compra fica na frente do quiosque na
     // tela, e não escondido atrás dele
-    w.add(w.place(kiosk(0xf6a6c0, { tipo: 'sorvete' }), 12, 0, 18.6, 0.3));
-    w.blockBox(12, 18.6, 1.4, 0.95, 0.3);
+    w.add(w.place(kiosk(P.sorveteriaRosa, { tipo: 'sorvete' }), SORVETERIA.x, 0, SORVETERIA.z));
+    w.blockBox(SORVETERIA.x, SORVETERIA.z, 1.4, 0.95);
+
+    /*
+     * AS QUATRO MESINHAS, uma por quadrante da arena, todas olhando para o
+     * balcão. Elas ficam a 3,5 e 7,5 do quiosque em Z: nenhuma cai em cima do
+     * ponto de comprar (que fica a 2 do balcão) nem na linha entre ele e a
+     * entrada da praça.
+     *
+     * A distância entre duas mesas vizinhas nunca é menor que 4, e cada uma
+     * bloqueia 1 de raio — sobra vão de sobra para passar entre elas (o jogador
+     * tem 0,42).
+     */
+    const MESAS: Array<[number, number, number]> = [
+      // x, z, sabor da taça
+      [9.9, 19.9, P.morango],
+      [17.7, 19.7, P.maracuja],
+      [11.2, 24.1, P.chocolate],
+      [16.6, 23.8, P.limao],
+    ];
+    for (const [mx, mz, sabor] of MESAS) {
+      const mesinha = mesaDeSorveteria(P.sorveteriaRosa, sabor);
+      w.add(w.place(mesinha, mx, 0, mz, Math.atan2(SORVETERIA.x - mx, SORVETERIA.z - mz)));
+      w.blockCircle(mx, mz, 1);
+    }
+
+    // os postes das quinas. Baixos (2,3) para não apagarem as mesinhas: cada
+    // metro de poste esconde 1,5 de chão atrás dele nesta câmera
+    for (const [px, pz] of [[8.4, 16.4], [19.2, 16.4], [8.6, 24.6]] as const) {
+      w.add(w.place(posteDeGelo(), px, 0, pz));
+      w.blockCircle(px, pz, 0.3);
+    }
+
+    /*
+     * A quarta quina é do boneco de neve, e ele OLHA PARA O VÃO DA ENTRADA.
+     *
+     * Virado para o meio da praça ele ficava de costas para a câmera padrão
+     * (que vem de +X/+Z) e ninguém via o rosto — sobrava um monte de neve com
+     * cachecol. Olhando para a porta ele recebe quem chega, e o nariz de
+     * cenoura e o chapéu de casquinha aparecem.
+     */
+    const BONECO = { x: 19.1, z: 24.4 };
+    const ENTRADA = { x: PRACA.x, z: PRACA.z + PRACA.profundidade / 2 };
+    w.add(w.place(
+      bonecoDeNeve(1), BONECO.x, 0, BONECO.z,
+      Math.atan2(ENTRADA.x - BONECO.x, ENTRADA.z - BONECO.z),
+    ));
+    w.blockCircle(BONECO.x, BONECO.z, 0.55);
+
+    // Tufos de cristal: dois ladeando o quiosque, dentro do rinque, e dois na
+    // neve pisada do lado de FORA da borda — cristal em cima da borda ficaria
+    // atravessado nela.
+    for (const [cx, cz, esc, sem] of [
+      [11.4, 15.4, 1.15, 0.2], [16.3, 15.5, 0.95, 0.62],
+      [6.8, 20.8, 1.05, 0.41], [21.0, 21.2, 1.2, 0.88],
+    ] as const) {
+      w.add(w.place(cristalDeGelo(esc, sem), cx, 0, cz, sem * 6.28));
+      w.blockCircle(cx, cz, 0.45 * esc);
+    }
 
     /**
      * O MANO, o pinguim sorveteiro — o primeiro bicho do parque.
      *
-     * ONDE ELE FICA: na frente do balcão, do lado direito. O quiosque está
-     * girado 0,3 rad, então a normal da frente dele é `(sen 0,3; cos 0,3)` =
-     * `(0,30; 0,95)`; ele fica a 1,7 por essa normal, bem fora do colisor
-     * (0,95 de meia profundidade), e desviado para `+X` para não ficar na
-     * linha entre o jogador e o balcão.
+     * ONDE ELE FICA: na frente do balcão, do lado direito. Com o quiosque reto
+     * na borda da praça, a normal da frente dele é `(0; 1)`; ele fica a 1,7 por
+     * essa normal, bem fora do colisor (0,95 de meia profundidade), e desviado
+     * 0,9 para `+X` para não ficar na linha entre o jogador e o balcão.
      *
      * A PRIMEIRA POSIÇÃO ERA COLADA DEMAIS (`13,0; 19,75`): dali o pilar da
      * direita do quiosque cortava metade dele no zoom de jogo. Um bicho de
      * posto tem que aparecer INTEIRO do lugar de onde se compra.
      *
-     * ELE OLHA PARA O MESMO LADO QUE O BALCÃO (`rotation.y = 0,3`), que é para
+     * ELE OLHA PARA O MESMO LADO QUE O BALCÃO (`rotation.y = 0`), que é para
      * `+Z` — de onde a câmera olha e de onde o cliente chega. De costas para o
      * quiosque e de frente para quem compra, como todo sorveteiro.
      *
@@ -552,12 +708,12 @@ export const villaLobos: SceneDef = {
      * posto: é a mesma coleira da Gina na portaria, e nenhuma linha de cérebro
      * mudou por causa disso.
      */
-    const MANO = { x: 12.9, z: 20.3 };
+    const MANO = { x: SORVETERIA.x + 0.9, z: SORVETERIA.z + 1.7 };
     const mano = new Mano({
       minX: MANO.x - 0.12, maxX: MANO.x + 0.12,
       minZ: MANO.z - 0.1, maxZ: MANO.z + 0.1,
     });
-    mano.group.rotation.y = 0.3;
+    mano.group.rotation.y = 0;
     w.add(mano.group);
     mano.aoSoar = () => g.som('pinguim');
 
@@ -566,19 +722,20 @@ export const villaLobos: SceneDef = {
      *
      * Uma das falas lá de cima é sobre ele ("olha o Mano lá embaixo"), e do
      * alto da roda ele estava ATRÁS do quiosque: a roda fica em (0; −26) e o
-     * quiosque em (12; 18,6), então quem olha de lá vê o telhado, e o Mano —
-     * que atende pela FRENTE, em (12,9; 20,3) — some por trás dele.
+     * quiosque na borda da praça de gelo, então quem olha de lá vê o telhado, e
+     * o Mano — que atende pela FRENTE — some por trás dele.
      *
-     * Este ponto é o LADO do quiosque, 2,8 pelo eixo lateral dele (a normal da
-     * frente é `(sen 0,3; cos 0,3)`, então o lado é `(cos 0,3; −sen 0,3)`).
-     * Daqui ele fica 2,7 fora da silhueta do quiosque visto da roda — folga de
-     * sobra sobre a meia-largura de 1,4 — e o caminho até lá passa raspando
-     * POR FORA do colisor, sem atravessar a peça.
+     * Este ponto é o LADO do quiosque: 2,8 pelo eixo lateral dele, que com a
+     * peça reta é o `+X` puro. A visada da roda sobe quase pelo Z (a razão
+     * `x/z` da linha até aqui é 0,4), então esses 2,8 são quase todos
+     * PERPENDICULARES a ela: sobram uns 2,6 fora da silhueta do quiosque,
+     * folga de sobra sobre a meia-largura de 1,4. E o caminho até lá passa
+     * raspando POR FORA do colisor, sem atravessar a peça.
      *
      * E ele fica OLHANDO PARA A RODA: se a fala é sobre ele, que ele esteja
      * olhando de volta.
      */
-    const MANO_DE_LADO = { x: 14.8, z: 18.2 };
+    const MANO_DE_LADO = { x: SORVETERIA.x + 2.8, z: SORVETERIA.z };
     const OLHANDO_A_RODA = Math.atan2(-MANO_DE_LADO.x, -26 - MANO_DE_LADO.z);
 
     /**
@@ -591,7 +748,7 @@ export const villaLobos: SceneDef = {
      *
      * MAS O RAIO PRECISA SER MENOR QUE A DISTÂNCIA ATÉ O PONTO DE COMPRAR, e a
      * primeira versão errou isso: com 1,05 de raio e o Mano a 0,92 da âncora de
-     * "Comprar sorvete" (`12; 20,6`), o carinho roubava o prompt de quem só
+     * "Comprar sorvete" (2 na frente do balcão), o carinho roubava o prompt de quem só
      * queria comprar — a ação principal do quiosque virava a difícil de achar.
      * Agora ele está a 0,95 da âncora e o raio é 0,8: parado onde se compra,
      * o prompt é comprar; um passo para cima dele, é o carinho.
@@ -738,8 +895,12 @@ export const villaLobos: SceneDef = {
        * inteiro atrás da folha, sobrando só a bolinha de sorvete do chapéu.
        * O quiosque continuava aparecendo porque ele é alto — a regra é a altura
        * do que está atrás, não a distância.
+       *
+       * E DE 6,5 FOI PARA 10 quando a praça de gelo tomou o lugar do gramado: a
+       * meia-diagonal do piso é 8,7, e árvore plantada em cima do rinque seria
+       * árvore nascendo dentro do gelo.
        */
-      [12, 19, 6.5], [-10, 20, 3],
+      [PRACA.x, PRACA.z, 10], [-10, 20, 3],
       // a pista e a loja entram na lista pelo mesmo motivo da praça da roda:
       // sem isto o espalhador planta árvore em cima do asfalto
       [-21, -5, 12], [-8.6, 2.5, 9],
@@ -1899,7 +2060,7 @@ export const villaLobos: SceneDef = {
 
     const pedirSorvete = w.interact({
       id: 'parque:sorveteria',
-      x: 12, z: 20.6, radius: 2.4,
+      x: SORVETERIA.x, z: SORVETERIA.z + 2, radius: 2.4,
       label: 'Pedir sorvete pro Mano', icon: '🍦',
       highlight: mano.group,
       onInteract: async (api) => {

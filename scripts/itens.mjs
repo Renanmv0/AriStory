@@ -22,7 +22,7 @@ const page = await browser.newPage({ viewport: { width: 900, height: 620 } });
 const erros = [];
 page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
 
-await page.goto(`${BASE}/?cena=villa-lobos&em=12,22.4&olhar=3.14`, { waitUntil: 'networkidle' });
+await page.goto(`${BASE}/?cena=villa-lobos&em=13.8,19.9&olhar=3.14`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(3000);
 await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));
 

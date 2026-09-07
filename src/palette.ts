@@ -348,6 +348,28 @@ export const PALETTE = {
   cabineEsquadria: 0xeef3f6,
   cabineLuz: 0xffe9b8,
 
+  // A PRAÇA DE GELO, o piso do quiosque do Mano no Villa Lobos. O gelo aqui e
+  // CIANO LAVADO, e nao azul cheio: azul cheio no chao vira piscina, e o que se
+  // quer e uma lamina lisa e clara que ainda deixe a grama em volta ser o verde
+  // da cena. Sao quatro degraus do mesmo tom, do mais claro (o cristal, que e
+  // quase branco por ser translucido) ao mais fundo (a base da borda, que e a
+  // sombra por baixo da neve pisada).
+  geloPiso: 0xd7eff8,
+  geloSombra: 0xb6dcec,
+  geloCristal: 0xeafaff,
+  geloFundo: 0x9ccbe0,
+  // a neve: branca de verdade, com um degrau acinzentado para a sombra. Ela e
+  // mais quente que o gelo de proposito — e isso que separa "monte de neve" de
+  // "bloco de gelo" numa cena que ja e toda azul-clara
+  neveFofa: 0xfbfdff,
+  neveSombra: 0xdfe9f2,
+  // o rosa da sorveteria: a MESMA cor do quiosque e do avental do Mano
+  // (0xf6a6c0), agora com nome, porque agora ela veste tambem os guarda-sois e
+  // as cadeirinhas da praca. O `aventalDoMano` continua onde esta: aquele e
+  // identidade de personagem, este e a cor da loja.
+  sorveteriaRosa: 0xf6a6c0,
+  sorveteriaCreme: 0xfdf3e7,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

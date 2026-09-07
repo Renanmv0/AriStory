@@ -86,7 +86,7 @@ const trocas = await page.evaluate(() => {
 });
 
 // ------------------------------------------------------------- sorveteria
-await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=12,20.8&olhar=3.14`, { waitUntil: 'networkidle' });
+await page.goto(`${BASE}/?cena=villa-lobos&entrada=portao&em=13.8,19&olhar=3.14`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2800);
 /**
  * A COMPRA VIROU CENA quando o Mano chegou: ele fala, dança 2,5 s e só então
@@ -94,11 +94,19 @@ await page.waitForTimeout(2800);
  * sorveteria. As dez teclas de antes acabavam no meio e a memória não chegava
  * a entrar — daí as quarenta e seis. Os `wait` da dança não respondem ao E, e
  * no Chromium sem tela o tempo de jogo corre a um terço do relógio.
+ *
+ * E O PASSO FOI DE 420 PARA 640 ms quando a praça de gelo nasceu em volta do
+ * quiosque. A cena ficou mais pesada para o renderizador por software e o
+ * tempo de jogo andou ainda mais devagar em relação ao relógio: a compra
+ * ficava presa na dança e a memória, que só entra no fim, não chegava. O que
+ * faltava era TEMPO DE RELÓGIO, e não tecla — com 46 teclas mais lentas a
+ * cena inteira cabe, e ainda sobra para os dois ciclos de "vocês ainda estão
+ * com o de antes" que vêm depois.
  */
 await page.keyboard.press('KeyE');
 for (let i = 0; i < 46; i++) {
   await page.keyboard.press('KeyE');
-  await page.waitForTimeout(420);
+  await page.waitForTimeout(640);
 }
 await page.waitForTimeout(1200);
 await page.screenshot({ path: `${OUT}-sorvete.png` });
