@@ -242,13 +242,61 @@ export const villaLobos: SceneDef = {
      * dele entra depois, quando o Renan aprovar a conta da caminhada.
      */
     const COOKIE = { x: 13.5, z: -20.6 };
+    /**
+     * A PATRULHA: um vaivem curto pelo eixo Z, rente a parede lateral da
+     * cabine. Pelo Z e nao pelo X porque o X passa na frente da janela de
+     * atendimento (`9,6…11,6`), e ele tem 1,84 de largura com as orelhas.
+     *
+     * 2,4 de trecho a 0,42 de velocidade = 5,7 s por perna, mais a pausa da
+     * ponta: um ciclo de uns 16 s.
+     */
+    const COOKIE_A = { x: COOKIE.x, z: -21.4 };
+    const COOKIE_B = { x: COOKIE.x, z: -19.0 };
     const cookie = new Cookie({
       minX: COOKIE.x - 0.12, maxX: COOKIE.x + 0.12,
       minZ: COOKIE.z - 0.1, maxZ: COOKIE.z + 0.1,
     });
-    cookie.group.rotation.y = 0.5; // olhando para a boca do corredor
+    cookie.group.rotation.y = 0;
     w.add(cookie.group);
-    w.onUpdate((dt) => cookie.update(dt));
+    /*
+     * ELE ANDA POR ORDEM DA CENA, e nao pelo passeio do cerebro. A area dele e
+     * a coleira de sempre (menor que o passo minimo), entao o cerebro nunca
+     * sorteia nada; quem manda e este laco.
+     *
+     * E o vaivem usa `seguir()`, e nao `irPara()`: `irPara` devolve uma
+     * promessa por chamada, e interromper a caminhada para conversar deixaria
+     * essa promessa pendurada para sempre — o laco travaria na primeira
+     * conversa. `seguir` nao promete nada: chegar so limpa a missao.
+     *
+     * POR QUE NAO `Math.sin` NA POSICAO: o `x`/`z` sairia certo, mas o flag
+     * `andando` (que e o que mexe as PERNAS) nasce dentro do cerebro. Escrito
+     * de fora, o motor acha que ele esta parado e o Cookie desliza pelo chao
+     * como estatua em trilho. E o retorno de 180° sairia em estalo, enquanto o
+     * `passo()` da base ja interpola pelo lado curto — 0,45 s de meia-volta.
+     */
+    cookie.entrarEmServico();
+    let cookieVaiPraFrente = true;
+    let cookieEsperando = 0;
+    let cookieConversando = false;
+    w.onUpdate((dt, tempo) => {
+      cookie.update(dt);
+      pedirBilhete.moveTo(cookie.x, cookie.z);
+      if (cookieConversando) return; // parado, olhando para quem chegou
+
+      const alvo = cookieVaiPraFrente ? COOKIE_B : COOKIE_A;
+      if (Math.hypot(alvo.x - cookie.x, alvo.z - cookie.z) < 0.12) {
+        // a pausa da ponta varia com o relogio da cena: nao e sorteio (que
+        // mexeria na sequencia semeada do mundo), mas tambem nao e metronomo
+        if (cookieEsperando <= 0) cookieEsperando = 1.2 + (Math.sin(tempo * 0.7) + 1) * 0.6;
+        cookieEsperando -= dt;
+        if (cookieEsperando <= 0) {
+          cookieVaiPraFrente = !cookieVaiPraFrente;
+          cookieEsperando = 0;
+        }
+        return;
+      }
+      cookie.seguir(alvo.x, alvo.z, 0.42);
+    });
 
     // ------------------------------------------- entorno da roda gigante
     // Tudo aqui é posicionado na mão de propósito: o espalhador de vegetação
@@ -1966,63 +2014,163 @@ export const villaLobos: SceneDef = {
     });
 
     /**
-     * ========================================== A BILHETERIA VENDE DE VERDADE
+     * ================================ QUEM VENDE O BILHETE É O COOKIE
      *
      * Este é o primeiro lugar do jogo que GASTA a carteira do casal. Ela nasceu
      * no turno do Mania de Churrasco e até agora só enchia; aqui ela esvazia, e
      * o dinheiro passa a querer dizer alguma coisa.
      *
-     * SEM DINHEIRO NÃO TRAVA NADA: o bilheteiro manda a dupla trabalhar um
-     * turno no Mania, que é uma volta de trinta segundos de caminhada e um
-     * minigame que já existe. Um jogo-presente não pode ter beco sem saída —
-     * mas pode ter um caminho.
+     * E a venda mora NELE, e não na cabine: uma bilheteria com a janela vazia é
+     * um objeto, e o Renan pediu um bilheteiro. O ponto da cabine continua
+     * existindo — mas só para mandar a dupla falar com ele, que é o que uma
+     * janela vazia faria na vida real.
+     *
+     * SEM DINHEIRO NÃO TRAVA NADA: ele mesmo manda a dupla trabalhar um turno
+     * no Mania, que é uma volta de trinta segundos de caminhada e um minigame
+     * que já existe. Um jogo-presente não pode ter beco sem saída — mas pode
+     * ter um caminho.
      */
     const PRECO_DO_BILHETE = 24;
+    const C = 'Cookie';
 
+    /** as falas dele quando a dupla volta, depois da apresentação */
+    const OI_DO_COOKIE = [
+      'Oi de novo! Eu reconheci vocês pelo passo. Passo leve.',
+      'Voltaram! Eu tava aqui, andando de um lado pro outro. É o que eu faço.',
+      'Oi! Desculpa a orelha, ela abana sozinha quando eu fico contente.',
+      'Vocês de novo. Que bom. Ninguém vem duas vezes.',
+    ];
+
+    const pedirBilhete = w.interact({
+      id: 'parque:cookie',
+      x: COOKIE.x, z: COOKIE.z, radius: 2.6,
+      label: 'Falar com o Cookie', icon: '🐘',
+      highlight: cookie.group,
+      onInteract: async (api) => {
+        /*
+         * ELE PARA E OLHA. `entrarEmServico()` limpa a missão de caminhada (as
+         * pernas voltam ao repouso sozinhas, por interpolação) e o `encarar`
+         * gira o corpo dele para quem chegou, devagar. Sem isto ele continuaria
+         * o vaivém falando de costas.
+         */
+        cookieConversando = true;
+        cookie.entrarEmServico();
+        const eu = api.playerPosition();
+        cookie.encarar(eu.x, eu.z);
+        api.lockPlayer(true);
+        try {
+          if (!api.flag('cookie-apresentado')) {
+            api.setFlag('cookie-apresentado');
+            await conversa([
+              [A, 'Oi...'],
+              [C, 'Oi! Oi. Desculpa, eu falo baixinho, mas mesmo assim...'],
+              [C, 'As pessoas dão um passinho pra trás quando eu digo oi. Não é maldade delas. Eu sou grande.'],
+              [R, 'A gente não deu passo nenhum.'],
+              [C, 'Vocês não deram.'],
+            ]);
+            await api.wait(0.8);
+            await conversa([
+              [C, 'Obrigado.'],
+              [C, 'Eu sou o Cookie. Eu cuido dos bilhetes daqui.'],
+              [A, 'Cookie por causa de biscoito?'],
+              [C, 'Por causa de biscoito. Eu gosto de tudo que é doce e pequenininho.'],
+              [C, 'Bala, jujuba, aquele confeitinho colorido que gruda no dente. Coisa que cabe na pontinha da tromba.'],
+            ]);
+
+            // ele olha para cima ANTES da fala do sonho, e não durante: o
+            // gesto precisa chegar primeiro, senão a fala explica um boneco
+            // parado. 7 s cobrem as três linhas que vêm depois.
+            cookie.olharProAlto(7);
+            await api.wait(1.2);
+            await conversa([
+              [C, 'Um dia eu subo naquilo ali.'],
+              [R, 'Na roda?'],
+              [C, 'Na roda. Eu vendo bilhete dela faz não sei quanto tempo, e nunca coube numa cabine.'],
+              [C, 'Mas todo mundo desce daquilo sorrindo. Eu fico aqui embaixo vendo. Já é um pedacinho, né?'],
+              [A, 'É um pedacinho.'],
+            ]);
+            api.unlock({
+              id: 'cookie',
+              title: 'O Cookie',
+              place: 'Parque Villa Lobos',
+              note: 'O elefante que vende os bilhetes da roda gigante. Bonzinho, meio sem jeito do próprio tamanho, e apaixonado por doce pequenininho. Sonha em subir na roda — nunca coube numa cabine.',
+              icon: '🐘',
+            });
+          } else {
+            await api.say([w.pick(OI_DO_COOKIE)], C);
+          }
+
+          // --------------------------------------------------------- o bilhete
+          if (api.hasItem(ITENS.bilheteDaRoda.id) || api.hasItem(ITENS.bilheteDaRoda.id, api.companionId())) {
+            await conversa([
+              [C, 'Vocês já estão com o de vocês! Não vou vender dois.'],
+              [A, 'Tá aqui na mochila.'],
+              [C, 'Então vão. A fila tá curta.'],
+            ]);
+            return;
+          }
+
+          await conversa([
+            [A, 'A gente queria dois pra roda gigante.'],
+            [C, 'Dois. Na mesma cabine, né? É sempre na mesma cabine, com vocês.'],
+          ]);
+          if (api.carteira() < PRECO_DO_BILHETE) {
+            await conversa([
+              [C, `São vinte e quatro reais os dois. Vocês têm ${api.carteira()}.`],
+              [C, 'Não fica com essa cara. O Walter do Mania de Churrasco tá sempre precisando de gente.'],
+              [C, 'Um turno lá e vocês voltam. Eu tô aqui. Eu tô sempre aqui.'],
+            ]);
+            api.toast(`Faltam R$ ${PRECO_DO_BILHETE - api.carteira()}`, '🎟️');
+            return;
+          }
+
+          const vai = await api.ask(
+            `Dois lugares na mesma cabine — R$ ${PRECO_DO_BILHETE}?`,
+            ['Comprar', 'Agora não'],
+            A,
+          );
+          if (vai !== 0) {
+            await api.say(['Sem pressa. A roda não vai a lugar nenhum. Eu também não.'], C);
+            return;
+          }
+          if (!api.gastar(PRECO_DO_BILHETE)) return;
+
+          api.addItem(ITENS.bilheteDaRoda);
+          api.som('caixa');
+          api.toast(`Bilhete comprado · R$ ${api.carteira()} na carteira`, '🎟️');
+          await conversa([
+            [C, 'Prontinho. Rasguei bem no picotado, olha.'],
+            [C, 'A catraca é ali na plataforma. Quando chegarem lá em cima, acenem pra cá.'],
+            [A, 'A gente acena.'],
+            [C, 'Eu vou estar olhando.'],
+          ]);
+        } finally {
+          // SEMPRE devolve ele para a patrulha, por qualquer saída da conversa:
+          // um `return` no meio que esquecesse isto deixaria o Cookie parado
+          // olhando para o vazio pelo resto da sessão
+          cookie.pararDeEncarar();
+          cookieConversando = false;
+          api.lockPlayer(false);
+        }
+      },
+    });
+
+    /*
+     * A JANELA VAZIA. O ponto da cabine continua, mas agora ele só aponta para
+     * o Cookie: quem anda até o guichê tem que descobrir alguma coisa ali, e
+     * não bater numa parede muda.
+     */
     w.interact({
       id: 'parque:bilheteria',
-      // na frente do guichê, e não no centro da cabine: agora ela é fechada
-      x: BILHETERIA.x, z: BILHETERIA.z + 2.1, radius: 2.4,
-      label: 'Bilheteria', icon: '🎟️',
+      x: BILHETERIA.x, z: BILHETERIA.z + 2.1, radius: 2.0,
+      label: 'Guichê', icon: '🎟️',
       highlight: bilheteria,
       onInteract: async (api) => {
-        if (api.hasItem(ITENS.bilheteDaRoda.id) || api.hasItem(ITENS.bilheteDaRoda.id, api.companionId())) {
-          await conversa([
-            [A, 'A gente já tem o bilhete.'],
-            [R, 'Tá aqui na mochila. Vamos logo.'],
-          ]);
-          return;
-        }
-
         await conversa([
-          [A, 'Dois pra roda gigante.'],
-          [R, 'Sempre dois.'],
+          [A, 'Não tem ninguém na janelinha.'],
+          [R, 'Tem sim. Olha do lado.'],
         ]);
-        if (api.carteira() < PRECO_DO_BILHETE) {
-          await conversa([
-            [A, `São R$ ${PRECO_DO_BILHETE} e a gente tem R$ ${api.carteira()}.`],
-            [R, 'O Walter tá contratando lá no Mania de Churrasco.'],
-            [A, 'Um turno e a gente volta.'],
-          ]);
-          api.toast(`Faltam R$ ${PRECO_DO_BILHETE - api.carteira()}`, '🎟️');
-          return;
-        }
-
-        const vai = await api.ask(
-          `Dois lugares na mesma cabine — R$ ${PRECO_DO_BILHETE}?`,
-          ['Comprar', 'Agora não'],
-          A,
-        );
-        if (vai !== 0) return;
-        if (!api.gastar(PRECO_DO_BILHETE)) return;
-
-        api.addItem(ITENS.bilheteDaRoda);
-        api.som('caixa');
-        api.toast(`Bilhete comprado · R$ ${api.carteira()} na carteira`, '🎟️');
-        await conversa([
-          [R, 'Guardei aqui.'],
-          [A, 'A catraca é ali na plataforma.'],
-        ]);
+        api.toast('Quem vende é o Cookie, do lado da cabine', '🐘');
       },
     });
 
