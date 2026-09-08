@@ -81,21 +81,47 @@ const RONDA: ReadonlyArray<{ x: number; z: number; onde: string }> = [
 /**
  * O QUE ELA SOLTA ENQUANTO PASSEIA.
  *
- * As três primeiras são do Renan e vão literais. Elas saem em TOAST (o aviso do
- * canto), e não em caixa de diálogo: passar por uma loja e ser parado por um
- * balão a cada doze segundos é o que transforma "explorar" em "clicar E". É a
- * mesma decisão que os gritos do Mano já pagaram — quem quiser conversa de
- * verdade fala com ela, e aí sim é diálogo.
+ * As três primeiras da lista de baixo são do Renan e vão literais. Todas saem em
+ * TOAST (o aviso do canto), e não em caixa de diálogo: passar por uma loja e ser
+ * parado por um balão a cada doze segundos é o que transforma "explorar" em
+ * "clicar E". É a mesma decisão que os gritos do Mano já pagaram — quem quiser
+ * conversa de verdade fala com ela, e aí sim é diálogo.
+ *
+ * ============================ POR QUE SÃO DUAS LISTAS, E NÃO UMA
+ *
+ * O Renan pediu que ela chamasse a dupla de "meus queridos", "cariños", "meus
+ * amores". Se todas as falas começassem assim, o bordão vira tique em dois
+ * minutos; se o sorteio fosse livre numa lista só, dava para passar cinco falas
+ * sem ouvir nenhum — e aí não é bordão, é acaso.
+ *
+ * Então elas se ALTERNAM: uma com carinho, uma solta, uma com carinho. O jeito
+ * dela aparece a cada duas falas, sempre, e nunca duas seguidas. É também o que
+ * deixa o `scripts/lojinha.mjs` conferir o bordão sem depender de sorte.
  */
-const FALAS_DE_LOJA = [
+const FALAS_COM_CARINHO = [
+  'Meus queridos, olhem essa arara do meio. Olhem!',
+  'Cariños, provar não custa nada, viu. Nadinha.',
+  'Meus amores, cuidado com o alfinete no chão. Sempre cai um.',
+  'Meus queridos, essa bainha aí eu fiz ontem à noite. Ontem!',
+  'Cariños, se apertar no ombro eu ajusto na hora.',
+  'Meus amores, o provador do fundo é o melhor. Tem o espelho maior.',
+  'Meus queridos, essa cor foi feita pra vocês. FEITA.',
+  'Cariños, vocês dois de vermelho seria um escândalo. Um escândalo bom.',
+  'Meus amores, tem biscoitinho no balcão. Tem sim.',
+  'Meus queridos, não me deixem falando sozinha... ai, deixem. Eu gosto.',
+  'Cariños, se quiserem eu meço vocês dois de olho fechado.',
+  'Meus amores, tem um tabuleiro lá fora esperando, hein.',
+];
+const FALAS_SOLTAS = [
   'Bééé... essa coleção de outono está um arraso!',
   'Não repare a bagunça, chegaram peças novas hoje!',
   'Acho que aquele tom de azul destacaria muito a sua... lã. Digo, sua pele!',
-  'Prova, prova! Provar não custa nada.',
   'Essa arara do meio é a minha favorita. Eu costurei tudo.',
-  'Se apertar no ombro eu ajusto na hora, viu.',
-  'O provador do fundo é o melhor, tem o espelho maior.',
-  'Cuidado com o alfinete no chão. Sempre cai um.',
+  'Cada botão desta loja passou por este olho aqui, ó.',
+  'Roupa boa é roupa que a pessoa esquece que tá usando.',
+  'Bééé... amanhã eu remonto essa vitrine inteira. INTEIRA.',
+  'Ninguém sai daqui de mãos vazias. Nem que seja um biscoito.',
+  'Ninguém combina cor como eu. Ninguém.',
 ];
 
 export const lojinha: SceneDef = {
@@ -288,6 +314,9 @@ export const lojinha: SceneDef = {
     let andando = false;
     let espera = 1.2;
     let ateFalar = 6;
+    /** de qual das duas listas sai a próxima fala, e qual foi a última */
+    let comCarinho = false;
+    let ultimaFala = '';
 
     w.onUpdate((dt) => {
       estella.update(dt);
@@ -297,7 +326,19 @@ export const lojinha: SceneDef = {
       ateFalar -= dt;
       if (ateFalar <= 0) {
         ateFalar = 10 + w.rng() * 5;
-        if (!conversando) g.toast(`Estella: ${w.pick(FALAS_DE_LOJA)}`, '🐑');
+        /*
+         * ALTERNA carinho e fala solta, e nunca repete a última — com sorteio
+         * puro ela dizia a mesma frase duas vezes seguidas, e nada denuncia mais
+         * um NPC do que isso.
+         */
+        comCarinho = !comCarinho;
+        const lista = comCarinho ? FALAS_COM_CARINHO : FALAS_SOLTAS;
+        let fala = w.pick(lista);
+        for (let tentativa = 0; tentativa < 4 && fala === ultimaFala; tentativa++) {
+          fala = w.pick(lista);
+        }
+        ultimaFala = fala;
+        if (!conversando) g.toast(`Estella: ${fala}`, '🐑');
       }
 
       if (andando || conversando) return;
@@ -327,11 +368,14 @@ export const lojinha: SceneDef = {
      */
     let conversando = false;
     const DENTRO_DA_LOJA = [
-      'Essa arara chegou hoje. Hoje mesmo, ainda tá quentinha.',
-      'Prova o que quiser. Provar é de graça.',
-      'Eu costuro tudo aqui atrás. Tudo.',
-      'Se quiser, eu meço vocês dois direitinho.',
+      'Meus queridos! Essa arara chegou hoje. Hoje mesmo, ainda tá quentinha.',
+      'Cariños, provem o que quiserem. Provar é de graça.',
+      'Eu costuro tudo aqui atrás. Tudo. Sozinha.',
+      'Meus amores, se quiserem eu meço vocês dois direitinho.',
       'Um dia desses eu faço um par de roupa igual pros dois. Combinando.',
+      'Meus queridos, digam a verdade: essa parede aqui pede um espelho maior, né?',
+      'Cariños, sentem no pufe. Ele é bem mais confortável do que parece.',
+      'Meus amores, se sumir um cabide eu sei. Eu sempre sei.',
     ];
     const pontoDaConversa = w.interact({
       id: 'lojinha:estella',
