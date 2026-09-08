@@ -4,12 +4,16 @@ import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
 
 /**
- * A OVELHA da lojinha de roupas do Villa Lobos — a costureira que toma conta
- * da loja e fica parada na calçada, na frente da vitrine.
+ * A ESTELLA, a ovelha costureira da lojinha de roupas do Villa Lobos. O nome e
+ * o jeito sao do Renan: ela tem MUITO orgulho das roupinhas que cria, e chega a
+ * ser obcecada por elas — nenhum modelo sai da loja sem passar pela aprovacao
+ * dela. E ela adora dar brinde em docinho: foi ela que fez a roupinha de
+ * bilheteiro do Cookie, e no dia da entrega deu um biscoitinho pra ele. Ele
+ * amou.
  *
- * O NOME AINDA E DO RENAN. Ele disse que ainda nao decidiu, entao a classe se
- * chama `Ovelha` mesmo: quando ele escolher, muda o rotulo da interacao e a
- * fala — nao o modelo. E por isso que nada aqui dentro escreve nome nenhum.
+ * ISSO TEM CONSEQUENCIA NO MODELO, e nao e so lore: a manta, o quepe e o cracha
+ * do Cookie sairam desta loja. As duas fichas conversam — quem olhar o uniforme
+ * dele e a fita metrica dela esta olhando para a mesma costureira.
  *
  * O QUE FAZ UMA OVELHA SER LIDA COMO OVELHA, na ordem que importa:
  *
@@ -44,7 +48,7 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * mexendo devagar e o que faz ela nao virar estatua enquanto ninguem fala com
  * ela — o equivalente da orelha do Cookie abanando.
  */
-export class Ovelha extends Bicho {
+export class Estella extends Bicho {
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly focinho = new THREE.Group();
@@ -58,6 +62,16 @@ export class Ovelha extends Bicho {
 
   /** para onde ela deve virar, quando a cena manda encarar alguem */
   private encarando: { x: number; z: number } | null = null;
+
+  /**
+   * O BRINDE: quanto falta do gesto de pegar um biscoito na cestinha e
+   * oferecer, em segundos, e quanto ele durava no comeco.
+   *
+   * Nao e estado do cerebro — ela continua respirando, ruminando e mexendo a
+   * orelha do mesmo jeito. So a cabeca desce ate a cesta e volta.
+   */
+  private oferecendo = 0;
+  private duracaoDaOferta = 1;
 
   constructor(area: AreaDoBicho) {
     super(area, {
@@ -74,7 +88,7 @@ export class Ovelha extends Bicho {
       semente: 20260910,
     });
     this.montar();
-    this.prontoParaAparecer('ovelha');
+    this.prontoParaAparecer('estella');
   }
 
   // ------------------------------------------------------------------- corpo
@@ -192,7 +206,7 @@ export class Ovelha extends Bicho {
     // -------------------------------------------------------------- a cabeca
     // etiqueta, para o teste achar a cabeca em vez de adivinhar qual grupo e
     // qual (o Cookie, o Capy e a Gina fazem igual)
-    this.cabeca.name = 'cabeca-da-ovelha';
+    this.cabeca.name = 'cabeca-da-estella';
     /*
      * A CABECA SOBE ACIMA DA LINHA DA LA. O cacho de bolotas chega a `y = 1,02`
      * no lombo, e com a cabeca em 0,91 a ovelha ficava CORCUNDA: o pescoco
@@ -513,6 +527,16 @@ export class Ovelha extends Bicho {
     this.encarando = null;
   }
 
+  /**
+   * O GESTO DO BRINDE: ela abaixa a cabeca ate a cestinha e volta com o
+   * biscoito. A cena chama antes da fala em que entrega — gesto que chega
+   * DEPOIS da fala explica um boneco parado.
+   */
+  oferecerBiscoito(segundos = 2.2): void {
+    this.oferecendo = segundos;
+    this.duracaoDaOferta = segundos;
+  }
+
   // -------------------------------------------------------------------- pose
 
   protected animar(dt: number, { andando, carinho, fase }: PoseDoBicho): void {
@@ -562,9 +586,19 @@ export class Ovelha extends Bicho {
       this.orelhas[i].rotation.x = Math.sin(fase * 1.6 + i) * 0.06;
     }
 
+    /*
+     * O GESTO DO BRINDE. Um seno da volta inteira ao longo da duracao: a cabeca
+     * DESCE ate a cesta e VOLTA sozinha, sem precisar de um segundo aviso da
+     * cena. `rotation.x` positivo na cabeca abaixa o focinho.
+     */
+    if (this.oferecendo > 0) this.oferecendo = Math.max(0, this.oferecendo - dt);
+    const oferta = this.oferecendo > 0
+      ? Math.sin((1 - this.oferecendo / this.duracaoDaOferta) * Math.PI)
+      : 0;
+
     // a cabeca olha em volta parada, e sobe no carinho
-    this.cabeca.rotation.y = andando ? 0 : Math.sin(fase * 0.5) * 0.3;
-    const alvoCabeca = -carinho * 0.2 + Math.sin(fase * 1.2) * 0.025;
+    this.cabeca.rotation.y = andando ? 0 : Math.sin(fase * 0.5) * 0.3 * (1 - oferta);
+    const alvoCabeca = oferta * 0.75 - carinho * 0.2 + Math.sin(fase * 1.2) * 0.025;
     this.cabeca.rotation.x += (alvoCabeca - this.cabeca.rotation.x) * Math.min(1, dt * 4);
 
     // olho fechando de contente

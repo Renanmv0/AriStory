@@ -338,7 +338,7 @@ export const PALETTE = {
   lojaDentro: 0xd9c7c4,
   lojaManequim: 0xdcc3a4,
 
-  // A OVELHA da lojinha de roupas. A la e CREME, e nao branca: branco puro
+  // A ESTELLA, a ovelha costureira da lojinha de roupas. A la e CREME, e nao branca: branco puro
   // estoura o degrade do toon e a bolota de la vira uma mancha chapada — e la
   // e feita de bolota, entao ela precisa do degrade para existir. A cara e as
   // pernas sao MARROM ESCURO, e sao elas que desenham a ovelha: sem o
@@ -354,6 +354,22 @@ export const PALETTE = {
   ovelhaFita: 0xf0d79a,
   ovelhaAlfineteira: 0xc4565a,
   ovelhaOculos: 0xd8b45e,
+
+  // O BISCOITINHO DA ESTELLA — o brinde que ela da junto com a roupa, e o que
+  // ela deu pro Cookie no dia do uniforme. Massa amanteigada com as gotas de
+  // chocolate escuras e um pingo do rosa da loja no meio, que e a assinatura
+  // dela: doce que sai daquela porta vem com aquele rosa.
+  // o xadrez da Estella: o creme e o castanho de um tabuleiro de madeira de
+  // verdade. Preto puro e branco puro comem o degrade do toon e o tabuleiro
+  // vira um adesivo chapado em cima da mesa
+  xadrezClaro: 0xf0e2c6,
+  xadrezEscuro: 0x6b4a38,
+
+  // a palha da cestinha em que os biscoitos moram, na porta da loja
+  cestaPalha: 0xd9b781,
+  biscoitoMassa: 0xdfab68,
+  biscoitoBorda: 0xc68f4f,
+  biscoitoGota: 0x5b3a2a,
 
   // o Cookie, o elefante da bilheteria. Cinza de elefante de verdade puxa para
   // o ROXO, e nao para o azul — cinza azulado sai como pedra. A orelha por

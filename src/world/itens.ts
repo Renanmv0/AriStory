@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
-import { copoDeSuco, frisbee, iceCream, osso } from './props';
+import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
 import {
   canoDaBota, gargantilhaDeLaco, gorroDeLa, gravataDoWalter, maidJapones, mangaDeMoletom, mangaDeQuimono,
   meiaDeCoxa, moletomComCapuz, oculosDeSol, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
@@ -77,6 +77,21 @@ export const ITENS = {
     nota: 'do Renan',
     holdPose: 'upright',
   },
+  /**
+   * O BRINDE DA ESTELLA. Ela nao vende doce — ela DA, junto com a roupa, e foi
+   * assim que o Cookie ganhou o dele no dia do uniforme. Um so para os dois,
+   * cada um com o seu: e a mesma regra dos sorvetes do Mano, e o que decide nao
+   * e o sabor, e de quem e a mao.
+   */
+  biscoitoDaEstella: {
+    id: 'biscoito-estella',
+    nome: 'Biscoitinho da Estella',
+    icone: '🍪',
+    tipo: 'mao',
+    nota: 'brinde da lojinha do parque',
+    holdPose: 'upright',
+  },
+
   // ------------------------------------------------------------ vestiveis
   // Todo vestivel declara o `slot`, porque as 4 vagas de vestimenta SAO as 4
   // partes do corpo. E o que faz chapeu e patins conviverem (cabeca e pe sao
@@ -372,6 +387,7 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'suco-morango': () => copoDeSuco(P.morango),
   'frisbee': () => frisbee(P.frisbee),
   'osso': () => osso(P.osso),
+  'biscoito-estella': () => biscoitoDaEstella(),
 };
 
 const PORID: Record<string, ItemDef> = Object.fromEntries(
