@@ -251,6 +251,51 @@ await page.waitForTimeout(3000);
 const desvirou = await aEstella();
 await page.screenshot({ path: `${OUT}-posto.png` });
 
+/* ================= 4b. A CALÇADA PRECISA SER ANDÁVEL DOS DOIS LADOS DA MESA
+ *
+ * Esta asserção existe por causa de um muro invisível: a mesinha de xadrez foi
+ * colocada com `blockBox(…, 1,7, 1,0, …)`, e o `blockBox` recebe MEIA largura —
+ * era uma caixa de 3,4 × 2,0 para uma mesa de 0,84 de diâmetro, atravessando a
+ * calçada quase de ponta a ponta. Dava para VER a passagem e não dava para
+ * passar, que é o pior tipo de bug de cenário: a pessoa acha que o jogo travou.
+ *
+ * O teste mede o mundo pela mesma conta que o jogo usa (o jogador é um círculo
+ * de 0,42), em quatro pontos que têm que estar livres — os dois lados da mesa e
+ * os dois lados da cesta — e em dois que têm que estar BLOQUEADOS, senão a
+ * "correção" seria apagar o colisor e deixar a dupla andar por dentro da mesa.
+ */
+const calcada = await page.evaluate(([mx, mz, cx, cz]) => {
+  const RAIO = 0.42;
+  const colisores = window.jogo.current.world.colliders;
+  const bate = (x, z) => colisores.some((c) => {
+    if (c.kind === 'circle') return Math.hypot(x - c.x, z - c.z) < RAIO + c.r;
+    const cos = Math.cos(-c.rot);
+    const sin = Math.sin(-c.rot);
+    const rx = x - c.x;
+    const rz = z - c.z;
+    const lx = rx * cos - rz * sin;
+    const lz = rx * sin + rz * cos;
+    const dx = Math.max(Math.abs(lx) - c.hw, 0);
+    const dz = Math.max(Math.abs(lz) - c.hd, 0);
+    return dx * dx + dz * dz < RAIO * RAIO;
+  });
+  return {
+    // livres: passar pelos dois lados da mesinha, e pelos dois da cesta
+    ladoDaRua: bate(mx + 1.6, mz),
+    ladoDaVitrine: bate(mx - 1.7, mz),
+    antesDaMesa: bate(mx, mz + 1.6),
+    aoLadoDaCesta: bate(cx + 1.0, cz),
+    // e dá para chegar perto da vitrine: o colisor do prédio para na linha dos
+    // vasos (−35,45), então o centro da dupla alcança −35,03
+    naFrenteDaVitrine: bate(-34.9, -16.5),
+    // e o que TEM que barrar: o meio da mesa e o meio do caixote
+    emCimaDaMesa: bate(mx, mz),
+    emCimaDaCesta: bate(cx, cz),
+    emCimaDoVaso: bate(-35.6, -18.3),
+    emCimaDaLoja: bate(-40, -16.5),
+  };
+}, [-32.75, -18.7, -32.35, -15.45]);
+
 // ================================================ 5. ela não sai do posto, e bale
 const trilha = [];
 for (let i = 0; i < 14; i++) {
@@ -335,6 +380,14 @@ else if (mesinha.alto > 1.2) {
   falhas.push(`a mesinha de xadrez ficou alta demais e esconde a ovelha (${mesinha.alto})`);
 }
 if (!noDiario.includes('estella-da-lojinha')) falhas.push('ela nao entrou no diario');
+for (const [onde, barrado] of Object.entries(calcada)) {
+  const temQueBarrar = onde.startsWith('emCima');
+  if (barrado !== temQueBarrar) {
+    falhas.push(temQueBarrar
+      ? `da para andar por dentro da peca: ${onde}`
+      : `tem parede invisivel na calcada: ${onde}`);
+  }
+}
 if (!opcoes.some((t) => /xadrez/i.test(t ?? ''))) {
   falhas.push(`falar com ela nao oferece a partida: ${JSON.stringify(opcoes)}`);
 }
@@ -355,6 +408,7 @@ console.log('3. prompt de perto:', JSON.stringify(deColado));
 console.log('   apresentacao:', JSON.stringify(apresentacao));
 console.log('   giro: nasceu', nasceu?.giro, '· encarando', encarando?.giro, '· desvirou', desvirou?.giro);
 console.log('3b. escolhas ao falar com ela:', JSON.stringify(opcoes), '·', JSON.stringify(falaSolta));
+console.log('4b. calcada:', JSON.stringify(calcada));
 console.log('4. brinde:', JSON.stringify(brinde), '· mesinha:', JSON.stringify(mesinha));
 console.log('   diario:', JSON.stringify(noDiario.filter((i) => /estella|loj/i.test(i))));
 console.log('5. pontos fora do posto:', longeDoPosto.length, 'de', trilha.length, '· balidos:', balidos);
