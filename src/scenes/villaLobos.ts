@@ -46,6 +46,8 @@ export const villaLobos: SceneDef = {
     portao: { x: 0, z: 26, facing: Math.PI },
     roda: { x: 0, z: -17, facing: 0 },
     clube: { x: 33, z: 13, facing: Math.PI * 1.5 },
+    // saindo da loja: um passo na calcada, de costas para a vitrine
+    'da-lojinha': { x: -33.6, z: -16.5, facing: Math.PI / 2 },
   },
 
   build(w) {
@@ -1189,6 +1191,18 @@ export const villaLobos: SceneDef = {
      * 1 de chao atras de si, e a ovelha esta no `+Z` dela — na frente, do lado
      * da camera. Mesinha nenhuma tapa costureira nenhuma.
      */
+    /*
+     * A PORTA DA LOJA. Ela fica no meio da fachada (`x = −34,8`), e o colisor do
+     * predio para na linha dos vasos (`−35,45`) — o centro da dupla alcanca
+     * `−35,03`, a 23 cm da porta. Raio 1,8 pega de longe o suficiente para o
+     * prompt aparecer antes de a dupla encostar na parede.
+     */
+    w.door({
+      x: -34.9, z: -16.5, radius: 1.8,
+      to: 'lojinha', entry: 'da-calcada',
+      label: 'Entrar na lojinha', icon: '👗',
+    });
+
     const XADREZ = { x: ESTELLA.x - 0.15, z: ESTELLA.z - 2.2 };
     w.add(w.place(mesinhaDeXadrez(), XADREZ.x, 0, XADREZ.z, -0.35));
     /**
