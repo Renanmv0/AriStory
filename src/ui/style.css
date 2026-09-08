@@ -1598,12 +1598,22 @@ body.touch-device .dialogue .next { right: 84px; }
 .xadrez .casa.comer { box-shadow: inset 0 0 0 5px rgba(226, 85, 124, 0.85); }
 .xadrez.travado .casa { cursor: default; }
 .xadrez .peca {
-  /* o MESMO glifo cheio para os dois lados, e a cor é que separa os times: com
-     o par vazado/cheio do Unicode (♙ contra ♟) cada fonte desenha um tamanho
-     diferente e o tabuleiro fica com dois exércitos de alturas diferentes */
   position: relative;
   z-index: 2;
   pointer-events: none;
+  /**
+   * A TERCEIRA TRAVA CONTRA O EMOJI.
+   *
+   * O peão preto (U+265F) é emoji, e no iPhone o Apple Color Emoji ganhava de
+   * tudo: as peças brancas do Renan apareciam pretas, porque glifo de emoji é
+   * imagem e ignora `color` e `text-shadow`. O `mesaDeXadrez.ts` já pede texto
+   * pelo VS15 e já usa o desenho vazado nas brancas; aqui a fonte é escolhida
+   * explicitamente entre as de SÍMBOLO, e `font-variant-emoji: text` repete o
+   * pedido no vocabulário do CSS (Safari 17+).
+   */
+  font-family: 'Apple Symbols', 'Segoe UI Symbol', 'Noto Sans Symbols 2',
+    'DejaVu Sans', 'Arial Unicode MS', serif;
+  font-variant-emoji: text;
 }
 .xadrez .peca.brancas {
   color: #fffdf8;
