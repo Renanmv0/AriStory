@@ -1,5 +1,5 @@
 /**
- * A OVELHA da lojinha de roupas do Villa Lobos — a costureira de posto.
+ * A ESTELLA, a ovelha costureira da lojinha de roupas do Villa Lobos.
  *
  * O que este teste guarda:
  *
@@ -15,23 +15,28 @@
  *   parque é vivo, e duas capturas do mesmo quadro já saem diferentes;
  * - o PROMPT anda junto com ela (o `moveTo` no `onUpdate`), medido contra a
  *   posição dela e não contra o balão;
- * - a APRESENTAÇÃO acontece, entra no diário e NÃO INVENTA NOME NENHUM — o
- *   Renan ainda não escolheu, e o teste falha se alguém batizar a ovelha sem
- *   ele;
+ * - a APRESENTAÇÃO acontece e diz quem ela é: o nome, o orgulho da costura
+ *   ("nada sai daquela porta sem eu aprovar"), o uniforme do Cookie e o
+ *   xadrez;
+ * - o BRINDE SAI DA MÃO DELA: um biscoitinho para CADA UM dos dois, e não um
+ *   para o casal. É a mesma regra dos sorvetes do Mano, e é o teste que
+ *   garante que o Renan não fique olhando o Ari comer;
+ * - a MESINHA DE XADREZ existe, está montada na calçada e é BAIXA o bastante
+ *   para não esconder a ovelha;
  * - ela VIRA para quem chega e DESVIRA quando a dupla vai embora, voltando a
  *   olhar para o parque (`+X`). O Mano já pagou esse bug: soltar o alvo sem
  *   mandar de volta deixa o bicho torto para sempre;
  * - ela BALE sozinha, pelo contador do motor de áudio.
  *
- * Uso: node scripts/ovelha.mjs /caminho/prefixo
+ * Uso: node scripts/estella.mjs /caminho/prefixo
  */
 import { chromium } from 'playwright';
 
-const OUT = process.argv[2] ?? './ovelha';
+const OUT = process.argv[2] ?? './estella';
 const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-/** tem que bater com o `OVELHA` da cena */
+/** tem que bater com o `ESTELLA` da cena */
 const POSTO = { x: -32.6, z: -16.5 };
 /** a fachada da loja, para a conta do toldo */
 const FACHADA_X = -34.8;
@@ -77,22 +82,22 @@ await page.waitForTimeout(600);
  */
 await page.evaluate(() => {
   window.jogo.scene.traverse((o) => {
-    if (!window.__ovelha && o.userData?.peca === 'ovelha') window.__ovelha = o;
+    if (!window.__estella && o.userData?.peca === 'estella') window.__estella = o;
   });
 });
 
-const aOvelha = () => page.evaluate(() => {
-  const o = window.__ovelha;
+const aEstella = () => page.evaluate(() => {
+  const o = window.__estella;
   if (!o) return null;
   return {
     onde: [+o.position.x.toFixed(2), +o.position.z.toFixed(2)],
     giro: +o.rotation.y.toFixed(2),
-    temCabeca: !!o.getObjectByName('cabeca-da-ovelha'),
+    temCabeca: !!o.getObjectByName('cabeca-da-estella'),
   };
 });
 
 // ================================================ 1. ela existe, e está no posto
-const nasceu = await aOvelha();
+const nasceu = await aEstella();
 
 /**
  * NADA ALTO ENTRE ELA E A CÂMERA.
@@ -150,12 +155,12 @@ const tapando = await page.evaluate(([ox, oz, alta]) => {
 
 // ==================================================== 2. o prompt anda com ela
 const grudado = await page.evaluate(() => {
-  const it = window.jogo.current.world.interactables.find((i) => i.id === 'parque:ovelha');
-  const o = window.__ovelha;
+  const it = window.jogo.current.world.interactables.find((i) => i.id === 'parque:estella');
+  const o = window.__estella;
   if (!it || !o) return null;
   return {
     doPrompt: [+it.x.toFixed(3), +it.z.toFixed(3)],
-    daOvelha: [+o.position.x.toFixed(3), +o.position.z.toFixed(3)],
+    daEstella: [+o.position.x.toFixed(3), +o.position.z.toFixed(3)],
   };
 });
 
@@ -166,9 +171,20 @@ const deColado = await prompt();
 
 await page.keyboard.press('KeyE');
 await page.waitForTimeout(900);
+/*
+ * A APRESENTAÇÃO VEM EM BLOCOS, e `venceAFala` desiste no primeiro silêncio —
+ * entre um `conversa` e o seguinte a caixa some por um quadro, e o teste
+ * enxergava só o primeiro bloco (dava a Estella por muda sobre o xadrez, que é
+ * o último). Três rodadas cobrem os quatro blocos dela, e a última também
+ * espera o diário fechar a cena.
+ */
 const apresentacao = await venceAFala();
+for (let volta = 0; volta < 3; volta++) {
+  await page.waitForTimeout(900);
+  for (const f of await venceAFala()) if (!apresentacao.includes(f)) apresentacao.push(f);
+}
 await page.waitForTimeout(900);
-const encarando = await aOvelha();
+const encarando = await aEstella();
 
 /**
  * A FOTO DE PERTO É OBRIGATÓRIA, e é ela que prova o modelo: de longe qualquer
@@ -185,7 +201,7 @@ const encarando = await aOvelha();
  */
 await page.evaluate(([x, z]) => {
   window.jogo.debugPlace(x + 9, z + 8, 0);
-  window.jogo.focusCamera(window.__ovelha);
+  window.jogo.focusCamera(window.__estella);
   window.jogo.setZoom(2.6);
 }, [POSTO.x, POSTO.z]);
 await page.waitForTimeout(2400);
@@ -200,13 +216,13 @@ await page.evaluate(() => window.jogo.focusCamera(null));
 await irPara(POSTO.x + 9, POSTO.z + 7);
 await page.evaluate(() => window.jogo.setZoom(11));
 await page.waitForTimeout(3000);
-const desvirou = await aOvelha();
+const desvirou = await aEstella();
 await page.screenshot({ path: `${OUT}-posto.png` });
 
 // ================================================ 5. ela não sai do posto, e bale
 const trilha = [];
 for (let i = 0; i < 14; i++) {
-  const o = await aOvelha();
+  const o = await aEstella();
   if (o) trilha.push(o.onde);
   await page.waitForTimeout(700);
 }
@@ -215,6 +231,31 @@ const balidos = await page.evaluate(
   () => Object.fromEntries(window.jogo.audio.contagem).balido ?? 0,
 );
 
+/*
+ * O BRINDE E A MESINHA. O biscoito e medido POR PESSOA — um para cada, e nao um
+ * para o casal —, e a mesinha e medida pela ALTURA: peca alta na calcada, do
+ * lado da camera, esconde quem esta atras dela (1,5 vez a propria altura).
+ */
+const brinde = await page.evaluate(() => ({
+  doAri: window.jogo.hasItem('biscoito-estella', 'ari'),
+  doRenan: window.jogo.hasItem('biscoito-estella', 'renan'),
+}));
+const mesinha = await page.evaluate(() => {
+  let m = null;
+  window.jogo.scene.traverse((o) => {
+    if (!m && o.userData?.peca === 'mesinha-de-xadrez') m = o;
+  });
+  if (!m) return null;
+  let alto = 0;
+  m.traverse((n) => {
+    if (!n.isMesh) return;
+    n.updateWorldMatrix(true, false);
+    alto = Math.max(alto, n.matrixWorld.elements[13]);
+  });
+  m.updateWorldMatrix(true, false);
+  return { x: +m.matrixWorld.elements[12].toFixed(1), z: +m.matrixWorld.elements[14].toFixed(1), alto: +alto.toFixed(2) };
+});
+
 const noDiario = await page.evaluate(() => {
   const save = JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}');
   return (save.unlocks ?? save.memories ?? []).map((m) => m.id ?? m);
@@ -222,7 +263,7 @@ const noDiario = await page.evaluate(() => {
 
 // ======================================================================= laudo
 const falhas = [];
-if (!nasceu) falhas.push('a ovelha nao esta na cena');
+if (!nasceu) falhas.push('a Estella nao esta na cena');
 else {
   if (Math.hypot(nasceu.onde[0] - POSTO.x, nasceu.onde[1] - POSTO.z) > 0.3) {
     falhas.push(`ela nao nasceu no posto: ${JSON.stringify(nasceu.onde)}`);
@@ -240,15 +281,28 @@ if (tapando.length) {
   falhas.push(`tem coisa alta na frente dela, escondendo ela: ${JSON.stringify(tapando[0])}`);
 }
 if (!grudado) falhas.push('nao achei o ponto de interacao dela');
-else if (Math.hypot(grudado.doPrompt[0] - grudado.daOvelha[0], grudado.doPrompt[1] - grudado.daOvelha[1]) > 0.2) {
+else if (Math.hypot(grudado.doPrompt[0] - grudado.daEstella[0], grudado.doPrompt[1] - grudado.daEstella[1]) > 0.2) {
   falhas.push(`o prompt nao esta em cima dela: ${JSON.stringify(grudado)}`);
 }
-if (!/ovelha/i.test(deColado)) falhas.push(`perto dela o prompt nao e o dela: "${deColado}"`);
-if (!apresentacao.some((f) => /ovelha/i.test(f))) falhas.push('a apresentacao dela nao aconteceu');
-if (!apresentacao.some((f) => /costureira|alfinete|fita/i.test(f))) {
-  falhas.push('a apresentacao nao diz que ela e a costureira da loja');
+if (!/estella/i.test(deColado)) falhas.push(`perto dela o prompt nao e o dela: "${deColado}"`);
+if (!apresentacao.some((f) => /Estella/.test(f))) falhas.push('ela nao disse o nome dela');
+if (!apresentacao.some((f) => /aprovar|costureira/i.test(f))) {
+  falhas.push('a apresentacao nao diz que nada sai da loja sem ela aprovar');
 }
-if (!noDiario.includes('ovelha-da-lojinha')) falhas.push('ela nao entrou no diario');
+if (!apresentacao.some((f) => /Cookie/i.test(f))) {
+  falhas.push('ela nao contou que fez o uniforme do Cookie');
+}
+if (!apresentacao.some((f) => /xadrez|tabuleiro/i.test(f))) {
+  falhas.push('ela nao falou do xadrez');
+}
+if (!brinde.doAri || !brinde.doRenan) {
+  falhas.push(`o biscoitinho nao saiu para os dois: ${JSON.stringify(brinde)}`);
+}
+if (!mesinha) falhas.push('a mesinha de xadrez nao esta na calcada');
+else if (mesinha.alto > 1.2) {
+  falhas.push(`a mesinha de xadrez ficou alta demais e esconde a ovelha (${mesinha.alto})`);
+}
+if (!noDiario.includes('estella-da-lojinha')) falhas.push('ela nao entrou no diario');
 if (encarando && Math.abs(encarando.giro - (nasceu?.giro ?? 0)) < 0.1) {
   falhas.push(`ela nao virou para quem chegou (giro ${encarando.giro})`);
 }
@@ -264,7 +318,8 @@ console.log('2. prompt grudado:', JSON.stringify(grudado));
 console.log('3. prompt de perto:', JSON.stringify(deColado));
 console.log('   apresentacao:', JSON.stringify(apresentacao));
 console.log('   giro: nasceu', nasceu?.giro, '· encarando', encarando?.giro, '· desvirou', desvirou?.giro);
-console.log('4. diario:', JSON.stringify(noDiario.filter((i) => /ovelha|loj/i.test(i))));
+console.log('4. brinde:', JSON.stringify(brinde), '· mesinha:', JSON.stringify(mesinha));
+console.log('   diario:', JSON.stringify(noDiario.filter((i) => /estella|loj/i.test(i))));
 console.log('5. pontos fora do posto:', longeDoPosto.length, 'de', trilha.length, '· balidos:', balidos);
 
 await browser.close();

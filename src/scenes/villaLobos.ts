@@ -8,6 +8,7 @@ import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PingPong } from '../entities/PingPong';
 import {
   aroDeFrisbee, bin, bleachers, bonecoDeNeve, bordaDeGelo, building, bus, busStop, bush,
+  cestaDeBiscoitos, mesinhaDeXadrez,
   canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro, duck,
   fence, floodlight, flowers, iceCream, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
   mesaPingPong, nenufar, picnicTable, posteDeGelo, raquete, skateShop,
@@ -18,7 +19,7 @@ import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
 import { asfalto, calcadaDePedrinha, gelo, tapeteDeGrama } from '../world/texturasDeChao';
 import { Mano } from '../entities/bichos/Mano';
-import { Ovelha } from '../entities/bichos/Ovelha';
+import { Estella } from '../entities/bichos/Estella';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -1120,86 +1121,154 @@ export const villaLobos: SceneDef = {
     w.patch(-33.2, -15, 4.4, 16, P.concrete, 0, 0.015, calcadaDePedrinha());
 
     /**
-     * ------------------------------------------- A OVELHA QUE CUIDA DA LOJA
+     * ---------------------------------- A ESTELLA, A OVELHA QUE CUIDA DA LOJA
      *
-     * Pedido do Renan: "quem vai cuidar dessa loja vai ficar na frente parado,
-     * será uma ovelha". O NOME dela ele ainda não escolheu — por isso nada aqui
-     * escreve nome nenhum, nem o rótulo, nem a fala, nem o diário.
+     * O nome e o jeito sao do Renan: ela tem MUITO orgulho das roupinhas que
+     * cria, e e obcecada por elas — nenhum modelo sai da loja sem passar pela
+     * aprovacao dela. E ela adora dar brinde em docinho: foi ela que fez o
+     * uniforme de bilheteiro do Cookie, e no dia da entrega deu um biscoitinho
+     * pra ele. Ele amou.
      *
-     * ONDE ELA FICA saiu de uma conta que já estava escrita no prédio: o toldo
-     * avança 1,05 da fachada, e a câmera de 34° faz cada peça esconder 1,5 vez
-     * a própria altura de chão atrás dela — quem ficar debaixo do toldo aparece
-     * decapitado. A fachada está em `x = −34,8`, então qualquer coisa a mais de
-     * 2 dali aparece inteira. Ela está a 2,2, na calçada (que vai de −35,4 a
+     * ONDE ELA FICA saiu de uma conta que ja estava escrita no predio: o toldo
+     * avanca 1,05 da fachada, e a camera de 34° faz cada peca esconder 1,5 vez
+     * a propria altura de chao atras dela — quem ficar debaixo do toldo aparece
+     * decapitado. A fachada esta em `x = −34,8`, entao qualquer coisa a mais de
+     * 2 dali aparece inteira. Ela esta a 2,2, na calcada (que vai de −35,4 a
      * −31), bem na frente da porta.
      *
-     * ELA OLHA PARA `+X`, que é para o resto do parque: de costas para a
-     * vitrine e de frente para quem chega, como todo lojista de porta de loja.
+     * ELA OLHA PARA `+X`, que e para o resto do parque: de costas para a
+     * vitrine e de frente para quem chega, como toda lojista de porta de loja.
      *
-     * A ÁREA É MENOR QUE O PASSO MÍNIMO do cérebro (0,7), e é só isso que a
+     * A AREA E MENOR QUE O PASSO MINIMO do cerebro (0,7), e e so isso que a
      * segura no posto — a mesma coleira da Gina na portaria e do Mano no
-     * quiosque. Nenhuma linha de cérebro mudou por causa dela.
+     * quiosque. Nenhuma linha de cerebro mudou por causa dela.
      */
-    const OVELHA = { x: -32.6, z: -16.5 };
-    const ovelha = new Ovelha({
-      minX: OVELHA.x - 0.12, maxX: OVELHA.x + 0.12,
-      minZ: OVELHA.z - 0.12, maxZ: OVELHA.z + 0.12,
+    const ESTELLA = { x: -32.6, z: -16.5 };
+    const estella = new Estella({
+      minX: ESTELLA.x - 0.12, maxX: ESTELLA.x + 0.12,
+      minZ: ESTELLA.z - 0.12, maxZ: ESTELLA.z + 0.12,
     });
-    ovelha.group.rotation.y = Math.PI / 2;
-    w.add(ovelha.group);
-    ovelha.aoSoar = () => g.som('balido');
+    estella.group.rotation.y = Math.PI / 2;
+    w.add(estella.group);
+    estella.aoSoar = () => g.som('balido');
 
     /*
-     * AS FALAS SÃO MINHAS, e provisórias: as do Renan vão literais quando ele
-     * mandar, e o nome dela entra aqui junto. Elas dizem duas coisas de
-     * propósito — que ela é a costureira (é o que o modelo mostra) e que a loja
-     * AINDA não abriu, porque entrar para comprar roupa é o próximo pedaço.
+     * A CESTA DE BISCOITO FICA DO LADO DELA, e ela existe para o brinde nao sair
+     * do nada: quando a Estella entrega um biscoitinho, ele vem de um lugar que
+     * ja estava ali na tela. Ela vai no `+Z` (o lado da camera) e um pouco a
+     * frente, fora da sombra do toldo pela mesma conta que vale para a ovelha.
      */
-    const FALAS_DA_OVELHA = [
-      'Ela mediu você com os olhos. Do ombro até o pulso.',
-      'A fita métrica no pescoço dela balançou junto.',
-      'Ó o óculos escorregando no focinho.',
-      'Ela ficou tão fofinha que eu quase esqueci da loja.',
-      'Acho que ela já sabe o seu número.',
+    w.add(w.place(cestaDeBiscoitos(), ESTELLA.x + 0.25, 0, ESTELLA.z + 1.05, 0.3));
+
+    /*
+     * A MESINHA DE XADREZ, a outra paixao dela (o Renan contou depois): fica na
+     * calcada, do lado de la da ovelha, com uma partida no meio esperando
+     * adversario. Ela vai a 2,2 dela pelo `−Z`, longe o bastante para nao
+     * roubar o prompt de falar (raio 1,3) e perto o bastante para ler como
+     * "aquilo ali e dela".
+     *
+     * E ela e BAIXA (0,66 no tampo): pela conta da camera esconde 1,5 × 0,66 ≈
+     * 1 de chao atras de si, e a ovelha esta no `+Z` dela — na frente, do lado
+     * da camera. Mesinha nenhuma tapa costureira nenhuma.
+     */
+    const XADREZ = { x: ESTELLA.x - 0.15, z: ESTELLA.z - 2.2 };
+    w.add(w.place(mesinhaDeXadrez(), XADREZ.x, 0, XADREZ.z, -0.35));
+    w.blockBox(XADREZ.x, XADREZ.z, 1.7, 1.0, -0.35);
+
+    const E = 'Estella';
+    /*
+     * O QUE ELA FALA depois de apresentada, e sao as duas obsessoes dela: a
+     * roupa que ela mesma fez e o docinho. Nada aqui promete a loja aberta —
+     * entrar para comprar e o proximo pedaco.
+     */
+    const FALAS_DA_ESTELLA = [
+      'Essa costura aqui? Minha. Ponto por ponto.',
+      'Nada sai desta porta sem eu aprovar. Nada.',
+      'Deixa eu ver essa manga... hm. Podia subir dois dedos.',
+      'Come um biscoitinho. Come, vai.',
+      'Eu meço vocês dois de olho fechado, viu.',
+      'Roupa boa é roupa que a pessoa esquece que tá usando.',
+      'Tá vendo aquele tabuleiro? Tá esperando vocês.',
+      'Eu jogo de brancas, mas dou as pretas pra vocês. Sou boa demais.',
+      'Costura e xadrez é a mesma coisa: é ver o final antes de começar.',
     ];
-    const carinhoNaOvelha = w.interact({
-      id: 'parque:ovelha',
-      x: ovelha.x, z: ovelha.z, radius: 1.3,
-      label: 'Falar com a ovelha da loja', icon: '🐑',
-      highlight: ovelha.group,
+    const falarComEstella = w.interact({
+      id: 'parque:estella',
+      x: estella.x, z: estella.z, radius: 1.3,
+      label: 'Falar com a Estella', icon: '🐑',
+      highlight: estella.group,
       onInteract: async (api) => {
         const eu = api.playerPosition();
-        ovelha.encarar(eu.x, eu.z);
-        ovelha.receberCarinho();
+        estella.encarar(eu.x, eu.z);
+        estella.receberCarinho();
         api.som('balido');
-        if (!api.flag('ovelha-conhecida')) {
-          api.setFlag('ovelha-conhecida');
+        if (!api.flag('estella-conhecida')) {
+          api.setFlag('estella-conhecida');
           await conversa([
-            [R, 'Tem uma loja de roupas no meio do parque.'],
-            [A, 'Tem uma OVELHA na porta da loja de roupas.'],
-            [R, 'De óculos. E com fita métrica no pescoço.'],
-            [A, 'Ela é a costureira, Renan. Olha a almofada de alfinete nas costas dela.'],
-            [R, 'A loja ainda está fechada.'],
-            [A, 'Ela balançou a cabeça. Acho que é "logo, logo".'],
+            [R, 'Tem uma ovelha de óculos na porta da loja.'],
+            [E, 'Tem uma COSTUREIRA de óculos na porta da loja dela. Estella.'],
+            [A, 'Oi, Estella.'],
+            [E, 'Oi, meus amores. Vocês repararam na vitrine? Repararam?'],
+            [E, 'Eu que fiz. Tudo. Cada bainha daquilo passou por aqui ó, por este olho.'],
+            [R, 'A senhora faz roupa pro parque inteiro?'],
+            [E, 'Faço. E nada sai daquela porta sem eu aprovar. NADA.'],
+          ]);
+          /*
+           * O UNIFORME DO COOKIE E DELA, e e por isso que a manta, o quepe e o
+           * cracha dele saem nas cores da bilheteria: quem costurou foi ela.
+           * Esta fala e a costura entre as duas fichas.
+           */
+          await conversa([
+            [E, 'Viu o elefante da bilheteria? A mantinha dele, o quepe, o crachá.'],
+            [A, 'O Cookie.'],
+            [E, 'O Cookie. Aquilo é meu. Provei três vezes na orelha dele até cair certo.'],
+            [E, 'E quando ficou pronto eu dei um biscoitinho pra ele. Ele quase chorou.'],
+            [R, 'Biscoitinho?'],
+          ]);
+          /*
+           * E ELA JA DA O BRINDE. Um para cada — a mesma regra dos sorvetes do
+           * Mano: o que decide nao e o sabor, e de quem e a mao.
+           */
+          estella.oferecerBiscoito(4);
+          api.addItem(ITENS.biscoitoDaEstella, ARI.id);
+          api.addItem(ITENS.biscoitoDaEstella, RENAN.id);
+          api.som('sorvete');
+          api.toast('Biscoitinho da Estella', '🍪');
+          await conversa([
+            [E, 'Biscoitinho. Toma, um pra cada. Ninguém sai da minha porta de mão vazia.'],
+            [A, 'Obrigado, Estella.'],
+            [E, 'Voltem quando eu abrir. Vou vestir vocês dois de cima a baixo.'],
+          ]);
+          /*
+           * E O TABULEIRO. Ela mesma aponta para a mesinha que ja estava ali na
+           * calcada — o objeto veio primeiro, a fala explica.
+           */
+          await conversa([
+            [R, 'A senhora tem um tabuleiro de xadrez montado ali fora.'],
+            [E, 'Tenho. Montado e no meio de uma partida, que é como eu gosto.'],
+            [E, 'Ninguém aqui joga comigo. O elefante é grande demais pra cadeirinha, o pinguim derruba as peças.'],
+            [A, 'A gente joga.'],
+            [E, 'AH. Vocês jogam?'],
+            [E, 'Então guarda esse biscoito pra depois da partida. Eu volto pra esse tabuleiro todo dia.'],
           ]);
           api.unlock({
-            id: 'ovelha-da-lojinha',
-            title: 'A ovelha da lojinha',
+            id: 'estella-da-lojinha',
+            title: 'A Estella',
             place: 'Parque Villa Lobos',
-            note: 'A costureira que cuida da loja de roupas do parque: óculos de meia-lua, fita métrica no pescoço e uma almofada de alfinete espetada na lã. Ela ainda não nos disse o nome dela.',
+            note: 'A ovelha costureira da lojinha de roupas do parque: óculos de meia-lua, fita métrica no pescoço e alfinete espetado na lã. Tem orgulho de cada costura que faz — nada sai da loja sem a aprovação dela — e não deixa ninguém ir embora sem um biscoitinho. O uniforme do Cookie é dela. E ela ama xadrez: tem um tabuleiro montado na calçada, sempre no meio de uma partida, esperando alguém sentar.',
             icon: '🐑',
           });
           return;
         }
-        await api.say([w.pick(FALAS_DA_OVELHA)], A);
+        await api.say([w.pick(FALAS_DA_ESTELLA)], E);
       },
     });
 
     w.onUpdate((dt) => {
-      ovelha.update(dt);
+      estella.update(dt);
       // ela quase não sai do lugar, mas "quase" não é "nunca": sem isto o ponto
       // fica onde ela nasceu e a conversa vira um buraco na calçada
-      carinhoNaOvelha.moveTo(ovelha.x, ovelha.z);
+      falarComEstella.moveTo(estella.x, estella.z);
       /*
        * LONGE DELA, ELA VOLTA A OLHAR A RUA — e o jeito de fazer isso é mandar
        * ela encarar um ponto lá no `+X`, e não largar o alvo: `pararDeEncarar`
@@ -1207,8 +1276,8 @@ export const villaLobos: SceneDef = {
        * último cliente a deixou. Foi o que o Mano já pagou no quiosque.
        */
       const eu = g.playerPosition();
-      if (Math.hypot(eu.x - ovelha.x, eu.z - ovelha.z) > 4) {
-        ovelha.encarar(OVELHA.x + 5, OVELHA.z);
+      if (Math.hypot(eu.x - estella.x, eu.z - estella.z) > 4) {
+        estella.encarar(ESTELLA.x + 5, ESTELLA.z);
       }
     });
 
@@ -2840,6 +2909,38 @@ export const villaLobos: SceneDef = {
               place: 'Parque Villa Lobos',
               note: 'O elefante que vende os bilhetes da roda gigante. Bonzinho, meio sem jeito do próprio tamanho, e apaixonado por doce pequenininho. Sonha em subir na roda — nunca coube numa cabine.',
               icon: '🐘',
+            });
+          } else if (api.flag('estella-conhecida') && !api.flag('cookie-falou-do-uniforme')) {
+            /**
+             * O LADO DELE DA MESMA HISTORIA, uma vez so.
+             *
+             * A Estella conta que fez o uniforme dele e deu um biscoitinho; o
+             * Cookie conta o que aquilo significou. A fala so existe depois de
+             * conhecer os dois, porque antes disso ela seria um elefante
+             * falando de uma ovelha que ninguem viu.
+             *
+             * ELE OLHA PARA O PROPRIO QUEPE enquanto fala — `olharProAlto` e o
+             * gesto que ele ja tem, e aqui ele serve de novo: cabeca e tromba
+             * subindo, so que agora e orgulho, e nao sonho.
+             */
+            api.setFlag('cookie-falou-do-uniforme');
+            cookie.olharProAlto(5);
+            await conversa([
+              [C, 'Vocês foram lá na ovelha, né? Na Estella.'],
+              [A, 'Fomos.'],
+              [C, 'Isso aqui é dela.'],
+              [C, 'A manta, o quepe, o crachá com o meu nome. Ela mediu a minha orelha três vezes.'],
+              [C, 'Nunca ninguém tinha feito roupa do meu tamanho. Sempre é "não temos". Sempre.'],
+              [R, 'E ficou bom.'],
+              [C, 'Ficou. E no dia que ficou pronto ela me deu um biscoitinho.'],
+              [C, 'Eu guardei metade pro dia seguinte. Só pra ter de novo no dia seguinte.'],
+            ]);
+            api.unlock({
+              id: 'uniforme-do-cookie',
+              title: 'O uniforme do Cookie',
+              place: 'Parque Villa Lobos',
+              note: 'A Estella costurou a manta, o quepe e o crachá do Cookie nas cores da bilheteria dele, e mediu a orelha três vezes até cair certo. Foi a primeira roupa feita do tamanho dele. No dia da entrega ela deu um biscoitinho, e ele guardou metade pro dia seguinte.',
+              icon: '🧵',
             });
           } else {
             await api.say([w.pick(OI_DO_COOKIE)], C);

@@ -4137,6 +4137,285 @@ export function osso(cor: number = P.osso): THREE.Group {
 }
 
 /**
+ * O BISCOITINHO DA ESTELLA — o brinde que sai junto com a roupa.
+ *
+ * Ele nasce ITEM DE MAO (é o que ela dá pra dupla), e por isso é pequeno: 9 cm
+ * de diâmetro, o tamanho de uma coisa que cabe na mão de alguém de 1,75 sem
+ * virar um disco de frisbee.
+ *
+ * O QUE FAZ UM CILINDRO VIRAR BISCOITO são as GOTAS. Um disco liso cor de massa
+ * é uma ficha de pôquer; as gotas de chocolate — meia esfera afundada na massa,
+ * espalhadas sem simetria — são o desenho todo. A borda um tom mais escura é o
+ * assado, e é o que tira a cara de plástico.
+ *
+ * O PINGO ROSA NO MEIO é a assinatura da loja: doce que sai daquela porta vem
+ * com o rosa do toldo.
+ */
+export function biscoitoDaEstella(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'biscoito';
+
+  const massa = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.043, 0.016, 14), toon(P.biscoitoMassa));
+  g.add(massa);
+  // a borda: um anel um fio maior e mais escuro, e mais BAIXO que a massa —
+  // dois cilindros do mesmo raio dividiriam superfície e brigariam pelo pixel
+  const borda = new THREE.Mesh(new THREE.TorusGeometry(0.044, 0.007, 5, 16), toon(P.biscoitoBorda));
+  borda.rotation.x = Math.PI / 2;
+  borda.position.y = -0.002;
+  g.add(borda);
+
+  // as gotas, em ângulos e raios diferentes: em coroa regular vira botão de
+  // camisa. Meia esfera, afundada até a metade na massa
+  for (const [ang, raio] of [[0.4, 0.02], [1.9, 0.026], [3.3, 0.014], [4.6, 0.028], [5.7, 0.019]] as const) {
+    const gota = new THREE.Mesh(new THREE.SphereGeometry(0.009, 8, 6), toon(P.biscoitoGota));
+    gota.position.set(Math.cos(ang) * raio, 0.007, Math.sin(ang) * raio);
+    gota.scale.y = 0.8;
+    g.add(gota);
+  }
+
+  const pingo = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 6), toon(P.lojaToldo));
+  pingo.scale.y = 0.55;
+  pingo.position.y = 0.009;
+  g.add(pingo);
+  return g;
+}
+
+/**
+ * A CESTA DE BISCOITOS que fica ao lado da Estella, na porta da loja.
+ *
+ * Ela existe para o brinde não sair do nada: a ovelha dá um biscoitinho pra
+ * quem passa, e a cesta é de onde ele vem. Mesma regra dos props de posto — o
+ * objeto explica a fala antes de a fala acontecer.
+ *
+ * É RASA E ABERTA, de propósito. A câmera olha de 34°: cesta funda com tampa
+ * mostraria a tampa e mais nada, e o que precisa aparecer é o MONTE DE
+ * BISCOITO dentro. Por isso a parede vai só até a metade da altura dos
+ * biscoitos empilhados.
+ */
+export function cestaDeBiscoitos(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cesta-de-biscoitos';
+
+  /**
+   * ELA MORA EM CIMA DE UM CAIXOTE, e isso nasceu de uma foto: no chão, a cesta
+   * saía como um pratinho esquecido na calçada. A câmera olha de 34° e o que
+   * está no piso aparece de topo, achatado — para uma peça de 20 cm ser LIDA
+   * ela precisa de altura, não de tamanho.
+   *
+   * O caixote sobe 0,42 (altura de banquinho) e a cesta chega perto da linha do
+   * lombo da ovelha, que é onde o olho já está quando olha para ela.
+   */
+  const madeira = toon(P.wood);
+  /*
+   * AS LATERAIS CABEM ENTRE A FRENTE E O FUNDO (0,38 contra 0,42), e não é
+   * capricho de marceneiro: com as quatro do mesmo tamanho, as pontas se
+   * cruzam num quadradinho de 1 cm² nos quatro cantos, e ali as tampas de
+   * cima e de baixo das duas ficam no MESMO plano olhando para o MESMO lado —
+   * que é a definição de z-fighting. O `scripts/zfighting.mjs` pegou os oito
+   * pares.
+   */
+  for (const [lx, lz, larg, fundo] of [
+    [0, -0.21, 0.42, 0.02], [0, 0.21, 0.42, 0.02],
+    [-0.21, 0, 0.02, 0.38], [0.21, 0, 0.02, 0.38],
+  ] as const) {
+    const parede = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.42, fundo), madeira);
+    parede.position.set(lx, 0.21, lz);
+    g.add(parede);
+  }
+  const tampoDoCaixote = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.03, 0.46), toon(P.woodDark));
+  tampoDoCaixote.position.y = 0.435;
+  g.add(tampoDoCaixote);
+  const cesta = new THREE.Group();
+  cesta.position.y = 0.45;
+  cesta.scale.setScalar(1.35);
+  g.add(cesta);
+
+  const palha = toon(P.cestaPalha);
+  /*
+  * A CESTA E ESTREITA (0,17 na boca) e os biscoitos passam DA BORDA. Com 0,19 e
+  * a pilha afundada, a foto de perto voltou com um pratinho de pano rosa e umas
+  * pintinhas dentro: o que se lê numa cesta de doce é o MONTE, e monte precisa
+  * transbordar.
+  */
+  const parede = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.17, 0.14, 0.11, 16, 1, true),
+    toon(P.cestaPalha, { doubleSide: true }),
+  );
+  parede.position.y = 0.055;
+  cesta.add(parede);
+  const fundo = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.012, 16), palha);
+  fundo.position.y = 0.006;
+  cesta.add(fundo);
+  // a borda trançada: um toro no alto da parede, que é o que diz "cesta" e não
+  // "balde"
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.016, 5, 18), palha);
+  aro.rotation.x = Math.PI / 2;
+  aro.position.y = 0.11;
+  cesta.add(aro);
+
+  // o paninho da loja forrando a cesta, aparecendo por dentro do aro
+  const pano = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.13, 0.05, 16), toon(P.lojaToldo));
+  pano.position.y = 0.065;
+  cesta.add(pano);
+
+  // e os biscoitos, meio tortos, empilhados sem ordem: pilha reta vira fichas
+  for (const [x, z, y, giro, tomba] of [
+    [-0.07, -0.04, 0.115, 0.4, 0.18], [0.06, -0.06, 0.118, 1.9, -0.22],
+    [0.03, 0.07, 0.113, 3.1, 0.14], [-0.03, 0.02, 0.15, 5.0, -0.3],
+    [0.05, 0.02, 0.155, 2.2, 0.34], [-0.01, -0.05, 0.152, 4.1, -0.12],
+  ] as const) {
+    const b = biscoitoDaEstella();
+    b.position.set(x, y, z);
+    b.rotation.set(tomba, giro, tomba * 0.6);
+    cesta.add(b);
+  }
+  return g;
+}
+
+/**
+ * A MESINHA DE XADREZ da Estella, na calçada da lojinha.
+ *
+ * O Renan contou que ela AMA jogar xadrez, e uma paixão que não aparece na tela
+ * não existe: a mesinha fica na porta da loja, montada, esperando adversário —
+ * do mesmo jeito que a cesta de biscoito explica o brinde antes de a fala
+ * acontecer.
+ *
+ * O TABULEIRO É DE VERDADE (8×8, casas alternadas), e isso importa: um quadrado
+ * com quatro riscos lê como mesinha de bar. As casas são placas RASAS por cima
+ * do tampo (0,006), e não faces coplanares com ele — duas superfícies no mesmo
+ * plano brigam pelo pixel, e xadrez é o pior lugar possível para isso
+ * acontecer.
+ *
+ * AS PEÇAS SÃO TORNEADAS, não cones: base, colarinho e cabeça, cada uma com o
+ * seu perfil (o peão é uma bolinha; a torre é reta com ameia; o rei tem a
+ * cruzinha em cima). Três alturas diferentes já dizem "jogo em andamento" de
+ * longe. E o tabuleiro está NO MEIO de uma partida, com peça faltando dos dois
+ * lados — tabuleiro cheio e arrumado lê como enfeite; tabuleiro pela metade lê
+ * como alguém que vai voltar pra jogada.
+ */
+export function mesinhaDeXadrez(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesinha-de-xadrez';
+
+  const madeira = toon(P.wood);
+  const escura = toon(P.woodDark);
+
+  // ------------------------------------------------------------------ a mesa
+  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 20), madeira);
+  tampo.position.y = 0.6;
+  g.add(tampo);
+  const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.075, 0.58, 10), escura);
+  pe.position.y = 0.29;
+  g.add(pe);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.045, 14), escura);
+  base.position.y = 0.022;
+  g.add(base);
+
+  // -------------------------------------------------------------- o tabuleiro
+  const CASA = 0.062;
+  const LADO = CASA * 8;
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(LADO + 0.06, 0.022, LADO + 0.06), escura);
+  moldura.position.y = 0.636;
+  g.add(moldura);
+  const claro = toon(P.lojaEsquadria);
+  const preto = toon(P.xadrezEscuro);
+  for (let l = 0; l < 8; l++) {
+    for (const c of [0, 1, 2, 3, 4, 5, 6, 7]) {
+      // só as casas escuras viram peça: as claras são a própria moldura clara
+      const casa = new THREE.Mesh(
+        new THREE.BoxGeometry(CASA, 0.006, CASA),
+        (l + c) % 2 === 0 ? claro : preto,
+      );
+      casa.position.set((c - 3.5) * CASA, 0.65, (l - 3.5) * CASA);
+      g.add(casa);
+    }
+  }
+
+  /**
+   * AS PEÇAS. `feitio` diz o perfil, e cada um é um torneado diferente — o que
+   * separa um peão de um rei na tela é a ALTURA e o que tem em cima, nessa
+   * ordem.
+   */
+  const peca = (feitio: 'peao' | 'torre' | 'bispo' | 'rei', cor: number): THREE.Group => {
+    const p = new THREE.Group();
+    const m = toon(cor);
+    const disco = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.021, 0.012, 10), m);
+    disco.position.y = 0.006;
+    p.add(disco);
+    const alturas = { peao: 0.032, torre: 0.042, bispo: 0.05, rei: 0.062 };
+    const h = alturas[feitio];
+    const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.016, h, 10), m);
+    corpo.position.y = 0.012 + h / 2;
+    p.add(corpo);
+    const topo = 0.012 + h;
+    if (feitio === 'peao') {
+      const bola = new THREE.Mesh(new THREE.SphereGeometry(0.013, 8, 6), m);
+      bola.position.y = topo + 0.008;
+      p.add(bola);
+    } else if (feitio === 'torre') {
+      const ameia = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.015, 0.014, 8), m);
+      ameia.position.y = topo + 0.006;
+      p.add(ameia);
+    } else if (feitio === 'bispo') {
+      const mitra = new THREE.Mesh(new THREE.ConeGeometry(0.014, 0.03, 8), m);
+      mitra.position.y = topo + 0.014;
+      p.add(mitra);
+      const bolinha = new THREE.Mesh(new THREE.SphereGeometry(0.006, 6, 5), m);
+      bolinha.position.y = topo + 0.032;
+      p.add(bolinha);
+    } else {
+      const coroa = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.013, 0.016, 8), m);
+      coroa.position.y = topo + 0.008;
+      p.add(coroa);
+      const cruz = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.022, 0.005), m);
+      cruz.position.y = topo + 0.027;
+      p.add(cruz);
+      /*
+       * O BRAÇO É MAIS GROSSO QUE A HASTE (0,009 contra 0,005 em `z`). Com os
+       * dois na mesma espessura, as duas faces de frente da cruz caem no mesmo
+       * plano e brigam pelo pixel — e uma cruz de rei tem 5 mm na tela, o pior
+       * tamanho possível para serrilhar.
+       */
+      const braco = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.005, 0.009), m);
+      braco.position.y = topo + 0.03;
+      p.add(braco);
+    }
+    return p;
+  };
+
+  // a partida no meio: peça faltando dos dois lados, e duas já avançadas
+  const NAS_CASAS: Array<[number, number, 'peao' | 'torre' | 'bispo' | 'rei', boolean]> = [
+    [0, 0, 'torre', true], [3, 0, 'rei', true], [5, 0, 'bispo', true],
+    [1, 1, 'peao', true], [2, 1, 'peao', true], [6, 1, 'peao', true],
+    [4, 3, 'peao', true],
+    [3, 4, 'peao', false],
+    [1, 6, 'peao', false], [5, 6, 'peao', false], [6, 6, 'peao', false],
+    [2, 7, 'bispo', false], [4, 7, 'rei', false], [7, 7, 'torre', false],
+  ];
+  for (const [c, l, feitio, brancas] of NAS_CASAS) {
+    const p = peca(feitio, brancas ? P.xadrezClaro : P.xadrezEscuro);
+    p.position.set((c - 3.5) * CASA, 0.653, (l - 3.5) * CASA);
+    g.add(p);
+  }
+
+  // as duas cadeirinhas: uma de cada lado, e a da ovelha fica virada pra loja
+  for (const lado of [-1, 1] as const) {
+    const banquinho = new THREE.Group();
+    const assento = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.04, 12), madeira);
+    assento.position.y = 0.34;
+    banquinho.add(assento);
+    for (const [px, pz] of [[-0.09, -0.09], [0.09, -0.09], [-0.09, 0.09], [0.09, 0.09]] as const) {
+      const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.34, 6), escura);
+      perna.position.set(px, 0.17, pz);
+      banquinho.add(perna);
+    }
+    banquinho.position.set(lado * 0.66, 0, 0);
+    g.add(banquinho);
+  }
+  return g;
+}
+
+/**
  * A PILHA DE LOUÇA SUJA que fica na mesa depois que o cliente vai embora.
  *
  * É o que o turno do Mania de Churrasco pede de volta ao balcão, e por isso
