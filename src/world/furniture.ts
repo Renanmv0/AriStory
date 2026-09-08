@@ -1459,3 +1459,782 @@ export function placaDeFachada(
   g.add(texto);
   return g;
 }
+
+/* ============================================================================
+ *                     O MIOLO DA LOJINHA DE ROUPAS
+ *
+ * As pecas de dentro da loja da Estella. Elas moram aqui, e nao em `props.ts`,
+ * pela regra do kit: `props.ts` e o de fora (arvore, poste, quiosque) e
+ * `furniture.ts` e o de dentro.
+ * ========================================================================== */
+
+/**
+ * Sorteio REPETIVEL, e e por isso que nao ha `Math.random()` aqui.
+ *
+ * Uma arara sorteada com `Math.random()` fica diferente a cada `npm run build`:
+ * a foto do teste nunca bate com a anterior, e "o que mudou?" passa a ser
+ * impossivel de responder olhando duas capturas. Com semente, a mesma arara sai
+ * igual em todo build — e continua variada, que e o que se queria de verdade.
+ * E o mesmo xorshift do resto do jogo (o cerebro dos bichos, a musica).
+ */
+function sorteio(semente: number): () => number {
+  let s = semente >>> 0 || 1;
+  return () => {
+    s ^= s << 13;
+    s ^= s >>> 17;
+    s ^= s << 5;
+    s >>>= 0;
+    return (s % 100000) / 100000;
+  };
+}
+
+/**
+ * AS COLECOES DA LOJA, e esta e a decisao que faz a arara parecer uma arara.
+ *
+ * Cada linha e uma familia de tons que conversam entre si, do jeito que uma
+ * loja de verdade agrupa a arara ("a coleção de outono", "os pasteis"). Sortear
+ * cor a cor entre as doze daria uma arara com doze cores diferentes — e isso na
+ * tela le como caixa de lapis de cor, nao como roupa a venda.
+ *
+ * A variedade vem de as ARARAS serem diferentes entre si, e nao as pecas dentro
+ * de uma arara. E a mesma regra de uma vitrine de verdade.
+ */
+export const COLECOES: readonly (readonly number[])[] = [
+  // os pasteis
+  [P.tecidoRosa, P.tecidoLilas, P.tecidoCeu, P.tecidoManteiga],
+  // o outono
+  [P.tecidoMostarda, P.tecidoCoral, P.tecidoVinho, P.tecidoPessego],
+  // os frios
+  [P.tecidoPetroleo, P.tecidoIndigo, P.tecidoCeu, P.tecidoMenta],
+  // a terra
+  [P.tecidoOliva, P.tecidoMostarda, P.tecidoManteiga, P.tecidoPessego],
+];
+
+export type TipoDePeca = 'camisa' | 'vestido' | 'calca' | 'casaco';
+
+/**
+ * UMA PECA DE ROUPA PENDURADA NO CABIDE.
+ *
+ * O truque de forma e o `CylinderGeometry` de QUATRO lados: ele e uma caixa que
+ * AFINA (raio de cima diferente do de baixo), e roupa e exatamente isso — a
+ * camisa abre do ombro para a barra, a saia abre muito mais, a calca fecha.
+ * Com `BoxGeometry` toda peca sairia com a mesma largura em cima e embaixo, que
+ * e o desenho de uma placa, nao de um pano.
+ *
+ * E toda peca e ACHATADA no eixo Z (`scale.z`): roupa no cabide e quase plana,
+ * e e essa espessura pequena que faz doze pecas caberem lado a lado numa arara
+ * sem virar um bloco macico.
+ */
+export function pecaPendurada(
+  tipo: TipoDePeca,
+  cor: number,
+  corDetalhe: number,
+): THREE.Group {
+  const g = new THREE.Group();
+  const pano = toon(cor);
+  const detalhe = toon(corDetalhe);
+  /** caixa que afina: 4 lados, girada 45° para as faces ficarem retas */
+  const tronco = (rCima: number, rBaixo: number, alt: number, mat: THREE.Material): THREE.Mesh => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rBaixo, rCima, alt, 4, 1), mat);
+    m.rotation.y = Math.PI / 4;
+    return m;
+  };
+
+  if (tipo === 'calca') {
+    // cos: a unica peca que pendura pela CINTURA, entao ela comeca larga e
+    // desce em duas pernas com um vao no meio
+    const cos = tronco(0.19, 0.2, 0.16, pano);
+    cos.position.y = -0.08;
+    cos.scale.z = 0.4;
+    g.add(cos);
+    for (const lado of [-1, 1] as const) {
+      const perna = tronco(0.1, 0.085, 0.62, pano);
+      perna.position.set(lado * 0.085, -0.47, 0);
+      perna.scale.z = 0.55;
+      g.add(perna);
+    }
+    const cinto = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.035, 0.13), detalhe);
+    cinto.position.y = -0.02;
+    g.add(cinto);
+    return g;
+  }
+
+  /*
+   * ------------------------------------------------- camisa, vestido e casaco
+   *
+   * A ESPESSURA (`scale.z`) FOI DE 0,42 PARA 0,55 depois da primeira foto de
+   * perto: com 0,42 a peca virava um recorte de papel — de perto dava para ver
+   * que a camisa nao tinha lado nenhum. Roupa no cabide e fina, mas nao e
+   * chapa.
+   *
+   * E O OMBRO E MAIS LARGO QUE O TOPO DO CORPO (0,22 contra 0,2): e a saliencia
+   * do ombro que a manga pendura POR BAIXO. Sem ela as mangas nasciam na mesma
+   * linha do tronco e liam como duas asas coladas no lado da peca.
+   */
+  const largo = tipo === 'casaco' ? 1.12 : 1;
+  const ombro = tronco(0.15 * largo, 0.22 * largo, 0.12, pano);
+  ombro.position.y = -0.06;
+  ombro.scale.z = 0.55;
+  g.add(ombro);
+
+  const corpoAlt = tipo === 'vestido' ? 0.3 : tipo === 'casaco' ? 0.56 : 0.44;
+  const corpo = tronco(0.21 * largo, (tipo === 'vestido' ? 0.17 : 0.24) * largo, corpoAlt, pano);
+  corpo.position.y = -0.12 - corpoAlt / 2;
+  corpo.scale.z = 0.55;
+  g.add(corpo);
+
+  if (tipo !== 'vestido') {
+    // a BARRA: um risco um degrau mais escuro no fim do pano. E o detalhe que
+    // faz a peca terminar em vez de simplesmente parar
+    const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.245 * largo, 0.245 * largo, 0.025, 4), detalhe);
+    barra.rotation.y = Math.PI / 4;
+    barra.position.y = -0.12 - corpoAlt;
+    barra.scale.z = 0.55;
+    g.add(barra);
+  }
+
+  if (tipo === 'vestido') {
+    // a saia abre MUITO (0,17 na cintura para 0,34 na barra): e a abertura que
+    // separa vestido de camisa comprida na silhueta de longe
+    const saia = tronco(0.17, 0.34, 0.42, pano);
+    saia.position.y = -0.63;
+    saia.scale.z = 0.58;
+    g.add(saia);
+    const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.345, 0.345, 0.03, 12), detalhe);
+    barra.position.y = -0.83;
+    barra.scale.z = 0.58;
+    g.add(barra);
+  }
+
+  // as MANGAS penduram do ombro, afastadas e inclinadas para fora: sem elas a
+  // peca e um retangulo, e retangulo pendurado nao le como camisa
+  const mangaAlt = tipo === 'casaco' ? 0.42 : 0.3;
+  for (const lado of [-1, 1] as const) {
+    const manga = tronco(0.075 * largo, 0.055 * largo, mangaAlt, pano);
+    manga.position.set(lado * 0.2 * largo, -0.16 - mangaAlt / 2, 0);
+    manga.rotation.z = lado * 0.22;
+    manga.scale.z = 0.55;
+    g.add(manga);
+  }
+
+  // a gola: um vao escuro no alto, que e onde o cabide entra
+  const gola = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.05, 10), detalhe);
+  gola.position.y = -0.02;
+  gola.scale.z = 0.5;
+  g.add(gola);
+
+  if (tipo === 'casaco') {
+    // duas lapelas e uma fila de botoes: e o que diz "casaco" e nao "camisa
+    // grande"
+    for (const lado of [-1, 1] as const) {
+      const lapela = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.24, 0.04), detalhe);
+      lapela.position.set(lado * 0.055, -0.16, 0.045);
+      lapela.rotation.z = lado * 0.16;
+      g.add(lapela);
+    }
+    for (let i = 0; i < 3; i++) {
+      const botao = new THREE.Mesh(new THREE.SphereGeometry(0.014, 6, 5), detalhe);
+      botao.position.set(0, -0.3 - i * 0.11, 0.05);
+      g.add(botao);
+    }
+  }
+  return g;
+}
+
+/** o cabide: o gancho, os dois ombros e a barra de baixo */
+function cabide(cor: number = P.lojaMetal): THREE.Group {
+  const g = new THREE.Group();
+  const m = toon(cor);
+  const gancho = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.008, 5, 12, Math.PI * 1.5), m);
+  gancho.position.y = 0.075;
+  gancho.rotation.z = Math.PI * 0.25;
+  g.add(gancho);
+  for (const lado of [-1, 1] as const) {
+    const ombro = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.012), m);
+    ombro.position.set(lado * 0.075, -0.01, 0);
+    ombro.rotation.z = lado * -0.28;
+    g.add(ombro);
+  }
+  const barra = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.01, 0.01), m);
+  barra.position.y = -0.055;
+  g.add(barra);
+  return g;
+}
+
+export interface AraraOpts {
+  largura?: number;
+  altura?: number;
+  /** qual familia de cores (indice em `COLECOES`); fora da lista, sorteia */
+  colecao?: number;
+  /** o que pendura nela */
+  tipos?: readonly TipoDePeca[];
+  /** semente do sorteio: mesma semente, mesma arara em todo build */
+  semente?: number;
+}
+
+/**
+ * ======================================== A ARARA DE ROUPAS
+ *
+ * Estrutura de metal (dois pes em T, dois montantes e a barra) com uma fila de
+ * cabides pendurados. E a peca que faz a loja parecer loja, e o que decide se
+ * ela fica bonita nao e a geometria — e a VARIACAO. Seis regras, e cada uma
+ * conserta um jeito diferente de a fila sair errada:
+ *
+ * 1. **A COR VEM DE UMA COLECAO**, nao do sorteio livre entre as doze. Arara
+ *    com doze cores le como caixa de lapis; tres ou quatro tons que conversam
+ *    leem como "a coleção de outono". A variedade fica entre as ARARAS.
+ * 2. **UMA PECA DESTOA de proposito.** Uma so, sorteada, sai de outra coleção:
+ *    e a peça que o olho acha primeiro, e sem ela a arara fica monotona mesmo
+ *    com quatro tons.
+ * 3. **CADA CABIDE GIRA UM POUCO** (±0,3 rad). Roupa pendurada nunca esta toda
+ *    paralela, e este e o detalhe que mais faz a fila parecer mexida por gente.
+ * 4. **AS ALTURAS DIFEREM** em centimetros, e os espacamentos tambem. Fila
+ *    perfeitamente regular le como textura impressa, nao como objeto.
+ * 5. **OS COMPRIMENTOS SE MISTURAM** (camisa, vestido, calca): e o que quebra a
+ *    linha reta na barra de baixo da arara.
+ * 6. **FALTA UMA AQUI E ALI.** Um vao no meio da fila conta uma historia — que
+ *    alguem levou uma peca para o provador — e custa uma linha.
+ */
+export function araraDeRoupas(opts: AraraOpts = {}): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'arara-de-roupas';
+  const largura = opts.largura ?? 1.8;
+  const altura = opts.altura ?? 1.55;
+  const rnd = sorteio(opts.semente ?? 20260908);
+  const metal = toon(P.lojaMetal);
+  const metalEscuro = toon(P.lojaMetalEscuro);
+
+  // ---------------------------------------------------------- a estrutura
+  for (const lado of [-1, 1] as const) {
+    const x = lado * (largura / 2 - 0.05);
+    // o pe em T, com quatro rodizios: arara de loja anda, e o rodizio e o
+    // detalhe que diz isso
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.62), metalEscuro);
+    pe.position.set(x, 0.06, 0);
+    g.add(pe);
+    for (const z of [-0.26, 0.26]) {
+      const rodizio = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), metalEscuro);
+      rodizio.position.set(x, 0.035, z);
+      g.add(rodizio);
+    }
+    const montante = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, altura - 0.08, 8), metal);
+    montante.position.set(x, 0.08 + (altura - 0.08) / 2, 0);
+    g.add(montante);
+  }
+  const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, largura, 8), metal);
+  barra.rotation.z = Math.PI / 2;
+  barra.position.y = altura;
+  g.add(barra);
+  // a travessa de baixo, onde ficam os sapatos e as caixas
+  const travessa = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, largura - 0.12, 6), metal);
+  travessa.rotation.z = Math.PI / 2;
+  travessa.position.y = 0.28;
+  g.add(travessa);
+
+  // ------------------------------------------------------------- as roupas
+  const familia = COLECOES[(opts.colecao ?? Math.floor(rnd() * COLECOES.length)) % COLECOES.length];
+  const outra = COLECOES[(COLECOES.indexOf(familia) + 2) % COLECOES.length];
+  const tipos = opts.tipos ?? (['camisa', 'camisa', 'vestido', 'calca', 'casaco'] as const);
+  // o passo acompanha a espessura da peca: com 0,115 e o pano mais cheio, duas
+  // pecas vizinhas se atravessavam no giro
+  const passo = 0.132;
+  const quantas = Math.max(3, Math.floor((largura - 0.24) / passo));
+  const inicio = -((quantas - 1) * passo) / 2;
+  // a peca que destoa: uma so na arara, sorteada
+  const destaque = Math.floor(rnd() * quantas);
+
+  for (let i = 0; i < quantas; i++) {
+    // o vao: uma em nove sai da fila, como se alguem tivesse levado a peca
+    if (rnd() < 0.11) continue;
+    const tipo = tipos[Math.floor(rnd() * tipos.length)];
+    const cor = i === destaque
+      ? outra[Math.floor(rnd() * outra.length)]
+      : familia[Math.floor(rnd() * familia.length)];
+    // o detalhe (gola, cinto, barra) e um degrau da MESMA cor, e nao uma cor
+    // nova: contraste demais em peca de 30 cm vira sujeira na tela
+    const escuro = new THREE.Color(cor).multiplyScalar(0.78).getHex();
+
+    const conjunto = new THREE.Group();
+    conjunto.add(cabide());
+    const roupa = pecaPendurada(tipo, cor, escuro);
+    roupa.position.y = -0.02;
+    conjunto.add(roupa);
+    conjunto.position.set(
+      inicio + i * passo + (rnd() - 0.5) * 0.03,
+      altura - 0.06 + (rnd() - 0.5) * 0.03,
+      (rnd() - 0.5) * 0.05,
+    );
+    conjunto.rotation.y = (rnd() - 0.5) * 0.6;
+    g.add(conjunto);
+  }
+  return g;
+}
+
+/**
+ * ======================================== OS PROVADORES
+ *
+ * Uma fileira de cabines encostada na parede do fundo. Elas nascem OLHANDO PARA
+ * `+Z`, como toda peca do kit, e a cena gira.
+ *
+ * AS DIVISORIAS SAO COMPARTILHADAS: `n` cabines tem `n + 1` paredes, e nao
+ * `2n`. Nao e so economia de malha — duas paredes encostadas uma na outra sao
+ * duas faces coplanares, que e exatamente o que serrilha na tela.
+ *
+ * A CORTINA E O QUE DIZ "provador". Ela e feita de tiras verticais estreitas
+ * com um seno na posicao em `z`, o que da a ONDULACAO do pano franzido sem
+ * geometria deformavel: cortina em plano liso le como porta pintada. Uma das
+ * cabines fica ABERTA (a cortina recuada, meia largura) — cabine aberta e o
+ * convite para entrar, e as tres fechadas leem como armario.
+ *
+ * O ESPELHO no fundo de cada cabine e `flat()`, e nao `toon()`: espelho nao tem
+ * sombra propria, e o material sem luz e o unico que da o vidro chapado e claro
+ * que o olho le como reflexo nesta escala.
+ */
+export function provadores(
+  quantas = 3,
+  opts: { largura?: number; altura?: number; corCortina?: number } = {},
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'provadores';
+  const larg = opts.largura ?? 1.15;
+  const alt = opts.altura ?? 2.25;
+  const fundo = 1.05;
+  const parede = toon(P.lojaFriso);
+  const madeira = toon(P.woodDark);
+  const total = quantas * larg;
+
+  // o fundo corrido
+  const costas = new THREE.Mesh(new THREE.BoxGeometry(total, alt, 0.08), parede);
+  costas.position.set(0, alt / 2, -fundo);
+  g.add(costas);
+
+  // as divisorias: n+1, compartilhadas entre as cabines
+  for (let i = 0; i <= quantas; i++) {
+    const x = -total / 2 + i * larg;
+    const divisoria = new THREE.Mesh(new THREE.BoxGeometry(0.08, alt, fundo), parede);
+    divisoria.position.set(x, alt / 2, -fundo / 2);
+    g.add(divisoria);
+  }
+
+  // a verga por cima, com o trilho da cortina
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(total + 0.1, 0.22, fundo + 0.06), parede);
+  verga.position.set(0, alt - 0.11, -fundo / 2 + 0.02);
+  g.add(verga);
+  const trilho = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, total, 8), toon(P.lojaMetal));
+  trilho.rotation.z = Math.PI / 2;
+  trilho.position.set(0, alt - 0.28, 0.01);
+  g.add(trilho);
+
+  for (let c = 0; c < quantas; c++) {
+    const cx = -total / 2 + larg * (c + 0.5);
+    const aberta = c === quantas - 1;
+
+    // ------------------------------------------------------------- a cortina
+    const cortina = new THREE.Group();
+    const tiras = 11;
+    const largaDaTira = (aberta ? larg * 0.45 : larg - 0.1) / tiras;
+    for (let t = 0; t < tiras; t++) {
+      const tira = new THREE.Mesh(
+        new THREE.BoxGeometry(largaDaTira * 1.06, alt - 0.42, 0.035),
+        toon(opts.corCortina ?? P.lojaCortinaProvador),
+      );
+      // O FRANZIDO: um seno em `z` por tira. Sem ele a cortina e um plano liso,
+      // e plano liso pendurado le como porta de armario.
+      tira.position.set(
+        -((tiras - 1) * largaDaTira) / 2 + t * largaDaTira,
+        (alt - 0.42) / 2,
+        Math.sin(t * 1.9) * 0.035,
+      );
+      cortina.add(tira);
+    }
+    // aberta, ela recua para um lado e mostra o dentro da cabine
+    cortina.position.set(cx + (aberta ? larg * 0.26 : 0), 0.08, -0.02);
+    g.add(cortina);
+
+    // ---------------------------------------------------- o dentro da cabine
+    const espelho = new THREE.Mesh(
+      new THREE.BoxGeometry(larg - 0.34, 1.5, 0.03),
+      flat(P.lojaEspelhoVidro, 0.92),
+    );
+    espelho.position.set(cx, 1.05, -fundo + 0.07);
+    g.add(espelho);
+    const moldura = new THREE.Mesh(new THREE.BoxGeometry(larg - 0.28, 1.58, 0.02), madeira);
+    moldura.position.set(cx, 1.05, -fundo + 0.055);
+    g.add(moldura);
+
+    // o banquinho e o gancho: dois objetos pequenos que enchem a cabine aberta
+    const banco = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.3), madeira);
+    banco.position.set(cx, 0.42, -fundo + 0.28);
+    g.add(banco);
+    for (const lado of [-1, 1] as const) {
+      const pe = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.42, 0.05), madeira);
+      pe.position.set(cx + lado * 0.16, 0.21, -fundo + 0.28);
+      g.add(pe);
+    }
+    const gancho = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.012, 5, 10, Math.PI), toon(P.lojaMetal));
+    gancho.position.set(cx + larg * 0.3, 1.75, -fundo + 0.1);
+    gancho.rotation.x = Math.PI / 2;
+    g.add(gancho);
+
+    // o numero da cabine, numa plaquinha
+    const placa = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.02), madeira);
+    placa.position.set(cx, alt - 0.11, fundo * 0.02 + 0.05);
+    g.add(placa);
+    for (let i = 0; i <= c; i++) {
+      const risco = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.08, 0.012), toon(P.lojaMetal));
+      risco.position.set(cx - c * 0.022 + i * 0.044, alt - 0.11, fundo * 0.02 + 0.06);
+      g.add(risco);
+    }
+  }
+  return g;
+}
+
+/**
+ * O MANEQUIM DE CHAO, vestido.
+ *
+ * O da vitrine (em `lojaDeRoupas.ts`) e um torso num pedestal — de fora, atras
+ * do vidro, e o suficiente. Aqui dentro a dupla passa do lado dele, entao ele
+ * ganha bracos, pernas e uma peca de roupa de verdade por cima.
+ *
+ * ELE NAO TEM ROSTO, e isso e regra e nao economia: manequim com olho vira
+ * gente parada dentro da loja, e o susto e imediato. A cabeca e um ovo liso.
+ */
+export function manequimDeLoja(
+  corRoupa: number = P.tecidoRosa,
+  tipo: TipoDePeca = 'vestido',
+  corDetalhe?: number,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'manequim-de-loja';
+  const pele = toon(P.lojaManequim);
+  const metal = toon(P.lojaMetalEscuro);
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.05, 14), metal);
+  base.position.y = 0.025;
+  g.add(base);
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.62, 8), metal);
+  haste.position.y = 0.34;
+  g.add(haste);
+
+  const quadril = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), pele);
+  quadril.scale.set(0.17, 0.16, 0.13);
+  quadril.position.y = 0.72;
+  g.add(quadril);
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.15, 0.52, 12), pele);
+  torso.scale.z = 0.78;
+  torso.position.y = 1.0;
+  g.add(torso);
+  const peito = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), pele);
+  peito.scale.set(0.2, 0.13, 0.15);
+  peito.position.y = 1.22;
+  g.add(peito);
+  // o pescoco decepado, que e como manequim de loja termina
+  const pescoco = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.14, 10), pele);
+  pescoco.position.y = 1.35;
+  g.add(pescoco);
+  const cabeca = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 12), pele);
+  cabeca.scale.set(0.11, 0.15, 0.12);
+  cabeca.position.y = 1.52;
+  g.add(cabeca);
+
+  for (const lado of [-1, 1] as const) {
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.038, 0.54, 8), pele);
+    braco.position.set(lado * 0.21, 1.02, 0.02);
+    braco.rotation.z = lado * 0.12;
+    g.add(braco);
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.055, 0.62, 8), pele);
+    perna.position.set(lado * 0.075, 0.42, 0);
+    g.add(perna);
+  }
+
+  // e a roupa por cima, a MESMA peca que pendura nas araras — o manequim veste
+  // o que a loja vende, e nao uma roupa desenhada so para ele
+  /**
+   * ============================ A ROUPA DO MANEQUIM E COSTURADA NO CORPO DELE
+   *
+   * A primeira versao pendurava nele a MESMA peca das araras, so que maior. Nao
+   * funciona, e a foto mostrou na hora: a peca do cabide e um pano CHATO de
+   * quatro lados (e o desenho certo para uma roupa pendurada), e chapa achatada
+   * colada num torso redondo le como uma placa espetada no boneco — o vestido
+   * azul virou uma tabua e o casaco rosa uma nuvem de trapezios.
+   *
+   * Aqui a roupa acompanha a FORMA do manequim: cilindros um fio maiores que o
+   * torso, que abrem no quadril como a saia abre, e mangas que descem POR CIMA
+   * do braco que ja existe. E o mesmo caminho do manequim da vitrine.
+   */
+  const pano = toon(corRoupa);
+  const debrum = toon(corDetalhe ?? new THREE.Color(corRoupa).multiplyScalar(0.78).getHex());
+  const vestir = (rCima: number, rBaixo: number, y0: number, y1: number, mat: THREE.Material): THREE.Mesh => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rCima, rBaixo, y1 - y0, 14), mat);
+    m.scale.z = 0.82;
+    m.position.y = (y0 + y1) / 2;
+    g.add(m);
+    return m;
+  };
+
+  if (tipo === 'vestido') {
+    vestir(0.21, 0.2, 1.06, 1.3, pano);          // o corpete
+    vestir(0.2, 0.34, 0.62, 1.06, pano);         // a saia, abrindo no quadril
+    const barra = vestir(0.345, 0.345, 0.6, 0.63, debrum);
+    barra.scale.z = 0.82;
+    for (const lado of [-1, 1] as const) {
+      const alca = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.03), pano);
+      alca.position.set(lado * 0.1, 1.32, 0.06);
+      alca.rotation.z = lado * 0.08;
+      g.add(alca);
+    }
+  } else if (tipo === 'calca') {
+    vestir(0.2, 0.19, 0.62, 0.78, pano);
+    for (const lado of [-1, 1] as const) {
+      const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.5, 10), pano);
+      perna.position.set(lado * 0.075, 0.36, 0);
+      g.add(perna);
+    }
+  } else {
+    // camisa e casaco: torso mais os dois bracos vestidos
+    const compriment = tipo === 'casaco' ? 0.72 : 0.86;
+    vestir(0.21, 0.23, compriment, 1.3, pano);
+    const barra = vestir(0.235, 0.235, compriment - 0.03, compriment, debrum);
+    barra.scale.z = 0.82;
+    for (const lado of [-1, 1] as const) {
+      const manga = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.05, tipo === 'casaco' ? 0.5 : 0.34, 10),
+        pano,
+      );
+      manga.position.set(lado * 0.215, tipo === 'casaco' ? 1.06 : 1.14, 0.02);
+      manga.rotation.z = lado * 0.12;
+      g.add(manga);
+    }
+    if (tipo === 'casaco') {
+      // a gola e a fila de botoes, que e o que separa casaco de camiseta
+      for (const lado of [-1, 1] as const) {
+        const lapela = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.3, 0.03), debrum);
+        lapela.position.set(lado * 0.06, 1.14, 0.17);
+        lapela.rotation.z = lado * 0.14;
+        g.add(lapela);
+      }
+      const gola = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.026, 6, 14, Math.PI), debrum);
+      gola.position.set(0, 1.3, 0.02);
+      gola.rotation.x = Math.PI / 2;
+      gola.rotation.z = Math.PI;
+      g.add(gola);
+    }
+  }
+  return g;
+}
+
+/**
+ * O BALCAO DO CAIXA. Um "L" de tampo de madeira sobre corpo claro, com painel
+ * frontal almofadado, prateleira interna e um pedaco de vidro na ponta — a
+ * vitrininha de bijuteria que todo caixa de loja tem.
+ *
+ * Ele nasce olhando para `+Z` (o cliente chega por `+Z`), e a parte de dentro
+ * (onde a Estella fica) e o `-Z`.
+ */
+export function balcaoDaLoja(largura = 2.4): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'balcao-da-loja';
+  const corpo = toon(P.lojaFriso);
+  const tampo = toon(P.lojaBalcao);
+  const alt = 1.0;
+  const fundo = 0.62;
+
+  const caixa = new THREE.Mesh(new THREE.BoxGeometry(largura, alt - 0.06, fundo), corpo);
+  caixa.position.set(0, (alt - 0.06) / 2, 0);
+  g.add(caixa);
+  const tampoM = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.1, 0.07, fundo + 0.12), tampo);
+  tampoM.position.y = alt - 0.02;
+  g.add(tampoM);
+
+  // as almofadas do painel da frente: tres quadros rasos, o detalhe que separa
+  // um balcao de marcenaria de uma caixa de papelao
+  const quantas = Math.max(2, Math.round(largura / 0.8));
+  for (let i = 0; i < quantas; i++) {
+    const w2 = (largura - 0.2) / quantas;
+    const painel = new THREE.Mesh(new THREE.BoxGeometry(w2 - 0.1, alt - 0.34, 0.03), toon(P.lojaParedeDentro));
+    painel.position.set(-largura / 2 + 0.1 + w2 * (i + 0.5), (alt - 0.06) / 2, fundo / 2 + 0.005);
+    g.add(painel);
+  }
+  const rodape = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.04, 0.1, fundo + 0.04), toon(P.lojaRodape));
+  rodape.position.y = 0.05;
+  g.add(rodape);
+
+  // a vitrininha de vidro na ponta: bijuteria em cima de um pano
+  const vitrine = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.28, fundo - 0.14), flat(P.lojaEspelhoVidro, 0.34));
+  vitrine.position.set(largura / 2 - 0.34, alt + 0.16, 0);
+  g.add(vitrine);
+  const pano = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.02, fundo - 0.18), toon(P.lojaCortinaProvador));
+  pano.position.set(largura / 2 - 0.34, alt + 0.03, 0);
+  g.add(pano);
+  for (let i = 0; i < 3; i++) {
+    const joia = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 6), toon(P.gold));
+    joia.position.set(largura / 2 - 0.48 + i * 0.14, alt + 0.06, (i % 2) * 0.08 - 0.04);
+    g.add(joia);
+  }
+
+  // a prateleira de dentro, com as sacolas da loja
+  const prateleira = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.14, 0.04, fundo - 0.16), toon(P.woodDark));
+  prateleira.position.set(0, 0.42, -0.02);
+  g.add(prateleira);
+  for (let i = 0; i < 3; i++) {
+    const sacola = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.3, 0.1), toon(P.lojaToldo));
+    sacola.position.set(-largura / 2 + 0.35 + i * 0.42, 0.59, -0.02);
+    sacola.rotation.y = (i - 1) * 0.16;
+    g.add(sacola);
+    const alca = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.008, 5, 10, Math.PI), toon(P.lojaEsquadria));
+    alca.position.set(sacola.position.x, 0.75, -0.02);
+    alca.rotation.y = sacola.rotation.y;
+    g.add(alca);
+  }
+  return g;
+}
+
+/**
+ * A MESA DE DOBRAR, com as pilhas de roupa dobrada.
+ *
+ * Ela existe por contraste: a loja inteira e roupa PENDURADA, tudo vertical e
+ * na mesma altura. Uma mesa baixa no meio, com pilhas horizontais, quebra essa
+ * linha — e e o que faz o salao parecer arrumado por alguem em vez de gerado.
+ *
+ * As pilhas sao caixas achatadas em `y` empilhadas com um giro pequeno em cada
+ * camada: pilha perfeitamente alinhada le como um bloco pintado de listras.
+ */
+export function mesaDeDobrar(largura = 1.6, semente = 7): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesa-de-dobrar';
+  const rnd = sorteio(semente);
+  const madeira = toon(P.lojaBalcao);
+  const alt = 0.78;
+
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.07, 0.85), madeira);
+  tampo.position.y = alt;
+  g.add(tampo);
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      const pe = new THREE.Mesh(new THREE.BoxGeometry(0.08, alt, 0.08), toon(P.woodDark));
+      pe.position.set(sx * (largura / 2 - 0.12), alt / 2, sz * 0.32);
+      g.add(pe);
+    }
+  }
+  // a prateleira de baixo, com caixas
+  const baixo = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.16, 0.04, 0.7), toon(P.woodDark));
+  baixo.position.y = 0.24;
+  g.add(baixo);
+
+  const familia = COLECOES[Math.floor(rnd() * COLECOES.length)];
+  const pilhas = Math.max(2, Math.round(largura / 0.55));
+  for (let i = 0; i < pilhas; i++) {
+    const x = -largura / 2 + (largura / pilhas) * (i + 0.5);
+    const quantas = 3 + Math.floor(rnd() * 3);
+    for (let c = 0; c < quantas; c++) {
+      const pano = new THREE.Mesh(
+        new THREE.BoxGeometry(0.34, 0.055, 0.3),
+        toon(familia[Math.floor(rnd() * familia.length)]),
+      );
+      pano.position.set(x + (rnd() - 0.5) * 0.03, alt + 0.06 + c * 0.058, (rnd() - 0.5) * 0.05);
+      pano.rotation.y = (rnd() - 0.5) * 0.3;
+      g.add(pano);
+    }
+  }
+  return g;
+}
+
+/**
+ * A PRATELEIRA DE PAREDE da loja: tres tabuas com sapatos, chapeus e caixas.
+ *
+ * Ela e RASA (0,32) de proposito: prateleira funda encostada na parede do fundo
+ * come o pouco chao que sobra num interior, e a camera de 34° so mostra a borda
+ * de cima de qualquer coisa colocada nela.
+ */
+export function prateleiraDaLoja(largura = 2.2, semente = 3): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'prateleira-da-loja';
+  const rnd = sorteio(semente);
+  const madeira = toon(P.lojaBalcao);
+  const fundo = 0.32;
+  const alturas = [0.55, 1.05, 1.55];
+
+  for (const lado of [-1, 1] as const) {
+    const lateral = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.85, fundo), madeira);
+    lateral.position.set(lado * (largura / 2), 0.92, -fundo / 2);
+    g.add(lateral);
+  }
+  const familia = COLECOES[Math.floor(rnd() * COLECOES.length)];
+  for (const [n, y] of alturas.entries()) {
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.05, fundo), madeira);
+    tabua.position.set(0, y, -fundo / 2);
+    g.add(tabua);
+
+    const quantos = 3 + Math.floor(rnd() * 2);
+    for (let i = 0; i < quantos; i++) {
+      const x = -largura / 2 + (largura / quantos) * (i + 0.5) + (rnd() - 0.5) * 0.08;
+      const cor = toon(familia[Math.floor(rnd() * familia.length)]);
+      if (n === 0) {
+        // sapatos: dois blocos com o bico arredondado, um do lado do outro
+        for (const s of [-1, 1] as const) {
+          const sapato = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.22), cor);
+          sapato.position.set(x + s * 0.06, y + 0.06, -fundo / 2 + 0.02);
+          sapato.rotation.y = (rnd() - 0.5) * 0.25;
+          g.add(sapato);
+          const bico = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), cor);
+          bico.scale.set(1, 0.7, 1);
+          bico.position.set(sapato.position.x, y + 0.06, -fundo / 2 + 0.13);
+          g.add(bico);
+        }
+      } else if (n === 1) {
+        // chapeus: copa e aba
+        const copa = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.12, 12), cor);
+        copa.position.set(x, y + 0.09, -fundo / 2);
+        g.add(copa);
+        const aba = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.02, 14), cor);
+        aba.position.set(x, y + 0.04, -fundo / 2);
+        g.add(aba);
+      } else {
+        // caixas de sapato, com a tampa de outra cor
+        const caixa = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.16, 0.24), cor);
+        caixa.position.set(x, y + 0.1, -fundo / 2);
+        caixa.rotation.y = (rnd() - 0.5) * 0.2;
+        g.add(caixa);
+        const tampa = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.26), toon(P.lojaParedeDentro));
+        tampa.position.set(x, y + 0.2, -fundo / 2);
+        tampa.rotation.y = caixa.rotation.y;
+        g.add(tampa);
+      }
+    }
+  }
+  return g;
+}
+
+/**
+ * O PUFE DE PROVAR SAPATO, redondo e estofado.
+ *
+ * Ele existe pela mesma razão da mesa de dobrar: a loja é toda vertical e alta
+ * (arara, manequim, prateleira), e um objeto BAIXO e redondo perto da porta
+ * quebra essa linha. Em loja de verdade ele fica sempre ali, para quem senta
+ * para experimentar sapato.
+ */
+export function pufeDeLoja(cor: number = P.lojaCortinaProvador): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'pufe-de-loja';
+  const estofado = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.32, 0.2, 16), toon(cor));
+  estofado.position.y = 0.38;
+  g.add(estofado);
+  // a almofada de cima, um pouco mais clara e abaulada
+  const almofada = new THREE.Mesh(new THREE.SphereGeometry(0.34, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), toon(cor));
+  almofada.scale.y = 0.34;
+  almofada.position.y = 0.47;
+  g.add(almofada);
+  // o botão do meio, que é o que faz o estofado parecer estofado
+  const botao = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), toon(P.lojaBalcao));
+  botao.scale.y = 0.5;
+  botao.position.y = 0.55;
+  g.add(botao);
+  for (let i = 0; i < 4; i++) {
+    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.016, 0.3, 6), toon(P.woodDark));
+    pe.position.set(Math.cos(i * 1.57) * 0.22, 0.15, Math.sin(i * 1.57) * 0.22);
+    pe.rotation.z = Math.cos(i * 1.57) * 0.12;
+    pe.rotation.x = -Math.sin(i * 1.57) * 0.12;
+    g.add(pe);
+  }
+  return g;
+}

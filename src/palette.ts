@@ -371,6 +371,39 @@ export const PALETTE = {
   biscoitoBorda: 0xc68f4f,
   biscoitoGota: 0x5b3a2a,
 
+  // A LOJINHA POR DENTRO. O predio ja tem a cara dele por fora (rosa quase
+  // creme, esquadria branca, toldo forte); aqui dentro a regra muda: parede
+  // CLARA e quente, para as roupas serem a unica coisa colorida da sala. Loja
+  // de roupa de verdade e um fundo neutro com arara colorida — inverter isso
+  // faz o cenario brigar com a mercadoria.
+  lojaChaoTabua: 0xdcbd97,
+  lojaChaoTapete: 0xe6d2d6,
+  lojaParedeDentro: 0xfbf3ec,
+  lojaFriso: 0xf0e2d8,
+  lojaRodape: 0xe0cec2,
+  lojaMetal: 0xc9ccd2,
+  lojaMetalEscuro: 0x9aa0a8,
+  lojaCortinaProvador: 0xd07f92,
+  lojaEspelhoVidro: 0xdcecf2,
+  lojaBalcao: 0xb0836a,
+
+  // OS TECIDOS DAS ROUPAS penduradas. Seis pasteis e seis vivas, e as araras
+  // sao montadas por COLECAO (tres ou quatro tons que conversam) em vez de
+  // sortear cor a cor: arara com doze cores diferentes le como caixa de lapis,
+  // nao como roupa a venda.
+  tecidoRosa: 0xf7a8c0,
+  tecidoLilas: 0xc4a7e7,
+  tecidoMenta: 0x9fd8c0,
+  tecidoCeu: 0xa8c8f0,
+  tecidoManteiga: 0xf6dfa0,
+  tecidoPessego: 0xf7bfa0,
+  tecidoVinho: 0x9c3b52,
+  tecidoPetroleo: 0x2e6f8e,
+  tecidoMostarda: 0xdda12b,
+  tecidoOliva: 0x6f8b4a,
+  tecidoCoral: 0xef6b5a,
+  tecidoIndigo: 0x4a5a9c,
+
   // o Cookie, o elefante da bilheteria. Cinza de elefante de verdade puxa para
   // o ROXO, e nao para o azul — cinza azulado sai como pedra. A orelha por
   // dentro e o dentro da tromba sao rosados, e e dai que vem o "fofo" que um
