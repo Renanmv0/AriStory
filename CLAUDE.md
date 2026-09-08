@@ -41,6 +41,10 @@ não código — nada dele está no jogo até o `git log` dizer que está.
   biblioteca de modelo nem de áudio. A única textura permitida é a desenhada em
   tempo de execução num `<canvas>` — o texto das placas, as memórias do quadro,
   as miniaturas do cardápio e o chão do clube (`world/texturasDeChao.ts`).
+  **Biblioteca de LÓGICA é outra coisa e pode**: a `chess.js` entrou para as
+  regras do xadrez da Estella (nenhum byte de arte ou som vem dela, e escrever
+  roque, en passant e peça cravada à mão era bug garantido). Ela é conhecida
+  por um arquivo só, `entities/ChessEngine.ts`.
 - **Cor sai de `src/palette.ts`; material sai de `toon()`/`flat()`.** Nunca
   instancie material dentro de uma cena.
 - **Cena não conhece o motor.** Ela só usa `WorldBuilder` e `GameAPI`.
@@ -104,6 +108,7 @@ node scripts/turno.mjs   /tmp/tn    # o turno do Mania: levar a mesa, anotar, se
 node scripts/premio.mjs  /tmp/pr    # a carteira do casal (uma so para os dois) e a gravatinha das 3 estrelas
 node scripts/mano.mjs    /tmp/pg    # o Mano no quiosque: fica no posto, aparece inteiro, fala, danca e entrega
 node scripts/cookie.mjs  /tmp/ck    # o Cookie: patrulha ao lado da cabine, vira nas pontas, e vende o bilhete
+node scripts/xadrez.mjs  /tmp/xa    # o xadrez da Estella: 14 posicoes de regra, 300 partidas de fuzz e o tabuleiro na tela
 node scripts/estella.mjs /tmp/es    # a Estella: fica no posto, aparece inteira fora do toldo, da o biscoitinho pros dois e tem o xadrez montado
 node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena, a mesinha servida pelo Mano, o deslize e a patinacao
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)

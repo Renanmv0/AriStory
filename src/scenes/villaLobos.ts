@@ -1260,7 +1260,127 @@ export const villaLobos: SceneDef = {
           });
           return;
         }
+        /*
+         * DEPOIS DE APRESENTADA, FALAR COM ELA E TAMBEM CONVIDAR PARA JOGAR.
+         *
+         * O tabuleiro tem o ponto dele na calcada, mas quem chega perto da
+         * ovelha e nao repara na mesinha ficaria sem saber que da para jogar —
+         * e a partida e a coisa mais legal que ela tem. Duas portas para a
+         * mesma mesa.
+         */
+        const escolha = await api.ask('Falar com ela', ['Jogar xadrez', 'Só um oi'], E);
+        if (escolha === 0) {
+          await partidaDeXadrez(api);
+          return;
+        }
         await api.say([w.pick(FALAS_DA_ESTELLA)], E);
+      },
+    });
+
+    /**
+     * ============================== A PARTIDA DE XADREZ CONTRA A ESTELLA
+     *
+     * A cena nao sabe uma regra de xadrez, e a tela tambem nao: as duas so
+     * perguntam ao motor (`entities/ChessEngine.ts`, que embrulha a `chess.js`).
+     * O que mora aqui e o que e DELA — as falas, a cor com que ela joga, o que
+     * acontece depois do mate.
+     *
+     * A DUPLA JOGA DE BRANCAS porque quem comeca ataca, e porque e ela mesma
+     * quem oferece isso na fala ("dou as pretas pra vocês, sou boa demais").
+     *
+     * O `lockPlayer` some com o joystick enquanto a mesa esta aberta, e o
+     * `finally` devolve o controle aconteca o que acontecer — desistir no
+     * Escape, mate em quatro lances ou fechar no meio. Cutscene que trava e
+     * esquece de soltar e o pior defeito possivel.
+     */
+    const provocacoesDaEstella = [
+      'Meu cavalo já previu seus próximos 3 movimentos.',
+      'Você vai entregar seu bispo assim de bandeja? Bééé...',
+      'Eu jogo isso desde antes de você nascer. E eu tenho quatro anos.',
+      'Hmm. Interessante. Errado, mas interessante.',
+      'Já vi essa abertura. Terminou mal pra quem jogou.',
+      'Pensa com calma. Eu tenho o dia todo, meu amor.',
+    ];
+    let partidasGanhas = 0;
+
+    const partidaDeXadrez = async (api: GameAPI): Promise<void> => {
+      estella.encarar(api.playerPosition().x, api.playerPosition().z);
+      await api.say(['Bééé... acha que tem raciocínio rápido suficiente para me vencer?'], E);
+      api.lockPlayer(true);
+      try {
+        /*
+         * A SEMENTE MUDA A CADA PARTIDA (`lancesFeitos` de nada adianta aqui —
+         * o motor e novo). Sem isso ela repetiria a mesma partida inteira toda
+         * vez que a dupla sentasse, e a segunda partida seria um replay.
+         */
+        const motor = api.motorDeXadrez('brancas', 20260908 + partidasGanhas * 7919 + Math.floor(Date.now() / 1000) % 100000);
+        const fim = await api.abrirXadrez(motor, {
+          nome: 'Estella',
+          avatar: '🐑',
+          provocacoes: provocacoesDaEstella,
+          ganhou: 'Xeque-mate, meu amor. Eu avisei. Bééé.',
+          perdeu: 'Não. NÃO. Isso não aconteceu. Joga de novo.',
+          empatou: 'Empate. Empate é o xadrez dizendo que vocês dois têm razão.',
+        });
+        estella.receberCarinho();
+        if (fim === 'ganhei') {
+          partidasGanhas++;
+          await conversa([
+            [E, 'Eu... você... QUE?'],
+            [A, 'A gente ganhou.'],
+            [E, 'Ganharam. Ganharam mesmo. Ninguém nunca me ganhou.'],
+            [E, 'Toma outro biscoitinho. Você merece. Os dois merecem.'],
+          ]);
+          api.addItem(ITENS.biscoitoDaEstella, ARI.id);
+          api.addItem(ITENS.biscoitoDaEstella, RENAN.id);
+          api.som('sorvete');
+          api.toast('Biscoitinho da Estella', '🍪');
+          api.unlock({
+            id: 'xadrez-com-a-estella',
+            title: 'A partida com a Estella',
+            place: 'Parque Villa Lobos',
+            note: 'A ovelha da lojinha se acha a maior mestra de xadrez do parque, e passou a partida inteira dizendo que o cavalo dela já tinha previsto tudo. A gente ganhou dela. Ela ficou uns três segundos sem falar, e depois deu biscoitinho pros dois.',
+            icon: '♟️',
+          });
+        } else if (fim === 'perdi') {
+          await conversa([
+            [E, 'Não fica assim. Perder pra mim não é vergonha nenhuma.'],
+            [R, 'Ela é boa mesmo.'],
+            [E, 'Eu sou ÓTIMA. Senta aí de novo quando quiser.'],
+          ]);
+        } else if (fim === 'empate') {
+          await api.say(['Empate. Isso quer dizer que vocês quase me ganharam. QUASE.'], E);
+        } else {
+          await api.say(['Ah, desiste não... o tabuleiro fica aqui, viu.'], E);
+        }
+      } finally {
+        api.lockPlayer(false);
+      }
+    };
+
+    /*
+     * O PONTO DA MESA fica do lado do banquinho, e nao no meio do tabuleiro:
+     * o raio de 1,6 pega quem chega pela calcada, e o prompt aparece antes de a
+     * dupla esbarrar no colisor da mesinha.
+     */
+    w.interact({
+      id: 'parque:xadrez',
+      x: XADREZ.x + 0.9, z: XADREZ.z + 0.5, radius: 1.6,
+      label: 'Jogar xadrez com a Estella', icon: '♟️',
+      onInteract: async (api) => {
+        if (!api.flag('estella-conhecida')) {
+          /*
+           * NINGUEM JOGA COM UM TABULEIRO DE ESTRANHO. Sem conhecer a Estella, a
+           * mesinha e so uma mesinha — e a fala manda falar com ela, que e onde
+           * a partida comeca de verdade.
+           */
+          await conversa([
+            [R, 'Tem uma partida no meio aqui.'],
+            [A, 'É de alguém. Olha a ovelha ali na porta olhando pra gente.'],
+          ]);
+          return;
+        }
+        await partidaDeXadrez(api);
       },
     });
 
