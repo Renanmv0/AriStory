@@ -390,6 +390,32 @@ await page.waitForTimeout(900);
  * joga xadrez estranha na hora. h1 e h8 sao as duas ancoras — h1 clara, a1
  * escura.
  */
+/**
+ * OS GLIFOS DE CADA TIME, e esta asserção nasceu de um bug de iPhone.
+ *
+ * Com o glifo CHEIO nos dois lados, o peão branco saía preto no iOS: U+265F é
+ * emoji, e emoji é imagem — ignora `color` e `text-shadow`. Cor de peça não dá
+ * para medir num teste headless (o Chromium do CI nem tem a fonte da Apple),
+ * mas o CÓDIGO DO CARACTERE dá: branca tem que estar no bloco vazado
+ * (U+2654–2659), preta no cheio (U+265A–265F), e toda peça tem que carregar o
+ * VS15 (U+FE0E), que é o pedido de "desenha como texto".
+ */
+const glifos = await page.evaluate(() => {
+  const ler = (classe) => [...document.querySelectorAll(`.xadrez .grade .peca.${classe}`)]
+    .map((p) => [...p.textContent].map((c) => c.codePointAt(0)));
+  const brancas = ler('brancas');
+  const pretas = ler('pretas');
+  const erra = (lista, min, max) => lista.filter(
+    (cs) => !(cs[0] >= min && cs[0] <= max) || cs[1] !== 0xfe0e,
+  ).length;
+  return {
+    brancas: brancas.length,
+    pretas: pretas.length,
+    brancasErradas: erra(brancas, 0x2654, 0x2659),
+    pretasErradas: erra(pretas, 0x265a, 0x265f),
+  };
+});
+
 const cores = await page.evaluate(() => {
   const cor = (casa) => {
     const c = document.querySelector(`.xadrez .casa[data-casa="${casa}"]`);
@@ -533,6 +559,12 @@ if (!abriu.aberto) falhas.push('o tabuleiro nao abriu');
 if (abriu.casas !== 64) falhas.push(`o tabuleiro tem ${abriu.casas} casas`);
 if (abriu.pecas !== 32) falhas.push(`o tabuleiro comecou com ${abriu.pecas} pecas`);
 if (!abriu.travado) falhas.push('o jogo nao marcou tela-aberta (os botoes de toque continuam clicaveis por baixo)');
+if (glifos.brancasErradas || glifos.pretasErradas) {
+  falhas.push(`os glifos das pecas sairam errados (emoji volta a comer a cor): ${JSON.stringify(glifos)}`);
+}
+if (glifos.brancas !== 16 || glifos.pretas !== 16) {
+  falhas.push(`os times nasceram torto: ${JSON.stringify(glifos)}`);
+}
 if (cores.a1 !== 'escura' || cores.h1 !== 'clara' || cores.a8 !== 'clara' || cores.h8 !== 'escura') {
   falhas.push(`o tabuleiro esta pintado ao contrario: ${JSON.stringify(cores)}`);
 }
@@ -566,7 +598,7 @@ console.log('3. fim de jogo:', finais.length ? JSON.stringify(finais) : 'mate, a
 console.log('4. a ovelha:', ovelha.length ? JSON.stringify(ovelha) : 'pega o mate, come a peca mais cara, so joga legal');
 console.log('5. fuzz:', fuzz.lances, 'lances em 300 partidas ·', fuzz.mates, 'mates ·', fuzz.empates, 'empates/afogamentos ·',
   fuzz.falhas.length ? JSON.stringify(fuzz.falhas) : 'invariantes de pe');
-console.log('6. tela:', JSON.stringify(abriu), '· cantos:', JSON.stringify(cores), '· acesas do peao:', JSON.stringify(destinosDoPeao));
+console.log('6. tela:', JSON.stringify(abriu), '· cantos:', JSON.stringify(cores), '· glifos:', JSON.stringify(glifos), '· acesas do peao:', JSON.stringify(destinosDoPeao));
 console.log('   lances pela tela:', lances.map((l) => `${l.de}-${l.para} (${l.respondeu?.ms ?? '—'}ms)`).join(' · '));
 console.log('   balao:', JSON.stringify(balao), '· pecas na tela:', pecasNaTela,
   '· fechou:', fechou, '· andou depois:', andou.toFixed(2));

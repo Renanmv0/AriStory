@@ -47,12 +47,52 @@ export interface ConviteDeXadrez {
 /** como a partida terminou, do ponto de vista do JOGADOR */
 export type FimDeXadrez = 'ganhei' | 'perdi' | 'empate' | 'desisti';
 
-/** os simbolos de xadrez do Unicode — sem asset, como todo o resto do jogo */
-const SIMBOLO: Record<string, string> = {
-  p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚',
+/**
+ * OS SIMBOLOS DE XADREZ DO UNICODE — sem asset, como todo o resto do jogo.
+ *
+ * ============================ POR QUE SAO DOIS CONJUNTOS, E NAO UM PINTADO
+ *
+ * A primeira versao usava o glifo CHEIO (`♟`) para os dois lados e separava os
+ * times por `color` e `text-shadow`. No computador ficou perfeito. No iPhone do
+ * Renan, todos os peoes dele sairam PRETOS.
+ *
+ * A culpa e do `♟` (U+265F): ele e um EMOJI (o "peao de xadrez" entrou na lista
+ * de emoji), e o iOS desenha emoji com a fonte colorida da Apple. Glifo de
+ * emoji e uma imagem, entao ele IGNORA `color` e `text-shadow` — o peao branco
+ * continuava preto e nao havia CSS que resolvesse. As outras cinco pecas nao
+ * sao emoji, e por isso so os peoes apareciam errados.
+ *
+ * Sao duas travas, e cada uma sozinha ja resolveria:
+ *
+ * 1. as brancas usam o conjunto VAZADO (U+2654–2659) e as pretas o CHEIO
+ *    (U+265A–265F). O desenho ja diz o time, mesmo que a cor falhe;
+ * 2. cada glifo leva o VS15 (`\uFE0E`), que e o pedido formal de "desenha isto
+ *    como TEXTO, nao como emoji".
+ *
+ * A cor e o contorno continuam por cima: e o que deixa a peca vazada legivel
+ * em cima da casa escura.
+ */
+const TEXTO = '\uFE0E';
+const SIMBOLO_BRANCO: Record<string, string> = {
+  p: `\u2659${TEXTO}`, n: `\u2658${TEXTO}`, b: `\u2657${TEXTO}`,
+  r: `\u2656${TEXTO}`, q: `\u2655${TEXTO}`, k: `\u2654${TEXTO}`,
 };
+const SIMBOLO_PRETO: Record<string, string> = {
+  p: `\u265F${TEXTO}`, n: `\u265E${TEXTO}`, b: `\u265D${TEXTO}`,
+  r: `\u265C${TEXTO}`, q: `\u265B${TEXTO}`, k: `\u265A${TEXTO}`,
+};
+const simbolo = (peca: string, cor: Cor): string =>
+  (cor === 'brancas' ? SIMBOLO_BRANCO : SIMBOLO_PRETO)[peca];
+/**
+ * O nome de cada peca JA COM O ARTIGO, e nao so o substantivo.
+ *
+ * "Obrigada pelo torre" — foi o que a Estella disse na primeira captura de
+ * torre do teste. Torre e dama sao femininas e o resto e masculino; guardar so
+ * o nome obrigaria quem escreve a fala a lembrar disso toda vez.
+ */
 const NOME_DA_PECA: Record<string, string> = {
-  p: 'peão', n: 'cavalo', b: 'bispo', r: 'torre', q: 'dama', k: 'rei',
+  p: 'pelo peão', n: 'pelo cavalo', b: 'pelo bispo',
+  r: 'pela torre', q: 'pela dama', k: 'pelo rei',
 };
 
 export class MesaDeXadrez {
@@ -259,7 +299,7 @@ export class MesaDeXadrez {
     const c = this.convite;
     if (!c) return;
     if (capturou) {
-      this.falar(`Obrigada pelo ${NOME_DA_PECA[capturou]}. Bééé.`);
+      this.falar(`Obrigada ${NOME_DA_PECA[capturou]}. Bééé.`);
       this.ateProvocar = 2;
       return;
     }
@@ -340,7 +380,7 @@ export class MesaDeXadrez {
           classes.push('ultimo');
         }
         const peca = casa.peca
-          ? `<span class="peca ${casa.cor === 'brancas' ? 'brancas' : 'pretas'}">${SIMBOLO[casa.peca]}</span>`
+          ? `<span class="peca ${casa.cor === 'brancas' ? 'brancas' : 'pretas'}">${simbolo(casa.peca, casa.cor!)}</span>`
           : '';
         // a coordenada so na borda, como num tabuleiro de verdade
         const fila = c === 0 ? `<i class="fila">${8 - l}</i>` : '';
@@ -383,7 +423,7 @@ export class MesaDeXadrez {
     const desenhar = (tipos: string[], cor: Cor): string =>
       tipos
         .sort((a, b) => 'kqrbnp'.indexOf(a) - 'kqrbnp'.indexOf(b))
-        .map((t) => `<span class="peca ${cor === 'brancas' ? 'brancas' : 'pretas'}">${SIMBOLO[t]}</span>`)
+        .map((t) => `<span class="peca ${cor === 'brancas' ? 'brancas' : 'pretas'}">${simbolo(t, cor)}</span>`)
         .join('');
     const minhaCor = this.motor.minhaCor;
     const dela0: Cor = minhaCor === 'brancas' ? 'pretas' : 'brancas';
