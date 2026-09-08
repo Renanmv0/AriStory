@@ -1112,7 +1112,21 @@ export const villaLobos: SceneDef = {
      */
     const LOJINHA = { x: -40, z: -16.5 };
     w.add(w.place(lojaDeRoupas(), LOJINHA.x, 0, LOJINHA.z, Math.PI / 2));
-    w.blockBox(LOJINHA.x, LOJINHA.z, 5.7, 4.2, Math.PI / 2);
+    /*
+     * O COLISOR DO PRÉDIO PARA NA LINHA DOS VASOS, e não um metro antes dela.
+     *
+     * Medido na peça: a parede da vitrine está em `x = −34,8` e os vasos da
+     * calçada avançam até `−35,45`; o capacho (4 cm de altura) é o único que
+     * passa disso, e capacho não barra ninguém. A caixa ia até `−35,8`, o que
+     * deixava a dupla parada meio metro antes dos vasos, olhando a vitrine de
+     * longe sem nada no caminho. Agora a frente do colisor é a própria linha dos
+     * vasos: dá para encostar na vitrine, e não dá para atravessar um vaso de
+     * 1,3 de altura.
+     *
+     * Os fundos continuam em `−44,3`, que é onde a parede de trás encosta no
+     * barranco do rio: centro em `−39,87` com meia-profundidade de 4,43.
+     */
+    w.blockBox(-39.87, LOJINHA.z, 5.7, 4.43, Math.PI / 2);
     /*
      * A CALÇADA CORRE NA FRENTE, ao longo do `Z` como a loja: da esquina do
      * prédio até a beira da pista. É por ela que se chega — quem vem do parque
@@ -1158,7 +1172,11 @@ export const villaLobos: SceneDef = {
      * ja estava ali na tela. Ela vai no `+Z` (o lado da camera) e um pouco a
      * frente, fora da sombra do toldo pela mesma conta que vale para a ovelha.
      */
-    w.add(w.place(cestaDeBiscoitos(), ESTELLA.x + 0.25, 0, ESTELLA.z + 1.05, 0.3));
+    const CESTA = { x: ESTELLA.x + 0.25, z: ESTELLA.z + 1.05 };
+    w.add(w.place(cestaDeBiscoitos(), CESTA.x, 0, CESTA.z, 0.3));
+    // e o caixote da cesta tinha o problema CONTRARIO do tabuleiro: um caixote
+    // de 46 cm no meio da calcada que a dupla atravessava como fantasma
+    w.blockCircle(CESTA.x, CESTA.z, 0.34);
 
     /*
      * A MESINHA DE XADREZ, a outra paixao dela (o Renan contou depois): fica na
@@ -1173,7 +1191,22 @@ export const villaLobos: SceneDef = {
      */
     const XADREZ = { x: ESTELLA.x - 0.15, z: ESTELLA.z - 2.2 };
     w.add(w.place(mesinhaDeXadrez(), XADREZ.x, 0, XADREZ.z, -0.35));
-    w.blockBox(XADREZ.x, XADREZ.z, 1.7, 1.0, -0.35);
+    /**
+     * O COLISOR É UM CÍRCULO, do tamanho da mesa — o mesmo que as mesinhas da
+     * praça de gelo usam.
+     *
+     * Ele nasceu como `blockBox(…, 1.7, 1.0, …)`, e isso era um MURO INVISÍVEL:
+     * o `blockBox` recebe MEIA largura e MEIA profundidade, então aquilo era uma
+     * caixa de 3,4 × 2,0 para uma mesa de 0,84 de diâmetro. A calçada aqui tem
+     * 4,4 de largura e a caixa atravessava quase toda ela — dava para ver a
+     * mesinha e não dava para passar do lado dela, que é justamente onde a dupla
+     * para para jogar. O Renan esbarrou nisso na primeira partida.
+     *
+     * 0,95 de raio cobre o tampo (0,42) e os dois banquinhos, que chegam a 0,81
+     * do centro. Sobram 1,3 de passagem para o lado da rua e 1,7 para o lado da
+     * vitrine: a dupla circula a mesa inteira sem esbarrar em nada que não veja.
+     */
+    w.blockCircle(XADREZ.x, XADREZ.z, 0.95);
 
     const E = 'Estella';
     /*
