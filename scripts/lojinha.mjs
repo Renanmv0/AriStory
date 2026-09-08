@@ -257,6 +257,16 @@ if (dentroDeMovel.length) {
   falhas.push(`ela foi vista dentro de um movel: ${JSON.stringify(dentroDeMovel.slice(0, 3))}`);
 }
 if (!/Estella/.test(falou)) falhas.push(`ela nao falou sozinha: "${falou}"`);
+/*
+ * O BORDAO DELA. As falas alternam "com carinho" e "solta", entao em tres ou
+ * quatro falas ouvidas pelo menos uma tem que trazer o tratamento — e o teste
+ * so pode cobrar isso PORQUE elas alternam: com sorteio livre numa lista so,
+ * esta assercao passaria a depender de sorte e falharia sozinha de vez em
+ * quando, que e o pior tipo de teste.
+ */
+if (ditas.size >= 2 && !/(meus queridos|cariños|meus amores)/i.test(falou)) {
+  falhas.push(`ela nao chamou a dupla de "meus queridos/cariños/meus amores": "${falou}"`);
+}
 if (!/Falar com a Estella/i.test(promptDela)) falhas.push(`nao da para falar com ela: "${promptDela}"`);
 if (!apresentacao.some((f) => /minha|arara|bainha/i.test(f))) {
   falhas.push(`a apresentacao dela nao aconteceu: ${JSON.stringify(apresentacao)}`);
