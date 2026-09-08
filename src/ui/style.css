@@ -1514,3 +1514,192 @@ body.touch-device .dialogue .next { right: 84px; }
   color: var(--ink-soft);
   font-size: 11px;
 }
+
+/* ------------------------------------------------ a mesa de xadrez da Estella */
+/**
+ * O TABULEIRO É O ELEMENTO PRINCIPAL DA TELA, e o resto se ajusta a ele.
+ *
+ * `min()` de três medidas: cabe na largura, cabe na altura e não passa de 460px
+ * num monitor grande. Sem a conta da ALTURA, no celular deitado o tabuleiro
+ * saía maior que a tela e a última fila ficava fora — e casa fora da tela é
+ * lance que não dá para jogar.
+ *
+ * As casas são `aspect-ratio: 1`, então o tabuleiro é quadrado por construção:
+ * não há como uma casa sair retangular e a peça esticada junto.
+ */
+.xadrez {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  background: rgba(28, 20, 14, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 6;
+  --lado: min(calc(100vw - 32px), calc(100vh - 190px), 460px);
+  --casa-clara: #f2e2c4;
+  --casa-escura: #8c6244;
+}
+.xadrez.show { display: grid; }
+/**
+ * O PAINEL PRECISA PEDIR O CLIQUE DE VOLTA.
+ *
+ * `:where(#ui) > *` deixa tudo em `pointer-events: none` (o HUD flutua por cima
+ * do mundo e não pode comer clique de câmera), e é por isso que aqui é `auto`
+ * só com o `.show`: com o tabuleiro aberto os cliques são dele, e com ele
+ * fechado o canvas volta a receber tudo. Sem esta regra as 64 casas existiam,
+ * apareciam na tela e não respondiam a clique nenhum — o canvas do jogo ficava
+ * na frente delas.
+ */
+.xadrez.show { pointer-events: auto; }
+.xadrez .mesa {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+}
+.xadrez .grade {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: var(--lado);
+  height: var(--lado);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 0 6px #5a3d2b, 0 18px 40px rgba(24, 14, 6, 0.5);
+}
+.xadrez .casa {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: var(--casa-clara);
+  cursor: pointer;
+  /* a peça é um glifo de texto: sem isto ela herda o tamanho do botão */
+  font-size: calc(var(--lado) / 11);
+  line-height: 1;
+}
+.xadrez .casa.escura { background: var(--casa-escura); }
+/* o último lance fica marcado nas DUAS casas: é como se vê o que ela jogou
+   sem precisar de animação */
+.xadrez .casa.ultimo { box-shadow: inset 0 0 0 100px rgba(255, 201, 77, 0.22); }
+.xadrez .casa.marcada { box-shadow: inset 0 0 0 4px var(--accent); }
+/* destino livre é uma bolinha no meio; destino com peça é um anel na borda —
+   dois desenhos diferentes porque "ando aqui" e "como aqui" são decisões
+   diferentes, e no meio de uma partida a diferença tem que saltar */
+.xadrez .casa.ir::after {
+  content: '';
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: rgba(53, 48, 74, 0.42);
+}
+.xadrez .casa.comer { box-shadow: inset 0 0 0 5px rgba(226, 85, 124, 0.85); }
+.xadrez.travado .casa { cursor: default; }
+.xadrez .peca {
+  /* o MESMO glifo cheio para os dois lados, e a cor é que separa os times: com
+     o par vazado/cheio do Unicode (♙ contra ♟) cada fonte desenha um tamanho
+     diferente e o tabuleiro fica com dois exércitos de alturas diferentes */
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+.xadrez .peca.brancas {
+  color: #fffdf8;
+  /* o contorno escuro é o que segura a peça branca em cima da casa clara: sem
+     as quatro sombras ela some no fundo creme e o time inteiro vira vulto */
+  text-shadow:
+    0 0 2px rgba(58, 42, 30, 0.55),
+    0 1.5px 0 #3a2a1e, 1.5px 0 0 #3a2a1e, -1.5px 0 0 #3a2a1e, 0 -1.5px 0 #3a2a1e;
+}
+.xadrez .peca.pretas {
+  color: #2f2620;
+  text-shadow: 0 0 1px #f6ecd8, 0 1px 0 rgba(255, 250, 242, 0.7);
+}
+/* as coordenadas: 9px saíam como borrão e o "8" da primeira fila lia como 6 —
+   num tabuleiro, coordenada ilegível é pior que coordenada nenhuma */
+.xadrez .fila,
+.xadrez .coluna {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  opacity: 0.62;
+  color: #3a2a1e;
+}
+.xadrez .fila { top: 2px; left: 3px; }
+.xadrez .coluna { bottom: 1px; right: 4px; }
+.xadrez .casa.escura .fila,
+.xadrez .casa.escura .coluna { color: #f2e2c4; }
+
+/* o lado da mesa: quem é ela, o que ela está falando e o que já foi comido */
+.xadrez .lado {
+  width: var(--lado);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--paper);
+}
+.xadrez .quem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+.xadrez .quem .avatar { font-size: 22px; }
+.xadrez .balao {
+  display: none;
+  position: relative;
+  padding: 9px 13px;
+  border-radius: 14px 14px 14px 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.35;
+}
+.xadrez .balao.cheio { display: block; }
+.xadrez .bandeja {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+  font-size: 17px;
+  line-height: 1;
+}
+.xadrez .bandeja .rotulo {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.xadrez .estado {
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 19px;
+}
+.xadrez .estado.fim { color: var(--gold); }
+.xadrez .sair {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.16);
+  color: var(--paper);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.xadrez .sair:hover { background: rgba(255, 250, 242, 0.28); }
+
+/* de pé (celular), o balão e as bandejas vão para CIMA do tabuleiro: embaixo
+   eles caem na altura do polegar e o dedo tapa justamente a fala dela */
+@media (min-aspect-ratio: 1/1) {
+  .xadrez .mesa {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .xadrez .lado { width: min(230px, 30vw); padding-top: 6px; }
+}

@@ -2,6 +2,8 @@ import type { SavedMemory } from '../core/SaveState';
 import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import type { MemoriaPintada } from '../world/memoriasData';
+import type { ChessEngine } from '../entities/ChessEngine';
+import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
 import type { SecaoDoCardapio } from '../world/cardapioData';
 
 /**
@@ -50,6 +52,15 @@ export class Ui {
   private readonly dono: HTMLElement;
   private readonly descarte: HTMLElement;
   private readonly cardapio: HTMLDivElement;
+  /**
+   * A MESA DE XADREZ mora numa classe propria (`mesaDeXadrez.ts`), e nao aqui.
+   *
+   * Ela e a unica tela do jogo com uma PARTIDA dentro — turno, relogio da
+   * adversaria, provocacao, fim de jogo —, e isso e um estado que nao tem nada
+   * a ver com o resto da interface. A Ui continua sendo a unica porta de
+   * entrada (o `abrirXadrez` esta logo abaixo); quem guarda o tabuleiro e ela.
+   */
+  private readonly mesaDeXadrez: MesaDeXadrez;
   private readonly secoesDoCardapio: HTMLDivElement;
   /**
    * Quem espera o cardapio fechar; a cutscene da mesa segura nele. Resolve com
@@ -224,6 +235,7 @@ export class Ui {
           <button class="close">só olhando, obrigado</button>
         </div>
       </div>
+      <div class="xadrez"></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
         <p class="sub"></p>
@@ -284,6 +296,7 @@ export class Ui {
     this.bermudas = ui.querySelector('.vestiario .bermudas')!;
     this.donoVestiario = ui.querySelector('.vestiario .dono')!;
     this.cardapio = ui.querySelector('.cardapio')!;
+    this.mesaDeXadrez = new MesaDeXadrez(ui.querySelector('.xadrez')!);
     this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
     this.memorias = ui.querySelector('.memorias')!;
     this.quadro = ui.querySelector('.memorias .quadro')!;
@@ -485,7 +498,7 @@ export class Ui {
     document.body.classList.toggle(
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
-      this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen,
+      this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen || this.xadrezOpen,
     );
   }
 
@@ -831,6 +844,34 @@ export class Ui {
       this.marcarTelaAberta();
       this.fecharCardapioResolve = resolve;
     });
+  }
+
+  // ---------------------------------------------------------------- xadrez
+
+  get xadrezOpen(): boolean {
+    return this.mesaDeXadrez.aberta;
+  }
+
+  /**
+   * Abre a mesa de xadrez e resolve quando a partida termina.
+   *
+   * Mesmo contrato do cardapio, e pelo mesmo motivo: a cena escreve "convida,
+   * joga, comemora" em linha reta em vez de virar maquina de estados para saber
+   * quando o painel sumiu.
+   */
+  abrirXadrez(motor: ChessEngine, convite: ConviteDeXadrez): Promise<FimDeXadrez> {
+    this.som?.('escolha');
+    const fim = this.mesaDeXadrez.abrir(motor, convite);
+    this.marcarTelaAberta();
+    return fim.then((r) => {
+      this.marcarTelaAberta();
+      return r;
+    });
+  }
+
+  /** O Escape e o botao de desistir passam por aqui. */
+  fecharXadrez(): void {
+    this.mesaDeXadrez.desistir();
   }
 
   /**

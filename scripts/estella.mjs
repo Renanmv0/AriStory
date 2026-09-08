@@ -186,6 +186,38 @@ for (let volta = 0; volta < 3; volta++) {
 await page.waitForTimeout(900);
 const encarando = await aEstella();
 
+/* ============ 3b. DEPOIS DE APRESENTADA, FALAR COM ELA OFERECE A PARTIDA
+ *
+ * A mesinha tem o ponto dela na calçada, mas quem chega pela ovelha precisa
+ * poder sentar sem descobrir o tabuleiro sozinho — são duas portas para a mesma
+ * mesa, e esta é a que fica em cima dela. (A partida em si é o
+ * `scripts/xadrez.mjs`; aqui só se prova que o convite existe e que o "só um
+ * oi" continua devolvendo uma fala dela.)
+ */
+/*
+ * ESVAZIA A CAIXA DE FALA ANTES DE APERTAR O E.
+ *
+ * Com a apresentação ainda rolando, o E avança a fala em vez de abrir a
+ * interação de novo — e o teste lia "nenhuma opção" achando que o convite não
+ * existia. Espera a caixa sumir; só aí o E vale como interagir.
+ */
+for (let i = 0; i < 30 && (await page.locator('.dialogue.show').count()); i++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(450);
+}
+await page.waitForTimeout(600);
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(1100);
+const opcoes = await page.evaluate(() =>
+  [...document.querySelectorAll('.escolhas button')].map((b) => b.textContent));
+if (opcoes.length) {
+  const soUmOi = opcoes.findIndex((t) => /oi/i.test(t ?? ''));
+  await page.click(`.escolhas button:nth-child(${soUmOi + 1})`);
+  await page.waitForTimeout(700);
+}
+const falaSolta = await venceAFala(10);
+
+
 /**
  * A FOTO DE PERTO É OBRIGATÓRIA, e é ela que prova o modelo: de longe qualquer
  * bolota creme parece uma ovelha. Duas — a cara (onde moram o óculos, a fita e
@@ -303,6 +335,10 @@ else if (mesinha.alto > 1.2) {
   falhas.push(`a mesinha de xadrez ficou alta demais e esconde a ovelha (${mesinha.alto})`);
 }
 if (!noDiario.includes('estella-da-lojinha')) falhas.push('ela nao entrou no diario');
+if (!opcoes.some((t) => /xadrez/i.test(t ?? ''))) {
+  falhas.push(`falar com ela nao oferece a partida: ${JSON.stringify(opcoes)}`);
+}
+if (!falaSolta.length) falhas.push('o "so um oi" nao devolveu fala nenhuma dela');
 if (encarando && Math.abs(encarando.giro - (nasceu?.giro ?? 0)) < 0.1) {
   falhas.push(`ela nao virou para quem chegou (giro ${encarando.giro})`);
 }
@@ -318,6 +354,7 @@ console.log('2. prompt grudado:', JSON.stringify(grudado));
 console.log('3. prompt de perto:', JSON.stringify(deColado));
 console.log('   apresentacao:', JSON.stringify(apresentacao));
 console.log('   giro: nasceu', nasceu?.giro, '· encarando', encarando?.giro, '· desvirou', desvirou?.giro);
+console.log('3b. escolhas ao falar com ela:', JSON.stringify(opcoes), '·', JSON.stringify(falaSolta));
 console.log('4. brinde:', JSON.stringify(brinde), '· mesinha:', JSON.stringify(mesinha));
 console.log('   diario:', JSON.stringify(noDiario.filter((i) => /estella|loj/i.test(i))));
 console.log('5. pontos fora do posto:', longeDoPosto.length, 'de', trilha.length, '· balidos:', balidos);

@@ -26,6 +26,8 @@ import {
 } from './types';
 import { ITENS, MODA_PRAIA, modeloDoItem } from '../world/itens';
 import { MEMORIAS } from '../world/memoriasData';
+import { ChessEngine, type Cor } from '../entities/ChessEngine';
+import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import { CARDAPIO } from '../world/cardapioData';
 import type { CharacterSpec } from '../characters/spec';
 
@@ -372,6 +374,9 @@ export class Game implements GameAPI {
     // o cardapio tambem trava o movimento, e quem espera por ele e uma cutscene:
     // fechar no Escape e o que impede a dupla de ficar presa sentada na mesa
     if (this.ui.cardapioOpen && this.input.justPressed('Escape')) this.ui.fecharCardapio();
+    // no xadrez o Escape e a desistencia: e a unica saida de quem cansou da
+    // partida, e sem ela a dupla fica presa na mesa
+    if (this.ui.xadrezOpen && this.input.justPressed('Escape')) this.ui.fecharXadrez();
     // as setas folheiam o quadro; com ele fechado elas continuam sendo andar
     if (this.ui.memoriasOpen) {
       if (this.input.justPressed('ArrowLeft')) this.ui.folhear(-1);
@@ -953,6 +958,34 @@ export class Game implements GameAPI {
    */
   abrirCardapio(casa?: string): Promise<string | null> {
     return this.ui.abrirCardapio(CARDAPIO, casa);
+  }
+
+  /**
+   * Abre a mesa de xadrez. O Game nao sabe uma regra de xadrez: ele so junta o
+   * motor (que a cena criou) com a tela, do mesmo jeito que faz com o cardapio.
+   *
+   * O SOM ENTRA AQUI, e nao na tela: a mesa avisa "peca", "captura" ou "fala" e
+   * quem conhece o motor de audio e o Game.
+   */
+  abrirXadrez(motor: ChessEngine, convite: ConviteDeXadrez): Promise<FimDeXadrez> {
+    return this.ui.abrirXadrez(motor, {
+      ...convite,
+      som: (nome) => this.audio.play(
+        nome === 'captura' ? 'pegar' : nome === 'fala' ? 'balido' : 'escolha',
+      ),
+    });
+  }
+
+  /**
+   * Um motor de xadrez novo, para o teste medir as REGRAS sem abrir tela.
+   *
+   * Gancho de teste, como o `debugPlace` e o `cameraDeCena`: e por aqui que o
+   * `scripts/xadrez.mjs` carrega posicao montada (mate do pastor, en passant,
+   * peca cravada) e confere lance a lance dentro do navegador, onde o codigo
+   * que roda e exatamente o que o jogo publica.
+   */
+  motorDeXadrez(minhaCor: Cor = 'brancas', semente?: number): ChessEngine {
+    return new ChessEngine(minhaCor, semente);
   }
 
   unlock(memory: Memory): void {

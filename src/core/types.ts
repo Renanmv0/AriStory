@@ -1,6 +1,8 @@
 import type * as THREE from 'three';
 import type { WorldBuilder } from '../world/WorldBuilder';
 import type { SomNome } from '../audio/efeitos';
+import type { ChessEngine, Cor } from '../entities/ChessEngine';
+import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 
 export interface CircleCollider {
   kind: 'circle';
@@ -421,6 +423,24 @@ export interface GameAPI {
    * "Restaurante do Clube" e quem senta la dentro esta no "Mania de Churrasco".
    */
   abrirCardapio(casa?: string): Promise<string | null>;
+  /**
+   * Abre a mesa de xadrez em DOM e resolve quando a PARTIDA acaba (por mate,
+   * empate ou desistencia). Trava o movimento enquanto estiver aberta.
+   *
+   * A cena entrega o motor pronto — e ela quem escolhe a cor da dupla e a
+   * semente do sorteio da adversaria — e as falas de quem convidou. O motor de
+   * xadrez em si mora em `entities/ChessEngine.ts`, e nem a cena nem a tela
+   * conhecem uma regra sequer: as duas so perguntam a ele.
+   */
+  abrirXadrez(motor: ChessEngine, convite: ConviteDeXadrez): Promise<FimDeXadrez>;
+  /**
+   * Um motor de xadrez novo para uma partida.
+   *
+   * A CENA e quem cria, e nao a tela, porque e ela que decide de que cor a
+   * dupla joga e com que semente a adversaria sorteia — dois numeros que sao
+   * daquela partida daquele personagem, e nao da interface.
+   */
+  motorDeXadrez(minhaCor?: Cor, semente?: number): ChessEngine;
 
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */

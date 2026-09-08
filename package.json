@@ -12,6 +12,7 @@
     "smoke": "node scripts/smoke.mjs ./smoke"
   },
   "dependencies": {
+    "chess.js": "^1.4.0",
     "three": "^0.180.0"
   },
   "devDependencies": {
