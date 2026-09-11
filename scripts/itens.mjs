@@ -72,6 +72,19 @@ const chegou = async () => {
   return false;
 };
 const entregou = await chegou();
+/*
+ * E O BALÃO É FECHADO ATÉ O FIM ANTES DE SEGUIR.
+ *
+ * O sorvete chega na mão no MEIO da fala do Mano, e o `T` não troca de
+ * personagem com uma caixa de diálogo aberta (nem deve: `keyPressed` recusa
+ * tudo enquanto há tela de ler). Sem esta drenagem o teste apertava `T` no
+ * vazio e cobrava a troca que ele mesmo tinha impedido.
+ */
+for (let i = 0; i < 20 && (await page.locator('.dialogue.show').count()); i++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(600);
+}
+await page.waitForTimeout(800);
 
 // De FRENTE para a câmera, não de costas: a pose `upright` estica o braço
 // para a frente, e de costas o braço esticado fica escondido atrás do corpo.
