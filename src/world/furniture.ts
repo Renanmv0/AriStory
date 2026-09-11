@@ -1808,17 +1808,27 @@ export function provadores(
   costas.position.set(0, alt / 2, -fundo);
   g.add(costas);
 
-  // as divisorias: n+1, compartilhadas entre as cabines
+  /*
+   * AS DIVISÓRIAS: n+1, compartilhadas entre as cabines. Elas são 8 mm mais
+   * baixas que o fundo — 4 mm de folga em cima e 4 embaixo — e a verga passa
+   * 12 mm acima de todo mundo.
+   *
+   * Isso não é detalhe de marcenaria, é o conserto do serrilhado: com as cinco
+   * paredes nascendo em `y = 0` e terminando em `y = alt`, junto com a verga,
+   * davam 25 pares de faces coplanares — e os de CIMA são os que aparecem, que
+   * a câmera olha de 34° e vê o topo de tudo. As duas folgas somem: a de baixo
+   * atrás da cortina, a de cima dentro da verga.
+   */
   for (let i = 0; i <= quantas; i++) {
     const x = -total / 2 + i * larg;
-    const divisoria = new THREE.Mesh(new THREE.BoxGeometry(0.08, alt, fundo), parede);
+    const divisoria = new THREE.Mesh(new THREE.BoxGeometry(0.08, alt - 0.008, fundo), parede);
     divisoria.position.set(x, alt / 2, -fundo / 2);
     g.add(divisoria);
   }
 
   // a verga por cima, com o trilho da cortina
   const verga = new THREE.Mesh(new THREE.BoxGeometry(total + 0.1, 0.22, fundo + 0.06), parede);
-  verga.position.set(0, alt - 0.11, -fundo / 2 + 0.02);
+  verga.position.set(0, alt - 0.098, -fundo / 2 + 0.02);
   g.add(verga);
   const trilho = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, total, 8), toon(P.lojaMetal));
   trilho.rotation.z = Math.PI / 2;
@@ -2039,8 +2049,15 @@ export function balcaoDaLoja(largura = 2.4): THREE.Group {
   const alt = 1.0;
   const fundo = 0.62;
 
+  /*
+   * O CORPO NASCE 5 mm ACIMA DO CHÃO, e quem encosta no piso é o rodapé. Com
+   * os dois nascendo em `y = 0` sobrava 1,49 m² de barriga coplanar com a
+   * barriga do rodapé — a maior área do relatório do `zfighting.mjs` na loja
+   * inteira. De quebra, os 5 mm fecham a fresta que havia entre o corpo e o
+   * tampo.
+   */
   const caixa = new THREE.Mesh(new THREE.BoxGeometry(largura, alt - 0.06, fundo), corpo);
-  caixa.position.set(0, (alt - 0.06) / 2, 0);
+  caixa.position.set(0, (alt - 0.06) / 2 + 0.005, 0);
   g.add(caixa);
   const tampoM = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.1, 0.07, fundo + 0.12), tampo);
   tampoM.position.y = alt - 0.02;
@@ -2116,8 +2133,13 @@ export function mesaDeDobrar(largura = 1.6, semente = 7): THREE.Group {
       g.add(pe);
     }
   }
-  // a prateleira de baixo, com caixas
-  const baixo = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.16, 0.04, 0.7), toon(P.woodDark));
+  /*
+   * A prateleira de baixo é 1 cm mais estreita QUE A LINHA DOS PÉS, e não
+   * rente a ela: com `largura - 0.16` a lateral dela caía exatamente no plano
+   * da face de fora do pé (os dois dão `largura/2 − 0.08`, para qualquer
+   * largura), e faces coplanares é o que serrilha.
+   */
+  const baixo = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.18, 0.04, 0.7), toon(P.woodDark));
   baixo.position.y = 0.24;
   g.add(baixo);
 
@@ -2160,8 +2182,14 @@ export function prateleiraDaLoja(largura = 2.2, semente = 3): THREE.Group {
     g.add(lateral);
   }
   const familia = COLECOES[Math.floor(rnd() * COLECOES.length)];
+  /*
+   * A TÁBUA É 1,2 cm MAIS RASA QUE A LATERAL, 6 mm recuados de cada lado. Com
+   * a mesma profundidade das duas, a frente e o fundo de cada tábua caíam no
+   * mesmo plano da frente e do fundo das laterais — doze pares coplanares numa
+   * peça de cinco caixas. E prateleira de verdade tem esse recuo mesmo.
+   */
   for (const [n, y] of alturas.entries()) {
-    const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.05, fundo), madeira);
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.05, fundo - 0.012), madeira);
     tabua.position.set(0, y, -fundo / 2);
     g.add(tabua);
 
@@ -2298,22 +2326,25 @@ export function escadaRolante(altura = 3.9, comprimento = 6.4): THREE.Group {
     const piso = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.06, passo * 0.94), aco);
     piso.position.set(0, y + 0.03, z);
     g.add(piso);
-    // o espelho do degrau, a face vertical que fecha o desnível
+    /*
+     * O espelho do degrau, a face vertical que fecha o desnível.
+     *
+     * Ele é 2 cm MAIS ESTREITO que o piso e nasce 4 mm ACIMA dele, e os dois
+     * números são de conserto: nascendo com a mesma largura e no mesmo `y`, o
+     * espelho e o piso de cada degrau davam duas faces laterais e uma face de
+     * baixo COPLANARES — vinte e tantos pares num lance só, que é o que
+     * serrilha quando a escada aparece de lado.
+     */
     const degrau = altura / quantos;
     if (i < quantos) {
-      const face = new THREE.Mesh(new THREE.BoxGeometry(largura, degrau, 0.05), acoEscuro);
-      face.position.set(0, y + degrau / 2, z - passo * 0.47);
+      const face = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.02, degrau, 0.05), acoEscuro);
+      face.position.set(0, y + degrau / 2 + 0.004, z - passo * 0.47);
       g.add(face);
     }
-    /*
-     * Os frisos amarelos da borda do degrau, de dois em dois. O `0,074` (e não
-     * o `0,07` redondo) é o que tira o friso do PLANO DA PLACA PENTE, que
-     * também termina em `y = 0,08`: dois topos coplanares de 0,042 m² bem na
-     * boca da escada, que é onde o olho para.
-     */
+    // os frisos amarelos da borda do degrau, de dois em dois
     if (i % 2 === 0) {
       const friso = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.1, 0.02, 0.04), toon(P.boutiqueOuro));
-      friso.position.set(0, y + 0.074, z + passo * 0.4);
+      friso.position.set(0, y + 0.07, z + passo * 0.4);
       g.add(friso);
     }
   }
@@ -2363,7 +2394,13 @@ export function escadaRolante(altura = 3.9, comprimento = 6.4): THREE.Group {
 
   // -------------------------------------------------------- as placas pente
   for (const [zz, yy] of [[z0 + 0.22, 0], [-z0 - 0.22, altura]] as const) {
-    const pente = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.24, 0.08, 0.5), acoEscuro);
+    /*
+     * A placa é 1 cm mais BAIXA que o degrau e nasce 5 mm acima do piso do
+     * andar: com 0,08 de altura a partir do zero, a barriga dela ficava no
+     * mesmo plano da barriga do primeiro degrau (0,25 m² coplanares) e o topo
+     * dela, no mesmo plano do friso.
+     */
+    const pente = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.24, 0.07, 0.5), acoEscuro);
     pente.position.set(0, yy + 0.04, zz);
     g.add(pente);
     for (let i = 0; i < 9; i++) {
