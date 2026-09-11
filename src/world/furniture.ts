@@ -1649,8 +1649,17 @@ function cabide(cor: number = P.lojaMetal): THREE.Group {
   gancho.position.y = 0.075;
   gancho.rotation.z = Math.PI * 0.25;
   g.add(gancho);
+  /*
+   * OS DOIS OMBROS SE ENCOSTAM NO MEIO, e não se ATRAVESSAM.
+   *
+   * Com 0,16 eles cruzavam 1 cm um dentro do outro — e como são espelhados, a
+   * caixa envolvente dos dois é a MESMA em `y` e em `z`: quatro planos
+   * coplanares por cabide, vezes toda arara da loja. Com 0,152 eles se tocam e
+   * param, o gancho cobre a emenda, e o `zfighting.mjs` deixa de ter o que
+   * marcar (a sobreposição cai abaixo dos 4 mm que ele exige para ligar).
+   */
   for (const lado of [-1, 1] as const) {
-    const ombro = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.012), m);
+    const ombro = new THREE.Mesh(new THREE.BoxGeometry(0.152, 0.012, 0.012), m);
     ombro.position.set(lado * 0.075, -0.01, 0);
     ombro.rotation.z = lado * -0.28;
     g.add(ombro);
@@ -1848,11 +1857,21 @@ export function provadores(
         new THREE.BoxGeometry(largaDaTira * 1.06, alt - 0.42, 0.035),
         toon(opts.corCortina ?? P.lojaCortinaProvador),
       );
-      // O FRANZIDO: um seno em `z` por tira. Sem ele a cortina e um plano liso,
-      // e plano liso pendurado le como porta de armario.
+      /*
+       * O FRANZIDO: um seno em `z` por tira. Sem ele a cortina e um plano liso,
+       * e plano liso pendurado le como porta de armario.
+       *
+       * E CADA TIRA DESCE UM TANTO DIFERENTE (`desce`), o que e verdade de
+       * cortina franzida — barra reta e coisa de porta — e e tambem o que tira
+       * as tiras VIZINHAS do mesmo plano. Elas se sobrepoem 6% de proposito
+       * (para nao abrir fresta), entao com todas comecando e terminando na
+       * mesma linha eram 22 pares coplanares por provador. Os tres valores
+       * (0, 3, 6, 9, 12, 15 mm) nunca se repetem entre vizinhas.
+       */
+      const desce = (t % 3) * 0.006 + (t % 2) * 0.003;
       tira.position.set(
         -((tiras - 1) * largaDaTira) / 2 + t * largaDaTira,
-        (alt - 0.42) / 2,
+        (alt - 0.42) / 2 - desce,
         Math.sin(t * 1.9) * 0.035,
       );
       cortina.add(tira);
