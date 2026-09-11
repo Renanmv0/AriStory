@@ -430,17 +430,30 @@ export const lojinha: SceneDef = {
      * ================================================================== */
 
     /**
-     * A LAJE, e ela tem um VÃO.
+     * A LAJE, e ela tem um VÃO — que é um RASGO COMPRIDO, e não um buraco.
      *
-     * Ela é montada em quatro retângulos em volta do buraco por onde a escada
-     * chega, em vez de um plano com furo: quatro caixas custam quatro malhas e
-     * qualquer um lê o código; `Shape` com `holes` custaria uma triangulação
-     * para desenhar o mesmo retângulo.
+     * Ela é montada em retângulos em volta do buraco por onde a escada chega,
+     * em vez de um plano com furo: caixas custam caixas e qualquer um lê o
+     * código; `Shape` com `holes` custaria uma triangulação para desenhar o
+     * mesmo retângulo.
      *
-     * O material é o mesmo `polido()` do térreo, um degrau mais quente — lá em
-     * cima a luz que entra é a do lanternim, não a da vitrine.
+     * O COMPRIMENTO DO RASGO NÃO É GOSTO, e ele já nasceu curto uma vez. O vão
+     * cobria só a boca da escada (1,9 m), e aí a dupla subia POR BAIXO da laje
+     * até quase o fim do lance — com a cabeça saindo pelo piso do mezanino no
+     * meio do caminho, que foi o defeito que o Renan viu na foto.
+     *
+     * A conta é a de prédio de verdade: o rasgo tem que começar onde ainda há
+     * pé-direito para uma pessoa em cima do degrau. A 31° de inclinação, a
+     * cabeça (1,8 m acima do degrau) encosta na barriga da laje (3,77 m) quando
+     * o degrau está a 1,97 m — ou seja, a 1,5 m do pé da escada. Terminar o
+     * rasgo em `x = −0,8` dá 3,4 m de corrida coberta e meio metro de folga
+     * sobre a cabeça mais alta da dupla (a do chapéu de festa).
+     *
+     * E a ponta de `−X` (o patamar de desembarque) é PISO CHEIO: é ali que se
+     * pisa ao sair da placa pente, e era ali que antes havia um guarda-corpo de
+     * vidro a setenta centímetros do nariz de quem chegava.
      */
-    const VAO = { x0: -5.7, x1: -3.8, z0: z0, z1: -3.1 };
+    const VAO = { x0: -5.05, x1: -0.8, z0: z0, z1: -3.1 };
     const laje = polido(P.mezaninoPiso, { brilho: 0.14 });
     const pedacoDeLaje = (cx: number, cz: number, larg: number, prof: number): THREE.Mesh => {
       const piso = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.26, prof), laje);
@@ -455,34 +468,34 @@ export const lojinha: SceneDef = {
      * cinco metros e terminava NO AR. Lia como escada quebrada, não como escada
      * para o andar de cima.
      *
-     * Agora o pedaço de laje em volta do vão — os dois retângulos que ladeiam a
-     * boca da escada — mora no grupo da ESCADA, que nunca some. De baixo se vê
-     * o lance entrar num piso; de cima, ele chegar por ele. E o que essa aba
-     * esconde, pela conta da câmera, é o canto de `-X/-Z`: parede, e nada mais.
+     * Agora o PATAMAR DE DESEMBARQUE — o pedaço de laje entre a parede do fundo
+     * e a boca do rasgo, que é onde a placa pente entrega a dupla — mora no
+     * grupo da ESCADA, que nunca some. De baixo se vê o lance entrar num piso;
+     * de cima, ele chegar por ele. E o que esse patamar esconde, pela conta da
+     * câmera, é o canto de `-X/-Z`: parede, e nada mais.
      */
-    for (const [cx, larg] of [
-      [(x0 + VAO.x0) / 2, VAO.x0 - x0],
-      [(VAO.x1 + (VAO.x1 + 1.0)) / 2, 1.0],
-    ] as const) {
-      escada.add(pedacoDeLaje(cx, (z0 + VAO.z1) / 2, larg, VAO.z1 - z0));
-    }
-    const arremate = new THREE.Mesh(
-      new THREE.BoxGeometry(VAO.x1 - VAO.x0 + 0.1, 0.3, 0.1),
-      toon(P.boutiqueOuro),
-    );
-    arremate.position.set((VAO.x0 + VAO.x1) / 2, ALTURA - 0.13, VAO.z1);
-    escada.add(arremate);
+    escada.add(pedacoDeLaje(
+      (x0 + VAO.x0) / 2, (z0 + VAO.z1) / 2,
+      VAO.x0 - x0, VAO.z1 - z0,
+    ));
 
     /*
      * E O RESTO DA LAJE, que só aparece lá em cima: duas peças que cobrem tudo
-     * menos a aba e o vão. Sem esse recorte, laje e aba ficariam no mesmo plano
-     * na mesma região — duas faces coplanares, que é o que serrilha na tela.
+     * menos o patamar e o rasgo. Sem esse recorte, laje e patamar ficariam no
+     * mesmo plano na mesma região — faces coplanares, que é o que serrilha.
      */
-    superior.add(pedacoDeLaje((VAO.x1 + 1.0 + W / 2) / 2, 0, W / 2 - VAO.x1 - 1.0, D));
+    superior.add(pedacoDeLaje((VAO.x1 + W / 2) / 2, 0, W / 2 - VAO.x1, D));
     superior.add(pedacoDeLaje(
-      (x0 + VAO.x1 + 1.0) / 2, (VAO.z1 + D / 2) / 2,
-      VAO.x1 + 1.0 - x0, D / 2 - VAO.z1,
+      (x0 + VAO.x1) / 2, (VAO.z1 + D / 2) / 2,
+      VAO.x1 - x0, D / 2 - VAO.z1,
     ));
+    // o arremate dourado na borda comprida do rasgo, por baixo do guarda-corpo
+    const arremate = new THREE.Mesh(
+      new THREE.BoxGeometry(VAO.x1 - VAO.x0, 0.3, 0.1),
+      toon(P.boutiqueOuro),
+    );
+    arremate.position.set((VAO.x0 + VAO.x1) / 2, ALTURA - 0.13, VAO.z1 - 0.05);
+    superior.add(arremate);
 
     // paredes altas do mezanino (as mesmas duas do térreo) e guarda-corpo nas
     // duas bordas que dão para a câmera
@@ -527,9 +540,42 @@ export const lojinha: SceneDef = {
     };
     guardaCorpo(W / 2 - 0.1, z0, W / 2 - 0.1, D / 2 - 0.1);
     guardaCorpo(x0 + 0.1, D / 2 - 0.1, W / 2 - 0.1, D / 2 - 0.1);
-    // e as três bordas do vão da escada (a quarta é por onde se chega)
-    guardaCorpo(VAO.x0, VAO.z1, VAO.x1, VAO.z1);
-    guardaCorpo(VAO.x0, z0, VAO.x0, VAO.z1);
+    /*
+     * O RASGO TEM UM GUARDA-CORPO SÓ: a borda comprida, a que dá para o salão.
+     *
+     * As outras três não levam vidro, e nenhuma delas é um buraco aberto:
+     *  - a de `−Z` é a parede do fundo;
+     *  - a de `+X` fica a 2,4 m acima do lance e é INALCANÇÁVEL a pé (para
+     *    chegar nela seria preciso passar por dentro da escada);
+     *  - e a de `−X` é POR ONDE SE CHEGA — o patamar e a placa pente são a
+     *    mesma superfície, e foi um vidro fechando justamente essa ponta que
+     *    fazia a dupla terminar a viagem do lado errado dele.
+     *
+     * Quem impede de andar rasgo adentro a partir do patamar é o colisor da
+     * escada, logo abaixo, e não uma mureta.
+     */
+    /*
+     * O VIDRO COMEÇA 85 cm PARA DENTRO, e não na ponta do rasgo.
+     *
+     * Quem fecha a ponta de `−X` é a BALAUSTRADA DA PRÓPRIA ESCADA, que sobe
+     * junto com o lance e chega mais alta que o piso do mezanino — é assim num
+     * shopping de verdade, e é o que deixa a boca livre para desembarcar.
+     *
+     * Com o vidro indo até `VAO.x0`, o patamar virava um beco: a dupla saía da
+     * escada e ficava entalada entre o vidro (a `+Z`) e o rasgo (a `+X`), com
+     * 25 cm de corredor para escapar. Foi medido andando, não estimado.
+     */
+    guardaCorpo(VAO.x0 + 0.85, VAO.z1, VAO.x1, VAO.z1);
+    /*
+     * E O RASGO INTEIRO É COLISOR.
+     *
+     * O colisor do lance mora na lista do TÉRREO (ele é quem impede de andar
+     * por dentro da escada lá embaixo), então aqui em cima o buraco ficava
+     * aberto: dava para sair do patamar e andar quatro metros rasgo adentro,
+     * no ar, por cima dos degraus. É ele, e não a mureta, que segura a dupla.
+     */
+    w.blockBox((VAO.x0 + VAO.x1) / 2, (z0 + VAO.z1) / 2,
+      (VAO.x1 - VAO.x0) / 2, (VAO.z1 - z0) / 2);
 
     w.setBounds(x0 + 0.5, z0 + 0.5, W / 2 - 0.5, D / 2 - 0.5);
 
@@ -667,16 +713,31 @@ export const lojinha: SceneDef = {
       } finally {
         g.focusCamera(null);
         /*
-         * A SAÍDA É UM PASSO PARA DENTRO DA LOJA, e não em cima da placa pente:
-         * soltar a dupla exatamente no fim do lance deixaria os dois dentro do
-         * colisor da escada, e o primeiro quadro de física os empurraria para
-         * fora com um tranco.
+         * A SAÍDA É UM PASSO À FRENTE, no sentido em que o lance estava indo, e
+         * não em cima da placa pente: soltar a dupla exatamente no fim do lance
+         * deixaria os dois dentro do colisor da escada, e o primeiro quadro de
+         * física os empurraria para fora com um tranco.
+         *
+         * EM CIMA, ESSE PASSO É PARA `−X`, no PATAMAR — e isso é o conserto de
+         * um defeito que a foto mostrou. A saída ficava em `+Z`, um metro e
+         * meio para dentro do salão: como o rasgo da escada é fechado dos dois
+         * lados compridos por guarda-corpo, a dupla subia e reaparecia DO OUTRO
+         * LADO do vidro, que é a única parte do trajeto que ela não poderia ter
+         * feito a pé.
+         *
+         * Os dois saem EM FILA (um atrás do outro em `z`), e não lado a lado: o
+         * patamar tem 1,45 m entre a parede e o guarda-corpo do rasgo, e dois
+         * corpos lado a lado não cabem sem um deles nascer dentro de um colisor.
          */
         const saida = subindo
-          ? { x: TOPO_DA_ESCADA.x + 0.2, z: TOPO_DA_ESCADA.z + 1.5 }
-          : { x: BASE_DA_ESCADA.x + 0.9, z: BASE_DA_ESCADA.z + 1.2 };
-        g.releasePlayer(saida.x, saida.z, Math.PI);
-        g.releaseCompanion(saida.x - 0.7, saida.z + 0.5, Math.PI);
+          ? { x: TOPO_DA_ESCADA.x - 0.75, z: TOPO_DA_ESCADA.z + 0.1, olhar: 0, fila: true }
+          : { x: BASE_DA_ESCADA.x + 0.9, z: BASE_DA_ESCADA.z + 1.2, olhar: Math.PI, fila: false };
+        g.releasePlayer(saida.x, saida.z, saida.olhar);
+        g.releaseCompanion(
+          saida.fila ? saida.x : saida.x - 0.7,
+          saida.z + (saida.fila ? 0.75 : 0.5),
+          saida.olhar,
+        );
         // e SÓ DEPOIS a altura: `releasePlayer` teleporta, e teleporte zera o `y`
         g.elevarDupla(subindo ? ALTURA : 0);
         g.lockPlayer(false);
@@ -713,9 +774,14 @@ export const lojinha: SceneDef = {
         await viajarNaEscada(true);
       },
     }));
+    /*
+     * O prompt de descer mora no PATAMAR, junto com o ponto de desembarque —
+     * do outro lado do guarda-corpo ele pedia para descer uma escada que dali
+     * não dá para alcançar a pé.
+     */
     doSuperior.push(w.interact({
       id: 'lojinha:descer',
-      x: TOPO_DA_ESCADA.x + 0.1, z: TOPO_DA_ESCADA.z + 1.0, radius: 1.5,
+      x: TOPO_DA_ESCADA.x - 0.75, z: TOPO_DA_ESCADA.z + 0.45, radius: 1.6,
       label: 'Descer a escada rolante', icon: '🛗',
       onInteract: async () => { await viajarNaEscada(false); },
     }));

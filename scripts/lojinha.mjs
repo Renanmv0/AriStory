@@ -43,9 +43,13 @@ const RONDA = [
   [-4.4, 0.35], [-2.75, 0.4], [-2.75, -3.0], [0.9, -3.0], [3.6, -2.8],
   [1.6, -2.9], [1.6, -0.6], [1.05, 1.2], [1.1, 3.3], [3.4, 3.8],
 ];
-/** o pé e o topo da escada rolante, na planta da loja */
+/**
+ * O pé e o topo da escada rolante, na planta da loja. O do topo é o PATAMAR de
+ * desembarque, na ponta de `−X` do rasgo — e não um ponto qualquer do mezanino:
+ * é dali que dá para descer, e foi lá que a viagem passou a soltar a dupla.
+ */
 const PE_DA_ESCADA = { x: 2.0, z: -3.4 };
-const TOPO_DA_ESCADA = { x: -4.6, z: -2.56 };
+const TOPO_DA_ESCADA = { x: -5.5, z: -4.0 };
 /** onde se para para se olhar no espelho do mezanino */
 const FRENTE_DO_ESPELHO = { x: 3.4, z: -2.6 };
 /** a porta da loja, na calçada do parque */
