@@ -48,14 +48,43 @@ const estado = () =>
   });
 
 // ------------------------------------------------------------- a compra
+/*
+ * A COMPRA É ESPERADA ATÉ O SORVETE CHEGAR NA MÃO, e não por relógio.
+ *
+ * Ela já foi "aperta E seis vezes e espera 1,2 s", e isso parou de valer no dia
+ * em que o Mano passou a ENTREGAR o pedido: agora ele sai do posto, anda até a
+ * dupla e dá os dois sorvetes, o que leva uns quinze segundos de relógio num
+ * Chromium headless (onde o tempo de jogo corre umas cinco vezes mais devagar).
+ * O teste media antes disso e via as duas mãos vazias.
+ */
 await page.keyboard.press('KeyE');
-await page.waitForTimeout(600);
-for (let i = 0; i < 6; i++) {
-  if (!(await page.locator('.dialogue.show').count())) break;
+const chegou = async () => {
+  const t0 = Date.now();
+  while (Date.now() - t0 < 60000) {
+    await page.waitForTimeout(700);
+    if (await page.locator('.dialogue.show').count()) await page.keyboard.press('KeyE');
+    const [a, r] = await page.evaluate(() => [
+      window.jogo.getActiveHandItem('ari')?.id ?? null,
+      window.jogo.getActiveHandItem('renan')?.id ?? null,
+    ]);
+    if (a && r) return true;
+  }
+  return false;
+};
+const entregou = await chegou();
+/*
+ * E O BALÃO É FECHADO ATÉ O FIM ANTES DE SEGUIR.
+ *
+ * O sorvete chega na mão no MEIO da fala do Mano, e o `T` não troca de
+ * personagem com uma caixa de diálogo aberta (nem deve: `keyPressed` recusa
+ * tudo enquanto há tela de ler). Sem esta drenagem o teste apertava `T` no
+ * vazio e cobrava a troca que ele mesmo tinha impedido.
+ */
+for (let i = 0; i < 20 && (await page.locator('.dialogue.show').count()); i++) {
   await page.keyboard.press('KeyE');
   await page.waitForTimeout(600);
 }
-await page.waitForTimeout(1200);
+await page.waitForTimeout(800);
 
 // De FRENTE para a câmera, não de costas: a pose `upright` estica o braço
 // para a frente, e de costas o braço esticado fica escondido atrás do corpo.
@@ -242,6 +271,7 @@ const paresCertos = (e) =>
 
 const ok =
   !erros.length &&
+  entregou &&
   comprou.maoAri === 'sorvete-morango' &&
   comprou.maoRenan === 'sorvete-maracuja' &&
   paresCertos(comprou) &&

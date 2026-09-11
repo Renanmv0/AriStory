@@ -441,6 +441,16 @@ export interface GameAPI {
    * daquela partida daquele personagem, e nao da interface.
    */
   motorDeXadrez(minhaCor?: Cor, semente?: number): ChessEngine;
+  /**
+   * Poe a dupla num PISO de outra altura — o mezanino da boutique e o unico
+   * lugar do jogo em que o chao nao esta em `y = 0`.
+   *
+   * Nada no motor precisou virar "sistema de andares" para isso: a fisica de
+   * caminhada escreve so `x` e `z`, e a colisao e 2D. Quem decide o que existe
+   * em cada andar e a CENA — ela troca os colisores, os limites, o que esta
+   * visivel e quais interacoes ligam. Isto aqui e so a altura do piso.
+   */
+  elevarDupla(altura: number): void;
 
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */

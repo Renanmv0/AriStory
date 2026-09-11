@@ -60,6 +60,14 @@ const PECAS = [
   ['balcao-de-passagem', 'mania-de-churrasco'],
   ['estante-de-bebidas', 'mania-de-churrasco'],
   ['placa-de-fachada', 'mania-de-churrasco'],
+  ['arara-de-roupas', 'lojinha'],
+  ['arara-premium', 'lojinha'],
+  ['provadores', 'lojinha'],
+  ['balcao-da-loja', 'lojinha'],
+  ['mesa-de-dobrar', 'lojinha'],
+  ['prateleira-da-loja', 'lojinha'],
+  ['escada-rolante', 'lojinha'],
+  ['espelho-magico', 'lojinha'],
 ];
 
 const browser = await chromium.launch({
@@ -84,12 +92,28 @@ const caçar = (etiqueta) =>
     // rotação: com rotação a caixa deixa de ser alinhada e a conta não vale —
     // e peça girada raramente compartilha plano com a vizinha por acidente.
     const caixas = [];
-    const recolher = (obj, dx, dy, dz) => {
+    /**
+     * A ROTAÇÃO DO PAI CONTA TANTO QUANTO A DA MALHA.
+     *
+     * A regra sempre foi "só caixa sem rotação", porque a conta é de caixa
+     * ALINHADA e com giro ela não vale. Mas o teste olhava só o `rotation` da
+     * própria malha e descia para os filhos sem levar o do pai — então uma
+     * caixa reta pendurada num grupo girado entrava na lista como se fosse
+     * reta, com a caixa envolvente errada.
+     *
+     * Foi assim que a arara acusou seis pares fantasmas: cada roupa mora num
+     * `conjunto` com `rotation.y` sorteado, e o teste media todas as barras de
+     * cabide como se estivessem no mesmo ângulo — duas cujo sorteio caiu a
+     * menos de 1,5 mm uma da outra "compartilhavam" planos que, na tela, não
+     * são nem paralelos.
+     */
+    const recolher = (obj, dx, dy, dz, giradoAcima) => {
       for (const f of obj.children) {
         const px = dx + f.position.x;
         const py = dy + f.position.y;
         const pz = dz + f.position.z;
         const girado =
+          giradoAcima ||
           Math.abs(f.rotation.x) > 1e-6 ||
           Math.abs(f.rotation.y) > 1e-6 ||
           Math.abs(f.rotation.z) > 1e-6;
@@ -106,10 +130,10 @@ const caçar = (etiqueta) =>
             offset: !!f.material?.polygonOffset,
           });
         }
-        if (f.children?.length) recolher(f, px, py, pz);
+        if (f.children?.length) recolher(f, px, py, pz, girado);
       }
     };
-    recolher(peca, 0, 0, 0);
+    recolher(peca, 0, 0, 0, false);
 
     const EIXOS = ['x', 'y', 'z'];
     for (let a = 0; a < caixas.length; a++) {

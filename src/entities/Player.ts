@@ -80,8 +80,15 @@ export class Player {
     return new THREE.Vector3(this.position.x, this.position.y + 1.0, this.position.z);
   }
 
-  teleport(x: number, z: number, facing = 0): void {
-    this.position.set(x, 0, z);
+  /**
+   * @param altura o `y` do PISO em que ele vai parar. Zero em quase todo lugar;
+   * o mezanino da boutique e o unico chao do jogo que nao esta no zero.
+   *
+   * A fisica desta classe so escreve `x` e `z` — o `y` fica onde for posto, e e
+   * isso que deixa um segundo andar existir sem o motor saber o que e um andar.
+   */
+  teleport(x: number, z: number, facing = 0, altura = 0): void {
+    this.position.set(x, altura, z);
     this.velocity.set(0, 0, 0);
     this.submersion = 0;
     // trocar de cena com o pe no gelo nao pode deixar a cena seguinte

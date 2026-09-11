@@ -108,7 +108,7 @@ node scripts/turno.mjs   /tmp/tn    # o turno do Mania: levar a mesa, anotar, se
 node scripts/premio.mjs  /tmp/pr    # a carteira do casal (uma so para os dois) e a gravatinha das 3 estrelas
 node scripts/mano.mjs    /tmp/pg    # o Mano no quiosque: fica no posto, aparece inteiro, fala, danca e entrega
 node scripts/cookie.mjs  /tmp/ck    # o Cookie: patrulha ao lado da cabine, vira nas pontas, e vende o bilhete
-node scripts/lojinha.mjs /tmp/lj    # a loja por dentro: a porta nos dois sentidos, o salao montado e a ronda da Estella sem atravessar movel
+node scripts/lojinha.mjs /tmp/lj    # a boutique nos dois andares: a ronda da Estella, a escada rolante subindo e descendo, e o espelho refletindo quem para na frente
 node scripts/xadrez.mjs  /tmp/xa    # o xadrez da Estella: 14 posicoes de regra, 300 partidas de fuzz e o tabuleiro na tela
 node scripts/estella.mjs /tmp/es    # a Estella: fica no posto, aparece inteira fora do toldo, da o biscoitinho pros dois e tem o xadrez montado
 node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena, a mesinha servida pelo Mano, o deslize e a patinacao

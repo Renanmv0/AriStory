@@ -78,8 +78,8 @@ export class Companion {
     return antigo;
   }
 
-  teleport(x: number, z: number, facing = 0): void {
-    this.position.set(x, 0, z);
+  teleport(x: number, z: number, facing = 0, altura = 0): void {
+    this.position.set(x, altura, z);
     this.velocity.set(0, 0, 0);
     this.submersion = 0;
     this.derrapagem = 0;

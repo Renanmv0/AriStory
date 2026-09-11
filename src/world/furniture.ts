@@ -1649,8 +1649,18 @@ function cabide(cor: number = P.lojaMetal): THREE.Group {
   gancho.position.y = 0.075;
   gancho.rotation.z = Math.PI * 0.25;
   g.add(gancho);
+  /*
+   * OS DOIS OMBROS SE ENCOSTAM NO MEIO, e não se ATRAVESSAM.
+   *
+   * Com 0,16 eles cruzavam 1 cm um dentro do outro — e, sendo espelhados, a
+   * caixa envolvente dos dois era a MESMA em `y` e em `z`, que é a receita de
+   * face coplanar. Com 0,152 eles se tocam e param, e o gancho cobre a emenda.
+   *
+   * (O `zfighting.mjs` não pega este caso: os ombros são girados, e a conta
+   * dele é de caixa alinhada. Foi olhando a geometria, e não o relatório.)
+   */
   for (const lado of [-1, 1] as const) {
-    const ombro = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.012), m);
+    const ombro = new THREE.Mesh(new THREE.BoxGeometry(0.152, 0.012, 0.012), m);
     ombro.position.set(lado * 0.075, -0.01, 0);
     ombro.rotation.z = lado * -0.28;
     g.add(ombro);
@@ -1808,17 +1818,27 @@ export function provadores(
   costas.position.set(0, alt / 2, -fundo);
   g.add(costas);
 
-  // as divisorias: n+1, compartilhadas entre as cabines
+  /*
+   * AS DIVISÓRIAS: n+1, compartilhadas entre as cabines. Elas são 8 mm mais
+   * baixas que o fundo — 4 mm de folga em cima e 4 embaixo — e a verga passa
+   * 12 mm acima de todo mundo.
+   *
+   * Isso não é detalhe de marcenaria, é o conserto do serrilhado: com as cinco
+   * paredes nascendo em `y = 0` e terminando em `y = alt`, junto com a verga,
+   * davam 25 pares de faces coplanares — e os de CIMA são os que aparecem, que
+   * a câmera olha de 34° e vê o topo de tudo. As duas folgas somem: a de baixo
+   * atrás da cortina, a de cima dentro da verga.
+   */
   for (let i = 0; i <= quantas; i++) {
     const x = -total / 2 + i * larg;
-    const divisoria = new THREE.Mesh(new THREE.BoxGeometry(0.08, alt, fundo), parede);
+    const divisoria = new THREE.Mesh(new THREE.BoxGeometry(0.08, alt - 0.008, fundo), parede);
     divisoria.position.set(x, alt / 2, -fundo / 2);
     g.add(divisoria);
   }
 
   // a verga por cima, com o trilho da cortina
   const verga = new THREE.Mesh(new THREE.BoxGeometry(total + 0.1, 0.22, fundo + 0.06), parede);
-  verga.position.set(0, alt - 0.11, -fundo / 2 + 0.02);
+  verga.position.set(0, alt - 0.098, -fundo / 2 + 0.02);
   g.add(verga);
   const trilho = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, total, 8), toon(P.lojaMetal));
   trilho.rotation.z = Math.PI / 2;
@@ -1838,11 +1858,21 @@ export function provadores(
         new THREE.BoxGeometry(largaDaTira * 1.06, alt - 0.42, 0.035),
         toon(opts.corCortina ?? P.lojaCortinaProvador),
       );
-      // O FRANZIDO: um seno em `z` por tira. Sem ele a cortina e um plano liso,
-      // e plano liso pendurado le como porta de armario.
+      /*
+       * O FRANZIDO: um seno em `z` por tira. Sem ele a cortina e um plano liso,
+       * e plano liso pendurado le como porta de armario.
+       *
+       * E CADA TIRA DESCE UM TANTO DIFERENTE (`desce`), o que e verdade de
+       * cortina franzida — barra reta e coisa de porta — e e tambem o que tira
+       * as tiras VIZINHAS do mesmo plano. Elas se sobrepoem 6% de proposito
+       * (para nao abrir fresta), entao com todas comecando e terminando na
+       * mesma linha eram 22 pares coplanares por provador. Os tres valores
+       * (0, 3, 6, 9, 12, 15 mm) nunca se repetem entre vizinhas.
+       */
+      const desce = (t % 3) * 0.006 + (t % 2) * 0.003;
       tira.position.set(
         -((tiras - 1) * largaDaTira) / 2 + t * largaDaTira,
-        (alt - 0.42) / 2,
+        (alt - 0.42) / 2 - desce,
         Math.sin(t * 1.9) * 0.035,
       );
       cortina.add(tira);
@@ -2039,8 +2069,15 @@ export function balcaoDaLoja(largura = 2.4): THREE.Group {
   const alt = 1.0;
   const fundo = 0.62;
 
+  /*
+   * O CORPO NASCE 5 mm ACIMA DO CHÃO, e quem encosta no piso é o rodapé. Com
+   * os dois nascendo em `y = 0` sobrava 1,49 m² de barriga coplanar com a
+   * barriga do rodapé — a maior área do relatório do `zfighting.mjs` na loja
+   * inteira. De quebra, os 5 mm fecham a fresta que havia entre o corpo e o
+   * tampo.
+   */
   const caixa = new THREE.Mesh(new THREE.BoxGeometry(largura, alt - 0.06, fundo), corpo);
-  caixa.position.set(0, (alt - 0.06) / 2, 0);
+  caixa.position.set(0, (alt - 0.06) / 2 + 0.005, 0);
   g.add(caixa);
   const tampoM = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.1, 0.07, fundo + 0.12), tampo);
   tampoM.position.y = alt - 0.02;
@@ -2116,8 +2153,13 @@ export function mesaDeDobrar(largura = 1.6, semente = 7): THREE.Group {
       g.add(pe);
     }
   }
-  // a prateleira de baixo, com caixas
-  const baixo = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.16, 0.04, 0.7), toon(P.woodDark));
+  /*
+   * A prateleira de baixo é 1 cm mais estreita QUE A LINHA DOS PÉS, e não
+   * rente a ela: com `largura - 0.16` a lateral dela caía exatamente no plano
+   * da face de fora do pé (os dois dão `largura/2 − 0.08`, para qualquer
+   * largura), e faces coplanares é o que serrilha.
+   */
+  const baixo = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.18, 0.04, 0.7), toon(P.woodDark));
   baixo.position.y = 0.24;
   g.add(baixo);
 
@@ -2160,8 +2202,14 @@ export function prateleiraDaLoja(largura = 2.2, semente = 3): THREE.Group {
     g.add(lateral);
   }
   const familia = COLECOES[Math.floor(rnd() * COLECOES.length)];
+  /*
+   * A TÁBUA É 1,2 cm MAIS RASA QUE A LATERAL, 6 mm recuados de cada lado. Com
+   * a mesma profundidade das duas, a frente e o fundo de cada tábua caíam no
+   * mesmo plano da frente e do fundo das laterais — doze pares coplanares numa
+   * peça de cinco caixas. E prateleira de verdade tem esse recuo mesmo.
+   */
   for (const [n, y] of alturas.entries()) {
-    const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.05, fundo), madeira);
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.05, fundo - 0.012), madeira);
     tabua.position.set(0, y, -fundo / 2);
     g.add(tabua);
 
@@ -2235,6 +2283,237 @@ export function pufeDeLoja(cor: number = P.lojaCortinaProvador): THREE.Group {
     pe.rotation.z = Math.cos(i * 1.57) * 0.12;
     pe.rotation.x = -Math.sin(i * 1.57) * 0.12;
     g.add(pe);
+  }
+  return g;
+}
+
+/**
+ * ====================================== A ESCADA ROLANTE DA BOUTIQUE
+ *
+ * Ela sobe de `+Z` para `−Z` (a cena gira, como toda peça do kit), com a base
+ * em `z = +comprimento/2` e o topo em `−comprimento/2`.
+ *
+ * O QUE FAZ UMA RAMPA VIRAR ESCADA ROLANTE, e é nesta ordem:
+ *
+ * 1. OS DEGRAUS SÃO DEGRAUS, e não uma rampa lisa com riscos. Cada um tem
+ *    espelho (a face vertical) e piso (a face horizontal), e é a serrilha que
+ *    o olho reconhece de longe. Rampa com textura de degrau lê como escada
+ *    rolante desligada.
+ * 2. AS LATERAIS SÃO DE VIDRO, inclinadas junto com o lance. Vidro é o que
+ *    separa "escada rolante de loja" de "escada de emergência": a de shopping
+ *    é sempre um painel transparente com o corrimão escuro correndo por cima.
+ * 3. O CORRIMÃO É ESCURO E GORDO. É a única linha de contraste da peça, e é
+ *    ela que desenha a diagonal na tela — o vidro quase não aparece, os
+ *    degraus são claros, e sem o corrimão a escada some no piso claro.
+ * 4. AS DUAS PLACAS PENTE, em cima e embaixo, onde o degrau "entra no chão".
+ *    Elas custam duas caixas e são o detalhe que faz a escada ter começo e fim
+ *    em vez de flutuar.
+ *
+ * A ALTURA E O COMPRIMENTO vêm de fora porque quem manda é o pé-direito do
+ * andar: a cena passa a altura do mezanino e o comprimento que cabe na sala, e
+ * a inclinação sai da divisão. Escada rolante de verdade tem 30°; abaixo de 25°
+ * ela lê como esteira de aeroporto, e acima de 40° como escada de mão.
+ */
+export function escadaRolante(altura = 3.9, comprimento = 6.4): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'escada-rolante';
+  const largura = 1.15;
+  const aco = toon(P.escadaDegrau);
+  const acoEscuro = toon(P.escadaDegrauEscuro);
+  // o vidro e BEM transparente (0,2) e a saia baixa: visto de 34° de cima, um
+  // painel de 7,5 de comprimento vira uma faixa enorme atravessando o salao, e
+  // com 0,34 de opacidade ele apagava tudo o que passava por baixo
+  const vidro = toon(P.escadaVidro, { opacity: 0.2, doubleSide: true });
+  const corrimao = toon(P.escadaCorrimao);
+
+  const z0 = comprimento / 2;   // a base, em +Z
+  const inclinacao = Math.atan2(altura, comprimento);
+  const lance = Math.hypot(altura, comprimento);
+
+  // ------------------------------------------------------------- os degraus
+  /*
+   * O PASSO É MEDIDO NA HORIZONTAL (0,4), e não ao longo da rampa: assim o
+   * piso de cada degrau tem sempre a mesma profundidade aparente, que é o que
+   * acontece numa escada rolante de verdade (o degrau é sempre do mesmo
+   * tamanho, quem muda é a altura entre eles).
+   */
+  const passo = 0.4;
+  const quantos = Math.floor(comprimento / passo);
+  for (let i = 0; i <= quantos; i++) {
+    const t = i / quantos;
+    const z = z0 - t * comprimento;
+    const y = t * altura;
+    const piso = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.06, passo * 0.94), aco);
+    piso.position.set(0, y + 0.03, z);
+    g.add(piso);
+    /*
+     * O espelho do degrau, a face vertical que fecha o desnível.
+     *
+     * Ele é 2 cm MAIS ESTREITO que o piso e nasce 4 mm ACIMA dele, e os dois
+     * números são de conserto: nascendo com a mesma largura e no mesmo `y`, o
+     * espelho e o piso de cada degrau davam duas faces laterais e uma face de
+     * baixo COPLANARES — vinte e tantos pares num lance só, que é o que
+     * serrilha quando a escada aparece de lado.
+     */
+    const degrau = altura / quantos;
+    if (i < quantos) {
+      const face = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.02, degrau, 0.05), acoEscuro);
+      face.position.set(0, y + degrau / 2 + 0.004, z - passo * 0.47);
+      g.add(face);
+    }
+    // os frisos amarelos da borda do degrau, de dois em dois
+    if (i % 2 === 0) {
+      const friso = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.1, 0.02, 0.04), toon(P.boutiqueOuro));
+      friso.position.set(0, y + 0.07, z + passo * 0.4);
+      g.add(friso);
+    }
+  }
+
+  // ----------------------------------------------------- as laterais e o corrimão
+  /**
+   * O SINAL DA INCLINAÇÃO, e ele já nasceu trocado uma vez.
+   *
+   * `rotation.x = θ` leva o `+Z` local para `(0, −sen θ, cos θ)`: com θ
+   * POSITIVO a ponta de `+Z` DESCE. E `+Z` aqui é a BASE (o degrau `i = 0`
+   * nasce em `z0` com `y = 0`), então é `+inclinacao` que faz a lateral subir
+   * junto com os degraus.
+   *
+   * Com o sinal trocado a lateral subia ao contrário: o painel e o corrimão
+   * cruzavam a escada em X, e a ponta alta deles ficava sobre a BASE — quatro
+   * metros no ar, sobre o piso do mezanino, um risco escuro flutuando ao lado
+   * do espelho. Só a foto DE CIMA mostrou; do térreo a diagonal errada ainda
+   * lia como diagonal.
+   */
+  for (const lado of [-1, 1] as const) {
+    const x = lado * (largura / 2 + 0.06);
+
+    const painel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.78, lance), vidro);
+    painel.position.set(x, altura / 2 + 0.46, 0);
+    painel.rotation.x = inclinacao;
+    g.add(painel);
+
+    // a saia de aço por baixo do vidro, que é o que esconde o maquinário
+    const saia = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, lance), acoEscuro);
+    saia.position.set(x, altura / 2 + 0.03, 0);
+    saia.rotation.x = inclinacao;
+    g.add(saia);
+
+    const mao = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.07, lance), corrimao);
+    mao.position.set(x, altura / 2 + 0.89, 0);
+    mao.rotation.x = inclinacao;
+    g.add(mao);
+    // as duas voltas do corrimão, nas pontas: meio toro deitado
+    for (const [zz, yy] of [[z0, 0], [-z0, altura]] as const) {
+      const volta = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.055, 6, 12, Math.PI), corrimao);
+      volta.position.set(x, yy + 0.7, zz);
+      volta.rotation.y = Math.PI / 2;
+      volta.rotation.z = inclinacao + (yy === 0 ? Math.PI : 0);
+      g.add(volta);
+    }
+  }
+
+  // -------------------------------------------------------- as placas pente
+  for (const [zz, yy] of [[z0 + 0.22, 0], [-z0 - 0.22, altura]] as const) {
+    /*
+     * A placa é 1 cm mais BAIXA que o degrau e nasce 5 mm acima do piso do
+     * andar: com 0,08 de altura a partir do zero, a barriga dela ficava no
+     * mesmo plano da barriga do primeiro degrau (0,25 m² coplanares) e o topo
+     * dela, no mesmo plano do friso.
+     */
+    const pente = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.24, 0.07, 0.5), acoEscuro);
+    pente.position.set(0, yy + 0.04, zz);
+    g.add(pente);
+    for (let i = 0; i < 9; i++) {
+      const dente = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, 0.16), toon(P.boutiqueOuro));
+      dente.position.set(-largura / 2 + 0.07 + i * (largura - 0.14) / 8, yy + 0.085, zz + (yy === 0 ? -0.2 : 0.2));
+      g.add(dente);
+    }
+  }
+  return g;
+}
+
+/**
+ * ====================================== A ARARA PREMIUM DO MEZANINO
+ *
+ * A mesma ideia da arara de baixo, com três diferenças que são o que separa a
+ * peça cara da peça comum numa loja de verdade:
+ *
+ * 1. **MENOS ROUPA, MAIS ESPAÇO.** É o sinal mais forte de todos: arara lotada
+ *    lê como liquidação, arara com seis peças espaçadas lê como coleção. O
+ *    passo aqui é 0,3 contra os 0,132 lá de baixo.
+ * 2. **METAL DOURADO E ARCO NO ALTO.** O tubo reto vira um pórtico com dois
+ *    cantos arredondados (um toro de um quarto de volta em cada ponta), que é
+ *    o desenho de vitrine de butique.
+ * 3. **BASE DE MÁRMORE**, e não pé de rodízio: ela não anda. Arara premium é
+ *    móvel fixo, e o pé pesado diz isso sozinho.
+ *
+ * As roupas são as MESMAS de baixo (`pecaPendurada`) — a diferença está em como
+ * elas são apresentadas, não no que são. É o que uma boutique faz.
+ */
+export function araraPremium(opts: AraraOpts & { prata?: boolean } = {}): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'arara-premium';
+  const largura = opts.largura ?? 2.0;
+  const altura = opts.altura ?? 1.7;
+  const rnd = sorteio(opts.semente ?? 20260911);
+  const metal = toon(opts.prata ? P.boutiquePrata : P.boutiqueOuro);
+  const pedra = toon(P.boutiqueBoiserie);
+
+  const meia = largura / 2 - 0.18;
+  for (const lado of [-1, 1] as const) {
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.09, 0.42), pedra);
+    base.position.set(lado * meia, 0.045, 0);
+    g.add(base);
+    const sapata = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.06, 10), metal);
+    sapata.position.set(lado * meia, 0.11, 0);
+    g.add(sapata);
+
+    const montante = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.028, 0.028, altura - 0.32, 10),
+      metal,
+    );
+    montante.position.set(lado * meia, 0.13 + (altura - 0.32) / 2, 0);
+    g.add(montante);
+
+    /*
+     * O CANTO ARREDONDADO: um quarto de toro ligando o montante à barra. É o
+     * detalhe que transforma dois tubos e uma barra num PÓRTICO — e pórtico é
+     * o que uma arara de vitrine tem.
+     */
+    const canto = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.028, 6, 10, Math.PI / 2), metal);
+    canto.position.set(lado * (meia - 0.18), altura - 0.19, 0);
+    canto.rotation.z = lado > 0 ? 0 : Math.PI / 2;
+    g.add(canto);
+  }
+
+  const barra = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.028, 0.028, largura - 0.72, 10),
+    metal,
+  );
+  barra.rotation.z = Math.PI / 2;
+  barra.position.y = altura - 0.01;
+  g.add(barra);
+
+  // ------------------------------------------------------------- as roupas
+  const familia = COLECOES[(opts.colecao ?? 0) % COLECOES.length];
+  const tipos = opts.tipos ?? (['vestido', 'casaco', 'vestido'] as const);
+  const passo = 0.3;
+  const quantas = Math.max(3, Math.floor((largura - 0.9) / passo));
+  const inicio = -((quantas - 1) * passo) / 2;
+  for (let i = 0; i < quantas; i++) {
+    const conjunto = new THREE.Group();
+    conjunto.add(cabide(opts.prata ? P.boutiquePrata : P.boutiqueOuro));
+    const cor = familia[i % familia.length];
+    conjunto.add(pecaPendurada(
+      tipos[Math.floor(rnd() * tipos.length)],
+      cor,
+      new THREE.Color(cor).multiplyScalar(0.78).getHex(),
+    ));
+    conjunto.position.set(inicio + i * passo, altura - 0.08, (rnd() - 0.5) * 0.03);
+    // quase de frente, e não de lado: em arara premium a peça é EXPOSTA, e o
+    // giro pequeno (0,12 contra 0,6) é o que diz "arrumada uma a uma"
+    conjunto.rotation.y = (rnd() - 0.5) * 0.24;
+    g.add(conjunto);
   }
   return g;
 }

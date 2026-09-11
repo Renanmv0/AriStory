@@ -484,3 +484,68 @@ export function gelo(lado = 6): THREE.CanvasTexture {
     }
   });
 }
+
+/**
+ * PORCELANATO POLIDO — o piso da boutique.
+ *
+ * Ele é o oposto do assoalho: placa GRANDE (1,8 de lado), junta quase
+ * invisível e nenhum veio forte. O que dá a cara de piso caro não é desenho, é
+ * a AUSÊNCIA dele — mancha larguíssima e suave, e um leve véu diagonal que o
+ * especular do material `polido()` transforma em reflexo quando a câmera gira.
+ *
+ * Como todas as texturas daqui, ela trabalha entre 0,9 e 1,0 de luminosidade:
+ * o material MULTIPLICA a cor da paleta pelo desenho, e qualquer cinza aqui
+ * viraria uma segunda demão de tinta por cima do bege.
+ */
+export function porcelanatoPolido(lado = 1.8): THREE.CanvasTexture {
+  return novaTextura(`porcelanato:${lado}`, lado, (ctx, s) => {
+    const rnd = sorteio(20260911);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s, s);
+
+    // o veio da pedra: riscos largos, quase brancos, em diagonal
+    for (let i = 0; i < 9; i++) {
+      const x = rnd() * s;
+      const y = rnd() * s;
+      const comp = s * (0.4 + rnd() * 0.5);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.6 + rnd() * 0.35);
+      const g = ctx.createLinearGradient(0, 0, comp, 0);
+      g.addColorStop(0, 'rgba(196,182,168,0)');
+      g.addColorStop(0.5, `rgba(196,182,168,${0.03 + rnd() * 0.03})`);
+      g.addColorStop(1, 'rgba(196,182,168,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, comp, 1 + rnd() * 3);
+      ctx.restore();
+    }
+
+    // duas manchas enormes e suaves: é o que tira o "plástico" do piso liso
+    for (let i = 0; i < 3; i++) {
+      const x = rnd() * s;
+      const y = rnd() * s;
+      const r = s * (0.25 + rnd() * 0.2);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(210,198,182,${0.03 + rnd() * 0.02})`);
+      g.addColorStop(1, 'rgba(210,198,182,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+
+    /*
+     * A JUNTA É FINÍSSIMA e SÓ EM DUAS BORDAS (o mesmo motivo do `pisoDePlacas`:
+     * a outra metade da junta vem da placa vizinha). Porcelanato retificado tem
+     * junta de 2 mm — numa placa de 1,8 m isso é 0,1% do lado, e no jogo ela
+     * some; 0,6% é o mínimo que ainda LÊ como piso assentado.
+     */
+    const junta = s * 0.006;
+    ctx.fillStyle = 'rgba(186,174,160,0.3)';
+    ctx.fillRect(0, 0, s, junta);
+    ctx.fillRect(0, 0, junta, s);
+    // e o fio de luz do lado de dentro da junta: é ele que dá o bisel da placa
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillRect(0, junta, s, junta);
+    ctx.fillRect(junta, 0, junta, s);
+  });
+}

@@ -21,6 +21,14 @@
  * - ELA FALA SOZINHA, em toast, com as frases do Renan.
  * - O SALÃO TEM O QUE FOI PEDIDO: araras com roupa pendurada, provadores,
  *   manequins, balcão. Medido por contagem de peça, e não por foto.
+ * - OS DOIS ANDARES SÃO DOIS ANDARES. A escada rolante leva a dupla inteira para
+ *   cima e para baixo, e na chegada o térreo some, o mezanino aparece e a LISTA
+ *   DE COLISORES troca — as três, porque cada uma sozinha passa com o bug da
+ *   outra.
+ * - O ESPELHO REFLETE QUEM ESTÁ NA FRENTE DELE. E isso é medido comparando a
+ *   textura do reflexo com a dupla no lugar e com a dupla longe: um teste de
+ *   "tem pixel aceso" passa com o espelho refletindo a sala e ESQUECENDO as
+ *   pessoas, que é literalmente o bug que esta peça já teve.
  *
  * Uso: node scripts/lojinha.mjs /caminho/prefixo
  */
@@ -32,9 +40,14 @@ const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome
 
 /** tem que bater com o `RONDA` da cena */
 const RONDA = [
-  [4.0, -2.1], [0.6, -3.2], [-2.4, -3.2], [-5.4, -3.0],
-  [-5.4, 1.6], [-2.4, 1.9], [-0.4, 3.4], [2.6, 3.6],
+  [-4.4, 0.35], [-2.75, 0.4], [-2.75, -3.0], [0.9, -3.0], [3.6, -2.8],
+  [1.6, -2.9], [1.6, -0.6], [1.05, 1.2], [1.1, 3.3], [3.4, 3.8],
 ];
+/** o pé e o topo da escada rolante, na planta da loja */
+const PE_DA_ESCADA = { x: 2.0, z: -3.4 };
+const TOPO_DA_ESCADA = { x: -4.6, z: -2.56 };
+/** onde se para para se olhar no espelho do mezanino */
+const FRENTE_DO_ESPELHO = { x: 3.4, z: -2.6 };
 /** a porta da loja, na calçada do parque */
 const PORTA_DE_FORA = { x: -34.9, z: -16.5 };
 
@@ -139,9 +152,17 @@ const ondeEla = () => page.evaluate(() => {
  * amostragem, e apostar em cair no meio dos tres segundos em que a fala esta na
  * tela. Aqui cada amostra da trilha aproveita e recolhe o que estiver escrito.
  */
+/*
+ * A AMOSTRAGEM É LONGA (54 s) PORQUE A RONDA NOVA TEM PERNA CURTA. A fila de
+ * dez paradas anda de dois em dois metros, e entre uma e outra ela PARA de 3,5
+ * a 7,5 s — num Chromium headless, que roda o tempo de jogo umas cinco vezes
+ * mais devagar que o relógio. Com a janela de 36 s da versão antiga ela mal
+ * completava um trecho, e o teste reprovava a ronda por "quase não andou"
+ * estando ela perfeitamente viva.
+ */
 const trilha = [];
 const ditas = new Set();
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 60; i++) {
   const onde = await ondeEla();
   if (onde) trilha.push(onde);
   for (const t of await page.evaluate(() =>
@@ -219,6 +240,153 @@ const noDiario = await page.evaluate(() => {
   return (save.memories ?? []).map((m) => m.id);
 });
 
+// ================================== 7. a escada rolante, o mezanino e o espelho
+/**
+ * A VIAGEM É ESPERADA POR CONDIÇÃO, NUNCA POR RELÓGIO. O Chromium headless roda
+ * o tempo de jogo umas cinco vezes mais devagar que o relógio de parede, então
+ * um `waitForTimeout` do tamanho do tween (4,2 s) fotografa a dupla no meio da
+ * escada. O teste espera a ALTURA passar de 3,5 E o controle voltar.
+ */
+const subir = async () => {
+  const t0 = Date.now();
+  while (Date.now() - t0 < 90000) {
+    const [, y] = await page.evaluate(() => {
+      const q = window.jogo.playerPosition();
+      return [+q.x.toFixed(2), +q.y.toFixed(2)];
+    });
+    const travado = await page.evaluate(() => window.jogo.input?.blocked ?? null);
+    if (y > 3.5 && !travado) return +((Date.now() - t0) / 1000).toFixed(0);
+    await page.waitForTimeout(800);
+  }
+  return null;
+};
+const descer = async () => {
+  const t0 = Date.now();
+  while (Date.now() - t0 < 90000) {
+    const y = await page.evaluate(() => +window.jogo.playerPosition().y.toFixed(2));
+    const travado = await page.evaluate(() => window.jogo.input?.blocked ?? null);
+    if (y < 0.4 && !travado) return +((Date.now() - t0) / 1000).toFixed(0);
+    await page.waitForTimeout(800);
+  }
+  return null;
+};
+
+await page.evaluate(([x, z]) => {
+  window.jogo.debugPlace(x, z, Math.PI);
+  window.jogo.setZoom(11);
+}, [PE_DA_ESCADA.x, PE_DA_ESCADA.z]);
+await page.waitForTimeout(1400);
+const promptDoPe = await page.locator('.prompt .label').textContent().catch(() => '');
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(900);
+for (let i = 0; i < 8 && (await page.locator('.dialogue.show').count()); i++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(450);
+}
+const segundosSubindo = await subir();
+const laEmCima = await page.evaluate(() => {
+  const q = window.jogo.playerPosition();
+  const c = window.jogo.companionPosition();
+  return { jogador: [+q.x.toFixed(2), +q.y.toFixed(2), +q.z.toFixed(2)], parceiroY: +c.y.toFixed(2) };
+});
+await page.screenshot({ path: `${OUT}-mezanino.png` });
+
+/**
+ * O ANDAR TROCOU DE VERDADE: peça do térreo escondida, peça do mezanino na
+ * tela, e a lista de colisores é OUTRA. As três juntas, porque cada uma sozinha
+ * passa com o bug da outra — já apareceu mezanino desenhado com os colisores do
+ * térreo, e a dupla andava atravessando arara premium.
+ */
+const andar = await page.evaluate(() => {
+  const naTela = (peca) => {
+    let achou = null;
+    window.jogo.scene.traverse((o) => { if (!achou && o.userData?.peca === peca) achou = o; });
+    if (!achou) return null;
+    for (let q = achou; q; q = q.parent) if (!q.visible) return false;
+    return true;
+  };
+  return {
+    balcao: naTela('balcao-da-loja'),
+    premium: naTela('arara-premium'),
+    espelho: naTela('espelho-magico'),
+    colisores: window.jogo.current.world.colliders.length,
+  };
+});
+
+/**
+ * O ESPELHO REFLETE A DUPLA, e a prova é uma COMPARAÇÃO, não um "não está
+ * preto". A textura do reflexo é lida duas vezes — com a dupla na frente do
+ * vidro e com ela longe — e as duas TÊM que ser diferentes.
+ *
+ * É exatamente o bug que essa peça já teve: o reflexo estava vivo, cheio de
+ * sala, e quem se olhava nele não aparecia (o frustum saía do olho da câmera
+ * ORTOGRÁFICA, a trinta e cinco metros de lado, e jogava quem estava na frente
+ * do vidro para fora de quadro). Um teste de "tem pixel aceso" passaria.
+ */
+await page.evaluate(([x, z]) => {
+  window.jogo.debugPlace(x, z, Math.PI);
+  window.jogo.elevarDupla(3.9);
+  window.jogo.setZoom(7);
+}, [FRENTE_DO_ESPELHO.x, FRENTE_DO_ESPELHO.z]);
+await page.waitForTimeout(2500);
+const promptDoEspelho = await page.locator('.prompt .label').textContent().catch(() => '');
+await page.screenshot({ path: `${OUT}-espelho.png` });
+
+const lerOEspelho = () => page.evaluate(() => {
+  let vidro = null;
+  window.jogo.scene.traverse((o) => { if (o.name === 'vidro-do-espelho') vidro = o; });
+  if (!vidro) return null;
+  const alvo = vidro.alvo;
+  const lado = 96;
+  const buf = new Uint8Array(lado * lado * 4);
+  window.jogo.renderer.readRenderTargetPixels(
+    alvo,
+    Math.round((alvo.width - lado) / 2), Math.round((alvo.height - lado) / 2),
+    lado, lado, buf,
+  );
+  return Array.from(buf);
+});
+const espelhoComEla = await lerOEspelho();
+await page.evaluate(() => {
+  window.jogo.player.teleport(-4.5, 1.5, 0, 3.9);
+  window.jogo.parceiro.teleport(-5.2, 1.5, 0, 3.9);
+});
+await page.waitForTimeout(1200);
+const espelhoSemEla = await lerOEspelho();
+let mudou = 0;
+let aceso = 0;
+if (espelhoComEla && espelhoSemEla) {
+  for (let i = 0; i < espelhoComEla.length; i += 4) {
+    if (espelhoComEla[i] + espelhoComEla[i + 1] + espelhoComEla[i + 2] > 30) aceso++;
+    const d = Math.abs(espelhoComEla[i] - espelhoSemEla[i])
+      + Math.abs(espelhoComEla[i + 1] - espelhoSemEla[i + 1])
+      + Math.abs(espelhoComEla[i + 2] - espelhoSemEla[i + 2]);
+    if (d > 24) mudou++;
+  }
+}
+const pixels = espelhoComEla ? espelhoComEla.length / 4 : 0;
+
+// e a viagem de volta: o topo da escada devolve a dupla ao térreo
+await page.evaluate(([x, z]) => {
+  window.jogo.debugPlace(x, z, 0);
+  window.jogo.elevarDupla(3.9);
+  window.jogo.setZoom(11);
+}, [TOPO_DA_ESCADA.x, TOPO_DA_ESCADA.z]);
+await page.waitForTimeout(1600);
+const promptDoTopo = await page.locator('.prompt .label').textContent().catch(() => '');
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(900);
+for (let i = 0; i < 8 && (await page.locator('.dialogue.show').count()); i++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(450);
+}
+const segundosDescendo = await descer();
+const laEmBaixo = await page.evaluate(() => {
+  const q = window.jogo.playerPosition();
+  return [+q.x.toFixed(2), +q.y.toFixed(2), +q.z.toFixed(2)];
+});
+
+// ================================================= 8. e a porta de volta pra rua
 await page.evaluate(() => window.jogo.debugPlace(4.1, 4.0, 0));
 await page.waitForTimeout(1200);
 const promptDeSair = await page.locator('.prompt .label').textContent().catch(() => '');
@@ -244,6 +412,7 @@ if (entrou !== 'lojinha') falhas.push(`a porta nao levou para dentro: cena "${en
 for (const [peca, quantas] of [
   ['arara-de-roupas', 4], ['provadores', 1], ['manequim-de-loja', 2],
   ['balcao-da-loja', 1], ['mesa-de-dobrar', 1], ['prateleira-da-loja', 2], ['estella', 1],
+  ['escada-rolante', 1], ['arara-premium', 3], ['espelho-magico', 1],
 ]) {
   if ((salao.conta[peca] ?? 0) !== quantas) {
     falhas.push(`o salao tem ${salao.conta[peca] ?? 0} de "${peca}" (esperado ${quantas})`);
@@ -252,7 +421,7 @@ for (const [peca, quantas] of [
 if (salao.roupas < 40) falhas.push(`as araras tem so ${salao.roupas} pecas penduradas`);
 falhas.push(...ronda.pontosRuins.map((p) => `parada dentro de movel: ${p}`));
 falhas.push(...ronda.trechosRuins.map((t) => `a ronda atravessa movel: ${t}`));
-if (andou < 3) falhas.push(`a Estella quase nao andou (${andou.toFixed(2)} em 36 s)`);
+if (andou < 3) falhas.push(`a Estella quase nao andou (${andou.toFixed(2)} em 54 s)`);
 if (dentroDeMovel.length) {
   falhas.push(`ela foi vista dentro de um movel: ${JSON.stringify(dentroDeMovel.slice(0, 3))}`);
 }
@@ -272,6 +441,30 @@ if (!apresentacao.some((f) => /minha|arara|bainha/i.test(f))) {
   falhas.push(`a apresentacao dela nao aconteceu: ${JSON.stringify(apresentacao)}`);
 }
 if (!noDiario.includes('lojinha-por-dentro')) falhas.push('a loja nao entrou no diario');
+
+// -------------------------------------------------- os dois andares e o espelho
+if (!/subir/i.test(promptDoPe)) falhas.push(`nao da para subir no pe da escada: "${promptDoPe}"`);
+if (segundosSubindo === null) falhas.push('a viagem de subida nunca terminou (90 s)');
+if (laEmCima.jogador[1] < 3.5) falhas.push(`a escada nao entregou o mezanino: ${JSON.stringify(laEmCima.jogador)}`);
+if (Math.abs(laEmCima.parceiroY - laEmCima.jogador[1]) > 0.3) {
+  falhas.push(`o parceiro ficou num andar diferente (y ${laEmCima.parceiroY})`);
+}
+if (andar.balcao !== false) falhas.push('o terreo continua na tela com a dupla no mezanino');
+if (andar.premium !== true) falhas.push('as araras premium nao apareceram no mezanino');
+if (andar.espelho !== true) falhas.push('o espelho nao apareceu no mezanino');
+if (andar.colisores === ronda.colisores) {
+  falhas.push(`os colisores nao trocaram de andar (${andar.colisores} nos dois)`);
+}
+if (!/espelho/i.test(promptDoEspelho)) falhas.push(`nao da para se olhar no espelho: "${promptDoEspelho}"`);
+if (!pixels) falhas.push('o espelho nao tem alvo de reflexo para ler');
+else {
+  if (aceso < pixels * 0.5) falhas.push(`o reflexo saiu apagado (${aceso} de ${pixels} pixels acesos)`);
+  if (mudou < pixels * 0.02) falhas.push(`a dupla nao aparece no reflexo (so ${mudou} de ${pixels} pixels mudaram quando ela saiu da frente)`);
+}
+if (!/descer/i.test(promptDoTopo)) falhas.push(`nao da para descer no topo: "${promptDoTopo}"`);
+if (segundosDescendo === null) falhas.push('a viagem de descida nunca terminou (90 s)');
+if (laEmBaixo[1] > 0.4) falhas.push(`a descida nao devolveu o terreo: ${JSON.stringify(laEmBaixo)}`);
+
 if (!/calçada|calcada/i.test(promptDeSair)) falhas.push(`nao ha porta de volta: "${promptDeSair}"`);
 if (voltou.cena !== 'villa-lobos') falhas.push(`a porta de volta nao saiu da loja: "${voltou.cena}"`);
 if (andouLaFora < 0.4) falhas.push(`a dupla nasceu presa na calcada (andou ${andouLaFora.toFixed(2)})`);
@@ -279,13 +472,20 @@ falhas.push(...erros);
 
 console.log('1. porta:', JSON.stringify(promptDaPorta), '→ cena', entrou);
 console.log('2. salao:', JSON.stringify(salao.conta), '·', salao.roupas, 'pecas penduradas');
-console.log('3. ronda:', ronda.pontosRuins.length ? JSON.stringify(ronda.pontosRuins) : 'as 8 paradas livres',
-  '·', ronda.trechosRuins.length ? JSON.stringify(ronda.trechosRuins) : 'os 7 trechos limpos',
-  `· ${ronda.colisores} colisores na cena`);
-console.log('4. ela andou', andou.toFixed(2), 'em 36 s · dentro de movel:', dentroDeMovel.length);
+console.log('3. ronda:',
+  ronda.pontosRuins.length ? JSON.stringify(ronda.pontosRuins) : `as ${RONDA.length} paradas livres`,
+  '·', ronda.trechosRuins.length ? JSON.stringify(ronda.trechosRuins) : `os ${RONDA.length - 1} trechos limpos`,
+  `· ${ronda.colisores} colisores no terreo`);
+console.log('4. ela andou', andou.toFixed(2), 'em 54 s · dentro de movel:', dentroDeMovel.length);
 console.log('   toast:', JSON.stringify(falou.slice(0, 120)));
 console.log('5. conversa:', JSON.stringify(apresentacao.slice(0, 3)), '· diario:', JSON.stringify(noDiario));
-console.log('6. volta:', JSON.stringify(promptDeSair), '→', voltou.cena, JSON.stringify(voltou.onde),
+console.log('6. escada:', JSON.stringify(promptDoPe), '→', JSON.stringify(laEmCima.jogador),
+  `em ${segundosSubindo}s ·`, JSON.stringify(promptDoTopo), '→', JSON.stringify(laEmBaixo),
+  `em ${segundosDescendo}s`);
+console.log('   andar:', JSON.stringify(andar));
+console.log('7. espelho:', JSON.stringify(promptDoEspelho), '·', aceso, 'de', pixels, 'pixels acesos ·',
+  mudou, 'mudaram quando a dupla saiu da frente');
+console.log('8. volta:', JSON.stringify(promptDeSair), '→', voltou.cena, JSON.stringify(voltou.onde),
   '· andou la fora:', andouLaFora.toFixed(2));
 
 await browser.close();
