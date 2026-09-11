@@ -404,6 +404,31 @@ export const PALETTE = {
   tecidoCoral: 0xef6b5a,
   tecidoIndigo: 0x4a5a9c,
 
+  // A REFORMA CHIC da boutique. O terreo trocou a tabua quente por PORCELANATO
+  // POLIDO bege-osso, e a regra da sala mudou junto: fundo quase sem cor, para
+  // a arara ser a unica coisa colorida. O ouro entra so em fio (perfil da
+  // arara premium, aro do espelho, corrimao) — ouro em area grande vira
+  // dourado de bijuteria, e ai a loja fica brega em vez de chique.
+  boutiquePiso: 0xf2ebe0,
+  boutiqueTapete: 0xd9c3c6,
+  boutiqueTapeteBorda: 0xc2a7ac,
+  boutiqueParede: 0xf7f1ea,
+  boutiqueBoiserie: 0xece1d4,
+  boutiqueOuro: 0xd6ad63,
+  boutiqueOuroEscuro: 0xa8813f,
+  boutiquePrata: 0xd3d7dc,
+  boutiqueVinho: 0x7d3a4c,
+  boutiqueLuz: 0xfff0d2,
+  // o vidro da escada rolante e o degrau de aco
+  escadaVidro: 0xbfe0ea,
+  escadaDegrau: 0xb7bcc4,
+  escadaDegrauEscuro: 0x8d939c,
+  escadaCorrimao: 0x3a3a42,
+  // o andar de cima: mesma familia, um degrau mais quente, porque la em cima a
+  // luz que entra e a do lanternim e nao a da vitrine
+  mezaninoPiso: 0xeee5d6,
+  mezaninoGuarda: 0xf7f1ea,
+
   // o Cookie, o elefante da bilheteria. Cinza de elefante de verdade puxa para
   // o ROXO, e nao para o azul — cinza azulado sai como pedra. A orelha por
   // dentro e o dentro da tromba sao rosados, e e dai que vem o "fofo" que um

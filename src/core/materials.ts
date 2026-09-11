@@ -103,6 +103,51 @@ function aplicarDecal(mat: THREE.Material): void {
 
 /** Material chapado, sem luz: ceu, silhuetas de fundo, decalques. */
 const flatCache = new Map<string, THREE.MeshBasicMaterial>();
+/**
+ * ============================== PISO POLIDO: o unico material com BRILHO
+ *
+ * O `MeshToonMaterial` nao tem reflexo especular — ele e feito de degraus
+ * chapados, e e isso que da a cara de desenho ao jogo inteiro. Piso polido de
+ * boutique precisa da mancha de luz que anda com a camera, e por isso aqui
+ * entra o `MeshPhongMaterial`: mesma cor da paleta, mesmo mapa de textura, mais
+ * um destaque especular fraco e largo.
+ *
+ * ELE E EXCECAO, E NAO ALTERNATIVA. Use so em chao de interior encerado (a
+ * boutique da Estella) — parede, movel e peca de cenario continuam no `toon()`,
+ * senao o jogo perde a unidade de estilo num piso de cada vez.
+ *
+ * `shininess` ALTO com `specular` BAIXO e a combinacao certa: alto e baixo
+ * juntos dao uma mancha PEQUENA e discreta, que le como cera. Specular forte
+ * num piso claro estoura em branco e vira gelo.
+ */
+export interface PolidoOptions {
+  /** 0..1, quanto o piso reflete a luz (0,18 e cera; 0,5 ja e gelo) */
+  brilho?: number;
+  mapa?: THREE.Texture;
+}
+
+const polidoCache = new Map<string, THREE.MeshPhongMaterial>();
+
+export function polido(color: number, opts: PolidoOptions = {}): THREE.MeshPhongMaterial {
+  const brilho = opts.brilho ?? 0.18;
+  const key = `${color}|${brilho}|${opts.mapa?.uuid ?? ''}`;
+  const hit = polidoCache.get(key);
+  if (hit) return hit;
+  const tom = Math.round(brilho * 255);
+  const mat = new THREE.MeshPhongMaterial({
+    color,
+    map: opts.mapa ?? null,
+    specular: new THREE.Color(`rgb(${tom},${tom},${tom})`),
+    shininess: 90,
+    // sem isto o piso fica mais escuro que o resto da sala: o Phong nao tem o
+    // degrade do toon, que ja clareia a base
+    emissive: new THREE.Color(color),
+    emissiveIntensity: 0.16,
+  });
+  polidoCache.set(key, mat);
+  return mat;
+}
+
 export function flat(color: number, opacity = 1, decal = false): THREE.MeshBasicMaterial {
   const key = `${color}|${opacity}|${decal ? 1 : 0}`;
   const hit = flatCache.get(key);

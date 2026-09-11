@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { toon } from '../core/materials';
+import { polido, toon } from '../core/materials';
 import { Interactable } from './Interactable';
 import type { Bounds, Collider, GameAPI, InteractableDef } from '../core/types';
 import { bench, picnicTable } from './props';
@@ -52,6 +52,12 @@ export interface GroundOptions {
    * ajusta o repeat pelo tamanho do chao e o `groundWithHoles()` nao precisa.
    */
   textura?: THREE.Texture;
+  /**
+   * Piso ENCERADO: 0..1 de brilho especular. Sem isto o chao e `toon()` como
+   * todo o resto — com isto ele vira `polido()`, o unico material do jogo com
+   * reflexo. So piso de interior polido usa (a boutique da Estella).
+   */
+  brilho?: number;
 }
 
 export interface DoorOptions {
@@ -169,7 +175,12 @@ export class WorldBuilder {
     // aqui o repeat precisa ser multiplicado pelo tamanho do chao para o
     // azulejo sair do mesmo tamanho nos dois caminhos
     const mapa = opts.textura ? this.escalarPeloChao(opts.textura, opts.width, opts.depth) : undefined;
-    const mesh = new THREE.Mesh(geo, toon(opts.color, { decal: empilhado, mapa }));
+    const mesh = new THREE.Mesh(
+      geo,
+      opts.brilho && !empilhado
+        ? polido(opts.color, { brilho: opts.brilho, mapa })
+        : toon(opts.color, { decal: empilhado, mapa }),
+    );
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(opts.x ?? 0, this.afundarChaoDeBase(opts.y), opts.z ?? 0);
     if (empilhado) return this.decalar(mesh);
@@ -287,6 +298,26 @@ export class WorldBuilder {
 
   blockBox(x: number, z: number, hw: number, hd: number, rot = 0): void {
     this.colliders.push({ kind: 'box', x, z, hw, hd, rot });
+  }
+
+  /**
+   * TROCA a lista de colisores inteira. É o que faz um segundo andar existir.
+   *
+   * A colisão do jogo é 2D (só `x` e `z`): o mezanino da boutique ocupa as
+   * MESMAS coordenadas do térreo, um andar acima. Se as duas listas valessem ao
+   * mesmo tempo, quem andasse lá em cima esbarraria nas araras de baixo.
+   *
+   * Então a cena monta as duas listas na construção e diz qual vale agora. Nada
+   * disso subiu para o motor: "andar" é assunto de quem conhece a planta.
+   */
+  usarColisores(lista: readonly Collider[]): void {
+    this.colliders.length = 0;
+    this.colliders.push(...lista);
+  }
+
+  /** Uma cópia da lista de colisores como ela está agora. */
+  colisoresAgora(): Collider[] {
+    return [...this.colliders];
   }
 
   blockCircle(x: number, z: number, r: number): void {

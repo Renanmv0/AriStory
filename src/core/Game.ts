@@ -988,6 +988,17 @@ export class Game implements GameAPI {
     return new ChessEngine(minhaCor, semente);
   }
 
+  /**
+   * A altura do PISO em que a dupla anda. Ver `GameAPI.elevarDupla`.
+   *
+   * A camera acompanha de graca: ela mira no `chest`, que e a posicao do
+   * jogador mais um metro.
+   */
+  elevarDupla(altura: number): void {
+    this.player.position.y = altura;
+    this.parceiro.position.y = altura;
+  }
+
   unlock(memory: Memory): void {
     if (this.save.addMemory(memory)) {
       this.audio.play('memoria');

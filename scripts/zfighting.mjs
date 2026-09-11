@@ -60,6 +60,14 @@ const PECAS = [
   ['balcao-de-passagem', 'mania-de-churrasco'],
   ['estante-de-bebidas', 'mania-de-churrasco'],
   ['placa-de-fachada', 'mania-de-churrasco'],
+  ['arara-de-roupas', 'lojinha'],
+  ['arara-premium', 'lojinha'],
+  ['provadores', 'lojinha'],
+  ['balcao-da-loja', 'lojinha'],
+  ['mesa-de-dobrar', 'lojinha'],
+  ['prateleira-da-loja', 'lojinha'],
+  ['escada-rolante', 'lojinha'],
+  ['espelho-magico', 'lojinha'],
 ];
 
 const browser = await chromium.launch({
