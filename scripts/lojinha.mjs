@@ -152,9 +152,17 @@ const ondeEla = () => page.evaluate(() => {
  * amostragem, e apostar em cair no meio dos tres segundos em que a fala esta na
  * tela. Aqui cada amostra da trilha aproveita e recolhe o que estiver escrito.
  */
+/*
+ * A AMOSTRAGEM É LONGA (54 s) PORQUE A RONDA NOVA TEM PERNA CURTA. A fila de
+ * dez paradas anda de dois em dois metros, e entre uma e outra ela PARA de 3,5
+ * a 7,5 s — num Chromium headless, que roda o tempo de jogo umas cinco vezes
+ * mais devagar que o relógio. Com a janela de 36 s da versão antiga ela mal
+ * completava um trecho, e o teste reprovava a ronda por "quase não andou"
+ * estando ela perfeitamente viva.
+ */
 const trilha = [];
 const ditas = new Set();
-for (let i = 0; i < 40; i++) {
+for (let i = 0; i < 60; i++) {
   const onde = await ondeEla();
   if (onde) trilha.push(onde);
   for (const t of await page.evaluate(() =>
@@ -413,7 +421,7 @@ for (const [peca, quantas] of [
 if (salao.roupas < 40) falhas.push(`as araras tem so ${salao.roupas} pecas penduradas`);
 falhas.push(...ronda.pontosRuins.map((p) => `parada dentro de movel: ${p}`));
 falhas.push(...ronda.trechosRuins.map((t) => `a ronda atravessa movel: ${t}`));
-if (andou < 3) falhas.push(`a Estella quase nao andou (${andou.toFixed(2)} em 36 s)`);
+if (andou < 3) falhas.push(`a Estella quase nao andou (${andou.toFixed(2)} em 54 s)`);
 if (dentroDeMovel.length) {
   falhas.push(`ela foi vista dentro de um movel: ${JSON.stringify(dentroDeMovel.slice(0, 3))}`);
 }
@@ -468,7 +476,7 @@ console.log('3. ronda:',
   ronda.pontosRuins.length ? JSON.stringify(ronda.pontosRuins) : `as ${RONDA.length} paradas livres`,
   '·', ronda.trechosRuins.length ? JSON.stringify(ronda.trechosRuins) : `os ${RONDA.length - 1} trechos limpos`,
   `· ${ronda.colisores} colisores no terreo`);
-console.log('4. ela andou', andou.toFixed(2), 'em 36 s · dentro de movel:', dentroDeMovel.length);
+console.log('4. ela andou', andou.toFixed(2), 'em 54 s · dentro de movel:', dentroDeMovel.length);
 console.log('   toast:', JSON.stringify(falou.slice(0, 120)));
 console.log('5. conversa:', JSON.stringify(apresentacao.slice(0, 3)), '· diario:', JSON.stringify(noDiario));
 console.log('6. escada:', JSON.stringify(promptDoPe), '→', JSON.stringify(laEmCima.jogador),
