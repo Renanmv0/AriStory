@@ -1652,11 +1652,12 @@ function cabide(cor: number = P.lojaMetal): THREE.Group {
   /*
    * OS DOIS OMBROS SE ENCOSTAM NO MEIO, e não se ATRAVESSAM.
    *
-   * Com 0,16 eles cruzavam 1 cm um dentro do outro — e como são espelhados, a
-   * caixa envolvente dos dois é a MESMA em `y` e em `z`: quatro planos
-   * coplanares por cabide, vezes toda arara da loja. Com 0,152 eles se tocam e
-   * param, o gancho cobre a emenda, e o `zfighting.mjs` deixa de ter o que
-   * marcar (a sobreposição cai abaixo dos 4 mm que ele exige para ligar).
+   * Com 0,16 eles cruzavam 1 cm um dentro do outro — e, sendo espelhados, a
+   * caixa envolvente dos dois era a MESMA em `y` e em `z`, que é a receita de
+   * face coplanar. Com 0,152 eles se tocam e param, e o gancho cobre a emenda.
+   *
+   * (O `zfighting.mjs` não pega este caso: os ombros são girados, e a conta
+   * dele é de caixa alinhada. Foi olhando a geometria, e não o relatório.)
    */
   for (const lado of [-1, 1] as const) {
     const ombro = new THREE.Mesh(new THREE.BoxGeometry(0.152, 0.012, 0.012), m);
