@@ -47,11 +47,13 @@ import { PALETTE as P } from '../palette';
  *
  *  1. o olho é `(0, 0, RECUO)` e o olho refletido, `(0, 0, −RECUO)`;
  *  2. a câmera virtual vai ali, com a orientação do espelho girada meia volta
- *     em `Y`. Esse giro é o que ESPELHA a imagem da esquerda para a direita, em
- *     vez de só mostrar "a sala vista de trás";
- *  3. e o frustum sai do retângulo do vidro visto DALI: a `RECUO` de distância,
+ *     em `Y`, que é o que a faz olhar para a sala em vez de para o fundo;
+ *  3. o frustum sai do retângulo do vidro visto DALI: a `RECUO` de distância,
  *     o vidro ocupa de `−larg/2` a `+larg/2` — e é isso que entra no
- *     `makePerspective`.
+ *     `makePerspective`;
+ *  4. e o `u` da textura entra INVERTIDO no plano, que é o que troca a imagem
+ *     de lado — ver `espelhar()`, logo abaixo, que é o conserto de um espelho
+ *     que refletia para o lado errado.
  *
  * O reflexo continua VIVO: ele não desliza com a câmera (não tem por onde — a
  * câmera é ortográfica), mas mostra em tempo real quem está na frente, com a
@@ -94,6 +96,33 @@ export interface EspelhoOpts {
   corAro?: number;
 }
 
+/**
+ * ================== O ÚLTIMO MEIO-GIRO: o `u` da textura nasce ao contrário
+ *
+ * A câmera virtual, girada meia volta em `Y`, olha para a sala com o `+X` DELA
+ * apontando para o `−X` do espelho. Quem está à direita de quem se olha no
+ * vidro cai, portanto, na METADE ESQUERDA da textura — e o `PlaneGeometry`
+ * mapeia a metade esquerda da textura na metade ESQUERDA do vidro. Resultado:
+ * a sala aparece trocada de lado. É exatamente o que o Renan viu na foto do
+ * mezanino: o espelho funcionava, refletia ao vivo, e espelhava para o lado
+ * errado.
+ *
+ * (O `Reflector` dos exemplos do three não tem esse defeito por um motivo que
+ * não se vê de imediato: ele não usa o `uv` do plano, e sim a PROJEÇÃO da
+ * câmera virtual como coordenada de textura — que já embute este meio-giro.)
+ *
+ * A correção é de um atributo: inverter o `u` da geometria (`u → 1 − u`). Sai
+ * de graça (não custa um pixel em tempo de execução, ao contrário de mexer no
+ * `repeat` da textura ou de espelhar o frustum, que ainda inverteria o sentido
+ * das faces e sumiria com a sala inteira por trás do culling).
+ */
+function espelhar(geo: THREE.PlaneGeometry): THREE.PlaneGeometry {
+  const uv = geo.attributes.uv as THREE.BufferAttribute;
+  for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i));
+  uv.needsUpdate = true;
+  return geo;
+}
+
 class VidroDeEspelho extends THREE.Mesh {
   private readonly alvo: THREE.WebGLRenderTarget;
   private readonly camera = new THREE.PerspectiveCamera();
@@ -114,7 +143,7 @@ class VidroDeEspelho extends THREE.Mesh {
      * sairia mais escuro que a sala que ele reflete.
      */
     super(
-      new THREE.PlaneGeometry(largura, altura),
+      espelhar(new THREE.PlaneGeometry(largura, altura)),
       new THREE.MeshBasicMaterial({ map: alvo.texture }),
     );
     this.alvo = alvo;
@@ -162,9 +191,9 @@ class VidroDeEspelho extends THREE.Mesh {
 
     /*
      * A CÂMERA VIRTUAL: no olho refletido — `(0, 0, −RECUO)` em espaço local —
-     * com a orientação do espelho girada meia volta em `Y`. Esse giro é o que
-     * ESPELHA a imagem da esquerda para a direita, em vez de mostrar só "a sala
-     * vista de trás".
+     * com a orientação do espelho girada meia volta em `Y`, que é o que a faz
+     * olhar para a SALA e não para o fundo. (A troca de lado da imagem não vem
+     * daqui: vem do `u` invertido do plano — ver `espelhar()`.)
      *
      * Ela é recolocada a cada quadro (e não uma vez só) porque o espelho é uma
      * peça do kit: nada impede uma cena futura de pendurar ele num elevador.
