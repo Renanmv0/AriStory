@@ -2305,10 +2305,15 @@ export function escadaRolante(altura = 3.9, comprimento = 6.4): THREE.Group {
       face.position.set(0, y + degrau / 2, z - passo * 0.47);
       g.add(face);
     }
-    // os frisos amarelos da borda do degrau, de dois em dois
+    /*
+     * Os frisos amarelos da borda do degrau, de dois em dois. O `0,074` (e não
+     * o `0,07` redondo) é o que tira o friso do PLANO DA PLACA PENTE, que
+     * também termina em `y = 0,08`: dois topos coplanares de 0,042 m² bem na
+     * boca da escada, que é onde o olho para.
+     */
     if (i % 2 === 0) {
       const friso = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.1, 0.02, 0.04), toon(P.boutiqueOuro));
-      friso.position.set(0, y + 0.07, z + passo * 0.4);
+      friso.position.set(0, y + 0.074, z + passo * 0.4);
       g.add(friso);
     }
   }

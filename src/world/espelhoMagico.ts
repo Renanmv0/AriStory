@@ -225,9 +225,14 @@ export function espelhoMagico(opts: EspelhoOpts = {}): THREE.Group {
   friso.position.set(0, altura / 2 + 0.16, -0.02);
   g.add(friso);
 
-  // o pedestal, que é o que impede o espelho de nascer flutuando
-  const base = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.5, 0.16, 0.42), aro);
-  base.position.set(0, 0.08, 0);
+  /*
+   * O pedestal, que é o que impede o espelho de nascer flutuando. Ele é 2 cm
+   * MAIS BAIXO que a barra de baixo do aro de propósito: com os dois topos em
+   * `y = 0,16` sobravam 0,32 m² de faces coplanares olhando para cima, e é
+   * exatamente isso que serrilha na tela (`scripts/zfighting.mjs` pegou).
+   */
+  const base = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.5, 0.14, 0.42), aro);
+  base.position.set(0, 0.07, 0);
   g.add(base);
 
   // e dois castiçais de luz nas laterais, como todo espelho de provador chique
