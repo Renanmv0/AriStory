@@ -600,22 +600,42 @@ export const lojinha: SceneDef = {
 
     w.setBounds(x0 + 0.5, z0 + 0.5, W / 2 - 0.5, D / 2 - 0.5);
 
-    /*
-     * AS ARARAS PREMIUM: três, douradas, bem espaçadas, em fila com o mesmo
-     * afastamento entre elas. Repetição regular aqui é de propósito — no térreo
-     * a bagunça controlada é o charme, e em cima o alinhamento é o luxo.
+    /**
+     * AS ARARAS PREMIUM: três, douradas, em fila com o mesmo afastamento.
+     * Repetição regular aqui é de propósito — no térreo a bagunça controlada é
+     * o charme, e em cima o alinhamento é o luxo.
+     *
+     * DÁ PARA ANDAR ENTRE ELAS, e a conta que garante isso tem um passo que é
+     * fácil de esquecer — o RAIO DA DUPLA ENTRA DUAS VEZES:
+     *
+     *   vão entre os colisores = afastamento − 2 × meia-largura
+     *                          = 3,0 − 1,44 = 1,56 m
+     *   faixa por onde o CENTRO passa = vão − 2 × 0,42 = 0,72 m
+     *
+     * É a segunda linha que decide se passa. Antes eram araras de 2,2 a cada
+     * 2,8: vão de 0,60, faixa NEGATIVA — a fila virava uma parede de sete
+     * metros no meio do mezanino, e a única saída era contornar pelas pontas,
+     * que foi o que o Renan viu. Encolher a arara para 1,9 ainda deixava uma
+     * faixa de 26 cm: passa, mas só mirando.
+     *
+     * Com 1,4 de arara a cada 3,0 a faixa é de 72 cm — a mesma ordem do
+     * corredor entre as ilhas do térreo — e de quebra a fila passa a caber
+     * EXATAMENTE no tapete do mezanino (z de −3,3 a 4,1), que é onde ela
+     * deveria estar desde o começo. Arara premium curta também não mente: são
+     * duas peças em cada.
      */
     const PREMIUM = [
-      { x: 0.4, z: -2.2, colecao: 1, prata: false },
-      { x: 0.4, z: 0.6, colecao: 3, prata: true },
+      { x: 0.4, z: -2.6, colecao: 1, prata: false },
+      { x: 0.4, z: 0.4, colecao: 3, prata: true },
       { x: 0.4, z: 3.4, colecao: 2, prata: false },
     ];
     for (const [i, a] of PREMIUM.entries()) {
       por(superior, w.place(
-        araraPremium({ largura: 2.2, colecao: a.colecao, prata: a.prata, semente: 900 + i * 31 }),
+        araraPremium({ largura: 1.4, colecao: a.colecao, prata: a.prata, semente: 900 + i * 31 }),
         a.x, ALTURA, a.z, Math.PI / 2,
       ));
-      w.blockBox(a.x, a.z, 1.1, 0.32, Math.PI / 2);
+      // 0,72 = o pé da arara (1,4/2 − 0,18) mais a meia-base de 0,21
+      w.blockBox(a.x, a.z, 0.72, 0.32, Math.PI / 2);
     }
 
     // o tapete do mezanino, desenhado por peça (decalque não sobe de altura)

@@ -764,6 +764,22 @@ export class Game implements GameAPI {
     const vagas = de.lista === 'mao' ? this.save.maos(quem) : this.save.vestiveis(quem);
     const item = vagas[de.indice];
     if (!item) return;
+    /*
+     * ROUPA COMPRADA NAO SE PERDE. Esta e a trava de verdade — a tela ja
+     * esconde o botao, mas quem escreve no save e este metodo, e e aqui que a
+     * regra tem que valer.
+     *
+     * O `preco` na ficha e exatamente "esta peca foi paga": a unica porta de
+     * entrada dela no inventario e a arara da Estella, e la sai dinheiro da
+     * carteira do casal. As pecas do armario do Ari nao tem preco e podem ser
+     * descartadas a vontade — o armario repoe todas a cada abertura, entao
+     * descartar uma delas nao custa nada. Uma comprada custava R$ 96 e um
+     * toque sem querer.
+     */
+    if (item.preco !== undefined) {
+      this.ui.toast(`${item.nome} foi comprada — ela é de vocês`, '🛍️');
+      return;
+    }
     this.save.largar(quem, item.id);
     this.audio.play('escolha');
     this.ui.toast(`${item.nome} foi descartado`, '🗑');
