@@ -24,7 +24,7 @@ import {
   type SceneDef,
   type Vaga,
 } from './types';
-import { ITENS, MODA_PRAIA, modeloDoItem } from '../world/itens';
+import { ITENS, MODA_PRAIA, fichaDoItem, modeloDoItem } from '../world/itens';
 import { MEMORIAS } from '../world/memoriasData';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
@@ -765,21 +765,12 @@ export class Game implements GameAPI {
     const item = vagas[de.indice];
     if (!item) return;
     /*
-     * ROUPA COMPRADA NAO SE PERDE. Esta e a trava de verdade — a tela ja
-     * esconde o botao, mas quem escreve no save e este metodo, e e aqui que a
-     * regra tem que valer.
-     *
-     * O `preco` na ficha e exatamente "esta peca foi paga": a unica porta de
-     * entrada dela no inventario e a arara da Estella, e la sai dinheiro da
-     * carteira do casal. As pecas do armario do Ari nao tem preco e podem ser
-     * descartadas a vontade — o armario repoe todas a cada abertura, entao
-     * descartar uma delas nao custa nada. Uma comprada custava R$ 96 e um
-     * toque sem querer.
+     * DESCARTAR ROUPA COMPRADA PODE, e nao custa a compra. Quem paga uma peca
+     * na boutique compra o DIREITO a ela, anotado em `save.compradas`, e o
+     * guarda-roupa repoe tudo que esta la a cada abertura — exatamente como
+     * `ROUPAS_DO_ARMARIO` repoe as pecas do armario do Ari. Tirar do corpo e
+     * jogar fora e so arrumacao; a peca volta no proximo armario aberto.
      */
-    if (item.preco !== undefined) {
-      this.ui.toast(`${item.nome} foi comprada — ela é de vocês`, '🛍️');
-      return;
-    }
     this.save.largar(quem, item.id);
     this.audio.play('escolha');
     this.ui.toast(`${item.nome} foi descartado`, '🗑');
@@ -915,9 +906,30 @@ export class Game implements GameAPI {
    * inventario, e as pecas sao itens. Um dia o `I` pode abrir daqui tambem.
    */
   abrirGuardaRoupa(): void {
+    this.reporCompras();
     this.previa.mostrar(this.player.rig.spec);
     this.pintarArmario();
     this.ui.abrirArmario();
+  }
+
+  /**
+   * Repoe no guarda-roupa tudo que ja foi comprado na boutique.
+   *
+   * E o mesmo padrao do armario do Ari (`ROUPAS_DO_ARMARIO`, em `quarto.ts`):
+   * o armario nao guarda o que sobrou, ele ESTOCA o que e de vocês. Peca paga
+   * entra nessa lista para sempre, entao descartar uma so tira ela do corpo —
+   * na proxima abertura ela esta la de novo, como qualquer outra peca.
+   *
+   * Repoe para OS DOIS, como o armario do quarto: quem pagou foi o casal (a
+   * carteira e uma so), entao a peca e dos dois. E de graca repetir: `guardar`
+   * devolve 'repetido' e nao escreve quando a peca ja esta la.
+   */
+  private reporCompras(): void {
+    for (const id of this.save.compradas) {
+      const peca = fichaDoItem(id);
+      if (!peca) continue; // id de uma peca que saiu do catalogo: ignora
+      for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
+    }
   }
 
   /** Redesenha o painel e o boneco a partir do save. */
@@ -993,7 +1005,9 @@ export class Game implements GameAPI {
         // a amostra da grade tem a COR DA PEÇA, como as bermudas do vestiário:
         // numa arara o que se escolhe é a cor, então ela tem que ser o botão
         cor: css(p.cor ?? p.corBanho ?? 0xcccccc),
-        jaTem: this.save.achouItem(quem, p.id),
+        // "já é seu" é PAGOU, não "está no inventário agora": descartar a peça
+        // do corpo não pode fazer a arara cobrar de novo por ela
+        jaTem: this.save.comprou(p.id) || this.save.achouItem(quem, p.id),
       })),
     });
 
@@ -1030,7 +1044,7 @@ export class Game implements GameAPI {
     const peca = this.provando;
     if (!peca || peca.preco === undefined) return;
     const quem = this.playerId();
-    if (this.save.achouItem(quem, peca.id)) return;
+    if (this.save.comprou(peca.id) || this.save.achouItem(quem, peca.id)) return;
     if (!this.gastar(peca.preco)) {
       this.ui.toast(`Faltam R$ ${peca.preco - this.save.carteira}`, '💸');
       return;
@@ -1053,6 +1067,16 @@ export class Game implements GameAPI {
       this.ui.toast('Sem espaço para levar — o dinheiro voltou', '🎒');
       return;
     }
+    /*
+     * PAGOU, É DE VOCÊS PARA SEMPRE. A anotação é o que separa "a peça está no
+     * inventário agora" de "a peça foi comprada": descartar tira do corpo, mas
+     * o guarda-roupa repõe (`reporCompras`) na próxima abertura — a peça virou
+     * estoque da casa, como as do armário do Ari.
+     *
+     * E vale para os DOIS, no mesmo movimento: a carteira é do casal.
+     */
+    this.save.registrarCompra(peca.id);
+    this.storeItem(peca, this.companionId());
     this.audio.play('caixa');
     this.ui.toast(`${peca.nome} — R$ ${peca.preco}`, '🛍️');
     this.pintarLoja();

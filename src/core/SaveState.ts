@@ -111,6 +111,16 @@ interface SaveData {
    * únicas portas são `ganhar` e `gastar`, que nunca deixam o saldo negativo.
    */
   carteira: number;
+  /**
+   * O QUE JA FOI COMPRADO NA BOUTIQUE — so os ids, e uma lista so para os dois.
+   *
+   * Peca paga vira ESTOQUE do guarda-roupa, igual as pecas do armario do Ari:
+   * o armario repoe tudo a cada abertura, entao descartar uma peca comprada
+   * nao perde a compra, so tira ela do corpo. Guardar o id aqui (e nao contar
+   * com o inventario) e o que faz a compra sobreviver ao descarte — e e por
+   * isso que a lista e do casal, como a carteira que pagou por ela.
+   */
+  compradas: string[];
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -251,6 +261,7 @@ const EMPTY: SaveData = {
   memories: [],
   stats: {},
   carteira: 0,
+  compradas: [],
   inventarios: {},
 };
 
@@ -279,6 +290,11 @@ export class SaveState {
         // save antigo não tem carteira: quem já jogava começa com zero, e não
         // com `NaN` — que envenenaria toda soma dali para a frente
         carteira: Math.max(0, Math.floor(Number(parsed.carteira) || 0)),
+        // save de antes da boutique nao tem a lista: comeca vazia, e nunca
+        // `undefined` — quem le isso faz `.includes` sem perguntar
+        compradas: Array.isArray(parsed.compradas)
+          ? parsed.compradas.filter((id): id is string => typeof id === 'string')
+          : [],
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
     } catch {
@@ -336,6 +352,25 @@ export class SaveState {
     this.data.carteira -= preco;
     this.persist();
     return true;
+  }
+
+  // ------------------------------------------------------- o que foi pago
+
+  /** ids de tudo que ja foi comprado na boutique, na ordem em que foi pago */
+  get compradas(): readonly string[] {
+    return this.data.compradas;
+  }
+
+  /** Ja pagaram por esta peca alguma vez? Nao olha o inventario de proposito. */
+  comprou(id: string): boolean {
+    return this.data.compradas.includes(id);
+  }
+
+  /** Anota a compra. Idempotente: pagar de novo pela mesma peca nao existe. */
+  registrarCompra(id: string): void {
+    if (this.data.compradas.includes(id)) return;
+    this.data.compradas.push(id);
+    this.persist();
   }
 
   bump(key: string, by = 1): number {
