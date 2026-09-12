@@ -26,10 +26,12 @@ page.on('console', (m) => {
 
 const cenas = [
   ['casa', '', 2500],
+  ['quarto', '', 2500],
   ['villa-lobos', 'portao', 3000],
   ['villa-lobos', 'roda', 3000],
   ['clube', 'portaria', 3000],
   ['clube', 'beira', 3000],
+  ['lojinha', '', 3000],
 ];
 
 for (const [cena, entrada, espera] of cenas) {

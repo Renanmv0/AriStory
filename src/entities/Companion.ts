@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { CharacterRig } from '../characters/CharacterRig';
 import { clampToBounds, resolveCollisions } from '../world/collision';
+import { BONUS_PATINS } from './Player';
 import type { Bounds, Collider } from '../core/types';
 
 /**
@@ -18,6 +19,8 @@ export class Companion {
   private readonly dir = new THREE.Vector3();
 
   private body: CharacterRig;
+  /** direcao do jogador no frame; e dela que sai o lateral do reboque */
+  private aoLado = 0;
 
   /** distancia em que ele para de seguir */
   readonly folga = 2.0;
@@ -25,6 +28,30 @@ export class Companion {
   private ordem: THREE.Vector3 | null = null;
   riding = false;
   submersion = 0;
+  /**
+   * De patins ele tambem corre mais. Sem isto, o jogador de patins deixa o
+   * parceiro para tras em dez passos e a dupla vira um so.
+   */
+  patins = false;
+  /**
+   * 0 = chao seco, 1 = gelo. Ver `Player.derrapagem` — aqui ela mexe nas duas
+   * molas do seguir: a que acelera atras do jogador e a que freia ao chegar.
+   *
+   * Ele PRECISA escorregar junto. A dupla anda lado a lado o tempo todo, e um
+   * deslizando enquanto o outro para de estalo seria o parceiro colado num
+   * trilho no meio de uma praca de gelo.
+   */
+  derrapagem = 0;
+
+  /**
+   * Reboque: enquanto vale, ele nao segue nem olha para o jogador — anda
+   * colado num ponto que OUTRA COISA calcula. E de proposito que o nome nao
+   * diz "maos dadas": o Companion nao precisa saber que mecanica esta puxando
+   * ele. Guarda so de que lado do jogador ele fica (-1 esquerda, 1 direita).
+   */
+  private lado: -1 | 1 | 0 = 0;
+  /** deslocamento lateral do reboque, em unidades de mundo */
+  private distancia = 0;
 
   constructor(rig: CharacterRig) {
     this.body = rig;
@@ -51,10 +78,11 @@ export class Companion {
     return antigo;
   }
 
-  teleport(x: number, z: number, facing = 0): void {
-    this.position.set(x, 0, z);
+  teleport(x: number, z: number, facing = 0, altura = 0): void {
+    this.position.set(x, altura, z);
     this.velocity.set(0, 0, 0);
     this.submersion = 0;
+    this.derrapagem = 0;
     this.ordem = null;
     this.body.group.rotation.y = facing;
     this.body.setFacing(facing);
@@ -62,6 +90,21 @@ export class Companion {
 
   setVisible(visible: boolean): void {
     this.object.visible = visible;
+  }
+
+  /** Atrela ele ao lado do jogador. Ver `lado`. */
+  atrelar(lado: -1 | 1, distancia: number): void {
+    this.lado = lado;
+    this.distancia = distancia;
+    this.ordem = null;
+  }
+
+  soltar(): void {
+    this.lado = 0;
+  }
+
+  get atrelado(): boolean {
+    return this.lado !== 0;
   }
 
   /** manda ele ate um ponto; enquanto durar, ele ignora o jogador */
@@ -73,8 +116,67 @@ export class Companion {
     this.ordem = null;
   }
 
+  /**
+   * Planta ele onde esta, parado, encarando um ponto. E o que o frisbee usa:
+   * ninguem lanca andando — primeiro para, depois mira, depois joga.
+   */
+  hold(olharX: number, olharZ: number): void {
+    if (this.ordem) this.ordem.set(this.position.x, 0, this.position.z);
+    else this.ordem = new THREE.Vector3(this.position.x, 0, this.position.z);
+    this.velocity.set(0, 0, 0);
+    this.body.setFacing(Math.atan2(olharX - this.position.x, olharZ - this.position.z));
+  }
+
   get hasOrder(): boolean {
     return this.ordem !== null;
+  }
+
+  /**
+   * Anda emparelhado com o jogador, no lado escolhido.
+   *
+   * Nao usa nada da rotina de seguir: nem `folga`, nem aceleracao, nem virar
+   * para olhar. E uma mola dura ate o ponto certo, porque o que faz a dupla
+   * parecer de maos dadas nao e andar junto — e PARAR junto. Com aceleracao,
+   * ele para meio passo depois e o braco estica.
+   */
+  private rebocar(
+    seguindo: THREE.Vector3,
+    dt: number,
+    colliders: readonly Collider[],
+    bounds: Bounds,
+  ): void {
+    const olhando = this.aoLado;
+    const alvoX = seguindo.x + Math.sin(olhando + Math.PI / 2) * this.distancia * this.lado;
+    const alvoZ = seguindo.z + Math.cos(olhando + Math.PI / 2) * this.distancia * this.lado;
+
+    const antesX = this.position.x;
+    const antesZ = this.position.z;
+    const passo = Math.min(1, dt * 16);
+    this.position.x += (alvoX - this.position.x) * passo;
+    this.position.z += (alvoZ - this.position.z) * passo;
+
+    // parede ainda e parede: quem quiser esticar o braco atraves de uma quina
+    // e barrado aqui, e a mecanica desiste sozinha quando a distancia estoura
+    resolveCollisions(this.position, this.radius, colliders);
+    clampToBounds(this.position, this.radius, bounds);
+
+    // o empurrao de "nunca fica em cima do jogador" NAO roda aqui: ele forca
+    // 0.86 de folga e brigaria com o deslocamento fixo do reboque
+    this.velocity.set(
+      (this.position.x - antesX) / Math.max(dt, 0.0001),
+      0,
+      (this.position.z - antesZ) / Math.max(dt, 0.0001),
+    );
+
+    this.body.setFacing(olhando);
+    this.body.group.position.y = -this.submersion * 0.72;
+    this.body.setSwimming(this.submersion > 0.05);
+    this.body.update(dt, Math.hypot(this.velocity.x, this.velocity.z));
+  }
+
+  /** Direcao para onde o jogador olha, avisada pela mecanica que reboca. */
+  set direcaoDoPar(angulo: number) {
+    this.aoLado = angulo;
   }
 
   update(
@@ -85,6 +187,11 @@ export class Companion {
   ): void {
     if (this.riding) {
       this.body.update(dt, 0);
+      return;
+    }
+
+    if (this.lado !== 0) {
+      this.rebocar(seguindo, dt, colliders, bounds);
       return;
     }
 
@@ -100,15 +207,29 @@ export class Companion {
       return;
     }
 
+    /**
+     * No gelo as duas molas afrouxam: ele demora a pegar embalo e demora a
+     * parar. Os numeros sao os mesmos da conta do jogador, so que aqui elas
+     * sao taxas de interpolacao em vez de aceleracao e atrito.
+     *
+     * DE PATINS NO GELO a lamina crava e as duas voltam quase ao normal — ele
+     * precisa disso para acompanhar quem esta patinando na frente, que ali
+     * anda 60% mais rapido que a pe.
+     */
+    const lamina = this.patins ? this.derrapagem : 0;
+    const puxao = 7 * (1 - 0.6 * this.derrapagem + 0.55 * lamina);
+    const freio = 9 * (1 - 0.85 * this.derrapagem + 0.7 * lamina);
+
     if (dist > folga) {
       this.dir.normalize();
       // acelera quando esta longe, para nao ficar pendurado no limite
-      const alvoVel = Math.min(this.maxSpeed, 1.6 + (dist - folga) * 2.2);
-      this.velocity.x += (this.dir.x * alvoVel - this.velocity.x) * Math.min(1, dt * 7);
-      this.velocity.z += (this.dir.z * alvoVel - this.velocity.z) * Math.min(1, dt * 7);
+      const teto = this.maxSpeed * (this.patins ? BONUS_PATINS : 1) * (1 + 0.25 * lamina);
+      const alvoVel = Math.min(teto, 1.6 + (dist - folga) * 2.2);
+      this.velocity.x += (this.dir.x * alvoVel - this.velocity.x) * Math.min(1, dt * puxao);
+      this.velocity.z += (this.dir.z * alvoVel - this.velocity.z) * Math.min(1, dt * puxao);
       this.body.setFacing(Math.atan2(this.dir.x, this.dir.z));
     } else {
-      this.velocity.multiplyScalar(Math.max(0, 1 - dt * 9));
+      this.velocity.multiplyScalar(Math.max(0, 1 - dt * freio));
       if (this.velocity.lengthSq() < 0.0004) this.velocity.set(0, 0, 0);
       // parado, fica de frente para o outro
       if (dist > 0.2) this.body.setFacing(Math.atan2(this.dir.x, this.dir.z));

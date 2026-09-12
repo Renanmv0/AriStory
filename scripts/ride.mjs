@@ -31,14 +31,86 @@ const memorias = () =>
     }
   });
 
+/*
+ * A CATRACA COBRA: sem bilhete na mochila a roda recusa. O teste prova as duas
+ * metades — primeiro esbarra na recusa, depois compra (direto pela carteira,
+ * que a bilheteria fica do outro lado do lago) e sobe.
+ */
+await page.keyboard.press('KeyE');
+for (let i = 0; i < 12; i++) {
+  if (await dialogoAberto()) await page.keyboard.press('KeyE');
+  await page.waitForTimeout(200);
+}
+const recusouSemBilhete = (await memorias()) === 0;
+
+await page.evaluate(() => {
+  const itens = window.aristoryItens;
+  window.jogo.addItem(itens['bilhete-roda']);
+});
+await page.waitForTimeout(400);
+
 await page.keyboard.press('KeyE'); // embarca
 
-// o dialogo tem efeito de maquina de escrever: a primeira tecla completa a
-// linha e a segunda avanca, entao e mais simples martelar E ate o fim.
+/*
+ * A volta e LENTA de proposito (~45s de tempo de jogo), e no Chromium headless
+ * o tempo de jogo anda mais devagar que o relogio. Por isso o laco e longo e
+ * espera por EVENTO (a memoria salva no fim), nunca por tempo.
+ *
+ * De quebra ele olha em volta: a cabine devolve o manche como olhar, entao as
+ * setas tem que mexer a camera mesmo com o jogador travado e com fala na tela.
+ */
+const alturaDaCamera = () =>
+  page.evaluate(() => {
+    const c = window.jogo.cameraDeCena?.();
+    return c ? [c.position.y, c.rotation.y] : null;
+  });
+
+/*
+ * A ESTRUTURA VIRA VIDRO enquanto alguem esta dentro: os dois olham para +Z, o
+ * lado do parque, e entre a cabine e o parque passa metade da roda. O teste
+ * conta quantas pecas da roda estao translucidas — tem que ser muitas durante
+ * o passeio e NENHUMA depois, senao a roda fica de vidro para sempre.
+ */
+const pecasDeVidro = () =>
+  page.evaluate(() => {
+    let n = 0;
+    window.jogo.scene.traverse((o) => {
+      if (o.userData?.peca !== 'roda-gigante') return;
+      o.traverse((f) => {
+        const mat = f.material;
+        if (mat && !Array.isArray(mat) && mat.transparent && mat.opacity < 0.3) n++;
+      });
+    });
+    return n;
+  });
+
 let subiu = false;
-for (let i = 0; i < 200; i++) {
+let primeiraPessoa = false;
+let vidroNoPasseio = 0;
+let olhouEmVolta = false;
+let giroInicial = null;
+let subindo = null;
+for (let i = 0; i < 620; i++) {
   if (await dialogoAberto()) await page.keyboard.press('KeyE');
   await page.waitForTimeout(250);
+
+  const cam = await alturaDaCamera();
+  if (cam) {
+    primeiraPessoa = true;
+    vidroNoPasseio = Math.max(vidroNoPasseio, await pecasDeVidro());
+    if (giroInicial === null) giroInicial = cam[1];
+    else if (Math.abs(cam[1] - giroInicial) > 0.25) olhouEmVolta = true;
+    if (subindo === null && cam[0] > 6) {
+      subindo = cam[0];
+      await page.screenshot({ path: `${OUT}-cabine.png` });
+    }
+    // olhar para os lados: 10 quadros para um lado, 10 para o outro
+    await page.keyboard.down(i % 40 < 20 ? 'ArrowLeft' : 'ArrowRight');
+    await page.waitForTimeout(120);
+    await page.keyboard.up(i % 40 < 20 ? 'ArrowLeft' : 'ArrowRight');
+    if (cam[0] > 20) await page.screenshot({ path: `${OUT}-alto.png` });
+  }
+
   if (i === 20) await page.screenshot({ path: `${OUT}-subindo.png` });
   if ((await memorias()) >= 1 && !(await dialogoAberto())) {
     subiu = true;
@@ -48,13 +120,43 @@ for (let i = 0; i < 200; i++) {
 await page.waitForTimeout(800);
 await page.screenshot({ path: `${OUT}-fim.png` });
 
+// a camera de cena tem que ter sido DEVOLVIDA: no chao volta a isometrica
+const voltouAIsometrica = (await alturaDaCamera()) === null;
+// e a roda tem que ter voltado a ser solida
+const vidroDepois = await pecasDeVidro();
+
 // o passeio terminou? o prompt tem que voltar e o jogador andar de novo
 const promptVisivel = (await page.locator('.prompt.show').count()) > 0;
 const total = await memorias();
 
+// o bilhete e picotado na entrada: nao pode sobrar na mochila
+const bilheteGasto = await page.evaluate(() => {
+  const j = window.jogo;
+  return !j.hasItem('bilhete-roda') && !j.hasItem('bilhete-roda', j.companionId());
+});
+
+console.log('recusou sem bilhete:', recusouSemBilhete);
+console.log('bilhete picotado:', bilheteGasto);
+console.log('primeira pessoa na cabine:', primeiraPessoa, '· altura maxima vista:', subindo);
+console.log('olhou em volta com as setas:', olhouEmVolta);
+console.log('estrutura de vidro durante:', vidroNoPasseio, '· depois:', vidroDepois, '(tem que ser 0)');
+console.log('camera devolvida no chao:', voltouAIsometrica);
 console.log('passeio concluido:', subiu);
 console.log('prompt de volta:', promptVisivel);
 console.log('memorias salvas:', total);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 await browser.close();
-process.exit(erros.length || !subiu || !promptVisivel ? 1 : 0);
+process.exit(
+  erros.length ||
+    !subiu ||
+    !promptVisivel ||
+    !recusouSemBilhete ||
+    !bilheteGasto ||
+    !primeiraPessoa ||
+    !olhouEmVolta ||
+    !voltouAIsometrica ||
+    vidroNoPasseio < 10 ||
+    vidroDepois !== 0
+    ? 1
+    : 0,
+);

@@ -38,6 +38,8 @@ export const casa: SceneDef = {
   spawn: { x: 1.4, z: 2.4, facing: Math.PI },
   entries: {
     'da-rua': { x: 3.4, z: 3.1, facing: Math.PI },
+    // sai da porta virado para dentro da sala (+X)
+    'do-quarto': { x: -5.05, z: -1.2, facing: Math.PI / 2 },
   },
 
   build(w) {
@@ -61,7 +63,22 @@ export const casa: SceneDef = {
     w.setBounds(x0 + 0.45, z0 + 0.45, W / 2 - 0.45, D / 2 - 0.45);
 
     w.wall(x0, z0, W / 2, z0, H, P.wallCream);
-    w.wall(x0, z0, x0, D / 2, H, P.wallMint);
+
+    // Parede da esquerda, com um VÃO para a porta do quarto do Ari.
+    //
+    // Duas coisas decidiram este lugar. O vão em si não é enfeite: a parede tem
+    // 0,3 de espessura e a folha da porta 0,08, então porta largada no meio de
+    // parede inteira fica enterrada dentro dela e some — é por isso que a
+    // parede do bloco da Rubi também é feita em pedaços.
+    //
+    // E a parede escolhida é esta, e não a do fundo: no fundo só sobrava o
+    // trecho entre a cozinha e o bloco da Rubi, e dali a porta fica ATRÁS do
+    // bloco na câmera isométrica. Nesta parede a face olha para a câmera, do
+    // mesmo jeito que a TV e a janela.
+    const zDoAri = -1.2;
+    const vaoAri = 0.95;
+    w.wall(x0, z0, x0, zDoAri - vaoAri / 2, H, P.wallMint);
+    w.wall(x0, zDoAri + vaoAri / 2, x0, D / 2, H, P.wallMint);
     w.wall(x0, D / 2, W / 2, D / 2, 0.45, P.wallCream);
     w.wall(W / 2, -1.3, W / 2, D / 2, 0.45, P.wallCream);
 
@@ -108,6 +125,16 @@ export const casa: SceneDef = {
     // uns enfeites para o bege não ficar liso
     w.add(w.place(pictureFrame(0.6, 0.75, P.wallMint), 3.55, 1.75, qz2 + 0.17));
     w.add(w.place(wallShelf(0.9), 1.1, 1.7, qz2 + 0.19));
+
+    // ------------------------------------------------- porta do quarto do Ari
+    // Centrada na linha da parede, pela mesma razão das outras: batente posto à
+    // frente encosta na face da parede e as duas piscam.
+    w.add(w.place(interiorDoor(P.fabricBlue, 0.9, 2.1), x0, 0, zDoAri, Math.PI / 2));
+    w.door({
+      x: x0 + 0.85, z: zDoAri,
+      to: 'quarto', entry: 'da-sala',
+      label: 'Entrar no quarto do Ari', icon: '🚪',
+    });
 
     // ------------------------------------------------------ cozinha (lilás)
     w.add(w.place(counter(3.6), -3.4, 0, z0 + 0.42));
@@ -239,6 +266,7 @@ export const casa: SceneDef = {
       highlight: tv,
       onInteract: async (g) => {
         ligarTv(!tvLigada);
+        if (tvLigada) g.som('tv');
         g.toast(tvLigada ? 'TV ligada' : 'TV desligada', '📺');
         if (tvLigada) await g.say(['Está passando Bo Burnham.']);
       },

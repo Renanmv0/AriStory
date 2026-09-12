@@ -18,7 +18,7 @@ export const ARI: CharacterSpec = {
   height: 1.72,           // altura total em unidades (1.75 ≈ adulto)
   build: 'magro',         // 'magro' | 'medio' | 'forte'
   skin: 0xf2cfb2,
-  blush: 0xff8fa0,        // bochecha
+  blush: 0xff8fa0,        // bochecha; omita para um rosto sem blush
   eyes: 0x4a3328,
   hair: {
     color: 0x8f5c33,
@@ -34,6 +34,7 @@ export const ARI: CharacterSpec = {
   jacket: undefined,      // moletom/jaqueta aberta por cima, com capuz
   accessories: ['presilha', 'laco', 'cinto'],
   accessoryColor: 0x24222a,
+  casal: true,            // ver "O beijo" mais abaixo
 };
 ```
 
@@ -104,6 +105,28 @@ Parâmetros de URL que ajudam:
 a pessoa real — quando faltar informação, pergunte (ou peça uma foto de
 referência) em vez de inventar. Os valores em `cast.ts` são um rascunho
 declarado como tal.
+
+## O beijo
+
+Quando os dois estão perto (até 1,5) e de frente um para o outro, aparece o
+prompt **💋 Beijar** e o `E` faz os dois se inclinarem, com um coraçãozinho
+subindo de cada lado. Está em `src/entities/Beijo.ts`, é do motor: toda cena
+ganha de graça, nenhuma precisa fazer nada.
+
+**Só funciona entre duas fichas com `casal: true`** — hoje o Ari e o Renan.
+Personagem novo nasce sem o campo e portanto sem beijo; é assim de propósito.
+
+Detalhes que já custaram foto para acertar:
+
+- o par **gira em torno do próprio meio** até ficar de perfil para a câmera,
+  senão um fica exatamente atrás do outro e some;
+- os corações sobem **pelo eixo em que os dois estão alinhados** (o horizontal
+  da tela). Pela perpendicular eles vêm na direção da câmera e passam por cima
+  dos corpos;
+- o prompt do beijo perde para qualquer interativo por perto, senão o sofá e a
+  geladeira ficam inalcançáveis quando os dois estão coladinhos.
+
+Foto obrigatória: `node scripts/beijo.mjs /tmp/beijo`.
 
 ## Criar um personagem novo
 

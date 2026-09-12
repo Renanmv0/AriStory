@@ -24,13 +24,33 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Ponto de ônibus com placa escrita levando pro clube
 - [x] Renan com silhueta de cabelo própria
 - [x] Publicado no GitHub Pages
+- [x] Beijo rápido da dupla, com coraçãozinho de cada lado
+- [x] Quiosques de verdade: toldo listrado, letreiro escrito e vitrine (sorvete e sucos)
+- [x] Passe de volta do frisbee: ele para, mira e joga além, para dar pra pegar no ar
+- [x] Menu no canto com "recomeçar o jogo", que zera o diário e volta pra casa do Ari
+- [x] Som: música procedural com clima por cenário e um efeito para cada ação
+- [x] Interface de celular sem tapar texto, e tela de controles no menu
+- [x] Praça da roda gigante povoada, cúpula com estrutura e margem do lago viva
+- [x] Minigame de ping pong até 5 pontos, com chapéu de campeão de prêmio
+- [x] Guarda-roupa: armário no quarto do Ari, com as peças feitas a partir de foto
+- [x] Quadro de memórias no quarto: fotos da vida real deles pintadas em Canvas 2D
+- [x] Deitar junto na cama do Ari, lado a lado, com os braços balançando devagar
+- [x] O Pelusa, o gato do Ari: passeia pelo quarto, mia sozinho e aceita carinho
 
 ## Próximos passos naturais
 
 ### Personagens
+- [ ] Mais prêmios vestíveis, no molde do chapéu de campeão
 - [ ] Expressões simples (feliz, surpreso, dormindo)
 - [ ] Mais roupas por cenário (casaco no frio, pijama em casa)
 - [ ] O parceiro reagir ao que você faz (comentar, aplaudir, entrar na água junto)
+- [ ] Mais carinho além do beijo (abraço; a mão e o deitar junto já existem)
+
+### Bichos
+- [ ] Mais um bicho: com `entities/bichos/Bicho.ts` pronto, é só corpo e pose
+- [ ] O Pelusa subir na cama quando os dois deitam
+- [ ] Reagir a quem entra no cômodo (vir andando, ou fugir)
+- [ ] Um ronronado próprio, diferente do miado
 
 ### Cenários
 - [ ] Casa do Renan
@@ -42,12 +62,17 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 Cenário de lugar onde vocês **ainda não foram** também vale: o clube foi o
 primeiro. A memória que ele desbloqueia assume isso na hora de escrever.
 
+### Quadro de memórias
+- [ ] Mais memórias — cada foto que o Renan mandar vira uma; a navegação já aguenta
+- [ ] Uma memória que só destrava depois de visitar o cenário correspondente
+- [ ] Som próprio ao abrir uma memória (o clima daquele lugar, em dois acordes)
+
 ### Jogabilidade
 - [ ] Frisbee: disputar o mesmo disco, vento afetando o voo, modo cronometrado
 - [ ] Ciclo dia/noite por cenário (o parque ao pôr do sol)
 - [ ] Mapa mundo para escolher para onde ir
 - [ ] Itens colecionáveis além das memórias (fotos, bilhetes)
-- [ ] Som: passos, ambiente do parque, uma musiquinha
+- [ ] Som: mais camadas de ambiente (pássaros no parque, água na piscina)
 
 ### Acabamento
 - [ ] Tela de início com o nome do jogo
@@ -58,3 +83,11 @@ primeiro. A memória que ele desbloqueia assume isso na hora de escrever.
 Leia `.claude/skills/aristory-cenario/SKILL.md`. Resumo: um arquivo em
 `src/scenes/`, registrar em `src/scenes/index.ts`, ligar as portas nos dois
 sentidos, rodar o smoke test e olhar as fotos.
+
+## Como adicionar uma memória ao quadro
+
+Leia `.claude/skills/aristory-memoria/SKILL.md`. Resumo: uma função de pintura
+e uma entrada no array `MEMORIAS`, os dois em `src/world/memoriasData.ts` — o
+quadro, a interação e o painel não mudam. Depois `node scripts/memorias.mjs
+/tmp/me` e **olhe a foto**: as armadilhas desse desenho aparecem na imagem,
+não no código.
