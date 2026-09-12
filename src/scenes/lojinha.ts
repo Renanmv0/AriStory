@@ -467,10 +467,19 @@ export const lojinha: SceneDef = {
      */
     const VAO = { x0: -5.05, x1: -0.8, z0: z0, z1: -3.1 };
     const laje = polido(P.mezaninoPiso, { brilho: 0.14 });
+    /*
+     * A LAJE RECEBE **E PROJETA** SOMBRA.
+     *
+     * O `receiveShadow` é o óbvio: é nela que cai a sombra de quem anda lá em
+     * cima. O `castShadow` é o que faltava, e sem ele a laje é um piso que a
+     * LUZ ATRAVESSA — a sombra da dupla no mezanino não parava no piso, ela
+     * seguia reto e ia cair no térreo, cinco metros abaixo.
+     */
     const pedacoDeLaje = (cx: number, cz: number, larg: number, prof: number): THREE.Mesh => {
       const piso = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.26, prof), laje);
       piso.position.set(cx, ALTURA - 0.13, cz);
       piso.receiveShadow = true;
+      piso.castShadow = true;
       return piso;
     };
 
@@ -507,7 +516,7 @@ export const lojinha: SceneDef = {
       toon(P.boutiqueOuro),
     );
     arremate.position.set((VAO.x0 + VAO.x1) / 2, ALTURA - 0.13, VAO.z1 - 0.05);
-    superior.add(arremate);
+    por(superior, arremate);
 
     // paredes altas do mezanino (as mesmas duas do térreo) e guarda-corpo nas
     // duas bordas que dão para a câmera
@@ -521,7 +530,7 @@ export const lojinha: SceneDef = {
       w.wall(x0, z0, x0, D / 2, H - 0.9, P.boutiqueParede),
     ]) {
       parede.position.y += ALTURA;
-      superior.add(parede);
+      por(superior, parede);
     }
 
     /**
@@ -543,11 +552,11 @@ export const lojinha: SceneDef = {
       );
       vidro.position.set(mx, ALTURA + 0.42, mz);
       vidro.rotation.y = ang;
-      superior.add(vidro);
+      por(superior, vidro);
       const mao = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, comp), toon(P.boutiqueOuro));
       mao.position.set(mx, ALTURA + 0.86, mz);
       mao.rotation.y = ang;
-      superior.add(mao);
+      por(superior, mao);
       w.blockBox(mx, mz, 0.12, comp / 2, ang);
     };
     guardaCorpo(W / 2 - 0.1, z0, W / 2 - 0.1, D / 2 - 0.1);
@@ -602,7 +611,7 @@ export const lojinha: SceneDef = {
       { x: 0.4, z: 3.4, colecao: 2, prata: false },
     ];
     for (const [i, a] of PREMIUM.entries()) {
-      superior.add(w.place(
+      por(superior, w.place(
         araraPremium({ largura: 2.2, colecao: a.colecao, prata: a.prata, semente: 900 + i * 31 }),
         a.x, ALTURA, a.z, Math.PI / 2,
       ));
@@ -615,7 +624,7 @@ export const lojinha: SceneDef = {
       toon(P.boutiqueTapete),
     );
     tapeteDeCima.position.set(-0.9, ALTURA + 0.015, 0.4);
-    superior.add(tapeteDeCima);
+    por(superior, tapeteDeCima);
 
     /**
      * O PROVADOR ABERTO E O ESPELHO GRANDE, no fundo do mezanino.
@@ -630,7 +639,7 @@ export const lojinha: SceneDef = {
      * olha nele está entre ele e a câmera — e aparece no reflexo de frente.
      */
     const ESPELHO = { x: 3.4, z: z0 + 0.6 };
-    superior.add(w.place(espelhoMagico({ largura: 2.4, altura: 2.7 }), ESPELHO.x, ALTURA, ESPELHO.z));
+    por(superior, w.place(espelhoMagico({ largura: 2.4, altura: 2.7 }), ESPELHO.x, ALTURA, ESPELHO.z));
     w.blockBox(ESPELHO.x, ESPELHO.z - 0.1, 1.6, 0.3);
     // o tapetinho redondo na frente dele, que é onde se para para olhar
     const alvoDoEspelho = new THREE.Mesh(
@@ -638,14 +647,14 @@ export const lojinha: SceneDef = {
       toon(P.boutiqueTapeteBorda),
     );
     alvoDoEspelho.position.set(ESPELHO.x, ALTURA + 0.015, ESPELHO.z + 1.5);
-    superior.add(alvoDoEspelho);
+    por(superior, alvoDoEspelho);
 
-    superior.add(w.place(pufeDeLoja(P.boutiqueVinho), 5.2, ALTURA, 0.4));
+    por(superior, w.place(pufeDeLoja(P.boutiqueVinho), 5.2, ALTURA, 0.4));
     w.blockCircle(5.2, 0.4, 0.42);
-    superior.add(w.place(pottedPlant(1.3), 5.5, ALTURA, 3.6));
+    por(superior, w.place(pottedPlant(1.3), 5.5, ALTURA, 3.6));
     w.blockCircle(5.5, 3.6, 0.32);
     for (const px of [-2.4, 2.6]) {
-      superior.add(w.place(luminariaPendente(P.boutiqueOuro, 2.2), px, ALTURA, 1.0));
+      por(superior, w.place(luminariaPendente(P.boutiqueOuro, 2.2), px, ALTURA, 1.0));
     }
 
     const colisoresSuperior: Collider[] = w.colisoresAgora();

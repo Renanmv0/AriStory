@@ -1125,6 +1125,23 @@ export class Game implements GameAPI {
    * jogador mais um metro.
    */
   elevarDupla(altura: number): void {
+    /*
+     * QUEM ESTÁ DE CARONA NÃO SE ELEVA, e isto é a correção de um defeito que
+     * aparecia no meio da escada rolante.
+     *
+     * `ridePlayer` REPARENTA o corpo para dentro da âncora, então enquanto a
+     * viagem dura o `position` dele não é o mundo — é um deslocamento dentro da
+     * âncora. Escrever 3,9 ali não põe a dupla no piso do mezanino: põe ela 3,9
+     * metros ACIMA da escada, boiando, até a viagem acabar e o `releasePlayer`
+     * devolver o corpo à cena.
+     *
+     * Era exatamente o que a boutique fazia: a troca de andar acontece a 55% da
+     * subida, e a partir dali os dois subiam o resto do lance flutuando.
+     *
+     * Quem manda na altura de um passageiro é a âncora, sempre. Ignorar aqui é
+     * mais seguro do que lembrar disso em cada cena que tiver uma carona.
+     */
+    if (this.player.riding) return;
     this.player.position.y = altura;
     this.parceiro.position.y = altura;
   }
