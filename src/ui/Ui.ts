@@ -43,6 +43,9 @@ export class Ui {
   private readonly corpo: HTMLDivElement;
   private readonly acervo: HTMLDivElement;
   private readonly donoArmario: HTMLSpanElement;
+  private readonly loja: HTMLDivElement;
+  private readonly bonecoDaLoja: HTMLCanvasElement;
+  private readonly vitrine: HTMLDivElement;
   private readonly vestiario: HTMLDivElement;
   private readonly oculos: HTMLButtonElement;
   private readonly bermudas: HTMLDivElement;
@@ -215,6 +218,23 @@ export class Ui {
         <div class="acervo"></div>
         <button class="close">fechar</button>
       </div></div>
+      <div class="loja"><div class="sheet">
+        <h2><span class="arara"></span> <span class="dono"></span></h2>
+        <p class="sub">clique numa peça para <b>provar no corpo</b> · comprar guarda no guarda-roupa · <b>T</b> troca de pessoa</p>
+        <div class="prova">
+          <canvas class="boneco"></canvas>
+          <div class="ficha">
+            <b class="nome"></b>
+            <small class="nota"></small>
+            <span class="preco"></span>
+            <button class="comprar"></button>
+            <p class="aviso"></p>
+          </div>
+        </div>
+        <div class="vitrine"></div>
+        <p class="saldo"></p>
+        <button class="close">sair da arara</button>
+      </div></div>
       <div class="vestiario"><div class="sheet">
         <h2>Vestiário <span class="dono"></span></h2>
         <p class="sub">o traje de praia de cada um · <b>T</b> troca de pessoa</p>
@@ -291,6 +311,9 @@ export class Ui {
     this.corpo = ui.querySelector('.armario .corpo')!;
     this.acervo = ui.querySelector('.armario .acervo')!;
     this.donoArmario = ui.querySelector('.armario .dono')!;
+    this.loja = ui.querySelector('.loja')!;
+    this.bonecoDaLoja = ui.querySelector('.loja .boneco')!;
+    this.vitrine = ui.querySelector('.loja .vitrine')!;
     this.vestiario = ui.querySelector('.vestiario')!;
     this.oculos = ui.querySelector('.vestiario .oculos')!;
     this.bermudas = ui.querySelector('.vestiario .bermudas')!;
@@ -383,6 +406,21 @@ export class Ui {
     this.armario.addEventListener('click', (e) => {
       if (e.target === this.armario) this.fecharArmario();
     });
+    ui.querySelector('.loja .close')!.addEventListener('click', () => this.fecharLoja());
+    this.loja.addEventListener('click', (e) => {
+      if (e.target === this.loja) this.fecharLoja();
+    });
+    /*
+     * UM OUVINTE SÓ NA VITRINE, e não um por peça: a grade é redesenhada a
+     * cada prova e a cada compra, e registrar quatro ouvintes por redesenho é
+     * como se acumula vazamento em painel que reabre. É o mesmo padrão do
+     * tabuleiro de xadrez.
+     */
+    this.vitrine.addEventListener('click', (e) => {
+      const peca = (e.target as HTMLElement).closest<HTMLElement>('.peca');
+      if (peca?.dataset.id) this.onProvarPeca?.(peca.dataset.id);
+    });
+    ui.querySelector('.loja .comprar')!.addEventListener('click', () => this.onComprarPeca?.());
     ui.querySelector('.vestiario .close')!.addEventListener('click', () => this.fecharVestiario());
     this.vestiario.addEventListener('click', (e) => {
       if (e.target === this.vestiario) this.fecharVestiario();
@@ -498,7 +536,8 @@ export class Ui {
     document.body.classList.toggle(
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
-      this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen || this.xadrezOpen,
+      this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen || this.xadrezOpen ||
+      this.lojaOpen,
     );
   }
 
@@ -1340,6 +1379,109 @@ export class Ui {
   // inteiro. Ele não tem boneco 3D de propósito — a folha é baixa e estreita, e
   // o corpo de verdade continua aparecendo atrás dela na beira da piscina. É o
   // único painel em que dá para ver a peça no lugar certo enquanto se escolhe.
+
+  /* ====================================================================
+   *                   A ARARA DA ESTELLA — provar e comprar
+   * ==================================================================== */
+
+  get lojaOpen(): boolean {
+    return this.loja.classList.contains('show');
+  }
+
+  canvasDaLojaBoneco(): HTMLCanvasElement {
+    return this.bonecoDaLoja;
+  }
+
+  abrirLoja(): void {
+    if (this.lojaOpen) return;
+    this.som?.('escolha');
+    this.onAbrirLoja?.();
+    this.loja.classList.add('show');
+    this.marcarTelaAberta();
+  }
+
+  fecharLoja(): void {
+    if (!this.lojaOpen) return;
+    this.loja.classList.remove('show');
+    this.marcarTelaAberta();
+    this.onFecharLoja?.();
+  }
+
+  /**
+   * Desenha a arara: a vitrine, a ficha da peça provada e o saldo.
+   *
+   * A PEÇA PROVADA NÃO É A COMPRADA. Clicar veste o boneco do painel e mais
+   * nada — o dinheiro só sai no botão, e é por isso que a ficha e o botão
+   * ficam ao lado do boneco em vez de um botãozinho por peça na grade: com
+   * "comprar" em cada célula, provar e comprar viram o mesmo gesto a um pixel
+   * de distância, e a compra aqui é irreversível (não há vender de volta).
+   */
+  renderLoja(dados: {
+    arara: string;
+    dono: string;
+    saldo: number;
+    provando: string | null;
+    pecas: ReadonlyArray<{
+      id: string; nome: string; icone: string; nota?: string;
+      preco: number; cor: string; jaTem: boolean;
+    }>;
+  }): void {
+    this.loja.querySelector('.arara')!.textContent = dados.arara;
+    this.loja.querySelector('.dono')!.textContent = `— provando em ${dados.dono}`;
+    this.loja.querySelector('.saldo')!.innerHTML =
+      `Na carteira do casal: <b>R$ ${dados.saldo}</b>`;
+
+    this.vitrine.innerHTML = '';
+    for (const p of dados.pecas) {
+      const botao = document.createElement('button');
+      botao.className = 'peca';
+      botao.classList.toggle('provando', p.id === dados.provando);
+      botao.classList.toggle('ja-tem', p.jaTem);
+      botao.classList.toggle('caro', !p.jaTem && p.preco > dados.saldo);
+      botao.dataset.id = p.id;
+      const amostra = document.createElement('i');
+      amostra.style.background = p.cor;
+      botao.appendChild(amostra);
+      const nome = document.createElement('b');
+      nome.textContent = p.nome;
+      botao.appendChild(nome);
+      const etiqueta = document.createElement('em');
+      etiqueta.textContent = p.jaTem ? 'já é seu' : `R$ ${p.preco}`;
+      botao.appendChild(etiqueta);
+      this.vitrine.appendChild(botao);
+    }
+
+    const escolhida = dados.pecas.find((p) => p.id === dados.provando) ?? null;
+    const ficha = this.loja.querySelector<HTMLElement>('.ficha')!;
+    const comprar = this.loja.querySelector<HTMLButtonElement>('.comprar')!;
+    ficha.classList.toggle('vazia', escolhida === null);
+    this.loja.querySelector('.nome')!.textContent = escolhida?.nome ?? 'Escolha uma peça';
+    this.loja.querySelector('.nota')!.textContent =
+      escolhida?.nota ?? 'clique numa da arara para ver no corpo';
+    this.loja.querySelector('.preco')!.textContent =
+      escolhida ? `R$ ${escolhida.preco}` : '';
+
+    const falta = escolhida ? escolhida.preco - dados.saldo : 0;
+    comprar.disabled = !escolhida || escolhida.jaTem || falta > 0;
+    comprar.textContent = !escolhida
+      ? 'Comprar'
+      : escolhida.jaTem
+        ? 'Já é seu'
+        : falta > 0
+          ? `Faltam R$ ${falta}`
+          : `Comprar por R$ ${escolhida.preco}`;
+    this.loja.querySelector('.aviso')!.textContent =
+      escolhida && !escolhida.jaTem && falta > 0
+        ? 'A Estella não fia. Nem para vocês.'
+        : '';
+  }
+
+  /** Clicou numa peça da arara: prova no boneco. */
+  onProvarPeca: ((id: string) => void) | null = null;
+  /** Apertou o botão de comprar a peça que está provada. */
+  onComprarPeca: (() => void) | null = null;
+  onAbrirLoja: (() => void) | null = null;
+  onFecharLoja: (() => void) | null = null;
 
   get vestiarioOpen(): boolean {
     return this.vestiario.classList.contains('show');

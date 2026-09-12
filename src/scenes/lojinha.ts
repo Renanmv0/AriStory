@@ -7,6 +7,7 @@ import {
   luminariaPendente, manequimDeLoja, mesaDeDobrar, pottedPlant, prateleiraDaLoja,
   provadores, pufeDeLoja,
 } from '../world/furniture';
+import { ARARAS_DA_ESTELLA, PREMIUM_DA_ESTELLA, type AraraDaLoja } from '../world/itens';
 import { espelhoMagico } from '../world/espelhoMagico';
 import { porcelanatoPolido } from '../world/texturasDeChao';
 import { polido, toon } from '../core/materials';
@@ -301,6 +302,17 @@ export const lojinha: SceneDef = {
      * 0,35 de meia-profundidade e o jogador é um círculo de 0,42. Com os
      * montantes em `x = −3,9` e `x = −1,3`, sobram 1,9 de vão livre — a dupla
      * passa lado a lado.
+     */
+    /**
+     * A ORDEM DAQUI É A ORDEM DE `ARARAS_DA_ESTELLA` — camisaria, vestidos,
+     * calçaria, frio e pé. Cada arara do chão é a vitrine de uma fila do
+     * catálogo, e o `colecao` (que pinta o pano pendurado) foi escolhido para
+     * combinar com as cores que aquela fila vende: quem clica numa arara de
+     * pano azul não pode receber um painel de terracota.
+     *
+     * O PROMPT FICA NO CORREDOR, e não em cima da arara: o colisor dela tem
+     * 0,35 de meia-profundidade, então o raio de 1,3 a partir do eixo pega
+     * quem passa pelos dois lados sem pegar quem só atravessa a ilha.
      */
     const ARARAS = [
       { x: -3.9, z: -1.5, colecao: 0, semente: 101 },
@@ -759,6 +771,46 @@ export const lojinha: SceneDef = {
       }
     });
 
+    /**
+     * ==================== AS ARARAS QUE VENDEM
+     *
+     * Uma interação por arara, e todas iguais: a primeira vez ela fala (é a
+     * loja DELA, e ela apresenta a fila), e daí em diante abre direto. O
+     * painel é o mesmo para as sete — quem muda é a lista de peças, que vem
+     * do catálogo (`world/itens.ts`), e não daqui: a cena não sabe quanto
+     * custa um vestido, ela sabe onde fica a arara.
+     */
+    const araraQueVende = (
+      fila: AraraDaLoja,
+      x: number,
+      z: number,
+      chave: string,
+    ): Interactable => w.interact({
+      id: `lojinha:arara-${chave}`,
+      /*
+       * O RAIO É 1,5, e o número saiu de medir e não de gosto: a arara corre
+       * no eixo Z com 0,35 de meia-profundidade em X, e a dupla é um círculo
+       * de 0,42 — quem chega pela frente para a 0,77 do eixo, mas quem chega
+       * pela PONTA para a 1,37, que é o que um raio de 1,3 deixava de fora.
+       */
+      x, z, radius: 1.5,
+      label: `Ver a arara: ${fila.titulo.toLowerCase()}`, icon: '🛍️',
+      onInteract: async () => {
+        if (!g.flag(`arara-${chave}`)) {
+          g.setFlag(`arara-${chave}`);
+          await conversa([[E, fila.fala]]);
+        }
+        g.abrirLoja(fila.titulo, fila.pecas);
+      },
+    });
+
+    for (const [i, a] of ARARAS.entries()) {
+      doTerreo.push(araraQueVende(ARARAS_DA_ESTELLA[i], a.x, a.z, `terreo-${i}`));
+    }
+    for (const [i, a] of PREMIUM.entries()) {
+      doSuperior.push(araraQueVende(PREMIUM_DA_ESTELLA[i], a.x, a.z, `premium-${i}`));
+    }
+
     doTerreo.push(w.interact({
       id: 'lojinha:subir',
       x: BASE_DA_ESCADA.x + 0.75, z: BASE_DA_ESCADA.z + 0.35, radius: 1.5,
@@ -792,15 +844,30 @@ export const lojinha: SceneDef = {
     doSuperior.push(w.interact({
       id: 'lojinha:espelho',
       x: ESPELHO.x, z: ESPELHO.z + 1.5, radius: 1.6,
-      label: 'Se olhar no espelho', icon: '🪞',
+      label: 'Se arrumar no espelho', icon: '🪞',
+      /**
+       * O ESPELHO É O PROVADOR: ele abre o GUARDA-ROUPA DE CASA.
+       *
+       * Isso não é um atalho de conveniência, é o que fecha o ciclo da loja.
+       * Roupa comprada aqui vai para o guarda-roupa (`storeItem`), e o
+       * guarda-roupa só se mexia no armário do quarto, do outro lado do mapa
+       * — dava para comprar um vestido e não ter como vesti-lo sem pegar o
+       * ônibus. Agora compra-se na arara e veste-se no espelho, dois andares
+       * da mesma loja.
+       *
+       * E não há guarda-roupa novo nenhum: é o MESMO painel do armário, com o
+       * mesmo acervo e as mesmas quatro vagas do corpo. O espelho é só outra
+       * porta para ele.
+       */
       onInteract: async () => {
-        await conversa([
-          [A, 'Esse espelho é ENORME.'],
-          [R, 'Dá pra ver a gente inteiro. Olha, tá até mexendo junto.'],
-          [A, 'Vira de lado. Vira!'],
-          [R, 'A Estella tem razão: é o melhor espelho da cidade.'],
-        ]);
         if (!g.flag('espelho-do-mezanino')) {
+          await conversa([
+            [A, 'Esse espelho é ENORME.'],
+            [R, 'Dá pra ver a gente inteiro. Olha, tá até mexendo junto.'],
+            [A, 'Vira de lado. Vira!'],
+            [R, 'A Estella tem razão: é o melhor espelho da cidade.'],
+            [E, 'É pra isso que ele serve, meus amores. Vistam o que compraram!'],
+          ]);
           g.setFlag('espelho-do-mezanino');
           g.unlock({
             id: 'espelho-do-mezanino',
@@ -810,19 +877,7 @@ export const lojinha: SceneDef = {
             icon: '🪞',
           });
         }
-      },
-    }));
-    doSuperior.push(w.interact({
-      id: 'lojinha:premium',
-      x: 1.8, z: 0.6, radius: 1.6,
-      label: 'Olhar as peças premium', icon: '✨',
-      onInteract: async () => {
-        await conversa([
-          [R, 'Essas araras aqui em cima são douradas.'],
-          [A, 'E tem quatro peças em cada. Quatro!'],
-          [R, 'Quanto menos roupa na arara, mais cara a roupa.'],
-          [A, 'Não vou nem perguntar o preço.'],
-        ]);
+        g.abrirGuardaRoupa();
       },
     }));
     doTerreo.push(w.interact({

@@ -188,6 +188,52 @@ ganha isso de graça; se descobrir uma peça fixa que ainda vaza por cima
 (aconteceu com a mochila do Renan, que cruza o peito por cima de vestido),
 adicione o objeto em `sobreTronco` no construtor.
 
+## A MESMA peça em outra cor: o jeito mais barato de ter roupa nova
+
+A `extra` recebe a FICHA como terceiro argumento (`extra(m, lado, peca)`), e é
+dali que a geometria tira a cor:
+
+```ts
+function gorroDeLa(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef) {
+  const la = toon(peca?.cor ?? P.roupaLa);            // a da paleta é só o PADRÃO
+  const laBarra = toon(peca?.corDetalhe ?? P.roupaLaBarra);
+```
+
+**Este é o primeiro lugar onde olhar antes de desenhar qualquer coisa.** Hoje
+o gorro, o cano da bota e o vestido de babados já obedecem a ficha, então um
+gorro novo, uma bota nova ou um vestido novo custam UMA ENTRADA em `ITENS` e
+duas cores na paleta — nenhuma geometria. Foi assim que as vinte peças da
+boutique entraram.
+
+**A armadilha, e ela já mordeu**: geometria que crava `P.algumaCor` por dentro
+ignora a ficha em silêncio. Quatro vestidos de cores diferentes na arara
+apareciam os quatro rosa, e o painel mostrava a amostra certa ao lado do boneco
+errado — parecia bug de painel e era de geometria. Ao reaproveitar uma peça
+para uma cor nova, CONFIRA se a fábrica lê `peca.cor`; se não lê, faça ela ler.
+
+E quando uma peça tem mais cores do que as duas da ficha (o vestido usa pano,
+renda e fita), a terceira sai de conta em cima da primeira —
+`new THREE.Color(pano).multiplyScalar(0.74)`. Peça que veio de FOTO não entra
+nessa conta: ela passa as cores exatas por um ponto de entrada próprio
+(`vestidoRosa` vs `vestidoDaLoja`), senão a peça de referência muda junto com
+a variação nova.
+
+## Pôr a peça à venda na boutique
+
+`preco` na ficha é o que coloca a peça numa arara — sem ele, ela não está à
+venda em lugar nenhum (é o caso de tudo o que já estava no armário do Ari, da
+moda praia e do prêmio do Walter; não existe "preço 0").
+
+Depois, a peça entra numa fila de `ARARAS_DA_ESTELLA` (térreo) ou
+`PREMIUM_DA_ESTELLA` (mezanino), em `world/itens.ts`. A cena LIGA por essa
+lista e o painel DESENHA por ela — a `lojinha.ts` não sabe quanto custa um
+vestido, sabe onde fica a arara.
+
+Escala de preço, na mesma régua do resto do jogo (bilhete da roda = 24, prato
+do Mania = 12 a 34, um turno de garçom paga ~200): peça de térreo 35–110,
+premium 150–220. Quem compra veste no espelho do mezanino, que abre o mesmo
+painel do guarda-roupa do quarto.
+
 ## Ferramentas já prontas em `roupas.ts` — reaproveite antes de desenhar do zero
 
 - `laco(escala, cor, corNo?)` — laço de fita, usado no cabelo, na cintura e na

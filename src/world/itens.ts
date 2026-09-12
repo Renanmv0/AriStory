@@ -4,7 +4,7 @@ import type { ItemDef } from '../core/types';
 import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
 import {
   canoDaBota, gargantilhaDeLaco, gorroDeLa, gravataDoWalter, maidJapones, mangaDeMoletom, mangaDeQuimono,
-  meiaDeCoxa, moletomComCapuz, oculosDeSol, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
+  meiaDeCoxa, moletomComCapuz, oculosDeSol, vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
 } from './roupas';
 
 /**
@@ -355,7 +355,232 @@ export const ITENS = {
     nota: 'desenterrado no jardim do clube',
     holdPose: 'relaxed',
   },
+
+  /* ====================================================================
+   *              A COLECAO DA ESTELLA — o que esta a venda
+   * ====================================================================
+   *
+   * Vinte pecas, e QUASE NENHUMA GEOMETRIA NOVA. Isso e de proposito, e e a
+   * primeira pergunta da skill de roupa: "da para resolver so com cor?".
+   *
+   * - camisa, regata e calca nao tem `extra` nenhum — repintam a malha que o
+   *   corpo ja tem, que e a peca mais barata que existe neste jogo;
+   * - os sete vestidos sao o MESMO `vestidoRosa` em sete cores, e os gorros e
+   *   as botas idem. A geometria estava paga; o que faltava era o mostruario.
+   *
+   * Vinte pecas desenhadas do zero seriam vinte oportunidades de manga torta.
+   * Vinte fichas de cor sao vinte linhas que nao podem quebrar a caminhada.
+   *
+   * O `preco` e o que poe cada uma na vitrine — sem ele a peca nao esta a
+   * venda em lugar nenhum.
+   */
+
+  // ---------------------------------------------- arara 1: camisaria clara
+  camisaLinho: {
+    id: 'camisa-linho', nome: 'Camisa de linho', icone: '👔',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaLinho, corDetalhe: P.lojaLinhoManga,
+    nota: 'crua, de manga dobrada', preco: 48,
+  },
+  camisaMenta: {
+    id: 'camisa-menta', nome: 'Camisa verde-menta', icone: '👕',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaMenta, corDetalhe: P.lojaMentaManga,
+    nota: 'a cor preferida da Estella', preco: 52,
+  },
+  camisaTerracota: {
+    id: 'camisa-terracota', nome: 'Camisa terracota', icone: '👕',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaTerracota, corDetalhe: P.lojaTerracotaManga,
+    nota: 'cor de telha nova', preco: 52,
+  },
+  regataPiscina: {
+    id: 'regata-piscina', nome: 'Regata azul-piscina', icone: '🎽',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaRegata,
+    nota: 'sem manga, para o calor', preco: 38,
+    bracosNus: true,
+  },
+
+  // ------------------------------------------------------ arara 2: vestidos
+  vestidoNoite: {
+    id: 'vestido-noite', nome: 'Vestido azul-noite', icone: '👗',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaVestidoNoite, corDetalhe: P.lojaVestidoNoiteRenda,
+    nota: 'babado cor de nuvem', preco: 96,
+    bracosNus: true, pernasNuas: true, extra: vestidoDaLoja,
+  },
+  vestidoJade: {
+    id: 'vestido-jade', nome: 'Vestido jade', icone: '👗',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaVestidoJade, corDetalhe: P.lojaVestidoJadeRenda,
+    nota: 'verde de água funda', preco: 96,
+    bracosNus: true, pernasNuas: true, extra: vestidoDaLoja,
+  },
+  vestidoLilas: {
+    id: 'vestido-lilas', nome: 'Vestido lilás', icone: '👗',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaVestidoLilas, corDetalhe: P.lojaVestidoLilasRenda,
+    nota: 'o mais leve da arara', preco: 88,
+    bracosNus: true, pernasNuas: true, extra: vestidoDaLoja,
+  },
+  vestidoManteiga: {
+    id: 'vestido-manteiga', nome: 'Vestido manteiga', icone: '👗',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaVestidoManteiga, corDetalhe: P.lojaVestidoManteigaRenda,
+    nota: 'amarelo de bolo', preco: 88,
+    bracosNus: true, pernasNuas: true, extra: vestidoDaLoja,
+  },
+
+  // ----------------------------------------------------- arara 3: calcaria
+  calcaAlfaiataria: {
+    id: 'calca-alfaiataria', nome: 'Calça de alfaiataria', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.lojaAlfaiataria,
+    nota: 'chumbo, de prega', preco: 74,
+  },
+  calcaBege: {
+    id: 'calca-bege', nome: 'Calça bege', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.lojaCalcaBege,
+    nota: 'combina com tudo, diz ela', preco: 58,
+  },
+  calcaVinho: {
+    id: 'calca-vinho', nome: 'Calça vinho', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.lojaCalcaVinho,
+    nota: 'a mais ousada da fila', preco: 62,
+  },
+  calcaOliva: {
+    id: 'calca-oliva', nome: 'Calça oliva', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.lojaCalcaOliva,
+    nota: 'verde de jardim', preco: 58,
+  },
+
+  // ------------------------------------------------- arara 4: frio e pé
+  gorroAzul: {
+    id: 'gorro-azul', nome: 'Gorro azul', icone: '🧢',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.lojaGorroAzul, corDetalhe: P.lojaGorroAzulBarra,
+    nota: 'barra dobrada', preco: 42,
+    cobreCabelo: true, extra: gorroDeLa,
+  },
+  gorroMusgo: {
+    id: 'gorro-musgo', nome: 'Gorro musgo', icone: '🧢',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.lojaGorroMusgo, corDetalhe: P.lojaGorroMusgoBarra,
+    nota: 'lã grossa', preco: 42,
+    cobreCabelo: true, extra: gorroDeLa,
+  },
+  botaVermelha: {
+    id: 'bota-vermelha', nome: 'Bota vermelha', icone: '🥾',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.lojaBotaVermelha, corDetalhe: P.lojaBotaVermelhaCano,
+    nota: 'cano curto, bico redondo', preco: 86,
+    extra: canoDaBota,
+  },
+  botaCreme: {
+    id: 'bota-creme', nome: 'Bota creme', icone: '🥾',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.lojaBotaCreme, corDetalhe: P.lojaBotaCremeCano,
+    nota: 'a que ela não deixa ninguém provar de meia suja', preco: 92,
+    extra: canoDaBota,
+  },
+
+  // ------------------------------------------- mezanino: a linha premium
+  vestidoDeGala: {
+    id: 'vestido-gala', nome: 'Vestido de gala dourado', icone: '✨',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaGala, corDetalhe: P.lojaGalaRenda,
+    nota: 'ela levou três meses nesse', preco: 210,
+    bracosNus: true, pernasNuas: true, extra: vestidoDaLoja,
+  },
+  vestidoDePrata: {
+    id: 'vestido-prata', nome: 'Vestido de gala prata', icone: '✨',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.lojaGalaPrata, corDetalhe: P.lojaGalaPrataRenda,
+    nota: 'o par do dourado', preco: 210,
+    bracosNus: true, pernasNuas: true, extra: vestidoDaLoja,
+  },
+  boinaDeVeludo: {
+    id: 'boina-veludo', nome: 'Boina de veludo', icone: '🎩',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.lojaVeludo, corDetalhe: P.lojaVeludoBarra,
+    nota: 'vinho, de festa', preco: 150,
+    cobreCabelo: true, extra: gorroDeLa,
+  },
+  botaDeGala: {
+    id: 'bota-gala', nome: 'Bota de gala dourada', icone: '👢',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.lojaGala, corDetalhe: P.lojaVeludo,
+    nota: 'para usar com o vestido, e só com ele', preco: 165,
+    extra: canoDaBota,
+  },
+  calcaDeVeludo: {
+    id: 'calca-veludo', nome: 'Calça de veludo', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.lojaVeludo,
+    nota: 'o mesmo veludo da boina', preco: 160,
+  },
 } as const satisfies Record<string, ItemDef>;
+
+/**
+ * AS ARARAS DA BOUTIQUE: o que cada uma vende, na ordem em que elas estao na
+ * planta da loja (`scenes/lojinha.ts`).
+ *
+ * Um lugar so, pelo mesmo motivo do `MODA_PRAIA`: a cena liga a interacao por
+ * esta lista e o painel desenha por ela, e as duas nao tem como discordar
+ * sobre o que esta pendurado. O `titulo` e o que aparece no alto do painel —
+ * e o nome que a Estella daria para a arara, nao "arara 3".
+ */
+export interface AraraDaLoja {
+  readonly titulo: string;
+  readonly fala: string;
+  readonly pecas: readonly ItemDef[];
+}
+
+export const ARARAS_DA_ESTELLA: readonly AraraDaLoja[] = [
+  {
+    titulo: 'Camisaria',
+    fala: 'Essa fila é a que mais sai. Linho não amassa se você não sentar em cima.',
+    pecas: [ITENS.camisaLinho, ITENS.camisaMenta, ITENS.camisaTerracota, ITENS.regataPiscina],
+  },
+  {
+    titulo: 'Vestidos',
+    fala: 'Aqui eu não deixo ninguém mexer sem provar. Prova, meu amor. PROVA.',
+    pecas: [ITENS.vestidoNoite, ITENS.vestidoJade, ITENS.vestidoLilas, ITENS.vestidoManteiga],
+  },
+  {
+    titulo: 'Calçaria',
+    fala: 'Cintura alta. Todas. Não me venha pedir cintura baixa que eu não faço.',
+    pecas: [ITENS.calcaAlfaiataria, ITENS.calcaBege, ITENS.calcaVinho, ITENS.calcaOliva],
+  },
+  {
+    titulo: 'Frio e pé',
+    fala: 'Gorro e bota. Nesta cidade não faz frio, e mesmo assim isso aqui esgota.',
+    pecas: [ITENS.gorroAzul, ITENS.gorroMusgo, ITENS.botaVermelha, ITENS.botaCreme],
+  },
+];
+
+/** As três araras douradas do mezanino. A mesma ideia, outra faixa de preço. */
+export const PREMIUM_DA_ESTELLA: readonly AraraDaLoja[] = [
+  {
+    titulo: 'Gala',
+    fala: 'Estes dois eu não vendo pra qualquer um. Vocês eu vendo.',
+    pecas: [ITENS.vestidoDeGala, ITENS.vestidoDePrata],
+  },
+  {
+    titulo: 'Veludo',
+    fala: 'Veludo pede ocasião. Arrumem uma ocasião.',
+    pecas: [ITENS.boinaDeVeludo, ITENS.calcaDeVeludo],
+  },
+  {
+    titulo: 'Acabamento',
+    fala: 'A bota fecha o look. Sem ela vocês são gente bonita de pé descalço.',
+    pecas: [ITENS.botaDeGala],
+  },
+];
 
 /**
  * O que o vestiario do clube tem para vestir.

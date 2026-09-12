@@ -81,6 +81,61 @@ export const PALETTE = {
   vestidoRosa: 0xf6d3d8,
   vestidoRenda: 0xfdf7f0,
   vestidoFita: 0xf0aebd,
+  /*
+   * A COLECAO DA ESTELLA — o que esta a venda nas araras da boutique.
+   *
+   * Sao quatro familias, uma por arara do terreo, e cada familia e um degrade
+   * curto em volta de UM tom. Isso nao e enfeite: a arara do mundo ja nasce
+   * pintada por `colecao` (world/furniture.ts), e o que o painel vende tem que
+   * combinar com o que esta pendurado ali — senao o jogador clica numa arara de
+   * pano azul e o painel oferece terracota.
+   *
+   * As de manga/barra sao sempre um degrau do MESMO tom, e nao uma cor nova:
+   * contraste demais numa peca vista a tres metros vira sujeira na tela (a
+   * mesma razao do `escuro` das roupas penduradas).
+   */
+  // arara 1 — camisaria clara
+  lojaLinho: 0xf4efe4,
+  lojaLinhoManga: 0xdfd4c0,
+  lojaMenta: 0x9fd3bd,
+  lojaMentaManga: 0x7ab8a1,
+  lojaTerracota: 0xc9714f,
+  lojaTerracotaManga: 0xa85a3e,
+  lojaRegata: 0x63b7d4,
+  // arara 2 — vestidos (a mesma geometria do vestido rosa, outras cores)
+  lojaVestidoNoite: 0x39456e,
+  lojaVestidoNoiteRenda: 0xb9c2e0,
+  lojaVestidoJade: 0x2f8a72,
+  lojaVestidoJadeRenda: 0xd6efe5,
+  lojaVestidoLilas: 0xb99ad4,
+  lojaVestidoLilasRenda: 0xf2e9fa,
+  lojaVestidoManteiga: 0xf2dd9a,
+  lojaVestidoManteigaRenda: 0xfff7df,
+  // arara 3 — calcaria
+  lojaAlfaiataria: 0x3c3b46,
+  lojaCalcaBege: 0xd7c2a0,
+  lojaCalcaVinho: 0x7b2f40,
+  lojaCalcaOliva: 0x6a7148,
+  // arara 4 — frio e pe
+  lojaGorroAzul: 0x4f79bd,
+  lojaGorroAzulBarra: 0xcfe0f5,
+  lojaGorroMusgo: 0x5f7a52,
+  lojaGorroMusgoBarra: 0xe4e9d6,
+  lojaBotaVermelha: 0xb5372f,
+  lojaBotaVermelhaCano: 0x6d2019,
+  lojaBotaCreme: 0xf0e6d2,
+  lojaBotaCremeCano: 0xbda882,
+  /*
+   * E A LINHA PREMIUM DO MEZANINO: ouro e prata de verdade (`glow` nao entra
+   * em roupa — o brilho aqui e a COR clara com a barra escura, que e o que da
+   * o metal num material toon), mais o veludo que acompanha os dois.
+   */
+  lojaGala: 0xd9b25f,
+  lojaGalaRenda: 0xf6e7bf,
+  lojaGalaPrata: 0xbcc3cc,
+  lojaGalaPrataRenda: 0xeef1f5,
+  lojaVeludo: 0x5c2a4d,
+  lojaVeludoBarra: 0x8d4b78,
   // os dois maid da mesma loja: preto lavado (preto puro come o degrade do toon
   // e vira silhueta chapada), creme do avental e a fita preta do debrum
   maidPreto: 0x2b2a33,
