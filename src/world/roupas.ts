@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import { toon } from '../core/materials';
-import type { MedidasCorpo } from '../core/types';
+import type { ItemDef, MedidasCorpo } from '../core/types';
 
 /**
  * O CORPO das pecas de roupa que tem geometria propria.
@@ -30,9 +30,15 @@ import type { MedidasCorpo } from '../core/types';
  * em `y = centro + R·cos(theta)` com raio `R·sen(theta)` — errar essas duas
  * contas poe um anel largo no meio da cupula, e o gorro vira sombrero.
  */
-function gorroDeLa(m: MedidasCorpo): THREE.Object3D {
+function gorroDeLa(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
   const r = m.headR;
+  // A COR SAI DA FICHA, e a da paleta e so o padrao: este mesmo gorro veste o
+  // rosa do armario do Ari, o azul e o musgo da arara da Estella e a boina de
+  // veludo do mezanino. Sem isto, quatro fichas de cores diferentes apareciam
+  // as quatro rosa — a geometria ganhava da ficha.
+  const la = toon(peca?.cor ?? P.roupaLa);
+  const laBarra = toon(peca?.corDetalhe ?? P.roupaLaBarra);
 
   // Este gorro pede `cobreCabelo`, entao ele pode ser JUSTO: sem a juba por
   // baixo, basta folgar um pouco do cranio. Um chapeu que so pousa por cima
@@ -42,7 +48,7 @@ function gorroDeLa(m: MedidasCorpo): THREE.Object3D {
   const CENTRO = r * 0.06;
   const calota = new THREE.Mesh(
     new THREE.SphereGeometry(RAIO, 18, 12, 0, Math.PI * 2, 0, ABRE),
-    toon(P.roupaLa),
+    la,
   );
   calota.position.y = CENTRO;
   calota.scale.y = 1.16; // um pouco alto: gorro achatado lembra boina
@@ -53,14 +59,14 @@ function gorroDeLa(m: MedidasCorpo): THREE.Object3D {
   const raioNaBorda = RAIO * Math.sin(ABRE);
   const barra = new THREE.Mesh(
     new THREE.CylinderGeometry(raioNaBorda * 1.03, raioNaBorda * 1.03, r * 0.26, 18),
-    toon(P.roupaLaBarra),
+    laBarra,
   );
   barra.position.y = borda;
   g.add(barra);
 
   const pompom = new THREE.Mesh(
     new THREE.SphereGeometry(r * 0.2, 10, 8),
-    toon(P.roupaLaBarra),
+    laBarra,
   );
   pompom.position.y = CENTRO + RAIO * 1.16;
   g.add(pompom);
@@ -75,18 +81,20 @@ function gorroDeLa(m: MedidasCorpo): THREE.Object3D {
  * `-legH + h*0.022`, entao o cano fica logo acima disso e desce um pouco para
  * cobrir a costura.
  */
-function canoDaBota(m: MedidasCorpo): THREE.Object3D {
+function canoDaBota(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
+  // a cor sai da ficha (ver o gorro): a amarela do armario, a vermelha e a
+  // creme da arara e a dourada do mezanino sao esta mesma bota
   const cano = new THREE.Mesh(
     new THREE.CylinderGeometry(m.h * 0.05 * m.w, m.h * 0.055 * m.w, m.h * 0.08, 12),
-    toon(P.roupaBotaCano),
+    toon(peca?.corDetalhe ?? P.roupaBotaCano),
   );
   cano.position.y = -m.legH + m.h * 0.075;
   g.add(cano);
 
   const dobra = new THREE.Mesh(
     new THREE.CylinderGeometry(m.h * 0.058 * m.w, m.h * 0.058 * m.w, m.h * 0.018, 12),
-    toon(P.roupaBota),
+    toon(peca?.cor ?? P.roupaBota),
   );
   dobra.position.y = -m.legH + m.h * 0.113;
   g.add(dobra);
@@ -218,16 +226,61 @@ function mangaBufante(raio: number, cor: number): THREE.Mesh {
  * (`torso.scale.z = 0.82`); saia redonda em corpo achatado parece inflada de
  * perfil.
  */
-function vestidoRosa(m: MedidasCorpo): THREE.Object3D {
+interface CoresDeVestido { pano: number; renda: number; fita: number }
+
+/**
+ * O VESTIDO DA FOTO — as tres cores escolhidas a mao, e nao derivadas.
+ *
+ * Esta e a peca do armario do Ari. Ela existe separada da generica para que a
+ * conta de fita dos vestidos da loja nao mexa numa peca que saiu de uma
+ * referencia de verdade.
+ */
+const vestidoRosa: NonNullable<ItemDef['extra']> = (m) =>
+  vestidoDeBabados(m, undefined, {
+    pano: P.vestidoRosa,
+    renda: P.vestidoRenda,
+    fita: P.vestidoFita,
+  });
+
+/**
+ * O MESMO VESTIDO, NA COR DA FICHA. E o que a arara da Estella vende sete
+ * vezes: mesma geometria, `cor` e `corDetalhe` de cada `ItemDef`.
+ */
+const vestidoDaLoja: NonNullable<ItemDef['extra']> = (m, _lado, peca) =>
+  vestidoDeBabados(m, peca);
+
+function vestidoDeBabados(
+  m: MedidasCorpo,
+  peca?: ItemDef,
+  cores?: CoresDeVestido,
+): THREE.Object3D {
   const g = new THREE.Group();
   const { h, w } = m;
   const hipY = m.legH;
   const raioTorso = h * 0.105 * w;
   const ACHATA = 0.85;
 
-  const rosa = toon(P.vestidoRosa);
-  const renda = toon(P.vestidoRenda, { doubleSide: true });
-  const fita = toon(P.vestidoFita);
+  /*
+   * TRES COLORACOES, E SO DUAS CABEM NA FICHA.
+   *
+   * O `ItemDef` tem `cor` e `corDetalhe`, e este vestido usa tres: o pano, a
+   * renda e a FITA dos lacos. A terceira sai de uma conta em cima do pano — um
+   * degrau mais escuro —, que e a mesma receita das roupas penduradas na
+   * arara. Cor de fita propria por peca seria uma entrada de paleta a mais por
+   * vestido para uma faixa de 3 cm.
+   *
+   * O VESTIDO ROSA NAO PASSA POR ESSA CONTA: ele veio de uma foto que o Renan
+   * mandou, com as tres cores escolhidas uma a uma, e a conta generica muda a
+   * fita dele de rosa para um malva apagado. Quem quiser as tres cores exatas
+   * passa `cores`; quem so tem ficha (os sete vestidos da loja) cai na conta.
+   */
+  const corPano = cores?.pano ?? peca?.cor ?? P.vestidoRosa;
+  const corRenda = cores?.renda ?? peca?.corDetalhe ?? P.vestidoRenda;
+  const corFita = cores?.fita ?? new THREE.Color(corPano).multiplyScalar(0.74).getHex();
+
+  const rosa = toon(corPano);
+  const renda = toon(corRenda, { doubleSide: true });
+  const fita = toon(corFita);
 
   // ------------------------------------------------------------- corpete
   // faixa de renda no decote, que e o que da a cara de lolita de longe
@@ -252,7 +305,7 @@ function vestidoRosa(m: MedidasCorpo): THREE.Object3D {
   }
 
   // o laco do peito e o que se ve primeiro na foto, entao ele e o maior de todos
-  const lacoPeito = laco(h * 0.04, P.vestidoFita, P.vestidoRenda);
+  const lacoPeito = laco(h * 0.04, corFita, corRenda);
   lacoPeito.position.set(0, hipY + m.torsoH * 0.62, raioTorso * 0.9);
   g.add(lacoPeito);
 
@@ -265,7 +318,7 @@ function vestidoRosa(m: MedidasCorpo): THREE.Object3D {
   cinta.scale.z = ACHATA;
   g.add(cinta);
 
-  const lacoCintura = laco(h * 0.036, P.vestidoRosa, P.vestidoFita);
+  const lacoCintura = laco(h * 0.036, corPano, corFita);
   lacoCintura.position.set(0, hipY + m.torsoH * 0.14, raioTorso * 0.92);
   g.add(lacoCintura);
 
@@ -303,7 +356,7 @@ function vestidoRosa(m: MedidasCorpo): THREE.Object3D {
 
   // lacos em volta da barra, como na foto — nao atras, que ninguem ve
   for (const ang of [-0.9, 0, 0.9]) {
-    const l = laco(h * 0.022, P.vestidoFita, P.vestidoRenda);
+    const l = laco(h * 0.022, corFita, corRenda);
     l.position.set(
       Math.sin(ang) * raioBarra * 0.92,
       barra + h * 0.055,
@@ -1500,7 +1553,7 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
 // roupa e item como qualquer outro, e mora numa vaga de vestimenta do
 // inventario. Aqui fica so o corpo delas.
 export {
-  gorroDeLa, canoDaBota, vestidoRosa, gargantilhaDeLaco, gravataDoWalter,
+  gorroDeLa, canoDaBota, vestidoRosa, vestidoDaLoja, gargantilhaDeLaco, gravataDoWalter,
   vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
   moletomComCapuz, mangaDeMoletom, oculosDeSol,
 };

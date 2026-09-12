@@ -221,6 +221,78 @@ await page.waitForTimeout(2000);
 await page.screenshot({ path: `${OUT}-estella.png` });
 await page.evaluate(() => window.jogo.focusCamera(null));
 
+// ====================== 5b. A ARARA VENDE: provar, faltar dinheiro, e comprar
+/**
+ * O QUE ESTE BLOCO GUARDA, e é tudo sobre o dinheiro sair certo:
+ *
+ * 1. provar NÃO compra e não mexe no save — é o gesto que tem que ser de graça;
+ * 2. sem saldo o botão não vende (e apertar mesmo assim não tira nada);
+ * 3. com saldo, a carteira cai EXATAMENTE o preço e a peça aparece no
+ *    guarda-roupa — as duas juntas, porque "debitou" e "entregou" são a mesma
+ *    decisão e é aqui que se prova que não há o caminho de uma sem a outra;
+ * 4. comprada, ela não se compra de novo.
+ */
+const abrirArara = async (x, z) => {
+  await page.evaluate(([ax, az]) => window.jogo.debugPlace(ax, az, Math.PI), [x, z]);
+  await page.waitForTimeout(1300);
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(800);
+  for (let i = 0; i < 8 && (await page.locator('.dialogue.show').count()); i++) {
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(430);
+  }
+  await page.waitForTimeout(900);
+  return page.locator('.loja.show').count();
+};
+
+const guardaRoupa = () => page.evaluate(() => window.jogo.wardrobeItems().map((i) => i.id));
+const carteira = () => page.evaluate(() => window.jogo.carteira());
+
+await page.evaluate(() => window.jogo.setZoom(9));
+const araraAbriu = await abrirArara(-1.3, -0.6);
+const naArara = {
+  titulo: await page.locator('.loja .arara').textContent().catch(() => ''),
+  quantas: await page.locator('.loja .vitrine .peca').count(),
+};
+
+// 1 e 2: prova sem dinheiro
+await page.evaluate(() => window.jogo.gastar(window.jogo.carteira()));
+await page.locator('.loja .vitrine .peca').first().click();
+await page.waitForTimeout(1200);
+const provado = {
+  nome: await page.locator('.loja .ficha .nome').textContent(),
+  botao: await page.locator('.loja .comprar').textContent(),
+  travado: await page.locator('.loja .comprar').isDisabled(),
+  acervo: await guardaRoupa(),
+};
+await page.locator('.loja .comprar').click({ force: true }).catch(() => {});
+await page.waitForTimeout(500);
+const depoisDeInsistir = { carteira: await carteira(), acervo: await guardaRoupa() };
+await page.screenshot({ path: `${OUT}-arara.png` });
+
+// 3: com dinheiro
+await page.evaluate(() => window.jogo.ganhar(400));
+await page.waitForTimeout(250);
+// reprova a mesma peça para o painel repintar com o saldo novo
+await page.locator('.loja .vitrine .peca').first().click();
+await page.waitForTimeout(350);
+await page.locator('.loja .vitrine .peca').first().click();
+await page.waitForTimeout(900);
+const antesDaCompra = await carteira();
+const precoNaTela = await page.locator('.loja .ficha .preco').textContent();
+await page.locator('.loja .comprar').click();
+await page.waitForTimeout(1200);
+const compra = {
+  preco: Number((precoNaTela ?? '').replace(/\D+/g, '')),
+  gastou: antesDaCompra - (await carteira()),
+  acervo: await guardaRoupa(),
+  botao: await page.locator('.loja .comprar').textContent(),
+};
+await page.screenshot({ path: `${OUT}-comprado.png` });
+await page.keyboard.press('Escape');
+await page.waitForTimeout(600);
+const araraFechou = (await page.locator('.loja.show').count()) === 0;
+
 // ============================================ 6. falar com ela, e voltar pra rua
 await page.evaluate(() => {
   window.jogo.setZoom(11);
@@ -336,6 +408,7 @@ await page.waitForTimeout(2500);
 const promptDoEspelho = await page.locator('.prompt .label').textContent().catch(() => '');
 await page.screenshot({ path: `${OUT}-espelho.png` });
 
+
 const lerOEspelho = () => page.evaluate(() => {
   let vidro = null;
   window.jogo.scene.traverse((o) => { if (o.name === 'vidro-do-espelho') vidro = o; });
@@ -369,6 +442,48 @@ if (espelhoComEla && espelhoSemEla) {
   }
 }
 const pixels = espelhoComEla ? espelhoComEla.length / 4 : 0;
+
+/*
+ * O ARMÁRIO E A ARARA PREMIUM VÊM DEPOIS DA MEDIÇÃO DO REFLEXO, e a ordem é
+ * o próprio teste: os dois teleportam a dupla para longe do espelho, e medir
+ * "com ela na frente" depois disso comparava dois quadros vazios — 0 de 9216
+ * pixels diferentes, que foi como este bloco reprovou o espelho na primeira
+ * vez estando o espelho certo.
+ */
+await page.evaluate(([x, z]) => {
+  window.jogo.debugPlace(x, z, Math.PI);
+  window.jogo.elevarDupla(3.9);
+}, [FRENTE_DO_ESPELHO.x, FRENTE_DO_ESPELHO.z]);
+await page.waitForTimeout(1600);
+/*
+ * O ESPELHO ABRE O GUARDA-ROUPA, e é ele que fecha o ciclo da loja: comprar
+ * na arara enche o guarda-roupa, e sem uma porta para ele aqui a peça só
+ * poderia ser vestida no armário do quarto, do outro lado do mapa.
+ */
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(900);
+for (let i = 0; i < 10 && (await page.locator('.dialogue.show').count()); i++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(430);
+}
+await page.waitForTimeout(900);
+const espelhoAbreArmario = await page.locator('.armario.show').count();
+const noArmario = await page.evaluate(() =>
+  [...document.querySelectorAll('.armario .acervo .peca')].map((n) => n.dataset.id));
+await page.screenshot({ path: `${OUT}-armario.png` });
+await page.keyboard.press('Escape');
+await page.waitForTimeout(600);
+
+// e a arara premium do mezanino vende as peças caras
+const premiumAbriu = await abrirArara(0.4, 1.7);
+const naPremium = {
+  titulo: await page.locator('.loja .arara').textContent().catch(() => ''),
+  precos: await page.evaluate(() =>
+    [...document.querySelectorAll('.loja .vitrine .peca em')].map((n) => n.textContent)),
+};
+await page.screenshot({ path: `${OUT}-premium.png` });
+await page.keyboard.press('Escape');
+await page.waitForTimeout(600);
 
 // e a viagem de volta: o topo da escada devolve a dupla ao térreo
 await page.evaluate(([x, z]) => {
@@ -425,7 +540,19 @@ for (const [peca, quantas] of [
 if (salao.roupas < 40) falhas.push(`as araras tem so ${salao.roupas} pecas penduradas`);
 falhas.push(...ronda.pontosRuins.map((p) => `parada dentro de movel: ${p}`));
 falhas.push(...ronda.trechosRuins.map((t) => `a ronda atravessa movel: ${t}`));
-if (andou < 3) falhas.push(`a Estella quase nao andou (${andou.toFixed(2)} em 54 s)`);
+/*
+ * O LIMIAR É 1,5, e não 3, porque a ronda nova tem PERNA DE 2 m.
+ *
+ * Medido em cinco rodadas seguidas: 4,33 · 3,56 · 3,13 · 2,32 · 2,27. O que
+ * varia não é ela — é ONDE da pausa (3,5 a 7,5 s) a amostragem começa, e num
+ * headless que roda o tempo de jogo cinco vezes mais devagar essa pausa come
+ * metade da janela. Um limiar de 3 no meio dessa faixa reprova a metade das
+ * rodadas com a ronda perfeita, que é o pior tipo de teste.
+ *
+ * 1,5 é menos da metade de uma perna: ele continua pegando o bug que importa
+ * (ela travada, parada em zero) e não reprova por sorte de cronômetro.
+ */
+if (andou < 1.5) falhas.push(`a Estella quase nao andou (${andou.toFixed(2)} em 54 s)`);
 if (dentroDeMovel.length) {
   falhas.push(`ela foi vista dentro de um movel: ${JSON.stringify(dentroDeMovel.slice(0, 3))}`);
 }
@@ -465,6 +592,36 @@ else {
   if (aceso < pixels * 0.5) falhas.push(`o reflexo saiu apagado (${aceso} de ${pixels} pixels acesos)`);
   if (mudou < pixels * 0.02) falhas.push(`a dupla nao aparece no reflexo (so ${mudou} de ${pixels} pixels mudaram quando ela saiu da frente)`);
 }
+// ------------------------------------------------------- a arara que vende
+if (!araraAbriu) falhas.push('a arara nao abriu o painel da loja');
+if (naArara.titulo !== 'Vestidos') falhas.push(`a arara errada abriu: "${naArara.titulo}"`);
+if (naArara.quantas !== 4) falhas.push(`a arara tem ${naArara.quantas} pecas (esperado 4)`);
+if (!provado.travado) falhas.push(`sem saldo o botao vende: "${provado.botao}"`);
+if (!/faltam/i.test(provado.botao)) falhas.push(`o botao nao diz o que falta: "${provado.botao}"`);
+if (provado.acervo.length) falhas.push(`provar guardou peca: ${JSON.stringify(provado.acervo)}`);
+if (depoisDeInsistir.carteira !== 0 || depoisDeInsistir.acervo.length) {
+  falhas.push(`insistir sem saldo cobrou ou entregou: ${JSON.stringify(depoisDeInsistir)}`);
+}
+if (!compra.preco) falhas.push('o painel nao mostrou preco nenhum');
+if (compra.gastou !== compra.preco) {
+  falhas.push(`a carteira caiu ${compra.gastou} para uma peca de ${compra.preco}`);
+}
+if (compra.acervo.length !== 1) {
+  falhas.push(`a peca comprada nao foi para o guarda-roupa: ${JSON.stringify(compra.acervo)}`);
+}
+if (!/já é seu|ja e seu/i.test(compra.botao)) {
+  falhas.push(`da para comprar de novo a mesma peca: "${compra.botao}"`);
+}
+if (!araraFechou) falhas.push('o Escape nao fecha a arara');
+if (!espelhoAbreArmario) falhas.push('o espelho do mezanino nao abre o guarda-roupa');
+if (!noArmario.includes(compra.acervo[0])) {
+  falhas.push(`a peca comprada nao aparece no espelho: ${JSON.stringify(noArmario)}`);
+}
+if (!premiumAbriu) falhas.push('a arara premium do mezanino nao abre');
+if (!naPremium.precos.some((p) => Number(String(p).replace(/\D+/g, '')) >= 150)) {
+  falhas.push(`a linha premium nao esta cara: ${JSON.stringify(naPremium.precos)}`);
+}
+
 if (!/descer/i.test(promptDoTopo)) falhas.push(`nao da para descer no topo: "${promptDoTopo}"`);
 if (segundosDescendo === null) falhas.push('a viagem de descida nunca terminou (90 s)');
 if (laEmBaixo[1] > 0.4) falhas.push(`a descida nao devolveu o terreo: ${JSON.stringify(laEmBaixo)}`);
@@ -487,8 +644,14 @@ console.log('6. escada:', JSON.stringify(promptDoPe), '→', JSON.stringify(laEm
   `em ${segundosSubindo}s ·`, JSON.stringify(promptDoTopo), '→', JSON.stringify(laEmBaixo),
   `em ${segundosDescendo}s`);
 console.log('   andar:', JSON.stringify(andar));
+console.log('5b. arara:', JSON.stringify(naArara), '· provou', JSON.stringify(provado.nome),
+  '→', JSON.stringify(provado.botao));
+console.log('    compra: R$', compra.preco, '· carteira caiu', compra.gastou,
+  '· guarda-roupa', JSON.stringify(compra.acervo), '·', JSON.stringify(compra.botao));
 console.log('7. espelho:', JSON.stringify(promptDoEspelho), '·', aceso, 'de', pixels, 'pixels acesos ·',
   mudou, 'mudaram quando a dupla saiu da frente');
+console.log('   armario pelo espelho:', espelhoAbreArmario, JSON.stringify(noArmario),
+  '· premium:', JSON.stringify(naPremium));
 console.log('8. volta:', JSON.stringify(promptDeSair), '→', voltou.cena, JSON.stringify(voltou.onde),
   '· andou la fora:', andouLaFora.toFixed(2));
 

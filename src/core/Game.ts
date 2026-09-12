@@ -49,6 +49,16 @@ export class Game implements GameAPI {
   private readonly save = new SaveState();
   /** o boneco do painel do guarda-roupa; corpo proprio, cena e canvas proprios */
   private readonly previa: Previa;
+  /**
+   * O BONECO DA ARARA é um SEGUNDO `Previa`, e não o mesmo do guarda-roupa.
+   *
+   * Um `WebGLRenderer` vive amarrado a UM canvas, e os dois paineis tem o seu
+   * — mover o canvas de um para o outro na hora de abrir seria trocar o
+   * contexto de lugar a cada interacao. Montar um rig e barato (e geometria
+   * procedural, o jogo ja monta dois no comeco), entao a copia sai mais
+   * simples e nao pode quebrar o painel do quarto.
+   */
+  private readonly previaDaLoja: Previa;
   private readonly player: Player;
   private readonly parceiro: Companion;
   private readonly clock = new THREE.Clock();
@@ -95,6 +105,7 @@ export class Game implements GameAPI {
 
     this.ui = new Ui(root);
     this.previa = new Previa(this.ui.canvasDoBoneco());
+    this.previaDaLoja = new Previa(this.ui.canvasDaLojaBoneco());
     this.ui.setMemories(this.save.memories);
     this.ui.onTouchAction = () => this.input.tapAction();
     this.ui.onTouchSwap = () => this.input.tapSwap();
@@ -106,6 +117,8 @@ export class Game implements GameAPI {
     this.ui.onAbrirMochila = () => this.pintarMochila();
     this.ui.onAbrirArmario = () => this.pintarArmario();
     this.ui.onGirarBoneco = (d) => this.previa.girar(d);
+    this.ui.onProvarPeca = (id) => this.provarPeca(id);
+    this.ui.onComprarPeca = () => this.comprarProvada();
     this.ui.onTirarParte = (i) => {
       if (!this.tirarPeca(this.playerId(), i)) return;
       this.audio.play('escolha');
@@ -350,6 +363,7 @@ export class Game implements GameAPI {
       this.ui.vestiarioOpen ||
       this.ui.memoriasOpen ||
       this.ui.cardapioOpen ||
+      this.ui.lojaOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
@@ -377,6 +391,8 @@ export class Game implements GameAPI {
     // no xadrez o Escape e a desistencia: e a unica saida de quem cansou da
     // partida, e sem ela a dupla fica presa na mesa
     if (this.ui.xadrezOpen && this.input.justPressed('Escape')) this.ui.fecharXadrez();
+    // e a arara, pelo mesmo motivo de todas as outras: ela trava o movimento
+    if (this.ui.lojaOpen && this.input.justPressed('Escape')) this.ui.fecharLoja();
     // as setas folheiam o quadro; com ele fechado elas continuam sendo andar
     if (this.ui.memoriasOpen) {
       if (this.input.justPressed('ArrowLeft')) this.ui.folhear(-1);
@@ -387,7 +403,8 @@ export class Game implements GameAPI {
     // As duas telas mostram o inventário de quem está sendo controlado, então
     // trocar é como se vê — e se veste — o outro. O subtítulo da mochila já
     // prometia "T vê a do outro" e não funcionava: o `busy` engolia a tecla.
-    const emTela = this.ui.mochilaOpen || this.ui.armarioOpen || this.ui.vestiarioOpen;
+    const emTela =
+      this.ui.mochilaOpen || this.ui.armarioOpen || this.ui.vestiarioOpen || this.ui.lojaOpen;
     const podeTrocar = emTela
       ? !this.ui.dialogueOpen && !this.ui.menuOpen && !this.transitioning
       : !busy;
@@ -459,6 +476,10 @@ export class Game implements GameAPI {
     if (this.ui.armarioOpen) {
       this.previa.update(dt);
       this.previa.desenhar();
+    }
+    if (this.ui.lojaOpen) {
+      this.previaDaLoja.update(dt);
+      this.previaDaLoja.desenhar();
     }
 
     this.input.endFrame();
@@ -912,6 +933,115 @@ export class Game implements GameAPI {
     this.ui.abrirVestiario();
   }
 
+  /* ====================================================================
+   *              A ARARA DA ESTELLA: provar no corpo e comprar
+   * ==================================================================== */
+
+  /** o que a arara aberta vende, e qual peça está provada no boneco */
+  private arara: { titulo: string; pecas: readonly ItemDef[] } | null = null;
+  private provando: ItemDef | null = null;
+
+  /**
+   * Abre uma arara da boutique.
+   *
+   * PROVAR NÃO MEXE NO SAVE. A peça provada entra no `loadout` que vai para o
+   * boneco do painel e para lugar nenhum mais — não é vestida, não é guardada,
+   * e fechar a arara sem comprar não deixa rastro. Isso é o que deixa provar
+   * ser de graça e sem arrependimento, que é o ponto de uma loja de roupa.
+   *
+   * Quem compra é `comprarProvada`, e ela é o único caminho que escreve.
+   */
+  abrirLoja(titulo: string, pecas: readonly ItemDef[]): void {
+    this.arara = { titulo, pecas };
+    this.provando = null;
+    this.previaDaLoja.mostrar(this.player.rig.spec);
+    this.pintarLoja();
+    this.ui.abrirLoja();
+  }
+
+  private pintarLoja(): void {
+    if (!this.arara) return;
+    const quem = this.playerId();
+    const css = (cor: number): string => `#${cor.toString(16).padStart(6, '0')}`;
+    this.ui.renderLoja({
+      arara: this.arara.titulo,
+      dono: this.player.name,
+      saldo: this.save.carteira,
+      provando: this.provando?.id ?? null,
+      pecas: this.arara.pecas.map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        icone: p.icone,
+        nota: p.nota,
+        preco: p.preco ?? 0,
+        // a amostra da grade tem a COR DA PEÇA, como as bermudas do vestiário:
+        // numa arara o que se escolhe é a cor, então ela tem que ser o botão
+        cor: css(p.cor ?? p.corBanho ?? 0xcccccc),
+        jaTem: this.save.achouItem(quem, p.id),
+      })),
+    });
+
+    /*
+     * O BONECO VESTE O `loadout` DE QUEM ESTÁ NO COMANDO, COM A PEÇA PROVADA
+     * POR CIMA — e a peça entra na vaga DELA, não numa vaga qualquer: provar
+     * uma bota não pode tirar o vestido, e provar um vestido tem que cobrir a
+     * calça, que é o que o `slot` já resolve no resto do jogo.
+     */
+    const loadout = { ...this.save.loadout(quem) };
+    if (this.provando?.slot) loadout[this.provando.slot] = this.provando.id;
+    this.previaDaLoja.vestir(loadout);
+  }
+
+  private provarPeca(id: string): void {
+    const peca = this.arara?.pecas.find((p) => p.id === id) ?? null;
+    if (!peca) return;
+    // clicar de novo na mesma peça TIRA: é como se experimenta, vestindo e
+    // tirando, e sem isso não havia como ver o corpo sem ela de novo
+    this.provando = this.provando?.id === peca.id ? null : peca;
+    this.audio.play('escolha');
+    this.pintarLoja();
+  }
+
+  /**
+   * Compra a peça provada.
+   *
+   * O DÉBITO E A ENTREGA SÃO A MESMA DECISÃO: `gastar` devolve `false` e não
+   * tira nada quando falta dinheiro, então não há o caminho de "cobrou e não
+   * entregou" nem o de "entregou e não cobrou". O botão já nasce desligado sem
+   * saldo; esta checagem é a que vale, porque o saldo pode ter mudado.
+   */
+  private comprarProvada(): void {
+    const peca = this.provando;
+    if (!peca || peca.preco === undefined) return;
+    const quem = this.playerId();
+    if (this.save.achouItem(quem, peca.id)) return;
+    if (!this.gastar(peca.preco)) {
+      this.ui.toast(`Faltam R$ ${peca.preco - this.save.carteira}`, '💸');
+      return;
+    }
+    /*
+     * A PEÇA VAI PARA O GUARDA-ROUPA, e não para a mochila: `storeItem` é quem
+     * sabe a diferença (roupa cosmética não ocupa vaga de mão), e é a mesma
+     * chamada que o armário do Ari usa. Comprar aqui é encher o guarda-roupa
+     * de casa — e é no espelho do mezanino que dá para vestir na hora.
+     *
+     * E SE A ENTREGA FALHAR, O DINHEIRO VOLTA. Hoje não falha (o guarda-roupa
+     * não tem tamanho), mas o dia em que alguém puser preço numa peça
+     * FUNCIONAL ela passa a ir para a mochila — que tem dez vagas e enche. O
+     * estorno é o que garante que não existe o caminho "pagou e não levou",
+     * em vez de contar com uma propriedade de outro arquivo.
+     */
+    const foi = this.storeItem(peca, quem);
+    if (foi === 'cheio') {
+      this.ganhar(peca.preco);
+      this.ui.toast('Sem espaço para levar — o dinheiro voltou', '🎒');
+      return;
+    }
+    this.audio.play('caixa');
+    this.ui.toast(`${peca.nome} — R$ ${peca.preco}`, '🛍️');
+    this.pintarLoja();
+  }
+
   /** Redesenha o painel do vestiario a partir do save. */
   private pintarVestiario(): void {
     const quem = this.playerId();
@@ -1125,6 +1255,12 @@ export class Game implements GameAPI {
       this.pintarArmario();
     }
     if (this.ui.vestiarioOpen) this.pintarVestiario();
+    // a arara mostra a peca no corpo de quem esta no comando: o T troca o
+    // corpo do boneco junto, e a peca provada continua provada no outro
+    if (this.ui.lojaOpen) {
+      this.previaDaLoja.mostrar(this.player.rig.spec);
+      this.pintarLoja();
+    }
   }
 
   setSaboreando(ativo: boolean): void {

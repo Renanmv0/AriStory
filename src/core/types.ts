@@ -128,6 +128,20 @@ export interface ItemDef {
   funcional?: boolean;
   /** linha curta que o painel mostra ao passar o olho */
   nota?: string;
+  /**
+   * QUANTO CUSTA, em reais, na arara da Estella.
+   *
+   * So a loja le isto. Peca sem preco nao esta a venda — e o caso de tudo o
+   * que ja estava no armario do Ari, da bermuda do vestiario e do premio do
+   * Walter: eles nao aparecem em vitrine nenhuma, e nao ha "preco 0" para
+   * significar isso (zero e um preco, e um preco de graca).
+   *
+   * O numero e inteiro e em reais cheios, na mesma escala do resto do jogo: o
+   * bilhete da roda gigante custa 24, um prato do Mania sai por 12 a 34, e um
+   * turno inteiro de garcom paga uns 200. Uma peca de terreo (35 a 110) e
+   * uma tarde de trabalho; uma premium do mezanino (150 a 220) e um turno bom.
+   */
+  preco?: number;
 
   // --- guarda-roupa: so para `tipo: 'vestivel'`
   /**
@@ -189,8 +203,18 @@ export interface ItemDef {
    * se desloca para FORA do corpo precisa multiplicar por ele, senao a copia
    * da esquerda vai para dentro. Vale 1 para cabeca e tronco, que tem copia
    * unica.
+   *
+   * `peca` E A PROPRIA FICHA, e serve para UMA coisa: a geometria ler a COR
+   * dali em vez de cravar a da paleta. Sem isso, a cor do `ItemDef` so pintava
+   * a malha que ja existe no corpo (torso, perna, pe) e a geometria extra
+   * saia sempre na cor de quem foi desenhado primeiro — quatro vestidos de
+   * cores diferentes na arara da Estella apareciam os quatro rosa.
+   *
+   * Fabrica que so tem uma cor possivel pode ignorar o parametro, como faz a
+   * gargantilha. Fabrica que e VESTIDA EM VARIAS CORES le `peca.cor` e
+   * `peca.corDetalhe`, usando a cor antiga como padrao.
    */
-  extra?(m: MedidasCorpo, lado: -1 | 1): THREE.Object3D;
+  extra?(m: MedidasCorpo, lado: -1 | 1, peca: ItemDef): THREE.Object3D;
   /**
    * Geometria pendurada em CADA BRACO, uma copia por lado.
    *
@@ -203,9 +227,10 @@ export interface ItemDef {
    * continua sendo a unica coisa proibida.
    *
    * REFERENCIAL: o pivo do braco, y = 0 no ombro, com o braco pendendo em -Y.
-   * `lado` e -1 no braco de -X e 1 no de +X — ver a nota em `extra`.
+   * `lado` e -1 no braco de -X e 1 no de +X — ver a nota em `extra`, que vale
+   * tambem para o `peca`.
    */
-  extraBraco?(m: MedidasCorpo, lado: -1 | 1): THREE.Object3D;
+  extraBraco?(m: MedidasCorpo, lado: -1 | 1, peca: ItemDef): THREE.Object3D;
   /**
    * Deixa o braco nu: a manga vira pele em vez da cor da peca.
    *
@@ -402,6 +427,16 @@ export interface GameAPI {
    * os mesmos itens, no mesmo save. Cada pessoa tem o seu.
    */
   abrirVestiario(): void;
+  /**
+   * Abre uma ARARA da boutique da Estella: a vitrine daquela fila, com o
+   * boneco de prova ao lado. Trava o movimento igual ao armario.
+   *
+   * PROVAR NAO MEXE NO SAVE — a peca provada so veste o boneco do painel.
+   * Quem escreve e o botao de comprar, e ele debita da carteira do casal e
+   * guarda a peca no guarda-roupa de quem esta sendo controlado (roupa
+   * cosmetica nao ocupa vaga de mao). Peca sem `preco` na ficha e ignorada.
+   */
+  abrirLoja(titulo: string, pecas: readonly ItemDef[]): void;
   /**
    * Abre o quadro de memorias e pinta a memoria de `id` (as do catalogo em
    * `world/memoriasData.ts`). O movimento fica travado enquanto ele estiver

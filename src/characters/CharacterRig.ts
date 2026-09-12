@@ -1161,8 +1161,8 @@ export class CharacterRig {
       // uma malha NOVA por pai: o mesmo Object3D nao pode ter dois pais, que e
       // a mesma razao de `modeloDoItem` nunca devolver a mesma instancia
       const obj = tipo === 'braco'
-        ? peca.extraBraco!(this.medidas, lado)
-        : peca.extra!(this.medidas, lado);
+        ? peca.extraBraco!(this.medidas, lado, peca)
+        : peca.extra!(this.medidas, lado, peca);
       // etiqueta para o teste conseguir dizer o que cada corpo esta vestindo
       obj.userData.roupa = peca.id;
       // o `traverse` que liga sombra roda no CONSTRUTOR, entao nada criado
