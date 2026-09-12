@@ -39,8 +39,15 @@ export interface CharacterSpec {
   height: number;
   build: BodyBuild;
   skin: number;
-  blush: number;
+  /** bochecha rosada; omita para um rosto sem blush */
+  blush?: number;
   eyes: number;
+  /**
+   * Faz parte do casal. So dois personagens marcados assim podem se beijar —
+   * e o que mantem a mecanica exclusiva do Ari e do Renan quando entrar gente
+   * nova no elenco.
+   */
+  casal?: boolean;
   hair: {
     color: number;
     style: HairStyle;

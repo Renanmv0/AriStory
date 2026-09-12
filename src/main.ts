@@ -2,17 +2,22 @@ import './ui/style.css';
 import { Game } from './core/Game';
 import { SCENES, CENA_INICIAL } from './scenes';
 import { DUPLA } from './characters/cast';
+import { CLIMAS, Musica } from './audio/musica';
+import { EFEITOS } from './audio/efeitos';
+import { ITENS } from './world/itens';
+import { MEMORIAS } from './world/memoriasData';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
 
-const game = new Game(root, SCENES, DUPLA);
+const game = new Game(root, SCENES, DUPLA, CENA_INICIAL);
 
 // ?cena=villa-lobos&entrada=roda abre direto num ponto do cenario, util pra testar
 const params = new URLSearchParams(location.search);
 const pedida = params.get('cena') ?? undefined;
 const entrada = params.get('entrada') ?? undefined;
-void game.start(pedida ?? (localStorage.getItem('aristory.save.v1') ? undefined : CENA_INICIAL), entrada);
+// sem cena pedida o jogo continua de onde parou; sem progresso, começa na casa
+void game.start(pedida, entrada);
 
 // ?zoom=5 aproxima a camera: serve para conferir o visual dos personagens
 const zoom = Number(params.get('zoom'));
@@ -25,5 +30,18 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
   game.debugPlace(em[0], em[1], Number.isFinite(olhar) ? olhar : Math.PI / 4);
 }
 
-// atalho de depuracao no console do navegador
+// atalhos de depuracao no console do navegador. O `aristoryAudio` existe para
+// scripts/musica.mjs renderizar a música num OfflineAudioContext: o .wav sai da
+// mesma classe que toca no jogo, não de uma cópia.
 (window as unknown as { jogo: Game }).jogo = game;
+(window as unknown as { aristoryAudio: unknown }).aristoryAudio = { Musica, CLIMAS, EFEITOS };
+// o catalogo por id, para o console e para os testes darem um item de verdade
+// ao jogo em vez de inventarem uma ficha parecida
+(window as unknown as { aristoryItens: unknown }).aristoryItens = Object.fromEntries(
+  Object.values(ITENS).map((i) => [i.id, i]),
+);
+// o acervo do quadro de memorias, para o teste conferir quantas pecas existem
+// sem ter que contar os pontinhos da tela
+(window as unknown as { aristoryMemorias: unknown }).aristoryMemorias = MEMORIAS.map(
+  (m) => ({ id: m.id, titulo: m.titulo }),
+);

@@ -19,7 +19,7 @@ Os personagens são **fichas**, não modelos. Para mudar alguém, edite
 | `height` | altura total | 1,75 ≈ adulto. 1,60 = baixinho, 1,90 = alto |
 | `build` | `magro` · `medio` · `forte` | mexe na largura de ombro, tronco e membros |
 | `skin` | tom de pele | |
-| `blush` | bochecha | rosado suave; é o que deixa fofo |
+| `blush` | bochecha | rosado suave; opcional — sem ele o rosto fica sem bochecha (é o caso do Renan) |
 | `eyes` | olhos (e boca) | |
 | `hair.color` | cabelo (e barba) | |
 | `hair.style` | ver abaixo | |
@@ -31,6 +31,7 @@ Os personagens são **fichas**, não modelos. Para mudar alguém, edite
 | `accessoryColor` | armação, aba, fone, mochila | |
 | `jacket` | moletom/jaqueta aberta com capuz | mostra a camiseta pela fresta |
 | `swim` | cor do calção de banho | padrão: a cor da calça |
+| `casal` | faz parte do casal | só entre dois marcados assim rola o beijo |
 
 ## Cabelos
 

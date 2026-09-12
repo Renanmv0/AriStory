@@ -1,0 +1,272 @@
+/**
+ * A mesa do restaurante do clube: sentar, conversar e ler o cardápio.
+ *
+ * O que este teste guarda:
+ *
+ * 1. OS DOIS SENTAM DE FRENTE UM PARA O OUTRO. A cutscene põe cada um numa
+ *    cadeira da mesa, e os dois olham em direções OPOSTAS — é o que separa esta
+ *    cena do banco, onde eles sentam lado a lado olhando para o mesmo lado.
+ * 2. O CARDÁPIO TRAVA O JOGO. Painel aberto, o WASD não anda: a cutscene está
+ *    esperando ele fechar, e movimento solto deixaria o boneco sair de baixo da
+ *    própria cena.
+ * 3. AS MINIATURAS SÃO PINTADAS. Cada prato tem um canvas com pixel de verdade
+ *    dentro — se a função de pintura quebrar, o canvas fica em branco e ninguém
+ *    percebe olhando o HTML.
+ * 4. O CARDÁPIO TEM O QUE FOI PEDIDO: arepa em destaque, os dois hambúrgueres,
+ *    o perro e as duas bebidas.
+ * 5. FECHOU, LEVANTOU. O Escape fecha, a dupla sai da cadeira e o movimento
+ *    volta — senão o jogo fica preso sentado.
+ *
+ * Uso: node scripts/cardapio.mjs /caminho/prefixo
+ */
+import { chromium } from 'playwright';
+
+const OUT = process.argv[2] ?? './cardapio';
+const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
+const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+
+const browser = await chromium.launch({
+  executablePath: CHROME,
+  args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+});
+const page = await browser.newPage({ viewport: { width: 1000, height: 780 } });
+const erros = [];
+page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
+
+await page.goto(`${BASE}/?cena=clube&em=-16.5,-4.9&olhar=3.14`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(3000);
+
+const onde = () =>
+  page.evaluate(() => {
+    const j = window.jogo;
+    const p = j.player.rig.group;
+    const c = j.parceiro.rig.group;
+    const mundo = (o) => {
+      const v = new (o.position.constructor)();
+      o.getWorldPosition(v);
+      return [+v.x.toFixed(2), +v.z.toFixed(2)];
+    };
+    const olhar = (o) => {
+      const q = o.getWorldQuaternion(new (o.quaternion.constructor)());
+      const e = new (j.player.rig.group.rotation.constructor)().setFromQuaternion(q, 'YXZ');
+      return +e.y.toFixed(2);
+    };
+    return {
+      jogador: mundo(p), parceiro: mundo(c),
+      olharJogador: olhar(p), olharParceiro: olhar(c),
+      sentados: j.player.rig.sitting === true && j.parceiro.rig.sitting === true,
+    };
+  });
+
+// ------------------------------------------------- abrir a cena da mesa
+for (let t = 0; t < 40 && !(await page.locator('.dialogue.show').count()); t++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(250);
+}
+await page.waitForTimeout(500);
+const naMesa = await onde();
+await page.screenshot({ path: `${OUT}-sentados.png` });
+
+// passar o diálogo até o cardápio abrir
+for (let t = 0; t < 30 && !(await page.locator('.cardapio.show').count()); t++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(400);
+}
+await page.waitForTimeout(700);
+
+const abriu = await page.locator('.cardapio.show').count() > 0;
+await page.screenshot({ path: `${OUT}-cardapio.png` });
+
+// ------------------------------------------------------------ o conteúdo
+const conteudo = await page.evaluate(() => {
+  const secoes = [...document.querySelectorAll('.cardapio .secao')].map((s) => ({
+    titulo: s.querySelector('h3 span')?.textContent ?? '',
+    pratos: [...s.querySelectorAll('.prato')].map((p) => ({
+      nome: p.querySelector('b')?.textContent ?? '',
+      preco: p.querySelector('em')?.textContent ?? '',
+      temDescricao: (p.querySelector('p')?.textContent ?? '').length > 30,
+      destaque: p.classList.contains('destaque'),
+      selo: p.querySelector('.selo')?.textContent ?? null,
+    })),
+  }));
+  // quantos pixels não-transparentes tem cada miniatura: canvas em branco = 0
+  const fotos = [...document.querySelectorAll('.cardapio .foto')].map((c) => {
+    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let pintados = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 8) pintados++;
+    return Math.round((pintados / (c.width * c.height)) * 100);
+  });
+  return { secoes, fotos };
+});
+
+// ------------------------------------------------- o painel trava o jogo
+const antes = await onde();
+await page.keyboard.down('KeyW');
+await page.waitForTimeout(900);
+await page.keyboard.up('KeyW');
+const depois = await onde();
+const travado =
+  Math.abs(antes.jogador[0] - depois.jogador[0]) < 0.05 &&
+  Math.abs(antes.jogador[1] - depois.jogador[1]) < 0.05;
+
+// ------------------------------------------------ escolher e pedir
+// o PRIMEIRO clique marca, o SEGUNDO pede — e é o botão dourado que conta o
+// que está marcado
+const arepa = page.locator('.cardapio .prato[data-id="arepa-queijo"]');
+await arepa.click();
+await page.waitForTimeout(400);
+const marcou = await page.locator('.cardapio .prato.marcado').count() === 1;
+const aindaAberto = await page.locator('.cardapio.show').count() > 0;
+const rotuloBotao = (await page.locator('.cardapio .pedir').textContent()) ?? '';
+await page.screenshot({ path: `${OUT}-marcado.png` });
+
+await page.locator('.cardapio .pedir').click();
+await page.waitForTimeout(900);
+const fechou = !(await page.locator('.cardapio.show').count());
+
+// ---------------------------------------------- o pedido e o garçom
+// o primeiro E COMPLETA a máquina de escrever; sem ele a fala é lida em
+// "Um(", que é o texto no meio da digitação
+await page.waitForTimeout(600);
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(500);
+const falaDoPedido = (await page.locator('.dialogue .text').textContent()) ?? '';
+// e fechar o balão: o primeiro E completa o texto, o segundo é que fecha
+for (let t = 0; t < 8 && (await page.locator('.dialogue.show').count()); t++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(350);
+}
+await page.waitForTimeout(700);
+await page.screenshot({ path: `${OUT}-garcom.png` });
+const garcom = await page.evaluate(() => {
+  let achou = null;
+  window.jogo.scene.traverse((o) => {
+    if (o.userData?.peca === 'garcom-canino') achou = o;
+  });
+  if (!achou) return null;
+  const v = new (achou.position.constructor)();
+  achou.getWorldPosition(v);
+  const bandeja = achou.getObjectByName('bandeja');
+  return { x: +v.x.toFixed(2), z: +v.z.toFixed(2), levando: (bandeja?.children.length ?? 0) > 0 };
+});
+
+// esperar a entrega: o prato troca de pai para a mesa
+let pousou = false;
+for (let t = 0; t < 60 && !pousou; t++) {
+  await page.waitForTimeout(400);
+  pousou = await page.evaluate(() => {
+    let comida = null;
+    window.jogo.scene.traverse((o) => {
+      if (o.userData?.peca === 'arepa-queijo') comida = o;
+    });
+    if (!comida) return false;
+    const v = new (comida.position.constructor)();
+    comida.getWorldPosition(v);
+    // na mesa quer dizer: alto de mesa posta, e o pai não é mais o cachorro
+    return v.y > 0.6 && comida.parent?.name !== 'bandeja';
+  });
+}
+await page.screenshot({ path: `${OUT}-mesa.png` });
+
+// o cachorro tem que sumir da cena depois de servir
+let sumiu = false;
+for (let t = 0; t < 60 && !sumiu; t++) {
+  await page.waitForTimeout(400);
+  sumiu = await page.evaluate(() => {
+    let achou = false;
+    window.jogo.scene.traverse((o) => { if (o.userData?.peca === 'garcom-canino') achou = true; });
+    return !achou;
+  });
+}
+
+// e a comida some depois do tempo comendo, e a dupla levanta
+let levantou = false;
+for (let t = 0; t < 80 && !levantou; t++) {
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(400);
+  levantou = await page.evaluate(() => window.jogo.player.rig.sitting === false);
+}
+const emPe = await onde();
+await page.keyboard.down('KeyW');
+await page.waitForTimeout(900);
+await page.keyboard.up('KeyW');
+const andou = await onde();
+const soltou =
+  Math.abs(emPe.jogador[0] - andou.jogador[0]) > 0.3 ||
+  Math.abs(emPe.jogador[1] - andou.jogador[1]) > 0.3;
+await page.screenshot({ path: `${OUT}-depois.png` });
+
+// --------------------------------------------------------------- relatorio
+const falhas = [];
+const conferir = (ok, msg) => { if (!ok) falhas.push(msg); };
+
+console.log(`sentados: ${naMesa.sentados}`);
+console.log(`  jogador em ${naMesa.jogador} olhando ${naMesa.olharJogador}`);
+console.log(`  parceiro em ${naMesa.parceiro} olhando ${naMesa.olharParceiro}`);
+conferir(naMesa.sentados, 'a dupla não sentou');
+// de frente um para o outro: meia volta de diferença entre os dois ângulos
+const diff = Math.abs(Math.atan2(
+  Math.sin(naMesa.olharJogador - naMesa.olharParceiro),
+  Math.cos(naMesa.olharJogador - naMesa.olharParceiro),
+));
+console.log(`  diferença de olhar: ${diff.toFixed(2)} rad (tem que ser perto de ${Math.PI.toFixed(2)})`);
+conferir(Math.abs(diff - Math.PI) < 0.25, 'não estão de frente um para o outro');
+// e um de cada lado da mesa: as posições têm que se separar
+const vao = Math.hypot(naMesa.jogador[0] - naMesa.parceiro[0], naMesa.jogador[1] - naMesa.parceiro[1]);
+console.log(`  vão entre os dois: ${vao.toFixed(2)} (a mesa tem 2,04 de cadeira a cadeira)`);
+conferir(vao > 1.6, 'os dois sentaram no mesmo lugar');
+
+console.log(`cardápio abriu: ${abriu}`);
+conferir(abriu, 'o cardápio não abriu');
+
+for (const s of conteudo.secoes) {
+  console.log(`  ${s.titulo}: ${s.pratos.map((p) => `${p.nome} ${p.preco}`).join(' · ')}`);
+}
+const todos = conteudo.secoes.flatMap((s) => s.pratos);
+const nomes = todos.map((p) => p.nome.toLowerCase()).join(' | ');
+for (const [termo, oque] of [
+  ['arepa', 'arepa'], ['duplo', 'duplo burger'], ['quarteirão', 'quarteirão'],
+  ['perro', 'perro caliente'], ['morango', 'suco de morango'], ['smoothie', 'smoothie'],
+]) {
+  conferir(nomes.includes(termo), `falta ${oque} no cardápio`);
+}
+conferir(todos.every((p) => p.preco.length > 0), 'tem prato sem preço');
+conferir(todos.every((p) => p.temDescricao), 'tem prato sem descrição');
+const destaque = todos.find((p) => p.destaque);
+console.log(`  destaque: ${destaque?.nome} — ${destaque?.selo}`);
+conferir(!!destaque && destaque.nome.toLowerCase().includes('arepa'), 'a arepa não está em destaque');
+conferir(!!destaque?.selo?.toLowerCase().includes('ari'), 'o selo não diz que é o favorito do Ari');
+
+console.log(`  miniaturas pintadas (% da área): ${conteudo.fotos.join(', ')}`);
+conferir(conteudo.fotos.length === todos.length, 'faltou miniatura em algum prato');
+conferir(conteudo.fotos.every((p) => p > 20), 'tem miniatura em branco');
+
+console.log(`movimento travado com o cardápio aberto: ${travado}`);
+conferir(travado, 'dava para andar com o cardápio aberto');
+console.log(`1º clique marcou: ${marcou} · cardápio continuou aberto: ${aindaAberto}`);
+conferir(marcou, 'o primeiro clique não marcou o prato');
+conferir(aindaAberto, 'o primeiro clique já fechou o cardápio — tem que marcar só');
+console.log(`botão de pedir: "${rotuloBotao}"`);
+conferir(rotuloBotao.toLowerCase().includes('arepa'), 'o botão não diz o prato marcado');
+console.log(`pediu e fechou: ${fechou}`);
+conferir(fechou, 'confirmar o pedido não fechou o cardápio');
+
+console.log(`fala do pedido: "${falaDoPedido}"`);
+conferir(falaDoPedido.toLowerCase().includes('por favor'), 'ninguém pediu em voz alta');
+console.log(`garçom em ${garcom ? [garcom.x, garcom.z] : 'não apareceu'} · levando o prato: ${garcom?.levando}`);
+conferir(!!garcom, 'o garçom canino não apareceu');
+conferir(!!garcom?.levando, 'o garçom saiu de casa sem o prato nas costas');
+console.log(`prato pousou na mesa: ${pousou} · o cachorro saiu de cena: ${sumiu}`);
+conferir(pousou, 'o prato não chegou na mesa');
+conferir(sumiu, 'o cachorro ficou plantado na cena');
+console.log(`levantaram no fim: ${levantou} · voltaram a andar: ${soltou}`);
+conferir(levantou, 'a dupla ficou presa sentada depois de comer');
+conferir(soltou, 'a dupla ficou presa depois da cutscene');
+
+console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
+await browser.close();
+if (falhas.length || erros.length) {
+  console.log('FALHOU:\n - ' + [...falhas, ...erros].join('\n - '));
+  process.exit(1);
+}
+process.exit(0);

@@ -49,6 +49,11 @@ export class IsoCamera {
     this.targetViewSize = THREE.MathUtils.clamp(this.targetViewSize + delta, 4, 26);
   }
 
+  /** giro atual da camera em radianos; o eixo horizontal da tela e `angle + PI/2` */
+  get angle(): number {
+    return this.yaw;
+  }
+
   /** enquadramento atual (ja suavizado) */
   get currentViewSize(): number {
     return this.viewSize;
