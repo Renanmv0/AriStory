@@ -293,6 +293,53 @@ await page.keyboard.press('Escape');
 await page.waitForTimeout(600);
 const araraFechou = (await page.locator('.loja.show').count()) === 0;
 
+/**
+ * 4: PEÇA COMPRADA NÃO SE PERDE.
+ *
+ * Este bloco existe por um acidente de verdade: o Renan comprou um vestido de
+ * R$ 96, vestiu, descartou sem querer e teve que comprar de novo. São duas
+ * medidas, e as duas importam — a tela não pode OFERECER o descarte, e o motor
+ * tem que RECUSAR mesmo quando chamado direto (é ele que escreve no save, e um
+ * botão escondido não é uma regra).
+ */
+await page.evaluate(() => window.jogo.abrirGuardaRoupa());
+await page.waitForTimeout(1100);
+await page.locator('.armario .acervo .peca').first().click();
+await page.waitForTimeout(800);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(500);
+await page.keyboard.press('KeyI');
+await page.waitForTimeout(1000);
+await page.locator('.mochila .slots.vestiveis .slot.cheio').first().click();
+await page.waitForTimeout(600);
+const descarteOferecido = await page.locator('.mochila .descarte.show').count();
+const sobreviveu = await page.evaluate(() => {
+  const j = window.jogo;
+  const vagas = j.save.vestiveis(j.playerId());
+  const i = vagas.findIndex((x) => x);
+  // chama o caminho de escrita na marra, como se o botão existisse
+  j.ui.onDescartar?.({ lista: 'vestivel', indice: i });
+  return {
+    vestindo: j.save.vestiveis(j.playerId()).map((x) => x?.id ?? null),
+    acervo: j.wardrobeItems().map((x) => x.id),
+  };
+});
+await page.keyboard.press('KeyI');
+await page.waitForTimeout(500);
+/*
+ * E A PEÇA VOLTA PARA O GUARDA-ROUPA antes de seguir. Vestir é o que este
+ * bloco precisava para ter uma vaga de corpo ocupada para tentar descartar,
+ * mas peça vestida SAI do acervo — e a checagem do espelho, lá na frente,
+ * procura ela justamente no acervo. Cada bloco devolve a cena como pegou.
+ */
+await page.evaluate(() => window.jogo.abrirGuardaRoupa());
+await page.waitForTimeout(1000);
+await page.locator('.armario .corpo .parte.cheio').first().click();
+await page.waitForTimeout(800);
+const despiu = await page.evaluate(() => window.jogo.wardrobeItems().map((x) => x.id));
+await page.keyboard.press('Escape');
+await page.waitForTimeout(500);
+
 // ============================================ 6. falar com ela, e voltar pra rua
 await page.evaluate(() => {
   window.jogo.setZoom(11);
@@ -613,6 +660,13 @@ if (!/já é seu|ja e seu/i.test(compra.botao)) {
   falhas.push(`da para comprar de novo a mesma peca: "${compra.botao}"`);
 }
 if (!araraFechou) falhas.push('o Escape nao fecha a arara');
+if (descarteOferecido) falhas.push('a tela oferece descartar uma peca COMPRADA');
+if (!despiu.includes(compra.acervo[0])) {
+  falhas.push(`tirar a peca no armario nao a devolveu ao acervo: ${JSON.stringify(despiu)}`);
+}
+if (!sobreviveu.vestindo.includes(compra.acervo[0])) {
+  falhas.push(`a peca comprada foi descartada: ${JSON.stringify(sobreviveu)}`);
+}
 if (!espelhoAbreArmario) falhas.push('o espelho do mezanino nao abre o guarda-roupa');
 if (!noArmario.includes(compra.acervo[0])) {
   falhas.push(`a peca comprada nao aparece no espelho: ${JSON.stringify(noArmario)}`);
@@ -648,6 +702,8 @@ console.log('5b. arara:', JSON.stringify(naArara), '· provou', JSON.stringify(p
   '→', JSON.stringify(provado.botao));
 console.log('    compra: R$', compra.preco, '· carteira caiu', compra.gastou,
   '· guarda-roupa', JSON.stringify(compra.acervo), '·', JSON.stringify(compra.botao));
+console.log('    descarte oferecido:', descarteOferecido, '(tem que ser 0) · depois de forcar:',
+  JSON.stringify(sobreviveu.vestindo), '· devolvida ao guarda-roupa:', JSON.stringify(despiu));
 console.log('7. espelho:', JSON.stringify(promptDoEspelho), '·', aceso, 'de', pixels, 'pixels acesos ·',
   mudou, 'mudaram quando a dupla saiu da frente');
 console.log('   armario pelo espelho:', espelhoAbreArmario, JSON.stringify(noArmario),

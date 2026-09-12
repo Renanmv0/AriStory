@@ -1212,9 +1212,15 @@ export class Ui {
           vaga.dataset.tipo = item.tipo;
           if (item.funcional) vaga.dataset.funcional = 'sim';
           else delete vaga.dataset.funcional;
+          // PEÇA COMPRADA NÃO SE DESCARTA: ela foi paga, é da dupla para
+          // sempre. A marca viaja no DOM pelo mesmo motivo da categoria — é o
+          // que o botão de descarte consulta sem perguntar ao save.
+          if (item.preco !== undefined) vaga.dataset.comprado = 'sim';
+          else delete vaga.dataset.comprado;
         } else {
           delete vaga.dataset.tipo;
           delete vaga.dataset.funcional;
+          delete vaga.dataset.comprado;
         }
         const rotulo = partes ? `<em class="parte">${PARTES[i]}</em>` : '';
         vaga.innerHTML = rotulo + (item
@@ -1651,9 +1657,17 @@ export class Ui {
     for (const el of this.mochila.querySelectorAll('.slot.pego')) el.classList.remove('pego');
     vaga?.classList.add('pego');
     this.mochila.classList.toggle('movendo', vaga !== null);
-    // o descarte só existe com um item na pinça: sem seleção não há o que jogar
-    // fora, e um botão solto ali só assusta
-    this.descarte.classList.toggle('show', vaga !== null);
+    /*
+     * O descarte só existe com um item na pinça: sem seleção não há o que
+     * jogar fora, e um botão solto ali só assusta.
+     *
+     * E ele NÃO APARECE para peça comprada. Oferecer um botão que o save
+     * recusa é pior do que não ter botão — e aqui a recusa não é detalhe
+     * técnico: a roupa foi paga com o dinheiro do casal, e o Renan perdeu um
+     * vestido de R$ 96 num toque e teve que comprar de novo.
+     */
+    const comprada = vaga?.dataset.comprado === 'sim';
+    this.descarte.classList.toggle('show', vaga !== null && !comprada);
     this.descarte.classList.remove('confirmando');
     const alvo = this.descarte.querySelector('.descartar')!;
     const nome = vaga?.querySelector('b')?.textContent ?? '';
