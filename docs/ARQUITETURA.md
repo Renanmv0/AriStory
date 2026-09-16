@@ -62,7 +62,10 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 - `collision.ts` — círculo (jogador) contra círculos e caixas giradas, no plano XZ.
 - `Interactable.ts` — ponto de interação: prompt, destaque pulsante, `enabled`,
   `priority`, `moveTo()` para objetos que andam.
-- `props.ts` / `furniture.ts` — kits de peças. Ver a skill `aristory-prop`.
+- `props/` / `furniture.ts` — kits de peças. Ver a skill `aristory-prop`. O kit
+  externo é uma pasta dividida por categoria (`natureza`, `urbano`, `rua`,
+  `quadra`, `piscina`, `itens`), com `props/index.ts` repassando tudo: quem usa
+  continua importando de `'../world/props'`.
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**
   do grupo que gira e são reposicionadas por frame, para nunca virarem de cabeça
   para baixo.

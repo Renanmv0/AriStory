@@ -219,7 +219,7 @@ chão ou na vertical.
 1. **Cor sempre da paleta** (`src/palette.ts`). Se falta uma cor, adicione lá.
 2. **Material sempre por `toon()`/`flat()`** (`src/core/materials.ts`), que são
    cacheados. Nunca `new THREE.Mesh*Material` solto dentro de uma cena.
-3. **Reaproveite os kits**: `src/world/props.ts` (externo) e
+3. **Reaproveite os kits**: `src/world/props/` (externo) e
    `src/world/furniture.ts` (interno). Peça nova e reutilizável vai para o kit,
    não para dentro da cena.
 4. **Interiores**: paredes inteiras só em `-X` e `-Z`; nos dois lados abertos use

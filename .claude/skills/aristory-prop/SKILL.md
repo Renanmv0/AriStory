@@ -7,10 +7,30 @@ description: Adicionar uma peça nova ao kit de cenário do AriStory — árvore
 
 Duas caixas de peças:
 
-- `src/world/props.ts` — externo: natureza, parque, rua, praia.
+- `src/world/props/` — externo: natureza, parque, rua, praia.
 - `src/world/furniture.ts` — interno: móveis, eletrodomésticos, decoração.
 
 Peça grande e animada ganha arquivo próprio (ver `src/world/ferrisWheel.ts`).
+
+## Onde a peça nova vai
+
+O kit externo é dividido por categoria. **Abra só o arquivo da categoria** — não
+precisa ler o kit inteiro para adicionar uma peça.
+
+| arquivo                     | o que mora lá                                                    |
+|-----------------------------|------------------------------------------------------------------|
+| `props/natureza.ts`         | árvore, arbusto, flores, pedra, pato, nuvem                       |
+| `props/urbano.ts`           | banco, poste, lixeira, mesa, cerca, placa, `textSign`, quiosque, prédio |
+| `props/rua.ts`              | ônibus, ponto de ônibus — e o que mais for de rua/transporte      |
+| `props/quadra.ts`           | cesta de disc golf, placar, arquibancada, bebedouro, refletor, biruta, cone |
+| `props/piscina.ts`          | casco, água, escada, trampolim, ducha, boia, espreguiçadeira, guarda-sol |
+| `props/itens.ts`            | frisbee, coração, sorvete — coisa pequena, de mão ou flutuando    |
+
+Categoria nova (ex.: um kit de praia ou de restaurante) ganha arquivo próprio em
+`props/`, e uma linha a mais no `export *` de `props/index.ts` e nesta tabela.
+
+As cenas importam sempre de `'../world/props'` (o `index.ts` repassa tudo), então
+mover ou criar arquivo dentro da pasta **não muda nenhum import de cena**.
 
 ## Contrato
 
