@@ -229,28 +229,43 @@ export class JeanLuc extends Bicho {
     /**
      * A RAQUETE, na asa DIREITA (a segunda da lista).
      *
-     * `raquete()` nasce com a face encarando `+Z` e o cabo para baixo. Aqui ela
-     * entra com o cabo na ponta da asa e a face virada para fora: girar em `y`
-     * põe o disco de lado, que é como alguém segura a raquete andando.
+     * O PIVÔ É O PUNHO, e não o disco — é essa a correção que o Renan pediu.
+     * Antes a raquete inteira era posicionada e girada a partir do CENTRO DA
+     * BORRACHA, e todo giro arrastava o cabo junto: ele terminava apontando
+     * para fora e a peça flutuava ao lado da asa, como se o pato estivesse
+     * levitando uma frigideira.
+     *
+     * Agora existe um grupo `punho` na PONTA DA ASA, e a raquete entra dentro
+     * dele deslocada para cima exatamente o comprimento do cabo. A origem do
+     * grupo passa a ser o ponto onde a mão segura, então girar o grupo gira a
+     * raquete EM VOLTA DO PUNHO — que é o que um pulso faz.
+     *
+     * A conta do deslocamento: `raquete()` põe o cabo numa cápsula de raio
+     * 0,035 e corpo 0,16 (altura total 0,23) centrada em `y = -0,25`, ou seja
+     * a ponta de baixo do cabo fica em `-0,365`. Vezes a escala 0,58 dá
+     * `-0,2117` — e é essa a subida que encosta a ponta do cabo na origem.
      */
+    const punhoDaRaquete = new THREE.Group();
+    punhoDaRaquete.position.set(0.015, -0.185, 0.03);
+    /*
+     * O GIRO EM `y` DECIDE PARA ONDE A FACE DA RAQUETE OLHA, e ele é medido
+     * PARA A POSE DA APRESENTAÇÃO — não para o pato de frente.
+     *
+     * A raquete gira junto com o bicho, então nenhum valor serve para todas as
+     * direções: com a face olhando para a câmera quando ele encara `+Z`, ela
+     * fica de perfil justamente na cutscene, onde ele para virado a 1,3 rad e
+     * fica falando um minuto. `-0,45` inverte a conta: a 1,3 a face cai em
+     * 0,85 rad, de frente para a câmera, e é ali que ela precisa aparecer.
+     *
+     * O `z` NEGATIVO inclina o disco para FORA do corpo (o punho está em `x`
+     * positivo), deixando o cabo levemente virado para dentro — para a mão.
+     */
+    punhoDaRaquete.rotation.set(0.18, -0.45, -0.3);
     const bat = raquete(P.vermelhoFranca);
     bat.scale.setScalar(0.58);
-    /**
-     * ELA FICA ALTA, na pose de quem está pronto para sacar — e não pendurada
-     * na ponta da asa. Na primeira tentativa o cabo descia abaixo do pé dele e
-     * atravessava o tablado, e a raquete lia como um remo esquecido. Aqui o
-     * disco fica na altura do peito, que é onde a câmera de 34° olha.
-     */
-    bat.position.set(0.115, -0.05, 0.085);
-    /*
-     * O GIRO EM `y` É POSITIVO, e isso é o que faz a raquete aparecer. Ela
-     * nasce com a face em `+Z`; com `-0,55` a face apontava para fora do
-     * quadro e a câmera pegava só o rebordo — na foto o bicho segurava um
-     * graveto. Com `+0,6` a face vira para `+X/+Z`, que é de onde a câmera
-     * olha, e o disco vermelho lê inteiro.
-     */
-    bat.rotation.set(0.25, 0.6, 0.95);
-    this.asas[1].add(bat);
+    bat.position.y = 0.2117;
+    punhoDaRaquete.add(bat);
+    this.asas[1].add(punhoDaRaquete);
 
     // ------------------------------------------------------- a bandeirinha
     /**
