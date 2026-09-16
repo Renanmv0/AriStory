@@ -5,7 +5,7 @@ import { FerrisWheel } from '../world/ferrisWheel';
 import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { Frisbee } from '../entities/Frisbee';
-import { MESA_PING, PingPong } from '../entities/PingPong';
+import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/PingPong';
 import {
   aroDeFrisbee, bin, bleachers, bonecoDeNeve, bordaDeGelo, building, bus, busStop, bush,
   cestaDeBiscoitos, mesinhaDeXadrez,
@@ -13,7 +13,7 @@ import {
   fence, floodlight, flowers, iceCream, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
   mesaPingPong, nenufar, picnicTable, posteDeGelo, raquete, skateShop,
   rock, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
-  bolinhaPingPong, bordaDeTablado, cestoDeBolinhas, placarDePingPong, suporteDeRaquetes,
+  bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong, suporteDeRaquetes,
   vasoDePlanta,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
@@ -804,11 +804,32 @@ export const villaLobos: SceneDef = {
         await conversa([
           ['Jean-Luc', duas[0]],
           ['Jean-Luc', duas[1]],
-          [vezes % 2 === 0 ? A : R, vezes % 2 === 0
-            ? 'Ele nunca cansa.'
-            : 'Um dia a gente joga, Jean-Luc.'],
-          ['Jean-Luc', 'Quand vous voulez. Eu fico aqui. Molhado, mas aqui.'],
         ]);
+
+        /*
+         * E NO FIM ELE PEDE A PARTIDA — toda vez, porque é disso que ele vive.
+         *
+         * A pergunta fica DEPOIS da conversa de propósito: ele é um bicho que
+         * conta uma história e só então lembra do que queria desde o começo.
+         * Perguntar de cara transformaria o pato num botão de "iniciar jogo".
+         */
+        const jogar = await api.ask('Jogar contra o Jean-Luc?', ['Allez!', 'Agora não']);
+        if (jogar !== 0) {
+          await conversa([
+            [vezes % 2 === 0 ? A : R, 'Fica pra próxima.'],
+            ['Jean-Luc', 'Quand vous voulez. Eu fico aqui. Molhado, mas aqui.'],
+          ]);
+          return;
+        }
+        jeanLuc.comemorar(2.6);
+        api.som('pato');
+        await conversa([
+          ['Jean-Luc', 'ENFIN! Finalmente!'],
+          ['Jean-Luc', 'Eu trouxe meu caixote. Eu trago sempre. Nunca precisei até hoje.'],
+          [R, 'Ele tem um caixote.'],
+          [A, 'Ele tem um caixote e um sonho.'],
+        ]);
+        await comecarPartida(api, JEAN_LUC_ADVERSARIO);
       },
     });
     // ele só existe para quem já o conheceu — e o balão anda junto com ele,
@@ -2803,6 +2824,52 @@ export const villaLobos: SceneDef = {
     let jogando = false;
     const LADO = MESA_PING.plano + 0.55; // onde cada um fica de pé
 
+    /* ==================================================================
+     *                   O JEAN-LUC COMO ADVERSÁRIO
+     *
+     * A ficha dele é a do parceiro apertada em três lugares, e NADA na física
+     * muda de um para o outro: o desvio da rebatida cai para 60%, o desvio
+     * feio (a bola que vai para fora) fica quase pela metade, e a mão dele
+     * persegue a bolinha mais rápido, o que fecha os ângulos. É difícil porque
+     * ele DEVOLVE, e não porque a bola bate diferente.
+     *
+     * E A PONTARIA É O QUE FAZ ELE SER DIFÍCIL: ele devolve DE PROPÓSITO para
+     * o lado em que a sua raquete não está. Os outros números só o deixam
+     * teimoso.
+     *
+     * OS NÚMEROS SÃO MEDIDOS, e não escolhidos no olho — `scripts/balanco.mjs`
+     * simula 50 partidas contra cada ficha e devolve a taxa de vitória. Foram
+     * três medições até chegar aqui:
+     *
+     *  1. `erro 0,45 · rapidez 6,4` — parede. O rastreador do `duelo.mjs`, que
+     *     persegue a bolinha quadro a quadro, levou doze pontos seguidos.
+     *  2. `erro 0,5 · rapidez 5,9` — pior ainda, e de um jeito que não dava
+     *     para ver na foto: 33 de 50 partidas NÃO TERMINAVAM. Dois jogadores
+     *     que alcançam tudo e devolvem no meio jogam para sempre.
+     *  3. esta — mão boa ganha quase sempre, mão média ganha uma em quatro, e
+     *     ele leva 4,6 pontos por partida de quem ainda está aprendendo. Ele é
+     *     difícil porque COLOCA a bola, e não porque erra menos.
+     * ================================================================== */
+    const JEAN_LUC_ADVERSARIO: Adversario = {
+      id: 'jean-luc',
+      cor: P.vermelhoFranca,
+      erro: 0.8,
+      feio: 0.2,
+      rapidez: 5.4,
+      desvio: 0.7,
+      pontaria: 2.2,
+    };
+
+    /**
+     * O CAIXOTE. O Jean-Luc tem 66 cm e o tampo da mesa tem 76: sem um degrau
+     * ele joga a partida inteira escondido atrás da própria mesa, com a boina
+     * aparecendo por cima. Ele fica guardado até a hora da partida — pato que
+     * anda com caixote pelo parque é outro personagem.
+     */
+    const ALTURA_DO_CAIXOTE = 0.5;
+    const caixoteDoPato = w.add(w.place(caixote(0.5, ALTURA_DO_CAIXOTE), PING.x + 3, 0, PING.z));
+    caixoteDoPato.visible = false;
+
     const encerrarPing = (): void => {
       jogando = false;
       partida.guardar();
@@ -2813,6 +2880,87 @@ export const villaLobos: SceneDef = {
       g.lockPlayer(false);
       g.freeCompanion();
       jogarPing.enabled = true;
+      // e o pato volta a ser abordável — se já tiver sido apresentado
+      falarComOPato.enabled = g.flag('jean-luc-conhecido');
+      /*
+       * O PATO DESCE DO CAIXOTE E VOLTA A VIVER. `partida.adversario` continua
+       * dizendo quem jogou — quem o reescreve é o COMEÇO da próxima partida, e
+       * não o fim desta. É isso que deixa o fim de partida, logo abaixo, saber
+       * contra quem foi sem ninguém precisar guardar a informação duas vezes.
+       */
+      if (partida.adversario.id === JEAN_LUC_ADVERSARIO.id) {
+        caixoteDoPato.visible = false;
+        jeanLuc.emergirAte(0);
+        jeanLuc.voltarAPassear();
+      }
+    };
+
+    /**
+     * MONTA A PARTIDA, contra quem for.
+     *
+     * Os dois caminhos (a mesa e o pato) passam por aqui, e a única coisa que
+     * muda entre eles é QUEM fica do outro lado: o parceiro joga, e aí o pato
+     * nem entra; o pato joga, e aí o parceiro vira torcida na beira.
+     *
+     * A câmera, a primeira pessoa e o esconde-enfeites são idênticos nos dois
+     * — era esse o pedido, que a mesa continue sendo a mesma mesa.
+     */
+    const comecarPartida = async (api: GameAPI, contra: Adversario): Promise<void> => {
+      const meu = naMesa(-LADO, 0);
+      const dele = naMesa(LADO, 0);
+      const contraOPato = contra.id === JEAN_LUC_ADVERSARIO.id;
+
+      // cada um de um lado, olhando para o outro
+      api.releasePlayer(meu.x, meu.z, Math.atan2(dele.x - meu.x, dele.z - meu.z));
+      if (contraOPato) {
+        // O PARCEIRO VIRA TORCIDA, atrás e ao lado: `São sempre dois em cena`
+        // continua valendo, mas quem joga agora é o pato. O ponto é fora do
+        // eixo da câmera de ombro (que corre em `z = 0` local), senão ele
+        // entraria na frente do jogo.
+        const beira = naMesa(-1, 2.4);
+        api.releaseCompanion(beira.x, beira.z, Math.atan2(meu.x - beira.x, meu.z - beira.z));
+        api.holdCompanion(PING.x, PING.z);
+      } else {
+        api.releaseCompanion(dele.x, dele.z, Math.atan2(meu.x - dele.x, meu.z - dele.z));
+        api.holdCompanion(meu.x, meu.z);
+      }
+      api.lockPlayer(true);
+
+      if (contraOPato) {
+        jeanLuc.entrarEmServico();
+        await jeanLuc.irPara(dele.x, dele.z, 1.6);
+        jeanLuc.group.rotation.y = Math.atan2(meu.x - dele.x, meu.z - dele.z);
+        caixoteDoPato.position.set(dele.x, 0, dele.z);
+        caixoteDoPato.visible = true;
+        jeanLuc.emergirAte(ALTURA_DO_CAIXOTE);
+        jeanLuc.comemorar(1.4);
+        await api.wait(0.5);
+      }
+
+      // Falsa primeira pessoa: atrás e ACIMA da cabeça, olhando para o
+      // centro da mesa. Duas correções que a foto cobrou: câmera na altura
+      // dos olhos deixa a juba do Ari tapando metade da tela, e mirar no
+      // parceiro (que está longe) joga a mesa para fora do quadro — o alvo
+      // certo é o meio da mesa.
+      const atras = naMesa(-LADO - 1.6, 0);
+      const meio = naMesa(0, 0);
+      api.setCameraOmbro(
+        new THREE.Vector3(atras.x, 2.35, atras.z),
+        new THREE.Vector3(meio.x, 0.9, meio.z),
+      );
+      // O corpo de quem joga sai de cena: é primeira pessoa, e a juba do Ari
+      // tapa a mesa inteira e a própria raquete se ficar na frente da câmera.
+      api.setPlayerVisible(false);
+
+      for (const e of enfeitesPing) e.visible = false;
+      // desliga o interativo: sem isso a mesa continua com o "respiro" do
+      // destaque, e como ela é o pai da bolinha a partida inteira balança
+      jogarPing.enabled = false;
+      falarComOPato.enabled = false;
+      partida.trocarAdversario(contra);
+      partida.comecar();
+      jogando = true;
+      api.toast('Mexa o mouse para mover a raquete', '🏓');
     };
 
     w.onUpdate((dt) => {
@@ -2823,7 +2971,10 @@ export const villaLobos: SceneDef = {
       if (!jogando) return;
       g.showPlacar({
         eu: g.playerName(),
-        ele: g.companionName(),
+        // O NOME DO OUTRO LADO SAI DE QUEM ESTÁ JOGANDO, e não do parceiro:
+        // contra o pato o placar dizia o nome de quem estava assistindo da
+        // beira do tablado
+        ele: partida.adversario.id === JEAN_LUC_ADVERSARIO.id ? 'Jean-Luc' : g.companionName(),
         meus: partida.meus,
         dele: partida.dele,
       });
@@ -2841,42 +2992,31 @@ export const villaLobos: SceneDef = {
       highlight: mesaPing,
       onInteract: async (api) => {
         if (jogando) return;
-        await conversa([
-          [A, 'Cinco pontos?'],
-          [R, 'Cinco pontos. E o perdedor carrega a bolsa até em casa.'],
-        ]);
-
-        // cada um de um lado, olhando para o outro
-        const meu = naMesa(-LADO, 0);
-        const dele = naMesa(LADO, 0);
-        api.releasePlayer(meu.x, meu.z, Math.atan2(dele.x - meu.x, dele.z - meu.z));
-        api.releaseCompanion(dele.x, dele.z, Math.atan2(meu.x - dele.x, meu.z - dele.z));
-        api.holdCompanion(meu.x, meu.z);
-        api.lockPlayer(true);
-
-        // Falsa primeira pessoa: atrás e ACIMA da cabeça, olhando para o
-        // centro da mesa. Duas correções que a foto cobrou: câmera na altura
-        // dos olhos deixa a juba do Ari tapando metade da tela, e mirar no
-        // parceiro (que está longe) joga a mesa para fora do quadro — o alvo
-        // certo é o meio da mesa.
-        const atras = naMesa(-LADO - 1.6, 0);
-        const meio = naMesa(0, 0);
-        api.setCameraOmbro(
-          new THREE.Vector3(atras.x, 2.35, atras.z),
-          new THREE.Vector3(meio.x, 0.9, meio.z),
-        );
-        // O corpo de quem joga sai de cena: é primeira pessoa, e a juba do Ari
-        // tapa a mesa inteira e a própria raquete se ficar na frente da câmera.
-        // Quem continua em cena é o parceiro, do outro lado.
-        api.setPlayerVisible(false);
-
-        for (const e of enfeitesPing) e.visible = false;
-        // desliga o interativo: sem isso a mesa continua com o "respiro" do
-        // destaque, e como ela é o pai da bolinha a partida inteira balança
-        jogarPing.enabled = false;
-        partida.comecar();
-        jogando = true;
-        api.toast('Mexa o mouse para mover a raquete', '🏓');
+        /*
+         * A MESA PASSA A PERGUNTAR CONTRA QUEM — mas só depois de o pato ter
+         * sido batido uma vez. Antes disso ele não é adversário de mesa, é um
+         * bicho que mora no lago e pede uma partida; a escolha aparecer antes
+         * entregaria o desafio como um item de menu.
+         *
+         * É a primeira linha do painel de adversários: hoje são dois nomes,
+         * e o painel cresce a partir daqui.
+         */
+        let contra = PARCEIRO;
+        if (api.flag('jean-luc-batido')) {
+          const quem = await api.ask('Contra quem?', [api.companionName(), 'Jean-Luc']);
+          if (quem === 1) contra = JEAN_LUC_ADVERSARIO;
+        }
+        if (contra === PARCEIRO) {
+          await conversa([
+            [A, 'Cinco pontos?'],
+            [R, 'Cinco pontos. E o perdedor carrega a bolsa até em casa.'],
+          ]);
+        } else {
+          await conversa([
+            ['Jean-Luc', 'Encore? Vocês não cansam. J\'adore.'],
+          ]);
+        }
+        await comecarPartida(api, contra);
       },
     });
 
@@ -3124,7 +3264,77 @@ export const villaLobos: SceneDef = {
      * chegar nela sem jogar cinco partidas inteiras de cinco pontos cada.
      * Quem chama isto de verdade é o fim de partida, aqui embaixo.
      */
-    mesaPing.userData.jeanLuc = { bicho: jeanLuc, chegar: () => chegarOJeanLuc(g) };
+    mesaPing.userData.jeanLuc = {
+      bicho: jeanLuc,
+      chegar: () => chegarOJeanLuc(g),
+      // a ficha também: é o `scripts/balanco.mjs` que mede se ela está justa,
+      // e ele tem que medir O NÚMERO QUE O JOGO USA, não uma cópia no teste
+      ficha: JEAN_LUC_ADVERSARIO,
+    };
+
+    /**
+     * O FIM DE UMA PARTIDA CONTRA O PATO.
+     *
+     * O PRÊMIO DE BATER ELE É ELE. A partir daqui a mesa pergunta contra quem
+     * jogar, e o Jean-Luc entra na lista — é a primeira linha do painel de
+     * adversários, e o painel cresce a partir dela quando os outros
+     * personagens do parque toparem jogar (ele sai daqui prometendo buscá-los).
+     *
+     * A flag é gravada UMA VEZ: revanche não desbloqueia nada de novo, e a
+     * conversa da segunda vitória em diante é outra.
+     */
+    const fimContraOPato = async (api: GameAPI, ganhei: boolean): Promise<void> => {
+      if (!ganhei) {
+        jeanLuc.comemorar(3.4);
+        api.som('pato');
+        await conversa([
+          ['Jean-Luc', 'Voilà! Cinco a ' + partida.meus + '!'],
+          ['Jean-Luc', 'Não fiquem tristes. Eu treino há seis anos. Debaixo d\'água.'],
+          [R, 'Isso não é treino, isso é obsessão.'],
+          ['Jean-Luc', 'Em francês é a mesma palavra. Quase.'],
+          [A, 'Revanche.'],
+          ['Jean-Luc', 'Toujours.'],
+        ]);
+        return;
+      }
+
+      const primeira = !api.flag('jean-luc-batido');
+      api.som('memoria');
+      jeanLuc.receberCarinho();
+      if (!primeira) {
+        await conversa([
+          ['Jean-Luc', 'De novo! Cinco a ' + partida.dele + '.'],
+          ['Jean-Luc', 'Eu devia estar triste. Mas jogar com vocês é meilleur que ganhar.'],
+          [A, 'Isso é bonito, Jean-Luc.'],
+          ['Jean-Luc', 'É. E é mentira. Mas é bonito.'],
+        ]);
+        return;
+      }
+
+      api.setFlag('jean-luc-batido');
+      api.toast('Jean-Luc entrou na lista de adversários', '🦆');
+      await conversa([
+        ['Jean-Luc', 'Cinco a ' + partida.dele + '.'],
+        ['Jean-Luc', '...'],
+        [R, 'Jean-Luc?'],
+        ['Jean-Luc', 'Pardon. Eu estou processando.'],
+        ['Jean-Luc', 'Seis anos debaixo d\'água. E vocês me batem num sábado.'],
+        [A, 'A gente pode jogar de novo, se você quiser.'],
+        ['Jean-Luc', 'Se eu QUISER? Mon Dieu.'],
+        ['Jean-Luc', 'Voltem aqui quando quiserem. A mesa vai perguntar contra quem. Eu vou estar na lista.'],
+        ['Jean-Luc', 'E eu vou buscar os outros. O pinguim do sorvete. A ovelha da loja. Todos eles.'],
+        [R, 'Você vai convencer o Mano a jogar ping pong?'],
+        ['Jean-Luc', 'Eu convenci vocês a jogarem contra um pato. Eu convenço qualquer um.'],
+      ]);
+      api.unlock({
+        id: 'jean-luc-batido',
+        title: 'Cinco a ' + partida.dele,
+        place: 'Parque Villa Lobos',
+        note: 'A gente ganhou do Jean-Luc. Ele ficou em silêncio, disse «pardon, estou processando», '
+          + 'e foi buscar os outros bichos do parque para jogar também.',
+        icon: '🦆',
+      });
+    };
 
     partida.onPonto = (meu) => {
       g.som(meu ? 'confirma' : 'quicar');
@@ -3132,10 +3342,16 @@ export const villaLobos: SceneDef = {
 
     partida.onFim = (ganhei) => {
       void (async () => {
+        const contraOPato = partida.adversario.id === JEAN_LUC_ADVERSARIO.id;
         encerrarPing();
         // o placarzinho da arena lê estes dois: sem eles ele seria enfeite
         g.bump('pingpong.partidas');
         if (ganhei) g.bump('pingpong.vitorias');
+
+        if (contraOPato) {
+          await fimContraOPato(g, ganhei);
+          return;
+        }
         if (ganhei) {
           g.som('memoria');
           g.toast('Campeão de ping pong!', '🏆');

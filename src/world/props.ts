@@ -1387,6 +1387,66 @@ export function bordaDeTablado(comprimento = 4, cor: number = P.dequeViga): THRE
 }
 
 /**
+ * Caixote de feira, de ripa de madeira.
+ *
+ * Ele nasceu porque o Jean-Luc tem 66 cm e o tampo da mesa de ping pong tem
+ * 76: sem um degrau, o pato joga a partida inteira escondido atras da propria
+ * mesa. Mas a peca e generica de proposito — caixote serve de banquinho, de
+ * mesa improvisada e de carga em qualquer cena.
+ *
+ * As ripas sao ALTERNADAS com fresta, e nao uma caixa fechada pintada: e a
+ * fresta que faz ler como caixote de verdade, e ela custa quatro caixinhas por
+ * face. O aro de cima e mais largo que o corpo para nenhuma face lateral cair
+ * no mesmo plano da ripa.
+ */
+export function caixote(largura = 0.56, altura = 0.44, cor: number = P.wood): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'caixote';
+  const ripa = toon(cor);
+  const canto = toon(P.woodDark);
+
+  // os quatro montantes das quinas
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      const pe = new THREE.Mesh(new THREE.BoxGeometry(0.055, altura, 0.055), canto);
+      pe.position.set(sx * (largura / 2 - 0.028), altura / 2, sz * (largura / 2 - 0.028));
+      g.add(pe);
+    }
+  }
+  // as ripas horizontais das quatro faces, tres por face
+  for (let i = 0; i < 3; i++) {
+    const y = altura * (0.16 + i * 0.32);
+    for (const giro of [0, Math.PI / 2] as const) {
+      for (const sinal of [-1, 1] as const) {
+        const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.09, altura * 0.2, 0.026), ripa);
+        tabua.position.set(
+          giro === 0 ? 0 : sinal * (largura / 2 - 0.012),
+          y,
+          giro === 0 ? sinal * (largura / 2 - 0.012) : 0,
+        );
+        tabua.rotation.y = giro;
+        g.add(tabua);
+      }
+    }
+  }
+  // o tampo, um dedo mais largo que o corpo: encostado na ripa as duas faces
+  // laterais cairiam no mesmo plano
+  /*
+   * O TAMPO PASSA POR CIMA DOS MONTANTES, e nao encosta neles: com o topo dos
+   * dois em `altura` exata, as quatro quinas serrilhavam (o
+   * `scripts/zfighting.mjs` acusou os quatro pares). Meio centimetro de folga
+   * poe a ponta do pe DENTRO da tabua.
+   */
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.03, 0.04, largura + 0.03), ripa);
+  tampo.position.y = altura - 0.005;
+  g.add(tampo);
+  const aro = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.06, 0.028, largura + 0.06), canto);
+  aro.position.y = altura - 0.052;
+  g.add(aro);
+  return g;
+}
+
+/**
  * O placarzinho da arena: dois numeros de virar num painel de madeira.
  *
  * NAO E o `scoreboard()` da quadra de frisbee — aquele tem 2,6 de altura e e
