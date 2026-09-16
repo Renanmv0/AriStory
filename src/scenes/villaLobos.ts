@@ -20,6 +20,8 @@ import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
 import { asfalto, calcadaDePedrinha, gelo, tapeteDeGrama } from '../world/texturasDeChao';
 import { Mano } from '../entities/bichos/Mano';
+import { JeanLuc } from '../entities/bichos/JeanLuc';
+import { flat } from '../core/materials';
 import { Estella } from '../entities/bichos/Estella';
 
 /**
@@ -689,6 +691,116 @@ export const villaLobos: SceneDef = {
       w.add(w.place(vasoDePlanta(tipo, 0.34, 0.3), x, 0, z));
       w.blockCircle(x, z, 0.3);
     }
+
+    /* ================================================ O JEAN-LUC, o pato
+     *
+     * Ele mora no lago, e estava lá o tempo todo — debaixo d'água. Quem ganha
+     * cinco partidas na arena acorda ele (ver `chegarOJeanLuc`, lá embaixo,
+     * junto do fim de partida).
+     *
+     * OS TRÊS PONTOS DA CHEGADA, e cada um foi medido contra o lago (centro em
+     * `(-21; 11)`, água até 8,5, areia até 9,2 e o colisor em 8,8):
+     *
+     *  - `LAGO` está a 6,7 do centro — dentro d'água de verdade, e não na
+     *    beirada: cabeça saindo no meio do lago é o que faz a emersão ler como
+     *    emersão;
+     *  - `MARGEM` está a 9,4 — fora do colisor, na faixa de areia;
+     *  - `POSTO` é na frente da mesa, onde ele fica falando com a dupla.
+     *
+     * DEPOIS DA CHEGADA ELE PASSEIA PELA FAIXA DA FRENTE DO TABLADO, e só por
+     * ela: 1,5 de fundo entre a mesa e a borda de `+Z`. É a beira do campo, que
+     * é onde um técnico empolgado fica — e, de quebra, ele tem 66 cm e esconde
+     * 1 m de chão na diagonal da câmera: daqui isso cai fora da mesa.
+     */
+    const JEANLUC_LAGO = { x: -18.4, z: 17.2 };
+    const JEANLUC_MARGEM = { x: -17.1, z: 19.6 };
+    /**
+     * O POSTO é na quina da FRENTE pelo lado `-X`, e não no meio da borda, e
+     * isso é decisão de câmera: dali ele olha para a mesa numa direção que
+     * aponta para `+X`, e a câmera (que vem de `+X/+Z`) pega o rosto dele de
+     * três quartos. No meio da borda ele ficaria de costas para o jogo — um
+     * pato falante do qual só se vê a nuca.
+     */
+    const JEANLUC_POSTO = { x: -17.6, z: 26.3 };
+    /** quantas vitórias acordam ele */
+    const VITORIAS_PARA_O_PATO = 5;
+    const jeanLuc = new JeanLuc({
+      minX: ax0 + 1.2, maxX: ax1 - 1.2,
+      minZ: 25.4, maxZ: 26.9,
+      proibido: [
+        { x: CESTO_PING.x, z: CESTO_PING.z, r: 0.55 },
+        { x: -10.1, z: 26.6, r: 0.5 },
+      ],
+    });
+    w.add(jeanLuc.group);
+    jeanLuc.aoSoar = () => g.som('pato');
+
+    /**
+     * A MAROLA da emersão: um anel branco que abre na superfície da água.
+     *
+     * Material de `flat()` como manda a casa, com `decal` ligado e
+     * `renderOrder` alto — ele é coplanar com o decalque do lago de propósito,
+     * e é o `polygonOffset` mais a ordem de desenho que resolvem isso (a mesma
+     * receita da foto na parede e da linha do fundo da piscina).
+     *
+     * Ele ANIMA POR ESCALA, e não por opacidade: `flat()` é cacheado por
+     * cor+opacidade, então mexer na transparência deste anel mexeria em todo
+     * material que por acaso dividisse a mesma chave.
+     */
+    const marola = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.44, 22), flat(0xffffff, 0.5, true));
+    marola.rotation.x = -Math.PI / 2;
+    marola.position.set(JEANLUC_LAGO.x, 0.05, JEANLUC_LAGO.z);
+    marola.renderOrder = 12;
+    marola.visible = false;
+    w.root.add(marola);
+
+    /**
+     * QUEM JÁ CONHECE O PATO ENCONTRA ELE NA ARENA; quem não conhece não vê
+     * nada. Antes da cutscene ele fica submerso E invisível: o chão do mundo
+     * já esconderia o corpo a essa altura, mas a cabeça dele passa de 60 cm e
+     * apareceria boiando no meio do lago como um brinquedo esquecido.
+     */
+    const patoJaConhecido = g.flag('jean-luc-conhecido');
+    if (patoJaConhecido) {
+      jeanLuc.group.position.set(JEANLUC_POSTO.x, 0, JEANLUC_POSTO.z);
+    } else {
+      jeanLuc.entrarEmServico();
+      jeanLuc.group.visible = false;
+      jeanLuc.group.position.set(JEANLUC_LAGO.x, -0.85, JEANLUC_LAGO.z);
+    }
+
+    const falarComOPato = w.interact({
+      id: 'parque:jean-luc',
+      x: JEANLUC_POSTO.x, z: JEANLUC_POSTO.z, radius: 1.5, priority: -1,
+      label: 'Falar com o Jean-Luc', icon: '🦆',
+      highlight: jeanLuc.group,
+      onInteract: async (api) => {
+        jeanLuc.receberCarinho();
+        jeanLuc.comemorar(2.2);
+        api.som('pato');
+        const vezes = api.bump('jean-luc.conversas');
+        const dele = [
+          'Cinco vitórias! Eu contei todas debaixo d\'água. Todas!',
+          'Eu treino na correnteza. É mais difícil. A bolinha foge.',
+          'Meu avô jogava em Paris. Perdeu tudo. Mas com estilo.',
+          'A boina é para o sol. E para a elegância. Principalmente a elegância.',
+        ];
+        await conversa([
+          ['Jean-Luc', dele[(vezes - 1) % dele.length]],
+          [vezes % 2 === 0 ? A : R, vezes % 2 === 0
+            ? 'Ele nunca cansa.'
+            : 'Um dia a gente joga, Jean-Luc.'],
+          ['Jean-Luc', 'Quando quiserem. Eu estarei aqui. Molhado, mas aqui.'],
+        ]);
+      },
+    });
+    // ele só existe para quem já o conheceu — e o balão anda junto com ele,
+    // senão o prompt fica onde ele nasceu e vira um ponto morto no tablado
+    falarComOPato.enabled = patoJaConhecido;
+    w.onUpdate((dt) => {
+      jeanLuc.update(dt);
+      falarComOPato.moveTo(jeanLuc.x, jeanLuc.z);
+    });
 
     /* ================================================= A PRAÇA DE GELO
      *
@@ -2859,6 +2971,143 @@ export const villaLobos: SceneDef = {
       },
     });
 
+    /* ==================================================================
+     *      A CHEGADA DO JEAN-LUC — cinco vitórias acordam o pato
+     *
+     * Ele não "aparece": ele SOBE. A cutscene inteira é essa ideia — o bicho
+     * estava debaixo d'água o tempo todo, viu tudo dali, e a quinta vitória é
+     * o que finalmente o traz à tona.
+     *
+     * A EMERSÃO É FEITA À MÃO, em passos de 55 ms, e não por um `onUpdate`
+     * ligado e desligado: a cutscene é uma sequência de `await`, e o relógio
+     * que ela já tem (`api.wait`) é o mesmo do jogo — pausar o jogo pausa a
+     * subida junto, que é o que um `setTimeout` não faria.
+     *
+     * E ELE SALTA UM POUCO ACIMA DA LINHA D'ÁGUA ANTES DE ASSENTAR. Subir em
+     * linha reta até `y = 0` lê como elevador; o sobressalto é o que faz
+     * parecer que alguém empurrou a água para sair dela.
+     *
+     * DEPOIS ELE CORRE, e por isso o `irPara` vai a 1,5 e não aos 0,52 do
+     * passeio: no passo normal a travessia do lago até a arena levaria 25
+     * segundos de cutscene, e ninguém espera 25 segundos por um pato.
+     * ================================================================== */
+    const emergirOPato = async (api: GameAPI): Promise<void> => {
+      jeanLuc.group.visible = true;
+      marola.visible = true;
+      marola.scale.setScalar(0.3);
+      const passos = 26;
+      for (let i = 1; i <= passos; i++) {
+        const t = i / passos;
+        // a subida termina antes do fim (em 82%) para o salto ter onde cair
+        const subida = Math.min(1, t / 0.82);
+        const salto = Math.sin(t * Math.PI) * 0.2;
+        jeanLuc.emergirAte(-0.85 + 0.85 * subida + salto);
+        marola.scale.setScalar(0.3 + t * 3.4);
+        await api.wait(0.055);
+      }
+      jeanLuc.emergirAte(0);
+      marola.visible = false;
+    };
+
+    const chegarOJeanLuc = async (api: GameAPI): Promise<void> => {
+      if (api.flag('jean-luc-conhecido')) return;
+      if (api.stat('pingpong.vitorias') < VITORIAS_PARA_O_PATO) return;
+
+      api.lockPlayer(true);
+      jeanLuc.entrarEmServico();
+      jeanLuc.group.position.set(JEANLUC_LAGO.x, -0.85, JEANLUC_LAGO.z);
+      jeanLuc.group.rotation.y = Math.atan2(
+        JEANLUC_MARGEM.x - JEANLUC_LAGO.x,
+        JEANLUC_MARGEM.z - JEANLUC_LAGO.z,
+      );
+      api.focusCamera(jeanLuc.group);
+      api.setZoom(8);
+      await api.wait(0.9);
+
+      await conversa([
+        [A, 'Você ouviu isso?'],
+        [R, 'A água mexeu.'],
+      ]);
+
+      api.som('pato');
+      await emergirOPato(api);
+      api.som('pato');
+      jeanLuc.comemorar(2.4);
+      await api.wait(1.1);
+
+      await conversa([
+        ['Jean-Luc', 'CINCO! Cinco vitórias!'],
+        [R, 'Tem um pato de boina falando com a gente.'],
+        [A, 'Tem um pato de boina falando com a gente E ele tem uma raquete.'],
+      ]);
+
+      // ele sai da água e vem correndo até a arena — a câmera vai junto
+      await jeanLuc.irPara(JEANLUC_MARGEM.x, JEANLUC_MARGEM.z, 1.5);
+      api.som('pato');
+      await jeanLuc.irPara(JEANLUC_POSTO.x, JEANLUC_POSTO.z, 1.5);
+      /*
+       * ELE FICA VIRADO PARA `+X`, e não exatamente para a mesa.
+       *
+       * Apontado para a dupla (2,12 rad) ele ficava de três quartos de COSTAS
+       * para o jogo: a câmera vem de `+X/+Z`, e a nuca dele era o que aparecia
+       * na cena inteira de apresentação. 1,3 rad é o meio-termo — o bico ainda
+       * está do lado da mesa, e o rosto está do lado de quem joga. É a batota
+       * de câmera que todo jogo faz, e o custo dela é meio radiano.
+       */
+      jeanLuc.group.rotation.y = 1.3;
+      jeanLuc.comemorar(3);
+      await api.wait(0.6);
+
+      await conversa([
+        ['Jean-Luc', 'Jean-Luc. Enchanté. Eu moro aqui embaixo.'],
+        ['Jean-Luc', 'Eu vejo TODAS as partidas. Do fundo. A água distorce, mas eu vejo.'],
+        [A, 'Você mora no lago e assiste ping pong?'],
+        ['Jean-Luc', 'Eu moro no lago PORQUE tem ping pong. Não é a mesma coisa.'],
+        [R, 'Justo.'],
+        ['Jean-Luc', 'Cinco vitórias é sério. Meu avô jogava em Paris — ele ganhou três.'],
+        ['Jean-Luc', 'Vocês são melhores que o meu avô. Isso me deixa muito feliz e um pouco triste.'],
+        [A, 'Sinto muito pelo seu avô.'],
+        ['Jean-Luc', 'Ele está bem. Ele só perde.'],
+      ]);
+
+      jeanLuc.comemorar(3.2);
+      api.som('pato');
+      await conversa([
+        ['Jean-Luc', 'Agora. Vocês. Eu. Uma partida. Por favor.'],
+        [R, 'Agora?'],
+        ['Jean-Luc', 'Não! Agora eu estou encharcado, é ridículo. Eu preciso secar e alongar.'],
+        ['Jean-Luc', 'Mas eu fico aqui. Na beira. Esperando. Sempre.'],
+        [A, 'A gente volta, Jean-Luc.'],
+        ['Jean-Luc', 'Eu sei. Todo mundo volta pro ping pong.'],
+      ]);
+
+      api.setFlag('jean-luc-conhecido');
+      falarComOPato.enabled = true;
+      jeanLuc.voltarAPassear();
+      api.focusCamera(null);
+      api.setZoom(11);
+      api.lockPlayer(false);
+
+      api.unlock({
+        id: 'jean-luc',
+        title: 'O pato do lago',
+        place: 'Parque Villa Lobos',
+        note: 'Cinco vitórias e um pato francês subiu do fundo do lago de boina e raquete. '
+          + 'O avô dele jogava em Paris. Ganhou três.',
+        icon: '🦆',
+      });
+    };
+
+    /**
+     * O GATILHO DE TESTE, pendurado na mesa.
+     *
+     * É o mesmo espírito do `mesaPing.userData.pingpong` logo acima: a cena
+     * guarda a cutscene numa variável local, e um teste de fora não teria como
+     * chegar nela sem jogar cinco partidas inteiras de cinco pontos cada.
+     * Quem chama isto de verdade é o fim de partida, aqui embaixo.
+     */
+    mesaPing.userData.jeanLuc = { bicho: jeanLuc, chegar: () => chegarOJeanLuc(g) };
+
     partida.onPonto = (meu) => {
       g.som(meu ? 'confirma' : 'quicar');
     };
@@ -2893,6 +3142,10 @@ export const villaLobos: SceneDef = {
             [A, 'Sempre revanche.'],
           ]);
         }
+        // e é aqui que o pato acorda, se esta foi a quinta vitória. Depois da
+        // conversa do chapéu, e não no meio dela: duas cutscenes empilhadas no
+        // mesmo instante deixariam os dois diálogos brigando pela tela
+        await chegarOJeanLuc(g);
       })();
     };
 
