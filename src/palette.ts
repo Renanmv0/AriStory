@@ -538,6 +538,27 @@ export const PALETTE = {
   // dois sao estrado de area publica, e usar a mesma madeira e o que faz o
   // parque e o clube lerem como o mesmo mundo. Estas tres sao as cores que so
   // existem aqui.
+  /*
+   * O JEAN-LUC, o pato frances que mora no lago do Villa Lobos.
+   *
+   * A PENA E A DOS PATOS DO LAGO (`duck()` nasce em 0xf6f2e8), so um fio mais
+   * clara: ele e um deles, e o que o separa dos outros e a roupa. Pato de cor
+   * propria seria um bicho de outro lugar que veio visitar — e a piada e
+   * justamente que ele estava ali o tempo todo, debaixo d'agua.
+   *
+   * O AZUL E O VERMELHO SAO OS DA BANDEIRA, e nao um azul e um vermelho
+   * quaisquer: e o par que faz a boina e a faixa do peito lerem como Franca
+   * sem precisar de legenda.
+   */
+  patoPena: 0xfaf5e9,
+  patoPenaSombra: 0xe7dcc4,
+  patoBico: 0xf2a23c,
+  patoBicoEscuro: 0xd4802a,
+  patoBochecha: 0xf5a7ad,
+  azulFranca: 0x11488f,
+  vermelhoFranca: 0xe0243c,
+  camisaDoJeanLuc: 0xfcfbf6,
+
   pingBalde: 0x3f8fbe,     // o balde de bolinhas, plastico de clube
   pingCartela: 0x2f333c,   // a cartela de numero do placarzinho
   pingVerde: 0x4f9a7a,     // a terceira raquete do suporte, a que ninguem pega

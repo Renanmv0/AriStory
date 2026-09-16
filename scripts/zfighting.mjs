@@ -40,6 +40,7 @@ const PECAS = [
   ['borda-de-tablado', 'villa-lobos'],
   ['placar-de-ping-pong', 'villa-lobos'],
   ['cesto-de-bolinhas', 'villa-lobos'],
+  ['jean-luc', 'villa-lobos'],
   ['suporte-de-raquetes', 'villa-lobos'],
   ['cadeirinha-de-sorveteria', 'villa-lobos'],
   ['restaurante', 'clube'],
