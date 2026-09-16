@@ -533,6 +533,15 @@ export const PALETTE = {
   sorveteriaRosa: 0xf6a6c0,
   sorveteriaCreme: 0xfdf3e7,
 
+  // A arena de ping pong do Villa Lobos. O tablado reaproveita a madeira do
+  // deque do clube (`dequeTabua`/`dequeRipa`/`dequeViga`) de proposito — os
+  // dois sao estrado de area publica, e usar a mesma madeira e o que faz o
+  // parque e o clube lerem como o mesmo mundo. Estas tres sao as cores que so
+  // existem aqui.
+  pingBalde: 0x3f8fbe,     // o balde de bolinhas, plastico de clube
+  pingCartela: 0x2f333c,   // a cartela de numero do placarzinho
+  pingVerde: 0x4f9a7a,     // a terceira raquete do suporte, a que ninguem pega
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,
