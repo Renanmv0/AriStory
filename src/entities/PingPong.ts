@@ -87,13 +87,75 @@ const REBATE = {
 export type FasePing = 'parado' | 'sacando' | 'jogando' | 'ponto' | 'fim';
 type Lado = 'eu' | 'ele';
 
+/**
+ * QUEM ESTA DO OUTRO LADO DA MESA.
+ *
+ * A dificuldade do adversario nao e um numero so — sao tres, e cada um mexe
+ * numa coisa diferente do que da para sentir jogando:
+ *
+ * - `erro` e o DESVIO que ele poe na propria rebatida. E o unico motivo pelo
+ *   qual da para ganhar dele: perseguicao sem erro seria uma parede.
+ * - `feio` e a chance de esse desvio sair GRANDE — a bola que ele manda para
+ *   fora. Baixar isto e o que faz um adversario "nao dar ponto de graca".
+ * - `rapidez` e o quanto a mao dele persegue o `z` da bolinha. Mexer aqui
+ *   fecha os angulos: contra uma mao lenta, bola cruzada e ponto certo.
+ *
+ * E DUAS SOBRE A DEVOLUCAO, que sao as que decidem de verdade quem ganha:
+ *
+ * - `desvio` e o quanto a devolucao dele sai torta por acaso.
+ * - `pontaria` e o quanto ele mira DE PROPOSITO longe da raquete de quem
+ *   joga. Este e o unico numero que faz um adversario ser MELHOR em vez de so
+ *   mais teimoso — e ele nasceu de uma medicao: com o adversario preciso e
+ *   rapido (erro baixo, rapidez alta) o `scripts/balanco.mjs` acusou 33 de 50
+ *   partidas SEM FIM. Dois jogadores que alcancam tudo e devolvem no meio
+ *   jogam para sempre; quem encerra o ponto e quem coloca a bola onde o outro
+ *   nao esta.
+ *
+ * O `parceiro` e a referencia — todo numero de adversario novo se le como
+ * "tanto do parceiro".
+ */
+export interface Adversario {
+  readonly id: string;
+  /** cor da raquete dele, do outro lado da mesa */
+  readonly cor: number;
+  /** multiplicador do desvio da mao dele ao ALCANCAR a bola; 1 = o parceiro */
+  readonly erro: number;
+  /** chance de esse desvio sair feio (0 a 1) */
+  readonly feio: number;
+  /** quao rapido a mao dele persegue a bolinha */
+  readonly rapidez: number;
+  /** multiplicador da aleatoriedade da DEVOLUCAO; 1 = o parceiro */
+  readonly desvio: number;
+  /** o quanto ele devolve de proposito para o lado vazio; 0 = o parceiro */
+  readonly pontaria: number;
+}
+
+/** O parceiro: a referencia, e o adversario de sempre da mesa do parque. */
+export const PARCEIRO: Adversario = {
+  id: 'parceiro',
+  cor: P.fabricBlue,
+  erro: 1,
+  feio: 0.25,
+  rapidez: 4.6,
+  desvio: 1,
+  pontaria: 0,
+};
+
 export class PingPong {
   /** tudo (bolinha e raquetes) mora aqui dentro, em coordenada local da mesa */
   readonly grupo = new THREE.Group();
 
   readonly bola: THREE.Mesh;
   readonly minhaRaquete: THREE.Group;
-  readonly raqueteDele: THREE.Group;
+  /**
+   * NAO E `readonly`: trocar de adversario troca a cor da raquete, e a cor
+   * mora no material que `raquete()` cria no construtor. Repintar malha por
+   * malha daria no mesmo com mais linhas — e `toon()` ja devolve material
+   * cacheado, entao remontar a peca nao aloca nada novo.
+   */
+  raqueteDele: THREE.Group;
+  /** quem esta do outro lado agora */
+  adversario: Adversario = PARCEIRO;
 
   fase: FasePing = 'parado';
   meus = 0;
@@ -130,7 +192,7 @@ export class PingPong {
     this.grupo.add(this.bola);
 
     this.minhaRaquete = raquete(P.metalRed);
-    this.raqueteDele = raquete(P.fabricBlue);
+    this.raqueteDele = raquete(PARCEIRO.cor);
     // `raquete()` nasce com a face encarando +Z e o cabo para baixo. Girar em Y
     // põe a face encarando o eixo X, que é por onde a bolinha vem — girar em Z
     // (o erro óbvio) só roda o cabo e deixa o disco de perfil, invisível.
@@ -141,6 +203,24 @@ export class PingPong {
     this.grupo.add(this.minhaRaquete, this.raqueteDele);
 
     this.resetar();
+  }
+
+  /**
+   * Troca quem esta do outro lado da mesa.
+   *
+   * A raquete e remontada na posicao em que estava: trocar de adversario entre
+   * dois pontos nao existe hoje, mas copiar a posicao custa uma linha e evita
+   * que a mao dele teleporte se um dia existir.
+   */
+  trocarAdversario(quem: Adversario): void {
+    this.adversario = quem;
+    const nova = raquete(quem.cor);
+    nova.rotation.y = -Math.PI / 2;
+    nova.scale.setScalar(1.15);
+    nova.position.copy(this.raqueteDele.position);
+    this.grupo.remove(this.raqueteDele);
+    this.raqueteDele = nova;
+    this.grupo.add(nova);
   }
 
   comecar(): void {
@@ -171,10 +251,16 @@ export class PingPong {
     this.sortearErro();
   }
 
-  /** O parceiro erra de propósito, mas nunca no mesmo lugar. */
+  /**
+   * O adversário erra de propósito, mas nunca no mesmo lugar — e o TAMANHO do
+   * erro é a ficha dele. Contra o parceiro (`erro: 1`, `feio: 0,25`) sai um
+   * desvio de até 75 cm uma vez em cada quatro; contra o Jean-Luc o mesmo
+   * sorteio sai pela metade e quase nunca feio, e é só por isso que ele é
+   * difícil: nada na física muda de um para o outro.
+   */
   private sortearErro(): void {
-    const feio = Math.random() < 0.25;
-    this.erroDele = (Math.random() - 0.5) * (feio ? 1.5 : 0.5);
+    const feio = Math.random() < this.adversario.feio;
+    this.erroDele = (Math.random() - 0.5) * (feio ? 1.5 : 0.5) * this.adversario.erro;
   }
 
   update(dt: number, mira: { x: number; y: number }): void {
@@ -235,7 +321,7 @@ export class PingPong {
     // rápido o bastante para alcançar bola angulada — senão quem mira bem faz
     // 5 a 0 e o rali nunca acontece. Quem dá chance ao jogador é o erro
     // sorteado, não a lentidão da mão dele.
-    const rapidez = indoParaEle ? 4.6 : 1.6;
+    const rapidez = indoParaEle ? this.adversario.rapidez : 1.6;
     this.raqueteDele.position.z += (alvo - this.raqueteDele.position.z) * Math.min(1, dt * rapidez);
     this.raqueteDele.position.z = THREE.MathUtils.clamp(this.raqueteDele.position.z, -ALCANCE_Z, ALCANCE_Z);
 
@@ -361,10 +447,23 @@ export class PingPong {
    * De vez em quando o desvio é grande o bastante para a bola sair — é o erro
    * não forçado dele, e a regra cobra igual à minha.
    */
+  /**
+   * PARA ONDE O ADVERSARIO DEVOLVE.
+   *
+   * Tres parcelas: ele traz a bola de volta para o meio, erra um tanto por
+   * acaso (`desvio`), e — se tiver `pontaria` — empurra DE PROPOSITO para o
+   * lado oposto ao da raquete de quem esta jogando.
+   *
+   * O SINAL DA PONTARIA: `vz` sai de `lateral * 0,2`, entao `lateral` positivo
+   * manda a bola para `+z`. Para fugir de uma raquete que esta em `+z`, o
+   * `lateral` tem que ser NEGATIVO — dai o menos.
+   */
   private miraDoParceiro(): number {
     const paraOMeio = -this.bola.position.z * 1.2;
-    const desvio = (Math.random() - 0.5) * 2.4;
-    return THREE.MathUtils.clamp(paraOMeio + desvio, -4, 4);
+    const desvio = (Math.random() - 0.5) * 2.4 * this.adversario.desvio;
+    const ondeEleNaoEsta = this.minhaRaquete.position.z >= 0 ? -1 : 1;
+    const fugindo = ondeEleNaoEsta * this.adversario.pontaria;
+    return THREE.MathUtils.clamp(paraOMeio + desvio + fugindo, -4, 4);
   }
 
   private marcar(meuPonto: boolean, motivo: string): void {

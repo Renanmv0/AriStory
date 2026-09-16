@@ -141,10 +141,22 @@ const conversar = async () => {
   await page.keyboard.press('KeyE');
   await page.waitForTimeout(650);
   const ditas = [];
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 14; i++) {
     const t = await page.locator('.dialogue .text').textContent().catch(() => '');
     if (t && t.length > 3 && !ditas.includes(t)) ditas.push(t);
     if (!(await page.locator('.dialogue.show').count())) break;
+    /*
+     * ELE TERMINA TODA CONVERSA OFERECENDO UMA PARTIDA, e aqui a resposta é
+     * NÃO. Este teste é sobre o pato morar na arena; teclar `E` em cima da
+     * pergunta aceitaria o desafio, e a partida levaria ele para o outro lado
+     * da mesa — que foi exatamente como a asserção da faixa da frente quebrou.
+     * Quem cobre a partida é o `scripts/duelo.mjs`.
+     */
+    if (await page.locator('.dialogue .escolhas.show button').count()) {
+      await page.locator('.dialogue .escolhas button').nth(1).click(); // "Agora não"
+      await page.waitForTimeout(500);
+      continue;
+    }
     await page.keyboard.press('KeyE');
     await page.waitForTimeout(420);
   }
