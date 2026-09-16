@@ -778,19 +778,36 @@ export const villaLobos: SceneDef = {
         jeanLuc.receberCarinho();
         jeanLuc.comemorar(2.2);
         api.som('pato');
+        /*
+         * ELE FALA PORTUGUÊS COM FRANCÊS ENFIADO NO MEIO, e não francês com
+         * legenda: a graça é o sotaque escapando numa palavra por frase, e
+         * não uma fala inteira que ninguém entende. Quando a palavra francesa
+         * carrega a piada, a fala seguinte traduz — é o próprio Jean-Luc
+         * explicando o trocadilho, que é a coisa mais francesa que ele faz.
+         */
         const vezes = api.bump('jean-luc.conversas');
-        const dele = [
-          'Cinco vitórias! Eu contei todas debaixo d\'água. Todas!',
-          'Eu treino na correnteza. É mais difícil. A bolinha foge.',
-          'Meu avô jogava em Paris. Perdeu tudo. Mas com estilo.',
-          'A boina é para o sol. E para a elegância. Principalmente a elegância.',
+        const dele: Array<readonly [string, string]> = [
+          ['Cinco vitórias! Eu contei todas debaixo d\'água. Toutes!',
+            'Perdi duas de vista quando um pato passou na frente. Mas eu contei.'],
+          ['Dizem por aí que eu jogo mal. C\'est un canard.',
+            '«Canard» é boato. E é pato. A piada é bem melhor em francês, pardon.'],
+          ['Eu treino na correnteza. É mais difícil — la balle s\'enfuit.',
+            'A bolinha foge. Mas quem alcança bolinha na correnteza alcança tudo.'],
+          ['«Faire le canard» é sumir sem avisar ninguém.',
+            'Eu fiz isso por seis anos. Aqui embaixo. Voilà.'],
+          ['A boina é para o sol. Et pour l\'élégance.',
+            'Principalmente para a élégance. O sol aqui nem é tão forte.'],
+          ['Mon grand-père dizia: perder com estilo ainda é perder.',
+            'Ele dizia muito isso. Ele tinha muita prática.'],
         ];
+        const duas = dele[(vezes - 1) % dele.length];
         await conversa([
-          ['Jean-Luc', dele[(vezes - 1) % dele.length]],
+          ['Jean-Luc', duas[0]],
+          ['Jean-Luc', duas[1]],
           [vezes % 2 === 0 ? A : R, vezes % 2 === 0
             ? 'Ele nunca cansa.'
             : 'Um dia a gente joga, Jean-Luc.'],
-          ['Jean-Luc', 'Quando quiserem. Eu estarei aqui. Molhado, mas aqui.'],
+          ['Jean-Luc', 'Quand vous voulez. Eu fico aqui. Molhado, mas aqui.'],
         ]);
       },
     });
@@ -3036,7 +3053,7 @@ export const villaLobos: SceneDef = {
       await api.wait(1.1);
 
       await conversa([
-        ['Jean-Luc', 'CINCO! Cinco vitórias!'],
+        ['Jean-Luc', 'CINQ! Cinq victoires! CINCO!'],
         [R, 'Tem um pato de boina falando com a gente.'],
         [A, 'Tem um pato de boina falando com a gente E ele tem uma raquete.'],
       ]);
@@ -3062,23 +3079,24 @@ export const villaLobos: SceneDef = {
         ['Jean-Luc', 'Jean-Luc. Enchanté. Eu moro aqui embaixo.'],
         ['Jean-Luc', 'Eu vejo TODAS as partidas. Do fundo. A água distorce, mas eu vejo.'],
         [A, 'Você mora no lago e assiste ping pong?'],
-        ['Jean-Luc', 'Eu moro no lago PORQUE tem ping pong. Não é a mesma coisa.'],
+        ['Jean-Luc', 'Tennis de table. Em francês soa mais caro.'],
+        ['Jean-Luc', 'E eu moro no lago PORQUE tem tennis de table. Não é a mesma coisa.'],
         [R, 'Justo.'],
-        ['Jean-Luc', 'Cinco vitórias é sério. Meu avô jogava em Paris — ele ganhou três.'],
-        ['Jean-Luc', 'Vocês são melhores que o meu avô. Isso me deixa muito feliz e um pouco triste.'],
+        ['Jean-Luc', 'Cinco vitórias é sério. Mon grand-père jogava em Paris. Ganhou três.'],
+        ['Jean-Luc', 'Vocês são melhores que o meu avô. Isso me deixa très heureux e um pouco triste.'],
         [A, 'Sinto muito pelo seu avô.'],
-        ['Jean-Luc', 'Ele está bem. Ele só perde.'],
+        ['Jean-Luc', 'Il va bien. Ele está bem. Ele só perde.'],
       ]);
 
       jeanLuc.comemorar(3.2);
       api.som('pato');
       await conversa([
-        ['Jean-Luc', 'Agora. Vocês. Eu. Uma partida. Por favor.'],
+        ['Jean-Luc', 'Alors. Vocês. Eu. Uma partida. S\'il vous plaît.'],
         [R, 'Agora?'],
-        ['Jean-Luc', 'Não! Agora eu estou encharcado, é ridículo. Eu preciso secar e alongar.'],
-        ['Jean-Luc', 'Mas eu fico aqui. Na beira. Esperando. Sempre.'],
+        ['Jean-Luc', 'Non! Agora eu estou encharcado, é ridículo. Preciso secar e alongar.'],
+        ['Jean-Luc', 'Mas eu fico aqui. Na beira. À espera. Toujours.'],
         [A, 'A gente volta, Jean-Luc.'],
-        ['Jean-Luc', 'Eu sei. Todo mundo volta pro ping pong.'],
+        ['Jean-Luc', 'Je sais. Todo mundo volta pro tennis de table.'],
       ]);
 
       api.setFlag('jean-luc-conhecido');
@@ -3093,7 +3111,7 @@ export const villaLobos: SceneDef = {
         title: 'O pato do lago',
         place: 'Parque Villa Lobos',
         note: 'Cinco vitórias e um pato francês subiu do fundo do lago de boina e raquete. '
-          + 'O avô dele jogava em Paris. Ganhou três.',
+          + 'Jean-Luc, enchanté. O avô dele jogava em Paris — ganhou três.',
         icon: '🦆',
       });
     };
