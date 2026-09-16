@@ -25,7 +25,7 @@ const erros = [];
 page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
 
 // bem ao lado da mesa de ping pong
-await page.goto(`${BASE}/?cena=villa-lobos&em=-15.5,23&olhar=3.14`, { waitUntil: 'networkidle' });
+await page.goto(`${BASE}/?cena=villa-lobos&em=-14.5,26&olhar=3.14`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(3000);
 await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));
 

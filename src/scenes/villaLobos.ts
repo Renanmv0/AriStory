@@ -13,7 +13,8 @@ import {
   fence, floodlight, flowers, iceCream, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
   mesaPingPong, nenufar, picnicTable, posteDeGelo, raquete, skateShop,
   rock, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
-  bolinhaPingPong,
+  bolinhaPingPong, bordaDeTablado, cestoDeBolinhas, placarDePingPong, suporteDeRaquetes,
+  vasoDePlanta,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
@@ -94,10 +95,40 @@ export const villaLobos: SceneDef = {
 
     // A quadra de frisbee: fora dela o disco nem aparece na mão.
     const QUADRA = { x: 18, z: -4.5, largura: 26, profundidade: 19 };
+    /* ================================================ A ARENA DE PING PONG
+     *
+     * A mesa estava SOLTA no gramado, meio de lado, a 11 do lago — parecia
+     * largada ali, e nao montada. Agora ela e o centro de uma arena: um
+     * tablado de madeira rente a grama, com banco, placar, suporte de
+     * raquetes e o balde de bolinhas em volta.
+     *
+     * TRES DECISOES DE POSICAO, e nenhuma delas e gosto:
+     *
+     * 1. **O TAMPO FICOU PARALELO A GRADE DE BAIXO.** A grade do portao corre
+     *    ao longo do X em `z = 28`, e a mesa entra com `giro = 0` — que e
+     *    exatamente a direcao dela. Torta, a mesa lia como movel caido; e a
+     *    mesma licao que a loja de patins e o quiosque do Mano ja tinham dado.
+     * 2. **ELA SE AFASTOU DO LAGO**: de 11 para 14,8 do centro d'agua. O
+     *    tablado inteiro fica fora da faixa de 11,4 onde mora a margem
+     *    sorteada (junco, pedra, capim) — ver o filtro em `NA_ARENA`.
+     * 3. **NADA ALTO NO LADO +Z.** A camera olha em 34° e esconde `1,5 · h`
+     *    de chao na diagonal `(+X, +Z)` de cada peca. Tudo que passa de meio
+     *    metro (banco, placar, suporte, postes) mora no lado -Z, ATRAS da
+     *    mesa; na frente dela so ficam o balde e as bolinhas caidas.
+     *
+     * O tablado tem 10,4 × 6: da os 2,07 de cada lado onde a dupla fica de pe
+     * para jogar (`MESA_PING.plano + 0,55`) e ainda sobra a faixa de tras para
+     * o banco. E ele NAO E UM ESTRADO LEVANTADO — o piso e decalque rente a
+     * grama, e so a moldura (`bordaDeTablado`, 11 cm) tem volume. O jogo nao
+     * tem altura de caminhada: um deque de verdade poria a dupla andando no ar.
+     */
+    const ARENA = { x: -14.5, z: 24.2, largura: 10.4, profundidade: 6 };
+    /** o retangulo do tablado, para o sorteio da margem do lago desviar dele */
+    const NA_ARENA = (x: number, z: number, folga = 0.6): boolean =>
+      Math.abs(x - ARENA.x) < ARENA.largura / 2 + folga &&
+      Math.abs(z - ARENA.z) < ARENA.profundidade / 2 + folga;
     /** onde a mesa de ping pong mora, e para que lado o tampo aponta */
-    // longe da areia do lago (raio 9,2 a partir de -21,11) e sem esbarrar na
-    // mesa de piquenique
-    const PING = { x: -15.5, z: 20.5, giro: 0.35 };
+    const PING = { x: ARENA.x, z: 24.4, giro: 0 };
     const naQuadra = (x: number, z: number, margem = 0): boolean =>
       Math.abs(x - QUADRA.x) < QUADRA.largura / 2 - margem &&
       Math.abs(z - QUADRA.z) < QUADRA.profundidade / 2 - margem;
@@ -379,6 +410,10 @@ export const villaLobos: SceneDef = {
       const d = w.range(9.1, 11.4);
       const x = NO_LAGO.x + Math.cos(a) * d;
       const z = NO_LAGO.z + Math.sin(a) * d;
+      // a faixa da margem chega a 11,4 do centro d'agua, e a quina -X/-Z do
+      // tablado esta a 10,3: sem este desvio o sorteio planta junco em cima da
+      // madeira da arena de ping pong
+      if (NA_ARENA(x, z, 1)) continue;
       const sorte = i % 4;
       if (sorte === 0) w.add(w.place(bush(w.range(0.6, 1), P.leafDark), x, 0, z));
       else if (sorte === 1) w.add(w.place(capim(w.range(0.9, 1.5)), x, 0, z, w.range(0, 6.28)));
@@ -506,8 +541,18 @@ export const villaLobos: SceneDef = {
       w.blockCircle(x, z, 0.35);
     }
 
-    const mesa = w.add(w.place(picnicTable(), -10, 0, 20, 0.3));
-    w.blockBox(-10, 20, 1, 0.9, 0.3);
+    /**
+     * A MESA DE PIQUENIQUE RECUOU de `(-10; 20)` para `(-8,6; 18,4)`.
+     *
+     * Dois motivos, e os dois vieram da foto: ela encostava na quina da arena
+     * de ping pong nova (o tablado comeca em `x = -9,3`), e estava enterrada
+     * numa moita de arvores sorteadas — o espalhador la embaixo agora tem um
+     * circulo proibido em volta dela (ver `proibido`). Daqui ela e o canto de
+     * comer do lado da arena, com grama entre as duas.
+     */
+    const PIQUENIQUE = { x: -8.6, z: 18.4 };
+    const mesa = w.add(w.place(picnicTable(), PIQUENIQUE.x, 0, PIQUENIQUE.z, 0.3));
+    w.blockBox(PIQUENIQUE.x, PIQUENIQUE.z, 1, 0.9, 0.3);
 
     // ------------------------------------------------ mesa de ping pong
     // O tampo fica ao longo do X local: é nessa direção que a bolinha viaja, e
@@ -526,10 +571,124 @@ export const villaLobos: SceneDef = {
     bolinha.position.set(0.36, 0.845, 0.42);
     mesaPing.add(bolinha);
 
+    /* ---------------------------------------------- o tablado da arena
+     *
+     * O PISO É DECALQUE, montado de baixo para cima como todo chão do jogo:
+     * a tábua corrida primeiro, as ripas por cima, e a risca de contorno por
+     * último. Decalque não briga com decalque — quem é criado depois fica em
+     * cima, e nenhuma dessas camadas precisa de folga de altura.
+     *
+     * As ripas correm ao longo do X, a MESMA direção do tampo da mesa: assoalho
+     * atravessado deixaria o retângulo lendo como tapete, e não como estrado.
+     */
+    const ax0 = ARENA.x - ARENA.largura / 2;
+    const ax1 = ARENA.x + ARENA.largura / 2;
+    const az0 = ARENA.z - ARENA.profundidade / 2;
+    const az1 = ARENA.z + ARENA.profundidade / 2;
+    w.patch(ARENA.x, ARENA.z, ARENA.largura, ARENA.profundidade, P.dequeTabua, 0, 0.03);
+    /*
+     * A FRESTA ENTRE AS TÁBUAS É ESCURA, e não clara. Na primeira tentativa a
+     * ripa era `dequeRipa` (só um tom abaixo da tábua) e tinha 8 cm: na foto o
+     * tablado saiu liso, sem assoalho nenhum. Deque de verdade lê pela SOMBRA
+     * da junta, então o risco virou `dequeViga` com 11 cm — o mesmo salto de
+     * contraste que a calçada de pedrinha precisou para parar de virar cinza.
+     */
+    for (let i = 0; i < 13; i++) {
+      const z = az0 + 0.42 + i * 0.44;
+      w.patch(ARENA.x, z, ARENA.largura - 0.5, 0.11, P.dequeViga, 0, 0.034);
+    }
+    // duas juntas no sentido do comprimento: tábua de 5,2 não existe, e é essa
+    // emenda que dá a escala da madeira
+    for (const x of [ARENA.x - 2.6, ARENA.x + 2.6]) {
+      w.patch(x, ARENA.z, 0.07, ARENA.profundidade - 0.5, P.dequeViga, 0, 0.038);
+    }
+    /*
+     * A CINTA DE ACABAMENTO, por último e por cima de tudo.
+     *
+     * A moldura de madeira tem 14 cm e, vista de cima em 34°, é uma tira fina
+     * demais para desenhar o contorno do tablado — na primeira foto o deque
+     * simplesmente acabava na grama. Esta cinta é a tábua de remate que todo
+     * deque tem na borda, e é ela que fecha o retângulo na vista do jogo.
+     */
+    for (const z of [az0 + 0.16, az1 - 0.16]) {
+      w.patch(ARENA.x, z, ARENA.largura - 0.32, 0.32, P.dequeViga, 0, 0.042);
+    }
+    for (const x of [ax0 + 0.16, ax1 - 0.16]) {
+      w.patch(x, ARENA.z, 0.32, ARENA.profundidade - 0.32, P.dequeViga, 0, 0.042);
+    }
+
+    // a moldura, a única parte com volume: 11 cm, o bastante para ler como
+    // estrado e baixo o bastante para ninguém reparar que atravessa
+    w.add(w.place(bordaDeTablado(ARENA.largura), ARENA.x, 0, az0));
+    w.add(w.place(bordaDeTablado(ARENA.largura), ARENA.x, 0, az1));
+    w.add(w.place(bordaDeTablado(ARENA.profundidade), ax0, 0, ARENA.z, Math.PI / 2));
+    w.add(w.place(bordaDeTablado(ARENA.profundidade), ax1, 0, ARENA.z, Math.PI / 2));
+
+    // ------------------------------------------------ mesa de ping pong
+    // O tampo fica ao longo do X local: é nessa direção que a bolinha viaja, e
+    // é por isso que a mesa entra girada mas tudo dentro dela usa coordenada
+    // local — a física do minigame não precisa saber o giro da mesa.
     w.add(w.place(mesaPing, PING.x, 0, PING.z, PING.giro));
     w.blockBox(PING.x, PING.z, 1.45, 0.85, PING.giro);
     // as raquetes e a bolinha de enfeite somem quando a partida começa
     const enfeitesPing = [raqueteA, raqueteB, bolinha];
+
+    /* ------------------------------------- o que mora em volta da mesa
+     *
+     * TUDO QUE PASSA DE MEIO METRO FICA NO LADO -Z. A câmera olha em 34° e
+     * cada peça esconde `1,5 · h` de chão na diagonal `(+X, +Z)` — o que
+     * estiver na FRENTE da mesa come o tampo dela. Atrás não esconde nada
+     * além da grama que vai até o lago.
+     *
+     * E O CORREDOR DE `z = 24,4` ENTRE `x = -18,2` E A MESA FICA VAZIO: é por
+     * ali que passa a câmera de ombro da partida (`atras`, a 1,6 do lugar de
+     * quem saca). Qualquer coisa plantada ali entraria na frente do jogo.
+     */
+    /** o banco, de frente para a mesa: quem espera a vez senta aqui */
+    const BANCO_PING = { x: ARENA.x, z: 21.9 };
+    w.banco(BANCO_PING.x, BANCO_PING.z, 0);
+
+    const PLACAR_PING = { x: -18.3, z: 22.2 };
+    const placarPing = w.add(w.place(placarDePingPong(), PLACAR_PING.x, 0, PLACAR_PING.z, 0.22));
+    w.blockCircle(PLACAR_PING.x, PLACAR_PING.z, 0.6);
+
+    const SUPORTE_PING = { x: -10.9, z: 22.3 };
+    const suportePing = w.add(w.place(suporteDeRaquetes(), SUPORTE_PING.x, 0, SUPORTE_PING.z, -0.2));
+    w.blockCircle(SUPORTE_PING.x, SUPORTE_PING.z, 0.55);
+
+    // o balde é a ÚNICA peça do lado da câmera, e por isso ele é o mais baixo
+    // da arena: 42 cm escondem 63 cm de chão, e a mesa começa 1,6 atrás
+    const CESTO_PING = { x: -11.7, z: 26.2 };
+    const cestoPing = w.add(w.place(cestoDeBolinhas(), CESTO_PING.x, 0, CESTO_PING.z, 0.6));
+    w.blockCircle(CESTO_PING.x, CESTO_PING.z, 0.32);
+    // as que escaparam do balde, paradas na madeira
+    for (const [x, z] of [[-12.6, 26.5], [-10.8, 26.8], [-13.4, 26.9]] as const) {
+      const solta = bolinhaPingPong();
+      w.add(w.place(solta, x, 0.055, z));
+    }
+
+    // o bebedouro, na quina da frente pelo lado -X: sede de quem joga cinco
+    // pontos. Ele tem 1,9 e esconde 2,85 na diagonal — que daqui cai fora do
+    // tablado, e não em cima da mesa
+    // girado meia volta: a cuba e a bica de `waterFountain()` ficam no `-Z`
+    // local, e sem o giro quem bebe some atrás da coluna de concreto
+    w.add(w.place(waterFountain(), -18.8, 0, 26.4, Math.PI));
+    w.blockCircle(-18.8, 26.4, 0.5);
+
+    // os dois postes da arena, nas quinas de trás — a mesma luminária da
+    // alameda do parque, para a arena não virar uma ilha de outro cenário
+    for (const [x, z] of [[ax0 + 0.4, az0 + 0.4], [ax1 - 0.4, az0 + 0.4]] as const) {
+      w.add(w.place(lamp(false), x, 0, z));
+      w.blockCircle(x, z, 0.35);
+    }
+    // os vasos: dois ladeando o banco e um na quina livre da frente. Baixos
+    // (34 cm), então não tapam nada de onde estiverem
+    for (const [x, z, tipo] of [
+      [-16.1, 21.7, 'samambaia'], [-12.9, 21.7, 'lavanda'], [-10.1, 26.6, 'suculenta'],
+    ] as const) {
+      w.add(w.place(vasoDePlanta(tipo, 0.34, 0.3), x, 0, z));
+      w.blockCircle(x, z, 0.3);
+    }
 
     /* ================================================= A PRAÇA DE GELO
      *
@@ -1466,7 +1625,24 @@ export const villaLobos: SceneDef = {
        * meia-diagonal do piso é 8,7, e árvore plantada em cima do rinque seria
        * árvore nascendo dentro do gelo.
        */
-      [PRACA.x, PRACA.z, 10], [-10, 20, 3],
+      [PRACA.x, PRACA.z, 10],
+      /**
+       * A ARENA DE PING PONG E A MESA DE PIQUENIQUE, com folga de verdade.
+       *
+       * O raio antigo da mesa de piquenique era 3, e 3 não chega: a copa de uma
+       * árvore de escala 1,5 tem quase 2 de raio e a câmera esconde 1,5 × h de
+       * chão atrás de cada uma. Sobrava uma moita plantada bem na diagonal
+       * `(+X, +Z)` da mesa — o único lugar de onde ela realmente some — e da
+       * foto do Renan não dava para ver que ali tinha mesa.
+       *
+       * A arena leva 9,2, e não os 7,8 da primeira tentativa: com 7,8 nascia
+       * uma árvore no vão entre o tablado e a mesa de piquenique, e da foto
+       * ela escondia o suporte de raquetes E a dupla inteira. A meia-diagonal
+       * do tablado é 6; o resto é a copa (quase 2 de raio numa escala 1,5) mais
+       * a folga da sombra da câmera. A clareira é o ponto: área de esporte no
+       * meio do mato não se acha.
+       */
+      [ARENA.x, ARENA.z, 9.2], [PIQUENIQUE.x, PIQUENIQUE.z, 5],
       // a pista e a loja entram na lista pelo mesmo motivo da praça da roda:
       // sem isto o espalhador planta árvore em cima do asfalto
       [-21, -5, 12], [-8.6, 2.5, 9],
@@ -2527,6 +2703,11 @@ export const villaLobos: SceneDef = {
     const jogarPing = w.interact({
       id: 'parque:pingpong',
       x: PING.x, z: PING.z, radius: 2.6,
+      // A MESA GANHA DE TUDO O QUE MORA NA ARENA. O banco tem 1,9 de raio e
+      // fica a 2,5 da mesa: os dois círculos se cruzam, e colado na mesa o
+      // prompt tem que ser "jogar". As peças em volta entram com `-1` pelo
+      // mesmo motivo, do outro lado da conta.
+      priority: 1,
       label: 'Jogar ping pong', icon: '🏓',
       highlight: mesaPing,
       onInteract: async (api) => {
@@ -2570,6 +2751,114 @@ export const villaLobos: SceneDef = {
       },
     });
 
+    /* ==================================================================
+     *          AS PEÇAS DA ARENA, uma interação para cada uma
+     *
+     * Nenhuma delas encosta na mesa: a partida continua sendo exatamente o
+     * que era. Elas têm `priority: -1` e raio 1,7 porque o círculo de 2,6 da
+     * mesa passa por cima das três — de perto da mesa o prompt tem que ser
+     * "jogar", e não "olhar o placar".
+     * ================================================================== */
+
+    /**
+     * O PLACAR CONTA O QUE JÁ ACONTECEU. Os dois números saem de `stat`, e
+     * quem escreve neles é o fim de partida lá embaixo — por isso ele é um
+     * placar de verdade e não um enfeite com número pintado.
+     *
+     * "Vitórias" é de quem estava no comando: o jogador troca de corpo com o
+     * `T`, então o par certo de nomes é o de AGORA, e não um nome cravado.
+     */
+    w.interact({
+      id: 'parque:ping-placar',
+      x: PLACAR_PING.x, z: PLACAR_PING.z, radius: 1.7, priority: -1,
+      label: 'Ver o placar', icon: '🔢',
+      highlight: placarPing,
+      onInteract: async (api) => {
+        const partidas = api.stat('pingpong.partidas');
+        if (partidas === 0) {
+          await conversa([
+            [A, 'O placar tá zerado.'],
+            [R, 'Então ninguém perdeu ainda pra ninguém.'],
+            [A, 'Aproveita, que é o único momento em que a gente empata.'],
+          ]);
+          return;
+        }
+        const ganhas = api.stat('pingpong.vitorias');
+        api.som('confirma');
+        api.toast(`${partidas} partida${partidas > 1 ? 's' : ''} · ${ganhas} com chapéu`, '🏓');
+        await conversa([
+          [R, `Já foram ${partidas}.`],
+          [A, ganhas > partidas - ganhas ? 'E o chapéu mora comigo.' : 'Um dia esse chapéu é meu.'],
+        ]);
+      },
+    });
+
+    /**
+     * O SUPORTE TROCA A RAQUETE DA MESA DE COR, e essa é a única coisa que ele
+     * faz — a raquete do MINIGAME não muda, porque mexer nela seria mexer na
+     * partida, e a partida tem que continuar idêntica.
+     *
+     * A troca é reconstruir a peça no mesmo lugar: `raquete()` pinta no
+     * construtor, e material vem cacheado de `toon()`. O `enfeitesPing` guarda
+     * a raquete pelo ÍNDICE 0, então trocar o objeto exige trocar a entrada da
+     * lista junto — senão a partida esconderia a raquete velha, que já não
+     * está mais na mesa, e deixaria a nova acesa em cima do jogo.
+     */
+    const CORES_DE_RAQUETE = [
+      { nome: 'A vermelha', cor: P.metalRed, flag: 'ping-raquete-vermelha' },
+      { nome: 'A verde', cor: P.pingVerde, flag: 'ping-raquete-verde' },
+      { nome: 'A azul', cor: P.fabricBlue, flag: 'ping-raquete-azul' },
+    ] as const;
+    const trocarRaqueteDaMesa = (cor: number): void => {
+      const velha = enfeitesPing[0];
+      const nova = raquete(cor);
+      nova.position.copy(velha.position);
+      nova.rotation.copy(velha.rotation);
+      mesaPing.remove(velha);
+      mesaPing.add(nova);
+      enfeitesPing[0] = nova;
+    };
+    // a escolha sobrevive a sair e voltar do parque: a cena se remonta inteira
+    // a cada entrada, e sem isto a raquete voltaria vermelha toda vez
+    for (const opcao of CORES_DE_RAQUETE) {
+      if (g.flag(opcao.flag)) trocarRaqueteDaMesa(opcao.cor);
+    }
+
+    w.interact({
+      id: 'parque:ping-raquetes',
+      x: SUPORTE_PING.x, z: SUPORTE_PING.z, radius: 1.7, priority: -1,
+      label: 'Escolher uma raquete', icon: '🏓',
+      highlight: suportePing,
+      onInteract: async (api) => {
+        await conversa([[R, 'Escolhe a sua. A minha é a que sobrar.']]);
+        const escolha = await api.ask('Qual raquete?', CORES_DE_RAQUETE.map((c) => c.nome));
+        const opcao = CORES_DE_RAQUETE[escolha];
+        if (!opcao) return;
+        for (const c of CORES_DE_RAQUETE) api.setFlag(c.flag, c.flag === opcao.flag);
+        trocarRaqueteDaMesa(opcao.cor);
+        api.som('escolha');
+        api.toast(`${opcao.nome} é sua`, '🏓');
+        await conversa([[A, 'Essa aqui tem sorte. Dá pra sentir.']]);
+      },
+    });
+
+    /** O balde: a piada é onde as bolinhas vão parar. */
+    w.interact({
+      id: 'parque:ping-bolinhas',
+      x: CESTO_PING.x, z: CESTO_PING.z, radius: 1.7, priority: -1,
+      label: 'Mexer no balde de bolinhas', icon: '🪣',
+      highlight: cestoPing,
+      onInteract: async (api) => {
+        api.som('pegar');
+        await conversa([
+          [A, 'Quantas bolinhas cabem aqui?'],
+          [R, 'Menos do que já foram pro lago.'],
+          [A, 'Os patos estão montando a própria mesa.'],
+        ]);
+        api.toast('Uma bolinha, bem levinha', '🏓');
+      },
+    });
+
     partida.onPonto = (meu) => {
       g.som(meu ? 'confirma' : 'quicar');
     };
@@ -2577,6 +2866,9 @@ export const villaLobos: SceneDef = {
     partida.onFim = (ganhei) => {
       void (async () => {
         encerrarPing();
+        // o placarzinho da arena lê estes dois: sem eles ele seria enfeite
+        g.bump('pingpong.partidas');
+        if (ganhei) g.bump('pingpong.vitorias');
         if (ganhei) {
           g.som('memoria');
           g.toast('Campeão de ping pong!', '🏆');
@@ -2975,7 +3267,12 @@ export const villaLobos: SceneDef = {
 
     w.interact({
       id: 'parque:piquenique',
-      x: -10, z: 21.6, radius: 2.2,
+      // O PONTO ANDA COM A MESA. Ele estava cravado em `(-10; 21,6)` — 1,6 à
+      // frente de onde a mesa morava — e quando ela recuou para dar lugar à
+      // arena o prompt ficou para trás, sozinho na beira do tablado: de perto
+      // do suporte de raquetes o jogo oferecia "arrumar o piquenique" e da
+      // mesa de verdade não oferecia nada.
+      x: PIQUENIQUE.x, z: PIQUENIQUE.z + 1.6, radius: 2.2,
       label: 'Arrumar o piquenique', icon: '🧺',
       highlight: mesa,
       onInteract: async (api) => {

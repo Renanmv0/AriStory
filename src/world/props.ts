@@ -12,6 +12,10 @@ export type TreeKind = 'redonda' | 'pinheiro' | 'palmeira' | 'florida';
 
 export function tree(kind: TreeKind = 'redonda', scale = 1, seed = 0.5): THREE.Group {
   const g = new THREE.Group();
+  // a etiqueta e o que deixa um teste CONTAR arvore sem adivinhar pela
+  // geometria: sem ela, "cilindro mais esfera" tambem casa com poste e com a
+  // propria mesa de ping pong (ver `scripts/arena.mjs`)
+  g.userData.peca = 'arvore';
   const trunkH = 2.1 * scale;
 
   const trunk = new THREE.Mesh(
@@ -1335,6 +1339,193 @@ export function mesaPingPong(cor: number = P.mesaVerde): THREE.Group {
     travessa.position.set(x, alturaTampo * 0.35, 0);
     g.add(travessa);
   }
+
+  return g;
+}
+
+/* ------------------------------------------------------------------------ *
+ *              A ARENA DE PING PONG — o tablado e o que mora nele
+ * ------------------------------------------------------------------------ */
+
+/**
+ * A borda de um tablado de madeira: a viga baixa e o rodape mais claro em cima.
+ *
+ * Corre ao longo do X, como `fence()` — a cena gira meia volta de radio para
+ * fechar os outros dois lados.
+ *
+ * ELA TEM 11 CM DE ALTURA, E ISSO E DE PROPOSITO. O jogo nao tem altura de
+ * caminhada: um estrado de verdade deixaria a dupla andando no ar em cima
+ * dele (e a mesma licao que o deque do clube ja tinha dado). Entao o PISO do
+ * tablado continua sendo decalque, rente a grama, e so a MOLDURA tem volume —
+ * o bastante para o retangulo ler como estrado de longe, e baixo o bastante
+ * para ninguem reparar que atravessa.
+ */
+export function bordaDeTablado(comprimento = 4, cor: number = P.dequeViga): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'borda-de-tablado';
+
+  const viga = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 0.1, 0.24), toon(cor));
+  viga.position.y = 0.05;
+  g.add(viga);
+
+  // o rodape passa POR CIMA da viga (topo em 0,14 contra 0,1) e e mais largo
+  // nos dois eixos: no mesmo topo e na mesma largura as duas serrilhavam
+  const rodape = new THREE.Mesh(new THREE.BoxGeometry(comprimento - 0.06, 0.05, 0.29), toon(P.dequeRipa));
+  rodape.position.y = 0.115;
+  g.add(rodape);
+
+  // os parafusos, de 1,2 em 1,2: e o que faz a viga ler como tabua pregada em
+  // vez de barra de plastico
+  const quantos = Math.max(2, Math.round(comprimento / 1.2));
+  for (let i = 0; i < quantos; i++) {
+    const x = -comprimento / 2 + (comprimento / (quantos - 1 || 1)) * i;
+    const parafuso = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.03, 6), toon(P.metalGrey));
+    parafuso.position.set(Math.max(-comprimento / 2 + 0.12, Math.min(comprimento / 2 - 0.12, x)), 0.145, 0);
+    g.add(parafuso);
+  }
+  return g;
+}
+
+/**
+ * O placarzinho da arena: dois numeros de virar num painel de madeira.
+ *
+ * NAO E o `scoreboard()` da quadra de frisbee — aquele tem 2,6 de altura e e
+ * placar de campo, com pe de poste. Este e de mesa: 1,8 no total, do tamanho
+ * de uma tabuleta de clube de bairro, para caber ao lado da mesa sem virar
+ * prédio.
+ */
+export function placarDePingPong(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'placar-de-ping-pong';
+
+  for (const x of [-0.5, 0.5]) {
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.09, 1.05, 0.09), toon(P.woodDark));
+    pe.position.set(x, 0.525, 0);
+    g.add(pe);
+  }
+
+  // a moldura entra ATRAS do painel, e maior nos dois lados: peca que decora
+  // sobrepoe de leve em vez de encostar
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.9, 0.05), toon(P.woodDark));
+  moldura.position.set(0, 1.4, -0.045);
+  g.add(moldura);
+  const painel = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.78, 0.1), toon(P.wood));
+  painel.position.y = 1.4;
+  g.add(painel);
+
+  // a faixa de titulo, com o texto desenhado em canvas (zero asset)
+  const faixa = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.22, 0.04), toon(P.mesaVerde));
+  faixa.position.set(0, 1.66, 0.04);
+  g.add(faixa);
+  const titulo = letreiro('PLACAR', 0.76, 0.17, '#f4f7f5');
+  titulo.position.set(0, 1.66, 0.068);
+  g.add(titulo);
+
+  // as duas cartelas de numero, cada uma com o vinco de virar no meio
+  for (const x of [-0.31, 0.31]) {
+    const cartela = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.42, 0.04), toon(P.pingCartela));
+    cartela.position.set(x, 1.28, 0.055);
+    g.add(cartela);
+    const vinco = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.015, 0.012), toon(P.metalGrey));
+    vinco.position.set(x, 1.28, 0.082);
+    g.add(vinco);
+  }
+
+  // a raquete de enfeite espetada no topo, que e o que diz de que esporte e
+  // este placar sem precisar escrever
+  // ela monta NA FRENTE do painel (z 0,09 contra a face em 0,05) e desce ate
+  // encostar no topo (1,79): solta acima da tabua, so o disco vermelho
+  // aparecia e a peca lia como pirulito espetado
+  const emblema = raquete(P.metalRed);
+  emblema.scale.setScalar(0.78);
+  // e ela mora na QUINA, e nao no meio: centrada, o cabo descia por cima da
+  // palavra "PLACAR" e comia o C
+  emblema.position.set(0.46, 1.95, 0.09);
+  emblema.rotation.z = 0.5;
+  g.add(emblema);
+
+  return g;
+}
+
+/**
+ * O balde de bolinhas, com as bolas empilhadas ate a boca.
+ *
+ * Fica com 42 cm de altura no total: e a peca mais baixa da arena de
+ * proposito, porque ela mora do lado da CAMERA e qualquer coisa alta ali
+ * taparia o tampo da mesa (a camera olha em 34° — `h / tan(34°)` de chao some
+ * atras de tudo).
+ */
+export function cestoDeBolinhas(cor: number = P.pingBalde): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cesto-de-bolinhas';
+
+  const balde = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.34, 12), toon(cor));
+  balde.position.y = 0.17;
+  g.add(balde);
+  // o aro da boca: mais largo que o balde, entao nenhuma face bate com a dele
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.265, 0.03, 6, 14), toon(P.metalWhite));
+  aro.position.y = 0.335;
+  aro.rotation.x = Math.PI / 2;
+  g.add(aro);
+  // a alca, uma meia-lua de arame de um lado ao outro
+  const alca = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.018, 5, 12, Math.PI), toon(P.metalGrey));
+  alca.position.y = 0.34;
+  alca.rotation.y = Math.PI / 2;
+  g.add(alca);
+
+  // as bolinhas, em duas camadas: a de baixo cheia, a de cima transbordando
+  const bolas: Array<[number, number, number]> = [
+    [0, 0.33, 0], [0.12, 0.33, 0.06], [-0.11, 0.33, 0.08], [0.05, 0.33, -0.13],
+    [-0.09, 0.33, -0.1], [0.06, 0.42, 0.02], [-0.06, 0.42, -0.04], [0.01, 0.49, 0.05],
+  ];
+  for (const [x, y, z] of bolas) {
+    const bola = bolinhaPingPong();
+    bola.position.set(x, y, z);
+    g.add(bola);
+  }
+  return g;
+}
+
+/**
+ * O suporte de raquetes: tres penduradas pelo cabo numa travessa de madeira.
+ *
+ * `raquete()` nasce com a face em `+Z` e o CABO PARA BAIXO. Pendurar e girar
+ * meia volta em Z — o cabo sobe e engancha na travessa, e a face continua
+ * encarando quem olha. Girar em X (o erro obvio) poria a raquete de perfil e
+ * ela sumiria.
+ */
+export function suporteDeRaquetes(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'suporte-de-raquetes';
+
+  for (const x of [-0.46, 0.46]) {
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.12, 0.08), toon(P.woodDark));
+    pe.position.set(x, 0.56, 0);
+    g.add(pe);
+  }
+  const travessa = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.11, 0.09), toon(P.wood));
+  travessa.position.y = 1.06;
+  g.add(travessa);
+  // a prateleira de baixo, onde ficam as bolinhas de reserva
+  const prateleira = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.06, 0.24), toon(P.wood));
+  prateleira.position.set(0, 0.34, 0.02);
+  g.add(prateleira);
+  for (const x of [-0.26, 0, 0.3]) {
+    const bola = bolinhaPingPong();
+    bola.position.set(x, 0.425, 0.02);
+    g.add(bola);
+  }
+
+  // as tres penduradas. A do meio fica um pouco mais baixa: fileira de topo
+  // reto le como decalque, e de longe e o desalinho que diz que alguem mexeu
+  const cores = [P.metalRed, P.pingVerde, P.fabricBlue];
+  cores.forEach((cor, i) => {
+    const r = raquete(cor);
+    r.scale.setScalar(0.86);
+    r.rotation.z = Math.PI;
+    r.position.set(-0.34 + i * 0.34, i === 1 ? 0.78 : 0.82, 0.09);
+    g.add(r);
+  });
 
   return g;
 }
