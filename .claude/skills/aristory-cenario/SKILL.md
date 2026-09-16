@@ -5,9 +5,15 @@ description: Criar ou editar um cenário do AriStory (casa, parque, praia, resta
 
 # Criar um cenário no AriStory
 
-Um cenário é **um arquivo só**: `src/scenes/<nome>.ts`, exportando um `SceneDef`.
-Nunca mexa no renderer, na câmera, nas luzes ou no loop — a cena só fala com o
+Um cenário começa como **um arquivo só**: `src/scenes/<nome>.ts`, exportando um
+`SceneDef`. Nunca mexa no renderer, na câmera, nas luzes ou no loop — a cena só fala com o
 `WorldBuilder` (`w`) e com o `GameAPI` (`w.game`, ou o `g` que chega em cada interação).
+
+Cenário que passa de ~400 linhas vira **pasta**: `src/scenes/<nome>/index.ts` com
+o `SceneDef` e um arquivo por pedaço do lugar. O Villa Lobos já é assim — veja
+`src/scenes/villaLobos/index.ts`, que tem a tabela de "o que mora onde". Para
+mexer num pedaço, abra só o arquivo dele. O import de quem usa não muda, porque
+`index.ts` é quem exporta a cena.
 
 ## Esqueleto
 
@@ -213,6 +219,24 @@ na mesma altura da face da parede. `w.wall()` usa espessura `0.3`; o batente da
 `interiorDoor` usa `0.24` e a porta vai **centrada na linha da parede**
 (`z = zParede`, não `zParede + algo`). Faces coplanares piscam igual, seja no
 chão ou na vertical.
+
+## A ordem do `build()` é significativa
+
+Não reordene o `build()` "só para organizar". Quatro coisas dependem da ordem:
+
+- **`w.rng()` / `w.range()` / `w.pick()`** puxam de uma semente única e
+  compartilhada. Inserir ou mover **um** sorteio reposiciona todas as árvores,
+  prédios e nuvens sorteados depois dele.
+- **`w.disc()` / `w.patch()`** pegam um `polygonOffset` na ordem em que são
+  criados. É o que impede o chão de piscar; reordenar pode trazer o piscar de volta.
+- **`w.onUpdate()`** roda na ordem de registro. Importa quando dois updaters
+  mexem na mesma coisa — no Villa Lobos, o frisbee e a roda gigante disputam o
+  zoom, e quem registra por último vence.
+- **`w.interact()`**: em empate de distância e prioridade, ganha o registrado
+  primeiro.
+
+Por isso, ao dividir um cenário em pasta, mantenha as chamadas na mesma ordem em
+que estavam no arquivo único — construção primeiro, interações depois.
 
 ## Regras da casa
 
