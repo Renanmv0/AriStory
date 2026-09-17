@@ -1447,6 +1447,122 @@ export function caixote(largura = 0.56, altura = 0.44, cor: number = P.wood): TH
 }
 
 /**
+ * O QUADRO DE INSCRIÇÕES da arena: tábua de madeira em dois pés, com os papéis
+ * dos desafiantes pregados por cima.
+ *
+ * ELE NAO E O `placarDePingPong()`. Aquele conta o que ja aconteceu (dois
+ * numeros de virar); este e o mural de quem quer jogar, e por isso e LARGO em
+ * vez de alto — mural le pela quantidade de papel, e papel precisa de espaco
+ * lado a lado.
+ *
+ * O QUE FAZ UMA TABUA VIRAR MURAL, e sao tres coisas:
+ *
+ * 1. OS PAPEIS SAO TORTOS, cada um no seu angulo. Fileira alinhada le como
+ *    azulejo; e o desalinho que diz que foi gente que pregou;
+ * 2. CADA UM TEM UM PERCEVEJO no alto, e a cor dele varia. Sem o percevejo o
+ *    papel parece pintado na madeira;
+ * 3. AS LINHAS ESCRITAS sao riscos claros no papel — nao da para ler a esta
+ *    distancia, e nao e para dar: o que le de longe e "tem texto ai".
+ *
+ * A tabua tem as RIPAS na horizontal com fresta entre elas, e nao uma placa
+ * lisa: e a mesma licao do assoalho do tablado, onde a fresta escura e o que
+ * faz a madeira ter escala.
+ */
+export function quadroDeInscricoes(largura = 2.1, papeis = 5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'quadro-de-inscricoes';
+  const madeira = toon(P.wood);
+  const escura = toon(P.woodDark);
+  const altura = 1.28;
+  const alto = 1.02; // altura do centro da tábua
+
+  for (const x of [-1, 1] as const) {
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.1, altura, 0.1), escura);
+    pe.position.set(x * (largura / 2 - 0.16), altura / 2, 0);
+    g.add(pe);
+  }
+
+  // a tábua de fundo, e as ripas por cima dela com fresta no meio
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.82, 0.07), escura);
+  fundo.position.y = alto;
+  g.add(fundo);
+  for (let i = 0; i < 4; i++) {
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.05, 0.175, 0.045), madeira);
+    ripa.position.set(0, alto + 0.3 - i * 0.2, 0.045);
+    g.add(ripa);
+  }
+  /*
+   * A moldura é maior que a tábua nos dois eixos E avança mais que ela em `z`.
+   * Nasceu em `0,016`, o que punha a face da frente dela em `0,036` contra os
+   * `0,035` do fundo: um milímetro de diferença, que é menos do que a GPU
+   * consegue desempatar — o `scripts/zfighting.mjs` acusou 1,7 m² de briga.
+   */
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.1, 0.92, 0.04), escura);
+  moldura.position.set(0, alto, 0.024);
+  g.add(moldura);
+
+  // o telhadinho de duas águas, que é o que protege papel de chuva num mural
+  // de parque — e o que dá silhueta ao quadro de longe
+  for (const lado of [-1, 1] as const) {
+    const agua = new THREE.Mesh(new THREE.BoxGeometry(largura * 0.56, 0.035, 0.26), madeira);
+    agua.position.set(lado * largura * 0.26, alto + 0.5, 0.02);
+    agua.rotation.z = lado * -0.42;
+    g.add(agua);
+  }
+
+  // a placa do título, pendurada na trave de cima
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(largura * 0.52, 0.16, 0.03), escura);
+  placa.position.set(0, alto + 0.34, 0.07);
+  g.add(placa);
+  const titulo = letreiro('INSCRIÇÕES', largura * 0.46, 0.1, '#f6ecd6');
+  titulo.position.set(0, alto + 0.34, 0.092);
+  g.add(titulo);
+
+  /**
+   * OS PAPÉIS. A largura de cada um sai da largura do quadro dividida pela
+   * quantidade, com uma margem — assim `papeis` pode mudar sem nenhum outro
+   * número mudar junto.
+   */
+  const passo = (largura - 0.18) / papeis;
+  const larguraDoPapel = passo * 0.86;
+  for (let i = 0; i < papeis; i++) {
+    const x = -largura / 2 + 0.09 + passo * (i + 0.5);
+    const grupo = new THREE.Group();
+    grupo.position.set(x, alto - 0.02, 0.075);
+    // o torto é o ponto: fileira alinhada lê como azulejo
+    grupo.rotation.z = ((i * 37) % 11) / 11 * 0.22 - 0.11;
+    const folha = new THREE.Mesh(
+      new THREE.BoxGeometry(larguraDoPapel, larguraDoPapel * 1.35, 0.012),
+      toon(P.sorveteriaCreme),
+    );
+    grupo.add(folha);
+    // as linhas escritas: riscos claros, ilegíveis de propósito
+    for (let k = 0; k < 4; k++) {
+      const risco = new THREE.Mesh(
+        new THREE.BoxGeometry(larguraDoPapel * (k === 0 ? 0.5 : 0.68), 0.012, 0.004),
+        toon(P.metalGrey),
+      );
+      risco.position.set(
+        larguraDoPapel * (k === 0 ? -0.14 : -0.05),
+        larguraDoPapel * (0.2 - k * 0.17),
+        0.009,
+      );
+      grupo.add(risco);
+    }
+    // o percevejo, e a cor dele muda de papel para papel
+    const cores = [P.metalRed, P.fabricBlue, P.gold, P.leafMid, P.frisbee];
+    const percevejo = new THREE.Mesh(
+      new THREE.SphereGeometry(0.022, 8, 6),
+      toon(cores[i % cores.length]),
+    );
+    percevejo.position.set(0, larguraDoPapel * 0.58, 0.016);
+    grupo.add(percevejo);
+    g.add(grupo);
+  }
+  return g;
+}
+
+/**
  * O placarzinho da arena: dois numeros de virar num painel de madeira.
  *
  * NAO E o `scoreboard()` da quadra de frisbee — aquele tem 2,6 de altura e e

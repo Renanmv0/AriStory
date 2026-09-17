@@ -459,6 +459,16 @@ export interface GameAPI {
    */
   abrirCardapio(casa?: string): Promise<string | null>;
   /**
+   * Abre o quadro de inscricoes da arena de ping pong e resolve com o `id` do
+   * desafiante escolhido (ou `null`, que e sair sem desafiar ninguem).
+   *
+   * Quem esta no quadro sai das FLAGS, e nao de uma lista que a cena passa: a
+   * inscricao de cada um e um `inscreveSe` na ficha dele
+   * (`world/adversariosData.ts`), e o motor le o save. Assim a cena so precisa
+   * dizer "abre" — e o quadro se monta sozinho conforme o jogo anda.
+   */
+  abrirQuadroDeInscricoes(): Promise<string | null>;
+  /**
    * Abre a mesa de xadrez em DOM e resolve quando a PARTIDA acaba (por mate,
    * empate ou desistencia). Trava o movimento enquanto estiver aberta.
    *

@@ -29,6 +29,7 @@ import { MEMORIAS } from '../world/memoriasData';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import { CARDAPIO } from '../world/cardapioData';
+import { INSCRITOS } from '../world/adversariosData';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -363,6 +364,7 @@ export class Game implements GameAPI {
       this.ui.vestiarioOpen ||
       this.ui.memoriasOpen ||
       this.ui.cardapioOpen ||
+      this.ui.quadroOpen ||
       this.ui.lojaOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
@@ -388,6 +390,9 @@ export class Game implements GameAPI {
     // o cardapio tambem trava o movimento, e quem espera por ele e uma cutscene:
     // fechar no Escape e o que impede a dupla de ficar presa sentada na mesa
     if (this.ui.cardapioOpen && this.input.justPressed('Escape')) this.ui.fecharCardapio();
+    // e o quadro de inscricoes, pelo mesmo motivo: quem espera por ele e uma
+    // cutscene, e sem o Escape a dupla fica presa em pe na frente da tabua
+    if (this.ui.quadroOpen && this.input.justPressed('Escape')) this.ui.fecharQuadro();
     // no xadrez o Escape e a desistencia: e a unica saida de quem cansou da
     // partida, e sem ela a dupla fica presa na mesa
     if (this.ui.xadrezOpen && this.input.justPressed('Escape')) this.ui.fecharXadrez();
@@ -1126,6 +1131,15 @@ export class Game implements GameAPI {
    * catalogo para a UI, que tem os canvas. A pintura mora inteira em
    * `world/cardapioData.ts`, do mesmo jeito que a das memorias.
    */
+  abrirQuadroDeInscricoes(): Promise<string | null> {
+    // quem ja se inscreveu sai do save: ficha com `inscreveSe` vazio esta la
+    // desde sempre, e o resto entra quando a flag dele existir
+    const inscritos = new Set(
+      INSCRITOS.filter((d) => !d.inscreveSe || this.save.flag(d.inscreveSe)).map((d) => d.id),
+    );
+    return this.ui.abrirQuadro(INSCRITOS, inscritos, this.parceiro.name);
+  }
+
   abrirCardapio(casa?: string): Promise<string | null> {
     return this.ui.abrirCardapio(CARDAPIO, casa);
   }
