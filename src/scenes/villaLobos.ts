@@ -52,7 +52,9 @@ export const villaLobos: SceneDef = {
   entries: {
     portao: { x: 0, z: 26, facing: Math.PI },
     roda: { x: 0, z: -17, facing: 0 },
-    clube: { x: 33, z: 13, facing: Math.PI * 1.5 },
+    // logo depois do vão, já de frente para o parque: descer do ônibus é ter o
+    // caminho aberto, sem contornar o abrigo
+    clube: { x: 32.4, z: 13, facing: Math.PI * 1.5 },
     // saindo da loja: um passo na calcada, de costas para a vitrine
     'da-lojinha': { x: -33.6, z: -16.5, facing: Math.PI / 2 },
   },
@@ -1930,6 +1932,12 @@ export const villaLobos: SceneDef = {
     // A cerca recuou de `35` para `33,5`: com a calçada alargada, em `35` ela
     // ficava plantada no MEIO dela. Agora é a divisa entre o parque e a
     // calçada, que é onde cerca de parque fica.
+    //
+    // O CORREDOR É O EIXO `z = 13`, e ele é vazio. Do vão da cerca até a porta
+    // do ônibus dá para andar em linha reta, sem contornar nada: o abrigo
+    // estava plantado bem no meio dele e quem descia do ônibus esbarrava na
+    // cobertura em vez de ver o parque. Abrigo, placa e canteiro ficam nas
+    // beiradas; a única coisa no eixo é a porta do ônibus.
     w.add(w.place(fence(11, 1.4), 33.5, 0, 3.5, Math.PI / 2));
     w.add(w.place(fence(11, 1.4), 33.5, 0, 22.5, Math.PI / 2));
     w.blockBox(33.5, 3.5, 0.2, 5.5);
@@ -1940,7 +1948,9 @@ export const villaLobos: SceneDef = {
     // caminho agora para na calçada, e a rua começa depois dela.
     // A calçada alargou de 1,6 para 2,8: o abrigo do ponto tem 2,3 de fundo, e
     // na faixa antiga metade dele nasceria dentro da rua.
-    w.patch(28.8, 13, 9.6, 5, P.asphalt, 0, 0.01, asfalto()); // caminho do parque até o vão
+    // O caminho tem a largura do vão (6, e não 5): assim ele encosta na soleira
+    // sem deixar duas listras de grama sobrando nos cantos do portão.
+    w.patch(28.8, 13, 9.6, 6, P.asphalt, 0, 0.01, asfalto()); // caminho do parque até o vão
     // A rua atravessa o cenário INTEIRO (80 de comprimento, contra os 44 de
     // área jogável): rua que começa e acaba dentro da tela vira pátio. Ela
     // some no horizonte nas duas pontas, como rua de verdade.
@@ -1956,21 +1966,41 @@ export const villaLobos: SceneDef = {
     // a guia: o degrau entre a calçada e o asfalto
     w.add(w.place(meioFio(RUA_COMP), 36.4, 0, 0));
 
-    // O ônibus deita ao longo do Z com `-PI/2`, que leva a porta (o `+Z` da
-    // peça) para o `-X` do mundo — virada para a calçada, que é de onde a
-    // dupla embarca.
-    const onibus = w.add(w.place(bus(P.onibusAzul, 'Clube'), 39.5, 0, 13, -Math.PI / 2));
-    w.blockBox(39.5, 13, 1.4, 4.5);
+    // A SOLEIRA do vão, como a do portão do clube: a pedrinha da calçada entra
+    // pelo vão e encosta no asfalto do caminho, então a passagem lê como
+    // entrada e não como um buraco na cerca.
+    w.patch(33.4, 13, 2.6, 8, P.concrete, 0, 0.026, calcadaDePedrinha());
+
+    /**
+     * O ônibus deita ao longo do Z com `-PI/2`, que leva a porta (o `+Z` da
+     * peça) para o `-X` do mundo — virada para a calçada, que é de onde a
+     * dupla embarca.
+     *
+     * Ele parou em `z = 10,4`, e não no 13 do corredor: a porta fica 2,6 À
+     * FRENTE do centro da peça, então é com o centro aqui que ela cai bem no
+     * eixo. Quem sai do vão anda reto e entra; quem desce sai olhando o parque.
+     */
+    const onibus = w.add(w.place(bus(P.onibusAzul, 'Clube'), 39.5, 0, 10.4, -Math.PI / 2));
+    w.blockBox(39.5, 10.4, 1.4, 4.5);
 
     // O abrigo abre para o `+Z` da peça; `+PI/2` põe essa boca virada para a
     // rua. O colisor pega só o fundo e o banco — a frente é vazada, e quem
     // espera precisa poder entrar embaixo do teto.
-    const parada = w.add(w.place(busStop(), 35, 0, 13, Math.PI / 2));
-    w.blockBox(34.3, 13, 0.4, 2.4);
-    w.blockCircle(35.5, 15.65, 0.25); // o totem da parada
+    // Ele subiu a rua até `z = 19`: em 13 ficava atravessado no corredor, e
+    // descer do ônibus era esbarrar na cobertura. Aqui ele encosta no trecho
+    // norte da cerca, continua na calçada e o caminho passa limpo na frente.
+    const parada = w.add(w.place(busStop(), 35, 0, 19, Math.PI / 2));
+    w.blockBox(34.3, 19, 0.4, 2.4);
+    w.blockCircle(35.5, 21.65, 0.25); // o totem da parada
 
-    const placaClube = w.add(w.place(textSign('Clube!', 0x4ec1a8), 34.4, 0, 8.6, Math.PI * 0.25));
-    w.blockCircle(34.4, 8.6, 0.3);
+    const placaClube = w.add(w.place(textSign('Clube!', 0x4ec1a8), 34.4, 0, 8.2, Math.PI * 0.25));
+    w.blockCircle(34.4, 8.2, 0.3);
+
+    // os canteiros que emolduram o vão, um de cada lado e fora do corredor
+    for (const z of [8.4, 17.6]) {
+      w.add(w.place(canteiro(1.1, undefined, w.rng()), 32.2, 0, z));
+      w.blockCircle(32.2, z, 0.9);
+    }
 
     w.door({
       x: 37.6, z: 13,
@@ -2763,7 +2793,7 @@ export const villaLobos: SceneDef = {
     // -------------------------------------------- interações do ponto
     w.interact({
       id: 'parque:ponto-onibus',
-      x: 36.4, z: 15.4, radius: 2.2,
+      x: 36.0, z: 19, radius: 2.6,
       label: 'Esperar no ponto', icon: '🚏',
       highlight: parada,
       onInteract: () =>
@@ -2775,7 +2805,7 @@ export const villaLobos: SceneDef = {
 
     w.interact({
       id: 'parque:placa-clube',
-      x: 36.4, z: 7.0, radius: 2.2,
+      x: 35.4, z: 7.4, radius: 2.2,
       label: 'Ler a placa', icon: '🪧',
       highlight: placaClube,
       onInteract: () =>
