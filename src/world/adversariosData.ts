@@ -234,12 +234,25 @@ function retratoDoJeanLuc(ctx: CanvasRenderingContext2D, s: number): void {
   }
 
   elipse(ctx, s * 0.47, s * 0.54, s * 0.215, s * 0.215, C.pena);
-  // o BICO: espátula larga e achatada, com a mandíbula por baixo. É ele que
-  // decide se isto é um pato — cone viraria passarinho genérico
-  elipse(ctx, s * 0.21, s * 0.6, s * 0.155, s * 0.075, C.bicoPatoEscuro, -0.12);
-  elipse(ctx, s * 0.22, s * 0.575, s * 0.16, s * 0.072, C.bicoPato, -0.12);
+  /*
+   * O BICO: espátula larga e achatada, com a mandíbula um degrau menor por
+   * baixo. É ele que decide se isto é um pato — cone viraria passarinho.
+   *
+   * ELE FICA CENTRADO, ABAIXO DOS OLHOS, e não saindo pelo lado da cabeça.
+   * Nasceu em `x = 0,22`, um bico de PERFIL grudado numa cara de frente: o
+   * resto do retrato (dois olhos, duas bochechas, a boina) é 3×4, e o bico
+   * apontava para fora como se a cabeça estivesse virada. Todos os outros
+   * retratos desta lista são de frente; este tinha que ser também.
+   */
+  elipse(ctx, s * 0.475, s * 0.655, s * 0.125, s * 0.055, C.bicoPatoEscuro);
+  elipse(ctx, s * 0.475, s * 0.625, s * 0.135, s * 0.058, C.bicoPato);
+  // as narinas, dois pontinhos no alto da espátula
+  for (const dx of [-0.038, 0.038]) {
+    elipse(ctx, s * (0.475 + dx), s * 0.605, s * 0.011, s * 0.009, C.bicoPatoEscuro);
+  }
   olhos(ctx, s * 0.4, s * 0.55, s * 0.5, s * 0.038);
-  elipse(ctx, s * 0.32, s * 0.63, s * 0.045, s * 0.03, C.bochecha);
+  elipse(ctx, s * 0.315, s * 0.615, s * 0.042, s * 0.028, C.bochecha);
+  elipse(ctx, s * 0.635, s * 0.615, s * 0.042, s * 0.028, C.bochecha);
 
   // a BOINA, tombada para a direita, com o rabinho de pano no alto
   ctx.save();
