@@ -13,7 +13,8 @@ import {
   fence, floodlight, flowers, iceCream, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
   mesaPingPong, nenufar, picnicTable, posteDeGelo, raquete, skateShop,
   rock, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
-  bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong, suporteDeRaquetes,
+  bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong,
+  quadroDeInscricoes, suporteDeRaquetes,
   vasoDePlanta,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
@@ -21,6 +22,9 @@ import { ITENS } from '../world/itens';
 import { asfalto, calcadaDePedrinha, gelo, tapeteDeGrama } from '../world/texturasDeChao';
 import { Mano } from '../entities/bichos/Mano';
 import { JeanLuc } from '../entities/bichos/JeanLuc';
+import type { Bicho } from '../entities/bichos/Bicho';
+import type { SomNome } from '../audio/efeitos';
+import { INSCRITOS } from '../world/adversariosData';
 import { flat } from '../core/materials';
 import { Estella } from '../entities/bichos/Estella';
 
@@ -280,6 +284,18 @@ export const villaLobos: SceneDef = {
      * ele fica no lugar — e a mesma coleira da Gina na portaria. A patrulha
      * dele entra depois, quando o Renan aprovar a conta da caminhada.
      */
+    /**
+     * QUEM ESTÁ NA MESA DE PING PONG AGORA.
+     *
+     * Mora aqui em cima porque três blocos bem distantes precisam dele: o
+     * passeio do Cookie, o do Mano e o da Estella. Cada um desses bichos tem
+     * um `onUpdate` que o empurra de volta para o posto (o Cookie patrulha, os
+     * outros dois viram para a rua quando ninguém está perto) — e sem esta
+     * trava o adversário convidado sairia andando da arena no meio da partida,
+     * puxado pelo próprio passeio.
+     */
+    const naMesaDePing = { quem: null as string | null };
+
     const COOKIE = { x: 13.5, z: -20.6 };
     /**
      * A PATRULHA: um vaivem curto pelo eixo Z, rente a parede lateral da
@@ -321,6 +337,7 @@ export const villaLobos: SceneDef = {
       cookie.update(dt);
       pedirBilhete.moveTo(cookie.x, cookie.z);
       if (cookieConversando) return; // parado, olhando para quem chegou
+      if (naMesaDePing.quem === 'cookie') return; // ele está jogando, na arena
 
       const alvo = cookieVaiPraFrente ? COOKIE_B : COOKIE_A;
       if (Math.hypot(alvo.x - cookie.x, alvo.z - cookie.z) < 0.12) {
@@ -768,6 +785,22 @@ export const villaLobos: SceneDef = {
       jeanLuc.group.visible = false;
       jeanLuc.group.position.set(JEANLUC_LAGO.x, -0.85, JEANLUC_LAGO.z);
     }
+
+    /* =========================================== O QUADRO DE INSCRIÇÕES
+     *
+     * O mural fica FORA do tablado, na grama do lado `-Z`, como todo quadro de
+     * aviso de parque: na entrada da arena, de frente para quem chega. Dentro
+     * dele não cabia — a tábua tem 2,1 de largura e 1,6 de altura, e no
+     * tablado ela brigaria com o banco de um lado e com o suporte de raquetes
+     * do outro, com 10 cm sobrando para cada.
+     *
+     * E ELE É ALTO, então esconde 2,4 de chão na diagonal da câmera — que
+     * daqui cai na grama atrás, e não em cima da mesa.
+     */
+    const QUADRO = { x: -12.4, z: 20.6 };
+    const quadroDaArena = w.add(w.place(quadroDeInscricoes(2.1, INSCRITOS.length),
+      QUADRO.x, 0, QUADRO.z, -0.06));
+    w.blockBox(QUADRO.x, QUADRO.z, 1.05, 0.2);
 
     const falarComOPato = w.interact({
       id: 'parque:jean-luc',
@@ -1218,6 +1251,9 @@ export const villaLobos: SceneDef = {
       // ele quase não sai do lugar, mas "quase" não é "nunca": sem isto o ponto
       // fica onde ele nasceu e o carinho vira um buraco no chão
       carinhoNoMano.moveTo(mano.x, mano.z);
+      // jogando na arena ele não é mais o pinguim do balcão: sem isto o
+      // "encarar" daqui de baixo o viraria de lado no meio do saque
+      if (naMesaDePing.quem === 'mano') return;
       /**
        * O RÓTULO NÃO PODE PROMETER O QUE ELE NÃO VAI DAR. Com sorvete na mão
        * ele não vende outro, então o prompt deixa de dizer "pedir sorvete" e
@@ -1745,6 +1781,9 @@ export const villaLobos: SceneDef = {
       // ela quase não sai do lugar, mas "quase" não é "nunca": sem isto o ponto
       // fica onde ela nasceu e a conversa vira um buraco na calçada
       falarComEstella.moveTo(estella.x, estella.z);
+      // jogando na arena ela não está na porta da loja: sem isto o "voltar a
+      // olhar a rua" daqui de baixo a viraria de costas para a mesa
+      if (naMesaDePing.quem === 'estella') return;
       /*
        * LONGE DELA, ELA VOLTA A OLHAR A RUA — e o jeito de fazer isso é mandar
        * ela encarar um ponto lá no `+X`, e não largar o alvo: `pararDeEncarar`
@@ -2825,6 +2864,30 @@ export const villaLobos: SceneDef = {
     const LADO = MESA_PING.plano + 0.55; // onde cada um fica de pé
 
     /* ==================================================================
+     *              QUEM PODE SER CHAMADO PARA A MESA
+     *
+     * O quadro de inscrições devolve um `id`; este mapa diz o que fazer com
+     * ele. Cada bicho tem UM posto no parque, e a partida o empresta: sai de
+     * lá, joga, e volta para o lugar exato de onde saiu.
+     *
+     * ELE É TELEPORTADO PARA A BEIRA DA ARENA e só então ANDA até a mesa. O
+     * Mano mora a trinta unidades daqui; andar de verdade seriam vinte
+     * segundos de cutscene olhando um pinguim atravessar o parque. O
+     * teleporte acontece com o diálogo na tela — e os últimos quatro metros,
+     * que são os que a câmera mostra, ele faz a pé.
+     * ================================================================== */
+    interface Chamavel {
+      readonly bicho: Bicho;
+      /** para onde ele volta quando a partida acaba */
+      readonly posto: { readonly x: number; readonly z: number };
+      /** e para que lado ele fica olhando lá */
+      readonly giro: number;
+      readonly som: SomNome;
+    }
+    /** por onde o convidado entra no tablado: a beira de `-Z`, atrás do banco */
+    const ENTRADA_DA_ARENA = { x: -12.6, z: 21.4 };
+
+    /* ==================================================================
      *                   O JEAN-LUC COMO ADVERSÁRIO
      *
      * A ficha dele é a do parceiro apertada em três lugares, e NADA na física
@@ -2850,14 +2913,24 @@ export const villaLobos: SceneDef = {
      *     ele leva 4,6 pontos por partida de quem ainda está aprendendo. Ele é
      *     difícil porque COLOCA a bola, e não porque erra menos.
      * ================================================================== */
-    const JEAN_LUC_ADVERSARIO: Adversario = {
-      id: 'jean-luc',
-      cor: P.vermelhoFranca,
-      erro: 0.8,
-      feio: 0.2,
-      rapidez: 5.4,
-      desvio: 0.7,
-      pontaria: 2.2,
+    /**
+     * A FICHA VEM DO QUADRO, e não de uma cópia aqui.
+     *
+     * Ela morou aqui em cima durante uma rodada, e aí o quadro de inscrições
+     * nasceu com os mesmos cinco números escritos de novo em
+     * `world/adversariosData.ts`. Duas listas iguais viram duas listas
+     * diferentes no primeiro ajuste — e o `scripts/balanco.mjs`, que mede se a
+     * dificuldade está justa, estaria medindo a cópia errada.
+     */
+    const fichaDe = (id: string): Adversario =>
+      INSCRITOS.find((d) => d.id === id)?.ficha ?? PARCEIRO;
+    const JEAN_LUC_ADVERSARIO = fichaDe('jean-luc');
+
+    const CHAMAVEIS: Record<string, Chamavel> = {
+      'jean-luc': { bicho: jeanLuc, posto: JEANLUC_POSTO, giro: 1.3, som: 'pato' },
+      mano: { bicho: mano, posto: MANO, giro: 0, som: 'pinguim' },
+      cookie: { bicho: cookie, posto: COOKIE, giro: 0, som: 'sino' },
+      estella: { bicho: estella, posto: ESTELLA, giro: Math.PI / 2, som: 'balido' },
     };
 
     /**
@@ -2865,10 +2938,54 @@ export const villaLobos: SceneDef = {
      * ele joga a partida inteira escondido atrás da própria mesa, com a boina
      * aparecendo por cima. Ele fica guardado até a hora da partida — pato que
      * anda com caixote pelo parque é outro personagem.
+     *
+     * E ELE SERVE PARA TODO MUNDO, esticando em `y`: o pinguim precisa de um
+     * degrau menor que o do pato, a ovelha de um menor ainda, e o elefante de
+     * nenhum. A altura sai de uma MEDIDA da malha do bicho (ver `degrauPara`),
+     * e não de uma tabela escrita à mão que envelheceria no primeiro ajuste de
+     * modelo.
      */
     const ALTURA_DO_CAIXOTE = 0.5;
     const caixoteDoPato = w.add(w.place(caixote(0.5, ALTURA_DO_CAIXOTE), PING.x + 3, 0, PING.z));
     caixoteDoPato.visible = false;
+
+    /**
+     * Onde a CABEÇA do convidado precisa ficar para ele jogar de verdade.
+     *
+     * NÃO BASTA PASSAR DO TAMPO. A raquete do minigame fica em
+     * `tampo + 0,30` = 1,06, com 20 cm de raio: um convidado com a cabeça em
+     * 1,05 fica exatamente ATRÁS DELA, e na câmera de ombro o adversário
+     * inteiro some por trás do próprio disco vermelho — foi o que a foto
+     * mostrou do Jean-Luc e do Mano, dois discos jogando sozinhos.
+     *
+     * 1,30 põe a cabeça ACIMA da borda de cima da raquete. É por isso que o
+     * pato acaba num caixote quase da altura dele — e isso, olhando a foto, é
+     * melhor ainda: um pato de 74 cm empoleirado para alcançar a mesa é
+     * exatamente a piada que ele é.
+     */
+    const ALVO_DA_CABECA = 1.3;
+    /**
+     * De quanto ele precisa de degrau. A medida é A CABEÇA, e não o ponto mais
+     * alto da malha — todo bicho daqui nomeia o grupo dela `cabeca-<nome>`.
+     *
+     * Medindo o topo, o chapéu de casquinha do Mano dava 1,56 e o pinguim
+     * "passava" do tampo sem caixote nenhum. Quem passava era o SORVETE: os
+     * olhos dele ficam em 0,62, quatorze centímetros abaixo da mesa. O mesmo
+     * valia para a alfineteira da Estella e para a tromba do Cookie.
+     */
+    const degrauPara = (bicho: Bicho): number => {
+      bicho.group.updateWorldMatrix(true, true);
+      let cabeca: THREE.Object3D | null = null;
+      bicho.group.traverse((n) => {
+        if (!cabeca && n.name.startsWith('cabeca-')) cabeca = n;
+      });
+      const ponto = new THREE.Vector3();
+      const alto = cabeca !== null
+        ? ponto.setFromMatrixPosition((cabeca as THREE.Object3D).matrixWorld).y
+          - bicho.group.position.y
+        : new THREE.Box3().setFromObject(bicho.group).max.y - bicho.group.position.y;
+      return Math.max(0, ALVO_DA_CABECA - alto);
+    };
 
     const encerrarPing = (): void => {
       jogando = false;
@@ -2880,19 +2997,30 @@ export const villaLobos: SceneDef = {
       g.lockPlayer(false);
       g.freeCompanion();
       jogarPing.enabled = true;
+      verOQuadro.enabled = true;
       // e o pato volta a ser abordável — se já tiver sido apresentado
       falarComOPato.enabled = g.flag('jean-luc-conhecido');
       /*
-       * O PATO DESCE DO CAIXOTE E VOLTA A VIVER. `partida.adversario` continua
-       * dizendo quem jogou — quem o reescreve é o COMEÇO da próxima partida, e
-       * não o fim desta. É isso que deixa o fim de partida, logo abaixo, saber
-       * contra quem foi sem ninguém precisar guardar a informação duas vezes.
+       * O CONVIDADO DESCE DO CAIXOTE E VOLTA PARA O POSTO DELE.
+       *
+       * `partida.adversario` continua dizendo quem jogou — quem o reescreve é o
+       * COMEÇO da próxima partida, e não o fim desta. É isso que deixa o fim de
+       * partida, logo abaixo, saber contra quem foi sem ninguém guardar a
+       * informação duas vezes.
+       *
+       * E A DEVOLUÇÃO É OBRIGATÓRIA. Bicho que fica de serviço para sempre é o
+       * defeito que o teste do garçom mede: ele nunca mais passeia, e o posto
+       * dele fica vazio pelo resto da sessão.
        */
-      if (partida.adversario.id === JEAN_LUC_ADVERSARIO.id) {
+      const jogou = CHAMAVEIS[partida.adversario.id];
+      if (jogou) {
         caixoteDoPato.visible = false;
-        jeanLuc.emergirAte(0);
-        jeanLuc.voltarAPassear();
+        caixoteDoPato.scale.y = 1;
+        jogou.bicho.group.position.set(jogou.posto.x, 0, jogou.posto.z);
+        jogou.bicho.group.rotation.y = jogou.giro;
+        jogou.bicho.voltarAPassear();
       }
+      naMesaDePing.quem = null;
     };
 
     /**
@@ -2908,7 +3036,9 @@ export const villaLobos: SceneDef = {
     const comecarPartida = async (api: GameAPI, contra: Adversario): Promise<void> => {
       const meu = naMesa(-LADO, 0);
       const dele = naMesa(LADO, 0);
-      const contraOPato = contra.id === JEAN_LUC_ADVERSARIO.id;
+      const convidado = CHAMAVEIS[contra.id] ?? null;
+      const contraOPato = convidado !== null;
+      naMesaDePing.quem = convidado ? contra.id : null;
 
       // cada um de um lado, olhando para o outro
       api.releasePlayer(meu.x, meu.z, Math.atan2(dele.x - meu.x, dele.z - meu.z));
@@ -2926,14 +3056,27 @@ export const villaLobos: SceneDef = {
       }
       api.lockPlayer(true);
 
-      if (contraOPato) {
-        jeanLuc.entrarEmServico();
-        await jeanLuc.irPara(dele.x, dele.z, 1.6);
-        jeanLuc.group.rotation.y = Math.atan2(meu.x - dele.x, meu.z - dele.z);
-        caixoteDoPato.position.set(dele.x, 0, dele.z);
-        caixoteDoPato.visible = true;
-        jeanLuc.emergirAte(ALTURA_DO_CAIXOTE);
-        jeanLuc.comemorar(1.4);
+      if (convidado) {
+        convidado.bicho.entrarEmServico();
+        // QUEM FOI CHAMADO APARECE. O pato nasce invisível enquanto ninguém o
+        // conhece, e um save que já tenha o quadro cheio (ou um teste que
+        // escreva a flag depois da cena montada) traria para a mesa um
+        // adversário que não dá para ver: só a raquete dele jogando sozinha.
+        convidado.bicho.group.visible = true;
+        // teleporta para a beira e ANDA os últimos metros, que são os que a
+        // câmera vai mostrar — ver o bloco dos chamáveis, lá em cima
+        convidado.bicho.group.position.set(ENTRADA_DA_ARENA.x, 0, ENTRADA_DA_ARENA.z);
+        api.som(convidado.som);
+        await convidado.bicho.irPara(dele.x, dele.z, 1.7);
+        convidado.bicho.group.rotation.y = Math.atan2(meu.x - dele.x, meu.z - dele.z);
+        const degrau = degrauPara(convidado.bicho);
+        if (degrau > 0.04) {
+          caixoteDoPato.position.set(dele.x, 0, dele.z);
+          caixoteDoPato.scale.y = degrau / ALTURA_DO_CAIXOTE;
+          caixoteDoPato.visible = true;
+          convidado.bicho.group.position.y = degrau;
+        }
+        if (convidado.bicho === jeanLuc) jeanLuc.comemorar(1.4);
         await api.wait(0.5);
       }
 
@@ -2957,6 +3100,7 @@ export const villaLobos: SceneDef = {
       // destaque, e como ela é o pai da bolinha a partida inteira balança
       jogarPing.enabled = false;
       falarComOPato.enabled = false;
+      verOQuadro.enabled = false;
       partida.trocarAdversario(contra);
       partida.comecar();
       jogando = true;
@@ -2971,10 +3115,15 @@ export const villaLobos: SceneDef = {
       if (!jogando) return;
       g.showPlacar({
         eu: g.playerName(),
-        // O NOME DO OUTRO LADO SAI DE QUEM ESTÁ JOGANDO, e não do parceiro:
-        // contra o pato o placar dizia o nome de quem estava assistindo da
-        // beira do tablado
-        ele: partida.adversario.id === JEAN_LUC_ADVERSARIO.id ? 'Jean-Luc' : g.companionName(),
+        /*
+         * O NOME DO OUTRO LADO SAI DE QUEM ESTÁ JOGANDO, e não do parceiro.
+         *
+         * Ele já teve o nome do Jean-Luc cravado num `if`, e isso durou até o
+         * quadro de inscrições existir: com cinco adversários, o placar voltou
+         * a dizer "Renan" numa partida contra a Estella. Agora ele pergunta à
+         * LISTA — e o próximo inscrito não precisa de mais um `if`.
+         */
+        ele: INSCRITOS.find((d) => d.id === partida.adversario.id)?.nome ?? g.companionName(),
         meus: partida.meus,
         dele: partida.dele,
       });
@@ -2990,33 +3139,58 @@ export const villaLobos: SceneDef = {
       priority: 1,
       label: 'Jogar ping pong', icon: '🏓',
       highlight: mesaPing,
+      /*
+       * A MESA É A DUPLA, e só. Quem escolhe adversário é o QUADRO DE
+       * INSCRIÇÕES, ali na entrada da arena — a mesa chegou a perguntar
+       * "contra quem?" numa caixa de duas opções, e isso era o esboço do
+       * painel. Com o quadro montado, manter as duas portas seria ensinar
+       * duas vezes a mesma coisa.
+       */
       onInteract: async (api) => {
         if (jogando) return;
-        /*
-         * A MESA PASSA A PERGUNTAR CONTRA QUEM — mas só depois de o pato ter
-         * sido batido uma vez. Antes disso ele não é adversário de mesa, é um
-         * bicho que mora no lago e pede uma partida; a escolha aparecer antes
-         * entregaria o desafio como um item de menu.
-         *
-         * É a primeira linha do painel de adversários: hoje são dois nomes,
-         * e o painel cresce a partir daqui.
-         */
-        let contra = PARCEIRO;
-        if (api.flag('jean-luc-batido')) {
-          const quem = await api.ask('Contra quem?', [api.companionName(), 'Jean-Luc']);
-          if (quem === 1) contra = JEAN_LUC_ADVERSARIO;
-        }
-        if (contra === PARCEIRO) {
+        await conversa([
+          [A, 'Cinco pontos?'],
+          [R, 'Cinco pontos. E o perdedor carrega a bolsa até em casa.'],
+        ]);
+        await comecarPartida(api, PARCEIRO);
+      },
+    });
+
+    /* ==================================================================
+     *              O QUADRO DE INSCRIÇÕES, por dentro
+     *
+     * O painel devolve o `id` de quem foi escolhido (ou `null`, que é fechar
+     * sem desafiar). A ficha de cada um — inclusive como ele joga — mora em
+     * `world/adversariosData.ts`; aqui só se traduz o `id` numa partida.
+     *
+     * Quem ainda não se inscreveu nem chega aqui: o painel mostra uma ficha em
+     * branco no lugar dele, e ficha em branco não tem clique.
+     * ================================================================== */
+    const verOQuadro = w.interact({
+      id: 'parque:inscricoes',
+      x: QUADRO.x, z: QUADRO.z + 0.9, radius: 1.6,
+      label: 'Ver as inscrições', icon: '📋',
+      highlight: quadroDaArena,
+      onInteract: async (api) => {
+        if (jogando) return;
+        const escolhido = await api.abrirQuadroDeInscricoes();
+        if (!escolhido) return;
+        const ficha = INSCRITOS.find((d) => d.id === escolhido);
+        if (!ficha) return;
+
+        if (ficha.id === 'parceiro') {
           await conversa([
-            [A, 'Cinco pontos?'],
-            [R, 'Cinco pontos. E o perdedor carrega a bolsa até em casa.'],
+            [A, 'A gente está bem ali na lista.'],
+            [R, 'A gente É a lista. Vamos.'],
           ]);
-        } else {
-          await conversa([
-            ['Jean-Luc', 'Encore? Vocês não cansam. J\'adore.'],
-          ]);
+          await comecarPartida(api, PARCEIRO);
+          return;
         }
-        await comecarPartida(api, contra);
+
+        // ELE É CHAMADO, e não encontrado: a fala cobre o teleporte até a
+        // beira do tablado, e os últimos metros ele faz a pé
+        await conversa([[R, `Alguém chama o ${ficha.nome}.`]]);
+        await comecarPartida(api, ficha.ficha);
       },
     });
 
@@ -3312,7 +3486,7 @@ export const villaLobos: SceneDef = {
       }
 
       api.setFlag('jean-luc-batido');
-      api.toast('Jean-Luc entrou na lista de adversários', '🦆');
+      api.toast('O quadro de inscrições encheu', '📋');
       await conversa([
         ['Jean-Luc', 'Cinco a ' + partida.dele + '.'],
         ['Jean-Luc', '...'],
@@ -3321,19 +3495,101 @@ export const villaLobos: SceneDef = {
         ['Jean-Luc', 'Seis anos debaixo d\'água. E vocês me batem num sábado.'],
         [A, 'A gente pode jogar de novo, se você quiser.'],
         ['Jean-Luc', 'Se eu QUISER? Mon Dieu.'],
-        ['Jean-Luc', 'Voltem aqui quando quiserem. A mesa vai perguntar contra quem. Eu vou estar na lista.'],
-        ['Jean-Luc', 'E eu vou buscar os outros. O pinguim do sorvete. A ovelha da loja. Todos eles.'],
-        [R, 'Você vai convencer o Mano a jogar ping pong?'],
-        ['Jean-Luc', 'Eu convenci vocês a jogarem contra um pato. Eu convenço qualquer um.'],
+        ['Jean-Luc', 'Voltem quando quiserem. Eu preguei meu papel no quadro ali da entrada.'],
+        ['Jean-Luc', 'E eu fui buscar os outros. O pinguim do sorvete. O elefante da bilheteria. A ovelha da loja.'],
+        [R, 'Você convenceu o Mano a jogar ping pong?'],
+        ['Jean-Luc', 'Eu convenci vocês a jogarem contra um pato. Je convaincs n\'importe qui.'],
+        [A, 'O que isso quer dizer?'],
+        ['Jean-Luc', 'Que eu convenço qualquer um. Soa melhor em francês. Tudo soa.'],
       ]);
       api.unlock({
         id: 'jean-luc-batido',
         title: 'Cinco a ' + partida.dele,
         place: 'Parque Villa Lobos',
         note: 'A gente ganhou do Jean-Luc. Ele ficou em silêncio, disse «pardon, estou processando», '
-          + 'e foi buscar os outros bichos do parque para jogar também.',
+          + 'e foi buscar os outros bichos do parque. No dia seguinte o quadro de inscrições '
+          + 'da arena estava cheio.',
         icon: '🦆',
       });
+    };
+
+    /**
+     * O FIM DE UMA PARTIDA CONTRA OS OUTROS INSCRITOS.
+     *
+     * Cada um perde e ganha do jeito dele — é a mesma personalidade que a
+     * historinha do quadro conta, agora com a partida jogada. Sem isto os três
+     * dividiriam uma fala genérica, e aí não valeria a pena eles existirem
+     * como adversários diferentes.
+     */
+    const FIM_DOS_OUTROS: Record<string, { ganhei: Array<readonly [string, string]>;
+      perdi: Array<readonly [string, string]> }> = {
+      mano: {
+        ganhei: [
+          ['Mano', 'AÊÊÊ! Vocês ganharam!'],
+          [R, 'Mano, você perdeu.'],
+          ['Mano', 'Eu sei! Mas foi tão bonito de ver.'],
+          [A, 'Ele é a melhor pessoa do parque.'],
+        ],
+        perdi: [
+          ['Mano', 'Ganhei?! Eu GANHEI?'],
+          ['Mano', 'Desculpa. Desculpa. Eu não queria. Quer dizer, queria, mas não assim.'],
+          [R, 'Pode comemorar, Mano.'],
+          ['Mano', 'Obrigado. JÁ VOU COMEÇAR.'],
+        ],
+      },
+      cookie: {
+        ganhei: [
+          ['Cookie', 'Ah. Acabou?'],
+          ['Cookie', 'Desculpa, eu estava com medo de bater forte demais na bolinha.'],
+          [A, 'Cookie, a bolinha é oca.'],
+          ['Cookie', 'Por isso mesmo. Ela é tão pequenininha.'],
+        ],
+        perdi: [
+          ['Cookie', 'Eu ganhei sem querer. A tromba faz sozinha.'],
+          [R, 'Você tem um metro de alcance, Cookie.'],
+          ['Cookie', 'Eu sei. Eu tento não usar. Às vezes esqueço.'],
+          [A, 'Revanche, então. Com você lembrando.'],
+        ],
+      },
+      estella: {
+        ganhei: [
+          ['Estella', 'Muito bem jogado, meus queridos. Muito bem mesmo.'],
+          ['Estella', 'E essa camisa ficou ótima em você de perfil. Eu reparei entre o terceiro e o quarto ponto.'],
+          [R, 'Foi por isso que eu errei o quarto.'],
+          ['Estella', 'Ai, foi? Que pena. Que pena mesmo.'],
+        ],
+        perdi: [
+          ['Estella', 'Eu avisei que penso três jogadas à frente.'],
+          [A, 'Você avisou enquanto sacava.'],
+          ['Estella', 'Avisei. Isso também fazia parte.'],
+          [R, 'Ela é assustadora.'],
+        ],
+      },
+    };
+
+    const fimContraOsOutros = async (
+      api: GameAPI, id: string, ganhei: boolean,
+    ): Promise<void> => {
+      const falas = FIM_DOS_OUTROS[id];
+      if (!falas) return;
+      api.som(ganhei ? 'memoria' : 'quicar');
+      const ficha = INSCRITOS.find((d) => d.id === id);
+      if (ganhei) api.toast(`${ficha?.nome ?? id} — ${partida.meus} a ${partida.dele}`, '🏓');
+      await conversa(ganhei ? falas.ganhei : falas.perdi);
+      /*
+       * A PRIMEIRA VITÓRIA CONTRA CADA UM VIRA MEMÓRIA, e só a primeira: o
+       * diário é de coisas que aconteceram uma vez, e `unlock` já recusa id
+       * repetido — mas a conversa não pode ser "a primeira vez" toda vez.
+       */
+      if (ganhei && ficha) {
+        api.unlock({
+          id: `pingpong-${id}`,
+          title: `${ficha.nome} na mesa`,
+          place: 'Parque Villa Lobos',
+          note: `${ficha.historia.split('.')[0]}. E a gente ganhou mesmo assim.`,
+          icon: '🏓',
+        });
+      }
     };
 
     partida.onPonto = (meu) => {
@@ -3350,6 +3606,10 @@ export const villaLobos: SceneDef = {
 
         if (contraOPato) {
           await fimContraOPato(g, ganhei);
+          return;
+        }
+        if (partida.adversario.id !== PARCEIRO.id) {
+          await fimContraOsOutros(g, partida.adversario.id, ganhei);
           return;
         }
         if (ganhei) {

@@ -14,9 +14,8 @@
  * - **A MESA É DEVOLVIDA.** Caixote escondido, pato no chão e passeando de
  *   novo, prompts de volta: cutscene que esquece de devolver deixa o jogo
  *   quebrado para o resto da sessão.
- * - **O PRÊMIO É REAL.** Bater ele põe o Jean-Luc na lista de adversários da
- *   mesa — a partir daí o prompt de jogar PERGUNTA contra quem, e é essa
- *   pergunta a primeira linha do painel de adversários.
+ * - **O PRÊMIO É REAL.** Bater ele enche o QUADRO DE INSCRIÇÕES da arena: os
+ *   três bichos do parque que ele foi buscar pregam o papel deles lá.
  *
  * A VITÓRIA É FORÇADA pondo o placar em 4 antes do último ponto, e o ponto que
  * decide é disputado de verdade. Sem isso o teste dependeria de ganhar cinco
@@ -272,16 +271,30 @@ const trilha = await page.evaluate(async () => {
   return +soma.toFixed(2);
 });
 
-// ============================================ 6. a mesa agora pergunta
-await page.evaluate(() => {
-  const m = window.__mesa.position;
-  window.jogo.debugPlace(m.x, m.z + 1.5, 0);
-});
-await page.waitForTimeout(800);
-const promptDaMesa = (await page.locator('.prompt .label').textContent().catch(() => '')) ?? '';
+// ====================================== 6. o quadro de inscrições encheu
+/**
+ * O PRÊMIO DE BATER O PATO É O QUADRO, e não uma linha a mais na mesa.
+ *
+ * A mesa chegou a perguntar "contra quem?" numa caixa de duas opções — era o
+ * esboço do painel, e ele saiu quando o quadro de verdade entrou na arena.
+ * O que se mede aqui é o mural: os três bichos do parque pregaram o papel.
+ */
+await page.evaluate(() => window.jogo.debugPlace(-12.4, 21.5, 0));
+let promptDoQuadro = '';
+for (let i = 0; i < 16; i++) {
+  await page.waitForTimeout(300);
+  promptDoQuadro = (await page.locator('.prompt .label').textContent().catch(() => '')) ?? '';
+  if (/inscri/i.test(promptDoQuadro)) break;
+}
 await page.keyboard.press('KeyE');
-await page.waitForTimeout(900);
-const escolhaDaMesa = await page.locator('.dialogue .escolhas button').allTextContents().catch(() => []);
+await page.waitForTimeout(1500);
+const noQuadro = await page.evaluate(() => {
+  const fichas = [...document.querySelectorAll('.quadro-de-inscricoes .ficha')];
+  return {
+    nomes: fichas.map((f) => f.querySelector('b')?.textContent ?? ''),
+    vazias: fichas.filter((f) => f.classList.contains('vazia')).length,
+  };
+});
 await page.screenshot({ path: `${OUT}-lista.png` });
 
 // ============================================ 7. veredito
@@ -319,12 +332,12 @@ if (!depois.memorias.includes('jean-luc-batido')) {
   falhas.push(`a memoria do duelo nao entrou: ${JSON.stringify(depois.memorias)}`);
 }
 if (falasDoFim.length < 4) falhas.push(`a conversa do fim nao saiu: ${JSON.stringify(falasDoFim)}`);
-if (!/ping pong/i.test(promptDaMesa)) falhas.push(`a mesa perdeu o prompt: "${promptDaMesa}"`);
-if (!escolhaDaMesa.some((o) => /jean-luc/i.test(o))) {
-  falhas.push(`a mesa nao lista o Jean-Luc: ${JSON.stringify(escolhaDaMesa)}`);
-}
-if (escolhaDaMesa.length !== 2) {
-  falhas.push(`a lista de adversarios tem ${escolhaDaMesa.length} nomes, esperado 2`);
+if (!/inscri/i.test(promptDoQuadro)) falhas.push(`o quadro nao tem prompt: "${promptDoQuadro}"`);
+if (noQuadro.vazias !== 0) falhas.push(`o premio deixou ${noQuadro.vazias} vagas abertas no quadro`);
+for (const quem of ['Jean-Luc', 'Mano', 'Cookie', 'Estella']) {
+  if (!noQuadro.nomes.some((n) => n.includes(quem))) {
+    falhas.push(`${quem} nao entrou no quadro depois da vitoria`);
+  }
 }
 falhas.push(...erros);
 
@@ -334,7 +347,7 @@ console.log('2. mesa montada:', JSON.stringify(montagem));
 console.log('   pontos que ele tomou antes de eu fechar:', tiros);
 console.log('3. fim:', JSON.stringify(falasDoFim.slice(0, 3)));
 console.log('4. devolvida:', JSON.stringify(depois), '· passeio', trilha);
-console.log('5. lista da mesa:', JSON.stringify(escolhaDaMesa));
+console.log('5. quadro depois do premio:', JSON.stringify(noQuadro.nomes));
 
 if (falhas.length) {
   console.log('\nFALHAS:');

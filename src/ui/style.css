@@ -1876,3 +1876,243 @@ body.touch-device .dialogue .next { right: 84px; }
   }
   .xadrez .lado { width: min(230px, 30vw); padding-top: 6px; }
 }
+
+/* ========================================================================
+ *          O QUADRO DE INSCRIÇÕES da arena de ping pong
+ *
+ * O cardápio do restaurante é uma FOLHA: papel creme, moldura dourada,
+ * serifa. Este aqui é um MURAL: tábua de madeira com papéis pregados por
+ * cima, cada um no seu ângulo e com o seu percevejo. As duas telas têm a
+ * mesma estrutura por baixo (cabeçalho, lista, dois botões) de propósito —
+ * quem já leu o cardápio sabe usar esta sem aprender nada —, mas nenhuma
+ * cor, nenhuma borda e nenhuma fonte são as mesmas: são dois objetos
+ * diferentes do mundo, e tinham que parecer.
+ * ===================================================================== */
+.quadro-de-inscricoes {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(24, 16, 10, 0.5);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+  --tabua: #a9763f;
+  --tabua-escura: #7a4f26;
+  --papel: #f7efdc;
+  --tinta: #4a3524;
+  --tinta-fraca: #8a6f56;
+  --verde: #2f6f57;
+}
+.quadro-de-inscricoes.show { opacity: 1; pointer-events: auto; }
+.quadro-de-inscricoes.show .desafiar,
+.quadro-de-inscricoes.show .close { pointer-events: auto; }
+
+.quadro-de-inscricoes .tabua {
+  position: relative;
+  z-index: 2;
+  width: min(620px, calc(100vw - 32px));
+  max-height: 88vh;
+  overflow: auto;
+  padding: 22px 20px 18px;
+  border-radius: 6px;
+  color: var(--papel);
+  text-align: center;
+  /* a fibra da madeira: riscas verticais finas por cima do marrom */
+  background:
+    repeating-linear-gradient(90deg, rgba(60, 34, 12, 0.13) 0 2px, transparent 2px 9px),
+    linear-gradient(175deg, #c08a4f 0%, var(--tabua) 30%, #8f6234 100%);
+  box-shadow:
+    inset 0 0 0 4px var(--tabua-escura),
+    inset 0 0 0 7px rgba(255, 236, 200, 0.12),
+    0 20px 46px rgba(16, 9, 3, 0.55);
+}
+.quadro-de-inscricoes .casa {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 238, 208, 0.72);
+}
+.quadro-de-inscricoes h2 {
+  margin: 2px 0 2px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 0 rgba(60, 34, 12, 0.5);
+}
+.quadro-de-inscricoes .sub {
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: rgba(255, 238, 208, 0.78);
+}
+.quadro-de-inscricoes .fichas {
+  display: grid;
+  gap: 14px;
+}
+
+/* cada papel pregado: creme, torto, com o percevejo no alto */
+.quadro-de-inscricoes .ficha {
+  position: relative;
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 12px;
+  align-items: start;
+  text-align: left;
+  padding: 12px 12px 10px;
+  color: var(--tinta);
+  background:
+    repeating-linear-gradient(93deg, rgba(120, 84, 40, 0.04) 0 1px, transparent 1px 5px),
+    linear-gradient(168deg, #fdf7e8 0%, var(--papel) 60%, #eee0c4 100%);
+  box-shadow: 0 6px 14px rgba(22, 12, 4, 0.4);
+  transform: rotate(var(--torto, 0deg));
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  cursor: pointer;
+}
+/* o percevejo: um pingo redondo com brilho, no meio do topo do papel */
+.quadro-de-inscricoes .ficha::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  margin-left: -6.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff9a8a, #c0392b 62%, #8c2a1f);
+  box-shadow: 0 2px 3px rgba(22, 12, 4, 0.5);
+}
+.quadro-de-inscricoes .ficha:nth-child(2)::before {
+  background: radial-gradient(circle at 35% 30%, #8fc3f2, #2f6fb5 62%, #1f4a7c);
+}
+.quadro-de-inscricoes .ficha:nth-child(3)::before {
+  background: radial-gradient(circle at 35% 30%, #ffdf8a, #d8a93a 62%, #96751f);
+}
+.quadro-de-inscricoes .ficha:nth-child(4)::before {
+  background: radial-gradient(circle at 35% 30%, #9ede8f, #46a63c 62%, #2c7126);
+}
+.quadro-de-inscricoes .ficha:nth-child(5)::before {
+  background: radial-gradient(circle at 35% 30%, #ffb59a, #e8663c 62%, #a8401f);
+}
+.quadro-de-inscricoes .ficha:hover { transform: rotate(0deg) translateY(-2px); }
+.quadro-de-inscricoes .ficha.marcada {
+  transform: rotate(0deg) translateY(-2px) scale(1.012);
+  box-shadow: 0 0 0 3px var(--verde), 0 10px 20px rgba(22, 12, 4, 0.5);
+}
+
+/* A VAGA ABERTA: papel em branco, sem foto e sem clique. Ela conta que tem
+   mais gente para chegar sem entregar quem é. */
+.quadro-de-inscricoes .ficha.vazia {
+  cursor: default;
+  opacity: 0.62;
+  background: linear-gradient(168deg, #efe6d0 0%, #e4d8bd 100%);
+}
+.quadro-de-inscricoes .ficha.vazia:hover { transform: rotate(var(--torto, 0deg)); }
+.quadro-de-inscricoes .ficha.vazia .foto {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 2px dashed rgba(122, 90, 48, 0.5);
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.35);
+}
+.quadro-de-inscricoes .ficha.vazia .titulo b { font-style: italic; }
+
+/* mesma pedra do cardápio: `#app canvas` estica todo canvas, e sem o `#ui`
+   no seletor o retrato herda a altura da linha e sai deformado */
+#ui .quadro-de-inscricoes .foto {
+  width: 76px;
+  height: 76px;
+  display: block;
+  border-radius: 50%;
+  box-shadow: 0 2px 7px rgba(74, 53, 36, 0.3), 0 0 0 2px rgba(122, 90, 48, 0.45);
+}
+.quadro-de-inscricoes .ficha .titulo {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.quadro-de-inscricoes .ficha .titulo b {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 16px;
+  font-weight: 700;
+}
+.quadro-de-inscricoes .ficha .titulo i {
+  flex: 1;
+  height: 0;
+  border-bottom: 1px dotted rgba(122, 90, 48, 0.55);
+}
+.quadro-de-inscricoes .ficha .titulo em {
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--tinta-fraca);
+  white-space: nowrap;
+}
+.quadro-de-inscricoes .ficha p {
+  margin: 5px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--tinta);
+}
+/* a assinatura à mão, na diagonal e num tom de caneta */
+.quadro-de-inscricoes .ficha .assinatura {
+  display: block;
+  margin-top: 6px;
+  font-family: 'Segoe Script', 'Bradley Hand', cursive;
+  font-size: 12.5px;
+  color: #3d5a8a;
+  transform: rotate(-1.2deg);
+}
+
+.quadro-de-inscricoes .rodape {
+  margin: 14px 0 12px;
+  font-size: 11.5px;
+  font-style: italic;
+  color: rgba(255, 238, 208, 0.7);
+}
+.quadro-de-inscricoes .desafiar,
+.quadro-de-inscricoes .close {
+  display: block;
+  width: 100%;
+  margin: 0 auto 8px;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.quadro-de-inscricoes .desafiar {
+  background: var(--verde);
+  color: #f4fbf6;
+  box-shadow: 0 3px 0 #1f4d3b;
+}
+.quadro-de-inscricoes .desafiar:disabled {
+  background: rgba(255, 238, 208, 0.22);
+  color: rgba(255, 238, 208, 0.62);
+  box-shadow: none;
+  cursor: default;
+}
+.quadro-de-inscricoes .close {
+  background: rgba(255, 238, 208, 0.16);
+  color: rgba(255, 238, 208, 0.9);
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+@media (max-width: 480px) {
+  .quadro-de-inscricoes .tabua { padding: 18px 12px 14px; }
+  .quadro-de-inscricoes .ficha { grid-template-columns: 60px 1fr; gap: 10px; }
+  #ui .quadro-de-inscricoes .foto,
+  .quadro-de-inscricoes .ficha.vazia .foto { width: 60px; height: 60px; }
+  .quadro-de-inscricoes h2 { font-size: 28px; }
+  /* No celular o nome e o apelido não cabem na mesma linha: "A dupla · Renan e
+     você" quebrava em duas e o apelido ficava pendurado na primeira, do lado
+     de um pontilhado de três pixels. Empilhados, os dois leem. */
+  .quadro-de-inscricoes .ficha .titulo { display: block; }
+  .quadro-de-inscricoes .ficha .titulo i { display: none; }
+  .quadro-de-inscricoes .ficha .titulo em { display: block; white-space: normal; }
+}

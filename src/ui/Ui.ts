@@ -5,6 +5,7 @@ import type { MemoriaPintada } from '../world/memoriasData';
 import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
 import type { SecaoDoCardapio } from '../world/cardapioData';
+import type { DesafianteDoQuadro } from '../world/adversariosData';
 
 /**
  * O nome de cada parte do corpo na tela, na ORDEM de `SLOTS_ROUPA`.
@@ -55,6 +56,8 @@ export class Ui {
   private readonly dono: HTMLElement;
   private readonly descarte: HTMLElement;
   private readonly cardapio: HTMLDivElement;
+  private readonly inscricoes: HTMLDivElement;
+  private readonly fichasDoQuadro: HTMLDivElement;
   /**
    * A MESA DE XADREZ mora numa classe propria (`mesaDeXadrez.ts`), e nao aqui.
    *
@@ -70,6 +73,10 @@ export class Ui {
    * o ID do prato escolhido, ou `null` se a pessoa saiu sem pedir.
    */
   private fecharCardapioResolve: ((escolha: string | null) => void) | null = null;
+  /** quem espera o quadro de inscrições fechar; a cena segura nele */
+  private fecharQuadroResolve: ((escolha: string | null) => void) | null = null;
+  /** o desafiante marcado no quadro, esperando o segundo clique */
+  private desafianteMarcado: string | null = null;
   /** o prato marcado no cardapio, esperando o segundo clique */
   private pratoMarcado: string | null = null;
   private readonly memorias: HTMLDivElement;
@@ -255,6 +262,17 @@ export class Ui {
           <button class="close">só olhando, obrigado</button>
         </div>
       </div>
+      <div class="quadro-de-inscricoes">
+        <div class="tabua">
+          <p class="casa">Arena do Villa Lobos</p>
+          <h2>Inscrições</h2>
+          <p class="sub">quem quiser jogar, prega o papel aqui</p>
+          <div class="fichas"></div>
+          <p class="rodape">a mesa é de todo mundo · cinco pontos</p>
+          <button class="desafiar" disabled>escolha um adversário</button>
+          <button class="close">só olhando as fichas</button>
+        </div>
+      </div>
       <div class="xadrez"></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
@@ -319,6 +337,8 @@ export class Ui {
     this.bermudas = ui.querySelector('.vestiario .bermudas')!;
     this.donoVestiario = ui.querySelector('.vestiario .dono')!;
     this.cardapio = ui.querySelector('.cardapio')!;
+    this.inscricoes = ui.querySelector('.quadro-de-inscricoes')!;
+    this.fichasDoQuadro = ui.querySelector('.quadro-de-inscricoes .fichas')!;
     this.mesaDeXadrez = new MesaDeXadrez(ui.querySelector('.xadrez')!);
     this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
     this.memorias = ui.querySelector('.memorias')!;
@@ -434,6 +454,14 @@ export class Ui {
       if (this.pratoMarcado) this.fecharCardapio(this.pratoMarcado);
     });
     ui.querySelector('.cardapio .close')!.addEventListener('click', () => this.fecharCardapio());
+    ui.querySelector('.quadro-de-inscricoes .desafiar')!.addEventListener('click', () => {
+      if (this.desafianteMarcado) this.fecharQuadro(this.desafianteMarcado);
+    });
+    ui.querySelector('.quadro-de-inscricoes .close')!
+      .addEventListener('click', () => this.fecharQuadro());
+    this.inscricoes.addEventListener('click', (e) => {
+      if (e.target === this.inscricoes) this.fecharQuadro();
+    });
     this.cardapio.addEventListener('click', (e) => {
       if (e.target === this.cardapio) this.fecharCardapio();
     });
@@ -537,7 +565,7 @@ export class Ui {
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
       this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen || this.xadrezOpen ||
-      this.lojaOpen,
+      this.lojaOpen || this.quadroOpen,
     );
   }
 
@@ -883,6 +911,140 @@ export class Ui {
       this.marcarTelaAberta();
       this.fecharCardapioResolve = resolve;
     });
+  }
+
+  // ------------------------------------------------ quadro de inscrições
+
+  get quadroOpen(): boolean {
+    return this.inscricoes.classList.contains('show');
+  }
+
+  /**
+   * Abre o quadro de inscrições da arena e SÓ RESOLVE quando ele fecha.
+   *
+   * Mesmo contrato do cardápio, e pelo mesmo motivo: a cena escreve "abre o
+   * quadro, chama quem foi escolhido, joga" em linha reta, em vez de virar
+   * máquina de estados só para saber quando o painel sumiu.
+   *
+   * Resolve com o `id` do desafiante, ou `null` — e `null` NÃO é erro: é sair
+   * sem desafiar ninguém, pelo botão de baixo ou pelo Escape.
+   *
+   * @param quem a lista inteira, inclusive os que ainda não se inscreveram
+   * @param inscritos os `id` que já estão no quadro; o resto vira ficha em branco
+   * @param parceiro o nome de quem acompanha agora, para a linha da dupla
+   */
+  abrirQuadro(
+    quem: readonly DesafianteDoQuadro[],
+    inscritos: ReadonlySet<string>,
+    parceiro: string,
+  ): Promise<string | null> {
+    return new Promise((resolve) => {
+      if (this.quadroOpen) {
+        resolve(null);
+        return;
+      }
+      this.som?.('escolha');
+      this.desafianteMarcado = null;
+      this.desenharQuadro(quem, inscritos, parceiro);
+      this.pintarBotaoDeDesafiar();
+      this.inscricoes.classList.add('show');
+      this.marcarTelaAberta();
+      this.fecharQuadroResolve = resolve;
+    });
+  }
+
+  fecharQuadro(escolha: string | null = null): void {
+    if (!this.quadroOpen) return;
+    this.inscricoes.classList.remove('show');
+    this.marcarTelaAberta();
+    const avisar = this.fecharQuadroResolve;
+    this.fecharQuadroResolve = null;
+    avisar?.(escolha);
+  }
+
+  /**
+   * O clique numa ficha: o PRIMEIRO marca, o SEGUNDO desafia.
+   *
+   * Dois tempos pelo mesmo motivo do cardápio — desafiar fecha a tela, e com
+   * um clique só quem estivesse lendo as historinhas já teria entrado numa
+   * partida sem querer.
+   */
+  private marcarDesafiante(id: string): void {
+    if (this.desafianteMarcado === id) {
+      this.fecharQuadro(id);
+      return;
+    }
+    this.desafianteMarcado = id;
+    this.som?.('escolha');
+    for (const ficha of this.fichasDoQuadro.querySelectorAll('.ficha')) {
+      ficha.classList.toggle('marcada', (ficha as HTMLElement).dataset.id === id);
+    }
+    this.pintarBotaoDeDesafiar();
+  }
+
+  private pintarBotaoDeDesafiar(): void {
+    const botao = this.inscricoes.querySelector('.desafiar') as HTMLButtonElement;
+    const nome = this.desafianteMarcado
+      ? this.fichasDoQuadro.querySelector(`.ficha[data-id="${this.desafianteMarcado}"] b`)
+      : null;
+    botao.disabled = !nome;
+    botao.textContent = nome ? `Desafiar ${nome.textContent}` : 'escolha um adversário';
+  }
+
+  /**
+   * Desenha os papéis pregados no quadro.
+   *
+   * QUEM AINDA NÃO SE INSCREVEU VIRA UMA FICHA EM BRANCO, e não some da lista:
+   * a vaga vazia conta que tem mais gente para chegar sem entregar quem é.
+   */
+  private desenharQuadro(
+    quem: readonly DesafianteDoQuadro[],
+    inscritos: ReadonlySet<string>,
+    parceiro: string,
+  ): void {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const LADO = Math.round(76 * dpr);
+    this.fichasDoQuadro.innerHTML = '';
+
+    for (const [i, d] of quem.entries()) {
+      const ficha = document.createElement('div');
+      ficha.className = 'ficha';
+      // cada papel entra com o seu próprio torto: fileira alinhada lê como
+      // formulário, e isto é para ler como mural
+      ficha.style.setProperty('--torto', `${((i * 37) % 9) / 9 * 1.8 - 0.9}deg`);
+
+      if (!inscritos.has(d.id)) {
+        ficha.classList.add('vazia');
+        ficha.innerHTML =
+          '<div class="foto"></div>'
+          + '<div class="texto"><div class="titulo"><b>Vaga aberta</b></div>'
+          + '<p>Ninguém pregou o papel nesta vaga ainda. Dizem que tem mais gente '
+          + 'no parque com vontade de jogar.</p></div>';
+        this.fichasDoQuadro.appendChild(ficha);
+        continue;
+      }
+
+      ficha.dataset.id = d.id;
+      const foto = document.createElement('canvas');
+      foto.className = 'foto';
+      foto.width = LADO;
+      foto.height = LADO;
+      const ctx = foto.getContext('2d');
+      if (ctx) d.pintar(ctx, LADO);
+
+      const texto = document.createElement('div');
+      texto.className = 'texto';
+      // a dupla é a única linha cujo nome muda: quem acompanha troca com o `T`
+      const nome = d.id === 'parceiro' ? `A dupla · ${parceiro} e você` : d.nome;
+      texto.innerHTML =
+        `<div class="titulo"><b>${nome}</b><i></i><em>${d.apelido}</em></div>`
+        + `<p>${d.historia}</p>`
+        + `<span class="assinatura">${d.assinatura}</span>`;
+
+      ficha.append(foto, texto);
+      ficha.addEventListener('click', () => this.marcarDesafiante(d.id));
+      this.fichasDoQuadro.appendChild(ficha);
+    }
   }
 
   // ---------------------------------------------------------------- xadrez
