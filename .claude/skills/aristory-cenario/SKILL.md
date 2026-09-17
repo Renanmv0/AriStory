@@ -370,13 +370,33 @@ Três coisas que essa parte cobra:
    ```
 10. **Fala que o Renan escreveu vai literal.** Quando ele der o texto de uma
    interação, use exatamente aquilo — não reescreva nem "melhore".
+11. **Passagem tem eixo, e o eixo fica vazio.** Portão, vão de cerca, ponto de
+   embarque: escolha a linha reta que vai da entrada até o destino (um `z` ou um
+   `x` fixo) e **não ponha nada em cima dela** — nem cobertura, nem placa, nem
+   canteiro, nem colisor. Enfeite vai para as beiradas. Vale para a peça *e*
+   para o `blockBox` dela: dá para a peça parecer fora do caminho e o colisor
+   não estar.
+
+   Quando o destino tem um ponto de entrada próprio, é o **ponto** que se alinha
+   ao eixo, não o centro da peça. A porta de embarque do `bus()` fica em
+   `comp/2 - 1.9` (2,6 à frente do centro): para ela cair num `z`, o ônibus
+   inteiro anda 2,6 para trás. Mexer na porta dentro do prop move onde a dupla
+   desembarca nas duas cenas.
 
 ## Depurar posição
 
-`?em=x,z`, `?olhar=<rad>` e `?zoom=<n>` na URL põem a dupla onde você quiser e
-aproximam a câmera — é o jeito rápido de conferir uma interação sem atravessar
-o cenário andando. (O parque só força o zoom perto da roda gigante; no resto a
-URL manda.)
+`?em=x,z`, `?olhar=<rad>` e `?zoom=<n>` na URL põem a dupla onde você quiser —
+é o jeito rápido de conferir uma interação sem atravessar o cenário andando.
+(O parque só força o zoom perto da roda gigante; no resto a URL manda.)
+
+`zoom` é o **tamanho do quadro**, não a aproximação: quanto **maior**, mais
+longe a câmera parece. `zoom=6` é retrato, `zoom=13` enquadra um canto,
+`zoom=30` mostra um pedaço grande do cenário.
+
+Para testar um corredor andando: na câmera padrão nenhuma tecla anda em `+X`
+sozinha — segure **D e S juntos** para `+X` — e leia
+`window.jogo.player.position` entre um passo e outro. Se o `z` não muda ao longo
+do trajeto, o caminho está limpo; se muda, alguma coisa está empurrando.
 
 ## Antes de dizer que terminou
 
