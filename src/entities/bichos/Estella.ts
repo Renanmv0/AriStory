@@ -60,8 +60,6 @@ export class Estella extends Bicho {
   /** as duas pontas da fita metrica, que balancam quando ela anda */
   private readonly pontasDaFita: THREE.Group[] = [];
 
-  /** para onde ela deve virar, quando a cena manda encarar alguem */
-  private encarando: { x: number; z: number } | null = null;
 
   /**
    * O BRINDE: quanto falta do gesto de pegar um biscoito na cestinha e
@@ -514,18 +512,8 @@ export class Estella extends Bicho {
 
   // --------------------------------------------------------- ordens da cena
 
-  /**
-   * Vira para um ponto, devagar. A cena chama antes de falar com ela: lojista
-   * que atende de perfil parece que nao viu o cliente chegar.
-   */
-  encarar(x: number, z: number): void {
-    this.encarando = { x, z };
-  }
-
-  /** Larga o alvo: ela volta a olhar para onde anda. */
-  pararDeEncarar(): void {
-    this.encarando = null;
-  }
+  // `encarar`/`pararDeEncarar` moram na base: eram identicos aqui e no Cookie,
+  // e a regra "quem anda olha para onde anda" tinha que valer para os dois.
 
   /**
    * O GESTO DO BRINDE: ela abaixa a cabeca ate a cestinha e volta com o
@@ -540,14 +528,6 @@ export class Estella extends Bicho {
   // -------------------------------------------------------------------- pose
 
   protected animar(dt: number, { andando, carinho, fase }: PoseDoBicho): void {
-    if (this.encarando) {
-      const alvo = Math.atan2(this.encarando.x - this.x, this.encarando.z - this.z);
-      let d = alvo - this.group.rotation.y;
-      while (d > Math.PI) d -= Math.PI * 2;
-      while (d < -Math.PI) d += Math.PI * 2;
-      this.group.rotation.y += d * Math.min(1, dt * 4);
-    }
-
     // o passo: patas em diagonal, num seno curto — perna de ovelha e curta, e
     // passo curto e o que faz ela trotar em vez de marchar
     if (andando) {

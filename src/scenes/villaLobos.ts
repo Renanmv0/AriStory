@@ -3445,6 +3445,13 @@ export const villaLobos: SceneDef = {
       // e ele tem que medir O NÚMERO QUE O JOGO USA, não uma cópia no teste
       ficha: JEAN_LUC_ADVERSARIO,
     };
+    /*
+     * E OS CHAMÁVEIS, pelo mesmo motivo. Sem isto um teste só alcança os bichos
+     * varrendo a cena por `userData.peca`, e o que ele acha é o GRUPO — dá para
+     * ler posição e rotação, mas não para mandar (`encarar`, `irPara`). Foi
+     * isso que travou a medição do "ela anda de lado".
+     */
+    mesaPing.userData.chamaveis = CHAMAVEIS;
 
     /**
      * O FIM DE UMA PARTIDA CONTRA O PATO.
