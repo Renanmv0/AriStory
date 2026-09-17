@@ -170,6 +170,23 @@ const naMesa = await page.evaluate((tampo) => {
   window.jogo.current.world.root.traverse((n) => {
     if (n.userData?.peca === 'estella') ov = n;
   });
+  /*
+   * PARA ONDE ELA ESTÁ OLHANDO.
+   *
+   * O corpo dela tem que apontar para o lado de quem saca (`-X` da mesa). O
+   * Renan viu ela jogando a partida inteira de PERFIL: o alvo de `encarar`
+   * que a cena da loja tinha deixado pendurado continuava girando ela por
+   * baixo, quarenta unidades dali.
+   */
+  const mesaPos = window.__mesa.position;
+  let desvio = null;
+  if (ov) {
+    const alvo = Math.atan2((mesaPos.x - 2.07) - ov.position.x, mesaPos.z - ov.position.z);
+    let d = alvo - ov.rotation.y;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    desvio = +(Math.abs(d) * 57.3).toFixed(1);
+  }
   let cx = null;
   window.jogo.current.world.root.traverse((n) => {
     if (n.userData?.peca === 'caixote') cx = n;
@@ -180,6 +197,7 @@ const naMesa = await page.evaluate((tampo) => {
     ovelhaDaMesa: ov ? +Math.hypot(ov.position.x - mesa.x, ov.position.z - mesa.z).toFixed(2) : null,
     ovelhaY: ov ? +ov.position.y.toFixed(2) : null,
     caixote: cx ? cx.visible : null,
+    desvioDoOlhar: desvio,
     // o degrau que ela ganhou: a cena calcula para a cabeça passar do tampo
     degrau: ov ? +(ov.position.y).toFixed(2) : null,
     tampo,
@@ -187,6 +205,46 @@ const naMesa = await page.evaluate((tampo) => {
   };
 }, TAMPO);
 await page.screenshot({ path: `${OUT}-partida.png` });
+
+/**
+ * E ELA ANDA PARA A FRENTE, e não de lado.
+ *
+ * Com um alvo de `encarar` pendurado (o que a porta da loja deixa toda vez que
+ * alguém fala com ela), a rotação da caminhada era sobrescrita quadro a quadro
+ * e a ovelha atravessava a cena apontada para o cliente antigo. A medida é o
+ * ângulo entre o CORPO e o RUMO em que ela se move, passo a passo.
+ */
+const andarDireito = await page.evaluate(async () => {
+  const ov = window.__mesa.userData.chamaveis.estella.bicho;
+  ov.entrarEmServico();
+  ov.group.position.set(-30, 0, -10);
+  ov.encarar(-22, -10); // 90° fora do caminho, que é a situação do bug
+  await new Promise((r) => setTimeout(r, 500));
+  const amostras = [];
+  let ax = ov.x;
+  let az = ov.z;
+  void ov.irPara(-30, -21, 0.9);
+  for (let i = 0; i < 300; i++) {
+    await new Promise((r) => setTimeout(r, 70));
+    const dx = ov.x - ax;
+    const dz = ov.z - az;
+    if (Math.hypot(dx, dz) > 0.01) {
+      let d = Math.atan2(dx, dz) - ov.group.rotation.y;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      amostras.push(Math.abs(d));
+    }
+    ax = ov.x;
+    az = ov.z;
+    if (Math.hypot(ov.x + 30, ov.z + 21) < 0.2) break;
+  }
+  amostras.sort((m, n) => m - n);
+  return {
+    passos: amostras.length,
+    medianaEmGraus: amostras.length
+      ? +(amostras[Math.floor(amostras.length / 2)] * 57.3).toFixed(1) : null,
+  };
+});
 
 // ============================================ 5. e ela volta pro posto
 await page.evaluate(() => {
@@ -279,7 +337,15 @@ if (naMesa && naMesa.ovelhaDaMesa !== null && naMesa.ovelhaDaMesa > 2.6) {
 if (naMesa && !/Estella/.test(naMesa.placar)) {
   falhas.push(`o placar nao diz o nome dela: "${naMesa.placar}"`);
 }
+if (naMesa && naMesa.desvioDoOlhar !== null && naMesa.desvioDoOlhar > 20) {
+  falhas.push(`ela esta jogando de perfil: ${naMesa.desvioDoOlhar}° fora do rumo da mesa`);
+}
 
+if (andarDireito.passos < 20) {
+  falhas.push(`a caminhada dela nao foi medida (${andarDireito.passos} passos)`);
+} else if (andarDireito.medianaEmGraus > 15) {
+  falhas.push(`ela anda de lado: ${andarDireito.medianaEmGraus}° entre o corpo e o rumo`);
+}
 if (devolvida.caixote) falhas.push('o caixote ficou na cena depois da partida');
 if (devolvida.noPosto !== null && devolvida.noPosto > 0.8) {
   falhas.push(`a Estella nao voltou para a porta da loja: ${devolvida.noPosto} dela`);
@@ -302,6 +368,8 @@ console.log('3. cheio:', JSON.stringify(cheio.nomes));
 console.log('   retratos:', JSON.stringify(cheio.retratos));
 console.log('   historinhas (letras):', JSON.stringify(cheio.historias));
 console.log('4. partida:', JSON.stringify(naMesa));
+console.log('   andando:', andarDireito.passos, 'passos ·',
+  andarDireito.medianaEmGraus, 'graus entre o corpo e o rumo');
 console.log('5. fim:', JSON.stringify(falasDoFim.slice(0, 3)));
 console.log('   devolvida:', JSON.stringify(devolvida));
 
