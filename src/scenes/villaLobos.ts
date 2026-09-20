@@ -3386,12 +3386,20 @@ export const villaLobos: SceneDef = {
       w.root.add(alvoDaFesta);
       api.focusCamera(alvoDaFesta);
       /*
-       * 5,8 E NÃO 7,4. A primeira versão enquadrava metade do gramado vazio e
-       * a mesa no canto: numa câmera isométrica, cada metro a mais de zoom
-       * tira gente da foto antes de tirar grama. Daqui cabem os seis e a
-       * mesa, que é tudo que precisa estar na cena.
+       * 6,3 DE ALTURA E 6,6 DE LARGURA, e não um zoom só.
+       *
+       * A altura é a que a foto pediu: a primeira versão, com 7,4, enquadrava
+       * metade do gramado vazio e a mesa no canto — numa câmera isométrica
+       * cada metro a mais tira gente da foto antes de tirar grama.
+       *
+       * A LARGURA existe por causa do celular. `setZoom` fixa só a altura, e a
+       * largura sai do formato da tela: num monitor deitado os 6,3 dão quase
+       * 7 de largura, e num celular em pé dão menos de 3. O Renan testou no
+       * celular e o Mano estava fora do quadro. Pedindo 6,6 de largura, a
+       * câmera abre sozinha o quanto a tela estreita precisar — e em tela
+       * larga o resultado é exatamente o mesmo 6,3 de antes.
        */
-      api.setZoom(6.3);
+      api.enquadrar(6.6, 6.3);
       await api.wait(0.8);
 
       await conversa([

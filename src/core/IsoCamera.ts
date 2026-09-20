@@ -63,6 +63,23 @@ export class IsoCamera {
     this.targetViewSize = Math.max(3, size);
   }
 
+  /**
+   * Enquadra um retangulo do MUNDO, seja qual for o formato da tela.
+   *
+   * `setViewSize` fixa a ALTURA do enquadramento e deixa a largura por conta
+   * do aspecto: `w = h * aspect`. Num monitor deitado (1,78) isso da largura
+   * de sobra, e num celular em pe (0,46) da menos de um terco dela — uma cena
+   * enquadrada no monitor perde quem estiver nas pontas quando vista no
+   * celular. Foi o que aconteceu com a festa da mesa de piquenique: o Mano
+   * ficava fora do quadro.
+   *
+   * Aqui quem chama diz o que precisa CABER, e a conta fica com a camera: a
+   * altura escolhida e a maior entre a pedida e a que a largura exige.
+   */
+  setViewSizeParaCaber(largura: number, altura: number): void {
+    this.setViewSize(Math.max(altura, largura / Math.max(0.2, this.aspect)));
+  }
+
   /** coloca a camera direto no alvo, sem animacao (usado ao trocar de cena) */
   snapTo(target: THREE.Vector3): void {
     this.focus.copy(target);

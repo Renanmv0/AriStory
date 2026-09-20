@@ -356,6 +356,19 @@ export interface GameAPI {
   } | null): void;
   /** muda o enquadramento: valores maiores afastam a camera */
   setZoom(viewSize: number): void;
+  /**
+   * Enquadra um retangulo do MUNDO, em vez de fixar so a altura.
+   *
+   * `setZoom` diz a ALTURA do enquadramento, e a largura sai do formato da
+   * tela (`w = h * aspecto`). Num monitor deitado sobra largura; num celular
+   * em pe, o mesmo numero da menos de um terco dela, e quem estiver nas
+   * pontas da cena some do quadro.
+   *
+   * Use isto em cutscene com gente espalhada: a cena diz o que precisa CABER,
+   * em unidades de mundo, e a camera escolhe o zoom que serve para as duas
+   * telas. Em tela larga o resultado e identico ao `setZoom(altura)`.
+   */
+  enquadrar(largura: number, altura: number): void;
   /** trava/destrava o controle do jogador (usado em cutscenes) */
   lockPlayer(locked: boolean): void;
   setPlayerVisible(visible: boolean): void;
