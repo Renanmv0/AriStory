@@ -3273,26 +3273,33 @@ export const villaLobos: SceneDef = {
         x: number; z: number; de: { x: number; z: number };
       }> = {
         cookie: {
-          x: PIQUENIQUE.x - 2.9, z: PIQUENIQUE.z - 1.4,
-          de: { x: PIQUENIQUE.x - 5.9, z: PIQUENIQUE.z - 2.4 },
+          x: PIQUENIQUE.x - 3.2, z: PIQUENIQUE.z - 1.2,
+          de: { x: PIQUENIQUE.x - 6.2, z: PIQUENIQUE.z - 2.2 },
         },
         estella: {
-          x: PIQUENIQUE.x - 1.1, z: PIQUENIQUE.z - 1.8,
-          de: { x: PIQUENIQUE.x - 3.9, z: PIQUENIQUE.z - 4.9 },
+          x: PIQUENIQUE.x - 1.5, z: PIQUENIQUE.z - 1.6,
+          de: { x: PIQUENIQUE.x - 4.3, z: PIQUENIQUE.z - 4.7 },
         },
         mano: {
-          x: PIQUENIQUE.x + 0.6, z: PIQUENIQUE.z - 1.8,
-          de: { x: PIQUENIQUE.x + 3.1, z: PIQUENIQUE.z - 4.8 },
+          x: PIQUENIQUE.x + 0.1, z: PIQUENIQUE.z - 1.6,
+          de: { x: PIQUENIQUE.x + 2.6, z: PIQUENIQUE.z - 4.6 },
         },
+        /*
+         * O PATO PARA EM `x = -7,2`, e não mais à direita que isso.
+         *
+         * O poste da alameda de `(-4; 20)` fica entre ele e a câmera nesta
+         * projeção: com ele meio metro mais para +X, a foto da festa saía com
+         * uma haste de metal cortando o pato ao meio.
+         */
         'jean-luc': {
-          x: PIQUENIQUE.x + 2.2, z: PIQUENIQUE.z - 1.4,
-          de: { x: PIQUENIQUE.x + 5.1, z: PIQUENIQUE.z - 2.2 },
+          x: PIQUENIQUE.x + 1.4, z: PIQUENIQUE.z - 1.2,
+          de: { x: PIQUENIQUE.x + 4.3, z: PIQUENIQUE.z - 2.0 },
         },
       };
 
       // a dupla do lado de cá da mesa, os dois virados para ela
-      const meu = { x: PIQUENIQUE.x - 0.8, z: PIQUENIQUE.z + 1.8 };
-      const dele = { x: PIQUENIQUE.x + 0.7, z: PIQUENIQUE.z + 1.9 };
+      const meu = { x: PIQUENIQUE.x - 1.2, z: PIQUENIQUE.z + 1.7 };
+      const dele = { x: PIQUENIQUE.x + 0.2, z: PIQUENIQUE.z + 1.8 };
       const paraAMesa = (p: { x: number; z: number }): number =>
         Math.atan2(PIQUENIQUE.x - p.x, PIQUENIQUE.z - p.z);
       api.releasePlayer(meu.x, meu.z, paraAMesa(meu));
@@ -3306,14 +3313,27 @@ export const villaLobos: SceneDef = {
       api.lockPlayer(true);
       // os quatro saem do passeio ao mesmo tempo: ver `deServico`
       naMesaDePing.festa = true;
-      api.focusCamera(mesa);
       /*
-       * 6,2 E NÃO 7,4. A primeira versão enquadrava metade do gramado vazio e
+       * A CÂMERA MIRA NUM PONTO, e não na mesa.
+       *
+       * `focusCamera` pede um objeto e põe ELE no meio da tela. Mirando na
+       * mesa, os quatro (que ficam atrás dela) empilhavam na metade de cima
+       * do quadro e a metade de baixo era gramado vazio. A âncora fica um
+       * passo atrás da mesa, no meio da roda — é ali que a cena acontece.
+       *
+       * Ela é um grupo vazio: não tem malha, não tem sombra, não aparece.
+       */
+      const alvoDaFesta = new THREE.Group();
+      alvoDaFesta.position.set(PIQUENIQUE.x - 0.4, 0, PIQUENIQUE.z - 0.7);
+      w.root.add(alvoDaFesta);
+      api.focusCamera(alvoDaFesta);
+      /*
+       * 5,8 E NÃO 7,4. A primeira versão enquadrava metade do gramado vazio e
        * a mesa no canto: numa câmera isométrica, cada metro a mais de zoom
        * tira gente da foto antes de tirar grama. Daqui cabem os seis e a
        * mesa, que é tudo que precisa estar na cena.
        */
-      api.setZoom(6.2);
+      api.setZoom(5.8);
       await api.wait(0.8);
 
       await conversa([
@@ -3441,6 +3461,7 @@ export const villaLobos: SceneDef = {
         quem.bicho.voltarAPassear();
       }
       naMesaDePing.festa = false;
+      w.root.remove(alvoDaFesta);
       api.focusCamera(null);
       api.setZoom(11);
       api.freeCompanion();
