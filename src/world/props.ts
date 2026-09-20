@@ -5625,20 +5625,32 @@ export function toalhaDePiquenique(
   tampo.position.y = ESPESSURA / 2;
   g.add(tampo);
 
-  // a barra dos quatro lados. Ela começa 1 cm ACIMA da base do tampo da
-  // toalha, e não rente: duas faces `min` no mesmo plano brigam pelo pixel
-  for (const [lx, lz, dx, dz] of [
-    [largura, ESPESSURA, 0, profundidade / 2],
-    [largura, ESPESSURA, 0, -profundidade / 2],
-    [ESPESSURA, profundidade, largura / 2, 0],
-    [ESPESSURA, profundidade, -largura / 2, 0],
-  ] as const) {
-    const saia = new THREE.Mesh(
-      new THREE.BoxGeometry(lx === ESPESSURA ? ESPESSURA : lx, CAI, lz === ESPESSURA ? ESPESSURA : lz),
+  /*
+   * A BARRA DOS QUATRO LADOS, e NENHUMA delas casa um número com o tampo.
+   *
+   * Cada saia é um dedo mais curta que o lado que ela acompanha e fica um
+   * fio para dentro da borda: casando as medidas, a face `min` do tampo e a
+   * face `min` da saia nascem no mesmo plano e brigam pelo pixel. E as duas
+   * de +X/-X têm altura diferente das de +Z/-Z pelo mesmo motivo, agora entre
+   * elas mesmas — quatro caixas da mesma altura compartilham dois planos.
+   *
+   * `node scripts/zfighting.mjs` acusou os 16 pares da primeira versão.
+   */
+  const RECUO = 0.012;
+  for (const lado of [-1, 1] as const) {
+    const naFrente = new THREE.Mesh(
+      new THREE.BoxGeometry(largura - RECUO * 2, CAI, ESPESSURA),
       pano,
     );
-    saia.position.set(dx, ESPESSURA - CAI / 2 - 0.004, dz);
-    g.add(saia);
+    naFrente.position.set(0, ESPESSURA - CAI / 2 - 0.004, lado * (profundidade / 2 - 0.005));
+    g.add(naFrente);
+
+    const naPonta = new THREE.Mesh(
+      new THREE.BoxGeometry(ESPESSURA, CAI - 0.014, profundidade - RECUO * 2),
+      pano,
+    );
+    naPonta.position.set(lado * (largura / 2 - 0.005), ESPESSURA - CAI / 2 - 0.004, 0);
+    g.add(naPonta);
   }
 
   /*
