@@ -127,6 +127,13 @@ const despirTodos = () =>
  * de xadrez em vez de ler a fala.
  */
 const conversarCom = async (x, z, prompt) => {
+  // primeiro FECHA o que estiver aberto: com um balão na tela não há prompt
+  // nenhum, e a leitura sairia vazia sem dizer por quê
+  for (let i = 0; i < 60; i++) {
+    if (!(await page.locator('.dialogue.show').count())) break;
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(300);
+  }
   await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, 0), [x, z]);
   let texto = '';
   for (let i = 0; i < 20; i++) {
@@ -138,7 +145,10 @@ const conversarCom = async (x, z, prompt) => {
 
   await page.keyboard.press('KeyE');
   const falas = [];
-  for (let i = 0; i < 60; i++) {
+  // a cutscene de um bicho passa de trinta falas com espera de câmera no meio:
+  // um teto curto aqui fecharia a leitura no meio da conversa, e a LEITURA
+  // SEGUINTE herdaria a cauda desta como se fosse resposta
+  for (let i = 0; i < 200; i++) {
     await page.waitForTimeout(320);
     if (!(await page.locator('.dialogue.show').count())) break;
     const t = (await page.locator('.dialogue .text').textContent().catch(() => '')) ?? '';
