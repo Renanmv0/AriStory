@@ -63,39 +63,34 @@ await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(3200);
 
 /*
- * O ESTADO DE QUEM JÁ JOGOU COM TODO MUNDO, escrito direto.
+ * O ESTADO DE QUEM JÁ JOGOU COM TODO MUNDO, escrito direto — e o RELOAD.
  *
  * As partidas de verdade são de `duelo.mjs` e `quadro.mjs`; aqui o que está
  * em teste é a FALA, e jogar quatro partidas de cinco pontos para chegar nela
  * levaria vinte minutos de relógio sem provar nada a mais.
+ *
+ * O reload depois das flags NÃO é enfeite. O Jean-Luc só nasce na arena para
+ * quem já o conhece — quem não conhece nem vê o pato, e o ponto de fala dele
+ * nasce desligado. Isso é lido UMA VEZ, na montagem da cena, então escrever a
+ * flag com a cena já de pé não acorda ninguém: é preciso montar de novo.
+ *
+ * Os dois sorvetes na mão entram pelo mesmo motivo do bilhete do Cookie: sem
+ * eles, falar com o Mano abre a cutscene inteira do primeiro pedido (com
+ * câmera, dança e tudo), e ela é mais longa que a paciência do teste.
  */
 await page.evaluate(() => {
   const j = window.jogo;
   for (const f of [
-    'cookie-apresentado', 'cookie-falou-do-uniforme', 'mano-conhecido',
+    'cookie-apresentado', 'cookie-falou-do-uniforme', 'mano-conhecido', 'mano-atendeu',
     'estella-conhecida', 'jean-luc-conhecido', 'jean-luc-batido',
     'batido-jean-luc', 'batido-cookie', 'batido-mano', 'batido-estella',
   ]) j.setFlag(f);
-  // o pato nasce escondido até ser conhecido; aqui ele já é
-  let mesa = null;
-  j.current.world.root.traverse((n) => { if (n.userData?.pingpong) mesa = n; });
-  if (mesa) {
-    /*
-     * O PATO COMEÇA SUBMERSO NO LAGO, e o balão de fala dele anda junto com
-     * ele: parado lá no fundo, não há onde ficar de pé para falar. A cutscene
-     * de `chegar()` levaria minutos e é o que `jeanluc.mjs` já cobre, então
-     * aqui ele é posto no posto dele na mão.
-     */
-    const jl = mesa.userData.jeanLuc.bicho;
-    jl.group.visible = true;
-    jl.group.position.set(-17.6, 0, 26.3);
-    jl.emergirAte(0);
-  }
-  // com bilhete na mochila o Cookie não tenta vender outro, e a conversa dele
-  // acaba onde a fala do prêmio acaba
   j.addItem(window.aristoryItens['bilhete-roda']);
+  j.addItem(window.aristoryItens['sorvete-morango'], 'ari');
+  j.addItem(window.aristoryItens['sorvete-maracuja'], 'renan');
 });
-await page.waitForTimeout(800);
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(3200);
 
 /** onde cada bicho está agora, pela etiqueta que a cena põe nele */
 const ondeEsta = (peca) =>
