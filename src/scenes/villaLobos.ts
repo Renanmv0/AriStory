@@ -298,7 +298,19 @@ export const villaLobos: SceneDef = {
      * trava o adversário convidado sairia andando da arena no meio da partida,
      * puxado pelo próprio passeio.
      */
-    const naMesaDePing = { quem: null as string | null };
+    const naMesaDePing = { quem: null as string | null, festa: false };
+    /**
+     * ESTE BICHO ESTÁ DE SERVIÇO AGORA?
+     *
+     * Duas coisas tiram um bicho do passeio dele: ser chamado para a mesa de
+     * ping pong (um por vez) e a festa do Prêmio do Campeão (os quatro ao
+     * mesmo tempo). Os `onUpdate` de cada um consultam ISTO, e não a partida
+     * diretamente — foi a festa que cobrou: com o guarda olhando só a mesa, a
+     * patrulha do Cookie assumia no meio da caminhada e o levava de volta para
+     * a bilheteria. A promessa do `irPara` dele nunca resolvia, e a cutscene
+     * inteira ficava pendurada com a dupla travada.
+     */
+    const deServico = (id: string): boolean => naMesaDePing.festa || naMesaDePing.quem === id;
 
     const COOKIE = { x: 13.5, z: -20.6 };
     /**
@@ -341,7 +353,7 @@ export const villaLobos: SceneDef = {
       cookie.update(dt);
       pedirBilhete.moveTo(cookie.x, cookie.z);
       if (cookieConversando) return; // parado, olhando para quem chegou
-      if (naMesaDePing.quem === 'cookie') return; // ele está jogando, na arena
+      if (deServico('cookie')) return; // ele está jogando, na arena
 
       const alvo = cookieVaiPraFrente ? COOKIE_B : COOKIE_A;
       if (Math.hypot(alvo.x - cookie.x, alvo.z - cookie.z) < 0.12) {
@@ -1268,7 +1280,7 @@ export const villaLobos: SceneDef = {
       carinhoNoMano.moveTo(mano.x, mano.z);
       // jogando na arena ele não é mais o pinguim do balcão: sem isto o
       // "encarar" daqui de baixo o viraria de lado no meio do saque
-      if (naMesaDePing.quem === 'mano') return;
+      if (deServico('mano')) return;
       /**
        * O RÓTULO NÃO PODE PROMETER O QUE ELE NÃO VAI DAR. Com sorvete na mão
        * ele não vende outro, então o prompt deixa de dizer "pedir sorvete" e
@@ -1804,7 +1816,7 @@ export const villaLobos: SceneDef = {
       falarComEstella.moveTo(estella.x, estella.z);
       // jogando na arena ela não está na porta da loja: sem isto o "voltar a
       // olhar a rua" daqui de baixo a viraria de costas para a mesa
-      if (naMesaDePing.quem === 'estella') return;
+      if (deServico('estella')) return;
       /*
        * LONGE DELA, ELA VOLTA A OLHAR A RUA — e o jeito de fazer isso é mandar
        * ela encarar um ponto lá no `+X`, e não largar o alvo: `pararDeEncarar`
@@ -3292,6 +3304,8 @@ export const villaLobos: SceneDef = {
       // usa o travamento para saber se a cena acabou concluía que ela tinha
       // acabado antes de os quatro chegarem.
       api.lockPlayer(true);
+      // os quatro saem do passeio ao mesmo tempo: ver `deServico`
+      naMesaDePing.festa = true;
       api.focusCamera(mesa);
       api.setZoom(7.4);
       await api.wait(0.8);
@@ -3420,6 +3434,7 @@ export const villaLobos: SceneDef = {
         quem.bicho.group.rotation.y = quem.giro;
         quem.bicho.voltarAPassear();
       }
+      naMesaDePing.festa = false;
       api.focusCamera(null);
       api.setZoom(11);
       api.freeCompanion();
