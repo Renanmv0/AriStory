@@ -1169,7 +1169,33 @@ export class Game implements GameAPI {
       batido: (id) => this.save.flag(`batido-${id}`),
       resgatado: (id) => (PREMIOS_DA_ARENA[id] ?? []).every((p) => this.save.ganhouPremio(p.id)),
       resgatar: (id) => this.resgatarPremio(id),
+      campeao: () => {
+        if (this.save.flag('campeao-da-arena')) return 'pego';
+        const [batidos, pegos, total] = this.progressoDaArena();
+        return batidos === total && pegos === total ? 'aberto' : 'fechado';
+      },
+      progresso: () => this.progressoDaArena(),
     });
+  }
+
+  /**
+   * Quanto falta para o Prêmio do Campeão: [derrotados, prêmios pegos, total].
+   *
+   * O TOTAL SAI DE `PREMIOS_DA_ARENA`, e não de um número escrito à mão: no dia
+   * em que entrar um quinto desafiante com prêmio, a meta cresce sozinha e
+   * ninguém fica campeão sem ter ganhado dele.
+   *
+   * São DUAS contas, e não uma, porque o Renan pediu as duas etapas: ganhar
+   * de todos e pegar o que cada um deu. Quem ganhou de todo mundo e deixou uma
+   * roupa pendurada no quadro ainda tem o que fazer.
+   */
+  private progressoDaArena(): readonly [number, number, number] {
+    const ids = Object.keys(PREMIOS_DA_ARENA);
+    const batidos = ids.filter((id) => this.save.flag(`batido-${id}`)).length;
+    const pegos = ids.filter(
+      (id) => (PREMIOS_DA_ARENA[id] ?? []).every((p) => this.save.ganhouPremio(p.id)),
+    ).length;
+    return [batidos, pegos, ids.length];
   }
 
   /**

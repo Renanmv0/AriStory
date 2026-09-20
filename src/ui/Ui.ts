@@ -5,7 +5,7 @@ import type { MemoriaPintada } from '../world/memoriasData';
 import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
 import type { SecaoDoCardapio } from '../world/cardapioData';
-import type { DesafianteDoQuadro } from '../world/adversariosData';
+import { retratoDoGrupo, type DesafianteDoQuadro } from '../world/adversariosData';
 import { PREMIOS_DA_ARENA } from '../world/itens';
 
 /**
@@ -20,7 +20,26 @@ export interface PremiosDoQuadro {
   batido(id: string): boolean;
   resgatado(id: string): boolean;
   resgatar(id: string): boolean;
+  /**
+   * O PRÊMIO DO CAMPEÃO, o de ter batido todo mundo.
+   *
+   * - `fechado`: ainda falta alguém, ou falta pegar algum prêmio. O card conta
+   *   quanto falta, porque meta escondida não convida ninguém a jogar;
+   * - `aberto`: está tudo feito e o clique chama a festa;
+   * - `pego`: a festa já aconteceu, e o card vira a foto de grupo.
+   */
+  campeao(): 'fechado' | 'aberto' | 'pego';
+  /** o que ainda falta, para o card contar: [batidos, prêmios pegos, total] */
+  progresso(): readonly [number, number, number];
 }
+
+/**
+ * O `id` com que o quadro resolve quando alguém clica no Prêmio do Campeão.
+ *
+ * Ele não é um desafiante — é um recado para a cena: "a festa foi chamada".
+ * Os dois sublinhados são de propósito, para nunca colidir com um id de bicho.
+ */
+export const CAMPEAO_DO_QUADRO = '__campeao';
 
 /**
  * O nome de cada parte do corpo na tela, na ORDEM de `SLOTS_ROUPA`.
@@ -73,6 +92,7 @@ export class Ui {
   private readonly cardapio: HTMLDivElement;
   private readonly inscricoes: HTMLDivElement;
   private readonly fichasDoQuadro: HTMLDivElement;
+  private readonly cardDoCampeao: HTMLDivElement;
   /**
    * A MESA DE XADREZ mora numa classe propria (`mesaDeXadrez.ts`), e nao aqui.
    *
@@ -282,6 +302,7 @@ export class Ui {
           <p class="casa">Arena do Villa Lobos</p>
           <h2>Inscrições</h2>
           <p class="sub">quem quiser jogar, prega o papel aqui</p>
+          <div class="campeao"></div>
           <div class="fichas"></div>
           <p class="rodape">a mesa é de todo mundo · cinco pontos</p>
           <button class="desafiar" disabled>escolha um adversário</button>
@@ -354,6 +375,7 @@ export class Ui {
     this.cardapio = ui.querySelector('.cardapio')!;
     this.inscricoes = ui.querySelector('.quadro-de-inscricoes')!;
     this.fichasDoQuadro = ui.querySelector('.quadro-de-inscricoes .fichas')!;
+    this.cardDoCampeao = ui.querySelector('.quadro-de-inscricoes .campeao')!;
     this.mesaDeXadrez = new MesaDeXadrez(ui.querySelector('.xadrez')!);
     this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
     this.memorias = ui.querySelector('.memorias')!;
@@ -1021,6 +1043,7 @@ export class Ui {
   ): void {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const LADO = Math.round(76 * dpr);
+    this.desenharCampeao(premios);
     this.fichasDoQuadro.innerHTML = '';
 
     for (const [i, d] of quem.entries()) {
@@ -1075,6 +1098,60 @@ export class Ui {
       for (const f of this.fichasDoQuadro.querySelectorAll('.ficha')) {
         f.classList.toggle('marcada', (f as HTMLElement).dataset.id === this.desafianteMarcado);
       }
+    }
+  }
+
+  /**
+   * O CARD DO PRÊMIO DO CAMPEÃO, pregado acima de todos os papéis.
+   *
+   * Ele é o único item do quadro que não é uma inscrição: é o que sobra
+   * quando não há mais ninguém para desafiar. Três estados, e o terceiro é o
+   * prêmio em si — o card VIRA a foto de grupo, e fica pregada ali para
+   * sempre, no lugar onde o trabalho aconteceu.
+   *
+   * O clique no estado `aberto` FECHA o quadro resolvendo com
+   * `CAMPEAO_DO_QUADRO`: quem faz a festa é a cena, não a tela.
+   */
+  private desenharCampeao(premios: PremiosDoQuadro): void {
+    const estado = premios.campeao();
+    const [batidos, pegos, total] = premios.progresso();
+    this.cardDoCampeao.className = `campeao ${estado}`;
+    this.cardDoCampeao.innerHTML = '';
+
+    if (estado === 'pego') {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const foto = document.createElement('canvas');
+      foto.className = 'foto-do-grupo';
+      // 2,1 de proporção: é uma foto DEITADA, e seis cabeças num quadrado
+      // viram sopa de bolinha
+      foto.width = Math.round(300 * dpr);
+      foto.height = Math.round(143 * dpr);
+      const ctx = foto.getContext('2d');
+      if (ctx) retratoDoGrupo(ctx, foto.width, foto.height);
+      const legenda = document.createElement('p');
+      legenda.className = 'legenda';
+      legenda.textContent = 'A festa na mesa de piquenique, no dia em que vocês '
+        + 'ganharam de todo mundo. O Mano derrubou as casquinhas no caminho.';
+      this.cardDoCampeao.append(foto, legenda);
+      return;
+    }
+
+    const titulo = document.createElement('div');
+    titulo.className = 'titulo';
+    titulo.innerHTML = estado === 'aberto'
+      ? '<b>🏆 Prêmio do Campeão</b><em>eles querem falar com vocês</em>'
+      : '<b>🔒 Prêmio do Campeão</b><em>ganhe de todos e pegue os prêmios</em>';
+    const linha = document.createElement('p');
+    linha.textContent = estado === 'aberto'
+      ? 'Vocês ganharam de todo mundo do quadro, e pegaram tudo que cada um deu. '
+        + 'Tem gente esperando na mesa de piquenique.'
+      : `Derrotados: ${batidos} de ${total} · prêmios pegos: ${pegos} de ${total}.`;
+    this.cardDoCampeao.append(titulo, linha);
+
+    if (estado === 'aberto') {
+      this.cardDoCampeao.addEventListener('click', () => {
+        this.fecharQuadro(CAMPEAO_DO_QUADRO);
+      });
     }
   }
 

@@ -562,6 +562,7 @@ export const PALETTE = {
   pingBalde: 0x3f8fbe,     // o balde de bolinhas, plastico de clube
   pingCartela: 0x2f333c,   // a cartela de numero do placarzinho
   pingVerde: 0x4f9a7a,     // a terceira raquete do suporte, a que ninguem pega
+  pingDourada: 0xe0b33f,   // a raquete da vaquinha, que a Estella pintou em tres demaos
 
   /* ------------------------------------------------------------------
    * OS QUATRO PREMIOS DA ARENA — um por desafiante do quadro.

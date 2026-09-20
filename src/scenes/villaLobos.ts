@@ -26,6 +26,7 @@ import { JeanLuc } from '../entities/bichos/JeanLuc';
 import type { Bicho } from '../entities/bichos/Bicho';
 import type { SomNome } from '../audio/efeitos';
 import { INSCRITOS } from '../world/adversariosData';
+import { CAMPEAO_DO_QUADRO } from '../ui/Ui';
 import { flat } from '../core/materials';
 import { Estella } from '../entities/bichos/Estella';
 
@@ -3214,6 +3215,182 @@ export const villaLobos: SceneDef = {
      * Quem ainda não se inscreveu nem chega aqui: o painel mostra uma ficha em
      * branco no lugar dele, e ficha em branco não tem clique.
      * ================================================================== */
+    /**
+     * QUANTO A VAQUINHA DOS QUATRO JUNTA.
+     *
+     * Na régua do jogo isto é muito, e é de propósito: o bilhete da roda
+     * gigante custa 24, um prato do Mania sai por 12 a 34 e um turno inteiro
+     * de garçom paga uns 200. Quatrocentos são dois turnos — o prêmio de
+     * ganhar de todo mundo tem que valer mais que uma tarde de trabalho.
+     */
+    const PREMIO_DO_CAMPEAO = 400;
+
+    /**
+     * ================= A FESTA DA MESA DE PIQUENIQUE ==================
+     *
+     * O PRÊMIO DO CAMPEÃO, e a única cena deste parque com os quatro ao mesmo
+     * tempo. Ela só acontece depois de ganhar de todos E pegar o que cada um
+     * deu — as duas etapas, porque o quadro cobra as duas.
+     *
+     * Eles CHEGAM ANDANDO, cada um do seu posto e cada um no seu tempo: a
+     * ovelha vem da calçada da loja, o elefante da bilheteria, o pinguim do
+     * quiosque e o pato do lago. Teleportar os quatro para os lugares e abrir
+     * o diálogo seria mais barato e não seria uma festa — o que faz a cena
+     * funcionar é ver eles convergindo.
+     *
+     * As posições são as quatro esquinas da mesa, com a dupla do lado de cá.
+     * O `giro` de cada um aponta para o meio, que é onde a conversa está.
+     */
+    const festaDoCampeao = async (api: GameAPI): Promise<void> => {
+      const LUGARES: Record<string, { x: number; z: number }> = {
+        estella: { x: PIQUENIQUE.x - 1.5, z: PIQUENIQUE.z - 1.0 },
+        cookie: { x: PIQUENIQUE.x - 1.7, z: PIQUENIQUE.z + 1.1 },
+        mano: { x: PIQUENIQUE.x + 1.5, z: PIQUENIQUE.z + 1.1 },
+        'jean-luc': { x: PIQUENIQUE.x + 1.4, z: PIQUENIQUE.z - 1.0 },
+      };
+
+      api.lockPlayer(true);
+      // a dupla do lado de cá da mesa, os dois virados para ela
+      const meu = { x: PIQUENIQUE.x - 0.5, z: PIQUENIQUE.z + 2.3 };
+      const dele = { x: PIQUENIQUE.x + 0.6, z: PIQUENIQUE.z + 2.4 };
+      const paraAMesa = (p: { x: number; z: number }): number =>
+        Math.atan2(PIQUENIQUE.x - p.x, PIQUENIQUE.z - p.z);
+      api.releasePlayer(meu.x, meu.z, paraAMesa(meu));
+      api.releaseCompanion(dele.x, dele.z, paraAMesa(dele));
+      api.holdCompanion(meu.x, meu.z);
+      api.focusCamera(mesa);
+      api.setZoom(7.4);
+      await api.wait(0.8);
+
+      await conversa([
+        [R, 'Por que tem tanta gente andando pra mesa de piquenique?'],
+        [A, 'Não sei. Mas estão vindo todos.'],
+      ]);
+
+      /*
+       * OS QUATRO ANDAM AO MESMO TEMPO, e não um de cada vez.
+       *
+       * `irPara` devolve uma promessa por bicho; esperar uma por uma daria
+       * quatro caminhadas em fila, que é uma reunião e não uma festa. Cada um
+       * sai com um atraso curto só para as chegadas não baterem no mesmo
+       * quadro — é o que faz parecer que vieram de lugares diferentes, que é
+       * exatamente o que aconteceu.
+       */
+      const chegadas: Array<Promise<void>> = [];
+      let atraso = 0;
+      for (const [id, lugar] of Object.entries(LUGARES)) {
+        const quem = CHAMAVEIS[id];
+        if (!quem) continue;
+        quem.bicho.entrarEmServico();
+        quem.bicho.group.visible = true;
+        const espera = atraso;
+        atraso += 0.45;
+        chegadas.push((async () => {
+          await api.wait(espera);
+          api.som(quem.som);
+          await quem.bicho.irPara(lugar.x, lugar.z, 1.5);
+          quem.bicho.group.rotation.y = Math.atan2(
+            PIQUENIQUE.x - lugar.x, PIQUENIQUE.z - lugar.z,
+          );
+        })());
+      }
+      await Promise.all(chegadas);
+      await api.wait(0.5);
+
+      await conversa([
+        ['Jean-Luc', 'Eu fui de porta em porta. A pé. Molhado, em todas.'],
+        ['Cookie', 'Desculpa a demora. Eu vim devagar pra não fazer barulho.'],
+        [R, 'Você tem três metros, Cookie.'],
+        ['Cookie', 'Eu sei. Eu vim devagar mesmo assim.'],
+        ['Mano', 'CHEGUEI! Eu trouxe casquinha pra todo mundo!'],
+        ['Mano', 'Caiu tudo no caminho. Mas eu trouxe.'],
+        ['Estella', 'Ninguém encosta nessa mesa antes de eu limpar. Pronto. Agora pode.'],
+      ]);
+      mano.dancar(2.4);
+      await conversa([
+        ['Estella', 'Vocês dois ganharam de todo mundo aqui. Um por um.'],
+        ['Jean-Luc', 'De mim primeiro. Eu gosto de lembrar que foi de mim primeiro.'],
+        ['Cookie', 'De mim foi sem querer. Eu estava com medo da bolinha.'],
+        [A, 'Você quase ganhou, Cookie.'],
+        ['Cookie', 'Quase. Eu guardei o quase.'],
+      ]);
+
+      // -------------------------------------------------------- a vaquinha
+      await conversa([
+        ['Estella', 'A gente fez uma vaquinha.'],
+        [R, 'Uma o quê?'],
+        ['Estella', 'Uma vaquinha. Quatrocentos.'],
+        [A, 'QUATROCENTOS?'],
+        ['Mano', 'Eu virei o pote de gorjeta. Tinha muita moeda de um real.'],
+        ['Mano', 'Tinha um botão também. Eu tirei o botão.'],
+        ['Cookie', 'Eu vendi bilhete a mais. Quer dizer... eu vendi os certos. Só que mais.'],
+        ['Estella', 'E eu cobrei o preço do mezanino de uma pessoa que merecia pagar '
+          + 'o preço do mezanino.'],
+        [R, 'E você, Jean-Luc?'],
+        ['Jean-Luc', 'Eu mergulhei.'],
+        [A, 'Você o quê?'],
+        ['Jean-Luc', 'O fundo do lago é cheio de moeda. As pessoas jogam e fazem um desejo.'],
+        [R, 'Jean-Luc, isso é o dinheiro do desejo dos outros.'],
+        ['Jean-Luc', 'O desejo continua lá. Eu só trouxe a moeda.'],
+        ['Jean-Luc', 'Ninguém desejou a moeda. Eu perguntei.'],
+      ]);
+      api.ganhar(PREMIO_DO_CAMPEAO);
+      api.som('caixa');
+      api.toast(`R$ ${PREMIO_DO_CAMPEAO} — a vaquinha dos quatro`, '💰');
+      await api.wait(0.6);
+
+      // ---------------------------------------------------- a raquete dourada
+      await conversa([
+        ['Estella', 'E tem mais uma coisa. Mano.'],
+        ['Mano', 'AH SIM! A raquete!'],
+        ['Mano', 'A gente mandou fazer uma raquete. DOURADA. Pra vocês.'],
+        ['Cookie', 'A Estella que pintou.'],
+        ['Estella', 'Pintei. Três demãos. A primeira ficou mostarda.'],
+        ['Jean-Luc', 'Ela está no suporte, com as outras. Escolham ela sempre.'],
+        ['Jean-Luc', 'Sempre. Eu vou saber se vocês não escolherem.'],
+      ]);
+      api.setFlag('raquete-dourada');
+      api.som('memoria');
+      api.toast('A raquete dourada está no suporte', '🏓');
+      jeanLuc.comemorar(2.6);
+      await conversa([
+        [A, 'Obrigado, gente.'],
+        ['Cookie', 'A gente que agradece. Ninguém nunca tinha querido jogar com a gente.'],
+        [R, 'Semana que vem de novo?'],
+        ['Mano', 'SEMANA QUE VEM!'],
+        ['Estella', 'Semana que vem eu ganho.'],
+        ['Jean-Luc', 'Semana que vem eu ganho.'],
+        ['Cookie', 'Semana que vem eu trago bolinha nova. A nossa está amassada.'],
+      ]);
+
+      api.setFlag('campeao-da-arena');
+      api.unlock({
+        id: 'campeao-da-arena',
+        title: 'A festa na mesa de piquenique',
+        place: 'Parque Villa Lobos',
+        note: 'A gente ganhou de todo mundo do quadro, e eles fizeram uma vaquinha de '
+          + 'quatrocentos reais — o pote de gorjeta do Mano, bilhete a mais do Cookie, '
+          + 'o preço do mezanino da Estella e um punhado de moedas que o Jean-Luc catou '
+          + 'no fundo do lago. Deram uma raquete dourada junto. A foto ficou pregada no '
+          + 'quadro de inscrições.',
+        icon: '🏆',
+      });
+
+      // E TODO MUNDO VOLTA PARA O POSTO. Bicho que fica de serviço para sempre
+      // é o defeito que o teste do garçom mede — a mesma regra do fim de partida
+      for (const id of Object.keys(LUGARES)) {
+        const quem = CHAMAVEIS[id];
+        if (!quem) continue;
+        quem.bicho.group.position.set(quem.posto.x, 0, quem.posto.z);
+        quem.bicho.group.rotation.y = quem.giro;
+        quem.bicho.voltarAPassear();
+      }
+      api.focusCamera(null);
+      api.setZoom(11);
+      api.freeCompanion();
+      api.lockPlayer(false);
+    };
+
     const verOQuadro = w.interact({
       id: 'parque:inscricoes',
       x: QUADRO.x, z: QUADRO.z + 0.9, radius: 1.6,
@@ -3223,6 +3400,11 @@ export const villaLobos: SceneDef = {
         if (jogando) return;
         const escolhido = await api.abrirQuadroDeInscricoes();
         if (!escolhido) return;
+        // o card do campeão não é um desafiante: ele chama a festa
+        if (escolhido === CAMPEAO_DO_QUADRO) {
+          await festaDoCampeao(api);
+          return;
+        }
         const ficha = INSCRITOS.find((d) => d.id === escolhido);
         if (!ficha) return;
 
@@ -3296,10 +3478,22 @@ export const villaLobos: SceneDef = {
      * está mais na mesa, e deixaria a nova acesa em cima do jogo.
      */
     const CORES_DE_RAQUETE = [
-      { nome: 'A vermelha', cor: P.metalRed, flag: 'ping-raquete-vermelha' },
-      { nome: 'A verde', cor: P.pingVerde, flag: 'ping-raquete-verde' },
-      { nome: 'A azul', cor: P.fabricBlue, flag: 'ping-raquete-azul' },
+      { nome: 'A vermelha', cor: P.metalRed, flag: 'ping-raquete-vermelha', pede: '' },
+      { nome: 'A verde', cor: P.pingVerde, flag: 'ping-raquete-verde', pede: '' },
+      { nome: 'A azul', cor: P.fabricBlue, flag: 'ping-raquete-azul', pede: '' },
+      /*
+       * A DOURADA só aparece no suporte depois da festa da mesa de piquenique.
+       *
+       * O `pede` é a flag que a destranca, e ela mora na MESMA lista das
+       * outras três de propósito: a escolha, o "sobrevive a sair e voltar do
+       * parque" e a pintura da raquete da partida já passam todas por aqui, e
+       * uma lista separada para uma peça só é uma segunda regra para manter.
+       */
+      { nome: 'A dourada', cor: P.pingDourada, flag: 'ping-raquete-dourada', pede: 'raquete-dourada' },
     ] as const;
+    /** o que está no suporte AGORA: a dourada só entra depois da festa */
+    const raquetesDisponiveis = (api: GameAPI): typeof CORES_DE_RAQUETE[number][] =>
+      CORES_DE_RAQUETE.filter((c) => !c.pede || api.flag(c.pede));
     const trocarRaqueteDaMesa = (cor: number): void => {
       const velha = enfeitesPing[0];
       const nova = raquete(cor);
@@ -3312,7 +3506,11 @@ export const villaLobos: SceneDef = {
     // a escolha sobrevive a sair e voltar do parque: a cena se remonta inteira
     // a cada entrada, e sem isto a raquete voltaria vermelha toda vez
     for (const opcao of CORES_DE_RAQUETE) {
-      if (g.flag(opcao.flag)) trocarRaqueteDaMesa(opcao.cor);
+      if (!g.flag(opcao.flag)) continue;
+      trocarRaqueteDaMesa(opcao.cor);
+      // e a raquete DA PARTIDA sai na mesma cor: sem isto a escolha era só um
+      // enfeite de mesa, que some justamente na hora de jogar
+      partida.trocarMinhaRaquete(opcao.cor);
     }
 
     w.interact({
@@ -3322,14 +3520,20 @@ export const villaLobos: SceneDef = {
       highlight: suportePing,
       onInteract: async (api) => {
         await conversa([[R, 'Escolhe a sua. A minha é a que sobrar.']]);
-        const escolha = await api.ask('Qual raquete?', CORES_DE_RAQUETE.map((c) => c.nome));
-        const opcao = CORES_DE_RAQUETE[escolha];
+        const naArara = raquetesDisponiveis(api);
+        const escolha = await api.ask('Qual raquete?', naArara.map((c) => c.nome));
+        const opcao = naArara[escolha];
         if (!opcao) return;
         for (const c of CORES_DE_RAQUETE) api.setFlag(c.flag, c.flag === opcao.flag);
         trocarRaqueteDaMesa(opcao.cor);
+        partida.trocarMinhaRaquete(opcao.cor);
         api.som('escolha');
         api.toast(`${opcao.nome} é sua`, '🏓');
-        await conversa([[A, 'Essa aqui tem sorte. Dá pra sentir.']]);
+        await conversa([
+          opcao.cor === P.pingDourada
+            ? [A, 'Essa aqui é a deles. Dá pra sentir o peso.']
+            : [A, 'Essa aqui tem sorte. Dá pra sentir.'],
+        ]);
       },
     });
 
