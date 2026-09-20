@@ -3242,14 +3242,42 @@ export const villaLobos: SceneDef = {
      * O `giro` de cada um aponta para o meio, que é onde a conversa está.
      */
     const festaDoCampeao = async (api: GameAPI): Promise<void> => {
-      const LUGARES: Record<string, { x: number; z: number }> = {
-        estella: { x: PIQUENIQUE.x - 1.5, z: PIQUENIQUE.z - 1.0 },
-        cookie: { x: PIQUENIQUE.x - 1.7, z: PIQUENIQUE.z + 1.1 },
-        mano: { x: PIQUENIQUE.x + 1.5, z: PIQUENIQUE.z + 1.1 },
-        'jean-luc': { x: PIQUENIQUE.x + 1.4, z: PIQUENIQUE.z - 1.0 },
+      /*
+       * ONDE CADA UM PARA, e DE ONDE ele entra no quadro.
+       *
+       * O `de` não é enfeite: cada um é teleportado para lá e anda só os
+       * últimos metros, que são os que a câmera mostra — é o mesmo caminho do
+       * convidado que sobe na mesa de ping pong. Andar do posto de verdade
+       * seriam quarenta unidades da porta da loja até aqui, quase um minuto
+       * de câmera parada numa mesa vazia, e com o bicho esbarrando em tudo
+       * que houver no caminho.
+       *
+       * As entradas apontam para os postos de verdade, uma em cada diagonal:
+       * a ovelha vem da loja (-X, -Z), o elefante da bilheteria (+X, -Z), o
+       * pinguim do quiosque (+X) e o pato da arena (-X, +Z). Eles convergem,
+       * e é isso que faz parecer que vieram de lugares diferentes.
+       */
+      const LUGARES: Record<string, {
+        x: number; z: number; de: { x: number; z: number };
+      }> = {
+        estella: {
+          x: PIQUENIQUE.x - 1.5, z: PIQUENIQUE.z - 1.0,
+          de: { x: PIQUENIQUE.x - 4.2, z: PIQUENIQUE.z - 3.4 },
+        },
+        cookie: {
+          x: PIQUENIQUE.x - 1.7, z: PIQUENIQUE.z + 1.1,
+          de: { x: PIQUENIQUE.x - 4.4, z: PIQUENIQUE.z + 3.4 },
+        },
+        mano: {
+          x: PIQUENIQUE.x + 1.5, z: PIQUENIQUE.z + 1.1,
+          de: { x: PIQUENIQUE.x + 4.4, z: PIQUENIQUE.z + 3.4 },
+        },
+        'jean-luc': {
+          x: PIQUENIQUE.x + 1.4, z: PIQUENIQUE.z - 1.0,
+          de: { x: PIQUENIQUE.x + 4.2, z: PIQUENIQUE.z - 3.4 },
+        },
       };
 
-      api.lockPlayer(true);
       // a dupla do lado de cá da mesa, os dois virados para ela
       const meu = { x: PIQUENIQUE.x - 0.5, z: PIQUENIQUE.z + 2.3 };
       const dele = { x: PIQUENIQUE.x + 0.6, z: PIQUENIQUE.z + 2.4 };
@@ -3258,6 +3286,12 @@ export const villaLobos: SceneDef = {
       api.releasePlayer(meu.x, meu.z, paraAMesa(meu));
       api.releaseCompanion(dele.x, dele.z, paraAMesa(dele));
       api.holdCompanion(meu.x, meu.z);
+      // O TRAVAMENTO VEM DEPOIS DO `releasePlayer`, e não antes: ele DESTRAVA
+      // ao devolver o corpo à cena (`player.locked = false`, em `Game`). Na
+      // ordem trocada a cutscene rodava com o joystick solto — e um teste que
+      // usa o travamento para saber se a cena acabou concluía que ela tinha
+      // acabado antes de os quatro chegarem.
+      api.lockPlayer(true);
       api.focusCamera(mesa);
       api.setZoom(7.4);
       await api.wait(0.8);
@@ -3283,6 +3317,7 @@ export const villaLobos: SceneDef = {
         if (!quem) continue;
         quem.bicho.entrarEmServico();
         quem.bicho.group.visible = true;
+        quem.bicho.group.position.set(lugar.de.x, 0, lugar.de.z);
         const espera = atraso;
         atraso += 0.45;
         chegadas.push((async () => {
