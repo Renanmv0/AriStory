@@ -180,14 +180,34 @@ const conversarCom = async (bicho, prompt) => {
 
   const onde = await ondeEsta(bicho);
   if (!onde) return { prompt: 'sumiu da cena', falas: [] };
-  await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz + 1.0, 0), onde);
+
+  /*
+   * DÁ A VOLTA NELE ATÉ O PROMPT SER O DELE.
+   *
+   * O ponto de fala do Jean-Luc tem `priority: -1` — ele perde de propósito
+   * para a mesa e para o quadro, que são o que importa na arena. Quando ele
+   * passeia para perto da mesa, parar sempre no mesmo lado dele devolve o
+   * prompt de JOGAR, e a leitura sai vazia sem dizer por quê.
+   *
+   * E o balão guarda o último texto enquanto está escondido, então não basta
+   * ler o rótulo: ele tem que estar VISÍVEL.
+   */
+  const voltas = [[0, 1.0], [0, -1.0], [1.0, 0], [-1.0, 0],
+    [0.8, 0.8], [-0.8, -0.8], [0.8, -0.8], [-0.8, 0.8]];
   let texto = '';
-  for (let i = 0; i < 20; i++) {
-    await page.waitForTimeout(250);
-    texto = (await page.locator('.prompt .label').textContent().catch(() => '')) ?? '';
-    if (prompt.test(texto)) break;
+  let achou = false;
+  for (const [dx, dz] of voltas) {
+    await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, 0),
+      [onde[0] + dx, onde[1] + dz]);
+    for (let i = 0; i < 6; i++) {
+      await page.waitForTimeout(250);
+      const visivel = await page.locator('.prompt.show').count();
+      texto = (await page.locator('.prompt .label').textContent().catch(() => '')) ?? '';
+      if (visivel && prompt.test(texto)) { achou = true; break; }
+    }
+    if (achou) break;
   }
-  if (!prompt.test(texto)) return { prompt: texto, falas: [] };
+  if (!achou) return { prompt: `sem prompt dele (ultimo: ${texto})`, falas: [] };
 
   await page.keyboard.press('KeyE');
   const falas = [];
