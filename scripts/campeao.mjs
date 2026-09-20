@@ -147,6 +147,14 @@ const ocupado = async () =>
 
 const falas = [];
 let juntos = null;
+/*
+ * A SEGUNDA FOTO, com a festa já montada.
+ *
+ * A primeira sai no instante em que os quatro convergem — e ali eles ainda
+ * estão chegando, com a mesa pela metade. A boa é a do meio da conversa, que
+ * é o que o Renan vai ver jogando.
+ */
+let daMesa = false;
 for (let i = 0; i < 400; i++) {
   await page.waitForTimeout(300);
   if (!(await ocupado())) break;
@@ -154,6 +162,10 @@ for (let i = 0; i < 400; i++) {
     const t = (await page.locator('.dialogue .text').textContent().catch(() => '')) ?? '';
     if (t && t.length > 2 && falas[falas.length - 1] !== t) falas.push(t);
     await page.keyboard.press('KeyE');
+  }
+  if (juntos !== null && !daMesa && falas.length >= 30) {
+    daMesa = true;
+    await page.screenshot({ path: `${OUT}-mesa.png` });
   }
   // a foto do momento em que os quatro estão em volta da mesa
   if (juntos === null) {

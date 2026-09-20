@@ -11,7 +11,8 @@ import {
   cestaDeBiscoitos, mesinhaDeXadrez,
   canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro, duck,
   fence, floodlight, flowers, iceCream, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
-  mesaPingPong, nenufar, picnicTable, posteDeGelo, raquete, skateShop,
+  comidinhasDePiquenique, mesaPingPong, nenufar, picnicTable, portaRetrato, posteDeGelo,
+  raquete, skateShop, toalhaDePiquenique,
   rock, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
   bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong,
   quadroDeInscricoes, suporteDeRaquetes,
@@ -25,7 +26,7 @@ import { Mano } from '../entities/bichos/Mano';
 import { JeanLuc } from '../entities/bichos/JeanLuc';
 import type { Bicho } from '../entities/bichos/Bicho';
 import type { SomNome } from '../audio/efeitos';
-import { INSCRITOS } from '../world/adversariosData';
+import { INSCRITOS, retratoDoGrupo } from '../world/adversariosData';
 import { CAMPEAO_DO_QUADRO } from '../ui/Ui';
 import { flat } from '../core/materials';
 import { Estella } from '../entities/bichos/Estella';
@@ -588,6 +589,40 @@ export const villaLobos: SceneDef = {
     const PIQUENIQUE = { x: -8.6, z: 18.4 };
     const mesa = w.add(w.place(picnicTable(), PIQUENIQUE.x, 0, PIQUENIQUE.z, 0.3));
     w.blockBox(PIQUENIQUE.x, PIQUENIQUE.z, 1, 0.9, 0.3);
+
+    /**
+     * A MESA POSTA DA FESTA DO CAMPEÃO.
+     *
+     * Ela mora dentro da mesa de piquenique (`mesa.add`), e não solta no
+     * mundo: assim a toalha, a comida e o retrato herdam de graça os 0,3 rad
+     * de giro do móvel. Posta solta, cada peça precisaria repetir a conta do
+     * giro, e a toalha sairia torta em cima do tampo.
+     *
+     * TRÊS PEÇAS, DUAS VIDAS. A toalha e o porta-retrato ficam para sempre
+     * depois da festa — são o que conta que ela aconteceu, do mesmo jeito que
+     * a foto pregada no quadro. A comida some: eles comeram.
+     *
+     * O TAMPO ESTÁ EM 0,81 (0,76 do centro da tábua mais a metade dos 0,1 de
+     * espessura dela), e é dali que tudo nasce.
+     */
+    const TAMPO_DA_MESA = 0.81;
+    const toalhaDaFesta = toalhaDePiquenique();
+    toalhaDaFesta.position.y = TAMPO_DA_MESA;
+    const comidaDaFesta = comidinhasDePiquenique();
+    comidaDaFesta.position.y = TAMPO_DA_MESA + 0.03;
+    // a foto fica na ponta de -X do tampo, virada para quem está do lado de
+    // cá: no meio ela taparia a cara dos quatro que ficam atrás da mesa
+    const retratoNaMesa = portaRetrato(0.42, 0.2, retratoDoGrupo);
+    retratoNaMesa.position.set(-0.62, TAMPO_DA_MESA + 0.03, -0.24);
+    retratoNaMesa.rotation.y = 0.35;
+    mesa.add(toalhaDaFesta, comidaDaFesta, retratoNaMesa);
+
+    // quem já deu a festa encontra a mesa posta ao voltar ao parque; quem não
+    // deu não vê nada em cima dela
+    const jaDeuAFesta = g.flag('campeao-da-arena');
+    toalhaDaFesta.visible = jaDeuAFesta;
+    retratoNaMesa.visible = jaDeuAFesta;
+    comidaDaFesta.visible = false;
 
     // ------------------------------------------------ mesa de ping pong
     // O tampo fica ao longo do X local: é nessa direção que a bolinha viaja, e
@@ -3317,6 +3352,11 @@ export const villaLobos: SceneDef = {
       api.lockPlayer(true);
       // os quatro saem do passeio ao mesmo tempo: ver `deServico`
       naMesaDePing.festa = true;
+      // a mesa é posta ANTES de eles chegarem: é a Estella que limpa e
+      // arruma, e ela diz isso na primeira fala da roda
+      toalhaDaFesta.visible = true;
+      comidaDaFesta.visible = true;
+      retratoNaMesa.visible = true;
       /*
        * A CÂMERA MIRA NUM PONTO, e não na mesa.
        *
@@ -3465,6 +3505,9 @@ export const villaLobos: SceneDef = {
         quem.bicho.voltarAPassear();
       }
       naMesaDePing.festa = false;
+      // a toalha e o retrato ficam; a comida some, que é o que acontece com
+      // comida numa festa
+      comidaDaFesta.visible = false;
       w.root.remove(alvoDaFesta);
       api.focusCamera(null);
       api.setZoom(11);
