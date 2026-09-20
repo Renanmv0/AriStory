@@ -83,7 +83,7 @@ node scripts/arena.mjs   /tmp/ar    # a arena do ping pong: tablado, clareira se
 node scripts/jeanluc.mjs /tmp/jl    # o pato frances: submerso ate as 5 vitorias, emerge, atravessa e fica de vez
 node scripts/duelo.mjs   /tmp/dl    # a partida contra o Jean-Luc: o caixote, a raquete dele, e o premio
 node scripts/balanco.mjs           # simula partidas contra cada adversario e mede se a dificuldade esta justa
-node scripts/quadro.mjs  /tmp/qi    # o quadro de inscricoes: vagas abertas, retratos pintados e o convidado vindo a mesa
+node scripts/quadro.mjs  /tmp/qi    # o quadro: vagas abertas, retratos pintados, o convidado vindo a mesa e o premio de cada um
 node scripts/maos.mjs    /tmp/mao   # de maos dadas: emparelhados e o coracao
 node scripts/suco.mjs    /tmp/su    # os sucos do clube: cada sabor com o seu dono
 node scripts/mochila.mjs /tmp/mo    # as 10 vagas, o slot principal e o F5

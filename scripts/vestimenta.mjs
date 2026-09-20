@@ -91,7 +91,21 @@ const funcional = await page.evaluate(() => {
   // e voltam
   const vagaLivre = j.handItems('ari').findIndex((x) => x === null);
   const tirou = j.moveItem({ lista: 'vestivel', indice: 3 }, { lista: 'mao', indice: vagaLivre }, 'ari');
-  return { guardou, naMao, calcou, tirou, armario: j.wardrobeItems('ari').map((i) => i.id) };
+  /*
+   * E O SEGUNDO PAR SEGUE A MESMA REGRA.
+   *
+   * Os patins do Mano (prêmio da arena) também são `funcional`, e "funcional"
+   * é uma propriedade da FICHA, não um `if` no id — se algum caminho de
+   * escrita tivesse cravado `'patins'`, o prêmio iria para o armário e não
+   * daria para calçar no parque, que é onde se anda de patins.
+   */
+  const guardouOPremio = j.storeItem(I['patins-mano'], 'ari');
+  const premioNaMao = j.handItems('ari').findIndex((x) => x?.id === 'patins-mano');
+  return {
+    guardou, naMao, calcou, tirou,
+    guardouOPremio, premioNaMao,
+    armario: j.wardrobeItems('ari').map((i) => i.id),
+  };
 });
 
 // ------------------------------------------ 4. item de mão não se veste
@@ -169,6 +183,9 @@ console.log('   corpo:', JSON.stringify(depoisDeVestir.corpo));
 console.log('3. patins · guardou como:', funcional.guardou, '· na vaga', funcional.naMao,
   '· calçou:', funcional.calcou, '· tirou pra mão:', funcional.tirou);
 console.log('   armário sem patins:', !funcional.armario.includes('patins'));
+console.log('   os do Mano (prêmio) também:', funcional.guardouOPremio,
+  '· na vaga', funcional.premioNaMao,
+  '· fora do armário:', !funcional.armario.includes('patins-mano'));
 console.log('4. sorvete · arrastar pra vestimenta:', itemDeMao.arrastou, '· vestir direto:', itemDeMao.vestiuDireto,
   '· foi pro armário:', itemDeMao.foiProArmario);
 console.log('5. vagas de vestimenta:', JSON.stringify(presos));
@@ -198,6 +215,10 @@ if (funcional.naMao < 0) problemas.push('os patins não foram para a mochila');
 if (funcional.armario.includes('patins')) problemas.push('os patins foram parar no armário');
 if (!funcional.calcou) problemas.push('não deu para calçar os patins direto da mochila');
 if (!funcional.tirou) problemas.push('não deu para tirar os patins de volta para a mochila');
+if (funcional.premioNaMao < 0) problemas.push('os patins do Mano não foram para a mochila');
+if (funcional.armario.includes('patins-mano')) {
+  problemas.push('os patins do Mano foram parar no armário');
+}
 
 // 4. item de mão continua sem poder ser vestido
 if (itemDeMao.arrastou || itemDeMao.vestiuDireto) problemas.push('deu para vestir um item de mão');

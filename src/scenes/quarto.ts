@@ -219,9 +219,13 @@ export const quarto: SceneDef = {
           /**
            * A GRAVATINHA DO WALTER NÃO É ESTOQUE DA CASA: ela é presente, e só
            * entra no armário depois que o turno do Mania fecha com três
-           * estrelas. É a única peça do guarda-roupa que se ganha jogando, e
-           * por isso ela mora aqui fora da lista — a lista é o que o Ari já
-           * tinha, e isto é o que os dois conquistaram.
+           * estrelas. Ela mora aqui fora da lista porque a lista é o que o Ari
+           * já tinha, e isto é o que os dois conquistaram.
+           *
+           * Os prêmios da arena de ping pong seguem a mesma regra e nem passam
+           * por aqui: quem os repõe é `reporPremios`, no `Game`, porque eles
+           * valem também no espelho da boutique — que abre este mesmo painel
+           * sem passar pelo armário do quarto.
            */
           if (g.flag('gravata-do-walter')) g.storeItem(ITENS.gravataDoWalter, quem);
         }

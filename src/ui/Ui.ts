@@ -6,6 +6,21 @@ import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
 import type { SecaoDoCardapio } from '../world/cardapioData';
 import type { DesafianteDoQuadro } from '../world/adversariosData';
+import { PREMIOS_DA_ARENA } from '../world/itens';
+
+/**
+ * O QUE O QUADRO SABE SOBRE OS PREMIOS, na hora em que ele abre.
+ *
+ * A tela nao le o save e nao escreve nele: ela pergunta e avisa. `batido` diz
+ * se a partida contra aquele ja foi ganha, `resgatado` se a roupa ja foi
+ * pegada, e `resgatar` e o clique — devolve `true` quando a peca de fato
+ * entrou no guarda-roupa, e e isso que redesenha o papel.
+ */
+export interface PremiosDoQuadro {
+  batido(id: string): boolean;
+  resgatado(id: string): boolean;
+  resgatar(id: string): boolean;
+}
 
 /**
  * O nome de cada parte do corpo na tela, na ORDEM de `SLOTS_ROUPA`.
@@ -937,6 +952,7 @@ export class Ui {
     quem: readonly DesafianteDoQuadro[],
     inscritos: ReadonlySet<string>,
     parceiro: string,
+    premios: PremiosDoQuadro,
   ): Promise<string | null> {
     return new Promise((resolve) => {
       if (this.quadroOpen) {
@@ -945,7 +961,7 @@ export class Ui {
       }
       this.som?.('escolha');
       this.desafianteMarcado = null;
-      this.desenharQuadro(quem, inscritos, parceiro);
+      this.desenharQuadro(quem, inscritos, parceiro, premios);
       this.pintarBotaoDeDesafiar();
       this.inscricoes.classList.add('show');
       this.marcarTelaAberta();
@@ -1001,6 +1017,7 @@ export class Ui {
     quem: readonly DesafianteDoQuadro[],
     inscritos: ReadonlySet<string>,
     parceiro: string,
+    premios: PremiosDoQuadro,
   ): void {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const LADO = Math.round(76 * dpr);
@@ -1041,10 +1058,68 @@ export class Ui {
         + `<p>${d.historia}</p>`
         + `<span class="assinatura">${d.assinatura}</span>`;
 
+      const premio = this.pregarPremio(d.id, premios, () => {
+        this.desenharQuadro(quem, inscritos, parceiro, premios);
+        this.pintarBotaoDeDesafiar();
+      });
+      if (premio) texto.appendChild(premio);
+
       ficha.append(foto, texto);
       ficha.addEventListener('click', () => this.marcarDesafiante(d.id));
       this.fichasDoQuadro.appendChild(ficha);
     }
+
+    // o papel marcado sobrevive ao redesenho: sem isto, pegar o premio de um
+    // desapontava a marca de quem estava escolhido e o botao de baixo mentia
+    if (this.desafianteMarcado) {
+      for (const f of this.fichasDoQuadro.querySelectorAll('.ficha')) {
+        f.classList.toggle('marcada', (f as HTMLElement).dataset.id === this.desafianteMarcado);
+      }
+    }
+  }
+
+  /**
+   * O PREMIO no pe do papel — a etiqueta da roupa que aquele desafiante da.
+   *
+   * Tres estados, e eles contam a historia inteira sem precisar de tela nova:
+   *
+   * - **fechado**: ainda nao ganharam dele. A etiqueta mostra o que esta em
+   *   jogo, porque premio escondido nao convida ninguem a jogar;
+   * - **aberto**: ja ganharam e a roupa esta pendurada esperando o clique. E o
+   *   unico estado clicavel, e ele para o clique de subir — sem isso pegar a
+   *   roupa marcaria o desafiante e, no segundo clique, comecaria uma partida;
+   * - **pego**: a peca ja esta no guarda-roupa, e continua la para sempre.
+   *
+   * Quem nao da premio nenhum (a dupla) nao ganha etiqueta.
+   */
+  private pregarPremio(
+    id: string, premios: PremiosDoQuadro, redesenhar: () => void,
+  ): HTMLElement | null {
+    const pecas = PREMIOS_DA_ARENA[id];
+    if (!pecas || pecas.length === 0) return null;
+
+    const caixa = document.createElement('div');
+    caixa.className = 'premio';
+    const nomes = pecas.map((p) => `${p.icone} ${p.nome}`).join(' · ');
+
+    if (!premios.batido(id)) {
+      caixa.classList.add('fechado');
+      caixa.innerHTML = `<span class="rotulo">🔒 prêmio</span><span class="peca">${nomes}</span>`;
+      return caixa;
+    }
+    if (premios.resgatado(id)) {
+      caixa.classList.add('pego');
+      caixa.innerHTML = `<span class="rotulo">✓ no guarda-roupa</span><span class="peca">${nomes}</span>`;
+      return caixa;
+    }
+
+    caixa.classList.add('aberto');
+    caixa.innerHTML = `<span class="rotulo">🎁 clique para pegar</span><span class="peca">${nomes}</span>`;
+    caixa.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (premios.resgatar(id)) redesenhar();
+    });
+    return caixa;
   }
 
   // ---------------------------------------------------------------- xadrez

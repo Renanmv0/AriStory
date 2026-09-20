@@ -3,8 +3,10 @@ import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
 import {
-  canoDaBota, gargantilhaDeLaco, gorroDeLa, gravataDoWalter, maidJapones, mangaDeMoletom, mangaDeQuimono,
-  meiaDeCoxa, moletomComCapuz, oculosDeSol, vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
+  blazerXadrez, canoDaBota, coroaDeDama, gargantilhaDeLaco, gorroDeLa, gravataDoWalter,
+  jaquetaFrancesa, maidJapones, mangaDaJaquetaFrancesa, mangaDeMoletom, mangaDeQuimono,
+  mangaDoBlazer, meiaDeCoxa, moletomComCapuz, oculosDeSol, perneiraXadrez, quepeDoCookie,
+  vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
 } from './roupas';
 
 /**
@@ -242,8 +244,9 @@ export const ITENS = {
    * A gravatinha do Walter — presente dele, e nao peca de vitrine.
    *
    * Ela SO existe no armario depois que o turno do Mania fecha com tres
-   * estrelas (a flag `gravata-do-walter`): e a unica peca do guarda-roupa que
-   * se ganha jogando, e por isso a `nota` diz de quem ela veio.
+   * estrelas (a flag `gravata-do-walter`): foi a PRIMEIRA peca do guarda-roupa
+   * que se ganha jogando, e o molde das quatro da arena que vieram depois. Por
+   * isso a `nota` diz de quem ela veio.
    */
   gravataDoWalter: {
     id: 'gravata-do-walter',
@@ -523,7 +526,148 @@ export const ITENS = {
     cor: P.lojaVeludo,
     nota: 'o mesmo veludo da boina', preco: 160,
   },
+
+  /* ====================================================================
+   *        OS PREMIOS DA ARENA — o que cada desafiante batido da
+   * ====================================================================
+   *
+   * Nenhuma delas tem `preco`: NAO ESTAO A VENDA em lugar nenhum, e nao estao
+   * no armario do Ari. E o mesmo precedente da gravatinha do Walter, so que
+   * com quatro donos — a peca so entra no guarda-roupa quando a partida contra
+   * aquele bicho for ganha e o papel dele for clicado no quadro.
+   *
+   * A `nota` de cada uma diz de quem ela veio, que e a unica coisa que separa
+   * um premio de mais uma roupa na arara.
+   */
+
+  // ------------------------------------------------------ Jean-Luc: a jaqueta
+  jaquetaDoJeanLuc: {
+    id: 'jaqueta-jean-luc',
+    nome: 'Jaqueta da França',
+    icone: '🧥',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.jaquetaFranca,
+    corDetalhe: P.jaquetaFrancaManga,
+    nota: 'do Jean-Luc · com o patinho no peito',
+    extra: jaquetaFrancesa,
+    extraBraco: mangaDaJaquetaFrancesa,
+  },
+
+  // ------------------------------------------------------- Cookie: o quepe
+  quepeDoCookie: {
+    id: 'quepe-cookie',
+    nome: 'Quepe da bilheteria',
+    icone: '🧢',
+    tipo: 'vestivel',
+    slot: 'cabeca',
+    cor: P.quepeCookie,
+    corDetalhe: P.quepeCookieFita,
+    nota: 'do Cookie · ele tem outro igual',
+    cobreCabelo: true,
+    extra: quepeDoCookie,
+  },
+
+  /* ------------------------------------------- Estella: o conjunto de xadrez
+   *
+   * Quatro pecas, uma por vaga do corpo, e nao uma peca so: ela e ESTILISTA, e
+   * estilista nao presenteia uma blusa avulsa. Vestir as quatro juntas e o
+   * conjunto inteiro; vestir so o blazer tambem funciona, porque cada uma
+   * continua sendo uma peca normal do guarda-roupa.
+   *
+   * O CLARO E A COR DA FICHA e o escuro sao as casas por cima — ver
+   * `casasDeXadrez`, em `roupas.ts`. Na calca isso fica ainda mais barato: a
+   * `cor` repinta a perna que o corpo ja tem, e a geometria so acrescenta as
+   * casas escuras.
+   */
+  blazerDaEstella: {
+    id: 'blazer-xadrez',
+    nome: 'Blazer de xadrez',
+    icone: '♟️',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.xadrezPano,
+    corDetalhe: P.xadrezPanoEscuro,
+    nota: 'da Estella · com o broche de dama na lapela',
+    extra: blazerXadrez,
+    extraBraco: mangaDoBlazer,
+  },
+  calcaDaEstella: {
+    id: 'calca-xadrez',
+    nome: 'Calça de xadrez',
+    icone: '♟️',
+    tipo: 'vestivel',
+    slot: 'pernas',
+    cor: P.xadrezPano,
+    corDetalhe: P.xadrezPanoEscuro,
+    nota: 'da Estella · o par do blazer',
+    extra: perneiraXadrez,
+  },
+  coroaDaEstella: {
+    id: 'coroa-dama',
+    nome: 'Coroa de dama',
+    icone: '👑',
+    tipo: 'vestivel',
+    slot: 'cabeca',
+    cor: P.xadrezDourado,
+    corDetalhe: P.xadrezForro,
+    nota: 'da Estella · «a dama anda como quiser, meu bem»',
+    extra: coroaDeDama,
+  },
+  botaDaEstella: {
+    id: 'bota-xadrez',
+    nome: 'Bota de xadrez',
+    icone: '👢',
+    tipo: 'vestivel',
+    slot: 'pes',
+    cor: P.xadrezPanoEscuro,
+    corDetalhe: P.xadrezDourado,
+    nota: 'da Estella · fecha o conjunto',
+    extra: canoDaBota,
+  },
+
+  // ------------------------------------------------------- Mano: os patins
+  /**
+   * OS PATINS DA PRACA DE GELO. Sao FUNCIONAIS, como os da lojinha: dao a
+   * mesma 1,3x de velocidade e viajam na mochila. Calcar um tira o outro — os
+   * dois sao da vaga dos pes, e a vaga e uma so.
+   *
+   * A `cor` aqui pinta a BOTA do patins, e nao o sapato do corpo (que o patins
+   * esconde inteiro) — ver `enfeite`, em `core/types.ts`.
+   */
+  patinsDoMano: {
+    id: 'patins-mano',
+    nome: 'Patins da praça de gelo',
+    icone: '🛼',
+    tipo: 'vestivel',
+    slot: 'pes',
+    funcional: true,
+    cor: P.patinsGeloBota,
+    corDetalhe: P.patinsGeloRoda,
+    enfeite: 'sorvete',
+    nota: 'do Mano · +velocidade, e uma casquinha de cada lado',
+  },
 } as const satisfies Record<string, ItemDef>;
+
+/**
+ * O PREMIO DE CADA DESAFIANTE DO QUADRO, pelo `id` dele.
+ *
+ * Um lugar so, pelo mesmo motivo do `MODA_PRAIA` e das araras: a cena grava a
+ * vitoria, o painel desenha o premio e o guarda-roupa repoe a peca, e os tres
+ * nao tem como discordar sobre o que o Cookie da.
+ *
+ * A dupla (`parceiro`) NAO esta aqui de proposito: o premio de ganhar deles
+ * e o chapeu de campeao, que ja existia antes do quadro e entra pela mao, e
+ * nao pelo papel pregado.
+ */
+export const PREMIOS_DA_ARENA: Record<string, readonly ItemDef[]> = {
+  'jean-luc': [ITENS.jaquetaDoJeanLuc],
+  cookie: [ITENS.quepeDoCookie],
+  estella: [
+    ITENS.blazerDaEstella, ITENS.calcaDaEstella, ITENS.coroaDaEstella, ITENS.botaDaEstella,
+  ],
+  mano: [ITENS.patinsDoMano],
+};
 
 /**
  * AS ARARAS DA BOUTIQUE: o que cada uma vende, na ordem em que elas estao na

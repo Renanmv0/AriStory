@@ -1549,6 +1549,645 @@ function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
   return g;
 }
 
+/* ======================================================================
+ *            OS PREMIOS DA ARENA — uma peca por desafiante batido
+ * ======================================================================
+ *
+ * Estas quatro nao estao a venda em lugar nenhum e nao estao no armario do
+ * Ari: elas so entram no guarda-roupa depois de uma partida ganha no quadro de
+ * inscricoes. E o mesmo precedente da gravatinha do Walter, agora com quatro
+ * donos — e por isso cada uma leva a cara de quem deu.
+ */
+
+/**
+ * Jaqueta azul da Franca, o premio do Jean-Luc.
+ *
+ * REFERENCIAL: o corpo, y = 0 no CHAO — igual ao moletom, que e a vizinha dela
+ * na vaga do tronco. As cotas de raio e de barra sao as MESMAS do moletom, e
+ * nao um chute novo: o braco deste rig fica colado no corpo, e um casco mais
+ * gordo que `raioTorso * 1.1` engole a manga e apaga o braco da silhueta.
+ *
+ * A leitura, de cima para baixo: gola branca de time, ombro arredondado,
+ * faixa azul-branco-vermelha atravessando o peito (a bandeira deitada, que e
+ * como ela aparece na camisa que ele ja veste), o bico de pato bordado do lado
+ * do coracao e a barra branca fechando embaixo.
+ */
+function jaquetaFrancesa(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const hipY = m.legH;
+  const raioTorso = h * 0.105 * w;
+  const ombroY = hipY + m.torsoH * 0.86;
+  const topoTorso = hipY + m.torsoH;
+  const ACHATA = 0.93;
+
+  const azul = toon(peca?.cor ?? P.jaquetaFranca);
+  const azulDuplo = toon(peca?.cor ?? P.jaquetaFranca, { doubleSide: true });
+  const branco = toon(P.jaquetaFrancaGola);
+  const brancoDuplo = toon(P.jaquetaFrancaGola, { doubleSide: true });
+  const vermelho = toon(P.jaquetaFrancaFita, { doubleSide: true });
+
+  const RAIO = raioTorso * 1.1;
+  const RAIO_BARRA = raioTorso * 1.05;
+  const BARRA = hipY + h * 0.012;
+  const TOPO = ombroY + m.torsoH * 0.03;
+  const frenteZ = RAIO * ACHATA;
+
+  const casco = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO, RAIO_BARRA, TOPO - BARRA, 22),
+    azul,
+  );
+  casco.position.y = (TOPO + BARRA) / 2;
+  casco.scale.z = ACHATA;
+  g.add(casco);
+
+  const ombro = new THREE.Mesh(
+    new THREE.SphereGeometry(RAIO, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+    azul,
+  );
+  ombro.position.y = TOPO;
+  ombro.scale.set(1, 0.42, ACHATA);
+  g.add(ombro);
+
+  // a barra branca de punho: o mesmo canal do moletom, noutra cor
+  const bainha = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO_BARRA * 1.03, RAIO_BARRA * 1.01, h * 0.026, 22, 1, true),
+    brancoDuplo,
+  );
+  bainha.position.y = BARRA + h * 0.013;
+  bainha.scale.z = ACHATA;
+  g.add(bainha);
+
+  /*
+   * A GOLA. Mesma conta do moletom: mais estreita que `raioTorso * 1.7` ela
+   * nasce inteira atras da cabeca (o cranio tem `0,17·h` de raio contra os
+   * `0,105·h` do tronco) e nao aparece de frente.
+   */
+  const golaY = topoTorso + h * 0.012;
+  const gola = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.72, raioTorso * 1.14, h * 0.058, 20, 1, true),
+    brancoDuplo,
+  );
+  gola.position.y = golaY;
+  gola.scale.z = 0.95;
+  g.add(gola);
+
+  // ------------------------------------------------------- a bandeira deitada
+  //
+  // Tres aneis finos empilhados no peito, um por cor. Deitada e nao em pe
+  // porque a bandeira em pe precisaria de tres fatias VERTICAIS no casco, e
+  // fatia vertical num cilindro de 22 lados serrilha na costura.
+  const peitoY = hipY + m.torsoH * 0.62;
+  for (const [desloca, mat] of [[h * 0.009, brancoDuplo], [-h * 0.009, vermelho]] as const) {
+    const faixa = new THREE.Mesh(
+      new THREE.CylinderGeometry(RAIO * 1.012, RAIO * 1.012, h * 0.016, 22, 1, true),
+      mat,
+    );
+    faixa.position.y = peitoY + desloca;
+    faixa.scale.z = ACHATA;
+    g.add(faixa);
+  }
+
+  // o ziper, a unica linha vertical da peca
+  const ziperTopo = golaY;
+  const ziperBaixo = BARRA + h * 0.02;
+  const ziper = new THREE.Mesh(
+    new THREE.BoxGeometry(h * 0.012, ziperTopo - ziperBaixo, h * 0.016),
+    branco,
+  );
+  ziper.position.set(0, (ziperTopo + ziperBaixo) / 2, frenteZ * 0.99);
+  g.add(ziper);
+
+  // ------------------------------------------------------ o patinho do peito
+  //
+  // Do lado do CORACAO (x negativo, que e o esquerdo de quem veste) e acima da
+  // bandeira. Ele e o detalhe que faz a jaqueta ser DELE e nao uma jaqueta de
+  // selecao qualquer — bico, cabeca e um olhinho, na mesma receita chibi do
+  // retrato do quadro.
+  const bordado = new THREE.Group();
+  bordado.position.set(-h * 0.038, peitoY + h * 0.05, frenteZ * 0.99);
+  const cabecaDoPato = new THREE.Mesh(
+    new THREE.SphereGeometry(h * 0.017, 12, 10),
+    toon(P.jaquetaFrancaGola),
+  );
+  cabecaDoPato.scale.z = 0.45;
+  bordado.add(cabecaDoPato);
+  const bico = new THREE.Mesh(
+    new THREE.SphereGeometry(h * 0.009, 10, 8),
+    toon(P.jaquetaFrancaBico),
+  );
+  bico.scale.set(1.5, 0.6, 0.5);
+  bico.position.set(h * 0.018, -h * 0.003, h * 0.004);
+  bordado.add(bico);
+  const olho = new THREE.Mesh(
+    new THREE.SphereGeometry(h * 0.004, 8, 6),
+    toon(P.moletomCostura),
+  );
+  olho.scale.z = 0.4;
+  olho.position.set(h * 0.005, h * 0.005, h * 0.008);
+  bordado.add(olho);
+  g.add(bordado);
+
+  // os dois bolsos de viés, como na jaqueta de time
+  for (const lado of [-1, 1] as const) {
+    const pivo = new THREE.Group();
+    pivo.rotation.y = lado * 0.6;
+    pivo.scale.z = ACHATA;
+    const boca = new THREE.Mesh(
+      new THREE.BoxGeometry(h * 0.012, h * 0.056, h * 0.012),
+      brancoDuplo,
+    );
+    boca.position.set(0, hipY + m.torsoH * 0.2, RAIO * 1.0);
+    boca.rotation.z = lado * 0.34;
+    pivo.add(boca);
+    g.add(pivo);
+  }
+
+  // e um arrematezinho azul no alto da gola, para ela nao ler como colarinho
+  // solto de camisa
+  const debrum = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.74, raioTorso * 1.7, h * 0.008, 20, 1, true),
+    azulDuplo,
+  );
+  debrum.position.y = golaY + h * 0.028;
+  debrum.scale.z = 0.95;
+  g.add(debrum);
+
+  return g;
+}
+
+/**
+ * A manga da jaqueta da Franca.
+ *
+ * REFERENCIAL: o pivo do braco, y = 0 no ombro. Copiada da manga do moletom
+ * pela mesma razao de sempre — a conta de comprimento (`0,82` do braco) ja
+ * esta paga e deixa a mao de fora.
+ */
+function mangaDaJaquetaFrancesa(
+  m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef,
+): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const armLen = h * 0.3;
+  const ATE = 0.82;
+  const pano = peca?.corDetalhe ?? P.jaquetaFrancaManga;
+
+  const ombro = new THREE.Mesh(
+    new THREE.SphereGeometry(h * 0.058 * w, 12, 10),
+    toon(peca?.cor ?? P.jaquetaFranca),
+  );
+  ombro.position.y = -armLen * 0.03;
+  ombro.scale.set(1, 0.92, 0.95);
+  g.add(ombro);
+
+  const tubo = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.056 * w, h * 0.045 * w, armLen * ATE, 14, 1, true),
+    toon(pano, { doubleSide: true }),
+  );
+  tubo.position.y = -armLen * ATE * 0.5;
+  g.add(tubo);
+
+  // a listra branca do meio do braco, a mesma da bandeira do peito
+  const listra = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.052 * w, h * 0.05 * w, h * 0.012, 14, 1, true),
+    toon(P.jaquetaFrancaGola, { doubleSide: true }),
+  );
+  listra.position.y = -armLen * ATE * 0.58;
+  g.add(listra);
+
+  // o punho branco fecha a boca do tubo — e a mao sai por ele
+  const punho = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.047 * w, h * 0.045 * w, h * 0.024, 14),
+    toon(P.jaquetaFrancaGola),
+  );
+  punho.position.y = -armLen * ATE;
+  g.add(punho);
+
+  return g;
+}
+
+/**
+ * O quepe da bilheteria, o premio do Cookie.
+ *
+ * REFERENCIAL: a cabeca, y = 0 no centro do cranio. E o MESMO quepe que ele
+ * usa no posto (`entities/bichos/Cookie.ts`), redesenhado na escala de gente:
+ * copa, faixa vermelha na base, aba avancando so para a frente e o botaozinho
+ * do alto.
+ *
+ * Ele pede `cobreCabelo`, entao pode ser justo. A ABA PRECISA AVANCAR DE
+ * VERDADE (`z` com esticada em 1,5): sem isso ela nasce dentro da copa e o
+ * quepe vira touca — foi o que aconteceu no do Cookie, e a conta e a mesma.
+ */
+function quepeDoCookie(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const r = m.headR;
+  const pano = toon(peca?.cor ?? P.quepeCookie);
+  const fita = toon(peca?.corDetalhe ?? P.quepeCookieFita, { doubleSide: true });
+  const debrum = toon(P.quepeCookieBotao);
+
+  /*
+   * A COPA SEGUE AS COTAS DO GORRO DE LA, e nao as do quepe do bicho.
+   *
+   * O quepe do Cookie mora numa cabeca de ELEFANTE, que e uma bola achatada
+   * com duas bossas; traduzido literal para este cranio (uma esfera de raio
+   * `headR` esticada 1,04 em y) a calota achatada terminava a `0,88·r` e o
+   * alto da cabeca saia POR CIMA dela — com `cobreCabelo` ligado, a foto
+   * mostrava dois carecas de aba vermelha.
+   *
+   * Uma casca de raio R aberta ate `thetaLength` termina em
+   * `y = centro + R·cos(theta)` com raio `R·sen(theta)`: e a mesma conta do
+   * gorro, e e ela que poe a borda um fio ABAIXO do equador do cranio.
+   */
+  const RAIO = r * 1.07;
+  const ABRE = Math.PI * 0.54;
+  const CENTRO = r * 0.06;
+  const ALTO = 0.95; // um pouco achatada: quepe nao e gorro de la
+
+  // ele tomba um FIO para tras, e nao para a frente como o do Cookie: a camera
+  // do jogo olha de cima, em 34°, e aba caida some com a cara de quem veste
+  const quepe = new THREE.Group();
+  quepe.rotation.x = -0.05;
+  g.add(quepe);
+
+  const copa = new THREE.Mesh(
+    new THREE.SphereGeometry(RAIO, 18, 12, 0, Math.PI * 2, 0, ABRE),
+    pano,
+  );
+  copa.position.y = CENTRO;
+  copa.scale.y = ALTO;
+  quepe.add(copa);
+
+  const borda = CENTRO + RAIO * Math.cos(ABRE) * ALTO;
+  const raioNaBorda = RAIO * Math.sin(ABRE);
+
+  // a faixa vermelha na base da copa, um fio mais gorda que ela: encostadas no
+  // mesmo raio, as duas superficies brigam pelo mesmo pixel
+  const faixa = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioNaBorda * 1.02, raioNaBorda * 1.03, r * 0.2, 18, 1, true),
+    fita,
+  );
+  faixa.position.y = borda + r * 0.06;
+  quepe.add(faixa);
+
+  /*
+   * A ABA. Meia esfera achatada — `phiLength` de meia volta girada para a
+   * frente da um leque, e nao um disco inteiro.
+   *
+   * ELA E CURTA, e essa e a diferenca para a do Cookie. A dele avanca o dobro
+   * do raio da copa, o que funciona num elefante de quatro patas visto de cima
+   * com um metro de focinho na frente. Traduzida literal para este rig, a aba
+   * chegava a `2,2·headR` e, na camera isometrica (que olha de cima, em 34°),
+   * TAPAVA A CARA INTEIRA: nas duas fotos o personagem era um bone azul com
+   * dois pes. Com a ponta parando em `0,8·headR` ela fica dentro da silhueta
+   * da cabeca e o rosto continua aparecendo.
+   */
+  const aba = new THREE.Mesh(
+    new THREE.SphereGeometry(raioNaBorda * 0.72, 14, 8, 0, Math.PI, 0, Math.PI / 2),
+    pano,
+  );
+  aba.scale.set(1.25, 0.09, 1.05);
+  aba.rotation.y = -Math.PI / 2;
+  aba.position.set(0, borda + r * 0.1, 0);
+  quepe.add(aba);
+
+  const botao = new THREE.Mesh(new THREE.SphereGeometry(r * 0.1, 8, 6), debrum);
+  botao.position.y = CENTRO + RAIO * ALTO;
+  quepe.add(botao);
+
+  // a estrelinha da bilheteria na frente da faixa — a mesma que o bilhete leva
+  // carimbada
+  const emblema = new THREE.Mesh(
+    new THREE.CylinderGeometry(r * 0.11, r * 0.11, r * 0.03, 5),
+    debrum,
+  );
+  emblema.rotation.x = Math.PI / 2;
+  emblema.position.set(0, borda + r * 0.06, raioNaBorda * 1.0);
+  quepe.add(emblema);
+
+  return g;
+}
+
+/**
+ * As casas escuras de um xadrez em volta de um cilindro.
+ *
+ * Ferramenta dos dois pedacos do conjunto da Estella — o blazer e a perneira.
+ * Em vez de tentar tingir uma superficie (o que pediria textura, e textura e
+ * asset), o claro e a superficie que JA EXISTE e o escuro sao plaquinhas
+ * finas por cima, em xadrez: casa sim, casa nao, alternando a cada fileira.
+ *
+ * A placa fica a `raio` do eixo e girada pelo proprio angulo, entao ela pousa
+ * rente a parede. `achata` e o `scale.z` do cilindro embaixo — sem ele as
+ * casas da frente flutuam e as do lado afundam num corpo achatado em Z.
+ */
+function casasDeXadrez(
+  raio: number, deY: number, ateY: number, colunas: number, fileiras: number,
+  cor: number, achata = 1, comecaEscura = true,
+): THREE.Group {
+  const g = new THREE.Group();
+  const mat = toon(cor);
+  const alturaDaCasa = (ateY - deY) / fileiras;
+  const larguraDaCasa = (2 * Math.PI * raio) / colunas;
+  for (let f = 0; f < fileiras; f++) {
+    for (let c = 0; c < colunas; c++) {
+      // casa sim, casa nao — e a fileira de cima comeca do outro pe, senao
+      // saem listras verticais em vez de tabuleiro
+      if (((f + c) % 2 === 0) !== comecaEscura) continue;
+      const a = (c / colunas) * Math.PI * 2;
+      const casa = new THREE.Mesh(
+        // 0,94 de folga entre uma casa e outra: coladas, a serrilha da junta
+        // some e o tabuleiro vira um cilindro escuro com falhas
+        new THREE.BoxGeometry(larguraDaCasa * 0.94, alturaDaCasa * 0.94, raio * 0.03),
+        mat,
+      );
+      casa.position.set(
+        Math.sin(a) * raio,
+        deY + alturaDaCasa * (f + 0.5),
+        Math.cos(a) * raio * achata,
+      );
+      casa.rotation.y = a;
+      g.add(casa);
+    }
+  }
+  return g;
+}
+
+/**
+ * O blazer de xadrez, peca de tronco do conjunto da Estella.
+ *
+ * REFERENCIAL: o corpo, y = 0 no CHAO.
+ *
+ * Ela e ESTILISTA, entao a peca nao pode ser "cilindro quadriculado": o que a
+ * faz ler como alfaiataria sao as lapelas em V, o forro vinho aparecendo na
+ * dobra, os dois botoes dourados e o broche de DAMA na lapela — a peca de
+ * xadrez que ela mais usa no tabuleiro da lojinha.
+ */
+function blazerXadrez(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const hipY = m.legH;
+  const raioTorso = h * 0.105 * w;
+  const ombroY = hipY + m.torsoH * 0.86;
+  const topoTorso = hipY + m.torsoH;
+  const ACHATA = 0.9;
+
+  const claro = peca?.cor ?? P.xadrezPano;
+  const escuro = peca?.corDetalhe ?? P.xadrezPanoEscuro;
+  const pano = toon(claro);
+  const forro = toon(P.xadrezForro, { doubleSide: true });
+  const ouro = toon(P.xadrezDourado);
+
+  const RAIO = raioTorso * 1.09;
+  const BARRA = hipY - h * 0.01; // o blazer passa do quadril, como blazer longo
+  const TOPO = ombroY + m.torsoH * 0.03;
+
+  const casco = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO, RAIO * 1.02, TOPO - BARRA, 24),
+    pano,
+  );
+  casco.position.y = (TOPO + BARRA) / 2;
+  casco.scale.z = ACHATA;
+  g.add(casco);
+
+  const ombro = new THREE.Mesh(
+    new THREE.SphereGeometry(RAIO, 24, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+    pano,
+  );
+  ombro.position.y = TOPO;
+  ombro.scale.set(1, 0.44, ACHATA);
+  g.add(ombro);
+
+  // O TABULEIRO. Quatro fileiras de doze casas sobre o casco: a casa sai com
+  // `0,059·h` de largura por `0,064·h` de altura, que e quadrada o bastante
+  // para ler como xadrez e nao como listra.
+  const tabuleiro = casasDeXadrez(RAIO * 1.005, BARRA, TOPO, 12, 4, escuro, ACHATA);
+  g.add(tabuleiro);
+
+  // ----------------------------------------------------------- as lapelas
+  //
+  // Duas placas inclinadas descendo do pescoco para o peito, uma de cada lado
+  // do ziper imaginario. O `lado` multiplica o deslocamento E a inclinacao:
+  // sem ele as duas apontam para o mesmo canto e o V vira uma barra torta.
+  for (const lado of [-1, 1] as const) {
+    const lapela = new THREE.Mesh(
+      new THREE.BoxGeometry(h * 0.036, h * 0.12, h * 0.012),
+      toon(escuro),
+    );
+    lapela.position.set(lado * h * 0.026, topoTorso - h * 0.058, RAIO * ACHATA * 1.02);
+    lapela.rotation.z = lado * 0.3;
+    g.add(lapela);
+
+    // o forro vinho, um dedo para dentro: e ele que da profundidade a dobra
+    const dobra = new THREE.Mesh(
+      new THREE.BoxGeometry(h * 0.016, h * 0.11, h * 0.008),
+      forro,
+    );
+    dobra.position.set(lado * h * 0.014, topoTorso - h * 0.06, RAIO * ACHATA * 1.03);
+    dobra.rotation.z = lado * 0.3;
+    g.add(dobra);
+  }
+
+  // a gola por tras do pescoco, fechando o V — a mesma cota do moletom
+  const gola = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.7, raioTorso * 1.18, h * 0.05, 20, 1, true),
+    toon(escuro, { doubleSide: true }),
+  );
+  gola.position.y = topoTorso + h * 0.008;
+  gola.scale.z = 0.95;
+  g.add(gola);
+
+  // os dois botoes dourados, abaixo do V
+  for (const i of [0, 1]) {
+    const botao = new THREE.Mesh(
+      new THREE.CylinderGeometry(h * 0.009, h * 0.009, h * 0.006, 12),
+      ouro,
+    );
+    botao.rotation.x = Math.PI / 2;
+    botao.position.set(0, hipY + m.torsoH * (0.46 - i * 0.16), RAIO * ACHATA * 1.02);
+    g.add(botao);
+  }
+
+  // ------------------------------------------------- o broche de DAMA
+  //
+  // A peca do tabuleiro, em miniatura, na lapela do lado do coracao: base,
+  // corpo afunilado, a coroa recortada e a bolinha do alto. E o detalhe que
+  // diz "xadrez" mesmo em quem olhar de longe e so ver quadradinhos.
+  const broche = new THREE.Group();
+  broche.position.set(-h * 0.04, topoTorso - h * 0.042, RAIO * ACHATA * 1.06);
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.012, h * 0.015, h * 0.006, 10), ouro,
+  );
+  broche.add(base);
+  const corpo = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.006, h * 0.011, h * 0.022, 10), ouro,
+  );
+  corpo.position.y = h * 0.014;
+  broche.add(corpo);
+  const coroa = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.013, h * 0.008, h * 0.008, 8), ouro,
+  );
+  coroa.position.y = h * 0.029;
+  broche.add(coroa);
+  const bolinha = new THREE.Mesh(new THREE.SphereGeometry(h * 0.006, 8, 6), ouro);
+  bolinha.position.y = h * 0.037;
+  broche.add(bolinha);
+  // deitado na lapela, e nao em pe no ar: broche e uma peca PREGADA
+  broche.rotation.x = Math.PI / 2 - 0.25;
+  g.add(broche);
+
+  return g;
+}
+
+/** A manga do blazer: escura, com o punho de xadrez e um botao dourado. */
+function mangaDoBlazer(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const armLen = h * 0.3;
+  const ATE = 0.84;
+  const claro = peca?.cor ?? P.xadrezPano;
+  const escuro = peca?.corDetalhe ?? P.xadrezPanoEscuro;
+
+  const ombro = new THREE.Mesh(
+    new THREE.SphereGeometry(h * 0.058 * w, 12, 10),
+    toon(claro),
+  );
+  ombro.position.y = -armLen * 0.03;
+  ombro.scale.set(1, 0.92, 0.95);
+  g.add(ombro);
+
+  const tubo = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.055 * w, h * 0.044 * w, armLen * ATE, 14, 1, true),
+    toon(claro, { doubleSide: true }),
+  );
+  tubo.position.y = -armLen * ATE * 0.5;
+  g.add(tubo);
+
+  // o tabuleiro tambem na manga, senao o braco vira uma faixa lisa ao lado de
+  // um tronco quadriculado
+  g.add(casasDeXadrez(
+    h * 0.052 * w, -armLen * ATE * 0.92, -armLen * 0.06, 8, 4, escuro,
+  ));
+
+  const punho = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.046 * w, h * 0.044 * w, h * 0.026, 14),
+    toon(escuro),
+  );
+  punho.position.y = -armLen * ATE;
+  g.add(punho);
+
+  const botao = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.007, h * 0.007, h * 0.005, 10),
+    toon(P.xadrezDourado),
+  );
+  botao.rotation.z = Math.PI / 2;
+  botao.position.set(0, -armLen * ATE, h * 0.046 * w);
+  g.add(botao);
+
+  return g;
+}
+
+/**
+ * A perneira de xadrez, peca de PERNAS do conjunto.
+ *
+ * REFERENCIAL: o pivo da perna, y = 0 no quadril — uma copia em cada perna,
+ * que e o que faz ela dobrar junto com a coxa.
+ *
+ * A cor clara nao esta aqui: ela e a `cor` da ficha, que repinta a perna que o
+ * corpo ja tem. Esta funcao poe SO as casas escuras por cima e a barra da
+ * bainha. E a peca mais barata do conjunto, e e de proposito.
+ */
+function perneiraXadrez(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const raio = h * 0.045 * w;
+  const escuro = peca?.corDetalhe ?? P.xadrezPanoEscuro;
+
+  // do quadril ate o tornozelo, parando antes do pe (que fica em `-legH`)
+  const DE = -m.legH * 0.86;
+  const ATE = -m.legH * 0.04;
+  g.add(casasDeXadrez(raio, DE, ATE, 8, 6, escuro));
+
+  // a bainha vinho fecha a barra embaixo — sem ela a calca termina no meio de
+  // uma fileira de casas e parece cortada
+  const bainha = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio * 1.04, raio * 1.06, h * 0.018, 14, 1, true),
+    toon(P.xadrezForro, { doubleSide: true }),
+  );
+  bainha.position.y = DE;
+  g.add(bainha);
+
+  return g;
+}
+
+/**
+ * A coroa de dama, peca de CABECA do conjunto.
+ *
+ * REFERENCIAL: a cabeca, y = 0 no centro do cranio. Ela POUSA por cima, entao
+ * nao pede `cobreCabelo` — a juba do Ari continua aparecendo por baixo, que e
+ * o que faz uma coroa ler como coroa e nao como capacete.
+ *
+ * O recorte e o da DAMA do xadrez, e nao o de uma coroa de rei: pontas
+ * arredondadas em volta e uma bolinha no meio.
+ */
+function coroaDeDama(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const r = m.headR;
+  const ouro = toon(peca?.cor ?? P.xadrezDourado);
+  const pedra = toon(peca?.corDetalhe ?? P.xadrezForro);
+
+  /*
+   * A ALTURA E MEDIDA PELO CABELO, e nao pelo cranio — a mesma nota do chapeu
+   * de campeao, que mora dois metodos acima no rig. A juba do Ari sobe a
+   * ~1,35·headR, e uma coroa apoiada no cranio (a `0,52·headR`, que foi a
+   * primeira versao) some INTEIRA dentro dela: na foto de costas sobravam tres
+   * pontinhos dourados no meio do cabelo.
+   */
+  const Y = r * 1.4;
+  const RAIO = r * 0.72;
+
+  const aro = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO, RAIO * 1.04, r * 0.24, 18, 1, true),
+    toon(peca?.cor ?? P.xadrezDourado, { doubleSide: true }),
+  );
+  aro.position.y = Y;
+  g.add(aro);
+
+  // a faixa de pedras vinho em volta do aro: sem ela o aro e um anel liso, e
+  // anel liso em cima da cabeca le como aureola
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const pedrinha = new THREE.Mesh(new THREE.SphereGeometry(r * 0.035, 8, 6), pedra);
+    pedrinha.position.set(Math.sin(a) * RAIO * 1.02, Y, Math.cos(a) * RAIO * 1.02);
+    pedrinha.scale.z = 0.6;
+    g.add(pedrinha);
+  }
+
+  // as pontas da DAMA: bolinhas em volta, e a da frente mais alta que as outras
+  const PONTAS = 7;
+  for (let i = 0; i < PONTAS; i++) {
+    const a = (i / PONTAS) * Math.PI * 2;
+    const alta = i === 0; // a da frente
+    const alturaDaHaste = r * (alta ? 0.3 : 0.18);
+    const x = Math.sin(a) * RAIO * 0.98;
+    const z = Math.cos(a) * RAIO * 0.98;
+
+    const haste = new THREE.Mesh(
+      new THREE.CylinderGeometry(r * 0.03, r * 0.042, alturaDaHaste, 8),
+      ouro,
+    );
+    haste.position.set(x, Y + r * 0.12 + alturaDaHaste / 2, z);
+    g.add(haste);
+
+    const ponta = new THREE.Mesh(
+      new THREE.SphereGeometry(r * (alta ? 0.075 : 0.055), 10, 8),
+      alta ? pedra : ouro,
+    );
+    ponta.position.set(x, Y + r * 0.12 + alturaDaHaste, z);
+    g.add(ponta);
+  }
+
+  return g;
+}
+
 // As FICHAS das pecas moram em `itens.ts`, junto com o resto do acervo: peca de
 // roupa e item como qualquer outro, e mora numa vaga de vestimenta do
 // inventario. Aqui fica so o corpo delas.
@@ -1556,4 +2195,6 @@ export {
   gorroDeLa, canoDaBota, vestidoRosa, vestidoDaLoja, gargantilhaDeLaco, gravataDoWalter,
   vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
   moletomComCapuz, mangaDeMoletom, oculosDeSol,
+  jaquetaFrancesa, mangaDaJaquetaFrancesa, quepeDoCookie,
+  blazerXadrez, mangaDoBlazer, perneiraXadrez, coroaDeDama,
 };

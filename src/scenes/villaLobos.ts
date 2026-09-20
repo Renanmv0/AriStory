@@ -3510,6 +3510,17 @@ export const villaLobos: SceneDef = {
       }
 
       const primeira = !api.flag('jean-luc-batido');
+      /*
+       * A FLAG DO PREMIO É SEPARADA DA DO QUADRO, e é gravada em TODA vitória.
+       *
+       * `jean-luc-batido` é o que enche o quadro de inscrições, e ela só faz
+       * sentido uma vez. `batido-jean-luc` é o que libera a jaqueta no papel
+       * dele, e segue a mesma forma dos outros três — sem ela o pato seria o
+       * único caso especial de um sistema que tem quatro donos iguais.
+       */
+      const premioNovo = !api.flag('batido-jean-luc');
+      api.setFlag('batido-jean-luc');
+      if (premioNovo) api.toast('Tem um prêmio te esperando no quadro', '🎁');
       api.som('memoria');
       jeanLuc.receberCarinho();
       if (!primeira) {
@@ -3611,7 +3622,14 @@ export const villaLobos: SceneDef = {
       if (!falas) return;
       api.som(ganhei ? 'memoria' : 'quicar');
       const ficha = INSCRITOS.find((d) => d.id === id);
-      if (ganhei) api.toast(`${ficha?.nome ?? id} — ${partida.meus} a ${partida.dele}`, '🏓');
+      if (ganhei) {
+        api.toast(`${ficha?.nome ?? id} — ${partida.meus} a ${partida.dele}`, '🏓');
+        // a vitória abre o prêmio no papel dele, no quadro — pegar a roupa é
+        // um clique lá, e não um item que cai na mão aqui
+        const novo = !api.flag(`batido-${id}`);
+        api.setFlag(`batido-${id}`);
+        if (novo) api.toast('Tem um prêmio te esperando no quadro', '🎁');
+      }
       await conversa(ganhei ? falas.ganhei : falas.perdi);
       /*
        * A PRIMEIRA VITÓRIA CONTRA CADA UM VIRA MEMÓRIA, e só a primeira: o

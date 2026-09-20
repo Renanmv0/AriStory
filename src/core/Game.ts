@@ -24,7 +24,7 @@ import {
   type SceneDef,
   type Vaga,
 } from './types';
-import { ITENS, MODA_PRAIA, fichaDoItem, modeloDoItem } from '../world/itens';
+import { ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, fichaDoItem, modeloDoItem } from '../world/itens';
 import { MEMORIAS } from '../world/memoriasData';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
@@ -828,9 +828,18 @@ export class Game implements GameAPI {
       const chapeu = vagas.some((i) => i?.id === ITENS.chapeuPingPong.id);
       if (quem.rig.campeao !== chapeu) quem.rig.setCampeao(chapeu);
 
-      const patins = vagas.some((i) => i?.id === ITENS.patins.id);
-      quem.patins = patins;
-      quem.rig.setPatins(patins);
+      /*
+       * DE PATINS QUEM ESTIVER COM QUALQUER PAR. Existem dois — o da lojinha e
+       * o premio do Mano —, e os dois dao a mesma 1,3x. Por isso a pergunta
+       * aqui e "tem vestimenta FUNCIONAL na vaga dos pes?" e nao "e aquele id
+       * ali": com o id cravado, calcar o premio deixava a pessoa andando no
+       * chao com um par de patins invisivel.
+       */
+      const calcado = vagas.find(
+        (i) => i?.tipo === 'vestivel' && i.slot === 'pes' && i.funcional === true,
+      ) ?? null;
+      quem.patins = calcado !== null;
+      quem.rig.setPatins(calcado !== null, calcado);
 
       // A roupa sai das MESMAS vagas: a vaga é o loadout, não há um segundo
       // armazenamento. Com o cache, `vestirRoupa` só roda quando algo mudou —
@@ -912,6 +921,7 @@ export class Game implements GameAPI {
    */
   abrirGuardaRoupa(): void {
     this.reporCompras();
+    this.reporPremios();
     this.previa.mostrar(this.player.rig.spec);
     this.pintarArmario();
     this.ui.abrirArmario();
@@ -933,6 +943,24 @@ export class Game implements GameAPI {
     for (const id of this.save.compradas) {
       const peca = fichaDoItem(id);
       if (!peca) continue; // id de uma peca que saiu do catalogo: ignora
+      for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
+    }
+  }
+
+  /**
+   * Repoe no guarda-roupa todo premio ja resgatado no quadro da arena.
+   *
+   * Gemeo do `reporCompras`, e pela mesma razao: o armario ESTOCA o que e de
+   * voces em vez de guardar o que sobrou. A peca de premio nao esta no
+   * `ROUPAS_DO_ARMARIO` do quarto (ela nao e do acervo do Ari, foi ganha) e
+   * nem numa arara (ela nao esta a venda), entao este e o unico caminho de
+   * volta dela — e ele vale tanto para o armario do quarto quanto para o
+   * espelho do mezanino da Estella, que abrem o mesmo painel.
+   */
+  private reporPremios(): void {
+    for (const id of this.save.premios) {
+      const peca = fichaDoItem(id);
+      if (!peca) continue;
       for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
     }
   }
@@ -1137,7 +1165,39 @@ export class Game implements GameAPI {
     const inscritos = new Set(
       INSCRITOS.filter((d) => !d.inscreveSe || this.save.flag(d.inscreveSe)).map((d) => d.id),
     );
-    return this.ui.abrirQuadro(INSCRITOS, inscritos, this.parceiro.name);
+    return this.ui.abrirQuadro(INSCRITOS, inscritos, this.parceiro.name, {
+      batido: (id) => this.save.flag(`batido-${id}`),
+      resgatado: (id) => (PREMIOS_DA_ARENA[id] ?? []).every((p) => this.save.ganhouPremio(p.id)),
+      resgatar: (id) => this.resgatarPremio(id),
+    });
+  }
+
+  /**
+   * Pega o premio de um desafiante ja batido.
+   *
+   * ELE VAI PARA O GUARDA-ROUPA DOS DOIS na hora, e nao so para o de quem
+   * jogou: a peca e do casal, como tudo que se ganha aqui. E o id fica anotado
+   * em `save.premios`, que e o que faz a peca voltar a cada abertura do
+   * armario — descartar uma peca de premio tira ela do corpo, nunca da vida.
+   *
+   * Recusa em silencio o que ainda nao foi ganho: quem decide isso e a flag da
+   * vitoria, e a tela so mostra o que o save ja permite.
+   */
+  private resgatarPremio(id: string): boolean {
+    if (!this.save.flag(`batido-${id}`)) return false;
+    const pecas = PREMIOS_DA_ARENA[id] ?? [];
+    if (pecas.length === 0) return false;
+    if (pecas.every((p) => this.save.ganhouPremio(p.id))) return false;
+    for (const peca of pecas) {
+      this.save.registrarPremio(peca.id);
+      for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
+    }
+    this.som('memoria');
+    this.ui.toast(
+      pecas.length > 1 ? `${pecas.length} peças no guarda-roupa` : `${pecas[0].nome} é de vocês`,
+      pecas[0].icone,
+    );
+    return true;
   }
 
   abrirCardapio(casa?: string): Promise<string | null> {
