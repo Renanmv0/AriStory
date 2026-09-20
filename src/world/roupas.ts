@@ -1786,47 +1786,44 @@ function quepeDoCookie(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THRE
   const debrum = toon(P.quepeCookieBotao);
 
   /*
-   * A COPA SEGUE AS COTAS DO GORRO DE LA, e nao as do quepe do bicho.
+   * ELE POUSA EM CIMA DO CABELO, e nao dentro dele.
    *
-   * O quepe do Cookie mora numa cabeca de ELEFANTE, que e uma bola achatada
-   * com duas bossas; traduzido literal para este cranio (uma esfera de raio
-   * `headR` esticada 1,04 em y) a calota achatada terminava a `0,88·r` e o
-   * alto da cabeca saia POR CIMA dela — com `cobreCabelo` ligado, a foto
-   * mostrava dois carecas de aba vermelha.
+   * E a diferenca entre este e o gorro de la: o gorro e JUSTO e pede
+   * `cobreCabelo`, entao ele se mede pelo cranio; um bone so pousa, e quem
+   * manda na altura dele e a JUBA — a do Ari sobe a ~1,35·headR. E a mesma
+   * conta do chapeu de campeao, que mora no construtor do rig e ja marca a
+   * aba dele em `1,42·headR`.
    *
-   * Uma casca de raio R aberta ate `thetaLength` termina em
-   * `y = centro + R·cos(theta)` com raio `R·sen(theta)`: e a mesma conta do
-   * gorro, e e ela que poe a borda um fio ABAIXO do equador do cranio.
+   * Medido pelo cranio (a versao anterior, com `cobreCabelo`), ele so servia
+   * se o cabelo sumisse — e sumir com o cabelo de alguem para caber um bone e
+   * o contrario do que um bone faz.
    */
-  const RAIO = r * 1.07;
-  const ABRE = Math.PI * 0.54;
-  const CENTRO = r * 0.06;
-  const ALTO = 0.95; // um pouco achatada: quepe nao e gorro de la
+  const BORDA = r * 1.3;   // onde a faixa encosta no cabelo
+  const RAIO = r * 0.86;   // a copa, bem mais estreita que o cranio
+  const ALTO = 0.72;       // quepe e achatado: copa alta vira touca
 
-  // ele tomba um FIO para tras, e nao para a frente como o do Cookie: a camera
-  // do jogo olha de cima, em 34°, e aba caida some com a cara de quem veste
+  // ele tomba um fio para a frente, que e como bone de trabalho fica. Aqui
+  // isso e seguro: a peca inteira esta ACIMA dos olhos
   const quepe = new THREE.Group();
-  quepe.rotation.x = -0.05;
+  quepe.rotation.x = 0.12;
   g.add(quepe);
 
+  // a copa: meia casca, fechada em cima, apoiada na borda
   const copa = new THREE.Mesh(
-    new THREE.SphereGeometry(RAIO, 18, 12, 0, Math.PI * 2, 0, ABRE),
+    new THREE.SphereGeometry(RAIO, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.52),
     pano,
   );
-  copa.position.y = CENTRO;
+  copa.position.y = BORDA;
   copa.scale.y = ALTO;
   quepe.add(copa);
 
-  const borda = CENTRO + RAIO * Math.cos(ABRE) * ALTO;
-  const raioNaBorda = RAIO * Math.sin(ABRE);
-
-  // a faixa vermelha na base da copa, um fio mais gorda que ela: encostadas no
-  // mesmo raio, as duas superficies brigam pelo mesmo pixel
+  // a faixa na base da copa, um fio mais gorda que ela: encostadas no mesmo
+  // raio, as duas superficies brigam pelo mesmo pixel
   const faixa = new THREE.Mesh(
-    new THREE.CylinderGeometry(raioNaBorda * 1.02, raioNaBorda * 1.03, r * 0.2, 18, 1, true),
+    new THREE.CylinderGeometry(RAIO * 1.02, RAIO * 1.05, r * 0.16, 18, 1, true),
     fita,
   );
-  faixa.position.y = borda + r * 0.06;
+  faixa.position.y = BORDA - r * 0.04;
   quepe.add(faixa);
 
   /*
@@ -1837,31 +1834,33 @@ function quepeDoCookie(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THRE
    * do raio da copa, o que funciona num elefante de quatro patas visto de cima
    * com um metro de focinho na frente. Traduzida literal para este rig, a aba
    * chegava a `2,2·headR` e, na camera isometrica (que olha de cima, em 34°),
-   * TAPAVA A CARA INTEIRA: nas duas fotos o personagem era um bone azul com
-   * dois pes. Com a ponta parando em `0,8·headR` ela fica dentro da silhueta
-   * da cabeca e o rosto continua aparecendo.
+   * tapava a cara inteira.
    */
   const aba = new THREE.Mesh(
-    new THREE.SphereGeometry(raioNaBorda * 0.72, 14, 8, 0, Math.PI, 0, Math.PI / 2),
+    new THREE.SphereGeometry(RAIO * 0.92, 14, 8, 0, Math.PI, 0, Math.PI / 2),
     pano,
   );
-  aba.scale.set(1.25, 0.09, 1.05);
+  // ela sai NA LINHA DA FAIXA, e nao acima dela: montada em cima, a aba
+  // engrossava a silhueta e o quepe lia como boina
+  aba.scale.set(1.15, 0.07, 1.15);
   aba.rotation.y = -Math.PI / 2;
-  aba.position.set(0, borda + r * 0.1, 0);
+  aba.position.set(0, BORDA - r * 0.075, 0);
   quepe.add(aba);
 
-  const botao = new THREE.Mesh(new THREE.SphereGeometry(r * 0.1, 8, 6), debrum);
-  botao.position.y = CENTRO + RAIO * ALTO;
+  const botao = new THREE.Mesh(new THREE.SphereGeometry(r * 0.09, 8, 6), debrum);
+  botao.position.y = BORDA + RAIO * ALTO;
   quepe.add(botao);
 
   // a estrelinha da bilheteria na frente da faixa — a mesma que o bilhete leva
   // carimbada
   const emblema = new THREE.Mesh(
-    new THREE.CylinderGeometry(r * 0.11, r * 0.11, r * 0.03, 5),
+    new THREE.CylinderGeometry(r * 0.1, r * 0.1, r * 0.03, 5),
     debrum,
   );
+  // ACIMA da aba, na testa da copa: na linha da faixa ela ficava escondida
+  // por baixo da propria aba, que avanca um fio mais que ela
   emblema.rotation.x = Math.PI / 2;
-  emblema.position.set(0, borda + r * 0.06, raioNaBorda * 1.0);
+  emblema.position.set(0, BORDA + r * 0.05, RAIO * 1.0);
   quepe.add(emblema);
 
   return g;

@@ -564,7 +564,9 @@ export const ITENS = {
     cor: P.quepeCookie,
     corDetalhe: P.quepeCookieFita,
     nota: 'do Cookie · ele tem outro igual',
-    cobreCabelo: true,
+    // SEM `cobreCabelo`: ele POUSA em cima do cabelo, como o chapeu de campeao,
+    // e nao aperta a cabeca como o gorro de la. Sumir com a juba de alguem para
+    // um bone caber e o contrario do que um bone faz
     extra: quepeDoCookie,
   },
 

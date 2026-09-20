@@ -619,7 +619,8 @@ console.log('  jaqueta da França · corpo:', jaqueta.noCorpo, '· cabeça:', ja
 console.log('    base', jaqueta.base, '· topo', jaqueta.topo, '· olhos', jaqueta.olhos,
   '· mão', jaqueta.mao, '(topo abaixo dos olhos, base acima da mão)');
 console.log('  quepe da bilheteria · cabeça:', quepe.naCabeca, '· corpo:', quepe.noCorpo,
-  '· cabelo visível:', quepe.cabeloVisivel, '(tem que ser 0)');
+  '· cabelo visível:', quepe.cabeloVisivel, '(ele POUSA: o cabelo fica)');
+console.log('    ele pousa em', quepe.base, '· a cabeça está em', quepe.olhos);
 console.log('  conjunto de xadrez · vagas:', JSON.stringify(conjunto.vagas));
 console.log('    blazer no corpo:', conjunto.blazer.noCorpo,
   '· mangas:', JSON.stringify(conjunto.blazer.mangas),
@@ -700,8 +701,16 @@ const ok =
   // moletom — não sobe até a cara nem passa da mão
   jaqueta.noCorpo === 1 && jaqueta.naCabeca === 0 && jaqueta.mangas.join() === '1,1' &&
   jaqueta.topo < jaqueta.olhos && jaqueta.base > jaqueta.mao &&
-  // o quepe: na cabeça, e o cabelo some por baixo dele
-  quepe.naCabeca === 1 && quepe.noCorpo === 0 && quepe.cabeloVisivel === 0 &&
+  /*
+   * o quepe: na cabeça, e o cabelo CONTINUA aparecendo por baixo dele.
+   *
+   * Ele não declara `cobreCabelo` — um boné pousa em cima da juba, ao
+   * contrário do gorro de lã, que é justo e some com ela. E a peça tem que
+   * nascer ACIMA DOS OLHOS: medida pelo crânio (a primeira versão), a aba
+   * caía na linha do rosto e, na câmera isométrica, tapava a cara inteira.
+   */
+  quepe.naCabeca === 1 && quepe.noCorpo === 0 && quepe.cabeloVisivel > 0 &&
+  quepe.base > quepe.olhos &&
   // o conjunto: as quatro vagas ocupadas ao mesmo tempo
   conjunto.vagas.filter(Boolean).length === 4 &&
   conjunto.blazer.noCorpo === 1 && conjunto.blazer.mangas.join() === '1,1' &&
