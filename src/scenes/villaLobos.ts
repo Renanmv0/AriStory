@@ -3272,27 +3272,27 @@ export const villaLobos: SceneDef = {
       const LUGARES: Record<string, {
         x: number; z: number; de: { x: number; z: number };
       }> = {
-        estella: {
-          x: PIQUENIQUE.x - 1.5, z: PIQUENIQUE.z - 1.0,
-          de: { x: PIQUENIQUE.x - 4.2, z: PIQUENIQUE.z - 3.4 },
-        },
         cookie: {
-          x: PIQUENIQUE.x - 1.7, z: PIQUENIQUE.z + 1.1,
-          de: { x: PIQUENIQUE.x - 4.4, z: PIQUENIQUE.z + 3.4 },
+          x: PIQUENIQUE.x - 2.9, z: PIQUENIQUE.z - 1.4,
+          de: { x: PIQUENIQUE.x - 5.9, z: PIQUENIQUE.z - 2.4 },
+        },
+        estella: {
+          x: PIQUENIQUE.x - 1.1, z: PIQUENIQUE.z - 1.8,
+          de: { x: PIQUENIQUE.x - 3.9, z: PIQUENIQUE.z - 4.9 },
         },
         mano: {
-          x: PIQUENIQUE.x + 1.5, z: PIQUENIQUE.z + 1.1,
-          de: { x: PIQUENIQUE.x + 4.4, z: PIQUENIQUE.z + 3.4 },
+          x: PIQUENIQUE.x + 0.6, z: PIQUENIQUE.z - 1.8,
+          de: { x: PIQUENIQUE.x + 3.1, z: PIQUENIQUE.z - 4.8 },
         },
         'jean-luc': {
-          x: PIQUENIQUE.x + 1.4, z: PIQUENIQUE.z - 1.0,
-          de: { x: PIQUENIQUE.x + 4.2, z: PIQUENIQUE.z - 3.4 },
+          x: PIQUENIQUE.x + 2.2, z: PIQUENIQUE.z - 1.4,
+          de: { x: PIQUENIQUE.x + 5.1, z: PIQUENIQUE.z - 2.2 },
         },
       };
 
       // a dupla do lado de cá da mesa, os dois virados para ela
-      const meu = { x: PIQUENIQUE.x - 0.5, z: PIQUENIQUE.z + 2.3 };
-      const dele = { x: PIQUENIQUE.x + 0.6, z: PIQUENIQUE.z + 2.4 };
+      const meu = { x: PIQUENIQUE.x - 0.8, z: PIQUENIQUE.z + 1.8 };
+      const dele = { x: PIQUENIQUE.x + 0.7, z: PIQUENIQUE.z + 1.9 };
       const paraAMesa = (p: { x: number; z: number }): number =>
         Math.atan2(PIQUENIQUE.x - p.x, PIQUENIQUE.z - p.z);
       api.releasePlayer(meu.x, meu.z, paraAMesa(meu));
@@ -3307,7 +3307,13 @@ export const villaLobos: SceneDef = {
       // os quatro saem do passeio ao mesmo tempo: ver `deServico`
       naMesaDePing.festa = true;
       api.focusCamera(mesa);
-      api.setZoom(7.4);
+      /*
+       * 6,2 E NÃO 7,4. A primeira versão enquadrava metade do gramado vazio e
+       * a mesa no canto: numa câmera isométrica, cada metro a mais de zoom
+       * tira gente da foto antes de tirar grama. Daqui cabem os seis e a
+       * mesa, que é tudo que precisa estar na cena.
+       */
+      api.setZoom(6.2);
       await api.wait(0.8);
 
       await conversa([

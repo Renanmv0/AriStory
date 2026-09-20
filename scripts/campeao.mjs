@@ -199,21 +199,41 @@ await page.screenshot({ path: `${OUT}-foto.png` });
 await fechar();
 
 // ====================== 6. a raquete dourada está no suporte
+/*
+ * O SUPORTE É PROCURADO NA CENA, e não por uma coordenada escrita aqui.
+ *
+ * Copiar a posição para o teste é o jeito garantido de mirar no lugar errado
+ * no dia em que a arena andar meio metro — e foi o que aconteceu: o teste
+ * ficou parado a seis unidades dele esperando um prompt que estava do outro
+ * lado. E o ponto dele tem `priority: -1` (a mesa e o quadro ganham de perto),
+ * então não basta chegar: é preciso dar a volta até o prompt ser o dele.
+ */
 const noSuporte = await page.evaluate(() => {
   let suporte = null;
   window.jogo.current.world.root.traverse((n) => {
     if (n.userData?.peca === 'suporte-de-raquetes') suporte = n;
   });
-  return { achouSuporte: !!suporte };
+  return {
+    achouSuporte: !!suporte,
+    onde: suporte ? [+suporte.position.x.toFixed(2), +suporte.position.z.toFixed(2)] : null,
+  };
 });
-await page.evaluate(() => window.jogo.debugPlace(-16.9, 24.4, 0));
-await page.waitForTimeout(1200);
 let opcoes = [];
-for (let i = 0; i < 12; i++) {
-  const visivel = await page.locator('.prompt.show').count();
-  const rotulo = (await page.locator('.prompt .label').textContent().catch(() => '')) ?? '';
-  if (visivel && /raquete/i.test(rotulo)) break;
-  await page.waitForTimeout(300);
+let achouOPrompt = false;
+if (noSuporte.onde) {
+  const voltas = [[0, 1.2], [0, -1.2], [1.2, 0], [-1.2, 0],
+    [0.9, 0.9], [-0.9, -0.9], [0.9, -0.9], [-0.9, 0.9]];
+  for (const [dx, dz] of voltas) {
+    await page.evaluate(([x, z]) => window.jogo.debugPlace(x, z, 0),
+      [noSuporte.onde[0] + dx, noSuporte.onde[1] + dz]);
+    for (let i = 0; i < 6; i++) {
+      await page.waitForTimeout(300);
+      const visivel = await page.locator('.prompt.show').count();
+      const rotulo = (await page.locator('.prompt .label').textContent().catch(() => '')) ?? '';
+      if (visivel && /raquete/i.test(rotulo)) { achouOPrompt = true; break; }
+    }
+    if (achouOPrompt) break;
+  }
 }
 await page.keyboard.press('KeyE');
 for (let i = 0; i < 20; i++) {
@@ -279,6 +299,7 @@ if (comFoto.corDaFoto) {
   const [, , , a] = comFoto.corDaFoto.split(',').map(Number);
   if (a < 200) falhas.push(`a foto de grupo saiu em branco (${comFoto.corDaFoto})`);
 }
+if (!achouOPrompt) falhas.push(`nao achei o prompt do suporte em ${JSON.stringify(noSuporte.onde)}`);
 if (!opcoes.some((o) => /dourada/i.test(o))) {
   falhas.push(`a dourada nao entrou no suporte: ${JSON.stringify(opcoes)}`);
 }
@@ -298,8 +319,8 @@ console.log('   carteira:', carteiraAntes, '→', depois.carteira,
 console.log('   postos depois:', JSON.stringify(depois.postos));
 console.log('5. o card virou:', comFoto.estado, '· foto:', comFoto.temFoto,
   '· cor no meio:', comFoto.corDaFoto);
-console.log('6. suporte:', JSON.stringify(opcoes), '·',
-  JSON.stringify(raqueteEscolhida), noSuporte.achouSuporte ? '' : '(sem suporte etiquetado)');
+console.log('6. suporte em', JSON.stringify(noSuporte.onde), '· prompt:', achouOPrompt);
+console.log('   opções:', JSON.stringify(opcoes), '·', JSON.stringify(raqueteEscolhida));
 
 if (falhas.length) {
   console.log('\nFALHAS:');
