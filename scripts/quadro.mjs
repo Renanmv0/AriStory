@@ -87,10 +87,24 @@ const promptEm = async (x, z, espera) => {
 const promptDoQuadro = await promptEm(QUADRO.x, QUADRO.z + 1.1, /inscri/i);
 await page.screenshot({ path: `${OUT}-mundo.png` });
 
-/** abre o painel e devolve o que está pregado nele */
+/**
+ * Abre o painel e devolve o que está pregado nele.
+ *
+ * O `KeyE` ENTRA NUMA ESPERA, e não num `waitForTimeout` só: o painel fica no
+ * DOM mesmo fechado (o CSS só tira o `show`), então uma leitura feita com ele
+ * fechado devolve o desenho ANTERIOR sem reclamar de nada. Foi assim que a
+ * conferência do prêmio leu "fechado" depois da vitória — era a pintura velha,
+ * e não o estado novo.
+ */
 const espiarPainel = async () => {
-  await page.keyboard.press('KeyE');
-  await page.waitForTimeout(1500);
+  for (let i = 0; i < 12; i++) {
+    if (await page.evaluate(
+      () => document.querySelector('.quadro-de-inscricoes')?.classList.contains('show') ?? false,
+    )) break;
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(600);
+  }
+  await page.waitForTimeout(900);
   const dados = await page.evaluate(() => {
     const fichas = [...document.querySelectorAll('.quadro-de-inscricoes .ficha')];
     return {
@@ -317,6 +331,7 @@ const devolvida = await page.evaluate(() => {
 // clique) e prêmio que some (o armário sem ela na visita seguinte).
 await promptEm(QUADRO.x, QUADRO.z + 1.1, /inscri/i);
 const depoisDeGanhar = await espiarPainel();
+if (!depoisDeGanhar.aberto) erros.push('o quadro nao reabriu depois da partida');
 const daEstella = depoisDeGanhar.nomes.findIndex((n) => /Estella/i.test(n));
 const antesDoClique = await page.evaluate(() => ({
   premios: [...window.jogo.save.premios],
