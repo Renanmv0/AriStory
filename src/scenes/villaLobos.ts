@@ -3244,6 +3244,17 @@ export const villaLobos: SceneDef = {
        */
       onInteract: async (api) => {
         if (jogando) return;
+        /*
+         * A PERGUNTA VEM ANTES DA CONVERSA, e não depois dela.
+         *
+         * A mesa tem 2,6 de raio e ganha de tudo na arena, então ela é o
+         * prompt de quase todo lugar por ali — quem estava indo ver o quadro
+         * ou trocar de raquete esbarra nela e caía direto numa partida de
+         * cinco pontos, que não tem como abandonar no meio. Perguntar só
+         * DEPOIS das duas falas cobraria a conversa inteira por um engano.
+         */
+        const vai = await api.ask('Jogar uma partida de cinco pontos?', ['Bora', 'Agora não'], A);
+        if (vai !== 0) return;
         await conversa([
           [A, 'Cinco pontos?'],
           [R, 'Cinco pontos. E o perdedor carrega a bolsa até em casa.'],

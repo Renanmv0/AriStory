@@ -66,7 +66,46 @@ await page.evaluate(() => {
   window.__ping = achar();
 });
 
-await page.keyboard.press('KeyE'); // abre a conversa
+/*
+ * A MESA PERGUNTA ANTES DE COMEÇAR, e o teste prova as duas respostas.
+ *
+ * Ela tem 2,6 de raio e ganha de tudo na arena, então é o prompt de quase
+ * todo lugar por ali — quem ia ver o quadro ou trocar de raquete esbarrava
+ * nela e caía direto numa partida de cinco pontos, que não tem como
+ * abandonar no meio.
+ *
+ * O `E` escolheria a PRIMEIRA opção sozinho, e um teste que só aperta `E`
+ * passaria por aqui sem nunca saber que existe uma pergunta. Por isso ele
+ * clica no botão pelo nome: primeiro no "agora não" (que não pode começar
+ * nada), depois no "bora".
+ */
+await page.keyboard.press('KeyE');
+const escolhas = page.locator('.dialogue .escolhas.show button');
+let perguntou = false;
+for (let i = 0; i < 12 && !perguntou; i++) {
+  await page.waitForTimeout(300);
+  perguntou = (await escolhas.count()) > 0;
+}
+const rotulos = perguntou ? await escolhas.allTextContents() : [];
+if (perguntou) {
+  const nao = rotulos.findIndex((r) => /agora não|agora nao/i.test(r));
+  await escolhas.nth(nao >= 0 ? nao : rotulos.length - 1).click();
+  await page.waitForTimeout(1200);
+}
+const recusou = await page.evaluate(
+  () => (window.__ping?.fase ?? 'parado') === 'parado' && window.jogo.camOmbro === null,
+);
+
+// e agora de novo, dizendo que sim
+await page.keyboard.press('KeyE');
+for (let i = 0; i < 12; i++) {
+  await page.waitForTimeout(300);
+  if (await escolhas.count()) {
+    const sim = (await escolhas.allTextContents()).findIndex((r) => /bora/i.test(r));
+    await escolhas.nth(sim >= 0 ? sim : 0).click();
+    break;
+  }
+}
 for (let i = 0; i < 4; i++) {
   await page.keyboard.press('KeyE');
   await page.waitForTimeout(500);
@@ -139,19 +178,32 @@ await page.waitForTimeout(900);
 const fim = await estado();
 await page.screenshot({ path: `${OUT}-fim.png` });
 
-// O chapéu virou ITEM: ele aparece na cabeça se, e só se, estiver numa vaga
-// de acessório. Tirar dali pela UI tem que apagá-lo do corpo no mesmo quadro.
+/*
+ * O CHAPÉU VIROU ITEM: ele aparece na cabeça se, e só se, estiver numa vaga
+ * de acessório. E sai de lá por UM caminho só.
+ *
+ * Arrastar peça vestida para a mochila é RECUSADO — roupa cosmética não ocupa
+ * vaga de mão, que é a regra que o `vestimenta.mjs` guarda. Este teste cobrava
+ * o contrário (era o comportamento de antes da reforma do guarda-roupa) e
+ * reprovava numa coisa que está certa. Agora ele mede as duas metades: o
+ * arrasto não leva o chapéu nem o tira da cabeça, e o descarte tira.
+ */
 const premio = await page.evaluate(() => {
   const j = window.jogo;
   const quem = j.playerId();
   const vestindo = j.wearables(quem).map((i) => i?.id ?? null);
   const slot = vestindo.indexOf('chapeu-ping-pong');
-  if (slot < 0) return { vestindo, slot, naCabecaAntes: j.player.rig.campeao, naCabecaDepois: null };
+  if (slot < 0) return { vestindo, slot, naCabecaAntes: j.player.rig.campeao, arrastou: null };
   const naCabecaAntes = j.player.rig.campeao;
   const vaga = j.handItems(quem).findIndex((x) => x === null);
-  j.moveItem({ lista: 'vestivel', indice: slot }, { lista: 'mao', indice: vaga }, quem);
-  return { vestindo, slot, naCabecaAntes, vaga };
+  const arrastou = j.moveItem({ lista: 'vestivel', indice: slot }, { lista: 'mao', indice: vaga }, quem);
+  return { vestindo, slot, naCabecaAntes, vaga, arrastou };
 });
+await page.waitForTimeout(700);
+const naCabecaAposArrasto = await page.evaluate(() => window.jogo.player.rig.campeao);
+
+// e agora pelo caminho de verdade: o descarte
+await page.evaluate(() => window.jogo.removeItem('chapeu-ping-pong', window.jogo.playerId()));
 await page.waitForTimeout(700);
 const naCabecaDepois = await page.evaluate(() => window.jogo.player.rig.campeao);
 await page.screenshot({ path: `${OUT}-sem-chapeu.png` });
@@ -170,6 +222,8 @@ const balanco = await page.evaluate(() => {
   return b.length ? Math.max(...b) - Math.min(...b) : -1;
 });
 
+console.log('a mesa perguntou antes:', perguntou, '·', JSON.stringify(rotulos));
+console.log('  e "agora não" nao comecou partida nenhuma:', recusou);
 console.log('motivos dos pontos:', motivos.join(' | ') || '(nenhum)');
 console.log('balanço da mesa durante a partida:', balanco.toFixed(4), '(tem que ser 0)');
 console.log('perspectiva ligada ao começar:', comecou.perspectiva);
@@ -178,13 +232,18 @@ console.log('placar final:', `${ultimo.meus} × ${ultimo.dele}`, '· fase', ulti
 console.log('voltou para a isométrica:', !fim.perspectiva);
 console.log('chapéu na cabeça:', fim.chapeu);
 console.log('acessórios do vencedor:', JSON.stringify(premio.vestindo));
-console.log('tirou o chapéu da vaga de acessório · na cabeça antes:', premio.naCabecaAntes, '→ depois:', naCabecaDepois);
+console.log('o chapéu na cabeça:', premio.naCabecaAntes,
+  '· arrastar pra mochila:', premio.arrastou, '(tem que ser false)',
+  '· continua na cabeça:', naCabecaAposArrasto);
+console.log('  e depois do descarte:', naCabecaDepois, '(tem que ser false)');
 console.log('memórias:', (save.memories ?? []).map((m) => m.id).join(', ') || '(nenhuma)');
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const ganhou = ultimo.meus >= 5;
 const ok =
   !erros.length &&
+  // a confirmação da mesa: ela existe, e recusar não começa nada
+  perguntou && recusou &&
   comecou.perspectiva &&
   comecou.placar &&
   balanco === 0 &&
@@ -194,7 +253,10 @@ const ok =
   (!ganhou ||
     (fim.chapeu &&
       premio.vestindo.includes('chapeu-ping-pong') &&
-      // desequipado pela UI, some da cabeça na hora
+      // arrastar para a mochila é recusado, e ele NÃO sai da cabeça por isso
+      premio.arrastou === false &&
+      naCabecaAposArrasto === true &&
+      // descartado, some da cabeça na hora
       naCabecaDepois === false &&
       (save.memories ?? []).some((m) => m.id === 'memoria-ping-pong')));
 
