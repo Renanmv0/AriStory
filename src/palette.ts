@@ -562,6 +562,29 @@ export const PALETTE = {
   pingBalde: 0x3f8fbe,     // o balde de bolinhas, plastico de clube
   pingCartela: 0x2f333c,   // a cartela de numero do placarzinho
   pingVerde: 0x4f9a7a,     // a terceira raquete do suporte, a que ninguem pega
+  pingDourada: 0xe0b33f,   // a raquete da vaquinha, que a Estella pintou em tres demaos
+
+  /* ------------------------------------------------------------------
+   * A FESTA DA MESA DE PIQUENIQUE — a toalha, o que esta em cima dela e o
+   * porta-retrato com a foto dos seis.
+   *
+   * A toalha e vermelha e branca porque toalha de piquenique e vermelha e
+   * branca: e o unico objeto deste jogo cuja cor ja estava decidida antes de
+   * alguem desenhar. O resto acompanha o quiosque do Mano e o cardapio do
+   * Walter, que sao a comida que este mundo ja tem.
+   * ------------------------------------------------------------------ */
+  toalhaPano: 0xf8f3e8,
+  toalhaXadrez: 0xd8453f,
+  cestaVime: 0xc99a5a,
+  cestaVimeEscuro: 0xa3763c,
+  sanduichePao: 0xe8c489,
+  sanduicheRecheio: 0x8fc46a,
+  sanduicheQueijo: 0xf6d066,
+  jarraSuco: 0xf2a03c,
+  jarraVidro: 0xdfeef5,
+  boloMassa: 0xf0d9a8,
+  boloCobertura: 0xf6a6c0,
+  portaRetratoMoldura: 0xb5793a,
 
   /* ------------------------------------------------------------------
    * OS QUATRO PREMIOS DA ARENA — um por desafiante do quadro.

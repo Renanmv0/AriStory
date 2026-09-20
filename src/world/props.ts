@@ -5586,3 +5586,329 @@ export function mesaDeSorveteria(cor: number = P.sorveteriaRosa, sabor: number |
 
   return g;
 }
+
+/* ======================================================================
+ *        A MESA POSTA DA FESTA DO CAMPEÃO — toalha, comida e retrato
+ * ======================================================================
+ *
+ * As três peças nascem com a base em `y = 0` como qualquer outra do kit: quem
+ * as põe na altura do tampo (0,81 na mesa de piquenique) é a cena.
+ */
+
+/**
+ * A toalha xadrez, caída por cima do tampo.
+ *
+ * O que faz uma toalha ler como toalha, e não como um tampo de outra cor, é a
+ * BARRA CAINDO pelos quatro lados — uma placa chapada em cima da mesa some no
+ * toon shading e vira pintura. A saia é uma casca fina, e ela desce só 12 cm:
+ * mais que isso encosta no banco da mesa de piquenique, que está a 45 cm.
+ *
+ * O xadrez são placas escuras por cima do pano claro, como o conjunto da
+ * Estella: tingir a superfície pediria textura, e textura é asset.
+ */
+export function toalhaDePiquenique(
+  largura = 2.08,
+  profundidade = 1.18,
+  cor: number = P.toalhaPano,
+  corXadrez: number = P.toalhaXadrez,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'toalha-de-piquenique';
+  const pano = toon(cor);
+  const ESPESSURA = 0.02;
+  const CAI = 0.12;
+
+  const tampo = new THREE.Mesh(
+    new THREE.BoxGeometry(largura, ESPESSURA, profundidade),
+    pano,
+  );
+  tampo.position.y = ESPESSURA / 2;
+  g.add(tampo);
+
+  /*
+   * A BARRA DOS QUATRO LADOS, e NENHUMA delas casa um número com o tampo.
+   *
+   * Cada saia é um dedo mais curta que o lado que ela acompanha e fica um
+   * fio para dentro da borda: casando as medidas, a face `min` do tampo e a
+   * face `min` da saia nascem no mesmo plano e brigam pelo pixel. E as duas
+   * de +X/-X têm altura diferente das de +Z/-Z pelo mesmo motivo, agora entre
+   * elas mesmas — quatro caixas da mesma altura compartilham dois planos.
+   *
+   * `node scripts/zfighting.mjs` acusou os 16 pares da primeira versão.
+   */
+  const RECUO = 0.012;
+  for (const lado of [-1, 1] as const) {
+    const naFrente = new THREE.Mesh(
+      new THREE.BoxGeometry(largura - RECUO * 2, CAI, ESPESSURA),
+      pano,
+    );
+    naFrente.position.set(0, ESPESSURA - CAI / 2 - 0.004, lado * (profundidade / 2 - 0.005));
+    g.add(naFrente);
+
+    const naPonta = new THREE.Mesh(
+      new THREE.BoxGeometry(ESPESSURA, CAI - 0.014, profundidade - RECUO * 2),
+      pano,
+    );
+    naPonta.position.set(lado * (largura / 2 - 0.005), ESPESSURA - CAI / 2 - 0.004, 0);
+    g.add(naPonta);
+  }
+
+  /*
+   * O XADREZ. Casa sim, casa não, e a fileira de cima começa do outro pé —
+   * senão saem listras em vez de tabuleiro. As placas ficam POR CIMA do pano
+   * (`ESPESSURA + metade da própria`), nunca no mesmo plano dele.
+   */
+  const COLUNAS = 8;
+  const FILEIRAS = 5;
+  const cw = largura / COLUNAS;
+  const cd = profundidade / FILEIRAS;
+  const casa = toon(corXadrez);
+  for (let f = 0; f < FILEIRAS; f++) {
+    for (let c = 0; c < COLUNAS; c++) {
+      if ((f + c) % 2 !== 0) continue;
+      const q = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.92, 0.008, cd * 0.92), casa);
+      q.position.set(
+        -largura / 2 + cw * (c + 0.5),
+        ESPESSURA + 0.004,
+        -profundidade / 2 + cd * (f + 0.5),
+      );
+      g.add(q);
+    }
+  }
+  return g;
+}
+
+/**
+ * O QUE ESTÁ EM CIMA DA MESA na festa: cesta, sanduíches, jarra, copos, bolo
+ * e uma tigela de morango.
+ *
+ * Tudo baixo de propósito. A câmera olha de cima em 34°, e qualquer coisa
+ * alta em cima de uma mesa tapa quem está atrás dela — o que nesta cena são
+ * quatro bichos. A peça mais alta é a jarra, com 22 cm.
+ */
+export function comidinhasDePiquenique(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'comidinhas-de-piquenique';
+
+  // ------------------------------------------------------------ a cesta
+  const cesta = new THREE.Group();
+  cesta.position.set(-0.62, 0, 0.05);
+  const corpo = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.19, 0.16, 0.14, 12, 1, true),
+    toon(P.cestaVime, { doubleSide: true }),
+  );
+  corpo.position.y = 0.07;
+  cesta.add(corpo);
+  const fundo = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.16, 0.02, 12),
+    toon(P.cestaVimeEscuro),
+  );
+  fundo.position.y = 0.01;
+  cesta.add(fundo);
+  // as duas voltas de vime, um fio mais gordas que o corpo
+  for (const y of [0.04, 0.115]) {
+    const volta = new THREE.Mesh(
+      new THREE.TorusGeometry(0.18, 0.012, 6, 14),
+      toon(P.cestaVimeEscuro),
+    );
+    volta.rotation.x = Math.PI / 2;
+    volta.position.y = y;
+    cesta.add(volta);
+  }
+  // a alça, um meio anel de pé
+  const alca = new THREE.Mesh(
+    new THREE.TorusGeometry(0.17, 0.014, 6, 16, Math.PI),
+    toon(P.cestaVimeEscuro),
+  );
+  alca.position.y = 0.14;
+  cesta.add(alca);
+  // um pano saindo dela, que é o que separa cesta de balde
+  const guardanapo = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, 0.03, 0.16),
+    toon(P.toalhaPano),
+  );
+  guardanapo.position.y = 0.145;
+  guardanapo.rotation.y = 0.3;
+  cesta.add(guardanapo);
+  g.add(cesta);
+
+  // ------------------------------------------------------- os sanduíches
+  // Meia-fatia cada um: um prisma triangular deitado, que é a forma que todo
+  // mundo reconhece como sanduíche mesmo com quatro polígonos.
+  const prato = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.19, 0.17, 0.02, 14),
+    toon(P.metalWhite),
+  );
+  prato.position.set(-0.16, 0.01, -0.22);
+  g.add(prato);
+  for (const [i, dx] of [-0.07, 0.02, 0.1].entries()) {
+    const s = new THREE.Group();
+    s.position.set(-0.16 + dx, 0.02, -0.22 + (i - 1) * 0.05);
+    s.rotation.y = 0.4 + i * 0.5;
+    const pao = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.075, 0.075, 0.075, 3),
+      toon(P.sanduichePao),
+    );
+    pao.rotation.z = Math.PI / 2;
+    pao.rotation.y = Math.PI / 2;
+    pao.position.y = 0.045;
+    s.add(pao);
+    // o recheio: duas fatias finas assomando pela lateral do corte
+    for (const [dy, cor] of [[0.042, P.sanduicheRecheio], [0.052, P.sanduicheQueijo]] as const) {
+      const fatia = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.006, 0.1), toon(cor));
+      fatia.position.y = dy;
+      s.add(fatia);
+    }
+    g.add(s);
+  }
+
+  // ------------------------------------------------------ a jarra e os copos
+  const jarra = new THREE.Group();
+  jarra.position.set(0.42, 0, 0.12);
+  const vidro = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.075, 0.2, 12),
+    toon(P.jarraVidro),
+  );
+  vidro.position.y = 0.1;
+  jarra.add(vidro);
+  // o suco DENTRO dela, um degrau para dentro do vidro: encostado na parede
+  // ele brigaria pelo pixel com ela
+  const suco = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.062, 0.066, 0.14, 12),
+    toon(P.jarraSuco),
+  );
+  suco.position.y = 0.075;
+  jarra.add(suco);
+  const bico = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 0.03), toon(P.jarraVidro));
+  bico.position.set(0, 0.19, 0.075);
+  jarra.add(bico);
+  const asa = new THREE.Mesh(
+    new THREE.TorusGeometry(0.045, 0.011, 6, 12, Math.PI * 1.2),
+    toon(P.jarraVidro),
+  );
+  asa.position.set(-0.08, 0.11, 0);
+  asa.rotation.y = Math.PI / 2;
+  jarra.add(asa);
+  g.add(jarra);
+
+  for (const [dx, dz] of [[0.66, -0.1], [0.58, -0.26], [0.3, -0.24]] as const) {
+    const copo = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.035, 0.03, 0.075, 10),
+      toon(P.jarraVidro),
+    );
+    copo.position.set(dx, 0.038, dz);
+    g.add(copo);
+    const dentro = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.029, 0.026, 0.05, 10),
+      toon(P.jarraSuco),
+    );
+    dentro.position.set(dx, 0.03, dz);
+    g.add(dentro);
+  }
+
+  // ---------------------------------------------------------------- o bolo
+  const pratoDoBolo = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.17, 0.15, 0.022, 14),
+    toon(P.metalWhite),
+  );
+  pratoDoBolo.position.set(-0.02, 0.011, 0.26);
+  g.add(pratoDoBolo);
+  // ele está PELA METADE: a festa já começou, e bolo inteiro numa mesa de
+  // festa é bolo que ninguém cortou
+  const massa = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.13, 0.13, 0.09, 14, 1, false, 0, Math.PI * 1.35),
+    toon(P.boloMassa),
+  );
+  massa.position.set(-0.02, 0.067, 0.26);
+  g.add(massa);
+  const cobertura = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.133, 0.133, 0.022, 14, 1, false, 0, Math.PI * 1.35),
+    toon(P.boloCobertura),
+  );
+  cobertura.position.set(-0.02, 0.118, 0.26);
+  g.add(cobertura);
+  for (const a of [0.3, 1.1, 2.6, 3.6]) {
+    const morango = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), toon(P.morango));
+    morango.position.set(-0.02 + Math.sin(a) * 0.08, 0.14, 0.26 + Math.cos(a) * 0.08);
+    g.add(morango);
+  }
+
+  // ------------------------------------------------------ a tigela de fruta
+  const tigela = new THREE.Mesh(
+    new THREE.SphereGeometry(0.11, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2),
+    toon(P.wallCream, { doubleSide: true }),
+  );
+  tigela.position.set(0.16, 0.11, -0.28);
+  g.add(tigela);
+  for (const [dx, dz, dy] of [
+    [0, 0, 0.055], [0.04, 0.03, 0.05], [-0.04, 0.02, 0.05], [0.01, -0.04, 0.052],
+  ] as const) {
+    const fruta = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), toon(P.morango));
+    fruta.position.set(0.16 + dx, dy, -0.28 + dz);
+    g.add(fruta);
+  }
+
+  return g;
+}
+
+/**
+ * Um porta-retrato de mesa, com a foto pintada num `<canvas>`.
+ *
+ * É o mesmo caminho do `letreiro()` e das miniaturas do cardápio: o desenho é
+ * CÓDIGO, e a textura nasce em tempo de execução. Nenhum `.png` entra no
+ * repositório por causa disto.
+ *
+ * Ele fica TOMBADO PARA TRÁS (0,22 rad), como porta-retrato de verdade com o
+ * pezinho: reto, a câmera isométrica o vê quase de topo e a foto vira uma
+ * linha.
+ *
+ * @param pintar a função que desenha a foto, em pixels de dispositivo
+ */
+export function portaRetrato(
+  largura: number,
+  altura: number,
+  pintar: (ctx: CanvasRenderingContext2D, l: number, a: number) => void,
+  cor: number = P.portaRetratoMoldura,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'porta-retrato';
+
+  const inclinado = new THREE.Group();
+  inclinado.rotation.x = 0.22;
+  g.add(inclinado);
+
+  const moldura = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.05, altura + 0.05, 0.02),
+    toon(cor),
+  );
+  moldura.position.y = altura / 2 + 0.02;
+  inclinado.add(moldura);
+
+  const canvas = document.createElement('canvas');
+  // 300 px de largura é o que a foto do quadro de inscrições já usa, e a mesma
+  // função pinta as duas: a miniatura da mesa é a MESMA foto, menor
+  canvas.width = 300;
+  canvas.height = Math.max(1, Math.round((300 * altura) / largura));
+  const ctx = canvas.getContext('2d');
+  if (ctx) pintar(ctx, canvas.width, canvas.height);
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  const foto = new THREE.Mesh(
+    new THREE.PlaneGeometry(largura, altura),
+    new THREE.MeshBasicMaterial({ map: textura }),
+  );
+  // 1,5 cm à frente da moldura: no mesmo plano dela as duas brigariam pelo pixel
+  foto.position.set(0, altura / 2 + 0.02, 0.015);
+  inclinado.add(foto);
+
+  // o pezinho de trás, que é o que faz ele ficar de pé numa mesa
+  const pe = new THREE.Mesh(
+    new THREE.BoxGeometry(0.03, altura * 0.72, 0.02),
+    toon(cor),
+  );
+  pe.position.set(0, altura * 0.34, -0.09);
+  pe.rotation.x = -0.42;
+  g.add(pe);
+
+  return g;
+}

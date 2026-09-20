@@ -44,6 +44,12 @@ const PECAS = [
   ['caixote', 'villa-lobos'],
   ['quadro-de-inscricoes', 'villa-lobos'],
   ['suporte-de-raquetes', 'villa-lobos'],
+  // a mesa posta da festa do campeão. Ela nasce escondida para quem não deu a
+  // festa, mas o detector mede a CAIXA de cada peça, e caixa não depende de
+  // `visible` — então as três entram aqui como qualquer outra
+  ['toalha-de-piquenique', 'villa-lobos'],
+  ['comidinhas-de-piquenique', 'villa-lobos'],
+  ['porta-retrato', 'villa-lobos'],
   ['cadeirinha-de-sorveteria', 'villa-lobos'],
   ['restaurante', 'clube'],
   ['vestiario', 'clube'],

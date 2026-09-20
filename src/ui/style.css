@@ -1954,6 +1954,85 @@ body.touch-device .dialogue .next { right: 84px; }
   gap: 14px;
 }
 
+/* O CARD DO PRÊMIO DO CAMPEÃO, pregado acima de todos os papéis.
+   Ele é o único item do quadro que não é uma inscrição, então não herda o
+   torto nem o percevejo colorido: ele é o cartaz, e não mais um papel. */
+.quadro-de-inscricoes .campeao {
+  position: relative;
+  margin-bottom: 16px;
+  padding: 12px 14px 11px;
+  text-align: left;
+  color: var(--tinta);
+  border-radius: 3px;
+  background: linear-gradient(168deg, #fdf7e8 0%, var(--papel) 60%, #eee0c4 100%);
+  box-shadow: 0 6px 14px rgba(22, 12, 4, 0.4);
+}
+.quadro-de-inscricoes .campeao::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  margin-left: -6.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe9a0, #d8a93a 62%, #8c6a14);
+  box-shadow: 0 2px 3px rgba(22, 12, 4, 0.5);
+}
+.quadro-de-inscricoes .campeao .titulo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.quadro-de-inscricoes .campeao .titulo b {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 16px;
+}
+.quadro-de-inscricoes .campeao .titulo em {
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--tinta-fraca);
+}
+.quadro-de-inscricoes .campeao p {
+  margin: 5px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.quadro-de-inscricoes .campeao.fechado { opacity: 0.66; }
+
+/* o único estado clicável: a mesma fita dourada das etiquetas de prêmio */
+.quadro-de-inscricoes .campeao.aberto {
+  cursor: pointer;
+  background: linear-gradient(168deg, #fff3cf 0%, #f6e3ae 60%, #e8cf8a 100%);
+  box-shadow: 0 0 0 2px #b98b2e, 0 8px 18px rgba(22, 12, 4, 0.45);
+  animation: premio-pisca 1.8s ease-in-out infinite;
+}
+.quadro-de-inscricoes .campeao.aberto:hover { filter: brightness(1.05); }
+
+/* PEGO: o card vira a foto, e a foto é o prêmio. Moldura branca de papel
+   fotográfico e uma fita crepe em cada canto de cima, como foto colada. */
+.quadro-de-inscricoes .campeao.pego {
+  padding: 10px 10px 8px;
+  background: #fbf7ef;
+  transform: rotate(-0.7deg);
+}
+#ui .quadro-de-inscricoes .foto-do-grupo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 300 / 143;
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(74, 53, 36, 0.35);
+}
+.quadro-de-inscricoes .campeao.pego .legenda {
+  margin: 8px 2px 0;
+  font-family: 'Segoe Script', 'Bradley Hand', cursive;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: #3d5a8a;
+}
+
 /* cada papel pregado: creme, torto, com o percevejo no alto */
 .quadro-de-inscricoes .ficha {
   position: relative;

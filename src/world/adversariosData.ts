@@ -529,3 +529,198 @@ export const INSCRITOS: readonly DesafianteDoQuadro[] = [
     pintar: retratoDaEstella,
   },
 ];
+
+/* ====================================================================
+ *            O RETRATO DO GRUPO — o prêmio de bater todos
+ * ====================================================================
+ *
+ * Este é o único desenho deste arquivo que NÃO é 3×4: é uma FOTO DEITADA,
+ * daquelas que se tira com o braço esticado, e é por isso que ela recebe
+ * largura e altura em vez de um lado só. Seis cabeças não cabem num quadrado
+ * de 68 px sem virar sopa de bolinha.
+ *
+ * A ordem da esquerda para a direita é a da altura, e não a do quadro: a
+ * ovelha e o elefante de um lado, o casal no meio, o pinguim e o pato do
+ * outro. Foto de grupo se organiza pelo tamanho de quem está nela, e é isso
+ * que faz o Cookie parecer grande sem precisar de legenda.
+ *
+ * O fundo é o parque: céu em cima, grama embaixo e a mesa de piquenique
+ * atravessando na frente de todo mundo — é lá que a festa acontece.
+ */
+
+/** Uma cabeça do casal: pele, juba de bolotas, olhos e bochecha. */
+function cabecaDaDupla(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number, r: number, cabelo: string, camisa: string,
+): void {
+  elipse(ctx, cx, cy + r * 2.1, r * 1.25, r * 1.3, camisa);
+  elipse(ctx, cx, cy, r, r * 1.05, C.peleAri);
+  for (let i = 0; i < 10; i++) {
+    const a = Math.PI * (0.98 + (i / 9) * 1.04);
+    elipse(ctx, cx + Math.cos(a) * r * 0.97, cy + Math.sin(a) * r * 1.02,
+      r * 0.54, r * 0.51, cabelo);
+  }
+  olhos(ctx, cx - r * 0.34, cx + r * 0.34, cy + r * 0.04, r * 0.16);
+  elipse(ctx, cx - r * 0.62, cy + r * 0.38, r * 0.22, r * 0.15, C.bochecha);
+  elipse(ctx, cx + r * 0.62, cy + r * 0.38, r * 0.22, r * 0.15, C.bochecha);
+  ctx.strokeStyle = C.olho;
+  ctx.lineWidth = r * 0.1;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(cx, cy + r * 0.38, r * 0.26, 0.25, Math.PI - 0.25);
+  ctx.stroke();
+}
+
+/** O pato: pena, bico-espátula e a boina tombada. */
+function cabecaDoPato(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+  elipse(ctx, cx, cy + r * 2.2, r * 1.3, r * 1.2, C.azulFranca);
+  elipse(ctx, cx, cy, r, r, C.pena);
+  elipse(ctx, cx, cy + r * 0.56, r * 0.58, r * 0.26, C.bicoPatoEscuro);
+  elipse(ctx, cx, cy + r * 0.42, r * 0.63, r * 0.27, C.bicoPato);
+  olhos(ctx, cx - r * 0.33, cx + r * 0.33, cy - r * 0.08, r * 0.17);
+  elipse(ctx, cx - r * 0.72, cy + r * 0.3, r * 0.2, r * 0.13, C.bochecha);
+  elipse(ctx, cx + r * 0.72, cy + r * 0.3, r * 0.2, r * 0.13, C.bochecha);
+  ctx.save();
+  ctx.translate(cx + r * 0.08, cy - r * 0.86);
+  ctx.rotate(0.24);
+  elipse(ctx, 0, 0, r * 1.07, r * 0.49, C.azulFranca);
+  elipse(ctx, 0, -r * 0.16, r * 0.86, r * 0.4, C.azulFranca);
+  ctx.restore();
+}
+
+/** O pinguim: casaco escuro, máscara clara, bico em cunha e a casquinha. */
+function cabecaDoPinguim(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+  elipse(ctx, cx, cy + r * 2.3, r * 1.35, r * 1.3, C.casaco);
+  elipse(ctx, cx, cy + r * 2.4, r * 0.85, r * 1.05, C.rosaDoMano);
+  elipse(ctx, cx, cy, r, r * 0.96, C.casaco);
+  elipse(ctx, cx, cy + r * 0.2, r * 0.7, r * 0.66, C.barriga);
+  ctx.fillStyle = C.bicoPinguim;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r * 0.1);
+  ctx.lineTo(cx + r * 0.36, cy + r * 0.5);
+  ctx.lineTo(cx - r * 0.36, cy + r * 0.5);
+  ctx.closePath();
+  ctx.fill();
+  olhos(ctx, cx - r * 0.34, cx + r * 0.34, cy - r * 0.04, r * 0.16);
+  // a casquinha de cabeça para baixo, o chapéu dele
+  ctx.save();
+  ctx.translate(cx, cy - r * 0.95);
+  ctx.rotate(-0.12);
+  ctx.fillStyle = C.waffle;
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.5, r * 0.12);
+  ctx.lineTo(r * 0.5, r * 0.12);
+  ctx.lineTo(0, -r * 0.65);
+  ctx.closePath();
+  ctx.fill();
+  elipse(ctx, 0, -r * 0.8, r * 0.33, r * 0.3, C.sorvete);
+  elipse(ctx, r * 0.04, -r * 1.1, r * 0.13, r * 0.13, C.cereja);
+  ctx.restore();
+}
+
+/** O elefante: orelha-leque, tromba em gomos, presinhas e o quepe. */
+function cabecaDoElefante(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+  for (const [dx, giro] of [[-1.25, -0.3], [1.25, 0.3]] as const) {
+    elipse(ctx, cx + r * dx, cy - r * 0.05, r * 0.72, r * 0.87, C.elefanteEscuro, giro);
+    elipse(ctx, cx + r * dx, cy - r * 0.02, r * 0.49, r * 0.64, C.orelha, giro);
+  }
+  elipse(ctx, cx, cy + r * 2.0, r * 1.35, r * 1.1, C.elefanteEscuro);
+  elipse(ctx, cx, cy, r, r * 0.92, C.elefante);
+  elipse(ctx, cx - r * 0.42, cy - r * 0.68, r * 0.42, r * 0.36, C.elefante);
+  elipse(ctx, cx + r * 0.42, cy - r * 0.68, r * 0.42, r * 0.36, C.elefante);
+  const gomos: Array<[number, number, number]> = [
+    [0, 0.48, 0.38], [0.02, 0.86, 0.32], [0.13, 1.16, 0.26], [0.34, 1.32, 0.2],
+  ];
+  for (const [dx, dy, gr] of gomos) {
+    elipse(ctx, cx + r * dx, cy + r * dy, r * gr, r * gr, C.elefante);
+  }
+  for (const [dx, giro] of [[-0.53, 0.4], [0.53, -0.4]] as const) {
+    elipse(ctx, cx + r * dx, cy + r * 0.72, r * 0.12, r * 0.23, C.presa, giro);
+  }
+  olhos(ctx, cx - r * 0.38, cx + r * 0.38, cy + r * 0.0, r * 0.15);
+  ctx.fillStyle = C.quepe;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - r * 0.92, r * 0.76, r * 0.44, 0, Math.PI, 0);
+  ctx.fill();
+  ctx.fillRect(cx - r * 0.76, cy - r * 0.98, r * 1.52, r * 0.14);
+  elipse(ctx, cx, cy - r * 0.79, r * 0.88, r * 0.13, C.elefanteEscuro);
+}
+
+/** A ovelha: lã em bolotas, cara escura, focinho e os óculos de meia-lua. */
+function cabecaDaOvelha(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+  elipse(ctx, cx, cy + r * 2.1, r * 1.3, r * 1.2, C.la);
+  // a lã: bolotas em volta, por fora da cara
+  for (let i = 0; i < 11; i++) {
+    const a = (i / 11) * Math.PI * 2;
+    elipse(ctx, cx + Math.cos(a) * r * 0.86, cy + Math.sin(a) * r * 0.82,
+      r * 0.46, r * 0.44, i % 2 === 0 ? C.la : C.laSombra);
+  }
+  elipse(ctx, cx, cy, r * 0.82, r * 0.86, C.cara);
+  // as orelhinhas caídas, uma de cada lado
+  elipse(ctx, cx - r * 0.95, cy + r * 0.2, r * 0.3, r * 0.17, C.cara, -0.5);
+  elipse(ctx, cx + r * 0.95, cy + r * 0.2, r * 0.3, r * 0.17, C.cara, 0.5);
+  elipse(ctx, cx, cy + r * 0.44, r * 0.42, r * 0.3, C.focinho);
+  olhos(ctx, cx - r * 0.34, cx + r * 0.34, cy + r * 0.04, r * 0.15);
+  ctx.strokeStyle = C.oculos;
+  ctx.lineWidth = r * 0.08;
+  for (const dx of [-0.34, 0.34]) {
+    ctx.beginPath();
+    ctx.arc(cx + r * dx, cy + r * 0.02, r * 0.26, 0.15, Math.PI - 0.15);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.09, cy + r * 0.02);
+  ctx.lineTo(cx + r * 0.09, cy + r * 0.02);
+  ctx.stroke();
+}
+
+/**
+ * A FOTO DE GRUPO da arena, deitada.
+ *
+ * @param L largura em pixels de dispositivo
+ * @param H altura em pixels de dispositivo
+ */
+export function retratoDoGrupo(ctx: CanvasRenderingContext2D, L: number, H: number): void {
+  // o parque atrás: céu, morrinho e grama
+  ctx.fillStyle = '#cfe6f2';
+  ctx.fillRect(0, 0, L, H);
+  ctx.fillStyle = '#a8cf8a';
+  ctx.beginPath();
+  ctx.ellipse(L * 0.5, H * 0.72, L * 0.72, H * 0.42, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#93c176';
+  ctx.fillRect(0, H * 0.74, L, H * 0.26);
+
+  /*
+   * OS SEIS, da esquerda para a direita e do maior para o menor nas pontas.
+   * `u` é a unidade: tudo mede em altura de foto, então a mesma função serve
+   * para o papel do quadro e para qualquer tamanho que a gente resolva usar.
+   */
+  const u = H;
+  cabecaDaOvelha(ctx, L * 0.115, H * 0.46, u * 0.155);
+  cabecaDoElefante(ctx, L * 0.28, H * 0.42, u * 0.17);
+  cabecaDaDupla(ctx, L * 0.435, H * 0.47, u * 0.145, C.cabeloAri, C.camisaAri);
+  cabecaDaDupla(ctx, L * 0.565, H * 0.47, u * 0.145, C.cabeloRenan, C.camisaRenan);
+  cabecaDoPinguim(ctx, L * 0.725, H * 0.5, u * 0.145);
+  cabecaDoPato(ctx, L * 0.885, H * 0.54, u * 0.13);
+
+  /*
+   * A MESA DE PIQUENIQUE NA FRENTE DE TODO MUNDO.
+   *
+   * Ela corta os corpos na cintura, que é o que uma foto tirada do outro lado
+   * da mesa faz — e é ela que diz ONDE isto aconteceu. Sem ela, os seis
+   * estariam flutuando num gramado qualquer.
+   */
+  ctx.fillStyle = '#b5793a';
+  ctx.fillRect(0, H * 0.79, L, H * 0.09);
+  ctx.fillStyle = '#8a5a2a';
+  ctx.fillRect(0, H * 0.79, L, H * 0.016);
+  for (const x of [0.16, 0.5, 0.84]) {
+    ctx.fillStyle = '#8a5a2a';
+    ctx.fillRect(L * x - L * 0.012, H * 0.88, L * 0.024, H * 0.12);
+  }
+
+  // a bolinha em cima da mesa, que é a assinatura de todo retrato deste quadro
+  elipse(ctx, L * 0.93, H * 0.76, H * 0.05, H * 0.05, C.bolinhaSombra);
+  elipse(ctx, L * 0.93 - H * 0.008, H * 0.76 - H * 0.01, H * 0.045, H * 0.045, C.bolinha);
+}
