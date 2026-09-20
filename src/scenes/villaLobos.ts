@@ -3331,8 +3331,8 @@ export const villaLobos: SceneDef = {
          * mesinha"), em vez de uma fileira atrás dela.
          */
         'jean-luc': {
-          x: PIQUENIQUE.x - 2.3, z: PIQUENIQUE.z + 1.5,
-          de: { x: PIQUENIQUE.x - 5.0, z: PIQUENIQUE.z + 2.6 },
+          x: PIQUENIQUE.x - 1.7, z: PIQUENIQUE.z + 1.4,
+          de: { x: PIQUENIQUE.x - 4.4, z: PIQUENIQUE.z + 2.5 },
         },
       };
 
@@ -3368,7 +3368,10 @@ export const villaLobos: SceneDef = {
        * Ela é um grupo vazio: não tem malha, não tem sombra, não aparece.
        */
       const alvoDaFesta = new THREE.Group();
-      alvoDaFesta.position.set(PIQUENIQUE.x - 0.9, 0, PIQUENIQUE.z + 0.1);
+      // um passo para o lado do Cookie: ele tem quase três de altura, e altura
+      // em câmera isométrica sobe no quadro — com a âncora no meio da roda ele
+      // saía cortado pela borda de cima
+      alvoDaFesta.position.set(PIQUENIQUE.x - 1.3, 0, PIQUENIQUE.z - 0.2);
       w.root.add(alvoDaFesta);
       api.focusCamera(alvoDaFesta);
       /*
@@ -3377,7 +3380,7 @@ export const villaLobos: SceneDef = {
        * tira gente da foto antes de tirar grama. Daqui cabem os seis e a
        * mesa, que é tudo que precisa estar na cena.
        */
-      api.setZoom(5.8);
+      api.setZoom(6.3);
       await api.wait(0.8);
 
       await conversa([
