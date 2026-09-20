@@ -167,7 +167,15 @@ for (let i = 0; i < 400; i++) {
         return p ? +Math.hypot(p.x - mesa.x, p.z - mesa.z).toFixed(2) : null;
       });
     }, PIQUENIQUE);
-    if (perto.every((d) => d !== null && d < 2.6)) {
+    /*
+     * 3,6 do centro da mesa, e não 2,6.
+     *
+     * O Cookie para de propósito um passo além da ponta: ele é enorme, e com
+     * ele encostado na mesa a Estella some atrás dele. A medida aqui é
+     * "juntaram na mesa", e a mesa tem dois metros de comprimento — quem está
+     * a 3,2 do centro está na ponta dela, não do outro lado do parque.
+     */
+    if (perto.every((d) => d !== null && d < 3.6)) {
       juntos = perto;
       await page.screenshot({ path: `${OUT}-festa.png` });
     }
