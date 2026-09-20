@@ -66,7 +66,46 @@ await page.evaluate(() => {
   window.__ping = achar();
 });
 
-await page.keyboard.press('KeyE'); // abre a conversa
+/*
+ * A MESA PERGUNTA ANTES DE COMEÇAR, e o teste prova as duas respostas.
+ *
+ * Ela tem 2,6 de raio e ganha de tudo na arena, então é o prompt de quase
+ * todo lugar por ali — quem ia ver o quadro ou trocar de raquete esbarrava
+ * nela e caía direto numa partida de cinco pontos, que não tem como
+ * abandonar no meio.
+ *
+ * O `E` escolheria a PRIMEIRA opção sozinho, e um teste que só aperta `E`
+ * passaria por aqui sem nunca saber que existe uma pergunta. Por isso ele
+ * clica no botão pelo nome: primeiro no "agora não" (que não pode começar
+ * nada), depois no "bora".
+ */
+await page.keyboard.press('KeyE');
+const escolhas = page.locator('.dialogue .escolhas.show button');
+let perguntou = false;
+for (let i = 0; i < 12 && !perguntou; i++) {
+  await page.waitForTimeout(300);
+  perguntou = (await escolhas.count()) > 0;
+}
+const rotulos = perguntou ? await escolhas.allTextContents() : [];
+if (perguntou) {
+  const nao = rotulos.findIndex((r) => /agora não|agora nao/i.test(r));
+  await escolhas.nth(nao >= 0 ? nao : rotulos.length - 1).click();
+  await page.waitForTimeout(1200);
+}
+const recusou = await page.evaluate(
+  () => (window.__ping?.fase ?? 'parado') === 'parado' && window.jogo.camOmbro === null,
+);
+
+// e agora de novo, dizendo que sim
+await page.keyboard.press('KeyE');
+for (let i = 0; i < 12; i++) {
+  await page.waitForTimeout(300);
+  if (await escolhas.count()) {
+    const sim = (await escolhas.allTextContents()).findIndex((r) => /bora/i.test(r));
+    await escolhas.nth(sim >= 0 ? sim : 0).click();
+    break;
+  }
+}
 for (let i = 0; i < 4; i++) {
   await page.keyboard.press('KeyE');
   await page.waitForTimeout(500);
@@ -170,6 +209,8 @@ const balanco = await page.evaluate(() => {
   return b.length ? Math.max(...b) - Math.min(...b) : -1;
 });
 
+console.log('a mesa perguntou antes:', perguntou, '·', JSON.stringify(rotulos));
+console.log('  e "agora não" nao comecou partida nenhuma:', recusou);
 console.log('motivos dos pontos:', motivos.join(' | ') || '(nenhum)');
 console.log('balanço da mesa durante a partida:', balanco.toFixed(4), '(tem que ser 0)');
 console.log('perspectiva ligada ao começar:', comecou.perspectiva);
@@ -185,6 +226,8 @@ console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 const ganhou = ultimo.meus >= 5;
 const ok =
   !erros.length &&
+  // a confirmação da mesa: ela existe, e recusar não começa nada
+  perguntou && recusou &&
   comecou.perspectiva &&
   comecou.placar &&
   balanco === 0 &&
