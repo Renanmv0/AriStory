@@ -3273,33 +3273,37 @@ export const villaLobos: SceneDef = {
         x: number; z: number; de: { x: number; z: number };
       }> = {
         cookie: {
-          x: PIQUENIQUE.x - 3.2, z: PIQUENIQUE.z - 1.2,
-          de: { x: PIQUENIQUE.x - 6.2, z: PIQUENIQUE.z - 2.2 },
+          x: PIQUENIQUE.x - 3.0, z: PIQUENIQUE.z - 1.1,
+          de: { x: PIQUENIQUE.x - 6.0, z: PIQUENIQUE.z - 2.1 },
         },
         estella: {
-          x: PIQUENIQUE.x - 1.5, z: PIQUENIQUE.z - 1.6,
-          de: { x: PIQUENIQUE.x - 4.3, z: PIQUENIQUE.z - 4.7 },
+          x: PIQUENIQUE.x - 1.2, z: PIQUENIQUE.z - 1.7,
+          de: { x: PIQUENIQUE.x - 4.0, z: PIQUENIQUE.z - 4.8 },
         },
         mano: {
-          x: PIQUENIQUE.x + 0.1, z: PIQUENIQUE.z - 1.6,
-          de: { x: PIQUENIQUE.x + 2.6, z: PIQUENIQUE.z - 4.6 },
+          x: PIQUENIQUE.x + 0.2, z: PIQUENIQUE.z - 1.4,
+          de: { x: PIQUENIQUE.x + 2.7, z: PIQUENIQUE.z - 4.4 },
         },
         /*
-         * O PATO PARA EM `x = -7,2`, e não mais à direita que isso.
+         * O PATO FECHA A RODA DO LADO DE CÁ, ao lado da dupla — e não na ponta
+         * de +X, com os outros três.
          *
-         * O poste da alameda de `(-4; 20)` fica entre ele e a câmera nesta
-         * projeção: com ele meio metro mais para +X, a foto da festa saía com
-         * uma haste de metal cortando o pato ao meio.
+         * O poste da alameda de `(-4; 20)` cai bem nessa coluna da tela: ele é
+         * alto, e altura em câmera isométrica empurra a peça para CIMA no
+         * quadro, bem na altura de uma cabeça. Nas duas primeiras encenações a
+         * foto saiu com uma haste de metal atravessando o pato. Daqui ele está
+         * longe dela — e uma roda fechada é o que o Renan pediu ("em volta da
+         * mesinha"), em vez de uma fileira atrás dela.
          */
         'jean-luc': {
-          x: PIQUENIQUE.x + 1.4, z: PIQUENIQUE.z - 1.2,
-          de: { x: PIQUENIQUE.x + 4.3, z: PIQUENIQUE.z - 2.0 },
+          x: PIQUENIQUE.x - 2.3, z: PIQUENIQUE.z + 1.5,
+          de: { x: PIQUENIQUE.x - 5.0, z: PIQUENIQUE.z + 2.6 },
         },
       };
 
       // a dupla do lado de cá da mesa, os dois virados para ela
-      const meu = { x: PIQUENIQUE.x - 1.2, z: PIQUENIQUE.z + 1.7 };
-      const dele = { x: PIQUENIQUE.x + 0.2, z: PIQUENIQUE.z + 1.8 };
+      const meu = { x: PIQUENIQUE.x - 0.3, z: PIQUENIQUE.z + 1.8 };
+      const dele = { x: PIQUENIQUE.x + 1.0, z: PIQUENIQUE.z + 1.6 };
       const paraAMesa = (p: { x: number; z: number }): number =>
         Math.atan2(PIQUENIQUE.x - p.x, PIQUENIQUE.z - p.z);
       api.releasePlayer(meu.x, meu.z, paraAMesa(meu));
@@ -3324,7 +3328,7 @@ export const villaLobos: SceneDef = {
        * Ela é um grupo vazio: não tem malha, não tem sombra, não aparece.
        */
       const alvoDaFesta = new THREE.Group();
-      alvoDaFesta.position.set(PIQUENIQUE.x - 0.4, 0, PIQUENIQUE.z - 0.7);
+      alvoDaFesta.position.set(PIQUENIQUE.x - 0.9, 0, PIQUENIQUE.z + 0.1);
       w.root.add(alvoDaFesta);
       api.focusCamera(alvoDaFesta);
       /*
