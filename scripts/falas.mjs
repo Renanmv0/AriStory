@@ -126,14 +126,29 @@ const despirTodos = () =>
  * roupa) precisa do clique no botão certo — senão o teste entra numa partida
  * de xadrez em vez de ler a fala.
  */
+/**
+ * A cena ainda está no meio de alguma coisa?
+ *
+ * NÃO BASTA OLHAR O BALÃO. Uma cutscene tem esperas de câmera no meio
+ * (`api.wait`), e nelas o balão some enquanto o roteiro continua — quem só
+ * olha o `.dialogue.show` conclui que acabou, teleporta a dupla e lê as falas
+ * que faltavam como se fossem resposta da conversa seguinte. Foi exatamente
+ * isso que fez o Mano "responder" com a fala do pedido anterior. O que diz a
+ * verdade é o jogador TRAVADO, que é o que toda cutscene faz.
+ */
+const ocupado = async () =>
+  (await page.locator('.dialogue.show').count()) > 0
+  || (await page.evaluate(() => window.jogo.player.locked === true));
+
 const conversarCom = async (x, z, prompt) => {
   // primeiro FECHA o que estiver aberto: com um balão na tela não há prompt
   // nenhum, e a leitura sairia vazia sem dizer por quê
-  for (let i = 0; i < 60; i++) {
-    if (!(await page.locator('.dialogue.show').count())) break;
+  for (let i = 0; i < 200; i++) {
+    if (!(await ocupado())) break;
     await page.keyboard.press('KeyE');
     await page.waitForTimeout(300);
   }
+  await page.waitForTimeout(400);
   await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, 0), [x, z]);
   let texto = '';
   for (let i = 0; i < 20; i++) {
@@ -150,7 +165,8 @@ const conversarCom = async (x, z, prompt) => {
   // SEGUINTE herdaria a cauda desta como se fosse resposta
   for (let i = 0; i < 200; i++) {
     await page.waitForTimeout(320);
-    if (!(await page.locator('.dialogue.show').count())) break;
+    if (!(await ocupado())) break;
+    if (!(await page.locator('.dialogue.show').count())) continue; // espera de câmera
     const t = (await page.locator('.dialogue .text').textContent().catch(() => '')) ?? '';
     if (t && t.length > 2 && falas[falas.length - 1] !== t) falas.push(t);
     // um `ask` na tela: "Só um oi" é a saída que não entra em minigame
