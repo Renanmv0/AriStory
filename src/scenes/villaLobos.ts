@@ -18,6 +18,7 @@ import {
   vasoDePlanta,
 } from '../world/props';
 import { ARI, RENAN } from '../characters/cast';
+import { falarDoPremio } from '../world/falasDePremio';
 import { ITENS } from '../world/itens';
 import { asfalto, calcadaDePedrinha, gelo, tapeteDeGrama } from '../world/texturasDeChao';
 import { Mano } from '../entities/bichos/Mano';
@@ -820,6 +821,12 @@ export const villaLobos: SceneDef = {
          * carrega a piada, a fala seguinte traduz — é o próprio Jean-Luc
          * explicando o trocadilho, que é a coisa mais francesa que ele faz.
          */
+        /*
+         * DE JAQUETA DELE, ELE FALA DA JAQUETA. As seis falas de sempre ficam
+         * para quem chegar sem ela — e ele continua pedindo a partida no fim
+         * dos dois caminhos, porque é disso que ele vive.
+         */
+        const jaFalouDaJaqueta = await falarDoPremio(api, 'jean-luc');
         const vezes = api.bump('jean-luc.conversas');
         const dele: Array<readonly [string, string]> = [
           ['Cinco vitórias! Eu contei todas debaixo d\'água. Toutes!',
@@ -836,10 +843,12 @@ export const villaLobos: SceneDef = {
             'Ele dizia muito isso. Ele tinha muita prática.'],
         ];
         const duas = dele[(vezes - 1) % dele.length];
-        await conversa([
-          ['Jean-Luc', duas[0]],
-          ['Jean-Luc', duas[1]],
-        ]);
+        if (!jaFalouDaJaqueta) {
+          await conversa([
+            ['Jean-Luc', duas[0]],
+            ['Jean-Luc', duas[1]],
+          ]);
+        }
 
         /*
          * E NO FIM ELE PEDE A PARTIDA — toda vez, porque é disso que ele vive.
@@ -1244,6 +1253,9 @@ export const villaLobos: SceneDef = {
           });
           return;
         }
+        // de patins dele, ele repara — e aí a fala do carinho é a dele, e não
+        // a da dupla comentando o chapéu de casquinha
+        if (await falarDoPremio(api, 'mano')) return;
         await api.say([w.pick(FALAS_DO_MANO)], A);
       },
     });
@@ -1662,12 +1674,18 @@ export const villaLobos: SceneDef = {
          * e a partida e a coisa mais legal que ela tem. Duas portas para a
          * mesma mesa.
          */
+        /*
+         * ELA REPARA NA ROUPA ANTES DE QUALQUER OUTRA COISA — é a Estella, e
+         * ela é assim com a roupa de qualquer um. A pergunta vem depois, e o
+         * "oi" genérico só entra se ela NÃO tiver reparado em nada.
+         */
+        const notou = await falarDoPremio(api, 'estella');
         const escolha = await api.ask('Falar com ela', ['Jogar xadrez', 'Só um oi'], E);
         if (escolha === 0) {
           await partidaDeXadrez(api);
           return;
         }
-        await api.say([w.pick(FALAS_DA_ESTELLA)], E);
+        if (!notou) await api.say([w.pick(FALAS_DA_ESTELLA)], E);
       },
     });
 
@@ -4208,7 +4226,14 @@ export const villaLobos: SceneDef = {
               note: 'A Estella costurou a manta, o quepe e o crachá do Cookie nas cores da bilheteria dele, e mediu a orelha três vezes até cair certo. Foi a primeira roupa feita do tamanho dele. No dia da entrega ela deu um biscoitinho, e ele guardou metade pro dia seguinte.',
               icon: '🧵',
             });
-          } else {
+          } else if (!(await falarDoPremio(api, 'cookie'))) {
+            /*
+             * O QUEPE GANHA DO "OI" DE SEMPRE.
+             *
+             * `falarDoPremio` devolve `true` quando de fato falou, e por isso
+             * ele entra na condição: reparar na roupa e emendar um cumprimento
+             * genérico seria ele esquecer do quepe no mesmo fôlego.
+             */
             await api.say([w.pick(OI_DO_COOKIE)], C);
           }
 

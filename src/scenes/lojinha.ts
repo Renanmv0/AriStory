@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { falarDoPremio } from '../world/falasDePremio';
 import { PALETTE as P } from '../palette';
 import type { Collider, SceneDef } from '../core/types';
 import type { Interactable } from '../world/Interactable';
@@ -1003,7 +1004,9 @@ export const lojinha: SceneDef = {
               note: 'A loja de roupas do parque por dentro, depois da reforma: piso polido, duas ilhas de arara com tapete, provadores de cortina e uma escada rolante que sobe pro mezanino das peças premium. A Estella circula entre tudo chamando a gente de "meus queridos".',
               icon: '👗',
             });
-          } else {
+          } else if (!(await falarDoPremio(api, 'estella'))) {
+            // o conjunto de xadrez ganha do "oi" de sempre, aqui como na
+            // calçada: ela é a mesma ovelha nos dois lados da porta
             await api.say([w.pick(DENTRO_DA_LOJA)], E);
           }
         } finally {
