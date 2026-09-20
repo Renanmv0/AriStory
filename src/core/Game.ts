@@ -653,6 +653,10 @@ export class Game implements GameAPI {
     this.iso.setViewSize(viewSize);
   }
 
+  enquadrar(largura: number, altura: number): void {
+    this.iso.setViewSizeParaCaber(largura, altura);
+  }
+
   lockPlayer(locked: boolean): void {
     this.player.locked = locked;
     if (locked) this.ui.hidePrompt();
