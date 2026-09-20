@@ -3776,7 +3776,21 @@ export const villaLobos: SceneDef = {
           const eu = api.playerPosition();
           mano.group.rotation.y = Math.atan2(eu.x - mano.x, eu.z - mano.z);
 
+          /*
+           * OS PATINS VÊM ANTES DO PEDIDO.
+           *
+           * Este é o balcão, e é aqui que se FALA com ele — o carinho tem um
+           * raio de 0,8 e quase ninguém chega tão perto. Se o prêmio só
+           * falasse lá, a fala existiria e ninguém ouviria.
+           *
+           * Com sorvete na mão a conversa acaba aqui: ele reparou nos patins,
+           * e emendar o "mas vocês ainda estão com o de antes" seria trocar de
+           * assunto no meio da própria frase.
+           */
+          const falouDosPatins = await falarDoPremio(api, 'mano');
+
           if (aindaTemSorvete()) {
+            if (falouDosPatins) return;
             api.som('pinguim');
             await api.say(['Opa! Mas vocês ainda estão com o de antes.'], 'Mano');
             await api.say([w.pick(AINDA_COMENDO)], 'Mano');

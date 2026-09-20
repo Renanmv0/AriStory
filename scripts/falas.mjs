@@ -79,7 +79,18 @@ await page.evaluate(() => {
   // o pato nasce escondido até ser conhecido; aqui ele já é
   let mesa = null;
   j.current.world.root.traverse((n) => { if (n.userData?.pingpong) mesa = n; });
-  if (mesa) mesa.userData.jeanLuc.bicho.group.visible = true;
+  if (mesa) {
+    /*
+     * O PATO COMEÇA SUBMERSO NO LAGO, e o balão de fala dele anda junto com
+     * ele: parado lá no fundo, não há onde ficar de pé para falar. A cutscene
+     * de `chegar()` levaria minutos e é o que `jeanluc.mjs` já cobre, então
+     * aqui ele é posto no posto dele na mão.
+     */
+    const jl = mesa.userData.jeanLuc.bicho;
+    jl.group.visible = true;
+    jl.group.position.set(-17.6, 0, 26.3);
+    jl.emergirAte(0);
+  }
   // com bilhete na mochila o Cookie não tenta vender outro, e a conversa dele
   // acaba onde a fala do prêmio acaba
   j.addItem(window.aristoryItens['bilhete-roda']);
