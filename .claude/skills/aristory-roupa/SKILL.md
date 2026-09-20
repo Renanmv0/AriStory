@@ -15,11 +15,19 @@ pipeline inteiro:
 4. `src/scenes/quarto.ts` — `ROUPAS_DO_ARMARIO` estoca a peça; o armário
    abastece os DOIS personagens a cada abertura, então uma entrada só já
    basta para os dois poderem vestir.
-   **Peça que se GANHA jogando fica fora dessa lista** e entra por `flag` no
-   mesmo laço (a gravatinha do Walter, `gravata-do-walter`): a lista é o que o
-   Ari já tinha, e prêmio que aparece de graça deixa de ser prêmio. Quem dá o
-   prêmio chama `g.storeItem(peca, quem)` para os dois na hora, para a peça
-   não sumir até a próxima visita ao quarto.
+   **Peça que se GANHA jogando fica fora dessa lista** — a lista é o que o Ari
+   já tinha, e prêmio que aparece de graça deixa de ser prêmio. Há dois jeitos
+   de repor uma peça ganha, e o segundo é o bom:
+
+   - por `flag`, no mesmo laço do armário (a gravatinha do Walter,
+     `gravata-do-walter`). Simples, mas só vale no quarto: quem abrir o
+     espelho da boutique não vê a peça;
+   - por `save.premios`, reposto em `Game.reporPremios()` (os quatro prêmios
+     da arena de ping pong). É o gêmeo do `reporCompras` da boutique, e vale
+     nos DOIS painéis, porque os dois entram por `g.abrirGuardaRoupa()`.
+
+   Em qualquer um dos dois, quem dá o prêmio chama `g.storeItem(peca, quem)`
+   para os dois na hora, para a peça não sumir até a próxima abertura.
 5. `scripts/roupas.mjs` e `scripts/vestimenta.mjs` — asserções que provam que a
    roupa não quebrou a animação, não nasceu no lugar errado e não escapou das
    regras de armazenamento.
@@ -217,6 +225,23 @@ renda e fita), a terceira sai de conta em cima da primeira —
 nessa conta: ela passa as cores exatas por um ponto de entrada próprio
 (`vestidoRosa` vs `vestidoDaLoja`), senão a peça de referência muda junto com
 a variação nova.
+
+## Pôr a peça à venda na boutique
+
+## Pôr a peça como PRÊMIO de um desafiante da arena
+
+`world/itens.ts` tem o `PREMIOS_DA_ARENA`: um id de desafiante do quadro de
+inscrições (`world/adversariosData.ts`) para a lista de peças que ele dá. Uma
+entrada nova ali é tudo — o painel desenha a etiqueta sozinho, o clique grava
+em `save.premios` e `reporPremios` repõe para sempre nos dois guarda-roupas.
+
+A peça só abre quando a flag `batido-<id>` existir, e quem a grava é o fim da
+partida em `scenes/villaLobos.ts`. Prêmio NÃO leva `preco`: ele não está à
+venda em lugar nenhum.
+
+O conjunto da Estella são quatro peças de uma vez (uma por vaga do corpo) e o
+do Mano é um par de patins — este último é o único caso em que a ficha manda no
+modelo do RIG e não num `extra`: ver `enfeite`, em `core/types.ts`.
 
 ## Pôr a peça à venda na boutique
 

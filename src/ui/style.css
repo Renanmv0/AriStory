@@ -2067,6 +2067,58 @@ body.touch-device .dialogue .next { right: 84px; }
   transform: rotate(-1.2deg);
 }
 
+/* A ETIQUETA DO PRÊMIO, grampeada no pé do papel.
+   Ela fica FORA do fluxo do texto (tem fundo e borda própria) porque é a única
+   parte do papel que responde a clique por conta própria — o resto da ficha
+   marca o desafiante, e isto pega a roupa. */
+.quadro-de-inscricoes .ficha .premio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  border: 1px dashed rgba(122, 90, 48, 0.5);
+  background: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.quadro-de-inscricoes .ficha .premio .rotulo {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+.quadro-de-inscricoes .ficha .premio .peca {
+  font-style: italic;
+  color: var(--tinta-fraca);
+}
+.quadro-de-inscricoes .ficha .premio.fechado { opacity: 0.72; }
+.quadro-de-inscricoes .ficha .premio.pego {
+  border-style: solid;
+  border-color: rgba(70, 140, 80, 0.55);
+  background: rgba(150, 210, 160, 0.26);
+}
+/* o único estado clicável: fita dourada, e ele reage sozinho ao mouse */
+.quadro-de-inscricoes .ficha .premio.aberto {
+  cursor: pointer;
+  border: 1px solid #b98b2e;
+  background: linear-gradient(170deg, rgba(255, 222, 150, 0.85), rgba(238, 190, 92, 0.7));
+  box-shadow: 0 2px 6px rgba(80, 50, 10, 0.25);
+  animation: premio-pisca 1.8s ease-in-out infinite;
+}
+.quadro-de-inscricoes .ficha .premio.aberto:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+@keyframes premio-pisca {
+  0%, 100% { box-shadow: 0 2px 6px rgba(80, 50, 10, 0.25); }
+  50% { box-shadow: 0 2px 12px rgba(212, 160, 60, 0.75); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quadro-de-inscricoes .ficha .premio.aberto { animation: none; }
+}
+
 .quadro-de-inscricoes .rodape {
   margin: 14px 0 12px;
   font-size: 11.5px;

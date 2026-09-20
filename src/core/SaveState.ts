@@ -121,6 +121,16 @@ interface SaveData {
    * isso que a lista e do casal, como a carteira que pagou por ela.
    */
   compradas: string[];
+  /**
+   * Os ids das pecas de PREMIO ja resgatadas no quadro de inscricoes.
+   *
+   * Lista separada da de compras porque as duas respondem perguntas
+   * diferentes: `compradas` responde "ja pagaram por isso?" (e e o que impede
+   * a arara de cobrar duas vezes), esta responde "ja pegaram o premio?". O
+   * efeito no guarda-roupa e o mesmo — a peca volta a cada abertura, entao
+   * descartar uma nao perde nada.
+   */
+  premios: string[];
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -262,6 +272,7 @@ const EMPTY: SaveData = {
   stats: {},
   carteira: 0,
   compradas: [],
+  premios: [],
   inventarios: {},
 };
 
@@ -294,6 +305,10 @@ export class SaveState {
         // `undefined` — quem le isso faz `.includes` sem perguntar
         compradas: Array.isArray(parsed.compradas)
           ? parsed.compradas.filter((id): id is string => typeof id === 'string')
+          : [],
+        // idem: save de antes do quadro de inscricoes nao tem premio nenhum
+        premios: Array.isArray(parsed.premios)
+          ? parsed.premios.filter((id): id is string => typeof id === 'string')
           : [],
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
@@ -370,6 +385,23 @@ export class SaveState {
   registrarCompra(id: string): void {
     if (this.data.compradas.includes(id)) return;
     this.data.compradas.push(id);
+    this.persist();
+  }
+
+  /** ids das pecas de premio ja resgatadas no quadro de inscricoes */
+  get premios(): readonly string[] {
+    return this.data.premios;
+  }
+
+  /** Ja pegaram este premio? */
+  ganhouPremio(id: string): boolean {
+    return this.data.premios.includes(id);
+  }
+
+  /** Anota o premio resgatado. Idempotente, como a compra. */
+  registrarPremio(id: string): void {
+    if (this.data.premios.includes(id)) return;
+    this.data.premios.push(id);
     this.persist();
   }
 

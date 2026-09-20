@@ -563,6 +563,41 @@ export const PALETTE = {
   pingCartela: 0x2f333c,   // a cartela de numero do placarzinho
   pingVerde: 0x4f9a7a,     // a terceira raquete do suporte, a que ninguem pega
 
+  /* ------------------------------------------------------------------
+   * OS QUATRO PREMIOS DA ARENA — um por desafiante do quadro.
+   *
+   * Cada conjunto sai do DONO dele, e nao de um gosto de cor: a jaqueta usa o
+   * mesmo azul e o mesmo vermelho da camisa do Jean-Luc, o quepe usa o pano do
+   * quepe que o Cookie de fato veste na bilheteria, e os patins usam o rosa do
+   * Mano no sorvete. Peca de premio que nao lembra de quem veio e so mais uma
+   * roupa na arara.
+   * ------------------------------------------------------------------ */
+
+  // Jean-Luc: a jaqueta azul da Franca, com o bico de pato no peito
+  jaquetaFranca: 0x14539f,        // um tom acima do `azulFranca`, que e de bandeira
+  jaquetaFrancaManga: 0x0e3d78,   // a manga, mais funda que o corpo
+  jaquetaFrancaGola: 0xf4f1e8,    // gola e punho, o branco da bandeira
+  jaquetaFrancaFita: 0xe0243c,    // a faixa vermelha do peito
+  jaquetaFrancaBico: 0xf2a23c,    // o bico do patinho bordado no peito
+
+  // Cookie: o quepe da bilheteria, o mesmo pano da manta dele
+  quepeCookie: 0x4a7fe0,
+  quepeCookieFita: 0xe0524a,      // a faixa vermelha na base da copa
+  quepeCookieBotao: 0xf3e7d3,     // o botaozinho do alto e o debrum
+
+  // Estella: o conjunto de xadrez, preto e branco de tabuleiro
+  xadrezPano: 0xf2ece0,
+  xadrezPanoEscuro: 0x2a2731,
+  xadrezDourado: 0xd8b45e,        // o broche de dama e a coroa, o mesmo ouro do oculos dela
+  xadrezForro: 0x8d3f4c,          // o forro vinho que aparece na gola e na barra
+
+  // Mano: os patins da praca de gelo, azul-claro e branco
+  patinsGelo: 0x8fd3ef,
+  patinsGeloBota: 0xf7fbfd,
+  patinsGeloRoda: 0x3fa9d6,
+  patinsGeloCasquinha: 0xe0ac63,  // o waffle da casquinha do emblema
+  patinsGeloSorvete: 0xf6a6c0,    // a bola de sorvete, o rosa do Mano
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

@@ -120,6 +120,12 @@ export class CharacterRig {
   private alturaDaPerna = 0;
   private readonly pes: THREE.Mesh[] = [];
   private readonly patins: THREE.Group[] = [];
+  /** os pivos das pernas com o lado de cada um, para remontar o patins */
+  private readonly pernas: Array<[THREE.Object3D, -1 | 1]> = [];
+  /** quanto o patins encolhe para caber em quem e mais baixo */
+  private escalaPatins = 1;
+  /** o id do patins montado agora — o premio do Mano tem outra cor */
+  private patinsMontado: string | null = null;
   private targetFacing = 0;
   private swimming = false;
   private sitting = false;
@@ -200,6 +206,7 @@ export class CharacterRig {
     // o patins tem 0.405 de altura na escala nativa; a peca acompanha o tamanho
     // da pessoa para nao virar sapato de palhaco em quem e mais baixo
     const escalaPatins = h / 1.7;
+    this.escalaPatins = escalaPatins;
     this.altoDoPatins = SOLA_PATINS * escalaPatins;
     this.alturaDaPerna = legH;
     const torsoH = h * 0.3;
@@ -282,6 +289,7 @@ export class CharacterRig {
       roda.visible = false;
       pivot.add(roda);
       this.patins.push(roda);
+      this.pernas.push([pivot, side]);
 
       this.body.add(pivot);
     }
@@ -1236,7 +1244,8 @@ export class CharacterRig {
    * Quem manda e o inventario: o `Game` le a vaga de acessorio e carimba isto
    * todo quadro. O rig so obedece — nao ha estado de patins fora do save.
    */
-  setPatins(v: boolean): void {
+  setPatins(v: boolean, peca: ItemDef | null = null): void {
+    this.trocarModeloDoPatins(peca);
     if (this.patinando === v) return;
     this.patinando = v;
     // a peca desce ate o chao novo: o corpo sobe `altoDoPatins`, entao no
@@ -1249,6 +1258,45 @@ export class CharacterRig {
 
   get patinandoAgora(): boolean {
     return this.patinando;
+  }
+
+  /**
+   * Troca o MODELO do patins quando a peca calcada muda.
+   *
+   * O patins nao e um `extra` de roupa: ele nasce no construtor e SUBSTITUI o
+   * pe, porque a bota engole o tornozelo. Isso era simples enquanto existia um
+   * par so; com o premio do Mano passaram a existir dois, e quem decide a cor
+   * e a peca que esta na vaga dos pes.
+   *
+   * Remonta so quando o id muda — `sincronizarVestiveis` carimba isto todo
+   * quadro, e refazer geometria a 60 fps e o mesmo erro que o cache de roupa
+   * ja evita.
+   */
+  private trocarModeloDoPatins(peca: ItemDef | null): void {
+    const id = peca?.id ?? null;
+    if (this.patinsMontado === id) return;
+    this.patinsMontado = id;
+    for (const [i, [pivot, lado]] of this.pernas.entries()) {
+      const velho = this.patins[i];
+      pivot.remove(velho);
+      const novo = peca?.cor === undefined
+        ? patinsMesh(this.spec.shoes)
+        : patinsMesh(peca.cor, peca.corDetalhe ?? P.frisbee, peca.enfeite === 'sorvete', lado);
+      novo.scale.setScalar(this.escalaPatins);
+      // a peca tem a sola das rodas em y = 0, entao ela desce ate o chao novo
+      novo.position.y = -this.alturaDaPerna - this.altoDoPatins;
+      novo.visible = this.patinando;
+      // o `traverse` que liga sombra roda no CONSTRUTOR: nada criado depois
+      // herda isso sozinho — a mesma nota que ja existe em `porExtras`
+      novo.traverse((n: THREE.Object3D) => {
+        if ((n as THREE.Mesh).isMesh) {
+          n.castShadow = true;
+          n.receiveShadow = false;
+        }
+      });
+      pivot.add(novo);
+      this.patins[i] = novo;
+    }
   }
 
   /**

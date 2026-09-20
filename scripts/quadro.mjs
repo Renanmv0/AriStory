@@ -109,6 +109,17 @@ const espiarPainel = async () => {
       }),
       historias: fichas.map((f) => (f.querySelector('p')?.textContent ?? '').length),
       assinaturas: fichas.filter((f) => f.querySelector('.assinatura')).length,
+      // A ETIQUETA DO PRÊMIO, por ficha: `fechado` (ainda não ganharam dele),
+      // `aberto` (ganharam e a roupa espera o clique) ou `pego` (já está no
+      // guarda-roupa). Quem não dá prêmio nenhum — a dupla — não tem etiqueta.
+      premios: fichas.map((f) => {
+        const p = f.querySelector('.premio');
+        if (!p) return null;
+        return {
+          estado: ['fechado', 'aberto', 'pego'].find((c) => p.classList.contains(c)) ?? '?',
+          texto: p.textContent ?? '',
+        };
+      }),
     };
   });
   return dados;
@@ -297,6 +308,55 @@ const devolvida = await page.evaluate(() => {
   };
 });
 
+// ================================ 5b. o prêmio da Estella, no papel dela
+//
+// A PEÇA SÓ APARECE DEPOIS DA PARTIDA GANHA, e só entra no guarda-roupa no
+// clique. É o pedido do Renan em três tempos, e cada tempo tem um defeito
+// próprio que só este teste pega: prêmio que aparece de graça (a etiqueta
+// `aberto` sem a vitória), prêmio que entra sozinho (a peça no armário sem o
+// clique) e prêmio que some (o armário sem ela na visita seguinte).
+await promptEm(QUADRO.x, QUADRO.z + 1.1, /inscri/i);
+const depoisDeGanhar = await espiarPainel();
+const daEstella = depoisDeGanhar.nomes.findIndex((n) => /Estella/i.test(n));
+const antesDoClique = await page.evaluate(() => ({
+  premios: [...window.jogo.save.premios],
+  armario: window.jogo.wardrobeItems('ari').map((i) => i.id),
+}));
+
+// o clique na etiqueta não pode desafiar ninguém: ele para de subir para a
+// ficha, senão pegar a roupa começaria uma partida
+if (daEstella >= 0) {
+  await page.locator('.quadro-de-inscricoes .ficha').nth(daEstella)
+    .locator('.premio').click();
+  await page.waitForTimeout(900);
+}
+const depoisDoClique = await page.evaluate(() => ({
+  aindaAberto: document.querySelector('.quadro-de-inscricoes')?.classList.contains('show') ?? false,
+  estado: [...document.querySelectorAll('.quadro-de-inscricoes .ficha')]
+    .map((f) => f.querySelector('.premio')?.className ?? null),
+  premios: [...window.jogo.save.premios],
+  armarioAri: window.jogo.wardrobeItems('ari').map((i) => i.id),
+  armarioRenan: window.jogo.wardrobeItems('renan').map((i) => i.id),
+}));
+await page.screenshot({ path: `${OUT}-premio.png` });
+await page.keyboard.press('Escape');
+await page.waitForTimeout(600);
+
+// e ela CONTINUA lá depois de recarregar: o prêmio é do casal para sempre,
+// como a peça paga na boutique
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(3000);
+const depoisDoReload = await page.evaluate(() => {
+  window.jogo.abrirGuardaRoupa();
+  const r = {
+    premios: [...window.jogo.save.premios],
+    armarioAri: window.jogo.wardrobeItems('ari').map((i) => i.id),
+    armarioRenan: window.jogo.wardrobeItems('renan').map((i) => i.id),
+  };
+  window.jogo.ui.fecharArmario();
+  return r;
+});
+
 // ============================================ 6. veredito
 const falhas = [];
 if (!noMundo.achou) falhas.push('a tabua do quadro nao esta na cena');
@@ -359,6 +419,48 @@ if (!devolvida.memorias.includes('pingpong-estella')) {
   falhas.push(`a memoria da vitoria contra ela nao entrou: ${JSON.stringify(devolvida.memorias)}`);
 }
 if (falasDoFim.length < 3) falhas.push(`a conversa do fim nao saiu: ${JSON.stringify(falasDoFim)}`);
+
+// 5b. os prêmios
+// quatro etiquetas (a dupla não dá prêmio), todas FECHADAS antes da vitória
+const etiquetas = cheio.premios.filter(Boolean);
+if (etiquetas.length !== 4) {
+  falhas.push(`o quadro cheio tem ${etiquetas.length} etiquetas de premio, esperado 4`);
+}
+if (cheio.premios[0] !== null) falhas.push('a ficha da dupla ganhou etiqueta de premio');
+if (etiquetas.some((p) => p.estado !== 'fechado')) {
+  falhas.push(`premio aberto sem vitoria: ${JSON.stringify(cheio.premios)}`);
+}
+// depois da partida ganha, SÓ o dela abre
+const daEstellaDepois = depoisDeGanhar.premios[daEstella];
+if (!daEstellaDepois || daEstellaDepois.estado !== 'aberto') {
+  falhas.push(`o premio da Estella nao abriu depois da vitoria: ${JSON.stringify(daEstellaDepois)}`);
+}
+if (depoisDeGanhar.premios.filter((p) => p && p.estado !== 'fechado').length !== 1) {
+  falhas.push(`abriu premio de quem nao foi batido: ${JSON.stringify(depoisDeGanhar.premios)}`);
+}
+if (antesDoClique.premios.length !== 0) {
+  falhas.push(`o premio entrou sozinho, sem o clique: ${JSON.stringify(antesDoClique.premios)}`);
+}
+// o clique pega a roupa e NÃO desafia ninguém: o painel continua aberto
+if (!depoisDoClique.aindaAberto) falhas.push('o clique no premio fechou o quadro');
+if (depoisDoClique.premios.length !== 4) {
+  falhas.push(`o conjunto da Estella nao entrou inteiro: ${JSON.stringify(depoisDoClique.premios)}`);
+}
+for (const quem of ['armarioAri', 'armarioRenan']) {
+  const faltando = depoisDoClique.premios.filter((id) => !depoisDoClique[quem].includes(id));
+  if (faltando.length) falhas.push(`${quem} sem as pecas ${JSON.stringify(faltando)}`);
+}
+if (!depoisDoClique.estado[daEstella]?.includes('pego')) {
+  falhas.push(`a etiqueta nao virou "pego": ${JSON.stringify(depoisDoClique.estado)}`);
+}
+// e a peça continua lá na próxima visita ao armário, como a comprada
+if (depoisDoReload.premios.length !== 4) {
+  falhas.push(`o premio nao sobreviveu ao reload: ${JSON.stringify(depoisDoReload.premios)}`);
+}
+for (const quem of ['armarioAri', 'armarioRenan']) {
+  const faltando = depoisDoReload.premios.filter((id) => !depoisDoReload[quem].includes(id));
+  if (faltando.length) falhas.push(`depois do reload, ${quem} sem ${JSON.stringify(faltando)}`);
+}
 falhas.push(...erros);
 
 console.log('1. tabua:', JSON.stringify(noMundo), '· prompt:', JSON.stringify(promptDoQuadro));
@@ -372,6 +474,15 @@ console.log('   andando:', andarDireito.passos, 'passos ·',
   andarDireito.medianaEmGraus, 'graus entre o corpo e o rumo');
 console.log('5. fim:', JSON.stringify(falasDoFim.slice(0, 3)));
 console.log('   devolvida:', JSON.stringify(devolvida));
+console.log('5b. premios no quadro cheio:',
+  JSON.stringify(cheio.premios.map((p) => p?.estado ?? '—')));
+console.log('    depois da vitoria:',
+  JSON.stringify(depoisDeGanhar.premios.map((p) => p?.estado ?? '—')));
+console.log('    antes do clique, no save:', JSON.stringify(antesDoClique.premios));
+console.log('    depois do clique:', JSON.stringify(depoisDoClique.premios),
+  '· quadro aberto:', depoisDoClique.aindaAberto);
+console.log('    no armario do Ari:', JSON.stringify(depoisDoClique.armarioAri));
+console.log('    depois do reload:', JSON.stringify(depoisDoReload.premios));
 
 if (falhas.length) {
   console.log('\nFALHAS:');

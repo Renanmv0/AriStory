@@ -242,6 +242,17 @@ export interface ItemDef {
   /** Idem para a perna: vestido, saia e short. */
   pernasNuas?: boolean;
   /**
+   * Um enfeite a mais na peca, quando ela tem um modelo PROPRIO do rig.
+   *
+   * Hoje so o patins tem: ele nao e um `extra` de roupa, ele nasce no
+   * construtor do rig e SUBSTITUI o pe (a bota engole o tornozelo, entao o
+   * tenis por dentro apareceria pela costura). Enquanto existia um par so, a
+   * cor dele vinha da ficha do personagem; com o premio do Mano passaram a
+   * existir dois, e a ficha da peca ganhou voz: `cor` pinta a bota, `corDetalhe`
+   * as rodas e o cadarco, e isto acrescenta a casquinha de sorvete na lateral.
+   */
+  enfeite?: 'sorvete';
+  /**
    * Como o personagem segura isto na mao.
    *
    * - `upright`: braco esticado para a frente e o objeto em pe — sorvete, suco;

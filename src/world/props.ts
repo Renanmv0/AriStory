@@ -1790,7 +1790,12 @@ export function duck(color = 0xf6f2e8): THREE.Group {
  *
  * @param cor cor do cano da bota
  */
-export function patins(cor: number = P.wallCream): THREE.Group {
+export function patins(
+  cor: number = P.wallCream,
+  corDetalhe: number = P.frisbee,
+  sorvete = false,
+  lado: -1 | 1 = 1,
+): THREE.Group {
   const g = new THREE.Group();
   // etiqueta para o teste conseguir contar os pes calcados
   g.userData.patins = true;
@@ -1805,7 +1810,7 @@ export function patins(cor: number = P.wallCream): THREE.Group {
   cano.position.set(0, RODA * 2 + 0.25, -0.04);
   g.add(cano);
 
-  const cadarco = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.04, 0.13), toon(P.frisbee));
+  const cadarco = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.04, 0.13), toon(corDetalhe));
   cadarco.position.set(0, RODA * 2 + 0.235, 0.02);
   g.add(cadarco);
 
@@ -1814,17 +1819,60 @@ export function patins(cor: number = P.wallCream): THREE.Group {
   g.add(chassi);
 
   // duas rodas de cada lado, como patins de quatro rodinhas
-  for (const lado of [-1, 1]) {
+  for (const roda of [-1, 1]) {
     for (const frente of [-1, 1]) {
-      const roda = new THREE.Mesh(
+      const r = new THREE.Mesh(
         new THREE.CylinderGeometry(RODA, RODA, 0.035, 10),
-        toon(P.frisbee),
+        toon(corDetalhe),
       );
-      roda.rotation.z = Math.PI / 2;
-      roda.position.set(lado * 0.062, RODA, 0.01 + frente * 0.095);
-      g.add(roda);
+      r.rotation.z = Math.PI / 2;
+      r.position.set(roda * 0.062, RODA, 0.01 + frente * 0.095);
+      g.add(r);
     }
   }
+
+  /**
+   * A CASQUINHA DE SORVETE na lateral de FORA da bota — o enfeite dos patins
+   * que o Mano da de premio.
+   *
+   * Ela vai no lado de fora, e nao na frente: na frente ela some por baixo do
+   * corpo na camera isometrica, e entre as duas botas ela ficaria escondida na
+   * outra perna. O `lado` multiplica o x, senao a casquinha da perna esquerda
+   * nasce virada para dentro — a mesma pegadinha de sinal do resto do jogo.
+   */
+  if (sorvete) {
+    const enfeite = new THREE.Group();
+    enfeite.position.set(lado * 0.068, RODA * 2 + 0.135, 0.0);
+    enfeite.rotation.y = lado * Math.PI / 2;
+
+    const casquinha = new THREE.Mesh(
+      new THREE.ConeGeometry(0.035, 0.075, 10),
+      toon(P.patinsGeloCasquinha),
+    );
+    casquinha.rotation.x = Math.PI; // ponta para baixo, como casquinha de verdade
+    casquinha.position.y = -0.02;
+    casquinha.scale.z = 0.35;
+    enfeite.add(casquinha);
+
+    const bola = new THREE.Mesh(
+      new THREE.SphereGeometry(0.036, 10, 8),
+      toon(P.patinsGeloSorvete),
+    );
+    bola.position.y = 0.032;
+    bola.scale.z = 0.35;
+    enfeite.add(bola);
+
+    const cereja = new THREE.Mesh(
+      new THREE.SphereGeometry(0.014, 8, 6),
+      toon(P.fabricRed),
+    );
+    cereja.position.y = 0.066;
+    cereja.scale.z = 0.4;
+    enfeite.add(cereja);
+
+    g.add(enfeite);
+  }
+
   return g;
 }
 
