@@ -197,8 +197,11 @@ const conversarCom = async (bicho, prompt) => {
   let texto = '';
   let achou = false;
   for (const [dx, dz] of voltas) {
+    // relê a posição A CADA tentativa: ele continua andando enquanto o teste
+    // espera, e um alvo lido três segundos atrás já não é onde ele está
+    const agora = (await ondeEsta(bicho)) ?? onde;
     await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, 0),
-      [onde[0] + dx, onde[1] + dz]);
+      [agora[0] + dx, agora[1] + dz]);
     for (let i = 0; i < 6; i++) {
       await page.waitForTimeout(250);
       const visivel = await page.locator('.prompt.show').count();
