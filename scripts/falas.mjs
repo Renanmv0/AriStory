@@ -140,12 +140,32 @@ const ocupado = async () =>
   (await page.locator('.dialogue.show').count()) > 0
   || (await page.evaluate(() => window.jogo.player.locked === true));
 
+/**
+ * Um passo para a frente na conversa.
+ *
+ * PERGUNTA NÃO SE AVANÇA COM `E`. O `E` escolhe a PRIMEIRA opção, e a primeira
+ * opção do Jean-Luc é «Allez!» — ou seja, apertar `E` numa pergunta dele
+ * começa uma partida de ping pong e o teste some dentro do minigame. Por isso
+ * quem estiver com botões na tela leva clique na saída, e não tecla.
+ */
+const avancar = async () => {
+  const botoes = page.locator('.dialogue .escolhas.show button');
+  if (await botoes.count()) {
+    const rotulos = await botoes.allTextContents();
+    const saida = rotulos.findIndex((r) => /oi|agora não|agora nao|não|nao/i.test(r));
+    await botoes.nth(saida >= 0 ? saida : rotulos.length - 1).click();
+    await page.waitForTimeout(400);
+    return;
+  }
+  await page.keyboard.press('KeyE');
+};
+
 const conversarCom = async (x, z, prompt) => {
   // primeiro FECHA o que estiver aberto: com um balão na tela não há prompt
   // nenhum, e a leitura sairia vazia sem dizer por quê
   for (let i = 0; i < 200; i++) {
     if (!(await ocupado())) break;
-    await page.keyboard.press('KeyE');
+    await avancar();
     await page.waitForTimeout(300);
   }
   await page.waitForTimeout(400);
@@ -169,16 +189,7 @@ const conversarCom = async (x, z, prompt) => {
     if (!(await page.locator('.dialogue.show').count())) continue; // espera de câmera
     const t = (await page.locator('.dialogue .text').textContent().catch(() => '')) ?? '';
     if (t && t.length > 2 && falas[falas.length - 1] !== t) falas.push(t);
-    // um `ask` na tela: "Só um oi" é a saída que não entra em minigame
-    const botoes = page.locator('.dialogue .escolhas.show button');
-    if (await botoes.count()) {
-      const rotulos = await botoes.allTextContents();
-      const oi = rotulos.findIndex((r) => /oi|agora não|não/i.test(r));
-      await botoes.nth(oi >= 0 ? oi : rotulos.length - 1).click();
-      await page.waitForTimeout(400);
-      continue;
-    }
-    await page.keyboard.press('KeyE');
+    await avancar();
   }
   await page.waitForTimeout(400);
   return { prompt: texto, falas };
