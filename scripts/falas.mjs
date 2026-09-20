@@ -160,7 +160,15 @@ const avancar = async () => {
   await page.keyboard.press('KeyE');
 };
 
-const conversarCom = async (x, z, prompt) => {
+/**
+ * @param bicho a etiqueta do bicho, e não uma coordenada: O PATO PASSEIA.
+ *
+ * O Jean-Luc volta a andar pela arena depois de cada conversa, e o balão de
+ * fala dele anda junto (`moveTo`, na cena). Uma posição lida uma vez no
+ * começo serve para os outros três, que ficam no posto, e deixa o teste
+ * parado num lugar vazio esperando um prompt que está a três metros dali.
+ */
+const conversarCom = async (bicho, prompt) => {
   // primeiro FECHA o que estiver aberto: com um balão na tela não há prompt
   // nenhum, e a leitura sairia vazia sem dizer por quê
   for (let i = 0; i < 200; i++) {
@@ -169,7 +177,10 @@ const conversarCom = async (x, z, prompt) => {
     await page.waitForTimeout(300);
   }
   await page.waitForTimeout(400);
-  await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, 0), [x, z]);
+
+  const onde = await ondeEsta(bicho);
+  if (!onde) return { prompt: 'sumiu da cena', falas: [] };
+  await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz + 1.0, 0), onde);
   let texto = '';
   for (let i = 0; i < 20; i++) {
     await page.waitForTimeout(250);
@@ -197,31 +208,29 @@ const conversarCom = async (x, z, prompt) => {
 
 const resultado = [];
 for (const q of QUEM) {
-  const onde = await ondeEsta(q.bicho);
-  if (!onde) {
+  if (!(await ondeEsta(q.bicho))) {
     resultado.push({ ...q, erro: 'nao achei o bicho na cena' });
     continue;
   }
-  const [x, z] = onde;
 
   // 1. SEM a roupa: tem que ser a conversa de sempre
   await despirTodos();
   await page.waitForTimeout(500);
-  const semRoupa = await conversarCom(x, z + 1.0, q.prompt);
+  const semRoupa = await conversarCom(q.bicho, q.prompt);
 
   // 2. COM a roupa, a primeira vez: a cena grande
   await vestir(q.peca, 'ari');
   await page.waitForTimeout(700);
-  const primeira = await conversarCom(x, z + 1.0, q.prompt);
+  const primeira = await conversarCom(q.bicho, q.prompt);
 
   // 3. COM a roupa, de novo: a curta do rodízio
-  const segunda = await conversarCom(x, z + 1.0, q.prompt);
+  const segunda = await conversarCom(q.bicho, q.prompt);
 
   // 4. e a peça no PARCEIRO também vale — o prêmio é do casal
   await despirTodos();
   await vestir(q.peca, 'renan');
   await page.waitForTimeout(700);
-  const noParceiro = await conversarCom(x, z + 1.0, q.prompt);
+  const noParceiro = await conversarCom(q.bicho, q.prompt);
 
   resultado.push({ ...q, semRoupa, primeira, segunda, noParceiro });
   await page.screenshot({ path: `${OUT}-${q.id}.png` });
