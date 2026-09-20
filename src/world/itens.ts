@@ -127,7 +127,8 @@ export const ITENS = {
     cor: P.roupaLa,
     corDetalhe: P.roupaLaBarra,
     nota: 'para o frio que nunca faz',
-    cobreCabelo: true,
+    // SEM `cobreCabelo`: ele POUSA em cima da juba, como o quepe da bilheteria
+    // e o chapeu de campeao. Justo, ele sumia com o cabelo e tapava os olhos
     extra: gorroDeLa,
   },
   camisaListrada: {
@@ -467,14 +468,14 @@ export const ITENS = {
     tipo: 'vestivel', slot: 'cabeca',
     cor: P.lojaGorroAzul, corDetalhe: P.lojaGorroAzulBarra,
     nota: 'barra dobrada', preco: 42,
-    cobreCabelo: true, extra: gorroDeLa,
+    extra: gorroDeLa,
   },
   gorroMusgo: {
     id: 'gorro-musgo', nome: 'Gorro musgo', icone: '🧢',
     tipo: 'vestivel', slot: 'cabeca',
     cor: P.lojaGorroMusgo, corDetalhe: P.lojaGorroMusgoBarra,
     nota: 'lã grossa', preco: 42,
-    cobreCabelo: true, extra: gorroDeLa,
+    extra: gorroDeLa,
   },
   botaVermelha: {
     id: 'bota-vermelha', nome: 'Bota vermelha', icone: '🥾',
@@ -511,7 +512,7 @@ export const ITENS = {
     tipo: 'vestivel', slot: 'cabeca',
     cor: P.lojaVeludo, corDetalhe: P.lojaVeludoBarra,
     nota: 'vinho, de festa', preco: 150,
-    cobreCabelo: true, extra: gorroDeLa,
+    extra: gorroDeLa,
   },
   botaDeGala: {
     id: 'bota-gala', nome: 'Bota de gala dourada', icone: '👢',
