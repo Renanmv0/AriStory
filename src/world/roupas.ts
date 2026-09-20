@@ -23,7 +23,17 @@ import type { ItemDef, MedidasCorpo } from '../core/types';
 // os pivos de rotacao da caminhada continuam intocados.
 
 /**
- * Gorro de la: calota que cobre o cabelo, com a barra dobrada na borda.
+ * Gorro de la: calota apoiada EM CIMA do cabelo, com a barra dobrada na borda.
+ *
+ * ELE POUSA, e nao engole. A primeira versao era justa: media-se pelo cranio e
+ * pedia `cobreCabelo`, entao a juba sumia e sobrava uma cabeca careca de touca
+ * — e, medida pelo cranio, a barra caia na linha do rosto e, na camera
+ * isometrica (que olha de cima, em 34°), tapava os olhos.
+ *
+ * Agora ele segue as cotas do QUEPE DA BILHETERIA, que por sua vez seguem as
+ * do chapeu de campeao no construtor do rig: a altura sai do CABELO (a juba do
+ * Ari sobe a ~1,35·headR), e nao do cranio. O cabelo continua aparecendo por
+ * baixo, que e o que um gorro de verdade faz.
  *
  * A barra tem que cair EXATAMENTE na borda de baixo da calota, e nao mais
  * larga que ela. Uma casca esferica de raio R aberta ate `thetaLength` termina
@@ -40,35 +50,42 @@ function gorroDeLa(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Ob
   const la = toon(peca?.cor ?? P.roupaLa);
   const laBarra = toon(peca?.corDetalhe ?? P.roupaLaBarra);
 
-  // Este gorro pede `cobreCabelo`, entao ele pode ser JUSTO: sem a juba por
-  // baixo, basta folgar um pouco do cranio. Um chapeu que so pousa por cima
-  // (bone, o chapeu de campeao) e que precisa medir pelo cabelo.
-  const RAIO = r * 1.07;
-  const ABRE = Math.PI * 0.54;
-  const CENTRO = r * 0.06;
+  /*
+   * AS COTAS SAO AS DO QUEPE, e nao as do cranio.
+   *
+   * `BORDA` e onde a barra encosta no cabelo, e ela e o numero que decide
+   * tudo: acima dela a peca inteira fica longe do rosto, e por baixo dela
+   * continua havendo cabeca e cabelo. `RAIO` e bem menor que `headR` porque a
+   * peca nao precisa mais envolver o cranio — ela so se apoia no alto dele.
+   */
+  const BORDA = r * 1.26;
+  const RAIO = r * 0.9;
+  const ALTO = 1.02; // um pouco alto: gorro achatado lembra boina
+  const ABRE = Math.PI * 0.52;
+
   const calota = new THREE.Mesh(
     new THREE.SphereGeometry(RAIO, 18, 12, 0, Math.PI * 2, 0, ABRE),
     la,
   );
-  calota.position.y = CENTRO;
-  calota.scale.y = 1.16; // um pouco alto: gorro achatado lembra boina
+  calota.position.y = BORDA;
+  calota.scale.y = ALTO;
   g.add(calota);
 
   // onde a casca de fato termina — ver o comentario do cabecalho
-  const borda = CENTRO + RAIO * Math.cos(ABRE) * 1.16;
+  const borda = BORDA + RAIO * Math.cos(ABRE) * ALTO;
   const raioNaBorda = RAIO * Math.sin(ABRE);
   const barra = new THREE.Mesh(
-    new THREE.CylinderGeometry(raioNaBorda * 1.03, raioNaBorda * 1.03, r * 0.26, 18),
+    new THREE.CylinderGeometry(raioNaBorda * 1.04, raioNaBorda * 1.07, r * 0.22, 18),
     laBarra,
   );
-  barra.position.y = borda;
+  barra.position.y = borda - r * 0.03;
   g.add(barra);
 
   const pompom = new THREE.Mesh(
-    new THREE.SphereGeometry(r * 0.2, 10, 8),
+    new THREE.SphereGeometry(r * 0.17, 10, 8),
     laBarra,
   );
-  pompom.position.y = CENTRO + RAIO * 1.16;
+  pompom.position.y = BORDA + RAIO * ALTO;
   g.add(pompom);
 
   return g;

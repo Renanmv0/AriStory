@@ -399,7 +399,9 @@ await page.screenshot({ path: `${OUT}-moletom.png` });
 // - a jaqueta do Jean-Luc é casca no CORPO com uma manga em cada braço, e não
 //   sobe até o rosto nem engole a mão (a mesma régua do moletom, que é a peça
 //   de onde ela herdou as cotas);
-// - o quepe do Cookie nasce na CABEÇA e esconde o cabelo;
+// - o quepe do Cookie nasce na CABEÇA e POUSA em cima da juba, sem escondê-la
+//   — e o gorro de lã, que era justo e sumia com o cabelo, segue a mesma régua
+//   agora: nenhuma peça de cabeça pode nascer na linha do rosto;
 // - o conjunto da Estella ocupa as QUATRO vagas ao mesmo tempo, e as peças de
 //   perna nascem uma em cada perna (é o que prova que o mapa de pais continua
 //   mandando `pernas`/`pes` para os dois pivôs);
@@ -460,12 +462,26 @@ const jaqueta = await medirPeca('jaqueta-jean-luc');
 const quepe = await medirPeca('quepe-cookie');
 await page.screenshot({ path: `${OUT}-premio-jean-luc.png` });
 
+// e o GORRO DE LÃ, pela mesma régua: ele deixou de ser justo e passou a pousar
+// em cima da juba, como o quepe. Medido pelo crânio (a versão antiga, com
+// `cobreCabelo`), ele sumia com o cabelo e a barra caía na linha dos olhos.
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.removeItem('quepe-cookie', 'ari');
+  j.equipWearable(window.aristoryItens['gorro-la'], 'ari');
+});
+await page.waitForTimeout(900);
+const gorro = await medirPeca('gorro-la');
+
 // o conjunto inteiro da Estella, as quatro vagas de uma vez
 await page.evaluate(() => {
   const j = window.jogo;
   const cat = window.aristoryItens;
   j.removeItem('jaqueta-jean-luc', 'ari');
   j.removeItem('quepe-cookie', 'ari');
+  // e o gorro, que ficou na vaga da cabeça na medição logo acima: vaga
+  // ocupada RECUSA a peça nova, e a coroa não entraria
+  j.removeItem('gorro-la', 'ari');
   j.removeItem('bota-amarela', 'ari');
   for (const id of ['blazer-xadrez', 'calca-xadrez', 'coroa-dama', 'bota-xadrez']) {
     j.equipWearable(cat[id], 'ari');
@@ -618,6 +634,8 @@ console.log('  jaqueta da França · corpo:', jaqueta.noCorpo, '· cabeça:', ja
   '· mangas:', JSON.stringify(jaqueta.mangas));
 console.log('    base', jaqueta.base, '· topo', jaqueta.topo, '· olhos', jaqueta.olhos,
   '· mão', jaqueta.mao, '(topo abaixo dos olhos, base acima da mão)');
+console.log('  gorro de lã · cabeça:', gorro.naCabeca, '· cabelo visível:', gorro.cabeloVisivel,
+  '· pousa em', gorro.base, '(a cabeça está em', gorro.olhos + ')');
 console.log('  quepe da bilheteria · cabeça:', quepe.naCabeca, '· corpo:', quepe.noCorpo,
   '· cabelo visível:', quepe.cabeloVisivel, '(ele POUSA: o cabelo fica)');
 console.log('    ele pousa em', quepe.base, '· a cabeça está em', quepe.olhos);
@@ -711,6 +729,8 @@ const ok =
    */
   quepe.naCabeca === 1 && quepe.noCorpo === 0 && quepe.cabeloVisivel > 0 &&
   quepe.base > quepe.olhos &&
+  // o gorro de lã segue a MESMA régua desde que deixou de ser justo
+  gorro.naCabeca === 1 && gorro.cabeloVisivel > 0 && gorro.base > gorro.olhos &&
   // o conjunto: as quatro vagas ocupadas ao mesmo tempo
   conjunto.vagas.filter(Boolean).length === 4 &&
   conjunto.blazer.noCorpo === 1 && conjunto.blazer.mangas.join() === '1,1' &&
