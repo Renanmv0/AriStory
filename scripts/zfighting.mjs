@@ -54,6 +54,7 @@ const PECAS = [
   ['restaurante', 'clube'],
   ['estufa', 'clube'],
   ['arco-de-estufa', 'estufa'],
+  ['portao-de-jardim', 'estufa'],
   ['folhagem-alta', 'estufa'],
   ['trelica', 'estufa'],
   ['prateleira-de-mudas', 'estufa'],

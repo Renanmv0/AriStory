@@ -27,7 +27,9 @@ const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /** tem que bater com a cena `estufa` */
-const TERREIRO = { largura: 15, profundidade: 11 };
+const TERREIRO = { x: 0, z: -1.5, largura: 16, profundidade: 13 };
+/** e com o `PORTOES` dela: os tres vaos do fundo, por onde os bichos entram */
+const PORTOES = [-8.5, 0, 8.5];
 /** e com o `ESTUFA` da cena do clube */
 const PORTA_NO_JARDIM = { x: 25.6, z: -20.9 };
 
@@ -130,15 +132,21 @@ const envelope = (c) => {
   return { x: c.x, z: c.z, hx: c.hw * cos + c.hd * sen, hz: c.hw * sen + c.hd * cos };
 };
 
-/** o terreiro vazio, medido e não olhado */
+/**
+ * O terreiro vazio, medido e não olhado.
+ *
+ * Ele NÃO está mais centrado na origem: quando os três portões entraram, a
+ * arena andou para o fundo (o campo de jogo é a faixa entre as portas e os
+ * canteiros). Por isso a conta desconta o centro dele, e não o zero.
+ */
 const hx = TERREIRO.largura / 2;
 const hz = TERREIRO.profundidade / 2;
 const invadeOTerreiro = dentro.colisores.filter((c) => {
   const e = envelope(c);
-  return Math.abs(e.x) < hx + e.hx && Math.abs(e.z) < hz + e.hz;
+  return Math.abs(e.x - TERREIRO.x) < hx + e.hx && Math.abs(e.z - TERREIRO.z) < hz + e.hz;
 });
 
-/** as quatro bocas: nada a menos de 1,4 delas */
+/** as bocas dos portões: nada a menos de 1,4 delas */
 const bocas = dentro.pontos?.bocas ?? [];
 const bocasEntupidas = bocas.filter((b) =>
   dentro.colisores.some((c) => {
@@ -162,7 +170,7 @@ await page.screenshot({ path: `${OUT}-dentro.png` });
  * relógio, e o que denuncia esbarrão é um trecho que não anda, não um total
  * pequeno.
  */
-await page.evaluate(() => window.jogo.debugPlace(5.5, 5, Math.PI));
+await page.evaluate(() => window.jogo.debugPlace(5.5, 4, Math.PI));
 await page.waitForTimeout(700);
 const trilha = [await onde()];
 await page.keyboard.down('KeyW');
@@ -189,6 +197,42 @@ const andou = trechos.reduce((a, b) => a + b, 0);
 const ordenados = [...trechos].sort((a, b) => a - b);
 const mediana = ordenados[Math.floor(ordenados.length / 2)];
 const travados = trechos.filter((t) => t < mediana * 0.5);
+
+/**
+ * ================================ 3.5. OS TRÊS PORTÕES DEIXAM PASSAR
+ *
+ * Esta é a asserção que o minigame inteiro depende, e ela não se mede por
+ * folga geométrica: mede-se ANDANDO. O jogador nasce em frente a cada portão,
+ * anda para o fundo e o teste confere que ele chega na soleira — se uma
+ * pilastra, uma soleira de alvenaria ou um colisor de parede estiver no vão,
+ * ele para antes e o número denuncia.
+ *
+ * O limite de caminhada segura a dupla dentro do vidro (não há cena lá fora),
+ * então "passou" quer dizer chegar em `z ≤ -10,0`, que é a soleira do portão.
+ */
+const atravessou = [];
+for (const x of PORTOES) {
+  await page.evaluate(([px]) => window.jogo.debugPlace(px, -6.5, 0), [x]);
+  await page.waitForTimeout(800);
+  /**
+   * `W` + `D` JUNTOS andam em `-Z` puro, e não `W` + `A`.
+   *
+   * Na câmera isométrica padrão nenhuma tecla anda num eixo do mundo sozinha.
+   * A skill de cenário registra o par de ida (`D` + `S` para `+X`); daí sai o
+   * resto por simetria, e `W` + `A` — que foi a primeira tentativa — anda em
+   * `-X`. O teste acusou os três portões de não deixarem passar quando na
+   * verdade a dupla estava andando de lado, paralela à parede.
+   */
+  await page.keyboard.down('KeyW');
+  await page.keyboard.down('KeyD');
+  for (let i = 0; i < 12; i++) await page.waitForTimeout(700);
+  await page.keyboard.up('KeyD');
+  await page.keyboard.up('KeyW');
+  await page.waitForTimeout(400);
+  const fim = await onde();
+  atravessou.push({ portao: x, chegou: fim });
+}
+await page.screenshot({ path: `${OUT}-portoes.png` });
 
 // ================================================ 4. as conversas da cena
 const conversar = async (x, z) => {
@@ -236,7 +280,10 @@ console.log('   canteiros:', dentro.canteiros.length,
 console.log('   colisores:', dentro.colisores.length,
   '· invadindo o terreiro:', invadeOTerreiro.length,
   '· bocas entupidas:', bocasEntupidas.length);
-console.log('3. travessia do meio: (5.5, 5) →', JSON.stringify(depoisDeAtravessar),
+for (const a of atravessou) {
+  console.log(`3.5 portão x=${a.portao} · parou em`, JSON.stringify(a.chegou));
+}
+console.log('3. travessia do meio: (5.5, 4) →', JSON.stringify(depoisDeAtravessar),
   '· andou', andou.toFixed(2), '· mediana por amostra', mediana,
   '· trechos:', JSON.stringify(trechos));
 console.log('4. bancada:', JSON.stringify(naBancada.rotulo));
@@ -269,7 +316,23 @@ if (invadeOTerreiro.length) {
   problemas.push(`${invadeOTerreiro.length} colisor(es) dentro do terreiro: ` +
     JSON.stringify(invadeOTerreiro.slice(0, 4)));
 }
-if (bocas.length !== 4) problemas.push('a cena não publica as quatro bocas');
+if (bocas.length !== 3) problemas.push(`a cena publica ${bocas.length} bocas, e não as 3 dos portões`);
+if (bocas.some((b) => b.z > -8)) {
+  problemas.push('as bocas saíram da parede do fundo: ' + JSON.stringify(bocas));
+}
+// e o portão tem que deixar passar de verdade, andando
+for (const a of atravessou) {
+  if (a.chegou[1] > -9.4) {
+    problemas.push(`o portão x=${a.portao} não deixa passar (parou em z=${a.chegou[1]})`);
+  }
+}
+if (!dentro.pecas['portao-de-jardim'] || dentro.pecas['portao-de-jardim'] !== 3) {
+  problemas.push(`são ${dentro.pecas['portao-de-jardim'] ?? 0} portões, e não 3`);
+}
+// o jardim de fora: é ele que faz o portão parecer entrada, e não buraco
+if ((dentro.pecas['arvore'] ?? 0) < 4) {
+  problemas.push('o jardim de fora sumiu — sem ele o portão vira buraco na parede');
+}
 if (bocasEntupidas.length) problemas.push(`${bocasEntupidas.length} boca(s) com colisor em cima`);
 if (!dentro.pecas['tonel-de-agua']) problemas.push('o tonel de água sumiu');
 if (!dentro.pecas['bancada-de-jardinagem']) problemas.push('a bancada de jardinagem sumiu');

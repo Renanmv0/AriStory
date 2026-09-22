@@ -6555,3 +6555,117 @@ export function prateleiraDeMudas(comprimento = 2.6, semente = 0.5): THREE.Group
   });
   return g;
 }
+
+/**
+ * PORTAO DE JARDIM — o vao decorado por onde se entra num jardim de fora.
+ *
+ * Ele nasceu para as tres entradas do fundo da estufa da Josefina, por onde os
+ * bichos do minigame vao entrar (`docs/MINIGAME-JARDIM.md` §8), e o pedido era
+ * que parecessem "entradas para um jardim, como se ainda tivesse uma area do
+ * lado de fora".
+ *
+ * TRES COISAS FAZEM ISSO LER, e todas as tres sao sobre PARECER MAIS VELHO QUE
+ * A ESTUFA — portao que combina com o vidro vira porta de galpao:
+ *
+ * 1. **Pilastra de pedra com capitel e bola.** E a silhueta de entrada de
+ *    chacara. A pedra e mais fria que a alvenaria da soleira de proposito.
+ * 2. **As folhas ficam ABERTAS, encostadas para fora.** Portao fechado lê como
+ *    obstaculo, e este e um lugar por onde se PASSA. Aberto, ele conta que o
+ *    de la e outro lugar, e nao uma parede.
+ * 3. **A soleira de pedra atravessando o vao.** E o que diz que este chao
+ *    continua do outro lado.
+ *
+ * O `userData.vao` guarda a largura livre, para a cena saber por onde a
+ * passagem realmente cabe sem remedir a peca.
+ */
+export function portaoDeJardim(vao = 3, altura = 2.6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'portao-de-jardim';
+  g.userData.vao = vao;
+
+  const pedra = toon(P.pedraDoPortao);
+  const capa = toon(P.pedraDoPortaoCapa);
+  const ferro = toon(P.ferroDoPortao);
+  const PILASTRA = 0.36;
+  const meio = vao / 2 + PILASTRA / 2;
+
+  for (const s of [-1, 1] as const) {
+    // o corpo da pilastra
+    const pilar = new THREE.Mesh(new THREE.BoxGeometry(PILASTRA, altura, PILASTRA), pedra);
+    pilar.position.set(s * meio, altura / 2, 0);
+    g.add(pilar);
+    // as duas juntas de pedra, rentes: elas quebram o bloco liso de 2,6 m
+    for (const y of [altura * 0.34, altura * 0.67]) {
+      const junta = new THREE.Mesh(
+        new THREE.BoxGeometry(PILASTRA + 0.05, 0.05, PILASTRA + 0.05), capa,
+      );
+      junta.position.set(s * meio, y, 0);
+      g.add(junta);
+    }
+    // o capitel, mais largo que o corpo — embutido, as faces coincidiriam
+    const capitel = new THREE.Mesh(
+      new THREE.BoxGeometry(PILASTRA + 0.16, 0.13, PILASTRA + 0.16), capa,
+    );
+    capitel.position.set(s * meio, altura + 0.065, 0);
+    g.add(capitel);
+    // e a bola em cima, que e o que transforma pilar em PORTAO
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), pedra);
+    bola.position.set(s * meio, altura + 0.26, 0);
+    g.add(bola);
+
+    /**
+     * A FOLHA, ABERTA PARA FORA.
+     *
+     * Ela gira na pilastra (por isso entra num pivo posicionado nela, e nao
+     * numa posicao propria) e abre 105 graus — mais que o angulo reto, como
+     * portao que ficou escancarado e encostou no muro.
+     */
+    const dobradica = new THREE.Group();
+    dobradica.position.set(s * (meio - PILASTRA / 2), 0, 0);
+    dobradica.rotation.y = s * -1.83;
+    g.add(dobradica);
+
+    const larguraDaFolha = vao / 2 - 0.05;
+    const alturaDaFolha = altura * 0.78;
+    // o quadro
+    for (const y of [0.22, alturaDaFolha]) {
+      const travessa = new THREE.Mesh(
+        new THREE.BoxGeometry(larguraDaFolha, 0.07, 0.05), ferro,
+      );
+      travessa.position.set(s * larguraDaFolha / 2, y, 0);
+      dobradica.add(travessa);
+    }
+    // as barras verticais, com as pontas passando da travessa de cima
+    const barras = Math.max(4, Math.round(larguraDaFolha / 0.24));
+    for (let i = 0; i < barras; i++) {
+      const t = i / (barras - 1);
+      // as do meio sao mais ALTAS: e o arco de topo de todo portao de jardim
+      const sobra = 0.12 + Math.sin(t * Math.PI) * 0.22;
+      const h = alturaDaFolha - 0.22 + sobra;
+      const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, h, 6), ferro);
+      barra.position.set(s * (0.06 + t * (larguraDaFolha - 0.12)), 0.22 + h / 2, 0);
+      dobradica.add(barra);
+    }
+  }
+
+  /**
+   * A SOLEIRA DE PEDRA, atravessando o vao.
+   *
+   * Ela e RASA (7 cm) e mais estreita que a pilastra, para nao virar degrau: o
+   * jogador e os bichos passam por cima dela o tempo todo, e um degrau de
+   * verdade no meio de uma passagem e a coisa que mais trava caminhada.
+   */
+  const soleira = new THREE.Mesh(
+    new THREE.BoxGeometry(vao + PILASTRA, 0.07, 0.62), capa,
+  );
+  soleira.position.y = 0.035;
+  g.add(soleira);
+  // duas juntas transversais, so para a pedra nao ser uma laje unica
+  for (const s of [-1, 1] as const) {
+    const junta = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.075, 0.58), pedra);
+    junta.position.set(s * vao * 0.22, 0.04, 0);
+    g.add(junta);
+  }
+
+  return g;
+}

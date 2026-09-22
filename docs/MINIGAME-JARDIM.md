@@ -272,7 +272,7 @@ Gota que fica no chão mais de 20 s some. Gota de bicho elite vale 5.
 
 ## 8. Por onde os bichos entram, e o que a estufa tem
 
-### As três portas numa parede só — decidido, ainda não construído
+### As três portas numa parede só — **construído**
 
 O Renan propôs **três portas numa parede só**, na parede oposta à da saída (o
 fundo do prédio, visto do clube). Substitui as quatro bocas de canto que a área
@@ -289,14 +289,46 @@ tem hoje. É o desenho melhor, e por razões concretas:
 - **a continuidade fecha:** o `-Z` da cena interna é o fundo do prédio visto do
   jardim do clube.
 
-**A consequência que vem junto, e é a parte cara:** se os bichos vêm de uma
-parede só, **os canteiros têm que ficar entre as portas e o jogador**. Os três
-que hoje estão colados na parede da saída nunca seriam comidos naquele desenho
-— virariam decoração. Então a mudança não é abrir três portas: é puxar os
-canteiros para a metade do fundo e refazer o `CANTEIROS` da cena.
+**A consequência veio junto, e era a parte cara:** com os bichos vindo de uma
+parede só, os canteiros tiveram que sair de lá. A fileira do fundo ficava em
+`z = -8,8`, que é exatamente onde os portões abriram — o bicho entraria e
+comeria no primeiro passo. Os oito canteiros agora formam **uma ferradura
+aberta para os portões**: quatro na parede da saída e dois em cada lateral,
+todos na metade `+Z`. Assim todo bicho que entra precisa **atravessar o
+terreiro inteiro** para chegar em qualquer horta, e essa travessia é o jogo.
 
-Enquanto isso não acontece, **a parede do fundo fica pobre de propósito**: nada
-caro plantado ali, para não plantar hoje o que seria arrancado depois.
+**O terreiro andou para o fundo junto** (`16 × 13`, centrado em `z = -1,5`): o
+campo de jogo é a faixa entre as portas e os canteiros, e o meio geométrico da
+estufa deixou de ser o meio do jogo.
+
+**A oficina e o tonel trocaram de lado**, e isso é regra de jogo disfarçada de
+decoração. A bancada foi para a metade `+Z`, perto da saída — é de lá que a
+Josefina entrega os regadores, e o posto dela não pode ser o lado por onde
+entra bicho. **O tonel foi para a metade `-Z`**, a quatro metros do portão do
+meio: o §4 diz que a água acaba e que a viagem até o tonel é o que deixa os
+canteiros sozinhos. Se reabastecer fosse seguro não custaria nada; agora custa
+andar **na direção das portas**.
+
+**A faixa de chegada ficou vazia de planta**, a pedido do Renan, e ele está
+certo pelas duas pontas: não faz sentido a Josefina plantar em cima de onde os
+bichos passam, e não faz sentido encher de enfeite justamente a faixa que
+precisa estar legível quando os três portões cospem bicho ao mesmo tempo. O que
+decora ali é **estrutura**: os três portões de pedra, os caminhos que saem
+deles e o jardim que continua do lado de fora.
+
+### O jardim de fora
+
+Os portões precisavam parecer entradas para *algum lugar*, e não buracos numa
+parede. A saída é mais barata do que parece: o chão da cena continua 19 m além
+da parede de trás, com **o gramado como camada de BASE** (a terra batida da
+estufa é uma mancha por cima dele, e não o contrário — senão sobra um anel de
+terra pelada em volta dos outros três lados). Lá fora: três caminhos de
+pedrinha saindo dos portões, árvores e moitas espalhadas **fora do eixo de cada
+vão**, e uma sebe ao fundo fechando a vista.
+
+O jogador nunca chega lá — o limite de caminhada o segura dentro do vidro —,
+mas **através do vidro ele vê um jardim que continua**, que é tudo o que a
+ilusão precisa.
 
 ### 8.2. O que a estufa já tem
 
@@ -338,7 +370,7 @@ trabalha rápido") virando geometria.
 | 0 | **a área**: a estufa, a porta no jardim do clube, o caminho | **pronto** (§10) |
 | 1 | a skill `aristory-habilidade`, para carta nova sair barato | a fazer |
 | 2 | a quest do adubo (banco → Noel → Josefina → convite) | **pronto** (§2) |
-| 2.5 | **as três portas** na parede do fundo, e os canteiros puxados para lá (§8) | a fazer |
+| 2.5 | as três portas na parede do fundo, e os canteiros puxados para lá | **pronto** (§8) |
 | 3 | o esqueleto do minigame: onda, regador automático, um bicho só (a lagarta) | a fazer |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
 | 5 | gota, nível e a tela de três cartas | a fazer |
@@ -362,8 +394,8 @@ prateleiras de muda.
 
 **As peças novas do kit** (`src/world/props.ts`): `estufa()` (a casca),
 `bancadaDeJardinagem()`, `tonelDeAgua()`, `folhagemAlta()`,
-`trelicaComTrepadeira()` e `prateleiraDeMudas()`. Mais o parâmetro
-`crescimento` do `canteiroDeHorta()`.
+`trelicaComTrepadeira()`, `prateleiraDeMudas()` e `portaoDeJardim()`. Mais o
+parâmetro `crescimento` do `canteiroDeHorta()`.
 
 **A quest** (§2), espalhada por três arquivos: o saco no banco do fundo em
 `scenes/villaLobos.ts`, a troca com o Noel e a entrega à Josefina em
@@ -373,8 +405,10 @@ A peça é uma só, `sacoDeGraos()`, em dois jogos de cor.
 **Os testes**: `node scripts/estufa.mjs /tmp/ef` prova que a porta abre nos dois
 sentidos, que o terreiro do meio está mesmo vazio (nenhum colisor dentro dele),
 que os oito canteiros existem e que as quatro bocas estão desobstruídas.
-`node scripts/adubo.mjs /tmp/ad` percorre a quest inteira e guarda o que é fácil
-de quebrar sem perceber: a estufa trancada antes da hora, a Josefina calada
+Ele também **atravessa os três portões andando**, um por um: folga geométrica
+não prova passagem, e uma pilastra ou uma soleira de alvenaria no vão só
+aparece quando alguém tenta passar. `node scripts/adubo.mjs /tmp/ad` percorre a
+quest inteira e guarda o que é fácil de quebrar sem perceber: a estufa trancada antes da hora, a Josefina calada
 sobre ela, os rótulos que trocam sozinhos e ninguém emudecendo depois de
 receber o presente.
 

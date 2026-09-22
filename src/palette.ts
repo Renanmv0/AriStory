@@ -329,6 +329,16 @@ export const PALETTE = {
   tonelAro: 0x6d7c85,
   tonelAgua: 0x4f9fbd,
 
+  // OS TRES PORTOES DE JARDIM no fundo da estufa — por onde os bichos vao
+  // entrar. A pedra e mais fria e mais clara que a alvenaria da soleira, para
+  // o portao nao parecer um pedaco da estufa: ele e mais VELHO que ela, como
+  // muro de chacara que ja estava ali quando o vidro subiu.
+  pedraDoPortao: 0xc4bcae,
+  pedraDoPortaoCapa: 0xa79b8a,
+  // o ferro do portao: verde escuro de jardim, e nao preto — preto puro come o
+  // degrade do toon e vira silhueta chapada
+  ferroDoPortao: 0x46594b,
+
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
   // e a diferenca de tom e o que separa "comida de bicho" de "comida de
