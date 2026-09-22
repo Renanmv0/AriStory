@@ -39,9 +39,10 @@ import { toon } from '../core/materials';
 /**
  * O QUE A RODADA FEZ COM O REGADOR.
  *
- * Os tres primeiros campos sao CONTINUOS (0 a 1) porque as cartas comuns
- * repetem: pegar "Bico mais longo" tres vezes tem que esticar tres vezes, e nao
- * ligar um interruptor. Os outros sao cartas unicas, e por isso sao booleanos.
+ * Os tres primeiros campos sao CONTINUOS (0 a 1) porque as comuns vem em
+ * SERIE: "Bico mais longo", "II" e "III" tem que esticar tres vezes, e nao
+ * ligar um interruptor (`minigames/jardim/cartas.ts`). Os outros sao cartas
+ * unicas, e por isso sao booleanos.
  */
 export interface EstiloDeRegador {
   /**

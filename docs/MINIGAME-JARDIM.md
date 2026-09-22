@@ -1,7 +1,9 @@
 # A Estufa da Josefina — plano do minigame do jardim
 
-> Documento de PROJETO. **As etapas 0 e 2 estão no jogo** (§10): a área existe,
-> e a quest que a destranca também. O minigame em si ainda é plano. Quando uma etapa
+> Documento de PROJETO. **As etapas 0, 1 e 2 estão no jogo** (§10): a área existe,
+> a quest que a destranca também, a Josefina já entra na estufa junto com a
+> dupla e já pede confirmação para começar, e as cartas, a curva de nível e as
+> ondas existem como lógica testada. A rodada em si (etapa 3) ainda é plano. Quando uma etapa
 > for construída, marque-a aqui, e deixe o `git log` ser a fonte da verdade do
 > que de fato existe.
 >
@@ -40,11 +42,14 @@ canteiro para de te perseguir e começa a comer, e canteiro comido não volta.
 > dá para terminar a onda com vida cheia e ter perdido: se os oito canteiros
 > foram comidos, a Josefina não tem mais horta.
 
-**São dois regadores.** A dupla está em cena como sempre, e o parceiro também
-rega — ele segue você, com o mesmo alcance, disparando sozinho. A tecla `T`
-troca quem você controla, e quem você larga continua regando de onde estava. É a
-mesma tensão do turno do Mania (`MINIGAME-RESTAURANTE.md` §1): **onde eu
-estaciono a minha outra metade**.
+**Quem vai para a frente é só quem você controla.** Decisão do Renan: quem não
+está sendo controlado fica **lá atrás, com a Josefina**, na linha da porta,
+olhando para os portões. A dupla continua em cena, como o jogo exige — só que
+dividida: um defende, o outro torce.
+
+> O plano antigo punha os dois regando, e isso não sumiu: virou a carta
+> lendária **Os dois na frente** (§6). É o prêmio de uma rodada boa, e não o
+> começo de toda rodada.
 
 ---
 
@@ -148,12 +153,41 @@ inteiro acontece sem ninguém chamar de tutorial.**
 E nada disso é obrigatório — dá para entrar, olhar tudo e sair sem encostar no
 regador. Quem quiser jogar, rega; quem quiser só visitar a estufa, visita.
 
+### Depois do convite: ela entra junto, e é com ela que se joga — **construído**
+
+O ritual acontece **uma vez na vida**. Depois dele (flag `jardim.convite`), o
+desenho do Renan:
+
+1. **Lá fora ela continua passeando** no caminho do jardim, como sempre.
+2. **Toda vez que a dupla entra na estufa, ela entra junto**: nasce do lado de
+   fora da porta, atrás do vidro, e atravessa a soleira um instante depois —
+   "viu a gente entrando e veio atrás". Ela anda pelo lado `x = 1` da porta,
+   e não pelo eixo, porque é no eixo que a dupla acabou de nascer.
+3. **Lá dentro ela passeia perto das plantas** — a metade da porta
+   (`z > 1`), sem nunca pisar em canteiro nem em muda. A metade dos portões é
+   o caminho dos bichos, e tartaruga ali seria tartaruga no meio do enxame.
+4. **Para jogar, fala-se com ela, e ela pede CONFIRMAÇÃO**: *"Vocês me ajudam a
+   espantar as pragas?"* — **Vamos espantar as pragas** / **Agora não**. Quem
+   só veio passear responde "agora não" e continua passeando, sem castigo.
+5. **Sem o regador na mão, não começa**: ela manda buscar na bancada (ou, se
+   quem está com ele é o parceiro, diz que vai para a frente quem está com o
+   regador). Regador na mochila vai sozinho para a mão.
+6. **Com o regador, cada um vai para o seu posto**: ela e o parceiro ANDAM até
+   a linha da porta (`(-1; 6,8)` e `(1; 6,8)`) e ficam virados para os três
+   portões. O jogador fica solto — é a hora de ele ir para onde quiser defender.
+
+**O gancho da rodada está no fim do passo 6**, marcado no código
+(`scenes/estufa.ts`, `assumirOsPostos`). Enquanto a etapa 3 não existe, ela
+fecha o assunto dentro do mundo ("ainda tá quente demais, eles só saem quando
+esfria") e desfaz os postos. `node scripts/postos.mjs /tmp/pt` percorre tudo
+isso.
+
 A rodada em si é curta de propósito: **algo entre 4 e 6 minutos**. Roguelite é
 jogo de repetir, e repetir só é gostoso se recomeçar é barato.
 
 | fase | o que acontece |
 |---|---|
-| **preparo** | a Josefina entrega os dois regadores e diz quantas ondas vêm |
+| **preparo** | fala-se com a Josefina, ela confirma, e ela e o parceiro vão para o posto de trás |
 | **onda** (×5) | bichos entram pelas beiradas, andam para o canteiro mais perto, você rega |
 | **escolha** | a cada nível, o jogo para e mostra **três** melhorias; você pega uma |
 | **fim** | conta quantos canteiros sobraram e paga por canteiro vivo |
@@ -330,7 +364,36 @@ cima da cabeça de cada uma, e que nenhuma encosta na outra na fila.
 ## 6. As melhorias, e as raridades
 
 A cada nível o jogo para e oferece **três** cartas. A raridade sai de um sorteio
-com peso, e o peso muda com o nível — nível alto tira mais raro:
+com peso, e o peso muda com o nível — nível alto tira mais raro.
+
+**O catálogo e o sorteio estão construídos** (`src/minigames/jardim/`), como
+lógica pura, e `node scripts/cartas.mjs` joga mil rodadas até o baralho acabar
+para provar as regras abaixo. Hoje são 38 cartas mais 3 de consolo.
+
+### Carta nenhuma se repete — **construído**
+
+Pedido do Renan: **carta que você já tem não aparece de novo**. Quem guarda
+isso é a `MaoDeCartas` (`minigames/jardim/baralho.ts`): uma lista de ids, na
+ordem em que foram escolhidos, que nasce vazia com a rodada e morre com ela.
+Tudo o que as cartas fazem — os números, as regras, o desenho do regador, o
+estágio dele — é **derivado** dessa lista toda vez que alguém pergunta, e não
+acumulado; assim nenhum número "escorrega", e a rodada de qualquer momento se
+reconstrói só com os ids.
+
+O sorteio olha o baralho **menos a mão**, e também:
+
+- **série anda em ordem.** Empilhar alcance continua valendo, mas como três
+  cartas diferentes: *Bico mais longo*, *II* e *III*, e a II só sorteia com a I
+  na mão. É o desenho do Vampire Survivors;
+- **`exclui` é de mão dupla**: duas cartas que brigam pela mesma coisa nunca
+  convivem (*Lá de trás* × *Os dois na frente*);
+- **as três famílias na mesa**: dentro da raridade sorteada, o jogo prefere uma
+  família que ainda não está entre as três — e sorteia a família antes da carta,
+  senão o regador (15 comuns) ganharia sempre. Medido: 100% das mesas do começo
+  têm as três famílias;
+- **quando o baralho acaba**, os buracos se enchem de **consolos** (*Gole
+  d'água*, *Muda de reserva*, *Susto*): efeito na hora, podem repetir, não
+  entram na mão. Consolo nunca aparece enquanto há três cartas de verdade.
 
 | raridade | cor | peso no nível 1 | peso no nível 10 |
 |---|---|---|---|
@@ -344,17 +407,17 @@ a rodada é roguelite que não tem rodada.
 
 ### Regador — os números
 
-O Renan foi explícito: **começa melhorando o regador**. As quatro comuns são as
-quatro linhas da tabela do §4, e elas repetem — pegar "mais alcance" três vezes
-é jogada válida.
+O Renan foi explícito: **começa melhorando o regador**. As comuns são as linhas
+da tabela do §4, cada uma numa **série de três degraus** (I, II, III) — pegar
+"mais alcance" três vezes continua sendo jogada válida, sem carta repetida.
 
-| carta | raridade | efeito |
+| carta | raridade | efeito (por degrau) |
 |---|---|---|
-| Bico mais longo | comum | +18% alcance |
-| Jato firme | comum | +20% dano |
-| Braço solto | comum | −12% cadência |
-| Leque aberto | comum | +10° de abertura |
-| Tanque maior | comum | +4 de água |
+| Bico mais longo I–III | comum | +18% alcance |
+| Jato firme I–III | comum | +20% dano |
+| Braço solto I–III | comum | −12% cadência |
+| Leque aberto I–III | comum | +10° de abertura |
+| Tanque maior I–III | comum | +4 de água |
 
 E as do mesmo baralho que mudam a regra do jato:
 
@@ -384,27 +447,32 @@ regra.** Se uma ideia só sabe dar +X%, ela é comum, por melhor que pareça.
 
 | carta | raridade | efeito |
 |---|---|---|
-| Passo leve | comum | +12% de velocidade |
+| Passo leve I–II | comum | +12% de velocidade |
 | Bolso furado | comum | as gotas são puxadas de 2 m em vez de pisadas |
 | Bota de jardim | comum | terra de canteiro não te segura mais |
 | Fôlego | incomum | o tanque enche sozinho enquanto você anda, e não só no tonel |
 | Chinelada | incomum | encostar num bicho dá um empurrão que o joga 2 m para trás |
 | Grito | raro | uma vez por onda, tudo num raio de 4 m recua até a porta |
-| Mãos dadas | raro | com os dois juntos, os dois jatos viram um só, do dobro do tamanho |
 | Dedo verde | raro | canteiro machucado recupera 1 ponto entre uma onda e outra |
+| **Os dois na frente** | lendário | quem ficou lá atrás pega o outro regador e vem regar do seu lado |
+
+*Mãos dadas* e *Regador do Renan* **saíram**: as duas supunham os dois na
+frente desde o começo, e o Renan decidiu que quem não é controlado fica atrás
+(§1). No lugar entraram *Lá de trás* e *Os dois na frente*, que se excluem.
 
 #### Jardim — o que muda no campo
 
 | carta | raridade | efeito |
 |---|---|---|
+| Terra adubada I–II | comum | os canteiros aguentam 25% mais mordida |
 | Segundo tonel | comum | nasce um tonel do outro lado: a viagem pela água encurta |
 | Poça | incomum | onde o jato cai fica escorregadio 4 s, e quem passa anda devagar |
+| Lá de trás | incomum | quem ficou com a Josefina rega o canteiro mais perto dele |
 | Espantalho | raro | um espantalho onde você escolher puxa o alvo dos bichos por 20 s |
 | Josefina ajuda | raro | ela sai do canto e rega um canteiro por conta dela, uma vez por onda |
 | Portão emperrado | raro | uma das três portas fecha pelo resto da rodada |
 | Cerca viva | lendário | um canteiro à sua escolha fica intocável até o fim |
 | Chuva | lendário | a estufa inteira leva um jato, de uma vez, a cada 30 s |
-| Regador do Renan | lendário | o parceiro dispara na SUA cadência, e não na dele |
 
 ### O regador MUDA DE CARA quando você melhora ele
 
@@ -434,10 +502,7 @@ o que faz o jogador olhar para a própria mão no fim e ver a rodada que ele jog
 de competição ao lado de uma lata amassada contaria uma história errada.
 
 Para criar carta nova sem reabrir este documento inteiro existe uma skill:
-`.claude/skills/aristory-habilidade/SKILL.md` — **ainda não escrita** (§9).
-
-Para criar carta nova sem reabrir este documento inteiro existe uma skill:
-`.claude/skills/aristory-habilidade/SKILL.md` — **ainda não escrita** (§9).
+`.claude/skills/aristory-habilidade/SKILL.md`.
 
 ---
 
@@ -471,11 +536,10 @@ mais trabalho paga mais:
 O tanque e o chefe soltam as gotas **espalhadas**, e não empilhadas: oito gotas
 no mesmo ponto é um clique, oito gotas num raio de 3 m é uma decisão.
 
-### A curva: barato no começo, caro no fim
+### A curva: barato no começo, caro no fim — **construído**
 
-```
-custo(nivel) = 4 + nivel ^ 1.6   (arredondado)
-```
+O primeiro nível custa 5 gotas, e dali em diante **o degrau cresce 1 a cada 2
+níveis** (`custoDoNivel`, em `minigames/jardim/progressao.ts`):
 
 | nível | custo | acumulado |
 |---|---|---|
@@ -483,22 +547,37 @@ custo(nivel) = 4 + nivel ^ 1.6   (arredondado)
 | 1 → 2 | 7 | 12 |
 | 2 → 3 | 10 | 22 |
 | 3 → 4 | 13 | 35 |
-| 4 → 5 | 16 | 51 |
-| 5 → 6 | 20 | 71 |
-| 6 → 7 | 24 | 95 |
-| 7 → 8 | 28 | 123 |
-| 8 → 9 | 33 | 156 |
-| 9 → 10 | 38 | 194 |
+| 4 → 5 | 17 | 52 |
+| 5 → 6 | 21 | 73 |
+| 6 → 7 | 26 | 99 |
+| 7 → 8 | 31 | 130 |
+| 8 → 9 | 37 | 167 |
+| 9 → 10 | 43 | 210 |
+
+A primeira versão era `4 + nível^1,6`, arredondada — e o arredondamento fazia
+o degrau **encolher** no meio (22 → 26 → 32): subir de nível ficava mais barato
+de repente, o contrário do pedido. Escrita como degrau, a curva só sobe, e o
+teste cobra isso.
 
 Os **três primeiros níveis saem quase de graça** — cinco lagartejos e você já
 escolheu uma carta. Isso é de propósito: roguelite que demora a dar a primeira
 carta é roguelite que o jogador abandona na primeira rodada. Do nível 5 para
 frente cada carta custa uma onda inteira, e é aí que as escolhas passam a doer.
 
-Uma rodada de 5 ondas solta perto de 200 gotas, então ela termina por volta do
-**nível 10, com 10 cartas escolhidas**. Esse é o alvo do balanceamento, e é o
-número que o `scripts/balanco.mjs` do jardim vai ter que confirmar quando o
-minigame existir.
+Uma rodada de 5 ondas solta perto de 210 gotas se nenhum bicho escapar, então
+ela termina por volta do **nível 10, com 10 cartas escolhidas**. Esse é o alvo,
+e o `scripts/cartas.mjs` já o confere: ele monta o roteiro das cinco ondas
+trezentas vezes e mede o nível final (hoje, 10,0 em média). Quando o minigame
+existir, a conta passa a ser com os bichos que de fato foram espantados.
+
+**As gotas de cada praga estão na ficha dela** (`FichaDePraga.gotas`, em
+`world/bichosDoJardim.ts`), ao lado do `encharque`: quem desenha o bicho diz
+quanto ele vale.
+
+**As ondas também já são lógica**: `ONDAS` é a tabela do §3, e
+`planoDaOnda(n, rng)` devolve quem entra, quando e por qual porta — a estreia
+em ordem de tier, o bicho novo sozinho por uma porta só nos primeiros 10 s, e
+o tanque e o chefe só como entrada anunciada.
 
 ---
 
@@ -645,15 +724,17 @@ trabalha rápido") virando geometria.
 |---|---|---|
 | 0 | **a área**: a estufa, a porta no jardim do clube, o caminho | **pronto** (§10) |
 | 0.5 | **a skill `aristory-praga`**, para praga nova sair barata | **pronto** |
-| 1 | a skill `aristory-habilidade`, para carta nova sair barato | a fazer |
+| 1 | a skill `aristory-habilidade`, para carta nova sair barato | **pronto** |
 | 2 | a quest do adubo (banco → Noel → Josefina → convite) | **pronto** (§2) |
 | 2.5 | as três portas na parede do fundo, e os canteiros puxados para lá | **pronto** (§8) |
 | 2.7 | **os modelos das seis pragas**, para poder olhar e ajustar antes da lógica | **pronto** (§5) |
 | 2.8 | **a entrada**: pegar o regador, regar 3 canteiros, a Josefina chegar | **pronto** (§3) |
 | 2.9 | **o modelo do regador**, já pronto para as melhorias mudarem a peça | **pronto** (§4) |
+| 2.95 | **a Josefina entra junto**, passeia lá dentro, pede confirmação e leva o parceiro para o posto de trás | **pronto** (§3) |
+| 2.97 | **a lógica**: o baralho, a mão que não repete carta, a curva de nível, as gotas por praga e o roteiro das ondas | **pronto** (§6, §7) |
 | 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | a fazer |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
-| 5 | gota, nível e a tela de três cartas | a fazer |
+| 5 | gota no chão e a tela de três cartas (a conta de nível e o sorteio já existem) | a fazer |
 | 6 | as cartas comuns (as do regador), **e o regador mudando de cara** | a fazer |
 | 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | a fazer |
 | 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | a fazer |
@@ -689,12 +770,24 @@ de `scenes/estufa.ts`: pegar da bancada, regar três canteiros e a cutscene da
 Josefina. O **gancho da rodada** está marcado no código, no fim da cutscene —
 é uma chamada só, com a dupla já de regador na mão.
 
+**A Josefina dentro da estufa** (fim de `scenes/estufa.ts`): depois do convite
+ela entra atrás da dupla, passeia na metade das plantas e, na conversa, pede
+confirmação e manda cada um para o seu posto (§3).
+
+**As cartas e a progressão** (`src/minigames/jardim/`): `cartas.ts` (o
+catálogo e a `FichaDaRodada`), `baralho.ts` (a `MaoDeCartas`, o registro das
+cartas pegas e o sorteio) e `progressao.ts` (curva, gotas e ondas). Lógica
+pura, sem cena: a rodada vai importar isto pronto.
+
 **As seis pragas** (`src/world/bichosDoJardim.ts`): `lagartejo()`, `gafanhopo()`,
 `coelhatu()`, `tucanguru()`, `preguipolvo()` e `maeLagartejo()`, mais o catálogo
 `PRAGAS` que liga cada uma ao tier e ao encharque. São só os MODELOS — nenhuma
 delas anda, ataca ou aparece numa cena ainda (§5).
 
-**Os testes**: `node scripts/estufa.mjs /tmp/ef` prova que a porta abre nos dois
+**Os testes**: `node scripts/cartas.mjs` (no Node, sem navegador) joga mil
+rodadas de cartas e trezentas de ondas; `node scripts/postos.mjs /tmp/pt` faz a
+Josefina entrar junto, passear sem pisar em canteiro e mandar cada um para o
+posto. `node scripts/estufa.mjs /tmp/ef` prova que a porta abre nos dois
 sentidos, que o terreiro do meio está mesmo vazio (nenhum colisor dentro dele),
 que os oito canteiros existem e que as quatro bocas estão desobstruídas.
 Ele também **atravessa os três portões andando**, um por um, e confere que a
@@ -751,12 +844,20 @@ em vez de inventar uma resposta e seguir.
 1. **Reroll.** Vale a Josefina dar um "não gostei, mostra outras três" por
    rodada? A recomendação é que sim, e **um só** — o suficiente para salvar uma
    mão ruim sem virar uma quarta escolha grátis.
-2. **Carta repetida.** Hoje "Bico mais longo" três vezes é jogada válida, e a
-   regra do §6 diz que comum repete de propósito. Precisa de teto (cinco vezes
-   cada, por exemplo), ou deixa aberto?
+2. ~~**Carta repetida.**~~ **Respondida pelo Renan: carta não se repete.** A
+   comum que empilhava virou série de três degraus (§6).
 3. **A chefe.** A Mãe-Lagartejo entra na onda 5 de toda rodada, ou só a partir
    da segunda vez que se joga? A favor da segunda: a primeira rodada é a que
    ensina, e chefe na estreia é onde roguelite costuma perder gente.
+
+**Sobre a dupla na rodada (§1):**
+
+6. **O `T` no meio da rodada.** Com um na frente e o outro atrás, o `T` pode
+   fazer duas coisas: (a) ficar **desligado** durante a rodada, ou (b) **trocar
+   quem está na frente** — quem estava atrás vem com o tanque cheio, e quem
+   estava na frente vai descansar ao lado da Josefina. A recomendação é (b):
+   vira uma decisão de jogo (revezar para não voltar ao tonel) sem custar
+   carta nenhuma.
 
 **Sobre os modelos (§5):**
 

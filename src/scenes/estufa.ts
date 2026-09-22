@@ -554,6 +554,12 @@ export const estufa: SceneDef = {
      */
     const podePlantar = (x: number, z: number, raio: number): boolean =>
       !emCimaDeCanteiro(x, z, raio + 0.1) && Math.abs(x - PORTA.x) > 1.6 + raio;
+    /**
+     * o que foi plantado no lado da porta, guardado para a Josefina saber
+     * contornar: ela passeia AQUI, e jardineira que pisa na muda nao e
+     * jardineira
+     */
+    const moitasDaFrente: Array<{ x: number; z: number; r: number }> = [];
 
     // ------------------------------------------- a oficina, na parede esquerda
     /**
@@ -654,12 +660,14 @@ export const estufa: SceneDef = {
       if (!podePlantar(x, z, 0.78 * e)) continue;
       w.add(w.place(bush(e), x, 0, z, (x + z) % 1));
       w.blockCircle(x, z, 0.3 * e);
+      moitasDaFrente.push({ x, z, r: 0.78 * e + 0.2 });
     }
     // e mais uma fileira de mudas crescidas fechando a frente dos canteiros
     for (let i = 0; i < 12; i++) {
       const x = -11.6 + i * 2.1;
       if (!podePlantar(x, 7.5, 0.3)) continue;
       w.add(w.place(planta(i % 2 ? 'alface' : 'girassol', 1.5, (i * 0.23) % 1), x, 0, 7.5));
+      moitasDaFrente.push({ x, z: 7.5, r: 0.5 });
     }
 
     // -------------------------------- a parede esquerda: a altura pode ir aqui
@@ -938,7 +946,9 @@ export const estufa: SceneDef = {
             }
             return;
           }
-          if (chamando) return;
+          // o convite acontece UMA vez na vida: quem ja ouviu das pragas e
+          // continua regando so esta regando
+          if (chamando || api.flag('jardim.convite')) return;
           chamando = true;
           await aJosefinaChega(api);
         },
@@ -956,12 +966,32 @@ export const estufa: SceneDef = {
      * (`entities/bichos/Josefina.ts`), em servico — `entrarEmServico()` tira o
      * passeio aleatorio das maos dela e `irPara()` a leva aonde a cena mandar.
      */
-    const josefina = new Josefina({
-      minX: -hx + 1, minZ: -hz + 1, maxX: hx - 1, maxZ: hz - 1,
-      // os canteiros sao o unico lugar da estufa onde ela NAO pisa: e a mesma
-      // regra do jardim de fora, e e o que faz a jardineira parecer jardineira
-      proibido: CANTEIROS.map(({ x, z }) => ({ x, z, r: 1.6 })),
+    /**
+     * A AREA DELA E A METADE DA PORTA, perto das plantas — e nao a estufa
+     * inteira.
+     *
+     * Pedido do Renan: ela passeia "ali perto das plantas dela". E ha uma
+     * razao de jogo junto: a metade `-Z` e o caminho dos bichos, e o posto
+     * dela na rodada e atras, na linha da porta. Uma tartaruga passeando no
+     * meio do terreiro seria, na rodada, uma tartaruga no meio do enxame.
+     *
+     * Os canteiros entram como TRES circulos cada, ao longo do comprimento:
+     * um so, no centro, deixava as pontas de 3,2 m de fora, e ela atravessava
+     * a ponta da alface.
+     */
+    const canteiroEmCirculos = CANTEIROS.flatMap(({ x, z, giro }) => {
+      const [ex, ez] = giro === 0 ? [1, 0] : [0, 1];
+      return [-1.1, 0, 1.1].map((d) => ({ x: x + ex * d, z: z + ez * d, r: 1.05 }));
     });
+    const josefina = new Josefina({
+      minX: -hx + 2.6, maxX: hx - 2.6,
+      minZ: 1.0, maxZ: hz - 1.6,
+      // os canteiros e as mudas da frente sao o unico lugar onde ela NAO pisa:
+      // e a mesma regra do jardim de fora, e e o que faz a jardineira parecer
+      // jardineira
+      proibido: [...canteiroEmCirculos, ...moitasDaFrente],
+    });
+    josefina.aoSoar = () => g.som('cantarolar');
     josefina.group.visible = false;
     /**
      * ELA NASCE NA SOLEIRA, e isso e `sentarEm` e nao `irPara`.
@@ -1061,7 +1091,10 @@ export const estufa: SceneDef = {
       api.setZoom(11);
       w.root.remove(meio);
       josefina.pararDeEncarar();
-      void josefina.irPara(bancada.position.x + 1.2, bancada.position.z, 0.4);
+      // e, chegando no lado da bancada (fora dos canteiros), ela fica: passeia
+      // pelas plantas como em toda visita daqui em diante
+      void josefina.irPara(-10.4, 5.0, 0.4)
+        .then(() => josefina.voltarAPassear());
       api.lockPlayer(false);
 
       /**
@@ -1076,6 +1109,186 @@ export const estufa: SceneDef = {
        * falta. Nada aqui e um beco sem saida: o jogador continua com o regador,
        * continua regando o que sobrou e continua podendo sair.
        */
+    };
+
+    /* ====================================================================
+     *        DEPOIS DO CONVITE: ELA ENTRA JUNTO, E E COM ELA QUE SE JOGA
+     * ====================================================================
+     *
+     * O desenho e do Renan. Do lado de fora a Josefina continua passeando no
+     * caminho do jardim, como sempre (`scenes/clube.ts`). Mas depois que ela
+     * contou das pragas, **toda vez que a dupla entra na estufa ela entra
+     * junto** — vê os dois passando pela porta e vem atras — e fica passeando
+     * aqui dentro, perto das plantas.
+     *
+     * E e ELA quem comeca a rodada: falar com ela, e ela pede confirmacao.
+     * Nada comeca sem o jogador dizer que quer.
+     */
+    /** onde ela e quem ficou para tras esperam a rodada: atras, na linha da porta */
+    const POSTO_DA_JOSEFINA = { x: -1.0, z: 6.8 };
+    const POSTO_DO_PARCEIRO = { x: 1.0, z: 6.8 };
+    /** o meio dos tres portoes: e para la que os dois de tras ficam olhando */
+    const OLHAR_DOS_PORTOES = { x: 0, z: -hz };
+
+    const convidados = g.flag('jardim.convite');
+    /**
+     * A ENTRADA DELA. Ela nasce do lado de FORA da porta, atras do vidro, e
+     * atravessa a soleira um instante depois da dupla: e o "viu a gente
+     * entrando e veio junto". Aparecer ja la dentro seria teletransporte, e
+     * a Josefina e a unica pessoa do jogo que nunca tem pressa.
+     *
+     * O caminho passa por `x = 1`, e nao pelo eixo da porta: a dupla nasce EM
+     * `(0; 8,6)`, e o eixo levaria a tartaruga por dentro de quem acabou de
+     * entrar.
+     */
+    let entrando = convidados ? 1.1 : -1;
+    if (convidados) {
+      josefina.group.visible = true;
+      josefina.sentarEm(PORTA.x, PORTA.z + 1.4, Math.PI);
+    }
+    const entrarAtras = async (): Promise<void> => {
+      josefina.levantar();
+      // um pouco mais rapida que o passeio (0,3): ela esta ACOMPANHANDO a
+      // dupla, e a 0,3 a travessia da soleira levaria quinze segundos
+      await josefina.irPara(PORTA.x, hz - 0.9, 0.9);
+      await josefina.irPara(PORTA.x + 1.0, hz - 2.4, 0.9);
+      await josefina.irPara(PORTA.x + 1.0, 5.6, 0.9);
+      josefina.voltarAPassear();
+    };
+
+    /** a conversa ou a rodada estao acontecendo: o prompt dela descansa */
+    let ocupada = false;
+
+    const falarComAJosefina = w.interact({
+      id: 'estufa:josefina',
+      x: josefina.x, z: josefina.z, radius: 1.6,
+      label: 'Falar com a Josefina', icon: '🐢',
+      highlight: josefina.group,
+      onInteract: async (api) => {
+        if (ocupada) return;
+        ocupada = true;
+        try {
+          await conversarComAJosefina(api);
+        } finally {
+          ocupada = false;
+        }
+      },
+    });
+    falarComAJosefina.enabled = false;
+
+    w.onUpdate((dt) => {
+      if (entrando > 0) {
+        entrando -= dt;
+        if (entrando <= 0) void entrarAtras();
+      }
+      falarComAJosefina.moveTo(josefina.x, josefina.z);
+      // ela so conversa depois do convite, e nunca no meio de outra conversa
+      // dela (a cutscene das pragas liga o `visible` antes de o convite existir)
+      falarComAJosefina.enabled = !ocupada && g.flag('jardim.convite') && josefina.group.visible;
+    });
+
+    /** Quem vai regar tem que estar com o regador NA MAO, e nao na mochila. */
+    const regadorNaMao = (api: typeof g): boolean => {
+      if (api.getActiveHandItem()?.id === 'regador') return true;
+      const vaga = api.handItems().findIndex((i) => i?.id === 'regador');
+      if (vaga < 0) return false;
+      api.setActiveHandSlot(vaga);
+      return true;
+    };
+
+    const conversarComAJosefina = async (api: typeof g): Promise<void> => {
+      const J = 'Josefina';
+      const outro = api.companionName();
+      josefina.receberCarinho();
+      const eu = api.playerPosition();
+      josefina.encarar(eu.x, eu.z);
+      api.som('cantarolar');
+
+      /**
+       * A CONFIRMACAO. Pedido explicito do Renan: a rodada so comeca se o
+       * jogador disser que quer. Quem so veio passear pela estufa responde
+       * "agora nao" e continua passeando, sem castigo e sem insistencia.
+       */
+      const escolha = await api.ask(
+        'Eles andam rondando os portões de novo. Vocês me ajudam a espantar as pragas?',
+        ['Vamos espantar as pragas', 'Agora não'],
+        J,
+      );
+      if (escolha !== 0) {
+        await api.say(['Tudo bem, meu bem. Eu fico aqui com as mudas. É só me chamar.'], J);
+        josefina.pararDeEncarar();
+        return;
+      }
+
+      if (!regadorNaMao(api)) {
+        if (api.hasItem('regador', api.companionId())) {
+          await api.say(['O regador tá comigo.'], outro);
+          await api.say(['Então quem vai lá pra frente é quem tá com ele, meu bem.'], J);
+        } else {
+          await api.say(['Pega o regador ali na bancada primeiro. Com a mão ninguém espanta bicho.'], J);
+        }
+        josefina.pararDeEncarar();
+        return;
+      }
+
+      await assumirOsPostos(api);
+    };
+
+    /**
+     * OS POSTOS: quem nao esta sendo controlado fica ATRAS, com a Josefina.
+     *
+     * Pedido do Renan: na rodada, so quem voce controla vai para a frente. O
+     * outro fica na linha da porta, ao lado dela, olhando para os portoes —
+     * e a dupla continua em cena, como o jogo exige, so que dividida.
+     *
+     * O PARCEIRO ANDA ATE LA, e nao aparece la. E o jogador fica SOLTO
+     * enquanto isso: e a hora de ele ir para onde quiser defender.
+     */
+    const assumirOsPostos = async (api: typeof g): Promise<void> => {
+      const J = 'Josefina';
+      const outro = api.companionName();
+      await api.say([
+        'Então fica assim. Eu fico aqui atrás, na linha da porta, de olho nos canteiros.',
+        `${outro}, fica comigo. Daqui a gente vê os três portões.`,
+      ], J);
+
+      api.commandCompanion(POSTO_DO_PARCEIRO.x, POSTO_DO_PARCEIRO.z);
+      josefina.pararDeEncarar();
+      josefina.entrarEmServico();
+      const chegou = josefina.irPara(POSTO_DA_JOSEFINA.x, POSTO_DA_JOSEFINA.z, 1.0);
+
+      // o parceiro e mais rapido que ela; espera ele chegar (com teto, para um
+      // movel no caminho nunca prender a cena) e vira ele para os portoes
+      for (let t = 0; t < 8; t += 0.25) {
+        const p = api.companionPosition();
+        if (Math.hypot(p.x - POSTO_DO_PARCEIRO.x, p.z - POSTO_DO_PARCEIRO.z) < 0.5) break;
+        await api.wait(0.25);
+      }
+      api.holdCompanion(OLHAR_DOS_PORTOES.x, OLHAR_DOS_PORTOES.z);
+      await api.say(['Fico aqui com ela. Vai lá, que daqui eu grito se vier bicho.'], outro);
+      await chegou;
+      josefina.encarar(OLHAR_DOS_PORTOES.x, OLHAR_DOS_PORTOES.z);
+
+      /**
+       * ======================= O GANCHO DA RODADA — a etapa 3 do plano
+       *
+       * E AQUI que `iniciarRodadaDoJardim(...)` entra (`docs/MINIGAME-JARDIM.md`
+       * §9): com o jogador de regador na mao, o parceiro e a Josefina nos
+       * postos, a mao de cartas nova (`minigames/jardim/baralho.ts`) e as
+       * ondas do `minigames/jardim/progressao.ts`.
+       *
+       * Enquanto a rodada nao existe, a Josefina fecha o assunto dentro do
+       * mundo, com a mesma desculpa da cutscene das pragas — e desfaz os
+       * postos, para ninguem ficar plantado na porta esperando um bicho que
+       * nao vem.
+       */
+      await api.say([
+        'Ih… olha o sol. Ainda tá quente demais — eles só saem quando esfria.',
+        'Mas agora vocês já sabem onde cada um fica. Quando for a hora, é assim.',
+      ], J);
+      api.freeCompanion();
+      josefina.pararDeEncarar();
+      josefina.voltarAPassear();
     };
 
     // o segundo tonel e a segunda bancada ficam so de cenario por enquanto —

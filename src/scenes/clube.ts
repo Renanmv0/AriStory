@@ -1354,6 +1354,10 @@ export const clube: SceneDef = {
      * Ela é a MAIS LENTA do jogo (0,3 contra 0,85 do Noel) e descansa de 3 a
      * 7 s. É a personalidade que o Renan pediu, e ela mora inteira nesses dois
      * números.
+     *
+     * Depois do convite das pragas, ela continua passeando AQUI — e, quando a
+     * dupla entra na estufa, entra junto: a cena `estufa` monta a entrada dela
+     * pela porta (e é lá dentro que se fala com ela para jogar).
      */
     const josefina = new Josefina({
       minX: JARDIM.caminho - 0.55, maxX: JARDIM.caminho + 0.55,

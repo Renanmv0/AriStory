@@ -16,6 +16,7 @@ acento — é o padrão do repositório, siga o que já está lá.
 | criar uma peça de cenário | `.claude/skills/aristory-prop/SKILL.md` |
 | criar um bicho (gato, cachorro, passarinho) | `.claude/skills/aristory-bicho/SKILL.md` |
 | criar/ajustar uma praga do minigame do jardim | `.claude/skills/aristory-praga/SKILL.md` |
+| criar/ajustar uma carta (habilidade) do minigame do jardim | `.claude/skills/aristory-habilidade/SKILL.md` |
 | pintar uma memória para o quadro (a partir de uma foto) | `.claude/skills/aristory-memoria/SKILL.md` |
 | adicionar/ajustar roupa do guarda-roupa | `.claude/skills/aristory-roupa/SKILL.md` |
 | pôr um prato novo no cardápio do restaurante | `.claude/skills/aristory-prato/SKILL.md` |
@@ -127,6 +128,8 @@ node scripts/adubo.mjs   /tmp/ad    # a quest que abre a estufa: sementes no ban
 node scripts/regador.mjs /tmp/rg    # o regador: os 3 estagios, cada melhoria mudando a peca, e pegar-regar-a Josefina chegar
 node scripts/pragas.mjs  /tmp/pg    # as seis pragas do jardim: retrato de cada uma, e a silhueta dizendo o tier
 node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena, a mesinha servida pelo Mano, o deslize e a patinacao
+node scripts/cartas.mjs            # as cartas do jardim: nenhuma repete em mil rodadas, a curva de nivel e as ondas (sem navegador)
+node scripts/postos.mjs  /tmp/pt    # a Josefina entra junto na estufa, passeia, pede confirmacao e leva o parceiro pro posto de tras
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```
 

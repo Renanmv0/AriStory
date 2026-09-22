@@ -191,7 +191,7 @@ laranja de aviso que diz "isto machuca a planta" — pinça, unha, dente, bico.
 ```ts
 {
   id: 'gafanhopo', nome: 'Gafanhopo', tier: 'fraco',
-  mistura: 'gafanhoto + sapo', encharque: 2, alturaDaBarra: 0.74,
+  mistura: 'gafanhoto + sapo', encharque: 2, alturaDaBarra: 0.74, gotas: 1,
   monta: (e = 1, s) => gafanhopo(ESCALA_DO_TIER.fraco * e, s),
 },
 ```
@@ -199,6 +199,11 @@ laranja de aviso que diz "isto machuca a planta" — pinça, unha, dente, bico.
 - **`encharque`** é quantos jatos do regador BÁSICO ele aguenta. Ele **tem que
   subir junto com o tier** — o teste reprova um fraco que aguente tanto quanto
   um médio, porque aí a ficha mente para o jogador.
+- **`gotas`** é a experiência que ele solta ao ser espantado, e **sobe com o
+  tier** junto com o encharque (fraco 1, médio 2–3, tanque 8, chefe 25). O
+  `scripts/cartas.mjs` reprova um tier que pague menos que o de baixo, e mede
+  se a rodada inteira ainda termina perto do nível 10 — praga nova numa onda
+  mexe nessa conta (a curva mora na skill `aristory-habilidade`).
 - **`monta` já aplica a escala do tier.** O argumento multiplica por cima, para
   quem quiser uma variação grande de um bicho pequeno.
 - O elenco cresce como o do Mania: **cada praga é uma linha nesta lista**. Praga

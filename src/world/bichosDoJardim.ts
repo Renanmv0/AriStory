@@ -860,6 +860,12 @@ export interface FichaDePraga {
   readonly encharque: number;
   /** a que altura pendurar a barra de vida, em metros do chao */
   readonly alturaDaBarra: number;
+  /**
+   * quantas GOTAS (a experiencia da rodada) ele solta ao ser espantado. Sobe
+   * com o tier, na mesma regua do `encharque`: quem deu mais trabalho paga
+   * mais (§7 do `docs/MINIGAME-JARDIM.md`)
+   */
+  readonly gotas: number;
   /** ja vem com a escala do tier aplicada; o argumento multiplica por cima */
   readonly monta: (escala?: number, semente?: number) => THREE.Group;
 }
@@ -867,32 +873,32 @@ export interface FichaDePraga {
 export const PRAGAS: readonly FichaDePraga[] = [
   {
     id: 'lagartejo', nome: 'Lagartejo', tier: 'fraco',
-    mistura: 'lagarta + caranguejo', encharque: 2, alturaDaBarra: 0.72,
+    mistura: 'lagarta + caranguejo', encharque: 2, alturaDaBarra: 0.72, gotas: 1,
     monta: (e = 1, s) => lagartejo(ESCALA_DO_TIER.fraco * e, s),
   },
   {
     id: 'gafanhopo', nome: 'Gafanhopo', tier: 'fraco',
-    mistura: 'gafanhoto + sapo', encharque: 2, alturaDaBarra: 0.74,
+    mistura: 'gafanhoto + sapo', encharque: 2, alturaDaBarra: 0.74, gotas: 1,
     monta: (e = 1, s) => gafanhopo(ESCALA_DO_TIER.fraco * e, s),
   },
   {
     id: 'coelhatu', nome: 'Coelhatu', tier: 'medio',
-    mistura: 'coelho + tatu', encharque: 4, alturaDaBarra: 1.25,
+    mistura: 'coelho + tatu', encharque: 4, alturaDaBarra: 1.25, gotas: 3,
     monta: (e = 1, s) => coelhatu(ESCALA_DO_TIER.medio * e, s),
   },
   {
     id: 'tucanguru', nome: 'Tucanguru', tier: 'medio',
-    mistura: 'tucano + canguru', encharque: 3, alturaDaBarra: 1.45,
+    mistura: 'tucano + canguru', encharque: 3, alturaDaBarra: 1.45, gotas: 2,
     monta: (e = 1, s) => tucanguru(ESCALA_DO_TIER.medio * e, s),
   },
   {
     id: 'preguipolvo', nome: 'Preguipolvo', tier: 'tanque',
-    mistura: 'preguiça + polvo', encharque: 10, alturaDaBarra: 1.1,
+    mistura: 'preguiça + polvo', encharque: 10, alturaDaBarra: 1.1, gotas: 8,
     monta: (e = 1, s) => preguipolvo(ESCALA_DO_TIER.tanque * e, s),
   },
   {
     id: 'mae-lagartejo', nome: 'Mãe-Lagartejo', tier: 'chefe',
-    mistura: 'o lagartejo em tamanho de chefe', encharque: 18, alturaDaBarra: 1.62,
+    mistura: 'o lagartejo em tamanho de chefe', encharque: 18, alturaDaBarra: 1.62, gotas: 25,
     monta: (e = 1) => maeLagartejo(ESCALA_DO_TIER.chefe * e),
   },
 ];

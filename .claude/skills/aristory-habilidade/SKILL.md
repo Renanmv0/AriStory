@@ -1,0 +1,209 @@
+---
+name: aristory-habilidade
+description: Criar ou ajustar uma carta (habilidade) do minigame do jardim do AriStory — as melhorias que aparecem de três em três quando a rodada da estufa sobe de nível (bico mais longo, poça, chuva, os dois na frente). Use quando pedirem "cria uma carta nova", "mais uma habilidade pro jardim", "uma lendária que faz X", "essa carta está forte/fraca demais", ou para mexer no sorteio, nas raridades, na curva de nível ou no registro das cartas já pegas.
+---
+
+# Criar uma carta do jardim
+
+Carta é **melhoria da rodada da estufa**: a cada nível o jogo para, mostra
+três, e o jogador fica com uma. Tudo o que é carta mora em **três arquivos de
+lógica pura** — nenhum deles conhece cena, motor ou malha:
+
+```
+src/minigames/jardim/cartas.ts      o catálogo CARTAS, a FichaDaRodada e as regras
+src/minigames/jardim/baralho.ts     a MaoDeCartas: o registro do que já foi pego, e o sorteio
+src/minigames/jardim/progressao.ts  a curva de nível, as gotas de cada praga e as ondas
+scripts/cartas.mjs                  mil rodadas simuladas, no Node, em menos de um segundo
+docs/MINIGAME-JARDIM.md §6 e §7     o plano: as tabelas, e o PORQUÊ de cada carta
+```
+
+Se o pedido for um **bicho** novo para a estufa, a skill é a `aristory-praga`.
+
+---
+
+## 1. A regra que não se discute: carta nenhuma se repete
+
+Pedido do Renan. Carta que já está na mão **não aparece de novo** — nem na
+oferta seguinte, nem na mesma mesa de três.
+
+Quem garante isso é a `MaoDeCartas`, e não quem escreve a carta:
+
+```ts
+const mao = new MaoDeCartas();      // nasce vazia a cada rodada (nível 0)
+mao.oferta(nivel, rng);             // as 3 da tela — nunca uma que a mão já tem
+mao.pegar('bico-1', nivel);         // false se já tem, se falta a série, se exclui
+mao.ficha();                        // os números de AGORA, derivados do zero
+mao.estiloDoRegador();              // o regador da mão, pronto para regadorDeJardim()
+```
+
+- **A mão guarda ID, e só.** Ficha, estilo do regador e estágio são
+  *derivados* da lista toda vez. Não existe número acumulado que escorregue.
+- **Uma rodada, uma mão.** A rodada começa sempre do nível 0 (é o gênero); a
+  mão NÃO vai para o `SaveState`.
+- **O dado vem de fora** (`rng`): mesmo dado, mesma oferta, e o teste repete.
+
+### "Mas eu quero empilhar alcance" → SÉRIE
+
+O que o plano antigo chamava de "comum que repete" virou **série**: `Bico mais
+longo`, `Bico mais longo II` e `III` são três cartas, e a II só sorteia com a I
+na mão (`requer`). Use o ajudante `serie(...)`:
+
+```ts
+...serie('bico', 3, {
+  familia: 'regador', raridade: 'comum', icone: '📏',
+  nome: 'Bico mais longo', texto: 'O regador alcança 18% mais longe',
+}, (f, degrau, total) => {
+  f.alcance *= 1.18;
+  f.estilo.bico = degrau / total;    // o bico da peça estica um terço por degrau
+}),
+```
+
+Os ids saem `bico-1`, `bico-2`, `bico-3`; o nome ganha " II", " III".
+
+---
+
+## 2. O contrato de uma carta
+
+```ts
+{
+  id: 'poca',                       // único no baralho; é o que a mão guarda
+  nome: 'Poça',                     // o título da carta
+  familia: 'jardim',                // regador | jardineiro | jardim
+  raridade: 'incomum',              // comum | incomum | raro | lendario
+  icone: '🫗',                      // um emoji: é o desenho da carta
+  texto: 'Onde o jato cai fica escorregadio por 4 s, e o bicho anda devagar',
+  requer: ['...'],                  // opcional: só sorteia com estas na mão
+  exclui: ['...'],                  // opcional: nunca junto destas (DE MÃO DUPLA)
+  nivelMinimo: 6,                   // opcional: senão vale o piso da raridade
+  aplicar: (f) => f.regras.add('poca'),
+},
+```
+
+- **`aplicar` só escreve na `FichaDaRodada`.** Nunca guarda estado fora dela,
+  nunca toca em cena. A mão chama `aplicar` de todas as cartas, em ordem, toda
+  vez que alguém pede a ficha.
+- **`texto` em até 70 letras**, começando com maiúscula. Ele cabe numa carta
+  de celular; o teste mede.
+- **`exclui` é de mão dupla**: se A exclui B, B exclui A. O teste reprova o
+  contrário (senão pegar B primeiro deixaria A sair).
+
+### Número ou regra?
+
+A `FichaDaRodada` tem os números (`alcance`, `dano`, `cadencia`, `largura`,
+`tanque`, `recarga`, `velocidade`, `coleta`, `vidaDoCanteiro`) e um conjunto
+de `regras`. **Regra nova é DUAS coisas**: uma linha no tipo `RegraDoJardim`
+(com o comentário do que ela faz) e o código no minigame que a obedece. Sem a
+segunda, a carta existe, é escolhida e não faz nada — o pior bug possível
+numa tela de escolha.
+
+> Hoje o minigame (etapa 3 do plano) ainda não existe. As regras estão
+> declaradas e o sorteio funciona; quem obedece cada uma entra junto com a
+> rodada. Ao criar carta de regra nova, anote no §6 do plano que ela depende
+> de código no minigame.
+
+---
+
+## 3. A raridade: comum mexe em número, rara mexe em regra
+
+| raridade | o que ela faz | piso | peso nv 1 → nv 10 |
+|---|---|---|---|
+| **comum** | +X% num número (série, se empilha) | 1 | 70 → 35 |
+| **incomum** | um número forte, ou uma regra pequena | 1 | 25 → 35 |
+| **raro** | uma regra que muda o jeito de jogar | 2 | 5 → 22 |
+| **lendário** | muda a rodada inteira | **4** | 0 → 8 |
+
+Se uma ideia só sabe dar +X%, ela é **comum**, por melhor que pareça. O teste
+cobra: carta comum que liga regra reprova (as duas exceções declaradas são
+`bota` e `segundo-tonel`, que são conforto e não jogada).
+
+**Lendária não sai antes do nível 4.** Roguelite em que a primeira carta decide
+a rodada não tem rodada.
+
+---
+
+## 4. As três famílias têm que estar na mesa
+
+| família | mexe em | como se sente |
+|---|---|---|
+| **regador** | os números do jato e as regras dele | "eu bato mais forte" |
+| **jardineiro** | você: velocidade, coleta, o corpo, o parceiro | "eu me viro melhor" |
+| **jardim** | a estufa: canteiro, tonel, portas, a Josefina | "o campo joga a meu favor" |
+
+O sorteio escolhe a raridade pelo peso e, dentro dela, **prefere uma família que
+ainda não está na mesa** — e sorteia a família antes da carta, senão o regador
+(que tem 15 comuns) ganharia sempre. Resultado medido: as três famílias juntas
+em quase toda mesa do começo.
+
+**Consequência para quem cria carta:** família com poucas comuns aparece pouco
+no começo. Se o `jardim` ou o `jardineiro` ficar sem comum disponível cedo, a
+mesa vira dois regadores — prefira dar comum à família mais magra.
+
+---
+
+## 5. O regador muda de cara
+
+Carta de REGADOR que mexe num número **mexe também na peça da mão** (§6 do
+plano). Ela escreve em `f.estilo`, com os campos de `EstiloDeRegador`
+(`world/regador.ts`): `bico`, `crivo`, `tanque` (0 a 1), `ponteira`,
+`caboDeMadeira`, `segundoBico`, `mangueira`, `respiro`, `nuvem`.
+
+O `estagio` (lata → latão → competição) **não é escrito por carta**: sai de
+quantas cartas de regador a mão tem (0–2, 3–5, 6+). Carta nova de regador que
+precisa de um desenho que não existe → a peça é da skill `aristory-prop`, e o
+`scripts/regador.mjs` mede que ela mudou mesmo.
+
+---
+
+## 6. Os consolos: quando o baralho acaba
+
+Rodada boa pode chegar num nível com menos de três cartas novas. Tela com uma
+carta não é escolha, tela vazia é travamento: os buracos se enchem com
+`CONSOLOS` (`Gole d’água`, `Muda de reserva`, `Susto`). Eles são `repetivel`,
+**não entram na mão**, não contam para o estágio, e fazem uma coisa NA HORA
+(`naHora`), que o minigame executa. **Consolo nunca aparece enquanto houver três
+cartas de verdade** — o teste cobra. São três de propósito: com o baralho vazio,
+a mesa é só consolo.
+
+---
+
+## 7. A curva e as gotas (progressao.ts)
+
+- **Nível**: o primeiro custa 5 gotas e o degrau cresce 1 a cada 2 níveis
+  (5, 7, 10, 13, 17, 21, 26, 31, 37, 43). Escrito como degrau, não potência:
+  a potência arredondada fazia o degrau ENCOLHER no meio.
+- **Gotas por praga** ficam na ficha da praga (`FichaDePraga.gotas`, em
+  `world/bichosDoJardim.ts`), e sobem com o tier: fraco 1, médio 2–3, tanque 8,
+  chefe 25.
+- **Ondas**: `ONDAS` é a tabela do §3; `planoDaOnda(n, rng)` devolve quem entra,
+  quando e por qual porta. Cada onda estreia um bicho em ordem de tier, e ele
+  entra **sozinho, por uma porta só, nos primeiros 10 s**. Tanque e chefe
+  entram só como `anunciados`, numa hora marcada.
+- **O alvo**: uma rodada inteira, sem ninguém escapar, termina perto do
+  **nível 10**. Carta nova não muda isso; bicho novo ou onda nova muda — rode o
+  teste.
+
+---
+
+## 8. Validar
+
+```bash
+npm run typecheck
+node scripts/cartas.mjs          # baralho, mão, sorteio, mil rodadas, curva e ondas
+```
+
+Carta que mexe no desenho do regador também pede `node scripts/regador.mjs`.
+
+Depois, **escreva a carta na tabela da família no §6 do
+`docs/MINIGAME-JARDIM.md`** — com raridade e efeito. É lá que o Renan ajusta o
+minigame, e carta que só existe no código ninguém balanceia.
+
+## 9. Cartas que já existem e as que foram cortadas
+
+- **Mãos dadas** e **Regador do Renan** saíram quando o Renan decidiu que, na
+  rodada, quem não é controlado fica LÁ ATRÁS com a Josefina. As duas só faziam
+  sentido com os dois na frente desde o começo. No lugar delas entraram
+  **Lá de trás** (incomum: quem ficou atrás rega o canteiro mais perto dele) e
+  **Os dois na frente** (lendária: o parceiro pega o outro regador e vem). Elas
+  se excluem.
+- Nada de golfinho e nada de rato — nem como carta, nem de piada (§ topo do
+  plano).
