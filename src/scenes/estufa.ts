@@ -529,8 +529,20 @@ export const estufa: SceneDef = {
         const meiaZ = (giro === 0 ? CANTEIRO.profundidade : CANTEIRO.largura) / 2;
         return Math.abs(x - cx) < meiaX + folga && Math.abs(z - cz) < meiaZ + folga;
       });
-    const podePlantar = (x: number, z: number, folga = 0.3): boolean =>
-      !emCimaDeCanteiro(x, z, folga) && Math.abs(x - PORTA.x) > 1.6;
+    /**
+     * `raio` E A METADE DA PECA DESENHADA, e nao a do colisor.
+     *
+     * Este e o mesmo erro que as copas das arvores ja pagaram, cometido de
+     * novo aqui: a primeira versao usava folga fixa de 0,3 — o tamanho do
+     * COLISOR da moita — enquanto a moita desenhada tem 1,3 de largura. As
+     * duas das pontas continuaram debrucadas nos canteiros laterais, e o
+     * teste, que tambem media colisor, nao viu.
+     *
+     * Quem chama passa o raio da peca que vai plantar: `bush(e)` tem
+     * `0,78 · e`, muda e capim tem uns 0,2. A regra deixou de adivinhar.
+     */
+    const podePlantar = (x: number, z: number, raio: number): boolean =>
+      !emCimaDeCanteiro(x, z, raio + 0.1) && Math.abs(x - PORTA.x) > 1.6 + raio;
 
     // ------------------------------------------- a oficina, na parede esquerda
     /**
@@ -602,7 +614,7 @@ export const estufa: SceneDef = {
      */
     for (let i = 0; i < 17; i++) {
       const x = -13.2 + i * 1.65;
-      if (!podePlantar(x, hz - 0.85)) continue;
+      if (!podePlantar(x, hz - 0.85, 0.35)) continue;
       const s = (i * 0.37) % 1;
       w.add(w.place(
         i % 3 === 0 ? capim(1.5 + s * 0.5) : planta(i % 3 === 1 ? 'lavanda' : 'suculenta', 1.7 + s * 0.5, s),
@@ -626,14 +638,16 @@ export const estufa: SceneDef = {
       [-11.4, 6.5, 0.8], [-7.6, 6.4, 0.7], [-4.2, 6.6, 0.75],
       [4.2, 6.4, 0.7], [7.6, 6.6, 0.8], [11.4, 6.5, 0.75],
     ] as const) {
-      if (!podePlantar(x, z)) continue;
+      // `bush(e)` sao tres esferas de raio `0,42·e` espacadas de `0,36·e`:
+      // a peca inteira tem `0,78·e` de meia-largura
+      if (!podePlantar(x, z, 0.78 * e)) continue;
       w.add(w.place(bush(e), x, 0, z, (x + z) % 1));
       w.blockCircle(x, z, 0.3 * e);
     }
     // e mais uma fileira de mudas crescidas fechando a frente dos canteiros
     for (let i = 0; i < 12; i++) {
       const x = -11.6 + i * 2.1;
-      if (!podePlantar(x, 7.5)) continue;
+      if (!podePlantar(x, 7.5, 0.3)) continue;
       w.add(w.place(planta(i % 2 ? 'alface' : 'girassol', 1.5, (i * 0.23) % 1), x, 0, 7.5));
     }
 
@@ -675,12 +689,29 @@ export const estufa: SceneDef = {
      * caminhos que saem deles e o jardim que continua do lado de fora.
      */
 
-    // =========================================================== as conversas
+    /* =========================================================== as conversas
+     *
+     * CADA PROMPT NASCE DA PECA, e nao de um par de numeros escrito a mao.
+     *
+     * Os tres interativos daqui ficaram para tras quando o layout mudou por
+     * causa dos portoes: a bancada foi para `z = 6,4` e o tonel para `-7,4`,
+     * mas os pontos continuaram em `-4,6` e `4,4`. Na pratica eles TROCARAM de
+     * lugar — o Renan encostou nos tonéis e leu "Olhar a bancada".
+     *
+     * Ler a posicao do objeto (`bancada.position`) e o que impede isso: mover a
+     * peca move o prompt junto, e nao existe mais um segundo lugar onde a
+     * mesma coordenada esta escrita.
+     */
+    /** um passo a frente da peca, do lado de dentro da estufa */
+    const naFrenteDe = (peca: THREE.Object3D, afasta = 1.0) => ({
+      x: peca.position.x + Math.sign(peca.position.x || 1) * -afasta,
+      z: peca.position.z,
+    });
 
     let jaOlhou = false;
     w.interact({
       id: 'estufa:bancada',
-      x: -hx + 2.1, z: -4.6, radius: 1.8,
+      ...naFrenteDe(bancada), radius: 1.8,
       label: 'Olhar a bancada', icon: '🪴',
       highlight: bancada,
       onInteract: async (api) => {
@@ -710,7 +741,7 @@ export const estufa: SceneDef = {
 
     w.interact({
       id: 'estufa:tonel',
-      x: -hx + 2.2, z: 4.4, radius: 1.8,
+      ...naFrenteDe(tonel, 1.1), radius: 1.8,
       label: 'Espiar o tonel', icon: '💧',
       highlight: tonel,
       onInteract: async () => {
@@ -725,7 +756,7 @@ export const estufa: SceneDef = {
 
     w.interact({
       id: 'estufa:terreiro',
-      x: 0, z: 0, radius: 2.2,
+      x: TERREIRO.x, z: TERREIRO.z, radius: 2.2,
       label: 'Olhar o terreiro', icon: '👀',
       onInteract: async () => {
         await conversa([

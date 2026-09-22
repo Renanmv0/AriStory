@@ -118,8 +118,97 @@ const dentro = await page.evaluate(() => {
           },
     ),
     pontos: window.jogo.current.world.root.userData.pontosDoJardim ?? null,
+
+    /**
+     * A PEGADA DESENHADA de cada canteiro e de cada enfeite solto.
+     *
+     * Medir colisor não basta, e isso já escapou duas vezes: a moita tem 1,3
+     * de largura e 0,42 de colisor, então ela debruça no canteiro com o centro
+     * do colisor bem longe dele. Aqui a caixa sai da GEOMETRIA — os oito
+     * cantos da bounding box de cada malha, levados para o mundo.
+     */
+    pegadas: (() => {
+      const medir = (o) => {
+        o.updateWorldMatrix(true, true);
+        let minx = 1e9, maxx = -1e9, minz = 1e9, maxz = -1e9;
+        o.traverse((c) => {
+          if (!c.isMesh || !c.geometry) return;
+          if (!c.geometry.boundingBox) c.geometry.computeBoundingBox();
+          const bb = c.geometry.boundingBox;
+          const e = c.matrixWorld.elements;
+          for (const vx of [bb.min.x, bb.max.x]) {
+            for (const vy of [bb.min.y, bb.max.y]) {
+              for (const vz of [bb.min.z, bb.max.z]) {
+                const X = e[0] * vx + e[4] * vy + e[8] * vz + e[12];
+                const Z = e[2] * vx + e[6] * vy + e[10] * vz + e[14];
+                minx = Math.min(minx, X); maxx = Math.max(maxx, X);
+                minz = Math.min(minz, Z); maxz = Math.max(maxz, Z);
+              }
+            }
+          }
+        });
+        return minx > 1e8 ? null : { minx, maxx, minz, maxz };
+      };
+      const raiz = window.jogo.current.world.root;
+      const canteiros = [];
+      const soltos = [];
+      raiz.traverse((o) => {
+        if (o.userData?.peca === 'canteiro-de-horta') {
+          const m = medir(o);
+          if (m) canteiros.push(m);
+        }
+      });
+      for (const o of raiz.children) {
+        if (!o.isGroup || o.userData?.peca) continue;
+        const m = medir(o);
+        if (m) soltos.push(m);
+      }
+      return { canteiros, soltos };
+    })(),
+
+    /**
+     * OS INTERATIVOS, com a peça que cada um destaca.
+     *
+     * `highlight` diz A QUE OBJETO a interação se refere. Se o prompt está
+     * longe dele, alguém moveu a peça e esqueceu o ponto — que foi exatamente
+     * o que aconteceu quando o layout mudou por causa dos portões: a bancada e
+     * o tonel trocaram de lado da estufa e os dois prompts ficaram parados.
+     */
+    interativos: window.jogo.current.world.interactables
+      .filter((it) => it.highlight)
+      .map((it) => {
+        it.highlight.updateWorldMatrix(true, false);
+        const e = it.highlight.matrixWorld.elements;
+        return {
+          id: it.id,
+          ponto: [+it.x.toFixed(2), +it.z.toFixed(2)],
+          alvo: [+e[12].toFixed(2), +e[14].toFixed(2)],
+          raio: it.radius,
+        };
+      }),
   };
 });
+
+/**
+ * NADA DESENHADO EM CIMA DE CANTEIRO — medido pela geometria.
+ *
+ * A versão anterior desta asserção comparava o CENTRO do colisor redondo com a
+ * pegada do canteiro, e passou verde com duas moitas debruçadas nos canteiros
+ * laterais: o colisor tem 0,42 e a moita desenhada tem 1,3. Agora as duas
+ * caixas são as reais, e o que se mede é sobreposição de área.
+ */
+const invadeCanteiro = dentro.pegadas.soltos.filter((m) =>
+  dentro.pegadas.canteiros.some((c) => {
+    const sobreX = Math.min(m.maxx, c.maxx) - Math.max(m.minx, c.minx);
+    const sobreZ = Math.min(m.maxz, c.maxz) - Math.max(m.minz, c.minz);
+    return sobreX > 0.05 && sobreZ > 0.05;
+  }),
+).map((m) => [+((m.minx + m.maxx) / 2).toFixed(2), +((m.minz + m.maxz) / 2).toFixed(2)]);
+
+/** e cada prompt tem que estar COLADO na peça que ele destaca */
+const promptsSoltos = dentro.interativos.filter(
+  (it) => Math.hypot(it.ponto[0] - it.alvo[0], it.ponto[1] - it.alvo[1]) > it.raio + 1.2,
+);
 
 /**
  * A CAIXA ENVOLVENTE DE UM COLISOR, no eixo do mundo.
@@ -170,34 +259,6 @@ const naLinhaDoFundo = (x) =>
 const brechasAbertas = PORTOES.filter((x) => !naLinhaDoFundo(x));
 // e a sebe entre elas continua de pé: amostra no meio de cada trecho cheio
 const trechosFechados = [-13, -4.25, 4.25, 13].filter(naLinhaDoFundo);
-
-/**
- * NADA PLANTADO EM CIMA DE CANTEIRO.
- *
- * O Renan viu na tela: moita brotando do meio da alface. A causa foi as moitas
- * terem `x` escrito à mão com os canteiros numa posição antiga — quando os
- * canteiros viraram a ferradura dos portões, as posições novas caíram em cima
- * delas.
- *
- * A medida é simples e pega qualquer reincidência: nenhum colisor REDONDO
- * (moita, folhagem, vaso, tonel — tudo o que é enfeite) pode ter o centro
- * dentro da pegada de um canteiro. Canteiro é caixa, então os dois tipos de
- * colisor não se confundem.
- */
-const CANTEIRO = { largura: 3.2, profundidade: 1.6 };
-const enfeiteEmCimaDeCanteiro = dentro.colisores
-  .filter((c) => c.kind === 'circle')
-  .filter((c) =>
-    dentro.canteiros.some((cant) => {
-      // o giro não vem no relatório; a pegada é medida pelas duas orientações
-      // possíveis, e a mais apertada é a que vale
-      const meia = Math.min(CANTEIRO.largura, CANTEIRO.profundidade) / 2;
-      const maior = Math.max(CANTEIRO.largura, CANTEIRO.profundidade) / 2;
-      const dx = Math.abs(c.x - cant.x);
-      const dz = Math.abs(c.z - cant.z);
-      return (dx < maior && dz < meia) || (dx < meia && dz < maior);
-    }),
-  );
 
 /** as bocas dos portões: nada a menos de 1,4 delas */
 const bocas = dentro.pontos?.bocas ?? [];
@@ -373,7 +434,8 @@ console.log('   colisores:', dentro.colisores.length,
   '· bocas entupidas:', bocasEntupidas.length);
 console.log('   brechas abertas na sebe do fundo:', brechasAbertas.length,
   '· trechos de sebe de pé:', trechosFechados.length,
-  '· enfeite em cima de canteiro:', enfeiteEmCimaDeCanteiro.length);
+  '· enfeite em cima de canteiro:', invadeCanteiro.length,
+  '· prompts soltos da peça:', promptsSoltos.length);
 for (const a of atravessou) {
   console.log(`3.5 portão x=${a.portao} · saiu para`, JSON.stringify(a.chegou));
 }
@@ -456,9 +518,16 @@ if (trechosFechados.length !== 4) {
 }
 if (BRECHA < 2.4) problemas.push('a brecha ficou estreita demais para um corpo passar');
 // nada de moita brotando do meio da alface
-if (enfeiteEmCimaDeCanteiro.length) {
-  problemas.push(`${enfeiteEmCimaDeCanteiro.length} enfeite(s) em cima de canteiro: ` +
-    JSON.stringify(enfeiteEmCimaDeCanteiro.slice(0, 4)));
+if (invadeCanteiro.length) {
+  problemas.push(`${invadeCanteiro.length} enfeite(s) em cima de canteiro: ` +
+    JSON.stringify(invadeCanteiro.slice(0, 4)));
+}
+// e nenhum prompt apontando para onde a peça NÃO está mais
+for (const it of promptsSoltos) {
+  problemas.push(
+    `o prompt "${it.id}" está a ${Math.hypot(it.ponto[0] - it.alvo[0], it.ponto[1] - it.alvo[1]).toFixed(1)} ` +
+    `da peça que ele destaca (ponto ${JSON.stringify(it.ponto)}, peça ${JSON.stringify(it.alvo)})`,
+  );
 }
 if (!dentro.pecas['portao-de-jardim'] || dentro.pecas['portao-de-jardim'] !== 3) {
   problemas.push(`são ${dentro.pecas['portao-de-jardim'] ?? 0} portões, e não 3`);
