@@ -129,6 +129,9 @@ const FUNDO_DE_FORA = -hz - FORA.profundidade;
  * O `x = ±3,6` da fileira da frente e o que mantem o EIXO DA PORTA DE SAIDA
  * vazio: ela tem 1,9 de vao, e o canteiro comeca em 2,0.
  */
+/** a medida de cada canteiro da estufa, em largura x profundidade */
+const CANTEIRO = { largura: 3.2, profundidade: 1.6 };
+
 const CANTEIROS = [
   { x: -10.2, z: 8.8, tipo: 'samambaia', giro: 0 },
   { x: -3.6, z: 8.8, tipo: 'lavanda', giro: 0 },
@@ -496,11 +499,38 @@ export const estufa: SceneDef = {
       // E o que faz os dois lugares nao parecerem o mesmo canteiro copiado — e
       // e a fala da propria Josefina depois da quest ("adubo bom trabalha
       // rapido") virando geometria.
-      w.add(w.place(canteiroDeHorta(tipo, 3.2, 1.6, ((x + z) / 7) % 1, 1.45), x, 0, z, giro));
+      w.add(w.place(
+        canteiroDeHorta(tipo, CANTEIRO.largura, CANTEIRO.profundidade, ((x + z) / 7) % 1, 1.45),
+        x, 0, z, giro,
+      ));
       // o colisor acompanha o giro: nos dois deitados a caixa troca de eixo
-      if (giro === 0) w.blockBox(x, z, 1.6, 0.8);
-      else w.blockBox(x, z, 0.8, 1.6);
+      if (giro === 0) w.blockBox(x, z, CANTEIRO.largura / 2, CANTEIRO.profundidade / 2);
+      else w.blockBox(x, z, CANTEIRO.profundidade / 2, CANTEIRO.largura / 2);
     }
+
+    /**
+     * ================= ONDE PODE ENTRAR ENFEITE, no lado da porta
+     *
+     * Duas proibicoes, e a primeira ja custou conserto depois de o Renan ver na
+     * tela: moita brotando do meio da alface.
+     *
+     * 1. **NAO EM CIMA DE CANTEIRO.** As moitas tinham `x` escrito a mao, e
+     *    esses numeros foram escolhidos quando os canteiros da frente ficavam em
+     *    `x = -6,6 / 0 / 6,6`. Quando eles viraram a ferradura dos portoes
+     *    (`-10,2 / -3,6 / 3,6 / 10,2`) as moitas ficaram para tras, e as
+     *    posicoes novas dos canteiros cairam exatamente em cima delas. A regra
+     *    agora DERIVA de `CANTEIROS`: mudar um canteiro de lugar move a
+     *    proibicao junto, e o enfeite se recusa a nascer ali sozinho.
+     * 2. **NAO NO EIXO DA PORTA.** Passagem tem eixo, e o eixo fica vazio.
+     */
+    const emCimaDeCanteiro = (x: number, z: number, folga: number): boolean =>
+      CANTEIROS.some(({ x: cx, z: cz, giro }) => {
+        const meiaX = (giro === 0 ? CANTEIRO.largura : CANTEIRO.profundidade) / 2;
+        const meiaZ = (giro === 0 ? CANTEIRO.profundidade : CANTEIRO.largura) / 2;
+        return Math.abs(x - cx) < meiaX + folga && Math.abs(z - cz) < meiaZ + folga;
+      });
+    const podePlantar = (x: number, z: number, folga = 0.3): boolean =>
+      !emCimaDeCanteiro(x, z, folga) && Math.abs(x - PORTA.x) > 1.6;
 
     // ------------------------------------------- a oficina, na parede esquerda
     /**
@@ -572,26 +602,38 @@ export const estufa: SceneDef = {
      */
     for (let i = 0; i < 17; i++) {
       const x = -13.2 + i * 1.65;
-      // pula o vao da porta: passagem tem eixo, e o eixo fica vazio
-      if (Math.abs(x - PORTA.x) < 1.6) continue;
+      if (!podePlantar(x, hz - 0.85)) continue;
       const s = (i * 0.37) % 1;
       w.add(w.place(
         i % 3 === 0 ? capim(1.5 + s * 0.5) : planta(i % 3 === 1 ? 'lavanda' : 'suculenta', 1.7 + s * 0.5, s),
         x, 0, hz - 0.85,
       ));
     }
-    // as moitas entre os canteiros da frente, na altura do joelho: sao elas que
-    // fecham os vaos e fazem o lado da porta parecer PLANTADO, e nao arrumado
+    /**
+     * AS MOITAS NASCEM NOS VAOS ENTRE OS CANTEIROS, e nao em cima deles.
+     *
+     * Os dois `x = ±6,9` sao o MEIO do vao entre um canteiro e o seguinte
+     * (`-10,2 / -3,6 / 3,6 / 10,2`, cada um com 3,2 de largura): e ali que a
+     * moita fecha o buraco e faz a fileira parecer plantada em vez de arrumada.
+     * O vao do meio (`x = 0`) fica vazio — e o eixo da porta.
+     *
+     * Todas passam pelo `podePlantar` mesmo assim: numero escrito a mao
+     * envelhece quando o canteiro muda de lugar, e foi exatamente isso que
+     * aconteceu da ultima vez.
+     */
     for (const [x, z, e] of [
-      [-9.9, 8.4, 0.95], [-3.3, 9.0, 0.8], [3.3, 8.4, 0.9], [9.9, 9.0, 0.85],
-      [-9.9, 6.6, 0.7], [-3.3, 6.4, 0.75], [3.3, 6.6, 0.7], [9.9, 6.4, 0.8],
+      [-6.9, 8.8, 0.95], [6.9, 8.8, 0.9],
+      [-11.4, 6.5, 0.8], [-7.6, 6.4, 0.7], [-4.2, 6.6, 0.75],
+      [4.2, 6.4, 0.7], [7.6, 6.6, 0.8], [11.4, 6.5, 0.75],
     ] as const) {
+      if (!podePlantar(x, z)) continue;
       w.add(w.place(bush(e), x, 0, z, (x + z) % 1));
       w.blockCircle(x, z, 0.3 * e);
     }
     // e mais uma fileira de mudas crescidas fechando a frente dos canteiros
     for (let i = 0; i < 12; i++) {
       const x = -11.6 + i * 2.1;
+      if (!podePlantar(x, 7.5)) continue;
       w.add(w.place(planta(i % 2 ? 'alface' : 'girassol', 1.5, (i * 0.23) % 1), x, 0, 7.5));
     }
 

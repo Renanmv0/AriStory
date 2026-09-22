@@ -171,6 +171,34 @@ const brechasAbertas = PORTOES.filter((x) => !naLinhaDoFundo(x));
 // e a sebe entre elas continua de pé: amostra no meio de cada trecho cheio
 const trechosFechados = [-13, -4.25, 4.25, 13].filter(naLinhaDoFundo);
 
+/**
+ * NADA PLANTADO EM CIMA DE CANTEIRO.
+ *
+ * O Renan viu na tela: moita brotando do meio da alface. A causa foi as moitas
+ * terem `x` escrito à mão com os canteiros numa posição antiga — quando os
+ * canteiros viraram a ferradura dos portões, as posições novas caíram em cima
+ * delas.
+ *
+ * A medida é simples e pega qualquer reincidência: nenhum colisor REDONDO
+ * (moita, folhagem, vaso, tonel — tudo o que é enfeite) pode ter o centro
+ * dentro da pegada de um canteiro. Canteiro é caixa, então os dois tipos de
+ * colisor não se confundem.
+ */
+const CANTEIRO = { largura: 3.2, profundidade: 1.6 };
+const enfeiteEmCimaDeCanteiro = dentro.colisores
+  .filter((c) => c.kind === 'circle')
+  .filter((c) =>
+    dentro.canteiros.some((cant) => {
+      // o giro não vem no relatório; a pegada é medida pelas duas orientações
+      // possíveis, e a mais apertada é a que vale
+      const meia = Math.min(CANTEIRO.largura, CANTEIRO.profundidade) / 2;
+      const maior = Math.max(CANTEIRO.largura, CANTEIRO.profundidade) / 2;
+      const dx = Math.abs(c.x - cant.x);
+      const dz = Math.abs(c.z - cant.z);
+      return (dx < maior && dz < meia) || (dx < meia && dz < maior);
+    }),
+  );
+
 /** as bocas dos portões: nada a menos de 1,4 delas */
 const bocas = dentro.pontos?.bocas ?? [];
 const bocasEntupidas = bocas.filter((b) =>
@@ -344,7 +372,8 @@ console.log('   colisores:', dentro.colisores.length,
   '· invadindo o terreiro:', invadeOTerreiro.length,
   '· bocas entupidas:', bocasEntupidas.length);
 console.log('   brechas abertas na sebe do fundo:', brechasAbertas.length,
-  '· trechos de sebe de pé:', trechosFechados.length);
+  '· trechos de sebe de pé:', trechosFechados.length,
+  '· enfeite em cima de canteiro:', enfeiteEmCimaDeCanteiro.length);
 for (const a of atravessou) {
   console.log(`3.5 portão x=${a.portao} · saiu para`, JSON.stringify(a.chegou));
 }
@@ -426,6 +455,11 @@ if (trechosFechados.length !== 4) {
   problemas.push(`a sebe do fundo tem buraco: só ${trechosFechados.length} de 4 trechos fechados`);
 }
 if (BRECHA < 2.4) problemas.push('a brecha ficou estreita demais para um corpo passar');
+// nada de moita brotando do meio da alface
+if (enfeiteEmCimaDeCanteiro.length) {
+  problemas.push(`${enfeiteEmCimaDeCanteiro.length} enfeite(s) em cima de canteiro: ` +
+    JSON.stringify(enfeiteEmCimaDeCanteiro.slice(0, 4)));
+}
 if (!dentro.pecas['portao-de-jardim'] || dentro.pecas['portao-de-jardim'] !== 3) {
   problemas.push(`são ${dentro.pecas['portao-de-jardim'] ?? 0} portões, e não 3`);
 }
