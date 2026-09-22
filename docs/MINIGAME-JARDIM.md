@@ -145,6 +145,31 @@ matar tudo não é a estratégia ótima por definição — segurar a linha é.
 sacode, e vai embora pela beirada por onde entrou. Nada morre nesta estufa. É
 regra, não detalhe de texto.
 
+### Eles entram aos pouquinhos, e um bicho novo por onda
+
+A primeira onda tem **um tipo só** — o Lagartejo —, entrando **um de cada vez**,
+a cada 4 segundos. A rodada começa fácil de propósito: o jogador ainda está
+descobrindo que o regador tem alcance, que a água acaba e que o canteiro é o
+placar. Onda 1 é uma aula, e ela tem que parecer fácil.
+
+| onda | quem entra | ritmo | quantos |
+|---|---|---|---|
+| 1 | Lagartejo | 1 a cada 4 s | ~12 |
+| 2 | **+ Gafanhopo** | 2 a cada 4 s | ~20 |
+| 3 | **+ Coelhatu** | 2 a cada 3 s | ~28 |
+| 4 | **+ Tucanguru**, e um Preguipolvo | 3 a cada 3 s | ~36 |
+| 5 | todos, e a **Mãe-Lagartejo** no fim | 3 a cada 2,5 s | ~45 |
+
+**A regra que vale mais que a tabela: bicho novo entra SOZINHO.** Nos primeiros
+10 segundos da onda em que ele estreia, só ele entra, e por uma porta só. O
+jogador precisa de um momento limpo para descobrir que o Gafanhopo pula por cima
+do jato, e esse momento não existe se ele estreia no meio de oito lagartejos.
+Depois desses 10 segundos, o sorteio mistura tudo.
+
+O tanque e o chefe são **anunciados**: a porta por onde eles vêm chacoalha e a
+Josefina fala uma linha antes. Bicho grande que aparece sem aviso não é difícil,
+é injusto.
+
 ---
 
 ## 4. O regador
@@ -280,7 +305,7 @@ com peso, e o peso muda com o nível — nível alto tira mais raro:
 **Lendária não sai antes do nível 4.** Roguelite em que a primeira carta decide
 a rodada é roguelite que não tem rodada.
 
-### As primeiras são o regador mesmo
+### Regador — os números
 
 O Renan foi explícito: **começa melhorando o regador**. As quatro comuns são as
 quatro linhas da tabela do §4, e elas repetem — pegar "mais alcance" três vezes
@@ -294,39 +319,149 @@ quatro linhas da tabela do §4, e elas repetem — pegar "mais alcance" três ve
 | Leque aberto | comum | +10° de abertura |
 | Tanque maior | comum | +4 de água |
 
-### As de baixo mudam como se joga
+E as do mesmo baralho que mudam a regra do jato:
 
 | carta | raridade | efeito |
 |---|---|---|
 | Segundo bico | incomum | o jato sai também para trás |
-| Poça | incomum | onde o jato cai fica escorregadio por 4 s: quem passa anda devagar |
 | Orvalho | incomum | o tanque enche sozinho 50% mais rápido |
 | Mangueira | raro | o alcance dobra, mas a cadência piora 40% |
-| Espantalho | raro | um espantalho plantado onde você escolher puxa o alvo dos bichos por 20 s |
-| Josefina ajuda | raro | ela sai do canto e rega um canteiro por conta dela, uma vez por onda |
-| Chuva | lendário | a estufa inteira leva um jato, de uma vez, a cada 30 s |
-| Cerca viva | lendário | um canteiro à sua escolha fica intocável pelo resto da rodada |
-| Regador do Renan | lendário | o parceiro dispara na sua cadência, e não na dele |
+| Regador de pressão | raro | o jato atravessa o primeiro bicho e acerta o de trás |
 
-A regra que guia carta nova: **carta comum mexe em número, carta rara mexe em
-regra**. Se uma ideia de carta só sabe dar +X%, ela é comum, por melhor que
-pareça.
+### As três famílias de carta
+
+O sorteio tira de três baralhos misturados, e **as três precisam estar na mesa**
+para a escolha ser interessante. Três cartas que só sabem dar +% ao regador não
+é uma escolha, é um clique.
+
+| família | o que ela mexe | como ela se sente |
+|---|---|---|
+| **REGADOR** | os quatro números do §4, e as regras do jato | "eu bato mais forte" |
+| **JARDINEIRO** | você — velocidade, alcance de coleta, o corpo | "eu me viro melhor" |
+| **JARDIM** | a estufa — canteiro, tonel, portas, a Josefina | "o campo joga a meu favor" |
+
+**A regra que guia carta nova: carta comum mexe em número, carta rara mexe em
+regra.** Se uma ideia só sabe dar +X%, ela é comum, por melhor que pareça.
+
+#### Jardineiro — o que muda em você
+
+| carta | raridade | efeito |
+|---|---|---|
+| Passo leve | comum | +12% de velocidade |
+| Bolso furado | comum | as gotas são puxadas de 2 m em vez de pisadas |
+| Bota de jardim | comum | terra de canteiro não te segura mais |
+| Fôlego | incomum | o tanque enche sozinho enquanto você anda, e não só no tonel |
+| Chinelada | incomum | encostar num bicho dá um empurrão que o joga 2 m para trás |
+| Grito | raro | uma vez por onda, tudo num raio de 4 m recua até a porta |
+| Mãos dadas | raro | com os dois juntos, os dois jatos viram um só, do dobro do tamanho |
+| Dedo verde | raro | canteiro machucado recupera 1 ponto entre uma onda e outra |
+
+#### Jardim — o que muda no campo
+
+| carta | raridade | efeito |
+|---|---|---|
+| Segundo tonel | comum | nasce um tonel do outro lado: a viagem pela água encurta |
+| Poça | incomum | onde o jato cai fica escorregadio 4 s, e quem passa anda devagar |
+| Espantalho | raro | um espantalho onde você escolher puxa o alvo dos bichos por 20 s |
+| Josefina ajuda | raro | ela sai do canto e rega um canteiro por conta dela, uma vez por onda |
+| Portão emperrado | raro | uma das três portas fecha pelo resto da rodada |
+| Cerca viva | lendário | um canteiro à sua escolha fica intocável até o fim |
+| Chuva | lendário | a estufa inteira leva um jato, de uma vez, a cada 30 s |
+| Regador do Renan | lendário | o parceiro dispara na SUA cadência, e não na dele |
+
+### O regador MUDA DE CARA quando você melhora ele
+
+Esta é a regra que amarra as cartas ao resto do jogo, e ela é barata porque
+neste projeto todo modelo é geometria procedural: **carta que mexe no regador
+mexe também na peça na mão**. Nada de ícone de buff no canto da tela — o
+upgrade aparece no objeto.
+
+| carta | o que aparece na peça |
+|---|---|
+| Bico mais longo | o bico estica de verdade |
+| Leque aberto | o crivo da ponta alarga e ganha mais furos |
+| Tanque maior | o corpo engorda e a alça sobe |
+| Jato firme | o bico ganha uma ponteira de latão |
+| Braço solto | a alça vira um cabo de madeira lixado |
+| Segundo bico | nasce um bico atrás, virado para trás |
+| Mangueira | uma mangueira enrolada pendurada no corpo |
+| Orvalho | um respiro de cobre no topo, soltando vapor |
+| Chuva | uma nuvenzinha que flutua um palmo acima da peça |
+
+E o regador tem **três estágios visíveis**, pelo número de cartas de REGADOR que
+você pegou: `0–2` o de lata amassada que a Josefina empresta, `3–5` um
+reforçado de latão, `6+` um de competição, que é o troféu de uma rodada boa. É
+o que faz o jogador olhar para a própria mão no fim e ver a rodada que ele jogou.
+
+**O parceiro carrega a mesma evolução.** São sempre dois em cena, e um regador
+de competição ao lado de uma lata amassada contaria uma história errada.
+
+Para criar carta nova sem reabrir este documento inteiro existe uma skill:
+`.claude/skills/aristory-habilidade/SKILL.md` — **ainda não escrita** (§9).
 
 Para criar carta nova sem reabrir este documento inteiro existe uma skill:
 `.claude/skills/aristory-habilidade/SKILL.md` — **ainda não escrita** (§9).
 
 ---
 
-## 7. A experiência
+## 7. A experiência, e o nível
+
+**A rodada começa sempre do nível 0.** Isso é o coração do gênero (o Renan citou
+o Vampire Survivors, e é exatamente isso): o que se leva de uma rodada para a
+outra é o dinheiro dos canteiros vivos e o que se aprendeu jogando — **nunca
+poder**. Duas rodadas seguidas com o mesmo começo e cartas diferentes têm que
+dar jogos diferentes, e isso só acontece se ninguém entra na rodada já forte.
 
 Bicho espantado solta uma **gota** no chão. A gota não vai sozinha para você:
 você tem que passar por cima. É o que puxa o jogador para fora da posição
-confortável, e é a mecânica mais barata de tensão que o gênero tem.
+confortável, e é a mecânica mais barata de tensão que o gênero tem. Gota que
+fica no chão mais de 20 s seca e some.
 
-- `nivel 1 → 2`: 8 gotas
-- cada nível seguinte: `8 + nivel * 5` gotas
+### Quanto cada praga solta
 
-Gota que fica no chão mais de 20 s some. Gota de bicho elite vale 5.
+Bicho mais forte solta mais, e a régua é a mesma do `encharque` (§5) — quem deu
+mais trabalho paga mais:
+
+| praga | tier | gotas |
+|---|---|---|
+| Lagartejo | fraco | 1 |
+| Gafanhopo | fraco | 1 |
+| Tucanguru | médio | 2 |
+| Coelhatu | médio | 3 |
+| Preguipolvo | tanque | 8 |
+| Mãe-Lagartejo | chefe | 25 |
+
+O tanque e o chefe soltam as gotas **espalhadas**, e não empilhadas: oito gotas
+no mesmo ponto é um clique, oito gotas num raio de 3 m é uma decisão.
+
+### A curva: barato no começo, caro no fim
+
+```
+custo(nivel) = 4 + nivel ^ 1.6   (arredondado)
+```
+
+| nível | custo | acumulado |
+|---|---|---|
+| 0 → 1 | 5 | 5 |
+| 1 → 2 | 7 | 12 |
+| 2 → 3 | 10 | 22 |
+| 3 → 4 | 13 | 35 |
+| 4 → 5 | 16 | 51 |
+| 5 → 6 | 20 | 71 |
+| 6 → 7 | 24 | 95 |
+| 7 → 8 | 28 | 123 |
+| 8 → 9 | 33 | 156 |
+| 9 → 10 | 38 | 194 |
+
+Os **três primeiros níveis saem quase de graça** — cinco lagartejos e você já
+escolheu uma carta. Isso é de propósito: roguelite que demora a dar a primeira
+carta é roguelite que o jogador abandona na primeira rodada. Do nível 5 para
+frente cada carta custa uma onda inteira, e é aí que as escolhas passam a doer.
+
+Uma rodada de 5 ondas solta perto de 200 gotas, então ela termina por volta do
+**nível 10, com 10 cartas escolhidas**. Esse é o alvo do balanceamento, e é o
+número que o `scripts/balanco.mjs` do jardim vai ter que confirmar quando o
+minigame existir.
 
 ---
 
@@ -472,6 +607,7 @@ trabalha rápido") virando geometria.
 | # | etapa | estado |
 |---|---|---|
 | 0 | **a área**: a estufa, a porta no jardim do clube, o caminho | **pronto** (§10) |
+| 0.5 | **a skill `aristory-praga`**, para praga nova sair barata | **pronto** |
 | 1 | a skill `aristory-habilidade`, para carta nova sair barato | a fazer |
 | 2 | a quest do adubo (banco → Noel → Josefina → convite) | **pronto** (§2) |
 | 2.5 | as três portas na parede do fundo, e os canteiros puxados para lá | **pronto** (§8) |
@@ -479,9 +615,9 @@ trabalha rápido") virando geometria.
 | 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | a fazer |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
 | 5 | gota, nível e a tela de três cartas | a fazer |
-| 6 | as cartas comuns (as do regador) | a fazer |
-| 7 | o resto do elenco de bichos, um por vez | a fazer |
-| 8 | as cartas incomuns, raras e lendárias | a fazer |
+| 6 | as cartas comuns (as do regador), **e o regador mudando de cara** | a fazer |
+| 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | a fazer |
+| 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | a fazer |
 | 9 | o pagamento, a memória e a fala de despedida da Josefina | a fazer |
 
 A etapa 3 é a que decide se o resto vale: um regador que atira sozinho num
