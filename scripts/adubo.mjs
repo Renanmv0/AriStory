@@ -36,7 +36,7 @@ const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /** tem que bater com o `BANCO_ESQUECIDO` do Villa-Lobos */
-const BANCO = { x: -13.2, z: -22.5, giro: 1.1 };
+const BANCO = { x: -12, z: 9.5, giro: Math.PI / 2 };
 const SEMENTES = {
   x: BANCO.x + Math.cos(BANCO.giro) * 0.45,
   z: BANCO.z - Math.sin(BANCO.giro) * 0.45,
@@ -134,7 +134,10 @@ await page.mouse.click(500, 440);
 await page.waitForTimeout(400);
 
 // ============================================ 1. o saco no banco do fundo
-await page.evaluate(([x, z]) => window.jogo.debugPlace(x, z + 1.1, Math.PI), [SEMENTES.x, SEMENTES.z]);
+await page.evaluate(
+  ([x, z]) => window.jogo.debugPlace(x + 1.1, z, -Math.PI / 2),
+  [SEMENTES.x, SEMENTES.z],
+);
 await page.waitForTimeout(1300);
 const promptDasSementes = await prompt();
 await page.screenshot({ path: `${OUT}-banco.png` });

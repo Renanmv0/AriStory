@@ -405,82 +405,9 @@ export const villaLobos: SceneDef = {
       w.blockCircle(x, z, 0.35);
     }
 
-    const BANCO_ESQUECIDO = { x: -13.2, z: -22.5, giro: 1.1 };
-    for (const [x, z, r] of [
-      [-3.6, -12.2, 0.1], [3.6, -12.2, -0.1],
-      [BANCO_ESQUECIDO.x, BANCO_ESQUECIDO.z, BANCO_ESQUECIDO.giro],
-    ] as const) {
+    for (const [x, z, r] of [[-3.6, -12.2, 0.1], [3.6, -12.2, -0.1], [-13.2, -22.5, 1.1]] as const) {
       w.banco(x, z, r);
     }
-
-    /**
-     * ======================= O SACO DE SEMENTES, esquecido no banco do fundo
-     *
-     * O primeiro passo da quest do adubo (`docs/MINIGAME-JARDIM.md` §2), e o
-     * unico pedaco dela que mora no parque.
-     *
-     * POR QUE ESTE BANCO. Dos sete bancos do Villa-Lobos, este e o unico que
-     * nao esta na alameda nem na praca da roda: fica em `(-13,2; -22,5)`, no
-     * canto de tras, fora de qualquer caminho que o jogo peca para percorrer.
-     * E a mesma regra do osso enterrado no jardim da Josefina — quem acha,
-     * acha porque saiu do caminho e foi olhar. Foi escolha do Renan entre os
-     * tres lugares possiveis.
-     *
-     * ONDE EXATAMENTE, em cima do assento. O banco esta girado 1,1 rad, entao
-     * um deslocamento no X LOCAL dele vira `(cos, -sen)` no mundo — sem essa
-     * conta o saco pousa no ar, ao lado do banco. O assento tem o topo em
-     * `y = 0,53` (0,48 de altura mais 5 cm de meia-tabua).
-     *
-     * O RAIO E PEQUENO (1,1), pelo mesmo motivo do montinho de terra: prompt
-     * que acende de longe entrega o segredo antes de o jogador chegar nele.
-     */
-    const ASSENTO = 0.53;
-    const SEMENTES = {
-      x: BANCO_ESQUECIDO.x + Math.cos(BANCO_ESQUECIDO.giro) * 0.45,
-      z: BANCO_ESQUECIDO.z - Math.sin(BANCO_ESQUECIDO.giro) * 0.45,
-    };
-    const saco = w.add(w.place(sacoDeGraos(), SEMENTES.x, ASSENTO, SEMENTES.z, 0.7));
-    saco.visible = !g.flag('sementes-achadas');
-
-    const pegarAsSementes = w.interact({
-      id: 'parque:sementes',
-      x: SEMENTES.x, z: SEMENTES.z + 0.7, radius: 1.1,
-      // o rotulo diz O QUE E, e nunca PARA QUEM: a ligacao e do jogador
-      label: 'Pegar o saco de sementes', icon: '🌾',
-      highlight: saco,
-      onInteract: async (api) => {
-        /**
-         * A MOCHILA CHEIA NAO PODE ENGOLIR AS SEMENTES. Elas sao a chave da
-         * estufa: se o saco sumisse do banco sem entrar na mochila, o jogo
-         * trancaria a porta com a chave do lado de fora. Por isso o saco so
-         * some DEPOIS de o item entrar de verdade — e por isso a interacao nao
-         * e `once`.
-         */
-        if (api.addItem(ITENS.sementes) === 'cheio') {
-          await conversa([
-            [A, 'Tem um saco aqui em cima do banco, mas eu não tenho onde pôr.'],
-            [R, 'Guarda alguma coisa e volta.'],
-          ]);
-          return;
-        }
-        saco.visible = false;
-        pegarAsSementes.enabled = false;
-        api.setFlag('sementes-achadas');
-        api.som('pegar');
-
-        await conversa([
-          [R, 'Alguém esqueceu um saco de semente num banco.'],
-          [A, 'Semente de quê?'],
-          [R, 'Dessas de passarinho. Milho quebrado, girassol, essas coisas.'],
-          [A, 'E a gente vai fazer o quê com semente de passarinho?'],
-          // A DICA, e ela nao diz nome nenhum. O jogador tem os dois fios: o
-          // que o saco e, e que existe alguem por aqui que come isso.
-          [R, 'Eu não sei. Mas quem é que come semente por aqui?'],
-        ]);
-        api.toast('Saco de sementes', '🌾');
-      },
-    });
-    pegarAsSementes.enabled = !g.flag('sementes-achadas');
 
     for (const [x, z] of [[6.9, -18.9], [-5.2, -11.6]] as const) {
       w.add(w.place(bin(), x, 0, z));
@@ -636,6 +563,83 @@ export const villaLobos: SceneDef = {
       [-12, 9.5, Math.PI / 2],
     ];
     for (const [x, z, r] of bancos) w.banco(x, z, r);
+
+    /**
+     * ========================= O SACO DE SEMENTES, esquecido no banco lateral
+     *
+     * O primeiro passo da quest do adubo (`docs/MINIGAME-JARDIM.md` §2), e o
+     * único pedaço dela que mora no parque.
+     *
+     * POR QUE ESTE BANCO, e a razão não é estética. Ele é o de `(-12; 9,5)`:
+     * o único fora da alameda (que corre em `x = ±4,2`) e, sobretudo, o único
+     * banco isolado FORA DA ZONA DE ZOOM DA RODA-GIGANTE.
+     *
+     * Essa zona é a conta que decidiu tudo. A roda fica em `(0; -26)` e manda
+     * na câmera num raio de 28: lá dentro o enquadramento abre até 30 para a
+     * roda caber na tela. O primeiro lugar escolhido — o banco de
+     * `(-13,2; -22,5)` — está a 13,7 dela, e abria a câmera em 30. Um saco de
+     * 30 cm nesse enquadramento tem meia dúzia de pixels: o item da quest
+     * ficava invisível, e a foto foi quem contou isso. Aqui a distância é 37,5,
+     * fora do raio, e a câmera fica no zoom normal de jogo.
+     *
+     * O resto da regra continua: fora do caminho que o jogo pede para
+     * percorrer, e raio de interação pequeno (1,1) — prompt que acende de longe
+     * entrega o segredo antes de o jogador chegar nele. É o desenho do osso
+     * enterrado no jardim da Josefina.
+     *
+     * ONDE EXATAMENTE, em cima do assento. O banco está girado 90° (`PI/2`),
+     * então um deslocamento no X LOCAL dele vira `(cos, -sen)` no mundo — sem
+     * essa conta o saco pousa no ar, ao lado do banco. O assento tem o topo em
+     * `y = 0,53` (0,48 de altura mais 5 cm de meia-tábua).
+     */
+    const BANCO_ESQUECIDO = { x: -12, z: 9.5, giro: Math.PI / 2 };
+    const ASSENTO = 0.53;
+    const SEMENTES = {
+      x: BANCO_ESQUECIDO.x + Math.cos(BANCO_ESQUECIDO.giro) * 0.45,
+      z: BANCO_ESQUECIDO.z - Math.sin(BANCO_ESQUECIDO.giro) * 0.45,
+    };
+    const saco = w.add(w.place(sacoDeGraos(), SEMENTES.x, ASSENTO, SEMENTES.z, 0.7));
+    saco.visible = !g.flag('sementes-achadas');
+
+    const pegarAsSementes = w.interact({
+      id: 'parque:sementes',
+      x: SEMENTES.x + 0.7, z: SEMENTES.z, radius: 1.1,
+      // o rótulo diz O QUE É, e nunca PARA QUEM: a ligação é do jogador
+      label: 'Pegar o saco de sementes', icon: '🌾',
+      highlight: saco,
+      onInteract: async (api) => {
+        /**
+         * A MOCHILA CHEIA NÃO PODE ENGOLIR AS SEMENTES. Elas são a chave da
+         * estufa: se o saco sumisse do banco sem entrar na mochila, o jogo
+         * trancaria a porta com a chave do lado de fora. Por isso o saco só
+         * some DEPOIS de o item entrar de verdade — e por isso a interação não
+         * é `once`.
+         */
+        if (api.addItem(ITENS.sementes) === 'cheio') {
+          await conversa([
+            [A, 'Tem um saco aqui em cima do banco, mas eu não tenho onde pôr.'],
+            [R, 'Guarda alguma coisa e volta.'],
+          ]);
+          return;
+        }
+        saco.visible = false;
+        pegarAsSementes.enabled = false;
+        api.setFlag('sementes-achadas');
+        api.som('pegar');
+
+        await conversa([
+          [R, 'Alguém esqueceu um saco de semente num banco.'],
+          [A, 'Semente de quê?'],
+          [R, 'Dessas de passarinho. Milho quebrado, girassol, essas coisas.'],
+          [A, 'E a gente vai fazer o quê com semente de passarinho?'],
+          // A DICA, e ela não diz nome nenhum. O jogador fica com os dois fios:
+          // o que o saco é, e que existe alguém por aqui que come isso.
+          [R, 'Eu não sei. Mas quem é que come semente por aqui?'],
+        ]);
+        api.toast('Saco de sementes', '🌾');
+      },
+    });
+    pegarAsSementes.enabled = !g.flag('sementes-achadas');
 
     // O poste de `[-4, 2]` saiu daqui: ele caia DENTRO da lojinha de patins, com
     // o pé atravessando o balcão e a cabeça saindo por cima do toldo. O balcão

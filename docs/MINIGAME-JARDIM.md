@@ -80,11 +80,23 @@ sempre não é pista, é loteria. É o mesmo desenho da dica do osso.
 
 ### Onde fica o saco de sementes
 
-No banco de `(-13,2; -22,5)`, no canto de trás do Villa-Lobos. Dos sete bancos
-do parque, é o único fora da alameda e da praça da roda — **quem acha, acha
-porque saiu do caminho**, que é a regra do osso enterrado. Escolha do Renan
-entre três lugares possíveis. O raio da interação é 1,1: prompt que acende de
-longe entrega o segredo antes de o jogador chegar nele.
+No banco de `(-12; 9,5)` — o banco sozinho de frente para o lago, ao lado da
+loja de patins. O Renan escolheu "o banco isolado", e este é o que de fato
+cumpre isso: fora da alameda (que corre em `x = ±4,2`) e fora da praça da roda.
+
+**O primeiro candidato não sobreviveu à foto.** Era o banco de
+`(-13,2; -22,5)`, e o problema não era estético: a roda-gigante fica em
+`(0; -26)` e **manda na câmera num raio de 28**, abrindo o enquadramento até 30
+para ela caber na tela. Aquele banco está a 13,7 dela — um saco de 30 cm
+naquele zoom tem meia dúzia de pixels, e o item da quest ficava invisível. Este
+está a 37,5, fora do raio, com a câmera no zoom normal de jogo.
+
+Deu de brinde uma quase-pista boa: o banco fica na beira do lago, **com patos
+nadando a dez metros**. Quem lê "saco de sementes" ali pensa nos patos
+primeiro. A resposta é o peru, do outro lado do mapa.
+
+O raio da interação é 1,1: prompt que acende de longe entrega o segredo antes
+de o jogador chegar nele.
 
 ### A estufa antes da quest
 

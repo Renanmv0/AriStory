@@ -175,6 +175,20 @@ await page.waitForTimeout(400);
 const depoisDeAtravessar = await onde();
 const trechos = trilha.slice(1).map((p, i) => +Math.hypot(p[0] - trilha[i][0], p[1] - trilha[i][1]).toFixed(2));
 const andou = trechos.reduce((a, b) => a + b, 0);
+/**
+ * O ESBARRÃO SE MEDE CONTRA OS OUTROS TRECHOS, e não contra um número fixo.
+ *
+ * O relógio de jogo aqui depende de quanta máquina sobra: a mesma travessia
+ * limpa já deu 1,3 por amostra com a máquina livre e 0,44 com outro navegador
+ * rodando ao lado. Um limite absoluto reprova o teste por carga, que é
+ * exatamente o tipo de falha que ensina a ignorar teste vermelho.
+ *
+ * Colisão tem outra assinatura: UM trecho quase parado no meio de trechos
+ * normais. Comparar cada um com a mediana pega isso em qualquer velocidade.
+ */
+const ordenados = [...trechos].sort((a, b) => a - b);
+const mediana = ordenados[Math.floor(ordenados.length / 2)];
+const travados = trechos.filter((t) => t < mediana * 0.5);
 
 // ================================================ 4. as conversas da cena
 const conversar = async (x, z) => {
@@ -223,7 +237,8 @@ console.log('   colisores:', dentro.colisores.length,
   '· invadindo o terreiro:', invadeOTerreiro.length,
   '· bocas entupidas:', bocasEntupidas.length);
 console.log('3. travessia do meio: (5.5, 5) →', JSON.stringify(depoisDeAtravessar),
-  '· andou', andou.toFixed(2), '· trechos:', JSON.stringify(trechos));
+  '· andou', andou.toFixed(2), '· mediana por amostra', mediana,
+  '· trechos:', JSON.stringify(trechos));
 console.log('4. bancada:', JSON.stringify(naBancada.rotulo));
 for (const f of naBancada.ditas) console.log('   ', f);
 console.log('   tonel:', JSON.stringify(noTonel.rotulo),
@@ -262,11 +277,12 @@ if (!dentro.pecas['regador']) problemas.push('o regador sumiu — é a arma do m
 if ((dentro.pecas['arco-de-estufa'] ?? 0) < 3) {
   problemas.push('faltam arcos: sem eles a estufa lê como pátio, e não como estufa');
 }
-// atravessar o meio: nenhum trecho parado (esbarrão) e a diagonal fechada
-if (trechos.some((t) => t < 0.4)) {
+// atravessar o meio: nenhum trecho destoando dos outros (esbarrão), e a dupla
+// realmente saiu do lugar (o limite baixo é só contra "não andou nada")
+if (travados.length) {
   problemas.push(`travou ao atravessar o terreiro (trechos: ${JSON.stringify(trechos)})`);
 }
-if (andou < 5) problemas.push(`mal saiu do lugar no terreiro (${andou.toFixed(2)})`);
+if (andou < 2) problemas.push(`mal saiu do lugar no terreiro (${andou.toFixed(2)})`);
 if (naBancada.ditas.length < 4) problemas.push('a conversa da bancada não aconteceu');
 if (!noDiario) problemas.push('a memória da estufa não entrou no diário');
 if (!noTonel.ditas.length) problemas.push('o tonel não rende conversa');
