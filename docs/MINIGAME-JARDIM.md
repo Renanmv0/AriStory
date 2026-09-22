@@ -736,3 +736,38 @@ dispara sozinho sem tecla; bicho parado em canteiro para de perseguir; canteiro
 comido não volta; a tela de três cartas aparece no nível certo e some ao
 escolher; lendária não sai antes do nível 4; e a rodada fecha pagando por
 canteiro vivo.
+
+---
+
+## 12. O que está esperando resposta do Renan
+
+Isto fica escrito aqui, e não numa conversa, por um motivo prático: conversa
+acaba. Toda vez que uma decisão deste plano depender dele, a pergunta vem para
+cá — assim quem continuar o trabalho amanhã sabe o que ainda não foi decidido,
+em vez de inventar uma resposta e seguir.
+
+**Sobre as cartas (§6):**
+
+1. **Reroll.** Vale a Josefina dar um "não gostei, mostra outras três" por
+   rodada? A recomendação é que sim, e **um só** — o suficiente para salvar uma
+   mão ruim sem virar uma quarta escolha grátis.
+2. **Carta repetida.** Hoje "Bico mais longo" três vezes é jogada válida, e a
+   regra do §6 diz que comum repete de propósito. Precisa de teto (cinco vezes
+   cada, por exemplo), ou deixa aberto?
+3. **A chefe.** A Mãe-Lagartejo entra na onda 5 de toda rodada, ou só a partir
+   da segunda vez que se joga? A favor da segunda: a primeira rodada é a que
+   ensina, e chefe na estreia é onde roguelite costuma perder gente.
+
+**Sobre os modelos (§5):**
+
+4. **A crosta do dorso da Mãe-Lagartejo** ainda lê como uma tampa chapada
+   pousada nas costas, e não como parte do bicho. É a única coisa dos seis
+   modelos que eu mudaria sem ele pedir — mas é ajuste de gosto, e o gosto é
+   dele e do Ari.
+
+**Sobre a pose (§4):**
+
+5. **O braço do regador** ficou estendido para a frente (0,9 rad) para a lata
+   pendurada não raspar no chão. Dá para trazer mais para o lado do corpo, ao
+   preço de a lata chegar mais perto do chão — a conta está no comentário da
+   pose `regando`, em `CharacterRig.ts`.
