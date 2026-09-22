@@ -207,9 +207,15 @@ export const estufa: SceneDef = {
      * briga por profundidade com decalque.
      */
     w.ground({ width: W + 1, depth: D + 1, color: P.estufaChao, textura: asfalto(1.6) });
+    /**
+     * O gramado passa 3 m ALEM da sebe do fundo. Nao e sobra: e onde os bichos
+     * nascem, do lado de fora, para entrarem pelas brechas andando — bicho que
+     * aparece do nada dentro do patio nao da tempo de ser interceptado, que e
+     * justamente a jogada que o patio existe para permitir.
+     */
     w.ground({
-      width: W, depth: FORA.profundidade + 0.6,
-      z: -hz - FORA.profundidade / 2 + 0.3,
+      width: W, depth: FORA.profundidade + 3.6,
+      z: -hz - FORA.profundidade / 2 - 1.2,
       color: P.grass, textura: tapeteDeGrama(9), y: 0.004,
     });
 
@@ -225,9 +231,9 @@ export const estufa: SceneDef = {
     // sao o que amarra o de dentro com o de fora numa coisa so, e agora
     // atravessam o patio inteiro ate a sebe do fundo
     for (const x of PORTOES.xs) {
-      const comprimento = FORA.profundidade + 3;
+      const comprimento = FORA.profundidade + 5;
       w.patch(
-        x, -hz - FORA.profundidade / 2 + 1, 2.2, comprimento,
+        x, -hz - FORA.profundidade / 2 - 0.4, 2.2, comprimento,
         P.concrete, 0, 0.018, calcadaDePedrinha(0.4, 5),
       );
     }
@@ -241,7 +247,13 @@ export const estufa: SceneDef = {
      * lugar menos nos vaos, e as paredes laterais acabam em `z = -11`, entao o
      * patio de tras e um beco sem saida de proposito.
      */
-    w.setBounds(-hx + FORA.recuo, FUNDO_DE_FORA + FORA.recuo, hx - FORA.recuo, hz - 0.8);
+    /**
+     * O limite do fundo encosta na LINHA DA SEBE, e nao um metro antes: assim a
+     * dupla para no mesmo `z` ao longo do fundo inteiro, tanto onde tem sebe
+     * (que ja para por colisor) quanto nas brechas. Linha de parada continua
+     * nao lê como parede invisivel; linha quebrada, sim.
+     */
+    w.setBounds(-hx + FORA.recuo, FUNDO_DE_FORA + 0.55, hx - FORA.recuo, hz - 0.8);
 
     // -------------------------------------------------------------- as paredes
     /**
@@ -337,8 +349,54 @@ export const estufa: SceneDef = {
       ));
       w.blockBox(sx * hx, -hz - ladoDoPatio / 2, 0.55, ladoDoPatio / 2);
     }
-    w.add(w.place(sebe(W + 1.1, 1.6), 0, 0, FUNDO_DE_FORA));
-    w.blockBox(0, FUNDO_DE_FORA, (W + 1.1) / 2, 0.55);
+    /**
+     * A SEBE DO FUNDO ABRE EM TRES BRECHAS, no fim de cada caminho de pedra.
+     *
+     * Pedido do Renan, e ele fecha a corrente inteira do minigame: o bicho
+     * nasce no gramado de fora, **entra pela brecha**, sobe o caminho de pedra,
+     * atravessa o portao e so entao chega na estufa. Cada um desses tres
+     * trechos e uma chance de interceptar — e e por isso que "segurar fora"
+     * contra "segurar dentro" vira decisao, e nao preferencia.
+     *
+     * As brechas ficam no EIXO dos portoes e sao mais largas que o caminho
+     * (3,2 contra 2,2): passagem tem eixo, e o eixo fica vazio.
+     */
+    const BRECHA = 3.2;
+    const pontaDaSebe = W / 2 + 0.55;
+    const cortes = [
+      -pontaDaSebe,
+      ...PORTOES.xs.flatMap((x) => [x - BRECHA / 2, x + BRECHA / 2]),
+      pontaDaSebe,
+    ];
+    for (let i = 0; i < cortes.length; i += 2) {
+      const comprimento = cortes[i + 1] - cortes[i];
+      if (comprimento < 0.05) continue;
+      const centro = (cortes[i] + cortes[i + 1]) / 2;
+      w.add(w.place(sebe(comprimento, 1.6), centro, 0, FUNDO_DE_FORA));
+      w.blockBox(centro, FUNDO_DE_FORA, comprimento / 2, 0.55);
+    }
+    /**
+     * E duas moitas altas ladeando cada brecha, encostadas na ponta da sebe.
+     *
+     * Sao elas que fazem a abertura LER como abertura: sebe cortada em quina
+     * viva parece parede quebrada, e moita arredondada na ponta parece mato que
+     * abriu. Elas ficam FORA do vao (a 2,1 do eixo, contra os 1,6 da brecha),
+     * entao nao estreitam a passagem.
+     */
+    for (const x of PORTOES.xs) {
+      for (const s of [-1, 1] as const) {
+        w.add(w.place(bush(1.15), x + s * 2.1, 0, FUNDO_DE_FORA + 0.15, (x + s) % 1));
+        w.blockCircle(x + s * 2.1, FUNDO_DE_FORA + 0.15, 0.38);
+      }
+    }
+    // e algumas moitas soltas do lado de FORA da sebe, para a brecha nao dar
+    // num gramado vazio: quem olha pela brecha tem que ver o mato continuar
+    for (const [x, z, e] of [
+      [-12.2, -27.2, 1.0], [-5.4, -26.6, 0.9], [5.6, -27.4, 1.05],
+      [12.6, -26.4, 0.95], [-0.2, -28.2, 0.85],
+    ] as const) {
+      w.add(w.place(bush(e), x, 0, z, (x * z) % 1));
+    }
 
     /**
      * O QUE CRESCE NO PATIO. Ele e chao de briga agora, entao a regra e a mesma
@@ -626,9 +684,13 @@ export const estufa: SceneDef = {
       canteiros: CANTEIROS.map(({ x, z }) => ({ x, z })),
       /** um passo para DENTRO de cada portao */
       bocas: PORTOES.xs.map((x) => ({ x, z: CHEGADA })),
-      /** e um ponto no fundo do patio alinhado com cada portao: e de LA que o
-       *  bicho deve aparecer, para dar tempo de interceptar antes do vao */
-      entradas: PORTOES.xs.map((x) => ({ x, z: FUNDO_DE_FORA + 1.6 })),
+      /**
+       * e um ponto do lado de FORA da sebe, alinhado com cada brecha: e de la
+       * que o bicho deve aparecer. A corrente dele e brecha → caminho de pedra
+       * → portao → estufa, e cada trecho e uma chance de interceptar.
+       */
+      entradas: PORTOES.xs.map((x) => ({ x, z: FUNDO_DE_FORA - 1.6 })),
+      brechas: PORTOES.xs.map((x) => ({ x, z: FUNDO_DE_FORA, vao: 3.2 })),
       patio: {
         x: 0, z: -hz - FORA.profundidade / 2,
         largura: W, profundidade: FORA.profundidade,

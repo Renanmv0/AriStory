@@ -33,6 +33,8 @@ const PORTOES = [-8.5, 0, 8.5];
 /** a parede do fundo, e o pátio jogável que fica atrás dela */
 const FUNDO = -11;
 const PATIO_FUNDO = -25;
+/** a largura da brecha que a sebe do fundo abre no fim de cada caminho */
+const BRECHA = 3.2;
 /** e com o `ESTUFA` da cena do clube */
 const PORTA_NO_JARDIM = { x: 25.6, z: -20.9 };
 
@@ -148,6 +150,26 @@ const invadeOTerreiro = dentro.colisores.filter((c) => {
   const e = envelope(c);
   return Math.abs(e.x - TERREIRO.x) < hx + e.hx && Math.abs(e.z - TERREIRO.z) < hz + e.hz;
 });
+
+/**
+ * AS TRÊS BRECHAS DA SEBE DO FUNDO, no fim de cada caminho de pedra.
+ *
+ * É por elas que o bicho entra no pátio, então elas têm que estar ABERTAS — e
+ * o resto da linha do fundo tem que continuar FECHADO, senão o pátio deixa de
+ * ser um beco e o bicho entra por qualquer lugar.
+ *
+ * A medida é feita na linha da sebe: para cada `x` amostrado ao longo do
+ * fundo, o teste pergunta se existe colisor ali. No eixo de cada portão a
+ * resposta tem que ser "não"; fora das brechas, "sim".
+ */
+const naLinhaDoFundo = (x) =>
+  dentro.colisores.some((c) => {
+    const e = envelope(c);
+    return Math.abs(e.x - x) < e.hx && Math.abs(e.z - PATIO_FUNDO) < e.hz + 0.1;
+  });
+const brechasAbertas = PORTOES.filter((x) => !naLinhaDoFundo(x));
+// e a sebe entre elas continua de pé: amostra no meio de cada trecho cheio
+const trechosFechados = [-13, -4.25, 4.25, 13].filter(naLinhaDoFundo);
 
 /** as bocas dos portões: nada a menos de 1,4 delas */
 const bocas = dentro.pontos?.bocas ?? [];
@@ -306,6 +328,8 @@ console.log('   canteiros:', dentro.canteiros.length,
 console.log('   colisores:', dentro.colisores.length,
   '· invadindo o terreiro:', invadeOTerreiro.length,
   '· bocas entupidas:', bocasEntupidas.length);
+console.log('   brechas abertas na sebe do fundo:', brechasAbertas.length,
+  '· trechos de sebe de pé:', trechosFechados.length);
 for (const a of atravessou) {
   console.log(`3.5 portão x=${a.portao} · saiu para`, JSON.stringify(a.chegou));
 }
@@ -371,6 +395,20 @@ for (const c of tentouContornar) {
 if ((dentro.pontos?.entradas ?? []).length !== 3) {
   problemas.push('a cena não publica os três pontos de entrada do pátio');
 }
+// as entradas ficam do lado de FORA da sebe: bicho que nasce dentro do pátio
+// não dá tempo de ser interceptado, que é a jogada inteira
+if ((dentro.pontos?.entradas ?? []).some((e) => e.z > PATIO_FUNDO)) {
+  problemas.push('os bichos nasceriam DENTRO do pátio: ' + JSON.stringify(dentro.pontos.entradas));
+}
+// as três brechas abertas...
+if (brechasAbertas.length !== 3) {
+  problemas.push(`só ${brechasAbertas.length} das 3 brechas da sebe estão abertas`);
+}
+// ... e a sebe entre elas de pé, senão o pátio deixa de ser um beco
+if (trechosFechados.length !== 4) {
+  problemas.push(`a sebe do fundo tem buraco: só ${trechosFechados.length} de 4 trechos fechados`);
+}
+if (BRECHA < 2.4) problemas.push('a brecha ficou estreita demais para um corpo passar');
 if (!dentro.pecas['portao-de-jardim'] || dentro.pecas['portao-de-jardim'] !== 3) {
   problemas.push(`são ${dentro.pecas['portao-de-jardim'] ?? 0} portões, e não 3`);
 }
