@@ -339,6 +339,33 @@ export const PALETTE = {
   // degrade do toon e vira silhueta chapada
   ferroDoPortao: 0x46594b,
 
+  /*
+   * AS PRAGAS DO JARDIM — os bichos do minigame da estufa.
+   *
+   * ELES SAO UMA FAMILIA DE COR, e isso e requisito de jogo e nao estilo: numa
+   * estufa de verde e terracota, com cinco bichos correndo ao mesmo tempo, o
+   * jogador precisa separar PRAGA de PLANTA num relance. Entao nenhuma cor
+   * daqui existe no jardim — o roxo e acinzentado (a lavanda do canteiro e
+   * clara e saturada), o verde e sujo (a folha e limpa) e o laranja de aviso
+   * das pincas e garras nao aparece em nada que se planta.
+   *
+   * E eles nao usam NENHUMA cor de bicho com nome. O Capy, a Josefina, o Noel
+   * e os outros sao gente; praga e praga.
+   */
+  pragaCorpo: 0x6d5f7a,
+  pragaCorpoEscuro: 0x51465e,
+  pragaBarriga: 0xd6c69a,
+  pragaCasco: 0x8a7f6b,
+  pragaCascoEscuro: 0x6b6152,
+  /** pinca, bico, unha e dente: o laranja que diz "isto machuca a planta" */
+  pragaGarra: 0xe28a3a,
+  pragaGarraEscura: 0xb8641f,
+  pragaOlho: 0xfaf4e6,
+  pragaPupila: 0x211c28,
+  /** o verde sujo do preguipolvo, que e o unico bicho esverdeado da turma */
+  pragaMusgo: 0x62744a,
+  pragaMusgoEscuro: 0x475436,
+
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
   // e a diferenca de tom e o que separa "comida de bicho" de "comida de

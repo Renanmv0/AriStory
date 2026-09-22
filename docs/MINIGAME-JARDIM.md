@@ -172,36 +172,66 @@ sozinhos.
 
 ---
 
-## 5. Os bichos que comem planta
+## 5. Os bichos que comem planta — **os modelos estão construídos**
 
-**Esta lista é uma PROPOSTA nova, e precisa do aval do Renan** — a conversa
-original em que ela apareceu se perdeu, e o que sobrou dela é: capivara sim,
-golfinho não, rato nunca.
+Eles **não são animais de verdade**, e essa foi a decisão do Renan com o Ari: um
+coelho comum na mira do regador dá dó, e dó estraga o jogo. Então são
+**quimeras** — bicho com parte de outro bicho, como as anomalias daqueles jogos,
+mas sem nada de terror. Cada um é uma mistura que se lê em dois segundos, e o
+desenho já diz que ele é malvado: olho semicerrado com sobrancelha brava, garra
+laranja, andar de quem vem comer a horta.
 
-Nenhum deles é bicho nomeado do jogo. Os bichos com nome (Pelusa, Walter,
-Cookie, Gina, Noel, Capy, Estella, Mano, Jean-Luc, Josefina) são **gente**, e
-gente não vira alvo. Os invasores são anônimos de propósito.
+Nenhum deles empresta bicho nomeado do jogo. Pelusa, Walter, Cookie, Gina,
+Noel, Capy, Estella, Mano, Jean-Luc e Josefina são **gente**, e gente não vira
+alvo. Nenhuma peça de bicho já existente foi reaproveitada: as seis são modelos
+novos, em `src/world/bichosDoJardim.ts`.
 
-| bicho | velocidade | encharque | o que ele faz de diferente |
-|---|---|---|---|
-| **lagarta** | muito devagar | 2 | o básico. Vai reto no canteiro mais perto e come |
-| **caracol** | devagaríssimo | 6 | casca. Os dois primeiros jatos escorregam |
-| **pulgão** | rápido | 1 | nunca vem sozinho: entra em nuvem de seis |
-| **gafanhoto** | médio, aos pulos | 2 | pula 2 m de cada vez — o jato passa por baixo no ar |
-| **coelho** | muito rápido | 3 | corre até o canteiro, dá uma mordida e volta correndo |
-| **tatu** | médio | 4 | anda por BAIXO: some do chão e ressurge do outro lado |
-| **pombo** | rápido | 2 | voa. Ignora canteiro e vai direto no que estiver em vaso |
-| **formiga cortadeira** | média | 1 | corta uma folha e tenta LEVAR. Se ela sair com a folha, o canteiro perde um ponto mesmo sem ser comido |
-| **bode** | médio | 8 | come canteiro, come vaso, come a placa. Elite: um por rodada |
-| **capivara** | devagar | 12 | **adora água.** O jato praticamente não incomoda: ela só sai empurrada, a jato queima-roupa. A chefe da quinta onda |
+| bicho | mistura | tier | encharque | o que ele faz de diferente |
+|---|---|---|---|---|
+| **Lagartejo** | lagarta + caranguejo | fraco | 2 | o básico. Vai reto no canteiro mais perto e come. As duas garras são só ameaça |
+| **Gafanhopo** | gafanhoto + sapo | fraco | 2 | pula 2 m de cada vez — o jato passa por baixo enquanto ele está no ar |
+| **Coelhatu** | coelho + tatu | médio | 4 | corre, dá uma mordida e volta. Se levar jato de frente, **enrola** e os placões aguentam |
+| **Tucanguru** | tucano + canguru | médio | 3 | aos saltos longos, e **ignora canteiro**: vai direto no que estiver em vaso ou na prateleira de mudas |
+| **Preguipolvo** | preguiça + polvo | tanque | 10 | lentíssimo e largo. Os braços alcançam **dois canteiros ao mesmo tempo**, e ele é o que mais atrapalha a passagem |
+| **Mãe-Lagartejo** | o lagartejo em tamanho de chefe | chefe | 18 | a chefe. Anda devagar, come um canteiro inteiro de uma vez e **solta lagartejos** pelo caminho |
 
-A capivara é a piada da fase e a lição de design ao mesmo tempo: existe um
-inimigo contra o qual a sua arma inteira não serve, e a resposta é posicionar,
-não atirar. (E ela não é o **Capy**, o salva-vidas — são capivaras diferentes, e
-alguém tem que dizer isso em voz alta numa fala.)
+A coluna `encharque` é a que está no código (`FichaDePraga.encharque`) e vale em
+**jatos do regador básico**. Velocidade e comportamento ainda são projeto: os
+modelos existem, a lógica não.
 
-O elenco cresce como o do Mania: **cada bicho é uma linha numa lista**. Bicho
-novo é uma entrada nova, não uma mexida no motor.
+O elenco cresce como o do Mania: **cada bicho é uma linha numa lista**
+(`PRAGAS`, no mesmo arquivo). Bicho novo é uma entrada nova, não uma mexida no
+motor.
+
+### A silhueta conta o tier antes da forma
+
+Com cinco na tela, ninguém lê "preguiça com braço de polvo" — lê tamanho. Então
+a régua é geométrica, e o teste cobra: **fraco é baixo e rasteiro** (≈ 0,6 de
+altura), **médio é de joelho** (1,0 a 1,25), **o tanque é o mais LARGO** (2,4 de
+envergadura) e **o chefe é o mais ALTO** (1,36) e o mais comprido. Nenhum fraco
+pode chegar à altura de um médio, e o encharque tem que subir junto com o tier —
+senão a ficha mente para o jogador.
+
+A paleta deles é uma família só (`P.praga*`): corpo roxo-acinzentado, barriga
+clara, casco bege, **garra laranja** e o par de olhos creme com pupila quase
+preta. O Preguipolvo é o único fora do roxo — ele é musgo, porque a piada dele é
+parecer moita até se mexer.
+
+### Como olhar para eles
+
+Nenhuma praga está numa cena ainda: sem um script, não haveria como VER o que
+foi feito, e o que não se vê não se ajusta.
+
+```bash
+node scripts/pragas.mjs /tmp/pg   # enfileira as seis e tira retrato de cada uma
+```
+
+Ele mede cada bicho pela **geometria desenhada** (os oito cantos da caixa de
+cada malha levados para o mundo), e não por raio inventado: já foi medindo
+colisor que passaram verde dois defeitos que estavam na tela. Guarda o contrato
+do kit (base em `y = 0`, centrada na origem), o teto de malhas por tier (o jogo
+roda em celular e vão existir muitas ao mesmo tempo), a régua de silhueta acima,
+e que nenhuma encosta na outra na fila.
 
 ---
 
@@ -415,7 +445,8 @@ trabalha rápido") virando geometria.
 | 1 | a skill `aristory-habilidade`, para carta nova sair barato | a fazer |
 | 2 | a quest do adubo (banco → Noel → Josefina → convite) | **pronto** (§2) |
 | 2.5 | as três portas na parede do fundo, e os canteiros puxados para lá | **pronto** (§8) |
-| 3 | o esqueleto do minigame: onda, regador automático, um bicho só (a lagarta) | a fazer |
+| 2.7 | **os modelos das seis pragas**, para poder olhar e ajustar antes da lógica | **pronto** (§5) |
+| 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | a fazer |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
 | 5 | gota, nível e a tela de três cartas | a fazer |
 | 6 | as cartas comuns (as do regador) | a fazer |
@@ -445,6 +476,11 @@ parâmetro `crescimento` do `canteiroDeHorta()`.
 `scenes/villaLobos.ts`, a troca com o Noel e a entrega à Josefina em
 `scenes/clube.ts`, e as duas fichas (`sementes`, `adubo`) em `world/itens.ts`.
 A peça é uma só, `sacoDeGraos()`, em dois jogos de cor.
+
+**As seis pragas** (`src/world/bichosDoJardim.ts`): `lagartejo()`, `gafanhopo()`,
+`coelhatu()`, `tucanguru()`, `preguipolvo()` e `maeLagartejo()`, mais o catálogo
+`PRAGAS` que liga cada uma ao tier e ao encharque. São só os MODELOS — nenhuma
+delas anda, ataca ou aparece numa cena ainda (§5).
 
 **Os testes**: `node scripts/estufa.mjs /tmp/ef` prova que a porta abre nos dois
 sentidos, que o terreiro do meio está mesmo vazio (nenhum colisor dentro dele),

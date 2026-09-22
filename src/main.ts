@@ -6,6 +6,7 @@ import { CLIMAS, Musica } from './audio/musica';
 import { EFEITOS } from './audio/efeitos';
 import { ITENS } from './world/itens';
 import { MEMORIAS } from './world/memoriasData';
+import { PRAGAS } from './world/bichosDoJardim';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
@@ -45,3 +46,7 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 (window as unknown as { aristoryMemorias: unknown }).aristoryMemorias = MEMORIAS.map(
   (m) => ({ id: m.id, titulo: m.titulo }),
 );
+// as pragas da estufa, para o `scripts/pragas.mjs` montar e fotografar as seis
+// sem precisar que elas ja estejam numa cena — elas sao do minigame, que ainda
+// nao existe, e peca que ninguem consegue OLHAR nao da para ajustar
+(window as unknown as { aristoryPragas: unknown }).aristoryPragas = PRAGAS;
