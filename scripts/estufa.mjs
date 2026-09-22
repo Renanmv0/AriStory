@@ -30,6 +30,9 @@ const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome
 const TERREIRO = { x: 0, z: -1.5, largura: 16, profundidade: 13 };
 /** e com o `PORTOES` dela: os tres vaos do fundo, por onde os bichos entram */
 const PORTOES = [-8.5, 0, 8.5];
+/** a parede do fundo, e o pátio jogável que fica atrás dela */
+const FUNDO = -11;
+const PATIO_FUNDO = -25;
 /** e com o `ESTUFA` da cena do clube */
 const PORTA_NO_JARDIM = { x: 25.6, z: -20.9 };
 
@@ -199,16 +202,16 @@ const mediana = ordenados[Math.floor(ordenados.length / 2)];
 const travados = trechos.filter((t) => t < mediana * 0.5);
 
 /**
- * ================================ 3.5. OS TRÊS PORTÕES DEIXAM PASSAR
+ * ================================ 3.5. OS TRÊS PORTÕES DEIXAM SAIR
  *
- * Esta é a asserção que o minigame inteiro depende, e ela não se mede por
- * folga geométrica: mede-se ANDANDO. O jogador nasce em frente a cada portão,
- * anda para o fundo e o teste confere que ele chega na soleira — se uma
- * pilastra, uma soleira de alvenaria ou um colisor de parede estiver no vão,
- * ele para antes e o número denuncia.
+ * A asserção de que o minigame inteiro depende, e ela não se mede por folga
+ * geométrica: mede-se ANDANDO. Uma pilastra ou uma soleira de alvenaria atravessada
+ * no vão só aparece quando alguém tenta passar.
  *
- * O limite de caminhada segura a dupla dentro do vidro (não há cena lá fora),
- * então "passou" quer dizer chegar em `z ≤ -10,0`, que é a soleira do portão.
+ * Agora "passar" quer dizer SAIR: o pátio de trás é jogável (foi pedido do
+ * Renan — interceptar o bicho lá fora enquanto vem pouco, recuar para dentro
+ * quando vier muito), então atravessar o portão tem que levar a dupla para
+ * `z < -11`, do outro lado da parede.
  */
 const atravessou = [];
 for (const x of PORTOES) {
@@ -225,12 +228,35 @@ for (const x of PORTOES) {
    */
   await page.keyboard.down('KeyW');
   await page.keyboard.down('KeyD');
-  for (let i = 0; i < 12; i++) await page.waitForTimeout(700);
+  for (let i = 0; i < 16; i++) await page.waitForTimeout(700);
   await page.keyboard.up('KeyD');
   await page.keyboard.up('KeyW');
   await page.waitForTimeout(400);
   const fim = await onde();
   atravessou.push({ portao: x, chegou: fim });
+}
+
+/**
+ * ========================= 3.6. MAS NÃO DÁ PARA CONTORNAR A ESTUFA
+ *
+ * O pátio é um beco: sebe nos dois lados e no fundo, e a única ligação com a
+ * estufa são os três portões. Era assim que a versão anterior falhava — o
+ * gramado dava a volta no prédio e dava para voltar pela frente por fora.
+ *
+ * O teste põe a dupla lá fora, encosta ela na sebe de cada lado e confere que
+ * ela não passa da quina da estufa.
+ */
+const tentouContornar = [];
+for (const s of [-1, 1]) {
+  await page.evaluate(([sx]) => window.jogo.debugPlace(sx * 12, -18, 0), [s]);
+  await page.waitForTimeout(700);
+  // S+D anda em +X; W+A anda em -X
+  const teclas = s > 0 ? ['KeyS', 'KeyD'] : ['KeyW', 'KeyA'];
+  for (const t of teclas) await page.keyboard.down(t);
+  for (let i = 0; i < 10; i++) await page.waitForTimeout(700);
+  for (const t of teclas) await page.keyboard.up(t);
+  await page.waitForTimeout(400);
+  tentouContornar.push({ lado: s, parou: await onde() });
 }
 await page.screenshot({ path: `${OUT}-portoes.png` });
 
@@ -281,7 +307,10 @@ console.log('   colisores:', dentro.colisores.length,
   '· invadindo o terreiro:', invadeOTerreiro.length,
   '· bocas entupidas:', bocasEntupidas.length);
 for (const a of atravessou) {
-  console.log(`3.5 portão x=${a.portao} · parou em`, JSON.stringify(a.chegou));
+  console.log(`3.5 portão x=${a.portao} · saiu para`, JSON.stringify(a.chegou));
+}
+for (const c of tentouContornar) {
+  console.log(`3.6 encostou na sebe do lado ${c.lado > 0 ? '+X' : '-X'} ·`, JSON.stringify(c.parou));
 }
 console.log('3. travessia do meio: (5.5, 4) →', JSON.stringify(depoisDeAtravessar),
   '· andou', andou.toFixed(2), '· mediana por amostra', mediana,
@@ -320,11 +349,27 @@ if (bocas.length !== 3) problemas.push(`a cena publica ${bocas.length} bocas, e 
 if (bocas.some((b) => b.z > -8)) {
   problemas.push('as bocas saíram da parede do fundo: ' + JSON.stringify(bocas));
 }
-// e o portão tem que deixar passar de verdade, andando
+// e o portão tem que deixar SAIR de verdade, andando
 for (const a of atravessou) {
-  if (a.chegou[1] > -9.4) {
-    problemas.push(`o portão x=${a.portao} não deixa passar (parou em z=${a.chegou[1]})`);
+  if (a.chegou[1] > FUNDO - 0.8) {
+    problemas.push(`o portão x=${a.portao} não deixa sair (parou em z=${a.chegou[1]})`);
   }
+  if (a.chegou[1] < PATIO_FUNDO) {
+    problemas.push(`o pátio não tem fundo: saiu para z=${a.chegou[1]}`);
+  }
+}
+// ... e o pátio não pode dar a volta no prédio
+for (const c of tentouContornar) {
+  if (Math.abs(c.parou[0]) > 14.6) {
+    problemas.push(`dá para contornar a estufa pelo lado ${c.lado > 0 ? '+X' : '-X'} (x=${c.parou[0]})`);
+  }
+  if (c.parou[1] > FUNDO) {
+    problemas.push(`dá para voltar pela frente por fora (z=${c.parou[1]})`);
+  }
+}
+// o pátio precisa estar publicado para o minigame achar os pontos de entrada
+if ((dentro.pontos?.entradas ?? []).length !== 3) {
+  problemas.push('a cena não publica os três pontos de entrada do pátio');
 }
 if (!dentro.pecas['portao-de-jardim'] || dentro.pecas['portao-de-jardim'] !== 3) {
   problemas.push(`são ${dentro.pecas['portao-de-jardim'] ?? 0} portões, e não 3`);

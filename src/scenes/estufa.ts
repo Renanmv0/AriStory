@@ -87,6 +87,29 @@ const PORTOES = { xs: [-8.5, 0, 8.5], vao: 3, altura: 2.6 } as const;
 const CHEGADA = -hz + 1.4;
 
 /**
+ * ======================= O JARDIM DE FORA, atras dos portoes — e JOGAVEL
+ *
+ * A primeira versao dele era so paisagem: grama pintada em volta do predio
+ * inteiro, para o portao nao parecer um buraco na parede. O Renan quis duas
+ * coisas diferentes disso, e as duas mudam o que a area E:
+ *
+ * 1. **Da para SAIR.** A ideia de jogo e dele: enquanto vem pouco bicho, voce
+ *    atravessa o portao e intercepta LA FORA, antes que eles entrem; quando
+ *    vier muito, voce recua e segura do lado de dentro. Isso transforma os
+ *    tres portoes de "spawn" em DECISAO — ficar na frente ou atras deles.
+ * 2. **Nao da a volta.** A grama corria pelos quatro lados, e por ela dava para
+ *    contornar a estufa e voltar pela frente. Agora o verde existe SO atras,
+ *    na direcao das portas, e ele e um patio FECHADO: sebe nos dois lados e no
+ *    fundo. Quem sai por um portao so volta por um portao.
+ *
+ * A profundidade (14) e o que faz caber briga sem virar uma segunda arena: da
+ * para correr e recuar, e nao da para se esconder.
+ */
+const FORA = { profundidade: 14, recuo: 0.9 };
+/** a linha do fundo do patio, onde a sebe fecha */
+const FUNDO_DE_FORA = -hz - FORA.profundidade;
+
+/**
  * ONDE FICAM OS OITO CANTEIROS — e eles mudaram de lugar por causa dos portoes.
  *
  * A FILEIRA DO FUNDO SAIU. Ela ficava em `z = -8,8`, que e exatamente onde os
@@ -171,20 +194,24 @@ export const estufa: SceneDef = {
      * continua — que e tudo o que a ilusao precisa.
      */
     /**
-     * A ORDEM DAS CAMADAS E AO CONTRARIO DO QUE PARECE: o chao de BASE e o
-     * GRAMADO, e a terra batida da estufa e uma mancha por cima dele.
+     * O CHAO SAO DOIS RETANGULOS, e nao um so.
      *
-     * A primeira versao fazia o oposto — terra batida por baixo e grama so
-     * atras dos portoes — e o resultado era um anel de terra pelada em volta
-     * dos outros tres lados do predio, bem visivel pelo vidro. Com o gramado
-     * por baixo, o de fora e jardim POR TODOS OS LADOS de graca, e a terra
-     * aparece exatamente onde a estufa esta.
+     * A versao anterior pintava um gramado gigante por baixo de tudo, e por
+     * isso a grama dava a volta na estufa — dava para contornar o predio e
+     * voltar pela frente. Agora cada lugar tem o seu chao e eles se encostam:
+     * a estufa e terra batida, o patio de tras e grama, e nao existe verde em
+     * lugar nenhum a nao ser atras das portas.
      *
-     * (Decalque nunca briga com decalque: o que decide quem fica por cima e a
-     * ordem de criacao, nao o `y`. Ver a skill de cenario.)
+     * O segundo `ground()` entra como decalque (o `WorldBuilder` empilha assim
+     * quando ja existe chao), o que e exatamente o que se quer: decalque nunca
+     * briga por profundidade com decalque.
      */
-    w.ground({ width: W + 22, depth: D + 30, z: -8, color: P.grass, textura: tapeteDeGrama(9) });
-    w.patch(0, 0, W + 0.5, D + 0.5, P.estufaChao, 0, 0.008, asfalto(1.6));
+    w.ground({ width: W + 1, depth: D + 1, color: P.estufaChao, textura: asfalto(1.6) });
+    w.ground({
+      width: W, depth: FORA.profundidade + 0.6,
+      z: -hz - FORA.profundidade / 2 + 0.3,
+      color: P.grass, textura: tapeteDeGrama(9), y: 0.004,
+    });
 
     w.patch(
       TERREIRO.x, TERREIRO.z, TERREIRO.largura, TERREIRO.profundidade,
@@ -195,12 +222,26 @@ export const estufa: SceneDef = {
     w.patch(0, 1, 2.2, D - 4, P.estufaSaibro, 0, 0.016, calcadaDePedrinha(0.4, 5));
     w.patch(0, TERREIRO.z, W - 1.5, 2.2, P.estufaSaibro, 0, 0.016, calcadaDePedrinha(0.4, 5));
     // e os tres caminhos que saem de cada portao, atravessando o vidro: eles
-    // sao o que amarra o de dentro com o de fora numa coisa so
+    // sao o que amarra o de dentro com o de fora numa coisa so, e agora
+    // atravessam o patio inteiro ate a sebe do fundo
     for (const x of PORTOES.xs) {
-      w.patch(x, -hz - 3.4, 2.2, 11, P.concrete, 0, 0.018, calcadaDePedrinha(0.4, 5));
+      const comprimento = FORA.profundidade + 3;
+      w.patch(
+        x, -hz - FORA.profundidade / 2 + 1, 2.2, comprimento,
+        P.concrete, 0, 0.018, calcadaDePedrinha(0.4, 5),
+      );
     }
 
-    w.setBounds(-hx + 0.8, -hz + 0.9, hx - 0.8, hz - 0.8);
+    /**
+     * O LIMITE DE CAMINHADA ABRACA OS DOIS: a estufa E o patio de tras.
+     *
+     * Quem segura a dupla dentro da estufa nao e mais o limite — sao as
+     * PAREDES. O limite so fecha a caixa por fora, e a unica ligacao entre os
+     * dois lados sao os tres portoes: a parede de `-Z` tem colisor em todo
+     * lugar menos nos vaos, e as paredes laterais acabam em `z = -11`, entao o
+     * patio de tras e um beco sem saida de proposito.
+     */
+    w.setBounds(-hx + FORA.recuo, FUNDO_DE_FORA + FORA.recuo, hx - FORA.recuo, hz - 0.8);
 
     // -------------------------------------------------------------- as paredes
     /**
@@ -277,33 +318,60 @@ export const estufa: SceneDef = {
     }
 
     /**
-     * ==================================== O JARDIM DE FORA, visto pelo vidro
+     * ============================ O PATIO DE TRAS — e ele e um lugar, nao uma
+     * paisagem
      *
-     * Nada aqui e alcancavel: o limite de caminhada para dentro da estufa. Sao
-     * silhuetas, e a unica funcao delas e dar PROFUNDIDADE ao que se ve pelos
-     * tres portoes — sem elas o de fora e um gramado chapado ate o horizonte,
-     * e o portao volta a parecer um buraco na parede.
+     * Da para sair para ele pelos tres portoes e voltar por eles. E fechado nos
+     * tres outros lados por sebe, entao quem sai nao contorna a estufa: e um
+     * beco de proposito. A ideia de jogo e do Renan — interceptar o bicho LA
+     * FORA enquanto vem pouco, e recuar para dentro quando vier muito.
      *
-     * As arvores ficam LONGE (14 a 22 m) e fora do eixo dos portoes: uma
-     * arvore no meio do vao taparia justamente o que ela deveria emoldurar.
+     * A SEBE E MAIS ALTA QUE A DO CLUBE (1,6 contra 1,05) porque aqui ela e
+     * LIMITE, e nao enfeite: quem bate nela precisa entender que acabou o
+     * terreno. E ela vai ate a quina da estufa nos dois lados, sem vao nenhum.
      */
+    const ladoDoPatio = FORA.profundidade;
+    for (const sx of [-1, 1] as const) {
+      w.add(w.place(
+        sebe(ladoDoPatio, 1.6), sx * hx, 0, -hz - ladoDoPatio / 2, Math.PI / 2,
+      ));
+      w.blockBox(sx * hx, -hz - ladoDoPatio / 2, 0.55, ladoDoPatio / 2);
+    }
+    w.add(w.place(sebe(W + 1.1, 1.6), 0, 0, FUNDO_DE_FORA));
+    w.blockBox(0, FUNDO_DE_FORA, (W + 1.1) / 2, 0.55);
+
+    /**
+     * O QUE CRESCE NO PATIO. Ele e chao de briga agora, entao a regra e a mesma
+     * do terreiro de dentro: **os tres corredores dos portoes ficam limpos**.
+     * Arvore e moita vao para as faixas entre um corredor e outro, e para as
+     * quinas — que e onde elas emolduram o vao em vez de tapa-lo.
+     */
+    const noCorredor = (x: number): boolean =>
+      PORTOES.xs.some((px) => Math.abs(x - px) < 2.2);
     for (const [x, z, tipo, e] of [
-      [-17.5, -15.5, 'redonda', 1.15], [-4.2, -18.5, 'pinheiro', 1.0],
-      [4.6, -16.2, 'redonda', 1.25], [16.8, -19.5, 'pinheiro', 1.05],
-      [-11.5, -22, 'redonda', 0.9], [11.2, -23, 'redonda', 1.1],
+      [-12.6, -16.5, 'redonda', 1.1], [-4.4, -20.5, 'pinheiro', 0.95],
+      [4.4, -17.2, 'redonda', 1.15], [12.4, -21, 'pinheiro', 1.0],
+      [-4.6, -14.2, 'redonda', 0.85], [4.8, -23, 'redonda', 1.05],
     ] as const) {
+      if (noCorredor(x)) continue;
       w.add(w.place(tree(tipo, e, ((x + z) / 13) % 1), x, 0, z));
+      w.blockCircle(x, z, 0.4);
     }
     for (const [x, z, e] of [
-      [-12.6, -13.6, 1.1], [-6.2, -14.2, 0.85], [2.4, -13.4, 0.95],
-      [12.2, -14.4, 1.2], [-1.6, -16.8, 0.8], [7.8, -17.4, 0.9],
-      [-15.5, -12.8, 0.9], [15.8, -13.2, 1.0],
+      [-13.4, -12.9, 1.0], [-4.9, -12.6, 0.85], [4.5, -12.8, 0.95],
+      [13.2, -13.4, 1.1], [-12.8, -22.6, 0.9], [12.6, -17.6, 1.0],
+      [-4.3, -24.1, 0.8], [13.6, -24.2, 0.95], [-13.2, -18.8, 0.85],
     ] as const) {
+      if (noCorredor(x)) continue;
       w.add(w.place(bush(e), x, 0, z, (x * z) % 1));
+      w.blockCircle(x, z, 0.3 * e);
     }
-    // a sebe do fundo, que fecha a vista: sem ela o gramado some num vazio
-    for (const x of [-16, -8, 0, 8, 16]) {
-      w.add(w.place(sebe(8.2, 1.3), x, 0, -hz - 14.5));
+    // capim solto nas faixas livres: e o que impede o gramado de virar carpete
+    for (let i = 0; i < 22; i++) {
+      const x = -13.6 + ((i * 7.3) % 27);
+      const z = -hz - 1.6 - ((i * 4.7) % (FORA.profundidade - 3));
+      if (noCorredor(x)) continue;
+      w.add(w.place(capim(1.1 + ((i * 0.31) % 1) * 0.5), x, 0, z));
     }
 
     // ---------------------------------------------------------------- a porta
@@ -556,7 +624,16 @@ export const estufa: SceneDef = {
       oficina: { x: bancada.position.x, z: bancada.position.z },
       bancadaDeMudas: { x: bancadaDois.position.x, z: bancadaDois.position.z },
       canteiros: CANTEIROS.map(({ x, z }) => ({ x, z })),
+      /** um passo para DENTRO de cada portao */
       bocas: PORTOES.xs.map((x) => ({ x, z: CHEGADA })),
+      /** e um ponto no fundo do patio alinhado com cada portao: e de LA que o
+       *  bicho deve aparecer, para dar tempo de interceptar antes do vao */
+      entradas: PORTOES.xs.map((x) => ({ x, z: FUNDO_DE_FORA + 1.6 })),
+      patio: {
+        x: 0, z: -hz - FORA.profundidade / 2,
+        largura: W, profundidade: FORA.profundidade,
+      },
+      portoes: PORTOES.xs.map((x) => ({ x, z: -hz, vao: PORTOES.vao })),
     };
   },
 };
