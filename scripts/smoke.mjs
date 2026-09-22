@@ -32,6 +32,7 @@ const cenas = [
   ['clube', 'portaria', 3000],
   ['clube', 'beira', 3000],
   ['lojinha', '', 3000],
+  ['estufa', '', 3000],
 ];
 
 for (const [cena, entrada, espera] of cenas) {

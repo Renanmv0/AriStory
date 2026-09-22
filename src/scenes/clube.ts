@@ -4,7 +4,7 @@ import type { GameAPI, SceneDef } from '../core/types';
 import { flat, toon } from '../core/materials';
 import {
   bin, bleachers, bus, busStop, bush, cadeiraDeSalvaVidas, canteiro, canteiroComPalmeira,
-  canteiroDeHorta, planta, regador, terraRemexida, vasoDePlanta,
+  canteiroDeHorta, estufa, planta, regador, terraRemexida, vasoDePlanta,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
   guarita, meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante, sebe,
@@ -158,6 +158,9 @@ export const clube: SceneDef = {
     // quem volta do Mania de Churrasco sai pela porta de serviço, atrás do
     // prédio: um passo para fora dela, já de costas para a parede
     'dos-fundos-do-restaurante': { x: -14.6, z: -18.9, facing: Math.PI },
+    // quem volta da estufa sai um passo a frente da porta dela, ja de costas
+    // para o vidro e olhando o caminho do jardim
+    'da-estufa': { x: 25.6, z: -20.9, facing: 0 },
   },
 
   build(w) {
@@ -213,7 +216,7 @@ export const clube: SceneDef = {
      * concreto e já marca onde as próximas atrações vão morar. É decalque: entra
      * DEPOIS do deck, então aparece por cima dele sem brigar por profundidade.
      */
-    w.patch(23, -14, 12, 20, P.grass, 0, 0.018, tapeteDeGrama(9));
+    w.patch(23, -14.5, 12, 21, P.grass, 0, 0.018, tapeteDeGrama(9));
     // A RUA, na borda esquerda: o ônibus não podia continuar estacionado em
     // cima do piso do clube. Vem por cima do deck e da grama, na mesma ordem do
     // Villa-Lobos — calçada, guia, asfalto — para os dois lados da viagem
@@ -1099,7 +1102,7 @@ export const clube: SceneDef = {
 
     // o caminho de pedrinha entre as duas colunas de canteiros. Decalque, então
     // entra por cima da grama sem brigar por profundidade.
-    w.patch(JARDIM.caminho, -13.8, 1.3, 15, P.concrete, 0, 0.022, calcadaDePedrinha(0.4, 5));
+    w.patch(JARDIM.caminho, -14.5, 1.3, 16.4, P.concrete, 0, 0.022, calcadaDePedrinha(0.4, 5));
 
     /**
      * OS CANTEIROS, quatro fileiras em duas colunas. Cada um com uma espécie
@@ -1124,9 +1127,13 @@ export const clube: SceneDef = {
      * lavanda alinhada em `z = -21,2`, sem mureta e sem colisor: são 30 cm de
      * altura, e cercar isso faria o jardim virar um labirinto.
      */
-    for (let i = 0; i < 5; i++) {
-      const x = 22.8 + i * 1.4;
-      w.add(w.place(planta('lavanda', 1.15, (i * 0.27) % 1), x, 0, -21.2));
+    //
+    // A FILEIRA ABRE NO MEIO desde que a estufa entrou: o caminho de pedrinha
+    // passa por aqui para chegar na porta dela, e "passagem tem eixo, e o eixo
+    // fica vazio" (skill de cenario). Duas de cada lado, e nada em cima do
+    // `x = 25,6`.
+    for (const x of [22.7, 23.8, 27.4, 28.5]) {
+      w.add(w.place(planta('lavanda', 1.15, ((x - 22) * 0.31) % 1), x, 0, -21.2));
     }
     // e uma fileira de suculentas na frente, que é a borda baixa do jardim
     for (let i = 0; i < 6; i++) {
@@ -1152,6 +1159,38 @@ export const clube: SceneDef = {
     // o regador largado no meio do caminho: é o que diz que alguém TRABALHA
     // aqui, e não que o jardim se cuida sozinho
     w.add(w.place(regador(), JARDIM.caminho + 0.4, 0, -17.6, 0.6));
+
+    /**
+     * ============================================ A ESTUFA, no fundo do jardim
+     *
+     * A casca de vidro fecha o caminho de pedrinha, e a porta dela leva para a
+     * cena `estufa` — o jardim grande da Josefina, onde o roguelite vai morar
+     * (o plano inteiro está em `docs/MINIGAME-JARDIM.md`).
+     *
+     * ONDE ELA COUBE. Entre a última fileira de lavanda (`z = -21,2`) e o
+     * limite de caminhada do clube (`z = -25,1`): 3,2 de profundidade e 6 de
+     * largura, centrada em `z = -23,4`. Atrás dela só tem a sebe, que é o
+     * lugar certo para pôr um prédio de 3,3 de altura — ele come uns 5 metros
+     * de chão na direção da câmera, e ali não há chão nenhum para comer.
+     *
+     * O EIXO DO CAMINHO FICOU VAZIO para ela: a lavanda do meio saiu e as duas
+     * jardineiras que ladeiam a boca do caminho viraram, sem mudar de lugar, o
+     * par de vasos da entrada.
+     *
+     * A PORTA NÃO É UM VÃO DE VERDADE: quem entra troca de cena, então o
+     * colisor cobre a casca inteira e a interação fica um passo à frente dela.
+     */
+    const ESTUFA = { x: JARDIM.caminho, z: -23.4, largura: 6, profundidade: 3.2 };
+    const casca = w.add(w.place(estufa(ESTUFA.largura, ESTUFA.profundidade), ESTUFA.x, 0, ESTUFA.z));
+    w.blockBox(ESTUFA.x, ESTUFA.z, ESTUFA.largura / 2, ESTUFA.profundidade / 2);
+
+    w.door({
+      x: ESTUFA.x, z: -20.9,
+      to: 'estufa', entry: 'do-jardim',
+      label: 'Entrar na estufa', icon: '🪴',
+      highlight: casca.userData.porta as THREE.Object3D,
+      radius: 1.8,
+    });
 
     /**
      * ============================================ O OSSO ENTERRADO NO JARDIM

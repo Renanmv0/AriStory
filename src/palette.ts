@@ -312,6 +312,23 @@ export const PALETTE = {
   florCamelia: 0xf2909f,
   tomateMaduro: 0xd8402f,
 
+  // A ESTUFA DA JOSEFINA, o jardim grande no fundo do jardim do clube.
+  // A estrutura e branca com um fio de verde: estufa de verdade e aluminio
+  // pintado, e branco puro aqui brigaria com o metal da piscina. O vidro e
+  // esverdeado porque ele esta sempre com planta do outro lado.
+  estufaEstrutura: 0xeaf1e6,
+  estufaVidro: 0xd2ece0,
+  estufaBase: 0xbdaa92,
+  // por dentro: terra batida no geral, saibro no terreiro do meio. Sao duas
+  // cores proximas de proposito — o terreiro precisa LER como area limpa sem
+  // virar uma mancha clara no meio da estufa.
+  estufaChao: 0xa8906f,
+  estufaSaibro: 0xc5ac87,
+  // o tonel de agua do canto: chapa galvanizada, e a agua parada dentro
+  tonelChapa: 0x8b9aa2,
+  tonelAro: 0x6d7c85,
+  tonelAgua: 0x4f9fbd,
+
   // a Josefina, a tartaruga jardineira. O casco e verde-oliva com as placas
   // (escudos) mais escuras; a pele e um verde mais claro e amarelado.
   tartarugaCasco: 0x6d8a3f,

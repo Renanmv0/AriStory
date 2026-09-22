@@ -31,8 +31,11 @@ já está respondido ali. `ARQUITETURA.md` é o motor por dentro.
 `CONTEXTO-INTEGRAL.md` e `ROADMAP.md` são um retrato do projeto e do que
 falta — **úteis para se situar rápido, mas podem estar desatualizados**; o
 `git log` é a fonte da verdade para o que mudou por último.
-`MINIGAME-RESTAURANTE.md` é o plano do turno do Mania de Churrasco: projeto,
-não código — nada dele está no jogo até o `git log` dizer que está.
+`MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
+turno do Mania de Churrasco e o roguelite da estufa da Josefina. São projeto,
+não código: nada deles está no jogo até o `git log` dizer que está, e cada um
+marca no próprio texto o que já foi construído. Ajuste do minigame começa no
+arquivo dele, não no código.
 
 ## Invariantes
 
@@ -118,6 +121,7 @@ node scripts/cookie.mjs  /tmp/ck    # o Cookie: patrulha ao lado da cabine, vira
 node scripts/lojinha.mjs /tmp/lj    # a boutique inteira: a ronda da Estella, a escada rolante, o espelho refletindo, e a arara vendendo (provar, faltar dinheiro, comprar e ir pro guarda-roupa)
 node scripts/xadrez.mjs  /tmp/xa    # o xadrez da Estella: 14 posicoes de regra, 300 partidas de fuzz e o tabuleiro na tela
 node scripts/estella.mjs /tmp/es    # a Estella: fica no posto, aparece inteira fora do toldo, da o biscoitinho pros dois e tem o xadrez montado
+node scripts/estufa.mjs  /tmp/ef    # a estufa da Josefina: a porta nos dois sentidos, o terreiro vazio e as quatro bocas livres
 node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena, a mesinha servida pelo Mano, o deslize e a patinacao
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```

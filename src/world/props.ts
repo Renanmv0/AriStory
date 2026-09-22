@@ -5912,3 +5912,367 @@ export function portaRetrato(
 
   return g;
 }
+
+/* =========================================================================
+ * A ESTUFA DA JOSEFINA
+ *
+ * A casca de fora, plantada no fundo do jardim do clube, e as pecas de dentro
+ * (o arco, a bancada e o tonel). O plano do que vai acontecer la dentro esta em
+ * `docs/MINIGAME-JARDIM.md`.
+ * ========================================================================= */
+
+/**
+ * A CASCA DA ESTUFA vista de fora — um tunel de vidro com soleira de alvenaria
+ * e porta dupla na face `+Z`.
+ *
+ * POR QUE TUNEL, e nao duas aguas. Estufa de duas aguas precisa de cumeeira,
+ * empena e caimento, e a esta distancia de camera as tres coisas somem: sobra
+ * uma caixa. O arco lê de longe, com uma silhueta que nada mais no jogo tem.
+ *
+ * A PORTA FICA EM `+Z` porque e para la que a camera olha (ver a skill de
+ * cenario): virada para o outro lado, a estufa mostraria so o fundo liso e quem
+ * entra sumiria atras dela.
+ *
+ * O `userData.porta` e o grupo da porta, para a cena poder usar de `highlight`
+ * sem saber como ela foi feita.
+ */
+export function estufa(largura = 6, profundidade = 3.2, vaoDaPorta = 1.3): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'estufa';
+
+  const hx = largura / 2;
+  const hz = profundidade / 2;
+  /** onde a parede reta acaba e o arco comeca */
+  const BEIRAL = 1.7;
+  const raio = hz;
+
+  const estrutura = toon(P.estufaEstrutura);
+  const vidro = toon(P.estufaVidro, { glow: 0.1, doubleSide: true });
+
+  // ------------------------------------------------------------- a soleira
+  // Meio palmo mais larga que a estufa: ela e o degrau que toda estufa tem, e
+  // afasta o vidro do chao — vidro terminando no piso serrilha na beirada.
+  const soleira = new THREE.Mesh(
+    new THREE.BoxGeometry(largura + 0.24, 0.26, profundidade + 0.24),
+    toon(P.estufaBase),
+  );
+  soleira.position.y = 0.13;
+  g.add(soleira);
+
+  /** Um pano de vidro liso, com a base MERGULHADA na soleira. */
+  const pano = (larg: number, prof: number, x: number, z: number): void => {
+    const alto = BEIRAL - 0.2;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(larg, alto, prof), vidro);
+    m.position.set(x, 0.2 + alto / 2, z);
+    g.add(m);
+  };
+  pano(largura - 0.2, 0.06, 0, -hz);           // fundo
+  pano(0.06, profundidade - 0.2, -hx, 0);      // esquerda
+  pano(0.06, profundidade - 0.2, hx, 0);       // direita
+  // a frente, partida em dois pelo vao da porta
+  const meioPano = (largura - 0.2 - vaoDaPorta) / 2;
+  for (const s of [-1, 1] as const) {
+    pano(meioPano, 0.06, s * (vaoDaPorta / 2 + meioPano / 2), hz);
+  }
+
+  /**
+   * MONTANTES E VIGAS, e a conta que impede o serrilhado.
+   *
+   * Os tres se cruzam nos cantos, e a primeira versao deu a todos a MESMA
+   * secao de 12 cm: montante, viga do Z e viga do X ficavam com as laterais
+   * exatamente no mesmo plano, com area de sobra em comum — 16 dos 18 pares
+   * que o `zfighting.mjs` acusou saiam dai. A saida nao e afastar as pecas
+   * (elas TEM que se encontrar no canto), e sim dar a cada uma uma espessura
+   * diferente, para nenhuma face cair no plano da outra:
+   *
+   *   montante  0,15  ·  viga do Z  0,11  ·  viga do X  0,12 x 0,13
+   *
+   * As alturas tambem sao desencontradas: montante 0,14 a 1,76; panos 0,2 a
+   * 1,7; viga do Z 1,665 a 1,775; viga do X 1,70 a 1,82.
+   */
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      const poste = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.62, 0.15), estrutura);
+      poste.position.set(sx * hx, 0.95, sz * hz);
+      g.add(poste);
+    }
+    const viga = new THREE.Mesh(
+      new THREE.BoxGeometry(0.11, 0.11, profundidade - 0.1), estrutura,
+    );
+    viga.position.set(sx * hx, BEIRAL + 0.02, 0);
+    g.add(viga);
+  }
+  for (const sz of [-1, 1] as const) {
+    const viga = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.1, 0.12, 0.13), estrutura);
+    viga.position.set(0, BEIRAL + 0.06, sz * hz);
+    g.add(viga);
+  }
+
+  /**
+   * O ARCO, em sete panos.
+   *
+   * Um ponto do arco no angulo `a` (0 no beiral de tras, PI no da frente) fica
+   * em `z = -raio·cos a`, `y = BEIRAL + raio·sen a`. A tangente ali e
+   * `(sen a, cos a)` em `(z, y)`, e um giro de `a - PI/2` no eixo X e
+   * exatamente o que deita o pano nessa direcao.
+   */
+  const PASSOS = 7;
+  for (let i = 0; i < PASSOS; i++) {
+    const a0 = (Math.PI * i) / PASSOS;
+    const a1 = (Math.PI * (i + 1)) / PASSOS;
+    const am = (a0 + a1) / 2;
+    const corda = 2 * raio * Math.sin((a1 - a0) / 2);
+    const painel = new THREE.Mesh(
+      new THREE.BoxGeometry(largura - 0.2, 0.05, corda + 0.01), vidro,
+    );
+    painel.position.set(0, BEIRAL + Math.sin(am) * raio, -Math.cos(am) * raio);
+    painel.rotation.x = am - Math.PI / 2;
+    g.add(painel);
+  }
+  // as caibras nas emendas, um pouco mais largas que os panos para as pontas
+  // nao caírem no mesmo plano
+  for (let i = 0; i <= PASSOS; i++) {
+    const a = (Math.PI * i) / PASSOS;
+    const caibro = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.04, 0.09, 0.09), estrutura);
+    caibro.position.set(0, BEIRAL + Math.sin(a) * raio, -Math.cos(a) * raio);
+    g.add(caibro);
+  }
+  // as duas meias-luas que fecham as pontas do tunel
+  for (const sx of [-1, 1] as const) {
+    const tampa = new THREE.Mesh(new THREE.CircleGeometry(raio, 16, 0, Math.PI), vidro);
+    tampa.position.set(sx * hx, BEIRAL, 0);
+    tampa.rotation.y = (sx * Math.PI) / 2;
+    g.add(tampa);
+  }
+
+  // ---------------------------------------------------------------- a porta
+  const porta = new THREE.Group();
+  /**
+   * O BATENTE AVANCA 4 CM do pano de vidro, e nao 2.
+   *
+   * Com 2 cm e 10 de espessura ele comecava exatamente em `hz - 0,03`, que e
+   * onde o pano da frente tambem comeca — as duas faces olhando para fora, no
+   * mesmo plano, com meio palmo de area em comum. Eram os dois pares que
+   * sobravam depois de arrumar os montantes.
+   */
+  const zP = hz + 0.04;
+  const batente = new THREE.Mesh(
+    new THREE.BoxGeometry(vaoDaPorta + 0.2, BEIRAL - 0.06, 0.12), estrutura,
+  );
+  batente.position.set(0, 0.17 + (BEIRAL - 0.06) / 2, zP);
+  porta.add(batente);
+  for (const s of [-1, 1] as const) {
+    const folha = new THREE.Mesh(
+      new THREE.BoxGeometry(vaoDaPorta / 2 - 0.06, BEIRAL - 0.3, 0.06), vidro,
+    );
+    folha.position.set(s * (vaoDaPorta / 4 + 0.01), 0.24 + (BEIRAL - 0.3) / 2, zP + 0.04);
+    porta.add(folha);
+    const puxador = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.022, 0.022, 0.42, 6), toon(P.metalGrey),
+    );
+    puxador.position.set(s * 0.12, 1.02, zP + 0.1);
+    porta.add(puxador);
+  }
+  g.add(porta);
+  g.userData.porta = porta;
+
+  return g;
+}
+
+/**
+ * UM ARCO DE ESTUFA, para usar POR DENTRO do galpao.
+ *
+ * Ele existe porque a cena de dentro nao pode ter teto: numa camera isometrica
+ * um teto sobre 32 x 24 tapa o cenario inteiro. O arco resolve por sugestao —
+ * duas pernas e uma meia-lua de cantoneira, sem pano de vidro nenhum. Quem olha
+ * lê "estufa"; a camera continua vendo o chao.
+ *
+ * O ARCO E ELIPTICO, e nao meio circulo. Num vao de 22 o meio circulo subiria
+ * 11 metros — a estufa viraria uma catedral. Separando o vao da altura dá para
+ * achatar o arco e manter a leitura.
+ *
+ * @param vao    distancia entre as duas pernas (no eixo Z local)
+ * @param altura altura do topo do arco
+ * @param perna  ate onde as pernas sobem retas antes de a curva comecar
+ */
+export function arcoDeEstufa(
+  vao = 22,
+  altura = 5.4,
+  perna = 2.2,
+  cor: number = P.estufaEstrutura,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'arco-de-estufa';
+  const mat = toon(cor);
+  const raio = vao / 2;
+  const flecha = Math.max(0.4, altura - perna);
+  const GROSSO = 0.16;
+
+  for (const sz of [-1, 1] as const) {
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(GROSSO, perna, GROSSO), mat);
+    pe.position.set(0, perna / 2, sz * raio);
+    g.add(pe);
+  }
+
+  /**
+   * A curva, em dez segmentos retos. Cada segmento e posicionado pelo MEIO dos
+   * seus dois extremos e girado para apontar de um ao outro — com a elipse nao
+   * dá para usar a conta de corda do circulo, e medir os extremos de verdade
+   * funciona para qualquer curva.
+   */
+  const PASSOS = 10;
+  const ponto = (a: number): [number, number] => [
+    perna + Math.sin(a) * flecha,   // y
+    -Math.cos(a) * raio,            // z
+  ];
+  for (let i = 0; i < PASSOS; i++) {
+    const [y0, z0] = ponto((Math.PI * i) / PASSOS);
+    const [y1, z1] = ponto((Math.PI * (i + 1)) / PASSOS);
+    const comp = Math.hypot(y1 - y0, z1 - z0);
+    const seg = new THREE.Mesh(
+      new THREE.BoxGeometry(GROSSO * 0.85, GROSSO * 0.85, comp + 0.02), mat,
+    );
+    seg.position.set(0, (y0 + y1) / 2, (z0 + z1) / 2);
+    // o +Z local vai parar em `(-sen θ, cos θ)` no par `(y, z)` do mundo
+    seg.rotation.x = Math.atan2(-(y1 - y0), z1 - z0);
+    g.add(seg);
+  }
+  return g;
+}
+
+/**
+ * A BANCADA DE JARDINAGEM: tabua de trabalho com prateleira embaixo, vasinhos
+ * vazios e um saco de terra.
+ *
+ * E o movel que diz que aquele lugar e OFICINA, e nao so jardim. Sem ele a
+ * estufa vira um canteiro grande.
+ */
+export function bancadaDeJardinagem(largura = 2.4): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'bancada-de-jardinagem';
+  const madeira = toon(P.wood);
+  const escura = toon(P.woodDark);
+  const ALTO = 0.88;
+
+  // as quatro pernas
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      const perna = new THREE.Mesh(new THREE.BoxGeometry(0.09, ALTO, 0.09), escura);
+      perna.position.set(sx * (largura / 2 - 0.1), ALTO / 2, sz * 0.32);
+      g.add(perna);
+    }
+  }
+  // a prateleira de baixo, e o tampo por cima (alturas e larguras diferentes,
+  // para nenhuma face de um cair no plano do outro)
+  const prateleira = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.3, 0.05, 0.62), escura);
+  prateleira.position.y = 0.26;
+  g.add(prateleira);
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.08, 0.78), madeira);
+  tampo.position.y = ALTO + 0.04;
+  g.add(tampo);
+  // o rebordo do fundo, que e o que segura a terra em cima da tabua
+  const rebordo = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.04, 0.16, 0.05), escura);
+  rebordo.position.set(0, ALTO + 0.16, -0.36);
+  g.add(rebordo);
+
+  // os vasinhos vazios em cima, de tamanhos desencontrados
+  /**
+   * OS VASINHOS EM CIMA. Eles ja foram pequenos demais: a 0,15 de altura, na
+   * camera isometrica, viravam manchas cor de tijolo no tampo. Agora tem 22 a
+   * 30 cm e dois deles ja estao com muda — vaso vazio ao lado de vaso plantado
+   * e o que diz que a bancada esta NO MEIO de um trabalho.
+   */
+  for (let i = 0; i < 4; i++) {
+    const alto = 0.22 + (i % 3) * 0.04;
+    const raio = alto * 0.42;
+    const vaso = new THREE.Mesh(
+      new THREE.CylinderGeometry(raio, raio * 0.74, alto, 10), toon(P.barroDoVaso),
+    );
+    const x = -largura / 2 + 0.4 + i * 0.5;
+    const z = 0.02 + (i % 2) * 0.18;
+    vaso.position.set(x, ALTO + 0.08 + alto / 2, z);
+    g.add(vaso);
+    // o colarinho, mais largo que o corpo para as duas faces nao coincidirem
+    const colar = new THREE.Mesh(
+      new THREE.CylinderGeometry(raio * 1.1, raio * 1.1, 0.045, 10), toon(P.barroDaBorda),
+    );
+    colar.position.set(x, ALTO + 0.08 + alto - 0.018, z);
+    g.add(colar);
+    if (i % 2 === 0) {
+      const muda = planta(i === 0 ? 'suculenta' : 'alface', 0.9, (i * 0.37) % 1);
+      muda.position.set(x, ALTO + 0.08 + alto - 0.04, z);
+      g.add(muda);
+    }
+  }
+  // o saco de terra na prateleira: um paralelepipedo amassado de pano
+  const saco = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.26, 0.44), toon(P.terraDeCanteiro));
+  saco.position.set(largura / 2 - 0.5, 0.42, 0);
+  saco.rotation.y = 0.18;
+  g.add(saco);
+
+  return g;
+}
+
+/**
+ * O TONEL DE AGUA DA CHUVA, de chapa galvanizada com dois aros e uma torneira.
+ *
+ * No plano do minigame (`docs/MINIGAME-JARDIM.md` §4) e aqui que o regador
+ * reabastece — por isso ele e alto e escuro: precisa ser achavel de longe, no
+ * meio de uma estufa clara.
+ */
+export function tonelDeAgua(altura = 1.15): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'tonel-de-agua';
+  const raio = altura * 0.38;
+
+  /**
+   * O CORPO PARA 12 CM ANTES DA BOCA, e nao na boca.
+   *
+   * `CylinderGeometry` vem com tampa em cima, e a tampa escondia a agua — o
+   * tonel aparecia como um cilindro de chapa fechado. Encurtando o corpo, a
+   * agua fica ACIMA da tampa e a vista de cima (a camera olha em 34 graus) ve
+   * dentro dele.
+   */
+  const corpo = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio, raio * 0.94, altura - 0.12, 16), toon(P.tonelChapa),
+  );
+  corpo.position.y = (altura - 0.12) / 2;
+  g.add(corpo);
+  // os dois aros, MAIS LARGOS que o corpo — encostados nele por fora, e nao
+  // embutidos, para nao dividirem face com a chapa
+  for (const y of [altura * 0.24, altura * 0.76]) {
+    const aro = new THREE.Mesh(
+      new THREE.CylinderGeometry(raio * 1.05, raio * 1.05, 0.07, 16), toon(P.tonelAro),
+    );
+    aro.position.y = y;
+    g.add(aro);
+  }
+  // a agua parada dentro, um dedo abaixo da boca
+  const agua = new THREE.Mesh(
+    new THREE.CylinderGeometry(raio * 0.93, raio * 0.93, 0.04, 16),
+    toon(P.tonelAgua, { glow: 0.16 }),
+  );
+  agua.position.y = altura - 0.1;
+  g.add(agua);
+  // a boca: um aro por fora, tapando a emenda entre a chapa e a agua
+  const boca = new THREE.Mesh(
+    new THREE.TorusGeometry(raio * 0.99, 0.038, 6, 18), toon(P.tonelAro),
+  );
+  boca.position.y = altura - 0.09;
+  boca.rotation.x = Math.PI / 2;
+  g.add(boca);
+  // a torneirinha de baixo
+  const bico = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.03, 0.2, 8), toon(P.metalGrey),
+  );
+  bico.position.set(0, 0.2, raio * 0.86);
+  bico.rotation.x = Math.PI / 2;
+  g.add(bico);
+  const volante = new THREE.Mesh(
+    new THREE.TorusGeometry(0.06, 0.017, 6, 12), toon(P.tonelAro),
+  );
+  volante.position.set(0, 0.31, raio * 0.86);
+  g.add(volante);
+
+  return g;
+}
