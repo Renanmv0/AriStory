@@ -233,8 +233,12 @@ const prompt = async () =>
  * atravessando a porta antes da primeira fala. Sem esta espera o teste lia
  * "nenhuma fala", e depois reprovava a flag e o destravamento — três falhas,
  * todas pela mesma pressa.
+ *
+ * O limite é generoso (40 s de relógio de parede) porque o relógio de JOGO no
+ * Chromium sem tela anda bem mais devagar que o real: os quatro segundos de
+ * caminhada da Josefina podem levar três vezes isso aqui dentro.
  */
-const esperarFala = async (segundos = 16) => {
+const esperarFala = async (segundos = 40) => {
   for (let i = 0; i < segundos * 2; i++) {
     if (await page.locator('.dialogue.show').count()) return true;
     await page.waitForTimeout(500);

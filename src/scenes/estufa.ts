@@ -1002,10 +1002,25 @@ export const estufa: SceneDef = {
        * Duas passadas e o suficiente para ela ESTAR na estufa, que e o que a
        * entrada precisa dizer. Quem se aproxima na conversa e a camera.
        */
-      await josefina.irPara(PORTA.x, PORTA.z - 2.2, 0.8);
+      await josefina.irPara(PORTA.x, PORTA.z - 2.2, 1.2);
       const eu = api.playerPosition();
       josefina.encarar(eu.x, eu.z);
-      api.setZoom(13);
+
+      /**
+       * A CAMERA ENQUADRA OS DOIS LADOS DA CONVERSA, e nao so quem fala.
+       *
+       * Focada na Josefina, a foto saia com a tartaruga na porta e mais nada: a
+       * dupla estava no canteiro onde regou, a doze metros dali, e as falas
+       * dela vinham de fora da tela. Uma ancora no MEIO do caminho, com o zoom
+       * tirado da distancia, poe os dois no quadro sem ninguem precisar andar —
+       * e a cena passa a mostrar o que ela e: ela chamando os dois da porta.
+       */
+      const meio = new THREE.Object3D();
+      meio.position.set((eu.x + josefina.x) / 2, 0, (eu.z + josefina.z) / 2);
+      w.root.add(meio);
+      const vao = Math.hypot(eu.x - josefina.x, eu.z - josefina.z);
+      api.focusCamera(meio);
+      api.setZoom(Math.max(12, Math.min(26, vao * 1.5)));
       await api.wait(0.5);
 
       await conversa([
@@ -1044,6 +1059,7 @@ export const estufa: SceneDef = {
        */
       api.focusCamera(null);
       api.setZoom(11);
+      w.root.remove(meio);
       josefina.pararDeEncarar();
       void josefina.irPara(bancada.position.x + 1.2, bancada.position.z, 0.4);
       api.lockPlayer(false);
