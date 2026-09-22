@@ -404,8 +404,19 @@ export const estufa: SceneDef = {
      * Arvore e moita vao para as faixas entre um corredor e outro, e para as
      * quinas — que e onde elas emolduram o vao em vez de tapa-lo.
      */
+    /**
+     * A FOLGA MEDE A COPA, e nao o tronco.
+     *
+     * A primeira conta usava 2,2 — a largura do caminho — e o resultado apareceu
+     * na foto: arvore plantada a 2,2 do eixo tem copa de 1,2 de raio, entao ela
+     * chega a 1,0 do eixo e debruca em cima da calcada. O corredor continuava
+     * ANDAVEL (o colisor do tronco tem 40 cm e ficava longe), mas parecia
+     * bloqueado, e num jogo isometrico parecer bloqueado e ser bloqueado.
+     *
+     * 3,2 e a meia-largura do caminho (1,1) mais a copa maior (1,3) mais folga.
+     */
     const noCorredor = (x: number): boolean =>
-      PORTOES.xs.some((px) => Math.abs(x - px) < 2.2);
+      PORTOES.xs.some((px) => Math.abs(x - px) < 3.2);
     for (const [x, z, tipo, e] of [
       [-12.6, -16.5, 'redonda', 1.1], [-4.4, -20.5, 'pinheiro', 0.95],
       [4.4, -17.2, 'redonda', 1.15], [12.4, -21, 'pinheiro', 1.0],
