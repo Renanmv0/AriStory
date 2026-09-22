@@ -60,22 +60,26 @@ const POSES = {
    */
   relaxed: { bracoX: -0.22, bracoZ: 0.46, balanco: 0.6, itemZ: 0.9, itemX: 0.13 },
   /**
-   * REGADOR: o braco LEVANTADO, e nao esticado para a frente.
+   * REGADOR: PENDURADO na mao, pela alca de cima.
    *
-   * O pedido do Renan foi esse ("ficaremos com o braco levantado segurando o
-   * regador"), e ele tem razao de jogo: o regador e a arma do minigame do
-   * jardim, e arma precisa aparecer ACIMA da linha do canteiro. Na altura do
-   * `upright` a lata fica na frente do tronco e some atras de qualquer moita.
+   * A primeira versao levantava o braco e a lata ficava equilibrada em cima do
+   * punho, como uma bandeja. O Renan viu na tela e pediu o gesto certo: a mao
+   * segura a ALCA e o regador pende dela, que e como se carrega um de verdade.
+   * Quem desce a peca ate a alca cair na mao e a ficha do item
+   * (`world/itens.ts`), lendo a altura da alca da propria geometria.
    *
-   * `itemZ` negativo inclina a peca para a FRENTE dentro da mao — regador de
-   * verdade despeja inclinando de leve, e um regador perfeitamente em pe lê
-   * como lata de tinta sendo carregada.
+   * O BRACO NAO DESCE DE TODO, e a conta e do corpo chibi: o ombro fica em
+   * 0,94 e o braco tem 0,52, entao com ele na vertical a mao para em 0,43 — e
+   * uma lata de 29 cm pendurada ali RASPA no chao. Em 0,9 rad a mao sobe para
+   * 0,62 e a base da lata fica em 0,33, que lê como carregada.
    *
-   * `balanco` 0,1: quase nada. Com o balanco cheio da caminhada uma lata de
-   * agua de 40 cm faz um arco enorme, e a peca parece leve demais para o que
-   * ela e.
+   * `itemZ` zero: coisa pendurada fica em pe, e o `maoDir` ja desfaz a rotacao
+   * do braco — e isso que mantem a lata vertical enquanto a mao balanca.
+   *
+   * `balanco` 0,3: um tico de vaivem. Zero engessa o boneco; cheio faz uma
+   * lata de agua voar, e agua pesa.
    */
-  regando: { bracoX: -2.05, bracoZ: 0.3, balanco: 0.1, itemZ: -0.5, itemX: 0.04 },
+  regando: { bracoX: -0.9, bracoZ: 0.42, balanco: 0.3, itemZ: 0, itemX: 0.05 },
 } as const;
 
 /**

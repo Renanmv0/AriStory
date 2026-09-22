@@ -809,16 +809,29 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'osso': () => osso(P.osso),
   'biscoito-estella': () => biscoitoDaEstella(),
   /**
-   * O regador da mao sai MENOR que o do chao (0,82).
+   * O REGADOR PENDURA PELA ALCA DE CIMA, e nao nasce apoiado na mao.
    *
-   * A peca do kit tem 42 cm, que e a medida de um regador de jardim de verdade
-   * ao lado de uma pessoa de 1,75. Na mao de um boneco chibi, cuja cabeca ja e
-   * desproporcional, essa mesma medida vira um balde: o braco some atras dela.
-   * Encolher na hora de segurar e mais barato que ter duas geometrias.
+   * Pedido do Renan olhando a foto, e ele esta certo: e assim que se carrega um
+   * regador de verdade. A peca do kit nasce com a BASE em `y = 0`, como todo o
+   * kit, entao segurando-a no ponto da mao a lata ficava equilibrada em cima do
+   * punho como uma bandeja — o gesto errado.
+   *
+   * A correcao e um grupo a mais que DESCE a peca ate a barra da alca cair na
+   * mao. A altura dela sai de `userData.partes.alturaDaAlca`, e nao de um
+   * numero cravado aqui: a carta "Braco solto" troca o arco por um cabo reto
+   * mais alto, e sem ler a peca esse regador ficaria pendurado pelo ar.
+   *
+   * Ele tambem sai MENOR que o do chao (0,78): a peca tem 37 cm, que e a medida
+   * ao lado de uma pessoa de 1,75. Pendurada na mao de um boneco chibi, cujo
+   * braco e curto, essa medida raspa no chao.
    */
   'regador': () => {
-    const g = regadorDeJardim();
-    g.scale.setScalar(0.82);
+    const g = new THREE.Group();
+    const lata = regadorDeJardim();
+    const ESCALA = 0.78;
+    lata.scale.setScalar(ESCALA);
+    lata.position.y = -(lata.userData.partes.alturaDaAlca as number) * ESCALA;
+    g.add(lata);
     return g;
   },
 };

@@ -296,6 +296,17 @@ export function regadorDeJardim(
    * "Braco solto" troca ela por um cabo de madeira lixado, com dois suportes —
    * a madeira nao se dobra em arco, entao a peca muda de FORMA e nao so de cor.
    */
+  /**
+   * ONDE A MAO PEGA — e isso e uma medida, nao um enfeite.
+   *
+   * O regador e CARREGADO PENDURADO pela alca de cima (pedido do Renan, e e
+   * como se carrega um de verdade), entao quem for pendurar precisa saber a que
+   * altura fica a barra que a mao segura. Ela muda com a carta "Braco solto",
+   * que troca o arco por um cabo reto mais alto — e sem este numero publicado a
+   * peca do cabo de madeira ficaria pendurada pelo ar.
+   */
+  let alturaDaAlca: number;
+
   if (e.caboDeMadeira) {
     const madeira = toon(P.regadorMadeira);
     const cabo = new THREE.Mesh(
@@ -303,6 +314,7 @@ export function regadorDeJardim(
     );
     cabo.rotation.z = Math.PI / 2;
     cabo.position.y = alturaBoca + 0.105 * s;
+    alturaDaAlca = cabo.position.y;
     g.add(cabo);
     for (const lado of [-1, 1] as const) {
       const suporte = new THREE.Mesh(
@@ -318,6 +330,8 @@ export function regadorDeJardim(
     alca.position.y = alturaBoca;
     alca.rotation.y = Math.PI / 2;
     g.add(alca);
+    // o alto do arco, que e por onde a mao passa
+    alturaDaAlca = alturaBoca + raioBoca * 0.92;
   }
 
   /**
@@ -399,7 +413,7 @@ export function regadorDeJardim(
    * onde a agua sai (a ponta dele, em espaco local, e `pontaDoBico`), e a
    * `nuvem` boia sozinha.
    */
-  g.userData.partes = { corpo, bico, pontaDoBico, alturaBoca };
+  g.userData.partes = { corpo, bico, pontaDoBico, alturaBoca, alturaDaAlca };
   return g;
 }
 

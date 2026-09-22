@@ -307,27 +307,63 @@ if ((await naMao()) !== 'regador') {
 }
 
 /**
- * ELE APARECE NA MÃO DE VERDADE, e num braço LEVANTADO.
+ * ELE APARECE NA MÃO, e PENDURADO PELA ALÇA.
  *
- * A ficha pede `holdPose: 'regando'`, e a pose é o motivo de a peça existir na
- * mão: com o braço na altura do `upright` a lata fica na frente do tronco e
- * some atrás de qualquer moita. A conta é a altura da peça no mundo contra a
- * altura de quem a segura.
+ * O gesto é o pedido do Renan, e ele é medível: a mão segura a barra da alça e
+ * a lata pende dela. Na primeira versão a peça nascia com a BASE na mão e
+ * ficava equilibrada em cima do punho como uma bandeja — e "está na mão" era
+ * verdade nas duas, então a asserção antiga (só a altura do ponto de preensão)
+ * passaria verde no gesto errado.
+ *
+ * O que separa os dois é onde a peça está EM RELAÇÃO ao ponto da mão: pendurada,
+ * o corpo dela fica abaixo; apoiada, acima. E ela não pode raspar no chão, que
+ * é o preço de pendurar num boneco de braço curto.
  */
-const naoDentro = await page.evaluate(() => {
+const naMaoMedido = await page.evaluate(() => {
   let achado = null;
   window.jogo.player.object.traverse((o) => {
     if (!achado && o.userData?.item === 'regador') achado = o;
   });
   if (!achado) return { existe: false };
-  achado.updateWorldMatrix(true, false);
-  // a translação da matriz de mundo, sem precisar do THREE no escopo da página
-  return { existe: true, y: +achado.matrixWorld.elements[13].toFixed(2) };
+  achado.updateWorldMatrix(true, true);
+  // o ponto da MÃO: o grupo do item nasce nela, então é a translação dele
+  const mao = achado.matrixWorld.elements[13];
+  let alto = -1e9;
+  let baixo = 1e9;
+  achado.traverse((c) => {
+    if (!c.isMesh || !c.geometry) return;
+    if (!c.geometry.boundingBox) c.geometry.computeBoundingBox();
+    const bb = c.geometry.boundingBox;
+    const e = c.matrixWorld.elements;
+    for (const vx of [bb.min.x, bb.max.x]) {
+      for (const vy of [bb.min.y, bb.max.y]) {
+        for (const vz of [bb.min.z, bb.max.z]) {
+          const Y = e[1] * vx + e[5] * vy + e[9] * vz + e[13];
+          alto = Math.max(alto, Y);
+          baixo = Math.min(baixo, Y);
+        }
+      }
+    }
+  });
+  return { existe: true, mao: +mao.toFixed(2), alto: +alto.toFixed(2), baixo: +baixo.toFixed(2) };
 });
-if (!naoDentro.existe) {
-  problemas.push('o regador não apareceu pendurado na mão do personagem');
-} else if (naoDentro.y < 1.0) {
-  problemas.push(`o regador está na altura ${naoDentro.y}: o braço não subiu`);
+if (!naMaoMedido.existe) {
+  problemas.push('o regador não apareceu na mão do personagem');
+} else {
+  const { mao, alto, baixo } = naMaoMedido;
+  console.log(`na mão: pega em ${mao} · topo ${alto} · base ${baixo}`);
+  // PENDURADO: o corpo da lata fica abaixo do ponto da mão
+  if (baixo > mao - 0.12) {
+    problemas.push(`o regador não pende da mão (pega em ${mao}, base em ${baixo})`);
+  }
+  // e a ALÇA, que é o que a mão segura, fica na altura da mão
+  if (Math.abs(alto - mao) > 0.1) {
+    problemas.push(`a alça não está na mão (pega em ${mao}, topo da peça em ${alto})`);
+  }
+  // sem raspar no chão: braço curto de boneco chibi mais lata comprida
+  if (baixo < 0.16) problemas.push(`o regador raspa no chão (base em ${baixo})`);
+  // e sem virar mochila: a mão não pode estar na altura do ombro
+  if (mao > 0.9) problemas.push(`a mão está alta demais para carregar pendurado (${mao})`);
 }
 
 await page.evaluate(() => window.jogo.setZoom(4.5));
