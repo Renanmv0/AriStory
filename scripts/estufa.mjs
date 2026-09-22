@@ -387,7 +387,27 @@ for (const s of [-1, 1]) {
 await page.screenshot({ path: `${OUT}-portoes.png` });
 
 // ================================================ 4. as conversas da cena
-const conversar = async (x, z) => {
+/**
+ * Conversa com um ponto, PROCURANDO ELE PELO ID.
+ *
+ * As três chamadas usavam `x, z` escritos à mão, e caíram junto com os prompts
+ * quando o layout mudou: o teste andava até onde a bancada ESTAVA. Pedir o
+ * ponto ao jogo é o que faz o teste seguir a cena em vez de repetir a mesma
+ * dívida que ele deveria estar cobrando.
+ */
+const ondeFica = async (id) =>
+  page.evaluate(
+    (alvo) => {
+      const it = window.jogo.current.world.interactables.find((i) => i.id === alvo);
+      return it ? [it.x, it.z] : null;
+    },
+    id,
+  );
+
+const conversar = async (id) => {
+  const ponto = await ondeFica(id);
+  if (!ponto) return { rotulo: '', ditas: [], achou: false };
+  const [x, z] = ponto;
   await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, 0), [x, z]);
   await page.waitForTimeout(1200);
   const rotulo = await prompt();
@@ -401,12 +421,12 @@ const conversar = async (x, z) => {
     await page.keyboard.press('KeyE');
     await page.waitForTimeout(650);
   }
-  return { rotulo, ditas };
+  return { rotulo, ditas, achou: true };
 };
 
-const naBancada = await conversar(-12.4, -4.6);
-const noTonel = await conversar(-12.3, 4.4);
-const noTerreiro = await conversar(0, 1.6);
+const naBancada = await conversar('estufa:bancada');
+const noTonel = await conversar('estufa:tonel');
+const noTerreiro = await conversar('estufa:terreiro');
 
 const noDiario = await page.evaluate(() =>
   (JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}').memories ?? [])
@@ -549,6 +569,9 @@ if (travados.length) {
   problemas.push(`travou ao atravessar o terreiro (trechos: ${JSON.stringify(trechos)})`);
 }
 if (andou < 2) problemas.push(`mal saiu do lugar no terreiro (${andou.toFixed(2)})`);
+for (const [nome, c] of [['bancada', naBancada], ['tonel', noTonel], ['terreiro', noTerreiro]]) {
+  if (!c.achou) problemas.push(`a interação "estufa:${nome}" não existe mais na cena`);
+}
 if (naBancada.ditas.length < 4) problemas.push('a conversa da bancada não aconteceu');
 if (!noDiario) problemas.push('a memória da estufa não entrou no diário');
 if (!noTonel.ditas.length) problemas.push('o tonel não rende conversa');
