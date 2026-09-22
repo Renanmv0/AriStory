@@ -345,10 +345,34 @@ no fundo — um beco, de propósito. A sebe é mais alta que a do clube (1,6 con
 portões ficam limpos, e árvore e moita vão para as faixas entre um corredor e
 outro, onde emolduram o vão em vez de tapá-lo.
 
-**A cena publica `entradas`** — um ponto no fundo do pátio alinhado com cada
-portão. É de lá que o bicho deve aparecer, e a distância até o vão é exatamente
-o tempo que a dupla tem para interceptar. Esse número é o que vai regular a
-dificuldade de "segurar fora" contra "segurar dentro".
+### A corrente de entrada, e as três chances de interceptar
+
+A sebe do fundo **abre em três brechas**, no fim de cada caminho de pedra e no
+eixo de cada portão (pedido do Renan). Com elas, o caminho do bicho tem quatro
+trechos:
+
+```
+nasce no gramado de fora  →  BRECHA da sebe  →  caminho de pedra
+                          →  PORTÃO          →  a estufa
+```
+
+**Cada trecho é uma chance de interceptar**, e é isso que faz "segurar fora"
+contra "segurar dentro" virar decisão em vez de preferência. As brechas são
+mais largas que o caminho (3,2 contra 2,2) — passagem tem eixo, e o eixo fica
+vazio — e duas moitas altas ladeiam cada uma, **fora do vão**: sebe cortada em
+quina viva parece parede quebrada, e moita arredondada na ponta parece mato que
+abriu.
+
+**A cena publica `entradas`**: um ponto do lado de FORA da sebe, alinhado com
+cada brecha. É de lá que o bicho aparece — bicho que nasce dentro do pátio não
+dá tempo de ser interceptado, que é a jogada inteira. A distância dali até o
+portão é o botão que regula a dificuldade das duas posturas, e é o primeiro
+número a girar quando a fase estiver fácil ou impossível demais.
+
+**Corredor limpo é regra, e ela mede a COPA.** Árvore plantada a 2,2 do eixo
+tem copa de 1,2 de raio e debruça na calçada: o corredor continua andável (o
+colisor é o tronco) mas parece bloqueado, e num jogo isométrico parecer
+bloqueado é ser bloqueado. A folga é 3,2.
 
 ### 8.2. O que a estufa já tem
 

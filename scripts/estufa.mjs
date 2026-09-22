@@ -248,13 +248,28 @@ for (const x of PORTOES) {
    * `-X`. O teste acusou os três portões de não deixarem passar quando na
    * verdade a dupla estava andando de lado, paralela à parede.
    */
+  /**
+   * ANDA ATÉ SAIR, e não por um número fixo de passos.
+   *
+   * A primeira versão andava 16 amostras e exigia chegar a `z < -11,8`. Isso
+   * mede DISTÂNCIA PERCORRIDA, que aqui depende de quanta máquina sobra: com
+   * outro navegador rodando ao lado, dois dos três portões pararam em -11,2 e
+   * -11,7 (ou seja, JÁ TINHAM SAÍDO) e o teste os reprovou mesmo assim.
+   *
+   * O que se quer provar é travessia, não velocidade: anda até cruzar a linha
+   * da parede com folga, e desiste depois de um teto generoso de passos.
+   */
   await page.keyboard.down('KeyW');
   await page.keyboard.down('KeyD');
-  for (let i = 0; i < 16; i++) await page.waitForTimeout(700);
+  let fim = await onde();
+  for (let i = 0; i < 24 && fim[1] > FUNDO - 2; i++) {
+    await page.waitForTimeout(700);
+    fim = await onde();
+  }
   await page.keyboard.up('KeyD');
   await page.keyboard.up('KeyW');
   await page.waitForTimeout(400);
-  const fim = await onde();
+  fim = await onde();
   atravessou.push({ portao: x, chegou: fim });
 }
 
@@ -375,7 +390,9 @@ if (bocas.some((b) => b.z > -8)) {
 }
 // e o portão tem que deixar SAIR de verdade, andando
 for (const a of atravessou) {
-  if (a.chegou[1] > FUNDO - 0.8) {
+  // "saiu" = o corpo inteiro passou do plano da parede (que tem 9 cm de
+  // espessura). Portão bloqueado pararia a dupla ~meio metro ANTES dela.
+  if (a.chegou[1] > FUNDO - 1) {
     problemas.push(`o portão x=${a.portao} não deixa sair (parou em z=${a.chegou[1]})`);
   }
   if (a.chegou[1] < PATIO_FUNDO) {
