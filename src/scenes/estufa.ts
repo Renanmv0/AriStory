@@ -208,14 +208,31 @@ export const estufa: SceneDef = {
      */
     w.ground({ width: W + 1, depth: D + 1, color: P.estufaChao, textura: asfalto(1.6) });
     /**
-     * O gramado passa 3 m ALEM da sebe do fundo. Nao e sobra: e onde os bichos
-     * nascem, do lado de fora, para entrarem pelas brechas andando — bicho que
-     * aparece do nada dentro do patio nao da tempo de ser interceptado, que e
-     * justamente a jogada que o patio existe para permitir.
+     * O GRAMADO VAI DA LINHA DA PAREDE DE TRAS ATE 3 M ALEM DA SEBE.
+     *
+     * As duas bordas sao escolhidas, e nao sobra de conta:
+     *
+     * - **a de tras** passa 3 m da sebe porque e ALI que os bichos nascem, do
+     *   lado de fora, para entrarem pelas brechas andando. Bicho que aparece do
+     *   nada dentro do patio nao da tempo de ser interceptado, que e justamente
+     *   a jogada que o patio existe para permitir;
+     * - **a da frente** para EXATAMENTE em `z = -hz`, a linha da parede. A
+     *   primeira versao escrevia essa borda por uma conta de centro e
+     *   profundidade e ela caiu em `-10,4`: 60 cm de grama DENTRO da estufa,
+     *   uma faixa verde correndo por dentro do vidro que o Renan viu na tela.
+     *   Escrever as duas bordas e depois derivar centro e profundidade delas e
+     *   o que impede esse erro de voltar.
+     *
+     * Em `-11` a emenda fica debaixo da propria parede (que tem 18 cm de
+     * espessura) e, nas tres brechas, debaixo da soleira de pedra do portao —
+     * entao ela nao aparece em lugar nenhum.
      */
+    const GRAMA_FRENTE = -hz;
+    const GRAMA_FUNDO = FUNDO_DE_FORA - 3;
     w.ground({
-      width: W, depth: FORA.profundidade + 3.6,
-      z: -hz - FORA.profundidade / 2 - 1.2,
+      width: W,
+      depth: GRAMA_FRENTE - GRAMA_FUNDO,
+      z: (GRAMA_FRENTE + GRAMA_FUNDO) / 2,
       color: P.grass, textura: tapeteDeGrama(9), y: 0.004,
     });
 
