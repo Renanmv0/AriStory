@@ -329,6 +329,16 @@ export const PALETTE = {
   tonelAro: 0x6d7c85,
   tonelAgua: 0x4f9fbd,
 
+  // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
+  // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
+  // e a diferenca de tom e o que separa "comida de bicho" de "comida de
+  // planta" num relance — clara e dourada contra escura e terrosa.
+  estopa: 0xc9a86a,
+  estopaBarra: 0xa8854a,
+  graoDeSemente: 0xe6c86e,
+  estopaDeAdubo: 0x8d7d61,
+  estopaDeAduboBarra: 0x6e6049,
+
   // a Josefina, a tartaruga jardineira. O casco e verde-oliva com as placas
   // (escudos) mais escuras; a pele e um verde mais claro e amarelado.
   tartarugaCasco: 0x6d8a3f,

@@ -44,6 +44,19 @@ await page.waitForTimeout(2600);
 await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(3400);
+
+/**
+ * A ESTUFA NASCE TRANCADA, e quem abre é a quest do adubo
+ * (`scripts/adubo.mjs` percorre ela inteira). Este teste é sobre o LUGAR, e
+ * não sobre a chave: ele levanta a flag e recarrega.
+ *
+ * A recarga não é opcional — a porta é decidida na hora em que a cena é
+ * montada, e escrever a flag com o clube já de pé não acorda ninguém.
+ */
+await page.evaluate(() => window.jogo.setFlag('adubo-entregue'));
+await page.waitForTimeout(600);
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(3400);
 await page.mouse.click(500, 440);
 await page.waitForTimeout(400);
 

@@ -360,6 +360,32 @@ export const ITENS = {
     holdPose: 'relaxed',
   },
 
+  /*
+   * OS DOIS SACOS DA QUEST DO ADUBO (`docs/MINIGAME-JARDIM.md` §2).
+   *
+   * As `nota` dizem de ONDE a coisa veio, e nunca para ONDE ela vai. E a regra
+   * da quest inteira: o jogo entrega os dois fios (semente, adubo) e quem liga
+   * "quem come semente por aqui?" e "quem cuida de planta por aqui?" e o
+   * jogador. Um item chamado "Sementes pro Noel" acabaria com a charada numa
+   * palavra.
+   */
+  sementes: {
+    id: 'sementes',
+    nome: 'Saco de sementes',
+    icone: '🌾',
+    tipo: 'mao',
+    nota: 'esquecido num banco do parque',
+    holdPose: 'relaxed',
+  },
+  adubo: {
+    id: 'adubo',
+    nome: 'Saco de adubo',
+    icone: '🪱',
+    tipo: 'mao',
+    nota: 'presente do Noel, do bar de sucos',
+    holdPose: 'relaxed',
+  },
+
   /* ====================================================================
    *              A COLECAO DA ESTELLA — o que esta a venda
    * ====================================================================

@@ -1,7 +1,7 @@
 # A Estufa da Josefina — plano do minigame do jardim
 
-> Documento de PROJETO. **Só a etapa 0 está no jogo** (§10) — a área existe e
-> dá para andar nela. Da quest para a frente ainda é plano. Quando uma etapa
+> Documento de PROJETO. **As etapas 0 e 2 estão no jogo** (§10): a área existe,
+> e a quest que a destranca também. O minigame em si ainda é plano. Quando uma etapa
 > for construída, marque-a aqui, e deixe o `git log` ser a fonte da verdade do
 > que de fato existe.
 >
@@ -50,37 +50,66 @@ estaciono a minha outra metade**.
 
 ## 2. A quest que destranca: o adubo
 
-A área já existe e já dá para entrar (§10). A quest é o que vai fazer ela
-**significar** alguma coisa — hoje a porta da estufa está simplesmente aberta.
+**Construída.** É ela que abre a estufa, e nada mais abre.
 
-1. **Achar o produto pelo mundo.** Um item de mochila, `tipo: 'mao'`, como o
-   osso do Walter já é. As opções, em ordem de preferência:
-   - **o Noel, do bar de sucos**, tem a borra das frutas do dia — um balde de
-     casca de laranja e abacaxi que ele ia jogar fora. Composto de graça, e é
-     conversa de duas falas com um personagem que já existe;
-   - **a Gina, na portaria**, guarda um saco de adubo que chegou por engano e
-     ninguém foi buscar;
-   - **cavar de novo no jardim**, num segundo montinho — funciona, mas repete a
-     mecânica do osso, e repetir é o pior dos três.
+A corrente inteira, e cada elo mora num lugar diferente do mundo:
 
-   A primeira é a que ganha: liga dois personagens que hoje não se falam e não
-   inventa mecânica nenhuma.
+```
+saco de sementes, esquecido num banco do fundo do Villa-Lobos
+  → dar ao NOEL, que é peru e come semente
+  → ele retribui com um saco de ADUBO (a borra das frutas do bar, curtida)
+  → dar o adubo à JOSEFINA, que cuida de planta
+  → ela destranca a ESTUFA
+```
 
-2. **Levar à Josefina.** Com o balde na mão, a conversa com ela ganha uma opção
-   nova: **"Dar o adubo"**. Ela reage como ela é — devagar, sem alarde, reparando
-   no detalhe — e então convida:
+### As duas deduções, e por que não há seta nenhuma
 
-   > *"Isso aqui é bom demais pra horta de fora. Vem comigo, que eu quero te
-   > mostrar onde é que eu guardo as coisas sérias."*
+O pedido do Renan foi explícito: **a gente tem que deduzir**. Então nenhum
+rótulo, nenhuma nota de item e nenhum diálogo diz o nome do destinatário. O que
+o jogo faz é deixar os **dois fios** soltos, um de cada lado:
 
-3. **A estufa deixa de ser um galpão e vira um lugar.** Antes da quest: porta
-   aberta, ninguém dentro, nada para fazer além de olhar. Depois: a Josefina
-   está lá dentro, e o cartaz de "Cuidar da horta" acende.
+| fio | onde ele aparece |
+|---|---|
+| *"quem é que come semente por aqui?"* | o Renan, ao pegar o saco no banco |
+| *"alguém aqui passa o dia de joelho num canteiro"* | o Ari, quando o Noel entrega o adubo |
+| *"sete anos plantando no mesmo lugar cansa qualquer terra"* | a Josefina, na segunda visita ao jardim |
 
-**A flag é `adubo-entregue`.** Tudo o que muda dentro da estufa lê essa flag na
-hora de montar a cena. (Cuidado conhecido: estado lido na construção da cena
-não acorda sozinho — ver `CLAUDE.md`; quem entrega o adubo está no clube, e
-entra na estufa depois, então a cena é montada de novo de qualquer jeito.)
+Nenhuma das três cita um nome. A ligação continua sendo do jogador — e as três
+saem **uma vez cada**, nunca sorteadas: pista que o jogo pode esconder para
+sempre não é pista, é loteria. É o mesmo desenho da dica do osso.
+
+### Onde fica o saco de sementes
+
+No banco de `(-13,2; -22,5)`, no canto de trás do Villa-Lobos. Dos sete bancos
+do parque, é o único fora da alameda e da praça da roda — **quem acha, acha
+porque saiu do caminho**, que é a regra do osso enterrado. Escolha do Renan
+entre três lugares possíveis. O raio da interação é 1,1: prompt que acende de
+longe entrega o segredo antes de o jogador chegar nele.
+
+### A estufa antes da quest
+
+Ela **está lá, e não abre**. O prédio é visível do jardim desde a primeira
+visita; a porta responde com **"Abrir a porta da estufa"** — nunca com um
+cadeado no HUD, porque isso contaria a história antes de alguém encostar nela.
+Quem clica é que descobre: *"Trancada. Tem cadeado por dentro."*
+
+E **a Josefina não comenta nada sobre a estufa** até receber o adubo. Foi
+pedido explícito, e é a diferença entre descobrir e ser avisado: ela fala da
+terra cansada, que é assunto de jardineira, e não da porta. Depois da quest ela
+ganha um repertório novo de histórias, em que a estufa finalmente existe.
+
+### Dois detalhes de implementação que já custaram bug
+
+- **Tirar antes de pôr.** O adubo entra na mochila na vaga que as sementes
+  acabaram de deixar. Na ordem inversa, quem chegasse com as dez vagas cheias
+  perderia o saco e não ganharia nada.
+- **O `onUpdate` para de arbitrar quando a flag sobe.** Os prompts de "falar" e
+  "entregar" moram no mesmo ponto e se revezam por `enabled`, decidido a cada
+  frame — mas só enquanto a quest está aberta. Sem religar o "falar" à mão no
+  momento da entrega, o bicho fica com os dois pontos desligados e emudece até
+  a cena ser remontada.
+
+**A flag é `adubo-entregue`**, e ela é a única chave da estufa.
 
 ---
 
@@ -256,7 +285,7 @@ já tomada.
 |---|---|---|
 | 0 | **a área**: a estufa, a porta no jardim do clube, o caminho | **pronto** (§10) |
 | 1 | a skill `aristory-habilidade`, para carta nova sair barato | a fazer |
-| 2 | a quest do adubo (Noel → Josefina → convite) | a fazer |
+| 2 | a quest do adubo (banco → Noel → Josefina → convite) | **pronto** (§2) |
 | 3 | o esqueleto do minigame: onda, regador automático, um bicho só (a lagarta) | a fazer |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
 | 5 | gota, nível e a tela de três cartas | a fazer |
@@ -281,9 +310,18 @@ prateleiras de muda.
 **As peças novas do kit** (`src/world/props.ts`): `estufa()` (a casca),
 `bancadaDeJardinagem()` e `tonelDeAgua()`.
 
-**O teste**: `node scripts/estufa.mjs /tmp/es2` — prova que a porta abre nos dois
+**A quest** (§2), espalhada por três arquivos: o saco no banco do fundo em
+`scenes/villaLobos.ts`, a troca com o Noel e a entrega à Josefina em
+`scenes/clube.ts`, e as duas fichas (`sementes`, `adubo`) em `world/itens.ts`.
+A peça é uma só, `sacoDeGraos()`, em dois jogos de cor.
+
+**Os testes**: `node scripts/estufa.mjs /tmp/ef` prova que a porta abre nos dois
 sentidos, que o terreiro do meio está mesmo vazio (nenhum colisor dentro dele),
 que os oito canteiros existem e que as quatro bocas estão desobstruídas.
+`node scripts/adubo.mjs /tmp/ad` percorre a quest inteira e guarda o que é fácil
+de quebrar sem perceber: a estufa trancada antes da hora, a Josefina calada
+sobre ela, os rótulos que trocam sozinhos e ninguém emudecendo depois de
+receber o presente.
 
 ---
 

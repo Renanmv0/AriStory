@@ -6276,3 +6276,83 @@ export function tonelDeAgua(altura = 1.15): THREE.Group {
 
   return g;
 }
+
+/**
+ * UM SACO DE ESTOPA ABERTO, com grao transbordando na boca e um punhado caido
+ * ao lado.
+ *
+ * E UMA PECA, DUAS COISAS: o saco de SEMENTES que o parque esqueceu num banco
+ * e o saco de ADUBO que o Noel da de presente sao a mesma geometria em cores
+ * diferentes. Nao e economia preguicosa — e o que faz a dupla LER como par: a
+ * mesma coisa, uma para bicho e outra para planta, e a cor e o unico aviso.
+ *
+ * Por isso a paleta guarda os dois jogos de cor (`estopa`/`graoDeSemente` e
+ * `estopaDeAdubo`/`terraUmida`) em vez de uma so: claro e dourado contra
+ * escuro e terroso, separaveis num relance mesmo de longe.
+ *
+ * O punhado CAIDO e o que impede o saco de parecer enfeite fechado: saco em pe
+ * e sem nada em volta lê como almofada. O grao no chao diz que ele esta aberto.
+ */
+export function sacoDeGraos(
+  cor: number = P.estopa,
+  corDaBarra: number = P.estopaBarra,
+  corDoGrao: number = P.graoDeSemente,
+  semente = 0.5,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'saco-de-graos';
+  const giro = semente * 6.283;
+  const pano = toon(cor);
+  const ALTO = 0.3;
+  const RAIO = 0.145;
+
+  // o corpo, mais GORDO embaixo: saco cheio senta e alarga na base
+  const corpo = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO * 0.92, RAIO * 1.12, ALTO, 12), pano,
+  );
+  corpo.position.y = ALTO / 2;
+  corpo.rotation.y = giro;
+  g.add(corpo);
+
+  // a boca virada para fora, um anel mais LARGO que o corpo: embutida, as duas
+  // faces cairiam no mesmo plano
+  const bainha = new THREE.Mesh(
+    new THREE.TorusGeometry(RAIO * 0.94, 0.038, 6, 14), toon(corDaBarra),
+  );
+  bainha.position.y = ALTO - 0.01;
+  bainha.rotation.x = Math.PI / 2;
+  g.add(bainha);
+
+  // o grao transbordando: uma calota rasa dentro da boca
+  const monte = new THREE.Mesh(
+    new THREE.SphereGeometry(RAIO * 0.86, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2),
+    toon(corDoGrao),
+  );
+  monte.scale.y = 0.34;
+  monte.position.y = ALTO - 0.015;
+  g.add(monte);
+
+  // ... e o punhado derramado ao lado, em raio e tamanho desencontrados
+  for (let i = 0; i < 7; i++) {
+    const a = giro + (i * 6.283) / 7 + (i % 2) * 0.4;
+    const r = RAIO * 1.35 + ((i * 0.41) % 1) * 0.16;
+    const s = 0.018 + ((i * 0.67) % 1) * 0.014;
+    const grao = new THREE.Mesh(new THREE.SphereGeometry(s, 6, 5), toon(corDoGrao));
+    grao.scale.set(1, 0.62, 1.3);
+    grao.position.set(Math.cos(a) * r, s * 0.6, Math.sin(a) * r);
+    grao.rotation.y = a * 1.4;
+    g.add(grao);
+  }
+
+  // a faixa costurada na frente, que e o que diz "isto e um saco de feira" e
+  // nao um travesseiro. Fica RENTE ao pano, com raio maior, nunca dentro dele.
+  const faixa = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO * 1.03, RAIO * 1.06, 0.06, 12, 1, true),
+    toon(corDaBarra, { doubleSide: true }),
+  );
+  faixa.position.y = ALTO * 0.42;
+  faixa.rotation.y = giro;
+  g.add(faixa);
+
+  return g;
+}
