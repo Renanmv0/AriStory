@@ -6588,29 +6588,39 @@ export function portaoDeJardim(vao = 3, altura = 2.6): THREE.Group {
   const ferro = toon(P.ferroDoPortao);
   const PILASTRA = 0.36;
   const meio = vao / 2 + PILASTRA / 2;
+  /**
+   * A PILASTRA ASSENTA SOBRE A SOLEIRA, e nao ao lado dela.
+   *
+   * A primeira versao punha as duas com a base em `y = 0`: a soleira de pedra
+   * passa por baixo das pilastras, entao as tres faces de baixo caiam no mesmo
+   * plano com area de sobra em comum, e o `zfighting.mjs` acusou os dois pares.
+   * Alem de resolver, assentar em cima e como portao de pedra de verdade e —
+   * a soleira e a fundacao, e nao um tapete encostado.
+   */
+  const BASE = 0.07;
 
   for (const s of [-1, 1] as const) {
     // o corpo da pilastra
     const pilar = new THREE.Mesh(new THREE.BoxGeometry(PILASTRA, altura, PILASTRA), pedra);
-    pilar.position.set(s * meio, altura / 2, 0);
+    pilar.position.set(s * meio, BASE + altura / 2, 0);
     g.add(pilar);
     // as duas juntas de pedra, rentes: elas quebram o bloco liso de 2,6 m
     for (const y of [altura * 0.34, altura * 0.67]) {
       const junta = new THREE.Mesh(
         new THREE.BoxGeometry(PILASTRA + 0.05, 0.05, PILASTRA + 0.05), capa,
       );
-      junta.position.set(s * meio, y, 0);
+      junta.position.set(s * meio, BASE + y, 0);
       g.add(junta);
     }
     // o capitel, mais largo que o corpo — embutido, as faces coincidiriam
     const capitel = new THREE.Mesh(
       new THREE.BoxGeometry(PILASTRA + 0.16, 0.13, PILASTRA + 0.16), capa,
     );
-    capitel.position.set(s * meio, altura + 0.065, 0);
+    capitel.position.set(s * meio, BASE + altura + 0.065, 0);
     g.add(capitel);
     // e a bola em cima, que e o que transforma pilar em PORTAO
     const bola = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), pedra);
-    bola.position.set(s * meio, altura + 0.26, 0);
+    bola.position.set(s * meio, BASE + altura + 0.26, 0);
     g.add(bola);
 
     /**
@@ -6660,10 +6670,12 @@ export function portaoDeJardim(vao = 3, altura = 2.6): THREE.Group {
   );
   soleira.position.y = 0.035;
   g.add(soleira);
-  // duas juntas transversais, so para a pedra nao ser uma laje unica
+  // duas juntas transversais, so para a pedra nao ser uma laje unica. Elas
+  // ficam EM CIMA da soleira (0,03 a 0,08), e nao embutidas: embutidas, as
+  // faces de baixo cairiam no mesmo plano dela.
   for (const s of [-1, 1] as const) {
-    const junta = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.075, 0.58), pedra);
-    junta.position.set(s * vao * 0.22, 0.04, 0);
+    const junta = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.58), pedra);
+    junta.position.set(s * vao * 0.22, 0.055, 0);
     g.add(junta);
   }
 
