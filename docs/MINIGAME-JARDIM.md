@@ -316,19 +316,39 @@ precisa estar legível quando os três portões cospem bicho ao mesmo tempo. O q
 decora ali é **estrutura**: os três portões de pedra, os caminhos que saem
 deles e o jardim que continua do lado de fora.
 
-### O jardim de fora
+### O pátio de trás — e ele é jogável
 
-Os portões precisavam parecer entradas para *algum lugar*, e não buracos numa
-parede. A saída é mais barata do que parece: o chão da cena continua 19 m além
-da parede de trás, com **o gramado como camada de BASE** (a terra batida da
-estufa é uma mancha por cima dele, e não o contrário — senão sobra um anel de
-terra pelada em volta dos outros três lados). Lá fora: três caminhos de
-pedrinha saindo dos portões, árvores e moitas espalhadas **fora do eixo de cada
-vão**, e uma sebe ao fundo fechando a vista.
+Começou como paisagem (grama pintada atrás do vidro, só para o portão não
+parecer um buraco na parede) e virou **chão de jogo**, por dois pedidos do
+Renan que mudam o que a área é:
 
-O jogador nunca chega lá — o limite de caminhada o segura dentro do vidro —,
-mas **através do vidro ele vê um jardim que continua**, que é tudo o que a
-ilusão precisa.
+**1. Dá para sair.** A ideia de jogo é dele: *enquanto vem pouco bicho, você
+atravessa o portão e intercepta lá fora, antes que eles entrem; quando vier
+muito, você recua e segura do lado de dentro.* Isso transforma os três portões
+de "spawn" em **decisão** — ficar na frente ou atrás deles —, e é a melhor
+mecânica que o minigame ganhou até agora sem custar uma linha de lógica.
+
+O limite de caminhada passou a abraçar a estufa **e** o pátio. Quem segura a
+dupla dentro do vidro deixou de ser o limite e passaram a ser as **paredes**: a
+de `-Z` tem colisor em todo lugar menos nos três vãos, e as laterais acabam em
+`z = -11`.
+
+**2. Não dá para dar a volta.** A grama corria pelos quatro lados do prédio, e
+por ela dava para contornar a estufa e voltar pela frente. O chão agora são
+**dois retângulos que se encostam**, e não um gramado gigante por baixo de
+tudo: a estufa é terra batida, o pátio é grama, e não existe verde em lugar
+nenhum a não ser atrás das portas. O pátio é fechado por sebe nos dois lados e
+no fundo — um beco, de propósito. A sebe é mais alta que a do clube (1,6 contra
+1,05) porque aqui ela é **limite**, e não enfeite.
+
+**O que cresce lá fora segue a regra do terreiro**: os três corredores dos
+portões ficam limpos, e árvore e moita vão para as faixas entre um corredor e
+outro, onde emolduram o vão em vez de tapá-lo.
+
+**A cena publica `entradas`** — um ponto no fundo do pátio alinhado com cada
+portão. É de lá que o bicho deve aparecer, e a distância até o vão é exatamente
+o tempo que a dupla tem para interceptar. Esse número é o que vai regular a
+dificuldade de "segurar fora" contra "segurar dentro".
 
 ### 8.2. O que a estufa já tem
 
@@ -405,9 +425,11 @@ A peça é uma só, `sacoDeGraos()`, em dois jogos de cor.
 **Os testes**: `node scripts/estufa.mjs /tmp/ef` prova que a porta abre nos dois
 sentidos, que o terreiro do meio está mesmo vazio (nenhum colisor dentro dele),
 que os oito canteiros existem e que as quatro bocas estão desobstruídas.
-Ele também **atravessa os três portões andando**, um por um: folga geométrica
-não prova passagem, e uma pilastra ou uma soleira de alvenaria no vão só
-aparece quando alguém tenta passar. `node scripts/adubo.mjs /tmp/ad` percorre a
+Ele também **atravessa os três portões andando**, um por um, e confere que a
+dupla sai de verdade para `z < -11`: folga geométrica não prova passagem, e
+uma pilastra ou uma soleira de alvenaria no vão só aparece quando alguém tenta
+passar. Depois ele encosta na sebe de cada lado do pátio e exige que ela **não
+deixe contornar a estufa** nem voltar pela frente por fora. `node scripts/adubo.mjs /tmp/ad` percorre a
 quest inteira e guarda o que é fácil de quebrar sem perceber: a estufa trancada antes da hora, a Josefina calada
 sobre ela, os rótulos que trocam sozinhos e ninguém emudecendo depois de
 receber o presente.
