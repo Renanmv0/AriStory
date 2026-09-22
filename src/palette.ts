@@ -352,19 +352,51 @@ export const PALETTE = {
    * E eles nao usam NENHUMA cor de bicho com nome. O Capy, a Josefina, o Noel
    * e os outros sao gente; praga e praga.
    */
-  pragaCorpo: 0x6d5f7a,
-  pragaCorpoEscuro: 0x51465e,
+  /**
+   * O QUE TODAS DIVIDEM: so o olho, a barriga clara e o laranja de aviso. O
+   * CORPO de cada uma e cor propria (logo abaixo), porque o jogador precisa
+   * dizer QUAL praga e, e nao so que aquilo e uma praga. Uma familia unica de
+   * roxo fazia as seis virarem a mesma mancha escura com cinco na tela.
+   */
   pragaBarriga: 0xd6c69a,
-  pragaCasco: 0x8a7f6b,
-  pragaCascoEscuro: 0x6b6152,
-  /** pinca, bico, unha e dente: o laranja que diz "isto machuca a planta" */
+  /** pinca, unha e dente: o laranja que diz "isto machuca a planta" */
   pragaGarra: 0xe28a3a,
   pragaGarraEscura: 0xb8641f,
   pragaOlho: 0xfaf4e6,
   pragaPupila: 0x211c28,
-  /** o verde sujo do preguipolvo, que e o unico bicho esverdeado da turma */
+
+  /** LAGARTEJO — o roxo acinzentado, que e o mais longe de folha que existe */
+  pragaLagartejo: 0x7b5f97,
+  pragaLagartejoEscuro: 0x5a4271,
+  /** GAFANHOPO — turquesa de sapo. Verde, mas AZULADO: folha nenhuma e assim */
+  pragaGafanhopo: 0x3fa08f,
+  pragaGafanhopoEscuro: 0x2a7468,
+  /**
+   * COELHATU — ferrugem de tatu, com as placas num creme bem mais claro.
+   *
+   * O primeiro terracota (0xb5774c) era quase o chao do terreiro: na foto o
+   * bicho sumia no piso. A regra aqui nao e so "cor propria", e tambem
+   * "contraste com o chao": o corpo desceu para um ferrugem escuro e as placas
+   * subiram para um creme mais claro que o piso, e ele voltou a ter silhueta.
+   */
+  pragaCoelhatu: 0x9c4626,
+  pragaCoelhatuEscuro: 0x74301a,
+  pragaCoelhatuCasco: 0xf0dcbb,
+  pragaCoelhatuCascoEscuro: 0xd3bc94,
+  /** TUCANGURU — azul de tucano, e o bico no amarelo que so ele tem */
+  pragaTucanguru: 0x3f5ea8,
+  pragaTucanguruEscuro: 0x2a3f78,
+  pragaTucanguruBico: 0xf2c247,
+  pragaTucanguruBicoEscuro: 0xd18a25,
+  /** PREGUIPOLVO — o verde sujo de limo nas costas, o unico esverdeado escuro */
   pragaMusgo: 0x62744a,
   pragaMusgoEscuro: 0x475436,
+  /** MAE-LAGARTEJO — o roxo do filho puxado para o vinho: mesma familia, outro bicho */
+  pragaMae: 0x93355f,
+  pragaMaeEscura: 0x6b2143,
+  // a crosta do dorso dela: rosa QUEIMADO, e nao rosa claro. Clara demais, a
+  // calota achatada lia como uma tampa de outro material pousada nas costas
+  pragaMaeCrosta: 0xae5c80,
 
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,

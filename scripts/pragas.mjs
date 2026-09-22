@@ -90,6 +90,7 @@ const medidas = await page.evaluate(([x0, z0, passo]) => {
       tier: ficha.tier,
       mistura: ficha.mistura,
       encharque: ficha.encharque,
+      alturaDaBarra: ficha.alturaDaBarra,
       x,
       // a base tem que encostar no chão, e o centro tem que ser o centro
       pousa: +b.miny.toFixed(3),
@@ -99,6 +100,22 @@ const medidas = await page.evaluate(([x0, z0, passo]) => {
       desvioX: +(((b.minx + b.maxx) / 2) - x).toFixed(2),
       desvioZ: +(((b.minz + b.maxz) / 2) - z0).toFixed(2),
       malhas: (() => { let n = 0; bicho.traverse((c) => { if (c.isMesh) n += 1; }); return n; })(),
+      /**
+       * A COR PRINCIPAL: a que pinta mais malhas do bicho.
+       *
+       * Ela existe para o teste cobrar que cada praga tenha a SUA. Antes as
+       * seis saiam da mesma familia de roxo, e o Renan não conseguia dizer
+       * qual era qual — o que é o problema inteiro quando há cinco na tela.
+       */
+      corPrincipal: (() => {
+        const conta = new Map();
+        bicho.traverse((c) => {
+          if (!c.isMesh || !c.material?.color) return;
+          const hex = c.material.color.getHexString();
+          conta.set(hex, (conta.get(hex) ?? 0) + 1);
+        });
+        return [...conta.entries()].sort((a, b) => b[1] - a[1])[0][0];
+      })(),
     };
   });
 }, [FILA.x, FILA.z, FILA.passo]);
@@ -148,7 +165,8 @@ for (const m of medidas) {
   console.log(
     `${m.id.padEnd(14)} ${m.tier.padEnd(7)} ${String(m.malhas).padStart(3)} malhas · ` +
     `alt ${m.altura} · larg ${m.largura} · comp ${m.comprimento} · ` +
-    `pousa em ${m.pousa} · desvio (${m.desvioX}, ${m.desvioZ}) · ${m.encharque} jatos · ${m.mistura}`,
+    `pousa em ${m.pousa} · desvio (${m.desvioX}, ${m.desvioZ}) · ` +
+    `#${m.corPrincipal} · barra a ${m.alturaDaBarra} · ${m.encharque} jatos · ${m.mistura}`,
   );
 }
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
@@ -191,6 +209,34 @@ for (let i = 1; i < medidas.length; i++) {
 }
 
 /**
+ * CADA UMA COM A SUA COR.
+ *
+ * Duas pragas com a mesma cor principal são duas manchas iguais no meio da
+ * rodada — e o jogador precisa saber qual bicho está chegando, não só que algo
+ * está chegando.
+ */
+const porCor = new Map();
+for (const m of medidas) {
+  const jaTem = porCor.get(m.corPrincipal);
+  if (jaTem) problemas.push(`"${jaTem}" e "${m.id}" têm a mesma cor (#${m.corPrincipal})`);
+  porCor.set(m.corPrincipal, m.id);
+}
+
+/**
+ * A BARRA DE VIDA TEM QUE CABER EM CIMA DA CABEÇA.
+ *
+ * `alturaDaBarra` é o contrato do desenho com o minigame: onde pendurar a
+ * barra. Abaixo do topo ela atravessa o bicho; alto demais ela desgruda dele e
+ * vira legenda solta. A folga útil é de 8 a 45 cm acima da peça.
+ */
+for (const m of medidas) {
+  const folga = +(m.alturaDaBarra - m.altura).toFixed(2);
+  if (folga < 0.08 || folga > 0.45) {
+    problemas.push(`a barra de "${m.id}" fica a ${folga} do topo dele (esperado entre 0.08 e 0.45)`);
+  }
+}
+
+/**
  * A SILHUETA TEM QUE DIZER A VERDADE.
  *
  * O jogador lê o tamanho antes de ler a forma, então o tier precisa estar na
@@ -207,8 +253,12 @@ if (maisLargo.tier !== 'chefe' && maisLargo.tier !== 'tanque') {
 }
 const altoDosFracos = Math.max(...medidas.filter((m) => m.tier === 'fraco').map((m) => m.altura));
 const baixoDosMedios = Math.min(...medidas.filter((m) => m.tier === 'medio').map((m) => m.altura));
-if (altoDosFracos >= baixoDosMedios) {
-  problemas.push(`um fraco (${altoDosFracos}) é tão alto quanto um médio (${baixoDosMedios})`);
+// e não basta ser MENOR: bicho fraco é um bicho PEQUENO, e a diferença tem que
+// sobreviver a cinco deles correndo. Dois terços do médio mais baixo é a régua.
+if (altoDosFracos >= baixoDosMedios * 0.67) {
+  problemas.push(
+    `um fraco (${altoDosFracos}) é quase da altura de um médio (${baixoDosMedios})`,
+  );
 }
 // e o encharque tem que subir com o tier, senão a ficha mente para o jogador
 const ordem = { fraco: 0, medio: 1, tanque: 2, chefe: 3 };

@@ -26,52 +26,82 @@ import { toon } from '../core/materials';
  * TRES REGRAS, e as tres sao sobre ser lido a tres metros de distancia com
  * cinco deles na tela ao mesmo tempo:
  *
- * 1. **A SILHUETA SEPARA O TIER.** Fraco e baixo e comprido; medio tem a
- *    altura de um joelho e uma saliencia unica (orelha, bico); tanque e LARGO,
- *    porque largura lê como peso; chefe e alto. Quem olha rapido le o tamanho
- *    antes de ler a forma, entao o tamanho precisa dizer a verdade.
- * 2. **A COR SEPARA PRAGA DE PLANTA.** Todos partem da mesma familia
- *    (`P.pragaCorpo` e companhia): roxo acinzentado, ocre, e o laranja de
- *    aviso nas garras. Nenhuma dessas cores existe num canteiro.
- * 3. **A CARA E BRAVA, e isso e de proposito.** Sobrancelha em cunha por cima
- *    de cada olho. E o unico detalhe pequeno que sobrevive ao zoom de jogo, e e
- *    ele que diz que o bicho esta ALI PARA COMER A HORTA — e nao passeando.
+ * 1. **O TAMANHO SEPARA O TIER.** Fraco e PEQUENO (`ESCALA_DO_TIER`, no fim do
+ *    arquivo), medio tem a altura de um joelho, tanque e LARGO porque largura
+ *    lê como peso, e o chefe e alto. Quem olha rapido le o tamanho antes de ler
+ *    a forma. Quanta agua ainda falta quem diz e a BARRA DE VIDA em cima da
+ *    cabeca, que o minigame desenha — o tamanho e o relance, a barra e o exato.
+ * 2. **A COR SEPARA UMA PRAGA DA OUTRA.** Cada uma tem a sua
+ *    (`P.pragaLagartejo`, `P.pragaGafanhopo`, ...), e nao ha familia unica: com
+ *    cinco na tela, seis tons do mesmo roxo viram uma mancha so, e o jogador
+ *    precisa saber QUAL bicho esta chegando. O que elas dividem e o olho, a
+ *    barriga clara e o laranja de aviso — e nenhuma cor daqui existe num
+ *    canteiro, para praga nunca se confundir com planta.
+ * 3. **A CARA NAO E ASSUSTADORA.** Olho redondo com pupila redonda, e so. A
+ *    primeira versao tinha sobrancelha em cunha, e na tela ela virou uma faixa
+ *    preta atravessando o olho: assustador, que nao e o que este minigame quer
+ *    ser. Malvado eles sao pelo que FAZEM — vem comer a horta —, pela garra
+ *    laranja e pelo jeito de andar.
  *
  * Cada peca devolve o grupo com a base em `y = 0` e olhando para `+Z`, como
  * todo o kit. E cada uma publica `userData.partes` com o que se mexe (pernas,
  * pincas, bracos), para o minigame animar sem ter que procurar na arvore.
  */
 
-/** cor de olho, pupila e sobrancelha — o mesmo trio em todos eles */
+/** cor de olho e pupila — o mesmo par em todos eles */
 const OLHO = () => toon(P.pragaOlho);
 const PUPILA = () => toon(P.pragaPupila);
 
 /**
- * UM OLHO BRAVO, virado para `+Z`.
+ * UM OLHO, virado para `+Z`. Globo claro e pupila redonda, e mais nada.
  *
- * A sobrancelha e uma cunha inclinada PARA DENTRO (a ponta baixa fica do lado
- * do nariz), que e a unica forma de "bravo" que funciona sem rosto: com a
- * ponta baixa para fora, a mesma peca lê como triste.
+ * A PRIMEIRA VERSAO TINHA SOBRANCELHA, uma cunha escura por cima de cada olho,
+ * para dizer "bravo" sem rosto. Na tela ela nao leu como sobrancelha: leu como
+ * uma FAIXA PRETA atravessando o olho, e o bicho ficou assustador em vez de
+ * malvado — que e justamente o que este minigame nao quer ser. O que diz que
+ * eles sao malvados e o que eles FAZEM (vem comer a horta), a garra laranja e
+ * o jeito de andar; nao precisa estar na cara.
  *
- * @param lado -1 para o olho da esquerda, 1 para o da direita
+ * A pupila fica CENTRADA e apontando direto para `+Z`, nunca virada para
+ * dentro: duas pupilas convergindo deixam o bicho vesgo de qualquer angulo, e
+ * vesgo lê como bobo — nao como ameaca.
  */
-function olhoBravo(raio: number, lado: -1 | 1): THREE.Group {
+function olhoRedondo(raio: number): THREE.Group {
   const g = new THREE.Group();
 
   const globo = new THREE.Mesh(new THREE.SphereGeometry(raio, 10, 8), OLHO());
   g.add(globo);
-  // a pupila avanca o suficiente para nao dividir superficie com o globo
-  const pupila = new THREE.Mesh(new THREE.SphereGeometry(raio * 0.52, 8, 6), PUPILA());
-  pupila.position.z = raio * 0.62;
-  pupila.scale.z = 0.6;
-  g.add(pupila);
 
-  const sobrancelha = new THREE.Mesh(
-    new THREE.BoxGeometry(raio * 2.1, raio * 0.42, raio * 0.5), PUPILA(),
-  );
-  sobrancelha.position.set(0, raio * 0.92, raio * 0.42);
-  sobrancelha.rotation.z = lado * -0.55;
-  g.add(sobrancelha);
+  /**
+   * A PUPILA SOBE UM POUCO NO GLOBO, e isso e por causa da camera.
+   *
+   * No equador da esfera, apontando para `+Z`, ela some: a camera olha de 34
+   * graus de cima, ve a calota SUPERIOR do olho, e a pupila fica escondida
+   * pela propria testa do globo — o bicho aparece com dois olhos brancos de
+   * bola de gude. Levantada 0,45 rad ela cai bem no meio do que a camera ve.
+   *
+   * Ela sobe, e nunca vira para DENTRO: pupila convergindo deixa o bicho vesgo
+   * de qualquer angulo, e vesgo lê como bobo — nao como ameaca.
+   */
+  const olhar = new THREE.Group();
+  olhar.rotation.x = -0.45;
+  g.add(olhar);
+
+  /**
+   * A PUPILA PRECISA SOBRAR DO GLOBO, e a primeira versao nao sobrava.
+   *
+   * Ela era uma esfera de raio 0,56 achatada a 0,31 e centrada em `z = 0,6`:
+   * o polo dela parava em `0,91` contra `1,0` do globo, ou seja, ficava
+   * INTEIRA por dentro. O que aparecia na tela era so um pontinho escuro
+   * vazando por uma faceta — o bicho tinha dois olhos de bola de gude.
+   *
+   * Agora o polo vai a `1,08`, com folga para a esfera do globo ser um poliedro
+   * de 10 gomos (cuja face do meio fica em `0,95`, e nao em `1,0`).
+   */
+  const pupila = new THREE.Mesh(new THREE.SphereGeometry(raio * 0.5, 8, 6), PUPILA());
+  pupila.position.z = raio * 0.86;
+  pupila.scale.z = 0.45;
+  olhar.add(pupila);
 
   return g;
 }
@@ -100,19 +130,26 @@ function patinha(raio: number, cor: number): THREE.Mesh {
  * como uma fila de bichos, e nao como um bicho comprido.
  *
  * @param escala 1 e o tamanho de praga; a Mae-Lagartejo usa 1,9
+ * @param corDoCorpo a cor da casca. So a Mae-Lagartejo passa este argumento —
+ *   ela e a mesma peca no vinho dela; sem ele, sai o roxo do lagartejo comum.
  * @param segmentos quantos aneis o corpo tem. A mae usa QUATRO, e nao cinco:
  *   crescer o bicho inteiro por escala deixava ela com 3,5 de comprimento, mais
  *   do que qualquer peca cabe no terreiro. Mae tem que ser mais GORDA, e nao
  *   mais comprida — e aumentar o raio sem aumentar a fila e exatamente isso.
  */
-export function lagartejo(escala = 1, semente = 0.5, segmentos = 5): THREE.Group {
+export function lagartejo(
+  escala = 1, semente = 0.5, segmentos = 5, corDoCorpo?: number,
+): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'lagartejo';
   const e = escala;
   const giro = semente * 6.283;
 
-  const casca = toon(P.pragaCorpo);
-  const cascaEscura = toon(P.pragaCorpoEscuro);
+  // a mae usa a MESMA peca com a cor dela: e o unico caso de duas pragas
+  // dividindo geometria, e a cor e o que separa as duas de longe
+  const ehMae = corDoCorpo !== undefined;
+  const casca = toon(corDoCorpo ?? P.pragaLagartejo);
+  const cascaEscura = toon(ehMae ? P.pragaMaeEscura : P.pragaLagartejoEscuro);
   const garra = toon(P.pragaGarra);
 
   const pernas: THREE.Object3D[] = [];
@@ -137,7 +174,7 @@ export function lagartejo(escala = 1, semente = 0.5, segmentos = 5): THREE.Group
 
     // um par de patinhas por segmento, alternando o lado que vai a frente
     for (const s of [-1, 1] as const) {
-      const pe = patinha(0.055 * e, P.pragaCorpoEscuro);
+      const pe = patinha(0.055 * e, ehMae ? P.pragaMaeEscura : P.pragaLagartejoEscuro);
       pe.position.set(s * raio * 0.95, 0.05 * e, anel.position.z + (i % 2 ? 0.03 : -0.03) * e);
       g.add(pe);
       pernas.push(pe);
@@ -167,7 +204,7 @@ export function lagartejo(escala = 1, semente = 0.5, segmentos = 5): THREE.Group
     talo.rotation.z = s * -0.22;
     cabeca.add(talo);
 
-    const olho = olhoBravo(0.072 * e, s);
+    const olho = olhoRedondo(0.072 * e);
     olho.position.set(s * 0.11 * e, 0.26 * e, 0.05 * e);
     cabeca.add(olho);
   }
@@ -223,9 +260,9 @@ export function gafanhopo(escala = 1, semente = 0.5): THREE.Group {
   // ele nasce olhando um tico de lado, para uma fila deles nao virar um pente
   g.rotation.y = (semente - 0.5) * 0.14;
 
-  const casca = toon(P.pragaCorpo);
+  const casca = toon(P.pragaGafanhopo);
   const barriga = toon(P.pragaBarriga);
-  const escura = toon(P.pragaCorpoEscuro);
+  const escura = toon(P.pragaGafanhopoEscuro);
 
   // ------------------------------------------------------------- o corpo
   const corpo = new THREE.Mesh(new THREE.SphereGeometry(0.27 * e, 10, 8), casca);
@@ -258,7 +295,7 @@ export function gafanhopo(escala = 1, semente = 0.5): THREE.Group {
 
   // os olhos, altos e juntos no topo — de sapo
   for (const s of [-1, 1] as const) {
-    const olho = olhoBravo(0.086 * e, s);
+    const olho = olhoRedondo(0.086 * e);
     olho.position.set(s * 0.11 * e, 0.42 * e, 0.14 * e);
     g.add(olho);
   }
@@ -344,9 +381,9 @@ export function coelhatu(escala = 1, semente = 0.5): THREE.Group {
   g.userData.peca = 'coelhatu';
   const e = escala;
 
-  const casco = toon(P.pragaCasco);
-  const cascoEscuro = toon(P.pragaCascoEscuro);
-  const pelo = toon(P.pragaCorpo);
+  const casco = toon(P.pragaCoelhatuCasco);
+  const cascoEscuro = toon(P.pragaCoelhatuCascoEscuro);
+  const pelo = toon(P.pragaCoelhatu);
 
   // ------------------------------------------------------------- o corpo
   const corpo = new THREE.Mesh(new THREE.SphereGeometry(0.34 * e, 10, 8), pelo);
@@ -404,7 +441,7 @@ export function coelhatu(escala = 1, semente = 0.5): THREE.Group {
   }
 
   for (const s of [-1, 1] as const) {
-    const olho = olhoBravo(0.062 * e, s);
+    const olho = olhoRedondo(0.062 * e);
     olho.position.set(s * 0.1 * e, 0.06 * e, 0.15 * e);
     cabeca.add(olho);
   }
@@ -422,7 +459,15 @@ export function coelhatu(escala = 1, semente = 0.5): THREE.Group {
      */
     const orelha = new THREE.Group();
     orelha.position.set(s * 0.1 * e, 0.16 * e, -0.01 * e);
-    orelha.rotation.set(-0.1, 0, s * 0.34);
+    /**
+     * O SINAL DO `rotation.z` ABRE O V — e ele estava invertido.
+     *
+     * A regra do `CLAUDE.md`: `rotation.z` POSITIVO na peca do lado negativo
+     * empurra para DENTRO. Com `s * 0.34` as duas orelhas caiam uma por cima
+     * da outra e o coelho ficava com as orelhas CRUZADAS em X. Com o sinal
+     * trocado elas abrem em V, que e o desenho que estava escrito aqui.
+     */
+    orelha.rotation.set(-0.1, 0, s * -0.34);
     cabeca.add(orelha);
     orelhas.push(orelha);
 
@@ -441,7 +486,7 @@ export function coelhatu(escala = 1, semente = 0.5): THREE.Group {
   const pernas: THREE.Object3D[] = [];
   for (const sx of [-1, 1] as const) {
     for (const sz of [-1, 1] as const) {
-      const pe = patinha(0.08 * e, P.pragaCorpoEscuro);
+      const pe = patinha(0.08 * e, P.pragaCoelhatuEscuro);
       pe.position.set(sx * 0.22 * e, 0.07 * e, sz * 0.2 * e);
       g.add(pe);
       pernas.push(pe);
@@ -469,10 +514,10 @@ export function tucanguru(escala = 1, semente = 0.5): THREE.Group {
   g.userData.peca = 'tucanguru';
   const e = escala;
 
-  const pelo = toon(P.pragaCorpo);
-  const peloEscuro = toon(P.pragaCorpoEscuro);
-  const bicoCor = toon(P.pragaGarra);
-  const bicoEscuro = toon(P.pragaGarraEscura);
+  const pelo = toon(P.pragaTucanguru);
+  const peloEscuro = toon(P.pragaTucanguruEscuro);
+  const bicoCor = toon(P.pragaTucanguruBico);
+  const bicoEscuro = toon(P.pragaTucanguruBicoEscuro);
 
   /** o tronco inteiro se inclina para a frente, como canguru parado */
   const tronco = new THREE.Group();
@@ -519,7 +564,7 @@ export function tucanguru(escala = 1, semente = 0.5): THREE.Group {
   }
 
   for (const s of [-1, 1] as const) {
-    const olho = olhoBravo(0.06 * e, s);
+    const olho = olhoRedondo(0.06 * e);
     olho.position.set(s * 0.09 * e, 0.07 * e, 0.11 * e);
     cabeca.add(olho);
   }
@@ -643,7 +688,7 @@ export function preguipolvo(escala = 1, semente = 0.5): THREE.Group {
   cabeca.add(mascara);
 
   for (const s of [-1, 1] as const) {
-    const olho = olhoBravo(0.075 * e, s);
+    const olho = olhoRedondo(0.075 * e);
     olho.position.set(s * 0.11 * e, 0.03 * e, 0.19 * e);
     cabeca.add(olho);
   }
@@ -669,12 +714,21 @@ export function preguipolvo(escala = 1, semente = 0.5): THREE.Group {
     const GOMOS = 5;
     for (let j = 0; j < GOMOS; j++) {
       const t = j / (GOMOS - 1);
-      const raio = (0.11 - t * 0.065) * e;
+      /**
+       * OS GOMOS TEM QUE SE ENCOSTAR, e os primeiros nao se encostavam.
+       *
+       * Com o raio caindo de 0,11 para 0,045 ao longo de 0,7 de braco, o passo
+       * entre dois gomos (0,175) ficava MAIOR que o diametro deles na ponta
+       * (0,09): o braco virava um tracejado de bolinhas soltas no chao, em vez
+       * de um tentaculo. A ponta afina menos e o braco encurta um pouco, e o
+       * passo (0,13) passa a caber dentro do diametro (0,14).
+       */
+      const raio = (0.115 - t * 0.045) * e;
       const gomo = new THREE.Mesh(
         new THREE.SphereGeometry(raio, 8, 6),
         j % 2 === 0 ? musgo : musgoEscuro,
       );
-      gomo.position.set(0, (0.02 - t * t * 0.34) * e, (0.1 + t * 0.7) * e);
+      gomo.position.set(0, (0.02 - t * t * 0.34) * e, (0.1 + t * 0.52) * e);
       braco.add(gomo);
       /**
        * AS VENTOSAS, e sao TRES por braco, e nao quatro.
@@ -727,7 +781,7 @@ export function maeLagartejo(escala = 1): THREE.Group {
   g.userData.peca = 'mae-lagartejo';
   const e = escala;
 
-  const corpo = lagartejo(1.9 * e, 0.3, 4);
+  const corpo = lagartejo(1.9 * e, 0.3, 4, P.pragaMae);
   // a etiqueta da filha sai, senao um teste que conta lagartejos conta a mae
   corpo.userData.peca = undefined;
   g.add(corpo);
@@ -740,7 +794,7 @@ export function maeLagartejo(escala = 1): THREE.Group {
   for (const [i, [raio, z]] of ([[0.3, 0.16], [0.27, -0.24], [0.22, -0.6]] as const).entries()) {
     const crosta = new THREE.Mesh(
       new THREE.SphereGeometry(raio * 1.9 * e, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.5),
-      toon(i % 2 === 0 ? P.pragaCorpoEscuro : P.pragaCasco),
+      toon(i % 2 === 0 ? P.pragaMaeEscura : P.pragaMaeCrosta),
     );
     crosta.scale.set(1, 0.62, 0.5);
     crosta.position.set(0, 0.34 * 1.9 * e, z * 1.9 * e);
@@ -771,12 +825,31 @@ export function maeLagartejo(escala = 1): THREE.Group {
   return g;
 }
 
+/* =========================================================================
+ * O CATALOGO
+ * ========================================================================= */
+
+/**
+ * O TAMANHO DE CADA UM, e por que ele nao e 1 para todos.
+ *
+ * Bicho fraco e um bicho PEQUENO. A peca e a mesma, so encolhida: um Lagartejo
+ * de 42 cm de altura ao lado de um Coelhatu de 1 m nao precisa de nenhuma
+ * explicacao, e essa diferenca continua legivel com cinco deles em movimento —
+ * que e o momento em que ninguem tem tempo de olhar a cara de ninguem.
+ *
+ * Ela NAO e a unica coisa que conta o perigo: quem diz quanta agua falta e a
+ * BARRA DE VIDA em cima da cabeca (§5 do plano), que o minigame desenha. O
+ * tamanho e a leitura de relance; a barra e a leitura exata.
+ */
+const ESCALA_DO_TIER = { fraco: 0.72, medio: 1, tanque: 1, chefe: 1 } as const;
+
 /**
  * O CATALOGO, para quem for montar onda e para os testes.
  *
- * A ordem e a do plano: dois fracos, dois medios, um tanque, um chefe. `vida`
- * e `escala` sao o contrato do desenho com o jogo — quanto jato ele aguenta e
- * quanto espaco ele ocupa —, e ficam aqui porque quem desenhou e quem sabe.
+ * A ordem e a do plano: dois fracos, dois medios, um tanque, um chefe. O
+ * `encharque` e o `alturaDaBarra` sao o contrato do desenho com o jogo —
+ * quanto jato ele aguenta, e onde a barra de vida tem que flutuar para nao
+ * atravessar a cabeca dele — e ficam aqui porque quem desenhou e quem sabe.
  */
 export interface FichaDePraga {
   readonly id: string;
@@ -785,32 +858,41 @@ export interface FichaDePraga {
   readonly mistura: string;
   /** quantos jatos de regador basico ele aguenta */
   readonly encharque: number;
+  /** a que altura pendurar a barra de vida, em metros do chao */
+  readonly alturaDaBarra: number;
+  /** ja vem com a escala do tier aplicada; o argumento multiplica por cima */
   readonly monta: (escala?: number, semente?: number) => THREE.Group;
 }
 
 export const PRAGAS: readonly FichaDePraga[] = [
   {
     id: 'lagartejo', nome: 'Lagartejo', tier: 'fraco',
-    mistura: 'lagarta + caranguejo', encharque: 2, monta: lagartejo,
+    mistura: 'lagarta + caranguejo', encharque: 2, alturaDaBarra: 0.72,
+    monta: (e = 1, s) => lagartejo(ESCALA_DO_TIER.fraco * e, s),
   },
   {
     id: 'gafanhopo', nome: 'Gafanhopo', tier: 'fraco',
-    mistura: 'gafanhoto + sapo', encharque: 2, monta: gafanhopo,
+    mistura: 'gafanhoto + sapo', encharque: 2, alturaDaBarra: 0.74,
+    monta: (e = 1, s) => gafanhopo(ESCALA_DO_TIER.fraco * e, s),
   },
   {
     id: 'coelhatu', nome: 'Coelhatu', tier: 'medio',
-    mistura: 'coelho + tatu', encharque: 4, monta: coelhatu,
+    mistura: 'coelho + tatu', encharque: 4, alturaDaBarra: 1.25,
+    monta: (e = 1, s) => coelhatu(ESCALA_DO_TIER.medio * e, s),
   },
   {
     id: 'tucanguru', nome: 'Tucanguru', tier: 'medio',
-    mistura: 'tucano + canguru', encharque: 3, monta: tucanguru,
+    mistura: 'tucano + canguru', encharque: 3, alturaDaBarra: 1.45,
+    monta: (e = 1, s) => tucanguru(ESCALA_DO_TIER.medio * e, s),
   },
   {
     id: 'preguipolvo', nome: 'Preguipolvo', tier: 'tanque',
-    mistura: 'preguiça + polvo', encharque: 10, monta: preguipolvo,
+    mistura: 'preguiça + polvo', encharque: 10, alturaDaBarra: 1.1,
+    monta: (e = 1, s) => preguipolvo(ESCALA_DO_TIER.tanque * e, s),
   },
   {
     id: 'mae-lagartejo', nome: 'Mãe-Lagartejo', tier: 'chefe',
-    mistura: 'o lagartejo em tamanho de chefe', encharque: 18, monta: maeLagartejo,
+    mistura: 'o lagartejo em tamanho de chefe', encharque: 18, alturaDaBarra: 1.62,
+    monta: (e = 1) => maeLagartejo(ESCALA_DO_TIER.chefe * e),
   },
 ];

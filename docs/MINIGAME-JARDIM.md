@@ -186,14 +186,14 @@ Noel, Capy, Estella, Mano, Jean-Luc e Josefina são **gente**, e gente não vira
 alvo. Nenhuma peça de bicho já existente foi reaproveitada: as seis são modelos
 novos, em `src/world/bichosDoJardim.ts`.
 
-| bicho | mistura | tier | encharque | o que ele faz de diferente |
-|---|---|---|---|---|
-| **Lagartejo** | lagarta + caranguejo | fraco | 2 | o básico. Vai reto no canteiro mais perto e come. As duas garras são só ameaça |
-| **Gafanhopo** | gafanhoto + sapo | fraco | 2 | pula 2 m de cada vez — o jato passa por baixo enquanto ele está no ar |
-| **Coelhatu** | coelho + tatu | médio | 4 | corre, dá uma mordida e volta. Se levar jato de frente, **enrola** e os placões aguentam |
-| **Tucanguru** | tucano + canguru | médio | 3 | aos saltos longos, e **ignora canteiro**: vai direto no que estiver em vaso ou na prateleira de mudas |
-| **Preguipolvo** | preguiça + polvo | tanque | 10 | lentíssimo e largo. Os braços alcançam **dois canteiros ao mesmo tempo**, e ele é o que mais atrapalha a passagem |
-| **Mãe-Lagartejo** | o lagartejo em tamanho de chefe | chefe | 18 | a chefe. Anda devagar, come um canteiro inteiro de uma vez e **solta lagartejos** pelo caminho |
+| bicho | mistura | cor | tier | altura | encharque | o que ele faz de diferente |
+|---|---|---|---|---|---|---|
+| **Lagartejo** | lagarta + caranguejo | roxo | fraco | 0,38 | 2 | o básico. Vai reto no canteiro mais perto e come. As duas garras são só ameaça |
+| **Gafanhopo** | gafanhoto + sapo | turquesa | fraco | 0,44 | 2 | pula 2 m de cada vez — o jato passa por baixo enquanto ele está no ar |
+| **Coelhatu** | coelho + tatu | ferrugem e creme | médio | 1,01 | 4 | corre, dá uma mordida e volta. Se levar jato de frente, **enrola** e os placões aguentam |
+| **Tucanguru** | tucano + canguru | azul de bico amarelo | médio | 1,23 | 3 | aos saltos longos, e **ignora canteiro**: vai direto no que estiver em vaso ou na prateleira de mudas |
+| **Preguipolvo** | preguiça + polvo | musgo | tanque | 0,83 (e 2,1 de largura) | 10 | lentíssimo e largo. Os braços alcançam **dois canteiros ao mesmo tempo**, e ele é o que mais atrapalha a passagem |
+| **Mãe-Lagartejo** | o lagartejo em tamanho de chefe | vinho | chefe | 1,36 | 18 | a chefe. Anda devagar, come um canteiro inteiro de uma vez e **solta lagartejos** pelo caminho |
 
 A coluna `encharque` é a que está no código (`FichaDePraga.encharque`) e vale em
 **jatos do regador básico**. Velocidade e comportamento ainda são projeto: os
@@ -203,19 +203,48 @@ O elenco cresce como o do Mania: **cada bicho é uma linha numa lista**
 (`PRAGAS`, no mesmo arquivo). Bicho novo é uma entrada nova, não uma mexida no
 motor.
 
-### A silhueta conta o tier antes da forma
+### O tamanho é o relance; a barra de vida é o número
 
 Com cinco na tela, ninguém lê "preguiça com braço de polvo" — lê tamanho. Então
-a régua é geométrica, e o teste cobra: **fraco é baixo e rasteiro** (≈ 0,6 de
-altura), **médio é de joelho** (1,0 a 1,25), **o tanque é o mais LARGO** (2,4 de
-envergadura) e **o chefe é o mais ALTO** (1,36) e o mais comprido. Nenhum fraco
-pode chegar à altura de um médio, e o encharque tem que subir junto com o tier —
-senão a ficha mente para o jogador.
+**bicho fraco é um bicho pequeno**: a peça é a mesma, encolhida a 0,72
+(`ESCALA_DO_TIER`). Um Lagartejo de 38 cm ao lado de um Coelhatu de 1 m não
+precisa de explicação nenhuma. O teste cobra a régua: fraco não chega a dois
+terços do médio mais baixo, **o tanque é o mais LARGO** (2,1 de envergadura),
+**o chefe é o mais ALTO** (1,36) e o mais comprido, e o encharque sobe junto com
+o tier — senão a ficha mente para o jogador.
 
-A paleta deles é uma família só (`P.praga*`): corpo roxo-acinzentado, barriga
-clara, casco bege, **garra laranja** e o par de olhos creme com pupila quase
-preta. O Preguipolvo é o único fora do roxo — ele é musgo, porque a piada dele é
-parecer moita até se mexer.
+Quanta água ainda falta quem diz é a **barra de vida em cima da cabeça**, que o
+minigame desenha. Cada ficha já traz o `alturaDaBarra`, em metros do chão, para
+a barra não atravessar o bicho nem desgrudar dele; o teste confere que ela cai
+de 8 a 45 cm acima do topo da peça.
+
+### Cada uma com a sua cor
+
+Não há família única de cor, e essa foi uma correção do Renan olhando a primeira
+leva: seis tons do mesmo roxo viram **uma mancha escura só** quando há cinco na
+tela, e aí o jogador sabe que vem praga mas não sabe QUAL. Agora cada uma tem a
+sua (`P.pragaLagartejo`, `P.pragaGafanhopo`, …): roxo, turquesa, ferrugem, azul,
+musgo e vinho. A cor também precisa brigar com o CHÃO — o primeiro terracota do
+Coelhatu era quase o piso do terreiro, e ele sumia nele.
+
+O que as seis dividem é só o olho, a barriga clara e a **garra laranja** de
+aviso. E nenhuma dessas cores existe num canteiro, para praga nunca se confundir
+com planta.
+
+### A cara não é assustadora
+
+A primeira versão punha uma sobrancelha em cunha sobre cada olho, para dizer
+"bravo" sem rosto. Na tela ela não leu como sobrancelha: leu como uma **faixa
+preta atravessando o olho**, e o bicho ficou assustador — que é o oposto do que
+este minigame quer ser. Agora é olho redondo com pupila redonda, e mais nada.
+
+A pupila é levantada 0,45 rad no globo, porque a câmera olha de 34° de cima e no
+equador ela some atrás da própria testa do olho (o bicho fica com dois olhos de
+bola de gude). E ela nunca vira para dentro: pupila convergindo deixa o bicho
+vesgo, e vesgo lê como bobo, não como ameaça.
+
+Malvados eles são pelo que **fazem** — vêm comer a horta —, pela garra laranja e
+pelo jeito de andar. Não precisa estar na cara.
 
 ### Como olhar para eles
 
@@ -230,8 +259,9 @@ Ele mede cada bicho pela **geometria desenhada** (os oito cantos da caixa de
 cada malha levados para o mundo), e não por raio inventado: já foi medindo
 colisor que passaram verde dois defeitos que estavam na tela. Guarda o contrato
 do kit (base em `y = 0`, centrada na origem), o teto de malhas por tier (o jogo
-roda em celular e vão existir muitas ao mesmo tempo), a régua de silhueta acima,
-e que nenhuma encosta na outra na fila.
+roda em celular e vão existir muitas ao mesmo tempo), a régua de tamanho acima,
+que **nenhuma repete a cor principal de outra**, que a barra de vida cabe em
+cima da cabeça de cada uma, e que nenhuma encosta na outra na fila.
 
 ---
 
