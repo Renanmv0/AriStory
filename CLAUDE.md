@@ -15,6 +15,7 @@ acento — é o padrão do repositório, siga o que já está lá.
 | aparência de um personagem | `.claude/skills/aristory-personagem/SKILL.md` |
 | criar uma peça de cenário | `.claude/skills/aristory-prop/SKILL.md` |
 | criar um bicho (gato, cachorro, passarinho) | `.claude/skills/aristory-bicho/SKILL.md` |
+| criar/ajustar uma praga do minigame do jardim | `.claude/skills/aristory-praga/SKILL.md` |
 | pintar uma memória para o quadro (a partir de uma foto) | `.claude/skills/aristory-memoria/SKILL.md` |
 | adicionar/ajustar roupa do guarda-roupa | `.claude/skills/aristory-roupa/SKILL.md` |
 | pôr um prato novo no cardápio do restaurante | `.claude/skills/aristory-prato/SKILL.md` |
