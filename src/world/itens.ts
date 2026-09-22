@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
+import { regadorDeJardim } from './regador';
 import {
   blazerXadrez, canoDaBota, coroaDeDama, gargantilhaDeLaco, gorroDeLa, gravataDoWalter,
   jaquetaFrancesa, maidJapones, mangaDaJaquetaFrancesa, mangaDeMoletom, mangaDeQuimono,
@@ -384,6 +385,27 @@ export const ITENS = {
     tipo: 'mao',
     nota: 'presente do Noel, do bar de sucos',
     holdPose: 'relaxed',
+  },
+  /**
+   * O REGADOR da bancada da estufa — e a arma do minigame do jardim.
+   *
+   * Ele e um item de MAO como qualquer outro, e isso nao e detalhe: o Renan
+   * quis que a estufa continue sendo um lugar onde se anda normalmente, e que o
+   * minigame comece porque o jogador FOI PEGAR O REGADOR e regou as plantas.
+   * Uma arma que so existe dentro de um modo de jogo precisaria de um sistema
+   * de estado proprio; um item que se pega numa bancada nao precisa de nada
+   * novo — a mochila ja sabe guardar, largar e mostrar na mao.
+   *
+   * A `holdPose` e a unica coisa dele que e especial: braco levantado, que e a
+   * pose que faz a lata aparecer acima da linha do canteiro.
+   */
+  regador: {
+    id: 'regador',
+    nome: 'Regador',
+    icone: '🪣',
+    tipo: 'mao',
+    nota: 'da bancada da Josefina',
+    holdPose: 'regando',
   },
 
   /* ====================================================================
@@ -786,6 +808,19 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'frisbee': () => frisbee(P.frisbee),
   'osso': () => osso(P.osso),
   'biscoito-estella': () => biscoitoDaEstella(),
+  /**
+   * O regador da mao sai MENOR que o do chao (0,82).
+   *
+   * A peca do kit tem 42 cm, que e a medida de um regador de jardim de verdade
+   * ao lado de uma pessoa de 1,75. Na mao de um boneco chibi, cuja cabeca ja e
+   * desproporcional, essa mesma medida vira um balde: o braco some atras dela.
+   * Encolher na hora de segurar e mais barato que ter duas geometrias.
+   */
+  'regador': () => {
+    const g = regadorDeJardim();
+    g.scale.setScalar(0.82);
+    return g;
+  },
 };
 
 const PORID: Record<string, ItemDef> = Object.fromEntries(

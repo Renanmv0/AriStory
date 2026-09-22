@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { toon, flat } from '../core/materials';
 import { PALETTE as P } from '../palette';
+import { regadorDeJardim } from './regador';
 
 /**
  * Kit de cenario ao ar livre. Toda peca volta como um Group com a base em y=0,
@@ -4369,6 +4370,18 @@ export function canteiroDeHorta(
   const colunas = Math.max(3, Math.round((largura - 0.45) / 0.45));
   const linhas = profundidade > 1.0 ? 2 : 1;
   const vaoX = largura - 0.62;
+  /**
+   * AS MUDAS E A TERRA ficam publicadas em `userData`.
+   *
+   * Sem isso, quem quisesse mexer no canteiro depois de montado teria que
+   * adivinhar qual filho e qual — e "o filho de indice 6" quebra na primeira
+   * vez que alguem acrescentar uma tabua. Quem precisa: a rega da estufa
+   * (a terra escurece e as mudas dao uma esticada) e, depois, o minigame, que
+   * precisa murchar planta por planta quando a praga come.
+   */
+  const mudas: THREE.Object3D[] = [];
+  g.userData.mudas = mudas;
+  g.userData.terra = terra;
   for (let c = 0; c < colunas; c++) {
     for (let l = 0; l < linhas; l++) {
       // as duas fileiras saem DESENCONTRADAS meio passo, como canteiro de
@@ -4381,6 +4394,7 @@ export function canteiroDeHorta(
         linhas === 1 ? 0 : -profundidade * 0.17 + l * profundidade * 0.34,
       );
       g.add(muda);
+      mudas.push(muda);
     }
   }
   return g;
@@ -4429,28 +4443,14 @@ export function vasoDePlanta(tipo: TipoDePlanta, altura = 0.32, semente = 0.5): 
  * O REGADOR da Josefina, largado no jardim. Peca pequena e sem colisor: e um
  * sinal de que alguem trabalha aqui, que e o que separa um jardim de um
  * canteiro decorativo.
+ *
+ * A GEOMETRIA MUDOU DE CASA: ela mora em `world/regador.ts`, porque o regador
+ * e a arma do minigame do jardim e MUDA DE CARA a cada melhoria — ele deixou
+ * de ser uma peca e virou uma receita. Esta funcao sobrou como o atalho para
+ * quem so quer um regador largado num canto: o de fabrica, no estagio 0.
  */
-export function regador(cor: number = P.metalGrey): THREE.Group {
-  const g = new THREE.Group();
-  g.userData.peca = 'regador';
-  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.2, 10), toon(cor));
-  corpo.position.y = 0.1;
-  g.add(corpo);
-  // o bico, subindo em diagonal, e o chuveirinho da ponta
-  const bico = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.035, 0.3, 8), toon(cor));
-  bico.position.set(0.16, 0.17, 0);
-  bico.rotation.z = -0.75;
-  g.add(bico);
-  const crivo = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.04, 0.05, 8), toon(P.metalWhite));
-  crivo.position.set(0.27, 0.26, 0);
-  crivo.rotation.z = -0.75;
-  g.add(crivo);
-  // a alca por cima
-  const alca = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.016, 6, 12, Math.PI), toon(cor));
-  alca.position.set(-0.03, 0.2, 0);
-  alca.rotation.y = Math.PI / 2;
-  g.add(alca);
-  return g;
+export function regador(): THREE.Group {
+  return regadorDeJardim();
 }
 
 /**

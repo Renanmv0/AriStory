@@ -257,12 +257,13 @@ export interface ItemDef {
    *
    * - `upright`: braco esticado para a frente e o objeto em pe — sorvete, suco;
    * - `relaxed`: braco so descolado do tronco, objeto pendurado na mao — frisbee;
+   * - `regando`: braco LEVANTADO e o objeto inclinado para a frente — regador;
    * - `none`: nao muda a pose (padrao para o que nem aparece na mao).
    */
   holdPose?: HoldPose;
 }
 
-export type HoldPose = 'upright' | 'relaxed' | 'none';
+export type HoldPose = 'upright' | 'relaxed' | 'regando' | 'none';
 
 // --- guarda-roupa -----------------------------------------------------------
 //

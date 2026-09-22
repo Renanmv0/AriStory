@@ -59,6 +59,23 @@ const POSES = {
    * distancia de camera ninguem reconhece um frisbee de canto.
    */
   relaxed: { bracoX: -0.22, bracoZ: 0.46, balanco: 0.6, itemZ: 0.9, itemX: 0.13 },
+  /**
+   * REGADOR: o braco LEVANTADO, e nao esticado para a frente.
+   *
+   * O pedido do Renan foi esse ("ficaremos com o braco levantado segurando o
+   * regador"), e ele tem razao de jogo: o regador e a arma do minigame do
+   * jardim, e arma precisa aparecer ACIMA da linha do canteiro. Na altura do
+   * `upright` a lata fica na frente do tronco e some atras de qualquer moita.
+   *
+   * `itemZ` negativo inclina a peca para a FRENTE dentro da mao — regador de
+   * verdade despeja inclinando de leve, e um regador perfeitamente em pe lê
+   * como lata de tinta sendo carregada.
+   *
+   * `balanco` 0,1: quase nada. Com o balanco cheio da caminhada uma lata de
+   * agua de 40 cm faz um arco enorme, e a peca parece leve demais para o que
+   * ela e.
+   */
+  regando: { bracoX: -2.05, bracoZ: 0.3, balanco: 0.1, itemZ: -0.5, itemX: 0.04 },
 } as const;
 
 /**

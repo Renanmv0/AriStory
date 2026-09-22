@@ -7,6 +7,8 @@ import {
   trelicaComTrepadeira, vasoDePlanta,
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
+import { ITENS } from '../world/itens';
+import { Josefina } from '../entities/bichos/Josefina';
 import { ARI, RENAN } from '../characters/cast';
 import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 import { toon } from '../core/materials';
@@ -494,19 +496,28 @@ export const estufa: SceneDef = {
     });
 
     // ------------------------------------------------------------ os canteiros
-    for (const { x, z, tipo, giro } of CANTEIROS) {
+    /**
+     * As oito hortas ficam GUARDADAS, e nao so plantadas.
+     *
+     * A rega (§2 deste arquivo, mais abaixo) precisa de cada peca para
+     * escurecer a terra e esticar as mudas, e o minigame vai precisar delas
+     * para murchar planta por planta. Guardar a peca aqui e o que evita, de
+     * novo, um segundo lugar onde a mesma coordenada esta escrita.
+     */
+    const hortas = CANTEIROS.map(({ x, z, tipo, giro }) => {
       // CRESCIMENTO 1,45: a mesma peca da horta de fora, com as mudas maiores.
       // E o que faz os dois lugares nao parecerem o mesmo canteiro copiado — e
       // e a fala da propria Josefina depois da quest ("adubo bom trabalha
       // rapido") virando geometria.
-      w.add(w.place(
+      const peca = w.add(w.place(
         canteiroDeHorta(tipo, CANTEIRO.largura, CANTEIRO.profundidade, ((x + z) / 7) % 1, 1.45),
         x, 0, z, giro,
       ));
       // o colisor acompanha o giro: nos dois deitados a caixa troca de eixo
       if (giro === 0) w.blockBox(x, z, CANTEIRO.largura / 2, CANTEIRO.profundidade / 2);
       else w.blockBox(x, z, CANTEIRO.profundidade / 2, CANTEIRO.largura / 2);
-    }
+      return { x, z, giro, tipo, peca };
+    });
 
     /**
      * ================= ONDE PODE ENTRAR ENFEITE, no lado da porta
@@ -563,8 +574,8 @@ export const estufa: SceneDef = {
     const bancada = w.add(w.place(bancadaDeJardinagem(2.8), -hx + 1.1, 0, 6.4, Math.PI / 2));
     w.blockBox(-hx + 1.1, 6.4, 0.45, 1.4);
     // o regador do plano (§4) largado ao lado dela: ele ja esta no cenario
-    // muito antes de virar arma
-    w.add(w.place(regador(), -hx + 1.5, 0, 8.2, 1.1));
+    // muito antes de virar arma, e e ele que o jogador vem pegar
+    const regadorDaBancada = w.add(w.place(regador(), -hx + 1.5, 0, 8.2, 1.1));
 
     const tonel = w.add(w.place(tonelDeAgua(1.25), -hx + 1.2, 0, -7.4));
     w.blockCircle(-hx + 1.2, -7.4, 0.55);
@@ -766,6 +777,290 @@ export const estufa: SceneDef = {
         ]);
       },
     });
+
+    /* ====================================================================
+     *        O REGADOR, A REGA, E COMO O MINIGAME COMECA
+     * ====================================================================
+     *
+     * O pedido do Renan, e ele decide a forma de tudo aqui: **a estufa
+     * continua sendo um lugar onde se anda normalmente**, e o minigame nao
+     * comeca por um botao "jogar". Comeca porque o jogador foi ate a bancada,
+     * PEGOU O REGADOR e saiu regando as plantas — e, na terceira, a Josefina
+     * entra pela porta para contar das pragas.
+     *
+     * Isso e melhor que um botao por uma razao concreta: quando a rodada
+     * comecar, o jogador ja vai estar com o regador na mao, ja vai ter andado
+     * de canteiro em canteiro e ja vai ter visto que a lata aponta para onde
+     * ele olha. O tutorial inteiro acontece sem ninguem chamar de tutorial.
+     *
+     * Nada disso e obrigatorio: da para entrar na estufa, olhar tudo e sair
+     * sem nunca encostar no regador.
+     */
+    const REGAS_PARA_CHAMAR = 3;
+
+    /** um passo para dentro do terreiro, a partir do canteiro */
+    const pontoDeRega = (h: { x: number; z: number; giro: number }) =>
+      h.giro === 0
+        ? { x: h.x, z: h.z - CANTEIRO.profundidade / 2 - 1.1 }
+        : { x: h.x - Math.sign(h.x) * (CANTEIRO.profundidade / 2 + 1.1), z: h.z };
+
+    /**
+     * OS RESPINGOS DA REGA.
+     *
+     * Eles caem em ARCO a partir da altura da mao (1,25, que e onde o crivo
+     * fica com o braco levantado) ate a terra do canteiro. Gota nascendo no
+     * chao nao lê como rega — lê como poça —, e a altura e a unica coisa que
+     * separa as duas leituras.
+     */
+    interface Gota { mesh: THREE.Mesh; vy: number; vx: number; vz: number; vida: number; }
+    const gotas: Gota[] = [];
+    const molhar = (deX: number, deZ: number, paraX: number, paraZ: number): void => {
+      g.som('agua');
+      const voo = 0.55;
+      for (let i = 0; i < 14; i++) {
+        const t = i / 13;
+        const gota = new THREE.Mesh(
+          new THREE.SphereGeometry(0.035 + w.rng() * 0.025, 5, 4),
+          toon(P.regadorAgua),
+        );
+        // saem espalhadas em leque, como agua saindo de um crivo
+        const espalha = (w.rng() - 0.5) * 0.6;
+        gota.position.set(deX + espalha * 0.4, 1.25, deZ + espalha * 0.4);
+        w.root.add(gota);
+        gotas.push({
+          mesh: gota,
+          vx: (paraX - deX) / voo + espalha,
+          vz: (paraZ - deZ) / voo + espalha,
+          vy: 0.6 - t * 0.3,
+          vida: voo + w.rng() * 0.25,
+        });
+      }
+    };
+
+    w.onUpdate((dt) => {
+      for (let i = gotas.length - 1; i >= 0; i--) {
+        const gt = gotas[i];
+        gt.vy -= 7 * dt;
+        gt.mesh.position.x += gt.vx * dt;
+        gt.mesh.position.z += gt.vz * dt;
+        gt.mesh.position.y += gt.vy * dt;
+        gt.vida -= dt;
+        if (gt.vida <= 0 || gt.mesh.position.y < 0.12) {
+          w.root.remove(gt.mesh);
+          gt.mesh.geometry.dispose();
+          gotas.splice(i, 1);
+        }
+      }
+    });
+
+    // ------------------------------------------------- pegar e largar a lata
+    const comORegador = (): boolean => g.getActiveHandItem()?.id === 'regador';
+
+    const pegarORegador = w.interact({
+      id: 'estufa:pegar-regador',
+      x: regadorDaBancada.position.x + 1.1, z: regadorDaBancada.position.z,
+      radius: 1.6,
+      label: 'Pegar o regador', icon: '🪣',
+      highlight: regadorDaBancada,
+      priority: 1,
+      onInteract: async (api) => {
+        if (api.addItem(ITENS.regador) === 'cheio') {
+          api.toast('A mochila está cheia', '🎒');
+          return;
+        }
+        // a peca do chao some: ela E a que foi para a mao
+        regadorDaBancada.visible = false;
+        pegarORegador.enabled = false;
+        api.toast('Regador', '🪣');
+        if (!api.flag('estufa.regou-uma')) {
+          await conversa([
+            [A, 'A Josefina não vai se importar da gente usar?'],
+            [R, 'Ela deixou a porta destrancada. Acho que é mais ou menos um convite.'],
+            [A, 'Então tá. Vamos molhar tudo.'],
+          ]);
+        }
+      },
+    });
+
+    // ----------------------------------------------------- regar os canteiros
+    let regados = 0;
+    let chamando = false;
+    for (const h of hortas) {
+      let jaRegado = false;
+      const ponto = pontoDeRega(h);
+      const it = w.interact({
+        id: `estufa:regar-${h.tipo}-${Math.round(h.x)}-${Math.round(h.z)}`,
+        ...ponto, radius: 1.7,
+        label: 'Regar', icon: '💧',
+        highlight: h.peca,
+        onInteract: async (api) => {
+          if (!comORegador()) {
+            await conversa([
+              [A, 'Com a mão? Não vai dar.'],
+              [R, 'Tem um regador na bancada da Josefina.'],
+            ]);
+            return;
+          }
+          if (jaRegado) {
+            await api.say(['Esse já está encharcado.'], A);
+            return;
+          }
+          jaRegado = true;
+          it.enabled = false;
+
+          const de = api.playerPosition();
+          molhar(de.x, de.z, h.x, h.z);
+
+          /**
+           * A TERRA ESCURECE E AS MUDAS ESTICAM.
+           *
+           * Sem um dos dois a rega vira animacao de partícula sem
+           * consequencia. A terra e o que prova que a agua CAIU ali, e continua
+           * valendo depois de os respingos sumirem; a esticada e o obrigado da
+           * planta. As duas saem de `userData` do canteiro, que e o que
+           * dispensa adivinhar qual filho e qual.
+           */
+          const terra = h.peca.userData.terra as THREE.Mesh | undefined;
+          if (terra) terra.material = toon(P.terraUmida);
+          const mudas = (h.peca.userData.mudas ?? []) as THREE.Object3D[];
+          for (const muda of mudas) muda.scale.setScalar(1.09);
+
+          regados += 1;
+          api.bump('estufa.regadas');
+          api.setFlag('estufa.regou-uma');
+
+          if (regados < REGAS_PARA_CHAMAR) {
+            if (regados === 1) {
+              await conversa([
+                [R, 'Olha ela bebendo. Dá pra ver a terra mudando de cor.'],
+                [A, 'Mais umas duas e eu já me considero jardineiro.'],
+              ]);
+            }
+            return;
+          }
+          if (chamando) return;
+          chamando = true;
+          await aJosefinaChega(api);
+        },
+      });
+    }
+
+    /**
+     * ======================= A CUTSCENE QUE ABRE O MINIGAME
+     *
+     * A Josefina entra PELA PORTA, atravessa o terreiro e para na frente dos
+     * dois. Ela nao aparece do nada no meio da estufa: ela e a dona do lugar, e
+     * dona de casa entra pela porta.
+     *
+     * Ela e a MESMA classe da tartaruga do jardim de fora
+     * (`entities/bichos/Josefina.ts`), em servico — `entrarEmServico()` tira o
+     * passeio aleatorio das maos dela e `irPara()` a leva aonde a cena mandar.
+     */
+    const josefina = new Josefina({
+      minX: -hx + 1, minZ: -hz + 1, maxX: hx - 1, maxZ: hz - 1,
+      // os canteiros sao o unico lugar da estufa onde ela NAO pisa: e a mesma
+      // regra do jardim de fora, e e o que faz a jardineira parecer jardineira
+      proibido: CANTEIROS.map(({ x, z }) => ({ x, z, r: 1.6 })),
+    });
+    josefina.group.visible = false;
+    /**
+     * ELA NASCE NA SOLEIRA, e isso e `sentarEm` e nao `irPara`.
+     *
+     * A primeira versao mandava `irPara(porta, velocidade 0)` para prende-la
+     * ali. O efeito foi outro: com velocidade zero ela nunca CHEGA, a missao
+     * fica pendurada, e quando a cutscene a chamava ela partia do ponto onde o
+     * construtor a largou — o meio da estufa, a vinte metros da porta, a 0,55
+     * por segundo. A cutscene ficava mais de meio minuto travada com a dupla
+     * imobil esperando uma tartaruga atravessar o cenario.
+     *
+     * `sentarEm` ESCREVE a posicao, que e o que se queria: ela ja esta do lado
+     * de fora quando a cena sobe, e o `levantar()` da cutscene e o que a poe
+     * para andar.
+     */
+    josefina.sentarEm(PORTA.x, PORTA.z + 1.4, Math.PI);
+    w.add(josefina.group);
+    w.onUpdate((dt) => josefina.update(dt));
+
+    const aJosefinaChega = async (api: typeof g): Promise<void> => {
+      const J = 'Josefina';
+      api.lockPlayer(true);
+      josefina.group.visible = true;
+      josefina.entrarEmServico();
+      josefina.levantar();
+      api.focusCamera(josefina.group);
+      api.setZoom(9);
+      /**
+       * ELA ENTRA DOIS PASSOS, E CHAMA DALI. Nao atravessa a estufa.
+       *
+       * A versao anterior mandava ela ate o canteiro onde a dupla estava, e a
+       * conta condena: a Josefina e o bicho mais lento do jogo (0,3 de
+       * velocidade, personalidade dela), e de um canteiro da lateral ate a
+       * porta sao uns doze metros. Mesmo apressada para a cutscene, isso e
+       * meio minuto de tartaruga andando com o jogador travado — e ninguem
+       * dobra a velocidade de um personagem so para caber numa cena.
+       *
+       * Duas passadas e o suficiente para ela ESTAR na estufa, que e o que a
+       * entrada precisa dizer. Quem se aproxima na conversa e a camera.
+       */
+      await josefina.irPara(PORTA.x, PORTA.z - 2.2, 0.8);
+      const eu = api.playerPosition();
+      josefina.encarar(eu.x, eu.z);
+      api.setZoom(13);
+      await api.wait(0.5);
+
+      await conversa([
+        [J, 'Ah, vocês acharam o regador.'],
+        [A, 'A gente só ia dar uma olhada. Aí começou a regar.'],
+        [J, 'É assim que começa. Primeiro a gente só olha.'],
+        [J, 'Mas eu ia falar com vocês mesmo. Tem bicho entrando pelo fundo.'],
+        [R, 'Bicho como assim? Tipo pulgão?'],
+        [J, 'Não. Bicho grande. E não é bicho que eu conheça — tem uns com pinça, tem um que pula.'],
+        [J, 'Eles vêm pelos três portões, atrás. Vêm pela horta e comem tudo o que encontram pela frente.'],
+        [A, 'E a gente faz o quê? Espanta?'],
+        [J, 'Água. Só isso. Eles não gostam de água e vão embora por onde vieram.'],
+        [J, 'Não quero machucar nenhum bicho. Só quero eles do lado de fora.'],
+        [R, 'A gente fica. Fala quando for a hora.'],
+        [J, 'Eles chegam no fim da tarde, quando esfria. Enche esse regador até lá.'],
+      ]);
+
+      api.setFlag('jardim.convite');
+      api.unlock({
+        id: 'as-pragas-do-jardim',
+        title: 'O que vem pelos portões',
+        place: 'Clube',
+        note: 'A Josefina não pediu pra gente matar nada. Pediu pra gente molhar. É bem a cara dela.',
+        icon: '💧',
+      });
+
+      /**
+       * A DUPLA E LIBERADA ANTES DE ELA CHEGAR NA BANCADA, e o `irPara` daqui
+       * NAO e esperado.
+       *
+       * Ela anda a 0,4 e a bancada fica a uns treze metros: esperar isso seria
+       * meio minuto de jogador travado olhando uma tartaruga atravessar a
+       * estufa DEPOIS de a conversa ter acabado. A cutscene termina quando a
+       * fala termina; o caminho dela de volta acontece no mundo, como qualquer
+       * outro bicho andando pelo cenario.
+       */
+      api.focusCamera(null);
+      api.setZoom(11);
+      josefina.pararDeEncarar();
+      void josefina.irPara(bancada.position.x + 1.2, bancada.position.z, 0.4);
+      api.lockPlayer(false);
+
+      /**
+       * ======================= O GANCHO DA RODADA, e ele e de propriedade
+       *
+       * E AQUI que a etapa 3 do plano (`docs/MINIGAME-JARDIM.md` §9) entra: uma
+       * chamada so, `iniciarRodadaDoJardim(...)`, com a dupla ja de regador na
+       * mao e a planta do jardim publicada logo abaixo em `pontosDoJardim`.
+       *
+       * Ate ela existir, a fala da Josefina fecha o assunto no proprio mundo
+       * ("eles chegam no fim da tarde") em vez de o jogo admitir que a peca
+       * falta. Nada aqui e um beco sem saida: o jogador continua com o regador,
+       * continua regando o que sobrou e continua podendo sair.
+       */
+    };
 
     // o segundo tonel e a segunda bancada ficam so de cenario por enquanto —
     // marcados aqui para o minigame achar depois sem ter que varrer a cena

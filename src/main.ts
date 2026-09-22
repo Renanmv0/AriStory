@@ -7,6 +7,7 @@ import { EFEITOS } from './audio/efeitos';
 import { ITENS } from './world/itens';
 import { MEMORIAS } from './world/memoriasData';
 import { PRAGAS } from './world/bichosDoJardim';
+import { regadorDeJardim } from './world/regador';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
@@ -50,3 +51,7 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 // sem precisar que elas ja estejam numa cena — elas sao do minigame, que ainda
 // nao existe, e peca que ninguem consegue OLHAR nao da para ajustar
 (window as unknown as { aristoryPragas: unknown }).aristoryPragas = PRAGAS;
+// a RECEITA do regador, pelo mesmo motivo: ele e a unica peca do jogo que muda
+// de cara com as melhorias, e a unica forma de conferir que uma carta mexeu
+// mesmo no modelo e montar as duas versoes lado a lado e medir
+(window as unknown as { aristoryRegador: unknown }).aristoryRegador = regadorDeJardim;

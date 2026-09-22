@@ -127,8 +127,29 @@ ganha um repertório novo de histórias, em que a estufa finalmente existe.
 
 ## 3. A rodada, do começo ao fim
 
-Uma rodada é curta de propósito: **algo entre 4 e 6 minutos**. Roguelite é jogo
-de repetir, e repetir só é gostoso se recomeçar é barato.
+### Como ela começa — **construído**
+
+**Não há botão de "jogar".** A estufa é um lugar onde se anda normalmente, e o
+minigame começa por dentro da ficção, num ritual de três passos que o Renan
+desenhou:
+
+1. o **regador está na bancada** da Josefina, onde sempre esteve. Dá para pegar;
+2. com ele na mão, cada canteiro oferece **Regar** — a terra escurece, as mudas
+   dão uma esticada e a água cai em arco da altura da mão;
+3. na **terceira** rega, a Josefina entra pela porta, atravessa o terreiro e
+   conta das pragas: que vêm pelos três portões, que têm umas com pinça e uma
+   que pula, e que a arma é água porque ela **não quer machucar nenhum bicho**.
+
+Isso é melhor que um botão por uma razão concreta: quando a rodada começar, o
+jogador já vai estar com o regador na mão, já vai ter andado de canteiro em
+canteiro e já vai ter visto que a lata aponta para onde ele olha. **O tutorial
+inteiro acontece sem ninguém chamar de tutorial.**
+
+E nada disso é obrigatório — dá para entrar, olhar tudo e sair sem encostar no
+regador. Quem quiser jogar, rega; quem quiser só visitar a estufa, visita.
+
+A rodada em si é curta de propósito: **algo entre 4 e 6 minutos**. Roguelite é
+jogo de repetir, e repetir só é gostoso se recomeçar é barato.
 
 | fase | o que acontece |
 |---|---|
@@ -172,10 +193,26 @@ Josefina fala uma linha antes. Bicho grande que aparece sem aviso não é difíc
 
 ---
 
-## 4. O regador
+## 4. O regador — **construído**
 
-A arma inicial, e a única que não é escolhida — ela já está na mão.
-`regador()` já existe em `world/props.ts` e já está largado no jardim do clube.
+A arma inicial, e a única que não é escolhida: ela está na bancada da estufa, e
+o jogador vai lá pegar (§3).
+
+Ele **não mora mais em `world/props.ts`**: tem arquivo próprio,
+`src/world/regador.ts`, porque deixou de ser uma peça e virou uma **receita**.
+`regadorDeJardim(estilo)` recebe o que a rodada acumulou e devolve o regador
+daquele momento — é isso que faz a regra do §6 ("carta que mexe no regador mexe
+na peça da mão") ser barata em vez de ser um projeto.
+
+Na mão ele usa a pose `regando`: **braço levantado**, pedido do Renan, e com
+razão de jogo — na altura das outras poses a lata fica na frente do tronco e
+some atrás de qualquer moita. Arma precisa aparecer acima da linha do canteiro.
+
+`node scripts/regador.mjs /tmp/rg` monta os três estágios e as versões com
+melhoria lado a lado e **mede**: que cada carta mudou a peça de verdade (bico
+mais longo cresce, tanque maior engorda, crivo aberto alarga), que os três
+estágios não renderizam iguais, e que a lata cabe na mão. Depois faz o ritual
+inteiro: pegar, regar três, e a Josefina chegar.
 
 Os quatro números que definem ela, e que as primeiras melhorias mexem:
 
@@ -612,6 +649,8 @@ trabalha rápido") virando geometria.
 | 2 | a quest do adubo (banco → Noel → Josefina → convite) | **pronto** (§2) |
 | 2.5 | as três portas na parede do fundo, e os canteiros puxados para lá | **pronto** (§8) |
 | 2.7 | **os modelos das seis pragas**, para poder olhar e ajustar antes da lógica | **pronto** (§5) |
+| 2.8 | **a entrada**: pegar o regador, regar 3 canteiros, a Josefina chegar | **pronto** (§3) |
+| 2.9 | **o modelo do regador**, já pronto para as melhorias mudarem a peça | **pronto** (§4) |
 | 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | a fazer |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
 | 5 | gota, nível e a tela de três cartas | a fazer |
@@ -642,6 +681,13 @@ parâmetro `crescimento` do `canteiroDeHorta()`.
 `scenes/villaLobos.ts`, a troca com o Noel e a entrega à Josefina em
 `scenes/clube.ts`, e as duas fichas (`sementes`, `adubo`) em `world/itens.ts`.
 A peça é uma só, `sacoDeGraos()`, em dois jogos de cor.
+
+**O regador e a entrada do minigame.** A peça em `src/world/regador.ts`
+(`regadorDeJardim(estilo)`, mais `estagioDoRegador(cartas)`), a ficha de item em
+`world/itens.ts`, a pose `regando` no `CharacterRig`, e o ritual inteiro no fim
+de `scenes/estufa.ts`: pegar da bancada, regar três canteiros e a cutscene da
+Josefina. O **gancho da rodada** está marcado no código, no fim da cutscene —
+é uma chamada só, com a dupla já de regador na mão.
 
 **As seis pragas** (`src/world/bichosDoJardim.ts`): `lagartejo()`, `gafanhopo()`,
 `coelhatu()`, `tucanguru()`, `preguipolvo()` e `maeLagartejo()`, mais o catálogo

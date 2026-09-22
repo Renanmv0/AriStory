@@ -398,6 +398,29 @@ export const PALETTE = {
   // calota achatada lia como uma tampa de outro material pousada nas costas
   pragaMaeCrosta: 0xae5c80,
 
+  /**
+   * O REGADOR — a arma do minigame do jardim, e a unica peca do jogo que MUDA
+   * DE CARA enquanto se joga (`docs/MINIGAME-JARDIM.md` §6).
+   *
+   * Sao tres estagios, e a cor e o que os separa de longe: a lata galvanizada
+   * que a Josefina empresta, o mesmo corpo com ferragem de LATAO quando o
+   * jogador ja pegou tres cartas de regador, e o esmalte verde de competicao
+   * do fim de uma rodada boa. O latao aparece nos dois ultimos: ele e o fio
+   * que liga os estagios, senao a peca do meio parece de outra familia.
+   */
+  regadorLata: 0x9aa4aa,
+  regadorLataEscura: 0x6c767c,
+  regadorLatao: 0xc89a4c,
+  regadorLataoEscuro: 0x926d2c,
+  regadorEsmalte: 0x2f6b4f,
+  regadorEsmalteEscuro: 0x1f4a37,
+  /** o cabo lixado do "Braco solto", e o cobre do respiro do "Orvalho" */
+  regadorMadeira: 0xa97a4e,
+  regadorCobre: 0xb5613a,
+  /** a agua que se ve por cima, pela boca aberta, e os furos do crivo */
+  regadorAgua: 0x8fd0e8,
+  regadorFuro: 0x394045,
+
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
   // e a diferenca de tom e o que separa "comida de bicho" de "comida de

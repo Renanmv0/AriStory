@@ -308,9 +308,20 @@ const andou = trechos.reduce((a, b) => a + b, 0);
  * Colisão tem outra assinatura: UM trecho quase parado no meio de trechos
  * normais. Comparar cada um com a mediana pega isso em qualquer velocidade.
  */
-const ordenados = [...trechos].sort((a, b) => a - b);
+/**
+ * O PRIMEIRO TRECHO FICA DE FORA, e ele é a arrancada.
+ *
+ * A dupla parte do repouso, então a primeira amostra sempre anda menos que as
+ * outras — quanto menos, depende da carga da máquina. Com ela sobrando, a
+ * arrancada deu 0,4 contra 0,66 de mediana e passou raspando; com outro
+ * navegador rodando ao lado deu 0,07 contra 0,44 e o teste reprovou uma
+ * travessia que estava limpa. Acelerar não é esbarrar, e o que este teste
+ * procura é UM trecho parado no meio de trechos normais.
+ */
+const andados = trechos.slice(1);
+const ordenados = [...andados].sort((a, b) => a - b);
 const mediana = ordenados[Math.floor(ordenados.length / 2)];
-const travados = trechos.filter((t) => t < mediana * 0.5);
+const travados = andados.filter((t) => t < mediana * 0.5);
 
 /**
  * ================================ 3.5. OS TRÊS PORTÕES DEIXAM SAIR
