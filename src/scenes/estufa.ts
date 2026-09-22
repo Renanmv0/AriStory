@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
-  arcoDeEstufa, bancadaDeJardinagem, canteiroDeHorta, planta, regador, tonelDeAgua, vasoDePlanta,
+  arcoDeEstufa, bancadaDeJardinagem, bush, canteiroDeHorta, capim, folhagemAlta, planta,
+  prateleiraDeMudas, regador, tonelDeAgua, trelicaComTrepadeira, vasoDePlanta,
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
 import { ARI, RENAN } from '../characters/cast';
@@ -200,7 +201,11 @@ export const estufa: SceneDef = {
 
     // ------------------------------------------------------------ os canteiros
     for (const { x, z, tipo, giro } of CANTEIROS) {
-      w.add(w.place(canteiroDeHorta(tipo, 3.2, 1.6, ((x + z) / 7) % 1), x, 0, z, giro));
+      // CRESCIMENTO 1,45: a mesma peca da horta de fora, com as mudas maiores.
+      // E o que faz os dois lugares nao parecerem o mesmo canteiro copiado — e
+      // e a fala da propria Josefina depois da quest ("adubo bom trabalha
+      // rapido") virando geometria.
+      w.add(w.place(canteiroDeHorta(tipo, 3.2, 1.6, ((x + z) / 7) % 1, 1.45), x, 0, z, giro));
       // o colisor acompanha o giro: nos dois deitados a caixa troca de eixo
       if (giro === 0) w.blockBox(x, z, 1.6, 0.8);
       else w.blockBox(x, z, 0.8, 1.6);
@@ -224,21 +229,100 @@ export const estufa: SceneDef = {
     const bancadaDois = w.add(w.place(bancadaDeJardinagem(2.4), hx - 1.1, 0, 4.6, -Math.PI / 2));
     w.blockBox(hx - 1.1, 4.6, 0.45, 1.2);
     for (const [z, tipo, alto] of [
-      [-5.6, 'samambaia', 0.4],
-      [-4.2, 'girassol', 0.32],
-      [-2.8, 'suculenta', 0.3],
-      [1.4, 'lavanda', 0.36],
+      [-3.8, 'samambaia', 0.4],
+      [-2.6, 'girassol', 0.32],
+      [-1.4, 'suculenta', 0.3],
+      [2.9, 'lavanda', 0.36],
     ] as const) {
       w.add(w.place(vasoDePlanta(tipo, alto, ((z + 9) / 11) % 1), hx - 1.2, 0, z));
       w.blockCircle(hx - 1.2, z, 0.26);
     }
 
-    // as mudinhas plantadas direto na terra, encostadas nas paredes de fundo e
-    // de frente. Sem colisor: tem 30 cm, e cercar isso faria um labirinto
+    /* ====================================================================
+     * O VERDE DA ESTUFA — denso do lado da porta, alto so nas paredes de longe
+     *
+     * DUAS REGRAS DECIDEM ONDE CADA COISA PODE MORAR, e nenhuma das duas e
+     * estetica:
+     *
+     * 1. **A CAMERA OLHA DE `+X/+Z`.** O lado da porta (`+Z`) e o lado de
+     *    PERTO: qualquer coisa com mais de um metro plantada ali tapa o que
+     *    esta atras, inclusive a dupla andando. Entao o lado da porta leva
+     *    DENSIDADE, e nao ALTURA — canteiro crescido, moita, capim, tudo
+     *    abaixo do peito. Folhagem alta e treliça so nas paredes de longe
+     *    (`-X` e `-Z`), onde nao ha nada atras para esconder.
+     * 2. **A PAREDE DO FUNDO (`-Z`) FICA POBRE DE PROPOSITO.** Ela e a
+     *    candidata as tres portas por onde os bichos vao entrar (o plano esta
+     *    em `docs/MINIGAME-JARDIM.md`). Plantar coisa cara ali seria plantar
+     *    para arrancar depois.
+     *
+     * E o terreiro do meio continua VAZIO. Nada aqui encosta nele.
+     */
+
+    // ---------------------------------------------- o lado da porta, denso
+    /**
+     * A FAIXA DA FRENTE, colada na mureta. O jogador nao alcanca `z > 10,4`
+     * (a parede e o raio do corpo), entao esta fileira nunca fica entre a
+     * camera e alguem — e por isso ela pode ser cheia.
+     */
+    for (let i = 0; i < 17; i++) {
+      const x = -13.2 + i * 1.65;
+      // pula o vao da porta: passagem tem eixo, e o eixo fica vazio
+      if (Math.abs(x - PORTA.x) < 1.6) continue;
+      const s = (i * 0.37) % 1;
+      w.add(w.place(
+        i % 3 === 0 ? capim(1.5 + s * 0.5) : planta(i % 3 === 1 ? 'lavanda' : 'suculenta', 1.7 + s * 0.5, s),
+        x, 0, hz - 0.85,
+      ));
+    }
+    // as moitas entre os canteiros da frente, na altura do joelho: sao elas que
+    // fecham os vaos e fazem o lado da porta parecer PLANTADO, e nao arrumado
+    for (const [x, z, e] of [
+      [-9.9, 8.4, 0.95], [-3.3, 9.0, 0.8], [3.3, 8.4, 0.9], [9.9, 9.0, 0.85],
+      [-9.9, 6.6, 0.7], [-3.3, 6.4, 0.75], [3.3, 6.6, 0.7], [9.9, 6.4, 0.8],
+    ] as const) {
+      w.add(w.place(bush(e), x, 0, z, (x + z) % 1));
+      w.blockCircle(x, z, 0.3 * e);
+    }
+    // e mais uma fileira de mudas crescidas fechando a frente dos canteiros
+    for (let i = 0; i < 12; i++) {
+      const x = -11.6 + i * 2.1;
+      w.add(w.place(planta(i % 2 ? 'alface' : 'girassol', 1.5, (i * 0.23) % 1), x, 0, 7.5));
+    }
+
+    // -------------------------------- a parede esquerda: a altura pode ir aqui
+    // `-X` e a parede mais longe da camera: folhagem de 1,8 e treliça de 2,6
+    // nao escondem nada, porque nao ha nada atras delas.
+    // Os `z` fogem das BOCAS dos cantos (`±13; ±9`), que precisam de 1,4 livre.
+    // A folhagem tem 45 cm de colisor, e duas rodadas de medida foram
+    // necessarias aqui: em `z = -8,4` sobrava 0,70 da boca, e em `-7,4` ainda
+    // sobrava 1,18. O teste apontou as duas vezes — nao se afrouxa a asserção
+    // para caber enfeite, se move o enfeite.
+    for (const [z, alta] of [[-7.0, 1.9], [-5.5, 1.55], [1.0, 1.75], [2.6, 1.5]] as const) {
+      w.add(w.place(folhagemAlta(alta, ((z + 9) / 7) % 1), -hx + 1.3, 0, z));
+      w.blockCircle(-hx + 1.3, z, 0.45);
+    }
+    for (const [z, larg] of [[-1.4, 2.2], [7.6, 2.6]] as const) {
+      w.add(w.place(trelicaComTrepadeira(larg, 2.6, (z + 3) % 1), -hx + 0.3, 0, z, Math.PI / 2));
+    }
+
+    // ------------------------------- a parede direita: prateleiras e folhagem
+    // `+X` tambem e lado de perto, entao aqui a prateleira (1,05 de altura) e o
+    // teto: ela guarda verde na VERTICAL sem ocupar chao nem tapar ninguem.
+    // mesma conta das bocas aqui: a prateleira e comprida (1,2 a 1,4 de meia
+    // profundidade deitada), entao ela precisa nascer mais longe do canto que
+    // qualquer outra peca da parede
+    for (const [z, comp] of [[-6.0, 2.8], [0.8, 2.4]] as const) {
+      w.add(w.place(prateleiraDeMudas(comp, (z + 9) % 1), hx - 1.1, 0, z, -Math.PI / 2));
+      w.blockBox(hx - 1.1, z, 0.3, comp / 2);
+    }
+
+    // --------------------------------- a parede do fundo: pouca coisa, e baixa
+    // Uma fileira rala de lavanda e so. Ver a regra 2 la em cima: aqui vao
+    // entrar as tres portas dos bichos, e tudo o que for plantado agora seria
+    // arrancado depois.
     for (let i = 0; i < 9; i++) {
       const x = -10.4 + i * 2.6;
-      w.add(w.place(planta('lavanda', 1.1, (i * 0.31) % 1), x, 0, -hz + 1.0));
-      w.add(w.place(planta('suculenta', 1.05, (i * 0.47) % 1), x, 0, hz - 1.0));
+      w.add(w.place(planta('lavanda', 1.3, (i * 0.31) % 1), x, 0, -hz + 0.9));
     }
 
     // =========================================================== as conversas

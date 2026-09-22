@@ -270,24 +270,64 @@ Gota que fica no chão mais de 20 s some. Gota de bicho elite vale 5.
 
 ---
 
-## 8. O que a estufa precisa ter (e já tem)
+## 8. Por onde os bichos entram, e o que a estufa tem
 
-A área foi construída antes de tudo, de propósito — foi o pedido do Renan: *"comece
-a criar a nova área primeiro, antes de ter a quest, antes de ter qualquer coisa"*.
-Ela já nasceu com a planta do minigame desenhada no chão:
+### As três portas numa parede só — decidido, ainda não construído
 
-- **o meio é vazio.** Um terreiro de saibro de uns 14 × 10 no centro, sem nada
-  em cima. É a arena, e ela precisa estar limpa para caber a corrida;
-- **os canteiros estão na beirada, virados para dentro.** São eles que se
-  defende, e estar na beirada é o que obriga o jogador a escolher um lado;
-- **quatro bocas**, uma em cada canto da estufa: é por onde os bichos vão
-  entrar. Hoje são só vãos entre os canteiros;
+O Renan propôs **três portas numa parede só**, na parede oposta à da saída (o
+fundo do prédio, visto do clube). Substitui as quatro bocas de canto que a área
+tem hoje. É o desenho melhor, e por razões concretas:
+
+- **Bicho que pode vir de qualquer canto transforma o jogo em girar a câmera.**
+  A rodada vira checar as costas em vez de decidir. Com uma frente só, você
+  sempre sabe de onde vem, e o que sobra para decidir é *qual das três cobrir* —
+  que é decisão de verdade. **Três, e não uma**, é o que impede de estacionar
+  num ponto e resolver a fase;
+- **dá sentido ao espaço.** A parede das portas vira a frente de batalha e o
+  lado da saída vira o fundo que se defende. É lá que as plantas densas moram
+  (§8.2), então elas passam a ser *a coisa protegida* em vez de enfeite;
+- **a continuidade fecha:** o `-Z` da cena interna é o fundo do prédio visto do
+  jardim do clube.
+
+**A consequência que vem junto, e é a parte cara:** se os bichos vêm de uma
+parede só, **os canteiros têm que ficar entre as portas e o jogador**. Os três
+que hoje estão colados na parede da saída nunca seriam comidos naquele desenho
+— virariam decoração. Então a mudança não é abrir três portas: é puxar os
+canteiros para a metade do fundo e refazer o `CANTEIROS` da cena.
+
+Enquanto isso não acontece, **a parede do fundo fica pobre de propósito**: nada
+caro plantado ali, para não plantar hoje o que seria arrancado depois.
+
+### 8.2. O que a estufa já tem
+
+A área foi construída antes de tudo, de propósito — foi o pedido do Renan:
+*"comece a criar a nova área primeiro, antes de ter a quest, antes de ter
+qualquer coisa"*. Ela já nasceu com a planta do minigame desenhada no chão:
+
+- **o meio é vazio.** Um terreiro de saibro de 15 × 11 no centro, sem nada em
+  cima. É a arena, e o teste prova isso medindo os colisores;
+- **os canteiros estão na beirada**, e são oito. São eles que se defende;
 - **o tonel de água no canto**, que é onde o regador vai reabastecer;
-- **a bancada de trabalho**, que é onde a Josefina vai ficar durante a rodada e
-  de onde ela entrega os regadores.
+- **a bancada de trabalho**, de onde a Josefina vai entregar os regadores.
 
-Nada disso tem lógica ainda. É cenário — mas é cenário com a medida do jogo
-já tomada.
+### 8.3. A regra de altura, que a câmera impõe
+
+Ela não é estética e vale para qualquer coisa que se plante aqui depois:
+
+> **A câmera olha de `+X/+Z`.** O lado da porta de saída (`+Z`) e o lado direito
+> (`+X`) são os lados *de perto*: qualquer peça com mais de um metro ali tapa o
+> que está atrás, inclusive a dupla andando.
+
+Daí o desenho do verde: o lado da porta leva **densidade, não altura** —
+canteiro crescido, moita, capim, tudo abaixo do peito. Folhagem alta e treliça
+só nas paredes de longe (`-X` e `-Z`). No lado direito o teto é a prateleira de
+mudas (1,05), que guarda verde na **vertical** sem ocupar chão nem tapar
+ninguém.
+
+Os canteiros da estufa usam `crescimento: 1,45` — a mesma peça da horta de
+fora, com as mudas maiores. É o que faz os dois lugares não parecerem o mesmo
+canteiro copiado, e é a fala da própria Josefina depois da quest ("adubo bom
+trabalha rápido") virando geometria.
 
 ---
 
@@ -298,6 +338,7 @@ já tomada.
 | 0 | **a área**: a estufa, a porta no jardim do clube, o caminho | **pronto** (§10) |
 | 1 | a skill `aristory-habilidade`, para carta nova sair barato | a fazer |
 | 2 | a quest do adubo (banco → Noel → Josefina → convite) | **pronto** (§2) |
+| 2.5 | **as três portas** na parede do fundo, e os canteiros puxados para lá (§8) | a fazer |
 | 3 | o esqueleto do minigame: onda, regador automático, um bicho só (a lagarta) | a fazer |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
 | 5 | gota, nível e a tela de três cartas | a fazer |
@@ -320,7 +361,9 @@ terreiro no meio, oito canteiros na beirada, a bancada de trabalho, o tonel e as
 prateleiras de muda.
 
 **As peças novas do kit** (`src/world/props.ts`): `estufa()` (a casca),
-`bancadaDeJardinagem()` e `tonelDeAgua()`.
+`bancadaDeJardinagem()`, `tonelDeAgua()`, `folhagemAlta()`,
+`trelicaComTrepadeira()` e `prateleiraDeMudas()`. Mais o parâmetro
+`crescimento` do `canteiroDeHorta()`.
 
 **A quest** (§2), espalhada por três arquivos: o saco no banco do fundo em
 `scenes/villaLobos.ts`, a troca com o Noel e a entrega à Josefina em

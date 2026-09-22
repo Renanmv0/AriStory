@@ -4300,11 +4300,18 @@ export function planta(tipo: TipoDePlanta, escala = 1, semente = 0.5): THREE.Gro
  * nao e coplanar com o chao, que e o jeito de nao serrilhar. Ver a regra da
  * pilha do chao na skill de cenario.
  */
+/**
+ * @param crescimento o quanto as mudas ja cresceram. 1 e a horta do clube; a
+ *   estufa usa 1,45, porque planta de estufa com adubo bom passa a horta de
+ *   fora — e porque a diferenca de porte e o que faz os dois lugares nao
+ *   parecerem o mesmo canteiro copiado.
+ */
 export function canteiroDeHorta(
   tipo: TipoDePlanta,
   largura = 2.4,
   profundidade = 1.2,
   semente = 0.5,
+  crescimento = 1,
 ): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'canteiro-de-horta';
@@ -4367,7 +4374,7 @@ export function canteiroDeHorta(
       // as duas fileiras saem DESENCONTRADAS meio passo, como canteiro de
       // verdade: em grade perfeita elas viram um tabuleiro de xadrez
       const desencontro = linhas === 1 ? 0 : (l === 1 ? 0.5 : 0);
-      const muda = planta(tipo, 1, (semente + c * 0.19 + l * 0.41) % 1);
+      const muda = planta(tipo, crescimento, (semente + c * 0.19 + l * 0.41) % 1);
       muda.position.set(
         -vaoX / 2 + ((c + desencontro) * vaoX) / Math.max(1, colunas - 1 + desencontro),
         0.16,
@@ -6354,5 +6361,197 @@ export function sacoDeGraos(
   faixa.rotation.y = giro;
   g.add(faixa);
 
+  return g;
+}
+
+/**
+ * FOLHAGEM ALTA — a planta de folha larga que toda estufa tem num canto.
+ *
+ * Ela existe porque o jardim inteiro do jogo e feito de coisa BAIXA: muda de
+ * canteiro, capim, moita. Numa camera isometrica isso achata o cenario, e a
+ * estufa, que e o lugar de trabalho da Josefina, precisava de alguma coisa na
+ * altura do peito para nao ler como um terreno com caixas em cima.
+ *
+ * A silhueta e o oposto da muda de horta de proposito: caule unico e poucas
+ * folhas GRANDES, abertas em leque. Folha grande e o que diz "isto cresceu
+ * aqui dentro, no quente" — e nao "isto foi plantado semana passada".
+ *
+ * CUIDADO DE CAMERA, e ele decide onde a peca pode morar: a camera olha de
+ * `+X/+Z`, entao qualquer coisa com mais de um metro no lado de perto tapa o
+ * que esta atras, inclusive a dupla. Folhagem alta e peca de parede de LONGE
+ * (`-X`, `-Z`).
+ */
+export function folhagemAlta(altura = 1.6, semente = 0.5, cor: number = P.leafMid): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'folhagem-alta';
+  const giro = semente * 6.283;
+
+  // o caule, um pouco torto: reto vira poste
+  const caule = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.055, altura * 0.62, 6), toon(P.leafDark),
+  );
+  caule.position.y = altura * 0.31;
+  caule.rotation.z = 0.05;
+  g.add(caule);
+
+  /**
+   * AS FOLHAS, em duas coroas.
+   *
+   * Cada uma e uma esfera achatada e ESTICADA no eixo que aponta para fora —
+   * e a conta mais barata de "folha de bananeira" que existe, e a que aguenta
+   * ser vista de qualquer angulo sem virar um plano invisivel de perfil.
+   */
+  /**
+   * A INCLINACAO E O QUE SEPARA FOLHA DE DISCO.
+   *
+   * A primeira versao deixava as folhas quase horizontais (inclinacao 0,42 e
+   * 0,16) e achatadas a 0,1 da esfera. Vistas pela camera de 34 graus, que olha
+   * de cima, elas viravam panquecas empilhadas num palito — a planta lia como
+   * pirulito, e nao como folhagem. Agora elas CAEM: a coroa de baixo quase na
+   * vertical, a de cima aberta, e as duas com o dobro de espessura.
+   */
+  for (const [coroa, quantas, comp, sobe, inclina] of [
+    [0, 5, 0.54, 0.50, 1.05],
+    [1, 4, 0.40, 0.78, 0.62],
+  ] as const) {
+    for (let i = 0; i < quantas; i++) {
+      const a = (i / quantas) * Math.PI * 2 + giro + coroa * 0.7;
+      const comprimento = comp * altura;
+      const folha = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 6), toon(
+        i % 3 === 0 ? P.leafDark : i % 3 === 1 ? cor : P.leafLight,
+      ));
+      folha.scale.set(comprimento * 0.44, comprimento * 0.19, comprimento);
+      // a folha nasce no caule e aponta para fora, caindo um pouco na ponta
+      folha.position.set(
+        Math.cos(a) * comprimento * 0.46,
+        // a folha inclinada desce: sem descontar, a ponta arrancaria do caule
+        altura * sobe - Math.sin(inclina) * comprimento * 0.3,
+        Math.sin(a) * comprimento * 0.46,
+      );
+      folha.rotation.set(Math.sin(a) * inclina, -a, Math.cos(a) * inclina);
+      g.add(folha);
+    }
+  }
+  // o broto do meio, ainda enrolado: e o detalhe que diz que ela esta viva
+  const broto = new THREE.Mesh(
+    new THREE.ConeGeometry(0.07, altura * 0.26, 6), toon(P.leafLight),
+  );
+  broto.position.y = altura * 0.87;
+  g.add(broto);
+  return g;
+}
+
+/**
+ * TRELICA COM TREPADEIRA, para encostar numa parede.
+ *
+ * A peca mais alta que a estufa ganha, e a unica que usa a PAREDE como
+ * superficie — tudo mais no jardim do jogo cresce do chao. Uma estufa sem nada
+ * subindo pela parede parece um galpao com plantas dentro; com a trepadeira ela
+ * parece um lugar onde alguem planta ha anos.
+ *
+ * Ela nasce no plano XY (larga no X, alta no Y, rasa no Z), entao encosta numa
+ * parede de `-Z` sem giro nenhum e numa de `-X` com `rotation.y = PI/2`.
+ */
+export function trelicaComTrepadeira(
+  largura = 1.6,
+  altura = 2.6,
+  semente = 0.5,
+  cor: number = P.leafMid,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'trelica';
+  const giro = semente * 6.283;
+  const ripa = toon(P.woodDark);
+
+  // a grade: ripas verticais e horizontais, em espessuras DIFERENTES para as
+  // faces dos cruzamentos nao caírem no mesmo plano
+  const verticais = Math.max(3, Math.round(largura / 0.42));
+  for (let i = 0; i < verticais; i++) {
+    const x = -largura / 2 + (i * largura) / (verticais - 1);
+    const r = new THREE.Mesh(new THREE.BoxGeometry(0.05, altura, 0.035), ripa);
+    r.position.set(x, altura / 2, 0);
+    g.add(r);
+  }
+  const horizontais = Math.max(3, Math.round(altura / 0.55));
+  for (let i = 0; i < horizontais; i++) {
+    const y = 0.22 + (i * (altura - 0.35)) / (horizontais - 1);
+    const r = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.04, 0.055), ripa);
+    r.position.set(0, y, 0.012);
+    g.add(r);
+  }
+
+  /**
+   * A TREPADEIRA, e ela sobe DE BAIXO PARA CIMA rareando.
+   *
+   * E o detalhe que separa trepadeira de sebe vertical: planta que sobe tem a
+   * base fechada e o topo esgarcado, porque o topo e o que cresceu por ultimo.
+   * Densidade constante lê como parede verde, e nao como planta.
+   */
+  const folhas = Math.round(largura * altura * 13);
+  for (let i = 0; i < folhas; i++) {
+    const t = i / folhas;
+    // sobe com o indice, mas o topo recebe menos: a raiz quadrada concentra
+    // embaixo sem deixar o alto pelado
+    const y = 0.12 + Math.sqrt(t) * (altura - 0.3);
+    const rarefaz = 1 - (y / altura) * 0.55;
+    if (((i * 37) % 100) / 100 > rarefaz) continue;
+    const x = (((i * 61) % 100) / 100 - 0.5) * largura;
+    const s = 0.09 + (((i * 23) % 100) / 100) * 0.07;
+    const folha = new THREE.Mesh(new THREE.SphereGeometry(s, 6, 5), toon(
+      i % 4 === 0 ? P.leafDark : i % 4 === 3 ? P.leafLight : cor,
+    ));
+    folha.scale.set(1, 0.72, 0.55);
+    folha.position.set(x, y, 0.06 + (((i * 41) % 100) / 100) * 0.05);
+    folha.rotation.set(0, 0, giro + i * 0.9);
+    g.add(folha);
+  }
+  return g;
+}
+
+/**
+ * PRATELEIRA DE MUDAS: a estante de dois andares cheia de vasinhos.
+ *
+ * E o movel mais caracteristico de estufa que existe, e faz um servico que
+ * nenhuma outra peca daqui faz: ela empilha planta em ALTURA sem ocupar chao.
+ * Num lugar onde o meio precisa ficar vazio (a arena do minigame), guardar
+ * verde na vertical e exatamente o que se quer.
+ */
+export function prateleiraDeMudas(comprimento = 2.6, semente = 0.5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'prateleira-de-mudas';
+  const madeira = toon(P.woodDark);
+  const ANDARES = [0.5, 0.98] as const;
+  const FUNDO = 0.5;
+
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      const pe = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.04, 0.07), madeira);
+      pe.position.set(sx * (comprimento / 2 - 0.08), 0.52, sz * (FUNDO / 2 - 0.06));
+      g.add(pe);
+    }
+  }
+  // as duas tabuas, de larguras diferentes para nenhuma face coincidir
+  ANDARES.forEach((y, i) => {
+    const tabua = new THREE.Mesh(
+      new THREE.BoxGeometry(comprimento - i * 0.08, 0.05, FUNDO - i * 0.04), toon(P.wood),
+    );
+    tabua.position.y = y;
+    g.add(tabua);
+  });
+
+  // os vasinhos, alternando especie e tamanho, nos dois andares
+  const tipos: TipoDePlanta[] = ['alface', 'suculenta', 'samambaia', 'lavanda', 'tomate'];
+  const porAndar = Math.max(3, Math.round((comprimento - 0.4) / 0.42));
+  ANDARES.forEach((y, andar) => {
+    for (let i = 0; i < porAndar; i++) {
+      const x = -comprimento / 2 + 0.3 + (i * (comprimento - 0.6)) / (porAndar - 1);
+      const alto = 0.17 + ((i + andar) % 3) * 0.03;
+      const vaso = vasoDePlanta(
+        tipos[(i + andar * 2) % tipos.length], alto, ((i * 0.31 + andar * 0.47 + semente) % 1),
+      );
+      vaso.position.set(x, y + 0.025, (((i + andar) % 2) - 0.5) * 0.12);
+      g.add(vaso);
+    }
+  });
   return g;
 }
