@@ -547,6 +547,22 @@ corredor — ninguém está em dois lugares ao mesmo tempo.
 | Chamar o Noel ⚙ | raro | uma vez por onda o Noel passa 20 s catando as gotas do chão para você |
 | **Mutirão do clube** ⚙ | lendário | quando a chefe chega, Capy, Gina, Walter e Noel entram juntos por 30 s |
 
+**Pegar um chamado é uma cutscene — construída** (pedido do Renan). Na hora em
+que a carta é escolhida, a porta principal da estufa abre, o bicho entra, para
+no corredor entre os canteiros e fala com a dupla — cada um com as suas falas —,
+e depois vai para o **posto** dele, na linha da frente do terreiro, virado para
+os portões. Ele fica na estufa pelo resto da rodada. No Mutirão os quatro entram
+em fila; quem já tinha sido chamado não entra de novo, mas a conversa acontece.
+A Gina é mais alta que a porta e passa **abaixando o pescoço** ("Cuidado com a
+cabeça… a minha, no caso"). O Walter não fala: late, e a dupla fala por ele,
+como no Mania.
+
+As falas moram em `scenes/estufa.ts` (`FALAS_DO_CHAMADO`), e quem cada carta
+chama está na própria carta (`chama`, em `cartas.ts`). Foram escritas por mim, no
+tom de cada um no clube — **o Renan pode trocar qualquer uma**. Para ver:
+`?cena=estufa&treino=gotas`, ou `node scripts/chamados.mjs /tmp/ch`, que pega
+cada carta e fotografa a entrada.
+
 ### O regador MUDA DE CARA quando você melhora ele
 
 Esta é a regra que amarra as cartas ao resto do jogo, e ela é barata porque
@@ -981,10 +997,11 @@ em vez de inventar uma resposta e seguir.
 
 **Sobre as cartas (§6):**
 
-0. **Quando o chamado chega.** Hoje o texto diz "uma vez por onda", e a
-   recomendação é que seja **sozinho**, no momento em que o primeiro bicho da
-   onda encosta num canteiro — é quando a ajuda faz diferença. A outra opção é
-   um botão (o jogador chama quando quiser, uma vez por onda). Decide na etapa 3.
+0. **Quando o chamado ajuda.** ~~Quando ele chega~~ **respondido pelo Renan:
+   ele entra numa cutscene na hora em que a carta é pega, e fica.** Falta só
+   quando ele AGE ("uma vez por onda, por 20 s"): a recomendação é que seja
+   sozinho, quando o primeiro bicho da onda encosta num canteiro; a outra opção
+   é um botão. Decide na etapa 3.
 1. **Reroll.** Vale a Josefina dar um "não gostei, mostra outras três" por
    rodada? A recomendação é que sim, e **um só** — o suficiente para salvar uma
    mão ruim sem virar uma quarta escolha grátis.

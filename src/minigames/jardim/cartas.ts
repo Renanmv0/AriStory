@@ -196,6 +196,13 @@ export function fichaInicial(): FichaDaRodada {
  */
 export type EfeitoNaHora = 'encher-tanque' | 'curar-canteiro' | 'susto';
 
+/**
+ * Quem do clube uma carta de CHAMADO traz para dentro da estufa. Pedido do
+ * Renan: pegar a carta é uma cutscene do bicho entrando pela porta principal,
+ * com as falas dele (`scenes/estufa.ts`, "OS CHAMADOS").
+ */
+export type AjudanteDoClube = 'capy' | 'gina' | 'walter' | 'noel';
+
 export interface CartaDoJardim {
   /** único no baralho inteiro; é ele que a mão guarda */
   readonly id: string;
@@ -227,6 +234,8 @@ export interface CartaDoJardim {
    */
   readonly repetivel?: boolean;
   readonly naHora?: EfeitoNaHora;
+  /** carta de chamado: quem entra pela porta, na cutscene, quando ela é pega */
+  readonly chama?: readonly AjudanteDoClube[];
   /** o que ela faz com a rodada; nunca guarda estado fora da ficha */
   aplicar(f: FichaDaRodada): void;
 }
@@ -732,28 +741,33 @@ const JARDIM: CartaDoJardim[] = [
     id: 'chama-capy', nome: 'Chamar o Capy', familia: 'jardim', raridade: 'raro',
     icone: '🕶️', texto: 'Uma vez por onda o Capy vem por 20 s e rega junto com você',
     exclui: ['capy-salva-vidas'],
+    chama: ['capy'],
     aplicar: (f) => f.regras.add('chama-capy'),
   },
   {
     id: 'chama-gina', nome: 'Chamar a Gina', familia: 'jardim', raridade: 'raro',
     icone: '🦒', texto: 'Uma vez por onda a Gina fica 20 s num portão, e por ali ninguém passa',
     exclui: ['apito-da-gina'],
+    chama: ['gina'],
     aplicar: (f) => f.regras.add('chama-gina'),
   },
   {
     id: 'chama-walter', nome: 'Chamar o Walter', familia: 'jardim', raridade: 'raro',
     icone: '🐶', texto: 'Uma vez por onda o Walter corre 20 s latindo, e quem ele late foge',
     exclui: ['walter-de-plantao'],
+    chama: ['walter'],
     aplicar: (f) => f.regras.add('chama-walter'),
   },
   {
     id: 'chama-noel', nome: 'Chamar o Noel', familia: 'jardim', raridade: 'raro',
     icone: '🦃', texto: 'Uma vez por onda o Noel passa 20 s catando as gotas pra você',
+    chama: ['noel'],
     aplicar: (f) => f.regras.add('chama-noel'),
   },
   {
     id: 'mutirao-do-clube', nome: 'Mutirão do clube', familia: 'jardim', raridade: 'lendario',
     icone: '🎉', texto: 'Quando a chefe chega, Capy, Gina, Walter e Noel ajudam por 30 s',
+    chama: ['gina', 'capy', 'noel', 'walter'],
     aplicar: (f) => f.regras.add('mutirao-do-clube'),
   },
 ];

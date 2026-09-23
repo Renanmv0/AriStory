@@ -255,14 +255,21 @@ await page.screenshot({ path: `${OUT}-dentro.png` });
       problemas.push('ela não explicou de onde os dois de trás olham');
     }
   }
-  // o jogador continua solto depois
+  // o jogador continua solto depois. Anda ATE sair do lugar (com teto), e nao
+  // por 900 ms: com a maquina carregada o relogio do jogo anda devagar, e o
+  // tempo fixo reprovava um jogador que estava solto
   const antes = await page.evaluate(() => window.jogo.playerPosition());
+  let andou = 0;
   await page.keyboard.down('KeyW');
-  await page.waitForTimeout(900);
+  for (let i = 0; i < 20 && andou < 0.4; i++) {
+    await page.waitForTimeout(250);
+    const agora = await page.evaluate(() => window.jogo.playerPosition());
+    andou = Math.hypot(agora.x - antes.x, agora.z - antes.z);
+  }
   await page.keyboard.up('KeyW');
-  const depois = await page.evaluate(() => window.jogo.playerPosition());
-  if (Math.hypot(depois.x - antes.x, depois.z - antes.z) < 0.4) {
-    problemas.push('o jogador ficou travado depois de assumir os postos');
+  const travado = await page.evaluate(() => window.jogo.player.locked === true);
+  if (travado || andou < 0.4) {
+    problemas.push(`o jogador ficou travado depois de assumir os postos (andou ${andou.toFixed(2)} m)`);
   }
 }
 

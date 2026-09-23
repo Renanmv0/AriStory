@@ -226,7 +226,15 @@ As 46 ideias numeradas que o §6 do plano guardava **viraram carta de uma vez**,
 a pedido do Renan (ele ajusta depois de testar). Hoje são 93 cartas: as 88 de antes e mais os cinco
 *chamados* (Capy, Gina, Walter, Noel e o Mutirão do clube), que o Renan pediu
 depois — raros e uma lendária que trazem alguém do clube PARA DENTRO da estufa
-por um tempo. Cada chamado exclui a carta do mesmo bicho que já agia de longe. Ideia nova
+por um tempo. Cada chamado exclui a carta do mesmo bicho que já agia de longe.
+
+**Chamado é carta com `chama: ['capy']`** (os ids em `AjudanteDoClube`). Pegar
+uma carta dessas dispara a cutscene de entrada em `scenes/estufa.ts` ("OS
+CHAMADOS"): a porta abre, o bicho entra, fala, e vai para o posto. Chamado novo
+de um bicho que já existe = a carta com `chama` + uma entrada em
+`FALAS_DO_CHAMADO`. Bicho do clube novo = também uma entrada em `AJUDANTES`
+(classe, nome de quem fala, posto e som). `scripts/chamados.mjs` confere que
+ele vem de fora da porta, fala, e para no posto — e que a Gina passa abaixada. Ideia nova
 que surgir numa conversa vai para o §6 como proposta, e só vira carta quando ele
 escolher — a escolha é dele.
 

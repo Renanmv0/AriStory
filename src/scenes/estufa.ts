@@ -9,9 +9,14 @@ import {
 import { interiorDoor } from '../world/furniture';
 import { ITENS } from '../world/itens';
 import { Josefina } from '../entities/bichos/Josefina';
+import type { Bicho } from '../entities/bichos/Bicho';
+import { Capy } from '../entities/bichos/Capy';
+import { Gina } from '../entities/bichos/Gina';
+import { Noel } from '../entities/bichos/Noel';
+import { Walter } from '../entities/bichos/Walter';
 import { GotasDoJardim } from '../entities/GotasDoJardim';
 import { MaoDeCartas } from '../minigames/jardim/baralho';
-import { cartaPorId } from '../minigames/jardim/cartas';
+import { cartaPorId, type AjudanteDoClube } from '../minigames/jardim/cartas';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
 import { cartaNaTela } from '../minigames/jardim/tela';
 import { ARI, RENAN } from '../characters/cast';
@@ -492,6 +497,19 @@ export const estufa: SceneDef = {
       interiorDoor(P.estufaEstrutura, PORTA.largura - 0.16, PORTA.altura - 0.14, 0.2),
       PORTA.x, 0, PORTA.z,
     ));
+
+    /*
+     * A PORTA ABRE quando alguém de fora entra numa cutscene (os chamados):
+     * sem isso o Capy atravessava a folha fechada. Ela gira para dentro e
+     * volta sozinha — `portaAberta` é o alvo, e a folha anda até ele.
+     */
+    const dobradicaDaPorta = folha.getObjectByName('dobradica');
+    let portaAberta = false;
+    w.onUpdate((dt) => {
+      if (!dobradicaDaPorta) return;
+      const alvo = portaAberta ? 1.35 : 0;
+      dobradicaDaPorta.rotation.y += (alvo - dobradicaDaPorta.rotation.y) * Math.min(1, dt * 5);
+    });
 
     w.door({
       x: PORTA.x, z: hz - 1.6,
@@ -1297,6 +1315,204 @@ export const estufa: SceneDef = {
     };
 
     /* ====================================================================
+     *        OS CHAMADOS: QUEM DO CLUBE ENTRA PELA PORTA PARA AJUDAR
+     * ====================================================================
+     *
+     * Pedido do Renan: pegar uma carta de chamado ("Chamar o Capy", o Mutirão
+     * do clube) é uma CUTSCENE — o bicho entra pela porta principal, cada um
+     * com as falas dele, e fica. Quem ele é e o que faz na rodada está na
+     * carta (`chama`, em `minigames/jardim/cartas.ts`); aqui mora só a entrada.
+     *
+     * Eles são as MESMAS classes do clube (`entities/bichos/`), em serviço: o
+     * mesmo Capy da piscina, a mesma Gina da guarita. Nascem do lado de FORA
+     * da porta, escondidos, como a Josefina — ninguém aparece do nada no meio
+     * da estufa.
+     *
+     * O POSTO de cada um é a linha da frente do terreiro, entre a porta e os
+     * canteiros de cima, na altura das moitas: perto da porta por onde
+     * entraram, fora do caminho dos bichos, e na frente da câmera.
+     */
+    const areaDaPorta = {
+      minX: -hx + 2.6, maxX: hx - 2.6,
+      minZ: 1.0, maxZ: hz - 1.6,
+      proibido: [...canteiroEmCirculos, ...moitasDaFrente],
+    };
+    type Falas = Array<readonly [string, string]>;
+    const AJUDANTES: Record<AjudanteDoClube, {
+      bicho: Bicho;
+      nome: string;
+      posto: { x: number; z: number };
+      som: Parameters<typeof g.som>[0];
+    }> = {
+      capy: { bicho: new Capy(areaDaPorta), nome: 'Capy', posto: { x: -3.0, z: 5.2 }, som: 'apito' },
+      gina: { bicho: new Gina(areaDaPorta), nome: 'Gina', posto: { x: 3.0, z: 5.2 }, som: 'apito' },
+      walter: { bicho: new Walter(areaDaPorta), nome: 'Walter', posto: { x: -5.6, z: 5.0 }, som: 'latido' },
+      noel: { bicho: new Noel(areaDaPorta), nome: 'Noel', posto: { x: 5.6, z: 5.0 }, som: 'gluglu' },
+    };
+    for (const a of Object.values(AJUDANTES)) {
+      a.bicho.aoSoar = () => g.som(a.som);
+      a.bicho.group.visible = false;
+      a.bicho.sentarEm(PORTA.x, PORTA.z + 1.4, Math.PI);
+      w.add(a.bicho.group);
+    }
+    w.onUpdate((dt) => {
+      for (const a of Object.values(AJUDANTES)) if (a.bicho.group.visible) a.bicho.update(dt);
+    });
+    const naEstufa = new Set<AjudanteDoClube>();
+
+    /**
+     * AS FALAS DE CADA CHAMADO, pela carta. O Walter não fala — é cachorro, e
+     * no Mania quem fala por ele é a dupla ("se ele pudesse falar…"); aqui é
+     * igual. O Noel fala em maiúscula quando empolga, como no bar de sucos.
+     */
+    const FALAS_DO_CHAMADO: Record<string, Falas> = {
+      'chama-capy': [
+        ['Capy', 'Me chamaram? Ouvi dizer que aqui tem bicho que não gosta de água.'],
+        ['Capy', 'Então eu vim ao lugar certo. Água é comigo.'],
+        [R, 'Ele veio de apito e tudo.'],
+        [A, 'E de óculos. É o Capy de serviço.'],
+        ['Capy', 'Uma vez por onda eu dou uma volta regando com vocês. No resto, fico ali de olho.'],
+      ],
+      'chama-gina': [
+        ['Gina', 'Licença, licença! Cuidado com a cabeça… a minha, no caso.'],
+        ['Gina', 'Me contaram que tem bicho entrando aqui sem carteirinha.'],
+        [A, 'Pelos portões do fundo. Nem pedem licença.'],
+        ['Gina', 'Ah, não. Portão é comigo, viu? Onde eu ficar, ninguém passa.'],
+      ],
+      'chama-walter': [
+        ['Walter', 'Au! Au!'],
+        [R, 'O Walter largou o salão pra vir ajudar.'],
+        [A, 'Com bandeja e tudo.'],
+        ['Walter', 'Auuu!'],
+        [R, 'Acho que isso quer dizer "deixa comigo".'],
+      ],
+      'chama-noel': [
+        ['Noel', 'Cheguei, cheguei! Vim correndo. CORRENDO!'],
+        ['Noel', 'Me falaram que tá caindo gotinha azul por aqui. Eu cato tudo, viu? Uma por uma.'],
+        [R, 'Igual as laranjas da feira.'],
+        ['Noel', 'Igualzinho! Gota boa, a gente escolhe no olho.'],
+      ],
+      'mutirao-do-clube': [
+        ['Gina', 'Ô de casa! Trouxe o pessoal todo, viu?'],
+        ['Noel', 'Todo mundo junto! JUNTO!'],
+        ['Capy', 'Soube que a mãe desses bichos vem aí. Então a gente vem também.'],
+        ['Walter', 'Au! Au!'],
+        [A, 'O clube inteiro dentro da estufa…'],
+        [R, 'O Noel vai ter que fazer suco pra todo mundo depois.'],
+        ['Noel', 'Já tô fazendo a conta!'],
+        ['Capy', 'A gente fica ali perto da porta. Quando a grandona chegar, entra todo mundo.'],
+      ],
+    };
+
+    /** uma promessa de chegada, com teto: um bicho preso nunca trava a cena */
+    const chegar = (p: Promise<void>, teto: number): Promise<void> =>
+      Promise.race([p, g.wait(teto)]);
+
+    /**
+     * A ENTRADA DE UM: da soleira de fora, pelo eixo da porta, até um passo
+     * dentro — e dali para o posto. Na cutscene de um só ele para no meio do
+     * corredor para falar (`falarDoCorredor`); no mutirão cada um vai direto
+     * para o seu lugar, senão os quatro se empilhariam no mesmo ponto.
+     */
+    const entrar = async (quem: AjudanteDoClube, falarDoCorredor: boolean): Promise<void> => {
+      const a = AJUDANTES[quem];
+      const b = a.bicho;
+      b.group.visible = true;
+      b.sentarEm(PORTA.x, PORTA.z + 1.4, Math.PI);
+      b.levantar();
+      // a Gina é mais alta que a porta: abaixa o pescoço para passar ("cuidado
+      // com a cabeça… a minha") e só levanta depois da soleira
+      const gina = b instanceof Gina ? b : null;
+      // (ela nasce do lado de fora, escondida: pode nascer já abaixada)
+      if (gina) gina.abaixarDeUmaVez(1);
+      // cutscene anda mais depressa que passeio (o Capy passeia a 0,45), como
+      // a Josefina: ninguém espera meio minuto um bicho atravessar a soleira
+      await chegar(b.irPara(PORTA.x, hz - 0.9, 1.4), 15);
+      if (gina) gina.abaixar = 0;
+      if (falarDoCorredor) await chegar(b.irPara(PORTA.x, hz - 3.2, 1.4), 15);
+      else await chegar(b.irPara(a.posto.x, a.posto.z, 1.4), 20);
+    };
+
+    /** O PASSO QUE A CARTA DÁ: a cutscene inteira, e o bicho fica. */
+    const chamarPelaCarta = async (id: string): Promise<void> => {
+      const quem = (cartaPorId(id)?.chama ?? []).filter((q) => !naEstufa.has(q));
+      const falas = FALAS_DO_CHAMADO[id];
+      if (!falas) return;
+      for (const q of quem) naEstufa.add(q);
+      const sozinho = quem.length === 1;
+
+      g.lockPlayer(true);
+      if (quem.length > 0) {
+        g.som('porta');
+        portaAberta = true;
+        // a câmera acompanha quem abre a porta
+        g.focusCamera(AJUDANTES[quem[0]].bicho.group);
+        g.setZoom(9);
+        // no mutirão eles entram em fila, um depois do outro
+        await Promise.all(quem.map(async (q, i) => {
+          await g.wait(i * 0.8);
+          if (i > 0) g.som(AJUDANTES[q].som);
+          await entrar(q, sozinho);
+        }));
+        portaAberta = false;
+      }
+
+      /*
+       * A CÂMERA ENQUADRA OS DOIS LADOS DA CONVERSA — a mesma âncora do meio
+       * da cutscene da Josefina: a dupla pode estar no fundo do terreiro, e
+       * as falas de quem entrou não podem vir de fora da tela.
+       */
+      const eu = g.playerPosition();
+      const falantes = (quem.length > 0 ? quem : [...naEstufa]).map((q) => AJUDANTES[q].bicho);
+      const cx = falantes.reduce((s, b) => s + b.x, 0) / Math.max(1, falantes.length);
+      const cz = falantes.reduce((s, b) => s + b.z, 0) / Math.max(1, falantes.length);
+      /*
+       * A âncora fica MAIS PERTO DE QUEM ENTROU (60%), e não no meio exato: a
+       * porta é a parte de baixo da tela, e a caixa de fala mora ali. No meio
+       * exato, o bicho que acabou de entrar ficava atrás do próprio balão.
+       */
+      const meio = new THREE.Object3D();
+      meio.position.set(eu.x + (cx - eu.x) * 0.6, 0, eu.z + (cz - eu.z) * 0.6);
+      w.root.add(meio);
+      const vao = Math.max(
+        Math.hypot(eu.x - cx, eu.z - cz),
+        ...falantes.map((b) => Math.hypot(b.x - cx, b.z - cz) * 2),
+      );
+      g.focusCamera(meio);
+      g.setZoom(Math.max(11, Math.min(28, vao * 1.7)));
+      for (const b of falantes) b.encarar(eu.x, eu.z);
+      await g.wait(0.4);
+
+      for (const [fala, texto] of falas) {
+        const q = (Object.keys(AJUDANTES) as AjudanteDoClube[]).find((k) => AJUDANTES[k].nome === fala);
+        if (q) g.som(AJUDANTES[q].som);
+        await g.say([texto], fala);
+      }
+
+      g.focusCamera(null);
+      g.setZoom(11);
+      w.root.remove(meio);
+      g.lockPlayer(false);
+      // e cada um vai para o posto dele, virado para os portões — a caminhada
+      // acontece no mundo, depois da conversa, sem prender ninguém
+      for (const q of quem) {
+        const { bicho, posto } = AJUDANTES[q];
+        bicho.pararDeEncarar();
+        void chegar(bicho.irPara(posto.x, posto.z, 1.0), 10)
+          .then(() => bicho.encarar(OLHAR_DOS_PORTOES.x, OLHAR_DOS_PORTOES.z));
+      }
+    };
+    w.root.userData.chamarPelaCarta = chamarPelaCarta;
+    w.root.userData.ajudantes = () => Object.fromEntries(
+      (Object.keys(AJUDANTES) as AjudanteDoClube[]).map((q) => {
+        const b = AJUDANTES[q].bicho;
+        // `topo`: o ponto mais alto do desenho — é o que mede se a Gina passa na porta
+        const topo = new THREE.Box3().setFromObject(b.group).max.y;
+        return [q, { visivel: b.group.visible, x: b.x, z: b.z, topo, posto: AJUDANTES[q].posto }];
+      }),
+    );
+
+    /* ====================================================================
      *          O TREINO DAS GOTAS E DAS CARTAS — ferramenta de olhar
      * ====================================================================
      *
@@ -1338,6 +1554,32 @@ export const estufa: SceneDef = {
      * mesmo quadro. Cada nível ganho é UMA tela de cartas, em sequência: pular
      * uma seria perder a carta dela.
      */
+    /**
+     * O QUE ACONTECE DEPOIS DO TOQUE NA CARTA: ela entra na mão, a ficha é
+     * derivada de novo, o regador muda — e, se for chamado, o bicho entra pela
+     * porta. Publicado para o teste pegar uma carta ESPECÍFICA sem depender do
+     * sorteio (`scripts/chamados.mjs`).
+     */
+    const aplicarCartaPega = async (id: string): Promise<void> => {
+      mao.pegar(id, nivelAtual);
+      const carta = cartaPorId(id);
+      if (carta?.repetivel) {
+        g.toast(carta.texto, carta.icone);
+        return;
+      }
+      ficha = mao.ficha();
+      // a carta que mexe no regador MUDA A PEÇA DA MÃO — o §6 do plano
+      g.vestirRegador(mao.estiloDoRegador());
+      // carta de chamado: o bicho entra pela porta ANTES de a rodada voltar
+      if (carta?.chama) await chamarPelaCarta(id);
+    };
+    w.root.userData.pegarCarta = async (id: string, nivel = 10): Promise<void> => {
+      escolhendo = true;
+      nivelAtual = Math.max(nivelAtual, nivel);
+      await aplicarCartaPega(id);
+      escolhendo = false;
+    };
+
     const subir = async (ate: number): Promise<void> => {
       escolhendo = true;
       while (nivelAtual < ate) {
@@ -1347,15 +1589,7 @@ export const estufa: SceneDef = {
           nivel: nivelAtual,
           mao: mao.cartas.map((c) => ({ id: c.id, nome: c.nome, icone: c.icone, raridade: c.raridade })),
         });
-        mao.pegar(id, nivelAtual);
-        const carta = cartaPorId(id);
-        if (carta?.repetivel) {
-          g.toast(carta.texto, carta.icone);
-        } else {
-          ficha = mao.ficha();
-          // a carta que mexe no regador MUDA A PEÇA DA MÃO — o §6 do plano
-          g.vestirRegador(mao.estiloDoRegador());
-        }
+        await aplicarCartaPega(id);
       }
       escolhendo = false;
     };
