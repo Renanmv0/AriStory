@@ -542,6 +542,19 @@ export interface GameAPI {
   /** o giro atual da câmera, em radianos (ela gira de 45 em 45 graus) */
   anguloDaCamera(): number;
   /**
+   * UM PULINHO de quem é controlado: o corpo sobe e desce num arco curto,
+   * sem sair do lugar no chão. É a carta Pulinho, do jardim, passando por cima
+   * de um bicho pequeno.
+   */
+  pularJogador(altura?: number, duracao?: number): void;
+  /**
+   * TRAVA O T (a troca de personagem). A rodada do jardim trava: quem está
+   * atrás fica atrás, e só a carta Troca de turno destrava.
+   */
+  bloquearTroca(bloqueado: boolean): void;
+  /** Solta `quantos` corações subindo da dupla — o mesmo coração do beijo. */
+  soltarCoracoes(quantos?: number): void;
+  /**
    * Abre a mesa de xadrez em DOM e resolve quando a PARTIDA acaba (por mate,
    * empate ou desistencia). Trava o movimento enquanto estiver aberta.
    *

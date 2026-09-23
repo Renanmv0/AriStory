@@ -258,6 +258,7 @@ export class Game implements GameAPI {
     // o que a rodada do jardim liga morre com a cena
     this.player.mira = null;
     this.player.multiplicador = 1;
+    this.trocaBloqueada = false;
     this.ui.showJardim(null);
 
     // o parceiro chega junto, um passo atras
@@ -440,7 +441,7 @@ export class Game implements GameAPI {
     const podeTrocar = emTela
       ? !this.ui.dialogueOpen && !this.ui.menuOpen && !this.transitioning
       : !busy;
-    if (podeTrocar && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
+    if (podeTrocar && !this.trocaBloqueada && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
     if (!busy) {
       if (this.input.justPressed('KeyQ')) this.iso.rotate(-1);
       if (this.input.justPressed('KeyR')) this.iso.rotate(1);
@@ -1218,6 +1219,26 @@ export class Game implements GameAPI {
 
   anguloDaCamera(): number {
     return this.iso.angle;
+  }
+
+  pularJogador(altura?: number, duracao?: number): void {
+    this.player.pular(altura, duracao);
+  }
+
+  /** a rodada do jardim trava o T (ver `GameAPI.bloquearTroca`) */
+  private trocaBloqueada = false;
+
+  bloquearTroca(bloqueado: boolean): void {
+    this.trocaBloqueada = bloqueado;
+  }
+
+  soltarCoracoes(quantos = 3): void {
+    const p = this.player.position;
+    for (let i = 0; i < quantos; i++) {
+      const a = (i / Math.max(1, quantos)) * Math.PI * 2 + Math.random() * 0.6;
+      this.coracoes.soltar(p, Math.cos(a) * 0.35, Math.sin(a) * 0.35, 1.7 + i * 0.12);
+    }
+    this.audio.play('coracao');
   }
 
   vestirRegador(estilo: Partial<EstiloDeRegador> | null): void {

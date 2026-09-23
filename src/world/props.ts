@@ -6754,3 +6754,346 @@ export function portaoDeJardim(vao = 3, altura = 2.6): THREE.Group {
 
   return g;
 }
+
+/* =========================================================================
+ * AS PEÇAS DAS CARTAS DO JARDIM
+ *
+ * O que uma carta põe na estufa quando é pega: o espantalho, as tábuas do
+ * portão emperrado, o toldo de um canteiro, a dioneia. Elas moram no kit, e
+ * não na rodada, pela regra de sempre — peça é do kit, e a rodada só planta.
+ * Todas são para ser lidas de LONGE, no meio de uma rodada cheia: silhueta
+ * forte e cor viva, pouco detalhe.
+ * ========================================================================= */
+
+/**
+ * O ESPANTALHO (carta Espantalho): uma cruz de madeira com camisa, cabeça de
+ * saco de palha e chapéu. Palha saindo das mangas e da barra — é a palha que
+ * faz ele ler como espantalho, e não como gente parada no meio da estufa.
+ */
+export function espantalho(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'espantalho';
+  const madeira = toon(P.woodDark);
+  const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.9, 6), madeira);
+  poste.position.y = 0.95;
+  g.add(poste);
+  const travessa = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.3, 6), madeira);
+  travessa.rotation.z = Math.PI / 2;
+  travessa.position.y = 1.35;
+  g.add(travessa);
+
+  // a camisa: um tronco largo e duas mangas na travessa
+  const camisa = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.62, 8), toon(P.espantalhoCamisa));
+  camisa.position.y = 1.2;
+  g.add(camisa);
+  for (const s of [-1, 1] as const) {
+    const manga = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.42, 6), toon(P.espantalhoCamisa));
+    manga.rotation.z = Math.PI / 2;
+    manga.position.set(s * 0.38, 1.35, 0);
+    g.add(manga);
+    // a palha saindo da manga
+    const tufo = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.18, 6), toon(P.palha));
+    tufo.rotation.z = s * -Math.PI / 2;
+    tufo.position.set(s * 0.66, 1.35, 0);
+    g.add(tufo);
+  }
+  // o remendo xadrez no peito
+  const remendo = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.04), toon(P.espantalhoCamisaXadrez));
+  remendo.position.set(0.07, 1.26, 0.22);
+  remendo.rotation.z = 0.2;
+  g.add(remendo);
+  // palha na barra da camisa
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const fio = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.2, 4), toon(i % 2 ? P.palha : P.palhaEscura));
+    fio.rotation.x = Math.PI;
+    fio.position.set(Math.cos(a) * 0.2, 0.84, Math.sin(a) * 0.2);
+    g.add(fio);
+  }
+  // a cabeça de saco, com dois olhos de botão e um sorriso costurado
+  const cabeca = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), toon(P.palha));
+  cabeca.scale.set(1, 1.1, 0.95);
+  cabeca.position.y = 1.72;
+  g.add(cabeca);
+  for (const s of [-1, 1] as const) {
+    const botao = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 5), toon(P.espantalhoChapeu));
+    botao.position.set(s * 0.07, 1.76, 0.18);
+    g.add(botao);
+  }
+  const boca = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.012, 4, 10, Math.PI), toon(P.espantalhoChapeu));
+  boca.rotation.z = Math.PI;
+  boca.position.set(0, 1.66, 0.185);
+  g.add(boca);
+  // o chapéu de aba larga, torto
+  const aba = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.03, 12), toon(P.espantalhoChapeu));
+  aba.position.y = 1.88;
+  aba.rotation.z = 0.12;
+  g.add(aba);
+  const copa = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.2, 10), toon(P.espantalhoChapeu));
+  copa.position.set(0.01, 1.98, 0);
+  copa.rotation.z = 0.12;
+  g.add(copa);
+  return g;
+}
+
+/**
+ * AS TÁBUAS PREGADAS num portão (carta Portão emperrado): três tábuas em X e
+ * atravessadas, com um prego em cada ponta. `largura` é o vão do portão.
+ */
+export function tabuasPregadas(largura = 3, altura = 1.6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'tabuas-pregadas';
+  // cada tábua num plano próprio (`z`): duas no mesmo plano cruzando em X
+  // brigariam pelo pixel no cruzamento
+  const tabua = (comp: number, giro: number, y: number, cor: number, z: number): void => {
+    const t = new THREE.Mesh(new THREE.BoxGeometry(comp, 0.2, 0.06), toon(cor));
+    t.position.set(0, y, z);
+    t.rotation.z = giro;
+    g.add(t);
+    for (const s of [-1, 1] as const) {
+      const prego = new THREE.Mesh(new THREE.SphereGeometry(0.025, 5, 4), toon(P.metalGrey));
+      prego.position.set(Math.cos(giro) * s * (comp / 2 - 0.12), y + Math.sin(giro) * s * (comp / 2 - 0.12), z + 0.04);
+      g.add(prego);
+    }
+  };
+  const diagonal = Math.atan2(altura * 0.6, largura);
+  tabua(Math.hypot(largura, altura * 0.6) + 0.1, diagonal, altura * 0.5, P.wood, 0);
+  tabua(Math.hypot(largura, altura * 0.6) + 0.1, -diagonal, altura * 0.5, P.woodDark, -0.08);
+  tabua(largura + 0.2, 0, altura * 0.85, P.wood, 0.08);
+  return g;
+}
+
+/**
+ * O CADEADO NUM PORTÃO (carta Estufa trancada): uma corrente atravessada e o
+ * cadeado dourado no meio. Some sozinho quando a rodada abre o portão.
+ */
+export function cadeadoDePortao(largura = 3): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cadeado-de-portao';
+  const elos = Math.round(largura / 0.14);
+  for (let i = 0; i < elos; i++) {
+    const elo = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.014, 4, 8), toon(P.corrente));
+    const x = -largura / 2 + (i + 0.5) * (largura / elos);
+    elo.position.set(x, 1.05 - Math.cos((x / largura) * Math.PI) * 0.08, 0);
+    elo.rotation.y = i % 2 ? Math.PI / 2 : 0;
+    g.add(elo);
+  }
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.08), toon(P.cadeado, { glow: 0.15 }));
+  corpo.position.set(0, 0.9, 0.03);
+  g.add(corpo);
+  const arco = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.02, 5, 10, Math.PI), toon(P.corrente));
+  arco.position.set(0, 1, 0.03);
+  g.add(arco);
+  const buraco = new THREE.Mesh(new THREE.CircleGeometry(0.025, 8), toon(P.woodDark));
+  buraco.position.set(0, 0.89, 0.08);
+  g.add(buraco);
+  return g;
+}
+
+/**
+ * O TOLDO DE UM CANTEIRO (carta Toldo): quatro pés e uma lona listrada por
+ * cima, BAIXA — a câmera olha de cima, e toldo alto tapa a própria horta.
+ * `largura` e `profundidade` são as do canteiro.
+ */
+export function toldoDeCanteiro(largura = 3.2, profundidade = 1.6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'toldo-de-canteiro';
+  const ALTO = 1.05;
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, ALTO, 6), toon(P.woodDark));
+      pe.position.set(sx * (largura / 2 + 0.05), ALTO / 2, sz * (profundidade / 2 + 0.05));
+      g.add(pe);
+    }
+  }
+  // a lona em listras, cada uma um tiquinho mais alta no meio: vira uma curva
+  const LISTRAS = 8;
+  for (let i = 0; i < LISTRAS; i++) {
+    const t = (i + 0.5) / LISTRAS;
+    const listra = new THREE.Mesh(
+      // largura exata, sem sobra: as duas listras do meio ficam na MESMA
+      // altura (a curva é simétrica), e sobrepostas elas serrilhariam
+      new THREE.BoxGeometry(largura / LISTRAS, 0.04, profundidade + 0.3),
+      toon(i % 2 ? P.toldoLonaClara : P.toldoLona),
+    );
+    listra.position.set(-largura / 2 + t * largura, ALTO + Math.sin(t * Math.PI) * 0.12, 0);
+    g.add(listra);
+  }
+  // a franja da frente, em bicos
+  for (let i = 0; i < LISTRAS * 2; i++) {
+    const bico = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.12, 4), toon(i % 2 ? P.toldoLonaClara : P.toldoLona));
+    bico.rotation.x = Math.PI;
+    bico.position.set(-largura / 2 + (i + 0.5) * (largura / (LISTRAS * 2)), ALTO - 0.07, profundidade / 2 + 0.15);
+    g.add(bico);
+  }
+  return g;
+}
+
+/**
+ * AS PIMENTEIRAS (carta Canteiro de pimenta): pezinhos de pimenta vermelha
+ * espalhados sobre um canteiro. Base em `y = 0` do canteiro (a cena põe em
+ * cima da terra).
+ */
+export function pimenteiras(largura = 3.2, profundidade = 1.6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'pimenteiras';
+  const COLUNAS = 5;
+  for (let i = 0; i < COLUNAS * 2; i++) {
+    const x = -largura / 2 + ((i % COLUNAS) + 0.5) * (largura / COLUNAS);
+    const z = (i < COLUNAS ? -1 : 1) * profundidade * 0.22;
+    const pe = new THREE.Group();
+    pe.position.set(x + ((i * 0.37) % 0.2) - 0.1, 0, z);
+    const folha = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), toon(P.pimentaFolha));
+    folha.scale.y = 0.7;
+    folha.position.y = 0.16;
+    pe.add(folha);
+    for (let k = 0; k < 3; k++) {
+      const a = k * 2.1 + i;
+      const pimenta = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.14, 6), toon(P.pimentaVermelha, { glow: 0.1 }));
+      pimenta.rotation.x = Math.PI;
+      pimenta.position.set(Math.cos(a) * 0.1, 0.12, Math.sin(a) * 0.1);
+      pe.add(pimenta);
+    }
+    g.add(pe);
+  }
+  return g;
+}
+
+/**
+ * O ASPERSOR (carta Aspersor): um pé de metal com a cabeça giratória em cima.
+ * A cabeça é publicada (`userData.cabeca`) para a rodada girar ela a cada
+ * borrifo.
+ */
+export function aspersor(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'aspersor';
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.26, 0.08, 10), toon(P.aspersorMetal));
+  base.position.y = 0.04;
+  g.add(base);
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.6, 8), toon(P.aspersorMetal));
+  haste.position.y = 0.38;
+  g.add(haste);
+  const cabeca = new THREE.Group();
+  cabeca.name = 'cabeca-do-aspersor';
+  cabeca.position.y = 0.7;
+  g.add(cabeca);
+  const miolo = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), toon(P.aspersorBico));
+  cabeca.add(miolo);
+  for (const s of [-1, 1] as const) {
+    const braco = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.26, 6), toon(P.aspersorMetal));
+    braco.rotation.z = Math.PI / 2;
+    braco.position.x = s * 0.13;
+    cabeca.add(braco);
+    const bico = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.08, 6), toon(P.aspersorBico));
+    bico.rotation.z = s * -Math.PI / 2;
+    bico.rotation.y = s * 0.6;
+    bico.position.x = s * 0.28;
+    cabeca.add(bico);
+  }
+  return g;
+}
+
+/**
+ * A DIONEIA (carta Planta carnívora): duas folhas-boca abertas num caule, com
+ * dentinhos na borda e o miolo vermelho. As duas metades são publicadas
+ * (`userData.bocas`, a de cima e a de baixo) para a rodada fechar a boca na
+ * mordida. Ela olha para `+Z`.
+ */
+export function dioneia(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'dioneia';
+  const caule = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, 0.5, 6), toon(P.dioneia));
+  caule.position.y = 0.25;
+  g.add(caule);
+  for (const s of [-1, 1] as const) {
+    const folha = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), toon(P.dioneia));
+    folha.scale.set(1.4, 0.4, 0.8);
+    folha.position.set(s * 0.14, 0.08, 0);
+    folha.rotation.z = s * 0.3;
+    g.add(folha);
+  }
+  const bocas: THREE.Group[] = [];
+  for (const s of [1, -1] as const) {
+    // cada metade gira no eixo X na "dobradiça" de trás
+    const metade = new THREE.Group();
+    metade.position.set(0, 0.52, -0.02);
+    metade.rotation.x = s * -0.55;
+    g.add(metade);
+    bocas.push(metade);
+    const casca = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2),
+      toon(P.dioneia, { doubleSide: true }),
+    );
+    casca.scale.set(1, 0.45, 1);
+    casca.rotation.x = s === 1 ? 0 : Math.PI;
+    casca.position.z = 0.16;
+    metade.add(casca);
+    const miolo = new THREE.Mesh(new THREE.CircleGeometry(0.2, 12), toon(P.dioneiaBoca, { doubleSide: true }));
+    miolo.rotation.x = -Math.PI / 2;
+    miolo.position.set(0, s * 0.012, 0.16);
+    metade.add(miolo);
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 8) * Math.PI;
+      const dente = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.08, 4), toon(P.dioneiaDente));
+      dente.position.set(Math.cos(a) * 0.21, s * 0.03, 0.16 + Math.sin(a) * 0.21);
+      dente.rotation.x = s * (Math.PI / 2 - 0.3);
+      metade.add(dente);
+    }
+  }
+  g.userData.bocas = bocas;
+  return g;
+}
+
+/**
+ * A CERQUINHA DO TERREIRO (carta Cerquinha): tábuas pontudas, baixas (os bichos
+ * contornam, a câmera vê por cima), numa fileira de `comprimento` metros ao
+ * longo de X.
+ */
+export function cerquinha(comprimento = 6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cerquinha';
+  const RIPAS = Math.round(comprimento / 0.28);
+  for (let i = 0; i < RIPAS; i++) {
+    const x = -comprimento / 2 + (i + 0.5) * (comprimento / RIPAS);
+    const ripa = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.5, 0.04), toon(P.cerquinha));
+    ripa.position.set(x, 0.25, 0);
+    g.add(ripa);
+    const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.1, 4), toon(P.cerquinha));
+    ponta.rotation.y = Math.PI / 4;
+    ponta.scale.z = 0.3;
+    ponta.position.set(x, 0.55, 0);
+    g.add(ponta);
+  }
+  for (const y of [0.14, 0.38]) {
+    const trava = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 0.06, 0.04), toon(P.cerquinhaSombra));
+    // atrás das ripas, sem encostar a face na delas
+    trava.position.set(0, y, -0.055);
+    g.add(trava);
+  }
+  return g;
+}
+
+/**
+ * O PICOLÉ DO MANO (carta Picolé do Mano): de morango com a ponta mergulhada no
+ * chocolate, espetado no palito. Ele cai no chão da estufa no fim da onda, em
+ * pé, e a rodada faz ele girar e flutuar para ser visto.
+ */
+export function picole(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'picole';
+  const palito = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.02), toon(P.picolePalito));
+  palito.position.y = 0.1;
+  g.add(palito);
+  const sorvete = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.18, 4, 10), toon(P.picoleMorango));
+  sorvete.scale.z = 0.55;
+  sorvete.position.y = 0.36;
+  g.add(sorvete);
+  const cobertura = new THREE.Mesh(
+    new THREE.SphereGeometry(0.102, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2),
+    toon(P.picoleCobertura),
+  );
+  cobertura.scale.z = 0.56;
+  cobertura.position.y = 0.46;
+  g.add(cobertura);
+  return g;
+}

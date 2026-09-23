@@ -55,6 +55,14 @@ export class Player {
   mira: { x: number; z: number } | null = null;
   /** multiplica a velocidade maxima (as cartas de passo do jardim); 1 = normal */
   multiplicador = 1;
+  /** o pulinho em curso: tempo que falta, duracao e altura (a carta Pulinho) */
+  private salto = { resta: 0, dur: 0.45, alto: 0.6 };
+
+  /** Um pulinho no lugar: o corpo sobe num arco e volta. */
+  pular(altura = 0.6, duracao = 0.45): void {
+    if (this.salto.resta > 0) return;
+    this.salto = { resta: duracao, dur: duracao, alto: altura };
+  }
 
   constructor(rig: CharacterRig) {
     this.body = rig;
@@ -186,7 +194,13 @@ export class Player {
     clampToBounds(this.position, this.radius, bounds);
 
     // afunda o corpo na agua; na superficie da a impressao de estar nadando
-    this.body.group.position.y = -this.submersion * 0.72;
+    // o pulinho soma por cima: um arco, sem mexer na posicao do chao
+    let pulo = 0;
+    if (this.salto.resta > 0) {
+      this.salto.resta = Math.max(0, this.salto.resta - dt);
+      pulo = Math.sin((1 - this.salto.resta / this.salto.dur) * Math.PI) * this.salto.alto;
+    }
+    this.body.group.position.y = -this.submersion * 0.72 + pulo;
     this.body.setSwimming(naAgua);
     this.body.update(dt, Math.hypot(this.velocity.x, this.velocity.z));
   }

@@ -9,6 +9,9 @@ import { ITENS } from './world/itens';
 import { MEMORIAS } from './world/memoriasData';
 import { PRAGAS } from './world/bichosDoJardim';
 import { regadorDeJardim } from './world/regador';
+import {
+  espantalho, tabuasPregadas, cadeadoDePortao, toldoDeCanteiro, pimenteiras, aspersor, dioneia, cerquinha, picole,
+} from './world/props';
 import { CARTAS, CONSOLOS } from './minigames/jardim/cartas';
 import { cartaNaTela } from './minigames/jardim/tela';
 
@@ -67,6 +70,10 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 // mesma classe que toca no jogo, não de uma cópia.
 (window as unknown as { jogo: Game }).jogo = game;
 (window as unknown as { aristoryAudio: unknown }).aristoryAudio = { Musica, CLIMAS, EFEITOS };
+// as peças que as cartas do jardim põem na estufa: o teste fotografa cada uma
+(window as unknown as { aristoryPecasDoJardim: unknown }).aristoryPecasDoJardim = {
+  espantalho, tabuasPregadas, cadeadoDePortao, toldoDeCanteiro, pimenteiras, aspersor, dioneia, cerquinha, picole,
+};
 // o catalogo por id, para o console e para os testes darem um item de verdade
 // ao jogo em vez de inventarem uma ficha parecida
 (window as unknown as { aristoryItens: unknown }).aristoryItens = Object.fromEntries(

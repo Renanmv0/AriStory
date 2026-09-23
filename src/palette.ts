@@ -485,6 +485,42 @@ export const PALETTE = {
   /** canteiro comido até o fim: a terra seca e as mudas que sobraram */
   terraComida: 0x7a5a3e,
 
+  /*
+   * AS PEÇAS QUE AS CARTAS DO JARDIM PÕEM NA ESTUFA. Cada uma precisa ser lida
+   * de longe no meio da rodada, então as cores são mais vivas que as do
+   * cenário em volta — e nenhuma é o roxo, turquesa, ferrugem, azul, musgo ou
+   * vinho das pragas.
+   */
+  /** o Espantalho: palha, camisa xadrez desbotada e o chapéu */
+  palha: 0xe8c66a,
+  palhaEscura: 0xc59a3d,
+  espantalhoCamisa: 0xd9674a,
+  espantalhoCamisaXadrez: 0xf2d7a0,
+  espantalhoChapeu: 0x8a5a33,
+  /** o Toldo de um canteiro: lona listrada, verde e creme */
+  toldoLona: 0x5fae6e,
+  toldoLonaClara: 0xf4ecd2,
+  /** o Canteiro de pimenta */
+  pimentaVermelha: 0xe0392b,
+  pimentaFolha: 0x3f8a3a,
+  /** o Aspersor: metal e o bico azul */
+  aspersorMetal: 0xb8c3c9,
+  aspersorBico: 0x2f86c4,
+  /** a Planta carnívora: verde de dioneia, boca vermelha e dentinhos */
+  dioneia: 0x74b94a,
+  dioneiaBoca: 0xd64a4a,
+  dioneiaDente: 0xfbf6e6,
+  /** a Cerquinha do terreiro: madeira clara pintada */
+  cerquinha: 0xf1e3c4,
+  cerquinhaSombra: 0xcdb892,
+  /** o cadeado da Estufa trancada, e a corrente */
+  cadeado: 0xe0b43c,
+  corrente: 0x8f98a0,
+  /** o Picolé do Mano: sorvete de morango e o palito */
+  picoleMorango: 0xf28aa8,
+  picoleCobertura: 0x7a4a2e,
+  picolePalito: 0xe9d3a4,
+
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
   // e a diferenca de tom e o que separa "comida de bicho" de "comida de
