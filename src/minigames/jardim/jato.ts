@@ -117,6 +117,13 @@ export interface ContagemDoJato {
   vaporDoCaminho: number;
   /** a gota mais alta que já subiu (o Jato em arco) */
   alturaMaxima: number;
+  // o que não é jato: as cartas de jardineiro e de jardim
+  poeiras: number;
+  notas: number;
+  ondas: number;
+  brotos: number;
+  ardidos: number;
+  adubos: number;
 }
 
 function contagemZerada(): ContagemDoJato {
@@ -124,6 +131,7 @@ function contagemZerada(): ContagemDoJato {
     disparos: 0, formas: {}, tintas: {}, respingos: 0, trancos: 0, cristais: 0, vapores: 0,
     bolhas: 0, pocas: 0, garoas: 0, rachaduras: 0, geiseres: 0, aneis: 0, carga: 0,
     arcosIris: 0, sacudidas: 0, miras: 0, chuvas: 0, especiais: {}, vaporDoCaminho: 0, alturaMaxima: 0,
+    poeiras: 0, notas: 0, ondas: 0, brotos: 0, ardidos: 0, adubos: 0,
   };
 }
 
@@ -818,6 +826,92 @@ export class DesenhoDoJato {
       vx: Math.cos(a) * 0.6, vy: 1.2 + Math.random() * 0.6, vz: Math.sin(a) * 0.6,
       vida: 0.7, tamanho: 0.04, cor, gravidade: 5, arrasto: 1.5,
     });
+  }
+
+  // ======================================================== o que não é jato
+  /*
+   * AS CARTAS QUE NÃO MEXEM NO JATO também se veem: o Pique levanta poeira, o
+   * Assobio solta notinha, o Grito abre uma onda, o que brota solta faísca
+   * verde. Moram aqui porque usam os MESMOS pools de partícula — um segundo
+   * conjunto de malhas instanciadas para a mesma estufa seria desperdício.
+   */
+
+  /** a poeirinha dos pés de quem corre (o Pique) */
+  poeira(x: number, z: number, rumo: number): void {
+    this.contagem.poeiras += 1;
+    for (let i = 0; i < 2; i++) {
+      const a = rumo + Math.PI + (Math.random() - 0.5) * 1.2;
+      this.terra.emitir({
+        x: x + (Math.random() - 0.5) * 0.2, y: 0.05, z: z + (Math.random() - 0.5) * 0.2,
+        vx: Math.sin(a) * 0.5, vy: 0.4 + Math.random() * 0.4, vz: Math.cos(a) * 0.5,
+        vida: 0.55, tamanho: 0.05 + Math.random() * 0.03, cor: P.efeitoPoeira, gravidade: 1.2, arrasto: 2,
+      });
+    }
+  }
+
+  /** as notinhas do Assobio: sobem balançando da cabeça de quem assobia */
+  notinhas(x: number, y: number, z: number): void {
+    this.contagem.notas += 1;
+    for (let i = 0; i < 5; i++) {
+      this.depois(i * 0.09, () => this.faiscas.emitir({
+        x: x + (Math.random() - 0.5) * 0.3, y, z: z + (Math.random() - 0.5) * 0.3,
+        vx: (Math.random() - 0.5) * 0.4, vy: 0.9 + Math.random() * 0.4, vz: (Math.random() - 0.5) * 0.4,
+        vida: 1.1, tamanho: 0.06, cor: P.efeitoNota, gravidade: -0.2, arrasto: 0.5, balanco: 0.5,
+      }));
+    }
+  }
+
+  /**
+   * UMA ONDA DE SOM no chão: o Grito, o apito da Gina, o latido do Walter, o
+   * sino da porta. Dois anéis que abrem, um atrás do outro — é o desenho de
+   * "fez barulho" que qualquer um lê.
+   */
+  ondaDeSom(x: number, z: number, raio: number, cor: number = P.efeitoGrito): void {
+    this.contagem.ondas += 1;
+    this.aneis.deixar({ x, z, raio: raio * 0.6, vida: 0.55, cor, abrir: 1.8, crescer: 0.05 });
+    this.depois(0.15, () => this.aneis.deixar({ x, z, raio: raio * 0.8, vida: 0.55, cor, abrir: 1.4, crescer: 0.05 }));
+  }
+
+  /** o que brota: faíscas verdes subindo de um canteiro que se recuperou */
+  broto(x: number, z: number, meioX = 0.8, meioZ = 0.8): void {
+    this.contagem.brotos += 1;
+    for (let i = 0; i < 14; i++) {
+      this.faiscas.emitir({
+        x: x + (Math.random() - 0.5) * 2 * meioX, y: 0.3, z: z + (Math.random() - 0.5) * 2 * meioZ,
+        vy: 0.7 + Math.random() * 0.6, vida: 0.9 + Math.random() * 0.4, tamanho: 0.035,
+        cor: i % 3 ? P.efeitoBroto : P.jatoCristal, gravidade: -0.3, arrasto: 0.6, balanco: 0.2,
+      });
+    }
+  }
+
+  /** o ardido da pimenta: fagulha vermelha e fumacinha na boca de quem mordeu */
+  ardido(x: number, y: number, z: number): void {
+    this.contagem.ardidos += 1;
+    for (let i = 0; i < 10; i++) {
+      const a = Math.random() * 6.28;
+      this.faiscas.emitir({
+        x, y, z, vx: Math.cos(a) * 1.2, vy: 1 + Math.random() * 1.2, vz: Math.sin(a) * 1.2,
+        vida: 0.5, tamanho: 0.03, cor: i % 2 ? P.efeitoArdido : P.pimentaVermelha, gravidade: 3,
+      });
+    }
+    for (let i = 0; i < 4; i++) {
+      this.nevoa.emitir({
+        x: x + (Math.random() - 0.5) * 0.2, y: y + 0.1, z: z + (Math.random() - 0.5) * 0.2,
+        vy: 0.6, vida: 0.9, tamanho: 0.07, cor: P.jatoVapor, gravidade: -0.2, arrasto: 1, cresce: 1.8,
+      });
+    }
+  }
+
+  /** o adubo do Noel caindo num canteiro regado: pitadas marrons que assentam */
+  adubo(x: number, z: number): void {
+    this.contagem.adubos += 1;
+    for (let i = 0; i < 6; i++) {
+      this.terra.emitir({
+        x: x + (Math.random() - 0.5) * 0.6, y: 0.9, z: z + (Math.random() - 0.5) * 0.6,
+        vx: (Math.random() - 0.5) * 0.3, vy: 0.3, vz: (Math.random() - 0.5) * 0.3,
+        vida: 0.8, tamanho: 0.035, cor: P.efeitoAdubo, gravidade: 4, arrasto: 1,
+      });
+    }
   }
 
   /** o tonel enchendo o regador: espirro de água na boca do tonel */

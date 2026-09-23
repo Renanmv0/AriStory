@@ -96,10 +96,29 @@ de `regras`. **Regra nova é DUAS coisas**: uma linha no tipo `RegraDoJardim`
 segunda, a carta existe, é escolhida e não faz nada — o pior bug possível
 numa tela de escolha.
 
-> A rodada existe (`minigames/jardim/rodada.ts`, etapa 3), mas nem toda regra
-> já é obedecida: as de JATO são, e as outras entram com as etapas seguintes
-> (a lista está no §10 do plano). Regra nova de jato = a linha no tipo, o
-> código na rodada, e a animação em `jato.ts`.
+> **Toda regra que existe hoje é obedecida** pela rodada
+> (`minigames/jardim/rodada.ts`). Regra nova de jato = a linha no tipo, o
+> código na rodada e a animação em `jato.ts` (§5). Regra nova de jardineiro,
+> jardim ou clube = a linha no tipo e o código num destes lugares da rodada:
+>
+> | a carta age… | onde mora |
+> |---|---|
+> | a cada quadro, no corpo de quem rega (Pique, Assobio, Grito) | `cartasDoJardineiro` |
+> | a cada quadro, no campo (Aspersor, Espantalho, trancas) | `cartasDoJardim` |
+> | quando um bicho começa a comer | `aoMorder` |
+> | no começo / no fim de cada onda | `comecoDaOnda` / `fimDeUmaOnda` |
+> | pondo uma peça na estufa | `montarCartas` (e `recolidir`, se a peça bloqueia) |
+> | perguntando um canteiro | `cartaNova` + `escolherCanteiro` |
+> | chamando alguém do clube | `chamadosAgindo`, pelo `ElencoDaEstufa` da cena |
+>
+> **E toda uma se vê** — a regra do jato vale para as outras: o que não é água
+> se desenha com os efeitos de `jato.ts` (`poeira`, `notinhas`, `ondaDeSom`,
+> `broto`, `ardido`, `adubo`), e a peça nova vai para o kit (`world/props.ts`).
+> Quando a carta agir, chame `this.contar(id)`: é o que o teste lê.
+>
+> "Uma vez por onda" é `usadoNaOnda` (a onda seguinte limpa). Peça que a carta
+> põe na estufa entra por `pecaNaEstufa` (nasce crescendo e sai sozinha no fim
+> da rodada).
 
 ---
 
@@ -240,6 +259,13 @@ node scripts/cartas.mjs          # baralho, mão, sorteio, mil rodadas, curva e 
 Carta que mexe no desenho do regador também pede `node scripts/regador.mjs`;
 carta que mexe no jato pede `node scripts/jato.mjs /tmp/jt` (e olhar a foto
 dela), e mexer na rodada pede `node scripts/rodada.mjs /tmp/rd`.
+
+Carta de jardineiro, jardim ou clube ganha **um caso** em
+`scripts/cartasNaRodada.mjs`: uma `laboratorio([...])` com a carta na mão, o
+que ela precisa para agir (`soltarBicho`, `ferirCanteiro`, `forcarFimDeOnda`,
+`soltarGotasAqui`…), e um `confere` que exige o efeito NO MUNDO — o bicho
+recuou, o canteiro sarou —, não só o contador. Ponha um enquadramento na tabela
+`FOTO` e olhe a foto: `node scripts/cartasNaRodada.mjs /tmp/cr <id>`.
 
 Depois, **escreva a carta na tabela da família no §6 do
 `docs/MINIGAME-JARDIM.md`** — com raridade e efeito. É lá que o Renan ajusta o

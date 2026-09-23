@@ -195,6 +195,52 @@ export class GotasDoJardim {
     return pegas;
   }
 
+  /**
+   * O ÍMÃ DE GOTA: todas as que estão no chão levantam e voam até o jogador,
+   * de onde estiverem. Elas seguem o caminho normal do voo, então chegam uma
+   * por uma, e cada uma conta quando chega.
+   */
+  atrairTodas(): number {
+    let quantas = 0;
+    for (const g of this.gotas) {
+      if (g.estado !== 'no-chao') continue;
+      g.estado = 'voando';
+      g.peca.visible = true;
+      g.corpo.scale.setScalar(1);
+      g.vel = 4;
+      quantas += 1;
+    }
+    return quantas;
+  }
+
+  /** a gota parada mais perto de um ponto — o Noel vai atrás dela */
+  maisPerto(x: number, z: number): { x: number; z: number } | null {
+    let melhor: Gota | null = null;
+    let d = Infinity;
+    for (const g of this.gotas) {
+      if (g.estado !== 'no-chao') continue;
+      const dd = Math.hypot(g.peca.position.x - x, g.peca.position.z - z);
+      if (dd < d) { d = dd; melhor = g; }
+    }
+    return melhor ? { x: melhor.peca.position.x, z: melhor.peca.position.z } : null;
+  }
+
+  /**
+   * ALGUÉM CATA as gotas paradas num raio (o Noel): elas somem do chão e
+   * quem catou leva. Devolve quantas — quem decide o que elas valem é a rodada.
+   */
+  catar(x: number, z: number, raio: number): number {
+    let quantas = 0;
+    for (let i = this.gotas.length - 1; i >= 0; i--) {
+      const g = this.gotas[i];
+      if (g.estado !== 'no-chao') continue;
+      if (Math.hypot(g.peca.position.x - x, g.peca.position.z - z) > raio) continue;
+      this.tirar(i);
+      quantas += 1;
+    }
+    return quantas;
+  }
+
   /** Some com todas — fim de rodada, ou sair da estufa. */
   limpar(): void {
     for (let i = this.gotas.length - 1; i >= 0; i--) this.tirar(i);

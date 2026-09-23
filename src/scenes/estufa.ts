@@ -14,12 +14,13 @@ import { Capy } from '../entities/bichos/Capy';
 import { Gina } from '../entities/bichos/Gina';
 import { Noel } from '../entities/bichos/Noel';
 import { Walter } from '../entities/bichos/Walter';
+import { JeanLuc } from '../entities/bichos/JeanLuc';
 import { GotasDoJardim } from '../entities/GotasDoJardim';
 import { MaoDeCartas } from '../minigames/jardim/baralho';
 import { cartaPorId, type AjudanteDoClube } from '../minigames/jardim/cartas';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
 import { cartaNaTela } from '../minigames/jardim/tela';
-import { RodadaDoJardim } from '../minigames/jardim/rodada';
+import { RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigames/jardim/rodada';
 import { ARI, RENAN } from '../characters/cast';
 import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 import { toon } from '../core/materials';
@@ -145,15 +146,20 @@ const FUNDO_DE_FORA = -hz - FORA.profundidade;
 /** a medida de cada canteiro da estufa, em largura x profundidade */
 const CANTEIRO = { largura: 3.2, profundidade: 1.6 };
 
+/*
+ * O `nome` é como a Josefina chama cada um — é o que aparece nos botões das
+ * cartas de "um canteiro à sua escolha". Os repetidos (duas alfaces, dois
+ * tomates) levam o lado, como a dupla vê da porta.
+ */
 const CANTEIROS = [
-  { x: -10.2, z: 8.8, tipo: 'samambaia', giro: 0 },
-  { x: -3.6, z: 8.8, tipo: 'lavanda', giro: 0 },
-  { x: 3.6, z: 8.8, tipo: 'suculenta', giro: 0 },
-  { x: 10.2, z: 8.8, tipo: 'alface', giro: 0 },
-  { x: -12.4, z: 4.6, tipo: 'tomate', giro: Math.PI / 2 },
-  { x: -12.4, z: 0.2, tipo: 'girassol', giro: Math.PI / 2 },
-  { x: 12.4, z: 4.6, tipo: 'alface', giro: Math.PI / 2 },
-  { x: 12.4, z: 0.2, tipo: 'tomate', giro: Math.PI / 2 },
+  { x: -10.2, z: 8.8, tipo: 'samambaia', giro: 0, nome: 'Samambaia' },
+  { x: -3.6, z: 8.8, tipo: 'lavanda', giro: 0, nome: 'Lavanda' },
+  { x: 3.6, z: 8.8, tipo: 'suculenta', giro: 0, nome: 'Suculentas' },
+  { x: 10.2, z: 8.8, tipo: 'alface', giro: 0, nome: 'Alface da frente' },
+  { x: -12.4, z: 4.6, tipo: 'tomate', giro: Math.PI / 2, nome: 'Tomate da esquerda' },
+  { x: -12.4, z: 0.2, tipo: 'girassol', giro: Math.PI / 2, nome: 'Girassol' },
+  { x: 12.4, z: 4.6, tipo: 'alface', giro: Math.PI / 2, nome: 'Alface da direita' },
+  { x: 12.4, z: 0.2, tipo: 'tomate', giro: Math.PI / 2, nome: 'Tomate da direita' },
 ] as const;
 
 export const estufa: SceneDef = {
@@ -528,7 +534,7 @@ export const estufa: SceneDef = {
      * para murchar planta por planta. Guardar a peca aqui e o que evita, de
      * novo, um segundo lugar onde a mesma coordenada esta escrita.
      */
-    const hortas = CANTEIROS.map(({ x, z, tipo, giro }) => {
+    const hortas = CANTEIROS.map(({ x, z, tipo, giro, nome }) => {
       // CRESCIMENTO 1,45: a mesma peca da horta de fora, com as mudas maiores.
       // E o que faz os dois lugares nao parecerem o mesmo canteiro copiado — e
       // e a fala da propria Josefina depois da quest ("adubo bom trabalha
@@ -540,7 +546,7 @@ export const estufa: SceneDef = {
       // o colisor acompanha o giro: nos dois deitados a caixa troca de eixo
       if (giro === 0) w.blockBox(x, z, CANTEIRO.largura / 2, CANTEIRO.profundidade / 2);
       else w.blockBox(x, z, CANTEIRO.profundidade / 2, CANTEIRO.largura / 2);
-      return { x, z, giro, tipo, peca };
+      return { x, z, giro, tipo, nome, peca };
     });
 
     /**
@@ -1642,6 +1648,59 @@ export const estufa: SceneDef = {
       samambaia: P.folhaSamambaia, lavanda: P.florLavanda, suculenta: P.folhaSuculenta,
       alface: P.folhaAlface, tomate: P.tomateMaduro, girassol: P.florGirassol,
     };
+    /**
+     * O ELENCO: a rodada pede "vai até ali", "late", "volta pro posto", e aqui
+     * é quem sabe quem é quem. O Jean-Luc só existe para a carta dele: boia
+     * dentro do tonel enquanto ela está na mão.
+     */
+    const jeanLuc = new JeanLuc({
+      minX: tonel.position.x - 0.1, maxX: tonel.position.x + 0.1,
+      minZ: tonel.position.z - 0.1, maxZ: tonel.position.z + 0.1,
+      proibido: [],
+    });
+    jeanLuc.group.visible = false;
+    w.add(jeanLuc.group);
+    w.onUpdate((dt) => { if (jeanLuc.group.visible) jeanLuc.update(dt); });
+    const quemE = (q: QuemAjuda): Bicho => (q === 'josefina' ? josefina : AJUDANTES[q].bicho);
+    const postoDe = (q: QuemAjuda): { x: number; z: number } =>
+      (q === 'josefina' ? POSTO_DA_JOSEFINA : AJUDANTES[q].posto);
+    const elenco: ElencoDaEstufa = {
+      presente: (q) => (q === 'josefina' ? josefina.group.visible : naEstufa.has(q)),
+      onde: (q) => ({ x: quemE(q).x, z: quemE(q).z }),
+      ir: (q, x, z, velocidade) => {
+        const b = quemE(q);
+        b.pararDeEncarar();
+        return chegar(b.irPara(x, z, velocidade), 20);
+      },
+      seguir: (q, x, z, velocidade) => {
+        const b = quemE(q);
+        b.pararDeEncarar();
+        b.seguir(x, z, velocidade);
+      },
+      encarar: (q, x, z) => quemE(q).encarar(x, z),
+      voltarAoPosto: (q) => {
+        const b = quemE(q);
+        const posto = postoDe(q);
+        b.pararDeEncarar();
+        void chegar(b.irPara(posto.x, posto.z, 1.4), 15)
+          .then(() => b.encarar(OLHAR_DOS_PORTOES.x, OLHAR_DOS_PORTOES.z));
+      },
+      soar: (q) => g.som(q === 'josefina' ? 'cantarolar' : AJUDANTES[q].som),
+      jaEsta: (q) => {
+        const a = AJUDANTES[q];
+        naEstufa.add(q);
+        a.bicho.group.visible = true;
+        a.bicho.sentarEm(a.posto.x, a.posto.z, Math.PI);
+        a.bicho.levantar();
+        a.bicho.encarar(OLHAR_DOS_PORTOES.x, OLHAR_DOS_PORTOES.z);
+      },
+      patoNoTonel: (ligado) => {
+        jeanLuc.group.visible = ligado;
+        // boiando na água do tonel, que fica um dedo abaixo da boca
+        if (ligado) jeanLuc.sentarEm(tonel.position.x, tonel.position.z, Math.PI / 2, 1.0);
+      },
+    };
+
     const rodada = new RodadaDoJardim(w, g, {
       entradas: PORTOES.xs.map((x) => ({ x, z: FUNDO_DE_FORA - 1.6 })),
       brechas: PORTOES.xs.map((x) => ({ x, z: FUNDO_DE_FORA + 0.2 })),
@@ -1654,9 +1713,28 @@ export const estufa: SceneDef = {
         meioZ: (h.giro === 0 ? CANTEIRO.profundidade : CANTEIRO.largura) / 2,
         peca: h.peca,
         folha: FOLHA_DO_CANTEIRO[h.tipo] ?? P.folhaAlface,
+        tipo: h.tipo,
+        nome: h.nome,
+        giro: h.giro,
       })),
       tonel: { x: tonel.position.x, z: tonel.position.z, altura: 1.2 },
       centro: { x: 0, z: 0, raio: 12 },
+      porta: { x: PORTA.x, z: PORTA.z },
+      postoDeTras: POSTO_DO_PARCEIRO,
+      olharDosPortoes: OLHAR_DOS_PORTOES,
+      /*
+       * AS PEÇAS DAS CARTAS, no terreiro: o segundo tonel espelha o primeiro
+       * na parede da direita; a cerquinha atravessa o caminho do portão do
+       * meio; o espantalho fica entre ela e os portões (é lá que ele puxa
+       * quem acabou de entrar) e o aspersor no miolo, onde todo caminho passa.
+       */
+      lugares: {
+        segundoTonel: { x: hx - 1.2, z: -7.4 },
+        aspersor: { x: 0, z: -0.6 },
+        espantalho: { x: 0, z: -6.6 },
+        cerquinha: { x: 0, z: -4.2, comprimento: 6 },
+      },
+      elenco,
     });
     w.onUpdate((dt) => rodada.atualizar(dt));
     rodada.aoPegarCarta = (id) => chamarPelaCarta(id);
@@ -1666,7 +1744,8 @@ export const estufa: SceneDef = {
      * pé — que é o placar do §3 (canteiro vivo, e não bicho espantado). O
      * pagamento por canteiro é a etapa 9; aqui ela só agradece.
      */
-    rodada.aoAcabar = ({ canteiros, total }) => {
+    const ORDINAL = ['primeira', 'segunda', 'terceira', 'quarta', 'quinta'];
+    rodada.aoAcabar = ({ canteiros, total, ondas, de }) => {
       void (async () => {
         const J = 'Josefina';
         g.lockPlayer(true);
@@ -1676,9 +1755,13 @@ export const estufa: SceneDef = {
           : canteiros === 0
             ? ['Levaram tudo… Não tem problema, meu bem. Terra boa brota de novo.']
             : [`Sobraram ${canteiros} de ${total} canteiros. Tá ótimo pra primeira vez.`];
+        // as cinco levas inteiras, ou até onde a dupla chegou
+        const leva = ondas >= de && canteiros > 0
+          ? 'Foram as cinco levas, e vocês seguraram todas. Até a mãe deles!'
+          : `Essa foi a ${ORDINAL[Math.max(0, ondas - 1)] ?? 'última'} leva. Amanhã vem mais — e vem bicho diferente.`;
         await g.say([
           ...fala,
-          'Essa foi a primeira leva. Amanhã vem mais — e vem bicho diferente.',
+          leva,
           'Deixa que eu replanto o que foi comido.',
         ], J);
         g.lockPlayer(false);
@@ -1698,13 +1781,27 @@ export const estufa: SceneDef = {
      *   espantados, e as cartas pedidas já na mão. É o jeito de ver o jato de
      *   uma carta sem esperar ela sair no sorteio.
      */
+    /**
+     * Os atalhos pulam a conversa, mas não pulam a Josefina: na rodada de
+     * verdade ela está no posto dela, e cartas como "A Josefina ajuda" contam
+     * com isso.
+     */
+    const josefinaNoPosto = (): void => {
+      josefina.group.visible = true;
+      josefina.entrarEmServico();
+      josefina.sentarEm(POSTO_DA_JOSEFINA.x, POSTO_DA_JOSEFINA.z, Math.PI);
+      josefina.levantar();
+      josefina.encarar(OLHAR_DOS_PORTOES.x, OLHAR_DOS_PORTOES.z);
+    };
     w.root.userData.comecarRodada = (cartas: readonly string[] = []): void => {
+      josefinaNoPosto();
       if (!g.hasItem('regador')) g.addItem(ITENS.regador);
       const vaga = g.handItems().findIndex((i) => i?.id === 'regador');
       if (vaga >= 0) g.setActiveHandSlot(vaga);
       rodada.comecar({ cartas });
     };
     w.root.userData.vitrineDoJato = (cartas: readonly string[] = [], praga = 'lagartejo'): void => {
+      josefinaNoPosto();
       if (!g.hasItem('regador')) g.addItem(ITENS.regador);
       const vaga = g.handItems().findIndex((i) => i?.id === 'regador');
       if (vaga >= 0) g.setActiveHandSlot(vaga);

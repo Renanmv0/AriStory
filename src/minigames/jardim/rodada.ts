@@ -6,9 +6,14 @@ import type { WorldBuilder } from '../../world/WorldBuilder';
 import type { Interactable } from '../../world/Interactable';
 import { PRAGAS, type FichaDePraga } from '../../world/bichosDoJardim';
 import { GotasDoJardim } from '../../entities/GotasDoJardim';
+import { ITENS } from '../../world/itens';
+import {
+  aspersor, bush, cadeadoDePortao, cerquinha, dioneia, espantalho, picole, pimenteiras,
+  tabuasPregadas, toldoDeCanteiro, tonelDeAgua,
+} from '../../world/props';
 import { MaoDeCartas } from './baralho';
-import { cartaPorId, type FichaDaRodada } from './cartas';
-import { nivelDasGotas, planoDaOnda, type EntradaDePraga } from './progressao';
+import { cartaPorId, type AjudanteDoClube, type FichaDaRodada } from './cartas';
+import { ONDAS, nivelDasGotas, planoDaOnda, type EntradaDePraga } from './progressao';
 import { cartaNaTela } from './tela';
 import { DesenhoDoJato } from './jato';
 
@@ -55,8 +60,14 @@ const VIDA_DO_CANTEIRO = 24;
 const PERTO_DO_TONEL = 1.9;
 /** jatos por segundo que o tonel põe no regador, antes do Refil rápido */
 const ENCHE_NO_TONEL = 5;
-/** quantas ondas esta etapa joga (as outras entram com os bichos delas) */
-export const ONDAS_DESTA_ETAPA = 1;
+/** quantas ondas a rodada tem — a tabela do §3 do plano */
+export const ONDAS_DA_RODADA = ONDAS.length;
+/** o respiro entre uma onda e a outra, em segundos */
+const INTERVALO = 6;
+/** quantos pontinhos o Olho de jardineira desenha, no máximo */
+const PONTOS_DA_TRILHA = 240;
+/** os nomes dos três portões, como a dupla vê da porta */
+const NOME_DO_PORTAO = ['da esquerda', 'do meio', 'da direita'] as const;
 
 /** como cada praga ANDA e COME — o resto da ficha é do desenho */
 const JEITO: Record<string, { velocidade: number; mordida: number; raio: number }> = {
@@ -80,6 +91,41 @@ export interface CanteiroDaPlanta {
   peca: THREE.Object3D;
   /** a cor das folhas que voam quando ele é comido */
   folha: number;
+  /** o que está plantado (os Girassóis vigiam) */
+  tipo: string;
+  /** como a Josefina chama ele — é o nome que aparece na escolha das cartas */
+  nome: string;
+  /** o giro da peça no chão (os deitados giram 90°) */
+  giro: number;
+}
+
+/** quem da estufa ajuda, fora a dupla: a Josefina e os bichos do clube */
+export type QuemAjuda = AjudanteDoClube | 'josefina';
+
+/**
+ * O ELENCO DA ESTUFA — a ponte da rodada com as entidades da cena.
+ *
+ * A rodada não sabe que o Capy existe como classe: ela pede "vai até ali",
+ * "late", "volta pro posto", e quem conhece o bicho é a cena. É o mesmo corte
+ * da planta: a rodada decide O QUE acontece, a cena sabe COMO se mostra.
+ */
+export interface ElencoDaEstufa {
+  /** está dentro da estufa, de serviço? (os chamados só depois da cutscene) */
+  presente(quem: QuemAjuda): boolean;
+  onde(quem: QuemAjuda): { x: number; z: number };
+  /** manda a um ponto; resolve quando chega (e tem teto: nunca prende a rodada) */
+  ir(quem: QuemAjuda, x: number, z: number, velocidade?: number): Promise<void>;
+  /** anda atrás de um ponto que se mexe, sem promessa (o Noel atrás da gota) */
+  seguir(quem: QuemAjuda, x: number, z: number, velocidade?: number): void;
+  encarar(quem: QuemAjuda, x: number, z: number): void;
+  /** volta ao posto dele, olhando os portões */
+  voltarAoPosto(quem: QuemAjuda): void;
+  /** o barulho dele (latido, apito, o gluglu do Noel) */
+  soar(quem: QuemAjuda): void;
+  /** SEM cutscene, já no posto: a rodada que começa com a carta na mão (teste e vitrine) */
+  jaEsta(quem: AjudanteDoClube): void;
+  /** o Jean-Luc sentado na borda do tonel */
+  patoNoTonel(ligado: boolean): void;
 }
 
 export interface PlantaDoJardim {
@@ -93,6 +139,20 @@ export interface PlantaDoJardim {
   tonel: { x: number; z: number; altura: number };
   /** o meio do terreiro e o raio que cobre a estufa inteira (a Chuva) */
   centro: { x: number; z: number; raio: number };
+  /** a porta de entrada da estufa: o corredor do meio começa nela */
+  porta: { x: number; z: number };
+  /** o posto de trás, onde fica quem não está regando, e para onde olha */
+  postoDeTras: { x: number; z: number };
+  olharDosPortoes: { x: number; z: number };
+  /** onde nascem as peças das cartas de jardim */
+  lugares: {
+    segundoTonel: { x: number; z: number };
+    aspersor: { x: number; z: number };
+    espantalho: { x: number; z: number };
+    /** a cerquinha fica deitada em X, centrada aqui */
+    cerquinha: { x: number; z: number; comprimento: number };
+  };
+  elenco: ElencoDaEstufa;
 }
 
 // ------------------------------------------------------------------ estado
@@ -101,10 +161,23 @@ interface Canteiro extends CanteiroDaPlanta {
   vida: number;
   vidaMax: number;
   escalas: number[];
+  giros: number[];
   terraOriginal: THREE.Material | THREE.Material[] | null;
+  /** a Cerca viva: ninguém come */
+  protegido: boolean;
+  /** o Toldo: aguenta 50% mais */
+  toldo: boolean;
+  /** o Canteiro de pimenta: quem morde sai correndo */
+  pimenta: boolean;
+  /** a Planta carnívora: a dioneia na borda e quanto falta para ela abrir de novo */
+  carnivora: { peca: THREE.Object3D; espera: number; fecha: number } | null;
+  /** o Adubo do Noel: regado nesta onda, a mordida conta pela metade */
+  adubado: boolean;
+  /** a altura da terra do canteiro (onde a pimenteira planta) */
+  alturaDaTerra: number;
 }
 
-type Estado = 'andando' | 'comendo' | 'sacudindo' | 'fugindo' | 'voando' | 'preso' | 'parado';
+type Estado = 'andando' | 'comendo' | 'sacudindo' | 'fugindo' | 'voando' | 'preso' | 'parado' | 'recuando';
 
 interface Invasor {
   ficha: FichaDePraga;
@@ -141,6 +214,15 @@ interface Invasor {
   chineladaEspera: number;
   /** na vitrine: onde ele nasce de novo */
   casa: { x: number; z: number } | null;
+  /** tonto (apito, coração, pulinho): não anda nem come */
+  tonto: number;
+  /** recuando: para onde, e por quanto tempo no máximo */
+  recuo: { x: number; z: number } | null;
+  recuoResta: number;
+  /** o Espantalho puxou a atenção dele */
+  puxado: boolean;
+  /** já passou pelo portão (o Sino da porta toca uma vez por bicho) */
+  passouPortao: boolean;
 }
 
 /** o que a rodada anima na peça da mão */
@@ -151,7 +233,8 @@ export class RodadaDoJardim {
   /** a tela de cartas ou uma cutscene está aberta: tudo congela */
   private pausada = false;
 
-  readonly mao = new MaoDeCartas();
+  /** a mão desta rodada: nasce de novo a cada `comecar` (§7 — ninguém entra já forte) */
+  mao = new MaoDeCartas();
   private ficha: FichaDaRodada = this.mao.ficha();
   private readonly jato = new DesenhoDoJato();
   private readonly gotas = new GotasDoJardim();
@@ -190,10 +273,93 @@ export class RodadaDoJardim {
   private vitrine = false;
   private semente = 20260923;
 
+  /** quantas ondas esta rodada joga — o teste baixa para 1, para caber no tempo */
+  ondasDaRodada = ONDAS_DA_RODADA;
+  /** o respiro entre as ondas: conta para baixo, e a onda seguinte começa no zero */
+  private intervalo = 0;
+  /** os bichos anunciados (tanque e chefe) que já tiveram o aviso da Josefina */
+  private avisados = new Set<EntradaDePraga>();
+
+  // ---- as cartas de jardineiro
+  /** quanto tempo você está andando sem parar (o Pique) */
+  private correndo = 0;
+  private poeiraEspera = 0;
+  /** o impulso do Pé na poça e o do Picolé, em segundos */
+  private impulsoPoca = 0;
+  private impulsoPicole = 0;
+  private assobio = 0;
+  private pulinhoEspera = 0;
+  /** a próxima meta de gotas do Coraçãozinho */
+  private proximoCoracao = 20;
+  /** a Sorte e o Bis valem uma vez só: depois de usados, ficam na mão sem fazer nada */
+  private sorteGasta = false;
+  private bisGasto = false;
+  /** quem controla agora (a Troca de turno percebe quando muda) */
+  private quemRega = '';
+  /** os regadores que a rodada pôs na mão de alguém, para tirar no fim */
+  private regadoresDados: string[] = [];
+  /** o outro regador (Os dois na frente, Lá de trás): cadência própria */
+  private recargaDoParceiro = 0;
+  private ladoDeTras = 0;
+
+  // ---- as cartas de jardim e do clube
+  /** o que vale uma vez por onda, e volta a valer na seguinte */
+  private usadoNaOnda = new Set<string>();
+  /** colisores como a cena os deixou: o fim da rodada devolve esta lista */
+  private colisoresDaCena: ReturnType<WorldBuilder['colisoresAgora']> | null = null;
+  /** as peças que as cartas puseram na estufa, para tirar no fim */
+  private pecasDasCartas: THREE.Object3D[] = [];
+  private segundoTonel: THREE.Object3D | null = null;
+  private aspersorPeca: THREE.Object3D | null = null;
+  private aspersorRelogio = 0;
+  private cerquinhaPeca: THREE.Object3D | null = null;
+  private espantalhoPeca: THREE.Object3D | null = null;
+  private espantalhoResta = 0;
+  private picolePeca: THREE.Object3D | null = null;
+  /** o portão fechado pelo Portão emperrado */
+  private emperrado: number | null = null;
+  /**
+   * AS TRANCAS dos portões: a Estufa trancada (os três, 10 s) e a Gina (um,
+   * 20 s). O relógio de cada uma só anda quando tem bicho esperando nela — um
+   * portão trancado sem ninguém na frente não segura nada.
+   */
+  private trancas: Array<{ porta: number; resta: number; quem: 'cadeado' | 'gina'; peca: THREE.Object3D | null }> = [];
+  private walterDePlantao = 0;
+  private sinoEspera = 0;
+  /** o próximo roteiro, já sorteado (o Noel avisa o portão dele antes) */
+  private proximoPlano: EntradaDePraga[] | null = null;
+
+  // ---- os chamados agindo
+  private capy: { resta: number; alvo: { x: number; z: number }; recarga: number } | null = null;
+  private noel: { resta: number; leva: number; entregando: boolean } | null = null;
+  private walter: { alvo: Canteiro; chegou: boolean; resta: number } | null = null;
+  private mutirao = 0;
+
+  /** o pontilhado do Olho de jardineira */
+  private readonly trilha: THREE.InstancedMesh;
+  private relogioDaTrilha = 0;
+
+  /**
+   * QUANTAS VEZES CADA CARTA FEZ A COISA DELA, pela id. É o que o teste lê
+   * (`scripts/cartasNaRodada.mjs`) para provar que a carta não só está na mão,
+   * como agiu — foto nenhuma prova que o espantalho puxou os bichos.
+   */
+  readonly efeitos: Record<string, number> = {};
+  private contar(id: string): void {
+    this.efeitos[id] = (this.efeitos[id] ?? 0) + 1;
+  }
+
+  /** o teste escolhe o canteiro das cartas "à sua escolha" sem clicar */
+  escolhaForcada: number | null = null;
+
   /** a cena ouve isto: carta pega (para a cutscene de um chamado) */
   aoPegarCarta: ((id: string) => Promise<void>) | null = null;
   /** a cena ouve isto: a rodada acabou, com quantos canteiros de pé */
-  aoAcabar: ((resultado: { canteiros: number; total: number; espantados: number }) => void) | null = null;
+  aoAcabar: ((resultado: {
+    canteiros: number; total: number; espantados: number;
+    /** a onda em que acabou, de quantas; e se acabou jogando ou foi interrompida */
+    ondas: number; de: number; motivo: 'fim' | 'interrompida';
+  }) => void) | null = null;
 
 
   constructor(
@@ -207,14 +373,31 @@ export class RodadaDoJardim {
     this.canteiros = planta.canteiros.map((c) => {
       const mudas = (c.peca.userData.mudas ?? []) as THREE.Object3D[];
       const terra = c.peca.userData.terra as THREE.Mesh | undefined;
+      const alturaDaTerra = terra ? new THREE.Box3().setFromObject(terra).max.y : 0.3;
       return {
         ...c,
         vida: VIDA_DO_CANTEIRO,
         vidaMax: VIDA_DO_CANTEIRO,
         escalas: mudas.map((m) => m.scale.x),
+        giros: mudas.map((m) => m.rotation.y),
         terraOriginal: terra ? terra.material : null,
+        protegido: false,
+        toldo: false,
+        pimenta: false,
+        carnivora: null,
+        adubado: false,
+        alturaDaTerra,
       };
     });
+
+    // o pontilhado do Olho de jardineira: discos no chão, reaproveitados
+    const disco = new THREE.CircleGeometry(0.07, 10);
+    disco.rotateX(-Math.PI / 2);
+    this.trilha = new THREE.InstancedMesh(disco, toon(P.efeitoTrilha, { glow: 0.5, decal: true }), PONTOS_DA_TRILHA);
+    this.trilha.count = 0;
+    this.trilha.frustumCulled = false;
+    this.trilha.renderOrder = 2;
+    w.root.add(this.trilha);
   }
 
   private sorte(): number {
@@ -240,6 +423,23 @@ export class RodadaDoJardim {
     this.rodando = true;
     this.pausada = false;
     this.vitrine = !!opcoes.vitrine;
+    // a lista de colisores como a cena deixou: as cartas mexem numa cópia dela
+    this.colisoresDaCena = this.w.colisoresAgora();
+    this.quemRega = this.g.playerId();
+    this.usadoNaOnda.clear();
+    this.sorteGasta = false;
+    this.bisGasto = false;
+    this.proximoCoracao = 20;
+    this.emperrado = null;
+    this.intervalo = 0;
+    this.proximoPlano = null;
+    for (const k of Object.keys(this.efeitos)) delete this.efeitos[k];
+    /*
+     * A MÃO NASCE VAZIA a cada rodada. Antes ela era criada uma vez com a
+     * rodada e nunca mais: a segunda rodada na mesma visita à estufa começava
+     * com as cartas da primeira — e o teste das cartas pegou isso.
+     */
+    this.mao = new MaoDeCartas();
     for (const id of opcoes.cartas ?? []) this.mao.pegar(id);
     this.aplicarFicha(true);
     this.agua = this.ficha.tanque;
@@ -263,6 +463,20 @@ export class RodadaDoJardim {
     this.suspensas = this.w.interactables.filter((p) => p.enabled);
     for (const p of this.suspensas) p.enabled = false;
 
+    /*
+     * QUEM ESTÁ ATRÁS FICA ATRÁS: o T troca o corpo, e não a posição, então
+     * trocar no meio da rodada deixava o regador lá atrás e quem rega de mão
+     * vazia. Só a Troca de turno destrava — e ela é a carta que conserta isso.
+     */
+    this.g.bloquearTroca(!this.ficha.regras.has('troca-de-turno'));
+
+    // começou com a carta na mão (teste, vitrine): quem ela chama já está no
+    // posto, e as de "canteiro à sua escolha" escolhem agora
+    for (const id of opcoes.cartas ?? []) {
+      for (const q of cartaPorId(id)?.chama ?? []) this.planta.elenco.jaEsta(q);
+      void this.cartaNova(id);
+    }
+
     this.g.showExperiencia(nivelDasGotas(0));
     if (this.vitrine) {
       this.onda = 1;
@@ -273,19 +487,37 @@ export class RodadaDoJardim {
     this.pintarPainel();
   }
 
+  /**
+   * UMA ONDA NOVA: o roteiro dela (já sorteado, se o Noel avisou), o que vale
+   * uma vez por onda volta a valer, e o que acontece no começo de toda onda
+   * (a Sementeira brota, os portões trancam, a Gina vai para o portão dela).
+   */
   private proximaOnda(): void {
     this.onda += 1;
     this.tempoDaOnda = 0;
-    this.plano = planoDaOnda(this.onda, this.dado);
-    // sem aviso: o painel já diz a onda, e o aviso caía em cima da barra
+    this.plano = this.proximoPlano ?? planoDaOnda(this.onda, this.dado);
+    this.proximoPlano = null;
+    this.remapearEmperrado(this.plano);
+    this.usadoNaOnda.clear();
+    this.avisados.clear();
+    for (const c of this.canteiros) c.adubado = false;
+    if (this.onda > 1) {
+      const estreia = ONDAS[this.onda - 1]?.estreia;
+      const ficha = estreia ? PRAGAS.find((p) => p.id === estreia) : null;
+      this.g.toast(
+        ficha ? `Onda ${this.onda}: chegam os ${ficha.nome}s` : `Onda ${this.onda}: a última leva`,
+        '🌿',
+      );
+    }
+    this.comecoDaOnda();
   }
 
   /**
    * ACABA, arruma a estufa e devolve tudo como estava: os canteiros voltam
    * (a Josefina replanta), o regador volta a ser a lata de fábrica, o painel
-   * some e os pontos da cena religam.
+   * some, as peças das cartas saem e os pontos da cena religam.
    */
-  terminar(): void {
+  terminar(motivo: 'fim' | 'interrompida' = 'interrompida'): void {
     if (!this.rodando) return;
     this.rodando = false;
     const vivos = this.canteiros.filter((c) => c.vida > 0).length;
@@ -299,11 +531,16 @@ export class RodadaDoJardim {
     this.g.showJardim(null);
     this.g.showExperiencia(null);
     this.g.vestirRegador(null);
+    this.g.bloquearTroca(false);
     this.pararGesto();
+    this.desmontarCartas();
     for (const c of this.canteiros) this.replantar(c);
     for (const p of this.suspensas) p.enabled = true;
     this.suspensas = [];
-    this.aoAcabar?.({ canteiros: vivos, total: this.canteiros.length, espantados: this.espantados });
+    this.aoAcabar?.({
+      canteiros: vivos, total: this.canteiros.length, espantados: this.espantados,
+      ondas: this.onda, de: ONDAS_DA_RODADA, motivo,
+    });
   }
 
   /** para o teste: o que está acontecendo agora */
@@ -312,6 +549,8 @@ export class RodadaDoJardim {
       rodando: this.rodando,
       pausada: this.pausada,
       onda: this.onda,
+      ondas: this.ondasDaRodada,
+      intervalo: this.intervalo,
       agua: this.agua,
       tanque: this.ficha.tanque,
       nivel: this.nivel,
@@ -320,15 +559,27 @@ export class RodadaDoJardim {
       espantados: this.espantados,
       invasores: this.invasores.map((i) => ({
         praga: i.ficha.id, x: i.x, z: i.z, estado: i.estado, vida: i.vida, vidaMax: i.vidaMax,
-        lento: i.lento > 0, gelado: i.gelado > 0,
+        lento: i.lento > 0, gelado: i.gelado > 0, tonto: i.tonto > 0, puxado: i.puxado, porta: i.porta,
       })),
-      canteiros: this.canteiros.map((c) => ({ x: c.x, z: c.z, vida: c.vida, vidaMax: c.vidaMax })),
+      canteiros: this.canteiros.map((c) => ({
+        x: c.x, z: c.z, nome: c.nome, vida: c.vida, vidaMax: c.vidaMax,
+        protegido: c.protegido, toldo: c.toldo, pimenta: c.pimenta, carnivora: !!c.carnivora, adubado: c.adubado,
+      })),
       faltamEntrar: this.plano.length,
       gotasNoAr: this.jato.gotasNoAr,
       gotasNoChao: this.gotas.quantasNoChao,
       jatosDados: this.jatosDados,
       desenho: this.jato.contagem,
       carga: this.carga,
+      efeitos: { ...this.efeitos },
+      emperrado: this.emperrado,
+      trancas: this.trancas.map((t) => ({ porta: t.porta, resta: t.resta, quem: t.quem })),
+      velocidade: this.velocidadeAgora,
+      segundoTonel: !!this.segundoTonel,
+      espantalho: this.espantalhoResta,
+      picole: this.picolePeca ? { x: this.picolePeca.position.x, z: this.picolePeca.position.z } : null,
+      chamados: { capy: !!this.capy, noel: !!this.noel, walter: !!this.walter, mutirao: this.mutirao },
+      trilha: this.trilha.count,
     };
   }
 
@@ -340,14 +591,23 @@ export class RodadaDoJardim {
     this.ficha = this.mao.ficha();
     this.g.vestirRegador(this.mao.estiloDoRegador());
     this.g.setVelocidadeDoJogador(this.ficha.velocidade);
-    // a Terra adubada vale para o que ainda está de pé, na mesma proporção
+    this.recalcularVida(inicio);
+    // tanque maior: a água que cabe a mais chega cheia
+    if (!inicio && this.ficha.tanque > antes.tanque) this.agua += this.ficha.tanque - antes.tanque;
+    this.montarCartas();
+  }
+
+  /**
+   * A VIDA MÁXIMA de cada canteiro: a Terra adubada vale para todos, o Toldo
+   * só para o dele. O que está de pé muda na mesma proporção — carta nova
+   * nunca "cura" nem "machuca" de repente.
+   */
+  private recalcularVida(inicio = false): void {
     for (const c of this.canteiros) {
-      const max = VIDA_DO_CANTEIRO * this.ficha.vidaDoCanteiro;
+      const max = VIDA_DO_CANTEIRO * this.ficha.vidaDoCanteiro * (c.toldo ? 1.5 : 1);
       c.vida = inicio ? max : c.vida * (max / c.vidaMax);
       c.vidaMax = max;
     }
-    // tanque maior: a água que cabe a mais chega cheia
-    if (!inicio && this.ficha.tanque > antes.tanque) this.agua += this.ficha.tanque - antes.tanque;
   }
 
   /**
@@ -360,33 +620,90 @@ export class RodadaDoJardim {
     this.g.mirarJogador(null);
     while (this.nivel < ate && this.rodando) {
       this.nivel += 1;
-      const oferta = this.mao.oferta(this.nivel, this.dado);
+      // a Sorte de principiante: esta tela sobe uma raridade, uma vez só
+      const acima = this.ficha.regras.has('sorte-de-principiante') && !this.sorteGasta;
+      if (acima) {
+        this.sorteGasta = true;
+        this.contar('sorte-de-principiante');
+      }
+      const oferta = this.mao.oferta(this.nivel, this.dado, acima);
       const id = await this.g.escolherCartaDoJardim(oferta.map(cartaNaTela), {
         nivel: this.nivel,
         mao: this.mao.cartas.map((c) => ({ id: c.id, nome: c.nome, icone: c.icone, raridade: c.raridade })),
       });
-      await this.pegarCarta(id);
+      // a carta que a Sorte subiu pode estar abaixo do piso do nível: vale mesmo assim
+      await this.pegarCarta(id, acima ? Infinity : this.nivel);
     }
     this.pausada = false;
   }
 
   /** a carta escolhida: entra na mão, a ficha muda, e o que ela faz NA HORA acontece */
-  async pegarCarta(id: string): Promise<void> {
+  async pegarCarta(id: string, nivel = this.nivel): Promise<void> {
     const carta = cartaPorId(id);
     if (!carta) return;
-    this.mao.pegar(id, Math.max(this.nivel, 1));
+    const bis = this.ficha.regras.has('bis') && !this.bisGasto;
+    this.mao.pegar(id, Math.max(nivel, 1));
     if (carta.repetivel) {
       this.naHora(carta.naHora);
       this.g.toast(carta.texto, carta.icone);
       return;
     }
-    this.aplicarFicha();
-    if (carta.chama && this.aoPegarCarta) {
-      const estava = this.pausada;
-      this.pausada = true;
-      await this.aoPegarCarta(id);
-      this.pausada = estava;
+    // o Bis: a carta de série pega leva o degrau de cima junto
+    if (bis) {
+      const acima = proximoDegrau(id);
+      if (acima && this.mao.pegar(acima.id, Infinity)) {
+        this.bisGasto = true;
+        this.contar('bis');
+        this.g.toast(`Bis! ${acima.nome}`, '🔁');
+        this.g.som('brotar');
+      }
     }
+    this.aplicarFicha();
+    const estava = this.pausada;
+    this.pausada = true;
+    await this.cartaNova(id);
+    if (carta.chama && this.aoPegarCarta) await this.aoPegarCarta(id);
+    this.pausada = estava;
+  }
+
+  /**
+   * O QUE UMA CARTA PERGUNTA OU MONTA quando chega: as quatro de "um canteiro
+   * à sua escolha" perguntam qual, e o Portão emperrado prega as tábuas.
+   */
+  private async cartaNova(id: string): Promise<void> {
+    if (id === 'portao-emperrado') {
+      this.emperrar();
+      return;
+    }
+    const pergunta: Record<string, string> = {
+      'cerca-viva': 'Qual canteiro a cerca viva abraça?',
+      toldo: 'Em qual canteiro vai o toldo?',
+      'canteiro-de-pimenta': 'Onde eu planto a pimenta?',
+      'planta-carnivora': 'Qual canteiro vira dioneia?',
+    };
+    if (!pergunta[id]) return;
+    const c = await this.escolherCanteiro(pergunta[id]);
+    if (!c || !this.rodando) return;
+    if (id === 'cerca-viva') this.cercarCanteiro(c);
+    else if (id === 'toldo') this.cobrirCanteiro(c);
+    else if (id === 'canteiro-de-pimenta') this.apimentarCanteiro(c);
+    else this.plantarDioneia(c);
+  }
+
+  /**
+   * A ESCOLHA DO CANTEIRO: os quatro vivos mais perto de você, pelo nome que
+   * a Josefina dá a eles. Quatro, e não oito: botão demais numa tela de
+   * celular é lista, e lista não é escolha rápida.
+   */
+  private async escolherCanteiro(pergunta: string): Promise<Canteiro | null> {
+    const eu = this.g.playerPosition();
+    const vivos = this.canteiros.filter((c) => c.vida > 0)
+      .sort((a, b) => Math.hypot(a.x - eu.x, a.z - eu.z) - Math.hypot(b.x - eu.x, b.z - eu.z))
+      .slice(0, 4);
+    if (vivos.length === 0) return null;
+    if (this.escolhaForcada !== null) return vivos[Math.min(this.escolhaForcada, vivos.length - 1)];
+    const i = await this.g.ask(pergunta, vivos.map((c) => c.nome), 'Josefina');
+    return vivos[i] ?? vivos[0];
   }
 
   /** os CONSOLOS: não entram na mão, fazem uma coisa agora */
@@ -441,27 +758,56 @@ export class RodadaDoJardim {
     this.regador(dt);
     this.animarGesto(dt);
     this.garoa(dt);
+    this.cartasDoJardineiro(dt);
+    this.cartasDoJardim(dt);
+    this.chamadosAgindo(dt);
+    this.animarPecas(dt);
+    this.desenharTrilha(dt);
 
-    if (pegas > 0) {
-      this.g.som('pegar');
-      this.juntadas += pegas;
-      const agora = nivelDasGotas(this.juntadas);
-      this.g.showExperiencia(agora);
-      if (agora.nivel > this.nivel) void this.subir(agora.nivel);
-    }
+    this.receberGotas(pegas);
 
     this.relogioDoPainel -= dt;
     if (this.relogioDoPainel <= 0) {
       this.relogioDoPainel = 0.1;
       this.pintarPainel();
     }
-    this.fimDaOnda();
+    this.fimDaOnda(dt);
+  }
+
+  /**
+   * GOTAS QUE CHEGARAM NA MÃO — pisadas, puxadas, ou trazidas pelo Noel. É o
+   * único lugar que soma experiência, e por isso é aqui que o Coraçãozinho
+   * conta de vinte em vinte e o Ímã de gota puxa o chão inteiro.
+   */
+  private receberGotas(n: number): void {
+    if (n <= 0) return;
+    const r = this.ficha.regras;
+    this.g.som('pegar');
+    this.juntadas += n;
+    if (r.has('coracaozinho') && this.juntadas >= this.proximoCoracao) {
+      while (this.proximoCoracao <= this.juntadas) this.proximoCoracao += 20;
+      this.g.soltarCoracoes(3);
+      const eu = this.g.playerPosition();
+      for (const inv of this.invasores) {
+        if (this.vulneravel(inv) && Math.hypot(inv.x - eu.x, inv.z - eu.z) < 4) inv.tonto = Math.max(inv.tonto, 1);
+      }
+      this.contar('coracaozinho');
+    }
+    const agora = nivelDasGotas(this.juntadas);
+    this.g.showExperiencia(agora);
+    if (agora.nivel > this.nivel && !this.pausada) {
+      if (r.has('ima-de-gota') && this.gotas.atrairTodas() > 0) {
+        this.g.som('brotar');
+        this.contar('ima-de-gota');
+      }
+      void this.subir(agora.nivel);
+    }
   }
 
   private pintarPainel(): void {
     this.g.showJardim({
       onda: this.onda,
-      ondas: ONDAS_DESTA_ETAPA,
+      ondas: this.ondasDaRodada,
       agua: this.agua,
       tanque: this.ficha.tanque,
       canteiros: this.canteiros.filter((c) => c.vida > 0).length,
@@ -471,25 +817,55 @@ export class RodadaDoJardim {
   }
 
   /**
-   * A ONDA ACABOU quando ninguém falta entrar e não sobrou bicho na estufa —
-   * ou quando o último canteiro caiu. Esta etapa joga só a primeira; as
-   * outras entram quando os bichos delas existirem (etapa 7 do plano).
+   * A ONDA ACABOU quando ninguém falta entrar e não sobrou bicho na estufa.
+   * Aí vem o RESPIRO (`INTERVALO`): o que as cartas fazem no fim da onda
+   * acontece, e a próxima começa. A rodada acaba depois da última — ou na
+   * hora em que o último canteiro cai.
    */
-  private fimDaOnda(): void {
+  private fimDaOnda(dt: number): void {
     if (this.vitrine) return;
     const semCanteiro = this.canteiros.every((c) => c.vida <= 0);
-    if (!semCanteiro && (this.plano.length > 0 || this.invasores.length > 0)) return;
-    if (!semCanteiro && this.onda < ONDAS_DESTA_ETAPA) {
-      this.proximaOnda();
+    if (semCanteiro) {
+      this.terminar('fim');
       return;
     }
-    this.terminar();
+    if (this.intervalo > 0) {
+      this.intervalo -= dt;
+      if (this.intervalo <= 0) this.proximaOnda();
+      return;
+    }
+    if (this.plano.length > 0 || this.invasores.length > 0) return;
+    if (this.onda < this.ondasDaRodada) {
+      this.intervalo = INTERVALO;
+      this.fimDeUmaOnda();
+      return;
+    }
+    this.terminar('fim');
   }
 
   // ================================================================ os bichos
 
   private chegadas(dt: number): void {
     this.tempoDaOnda += dt;
+    /*
+     * O GRANDÃO NUNCA CHEGA SEM AVISO (§3 do plano): quatro segundos antes, a
+     * Josefina grita de onde ele vem, e o chão ronca.
+     */
+    for (const e of this.plano) {
+      if (!e.anunciada || this.avisados.has(e) || e.t - this.tempoDaOnda > 4) continue;
+      this.avisados.add(e);
+      const ficha = PRAGAS.find((p) => p.id === e.praga);
+      const portao = `portão ${NOME_DO_PORTAO[e.porta]}`;
+      this.g.toast(
+        ficha?.tier === 'chefe'
+          ? `Josefina: “É a ${ficha.nome}! Pelo ${portao}!”`
+          : `Josefina: “Vem um grandão pelo ${portao}!”`,
+        '🐢',
+      );
+      this.g.som('ronco');
+      const p = this.planta.portoes[e.porta];
+      this.jato.ondaDeSom(p.x, p.z + 0.6, 2.2);
+    }
     while (this.plano.length > 0 && this.plano[0].t <= this.tempoDaOnda) {
       const e = this.plano.shift()!;
       this.nascer(e.praga, e.porta);
@@ -506,6 +882,8 @@ export class RodadaDoJardim {
 
   /** Um bicho aparece do lado de fora da sebe, na porta sorteada. */
   private nascer(praga: string, porta: number, casa: { x: number; z: number } | null = null): Invasor {
+    // o Portão emperrado: quem ia por ele vai pelo do lado
+    if (!casa && porta === this.emperrado) porta = this.portaDoLado(porta, this.sorte());
     const ficha = PRAGAS.find((p) => p.id === praga) ?? PRAGAS[0];
     const jeito = JEITO[ficha.id] ?? JEITO.lagartejo;
     const raiz = new THREE.Group();
@@ -541,11 +919,18 @@ export class RodadaDoJardim {
       voo: null,
       chineladaEspera: 0,
       casa,
+      tonto: 0,
+      recuo: null,
+      recuoResta: 0,
+      puxado: false,
+      passouPortao: !!casa,
     };
     raiz.position.set(inv.x, 0, inv.z);
     this.w.root.add(raiz);
     this.w.root.add(barra);
     this.invasores.push(inv);
+    // o Mutirão do clube: quando a chefe chega, os quatro entram em ação
+    if (ficha.tier === 'chefe' && this.ficha.regras.has('mutirao-do-clube')) this.comecarMutirao();
     return inv;
   }
 
@@ -563,7 +948,8 @@ export class RodadaDoJardim {
     let melhor: Canteiro | null = null;
     let d = Infinity;
     for (const c of this.canteiros) {
-      if (c.vida <= 0) continue;
+      // a Cerca viva: esse ninguém nem tenta
+      if (c.vida <= 0 || c.protegido) continue;
       const dd = Math.hypot(c.x - x, c.z - z);
       if (dd < d) { d = dd; melhor = c; }
     }
@@ -607,7 +993,8 @@ export class RodadaDoJardim {
   }
 
   private vulneravel(inv: Invasor): boolean {
-    return inv.estado === 'andando' || inv.estado === 'comendo' || inv.estado === 'parado' || inv.estado === 'preso';
+    return inv.estado === 'andando' || inv.estado === 'comendo' || inv.estado === 'parado'
+      || inv.estado === 'preso' || inv.estado === 'recuando';
   }
 
   private viver(inv: Invasor, dt: number): void {
@@ -631,6 +1018,25 @@ export class RodadaDoJardim {
       if (Math.hypot(inv.empurraX, inv.empurraZ) < 0.05) { inv.empurraX = 0; inv.empurraZ = 0; }
     }
 
+    // o Sino da porta: quem atravessa um portão toca o sininho, uma vez
+    if (!inv.passouPortao && inv.z > this.planta.portoes[inv.porta].z) {
+      inv.passouPortao = true;
+      if (this.ficha.regras.has('sino-da-porta') && this.sinoEspera <= 0) {
+        this.sinoEspera = 0.3;
+        this.g.som('sino');
+        const p = this.planta.portoes[inv.porta];
+        this.jato.ondaDeSom(p.x, p.z + 0.5, 1.4, P.efeitoNota);
+        this.contar('sino-da-porta');
+      }
+    }
+
+    // TONTO (o apito, o coração, o pulinho): não anda nem come, só balança
+    if (inv.tonto > 0) {
+      inv.tonto -= dt;
+      this.pintarInvasor(inv, dt);
+      return;
+    }
+
     // a Poça e a Gota gelada seguram o passo
     let ritmo = 1;
     if (inv.lento > 0) ritmo *= 0.7;
@@ -647,6 +1053,7 @@ export class RodadaDoJardim {
         }
         break;
       case 'fugindo': this.fugir(inv, dt); break;
+      case 'recuando': this.recuar(inv, velocidade, dt); break;
       case 'voando': this.voar(inv, dt); break;
       case 'preso':
         if (inv.relogio > 0.6) inv.estado = 'voando';
@@ -676,11 +1083,46 @@ export class RodadaDoJardim {
   private andar(inv: Invasor, velocidade: number, dt: number): void {
     // o caminho de fora: brecha → portão → boca; depois, o canteiro
     let alvo: { x: number; z: number } | null = inv.caminho[inv.passo] ?? null;
+
+    // O PORTÃO TRANCADO (a Estufa trancada, a Gina): espera do lado de fora
+    let naFila = false;
+    if (inv.passo === 1 && this.trancada(inv.porta)) {
+      naFila = true;
+      const espera = this.pontoDeEspera(inv);
+      if (Math.hypot(espera.x - inv.x, espera.z - inv.z) < 0.1) {
+        this.virarPara(inv, 0, dt);
+        return;
+      }
+      alvo = espera;
+    }
+
+    // O ESPANTALHO: quem está perto esquece o canteiro e vai olhar para ele
+    if (!alvo && this.espantalhoResta > 0) {
+      const e = this.planta.lugares.espantalho;
+      if (inv.puxado || Math.hypot(e.x - inv.x, e.z - inv.z) < 7) {
+        if (!inv.puxado) this.contar('espantalho');
+        inv.puxado = true;
+        const a = inv.lugarNaBorda * Math.PI;
+        const roda = { x: e.x + Math.sin(a) * 1.1, z: e.z - Math.abs(Math.cos(a)) * 1.1 };
+        if (Math.hypot(roda.x - inv.x, roda.z - inv.z) < 0.1) {
+          this.virarPara(inv, Math.atan2(e.x - inv.x, e.z - inv.z), dt);
+          return;
+        }
+        alvo = roda;
+      }
+    }
+
+    let vaiComer = false;
     if (!alvo) {
-      if (!inv.canteiro || inv.canteiro.vida <= 0) inv.canteiro = this.canteiroMaisPerto(inv.x, inv.z);
+      if (!inv.canteiro || inv.canteiro.vida <= 0 || inv.canteiro.protegido) inv.canteiro = this.canteiroMaisPerto(inv.x, inv.z);
       if (!inv.canteiro) return;
       alvo = this.pontoDeComer(inv, inv.canteiro);
+      vaiComer = true;
     }
+    // a Cerquinha: quem ia passar por ela contorna pela ponta
+    const final = alvo;
+    alvo = this.desviar(inv, alvo);
+    if (alvo !== final) vaiComer = false;
     const dx = alvo.x - inv.x;
     const dz = alvo.z - inv.z;
     const d = Math.hypot(dx, dz);
@@ -688,10 +1130,13 @@ export class RodadaDoJardim {
     if (d <= Math.max(0.08, passo)) {
       inv.x = alvo.x;
       inv.z = alvo.z;
+      // chegou na ponta da cerquinha ou na fila do portão: não é o ponto do caminho
+      if (alvo !== final || naFila) return;
       if (inv.passo < inv.caminho.length) inv.passo += 1;
-      else if (inv.canteiro) {
+      else if (inv.canteiro && vaiComer) {
         inv.estado = 'comendo';
         inv.relogio = 0;
+        this.aoMorder(inv, inv.canteiro);
       }
       return;
     }
@@ -702,7 +1147,7 @@ export class RodadaDoJardim {
 
   private comer(inv: Invasor, dt: number): void {
     const c = inv.canteiro;
-    if (!c || c.vida <= 0) {
+    if (!c || c.vida <= 0 || c.protegido) {
       inv.estado = 'andando';
       inv.canteiro = null;
       return;
@@ -712,7 +1157,8 @@ export class RodadaDoJardim {
       THREE.MathUtils.clamp(inv.x, c.x - c.meioX, c.x + c.meioX) - inv.x,
       THREE.MathUtils.clamp(inv.z, c.z - c.meioZ, c.z + c.meioZ) - inv.z,
     ), dt);
-    c.vida = Math.max(0, c.vida - inv.jeito.mordida * dt);
+    // o Adubo do Noel: canteiro regado nesta onda perde a metade
+    c.vida = Math.max(0, c.vida - inv.jeito.mordida * dt * (c.adubado ? 0.5 : 1));
     if (Math.random() < dt * 5) {
       this.jato.folhinhas(
         THREE.MathUtils.clamp(inv.x, c.x - c.meioX, c.x + c.meioX),
@@ -740,12 +1186,13 @@ export class RodadaDoJardim {
       return;
     }
     // o próximo ponto da volta é o primeiro que ainda está "na frente" dele (em z)
-    const alvo = volta.find((p) => p.z < inv.z - 0.3) ?? volta[volta.length - 1];
+    const destino = volta.find((p) => p.z < inv.z - 0.3) ?? volta[volta.length - 1];
+    const alvo = this.desviar(inv, destino);
     const dx = alvo.x - inv.x;
     const dz = alvo.z - inv.z;
     const d = Math.hypot(dx, dz);
     const v = inv.jeito.velocidade * 2 + 0.6;
-    if (d < 0.3 && alvo === volta[volta.length - 1]) {
+    if (d < 0.3 && destino === volta[volta.length - 1]) {
       this.tirar(inv);
       this.invasores.splice(this.invasores.indexOf(inv), 1);
       return;
@@ -822,8 +1269,8 @@ export class RodadaDoJardim {
     inv.raiz.position.z = inv.z;
     inv.raiz.rotation.y = inv.rumo;
     const c = inv.corpo;
-    const andando = inv.estado === 'andando' || inv.estado === 'fugindo';
-    const ritmo = inv.estado === 'fugindo' ? 16 : 10 * (inv.lento > 0 ? 0.6 : 1);
+    const andando = (inv.estado === 'andando' || inv.estado === 'fugindo' || inv.estado === 'recuando') && inv.tonto <= 0;
+    const ritmo = inv.estado === 'fugindo' || inv.estado === 'recuando' ? 16 : 10 * (inv.lento > 0 ? 0.6 : 1);
     // o passinho: sobe e desce, e as patinhas se revezam
     c.position.y = andando ? Math.abs(Math.sin(inv.fase * ritmo)) * 0.035 : 0;
     const pernas = (inv.partes.pernas ?? []) as THREE.Object3D[];
@@ -845,7 +1292,9 @@ export class RodadaDoJardim {
       cabeca.rotation.x = (cabeca.userData.x0 as number) + (inv.estado === 'comendo' ? 0.25 + Math.sin(inv.fase * 12) * 0.12 : 0);
     }
     // a sacudida do espantado: balança de um lado para o outro
-    c.rotation.z = inv.estado === 'sacudindo' ? Math.sin(inv.relogio * 40) * 0.35 * (1 - inv.relogio / 0.55) : 0;
+    c.rotation.z = inv.estado === 'sacudindo' ? Math.sin(inv.relogio * 40) * 0.35 * (1 - inv.relogio / 0.55)
+      // tonto: bambeia devagar, como quem levou um susto
+      : inv.tonto > 0 ? Math.sin(inv.fase * 9) * 0.16 : 0;
     // o tranco: o corpo inclina para trás enquanto o empurrão dura
     const empurrado = Math.min(1, Math.hypot(inv.empurraX, inv.empurraZ) / 6);
     c.rotation.x = -empurrado * 0.45;
@@ -891,6 +1340,8 @@ export class RodadaDoJardim {
     mudas.forEach((m, i) => {
       m.visible = true;
       m.scale.setScalar(c.escalas[i] ?? 1);
+      // os Girassóis vigia viraram as flores: voltam para onde a cena plantou
+      m.rotation.y = c.giros[i] ?? m.rotation.y;
     });
     const terra = c.peca.userData.terra as THREE.Mesh | undefined;
     if (terra && c.terraOriginal) terra.material = c.terraOriginal;
@@ -940,15 +1391,29 @@ export class RodadaDoJardim {
     const andou = Math.hypot(eu.x - this.ultimaPosicao.x, eu.z - this.ultimaPosicao.z);
     this.ultimaPosicao.copy(eu);
     const estaParado = andou < 0.004;
+    this.passoDoQuadro = andou;
     this.parado = estaParado ? this.parado + dt : 0;
     this.andouDesdeGaroa += andou;
 
     // ---- a água: sozinha, parado (Descanso), andando (Fôlego) e no tonel
-    const perto = Math.hypot(eu.x - this.planta.tonel.x, eu.z - this.planta.tonel.z) < PERTO_DO_TONEL;
+    // (no tonel de fábrica, ou no Segundo tonel do outro lado)
+    const toneis = [this.planta.tonel];
+    if (this.segundoTonel) toneis.push({ ...this.planta.lugares.segundoTonel, altura: this.planta.tonel.altura });
+    const tonel = toneis.find((t) => Math.hypot(eu.x - t.x, eu.z - t.z) < PERTO_DO_TONEL) ?? null;
+    const perto = tonel !== null;
+    // o Jean-Luc no tonel: encher ali é na hora
+    if (tonel === this.planta.tonel && f.regras.has('jean-luc-no-tonel') && this.agua < f.tanque - 0.5) {
+      this.agua = f.tanque;
+      this.tanqueCheio = true;
+      this.g.som('pato');
+      this.g.som('gluglu');
+      this.jato.espirroDoTonel(tonel.x, tonel.altura, tonel.z, 3);
+      this.contar('jean-luc-no-tonel');
+    }
     let enche = f.recarga * (estaParado ? f.recargaParado : 1);
     if (!estaParado && f.regras.has('enche-andando')) enche += 0.6;
     this.enchendo = perto && this.agua < f.tanque;
-    if (this.enchendo) {
+    if (this.enchendo && tonel) {
       enche += ENCHE_NO_TONEL * f.refil;
       this.relogioDoTonel -= dt;
       if (this.relogioDoTonel <= 0) {
@@ -956,7 +1421,8 @@ export class RodadaDoJardim {
         this.g.som('gluglu');
       }
       // o Refil rápido é um espirro maior na boca do tonel
-      this.jato.espirroDoTonel(this.planta.tonel.x, this.planta.tonel.altura, this.planta.tonel.z, f.refil);
+      this.jato.espirroDoTonel(tonel.x, tonel.altura, tonel.z, f.refil);
+      if (tonel !== this.planta.tonel) this.contar('segundo-tonel');
     }
     const antes = this.agua;
     this.agua = Math.min(f.tanque, this.agua + enche * dt);
@@ -1079,13 +1545,17 @@ export class RodadaDoJardim {
     const gasto = f.gastoPorJato;
     const alvo = this.escolherAlvo(eu);
     this.g.mirarJogador(alvo ? { x: alvo.x, z: alvo.z } : null);
-    if (!alvo || this.recarga < f.cadencia || this.agua < gasto) return;
+    if (!alvo || this.regadorDeFolga || this.recarga < f.cadencia || this.agua < gasto) return;
     this.recarga = 0;
     this.agua -= gasto;
     this.atirar(eu, alvo);
   }
 
   private dancaEm = { x: 0, z: 0 };
+  /** quanto você andou no último quadro (o Pique e a Bota leem daqui) */
+  private passoDoQuadro = 0;
+  /** o multiplicador de velocidade de agora, com Pique, poça e picolé */
+  private velocidadeAgora = 1;
 
   private algumPerto(eu: THREE.Vector3, raio: number): boolean {
     return this.invasores.some((i) => this.vulneravel(i) && Math.hypot(i.x - eu.x, i.z - eu.z) <= raio);
@@ -1254,6 +1724,15 @@ export class RodadaDoJardim {
     const tinta = especial === 'arco-iris' ? 'arco-iris' : especial === 'carregado' ? 'carga' : 'agua';
     this.jato.respingo(inv.x, altura, inv.z, e, especial ? 1.8 : 1, tinta);
     if (especial === 'arco-iris') inv.gotasVezes = 2;
+    // o Adubo do Noel: a água que cai perto de um canteiro leva adubo junto
+    if (f.regras.has('adubo-do-noel')) {
+      const c = this.canteiros.find((k) => k.vida > 0 && distanciaAoCanteiro(inv.x, inv.z, k) < 0.9);
+      if (c && !c.adubado) {
+        c.adubado = true;
+        this.jato.adubo(c.x, c.z);
+        this.contar('adubo-do-noel');
+      }
+    }
     this.molhar(inv, dano, de);
   }
 
@@ -1378,6 +1857,1088 @@ export class RodadaDoJardim {
     this.g.objetoNaMao()?.rotation.set(0, 0, 0);
   }
 
+  // ================================================================ os bichos, de novo
+
+  /**
+   * RECUANDO: anda até um ponto (a porta, no Grito e no Walter; o lado
+   * contrário, no Assobio) e, chegando ou dando o tempo, volta a querer comer.
+   */
+  private recuar(inv: Invasor, velocidade: number, dt: number): void {
+    inv.recuoResta -= dt;
+    const destino = inv.recuo;
+    if (!destino || inv.recuoResta <= 0) {
+      inv.estado = 'andando';
+      inv.recuo = null;
+      return;
+    }
+    const alvo = this.desviar(inv, destino);
+    const dx = alvo.x - inv.x;
+    const dz = alvo.z - inv.z;
+    const d = Math.hypot(dx, dz);
+    const passo = velocidade * 1.4 * dt;
+    if (d <= Math.max(0.08, passo)) {
+      inv.x = alvo.x;
+      inv.z = alvo.z;
+      if (alvo === destino) inv.recuoResta = 0;
+      return;
+    }
+    inv.x += (dx / d) * passo;
+    inv.z += (dz / d) * passo;
+    this.virarPara(inv, Math.atan2(dx, dz), dt * 1.5);
+  }
+
+  /** manda o bicho de volta até a boca do portão dele — ele volta depois */
+  private mandarParaAPorta(inv: Invasor): void {
+    const boca = this.planta.bocas[inv.porta];
+    inv.estado = 'recuando';
+    inv.recuo = { x: boca.x + inv.lugarNaBorda * 0.8, z: boca.z };
+    inv.recuoResta = 8;
+    inv.canteiro = null;
+  }
+
+  /**
+   * AFUGENTADO sem água: a pimenta, a dioneia e o latido do Walter. Ele vai
+   * embora como o espantado, pela porta, e solta as gotas que a carta disser.
+   */
+  private afugentar(inv: Invasor, gotas: number): void {
+    this.espantados += 1;
+    inv.vida = 0;
+    inv.estado = 'fugindo';
+    inv.relogio = 0;
+    inv.canteiro = null;
+    inv.empurraX = 0;
+    inv.empurraZ = 0;
+    if (gotas > 0) {
+      const onde = { x: inv.x, z: inv.z };
+      this.jato.depois(0.2, () => this.gotas.soltar(onde.x, onde.z, gotas, this.dado, (x, z) => this.foraDeCanteiro(x, z)));
+    }
+  }
+
+  /** um bicho acabou de começar a comer um canteiro */
+  private aoMorder(inv: Invasor, c: Canteiro): void {
+    const r = this.ficha.regras;
+    // o Canteiro de pimenta: arde, e ele sai correndo
+    if (c.pimenta) {
+      this.jato.ardido(inv.x, inv.ficha.alturaDaBarra * 0.6, inv.z);
+      this.g.som('ardido');
+      this.afugentar(inv, 2);
+      this.contar('canteiro-de-pimenta');
+      return;
+    }
+    // chamar o Capy: a primeira mordida da onda chama ele até ali
+    if (r.has('chama-capy') && !this.usadoNaOnda.has('chama-capy') && this.planta.elenco.presente('capy')) {
+      this.usadoNaOnda.add('chama-capy');
+      this.capy = { resta: 20, alvo: { x: c.x, z: c.z }, recarga: 0.6 };
+      this.planta.elenco.soar('capy');
+      this.g.toast(`O Capy correu para o canteiro de ${c.nome.toLowerCase()}`, '🕶️');
+      this.contar('chama-capy');
+    }
+  }
+
+  /** o portão que fica do lado de um (o do meio sorteia para que lado) */
+  private portaDoLado(porta: number, dado: number): number {
+    if (porta === 1) return dado < 0.5 ? 0 : 2;
+    return 1;
+  }
+
+  /** o portão está trancado agora (cadeado ou Gina)? */
+  private trancada(porta: number): boolean {
+    return this.trancas.some((t) => t.porta === porta && t.resta > 0);
+  }
+
+  /** onde o bicho espera do lado de fora do portão trancado, cada um num lugar */
+  private pontoDeEspera(inv: Invasor): { x: number; z: number } {
+    const p = this.planta.portoes[inv.porta];
+    return { x: p.x + inv.lugarNaBorda * 1.1, z: p.z - 0.9 - Math.abs(inv.lugarNaBorda) * 0.5 };
+  }
+
+  /**
+   * A CERQUINHA NO CAMINHO: se a reta até o alvo cruza a cerca, o bicho vai
+   * primeiro até a ponta mais em conta. Chegando lá, a reta já não cruza e
+   * ele segue — é o "contornar" do texto da carta, sem precisar de mapa.
+   */
+  private desviar(inv: Invasor, alvo: { x: number; z: number }): { x: number; z: number } {
+    if (!this.cerquinhaPeca) return alvo;
+    const c = this.planta.lugares.cerquinha;
+    const meio = c.comprimento / 2 + inv.jeito.raio;
+    if (!segmentoCruzaRetangulo(inv.x, inv.z, alvo.x, alvo.z, c.x, c.z, meio, 0.15 + inv.jeito.raio)) return alvo;
+    const pontas = [
+      { x: c.x - meio - 0.4, z: c.z },
+      { x: c.x + meio + 0.4, z: c.z },
+    ];
+    const custo = (p: { x: number; z: number }): number =>
+      Math.hypot(p.x - inv.x, p.z - inv.z) + Math.hypot(alvo.x - p.x, alvo.z - p.z);
+    return custo(pontas[0]) <= custo(pontas[1]) ? pontas[0] : pontas[1];
+  }
+
+  /** está dentro da estufa (passou do portão)? */
+  private dentro(inv: Invasor): boolean {
+    return inv.z > this.planta.portoes[0].z + 0.2;
+  }
+
+  // ================================================================ o começo e o fim de cada onda
+
+  /** o que acontece no comecinho de toda onda */
+  private comecoDaOnda(): void {
+    const r = this.ficha.regras;
+    // a Sementeira: canteiro comido até o fim brota de novo com meia vida
+    if (r.has('sementeira') && this.onda > 1) {
+      for (const c of this.canteiros) {
+        if (c.vida > 0) continue;
+        c.vida = c.vidaMax * 0.5;
+        this.pintarCanteiro(c);
+        this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
+        this.g.som('brotar');
+        this.contar('sementeira');
+      }
+    }
+    // a Estufa trancada: um cadeado em cada portão aberto
+    if (r.has('estufa-trancada')) {
+      for (let p = 0; p < this.planta.portoes.length; p++) {
+        if (p === this.emperrado) continue;
+        const pt = this.planta.portoes[p];
+        // na face de DENTRO: é a que a câmera vê (a de fora fica atrás das grades)
+        const peca = this.pecaNaEstufa(cadeadoDePortao(3), pt.x, pt.z + 0.22);
+        this.trancas.push({ porta: p, resta: 10, quem: 'cadeado', peca });
+      }
+    }
+    // chamar a Gina: ela tranca o portão que vem mais cheio nesta onda
+    if (r.has('chama-gina') && this.planta.elenco.presente('gina')) this.ginaTranca(20);
+  }
+
+  /** a Gina vai até o portão mais cheio do roteiro e segura ali */
+  private ginaTranca(segundos: number): void {
+    const porta = portaMaisCheia(this.plano, this.emperrado);
+    if (porta === null) return;
+    this.trancas = this.trancas.filter((t) => t.quem !== 'gina');
+    this.trancas.push({ porta, resta: segundos, quem: 'gina', peca: null });
+    const pt = this.planta.portoes[porta];
+    void this.planta.elenco.ir('gina', pt.x + 0.9, pt.z + 1.0, 2.4).then(() => {
+      if (this.rodando) this.planta.elenco.encarar('gina', pt.x, pt.z - 3);
+    });
+    this.planta.elenco.soar('gina');
+    this.g.toast(`A Gina foi segurar o portão ${NOME_DO_PORTAO[porta]}`, '🦒');
+    this.contar('chama-gina');
+  }
+
+  /** o que acontece quando uma onda acaba, antes do respiro */
+  private fimDeUmaOnda(): void {
+    const r = this.ficha.regras;
+    // o Dedo verde: o que está machucado se recupera um pouco
+    if (r.has('dedo-verde')) {
+      let algum = false;
+      for (const c of this.canteiros) {
+        if (c.vida <= 0 || c.vida >= c.vidaMax) continue;
+        c.vida = Math.min(c.vidaMax, c.vida + c.vidaMax * 0.15);
+        this.pintarCanteiro(c);
+        this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
+        algum = true;
+      }
+      if (algum) {
+        this.g.som('brotar');
+        this.contar('dedo-verde');
+      }
+    }
+    // o Picolé do Mano: cai um picolé em algum lugar do terreiro
+    if (r.has('picole-do-mano') && !this.picolePeca) {
+      const c = this.planta.centro;
+      const a = this.sorte() * Math.PI * 2;
+      const onde = this.foraDeCanteiro(c.x + Math.cos(a) * 3, -1.5 + Math.sin(a) * 3);
+      this.picolePeca = this.pecaNaEstufa(picole(), onde.x, onde.z);
+      this.picolePeca.scale.setScalar(1.6);
+      this.g.som('sorvete');
+      this.g.toast('O Mano jogou um picolé pela porta!', '🍦');
+    }
+    // o Noel avisa: o próximo roteiro já sai sorteado, e ele grita o portão
+    if (r.has('noel-avisa') && this.onda < this.ondasDaRodada) {
+      this.proximoPlano = planoDaOnda(this.onda + 1, this.dado);
+      this.remapearEmperrado(this.proximoPlano);
+      const porta = portaMaisCheia(this.proximoPlano, null);
+      if (porta !== null) {
+        this.planta.elenco.soar('noel');
+        this.g.toast(`O Noel, lá do muro: “VEM PELO PORTÃO ${NOME_DO_PORTAO[porta].toUpperCase()}!”`, '🗣️');
+        const pt = this.planta.portoes[porta];
+        this.jato.ondaDeSom(pt.x, pt.z + 0.6, 2, P.efeitoNota);
+        this.contar('noel-avisa');
+      }
+    }
+    // os trancados abrem: a onda seguinte tranca de novo, do zero
+    for (const t of this.trancas) this.abrirTranca(t);
+    this.trancas = [];
+  }
+
+  private abrirTranca(t: { porta: number; quem: 'cadeado' | 'gina'; peca: THREE.Object3D | null }): void {
+    if (t.quem === 'gina') this.planta.elenco.voltarAoPosto('gina');
+    if (t.peca) {
+      this.g.som('clique');
+      const peca = t.peca;
+      // o cadeado cai e some no chão
+      this.crescendo.push({ peca, t: 0, dur: 0.5, de: 1, para: 0, remover: true });
+    }
+  }
+
+  // ================================================================ as peças das cartas
+
+  /** põe uma peça na estufa, nascendo pequena e crescendo */
+  private pecaNaEstufa(peca: THREE.Object3D, x: number, z: number, giro = 0): THREE.Object3D {
+    peca.position.set(x, 0, z);
+    peca.rotation.y = giro;
+    this.w.root.add(peca);
+    this.pecasDasCartas.push(peca);
+    this.crescendo.push({ peca, t: 0, dur: 0.45, de: 0.01, para: 1, remover: false });
+    return peca;
+  }
+
+  /** as peças que estão nascendo (ou sumindo): escala de `de` para `para` */
+  private crescendo: Array<{ peca: THREE.Object3D; t: number; dur: number; de: number; para: number; remover: boolean }> = [];
+
+  private tirarPeca(peca: THREE.Object3D): void {
+    this.w.root.remove(peca);
+    const i = this.pecasDasCartas.indexOf(peca);
+    if (i >= 0) this.pecasDasCartas.splice(i, 1);
+  }
+
+  /**
+   * AS PEÇAS QUE A MÃO PEDE — chamado a cada carta nova, e não faz nada duas
+   * vezes: o Segundo tonel, o Aspersor, a Cerquinha, o Jean-Luc, o regador do
+   * parceiro. Depois refaz a lista de colisores (a Bota tira os canteiros dela).
+   */
+  private montarCartas(): void {
+    if (!this.rodando) return;
+    const r = this.ficha.regras;
+    const L = this.planta.lugares;
+    if (r.has('segundo-tonel') && !this.segundoTonel) {
+      this.segundoTonel = this.pecaNaEstufa(tonelDeAgua(1.25), L.segundoTonel.x, L.segundoTonel.z);
+      this.g.som('gluglu');
+    }
+    if (r.has('aspersor') && !this.aspersorPeca) {
+      this.aspersorPeca = this.pecaNaEstufa(aspersor(), L.aspersor.x, L.aspersor.z);
+      this.aspersorRelogio = 0;
+    }
+    if (r.has('cerquinha') && !this.cerquinhaPeca) {
+      this.cerquinhaPeca = this.pecaNaEstufa(cerquinha(L.cerquinha.comprimento), L.cerquinha.x, L.cerquinha.z);
+      this.g.som('martelo');
+      this.contar('cerquinha');
+    }
+    if (r.has('jean-luc-no-tonel') && !this.patoNoTonel) {
+      this.patoNoTonel = true;
+      this.planta.elenco.patoNoTonel(true);
+      this.g.som('pato');
+    }
+    // o parceiro com o outro regador: na frente (Os dois) ou lá atrás
+    if (r.has('os-dois-na-frente') || r.has('la-de-tras')) this.darRegador(this.g.companionId());
+    if (r.has('os-dois-na-frente') && !this.parceiroSolto) {
+      this.parceiroSolto = true;
+      this.g.freeCompanion();
+      this.g.toast(`${this.g.companionName()} pegou o outro regador!`, '💞');
+      this.contar('os-dois-na-frente');
+    }
+    if (r.has('troca-de-turno')) this.g.bloquearTroca(false);
+    this.recolidir();
+  }
+
+  private patoNoTonel = false;
+  private parceiroSolto = false;
+
+  /** um regador na mão de alguém — e a rodada lembra, para tirar no fim */
+  private darRegador(quem: string): void {
+    if (!this.g.hasItem('regador', quem)) {
+      if (this.g.addItem(ITENS.regador, quem) === 'cheio') return;
+      this.regadoresDados.push(quem);
+    }
+    const vaga = this.g.handItems(quem).findIndex((i) => i?.id === 'regador');
+    if (vaga >= 0) this.g.setActiveHandSlot(vaga, quem);
+  }
+
+  /** a lista de colisores de agora: a da cena, menos a Bota, mais as peças */
+  private recolidir(): void {
+    if (!this.colisoresDaCena) return;
+    const r = this.ficha.regras;
+    let lista = [...this.colisoresDaCena];
+    if (r.has('bota')) {
+      lista = lista.filter((k) => !(k.kind === 'box'
+        && this.canteiros.some((c) => Math.abs(c.x - k.x) < 0.01 && Math.abs(c.z - k.z) < 0.01)));
+    }
+    const L = this.planta.lugares;
+    if (this.segundoTonel) lista.push({ kind: 'circle', x: L.segundoTonel.x, z: L.segundoTonel.z, r: 0.55 });
+    if (this.aspersorPeca) lista.push({ kind: 'circle', x: L.aspersor.x, z: L.aspersor.z, r: 0.28 });
+    if (this.cerquinhaPeca) {
+      lista.push({ kind: 'box', x: L.cerquinha.x, z: L.cerquinha.z, hw: L.cerquinha.comprimento / 2, hd: 0.12, rot: 0 });
+    }
+    // o portão emperrado fecha para a dupla também: ninguém sai por ali
+    if (this.emperrado !== null) {
+      const pt = this.planta.portoes[this.emperrado];
+      lista.push({ kind: 'box', x: pt.x, z: pt.z, hw: 1.6, hd: 0.3, rot: 0 });
+    }
+    this.w.usarColisores(lista);
+  }
+
+  /** o fim da rodada: tudo o que as cartas puseram sai, e a estufa volta a ser a da cena */
+  private desmontarCartas(): void {
+    for (const p of [...this.pecasDasCartas]) this.tirarPeca(p);
+    this.crescendo = [];
+    for (const c of this.canteiros) {
+      c.protegido = false;
+      c.toldo = false;
+      c.pimenta = false;
+      c.carnivora = null;
+      c.adubado = false;
+    }
+    this.segundoTonel = null;
+    this.aspersorPeca = null;
+    this.cerquinhaPeca = null;
+    this.espantalhoPeca = null;
+    this.espantalhoResta = 0;
+    this.picolePeca = null;
+    this.trancas = [];
+    this.emperrado = null;
+    if (this.patoNoTonel) this.planta.elenco.patoNoTonel(false);
+    this.patoNoTonel = false;
+    this.parceiroSolto = false;
+    for (const quem of this.regadoresDados) this.g.removeItem('regador', quem);
+    this.regadoresDados = [];
+    for (const q of ['capy', 'gina', 'walter', 'noel'] as const) {
+      if (this.planta.elenco.presente(q)) this.planta.elenco.voltarAoPosto(q);
+    }
+    this.capy = null;
+    this.noel = null;
+    this.walter = null;
+    this.mutirao = 0;
+    this.trilha.count = 0;
+    this.impulsoPoca = 0;
+    this.impulsoPicole = 0;
+    this.correndo = 0;
+    if (this.colisoresDaCena) this.w.usarColisores(this.colisoresDaCena);
+    this.colisoresDaCena = null;
+  }
+
+  /** a Cerca viva: uma roda de moitas em volta, e ninguém mais come ali */
+  private cercarCanteiro(c: Canteiro): void {
+    c.protegido = true;
+    for (const inv of this.invasores) {
+      if (inv.canteiro === c) {
+        if (inv.estado === 'comendo') inv.estado = 'andando';
+        inv.canteiro = null;
+      }
+    }
+    const grupo = new THREE.Group();
+    const bx = c.meioX + 0.35;
+    const bz = c.meioZ + 0.35;
+    const perimetro = 4 * (bx + bz);
+    const quantas = Math.round(perimetro / 0.75);
+    for (let i = 0; i < quantas; i++) {
+      // anda pelo perímetro do retângulo, em passos iguais
+      let d = (i / quantas) * perimetro;
+      let x: number;
+      let z: number;
+      if (d < 2 * bx) { x = -bx + d; z = -bz; } else if ((d -= 2 * bx) < 2 * bz) { x = bx; z = -bz + d; }
+      else if ((d -= 2 * bz) < 2 * bx) { x = bx - d; z = bz; } else { d -= 2 * bx; x = -bx; z = bz - d; }
+      const moita = bush(0.62 + ((i * 7) % 5) * 0.04, P.cercaViva);
+      moita.position.set(x, 0, z);
+      grupo.add(moita);
+    }
+    this.pecaNaEstufa(grupo, c.x, c.z);
+    this.g.som('brotar');
+    this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
+    this.g.toast(`A cerca viva abraçou o canteiro de ${c.nome.toLowerCase()}`, '🌳');
+    this.contar('cerca-viva');
+  }
+
+  /** o Toldo: a lona por cima, e o canteiro aguenta 50% mais */
+  private cobrirCanteiro(c: Canteiro): void {
+    c.toldo = true;
+    this.recalcularVida();
+    this.pecaNaEstufa(toldoDeCanteiro(3.2, 1.6), c.x, c.z, c.giro);
+    this.g.som('martelo');
+    this.contar('toldo');
+  }
+
+  /**
+   * O Canteiro de pimenta: uma fileira de pimenteiras na BORDA que olha para o
+   * terreiro, do lado de fora da madeira. Dentro da terra elas sumiam no meio
+   * da lavanda — e o jogador precisa ver de longe qual canteiro arde.
+   */
+  private apimentarCanteiro(c: Canteiro): void {
+    c.pimenta = true;
+    const { x, z, giro } = this.bordaDoTerreiro(c, 0.42);
+    const p = this.pecaNaEstufa(pimenteiras(3.0, 0.3), x, z, giro);
+    p.userData.escala = 1.5;
+    this.g.som('brotar');
+    this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
+  }
+
+  /**
+   * UM PONTO NA BORDA do canteiro que olha para o meio do terreiro, a `folga`
+   * dela, e o giro de quem fica ali deitado ao longo da madeira (a dioneia olha
+   * para fora; a fileira de pimenta corre junto da borda).
+   */
+  private bordaDoTerreiro(c: Canteiro, folga: number): { x: number; z: number; giro: number; olhar: number } {
+    const dx = this.planta.centro.x - c.x;
+    const dz = -1.5 - c.z;
+    const deLado = Math.abs(dx) / (c.meioX + 0.01) > Math.abs(dz) / (c.meioZ + 0.01);
+    const x = deLado ? c.x + Math.sign(dx) * (c.meioX + folga) : c.x;
+    const z = deLado ? c.z : c.z + Math.sign(dz) * (c.meioZ + folga);
+    return { x, z, giro: deLado ? Math.PI / 2 : 0, olhar: Math.atan2(deLado ? Math.sign(dx) : 0, deLado ? 0 : Math.sign(dz)) };
+  }
+
+  /** a Planta carnívora: uma dioneia grande na borda do canteiro, virada para o terreiro */
+  private plantarDioneia(c: Canteiro): void {
+    const { x, z, olhar } = this.bordaDoTerreiro(c, 0.35);
+    const peca = this.pecaNaEstufa(dioneia(), x, z, olhar);
+    peca.userData.escala = 1.8;
+    c.carnivora = { peca, espera: 0, fecha: 0 };
+    this.g.som('nhac');
+  }
+
+  /**
+   * O Portão emperrado: tábuas pregadas no portão que vem mais cheio, e quem
+   * ia por ele vai pelo do lado — o resto da rodada inteira.
+   */
+  private emperrar(): void {
+    if (this.emperrado !== null) return;
+    const porta = portaMaisCheia(this.plano, null) ?? 1;
+    this.emperrado = porta;
+    const pt = this.planta.portoes[porta];
+    this.pecaNaEstufa(tabuasPregadas(3, 1.6), pt.x, pt.z + 0.25);
+    this.g.som('martelo');
+    this.g.toast(`O portão ${NOME_DO_PORTAO[porta]} emperrou!`, '🚧');
+    this.remapearEmperrado(this.plano);
+    this.recolidir();
+    // quem já vinha por ele, do lado de fora, muda de portão
+    for (const inv of this.invasores) {
+      if (inv.porta !== porta || inv.passo > 1 || inv.casa) continue;
+      const nova = this.portaDoLado(porta, inv.x < pt.x ? 0 : 1);
+      inv.porta = nova;
+      const ainda = inv.passo === 0 ? [this.planta.brechas[porta]] : [];
+      inv.caminho = [...ainda, this.planta.portoes[nova], this.planta.bocas[nova]]
+        .map((p) => ({ x: p.x + (this.sorte() - 0.5) * 0.9, z: p.z }));
+      inv.passo = 0;
+    }
+    this.contar('portao-emperrado');
+  }
+
+  private remapearEmperrado(plano: EntradaDePraga[]): void {
+    if (this.emperrado === null) return;
+    plano.forEach((e, i) => {
+      if (e.porta === this.emperrado) e.porta = this.portaDoLado(e.porta, i % 2 ? 0.2 : 0.8);
+    });
+  }
+
+  /** as peças nascendo e sumindo, o aspersor girando, a dioneia abrindo, o picolé boiando */
+  private animarPecas(dt: number): void {
+    for (let i = this.crescendo.length - 1; i >= 0; i--) {
+      const c = this.crescendo[i];
+      c.t += dt;
+      const t = Math.min(1, c.t / c.dur);
+      // nasce com um pulinho (passa do tamanho e volta), some de uma vez
+      const k = c.para > c.de ? 1 + Math.sin(t * Math.PI) * 0.18 : 1;
+      const escala = (c.peca.userData.escala as number | undefined) ?? 1;
+      c.peca.scale.setScalar(Math.max(0.01, (c.de + (c.para - c.de) * t) * k * escala));
+      if (t >= 1) {
+        this.crescendo.splice(i, 1);
+        if (c.remover) this.tirarPeca(c.peca);
+      }
+    }
+    for (const c of this.canteiros) {
+      const k = c.carnivora;
+      if (!k) continue;
+      k.espera = Math.max(0, k.espera - dt);
+      k.fecha = Math.max(0, k.fecha - dt);
+      // fecha de uma vez na mordida; recarregando fica fechada, e nos
+      // últimos 0,6 s abre devagar — aberta, ela respira
+      const abre = k.espera <= 0 ? 1 : Math.max(0, 1 - k.espera / 0.6);
+      const bocas = k.peca.userData.bocas as THREE.Object3D[] | undefined;
+      bocas?.forEach((b, i) => {
+        const s = i === 0 ? 1 : -1;
+        const quer = s * -0.55 * abre + Math.sin(this.relogioDaTrilha * 3 + i) * 0.05 * abre;
+        b.rotation.x += (quer - b.rotation.x) * Math.min(1, dt * (k.fecha > 0 ? 30 : 6));
+      });
+    }
+    if (this.picolePeca) {
+      this.picolePeca.rotation.y += dt * 2;
+      this.picolePeca.position.y = 0.15 + Math.sin(this.relogioDaTrilha * 3) * 0.08;
+    }
+  }
+
+  // ================================================================ as cartas de jardineiro
+
+  private cartasDoJardineiro(dt: number): void {
+    const r = this.ficha.regras;
+    const eu = this.g.playerPosition();
+
+    // ---- o Pique: andar 2 s sem parar dá +30%, e levanta poeira
+    const andando = this.passoDoQuadro > 0.004;
+    this.correndo = andando ? this.correndo + dt : 0;
+    const pique = r.has('pique') && this.correndo >= 2;
+    if (pique) {
+      if (this.correndo - dt < 2) this.contar('pique');
+      this.poeiraEspera -= dt;
+      if (this.poeiraEspera <= 0) {
+        this.poeiraEspera = 0.08;
+        this.jato.poeira(eu.x, eu.z, this.g.playerFacing());
+      }
+    }
+
+    // ---- o Pé na poça: pisar numa poça dá um impulso
+    if (r.has('pe-na-poca') && this.jato.pocasPerto(eu.x, eu.z) > 0) {
+      if (this.impulsoPoca <= 0) {
+        this.contar('pe-na-poca');
+        this.jato.respingo(eu.x, 0.05, eu.z, this.ficha.jato, 0.6);
+      }
+      this.impulsoPoca = 1.5;
+    }
+    // ---- o Picolé: passar por cima dele
+    if (this.picolePeca && Math.hypot(this.picolePeca.position.x - eu.x, this.picolePeca.position.z - eu.z) < 0.9) {
+      this.tirarPeca(this.picolePeca);
+      this.picolePeca = null;
+      this.agua = this.ficha.tanque;
+      this.tanqueCheio = true;
+      this.impulsoPicole = 10;
+      this.g.som('sorvete');
+      this.g.som('gluglu');
+      this.jato.anelDeAgua(new THREE.Vector3(eu.x, 1, eu.z), 0.8, 'giro', {});
+      this.contar('picole-do-mano');
+    }
+
+    this.impulsoPoca = Math.max(0, this.impulsoPoca - dt);
+    this.impulsoPicole = Math.max(0, this.impulsoPicole - dt);
+    this.velocidadeAgora = this.ficha.velocidade * (pique ? 1.3 : 1)
+      * (this.impulsoPoca > 0 ? 1.35 : 1) * (this.impulsoPicole > 0 ? 1.3 : 1);
+    this.g.setVelocidadeDoJogador(this.velocidadeAgora);
+
+    // ---- a Bota: andar por cima do canteiro
+    if (r.has('bota') && this.canteiros.some((c) => distanciaAoCanteiro(eu.x, eu.z, c) === 0)) this.contar('bota');
+
+    // ---- o Assobio: a cada 12 s o mais perto vira e anda 2 s para trás
+    if (r.has('assobio')) {
+      this.assobio += dt;
+      if (this.assobio >= 12) {
+        const alvo = this.maisPerto(eu.x, eu.z, 9, (i) => this.dentro(i) && i.estado !== 'recuando');
+        if (alvo) {
+          this.assobio = 0;
+          this.g.som('assobio');
+          this.jato.notinhas(eu.x, 1.9, eu.z);
+          this.jato.notinhas(alvo.x, alvo.ficha.alturaDaBarra + 0.2, alvo.z);
+          const volta = alvo.rumo + Math.PI;
+          alvo.estado = 'recuando';
+          alvo.recuo = { x: alvo.x + Math.sin(volta) * 6, z: alvo.z + Math.cos(volta) * 6 };
+          alvo.recuoResta = 2;
+          alvo.canteiro = null;
+          this.contar('assobio');
+        }
+      }
+    }
+
+    // ---- o Pulinho: encostar num bicho fraco é pular por cima, e ele fica tonto
+    this.pulinhoEspera = Math.max(0, this.pulinhoEspera - dt);
+    if (r.has('pulinho') && this.pulinhoEspera <= 0) {
+      const inv = this.invasores.find((i) => i.ficha.tier === 'fraco' && this.vulneravel(i)
+        && Math.hypot(i.x - eu.x, i.z - eu.z) < i.jeito.raio + 0.45);
+      if (inv) {
+        this.g.pularJogador(0.75, 0.5);
+        inv.tonto = Math.max(inv.tonto, 1);
+        this.pulinhoEspera = 0.9;
+        this.g.som('quicar');
+        this.jato.ondaDeSom(inv.x, inv.z, 0.6, P.efeitoNota);
+        this.contar('pulinho');
+      }
+    }
+
+    // ---- o Grito: uma vez por onda, com três perto, todo mundo volta para a porta
+    if (r.has('grito') && !this.usadoNaOnda.has('grito')) {
+      const perto = this.invasores.filter((i) => this.vulneravel(i) && Math.hypot(i.x - eu.x, i.z - eu.z) < 4);
+      if (perto.length >= 3) {
+        this.usadoNaOnda.add('grito');
+        this.g.som('grito');
+        this.jato.ondaDeSom(eu.x, eu.z, 4);
+        for (const inv of perto) this.mandarParaAPorta(inv);
+        this.contar('grito');
+      }
+    }
+
+    // ---- a Troca de turno: o T mudou quem rega
+    const agora = this.g.playerId();
+    if (agora !== this.quemRega) {
+      this.quemRega = agora;
+      if (r.has('troca-de-turno')) this.trocouDeTurno();
+    }
+
+    this.parceiroRega(dt);
+  }
+
+  /**
+   * A TROCA DE TURNO: o T troca os corpos (quem estava atrás agora está na
+   * frente, e vice-versa). Quem entra ganha o regador, e vem de tanque cheio.
+   */
+  private trocouDeTurno(): void {
+    this.darRegador(this.g.playerId());
+    this.agua = this.ficha.tanque;
+    this.tanqueCheio = true;
+    const eu = this.g.playerPosition();
+    const outro = this.g.companionPosition();
+    this.jato.ondaDeSom(eu.x, eu.z, 1.2, P.efeitoBroto);
+    this.jato.ondaDeSom(outro.x, outro.z, 1.2, P.efeitoBroto);
+    this.jato.anelDeAgua(new THREE.Vector3(eu.x, 1, eu.z), 0.8, 'giro', {});
+    this.contar('troca-de-turno');
+  }
+
+  /** o outro regador: Os dois na frente atira nos bichos, Lá de trás rega um canteiro */
+  private parceiroRega(dt: number): void {
+    const r = this.ficha.regras;
+    const f = this.ficha;
+    const p = this.g.companionPosition();
+    if (r.has('os-dois-na-frente')) {
+      this.recargaDoParceiro += dt;
+      if (this.recargaDoParceiro >= f.cadencia * 1.1) {
+        const alvo = this.maisPerto(p.x, p.z, f.alcance, (i) => f.jato.arco || !this.atrasDeCanteiro(p, i));
+        if (alvo) {
+          this.recargaDoParceiro = 0;
+          const rumo = Math.atan2(alvo.x - p.x, alvo.z - p.z);
+          const de = new THREE.Vector3(p.x + Math.sin(rumo) * 0.4, 1.15, p.z + Math.cos(rumo) * 0.4);
+          const tempo = this.jato.disparar({ de, para: new THREE.Vector3(alvo.x, 0.25, alvo.z), estilo: f.jato, largura: f.largura });
+          const onde = { x: p.x, z: p.z };
+          this.jato.depois(tempo, () => this.acertar(alvo, f.dano * 0.8, onde));
+          this.contar('os-dois-na-frente');
+        }
+      }
+    } else if (r.has('la-de-tras')) {
+      this.ladoDeTras += dt;
+      if (this.ladoDeTras >= 5) {
+        // o canteiro mais perto dele que precisa de água (machucado, ou com bicho em cima)
+        const c = this.canteiros
+          .filter((k) => k.vida > 0 && (k.vida < k.vidaMax - 0.01 || this.invasores.some((i) => i.canteiro === k && i.estado === 'comendo')))
+          .sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z))[0];
+        if (c) {
+          this.ladoDeTras = 0;
+          this.regarDeLonge({ x: p.x, z: p.z }, 1.15, c, 0.1, 0.6);
+          this.contar('la-de-tras');
+        }
+      }
+    }
+  }
+
+  /**
+   * UM JATO EM ARCO DE LONGE NUM CANTEIRO — o parceiro lá de trás e a
+   * Josefina. A água cai no meio da terra: o canteiro se recupera, e quem
+   * está comendo ali leva o respingo.
+   */
+  private regarDeLonge(de: { x: number; z: number }, altura: number, c: Canteiro, cura: number, dano: number): void {
+    const para = new THREE.Vector3(c.x, c.alturaDaTerra + 0.1, c.z);
+    const rumo = Math.atan2(c.x - de.x, c.z - de.z);
+    const bico = new THREE.Vector3(de.x + Math.sin(rumo) * 0.4, altura, de.z + Math.cos(rumo) * 0.4);
+    this.jato.disparar({
+      de: bico, para, estilo: { arco: true }, largura: 12,
+      aoChegar: () => {
+        if (!this.rodando || c.vida <= 0) return;
+        c.vida = Math.min(c.vidaMax, c.vida + c.vidaMax * cura);
+        this.pintarCanteiro(c);
+        this.jato.respingo(c.x, c.alturaDaTerra, c.z, {}, 1.2, 'agua', false);
+        this.jato.broto(c.x, c.z, c.meioX * 0.7, c.meioZ * 0.7);
+        for (const inv of [...this.invasores]) {
+          if (inv.canteiro === c && inv.estado === 'comendo') this.molhar(inv, this.ficha.dano * dano, null);
+        }
+      },
+    });
+  }
+
+  /** o bicho vulnerável mais perto de um ponto, dentro de um raio */
+  private maisPerto(x: number, z: number, raio: number, filtro: (i: Invasor) => boolean = () => true): Invasor | null {
+    let melhor: Invasor | null = null;
+    let d = raio;
+    for (const i of this.invasores) {
+      if (!this.vulneravel(i) || !filtro(i)) continue;
+      const dd = Math.hypot(i.x - x, i.z - z);
+      if (dd <= d) { d = dd; melhor = i; }
+    }
+    return melhor;
+  }
+
+  /**
+   * O OLHO DE JARDINEIRA: de cada bicho que anda na estufa sai um pontilhado
+   * até o canteiro que ele quer, e os pontos andam na direção dele — é a
+   * seta de "ele vai para lá" que qualquer um lê.
+   */
+  private desenharTrilha(dt: number): void {
+    this.relogioDaTrilha += dt;
+    if (!this.ficha.regras.has('olho-de-jardineira')) {
+      this.trilha.count = 0;
+      return;
+    }
+    const m = new THREE.Matrix4();
+    const PASSO = 0.45;
+    const desloca = (this.relogioDaTrilha * 0.9) % PASSO;
+    let n = 0;
+    for (const inv of this.invasores) {
+      if (inv.estado !== 'andando' || !this.dentro(inv) || inv.puxado || inv.passo < inv.caminho.length) continue;
+      const c = inv.canteiro && inv.canteiro.vida > 0 ? inv.canteiro : this.canteiroMaisPerto(inv.x, inv.z);
+      if (!c) continue;
+      const alvo = this.pontoDeComer(inv, c);
+      const dx = alvo.x - inv.x;
+      const dz = alvo.z - inv.z;
+      const d = Math.hypot(dx, dz);
+      for (let t = 0.35 + desloca; t < d && n < PONTOS_DA_TRILHA; t += PASSO) {
+        // os pontos crescem perto do canteiro: a ponta da seta é o destino
+        const s = 0.7 + (t / d) * 0.6;
+        m.makeScale(s, 1, s).setPosition(inv.x + (dx / d) * t, 0.035, inv.z + (dz / d) * t);
+        this.trilha.setMatrixAt(n++, m);
+      }
+    }
+    this.trilha.count = n;
+    this.trilha.instanceMatrix.needsUpdate = true;
+    if (n > 0) this.contar('olho-de-jardineira');
+  }
+
+  // ================================================================ as cartas de jardim e do clube
+
+  private cartasDoJardim(dt: number): void {
+    const r = this.ficha.regras;
+    const f = this.ficha;
+    const E = this.planta.elenco;
+    this.sinoEspera = Math.max(0, this.sinoEspera - dt);
+
+    // ---- as trancas: o relógio de cada uma anda enquanto tem bicho esperando
+    for (const t of [...this.trancas]) {
+      const esperando = this.invasores.some((i) => i.porta === t.porta && i.passo === 1 && i.estado === 'andando'
+        && Math.hypot(i.x - this.pontoDeEspera(i).x, i.z - this.pontoDeEspera(i).z) < 0.3);
+      if (!esperando) continue;
+      if (t.resta === (t.quem === 'cadeado' ? 10 : t.resta) && !this.segurou.has(t)) {
+        this.segurou.add(t);
+        this.contar(t.quem === 'cadeado' ? 'estufa-trancada' : 'chama-gina');
+      }
+      t.resta -= dt;
+      if (t.resta <= 0) {
+        this.abrirTranca(t);
+        this.trancas.splice(this.trancas.indexOf(t), 1);
+      }
+    }
+
+    // ---- o Aspersor: gira devagar, e a cada 3 s solta um anel de 2,5 m
+    if (this.aspersorPeca) {
+      const L = this.planta.lugares.aspersor;
+      const cabeca = this.aspersorPeca.getObjectByName('cabeca-do-aspersor');
+      this.aspersorRelogio += dt;
+      if (cabeca) cabeca.rotation.y += dt * (this.aspersorRelogio > 2.55 ? 16 : 1.2);
+      if (this.aspersorRelogio >= 3) {
+        this.aspersorRelogio = 0;
+        this.jato.anelDeAgua(new THREE.Vector3(L.x, 0.72, L.z), 2.5, 'giro', {});
+        this.jato.depois(0.35, () => {
+          let molhou = false;
+          for (const inv of [...this.invasores]) {
+            if (this.vulneravel(inv) && Math.hypot(inv.x - L.x, inv.z - L.z) <= 2.5 + inv.jeito.raio) {
+              this.molhar(inv, f.dano, L);
+              molhou = true;
+            }
+          }
+          if (molhou) this.contar('aspersor');
+        });
+      }
+    }
+
+    // ---- o Espantalho: com três na estufa, ele levanta e puxa a atenção 20 s
+    if (r.has('espantalho')) {
+      if (this.espantalhoResta > 0) {
+        this.espantalhoResta -= dt;
+        if (this.espantalhoPeca) this.espantalhoPeca.rotation.z = Math.sin(this.relogioDaTrilha * 2.2) * 0.05;
+        if (this.espantalhoResta <= 0) {
+          if (this.espantalhoPeca) this.crescendo.push({ peca: this.espantalhoPeca, t: 0, dur: 0.4, de: 1, para: 0, remover: true });
+          this.espantalhoPeca = null;
+          for (const inv of this.invasores) inv.puxado = false;
+        }
+      } else if (!this.usadoNaOnda.has('espantalho') && this.invasores.filter((i) => this.dentro(i) && this.vulneravel(i)).length >= 3) {
+        this.usadoNaOnda.add('espantalho');
+        this.espantalhoResta = 20;
+        const L = this.planta.lugares.espantalho;
+        this.espantalhoPeca = this.pecaNaEstufa(espantalho(), L.x, L.z);
+        this.g.som('martelo');
+        this.jato.ondaDeSom(L.x, L.z, 2.5, P.palha);
+        for (const inv of this.invasores) {
+          if (inv.estado === 'comendo' && Math.hypot(inv.x - L.x, inv.z - L.z) < 7) {
+            inv.estado = 'andando';
+            inv.canteiro = null;
+          }
+        }
+      }
+    }
+
+    // ---- a Josefina ajuda: um canteiro abaixo de 60%, ela rega de lá
+    if (r.has('josefina-ajuda') && !this.usadoNaOnda.has('josefina-ajuda') && E.presente('josefina')) {
+      const c = this.canteiros.filter((k) => k.vida > 0 && k.vida / k.vidaMax < 0.6)
+        .sort((a, b) => a.vida / a.vidaMax - b.vida / b.vidaMax)[0];
+      if (c) {
+        this.usadoNaOnda.add('josefina-ajuda');
+        const j = E.onde('josefina');
+        E.encarar('josefina', c.x, c.z);
+        this.regarDeLonge(j, 1.0, c, 0.35, 1.5);
+        this.g.som('brotar');
+        this.g.toast(`A Josefina regou o canteiro de ${c.nome.toLowerCase()}`, '🐢');
+        const o = this.planta.olharDosPortoes;
+        this.jato.depois(2.5, () => { if (this.rodando) E.encarar('josefina', o.x, o.z); });
+        this.contar('josefina-ajuda');
+      }
+    }
+
+    // ---- o Walter de plantão: a cada 12 s, o mais perto de um canteiro recua
+    if (r.has('walter-de-plantao')) {
+      this.walterDePlantao += dt;
+      if (this.walterDePlantao >= 12) {
+        let alvo: Invasor | null = null;
+        let perto = Infinity;
+        for (const i of this.invasores) {
+          if (!this.vulneravel(i) || !this.dentro(i) || i.estado === 'recuando') continue;
+          for (const c of this.canteiros) {
+            if (c.vida <= 0) continue;
+            const d = distanciaAoCanteiro(i.x, i.z, c);
+            if (d < perto) { perto = d; alvo = i; }
+          }
+        }
+        if (alvo) {
+          this.walterDePlantao = 0;
+          this.g.som('latido');
+          this.jato.ondaDeSom(alvo.x, alvo.z, 1.2);
+          this.mandarParaAPorta(alvo);
+          this.contar('walter-de-plantao');
+        }
+      }
+    }
+
+    // ---- o Apito da Gina: com quatro na estufa, todo mundo congela 1,5 s
+    if (r.has('apito-da-gina') && !this.usadoNaOnda.has('apito-da-gina')) {
+      const la = this.invasores.filter((i) => this.dentro(i) && this.vulneravel(i));
+      if (la.length >= 4) {
+        this.usadoNaOnda.add('apito-da-gina');
+        this.g.som('apito');
+        const porta = this.planta.porta;
+        this.jato.ondaDeSom(porta.x, porta.z - 1, 3);
+        for (const inv of la) {
+          inv.tonto = Math.max(inv.tonto, 1.5);
+          this.jato.ondaDeSom(inv.x, inv.z, 0.7);
+        }
+        this.g.toast('A Gina apitou da porta!', '📯');
+        this.contar('apito-da-gina');
+      }
+    }
+
+    // ---- o Capy salva-vidas: dois no corredor do meio, e lá vem o jato
+    if (r.has('capy-salva-vidas') && !this.usadoNaOnda.has('capy-salva-vidas')) {
+      const porta = this.planta.porta;
+      const noCorredor = this.invasores.filter((i) => this.dentro(i) && this.vulneravel(i) && Math.abs(i.x - porta.x) < 1.6);
+      if (noCorredor.length >= 2) {
+        this.usadoNaOnda.add('capy-salva-vidas');
+        this.g.som('apito');
+        const de = new THREE.Vector3(porta.x, 1.1, porta.z - 0.6);
+        const fundo = this.planta.portoes[0].z + 1;
+        const para = new THREE.Vector3(porta.x, 0.1, fundo);
+        const tempo = this.jato.disparar({ de, para, estilo: { mangueira: true }, largura: 6, forma: 'linha' });
+        for (const inv of this.invasores) {
+          if (!this.vulneravel(inv) || Math.abs(inv.x - porta.x) > 1.3 + inv.jeito.raio) continue;
+          const t = tempo * THREE.MathUtils.clamp((de.z - inv.z) / (de.z - fundo), 0, 1);
+          this.jato.depois(t, () => this.acertar(inv, f.dano * 2, { x: inv.x, z: inv.z + 1 }));
+        }
+        this.g.toast('O Capy mandou um jato pelo corredor!', '🛟');
+        this.contar('capy-salva-vidas');
+      }
+    }
+
+    // ---- a Planta carnívora: morde quem come o canteiro dela
+    for (const c of this.canteiros) {
+      const k = c.carnivora;
+      if (!k || k.espera > 0) continue;
+      const presa = this.invasores.find((i) => this.vulneravel(i)
+        && ((i.canteiro === c && i.estado === 'comendo') || Math.hypot(i.x - k.peca.position.x, i.z - k.peca.position.z) < i.jeito.raio + 0.5));
+      if (!presa) continue;
+      k.espera = 15;
+      k.fecha = 0.25;
+      this.g.som('nhac');
+      this.jato.ondaDeSom(presa.x, presa.z, 0.8, P.dioneiaBoca);
+      this.espantado(presa, 'agua');
+      this.contar('planta-carnivora');
+    }
+
+    // ---- os Girassóis vigiam o portão do próximo bicho
+    if (r.has('girassol-vigia')) this.girassoisVigiam(dt);
+  }
+
+  /** o Espantalho e as trancas contam uma vez por tranca */
+  private segurou = new Set<object>();
+
+  private ultimoVigiado = -1;
+  private girassoisVigiam(dt: number): void {
+    const prox = this.plano[0];
+    const alvo = prox ? this.planta.portoes[prox.porta] : this.planta.portoes[1];
+    if (prox && prox.porta !== this.ultimoVigiado) {
+      this.ultimoVigiado = prox.porta;
+      this.contar('girassol-vigia');
+    }
+    for (const c of this.canteiros) {
+      if (c.tipo !== 'girassol' || c.vida <= 0) continue;
+      const mudas = (c.peca.userData.mudas ?? []) as THREE.Object3D[];
+      const p = new THREE.Vector3();
+      mudas.forEach((m, i) => {
+        m.getWorldPosition(p);
+        // a flor olha para +Z da muda; a muda mora dentro do canteiro girado
+        const querido = Math.atan2(alvo.x - p.x, alvo.z - p.z) - c.giro;
+        let d = querido - m.rotation.y;
+        while (d > Math.PI) d -= Math.PI * 2;
+        while (d < -Math.PI) d += Math.PI * 2;
+        m.rotation.y += d * Math.min(1, dt * 2.5);
+        void i;
+      });
+    }
+  }
+
+  // ================================================================ os chamados agindo
+
+  /**
+   * OS CHAMADOS AGEM SOZINHOS (decisão do Renan), cada um no que ele é bom:
+   * o Capy ATACA onde mordem, a Gina BARRA um portão, o Walter PROTEGE o
+   * canteiro machucado, o Noel CATA as gotas. O gatilho de cada um é a
+   * situação dele, e cada um vale uma vez por onda — o Mutirão, quando a
+   * chefe chega, liga os quatro de uma vez por 30 s.
+   */
+  private chamadosAgindo(dt: number): void {
+    const r = this.ficha.regras;
+    const E = this.planta.elenco;
+    const eu = this.g.playerPosition();
+
+    if (this.mutirao > 0) {
+      this.mutirao -= dt;
+      // o Walter do mutirão late a cada 6 s no canteiro mais atacado
+      if (!this.walter && E.presente('walter') && this.mutirao % 6 < dt) this.walterCorre(this.canteiroMaisAtacado());
+      if (this.mutirao <= 0) this.mutirao = 0;
+    }
+
+    // ---- o Capy: corre até o canteiro mordido e rega junto
+    if (this.capy) {
+      const k = this.capy;
+      k.resta -= dt;
+      const onde = E.onde('capy');
+      const chefe = this.mutirao > 0 ? this.invasores.find((i) => i.ficha.tier === 'chefe' && this.vulneravel(i)) : null;
+      const foco = chefe ? { x: chefe.x, z: chefe.z } : k.alvo;
+      // fica do lado do terreiro, a um passo do foco
+      const cx = this.planta.centro.x;
+      const cz = -1.5;
+      const n = Math.hypot(cx - foco.x, cz - foco.z) || 1;
+      const lugar = { x: foco.x + ((cx - foco.x) / n) * 2.4, z: foco.z + ((cz - foco.z) / n) * 2.4 };
+      if (Math.hypot(lugar.x - onde.x, lugar.z - onde.z) > 0.4) E.seguir('capy', lugar.x, lugar.z, 2.4);
+      k.recarga -= dt;
+      if (k.recarga <= 0) {
+        const alvo = this.maisPerto(onde.x, onde.z, 5);
+        if (alvo) {
+          k.recarga = 0.9;
+          E.encarar('capy', alvo.x, alvo.z);
+          const rumo = Math.atan2(alvo.x - onde.x, alvo.z - onde.z);
+          const de = new THREE.Vector3(onde.x + Math.sin(rumo) * 0.5, 0.75, onde.z + Math.cos(rumo) * 0.5);
+          const tempo = this.jato.disparar({ de, para: new THREE.Vector3(alvo.x, 0.25, alvo.z), estilo: {}, largura: 25 });
+          const origem = { x: onde.x, z: onde.z };
+          this.jato.depois(tempo, () => this.acertar(alvo, this.ficha.dano, origem));
+          this.contar(this.mutirao > 0 ? 'mutirao-do-clube' : 'chama-capy');
+        }
+      }
+      if (k.resta <= 0) {
+        this.capy = null;
+        E.voltarAoPosto('capy');
+      }
+    }
+
+    // ---- o Walter: canteiro pela metade com bicho em cima, ele corre latindo
+    if (r.has('chama-walter') && !this.walter && !this.usadoNaOnda.has('chama-walter') && E.presente('walter')) {
+      const c = this.canteiros.find((k) => k.vida > 0 && k.vida / k.vidaMax < 0.5
+        && this.invasores.some((i) => i.canteiro === k && i.estado === 'comendo'));
+      if (c) {
+        this.usadoNaOnda.add('chama-walter');
+        this.walterCorre(c);
+      }
+    }
+    if (this.walter) {
+      const k = this.walter;
+      k.resta -= dt;
+      if (k.chegou || k.resta <= 0) {
+        const c = k.alvo;
+        E.soar('walter');
+        this.jato.ondaDeSom(c.x, c.z, Math.max(c.meioX, c.meioZ) + 1.5);
+        for (const inv of [...this.invasores]) {
+          if (this.vulneravel(inv) && distanciaAoCanteiro(inv.x, inv.z, c) < 1.6) this.afugentar(inv, 0);
+        }
+        this.contar(this.mutirao > 0 ? 'mutirao-do-clube' : 'chama-walter');
+        this.walter = null;
+        this.jato.depois(1.2, () => { if (this.rodando && !this.walter) E.voltarAoPosto('walter'); });
+      }
+    }
+
+    // ---- o Noel: com 8 gotas no chão, ele passa 20 s catando
+    if (r.has('chama-noel') && !this.noel && !this.usadoNaOnda.has('chama-noel') && E.presente('noel')
+      && this.gotas.quantasNoChao >= 8) {
+      this.usadoNaOnda.add('chama-noel');
+      this.noel = { resta: 20, leva: 0, entregando: false };
+      E.soar('noel');
+      this.g.toast('O Noel veio catar as gotas!', '🦃');
+    }
+    if (this.noel) {
+      const k = this.noel;
+      k.resta -= dt;
+      const onde = E.onde('noel');
+      const gota = k.entregando ? null : this.gotas.maisPerto(onde.x, onde.z);
+      if (k.leva >= 4 || (k.leva > 0 && (!gota || k.resta <= 0))) k.entregando = true;
+      if (k.entregando) {
+        E.seguir('noel', eu.x, eu.z, 2.8);
+        if (Math.hypot(eu.x - onde.x, eu.z - onde.z) < 1.3) {
+          this.receberGotas(k.leva);
+          E.soar('noel');
+          this.jato.ondaDeSom(eu.x, eu.z, 0.9, P.efeitoNota);
+          this.contar(this.mutirao > 0 ? 'mutirao-do-clube' : 'chama-noel');
+          k.leva = 0;
+          k.entregando = false;
+        }
+      } else if (gota) {
+        E.seguir('noel', gota.x, gota.z, 2.8);
+        if (Math.hypot(gota.x - onde.x, gota.z - onde.z) < 0.55) k.leva += this.gotas.catar(onde.x, onde.z, 0.8);
+      }
+      if (k.resta <= 0 && k.leva === 0) {
+        this.noel = null;
+        E.voltarAoPosto('noel');
+      }
+    }
+  }
+
+  /** o Walter corre até um canteiro; o latido é quando ele chega */
+  private walterCorre(c: Canteiro | null): void {
+    if (!c) return;
+    const E = this.planta.elenco;
+    this.walter = { alvo: c, chegou: false, resta: 10 };
+    E.soar('walter');
+    this.g.toast('O Walter saiu correndo e latindo!', '🐶');
+    const cx = this.planta.centro.x;
+    const n = Math.hypot(cx - c.x, -1.5 - c.z) || 1;
+    const lugar = { x: c.x + ((cx - c.x) / n) * (Math.max(c.meioX, c.meioZ) + 0.6), z: c.z + ((-1.5 - c.z) / n) * (Math.max(c.meioX, c.meioZ) + 0.6) };
+    void E.ir('walter', lugar.x, lugar.z, 3.2).then(() => {
+      if (this.walter && this.walter.alvo === c) this.walter.chegou = true;
+    });
+  }
+
+  private canteiroMaisAtacado(): Canteiro | null {
+    let melhor: Canteiro | null = null;
+    let mais = 0;
+    for (const c of this.canteiros) {
+      const n = this.invasores.filter((i) => i.canteiro === c && i.estado === 'comendo').length;
+      if (n > mais) { mais = n; melhor = c; }
+    }
+    return melhor;
+  }
+
+  /** o Mutirão do clube: a chefe chegou, e os quatro entram em ação por 30 s */
+  private comecarMutirao(): void {
+    const E = this.planta.elenco;
+    const quem = (['capy', 'gina', 'walter', 'noel'] as const).filter((q) => E.presente(q));
+    if (quem.length === 0) return;
+    this.mutirao = 30;
+    if (E.presente('capy')) this.capy = { resta: 30, alvo: { x: 0, z: -1.5 }, recarga: 0.5 };
+    if (E.presente('noel')) this.noel = { resta: 30, leva: 0, entregando: false };
+    if (E.presente('gina')) this.ginaTranca(30);
+    this.g.toast('O clube inteiro entrou em ação!', '🎉');
+    this.g.som('apito');
+    this.contar('mutirao-do-clube');
+  }
+
   // ================================================================ vitrine
 
   /**
@@ -1398,13 +2959,90 @@ export class RodadaDoJardim {
   }
 
   /** o teste liga um contador de efeito sem esperar o relógio (gêiser, chuva, crivo) */
-  adiantar(qual: 'geiser' | 'chuva' | 'crivo' | 'danca' | 'arco-iris' | 'carga'): void {
+  adiantar(qual: 'geiser' | 'chuva' | 'crivo' | 'danca' | 'arco-iris' | 'carga'
+    | 'assobio' | 'walter' | 'la-de-tras' | 'aspersor'): void {
+    if (qual === 'assobio') this.assobio = 12;
+    if (qual === 'walter') this.walterDePlantao = 12;
+    if (qual === 'la-de-tras') this.ladoDeTras = 5;
+    if (qual === 'aspersor') this.aspersorRelogio = 3;
     if (qual === 'arco-iris') this.jatosDados = 9;
     if (qual === 'carga') this.carga = 1;
     if (qual === 'geiser') this.geiser = 20;
     if (qual === 'chuva') this.chuva = 30;
     if (qual === 'crivo') this.crivo = 4;
     if (qual === 'danca') this.parado = 3;
+  }
+
+  /*
+   * ============================================= GANCHOS DO TESTE DAS CARTAS
+   *
+   * `scripts/cartasNaRodada.mjs` prova cada carta numa estufa de laboratório:
+   * a vitrine sem bicho parado, e o teste põe o bicho, o canteiro machucado ou
+   * a gota exatamente onde a carta precisa. Ninguém chega aqui jogando.
+   */
+
+  /** um bicho já dentro da estufa, andando atrás de canteiro (ou do lado de fora do portão) */
+  soltarBicho(praga: string, x: number, z: number, opcoes: { porta?: number; fora?: boolean } = {}): void {
+    const porta = opcoes.porta ?? 1;
+    const inv = this.nascer(praga, porta);
+    inv.x = x;
+    inv.z = z;
+    // de fora: indo para o portão (passo 1); de dentro: já passou da boca
+    inv.passo = opcoes.fora ? 1 : inv.caminho.length;
+    inv.passouPortao = !opcoes.fora;
+  }
+
+  /** tira todo bicho da estufa (os três parados da vitrine, e o que sobrou do caso anterior) */
+  limparBichos(): void {
+    for (const inv of this.invasores) this.tirar(inv);
+    this.invasores = [];
+  }
+
+  /** o regador do jogador de folga: o teste quer o bicho vivo para a carta agir nele */
+  regadorDeFolga = false;
+
+  /** machuca um canteiro até uma fração da vida (0 = comido) */
+  ferirCanteiro(i: number, fracao: number): void {
+    const c = this.canteiros[i];
+    if (!c) return;
+    c.vida = c.vidaMax * fracao;
+    this.pintarCanteiro(c);
+  }
+
+  /** o começo e o fim de uma onda, sem jogar a onda */
+  forcarComecoDeOnda(): void {
+    this.onda = Math.max(2, this.onda + 1);
+    this.usadoNaOnda.clear();
+    this.comecoDaOnda();
+  }
+
+  forcarFimDeOnda(): void {
+    this.fimDeUmaOnda();
+  }
+
+  /** gotas direto na mão (sem pisar) — e o nível, para a tela das cartas não abrir */
+  darGotas(n: number): void {
+    this.receberGotas(n);
+  }
+
+  fixarNivel(n: number): void {
+    this.nivel = n;
+  }
+
+  soltarGotasAqui(x: number, z: number, n: number): void {
+    this.gotas.soltar(x, z, n, this.dado, (px, pz) => this.foraDeCanteiro(px, pz));
+  }
+
+  /** um bicho no roteiro da onda, daqui a `t` segundos, pelo portão pedido */
+  agendar(praga: string, porta: number, t: number): void {
+    this.plano.push({ t: this.tempoDaOnda + t, praga, porta, anunciada: false });
+    this.plano.sort((a, b) => a.t - b.t);
+  }
+
+  /** uma poça debaixo do jogador (o Pé na poça) */
+  pocaAqui(): void {
+    const eu = this.g.playerPosition();
+    this.jato.poca(eu.x, eu.z, 0.9, 6);
   }
 
   dispose(): void {
@@ -1432,6 +3070,29 @@ function montarBarra(): { barra: THREE.Group; enchido: THREE.Mesh } {
   trilho.add(enchido);
   barra.add(trilho);
   return { barra, enchido };
+}
+
+/** a distância de um ponto até a borda de um canteiro (zero se está em cima dele) */
+function distanciaAoCanteiro(x: number, z: number, c: { x: number; z: number; meioX: number; meioZ: number }): number {
+  const dx = Math.max(0, Math.abs(x - c.x) - c.meioX);
+  const dz = Math.max(0, Math.abs(z - c.z) - c.meioZ);
+  return Math.hypot(dx, dz);
+}
+
+/** o portão por onde mais bichos vão entrar neste roteiro (sem contar um fechado) */
+function portaMaisCheia(plano: readonly EntradaDePraga[], fora: number | null): number | null {
+  const conta = [0, 0, 0];
+  for (const e of plano) if (e.porta !== fora) conta[e.porta] += 1;
+  const mais = Math.max(...conta);
+  return mais > 0 ? conta.indexOf(mais) : null;
+}
+
+/** o degrau de cima de uma carta de série (o Bis), se existir */
+function proximoDegrau(id: string): ReturnType<typeof cartaPorId> {
+  const m = /^(.+)-(\d+)$/.exec(id);
+  if (!m) return undefined;
+  const acima = cartaPorId(`${m[1]}-${Number(m[2]) + 1}`);
+  return acima?.requer?.includes(id) ? acima : undefined;
 }
 
 function difAngulo(a: number, b: number): number {

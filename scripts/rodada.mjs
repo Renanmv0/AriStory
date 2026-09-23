@@ -52,7 +52,7 @@ for (let i = 0; i < 40; i++) {
   if (await page.evaluate(() => window.jogo?.current?.world?.root?.userData?.rodada?.estado().rodando)) break;
   await page.waitForTimeout(250);
 }
-await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 3; });
+await page.evaluate(() => { const r = window.jogo.current.world.root.userData.rodada; r.escalaDoTempo = 3; r.ondasDaRodada = 1; });
 const estado = () => page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
 const pontosAcesos = () => page.evaluate(() => window.jogo.current.world.interactables.filter((p) => p.enabled).length);
 
@@ -181,6 +181,83 @@ ok(await pontosAcesos() > 0, 'os pontos da cena religam');
 ok(await page.locator('.painel-jardim.show').count() === 0, 'o painel some');
 ok(!!fim, 'a Josefina fala do fim da primeira leva');
 await page.screenshot({ path: `${OUT}-fim.png` });
+
+/*
+ * AS CINCO ONDAS. Jogar as cinco no Chromium sem tela levaria meia hora, então
+ * aqui cada onda é ESVAZIADA à mão (o roteiro e os bichos somem) e o teste
+ * confere a costura entre elas: o respiro, o aviso da onda nova com o bicho
+ * que estreia, o roteiro da onda certa, e o grandão anunciado antes de nascer.
+ */
+{
+  await page.evaluate(() => {
+    const u = window.jogo.current.world.root.userData;
+    const r = u.rodada;
+    r.aoAcabar = null;
+    window.jogo.debugPlace(0, 2, Math.PI);
+    u.comecarRodada();
+    r.escalaDoTempo = 3;
+    r.ondasDaRodada = 5;
+  });
+  const esvaziar = () => page.evaluate(() => {
+    const r = window.jogo.current.world.root.userData.rodada;
+    r.plano = [];
+    r.limparBichos();
+  });
+  const avisos = [];
+  const lerAvisos = async () => {
+    for (const t of await page.locator('.toast').allTextContents()) if (!avisos.includes(t)) avisos.push(t);
+  };
+  let pragasDaOnda = {};
+  for (let onda = 1; onda < 5; onda++) {
+    await esvaziar();
+    const noRespiro = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+    // o respiro: a onda seguinte começa sozinha depois dele
+    for (let i = 0; i < 60; i++) {
+      await lerAvisos();
+      const e2 = await estado();
+      if (e2.onda === onda + 1) {
+        pragasDaOnda[onda + 1] = await page.evaluate(() =>
+          [...new Set(window.jogo.current.world.root.userData.rodada.plano.map((p) => p.praga))]);
+        break;
+      }
+      await page.waitForTimeout(250);
+    }
+    void noRespiro;
+  }
+  const e5 = await estado();
+  ok(e5.onda === 5 && e5.rodando, `as ondas se seguem até a quinta (está na ${e5.onda})`);
+  ok(avisos.some((t) => /Onda 2: chegam os Gafanhopos/.test(t)), 'a onda 2 avisa quem estreia');
+  ok(avisos.some((t) => /Onda 5: a última leva/.test(t)), 'a onda 5 avisa que é a última');
+  ok((pragasDaOnda[3] ?? []).includes('coelhatu'), `a onda 3 traz o Coelhatu [${pragasDaOnda[3]}]`);
+  ok((pragasDaOnda[5] ?? []).includes('mae-lagartejo'), `a onda 5 traz a Mãe-Lagartejo [${pragasDaOnda[5]}]`);
+  // o grandão anunciado: adianta o relógio até 4 s antes da chefe
+  await page.evaluate(() => {
+    const r = window.jogo.current.world.root.userData.rodada;
+    const chefe = r.plano.find((p) => p.praga === 'mae-lagartejo');
+    r.plano = [chefe];
+    r.tempoDaOnda = chefe.t - 3.5;
+  });
+  let aviso = null;
+  let nasceu = false;
+  for (let i = 0; i < 40 && !(aviso && nasceu); i++) {
+    const t = (await page.locator('.toast').allTextContents()).find((x) => /Mãe-Lagartejo/.test(x));
+    if (t) aviso = t;
+    nasceu = (await estado()).invasores.some((b) => b.praga === 'mae-lagartejo');
+    if (aviso && !nasceu) await page.screenshot({ path: `${OUT}-aviso.png` });
+    await page.waitForTimeout(200);
+  }
+  ok(!!aviso && nasceu, `a Josefina anuncia a chefe antes dela nascer: ${aviso}`);
+  // e a última onda termina a rodada, com a fala das cinco levas
+  await page.evaluate(() => {
+    const r = window.jogo.current.world.root.userData.rodada;
+    r.aoAcabar = (res) => { window.__fimDaRodada = res; };
+    r.plano = [];
+    r.limparBichos();
+  });
+  await page.waitForFunction(() => !!window.__fimDaRodada, null, { timeout: 30000 }).catch(() => {});
+  const fimDas5 = await page.evaluate(() => window.__fimDaRodada);
+  ok(fimDas5?.ondas === 5 && fimDas5?.motivo === 'fim', `depois da quinta a rodada fecha sozinha (${JSON.stringify(fimDas5)})`);
+}
 
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 if (erros.length) problemas.push('erros de console');

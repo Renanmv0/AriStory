@@ -216,6 +216,11 @@ html, body {
   flex-direction: column;
   gap: 8px;
   align-items: center;
+  /* SEM ISTO A CAIXA SÓ ENXERGA METADE DA TELA: com `left: 50%`, a largura
+     que sobra para ela é a do meio até a borda, e no celular um aviso de
+     quatro palavras quebrava em três linhas */
+  width: max-content;
+  max-width: calc(100vw - 32px);
 }
 .toast {
   display: flex;
@@ -3009,3 +3014,9 @@ body.touch-device .dialogue .next { right: 84px; }
   30% { box-shadow: 0 0 0 4px #ffd15c, 0 0 26px 8px rgba(255, 209, 92, 0.8); }
   100% { box-shadow: var(--shadow); }
 }
+
+/* COM A RODADA DO JARDIM NA TELA, os avisos descem para baixo do painel dela.
+   Os avisos moram no topo, e o topo é da barra de experiência e do painel da
+   água: sem isto o "Onda 2" e o "Um canteiro foi comido" nasciam em cima do
+   tanque, que é justamente o número que a pessoa está olhando. */
+#ui:has(.painel-jardim.show) .toasts { top: 96px; }

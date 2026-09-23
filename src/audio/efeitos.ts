@@ -66,7 +66,15 @@ export type SomNome =
   | 'trovao'
   | 'chuvinha'
   | 'vapor'
-  | 'sacudida';
+  | 'sacudida'
+  // as cartas do jardim que não mexem no jato
+  | 'grito'
+  | 'assobio'
+  | 'nhac'
+  | 'ardido'
+  | 'clique'
+  | 'martelo'
+  | 'brotar';
 
 /** graus da pentatônica maior, em semitons */
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
@@ -696,6 +704,71 @@ export const EFEITOS: Record<SomNome, Receita> = {
 
   sentar: ({ ctx, destino, t }) => {
     chiado(ctx, destino, { quando: t, dur: 0.24, vol: 0.09, freq: 700, glide: 260, q: 0.7 });
+  },
+
+  // ------------------------------------------- as cartas do jardim, fora do jato
+  /*
+   * O QUE AS CARTAS DE JARDINEIRO E DE JARDIM FAZEM TAMBÉM SE OUVE. Todos
+   * curtos, e nenhum no registro do jato (o chiado agudo): na rodada eles
+   * tocam por cima da água, e o ouvido precisa separar um do outro.
+   */
+  // o Grito: um "ÊI!" de megafone — serra abafada que sobe e cai, com o ar na frente
+  grito: ({ ctx, destino, t }) => {
+    for (const [freq, det] of [[nota(DO - 5), 0], [nota(DO + 2), 8]] as const) {
+      tom(ctx, destino, {
+        // 0,6 s de envelope para render ~0,35 s audíveis: o decaimento é
+        // exponencial, e com 0,3 s o grito saía um "ê" de 0,17 s (medido no .wav)
+        freq: freq * 0.9, glide: freq * 1.08, quando: t, dur: 0.6, vol: 0.085,
+        ataque: 0.03, tipo: 'sawtooth', abafo: 1600, detune: det,
+      });
+    }
+    chiado(ctx, destino, { quando: t, dur: 0.4, vol: 0.05, freq: 1200, glide: 800, q: 1.2 });
+  },
+
+  // o Assobio: fiu-fiuuu, três notas subindo na pentatônica
+  assobio: ({ ctx, destino, t }) => {
+    const notas = [DO + 12 + PENTA[2], DO + 12 + PENTA[4], DO + 12 + PENTA[5]];
+    notas.forEach((n, i) => {
+      tom(ctx, destino, {
+        freq: nota(n) * 0.97, glide: nota(n), quando: t + i * 0.13, dur: i === 2 ? 0.4 : 0.14,
+        vol: 0.05, ataque: 0.02, tipo: 'sine',
+      });
+    });
+  },
+
+  // a Planta carnívora fechando a boca: um estalo seco e um baque grave
+  nhac: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.06, vol: 0.12, freq: 2200, q: 2 });
+    tom(ctx, destino, { freq: 150, glide: 70, quando: t + 0.02, dur: 0.18, vol: 0.12, tipo: 'sine' });
+  },
+
+  // a pimenta ardendo: um chiado de frigideira e um "ui" agudo que cai
+  ardido: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.7, vol: 0.05, freq: 4800, glide: 3000, q: 0.6, tipo: 'highpass' });
+    tom(ctx, destino, { freq: nota(DO + 19), glide: nota(DO + 12), quando: t + 0.05, dur: 0.22, vol: 0.05, tipo: 'triangle' });
+  },
+
+  // o cadeado abrindo: dois cliques de metal
+  clique: ({ ctx, destino, t }) => {
+    for (const atraso of [0, 0.09]) {
+      chiado(ctx, destino, { quando: t + atraso, dur: 0.08, vol: 0.2, freq: 3600, q: 3 });
+      tom(ctx, destino, { freq: 1900, quando: t + atraso, dur: 0.09, vol: 0.05, tipo: 'square', abafo: 3000 });
+    }
+  },
+
+  // as tábuas sendo pregadas no portão: três marteladas
+  martelo: ({ ctx, destino, t }) => {
+    for (const atraso of [0, 0.22, 0.44]) {
+      tom(ctx, destino, { freq: 240, glide: 120, quando: t + atraso, dur: 0.12, vol: 0.11, tipo: 'triangle' });
+      chiado(ctx, destino, { quando: t + atraso, dur: 0.05, vol: 0.08, freq: 2600, q: 1.5 });
+    }
+  },
+
+  // o que brota: um arpejo curtinho subindo, como uma muda se esticando
+  brotar: ({ ctx, destino, t }) => {
+    [0, 2, 4, 5].forEach((g, i) => {
+      tom(ctx, destino, { freq: nota(DO + PENTA[g]), quando: t + i * 0.07, dur: 0.22, vol: 0.05, tipo: 'triangle' });
+    });
   },
 
   // ------------------------------------------------------------------ ui

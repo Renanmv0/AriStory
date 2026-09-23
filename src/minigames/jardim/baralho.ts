@@ -102,8 +102,14 @@ export class MaoDeCartas {
    * Nenhuma carta sai duas vezes na mesma mão de três, e nenhuma carta da mão
    * sai de novo. O que faltar para completar três vem dos CONSOLOS.
    */
-  oferta(nivel: number, rng: () => number): CartaDoJardim[] {
-    const livres = this.disponiveis(nivel);
+  oferta(nivel: number, rng: () => number, acima = false): CartaDoJardim[] {
+    /*
+     * A SORTE DE PRINCIPIANTE (`acima`): cada vaga sobe uma raridade. O piso
+     * de nível não segura a subida — é a graça da carta: no nível 2 ela é o
+     * único jeito de ver uma lendária. O peso continua o do nível, então quem
+     * sobe é a raridade sorteada, e não o sorteio inteiro.
+     */
+    const livres = this.disponiveis(acima ? Math.max(nivel, NIVEL_MINIMO.lendario) : nivel);
     const mesa: CartaDoJardim[] = [];
 
     while (mesa.length < CARTAS_POR_ESCOLHA && livres.length > 0) {
@@ -126,6 +132,12 @@ export class MaoDeCartas {
           raridade = RARIDADES[i];
           break;
         }
+      }
+
+      if (acima) {
+        const i = RARIDADES.indexOf(raridade);
+        const subida = RARIDADES.slice(i + 1).find((r) => livres.some((c) => c.raridade === r));
+        if (subida) raridade = subida;
       }
 
       const daRaridade = livres.filter((c) => c.raridade === raridade);

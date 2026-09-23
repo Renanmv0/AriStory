@@ -477,12 +477,12 @@ regra.** Se uma ideia só sabe dar +X%, ela é comum, por melhor que pareça.
 | carta | raridade | efeito |
 |---|---|---|
 | Passo leve I–II | comum | +12% de velocidade |
-| Bolso furado | comum | as gotas são puxadas de 2 m em vez de pisadas |
+| Bolso furado | comum | as gotas vêm até você de 2,5 m (sem ela, de 1,3 m) |
 | Bota de jardim | comum | terra de canteiro não te segura mais |
 | Fôlego | incomum | o tanque enche sozinho enquanto você anda, e não só no tonel |
 | Chinelada | incomum | encostar num bicho dá um empurrão que o joga 2 m para trás |
 | Grito | raro | uma vez por onda, tudo num raio de 4 m recua até a porta |
-| Dedo verde | raro | canteiro machucado recupera 1 ponto entre uma onda e outra |
+| Dedo verde | raro | canteiro machucado recupera 15% da vida entre uma onda e outra |
 | **Os dois na frente** | lendário | quem ficou lá atrás pega o outro regador e vem regar do seu lado |
 | Chapéu de palha | comum | cada jato gasta 15% menos água |
 | Descanso na sombra | comum | parado, o tanque enche 50% mais rápido |
@@ -510,7 +510,7 @@ frente desde o começo, e o Renan decidiu que quem não é controlado fica atrá
 | Segundo tonel | comum | nasce um tonel do outro lado: a viagem pela água encurta |
 | Poça | incomum | onde o jato cai fica escorregadio 4 s, e quem passa anda devagar |
 | Lá de trás | incomum | quem ficou com a Josefina rega o canteiro mais perto dele |
-| Espantalho | raro | um espantalho onde você escolher puxa o alvo dos bichos por 20 s |
+| Espantalho | raro | com três bichos na estufa, um espantalho levanta no terreiro e puxa quem está a 7 m por 20 s (uma vez por onda) |
 | Josefina ajuda | raro | ela sai do canto e rega um canteiro por conta dela, uma vez por onda |
 | Portão emperrado | raro | uma das três portas fecha pelo resto da rodada |
 | Cerca viva | lendário | um canteiro à sua escolha fica intocável até o fim |
@@ -573,11 +573,83 @@ A Gina é mais alta que a porta e passa **abaixando o pescoço** ("Cuidado com a
 cabeça… a minha, no caso"). O Walter não fala: late, e a dupla fala por ele,
 como no Mania.
 
+**Cada chamado AGE — construído.** Depois da cutscene o bicho fica no posto, e
+a rodada chama ele quando a situação dele aparece: o Capy corre para o canteiro
+da primeira mordida e rega por 20 s o bicho mais perto dele; a Gina vai até o
+portão mais cheio do roteiro e segura quem chega ali (o relógio dos 20 s só anda
+com bicho esperando); o Walter corre latindo até o canteiro abaixo da metade e
+todo bicho em volta vai embora, sem gota; o Noel cata as gotas do chão, de três
+em três ou quatro em quatro, e traz na sua mão. No Mutirão, quando a
+Mãe-Lagartejo nasce, os quatro fazem isso juntos por 30 s — o Capy em volta
+dela, o Walter latindo a cada 6 s no canteiro mais atacado.
+
 As falas moram em `scenes/estufa.ts` (`FALAS_DO_CHAMADO`), e quem cada carta
 chama está na própria carta (`chama`, em `cartas.ts`). Foram escritas por mim, no
 tom de cada um no clube — **o Renan pode trocar qualquer uma**. Para ver:
 `?cena=estufa&treino=gotas`, ou `node scripts/chamados.mjs /tmp/ch`, que pega
 cada carta e fotografa a entrada.
+
+### Como as cartas de jardineiro e de jardim agem — **construído**
+
+Toda carta de jardineiro, de jardim e do clube faz a coisa dela na rodada, e
+**toda uma se vê** — a mesma regra do jato, estendida: carta que age sem
+mostrar que agiu parece carta quebrada. O código mora em `rodada.ts`
+(`cartasDoJardineiro`, `cartasDoJardim`, `chamadosAgindo`), e o desenho do que
+não é água em `jato.ts` (poeira, notinhas, onda de som, broto, ardido, adubo).
+
+| carta | quando | o que se vê e se ouve |
+|---|---|---|
+| Bota de jardim | sempre | os canteiros deixam de ter colisor: dá para cortar caminho por cima |
+| Pique | andando há 2 s | poeirinha nos pés, +30% até parar |
+| Assobio | a cada 12 s | notinhas na sua cabeça e na do bicho; ele vira e anda 2 s para trás |
+| Pé na poça | pisou numa poça | respingo nos pés e +35% por 1,5 s |
+| Ímã de gota | subiu de nível | as gotas do chão levantam e voam até você |
+| Sorte de principiante | a próxima tela | cada vaga sobe uma raridade — no nível 1 a mesa vem sem comum |
+| Olho de jardineira | sempre | um pontilhado anda de cada bicho até o canteiro que ele quer |
+| Pulinho | encostou num fraco | você dá um pulinho e ele fica tonto 1 s |
+| Bis | a próxima de série | o degrau de cima entra junto na mão ("Bis! Bico mais longo II") |
+| Troca de turno | apertou `T` | quem entra ganha o regador e vem de tanque cheio; sem a carta o `T` fica travado na rodada |
+| Coraçãozinho | a cada 20 gotas | sobem corações da dupla e quem está a 4 m para 1 s |
+| Grito | três bichos a 4 m, uma vez por onda | uma onda laranja no chão e todos voltam até a boca do portão |
+| Dedo verde | fim da onda | faísca verde nos canteiros machucados |
+| Os dois na frente | sempre | o parceiro pega o outro regador, segue você e atira com 80% do dano |
+| Segundo tonel | sempre | o tonel nasce na parede da direita, espelhando o primeiro |
+| Lá de trás | a cada 5 s | quem ficou atrás rega em arco o canteiro mais perto que precisa |
+| Espantalho | três na estufa, uma vez por onda | ele brota do chão; quem está a 7 m fica em roda olhando para ele |
+| A Josefina ajuda | canteiro abaixo de 60%, uma vez por onda | ela vira e rega em arco: +35% de vida e respingo em quem come ali |
+| Portão emperrado | na hora | tábuas pregadas no portão mais cheio; quem ia por ele vai pelo do lado, e a dupla também não passa |
+| Cerca viva | na hora (você escolhe) | uma roda de moitas abraça o canteiro, e ninguém come ali |
+| Toldo | na hora (você escolhe) | a lona listrada por cima; o canteiro aguenta 50% mais |
+| Canteiro de pimenta | na hora (você escolhe) | uma fileira de pimenteira na borda; quem morde arde e foge soltando 2 gotas |
+| Planta carnívora | na hora (você escolhe) | uma dioneia grande na borda morde quem come ali e fica fechada 15 s |
+| Sino da porta | bicho passando o portão | plim, e um anel amarelo no portão |
+| Girassol vigia | sempre | as flores do canteiro de girassol viram para o portão do próximo bicho |
+| Cerquinha | sempre | a cerca atravessa o caminho do portão do meio; eles contornam pela ponta |
+| Aspersor | a cada 3 s, com bicho perto | a cabeça gira depressa e solta um anel de 2,5 m |
+| Sementeira | começo da onda | canteiro comido brota de novo com meia vida |
+| Estufa trancada | começo da onda | cadeado e corrente em cada portão; eles esperam 10 s do lado de fora e o cadeado cai |
+| Apito da Gina | quatro na estufa, uma vez por onda | apito da porta, e todos ficam tontos 1,5 s |
+| Picolé do Mano | fim da onda | cai um picolé no terreiro; pegar enche o tanque e dá +30% por 10 s |
+| O Noel avisa | fim da onda | "VEM PELO PORTÃO DA ESQUERDA!" — e é por ele mesmo: o roteiro já sai sorteado |
+| O Jean-Luc no tonel | sempre | o pato boia dentro do tonel, e encher ali é na hora |
+| O Capy salva-vidas | dois no corredor do meio, uma vez por onda | um jato de mangueira da porta até os portões, dobrado |
+| O Walter de plantão | a cada 12 s | um latido, e o bicho mais perto de canteiro volta até a porta |
+| Adubo do Noel | seu jato perto de um canteiro | pitadas de adubo caem, e a mordida ali conta metade até o fim da onda |
+
+**As de "um canteiro à sua escolha"** perguntam pela boca da Josefina, com os
+quatro canteiros vivos mais perto de você. O nome de cada um ("Tomate da
+esquerda", "Alface da frente") está em `CANTEIROS`, na cena.
+
+**Os sons novos** (`audio/efeitos.ts`): `grito`, `assobio`, `nhac` (a
+dioneia), `ardido` (a pimenta), `clique` (o cadeado), `martelo` (tábuas,
+cerquinha, espantalho) e `brotar` (o que se recupera). O resto reaproveita o
+que já existia: `latido`, `apito`, `sino`, `pato`, `sorvete`, `quicar`.
+
+**Para testar:** `node scripts/cartasNaRodada.mjs /tmp/cr` monta uma estufa de
+laboratório para cada carta — os três bichos perto para o Grito, o canteiro pela
+metade com bicho em cima para o Walter — e exige o efeito no mundo, e não só a
+carta na mão. `node scripts/cartasNaRodada.mjs /tmp/cr grito,bota` roda só
+essas.
 
 ### O regador MUDA DE CARA quando você melhora ele
 
@@ -1020,9 +1092,9 @@ trabalha rápido") virando geometria.
 | 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | **pronto** (§10) |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
 | 5 | gota no chão e a tela de três cartas (a conta de nível e o sorteio já existem) | **pronto** (a peça; liga na rodada junto com a 3) |
-| 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, menos o som de cada carta |
-| 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | a fazer |
-| 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | a fazer |
+| 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, com o som de cada carta |
+| 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **em parte**: as cinco ondas rodam com os seis bichos, com o aviso do grandão; o JEITO de cada um (o Gafanhopo pular o jato, o Tucanguru saltar a cerca…) a fazer |
+| 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | **pronto** (§6, "Como as cartas de jardineiro e de jardim agem") |
 | 9 | o pagamento, a memória e a fala de despedida da Josefina | a fazer |
 
 A etapa 3 é a que decide se o resto vale: um regador que atira sozinho num
@@ -1073,10 +1145,13 @@ delas anda, ataca ou aparece numa cena ainda (§5).
 3. Começa quando a Josefina manda ("Água neles, meu bem!"), no fim de
 `assumirOsPostos`. O que ela já faz:
 
-- **uma onda**, a primeira do §3: doze Lagartejos, um a cada 4 s. Eles nascem
-  do lado de FORA da sebe do pátio, passam pela brecha, pelo caminho de pedra e
-  pelo portão, e vão ao canteiro vivo mais perto. As outras ondas entram junto
-  com o comportamento dos outros bichos (etapa 7);
+- **as cinco ondas** do §3, com um respiro de 6 s entre elas ("Onda 2: chegam
+  os Gafanhopos"). Os bichos nascem do lado de FORA da sebe do pátio, passam
+  pela brecha, pelo caminho de pedra e pelo portão, e vão ao canteiro vivo mais
+  perto. O Preguipolvo e a Mãe-Lagartejo são **anunciados** 4 s antes: a
+  Josefina grita o portão e o chão ronca. Por enquanto os seis ANDAM do mesmo
+  jeito, cada um na sua velocidade e mordida — o jeito próprio de cada um é a
+  etapa 7;
 - **o canteiro é o placar**: comido, as mudas encolhem e somem uma a uma, e no
   fim ele vira terra seca. O bicho então procura o próximo;
 - **o regador atira sozinho**, no bicho mais perto dentro do `alcance`, a cada
@@ -1088,16 +1163,13 @@ delas anda, ataca ou aparece numa cena ainda (§5).
 - **espantado, o bicho sacode e vai embora** pela brecha dele, e solta as
   gotas; as gotas sobem o nível, e cada nível é a tela das três cartas — com a
   rodada CONGELADA enquanto ela está aberta;
-- **no fim** a Josefina conta quantos canteiros ficaram de pé, promete bicho
-  diferente amanhã e replanta. O pagamento por canteiro é a etapa 9.
+- **no fim** a Josefina conta quantos canteiros ficaram de pé e em que leva
+  parou (ou comemora as cinco), e replanta. O pagamento por canteiro é a etapa 9.
 
-**O que cada carta já faz na rodada:** todas as que mexem no jato (a tabela do
-§6, com a animação e a mecânica que a carta descreve); os números do tanque, do
-tonel, da água por jato, do passo, da coleta e da vida dos canteiros; a
-Compostagem; e três de jardineiro baratas (Fôlego, Chinelada, Descanso na
-sombra). As outras regras (Grito, Bota, Espantalho, os chamados agindo, a
-Josefina ajudando…) estão escolhíveis e **ainda não fazem nada** — entram com as
-etapas seguintes. Os chamados já entram pela porta na cutscene.
+**O que cada carta já faz na rodada: todas.** As de jato com a animação delas
+(a tabela do §6), e as de jardineiro, jardim e clube como a tabela "Como as
+cartas de jardineiro e de jardim agem" descreve — os chamados inclusive, que
+entram pela porta na cutscene e depois agem sozinhos.
 
 **Para ver:** `?cena=estufa&rodada=1` começa a rodada direto;
 `?cena=estufa&jato=<cartas>` monta a vitrine do jato (e `&praga=preguipolvo`
@@ -1105,7 +1177,9 @@ troca o bicho da vitrine — a Água morna só aparece em bicho grande).
 
 **Os testes**: `node scripts/rodada.mjs /tmp/rd` joga a onda inteira com um robô
 que só anda (nunca aperta ataque) e cobra do nascer lá fora ao fim com a
-Josefina; `node scripts/jato.mjs /tmp/jt` confere o jato de cada carta.
+Josefina (com `ondasDaRodada = 1`, para caber no tempo); `node scripts/jato.mjs
+/tmp/jt` confere o jato de cada carta; `node scripts/cartasNaRodada.mjs /tmp/cr`
+prova cada uma das outras 41 agindo.
 `node scripts/cartas.mjs` (no Node, sem navegador) joga mil
 rodadas de cartas e trezentas de ondas; `node scripts/postos.mjs /tmp/pt` faz a
 Josefina entrar junto, passear sem pisar em canteiro e mandar cada um para o

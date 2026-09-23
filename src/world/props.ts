@@ -6870,22 +6870,23 @@ export function tabuasPregadas(largura = 3, altura = 1.6): THREE.Group {
 export function cadeadoDePortao(largura = 3): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'cadeado-de-portao';
-  const elos = Math.round(largura / 0.14);
+  // elos grossos: a corrente é lida de longe, por cima das grades do portão
+  const elos = Math.round(largura / 0.17);
   for (let i = 0; i < elos; i++) {
-    const elo = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.014, 4, 8), toon(P.corrente));
+    const elo = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.022, 5, 10), toon(P.corrente));
     const x = -largura / 2 + (i + 0.5) * (largura / elos);
-    elo.position.set(x, 1.05 - Math.cos((x / largura) * Math.PI) * 0.08, 0);
+    elo.position.set(x, 1.05 - Math.cos((x / largura) * Math.PI) * 0.1, 0);
     elo.rotation.y = i % 2 ? Math.PI / 2 : 0;
     g.add(elo);
   }
-  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.08), toon(P.cadeado, { glow: 0.15 }));
-  corpo.position.set(0, 0.9, 0.03);
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.3, 0.12), toon(P.cadeado, { glow: 0.2 }));
+  corpo.position.set(0, 0.84, 0.05);
   g.add(corpo);
-  const arco = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.02, 5, 10, Math.PI), toon(P.corrente));
-  arco.position.set(0, 1, 0.03);
+  const arco = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.03, 6, 12, Math.PI), toon(P.corrente));
+  arco.position.set(0, 0.99, 0.05);
   g.add(arco);
-  const buraco = new THREE.Mesh(new THREE.CircleGeometry(0.025, 8), toon(P.woodDark));
-  buraco.position.set(0, 0.89, 0.08);
+  const buraco = new THREE.Mesh(new THREE.CircleGeometry(0.035, 8), toon(P.woodDark));
+  buraco.position.set(0, 0.82, 0.115);
   g.add(buraco);
   return g;
 }

@@ -520,6 +520,26 @@ export const PALETTE = {
   picoleMorango: 0xf28aa8,
   picoleCobertura: 0x7a4a2e,
   picolePalito: 0xe9d3a4,
+  /*
+   * OS EFEITOS DAS CARTAS QUE NÃO SÃO ÁGUA: cada um com uma cor que não se
+   * confunde com o jato (azul) nem com a gota de experiência.
+   */
+  /** as notinhas do Assobio */
+  efeitoNota: 0xffd84a,
+  /** a onda do Grito, do apito da Gina e do latido do Walter */
+  efeitoGrito: 0xffb347,
+  /** o que brota: Dedo verde, Sementeira, a rega da Josefina */
+  efeitoBroto: 0x8fe36b,
+  /** o ardido da pimenta */
+  efeitoArdido: 0xff5a36,
+  /** a poeira do Pique */
+  efeitoPoeira: 0xcdb48a,
+  /** o pontilhado do Olho de jardineira */
+  efeitoTrilha: 0xfff3c4,
+  /** o adubo do Noel caindo no canteiro */
+  efeitoAdubo: 0x9a6b3c,
+  /** a cerca viva: o verde da moita que abraça o canteiro */
+  cercaViva: 0x3f8f4a,
 
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
