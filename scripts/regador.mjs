@@ -429,14 +429,24 @@ if ((await naMao()) !== 'regador') {
   problemas.push('o regador sumiu da mão durante a cutscene');
 }
 
-// e o jogador volta a andar depois dela
+/**
+ * E O JOGADOR VOLTA A ANDAR DEPOIS DELA.
+ *
+ * Anda ATÉ SAIR DO LUGAR, com teto, e não por um tempo fixo: travado anda 0,00,
+ * e é só isso que a asserção precisa separar. A versão de 900 ms reprovava uma
+ * dupla livre que andou 0,20 numa máquina carregada — o relógio de jogo do
+ * Chromium sem tela depende de quanta máquina sobra.
+ */
 const antes = await page.evaluate(() => window.jogo.playerPosition());
+let andou = 0;
 await page.keyboard.down('KeyW');
-await page.waitForTimeout(900);
+for (let i = 0; i < 20 && andou < 0.4; i++) {
+  await page.waitForTimeout(300);
+  const agora = await page.evaluate(() => window.jogo.playerPosition());
+  andou = Math.hypot(agora.x - antes.x, agora.z - antes.z);
+}
 await page.keyboard.up('KeyW');
-const depois = await page.evaluate(() => window.jogo.playerPosition());
-const andou = Math.hypot(depois.x - antes.x, depois.z - antes.z);
-if (andou < 0.4) problemas.push(`ninguém destravou depois da cutscene (andou ${andou.toFixed(2)})`);
+if (andou < 0.4) problemas.push(`ninguém destravou depois da cutscene (andou ${andou.toFixed(2)} em 6 s)`);
 
 await page.screenshot({ path: `${OUT}-depois.png` });
 
