@@ -398,6 +398,56 @@ export const PALETTE = {
   // calota achatada lia como uma tampa de outro material pousada nas costas
   pragaMaeCrosta: 0xae5c80,
 
+  /*
+   * A SEGUNDA LEVA (as que estreiam da 15ª onda em diante). A mesma regra da
+   * primeira: cada uma com a SUA cor, nenhuma que exista num canteiro, e todas
+   * brigando com o saibro bege do terreiro.
+   */
+  /** a asa de quem voa (libélula, abelha, mosquito): quase branca, um tico azulada */
+  pragaAsa: 0xe4f1f5,
+  pragaAsaNervura: 0xa9c4cf,
+  /** LIBELAGARTO — rosa-chiclete de lagartixa: nem tomate, nem lavanda */
+  pragaLibelagarto: 0xee8fb1,
+  pragaLibelagartoEscuro: 0xc9648c,
+  /**
+   * FORMIGURIÇO — ameixa escura de formiga, e os espinhos num caramelo claro.
+   * É o menor da estufa: escuro no saibro claro é o que faz ele não sumir.
+   */
+  pragaFormigurico: 0x4d3a55,
+  pragaFormiguricoEscuro: 0x35283c,
+  pragaFormiguricoEspinho: 0xe6c49a,
+  /** TAMANDUBELHA — mel de abelha com as listras quase pretas */
+  pragaTamandubelha: 0xdca535,
+  pragaTamandubelhaListra: 0x3a2f2e,
+  /** a língua comprida dele (e de quem mais tiver língua): rosa */
+  pragaLingua: 0xe98aa0,
+  /** MOSQUIPÓTAMO — hipopótamo lilás-azulado, com o focinho rosado */
+  pragaMosquipotamo: 0x9194c6,
+  pragaMosquipotamoEscuro: 0x676a9e,
+  pragaMosquipotamoFocinho: 0xe2b4c6,
+  /** RINOCARACOL — cinza de rinoceronte, e a concha de caracol em caramelo */
+  pragaRinocaracol: 0x7c8694,
+  pragaRinocaracolEscuro: 0x5b6472,
+  pragaConcha: 0xe3ac6b,
+  pragaConchaEscura: 0xb27a3f,
+  /**
+   * JAVAPONJA — amarelo de esponja, e os furinhos num marrom de miolo. O
+   * primeiro amarelo era frio (0xe8d565) e na sombra do toon puxava para
+   * oliva, que é quase folha: esquentou para gema.
+   */
+  pragaJavaponja: 0xf3cf55,
+  pragaJavaponjaEscuro: 0xd0a33a,
+  pragaJavaponjaFuro: 0x8f6c2c,
+  /**
+   * ESCORPICAMELO — o chefe novo. Caramelo de camelo, mais ESCURO que o saibro
+   * (areia no saibro sumia), e a cauda de escorpião num marrom mais fundo.
+   */
+  pragaCamelo: 0xb9854f,
+  pragaCameloEscuro: 0x8d6035,
+  pragaCameloClaro: 0xe7c89a,
+  pragaEscorpiao: 0x76492c,
+  pragaEscorpiaoClaro: 0x9a6538,
+
   /**
    * O REGADOR — a arma do minigame do jardim, e a unica peca do jogo que MUDA
    * DE CARA enquanto se joga (`docs/MINIGAME-JARDIM.md` §6).

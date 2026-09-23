@@ -28,7 +28,7 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | `src/minigames/jardim/tela.ts` | os tipos que a UI recebe (carta, painel, fim) |
 | `src/scenes/estufa.ts` | a cena: a planta que a rodada recebe (`PlantaDoJardim`), o `ElencoDaEstufa` (Josefina, Capy, Gina, Walter, Noel, Jean-Luc), as cutscenes dos chamados, o livro na bancada, as falas do fim |
 | `src/ui/telaDeCartas.ts`, `src/ui/livroDeCartas.ts` | a tela das três cartas; o livro das cartas e a tela do fim |
-| `src/world/bichosDoJardim.ts` | a geometria das seis pragas (`PRAGAS`) |
+| `src/world/bichosDoJardim.ts` | a geometria das **treze** pragas (`PRAGAS`): as seis da primeira leva e as sete da segunda (da 15ª onda em diante) |
 | `src/core/Oclusao.ts` | parede/árvore que tapa bicho ou gota fica translúcida (a rodada liga) |
 | `src/audio/musica.ts` (`'rodada-do-jardim'`) | a música da defesa |
 
@@ -57,7 +57,8 @@ velocidade/mordida de cada praga em `JEITO` (`rodada.ts`).
 
 **O que falta** (a escolha do próximo passo é do Renan):
 - o **jeito de cada bicho** (§5 diz o que cada um faria: o Gafanhopo pula o
-  jato, o Coelhatu cava…) — hoje os seis só andam e comem;
+  jato, o Coelhatu cava…) — hoje os treze só andam e comem, os sete novos
+  inclusive (o que cada um faria está no §5);
 - o **pagamento** por canteiro de pé e a **memória** de vencer as 30 ondas;
 - **equilíbrio**: ninguém jogou as 30 ondas inteiras; o Renan joga e diz.
 - perguntas em aberto: §12.
@@ -274,12 +275,25 @@ placar. Onda 1 é uma aula, e ela tem que parecer fácil.
 | 3 | **+ Coelhatu** | 2 a cada 3,5 s | ~22 (era 28: a terceira era a parede da rodada) |
 | 4 | **+ Tucanguru**, e um Preguipolvo | 3 a cada 3 s | ~36 |
 | 5 | todos, e a **Mãe-Lagartejo** no fim | 3 a cada 2,5 s | ~45 |
-| 6–20 | todos; um Preguipolvo por onda (dois da 12ª em diante) e a **Mãe-Lagartejo de volta nas ondas 10, 15 e 20** (duas na 20ª) | de 3 a 5 por leva, o intervalo encurtando até 1,8 s | 48 → 90 |
-| 21–30 | todos; **três** Preguipolvos da 22ª em diante, a Mãe-Lagartejo na 25ª e **duas na 30ª** | de 5 a 7 por leva (uma a mais a cada cinco ondas), o intervalo encurtando mais devagar, até 1,6 s | 93 → 120 |
+| 6–14 | todos; um Preguipolvo por onda (dois da 12ª em diante) e a **Mãe-Lagartejo de volta na 10ª** | de 3 a 5 por leva, o intervalo encurtando | 48 → 72 |
+| 15 | **+ Libelagarto** (a segunda leva começa), e a Mãe-Lagartejo no fim | 5 a cada 2,0 s | ~75 |
+| 16 | **+ Formiguriço** | | ~78 |
+| 17 | **+ Tamandubelha** | | ~81 |
+| 18 | **+ Mosquipótamo** | | ~84 |
+| 19–21 | todos; o segundo grandão vira o **Rinocaracol** (estreia na 19ª); duas Mães na 20ª | 5 por leva, até 1,8 s | 87 → 93 |
+| 22–24 | três grandões: Preguipolvo, Rinocaracol e a **Javaponja** (estreia na 22ª) | 5 por leva, o intervalo encurtando mais devagar | 96 → 102 |
+| 25 | **o Escorpicamelo estreia**, no lugar da Mãe | 6 por leva | ~105 |
+| 26–30 | tudo; a **30ª traz os dois chefes juntos**, a Mãe-Lagartejo no meio e o Escorpicamelo no fim | até 7 por leva, a cada 1,6 s | 108 → 120 |
 
 **A RODADA TEM TRINTA ONDAS — construído** (pedido do Renan; eram vinte):
 aguentar a trigésima com pelo menos um canteiro de pé é a **vitória**. Da sexta
-em diante ninguém estreia; sobe o ritmo, devagar, e sobem os grandões. Se nenhum
+à 14ª ninguém estreia; sobe o ritmo, devagar, e sobem os grandões. Da 15ª em
+diante entra a **segunda leva** de bichos (§5), um por onda, na mesma ordem do
+mais fraco para o mais forte: os dois pequenos e os dois médios estreiam de
+verdade (entram sozinhos nos primeiros 10 s), e os dois grandões e o chefe
+novo tomam o lugar de um anunciado antigo — a conta de gotas da rodada não
+muda, porque o tanque novo paga o mesmo que o Preguipolvo, e o chefe novo o
+mesmo que a Mãe. Se nenhum
 bicho escapa, a dupla chega perto do nível 10 na quinta onda, do 25 na
 vigésima e do 32 na trigésima — o prêmio de duas cartas do nível 30 cabe
 na rodada (`scripts/cartas.mjs` mede as duas marcas). O número mora em
@@ -410,8 +424,9 @@ laranja, andar de quem vem comer a horta.
 
 Nenhum deles empresta bicho nomeado do jogo. Pelusa, Walter, Cookie, Gina,
 Noel, Capy, Estella, Mano, Jean-Luc e Josefina são **gente**, e gente não vira
-alvo. Nenhuma peça de bicho já existente foi reaproveitada: as seis são modelos
-novos, em `src/world/bichosDoJardim.ts`.
+alvo. Nenhuma peça de bicho já existente foi reaproveitada: as treze são
+modelos novos, em `src/world/bichosDoJardim.ts`. **Nada de barata**, pedido do
+Renan — nem de rato, nem de golfinho (topo do arquivo).
 
 | bicho | mistura | cor | tier | altura | encharque | o que ele faz de diferente |
 |---|---|---|---|---|---|---|
@@ -421,6 +436,32 @@ novos, em `src/world/bichosDoJardim.ts`.
 | **Tucanguru** | tucano + canguru | azul de bico amarelo | médio | 1,23 | 3 | aos saltos longos, e **ignora canteiro**: vai direto no que estiver em vaso ou na prateleira de mudas |
 | **Preguipolvo** | preguiça + polvo | musgo | tanque | 0,83 (e 2,1 de largura) | 10 | lentíssimo e largo. Os braços alcançam **dois canteiros ao mesmo tempo**, e ele é o que mais atrapalha a passagem |
 | **Mãe-Lagartejo** | o lagartejo em tamanho de chefe | vinho | chefe | 1,36 | 18 | a chefe. Anda devagar, come um canteiro inteiro de uma vez e **solta lagartejos** pelo caminho |
+
+**A SEGUNDA LEVA — os modelos estão construídos** (pedido do Renan: mais
+bicho para as ondas difíceis, a partir da 15ª, "muito bem feitos e fofos", e
+os **tamanhos variando** — mais pequenininho e mais grandão). A régua esticou
+nas duas pontas: o Formiguriço bate no tornozelo da dupla, e o Escorpicamelo
+passa da cabeça dela. Cada um também ataca uma parte DIFERENTE da jogada —
+os seis de antes vão todos no canteiro; os novos vão no tonel, nas gotas, nos
+portões e no próprio jato. **O jeito deles ainda não existe**: hoje andam e
+comem como os outros.
+
+| bicho | mistura | cor | tier | altura | encharque | o que ele faz de diferente (plano) |
+|---|---|---|---|---|---|---|
+| **Libelagarto** | lagartixa + libélula | rosa-chiclete, asas claras | fraco | 0,31 (e 0,68 de asa) | 2 | **voa por cima do muro**: não entra pelos portões, pousa em qualquer ponto da borda (a Gina barrando portão não segura ele); a sombra no chão avisa antes |
+| **Formiguriço** | formiga + ouriço | ameixa escuro, espinho caramelo | fraco | **0,30 — o menor** | 1 | vem em **fila indiana**, cinco ou seis; espantar o da frente espalha a fila, cada um para um canteiro |
+| **Tamandubelha** | tamanduá + abelha | mel listrado de preto | médio | 1,04 (2,3 de comprido) | 3 | **aspira as gotas do chão** com a língua; espantado, devolve tudo o que aspirou, e mais um pouco |
+| **Mosquipótamo** | hipopótamo + mosquito | lilás-azulado, focinho rosa | médio | 1,14 (em seis pernas de pau) | 4 | **ignora canteiro e vai no tonel beber**: enquanto bebe, o tonel não enche o regador |
+| **Rinocaracol** | rinoceronte + caracol | cinza, concha caramelo | tanque | 1,67 | 12 | **investida reta** do portão ao canteiro, empurrando o jogador; meio encharcado, **se fecha na concha** uns 3 s sem levar água |
+| **Javaponja** | javali + esponja-do-mar | amarelo-gema furadinho | tanque | 1,40 (1,39 de largura) | 11 | **bebe o jato**: cada jato incha ele (fica lento, a barra enche devagar); espantado, **espirra a água numa poça** que recarrega o regador de quem pisar |
+| **Escorpicamelo** | camelo + escorpião | caramelo, cauda marrom, ferrão laranja | chefe | **2,59 — o maior** | 22 | o chefe novo. **Entra e bebe o tonel inteiro** (seco uns 15 s; as corcovas enchem); com meia vida as **corcovas murcham** e ele fica rápido e crava a cauda num canteiro de cada vez |
+
+O que faz cada um ser fofo, e que vale não perder num ajuste: os olhos
+grandes do Libelagarto; a carinha de ouriço e o narizinho preto do
+Formiguriço; a lingüinha rosa do Tamandubelha; os dentinhos e o focinhão rosa
+do Mosquipótamo; os olhos de caracol na ponta dos talos do Rinocaracol; as
+orelhas caídas e o rabinho de mola da Javaponja; o beiço caído e os cílios do
+camelo.
 
 A coluna `encharque` é a que está no código (`FichaDePraga.encharque`) e vale em
 **jatos do regador básico**. Velocidade e comportamento ainda são projeto: os
@@ -479,7 +520,7 @@ Nenhuma praga está numa cena ainda: sem um script, não haveria como VER o que
 foi feito, e o que não se vê não se ajusta.
 
 ```bash
-node scripts/pragas.mjs /tmp/pg   # enfileira as seis e tira retrato de cada uma
+node scripts/pragas.mjs /tmp/pg   # enfileira as treze, retrato de cada uma e a dupla do lado para o tamanho
 ```
 
 Ele mede cada bicho pela **geometria desenhada** (os oito cantos da caixa de
@@ -1239,7 +1280,7 @@ trabalha rápido") virando geometria.
 | 1 | a skill `aristory-habilidade`, para carta nova sair barato | **pronto** |
 | 2 | a quest do adubo (banco → Noel → Josefina → convite) | **pronto** (§2) |
 | 2.5 | as três portas na parede do fundo, e os canteiros puxados para lá | **pronto** (§8) |
-| 2.7 | **os modelos das seis pragas**, para poder olhar e ajustar antes da lógica | **pronto** (§5) |
+| 2.7 | **os modelos das seis pragas**, para poder olhar e ajustar antes da lógica | **pronto** (§5) — e depois os **sete da segunda leva** (da 15ª onda em diante) |
 | 2.8 | **a entrada**: pegar o regador, regar 3 canteiros, a Josefina chegar | **pronto** (§3) |
 | 2.9 | **o modelo do regador**, já pronto para as melhorias mudarem a peça | **pronto** (§4) |
 | 2.95 | **a Josefina entra junto**, passeia lá dentro, pede confirmação e leva o parceiro para o posto de trás | **pronto** (§3) |
@@ -1248,7 +1289,7 @@ trabalha rápido") virando geometria.
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | **pronto** (a tela do fim conta os canteiros; o pagamento é a 9) |
 | 5 | gota no chão e a tela de três cartas (a conta de nível e o sorteio já existem) | **pronto** (a peça; liga na rodada junto com a 3) |
 | 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, com o som de cada carta |
-| 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **em parte**: as cinco ondas rodam com os seis bichos, com o aviso do grandão; o JEITO de cada um (o Gafanhopo pular o jato, o Tucanguru saltar a cerca…) a fazer |
+| 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **em parte**: as trinta ondas rodam com os treze bichos (a segunda leva estreia da 15ª), com o aviso do grandão; o JEITO de cada um (o Gafanhopo pular o jato, o Tucanguru saltar a cerca…) a fazer |
 | 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | **pronto** (§6, "Como as cartas de jardineiro e de jardim agem") |
 | 9 | o pagamento, a memória e a fala de despedida da Josefina | **em parte**: a tela do fim (números e cartas) e o livro das cartas estão prontos; pagamento e memória a fazer |
 
@@ -1291,10 +1332,11 @@ catálogo e a `FichaDaRodada`), `baralho.ts` (a `MaoDeCartas`, o registro das
 cartas pegas e o sorteio) e `progressao.ts` (curva, gotas e ondas). Lógica
 pura, sem cena: a rodada vai importar isto pronto.
 
-**As seis pragas** (`src/world/bichosDoJardim.ts`): `lagartejo()`, `gafanhopo()`,
-`coelhatu()`, `tucanguru()`, `preguipolvo()` e `maeLagartejo()`, mais o catálogo
-`PRAGAS` que liga cada uma ao tier e ao encharque. São só os MODELOS — nenhuma
-delas anda, ataca ou aparece numa cena ainda (§5).
+**As treze pragas** (`src/world/bichosDoJardim.ts`): `lagartejo()`, `gafanhopo()`,
+`coelhatu()`, `tucanguru()`, `preguipolvo()` e `maeLagartejo()`, e a segunda
+leva — `libelagarto()`, `formigurico()`, `tamandubelha()`, `mosquipotamo()`,
+`rinocaracol()`, `javaponja()` e `escorpicamelo()` —, mais o catálogo `PRAGAS`
+que liga cada uma ao tier e ao encharque (§5).
 
 **A rodada** (`src/minigames/jardim/rodada.ts`, a `RodadaDoJardim`) — a etapa
 3. Começa quando a Josefina manda ("Água neles, meu bem!"), no fim de
@@ -1415,7 +1457,8 @@ em vez de inventar uma resposta e seguir.
    mão ruim sem virar uma quarta escolha grátis.
 2. ~~**Carta repetida.**~~ **Respondida pelo Renan: carta não se repete.** A
    comum que empilhava virou série de três degraus (§6).
-3. **A chefe.** (Hoje: ela entra em toda rodada, nas ondas 5, 10, 15, 20, 25 e 30.)
+3. **A chefe.** (Hoje: a Mãe-Lagartejo entra nas ondas 5, 10, 15, 20 e 30, e o
+   Escorpicamelo nas ondas 25 e 30.)
    A Mãe-Lagartejo entra na onda 5 de toda rodada, ou só a partir
    da segunda vez que se joga? A favor da segunda: a primeira rodada é a que
    ensina, e chefe na estreia é onde roguelite costuma perder gente.

@@ -235,11 +235,22 @@ console.log('\n— as ondas');
 {
   const { ONDAS, PRAGAS, ORDEM_DOS_TIERS } = m;
   const tierDe = (id) => ORDEM_DOS_TIERS.indexOf(PRAGAS.find((p) => p.id === id).tier);
-  const estreias = ONDAS.map((o) => o.estreia).filter(Boolean);
+  /*
+   * AS ESTREIAS VÊM EM DUAS LEVAS — as seis primeiras pragas nas ondas 1 a 4,
+   * e a segunda leva da 15ª em diante (pedido do Renan). Dentro de cada leva,
+   * do mais fraco para o mais forte.
+   */
+  const levas = [ONDAS.slice(0, 14), ONDAS.slice(14)].map((l) => l.map((o) => o.estreia).filter(Boolean));
   ok(
-    estreias.every((id, i) => i === 0 || tierDe(id) >= tierDe(estreias[i - 1])),
-    `estreias em ordem de tier: ${estreias.join(' → ')}`,
+    levas.every((ids) => ids.every((id, i) => i === 0 || tierDe(id) >= tierDe(ids[i - 1]))),
+    `estreias em ordem de tier, em cada leva: ${levas.map((l) => l.join(' → ')).join(' | ')}`,
   );
+  ok(levas[1].length >= 2 && ONDAS.slice(0, 14).every((o, i) => i < 5 || !o.estreia),
+    'a segunda leva só estreia da 15ª onda em diante');
+  // todo bicho do catálogo entra na rodada em algum momento
+  const entram = new Set(ONDAS.flatMap((o) => [o.estreia, ...(o.anunciados ?? []).map((a) => a.praga)]));
+  const fora = PRAGAS.filter((p) => !entram.has(p.id)).map((p) => p.id);
+  ok(fora.length === 0, `toda praga do catálogo entra numa onda${fora.length ? ` (faltam: ${fora.join(', ')})` : ''}`);
   ok(ONDAS[0].estreia === 'lagartejo' && ONDAS[0].quantos === 1, 'a onda 1 e so o Lagartejo, um de cada vez');
   // gotas sobem com o tier, e nunca mentem sobre o encharque
   const porTier = ORDEM_DOS_TIERS.map((t) => PRAGAS.filter((p) => p.tier === t).map((p) => p.gotas));
@@ -285,11 +296,16 @@ console.log('\n— as ondas');
   ok(ONDAS.length === 30 && m.TOTAL_DE_ONDAS === 30, 'a rodada tem trinta ondas (a trigésima é a vitória)');
   ok(naQuinta >= 9 && naQuinta <= 12, 'as cinco primeiras ondas levam perto do nivel 10 (entre 9 e 12)');
   ok(media >= 30 && media <= 36, 'as trinta ondas terminam entre o nivel 30 e o 36 (o premio do 30 cabe na rodada)');
-  ok([10, 15, 20, 25, 30].every((n) => ONDAS[n - 1].anunciados.some((a) => a.praga === 'mae-lagartejo')),
-    'a Mãe-Lagartejo volta nas ondas 10, 15, 20, 25 e 30');
+  const chefeEm = (n) => ONDAS[n - 1].anunciados.filter((a) => PRAGAS.find((p) => p.id === a.praga).tier === 'chefe');
+  ok([10, 15, 20, 25, 30].every((n) => chefeEm(n).length > 0), 'tem chefe nas ondas 10, 15, 20, 25 e 30');
+  ok(chefeEm(25).some((a) => a.praga === 'escorpicamelo')
+    && ONDAS.slice(0, 24).every((o) => !(o.anunciados ?? []).some((a) => a.praga === 'escorpicamelo')),
+    'o Escorpicamelo estreia na 25ª onda');
+  ok(new Set(chefeEm(30).map((a) => a.praga)).size === 2, 'a 30ª, o fim da rodada, traz os dois chefes juntos');
   // da 6ª à 30ª a onda nunca fica mais fácil que a anterior: nem menos bicho,
   // nem leva menor, nem intervalo maior, nem menos grandão
-  const pesoDosGrandoes = (o) => (o.anunciados ?? []).filter((a) => a.praga === 'preguipolvo').length;
+  const pesoDosGrandoes = (o) => (o.anunciados ?? [])
+    .filter((a) => PRAGAS.find((p) => p.id === a.praga).tier === 'tanque').length;
   const naoAfrouxa = ONDAS.slice(5).every((o, i) => {
     const antes = ONDAS[4 + i];
     return o.total > antes.total && o.quantos >= antes.quantos && o.aCada <= antes.aCada

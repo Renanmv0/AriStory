@@ -16,7 +16,7 @@ em `docs/MINIGAME-JARDIM.md` §5; o teste é `scripts/pragas.mjs`.
 ```
 src/world/bichosDoJardim.ts   a geometria de cada praga + o catálogo PRAGAS
 src/palette.ts                a cor de cada uma (bloco `praga*`)
-scripts/pragas.mjs            enfileira as seis, fotografa e MEDE
+scripts/pragas.mjs            enfileira as treze, fotografa (com a dupla do lado) e MEDE
 docs/MINIGAME-JARDIM.md §5    o elenco, o que cada uma faz, e por quê
 ```
 
@@ -24,7 +24,7 @@ Aqui é **só geometria**: a praga não sabe que existe uma rodada. Quem faz ela
 andar, comer e fugir é `minigames/jardim/rodada.ts` — a velocidade, a mordida e
 o raio de cada uma estão na tabela `JEITO` do topo dele, e em qual onda cada
 uma entra está em `ONDAS` (`progressao.ts`). **Praga nova no jogo = a ficha
-aqui + uma linha em `JEITO` + entrar numa onda.** Hoje as seis andam do mesmo
+aqui + uma linha em `JEITO` + entrar numa onda.** Hoje as treze andam do mesmo
 jeito; o comportamento próprio de cada uma (§5 do plano) ainda não existe.
 
 ---
@@ -44,7 +44,8 @@ praga do canteiro dos outros é uma coisa boa de fazer.
 
 1. **Nenhum bicho com nome entra na receita.** O Capy é capivara, a Josefina é
    tartaruga, o Noel é peru, o Jean-Luc é pato, o Walter é cachorro, o Pelusa é
-   gato, o Cookie, a Gina, a Estella, o Mano. Eles são **gente**, e gente não
+   gato, o Cookie é elefante, a Gina é girafa, a Estella é ovelha, o Mano é
+   pinguim. Eles são **gente**, e gente não
    vira alvo — usar qualquer um como metade de uma praga faria o jogador regar
    uma caricatura de alguém de quem ele gosta.
 2. **A mistura tem que ser lida em dois segundos.** "Lagarta + caranguejo" só
@@ -56,8 +57,14 @@ praga do canteiro dos outros é uma coisa boa de fazer.
    comer a horta —, pela garra laranja e pelo jeito de andar. Não precisa estar
    na cara. Ver §4.
 
-As dez metades já usadas: lagarta, caranguejo, gafanhoto, sapo, coelho, tatu,
-tucano, canguru, preguiça e polvo. Nenhuma pertence a ninguém.
+As vinte e quatro metades já usadas: lagarta, caranguejo, gafanhoto, sapo,
+coelho, tatu, tucano, canguru, preguiça e polvo (a primeira leva); lagartixa,
+libélula, formiga, ouriço, tamanduá, abelha, hipopótamo, mosquito, rinoceronte,
+caracol, javali, esponja-do-mar, camelo e escorpião (a segunda). Nenhuma
+pertence a ninguém.
+
+**E três bichos que não entram nunca, em forma nenhuma** (decisões do Renan):
+**rato** (o Ari odeia de verdade), **golfinho** (fora do escopo) e **barata**.
 
 ---
 
@@ -106,10 +113,16 @@ o teste cobra:
 
 | tier | como ele é | referência de hoje |
 |---|---|---|
-| **fraco** | baixo e rasteiro, **abaixo de 2/3 do médio mais baixo** | 0,38 e 0,44 de altura |
-| **médio** | altura de joelho, com uma saliência única (orelha, bico) | 1,01 e 1,23 |
-| **tanque** | o mais **LARGO** da turma — largura lê como peso | 2,1 de envergadura |
-| **chefe** | o mais **ALTO** e o mais comprido | 1,36 de altura |
+| **fraco** | baixo e rasteiro, **abaixo de 2/3 do médio mais baixo** | 0,30 (Formiguriço) a 0,44 |
+| **médio** | altura de joelho, com uma saliência única (orelha, bico) | 1,01 a 1,23 |
+| **tanque** | o mais **LARGO** da turma — largura lê como peso | 2,1 de envergadura; o Rinocaracol chega a 1,67 de altura |
+| **chefe** | o mais **ALTO** e o mais comprido | 1,36 (a Mãe) e **2,59** (o Escorpicamelo, o mais alto de todos) |
+
+**O pedido do Renan é VARIAR os tamanhos**, e não só separar os tiers: mais
+pequenininho e mais grandão, os dois. Por isso a `monta` de uma ficha pode
+encolher mais que o tier — o Formiguriço é `ESCALA_DO_TIER.fraco * 0.72`, um
+palmo de bicho. A foto `-tamanhos-*.png` do teste põe a dupla do lado: é por
+ela que se julga tamanho, e não pelo número.
 
 Quanta água ainda falta quem diz é a **barra de vida em cima da cabeça**, que o
 minigame desenha. Por isso cada ficha traz `alturaDaBarra`, em metros do chão:
@@ -170,6 +183,16 @@ na tela, e aí o jogador sabe que vem praga mas não sabe QUAL.
 | Tucanguru | azul, bico amarelo | `pragaTucanguru` + `pragaTucanguruBico` |
 | Preguipolvo | musgo | `pragaMusgo` / `…Escuro` |
 | Mãe-Lagartejo | vinho | `pragaMae` / `…Escura` / `…Crosta` |
+| Libelagarto | rosa-chiclete | `pragaLibelagarto` / `…Escuro` |
+| Formiguriço | ameixa escuro, espinho caramelo | `pragaFormigurico` / `…Escuro` / `…Espinho` |
+| Tamandubelha | mel, listra quase preta | `pragaTamandubelha` + `pragaTamandubelhaListra` |
+| Mosquipótamo | lilás-azulado, focinho rosa | `pragaMosquipotamo` / `…Escuro` / `…Focinho` |
+| Rinocaracol | cinza, concha caramelo | `pragaRinocaracol` / `…Escuro` + `pragaConcha` / `…Escura` |
+| Javaponja | amarelo-gema, furo marrom | `pragaJavaponja` / `…Escuro` / `…Furo` |
+| Escorpicamelo | caramelo, cauda marrom | `pragaCamelo` / `…Escuro` / `…Claro` + `pragaEscorpiao` / `…Claro` |
+
+As asas (libélula, abelha, mosquito) dividem `pragaAsa` e `pragaAsaNervura`, e
+a língua do Tamandubelha é `pragaLingua`.
 
 **As três regras de cor:**
 
@@ -184,7 +207,7 @@ na tela, e aí o jogador sabe que vem praga mas não sabe QUAL.
    Desceu para um ferrugem escuro e as placas subiram para um creme mais claro
    que o piso.
 
-O que as seis dividem é só três coisas: `pragaOlho` e `pragaPupila`,
+O que todas dividem é só três coisas: `pragaOlho` e `pragaPupila`,
 `pragaBarriga` (o claro do papo, do focinho, da ventosa) e **`pragaGarra`**, o
 laranja de aviso que diz "isto machuca a planta" — pinça, unha, dente, bico.
 
@@ -250,6 +273,34 @@ opcional (§8).
 
 ---
 
+### Da segunda leva
+
+- **Perna comprida lê como aranha.** O primeiro Formiguriço tinha seis pernas
+  finas de joelho alto em volta de uma bola escura, e na foto era uma aranha.
+  Perna curta, quase escondida, e a bola de espinho e a carinha na frente
+  passam a mandar na silhueta.
+- **Asa estreita e levantada vira faca.** As asas do Libelagarto com 0,4 rad de
+  subida ficavam de perfil na câmera e liam como quatro lâminas espetadas.
+  Largas e quase deitadas (0,16), mostram a lâmina inteira.
+- **Cone em pé na cabeça é chifre.** A orelha em cone da Javaponja e a orelha
+  comprida e escura do camelo liam como chifre. Orelha de bicho fofo é uma
+  folha achatada ou uma bolinha, da cor do pelo.
+- **Cone comprido na ponta da cauda é espeto.** A ponta da cauda de lagartixa
+  virou duas bolinhas subindo.
+- **Amarelo frio vira oliva** na sombra do toon, e oliva é quase folha: o da
+  Javaponja esquentou para gema.
+- **Muitas peças pequenas mudam a "cor principal".** O teste escolhe a cor que
+  pinta mais malhas: as doze unhas claras do Rinocaracol fizeram dele um bicho
+  "creme". Menos unha, e as pernas e o rabo na cor dele.
+
+**Dois ajudantes no topo do arquivo**, para a segunda leva não repetir a conta
+de ângulo: `osso(a, b, raio, material)` põe uma cápsula de uma junta a outra
+(perna desenhada por junta, e não por ângulo, é o fim da pegadinha do sinal do
+lado esquerdo), e `asa(comprimento, largura, s)` é a asa deitada com nervura.
+`apontar(peça, direção)` vira o `+Y` de um cone ou cilindro para onde se quer.
+
+---
+
 ## 8. Validar
 
 ```bash
@@ -260,7 +311,9 @@ node scripts/pragas.mjs /tmp/pg
 
 Nenhuma praga está numa cena: **sem este script não haveria como olhar para
 elas**, e praga que não se consegue olhar não se consegue ajustar. Ele enfileira
-as seis no terreiro da estufa, tira um retrato de cada uma, uma foto da fila e
+as treze no terreiro da estufa (as seis numa fila, as sete da segunda leva na de
+trás), tira um retrato de cada uma, duas fotos da segunda leva com a dupla do
+lado para julgar o tamanho, uma foto de cada fila e
 uma da fila girada.
 
 Ele **mede pela geometria desenhada** — os oito cantos da caixa de cada malha

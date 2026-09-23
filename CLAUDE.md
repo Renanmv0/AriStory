@@ -129,7 +129,7 @@ node scripts/estella.mjs /tmp/es    # a Estella: fica no posto, aparece inteira 
 node scripts/estufa.mjs  /tmp/ef    # a estufa da Josefina: a porta nos dois sentidos, o terreiro vazio e as quatro bocas livres
 node scripts/adubo.mjs   /tmp/ad    # a quest que abre a estufa: sementes no banco, o Noel troca por adubo, a Josefina destranca
 node scripts/regador.mjs /tmp/rg    # o regador: os 3 estagios, cada melhoria mudando a peca, e pegar-regar-a Josefina chegar
-node scripts/pragas.mjs  /tmp/pg    # as seis pragas do jardim: retrato de cada uma, e a silhueta dizendo o tier
+node scripts/pragas.mjs  /tmp/pg    # as treze pragas do jardim: retrato de cada uma, a silhueta dizendo o tier e a dupla do lado para o tamanho
 node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena, a mesinha servida pelo Mano, o deslize e a patinacao
 node scripts/cartas.mjs            # as cartas do jardim: nenhuma repete em mil rodadas, a curva de nivel e as ondas (sem navegador)
 node scripts/gotas.mjs   /tmp/gt    # as gotas no chao e a tela das tres cartas: pisar pega, sobe de nivel, escolhe em dois tempos, e uma mesa de cada raridade no computador e no celular

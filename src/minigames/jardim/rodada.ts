@@ -90,6 +90,15 @@ const JEITO: Record<string, { velocidade: number; mordida: number; raio: number 
   tucanguru: { velocidade: 1.5, mordida: 1.2, raio: 0.45 },
   preguipolvo: { velocidade: 0.45, mordida: 2.4, raio: 0.9 },
   'mae-lagartejo': { velocidade: 0.55, mordida: 4, raio: 0.8 },
+  // a segunda leva (da 15ª onda em diante). O jeito próprio de cada um (§5)
+  // ainda não existe: por enquanto eles só andam e comem, como os seis
+  libelagarto: { velocidade: 1.45, mordida: 1, raio: 0.3 },
+  formigurico: { velocidade: 1.3, mordida: 0.8, raio: 0.22 },
+  tamandubelha: { velocidade: 1.4, mordida: 1.4, raio: 0.5 },
+  mosquipotamo: { velocidade: 1.3, mordida: 1.3, raio: 0.5 },
+  rinocaracol: { velocidade: 0.5, mordida: 2.8, raio: 0.95 },
+  javaponja: { velocidade: 0.6, mordida: 2.2, raio: 0.9 },
+  escorpicamelo: { velocidade: 0.6, mordida: 4.5, raio: 0.9 },
 };
 
 // ------------------------------------------------------------------ a planta
@@ -983,7 +992,7 @@ export class RodadaDoJardim {
       const portao = `portão ${NOME_DO_PORTAO[e.porta]}`;
       this.g.toast(
         ficha?.tier === 'chefe'
-          ? `Josefina: “É a ${ficha.nome}! Pelo ${portao}!”`
+          ? `Josefina: “É ${ficha.artigo ?? 'o'} ${ficha.nome}! Pelo ${portao}!”`
           : `Josefina: “Vem um grandão pelo ${portao}!”`,
         '🐢',
       );

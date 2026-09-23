@@ -1,5 +1,5 @@
 /**
- * AS PRAGAS DA ESTUFA — enfileira as seis e tira retrato de cada uma.
+ * AS PRAGAS DA ESTUFA — enfileira as treze e tira retrato de cada uma.
  *
  * Elas são do minigame do jardim (`docs/MINIGAME-JARDIM.md` §5), que ainda não
  * existe: nenhuma delas está numa cena, ninguém as instancia, e sem este script
@@ -8,7 +8,8 @@
  *
  * O que ele guarda, além das fotos:
  *
- * - AS SEIS EXISTEM e montam sem erro de console;
+ * - AS TREZE EXISTEM e montam sem erro de console (as seis da primeira leva,
+ *   numa fila, e as sete da segunda — as das ondas 15 em diante — na de trás);
  * - CADA UMA NASCE COM A BASE EM `y = 0` e centrada em `x = 0, z = 0`, que é o
  *   contrato do kit inteiro. Bicho que nasce enterrado ou flutuando só aparece
  *   quando ele já está andando numa onda, e aí é tarde;
@@ -26,10 +27,13 @@ const OUT = process.argv[2] ?? './pragas';
 const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-/** onde a fila é montada: o terreiro da estufa, que é plano e vazio */
+/** onde as filas são montadas: o terreiro da estufa, que é plano e vazio */
 // 3,6 de passo: o chefe tem 3 de comprimento, e com 2 ele encostava no tanque
 // na foto da fila — o que e justamente o que o teste diz que nao pode.
-const FILA = { x: -9, z: -1.5, passo: 3.6 };
+const FILA = { x: -9, z: -0.5, passo: 3.6 };
+/** a segunda leva, na fila de trás: sete bichos, então o passo encurta */
+const SEGUNDA = ['libelagarto', 'formigurico', 'tamandubelha', 'mosquipotamo', 'rinocaracol', 'javaponja', 'escorpicamelo'];
+const FILA2 = { x: -9.3, z: -5.6, passo: 3.1 };
 
 const browser = await chromium.launch({
   executablePath: CHROME,
@@ -49,7 +53,7 @@ await page.waitForTimeout(3600);
  * mundo — a mesma conta que o `estufa.mjs` usa. Medir pela peça desenhada, e
  * não por um raio inventado, já evitou dois defeitos que passaram verde.
  */
-const medidas = await page.evaluate(([x0, z0, passo]) => {
+const medidas = await page.evaluate(([x0, z0, passo, segunda, x2, z2, passo2]) => {
   const w = window.jogo.current.world;
   const pragas = window.aristoryPragas;
   const medir = (o) => {
@@ -76,11 +80,15 @@ const medidas = await page.evaluate(([x0, z0, passo]) => {
     return b;
   };
 
-  return pragas.map((ficha, i) => {
-    const x = x0 + i * passo;
+  let i1 = 0;
+  let i2 = 0;
+  return pragas.map((ficha) => {
+    const nova = segunda.includes(ficha.id);
+    const x = nova ? x2 + (i2++) * passo2 : x0 + (i1++) * passo;
+    const zf = nova ? z2 : z0;
     // eles nascem olhando para `+Z`, que é o lado de CÁ na câmera isométrica.
     // A primeira versão girava `Math.PI` e fotografava a nuca das seis.
-    const bicho = w.add(w.place(ficha.monta(1, 0.4), x, 0, z0));
+    const bicho = w.add(w.place(ficha.monta(1, 0.4), x, 0, zf));
     // guardadas por id para o retrato: a câmera segue o JOGADOR, então focar
     // nela é o único jeito de enquadrar o bicho e não a dupla
     (window.__pragas ??= {})[ficha.id] = bicho;
@@ -92,13 +100,14 @@ const medidas = await page.evaluate(([x0, z0, passo]) => {
       encharque: ficha.encharque,
       alturaDaBarra: ficha.alturaDaBarra,
       x,
+      fila: nova ? 2 : 1,
       // a base tem que encostar no chão, e o centro tem que ser o centro
       pousa: +b.miny.toFixed(3),
       altura: +(b.maxy - b.miny).toFixed(2),
       largura: +(b.maxx - b.minx).toFixed(2),
       comprimento: +(b.maxz - b.minz).toFixed(2),
       desvioX: +(((b.minx + b.maxx) / 2) - x).toFixed(2),
-      desvioZ: +(((b.minz + b.maxz) / 2) - z0).toFixed(2),
+      desvioZ: +(((b.minz + b.maxz) / 2) - zf).toFixed(2),
       malhas: (() => { let n = 0; bicho.traverse((c) => { if (c.isMesh) n += 1; }); return n; })(),
       /**
        * A COR PRINCIPAL: a que pinta mais malhas do bicho.
@@ -118,7 +127,7 @@ const medidas = await page.evaluate(([x0, z0, passo]) => {
       })(),
     };
   });
-}, [FILA.x, FILA.z, FILA.passo]);
+}, [FILA.x, FILA.z, FILA.passo, SEGUNDA, FILA2.x, FILA2.z, FILA2.passo]);
 
 // ------------------------------------------------------------------- fotos
 // a dupla sai de cena: ela é do tamanho de três pragas e tapa a fila inteira
@@ -144,20 +153,45 @@ const enquadrar = async (alvo, zoom) => {
  * apoio e abre o zoom — é mais barato que inventar um objeto vazio só para
  * apontar a câmera.
  */
-await enquadrar(medidas[2].id, 11);
+await enquadrar('lagartejo', 11);
 await page.screenshot({ path: `${OUT}-fila.png` });
+await enquadrar('mosquipotamo', 11);
+await page.screenshot({ path: `${OUT}-fila-nova.png` });
+
+/**
+ * A SEGUNDA LEVA AO LADO DA DUPLA: o pedido era variar os tamanhos, e tamanho
+ * só se julga com alguém de referência do lado. A dupla fica ATRÁS da fila
+ * (na frente, ela tapava o Formiguriço, que é um palmo de bicho): uma foto
+ * com os pequenos e outra com os grandes.
+ */
+for (const [nome, entre, foco, zoom] of [
+  ['pequenos', 1.5, 'formigurico', 5.5],
+  ['grandes', 5.5, 'javaponja', 8],
+]) {
+  await page.evaluate(([x, z]) => window.jogo.debugPlace(x, z, 0), [FILA2.x + entre * FILA2.passo, FILA2.z - 1.4]);
+  await page.waitForTimeout(700);
+  await enquadrar(foco, zoom);
+  await page.screenshot({ path: `${OUT}-tamanhos-${nome}.png` });
+}
+await page.evaluate(() => window.jogo.debugPlace(0, 9, 0));
+await page.waitForTimeout(500);
 
 // e um retrato de cada uma, de perto
+const ZOOM = { formigurico: 1.5, escorpicamelo: 5.2, rinocaracol: 4, javaponja: 4 };
 for (const m of medidas) {
-  await enquadrar(m.id, m.tier === 'chefe' || m.tier === 'tanque' ? 4 : 2.6);
+  await enquadrar(m.id, ZOOM[m.id] ?? (m.tier === 'chefe' || m.tier === 'tanque' ? 4 : 2.6));
   await page.screenshot({ path: `${OUT}-${m.id}.png` });
 }
 
-// e a fila girada, para conferir que nenhuma delas só funciona de frente
-await enquadrar(medidas[2].id, 11);
+// e as filas giradas, para conferir que nenhuma delas só funciona de frente
+await enquadrar('lagartejo', 11);
 await page.keyboard.press('KeyQ');
 await page.waitForTimeout(1600);
 await page.screenshot({ path: `${OUT}-girada.png` });
+await enquadrar('mosquipotamo', 11);
+await page.screenshot({ path: `${OUT}-girada-nova.png` });
+await enquadrar('escorpicamelo', 5.2);
+await page.screenshot({ path: `${OUT}-escorpicamelo-girado.png` });
 void meio;
 
 // ------------------------------------------------------------------ relatório
@@ -174,7 +208,7 @@ console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 const acha = (id) => medidas.find((m) => m.id === id);
 const problemas = [];
 if (erros.length) problemas.push('erros de console');
-if (medidas.length !== 6) problemas.push(`o catálogo tem ${medidas.length} pragas, e não 6`);
+if (medidas.length !== 13) problemas.push(`o catálogo tem ${medidas.length} pragas, e não 13`);
 
 for (const m of medidas) {
   // o contrato do kit: base em y = 0, centrada na origem
@@ -199,9 +233,11 @@ for (const m of medidas) {
  * NENHUMA ENCOSTA NA OUTRA na fila — a prova barata de que nenhuma ficou
  * grande demais para conviver com as outras no terreiro.
  */
-for (let i = 1; i < medidas.length; i++) {
-  const a = medidas[i - 1];
-  const b = medidas[i];
+const emFila = [1, 2].flatMap((f) => {
+  const fila = medidas.filter((m) => m.fila === f).sort((a, b) => a.x - b.x);
+  return fila.slice(1).map((b, i) => [fila[i], b]);
+});
+for (const [a, b] of emFila) {
   const vao = (b.x - b.largura / 2) - (a.x + a.largura / 2);
   if (vao < 0.4) {
     problemas.push(`"${a.id}" e "${b.id}" quase se encostam na fila (vão de ${vao.toFixed(2)})`);

@@ -123,29 +123,50 @@ const ESTREIAS: readonly OndaDoJardim[] = [
 ];
 
 /**
+ * A SEGUNDA LEVA DE ESTREIAS (pedido do Renan: bicho novo para as ondas
+ * difíceis, a partir da 15ª). A mesma regra da primeira: um por onda, do mais
+ * fraco para o mais forte, e quem estreia entra sozinho nos primeiros `SOLO`
+ * segundos. Os dois pequenos e os dois médios estreiam aqui; os grandões não
+ * "estreiam" (tanque e chefe não vêm no sorteio) — eles entram ANUNCIADOS, e a
+ * primeira vez de cada um está em `depoisDasEstreias`.
+ */
+const ESTREIAS_TARDIAS: Readonly<Record<number, string>> = {
+  15: 'libelagarto',
+  16: 'formigurico',
+  17: 'tamandubelha',
+  18: 'mosquipotamo',
+};
+
+/**
  * DA SEXTA À TRIGÉSIMA — o limite da rodada, pedido do Renan: vencer é
- * aguentar trinta ondas (eram vinte). Ninguém mais estreia; o que sobe é o
- * ritmo, devagar, e os grandões:
+ * aguentar trinta ondas (eram vinte). Da 6ª à 14ª ninguém estreia; o que sobe
+ * é o ritmo, devagar, e os grandões:
  *
  * - **leva**: 3 bichos por vez, um a mais a cada quatro ondas, até 5 na 13ª;
  *   depois da 20ª, um a mais a cada cinco (6 na 25ª, 7 na 30ª);
  * - **intervalo**: encurta 0,05 s por onda até 1,8 s (na 19ª); depois da 20ª
  *   encurta mais devagar, 0,02 s por onda, até 1,6 s na 30ª;
  * - **quantos**: três bichos a mais por onda, o tempo todo (48 → 120);
- * - **grandões**: um Preguipolvo anunciado por onda, dois da 12ª em diante e
- *   três da 22ª; a Mãe-Lagartejo volta nas ondas redondas (10, 15, 20, 25 e
- *   30), e nas que terminam em zero depois da 10ª (20 e 30) vem em dupla.
+ * - **grandões**: um tanque anunciado por onda, dois da 12ª em diante e três
+ *   da 22ª. Até a 18ª todos são Preguipolvo; da 19ª o segundo vira o
+ *   Rinocaracol, e o terceiro (da 22ª) é a Javaponja;
+ * - **chefe**: nas ondas redondas. A Mãe-Lagartejo na 10ª, 15ª e 20ª (duas na
+ *   20ª); o Escorpicamelo estreia na 25ª, e a 30ª — o fim da rodada — traz
+ *   os dois chefes juntos.
  */
 function depoisDasEstreias(n: number): OndaDoJardim {
   const alem = n - 5;
   const depoisDaVigesima = Math.max(0, n - 20);
   const anunciados: Array<{ praga: string; quando: number }> = [{ praga: 'preguipolvo', quando: 0.35 }];
-  if (n >= 12) anunciados.push({ praga: 'preguipolvo', quando: 0.7 });
-  if (n >= 22) anunciados.push({ praga: 'preguipolvo', quando: 0.15 });
-  if (n % 5 === 0) anunciados.push({ praga: 'mae-lagartejo', quando: 1 });
-  if (n >= 20 && n % 10 === 0) anunciados.push({ praga: 'mae-lagartejo', quando: 0.5 });
+  if (n >= 12) anunciados.push({ praga: n >= 19 ? 'rinocaracol' : 'preguipolvo', quando: 0.7 });
+  if (n >= 22) anunciados.push({ praga: 'javaponja', quando: 0.15 });
+  if (n % 5 === 0) {
+    if (n < 25) anunciados.push({ praga: 'mae-lagartejo', quando: 1 });
+    if (n === 20 || n === 30) anunciados.push({ praga: 'mae-lagartejo', quando: 0.5 });
+    if (n >= 25) anunciados.push({ praga: 'escorpicamelo', quando: 1 });
+  }
   return {
-    estreia: null,
+    estreia: ESTREIAS_TARDIAS[n] ?? null,
     quantos: Math.min(5, 3 + Math.floor(alem / 4)) + Math.floor(depoisDaVigesima / 5),
     aCada: depoisDaVigesima > 0
       ? Math.max(1.6, 1.8 - depoisDaVigesima * 0.02)
