@@ -53,6 +53,7 @@ for (let i = 0; i < 40; i++) {
   await page.waitForTimeout(250);
 }
 await page.evaluate(() => { const r = window.jogo.current.world.root.userData.rodada; r.escalaDoTempo = 3; r.ondasDaRodada = 1; });
+const musicaNaRodada = await page.evaluate(() => window.jogo.climaDaMusica);
 const estado = () => page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
 const pontosAcesos = () => page.evaluate(() => window.jogo.current.world.interactables.filter((p) => p.enabled).length);
 
@@ -195,6 +196,9 @@ ok(await pontosAcesos() > 0, 'os pontos da cena religam');
 ok(await page.locator('.painel-jardim.show').count() === 0, 'o painel some');
 ok(/espantados/.test(telaDoFim), `a tela do fim conta a rodada (${telaDoFim.replace(/\s+/g, ' ').trim()})`);
 ok(!!fim, 'depois dela a Josefina fala do fim da rodada');
+ok(musicaNaRodada === 'rodada-do-jardim', `na rodada toca a música da defesa (${musicaNaRodada})`);
+const musicaDepois = await page.evaluate(() => window.jogo.climaDaMusica);
+ok(musicaDepois === 'estufa', `no fim volta a música da estufa (${musicaDepois})`);
 await page.screenshot({ path: `${OUT}-fim.png` });
 
 /*

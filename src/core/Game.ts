@@ -1228,6 +1228,15 @@ export class Game implements GameAPI {
   private jardimNaTela = false;
   private ajudaPedida = false;
 
+  trocarMusica(clima: string | null): void {
+    this.audio.setClima(clima ?? this.save.scene);
+  }
+
+  /** o clima da música tocando agora — o teste confere a troca por aqui */
+  get climaDaMusica(): string {
+    return this.audio.clima;
+  }
+
   pedidoDeAjudaDoPar(): boolean {
     const pediu = this.ajudaPedida;
     this.ajudaPedida = false;

@@ -537,6 +537,12 @@ export interface GameAPI {
    */
   pedidoDeAjudaDoPar(): boolean;
   /**
+   * TROCA A MÚSICA por um clima de `CLIMAS` que não é de cena (a defesa da
+   * estufa). `null` volta para o clima da cena atual. A troca espera o
+   * compasso fechar, como toda virada de clima.
+   */
+  trocarMusica(clima: string | null): void;
+  /**
    * VIRA O JOGADOR PARA UM PONTO enquanto ele está PARADO — é o regador da
    * rodada apontando para o bicho que ele rega. Andando, quem manda no giro
    * continua sendo a direção da tecla. `null` solta.

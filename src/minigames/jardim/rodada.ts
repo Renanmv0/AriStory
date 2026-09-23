@@ -537,6 +537,8 @@ export class RodadaDoJardim {
 
     this.g.showExperiencia(nivelDasGotas(0));
     this.enquadrarRodada();
+    // a música da defesa: fofa, mas com pressa (a vitrine é para olhar, fica a da cena)
+    if (!this.vitrine) this.g.trocarMusica('rodada-do-jardim');
     if (this.vitrine) {
       this.onda = 1;
       this.plano = [];
@@ -595,6 +597,7 @@ export class RodadaDoJardim {
     this.g.bloquearTroca(false);
     // a câmera volta ao zoom da estufa (o 11 das cutscenes da cena)
     if (!this.vitrine) this.g.setZoom(11);
+    this.g.trocarMusica(null);
     this.ajudaResta = 0;
     this.parVoltando = false;
     this.pararGesto();

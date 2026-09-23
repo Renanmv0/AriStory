@@ -60,6 +60,20 @@ Cada cenário tem um clima em `CLIMAS`, escolhido pelo **id da cena**:
 Cena nova sem clima cai no `padrao`. Para dar um clima próprio, acrescente uma
 entrada com o `id` da cena.
 
+**Clima que não é de cena** — um minigame pode trocar a música enquanto dura,
+com `g.trocarMusica('id')`, e devolver a da cena com `g.trocarMusica(null)`. É
+o que a defesa da estufa faz (`'rodada-do-jardim'`, ligada e desligada pela
+`RodadaDoJardim`).
+
+**Tensão sem perder o fofo** (o pedido do Renan para a defesa da estufa): a
+marimba e os acordes com sétima continuam, e entram chaves opcionais no
+`Clima` — `reto` (sem suingue), `ostinato` (pizzicato em colcheias), `bumbo`
+(macio, no 1 e no 3) e `tique` (bloco de madeira, relógio de cozinha). O resto
+da tensão é harmonia: tom menor, e um dominante no fim do giro que pede
+resolução. Nada de metal, nada de percussão pesada. Cuidado com o pico: o
+bumbo cai junto com o baixo no primeiro tempo, e os dois somados estouravam o
+nível dos outros climas.
+
 Coisas que já custaram foto (ou melhor: ouvido):
 
 - **A melodia tem que caminhar**, não sortear nota solta: passo curto na escala
