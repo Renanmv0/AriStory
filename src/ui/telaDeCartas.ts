@@ -199,6 +199,15 @@ function escapar(s: string): string {
 }
 
 /**
+ * NÚMERO E UNIDADE NÃO SE SEPARAM na quebra de linha: "20 s", "2 m", "30 cm"
+ * ganham um espaço que não quebra. Sem isso a carta estreita deixava o "20" no
+ * fim de uma linha e o "s" sozinho no começo da outra.
+ */
+function colarUnidades(s: string): string {
+  return s.replace(/(\d) (s|m|cm)(?=[\s,.:;]|$)/g, '$1\u00a0$2');
+}
+
+/**
  * O HTML DE UMA CARTA. As classes carregam o desenho inteiro (`style.css`,
  * bloco "TELA DAS TRÊS CARTAS"): `r-*` é a raridade, `f-*` a família.
  *
@@ -235,7 +244,7 @@ function desenharCarta(c: CartaNaTela, i: number): string {
         <span class="corpo">
           <b class="nome">${escapar(c.nome)}</b>
           ${degraus}
-          <span class="texto">${escapar(c.texto)}</span>
+          <span class="texto">${colarUnidades(escapar(c.texto))}</span>
           ${selos ? `<span class="selos">${selos}</span>` : ''}
         </span>
         <span class="rodape"><span class="raridade">${raridadeNome}</span><span class="pedras">${pedras}</span></span>

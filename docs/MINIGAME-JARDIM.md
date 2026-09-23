@@ -541,11 +541,20 @@ corredor — ninguém está em dois lugares ao mesmo tempo.
 
 | carta | raridade | efeito |
 |---|---|---|
-| Chamar o Capy ⚙ | raro | uma vez por onda o Capy entra por 20 s e rega junto com você — exclui *O Capy salva-vidas* |
-| Chamar a Gina ⚙ | raro | uma vez por onda a Gina fica 20 s num portão, e por ali ninguém passa — exclui *Apito da Gina* |
-| Chamar o Walter ⚙ | raro | uma vez por onda o Walter corre 20 s latindo, e o bicho latido foge — exclui *O Walter de plantão* |
-| Chamar o Noel ⚙ | raro | uma vez por onda o Noel passa 20 s catando as gotas do chão para você |
+| Chamar o Capy ⚙ | raro | **atacante** — na primeira mordida da onda num canteiro, corre até lá e rega junto por 20 s — exclui *O Capy salva-vidas* |
+| Chamar a Gina ⚙ | raro | **barreira** — no começo da onda, tranca por 20 s o portão que vai vir mais cheio — exclui *Apito da Gina* |
+| Chamar o Walter ⚙ | raro | **protetor** — quando um canteiro chega na metade da vida, corre até lá latindo e espanta todo mundo ali (sem molhar, sem gota) — exclui *O Walter de plantão* |
+| Chamar o Noel ⚙ | raro | **catador** — com 8 gotas no chão, passa 20 s catando e trazendo para você |
 | **Mutirão do clube** ⚙ | lendário | quando a chefe chega, Capy, Gina, Walter e Noel entram juntos por 30 s |
+
+**Cada um age sozinho, e cada um é bom numa coisa** (decisão do Renan): ninguém
+aperta botão para chamar. O gatilho de cada um é a situação em que ele é bom, e
+cada um age uma vez por onda. São quatro funções que não se sobrepõem — o Capy
+tira vida, a Gina segura a entrada, o Walter salva canteiro sem dar gota, o
+Noel dá experiência — então dois chamados na mão nunca são a mesma carta duas
+vezes. As cartas de longe de cada um (*Apito da Gina*, *O Capy salva-vidas*, *O
+Walter de plantão*, *O Noel avisa*/*Adubo do Noel*) seguem a mesma função do
+bicho, só que sem ele entrar.
 
 **Pegar um chamado é uma cutscene — construída** (pedido do Renan). Na hora em
 que a carta é escolhida, a porta principal da estufa abre, o bicho entra, para
@@ -997,11 +1006,9 @@ em vez de inventar uma resposta e seguir.
 
 **Sobre as cartas (§6):**
 
-0. **Quando o chamado ajuda.** ~~Quando ele chega~~ **respondido pelo Renan:
-   ele entra numa cutscene na hora em que a carta é pega, e fica.** Falta só
-   quando ele AGE ("uma vez por onda, por 20 s"): a recomendação é que seja
-   sozinho, quando o primeiro bicho da onda encosta num canteiro; a outra opção
-   é um botão. Decide na etapa 3.
+0. ~~**Quando o chamado ajuda.**~~ **Respondida pelo Renan:** ele entra numa
+   cutscene na hora em que a carta é pega, fica, e **age sozinho**, cada um
+   com a sua função (tabela dos chamados, §6).
 1. **Reroll.** Vale a Josefina dar um "não gostei, mostra outras três" por
    rodada? A recomendação é que sim, e **um só** — o suficiente para salvar uma
    mão ruim sem virar uma quarta escolha grátis.

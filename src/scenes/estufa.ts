@@ -1371,7 +1371,7 @@ export const estufa: SceneDef = {
         ['Capy', 'Então eu vim ao lugar certo. Água é comigo.'],
         [R, 'Ele veio de apito e tudo.'],
         [A, 'E de óculos. É o Capy de serviço.'],
-        ['Capy', 'Uma vez por onda eu dou uma volta regando com vocês. No resto, fico ali de olho.'],
+        ['Capy', 'Mordeu canteiro, eu corro lá e molho junto. No resto, fico ali de olho.'],
       ],
       'chama-gina': [
         ['Gina', 'Licença, licença! Cuidado com a cabeça… a minha, no caso.'],

@@ -110,10 +110,10 @@ export type RegraDoJardim =
   | 'walter-de-plantao' // o bicho mais perto de um canteiro recua até a porta
   | 'adubo-do-noel'     // canteiro regado fica mais forte até o fim da onda
   // os CHAMADOS: o bicho do clube entra na estufa e ajuda por um tempo
-  | 'chama-capy'        // uma vez por onda o Capy entra por 20 s e rega junto com você
-  | 'chama-gina'        // uma vez por onda a Gina fecha um portão por 20 s com o pescoço
-  | 'chama-walter'      // uma vez por onda o Walter corre 20 s latindo, e bicho latido foge
-  | 'chama-noel'        // uma vez por onda o Noel passa 20 s juntando gotas para você
+  | 'chama-capy'        // ATACANTE: na 1ª mordida da onda num canteiro, corre lá e rega 20 s
+  | 'chama-gina'        // BARREIRA: no começo da onda, tranca 20 s o portão que vai vir mais cheio
+  | 'chama-walter'      // PROTETOR: canteiro na metade da vida, corre lá latindo e todos ali fogem
+  | 'chama-noel'        // CATADOR: com 8 gotas no chão, passa 20 s catando e trazendo pra você
   | 'mutirao-do-clube'; // na onda da chefe, os quatro entram juntos por 30 s
 
 /**
@@ -736,31 +736,37 @@ const JARDIM: CartaDoJardim[] = [
    * de cima (um efeito de longe, sem ninguém entrar), aqui o bicho aparece no
    * terreiro. Cada chamado exclui a carta do mesmo bicho que já fazia algo
    * na porta ou no corredor: ele não está em dois lugares ao mesmo tempo.
+   *
+   * CADA UM TEM UMA FUNÇÃO, e age SOZINHO (decisão do Renan): ninguém aperta
+   * botão para chamar. O gatilho de cada um é a situação em que ele é bom —
+   * o Capy ATACA (rega onde mordem), a Gina BARRA (tranca um portão), o
+   * Walter PROTEGE (espanta quem está num canteiro machucado, sem molhar e
+   * sem gota) e o Noel CATA (as gotas do chão). Uma vez por onda cada um.
    */
   {
     id: 'chama-capy', nome: 'Chamar o Capy', familia: 'jardim', raridade: 'raro',
-    icone: '🕶️', texto: 'Uma vez por onda o Capy vem por 20 s e rega junto com você',
+    icone: '🕶️', texto: 'Mordeu um canteiro? O Capy corre até lá e rega junto por 20 s',
     exclui: ['capy-salva-vidas'],
     chama: ['capy'],
     aplicar: (f) => f.regras.add('chama-capy'),
   },
   {
     id: 'chama-gina', nome: 'Chamar a Gina', familia: 'jardim', raridade: 'raro',
-    icone: '🦒', texto: 'Uma vez por onda a Gina fica 20 s num portão, e por ali ninguém passa',
+    icone: '🦒', texto: 'No começo da onda a Gina tranca 20 s o portão que vem mais cheio',
     exclui: ['apito-da-gina'],
     chama: ['gina'],
     aplicar: (f) => f.regras.add('chama-gina'),
   },
   {
     id: 'chama-walter', nome: 'Chamar o Walter', familia: 'jardim', raridade: 'raro',
-    icone: '🐶', texto: 'Uma vez por onda o Walter corre 20 s latindo, e quem ele late foge',
+    icone: '🐶', texto: 'Canteiro pela metade? O Walter corre latindo e espanta quem está ali',
     exclui: ['walter-de-plantao'],
     chama: ['walter'],
     aplicar: (f) => f.regras.add('chama-walter'),
   },
   {
     id: 'chama-noel', nome: 'Chamar o Noel', familia: 'jardim', raridade: 'raro',
-    icone: '🦃', texto: 'Uma vez por onda o Noel passa 20 s catando as gotas pra você',
+    icone: '🦃', texto: 'Com 8 gotas no chão, o Noel passa 20 s catando e trazendo pra você',
     chama: ['noel'],
     aplicar: (f) => f.regras.add('chama-noel'),
   },
