@@ -96,10 +96,10 @@ de `regras`. **Regra nova é DUAS coisas**: uma linha no tipo `RegraDoJardim`
 segunda, a carta existe, é escolhida e não faz nada — o pior bug possível
 numa tela de escolha.
 
-> Hoje o minigame (etapa 3 do plano) ainda não existe. As regras estão
-> declaradas e o sorteio funciona; quem obedece cada uma entra junto com a
-> rodada. Ao criar carta de regra nova, anote no §6 do plano que ela depende
-> de código no minigame.
+> A rodada existe (`minigames/jardim/rodada.ts`, etapa 3), mas nem toda regra
+> já é obedecida: as de JATO são, e as outras entram com as etapas seguintes
+> (a lista está no §10 do plano). Regra nova de jato = a linha no tipo, o
+> código na rodada, e a animação em `jato.ts`.
 
 ---
 
@@ -166,9 +166,16 @@ O desenho do jato tem quatro camadas — **forma**, **tinta**, **impacto** e
 tabela carta por carta, com o som de cada uma, está no §6 do plano ("O jato
 também muda de cara"). Carta nova de jato entra nessa tabela no mesmo commit.
 
-Hoje o jato ainda não existe (é a etapa 3). Quando existir: a ficha ganha um
-`jato` como o `estilo`, a tela ganha o selo "muda o jato" pela mesma conta do
-selo do regador, e o teste fotografa o jato de cada carta ao lado do básico.
+**Como se faz** (está pronto para todas as cartas de hoje):
+
+1. no `aplicar`, escreva no `f.jato` (`EstiloDoJato`, em `cartas.ts`) — o
+   `scripts/cartas.mjs` reprova carta de jato que não escreve;
+2. em `minigames/jardim/jato.ts` (`DesenhoDoJato`), desenhe: forma e tinta
+   saem de `disparar()`, impacto de `respingo()` e vizinhos, chão de
+   `poca()`/`garoa()`. Some um contador em `contagem` para o efeito novo;
+3. em `minigames/jardim/rodada.ts`, ligue a mecânica que a carta descreve;
+4. em `scripts/jato.mjs`, um caso novo com o que tem que aparecer, e olhe a
+   foto (`?cena=estufa&jato=<id>` mostra ao vivo).
 
 ## 6. Os consolos: quando o baralho acaba
 
@@ -230,7 +237,9 @@ npm run typecheck
 node scripts/cartas.mjs          # baralho, mão, sorteio, mil rodadas, curva e ondas
 ```
 
-Carta que mexe no desenho do regador também pede `node scripts/regador.mjs`.
+Carta que mexe no desenho do regador também pede `node scripts/regador.mjs`;
+carta que mexe no jato pede `node scripts/jato.mjs /tmp/jt` (e olhar a foto
+dela), e mexer na rodada pede `node scripts/rodada.mjs /tmp/rd`.
 
 Depois, **escreva a carta na tabela da família no §6 do
 `docs/MINIGAME-JARDIM.md`** — com raridade e efeito. É lá que o Renan ajusta o

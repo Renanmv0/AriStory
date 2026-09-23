@@ -2604,6 +2604,11 @@ body.touch-device .dialogue .next { right: 84px; }
   background: #dff3fb;
   box-shadow: inset 0 0 0 1.5px #8fcfe6;
 }
+.carta-jardim .selo.jato {
+  color: #22506b;
+  background: linear-gradient(90deg, #e3f6ff, #d4efff);
+  box-shadow: inset 0 0 0 1.5px #6cc2ea;
+}
 .carta-jardim .selo.consolo {
   color: #6b4a2a;
   background: #f3e3cf;
@@ -2895,6 +2900,110 @@ body.touch-device .dialogue .next { right: 84px; }
   font-variant-numeric: tabular-nums;
 }
 .experiencia.subiu { animation: barra-subiu 0.7s ease; }
+/* ================================================= O PAINEL DA RODADA DO JARDIM
+ *
+ * Embaixo da barra de experiência: a onda, a água do regador e os canteiros.
+ * A água é a pílula maior — é o número que manda a pessoa ao tonel.
+ */
+.painel-jardim {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 5px;
+  border-radius: 999px;
+  background: rgba(255, 250, 240, 0.94);
+  box-shadow: var(--shadow);
+  transform: translate(-50%, -260%);
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.3s ease;
+  pointer-events: none;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+.painel-jardim.show { transform: translate(-50%, 0); opacity: 1; }
+.painel-jardim small { font-size: 10px; opacity: 0.7; }
+.painel-jardim .onda {
+  padding: 3px 9px;
+  font-size: 12px;
+  color: #fff;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #8fc46a, #5a9a3c);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.15);
+}
+.painel-jardim .onda small { color: #fff; }
+.painel-jardim .tanque {
+  position: relative;
+  width: clamp(96px, 22vw, 170px);
+  height: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dfe9ec;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.painel-jardim .tanque .agua {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 50%),
+    linear-gradient(90deg, #6fd0f0, #2a93cc);
+  transition: width 0.2s ease-out;
+}
+/* um risquinho por jato que cabe no tanque */
+.painel-jardim .tanque .marcas {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(90deg, transparent calc(100% - 1px), rgba(255, 255, 255, 0.55) 0);
+}
+.painel-jardim .tanque em {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-style: normal;
+  font-size: 11px;
+  color: #0f3c55;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+.painel-jardim.pouca .tanque { animation: tanque-pouco 0.9s ease-in-out infinite; }
+.painel-jardim.seco .tanque { box-shadow: inset 0 0 0 2px #e06a4a; }
+.painel-jardim.seco .tanque em { color: #b8412a; }
+@keyframes tanque-pouco {
+  50% { box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(224, 106, 74, 0.55); }
+}
+/* enchendo no tonel: bolhinhas subindo pela água */
+.painel-jardim.enchendo .tanque .agua {
+  background:
+    radial-gradient(circle at 20% 70%, rgba(255, 255, 255, 0.7) 0 2px, transparent 3px),
+    radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.7) 0 2px, transparent 3px),
+    radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.7) 0 2px, transparent 3px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 50%),
+    linear-gradient(90deg, #6fd0f0, #2a93cc);
+  background-size: 22px 18px, 22px 18px, 22px 18px, 100% 100%, 100% 100%;
+  animation: tanque-bolhas 0.8s linear infinite;
+}
+@keyframes tanque-bolhas {
+  from { background-position: 0 18px, 0 18px, 0 18px, 0 0, 0 0; }
+  to { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+}
+.painel-jardim .canteiros { font-size: 13px; white-space: nowrap; }
+.painel-jardim .onda,
+.experiencia .nv { white-space: nowrap; }
+/* no celular em pé: as barras encolhem para as duas pílulas caberem sem
+   quebrar linha nem encostar uma na outra */
+@media (max-width: 640px) {
+  .experiencia { top: 10px; gap: 6px; }
+  .experiencia .trilho { width: 92px; }
+  .painel-jardim { top: 50px; gap: 6px; }
+  .painel-jardim .tanque { width: 62px; }
+}
+.painel-jardim.perdendo .canteiros b { color: #c0502f; }
+
 @keyframes barra-subiu {
   0% { box-shadow: var(--shadow); }
   30% { box-shadow: 0 0 0 4px #ffd15c, 0 0 26px 8px rgba(255, 209, 92, 0.8); }

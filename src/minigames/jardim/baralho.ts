@@ -1,7 +1,7 @@
 import { estagioDoRegador, type EstiloDeRegador } from '../../world/regador';
 import {
   CARTAS, CONSOLOS, NIVEL_MINIMO, cartaPorId, fichaInicial,
-  type CartaDoJardim, type Familia, type FichaDaRodada, type Raridade,
+  type CartaDoJardim, type EstiloDoJato, type Familia, type FichaDaRodada, type Raridade,
 } from './cartas';
 
 /**
@@ -176,6 +176,11 @@ export class MaoDeCartas {
     const f = fichaInicial();
     for (const c of this.cartas) c.aplicar(f);
     return f;
+  }
+
+  /** O JATO DE AGORA: o que a animação de ataque desenha (`jato.ts`). */
+  estiloDoJato(): EstiloDoJato {
+    return this.ficha().jato;
   }
 
   /**

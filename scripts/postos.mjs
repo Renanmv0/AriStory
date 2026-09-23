@@ -18,6 +18,8 @@
  * 5. Sem regador na mão ela manda buscar, e a rodada não começa.
  * 6. Com o regador, o parceiro ANDA até o posto de trás, ao lado dela, e os
  *    dois ficam virados para os portões; o jogador continua solto.
+ * 7. Ela avisa ("água neles") e a RODADA começa; encerrada, ela fala do fim
+ *    da primeira leva e ninguém fica preso.
  *
  * Uso: node scripts/postos.mjs /caminho/prefixo
  */
@@ -241,8 +243,8 @@ await page.screenshot({ path: `${OUT}-dentro.png` });
         await page.waitForTimeout(560);
       } else {
         semBalao++;
-        // a fala final ja saiu e o balao fechou: acabou
-        if (ditas.some((d) => /quando for a hora/i.test(d))) break;
+        // a fala final ja saiu e o balao fechou: a rodada comecou
+        if (ditas.some((d) => /água neles/i.test(d))) break;
         await page.waitForTimeout(500);
       }
     }
@@ -254,6 +256,18 @@ await page.screenshot({ path: `${OUT}-dentro.png` });
     if (!/três portões|tres portoes/i.test(ditas.join(' '))) {
       problemas.push('ela não explicou de onde os dois de trás olham');
     }
+    /*
+     * DEPOIS DOS POSTOS A RODADA COMEÇA (etapa 3). Este teste não joga a
+     * rodada — quem joga é o `rodada.mjs` —: ele confere que ela ligou e a
+     * encerra na hora, para seguir conferindo que ninguém fica preso.
+     */
+    const ligou = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado().rodando);
+    console.log(`a rodada começou: ${ligou}`);
+    if (!ligou) problemas.push('depois dos postos a rodada não começou');
+    await page.evaluate(() => window.jogo.current.world.root.userData.rodada.terminar());
+    await page.waitForTimeout(600);
+    const fim = (await venceAFala()).join(' ');
+    if (!/primeira leva/i.test(fim)) problemas.push('no fim da rodada a Josefina não falou');
   }
   // o jogador continua solto depois. Anda ATE sair do lugar (com teto), e nao
   // por 900 ms: com a maquina carregada o relogio do jogo anda devagar, e o

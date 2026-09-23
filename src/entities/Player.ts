@@ -48,6 +48,13 @@ export class Player {
    * gelo, e nao precisa saber.
    */
   derrapagem = 0;
+  /**
+   * Para onde ele olha quando esta PARADO. E o regador da rodada do jardim
+   * apontando para o bicho: andando, a tecla continua mandando no giro.
+   */
+  mira: { x: number; z: number } | null = null;
+  /** multiplica a velocidade maxima (as cartas de passo do jardim); 1 = normal */
+  multiplicador = 1;
 
   constructor(rig: CharacterRig) {
     this.body = rig;
@@ -136,7 +143,7 @@ export class Player {
     const lamina = this.patins ? gelo : 0;
     // no gelo com patins o teto sobe mais um quarto: e a passada longa de quem
     // patina de verdade, e sem ela patinar seria so andar com outra animacao
-    const teto = naAgua ? this.maxSpeed * 0.55 : this.maxSpeed * rodas * (1 + 0.25 * lamina);
+    const teto = (naAgua ? this.maxSpeed * 0.55 : this.maxSpeed * rodas * (1 + 0.25 * lamina)) * this.multiplicador;
     const empurrao = this.accel * (1 - 0.72 * gelo + 0.67 * lamina);
     const freio = this.friction * (1 - 0.86 * gelo + 0.34 * lamina);
 
@@ -163,6 +170,12 @@ export class Player {
       // deslizando solto ele continua olhando para a frente do deslize
       if (gelo > 0.35 && this.velocity.lengthSq() > 0.64) {
         this.body.setFacing(Math.atan2(this.velocity.x, this.velocity.z));
+      }
+      // parado e mirando: vira para o alvo (o regador da rodada do jardim)
+      else if (this.mira && !this.locked) {
+        const dx = this.mira.x - this.position.x;
+        const dz = this.mira.z - this.position.z;
+        if (dx * dx + dz * dz > 0.01) this.body.setFacing(Math.atan2(dx, dz));
       }
     }
 

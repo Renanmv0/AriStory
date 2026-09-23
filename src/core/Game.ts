@@ -255,6 +255,10 @@ export class Game implements GameAPI {
     this.player.locked = false;
     this.player.riding = false;
     this.player.setVisible(true);
+    // o que a rodada do jardim liga morre com a cena
+    this.player.mira = null;
+    this.player.multiplicador = 1;
+    this.ui.showJardim(null);
 
     // o parceiro chega junto, um passo atras
     const atras = (spawn.facing ?? 0) + Math.PI;
@@ -1193,6 +1197,27 @@ export class Game implements GameAPI {
 
   showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void {
     this.ui.showExperiencia(dados);
+  }
+
+  showJardim(dados: Parameters<GameAPI['showJardim']>[0]): void {
+    this.ui.showJardim(dados);
+  }
+
+  mirarJogador(alvo: { x: number; z: number } | null): void {
+    this.player.mira = alvo ? { x: alvo.x, z: alvo.z } : null;
+  }
+
+  setVelocidadeDoJogador(multiplicador: number): void {
+    this.player.multiplicador = multiplicador;
+  }
+
+  objetoNaMao(quem?: string): THREE.Object3D | null {
+    const rig = quem && quem === this.parceiro.rig.spec.id ? this.parceiro.rig : this.player.rig;
+    return rig.objetoNaMao;
+  }
+
+  anguloDaCamera(): number {
+    return this.iso.angle;
   }
 
   vestirRegador(estilo: Partial<EstiloDeRegador> | null): void {

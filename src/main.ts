@@ -36,6 +36,21 @@ if (params.get('treino') === 'gotas') {
   });
 }
 
+// ?cena=estufa&rodada=1 começa a rodada do jardim direto (sem a conversa com
+// a Josefina); ?cena=estufa&jato=gota-gelada,poca monta a vitrine do jato, com
+// as cartas pedidas na mão e três lagartejos parados na frente da dupla.
+if (params.get('rodada') || params.get('jato') !== null) {
+  void comecou.then(() => {
+    const raiz = (game as unknown as { current?: { world: { root: THREE.Object3D } } }).current;
+    const dados = raiz?.world.root.userData ?? {};
+    const cartas = (params.get('cartas') ?? params.get('jato') ?? '').split(',').filter(Boolean);
+    // &praga=preguipolvo troca os bichos da vitrine (a Água morna só aparece em bicho grande)
+    const praga = params.get('praga') ?? undefined;
+    if (params.get('jato') !== null) (dados.vitrineDoJato as ((c: string[], p?: string) => void) | undefined)?.(cartas, praga);
+    else (dados.comecarRodada as ((c: string[]) => void) | undefined)?.(cartas);
+  });
+}
+
 // ?zoom=5 aproxima a camera: serve para conferir o visual dos personagens
 const zoom = Number(params.get('zoom'));
 if (Number.isFinite(zoom) && zoom > 0) game.setZoom(zoom);

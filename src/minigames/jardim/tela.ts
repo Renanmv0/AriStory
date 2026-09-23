@@ -29,6 +29,11 @@ export interface CartaNaTela {
    * aparecer no objeto.
    */
   readonly mudaORegador: boolean;
+  /**
+   * Se pegar esta carta MUDA O JATO na animação de ataque — a regra do Renan:
+   * carta de jato muda o que se vê. Mesma conta do selo do regador.
+   */
+  readonly mudaOJato: boolean;
   /** carta de consolo (o baralho acabou): outra moldura, e não entra na mão */
   readonly consolo: boolean;
 }
@@ -56,6 +61,14 @@ function mudaORegador(carta: CartaDoJardim): boolean {
   return Object.keys(f.estilo).length > 0;
 }
 
+/** Se a carta escreve no desenho do jato (`FichaDaRodada.jato`). */
+function mudaOJato(carta: CartaDoJardim): boolean {
+  if (carta.repetivel) return false;
+  const f = fichaInicial();
+  carta.aplicar(f);
+  return Object.keys(f.jato).length > 0;
+}
+
 export function cartaNaTela(carta: CartaDoJardim): CartaNaTela {
   return {
     id: carta.id,
@@ -66,6 +79,7 @@ export function cartaNaTela(carta: CartaDoJardim): CartaNaTela {
     raridade: carta.raridade,
     degrau: degrauDa(carta),
     mudaORegador: mudaORegador(carta),
+    mudaOJato: mudaOJato(carta),
     consolo: carta.repetivel === true,
   };
 }

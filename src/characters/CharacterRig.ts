@@ -1338,6 +1338,11 @@ export class CharacterRig {
     return this.maoDir.children.length > 0;
   }
 
+  /** a peca pendurada na mao direita, ou `null` */
+  get objetoNaMao(): THREE.Object3D | null {
+    return this.maoDir.children[0] ?? null;
+  }
+
   /**
    * Liga (ou desliga) o gesto de levar o que esta na mao a boca.
    *

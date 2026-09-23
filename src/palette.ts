@@ -434,6 +434,57 @@ export const PALETTE = {
   /** a sombra dela no chão, translúcida: azul-escuro, para puxar o tom da gota */
   gotaSombra: 0x10324a,
 
+  /**
+   * O JATO DO REGADOR — a animação de ataque da rodada do jardim.
+   *
+   * A água do jato é CLARA (o azul da rega), e não o azul-piscina da gota de
+   * experiência: no meio da rodada as duas estão na tela ao mesmo tempo, e a
+   * gota no chão é a que precisa chamar o olho. O miolo do jato é quase branco
+   * — é o brilho que faz água parecer água num desenho chapado.
+   */
+  jatoAgua: 0x9fdcf2,
+  jatoMiolo: 0xeefaff,
+  jatoFundo: 0x5fb6de,
+  /** o respingo no bicho e o anel que abre no chão */
+  jatoRespingo: 0xd8f3ff,
+  /** a Poça e o rastro da Garoa: água parada, um azul mais fundo e brilhante */
+  jatoPoca: 0x6fc3e6,
+  /** o Orvalho e a Água morna: vapor branco, translúcido */
+  jatoVapor: 0xf6fbff,
+  /** a Gota gelada: água azul-gelo e os cristais no bicho */
+  jatoGelo: 0xc8f0ff,
+  jatoCristal: 0xffffff,
+  /** a Água com sabão: bolha lilás-perolada, que é o furta-cor possível em toon */
+  jatoSabao: 0xf0dcff,
+  jatoSabaoBorda: 0xbfe8ff,
+  /** o Jato carregado juntando força na ponta do bico */
+  jatoCarga: 0xfff3b0,
+  /** o alvinho das miras, em cima do bicho escolhido */
+  jatoMira: 0xff9a3c,
+  /** o chão rachando antes do Gêiser */
+  jatoRachadura: 0x3a2618,
+  /** o arco-íris, na ordem de sempre */
+  arcoIris1: 0xff5e5e,
+  arcoIris2: 0xffa24a,
+  arcoIris3: 0xffe25a,
+  arcoIris4: 0x6fdc72,
+  arcoIris5: 0x5ab4ff,
+  arcoIris6: 0xa77cff,
+  /** a nuvem da Chuva e da Dança da chuva */
+  jatoNuvem: 0xdde6ee,
+  jatoNuvemFundo: 0xb4c2cf,
+
+  /**
+   * A BARRA DE VIDA DAS PRAGAS: quanta água ainda falta para espantar. O fundo
+   * é escuro para a barra ler em cima do saibro claro, e o que enche é o
+   * mesmo azul do jato — a barra é "o quanto de água cabe nele ainda".
+   */
+  barraFundo: 0x2b2f3a,
+  barraAgua: 0x6fd0f0,
+  barraMolhada: 0xffffff,
+  /** canteiro comido até o fim: a terra seca e as mudas que sobraram */
+  terraComida: 0x7a5a3e,
+
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
   // e a diferenca de tom e o que separa "comida de bicho" de "comida de

@@ -107,6 +107,30 @@ for (const f of ['regador', 'jardineiro', 'jardim']) {
   ok(vazamentos.length === 0, `comum mexe em numero, nao em regra ${vazamentos.map((c) => c.id).join(' ')}`);
 }
 
+/*
+ * A REGRA DO RENAN PARA O JATO: carta que mexe no jato muda alguma coisa que
+ * se VE na animacao de ataque. Medido: aplicar a carta numa ficha limpa e, se
+ * ela mexeu num numero do jato ou ligou uma regra do jato, ela TEM que ter
+ * escrito no `jato` — senao e uma carta de jato sem desenho.
+ */
+{
+  const NUMEROS = ['alcance', 'dano', 'cadencia', 'largura', 'empurraoDoJato', 'contraOGrandao'];
+  const REGRAS_DO_JATO = [
+    'segundo-bico', 'atravessa', 'poca', 'chuva', 'gota-gelada', 'jato-em-arco', 'borrifador',
+    'crivo-giratorio', 'agua-com-sabao', 'jato-carregado', 'mira-no-grandao', 'mira-em-quem-come',
+    'garoa', 'balde', 'pressao-acumulada', 'geiser', 'arco-iris', 'danca-da-chuva',
+  ];
+  const zerada = m.fichaInicial();
+  const semDesenho = CARTAS.filter((c) => {
+    const f = m.fichaInicial();
+    c.aplicar(f);
+    const mexeu = NUMEROS.some((k) => f[k] !== zerada[k])
+      || [...f.regras].some((r) => REGRAS_DO_JATO.includes(r));
+    return mexeu && Object.keys(f.jato).length === 0;
+  });
+  ok(semDesenho.length === 0, `toda carta de jato muda o desenho do jato ${semDesenho.map((c) => c.id).join(' ')}`);
+}
+
 // =================================================================== 2. mão
 console.log('\n— a mao');
 {

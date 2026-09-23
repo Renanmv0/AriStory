@@ -3,7 +3,10 @@
 > Documento de PROJETO. **As etapas 0, 1 e 2 estão no jogo** (§10): a área existe,
 > a quest que a destranca também, a Josefina já entra na estufa junto com a
 > dupla e já pede confirmação para começar, e as cartas, a curva de nível e as
-> ondas existem como lógica testada. A rodada em si (etapa 3) ainda é plano. Quando uma etapa
+> ondas existem como lógica testada. **A etapa 3 também**: a rodada roda (a
+> primeira onda, só de Lagartejos), o regador atira sozinho e o jato de cada
+> carta que mexe no jato já tem a animação dela (§6, "O jato também muda de
+> cara"). Quando uma etapa
 > for construída, marque-a aqui, e deixe o `git log` ser a fonte da verdade do
 > que de fato existe.
 >
@@ -606,7 +609,7 @@ de competição ao lado de uma lata amassada contaria uma história errada.
 Para criar carta nova sem reabrir este documento inteiro existe uma skill:
 `.claude/skills/aristory-habilidade/SKILL.md`.
 
-### O jato também muda de cara — **decisão do Renan, a construir com a etapa 3**
+### O jato também muda de cara — **construído** (decisão do Renan)
 
 > "Cada carta que muda os jatos do regador precisa mudar algo visualmente na
 > animação de ataque." — o Renan
@@ -687,14 +690,37 @@ As três marcadas com "(…)" não mexem no jato em si, e por isso a mudança
 visível delas mora em outro lugar — é o jeito de a regra continuar verdadeira
 sem inventar enfeite num jato que a carta não muda.
 
-#### Como isso entra no código (nota para a etapa 3)
+#### Como está no código
 
-Igual ao `estilo` do regador: a `FichaDaRodada` ganha um **`jato`** (as quatro
-camadas), a carta escreve nele no `aplicar`, e quem desenha o ataque só lê. A
-tela das cartas ganha o selo **"muda o jato"** pelo mesmo truque do selo "muda
-o regador" — aplica a carta numa ficha zerada e vê se ela escreveu no `jato`.
-Assim o selo nunca mente, e uma carta de jato sem desenho aparece sem selo, o
-que denuncia sozinho que ela está incompleta.
+Igual ao `estilo` do regador: a `FichaDaRodada` tem um **`jato`**
+(`EstiloDoJato`, as quatro camadas), a carta escreve nele no `aplicar`, e quem
+desenha o ataque só lê — `src/minigames/jardim/jato.ts` (`DesenhoDoJato`). A
+tela das cartas tem o selo **"💦 muda o jato"** pelo mesmo truque do selo "muda
+o regador": aplica a carta numa ficha zerada e vê se ela escreveu no `jato`.
+
+As gotas são um pool só, instanciado (`world/particulas.ts`): centenas de gotas
+numa chamada de desenho, o que o celular aguenta. Metade delas sai num fio
+contínuo (o miolo) e a outra metade abre o leque; cada gota nasce adiantada pela
+fração do quadro que lhe cabe, e é isso que mantém o fio contínuo mesmo quando
+o jogo engasga.
+
+**Três testes guardam a regra:**
+
+- `scripts/cartas.mjs` reprova carta que mexe num número ou numa regra do
+  jato e não escreve no `jato`;
+- `scripts/jato.mjs` monta a **vitrine** (`?cena=estufa&jato=gota-gelada,poca`:
+  três lagartejos parados na frente da dupla, que nascem de novo quando
+  espantados) com cada carta e confere na contagem do desenho que o efeito dela
+  apareceu: o arco passou de 2,2 m, saíram três fios, apareceu a poça. E
+  fotografa cada uma. O caso sem carta prova o contrário: nenhum efeito
+  especial aparece;
+- a vitrine serve para OLHAR também: é o jeito de ver o jato de uma carta sem
+  esperar ela sair no sorteio.
+
+**O que ainda não tem:** o som de cada carta. Hoje o jato é mudo, o bicho
+espantado faz o respingo de sempre e o tonel faz o `gluglu`; os sons novos da
+tabela (o "ploc" da bolha, o tilintar do gelo…) precisam ser sintetizados e
+OUVIDOS antes de entrar (skill `aristory-som`).
 
 ### A tela das três cartas — **construída**
 
@@ -991,10 +1017,10 @@ trabalha rápido") virando geometria.
 | 2.9 | **o modelo do regador**, já pronto para as melhorias mudarem a peça | **pronto** (§4) |
 | 2.95 | **a Josefina entra junto**, passeia lá dentro, pede confirmação e leva o parceiro para o posto de trás | **pronto** (§3) |
 | 2.97 | **a lógica**: o baralho, a mão que não repete carta, a curva de nível, as gotas por praga e o roteiro das ondas | **pronto** (§6, §7) |
-| 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | a fazer |
+| 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | **pronto** (§10) |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
 | 5 | gota no chão e a tela de três cartas (a conta de nível e o sorteio já existem) | **pronto** (a peça; liga na rodada junto com a 3) |
-| 6 | as cartas comuns (as do regador), o regador mudando de cara (**pronto**) **e o jato mudando de cara** — uma diferença visível por carta (§6) | a fazer |
+| 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, menos o som de cada carta |
 | 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | a fazer |
 | 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | a fazer |
 | 9 | o pagamento, a memória e a fala de despedida da Josefina | a fazer |
@@ -1043,7 +1069,44 @@ pura, sem cena: a rodada vai importar isto pronto.
 `PRAGAS` que liga cada uma ao tier e ao encharque. São só os MODELOS — nenhuma
 delas anda, ataca ou aparece numa cena ainda (§5).
 
-**Os testes**: `node scripts/cartas.mjs` (no Node, sem navegador) joga mil
+**A rodada** (`src/minigames/jardim/rodada.ts`, a `RodadaDoJardim`) — a etapa
+3. Começa quando a Josefina manda ("Água neles, meu bem!"), no fim de
+`assumirOsPostos`. O que ela já faz:
+
+- **uma onda**, a primeira do §3: doze Lagartejos, um a cada 4 s. Eles nascem
+  do lado de FORA da sebe do pátio, passam pela brecha, pelo caminho de pedra e
+  pelo portão, e vão ao canteiro vivo mais perto. As outras ondas entram junto
+  com o comportamento dos outros bichos (etapa 7);
+- **o canteiro é o placar**: comido, as mudas encolhem e somem uma a uma, e no
+  fim ele vira terra seca. O bicho então procura o próximo;
+- **o regador atira sozinho**, no bicho mais perto dentro do `alcance`, a cada
+  `cadencia`, gastando água. A dupla vira para o alvo quando está parada. Bicho
+  atrás de um canteiro (do ponto de vista de quem rega) não leva jato — só o
+  Jato em arco passa por cima;
+- **a água acaba**: o painel mostra o tanque, e perto do tonel ele enche
+  (borbulhando no painel, espirrando na boca do tonel);
+- **espantado, o bicho sacode e vai embora** pela brecha dele, e solta as
+  gotas; as gotas sobem o nível, e cada nível é a tela das três cartas — com a
+  rodada CONGELADA enquanto ela está aberta;
+- **no fim** a Josefina conta quantos canteiros ficaram de pé, promete bicho
+  diferente amanhã e replanta. O pagamento por canteiro é a etapa 9.
+
+**O que cada carta já faz na rodada:** todas as que mexem no jato (a tabela do
+§6, com a animação e a mecânica que a carta descreve); os números do tanque, do
+tonel, da água por jato, do passo, da coleta e da vida dos canteiros; a
+Compostagem; e três de jardineiro baratas (Fôlego, Chinelada, Descanso na
+sombra). As outras regras (Grito, Bota, Espantalho, os chamados agindo, a
+Josefina ajudando…) estão escolhíveis e **ainda não fazem nada** — entram com as
+etapas seguintes. Os chamados já entram pela porta na cutscene.
+
+**Para ver:** `?cena=estufa&rodada=1` começa a rodada direto;
+`?cena=estufa&jato=<cartas>` monta a vitrine do jato (e `&praga=preguipolvo`
+troca o bicho da vitrine — a Água morna só aparece em bicho grande).
+
+**Os testes**: `node scripts/rodada.mjs /tmp/rd` joga a onda inteira com um robô
+que só anda (nunca aperta ataque) e cobra do nascer lá fora ao fim com a
+Josefina; `node scripts/jato.mjs /tmp/jt` confere o jato de cada carta.
+`node scripts/cartas.mjs` (no Node, sem navegador) joga mil
 rodadas de cartas e trezentas de ondas; `node scripts/postos.mjs /tmp/pt` faz a
 Josefina entrar junto, passear sem pisar em canteiro e mandar cada um para o
 posto. `node scripts/estufa.mjs /tmp/ef` prova que a porta abre nos dois

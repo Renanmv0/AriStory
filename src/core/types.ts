@@ -515,6 +515,33 @@ export interface GameAPI {
    */
   vestirRegador(estilo: Partial<EstiloDeRegador> | null): void;
   /**
+   * O PAINEL DA RODADA DO JARDIM: a onda, a água no tanque e quantos canteiros
+   * ainda estão de pé. `null` esconde. A barra de experiência é outra
+   * (`showExperiencia`), porque ela também aparece no treino.
+   */
+  showJardim(dados: {
+    onda: number; ondas: number; agua: number; tanque: number;
+    canteiros: number; totalDeCanteiros: number; enchendo: boolean;
+  } | null): void;
+  /**
+   * VIRA O JOGADOR PARA UM PONTO enquanto ele está PARADO — é o regador da
+   * rodada apontando para o bicho que ele rega. Andando, quem manda no giro
+   * continua sendo a direção da tecla. `null` solta.
+   */
+  mirarJogador(alvo: { x: number; z: number } | null): void;
+  /** Multiplica a velocidade de andar de quem é controlado (as cartas de passo). 1 = normal. */
+  setVelocidadeDoJogador(multiplicador: number): void;
+  /**
+   * A PEÇA QUE ESTÁ NA MÃO de quem é controlado (ou de `quem`), ou `null`.
+   *
+   * É o objeto pendurado na mão: a rodada do jardim gira, sacode e vira ele
+   * de ponta-cabeça nas animações de ataque, e acha a ponta do bico por ele.
+   * O objeto é refeito quando o item muda — pegue de novo a cada quadro.
+   */
+  objetoNaMao(quem?: string): THREE.Object3D | null;
+  /** o giro atual da câmera, em radianos (ela gira de 45 em 45 graus) */
+  anguloDaCamera(): number;
+  /**
    * Abre a mesa de xadrez em DOM e resolve quando a PARTIDA acaba (por mate,
    * empate ou desistencia). Trava o movimento enquanto estiver aberta.
    *

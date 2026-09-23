@@ -19,7 +19,8 @@ import type { SomNome } from '../audio/efeitos';
  * - o MEDALHÃO com o emoji, num halo da cor da raridade — "o que é isto?";
  * - o NOME, e as BOLINHAS da série quando ela é uma — "tem mais depois?";
  * - o TEXTO do efeito, numa folha de papel — "o que muda?";
- * - o SELO "muda o regador", quando muda — "vou ver isso na mão?";
+ * - o SELO "muda o regador", quando muda — "vou ver isso na mão?" — e o
+ *   "muda o jato", quando o ataque fica diferente;
  * - o RODAPÉ com a raridade e as pedrinhas — "isto é raro?".
  *
  * A MOLDURA é a raridade, e é ela que se lê primeiro, de longe: verde, azul,
@@ -228,6 +229,7 @@ function desenharCarta(c: CartaNaTela, i: number): string {
     : '';
   const selos = [
     c.mudaORegador ? '<span class="selo regador">🪣 muda o regador</span>' : '',
+    c.mudaOJato ? '<span class="selo jato">💦 muda o jato</span>' : '',
     c.consolo ? '<span class="selo consolo">vale agora</span>' : '',
   ].join('');
   const raridadeNome = c.consolo ? 'Consolo' : raridade.nome;

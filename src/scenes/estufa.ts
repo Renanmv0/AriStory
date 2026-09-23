@@ -19,6 +19,7 @@ import { MaoDeCartas } from '../minigames/jardim/baralho';
 import { cartaPorId, type AjudanteDoClube } from '../minigames/jardim/cartas';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
 import { cartaNaTela } from '../minigames/jardim/tela';
+import { RodadaDoJardim } from '../minigames/jardim/rodada';
 import { ARI, RENAN } from '../characters/cast';
 import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 import { toon } from '../core/materials';
@@ -1293,25 +1294,15 @@ export const estufa: SceneDef = {
       josefina.encarar(OLHAR_DOS_PORTOES.x, OLHAR_DOS_PORTOES.z);
 
       /**
-       * ======================= O GANCHO DA RODADA — a etapa 3 do plano
+       * ======================= A RODADA COMEÇA — a etapa 3 do plano
        *
-       * E AQUI que `iniciarRodadaDoJardim(...)` entra (`docs/MINIGAME-JARDIM.md`
-       * §9): com o jogador de regador na mao, o parceiro e a Josefina nos
-       * postos, a mao de cartas nova (`minigames/jardim/baralho.ts`) e as
-       * ondas do `minigames/jardim/progressao.ts`.
-       *
-       * Enquanto a rodada nao existe, a Josefina fecha o assunto dentro do
-       * mundo, com a mesma desculpa da cutscene das pragas — e desfaz os
-       * postos, para ninguem ficar plantado na porta esperando um bicho que
-       * nao vem.
+       * Com o jogador de regador na mão e o parceiro e a Josefina nos postos,
+       * ela avisa, e a rodada (`minigames/jardim/rodada.ts`) liga. Quem a
+       * desliga é a própria rodada, no fim da onda — e aí a Josefina fala
+       * (`aoAcabarARodada`, mais abaixo).
        */
-      await api.say([
-        'Ih… olha o sol. Ainda tá quente demais — eles só saem quando esfria.',
-        'Mas agora vocês já sabem onde cada um fica. Quando for a hora, é assim.',
-      ], J);
-      api.freeCompanion();
-      josefina.pararDeEncarar();
-      josefina.voltarAPassear();
+      await api.say(['Olha lá… estão vindo pelo fundo. Água neles, meu bem!'], J);
+      rodada.comecar();
     };
 
     /* ====================================================================
@@ -1637,6 +1628,96 @@ export const estufa: SceneDef = {
       g.showExperiencia(agora);
       if (agora.nivel > nivelAtual && !escolhendo) void subir(agora.nivel);
     });
+
+    /* ====================================================================
+     *                  A RODADA — o minigame, rodando (etapa 3)
+     * ====================================================================
+     *
+     * A cena monta a PLANTA (por onde os bichos vêm, onde estão os canteiros
+     * e o tonel) e entrega para a rodada, que não sabe que existe uma estufa.
+     * O resto é ouvir: carta de chamado pega → a cutscene da porta; rodada
+     * acabou → a Josefina fala e todo mundo sai do posto.
+     */
+    const FOLHA_DO_CANTEIRO: Record<string, number> = {
+      samambaia: P.folhaSamambaia, lavanda: P.florLavanda, suculenta: P.folhaSuculenta,
+      alface: P.folhaAlface, tomate: P.tomateMaduro, girassol: P.florGirassol,
+    };
+    const rodada = new RodadaDoJardim(w, g, {
+      entradas: PORTOES.xs.map((x) => ({ x, z: FUNDO_DE_FORA - 1.6 })),
+      brechas: PORTOES.xs.map((x) => ({ x, z: FUNDO_DE_FORA + 0.2 })),
+      portoes: PORTOES.xs.map((x) => ({ x, z: -hz })),
+      bocas: PORTOES.xs.map((x) => ({ x, z: CHEGADA })),
+      canteiros: hortas.map((h) => ({
+        x: h.x,
+        z: h.z,
+        meioX: (h.giro === 0 ? CANTEIRO.largura : CANTEIRO.profundidade) / 2,
+        meioZ: (h.giro === 0 ? CANTEIRO.profundidade : CANTEIRO.largura) / 2,
+        peca: h.peca,
+        folha: FOLHA_DO_CANTEIRO[h.tipo] ?? P.folhaAlface,
+      })),
+      tonel: { x: tonel.position.x, z: tonel.position.z, altura: 1.2 },
+      centro: { x: 0, z: 0, raio: 12 },
+    });
+    w.onUpdate((dt) => rodada.atualizar(dt));
+    rodada.aoPegarCarta = (id) => chamarPelaCarta(id);
+
+    /**
+     * O FIM DA RODADA: a Josefina conta como foi, pelo número de canteiros de
+     * pé — que é o placar do §3 (canteiro vivo, e não bicho espantado). O
+     * pagamento por canteiro é a etapa 9; aqui ela só agradece.
+     */
+    rodada.aoAcabar = ({ canteiros, total }) => {
+      void (async () => {
+        const J = 'Josefina';
+        g.lockPlayer(true);
+        josefina.encarar(g.playerPosition().x, g.playerPosition().z);
+        const fala = canteiros === total
+          ? ['Nenhum canteiro comido! Vocês são bons nisso, hein.']
+          : canteiros === 0
+            ? ['Levaram tudo… Não tem problema, meu bem. Terra boa brota de novo.']
+            : [`Sobraram ${canteiros} de ${total} canteiros. Tá ótimo pra primeira vez.`];
+        await g.say([
+          ...fala,
+          'Essa foi a primeira leva. Amanhã vem mais — e vem bicho diferente.',
+          'Deixa que eu replanto o que foi comido.',
+        ], J);
+        g.lockPlayer(false);
+        g.freeCompanion();
+        josefina.pararDeEncarar();
+        josefina.voltarAPassear();
+      })();
+    };
+
+    /**
+     * DOIS ATALHOS DE OLHAR, ligados pela URL (`main.ts`), da mesma família
+     * do treino das gotas:
+     *
+     * - `?cena=estufa&rodada=1` começa a rodada direto, sem a conversa;
+     * - `?cena=estufa&jato=gota-gelada,poca` monta a VITRINE do jato: três
+     *   lagartejos parados na frente da dupla, que nascem de novo quando são
+     *   espantados, e as cartas pedidas já na mão. É o jeito de ver o jato de
+     *   uma carta sem esperar ela sair no sorteio.
+     */
+    w.root.userData.comecarRodada = (cartas: readonly string[] = []): void => {
+      if (!g.hasItem('regador')) g.addItem(ITENS.regador);
+      const vaga = g.handItems().findIndex((i) => i?.id === 'regador');
+      if (vaga >= 0) g.setActiveHandSlot(vaga);
+      rodada.comecar({ cartas });
+    };
+    w.root.userData.vitrineDoJato = (cartas: readonly string[] = [], praga = 'lagartejo'): void => {
+      if (!g.hasItem('regador')) g.addItem(ITENS.regador);
+      const vaga = g.handItems().findIndex((i) => i?.id === 'regador');
+      if (vaga >= 0) g.setActiveHandSlot(vaga);
+      const eu = g.playerPosition();
+      rodada.comecar({ cartas, vitrine: true });
+      // em leque, na direção dos portões: a câmera vê a dupla e os três
+      rodada.montarVitrine([
+        { x: eu.x - 1.3, z: eu.z - 2.0 },
+        { x: eu.x + 0.1, z: eu.z - 2.3 },
+        { x: eu.x + 1.4, z: eu.z - 1.8 },
+      ], praga);
+    };
+    w.root.userData.rodada = rodada;
 
     // o segundo tonel e a segunda bancada ficam so de cenario por enquanto —
     // marcados aqui para o minigame achar depois sem ter que varrer a cena

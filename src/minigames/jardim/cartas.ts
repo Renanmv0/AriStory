@@ -125,6 +125,76 @@ export type RegraDoJardim =
   | 'mutirao-do-clube'; // na onda da chefe, os quatro entram juntos por 30 s
 
 /**
+ * COMO O JATO ESTÁ DESENHADO — a regra do Renan: carta que mexe no jato muda
+ * alguma coisa que se VÊ na animação de ataque (§6 do plano, "O jato também
+ * muda de cara"). As quatro camadas: **forma** (por onde a água vai),
+ * **tinta** (a cor e a textura dela), **impacto** (o que acontece no bicho) e
+ * **chão** (o que fica depois). Quem desenha é `minigames/jardim/jato.ts`.
+ *
+ * Os números (`alcance`, `largura`, `cadencia`) já mudam o jato sozinhos — o
+ * cone vai mais longe, abre mais, sai mais seguido. Os degraus `longo`,
+ * `aberto`, `rapido` e `grosso` estão aqui para o desenho caprichar em cima
+ * disso (mais gotas na borda do leque, gota mais grossa) e para a tela saber
+ * pôr o selo "muda o jato".
+ */
+export interface EstiloDoJato {
+  // ---- forma
+  /** degraus do Bico mais longo: o cone vai mais longe */
+  longo?: number;
+  /** degraus do Leque aberto: o cone abre, com mais gotas na borda */
+  aberto?: number;
+  /** degraus do Braço solto: os jatos saem mais seguidos */
+  rapido?: number;
+  /** um segundo cone sai para trás */
+  segundoBico?: boolean;
+  /** a Mangueira: linha comprida e fina */
+  mangueira?: boolean;
+  /** o Regador de pressão: jato reto que atravessa o primeiro bicho */
+  reto?: boolean;
+  /** o jato sobe em parábola por cima do canteiro */
+  arco?: boolean;
+  /** três fiozinhos em leque no lugar do cone */
+  borrifador?: boolean;
+  /** a cada 4 s o regador gira e solta um anel de água */
+  crivoGiratorio?: boolean;
+  /** parado 1,5 s, o regador treme, brilha e solta um jatão */
+  carregado?: boolean;
+  /** segurar E vira o regador de ponta-cabeça: uma onda em círculo */
+  balde?: boolean;
+  /** a nuvem da Chuva despeja na estufa inteira */
+  chuva?: boolean;
+  /** parado 3 s, uma nuvem pequena chove em volta */
+  dancaDaChuva?: boolean;
+  // ---- tinta
+  /** o Orvalho: vapor fininho no caminho do jato */
+  vapor?: boolean;
+  /** água azul-gelo e cristaizinhos no bicho molhado */
+  gelo?: boolean;
+  /** bolhas no jato, e a bolha grande que estoura */
+  sabao?: boolean;
+  /** um jato em dez sai em arco-íris */
+  arcoIris?: boolean;
+  /** vapor sobe do bicho grande quando leva jato */
+  morna?: boolean;
+  // ---- impacto
+  /** degraus do Jato firme: gota mais grossa, respingo maior */
+  grosso?: number;
+  /** degraus da Gota pesada: o bicho dá um tranco para trás */
+  tranco?: number;
+  /** um alvinho em cima de quem o regador escolheu */
+  mira?: 'grandao' | 'come';
+  /** o primeiro jato de tanque cheio sai grosso, com um anel de respingo */
+  pressaoAcumulada?: boolean;
+  /** o chão racha e sobe uma coluna d'água embaixo do bicho mais forte */
+  geiser?: boolean;
+  // ---- chão
+  /** onde o jato cai fica uma mancha molhada e brilhante */
+  poca?: boolean;
+  /** um rastro de gotinhas fica atrás de você */
+  garoa?: boolean;
+}
+
+/**
  * OS NÚMEROS E AS REGRAS DA RODADA — tudo o que uma carta pode mexer.
  *
  * Ela nunca é acumulada à mão: a `MaoDeCartas` a DERIVA do zero, partindo de
@@ -171,6 +241,8 @@ export interface FichaDaRodada {
    * ele sai de QUANTAS cartas de regador foram pegas, e quem conta é a mão.
    */
   estilo: Omit<Partial<EstiloDeRegador>, 'estagio'>;
+  /** COMO O JATO ESTÁ DESENHADO — ver `EstiloDoJato` */
+  jato: EstiloDoJato;
 }
 
 /** Os quatro números do §4 do plano, e o resto no zero. */
@@ -193,6 +265,7 @@ export function fichaInicial(): FichaDaRodada {
     compostagem: 0,
     regras: new Set(),
     estilo: {},
+    jato: {},
   };
 }
 
@@ -298,20 +371,23 @@ const REGADOR: CartaDoJardim[] = [
   }, (f, d, n) => {
     f.alcance *= 1.18;
     f.estilo.bico = d / n;
+    f.jato.longo = d;
   }),
   ...serie('jato', 3, {
     familia: 'regador', raridade: 'comum', icone: '💦',
     nome: 'Jato firme', texto: 'Cada jato encharca 20% mais',
-  }, (f) => {
+  }, (f, d) => {
     f.dano *= 1.2;
     f.estilo.ponteira = true;
+    f.jato.grosso = d;
   }),
   ...serie('braco', 3, {
     familia: 'regador', raridade: 'comum', icone: '💪',
     nome: 'Braço solto', texto: 'O jato sai 12% mais rápido',
-  }, (f) => {
+  }, (f, d) => {
     f.cadencia *= 0.88;
     f.estilo.caboDeMadeira = true;
+    f.jato.rapido = d;
   }),
   ...serie('leque', 3, {
     familia: 'regador', raridade: 'comum', icone: '🌬️',
@@ -319,6 +395,7 @@ const REGADOR: CartaDoJardim[] = [
   }, (f, d, n) => {
     f.largura += 10;
     f.estilo.crivo = d / n;
+    f.jato.aberto = d;
   }),
   ...serie('tanque', 3, {
     familia: 'regador', raridade: 'comum', icone: '🪣',
@@ -333,6 +410,7 @@ const REGADOR: CartaDoJardim[] = [
     aplicar: (f) => {
       f.regras.add('segundo-bico');
       f.estilo.segundoBico = true;
+      f.jato.segundoBico = true;
     },
   },
   {
@@ -341,6 +419,7 @@ const REGADOR: CartaDoJardim[] = [
     aplicar: (f) => {
       f.recarga *= 1.5;
       f.estilo.respiro = true;
+      f.jato.vapor = true;
     },
   },
   {
@@ -350,19 +429,24 @@ const REGADOR: CartaDoJardim[] = [
       f.alcance *= 2;
       f.cadencia *= 1.4;
       f.estilo.mangueira = true;
+      f.jato.mangueira = true;
     },
   },
   {
     id: 'pressao', nome: 'Regador de pressão', familia: 'regador', raridade: 'raro',
     icone: '🎯', texto: 'O jato atravessa o primeiro bicho e acerta o de trás',
-    aplicar: (f) => f.regras.add('atravessa'),
+    aplicar: (f) => {
+      f.regras.add('atravessa');
+      f.jato.reto = true;
+    },
   },
   // --- do banco de ideias (§6 do plano)
   ...serie('gota-pesada', 3, {
     familia: 'regador', raridade: 'comum', icone: '🪨',
     nome: 'Gota pesada', texto: 'Cada jato empurra o bicho 30 cm para trás',
-  }, (f) => {
+  }, (f, d) => {
     f.empurraoDoJato += 0.3;
+    f.jato.tranco = d;
   }),
   ...serie('refil', 2, {
     familia: 'regador', raridade: 'comum', icone: '⏩',
@@ -376,74 +460,114 @@ const REGADOR: CartaDoJardim[] = [
     icone: '♨️', texto: 'O jato encharca 25% mais os bichos grandes e a chefe',
     aplicar: (f) => {
       f.contraOGrandao *= 1.25;
+      f.jato.morna = true;
     },
   },
   {
     id: 'gota-gelada', nome: 'Gota gelada', familia: 'regador', raridade: 'incomum',
     icone: '🧊', texto: 'Bicho molhado anda 30% mais devagar por 2 s',
-    aplicar: (f) => f.regras.add('gota-gelada'),
+    aplicar: (f) => {
+      f.regras.add('gota-gelada');
+      f.jato.gelo = true;
+    },
   },
   {
     id: 'jato-em-arco', nome: 'Jato em arco', familia: 'regador', raridade: 'incomum',
     icone: '⤴️', texto: 'O jato passa por cima do canteiro e acerta quem come do outro lado',
-    aplicar: (f) => f.regras.add('jato-em-arco'),
+    aplicar: (f) => {
+      f.regras.add('jato-em-arco');
+      f.jato.arco = true;
+    },
   },
   {
     id: 'borrifador', nome: 'Borrifador', familia: 'regador', raridade: 'incomum',
     icone: '💧', texto: 'Cada jato sai em três gotinhas: acerta mais bichos, mais fraco',
-    aplicar: (f) => f.regras.add('borrifador'),
+    aplicar: (f) => {
+      f.regras.add('borrifador');
+      f.jato.borrifador = true;
+    },
   },
   {
     id: 'mira-no-grandao', nome: 'Mira no grandão', familia: 'regador', raridade: 'incomum',
     icone: '🏋️', texto: 'O regador mira no bicho com mais vida, e não no mais perto',
     exclui: ['mira-em-quem-come'],
-    aplicar: (f) => f.regras.add('mira-no-grandao'),
+    aplicar: (f) => {
+      f.regras.add('mira-no-grandao');
+      f.jato.mira = 'grandao';
+    },
   },
   {
     id: 'mira-em-quem-come', nome: 'Mira em quem come', familia: 'regador', raridade: 'incomum',
     icone: '🍽️', texto: 'O regador mira primeiro em quem já está num canteiro',
     exclui: ['mira-no-grandao'],
-    aplicar: (f) => f.regras.add('mira-em-quem-come'),
+    aplicar: (f) => {
+      f.regras.add('mira-em-quem-come');
+      f.jato.mira = 'come';
+    },
   },
   {
     id: 'garoa', nome: 'Garoa', familia: 'regador', raridade: 'incomum',
     icone: '🌦️', texto: 'Você deixa um rastro de gotinhas: quem pisa leva meio jato',
-    aplicar: (f) => f.regras.add('garoa'),
+    aplicar: (f) => {
+      f.regras.add('garoa');
+      f.jato.garoa = true;
+    },
   },
   {
     id: 'pressao-acumulada', nome: 'Pressão acumulada', familia: 'regador', raridade: 'incomum',
     icone: '🧯', texto: 'O primeiro jato depois de encher o tanque encharca o triplo',
-    aplicar: (f) => f.regras.add('pressao-acumulada'),
+    aplicar: (f) => {
+      f.regras.add('pressao-acumulada');
+      f.jato.pressaoAcumulada = true;
+    },
   },
   {
     id: 'crivo-giratorio', nome: 'Crivo giratório', familia: 'regador', raridade: 'raro',
     icone: '🌀', texto: 'A cada 4 s o regador gira e molha tudo em volta',
-    aplicar: (f) => f.regras.add('crivo-giratorio'),
+    aplicar: (f) => {
+      f.regras.add('crivo-giratorio');
+      f.jato.crivoGiratorio = true;
+    },
   },
   {
     id: 'agua-com-sabao', nome: 'Água com sabão', familia: 'regador', raridade: 'raro',
     icone: '🧼', texto: 'Bicho espantado solta uma bolha que estoura e molha quem está perto',
-    aplicar: (f) => f.regras.add('agua-com-sabao'),
+    aplicar: (f) => {
+      f.regras.add('agua-com-sabao');
+      f.jato.sabao = true;
+    },
   },
   {
     id: 'jato-carregado', nome: 'Jato carregado', familia: 'regador', raridade: 'raro',
     icone: '⚡', texto: 'Parado 1,5 s, o próximo jato atravessa a fila inteira',
-    aplicar: (f) => f.regras.add('jato-carregado'),
+    aplicar: (f) => {
+      f.regras.add('jato-carregado');
+      f.jato.carregado = true;
+    },
   },
   {
     id: 'balde', nome: 'Balde', familia: 'regador', raridade: 'raro',
     icone: '🌊', texto: 'Segurar E derrama o tanque inteiro num círculo de 2 m',
-    aplicar: (f) => f.regras.add('balde'),
+    aplicar: (f) => {
+      f.regras.add('balde');
+      f.jato.balde = true;
+    },
   },
   {
     id: 'geiser', nome: 'Gêiser', familia: 'regador', raridade: 'lendario',
     icone: '⛲', texto: 'A cada 20 s um gêiser joga o bicho mais forte pela porta',
-    aplicar: (f) => f.regras.add('geiser'),
+    aplicar: (f) => {
+      f.regras.add('geiser');
+      f.jato.geiser = true;
+    },
   },
   {
     id: 'arco-iris', nome: 'Arco-íris', familia: 'regador', raridade: 'lendario',
     icone: '🌈', texto: 'Um jato em dez atravessa tudo e dobra as gotas de quem espanta',
-    aplicar: (f) => f.regras.add('arco-iris'),
+    aplicar: (f) => {
+      f.regras.add('arco-iris');
+      f.jato.arcoIris = true;
+    },
   },
 ];
 
@@ -583,7 +707,10 @@ const JARDINEIRO: CartaDoJardim[] = [
   {
     id: 'danca-da-chuva', nome: 'Dança da chuva', familia: 'jardineiro', raridade: 'lendario',
     icone: '💃', texto: 'Ficar parado 3 s faz chover 5 s em volta de você',
-    aplicar: (f) => f.regras.add('danca-da-chuva'),
+    aplicar: (f) => {
+      f.regras.add('danca-da-chuva');
+      f.jato.dancaDaChuva = true;
+    },
   },
 ];
 
@@ -605,7 +732,10 @@ const JARDIM: CartaDoJardim[] = [
   {
     id: 'poca', nome: 'Poça', familia: 'jardim', raridade: 'incomum',
     icone: '🫗', texto: 'Onde o jato cai fica escorregadio por 4 s, e o bicho anda devagar',
-    aplicar: (f) => f.regras.add('poca'),
+    aplicar: (f) => {
+      f.regras.add('poca');
+      f.jato.poca = true;
+    },
   },
   {
     id: 'la-de-tras', nome: 'Lá de trás', familia: 'jardim', raridade: 'incomum',
@@ -639,6 +769,7 @@ const JARDIM: CartaDoJardim[] = [
     aplicar: (f) => {
       f.regras.add('chuva');
       f.estilo.nuvem = true;
+      f.jato.chuva = true;
     },
   },
   // --- do banco de ideias (§6 do plano)

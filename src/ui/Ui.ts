@@ -106,6 +106,7 @@ export class Ui {
   private readonly mesaDeXadrez: MesaDeXadrez;
   private readonly telaDeCartas: TelaDeCartas;
   private readonly experiencia: HTMLDivElement;
+  private readonly painelJardim: HTMLDivElement;
   /** o nivel que a barra mostrava, para saber quando ele SUBIU e piscar */
   private nivelNaBarra = -1;
   private readonly secoesDoCardapio: HTMLDivElement;
@@ -317,6 +318,7 @@ export class Ui {
       </div>
       <div class="xadrez"></div>
       <div class="experiencia"><span class="nv">Nv <b>0</b></span><span class="trilho"><i class="enchido"></i></span><span class="conta">0/5</span></div>
+      <div class="painel-jardim"><span class="onda">Onda <b>1</b><small>/5</small></span><span class="tanque" title="água no regador"><i class="agua"></i><i class="marcas"></i><em>💧 <b>12</b></em></span><span class="canteiros" title="canteiros de pé">🌱 <b>8</b><small>/8</small></span></div>
       <div class="cartas-do-jardim"></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
@@ -388,6 +390,7 @@ export class Ui {
     this.telaDeCartas = new TelaDeCartas(ui.querySelector('.cartas-do-jardim')!);
     this.telaDeCartas.som = (nome) => this.som?.(nome);
     this.experiencia = ui.querySelector('.experiencia')!;
+    this.painelJardim = ui.querySelector('.painel-jardim')!;
     this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
     this.memorias = ui.querySelector('.memorias')!;
     this.quadro = ui.querySelector('.memorias .quadro')!;
@@ -1022,6 +1025,39 @@ export class Ui {
       el.classList.add('subiu');
     }
     this.nivelNaBarra = dados.nivel;
+  }
+
+  /**
+   * O PAINEL DA RODADA DO JARDIM, logo abaixo da barra de experiência: a onda,
+   * a ÁGUA do regador e os canteiros de pé. A água é o número que mais importa
+   * no meio da rodada — ela acaba, e acabar é o que manda a pessoa ao tonel —,
+   * então ela é a peça maior, e pisca quando está no fim.
+   */
+  showJardim(dados: {
+    onda: number; ondas: number; agua: number; tanque: number;
+    canteiros: number; totalDeCanteiros: number; enchendo: boolean;
+  } | null): void {
+    const el = this.painelJardim;
+    if (!dados) {
+      el.classList.remove('show');
+      return;
+    }
+    el.classList.add('show');
+    el.querySelector('.onda b')!.textContent = String(dados.onda);
+    el.querySelector('.onda small')!.textContent = `/${dados.ondas}`;
+    el.querySelector('.tanque em b')!.textContent = String(Math.floor(dados.agua));
+    const fracao = dados.tanque > 0 ? Math.max(0, Math.min(1, dados.agua / dados.tanque)) : 0;
+    el.querySelector<HTMLElement>('.tanque .agua')!.style.width = `${(fracao * 100).toFixed(1)}%`;
+    // um risquinho por jato: é a régua que diz "cabem mais quantos"
+    const marcas = el.querySelector<HTMLElement>('.tanque .marcas')!;
+    const passo = 100 / Math.max(1, dados.tanque);
+    marcas.style.backgroundSize = `${passo}% 100%`;
+    el.classList.toggle('seco', dados.agua < 1);
+    el.classList.toggle('pouca', dados.agua >= 1 && fracao < 0.25);
+    el.classList.toggle('enchendo', dados.enchendo);
+    el.querySelector('.canteiros b')!.textContent = String(dados.canteiros);
+    el.querySelector('.canteiros small')!.textContent = `/${dados.totalDeCanteiros}`;
+    el.classList.toggle('perdendo', dados.canteiros < dados.totalDeCanteiros);
   }
 
   // ------------------------------------------------ quadro de inscrições
