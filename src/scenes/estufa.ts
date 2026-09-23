@@ -1775,6 +1775,8 @@ export const estufa: SceneDef = {
       'primeira', 'segunda', 'terceira', 'quarta', 'quinta', 'sexta', 'sétima', 'oitava', 'nona', 'décima',
       'décima primeira', 'décima segunda', 'décima terceira', 'décima quarta', 'décima quinta',
       'décima sexta', 'décima sétima', 'décima oitava', 'décima nona', 'vigésima',
+      'vigésima primeira', 'vigésima segunda', 'vigésima terceira', 'vigésima quarta', 'vigésima quinta',
+      'vigésima sexta', 'vigésima sétima', 'vigésima oitava', 'vigésima nona', 'trigésima',
     ];
     rodada.aoAcabar = (fim) => {
       const { canteiros, total, ondas, de } = fim;
@@ -1810,7 +1812,7 @@ export const estufa: SceneDef = {
           : canteiros === 0
             ? ['Levaram tudo… Não tem problema, meu bem. Terra boa brota de novo.']
             : [`Sobraram ${canteiros} de ${total} canteiros. Tá ótimo pra primeira vez.`];
-        // as vinte levas inteiras, ou até onde a dupla chegou
+        // as trinta levas inteiras, ou até onde a dupla chegou
         const leva = venceu
           ? `Foram as ${de} levas, e vocês seguraram todas. Até a mãe deles!`
           : `Essa foi a ${ORDINAL[Math.max(0, ondas - 1)] ?? 'última'} leva. Amanhã vem mais.`;

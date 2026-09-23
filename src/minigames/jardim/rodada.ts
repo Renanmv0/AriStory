@@ -63,8 +63,8 @@ const VIDA_DO_CANTEIRO = 34;
  * pega um regador extra e espanta com UM jato só por `AJUDA_DURA` segundos.
  * Ela carrega com GOTAS, e não com ondas: cada gota pega enche o anel do
  * botão, então jogar bem chama a ajuda mais cedo, e o jogador VÊ ela chegando.
- * O custo sobe a cada uso (30, 45, 60…): na rodada de vinte ondas dá umas
- * nove ajudas, uma a cada duas ondas e pouco.
+ * O custo sobe a cada uso (30, 45, 60…): na rodada de trinta ondas, se
+ * nenhum bicho escapar, dá umas vinte ajudas — uma a cada onda e meia.
  */
 const AJUDA_DURA = 10;
 const AJUDA_CUSTO_INICIAL = 30;

@@ -282,11 +282,21 @@ console.log('\n— as ondas');
   const naQuinta = mediaDe(niveisNaQuinta);
   const media = mediaDe(niveisFinais);
   console.log(`       nivel medio se nenhum bicho escapar: ${naQuinta.toFixed(1)} na onda 5, ${media.toFixed(1)} na onda ${ONDAS.length}`);
-  ok(ONDAS.length === 20 && m.TOTAL_DE_ONDAS === 20, 'a rodada tem vinte ondas (a vigésima é a vitória)');
+  ok(ONDAS.length === 30 && m.TOTAL_DE_ONDAS === 30, 'a rodada tem trinta ondas (a trigésima é a vitória)');
   ok(naQuinta >= 9 && naQuinta <= 12, 'as cinco primeiras ondas levam perto do nivel 10 (entre 9 e 12)');
-  ok(media >= 20 && media <= 32, 'as vinte ondas terminam entre o nivel 20 e o 32');
-  ok([10, 15, 20].every((n) => ONDAS[n - 1].anunciados.some((a) => a.praga === 'mae-lagartejo')),
-    'a Mãe-Lagartejo volta nas ondas 10, 15 e 20');
+  ok(media >= 30 && media <= 36, 'as trinta ondas terminam entre o nivel 30 e o 36 (o premio do 30 cabe na rodada)');
+  ok([10, 15, 20, 25, 30].every((n) => ONDAS[n - 1].anunciados.some((a) => a.praga === 'mae-lagartejo')),
+    'a Mãe-Lagartejo volta nas ondas 10, 15, 20, 25 e 30');
+  // da 6ª à 30ª a onda nunca fica mais fácil que a anterior: nem menos bicho,
+  // nem leva menor, nem intervalo maior, nem menos grandão
+  const pesoDosGrandoes = (o) => (o.anunciados ?? []).filter((a) => a.praga === 'preguipolvo').length;
+  const naoAfrouxa = ONDAS.slice(5).every((o, i) => {
+    const antes = ONDAS[4 + i];
+    return o.total > antes.total && o.quantos >= antes.quantos && o.aCada <= antes.aCada
+      && pesoDosGrandoes(o) >= pesoDosGrandoes(antes);
+  });
+  ok(naoAfrouxa, 'da quinta à trigésima, nenhuma onda afrouxa em relação à anterior');
+  console.log(`       onda 20: ${ONDAS[19].total} bichos, ${ONDAS[19].quantos} por leva a cada ${ONDAS[19].aCada.toFixed(2)} s · onda 30: ${ONDAS[29].total}, ${ONDAS[29].quantos} a cada ${ONDAS[29].aCada.toFixed(2)} s`);
 
   const um = m.planoDaOnda(1, dado(42));
   console.log(`       onda 1: ${um.length} bichos em ${um.at(-1).t + ONDAS[0].aCada} s`);

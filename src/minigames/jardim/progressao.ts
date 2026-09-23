@@ -123,30 +123,40 @@ const ESTREIAS: readonly OndaDoJardim[] = [
 ];
 
 /**
- * DA SEXTA À VIGÉSIMA — o limite da rodada, pedido do Renan: vencer é
- * aguentar vinte ondas. Ninguém mais estreia; o que sobe é o ritmo, devagar
- * (uma leva maior a cada quatro ondas, o intervalo encurtando um tico por
- * onda), e os grandões. Todo onda tem um Preguipolvo anunciado, a partir da
- * 12ª dois, e a Mãe-Lagartejo volta nas ondas redondas: 10, 15 e 20 — a
- * última com tudo junto, que é o fim da rodada.
+ * DA SEXTA À TRIGÉSIMA — o limite da rodada, pedido do Renan: vencer é
+ * aguentar trinta ondas (eram vinte). Ninguém mais estreia; o que sobe é o
+ * ritmo, devagar, e os grandões:
+ *
+ * - **leva**: 3 bichos por vez, um a mais a cada quatro ondas, até 5 na 13ª;
+ *   depois da 20ª, um a mais a cada cinco (6 na 25ª, 7 na 30ª);
+ * - **intervalo**: encurta 0,05 s por onda até 1,8 s (na 19ª); depois da 20ª
+ *   encurta mais devagar, 0,02 s por onda, até 1,6 s na 30ª;
+ * - **quantos**: três bichos a mais por onda, o tempo todo (48 → 120);
+ * - **grandões**: um Preguipolvo anunciado por onda, dois da 12ª em diante e
+ *   três da 22ª; a Mãe-Lagartejo volta nas ondas redondas (10, 15, 20, 25 e
+ *   30), e nas que terminam em zero depois da 10ª (20 e 30) vem em dupla.
  */
 function depoisDasEstreias(n: number): OndaDoJardim {
   const alem = n - 5;
+  const depoisDaVigesima = Math.max(0, n - 20);
   const anunciados: Array<{ praga: string; quando: number }> = [{ praga: 'preguipolvo', quando: 0.35 }];
   if (n >= 12) anunciados.push({ praga: 'preguipolvo', quando: 0.7 });
+  if (n >= 22) anunciados.push({ praga: 'preguipolvo', quando: 0.15 });
   if (n % 5 === 0) anunciados.push({ praga: 'mae-lagartejo', quando: 1 });
-  if (n === 20) anunciados.push({ praga: 'mae-lagartejo', quando: 0.5 });
+  if (n >= 20 && n % 10 === 0) anunciados.push({ praga: 'mae-lagartejo', quando: 0.5 });
   return {
     estreia: null,
-    quantos: Math.min(5, 3 + Math.floor(alem / 4)),
-    aCada: Math.max(1.8, 2.5 - alem * 0.05),
+    quantos: Math.min(5, 3 + Math.floor(alem / 4)) + Math.floor(depoisDaVigesima / 5),
+    aCada: depoisDaVigesima > 0
+      ? Math.max(1.6, 1.8 - depoisDaVigesima * 0.02)
+      : Math.max(1.8, 2.5 - alem * 0.05),
     total: 45 + alem * 3,
     anunciados,
   };
 }
 
-/** Quantas ondas a rodada tem: a vigésima é a vitória. */
-export const TOTAL_DE_ONDAS = 20;
+/** Quantas ondas a rodada tem: a trigésima é a vitória. */
+export const TOTAL_DE_ONDAS = 30;
 
 export const ONDAS: readonly OndaDoJardim[] = [
   ...ESTREIAS,

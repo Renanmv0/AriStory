@@ -13,8 +13,8 @@ três cartas e a escolhida vale até o fim da rodada. Bicho não morre: é
 *espantado* e vai embora (§3). **Nada de rato nem golfinho, nunca.**
 
 **Estado: jogável de ponta a ponta.** Quest do adubo → convite → a Josefina
-entra junto, põe o parceiro no posto de trás → rodada de **20 ondas** (vencer
-a 20ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala.
+entra junto, põe o parceiro no posto de trás → rodada de **30 ondas** (vencer
+a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala.
 
 **Onde está no código:**
 
@@ -23,7 +23,7 @@ a 20ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | `src/minigames/jardim/rodada.ts` | a rodada inteira (`RodadaDoJardim`): ondas, bichos, regador, o jato de cada carta (`umJato`), as cartas de jardineiro/jardim/clube, os chamados agindo, a ajuda do par, o prêmio da onda e o de 5 em 5 níveis, e os ganchos de teste no fim da classe |
 | `src/minigames/jardim/cartas.ts` | o catálogo das **93 cartas** e a `FichaDaRodada` (números + `regras` + `jato`) |
 | `src/minigames/jardim/baralho.ts` | a mão (carta não repete), o sorteio de três, a Sorte de principiante |
-| `src/minigames/jardim/progressao.ts` | a curva de nível, as gotas por praga, as **20 ondas** (`ONDAS`, `TOTAL_DE_ONDAS`) |
+| `src/minigames/jardim/progressao.ts` | a curva de nível, as gotas por praga, as **30 ondas** (`ONDAS`, `TOTAL_DE_ONDAS`) |
 | `src/minigames/jardim/jato.ts` | o DESENHO da água e de todo efeito das cartas (partículas, poças, anéis, nuvem) |
 | `src/minigames/jardim/tela.ts` | os tipos que a UI recebe (carta, painel, fim) |
 | `src/scenes/estufa.ts` | a cena: a planta que a rodada recebe (`PlantaDoJardim`), o `ElencoDaEstufa` (Josefina, Capy, Gina, Walter, Noel, Jean-Luc), as cutscenes dos chamados, o livro na bancada, as falas do fim |
@@ -51,15 +51,15 @@ velocidade/mordida de cada praga em `JEITO` (`rodada.ts`).
   numa função (Capy ataca, Gina barra portão, Walter protege canteiro, Noel
   cata gota);
 - a **ajuda do par** carrega com gotas (a escolha foi minha, ele deixou);
-- limite de **20 ondas** "por enquanto"; a tela do fim conta os bichos e mostra
+- limite de **30 ondas** (eram 20; o Renan subiu); a tela do fim conta os bichos e mostra
   as cartas; o **livro das cartas** (na bancada) guarda para sempre toda carta
   já escolhida, em ordem de raridade.
 
 **O que falta** (a escolha do próximo passo é do Renan):
 - o **jeito de cada bicho** (§5 diz o que cada um faria: o Gafanhopo pula o
   jato, o Coelhatu cava…) — hoje os seis só andam e comem;
-- o **pagamento** por canteiro de pé e a **memória** de vencer as 20 ondas;
-- **equilíbrio**: ninguém jogou as 20 ondas inteiras; o Renan joga e diz.
+- o **pagamento** por canteiro de pé e a **memória** de vencer as 30 ondas;
+- **equilíbrio**: ninguém jogou as 30 ondas inteiras; o Renan joga e diz.
 - perguntas em aberto: §12.
 
 **Testes da rodada** (rodar UM de cada vez — dois Chromium juntos dão falha
@@ -242,7 +242,8 @@ vindo pelo fundo. Água neles, meu bem!") e a rodada começa (`rodada.comecar()`
 `node scripts/postos.mjs /tmp/pt` percorre tudo isso.
 
 A rodada nasceu curta (4 a 6 minutos, cinco ondas). Hoje ela vai até a
-**vigésima onda**, a pedido do Renan: vencer é aguentar as vinte.
+**trigésima onda**, a pedido do Renan: vencer é aguentar as trinta (foi
+vinte até ele pedir mais dez).
 
 | fase | o que acontece |
 |---|---|
@@ -274,12 +275,14 @@ placar. Onda 1 é uma aula, e ela tem que parecer fácil.
 | 4 | **+ Tucanguru**, e um Preguipolvo | 3 a cada 3 s | ~36 |
 | 5 | todos, e a **Mãe-Lagartejo** no fim | 3 a cada 2,5 s | ~45 |
 | 6–20 | todos; um Preguipolvo por onda (dois da 12ª em diante) e a **Mãe-Lagartejo de volta nas ondas 10, 15 e 20** (duas na 20ª) | de 3 a 5 por leva, o intervalo encurtando até 1,8 s | 48 → 90 |
+| 21–30 | todos; **três** Preguipolvos da 22ª em diante, a Mãe-Lagartejo na 25ª e **duas na 30ª** | de 5 a 7 por leva (uma a mais a cada cinco ondas), o intervalo encurtando mais devagar, até 1,6 s | 93 → 120 |
 
-**A RODADA TEM VINTE ONDAS — construído** (pedido do Renan, "por enquanto"):
-aguentar a vigésima com pelo menos um canteiro de pé é a **vitória**. Da sexta
+**A RODADA TEM TRINTA ONDAS — construído** (pedido do Renan; eram vinte):
+aguentar a trigésima com pelo menos um canteiro de pé é a **vitória**. Da sexta
 em diante ninguém estreia; sobe o ritmo, devagar, e sobem os grandões. Se nenhum
-bicho escapa, a dupla chega perto do nível 10 na quinta onda e do 25 na
-vigésima (`scripts/cartas.mjs` mede as duas marcas). O número mora em
+bicho escapa, a dupla chega perto do nível 10 na quinta onda, do 25 na
+vigésima e do 32 na trigésima — o prêmio de duas cartas do nível 30 cabe
+na rodada (`scripts/cartas.mjs` mede as duas marcas). O número mora em
 `TOTAL_DE_ONDAS`, em `progressao.ts`: mudar o limite é mudar ele.
 
 **AJUSTES DEPOIS DE JOGAR — construído** (o Renan achou a rodada difícil e
@@ -1412,7 +1415,7 @@ em vez de inventar uma resposta e seguir.
    mão ruim sem virar uma quarta escolha grátis.
 2. ~~**Carta repetida.**~~ **Respondida pelo Renan: carta não se repete.** A
    comum que empilhava virou série de três degraus (§6).
-3. **A chefe.** (Hoje: ela entra em toda rodada, nas ondas 5, 10, 15 e 20.)
+3. **A chefe.** (Hoje: ela entra em toda rodada, nas ondas 5, 10, 15, 20, 25 e 30.)
    A Mãe-Lagartejo entra na onda 5 de toda rodada, ou só a partir
    da segunda vez que se joga? A favor da segunda: a primeira rodada é a que
    ensina, e chefe na estreia é onde roguelite costuma perder gente.
