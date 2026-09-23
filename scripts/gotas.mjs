@@ -244,12 +244,16 @@ const MESA_A = ['bico-2', 'orvalho', 'pressao'];               // comum (série)
 const MESA_B = ['chuva', 'os-dois-na-frente', 'gole-de-agua']; // lendária, lendária, consolo
 // os tres textos mais compridos do baralho, um de cada familia: a mesa mais alta
 const MESA_C = ['agua-com-sabao', 'troca-de-turno', 'planta-carnivora'];
+// os chamados: quem do clube entra na estufa para ajudar
+const MESA_D = ['chama-gina', 'chama-walter', 'mutirao-do-clube'];
 
 await vitrine(page, MESA_A, `${OUT}-vitrine-a.png`);
 await fechar(page);
 await vitrine(page, MESA_B, `${OUT}-vitrine-b.png`);
 await fechar(page);
 await vitrine(page, MESA_C, `${OUT}-vitrine-c.png`);
+await fechar(page);
+await vitrine(page, MESA_D, `${OUT}-vitrine-d.png`);
 await fechar(page);
 await page.close();
 
@@ -285,6 +289,9 @@ await vitrine(cel, MESA_B, `${OUT}-celular-b.png`);
 await fechar(cel);
 await vitrine(cel, MESA_C, `${OUT}-celular-c.png`);
 await medir('c');
+await fechar(cel);
+await vitrine(cel, MESA_D, `${OUT}-celular-d.png`);
+await medir('d');
 await cel.close();
 
 // ------------------------------------------------------------------ relatório

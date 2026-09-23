@@ -368,7 +368,7 @@ com peso, e o peso muda com o nível — nível alto tira mais raro.
 
 **O catálogo e o sorteio estão construídos** (`src/minigames/jardim/`), como
 lógica pura, e `node scripts/cartas.mjs` joga mil rodadas até o baralho acabar
-para provar as regras abaixo. Hoje são 88 cartas mais 3 de consolo.
+para provar as regras abaixo. Hoje são 93 cartas mais 3 de consolo.
 
 ### Carta nenhuma se repete — **construído**
 
@@ -533,6 +533,20 @@ não leva jato).
 | O Walter de plantão ⚙ | raro | o Walter late para o bicho mais perto de um canteiro, e ele recua até a porta |
 | Adubo do Noel ⚙ | raro | canteiro que você rega fica mais forte até o fim da onda |
 
+**Os chamados** — pedido do Renan: cartas de raridade alta que **chamam** alguém
+do clube para DENTRO da estufa, e ele ajuda por um tempo. A diferença para as de
+cima é que aqui o bicho aparece no terreiro, andando, e não só um efeito de
+longe. Cada chamado exclui a carta do mesmo bicho que já agia da porta ou do
+corredor — ninguém está em dois lugares ao mesmo tempo.
+
+| carta | raridade | efeito |
+|---|---|---|
+| Chamar o Capy ⚙ | raro | uma vez por onda o Capy entra por 20 s e rega junto com você — exclui *O Capy salva-vidas* |
+| Chamar a Gina ⚙ | raro | uma vez por onda a Gina fica 20 s num portão, e por ali ninguém passa — exclui *Apito da Gina* |
+| Chamar o Walter ⚙ | raro | uma vez por onda o Walter corre 20 s latindo, e o bicho latido foge — exclui *O Walter de plantão* |
+| Chamar o Noel ⚙ | raro | uma vez por onda o Noel passa 20 s catando as gotas do chão para você |
+| **Mutirão do clube** ⚙ | lendário | quando a chefe chega, Capy, Gina, Walter e Noel entram juntos por 30 s |
+
 ### O regador MUDA DE CARA quando você melhora ele
 
 Esta é a regra que amarra as cartas ao resto do jogo, e ela é barata porque
@@ -606,8 +620,9 @@ uma mesa de cada raridade, no computador e no celular.
 As 46 ideias que estavam aqui numeradas **viraram carta de verdade**, todas de
 uma vez, a pedido do Renan: "pode criar todas as cartas que você mencionou" —
 ele ajusta depois de testar. Elas estão nas tabelas das famílias acima, e o
-baralho foi de 38 para **88 cartas** (38 de regador, 22 de jardineiro, 28 de
-jardim, contando cada degrau de série).
+baralho foi de 38 para **88 cartas**. Depois entraram os cinco *chamados* do
+clube, e hoje são **93** (38 de regador, 22 de jardineiro, 33 de jardim,
+contando cada degrau de série).
 
 O que isso quer dizer hoje, com a rodada (etapa 3) ainda por construir:
 
@@ -624,7 +639,8 @@ O que isso quer dizer hoje, com a rodada (etapa 3) ainda por construir:
   gelada deixando o bico azulado, o Balde trocando a lata) passa pela skill
   `aristory-prop` e o selo aparece sozinho.
 
-Três pares se excluem, porque um deixaria o outro morto: *Mira no grandão* ×
+Três pares se excluem, porque um deixaria o outro morto (fora os chamados, que
+excluem a carta do mesmo bicho): *Mira no grandão* ×
 *Mira em quem come*, *Refil rápido* × *O Jean-Luc no tonel* e *Troca de turno*
 × *Os dois na frente*. E o *Pé na poça* só sorteia com a *Poça* na mão.
 
@@ -965,6 +981,10 @@ em vez de inventar uma resposta e seguir.
 
 **Sobre as cartas (§6):**
 
+0. **Quando o chamado chega.** Hoje o texto diz "uma vez por onda", e a
+   recomendação é que seja **sozinho**, no momento em que o primeiro bicho da
+   onda encosta num canteiro — é quando a ajuda faz diferença. A outra opção é
+   um botão (o jogador chama quando quiser, uma vez por onda). Decide na etapa 3.
 1. **Reroll.** Vale a Josefina dar um "não gostei, mostra outras três" por
    rodada? A recomendação é que sim, e **um só** — o suficiente para salvar uma
    mão ruim sem virar uma quarta escolha grátis.

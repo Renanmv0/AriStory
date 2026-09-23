@@ -223,7 +223,10 @@ minigame, e carta que só existe no código ninguém balanceia.
 ## 10. O banco de ideias virou baralho
 
 As 46 ideias numeradas que o §6 do plano guardava **viraram carta de uma vez**,
-a pedido do Renan (ele ajusta depois de testar). Hoje são 88 cartas. Ideia nova
+a pedido do Renan (ele ajusta depois de testar). Hoje são 93 cartas: as 88 de antes e mais os cinco
+*chamados* (Capy, Gina, Walter, Noel e o Mutirão do clube), que o Renan pediu
+depois — raros e uma lendária que trazem alguém do clube PARA DENTRO da estufa
+por um tempo. Cada chamado exclui a carta do mesmo bicho que já agia de longe. Ideia nova
 que surgir numa conversa vai para o §6 como proposta, e só vira carta quando ele
 escolher — a escolha é dele.
 

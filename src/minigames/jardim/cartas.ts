@@ -108,7 +108,13 @@ export type RegraDoJardim =
   | 'jean-luc-no-tonel' // encher no tonel é na hora
   | 'capy-salva-vidas'  // uma vez por onda, um jato longo pelo corredor do meio
   | 'walter-de-plantao' // o bicho mais perto de um canteiro recua até a porta
-  | 'adubo-do-noel';    // canteiro regado fica mais forte até o fim da onda
+  | 'adubo-do-noel'     // canteiro regado fica mais forte até o fim da onda
+  // os CHAMADOS: o bicho do clube entra na estufa e ajuda por um tempo
+  | 'chama-capy'        // uma vez por onda o Capy entra por 20 s e rega junto com você
+  | 'chama-gina'        // uma vez por onda a Gina fecha um portão por 20 s com o pescoço
+  | 'chama-walter'      // uma vez por onda o Walter corre 20 s latindo, e bicho latido foge
+  | 'chama-noel'        // uma vez por onda o Noel passa 20 s juntando gotas para você
+  | 'mutirao-do-clube'; // na onda da chefe, os quatro entram juntos por 30 s
 
 /**
  * OS NÚMEROS E AS REGRAS DA RODADA — tudo o que uma carta pode mexer.
@@ -674,6 +680,7 @@ const JARDIM: CartaDoJardim[] = [
   {
     id: 'apito-da-gina', nome: 'Apito da Gina', familia: 'jardim', raridade: 'incomum',
     icone: '📯', texto: 'Uma vez por onda a Gina apita da porta e todo bicho congela 1,5 s',
+    exclui: ['chama-gina'],
     aplicar: (f) => f.regras.add('apito-da-gina'),
   },
   {
@@ -700,17 +707,54 @@ const JARDIM: CartaDoJardim[] = [
   {
     id: 'capy-salva-vidas', nome: 'O Capy salva-vidas', familia: 'jardim', raridade: 'raro',
     icone: '🛟', texto: 'Uma vez por onda o Capy dá um jato longo pelo corredor do meio',
+    exclui: ['chama-capy'],
     aplicar: (f) => f.regras.add('capy-salva-vidas'),
   },
   {
     id: 'walter-de-plantao', nome: 'O Walter de plantão', familia: 'jardim', raridade: 'raro',
     icone: '🐕', texto: 'O Walter late pro bicho mais perto de um canteiro, e ele recua',
+    exclui: ['chama-walter'],
     aplicar: (f) => f.regras.add('walter-de-plantao'),
   },
   {
     id: 'adubo-do-noel', nome: 'Adubo do Noel', familia: 'jardim', raridade: 'raro',
     icone: '🍂', texto: 'Canteiro que você rega fica mais forte até o fim da onda',
     aplicar: (f) => f.regras.add('adubo-do-noel'),
+  },
+  /*
+   * OS CHAMADOS — pedido do Renan: cartas de raridade alta que CHAMAM alguém
+   * do clube para dentro da estufa, e ele ajuda por um tempo. Diferente das
+   * de cima (um efeito de longe, sem ninguém entrar), aqui o bicho aparece no
+   * terreiro. Cada chamado exclui a carta do mesmo bicho que já fazia algo
+   * na porta ou no corredor: ele não está em dois lugares ao mesmo tempo.
+   */
+  {
+    id: 'chama-capy', nome: 'Chamar o Capy', familia: 'jardim', raridade: 'raro',
+    icone: '🕶️', texto: 'Uma vez por onda o Capy vem por 20 s e rega junto com você',
+    exclui: ['capy-salva-vidas'],
+    aplicar: (f) => f.regras.add('chama-capy'),
+  },
+  {
+    id: 'chama-gina', nome: 'Chamar a Gina', familia: 'jardim', raridade: 'raro',
+    icone: '🦒', texto: 'Uma vez por onda a Gina fica 20 s num portão, e por ali ninguém passa',
+    exclui: ['apito-da-gina'],
+    aplicar: (f) => f.regras.add('chama-gina'),
+  },
+  {
+    id: 'chama-walter', nome: 'Chamar o Walter', familia: 'jardim', raridade: 'raro',
+    icone: '🐶', texto: 'Uma vez por onda o Walter corre 20 s latindo, e quem ele late foge',
+    exclui: ['walter-de-plantao'],
+    aplicar: (f) => f.regras.add('chama-walter'),
+  },
+  {
+    id: 'chama-noel', nome: 'Chamar o Noel', familia: 'jardim', raridade: 'raro',
+    icone: '🦃', texto: 'Uma vez por onda o Noel passa 20 s catando as gotas pra você',
+    aplicar: (f) => f.regras.add('chama-noel'),
+  },
+  {
+    id: 'mutirao-do-clube', nome: 'Mutirão do clube', familia: 'jardim', raridade: 'lendario',
+    icone: '🎉', texto: 'Quando a chefe chega, Capy, Gina, Walter e Noel ajudam por 30 s',
+    aplicar: (f) => f.regras.add('mutirao-do-clube'),
   },
 ];
 
