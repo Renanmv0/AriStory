@@ -2147,6 +2147,17 @@ export class RodadaDoJardim {
   /** o que acontece quando uma onda acaba, antes do respiro */
   private fimDeUmaOnda(): void {
     const r = this.ficha.regras;
+    /*
+     * O PRÊMIO DA ONDA (pedido do Renan): vencer uma onda dá gotas — metade do
+     * que falta para o próximo nível, arredondado para cima. Metade, e não
+     * tudo: o prêmio empurra, mas a carta seguinte ainda é dos bichos.
+     */
+    const agora = nivelDasGotas(this.juntadas);
+    const premio = Math.max(1, Math.ceil((agora.custo - agora.noNivel) / 2));
+    this.g.toast(`Onda ${this.onda} vencida! +${premio} ${premio === 1 ? 'gota' : 'gotas'} de prêmio`, '🏆');
+    this.g.som('memoria');
+    this.receberGotas(premio);
+    this.contar('premio-da-onda');
     // o Dedo verde: o que está machucado se recupera um pouco
     if (r.has('dedo-verde')) {
       let algum = false;

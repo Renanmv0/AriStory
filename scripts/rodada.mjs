@@ -212,6 +212,8 @@ await page.screenshot({ path: `${OUT}-fim.png` });
     u.comecarRodada();
     r.escalaDoTempo = 3;
     r.ondasDaRodada = 5;
+    // o prêmio das ondas sobe o nível: sem isto a tela de cartas abriria no meio
+    r.fixarNivel(99);
   });
   const esvaziar = () => page.evaluate(() => {
     const r = window.jogo.current.world.root.userData.rodada;
@@ -247,6 +249,11 @@ await page.screenshot({ path: `${OUT}-fim.png` });
   const e5 = await estado();
   ok(e5.onda === 5 && e5.rodando, `as ondas se seguem até a quinta (está na ${e5.onda})`);
   ok(avisos.some((t) => /Onda 2: chegam os Gafanhopos/.test(t)), 'a onda 2 avisa quem estreia');
+  // o prêmio: metade do que falta para o próximo nível (0 gotas → faltam 5 → +3)
+  console.log('       avisos:', avisos.filter((t) => /vencida/.test(t)).join(' · '));
+  ok(avisos.some((t) => /Onda 1 vencida! \+3 gotas de prêmio/.test(t)), 'vencer a onda 1 dá +3 gotas (metade das 5 que faltavam)');
+  ok(avisos.filter((t) => /vencida/.test(t)).length >= 4, 'cada onda vencida avisa o prêmio');
+  ok(e5.juntadas >= 3, `as gotas do prêmio entram na conta (${e5.juntadas})`);
   ok(avisos.some((t) => /Onda 5: a última leva/.test(t)), 'a onda 5 avisa que é a última');
   ok((pragasDaOnda[3] ?? []).includes('coelhatu'), `a onda 3 traz o Coelhatu [${pragasDaOnda[3]}]`);
   ok((pragasDaOnda[5] ?? []).includes('mae-lagartejo'), `a onda 5 traz a Mãe-Lagartejo [${pragasDaOnda[5]}]`);

@@ -106,7 +106,9 @@ export interface OndaDoJardim {
 const ESTREIAS: readonly OndaDoJardim[] = [
   { estreia: 'lagartejo', quantos: 1, aCada: 4, total: 12 },
   { estreia: 'gafanhopo', quantos: 2, aCada: 4, total: 20 },
-  { estreia: 'coelhatu', quantos: 2, aCada: 3, total: 28 },
+  // a terceira era a parede da rodada (o Renan quase nunca passava sem carta
+  // boa): 28 → 22 bichos, e um a cada 3,5 s em vez de 3
+  { estreia: 'coelhatu', quantos: 2, aCada: 3.5, total: 22 },
   {
     estreia: 'tucanguru', quantos: 3, aCada: 3, total: 36,
     anunciados: [{ praga: 'preguipolvo', quando: 0.6 }],

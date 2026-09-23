@@ -214,7 +214,7 @@ placar. Onda 1 é uma aula, e ela tem que parecer fácil.
 |---|---|---|---|
 | 1 | Lagartejo | 1 a cada 4 s | ~12 |
 | 2 | **+ Gafanhopo** | 2 a cada 4 s | ~20 |
-| 3 | **+ Coelhatu** | 2 a cada 3 s | ~28 |
+| 3 | **+ Coelhatu** | 2 a cada 3,5 s | ~22 (era 28: a terceira era a parede da rodada) |
 | 4 | **+ Tucanguru**, e um Preguipolvo | 3 a cada 3 s | ~36 |
 | 5 | todos, e a **Mãe-Lagartejo** no fim | 3 a cada 2,5 s | ~45 |
 | 6–20 | todos; um Preguipolvo por onda (dois da 12ª em diante) e a **Mãe-Lagartejo de volta nas ondas 10, 15 e 20** (duas na 20ª) | de 3 a 5 por leva, o intervalo encurtando até 1,8 s | 48 → 90 |
@@ -237,6 +237,12 @@ jogou no celular):
   altura, o que for maior. No computador é um passo para trás; no celular em
   pé é mais que o dobro de chão à vista (antes eram uns 5 m de largura, e os
   bichos dos lados sumiam). No fim da rodada volta ao zoom da estufa.
+
+**O PRÊMIO DA ONDA — construído** (pedido do Renan). Vencer uma onda (menos
+a última, que é a tela do fim) dá gotas: **metade do que falta para o próximo
+nível**, arredondado para cima, com o aviso "🏆 Onda 3 vencida! +7 gotas de
+prêmio". Metade, e não tudo: o prêmio empurra a próxima carta, mas quem entrega
+ela ainda são os bichos. As gotas do prêmio enchem também o anel da ajuda do par.
 
 **A AJUDA DO PAR — construída** (ideia do Renan). Quem ficou lá atrás pode
 ser chamado: um botão no canto (ao lado do ✨ no celular; o `F` no computador)
