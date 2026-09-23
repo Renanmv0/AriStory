@@ -324,18 +324,19 @@ ele vem de fora da porta, fala, e para no posto — e que a Gina passa abaixada.
 que surgir numa conversa vai para o §6 como proposta, e só vira carta quando ele
 escolher — a escolha é dele.
 
-O que ficou devendo, e quem pegar a etapa 3 precisa saber:
+O que vale saber sobre o baralho de hoje:
 
-- **Quase todas ligam regra** (as ⚙ das tabelas). Cada `RegraDoJardim` tem um
-  comentário dizendo o que ela faz: é a especificação para o código da rodada.
-- **Seis números novos na ficha** para as que só mexem em número:
+- **Toda carta age na rodada** — as ⚙ ligam uma `RegraDoJardim` (cada uma com
+  um comentário do que faz), e o código que obedece está em `rodada.ts` (ver
+  a tabela "a carta age…" no §2 desta skill).
+- **Seis números da ficha** servem às que só mexem em número:
   `empurraoDoJato` (Gota pesada), `contraOGrandao` (Água morna), `refil`
   (Refil rápido), `gastoPorJato` (Chapéu de palha), `recargaParado` (Descanso
   na sombra) e `compostagem` (Compostagem).
-- **As novas de regador não mudam a peça ainda** — sem desenho, sem selo.
 - Pares que se excluem: *Mira no grandão* × *Mira em quem come*, *Refil
   rápido* (a série inteira) × *O Jean-Luc no tonel*, *Troca de turno* × *Os
-  dois na frente*. *Pé na poça* `requer` a *Poça*.
+  dois na frente*, cada chamado × a carta de longe do mesmo bicho. *Pé na
+  poça* `requer` a *Poça*.
 
 ## 11. Cartas que já existem e as que foram cortadas
 

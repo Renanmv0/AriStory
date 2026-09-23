@@ -20,8 +20,12 @@ scripts/pragas.mjs            enfileira as seis, fotografa e MEDE
 docs/MINIGAME-JARDIM.md §5    o elenco, o que cada uma faz, e por quê
 ```
 
-Nenhuma praga anda, colide ou sabe que existe uma rodada — aqui é **só
-geometria**. A lógica de onda é do minigame, e ainda não foi construída.
+Aqui é **só geometria**: a praga não sabe que existe uma rodada. Quem faz ela
+andar, comer e fugir é `minigames/jardim/rodada.ts` — a velocidade, a mordida e
+o raio de cada uma estão na tabela `JEITO` do topo dele, e em qual onda cada
+uma entra está em `ONDAS` (`progressao.ts`). **Praga nova no jogo = a ficha
+aqui + uma linha em `JEITO` + entrar numa onda.** Hoje as seis andam do mesmo
+jeito; o comportamento próprio de cada uma (§5 do plano) ainda não existe.
 
 ---
 

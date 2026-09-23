@@ -1,18 +1,75 @@
 # A Estufa da Josefina — plano do minigame do jardim
 
-> Documento de PROJETO. **As etapas 0, 1 e 2 estão no jogo** (§10): a área existe,
-> a quest que a destranca também, a Josefina já entra na estufa junto com a
-> dupla e já pede confirmação para começar, e as cartas, a curva de nível e as
-> ondas existem como lógica testada. **A etapa 3 também**: a rodada roda (a
-> primeira onda, só de Lagartejos), o regador atira sozinho e o jato de cada
-> carta que mexe no jato já tem a animação dela (§6, "O jato também muda de
-> cara"). Quando uma etapa
-> for construída, marque-a aqui, e deixe o `git log` ser a fonte da verdade do
-> que de fato existe.
->
-> Este arquivo é o lugar de ajustar o minigame. Ele vai mudar MUITO: número de
-> inimigo, dano de regador, curva de experiência, raridade de melhoria. Mexa
-> aqui primeiro, no código depois.
+## ⭐ COMECE AQUI — o estado em uma página
+
+> Sessão nova: **leia só esta seção** para se situar. O resto do arquivo é o
+> detalhe de cada parte (os § citados), para quando for mexer nela. O `git
+> log` é a fonte da verdade do que mudou por último.
+
+**O que é.** Um roguelite-survivor na estufa da Josefina, dentro do clube: o
+regador atira SOZINHO no bicho mais perto; o jogador só anda (regar, fugir,
+buscar água no tonel, pisar nas gotas). Gotas sobem o nível; cada nível abre
+três cartas e a escolhida vale até o fim da rodada. Bicho não morre: é
+*espantado* e vai embora (§3). **Nada de rato nem golfinho, nunca.**
+
+**Estado: jogável de ponta a ponta.** Quest do adubo → convite → a Josefina
+entra junto, põe o parceiro no posto de trás → rodada de **20 ondas** (vencer
+a 20ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala.
+
+**Onde está no código:**
+
+| arquivo | o que mora lá |
+|---|---|
+| `src/minigames/jardim/rodada.ts` | a rodada inteira (`RodadaDoJardim`): ondas, bichos, regador, o jato de cada carta (`umJato`), as cartas de jardineiro/jardim/clube, os chamados agindo, a ajuda do par, o prêmio da onda e o de 5 em 5 níveis, e os ganchos de teste no fim da classe |
+| `src/minigames/jardim/cartas.ts` | o catálogo das **93 cartas** e a `FichaDaRodada` (números + `regras` + `jato`) |
+| `src/minigames/jardim/baralho.ts` | a mão (carta não repete), o sorteio de três, a Sorte de principiante |
+| `src/minigames/jardim/progressao.ts` | a curva de nível, as gotas por praga, as **20 ondas** (`ONDAS`, `TOTAL_DE_ONDAS`) |
+| `src/minigames/jardim/jato.ts` | o DESENHO da água e de todo efeito das cartas (partículas, poças, anéis, nuvem) |
+| `src/minigames/jardim/tela.ts` | os tipos que a UI recebe (carta, painel, fim) |
+| `src/scenes/estufa.ts` | a cena: a planta que a rodada recebe (`PlantaDoJardim`), o `ElencoDaEstufa` (Josefina, Capy, Gina, Walter, Noel, Jean-Luc), as cutscenes dos chamados, o livro na bancada, as falas do fim |
+| `src/ui/telaDeCartas.ts`, `src/ui/livroDeCartas.ts` | a tela das três cartas; o livro das cartas e a tela do fim |
+| `src/world/bichosDoJardim.ts` | a geometria das seis pragas (`PRAGAS`) |
+| `src/core/Oclusao.ts` | parede/árvore que tapa bicho ou gota fica translúcida (a rodada liga) |
+| `src/audio/musica.ts` (`'rodada-do-jardim'`) | a música da defesa |
+
+**Os números que mais se ajustam** (todos no topo de `rodada.ts`, salvo aviso):
+canteiro aguenta `VIDA_DO_CANTEIRO = 34`; regador começa com alcance 3,0
+(`fichaInicial`, em `cartas.ts`); respiro entre ondas `INTERVALO = 6` s; ajuda
+do par dura `AJUDA_DURA = 10` s e custa 30 gotas, +15 a cada uso; prêmio da
+onda = metade do que falta para o próximo nível; de 5 em 5 níveis, 1 ou 2
+cartas a mais (`cartasDePremio`); o ritmo de cada onda em `progressao.ts`;
+velocidade/mordida de cada praga em `JEITO` (`rodada.ts`).
+
+**Decisões do Renan que valem como regra** (não reabrir):
+- carta **não se repete** (a comum que empilhava virou série I–II–III);
+- **as cartas se SOMAM**: tudo da mão vale junto, e carta nova não pode apagar
+  outra (§6, "As cartas se somam");
+- **carta que mexe no jato muda o jato na tela**, e toda carta se vê agindo;
+- quem não é controlado fica **atrás, com a Josefina**; o `T` só troca com a
+  carta Troca de turno;
+- os **chamados** entram numa cutscene pela porta e **agem sozinhos**, cada um
+  numa função (Capy ataca, Gina barra portão, Walter protege canteiro, Noel
+  cata gota);
+- a **ajuda do par** carrega com gotas (a escolha foi minha, ele deixou);
+- limite de **20 ondas** "por enquanto"; a tela do fim conta os bichos e mostra
+  as cartas; o **livro das cartas** (na bancada) guarda para sempre toda carta
+  já escolhida, em ordem de raridade.
+
+**O que falta** (a escolha do próximo passo é do Renan):
+- o **jeito de cada bicho** (§5 diz o que cada um faria: o Gafanhopo pula o
+  jato, o Coelhatu cava…) — hoje os seis só andam e comem;
+- o **pagamento** por canteiro de pé e a **memória** de vencer as 20 ondas;
+- **equilíbrio**: ninguém jogou as 20 ondas inteiras; o Renan joga e diz.
+- perguntas em aberto: §12.
+
+**Testes da rodada** (rodar UM de cada vez — dois Chromium juntos dão falha
+falsa por lentidão): `cartas.mjs` (lógica, sem navegador), `rodada.mjs`,
+`jato.mjs`, `cartasNaRodada.mjs`, `livro.mjs`, `oclusao.mjs`, `postos.mjs`,
+`chamados.mjs`, `gotas.mjs`. O que cada um prova está no `CLAUDE.md`. Para
+olhar: `?cena=estufa&rodada=1` (rodada direto) e `?cena=estufa&jato=<ids>`
+(vitrine de um jato).
+
+---
 
 O pedido do Renan, nas palavras dele: um minigame que começa numa **quest de
 achar alguma coisa pelo mundo** — um adubo, uma substância — para as plantas da
@@ -180,13 +237,12 @@ desenho do Renan:
    portões. O jogador fica solto — é a hora de ele ir para onde quiser defender.
 
 **O gancho da rodada está no fim do passo 6**, marcado no código
-(`scenes/estufa.ts`, `assumirOsPostos`). Enquanto a etapa 3 não existe, ela
-fecha o assunto dentro do mundo ("ainda tá quente demais, eles só saem quando
-esfria") e desfaz os postos. `node scripts/postos.mjs /tmp/pt` percorre tudo
-isso.
+(`scenes/estufa.ts`, `assumirOsPostos`): a Josefina avisa ("Olha lá… estão
+vindo pelo fundo. Água neles, meu bem!") e a rodada começa (`rodada.comecar()`).
+`node scripts/postos.mjs /tmp/pt` percorre tudo isso.
 
-A rodada em si é curta de propósito: **algo entre 4 e 6 minutos**. Roguelite é
-jogo de repetir, e repetir só é gostoso se recomeçar é barato.
+A rodada nasceu curta (4 a 6 minutos, cinco ondas). Hoje ela vai até a
+**vigésima onda**, a pedido do Renan: vencer é aguentar as vinte.
 
 | fase | o que acontece |
 |---|---|
@@ -788,8 +844,8 @@ invisível**. Se a carta mexe no jato, o jogador vê a diferença no jato. No fi
 de uma rodada boa o ataque tem que parecer outro, como a peça na mão já parece.
 
 **Carta de jato que não muda nada na tela é carta incompleta** — vale para as
-que existem e para toda carta nova. É para isso que o teste da etapa 3 vai
-fotografar o jato de cada uma ao lado do jato básico.
+que existem e para toda carta nova. O `scripts/jato.mjs` mede e fotografa o
+jato de cada uma (e das combinações).
 
 #### As quatro camadas do jato
 
@@ -886,10 +942,8 @@ o jogo engasga.
 - a vitrine serve para OLHAR também: é o jeito de ver o jato de uma carta sem
   esperar ela sair no sorteio.
 
-**O que ainda não tem:** o som de cada carta. Hoje o jato é mudo, o bicho
-espantado faz o respingo de sempre e o tonel faz o `gluglu`; os sons novos da
-tabela (o "ploc" da bolha, o tilintar do gelo…) precisam ser sintetizados e
-OUVIDOS antes de entrar (skill `aristory-som`).
+**O som também existe**: cada efeito do jato escolhe o seu (`jato.ts`, `aoSoar`;
+as receitas em `audio/efeitos.ts`), e o `jato.mjs` confere que tocou.
 
 ### A tela das três cartas — **construída**
 
@@ -938,7 +992,8 @@ baralho foi de 38 para **88 cartas**. Depois entraram os cinco *chamados* do
 clube, e hoje são **93** (38 de regador, 22 de jardineiro, 33 de jardim,
 contando cada degrau de série).
 
-O que isso quer dizer hoje, com a rodada (etapa 3) ainda por construir:
+O que isso quer dizer (escrito antes da rodada existir; **hoje todas as 93
+funcionam na rodada**, ver "Como as cartas de jardineiro e de jardim agem"):
 
 - **Já funcionam de ponta a ponta** no sorteio, na mão e na tela: saem nas três
   cartas, não repetem, respeitam série, `exclui` e o piso da lendária.
@@ -1187,7 +1242,7 @@ trabalha rápido") virando geometria.
 | 2.95 | **a Josefina entra junto**, passeia lá dentro, pede confirmação e leva o parceiro para o posto de trás | **pronto** (§3) |
 | 2.97 | **a lógica**: o baralho, a mão que não repete carta, a curva de nível, as gotas por praga e o roteiro das ondas | **pronto** (§6, §7) |
 | 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | **pronto** (§10) |
-| 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
+| 4 | os canteiros como alvo, e o placar por canteiro vivo | **pronto** (a tela do fim conta os canteiros; o pagamento é a 9) |
 | 5 | gota no chão e a tela de três cartas (a conta de nível e o sorteio já existem) | **pronto** (a peça; liga na rodada junto com a 3) |
 | 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, com o som de cada carta |
 | 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **em parte**: as cinco ondas rodam com os seis bichos, com o aviso do grandão; o JEITO de cada um (o Gafanhopo pular o jato, o Tucanguru saltar a cerca…) a fazer |
@@ -1307,6 +1362,10 @@ receber o presente.
 
 ## 11. Notas de implementação, para quando chegar a hora
 
+> **HISTÓRICO.** Escrito antes da rodada existir, para guiar a construção. Tudo
+> daqui já foi feito (às vezes de outro jeito); o que vale hoje é o código e o
+> "COMECE AQUI" do topo. Fica pelo raciocínio.
+
 **O minigame mora em `src/minigames/`**, como o `turnoDoMania.ts`. Ele recebe
 uma planta (`PlantaDoJardim`: onde é o terreiro, onde estão os canteiros, onde
 são as bocas, onde é o tonel) e **não sabe que existe uma estufa** — quem conhece
@@ -1353,13 +1412,16 @@ em vez de inventar uma resposta e seguir.
    mão ruim sem virar uma quarta escolha grátis.
 2. ~~**Carta repetida.**~~ **Respondida pelo Renan: carta não se repete.** A
    comum que empilhava virou série de três degraus (§6).
-3. **A chefe.** A Mãe-Lagartejo entra na onda 5 de toda rodada, ou só a partir
+3. **A chefe.** (Hoje: ela entra em toda rodada, nas ondas 5, 10, 15 e 20.)
+   A Mãe-Lagartejo entra na onda 5 de toda rodada, ou só a partir
    da segunda vez que se joga? A favor da segunda: a primeira rodada é a que
    ensina, e chefe na estreia é onde roguelite costuma perder gente.
 
 **Sobre a dupla na rodada (§1):**
 
-6. **O `T` no meio da rodada.** Com um na frente e o outro atrás, o `T` pode
+6. ~~**O `T` no meio da rodada.**~~ **Resolvida:** o `T` fica travado na
+   rodada, e a carta *Troca de turno* destrava ele (a opção b, virou carta).
+   O texto original, para registro: Com um na frente e o outro atrás, o `T` pode
    fazer duas coisas: (a) ficar **desligado** durante a rodada, ou (b) **trocar
    quem está na frente** — quem estava atrás vem com o tanque cheio, e quem
    estava na frente vai descansar ao lado da Josefina. A recomendação é (b):

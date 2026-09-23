@@ -60,6 +60,22 @@ o FPS medido aqui não diz nada sobre a máquina de verdade, ignore.
 A fonte do Google não carrega em ambiente sem rede — o smoke test já filtra esse
 ruído. Qualquer outro erro de console é erro de verdade.
 
+## Lições de teste que já custaram tempo
+
+- **Um Chromium de cada vez.** Dois scripts rodando juntos deixam a máquina
+  lenta, e testes de tempo (`postos.mjs`, `estufa.mjs`, `livro.mjs`) falham
+  de mentira. Rode em fila: `for t in a b c; do node scripts/$t.mjs …; done`.
+- **O Chromium sem tela anda a ~1/5 do relógio.** Espere por EVENTO (uma
+  condição, com teto), nunca por tempo fixo. A rodada do jardim tem
+  `escalaDoTempo` para acelerar; os bichos do clube (Noel, Capy) andam no
+  relógio do jogo, e não no da rodada.
+- **`pkill -f` com o nome do script mata o seu próprio shell** (a linha de
+  comando contém o nome). Deixe o teste acabar ou use o id do processo.
+- **`page.evaluate` que devolve uma promessa de painel** (livro, fim, fala)
+  trava até o painel fechar: use `void` dentro do evaluate.
+- **O servidor de preview serve o `dist/`**: mudou código, `npm run build`
+  antes de testar, senão o teste roda a versão velha.
+
 ## Checklist antes de fechar
 
 - [ ] `npm run typecheck` limpo

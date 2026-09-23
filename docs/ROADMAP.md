@@ -36,6 +36,11 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] Quadro de memórias no quarto: fotos da vida real deles pintadas em Canvas 2D
 - [x] Deitar junto na cama do Ari, lado a lado, com os braços balançando devagar
 - [x] O Pelusa, o gato do Ari: passeia pelo quarto, mia sozinho e aceita carinho
+- [x] **A estufa da Josefina**: a quest do adubo e o minigame do jardim (roguelite de 20 ondas, 93 cartas, livro das cartas) — o estado está no "COMECE AQUI" de `docs/MINIGAME-JARDIM.md`
+
+> Este roadmap parou de ser atualizado item a item: muita coisa entrou depois
+> (boutique, Mania de Churrasco, xadrez, bichos do clube…). O `git log` e os
+> planos de minigame em `docs/` são a fonte do que existe.
 
 ## Próximos passos naturais
 
