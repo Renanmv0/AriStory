@@ -29,6 +29,14 @@ import type { EstiloDeRegador } from '../../world/regador';
  * diferentes, e a II só entra no sorteio depois de a I estar na mão (`requer`).
  * O jogador continua podendo empilhar alcance, e nenhuma carta aparece duas
  * vezes — é o desenho do Vampire Survivors, que foi a referência dele.
+ *
+ * =============================================== CARTA DE JATO MUDA O JATO
+ *
+ * Regra do Renan: toda carta que mexe no jato muda alguma coisa VISÍVEL na
+ * animação de ataque — forma, tinta, impacto ou chão. A tabela carta por carta
+ * está no §6 do plano ("O jato também muda de cara"); quando o jato existir
+ * (etapa 3), a ficha ganha um `jato` e a carta escreve nele como já escreve
+ * no `estilo` do regador.
  */
 
 export type Raridade = 'comum' | 'incomum' | 'raro' | 'lendario';

@@ -260,6 +260,10 @@ Os quatro números que definem ela, e que as primeiras melhorias mexem:
 O jato é um **cone de partículas** reaproveitando os respingos que a piscina do
 clube já tem (`espirrar()` em `clube.ts`) — nenhum sistema novo de partícula.
 
+**E o jato muda com as cartas** — decisão do Renan: toda carta que mexe no jato
+muda alguma coisa que se VÊ na animação de ataque. A tabela inteira está no §6,
+em "O jato também muda de cara".
+
 **O regador tem água, e a água acaba.** Um tanque de 12 jatos que enche sozinho
 devagar, ou de uma vez encostando no **tonel** que fica no canto da estufa. É o
 que impede o jogo de virar "segure para a frente e ande em círculo": de vez em
@@ -602,6 +606,96 @@ de competição ao lado de uma lata amassada contaria uma história errada.
 Para criar carta nova sem reabrir este documento inteiro existe uma skill:
 `.claude/skills/aristory-habilidade/SKILL.md`.
 
+### O jato também muda de cara — **decisão do Renan, a construir com a etapa 3**
+
+> "Cada carta que muda os jatos do regador precisa mudar algo visualmente na
+> animação de ataque." — o Renan
+
+É a mesma regra do regador na mão, levada para o ataque: **nada de buff
+invisível**. Se a carta mexe no jato, o jogador vê a diferença no jato. No fim
+de uma rodada boa o ataque tem que parecer outro, como a peça na mão já parece.
+
+**Carta de jato que não muda nada na tela é carta incompleta** — vale para as
+que existem e para toda carta nova. É para isso que o teste da etapa 3 vai
+fotografar o jato de cada uma ao lado do jato básico.
+
+#### As quatro camadas do jato
+
+Com vinte e tantas cartas mexendo no mesmo jato, sem regra de encaixe ele vira
+uma mancha. Então o desenho do jato tem **quatro camadas**, e cada carta escreve
+numa (ou em duas) delas. Cartas em camadas diferentes somam sem brigar: gelo +
+sabão = bolhas azuladas.
+
+| camada | o que é | exemplos |
+|---|---|---|
+| **forma** | por onde a água vai | cone (o básico), três fios, arco, jato reto |
+| **tinta** | a cor e a textura da água | azul-gelo, sabão furta-cor, arco-íris |
+| **impacto** | o que acontece no bicho que leva o jato | respingo maior, tranco, cristais, bolha estourando |
+| **chão** | o que fica depois | poça brilhando, rastro de garoa |
+
+E **cada efeito tem o seu som**, sintetizado na hora como todo som do jogo
+(`audio/efeitos.ts`): o jato básico e mais um por carta que muda o jato.
+
+#### Carta por carta
+
+As que já estavam no baralho:
+
+| carta | camada | o que se vê no ataque | som |
+|---|---|---|---|
+| **jato básico** | — | cone curto de gotas azul-água, respingo pequeno no bicho | "fsh" curto |
+| Bico mais longo I–III | forma | o cone vai mais longe, a cada degrau | — (mesmo "fsh") |
+| Jato firme I–III | impacto | gotas mais grossas e o respingo no bicho cresce a cada degrau | "fsh" mais encorpado |
+| Braço solto I–III | forma | os jatos saem mais seguidos, e o braço balança mais rápido | — |
+| Leque aberto I–III | forma | o cone abre mais, com mais gotas na borda | — |
+| Tanque maior I–III | — | (é água no tanque, não no jato: aparece na peça, que já engorda) | — |
+| Segundo bico | forma | um segundo cone sai para trás, ao mesmo tempo | "fsh" duplo |
+| Orvalho | tinta | o jato solta um vapor fininho no caminho | chiado de vapor |
+| Mangueira | forma | o jato vira uma linha comprida e fina, que demora mais a sair | "fshhhh" longo |
+| Regador de pressão | forma + impacto | o jato é reto e atravessa: o primeiro bicho respinga e o de trás também | estalo de pressão |
+
+As que vieram do banco de ideias:
+
+| carta | camada | o que se vê no ataque | som |
+|---|---|---|---|
+| Gota pesada I–III | impacto | o bicho dá um tranco para trás a cada acerto, maior a cada degrau | "tum" abafado |
+| Água morna | tinta | vapor sobe do bicho grande e da chefe quando leva jato | chiado |
+| Gota gelada | tinta + impacto | água azul-clara; o bicho molhado ganha cristaizinhos e anda devagar | tilintar de gelo |
+| Jato em arco | forma | a água sobe em parábola por cima do canteiro e cai do outro lado | assobio subindo |
+| Borrifador | forma | três fiozinhos em leque no lugar de um cone | três "fsh" curtinhos |
+| Mira no grandão | impacto | um alvinho aparece em cima do bicho de mais vida antes do jato | "tic" de mira |
+| Mira em quem come | impacto | o mesmo alvinho, em quem está num canteiro | "tic" de mira |
+| Garoa | chão | um rastro de gotinhas fica no chão atrás de você | pingos |
+| Pressão acumulada | forma + impacto | com o tanque cheio, o primeiro jato sai mais grosso e solta um anel de respingo | "FSHHH" forte |
+| Refil rápido I–II | — | (é o tonel, não o jato: a água entra no regador mais depressa, com espirro) | glub-glub mais rápido |
+| Crivo giratório | forma | a cada 4 s o regador gira na mão e solta um anel de água em volta | giro + "fsh" circular |
+| Água com sabão | tinta + impacto | o jato sai com bolhas; o bicho espantado solta uma bolha grande que estoura | "ploc" |
+| Jato carregado | forma | parado, o regador treme e brilha; sai um jatão reto que atravessa a fila | zumbido subindo + estouro |
+| Balde | forma | a pessoa vira o regador de ponta-cabeça e uma onda cai em círculo | "splash" grande |
+| **Gêiser** (lendária) | impacto | o chão racha embaixo do bicho mais forte e sobe uma coluna d'água | ronco + jorro |
+| **Arco-íris** (lendária) | tinta | um jato em dez sai nas cores do arco-íris e deixa um arco no ar por um instante | acorde brilhante |
+
+E as de outras famílias que também mexem no que o jato faz:
+
+| carta | camada | o que se vê | som |
+|---|---|---|---|
+| Poça | chão | onde o jato cai fica uma mancha molhada e brilhante por 4 s | — |
+| Chapéu de palha | — | (é a água gasta: a barra do tanque desce menos a cada jato) | — |
+| Chuva | forma | a nuvenzinha do regador cresce e despeja na estufa inteira | trovão baixinho |
+| Dança da chuva | forma | uma nuvem pequena se forma em cima de você e chove em volta | chuva fina |
+
+As três marcadas com "(…)" não mexem no jato em si, e por isso a mudança
+visível delas mora em outro lugar — é o jeito de a regra continuar verdadeira
+sem inventar enfeite num jato que a carta não muda.
+
+#### Como isso entra no código (nota para a etapa 3)
+
+Igual ao `estilo` do regador: a `FichaDaRodada` ganha um **`jato`** (as quatro
+camadas), a carta escreve nele no `aplicar`, e quem desenha o ataque só lê. A
+tela das cartas ganha o selo **"muda o jato"** pelo mesmo truque do selo "muda
+o regador" — aplica a carta numa ficha zerada e vê se ela escreveu no `jato`.
+Assim o selo nunca mente, e uma carta de jato sem desenho aparece sem selo, o
+que denuncia sozinho que ela está incompleta.
+
 ### A tela das três cartas — **construída**
 
 Um pop-up por cima do mundo, em DOM (`src/ui/telaDeCartas.ts`, e o desenho no
@@ -899,8 +993,8 @@ trabalha rápido") virando geometria.
 | 2.97 | **a lógica**: o baralho, a mão que não repete carta, a curva de nível, as gotas por praga e o roteiro das ondas | **pronto** (§6, §7) |
 | 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | a fazer |
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | a fazer |
-| 5 | gota no chão e a tela de três cartas (a conta de nível e o sorteio já existem) | a fazer |
-| 6 | as cartas comuns (as do regador), **e o regador mudando de cara** | a fazer |
+| 5 | gota no chão e a tela de três cartas (a conta de nível e o sorteio já existem) | **pronto** (a peça; liga na rodada junto com a 3) |
+| 6 | as cartas comuns (as do regador), o regador mudando de cara (**pronto**) **e o jato mudando de cara** — uma diferença visível por carta (§6) | a fazer |
 | 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | a fazer |
 | 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | a fazer |
 | 9 | o pagamento, a memória e a fala de despedida da Josefina | a fazer |

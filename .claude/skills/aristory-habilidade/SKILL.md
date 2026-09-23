@@ -154,6 +154,22 @@ precisa de um desenho que não existe → a peça é da skill `aristory-prop`, e
 
 ---
 
+### E o JATO muda de cara também — regra do Renan
+
+> "Cada carta que muda os jatos do regador precisa mudar algo visualmente na
+> animação de ataque."
+
+Carta que mexe no jato (alcance, dano, cadência, abertura, forma, gelo, sabão…)
+**tem que mudar alguma coisa que se vê no ataque**. Não existe buff invisível.
+O desenho do jato tem quatro camadas — **forma**, **tinta**, **impacto** e
+**chão** — e a carta escreve numa delas; camadas diferentes somam sem brigar. A
+tabela carta por carta, com o som de cada uma, está no §6 do plano ("O jato
+também muda de cara"). Carta nova de jato entra nessa tabela no mesmo commit.
+
+Hoje o jato ainda não existe (é a etapa 3). Quando existir: a ficha ganha um
+`jato` como o `estilo`, a tela ganha o selo "muda o jato" pela mesma conta do
+selo do regador, e o teste fotografa o jato de cada carta ao lado do básico.
+
 ## 6. Os consolos: quando o baralho acaba
 
 Rodada boa pode chegar num nível com menos de três cartas novas. Tela com uma
