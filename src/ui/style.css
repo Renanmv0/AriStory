@@ -3331,3 +3331,12 @@ body.tela-aberta .ajuda-do-par { display: none; }
 /* no toque: ao lado do ✨ (60 px + as margens), e sem a tecla F */
 body.touch-device .ajuda-do-par { right: 90px; bottom: 26px; }
 body.touch-device .ajuda-do-par kbd { display: none; }
+
+/* a tela de PRÊMIO de cinco em cinco níveis: a mesma mesa, com o topo dourado */
+.cartas-do-jardim.premio .subiu {
+  padding: 3px 12px;
+  border-radius: 999px;
+  color: #5a3d0c;
+  background: linear-gradient(180deg, #ffe39a, #f2b134);
+  letter-spacing: 0.12em;
+}

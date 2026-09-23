@@ -141,6 +141,13 @@ outra. Na prática:
 e `scripts/jato.mjs` tem os casos `combo-*` — carta de jato nova ganha um combo
 com o Borrifador e com o Segundo bico, no mínimo.
 
+## 2.55. Os níveis múltiplos de 5 dão carta a mais
+
+No 5, no 15, no 25… uma tela extra; no 10, no 20, no 30… duas (`cartasDePremio`,
+em `rodada.ts`). A tela extra é o mesmo sorteio (`MaoDeCartas.oferta`), então
+carta nova entra nela sem nada a fazer — mas conte com isso no balanço: numa
+rodada inteira a mão chega a umas 30 cartas, e não 25.
+
 ## 2.6. O livro das cartas guarda tudo o que já saiu
 
 Escolher uma carta uma vez põe ela no LIVRO da bancada da estufa, para sempre

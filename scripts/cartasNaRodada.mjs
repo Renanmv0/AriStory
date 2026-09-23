@@ -505,6 +505,58 @@ const CASOS = {
       `a Mãe-Lagartejo leva um terço por jato (${b?.vida.toFixed(1)}/${b?.vidaMax})`);
   },
 
+  /*
+   * O PRÊMIO DE CINCO EM CINCO NÍVEIS: chegar no 5 abre a tela de sempre e
+   * mais uma de prêmio; chegar no 10, a de sempre e mais duas. Cada tela é
+   * uma escolha entre três, e cada carta pega entra na mão.
+   */
+  'premio-de-nivel': async () => {
+    await laboratorio([], { folga: true });
+    const telas = async () => {
+      const vistas = [];
+      for (let k = 0; k < 6; k++) {
+        const abriu = await page.waitForFunction(
+          () => document.querySelector('.cartas-do-jardim')?.classList.contains('show'), null, { timeout: 4000 },
+        ).then(() => true).catch(() => false);
+        if (!abriu) break;
+        await page.waitForTimeout(500);
+        vistas.push({
+          topo: await page.evaluate(() => document.querySelector('.cartas-do-jardim .subiu')?.textContent),
+          cartas: await page.evaluate(() => document.querySelectorAll('.cartas-do-jardim .carta-jardim').length),
+        });
+        await page.keyboard.press('Digit1');
+        await page.waitForTimeout(300);
+        await page.keyboard.press('KeyE');
+        await page.waitForFunction(() => !document.querySelector('.cartas-do-jardim')?.classList.contains('show'), null, { timeout: 4000 }).catch(() => {});
+        await page.waitForTimeout(300);
+      }
+      return vistas;
+    };
+    // do nível 4 para o 5: 52 gotas é o total do nível 5
+    await rodada(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.fixarNivel(4);
+      r.darGotas(52);
+    });
+    const no5 = await telas();
+    const e5 = await estado();
+    console.log('       nível 5:', no5.map((t) => `${t.topo} (${t.cartas})`).join(' | '));
+    // do 9 para o 10: 210 gotas no total
+    await rodada(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.fixarNivel(9);
+      r.darGotas(158);
+    });
+    const no10 = await telas();
+    const e10 = await estado();
+    console.log('       nível 10:', no10.map((t) => `${t.topo} (${t.cartas})`).join(' | '));
+    confere('premio-de-nivel',
+      no5.length === 2 && /prêmio do nível 5/i.test(no5[1].topo) && e5.mao.length === 2
+      && no10.length === 3 && /1 de 2/.test(no10[1].topo) && /2 de 2/.test(no10[2].topo) && e10.mao.length === 5
+      && [...no5, ...no10].every((t) => t.cartas === 3),
+      `nível 5: ${no5.length} telas, nível 10: ${no10.length} telas, ${e10.mao.length} cartas na mão`);
+  },
+
   // ============================================================ chamados
   'chama-capy': async () => {
     await laboratorio(['chama-capy'], { x: -7, z: 3, folga: true });

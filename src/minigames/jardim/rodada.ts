@@ -707,21 +707,38 @@ export class RodadaDoJardim {
     this.g.mirarJogador(null);
     while (this.nivel < ate && this.rodando) {
       this.nivel += 1;
-      // a Sorte de principiante: esta tela sobe uma raridade, uma vez só
-      const acima = this.ficha.regras.has('sorte-de-principiante') && !this.sorteGasta;
-      if (acima) {
-        this.sorteGasta = true;
-        this.contar('sorte-de-principiante');
+      await this.umaTelaDeCartas();
+      /*
+       * O PRÊMIO DE CINCO EM CINCO NÍVEIS (pedido do Renan): no 5 uma tela a
+       * mais, no 10 duas, no 15 uma, no 20 duas — e segue alternando. Cada tela
+       * extra é igual à de sempre (três cartas sorteadas, escolhe uma); só o
+       * topo diz que é prêmio.
+       */
+      const extras = cartasDePremio(this.nivel);
+      for (let i = 1; i <= extras && this.rodando; i++) {
+        this.contar('premio-de-nivel');
+        await this.umaTelaDeCartas({ atual: i, total: extras });
       }
-      const oferta = this.mao.oferta(this.nivel, this.dado, acima);
-      const id = await this.g.escolherCartaDoJardim(oferta.map(cartaNaTela), {
-        nivel: this.nivel,
-        mao: this.mao.cartas.map((c) => ({ id: c.id, nome: c.nome, icone: c.icone, raridade: c.raridade })),
-      });
-      // a carta que a Sorte subiu pode estar abaixo do piso do nível: vale mesmo assim
-      await this.pegarCarta(id, acima ? Infinity : this.nivel);
     }
     this.pausada = false;
+  }
+
+  /** uma tela das três cartas no nível de agora, e a carta pega entra na mão */
+  private async umaTelaDeCartas(premio?: { atual: number; total: number }): Promise<void> {
+    // a Sorte de principiante: esta tela sobe uma raridade, uma vez só
+    const acima = this.ficha.regras.has('sorte-de-principiante') && !this.sorteGasta;
+    if (acima) {
+      this.sorteGasta = true;
+      this.contar('sorte-de-principiante');
+    }
+    const oferta = this.mao.oferta(this.nivel, this.dado, acima);
+    const id = await this.g.escolherCartaDoJardim(oferta.map(cartaNaTela), {
+      nivel: this.nivel,
+      mao: this.mao.cartas.map((c) => ({ id: c.id, nome: c.nome, icone: c.icone, raridade: c.raridade })),
+      premio,
+    });
+    // a carta que a Sorte subiu pode estar abaixo do piso do nível: vale mesmo assim
+    await this.pegarCarta(id, acima ? Infinity : this.nivel);
   }
 
   /** a carta escolhida: entra na mão, a ficha muda, e o que ela faz NA HORA acontece */
@@ -3339,6 +3356,15 @@ function distanciaAoCanteiro(x: number, z: number, c: { x: number; z: number; me
   const dx = Math.max(0, Math.abs(x - c.x) - c.meioX);
   const dz = Math.max(0, Math.abs(z - c.z) - c.meioZ);
   return Math.hypot(dx, dz);
+}
+
+/**
+ * QUANTAS CARTAS DE PRÊMIO um nível dá: nos múltiplos de 5, alternando uma e
+ * duas (5 → 1, 10 → 2, 15 → 1, 20 → 2, 25 → 1…). Fora deles, nenhuma.
+ */
+export function cartasDePremio(nivel: number): number {
+  if (nivel <= 0 || nivel % 5 !== 0) return 0;
+  return (nivel / 5) % 2 === 1 ? 1 : 2;
 }
 
 /** o portão por onde mais bichos vão entrar neste roteiro (sem contar um fechado) */

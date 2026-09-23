@@ -90,6 +90,11 @@ export interface ContextoDaEscolha {
   readonly nivel: number;
   /** as cartas já pegas, na ordem — a tela mostra como fileira de fichinhas */
   readonly mao: readonly Pick<CartaNaTela, 'id' | 'nome' | 'icone' | 'raridade'>[];
+  /**
+   * Tela de PRÊMIO de cinco em cinco níveis (a 1ª de 2, por exemplo). Sem
+   * isto é a tela de sempre, a de subir de nível.
+   */
+  readonly premio?: { readonly atual: number; readonly total: number };
 }
 
 /**

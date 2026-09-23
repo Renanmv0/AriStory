@@ -238,6 +238,13 @@ jogou no celular):
   pé é mais que o dobro de chão à vista (antes eram uns 5 m de largura, e os
   bichos dos lados sumiam). No fim da rodada volta ao zoom da estufa.
 
+**O PRÊMIO DE CINCO EM CINCO NÍVEIS — construído** (pedido do Renan). Bater
+um nível múltiplo de 5 dá cartas a mais: **no 5, uma; no 10, duas; no 15, uma;
+no 20, duas** — e segue alternando (25 → uma, 30 → duas). Cada carta a mais é
+uma tela de escolha igual à de sempre, três cartas sorteadas, logo depois da
+carta normal do nível; o topo dela fica dourado ("🎁 prêmio do nível 10 · 1 de
+2"). A conta mora em `cartasDePremio`, em `rodada.ts`.
+
 **O PRÊMIO DA ONDA — construído** (pedido do Renan). Vencer uma onda (menos
 a última, que é a tela do fim) dá gotas: **metade do que falta para o próximo
 nível**, arredondado para cima, com o aviso "🏆 Onda 3 vencida! +7 gotas de

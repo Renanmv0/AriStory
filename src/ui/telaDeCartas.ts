@@ -96,6 +96,15 @@ export class TelaDeCartas {
       this.cartas = cartas;
       this.marcada = -1;
       this.titulo.textContent = String(contexto.nivel);
+      // o prêmio de cinco em cinco níveis: o topo diz que é carta extra
+      const p = contexto.premio;
+      this.raiz.classList.toggle('premio', !!p);
+      this.raiz.querySelector('.subiu')!.textContent = p
+        ? `🎁 prêmio do nível ${contexto.nivel}${p.total > 1 ? ` · ${p.atual} de ${p.total}` : ''}`
+        : 'subiu de nível';
+      this.raiz.querySelector('.sub')!.innerHTML = p
+        ? 'uma carta <b>a mais</b> para esta rodada'
+        : 'escolha <b>uma</b> melhoria para esta rodada';
       this.desenharMesa();
       this.desenharMao(contexto);
       this.pintarBotao();
