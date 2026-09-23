@@ -7098,3 +7098,67 @@ export function picole(): THREE.Group {
   g.add(cobertura);
   return g;
 }
+
+/**
+ * O LIVRO DAS CARTAS — o álbum da estufa, em cima da bancada.
+ *
+ * Fechado e deitado: capa, contracapa e o bloco de páginas creme entre as
+ * duas, a lombada arredondada, cantoneiras douradas, e na capa um retângulo
+ * dourado com uma carta desenhada (o que ele guarda). A fita do marcador sai
+ * por baixo das páginas. ~0,44 × 0,32 × 0,09 m: grande o bastante para ser
+ * lido como livro na câmera isométrica, e não como uma caixa.
+ */
+export function livroDeCartas(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'livro-de-cartas';
+  const L = 0.44;
+  const P0 = 0.32;
+  const CAPA = 0.014;
+  const MIOLO = 0.06;
+  const capa = toon(P.livroCapa);
+  for (const y of [CAPA / 2, CAPA * 1.5 + MIOLO]) {
+    const c = new THREE.Mesh(new THREE.BoxGeometry(L, CAPA, P0), capa);
+    c.position.y = y;
+    g.add(c);
+  }
+  // o bloco de páginas, recuado das capas (e sem face no plano delas)
+  const paginas = new THREE.Mesh(new THREE.BoxGeometry(L - 0.03, MIOLO, P0 - 0.025), toon(P.livroPagina));
+  paginas.position.set(0.012, CAPA + MIOLO / 2, 0);
+  g.add(paginas);
+  // a lombada: meio cilindro do lado esquerdo
+  const lombada = new THREE.Mesh(
+    new THREE.CylinderGeometry((MIOLO + CAPA * 2) / 2, (MIOLO + CAPA * 2) / 2, P0, 12, 1, false, Math.PI, Math.PI),
+    toon(P.livroCapaEscura),
+  );
+  lombada.rotation.x = Math.PI / 2;
+  lombada.position.set(-L / 2, (MIOLO + CAPA * 2) / 2, 0);
+  g.add(lombada);
+  const ouro = toon(P.livroOuro, { glow: 0.15 });
+  const topo = CAPA * 2 + MIOLO;
+  // as cantoneiras da capa de cima
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      if (sx < 0) continue; // do lado da lombada não tem canto solto
+      const canto = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.004, 0.05), ouro);
+      canto.position.set(sx * (L / 2 - 0.025), topo + 0.002, sz * (P0 / 2 - 0.025));
+      g.add(canto);
+    }
+  }
+  // o emblema: uma moldura dourada com uma "carta" creme dentro, e o losango da raridade
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.004, 0.19), ouro);
+  moldura.position.set(0.02, topo + 0.002, 0);
+  g.add(moldura);
+  const carta = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.006, 0.16), toon(P.livroPagina));
+  carta.position.set(0.02, topo + 0.004, 0);
+  g.add(carta);
+  const losango = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.008, 0.04), ouro);
+  losango.rotation.y = Math.PI / 4;
+  losango.position.set(0.02, topo + 0.006, 0);
+  g.add(losango);
+  // a fita do marcador, saindo das páginas e caindo pela frente
+  const fita = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.003, 0.09), toon(P.livroFita));
+  fita.position.set(0.08, CAPA + 0.004, P0 / 2 + 0.035);
+  fita.rotation.x = 0.35;
+  g.add(fita);
+  return g;
+}

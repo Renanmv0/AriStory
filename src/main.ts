@@ -14,6 +14,7 @@ import {
 } from './world/props';
 import { CARTAS, CONSOLOS } from './minigames/jardim/cartas';
 import { cartaNaTela } from './minigames/jardim/tela';
+import { ordemDoLivro } from './ui/livroDeCartas';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
@@ -96,3 +97,7 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 // uma mesa de cada raridade: o sorteio de verdade não garante uma lendária na
 // tela, e uma moldura que ninguém vê é uma moldura que ninguém conferiu
 (window as unknown as { aristoryCartas: unknown }).aristoryCartas = [...CARTAS, ...CONSOLOS].map(cartaNaTela);
+// o baralho como o LIVRO desenha (sem os consolos), e a ordem dos lugares dele
+(window as unknown as { aristoryCartasNaTela: unknown }).aristoryCartasNaTela = () => CARTAS.map(cartaNaTela);
+(window as unknown as { aristoryOrdemDoLivro: unknown }).aristoryOrdemDoLivro = () =>
+  ordemDoLivro(CARTAS.map(cartaNaTela)).map((c) => c.nome);

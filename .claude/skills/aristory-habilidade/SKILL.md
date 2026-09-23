@@ -141,6 +141,15 @@ outra. Na prática:
 e `scripts/jato.mjs` tem os casos `combo-*` — carta de jato nova ganha um combo
 com o Borrifador e com o Segundo bico, no mínimo.
 
+## 2.6. O livro das cartas guarda tudo o que já saiu
+
+Escolher uma carta uma vez põe ela no LIVRO da bancada da estufa, para sempre
+(é save: `SaveState.livro`, via `g.desbloquearCartaDoJardim`). O livro tem um
+lugar por carta do `CARTAS`, na ordem da raridade e, dentro dela, na ordem do
+catálogo — então **carta nova entra no livro sozinha**, no lugar que a posição
+dela na lista der. Mudar uma carta de lugar na lista muda o número dela no
+livro; os consolos não entram.
+
 ## 3. A raridade: comum mexe em número, rara mexe em regra
 
 | raridade | o que ela faz | piso | peso nv 1 → nv 10 |

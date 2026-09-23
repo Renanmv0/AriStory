@@ -540,6 +540,16 @@ export const PALETTE = {
   efeitoAdubo: 0x9a6b3c,
   /** a cerca viva: o verde da moita que abraça o canteiro */
   cercaViva: 0x3f8f4a,
+  /*
+   * O LIVRO DAS CARTAS, na bancada da estufa: capa de couro verde-musgo (a cor
+   * da família Jardim), cantoneiras douradas e as páginas creme, com uma fita
+   * vermelha de marcador — lê como "álbum de colecionar" de longe.
+   */
+  livroCapa: 0x3f6f4a,
+  livroCapaEscura: 0x2c4f35,
+  livroPagina: 0xf6ecd4,
+  livroOuro: 0xe2b64a,
+  livroFita: 0xc8433b,
 
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,

@@ -374,6 +374,13 @@ export class RodadaDoJardim {
     canteiros: number; total: number; espantados: number;
     /** a onda em que acabou, de quantas; e se acabou jogando ou foi interrompida */
     ondas: number; de: number; motivo: 'fim' | 'interrompida';
+    /** quantos de cada praga foram espantados, pela id */
+    porPraga: Record<string, number>;
+    /** as cartas da mão no fim, na ordem em que foram pegas */
+    cartas: string[];
+    nivel: number;
+    /** as que entraram no livro pela primeira vez nesta rodada */
+    novas: string[];
   }) => void) | null = null;
 
 
@@ -463,6 +470,8 @@ export class RodadaDoJardim {
     this.nivel = 0;
     this.juntadas = 0;
     this.espantados = 0;
+    this.espantadosPorPraga = {};
+    this.novasNoLivro = [];
     this.jatosDados = 0;
     this.crivo = 0;
     this.geiser = 0;
@@ -520,7 +529,9 @@ export class RodadaDoJardim {
       const estreia = ONDAS[this.onda - 1]?.estreia;
       const ficha = estreia ? PRAGAS.find((p) => p.id === estreia) : null;
       this.g.toast(
-        ficha ? `Onda ${this.onda}: chegam os ${ficha.nome}s` : `Onda ${this.onda}: a última leva`,
+        ficha ? `Onda ${this.onda}: chegam os ${ficha.nome}s`
+          : this.onda >= this.ondasDaRodada ? `Onda ${this.onda}: a última leva`
+            : `Onda ${this.onda} de ${this.ondasDaRodada}`,
         '🌿',
       );
     }
@@ -554,7 +565,11 @@ export class RodadaDoJardim {
     this.suspensas = [];
     this.aoAcabar?.({
       canteiros: vivos, total: this.canteiros.length, espantados: this.espantados,
-      ondas: this.onda, de: ONDAS_DA_RODADA, motivo,
+      ondas: this.onda, de: this.ondasDaRodada, motivo,
+      porPraga: { ...this.espantadosPorPraga },
+      cartas: [...this.mao.ids],
+      nivel: this.nivel,
+      novas: [...this.novasNoLivro],
     });
   }
 
@@ -663,10 +678,13 @@ export class RodadaDoJardim {
       this.g.toast(carta.texto, carta.icone);
       return;
     }
+    // O LIVRO DAS CARTAS: escolher uma vez basta para ela ficar na coleção
+    this.anotarNoLivro(id);
     // o Bis: a carta de série pega leva o degrau de cima junto
     if (bis) {
       const acima = proximoDegrau(id);
       if (acima && this.mao.pegar(acima.id, Infinity)) {
+        this.anotarNoLivro(acima.id);
         this.bisGasto = true;
         this.contar('bis');
         this.g.toast(`Bis! ${acima.nome}`, '🔁');
@@ -679,6 +697,12 @@ export class RodadaDoJardim {
     await this.cartaNova(id);
     if (carta.chama && this.aoPegarCarta) await this.aoPegarCarta(id);
     this.pausada = estava;
+  }
+
+  /** as cartas que entraram no livro pela primeira vez nesta rodada */
+  private novasNoLivro: string[] = [];
+  private anotarNoLivro(id: string): void {
+    if (this.g.desbloquearCartaDoJardim(id)) this.novasNoLivro.push(id);
   }
 
   /**
@@ -947,6 +971,12 @@ export class RodadaDoJardim {
     // o Mutirão do clube: quando a chefe chega, os quatro entram em ação
     if (ficha.tier === 'chefe' && this.ficha.regras.has('mutirao-do-clube')) this.comecarMutirao();
     return inv;
+  }
+
+  /** quantos de cada praga a dupla espantou nesta rodada — a tela de fim conta */
+  private espantadosPorPraga: Record<string, number> = {};
+  private contarEspantado(inv: Invasor): void {
+    this.espantadosPorPraga[inv.ficha.id] = (this.espantadosPorPraga[inv.ficha.id] ?? 0) + 1;
   }
 
   /** tira o bicho do mundo e devolve a geometria (o material é do cache) */
@@ -1801,6 +1831,7 @@ export class RodadaDoJardim {
    */
   private espantado(inv: Invasor, como: 'agua' | 'geiser'): void {
     this.espantados += 1;
+    this.contarEspantado(inv);
     inv.vida = 0;
     inv.estado = como === 'geiser' ? 'preso' : 'sacudindo';
     inv.relogio = 0;
@@ -1934,6 +1965,7 @@ export class RodadaDoJardim {
    */
   private afugentar(inv: Invasor, gotas: number): void {
     this.espantados += 1;
+    this.contarEspantado(inv);
     inv.vida = 0;
     inv.estado = 'fugindo';
     inv.relogio = 0;

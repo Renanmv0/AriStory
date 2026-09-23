@@ -135,6 +135,7 @@ node scripts/chamados.mjs /tmp/ch   # as cartas de chamado: Capy, Gina, Walter e
 node scripts/rodada.mjs  /tmp/rd    # a rodada do jardim: a onda 1 inteira, o regador atirando sozinho, o tonel, as cartas congelando e o fim com a Josefina
 node scripts/jato.mjs    /tmp/jt    # o jato de cada carta: a vitrine mede o efeito que a carta descreve (poça, gelo, arco, três fios…) e fotografa
 node scripts/cartasNaRodada.mjs /tmp/cr # as outras 41 cartas agindo: cada uma numa estufa de laboratorio, com o efeito medido no mundo e a foto
+node scripts/livro.mjs   /tmp/lv    # o livro das cartas na bancada (vagas cinzas, cada carta no seu lugar, a lupa, o F5) e a tela do fim da rodada
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```
 

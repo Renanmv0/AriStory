@@ -3,7 +3,7 @@ import type { WorldBuilder } from '../world/WorldBuilder';
 import type { SomNome } from '../audio/efeitos';
 import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
-import type { CartaNaTela, ContextoDaEscolha } from '../minigames/jardim/tela';
+import type { CartaNaTela, ContextoDaEscolha, FimDoJardim } from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
 
 export interface CircleCollider {
@@ -504,6 +504,17 @@ export interface GameAPI {
    * desenha e devolve.
    */
   escolherCartaDoJardim(cartas: readonly CartaNaTela[], contexto: ContextoDaEscolha): Promise<string>;
+  /**
+   * O LIVRO DAS CARTAS: põe uma carta na coleção (fica no save, entre
+   * rodadas). Devolve se ela era nova.
+   */
+  desbloquearCartaDoJardim(id: string): boolean;
+  /** as ids das cartas já descobertas, na ordem em que apareceram */
+  cartasDoLivro(): readonly string[];
+  /** Abre o livro com o baralho inteiro; as descobertas aparecem, as outras são vaga cinza. */
+  abrirLivroDeCartas(cartas: readonly CartaNaTela[]): Promise<void>;
+  /** A tela do fim da rodada do jardim: os números e as cartas da mão. */
+  mostrarFimDoJardim(fim: FimDoJardim): Promise<void>;
   /** A barra de experiência da rodada do jardim, no alto; `null` esconde. */
   showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void;
   /**

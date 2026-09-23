@@ -217,6 +217,21 @@ placar. Onda 1 é uma aula, e ela tem que parecer fácil.
 | 3 | **+ Coelhatu** | 2 a cada 3 s | ~28 |
 | 4 | **+ Tucanguru**, e um Preguipolvo | 3 a cada 3 s | ~36 |
 | 5 | todos, e a **Mãe-Lagartejo** no fim | 3 a cada 2,5 s | ~45 |
+| 6–20 | todos; um Preguipolvo por onda (dois da 12ª em diante) e a **Mãe-Lagartejo de volta nas ondas 10, 15 e 20** (duas na 20ª) | de 3 a 5 por leva, o intervalo encurtando até 1,8 s | 48 → 90 |
+
+**A RODADA TEM VINTE ONDAS — construído** (pedido do Renan, "por enquanto"):
+aguentar a vigésima com pelo menos um canteiro de pé é a **vitória**. Da sexta
+em diante ninguém estreia; sobe o ritmo, devagar, e sobem os grandões. Se nenhum
+bicho escapa, a dupla chega perto do nível 10 na quinta onda e do 25 na
+vigésima (`scripts/cartas.mjs` mede as duas marcas). O número mora em
+`TOTAL_DE_ONDAS`, em `progressao.ts`: mudar o limite é mudar ele.
+
+**O FIM DA RODADA É UMA PÁGINA — construído.** Ganhando ou perdendo, antes da
+fala da Josefina abre a tela do fim (`ui/livroDeCartas.ts`, `TelaDoFim`):
+vitória ou "a estufa caiu na onda N", quantos bichos foram espantados e **de
+quais** (Lagartejo ×50, Gafanhopo ×21…), canteiros de pé, o nível, e a página
+com **todas as cartas da mão**, com o selo "📖 nova no livro" nas que foram
+descobertas nesta rodada.
 
 **A regra que vale mais que a tabela: bicho novo entra SOZINHO.** Nos primeiros
 10 segundos da onda em que ele estreia, só ele entra, e por uma porta só. O
@@ -1127,7 +1142,7 @@ trabalha rápido") virando geometria.
 | 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, com o som de cada carta |
 | 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **em parte**: as cinco ondas rodam com os seis bichos, com o aviso do grandão; o JEITO de cada um (o Gafanhopo pular o jato, o Tucanguru saltar a cerca…) a fazer |
 | 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | **pronto** (§6, "Como as cartas de jardineiro e de jardim agem") |
-| 9 | o pagamento, a memória e a fala de despedida da Josefina | a fazer |
+| 9 | o pagamento, a memória e a fala de despedida da Josefina | **em parte**: a tela do fim (números e cartas) e o livro das cartas estão prontos; pagamento e memória a fazer |
 
 A etapa 3 é a que decide se o resto vale: um regador que atira sozinho num
 bicho que anda devagar já é jogo ou não é. **Não construa 5 antes de jogar 3.**
@@ -1202,6 +1217,17 @@ delas anda, ataca ou aparece numa cena ainda (§5).
 (a tabela do §6), e as de jardineiro, jardim e clube como a tabela "Como as
 cartas de jardineiro e de jardim agem" descreve — os chamados inclusive, que
 entram pela porta na cutscene e depois agem sozinhos.
+
+**O livro das cartas** (pedido do Renan): um livro verde na ponta de cima da
+bancada, "Abrir o livro das cartas". Toda carta do baralho tem um LUGAR nele, na
+ordem da raridade (comuns, incomuns, raras, lendárias; dentro de cada uma, a
+ordem do catálogo), numerado. A carta que a dupla ainda não escolheu nenhuma
+vez é um retângulo cinza translúcido com o número; escolhida uma vez, em
+qualquer rodada, ela aparece ali para sempre — é **save** (`livro`, em
+`SaveState`), e não rodada. Tocar numa carta abre ela grande (a lupa). Carta
+nova no catálogo ganha lugar no livro sozinha. `node scripts/livro.mjs /tmp/lv`
+prova o livro vazio, as cartas caindo cada uma no seu lugar, o F5, a tela do
+fim e o celular.
 
 **Para ver:** `?cena=estufa&rodada=1` começa a rodada direto;
 `?cena=estufa&jato=<cartas>` monta a vitrine do jato (e `&praga=preguipolvo`

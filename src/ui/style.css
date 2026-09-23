@@ -3020,3 +3020,229 @@ body.touch-device .dialogue .next { right: 84px; }
    água: sem isto o "Onda 2" e o "Um canteiro foi comido" nasciam em cima do
    tanque, que é justamente o número que a pessoa está olhando. */
 #ui:has(.painel-jardim.show) .toasts { top: 96px; }
+
+/* =========================================================================
+ * O LIVRO DAS CARTAS — o álbum da bancada da estufa (`livroDeCartas.ts`).
+ *
+ * Capa de couro verde com a lombada à esquerda, páginas creme por dentro, e
+ * um capítulo por raridade. A carta descoberta é a MESMA da tela de escolha,
+ * menor (`zoom`); a não descoberta é o retângulo cinza translúcido no lugar
+ * dela, com o número — pedido do Renan.
+ * ========================================================================= */
+.livro-de-cartas,
+.fim-do-jardim {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(22, 30, 24, 0.66);
+}
+.livro-de-cartas.show,
+.fim-do-jardim.show { display: flex; pointer-events: auto; }
+
+.livro-de-cartas .livro {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1120px, 100%);
+  height: min(90vh, 100%);
+  padding: 12px 12px 12px 30px;
+  border-radius: 18px 22px 22px 18px;
+  background:
+    linear-gradient(90deg, #2c4f35 0 20px, transparent 20px),
+    linear-gradient(180deg, #4b8158, #3f6f4a);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 0 0 3px rgba(226, 182, 74, 0.55);
+}
+.livro-de-cartas .lombada {
+  position: absolute;
+  left: 6px;
+  top: 14px;
+  bottom: 14px;
+  width: 8px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(180deg, #e2b64a 0 3px, transparent 3px 26px);
+  opacity: 0.8;
+}
+.livro-de-cartas .capa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 6px 10px;
+  color: #fdf3d6;
+}
+.livro-de-cartas .titulo { flex: 1; }
+.livro-de-cartas h2 { margin: 0; font-size: 24px; letter-spacing: 0.3px; }
+.livro-de-cartas .conta { margin: 2px 0 0; font-size: 13px; opacity: 0.9; }
+.livro-de-cartas .conta b { color: #ffe08a; font-size: 15px; }
+.livro-de-cartas .fechar,
+.fim-do-jardim .fechar {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  color: #5a3d0c;
+  background: linear-gradient(180deg, #ffe39a, #f2b134);
+  box-shadow: 0 4px 0 #c68a1f, 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+.livro-de-cartas .fechar:active,
+.fim-do-jardim .fechar:active { transform: translateY(3px); box-shadow: 0 1px 0 #c68a1f; }
+
+.livro-de-cartas .paginas {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px 20px;
+  border-radius: 10px 14px 14px 10px;
+  background:
+    linear-gradient(90deg, rgba(120, 90, 50, 0.12), transparent 18px),
+    #f6ecd4;
+  box-shadow: inset 0 0 0 1px rgba(120, 90, 50, 0.25);
+}
+.livro-de-cartas .capitulo + .capitulo { margin-top: 22px; }
+.livro-de-cartas h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  font-size: 18px;
+  color: #4a3a22;
+  border-bottom: 2px dotted rgba(120, 90, 50, 0.35);
+}
+.livro-de-cartas h3 small { font-size: 13px; font-weight: 700; color: #8a7350; }
+.livro-de-cartas .pedra { width: 14px; height: 14px; border-radius: 4px; transform: rotate(45deg); }
+.livro-de-cartas .r-comum .pedra { background: #5fbf52; }
+.livro-de-cartas .r-incomum .pedra { background: #4f9be0; }
+.livro-de-cartas .r-raro .pedra { background: #9a6ad6; }
+.livro-de-cartas .r-lendario .pedra { background: #f2b134; }
+
+.livro-de-cartas .grade,
+.fim-do-jardim .grade {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-start;
+}
+/* no livro e no fim a carta vai menor: o texto continua o da carta, e a lupa
+   mostra em tamanho de mesa */
+.livro-de-cartas .grade .carta-jardim,
+.fim-do-jardim .grade .carta-jardim { zoom: 0.72; cursor: pointer; }
+
+/* a carta que ainda não saiu: cinza translúcido, do tamanho de uma carta */
+.carta-jardim.vaga-trancada {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: default;
+  background: rgba(110, 110, 110, 0.16);
+  border: 2px dashed rgba(90, 90, 90, 0.32);
+  box-shadow: none;
+}
+.carta-jardim.vaga-trancada .interrogacao { font-size: 56px; font-weight: 900; color: rgba(80, 80, 80, 0.28); }
+.carta-jardim.vaga-trancada .numero { font-size: 18px; font-weight: 800; color: rgba(80, 80, 80, 0.38); }
+
+.livro-de-cartas .lupa {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(10, 16, 12, 0.6);
+  cursor: zoom-out;
+}
+.livro-de-cartas .lupa.show { display: flex; }
+.livro-de-cartas .lupa .carta-jardim { zoom: 1.2; pointer-events: none; }
+
+/* ================================================ O FIM DA RODADA DO JARDIM */
+.fim-do-jardim { overflow-y: auto; align-items: flex-start; }
+.fim-do-jardim .fim-cartao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(980px, 100%);
+  margin: auto;
+  padding: 20px 18px 22px;
+  border-radius: 22px;
+  background: #fbf3de;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 0 0 3px rgba(226, 182, 74, 0.6);
+  color: #3f3220;
+  text-align: center;
+}
+.fim-do-jardim .fim-cartao.caiu { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 0 0 3px rgba(150, 120, 90, 0.45); }
+.fim-do-jardim .cabeca { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.fim-do-jardim .selo-fim {
+  margin: 0;
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 15px;
+  color: #5a3d0c;
+  background: linear-gradient(180deg, #ffe39a, #f2b134);
+}
+.fim-do-jardim .caiu .selo-fim { color: #fff; background: linear-gradient(180deg, #b7926c, #8d6a4a); }
+.fim-do-jardim h2 { margin: 0; font-size: 26px; }
+.fim-do-jardim .numeros { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.fim-do-jardim .numeros div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 108px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: #fff7e6;
+  box-shadow: inset 0 0 0 2px rgba(120, 90, 50, 0.18);
+}
+.fim-do-jardim .numeros b { font-size: 26px; color: #2f6f3e; }
+.fim-do-jardim .numeros span { font-size: 12px; font-weight: 700; color: #8a7350; }
+.fim-do-jardim .pragas { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.fim-do-jardim .praga {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: rgba(140, 100, 200, 0.14);
+}
+.fim-do-jardim h3 { margin: 6px 0 0; font-size: 18px; }
+.fim-do-jardim h3 small { font-size: 13px; color: #8a7350; }
+.fim-do-jardim .grade { justify-content: center; }
+.fim-do-jardim .vaga { position: relative; }
+.fim-do-jardim .selo-novo {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  color: #5a3d0c;
+  background: #ffe08a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.fim-do-jardim .nenhuma { margin: 0; color: #8a7350; }
+
+/* no celular: a carta vira faixa (a regra da tela de escolha), uma por linha */
+@media (max-width: 640px) {
+  .livro-de-cartas { padding: 8px; }
+  .livro-de-cartas .livro { height: 100%; padding: 8px 8px 8px 22px; }
+  .livro-de-cartas h2 { font-size: 19px; }
+  .livro-de-cartas .paginas { padding: 10px; }
+  .livro-de-cartas .grade .carta-jardim,
+  .fim-do-jardim .grade .carta-jardim { zoom: 1; }
+  .livro-de-cartas .grade > *,
+  .fim-do-jardim .grade > * { width: 100%; }
+  .carta-jardim.vaga-trancada { flex-direction: row; min-height: 74px; gap: 12px; }
+  .carta-jardim.vaga-trancada .interrogacao { font-size: 34px; }
+  .livro-de-cartas .lupa .carta-jardim { zoom: 1; }
+  .fim-do-jardim { padding: 8px; }
+  .fim-do-jardim h2 { font-size: 20px; }
+  .fim-do-jardim .numeros div { min-width: 0; flex: 1 1 40%; }
+}

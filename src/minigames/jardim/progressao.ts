@@ -102,7 +102,8 @@ export interface OndaDoJardim {
   readonly anunciados?: ReadonlyArray<{ praga: string; quando: number }>;
 }
 
-export const ONDAS: readonly OndaDoJardim[] = [
+/** As cinco primeiras: uma estreia por onda, a rampa do §3 do plano. */
+const ESTREIAS: readonly OndaDoJardim[] = [
   { estreia: 'lagartejo', quantos: 1, aCada: 4, total: 12 },
   { estreia: 'gafanhopo', quantos: 2, aCada: 4, total: 20 },
   { estreia: 'coelhatu', quantos: 2, aCada: 3, total: 28 },
@@ -117,6 +118,37 @@ export const ONDAS: readonly OndaDoJardim[] = [
       { praga: 'mae-lagartejo', quando: 1 },
     ],
   },
+];
+
+/**
+ * DA SEXTA À VIGÉSIMA — o limite da rodada, pedido do Renan: vencer é
+ * aguentar vinte ondas. Ninguém mais estreia; o que sobe é o ritmo, devagar
+ * (uma leva maior a cada quatro ondas, o intervalo encurtando um tico por
+ * onda), e os grandões. Todo onda tem um Preguipolvo anunciado, a partir da
+ * 12ª dois, e a Mãe-Lagartejo volta nas ondas redondas: 10, 15 e 20 — a
+ * última com tudo junto, que é o fim da rodada.
+ */
+function depoisDasEstreias(n: number): OndaDoJardim {
+  const alem = n - 5;
+  const anunciados: Array<{ praga: string; quando: number }> = [{ praga: 'preguipolvo', quando: 0.35 }];
+  if (n >= 12) anunciados.push({ praga: 'preguipolvo', quando: 0.7 });
+  if (n % 5 === 0) anunciados.push({ praga: 'mae-lagartejo', quando: 1 });
+  if (n === 20) anunciados.push({ praga: 'mae-lagartejo', quando: 0.5 });
+  return {
+    estreia: null,
+    quantos: Math.min(5, 3 + Math.floor(alem / 4)),
+    aCada: Math.max(1.8, 2.5 - alem * 0.05),
+    total: 45 + alem * 3,
+    anunciados,
+  };
+}
+
+/** Quantas ondas a rodada tem: a vigésima é a vitória. */
+export const TOTAL_DE_ONDAS = 20;
+
+export const ONDAS: readonly OndaDoJardim[] = [
+  ...ESTREIAS,
+  ...Array.from({ length: TOTAL_DE_ONDAS - ESTREIAS.length }, (_, i) => depoisDasEstreias(ESTREIAS.length + 1 + i)),
 ];
 
 /** Os segundos em que só o bicho da estreia entra, e por uma porta só. */

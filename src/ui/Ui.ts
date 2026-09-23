@@ -2,7 +2,8 @@ import type { SavedMemory } from '../core/SaveState';
 import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import { TelaDeCartas } from './telaDeCartas';
-import type { CartaNaTela, ContextoDaEscolha } from '../minigames/jardim/tela';
+import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
+import type { CartaNaTela, ContextoDaEscolha, FimDoJardim } from '../minigames/jardim/tela';
 import type { MemoriaPintada } from '../world/memoriasData';
 import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
@@ -105,6 +106,8 @@ export class Ui {
    */
   private readonly mesaDeXadrez: MesaDeXadrez;
   private readonly telaDeCartas: TelaDeCartas;
+  private readonly livroDeCartas: LivroDeCartas;
+  private readonly telaDoFim: TelaDoFim;
   private readonly experiencia: HTMLDivElement;
   private readonly painelJardim: HTMLDivElement;
   /** o nivel que a barra mostrava, para saber quando ele SUBIU e piscar */
@@ -320,6 +323,8 @@ export class Ui {
       <div class="experiencia"><span class="nv">Nv <b>0</b></span><span class="trilho"><i class="enchido"></i></span><span class="conta">0/5</span></div>
       <div class="painel-jardim"><span class="onda">Onda <b>1</b><small>/5</small></span><span class="tanque" title="água no regador"><i class="agua"></i><i class="marcas"></i><em>💧 <b>12</b></em></span><span class="canteiros" title="canteiros de pé">🌱 <b>8</b><small>/8</small></span></div>
       <div class="cartas-do-jardim"></div>
+      <div class="livro-de-cartas"></div>
+      <div class="fim-do-jardim"></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
         <p class="sub"></p>
@@ -389,6 +394,10 @@ export class Ui {
     this.mesaDeXadrez = new MesaDeXadrez(ui.querySelector('.xadrez')!);
     this.telaDeCartas = new TelaDeCartas(ui.querySelector('.cartas-do-jardim')!);
     this.telaDeCartas.som = (nome) => this.som?.(nome);
+    this.livroDeCartas = new LivroDeCartas(ui.querySelector('.livro-de-cartas')!);
+    this.livroDeCartas.som = (nome) => this.som?.(nome);
+    this.telaDoFim = new TelaDoFim(ui.querySelector('.fim-do-jardim')!);
+    this.telaDoFim.som = (nome) => this.som?.(nome);
     this.experiencia = ui.querySelector('.experiencia')!;
     this.painelJardim = ui.querySelector('.painel-jardim')!;
     this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
@@ -616,7 +625,7 @@ export class Ui {
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
       this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen || this.xadrezOpen ||
-      this.lojaOpen || this.quadroOpen || this.cartasOpen,
+      this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen,
     );
   }
 
@@ -968,6 +977,38 @@ export class Ui {
 
   get cartasOpen(): boolean {
     return this.telaDeCartas.aberta;
+  }
+
+  // ------------------------------------ o livro das cartas e o fim da rodada
+
+  get livroOpen(): boolean {
+    return this.livroDeCartas.aberto;
+  }
+
+  get fimOpen(): boolean {
+    return this.telaDoFim.aberta;
+  }
+
+  /** Abre o livro das cartas; resolve quando ele fecha. Ver `livroDeCartas.ts`. */
+  abrirLivro(cartas: readonly CartaNaTela[], vistas: ReadonlySet<string>): Promise<void> {
+    const pedido = this.livroDeCartas.abrir(cartas, vistas);
+    this.marcarTelaAberta();
+    return pedido.then(() => this.marcarTelaAberta());
+  }
+
+  fecharLivro(): void {
+    this.livroDeCartas.fechar();
+  }
+
+  /** Mostra a tela do fim da rodada do jardim; resolve quando a dupla volta. */
+  mostrarFim(fim: FimDoJardim): Promise<void> {
+    const pedido = this.telaDoFim.abrir(fim);
+    this.marcarTelaAberta();
+    return pedido.then(() => this.marcarTelaAberta());
+  }
+
+  fecharFim(): void {
+    this.telaDoFim.fechar();
   }
 
   /**

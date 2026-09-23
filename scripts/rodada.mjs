@@ -94,6 +94,7 @@ let cartasPegas = 0;
 let testouTonel = false;
 let fotoPatio = false;
 let fim = null;
+let telaDoFim = '';
 
 for (let i = 0; i < 700; i++) {
   // ---- 5 e 6: a tela de cartas congela a rodada, e a carta entra na mão
@@ -112,9 +113,16 @@ for (let i = 0; i < 700; i++) {
     cartasPegas += 1;
     continue;
   }
+  // a tela do fim da rodada vem antes da fala da Josefina: anota e fecha
+  if (await page.locator('.fim-do-jardim.show').count()) {
+    telaDoFim = (await page.locator('.fim-do-jardim .numeros').textContent()) ?? '';
+    await page.locator('.fim-do-jardim .fechar').click();
+    await page.waitForTimeout(400);
+    continue;
+  }
   if (await page.locator('.dialogue.show').count()) {
     const t = await page.locator('.dialogue .text').textContent().catch(() => '');
-    if (/primeira leva/i.test(t ?? '')) fim = t;
+    if (/leva/i.test(t ?? '')) fim = t;
     await page.keyboard.press('KeyE');
     await page.waitForTimeout(400);
     continue;
@@ -160,9 +168,15 @@ for (let i = 0; i < 700; i++) {
 
 // o fim: a fala da Josefina pode ainda estar na tela
 for (let i = 0; i < 20; i++) {
+  if (await page.locator('.fim-do-jardim.show').count()) {
+    telaDoFim = (await page.locator('.fim-do-jardim .numeros').textContent()) ?? '';
+    await page.locator('.fim-do-jardim .fechar').click();
+    await page.waitForTimeout(400);
+    continue;
+  }
   if (!(await page.locator('.dialogue.show').count())) break;
   const t = await page.locator('.dialogue .text').textContent().catch(() => '');
-  if (/primeira leva/i.test(t ?? '')) fim = t;
+  if (/leva/i.test(t ?? '')) fim = t;
   await page.keyboard.press('KeyE');
   await page.waitForTimeout(400);
 }
@@ -179,7 +193,8 @@ ok(!e.rodando, 'a onda acabou e a rodada fechou');
 ok(e.canteiros.every((c) => c.vida === c.vidaMax), 'os canteiros voltam inteiros (a Josefina replanta)');
 ok(await pontosAcesos() > 0, 'os pontos da cena religam');
 ok(await page.locator('.painel-jardim.show').count() === 0, 'o painel some');
-ok(!!fim, 'a Josefina fala do fim da primeira leva');
+ok(/espantados/.test(telaDoFim), `a tela do fim conta a rodada (${telaDoFim.replace(/\s+/g, ' ').trim()})`);
+ok(!!fim, 'depois dela a Josefina fala do fim da rodada');
 await page.screenshot({ path: `${OUT}-fim.png` });
 
 /*
@@ -223,6 +238,11 @@ await page.screenshot({ path: `${OUT}-fim.png` });
       await page.waitForTimeout(250);
     }
     void noRespiro;
+  }
+  // o aviso nasce no mesmo quadro da onda nova: lê mais um pouco depois
+  for (let i = 0; i < 6; i++) {
+    await lerAvisos();
+    await page.waitForTimeout(200);
   }
   const e5 = await estado();
   ok(e5.onda === 5 && e5.rodando, `as ondas se seguem até a quinta (está na ${e5.onda})`);

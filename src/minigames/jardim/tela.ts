@@ -91,3 +91,25 @@ export interface ContextoDaEscolha {
   /** as cartas já pegas, na ordem — a tela mostra como fileira de fichinhas */
   readonly mao: readonly Pick<CartaNaTela, 'id' | 'nome' | 'icone' | 'raridade'>[];
 }
+
+/**
+ * O FIM DE UMA RODADA, como a tela desenha: vitória ou não, os números, quem
+ * foi espantado e as cartas da mão. Dado puro, pelo mesmo motivo da carta.
+ */
+export interface FimDoJardim {
+  /** aguentou todas as ondas com pelo menos um canteiro de pé */
+  readonly venceu: boolean;
+  /** a onda em que acabou, de quantas */
+  readonly onda: number;
+  readonly ondas: number;
+  readonly espantados: number;
+  /** quantos de cada praga, já com o nome, do mais espantado ao menos */
+  readonly porPraga: readonly { readonly nome: string; readonly quantos: number }[];
+  readonly canteiros: number;
+  readonly totalDeCanteiros: number;
+  readonly nivel: number;
+  /** as cartas da mão no fim, na ordem em que foram pegas */
+  readonly cartas: readonly CartaNaTela[];
+  /** as que entraram no livro pela primeira vez nesta rodada */
+  readonly novas: readonly string[];
+}

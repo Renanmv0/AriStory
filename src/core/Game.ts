@@ -27,7 +27,7 @@ import {
 import {
   ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem,
 } from '../world/itens';
-import type { CartaNaTela, ContextoDaEscolha } from '../minigames/jardim/tela';
+import type { CartaNaTela, ContextoDaEscolha, FimDoJardim } from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
@@ -376,6 +376,8 @@ export class Game implements GameAPI {
       this.ui.quadroOpen ||
       this.ui.lojaOpen ||
       this.ui.cartasOpen ||
+      this.ui.livroOpen ||
+      this.ui.fimOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
@@ -408,6 +410,9 @@ export class Game implements GameAPI {
     if (this.ui.xadrezOpen && this.input.justPressed('Escape')) this.ui.fecharXadrez();
     // e a arara, pelo mesmo motivo de todas as outras: ela trava o movimento
     if (this.ui.lojaOpen && this.input.justPressed('Escape')) this.ui.fecharLoja();
+    // o livro das cartas e o fim da rodada do jardim são só leitura: Esc fecha
+    if (this.ui.livroOpen && this.input.justPressed('Escape')) this.ui.fecharLivro();
+    if (this.ui.fimOpen && this.input.justPressed('Escape')) this.ui.fecharFim();
     /**
      * A TELA DAS CARTAS DO JARDIM tem o teclado inteiro para ela: 1/2/3 marcam,
      * as setas andam, E/espaço/Enter pegam. E ela NÃO tem Escape — ao contrário
@@ -1194,6 +1199,22 @@ export class Game implements GameAPI {
    */
   escolherCartaDoJardim(cartas: readonly CartaNaTela[], contexto: ContextoDaEscolha): Promise<string> {
     return this.ui.escolherCarta(cartas, contexto);
+  }
+
+  desbloquearCartaDoJardim(id: string): boolean {
+    return this.save.desbloquearCarta(id);
+  }
+
+  cartasDoLivro(): readonly string[] {
+    return this.save.livro;
+  }
+
+  abrirLivroDeCartas(cartas: readonly CartaNaTela[]): Promise<void> {
+    return this.ui.abrirLivro(cartas, new Set(this.save.livro));
+  }
+
+  mostrarFimDoJardim(fim: FimDoJardim): Promise<void> {
+    return this.ui.mostrarFim(fim);
   }
 
   showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void {

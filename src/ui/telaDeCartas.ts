@@ -195,7 +195,7 @@ const RARIDADES = {
 } as const;
 
 /** texto de carta vem do catálogo, mas vai para `innerHTML`: escapa assim mesmo */
-function escapar(s: string): string {
+export function escapar(s: string): string {
   return s.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]!);
 }
 
@@ -215,7 +215,7 @@ function colarUnidades(s: string): string {
  * `--i` é a posição na mesa, e é ela que atrasa a entrada de cada carta — as
  * três viram uma depois da outra, como cartas sendo dadas.
  */
-function desenharCarta(c: CartaNaTela, i: number): string {
+export function desenharCarta(c: CartaNaTela, i: number): string {
   const familia = FAMILIAS[c.familia];
   const raridade = RARIDADES[c.raridade];
   const pedras = [1, 2, 3, 4]

@@ -3,7 +3,7 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
   arcoDeEstufa, bancadaDeJardinagem, bush, canteiroDeHorta, capim, folhagemAlta, planta,
-  portaoDeJardim, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
+  livroDeCartas, portaoDeJardim, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
   trelicaComTrepadeira, vasoDePlanta,
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
@@ -17,7 +17,8 @@ import { Walter } from '../entities/bichos/Walter';
 import { JeanLuc } from '../entities/bichos/JeanLuc';
 import { GotasDoJardim } from '../entities/GotasDoJardim';
 import { MaoDeCartas } from '../minigames/jardim/baralho';
-import { cartaPorId, type AjudanteDoClube } from '../minigames/jardim/cartas';
+import { CARTAS, cartaPorId, type AjudanteDoClube } from '../minigames/jardim/cartas';
+import { PRAGAS } from '../world/bichosDoJardim';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
 import { cartaNaTela } from '../minigames/jardim/tela';
 import { RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigames/jardim/rodada';
@@ -755,6 +756,32 @@ export const estufa: SceneDef = {
     const naFrenteDe = (peca: THREE.Object3D, afasta = 1.0) => ({
       x: peca.position.x + Math.sign(peca.position.x || 1) * -afasta,
       z: peca.position.z,
+    });
+
+    /**
+     * O LIVRO DAS CARTAS, na ponta da bancada (pedido do Renan). É a coleção
+     * que atravessa as rodadas: toda carta do baralho tem um lugar nele, na
+     * ordem da raridade, e aparece só depois de ter sido escolhida uma vez. A
+     * rodada suspende todo ponto da cena, então ele se lê entre uma rodada e
+     * outra — que é quando dá vontade de ler.
+     *
+     * RAIO PEQUENO, e sem prioridade: a bancada inteira também é um ponto
+     * ("Olhar a bancada"), o regador do chão é outro, e a Josefina passeia ali
+     * perto. Com prioridade o livro roubava os três; assim ganha quem está
+     * mais perto, e o livro só é o prompt de quem está na frente dele.
+     */
+    // na ponta de CIMA: a de baixo encosta no canteiro de tomate, e entre os
+    // dois não passa ninguém — o livro ficava à vista e fora do alcance
+    const LIVRO = { x: -hx + 1.08, z: 7.35 };
+    const livro = w.add(w.place(livroDeCartas(), LIVRO.x, 0.96, LIVRO.z, 0.18));
+    w.interact({
+      id: 'estufa:livro-das-cartas',
+      x: LIVRO.x + 1.0, z: LIVRO.z, radius: 0.8,
+      label: 'Abrir o livro das cartas', icon: '📖',
+      highlight: livro,
+      onInteract: async (api) => {
+        await api.abrirLivroDeCartas(CARTAS.map(cartaNaTela));
+      },
     });
 
     let jaOlhou = false;
@@ -1744,21 +1771,49 @@ export const estufa: SceneDef = {
      * pé — que é o placar do §3 (canteiro vivo, e não bicho espantado). O
      * pagamento por canteiro é a etapa 9; aqui ela só agradece.
      */
-    const ORDINAL = ['primeira', 'segunda', 'terceira', 'quarta', 'quinta'];
-    rodada.aoAcabar = ({ canteiros, total, ondas, de }) => {
+    const ORDINAL = [
+      'primeira', 'segunda', 'terceira', 'quarta', 'quinta', 'sexta', 'sétima', 'oitava', 'nona', 'décima',
+      'décima primeira', 'décima segunda', 'décima terceira', 'décima quarta', 'décima quinta',
+      'décima sexta', 'décima sétima', 'décima oitava', 'décima nona', 'vigésima',
+    ];
+    rodada.aoAcabar = (fim) => {
+      const { canteiros, total, ondas, de } = fim;
+      const venceu = ondas >= de && canteiros > 0;
       void (async () => {
         const J = 'Josefina';
         g.lockPlayer(true);
+        /*
+         * A TELA DO FIM, antes da fala dela (pedido do Renan): quantos bichos
+         * foram espantados, e de quais, e a página das cartas que a rodada
+         * juntou. Só quando a rodada acabou jogando — interrompida, não há
+         * placar para mostrar.
+         */
+        if (fim.motivo === 'fim') {
+          await g.mostrarFimDoJardim({
+            venceu,
+            onda: ondas,
+            ondas: de,
+            espantados: fim.espantados,
+            porPraga: Object.entries(fim.porPraga)
+              .sort((x, y) => y[1] - x[1])
+              .map(([id, quantos]) => ({ nome: PRAGAS.find((p) => p.id === id)?.nome ?? id, quantos })),
+            canteiros,
+            totalDeCanteiros: total,
+            nivel: fim.nivel,
+            cartas: fim.cartas.map((id) => cartaPorId(id)).filter((c) => !!c).map((c) => cartaNaTela(c!)),
+            novas: fim.novas,
+          });
+        }
         josefina.encarar(g.playerPosition().x, g.playerPosition().z);
         const fala = canteiros === total
           ? ['Nenhum canteiro comido! Vocês são bons nisso, hein.']
           : canteiros === 0
             ? ['Levaram tudo… Não tem problema, meu bem. Terra boa brota de novo.']
             : [`Sobraram ${canteiros} de ${total} canteiros. Tá ótimo pra primeira vez.`];
-        // as cinco levas inteiras, ou até onde a dupla chegou
-        const leva = ondas >= de && canteiros > 0
-          ? 'Foram as cinco levas, e vocês seguraram todas. Até a mãe deles!'
-          : `Essa foi a ${ORDINAL[Math.max(0, ondas - 1)] ?? 'última'} leva. Amanhã vem mais — e vem bicho diferente.`;
+        // as vinte levas inteiras, ou até onde a dupla chegou
+        const leva = venceu
+          ? `Foram as ${de} levas, e vocês seguraram todas. Até a mãe deles!`
+          : `Essa foi a ${ORDINAL[Math.max(0, ondas - 1)] ?? 'última'} leva. Amanhã vem mais.`;
         await g.say([
           ...fala,
           leva,

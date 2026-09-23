@@ -131,6 +131,12 @@ interface SaveData {
    * descartar uma nao perde nada.
    */
   premios: string[];
+  /**
+   * O LIVRO DAS CARTAS DO JARDIM: as cartas que a dupla já escolheu alguma
+   * vez, em qualquer rodada. A mão de uma rodada morre com ela; isto não —
+   * é a coleção, e o livro da bancada desenha as que estão aqui.
+   */
+  livro: string[];
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -273,6 +279,7 @@ const EMPTY: SaveData = {
   carteira: 0,
   compradas: [],
   premios: [],
+  livro: [],
   inventarios: {},
 };
 
@@ -309,6 +316,10 @@ export class SaveState {
         // idem: save de antes do quadro de inscricoes nao tem premio nenhum
         premios: Array.isArray(parsed.premios)
           ? parsed.premios.filter((id): id is string => typeof id === 'string')
+          : [],
+        // save de antes do livro das cartas: coleção vazia
+        livro: Array.isArray(parsed.livro)
+          ? parsed.livro.filter((id): id is string => typeof id === 'string')
           : [],
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
@@ -403,6 +414,21 @@ export class SaveState {
     if (this.data.premios.includes(id)) return;
     this.data.premios.push(id);
     this.persist();
+  }
+
+  // ------------------------------------------------ o livro das cartas
+
+  /** as cartas do jardim já escolhidas alguma vez, na ordem em que apareceram */
+  get livro(): readonly string[] {
+    return this.data.livro;
+  }
+
+  /** Põe a carta no livro. Devolve se ela era NOVA (a primeira vez que saiu). */
+  desbloquearCarta(id: string): boolean {
+    if (this.data.livro.includes(id)) return false;
+    this.data.livro.push(id);
+    this.persist();
+    return true;
   }
 
   bump(key: string, by = 1): number {

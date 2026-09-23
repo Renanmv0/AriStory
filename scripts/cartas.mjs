@@ -251,6 +251,7 @@ console.log('\n— as ondas');
   let anunciadosErrados = 0;
   let ordemErrada = 0;
   const niveisFinais = [];
+  const niveisNaQuinta = [];
   for (let s = 1; s <= 300; s++) {
     const rng = dado(s * 104729);
     let gotas = 0;
@@ -269,15 +270,22 @@ console.log('\n— as ondas');
       const jaEstreados = new Set(ONDAS.slice(0, n).map((o) => o.estreia).filter(Boolean));
       if (plano.some((e) => !e.anunciada && !jaEstreados.has(e.praga))) ordemErrada++;
       gotas += m.gotasDoPlano(plano);
+      if (n === 5) niveisNaQuinta.push(m.nivelDasGotas(gotas).nivel);
     }
     niveisFinais.push(m.nivelDasGotas(gotas).nivel);
   }
   ok(problemasDeSolo === 0, 'o bicho novo entra sozinho, por uma porta so, nos primeiros 10 s');
   ok(anunciadosErrados === 0, 'tanque e chefe so entram anunciados, na conta certa');
   ok(ordemErrada === 0, 'nenhum bicho aparece antes da onda de estreia dele');
-  const media = niveisFinais.reduce((a, b) => a + b, 0) / niveisFinais.length;
-  console.log(`       nivel final medio, se nenhum bicho escapar: ${media.toFixed(1)}`);
-  ok(media >= 9 && media <= 12, 'a rodada inteira termina perto do nivel 10 (entre 9 e 12)');
+  const mediaDe = (l) => l.reduce((a, b) => a + b, 0) / l.length;
+  const naQuinta = mediaDe(niveisNaQuinta);
+  const media = mediaDe(niveisFinais);
+  console.log(`       nivel medio se nenhum bicho escapar: ${naQuinta.toFixed(1)} na onda 5, ${media.toFixed(1)} na onda ${ONDAS.length}`);
+  ok(ONDAS.length === 20 && m.TOTAL_DE_ONDAS === 20, 'a rodada tem vinte ondas (a vigésima é a vitória)');
+  ok(naQuinta >= 9 && naQuinta <= 12, 'as cinco primeiras ondas levam perto do nivel 10 (entre 9 e 12)');
+  ok(media >= 20 && media <= 32, 'as vinte ondas terminam entre o nivel 20 e o 32');
+  ok([10, 15, 20].every((n) => ONDAS[n - 1].anunciados.some((a) => a.praga === 'mae-lagartejo')),
+    'a Mãe-Lagartejo volta nas ondas 10, 15 e 20');
 
   const um = m.planoDaOnda(1, dado(42));
   console.log(`       onda 1: ${um.length} bichos em ${um.at(-1).t + ONDAS[0].aCada} s`);
