@@ -102,7 +102,7 @@ for (const f of ['regador', 'jardineiro', 'jardim']) {
     const f = m.fichaInicial();
     c.aplicar(f);
     // as comuns que so ligam UMA regra de conforto sao a excecao declarada
-    return f.regras.size > 0 && !['bota', 'segundo-tonel'].includes(c.id);
+    return f.regras.size > 0 && !['bota', 'segundo-tonel', 'sino-da-porta'].includes(c.id);
   });
   ok(vazamentos.length === 0, `comum mexe em numero, nao em regra ${vazamentos.map((c) => c.id).join(' ')}`);
 }

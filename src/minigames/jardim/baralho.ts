@@ -134,8 +134,8 @@ export class MaoDeCartas {
       const grupo = novas.length > 0 ? novas : daRaridade;
       /*
        * DENTRO DO GRUPO, POR FAMÍLIA E DEPOIS POR CARTA. Sortear a carta direto
-       * faria a família com mais cartas ganhar quase sempre: o regador tem 15
-       * comuns (cinco séries de três) e o jardim tem 3, então num sorteio plano
+       * faria a família com mais cartas ganhar quase sempre: o regador tem 21
+       * comuns e o jardim tem 6, então num sorteio plano
        * o jardim quase nunca aparecia na primeira vaga.
        */
       const familias = [...new Set(grupo.map((c) => c.familia))];

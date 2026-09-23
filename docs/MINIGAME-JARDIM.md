@@ -368,7 +368,7 @@ com peso, e o peso muda com o nível — nível alto tira mais raro.
 
 **O catálogo e o sorteio estão construídos** (`src/minigames/jardim/`), como
 lógica pura, e `node scripts/cartas.mjs` joga mil rodadas até o baralho acabar
-para provar as regras abaixo. Hoje são 38 cartas mais 3 de consolo.
+para provar as regras abaixo. Hoje são 88 cartas mais 3 de consolo.
 
 ### Carta nenhuma se repete — **construído**
 
@@ -428,6 +428,28 @@ E as do mesmo baralho que mudam a regra do jato:
 | Mangueira | raro | o alcance dobra, mas a cadência piora 40% |
 | Regador de pressão | raro | o jato atravessa o primeiro bicho e acerta o de trás |
 
+E as que vieram do banco de ideias (⚙ = regra nova, que o minigame ainda precisa
+obedecer — ver "Do banco de ideias para o baralho", no fim desta seção):
+
+| carta | raridade | efeito |
+|---|---|---|
+| Gota pesada I–III | comum | cada jato empurra o bicho 30 cm para trás (por degrau) |
+| Refil rápido I–II | comum | encher no tonel fica 40% mais rápido (por degrau) — exclui *O Jean-Luc no tonel* |
+| Água morna | comum | +25% de encharque em tanque e chefe |
+| Gota gelada ⚙ | incomum | o bicho molhado anda 30% mais devagar por 2 s |
+| Jato em arco ⚙ | incomum | o jato passa por cima do canteiro e acerta quem come do outro lado |
+| Borrifador ⚙ | incomum | cada jato sai em três gotinhas: acerta mais bichos, cada uma mais fraca |
+| Mira no grandão ⚙ | incomum | o regador prefere o bicho com mais vida — exclui *Mira em quem come* |
+| Mira em quem come ⚙ | incomum | o regador prefere quem já está num canteiro — exclui *Mira no grandão* |
+| Garoa ⚙ | incomum | você deixa um rastro de gotinhas; bicho que pisa leva meio jato |
+| Pressão acumulada ⚙ | incomum | o primeiro jato depois de encher o tanque encharca o triplo |
+| Crivo giratório ⚙ | raro | a cada 4 s o regador gira e molha em volta, 360° |
+| Água com sabão ⚙ | raro | bicho espantado solta uma bolha; ela estoura e molha quem está perto |
+| Jato carregado ⚙ | raro | ficar parado 1,5 s carrega um jatão que atravessa a fila inteira |
+| Balde ⚙ | raro | segurar E derrama o tanque inteiro num círculo de 2 m em volta |
+| Gêiser ⚙ | lendário | a cada 20 s um gêiser brota embaixo do bicho mais forte e o joga pela porta |
+| Arco-íris ⚙ | lendário | um jato a cada dez atravessa tudo e dobra as gotas de quem ele espanta |
+
 ### As três famílias de carta
 
 O sorteio tira de três baralhos misturados, e **as três precisam estar na mesa**
@@ -455,6 +477,19 @@ regra.** Se uma ideia só sabe dar +X%, ela é comum, por melhor que pareça.
 | Grito | raro | uma vez por onda, tudo num raio de 4 m recua até a porta |
 | Dedo verde | raro | canteiro machucado recupera 1 ponto entre uma onda e outra |
 | **Os dois na frente** | lendário | quem ficou lá atrás pega o outro regador e vem regar do seu lado |
+| Chapéu de palha | comum | cada jato gasta 15% menos água |
+| Descanso na sombra | comum | parado, o tanque enche 50% mais rápido |
+| Pique ⚙ | incomum | andar 2 s sem parar dá +30% de velocidade, até você parar |
+| Assobio ⚙ | incomum | a cada 12 s o bicho mais perto vira de costas e anda 2 s para o outro lado |
+| Pé na poça ⚙ | incomum | pisar numa poça dá um impulso — **só sorteia com a Poça na mão** |
+| Olho de jardineira ⚙ | incomum | você vê para qual canteiro cada bicho está indo |
+| Troca de turno ⚙ | incomum | o `T` troca quem joga e quem fica atrás; quem entra chega de tanque cheio — exclui *Os dois na frente* |
+| Coraçãozinho ⚙ | incomum | a cada 20 gotas sobe um coração da dupla, e os bichos perto param 1 s para olhar |
+| Ímã de gota ⚙ | raro | ao subir de nível, todas as gotas do chão voam até você |
+| Sorte de principiante ⚙ | raro | a próxima tela de cartas vem com tudo uma raridade acima |
+| Pulinho ⚙ | raro | encostar num bicho pequeno dá um pulo por cima dele |
+| Bis ⚙ | raro | a próxima carta de série que sair já vem um degrau acima |
+| Dança da chuva ⚙ | lendário | ficar parado 3 s faz chover 5 s em volta de você |
 
 *Mãos dadas* e *Regador do Renan* **saíram**: as duas supunham os dois na
 frente desde o começo, e o Renan decidiu que quem não é controlado fica atrás
@@ -473,6 +508,30 @@ frente desde o começo, e o Renan decidiu que quem não é controlado fica atrá
 | Portão emperrado | raro | uma das três portas fecha pelo resto da rodada |
 | Cerca viva | lendário | um canteiro à sua escolha fica intocável até o fim |
 | Chuva | lendário | a estufa inteira leva um jato, de uma vez, a cada 30 s |
+| Compostagem I–II | comum | cada bicho espantado devolve 5% de vida ao canteiro mais perto (por degrau) |
+| Sino da porta ⚙ | comum | um sininho toca quando um bicho passa por um portão — conforto, como a Bota |
+| Girassol vigia ⚙ | incomum | os girassóis viram para o portão de onde vem o próximo bicho |
+| Cerquinha ⚙ | incomum | nasce uma cerca baixa no terreiro que os bichos têm que contornar |
+| Toldo ⚙ | incomum | um canteiro à sua escolha aguenta 50% mais |
+| Canteiro de pimenta ⚙ | raro | quem morde esse canteiro sai correndo e solta 2 gotas |
+| Aspersor ⚙ | raro | um aspersor no meio do terreiro molha num raio de 2,5 m a cada 3 s |
+| Sementeira ⚙ | raro | canteiro comido até o fim vira muda e volta com metade da vida na onda seguinte |
+| Planta carnívora ⚙ | lendário | um canteiro vira dioneia: morde o primeiro bicho que encostar, e recarrega em 15 s |
+| Estufa trancada ⚙ | lendário | os portões seguram os bichos 10 s no começo de cada onda |
+
+**Os do clube vêm ajudar** — também família JARDIM. Usam os personagens com
+nome como AJUDANTES, nunca como alvo (a regra das pragas continua valendo: gente
+não leva jato).
+
+| carta | raridade | efeito |
+|---|---|---|
+| Apito da Gina ⚙ | incomum | uma vez por onda a Gina apita da porta e todo bicho congela 1,5 s |
+| Picolé do Mano ⚙ | incomum | no fim de cada onda cai um picolé: pegar enche o tanque e dá velocidade por 10 s |
+| O Noel avisa ⚙ | incomum | o Noel sobe no muro e grita qual portão abre na próxima onda |
+| O Jean-Luc no tonel ⚙ | incomum | o pato fica no tonel, e encher o tanque ali é na hora — exclui *Refil rápido* |
+| O Capy salva-vidas ⚙ | raro | uma vez por onda o Capy dá um jato longo pelo corredor do meio |
+| O Walter de plantão ⚙ | raro | o Walter late para o bicho mais perto de um canteiro, e ele recua até a porta |
+| Adubo do Noel ⚙ | raro | canteiro que você rega fica mais forte até o fim da onda |
 
 ### O regador MUDA DE CARA quando você melhora ele
 
@@ -542,82 +601,32 @@ a barra enche, a tela abre com o sorteio de verdade, e a carta pega entra na mã
 e muda o regador. `node scripts/gotas.mjs /tmp/gt` faz isso sozinho e fotografa
 uma mesa de cada raridade, no computador e no celular.
 
-### O banco de ideias — **esperando o Renan escolher**
+### Do banco de ideias para o baralho
 
-Pedido dele: muitas ideias, para ele e o Ari validarem quais entram. **Nenhuma
-destas está no jogo.** Elas estão numeradas para ele poder dizer "quero a 7, a
-12 e a 30" — e ficam escritas aqui, e não numa conversa, porque conversa acaba.
+As 46 ideias que estavam aqui numeradas **viraram carta de verdade**, todas de
+uma vez, a pedido do Renan: "pode criar todas as cartas que você mencionou" —
+ele ajusta depois de testar. Elas estão nas tabelas das famílias acima, e o
+baralho foi de 38 para **88 cartas** (38 de regador, 22 de jardineiro, 28 de
+jardim, contando cada degrau de série).
 
-Quando uma for escolhida: ela sai desta lista e entra na tabela da família, com
-a carta de verdade em `cartas.ts`. Carta que liga **regra nova** também precisa
-de código no minigame — as que dependem disso estão marcadas com ⚙.
+O que isso quer dizer hoje, com a rodada (etapa 3) ainda por construir:
 
-**REGADOR — o jato**
+- **Já funcionam de ponta a ponta** no sorteio, na mão e na tela: saem nas três
+  cartas, não repetem, respeitam série, `exclui` e o piso da lendária.
+- **As ⚙ ligam uma regra** (`RegraDoJardim`, em `cartas.ts`, cada uma com um
+  comentário do que faz). Quem obedece a regra é o código do minigame, que entra
+  junto com a rodada — como já era o caso da Poça, do Grito ou da Chuva.
+- **As sem ⚙ mexem em número** da `FichaDaRodada`. Seis números novos entraram
+  para elas: `empurraoDoJato`, `contraOGrandao`, `refil`, `gastoPorJato`,
+  `recargaParado` e `compostagem`.
+- **Nenhuma das novas de regador muda a peça da mão ainda** — por isso a tela
+  não põe nelas o selo "muda o regador". Cada uma que ganhar desenho (a Gota
+  gelada deixando o bico azulado, o Balde trocando a lata) passa pela skill
+  `aristory-prop` e o selo aparece sozinho.
 
-| # | carta | raridade | o que faz |
-|---|---|---|---|
-| 1 | Gota gelada ⚙ | incomum | o bicho molhado anda 30% mais devagar por 2 s |
-| 2 | Jato em arco ⚙ | incomum | o jato sobe e cai atrás do canteiro: acerta quem está comendo do outro lado |
-| 3 | Borrifador ⚙ | incomum | cada jato sai em três gotinhas: acerta mais bichos, cada uma mais fraca |
-| 4 | Gota pesada (série) | comum | cada jato empurra o bicho 30 cm para trás |
-| 5 | Crivo giratório ⚙ | raro | a cada 4 s o regador gira e molha em volta, 360° |
-| 6 | Água com sabão ⚙ | raro | bicho encharcado solta uma bolha; ela estoura e molha quem está perto |
-| 7 | Jato carregado ⚙ | raro | ficar parado 1,5 s carrega um jatão que atravessa a fila inteira |
-| 8 | Mira no grandão ⚙ | incomum | o regador prefere o bicho com mais vida, e não o mais perto |
-| 9 | Mira em quem come ⚙ | incomum | o regador prefere quem já está num canteiro |
-| 10 | Água morna | comum | +25% de encharque em tanque e chefe |
-| 11 | Garoa ⚙ | incomum | você deixa um rastro de gotinhas; bicho que pisa leva meio jato |
-| 12 | Balde ⚙ | raro | segurar E derrama o tanque inteiro num círculo de 2 m em volta |
-| 13 | Refil rápido (série) | comum | encher no tonel é 40% mais rápido |
-| 14 | Pressão acumulada ⚙ | incomum | o primeiro jato depois de encher o tanque encharca o triplo |
-| 15 | Gêiser ⚙ | lendário | a cada 20 s um gêiser brota embaixo do bicho mais forte e o joga pela porta |
-| 16 | Arco-íris ⚙ | lendário | um jato a cada dez sai em arco-íris: atravessa tudo e dobra as gotas de quem ele espanta |
-
-**JARDINEIRO — você e a dupla**
-
-| # | carta | raridade | o que faz |
-|---|---|---|---|
-| 17 | Chapéu de palha | comum | cada jato gasta 15% menos água |
-| 18 | Pique ⚙ | incomum | andar 2 s sem parar dá +30% de velocidade, até você parar |
-| 19 | Descanso na sombra | comum | parado, o tanque enche 50% mais rápido |
-| 20 | Assobio ⚙ | incomum | a cada 12 s o bicho mais perto vira de costas e anda 2 s para o outro lado |
-| 21 | Pé na poça ⚙ | incomum | pisar numa poça dá um impulso de velocidade |
-| 22 | Ímã de gota ⚙ | raro | ao subir de nível, todas as gotas do chão voam até você |
-| 23 | Sorte de principiante ⚙ | raro | a próxima tela de cartas vem com tudo uma raridade acima |
-| 24 | Olho de jardineira ⚙ | incomum | você vê para qual canteiro cada bicho está indo |
-| 25 | Pulinho ⚙ | raro | encostar num bicho pequeno dá um pulo por cima dele |
-| 26 | Bis ⚙ | raro | a próxima carta de série que sair já vem um degrau acima |
-| 27 | Troca de turno ⚙ | incomum | o `T` troca quem joga e quem fica atrás; quem entra chega de tanque cheio |
-| 28 | Coraçãozinho ⚙ | incomum | a cada 20 gotas sobe um coração da dupla, e os bichos perto param 1 s para olhar |
-| 29 | Dança da chuva ⚙ | lendário | ficar parado 3 s faz chover 5 s em volta de você |
-
-**JARDIM — o campo e quem mora no clube**
-
-| # | carta | raridade | o que faz |
-|---|---|---|---|
-| 30 | Compostagem (série) ⚙ | comum | cada bicho espantado devolve um tiquinho de vida ao canteiro mais perto |
-| 31 | Sino da porta ⚙ | comum | um sininho toca quando um bicho passa por um portão |
-| 32 | Girassol vigia ⚙ | incomum | os girassóis viram para o portão de onde vem o próximo bicho |
-| 33 | Cerquinha ⚙ | incomum | nasce uma cerca baixa no terreiro que os bichos têm que contornar |
-| 34 | Toldo ⚙ | incomum | um canteiro à sua escolha aguenta 50% mais |
-| 35 | Canteiro de pimenta ⚙ | raro | quem morde esse canteiro sai correndo e solta 2 gotas |
-| 36 | Aspersor ⚙ | raro | um aspersor no meio do terreiro molha num raio de 2,5 m a cada 3 s |
-| 37 | Sementeira ⚙ | raro | canteiro comido até o fim vira muda e volta com metade da vida na onda seguinte |
-| 38 | Planta carnívora ⚙ | lendário | um canteiro vira dioneia: morde o primeiro bicho que encostar, e recarrega em 15 s |
-| 39 | Estufa trancada ⚙ | lendário | os portões seguram os bichos 10 s no começo de cada onda: dá para se preparar |
-
-**Os do clube vêm ajudar** — estas usam os personagens com nome como AJUDANTES,
-nunca como alvo (a regra das pragas continua valendo: gente não leva jato).
-
-| # | carta | raridade | o que faz |
-|---|---|---|---|
-| 40 | Apito da Gina ⚙ | incomum | uma vez por onda a Gina apita da porta e todo bicho congela 1,5 s |
-| 41 | Picolé do Mano ⚙ | incomum | no fim de cada onda cai um picolé: pegar enche o tanque e dá velocidade por 10 s |
-| 42 | O Noel avisa ⚙ | incomum | o Noel sobe no muro e grita qual portão abre na próxima onda |
-| 43 | O Jean-Luc no tonel ⚙ | incomum | o pato fica no tonel, e encher o tanque ali é na hora |
-| 44 | O Capy salva-vidas ⚙ | raro | uma vez por onda o Capy dá um jato longo pelo corredor do meio |
-| 45 | O Walter de plantão ⚙ | raro | o Walter late para o bicho mais perto de um canteiro, e ele recua até a porta |
-| 46 | Adubo do Noel ⚙ | raro | canteiro que você rega fica mais forte até o fim da onda |
+Três pares se excluem, porque um deixaria o outro morto: *Mira no grandão* ×
+*Mira em quem come*, *Refil rápido* × *O Jean-Luc no tonel* e *Troca de turno*
+× *Os dois na frente*. E o *Pé na poça* só sorteia com a *Poça* na mão.
 
 ---
 

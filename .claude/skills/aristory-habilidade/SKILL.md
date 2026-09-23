@@ -113,8 +113,8 @@ numa tela de escolha.
 | **lendário** | muda a rodada inteira | **4** | 0 → 8 |
 
 Se uma ideia só sabe dar +X%, ela é **comum**, por melhor que pareça. O teste
-cobra: carta comum que liga regra reprova (as duas exceções declaradas são
-`bota` e `segundo-tonel`, que são conforto e não jogada).
+cobra: carta comum que liga regra reprova (as exceções declaradas são
+`bota`, `segundo-tonel` e `sino-da-porta`, que são conforto e não jogada).
 
 **Lendária não sai antes do nível 4.** Roguelite em que a primeira carta decide
 a rodada não tem rodada.
@@ -131,7 +131,7 @@ a rodada não tem rodada.
 
 O sorteio escolhe a raridade pelo peso e, dentro dela, **prefere uma família que
 ainda não está na mesa** — e sorteia a família antes da carta, senão o regador
-(que tem 15 comuns) ganharia sempre. Resultado medido: as três famílias juntas
+(que tem 21 comuns) ganharia sempre. Resultado medido: as três famílias juntas
 em quase toda mesa do começo.
 
 **Consequência para quem cria carta:** família com poucas comuns aparece pouco
@@ -220,12 +220,25 @@ Depois, **escreva a carta na tabela da família no §6 do
 `docs/MINIGAME-JARDIM.md`** — com raridade e efeito. É lá que o Renan ajusta o
 minigame, e carta que só existe no código ninguém balanceia.
 
-## 10. As ideias que esperam o Renan
+## 10. O banco de ideias virou baralho
 
-O §6 do plano tem um **banco de ideias numerado** (46 hoje), que o Renan e o Ari
-vão validando. Carta escolhida SAI de lá e entra na tabela da família, com a
-carta de verdade em `cartas.ts`. Não invente carta nova em cima de uma do banco
-sem ele ter escolhido: a lista existe justamente para a escolha ser dele.
+As 46 ideias numeradas que o §6 do plano guardava **viraram carta de uma vez**,
+a pedido do Renan (ele ajusta depois de testar). Hoje são 88 cartas. Ideia nova
+que surgir numa conversa vai para o §6 como proposta, e só vira carta quando ele
+escolher — a escolha é dele.
+
+O que ficou devendo, e quem pegar a etapa 3 precisa saber:
+
+- **Quase todas ligam regra** (as ⚙ das tabelas). Cada `RegraDoJardim` tem um
+  comentário dizendo o que ela faz: é a especificação para o código da rodada.
+- **Seis números novos na ficha** para as que só mexem em número:
+  `empurraoDoJato` (Gota pesada), `contraOGrandao` (Água morna), `refil`
+  (Refil rápido), `gastoPorJato` (Chapéu de palha), `recargaParado` (Descanso
+  na sombra) e `compostagem` (Compostagem).
+- **As novas de regador não mudam a peça ainda** — sem desenho, sem selo.
+- Pares que se excluem: *Mira no grandão* × *Mira em quem come*, *Refil
+  rápido* (a série inteira) × *O Jean-Luc no tonel*, *Troca de turno* × *Os
+  dois na frente*. *Pé na poça* `requer` a *Poça*.
 
 ## 11. Cartas que já existem e as que foram cortadas
 

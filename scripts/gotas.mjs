@@ -242,10 +242,14 @@ const fechar = async (pg) => {
 
 const MESA_A = ['bico-2', 'orvalho', 'pressao'];               // comum (série), incomum, rara
 const MESA_B = ['chuva', 'os-dois-na-frente', 'gole-de-agua']; // lendária, lendária, consolo
+// os tres textos mais compridos do baralho, um de cada familia: a mesa mais alta
+const MESA_C = ['agua-com-sabao', 'troca-de-turno', 'planta-carnivora'];
 
 await vitrine(page, MESA_A, `${OUT}-vitrine-a.png`);
 await fechar(page);
 await vitrine(page, MESA_B, `${OUT}-vitrine-b.png`);
+await fechar(page);
+await vitrine(page, MESA_C, `${OUT}-vitrine-c.png`);
 await fechar(page);
 await page.close();
 
@@ -253,28 +257,34 @@ await page.close();
 const cel = await abrir(390, 844);
 await vitrine(cel, MESA_A, `${OUT}-celular-a.png`);
 
-const medidas = await cel.evaluate(() => {
-  const vw = window.innerWidth;
-  const cartas = [...document.querySelectorAll('.cartas-do-jardim .carta-jardim')].map((el) => el.getBoundingClientRect());
-  const botao = document.querySelector('.cartas-do-jardim .pegar').getBoundingClientRect();
-  const textos = [...document.querySelectorAll('.cartas-do-jardim .texto')].map(
-    (el) => el.scrollWidth <= el.clientWidth + 1,
-  );
-  return {
-    vw,
-    fora: cartas.filter((r) => r.left < -1 || r.right > vw + 1).length,
-    sobrepoe: cartas.filter((r) => !(botao.bottom <= r.top || botao.top >= r.bottom)).length,
-    textosInteiros: textos.every(Boolean),
-    alturas: cartas.map((r) => Math.round(r.height)),
-  };
-});
-console.log(`celular: ${JSON.stringify(medidas)}`);
-if (medidas.fora) problemas.push(`${medidas.fora} carta(s) saem da tela do celular`);
-if (medidas.sobrepoe) problemas.push(`o botão "pegar" tapa ${medidas.sobrepoe} carta(s) no celular`);
-if (!medidas.textosInteiros) problemas.push('um texto de carta vaza para o lado no celular');
+const medir = async (mesa) => {
+  const medidas = await cel.evaluate(() => {
+    const vw = window.innerWidth;
+    const cartas = [...document.querySelectorAll('.cartas-do-jardim .carta-jardim')].map((el) => el.getBoundingClientRect());
+    const botao = document.querySelector('.cartas-do-jardim .pegar').getBoundingClientRect();
+    const textos = [...document.querySelectorAll('.cartas-do-jardim .texto')].map(
+      (el) => el.scrollWidth <= el.clientWidth + 1,
+    );
+    return {
+      vw,
+      fora: cartas.filter((r) => r.left < -1 || r.right > vw + 1).length,
+      sobrepoe: cartas.filter((r) => !(botao.bottom <= r.top || botao.top >= r.bottom)).length,
+      textosInteiros: textos.every(Boolean),
+      alturas: cartas.map((r) => Math.round(r.height)),
+    };
+  });
+  console.log(`celular ${mesa}: ${JSON.stringify(medidas)}`);
+  if (medidas.fora) problemas.push(`${mesa}: ${medidas.fora} carta(s) saem da tela do celular`);
+  if (medidas.sobrepoe) problemas.push(`${mesa}: o botão "pegar" tapa ${medidas.sobrepoe} carta(s) no celular`);
+  if (!medidas.textosInteiros) problemas.push(mesa + ': um texto de carta vaza para o lado no celular');
+};
+await medir('a');
 
 await fechar(cel);
 await vitrine(cel, MESA_B, `${OUT}-celular-b.png`);
+await fechar(cel);
+await vitrine(cel, MESA_C, `${OUT}-celular-c.png`);
+await medir('c');
 await cel.close();
 
 // ------------------------------------------------------------------ relatório
