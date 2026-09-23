@@ -172,3 +172,23 @@ export function line(color: number): THREE.LineBasicMaterial {
   lineCache.set(color, mat);
   return mat;
 }
+
+/**
+ * A VARIANTE TRANSLÚCIDA de um material que já existe — é o que a oclusão usa
+ * (`core/Oclusao.ts`) para deixar a parede ou a árvore que tapa um bicho meio
+ * transparente. Uma por material, guardada: os materiais do jogo são
+ * compartilhados, então mexer na opacidade do original apagaria TODAS as
+ * peças que usam a mesma cor. `depthWrite` desligado para quem está atrás
+ * aparecer inteiro através dela.
+ */
+const translucidos = new WeakMap<THREE.Material, THREE.Material>();
+export function translucido(mat: THREE.Material, opacidade = 0.28): THREE.Material {
+  const hit = translucidos.get(mat);
+  if (hit) return hit;
+  const t = mat.clone();
+  t.transparent = true;
+  t.opacity = Math.min(mat.opacity, opacidade);
+  t.depthWrite = false;
+  translucidos.set(mat, t);
+  return t;
+}

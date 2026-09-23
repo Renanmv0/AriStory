@@ -136,6 +136,7 @@ node scripts/rodada.mjs  /tmp/rd    # a rodada do jardim: a onda 1 inteira, o re
 node scripts/jato.mjs    /tmp/jt    # o jato de cada carta: a vitrine mede o efeito que a carta descreve (poça, gelo, arco, três fios…) e fotografa
 node scripts/cartasNaRodada.mjs /tmp/cr # as outras 41 cartas agindo (cada uma numa estufa de laboratorio, efeito medido no mundo e foto), a ajuda do par e o bicho comendo visto pela quina
 node scripts/livro.mjs   /tmp/lv    # o livro das cartas na bancada (vagas cinzas, cada carta no seu lugar, a lupa, o F5) e a tela do fim da rodada
+node scripts/oclusao.mjs /tmp/oc    # na rodada, a parede que tapa gota ou bicho fica translucida e volta; e a fala esconde o botao da ajuda no celular
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```
 

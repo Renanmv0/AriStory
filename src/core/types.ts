@@ -3,6 +3,7 @@ import type { WorldBuilder } from '../world/WorldBuilder';
 import type { SomNome } from '../audio/efeitos';
 import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
+import type { VigiaDaOclusao } from './Oclusao';
 import type { CartaNaTela, ContextoDaEscolha, FimDoJardim, PainelDoJardim } from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
 
@@ -542,6 +543,12 @@ export interface GameAPI {
    * compasso fechar, como toda virada de clima.
    */
   trocarMusica(clima: string | null): void;
+  /**
+   * A OCLUSÃO (`core/Oclusao.ts`): o que fica entre a câmera e estes pontos
+   * (e a dupla, sempre) fica translúcido. `ignorar` são os objetos dos próprios
+   * pontos, que nunca esmaecem. `null` desliga e devolve tudo como estava.
+   */
+  vigiarOclusao(vigia: VigiaDaOclusao | null): void;
   /**
    * VIRA O JOGADOR PARA UM PONTO enquanto ele está PARADO — é o regador da
    * rodada apontando para o bicho que ele rega. Andando, quem manda no giro

@@ -537,6 +537,19 @@ export class RodadaDoJardim {
 
     this.g.showExperiencia(nivelDasGotas(0));
     this.enquadrarRodada();
+    /*
+     * A OCLUSÃO (pedido do Renan): gota que cai atrás de uma árvore ou da
+     * parede dos portões sumia. Com a vigia ligada, o que fica entre a câmera
+     * e um bicho ou uma gota fica translúcido. Os próprios bichos, as gotas e
+     * a água nunca esmaecem.
+     */
+    this.g.vigiarOclusao({
+      pontos: () => [
+        ...this.invasores.map((i) => ({ x: i.x, y: i.ficha.alturaDaBarra * 0.45, z: i.z })),
+        ...this.gotasNoChao().map((p) => ({ x: p.x, y: 0.35, z: p.z })),
+      ],
+      ignorar: () => [this.gotas.grupo, this.jato.grupo, this.trilha, ...this.invasores.flatMap((i) => [i.raiz, i.barra])],
+    });
     // a música da defesa: fofa, mas com pressa (a vitrine é para olhar, fica a da cena)
     if (!this.vitrine) this.g.trocarMusica('rodada-do-jardim');
     if (this.vitrine) {
@@ -598,6 +611,7 @@ export class RodadaDoJardim {
     // a câmera volta ao zoom da estufa (o 11 das cutscenes da cena)
     if (!this.vitrine) this.g.setZoom(11);
     this.g.trocarMusica(null);
+    this.g.vigiarOclusao(null);
     this.ajudaResta = 0;
     this.parVoltando = false;
     this.pararGesto();

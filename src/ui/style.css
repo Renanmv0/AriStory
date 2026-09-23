@@ -3274,6 +3274,9 @@ body.touch-device .dialogue .next { right: 84px; }
 }
 .ajuda-do-par.show { display: flex; }
 body.tela-aberta .ajuda-do-par { display: none; }
+/* com alguém falando (o bicho que entrou, a Josefina, a pergunta do canteiro)
+   o botão some: no celular ele caía em cima do texto da fala */
+#ui:has(.dialogue.show) .ajuda-do-par { display: none; }
 .ajuda-do-par:disabled { cursor: default; }
 .ajuda-do-par .anel {
   position: relative;

@@ -20,6 +20,7 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 |---|---|
 | `Game.ts` | monta o renderer e as luzes, roda o loop, troca de cena, implementa `GameAPI` |
 | `IsoCamera.ts` | ortográfica a 34° de elevação; gira em passos de 45°, zoom com viés vertical |
+| `Oclusao.ts` | o que fica entre a câmera e os pontos vigiados (e a dupla) ganha a variante translúcida do material (`translucido()`); liga com `g.vigiarOclusao`, hoje só a rodada do jardim |
 | `Input.ts` | única fonte de entrada; `move()` devolve vetor de tela |
 | `SaveState.ts` | persistência; nada mais escreve em `localStorage` |
 | `materials.ts` | `toon()` / `flat()` / `line()`, todos cacheados por cor |

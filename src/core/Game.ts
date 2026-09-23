@@ -28,6 +28,7 @@ import {
   ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem,
 } from '../world/itens';
 import type { CartaNaTela, ContextoDaEscolha, FimDoJardim } from '../minigames/jardim/tela';
+import { Oclusao, type VigiaDaOclusao } from './Oclusao';
 import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
@@ -289,6 +290,8 @@ export class Game implements GameAPI {
     this.ui.hidePrompt();
     this.ui.sceneCard(def.name, def.subtitle);
     this.audio.setClima(id);
+    // o mundo novo não tem as malhas esmaecidas do velho
+    this.oclusao.esquecer();
     this.migrarPremios();
     this.aplicarPremios();
     this.save.scene = id;
@@ -510,6 +513,13 @@ export class Game implements GameAPI {
     const k = span / 22;
     this.sun.target.position.copy(this.camAim);
     this.sun.position.set(this.camAim.x + 14 * k, this.camAim.y + 20 * k, this.camAim.z + 9 * k);
+
+    // o que tapa quem importa fica translúcido (só com alguém vigiando: a rodada)
+    const eu = this.player.position;
+    const outro = this.parceiro.position;
+    this.oclusao.update(dt, this.iso.camera, world.root, [this.player.rig.group, this.parceiro.rig.group], [
+      { x: eu.x, y: 0.9, z: eu.z }, { x: outro.x, y: 0.9, z: outro.z },
+    ]);
 
     this.renderer.render(this.scene, this.camOmbro ?? this.iso.camera);
 
@@ -1227,6 +1237,13 @@ export class Game implements GameAPI {
   /** a rodada do jardim está com o painel na tela (só aí o F chama o par) */
   private jardimNaTela = false;
   private ajudaPedida = false;
+
+  /** o que tapa os bichos e as gotas fica translúcido (ver `Oclusao.ts`) */
+  readonly oclusao = new Oclusao();
+
+  vigiarOclusao(vigia: VigiaDaOclusao | null): void {
+    this.oclusao.vigiar(vigia);
+  }
 
   trocarMusica(clima: string | null): void {
     this.audio.setClima(clima ?? this.save.scene);

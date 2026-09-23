@@ -244,6 +244,15 @@ nível**, arredondado para cima, com o aviso "🏆 Onda 3 vencida! +7 gotas de
 prêmio". Metade, e não tudo: o prêmio empurra a próxima carta, mas quem entrega
 ela ainda são os bichos. As gotas do prêmio enchem também o anel da ajuda do par.
 
+**O QUE TAPA FICA TRANSLÚCIDO — construído** (pedido do Renan: gota caída
+atrás de uma árvore ou da parede dos portões sumia). Durante a rodada, a parede,
+a árvore, o portão ou a treliça que fica entre a câmera e um bicho, uma gota
+ou a dupla vira meio transparente, e volta a ser sólido quando sai da frente.
+É do motor (`core/Oclusao.ts`, ligado com `g.vigiarOclusao`), e não da estufa:
+qualquer minigame pode pedir. Só malha ALTA entra (topo acima de 0,9 m) —
+chão e canteiro baixo não piscam. E o botão da ajuda do par some enquanto
+alguém fala: no celular ele caía em cima do texto.
+
 **A AJUDA DO PAR — construída** (ideia do Renan). Quem ficou lá atrás pode
 ser chamado: um botão no canto (ao lado do ✨ no celular; o `F` no computador)
 com um anel que **enche com as gotas pegas**. Cheio, ele brilha e diz
