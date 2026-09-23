@@ -24,7 +24,11 @@ import {
   type SceneDef,
   type Vaga,
 } from './types';
-import { ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, fichaDoItem, modeloDoItem } from '../world/itens';
+import {
+  ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem,
+} from '../world/itens';
+import type { CartaNaTela, ContextoDaEscolha } from '../minigames/jardim/tela';
+import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
@@ -366,6 +370,7 @@ export class Game implements GameAPI {
       this.ui.cardapioOpen ||
       this.ui.quadroOpen ||
       this.ui.lojaOpen ||
+      this.ui.cartasOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
@@ -398,6 +403,24 @@ export class Game implements GameAPI {
     if (this.ui.xadrezOpen && this.input.justPressed('Escape')) this.ui.fecharXadrez();
     // e a arara, pelo mesmo motivo de todas as outras: ela trava o movimento
     if (this.ui.lojaOpen && this.input.justPressed('Escape')) this.ui.fecharLoja();
+    /**
+     * A TELA DAS CARTAS DO JARDIM tem o teclado inteiro para ela: 1/2/3 marcam,
+     * as setas andam, E/espaço/Enter pegam. E ela NÃO tem Escape — ao contrário
+     * de todas as telas acima: subir de nível sem pegar carta seria perder a
+     * melhoria por acidente. O `return` depois é o que impede o mesmo E de
+     * chegar no diálogo ou numa interação do cenário no mesmo quadro.
+     */
+    if (this.ui.cartasOpen) {
+      const i = this.input;
+      if (i.justPressed('Digit1') || i.justPressed('Numpad1')) this.ui.teclaDasCartas('um');
+      if (i.justPressed('Digit2') || i.justPressed('Numpad2')) this.ui.teclaDasCartas('dois');
+      if (i.justPressed('Digit3') || i.justPressed('Numpad3')) this.ui.teclaDasCartas('tres');
+      if (i.justPressed('ArrowLeft') || i.justPressed('KeyA')) this.ui.teclaDasCartas('esquerda');
+      if (i.justPressed('ArrowRight') || i.justPressed('KeyD')) this.ui.teclaDasCartas('direita');
+      if (i.justPressed('KeyE') || i.justPressed('Space') || i.justPressed('Enter')) {
+        this.ui.teclaDasCartas('pegar');
+      }
+    }
     // as setas folheiam o quadro; com ele fechado elas continuam sendo andar
     if (this.ui.memoriasOpen) {
       if (this.input.justPressed('ArrowLeft')) this.ui.folhear(-1);
@@ -421,7 +444,8 @@ export class Game implements GameAPI {
 
     if (!busy && !this.player.locked && this.input.justPressed('KeyH')) this.maoNaMao();
 
-    const acted = this.input.justPressed('KeyE') || this.input.justPressed('Space');
+    const acted =
+      !this.ui.cartasOpen && (this.input.justPressed('KeyE') || this.input.justPressed('Space'));
     if (acted && this.ui.handleAction()) {
       // o dialogo consumiu a tecla
     } else if (acted && !busy && this.hot && !this.player.locked) {
@@ -1163,6 +1187,22 @@ export class Game implements GameAPI {
    * catalogo para a UI, que tem os canvas. A pintura mora inteira em
    * `world/cardapioData.ts`, do mesmo jeito que a das memorias.
    */
+  escolherCartaDoJardim(cartas: readonly CartaNaTela[], contexto: ContextoDaEscolha): Promise<string> {
+    return this.ui.escolherCarta(cartas, contexto);
+  }
+
+  showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void {
+    this.ui.showExperiencia(dados);
+  }
+
+  vestirRegador(estilo: Partial<EstiloDeRegador> | null): void {
+    definirEstiloDoRegador(estilo);
+    // a mao so e refeita quando o ITEM muda; aqui o item e o mesmo e o que
+    // mudou foi o desenho, entao esquece o que estava na mao dos dois e o
+    // proximo `sincronizarMaos` monta o regador de novo
+    this.naMao.clear();
+  }
+
   abrirQuadroDeInscricoes(): Promise<string | null> {
     // quem ja se inscreveu sai do save: ficha com `inscreveSe` vazio esta la
     // desde sempre, e o resto entra quando a flag dele existir

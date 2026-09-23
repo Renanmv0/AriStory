@@ -129,6 +129,7 @@ node scripts/regador.mjs /tmp/rg    # o regador: os 3 estagios, cada melhoria mu
 node scripts/pragas.mjs  /tmp/pg    # as seis pragas do jardim: retrato de cada uma, e a silhueta dizendo o tier
 node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena, a mesinha servida pelo Mano, o deslize e a patinacao
 node scripts/cartas.mjs            # as cartas do jardim: nenhuma repete em mil rodadas, a curva de nivel e as ondas (sem navegador)
+node scripts/gotas.mjs   /tmp/gt    # as gotas no chao e a tela das tres cartas: pisar pega, sobe de nivel, escolhe em dois tempos, e uma mesa de cada raridade no computador e no celular
 node scripts/postos.mjs  /tmp/pt    # a Josefina entra junto na estufa, passeia, pede confirmacao e leva o parceiro pro posto de tras
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```

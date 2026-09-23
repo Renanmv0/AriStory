@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
-import { regadorDeJardim } from './regador';
+import { regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
   blazerXadrez, canoDaBota, coroaDeDama, gargantilhaDeLaco, gorroDeLa, gravataDoWalter,
   jaquetaFrancesa, maidJapones, mangaDaJaquetaFrancesa, mangaDeMoletom, mangaDeQuimono,
@@ -798,6 +798,19 @@ export const MODA_PRAIA: readonly ItemDef[] = [
  * Cada chamada devolve uma malha NOVA: o mesmo `Object3D` nao pode ter dois
  * pais, e a mesma ficha pode acabar na mao de duas pessoas em cenas diferentes.
  */
+/**
+ * O DESENHO DO REGADOR QUE ESTÁ NA MÃO — o único item cujo modelo muda com o jogo.
+ *
+ * As cartas do jardim melhoram o regador e a peça da mão muda junto (§6 do
+ * plano). O motor troca isto por `definirEstiloDoRegador` e força a mão a ser
+ * refeita; fora da rodada ele volta ao vazio, que é o regador de fábrica.
+ */
+let estiloDoRegadorNaMao: Partial<EstiloDeRegador> = {};
+
+export function definirEstiloDoRegador(estilo: Partial<EstiloDeRegador> | null): void {
+  estiloDoRegadorNaMao = estilo ? { ...estilo } : {};
+}
+
 const MODELOS: Record<string, () => THREE.Object3D> = {
   'sorvete-morango': () => iceCream(P.morango),
   'sorvete-maracuja': () => iceCream(P.maracuja),
@@ -827,7 +840,7 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
    */
   'regador': () => {
     const g = new THREE.Group();
-    const lata = regadorDeJardim();
+    const lata = regadorDeJardim(estiloDoRegadorNaMao);
     const ESCALA = 0.78;
     lata.scale.setScalar(ESCALA);
     lata.position.y = -(lata.userData.partes.alturaDaAlca as number) * ESCALA;

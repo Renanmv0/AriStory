@@ -9,6 +9,11 @@ import {
 import { interiorDoor } from '../world/furniture';
 import { ITENS } from '../world/itens';
 import { Josefina } from '../entities/bichos/Josefina';
+import { GotasDoJardim } from '../entities/GotasDoJardim';
+import { MaoDeCartas } from '../minigames/jardim/baralho';
+import { cartaPorId } from '../minigames/jardim/cartas';
+import { nivelDasGotas } from '../minigames/jardim/progressao';
+import { cartaNaTela } from '../minigames/jardim/tela';
 import { ARI, RENAN } from '../characters/cast';
 import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 import { toon } from '../core/materials';
@@ -1290,6 +1295,114 @@ export const estufa: SceneDef = {
       josefina.pararDeEncarar();
       josefina.voltarAPassear();
     };
+
+    /* ====================================================================
+     *          O TREINO DAS GOTAS E DAS CARTAS — ferramenta de olhar
+     * ====================================================================
+     *
+     * A rodada de verdade (etapa 3 do plano) ainda não existe, e sem ela nenhum
+     * bicho é espantado e nenhuma gota cai. Mas as duas peças que ela vai usar
+     * JÁ existem — as gotas no chão e a tela das três cartas — e peça que
+     * ninguém consegue ver não dá para ajustar.
+     *
+     * Então a estufa publica este treino, e só a URL o liga
+     * (`?cena=estufa&treino=gotas`, lido em `main.ts`): de tempos em tempos cai
+     * um punhado de gotas perto da dupla, como se um bicho tivesse acabado de
+     * ser espantado ali; pegar enche a barra; subir de nível abre a tela das
+     * cartas com o SORTEIO DE VERDADE (`MaoDeCartas.oferta`); e a carta pega
+     * entra na mão e muda o regador na mão do jogador.
+     *
+     * NADA disso é jogo — ninguém chega aqui jogando, e o save não guarda
+     * nada. É a mesma família do `?em=` e do `?zoom=`. Quando a rodada existir,
+     * ela faz exatamente estas chamadas, só que com bicho de verdade soltando
+     * as experiencia.
+     */
+    const experiencia = new GotasDoJardim();
+    // o dado do treino: `w.rng` usa o `this` do WorldBuilder, e passado solto
+    // como função ele perde o dono — o primeiro punhado de gotas quebrava
+    const dado = (): number => w.rng();
+    w.add(experiencia.grupo);
+
+    let treinando = false;
+    let escolhendo = false;
+    let juntadas = 0;
+    let nivelAtual = 0;
+    let proximoPunhado = 1.2;
+    const mao = new MaoDeCartas();
+    let ficha = mao.ficha();
+
+    /**
+     * SOBE DE NÍVEL — e pode subir mais de um de uma vez.
+     *
+     * Com o raio de coleta alto, uma chuva de gotas pode passar dois níveis no
+     * mesmo quadro. Cada nível ganho é UMA tela de cartas, em sequência: pular
+     * uma seria perder a carta dela.
+     */
+    const subir = async (ate: number): Promise<void> => {
+      escolhendo = true;
+      while (nivelAtual < ate) {
+        nivelAtual += 1;
+        const oferta = mao.oferta(nivelAtual, dado);
+        const id = await g.escolherCartaDoJardim(oferta.map(cartaNaTela), {
+          nivel: nivelAtual,
+          mao: mao.cartas.map((c) => ({ id: c.id, nome: c.nome, icone: c.icone, raridade: c.raridade })),
+        });
+        mao.pegar(id, nivelAtual);
+        const carta = cartaPorId(id);
+        if (carta?.repetivel) {
+          g.toast(carta.texto, carta.icone);
+        } else {
+          ficha = mao.ficha();
+          // a carta que mexe no regador MUDA A PEÇA DA MÃO — o §6 do plano
+          g.vestirRegador(mao.estiloDoRegador());
+        }
+      }
+      escolhendo = false;
+    };
+
+    w.root.userData.treinoDeGotas = (): void => {
+      if (treinando) return;
+      treinando = true;
+      // o regador vai para a mão: é nele que as cartas aparecem
+      if (!g.hasItem('regador')) g.addItem(ITENS.regador);
+      g.vestirRegador(null);
+      g.showExperiencia(nivelDasGotas(0));
+      g.toast('Treino das gotas: pegue as gotas azuis', '💧');
+    };
+    // o teste solta gotas onde quiser, sem esperar o relógio do treino
+    w.root.userData.soltarGotas = (x: number, z: number, quantas: number): void => {
+      experiencia.soltar(x, z, quantas, dado);
+    };
+    w.root.userData.estadoDoTreino = () => ({
+      juntadas, nivel: nivelAtual, noChao: experiencia.quantasNoChao, mao: [...mao.ids], escolhendo,
+    });
+
+    w.onUpdate((dt) => {
+      if (!treinando) return;
+      const eu = g.playerPosition();
+
+      // de tempos em tempos um punhado cai perto, dentro do terreiro: é o
+      // bicho que acabou de ser espantado ali
+      proximoPunhado -= escolhendo ? 0 : dt;
+      if (proximoPunhado <= 0) {
+        proximoPunhado = 2.4;
+        const a = w.rng() * Math.PI * 2;
+        const r = 2.2 + w.rng() * 2.6;
+        const meiaL = TERREIRO.largura / 2 - 1;
+        const meiaP = TERREIRO.profundidade / 2 - 1;
+        const x = Math.max(TERREIRO.x - meiaL, Math.min(TERREIRO.x + meiaL, eu.x + Math.cos(a) * r));
+        const z = Math.max(TERREIRO.z - meiaP, Math.min(TERREIRO.z + meiaP, eu.z + Math.sin(a) * r));
+        experiencia.soltar(x, z, 1 + Math.floor(w.rng() * 3), dado);
+      }
+
+      const pegas = experiencia.update(dt, eu, ficha.coleta, escolhendo);
+      if (pegas === 0) return;
+      g.som('pegar');
+      juntadas += pegas;
+      const agora = nivelDasGotas(juntadas);
+      g.showExperiencia(agora);
+      if (agora.nivel > nivelAtual && !escolhendo) void subir(agora.nivel);
+    });
 
     // o segundo tonel e a segunda bancada ficam so de cenario por enquanto —
     // marcados aqui para o minigame achar depois sem ter que varrer a cena

@@ -4454,6 +4454,79 @@ export function regador(): THREE.Group {
 }
 
 /**
+ * A GOTA DE EXPERIÊNCIA — o que a praga espantada deixa no chão da estufa.
+ *
+ * O jogador tem que PASSAR POR CIMA dela (é o que o puxa para fora da posição
+ * confortável, §7 do plano), então ela precisa ser lida de longe, com cinco
+ * bichos na tela, no chão de saibro bege. Três decisões fazem isso:
+ *
+ * 1. **FORMATO DE GOTA, e não bolinha.** Esfera embaixo, cone em cima: é o
+ *    desenho universal de "água", e é o que a separa das bolinhas de ventosa e
+ *    dos olhos das pragas, que também são esferas.
+ * 2. **ELA FLUTUA**, 40 cm acima do chão, com uma SOMBRA embaixo. Pousada ela
+ *    some no saibro; flutuando, a sombra diz onde ela está mesmo quando a
+ *    câmera achata a altura.
+ * 3. **UM BRILHO BRANCO** no alto do lado de cá — o reflexo que faz água
+ *    parecer água num material chapado.
+ *
+ * Ela nasce com a SOMBRA em `y = 0` e o corpo no grupo de NOME `corpo`, que é
+ * o que o `GotasDoJardim` balança e gira. A sombra fica parada no chão.
+ *
+ * AS PARTES SÃO ACHADAS PELO NOME, e não por `userData.partes` como no resto do
+ * kit — e isso é por causa do `clone()`. A gota é a única peça que o jogo
+ * clona às dezenas (uma molde, e um clone por gota solta), e o `clone()` do
+ * Three copia o `userData` por JSON: um objeto 3D lá dentro tem o pai, o pai tem
+ * o filho, e o JSON estoura em referência circular na primeira gota.
+ */
+export function gotaDeExperiencia(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'gota-de-experiencia';
+
+  /**
+   * O TAMANHO: meio palmo de altura, e não um dedo.
+   *
+   * A primeira versão tinha 25 cm e, no zoom normal da estufa, virou dois
+   * pontinhos azuis perdidos no saibro — lidos só de perto, com a câmera
+   * colada. É a coisa que o jogador tem que ACHAR correndo com bicho na tela,
+   * então ela cresceu 1,8×. `E` é essa régua, e tudo abaixo é multiplicado
+   * por ela; a flutuação (`corpo.position.y`) é o que o `GotasDoJardim` lê.
+   */
+  const E = 1.8;
+
+  const corpo = new THREE.Group();
+  corpo.name = 'corpo';
+  corpo.position.y = 0.22 * E;
+  g.add(corpo);
+
+  const bojo = new THREE.Mesh(new THREE.SphereGeometry(0.11 * E, 12, 10), toon(P.gotaAgua));
+  corpo.add(bojo);
+  // a ponta: um cone cuja base ENTRA um tico no bojo, para a costura não
+  // aparecer como um degrau entre as duas peças
+  const ponta = new THREE.Mesh(new THREE.ConeGeometry(0.083 * E, 0.15 * E, 12), toon(P.gotaAgua));
+  ponta.position.y = 0.135 * E;
+  corpo.add(ponta);
+  // o miolo mais fundo, por baixo — é o que dá volume a uma peça de cor chapada
+  const fundo = new THREE.Mesh(new THREE.SphereGeometry(0.075 * E, 10, 8), toon(P.gotaAguaFunda));
+  fundo.position.set(0, -0.045 * E, -0.02 * E);
+  corpo.add(fundo);
+  // o reflexo, do lado de CÁ (`+X/+Z`), que é para onde a câmera olha
+  const brilho = new THREE.Mesh(new THREE.SphereGeometry(0.03 * E, 8, 6), toon(P.gotaBrilho));
+  brilho.position.set(0.045 * E, 0.045 * E, 0.07 * E);
+  corpo.add(brilho);
+
+  // a sombra no chão: um disco translúcido, decalque que não briga com o piso
+  const sombra = new THREE.Mesh(
+    new THREE.CircleGeometry(0.12 * E, 16),
+    flat(P.gotaSombra, 0.28, true),
+  );
+  sombra.rotation.x = -Math.PI / 2;
+  sombra.position.y = 0.012;
+  sombra.renderOrder = 2;
+  g.add(sombra);
+  return g;
+}
+
+/**
  * O MONTINHO DE TERRA REMEXIDA, entre dois canteiros do jardim da Josefina.
  *
  * Ele existe para ser DESCOBERTO, e por isso e discreto de proposito: 12 cm de

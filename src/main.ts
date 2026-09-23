@@ -1,3 +1,4 @@
+import type * as THREE from 'three';
 import './ui/style.css';
 import { Game } from './core/Game';
 import { SCENES, CENA_INICIAL } from './scenes';
@@ -8,6 +9,8 @@ import { ITENS } from './world/itens';
 import { MEMORIAS } from './world/memoriasData';
 import { PRAGAS } from './world/bichosDoJardim';
 import { regadorDeJardim } from './world/regador';
+import { CARTAS, CONSOLOS } from './minigames/jardim/cartas';
+import { cartaNaTela } from './minigames/jardim/tela';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
@@ -19,7 +22,19 @@ const params = new URLSearchParams(location.search);
 const pedida = params.get('cena') ?? undefined;
 const entrada = params.get('entrada') ?? undefined;
 // sem cena pedida o jogo continua de onde parou; sem progresso, começa na casa
-void game.start(pedida, entrada);
+const comecou = game.start(pedida, entrada);
+
+// ?cena=estufa&treino=gotas liga o treino das gotas e das cartas do jardim: a
+// rodada ainda não existe, e este é o jeito de VER as gotas caindo e a tela das
+// três cartas com o sorteio de verdade. A estufa publica o treino; aqui só se
+// aperta o botão, como os outros atalhos desta página.
+if (params.get('treino') === 'gotas') {
+  void comecou.then(() => {
+    const raiz = (game as unknown as { current?: { world: { root: THREE.Object3D } } }).current;
+    const treino = raiz?.world.root.userData.treinoDeGotas as (() => void) | undefined;
+    treino?.();
+  });
+}
 
 // ?zoom=5 aproxima a camera: serve para conferir o visual dos personagens
 const zoom = Number(params.get('zoom'));
@@ -55,3 +70,7 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 // de cara com as melhorias, e a unica forma de conferir que uma carta mexeu
 // mesmo no modelo e montar as duas versoes lado a lado e medir
 (window as unknown as { aristoryRegador: unknown }).aristoryRegador = regadorDeJardim;
+// o baralho do jardim JÁ NO FORMATO DA TELA, para o `scripts/gotas.mjs` montar
+// uma mesa de cada raridade: o sorteio de verdade não garante uma lendária na
+// tela, e uma moldura que ninguém vê é uma moldura que ninguém conferiu
+(window as unknown as { aristoryCartas: unknown }).aristoryCartas = [...CARTAS, ...CONSOLOS].map(cartaNaTela);

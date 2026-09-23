@@ -184,7 +184,30 @@ a mesa é só consolo.
 
 ---
 
-## 8. Validar
+## 8. A tela das três cartas — ela desenha a carta sozinha
+
+Carta nova **aparece bonita na tela sem uma linha de CSS**. A tela
+(`src/ui/telaDeCartas.ts`, desenho no bloco "TELA DAS TRÊS CARTAS" do
+`style.css`) recebe uma `CartaNaTela`, e tudo nela é DERIVADO da carta em
+`minigames/jardim/tela.ts`:
+
+- a **moldura** vem da `raridade` e a **fita** da `familia`;
+- as **bolinhas da série** vêm do id (`bico-2` é o degrau 2 da série `bico`);
+- o selo **"muda o regador"** vem de aplicar a carta numa ficha zerada e ver
+  se ela escreveu no `estilo`. Ele nunca mente: carta que deixa de mexer na
+  peça perde o selo sozinha.
+
+O que isso cobra de quem escreve a carta: **`texto` curto** (até 70 letras — é
+ele que decide a altura da carta no celular) e um **`icone` que se entenda
+sozinho num círculo de 86 px**: é o desenho da carta.
+
+Para ver a carta nova na tela sem rodada: `?cena=estufa&treino=gotas` liga um
+treino em que as gotas caem e a tela abre com o sorteio de verdade. Para ver
+uma carta ESPECÍFICA, o `scripts/gotas.mjs` monta a mesa à mão
+(`window.jogo.escolherCartaDoJardim(...)` com `window.aristoryCartas`) — é o
+jeito de fotografar uma lendária, que o sorteio raramente mostra.
+
+## 9. Validar
 
 ```bash
 npm run typecheck
@@ -197,7 +220,14 @@ Depois, **escreva a carta na tabela da família no §6 do
 `docs/MINIGAME-JARDIM.md`** — com raridade e efeito. É lá que o Renan ajusta o
 minigame, e carta que só existe no código ninguém balanceia.
 
-## 9. Cartas que já existem e as que foram cortadas
+## 10. As ideias que esperam o Renan
+
+O §6 do plano tem um **banco de ideias numerado** (46 hoje), que o Renan e o Ari
+vão validando. Carta escolhida SAI de lá e entra na tabela da família, com a
+carta de verdade em `cartas.ts`. Não invente carta nova em cima de uma do banco
+sem ele ter escolhido: a lista existe justamente para a escolha ser dele.
+
+## 11. Cartas que já existem e as que foram cortadas
 
 - **Mãos dadas** e **Regador do Renan** saíram quando o Renan decidiu que, na
   rodada, quem não é controlado fica LÁ ATRÁS com a Josefina. As duas só faziam

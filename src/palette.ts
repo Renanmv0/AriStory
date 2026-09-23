@@ -421,6 +421,19 @@ export const PALETTE = {
   regadorAgua: 0x8fd0e8,
   regadorFuro: 0x394045,
 
+  /**
+   * A GOTA DE EXPERIÊNCIA — o que o bicho espantado deixa no chão.
+   *
+   * Ela é um AZUL-PISCINA saturado, e não o azul claro da água do regador: tem
+   * que saltar do saibro bege do terreiro e do verde dos canteiros de longe,
+   * com cinco bichos na tela. Nenhuma praga e nenhuma planta usa esse tom.
+   */
+  gotaAgua: 0x3cc4ee,
+  gotaAguaFunda: 0x1f8fc4,
+  gotaBrilho: 0xf4fdff,
+  /** a sombra dela no chão, translúcida: azul-escuro, para puxar o tom da gota */
+  gotaSombra: 0x10324a,
+
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
   // e a diferenca de tom e o que separa "comida de bicho" de "comida de

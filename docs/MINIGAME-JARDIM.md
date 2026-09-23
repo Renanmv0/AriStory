@@ -504,6 +504,121 @@ de competição ao lado de uma lata amassada contaria uma história errada.
 Para criar carta nova sem reabrir este documento inteiro existe uma skill:
 `.claude/skills/aristory-habilidade/SKILL.md`.
 
+### A tela das três cartas — **construída**
+
+Um pop-up por cima do mundo, em DOM (`src/ui/telaDeCartas.ts`, e o desenho no
+bloco "TELA DAS TRÊS CARTAS" do `style.css`) — o pedido do Renan foi que não
+fosse modelo 3D, e que as cartas fossem muito bem desenhadas. Cada carta mostra,
+de cima para baixo, uma resposta para cada pergunta que o jogador faz:
+
+| parte | responde |
+|---|---|
+| a **moldura**, na cor da raridade (verde, azul, roxo, dourado; barro no consolo) | "isto é raro?" — é a primeira leitura, de longe |
+| a **fita** da família (azul-água, terracota, verde-folha) | "isto melhora o quê?" |
+| o **medalhão** com o emoji, num halo que respira | "o que é isto?" |
+| o **nome**, e as **bolinhas da série** quando é uma | "tem mais depois?" |
+| o **texto**, numa tira de papel | "o que muda?" |
+| o selo **"muda o regador"**, quando muda | "vou ver isso na mão?" |
+| o **rodapé** com a raridade e as pedrinhas (1 a 4) | a raridade de novo, para quem não lê cor |
+
+A rara pulsa, a lendária tem um reflexo de ouro atravessando e brilho fixo.
+As três entram viradas, uma depois da outra, como cartas sendo dadas. No pé da
+tela fica **a mão** — o que já foi pego, em fichinhas —, porque a escolha
+depende do que você já tem.
+
+**Ela não fecha sem escolha** (sem botão de fechar, sem Escape) e a escolha é em
+**dois tempos**: o primeiro toque marca e a carta sobe, o segundo pega. No
+teclado, `1` `2` `3` ou as setas marcam, e `E` pega. No celular em pé as três
+cartas viram faixas deitadas, uma embaixo da outra.
+
+**Tudo o que a tela mostra é derivado da carta** (`minigames/jardim/tela.ts`):
+a série sai do id, e o selo "muda o regador" sai de aplicar a carta numa ficha
+zerada e ver se ela mexeu no `estilo`. Carta nova entra na tela sem uma linha de
+CSS.
+
+**Para ver sem a rodada existir:** `?cena=estufa&treino=gotas` liga um treino na
+estufa — gotas caem perto da dupla como se um bicho tivesse sido espantado ali,
+a barra enche, a tela abre com o sorteio de verdade, e a carta pega entra na mão
+e muda o regador. `node scripts/gotas.mjs /tmp/gt` faz isso sozinho e fotografa
+uma mesa de cada raridade, no computador e no celular.
+
+### O banco de ideias — **esperando o Renan escolher**
+
+Pedido dele: muitas ideias, para ele e o Ari validarem quais entram. **Nenhuma
+destas está no jogo.** Elas estão numeradas para ele poder dizer "quero a 7, a
+12 e a 30" — e ficam escritas aqui, e não numa conversa, porque conversa acaba.
+
+Quando uma for escolhida: ela sai desta lista e entra na tabela da família, com
+a carta de verdade em `cartas.ts`. Carta que liga **regra nova** também precisa
+de código no minigame — as que dependem disso estão marcadas com ⚙.
+
+**REGADOR — o jato**
+
+| # | carta | raridade | o que faz |
+|---|---|---|---|
+| 1 | Gota gelada ⚙ | incomum | o bicho molhado anda 30% mais devagar por 2 s |
+| 2 | Jato em arco ⚙ | incomum | o jato sobe e cai atrás do canteiro: acerta quem está comendo do outro lado |
+| 3 | Borrifador ⚙ | incomum | cada jato sai em três gotinhas: acerta mais bichos, cada uma mais fraca |
+| 4 | Gota pesada (série) | comum | cada jato empurra o bicho 30 cm para trás |
+| 5 | Crivo giratório ⚙ | raro | a cada 4 s o regador gira e molha em volta, 360° |
+| 6 | Água com sabão ⚙ | raro | bicho encharcado solta uma bolha; ela estoura e molha quem está perto |
+| 7 | Jato carregado ⚙ | raro | ficar parado 1,5 s carrega um jatão que atravessa a fila inteira |
+| 8 | Mira no grandão ⚙ | incomum | o regador prefere o bicho com mais vida, e não o mais perto |
+| 9 | Mira em quem come ⚙ | incomum | o regador prefere quem já está num canteiro |
+| 10 | Água morna | comum | +25% de encharque em tanque e chefe |
+| 11 | Garoa ⚙ | incomum | você deixa um rastro de gotinhas; bicho que pisa leva meio jato |
+| 12 | Balde ⚙ | raro | segurar E derrama o tanque inteiro num círculo de 2 m em volta |
+| 13 | Refil rápido (série) | comum | encher no tonel é 40% mais rápido |
+| 14 | Pressão acumulada ⚙ | incomum | o primeiro jato depois de encher o tanque encharca o triplo |
+| 15 | Gêiser ⚙ | lendário | a cada 20 s um gêiser brota embaixo do bicho mais forte e o joga pela porta |
+| 16 | Arco-íris ⚙ | lendário | um jato a cada dez sai em arco-íris: atravessa tudo e dobra as gotas de quem ele espanta |
+
+**JARDINEIRO — você e a dupla**
+
+| # | carta | raridade | o que faz |
+|---|---|---|---|
+| 17 | Chapéu de palha | comum | cada jato gasta 15% menos água |
+| 18 | Pique ⚙ | incomum | andar 2 s sem parar dá +30% de velocidade, até você parar |
+| 19 | Descanso na sombra | comum | parado, o tanque enche 50% mais rápido |
+| 20 | Assobio ⚙ | incomum | a cada 12 s o bicho mais perto vira de costas e anda 2 s para o outro lado |
+| 21 | Pé na poça ⚙ | incomum | pisar numa poça dá um impulso de velocidade |
+| 22 | Ímã de gota ⚙ | raro | ao subir de nível, todas as gotas do chão voam até você |
+| 23 | Sorte de principiante ⚙ | raro | a próxima tela de cartas vem com tudo uma raridade acima |
+| 24 | Olho de jardineira ⚙ | incomum | você vê para qual canteiro cada bicho está indo |
+| 25 | Pulinho ⚙ | raro | encostar num bicho pequeno dá um pulo por cima dele |
+| 26 | Bis ⚙ | raro | a próxima carta de série que sair já vem um degrau acima |
+| 27 | Troca de turno ⚙ | incomum | o `T` troca quem joga e quem fica atrás; quem entra chega de tanque cheio |
+| 28 | Coraçãozinho ⚙ | incomum | a cada 20 gotas sobe um coração da dupla, e os bichos perto param 1 s para olhar |
+| 29 | Dança da chuva ⚙ | lendário | ficar parado 3 s faz chover 5 s em volta de você |
+
+**JARDIM — o campo e quem mora no clube**
+
+| # | carta | raridade | o que faz |
+|---|---|---|---|
+| 30 | Compostagem (série) ⚙ | comum | cada bicho espantado devolve um tiquinho de vida ao canteiro mais perto |
+| 31 | Sino da porta ⚙ | comum | um sininho toca quando um bicho passa por um portão |
+| 32 | Girassol vigia ⚙ | incomum | os girassóis viram para o portão de onde vem o próximo bicho |
+| 33 | Cerquinha ⚙ | incomum | nasce uma cerca baixa no terreiro que os bichos têm que contornar |
+| 34 | Toldo ⚙ | incomum | um canteiro à sua escolha aguenta 50% mais |
+| 35 | Canteiro de pimenta ⚙ | raro | quem morde esse canteiro sai correndo e solta 2 gotas |
+| 36 | Aspersor ⚙ | raro | um aspersor no meio do terreiro molha num raio de 2,5 m a cada 3 s |
+| 37 | Sementeira ⚙ | raro | canteiro comido até o fim vira muda e volta com metade da vida na onda seguinte |
+| 38 | Planta carnívora ⚙ | lendário | um canteiro vira dioneia: morde o primeiro bicho que encostar, e recarrega em 15 s |
+| 39 | Estufa trancada ⚙ | lendário | os portões seguram os bichos 10 s no começo de cada onda: dá para se preparar |
+
+**Os do clube vêm ajudar** — estas usam os personagens com nome como AJUDANTES,
+nunca como alvo (a regra das pragas continua valendo: gente não leva jato).
+
+| # | carta | raridade | o que faz |
+|---|---|---|---|
+| 40 | Apito da Gina ⚙ | incomum | uma vez por onda a Gina apita da porta e todo bicho congela 1,5 s |
+| 41 | Picolé do Mano ⚙ | incomum | no fim de cada onda cai um picolé: pegar enche o tanque e dá velocidade por 10 s |
+| 42 | O Noel avisa ⚙ | incomum | o Noel sobe no muro e grita qual portão abre na próxima onda |
+| 43 | O Jean-Luc no tonel ⚙ | incomum | o pato fica no tonel, e encher o tanque ali é na hora |
+| 44 | O Capy salva-vidas ⚙ | raro | uma vez por onda o Capy dá um jato longo pelo corredor do meio |
+| 45 | O Walter de plantão ⚙ | raro | o Walter late para o bicho mais perto de um canteiro, e ele recua até a porta |
+| 46 | Adubo do Noel ⚙ | raro | canteiro que você rega fica mais forte até o fim da onda |
+
 ---
 
 ## 7. A experiência, e o nível

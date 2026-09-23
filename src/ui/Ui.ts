@@ -1,6 +1,8 @@
 import type { SavedMemory } from '../core/SaveState';
 import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
+import { TelaDeCartas } from './telaDeCartas';
+import type { CartaNaTela, ContextoDaEscolha } from '../minigames/jardim/tela';
 import type { MemoriaPintada } from '../world/memoriasData';
 import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
@@ -102,6 +104,10 @@ export class Ui {
    * entrada (o `abrirXadrez` esta logo abaixo); quem guarda o tabuleiro e ela.
    */
   private readonly mesaDeXadrez: MesaDeXadrez;
+  private readonly telaDeCartas: TelaDeCartas;
+  private readonly experiencia: HTMLDivElement;
+  /** o nivel que a barra mostrava, para saber quando ele SUBIU e piscar */
+  private nivelNaBarra = -1;
   private readonly secoesDoCardapio: HTMLDivElement;
   /**
    * Quem espera o cardapio fechar; a cutscene da mesa segura nele. Resolve com
@@ -310,6 +316,8 @@ export class Ui {
         </div>
       </div>
       <div class="xadrez"></div>
+      <div class="experiencia"><span class="nv">Nv <b>0</b></span><span class="trilho"><i class="enchido"></i></span><span class="conta">0/5</span></div>
+      <div class="cartas-do-jardim"></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
         <p class="sub"></p>
@@ -377,6 +385,9 @@ export class Ui {
     this.fichasDoQuadro = ui.querySelector('.quadro-de-inscricoes .fichas')!;
     this.cardDoCampeao = ui.querySelector('.quadro-de-inscricoes .campeao')!;
     this.mesaDeXadrez = new MesaDeXadrez(ui.querySelector('.xadrez')!);
+    this.telaDeCartas = new TelaDeCartas(ui.querySelector('.cartas-do-jardim')!);
+    this.telaDeCartas.som = (nome) => this.som?.(nome);
+    this.experiencia = ui.querySelector('.experiencia')!;
     this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
     this.memorias = ui.querySelector('.memorias')!;
     this.quadro = ui.querySelector('.memorias .quadro')!;
@@ -602,7 +613,7 @@ export class Ui {
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
       this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen || this.xadrezOpen ||
-      this.lojaOpen || this.quadroOpen,
+      this.lojaOpen || this.quadroOpen || this.cartasOpen,
     );
   }
 
@@ -948,6 +959,69 @@ export class Ui {
       this.marcarTelaAberta();
       this.fecharCardapioResolve = resolve;
     });
+  }
+
+  // ---------------------------------------- as três cartas do jardim
+
+  get cartasOpen(): boolean {
+    return this.telaDeCartas.aberta;
+  }
+
+  /**
+   * Mostra as três cartas da subida de nível e SÓ RESOLVE com uma pega.
+   *
+   * Não existe `null` aqui, ao contrário do cardápio: subir de nível sem pegar
+   * carta seria perder a melhoria, então a tela não fecha sem escolha. Ver
+   * `telaDeCartas.ts`.
+   */
+  escolherCarta(cartas: readonly CartaNaTela[], contexto: ContextoDaEscolha): Promise<string> {
+    const pedido = this.telaDeCartas.abrir(cartas, contexto);
+    this.marcarTelaAberta();
+    return pedido.then((id) => {
+      this.marcarTelaAberta();
+      return id;
+    });
+  }
+
+  /**
+   * As teclas da tela de cartas. Quem lê o teclado é o `Game`, que manda para
+   * cá só com a tela aberta: 1/2/3 marcam direto, as setas andam, E pega.
+   */
+  teclaDasCartas(tecla: 'um' | 'dois' | 'tres' | 'esquerda' | 'direita' | 'pegar'): void {
+    const t = this.telaDeCartas;
+    if (tecla === 'um') t.marcar(0);
+    else if (tecla === 'dois') t.marcar(1);
+    else if (tecla === 'tres') t.marcar(2);
+    else if (tecla === 'esquerda') t.mover(-1);
+    else if (tecla === 'direita') t.mover(1);
+    else t.confirmar();
+  }
+
+  /**
+   * A BARRA DE EXPERIÊNCIA da rodada do jardim, no alto da tela.
+   *
+   * `null` esconde. Quando o nível SOBE entre duas chamadas a barra dá uma
+   * piscada dourada: é o aviso de meio segundo antes de a tela das cartas
+   * cobrir tudo — sem ele a tela aparece "do nada".
+   */
+  showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void {
+    const el = this.experiencia;
+    if (!dados) {
+      el.classList.remove('show');
+      this.nivelNaBarra = -1;
+      return;
+    }
+    el.classList.add('show');
+    el.querySelector('.nv b')!.textContent = String(dados.nivel);
+    el.querySelector('.conta')!.textContent = `${dados.noNivel}/${dados.custo}`;
+    const fracao = dados.custo > 0 ? Math.min(1, dados.noNivel / dados.custo) : 0;
+    el.querySelector<HTMLElement>('.enchido')!.style.width = `${(fracao * 100).toFixed(1)}%`;
+    if (this.nivelNaBarra >= 0 && dados.nivel > this.nivelNaBarra) {
+      el.classList.remove('subiu');
+      void el.offsetWidth;
+      el.classList.add('subiu');
+    }
+    this.nivelNaBarra = dados.nivel;
   }
 
   // ------------------------------------------------ quadro de inscrições

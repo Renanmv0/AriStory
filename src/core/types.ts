@@ -3,6 +3,8 @@ import type { WorldBuilder } from '../world/WorldBuilder';
 import type { SomNome } from '../audio/efeitos';
 import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
+import type { CartaNaTela, ContextoDaEscolha } from '../minigames/jardim/tela';
+import type { EstiloDeRegador } from '../world/regador';
 
 export interface CircleCollider {
   kind: 'circle';
@@ -493,6 +495,25 @@ export interface GameAPI {
    * dizer "abre" — e o quadro se monta sozinho conforme o jogo anda.
    */
   abrirQuadroDeInscricoes(): Promise<string | null>;
+  /**
+   * A TELA DAS TRÊS CARTAS da rodada do jardim: resolve com o `id` da carta
+   * pega. Nunca com `null` — ela não fecha sem escolha, porque subir de nível
+   * sem pegar carta seria perder a melhoria. Trava o movimento enquanto aberta.
+   *
+   * Quem monta as cartas é o minigame (`minigames/jardim/tela.ts`); a tela só
+   * desenha e devolve.
+   */
+  escolherCartaDoJardim(cartas: readonly CartaNaTela[], contexto: ContextoDaEscolha): Promise<string>;
+  /** A barra de experiência da rodada do jardim, no alto; `null` esconde. */
+  showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void;
+  /**
+   * TROCA O DESENHO DO REGADOR QUE ESTÁ NA MÃO dos dois.
+   *
+   * É a regra do §6 do plano: carta que mexe no regador mexe na peça da mão. A
+   * mão de cartas calcula o estilo (`MaoDeCartas.estiloDoRegador()`) e a cena
+   * entrega aqui; `null` volta para o regador de fábrica.
+   */
+  vestirRegador(estilo: Partial<EstiloDeRegador> | null): void;
   /**
    * Abre a mesa de xadrez em DOM e resolve quando a PARTIDA acaba (por mate,
    * empate ou desistencia). Trava o movimento enquanto estiver aberta.
