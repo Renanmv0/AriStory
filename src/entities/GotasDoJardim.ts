@@ -15,8 +15,9 @@ import { gotaDeExperiencia } from '../world/props';
  *   voando   → entrou no raio de coleta: acelera até o jogador
  *   (fim)    → pega, ou secou aos 20 s
  *
- * A carta "Bolso furado" liga o raio de coleta (`ficha.coleta`): com ele, a
- * gota passa a VIR até você de 2 m de distância. Sem ela, só pisando em cima.
+ * Sem carta, a gota vem até você quando você chega a 1,3 m (`ATRAI`) — perto
+ * o bastante para ainda ter que ir buscar. A carta "Bolso furado" aumenta o
+ * raio (`ficha.coleta`) para 2,5 m.
  *
  * ================================================== O QUE ELA NÃO SABE
  *
@@ -32,6 +33,14 @@ export const VIDA_DA_GOTA = 20;
 const SECANDO = 3;
 /** o raio em que pisar pega a gota, sem carta nenhuma */
 export const PISAR = 0.6;
+/**
+ * O RAIO EM QUE A GOTA VEM SOZINHA, sem carta nenhuma — pequeno de propósito.
+ *
+ * Pedido do Renan, depois de uma gota ficar presa em cima de um canteiro (o
+ * canteiro tem colisor, e a dupla não conseguia pisar nela). Chegar perto
+ * basta; o Bolso furado continua valendo porque puxa de bem mais longe.
+ */
+export const ATRAI = 1.3;
 /** a duração do salto de quando ela sai do bicho */
 const SALTO = 0.45;
 
@@ -80,11 +89,22 @@ export class GotasDoJardim {
    * pedido do §7 — o tanque solta 8 e a chefe 25, e oito gotas empilhadas no
    * mesmo ponto seriam um clique, enquanto oito num raio de 3 m são uma decisão.
    */
-  soltar(x: number, z: number, quantas: number, rng: () => number = Math.random): void {
+  soltar(
+    x: number, z: number, quantas: number, rng: () => number = Math.random,
+    /**
+     * Onde a gota PODE pousar: recebe o ponto sorteado e devolve outro, se
+     * aquele não serve (a rodada empurra para fora dos canteiros — gota em
+     * cima de canteiro é gota que ninguém alcança a pé).
+     */
+    pouso?: (x: number, z: number) => { x: number; z: number },
+  ): void {
     const raio = Math.min(3, 0.45 + Math.sqrt(quantas) * 0.45);
     for (let i = 0; i < quantas; i++) {
       const a = (i / Math.max(1, quantas)) * Math.PI * 2 + rng() * 0.9;
       const r = raio * (0.35 + rng() * 0.65);
+      let px = x + Math.cos(a) * r;
+      let pz = z + Math.sin(a) * r;
+      if (pouso) ({ x: px, z: pz } = pouso(px, pz));
       const peca = this.molde.clone(true);
       const corpo = peca.getObjectByName('corpo') ?? peca;
       peca.position.set(x, 0, z);
@@ -95,7 +115,7 @@ export class GotasDoJardim {
         estado: 'pulando',
         idade: 0,
         de: new THREE.Vector3(x, 0, z),
-        para: new THREE.Vector3(x + Math.cos(a) * r, 0, z + Math.sin(a) * r),
+        para: new THREE.Vector3(px, 0, pz),
         t: 0,
         fase: rng() * Math.PI * 2,
         vel: 0,
@@ -107,14 +127,14 @@ export class GotasDoJardim {
    * Um quadro. Devolve QUANTAS gotas foram pegas nele.
    *
    * @param alvo onde o jogador está
-   * @param coleta o raio de puxar (`ficha.coleta`); 0 = só pisando em cima
+   * @param coleta o raio de puxar (`ficha.coleta`); nunca menor que `ATRAI`
    * @param pausado com a tela das cartas aberta o mundo para — a gota também,
    *   senão ela seca enquanto o jogador lê as cartas
    */
   update(dt: number, alvo: { x: number; z: number }, coleta = 0, pausado = false): number {
     if (pausado) return 0;
     let pegas = 0;
-    const alcance = Math.max(PISAR, coleta);
+    const alcance = Math.max(PISAR, ATRAI, coleta);
 
     for (let i = this.gotas.length - 1; i >= 0; i--) {
       const g = this.gotas[i];

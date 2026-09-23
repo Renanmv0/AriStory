@@ -202,6 +202,7 @@ export class RodadaDoJardim {
     private readonly planta: PlantaDoJardim,
   ) {
     w.root.add(this.jato.grupo);
+    this.jato.aoSoar = (nome) => this.g.som(nome);
     w.root.add(this.gotas.grupo);
     this.canteiros = planta.canteiros.map((c) => {
       const mudas = (c.peca.userData.mudas ?? []) as THREE.Object3D[];
@@ -585,6 +586,26 @@ export class RodadaDoJardim {
     return { x: cx + nx * folga, z: cz + nz * folga };
   }
 
+  /**
+   * EMPURRA UM PONTO PARA FORA DOS CANTEIROS. Gota que pousa em cima de um
+   * canteiro é gota que a dupla não alcança a pé (o canteiro tem colisor), e
+   * foi exatamente o que o Renan achou jogando: uma gota presa na horta.
+   */
+  private foraDeCanteiro(x: number, z: number): { x: number; z: number } {
+    const FOLGA = 0.55;
+    for (const c of this.canteiros) {
+      const dx = x - c.x;
+      const dz = z - c.z;
+      const sobraX = c.meioX + FOLGA - Math.abs(dx);
+      const sobraZ = c.meioZ + FOLGA - Math.abs(dz);
+      if (sobraX <= 0 || sobraZ <= 0) continue;
+      // sai pelo lado mais curto
+      if (sobraX < sobraZ) x = c.x + Math.sign(dx || 1) * (c.meioX + FOLGA);
+      else z = c.z + Math.sign(dz || -1) * (c.meioZ + FOLGA);
+    }
+    return { x, z };
+  }
+
   private vulneravel(inv: Invasor): boolean {
     return inv.estado === 'andando' || inv.estado === 'comendo' || inv.estado === 'parado' || inv.estado === 'preso';
   }
@@ -733,7 +754,8 @@ export class RodadaDoJardim {
     inv.z += (dz / Math.max(d, 0.001)) * v * dt;
     this.virarPara(inv, Math.atan2(dx, dz), dt * 2);
     // pinga no caminho: ainda está encharcado
-    if (Math.random() < dt * 6) this.jato.respingo(inv.x, 0.15, inv.z, {}, 0.25);
+    // (mudo: é só o bicho pingando, e tocaria o tempo todo)
+    if (Math.random() < dt * 6) this.jato.respingo(inv.x, 0.15, inv.z, {}, 0.25, 'agua', false);
   }
 
   /** o Gêiser: o bicho voa em parábola até a porta dele */
@@ -742,7 +764,6 @@ export class RodadaDoJardim {
       const destino = this.planta.brechas[inv.porta];
       inv.voo = { de: { x: inv.x, z: inv.z }, para: { x: destino.x, z: destino.z + 1.5 }, t: 0, dur: 1.5 };
       this.jato.geiser(inv.x, inv.z);
-      this.g.som('agua');
     }
     const v = inv.voo;
     v.t += dt;
@@ -963,7 +984,6 @@ export class RodadaDoJardim {
         this.crivo = 0;
         this.gesto = { tipo: 'giro', t: 0, dur: 0.45 };
         this.jato.anelDeAgua(ponta, f.alcance * 0.9, 'giro', e);
-        this.g.som('agua');
         this.jato.depois(0.35, () => {
           for (const inv of [...this.invasores]) {
             if (this.vulneravel(inv) && Math.hypot(inv.x - eu.x, inv.z - eu.z) <= f.alcance * 0.9) this.molhar(inv, f.dano, eu);
@@ -985,7 +1005,6 @@ export class RodadaDoJardim {
         this.gesto = { tipo: 'balde', t: 0, dur: 0.7 };
         const onde = new THREE.Vector3(eu.x, 1.2, eu.z);
         this.jato.depois(0.2, () => this.jato.anelDeAgua(onde, 2, 'balde', e));
-        this.g.som('agua');
         this.jato.depois(0.5, () => {
           for (const inv of [...this.invasores]) {
             // "num círculo de 2 m": conta o corpo do bicho, e não só o centro dele
@@ -1205,7 +1224,6 @@ export class RodadaDoJardim {
         this.jato.depois(tempo * (d / longe), () => this.acertar(inv, f.dano * 3, eu, 'carregado'));
       }
     }
-    this.g.som('agua');
   }
 
   /** o Segundo bico: um cone para trás */
@@ -1279,10 +1297,9 @@ export class RodadaDoJardim {
     inv.empurraX = 0;
     inv.empurraZ = 0;
     if (como === 'agua') this.jato.sacudida(inv.x, inv.ficha.alturaDaBarra, inv.z);
-    this.g.som('agua');
     const quantas = inv.ficha.gotas * inv.gotasVezes;
     const onde = { x: inv.x, z: inv.z };
-    this.jato.depois(0.3, () => this.gotas.soltar(onde.x, onde.z, quantas, this.dado));
+    this.jato.depois(0.3, () => this.gotas.soltar(onde.x, onde.z, quantas, this.dado, (x, z) => this.foraDeCanteiro(x, z)));
 
     const f = this.ficha;
     if (f.jato.sabao && como === 'agua') {

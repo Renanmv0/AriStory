@@ -3,6 +3,7 @@ import { PALETTE as P } from '../../palette';
 import { toon } from '../../core/materials';
 import { Marcas, Particulas } from '../../world/particulas';
 import type { EstiloDoJato } from './cartas';
+import type { SomNome } from '../../audio/efeitos';
 
 /**
  * O JATO DO REGADOR — tudo o que se VÊ quando a rodada ataca.
@@ -129,6 +130,16 @@ function contagemZerada(): ContagemDoJato {
 export class DesenhoDoJato {
   readonly grupo = new THREE.Group();
   readonly contagem: ContagemDoJato = contagemZerada();
+  /**
+   * O SOM de cada efeito. O desenho sabe QUAL efeito aconteceu, então é ele
+   * quem escolhe o som (a tabela do §6: um por carta que muda o jato); quem
+   * toca é a rodada, que tem o `GameAPI`.
+   */
+  aoSoar: ((nome: SomNome) => void) | null = null;
+  private soar(nome: SomNome): void {
+    this.aoSoar?.(nome);
+  }
+  private cargaAvisada = false;
   /** a água: gotas opacas com um brilho leve */
   private readonly agua = new Particulas(900, 0.28, 1, 6);
   /** faíscas: brilho forte (arco-íris, gelo, carga) */
@@ -165,6 +176,8 @@ export class DesenhoDoJato {
   private chuvaCentro = new THREE.Vector3();
   private chuvaRaio = 1;
   private chuvaAltura = 3;
+  /** a chuvinha é um som de 1 s: enquanto chove, ele se repete */
+  private proximaChuvinha = 0;
 
   constructor() {
     this.grupo.name = 'jato-do-regador';
@@ -343,6 +356,15 @@ export class DesenhoDoJato {
       bolhas: !!e.sabao,
     });
 
+    // O SOM DA SAÍDA: o especial manda, depois a forma, depois a tinta
+    if (especial === 'carregado') this.soar('jatao');
+    else if (especial === 'pressao-cheia' || forma === 'reto') this.soar('jatoForte');
+    else if (forma === 'linha') this.soar('jatoLongo');
+    else if (forma === 'arco') this.soar('jatoArco');
+    else this.soar('jato');
+    if (especial === 'arco-iris') this.soar('arcoIris');
+    if (tinta === 'sabao') this.soar('bolha');
+    if (e.vapor) this.soar('vapor');
     // na saída: um borrifo pequeno no bico, que é o "fsh" visual
     this.borrifoNoBico(d.de, d.para, tinta, especial === 'pressao-cheia' || especial === 'carregado');
 
@@ -464,8 +486,11 @@ export class DesenhoDoJato {
    * os jatos especiais. O anel no chão é o que se lê de longe; as gotas que
    * sobem são o que se lê de perto.
    */
-  respingo(x: number, y: number, z: number, estilo: EstiloDoJato, forca = 1, tinta: Tinta = 'agua'): void {
+  respingo(
+    x: number, y: number, z: number, estilo: EstiloDoJato, forca = 1, tinta: Tinta = 'agua', comSom = true,
+  ): void {
     this.contagem.respingos += 1;
+    if (comSom) this.soar('respingo');
     const f = forca * (1 + (estilo.grosso ?? 0) * 0.3);
     const n = Math.round(9 * f);
     const cor = tinta === 'agua'
@@ -491,6 +516,7 @@ export class DesenhoDoJato {
    */
   tranco(x: number, z: number, rumo: number, degrau: number): void {
     this.contagem.trancos += 1;
+    this.soar('tranco');
     const n = 4 + degrau * 3;
     for (let i = 0; i < n; i++) {
       const a = rumo + Math.PI + (Math.random() - 0.5) * 1.4;
@@ -510,6 +536,7 @@ export class DesenhoDoJato {
    */
   congelar(bicho: THREE.Object3D, altura: number): void {
     this.contagem.cristais += 1;
+    this.soar('gelo');
     let cristais = bicho.getObjectByName('cristais-de-gelo');
     if (!cristais) {
       cristais = new THREE.Group();
@@ -547,6 +574,7 @@ export class DesenhoDoJato {
   /** a Água morna: vapor sobe do bicho grande quando leva jato */
   vaporDoBicho(x: number, altura: number, z: number): void {
     this.contagem.vapores += 1;
+    this.soar('vapor');
     for (let i = 0; i < 7; i++) {
       this.nevoa.emitir({
         x: x + (Math.random() - 0.5) * 0.5, y: altura * 0.7, z: z + (Math.random() - 0.5) * 0.5,
@@ -571,6 +599,7 @@ export class DesenhoDoJato {
     livre.malha.scale.setScalar(0.01);
     livre.malha.visible = true;
     livre.malha.userData.estourar = () => {
+      this.soar('estouro');
       for (let i = 0; i < 22; i++) {
         const a = (i / 22) * Math.PI * 2;
         this.agua.emitir({
@@ -623,6 +652,7 @@ export class DesenhoDoJato {
   /** a Garoa: gotinhas caem do regador e ficam no chão atrás de você */
   garoa(de: THREE.Vector3): void {
     this.contagem.garoas += 1;
+    this.soar('pingo');
     for (let i = 0; i < 3; i++) {
       this.agua.emitir({
         x: de.x + (Math.random() - 0.5) * 0.15, y: de.y, z: de.z + (Math.random() - 0.5) * 0.15,
@@ -639,6 +669,7 @@ export class DesenhoDoJato {
    */
   rachadura(x: number, z: number): void {
     this.contagem.rachaduras += 1;
+    this.soar('ronco');
     for (let i = 0; i < 7; i++) {
       const giro = (i / 7) * Math.PI * 2 + Math.random() * 0.4;
       const comp = 0.5 + Math.random() * 0.45;
@@ -659,6 +690,7 @@ export class DesenhoDoJato {
 
   geiser(x: number, z: number): void {
     this.contagem.geiseres += 1;
+    this.soar('geiser');
     // a coluna: gotas grossas subindo rápido num tubo estreito, caindo em volta
     for (let i = 0; i < 70; i++) {
       const a = Math.random() * 6.28;
@@ -683,6 +715,7 @@ export class DesenhoDoJato {
    */
   anelDeAgua(centro: THREE.Vector3, raio: number, jeito: 'giro' | 'balde', estilo: EstiloDoJato): void {
     this.contagem.aneis += 1;
+    this.soar(jeito === 'giro' ? 'anel' : 'balde');
     const tinta: Tinta = estilo.gelo ? 'gelo' : estilo.sabao ? 'sabao' : 'agua';
     if (jeito === 'giro') {
       const n = 56;
@@ -722,6 +755,9 @@ export class DesenhoDoJato {
    */
   carregando(ponta: THREE.Vector3, carga: number): void {
     this.contagem.carga = Math.max(this.contagem.carga, carga);
+    // o zumbido de "pronto" toca uma vez, quando a carga enche
+    if (carga >= 1 && !this.cargaAvisada) this.soar('carga');
+    this.cargaAvisada = carga >= 1;
     if (Math.random() > 0.35 + carga * 0.6) return;
     const a = Math.random() * 6.28;
     const r = 0.5 - carga * 0.2;
@@ -763,6 +799,7 @@ export class DesenhoDoJato {
   /** a sacudida do bicho espantado: a água que ele joga para os lados */
   sacudida(x: number, altura: number, z: number): void {
     this.contagem.sacudidas += 1;
+    this.soar('sacudida');
     for (let i = 0; i < 16; i++) {
       const a = (i / 16) * Math.PI * 2;
       this.agua.emitir({
@@ -804,6 +841,7 @@ export class DesenhoDoJato {
    */
   mirar(bicho: THREE.Object3D, altura: number, duracao = 0.45): void {
     this.contagem.miras += 1;
+    this.soar('mira');
     this.alvinhoSegue = bicho;
     this.alvinhoAltura = altura;
     this.alvinhoResta = duracao;
@@ -845,6 +883,10 @@ export class DesenhoDoJato {
      * nuvenzinha do regador, em cima da dupla, e a chuva cai do alto em tudo.
      */
     this.contagem.chuvas += 1;
+    // a chuva grande (a estufa inteira) começa com um trovão lá longe
+    if (raio > 5) this.soar('trovao');
+    this.soar('chuvinha');
+    this.proximaChuvinha = 1;
     this.nuvem.position.copy(nuvem.em);
     this.nuvem.visible = true;
     this.nuvemTotal = duracao + 1;
@@ -869,6 +911,11 @@ export class DesenhoDoJato {
     this.nuvem.scale.set(this.nuvemRaio * s, Math.max(0.3, this.nuvemRaio * 0.35) * s, this.nuvemRaio * s);
     this.nuvem.rotation.y += dt * 0.2;
     if (decorrido > 0.4 && decorrido < 0.4 + this.nuvemChove) {
+      this.proximaChuvinha -= dt;
+      if (this.proximaChuvinha <= 0) {
+        this.proximaChuvinha = 0.95;
+        this.soar('chuvinha');
+      }
       // chuva grande tem teto de gotas por quadro: o pool é um só para tudo
       const quantas = Math.min(40, Math.round(this.chuvaRaio * this.chuvaRaio * 26 * dt) + 1);
       for (let i = 0; i < quantas; i++) {

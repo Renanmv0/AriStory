@@ -217,7 +217,7 @@ export interface FichaDaRodada {
   recarga: number;
   /** multiplicador da velocidade de andar */
   velocidade: number;
-  /** raio em que as gotas são puxadas; 0 = tem que pisar em cima */
+  /** raio em que as gotas são puxadas; abaixo de 1,3 m vale o `ATRAI` das gotas */
   coleta: number;
   /** multiplicador de quanto cada canteiro aguenta ser comido */
   vidaDoCanteiro: number;
@@ -583,9 +583,9 @@ const JARDINEIRO: CartaDoJardim[] = [
   }),
   {
     id: 'bolso-furado', nome: 'Bolso furado', familia: 'jardineiro', raridade: 'comum',
-    icone: '🫧', texto: 'As gotas vêm até você de 2 m de distância',
+    icone: '🫧', texto: 'As gotas vêm até você de 2,5 m de distância',
     aplicar: (f) => {
-      f.coleta = Math.max(f.coleta, 2);
+      f.coleta = Math.max(f.coleta, 2.5);
     },
   },
   {

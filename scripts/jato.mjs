@@ -9,6 +9,9 @@
  * apareceu — a poça, o cristal, o arco que sobe, os três fios, o alvinho.
  * Foto sozinha não prova: ela mostraria uma poça que apareceu por acaso.
  *
+ * E o SOM: cada carta que muda o jato toca o dela (`som`), contado no
+ * `jogo.audio.contagem` — que conta mesmo sem o áudio ter acordado.
+ *
  * E fotografa cada uma, para olhar: `<prefixo>-<carta>.png`.
  *
  * O relógio do Chromium sem tela anda a ~1/5: o teste espera por EVENTO (a
@@ -29,7 +32,7 @@ const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome
 const CASOS = [
   // o basico prova o contrario tambem: SEM carta, nenhum efeito especial aparece
   {
-    cartas: '', nome: 'basico', o: 'cone e respingo, e nada de especial',
+    cartas: '', nome: 'basico', som: 'jato', o: 'cone e respingo, e nada de especial',
     ok: (d) => (d.formas.cone ?? 0) > 0 && d.respingos > 0 && Object.keys(d.formas).length === 1
       && !d.cristais && !d.pocas && !d.bolhas && !d.arcosIris && !d.miras && !d.trancos && !d.vaporDoCaminho
       && Object.keys(d.especiais).length === 0,
@@ -39,27 +42,27 @@ const CASOS = [
   { cartas: 'braco-1,braco-2,braco-3', ok: (d) => d.disparos > 0, o: 'atira' },
   { cartas: 'leque-1,leque-2,leque-3', ok: (d) => (d.formas.cone ?? 0) > 0, o: 'cone' },
   { cartas: 'segundo-bico', ok: (d, e) => d.disparos >= 2 * e.jatosDados, o: 'dois jatos por ataque' },
-  { cartas: 'orvalho', ok: (d) => d.vaporDoCaminho > 0, o: 'vapor no caminho' },
-  { cartas: 'mangueira', ok: (d) => (d.formas.linha ?? 0) > 0, o: 'linha comprida' },
-  { cartas: 'pressao', ok: (d) => (d.formas.reto ?? 0) > 0, o: 'jato reto' },
-  { cartas: 'gota-pesada-1,gota-pesada-2,gota-pesada-3', ok: (d) => d.trancos > 0, o: 'tranco' },
-  { cartas: 'agua-morna', praga: 'preguipolvo', ok: (d) => d.vapores > 0, o: 'vapor no bicho grande' },
-  { cartas: 'gota-gelada', ok: (d) => d.cristais > 0 && (d.tintas.gelo ?? 0) > 0, o: 'agua azul-gelo e cristais' },
-  { cartas: 'jato-em-arco', ok: (d) => (d.formas.arco ?? 0) > 0 && d.alturaMaxima > 2.2, o: 'arco acima de 2,2 m' },
+  { cartas: 'orvalho', som: 'vapor', ok: (d) => d.vaporDoCaminho > 0, o: 'vapor no caminho' },
+  { cartas: 'mangueira', som: 'jatoLongo', ok: (d) => (d.formas.linha ?? 0) > 0, o: 'linha comprida' },
+  { cartas: 'pressao', som: 'jatoForte', ok: (d) => (d.formas.reto ?? 0) > 0, o: 'jato reto' },
+  { cartas: 'gota-pesada-1,gota-pesada-2,gota-pesada-3', som: 'tranco', ok: (d) => d.trancos > 0, o: 'tranco' },
+  { cartas: 'agua-morna', som: 'vapor', praga: 'preguipolvo', ok: (d) => d.vapores > 0, o: 'vapor no bicho grande' },
+  { cartas: 'gota-gelada', som: 'gelo', ok: (d) => d.cristais > 0 && (d.tintas.gelo ?? 0) > 0, o: 'agua azul-gelo e cristais' },
+  { cartas: 'jato-em-arco', som: 'jatoArco', ok: (d) => (d.formas.arco ?? 0) > 0 && d.alturaMaxima > 2.2, o: 'arco acima de 2,2 m' },
   { cartas: 'borrifador', ok: (d) => (d.formas.fio ?? 0) >= 3, o: 'tres fios' },
-  { cartas: 'mira-no-grandao', ok: (d) => d.miras > 0, o: 'alvinho' },
-  { cartas: 'mira-em-quem-come', ok: (d) => d.miras > 0, o: 'alvinho' },
-  { cartas: 'garoa', acao: 'andar', ok: (d) => d.garoas > 0, o: 'rastro no chao' },
-  { cartas: 'pressao-acumulada', ok: (d) => (d.especiais['pressao-cheia'] ?? 0) > 0, o: 'jato de tanque cheio' },
-  { cartas: 'crivo-giratorio', adiantar: 'crivo', ok: (d) => d.aneis > 0, o: 'anel em volta' },
-  { cartas: 'agua-com-sabao', ok: (d) => (d.tintas.sabao ?? 0) > 0 && d.bolhas > 0, o: 'bolhas e a bolha grande' },
-  { cartas: 'jato-carregado', adiantar: 'carga', ok: (d) => (d.especiais.carregado ?? 0) > 0 && d.carga > 0, o: 'carga e jatao' },
-  { cartas: 'balde', acao: 'balde', ok: (d) => d.aneis > 0, o: 'onda em circulo' },
-  { cartas: 'geiser', adiantar: 'geiser', ok: (d) => d.rachaduras > 0 && d.geiseres > 0, o: 'racha e coluna' },
-  { cartas: 'arco-iris', adiantar: 'arco-iris', ok: (d) => d.arcosIris > 0 && (d.tintas['arco-iris'] ?? 0) > 0, o: 'arco-iris no ar' },
+  { cartas: 'mira-no-grandao', som: 'mira', ok: (d) => d.miras > 0, o: 'alvinho' },
+  { cartas: 'mira-em-quem-come', som: 'mira', ok: (d) => d.miras > 0, o: 'alvinho' },
+  { cartas: 'garoa', som: 'pingo', acao: 'andar', ok: (d) => d.garoas > 0, o: 'rastro no chao' },
+  { cartas: 'pressao-acumulada', som: 'jatoForte', ok: (d) => (d.especiais['pressao-cheia'] ?? 0) > 0, o: 'jato de tanque cheio' },
+  { cartas: 'crivo-giratorio', som: 'anel', adiantar: 'crivo', ok: (d) => d.aneis > 0, o: 'anel em volta' },
+  { cartas: 'agua-com-sabao', som: 'bolha', ok: (d) => (d.tintas.sabao ?? 0) > 0 && d.bolhas > 0, o: 'bolhas e a bolha grande' },
+  { cartas: 'jato-carregado', som: 'jatao', adiantar: 'carga', ok: (d) => (d.especiais.carregado ?? 0) > 0 && d.carga > 0, o: 'carga e jatao' },
+  { cartas: 'balde', som: 'balde', acao: 'balde', ok: (d) => d.aneis > 0, o: 'onda em circulo' },
+  { cartas: 'geiser', som: 'geiser', adiantar: 'geiser', ok: (d) => d.rachaduras > 0 && d.geiseres > 0, o: 'racha e coluna' },
+  { cartas: 'arco-iris', som: 'arcoIris', adiantar: 'arco-iris', ok: (d) => d.arcosIris > 0 && (d.tintas['arco-iris'] ?? 0) > 0, o: 'arco-iris no ar' },
   { cartas: 'poca', ok: (d) => d.pocas > 0, o: 'poca no chao' },
-  { cartas: 'chuva', adiantar: 'chuva', ok: (d) => d.chuvas > 0, o: 'nuvem e chuva' },
-  { cartas: 'danca-da-chuva', adiantar: 'danca', ok: (d) => d.chuvas > 0, o: 'nuvem em volta' },
+  { cartas: 'chuva', som: 'trovao', adiantar: 'chuva', ok: (d) => d.chuvas > 0, o: 'nuvem e chuva' },
+  { cartas: 'danca-da-chuva', som: 'chuvinha', adiantar: 'danca', ok: (d) => d.chuvas > 0, o: 'nuvem em volta' },
 ];
 
 const browser = await chromium.launch({
@@ -115,8 +118,12 @@ for (const caso of CASOS) {
   if (caso.acao === 'andar') await page.keyboard.up('KeyD');
   e = await rodada();
   const passou = caso.ok(e.desenho, e);
-  console.log(`${passou ? '  ok ' : 'FALHOU'}  ${nome.padEnd(20)} ${caso.o}`);
+  const tocou = caso.som
+    ? await page.evaluate((n) => window.jogo.audio.contagem.get(n) ?? 0, caso.som)
+    : 1;
+  console.log(`${passou ? '  ok ' : 'FALHOU'}  ${nome.padEnd(20)} ${caso.o}${caso.som ? ` · som ${caso.som} ${tocou ? 'tocou' : 'NAO tocou'}` : ''}`);
   if (!passou) problemas.push(`${nome}: nao apareceu "${caso.o}" (${JSON.stringify(e.desenho)})`);
+  if (!tocou) problemas.push(`${nome}: o som "${caso.som}" nao tocou`);
 }
 
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
