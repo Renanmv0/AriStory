@@ -114,6 +114,7 @@ export class Game implements GameAPI {
     this.ui.setMemories(this.save.memories);
     this.ui.onTouchAction = () => this.input.tapAction();
     this.ui.onTouchSwap = () => this.input.tapSwap();
+    this.ui.aoPedirAjuda = () => { if (this.jardimNaTela) this.ajudaPedida = true; };
     this.ui.onTouchGirar = (dir) => this.input.tapGirar(dir);
     // clique numa vaga da mochila escolhe qual item fica na mao
     this.ui.onEscolherSlot = (i) => this.setActiveHandSlot(i);
@@ -453,6 +454,8 @@ export class Game implements GameAPI {
     }
 
     if (!busy && !this.player.locked && this.input.justPressed('KeyH')) this.maoNaMao();
+    // a ajuda do par, na rodada do jardim: o F (no celular, o botão do painel)
+    if (this.jardimNaTela && !busy && this.input.justPressed('KeyF')) this.ajudaPedida = true;
 
     const acted =
       !this.ui.cartasOpen && (this.input.justPressed('KeyE') || this.input.justPressed('Space'));
@@ -1221,7 +1224,19 @@ export class Game implements GameAPI {
     this.ui.showExperiencia(dados);
   }
 
+  /** a rodada do jardim está com o painel na tela (só aí o F chama o par) */
+  private jardimNaTela = false;
+  private ajudaPedida = false;
+
+  pedidoDeAjudaDoPar(): boolean {
+    const pediu = this.ajudaPedida;
+    this.ajudaPedida = false;
+    return pediu;
+  }
+
   showJardim(dados: Parameters<GameAPI['showJardim']>[0]): void {
+    this.jardimNaTela = dados !== null;
+    if (!dados) this.ajudaPedida = false;
     this.ui.showJardim(dados);
   }
 

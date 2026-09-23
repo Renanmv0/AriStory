@@ -3,7 +3,7 @@ import type { WorldBuilder } from '../world/WorldBuilder';
 import type { SomNome } from '../audio/efeitos';
 import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
-import type { CartaNaTela, ContextoDaEscolha, FimDoJardim } from '../minigames/jardim/tela';
+import type { CartaNaTela, ContextoDaEscolha, FimDoJardim, PainelDoJardim } from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
 
 export interface CircleCollider {
@@ -530,10 +530,12 @@ export interface GameAPI {
    * ainda estão de pé. `null` esconde. A barra de experiência é outra
    * (`showExperiencia`), porque ela também aparece no treino.
    */
-  showJardim(dados: {
-    onda: number; ondas: number; agua: number; tanque: number;
-    canteiros: number; totalDeCanteiros: number; enchendo: boolean;
-  } | null): void;
+  showJardim(dados: PainelDoJardim | null): void;
+  /**
+   * O BOTÃO DA AJUDA DO PAR foi apertado (o botão do painel ou a tecla F)?
+   * Devolve uma vez e esquece: quem pergunta é a rodada, a cada quadro.
+   */
+  pedidoDeAjudaDoPar(): boolean;
   /**
    * VIRA O JOGADOR PARA UM PONTO enquanto ele está PARADO — é o regador da
    * rodada apontando para o bicho que ele rega. Andando, quem manda no giro

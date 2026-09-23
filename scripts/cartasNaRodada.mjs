@@ -444,6 +444,67 @@ const CASOS = {
     confere('adubo-do-noel', efeito(e, 'adubo-do-noel') > 0 && e.canteiros.some((c) => c.adubado) && e.desenho.adubos > 0, 'o canteiro regado ficou adubado');
   },
 
+  // ============================================== a rodada, fora das cartas
+  /*
+   * O BICHO COMENDO É ALVO, mesmo visto pela quina do canteiro. Foi o que o
+   * Renan achou jogando: às vezes o regador não atirava em quem estava comendo.
+   * A reta até ele passava raspando pela terra do próprio canteiro, e isso
+   * contava como "atrás do canteiro".
+   */
+  'comendo-na-quina': async () => {
+    await laboratorio([], { x: -1.4, z: 9.7 });
+    await rodada(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.regadorDeFolga = true;
+      r.soltarBicho('coelhatu', -2.6, 7.2);
+    });
+    const comendo = await ate((s) => s.invasores[0]?.estado === 'comendo', 12000);
+    await page.evaluate(() => window.jogo.debugPlace(-1.4, 9.7, Math.PI));
+    await rodada(() => { window.jogo.current.world.root.userData.rodada.regadorDeFolga = false; });
+    const e = await ate((s) => s.jatosDados > 0 && (s.invasores[0]?.vida ?? 0) < (s.invasores[0]?.vidaMax ?? 1), 8000);
+    const b = comendo.invasores[0];
+    confere('comendo-na-quina', b?.estado === 'comendo' && e.jatosDados > 0,
+      `comendo em (${b?.x.toFixed(1)}, ${b?.z.toFixed(1)}), vista pela quina: ${e.jatosDados} jatos`);
+  },
+  /*
+   * A AJUDA DO PAR: com o anel cheio, o F chama quem ficou atrás; ele pega o
+   * regador extra, vem, e cada jato dele espanta de uma vez por 10 s. Depois
+   * volta para o posto e devolve o regador.
+   */
+  'ajuda-do-par': async () => {
+    await laboratorio([], { x: 0, z: 2, folga: true });
+    await rodada(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      for (const [x, z] of [[-1, -0.5], [0.2, -0.8], [1.2, -0.4]]) r.soltarBicho('coelhatu', x, z);
+      r.encherAjuda();
+    });
+    await page.waitForTimeout(400);
+    const antes = await estado();
+    await page.keyboard.press('KeyF');
+    const e = await ate((s) => s.invasores.every((i) => ['fugindo', 'sacudindo'].includes(i.estado)), 15000);
+    const temRegador = await page.evaluate(() => window.jogo.hasItem('regador', window.jogo.companionId()));
+    confere('ajuda-do-par', antes.ajuda.pronta && e.ajuda.vezes === 1 && efeito(e, 'ajuda-do-par') > 0
+      && e.invasores.every((i) => ['fugindo', 'sacudindo'].includes(i.estado)) && temRegador,
+      `pronta e chamada: ${e.espantados} coelhatus espantados com ${efeito(e, 'ajuda-do-par')} jatos do par`);
+    const depois = await ate((s) => s.ajuda.resta <= 0, 40000);
+    const devolveu = !(await page.evaluate(() => window.jogo.hasItem('regador', window.jogo.companionId())));
+    confere('ajuda-do-par (fim)', depois.ajuda.resta <= 0 && devolveu && depois.ajuda.custo > antes.ajuda.custo,
+      `acabou, devolveu o regador extra, e a próxima custa ${depois.ajuda.custo} gotas`);
+  },
+  'ajuda-do-par (chefe)': async () => {
+    await laboratorio([], { x: 0, z: 2, folga: true });
+    await rodada(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.soltarBicho('mae-lagartejo', 0, -0.6);
+      r.encherAjuda();
+    });
+    await page.keyboard.press('KeyF');
+    const e = await ate((s) => efeito(s, 'ajuda-do-par') >= 1 && s.invasores[0] && s.invasores[0].vida < s.invasores[0].vidaMax, 10000);
+    const b = e.invasores[0];
+    confere('ajuda-do-par (chefe)', !!b && b.vida > 0 && b.vida <= b.vidaMax * 0.7,
+      `a Mãe-Lagartejo leva um terço por jato (${b?.vida.toFixed(1)}/${b?.vidaMax})`);
+  },
+
   // ============================================================ chamados
   'chama-capy': async () => {
     await laboratorio(['chama-capy'], { x: -7, z: 3, folga: true });

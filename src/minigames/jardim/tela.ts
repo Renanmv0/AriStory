@@ -113,3 +113,19 @@ export interface FimDoJardim {
   /** as que entraram no livro pela primeira vez nesta rodada */
   readonly novas: readonly string[];
 }
+
+/**
+ * O PAINEL DA RODADA no alto da tela, e o BOTÃO DA AJUDA DO PAR: a onda, a
+ * água, os canteiros, e quanto falta para chamar quem ficou lá atrás.
+ */
+export interface PainelDoJardim {
+  onda: number;
+  ondas: number;
+  agua: number;
+  tanque: number;
+  canteiros: number;
+  totalDeCanteiros: number;
+  enchendo: boolean;
+  /** a ajuda do par: o nome de quem vem, o anel (0 a 1), se está pronta, e os segundos que restam dela */
+  ajuda?: { nome: string; carga: number; pronta: boolean; resta: number };
+}

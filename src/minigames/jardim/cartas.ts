@@ -248,7 +248,9 @@ export interface FichaDaRodada {
 /** Os quatro números do §4 do plano, e o resto no zero. */
 export function fichaInicial(): FichaDaRodada {
   return {
-    alcance: 2.6,
+    // 3,0 (era 2,6): a rodada estava difícil, e o regador que alcança um
+    // passo a mais é o que menos muda o jeito de jogar — pedido do Renan
+    alcance: 3.0,
     dano: 1,
     cadencia: 1.1,
     largura: 35,

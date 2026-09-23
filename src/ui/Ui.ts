@@ -3,7 +3,7 @@ import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import { TelaDeCartas } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
-import type { CartaNaTela, ContextoDaEscolha, FimDoJardim } from '../minigames/jardim/tela';
+import type { CartaNaTela, ContextoDaEscolha, FimDoJardim, PainelDoJardim } from '../minigames/jardim/tela';
 import type { MemoriaPintada } from '../world/memoriasData';
 import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
@@ -150,6 +150,9 @@ export class Ui {
   onTouchAction: (() => void) | null = null;
   /** chamado quando o jogador aperta o botao de trocar de personagem */
   onTouchSwap: (() => void) | null = null;
+  /** o botão da ajuda do par, na rodada do jardim */
+  aoPedirAjuda: (() => void) | null = null;
+  private readonly botaoAjuda: HTMLButtonElement;
   /** girar a camera no celular; -1 para um lado, 1 para o outro */
   onTouchGirar: ((dir: -1 | 1) => void) | null = null;
   /** botao de acao segurado no celular: carrega o lancamento do frisbee */
@@ -322,6 +325,7 @@ export class Ui {
       <div class="xadrez"></div>
       <div class="experiencia"><span class="nv">Nv <b>0</b></span><span class="trilho"><i class="enchido"></i></span><span class="conta">0/5</span></div>
       <div class="painel-jardim"><span class="onda">Onda <b>1</b><small>/5</small></span><span class="tanque" title="água no regador"><i class="agua"></i><i class="marcas"></i><em>💧 <b>12</b></em></span><span class="canteiros" title="canteiros de pé">🌱 <b>8</b><small>/8</small></span></div>
+      <button class="ajuda-do-par" aria-label="chamar o par para ajudar"><span class="anel" aria-hidden="true"></span><span class="rosto" aria-hidden="true">💦</span><span class="rotulo"><b class="nome"></b><small class="estado"></small></span><kbd>F</kbd></button>
       <div class="cartas-do-jardim"></div>
       <div class="livro-de-cartas"></div>
       <div class="fim-do-jardim"></div>
@@ -400,6 +404,8 @@ export class Ui {
     this.telaDoFim.som = (nome) => this.som?.(nome);
     this.experiencia = ui.querySelector('.experiencia')!;
     this.painelJardim = ui.querySelector('.painel-jardim')!;
+    this.botaoAjuda = ui.querySelector('.ajuda-do-par')!;
+    this.botaoAjuda.addEventListener('click', () => this.aoPedirAjuda?.());
     this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
     this.memorias = ui.querySelector('.memorias')!;
     this.quadro = ui.querySelector('.memorias .quadro')!;
@@ -1074,11 +1080,9 @@ export class Ui {
    * no meio da rodada — ela acaba, e acabar é o que manda a pessoa ao tonel —,
    * então ela é a peça maior, e pisca quando está no fim.
    */
-  showJardim(dados: {
-    onda: number; ondas: number; agua: number; tanque: number;
-    canteiros: number; totalDeCanteiros: number; enchendo: boolean;
-  } | null): void {
+  showJardim(dados: PainelDoJardim | null): void {
     const el = this.painelJardim;
+    this.pintarAjuda(dados?.ajuda ?? null);
     if (!dados) {
       el.classList.remove('show');
       return;
@@ -1099,6 +1103,29 @@ export class Ui {
     el.querySelector('.canteiros b')!.textContent = String(dados.canteiros);
     el.querySelector('.canteiros small')!.textContent = `/${dados.totalDeCanteiros}`;
     el.classList.toggle('perdendo', dados.canteiros < dados.totalDeCanteiros);
+  }
+
+  /**
+   * O BOTÃO DA AJUDA DO PAR: um anel que enche com as gotas pegas; cheio, ele
+   * brilha e diz "chamar!"; durante a ajuda, conta os segundos. No celular ele
+   * mora ao lado do ✨, onde o polegar já está.
+   */
+  private pintarAjuda(ajuda: PainelDoJardim['ajuda'] | null): void {
+    const b = this.botaoAjuda;
+    if (!ajuda) {
+      b.classList.remove('show');
+      return;
+    }
+    b.classList.add('show');
+    const ativa = ajuda.resta > 0;
+    b.style.setProperty('--carga', String(ativa ? ajuda.resta / 10 : Math.max(0, Math.min(1, ajuda.carga))));
+    b.classList.toggle('pronta', ajuda.pronta);
+    b.classList.toggle('ativa', ativa);
+    b.disabled = !ajuda.pronta;
+    b.querySelector('.nome')!.textContent = ajuda.nome;
+    b.querySelector('.estado')!.textContent = ativa
+      ? `ajudando · ${Math.ceil(ajuda.resta)} s`
+      : ajuda.pronta ? 'chamar!' : `${Math.floor(ajuda.carga * 100)}%`;
   }
 
   // ------------------------------------------------ quadro de inscrições

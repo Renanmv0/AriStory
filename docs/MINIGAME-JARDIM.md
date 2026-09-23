@@ -226,6 +226,34 @@ bicho escapa, a dupla chega perto do nível 10 na quinta onda e do 25 na
 vigésima (`scripts/cartas.mjs` mede as duas marcas). O número mora em
 `TOTAL_DE_ONDAS`, em `progressao.ts`: mudar o limite é mudar ele.
 
+**AJUSTES DEPOIS DE JOGAR — construído** (o Renan achou a rodada difícil e
+jogou no celular):
+
+- **mais fácil**: o regador alcança 3,0 m (era 2,6) e cada canteiro aguenta
+  34 de mordida (era 24);
+- **o bicho comendo é sempre alvo**: o canteiro que ele está comendo não conta
+  mais como "atrás do canteiro" — quem chegava pela quina ficava sem tiro;
+- **a câmera se afasta na rodada**: ela enquadra 11 m de largura ou 13 de
+  altura, o que for maior. No computador é um passo para trás; no celular em
+  pé é mais que o dobro de chão à vista (antes eram uns 5 m de largura, e os
+  bichos dos lados sumiam). No fim da rodada volta ao zoom da estufa.
+
+**A AJUDA DO PAR — construída** (ideia do Renan). Quem ficou lá atrás pode
+ser chamado: um botão no canto (ao lado do ✨ no celular; o `F` no computador)
+com um anel que **enche com as gotas pegas**. Cheio, ele brilha e diz
+"chamar!"; chamado, o par pega um **regador extra**, vem para perto de você e
+por **10 s** atira sozinho no bicho mais perto dele — e **cada jato espanta de
+uma vez** (e quem está colado no alvo vai junto). A exceção é a Mãe-Lagartejo,
+que leva um terço por jato: chefe que cai com um jato não é chefe. Acabou o
+tempo, ele devolve o regador e volta para o posto.
+
+*Por que gota, e não "a cada 3 ondas"*: o Renan deixou a escolha comigo. Com
+gota o anel anda a cada bicho espantado — o jogador VÊ a ajuda chegando, e
+jogar bem traz ela mais cedo. O custo sobe a cada uso (30, 45, 60… gotas), o
+que dá umas nove ajudas nas vinte ondas: uma a cada duas ondas e pouco, perto
+do ritmo que ele pensou. Os números moram no topo de `rodada.ts`
+(`AJUDA_DURA`, `AJUDA_CUSTO_INICIAL`, `AJUDA_CUSTO_SOBE`).
+
 **O FIM DA RODADA É UMA PÁGINA — construído.** Ganhando ou perdendo, antes da
 fala da Josefina abre a tela do fim (`ui/livroDeCartas.ts`, `TelaDoFim`):
 vitória ou "a estufa caiu na onda N", quantos bichos foram espantados e **de
@@ -270,7 +298,7 @@ Os quatro números que definem ela, e que as primeiras melhorias mexem:
 
 | número | começo | o que ele faz |
 |---|---|---|
-| `alcance` | 2,6 | raio em que o regador acha alvo |
+| `alcance` | 3,0 (era 2,6: a rodada estava difícil) | raio em que o regador acha alvo |
 | `dano` | 1,0 | quanto tira de encharque por jato |
 | `cadencia` | 1,1 s | intervalo entre um jato e o outro |
 | `largura` | 35° | abertura do leque de água (pega mais de um bicho) |

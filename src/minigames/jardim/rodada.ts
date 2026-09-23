@@ -55,7 +55,20 @@ import { DesenhoDoJato } from './jato';
 // ------------------------------------------------------------------ ajustes
 
 /** quanto um canteiro aguenta ser comido, antes da Terra adubada */
-const VIDA_DO_CANTEIRO = 24;
+// 34 (era 24): o Renan achou a rodada difícil — canteiro que aguenta mais é
+// tempo a mais para chegar lá, sem mudar o que o jogador faz
+const VIDA_DO_CANTEIRO = 34;
+/**
+ * A AJUDA DO PAR (pedido do Renan): o botão chama quem ficou lá atrás, que
+ * pega um regador extra e espanta com UM jato só por `AJUDA_DURA` segundos.
+ * Ela carrega com GOTAS, e não com ondas: cada gota pega enche o anel do
+ * botão, então jogar bem chama a ajuda mais cedo, e o jogador VÊ ela chegando.
+ * O custo sobe a cada uso (30, 45, 60…): na rodada de vinte ondas dá umas
+ * nove ajudas, uma a cada duas ondas e pouco.
+ */
+const AJUDA_DURA = 10;
+const AJUDA_CUSTO_INICIAL = 30;
+const AJUDA_CUSTO_SOBE = 15;
 /** a distância do tonel em que o regador enche */
 const PERTO_DO_TONEL = 1.9;
 /** jatos por segundo que o tonel põe no regador, antes do Refil rápido */
@@ -350,6 +363,19 @@ export class RodadaDoJardim {
   private walter: { alvo: Canteiro; chegou: boolean; resta: number } | null = null;
   private mutirao = 0;
 
+  // ---- a ajuda do par
+  /** gotas juntadas desde a última ajuda, e quanto a próxima custa */
+  private ajudaCarga = 0;
+  private ajudaCusto = AJUDA_CUSTO_INICIAL;
+  /** segundos que ainda faltam de ajuda (0 = parada) */
+  private ajudaResta = 0;
+  private ajudaRecarga = 0;
+  private ajudaVezes = 0;
+  /** o regador extra foi dado só para a ajuda (sai quando ela acaba) */
+  private ajudaDeuRegador = false;
+  /** depois da ajuda o par volta para o posto; chegando, vira para os portões */
+  private parVoltando = false;
+
   /** o pontilhado do Olho de jardineira */
   private readonly trilha: THREE.InstancedMesh;
   private relogioDaTrilha = 0;
@@ -472,6 +498,14 @@ export class RodadaDoJardim {
     this.espantados = 0;
     this.espantadosPorPraga = {};
     this.novasNoLivro = [];
+    this.ajudaCarga = 0;
+    this.ajudaCusto = AJUDA_CUSTO_INICIAL;
+    this.ajudaResta = 0;
+    this.ajudaVezes = 0;
+    this.ajudaDeuRegador = false;
+    this.parVoltando = false;
+    // o pedido que tiver sobrado de antes não vale: começa do zero
+    this.g.pedidoDeAjudaDoPar();
     this.jatosDados = 0;
     this.crivo = 0;
     this.geiser = 0;
@@ -502,6 +536,7 @@ export class RodadaDoJardim {
     }
 
     this.g.showExperiencia(nivelDasGotas(0));
+    this.enquadrarRodada();
     if (this.vitrine) {
       this.onda = 1;
       this.plano = [];
@@ -558,6 +593,10 @@ export class RodadaDoJardim {
     this.g.showExperiencia(null);
     this.g.vestirRegador(null);
     this.g.bloquearTroca(false);
+    // a câmera volta ao zoom da estufa (o 11 das cutscenes da cena)
+    if (!this.vitrine) this.g.setZoom(11);
+    this.ajudaResta = 0;
+    this.parVoltando = false;
     this.pararGesto();
     this.desmontarCartas();
     for (const c of this.canteiros) this.replantar(c);
@@ -610,6 +649,7 @@ export class RodadaDoJardim {
       picole: this.picolePeca ? { x: this.picolePeca.position.x, z: this.picolePeca.position.z } : null,
       chamados: { capy: !!this.capy, noel: !!this.noel, walter: !!this.walter, mutirao: this.mutirao },
       trilha: this.trilha.count,
+      ajuda: { carga: this.ajudaCarga, custo: this.ajudaCusto, resta: this.ajudaResta, vezes: this.ajudaVezes, pronta: this.ajudaPronta },
     };
   }
 
@@ -695,7 +735,11 @@ export class RodadaDoJardim {
     const estava = this.pausada;
     this.pausada = true;
     await this.cartaNova(id);
-    if (carta.chama && this.aoPegarCarta) await this.aoPegarCarta(id);
+    if (carta.chama && this.aoPegarCarta) {
+      await this.aoPegarCarta(id);
+      // a cutscene do chamado mexe na câmera: a rodada volta ao enquadramento dela
+      this.enquadrarRodada();
+    }
     this.pausada = estava;
   }
 
@@ -797,6 +841,7 @@ export class RodadaDoJardim {
     this.regador(dt);
     this.animarGesto(dt);
     this.garoa(dt);
+    this.ajudaDoPar(dt);
     this.cartasDoJardineiro(dt);
     this.cartasDoJardim(dt);
     this.chamadosAgindo(dt);
@@ -823,6 +868,7 @@ export class RodadaDoJardim {
     const r = this.ficha.regras;
     this.g.som('pegar');
     this.juntadas += n;
+    if (this.ajudaResta <= 0) this.ajudaCarga = Math.min(this.ajudaCusto, this.ajudaCarga + n);
     if (r.has('coracaozinho') && this.juntadas >= this.proximoCoracao) {
       while (this.proximoCoracao <= this.juntadas) this.proximoCoracao += 20;
       this.g.soltarCoracoes(3);
@@ -852,6 +898,12 @@ export class RodadaDoJardim {
       canteiros: this.canteiros.filter((c) => c.vida > 0).length,
       totalDeCanteiros: this.canteiros.length,
       enchendo: this.enchendo,
+      ajuda: {
+        nome: this.g.companionName(),
+        carga: this.ajudaCusto > 0 ? this.ajudaCarga / this.ajudaCusto : 0,
+        pronta: this.ajudaPronta,
+        resta: this.ajudaResta,
+      },
     });
   }
 
@@ -1418,6 +1470,13 @@ export class RodadaDoJardim {
   /** o bicho está atrás de um canteiro, do ponto de vista de quem rega? */
   private atrasDeCanteiro(de: { x: number; z: number }, inv: Invasor): boolean {
     for (const c of this.canteiros) {
+      /*
+       * O CANTEIRO QUE ELE ESTÁ COMENDO NÃO ESCONDE ELE. O bicho come na borda,
+       * e quem chegava pela quina via a reta passar raspando pela terra — o
+       * regador achava que ele estava "atrás" e não atirava justo em quem
+       * mais importa (o Renan achou jogando).
+       */
+      if (inv.estado === 'comendo' && c === inv.canteiro) continue;
       if (segmentoCruzaRetangulo(de.x, de.z, inv.x, inv.z, c.x, c.z, c.meioX - 0.1, c.meioZ - 0.1)) return true;
     }
     return false;
@@ -2422,6 +2481,112 @@ export class RodadaDoJardim {
       this.picolePeca.rotation.y += dt * 2;
       this.picolePeca.position.y = 0.15 + Math.sin(this.relogioDaTrilha * 3) * 0.08;
     }
+  }
+
+  // ================================================================ a ajuda do par
+
+  /**
+   * O ENQUADRAMENTO DA RODADA — pedido do Renan: no celular não dava para ver
+   * os bichos dos lados. O zoom da estufa (11 de altura) num celular em pé
+   * mostra uns 5 m de largura; a rodada pede 11 m de largura OU 13 de altura,
+   * o que for maior — no computador é um passo para trás, no celular mais do
+   * que o dobro de chão à vista. A vitrine fica de fora: ela é para olhar o
+   * jato de perto.
+   */
+  private enquadrarRodada(): void {
+    if (this.vitrine) return;
+    this.g.enquadrar(11, 13);
+  }
+
+  get ajudaPronta(): boolean {
+    return this.ajudaResta <= 0 && this.ajudaCarga >= this.ajudaCusto;
+  }
+
+  /**
+   * A AJUDA DO PAR, a cada quadro: o botão (ou o F) pedido com o anel cheio
+   * chama quem ficou atrás. Ele pega um regador extra, vem até você, e por 10 s
+   * atira sozinho no bicho mais perto dele — e cada jato espanta de uma vez
+   * (menos a Mãe-Lagartejo, que leva um terço: chefe que cai com um jato não é
+   * chefe). Acabou o tempo, ele volta para o posto.
+   */
+  private ajudaDoPar(dt: number): void {
+    const pediu = this.g.pedidoDeAjudaDoPar();
+    if (pediu && this.ajudaPronta) this.chamarOPar();
+
+    if (this.parVoltando) {
+      const p = this.g.companionPosition();
+      const posto = this.planta.postoDeTras;
+      if (Math.hypot(p.x - posto.x, p.z - posto.z) < 0.6) {
+        this.parVoltando = false;
+        this.g.holdCompanion(this.planta.olharDosPortoes.x, this.planta.olharDosPortoes.z);
+      }
+    }
+
+    if (this.ajudaResta <= 0) return;
+    this.ajudaResta -= dt;
+    this.ajudaRecarga -= dt;
+    const p = this.g.companionPosition();
+    if (this.ajudaRecarga <= 0) {
+      // o par não liga para canteiro no meio: a água dele vai por cima
+      const alvo = this.maisPerto(p.x, p.z, 5.5);
+      if (alvo) {
+        this.ajudaRecarga = 0.5;
+        const rumo = Math.atan2(alvo.x - p.x, alvo.z - p.z);
+        const de = new THREE.Vector3(p.x + Math.sin(rumo) * 0.4, 1.15, p.z + Math.cos(rumo) * 0.4);
+        const para = new THREE.Vector3(alvo.x, 0.25, alvo.z);
+        const tempo = this.jato.disparar({ de, para, estilo: { ...this.ficha.jato, arco: true }, largura: 30, especial: 'pressao-cheia' });
+        const origem = { x: p.x, z: p.z };
+        // o cone dele: todo bicho perto do alvo leva o mesmo jato
+        const molhados = this.invasores.filter((i) => this.vulneravel(i) && Math.hypot(i.x - alvo.x, i.z - alvo.z) < 1.0 + i.jeito.raio);
+        for (const inv of molhados) {
+          const dano = inv.ficha.tier === 'chefe' ? inv.vidaMax / 3 : inv.vida + 1;
+          this.jato.depois(tempo, () => this.acertar(inv, dano, origem, 'pressao-cheia'));
+        }
+        this.contar('ajuda-do-par');
+      }
+    }
+    if (this.ajudaResta <= 0) this.dispensarOPar();
+  }
+
+  private chamarOPar(): void {
+    this.ajudaVezes += 1;
+    this.ajudaCarga = 0;
+    this.ajudaCusto += AJUDA_CUSTO_SOBE;
+    this.ajudaResta = AJUDA_DURA;
+    this.ajudaRecarga = 0.4;
+    this.parVoltando = false;
+    const quem = this.g.companionId();
+    this.ajudaDeuRegador = !this.g.hasItem('regador', quem);
+    this.darRegador(quem);
+    // ele vem para perto de você e segue enquanto a ajuda dura
+    this.g.freeCompanion();
+    const p = this.g.companionPosition();
+    this.jato.anelDeAgua(new THREE.Vector3(p.x, 1, p.z), 1, 'giro', {});
+    this.jato.ondaDeSom(p.x, p.z, 1.6, P.efeitoBroto);
+    this.g.som('coracao');
+    this.g.toast(`${this.g.companionName()} pegou o regador extra!`, '💦');
+  }
+
+  private dispensarOPar(): void {
+    this.ajudaResta = 0;
+    const quem = this.g.companionId();
+    const r = this.ficha.regras;
+    // o regador extra volta, a menos que uma carta dê um regador para ele
+    if (this.ajudaDeuRegador && !r.has('os-dois-na-frente') && !r.has('la-de-tras')) {
+      this.g.removeItem('regador', quem);
+      this.regadoresDados = this.regadoresDados.filter((q) => q !== quem);
+    }
+    this.ajudaDeuRegador = false;
+    // com Os dois na frente ele já rega do seu lado: fica
+    if (r.has('os-dois-na-frente')) return;
+    const posto = this.planta.postoDeTras;
+    this.g.commandCompanion(posto.x, posto.z);
+    this.parVoltando = true;
+  }
+
+  /** o teste enche a ajuda sem juntar gota */
+  encherAjuda(): void {
+    this.ajudaCarga = this.ajudaCusto;
   }
 
   // ================================================================ as cartas de jardineiro
