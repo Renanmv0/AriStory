@@ -63,6 +63,20 @@ const CASOS = [
   { cartas: 'poca', ok: (d) => d.pocas > 0, o: 'poca no chao' },
   { cartas: 'chuva', som: 'trovao', adiantar: 'chuva', ok: (d) => d.chuvas > 0, o: 'nuvem e chuva' },
   { cartas: 'danca-da-chuva', som: 'chuvinha', adiantar: 'danca', ok: (d) => d.chuvas > 0, o: 'nuvem em volta' },
+  /*
+   * AS COMBINAÇÕES — regra do Renan: as cartas da mão valem todas juntas. Um
+   * caso por encontro que antes apagava uma das duas: agora as duas aparecem
+   * no MESMO ataque.
+   */
+  { nome: 'combo-borrifador-pressao', cartas: 'borrifador,pressao', ok: (d) => (d.formas.fio ?? 0) >= 3, o: 'tres fios, e cada um atravessa' },
+  { nome: 'combo-segundo-bico-borrifador', cartas: 'segundo-bico,borrifador', ok: (d) => (d.formas.fio ?? 0) >= 6, o: 'tres fios na frente e tres atras' },
+  { nome: 'combo-carregado-borrifador', cartas: 'jato-carregado,borrifador', adiantar: 'carga', ok: (d) => (d.especiais.carregado ?? 0) >= 3, o: 'tres jataos em leque' },
+  { nome: 'combo-carregado-poca', cartas: 'jato-carregado,poca', adiantar: 'carga', ok: (d) => (d.especiais.carregado ?? 0) > 0 && d.pocas >= 4, o: 'o jatao deixa a linha molhada' },
+  { nome: 'combo-segundo-bico-carregado', cartas: 'segundo-bico,jato-carregado', adiantar: 'carga', ok: (d) => (d.especiais.carregado ?? 0) >= 2, o: 'jatao na frente e atras' },
+  { nome: 'combo-pressao-acumulada-borrifador', cartas: 'pressao-acumulada,borrifador', ok: (d) => (d.especiais['pressao-cheia'] ?? 0) >= 3 && (d.formas.fio ?? 0) >= 3, o: 'os tres fios de tanque cheio' },
+  { nome: 'combo-arco-mangueira', cartas: 'jato-em-arco,mangueira', ok: (d) => (d.formas.arco ?? 0) > 0 && d.alturaMaxima > 2.2, o: 'arco longo e fino' },
+  { nome: 'combo-arco-pressao', cartas: 'jato-em-arco,pressao', ok: (d) => (d.formas.arco ?? 0) > 0, o: 'arco que passa do bicho' },
+  { nome: 'combo-crivo-poca', cartas: 'crivo-giratorio,poca', adiantar: 'crivo', ok: (d) => d.aneis > 0 && d.pocas > 0, o: 'o anel deixa poca' },
 ];
 
 const browser = await chromium.launch({

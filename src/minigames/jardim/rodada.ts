@@ -225,6 +225,21 @@ interface Invasor {
   passouPortao: boolean;
 }
 
+type Especial = 'pressao-cheia' | 'carregado' | 'arco-iris';
+
+/** um jato que sai de um bico: de onde, para onde, e com que força */
+interface Tiro {
+  /** onde está quem rega (o cone e a sombra contam daqui) */
+  origem: { x: number; z: number };
+  /** a ponta do bico, no ar — é daqui que a água sai no desenho */
+  de: THREE.Vector3;
+  rumo: number;
+  /** quem foi escolhido (o bico de trás não escolhe ninguém) */
+  alvo: Invasor | null;
+  dano: number;
+  especial?: Especial;
+}
+
 /** o que a rodada anima na peça da mão */
 type GestoDaMao = { tipo: 'giro' | 'balde' | 'treme'; t: number; dur: number };
 
@@ -1452,7 +1467,11 @@ export class RodadaDoJardim {
         this.jato.anelDeAgua(ponta, f.alcance * 0.9, 'giro', e);
         this.jato.depois(0.35, () => {
           for (const inv of [...this.invasores]) {
-            if (this.vulneravel(inv) && Math.hypot(inv.x - eu.x, inv.z - eu.z) <= f.alcance * 0.9) this.molhar(inv, f.dano, eu);
+            if (this.vulneravel(inv) && Math.hypot(inv.x - eu.x, inv.z - eu.z) <= f.alcance * 0.9) {
+              this.molhar(inv, f.dano, eu);
+              // com a Poça, o anel deixa chão molhado onde pegou
+              if (e.poca) this.jato.poca(inv.x, inv.z, 0.55);
+            }
           }
         });
       }
@@ -1582,9 +1601,9 @@ export class RodadaDoJardim {
   }
 
   /**
-   * UM ATAQUE. Decide quem leva água (o cone, a sombra de um bicho no outro, o
-   * atravessar), qual jato especial sai agora (tanque cheio, carregado, o
-   * décimo do arco-íris), e manda o desenho — o dano cai quando a água chega.
+   * UM ATAQUE. Decide qual jato especial sai agora (tanque cheio, carregado, o
+   * décimo do arco-íris), mostra a mira, e manda o MESMO jato para a frente e,
+   * com o Segundo bico, para trás — o dano cai quando a água chega.
    */
   private atirar(eu: THREE.Vector3, alvo: Invasor): void {
     const f = this.ficha;
@@ -1593,52 +1612,93 @@ export class RodadaDoJardim {
     const rumo = Math.atan2(alvo.x - eu.x, alvo.z - eu.z);
 
     // qual jato especial é este
-    let especial: 'pressao-cheia' | 'carregado' | 'arco-iris' | undefined;
+    let especial: Especial | undefined;
     if (e.carregado && this.carga >= 1) especial = 'carregado';
     else if (e.pressaoAcumulada && this.tanqueCheio) especial = 'pressao-cheia';
     else if (e.arcoIris && this.jatosDados % 10 === 0) especial = 'arco-iris';
     this.tanqueCheio = false;
     if (especial === 'carregado') this.carga = 0;
 
-    const multiplicador = especial === 'carregado' || especial === 'pressao-cheia' ? 3 : 1;
-    const atravessa = f.regras.has('atravessa') || especial === 'arco-iris';
-
     // a mira mostra quem foi escolhido antes de a água sair
     const atraso = e.mira ? 0.3 : 0;
     if (e.mira) this.jato.mirar(alvo.raiz, alvo.ficha.alturaDaBarra, 0.55);
 
+    const origem = { x: eu.x, z: eu.z };
     const saida = (): void => {
       const de = this.pontaDoBico();
-      if (e.borrifador && !especial) {
-        this.borrifar(eu, de, rumo);
-      } else if (especial === 'carregado') {
-        this.jatao(eu, de, rumo);
-      } else {
-        const atingidos = this.noCone(eu, rumo, f.alcance, THREE.MathUtils.degToRad(f.largura) / 2, alvo, atravessa);
-        const longe = atingidos.length ? atingidos[atingidos.length - 1] : alvo;
-        // a água vai até o último atingido; a Pressão e o Arco-íris passam dele
-        const para = atravessa
-          ? pontoAFrente(eu, rumo, Math.max(Math.hypot(longe.x - eu.x, longe.z - eu.z) + 1.2, f.alcance * 0.9))
-          : new THREE.Vector3(alvo.x, 0.25, alvo.z);
-        const tempo = this.jato.disparar({ de, para, estilo: e, largura: f.largura, especial });
-        for (const inv of atingidos) {
-          const t = tempo * (Math.hypot(inv.x - eu.x, inv.z - eu.z) / Math.max(0.5, Math.hypot(para.x - eu.x, para.z - eu.z)));
-          this.jato.depois(atravessa ? t : tempo, () => this.acertar(inv, f.dano * multiplicador, eu, especial));
-        }
-        if (especial === 'arco-iris') this.jato.depois(tempo * 0.6, () => this.jato.arcoNoAr(de, para));
-        if (especial === 'pressao-cheia') this.jato.depois(tempo, () => this.jato.anelDeAgua(new THREE.Vector3(alvo.x, 0.3, alvo.z), 0.9, 'giro', e));
-        if (e.poca) this.jato.depois(tempo, () => this.jato.poca(para.x, para.z));
+      this.umJato({ origem, de, rumo, alvo, dano: f.dano, especial });
+      // o Segundo bico: o mesmo jato, ao mesmo tempo, pelo bico de trás
+      if (e.segundoBico) {
+        const deTras = new THREE.Vector3(eu.x - Math.sin(rumo) * 0.25, de.y - 0.05, eu.z - Math.cos(rumo) * 0.25);
+        this.umJato({ origem, de: deTras, rumo: rumo + Math.PI, alvo: null, dano: f.dano, especial });
       }
-      // o Segundo bico: um cone para trás, ao mesmo tempo
-      if (e.segundoBico) this.paraTras(eu, de, rumo);
     };
     if (atraso) this.jato.depois(atraso, saida);
     else saida();
   }
 
+  /**
+   * UM JATO, COM TUDO O QUE A MÃO TEM — o coração das builds.
+   *
+   * Regra do Renan: as cartas que a rodada juntou valem TODAS ao mesmo tempo.
+   * Então não existe "o jato do Borrifador" e "o jato da Pressão": existe um
+   * jato só, e cada carta mexe numa parte dele. O Borrifador divide em três
+   * fios, a Pressão faz cada fio atravessar, o Leque abre os três, a Poça fica
+   * onde cada um cai, o Gelo congela cada bicho molhado, a Gota pesada empurra
+   * cada um. O especial do tiro (tanque cheio, carregado, arco-íris) também
+   * entra junto em vez de apagar o resto: três jatões, três fios arco-íris.
+   *
+   * É o mesmo caminho para o bico da frente, o de trás (Segundo bico) e o
+   * regador do parceiro (Os dois na frente) — por isso as três coisas ganham
+   * toda carta nova de graça.
+   */
+  private umJato(t: Tiro): void {
+    const f = this.ficha;
+    const e = f.jato;
+    const multiplicador = t.especial === 'carregado' || t.especial === 'pressao-cheia' ? 3 : 1;
+    const atravessa = f.regras.has('atravessa') || t.especial === 'arco-iris';
+    const meia = THREE.MathUtils.degToRad(f.largura) / 2;
+    // o Borrifador divide o jato em três, em leque; sem ele, é um jato só
+    const desvios = e.borrifador ? [-meia, 0, meia] : [0];
+    const parte = e.borrifador ? 0.4 : 1;
+    for (const desvio of desvios) {
+      const rumo = t.rumo + desvio;
+      if (t.especial === 'carregado') {
+        this.jatao(t, rumo, parte);
+        continue;
+      }
+      // o cone do jato comum, ou o fiozinho estreito de cada parte do Borrifador
+      const abertura = e.borrifador ? 0.22 : meia;
+      const alvo = desvio === 0 ? t.alvo : null;
+      const atingidos = this.noCone(t.origem, rumo, f.alcance, abertura, alvo, atravessa);
+      const longe = atingidos.length ? atingidos[atingidos.length - 1] : null;
+      // a água vai até o último atingido; a Pressão e o Arco-íris passam dele,
+      // e jato que não acha ninguém cai no chão a um passo do fim do alcance
+      const para = atravessa || !longe
+        ? pontoAFrente(t.origem, rumo, Math.max(longe ? Math.hypot(longe.x - t.origem.x, longe.z - t.origem.z) + 1.2 : 0, f.alcance * 0.9))
+        : new THREE.Vector3((alvo ?? atingidos[0]).x, 0.25, (alvo ?? atingidos[0]).z);
+      const tempo = this.jato.disparar({
+        de: t.de, para, estilo: e, largura: e.borrifador ? 6 : f.largura, especial: t.especial,
+        forma: e.borrifador ? 'fio' : undefined,
+      });
+      const alcancePara = Math.max(0.5, Math.hypot(para.x - t.origem.x, para.z - t.origem.z));
+      for (const inv of atingidos) {
+        const chega = atravessa ? tempo * (Math.hypot(inv.x - t.origem.x, inv.z - t.origem.z) / alcancePara) : tempo;
+        this.jato.depois(chega, () => this.acertar(inv, t.dano * multiplicador * parte, t.origem, t.especial));
+      }
+      if (atingidos.length === 0) this.jato.depois(tempo, () => this.jato.respingo(para.x, 0.05, para.z, e, 0.5));
+      if (t.especial === 'arco-iris') this.jato.depois(tempo * 0.6, () => this.jato.arcoNoAr(t.de, para));
+      if (t.especial === 'pressao-cheia' && longe) {
+        const onde = new THREE.Vector3(longe.x, 0.3, longe.z);
+        this.jato.depois(tempo, () => this.jato.anelDeAgua(onde, 0.9 * Math.sqrt(parte), 'giro', e));
+      }
+      if (e.poca) this.jato.depois(tempo, () => this.jato.poca(para.x, para.z, e.borrifador ? 0.45 : 0.7));
+    }
+  }
+
   /** os bichos no cone, do mais perto ao mais longe, com a sombra de um no outro */
   private noCone(
-    eu: THREE.Vector3, rumo: number, alcance: number, meiaAbertura: number,
+    eu: { x: number; z: number }, rumo: number, alcance: number, meiaAbertura: number,
     alvo: Invasor | null, atravessa: boolean,
   ): Invasor[] {
     const f = this.ficha;
@@ -1660,59 +1720,31 @@ export class RodadaDoJardim {
     return acertados.map((x) => x.i);
   }
 
-  /** o Borrifador: três fiozinhos em leque, cada um com 40% do dano */
-  private borrifar(eu: THREE.Vector3, de: THREE.Vector3, rumo: number): void {
-    const f = this.ficha;
-    const meia = THREE.MathUtils.degToRad(f.largura) / 2;
-    for (const desvio of [-meia, 0, meia]) {
-      const r = rumo + desvio;
-      const primeiro = this.noCone(eu, r, f.alcance, 0.22, null, false)[0];
-      const para = primeiro ? new THREE.Vector3(primeiro.x, 0.25, primeiro.z) : pontoAFrente(eu, r, f.alcance);
-      this.jato.disparar({
-        de, para, estilo: f.jato, largura: 6, forma: 'fio',
-        aoChegar: () => {
-          if (primeiro) this.acertar(primeiro, f.dano * 0.4, eu);
-          else this.jato.respingo(para.x, 0.05, para.z, f.jato, 0.4);
-          if (f.jato.poca) this.jato.poca(para.x, para.z, 0.45);
-        },
-      });
-    }
-  }
-
-  /** o Jato carregado: um jatão reto que atravessa a fila inteira */
-  private jatao(eu: THREE.Vector3, de: THREE.Vector3, rumo: number): void {
+  /**
+   * O Jato carregado: um jatão reto que atravessa a fila inteira. Com o
+   * Borrifador são três jatões em leque, cada um com a parte dele; com a Poça,
+   * a linha inteira fica molhada.
+   */
+  private jatao(t: Tiro, rumo: number, parte: number): void {
     const f = this.ficha;
     const longe = f.alcance * 1.6;
-    const para = pontoAFrente(eu, rumo, longe);
-    const tempo = this.jato.disparar({ de, para, estilo: f.jato, largura: 4, especial: 'carregado' });
+    const para = pontoAFrente(t.origem, rumo, longe);
+    const tempo = this.jato.disparar({ de: t.de, para, estilo: f.jato, largura: 4, especial: 'carregado' });
     for (const inv of this.invasores) {
       if (!this.vulneravel(inv)) continue;
-      const d = Math.hypot(inv.x - eu.x, inv.z - eu.z);
-      const a = difAngulo(Math.atan2(inv.x - eu.x, inv.z - eu.z), rumo);
+      const d = Math.hypot(inv.x - t.origem.x, inv.z - t.origem.z);
+      const a = difAngulo(Math.atan2(inv.x - t.origem.x, inv.z - t.origem.z), rumo);
       // perto da linha do jato (em metros, e não em graus: é um tubo, não um cone)
       if (d <= longe && Math.abs(Math.sin(a) * d) < 0.45 + inv.jeito.raio && Math.cos(a) > 0) {
-        this.jato.depois(tempo * (d / longe), () => this.acertar(inv, f.dano * 3, eu, 'carregado'));
+        this.jato.depois(tempo * (d / longe), () => this.acertar(inv, t.dano * 3 * parte, t.origem, 'carregado'));
       }
     }
-  }
-
-  /** o Segundo bico: um cone para trás */
-  private paraTras(eu: THREE.Vector3, de: THREE.Vector3, rumo: number): void {
-    const f = this.ficha;
-    const atras = rumo + Math.PI;
-    const alvos = this.noCone(eu, atras, f.alcance, THREE.MathUtils.degToRad(f.largura) / 2, null, f.regras.has('atravessa'));
-    const primeiro = alvos[0];
-    const para = primeiro ? new THREE.Vector3(primeiro.x, 0.25, primeiro.z) : pontoAFrente(eu, atras, f.alcance * 0.85);
-    // o bico de trás fica do outro lado da lata: a água sai de lá
-    const deTras = new THREE.Vector3(eu.x - Math.sin(rumo) * 0.25, de.y - 0.05, eu.z - Math.cos(rumo) * 0.25);
-    this.jato.disparar({
-      de: deTras, para, estilo: f.jato, largura: f.largura, forma: 'cone',
-      aoChegar: () => {
-        for (const inv of alvos) this.acertar(inv, f.dano, eu);
-        if (!primeiro) this.jato.respingo(para.x, 0.05, para.z, f.jato, 0.5);
-        if (f.jato.poca) this.jato.poca(para.x, para.z);
-      },
-    });
+    if (f.jato.poca) {
+      for (let k = 1; k <= 4; k++) {
+        const p = pontoAFrente(t.origem, rumo, (longe * k) / 4);
+        this.jato.depois(tempo * (k / 4), () => this.jato.poca(p.x, p.z, 0.55));
+      }
+    }
   }
 
   /** A ÁGUA CHEGOU num bicho: dano, respingo e o que cada carta de impacto faz. */
@@ -2495,9 +2527,14 @@ export class RodadaDoJardim {
           this.recargaDoParceiro = 0;
           const rumo = Math.atan2(alvo.x - p.x, alvo.z - p.z);
           const de = new THREE.Vector3(p.x + Math.sin(rumo) * 0.4, 1.15, p.z + Math.cos(rumo) * 0.4);
-          const tempo = this.jato.disparar({ de, para: new THREE.Vector3(alvo.x, 0.25, alvo.z), estilo: f.jato, largura: f.largura });
-          const onde = { x: p.x, z: p.z };
-          this.jato.depois(tempo, () => this.acertar(alvo, f.dano * 0.8, onde));
+          const origem = { x: p.x, z: p.z };
+          // o outro regador tem TODAS as cartas de jato da mão, como o seu:
+          // o mesmo `umJato`, só com 80% do dano (os especiais são só seus)
+          this.umJato({ origem, de, rumo, alvo, dano: f.dano * 0.8 });
+          if (f.jato.segundoBico) {
+            const deTras = new THREE.Vector3(p.x - Math.sin(rumo) * 0.25, 1.1, p.z - Math.cos(rumo) * 0.25);
+            this.umJato({ origem, de: deTras, rumo: rumo + Math.PI, alvo: null, dano: f.dano * 0.8 });
+          }
           this.contar('os-dois-na-frente');
         }
       }

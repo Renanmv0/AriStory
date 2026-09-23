@@ -302,11 +302,18 @@ export class DesenhoDoJato {
   disparar(d: Disparo): number {
     const e = d.estilo;
     const especial = d.especial;
+    /*
+     * AS FORMAS SE SOMAM, e não se apagam (regra do Renan: carta com carta
+     * vira build). Arco com Pressão é um arco que passa do bicho (quem estica
+     * o `para` é a rodada); Arco com Mangueira é um arco fino e comprido; o
+     * Leque abre qualquer forma, e não só o cone.
+     */
     const forma: JatoNoAr['forma'] = d.forma
-      ?? (especial === 'carregado' || e.reto ? 'reto'
+      ?? (especial === 'carregado' ? 'reto'
         : e.arco ? 'arco'
-          : e.mangueira ? 'linha'
-            : 'cone');
+          : e.reto ? 'reto'
+            : e.mangueira ? 'linha'
+              : 'cone');
     const tinta: Tinta = especial === 'arco-iris' ? 'arco-iris'
       : especial === 'carregado' ? 'carga'
         : e.gelo ? 'gelo'
@@ -334,12 +341,16 @@ export class DesenhoDoJato {
     const grosso = (e.grosso ?? 0) + (especial === 'pressao-cheia' ? 3 : 0) + (especial === 'carregado' ? 4 : 0);
     const aberto = e.aberto ?? 0;
 
+    const arcoFino = forma === 'arco' && !!e.mangueira;
     const abertura = forma === 'cone'
       ? THREE.MathUtils.degToRad(d.largura) / 2 * 0.55
-      : forma === 'fio' ? 0.04 : forma === 'linha' ? 0.025 : forma === 'reto' ? 0.02 : 0.1;
-    const duracao = forma === 'linha' ? 0.34 : forma === 'reto' ? 0.22 : forma === 'arco' ? 0.2 : DURACAO;
+      : forma === 'fio' ? 0.04
+        : forma === 'linha' ? 0.025 + aberto * 0.03
+          : forma === 'reto' ? 0.02 + aberto * 0.02
+            : (arcoFino ? 0.04 : 0.1) + aberto * 0.04;
+    const duracao = forma === 'linha' || arcoFino ? 0.34 : forma === 'reto' ? 0.22 : forma === 'arco' ? 0.2 : DURACAO;
     // mais gotas quando o leque abre (as da borda) e quando o jato engrossa
-    const quantas = (forma === 'linha' ? 56 : forma === 'fio' ? 22 : 44) + aberto * 8 + grosso * 5
+    const quantas = (forma === 'linha' || arcoFino ? 56 : forma === 'fio' ? 22 : 44) + aberto * 8 + grosso * 5
       + (especial ? 18 : 0);
 
     this.contagem.disparos += 1;

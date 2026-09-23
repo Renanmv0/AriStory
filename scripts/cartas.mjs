@@ -285,5 +285,65 @@ console.log('\n— as ondas');
   console.log(`       onda 5: ${cinco.length} bichos em ${cinco.at(-1).t} s, a chefe em ${cinco.find((e) => e.praga === 'mae-lagartejo').t} s`);
 }
 
+// ================================================ AS CARTAS SE SOMAM (builds)
+/*
+ * Regra do Renan: as cartas da rodada valem TODAS ao mesmo tempo. Uma deixa o
+ * jato mais largo e a outra mais rápido? Com as duas, ele sai mais largo E mais
+ * rápido. Aqui isso é provado para CADA PAR de cartas que pode estar junto na
+ * mão (as que se excluem ficam de fora): o que uma carta muda sozinha continua
+ * mudado com a outra do lado, e o que as duas mudam se acumula.
+ */
+{
+  const ficha = (...ids) => {
+    const f = m.fichaInicial();
+    for (const id of ids) m.cartaPorId(id).aplicar(f);
+    return f;
+  };
+  const base = m.fichaInicial();
+  const NUMEROS = Object.keys(base).filter((k) => typeof base[k] === 'number');
+  const mudou = (f, k) => Math.abs(f[k] - base[k]) > 1e-9;
+  const pares = [];
+  const cartas = m.CARTAS.filter((c) => !c.repetivel);
+  for (let i = 0; i < cartas.length; i++) {
+    for (let j = i + 1; j < cartas.length; j++) {
+      const a = cartas[i];
+      const b = cartas[j];
+      if (a.exclui?.includes(b.id) || b.exclui?.includes(a.id)) continue;
+      pares.push([a, b]);
+    }
+  }
+  const perdidos = [];
+  for (const [a, b] of pares) {
+    const fa = ficha(a.id);
+    const fb = ficha(b.id);
+    const fab = ficha(a.id, b.id);
+    for (const k of NUMEROS) {
+      const ma = mudou(fa, k);
+      const mb = mudou(fb, k);
+      if (ma && mb) {
+        // as duas mexem no mesmo número: o resultado tem que ir além de cada uma
+        const alem = (x) => Math.abs(fab[k] - base[k]) > Math.abs(x[k] - base[k]) + 1e-9
+          || Math.sign(fab[k] - base[k]) !== Math.sign(x[k] - base[k]);
+        if (!alem(fa) && !alem(fb) && !(k === 'coleta')) perdidos.push(`${a.id}+${b.id}: ${k} não acumulou`);
+      } else if (ma && Math.abs(fab[k] - fa[k]) > 1e-9) perdidos.push(`${a.id}+${b.id}: ${k} de ${a.id} se perdeu`);
+      else if (mb && Math.abs(fab[k] - fb[k]) > 1e-9) perdidos.push(`${a.id}+${b.id}: ${k} de ${b.id} se perdeu`);
+    }
+    for (const r of [...fa.regras, ...fb.regras]) if (!fab.regras.has(r)) perdidos.push(`${a.id}+${b.id}: a regra ${r} sumiu`);
+    for (const [nome, fx] of [[a.id, fa], [b.id, fb]]) {
+      for (const k of Object.keys(fx.jato)) if (fab.jato[k] === undefined) perdidos.push(`${a.id}+${b.id}: o jato.${k} de ${nome} sumiu`);
+      for (const k of Object.keys(fx.estilo)) if (fab.estilo[k] === undefined) perdidos.push(`${a.id}+${b.id}: o regador.${k} de ${nome} sumiu`);
+    }
+  }
+  console.log(`       ${pares.length} pares de cartas que podem estar juntas na mão`);
+  if (perdidos.length) console.log('       ' + perdidos.slice(0, 12).join('\n       '));
+  ok(perdidos.length === 0, 'em todo par, as duas cartas valem juntas (nada de uma apagar a outra)');
+  // o exemplo do Renan, escrito: Leque aberto + Braço solto
+  const leque = ficha('leque-1');
+  const braco = ficha('braco-1');
+  const os2 = ficha('leque-1', 'braco-1');
+  ok(os2.largura === leque.largura && os2.cadencia === braco.cadencia && os2.largura > base.largura && os2.cadencia < base.cadencia,
+    `Leque aberto + Braço solto: ${os2.largura}° de leque E um jato a cada ${os2.cadencia.toFixed(2)} s`);
+}
+
 console.log(falhas ? `\n${falhas} FALHA(S)` : '\ntudo certo');
 process.exit(falhas ? 1 : 0);

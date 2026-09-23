@@ -589,6 +589,38 @@ tom de cada um no clube — **o Renan pode trocar qualquer uma**. Para ver:
 `?cena=estufa&treino=gotas`, ou `node scripts/chamados.mjs /tmp/ch`, que pega
 cada carta e fotografa a entrada.
 
+### As cartas se somam: a mão inteira vale ao mesmo tempo — **construído** (regra do Renan)
+
+As cartas pegas são **melhorias permanentes da rodada**: valem desde a hora em
+que entram na mão até a rodada acabar (ganhando ou perdendo), e a rodada
+seguinte começa de mão vazia. E **todas valem juntas** — é isso que faz existir
+build. Leque aberto + Braço solto é um jato mais largo E mais rápido; nenhuma
+carta apaga outra.
+
+Os números já nascem assim (a ficha é derivada aplicando carta por carta). O
+jato também: existe UM jato só (`umJato`, em `rodada.ts`), e cada carta mexe
+numa parte dele — o mesmo caminho serve ao bico da frente, ao Segundo bico e
+ao regador do parceiro. Então:
+
+| com… | e… | sai |
+|---|---|---|
+| Borrifador | Regador de pressão | três fios, e cada um atravessa |
+| Borrifador | Segundo bico | três fios na frente e três atrás |
+| Borrifador | Jato carregado | três jatões em leque |
+| Borrifador | Pressão acumulada / Arco-íris | os três fios saem especiais |
+| Jato carregado | Poça | a linha inteira do jatão fica molhada |
+| Jato carregado | Segundo bico | jatão na frente e atrás |
+| Jato em arco | Mangueira | um arco longo e fino |
+| Jato em arco | Regador de pressão | um arco que passa do bicho |
+| Crivo giratório | Poça | o anel deixa poça onde pegou |
+| Leque aberto | Mangueira, Arco, Pressão | o fio, o arco e o reto abrem junto |
+| Os dois na frente | qualquer carta de jato | o parceiro atira com todas elas (80% do dano) |
+
+**Carta nova não pode apagar carta velha.** O `scripts/cartas.mjs` testa isso
+para TODO par de cartas que pode estar junto na mão (4270 pares): o que cada
+uma muda sozinha continua mudado com a outra do lado. E o `scripts/jato.mjs`
+tem um caso por combinação da tabela acima, medindo no desenho.
+
 ### Como as cartas de jardineiro e de jardim agem — **construído**
 
 Toda carta de jardineiro, de jardim e do clube faz a coisa dela na rodada, e

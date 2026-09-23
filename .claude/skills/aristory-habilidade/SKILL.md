@@ -122,6 +122,25 @@ numa tela de escolha.
 
 ---
 
+## 2.5. As cartas SE SOMAM — regra do Renan
+
+A mão é permanente na rodada (até ganhar ou perder), e **todas as cartas valem
+juntas**: é assim que nasce build. Carta nova nunca pode apagar o efeito de
+outra. Na prática:
+
+- no `aplicar`, **acumule** (`*=`, `+=`, `Math.max`), nunca sobrescreva um
+  número que outra carta também mexe;
+- no jato, **não crie um caminho de ataque separado**: ponha a mecânica dentro
+  de `umJato` (`rodada.ts`), que serve ao bico da frente, ao Segundo bico e ao
+  parceiro. Um `if (minhaCarta) { …; return }` que pula o resto é exatamente o
+  bug que isto proíbe;
+- no desenho (`jato.ts`), a forma nova tem que conviver com o Leque (abrir) e
+  com as tintas.
+
+`node scripts/cartas.mjs` testa todo par de cartas que pode estar junto na mão,
+e `scripts/jato.mjs` tem os casos `combo-*` — carta de jato nova ganha um combo
+com o Borrifador e com o Segundo bico, no mínimo.
+
 ## 3. A raridade: comum mexe em número, rara mexe em regra
 
 | raridade | o que ela faz | piso | peso nv 1 → nv 10 |
