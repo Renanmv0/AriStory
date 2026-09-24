@@ -877,7 +877,7 @@ function regadorElefantinho(): THREE.Group {
 }
 
 /**
- * A Pelusa de pelúcia: a gatinha deitada dormindo, com o rabo em volta. A
+ * O Pelusa de pelúcia: o gatinho deitado dormindo, com o rabo em volta. A
  * cabeça é GRANDE de propósito (pelúcia é assim, e de longe uma cabeça
  * pequena num corpo cinza lia como pedra), com as orelhas de miolo rosa.
  */
@@ -1005,8 +1005,8 @@ export const DECORACOES: readonly FichaDeDecoracao[] = ([
     monta: tartaruguinhaDaJosefina,
   },
   {
-    id: 'pelusa-de-pelucia', nome: 'Pelusa de pelúcia', icone: '🐱', preco: 34, artigo: 'a', raio: 0.3,
-    descricao: 'A gatinha enroladinha, dormindo com o rabo em volta.',
+    id: 'pelusa-de-pelucia', nome: 'Pelusa de pelúcia', icone: '🐱', preco: 34, artigo: 'o', raio: 0.3,
+    descricao: 'O gatinho enroladinho, dormindo com o rabo em volta.',
     monta: pelusaDePelucia,
   },
   {

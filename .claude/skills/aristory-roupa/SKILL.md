@@ -273,7 +273,7 @@ painel do guarda-roupa do quarto.
 
 **A outra loja é a da Josefina**, na estufa: a lista é `ROUPAS_DA_JOSEFINA`
 (mesmo arquivo), com roupa de jardim e peças temáticas do parque, do clube e
-dos personagens (tiaras do Walter e da Pelusa, boné da Gina, camisetas do Capy,
+dos personagens (tiaras do Walter e do Pelusa, boné da Gina, camisetas do Capy,
 da roda e do Noel). Preço: 35–60. Mesma ficha e mesmo `g.comprarPeca`; só muda
 a lista.
 
@@ -304,9 +304,19 @@ já tinha comprado ficou com o chapéu. Id novo deixaria a compra antiga órfã.
   profundidade certas da cápsula. Camiseta temática = a camiseta lisa (`cor` e
   `corDetalhe`) + uma estampa. Assim entraram a salva-vidas, a da roda e a do
   bar de sucos.
-- `tiara(m, cor)` — o arco de orelha a orelha, com raio `1,32·headR` para
-  passar por CIMA do cabelo; devolve `{ g, raio }` para quem pendura orelha.
-  Medida pelo crânio, a tiara afunda na juba.
+- `tiara(m, cor)` — a faixa de orelha a orelha que pousa POR CIMA do cabelo;
+  devolve `{ g, naFaixa(a) }` (o ponto da faixa no ângulo `a`) para quem
+  pendura orelha. Ela segue `m.cabelo(angulo)`, o contorno MEDIDO do cabelo de
+  quem veste (ver abaixo).
+
+**Peça que fica por cima do cabelo sem cobri-lo: use `m.cabelo(angulo)`.**
+O rig mede o cabelo montado e diz até onde ele vai, do centro do crânio, em
+cada ângulo a partir do alto, no plano de orelha a orelha. O cacheado do Ari
+passa de 1,5·headR; os cachos curtos do Renan ficam em ~1,3. A tiara já foi um
+arco fixo de 1,32·headR: servia no Renan e sumia na juba do Ari, orelhas
+inclusive. E confira a COR contra os dois cabelos: o `cachorroOrelha` é o
+mesmo tom das mechas claras do Ari, e a orelha do Walter sumia até sair do
+lugar certo.
 - `gorroDeLa`/`canoDaBota`/`meiaDeCoxa`/`mangaDeQuimono` — exemplos completos
   de peça de cabeça, pé, perna e braço, respectivamente; comece copiando a
   mais parecida com o que você vai fazer.

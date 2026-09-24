@@ -2152,67 +2152,134 @@ function chapeuJoaninha(m: MedidasCorpo): THREE.Object3D {
 }
 
 /**
- * A TIARA — a base das duas de orelhinha (Walter e Pelusa): um arco fino por
- * cima do cabelo, de orelha a orelha. Devolve o grupo e o RAIO do arco, para
- * quem pendura a orelha saber onde ele passa.
+ * A TIARA — a base das duas de orelhinha (Walter e Pelusa): uma faixa fina de
+ * orelha a orelha que pousa POR CIMA do cabelo. Devolve o grupo e `naFaixa(a)`:
+ * o ponto da faixa no ângulo `a` (radianos a partir do alto, `+` para `+X`),
+ * para quem pendura a orelha saber onde ela passa.
  *
- * O arco tem `1,32·headR`: é o volume da juba (a do Ari sobe a ~1,35·headR).
- * Medido pelo crânio, a tiara afundava no cabelo e só as orelhas apareciam.
+ * A faixa segue o CONTORNO MEDIDO do cabelo (`m.cabelo`), não um raio fixo.
+ * Ela já foi um arco de `1,32·headR`: servia para os cachos curtos do Renan
+ * (~1,3), mas o cacheado do Ari passa de 1,5 — a faixa e as orelhas afundavam
+ * na juba e só sobrava a ponta. Pedido do Renan: orelha APARENTE, em cima do
+ * cabelo, nos dois.
  */
-function tiara(m: MedidasCorpo, cor: number): { g: THREE.Group; raio: number } {
+function tiara(m: MedidasCorpo, cor: number): { g: THREE.Group; naFaixa: (a: number) => THREE.Vector3 } {
   const g = new THREE.Group();
   const r = m.headR;
-  const raio = r * 1.32;
-  const arco = new THREE.Mesh(new THREE.TorusGeometry(raio, r * 0.045, 6, 24, Math.PI), toon(cor));
-  // o arco nasce no plano XY, de x=+raio a x=-raio por cima: é a tiara em pé
-  arco.position.z = -r * 0.05;
-  g.add(arco);
-  return { g, raio };
+  const grossura = r * 0.05;
+  const PLANO = -r * 0.05;
+  // metade da grossura para dentro: a faixa ENCOSTA nos cachos mais altos
+  const naFaixa = (a: number): THREE.Vector3 => {
+    const raio = m.cabelo(a) + grossura * 0.5;
+    return new THREE.Vector3(Math.sin(a) * raio, Math.cos(a) * raio, PLANO);
+  };
+  const pontos: THREE.Vector3[] = [];
+  const PONTA = 1.35; // ~77°: a faixa desce até perto da orelha, sem entrar nela
+  for (let i = 0; i <= 16; i++) pontos.push(naFaixa(-PONTA + (i / 16) * PONTA * 2));
+  const curva = new THREE.CatmullRomCurve3(pontos);
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 40, grossura, 6, false), toon(cor)));
+  return { g, naFaixa };
 }
 
-/** A TIARA DE ORELHINHAS DO WALTER: orelhas caídas de cachorro, cor de caramelo. */
+/**
+ * A TIARA DE ORELHINHAS DO WALTER: orelhas caídas de cachorro, caramelo por
+ * fora e creme por dentro, e a gravatinha dele no alto.
+ *
+ * Presa na faixa a ~35° do alto, cada orelha desce ABRINDO para fora, pela
+ * tangente da faixa e um pouco para baixo — é o que mantém a orelha do lado de
+ * FORA da juba: caindo reto, ela voltava para dentro do cabelo do Ari. E ela
+ * fica NO PLANO DA FAIXA, com a cara larga para a frente, como numa tiara de
+ * verdade: deitada no cabelo, vista de cima, ela lia como uma colher.
+ *
+ * AS CORES não são as do Walter ao pé da letra, e é de propósito: o
+ * `cachorroOrelha` é o mesmo tom das mechas claras do Ari (#a9713f), e orelha
+ * e faixa sumiam no cabelo dela. O caramelo do pelo, o miolo creme e a faixa
+ * creme aparecem no castanho e no preto.
+ */
 function tiaraDoWalter(m: MedidasCorpo): THREE.Object3D {
   const r = m.headR;
-  const { g, raio } = tiara(m, P.cachorroOrelha);
-  const orelha = toon(P.cachorroOrelha);
+  const { g, naFaixa } = tiara(m, P.cachorroPeito);
+  const pelo = toon(P.cachorroPelo);
+  const dentro = toon(P.cachorroPeito);
+  const LARGA = r * 0.2;
+  const GROSSA = r * 0.06;
   for (const lado of [-1, 1] as const) {
-    // nasce no alto do arco (a 35° do topo) e cai para fora, pelo lado da cabeça
-    const a = 0.62;
-    const o = new THREE.Mesh(new THREE.SphereGeometry(r * 0.28, 12, 8), orelha);
-    o.scale.set(0.55, 1.25, 0.9);
-    o.position.set(lado * (Math.sin(a) * raio + r * 0.12), Math.cos(a) * raio - r * 0.2, -r * 0.05);
-    o.rotation.z = lado * 0.5;
-    g.add(o);
+    // presa na faixa a ~32° do alto, e a ponta pousada POR FORA do cabelo a
+    // ~70°: a orelha é a corda entre as duas, então ela acompanha a juba em vez
+    // de cair reto para dentro dela (no Ari fica mais comprida, como a juba)
+    const presa = naFaixa(lado * 0.55);
+    const a1 = lado * 1.2;
+    const ponta = new THREE.Vector3(Math.sin(a1), Math.cos(a1), 0)
+      .multiplyScalar(m.cabelo(a1) + LARGA * 0.9)
+      .setZ(presa.z);
+    const cai = ponta.clone().sub(presa);
+    const COMPRIDA = cai.length() + LARGA * 0.3;
+    cai.normalize();
+    // o lado de fora da orelha (perpendicular a `cai`, virado para longe da cabeça)
+    const fora = new THREE.Vector3(-cai.y, cai.x, 0).multiplyScalar(lado);
+    const orelha = new THREE.Group();
+    // eixo comprido (Y) no sentido em que ela cai; o X local vira o `fora`
+    orelha.rotation.z = Math.atan2(-cai.x, cai.y);
+    orelha.position.copy(presa).lerp(ponta, 0.5).addScaledVector(fora, LARGA * 0.45);
+    const aba = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), pelo);
+    aba.scale.set(LARGA, COMPRIDA / 2, GROSSA);
+    orelha.add(aba);
+    // o miolo creme na cara da frente, puxado para a ponta
+    const miolo = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), dentro);
+    miolo.scale.set(LARGA * 0.6, COMPRIDA * 0.32, GROSSA * 0.5);
+    miolo.position.set(0, COMPRIDA * 0.06, GROSSA * 0.75);
+    orelha.add(miolo);
+    g.add(orelha);
   }
-  // e a gravatinha borboleta dele, pequenininha, no meio do arco
+  // e a gravatinha borboleta dele, pequenininha, no alto da faixa
+  const topo = naFaixa(0);
+  const gravata = toon(P.gravataBorboleta);
   for (const lado of [-1, 1] as const) {
-    const aba = new THREE.Mesh(new THREE.ConeGeometry(r * 0.07, r * 0.14, 8), toon(P.gravataBorboleta));
+    const aba = new THREE.Mesh(new THREE.ConeGeometry(r * 0.08, r * 0.16, 8), gravata);
     aba.rotation.z = lado * Math.PI / 2;
-    aba.position.set(lado * r * 0.08, raio + r * 0.02, -r * 0.05);
+    aba.position.set(lado * r * 0.09, topo.y + r * 0.03, topo.z + r * 0.02);
     g.add(aba);
   }
-  const no = new THREE.Mesh(new THREE.SphereGeometry(r * 0.04, 8, 6), toon(P.gravataBorboleta));
-  no.position.set(0, raio + r * 0.02, -r * 0.05);
+  const no = new THREE.Mesh(new THREE.SphereGeometry(r * 0.05, 8, 6), gravata);
+  no.position.set(0, topo.y + r * 0.03, topo.z + r * 0.02);
   g.add(no);
   return g;
 }
 
-/** A TIARA DE ORELHINHAS DA PELUSA: orelhas de gato em pé, cinza com o miolo rosa. */
-function tiaraDaPelusa(m: MedidasCorpo): THREE.Object3D {
+/**
+ * A TIARA DE ORELHINHAS DO PELUSA: orelhas de gato em pé, claras com o miolo
+ * rosa. A orelha é uma pirâmide de 4 faces com uma face virada para a frente,
+ * e o miolo é a MESMA pirâmide menor, com a face da frente no mesmo plano da
+ * de fora (um fio à frente) — rosa por cima, sem furar nem sobrar.
+ */
+function tiaraDoPelusa(m: MedidasCorpo): THREE.Object3D {
   const r = m.headR;
-  const { g, raio } = tiara(m, P.pelusaCinzaEscuro);
+  const { g, naFaixa } = tiara(m, P.pelusaCinzaEscuro);
+  const ALTA = r * 0.52;
+  const LARGA = r * 0.3;
+  const MIOLO = 0.6;
+  const SOBE = ALTA * 0.1;
+  // a distância da face ao eixo, na base de uma pirâmide de 4 lados girada 45°
+  const face = LARGA * Math.SQRT1_2;
   for (const lado of [-1, 1] as const) {
-    const a = 0.55;
-    const base = new THREE.Vector3(lado * Math.sin(a) * raio, Math.cos(a) * raio, -r * 0.05);
+    const a = lado * 0.58;
+    const presa = naFaixa(a);
+    const orelha = new THREE.Group();
     // grandes e CLARAS: no cabelo escuro do Renan, orelha pequena cinza sumia
-    const orelha = new THREE.Mesh(new THREE.ConeGeometry(r * 0.27, r * 0.48, 4), toon(P.pelusaBranco));
-    orelha.position.set(base.x, base.y + r * 0.18, base.z);
-    orelha.rotation.set(0, Math.PI / 4, lado * -0.35);
+    const fora = new THREE.Mesh(new THREE.ConeGeometry(LARGA, ALTA, 4), toon(P.pelusaBranco));
+    fora.rotation.y = Math.PI / 4;
+    fora.position.y = ALTA / 2;
+    orelha.add(fora);
+    const miolo = new THREE.Mesh(new THREE.ConeGeometry(LARGA * MIOLO, ALTA * MIOLO, 4), toon(P.pelusaOrelha));
+    miolo.rotation.y = Math.PI / 4;
+    miolo.position.set(0, SOBE + (ALTA * MIOLO) / 2, face * (1 - MIOLO - SOBE / ALTA) + r * 0.012);
+    orelha.add(miolo);
+    // em pé, abrindo um pouco para fora; a base afunda um tico na faixa
+    const normal = new THREE.Vector3(Math.sin(a), Math.cos(a), 0);
+    const pe = new THREE.Vector3(0, 1, 0).lerp(normal, 0.55).normalize();
+    orelha.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pe);
+    orelha.position.copy(presa).addScaledVector(pe, -r * 0.03);
     g.add(orelha);
-    const miolo = new THREE.Mesh(new THREE.ConeGeometry(r * 0.15, r * 0.32, 4), toon(P.pelusaOrelha));
-    miolo.position.set(base.x - lado * r * 0.015, base.y + r * 0.15, base.z + r * 0.1);
-    miolo.rotation.set(0, Math.PI / 4, lado * -0.35);
-    g.add(miolo);
   }
   return g;
 }
@@ -2747,7 +2814,7 @@ function coroaDeDama(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.
 export {
   gorroDeLa, canoDaBota, vestidoRosa, vestidoDaLoja, gargantilhaDeLaco, gravataDoWalter,
   chapeuDeJardineira, aventalDaJosefina, girassolNoPeito,
-  chapeuJoaninha, tiaraDoWalter, tiaraDaPelusa, boneDaGina, mochilaCascoDaJosefina,
+  chapeuJoaninha, tiaraDoWalter, tiaraDoPelusa, boneDaGina, mochilaCascoDaJosefina,
   estampaSalvaVidas, estampaRodaGigante, estampaLaranja,
   vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
   moletomComCapuz, mangaDeMoletom, oculosDeSol,

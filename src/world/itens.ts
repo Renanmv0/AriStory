@@ -6,7 +6,7 @@ import { regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
   aventalDaJosefina, blazerXadrez, canoDaBota, chapeuDeJardineira, coroaDeDama, gargantilhaDeLaco,
   boneDaGina, chapeuJoaninha, estampaLaranja, estampaRodaGigante, estampaSalvaVidas, girassolNoPeito,
-  gorroDeLa, gravataDoWalter, mochilaCascoDaJosefina, tiaraDaPelusa, tiaraDoWalter,
+  gorroDeLa, gravataDoWalter, mochilaCascoDaJosefina, tiaraDoPelusa, tiaraDoWalter,
   jaquetaFrancesa, maidJapones, mangaDaJaquetaFrancesa, mangaDeMoletom, mangaDeQuimono,
   mangaDoBlazer, meiaDeCoxa, moletomComCapuz, oculosDeSol, perneiraXadrez, quepeDoCookie,
   vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
@@ -335,16 +335,19 @@ export const ITENS = {
   tiaraDoWalter: {
     id: 'tiara-do-walter', nome: 'Orelhinhas do Walter', icone: '🐶',
     tipo: 'vestivel', slot: 'cabeca',
-    cor: P.cachorroOrelha,
+    cor: P.cachorroPelo,
     nota: 'orelha caída e a gravatinha dele', preco: 36,
     extra: tiaraDoWalter,
   },
-  tiaraDaPelusa: {
-    id: 'tiara-da-pelusa', nome: 'Orelhinhas da Pelusa', icone: '🐱',
+  // O Pelusa é UM gatinho. O id ficou com o "da" de quando a peça saiu
+  // escrita errado: o save guarda a peça pelo id, e trocar deixaria órfã a
+  // tiara de quem já comprou. O nome, que é o que aparece, está certo.
+  tiaraDoPelusa: {
+    id: 'tiara-da-pelusa', nome: 'Orelhinhas do Pelusa', icone: '🐱',
     tipo: 'vestivel', slot: 'cabeca',
     cor: P.pelusaCinza,
-    nota: 'de gatinha, com o miolo rosa', preco: 36,
-    extra: tiaraDaPelusa,
+    nota: 'de gatinho, com o miolo rosa', preco: 36,
+    extra: tiaraDoPelusa,
   },
   boneDaGina: {
     id: 'bone-da-gina', nome: 'Boné da Gina', icone: '🦒',
@@ -1011,7 +1014,7 @@ export const ROUPAS_DA_JOSEFINA: readonly ItemDef[] = [
   ITENS.galochaVerde,
   // de personagem e de lugar: o clube, o parque e quem mora lá
   ITENS.tiaraDoWalter,
-  ITENS.tiaraDaPelusa,
+  ITENS.tiaraDoPelusa,
   ITENS.boneDaGina,
   ITENS.mochilaCasco,
   ITENS.camisetaSalvaVidas,

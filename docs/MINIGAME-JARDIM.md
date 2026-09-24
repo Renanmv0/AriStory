@@ -85,13 +85,13 @@ em `world/itens.ts`; comprar é `g.comprarPeca`, o mesmo caminho da boutique, e
 "provar no boneco" abre a arara da boutique com essas peças; hoje onze: quatro
 de jardim — camiseta verde-folha, camiseta de girassol, chapéu joaninha,
 galocha — e sete
-temáticas: tiara do Walter, tiara da Pelusa, boné da Gina, mochila-casco da
+temáticas: tiara do Walter, tiara do Pelusa, boné da Gina, mochila-casco da
 Josefina, e as camisetas salva-vidas, da roda gigante e do bar de sucos,
 estampadas por `estampaNoPeito` em `world/roupas.ts`. O chapéu joaninha
 manteve o id antigo `gorro-joaninha`, então quem comprou o gorro ficou com o
 chapéu) e **enfeites para a estufa** (`world/decoracoes.ts` — ficha e geometria
 no mesmo arquivo, hoje dezenove, em ordem de preço; os de referência são a
-tartaruguinha, a Pelusa de pelúcia, o copão do Noel, a casquinha do Mano, o
+tartaruguinha, o Pelusa de pelúcia, o copão do Noel, a casquinha do Mano, o
 Walter de cerâmica, o elefantinho do Cookie, a capivara, a girafinha da Gina,
 o laguinho do Jean-Luc e a rodinha gigante). **Luz sem luz**: a lanterninha e o
 varal de luzinhas "acendem" com uma poça aditiva no chão (`luzNoChao`) e um

@@ -30,6 +30,9 @@ const ABRE_MAO = 0.75;
  */
 const SOLA_PATINS = 0.13;
 
+/** quantos ângulos o contorno do cabelo mede, de orelha a orelha (de 10° em 10°) */
+const AMOSTRAS_DO_CABELO = 19;
+
 /**
  * As duas poses de segurar.
  *
@@ -217,6 +220,8 @@ export class CharacterRig {
   private readonly sobreTronco: THREE.Object3D[] = [];
   /** o cabelo inteiro, para um gorro poder achatá-lo */
   private readonly cabelo: THREE.Object3D[];
+  /** o contorno do cabelo no plano da tiara (ver `medirCabelo`) */
+  private contornoDoCabelo: number[] = [];
 
   constructor(spec: CharacterSpec) {
     this.spec = spec;
@@ -239,7 +244,7 @@ export class CharacterRig {
 
     this.headTop = legH + torsoH + headR * 2.1;
     // o que as fábricas de roupa recebem; elas não veem o rig, só números
-    this.medidas = { h, w, headR, legH, torsoH };
+    this.medidas = { h, w, headR, legH, torsoH, cabelo: (a) => this.cabeloNoAngulo(a, headR) };
 
     const skin = toon(spec.skin);
     const shirt = toon(spec.shirt);
@@ -506,6 +511,7 @@ export class CharacterRig {
     const antesDoCabelo = this.head.children.length;
     this.buildHair(headR);
     this.cabelo = this.head.children.slice(antesDoCabelo);
+    this.contornoDoCabelo = this.medirCabelo(headR);
     this.buildAccessories(headR, armLen, shoulderY, halfShoulder, torsoH, hipY, w);
 
     this.body.add(this.head);
@@ -747,6 +753,71 @@ export class CharacterRig {
         break;
       }
     }
+  }
+
+  /**
+   * O CONTORNO DO CABELO no plano de orelha a orelha (onde uma tiara passa):
+   * para cada ângulo de -90° a +90° a partir do alto, até onde o cabelo vai.
+   * É o que `MedidasCorpo.cabelo` responde.
+   *
+   * Cada cacho é uma esfera; o corte dela pelo plano da tiara é um círculo, e
+   * o ponto desse círculo mais longe na direção `d` fica em `centro·d + raio
+   * do círculo`. O contorno é o maior disso entre todos os pedaços — conta
+   * exata para esfera, e o cabelo daqui é quase todo esfera (a calota entra
+   * como esfera inteira, o que só sobra onde a própria cabeça já está). Peça
+   * que não é esfera (a franja em caixa do 'curto') entra pela esfera que a
+   * envolve.
+   */
+  private medirCabelo(headR: number): number[] {
+    const plano = -headR * 0.05;
+    const pedacos: Array<{ x: number; y: number; r: number }> = [];
+    this.head.updateMatrixWorld(true);
+    const daCabeca = this.head.matrixWorld.clone().invert();
+    const rel = new THREE.Matrix4();
+    const centro = new THREE.Vector3();
+    const escala = new THREE.Vector3();
+    const giro = new THREE.Quaternion();
+    for (const raiz of this.cabelo) {
+      raiz.traverse((n) => {
+        const mesh = n as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        rel.multiplyMatrices(daCabeca, mesh.matrixWorld);
+        rel.decompose(centro, giro, escala);
+        const esc = Math.max(escala.x, escala.y, escala.z);
+        const geo = mesh.geometry;
+        let r: number;
+        if (geo instanceof THREE.SphereGeometry) {
+          r = geo.parameters.radius * esc;
+        } else {
+          geo.computeBoundingSphere();
+          const envolve = geo.boundingSphere!;
+          centro.copy(envolve.center).applyMatrix4(rel);
+          r = envolve.radius * esc;
+        }
+        const dz = centro.z - plano;
+        if (Math.abs(dz) >= r) return;
+        pedacos.push({ x: centro.x, y: centro.y, r: Math.sqrt(r * r - dz * dz) });
+      });
+    }
+    const contorno: number[] = [];
+    for (let i = 0; i < AMOSTRAS_DO_CABELO; i++) {
+      const a = -Math.PI / 2 + (i / (AMOSTRAS_DO_CABELO - 1)) * Math.PI;
+      const dx = Math.sin(a);
+      const dy = Math.cos(a);
+      let longe = headR;
+      for (const p of pedacos) longe = Math.max(longe, p.x * dx + p.y * dy + p.r);
+      contorno.push(longe);
+    }
+    return contorno;
+  }
+
+  /** o contorno medido, interpolado no ângulo pedido */
+  private cabeloNoAngulo(a: number, headR: number): number {
+    const c = this.contornoDoCabelo;
+    if (c.length < 2) return headR;
+    const t = THREE.MathUtils.clamp((a + Math.PI / 2) / Math.PI, 0, 1) * (c.length - 1);
+    const i = Math.min(Math.floor(t), c.length - 2);
+    return THREE.MathUtils.lerp(c[i], c[i + 1], t - i);
   }
 
   // -------------------------------------------------------------- acessorios

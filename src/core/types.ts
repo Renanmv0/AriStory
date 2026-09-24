@@ -318,6 +318,15 @@ export interface MedidasCorpo {
   headR: number;
   legH: number;
   torsoH: number;
+  /**
+   * Até onde o CABELO vai, a partir do centro do crânio, na direção que faz
+   * `angulo` (radianos) com o alto da cabeça, no plano de orelha a orelha
+   * (positivo para `+X`). É o chão de peça que pousa POR CIMA do cabelo sem
+   * cobri-lo (tiara, orelhinha). Medido do cabelo montado, não chutado: o
+   * cacheado do Ari passa de 1,5·headR e os cachos curtos do Renan ficam em
+   * ~1,3 — um número só servia para um dos dois, e a orelhinha sumia no outro.
+   */
+  cabelo(angulo: number): number;
 }
 
 /** O que uma pessoa esta vestindo: slot -> id da peca. Sai das vagas. */
