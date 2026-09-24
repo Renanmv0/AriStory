@@ -126,7 +126,7 @@ export class LivroDeCartas {
 }
 
 /**
- * A TELA DO FIM DA RODADA: venceu (as trinta ondas) ou a estufa caiu. Mostra
+ * A TELA DO FIM DA RODADA: venceu (as vinte ondas) ou a estufa caiu. Mostra
  * os números da rodada — bichos espantados, e de quais, canteiros de pé, o
  * nível — e a PÁGINA DAS CARTAS que a rodada juntou, com um selo nas que
  * entraram no livro pela primeira vez.
