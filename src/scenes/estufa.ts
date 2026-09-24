@@ -322,10 +322,12 @@ export const estufa: SceneDef = {
 
     // -------------------------------------------------------------- as paredes
     /**
-     * PAREDE ALTA SO EM `-X` E `-Z` (regra da skill de cenario): dos dois lados
-     * que a camera olha de frente, mureta baixa, senao o vidro tapa a estufa
-     * inteira. Como e tudo vidro, a diferenca de altura quase nao aparece — o
-     * que se ve nos dois lados abertos e a soleira e os montantes.
+     * PAREDE ALTA SO NO FUNDO (`-Z`, a dos portoes). As tres outras sao mureta
+     * baixa: as duas que a camera olha de frente pela regra da skill de
+     * cenario, e a da BANCADA (`-X`) a pedido do Renan — ela era alta, a da
+     * lojinha em frente era baixa, e girando a camera os dois lados da estufa
+     * nao combinavam. Os jardins verticais dela ficam em pe, encostados na
+     * mureta, e passam da altura dela de proposito.
      */
     /**
      * A PAREDE DO FUNDO VEM PARTIDA EM QUATRO, com os tres vaos dos portoes
@@ -338,7 +340,7 @@ export const estufa: SceneDef = {
       if (bordas[i + 1] - bordas[i] < 0.05) continue;
       w.wall(bordas[i], -hz, bordas[i + 1], -hz, 3.2, P.estufaVidro, 0.18);
     }
-    w.wall(-hx, -hz, -hx, hz, 3.2, P.estufaVidro, 0.18);
+    w.wall(-hx, -hz, -hx, hz, 0.62, P.estufaVidro, 0.18);
     w.wall(hx, -hz, hx, hz, 0.62, P.estufaVidro, 0.18);
     // a parede da frente vem partida em duas, com o vao da porta no meio
     const meiaFrente = (W - PORTA.largura) / 2;
