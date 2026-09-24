@@ -626,10 +626,22 @@ export const PALETTE = {
   camisetaGirassolManga: 0xf0d27c,
   camisetaFolha: 0x7fb069,
   camisetaFolhaManga: 0x6a9a57,
-  gorroJoaninha: 0xd9483b,
-  gorroJoaninhaBarra: 0x2d2a26,
   girassolPetala: 0xf2c14b,
   girassolMiolo: 0x6b4526,
+  // o chapéu joaninha (pedido do Renan: vermelho com bolinhas BRANCAS em cima)
+  joaninhaVermelho: 0xd9373a,
+  joaninhaPreto: 0x2a2626,
+  joaninhaBolinha: 0xfaf6ee,
+  // as camisetas de personagem da lojinha da Josefina
+  camisetaSalvaVidas: 0xd9483b,
+  camisetaSalvaVidasManga: 0xc23a2f,
+  camisetaRoda: 0x8fc4e8,
+  camisetaRodaManga: 0x76b0d8,
+  camisetaSucos: 0x4ec1a8,
+  camisetaSucosManga: 0x3fa891,
+  laranjaCasca: 0xf29b38,
+  laranjaPolpa: 0xf8c86a,
+  estampaBranca: 0xfbf7ee,
 
   /*
    * A LOJINHA DA JOSEFINA (`lojinhaDaJosefina`, na parede direita da estufa):

@@ -73,8 +73,11 @@ const abas = await page.locator('.loja-da-josefina .abas button').allTextContent
 ok(abas.length === 2 && /Roupas/.test(abas[0]) && /Decora/.test(abas[1]), `duas abas: ${abas.map((a) => a.trim()).join(' | ')}`);
 await page.waitForTimeout(600);
 await page.screenshot({ path: `${OUT}-painel-decoracoes.png` });
-const fotos = await page.evaluate(() => [...document.querySelectorAll('.loja-da-josefina .produto.decoracao img')].filter((i) => i.src.startsWith('data:image/png')).length);
-ok(fotos === 6, `os seis enfeites têm retrato (${fotos})`);
+const fotos = await page.evaluate(() => ({
+  com: [...document.querySelectorAll('.loja-da-josefina .produto.decoracao img')].filter((i) => i.src.startsWith('data:image/png')).length,
+  cartoes: document.querySelectorAll('.loja-da-josefina .produto.decoracao').length,
+}));
+ok(fotos.cartoes >= 19 && fotos.com === fotos.cartoes, `todo enfeite do catálogo tem cartão e retrato (${fotos.com} de ${fotos.cartoes})`);
 
 // comprar o anão e o flamingo
 const saldo0 = await deco(() => window.jogo.carteira());
@@ -232,6 +235,39 @@ ok(postasFim.filter((d) => d.posta).length >= 5, `os enfeites da foto ficaram no
 await page.evaluate(() => { window.jogo.debugPlace(4, 4, 0.8); window.jogo.setZoom(15); });
 await page.waitForTimeout(1500);
 await page.screenshot({ path: `${OUT}-estufa-enfeitada.png` });
+
+// ======================== 7b. o que se mexe e o que acende
+const vivos = await page.evaluate(async () => {
+  const d = window.jogo.current.world.root.userData.decorador;
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  window.jogo.ganhar(300);
+  for (const [id, x, z, raio] of [['roda-gigante', 9.6, 3.4, 0.36], ['varal-de-luzinhas', 9.9, 5.1, 0.8]]) {
+    d.comprar(id);
+    d.colocar(id);
+    window.jogo.debugPlace(x, z - (0.85 + raio), 0);
+    await espera(400);
+    document.querySelector('.posicionador button.colocar')?.click();
+    await espera(300);
+  }
+  let roda = null;
+  const luzes = { halos: 0, pocas: 0 };
+  window.jogo.current.world.root.traverse((o) => {
+    if (o.userData?.peca === 'enfeite-roda-gigante') roda = o;
+    if (['enfeite-lanterna', 'enfeite-varal-de-luzinhas'].includes(o.userData?.peca)) {
+      o.traverse((k) => {
+        if (k.isSprite) luzes.halos += 1;
+        if (k.isMesh && k.material?.blending === 2) luzes.pocas += 1; // AdditiveBlending
+      });
+    }
+  });
+  const antes = roda?.userData.roda.rotation.z ?? 0;
+  await espera(1500);
+  const depois = roda?.userData.roda.rotation.z ?? 0;
+  return { temRoda: !!roda, girou: Math.abs(depois - antes), ...luzes };
+});
+console.log(`       roda girou ${vivos.girou.toFixed(2)} rad · ${vivos.halos} halos, ${vivos.pocas} poças de luz`);
+ok(vivos.temRoda && vivos.girou > 0.01, 'a rodinha gigante gira sozinha');
+ok(vivos.halos >= 8 && vivos.pocas >= 2, 'a lanterninha e o varal acendem (halo nas lâmpadas e a poça no chão)');
 
 // ============================== 8. as roupas da Josefina, vestidas (foto)
 await page.evaluate(() => {

@@ -82,9 +82,25 @@ lugar da segunda bancada, com o BALCÃO VIRADO PARA O MEIO da estufa — a câme
 padrão a vê por trás, por isso a estante é vazada e a lousa com o nome olha
 para a porta; os canteiros Alface e Tomate da direita recuaram 0,6 m): uma banca que vende **roupa de jardim** (`ROUPAS_DA_JOSEFINA`
 em `world/itens.ts`; comprar é `g.comprarPeca`, o mesmo caminho da boutique, e
-"provar no boneco" abre a arara da boutique com essas peças) e **enfeites para
-a estufa** (`world/decoracoes.ts` — ficha e geometria no mesmo arquivo, hoje
-seis). O enfeite comprado fica guardado; "Colocar" põe ele na frente da dupla e
+"provar no boneco" abre a arara da boutique com essas peças; hoje onze: quatro
+de jardim — camiseta verde-folha, camiseta de girassol, chapéu joaninha,
+galocha — e sete
+temáticas: tiara do Walter, tiara da Pelusa, boné da Gina, mochila-casco da
+Josefina, e as camisetas salva-vidas, da roda gigante e do bar de sucos,
+estampadas por `estampaNoPeito` em `world/roupas.ts`. O chapéu joaninha
+manteve o id antigo `gorro-joaninha`, então quem comprou o gorro ficou com o
+chapéu) e **enfeites para a estufa** (`world/decoracoes.ts` — ficha e geometria
+no mesmo arquivo, hoje dezenove, em ordem de preço; os de referência são a
+tartaruguinha, a Pelusa de pelúcia, o copão do Noel, a casquinha do Mano, o
+Walter de cerâmica, o elefantinho do Cookie, a capivara, a girafinha da Gina,
+o laguinho do Jean-Luc e a rodinha gigante). **Luz sem luz**: a lanterninha e o
+varal de luzinhas "acendem" com uma poça aditiva no chão (`luzNoChao`) e um
+halo em sprite (`brilhoDeLuz`), ambos em `core/materials.ts` — nenhum
+`PointLight`, que recompilaria o shader de tudo a cada enfeite posto e pesaria
+no celular. **Enfeite que mexe** declara `anima(peca, t)` na ficha (o cata-vento
+gira a hélice, a rodinha gira a roda com as cabines sempre de pé); o decorador
+chama a cada quadro, tanto para os postos quanto para o fantasma na mão.
+O enfeite comprado fica guardado; "Colocar" põe ele na frente da dupla e
 é ANDANDO que se escolhe o lugar (`world/decorador.ts`: anel verde/vermelho,
 barra com girar G / colocar E / cancelar X). Proibido: terreiro, caminhos,
 eixo da porta, fundo dos bichos (`z < -4,6`), canteiros, mudas e a frente de

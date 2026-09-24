@@ -23,7 +23,7 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 | `Oclusao.ts` | o que fica entre a câmera e os pontos vigiados (e a dupla) ganha a variante translúcida do material (`translucido()`); liga com `g.vigiarOclusao`, hoje só a rodada do jardim |
 | `Input.ts` | única fonte de entrada; `move()` devolve vetor de tela |
 | `SaveState.ts` | persistência; nada mais escreve em `localStorage` |
-| `materials.ts` | `toon()` / `flat()` / `line()`, todos cacheados por cor |
+| `materials.ts` | `toon()` / `flat()` / `line()`, todos cacheados por cor; `translucido()` (o fantasma do decorador) e a LUZ FALSA — `luzNoChao()` (poça aditiva de degradê no chão) e `brilhoDeLuz()` (halo em sprite) — no lugar de `PointLight`, que recompila o shader de toda a cena |
 | `types.ts` | `SceneDef`, `InteractableDef`, `GameAPI`, colisores |
 
 ### Detalhes que custaram caro
@@ -82,13 +82,16 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 - `decoracoes.ts` — os ENFEITES DA ESTUFA: a ficha (nome, preço, raio da
   pegada) e a geometria de cada um, num arquivo só. Enfeite novo = uma função e
   uma entrada em `DECORACOES`; a loja, o retrato, o modo de colocar e o save
-  leem tudo dali.
+  leem tudo dali. Enfeite que mexe declara `anima(peca, t)` na ficha e guarda
+  as partes que giram em `userData`; enfeite que acende usa `pocaDeLuz`/
+  `haloDeLuz` (a luz falsa de `materials.ts`).
 - `decorador.ts` — o chão decorado de uma cena: monta os enfeites do save
   (peça, colisor e o ponto "Mexer no…") e o MODO DE DECORAR (o enfeite
   translúcido na frente de quem joga, o anel verde/vermelho, a barra com girar,
   colocar e cancelar). A cena só diz onde é proibido (`RegrasDoLugar`); o resto
   (colisor, outro enfeite) ele confere com `circuloEncosta` (`collision.ts`).
-  Enquanto decora, suspende os pontos da cena, como a rodada.
+  Enquanto decora, suspende os pontos da cena, como a rodada. A cada quadro
+  chama o `anima` de cada enfeite posto e do fantasma.
 - `retrato.ts` — fotografa um modelo 3D num canvas fora da tela e guarda como
   imagem, para `<img>` de painel (as pragas do livro, os enfeites da loja).
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**

@@ -71,13 +71,21 @@ export class Decorador {
   private readonly g: GameAPI;
   private readonly postos = new Map<number, Posto>();
   private modo: Modo | null = null;
+  /** o relógio das animações (a roda gigante, o cata-vento) */
+  private t = 0;
   /** a cena é avisada quando um enfeite entra, sai ou muda (quem passeia desvia) */
   aoMudar: (() => void) | null = null;
 
   constructor(private readonly w: WorldBuilder, private readonly regras: RegrasDoLugar) {
     this.g = w.game;
     for (const d of this.g.decoracoes()) if (d.posta) this.por(d.uid, decoracaoPorId(d.id), d.posta);
-    w.onUpdate(() => this.atualizar());
+    w.onUpdate((dt) => {
+      this.t += dt;
+      // o que se mexe continua se mexendo — no chão e na mão
+      for (const p of this.postos.values()) p.ficha.anima?.(p.peca, this.t);
+      if (this.modo) this.modo.ficha.anima?.(this.modo.fantasma, this.t);
+      this.atualizar();
+    });
   }
 
   // ------------------------------------------------------ o que a cena lê

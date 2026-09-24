@@ -193,6 +193,12 @@ export interface ItemDef {
   /** Idem: as duas faixas da bermuda estampada. Sem isto, o calcao e liso. */
   estampaBanho?: number;
   /**
+   * A cor da AMOSTRA nos painéis de loja, quando a peça não pinta nada no
+   * corpo (a mochila casco da Josefina: sem `cor`, a camiseta continua a da
+   * pessoa, e a amostra sairia cinza).
+   */
+  amostra?: number;
+  /**
    * So `cabeca`: esconde o cabelo enquanto a peca estiver vestida.
    *
    * Existe porque cabelo aqui tem VOLUME de verdade — a juba do Ari chega a

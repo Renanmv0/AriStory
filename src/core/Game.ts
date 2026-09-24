@@ -1106,7 +1106,7 @@ export class Game implements GameAPI {
         preco: p.preco ?? 0,
         // a amostra da grade tem a COR DA PEÇA, como as bermudas do vestiário:
         // numa arara o que se escolhe é a cor, então ela tem que ser o botão
-        cor: css(p.cor ?? p.corBanho ?? 0xcccccc),
+        cor: css(p.cor ?? p.corBanho ?? p.amostra ?? 0xcccccc),
         // "já é seu" é PAGOU, não "está no inventário agora": descartar a peça
         // do corpo não pode fazer a arara cobrar de novo por ela
         jaTem: this.save.comprou(p.id) || this.save.achouItem(quem, p.id),

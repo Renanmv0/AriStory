@@ -1923,7 +1923,7 @@ export const estufa: SceneDef = {
         icone: p.icone,
         nota: p.nota,
         preco: p.preco ?? 0,
-        cor: `#${(p.cor ?? 0xcccccc).toString(16).padStart(6, '0')}`,
+        cor: `#${(p.cor ?? p.amostra ?? 0xcccccc).toString(16).padStart(6, '0')}`,
         jaTem: g.jaTemPeca(p.id),
       })),
       decoracoes: DECORACOES.map((d) => ({

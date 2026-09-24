@@ -271,6 +271,21 @@ do Mania = 12 a 34, um turno de garçom paga ~200): peça de térreo 35–110,
 premium 150–220. Quem compra veste no espelho do mezanino, que abre o mesmo
 painel do guarda-roupa do quarto.
 
+**A outra loja é a da Josefina**, na estufa: a lista é `ROUPAS_DA_JOSEFINA`
+(mesmo arquivo), com roupa de jardim e peças temáticas do parque, do clube e
+dos personagens (tiaras do Walter e da Pelusa, boné da Gina, camisetas do Capy,
+da roda e do Noel). Preço: 35–60. Mesma ficha e mesmo `g.comprarPeca`; só muda
+a lista.
+
+**Amostra de peça sem `cor`.** O cartão da loja pinta a amostra com
+`cor ?? corBanho ?? amostra`. Peça que é só `extra` por cima da roupa (a
+mochila-casco, que não pinta nada do corpo) declara `amostra: P.algumaCor` na
+ficha. Sem isso o quadradinho sai cinza.
+
+**Refazer uma peça que já está à venda: mantenha o `id`.** O save guarda a peça
+pelo id. O gorro joaninha virou chapéu com o mesmo `'gorro-joaninha'`, e quem
+já tinha comprado ficou com o chapéu. Id novo deixaria a compra antiga órfã.
+
 ## Ferramentas já prontas em `roupas.ts` — reaproveite antes de desenhar do zero
 
 - `laco(escala, cor, corNo?)` — laço de fita, usado no cabelo, na cintura e na
@@ -284,6 +299,14 @@ painel do guarda-roupa do quarto.
 - `mangaBufante(raio, cor)` — manga curta e estufada.
 - `coracaoChato(raio, cor)` — coraçãozinho decorativo achatado (festão do
   maid japonês).
+- `estampaNoPeito(m, desenho)` — prega um desenho (montado no plano XY,
+  olhando para `+Z`, unidade `e`) na frente do tronco, na altura e na
+  profundidade certas da cápsula. Camiseta temática = a camiseta lisa (`cor` e
+  `corDetalhe`) + uma estampa. Assim entraram a salva-vidas, a da roda e a do
+  bar de sucos.
+- `tiara(m, cor)` — o arco de orelha a orelha, com raio `1,32·headR` para
+  passar por CIMA do cabelo; devolve `{ g, raio }` para quem pendura orelha.
+  Medida pelo crânio, a tiara afunda na juba.
 - `gorroDeLa`/`canoDaBota`/`meiaDeCoxa`/`mangaDeQuimono` — exemplos completos
   de peça de cabeça, pé, perna e braço, respectivamente; comece copiando a
   mais parecida com o que você vai fazer.

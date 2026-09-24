@@ -202,3 +202,64 @@ export function translucido(mat: THREE.Material, opacidade = 0.28): THREE.Materi
   porOpacidade.set(opacidade, t);
   return t;
 }
+
+/**
+ * A LUZ DE ENFEITE (a lanterninha e o varal de luzinhas da estufa): luz que se
+ * VÊ, sem luz de verdade no motor. Duas peças:
+ *
+ * - `luzNoChao(cor)`: o material da POÇA DE LUZ — um disco no chão com um
+ *   degradê redondo (desenhado em canvas, a única textura que o jogo aceita)
+ *   somado à cor de baixo (`AdditiveBlending`): o piso em volta da lâmpada
+ *   clareia e esquenta;
+ * - `brilhoDeLuz(cor)`: o HALO macio em volta da lâmpada, num sprite (sempre
+ *   de frente para a câmera).
+ *
+ * POR QUE NÃO `PointLight`: cada luz nova muda a CONTA de luzes da cena, e o
+ * three recompila o shader de todos os materiais quando isso acontece — pôr
+ * uma lanterninha travaria o jogo um instante, e dez delas pesariam no
+ * celular. A poça é um disco a mais; o efeito na tela é o mesmo.
+ */
+let texturaDeLuz: THREE.CanvasTexture | null = null;
+function degradeDeLuz(): THREE.CanvasTexture {
+  if (texturaDeLuz) return texturaDeLuz;
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.35, 'rgba(255,255,255,0.55)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 128, 128);
+  }
+  texturaDeLuz = new THREE.CanvasTexture(canvas);
+  return texturaDeLuz;
+}
+
+const luzesNoChao = new Map<string, THREE.MeshBasicMaterial>();
+export function luzNoChao(color: number, forca = 0.55): THREE.MeshBasicMaterial {
+  const key = `${color}|${forca}`;
+  const hit = luzesNoChao.get(key);
+  if (hit) return hit;
+  const mat = new THREE.MeshBasicMaterial({
+    color, map: degradeDeLuz(), transparent: true, opacity: forca,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  luzesNoChao.set(key, mat);
+  return mat;
+}
+
+const brilhos = new Map<string, THREE.SpriteMaterial>();
+export function brilhoDeLuz(color: number, forca = 0.8): THREE.SpriteMaterial {
+  const key = `${color}|${forca}`;
+  const hit = brilhos.get(key);
+  if (hit) return hit;
+  const mat = new THREE.SpriteMaterial({
+    color, map: degradeDeLuz(), transparent: true, opacity: forca,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  brilhos.set(key, mat);
+  return mat;
+}

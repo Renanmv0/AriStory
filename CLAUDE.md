@@ -141,7 +141,7 @@ node scripts/jato.mjs    /tmp/jt    # o jato de cada carta: a vitrine mede o efe
 node scripts/cartasNaRodada.mjs /tmp/cr # as outras 41 cartas agindo (cada uma numa estufa de laboratorio, efeito medido no mundo e foto), a ajuda do par e o bicho comendo visto pela quina
 node scripts/livro.mjs   /tmp/lv    # o livro das cartas na bancada (vagas cinzas, cada carta no seu lugar, a lupa, o F5) e a tela do fim da rodada
 node scripts/oclusao.mjs /tmp/oc    # na rodada, a parede que tapa gota ou bicho fica translucida e volta; e a fala esconde o botao da ajuda no celular
-node scripts/decorar.mjs /tmp/dc    # a lojinha da Josefina: comprar roupa e enfeite, colocar o enfeite no chao (e recusar no terreiro), mexer, guardar e a visita nova
+node scripts/decorar.mjs /tmp/dc    # a lojinha da Josefina: comprar roupa e enfeite, colocar o enfeite no chao (e recusar no terreiro), mexer, guardar e a visita nova; todo enfeite com retrato, a rodinha girando e as luzinhas acesas
 node scripts/marcos.mjs  /tmp/mc    # os premios da estufa: moedas de toda rodada, o premio unico de cada marco resgatado no livro, e a aba de pragas
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```

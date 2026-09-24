@@ -5,7 +5,8 @@ import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props'
 import { regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
   aventalDaJosefina, blazerXadrez, canoDaBota, chapeuDeJardineira, coroaDeDama, gargantilhaDeLaco,
-  girassolNoPeito, gorroDeLa, gravataDoWalter,
+  boneDaGina, chapeuJoaninha, estampaLaranja, estampaRodaGigante, estampaSalvaVidas, girassolNoPeito,
+  gorroDeLa, gravataDoWalter, mochilaCascoDaJosefina, tiaraDaPelusa, tiaraDoWalter,
   jaquetaFrancesa, maidJapones, mangaDaJaquetaFrancesa, mangaDeMoletom, mangaDeQuimono,
   mangaDoBlazer, meiaDeCoxa, moletomComCapuz, oculosDeSol, perneiraXadrez, quepeDoCookie,
   vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
@@ -317,12 +318,69 @@ export const ITENS = {
     cor: P.camisetaFolha, corDetalhe: P.camisetaFolhaManga,
     nota: 'da cor da estufa', preco: 32,
   },
+  /*
+   * O CHAPÉU JOANINHA era o "gorro joaninha" (o gorro de lã em vermelho). O
+   * Renan pediu um chapéu de jardinagem pequeno com o desenho da joaninha, e
+   * o ID FICOU O MESMO de propósito: quem já tinha comprado o gorro abre o
+   * guarda-roupa e acha o chapéu, sem perder a compra.
+   */
   gorroJoaninha: {
-    id: 'gorro-joaninha', nome: 'Gorro joaninha', icone: '🐞',
+    id: 'gorro-joaninha', nome: 'Chapéu joaninha', icone: '🐞',
     tipo: 'vestivel', slot: 'cabeca',
-    cor: P.gorroJoaninha, corDetalhe: P.gorroJoaninhaBarra,
-    nota: 'vermelho com a barra preta', preco: 40,
-    extra: gorroDeLa,
+    cor: P.joaninhaVermelho,
+    nota: 'vermelho, de bolinha branca e anteninha', preco: 40,
+    extra: chapeuJoaninha,
+  },
+  // --- os de personagem (a lojinha da Josefina): cada peça lembra alguém
+  tiaraDoWalter: {
+    id: 'tiara-do-walter', nome: 'Orelhinhas do Walter', icone: '🐶',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.cachorroOrelha,
+    nota: 'orelha caída e a gravatinha dele', preco: 36,
+    extra: tiaraDoWalter,
+  },
+  tiaraDaPelusa: {
+    id: 'tiara-da-pelusa', nome: 'Orelhinhas da Pelusa', icone: '🐱',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.pelusaCinza,
+    nota: 'de gatinha, com o miolo rosa', preco: 36,
+    extra: tiaraDaPelusa,
+  },
+  boneDaGina: {
+    id: 'bone-da-gina', nome: 'Boné da Gina', icone: '🦒',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.girafaPelo,
+    nota: 'de girafa, com os chifrinhos', preco: 44,
+    extra: boneDaGina,
+  },
+  mochilaCasco: {
+    id: 'mochila-casco', nome: 'Mochila casco da Josefina', icone: '🐢',
+    tipo: 'vestivel', slot: 'tronco',
+    // SEM `cor`: a camiseta de baixo continua a da pessoa; a mochila vai por cima
+    amostra: P.tartarugaCasco,
+    nota: 'com o laço rosa dela', preco: 58,
+    extra: mochilaCascoDaJosefina,
+  },
+  camisetaSalvaVidas: {
+    id: 'camiseta-salva-vidas', nome: 'Camiseta salva-vidas do Capy', icone: '🛟',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.camisetaSalvaVidas, corDetalhe: P.camisetaSalvaVidasManga,
+    nota: 'da piscina do clube', preco: 40,
+    extra: estampaSalvaVidas,
+  },
+  camisetaRodaGigante: {
+    id: 'camiseta-roda-gigante', nome: 'Camiseta da roda gigante', icone: '🎡',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.camisetaRoda, corDetalhe: P.camisetaRodaManga,
+    nota: 'lembrança do Villa Lobos', preco: 40,
+    extra: estampaRodaGigante,
+  },
+  camisetaBarDeSucos: {
+    id: 'camiseta-bar-de-sucos', nome: 'Camiseta do bar de sucos', icone: '🍊',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.camisetaSucos, corDetalhe: P.camisetaSucosManga,
+    nota: 'o teal do Noel, com a laranja', preco: 40,
+    extra: estampaLaranja,
   },
   botaAmarela: {
     id: 'bota-amarela',
@@ -946,8 +1004,17 @@ export function modeloDoItem(id: string): THREE.Object3D | null {
  * boutique (`g.abrirLoja`).
  */
 export const ROUPAS_DA_JOSEFINA: readonly ItemDef[] = [
+  // de jardim
   ITENS.camisetaVerdeFolha,
   ITENS.camisetaDeGirassol,
   ITENS.gorroJoaninha,
   ITENS.galochaVerde,
+  // de personagem e de lugar: o clube, o parque e quem mora lá
+  ITENS.tiaraDoWalter,
+  ITENS.tiaraDaPelusa,
+  ITENS.boneDaGina,
+  ITENS.mochilaCasco,
+  ITENS.camisetaSalvaVidas,
+  ITENS.camisetaBarDeSucos,
+  ITENS.camisetaRodaGigante,
 ];
