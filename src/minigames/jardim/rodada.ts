@@ -269,6 +269,16 @@ interface Invasor {
   puxado: boolean;
   /** já passou pelo portão (o Sino da porta toca uma vez por bicho) */
   passouPortao: boolean;
+  /**
+   * a ponta da Cerquinha que ele ESCOLHEU contornar. Fica escolhida até ele
+   * chegar lá — decidir de novo a cada quadro fazia o bicho parado no meio,
+   * atrás da cerca, trocar de ponta sem parar e ir e voltar para sempre
+   */
+  desvio: Ponto2 | null;
+  /** o segundo ponto do contorno: a mesma ponta, do lado de lá da cerca */
+  desvioDepois: Ponto2 | null;
+  /** segundos em que ele ignora a cerca: acabou de contornar, segue em frente */
+  semCerca: number;
   /** o jeito dele (§5): o pulo, o voo, a concha… — ver "O JEITO DE CADA BICHO" */
   truque: Truque;
 }
@@ -1174,6 +1184,9 @@ export class RodadaDoJardim {
       recuoResta: 0,
       puxado: false,
       passouPortao: !!casa,
+      desvio: null,
+      desvioDepois: null,
+      semCerca: 0,
       truque: {
         // a Mãe demora um pouco mais para o primeiro filhote: ela acabou de chegar
         espera: (ficha.id === 'mae-lagartejo' ? 4 : 1.2) + this.sorte() * 2,
@@ -1294,6 +1307,7 @@ export class RodadaDoJardim {
     inv.lento = Math.max(0, inv.lento - dt);
     inv.chineladaEspera = Math.max(0, inv.chineladaEspera - dt);
     inv.trancoEspera = Math.max(0, inv.trancoEspera - dt);
+    inv.semCerca = Math.max(0, inv.semCerca - dt);
     if (inv.gelado > 0) {
       inv.gelado -= dt;
       if (inv.gelado <= 0) this.jato.derreter(inv.corpo);
@@ -1508,6 +1522,17 @@ export class RodadaDoJardim {
       inv.z -= Math.cos(inv.rumo) * 2 * dt;
       return;
     }
+    /*
+     * A REDE DE SEGURANÇA: espantado já foi espantado — não leva água, não come,
+     * só falta sair. Se em 20 s ele ainda não saiu (preso em qualquer coisa que
+     * ninguém previu), ele some ali mesmo: a onda nunca mais trava esperando
+     * um bicho que não consegue ir embora.
+     */
+    if (inv.relogio > 20) {
+      this.tirar(inv);
+      this.invasores.splice(this.invasores.indexOf(inv), 1);
+      return;
+    }
     // o próximo ponto da volta é o primeiro que ainda está "na frente" dele (em z)
     const destino = volta.find((p) => p.z < inv.z - 0.3) ?? volta[volta.length - 1];
     const alvo = this.desviar(inv, destino);
@@ -1520,8 +1545,16 @@ export class RodadaDoJardim {
       this.invasores.splice(this.invasores.indexOf(inv), 1);
       return;
     }
-    inv.x += (dx / Math.max(d, 0.001)) * v * dt;
-    inv.z += (dz / Math.max(d, 0.001)) * v * dt;
+    // chega no ponto em vez de passar dele: no celular, com o quadro longo, o
+    // passo passava da ponta da cerca e voltava, sem nunca "chegar"
+    const passo = v * dt;
+    if (d <= passo) {
+      inv.x = alvo.x;
+      inv.z = alvo.z;
+      return;
+    }
+    inv.x += (dx / d) * passo;
+    inv.z += (dz / d) * passo;
     this.virarPara(inv, Math.atan2(dx, dz), dt * 2);
     // pinga no caminho: ainda está encharcado
     // (mudo: é só o bicho pingando, e tocaria o tempo todo)
@@ -2891,21 +2924,63 @@ export class RodadaDoJardim {
 
   /**
    * A CERQUINHA NO CAMINHO: se a reta até o alvo cruza a cerca, o bicho vai
-   * primeiro até a ponta mais em conta. Chegando lá, a reta já não cruza e
-   * ele segue — é o "contornar" do texto da carta, sem precisar de mapa.
+   * dar a volta pela ponta mais em conta — é o "contornar" do texto da carta,
+   * sem precisar de mapa.
+   *
+   * BUG QUE TRAVAVA A RODADA (relato do Renan, com foto): o bicho ESPANTADO,
+   * fugindo para o portão, ficava indo e voltando na ponta da cerca para
+   * sempre — e espantado não leva mais água, então a onda nunca acabava. A
+   * ponta ficava bem NA LINHA da cerca: chegando nela, a reta até um portão do
+   * outro lado ainda raspava na cerca, ele escolhia a mesma ponta de novo e não
+   * saía dali (1 em cada 5 fugas, medido numa simulação). Agora:
+   *
+   * - o contorno é em DOIS pontos, um passo para fora da cerca: a ponta do
+   *   lado dele, e depois a mesma ponta do lado de lá. De lá, a reta até o
+   *   alvo se afasta da cerca e nunca mais cruza;
+   * - o ponto escolhido fica ESCOLHIDO (`inv.desvio`) até ele chegar, em vez
+   *   de ser decidido de novo a cada quadro (no meio da cerca as duas pontas
+   *   custam o mesmo, e ele trocava de ideia);
+   * - chegando, ele esquece a cerca por 1,5 s (`inv.semCerca`): se ainda
+   *   sobrar algum ângulo ruim, raspar a ponta é só visual — bicho do jardim
+   *   nunca leu colisor.
    */
   private desviar(inv: Invasor, alvo: { x: number; z: number }): { x: number; z: number } {
-    if (!this.cerquinhaPeca) return alvo;
+    if (!this.cerquinhaPeca || inv.semCerca > 0) {
+      inv.desvio = null;
+      inv.desvioDepois = null;
+      return alvo;
+    }
     const c = this.planta.lugares.cerquinha;
     const meio = c.comprimento / 2 + inv.jeito.raio;
-    if (!segmentoCruzaRetangulo(inv.x, inv.z, alvo.x, alvo.z, c.x, c.z, meio, 0.15 + inv.jeito.raio)) return alvo;
-    const pontas = [
-      { x: c.x - meio - 0.4, z: c.z },
-      { x: c.x + meio + 0.4, z: c.z },
-    ];
-    const custo = (p: { x: number; z: number }): number =>
-      Math.hypot(p.x - inv.x, p.z - inv.z) + Math.hypot(alvo.x - p.x, alvo.z - p.z);
-    return custo(pontas[0]) <= custo(pontas[1]) ? pontas[0] : pontas[1];
+    const fundo = 0.15 + inv.jeito.raio;
+    const cruza = segmentoCruzaRetangulo(inv.x, inv.z, alvo.x, alvo.z, c.x, c.z, meio, fundo);
+    if (inv.desvio) {
+      const chegou = Math.hypot(inv.desvio.x - inv.x, inv.desvio.z - inv.z) < 0.35;
+      if (chegou && inv.desvioDepois) {
+        inv.desvio = inv.desvioDepois;
+        inv.desvioDepois = null;
+        return inv.desvio;
+      }
+      if (chegou || !cruza) {
+        inv.desvio = null;
+        inv.desvioDepois = null;
+        if (chegou) inv.semCerca = 1.5;
+        return alvo;
+      }
+      return inv.desvio;
+    }
+    if (!cruza) return alvo;
+    const ladoDoAlvo = Math.sign(alvo.z - c.z) || 1;
+    const ladoDele = Math.sign(inv.z - c.z) || -ladoDoAlvo;
+    const afasta = fundo + 0.3;
+    const custo = (x: number): number =>
+      Math.hypot(x - inv.x, c.z - inv.z) + Math.hypot(alvo.x - x, alvo.z - c.z);
+    const esquerda = c.x - meio - 0.4;
+    const direita = c.x + meio + 0.4;
+    const x = custo(esquerda) <= custo(direita) ? esquerda : direita;
+    inv.desvio = { x, z: c.z + ladoDele * afasta };
+    inv.desvioDepois = ladoDele !== ladoDoAlvo ? { x, z: c.z + ladoDoAlvo * afasta } : null;
+    return inv.desvio;
   }
 
   /** está dentro da estufa (passou do portão)? */

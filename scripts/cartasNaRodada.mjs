@@ -384,6 +384,67 @@ const CASOS = {
     const e = await estado();
     confere('cerquinha', !furou && passou && efeito(e, 'cerquinha') > 0, passou ? (furou ? 'atravessou a cerca' : 'contornou pela ponta') : 'não passou da cerca');
   },
+  /*
+   * O BUG DA CERQUINHA (relato do Renan, com foto): o bicho bem no MEIO, atrás
+   * da cerca, via as duas pontas custando o mesmo e ia e voltava para sempre —
+   * e a onda nunca acabava. Aqui: um bicho no meio exato, outro empurrado para
+   * cima da cerca, e um terceiro perto da ponta. Os três têm que passar, e o do
+   * meio não pode trocar de lado mais de uma vez.
+   */
+  'cerquinha-travada': async () => {
+    await laboratorio(['cerquinha'], { x: -7, z: 3, folga: true });
+    await rodada(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.soltarBicho('lagartejo', 0, -6.2);
+      r.soltarBicho('lagartejo', 0.2, -4.25);
+      r.soltarBicho('lagartejo', 3.3, -5.4);
+    });
+    const passaram = new Set();
+    let viradas = 0;
+    let ultimoLado = 0;
+    let ultimoX = null;
+    for (let i = 0; i < 120 && passaram.size < 3; i++) {
+      await page.waitForTimeout(200);
+      const e = await estado();
+      e.invasores.forEach((b, k) => { if (b.z > -3.2) passaram.add(k); });
+      const meio = e.invasores[0];
+      if (meio && !passaram.has(0)) {
+        if (ultimoX !== null) {
+          const lado = Math.sign(meio.x - ultimoX);
+          if (lado && ultimoLado && lado !== ultimoLado) viradas += 1;
+          if (lado) ultimoLado = lado;
+        }
+        ultimoX = meio.x;
+      }
+    }
+    confere('cerquinha-travada', passaram.size === 3 && viradas <= 1,
+      `${passaram.size} de 3 passaram da cerca; o do meio mudou de lado ${viradas}×`);
+  },
+  /*
+   * ...e o caso da FOTO: o bicho ESPANTADO fugindo de volta para o portão, com
+   * a cerca no meio do caminho. Espantado não leva mais água, então se ele
+   * fica indo e voltando na ponta da cerca a onda nunca acaba. Cinco fugindo de
+   * dentro do terreiro têm que sair da estufa em 18 s — antes da rede de
+   * segurança dos 20 s, que senão esconderia o bug.
+   */
+  'cerquinha-fugindo': async () => {
+    await laboratorio(['cerquinha'], { x: -7, z: 3, folga: true });
+    await rodada(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      // os dois últimos são os que a simulação achou travando: perto de uma
+      // ponta, fugindo para o portão do lado OPOSTO
+      for (const [x, z, porta] of [[0, -1.8, 1], [1.2, -1.8, 0], [-2.2, -1.8, 2], [3.5, -3.5, 0], [-3.5, -3.5, 2]]) {
+        r.soltarBicho('lagartejo', x, z, { porta });
+      }
+      for (const inv of [...r.invasores]) r.espantado(inv, 'agua');
+    });
+    let restam = 5;
+    for (let i = 0; i < 90 && restam > 0; i++) {
+      await page.waitForTimeout(200);
+      restam = (await estado()).invasores.length;
+    }
+    confere('cerquinha-fugindo', restam === 0, restam ? `${restam} bicho(s) presos na cerca, fugindo` : 'os cinco espantados contornaram a cerca e saíram');
+  },
   aspersor: async () => {
     await laboratorio(['aspersor'], { x: -7, z: 3, folga: true });
     await rodada(() => {
@@ -685,6 +746,8 @@ const FOTO = {
   'sino-da-porta': [0, -10.5, 8],
   'girassol-vigia': [-12.4, 0.2, 6],
   cerquinha: [0, -4.2, 8],
+  'cerquinha-travada': [0, -4.2, 8],
+  'cerquinha-fugindo': [0, -4.2, 8],
   aspersor: [0, -0.6, 6],
   'estufa-trancada': [0, -11, 8],
   'picole-do-mano': null,

@@ -1024,7 +1024,7 @@ não é água em `jato.ts` (poeira, notinhas, onda de som, broto, ardido, adubo)
 | Planta carnívora | na hora (você escolhe) | uma dioneia grande na borda morde quem come ali e fica fechada 15 s |
 | Sino da porta | bicho passando o portão | plim, e um anel amarelo no portão |
 | Girassol vigia | sempre | as flores do canteiro de girassol viram para o portão do próximo bicho |
-| Cerquinha | sempre | a cerca atravessa o caminho do portão do meio; eles contornam pela ponta |
+| Cerquinha | sempre | a cerca atravessa o caminho do portão do meio; eles contornam pela ponta, em dois pontos (a ponta do lado deles, depois a do lado de lá), e o ponto escolhido fica escolhido até chegarem. **Bug corrigido** (relato do Renan): o espantado fugindo para o portão do lado oposto ficava indo e voltando na ponta para sempre e a onda não acabava — a ponta era na linha da cerca e a reta ainda raspava nela. E espantado que passa de 20 s fugindo some (rede de segurança). Teste: `cartasNaRodada.mjs … cerquinha-fugindo` |
 | Aspersor | a cada 3 s, com bicho perto | a cabeça gira depressa e solta um anel de 2,5 m |
 | Sementeira | começo da onda | canteiro comido brota de novo com meia vida |
 | Estufa trancada | começo da onda | cadeado e corrente em cada portão; eles esperam 10 s do lado de fora e o cadeado cai |
