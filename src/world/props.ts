@@ -7608,7 +7608,7 @@ export function lojinhaDaJosefina(): THREE.Group {
  * "mais fofos… falta cor").
  *
  * Um painel furado pintado de menta numa moldura de madeira de pontas
- * redondas, com uma plaquinha creme no alto ("Armas da estufa") e uma
+ * redondas, com uma plaquinha creme no alto ("Ferramentas da estufa") e uma
  * florzinha de cada lado, um varal de bandeirinhas coloridas entre os dois
  * pés, e atrás de cada gancho um CARIMBO pastel de borda creme — o desenho da
  * ferramenta pintado na parede, como em oficina arrumada, só que em bolinha
@@ -7670,18 +7670,18 @@ export function painelDeArmas(
   g.add(furos);
 
   // a plaquinha do título, uma pílula creme por cima da trave de cima
-  const placa = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, largura * 0.42, 4, 12), creme);
+  const placa = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, Math.min(largura * 0.42, 1.1), 4, 12), creme);
   placa.rotation.z = Math.PI / 2;
   placa.scale.z = 0.25;
   placa.position.set(0, topo + 0.12, 0.03);
   g.add(placa);
-  const titulo = letreiro('Armas da estufa', largura * 0.55, 0.16, '#' + P.painelTexto.toString(16).padStart(6, '0'));
+  const titulo = letreiro('Ferramentas da estufa', Math.min(largura * 0.55, 1.4), 0.16, '#' + P.painelTexto.toString(16).padStart(6, '0'));
   titulo.position.set(0, topo + 0.12, 0.068);
   g.add(titulo);
   // uma florzinha de cada lado da placa
   for (const lado of [-1, 1]) {
     const flor = florzinha(lado < 0 ? P.flowerPink : P.bandeirinhaLilas);
-    flor.position.set(lado * (largura * 0.21 + 0.2), topo + 0.12, 0.07);
+    flor.position.set(lado * (Math.min(largura * 0.21, 0.55) + 0.2), topo + 0.12, 0.07);
     g.add(flor);
   }
 
@@ -7699,7 +7699,7 @@ export function painelDeArmas(
     new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pontos), 24, 0.006, 4, false), toon(P.metalWhite),
   );
   g.add(fio);
-  const bandeiras = 9;
+  const bandeiras = Math.max(9, Math.round(largura * 5));
   for (let k = 0; k < bandeiras; k++) {
     const t = (k + 0.5) / bandeiras;
     const b = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.12, 3), toon(cores[k % cores.length]));
@@ -7715,7 +7715,7 @@ export function painelDeArmas(
   for (let k = 0; k < vagas; k++) {
     const x = -largura / 2 + (k + 0.5) * (largura / vagas);
     const y = PES + altura * 0.66;
-    const raio = Math.min(0.2, largura / vagas / 2 - 0.03);
+    const raio = Math.min(0.32, largura / vagas / 2 - 0.08);
     const cy = PES + altura * 0.48;
     const borda = new THREE.Mesh(new THREE.CircleGeometry(raio + 0.025, 24), creme);
     borda.position.set(x, cy, 0.019);
@@ -7822,7 +7822,7 @@ export function cadeadinho(escala = 1): THREE.Group {
  * escolhe com qual jogar. Um armário pintado de amarelo-manteiga com pezinhos
  * redondos, duas gavetas de puxador rosa e uma portinha com uma flor pintada;
  * tampo de madeira com a toalhinha xadrez do piquenique no meio, uma lousinha
- * de giz ("Armas", com um coração), um vasinho florido e um par de luvas de
+ * de giz ("Ferramentas", com um coração), um vasinho florido e um par de luvas de
  * jardim; e o rolo de mangueira pendurado na lateral. Nasce de frente para `+Z`.
  */
 export function bancadaDoArsenal(largura = 1.3): THREE.Group {
@@ -7905,7 +7905,7 @@ export function bancadaDoArsenal(largura = 1.3): THREE.Group {
   lousa.position.set(largura * 0.22, A + 0.16, -0.148);
   lousa.rotation.x = -0.15;
   g.add(lousa);
-  const escrito = letreiro('Armas ♡', 0.32, 0.13, '#' + P.painelPlaca.toString(16).padStart(6, '0'));
+  const escrito = letreiro('Ferramentas ♡', 0.34, 0.11, '#' + P.painelPlaca.toString(16).padStart(6, '0'));
   escrito.position.set(largura * 0.22, A + 0.165, -0.135);
   escrito.rotation.x = -0.15;
   g.add(escrito);

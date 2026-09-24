@@ -134,7 +134,10 @@ desviam. A fala de apresentação da Josefina é minha. Teste:
 `scripts/decorar.mjs`. **Enfeite novo: skill `aristory-enfeite`** (uma função e
 uma ficha em `decoracoes.ts`; foto e pegada por `scripts/enfeite.mjs`).
 
-**AS ARMAS** (pedido do Renan; `minigames/jardim/armas.ts`, §4.1): regador →
+**AS ARMAS** — no jogo, **"ferramentas"** (pedido do Renan: nenhum texto na
+tela usa a palavra "armas"; no código os nomes continuam `armas`/`arsenal`).
+O painel enche o vão entre as duas treliças da parede esquerda, centralizado.
+(pedido do Renan; `minigames/jardim/armas.ts`, §4.1): regador →
 mangueira → pistola d'água → borrifador, numa fila. Cada uma **destranca
 quando a dupla vence a onda 20 usando a anterior** — o recorde é POR ARMA
 (`jardim.recorde.<arma>`; o `jardim.recorde` global continua sendo o maior de

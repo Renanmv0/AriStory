@@ -807,8 +807,21 @@ export const estufa: SceneDef = {
      * das armas — parecido com o livro, uma aba por arma.
      */
     const ARSENAL = { z: 2.4 };
-    const paredeDasArmas = w.add(w.place(painelDeArmas(1.8, 1.45, ARMAS.map((a) => a.nome)), -hx + 0.32, 0, ARSENAL.z, Math.PI / 2));
-    w.blockBox(-hx + 0.32, ARSENAL.z, 0.12, 1.0);
+    /*
+     * O PAINEL ENCHE O VÃO ENTRE AS DUAS TRELIÇAS (pedido do Renan, olhando a
+     * tela): elas vão de z -3,3 a -0,7 e de 3,5 a 5,7, então o vão é de -0,7 a
+     * 3,5. O painel fica no meio dele, com 15 cm de folga de cada lado. A
+     * bancada continua no vão entre os canteiros, que é por onde se chega.
+     */
+    const ENTRE_TRELICAS = { de: -0.7, ate: 3.5 };
+    const PAINEL = {
+      z: (ENTRE_TRELICAS.de + ENTRE_TRELICAS.ate) / 2,
+      largura: ENTRE_TRELICAS.ate - ENTRE_TRELICAS.de - 0.5,
+    };
+    const paredeDasArmas = w.add(w.place(
+      painelDeArmas(PAINEL.largura, 1.45, ARMAS.map((a) => a.nome)), -hx + 0.32, 0, PAINEL.z, Math.PI / 2,
+    ));
+    w.blockBox(-hx + 0.32, PAINEL.z, 0.12, PAINEL.largura / 2 + 0.1);
     const bancadaDasArmas = w.add(w.place(bancadaDoArsenal(1.3), -hx + 0.86, 0, ARSENAL.z, Math.PI / 2));
     w.blockBox(-hx + 0.86, ARSENAL.z, 0.3, 0.7);
 
@@ -865,15 +878,15 @@ export const estufa: SceneDef = {
         pivo.userData.trancada = !!m.userData.trancada;
         pivo.add(m);
         if (a.id === 'regador') {
-          m.scale.setScalar(1.15);
+          m.scale.setScalar(1.45);
           m.rotation.y = 0.45;
-          m.position.y = -0.42;
+          m.position.y = -0.5;
           pivo.position.set(gancho.x + 0.03, gancho.y, gancho.z + 0.14);
         } else {
-          m.scale.setScalar(1.3);
+          m.scale.setScalar(1.65);
           m.rotation.y = Math.PI / 2;
           // o meio da peça no pivô, para ela girar em volta de si
-          m.position.set(-0.03, -0.2, 0);
+          m.position.set(-0.04, -0.25, 0);
           pivo.rotation.z = a.id === 'borrifador' ? 0 : 0.75;
           pivo.position.set(gancho.x, gancho.y - 0.18, gancho.z + 0.05);
         }
@@ -907,7 +920,7 @@ export const estufa: SceneDef = {
     w.interact({
       id: 'estufa:arsenal',
       x: -hx + 2.0, z: ARSENAL.z, radius: 0.9,
-      label: 'Escolher a arma', icon: '🧰',
+      label: 'Escolher a ferramenta', icon: '🧰',
       highlight: bancadaDasArmas,
       onInteract: async (api) => {
         const escolha = await api.abrirArsenal(conteudoDoArsenal());
@@ -2280,7 +2293,7 @@ export const estufa: SceneDef = {
         for (const a of armasNovas) {
           g.toast(`${a.nome} destrancada!`, a.icone);
           await g.say([a.pronta
-            ? `Vocês merecem: ${a.comArtigo} está liberada lá na parede das armas. É só escolher na bancada!`
+            ? `Vocês merecem: ${a.comArtigo} está liberada lá na parede das ferramentas. É só escolher na bancada!`
             : `Vocês destrancaram ${a.comArtigo}! Ainda estou arrumando ela, mas já está pendurada na parede.`], J);
         }
         // a recompensa nova espera no livro: a Josefina só avisa onde

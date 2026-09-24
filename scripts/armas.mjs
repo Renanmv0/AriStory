@@ -119,7 +119,7 @@ await page.evaluate(() => window.jogo.setZoom(6));
 
 // ============================================= 2. a bancada abre o painel
 const prompt = await abrirArsenal(page);
-ok(/escolher a arma/i.test(prompt), `na frente da bancada o prompt é o das armas ("${prompt.trim()}")`);
+ok(/escolher a ferramenta/i.test(prompt), `na frente da bancada o prompt é o das armas ("${prompt.trim()}")`);
 ok(await arsenalAberto(page), 'E na bancada abre o painel das armas');
 ok(await page.locator('.livro-de-cartas.arsenal .abas button').count() === 4, 'uma aba por arma');
 await page.screenshot({ path: `${OUT}-painel-regador.png` });

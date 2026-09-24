@@ -39,10 +39,10 @@ export class Arsenal {
         <div class="capa">
           <span class="lombada" aria-hidden="true"></span>
           <div class="titulo">
-            <h2>🧰 As armas da estufa</h2>
+            <h2>🧰 As ferramentas da estufa</h2>
             <p class="conta"></p>
           </div>
-          <button class="fechar" aria-label="fechar o painel das armas">fechar</button>
+          <button class="fechar" aria-label="fechar o painel das ferramentas">fechar</button>
         </div>
         <div class="abas" role="tablist"></div>
         <div class="paginas"></div>
@@ -102,7 +102,7 @@ export class Arsenal {
     const c = this.conteudo;
     if (!c) return;
     const abertas = c.armas.filter((a) => a.estado !== 'trancada').length;
-    this.conta.innerHTML = `<b>${abertas}</b> de ${c.armas.length} armas destrancadas`;
+    this.conta.innerHTML = `<b>${abertas}</b> de ${c.armas.length} ferramentas destrancadas`;
     this.abas.innerHTML = c.armas.map((a) => `
       <button role="tab" data-aba="${escapar(a.id)}" class="${this.aba === a.id ? 'ativa' : ''} ${a.estado}" aria-selected="${this.aba === a.id}">
         ${a.estado === 'trancada' ? '🔒' : a.icone} ${escapar(a.nome)}${a.estado === 'escolhida' ? '<span class="aviso">✓</span>' : ''}
@@ -116,7 +116,7 @@ export class Arsenal {
     const acao = a.estado === 'escolhida'
       ? '<span class="selo">✓ é esta que vai para a rodada</span>'
       : a.estado === 'aberta'
-        ? `<button class="resgatar" data-usar="${escapar(a.id)}">Usar esta arma</button>`
+        ? `<button class="resgatar" data-usar="${escapar(a.id)}">Usar esta ferramenta</button>`
         : a.estado === 'em-construcao'
           ? '<span class="falta">🚧 a Josefina ainda está arrumando esta</span>'
           : `<span class="falta">🔒 ${escapar(a.meta)}</span>`;
