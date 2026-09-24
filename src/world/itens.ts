@@ -345,7 +345,7 @@ export const ITENS = {
   tiaraDoPelusa: {
     id: 'tiara-da-pelusa', nome: 'Orelhinhas do Pelusa', icone: '🐱',
     tipo: 'vestivel', slot: 'cabeca',
-    cor: P.pelusaCinza,
+    cor: P.pelusaBranco,
     nota: 'de gatinho, com o miolo rosa', preco: 36,
     extra: tiaraDoPelusa,
   },

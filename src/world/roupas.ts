@@ -2248,13 +2248,14 @@ function tiaraDoWalter(m: MedidasCorpo): THREE.Object3D {
 
 /**
  * A TIARA DE ORELHINHAS DO PELUSA: orelhas de gato em pé, claras com o miolo
- * rosa. A orelha é uma pirâmide de 4 faces com uma face virada para a frente,
+ * rosa, numa faixa BRANCA como elas (pedido do Renan: a faixa cinza-escura
+ * sumia no cabelo e não combinava com as orelhas). A orelha é uma pirâmide de 4 faces com uma face virada para a frente,
  * e o miolo é a MESMA pirâmide menor, com a face da frente no mesmo plano da
  * de fora (um fio à frente) — rosa por cima, sem furar nem sobrar.
  */
 function tiaraDoPelusa(m: MedidasCorpo): THREE.Object3D {
   const r = m.headR;
-  const { g, naFaixa } = tiara(m, P.pelusaCinzaEscuro);
+  const { g, naFaixa } = tiara(m, P.pelusaBranco);
   const ALTA = r * 0.52;
   const LARGA = r * 0.3;
   const MIOLO = 0.6;
