@@ -24,14 +24,25 @@ import { decoracaoPorId, type FichaDeDecoracao } from './decoracoes';
  *    onde não. É ANDANDO que se escolhe o lugar (o mesmo controle de sempre,
  *    no teclado e no celular). A barra de baixo tem girar, colocar e
  *    cancelar; no teclado, G, E e X.
- * 3. **Decide se cabe.** Três perguntas, nessa ordem: a cena proíbe ali?
- *    (`RegrasDoLugar` — terreiro, caminhos, frente de móvel: quem conhece a
- *    planta é a cena), a pegada encosta em algum colisor do mundo?, e ela
- *    encosta em outro enfeite?
+ * 3. **O modo de edição.** O ponto "Mexer no …" de cada enfeite SÓ EXISTE
+ *    nele (pedido do Renan: com muitos enfeites, as caixinhas se amontoavam
+ *    e roubavam o "Regar"). Quem liga é a cena — na estufa, o botão "Arrumar
+ *    os enfeites" da lojinha. Cada enfeite ganha um anel no chão, os outros
+ *    pontos da cena descansam, e a barra de baixo diz que é só chegar perto e
+ *    apertar E; o "pronto" (X) sai.
+ * 4. **Decide se cabe.** Três perguntas, nessa ordem: a cena proíbe ali?
+ *    (`RegrasDoLugar` — parede, canteiro, frente de móvel, vão de passagem:
+ *    quem conhece a planta é a cena), a pegada encosta em algum colisor do
+ *    mundo?, e ela encosta em outro enfeite?
  *
  * ENQUANTO DECORA, OS PONTOS DA CENA FICAM SUSPENSOS (o mesmo truque da
  * rodada do jardim): o E é do "colocar", e não pode abrir a porta nem falar
  * com a Josefina no meio do caminho.
+ *
+ * ENFEITE NÃO SEGURA BICHO. Os bichos do jardim andam em linha e nunca leram
+ * colisor, e é isso que deixa enfeitar o caminho deles. E quando a cena diz
+ * `intangivel` (na estufa, durante a rodada) o colisor sai também para a
+ * dupla: gota que cai em cima de um enfeite tem que dar para pegar.
  */
 
 export interface RegrasDoLugar {
@@ -73,6 +84,14 @@ export class Decorador {
   private modo: Modo | null = null;
   /** o relógio das animações (a roda gigante, o cata-vento) */
   private t = 0;
+  /** no modo de edição: os pontos da cena que ele pôs para descansar */
+  private edicao: { suspensas: Interactable[] } | null = null;
+  /** o anel de cada enfeite, no modo de edição */
+  private readonly aneis = new Map<number, THREE.Mesh>();
+  /** a pergunta "o que fazer com…" está aberta: a barra sai da frente dela */
+  private perguntando = false;
+  /** sem colisor para a dupla (a cena liga na rodada) */
+  private semCorpo = false;
   /** a cena é avisada quando um enfeite entra, sai ou muda (quem passeia desvia) */
   aoMudar: (() => void) | null = null;
 
@@ -92,6 +111,90 @@ export class Decorador {
 
   get decorando(): boolean {
     return this.modo !== null;
+  }
+
+  get editando(): boolean {
+    return this.edicao !== null;
+  }
+
+  /** colocando ou editando: a cena não deve religar ponto nenhum dela */
+  get ocupado(): boolean {
+    return this.modo !== null || this.edicao !== null;
+  }
+
+  /** quantos enfeites estão no chão */
+  get noChao(): number {
+    return this.postos.size;
+  }
+
+  /**
+   * INTANGÍVEL: o colisor de cada enfeite sai do mundo (e volta quando
+   * desliga). A estufa liga durante a rodada — bicho nunca leu colisor, e
+   * assim nem a dupla tropeça no flamingo correndo atrás de uma gota.
+   */
+  set intangivel(sim: boolean) {
+    if (sim === this.semCorpo) return;
+    this.semCorpo = sim;
+    for (const p of this.postos.values()) {
+      const i = this.w.colliders.indexOf(p.colisor);
+      if (sim && i >= 0) this.w.colliders.splice(i, 1);
+      else if (!sim && i < 0) this.w.colliders.push(p.colisor);
+    }
+  }
+
+  get intangivel(): boolean {
+    return this.semCorpo;
+  }
+
+  // ---------------------------------------------------- o modo de edição
+
+  /**
+   * Liga o modo de edição: o "Mexer no …" de cada enfeite acorda, os outros
+   * pontos da cena descansam, e cada enfeite ganha um anel no chão.
+   */
+  editar(): boolean {
+    if (this.ocupado || this.postos.size === 0) return false;
+    const meus = new Set([...this.postos.values()].map((p) => p.ponto));
+    const suspensas = this.w.interactables.filter((p) => p.enabled && !meus.has(p));
+    for (const p of suspensas) p.enabled = false;
+    for (const p of meus) p.enabled = true;
+    this.edicao = { suspensas };
+    for (const uid of this.postos.keys()) this.pintarAnel(uid);
+    this.g.som('menu');
+    return true;
+  }
+
+  /** Sai do modo de edição: os enfeites voltam a ser só enfeite. */
+  pararDeEditar(): void {
+    const e = this.edicao;
+    if (!e) return;
+    for (const p of this.postos.values()) p.ponto.enabled = false;
+    for (const p of e.suspensas) p.enabled = true;
+    this.edicao = null;
+    for (const uid of [...this.aneis.keys()]) this.apagarAnel(uid);
+    this.g.posicionador(null);
+    this.g.som('confirma');
+  }
+
+  private pintarAnel(uid: number): void {
+    const p = this.postos.get(uid);
+    if (!p || this.aneis.has(uid)) return;
+    const anel = new THREE.Mesh(
+      new THREE.RingGeometry(p.ficha.raio + 0.04, p.ficha.raio + 0.11, 32),
+      flat(P.decorarPode, 0.8),
+    );
+    anel.rotation.x = -Math.PI / 2;
+    anel.position.set(p.peca.position.x, 0.025, p.peca.position.z);
+    this.w.root.add(anel);
+    this.aneis.set(uid, anel);
+  }
+
+  private apagarAnel(uid: number): void {
+    const anel = this.aneis.get(uid);
+    if (!anel) return;
+    this.w.root.remove(anel);
+    anel.geometry.dispose();
+    this.aneis.delete(uid);
   }
 
   guardadas(id: string): number {
@@ -162,6 +265,8 @@ export class Decorador {
     this.gravar(uid, null);
     this.g.som('menu');
     this.g.toast(`${p.ficha.nome} ${p.ficha.artigo === 'a' ? 'guardada' : 'guardado'} — dá para pôr de novo pela lojinha`, p.ficha.icone);
+    // guardou o último: não sobra nada para arrumar
+    if (this.edicao && this.postos.size === 0) this.pararDeEditar();
   }
 
   private entrar(uid: number, ficha: FichaDeDecoracao, antes: Modo['antes']): void {
@@ -222,7 +327,10 @@ export class Decorador {
 
   private atualizar(): void {
     const m = this.modo;
-    if (!m) return;
+    if (!m) {
+      this.atualizarEdicao();
+      return;
+    }
     if (this.g.keyPressed('KeyG')) this.apertar('girar');
     if (this.g.keyPressed('KeyX')) this.apertar('cancelar');
     if (this.g.keyPressed('KeyE')) this.apertar('colocar');
@@ -238,9 +346,25 @@ export class Decorador {
     m.anel.position.set(m.x, 0.02, m.z);
     m.anel.material = flat(m.motivo ? P.decorarNaoPode : P.decorarPode);
     this.g.posicionador(
-      { nome: m.ficha.nome, icone: m.ficha.icone, valido: !m.motivo, motivo: m.motivo ?? undefined },
+      { tipo: 'colocar', nome: m.ficha.nome, icone: m.ficha.icone, valido: !m.motivo, motivo: m.motivo ?? undefined },
       (b) => this.apertar(b),
     );
+  }
+
+  /** a barra do modo de edição, e o X que sai dele */
+  private atualizarEdicao(): void {
+    if (!this.edicao) return;
+    if (this.perguntando) {
+      this.g.posicionador(null);
+      return;
+    }
+    if (this.g.keyPressed('KeyX')) {
+      this.pararDeEditar();
+      return;
+    }
+    this.g.posicionador({ tipo: 'editar', postos: this.postos.size }, (b) => {
+      if (b === 'pronto') this.pararDeEditar();
+    });
   }
 
   /** `null` se cabe; senão, o porquê, em palavras de gente */
@@ -262,32 +386,41 @@ export class Decorador {
     if (!ficha) return;
     const peca = this.w.add(this.w.place(ficha.monta(), onde.x, 0, onde.z, onde.giro));
     const colisor: Collider = { kind: 'circle', x: onde.x, z: onde.z, r: ficha.raio * 0.75 };
-    this.w.colliders.push(colisor);
+    if (!this.semCorpo) this.w.colliders.push(colisor);
     const de = ficha.artigo === 'a' ? 'na' : 'no';
     const ponto = this.w.interact({
       id: `decoracao:${uid}`,
-      // prioridade NORMAL: ganha o prompt mais perto. Com prioridade menor, o
-      // "Regar" de um canteiro vizinho roubava o enfeite para sempre; e a
-      // frente da lojinha, do livro e da bancada já é proibida para enfeite
+      // prioridade NORMAL: ganha o prompt mais perto. E ele só existe no modo
+      // de edição, onde os pontos da cena (o "Regar", a porta) descansam
       x: onde.x, z: onde.z, radius: ficha.raio + 0.75,
       label: `Mexer ${de} ${ficha.nome.charAt(0).toLowerCase()}${ficha.nome.slice(1)}`,
       icon: ficha.icone,
       highlight: peca,
       onInteract: async (g) => {
-        const qual = await g.ask(`O que fazer com ${ficha.artigo} ${ficha.nome.toLowerCase()}?`, [
-          'Mudar de lugar', 'Girar', 'Guardar', 'Deixar assim',
-        ]);
+        this.perguntando = true;
+        let qual: number;
+        try {
+          qual = await g.ask(`O que fazer com ${ficha.artigo} ${ficha.nome.toLowerCase()}?`, [
+            'Mudar de lugar', 'Girar', 'Guardar', 'Deixar assim',
+          ]);
+        } finally {
+          this.perguntando = false;
+        }
         if (qual === 0) this.mover(uid);
         else if (qual === 1) this.girar(uid);
         else if (qual === 2) this.guardar(uid);
       },
     });
-    // enfeite posto durante o modo (o cancelar do "mudar de lugar") já nasce suspenso
-    if (this.modo) {
-      ponto.enabled = false;
-      this.modo.suspensas.push(ponto);
-    }
+    /*
+     * FORA DO MODO DE EDIÇÃO O PONTO DORME. Posto durante o modo de colocar (o
+     * cancelar do "mudar de lugar"), ele entra na lista do modo — que só o
+     * religa se a dupla estiver editando.
+     */
+    ponto.enabled = false;
+    if (this.modo && this.edicao) this.modo.suspensas.push(ponto);
+    else if (this.edicao) ponto.enabled = true;
     this.postos.set(uid, { uid, ficha, peca, colisor, ponto });
+    if (this.edicao) this.pintarAnel(uid);
     this.aoMudar?.();
   }
 
@@ -302,6 +435,7 @@ export class Decorador {
     if (i >= 0) this.w.colliders.splice(i, 1);
     const j = this.w.interactables.indexOf(p.ponto);
     if (j >= 0) this.w.interactables.splice(j, 1);
+    this.apagarAnel(uid);
     this.postos.delete(uid);
     this.aoMudar?.();
   }

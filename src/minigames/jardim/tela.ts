@@ -202,22 +202,34 @@ export interface AcaoNaLoja {
 
 /**
  * Como o painel fechou: só fechando (`null`), indo PROVAR as roupas no boneco
- * (a arara da boutique), ou indo COLOCAR um enfeite guardado no chão.
+ * (a arara da boutique), indo COLOCAR um enfeite guardado no chão, ou entrando
+ * no MODO DE EDIÇÃO (mexer nos enfeites que já estão no chão).
  */
-export type SaidaDaLoja = null | { readonly tipo: 'provar' } | { readonly tipo: 'colocar'; readonly id: string };
+export type SaidaDaLoja =
+  | null
+  | { readonly tipo: 'provar' }
+  | { readonly tipo: 'colocar'; readonly id: string }
+  | { readonly tipo: 'editar' };
 
 /**
- * A BARRA DO MODO DE DECORAR, embaixo da tela: o enfeite que está na mão, se
- * ele cabe onde está, e os três botões (que também são teclas: G, E e X).
+ * A BARRA DE BAIXO DA TELA, nos dois modos do decorador:
+ *
+ * - **colocar**: o enfeite que está na mão, se ele cabe onde está, e os três
+ *   botões (que também são teclas: G, E e X);
+ * - **editar**: o modo de edição — quantos enfeites estão no chão e o botão de
+ *   terminar (X). Mexer em cada um é chegar perto e apertar E.
  */
-export interface EstadoDoPosicionador {
-  readonly nome: string;
-  readonly icone: string;
-  readonly valido: boolean;
-  /** por que não dá, quando não dá ("em cima do canteiro", "no terreiro") */
-  readonly motivo?: string;
-}
-export type BotaoDoPosicionador = 'girar' | 'colocar' | 'cancelar';
+export type EstadoDoPosicionador =
+  | {
+    readonly tipo: 'colocar';
+    readonly nome: string;
+    readonly icone: string;
+    readonly valido: boolean;
+    /** por que não dá, quando não dá ("em cima do canteiro", "no vão do portão") */
+    readonly motivo?: string;
+  }
+  | { readonly tipo: 'editar'; readonly postos: number };
+export type BotaoDoPosicionador = 'girar' | 'colocar' | 'cancelar' | 'pronto';
 
 /**
  * O PAINEL DA RODADA no alto da tela, e o BOTÃO DA AJUDA DO PAR: a onda, a

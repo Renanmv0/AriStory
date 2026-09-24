@@ -3592,6 +3592,30 @@ body.touch-device .ajuda-do-par kbd { display: none; }
   color: #fff;
   background: #4f8fd0;
 }
+/* a porta do modo de edição: mexer nos enfeites que já estão no chão */
+.loja-da-josefina .editar-enfeites {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #efe3c6;
+}
+.loja-da-josefina .editar-enfeites small { flex: 1 1 180px; font-size: 13px; color: #5a4a30; }
+.loja-da-josefina .editar {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  color: #fff;
+  background: #4f8fd0;
+  box-shadow: 0 3px 0 #33689e;
+}
 .loja-da-josefina .grade-produtos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -3704,4 +3728,6 @@ body.touch-device .ajuda-do-par kbd { display: none; }
   .posicionador { flex-wrap: wrap; justify-content: center; bottom: 10px; width: calc(100% - 24px); }
   .posicionador .enfeite { width: 100%; justify-content: center; }
   .posicionador kbd { display: none; }
+  /* no modo de edição a barra embrulha em duas linhas: o "Mexer no…" sobe por cima dela */
+  :has(> .posicionador.editando.show) > .prompt { bottom: 136px; }
 }

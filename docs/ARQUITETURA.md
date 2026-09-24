@@ -91,7 +91,10 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
   colocar e cancelar). A cena só diz onde é proibido (`RegrasDoLugar`); o resto
   (colisor, outro enfeite) ele confere com `circuloEncosta` (`collision.ts`).
   Enquanto decora, suspende os pontos da cena, como a rodada. A cada quadro
-  chama o `anima` de cada enfeite posto e do fantasma.
+  chama o `anima` de cada enfeite posto e do fantasma. O "Mexer no…" de cada
+  enfeite só acorda no MODO DE EDIÇÃO (`editar()`/`pararDeEditar()`, que a
+  cena liga — na estufa, pela lojinha), e `intangivel` tira o colisor de todos
+  (a estufa liga na rodada). `ocupado` diz à cena para não religar ponto seu.
 - `retrato.ts` — fotografa um modelo 3D num canvas fora da tela e guarda como
   imagem, para `<img>` de painel (as pragas do livro, os enfeites da loja).
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**

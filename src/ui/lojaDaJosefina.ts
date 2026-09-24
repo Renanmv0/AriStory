@@ -17,11 +17,14 @@ import { escapar } from './telaDeCartas';
  *   faz a prova daqui ser igual à de lá.
  * - **Decorações**: os enfeites da estufa, com o retrato do próprio modelo.
  *   Comprar guarda uma unidade; "colocar" fecha a banca e a cena entra no modo
- *   de decorar com aquele enfeite na mão.
+ *   de decorar com aquele enfeite na mão. E "Arrumar os enfeites" é a PORTA
+ *   DO MODO DE EDIÇÃO: fora dele, enfeite no chão não tem ponto de interação
+ *   nenhum (pedido do Renan — com muitos, as caixinhas de "Mexer no…" se
+ *   amontoavam e roubavam o "Regar").
  *
  * COMPRAR NÃO FECHA: o painel chama `agir` e se redesenha com a resposta (o
- * saldo desce, o contador de guardados sobe). Só PROVAR e COLOCAR fecham,
- * porque os dois levam a dupla para outro lugar.
+ * saldo desce, o contador de guardados sobe). Só PROVAR, COLOCAR e ARRUMAR
+ * fecham, porque os três levam a dupla para outro lugar.
  */
 
 type Aba = 'roupas' | 'decoracoes';
@@ -65,6 +68,7 @@ export class LojaDaJosefina {
       this.aba = b.dataset.aba as Aba;
       this.som?.('menu');
       this.pintar();
+      this.prateleira.scrollTop = 0;
     });
     this.prateleira.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-acao]');
@@ -73,6 +77,7 @@ export class LojaDaJosefina {
       const acao = b.dataset.acao;
       if (acao === 'provar') this.sair({ tipo: 'provar' });
       else if (acao === 'colocar') this.sair({ tipo: 'colocar', id });
+      else if (acao === 'editar') this.sair({ tipo: 'editar' });
       else if ((acao === 'comprar-roupa' || acao === 'comprar-decoracao') && this.agir) {
         this.conteudo = this.agir({ tipo: acao, id });
         this.pintar();
@@ -96,8 +101,10 @@ export class LojaDaJosefina {
       this.retrato = retrato;
       this.agir = agir;
       this.pintar();
-      this.prateleira.scrollTop = 0;
+      // a rolagem volta ao topo DEPOIS do `show`: com o painel escondido não
+      // existe rolagem, e a banca reabria no meio da lista de antes
       this.raiz.classList.add('show');
+      this.prateleira.scrollTop = 0;
       this.som?.('diario');
       this.resolver = resolve;
     });
@@ -155,9 +162,16 @@ export class LojaDaJosefina {
           </div>
         </div>`;
     };
+    const noChao = c.decoracoes.reduce((s, d) => s + d.postas, 0);
     return `
-      <p class="dica">Comprou, toque em <b>Colocar</b>: o enfeite vai na frente de vocês, e é só andar até o lugar.
-        Fora do terreiro, dos caminhos e dos canteiros, ele fica onde vocês quiserem.</p>
+      <p class="dica">Comprou, toque em <b>Colocar</b>: o enfeite vai na frente de vocês, e é só andar até o lugar —
+        dentro da estufa ou no pátio de fora. Os bichos passam por cima, então pode enfeitar até o caminho deles.</p>
+      <div class="editar-enfeites">
+        <button class="editar" data-acao="editar" ${noChao ? '' : 'disabled'}>✏️ Arrumar os enfeites</button>
+        <small>${noChao
+          ? `mudar de lugar, girar ou guardar ${noChao === 1 ? 'o que está' : `os ${noChao} que estão`} no chão`
+          : 'quando tiver enfeite no chão, é por aqui que se mexe nele'}</small>
+      </div>
       <div class="grade-produtos">${c.decoracoes.map(cartao).join('')}</div>`;
   }
 

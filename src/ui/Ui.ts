@@ -1025,21 +1025,33 @@ export class Ui {
   }
 
   /**
-   * A BARRA DO MODO DE DECORAR, embaixo da tela. Não é painel: a dupla anda
-   * com ela aberta (é andando que se escolhe o lugar), então ela não entra em
-   * `tela-aberta`. Os botões são o caminho do celular; no teclado são G, E e X.
+   * A BARRA DO DECORADOR, embaixo da tela — a de colocar um enfeite e a do
+   * modo de edição. Não é painel: a dupla anda com ela aberta (é andando que se
+   * escolhe o lugar, e que se chega no enfeite a mexer), então ela não entra
+   * em `tela-aberta`. Os botões são o caminho do celular; no teclado são G, E
+   * e X.
    */
   mostrarPosicionador(estado: EstadoDoPosicionador | null, aoBotao: ((b: BotaoDoPosicionador) => void) | null): void {
     this.aoBotaoDoPosicionador = aoBotao;
     this.posicionador.classList.toggle('show', !!estado);
+    this.posicionador.classList.toggle('editando', estado?.tipo === 'editar');
     if (!estado) return;
-    const aviso = estado.valido ? '✓ aqui dá' : `✗ ${escapar(estado.motivo ?? 'aqui não dá')}`;
-    const html = `
-      <span class="enfeite"><span class="icone">${estado.icone}</span><b>${escapar(estado.nome)}</b>
-        <small class="${estado.valido ? 'pode' : 'nao-pode'}">${aviso}</small></span>
-      <button data-botao="girar">↻ girar <kbd>G</kbd></button>
-      <button data-botao="colocar" class="colocar" ${estado.valido ? '' : 'disabled'}>✓ colocar <kbd>E</kbd></button>
-      <button data-botao="cancelar">✕ <kbd>X</kbd></button>`;
+    let html: string;
+    if (estado.tipo === 'editar') {
+      const quantos = estado.postos === 1 ? '1 enfeite' : `${estado.postos} enfeites`;
+      html = `
+        <span class="enfeite"><span class="icone">✏️</span><b>Arrumando os enfeites</b>
+          <small class="pode">${quantos} · chegue perto de um e aperte E</small></span>
+        <button data-botao="pronto" class="colocar">✓ pronto <kbd>X</kbd></button>`;
+    } else {
+      const aviso = estado.valido ? '✓ aqui dá' : `✗ ${escapar(estado.motivo ?? 'aqui não dá')}`;
+      html = `
+        <span class="enfeite"><span class="icone">${estado.icone}</span><b>${escapar(estado.nome)}</b>
+          <small class="${estado.valido ? 'pode' : 'nao-pode'}">${aviso}</small></span>
+        <button data-botao="girar">↻ girar <kbd>G</kbd></button>
+        <button data-botao="colocar" class="colocar" ${estado.valido ? '' : 'disabled'}>✓ colocar <kbd>E</kbd></button>
+        <button data-botao="cancelar">✕ <kbd>X</kbd></button>`;
+    }
     // redesenha só quando muda: a cena chama isto todo quadro
     if (this.posicionador.dataset.html !== html) {
       this.posicionador.dataset.html = html;

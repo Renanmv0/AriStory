@@ -102,10 +102,22 @@ gira a hélice, a rodinha gira a roda com as cabines sempre de pé); o decorador
 chama a cada quadro, tanto para os postos quanto para o fantasma na mão.
 O enfeite comprado fica guardado; "Colocar" põe ele na frente da dupla e
 é ANDANDO que se escolhe o lugar (`world/decorador.ts`: anel verde/vermelho,
-barra com girar G / colocar E / cancelar X). Proibido: terreiro, caminhos,
-eixo da porta, fundo dos bichos (`z < -4,6`), canteiros, mudas e a frente de
-bancada/livro/loja (`regrasDoLugar`, em `scenes/estufa.ts`). Cada enfeite posto
-tem colisor e "Mexer no…" (mudar de lugar, girar, guardar), fica no save
+barra com girar G / colocar E / cancelar X). **Dá para enfeitar a estufa
+inteira e o PÁTIO DE FORA** (a grama com as árvores), terreiro e caminho dos
+bichos incluídos (pedido do Renan): bicho do jardim anda em linha e nunca leu
+colisor, então atravessa o enfeite; e da hora dos postos até o fim da rodada o
+enfeite perde o colisor da dupla também (`decorador.intangivel`), para gota
+que cai em cima dele dar para pegar. Continua proibido
+(`regrasDoLugar`, em `scenes/estufa.ts`): a porta até a linha dos postos, os
+vãos dos três portões, paredes e sebe, as brechas para fora do pátio,
+canteiros, mudas, a frente da bancada e da loja, e o posto de cada ajudante das
+cartas. **As moitas de três esferas (`bush`) saíram da estufa e do pátio**
+(pedido do Renan: trancavam o caminho).
+**O "Mexer no…" só existe no MODO DE EDIÇÃO** (pedido do Renan: com muitos
+enfeites as caixinhas se amontoavam e roubavam o "Regar"). A porta é o botão
+"✏️ Arrumar os enfeites" da aba de decorações da loja: cada enfeite ganha um
+anel, os outros pontos da cena descansam, a barra de baixo diz "chegue perto e
+aperte E", e o "pronto" (X) sai. Cada enfeite posto fica no save
 (`SaveState.decoracoes`) e entra na lista do que a Josefina e os ajudantes
 desviam. A fala de apresentação da Josefina é minha. Teste:
 `scripts/decorar.mjs`.
@@ -1295,8 +1307,10 @@ no fundo — um beco, de propósito. A sebe é mais alta que a do clube (1,6 con
 1,05) porque aqui ela é **limite**, e não enfeite.
 
 **O que cresce lá fora segue a regra do terreiro**: os três corredores dos
-portões ficam limpos, e árvore e moita vão para as faixas entre um corredor e
-outro, onde emolduram o vão em vez de tapá-lo.
+portões ficam limpos, e as árvores vão para as faixas entre um corredor e
+outro, onde emolduram o vão em vez de tapá-lo. (Tinha moita também; saiu a
+pedido do Renan, e o pátio virou lugar de enfeite — ver a lojinha no COMECE
+AQUI.)
 
 ### A corrente de entrada, e as três chances de interceptar
 
@@ -1312,9 +1326,8 @@ nasce no gramado de fora  →  BRECHA da sebe  →  caminho de pedra
 **Cada trecho é uma chance de interceptar**, e é isso que faz "segurar fora"
 contra "segurar dentro" virar decisão em vez de preferência. As brechas são
 mais largas que o caminho (3,2 contra 2,2) — passagem tem eixo, e o eixo fica
-vazio — e duas moitas altas ladeiam cada uma, **fora do vão**: sebe cortada em
-quina viva parece parede quebrada, e moita arredondada na ponta parece mato que
-abriu.
+vazio. (Duas moitas ladeavam cada uma; saíram com as outras, a pedido do
+Renan.)
 
 **A cena publica `entradas`**: um ponto do lado de FORA da sebe, alinhado com
 cada brecha. É de lá que o bicho aparece — bicho que nasce dentro do pátio não

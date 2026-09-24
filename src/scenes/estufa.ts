@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
-  arcoDeEstufa, bancadaDeJardinagem, bush, canteiroDeHorta, capim, folhagemAlta, planta,
+  arcoDeEstufa, bancadaDeJardinagem, canteiroDeHorta, capim, folhagemAlta, planta,
   livroDeCartas, lojinhaDaJosefina, plaquinhaDaEstufa, portaoDeJardim, regadorDeOuro, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
   trelicaComTrepadeira, vasoDePlanta,
 } from '../world/props';
@@ -438,33 +438,18 @@ export const estufa: SceneDef = {
       w.blockBox(centro, FUNDO_DE_FORA, comprimento / 2, 0.55);
     }
     /**
-     * E duas moitas altas ladeando cada brecha, encostadas na ponta da sebe.
-     *
-     * Sao elas que fazem a abertura LER como abertura: sebe cortada em quina
-     * viva parece parede quebrada, e moita arredondada na ponta parece mato que
-     * abriu. Elas ficam FORA do vao (a 2,1 do eixo, contra os 1,6 da brecha),
-     * entao nao estreitam a passagem.
+     * SEM MOITA NENHUMA, nem aqui nem dentro (pedido do Renan). As de três
+     * esferas (`bush`) ladeavam as brechas, salpicavam o pátio e fechavam os
+     * vãos entre os canteiros: trancavam o caminho e eram a peça menos
+     * caprichada da estufa. O que decora agora é o que a dupla põe — o pátio
+     * inteiro virou lugar de enfeite.
      */
-    for (const x of PORTOES.xs) {
-      for (const s of [-1, 1] as const) {
-        w.add(w.place(bush(1.15), x + s * 2.1, 0, FUNDO_DE_FORA + 0.15, (x + s) % 1));
-        w.blockCircle(x + s * 2.1, FUNDO_DE_FORA + 0.15, 0.38);
-      }
-    }
-    // e algumas moitas soltas do lado de FORA da sebe, para a brecha nao dar
-    // num gramado vazio: quem olha pela brecha tem que ver o mato continuar
-    for (const [x, z, e] of [
-      [-12.2, -27.2, 1.0], [-5.4, -26.6, 0.9], [5.6, -27.4, 1.05],
-      [12.6, -26.4, 0.95], [-0.2, -28.2, 0.85],
-    ] as const) {
-      w.add(w.place(bush(e), x, 0, z, (x * z) % 1));
-    }
 
     /**
      * O QUE CRESCE NO PATIO. Ele e chao de briga agora, entao a regra e a mesma
      * do terreiro de dentro: **os tres corredores dos portoes ficam limpos**.
-     * Arvore e moita vao para as faixas entre um corredor e outro, e para as
-     * quinas — que e onde elas emolduram o vao em vez de tapa-lo.
+     * Arvore vai para as faixas entre um corredor e outro, e para as quinas —
+     * que e onde elas emolduram o vao em vez de tapa-lo.
      */
     /**
      * A FOLGA MEDE A COPA, e nao o tronco.
@@ -487,15 +472,6 @@ export const estufa: SceneDef = {
       if (noCorredor(x)) continue;
       w.add(w.place(tree(tipo, e, ((x + z) / 13) % 1), x, 0, z));
       w.blockCircle(x, z, 0.4);
-    }
-    for (const [x, z, e] of [
-      [-13.4, -12.9, 1.0], [-4.9, -12.6, 0.85], [4.5, -12.8, 0.95],
-      [13.2, -13.4, 1.1], [-12.8, -22.6, 0.9], [12.6, -17.6, 1.0],
-      [-4.3, -24.1, 0.8], [13.6, -24.2, 0.95], [-13.2, -18.8, 0.85],
-    ] as const) {
-      if (noCorredor(x)) continue;
-      w.add(w.place(bush(e), x, 0, z, (x * z) % 1));
-      w.blockCircle(x, z, 0.3 * e);
     }
     // capim solto nas faixas livres: e o que impede o gramado de virar carpete
     for (let i = 0; i < 22; i++) {
@@ -602,8 +578,8 @@ export const estufa: SceneDef = {
      * duas das pontas continuaram debrucadas nos canteiros laterais, e o
      * teste, que tambem media colisor, nao viu.
      *
-     * Quem chama passa o raio da peca que vai plantar: `bush(e)` tem
-     * `0,78 · e`, muda e capim tem uns 0,2. A regra deixou de adivinhar.
+     * Quem chama passa o raio da peca que vai plantar: muda e capim tem uns
+     * 0,2 (a moita, que tinha 0,78, saiu da estufa). A regra deixou de adivinhar.
      */
     /** em cima da lojinha, ou na frente do balcão, onde a dupla para para comprar */
     const naLoja = (x: number, z: number, folga: number): boolean =>
@@ -699,31 +675,13 @@ export const estufa: SceneDef = {
         x, 0, hz - 0.85,
       ));
     }
-    /**
-     * AS MOITAS NASCEM NOS VAOS ENTRE OS CANTEIROS, e nao em cima deles.
-     *
-     * Os dois `x = ±6,9` sao o MEIO do vao entre um canteiro e o seguinte
-     * (`-10,2 / -3,6 / 3,6 / 10,2`, cada um com 3,2 de largura): e ali que a
-     * moita fecha o buraco e faz a fileira parecer plantada em vez de arrumada.
-     * O vao do meio (`x = 0`) fica vazio — e o eixo da porta.
-     *
-     * Todas passam pelo `podePlantar` mesmo assim: numero escrito a mao
-     * envelhece quando o canteiro muda de lugar, e foi exatamente isso que
-     * aconteceu da ultima vez.
+    /*
+     * Os vãos entre os canteiros tinham moita (`bush`, as três esferas). Saíram
+     * a pedido do Renan: fechavam a passagem entre um canteiro e outro, e o
+     * vão agora é lugar de enfeite. Ficam as mudas crescidas, que são baixas e
+     * não têm colisor.
      */
-    for (const [x, z, e] of [
-      [-6.9, 8.8, 0.95], [6.9, 8.8, 0.9],
-      [-11.4, 6.5, 0.8], [-7.6, 6.4, 0.7], [-4.2, 6.6, 0.75],
-      [4.2, 6.4, 0.7], [7.6, 6.6, 0.8], [11.4, 6.5, 0.75],
-    ] as const) {
-      // `bush(e)` sao tres esferas de raio `0,42·e` espacadas de `0,36·e`:
-      // a peca inteira tem `0,78·e` de meia-largura
-      if (!podePlantar(x, z, 0.78 * e)) continue;
-      w.add(w.place(bush(e), x, 0, z, (x + z) % 1));
-      w.blockCircle(x, z, 0.3 * e);
-      moitasDaFrente.push({ x, z, r: 0.78 * e + 0.2 });
-    }
-    // e mais uma fileira de mudas crescidas fechando a frente dos canteiros
+    // a fileira de mudas crescidas fechando a frente dos canteiros
     for (let i = 0; i < 12; i++) {
       const x = -11.6 + i * 2.1;
       if (!podePlantar(x, 7.5, 0.3)) continue;
@@ -1316,6 +1274,10 @@ export const estufa: SceneDef = {
 
     /** a conversa ou a rodada estao acontecendo: o prompt dela descansa */
     let ocupada = false;
+    /** colocando ou arrumando enfeite: o prompt dela tambem descansa (o decorador liga isto la embaixo) */
+    let decoradorOcupado = (): boolean => false;
+    /** dos postos ate a rodada ligar: os enfeites ja perdem o corpo (ver o decorador) */
+    let preparandoARodada = false;
 
     const falarComAJosefina = w.interact({
       id: 'estufa:josefina',
@@ -1342,7 +1304,8 @@ export const estufa: SceneDef = {
       falarComAJosefina.moveTo(josefina.x, josefina.z);
       // ela so conversa depois do convite, e nunca no meio de outra conversa
       // dela (a cutscene das pragas liga o `visible` antes de o convite existir)
-      falarComAJosefina.enabled = !ocupada && g.flag('jardim.convite') && josefina.group.visible;
+      falarComAJosefina.enabled = !ocupada && g.flag('jardim.convite') && josefina.group.visible
+        && !decoradorOcupado();
     });
 
     /** Quem vai regar tem que estar com o regador NA MAO, e nao na mochila. */
@@ -1405,6 +1368,7 @@ export const estufa: SceneDef = {
     const assumirOsPostos = async (api: typeof g): Promise<void> => {
       const J = 'Josefina';
       const outro = api.companionName();
+      preparandoARodada = true;
       await api.say([
         'Então fica assim. Eu fico aqui atrás, na linha da porta, de olho nos canteiros.',
         `${outro}, fica comigo. Daqui a gente vê os três portões.`,
@@ -1437,6 +1401,7 @@ export const estufa: SceneDef = {
        */
       await api.say(['Olha lá… estão vindo pelo fundo. Água neles, meu bem!'], J);
       rodada.comecar();
+      preparandoARodada = false;
     };
 
     /* ====================================================================
@@ -1878,36 +1843,59 @@ export const estufa: SceneDef = {
      * ====================================================================
      *
      * Pedido do Renan: a banca do canto vende roupa e decoração, e a dupla
-     * põe cada enfeite onde quiser. Quem cuida do chão é o `Decorador`
-     * (`world/decorador.ts`); aqui mora a REGRA DO LUGAR — o que só esta
-     * planta sabe:
+     * põe cada enfeite onde quiser — dentro da estufa E NO PÁTIO DE FORA,
+     * terreiro e caminho dos bichos incluídos. Quem cuida do chão é o
+     * `Decorador` (`world/decorador.ts`); aqui mora a REGRA DO LUGAR, o que só
+     * esta planta sabe.
      *
-     * - **o terreiro e os caminhos ficam limpos**: é a arena, e a rodada
-     *   precisa de chão legível (a mesma regra que já proibia planta ali);
-     * - **o fundo (`z < -4,6`) é dos bichos e dos tonéis**;
-     * - **o eixo da porta fica vazio** (passagem tem eixo), e a frente da
-     *   bancada, do livro, do regador e da lojinha também;
-     * - **nada em cima de canteiro nem das mudas da frente**.
+     * O TERREIRO E O FUNDO JÁ FORAM PROIBIDOS ("caminho de bicho"), e deixaram
+     * de ser: bicho do jardim anda em linha e nunca leu colisor, então ele
+     * passa por cima do enfeite sem desviar, e na rodada a estufa ainda tira o
+     * colisor da dupla (`decorador.intangivel`) — gota que cai no flamingo dá
+     * para pegar. O que continua proibido é o que ninguém pode perder:
      *
-     * Colisor e outro enfeite o decorador confere sozinho.
+     * - **passagem**: o vão da porta (e a linha dos postos da Josefina e de
+     *   quem fica atrás com ela) e os vãos dos três portões;
+     * - **as paredes e a sebe**, e a saída do pátio pelas brechas;
+     * - **o canteiro, as mudas da frente, a frente da bancada e da lojinha**;
+     * - **o posto de cada ajudante das cartas** (Capy, Gina, Walter, Noel),
+     *   que param ali no meio da rodada.
+     *
+     * Colisor (árvore, tonel, vaso) e outro enfeite o decorador confere sozinho.
      */
-    const FUNDO_DOS_ENFEITES = -4.6;
     const regrasDoLugar = {
       proibido: (x: number, z: number, raio: number): string | null => {
-        if (z < FUNDO_DOS_ENFEITES + raio) return 'aí é caminho de bicho';
-        if (Math.abs(x) > hx - 0.5 - raio || z > hz - 1.25 - raio) return 'colado demais na parede';
-        if (Math.abs(x - TERREIRO.x) < TERREIRO.largura / 2 + raio + 0.2
-          && Math.abs(z - TERREIRO.z) < TERREIRO.profundidade / 2 + raio + 0.2) return 'no terreiro, onde os bichos passam';
-        if (Math.abs(z - TERREIRO.z) < 1.1 + raio) return 'no caminho do meio';
-        if (Math.abs(x - PORTA.x) < 1.7 + raio && z > TERREIRO.z) return 'no caminho da porta';
+        // o pátio de fora: a sebe do fundo, e as brechas, que dão para lugar nenhum
+        if (z < FUNDO_DE_FORA + 0.6 + raio) return 'colado demais na sebe';
+        if (Math.abs(x) > hx - 0.5 - raio) return z < -hz ? 'colado demais na sebe' : 'colado demais na parede';
+        if (z > hz - 1.25 - raio) return 'colado demais na parede';
+        // a parede do fundo, e os três portões nela: passagem de gente e de bicho
+        if (Math.abs(z + hz) < 0.7 + raio) {
+          return PORTOES.xs.some((px) => Math.abs(x - px) < PORTOES.vao / 2 + 0.5 + raio)
+            ? 'no vão do portão' : 'colado demais na parede';
+        }
+        // da porta até a linha dos postos: por ali entra todo mundo, e ali
+        // ficam a Josefina e quem espera a rodada com ela
+        if (Math.abs(x - PORTA.x) < 1.7 + raio && z > POSTO_DA_JOSEFINA.z - 0.9 - raio) return 'no caminho da porta';
         if (emCimaDeCanteiro(x, z, raio + 0.05)) return 'em cima do canteiro';
         if (naLoja(x, z, raio)) return 'na frente da lojinha';
         if (x < -hx + 3.2 + raio && z > 4.4 && z < 9.8) return 'na frente da bancada';
         if (moitasDaFrente.some((m) => Math.hypot(x - m.x, z - m.z) < m.r * 0.8 + raio)) return 'em cima das plantas';
+        const posto = Object.values(AJUDANTES).find((a) => Math.hypot(x - a.posto.x, z - a.posto.z) < 0.7 + raio);
+        if (posto) return `no lugar ${posto.nome === 'Gina' ? 'da' : 'do'} ${posto.nome}`;
         return null;
       },
     };
     const decorador = new Decorador(w, regrasDoLugar);
+    decoradorOcupado = () => decorador.ocupado;
+    /*
+     * NA RODADA, ENFEITE NÃO TEM CORPO: a partir da hora em que a dupla aceita
+     * (os postos) até a Josefina fechar a conta. O parceiro atravessa o
+     * terreiro para o posto dele e a gota pode cair em cima de um enfeite.
+     */
+    w.onUpdate(() => {
+      decorador.intangivel = preparandoARodada || rodada.rodando;
+    });
     decorador.aoMudar = () => {
       obstaculosDoPasseio.length = fixos;
       obstaculosDoPasseio.push(...decorador.circulos());
@@ -1961,6 +1949,7 @@ export const estufa: SceneDef = {
       const saida = await g.abrirLojaDaJosefina(conteudoDaLoja(), agirNaLoja);
       if (saida?.tipo === 'provar') g.abrirLoja('Roupas da Josefina', ROUPAS_DA_JOSEFINA);
       else if (saida?.tipo === 'colocar') decorador.colocar(saida.id);
+      else if (saida?.tipo === 'editar') decorador.editar();
     };
     w.interact({
       id: 'estufa:lojinha',
