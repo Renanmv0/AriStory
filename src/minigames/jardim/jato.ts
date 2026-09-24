@@ -53,7 +53,7 @@ interface JatoNoAr {
   /** quantas gotas por segundo */
   taxa: number;
   acumulado: number;
-  forma: 'cone' | 'fio' | 'linha' | 'arco' | 'reto';
+  forma: 'cone' | 'fio' | 'linha' | 'arco' | 'reto' | 'tiro';
   /** meia abertura do leque, em radianos */
   abertura: number;
   tamanho: number;
@@ -109,6 +109,8 @@ export interface ContagemDoJato {
   carga: number;
   arcosIris: number;
   sacudidas: number;
+  /** os balões d'água da pistola que já voaram */
+  baloes: number;
   miras: number;
   chuvas: number;
   /** os jatos especiais: tanque cheio, carregado, o décimo do arco-íris */
@@ -130,7 +132,7 @@ function contagemZerada(): ContagemDoJato {
   return {
     disparos: 0, formas: {}, tintas: {}, respingos: 0, trancos: 0, cristais: 0, vapores: 0,
     bolhas: 0, pocas: 0, garoas: 0, rachaduras: 0, geiseres: 0, aneis: 0, carga: 0,
-    arcosIris: 0, sacudidas: 0, miras: 0, chuvas: 0, especiais: {}, vaporDoCaminho: 0, alturaMaxima: 0,
+    arcosIris: 0, sacudidas: 0, baloes: 0, miras: 0, chuvas: 0, especiais: {}, vaporDoCaminho: 0, alturaMaxima: 0,
     poeiras: 0, notas: 0, ondas: 0, brotos: 0, ardidos: 0, adubos: 0,
   };
 }
@@ -173,6 +175,12 @@ export class DesenhoDoJato {
   /** as bolhas grandes do sabão: malhas reaproveitadas */
   private readonly bolhas: Array<{ malha: THREE.Mesh; idade: number; viva: boolean; raio: number }> = [];
 
+  /** os balões d'água da pistola (o Balão d'água): voam em arco e estouram */
+  private readonly baloes: Array<{
+    malha: THREE.Mesh; viva: boolean; t: number; dur: number;
+    de: THREE.Vector3; para: THREE.Vector3; estourar: () => void;
+  }> = [];
+
   /** a nuvem da Chuva e da Dança da chuva */
   private readonly nuvem: THREE.Group;
   private nuvemResta = 0;
@@ -212,9 +220,76 @@ export class DesenhoDoJato {
       this.bolhas.push({ malha, idade: 0, viva: false, raio: 0.4 });
     }
 
+    // os balões: bexigas de festa em três cores, com o nozinho embaixo
+    for (const [i, cor] of [P.bandeirinhaRosa, P.bandeirinhaAmarela, P.bandeirinhaAzul, P.bandeirinhaLilas].entries()) {
+      const malha = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), toon(cor, { glow: 0.15 }));
+      malha.scale.set(1, 1.15, 1);
+      const no = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.05, 6), toon(cor));
+      no.position.y = -0.13;
+      no.rotation.x = Math.PI;
+      malha.add(no);
+      const brilho = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 5), toon(P.jatoCristal, { glow: 0.9 }));
+      brilho.position.set(-0.05, 0.06, 0.08);
+      malha.add(brilho);
+      malha.visible = false;
+      malha.name = `balao-${i}`;
+      this.grupo.add(malha);
+      this.baloes.push({ malha, viva: false, t: 0, dur: 0.4, de: new THREE.Vector3(), para: new THREE.Vector3(), estourar: () => {} });
+    }
+
     this.nuvem = montarNuvem();
     this.nuvem.visible = false;
     this.grupo.add(this.nuvem);
+  }
+
+  /**
+   * O BALÃO D'ÁGUA da pistola: sai da ponta do cano numa curvinha, rodando, e
+   * ESTOURA onde cai — um anel de água e um borrifo em volta. Quem molha quem
+   * a rodada decide (`aoEstourar`). Devolve o tempo de voo.
+   */
+  balaoDagua(de: THREE.Vector3, para: THREE.Vector3, aoEstourar: () => void): number {
+    const b = this.baloes.find((x) => !x.viva) ?? this.baloes[0];
+    const dist = Math.hypot(para.x - de.x, para.z - de.z);
+    b.viva = true;
+    b.t = 0;
+    b.dur = 0.25 + dist * 0.05;
+    b.de.copy(de);
+    b.para.set(para.x, 0.2, para.z);
+    b.malha.visible = true;
+    b.malha.position.copy(de);
+    this.contagem.baloes += 1;
+    this.soar('lancar');
+    b.estourar = () => {
+      this.soar('estouro');
+      for (let i = 0; i < 26; i++) {
+        const a = (i / 26) * Math.PI * 2;
+        this.agua.emitir({
+          x: b.para.x, y: 0.3, z: b.para.z,
+          vx: Math.cos(a) * 3, vy: 1.4 + Math.random(), vz: Math.sin(a) * 3,
+          vida: 0.55, tamanho: 0.035, cor: i % 2 ? P.jatoMiolo : P.jatoAgua, gravidade: 8,
+        });
+      }
+      this.aneis.deixar({ x: b.para.x, z: b.para.z, raio: 1.2, vida: 0.55, cor: P.jatoMiolo, abrir: 2, crescer: 0.1 });
+      this.poca(b.para.x, b.para.z, 0.9, 2.5);
+      aoEstourar();
+    };
+    return b.dur;
+  }
+
+  private animarBaloes(dt: number): void {
+    for (const b of this.baloes) {
+      if (!b.viva) continue;
+      b.t += dt;
+      const t = Math.min(1, b.t / b.dur);
+      b.malha.position.lerpVectors(b.de, b.para, t);
+      b.malha.position.y += Math.sin(t * Math.PI) * 0.7;
+      b.malha.rotation.z += dt * 8;
+      if (t >= 1) {
+        b.viva = false;
+        b.malha.visible = false;
+        b.estourar();
+      }
+    }
   }
 
   // ============================================================ o relógio
@@ -256,6 +331,7 @@ export class DesenhoDoJato {
     this.rachas.update(dt);
     this.animarAlvinho(dt);
     this.animarBolhas(dt);
+    this.animarBaloes(dt);
     this.animarNuvem(dt);
   }
 
@@ -277,6 +353,10 @@ export class DesenhoDoJato {
     this.alvinho.visible = false;
     this.alvinhoResta = 0;
     for (const b of this.bolhas) {
+      b.viva = false;
+      b.malha.visible = false;
+    }
+    for (const b of this.baloes) {
       b.viva = false;
       b.malha.visible = false;
     }
@@ -313,7 +393,8 @@ export class DesenhoDoJato {
         : e.arco ? 'arco'
           : e.reto ? 'reto'
             : e.mangueira ? 'linha'
-              : 'cone');
+              : e.pistola ? 'tiro'
+                : 'cone');
     const tinta: Tinta = especial === 'arco-iris' ? 'arco-iris'
       : especial === 'carregado' ? 'carga'
         : e.gelo ? 'gelo'
@@ -322,14 +403,16 @@ export class DesenhoDoJato {
 
     const dist = Math.hypot(d.para.x - d.de.x, d.para.z - d.de.z);
     // cada forma tem a sua velocidade, e é isso que dá o caráter dela
-    const gravidade = forma === 'reto' ? 0.6 : forma === 'arco' ? 9 : forma === 'linha' ? 4 : GRAVIDADE;
+    // o TIRO da pistola: bolinhas grandes, rápidas e quase sem cair — um
+    // brinquedo de piscina, e não um jato
+    const gravidade = forma === 'reto' ? 0.6 : forma === 'arco' ? 9 : forma === 'linha' ? 4 : forma === 'tiro' ? 1.2 : GRAVIDADE;
     /*
      * O ARCO é decidido pela ALTURA, e não pela velocidade: a carta diz que
      * ele passa por cima do canteiro, então o topo fica bem acima do bico
      * (1,2 m, mais um pouco quanto mais longe). A velocidade de lado sai da
      * conta do tempo de voo que essa altura dá.
      */
-    let velocidade = forma === 'reto' ? 14 : forma === 'linha' ? 11 : VELOCIDADE;
+    let velocidade = forma === 'reto' ? 14 : forma === 'linha' ? 11 : forma === 'tiro' ? 16 : VELOCIDADE;
     if (forma === 'arco') {
       const topo = 1.2 + dist * 0.12;
       const sobe = Math.sqrt(2 * gravidade * topo);
@@ -347,11 +430,14 @@ export class DesenhoDoJato {
       : forma === 'fio' ? 0.04
         : forma === 'linha' ? 0.025 + aberto * 0.03
           : forma === 'reto' ? 0.02 + aberto * 0.02
-            : (arcoFino ? 0.04 : 0.1) + aberto * 0.04;
-    const duracao = forma === 'linha' || arcoFino ? 0.34 : forma === 'reto' ? 0.22 : forma === 'arco' ? 0.2 : DURACAO;
+            : forma === 'tiro' ? 0.008 + aberto * 0.02
+              : (arcoFino ? 0.04 : 0.1) + aberto * 0.04;
+    const duracao = forma === 'linha' || arcoFino ? 0.34 : forma === 'reto' ? 0.22 : forma === 'arco' ? 0.2
+      : forma === 'tiro' ? 0.12 : DURACAO;
     // mais gotas quando o leque abre (as da borda) e quando o jato engrossa
-    const quantas = (forma === 'linha' || arcoFino ? 56 : forma === 'fio' ? 22 : 44) + aberto * 8 + grosso * 5
-      + (especial ? 18 : 0);
+    const quantas = forma === 'tiro'
+      ? 9 + grosso * 2 + (especial ? 6 : 0)
+      : (forma === 'linha' || arcoFino ? 56 : forma === 'fio' ? 22 : 44) + aberto * 8 + grosso * 5 + (especial ? 18 : 0);
 
     this.contagem.disparos += 1;
     this.contagem.formas[forma] = (this.contagem.formas[forma] ?? 0) + 1;
@@ -366,7 +452,7 @@ export class DesenhoDoJato {
       acumulado: 0,
       forma,
       abertura,
-      tamanho: (forma === 'linha' || forma === 'fio' ? 0.02 : forma === 'reto' ? 0.036 : 0.03) * (1 + grosso * 0.22),
+      tamanho: (forma === 'linha' || forma === 'fio' ? 0.02 : forma === 'reto' ? 0.036 : forma === 'tiro' ? 0.07 : 0.03) * (1 + grosso * 0.22),
       velocidade,
       gravidade,
       tinta,
@@ -377,7 +463,7 @@ export class DesenhoDoJato {
 
     // O SOM DA SAÍDA: o especial manda, depois a forma, depois a tinta
     if (especial === 'carregado') this.soar('jatao');
-    else if (especial === 'pressao-cheia' || forma === 'reto') this.soar('jatoForte');
+    else if (especial === 'pressao-cheia' || forma === 'reto' || forma === 'tiro') this.soar('jatoForte');
     else if (forma === 'linha') this.soar('jatoLongo');
     else if (forma === 'arco') this.soar('jatoArco');
     else this.soar('jato');
@@ -434,7 +520,7 @@ export class DesenhoDoJato {
       tamanho: j.tamanho * (miolo ? 1.25 : 0.8) * (0.85 + Math.random() * 0.3),
       cor,
       gravidade: j.gravidade,
-      esticar: j.forma === 'linha' || j.forma === 'reto' ? 0.02 : 0.011,
+      esticar: j.forma === 'linha' || j.forma === 'reto' ? 0.02 : j.forma === 'tiro' ? 0.006 : 0.011,
       adiantar,
     });
 

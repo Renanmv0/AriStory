@@ -56,16 +56,19 @@ export function servePara(carta: CartaDoJardim, arma: ArmaId): boolean {
 }
 
 /**
- * A carta é SÓ desta ferramenta? É o que a bancada das ferramentas mostra na
- * aba de cada uma (pedido do Renan: "somente as cartas únicas daquele tipo").
- * Serve nela e em nenhuma outra ferramenta já construída: na mangueira são as
- * `soPara: ['mangueira']`; no regador, as de tanque e tonel que a mangueira não
- * tira. As genéricas (alcance, força, leque…) servem em todas e ficam só no
- * livro da bancada.
+ * A carta é DA FERRAMENTA (e não genérica)? É o que a bancada das ferramentas
+ * mostra na aba de cada uma (pedido do Renan: "somente as cartas únicas daquele
+ * tipo"). Serve nela e NÃO serve em todas as ferramentas construídas: na
+ * mangueira são as `soPara: ['mangueira']`; no regador e na pistola, as de
+ * tanque e tonel (que a mangueira, de água infinita, não tira) mais as só
+ * dela. Uma carta pode ser de mais de uma ferramenta — o Jean-Luc no tonel é
+ * do regador E da pistola (regra do Renan: carta que serve para outra
+ * ferramenta de munição entra na lista dela também). As genéricas (alcance,
+ * força, leque…) servem em todas e ficam só no livro da bancada.
  */
 export function soDestaArma(carta: CartaDoJardim, arma: ArmaId): boolean {
   if (carta.repetivel || !servePara(carta, arma)) return false;
-  return ARMAS.every((o) => o.id === arma || !o.pronta || !servePara(carta, o.id));
+  return ARMAS.some((o) => o.pronta && !servePara(carta, o.id));
 }
 
 export class MaoDeCartas {

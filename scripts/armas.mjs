@@ -126,11 +126,32 @@ await page.screenshot({ path: `${OUT}-painel-regador.png` });
 await aba(page, 'Mangueira');
 await page.waitForTimeout(200);
 const trancada = await textoDaPagina(page);
-ok(/Vençam a onda 20 com o regador/.test(trancada), 'a mangueira trancada diz a meta: vencer a onda 20 com o regador');
+ok(/Joguem 15 ondas com o regador, somando as rodadas/.test(trancada), 'a mangueira trancada diz a meta: jogar 15 ondas com o regador, somando as rodadas');
 ok(await page.locator('[data-usar]').count() === 0, 'e não tem botão de usar');
 await page.screenshot({ path: `${OUT}-painel-trancada.png` });
 await page.locator('.livro-de-cartas.arsenal .fechar').click();
 await page.waitForTimeout(300);
+
+// ============================================= 2b. as 15 ondas SOMAM entre rodadas
+// o exemplo do Renan: chegar na 5 numa rodada e na 10 em outra destranca
+const rodadaDeRegador = async (onda) => {
+  await page.evaluate((onda) => {
+    const u = window.jogo.current.world.root.userData;
+    u.comecarRodada([], 'regador');
+    u.rodada.onda = onda;
+    u.rodada.terminar('fim');
+  }, onda);
+  await esperar(page, () => page.evaluate(() => document.querySelector('.fim-do-jardim')?.classList.contains('show')), 5000);
+  await page.evaluate(() => document.querySelector('.fim-do-jardim .fechar')?.click());
+  await page.waitForTimeout(600);
+  await falarAteAcabar(page);
+};
+await rodadaDeRegador(5);
+ok(await page.evaluate(() => window.jogo.stat('jardim.ondas.regador')) === 5, 'uma rodada que chegou na onda 5 soma 5 ondas no regador');
+ok((await parede(page))?.sombras === 3, 'e 5 ondas ainda não destrancam a mangueira');
+await rodadaDeRegador(10);
+ok(await page.evaluate(() => window.jogo.stat('jardim.ondas.regador')) === 15, 'outra, até a onda 10, soma 15');
+ok((await parede(page))?.sombras === 2, 'e com 15 ondas somadas a mangueira destranca, sem nunca ter chegado na onda 15');
 
 // ============================================= 3. destrancar e escolher
 // um recorde de antes das armas vira o do regador (a migração da primeira visita)
@@ -144,7 +165,8 @@ await page.evaluate(() => window.jogo.save?.persist?.());
 await estufa(page, '&zoom=6');
 ok(await page.evaluate(() => window.jogo.stat('jardim.recorde.regador')) === 22, 'o recorde de antes das armas vira o do regador');
 const p1 = await parede(page);
-ok(p1?.sombras === 2, `com a onda 20 do regador, a mangueira ganha cor (${p1?.sombras} em sombra)`);
+ok(await page.evaluate(() => window.jogo.stat('jardim.ondas.regador')) === 22, 'e as ondas jogadas de quem já jogava começam no recorde');
+ok(p1?.sombras === 2, `com isso a mangueira já vem destrancada (${p1?.sombras} em sombra)`);
 await page.evaluate(() => { window.jogo.debugPlace(-12.4, 2.4, -Math.PI / 2); window.jogo.setZoom(4); });
 await page.waitForTimeout(700);
 await page.screenshot({ path: `${OUT}-parede-perto.png` });
@@ -288,7 +310,7 @@ ok(vidaDepois > girassol.vida, `Mangueira que rega: o girassol que ela encosta s
 await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; });
 await page.screenshot({ path: `${OUT}-cartas-novas.png` });
 
-// ============================================= 5. a onda 20 de mangueira abre a pistola
+// ============================================= 5. 15 ondas de mangueira abrem a pistola
 await page.evaluate(() => {
   const r = window.jogo.current.world.root.userData.rodada;
   r.onda = 21;
@@ -299,7 +321,7 @@ await page.evaluate(() => document.querySelector('.fim-do-jardim .fechar')?.clic
 await page.waitForTimeout(600);
 const falaDaJosefina = await page.evaluate(() => document.querySelector('.dialogue')?.textContent ?? '');
 await falarAteAcabar(page);
-ok(await page.evaluate(() => window.jogo.stat('jardim.recorde.mangueira')) >= 20, 'a rodada guarda o recorde da mangueira');
+ok(await page.evaluate(() => window.jogo.stat('jardim.ondas.mangueira')) >= 15, 'a rodada soma as ondas jogadas de mangueira');
 const p2 = await parede(page);
 ok(p2?.sombras === 1, `e a pistola ganha cor na parede (${p2?.sombras} em sombra)`);
 ok(await page.evaluate(() => window.jogo.current.world.bounds.minZ) < -20, 'o limite de andar volta ao normal no fim');
@@ -307,8 +329,83 @@ console.log(`       a Josefina: "${falaDaJosefina.trim().slice(0, 90)}"`);
 await abrirArsenal(page);
 await aba(page, "Pistola");
 await page.waitForTimeout(200);
-ok(/arrumando/.test(await textoDaPagina(page)), 'a pistola destrancada aparece "em construção" (a rodada dela ainda não existe)');
+const daPistola = await textoDaPagina(page);
+ok(/Balão d'água/.test(daPistola) || /\?/.test(daPistola), 'a aba da pistola lista as cartas dela');
+await page.evaluate(() => { for (const id of ['rajada', 'jean-luc-no-tonel', 'tanque-1']) window.jogo.desbloquearCartaDoJardim(id); });
 await page.locator('.livro-de-cartas.arsenal .fechar').click();
+await page.waitForTimeout(300);
+await abrirArsenal(page);
+await aba(page, "Pistola");
+await page.waitForTimeout(200);
+const daPistola2 = await textoDaPagina(page);
+ok(/Rajada/.test(daPistola2) && /Jean-Luc/.test(daPistola2) && /Tanque maior/.test(daPistola2),
+  'na pistola aparecem a Rajada (só dela) e as de tanque que ela divide com o regador (Jean-Luc, Tanque maior)');
+ok(!/Esguicho/.test(daPistola2) && !/Bico mais longo/.test(daPistola2), 'e não as da mangueira nem as genéricas');
+await page.screenshot({ path: `${OUT}-painel-pistola.png` });
+await page.locator('[data-usar="pistola"]').click();
+await page.waitForTimeout(400);
+ok(await page.evaluate(() => window.jogo.stat('jardim.arma')) === 2, '"Usar esta ferramenta" escolhe a pistola');
+
+// ============================================= 5b. a rodada de pistola
+await page.evaluate(() => {
+  window.jogo.debugPlace(0, -6, Math.PI);
+  const u = window.jogo.current.world.root.userData;
+  u.comecarRodada([]);
+  u.rodada.escalaDoTempo = 3;
+});
+await page.waitForTimeout(800);
+const pr0 = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+ok(pr0.arma === 'pistola', 'a rodada começa com a pistola escolhida');
+ok(pr0.limiteZ < -20 && !pr0.mangueira, 'a pistola não é presa: dá para ir ao pátio, e não tem mangueira');
+const naMaoP = await page.evaluate(() => {
+  let peca = null;
+  window.jogo.objetoNaMao()?.traverse((o) => { if (o.userData.peca && !peca) peca = o.userData.peca; });
+  return peca;
+});
+ok(naMaoP === 'pistola-dagua', `na mão vai a pistola d'água (${naMaoP})`);
+await esperar(page, async () => {
+  if (await page.locator('.cartas-do-jardim.show').count()) {
+    await page.keyboard.press('Digit1');
+    await page.waitForTimeout(300);
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(600);
+  }
+  return page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado().jatosDados > 3);
+}, 90000);
+const pr1 = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+if (pr1.jatosDados <= 3) console.log('       estado:', JSON.stringify({ pausada: pr1.pausada, bichos: pr1.invasores.length, jatos: pr1.jatosDados, onda: pr1.onda, rodando: pr1.rodando }));
+ok((pr1.desenho.formas.tiro ?? 0) > 0, `o tiro sai em bolinhas (forma "tiro": ${pr1.desenho.formas.tiro ?? 0}×)`);
+ok(pr1.agua < pr1.tanque, `e a água acaba: tanque pequeno (${pr1.agua.toFixed(1)} de ${pr1.tanque})`);
+await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; window.jogo.setZoom(4); });
+await page.waitForTimeout(500);
+await page.screenshot({ path: `${OUT}-pistola.png` });
+
+// as cartas só da pistola agindo: a Rajada e o Balão d'água
+await page.evaluate(() => window.jogo.current.world.root.userData.rodada.terminar('interrompida'));
+await page.waitForTimeout(400);
+await falarAteAcabar(page);
+await page.evaluate(() => {
+  window.jogo.debugPlace(0, -6, Math.PI);
+  const u = window.jogo.current.world.root.userData;
+  u.comecarRodada(['rajada', 'balao-dagua'], 'pistola');
+  u.rodada.escalaDoTempo = 3;
+});
+await esperar(page, async () => {
+  if (await page.locator('.cartas-do-jardim.show').count()) {
+    await page.keyboard.press('Digit1');
+    await page.waitForTimeout(300);
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(600);
+  }
+  const e = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+  return (e.efeitos.rajada ?? 0) > 0 && (e.efeitos['balao-dagua'] ?? 0) > 0 && e.desenho.baloes > 0;
+}, 90000);
+const pr2 = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+ok((pr2.efeitos.rajada ?? 0) > 0, `Rajada: três tiros seguidos (${pr2.efeitos.rajada ?? 0}×)`);
+ok((pr2.efeitos['balao-dagua'] ?? 0) > 0 && pr2.desenho.baloes > 0, `Balão d'água: um balão voa e estoura (${pr2.desenho.baloes}×)`);
+await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; window.jogo.setZoom(4); });
+await page.screenshot({ path: `${OUT}-pistola-cartas.png` });
+await page.evaluate(() => window.jogo.current.world.root.userData.rodada.terminar('interrompida'));
 await page.close();
 
 // ============================================= 6. no celular

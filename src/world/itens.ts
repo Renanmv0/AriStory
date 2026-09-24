@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
-import { esguichoDeMangueira, regadorDeJardim, type EstiloDeRegador } from './regador';
+import { esguichoDeMangueira, pistolaDagua, regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
   aventalDaJosefina, blazerXadrez, canoDaBota, chapeuDeJardineira, coroaDeDama, gargantilhaDeLaco,
   boneDaGina, chapeuJoaninha, estampaLaranja, estampaRodaGigante, estampaSalvaVidas, girassolNoPeito,
@@ -966,10 +966,12 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'regador': () => {
     const g = new THREE.Group();
     // na rodada de mangueira (`armas.ts`) a mão carrega o esguicho no lugar
-    const lata = estiloDoRegadorNaMao.arma === 'mangueira'
-      // o esguicho é bem menor que a lata: na mão ele cresce para os detalhes aparecerem
-      ? esguichoDeMangueira(estiloDoRegadorNaMao, 1.6)
-      : regadorDeJardim(estiloDoRegadorNaMao);
+    const arma = estiloDoRegadorNaMao.arma;
+    // o esguicho e a pistola são bem menores que a lata: na mão eles crescem
+    // para os detalhes aparecerem
+    const lata = arma === 'mangueira' ? esguichoDeMangueira(estiloDoRegadorNaMao, 1.6)
+      : arma === 'pistola' ? pistolaDagua(1.6)
+        : regadorDeJardim(estiloDoRegadorNaMao);
     const ESCALA = 0.78;
     lata.scale.setScalar(ESCALA);
     lata.position.y = -(lata.userData.partes.alturaDaAlca as number) * ESCALA;

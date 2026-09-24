@@ -6,10 +6,11 @@ import type { FichaDaRodada } from './cartas';
  *
  *   regador → mangueira → pistola d'água → borrifador
  *
- * O regador vem de começo. Cada uma das outras DESTRANCA quando a dupla vence a
- * onda `ONDA_PARA_ABRIR` (20) USANDO A ANTERIOR — o recorde é guardado por arma,
- * então jogar bem de mangueira não abre nada para o regador, e vice-versa
- * (decisão do Renan). Quem escolhe com qual jogar é a parede das armas da
+ * O regador vem de começo. Cada uma das outras DESTRANCA quando a dupla JOGA
+ * `ONDAS_PARA_ABRIR` (15) ondas USANDO A ANTERIOR, somando as rodadas (decisão
+ * do Renan: "não necessariamente chegar à onda 15… é cumulativo": chegar na 5
+ * numa rodada e na 10 em outra já abre). A conta é guardada por arma
+ * (`chaveDasOndas`), então jogar de mangueira não abre nada para o regador. Quem escolhe com qual jogar é a parede das armas da
  * estufa (`scenes/estufa.ts`, e o painel em `ui/arsenal.ts`).
  *
  * ESTE ARQUIVO NÃO CONHECE CENA NEM MOTOR, como `cartas.ts`: uma arma é uma
@@ -26,8 +27,8 @@ import type { FichaDaRodada } from './cartas';
 
 export type ArmaId = 'regador' | 'mangueira' | 'pistola' | 'borrifador';
 
-/** a onda que precisa ser VENCIDA com a arma anterior para destrancar a próxima */
-export const ONDA_PARA_ABRIR = 20;
+/** quantas ondas é preciso JOGAR com a arma anterior, somando rodadas, para destrancar a próxima */
+export const ONDAS_PARA_ABRIR = 15;
 
 export interface FichaDaArma {
   readonly id: ArmaId;
@@ -37,7 +38,7 @@ export interface FichaDaArma {
   readonly icone: string;
   /** o jeito dela em uma frase, para o painel */
   readonly descricao: string;
-  /** a arma que precisa vencer a onda 20 para esta destrancar (`null` = vem de começo) */
+  /** a arma com que se jogam as 15 ondas que destrancam esta (`null` = vem de começo) */
   readonly anterior: ArmaId | null;
   /** já dá para jogar com ela; `false` = aparece na parede, trancada ou "em construção" */
   readonly pronta: boolean;
@@ -72,10 +73,25 @@ export const ARMAS: readonly FichaDaArma[] = [
       f.jato.mangueira = true;
     },
   },
+  /*
+   * A PISTOLA D'ÁGUA: a que alcança longe. Um tiro só, reto e fino, de
+   * bolinhas d'água grandes — nada de leque, é mira. Alcance 5,0 (o regador
+   * tem 3,0), 0,55 de força a cada 0,5 s (1,1 por segundo). O tanque é pequeno
+   * (8), mas cada tiro gasta meia água: 16 tiros, uns 8 s atirando sem parar,
+   * e aí é voltar ao tonel. Pode ir ao pátio, como o regador.
+   */
   {
-    id: 'pistola', nome: "Pistola d'água", comArtigo: "a pistola d'água", icone: '🔫', anterior: 'mangueira', pronta: false,
-    descricao: 'Tiros rápidos e de longe, tanque pequeno: para acertar os bichos lá no pátio.',
-    base: () => {},
+    id: 'pistola', nome: "Pistola d'água", comArtigo: "a pistola d'água", icone: '🔫', anterior: 'mangueira', pronta: true,
+    descricao: 'Tiros de bolinha, retos e de longe, um bicho por vez. Tanque pequeno: volta sempre ao tonel.',
+    base: (f) => {
+      f.alcance = 5.0;
+      f.dano = 0.55;
+      f.cadencia = 0.5;
+      f.largura = 6;
+      f.tanque = 8;
+      f.gastoPorJato = 0.5;
+      f.jato.pistola = true;
+    },
   },
   {
     id: 'borrifador', nome: 'Borrifador', comArtigo: 'o borrifador', icone: '🧴', anterior: 'pistola', pronta: false,
@@ -93,14 +109,22 @@ export function chaveDoRecorde(arma: ArmaId): string {
   return `jardim.recorde.${arma}`;
 }
 
+/**
+ * o contador do save com as ONDAS JOGADAS com uma arma, somando todas as
+ * rodadas que acabaram (é o que destranca a próxima)
+ */
+export function chaveDasOndas(arma: ArmaId): string {
+  return `jardim.ondas.${arma}`;
+}
+
 /** o contador do save com a arma escolhida na parede (a posição dela em `ARMAS`) */
 export const ARMA_ESCOLHIDA = 'jardim.arma';
 
 /**
- * A ARMA ESTÁ DESTRANCADA? A primeira sempre; as outras quando o recorde da
- * ANTERIOR chegou na onda 20. Recebe a leitura do recorde de fora (o save):
- * este arquivo não conhece o save.
+ * A ARMA ESTÁ DESTRANCADA? A primeira sempre; as outras quando a dupla já
+ * jogou 15 ondas com a ANTERIOR, somando as rodadas. Recebe a leitura do save
+ * de fora: este arquivo não conhece o save.
  */
-export function destrancada(arma: FichaDaArma, recordeDe: (a: ArmaId) => number): boolean {
-  return arma.anterior === null || recordeDe(arma.anterior) >= ONDA_PARA_ABRIR;
+export function destrancada(arma: FichaDaArma, ondasCom: (a: ArmaId) => number): boolean {
+  return arma.anterior === null || ondasCom(arma.anterior) >= ONDAS_PARA_ABRIR;
 }

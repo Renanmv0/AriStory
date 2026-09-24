@@ -18,7 +18,7 @@ import { JeanLuc } from '../entities/bichos/JeanLuc';
 import { GotasDoJardim } from '../entities/GotasDoJardim';
 import { MaoDeCartas, soDestaArma } from '../minigames/jardim/baralho';
 import {
-  ARMAS, ARMA_ESCOLHIDA, ONDA_PARA_ABRIR, chaveDoRecorde, destrancada, type ArmaId, type FichaDaArma,
+  ARMAS, ARMA_ESCOLHIDA, ONDAS_PARA_ABRIR, chaveDasOndas, chaveDoRecorde, destrancada, type ArmaId, type FichaDaArma,
 } from '../minigames/jardim/armas';
 import { borrifadorDeJardim, esguichoDeMangueira, pistolaDagua, regadorDeJardim } from '../world/regador';
 import { CARTAS, cartaPorId, type AjudanteDoClube } from '../minigames/jardim/cartas';
@@ -828,7 +828,7 @@ export const estufa: SceneDef = {
     /*
      * O RECORDE É POR ARMA. Antes das armas havia um recorde só, e toda rodada
      * até ali foi de regador: na primeira visita depois da mudança ele vira o
-     * recorde do regador (uma vez, pela flag) — quem já passou da onda 20
+     * recorde do regador (uma vez, pela flag) — quem já jogou bastante
      * encontra a mangueira destrancada.
      */
     if (!g.flag('jardim.armas-migradas')) {
@@ -836,8 +836,21 @@ export const estufa: SceneDef = {
       if (velho > g.stat(chaveDoRecorde('regador'))) g.bump(chaveDoRecorde('regador'), velho - g.stat(chaveDoRecorde('regador')));
       g.setFlag('jardim.armas-migradas');
     }
+    /*
+     * AS ONDAS JOGADAS, somadas por arma (a regra nova do Renan: 15 ondas com a
+     * anterior, e não chegar na 20). Quem já jogava antes começa com o recorde
+     * de cada arma como conta — ele é o mínimo que a dupla com certeza jogou.
+     */
+    if (!g.flag('jardim.ondas-migradas')) {
+      for (const a of ARMAS) {
+        const falta = g.stat(chaveDoRecorde(a.id)) - g.stat(chaveDasOndas(a.id));
+        if (falta > 0) g.bump(chaveDasOndas(a.id), falta);
+      }
+      g.setFlag('jardim.ondas-migradas');
+    }
     const recordeDe = (a: ArmaId): number => g.stat(chaveDoRecorde(a));
-    const liberada = (a: FichaDaArma): boolean => destrancada(a, recordeDe);
+    const ondasCom = (a: ArmaId): number => g.stat(chaveDasOndas(a));
+    const liberada = (a: FichaDaArma): boolean => destrancada(a, ondasCom);
     /** a arma da próxima rodada: a escolhida na bancada, se ainda vale; senão o regador */
     const armaDaRodada = (): ArmaId => {
       const a = ARMAS[g.stat(ARMA_ESCOLHIDA)];
@@ -899,7 +912,7 @@ export const estufa: SceneDef = {
     const conteudoDoArsenal = (): ConteudoDoArsenal => {
       const escolhida = armaDaRodada();
       return {
-        ondaParaAbrir: ONDA_PARA_ABRIR,
+        ondaParaAbrir: ONDAS_PARA_ABRIR,
         armas: ARMAS.map((a) => {
           const aberta = liberada(a);
           const anterior = a.anterior ? ARMAS.find((x) => x.id === a.anterior) : null;
@@ -909,9 +922,10 @@ export const estufa: SceneDef = {
             icone: a.icone,
             descricao: a.descricao,
             estado: !aberta ? 'trancada' : !a.pronta ? 'em-construcao' : a.id === escolhida ? 'escolhida' : 'aberta',
-            meta: anterior ? `Vençam a onda ${ONDA_PARA_ABRIR} com ${anterior.comArtigo}` : '',
+            meta: anterior ? `Joguem ${ONDAS_PARA_ABRIR} ondas com ${anterior.comArtigo}, somando as rodadas` : '',
             recorde: recordeDe(a.id),
-            progresso: anterior ? Math.min(ONDA_PARA_ABRIR, recordeDe(anterior.id)) : ONDA_PARA_ABRIR,
+            progresso: anterior ? Math.min(ONDAS_PARA_ABRIR, ondasCom(anterior.id)) : ONDAS_PARA_ABRIR,
+            ondas: ondasCom(a.id),
             // só as cartas ÚNICAS dela; as que servem em todas moram no livro
             cartas: CARTAS.filter((c) => soDestaArma(c, a.id)).map((c) => cartaDaArma(c, a.id)),
           };
@@ -2244,6 +2258,9 @@ export const estufa: SceneDef = {
       if (jogou && vencidas > recorde) g.bump(RECORDE, vencidas - recorde);
       // e o recorde DA ARMA, que é o que destranca a próxima da fila
       const trancadasAntes = ARMAS.filter((a) => !liberada(a));
+      // as ondas JOGADAS nesta rodada somam na conta da arma (a onda em que
+      // acabou conta: chegar na 5 numa rodada e na 10 em outra são 15)
+      if (jogou && ondas > 0) g.bump(chaveDasOndas(rodada.arma), ondas);
       const chaveDaArma = chaveDoRecorde(rodada.arma);
       if (jogou && vencidas > g.stat(chaveDaArma)) g.bump(chaveDaArma, vencidas - g.stat(chaveDaArma));
       const armasNovas = trancadasAntes.filter((a) => liberada(a));

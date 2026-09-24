@@ -295,21 +295,24 @@ export interface ArmaNoArsenal {
   readonly descricao: string;
   /**
    * `escolhida` = a que vai para a próxima rodada; `aberta` = dá para usar;
-   * `trancada` = falta vencer a onda 20 com a anterior; `em-construcao` =
+   * `trancada` = faltam ondas jogadas com a anterior (15, somando rodadas); `em-construcao` =
    * destrancada, mas a rodada dela ainda não existe no jogo.
    */
   readonly estado: 'escolhida' | 'aberta' | 'trancada' | 'em-construcao';
-  /** a meta dita como gente fala: "Vençam a onda 20 com o regador" */
+  /** a meta dita como gente fala: "Joguem 15 ondas com o regador, somando as rodadas" */
   readonly meta: string;
   /** a maior onda vencida com ela */
   readonly recorde: number;
-  /** o recorde da anterior, para a barrinha da meta (0 a `ondaParaAbrir`) */
+  /** as ondas já jogadas com a anterior, para a barrinha da meta (0 a `ondaParaAbrir`) */
   readonly progresso: number;
+  /** as ondas jogadas com ELA, somando as rodadas */
+  readonly ondas: number;
   /** as cartas que servem nela, já com a fita da arma */
   readonly cartas: readonly CartaNaTela[];
 }
 
 export interface ConteudoDoArsenal {
   readonly armas: readonly ArmaNoArsenal[];
+  /** quantas ondas jogadas com a anterior destrancam a próxima */
   readonly ondaParaAbrir: number;
 }

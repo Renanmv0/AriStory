@@ -252,7 +252,13 @@ console.log('\n— o baralho de cada arma');
   ok(unicas.mangueira.length > 0 && unicas.mangueira.every((id) => todas.find((c) => c.id === id).soPara?.includes('mangueira')),
     'as únicas da mangueira são as cartas só dela');
   ok(!unicas.regador.includes('bico-1') && !unicas.mangueira.includes('bico-1'), 'a genérica (Bico mais longo) não é única de ninguém');
-  ok(!Object.values(unicas).some((l, i, t) => l.some((id) => t.some((o, j) => j !== i && o.includes(id)))), 'nenhuma carta é única de duas ferramentas');
+  console.log(`       da pistola: ${unicas.pistola.length} · as três listas: ${ARMAS.filter((a) => a.pronta).map((a) => `${a.id} ${unicas[a.id].length}`).join(', ')}`);
+  ok(unicas.pistola.includes('jean-luc-no-tonel') && unicas.regador.includes('jean-luc-no-tonel'),
+    'o Jean-Luc no tonel é do regador E da pistola (as duas usam munição)');
+  ok(!unicas.pistola.includes('balde') && !unicas.pistola.includes('mangueira'), 'o Balde e o Bico de mangueira são só do regador');
+  ok(!unicas.mangueira.some((id) => unicas.regador.includes(id) || unicas.pistola.includes(id)), 'nada da mangueira aparece nas outras');
+  const tamanhos = ARMAS.filter((a) => a.pronta).map((a) => unicas[a.id].length);
+  ok(Math.max(...tamanhos) - Math.min(...tamanhos) <= 3, `as ferramentas têm mais ou menos o mesmo tanto de cartas (${tamanhos.join(', ')})`);
   ok(ARMAS.every((a, i) => i === 0 ? a.anterior === null : a.anterior === ARMAS[i - 1].id),
     'as armas são uma fila: cada uma destranca pela anterior');
 }

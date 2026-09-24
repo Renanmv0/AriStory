@@ -321,7 +321,7 @@ interface Tiro {
 }
 
 /** o que a rodada anima na peça da mão */
-type GestoDaMao = { tipo: 'giro' | 'balde' | 'treme'; t: number; dur: number };
+type GestoDaMao = { tipo: 'giro' | 'balde' | 'treme' | 'coice'; t: number; dur: number };
 
 export class RodadaDoJardim {
   rodando = false;
@@ -2453,9 +2453,41 @@ export class RodadaDoJardim {
     if (e.mira) this.jato.mirar(alvo.raiz, alvo.ficha.alturaDaBarra, 0.55);
 
     const origem = { x: eu.x, z: eu.z };
+    // a PISTOLA dá um coice a cada tiro: o cano pula e volta
+    if (e.pistola && (!this.gesto || this.gesto.tipo === 'coice')) this.gesto = { tipo: 'coice', t: 0, dur: 0.22 };
+    /*
+     * o BALÃO D'ÁGUA (pistola): um tiro em cinco sai como balão, que voa numa
+     * curvinha e estoura onde cai, molhando todo mundo em 1,2 m com 1,5× a força
+     */
+    const balao = f.regras.has('balao-dagua') && this.jatosDados % 5 === 0;
+    // a RAJADA (pistola): de quatro em quatro tiros, mais dois logo atrás
+    const rajada = f.regras.has('rajada') && this.jatosDados % 4 === 0;
     const saida = (): void => {
       const de = this.pontaDoBico();
-      this.umJato({ origem, de, rumo, alvo, dano: f.dano, especial });
+      if (balao) {
+        const onde = new THREE.Vector3(alvo.x, 0.2, alvo.z);
+        this.jato.balaoDagua(de, onde, () => {
+          for (const inv of [...this.invasores]) {
+            if (this.vulneravel(inv) && Math.hypot(inv.x - onde.x, inv.z - onde.z) <= 1.2 + inv.jeito.raio) {
+              this.acertar(inv, f.dano * 1.5, origem);
+            }
+          }
+        });
+        this.contar('balao-dagua');
+      } else {
+        this.umJato({ origem, de, rumo, alvo, dano: f.dano, especial });
+      }
+      if (rajada) {
+        for (const atraso of [0.1, 0.2]) {
+          this.jato.depois(atraso, () => {
+            if (!this.invasores.includes(alvo)) return;
+            const agora = this.g.playerPosition();
+            const r = Math.atan2(alvo.x - agora.x, alvo.z - agora.z);
+            this.umJato({ origem: { x: agora.x, z: agora.z }, de: this.pontaDoBico(), rumo: r, alvo, dano: f.dano });
+          });
+        }
+        this.contar('rajada');
+      }
       /*
        * a Bifurcação (mangueira): um Y no esguicho — um segundo fio sai de
        * lado, alternando esquerda e direita, com metade da força. É o mesmo
@@ -2741,6 +2773,10 @@ export class RodadaDoJardim {
     const t = Math.min(1, gs.t / gs.dur);
     if (gs.tipo === 'giro') {
       obj.rotation.set(0, t * Math.PI * 2, 0);
+    } else if (gs.tipo === 'coice') {
+      // o COICE da pistola: o cano pula para cima no tiro e volta devagar
+      const pulo = t < 0.25 ? t / 0.25 : 1 - (t - 0.25) / 0.75;
+      obj.rotation.set(-pulo * 0.5, 0, 0);
     } else if (gs.tipo === 'balde') {
       // vira rápido, segura de ponta-cabeça, e volta
       const vira = t < 0.3 ? t / 0.3 : t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;

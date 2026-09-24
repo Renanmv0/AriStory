@@ -21,7 +21,7 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | arquivo | o que mora lá |
 |---|---|
 | `src/minigames/jardim/rodada.ts` | a rodada inteira (`RodadaDoJardim`): ondas, bichos, regador, o jato de cada carta (`umJato`), as cartas de jardineiro/jardim/clube, os chamados agindo, a ajuda do par, o prêmio da onda e o de 5 em 5 níveis, e os ganchos de teste no fim da classe |
-| `src/minigames/jardim/cartas.ts` | o catálogo das **107 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
+| `src/minigames/jardim/cartas.ts` | o catálogo das **111 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
 | `src/minigames/jardim/armas.ts` | as **quatro armas** (regador, mangueira, pistola d'água, borrifador): a fila de destrancar e os números de partida de cada uma (`base`) |
 | `src/minigames/jardim/mangueira.ts` | a mangueira esticada do tonel até a mão (o tubo, e o trecho no chão que o Chicote e o Vazamento leem) |
 | `src/minigames/jardim/baralho.ts` | a mão (carta não repete), o sorteio de três, a Sorte de principiante |
@@ -139,10 +139,13 @@ tela usa a palavra "armas"; no código os nomes continuam `armas`/`arsenal`).
 O painel enche o vão entre as duas treliças da parede esquerda, centralizado.
 (pedido do Renan; `minigames/jardim/armas.ts`, §4.1): regador →
 mangueira → pistola d'água → borrifador, numa fila. Cada uma **destranca
-quando a dupla vence a onda 20 usando a anterior** — o recorde é POR ARMA
-(`jardim.recorde.<arma>`; o `jardim.recorde` global continua sendo o maior de
-todos, e é ele que abre a lojinha). Na primeira visita depois da mudança o
-recorde velho virou o do regador (flag `jardim.armas-migradas`). Elas ficam na
+quando a dupla JOGA 15 ondas com a anterior, somando as rodadas** (pedido do
+Renan: a onda em que a rodada acabou conta — chegar na 5 numa e na 10 noutra
+são 15; contador `jardim.ondas.<arma>`). O recorde por arma
+(`jardim.recorde.<arma>`) só aparece no painel; o `jardim.recorde` global
+continua sendo o maior de todos, e é ele que abre a lojinha. Quem já jogava
+começou com o recorde de cada arma como conta de ondas (flags
+`jardim.armas-migradas` e `jardim.ondas-migradas`). Elas ficam na
 **parede das armas**, entre o girassol e o tomate da esquerda (no lugar das duas
 folhagens que o Renan não gostava): painel furado pintado de menta, com
 bandeirinhas, plaquinha "Armas da estufa" e um carimbo pastel com o nome atrás
@@ -153,8 +156,8 @@ luvas, e o rolo de mangueira do lado (pedido do Renan: "mais fofos… falta
 cor"; as cores de cada arma estão em `palette.ts`) —, que abre o
 painel das armas — parecido com o livro: uma aba por arma, a meta, o recorde e
 só as cartas ÚNICAS dela (pedido do Renan: `soDestaArma`, em `baralho.ts` — na mangueira as seis só dela, no regador as de tanque e tonel que a mangueira não tira; as genéricas ficam só no livro), descobertas ou cinzas, e "Usar esta ferramenta" (contador
-`jardim.arma`). **Hoje só a mangueira está construída** além do regador; a
-pistola e o borrifador aparecem destrancáveis mas "em construção". O **prêmio
+`jardim.arma`). **Regador, mangueira e pistola d'água estão construídos**; o
+borrifador aparece destrancável mas "em construção". O **prêmio
 de destrancar** cada arma (roupinha ou item) o Renan decide depois — hoje só a
 Josefina avisa. Teste: `scripts/armas.mjs`.
 
@@ -534,9 +537,9 @@ do regador ganha a fita da arma ("🐍 Mangueira").
 | arma | destranca | o jeito |
 |---|---|---|
 | 🪣 Regador | de começo | o de sempre (§4) |
-| 🐍 Mangueira | onda 20 com o regador | presa no tonel: **água infinita** (o painel mostra ∞) e **não passa dos portões** (o limite de andar da cena encolhe durante a rodada). Jato fino e quase contínuo: alcance 3,6, força 0,42 a cada 0,32 s (1,3/s contra 0,9 do regador), abertura 12°. Na mão, o esguicho (`esguichoDeMangueira`); no chão, a mangueira esticada do tonel até a mão |
-| 🔫 Pistola d'água | onda 20 com a mangueira | *ainda não construída* — a ideia: tiros rápidos e de longe, tanque pequeno |
-| 🧴 Borrifador | onda 20 com a pistola | *ainda não construído* — a ideia: leque curto que pega vários de uma vez |
+| 🐍 Mangueira | 15 ondas jogadas com o regador | presa no tonel: **água infinita** (o painel mostra ∞) e **não passa dos portões** (o limite de andar da cena encolhe durante a rodada). Jato fino e quase contínuo: alcance 3,6, força 0,42 a cada 0,32 s (1,3/s contra 0,9 do regador), abertura 12°. Na mão, o esguicho (`esguichoDeMangueira`); no chão, a mangueira esticada do tonel até a mão |
+| 🔫 Pistola d'água | 15 ondas jogadas com a mangueira | **tiro de bolinhas**: uma fileira reta de gotas grandes, um bicho por vez (abertura 6°), alcance 5,0, 0,55 de força a cada 0,5 s. Tanque de 8, cada tiro gasta meia água (16 tiros): volta sempre ao tonel, e pode ir ao pátio. Na mão, a pistola lilás de tanque laranja, e cada tiro dá um COICE (o cano pula e volta) |
+| 🧴 Borrifador | 15 ondas jogadas com a pistola | *ainda não construído* — a ideia: leque curto que pega vários de uma vez |
 
 **Revisão das genéricas para a mangueira** (regra do Renan: "a mangueira… não
 teria a carta de 'tanque', pois a água dela já seria infinita"): não saem nela
@@ -544,12 +547,25 @@ Tanque maior (I–III), Refil rápido (I–III), Orvalho, Bico de mangueira,
 Pressão acumulada, Balde, Fôlego, Chapéu de palha, Descanso na sombra, Segundo
 tonel e O Jean-Luc no tonel — todas de água/tanque/tonel.
 
-**Toda ferramenta tem mais ou menos o mesmo tanto de cartas únicas** (pedido
-do Renan): hoje **14 do regador e 14 da mangueira**. A carta que não serve na
+**Toda ferramenta tem mais ou menos o mesmo tanto de cartas dela** (pedido
+do Renan): hoje **14 do regador, 14 da mangueira e 16 da pistola**. "Carta da
+ferramenta" é a que serve nela e não em todas (`soDestaArma`): as de tanque e
+tonel são do regador E da pistola, as duas de munição. O Balde e o Bico de
+mangueira viraram `soPara: ['regador']` (viram a lata, não fazem sentido em
+pistola). A carta que não serve na
 mangueira mas vai servir nas outras que usam munição (o Jean-Luc no tonel, o
 Tanque maior, o Refil…) fica com `naoServe: ['mangueira']`, e não com
 `soPara: ['regador']`: quando a pistola e o borrifador existirem, ela entra na
 lista deles de graça.
+
+**As cartas só da pistola** (`soPara: ['pistola']`), mais as 12 de tanque e tonel
+que ela divide com o regador:
+
+| carta | raridade | efeito |
+|---|---|---|
+| Cano comprido I–II | comum | o tiro vai 12% mais longe e acerta 6% mais forte |
+| Balão d'água | incomum | um tiro em cinco é um balão (bexiga colorida) que voa em curva e estoura: molha tudo em 1,2 m com 1,5× a força |
+| Rajada | raro | de quatro em quatro tiros, mais dois seguidos no mesmo bicho |
 
 **As cartas só da mangueira** (`soPara: ['mangueira']`; 7 comuns, 4 incomuns,
 2 raras, 1 lendária):

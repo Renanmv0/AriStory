@@ -121,7 +121,7 @@ export class Arsenal {
           ? '<span class="falta">🚧 a Josefina ainda está arrumando esta</span>'
           : `<span class="falta">🔒 ${escapar(a.meta)}</span>`;
     const barra = a.estado === 'trancada'
-      ? `<div class="meta-da-arma"><div class="enchido" style="width:${Math.min(100, (a.progresso / ondaParaAbrir) * 100).toFixed(0)}%"></div><span>onda ${a.progresso} de ${ondaParaAbrir}</span></div>`
+      ? `<div class="meta-da-arma"><div class="enchido" style="width:${Math.min(100, (a.progresso / ondaParaAbrir) * 100).toFixed(0)}%"></div><span>${a.progresso} de ${ondaParaAbrir} ondas</span></div>`
       : '';
     this.cartas = ordemDoLivro(a.cartas);
     const vistas = this.vistas;
@@ -151,7 +151,7 @@ export class Arsenal {
         <div class="recompensa arma-no-arsenal ${a.estado === 'trancada' ? 'trancada' : 'pronta'}">
           <span class="icone">${a.estado === 'trancada' ? '🔒' : a.icone}</span>
           <div class="texto">
-            <small>${a.recorde > 0 ? `recorde com ela: onda ${a.recorde}` : 'ainda sem rodada com ela'} · ${achadas} de ${this.cartas.length} cartas só dela descobertas</small>
+            <small>${a.ondas > 0 ? `${a.ondas} ondas jogadas com ela · recorde: onda ${a.recorde}` : 'ainda sem rodada com ela'} · ${achadas} de ${this.cartas.length} cartas só dela descobertas</small>
             <h4>${escapar(a.nome)}</h4>
             <p>${escapar(a.descricao)}</p>
             ${barra}

@@ -146,7 +146,7 @@ node scripts/oclusao.mjs /tmp/oc    # na rodada, a parede que tapa gota ou bicho
 node scripts/decorar.mjs /tmp/dc    # a lojinha da Josefina: enfeite em girassol, a banca destrancando pelo recorde, comprar roupa e enfeite, colocar o enfeite no chao (terreiro e patio de fora podem; vao do portao e canteiro nao), o modo de edicao pela lojinha (mexer, girar, guardar), sem colisor na rodada, a visita nova; todo enfeite com retrato, a rodinha girando e as luzinhas acesas
 node scripts/enfeite.mjs /tmp/en [id] # um enfeite (ou todos) posto pelo modo de colocar: a pegada medida, o cartao, e fotos de perto dos dois lados
 node scripts/marcos.mjs  /tmp/mc    # os premios da estufa: reais e girassois de toda rodada pelos bichos espantados, o premio unico de cada marco resgatado no livro, e a aba de pragas
-node scripts/armas.mjs  /tmp/ar    # as armas da estufa: a parede no lugar das duas folhagens, o painel por arma (meta e cartas de cada uma), destrancar pela onda 20, e a rodada de mangueira (esguicho, mangueira no chao, agua infinita, presa na estufa e as 4 cartas dela)
+node scripts/armas.mjs  /tmp/ar    # as ferramentas da estufa: a parede, o painel por ferramenta (meta e cartas de cada uma), destrancar com 15 ondas somadas, a rodada de mangueira (esguicho, mangueira no chao, agua infinita, presa na estufa e as cartas dela) e a de pistola (pistola na mao, tiro de bolinhas, coice, Rajada e Balao d'agua)
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```
 

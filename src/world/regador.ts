@@ -71,7 +71,7 @@ export interface EstiloDeRegador {
   nuvem: boolean;
   /**
    * A ARMA da rodada (`minigames/jardim/armas.ts`): sem isto, ou `regador`, a
-   * mao carrega o regador; `mangueira` troca pela peca do esguicho.
+   * mao carrega o regador; `mangueira` troca pelo esguicho e `pistola` pela pistola d'agua.
    */
   arma?: string;
 }
@@ -598,14 +598,18 @@ export function pistolaDagua(escala = 1): THREE.Group {
   guarda.position.set(0, 0.125 * s, -0.015 * s);
   g.add(guarda);
 
-  // o cano e a ponta amarela
-  const tubo = cano(0.022 * s, 0.1 * s, lilasEscuro);
-  tubo.position.set(0, 0.18 * s, 0.1 * s + tubo.position.z);
-  g.add(tubo);
+  // o cano e a ponta amarela, num grupo: é dele que o tiro sai (`partes.bico`)
+  const bico = new THREE.Group();
+  bico.position.set(0, 0.18 * s, 0.1 * s);
+  g.add(bico);
+  bico.add(cano(0.022 * s, 0.1 * s, lilasEscuro));
   const ponta = new THREE.Mesh(new THREE.CylinderGeometry(0.018 * s, 0.03 * s, 0.035 * s, 12), amarelo);
   ponta.rotation.x = Math.PI / 2;
-  ponta.position.set(0, 0.18 * s, 0.215 * s);
-  g.add(ponta);
+  ponta.position.z = 0.115 * s;
+  bico.add(ponta);
+  const furo = new THREE.Mesh(new THREE.CircleGeometry(0.01 * s, 8), toon(P.regadorFuro));
+  furo.position.z = 0.133 * s;
+  bico.add(furo);
   // a bomba de puxar, embaixo do cano
   const bomba = new THREE.Mesh(new THREE.CapsuleGeometry(0.024 * s, 0.06 * s, 4, 10), laranja);
   bomba.rotation.x = Math.PI / 2;
@@ -630,6 +634,12 @@ export function pistolaDagua(escala = 1): THREE.Group {
       g.add(b);
     }
   }
+  /*
+   * As MESMAS `partes` do regador e do esguicho: a mão pendura pelo cabo
+   * (`alturaDaAlca`, o alto do cabo, logo abaixo do corpo) e o tiro sai da
+   * ponta do cano (`bico` + `pontaDoBico`).
+   */
+  g.userData.partes = { corpo, bico, pontaDoBico: 0.135 * s, alturaBoca: 0.17 * s, alturaDaAlca: 0.12 * s };
   return g;
 }
 

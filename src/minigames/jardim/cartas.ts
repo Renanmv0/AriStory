@@ -98,6 +98,8 @@ export type RegraDoJardim =
   | 'bifurcacao'        // um segundo fio sai de lado (25°), com metade da força
   | 'laco'              // bicho que pisa na mangueira fica enrolado (tonto) 1,5 s
   | 'mangueira-rega'    // canteiro que a mangueira no chão encosta sara devagar
+  | 'rajada'            // (pistola) todo 4º tiro sai em rajada de três no mesmo bicho
+  | 'balao-dagua'       // (pistola) um tiro em cinco é um balão que estoura e molha em 1,2 m
   // jardineiro
   | 'pique'             // andar 2 s sem parar dá +30% de velocidade, até parar
   | 'assobio'           // a cada 12 s o bicho mais perto anda 2 s para o lado errado
@@ -166,6 +168,12 @@ export interface EstiloDoJato {
   enchente?: boolean;
   /** a Bifurcação: um segundo fio, mais fino, sai de lado a cada jato */
   bifurcacao?: boolean;
+  /** a PISTOLA D'ÁGUA (a arma): o tiro é uma fileira reta de bolinhas grandes */
+  pistola?: boolean;
+  /** a Rajada: de quatro em quatro tiros, saem três seguidos */
+  rajada?: boolean;
+  /** o Balão d'água: um tiro em cinco é um balão que estoura em volta */
+  balao?: boolean;
   /** o Regador de pressão: jato reto que atravessa o primeiro bicho */
   reto?: boolean;
   /** o jato sobe em parábola por cima do canteiro */
@@ -460,7 +468,7 @@ const REGADOR: CartaDoJardim[] = [
   },
   {
     // era "Mangueira": o nome mudou quando a mangueira virou ARMA (o id ficou, é o do livro)
-    id: 'mangueira', nome: 'Bico de mangueira', familia: 'regador', raridade: 'raro', naoServe: ['mangueira'],
+    id: 'mangueira', nome: 'Bico de mangueira', familia: 'regador', raridade: 'raro', soPara: ['regador'],
     icone: '🐍', texto: 'O alcance dobra, mas o jato demora 40% mais',
     aplicar: (f) => {
       f.alcance *= 2;
@@ -584,7 +592,7 @@ const REGADOR: CartaDoJardim[] = [
     },
   },
   {
-    id: 'balde', nome: 'Balde', familia: 'regador', raridade: 'raro', naoServe: ['mangueira'],
+    id: 'balde', nome: 'Balde', familia: 'regador', raridade: 'raro', soPara: ['regador'],
     icone: '🌊', texto: 'Segurar E derrama o tanque inteiro num círculo de 2 m',
     aplicar: (f) => {
       f.regras.add('balde');
@@ -605,6 +613,33 @@ const REGADOR: CartaDoJardim[] = [
     aplicar: (f) => {
       f.regras.add('arco-iris');
       f.jato.arcoIris = true;
+    },
+  },
+  // ======================================================= só da PISTOLA
+  // (`armas.ts`): o tiro de longe, um bicho por vez — as cartas dela brincam
+  // com o que um brinquedo de piscina faz: cano comprido, rajada, balão
+  ...serie('cano-longo', 2, {
+    familia: 'regador', raridade: 'comum', icone: '🔭', soPara: ['pistola'],
+    nome: 'Cano comprido', texto: 'O tiro vai 12% mais longe e acerta 6% mais forte',
+  }, (f, d) => {
+    f.alcance *= 1.12;
+    f.dano *= 1.06;
+    f.jato.longo = Math.max(f.jato.longo ?? 0, d);
+  }),
+  {
+    id: 'balao-dagua', nome: "Balão d'água", familia: 'regador', raridade: 'incomum', soPara: ['pistola'],
+    icone: '🎈', texto: 'Um tiro em cinco é um balão que estoura e molha tudo em 1,2 m',
+    aplicar: (f) => {
+      f.regras.add('balao-dagua');
+      f.jato.balao = true;
+    },
+  },
+  {
+    id: 'rajada', nome: 'Rajada', familia: 'regador', raridade: 'raro', soPara: ['pistola'],
+    icone: '💦', texto: 'De quatro em quatro tiros, saem três seguidos no mesmo bicho',
+    aplicar: (f) => {
+      f.regras.add('rajada');
+      f.jato.rajada = true;
     },
   },
   // ======================================================= só da MANGUEIRA
