@@ -431,11 +431,21 @@ const CASOS = {
     await laboratorio(['walter-de-plantao'], { x: -7, z: 3, folga: true });
     await rodada(() => {
       const r = window.jogo.current.world.root.userData.rodada;
+      // o Walter corre no relogio do jogo: com a rodada acelerada o prazo
+      // dele (4 s) acabava antes de ele chegar
+      r.escalaDoTempo = 1;
       r.soltarBicho('lagartejo', 2, 3);
       r.adiantar('walter');
     });
-    const e = await ate((s) => efeito(s, 'walter-de-plantao') > 0, 5000);
-    confere('walter-de-plantao', efeito(e, 'walter-de-plantao') > 0 && e.invasores[0]?.estado === 'recuando', 'latiu e ele recuou');
+    const e = await ate((s) => efeito(s, 'walter-de-plantao') > 0, 45000);
+    // relato do Renan: a carta espantava e o Walter não aparecia — agora ele
+    // está na estufa e late de PERTO do bicho
+    const w = await page.evaluate(() => window.jogo.current.world.root.userData.ajudantes().walter);
+    const b = e.invasores[0] ?? { x: 2, z: 3 };
+    const longe = Math.hypot(w.x - b.x, w.z - b.z);
+    console.log(`       walter de plantao: visivel ${w.visivel}, latiu a ${longe.toFixed(1)} m do bicho, efeito ${efeito(e, 'walter-de-plantao')}, bicho ${e.invasores[0]?.estado}`);
+    confere('walter-de-plantao', efeito(e, 'walter-de-plantao') > 0 && e.invasores[0]?.estado === 'recuando'
+      && w.visivel && longe < 2.5, 'o Walter correu ate o bicho, latiu e ele recuou');
   },
   'adubo-do-noel': async () => {
     await laboratorio(['adubo-do-noel'], { x: 3.6, z: 5.6 });
@@ -643,6 +653,7 @@ const FOTO = {
   'chama-capy': [-3.6, 5.5, 9],
   'chama-gina': [-6.5, -9, 9],
   'chama-walter': [-3.6, 6, 8],
+  'walter-de-plantao': [1, 3.5, 8],
   'chama-noel': [4, 2.5, 8],
   'mutirao-do-clube': [0, -2, 14],
 };

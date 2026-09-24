@@ -1410,6 +1410,12 @@ export const estufa: SceneDef = {
         ['Walter', 'Auuu!'],
         [R, 'Acho que isso quer dizer "deixa comigo".'],
       ],
+      'walter-de-plantao': [
+        ['Walter', 'Au!'],
+        [A, 'O Walter veio de plantão.'],
+        [R, 'Bicho chegou perto das plantas, ele vai lá latir.'],
+        ['Walter', 'Au! Au!'],
+      ],
       'chama-noel': [
         ['Noel', 'Cheguei, cheguei! Vim correndo. CORRENDO!'],
         ['Noel', 'Me falaram que tá caindo gotinha azul por aqui. Eu cato tudo, viu? Uma por uma.'],

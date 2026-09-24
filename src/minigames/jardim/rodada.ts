@@ -396,6 +396,8 @@ export class RodadaDoJardim {
    */
   private trancas: Array<{ porta: number; resta: number; quem: 'cadeado' | 'gina'; peca: THREE.Object3D | null }> = [];
   private walterDePlantao = 0;
+  /** o Walter de plantão correndo até um bicho (o latido é quando chega) */
+  private plantao: { alvo: Invasor; resta: number } | null = null;
   private sinoEspera = 0;
   /** o próximo roteiro, já sorteado (o Noel avisa o portão dele antes) */
   private proximoPlano: EntradaDePraga[] | null = null;
@@ -2869,6 +2871,7 @@ export class RodadaDoJardim {
     this.capy = null;
     this.noel = null;
     this.walter = null;
+    this.plantao = null;
     this.mutirao = 0;
     this.trilha.count = 0;
     this.impulsoPoca = 0;
@@ -3454,26 +3457,62 @@ export class RodadaDoJardim {
       }
     }
 
-    // ---- o Walter de plantão: a cada 12 s, o mais perto de um canteiro recua
-    if (r.has('walter-de-plantao')) {
-      this.walterDePlantao += dt;
-      if (this.walterDePlantao >= 12) {
-        let alvo: Invasor | null = null;
-        let perto = Infinity;
-        for (const i of this.invasores) {
-          if (!this.vulneravel(i) || !this.dentro(i) || i.estado === 'recuando') continue;
-          for (const c of this.canteiros) {
-            if (c.vida <= 0) continue;
-            const d = distanciaAoCanteiro(i.x, i.z, c);
-            if (d < perto) { perto = d; alvo = i; }
+    /*
+     * ---- o Walter de plantão: a cada 12 s, o mais perto de um canteiro recua.
+     * Ele ESTÁ na estufa (a carta o chama pela porta, como os chamados): corre
+     * até o bicho e late quando chega — ou, se não chegar em 4 s, late de onde
+     * estiver. Relato do Renan: a carta espantava, mas o Walter não aparecia.
+     */
+    if (r.has('walter-de-plantao') && !this.walter) {
+      const k = this.plantao;
+      if (k) {
+        k.resta -= dt;
+        const onde = E.onde('walter');
+        const la = !this.invasores.includes(k.alvo) || !this.vulneravel(k.alvo) || k.alvo.estado === 'recuando';
+        if (la) {
+          // o bicho já foi embora por outro motivo: volta sem latir
+          this.plantao = null;
+          E.voltarAoPosto('walter');
+        } else {
+          E.seguir('walter', k.alvo.x, k.alvo.z, 3.2);
+          if (Math.hypot(k.alvo.x - onde.x, k.alvo.z - onde.z) < 1.0 || k.resta <= 0) {
+            E.soar('walter');
+            this.jato.ondaDeSom(k.alvo.x, k.alvo.z, 1.2);
+            this.mandarParaAPorta(k.alvo);
+            this.contar('walter-de-plantao');
+            this.plantao = null;
+            this.walterDePlantao = 0;
+            this.jato.depois(1.0, () => {
+              if (this.rodando && !this.plantao && !this.walter) E.voltarAoPosto('walter');
+            });
           }
         }
-        if (alvo) {
-          this.walterDePlantao = 0;
-          this.g.som('latido');
-          this.jato.ondaDeSom(alvo.x, alvo.z, 1.2);
-          this.mandarParaAPorta(alvo);
-          this.contar('walter-de-plantao');
+      } else {
+        this.walterDePlantao += dt;
+        if (this.walterDePlantao >= 12) {
+          let alvo: Invasor | null = null;
+          let perto = Infinity;
+          for (const i of this.invasores) {
+            if (!this.vulneravel(i) || !this.dentro(i) || i.estado === 'recuando') continue;
+            for (const c of this.canteiros) {
+              if (c.vida <= 0) continue;
+              const d = distanciaAoCanteiro(i.x, i.z, c);
+              if (d < perto) { perto = d; alvo = i; }
+            }
+          }
+          if (alvo) {
+            if (E.presente('walter')) {
+              this.plantao = { alvo, resta: 4 };
+              E.soar('walter');
+            } else {
+              // sem o Walter em cena (não deveria acontecer): o latido de longe
+              this.walterDePlantao = 0;
+              this.g.som('latido');
+              this.jato.ondaDeSom(alvo.x, alvo.z, 1.2);
+              this.mandarParaAPorta(alvo);
+              this.contar('walter-de-plantao');
+            }
+          }
         }
       }
     }

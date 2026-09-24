@@ -862,8 +862,10 @@ const JARDIM: CartaDoJardim[] = [
   },
   {
     id: 'walter-de-plantao', nome: 'O Walter de plantão', familia: 'jardim', raridade: 'raro',
-    icone: '🐕', texto: 'O Walter late pro bicho mais perto de um canteiro, e ele recua',
+    icone: '🐕', texto: 'O Walter entra e, a cada 12 s, corre latindo pro bicho perto da horta',
     exclui: ['chama-walter'],
+    // ele entra pela porta como os chamados: carta com o nome dele traz ele
+    chama: ['walter'],
     aplicar: (f) => f.regras.add('walter-de-plantao'),
   },
   {

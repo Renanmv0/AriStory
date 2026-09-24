@@ -729,7 +729,7 @@ não leva jato).
 | O Noel avisa ⚙ | incomum | o Noel sobe no muro e grita qual portão abre na próxima onda |
 | O Jean-Luc no tonel ⚙ | incomum | o pato fica no tonel, e encher o tanque ali é na hora — exclui *Refil rápido* |
 | O Capy salva-vidas ⚙ | raro | uma vez por onda o Capy dá um jato longo pelo corredor do meio |
-| O Walter de plantão ⚙ | raro | o Walter late para o bicho mais perto de um canteiro, e ele recua até a porta |
+| O Walter de plantão ⚙ | raro | o Walter ENTRA pela porta (cutscene, como os chamados) e a cada 12 s corre latindo até o bicho mais perto de um canteiro, que recua até a porta — carta com o nome dele traz ele (relato do Renan: espantava e ele não aparecia) |
 | Adubo do Noel ⚙ | raro | canteiro que você rega fica mais forte até o fim da onda |
 
 **Os chamados** — pedido do Renan: cartas de raridade alta que **chamam** alguém
@@ -857,7 +857,7 @@ não é água em `jato.ts` (poeira, notinhas, onda de som, broto, ardido, adubo)
 | O Noel avisa | fim da onda | "VEM PELO PORTÃO DA ESQUERDA!" — e é por ele mesmo: o roteiro já sai sorteado |
 | O Jean-Luc no tonel | sempre | o pato boia dentro do tonel, e encher ali é na hora |
 | O Capy salva-vidas | dois no corredor do meio, uma vez por onda | um jato de mangueira da porta até os portões, dobrado |
-| O Walter de plantão | a cada 12 s | um latido, e o bicho mais perto de canteiro volta até a porta |
+| O Walter de plantão | a cada 12 s | ele corre até o bicho, late (prazo de 4 s), e o bicho mais perto de canteiro volta até a porta |
 | Adubo do Noel | seu jato perto de um canteiro | pitadas de adubo caem, e a mordida ali conta metade até o fim da onda |
 
 **As de "um canteiro à sua escolha"** perguntam pela boca da Josefina, com os
