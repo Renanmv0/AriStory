@@ -619,6 +619,64 @@ export const PALETTE = {
   aventalVerde: 0x6e9e5b,
   aventalBolso: 0x557f45,
   aventalAlca: 0xe9dcc0,
+  // as roupas que a lojinha da Josefina vende (`ROUPAS_DA_JOSEFINA`)
+  galochaVerde: 0x4f9a4e,
+  galochaVerdeCano: 0x3c7a3c,
+  camisetaGirassol: 0xf6e3a1,
+  camisetaGirassolManga: 0xf0d27c,
+  camisetaFolha: 0x7fb069,
+  camisetaFolhaManga: 0x6a9a57,
+  gorroJoaninha: 0xd9483b,
+  gorroJoaninhaBarra: 0x2d2a26,
+  girassolPetala: 0xf2c14b,
+  girassolMiolo: 0x6b4526,
+
+  /*
+   * A LOJINHA DA JOSEFINA (`lojinhaDaJosefina`, no canto direito da estufa):
+   * banca de feira de madeira clara com toldo listrado verde e creme — o
+   * verde da família Jardim de novo, para a loja ler como parte da estufa e
+   * não como quiosque do clube que caiu ali dentro.
+   */
+  lojaMadeira: 0xd2a36b,
+  lojaMadeiraEscura: 0x9a6b3c,
+  lojaToldoVerde: 0x5f9e57,
+  lojaToldoCreme: 0xf3e6c4,
+  lojaPlacaTexto: 0x3b2712,
+  lojaPacoteA: 0xe06c5a,
+  lojaPacoteB: 0x6fa8dc,
+  lojaPacoteC: 0xf0c44c,
+  lojaCaixinha: 0x7d5733,
+
+  /*
+   * OS ENFEITES DA ESTUFA (`world/decoracoes.ts`), vendidos na lojinha da
+   * Josefina. Cor viva de enfeite de jardim de verdade: gesso pintado,
+   * plástico rosa, barro — contra o marrom e o verde da estufa, eles têm que
+   * ler como "coisa que alguém pôs ali".
+   */
+  enfeiteGnomoGorro: 0xd9483b,
+  enfeiteGnomoRoupa: 0x3f76b8,
+  enfeiteGnomoBarba: 0xf5f1e8,
+  enfeiteGnomoPele: 0xf1c7a3,
+  enfeiteGnomoBota: 0x6b4526,
+  enfeiteGnomoCinto: 0x2d2a26,
+  enfeiteFlamingo: 0xf28cb0,
+  enfeiteFlamingoEscuro: 0xd9648f,
+  enfeiteFlamingoBico: 0x2d2a26,
+  enfeiteFlamingoPerna: 0x8a8f96,
+  enfeiteFlorRosa: 0xf06f9a,
+  enfeiteFlorBranca: 0xfaf3e6,
+  enfeiteFlorLilas: 0xa889e0,
+  enfeiteFlorMiolo: 0xf2c14b,
+  enfeiteLanterna: 0x3d4a3f,
+  enfeiteLanternaLuz: 0xffe39a,
+  enfeitePedra: 0xc9c2b4,
+  enfeitePedraEscura: 0xa39b8b,
+  enfeiteAguaRasa: 0x8fd0e8,
+  enfeitePassarinho: 0x5b8fd6,
+  enfeitePassarinhoPeito: 0xf2d27a,
+  /** o anel do chão no modo de decorar: verde onde dá, vermelho onde não dá */
+  decorarPode: 0x5fcf6a,
+  decorarNaoPode: 0xe0564b,
 
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,

@@ -1,9 +1,13 @@
 import type { SavedMemory } from '../core/SaveState';
 import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
-import { TelaDeCartas } from './telaDeCartas';
+import { TelaDeCartas, escapar } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
-import type { CartaNaTela, ConteudoDoLivro, ContextoDaEscolha, FimDoJardim, PainelDoJardim } from '../minigames/jardim/tela';
+import { LojaDaJosefina } from './lojaDaJosefina';
+import type {
+  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoLivro, ContextoDaEscolha,
+  EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
+} from '../minigames/jardim/tela';
 import type { MemoriaPintada } from '../world/memoriasData';
 import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
@@ -108,6 +112,9 @@ export class Ui {
   private readonly telaDeCartas: TelaDeCartas;
   private readonly livroDeCartas: LivroDeCartas;
   private readonly telaDoFim: TelaDoFim;
+  private readonly lojaDaJosefina: LojaDaJosefina;
+  private readonly posicionador: HTMLDivElement;
+  private aoBotaoDoPosicionador: ((b: BotaoDoPosicionador) => void) | null = null;
   private readonly experiencia: HTMLDivElement;
   private readonly painelJardim: HTMLDivElement;
   /** o nivel que a barra mostrava, para saber quando ele SUBIU e piscar */
@@ -329,6 +336,8 @@ export class Ui {
       <div class="cartas-do-jardim"></div>
       <div class="livro-de-cartas"></div>
       <div class="fim-do-jardim"></div>
+      <div class="loja-da-josefina"></div>
+      <div class="posicionador" role="toolbar"></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
         <p class="sub"></p>
@@ -402,6 +411,13 @@ export class Ui {
     this.livroDeCartas.som = (nome) => this.som?.(nome);
     this.telaDoFim = new TelaDoFim(ui.querySelector('.fim-do-jardim')!);
     this.telaDoFim.som = (nome) => this.som?.(nome);
+    this.lojaDaJosefina = new LojaDaJosefina(ui.querySelector('.loja-da-josefina')!);
+    this.lojaDaJosefina.som = (nome) => this.som?.(nome);
+    this.posicionador = ui.querySelector('.posicionador')!;
+    this.posicionador.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('button[data-botao]');
+      if (b) this.aoBotaoDoPosicionador?.(b.dataset.botao as BotaoDoPosicionador);
+    });
     this.experiencia = ui.querySelector('.experiencia')!;
     this.painelJardim = ui.querySelector('.painel-jardim')!;
     this.botaoAjuda = ui.querySelector('.ajuda-do-par')!;
@@ -631,7 +647,8 @@ export class Ui {
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
       this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen || this.xadrezOpen ||
-      this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen,
+      this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen ||
+      this.lojaJosefinaOpen,
     );
   }
 
@@ -983,6 +1000,51 @@ export class Ui {
 
   get cartasOpen(): boolean {
     return this.telaDeCartas.aberta;
+  }
+
+  // ------------------------------------------- a lojinha da Josefina
+
+  get lojaJosefinaOpen(): boolean {
+    return this.lojaDaJosefina.aberta;
+  }
+
+  /** A banca da Josefina; resolve com o que a dupla foi fazer (ver `SaidaDaLoja`). */
+  abrirLojaDaJosefina(
+    conteudo: ConteudoDaLoja, retrato: (id: string) => string, agir: (a: AcaoNaLoja) => ConteudoDaLoja,
+  ): Promise<SaidaDaLoja> {
+    const pedido = this.lojaDaJosefina.abrir(conteudo, retrato, agir);
+    this.marcarTelaAberta();
+    return pedido.then((saida) => {
+      this.marcarTelaAberta();
+      return saida;
+    });
+  }
+
+  fecharLojaDaJosefina(): void {
+    this.lojaDaJosefina.fechar();
+  }
+
+  /**
+   * A BARRA DO MODO DE DECORAR, embaixo da tela. Não é painel: a dupla anda
+   * com ela aberta (é andando que se escolhe o lugar), então ela não entra em
+   * `tela-aberta`. Os botões são o caminho do celular; no teclado são G, E e X.
+   */
+  mostrarPosicionador(estado: EstadoDoPosicionador | null, aoBotao: ((b: BotaoDoPosicionador) => void) | null): void {
+    this.aoBotaoDoPosicionador = aoBotao;
+    this.posicionador.classList.toggle('show', !!estado);
+    if (!estado) return;
+    const aviso = estado.valido ? '✓ aqui dá' : `✗ ${escapar(estado.motivo ?? 'aqui não dá')}`;
+    const html = `
+      <span class="enfeite"><span class="icone">${estado.icone}</span><b>${escapar(estado.nome)}</b>
+        <small class="${estado.valido ? 'pode' : 'nao-pode'}">${aviso}</small></span>
+      <button data-botao="girar">↻ girar <kbd>G</kbd></button>
+      <button data-botao="colocar" class="colocar" ${estado.valido ? '' : 'disabled'}>✓ colocar <kbd>E</kbd></button>
+      <button data-botao="cancelar">✕ <kbd>X</kbd></button>`;
+    // redesenha só quando muda: a cena chama isto todo quadro
+    if (this.posicionador.dataset.html !== html) {
+      this.posicionador.dataset.html = html;
+      this.posicionador.innerHTML = html;
+    }
   }
 
   // ------------------------------------ o livro das cartas e o fim da rodada

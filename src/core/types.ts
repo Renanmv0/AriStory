@@ -4,7 +4,10 @@ import type { SomNome } from '../audio/efeitos';
 import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import type { VigiaDaOclusao } from './Oclusao';
-import type { CartaNaTela, ConteudoDoLivro, ContextoDaEscolha, FimDoJardim, PainelDoJardim } from '../minigames/jardim/tela';
+import type {
+  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoLivro, ContextoDaEscolha,
+  EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
+} from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
 
 export interface CircleCollider {
@@ -27,6 +30,19 @@ export interface BoxCollider {
 }
 
 export type Collider = CircleCollider | BoxCollider;
+
+/**
+ * UM ENFEITE DA ESTUFA NO SAVE (a lojinha da Josefina vende, a dupla põe onde
+ * quiser). Cada compra é uma UNIDADE com número próprio: dois anões são dois
+ * enfeites, cada um no seu lugar. `posta` é onde ele está no chão da estufa;
+ * `null` quer dizer guardado, esperando lugar.
+ */
+export interface DecoracaoNoSave {
+  readonly uid: number;
+  /** o id da ficha em `world/decoracoes.ts` */
+  readonly id: string;
+  readonly posta: { readonly x: number; readonly z: number; readonly giro: number } | null;
+}
 
 export interface Bounds {
   minX: number;
@@ -421,6 +437,29 @@ export interface GameAPI {
    * nunca da vida. Devolve `false` se ela já era de vocês.
    */
   ganharPeca(peca: ItemDef): boolean;
+  /** já pagaram por esta peça (ou ela já está com quem joga)? */
+  jaTemPeca(id: string): boolean;
+  /**
+   * COMPRA UMA ROUPA com preço: debita da carteira do casal e guarda no
+   * guarda-roupa dos dois, com o aviso na tela. O mesmo caminho da arara da
+   * boutique — a lojinha da Josefina usa este.
+   */
+  comprarPeca(peca: ItemDef): 'comprou' | 'ja-tem' | 'sem-dinheiro' | 'sem-espaco' | 'sem-preco';
+  /** os enfeites da estufa no save (ver `DecoracaoNoSave`) */
+  decoracoes(): readonly DecoracaoNoSave[];
+  /** troca a lista de enfeites inteira no save */
+  salvarDecoracoes(lista: readonly DecoracaoNoSave[]): void;
+  /**
+   * Abre a banca da Josefina (abas de roupas e de decorações). `agir` faz as
+   * compras sem fechar o painel e devolve o conteúdo novo; o painel resolve
+   * quando fecha, dizendo se a dupla foi provar roupa ou colocar um enfeite.
+   */
+  abrirLojaDaJosefina(conteudo: ConteudoDaLoja, agir: (a: AcaoNaLoja) => ConteudoDaLoja): Promise<SaidaDaLoja>;
+  /**
+   * A barra do modo de decorar (o enfeite na mão, se cabe, e os botões de
+   * girar, colocar e cancelar). `null` esconde. A cena chama todo quadro.
+   */
+  posicionador(estado: EstadoDoPosicionador | null, aoBotao?: (b: BotaoDoPosicionador) => void): void;
   /** Tira um item da mochila ou dos acessorios, onde quer que ele esteja. */
   removeItem(id: string, quem?: string): boolean;
   hasItem(id: string, quem?: string): boolean;

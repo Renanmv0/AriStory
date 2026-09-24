@@ -17,6 +17,7 @@ import type { Interactable } from '../world/Interactable';
 import {
   SLOTS_ROUPA,
   type Coleta,
+  type DecoracaoNoSave,
   type GameAPI,
   type ItemDef,
   type Memory,
@@ -27,11 +28,15 @@ import {
 import {
   ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem,
 } from '../world/itens';
-import type { CartaNaTela, ConteudoDoLivro, ContextoDaEscolha, FimDoJardim } from '../minigames/jardim/tela';
+import type {
+  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoLivro, ContextoDaEscolha,
+  EstadoDoPosicionador, FimDoJardim, SaidaDaLoja,
+} from '../minigames/jardim/tela';
 import { Oclusao, type VigiaDaOclusao } from './Oclusao';
 import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
 import { retratoDePraga } from '../world/retratoDePraga';
+import { retratoDaDecoracao } from '../world/decoracoes';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import { CARDAPIO } from '../world/cardapioData';
@@ -293,6 +298,8 @@ export class Game implements GameAPI {
     this.audio.setClima(id);
     // o mundo novo não tem as malhas esmaecidas do velho
     this.oclusao.esquecer();
+    // a barra do modo de decorar é da cena que saiu
+    this.ui.mostrarPosicionador(null, null);
     this.migrarPremios();
     this.aplicarPremios();
     this.save.scene = id;
@@ -383,6 +390,7 @@ export class Game implements GameAPI {
       this.ui.cartasOpen ||
       this.ui.livroOpen ||
       this.ui.fimOpen ||
+      this.ui.lojaJosefinaOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
@@ -418,6 +426,8 @@ export class Game implements GameAPI {
     // o livro das cartas e o fim da rodada do jardim são só leitura: Esc fecha
     if (this.ui.livroOpen && this.input.justPressed('Escape')) this.ui.fecharLivro();
     if (this.ui.fimOpen && this.input.justPressed('Escape')) this.ui.fecharFim();
+    // a banca da Josefina trava o movimento como a arara, e sai pela mesma tecla
+    if (this.ui.lojaJosefinaOpen && this.input.justPressed('Escape')) this.ui.fecharLojaDaJosefina();
     /**
      * A TELA DAS CARTAS DO JARDIM tem o teclado inteiro para ela: 1/2/3 marcam,
      * as setas andam, E/espaço/Enter pegam. E ela NÃO tem Escape — ao contrário
@@ -1134,12 +1144,26 @@ export class Game implements GameAPI {
    */
   private comprarProvada(): void {
     const peca = this.provando;
-    if (!peca || peca.preco === undefined) return;
+    if (!peca) return;
+    if (this.comprarPeca(peca) === 'comprou') this.pintarLoja();
+  }
+
+  jaTemPeca(id: string): boolean {
+    return this.save.comprou(id) || this.save.achouItem(this.playerId(), id);
+  }
+
+  /**
+   * COMPRA UMA PEÇA DE ROUPA: debita da carteira do casal e guarda nos dois.
+   * É o caminho único de compra de roupa — a arara da boutique e a lojinha da
+   * Josefina passam os dois por aqui, com os mesmos avisos.
+   */
+  comprarPeca(peca: ItemDef): 'comprou' | 'ja-tem' | 'sem-dinheiro' | 'sem-espaco' | 'sem-preco' {
+    if (peca.preco === undefined) return 'sem-preco';
     const quem = this.playerId();
-    if (this.save.comprou(peca.id) || this.save.achouItem(quem, peca.id)) return;
+    if (this.jaTemPeca(peca.id)) return 'ja-tem';
     if (!this.gastar(peca.preco)) {
       this.ui.toast(`Faltam R$ ${peca.preco - this.save.carteira}`, '💸');
-      return;
+      return 'sem-dinheiro';
     }
     /*
      * A PEÇA VAI PARA O GUARDA-ROUPA, e não para a mochila: `storeItem` é quem
@@ -1157,7 +1181,7 @@ export class Game implements GameAPI {
     if (foi === 'cheio') {
       this.ganhar(peca.preco);
       this.ui.toast('Sem espaço para levar — o dinheiro voltou', '🎒');
-      return;
+      return 'sem-espaco';
     }
     /*
      * PAGOU, É DE VOCÊS PARA SEMPRE. A anotação é o que separa "a peça está no
@@ -1171,7 +1195,26 @@ export class Game implements GameAPI {
     this.storeItem(peca, this.companionId());
     this.audio.play('caixa');
     this.ui.toast(`${peca.nome} — R$ ${peca.preco}`, '🛍️');
-    this.pintarLoja();
+    return 'comprou';
+  }
+
+  // ------------------------------------------------ a lojinha da Josefina
+
+  decoracoes(): readonly DecoracaoNoSave[] {
+    return this.save.decoracoes;
+  }
+
+  salvarDecoracoes(lista: readonly DecoracaoNoSave[]): void {
+    this.save.salvarDecoracoes(lista);
+  }
+
+  abrirLojaDaJosefina(conteudo: ConteudoDaLoja, agir: (a: AcaoNaLoja) => ConteudoDaLoja): Promise<SaidaDaLoja> {
+    // o retrato de cada enfeite é o próprio modelo, fotografado na hora (e guardado)
+    return this.ui.abrirLojaDaJosefina(conteudo, retratoDaDecoracao, agir);
+  }
+
+  posicionador(estado: EstadoDoPosicionador | null, aoBotao?: (b: BotaoDoPosicionador) => void): void {
+    this.ui.mostrarPosicionador(estado, aoBotao ?? null);
   }
 
   /** Redesenha o painel do vestiario a partir do save. */

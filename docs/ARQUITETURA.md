@@ -79,6 +79,18 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 - `props.ts` / `furniture.ts` — kits de peças. Ver a skill `aristory-prop`.
 - `memoriasData.ts` — o acervo do quadro de memórias: cada memória é uma função
   que pinta uma foto em Canvas 2D. Ver a skill `aristory-memoria`.
+- `decoracoes.ts` — os ENFEITES DA ESTUFA: a ficha (nome, preço, raio da
+  pegada) e a geometria de cada um, num arquivo só. Enfeite novo = uma função e
+  uma entrada em `DECORACOES`; a loja, o retrato, o modo de colocar e o save
+  leem tudo dali.
+- `decorador.ts` — o chão decorado de uma cena: monta os enfeites do save
+  (peça, colisor e o ponto "Mexer no…") e o MODO DE DECORAR (o enfeite
+  translúcido na frente de quem joga, o anel verde/vermelho, a barra com girar,
+  colocar e cancelar). A cena só diz onde é proibido (`RegrasDoLugar`); o resto
+  (colisor, outro enfeite) ele confere com `circuloEncosta` (`collision.ts`).
+  Enquanto decora, suspende os pontos da cena, como a rodada.
+- `retrato.ts` — fotografa um modelo 3D num canvas fora da tela e guarda como
+  imagem, para `<img>` de painel (as pragas do livro, os enfeites da loja).
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**
   do grupo que gira e são reposicionadas por frame, para nunca virarem de cabeça
   para baixo.

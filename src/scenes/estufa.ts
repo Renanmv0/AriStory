@@ -3,11 +3,11 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
   arcoDeEstufa, bancadaDeJardinagem, bush, canteiroDeHorta, capim, folhagemAlta, planta,
-  livroDeCartas, plaquinhaDaEstufa, portaoDeJardim, regadorDeOuro, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
+  livroDeCartas, lojinhaDaJosefina, plaquinhaDaEstufa, portaoDeJardim, regadorDeOuro, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
   trelicaComTrepadeira, vasoDePlanta,
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
-import { ITENS } from '../world/itens';
+import { ITENS, ROUPAS_DA_JOSEFINA } from '../world/itens';
 import { Josefina } from '../entities/bichos/Josefina';
 import type { Bicho } from '../entities/bichos/Bicho';
 import { Capy } from '../entities/bichos/Capy';
@@ -22,9 +22,11 @@ import { PRAGAS } from '../world/bichosDoJardim';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
 import { cartaNaTela } from '../minigames/jardim/tela';
 import { RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigames/jardim/rodada';
+import { DECORACOES } from '../world/decoracoes';
+import { Decorador } from '../world/decorador';
 import { MARCOS, MOEDAS_POR_ONDA, RECORDE, ondasVencidas, pagamentoDaRodada, type MarcoDoJardim } from '../minigames/jardim/premios';
 import { DESCRICAO_DA_PRAGA, NOME_DO_TIER, flagDaPraga, pragasDoLivro } from '../minigames/jardim/bestiario';
-import type { ConteudoDoLivro } from '../minigames/jardim/tela';
+import type { AcaoNaLoja, ConteudoDaLoja, ConteudoDoLivro } from '../minigames/jardim/tela';
 import { ARI, RENAN } from '../characters/cast';
 import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 import { toon } from '../core/materials';
@@ -162,9 +164,21 @@ const CANTEIROS = [
   { x: 10.2, z: 8.8, tipo: 'alface', giro: 0, nome: 'Alface da frente' },
   { x: -12.4, z: 4.6, tipo: 'tomate', giro: Math.PI / 2, nome: 'Tomate da esquerda' },
   { x: -12.4, z: 0.2, tipo: 'girassol', giro: Math.PI / 2, nome: 'Girassol' },
-  { x: 12.4, z: 4.6, tipo: 'alface', giro: Math.PI / 2, nome: 'Alface da direita' },
-  { x: 12.4, z: 0.2, tipo: 'tomate', giro: Math.PI / 2, nome: 'Tomate da direita' },
+  // os dois da direita recuaram 0,6 m quando a lojinha da Josefina entrou no
+  // canto da frente (pedido do Renan): o vão entre eles continua 1,2
+  { x: 12.4, z: 4.0, tipo: 'alface', giro: Math.PI / 2, nome: 'Alface da direita' },
+  { x: 12.4, z: -0.4, tipo: 'tomate', giro: Math.PI / 2, nome: 'Tomate da direita' },
 ] as const;
+
+/**
+ * A LOJINHA DA JOSEFINA, no canto direito da frente — no lugar da segunda
+ * bancada, que ficava vazia (pedido do Renan). A banca olha para `+Z` (a
+ * câmera vem de `+X/+Z`), e quem compra fica entre ela e a parede da frente.
+ * `meiaX`/`meiaZ` são as da peça (`lojinhaDaJosefina`).
+ */
+const LOJA = { x: 12.9, z: 7.1, meiaX: 1.3, meiaZ: 0.7 };
+/** onde a dupla fica para comprar: um passo à frente do balcão */
+const BALCAO = { x: LOJA.x, z: LOJA.z + LOJA.meiaZ + 0.9 };
 
 export const estufa: SceneDef = {
   id: 'estufa',
@@ -586,8 +600,12 @@ export const estufa: SceneDef = {
      * Quem chama passa o raio da peca que vai plantar: `bush(e)` tem
      * `0,78 · e`, muda e capim tem uns 0,2. A regra deixou de adivinhar.
      */
+    /** em cima da lojinha, ou na frente dela, onde a dupla para para comprar */
+    const naLoja = (x: number, z: number, folga: number): boolean =>
+      Math.abs(x - LOJA.x) < LOJA.meiaX + folga
+      && z > LOJA.z - LOJA.meiaZ - folga && z < BALCAO.z + 0.6 + folga;
     const podePlantar = (x: number, z: number, raio: number): boolean =>
-      !emCimaDeCanteiro(x, z, raio + 0.1) && Math.abs(x - PORTA.x) > 1.6 + raio;
+      !emCimaDeCanteiro(x, z, raio + 0.1) && Math.abs(x - PORTA.x) > 1.6 + raio && !naLoja(x, z, raio);
     /**
      * o que foi plantado no lado da porta, guardado para a Josefina saber
      * contornar: ela passeia AQUI, e jardineira que pisa na muda nao e
@@ -622,11 +640,15 @@ export const estufa: SceneDef = {
     const tonelMenor = w.add(w.place(tonelDeAgua(0.95), -hx + 1.1, 0, -5.9));
     w.blockCircle(-hx + 1.1, -5.9, 0.42);
 
+    // ------------------------------------------ a lojinha, no canto direito
+    // Era a segunda bancada, vazia. Virou a banca da Josefina: roupa de jardim
+    // e enfeite para a estufa (o painel e o modo de decorar moram mais abaixo)
+    const lojinha = w.add(w.place(lojinhaDaJosefina(), LOJA.x, 0, LOJA.z));
+    w.blockBox(LOJA.x, LOJA.z, LOJA.meiaX, LOJA.meiaZ);
+
     // ------------------------------------ as mudas em vaso, na parede direita
     // Elas sobem parte das plantas do chao: um galpao com tudo na mesma altura
     // fica achatado na camera isometrica, e os vasos sao o que da relevo.
-    const bancadaDois = w.add(w.place(bancadaDeJardinagem(2.4), hx - 1.1, 0, 7.6, -Math.PI / 2));
-    w.blockBox(hx - 1.1, 7.6, 0.45, 1.2);
     for (const [z, tipo, alto] of [
       [-3.8, 'samambaia', 0.4],
       [-2.6, 'girassol', 0.32],
@@ -1104,13 +1126,23 @@ export const estufa: SceneDef = {
       const [ex, ez] = giro === 0 ? [1, 0] : [0, 1];
       return [-1.1, 0, 1.1].map((d) => ({ x: x + ex * d, z: z + ez * d, r: 1.05 }));
     });
+    // e a lojinha, em três círculos ao longo do balcão, como um canteiro deitado
+    canteiroEmCirculos.push(...[-0.9, 0, 0.9].map((d) => ({ x: LOJA.x + d, z: LOJA.z, r: 1.0 })));
+    /*
+     * ONDE QUEM PASSEIA NÃO PISA: canteiro, muda da frente, a lojinha — e os
+     * ENFEITES que a dupla puser. A lista é UMA SÓ e compartilhada (a Josefina
+     * e os ajudantes do clube leem a mesma), e o decorador a atualiza quando
+     * um enfeite entra ou sai do chão.
+     */
+    const obstaculosDoPasseio: Array<{ x: number; z: number; r: number }> = [...canteiroEmCirculos, ...moitasDaFrente];
+    const fixos = obstaculosDoPasseio.length;
     const josefina = new Josefina({
       minX: -hx + 2.6, maxX: hx - 2.6,
       minZ: 1.0, maxZ: hz - 1.6,
       // os canteiros e as mudas da frente sao o unico lugar onde ela NAO pisa:
       // e a mesma regra do jardim de fora, e e o que faz a jardineira parecer
       // jardineira
-      proibido: [...canteiroEmCirculos, ...moitasDaFrente],
+      proibido: obstaculosDoPasseio,
     });
     josefina.aoSoar = () => g.som('cantarolar');
     josefina.group.visible = false;
@@ -1423,7 +1455,7 @@ export const estufa: SceneDef = {
     const areaDaPorta = {
       minX: -hx + 2.6, maxX: hx - 2.6,
       minZ: 1.0, maxZ: hz - 1.6,
-      proibido: [...canteiroEmCirculos, ...moitasDaFrente],
+      proibido: obstaculosDoPasseio,
     };
     type Falas = Array<readonly [string, string]>;
     const AJUDANTES: Record<AjudanteDoClube, {
@@ -1836,6 +1868,104 @@ export const estufa: SceneDef = {
     w.onUpdate((dt) => rodada.atualizar(dt));
     rodada.aoPegarCarta = (id) => chamarPelaCarta(id);
 
+    /* ====================================================================
+     *          A LOJINHA DA JOSEFINA E OS ENFEITES DA ESTUFA
+     * ====================================================================
+     *
+     * Pedido do Renan: a banca do canto vende roupa e decoração, e a dupla
+     * põe cada enfeite onde quiser. Quem cuida do chão é o `Decorador`
+     * (`world/decorador.ts`); aqui mora a REGRA DO LUGAR — o que só esta
+     * planta sabe:
+     *
+     * - **o terreiro e os caminhos ficam limpos**: é a arena, e a rodada
+     *   precisa de chão legível (a mesma regra que já proibia planta ali);
+     * - **o fundo (`z < -4,6`) é dos bichos e dos tonéis**;
+     * - **o eixo da porta fica vazio** (passagem tem eixo), e a frente da
+     *   bancada, do livro, do regador e da lojinha também;
+     * - **nada em cima de canteiro nem das mudas da frente**.
+     *
+     * Colisor e outro enfeite o decorador confere sozinho.
+     */
+    const FUNDO_DOS_ENFEITES = -4.6;
+    const regrasDoLugar = {
+      proibido: (x: number, z: number, raio: number): string | null => {
+        if (z < FUNDO_DOS_ENFEITES + raio) return 'aí é caminho de bicho';
+        if (Math.abs(x) > hx - 0.5 - raio || z > hz - 1.25 - raio) return 'colado demais na parede';
+        if (Math.abs(x - TERREIRO.x) < TERREIRO.largura / 2 + raio + 0.2
+          && Math.abs(z - TERREIRO.z) < TERREIRO.profundidade / 2 + raio + 0.2) return 'no terreiro, onde os bichos passam';
+        if (Math.abs(z - TERREIRO.z) < 1.1 + raio) return 'no caminho do meio';
+        if (Math.abs(x - PORTA.x) < 1.7 + raio && z > TERREIRO.z) return 'no caminho da porta';
+        if (emCimaDeCanteiro(x, z, raio + 0.05)) return 'em cima do canteiro';
+        if (naLoja(x, z, raio)) return 'na frente da lojinha';
+        if (x < -hx + 3.2 + raio && z > 4.4 && z < 9.8) return 'na frente da bancada';
+        if (moitasDaFrente.some((m) => Math.hypot(x - m.x, z - m.z) < m.r * 0.8 + raio)) return 'em cima das plantas';
+        return null;
+      },
+    };
+    const decorador = new Decorador(w, regrasDoLugar);
+    decorador.aoMudar = () => {
+      obstaculosDoPasseio.length = fixos;
+      obstaculosDoPasseio.push(...decorador.circulos());
+    };
+    decorador.aoMudar();
+    w.root.userData.decorador = decorador;
+
+    const conteudoDaLoja = (): ConteudoDaLoja => ({
+      saldo: g.carteira(),
+      roupas: ROUPAS_DA_JOSEFINA.map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        icone: p.icone,
+        nota: p.nota,
+        preco: p.preco ?? 0,
+        cor: `#${(p.cor ?? 0xcccccc).toString(16).padStart(6, '0')}`,
+        jaTem: g.jaTemPeca(p.id),
+      })),
+      decoracoes: DECORACOES.map((d) => ({
+        id: d.id,
+        nome: d.nome,
+        icone: d.icone,
+        descricao: d.descricao,
+        preco: d.preco,
+        guardadas: decorador.guardadas(d.id),
+        postas: decorador.postas(d.id),
+      })),
+    });
+    const agirNaLoja = (a: AcaoNaLoja): ConteudoDaLoja => {
+      if (a.tipo === 'comprar-roupa') {
+        const peca = ROUPAS_DA_JOSEFINA.find((p) => p.id === a.id);
+        if (peca) g.comprarPeca(peca);
+      } else {
+        decorador.comprar(a.id);
+      }
+      return conteudoDaLoja();
+    };
+    /**
+     * A BANCA, pelo ponto na frente do balcão. A primeira vez a Josefina
+     * apresenta (a fala é minha — o Renan não passou texto: trocar aqui,
+     * literal, se ele mandar); depois o painel abre direto.
+     */
+    const abrirALojinha = async (): Promise<void> => {
+      if (!g.flag('estufa.lojinha-vista')) {
+        g.setFlag('estufa.lojinha-vista');
+        await g.say([
+          'Montei uma lojinha aqui no canto, viu?',
+          'Tem roupa de mexer na terra, e enfeite pra deixar a estufa mais bonita. Vocês escolhem onde fica cada um.',
+        ], 'Josefina');
+      }
+      const saida = await g.abrirLojaDaJosefina(conteudoDaLoja(), agirNaLoja);
+      if (saida?.tipo === 'provar') g.abrirLoja('Roupas da Josefina', ROUPAS_DA_JOSEFINA);
+      else if (saida?.tipo === 'colocar') decorador.colocar(saida.id);
+    };
+    w.interact({
+      id: 'estufa:lojinha',
+      x: BALCAO.x, z: BALCAO.z, radius: 1.3,
+      label: 'Lojinha da Josefina', icon: '🛍️',
+      highlight: lojinha,
+      onInteract: abrirALojinha,
+    });
+    w.root.userData.abrirALojinha = abrirALojinha;
+
     /**
      * O FIM DA RODADA: a Josefina conta como foi, pelo número de canteiros de
      * pé — que é o placar do §3 (canteiro vivo, e não bicho espantado). O
@@ -2040,7 +2170,7 @@ export const estufa: SceneDef = {
       tonel: { x: -hx + 1.2, z: -7.4 },
       tonelReserva: { x: tonelMenor.position.x, z: tonelMenor.position.z },
       oficina: { x: bancada.position.x, z: bancada.position.z },
-      bancadaDeMudas: { x: bancadaDois.position.x, z: bancadaDois.position.z },
+      lojinha: { x: lojinha.position.x, z: lojinha.position.z },
       canteiros: CANTEIROS.map(({ x, z }) => ({ x, z })),
       /** um passo para DENTRO de cada portao */
       bocas: PORTOES.xs.map((x) => ({ x, z: CHEGADA })),

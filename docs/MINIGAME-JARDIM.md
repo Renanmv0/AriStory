@@ -30,6 +30,7 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | `src/ui/telaDeCartas.ts`, `src/ui/livroDeCartas.ts` | a tela das três cartas; o livro da estufa (abas Cartas, Pragas, Recompensas) e a tela do fim |
 | `src/world/bichosDoJardim.ts` | a geometria das **treze** pragas (`PRAGAS`): as seis da primeira leva e as sete da segunda (da 15ª onda em diante) |
 | `src/core/Oclusao.ts` | parede/árvore que tapa bicho ou gota fica translúcida (a rodada liga) |
+| `src/world/decoracoes.ts`, `src/world/decorador.ts`, `src/ui/lojaDaJosefina.ts` | os enfeites da estufa (ficha + geometria), o modo de colocar, e o painel da lojinha |
 | `src/audio/musica.ts` (`'rodada-do-jardim'`) | a música da defesa |
 
 **Balanço das cartas somadas** (o Renan venceu as 30 ondas): os multiplicadores
@@ -75,6 +76,22 @@ Josefina avisam, e a dupla clica em **Resgatar** na aba de recompensas do
 livro (`jardim.resgate-N`); aí a Josefina entrega (`entregarMarco`, em
 `scenes/estufa.ts` — as falas são minhas, o Renan não passou texto: se ele
 mandar, troca ali, literal). Teste: `scripts/marcos.mjs`.
+
+**A LOJINHA DA JOSEFINA** (pedido do Renan; no canto direito da frente, onde
+era a segunda bancada — os canteiros Alface e Tomate da direita recuaram 0,6 m
+para ela caber): uma banca que vende **roupa de jardim** (`ROUPAS_DA_JOSEFINA`
+em `world/itens.ts`; comprar é `g.comprarPeca`, o mesmo caminho da boutique, e
+"provar no boneco" abre a arara da boutique com essas peças) e **enfeites para
+a estufa** (`world/decoracoes.ts` — ficha e geometria no mesmo arquivo, hoje
+seis). O enfeite comprado fica guardado; "Colocar" põe ele na frente da dupla e
+é ANDANDO que se escolhe o lugar (`world/decorador.ts`: anel verde/vermelho,
+barra com girar G / colocar E / cancelar X). Proibido: terreiro, caminhos,
+eixo da porta, fundo dos bichos (`z < -4,6`), canteiros, mudas e a frente de
+bancada/livro/loja (`regrasDoLugar`, em `scenes/estufa.ts`). Cada enfeite posto
+tem colisor e "Mexer no…" (mudar de lugar, girar, guardar), fica no save
+(`SaveState.decoracoes`) e entra na lista do que a Josefina e os ajudantes
+desviam. A fala de apresentação da Josefina é minha. Teste:
+`scripts/decorar.mjs`.
 
 **O LIVRO DA ESTUFA** (a bancada) tem três abas (`ui/livroDeCartas.ts`):
 **Cartas** (cinza até escolher), **Pragas** (cinza até a praga nascer numa

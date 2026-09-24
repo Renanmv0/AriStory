@@ -5,7 +5,7 @@ import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props'
 import { regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
   aventalDaJosefina, blazerXadrez, canoDaBota, chapeuDeJardineira, coroaDeDama, gargantilhaDeLaco,
-  gorroDeLa, gravataDoWalter,
+  girassolNoPeito, gorroDeLa, gravataDoWalter,
   jaquetaFrancesa, maidJapones, mangaDaJaquetaFrancesa, mangaDeMoletom, mangaDeQuimono,
   mangaDoBlazer, meiaDeCoxa, moletomComCapuz, oculosDeSol, perneiraXadrez, quepeDoCookie,
   vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
@@ -290,6 +290,39 @@ export const ITENS = {
     // O avental vai por cima e não mexe no que está embaixo
     nota: 'da Josefina, pelas vinte levas',
     extra: aventalDaJosefina,
+  },
+  /*
+   * A LOJINHA DA JOSEFINA (a banca no canto da estufa): roupa de mexer na
+   * terra. Todas com `preco` e fora das araras da Estella — quem as põe à
+   * venda é `ROUPAS_DA_JOSEFINA`, lá embaixo. Três são a MESMA geometria em
+   * outra cor (bota, gorro, camiseta lisa); a camiseta de girassol traz a flor.
+   */
+  galochaVerde: {
+    id: 'galocha-verde', nome: 'Galocha verde', icone: '🥾',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.galochaVerde, corDetalhe: P.galochaVerdeCano,
+    nota: 'para pisar na terra molhada', preco: 48,
+    extra: canoDaBota,
+  },
+  camisetaDeGirassol: {
+    id: 'camiseta-de-girassol', nome: 'Camiseta de girassol', icone: '🌻',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.camisetaGirassol, corDetalhe: P.camisetaGirassolManga,
+    nota: 'com a flor bordada no peito', preco: 38,
+    extra: girassolNoPeito,
+  },
+  camisetaVerdeFolha: {
+    id: 'camiseta-verde-folha', nome: 'Camiseta verde-folha', icone: '👕',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.camisetaFolha, corDetalhe: P.camisetaFolhaManga,
+    nota: 'da cor da estufa', preco: 32,
+  },
+  gorroJoaninha: {
+    id: 'gorro-joaninha', nome: 'Gorro joaninha', icone: '🐞',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.gorroJoaninha, corDetalhe: P.gorroJoaninhaBarra,
+    nota: 'vermelho com a barra preta', preco: 40,
+    extra: gorroDeLa,
   },
   botaAmarela: {
     id: 'bota-amarela',
@@ -906,3 +939,15 @@ export function modeloDoItem(id: string): THREE.Object3D | null {
   obj.userData.item = id;
   return obj;
 }
+
+/**
+ * AS ROUPAS DA LOJINHA DA JOSEFINA, na ordem da aba de roupas. A cena da
+ * estufa vende por esta lista, e a prova (o boneco) usa a mesma arara da
+ * boutique (`g.abrirLoja`).
+ */
+export const ROUPAS_DA_JOSEFINA: readonly ItemDef[] = [
+  ITENS.camisetaVerdeFolha,
+  ITENS.camisetaDeGirassol,
+  ITENS.gorroJoaninha,
+  ITENS.galochaVerde,
+];

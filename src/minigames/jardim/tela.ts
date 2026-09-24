@@ -160,6 +160,66 @@ export interface ConteudoDoLivro {
 }
 
 /**
+ * A LOJINHA DA JOSEFINA (a banca no canto da estufa) — o que o painel dela
+ * recebe. Quem monta é a cena, pelo save; o painel só desenha e devolve o que
+ * a dupla apertou.
+ */
+export interface RoupaNaLoja {
+  readonly id: string;
+  readonly nome: string;
+  readonly icone: string;
+  readonly nota?: string;
+  readonly preco: number;
+  /** a cor da peça em CSS, para a amostra do cartão */
+  readonly cor: string;
+  /** já pagaram por ela (o armário repõe para sempre) */
+  readonly jaTem: boolean;
+}
+
+export interface DecoracaoNaLoja {
+  readonly id: string;
+  readonly nome: string;
+  readonly icone: string;
+  readonly descricao: string;
+  readonly preco: number;
+  /** compradas e esperando lugar */
+  readonly guardadas: number;
+  /** já no chão da estufa */
+  readonly postas: number;
+}
+
+export interface ConteudoDaLoja {
+  readonly saldo: number;
+  readonly roupas: readonly RoupaNaLoja[];
+  readonly decoracoes: readonly DecoracaoNaLoja[];
+}
+
+/** o que o painel pede SEM fechar: comprar (ele se redesenha com a resposta) */
+export interface AcaoNaLoja {
+  readonly tipo: 'comprar-roupa' | 'comprar-decoracao';
+  readonly id: string;
+}
+
+/**
+ * Como o painel fechou: só fechando (`null`), indo PROVAR as roupas no boneco
+ * (a arara da boutique), ou indo COLOCAR um enfeite guardado no chão.
+ */
+export type SaidaDaLoja = null | { readonly tipo: 'provar' } | { readonly tipo: 'colocar'; readonly id: string };
+
+/**
+ * A BARRA DO MODO DE DECORAR, embaixo da tela: o enfeite que está na mão, se
+ * ele cabe onde está, e os três botões (que também são teclas: G, E e X).
+ */
+export interface EstadoDoPosicionador {
+  readonly nome: string;
+  readonly icone: string;
+  readonly valido: boolean;
+  /** por que não dá, quando não dá ("em cima do canteiro", "no terreiro") */
+  readonly motivo?: string;
+}
+export type BotaoDoPosicionador = 'girar' | 'colocar' | 'cancelar';
+
+/**
  * O PAINEL DA RODADA no alto da tela, e o BOTÃO DA AJUDA DO PAR: a onda, a
  * água, os canteiros, e quanto falta para chamar quem ficou lá atrás.
  */

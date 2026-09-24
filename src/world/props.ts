@@ -7234,3 +7234,145 @@ export function regadorDeOuro(): THREE.Group {
   g.add(lata);
   return g;
 }
+
+/**
+ * A LOJINHA DA JOSEFINA — a banca de feira no canto direito da estufa, onde
+ * ela vende roupa de jardim e enfeite para a estufa (pedido do Renan).
+ *
+ * Contrato do kit: base em `y = 0`, olhando para `+Z`, centrada na origem.
+ * Ocupa 2,6 × 1,4 (meia-largura 1,3, meia-profundidade 0,7).
+ *
+ * TRÊS DECISÕES DE CÂMERA, e todas são as mesmas do quiosque:
+ *
+ * 1. **A FRENTE OLHA PARA `+Z`.** A câmera vem de `+X/+Z`: virada para a
+ *    parede, a banca mostraria só o fundo liso.
+ * 2. **O TOLDO PARA ANTES DA METADE DO BALCÃO.** Na inclinação de 34°, toldo
+ *    que avança tapa o que está em cima do balcão — e o balcão é a vitrine.
+ * 3. **A PLACA FICA NO PAINEL DA FRENTE DO BALCÃO**, e não num letreiro alto:
+ *    este é o canto mais perto da câmera, e peça alta aqui come chão atrás
+ *    dela. O ponto mais alto (o toldo) fica em 2,15.
+ */
+export function lojinhaDaJosefina(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'lojinha-da-josefina';
+  const madeira = toon(P.lojaMadeira);
+  const escura = toon(P.lojaMadeiraEscura);
+  const L = 2.5;
+  const ALTO = 0.82;
+  const FRENTE = 0.66;
+
+  // ------------------------------------------------------------- o balcão
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(L, ALTO, 0.6), madeira);
+  corpo.position.set(0, ALTO / 2, 0.36);
+  g.add(corpo);
+  // as tábuas do painel da frente, um dedo para fora dele (sem face coplanar)
+  for (let i = 0; i < 6; i++) {
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(0.035, ALTO - 0.1, 0.02), escura);
+    tabua.position.set(-L / 2 + 0.2 + i * ((L - 0.4) / 5), ALTO / 2, FRENTE + 0.012);
+    g.add(tabua);
+  }
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(L + 0.1, 0.07, 0.74), escura);
+  tampo.position.set(0, ALTO + 0.035, 0.36);
+  g.add(tampo);
+
+  // a placa, no painel da frente: tábua clara com o nome em canvas, em duas
+  // linhas — numa só, "Lojinha da Josefina" encolhia até sumir de longe
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.56, 0.04), toon(P.lojaToldoCreme));
+  placa.position.set(0, ALTO * 0.52, FRENTE + 0.04);
+  g.add(placa);
+  const cor = '#' + P.lojaPlacaTexto.toString(16).padStart(6, '0');
+  const titulo = letreiro('Lojinha', 1.3, 0.3, cor);
+  titulo.position.set(0, ALTO * 0.52 + 0.11, FRENTE + 0.065);
+  g.add(titulo);
+  const dona = letreiro('da Josefina', 1.3, 0.2, cor);
+  dona.position.set(0, ALTO * 0.52 - 0.15, FRENTE + 0.065);
+  g.add(dona);
+
+  // ------------------------------------------------- a vitrine, no balcão
+  // os vasos com muda nas pontas, e a caixa de pacotes de semente no meio:
+  // é o que diz "loja de jardim" de longe
+  const topo = ALTO + 0.07;
+  for (const [x, tipo] of [[-0.95, 'lavanda'], [0.95, 'suculenta']] as const) {
+    const vaso = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.2, 10), toon(P.barroDoVaso));
+    vaso.position.set(x, topo + 0.1, 0.45);
+    g.add(vaso);
+    const muda = planta(tipo, 1.1, x > 0 ? 0.3 : 0.7);
+    muda.position.set(x, topo + 0.19, 0.45);
+    g.add(muda);
+  }
+  const caixa = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.12, 0.3), escura);
+  caixa.position.set(-0.2, topo + 0.06, 0.42);
+  g.add(caixa);
+  [P.lojaPacoteA, P.lojaPacoteB, P.lojaPacoteC, P.lojaPacoteA].forEach((c, i) => {
+    const pacote = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 0.025), toon(c));
+    pacote.position.set(-0.43 + i * 0.155, topo + 0.16, 0.42);
+    pacote.rotation.x = -0.25;
+    g.add(pacote);
+  });
+  // a caixinha de pagar, com a fenda em cima
+  const cofre = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.15, 0.16), toon(P.lojaCaixinha));
+  cofre.position.set(0.42, topo + 0.075, 0.46);
+  g.add(cofre);
+  const fenda = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.012, 0.025), escura);
+  fenda.position.set(0.42, topo + 0.156, 0.46);
+  g.add(fenda);
+
+  // ------------------------------------------ a prateleira de trás, baixa
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(L - 0.1, 0.05, 0.34), escura);
+  fundo.position.set(0, 1.05, -0.45);
+  g.add(fundo);
+  for (const sx of [-1, 1] as const) {
+    const lado = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.08, 0.34), escura);
+    lado.position.set(sx * (L / 2 - 0.08), 0.54, -0.45);
+    g.add(lado);
+  }
+  for (let i = 0; i < 5; i++) {
+    const alto = 0.18 + (i % 2) * 0.05;
+    const vaso = new THREE.Mesh(new THREE.CylinderGeometry(alto * 0.45, alto * 0.33, alto, 9), toon(P.barroDoVaso));
+    const x = -0.95 + i * 0.47;
+    vaso.position.set(x, 1.075 + alto / 2, -0.45);
+    g.add(vaso);
+    if (i % 2 === 0) {
+      const muda = planta(i === 2 ? 'girassol' : 'alface', 0.8, i * 0.21);
+      muda.position.set(x, 1.075 + alto - 0.02, -0.45);
+      g.add(muda);
+    }
+  }
+
+  // --------------------------------------------------------------- o toldo
+  // dois postes atrás, e a lona inclinada do alto de trás até um pouco antes
+  // da metade do balcão (regra 2)
+  for (const sx of [-1, 1] as const) {
+    const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 2.1, 8), escura);
+    poste.position.set(sx * (L / 2 + 0.02), 1.05, -0.62);
+    g.add(poste);
+  }
+  const TRAS = { y: 2.12, z: -0.66 };
+  const FRENTE_DO_TOLDO = { y: 1.86, z: 0.1 };
+  const comprimento = Math.hypot(FRENTE_DO_TOLDO.z - TRAS.z, FRENTE_DO_TOLDO.y - TRAS.y);
+  const inclinacao = Math.atan2(TRAS.y - FRENTE_DO_TOLDO.y, FRENTE_DO_TOLDO.z - TRAS.z);
+  const FAIXAS = 7;
+  const larguraDaFaixa = (L + 0.3) / FAIXAS;
+  for (let i = 0; i < FAIXAS; i++) {
+    const faixa = new THREE.Mesh(
+      new THREE.BoxGeometry(larguraDaFaixa + 0.004, 0.035, comprimento),
+      toon(i % 2 ? P.lojaToldoCreme : P.lojaToldoVerde),
+    );
+    faixa.position.set(-(L + 0.3) / 2 + larguraDaFaixa * (i + 0.5), (TRAS.y + FRENTE_DO_TOLDO.y) / 2, (TRAS.z + FRENTE_DO_TOLDO.z) / 2);
+    faixa.rotation.x = inclinacao;
+    // as faixas vizinhas alternam um fio de altura: lado a lado na mesma cota,
+    // as bordas delas brigariam pelo mesmo pixel
+    faixa.position.y += (i % 2) * 0.004;
+    g.add(faixa);
+    // o babado da borda: meia-lua pendurada na frente de cada faixa
+    const babado = new THREE.Mesh(
+      new THREE.CylinderGeometry(larguraDaFaixa / 2, larguraDaFaixa / 2, 0.03, 10, 1, false, 0, Math.PI),
+      toon(i % 2 ? P.lojaToldoCreme : P.lojaToldoVerde),
+    );
+    babado.rotation.x = Math.PI / 2;
+    babado.rotation.z = Math.PI / 2;
+    babado.position.set(faixa.position.x, FRENTE_DO_TOLDO.y - 0.02, FRENTE_DO_TOLDO.z + 0.005);
+    g.add(babado);
+  }
+  return g;
+}

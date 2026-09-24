@@ -181,14 +181,24 @@ export function line(color: number): THREE.LineBasicMaterial {
  * peças que usam a mesma cor. `depthWrite` desligado para quem está atrás
  * aparecer inteiro através dela.
  */
-const translucidos = new WeakMap<THREE.Material, THREE.Material>();
+const translucidos = new WeakMap<THREE.Material, Map<number, THREE.Material>>();
+/**
+ * Uma por material E por opacidade: a oclusão usa 0,28, e o enfeite "na mão"
+ * do modo de decorar da estufa usa mais (ele tem que ler como a peça, só que
+ * ainda não posta).
+ */
 export function translucido(mat: THREE.Material, opacidade = 0.28): THREE.Material {
-  const hit = translucidos.get(mat);
+  let porOpacidade = translucidos.get(mat);
+  if (!porOpacidade) {
+    porOpacidade = new Map();
+    translucidos.set(mat, porOpacidade);
+  }
+  const hit = porOpacidade.get(opacidade);
   if (hit) return hit;
   const t = mat.clone();
   t.transparent = true;
   t.opacity = Math.min(mat.opacity, opacidade);
   t.depthWrite = false;
-  translucidos.set(mat, t);
+  porOpacidade.set(opacidade, t);
   return t;
 }

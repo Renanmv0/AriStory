@@ -3502,3 +3502,206 @@ body.touch-device .ajuda-do-par kbd { display: none; }
   background: linear-gradient(180deg, #ffe39a, #f2b134);
   letter-spacing: 0.12em;
 }
+
+/* =====================================================================
+ * A LOJINHA DA JOSEFINA (`ui/lojaDaJosefina.ts`) — a banca no canto da
+ * estufa. Madeira clara e o toldo verde e creme da peça 3D: o painel é a
+ * mesma banca, vista de perto.
+ * ===================================================================== */
+.loja-da-josefina {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(22, 30, 24, 0.66);
+}
+.loja-da-josefina.show { display: flex; pointer-events: auto; }
+.loja-da-josefina .banca {
+  display: flex;
+  flex-direction: column;
+  width: min(980px, 100%);
+  height: min(88vh, 100%);
+  border-radius: 20px;
+  overflow: hidden;
+  background: #f6ecd4;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), inset 0 0 0 3px rgba(95, 158, 87, 0.7);
+}
+.loja-da-josefina .topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px 16px;
+  color: #3b2712;
+  /* o toldo listrado, com a borda de babado embaixo */
+  background:
+    radial-gradient(circle at 12px -2px, transparent 10px, #f6ecd4 10.5px) 0 100% / 24px 10px repeat-x,
+    repeating-linear-gradient(90deg, #5f9e57 0 34px, #f3e6c4 34px 68px);
+}
+.loja-da-josefina .topo .titulo {
+  flex: 1;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: rgba(246, 236, 212, 0.94);
+}
+.loja-da-josefina .rosto {
+  font-size: 34px;
+  padding: 4px;
+  border-radius: 50%;
+  background: rgba(246, 236, 212, 0.94);
+}
+.loja-da-josefina h2 { margin: 0; font-size: 22px; }
+.loja-da-josefina .saldo { margin: 1px 0 0; font-size: 14px; }
+.loja-da-josefina .saldo b { color: #6b4a08; }
+.loja-da-josefina .fechar {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  color: #5a3d0c;
+  background: linear-gradient(180deg, #ffe39a, #f2b134);
+  box-shadow: 0 4px 0 #c68a1f, 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+.loja-da-josefina .abas { display: flex; gap: 6px; padding: 8px 14px 0; background: #e8d9b5; }
+.loja-da-josefina .abas button {
+  border: 0;
+  border-radius: 10px 10px 0 0;
+  padding: 8px 16px 7px;
+  font: inherit;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  color: #4a3a22;
+  background: #d6c39a;
+}
+.loja-da-josefina .abas button.ativa { background: #f6ecd4; }
+.loja-da-josefina .prateleira { flex: 1; overflow-y: auto; padding: 14px 16px 20px; }
+.loja-da-josefina .dica { margin: 0 0 12px; font-size: 14px; color: #5a4a30; }
+.loja-da-josefina .dica .provar {
+  margin-left: 6px;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  color: #fff;
+  background: #4f8fd0;
+}
+.loja-da-josefina .grade-produtos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.loja-da-josefina .produto {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #fffaf0;
+  box-shadow: inset 0 0 0 2px rgba(120, 90, 50, 0.2);
+}
+.loja-da-josefina .produto.decoracao,
+.loja-da-josefina .produto.roupa { flex-wrap: wrap; }
+/* o botão (ou o selo) desce para a linha de baixo, inteiro: ao lado do texto,
+   ele espremia o nome da peça numa coluna de uma palavra */
+.loja-da-josefina .produto.roupa > .comprar,
+.loja-da-josefina .produto.roupa > .selo { flex: 1 1 100%; text-align: center; }
+.loja-da-josefina .produto .texto { flex: 1; min-width: 0; }
+.loja-da-josefina .produto h4 { margin: 0; font-size: 16px; color: #3f3220; }
+.loja-da-josefina .produto p { margin: 2px 0 0; font-size: 13px; line-height: 1.3; color: #5a4a30; }
+.loja-da-josefina .produto .conta { display: block; margin-top: 4px; font-size: 12px; font-weight: 800; color: #4f7a55; }
+.loja-da-josefina .amostra {
+  flex: 0 0 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 26px;
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.12);
+}
+.loja-da-josefina .foto {
+  flex: 0 0 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 40%, #eaf4dc, #cfe0bd);
+}
+.loja-da-josefina .foto img { width: 100%; height: 100%; object-fit: contain; }
+.loja-da-josefina .botoes { display: flex; gap: 8px; width: 100%; }
+.loja-da-josefina .botoes button { flex: 1; }
+.loja-da-josefina .comprar,
+.loja-da-josefina .colocar {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(180deg, #7cc36a, #4f9a45);
+  box-shadow: 0 3px 0 #3c7a35;
+}
+.loja-da-josefina .colocar { background: linear-gradient(180deg, #f2b134, #d99220); box-shadow: 0 3px 0 #a86f14; }
+.loja-da-josefina button:disabled {
+  cursor: default;
+  color: #8a7350;
+  background: #e2d6bb;
+  box-shadow: none;
+}
+.loja-da-josefina .selo { font-weight: 800; color: #4f9a45; white-space: nowrap; }
+
+/* A BARRA DO MODO DE DECORAR: embaixo, no meio, sem tapar o chão onde a dupla anda */
+.posicionador {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 20;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+  padding: 8px 10px;
+  border-radius: 18px;
+  transform: translateX(-50%);
+  color: #3f3220;
+  background: rgba(255, 250, 240, 0.96);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+}
+.posicionador.show { display: flex; pointer-events: auto; }
+.posicionador .enfeite { display: flex; align-items: center; gap: 6px; padding-right: 4px; }
+.posicionador .enfeite .icone { font-size: 24px; }
+.posicionador .enfeite small { display: block; font-size: 12px; font-weight: 800; }
+.posicionador .enfeite small.pode { color: #3c8a3c; }
+.posicionador .enfeite small.nao-pode { color: #c0392b; }
+.posicionador button {
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font: inherit;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  color: #3f3220;
+  background: #eadcbc;
+}
+.posicionador button.colocar { color: #fff; background: #4f9a45; }
+.posicionador button:disabled { opacity: 0.45; cursor: default; }
+.posicionador kbd { font-size: 11px; opacity: 0.7; }
+
+@media (max-width: 640px) {
+  .loja-da-josefina { padding: 8px; }
+  .loja-da-josefina .banca { height: 100%; }
+  .loja-da-josefina h2 { font-size: 18px; }
+  .loja-da-josefina .grade-produtos { grid-template-columns: 1fr; }
+  .posicionador { flex-wrap: wrap; justify-content: center; bottom: 10px; width: calc(100% - 24px); }
+  .posicionador .enfeite { width: 100%; justify-content: center; }
+  .posicionador kbd { display: none; }
+}

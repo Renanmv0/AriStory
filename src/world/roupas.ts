@@ -2038,6 +2038,36 @@ function aventalDaJosefina(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): 
 }
 
 /**
+ * O GIRASSOL NO PEITO da camiseta de girassol (lojinha da Josefina): oito
+ * pétalas achatadas em volta de um miolo, pregadas na frente do tronco.
+ *
+ * REFERENCIAL: o tronco, y = 0 no CHÃO. A frente do peito sai da cápsula do
+ * rig (`CharacterRig`, "torso"): raio `0,105·h·w`, achatada em `0,82` no `z`
+ * — a flor fica um fio à frente disso, na altura do peito.
+ */
+function girassolNoPeito(m: MedidasCorpo): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const raioTorso = h * 0.105 * w;
+  const y = m.legH + m.torsoH * 0.64;
+  const z = raioTorso * 0.82 + h * 0.004;
+  const petala = toon(P.girassolPetala);
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const p = new THREE.Mesh(new THREE.SphereGeometry(h * 0.011, 8, 6), petala);
+    p.scale.set(1, 1.9, 0.35);
+    p.position.set(raioTorso * 0.34 + Math.cos(a) * h * 0.021, y + Math.sin(a) * h * 0.021, z);
+    p.rotation.z = a - Math.PI / 2;
+    g.add(p);
+  }
+  const miolo = new THREE.Mesh(new THREE.SphereGeometry(h * 0.013, 10, 8), toon(P.girassolMiolo));
+  miolo.scale.z = 0.45;
+  miolo.position.set(raioTorso * 0.34, y, z + h * 0.002);
+  g.add(miolo);
+  return g;
+}
+
+/**
  * As casas escuras de um xadrez em volta de um cilindro.
  *
  * Ferramenta dos dois pedacos do conjunto da Estella — o blazer e a perneira.
@@ -2363,7 +2393,7 @@ function coroaDeDama(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.
 // inventario. Aqui fica so o corpo delas.
 export {
   gorroDeLa, canoDaBota, vestidoRosa, vestidoDaLoja, gargantilhaDeLaco, gravataDoWalter,
-  chapeuDeJardineira, aventalDaJosefina,
+  chapeuDeJardineira, aventalDaJosefina, girassolNoPeito,
   vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
   moletomComCapuz, mangaDeMoletom, oculosDeSol,
   jaquetaFrancesa, mangaDaJaquetaFrancesa, quepeDoCookie,

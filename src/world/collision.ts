@@ -69,3 +69,28 @@ export function clampToBounds(pos: { x: number; z: number }, radius: number, b: 
   pos.x = Math.max(b.minX + radius, Math.min(b.maxX - radius, pos.x));
   pos.z = Math.max(b.minZ + radius, Math.min(b.maxZ - radius, pos.z));
 }
+
+/**
+ * Um círculo no chão encosta em algum colisor? É a pergunta do modo de
+ * decorar da estufa ("o enfeite cabe aqui?"), com a MESMA conta de espaço
+ * local da caixa que `resolveCollisions` usa — o que o jogo considera parede
+ * para a dupla é o que ele considera parede para o enfeite.
+ */
+export function circuloEncosta(x: number, z: number, raio: number, colliders: readonly Collider[]): boolean {
+  for (const c of colliders) {
+    if (c.kind === 'circle') {
+      if (Math.hypot(x - c.x, z - c.z) < raio + c.r) return true;
+      continue;
+    }
+    const cos = Math.cos(-c.rot);
+    const sin = Math.sin(-c.rot);
+    const rx = x - c.x;
+    const rz = z - c.z;
+    const lx = rx * cos - rz * sin;
+    const lz = rx * sin + rz * cos;
+    const dx = lx - Math.max(-c.hw, Math.min(c.hw, lx));
+    const dz = lz - Math.max(-c.hd, Math.min(c.hd, lz));
+    if (dx * dx + dz * dz < raio * raio) return true;
+  }
+  return false;
+}

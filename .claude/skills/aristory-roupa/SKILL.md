@@ -230,6 +230,14 @@ nessa conta: ela passa as cores exatas por um ponto de entrada próprio
 (`vestidoRosa` vs `vestidoDaLoja`), senão a peça de referência muda junto com
 a variação nova.
 
+## Pôr a peça à venda na lojinha da Josefina (estufa)
+
+Roupa de JARDIM vai para `ROUPAS_DA_JOSEFINA` (`world/itens.ts`), e não para
+uma arara da Estella: é a aba de roupas da banca da estufa. Precisa de `preco`
+como qualquer peça à venda. A compra é `g.comprarPeca` (o mesmo caminho da
+boutique) e "provar no boneco" abre a arara da boutique com essa lista — então
+peça nova ali não pede código nenhum além da ficha e da entrada na lista.
+
 ## Pôr a peça à venda na boutique
 
 ## Pôr a peça como PRÊMIO de um desafiante da arena

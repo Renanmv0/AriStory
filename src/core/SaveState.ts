@@ -1,4 +1,4 @@
-import { SLOTS_ROUPA, type Coleta, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
+import { SLOTS_ROUPA, type Coleta, type DecoracaoNoSave, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
 
 import { fichaDoItem } from '../world/itens';
 
@@ -137,6 +137,12 @@ interface SaveData {
    * é a coleção, e o livro da bancada desenha as que estão aqui.
    */
   livro: string[];
+  /**
+   * OS ENFEITES DA ESTUFA: cada um comprado na lojinha da Josefina, guardado
+   * ou posto num lugar do chão (`DecoracaoNoSave`). A estufa monta os postos
+   * ao entrar; o painel da loja conta os guardados.
+   */
+  decoracoes: DecoracaoNoSave[];
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -270,6 +276,26 @@ function normalizar(
 
 const KEY = 'aristory.save.v1';
 
+/**
+ * Lê a lista de enfeites de um save desconhecido: o que não tiver `uid`
+ * numérico e `id` texto sai, e posição com número estragado vira "guardado"
+ * — enfeite perdido no chão não pode quebrar a cena, e no guardado ele volta
+ * a ser escolhível.
+ */
+function normalizarDecoracoes(bruto: unknown): DecoracaoNoSave[] {
+  if (!Array.isArray(bruto)) return [];
+  const lista: DecoracaoNoSave[] = [];
+  const vistos = new Set<number>();
+  for (const d of bruto as Array<Partial<DecoracaoNoSave>>) {
+    if (!d || typeof d.id !== 'string' || typeof d.uid !== 'number' || vistos.has(d.uid)) continue;
+    vistos.add(d.uid);
+    const p = d.posta;
+    const ok = p && [p.x, p.z, p.giro].every((n) => typeof n === 'number' && Number.isFinite(n));
+    lista.push({ uid: d.uid, id: d.id, posta: ok ? { x: p!.x, z: p!.z, giro: p!.giro } : null });
+  }
+  return lista;
+}
+
 const EMPTY: SaveData = {
   version: 1,
   scene: '',
@@ -280,6 +306,7 @@ const EMPTY: SaveData = {
   compradas: [],
   premios: [],
   livro: [],
+  decoracoes: [],
   inventarios: {},
 };
 
@@ -321,6 +348,8 @@ export class SaveState {
         livro: Array.isArray(parsed.livro)
           ? parsed.livro.filter((id): id is string => typeof id === 'string')
           : [],
+        // save de antes da lojinha: estufa sem enfeite nenhum
+        decoracoes: normalizarDecoracoes(parsed.decoracoes),
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
     } catch {
@@ -413,6 +442,18 @@ export class SaveState {
   registrarPremio(id: string): void {
     if (this.data.premios.includes(id)) return;
     this.data.premios.push(id);
+    this.persist();
+  }
+
+  // ------------------------------------------------ os enfeites da estufa
+
+  get decoracoes(): readonly DecoracaoNoSave[] {
+    return this.data.decoracoes;
+  }
+
+  /** Troca a lista inteira (a estufa é quem sabe onde cada um está). */
+  salvarDecoracoes(lista: readonly DecoracaoNoSave[]): void {
+    this.data.decoracoes = normalizarDecoracoes(lista);
     this.persist();
   }
 
