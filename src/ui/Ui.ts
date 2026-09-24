@@ -485,6 +485,16 @@ export class Ui {
       if (this.dialogueOpen) this.advance?.();
       else this.onTouchAction?.();
     });
+    /*
+     * NO MODO DE EDIÇÃO DOS ENFEITES, O PRÓPRIO "Mexer no…" É BOTÃO no celular
+     * (o CSS só liga o clique nele ali): é o texto que a pessoa está olhando, e
+     * tocar nele faz o mesmo que o ✨.
+     */
+    ui.querySelector('.prompt')!.addEventListener('click', () => {
+      if (!this.posicionador.classList.contains('editando') || !this.posicionador.classList.contains('show')) return;
+      if (this.dialogueOpen) return;
+      this.onTouchAction?.();
+    });
     // dedo que escorrega para fora do botao NAO vale como toque: solta a carga
     // (se houver) e nao interage com nada
     for (const ev of ['pointercancel', 'pointerleave']) {
@@ -1041,7 +1051,7 @@ export class Ui {
       const quantos = estado.postos === 1 ? '1 enfeite' : `${estado.postos} enfeites`;
       html = `
         <span class="enfeite"><span class="icone">✏️</span><b>Arrumando os enfeites</b>
-          <small class="pode">${quantos} · chegue perto de um e aperte E</small></span>
+          <small class="pode">${quantos} · chegue perto de um e ${document.body.classList.contains('touch-device') ? 'toque no ✨' : 'aperte E'}</small></span>
         <button data-botao="pronto" class="colocar">✓ pronto <kbd>X</kbd></button>`;
     } else {
       const aviso = estado.valido ? '✓ aqui dá' : `✗ ${escapar(estado.motivo ?? 'aqui não dá')}`;

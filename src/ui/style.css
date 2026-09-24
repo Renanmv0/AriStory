@@ -3758,3 +3758,29 @@ body.touch-device .ajuda-do-par kbd { display: none; }
   /* no modo de edição a barra embrulha em duas linhas: o "Mexer no…" sobe por cima dela */
   :has(> .posicionador.editando.show) > .prompt { bottom: 136px; }
 }
+
+/*
+ * NO TOQUE, A BARRA DEIXA O CORREDOR DA DIREITA LIVRE. É lá que mora a pilha
+ * de botões redondos, e o ✨ embaixo dela é o "E" do celular — o único jeito de
+ * abrir o "Mexer no…" no modo de edição. A barra centrada cobria o ✨ e o modo
+ * ficava sem saída (o Renan achou no celular). Agora ela vai da esquerda até
+ * antes da pilha, e o texto dela encolhe um tanto para caber.
+ */
+body.touch-device .posicionador {
+  left: 10px;
+  right: 88px;
+  bottom: 10px;
+  width: auto;
+  max-width: none;
+  transform: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+}
+body.touch-device .posicionador .enfeite { width: 100%; justify-content: center; text-align: center; }
+body.touch-device .posicionador .enfeite b { font-size: 15px; }
+body.touch-device .posicionador kbd { display: none; }
+body.touch-device :has(> .posicionador.show) > .prompt { bottom: 150px; }
+/* e o "Mexer no…" vira botão: tocar nele é o mesmo que tocar no ✨ */
+body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-events: auto; cursor: pointer; }
