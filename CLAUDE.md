@@ -83,6 +83,7 @@ node scripts/quiosque.mjs /tmp/q    # de perto: sorveteria, bilheteria e bar
 node scripts/frisbee.mjs /tmp/fr    # o passe de volta do parceiro, medido
 node scripts/forca.mjs   /tmp/fo    # a barra de forca: mais tempo, mais longe
 node scripts/menu.mjs    /tmp/menu  # o menu e o recomecar do zero
+node scripts/pausa.mjs   /tmp/pa    # o menu pausa de verdade: no meio da rodada do jardim, relogio, bichos e parceiro param, e voltam de onde pararam
 node scripts/audio.mjs             # o som acorda e cada acao dispara o seu efeito
 node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para ouvir
 node scripts/celular.mjs /tmp/cel   # tela de celular: nenhum botao pode tapar texto

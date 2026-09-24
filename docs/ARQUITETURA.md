@@ -312,7 +312,12 @@ celular, no mesmo painel) e **recomeçar o jogo**, esta em dois passos (o segund
 clique confirma), porque ela apaga o diário. `Game.restart()` zera o `SaveState`, devolve o controle ao
 primeiro da `DUPLA`, mostra as teclas de novo e volta para a cena inicial — que
 o `Game` recebe no construtor (`CENA_INICIAL`, a casa do Ari). Enquanto o menu
-está aberto o jogo não recebe entrada, igual ao diário.
+está aberto o jogo PAUSA: não recebe entrada, e os passos 3 a 6 do ciclo
+abaixo não rodam (`Game.simular`) — a rodada do jardim, o turno do Mania e o
+ping pong congelam e voltam de onde pararam. Só a câmera e o desenho seguem.
+Teste: `scripts/pausa.mjs`. (Os `g.wait` de cutscene são `setTimeout` e NÃO
+pausam; lógica de minigame que precisa parar com o menu anda pelo `dt` do
+`onUpdate`, nunca por relógio de parede.)
 
 ## Ciclo de um frame
 

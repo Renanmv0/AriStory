@@ -371,9 +371,20 @@ export class Game implements GameAPI {
 
   private tick = (): void => {
     const dt = Math.min(this.clock.getDelta(), 1 / 20);
-    this.elapsed += dt;
     const world = this.current?.world;
     if (!world) return;
+    /**
+     * O MENU PAUSA O JOGO DE VERDADE (pedido do Renan: o Ari abriu o menu no
+     * meio da rodada do jardim e os bichos continuaram comendo). Antes ele só
+     * travava os controles; a cena seguia rodando por baixo. Agora, com ele
+     * aberto, nada do mundo anda: nem a dupla, nem a cena (`world.updaters` —
+     * a rodada do jardim, o turno do Mania, o ping pong, os bichos, as
+     * animações), nem o relógio `elapsed`. Só a câmera e o desenho continuam,
+     * para a tela não congelar num quadro velho. Fechou, tudo segue de onde
+     * parou.
+     */
+    const pausado = this.ui.menuOpen;
+    if (!pausado) this.elapsed += dt;
 
     // ------------------------------------------------------------ entrada
     const busy =
@@ -491,6 +502,12 @@ export class Game implements GameAPI {
       this.maoNaMao();
     }
 
+    if (!pausado) this.simular(dt, world);
+    this.acompanharCamera(dt, world, pausado);
+  };
+
+  /** Um passo do mundo: os corpos, os interativos e a cena. Não roda em pausa. */
+  private simular(dt: number, world: WorldBuilder): void {
     // os dois rodam antes do movimento: sao eles que mandam nos corpos
     this.beijo.update(dt, this.player, this.parceiro);
     this.maos.update(dt, this.player, this.parceiro);
@@ -513,7 +530,10 @@ export class Game implements GameAPI {
 
     // ------------------------------------------------------------- cena
     for (const fn of world.updaters) fn(dt, this.elapsed);
+  }
 
+  /** A câmera, a sombra, a oclusão e o desenho: rodam sempre, até em pausa. */
+  private acompanharCamera(dt: number, world: WorldBuilder, pausado: boolean): void {
     // ------------------------------------------------------------ camera
     if (this.cameraTarget) this.cameraTarget.getWorldPosition(this.camAim);
     else this.camAim.copy(this.player.chest);
@@ -528,7 +548,7 @@ export class Game implements GameAPI {
     // o que tapa quem importa fica translúcido (só com alguém vigiando: a rodada)
     const eu = this.player.position;
     const outro = this.parceiro.position;
-    this.oclusao.update(dt, this.iso.camera, world.root, [this.player.rig.group, this.parceiro.rig.group], [
+    if (!pausado) this.oclusao.update(dt, this.iso.camera, world.root, [this.player.rig.group, this.parceiro.rig.group], [
       { x: eu.x, y: 0.9, z: eu.z }, { x: outro.x, y: 0.9, z: outro.z },
     ]);
 
