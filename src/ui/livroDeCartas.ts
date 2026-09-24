@@ -160,6 +160,22 @@ export class TelaDoFim {
               ${novas.has(c.id) ? '<span class="selo-novo">📖 nova no livro</span>' : ''}
             </div>`).join('')
         : '<p class="nenhuma">nenhuma carta nesta rodada</p>';
+      /*
+       * O PAGAMENTO e os PRÊMIOS ÚNICOS (`minigames/jardim/premios.ts`): toda
+       * rodada paga, e o marco alcançado pela primeira vez ganha um selo.
+       */
+      const pg = fim.pagamento;
+      const pago = pg && pg.total > 0
+        ? `<div class="pagamento">
+            <b>💰 +R$ ${pg.total}</b> na carteira
+            <small>${pg.vencidas} ${pg.vencidas === 1 ? 'onda vencida' : 'ondas vencidas'} × R$ ${pg.vencidas ? pg.porOnda / pg.vencidas : 0}${pg.bonus ? ` · bônus dos marcos R$ ${pg.bonus}` : ''}</small>
+          </div>`
+        : '';
+      const marcos = (fim.marcos ?? []).length
+        ? `<div class="marcos">${(fim.marcos ?? []).map((m) => `
+            <div class="marco"><span class="icone">${m.icone}</span><span><small>Onda ${m.onda} pela primeira vez</small>${escapar(m.nome)}</span></div>`).join('')}
+          </div>`
+        : '';
       this.raiz.innerHTML = `
         <div class="fim-cartao ${fim.venceu ? 'venceu' : 'caiu'}">
           <div class="cabeca">
@@ -175,6 +191,8 @@ export class TelaDoFim {
             <div><b>${fim.onda}/${fim.ondas}</b><span>ondas</span></div>
           </div>
           ${pragas ? `<div class="pragas">${pragas}</div>` : ''}
+          ${pago}
+          ${marcos}
           <h3>As cartas desta rodada <small>${fim.cartas.length}${novas.size ? ` · ${novas.size} ${novas.size === 1 ? 'nova' : 'novas'} no livro` : ''}</small></h3>
           <div class="grade">${cartas}</div>
           <button class="fechar">voltar pra estufa</button>

@@ -99,7 +99,9 @@ const depois = await page.evaluate(() => {
 // ------------------------------------------------ 3. folhear entre as memórias
 // O quadro é um mural: com mais de uma peça dá para trocar sem fechar e
 // reabrir. As setas e os pontinhos só existem quando há o que folhear.
-const acervo = await page.evaluate(() => window.aristoryMemorias?.length ?? 0);
+// só as DESTRAVADAS vão para o quadro: a memória ganha jogando (`trava`) fica
+// de fora até a flag dela — o bloco 6 destrava e confere
+const acervo = await page.evaluate(() => (window.aristoryMemorias ?? []).filter((m) => !m.trava).length);
 const pontos = await page.locator('.memorias .ponto').count();
 const setaVisivel = await page.locator('.memorias .folhear.depois').isVisible();
 
@@ -147,6 +149,29 @@ const fechouNoBotao = (await page.locator('.memorias.show').count()) === 0;
 const destravou = !(await page.evaluate(() => document.body.classList.contains('tela-aberta')));
 await page.screenshot({ path: `${OUT}-depois.png` });
 
+// ------------------------------------ 6. a memória ganha jogando (a trava)
+// As trinta levas da estufa só entram no quadro depois da flag do marco 30.
+const travadas = await page.evaluate(() => (window.aristoryMemorias ?? []).filter((m) => m.trava));
+let destravadaOk = true;
+for (const m of travadas) {
+  const antesDaFlag = await page.evaluate((id) => {
+    window.jogo.abrirMemoria(id);
+    return document.querySelectorAll('.memorias.show').length;
+  }, m.id);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  await page.evaluate((flag) => window.jogo.setFlag(flag), m.trava);
+  await page.evaluate((id) => window.jogo.abrirMemoria(id), m.id);
+  await page.waitForTimeout(1400);
+  const t = await page.locator('.memorias h2').textContent().catch(() => '');
+  const p = await page.locator('.memorias .ponto').count();
+  await page.screenshot({ path: `${OUT}-${m.id}.png` });
+  console.log(`6. ${m.id}: antes da flag abriu ${antesDaFlag} · depois ${JSON.stringify(t)} com ${p} pontinhos`);
+  if (antesDaFlag !== 0 || t !== m.titulo || p !== acervo + 1) destravadaOk = false;
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+}
+
 // ------------------------------------------------------------------ relatório
 console.log('1. prompt na parede:', JSON.stringify(prompt));
 console.log('   quadro abriu:', abriu > 0, '·', JSON.stringify(titulo));
@@ -185,6 +210,7 @@ if (!fechouNoEsc) problemas.push('o Esc não fechou o quadro');
 if (!reabriu) problemas.push('o quadro não reabriu na segunda interação');
 if (!fechouNoBotao) problemas.push('o botão não fechou o quadro');
 if (!destravou) problemas.push('o jogo continuou travado depois de fechar');
+if (!destravadaOk) problemas.push('a memória ganha jogando apareceu antes da flag, ou não apareceu depois');
 
 await browser.close();
 if (problemas.length) {

@@ -601,6 +601,25 @@ export const PALETTE = {
   livroOuro: 0xe2b64a,
   livroFita: 0xc8433b,
 
+  /*
+   * OS PRÊMIOS DOS MARCOS DA ESTUFA (`minigames/jardim/premios.ts`): a
+   * plaquinha de madeira da onda 5, o regador de ouro da 30, e as duas roupas
+   * de jardineira (10 e 20). O verde das fitas é o da família Jardim, o mesmo
+   * da capa do livro — os prêmios da estufa se reconhecem entre si.
+   */
+  plaquinhaMadeira: 0xb98a55,
+  plaquinhaMoldura: 0x7d5733,
+  plaquinhaTexto: 0x3b2712,
+  trofeuOuro: 0xe9b93c,
+  trofeuOuroEscuro: 0xb4861f,
+  trofeuPedestal: 0x5e3f24,
+  chapeuPalha: 0xe2c27a,
+  chapeuPalhaTrama: 0xc9a258,
+  chapeuPalhaFita: 0x4f8a4e,
+  aventalVerde: 0x6e9e5b,
+  aventalBolso: 0x557f45,
+  aventalAlca: 0xe9dcc0,
+
   // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
   // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
   // e a diferenca de tom e o que separa "comida de bicho" de "comida de

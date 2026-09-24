@@ -19,6 +19,11 @@ O pipeline inteiro cabe em dois arquivos, e só o primeiro muda quando a memóri
    "o desenho está vivo" e "dá para folhear"; uma peça a mais não pede teste
    novo, mas **pede a foto olhada**.
 
+**Memória ganha jogando** (e não de foto) leva `trava: 'uma-flag'` na ficha:
+ela só entra no quadro depois que a flag existe (`Game.abrirMemoria` filtra).
+A primeira é "As trinta levas" (`trava: 'jardim.marco-30'`), da estufa.
+`scripts/memorias.mjs` confere que ela some antes da flag e aparece depois.
+
 O quadro na parede (`muralDeMemorias` em `world/furniture.ts`), a interação
 (`quarto:memorias` em `scenes/quarto.ts`) e o painel (`Ui.ts` + `style.css`) já
 existem e **não mudam** para acrescentar memória.

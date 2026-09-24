@@ -83,7 +83,7 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 // o acervo do quadro de memorias, para o teste conferir quantas pecas existem
 // sem ter que contar os pontinhos da tela
 (window as unknown as { aristoryMemorias: unknown }).aristoryMemorias = MEMORIAS.map(
-  (m) => ({ id: m.id, titulo: m.titulo }),
+  (m) => ({ id: m.id, titulo: m.titulo, trava: m.trava ?? null }),
 );
 // as pragas da estufa, para o `scripts/pragas.mjs` montar e fotografar as seis
 // sem precisar que elas ja estejam numa cena — elas sao do minigame, que ainda

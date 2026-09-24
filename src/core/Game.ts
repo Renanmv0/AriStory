@@ -740,6 +740,13 @@ export class Game implements GameAPI {
     return como;
   }
 
+  ganharPeca(peca: ItemDef): boolean {
+    const nova = !this.save.ganhouPremio(peca.id);
+    this.save.registrarPremio(peca.id);
+    for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
+    return nova;
+  }
+
   storeItem(item: ItemDef, quem = this.playerId()): Coleta {
     const r = this.save.guardar(quem, item);
     if (r !== 'cheio' && r !== 'repetido') this.repintarMochila();
@@ -1201,8 +1208,10 @@ export class Game implements GameAPI {
    * `world/memoriasData.ts`.
    */
   abrirMemoria(id: string): void {
-    const onde = MEMORIAS.findIndex((m) => m.id === id);
-    if (onde >= 0) this.ui.abrirMemorias(MEMORIAS, onde);
+    // a memória ganha jogando só entra no quadro depois de ganha (`trava`)
+    const acervo = MEMORIAS.filter((m) => !m.trava || this.save.flag(m.trava));
+    const onde = acervo.findIndex((m) => m.id === id);
+    if (onde >= 0) this.ui.abrirMemorias(acervo, onde);
   }
 
   /**

@@ -4,7 +4,8 @@ import type { ItemDef } from '../core/types';
 import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
 import { regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
-  blazerXadrez, canoDaBota, coroaDeDama, gargantilhaDeLaco, gorroDeLa, gravataDoWalter,
+  aventalDaJosefina, blazerXadrez, canoDaBota, chapeuDeJardineira, coroaDeDama, gargantilhaDeLaco,
+  gorroDeLa, gravataDoWalter,
   jaquetaFrancesa, maidJapones, mangaDaJaquetaFrancesa, mangaDeMoletom, mangaDeQuimono,
   mangaDoBlazer, meiaDeCoxa, moletomComCapuz, oculosDeSol, perneiraXadrez, quepeDoCookie,
   vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
@@ -259,6 +260,36 @@ export const ITENS = {
     cor: P.gravataBorboleta,
     nota: 'presente dele, depois das três estrelas',
     extra: gravataDoWalter,
+  },
+  /*
+   * OS PRÊMIOS DOS MARCOS DA ESTUFA (`minigames/jardim/premios.ts`): a
+   * Josefina dá o chapéu na primeira vez que a dupla vence a onda 10, e o
+   * avental na 20. Como a gravatinha e os prêmios da arena, não têm `preco`
+   * nem entram na lista do armário: quem entrega é `g.ganharPeca`, que anota
+   * em `save.premios` e faz a peça voltar a cada abertura.
+   */
+  chapeuDeJardineira: {
+    id: 'chapeu-de-jardineira',
+    nome: 'Chapéu de jardineira',
+    icone: '👒',
+    tipo: 'vestivel',
+    slot: 'cabeca',
+    cor: P.chapeuPalha,
+    corDetalhe: P.chapeuPalhaFita,
+    nota: 'da Josefina, pelas dez levas',
+    extra: chapeuDeJardineira,
+  },
+  aventalDaJosefina: {
+    id: 'avental-da-josefina',
+    nome: 'Avental da Josefina',
+    icone: '🧺',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    // SEM `cor` e SEM `corDetalhe`: numa peça de tronco elas pintam a camiseta
+    // e a MANGA — com `corDetalhe` verde, a primeira foto saiu de manga verde.
+    // O avental vai por cima e não mexe no que está embaixo
+    nota: 'da Josefina, pelas vinte levas',
+    extra: aventalDaJosefina,
   },
   botaAmarela: {
     id: 'bota-amarela',

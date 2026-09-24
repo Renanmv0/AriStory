@@ -1884,6 +1884,160 @@ function quepeDoCookie(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THRE
 }
 
 /**
+ * O CHAPÉU DE JARDINEIRA — prêmio único da onda 10 da estufa
+ * (`minigames/jardim/premios.ts`).
+ *
+ * Palha, aba larga e uma fita verde (a da família Jardim). Pousa EM CIMA do
+ * cabelo, pela mesma conta do quepe do Cookie (`BORDA = 1,3·headR`): chapéu
+ * medido pelo crânio só serve se o cabelo sumir.
+ *
+ * A ABA É LARGA, mas não tanto: na câmera isométrica, que olha de cima, aba
+ * de sombreiro tapa a cara inteira. A primeira foto, com `1,75·headR`, tapava
+ * meia cara; `1,5·headR` e a aba tombada para trás ainda leem "chapéu de
+ * sol" sem esconder os olhos.
+ */
+function chapeuDeJardineira(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const r = m.headR;
+  const palha = toon(peca?.cor ?? P.chapeuPalha, { doubleSide: true });
+  const trama = toon(P.chapeuPalhaTrama, { doubleSide: true });
+  const fita = toon(peca?.corDetalhe ?? P.chapeuPalhaFita, { doubleSide: true });
+  const BORDA = r * 1.28;
+  const RAIO = r * 0.9;
+  const ABA = r * 1.5;
+
+  const chapeu = new THREE.Group();
+  // tomba para TRÁS: a câmera olha de cima, e aba tombada para a frente tapa o rosto
+  chapeu.rotation.x = -0.12;
+  g.add(chapeu);
+
+  // a copa: meia casca achatada, fechada em cima
+  const copa = new THREE.Mesh(
+    new THREE.SphereGeometry(RAIO, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.5),
+    palha,
+  );
+  copa.position.y = BORDA;
+  copa.scale.y = 0.62;
+  chapeu.add(copa);
+
+  // a aba: um anel chato, com a borda um fio caída (chapéu de palha cansa)
+  const aba = new THREE.Mesh(new THREE.CylinderGeometry(ABA, ABA * 1.04, r * 0.05, 26, 1, true), palha);
+  aba.position.y = BORDA - r * 0.02;
+  chapeu.add(aba);
+  const tampa = new THREE.Mesh(new THREE.RingGeometry(RAIO * 0.98, ABA * 1.005, 26), palha);
+  tampa.rotation.x = -Math.PI / 2;
+  tampa.position.y = BORDA + r * 0.005;
+  chapeu.add(tampa);
+  // a trama: dois anéis mais escuros na aba, que é o que diz "palha" de longe
+  for (const k of [1.18, 1.36]) {
+    const anel = new THREE.Mesh(new THREE.RingGeometry(r * k, r * (k + 0.06), 26), trama);
+    anel.rotation.x = -Math.PI / 2;
+    anel.position.y = BORDA + r * 0.012;
+    chapeu.add(anel);
+  }
+
+  // a fita verde na base da copa, um fio mais gorda que ela
+  const faixa = new THREE.Mesh(
+    new THREE.CylinderGeometry(RAIO * 1.03, RAIO * 1.04, r * 0.2, 20, 1, true),
+    fita,
+  );
+  faixa.position.y = BORDA + r * 0.1;
+  chapeu.add(faixa);
+  // o laço da fita, do lado
+  const lacinho = laco(r * 0.22, peca?.corDetalhe ?? P.chapeuPalhaFita);
+  lacinho.position.set(RAIO * 0.98, BORDA + r * 0.1, 0);
+  lacinho.rotation.y = Math.PI / 2;
+  chapeu.add(lacinho);
+  return g;
+}
+
+/**
+ * O AVENTAL DA JOSEFINA — prêmio único da onda 20 da estufa.
+ *
+ * Avental de jardim por CIMA da roupa: peitilho no peito, saia até o meio da
+ * coxa, alça no pescoço, laço atrás e um bolso de semente na frente. Sem
+ * `cor` na ficha, a camiseta de baixo continua a da pessoa — é avental, não
+ * vestido.
+ *
+ * REFERENCIAL: o tronco, y = 0 no CHÃO (a tabela da skill de roupa). As
+ * medidas saem das mesmas contas da jaqueta francesa.
+ *
+ * A SAIA NÃO DESCE ALÉM DO MEIO DA COXA e abre para a frente: a perna balança
+ * na caminhada, e pano comprido e rente é o que ela atravessa.
+ */
+function aventalDaJosefina(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const hipY = m.legH;
+  const raioTorso = h * 0.105 * w;
+  const ACHATA = 0.93;
+  const pano = toon(peca?.cor ?? P.aventalVerde, { doubleSide: true });
+  const bolso = toon(P.aventalBolso, { doubleSide: true });
+  const alca = toon(P.aventalAlca, { doubleSide: true });
+
+  // a SAIA: um pedaço de cone na frente, da cintura até o meio da coxa
+  const cintura = hipY + m.torsoH * 0.18;
+  const barra = hipY - h * 0.1;
+  const ABRE = Math.PI * 0.62;
+  const saia = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.1, raioTorso * 1.32, cintura - barra, 18, 1, true, -ABRE / 2, ABRE),
+    pano,
+  );
+  saia.position.y = (cintura + barra) / 2;
+  saia.scale.z = ACHATA;
+  g.add(saia);
+
+  // o PEITILHO: mais estreito, da cintura ao peito
+  const peito = hipY + m.torsoH * 0.74;
+  const ESTREITO = Math.PI * 0.4;
+  const peitilho = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.07, raioTorso * 1.1, peito - cintura, 14, 1, true, -ESTREITO / 2, ESTREITO),
+    pano,
+  );
+  peitilho.position.y = (peito + cintura) / 2;
+  peitilho.scale.z = ACHATA;
+  g.add(peitilho);
+
+  // a CINTA: a volta inteira na cintura, cor de algodão cru, e o laço atrás
+  const cinta = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioTorso * 1.12, raioTorso * 1.12, h * 0.022, 22, 1, true),
+    alca,
+  );
+  cinta.position.y = cintura;
+  cinta.scale.z = ACHATA;
+  g.add(cinta);
+  const lacoAtras = laco(h * 0.04, P.aventalAlca);
+  lacoAtras.position.set(0, cintura, -raioTorso * 1.12 * ACHATA - h * 0.004);
+  lacoAtras.rotation.y = Math.PI;
+  g.add(lacoAtras);
+
+  // as ALÇAS: do canto do peitilho sobem por cima do ombro até as costas
+  const cantoX = Math.sin(ESTREITO / 2) * raioTorso * 1.07;
+  const cantoZ = Math.cos(ESTREITO / 2) * raioTorso * 1.07 * ACHATA;
+  const topo = hipY + m.torsoH * 0.98;
+  for (const lado of [-1, 1] as const) {
+    const sobe = topo - peito;
+    const tira = new THREE.Mesh(new THREE.BoxGeometry(h * 0.014, sobe, h * 0.006), alca);
+    tira.position.set(lado * cantoX * 1.02, peito + sobe / 2, cantoZ * 0.93);
+    tira.rotation.x = -0.28;
+    g.add(tira);
+  }
+
+  // o BOLSO de semente, na frente da saia, com a boca mais escura
+  const bolsoY = (cintura + barra) / 2 + h * 0.01;
+  const raioBolso = raioTorso * 1.2;
+  const LARGO = Math.PI * 0.28;
+  const frente = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioBolso * 1.01, raioBolso * 1.04, h * 0.05, 10, 1, true, -LARGO / 2, LARGO),
+    bolso,
+  );
+  frente.position.y = bolsoY;
+  frente.scale.z = ACHATA;
+  g.add(frente);
+  return g;
+}
+
+/**
  * As casas escuras de um xadrez em volta de um cilindro.
  *
  * Ferramenta dos dois pedacos do conjunto da Estella — o blazer e a perneira.
@@ -2209,6 +2363,7 @@ function coroaDeDama(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.
 // inventario. Aqui fica so o corpo delas.
 export {
   gorroDeLa, canoDaBota, vestidoRosa, vestidoDaLoja, gargantilhaDeLaco, gravataDoWalter,
+  chapeuDeJardineira, aventalDaJosefina,
   vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
   moletomComCapuz, mangaDeMoletom, oculosDeSol,
   jaquetaFrancesa, mangaDaJaquetaFrancesa, quepeDoCookie,

@@ -414,6 +414,13 @@ export interface GameAPI {
    * vao para as vagas da mochila.
    */
   storeItem(item: ItemDef, quem?: string): Coleta;
+  /**
+   * Uma peça GANHA jogando (os marcos da estufa, e o que vier): vai para o
+   * guarda-roupa DOS DOIS e fica anotada em `save.premios`, então volta a cada
+   * abertura do armário e do espelho da boutique — descartar tira do corpo,
+   * nunca da vida. Devolve `false` se ela já era de vocês.
+   */
+  ganharPeca(peca: ItemDef): boolean;
   /** Tira um item da mochila ou dos acessorios, onde quer que ele esteja. */
   removeItem(id: string, quem?: string): boolean;
   hasItem(id: string, quem?: string): boolean;

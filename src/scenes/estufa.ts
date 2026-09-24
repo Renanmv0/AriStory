@@ -3,7 +3,7 @@ import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
   arcoDeEstufa, bancadaDeJardinagem, bush, canteiroDeHorta, capim, folhagemAlta, planta,
-  livroDeCartas, portaoDeJardim, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
+  livroDeCartas, plaquinhaDaEstufa, portaoDeJardim, regadorDeOuro, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
   trelicaComTrepadeira, vasoDePlanta,
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
@@ -22,6 +22,7 @@ import { PRAGAS } from '../world/bichosDoJardim';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
 import { cartaNaTela } from '../minigames/jardim/tela';
 import { RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigames/jardim/rodada';
+import { MARCOS, ondasVencidas, pagamentoDaRodada, type MarcoDoJardim } from '../minigames/jardim/premios';
 import { ARI, RENAN } from '../characters/cast';
 import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 import { toon } from '../core/materials';
@@ -783,6 +784,31 @@ export const estufa: SceneDef = {
         await api.abrirLivroDeCartas(CARTAS.map(cartaNaTela));
       },
     });
+
+    /*
+     * OS ENFEITES DOS MARCOS (`minigames/jardim/premios.ts`): o que a dupla
+     * ganhou uma vez fica na estufa para sempre. Cada um nasce pela flag do
+     * marco — na montagem da cena, e de novo na hora em que é ganho.
+     *
+     * - a PLAQUINHA (onda 5) na parede do lado da bancada, que é a parede que
+     *   a câmera vê de frente, acima das mudas;
+     * - o REGADOR DE OURO (onda 30) na outra ponta da bancada, longe do livro.
+     */
+    const PLAQUINHA = { x: -hx + 0.14, y: 1.85, z: 9.35 };
+    const TROFEU = { x: -hx + 1.08, z: 5.35 };
+    const enfeites: { plaquinha?: THREE.Object3D; trofeu?: THREE.Object3D } = {};
+    const montarEnfeites = (): void => {
+      if (!enfeites.plaquinha && g.flag('jardim.marco-5')) {
+        enfeites.plaquinha = w.add(w.place(
+          plaquinhaDaEstufa(['Jardineiros', 'da Josefina']), PLAQUINHA.x, PLAQUINHA.y, PLAQUINHA.z, Math.PI / 2,
+        ));
+      }
+      if (!enfeites.trofeu && g.flag('jardim.marco-30')) {
+        enfeites.trofeu = w.add(w.place(regadorDeOuro(), TROFEU.x, 0.96, TROFEU.z, 0.5));
+      }
+    };
+    montarEnfeites();
+    w.root.userData.enfeites = enfeites;
 
     let jaOlhou = false;
     w.interact({
@@ -1784,9 +1810,79 @@ export const estufa: SceneDef = {
       'vigésima primeira', 'vigésima segunda', 'vigésima terceira', 'vigésima quarta', 'vigésima quinta',
       'vigésima sexta', 'vigésima sétima', 'vigésima oitava', 'vigésima nona', 'trigésima',
     ];
+    /**
+     * A ENTREGA DE UM PRÊMIO ÚNICO — a primeira vez que a dupla vence a onda
+     * do marco. Quem entrega é a Josefina, depois da conversa do fim. As falas
+     * são minhas (o Renan não passou texto para estas): se ele mandar, trocar
+     * aqui, literal.
+     */
+    const entregarMarco = async (m: MarcoDoJardim): Promise<void> => {
+      const J = 'Josefina';
+      const mostrar = async (peca: THREE.Object3D | undefined): Promise<void> => {
+        if (!peca) return;
+        g.focusCamera(peca);
+        g.setZoom(7);
+        g.som('memoria');
+        await g.wait(1.6);
+        g.focusCamera(null);
+        g.setZoom(11);
+      };
+      if (m.premio === 'plaquinha') {
+        await g.say(['Cinco levas seguradas! Isso merece uma plaquinha.'], J);
+        montarEnfeites();
+        await mostrar(enfeites.plaquinha);
+        await g.say(['Pronto. Agora quem entra aqui sabe quem cuida disso comigo.'], J);
+      } else if (m.premio === 'chapeu-de-jardineira') {
+        await g.say([
+          'Dez levas… e vocês torrando nesse sol de estufa.',
+          'Tomem, um chapéu de jardineira pra cada um. Já deixei no armário de vocês.',
+        ], J);
+        g.ganharPeca(ITENS.chapeuDeJardineira);
+        g.som('memoria');
+        g.toast('Chapéu de jardineira no guarda-roupa dos dois', '👒');
+      } else if (m.premio === 'avental-da-josefina') {
+        await g.say([
+          'Vinte levas. Vocês já são da casa, meu bem.',
+          'Um avental pra cada um, com bolso pra semente. Jardineiro de verdade suja a roupa.',
+        ], J);
+        g.ganharPeca(ITENS.aventalDaJosefina);
+        g.som('memoria');
+        g.toast('Avental da Josefina no guarda-roupa dos dois', '🧺');
+      } else if (m.premio === 'regador-de-ouro') {
+        await g.say(['Trinta levas. Até a mãe deles desistiu de vocês!'], J);
+        montarEnfeites();
+        await mostrar(enfeites.trofeu);
+        await g.say(['Esse regador de ouro fica aqui na bancada, pra todo mundo saber quem segurou a estufa.'], J);
+        await conversa([
+          [A, 'Essa vai pro quadro do quarto.'],
+          [R, 'Trinta levas. A gente merece.'],
+        ]);
+        g.toast('Uma memória nova no quadro do quarto', '📌');
+        g.unlock({
+          id: 'estufa-trinta-levas',
+          title: 'As trinta levas',
+          place: 'Estufa da Josefina',
+          note: 'Até a mãe deles desistiu. O regador de ouro ficou na bancada.',
+          icon: '🏆',
+        });
+      }
+    };
+
     rodada.aoAcabar = (fim) => {
       const { canteiros, total, ondas, de } = fim;
       const venceu = ondas >= de && canteiros > 0;
+      /*
+       * OS PRÊMIOS (pedido do Renan): toda rodada jogada até o fim PAGA — por
+       * onda vencida e pelos marcos alcançados —, e o marco alcançado pela
+       * primeira vez dá o prêmio único dele. A rodada interrompida (a dupla
+       * saiu da cena) não paga: não chegou a acabar.
+       */
+      const jogou = fim.motivo === 'fim';
+      const vencidas = ondasVencidas(ondas, de, canteiros);
+      const pagamento = pagamentoDaRodada(vencidas);
+      const novos = jogou ? MARCOS.filter((m) => vencidas >= m.onda && !g.flag(m.flag)) : [];
+      if (jogou && pagamento.total > 0) g.ganhar(pagamento.total);
+      for (const m of novos) g.setFlag(m.flag);
       void (async () => {
         const J = 'Josefina';
         g.lockPlayer(true);
@@ -1810,6 +1906,8 @@ export const estufa: SceneDef = {
             nivel: fim.nivel,
             cartas: fim.cartas.map((id) => cartaPorId(id)).filter((c) => !!c).map((c) => cartaNaTela(c!)),
             novas: fim.novas,
+            pagamento,
+            marcos: novos.map((m) => ({ onda: m.onda, nome: m.nome, icone: m.icone })),
           });
         }
         josefina.encarar(g.playerPosition().x, g.playerPosition().z);
@@ -1827,6 +1925,7 @@ export const estufa: SceneDef = {
           leva,
           'Deixa que eu replanto o que foi comido.',
         ], J);
+        for (const m of novos) await entregarMarco(m);
         g.lockPlayer(false);
         g.freeCompanion();
         josefina.pararDeEncarar();

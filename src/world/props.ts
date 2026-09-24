@@ -7162,3 +7162,75 @@ export function livroDeCartas(): THREE.Group {
   g.add(fita);
   return g;
 }
+
+/**
+ * A PLAQUINHA DA ESTUFA — o prêmio único da onda 5 (`minigames/jardim/premios.ts`).
+ *
+ * Madeira clara com moldura escura e o texto pintado em canvas (a única
+ * textura que o jogo aceita), uma linha por letreiro, pendurada por dois
+ * fios num prego. Nasce de pé,
+ * de frente para `+Z`; a cena gira para a parede.
+ */
+export function plaquinhaDaEstufa(linhas: readonly string[]): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'plaquinha-da-estufa';
+  const L = 1.35;
+  const A = 0.3 + 0.2 * linhas.length;
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(L + 0.08, A + 0.08, 0.04), toon(P.plaquinhaMoldura));
+  g.add(moldura);
+  const tabua = new THREE.Mesh(new THREE.BoxGeometry(L, A, 0.05), toon(P.plaquinhaMadeira));
+  tabua.position.z = 0.012;
+  g.add(tabua);
+  // UMA LINHA POR LETREIRO: o letreiro encolhe a letra até o texto caber, e
+  // numa linha só "Jardineiros da Josefina" saía ilegível de longe
+  const cor = '#' + P.plaquinhaTexto.toString(16).padStart(6, '0');
+  const alturaDaLinha = (A * 0.82) / linhas.length;
+  linhas.forEach((linha, i) => {
+    const escrito = letreiro(linha, L * 0.88, alturaDaLinha, cor);
+    escrito.position.set(0, (A * 0.82) / 2 - alturaDaLinha * (i + 0.5), 0.04);
+    g.add(escrito);
+  });
+  // os dois fios até o prego, em V
+  const fio = toon(P.plaquinhaMoldura);
+  for (const lado of [-1, 1]) {
+    const f = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.36, 5), fio);
+    f.position.set(lado * 0.2, A / 2 + 0.14, 0);
+    f.rotation.z = lado * 0.95;
+    g.add(f);
+  }
+  const prego = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), toon(P.metalGrey));
+  prego.position.set(0, A / 2 + 0.26, -0.01);
+  g.add(prego);
+  return g;
+}
+
+/**
+ * O REGADOR DE OURO — o prêmio único das trinta ondas.
+ *
+ * É o MESMO regador da rodada (`regadorDeJardim`, no último estágio), banhado
+ * de dourado, em cima de um pedestal de madeira escura com uma faixa de ouro:
+ * troféu se lê pelo pedestal, e o regador diz de quê.
+ */
+export function regadorDeOuro(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'regador-de-ouro';
+  const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.23, 0.12, 16), toon(P.trofeuPedestal));
+  pedestal.position.y = 0.06;
+  g.add(pedestal);
+  const faixa = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.215, 0.03, 16), toon(P.trofeuOuroEscuro));
+  faixa.position.y = 0.075;
+  g.add(faixa);
+  const lata = regadorDeJardim({ estagio: 2, bico: 1, crivo: 1 }, 0.95);
+  const ouro = toon(P.trofeuOuro);
+  const ouroEscuro = toon(P.trofeuOuroEscuro);
+  let i = 0;
+  lata.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    // alterna o tom só para as peças não virarem uma mancha dourada única
+    m.material = i++ % 4 === 1 ? ouroEscuro : ouro;
+  });
+  lata.position.y = 0.12;
+  g.add(lata);
+  return g;
+}

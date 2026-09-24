@@ -117,6 +117,10 @@ export interface FimDoJardim {
   readonly cartas: readonly CartaNaTela[];
   /** as que entraram no livro pela primeira vez nesta rodada */
   readonly novas: readonly string[];
+  /** o que a rodada pagou na carteira (`premios.ts`): por onda, o bônus dos marcos e o total */
+  readonly pagamento?: { readonly vencidas: number; readonly porOnda: number; readonly bonus: number; readonly total: number };
+  /** os prêmios únicos que esta rodada destravou pela primeira vez */
+  readonly marcos?: readonly { readonly onda: number; readonly nome: string; readonly icone: string }[];
 }
 
 /**

@@ -62,15 +62,28 @@ velocidade/mordida de cada praga em `JEITO` (`rodada.ts`).
   as cartas; o **livro das cartas** (na bancada) guarda para sempre toda carta
   já escolhida, em ordem de raridade.
 
+**Os prêmios** (`minigames/jardim/premios.ts`, pedido do Renan): toda rodada
+jogada até o fim paga reais na carteira do casal — R$ 3 por onda vencida, mais
+um bônus em cada marco alcançado (onda 5: +10, 10: +20, 20: +40, 30: +80;
+vencer tudo = R$ 240). E cada marco dá um **prêmio único** na primeira vez
+(flag `jardim.marco-N`), entregue pela Josefina depois da fala do fim: a
+**plaquinha** "Jardineiros da Josefina" na parede da bancada (5), o **chapéu
+de jardineira** (10) e o **avental da Josefina** (20) no guarda-roupa dos dois
+(`g.ganharPeca`), e o **regador de ouro** na bancada com a memória **"As
+trinta levas"** no quadro do quarto (30). A tela do fim mostra o pagamento e
+os marcos novos. Teste: `scripts/marcos.mjs`. As falas da entrega são minhas
+(o Renan não passou texto): se ele mandar, troca em `entregarMarco`
+(`scenes/estufa.ts`), literal.
+
 **O que falta** (a escolha do próximo passo é do Renan):
-- o **pagamento** por canteiro de pé e a **memória** de vencer as 30 ondas;
+- a **vida dos bichos crescendo com as ondas** (hoje não cresce);
 - **equilíbrio**: ninguém jogou as 30 ondas inteiras; o Renan joga e diz.
 - perguntas em aberto: §12.
 
 **Testes da rodada** (rodar UM de cada vez — dois Chromium juntos dão falha
 falsa por lentidão): `cartas.mjs` (lógica, sem navegador), `rodada.mjs`,
 `jato.mjs`, `cartasNaRodada.mjs`, `livro.mjs`, `oclusao.mjs`, `postos.mjs`,
-`chamados.mjs`, `gotas.mjs`, `jeitos.mjs`. O que cada um prova está no `CLAUDE.md`. Para
+`chamados.mjs`, `gotas.mjs`, `jeitos.mjs`, `marcos.mjs`. O que cada um prova está no `CLAUDE.md`. Para
 olhar: `?cena=estufa&rodada=1` (rodada direto) e `?cena=estufa&jato=<ids>`
 (vitrine de um jato).
 
@@ -1325,7 +1338,7 @@ trabalha rápido") virando geometria.
 | 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, com o som de cada carta |
 | 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **pronto**: as trinta ondas rodam com os treze bichos (a segunda leva estreia da 15ª), com o aviso do grandão e o JEITO de cada um (§5, "O jeito de cada bicho") |
 | 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | **pronto** (§6, "Como as cartas de jardineiro e de jardim agem") |
-| 9 | o pagamento, a memória e a fala de despedida da Josefina | **em parte**: a tela do fim (números e cartas) e o livro das cartas estão prontos; pagamento e memória a fazer |
+| 9 | o pagamento, a memória e a fala de despedida da Josefina | **pronto**: a tela do fim, o livro das cartas, as moedas de toda rodada e os prêmios únicos dos marcos 5/10/20/30 com a memória das trinta levas (`premios.ts`) |
 
 A etapa 3 é a que decide se o resto vale: um regador que atira sozinho num
 bicho que anda devagar já é jogo ou não é. **Não construa 5 antes de jogar 3.**

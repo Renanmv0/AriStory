@@ -26,8 +26,12 @@ pipeline inteiro:
      da arena de ping pong). É o gêmeo do `reporCompras` da boutique, e vale
      nos DOIS painéis, porque os dois entram por `g.abrirGuardaRoupa()`.
 
-   Em qualquer um dos dois, quem dá o prêmio chama `g.storeItem(peca, quem)`
-   para os dois na hora, para a peça não sumir até a próxima abertura.
+   **Prêmio novo: uma chamada só, `g.ganharPeca(peca)`.** Ela faz o segundo
+   jeito inteiro de uma vez — anota em `save.premios` e guarda nos dois na
+   hora — e é o que os marcos da estufa usam (chapéu de jardineira, avental
+   da Josefina). Cuidado: numa peça de TRONCO, `cor` pinta a camiseta e
+   `corDetalhe` pinta a MANGA — peça que vai POR CIMA (o avental) não leva
+   nenhuma das duas, senão a primeira foto sai de manga verde.
 5. `scripts/roupas.mjs` e `scripts/vestimenta.mjs` — asserções que provam que a
    roupa não quebrou a animação, não nasceu no lugar errado e não escapou das
    regras de armazenamento.
