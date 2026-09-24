@@ -550,9 +550,16 @@ const CASOS = {
     const no10 = await telas();
     const e10 = await estado();
     console.log('       nível 10:', no10.map((t) => `${t.topo} (${t.cartas})`).join(' | '));
+    /*
+     * A MÃO TEM PELO MENOS uma carta por tela: o sorteio às vezes dá o Bis,
+     * que põe um degrau a mais na mão junto com a carta de série seguinte — e
+     * aí a mão fica com uma a mais sem nada estar errado. Quem conta as telas
+     * de prêmio é o efeito `premio-de-nivel` (1 no nível 5, mais 2 no 10).
+     */
     confere('premio-de-nivel',
-      no5.length === 2 && /prêmio do nível 5/i.test(no5[1].topo) && e5.mao.length === 2
-      && no10.length === 3 && /1 de 2/.test(no10[1].topo) && /2 de 2/.test(no10[2].topo) && e10.mao.length === 5
+      no5.length === 2 && /prêmio do nível 5/i.test(no5[1].topo) && e5.mao.length >= 2
+      && no10.length === 3 && /1 de 2/.test(no10[1].topo) && /2 de 2/.test(no10[2].topo) && e10.mao.length >= 5
+      && efeito(e5, 'premio-de-nivel') === 1 && efeito(e10, 'premio-de-nivel') === 3
       && [...no5, ...no10].every((t) => t.cartas === 3),
       `nível 5: ${no5.length} telas, nível 10: ${no10.length} telas, ${e10.mao.length} cartas na mão`);
   },
