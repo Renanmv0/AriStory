@@ -90,8 +90,8 @@ const JEITO: Record<string, { velocidade: number; mordida: number; raio: number 
   tucanguru: { velocidade: 1.5, mordida: 1.2, raio: 0.45 },
   preguipolvo: { velocidade: 0.45, mordida: 2.4, raio: 0.9 },
   'mae-lagartejo': { velocidade: 0.55, mordida: 4, raio: 0.8 },
-  // a segunda leva (da 15ª onda em diante). O jeito próprio de cada um (§5)
-  // ainda não existe: por enquanto eles só andam e comem, como os seis
+  // a segunda leva (da 15ª onda em diante). O truque de cada um (pulo, voo,
+  // concha…) mora em "O JEITO DE CADA BICHO", mais abaixo
   libelagarto: { velocidade: 1.45, mordida: 1, raio: 0.3 },
   formigurico: { velocidade: 1.3, mordida: 0.8, raio: 0.22 },
   tamandubelha: { velocidade: 1.4, mordida: 1.4, raio: 0.5 },
@@ -245,7 +245,41 @@ interface Invasor {
   puxado: boolean;
   /** já passou pelo portão (o Sino da porta toca uma vez por bicho) */
   passouPortao: boolean;
+  /** o jeito dele (§5): o pulo, o voo, a concha… — ver "O JEITO DE CADA BICHO" */
+  truque: Truque;
 }
+
+type Ponto2 = { x: number; z: number };
+
+/**
+ * O ESTADO DO TRUQUE DE UM BICHO. Cada praga usa só o pedaço dela; o resto
+ * fica no zero. Pedido do Renan: mecânica simples, tirada do DESENHO do bicho.
+ */
+interface Truque {
+  /** segundos até o próximo pulo, voo, gole de gota ou filhote */
+  espera: number;
+  /** um pulo (ou um voo) em curso: no ar, o jato passa por baixo */
+  salto: { de: Ponto2; para: Ponto2; t: number; dur: number; alto: number; voo: boolean } | null;
+  /** o truque que é de uma vez só (enrolar, a concha, o pulo de portão) já foi */
+  usou: boolean;
+  /** rolando enrolado (Coelhatu) e fechado na concha (Rinocaracol): segundos que faltam */
+  rola: number;
+  concha: number;
+  /** as gotas que o Tamandubelha aspirou — ele devolve quando vai embora */
+  guardadas: number;
+  /** bebendo no tonel (Mosquipótamo, Escorpicamelo), e há quanto tempo */
+  bebendo: boolean;
+  bebeu: number;
+  /** o Escorpicamelo de corcova murcha: corre */
+  bravo: boolean;
+  /** quantos filhotes a Mãe-Lagartejo já soltou */
+  filhotes: number;
+}
+
+/** quanto o Escorpicamelo bebe do tonel antes de ir aos canteiros, em segundos */
+const O_CHEFE_BEBE = 6;
+/** a Mãe-Lagartejo solta um filhote a cada tanto, até este tanto */
+const FILHOTES_DA_MAE = 5;
 
 type Especial = 'pressao-cheia' | 'carregado' | 'arco-iris';
 
@@ -506,6 +540,8 @@ export class RodadaDoJardim {
     this.juntadas = 0;
     this.espantados = 0;
     this.espantadosPorPraga = {};
+    this.dicasDadas.clear();
+    this.esponjas = [];
     this.novasNoLivro = [];
     this.ajudaCarga = 0;
     this.ajudaCusto = AJUDA_CUSTO_INICIAL;
@@ -655,7 +691,12 @@ export class RodadaDoJardim {
       invasores: this.invasores.map((i) => ({
         praga: i.ficha.id, x: i.x, z: i.z, estado: i.estado, vida: i.vida, vidaMax: i.vidaMax,
         lento: i.lento > 0, gelado: i.gelado > 0, tonto: i.tonto > 0, puxado: i.puxado, porta: i.porta,
+        noAr: !!i.truque.salto, voando: !!i.truque.salto?.voo, altura: i.raiz.position.y,
+        rola: i.truque.rola > 0, concha: i.truque.concha > 0, bebendo: i.truque.bebendo && i.estado === 'comendo',
+        guardadas: i.truque.guardadas, bravo: i.truque.bravo, escala: i.corpo.scale.x,
       })),
+      tonelSeco: this.tonelBebido(),
+      esponjas: this.esponjas.length,
       canteiros: this.canteiros.map((c) => ({
         x: c.x, z: c.z, nome: c.nome, vida: c.vida, vidaMax: c.vidaMax,
         protegido: c.protegido, toldo: c.toldo, pimenta: c.pimenta, carnivora: !!c.carnivora, adubado: c.adubado,
@@ -882,6 +923,7 @@ export class RodadaDoJardim {
     this.chegadas(dt);
     for (const inv of [...this.invasores]) this.viver(inv, dt);
     this.regador(dt);
+    this.pisarNaEsponja(dt);
     this.animarGesto(dt);
     this.garoa(dt);
     this.ajudaDoPar(dt);
@@ -1002,7 +1044,7 @@ export class RodadaDoJardim {
     }
     while (this.plano.length > 0 && this.plano[0].t <= this.tempoDaOnda) {
       const e = this.plano.shift()!;
-      this.nascer(e.praga, e.porta);
+      this.nascer(e.praga, e.porta, null, e.seguidor);
     }
     if (this.vitrine) {
       for (const inv of this.invasores) {
@@ -1015,7 +1057,7 @@ export class RodadaDoJardim {
   }
 
   /** Um bicho aparece do lado de fora da sebe, na porta sorteada. */
-  private nascer(praga: string, porta: number, casa: { x: number; z: number } | null = null): Invasor {
+  private nascer(praga: string, porta: number, casa: { x: number; z: number } | null = null, seguidor = false): Invasor {
     // o Portão emperrado: quem ia por ele vai pelo do lado
     if (!casa && porta === this.emperrado) porta = this.portaDoLado(porta, this.sorte());
     const ficha = PRAGAS.find((p) => p.id === praga) ?? PRAGAS[0];
@@ -1058,11 +1100,35 @@ export class RodadaDoJardim {
       recuoResta: 0,
       puxado: false,
       passouPortao: !!casa,
+      truque: {
+        // a Mãe demora um pouco mais para o primeiro filhote: ela acabou de chegar
+        espera: (ficha.id === 'mae-lagartejo' ? 4 : 1.2) + this.sorte() * 2,
+        salto: null,
+        // metade dos Tucangurus pula de portão; a outra metade entra onde ia
+        usou: ficha.id === 'tucanguru' ? this.sorte() < 0.5 : false,
+        rola: 0,
+        concha: 0,
+        guardadas: 0,
+        bebendo: false,
+        bebeu: 0,
+        bravo: false,
+        filhotes: 0,
+      },
     };
     raiz.position.set(inv.x, 0, inv.z);
     this.w.root.add(raiz);
     this.w.root.add(barra);
     this.invasores.push(inv);
+    /*
+     * O FORMIGURIÇO VEM EM FILA: quem puxa a fila traz mais dois logo atrás,
+     * pelo mesmo portão. Os de trás não puxam fila de novo.
+     */
+    if (ficha.id === 'formigurico' && !seguidor && !casa) {
+      for (const t of [0.5, 1]) {
+        this.plano.push({ t: this.tempoDaOnda + t, praga: 'formigurico', porta, anunciada: false, seguidor: true });
+      }
+      this.plano.sort((a, b) => a.t - b.t);
+    }
     // o Mutirão do clube: quando a chefe chega, os quatro entram em ação
     if (ficha.tier === 'chefe' && this.ficha.regras.has('mutirao-do-clube')) this.comecarMutirao();
     return inv;
@@ -1133,6 +1199,9 @@ export class RodadaDoJardim {
   }
 
   private vulneravel(inv: Invasor): boolean {
+    // no ar, enrolado ou fechado na concha, a água não pega (o jeito dele)
+    const t = inv.truque;
+    if (t.salto || t.rola > 0 || t.concha > 0) return false;
     return inv.estado === 'andando' || inv.estado === 'comendo' || inv.estado === 'parado'
       || inv.estado === 'preso' || inv.estado === 'recuando';
   }
@@ -1177,8 +1246,15 @@ export class RodadaDoJardim {
       return;
     }
 
+    // o jeito dele: no meio de um pulo, rolando ou na concha, o truque manda
+    if (this.truque(inv, dt)) {
+      this.pintarInvasor(inv, dt);
+      this.pintarTruque(inv);
+      return;
+    }
+
     // a Poça e a Gota gelada seguram o passo
-    let ritmo = 1;
+    let ritmo = this.ritmoDoTruque(inv);
     if (inv.lento > 0) ritmo *= 0.7;
     if (this.ficha.jato.poca && this.jato.pocasPerto(inv.x, inv.z) > 0) ritmo *= 0.6;
     const velocidade = inv.jeito.velocidade * ritmo;
@@ -1218,6 +1294,7 @@ export class RodadaDoJardim {
     }
 
     this.pintarInvasor(inv, dt);
+    this.pintarTruque(inv);
   }
 
   private andar(inv: Invasor, velocidade: number, dt: number): void {
@@ -1253,7 +1330,13 @@ export class RodadaDoJardim {
     }
 
     let vaiComer = false;
-    if (!alvo) {
+    let vaiBeber = false;
+    // quem bebe (o Mosquipótamo, o Escorpicamelo antes de murchar) vai no tonel
+    const tonel = alvo ? null : this.tonelDoBicho(inv);
+    if (tonel) {
+      alvo = tonel;
+      vaiBeber = true;
+    } else if (!alvo) {
       if (!inv.canteiro || inv.canteiro.vida <= 0 || inv.canteiro.protegido) inv.canteiro = this.canteiroMaisPerto(inv.x, inv.z);
       if (!inv.canteiro) return;
       alvo = this.pontoDeComer(inv, inv.canteiro);
@@ -1262,7 +1345,7 @@ export class RodadaDoJardim {
     // a Cerquinha: quem ia passar por ela contorna pela ponta
     const final = alvo;
     alvo = this.desviar(inv, alvo);
-    if (alvo !== final) vaiComer = false;
+    if (alvo !== final) { vaiComer = false; vaiBeber = false; }
     const dx = alvo.x - inv.x;
     const dz = alvo.z - inv.z;
     const d = Math.hypot(dx, dz);
@@ -1273,6 +1356,7 @@ export class RodadaDoJardim {
       // chegou na ponta da cerquinha ou na fila do portão: não é o ponto do caminho
       if (alvo !== final || naFila) return;
       if (inv.passo < inv.caminho.length) inv.passo += 1;
+      else if (vaiBeber) this.comecarABeber(inv);
       else if (inv.canteiro && vaiComer) {
         inv.estado = 'comendo';
         inv.relogio = 0;
@@ -1286,6 +1370,10 @@ export class RodadaDoJardim {
   }
 
   private comer(inv: Invasor, dt: number): void {
+    if (inv.truque.bebendo) {
+      this.beber(inv, dt);
+      return;
+    }
     const c = inv.canteiro;
     if (!c || c.vida <= 0 || c.protegido) {
       inv.estado = 'andando';
@@ -1396,6 +1484,405 @@ export class RodadaDoJardim {
     inv.empurraZ += (dz / n) * v;
     if (inv.estado === 'comendo') {
       inv.estado = 'andando';
+    }
+  }
+
+  // ======================================================= O JEITO DE CADA BICHO
+
+  /*
+   * PEDIDO DO RENAN: umas mecânicas novas "só para ficar mais divertido", sem
+   * deixar os bichos complicados, e cada uma TIRADA DO DESENHO do bicho. Cada
+   * praga tem no máximo um truque, e todo truque se VÊ:
+   *
+   * | bicho         | desenho               | truque                                        |
+   * |---------------|-----------------------|-----------------------------------------------|
+   * | Gafanhopo     | pernas de mola        | pula de tempo em tempo; no ar a água não pega |
+   * | Libelagarto   | quatro asas           | voa uns dois segundos, alto e mais rápido     |
+   * | Tucanguru     | pernas de canguru     | antes do portão, pula para o portão do lado   |
+   * | Coelhatu      | casco de tatu         | meio molhado, vira bolinha e ROLA um tiquinho |
+   * | Formiguriço   | formiga               | vem em fila de três                           |
+   * | Tamandubelha  | focinho de canudo     | aspira as gotas do chão, e devolve ao fugir   |
+   * | Mosquipótamo  | tromba de mosquito    | vai no TONEL beber: bebendo, ele não enche    |
+   * | Rinocaracol   | concha de caracol     | meio molhado, se fecha na concha uns 3 s      |
+   * | Javaponja     | esponja               | incha com a água (fica lenta) e deixa poça    |
+   * | Mãe-Lagartejo | a mãe                 | solta filhotes pelo caminho                   |
+   * | Escorpicamelo | corcovas de camelo    | bebe o tonel; com meia vida, murcha e corre   |
+   *
+   * O Lagartejo e o Preguipolvo ficam como são: o básico e o lento.
+   *
+   * A Josefina avisa na PRIMEIRA vez que cada truque acontece na rodada — é a
+   * única explicação que o jogador recebe, e basta.
+   */
+
+  /** a Josefina avisa o truque na primeira vez da rodada, e só na primeira */
+  private dicasDadas = new Set<string>();
+  private dica(id: string, fala: string): void {
+    if (this.vitrine || this.dicasDadas.has(id)) return;
+    this.dicasDadas.add(id);
+    this.g.toast(`Josefina: “${fala}”`, '🐢');
+  }
+
+  /** as poças que a Javaponja espremeu: pisar nelas enche o regador */
+  private esponjas: Array<{ x: number; z: number; vida: number }> = [];
+  private relogioDaEsponja = 0;
+
+  /** o passo do bicho, pelo jeito dele: a Javaponja inchada é lenta, o camelo bravo corre */
+  private ritmoDoTruque(inv: Invasor): number {
+    if (inv.ficha.id === 'javaponja') return 1 - 0.45 * (1 - Math.max(0, inv.vida) / inv.vidaMax);
+    if (inv.ficha.id === 'escorpicamelo' && inv.truque.bravo) return 1.7;
+    return 1;
+  }
+
+  /**
+   * O TRUQUE DO QUADRO. Devolve `true` quando o truque está no comando (no
+   * meio de um pulo, rolando, na concha) — aí o bicho não anda nem come do
+   * jeito normal neste quadro.
+   */
+  private truque(inv: Invasor, dt: number): boolean {
+    const t = inv.truque;
+    if (t.salto) {
+      this.saltar(inv, dt);
+      return true;
+    }
+    if (t.rola > 0) {
+      this.rolar(inv, dt);
+      return true;
+    }
+    if (t.concha > 0) {
+      t.concha -= dt;
+      if (t.concha <= 0) inv.raiz.position.y = 0;
+      return true;
+    }
+    if ((inv.estado !== 'andando' && inv.estado !== 'comendo') || inv.casa || inv.puxado) return false;
+    t.espera -= dt;
+    const meiaVida = inv.vida <= inv.vidaMax * 0.5;
+    switch (inv.ficha.id) {
+      case 'gafanhopo': {
+        // PERNAS DE MOLA: um pulo de 1,8 m de tempo em tempo, lá dentro
+        if (inv.estado !== 'andando' || !inv.passouPortao || t.espera > 0) break;
+        t.espera = 2.2 + this.sorte() * 1.3;
+        if (this.saltarRumo(inv, 1.8, 0.55, 0.75, false)) {
+          this.dica('gafanhopo', 'O Gafanhopo pula! No ar, a água passa por baixo.');
+          this.contar('jeito-pulo');
+        }
+        break;
+      }
+      case 'libelagarto': {
+        // AS ASAS: decola, voa uns dois segundos mais rápido, e pousa
+        if (inv.estado !== 'andando' || !inv.passouPortao || t.espera > 0) break;
+        t.espera = 4 + this.sorte() * 2;
+        if (this.saltarRumo(inv, 3.4, 2.2, 1.15, true)) {
+          this.dica('libelagarto', 'O Libelagarto voa um pouquinho! Espera ele pousar.');
+          this.contar('jeito-voo');
+        }
+        break;
+      }
+      case 'tucanguru': {
+        // PERNA DE CANGURU: chegando no portão, pula para o do lado
+        if (t.usou || inv.estado !== 'andando' || inv.passo !== 1) break;
+        const p = this.planta.portoes[inv.porta];
+        if (Math.hypot(p.x - inv.x, p.z - inv.z) > 4) break;
+        t.usou = true;
+        return this.trocarDePortao(inv);
+      }
+      case 'coelhatu': {
+        // O CASCO DE TATU: meio molhado, enrola e rola para longe da água
+        if (t.usou || !meiaVida) break;
+        t.usou = true;
+        t.rola = 1.3;
+        inv.estado = 'andando';
+        inv.corpo.userData.giro0 ??= inv.corpo.rotation.y;
+        this.g.som('quicar');
+        this.dica('coelhatu', 'Virou bolinha! Enrolado, a água escorre no casco.');
+        this.contar('jeito-rola');
+        return true;
+      }
+      case 'rinocaracol': {
+        // A CONCHA: meio molhado, se fecha nela uns segundos
+        if (t.usou || !meiaVida) break;
+        t.usou = true;
+        t.concha = 3;
+        // afunda o corpo até o chão: as patas somem para dentro da concha
+        inv.raiz.position.y = -0.28;
+        this.g.som('caixa');
+        this.dica('rinocaracol', 'Entrou na concha! Espera ele sair que a água volta a pegar.');
+        this.contar('jeito-concha');
+        return true;
+      }
+      case 'tamandubelha': {
+        // O FOCINHO DE CANUDO: aspira as gotas que estão na frente dele
+        if (t.espera > 0) break;
+        t.espera = 0.4;
+        const n = this.gotas.catar(inv.x + Math.sin(inv.rumo) * 0.9, inv.z + Math.cos(inv.rumo) * 0.9, 1.2);
+        if (n > 0) {
+          t.guardadas += n;
+          this.dica('tamandubelha', 'O Tamandubelha tá aspirando as gotas! Espanta que ele devolve.');
+          this.contar('jeito-aspira');
+        }
+        break;
+      }
+      case 'mae-lagartejo': {
+        // A MÃE: de tempo em tempo, um filhote sai de trás dela
+        if (!inv.passouPortao || t.espera > 0 || t.filhotes >= FILHOTES_DA_MAE) break;
+        t.espera = 7;
+        t.filhotes += 1;
+        const filho = this.nascer('lagartejo', inv.porta);
+        filho.x = inv.x - Math.sin(inv.rumo) * 1.4;
+        filho.z = inv.z - Math.cos(inv.rumo) * 1.4;
+        filho.passo = filho.caminho.length;
+        filho.passouPortao = true;
+        this.jato.poeira(filho.x, filho.z, inv.rumo + Math.PI);
+        this.dica('mae-lagartejo', 'A mãe tá soltando filhote!');
+        this.contar('jeito-filhote');
+        break;
+      }
+      case 'escorpicamelo': {
+        // AS CORCOVAS: com meia vida elas murcham, e sem o peso ele corre
+        if (t.bravo || !meiaVida) break;
+        t.bravo = true;
+        t.bebendo = false;
+        this.g.som('ronco');
+        this.dica('escorpicamelo-bravo', 'Murcharam as corcovas… agora ele corre!');
+        this.contar('jeito-bravo');
+        break;
+      }
+    }
+    return false;
+  }
+
+  /** para onde o bicho está indo agora: o próximo ponto do caminho, o tonel ou o canteiro */
+  private destinoDoBicho(inv: Invasor): Ponto2 | null {
+    if (inv.passo < inv.caminho.length) return inv.caminho[inv.passo];
+    const tonel = this.tonelDoBicho(inv);
+    if (tonel) return tonel;
+    if (!inv.canteiro || inv.canteiro.vida <= 0 || inv.canteiro.protegido) inv.canteiro = this.canteiroMaisPerto(inv.x, inv.z);
+    return inv.canteiro ? this.pontoDeComer(inv, inv.canteiro) : null;
+  }
+
+  /** um pulo (ou voo) na direção de onde ele ia, sem passar do ponto */
+  private saltarRumo(inv: Invasor, distancia: number, dur: number, alto: number, voo: boolean): boolean {
+    const alvo = this.destinoDoBicho(inv);
+    if (!alvo) return false;
+    const dx = alvo.x - inv.x;
+    const dz = alvo.z - inv.z;
+    const d = Math.hypot(dx, dz);
+    if (d < 0.9) return false;
+    const vai = Math.min(distancia, d - 0.3);
+    inv.truque.salto = {
+      de: { x: inv.x, z: inv.z },
+      para: { x: inv.x + (dx / d) * vai, z: inv.z + (dz / d) * vai },
+      // voo curto (o canteiro já está perto) é voo mais rápido, e não mais lento
+      t: 0, dur: voo ? Math.max(1.1, dur * vai / distancia) : dur, alto, voo,
+    };
+    return true;
+  }
+
+  private saltar(inv: Invasor, dt: number): void {
+    const s = inv.truque.salto!;
+    s.t += dt;
+    const k = Math.min(1, s.t / s.dur);
+    inv.x = s.de.x + (s.para.x - s.de.x) * k;
+    inv.z = s.de.z + (s.para.z - s.de.z) * k;
+    // o pulo é um arco; o voo sobe rápido, plana e desce rápido
+    inv.raiz.position.y = s.voo ? s.alto * Math.min(1, k * 5, (1 - k) * 5) : Math.sin(k * Math.PI) * s.alto;
+    this.virarPara(inv, Math.atan2(s.para.x - s.de.x, s.para.z - s.de.z), dt);
+    if (k >= 1) {
+      inv.raiz.position.y = 0;
+      inv.truque.salto = null;
+      this.jato.poeira(inv.x, inv.z, inv.rumo);
+    }
+  }
+
+  /**
+   * O TUCANGURU TROCA DE PORTÃO: do lado de fora, perto do portão dele, dá um
+   * salto comprido e cai na frente do portão do lado — e segue por ele. Pelo
+   * Portão emperrado ele não vai.
+   */
+  private trocarDePortao(inv: Invasor): boolean {
+    const nova = this.portaDoLado(inv.porta, this.sorte());
+    if (nova === this.emperrado) return false;
+    const p = this.planta.portoes[nova];
+    inv.porta = nova;
+    inv.caminho = [this.planta.brechas[nova], p, this.planta.bocas[nova]]
+      .map((q) => ({ x: q.x + (this.sorte() - 0.5) * 0.9, z: q.z }));
+    inv.passo = 1;
+    inv.truque.salto = {
+      de: { x: inv.x, z: inv.z },
+      para: { x: p.x + (this.sorte() - 0.5) * 0.8, z: p.z - 1.6 },
+      t: 0, dur: 1, alto: 1.6, voo: false,
+    };
+    this.g.som('quicar');
+    this.dica('tucanguru', `O Tucanguru pulou pro portão ${NOME_DO_PORTAO[nova]}!`);
+    this.contar('jeito-portao');
+    return true;
+  }
+
+  /** o Coelhatu enrolado rola ligeiro para onde ia */
+  private rolar(inv: Invasor, dt: number): void {
+    const t = inv.truque;
+    t.rola -= dt;
+    const alvo = this.destinoDoBicho(inv);
+    if (alvo) {
+      const dx = alvo.x - inv.x;
+      const dz = alvo.z - inv.z;
+      const d = Math.hypot(dx, dz);
+      const passo = inv.jeito.velocidade * 2.4 * dt;
+      if (d <= passo + 0.05) t.rola = 0;
+      else {
+        inv.x += (dx / d) * passo;
+        inv.z += (dz / d) * passo;
+        this.virarPara(inv, Math.atan2(dx, dz), dt);
+      }
+    }
+    inv.raiz.position.y = Math.abs(Math.sin(inv.fase * 16)) * 0.08;
+    if (t.rola <= 0) {
+      t.rola = 0;
+      inv.raiz.position.y = 0;
+      inv.corpo.rotation.y = (inv.corpo.userData.giro0 as number | undefined) ?? 0;
+    }
+  }
+
+  /** o ponto do lado do tonel onde quem bebe para — ou `null` para quem não bebe */
+  private tonelDoBicho(inv: Invasor): Ponto2 | null {
+    const t = inv.truque;
+    const quer = inv.ficha.id === 'mosquipotamo'
+      || (inv.ficha.id === 'escorpicamelo' && !t.bravo && t.bebeu < O_CHEFE_BEBE);
+    if (!quer || inv.passo < inv.caminho.length) return null;
+    const tonel = this.planta.tonel;
+    const nx = inv.x - tonel.x;
+    const nz = inv.z - tonel.z;
+    const n = Math.hypot(nx, nz) || 1;
+    const folga = inv.jeito.raio + 0.45;
+    return { x: tonel.x + (nx / n) * folga, z: tonel.z + (nz / n) * folga };
+  }
+
+  private comecarABeber(inv: Invasor): void {
+    inv.estado = 'comendo';
+    inv.canteiro = null;
+    inv.relogio = 0;
+    inv.truque.bebendo = true;
+    if (inv.ficha.id === 'escorpicamelo') this.dica('escorpicamelo', 'O Escorpicamelo tá secando o tonel!');
+    else this.dica('mosquipotamo', 'O Mosquipótamo tá bebendo do tonel! Assim ele não enche.');
+    this.contar('jeito-bebe');
+  }
+
+  /** bebendo: de frente para o tonel, puxando água pela tromba (ou pela boca) */
+  private beber(inv: Invasor, dt: number): void {
+    const t = inv.truque;
+    const tonel = this.planta.tonel;
+    this.virarPara(inv, Math.atan2(tonel.x - inv.x, tonel.z - inv.z), dt);
+    t.bebeu += dt;
+    if (inv.relogio > 1.2) {
+      inv.relogio = 0;
+      this.g.som('gluglu');
+      this.jato.espirroDoTonel(tonel.x, tonel.altura, tonel.z, 0.5);
+    }
+    // o camelo bebe o que cabe nas corcovas e vai para os canteiros
+    if (inv.ficha.id === 'escorpicamelo' && t.bebeu >= O_CHEFE_BEBE) {
+      t.bebendo = false;
+      inv.estado = 'andando';
+    }
+  }
+
+  /** tem bicho bebendo no tonel de fábrica agora? */
+  private tonelBebido(): boolean {
+    return this.invasores.some((i) => i.truque.bebendo && i.estado === 'comendo');
+  }
+
+  /**
+   * ESPANTADO, o que o jeito dele deixa para trás: o Tamandubelha devolve as
+   * gotas que aspirou, e mais a metade; a Javaponja espreme a água numa poça.
+   * Devolve as gotas a mais.
+   */
+  private aoEspantar(inv: Invasor, onde: Ponto2): number {
+    const t = inv.truque;
+    // quem é espantado de repente (o Gêiser) larga o truque na hora
+    t.salto = null;
+    t.rola = 0;
+    t.concha = 0;
+    t.bebendo = false;
+    if (inv.estado !== 'preso') inv.raiz.position.y = 0;
+    if (inv.ficha.id === 'javaponja') {
+      this.jato.poca(onde.x, onde.z, 1.2, 9);
+      this.esponjas.push({ x: onde.x, z: onde.z, vida: 9 });
+      this.dica('javaponja', 'A Javaponja espremeu uma poça! Pisa nela que enche o regador.');
+    }
+    if (t.guardadas > 0) return t.guardadas + Math.ceil(t.guardadas / 2);
+    return 0;
+  }
+
+  /** a poça da Javaponja: quem pisa com o regador enche, como num tonel pequeno */
+  private pisarNaEsponja(dt: number): void {
+    const eu = this.g.playerPosition();
+    this.relogioDaEsponja -= dt;
+    for (let i = this.esponjas.length - 1; i >= 0; i--) {
+      const e = this.esponjas[i];
+      e.vida -= dt;
+      if (e.vida <= 0) {
+        this.esponjas.splice(i, 1);
+        continue;
+      }
+      if (!this.comRegador() || this.agua >= this.ficha.tanque) continue;
+      if (Math.hypot(eu.x - e.x, eu.z - e.z) > 1.2) continue;
+      this.agua = Math.min(this.ficha.tanque, this.agua + 8 * dt);
+      if (this.agua >= this.ficha.tanque) this.tanqueCheio = true;
+      if (this.relogioDaEsponja <= 0) {
+        this.relogioDaEsponja = 0.5;
+        this.g.som('gluglu');
+        this.jato.espirroDoTonel(e.x, 0.1, e.z, 1);
+        this.contar('jeito-esponja');
+      }
+    }
+  }
+
+  /**
+   * O DESENHO DO TRUQUE, por cima do `pintarInvasor`: as asas batendo, o
+   * bicho enrolado ou fechado (cabeça e patas somem), a Javaponja inchando e
+   * as corcovas do camelo enchendo e murchando.
+   */
+  private pintarTruque(inv: Invasor): void {
+    const t = inv.truque;
+    const p = inv.partes;
+    const c = inv.corpo;
+
+    // as asas: zumbem sempre, e batem forte no voo
+    const asas = p.asas as THREE.Object3D[] | undefined;
+    if (asas) {
+      const forte = t.salto?.voo ? 0.55 : 0.07;
+      const ritmo = t.salto?.voo ? 38 : 11;
+      for (const a of asas) {
+        a.userData.rz0 ??= a.rotation.z;
+        const base = a.userData.rz0 as number;
+        a.rotation.z = base + Math.sign(base || 1) * Math.sin(inv.fase * ritmo) * forte;
+      }
+    }
+
+    // enrolado ou na concha: a cabeça e as patas somem para dentro
+    const escondido = t.rola > 0 || t.concha > 0;
+    const cabeca = p.cabeca as THREE.Object3D | undefined;
+    if (cabeca) cabeca.visible = !escondido;
+    for (const perna of (p.pernas ?? []) as THREE.Object3D[]) perna.visible = !escondido;
+    if (t.rola > 0) {
+      // bolinha: achata e gira como pião
+      c.scale.set(c.scale.x * 1.08, c.scale.y * 0.8, c.scale.z * 1.08);
+      c.rotation.y = inv.fase * 18;
+    }
+
+    // a Javaponja incha com a água que já levou (até um terço a mais)
+    if (inv.ficha.id === 'javaponja') {
+      const inchou = 1 + 0.35 * (1 - Math.max(0, inv.vida) / inv.vidaMax);
+      c.scale.multiplyScalar(inchou);
+      inv.barra.position.y = inv.ficha.alturaDaBarra * inchou + inv.raiz.position.y;
+    }
+
+    // as corcovas do camelo: enchem bebendo, murcham quando ele fica bravo
+    const corcovas = p.corcovas as THREE.Object3D[] | undefined;
+    if (corcovas) {
+      const k = t.bravo ? 0.7 : 1 + 0.3 * Math.min(1, t.bebeu / O_CHEFE_BEBE);
+      for (const corcova of corcovas) {
+        corcova.userData.escala0 ??= corcova.scale.clone();
+        corcova.scale.copy(corcova.userData.escala0 as THREE.Vector3).multiplyScalar(k);
+      }
     }
   }
 
@@ -1547,9 +2034,11 @@ export class RodadaDoJardim {
     const toneis = [this.planta.tonel];
     if (this.segundoTonel) toneis.push({ ...this.planta.lugares.segundoTonel, altura: this.planta.tonel.altura });
     const tonel = toneis.find((t) => Math.hypot(eu.x - t.x, eu.z - t.z) < PERTO_DO_TONEL) ?? null;
-    const perto = tonel !== null;
+    // com bicho bebendo nele, o tonel de fábrica não enche ninguém (o Segundo tonel enche)
+    const seco = tonel === this.planta.tonel && this.tonelBebido();
+    const perto = tonel !== null && !seco;
     // o Jean-Luc no tonel: encher ali é na hora
-    if (tonel === this.planta.tonel && f.regras.has('jean-luc-no-tonel') && this.agua < f.tanque - 0.5) {
+    if (perto && tonel === this.planta.tonel && f.regras.has('jean-luc-no-tonel') && this.agua < f.tanque - 0.5) {
       this.agua = f.tanque;
       this.tanqueCheio = true;
       this.g.som('pato');
@@ -1941,8 +2430,8 @@ export class RodadaDoJardim {
     inv.empurraX = 0;
     inv.empurraZ = 0;
     if (como === 'agua') this.jato.sacudida(inv.x, inv.ficha.alturaDaBarra, inv.z);
-    const quantas = inv.ficha.gotas * inv.gotasVezes;
     const onde = { x: inv.x, z: inv.z };
+    const quantas = inv.ficha.gotas * inv.gotasVezes + this.aoEspantar(inv, onde);
     this.jato.depois(0.3, () => this.gotas.soltar(onde.x, onde.z, quantas, this.dado, (x, z) => this.foraDeCanteiro(x, z)));
 
     const f = this.ficha;

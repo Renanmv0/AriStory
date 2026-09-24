@@ -56,9 +56,6 @@ velocidade/mordida de cada praga em `JEITO` (`rodada.ts`).
   já escolhida, em ordem de raridade.
 
 **O que falta** (a escolha do próximo passo é do Renan):
-- o **jeito de cada bicho** (§5 diz o que cada um faria: o Gafanhopo pula o
-  jato, o Coelhatu cava…) — hoje os treze só andam e comem, os sete novos
-  inclusive (o que cada um faria está no §5);
 - o **pagamento** por canteiro de pé e a **memória** de vencer as 30 ondas;
 - **equilíbrio**: ninguém jogou as 30 ondas inteiras; o Renan joga e diz.
 - perguntas em aberto: §12.
@@ -66,7 +63,7 @@ velocidade/mordida de cada praga em `JEITO` (`rodada.ts`).
 **Testes da rodada** (rodar UM de cada vez — dois Chromium juntos dão falha
 falsa por lentidão): `cartas.mjs` (lógica, sem navegador), `rodada.mjs`,
 `jato.mjs`, `cartasNaRodada.mjs`, `livro.mjs`, `oclusao.mjs`, `postos.mjs`,
-`chamados.mjs`, `gotas.mjs`. O que cada um prova está no `CLAUDE.md`. Para
+`chamados.mjs`, `gotas.mjs`, `jeitos.mjs`. O que cada um prova está no `CLAUDE.md`. Para
 olhar: `?cena=estufa&rodada=1` (rodada direto) e `?cena=estufa&jato=<ids>`
 (vitrine de um jato).
 
@@ -443,10 +440,10 @@ os **tamanhos variando** — mais pequenininho e mais grandão). A régua estico
 nas duas pontas: o Formiguriço bate no tornozelo da dupla, e o Escorpicamelo
 passa da cabeça dela. Cada um também ataca uma parte DIFERENTE da jogada —
 os seis de antes vão todos no canteiro; os novos vão no tonel, nas gotas, nos
-portões e no próprio jato. **O jeito deles ainda não existe**: hoje andam e
-comem como os outros.
+portões e no próprio jato — o jeito de cada um está construído (a tabela
+"O jeito de cada bicho", logo abaixo).
 
-| bicho | mistura | cor | tier | altura | encharque | o que ele faz de diferente (plano) |
+| bicho | mistura | cor | tier | altura | encharque | a ideia de quando o modelo nasceu |
 |---|---|---|---|---|---|---|
 | **Libelagarto** | lagartixa + libélula | rosa-chiclete, asas claras | fraco | 0,31 (e 0,68 de asa) | 2 | **voa por cima do muro**: não entra pelos portões, pousa em qualquer ponto da borda (a Gina barrando portão não segura ele); a sombra no chão avisa antes |
 | **Formiguriço** | formiga + ouriço | ameixa escuro, espinho caramelo | fraco | **0,30 — o menor** | 1 | vem em **fila indiana**, cinco ou seis; espantar o da frente espalha a fila, cada um para um canteiro |
@@ -464,8 +461,38 @@ orelhas caídas e o rabinho de mola da Javaponja; o beiço caído e os cílios d
 camelo.
 
 A coluna `encharque` é a que está no código (`FichaDePraga.encharque`) e vale em
-**jatos do regador básico**. Velocidade e comportamento ainda são projeto: os
-modelos existem, a lógica não.
+**jatos do regador básico**.
+
+### O jeito de cada bicho — **construído**
+
+Pedido do Renan: mecânicas novas "só para ficar mais divertido", **sem deixar
+os bichos complicados nem difíceis**, e cada uma **tirada do modelo** do
+bicho. Por isso é um truque por praga, no máximo, e todo truque se VÊ. A
+Josefina avisa na primeira vez que cada um acontece na rodada ("O Gafanhopo
+pula! No ar, a água passa por baixo.") — é a única explicação, e basta. As
+ideias das tabelas de cima que eram mais complicadas (a investida do
+Rinocaracol, o voo por cima do muro, a fila de seis) ficaram mais simples
+aqui.
+
+| bicho | do desenho | o truque |
+|---|---|---|
+| Lagartejo | — | nenhum: é o básico |
+| **Gafanhopo** | pernas de mola | lá dentro, **pula** 1,8 m de tempo em tempo; no ar, a água passa por baixo |
+| **Libelagarto** | quatro asas | de tempo em tempo **voa** uns dois segundos, alto e mais rápido, e pousa; no ar a água não pega |
+| **Tucanguru** | pernas de canguru | metade deles, chegando no portão, **pula para o portão do lado** e entra por ele |
+| **Coelhatu** | casco de tatu | com meia vida, **vira bolinha e rola** um tiquinho para onde ia; enrolado, a água escorre |
+| **Formiguriço** | formiga | vem **em fila de três**, pelo mesmo portão |
+| **Tamandubelha** | focinho de canudo | **aspira as gotas** do chão que estão na frente dele; espantado, devolve todas e mais a metade |
+| **Mosquipótamo** | tromba de mosquito | vai no **tonel beber**, e enquanto bebe o tonel não enche o regador (o Segundo tonel enche) |
+| Preguipolvo | — | nenhum: é o lento |
+| **Rinocaracol** | concha de caracol | com meia vida, **se fecha na concha** 3 s (a cabeça e as patas somem); fechado, a água não pega |
+| **Javaponja** | esponja | **incha** com a água que leva (até um terço maior, e mais lenta); espantada, deixa uma **poça que enche o regador** de quem pisar |
+| **Mãe-Lagartejo** | a mãe | **solta um filhote** de tempo em tempo (até cinco) |
+| **Escorpicamelo** | corcovas | vai no **tonel e seca ele** uns 6 s (as corcovas enchem); com meia vida elas **murcham** e ele corre |
+
+Os números moram na seção "O JEITO DE CADA BICHO" de `rodada.ts`
+(`truque()`), e `node scripts/jeitos.mjs` prova cada um numa estufa de
+laboratório, com foto.
 
 O elenco cresce como o do Mania: **cada bicho é uma linha numa lista**
 (`PRAGAS`, no mesmo arquivo). Bicho novo é uma entrada nova, não uma mexida no
@@ -1289,7 +1316,7 @@ trabalha rápido") virando geometria.
 | 4 | os canteiros como alvo, e o placar por canteiro vivo | **pronto** (a tela do fim conta os canteiros; o pagamento é a 9) |
 | 5 | gota no chão e a tela de três cartas (a conta de nível e o sorteio já existem) | **pronto** (a peça; liga na rodada junto com a 3) |
 | 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, com o som de cada carta |
-| 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **em parte**: as trinta ondas rodam com os treze bichos (a segunda leva estreia da 15ª), com o aviso do grandão; o JEITO de cada um (o Gafanhopo pular o jato, o Tucanguru saltar a cerca…) a fazer |
+| 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **pronto**: as trinta ondas rodam com os treze bichos (a segunda leva estreia da 15ª), com o aviso do grandão e o JEITO de cada um (§5, "O jeito de cada bicho") |
 | 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | **pronto** (§6, "Como as cartas de jardineiro e de jardim agem") |
 | 9 | o pagamento, a memória e a fala de despedida da Josefina | **em parte**: a tela do fim (números e cartas) e o livro das cartas estão prontos; pagamento e memória a fazer |
 
@@ -1348,7 +1375,7 @@ que liga cada uma ao tier e ao encharque (§5).
   perto. O Preguipolvo e a Mãe-Lagartejo são **anunciados** 4 s antes: a
   Josefina grita o portão e o chão ronca. Por enquanto os seis ANDAM do mesmo
   jeito, cada um na sua velocidade e mordida — o jeito próprio de cada um é a
-  etapa 7;
+  etapa 7 (construída depois: "O jeito de cada bicho", §5);
 - **o canteiro é o placar**: comido, as mudas encolhem e somem uma a uma, e no
   fim ele vira terra seca. O bicho então procura o próximo;
 - **o regador atira sozinho**, no bicho mais perto dentro do `alcance`, a cada

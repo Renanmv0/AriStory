@@ -206,6 +206,8 @@ export interface EntradaDePraga {
   porta: number;
   /** tanque e chefe: a porta chacoalha e a Josefina avisa antes */
   anunciada: boolean;
+  /** vem atrás de outro, na fila (o Formiguriço): não puxa fila de novo */
+  seguidor?: boolean;
 }
 
 /**

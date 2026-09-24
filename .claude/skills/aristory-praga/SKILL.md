@@ -24,8 +24,16 @@ Aqui é **só geometria**: a praga não sabe que existe uma rodada. Quem faz ela
 andar, comer e fugir é `minigames/jardim/rodada.ts` — a velocidade, a mordida e
 o raio de cada uma estão na tabela `JEITO` do topo dele, e em qual onda cada
 uma entra está em `ONDAS` (`progressao.ts`). **Praga nova no jogo = a ficha
-aqui + uma linha em `JEITO` + entrar numa onda.** Hoje as treze andam do mesmo
-jeito; o comportamento próprio de cada uma (§5 do plano) ainda não existe.
+aqui + uma linha em `JEITO` + entrar numa onda.** E, se ele tiver um truque,
+um `case` em `truque()` na seção "O JEITO DE CADA BICHO" de `rodada.ts`.
+
+**O truque sai do desenho, e é um só** (regra do Renan: divertido, mas nada
+complicado). Perna de mola pula, asa voa um pouco, canguru troca de portão,
+casco enrola, concha fecha, esponja incha, tromba bebe o tonel. Quem está no
+ar, enrolado ou na concha não leva água (`vulneravel`), e a Josefina avisa na
+primeira vez da rodada (`dica`). A tabela inteira está no §5 do plano;
+`node scripts/jeitos.mjs` prova cada um. Se a peça nova tem asa, publique
+`partes.asas` — a rodada faz elas zumbirem e baterem no voo.
 
 ---
 
