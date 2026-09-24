@@ -143,18 +143,22 @@ export class Arsenal {
           <div class="grade">${vagas}</div>
         </section>`;
     }).join('');
+    const vazio = this.cartas.length
+      ? ''
+      : '<p class="moedas-da-rodada">As cartas só dela ainda estão sendo feitas. As que servem em qualquer ferramenta (alcance, força, leque…) ficam no livro da bancada.</p>';
     this.paginas.innerHTML = `
       <section class="capitulo">
         <div class="recompensa arma-no-arsenal ${a.estado === 'trancada' ? 'trancada' : 'pronta'}">
           <span class="icone">${a.estado === 'trancada' ? '🔒' : a.icone}</span>
           <div class="texto">
-            <small>${a.recorde > 0 ? `recorde com ela: onda ${a.recorde}` : 'ainda sem rodada com ela'} · ${achadas} de ${this.cartas.length} cartas descobertas</small>
+            <small>${a.recorde > 0 ? `recorde com ela: onda ${a.recorde}` : 'ainda sem rodada com ela'} · ${achadas} de ${this.cartas.length} cartas só dela descobertas</small>
             <h4>${escapar(a.nome)}</h4>
             <p>${escapar(a.descricao)}</p>
             ${barra}
           </div>
           ${acao}
         </div>
+        ${vazio}
       </section>
       ${capitulos}`;
   }

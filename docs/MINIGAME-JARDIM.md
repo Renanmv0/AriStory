@@ -152,7 +152,7 @@ armário amarelo-manteiga de puxadores rosa, toalhinha xadrez, lousinha, vaso e
 luvas, e o rolo de mangueira do lado (pedido do Renan: "mais fofos… falta
 cor"; as cores de cada arma estão em `palette.ts`) —, que abre o
 painel das armas — parecido com o livro: uma aba por arma, a meta, o recorde e
-as cartas DELA (descobertas ou cinzas), e "Usar esta arma" (contador
+só as cartas ÚNICAS dela (pedido do Renan: `soDestaArma`, em `baralho.ts` — na mangueira as seis só dela, no regador as de tanque e tonel que a mangueira não tira; as genéricas ficam só no livro), descobertas ou cinzas, e "Usar esta ferramenta" (contador
 `jardim.arma`). **Hoje só a mangueira está construída** além do regador; a
 pistola e o borrifador aparecem destrancáveis mas "em construção". O **prêmio
 de destrancar** cada arma (roupinha ou item) o Renan decide depois — hoje só a

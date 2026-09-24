@@ -16,7 +16,7 @@ import { Noel } from '../entities/bichos/Noel';
 import { Walter } from '../entities/bichos/Walter';
 import { JeanLuc } from '../entities/bichos/JeanLuc';
 import { GotasDoJardim } from '../entities/GotasDoJardim';
-import { MaoDeCartas, servePara } from '../minigames/jardim/baralho';
+import { MaoDeCartas, soDestaArma } from '../minigames/jardim/baralho';
 import {
   ARMAS, ARMA_ESCOLHIDA, ONDA_PARA_ABRIR, chaveDoRecorde, destrancada, type ArmaId, type FichaDaArma,
 } from '../minigames/jardim/armas';
@@ -912,7 +912,8 @@ export const estufa: SceneDef = {
             meta: anterior ? `Vençam a onda ${ONDA_PARA_ABRIR} com ${anterior.comArtigo}` : '',
             recorde: recordeDe(a.id),
             progresso: anterior ? Math.min(ONDA_PARA_ABRIR, recordeDe(anterior.id)) : ONDA_PARA_ABRIR,
-            cartas: CARTAS.filter((c) => servePara(c, a.id)).map((c) => cartaDaArma(c, a.id)),
+            // só as cartas ÚNICAS dela; as que servem em todas moram no livro
+            cartas: CARTAS.filter((c) => soDestaArma(c, a.id)).map((c) => cartaDaArma(c, a.id)),
           };
         }),
       };

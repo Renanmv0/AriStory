@@ -3,7 +3,7 @@ import {
   CARTAS, CONSOLOS, NIVEL_MINIMO, cartaPorId, fichaInicial,
   type CartaDoJardim, type EstiloDoJato, type Familia, type FichaDaRodada, type Raridade,
 } from './cartas';
-import { armaPorId, type ArmaId } from './armas';
+import { ARMAS, armaPorId, type ArmaId } from './armas';
 
 /**
  * A MÃO DE CARTAS — quem guarda quais cartas a rodada já tem.
@@ -53,6 +53,19 @@ export function pesoDaRaridade(raridade: Raridade, nivel: number): number {
 export function servePara(carta: CartaDoJardim, arma: ArmaId): boolean {
   if (carta.soPara && !carta.soPara.includes(arma)) return false;
   return !carta.naoServe?.includes(arma);
+}
+
+/**
+ * A carta é SÓ desta ferramenta? É o que a bancada das ferramentas mostra na
+ * aba de cada uma (pedido do Renan: "somente as cartas únicas daquele tipo").
+ * Serve nela e em nenhuma outra ferramenta já construída: na mangueira são as
+ * `soPara: ['mangueira']`; no regador, as de tanque e tonel que a mangueira não
+ * tira. As genéricas (alcance, força, leque…) servem em todas e ficam só no
+ * livro da bancada.
+ */
+export function soDestaArma(carta: CartaDoJardim, arma: ArmaId): boolean {
+  if (carta.repetivel || !servePara(carta, arma)) return false;
+  return ARMAS.every((o) => o.id === arma || !o.pronta || !servePara(carta, o.id));
 }
 
 export class MaoDeCartas {

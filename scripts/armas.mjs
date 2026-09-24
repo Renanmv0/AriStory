@@ -160,7 +160,7 @@ await aba(page, 'Mangueira');
 await page.waitForTimeout(200);
 const daMangueira = await textoDaPagina(page);
 ok(/Esguicho de latão/.test(daMangueira) && !/Tanque maior/.test(daMangueira), 'a mangueira tem "Esguicho de latão" e não tem "Tanque maior"');
-ok(/Bico mais longo/.test(daMangueira), 'e as genéricas (alcance) servem nas duas');
+ok(!/Bico mais longo/.test(daMangueira) && !/Bico mais longo/.test(doRegador), 'as genéricas (alcance) não aparecem em nenhuma: cada aba mostra só as cartas únicas da ferramenta');
 await page.screenshot({ path: `${OUT}-painel-mangueira.png` });
 await page.locator('[data-usar="mangueira"]').click();
 await page.waitForTimeout(400);

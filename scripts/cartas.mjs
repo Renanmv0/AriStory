@@ -245,6 +245,14 @@ console.log('\n— o baralho de cada arma');
   ok(f.regras.has('agua-infinita') && f.regras.has('presa-na-estufa') && f.gastoPorJato === 0,
     'a ficha de partida da mangueira: água infinita, presa na estufa, jato de graça');
   ok(new Mao('mangueira').estiloDoRegador().arma === 'mangueira', 'e a peça da mão é a dela');
+  // a bancada das ferramentas mostra só as cartas ÚNICAS de cada uma
+  const { soDestaArma } = m;
+  const unicas = Object.fromEntries(ARMAS.map((a) => [a.id, todas.filter((c) => soDestaArma(c, a.id)).map((c) => c.id)]));
+  console.log(`       só do regador: ${unicas.regador.length} · só da mangueira: ${unicas.mangueira.join(', ')}`);
+  ok(unicas.mangueira.length > 0 && unicas.mangueira.every((id) => todas.find((c) => c.id === id).soPara?.includes('mangueira')),
+    'as únicas da mangueira são as cartas só dela');
+  ok(!unicas.regador.includes('bico-1') && !unicas.mangueira.includes('bico-1'), 'a genérica (Bico mais longo) não é única de ninguém');
+  ok(!Object.values(unicas).some((l, i, t) => l.some((id) => t.some((o, j) => j !== i && o.includes(id)))), 'nenhuma carta é única de duas ferramentas');
   ok(ARMAS.every((a, i) => i === 0 ? a.anterior === null : a.anterior === ARMAS[i - 1].id),
     'as armas são uma fila: cada uma destranca pela anterior');
 }
