@@ -141,8 +141,13 @@ quando a dupla vence a onda 20 usando a anterior** — o recorde é POR ARMA
 todos, e é ele que abre a lojinha). Na primeira visita depois da mudança o
 recorde velho virou o do regador (flag `jardim.armas-migradas`). Elas ficam na
 **parede das armas**, entre o girassol e o tomate da esquerda (no lugar das duas
-folhagens que o Renan não gostava): painel furado com as quatro penduradas (a
-trancada em sombra cinza) e a **bancada do arsenal** na frente, que abre o
+folhagens que o Renan não gostava): painel furado pintado de menta, com
+bandeirinhas, plaquinha "Armas da estufa" e um carimbo pastel com o nome atrás
+de cada arma, as quatro penduradas inclinadas como ferramenta (a trancada
+desbotada, com um cadeadinho dourado), e a **bancada do arsenal** na frente —
+armário amarelo-manteiga de puxadores rosa, toalhinha xadrez, lousinha, vaso e
+luvas, e o rolo de mangueira do lado (pedido do Renan: "mais fofos… falta
+cor"; as cores de cada arma estão em `palette.ts`) —, que abre o
 painel das armas — parecido com o livro: uma aba por arma, a meta, o recorde e
 as cartas DELA (descobertas ou cinzas), e "Usar esta arma" (contador
 `jardim.arma`). **Hoje só a mangueira está construída** além do regador; a

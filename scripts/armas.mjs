@@ -70,10 +70,12 @@ const parede = (page) => page.evaluate(() => {
     }
   }
   if (!painel) return null;
-  const pecas = painel.children.filter((c) => c.userData.peca && c.userData.peca !== 'painel-de-armas');
+  const pecas = painel.children.filter((c) => c.userData.peca && c.userData.peca !== 'painel-de-armas' && c.userData.peca !== 'cadeadinho');
+  const cadeados = painel.children.filter((c) => c.userData.peca === 'cadeadinho').length;
   return {
     penduradas: pecas.map((c) => c.userData.peca),
     sombras: pecas.filter((c) => c.userData.trancada).length,
+    cadeados,
     folhagensNoVao,
   };
 });
@@ -104,11 +106,16 @@ await page.mouse.click(640, 400);
 const p0 = await parede(page);
 ok(!!p0, 'o painel das armas está na estufa');
 ok(p0?.penduradas.length === 4, `com as quatro armas penduradas (${p0?.penduradas.join(', ')})`);
-ok(p0?.sombras === 3, `com o save zerado só o regador tem cor: ${p0?.sombras} em sombra`);
+ok(p0?.sombras === 3 && p0?.cadeados === 3, `com o save zerado só o regador está aberto: ${p0?.sombras} desbotadas, ${p0?.cadeados} cadeados`);
 ok(p0?.folhagensNoVao === 0, 'as duas folhagens do vão entre o girassol e o tomate saíram');
 await page.evaluate(() => window.jogo.debugPlace(-12.6, 2.4, -Math.PI / 2));
 await page.waitForTimeout(600);
 await page.screenshot({ path: `${OUT}-parede.png` });
+// de perto, as quatro trancadas-e-abertas, e a bancada
+await page.evaluate(() => { window.jogo.debugPlace(-11.6, 4.2, -Math.PI / 2); window.jogo.setZoom(3); });
+await page.waitForTimeout(700);
+await page.screenshot({ path: `${OUT}-parede-trancadas.png` });
+await page.evaluate(() => window.jogo.setZoom(6));
 
 // ============================================= 2. a bancada abre o painel
 const prompt = await abrirArsenal(page);

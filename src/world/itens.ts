@@ -967,7 +967,8 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
     const g = new THREE.Group();
     // na rodada de mangueira (`armas.ts`) a mão carrega o esguicho no lugar
     const lata = estiloDoRegadorNaMao.arma === 'mangueira'
-      ? esguichoDeMangueira(estiloDoRegadorNaMao)
+      // o esguicho é bem menor que a lata: na mão ele cresce para os detalhes aparecerem
+      ? esguichoDeMangueira(estiloDoRegadorNaMao, 1.6)
       : regadorDeJardim(estiloDoRegadorNaMao);
     const ESCALA = 0.78;
     lata.scale.setScalar(ESCALA);

@@ -471,26 +471,60 @@ export const PALETTE = {
   regadorAgua: 0x8fd0e8,
   regadorFuro: 0x394045,
   /**
-   * A MANGUEIRA, a segunda arma da estufa: a borracha verde-garrafa de toda
-   * mangueira de quintal (mais viva que o esmalte do regador, para as duas
-   * não se confundirem na parede) e o gatilho de plástico laranja do esguicho.
+   * AS ARMAS DA ESTUFA, em cores de brinquedo de quintal (pedido do Renan:
+   * "mais fofos… falta cor"). Cada arma tem a SUA cor-assinatura, que é o que
+   * separa as quatro de longe na parede:
+   *
+   * - a MANGUEIRA: borracha verde-folha com a listra amarela de toda mangueira
+   *   de quintal, e o esguicho turquesa com gatilho amarelo e o anel coral do
+   *   bocal (o que gira para escolher o jato);
+   * - a PISTOLA D'ÁGUA: lilás com o tanque laranja e o gatilho rosa;
+   * - o BORRIFADOR: frasco branco-leitoso com a cabeça menta e o rótulo rosa.
    */
-  mangueiraBorracha: 0x3f8f4a,
-  mangueiraBorrachaEscura: 0x2b6634,
-  mangueiraGatilho: 0xe8873a,
-  /** a pistola d'água e o borrifador, que por enquanto só moram na parede */
-  pistolaDagua: 0x3fa7d6,
-  pistolaDaguaTanque: 0xf2c94c,
-  borrifadorFrasco: 0xe9eef0,
-  borrifadorGatilho: 0x7cc47f,
+  mangueiraBorracha: 0x5bbf6a,
+  mangueiraBorrachaEscura: 0x3f9a50,
+  mangueiraListra: 0xffd166,
+  mangueiraGatilho: 0xffd166,
+  esguichoCorpo: 0x45c4c9,
+  esguichoCorpoEscuro: 0x2f9ea5,
+  esguichoAnel: 0xff7f6b,
+  pistolaDagua: 0xb38cf0,
+  pistolaDaguaEscura: 0x8f69d6,
+  pistolaDaguaTanque: 0xffa94d,
+  pistolaGatilho: 0xff8fb1,
+  borrifadorFrasco: 0xf3f6f7,
+  borrifadorGatilho: 0x8fdcb4,
+  borrifadorGatilhoEscuro: 0x5fbf8f,
+  borrifadorRotulo: 0xf6a5c0,
   /**
-   * A PAREDE DAS ARMAS: o painel furado de oficina (eucatex cru, os furos em
-   * marrom escuro) e a sombra de uma arma ainda trancada — um cinza-azulado
-   * que se lê como "tem algo aqui, mas ainda não é seu".
+   * A PAREDE DAS ARMAS: o painel furado pintado de menta (e não o eucatex cru
+   * de oficina: é a estufa da Josefina), a moldura de madeira, a plaquinha
+   * creme do título, as bandeirinhas e o "carimbo" pastel atrás de cada arma
+   * — o desenho da ferramenta pintado na parede, como em toda oficina
+   * arrumada, só que em bolinha colorida. A arma trancada fica DESBOTADA
+   * (`desbotar`) com um cadeadinho dourado pendurado.
    */
-  painelFurado: 0xcfa874,
-  painelFuro: 0x6e4f2f,
-  armaTrancada: 0x3b4046,
+  painelMenta: 0xbfe6cc,
+  painelMentaFuro: 0x86b896,
+  painelPlaca: 0xfff1cf,
+  painelTexto: 0x7a5230,
+  bandeirinhaRosa: 0xf7a1c0,
+  bandeirinhaAmarela: 0xffd97a,
+  bandeirinhaAzul: 0x9fd3f5,
+  bandeirinhaLilas: 0xcdb2f0,
+  bandeirinhaVerde: 0xa8e29a,
+  cadeadoOuro: 0xf2c14e,
+  cadeadoArco: 0xc9ced3,
+  /** o desbotado de uma arma trancada puxa para este creme */
+  armaDesbotada: 0xf4efe6,
+  /**
+   * A BANCADA DO ARSENAL: corpo pintado de amarelo-manteiga, puxadores rosa,
+   * tampo de madeira, e a toalhinha xadrez é a do piquenique (`toalhaXadrez`).
+   */
+  bancadaPintura: 0xfbe3a0,
+  bancadaPinturaEscura: 0xe8c77a,
+  bancadaPuxador: 0xf28fae,
+  luvaDeJardim: 0xff9f7a,
 
   /**
    * A GOTA DE EXPERIÊNCIA — o que o bicho espantado deixa no chão.

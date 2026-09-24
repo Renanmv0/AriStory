@@ -4,7 +4,7 @@ import type { SceneDef } from '../core/types';
 import {
   arcoDeEstufa, bancadaDeJardinagem, canteiroDeHorta, capim, folhagemAlta, planta,
   livroDeCartas, lojinhaDaJosefina, plaquinhaDaEstufa, portaoDeJardim, regadorDeOuro, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
-  trelicaComTrepadeira, vasoDePlanta, painelDeArmas, bancadaDoArsenal, silhuetaDeArma,
+  trelicaComTrepadeira, vasoDePlanta, painelDeArmas, bancadaDoArsenal, desbotarArma, cadeadinho,
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
 import { ITENS, ROUPAS_DA_JOSEFINA } from '../world/itens';
@@ -802,12 +802,12 @@ export const estufa: SceneDef = {
      * d'água → borrifador), cada uma destrancando quando a dupla vence a onda
      * 20 USANDO A ANTERIOR (`minigames/jardim/armas.ts`). Elas moram no vão da
      * parede entre o girassol e o tomate da esquerda, onde ficavam duas
-     * folhagens: o painel furado com as quatro penduradas (a trancada é uma
-     * sombra cinza), e na frente dele a bancada do arsenal, que abre o painel
+     * folhagens: o painel furado com as quatro penduradas (a trancada fica
+     * desbotada, com um cadeadinho), e na frente dele a bancada do arsenal, que abre o painel
      * das armas — parecido com o livro, uma aba por arma.
      */
     const ARSENAL = { z: 2.4 };
-    const paredeDasArmas = w.add(w.place(painelDeArmas(1.8, 1.45), -hx + 0.32, 0, ARSENAL.z, Math.PI / 2));
+    const paredeDasArmas = w.add(w.place(painelDeArmas(1.8, 1.45, ARMAS.map((a) => a.nome)), -hx + 0.32, 0, ARSENAL.z, Math.PI / 2));
     w.blockBox(-hx + 0.32, ARSENAL.z, 0.12, 1.0);
     const bancadaDasArmas = w.add(w.place(bancadaDoArsenal(1.3), -hx + 0.86, 0, ARSENAL.z, Math.PI / 2));
     w.blockBox(-hx + 0.86, ARSENAL.z, 0.3, 0.7);
@@ -834,7 +834,7 @@ export const estufa: SceneDef = {
       if (id === 'mangueira') return esguichoDeMangueira({ estagio: 1 });
       if (id === 'pistola') return pistolaDagua();
       if (id === 'borrifador') return borrifadorDeJardim();
-      return regadorDeJardim({ estagio: 0 });
+      return regadorDeJardim({ estagio: 2, crivo: 0.5 });
     };
     /** pendura (de novo) as quatro no painel: a destrancada colorida, a outra em sombra */
     const penduradas: THREE.Object3D[] = [];
@@ -846,13 +846,39 @@ export const estufa: SceneDef = {
         const gancho = ganchos[i];
         if (!gancho) return;
         const m = modeloDaArma(a.id);
-        if (!liberada(a)) silhuetaDeArma(m);
-        m.scale.setScalar(1.5);
-        // de perfil contra o painel, pendurada pelo gancho
-        m.rotation.y = Math.PI / 2;
-        m.position.set(gancho.x, gancho.y - (a.id === 'regador' ? 0.62 : a.id === 'borrifador' ? 0.5 : 0.36), gancho.z);
-        paredeDasArmas.add(m);
-        penduradas.push(m);
+        if (!liberada(a)) {
+          desbotarArma(m);
+          // o cadeadinho pendurado no gancho, na frente da arma
+          const cadeado = cadeadinho(1.2);
+          cadeado.position.set(gancho.x, gancho.y, gancho.z + 0.22);
+          paredeDasArmas.add(cadeado);
+          penduradas.push(cadeado);
+        }
+        /*
+         * PENDURADA COMO FERRAMENTA EM PAREDE: o regador de frente para quem
+         * olha (de perfil, o bico dele invadia a vaga do lado), e as outras
+         * três de perfil e inclinadas, com o bico para cima — deitadas,
+         * pistola e esguicho passavam do próprio carimbo.
+         */
+        const pivo = new THREE.Group();
+        pivo.userData.peca = m.userData.peca;
+        pivo.userData.trancada = !!m.userData.trancada;
+        pivo.add(m);
+        if (a.id === 'regador') {
+          m.scale.setScalar(1.15);
+          m.rotation.y = 0.45;
+          m.position.y = -0.42;
+          pivo.position.set(gancho.x + 0.03, gancho.y, gancho.z + 0.14);
+        } else {
+          m.scale.setScalar(1.3);
+          m.rotation.y = Math.PI / 2;
+          // o meio da peça no pivô, para ela girar em volta de si
+          m.position.set(-0.03, -0.2, 0);
+          pivo.rotation.z = a.id === 'borrifador' ? 0 : 0.75;
+          pivo.position.set(gancho.x, gancho.y - 0.18, gancho.z + 0.05);
+        }
+        paredeDasArmas.add(pivo);
+        penduradas.push(pivo);
       });
     };
     montarParede();
