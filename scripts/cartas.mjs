@@ -257,8 +257,12 @@ console.log('\n— o baralho de cada arma');
     'o Jean-Luc no tonel é do regador E da pistola (as duas usam munição)');
   ok(!unicas.pistola.includes('balde') && !unicas.pistola.includes('mangueira'), 'o Balde e o Bico de mangueira são só do regador');
   ok(!unicas.mangueira.some((id) => unicas.regador.includes(id) || unicas.pistola.includes(id)), 'nada da mangueira aparece nas outras');
-  const tamanhos = ARMAS.filter((a) => a.pronta).map((a) => unicas[a.id].length);
-  ok(Math.max(...tamanhos) - Math.min(...tamanhos) <= 3, `as ferramentas têm mais ou menos o mesmo tanto de cartas (${tamanhos.join(', ')})`);
+  // ÚNICAS DE VERDADE: servem numa ferramenta construída e em nenhuma outra
+  const prontas = ARMAS.filter((a) => a.pronta);
+  const soDela = Object.fromEntries(prontas.map((a) => [a.id,
+    todas.filter((c) => !c.repetivel && servePara(c, a.id) && prontas.every((o) => o.id === a.id || !servePara(c, o.id))).length]));
+  console.log(`       únicas de verdade: ${prontas.map((a) => `${a.id} ${soDela[a.id]}`).join(', ')}`);
+  ok(Math.abs(soDela.pistola - soDela.mangueira) <= 2, `a pistola tem mais ou menos tantas únicas quanto a mangueira (${soDela.pistola} e ${soDela.mangueira})`);
   ok(ARMAS.every((a, i) => i === 0 ? a.anterior === null : a.anterior === ARMAS[i - 1].id),
     'as armas são uma fila: cada uma destranca pela anterior');
 }

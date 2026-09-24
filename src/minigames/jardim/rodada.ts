@@ -590,6 +590,8 @@ export class RodadaDoJardim {
     for (const id of opcoes.cartas ?? []) this.mao.pegar(id);
     this.aplicarFicha(true);
     this.continuo = null;
+    this.superMolhador = 0;
+    this.superResta = 0;
     this.enchente = 0;
     this.enchenteResta = 0;
     this.vazamento = 0;
@@ -2321,12 +2323,36 @@ export class RodadaDoJardim {
       }
     }
 
+    /*
+     * ---- o Super molhador (pistola): de 20 em 20 s, 4 s de tiros no dobro da
+     * velocidade que não gastam água. Começa com um anel de água em volta, e
+     * a pistola brilha tremendo enquanto dura
+     */
+    let cadencia = f.cadencia;
+    let gasto = f.gastoPorJato;
+    if (f.regras.has('super-molhador')) {
+      if (this.superResta > 0) {
+        this.superResta -= dt;
+        cadencia *= 0.5;
+        gasto = 0;
+        if (!this.gesto) this.gesto = { tipo: 'treme', t: 0, dur: 0.1 };
+      } else {
+        this.superMolhador += dt;
+        if (this.superMolhador >= 20) {
+          this.superMolhador = 0;
+          this.superResta = 4;
+          this.g.som('jatao');
+          this.jato.anelDeAgua(new THREE.Vector3(eu.x, 0.6, eu.z), 1.3, 'giro', e);
+          this.contar('super-molhador');
+        }
+      }
+    }
+
     // ---- o jato de verdade: cadência, água e alvo
     this.recarga += dt;
-    const gasto = f.gastoPorJato;
     const alvo = this.escolherAlvo(eu);
     this.g.mirarJogador(alvo ? { x: alvo.x, z: alvo.z } : null);
-    if (!alvo || this.regadorDeFolga || this.recarga < f.cadencia || this.agua < gasto) return;
+    if (!alvo || this.regadorDeFolga || this.recarga < cadencia || this.agua < gasto) return;
     this.recarga = 0;
     this.agua -= gasto;
     this.atirar(eu, alvo);
@@ -2429,6 +2455,9 @@ export class RodadaDoJardim {
   private dancaEm = { x: 0, z: 0 };
   /** para que lado sai o fio da Bifurcação desta vez */
   private ladoDaBifurcacao = 1;
+  /** o Super molhador: o relógio até o próximo, e quanto falta do que está valendo */
+  private superMolhador = 0;
+  private superResta = 0;
   /** quanto você andou no último quadro (o Pique e a Bota leem daqui) */
   private passoDoQuadro = 0;
   /** o multiplicador de velocidade de agora, com Pique, poça e picolé */
@@ -2495,6 +2524,8 @@ export class RodadaDoJardim {
     const balao = f.regras.has('balao-dagua') && this.jatosDados % 5 === 0;
     // a RAJADA (pistola): de quatro em quatro tiros, mais dois logo atrás
     const rajada = f.regras.has('rajada') && this.jatosDados % 4 === 0;
+    // o Esguicho no olho (pistola): um tiro em quatro, defasado da Rajada
+    const olho = f.regras.has('esguicho-no-olho') && this.jatosDados % 4 === 2;
     const saida = (): void => {
       const de = this.pontaDoBico();
       if (balao) {
@@ -2509,6 +2540,32 @@ export class RodadaDoJardim {
         this.contar('balao-dagua');
       } else {
         this.umJato({ origem, de, rumo, alvo, dano: f.dano, especial });
+      }
+      /*
+       * a Pistola dupla: uma em cada mão — um segundo tiro sai junto, no
+       * outro bicho mais perto do alcance, com 70% da força
+       */
+      if (f.regras.has('pistola-dupla')) {
+        const outro = this.invasores
+          .filter((i) => i !== alvo && this.vulneravel(i) && Math.hypot(i.x - eu.x, i.z - eu.z) <= f.alcance
+            && (e.arco || !this.atrasDeCanteiro(eu, i)))
+          .sort((a, b) => Math.hypot(a.x - eu.x, a.z - eu.z) - Math.hypot(b.x - eu.x, b.z - eu.z))[0];
+        if (outro) {
+          const r2 = Math.atan2(outro.x - eu.x, outro.z - eu.z);
+          const de2 = new THREE.Vector3(eu.x + Math.cos(r2) * 0.25, de.y, eu.z - Math.sin(r2) * 0.25);
+          this.umJato({ origem, de: de2, rumo: r2, alvo: outro, dano: f.dano * 0.7 });
+          this.contar('pistola-dupla');
+        }
+      }
+      // o Esguicho no olho: um tiro em quatro deixa o bicho tonto 1 s
+      if (olho) {
+        const chega = Math.hypot(alvo.x - eu.x, alvo.z - eu.z) / 16 + 0.08;
+        this.jato.depois(chega, () => {
+          if (!this.invasores.includes(alvo) || !this.vulneravel(alvo)) return;
+          alvo.tonto = Math.max(alvo.tonto, 1);
+          this.jato.sacudida(alvo.x, alvo.ficha.alturaDaBarra * 0.7, alvo.z);
+          this.contar('esguicho-no-olho');
+        });
       }
       if (rajada) {
         for (const atraso of [0.1, 0.2]) {
@@ -2603,7 +2660,22 @@ export class RodadaDoJardim {
       const alcancePara = Math.max(0.5, Math.hypot(para.x - t.origem.x, para.z - t.origem.z));
       for (const inv of atingidos) {
         const chega = atravessa ? tempo * (Math.hypot(inv.x - t.origem.x, inv.z - t.origem.z) / alcancePara) : tempo;
-        this.jato.depois(chega, () => this.acertar(inv, t.dano * multiplicador * parte, t.origem, t.especial));
+        /*
+         * o Tiro de longe (pistola): bicho a mais de 3,5 m de quem atira leva
+         * 40% mais — e o alvinho aparece nele, que é como se vê
+         */
+        let longe = 1;
+        if (f.regras.has('tiro-de-longe') && Math.hypot(inv.x - t.origem.x, inv.z - t.origem.z) > 3.5) {
+          longe = 1.4;
+          this.jato.mirar(inv.raiz, inv.ficha.alturaDaBarra, 0.35);
+          this.contar('tiro-de-longe');
+        }
+        this.jato.depois(chega, () => this.acertar(inv, t.dano * multiplicador * parte * longe, t.origem, t.especial));
+        // o Ricochete (pistola): do bicho que o tiro da frente acertou, um
+        // tiro menor pula no vizinho mais perto (até 2,5 m)
+        if (inv === t.alvo && f.regras.has('ricochete')) {
+          this.jato.depois(chega, () => this.ricochetear(inv, t.dano * multiplicador * 0.5));
+        }
       }
       if (atingidos.length === 0) this.jato.depois(tempo, () => this.jato.respingo(para.x, 0.05, para.z, e, 0.5));
       if (t.especial === 'arco-iris') this.jato.depois(tempo * 0.6, () => this.jato.arcoNoAr(t.de, para));
@@ -2613,6 +2685,21 @@ export class RodadaDoJardim {
       }
       if (e.poca) this.jato.depois(tempo, () => this.jato.poca(para.x, para.z, e.borrifador ? 0.45 : 0.7));
     }
+  }
+
+  /** o Ricochete: do bicho acertado, um tiro menor pula no vizinho mais perto */
+  private ricochetear(de: Invasor, dano: number): void {
+    const vizinho = this.invasores
+      .filter((i) => i !== de && this.vulneravel(i) && Math.hypot(i.x - de.x, i.z - de.z) <= 2.5)
+      .sort((a, b) => Math.hypot(a.x - de.x, a.z - de.z) - Math.hypot(b.x - de.x, b.z - de.z))[0];
+    if (!vizinho) return;
+    const tempo = this.jato.disparar({
+      de: new THREE.Vector3(de.x, de.ficha.alturaDaBarra * 0.5, de.z),
+      para: new THREE.Vector3(vizinho.x, 0.25, vizinho.z),
+      estilo: this.ficha.jato, largura: 6, forma: 'tiro',
+    });
+    this.jato.depois(tempo, () => this.acertar(vizinho, dano, { x: de.x, z: de.z }));
+    this.contar('ricochete');
   }
 
   /** os bichos no cone, do mais perto ao mais longe, com a sombra de um no outro */

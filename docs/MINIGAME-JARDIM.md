@@ -21,7 +21,7 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | arquivo | o que mora lá |
 |---|---|
 | `src/minigames/jardim/rodada.ts` | a rodada inteira (`RodadaDoJardim`): ondas, bichos, regador, o jato de cada carta (`umJato`), as cartas de jardineiro/jardim/clube, os chamados agindo, a ajuda do par, o prêmio da onda e o de 5 em 5 níveis, e os ganchos de teste no fim da classe |
-| `src/minigames/jardim/cartas.ts` | o catálogo das **111 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
+| `src/minigames/jardim/cartas.ts` | o catálogo das **121 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
 | `src/minigames/jardim/armas.ts` | as **quatro armas** (regador, mangueira, pistola d'água, borrifador): a fila de destrancar e os números de partida de cada uma (`base`) |
 | `src/minigames/jardim/mangueira.ts` | a mangueira esticada do tonel até a mão (o tubo, e o trecho no chão que o Chicote e o Vazamento leem) |
 | `src/minigames/jardim/baralho.ts` | a mão (carta não repete), o sorteio de três, a Sorte de principiante |
@@ -548,7 +548,8 @@ Pressão acumulada, Balde, Fôlego, Chapéu de palha, Descanso na sombra, Segund
 tonel e O Jean-Luc no tonel — todas de água/tanque/tonel.
 
 **Toda ferramenta tem mais ou menos o mesmo tanto de cartas dela** (pedido
-do Renan): hoje **14 do regador, 14 da mangueira e 16 da pistola**. "Carta da
+do Renan): na bancada, **14 do regador, 14 da mangueira e 26 da pistola**; ÚNICAS
+DE VERDADE (só daquela ferramenta): **regador 2, mangueira 14, pistola 14**. "Carta da
 ferramenta" é a que serve nela e não em todas (`soDestaArma`): as de tanque e
 tonel são do regador E da pistola, as duas de munição. O Balde e o Bico de
 mangueira viraram `soPara: ['regador']` (viram a lata, não fazem sentido em
@@ -558,14 +559,23 @@ Tanque maior, o Refil…) fica com `naoServe: ['mangueira']`, e não com
 `soPara: ['regador']`: quando a pistola e o borrifador existirem, ela entra na
 lista deles de graça.
 
-**As cartas só da pistola** (`soPara: ['pistola']`), mais as 12 de tanque e tonel
-que ela divide com o regador:
+**As cartas só da pistola** (`soPara: ['pistola']`; 7 comuns, 4 incomuns, 2
+raras, 1 lendária — o mesmo desenho da mangueira), mais as 12 de tanque e
+tonel que ela divide com o regador:
 
 | carta | raridade | efeito |
 |---|---|---|
 | Cano comprido I–II | comum | o tiro vai 12% mais longe e acerta 6% mais forte |
+| Gatilho leve I–II | comum | a pistola atira 10% mais seguido |
+| Bolinha gorda I–II | comum | cada tiro molha 12% mais (a bolinha engrossa) |
+| Coldre (jardineiro) | comum | você anda 10% mais rápido |
 | Balão d'água | incomum | um tiro em cinco é um balão (bexiga colorida) que voa em curva e estoura: molha tudo em 1,2 m com 1,5× a força |
+| Ricochete | incomum | do bicho que o tiro acerta, um tiro menor pula no vizinho mais perto (até 2,5 m), com metade da força |
+| Esguicho no olho | incomum | um tiro em quatro deixa o bicho tonto 1 s (ele sacode) |
+| Tiro de longe | incomum | bicho a mais de 3,5 m leva 40% mais, e o alvinho aparece nele |
 | Rajada | raro | de quatro em quatro tiros, mais dois seguidos no mesmo bicho |
+| Pistola dupla | raro | um segundo tiro sai junto, no outro bicho mais perto, com 70% da força |
+| Super molhador | lendária | a cada 20 s, 4 s de tiros no dobro da velocidade que não gastam água (começa com um anel de água) |
 
 **As cartas só da mangueira** (`soPara: ['mangueira']`; 7 comuns, 4 incomuns,
 2 raras, 1 lendária):

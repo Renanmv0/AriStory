@@ -100,6 +100,11 @@ export type RegraDoJardim =
   | 'mangueira-rega'    // canteiro que a mangueira no chão encosta sara devagar
   | 'rajada'            // (pistola) todo 4º tiro sai em rajada de três no mesmo bicho
   | 'balao-dagua'       // (pistola) um tiro em cinco é um balão que estoura e molha em 1,2 m
+  | 'ricochete'         // (pistola) o tiro que acerta pula no bicho mais perto (até 2,5 m), com metade da força
+  | 'esguicho-no-olho'  // (pistola) um tiro em quatro deixa o bicho tonto 1 s
+  | 'tiro-de-longe'     // (pistola) bicho a mais de 3,5 m de quem atira leva 40% mais
+  | 'pistola-dupla'     // (pistola) um segundo tiro sai junto, no outro bicho mais perto, com 70% da força
+  | 'super-molhador'    // (pistola) a cada 20 s, 4 s de tiros no dobro da velocidade que não gastam água
   // jardineiro
   | 'pique'             // andar 2 s sem parar dá +30% de velocidade, até parar
   | 'assobio'           // a cada 12 s o bicho mais perto anda 2 s para o lado errado
@@ -174,6 +179,16 @@ export interface EstiloDoJato {
   rajada?: boolean;
   /** o Balão d'água: um tiro em cinco é um balão que estoura em volta */
   balao?: boolean;
+  /** o Ricochete: do bicho acertado sai um tiro menor até o vizinho */
+  ricochete?: boolean;
+  /** o Esguicho no olho: o bicho acertado sacode, tonto */
+  olho?: boolean;
+  /** o Tiro de longe: o alvinho aparece em quem está longe, e o tiro pesa mais */
+  longe?: boolean;
+  /** a Pistola dupla: um segundo tiro, noutro bicho */
+  dupla?: boolean;
+  /** o Super molhador: de 20 em 20 s, a pistola dispara no dobro */
+  superMolhador?: boolean;
   /** o Regador de pressão: jato reto que atravessa o primeiro bicho */
   reto?: boolean;
   /** o jato sobe em parábola por cima do canteiro */
@@ -634,6 +649,60 @@ const REGADOR: CartaDoJardim[] = [
       f.jato.balao = true;
     },
   },
+  ...serie('gatilho', 2, {
+    familia: 'regador', raridade: 'comum', icone: '👆', soPara: ['pistola'],
+    nome: 'Gatilho leve', texto: 'O gatilho amacia: a pistola atira 10% mais seguido',
+  }, (f, d) => {
+    f.cadencia *= 0.9;
+    f.jato.rapido = Math.max(f.jato.rapido ?? 0, d);
+  }),
+  ...serie('bolinha', 2, {
+    familia: 'regador', raridade: 'comum', icone: '💠', soPara: ['pistola'],
+    nome: 'Bolinha gorda', texto: 'A bolinha engrossa: cada tiro molha 12% mais',
+  }, (f, d) => {
+    f.dano *= 1.12;
+    f.jato.grosso = Math.max(f.jato.grosso ?? 0, d);
+  }),
+  {
+    id: 'ricochete', nome: 'Ricochete', familia: 'regador', raridade: 'incomum', soPara: ['pistola'],
+    icone: '↪️', texto: 'O tiro que acerta pula no bicho mais perto, com metade da força',
+    aplicar: (f) => {
+      f.regras.add('ricochete');
+      f.jato.ricochete = true;
+    },
+  },
+  {
+    id: 'esguicho-no-olho', nome: 'Esguicho no olho', familia: 'regador', raridade: 'incomum', soPara: ['pistola'],
+    icone: '😵', texto: 'Um tiro em quatro acerta o olho: o bicho fica tonto 1 s',
+    aplicar: (f) => {
+      f.regras.add('esguicho-no-olho');
+      f.jato.olho = true;
+    },
+  },
+  {
+    id: 'tiro-de-longe', nome: 'Tiro de longe', familia: 'regador', raridade: 'incomum', soPara: ['pistola'],
+    icone: '🎯', texto: 'Bicho a mais de 3,5 m de você leva 40% mais',
+    aplicar: (f) => {
+      f.regras.add('tiro-de-longe');
+      f.jato.longe = true;
+    },
+  },
+  {
+    id: 'pistola-dupla', nome: 'Pistola dupla', familia: 'regador', raridade: 'raro', soPara: ['pistola'],
+    icone: '🔫', texto: 'Uma em cada mão: sai um segundo tiro no outro bicho mais perto',
+    aplicar: (f) => {
+      f.regras.add('pistola-dupla');
+      f.jato.dupla = true;
+    },
+  },
+  {
+    id: 'super-molhador', nome: 'Super molhador', familia: 'regador', raridade: 'lendario', soPara: ['pistola'],
+    icone: '💧', texto: 'A cada 20 s, 4 s de tiros dobrados que não gastam água',
+    aplicar: (f) => {
+      f.regras.add('super-molhador');
+      f.jato.superMolhador = true;
+    },
+  },
   {
     id: 'rajada', nome: 'Rajada', familia: 'regador', raridade: 'raro', soPara: ['pistola'],
     icone: '💦', texto: 'De quatro em quatro tiros, saem três seguidos no mesmo bicho',
@@ -863,6 +932,14 @@ const JARDINEIRO: CartaDoJardim[] = [
   {
     id: 'carretel', nome: 'Carretel', familia: 'jardineiro', raridade: 'comum', soPara: ['mangueira'],
     icone: '🧵', texto: 'A mangueira desenrola sozinha: você anda 10% mais rápido',
+    aplicar: (f) => {
+      f.velocidade *= 1.1;
+    },
+  },
+  // só da PISTOLA: a pistola no coldre deixa as mãos livres para correr
+  {
+    id: 'coldre', nome: 'Coldre', familia: 'jardineiro', raridade: 'comum', soPara: ['pistola'],
+    icone: '🤠', texto: 'A pistola vai no coldre: você anda 10% mais rápido',
     aplicar: (f) => {
       f.velocidade *= 1.1;
     },

@@ -405,6 +405,49 @@ ok((pr2.efeitos.rajada ?? 0) > 0, `Rajada: três tiros seguidos (${pr2.efeitos.r
 ok((pr2.efeitos['balao-dagua'] ?? 0) > 0 && pr2.desenho.baloes > 0, `Balão d'água: um balão voa e estoura (${pr2.desenho.baloes}×)`);
 await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; window.jogo.setZoom(4); });
 await page.screenshot({ path: `${OUT}-pistola-cartas.png` });
+
+// as cartas novas da pistola: Ricochete, Esguicho no olho, Tiro de longe,
+// Pistola dupla e Super molhador — bichos em grupo, um deles longe
+const NOVAS_DA_PISTOLA = ['ricochete', 'esguicho-no-olho', 'tiro-de-longe', 'pistola-dupla', 'super-molhador'];
+await page.evaluate(() => window.jogo.current.world.root.userData.rodada.terminar('interrompida'));
+await page.waitForTimeout(400);
+await falarAteAcabar(page);
+await page.evaluate((cartas) => {
+  window.jogo.debugPlace(0, -3.5, Math.PI);
+  const u = window.jogo.current.world.root.userData;
+  u.comecarRodada(cartas, 'pistola');
+  u.rodada.escalaDoTempo = 3;
+  u.rodada.superMolhador = 18.5;
+  u.rodada.limparBichos();
+}, NOVAS_DA_PISTOLA);
+const soltarGrupo = () => page.evaluate(() => {
+  const r = window.jogo.current.world.root.userData.rodada;
+  if (r.invasores.length >= 3) return;
+  r.soltarBicho('lagartejo', 0.3, -7.6);
+  r.soltarBicho('lagartejo', 1.3, -7.2);
+  r.soltarBicho('lagartejo', -1.4, -6.2);
+});
+await soltarGrupo();
+await esperar(page, async () => {
+  if (await page.locator('.cartas-do-jardim.show').count()) {
+    await page.keyboard.press('Digit1');
+    await page.waitForTimeout(300);
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(600);
+  }
+  await soltarGrupo();
+  const e = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado().efeitos);
+  return NOVAS_DA_PISTOLA.every((k) => (e[k] ?? 0) > 0);
+}, 120000);
+const pr3 = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+for (const [id, nome] of [['ricochete', 'Ricochete: o tiro pula no vizinho'], ['esguicho-no-olho', 'Esguicho no olho: o bicho fica tonto'],
+  ['tiro-de-longe', 'Tiro de longe: o bicho longe leva mais (e o alvinho aparece)'], ['pistola-dupla', 'Pistola dupla: um segundo tiro noutro bicho'],
+  ['super-molhador', 'Super molhador: tiros dobrados sem gastar água']]) {
+  ok((pr3.efeitos[id] ?? 0) > 0, `${nome} (${pr3.efeitos[id] ?? 0}×)`);
+}
+await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; window.jogo.setZoom(4); });
+await page.waitForTimeout(300);
+await page.screenshot({ path: `${OUT}-pistola-novas.png` });
 await page.evaluate(() => window.jogo.current.world.root.userData.rodada.terminar('interrompida'));
 await page.close();
 
