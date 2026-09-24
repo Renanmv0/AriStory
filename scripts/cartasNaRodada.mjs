@@ -656,7 +656,11 @@ const CASOS = {
   'mutirao-do-clube': async () => {
     await laboratorio(['mutirao-do-clube'], { x: -7, z: 3, folga: true });
     await rodada(() => window.jogo.current.world.root.userData.rodada.soltarBicho('mae-lagartejo', 0, -6));
-    const e = await ate((s) => efeito(s, 'mutirao-do-clube') >= 2, 25000);
+    // a chefe anda no relógio do JOGO (0,55 m/s) até o canteiro mais perto, e o
+    // Capy só age quando ela chega perto: no Chromium sem tela isso leva uns
+    // 22 s de relógio de parede — com o Tomate da direita recuado para a
+    // lojinha, ela passou a ir para o lado direito e o teto de 25 s ficou justo
+    const e = await ate((s) => efeito(s, 'mutirao-do-clube') >= 2, 45000);
     confere('mutirao-do-clube', e.chamados.mutirao > 0 && efeito(e, 'mutirao-do-clube') >= 2, `os quatro em ação (${efeito(e, 'mutirao-do-clube')} ações)`);
   },
 };
