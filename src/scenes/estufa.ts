@@ -171,14 +171,19 @@ const CANTEIROS = [
 ] as const;
 
 /**
- * A LOJINHA DA JOSEFINA, no canto direito da frente — no lugar da segunda
- * bancada, que ficava vazia (pedido do Renan). A banca olha para `+Z` (a
- * câmera vem de `+X/+Z`), e quem compra fica entre ela e a parede da frente.
- * `meiaX`/`meiaZ` são as da peça (`lojinhaDaJosefina`).
+ * A LOJINHA DA JOSEFINA, encostada na parede direita — no MESMO lugar da
+ * segunda bancada, que ficava vazia, e com o balcão virado para o MEIO da
+ * estufa (os dois são pedido do Renan). A peça (`lojinhaDaJosefina`) nasce
+ * olhando para `+Z`; aqui ela gira para `-X`, e a ponta da lousa cai do lado
+ * da porta de entrada.
+ *
+ * `meiaX`/`meiaZ` são a pegada JÁ GIRADA: a profundidade da banca (1,44) é o
+ * `x`, o comprimento com a lousa e os caixotes (3,6) é o `z`. `centroZ` é o
+ * meio dessa pegada, um fio para o lado da porta (a lousa sai mais que o saco).
  */
-const LOJA = { x: 12.9, z: 7.1, meiaX: 1.3, meiaZ: 0.7 };
-/** onde a dupla fica para comprar: um passo à frente do balcão */
-const BALCAO = { x: LOJA.x, z: LOJA.z + LOJA.meiaZ + 0.9 };
+const LOJA = { x: 14.08, z: 7.5, centroZ: 7.57, meiaX: 0.72, meiaZ: 1.8 };
+/** onde a dupla fica para comprar: um passo à frente do balcão, do lado de dentro */
+const BALCAO = { x: LOJA.x - LOJA.meiaX - 0.85, z: LOJA.z - 0.1 };
 
 export const estufa: SceneDef = {
   id: 'estufa',
@@ -600,10 +605,10 @@ export const estufa: SceneDef = {
      * Quem chama passa o raio da peca que vai plantar: `bush(e)` tem
      * `0,78 · e`, muda e capim tem uns 0,2. A regra deixou de adivinhar.
      */
-    /** em cima da lojinha, ou na frente dela, onde a dupla para para comprar */
+    /** em cima da lojinha, ou na frente do balcão, onde a dupla para para comprar */
     const naLoja = (x: number, z: number, folga: number): boolean =>
-      Math.abs(x - LOJA.x) < LOJA.meiaX + folga
-      && z > LOJA.z - LOJA.meiaZ - folga && z < BALCAO.z + 0.6 + folga;
+      x > BALCAO.x - 0.9 - folga && x < LOJA.x + LOJA.meiaX + folga
+      && Math.abs(z - LOJA.centroZ) < LOJA.meiaZ + folga;
     const podePlantar = (x: number, z: number, raio: number): boolean =>
       !emCimaDeCanteiro(x, z, raio + 0.1) && Math.abs(x - PORTA.x) > 1.6 + raio && !naLoja(x, z, raio);
     /**
@@ -640,11 +645,11 @@ export const estufa: SceneDef = {
     const tonelMenor = w.add(w.place(tonelDeAgua(0.95), -hx + 1.1, 0, -5.9));
     w.blockCircle(-hx + 1.1, -5.9, 0.42);
 
-    // ------------------------------------------ a lojinha, no canto direito
+    // ---------------------------- a lojinha, encostada na parede direita
     // Era a segunda bancada, vazia. Virou a banca da Josefina: roupa de jardim
     // e enfeite para a estufa (o painel e o modo de decorar moram mais abaixo)
-    const lojinha = w.add(w.place(lojinhaDaJosefina(), LOJA.x, 0, LOJA.z));
-    w.blockBox(LOJA.x, LOJA.z, LOJA.meiaX, LOJA.meiaZ);
+    const lojinha = w.add(w.place(lojinhaDaJosefina(), LOJA.x, 0, LOJA.z, -Math.PI / 2));
+    w.blockBox(LOJA.x, LOJA.centroZ, LOJA.meiaX, LOJA.meiaZ);
 
     // ------------------------------------ as mudas em vaso, na parede direita
     // Elas sobem parte das plantas do chao: um galpao com tudo na mesma altura
@@ -1126,8 +1131,8 @@ export const estufa: SceneDef = {
       const [ex, ez] = giro === 0 ? [1, 0] : [0, 1];
       return [-1.1, 0, 1.1].map((d) => ({ x: x + ex * d, z: z + ez * d, r: 1.05 }));
     });
-    // e a lojinha, em três círculos ao longo do balcão, como um canteiro deitado
-    canteiroEmCirculos.push(...[-0.9, 0, 0.9].map((d) => ({ x: LOJA.x + d, z: LOJA.z, r: 1.0 })));
+    // e a lojinha, em quatro círculos ao longo da banca, como um canteiro deitado
+    canteiroEmCirculos.push(...[-1.3, -0.45, 0.45, 1.3].map((d) => ({ x: LOJA.x, z: LOJA.centroZ + d, r: 0.95 })));
     /*
      * ONDE QUEM PASSEIA NÃO PISA: canteiro, muda da frente, a lojinha — e os
      * ENFEITES que a dupla puser. A lista é UMA SÓ e compartilhada (a Josefina

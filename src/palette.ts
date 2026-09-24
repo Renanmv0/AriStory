@@ -632,7 +632,7 @@ export const PALETTE = {
   girassolMiolo: 0x6b4526,
 
   /*
-   * A LOJINHA DA JOSEFINA (`lojinhaDaJosefina`, no canto direito da estufa):
+   * A LOJINHA DA JOSEFINA (`lojinhaDaJosefina`, na parede direita da estufa):
    * banca de feira de madeira clara com toldo listrado verde e creme — o
    * verde da família Jardim de novo, para a loja ler como parte da estufa e
    * não como quiosque do clube que caiu ali dentro.
@@ -646,6 +646,14 @@ export const PALETTE = {
   lojaPacoteB: 0x6fa8dc,
   lojaPacoteC: 0xf0c44c,
   lojaCaixinha: 0x7d5733,
+  lojaLousa: 0x2f4a3a,
+  lojaGiz: 0xf4f1e6,
+  lojaTomate: 0xd94f3d,
+  lojaAlface: 0x8cc466,
+  lojaCenoura: 0xe98a3a,
+  lojaSino: 0xe2b64a,
+  lojaCesta: 0xc9a26b,
+  lojaSaco: 0xd9c49a,
 
   /*
    * OS ENFEITES DA ESTUFA (`world/decoracoes.ts`), vendidos na lojinha da

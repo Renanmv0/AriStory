@@ -77,9 +77,10 @@ livro (`jardim.resgate-N`); aí a Josefina entrega (`entregarMarco`, em
 `scenes/estufa.ts` — as falas são minhas, o Renan não passou texto: se ele
 mandar, troca ali, literal). Teste: `scripts/marcos.mjs`.
 
-**A LOJINHA DA JOSEFINA** (pedido do Renan; no canto direito da frente, onde
-era a segunda bancada — os canteiros Alface e Tomate da direita recuaram 0,6 m
-para ela caber): uma banca que vende **roupa de jardim** (`ROUPAS_DA_JOSEFINA`
+**A LOJINHA DA JOSEFINA** (pedido do Renan; encostada na parede direita, no
+lugar da segunda bancada, com o BALCÃO VIRADO PARA O MEIO da estufa — a câmera
+padrão a vê por trás, por isso a estante é vazada e a lousa com o nome olha
+para a porta; os canteiros Alface e Tomate da direita recuaram 0,6 m): uma banca que vende **roupa de jardim** (`ROUPAS_DA_JOSEFINA`
 em `world/itens.ts`; comprar é `g.comprarPeca`, o mesmo caminho da boutique, e
 "provar no boneco" abre a arara da boutique com essas peças) e **enfeites para
 a estufa** (`world/decoracoes.ts` — ficha e geometria no mesmo arquivo, hoje

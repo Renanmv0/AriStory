@@ -1,7 +1,7 @@
 /**
  * A LOJINHA DA JOSEFINA E OS ENFEITES DA ESTUFA (pedido do Renan):
  *
- *   1. a banca no canto direito da frente abre o painel (a Josefina apresenta
+ *   1. a banca na parede direita (balcão para o meio) abre o painel (a Josefina apresenta
  *      na primeira vez), com as abas de roupas e de decorações;
  *   2. comprar enfeite debita da carteira e GUARDA; "colocar" fecha a banca e
  *      o enfeite vai na frente da dupla, com o anel verde onde cabe;
@@ -52,7 +52,7 @@ const passarFalas = async () => {
 };
 
 // ================================================== 1. a banca e o painel
-await page.evaluate(() => window.jogo.debugPlace(12.9, 8.9, Math.PI));
+await page.evaluate(() => window.jogo.debugPlace(12.4, 7.4, Math.PI / 2));
 await page.waitForTimeout(800);
 const prompt = await page.evaluate(() => document.querySelector('.prompt')?.textContent ?? '');
 ok(/lojinha/i.test(prompt), `na frente do balcão, o prompt é o da lojinha ("${prompt.trim()}")`);
@@ -151,7 +151,7 @@ await page.waitForTimeout(400);
 ok(!(await deco(() => window.jogo.current.world.root.userData.decorador.decorando)), 'o X cancela');
 ok((await salvas()).find((d) => d.id === 'flamingo')?.posta === null, 'e o flamingo continua guardado');
 // e os pontos da cena voltaram
-await page.evaluate(() => window.jogo.debugPlace(12.9, 8.9, Math.PI));
+await page.evaluate(() => window.jogo.debugPlace(12.4, 7.4, Math.PI / 2));
 await page.waitForTimeout(700);
 ok(/lojinha/i.test(await page.evaluate(() => document.querySelector('.prompt')?.textContent ?? '')), 'depois de cancelar, a lojinha volta a responder');
 
