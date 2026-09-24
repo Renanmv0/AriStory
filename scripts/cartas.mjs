@@ -39,6 +39,7 @@ const saida = await build({
       export * from './src/minigames/jardim/cartas';
       export * from './src/minigames/jardim/baralho';
       export * from './src/minigames/jardim/progressao';
+      export * from './src/minigames/jardim/armas';
       export { PRAGAS } from './src/world/bichosDoJardim';
     `,
     resolveDir: process.cwd(),
@@ -213,6 +214,39 @@ console.log('\n— mil rodadas ate o baralho acabar');
   ok(mesaCurta === 0, 'a mesa tem tres cartas ate o baralho acabar, e depois dele');
   ok(consolosAntes === 0, 'consolo nunca aparece enquanto ha tres cartas de verdade');
   ok(consolosNoFim > 0, 'com o baralho vazio, a tela vira so consolo (e nao trava)');
+}
+
+// ================================================== 4b. o baralho de cada arma
+console.log('\n— o baralho de cada arma');
+{
+  const { ARMAS, CARTAS: todas, MaoDeCartas: Mao, servePara } = m;
+  for (const arma of ARMAS.filter((a) => a.pronta)) {
+    let fora = 0;
+    let saiu = 0;
+    for (let s = 1; s <= 300; s++) {
+      const rng = dado(s * 104729);
+      const mao = new Mao(arma.id);
+      for (let nivel = 1; nivel <= 40; nivel++) {
+        const oferta = mao.oferta(nivel, rng);
+        for (const c of oferta) if (!c.repetivel && !servePara(c, arma.id)) fora++;
+        const real = oferta.filter((c) => !c.repetivel);
+        if (!real.length) break;
+        mao.pegar(real[0].id, nivel);
+        saiu++;
+      }
+    }
+    ok(fora === 0, `${arma.nome}: 300 rodadas sem sortear carta que não serve nela (${saiu} pegas)`);
+  }
+  // a regra do Renan: a mangueira, de água infinita, não tem carta de tanque
+  const daMangueira = todas.filter((c) => servePara(c, 'mangueira'));
+  ok(!daMangueira.some((c) => /^tanque-/.test(c.id)), 'a mangueira não tem "Tanque maior"');
+  ok(!todas.filter((c) => servePara(c, 'regador')).some((c) => c.soPara?.includes('mangueira')), 'e o regador não tem as cartas só da mangueira');
+  const f = new Mao('mangueira').ficha();
+  ok(f.regras.has('agua-infinita') && f.regras.has('presa-na-estufa') && f.gastoPorJato === 0,
+    'a ficha de partida da mangueira: água infinita, presa na estufa, jato de graça');
+  ok(new Mao('mangueira').estiloDoRegador().arma === 'mangueira', 'e a peça da mão é a dela');
+  ok(ARMAS.every((a, i) => i === 0 ? a.anterior === null : a.anterior === ARMAS[i - 1].id),
+    'as armas são uma fila: cada uma destranca pela anterior');
 }
 
 // ================================================================= 5. curva

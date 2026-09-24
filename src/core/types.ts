@@ -5,7 +5,7 @@ import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import type { VigiaDaOclusao } from './Oclusao';
 import type {
-  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoLivro, ContextoDaEscolha,
+  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
   EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
@@ -580,6 +580,12 @@ export interface GameAPI {
    * `null` quando só fechou.
    */
   abrirLivroDeCartas(cartas: readonly CartaNaTela[], conteudo?: ConteudoDoLivro | null): Promise<string | null>;
+  /**
+   * Abre o PAINEL DAS ARMAS da estufa (a bancada ao lado da parede das armas):
+   * uma aba por arma, com a meta e as cartas dela. Resolve com o id da arma que
+   * a dupla mandou usar, ou `null` quando só fechou.
+   */
+  abrirArsenal(conteudo: ConteudoDoArsenal): Promise<string | null>;
   /** A tela do fim da rodada do jardim: os números e as cartas da mão. */
   mostrarFimDoJardim(fim: FimDoJardim): Promise<void>;
   /** A barra de experiência da rodada do jardim, no alto; `null` esconde. */

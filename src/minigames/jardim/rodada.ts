@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../../palette';
 import { toon } from '../../core/materials';
-import type { GameAPI } from '../../core/types';
+import type { Bounds, GameAPI } from '../../core/types';
 import type { WorldBuilder } from '../../world/WorldBuilder';
 import type { Interactable } from '../../world/Interactable';
 import { PRAGAS, type FichaDePraga } from '../../world/bichosDoJardim';
@@ -12,9 +12,11 @@ import {
   tabuasPregadas, toldoDeCanteiro, tonelDeAgua,
 } from '../../world/props';
 import { MaoDeCartas } from './baralho';
+import type { ArmaId } from './armas';
+import { MangueiraNoChao } from './mangueira';
 import { cartaPorId, type AjudanteDoClube, type FichaDaRodada } from './cartas';
 import { ONDAS, nivelDasGotas, planoDaOnda, type EntradaDePraga } from './progressao';
-import { cartaNaTela } from './tela';
+import { cartaDaArma } from './tela';
 import { DesenhoDoJato } from './jato';
 import { flagDaPraga } from './bestiario';
 
@@ -328,7 +330,22 @@ export class RodadaDoJardim {
 
   /** a mão desta rodada: nasce de novo a cada `comecar` (§7 — ninguém entra já forte) */
   mao = new MaoDeCartas();
+  /** a arma da rodada (`armas.ts`): escolhida na parede das armas, vale até o fim */
+  arma: ArmaId = 'regador';
   private ficha: FichaDaRodada = this.mao.ficha();
+  /** a mangueira esticada do tonel até a mão (só na rodada de mangueira) */
+  private readonly mangueira = new MangueiraNoChao();
+  /** os limites da cena, guardados enquanto a mangueira prende a dupla na estufa */
+  private limitesDaCena: Bounds | null = null;
+  /** o Jato contínuo: quem está levando água sem parar, e há quantos jatos */
+  private continuo: { inv: Invasor; vezes: number } | null = null;
+  /** a Enchente: o relógio até a próxima, e quanto falta da que está saindo */
+  private enchente = 0;
+  private enchenteResta = 0;
+  /** o Vazamento: o relógio da próxima pocinha na mangueira */
+  private vazamento = 0;
+  /** o Chicote: cada bicho leva no máximo um tranco da mangueira a cada 1,5 s */
+  private readonly chicoteEspera = new WeakMap<Invasor, number>();
   private readonly jato = new DesenhoDoJato();
   private readonly gotas = new GotasDoJardim();
 
@@ -485,6 +502,7 @@ export class RodadaDoJardim {
     w.root.add(this.jato.grupo);
     this.jato.aoSoar = (nome) => this.g.som(nome);
     w.root.add(this.gotas.grupo);
+    w.root.add(this.mangueira.malha);
     this.canteiros = planta.canteiros.map((c) => {
       const mudas = (c.peca.userData.mudas ?? []) as THREE.Object3D[];
       const terra = c.peca.userData.terra as THREE.Mesh | undefined;
@@ -536,7 +554,7 @@ export class RodadaDoJardim {
    * entra na rodada já forte (§7). `cartas` só serve ao teste e à vitrine —
    * uma rodada de verdade começa sempre de mão vazia.
    */
-  comecar(opcoes: { cartas?: readonly string[]; vitrine?: boolean } = {}): void {
+  comecar(opcoes: { cartas?: readonly string[]; vitrine?: boolean; arma?: ArmaId } = {}): void {
     if (this.rodando) return;
     this.rodando = true;
     this.pausada = false;
@@ -557,9 +575,26 @@ export class RodadaDoJardim {
      * rodada e nunca mais: a segunda rodada na mesma visita à estufa começava
      * com as cartas da primeira — e o teste das cartas pegou isso.
      */
-    this.mao = new MaoDeCartas();
+    this.arma = opcoes.arma ?? 'regador';
+    this.mao = new MaoDeCartas(this.arma);
     for (const id of opcoes.cartas ?? []) this.mao.pegar(id);
     this.aplicarFicha(true);
+    this.continuo = null;
+    this.enchente = 0;
+    this.enchenteResta = 0;
+    this.vazamento = 0;
+    /*
+     * A MANGUEIRA NÃO PASSA DOS PORTÕES (pedido do Renan: ela fica "restrita
+     * apenas à parte de dentro da estufa por causa dos tonéis"). O jeito mais
+     * honesto é o da parede: o limite de andar da cena encolhe até um palmo
+     * antes dos portões enquanto a rodada dura, e volta no fim.
+     */
+    if (this.ficha.regras.has('presa-na-estufa')) {
+      const b = this.w.bounds;
+      this.limitesDaCena = { ...b };
+      const portao = Math.max(...this.planta.portoes.map((p) => p.z));
+      this.w.bounds = { ...b, minZ: Math.max(b.minZ, portao + 0.45) };
+    }
     this.agua = this.ficha.tanque;
     this.tanqueCheio = true;
     this.onda = 0;
@@ -680,6 +715,11 @@ export class RodadaDoJardim {
     this.g.showExperiencia(null);
     this.g.vestirRegador(null);
     this.g.bloquearTroca(false);
+    this.mangueira.esconder();
+    if (this.limitesDaCena) {
+      this.w.bounds = this.limitesDaCena;
+      this.limitesDaCena = null;
+    }
     // a câmera volta ao zoom da estufa (o 11 das cutscenes da cena)
     if (!this.vitrine) this.g.setZoom(11);
     this.g.trocarMusica(null);
@@ -706,6 +746,11 @@ export class RodadaDoJardim {
     return {
       rodando: this.rodando,
       pausada: this.pausada,
+      arma: this.arma,
+      limiteZ: this.w.bounds.minZ,
+      mangueira: this.mangueira.malha.visible,
+      continuo: this.continuo?.vezes ?? 0,
+      enchente: this.enchenteResta,
       onda: this.onda,
       ondas: this.ondasDaRodada,
       intervalo: this.intervalo,
@@ -809,7 +854,7 @@ export class RodadaDoJardim {
       this.contar('sorte-de-principiante');
     }
     const oferta = this.mao.oferta(this.nivel, this.dado, acima);
-    const id = await this.g.escolherCartaDoJardim(oferta.map(cartaNaTela), {
+    const id = await this.g.escolherCartaDoJardim(oferta.map((c) => cartaDaArma(c, this.arma)), {
       nivel: this.nivel,
       mao: this.mao.cartas.map((c) => ({ id: c.id, nome: c.nome, icone: c.icone, raridade: c.raridade })),
       premio,
@@ -1007,6 +1052,7 @@ export class RodadaDoJardim {
       ondas: this.ondasDaRodada,
       agua: this.agua,
       tanque: this.ficha.tanque,
+      infinita: this.ficha.regras.has('agua-infinita'),
       canteiros: this.canteiros.filter((c) => c.vida > 0).length,
       totalDeCanteiros: this.canteiros.length,
       enchendo: this.enchendo,
@@ -2112,6 +2158,12 @@ export class RodadaDoJardim {
     const antes = this.agua;
     this.agua = Math.min(f.tanque, this.agua + enche * dt);
     if (antes < f.tanque && this.agua >= f.tanque) this.tanqueCheio = true;
+    // a mangueira: presa no tonel, a água nunca acaba
+    if (f.regras.has('agua-infinita')) {
+      this.agua = f.tanque;
+      this.enchendo = false;
+    }
+    this.mangueiraNaMao(dt);
 
     if (!this.comRegador()) {
       this.g.mirarJogador(null);
@@ -2247,6 +2299,71 @@ export class RodadaDoJardim {
     this.atirar(eu, alvo);
   }
 
+  /**
+   * A MANGUEIRA, a cada quadro (só na rodada de mangueira, `armas.ts`): estica
+   * do tonel até a mão, e as três cartas dela que moram no chão ou no relógio —
+   * o Chicote, o Vazamento e a Enchente.
+   */
+  private mangueiraNaMao(dt: number): void {
+    const f = this.ficha;
+    if (!f.regras.has('agua-infinita')) return;
+    const obj = this.comRegador() ? this.g.objetoNaMao() : null;
+    const eu = this.g.playerPosition();
+    const mao = obj ? obj.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(eu.x, 0.7, eu.z);
+    this.mangueira.atualizar(this.planta.tonel, new THREE.Vector3(eu.x, 0, eu.z), mao);
+
+    // ---- a Enchente: a cada 25 s, 3 s de jatão
+    if (f.regras.has('enchente')) {
+      if (this.enchenteResta > 0) {
+        this.enchenteResta -= dt;
+      } else {
+        this.enchente += dt;
+        if (this.enchente >= 25) {
+          this.enchente = 0;
+          this.enchenteResta = 3;
+          this.g.som('jatoForte');
+          this.jato.espirroDoTonel(this.planta.tonel.x, this.planta.tonel.altura, this.planta.tonel.z, 3);
+        }
+      }
+    }
+
+    const chicote = f.regras.has('chicote');
+    const vaza = f.regras.has('vazamento');
+    if (!chicote && !vaza) return;
+    // ---- o Vazamento: a mangueira pinga pocinhas no chão
+    if (vaza) {
+      this.vazamento -= dt;
+      if (this.vazamento <= 0) {
+        this.vazamento = 1.2;
+        const p = this.mangueira.pontoNoChao(this.sorte());
+        if (p) this.jato.poca(p.x, p.z, 0.45, 2.5);
+      }
+    }
+    for (const inv of [...this.invasores]) {
+      if (!this.vulneravel(inv)) continue;
+      const d = this.mangueira.distancia(inv.x, inv.z);
+      if (d > 0.3 + inv.jeito.raio * 0.6) continue;
+      if (vaza && inv.lento <= 0.1) {
+        inv.lento = 2;
+        this.contar('vazamento');
+      }
+      // ---- o Chicote: a mangueira dá um tranco em quem pisa nela
+      if (chicote && (this.chicoteEspera.get(inv) ?? 0) <= this.relogioDoChicote) {
+        this.chicoteEspera.set(inv, this.relogioDoChicote + 1.5);
+        const peso = inv.ficha.tier === 'chefe' ? 0.2 : inv.ficha.tier === 'tanque' ? 0.4 : 1;
+        this.empurrar(inv, inv.x - eu.x, inv.z - eu.z, 0.8 * peso);
+        this.jato.tranco(inv.x, inv.z, Math.atan2(inv.x - eu.x, inv.z - eu.z), 1);
+        this.jato.respingo(inv.x, 0.15, inv.z, f.jato, 1);
+        this.molhar(inv, f.dano * 1.5, null);
+        this.contar('chicote');
+      }
+    }
+    this.relogioDoChicote += dt;
+  }
+
+  /** o relógio do Chicote (a espera de cada bicho é medida nele) */
+  private relogioDoChicote = 0;
+
   private dancaEm = { x: 0, z: 0 };
   /** quanto você andou no último quadro (o Pique e a Bota leem daqui) */
   private passoDoQuadro = 0;
@@ -2290,7 +2407,11 @@ export class RodadaDoJardim {
 
     // qual jato especial é este
     let especial: Especial | undefined;
-    if (e.carregado && this.carga >= 1) especial = 'carregado';
+    // a Enchente: enquanto ela dura, todo jato é o jatão que atravessa a fila
+    if (this.enchenteResta > 0) {
+      especial = 'carregado';
+      this.contar('enchente');
+    } else if (e.carregado && this.carga >= 1) especial = 'carregado';
     else if (e.pressaoAcumulada && this.tanqueCheio) especial = 'pressao-cheia';
     else if (e.arcoIris && this.jatosDados % 10 === 0) especial = 'arco-iris';
     this.tanqueCheio = false;
@@ -2331,8 +2452,23 @@ export class RodadaDoJardim {
    */
   private umJato(t: Tiro): void {
     const f = this.ficha;
-    const e = f.jato;
-    const multiplicador = t.especial === 'carregado' || t.especial === 'pressao-cheia' ? 3 : 1;
+    let e = f.jato;
+    let multiplicador = t.especial === 'carregado' || t.especial === 'pressao-cheia' ? 3 : 1;
+    /*
+     * O JATO CONTÍNUO (mangueira): o mesmo bicho levando água sem parar
+     * encharca mais a cada jato, +15% até o dobro — e o fio engrossa junto,
+     * que é como se vê. Trocar de alvo zera. Só o bico da frente conta.
+     */
+    if (e.continuo && t.alvo) {
+      const vezes = this.continuo?.inv === t.alvo ? this.continuo.vezes + 1 : 0;
+      this.continuo = { inv: t.alvo, vezes };
+      const ganho = Math.min(1, vezes * 0.15);
+      multiplicador *= 1 + ganho;
+      if (vezes > 0) {
+        e = { ...e, grosso: (e.grosso ?? 0) + Math.round(ganho * 5) };
+        this.contar('jato-continuo');
+      }
+    }
     const atravessa = f.regras.has('atravessa') || t.especial === 'arco-iris';
     const meia = THREE.MathUtils.degToRad(f.largura) / 2;
     // o Borrifador divide o jato em três, em leque; sem ele, é um jato só

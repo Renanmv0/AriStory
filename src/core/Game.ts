@@ -29,7 +29,7 @@ import {
   ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem,
 } from '../world/itens';
 import type {
-  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoLivro, ContextoDaEscolha,
+  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
   EstadoDoPosicionador, FimDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
 import { Oclusao, type VigiaDaOclusao } from './Oclusao';
@@ -1298,6 +1298,10 @@ export class Game implements GameAPI {
   abrirLivroDeCartas(cartas: readonly CartaNaTela[], conteudo: ConteudoDoLivro | null = null): Promise<string | null> {
     // o retrato das pragas é o modelo 3D fotografado na hora (e guardado)
     return this.ui.abrirLivro(cartas, new Set(this.save.livro), conteudo, retratoDePraga);
+  }
+
+  abrirArsenal(conteudo: ConteudoDoArsenal): Promise<string | null> {
+    return this.ui.abrirArsenal(conteudo, new Set(this.save.livro));
   }
 
   mostrarFimDoJardim(fim: FimDoJardim): Promise<void> {

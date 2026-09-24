@@ -69,6 +69,11 @@ export interface EstiloDeRegador {
   respiro: boolean;
   /** "Chuva": uma nuvenzinha flutuando um palmo acima da peca */
   nuvem: boolean;
+  /**
+   * A ARMA da rodada (`minigames/jardim/armas.ts`): sem isto, ou `regador`, a
+   * mao carrega o regador; `mangueira` troca pela peca do esguicho.
+   */
+  arma?: string;
 }
 
 const PADRAO: EstiloDeRegador = {
@@ -419,6 +424,79 @@ export function regadorDeJardim(
 }
 
 /**
+ * O ESGUICHO DA MANGUEIRA — a peca da mao quando a arma da rodada e a
+ * mangueira (`minigames/jardim/armas.ts`). E o esguicho de pistola de todo
+ * quintal: cabo de segurar, gatilho laranja, um cano de latao para a frente e
+ * a borracha verde saindo por baixo do cabo. A mangueira comprida, do tonel ate
+ * a mao, quem desenha e a rodada: ela muda de forma a cada passo.
+ *
+ * Publica as MESMAS `partes` do regador (`bico`, `pontaDoBico`,
+ * `alturaDaAlca`), entao a mao pendura e o jato sai da ponta sem saber qual
+ * peca e. `alturaDaAlca` aqui e o alto do cabo, que e onde a mao fecha.
+ *
+ * O estagio muda a ferragem como no regador (cinza → latao → latao com
+ * borracha escura), e `bico` alonga o cano — o "Esguicho de latao".
+ */
+export function esguichoDeMangueira(
+  estilo: Partial<EstiloDeRegador> = {}, escala = 1,
+): THREE.Group {
+  const e = { ...PADRAO, ...estilo };
+  const s = escala;
+  const g = new THREE.Group();
+  g.userData.peca = 'esguicho';
+  g.userData.estilo = { ...e };
+
+  const metal = toon(e.estagio === 0 ? P.regadorLataEscura : P.regadorLatao);
+  const borracha = toon(e.estagio === 2 ? P.mangueiraBorrachaEscura : P.mangueiraBorracha);
+  const gatilho = toon(P.mangueiraGatilho);
+
+  // o cabo: um bloco inclinado para tras, como o de uma pistola
+  const alturaDoCabo = 0.16 * s;
+  const cabo = new THREE.Mesh(new THREE.BoxGeometry(0.05 * s, alturaDoCabo, 0.06 * s), borracha);
+  cabo.position.set(0, 0.1 * s, -0.02 * s);
+  cabo.rotation.x = 0.28;
+  g.add(cabo);
+
+  // o corpo de cima, de onde sai o cano
+  const topo = new THREE.Mesh(new THREE.BoxGeometry(0.06 * s, 0.06 * s, 0.13 * s), metal);
+  topo.position.set(0, 0.19 * s, 0.02 * s);
+  g.add(topo);
+
+  // o gatilho: uma lingueta laranja na frente do cabo
+  const lingueta = new THREE.Mesh(new THREE.BoxGeometry(0.03 * s, 0.1 * s, 0.022 * s), gatilho);
+  lingueta.position.set(0, 0.12 * s, 0.05 * s);
+  lingueta.rotation.x = 0.35;
+  g.add(lingueta);
+
+  // o cano, para a frente (+Z): e dele que o jato sai
+  const bico = new THREE.Group();
+  bico.position.set(0, 0.19 * s, 0.08 * s);
+  g.add(bico);
+  const comprimento = (0.12 + e.bico * 0.1) * s;
+  bico.add(cano(0.02 * s, comprimento, metal));
+  // o bocal regulavel na ponta, mais grosso: e o que diz "esguicho"
+  const bocal = new THREE.Mesh(new THREE.CylinderGeometry(0.03 * s, 0.026 * s, 0.05 * s, 10), metal);
+  bocal.rotation.x = Math.PI / 2;
+  bocal.position.z = comprimento + 0.02 * s;
+  bico.add(bocal);
+  const pontaDoBico = comprimento + 0.05 * s;
+
+  // a borracha saindo por baixo do cabo, um palmo, caindo para tras
+  const rabo = new THREE.Mesh(new THREE.CylinderGeometry(0.02 * s, 0.02 * s, 0.14 * s, 8), borracha);
+  rabo.position.set(0, 0.0 * s, -0.06 * s);
+  rabo.rotation.x = -0.5;
+  g.add(rabo);
+  const engate = new THREE.Mesh(new THREE.CylinderGeometry(0.028 * s, 0.028 * s, 0.03 * s, 10), metal);
+  engate.position.set(0, 0.03 * s, -0.045 * s);
+  engate.rotation.x = 0.28;
+  g.add(engate);
+
+  const alturaDaAlca = 0.1 * s + alturaDoCabo * 0.5;
+  g.userData.partes = { corpo: topo, bico, pontaDoBico, alturaBoca: 0.19 * s, alturaDaAlca };
+  return g;
+}
+
+/**
  * O ESTAGIO pelo numero de cartas de REGADOR que a rodada pegou.
  *
  * Mora aqui, e nao no minigame, porque e uma decisao de DESENHO: quantas
@@ -429,4 +507,73 @@ export function estagioDoRegador(cartasDeRegador: number): 0 | 1 | 2 {
   if (cartasDeRegador >= 6) return 2;
   if (cartasDeRegador >= 3) return 1;
   return 0;
+}
+
+/**
+ * A PISTOLA D'ÁGUA — a terceira arma da estufa. Por enquanto ela só mora na
+ * parede das armas (`scenes/estufa.ts`), trancada: a rodada dela ainda não
+ * foi construída. Azul de brinquedo com o tanque amarelo em cima, como as de
+ * piscina. Nasce apontando para `+Z`, com o cabo para baixo.
+ */
+export function pistolaDagua(escala = 1): THREE.Group {
+  const s = escala;
+  const g = new THREE.Group();
+  g.userData.peca = 'pistola-dagua';
+  const corpo = toon(P.pistolaDagua);
+  const tanque = toon(P.pistolaDaguaTanque);
+  const cabo = new THREE.Mesh(new THREE.BoxGeometry(0.05 * s, 0.13 * s, 0.07 * s), corpo);
+  cabo.position.set(0, 0.07 * s, -0.05 * s);
+  cabo.rotation.x = 0.3;
+  g.add(cabo);
+  const miolo = new THREE.Mesh(new THREE.BoxGeometry(0.06 * s, 0.07 * s, 0.22 * s), corpo);
+  miolo.position.set(0, 0.16 * s, 0.02 * s);
+  g.add(miolo);
+  const cano1 = cano(0.018 * s, 0.1 * s, toon(P.pistolaDaguaTanque));
+  cano1.position.set(0, 0.16 * s, 0.13 * s + cano1.position.z);
+  g.add(cano1);
+  const reservatorio = new THREE.Mesh(new THREE.CylinderGeometry(0.045 * s, 0.045 * s, 0.12 * s, 12), tanque);
+  reservatorio.rotation.x = Math.PI / 2;
+  reservatorio.position.set(0, 0.23 * s, -0.01 * s);
+  g.add(reservatorio);
+  const gatilho = new THREE.Mesh(new THREE.BoxGeometry(0.02 * s, 0.05 * s, 0.018 * s), tanque);
+  gatilho.position.set(0, 0.1 * s, 0.02 * s);
+  g.add(gatilho);
+  return g;
+}
+
+/**
+ * O BORRIFADOR — a quarta arma, também só na parede por enquanto: o frasco
+ * branco de borrifar planta, com a cabeça de gatilho verde. De pé, com a
+ * boca para `+Z`.
+ */
+export function borrifadorDeJardim(escala = 1): THREE.Group {
+  const s = escala;
+  const g = new THREE.Group();
+  g.userData.peca = 'borrifador';
+  const frasco = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.055 * s, 0.065 * s, 0.2 * s, 14), toon(P.borrifadorFrasco),
+  );
+  frasco.position.y = 0.1 * s;
+  g.add(frasco);
+  const agua = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.057 * s, 0.066 * s, 0.1 * s, 14), toon(P.regadorAgua),
+  );
+  agua.position.y = 0.055 * s;
+  g.add(agua);
+  const verde = toon(P.borrifadorGatilho);
+  const pescoco = new THREE.Mesh(new THREE.CylinderGeometry(0.025 * s, 0.035 * s, 0.04 * s, 10), verde);
+  pescoco.position.y = 0.22 * s;
+  g.add(pescoco);
+  const cabeca = new THREE.Mesh(new THREE.BoxGeometry(0.05 * s, 0.05 * s, 0.11 * s), verde);
+  cabeca.position.set(0, 0.26 * s, 0.02 * s);
+  g.add(cabeca);
+  const gatilho = new THREE.Mesh(new THREE.BoxGeometry(0.03 * s, 0.07 * s, 0.02 * s), verde);
+  gatilho.position.set(0, 0.2 * s, 0.07 * s);
+  gatilho.rotation.x = -0.25;
+  g.add(gatilho);
+  const bico = new THREE.Mesh(new THREE.CylinderGeometry(0.012 * s, 0.016 * s, 0.03 * s, 8), toon(P.regadorLataEscura));
+  bico.rotation.x = Math.PI / 2;
+  bico.position.set(0, 0.265 * s, 0.09 * s);
+  g.add(bico);
+  return g;
 }

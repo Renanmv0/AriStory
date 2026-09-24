@@ -225,7 +225,7 @@ function colarUnidades(s: string): string {
  * três viram uma depois da outra, como cartas sendo dadas.
  */
 export function desenharCarta(c: CartaNaTela, i: number): string {
-  const familia = FAMILIAS[c.familia];
+  const familia = c.arma ?? FAMILIAS[c.familia];
   const raridade = RARIDADES[c.raridade];
   const pedras = [1, 2, 3, 4]
     .map((n) => `<i class="${n <= raridade.pedras ? 'cheia' : ''}"></i>`)

@@ -7601,3 +7601,130 @@ export function lojinhaDaJosefina(): THREE.Group {
   g.add(boca);
   return g;
 }
+
+/**
+ * O PAINEL DAS ARMAS — a parede de ferramentas da estufa (pedido do Renan: no
+ * lugar das duas folhagens, entre o girassol e o tomate da esquerda).
+ *
+ * Um painel furado de oficina numa moldura de madeira, com quatro pares de
+ * ganchos. O que pendura em cada gancho é a cena que decide (as armas vêm de
+ * `world/regador.ts`); aqui mora só a parede, e os pontos dos ganchos saem
+ * publicados em `userData.ganchos` (em espaço local, da esquerda para a
+ * direita, na altura do peito).
+ *
+ * Nasce de pé, de frente para `+Z`, com a base em `y = 0`; a cena gira para a
+ * parede.
+ */
+export function painelDeArmas(largura = 1.8, altura = 1.5, vagas = 4): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'painel-de-armas';
+  const madeira = toon(P.woodDark);
+  const PES = 0.35;
+  // os dois pés, e a tábua em cima deles: o painel não pendura na mureta baixa
+  for (const lado of [-1, 1]) {
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.08, PES + altura, 0.08), madeira);
+    pe.position.set(lado * (largura / 2 + 0.02), (PES + altura) / 2, -0.03);
+    g.add(pe);
+  }
+  const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.03), toon(P.painelFurado));
+  tabua.position.set(0, PES + altura / 2, 0);
+  g.add(tabua);
+  for (const y of [PES, PES + altura]) {
+    const trave = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.12, 0.07, 0.06), madeira);
+    trave.position.set(0, y, 0.005);
+    g.add(trave);
+  }
+  // os furos: uma grade de pontinhos, deixando os ganchos com espaço em volta
+  const furo = new THREE.CircleGeometry(0.012, 6);
+  const corFuro = toon(P.painelFuro);
+  const colunas = Math.round(largura / 0.12);
+  const linhas = Math.round(altura / 0.12);
+  const furos = new THREE.InstancedMesh(furo, corFuro, colunas * linhas);
+  const m = new THREE.Matrix4();
+  let n = 0;
+  for (let i = 0; i < colunas; i++) {
+    for (let j = 0; j < linhas; j++) {
+      m.makeTranslation(-largura / 2 + (i + 0.5) * (largura / colunas), PES + (j + 0.5) * (altura / linhas), 0.017);
+      furos.setMatrixAt(n++, m);
+    }
+  }
+  furos.count = n;
+  g.add(furos);
+  // os ganchos: dois pinos de metal por vaga, e o ponto onde a arma pendura
+  const metal = toon(P.metalGrey);
+  const ganchos: THREE.Vector3[] = [];
+  for (let k = 0; k < vagas; k++) {
+    const x = -largura / 2 + (k + 0.5) * (largura / vagas);
+    const y = PES + altura * 0.62;
+    for (const dx of [-0.06, 0.06]) {
+      const pino = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.1, 5), metal);
+      pino.rotation.x = Math.PI / 2 - 0.25;
+      pino.position.set(x + dx, y, 0.06);
+      g.add(pino);
+    }
+    ganchos.push(new THREE.Vector3(x, y, 0.1));
+  }
+  g.userData.ganchos = ganchos;
+  return g;
+}
+
+/**
+ * A SOMBRA DE UMA ARMA TRANCADA: a mesma peça, toda num cinza só. Diz "tem uma
+ * arma aqui" sem mostrar a cor dela — a cor é o prêmio de destrancar.
+ */
+export function silhuetaDeArma(peca: THREE.Object3D): THREE.Object3D {
+  const cinza = toon(P.armaTrancada);
+  peca.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (m.isMesh) m.material = cinza;
+  });
+  peca.userData.trancada = true;
+  return peca;
+}
+
+/**
+ * A BANCADA DO ARSENAL — a mesinha baixa na frente do painel das armas, onde
+ * se escolhe com qual jogar. Tampo de madeira, uma prateleira embaixo com um
+ * rolo de mangueira e um frasco, e uma lousinha de pé no tampo (é ela que diz
+ * "aqui tem um painel", como o livro diz na outra bancada). Nasce de frente
+ * para `+Z`.
+ */
+export function bancadaDoArsenal(largura = 1.3): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'bancada-do-arsenal';
+  const madeira = toon(P.lojaMadeira);
+  const escura = toon(P.lojaMadeiraEscura);
+  const A = 0.82;
+  const F = 0.5;
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.06, F), madeira);
+  tampo.position.y = A - 0.03;
+  g.add(tampo);
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      const perna = new THREE.Mesh(new THREE.BoxGeometry(0.06, A - 0.06, 0.06), escura);
+      perna.position.set(sx * (largura / 2 - 0.06), (A - 0.06) / 2, sz * (F / 2 - 0.06));
+      g.add(perna);
+    }
+  }
+  const prateleira = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.1, 0.03, F - 0.08), escura);
+  prateleira.position.y = 0.2;
+  g.add(prateleira);
+  // o rolo de mangueira na prateleira: três voltas deitadas
+  const borracha = toon(P.mangueiraBorracha);
+  for (let i = 0; i < 3; i++) {
+    const volta = new THREE.Mesh(new THREE.TorusGeometry(0.15 - i * 0.02, 0.024, 6, 16), borracha);
+    volta.rotation.x = Math.PI / 2;
+    volta.position.set(-largura / 4, 0.24 + i * 0.035, 0);
+    g.add(volta);
+  }
+  // a lousinha de pé no tampo, virada para quem chega
+  const lousa = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.32, 0.03), toon(P.plaquinhaMoldura));
+  lousa.position.set(largura / 4, A + 0.18, -0.08);
+  lousa.rotation.x = -0.18;
+  g.add(lousa);
+  const escrito = letreiro('Armas', 0.38, 0.14, '#' + P.plaquinhaMadeira.toString(16).padStart(6, '0'));
+  escrito.position.set(largura / 4, A + 0.19, -0.06);
+  escrito.rotation.x = -0.18;
+  g.add(escrito);
+  return g;
+}

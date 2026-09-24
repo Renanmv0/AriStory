@@ -1,4 +1,5 @@
 import { CARTAS, fichaInicial, type CartaDoJardim, type Familia, type Raridade } from './cartas';
+import { armaPorId, type ArmaId } from './armas';
 
 /**
  * A CARTA COMO A TELA DESENHA — o que o painel das três cartas precisa saber.
@@ -36,6 +37,11 @@ export interface CartaNaTela {
   readonly mudaOJato: boolean;
   /** carta de consolo (o baralho acabou): outra moldura, e não entra na mão */
   readonly consolo: boolean;
+  /**
+   * A FITA de uma carta da família da arma quando a arma não é o regador
+   * ("🐍 Mangueira"). Sem isto a fita é a da família, como sempre.
+   */
+  readonly arma?: { readonly icone: string; readonly nome: string };
 }
 
 /** A série de uma carta, pelo id: `bico-2` é o degrau 2 da série `bico`. */
@@ -67,6 +73,20 @@ function mudaOJato(carta: CartaDoJardim): boolean {
   const f = fichaInicial();
   carta.aplicar(f);
   return Object.keys(f.jato).length > 0;
+}
+
+/**
+ * A carta como a tela desenha, NA RODADA DE UMA ARMA (`armas.ts`): a carta da
+ * família do regador ganha a fita da arma, e o selo "muda o regador" só vale
+ * quando a arma é o regador. A carta que é SÓ de uma arma (`soPara`) mostra a
+ * fita dela em qualquer lugar — no livro também.
+ */
+export function cartaDaArma(carta: CartaDoJardim, arma: ArmaId): CartaNaTela {
+  const base = cartaNaTela(carta);
+  const dona = carta.soPara?.length === 1 ? carta.soPara[0] : arma;
+  if (carta.familia !== 'regador' || dona === 'regador') return base;
+  const ficha = armaPorId(dona);
+  return { ...base, mudaORegador: false, arma: ficha ? { icone: ficha.icone, nome: ficha.nome } : undefined };
 }
 
 export function cartaNaTela(carta: CartaDoJardim): CartaNaTela {
@@ -255,6 +275,41 @@ export interface PainelDoJardim {
   canteiros: number;
   totalDeCanteiros: number;
   enchendo: boolean;
+  /** a mangueira: presa no tonel, a água nunca acaba (o painel mostra ∞) */
+  infinita?: boolean;
   /** a ajuda do par: o nome de quem vem, o anel (0 a 1), se está pronta, e os segundos que restam dela */
   ajuda?: { nome: string; carga: number; pronta: boolean; resta: number };
+}
+
+/**
+ * A BANCADA DO ARSENAL (pedido do Renan: "parecido com o livro inicial") — o
+ * painel das armas. Uma aba por arma: o estado dela, o que falta para
+ * destrancar, e as cartas DELA (as que servem nela), descobertas ou cinzas.
+ * Quem monta é a cena, pelo save; o painel só desenha e devolve a arma que a
+ * dupla mandou usar.
+ */
+export interface ArmaNoArsenal {
+  readonly id: string;
+  readonly nome: string;
+  readonly icone: string;
+  readonly descricao: string;
+  /**
+   * `escolhida` = a que vai para a próxima rodada; `aberta` = dá para usar;
+   * `trancada` = falta vencer a onda 20 com a anterior; `em-construcao` =
+   * destrancada, mas a rodada dela ainda não existe no jogo.
+   */
+  readonly estado: 'escolhida' | 'aberta' | 'trancada' | 'em-construcao';
+  /** a meta dita como gente fala: "Vençam a onda 20 com o regador" */
+  readonly meta: string;
+  /** a maior onda vencida com ela */
+  readonly recorde: number;
+  /** o recorde da anterior, para a barrinha da meta (0 a `ondaParaAbrir`) */
+  readonly progresso: number;
+  /** as cartas que servem nela, já com a fita da arma */
+  readonly cartas: readonly CartaNaTela[];
+}
+
+export interface ConteudoDoArsenal {
+  readonly armas: readonly ArmaNoArsenal[];
+  readonly ondaParaAbrir: number;
 }

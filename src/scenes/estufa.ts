@@ -4,7 +4,7 @@ import type { SceneDef } from '../core/types';
 import {
   arcoDeEstufa, bancadaDeJardinagem, canteiroDeHorta, capim, folhagemAlta, planta,
   livroDeCartas, lojinhaDaJosefina, plaquinhaDaEstufa, portaoDeJardim, regadorDeOuro, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
-  trelicaComTrepadeira, vasoDePlanta,
+  trelicaComTrepadeira, vasoDePlanta, painelDeArmas, bancadaDoArsenal, silhuetaDeArma,
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
 import { ITENS, ROUPAS_DA_JOSEFINA } from '../world/itens';
@@ -16,11 +16,15 @@ import { Noel } from '../entities/bichos/Noel';
 import { Walter } from '../entities/bichos/Walter';
 import { JeanLuc } from '../entities/bichos/JeanLuc';
 import { GotasDoJardim } from '../entities/GotasDoJardim';
-import { MaoDeCartas } from '../minigames/jardim/baralho';
+import { MaoDeCartas, servePara } from '../minigames/jardim/baralho';
+import {
+  ARMAS, ARMA_ESCOLHIDA, ONDA_PARA_ABRIR, chaveDoRecorde, destrancada, type ArmaId, type FichaDaArma,
+} from '../minigames/jardim/armas';
+import { borrifadorDeJardim, esguichoDeMangueira, pistolaDagua, regadorDeJardim } from '../world/regador';
 import { CARTAS, cartaPorId, type AjudanteDoClube } from '../minigames/jardim/cartas';
 import { PRAGAS } from '../world/bichosDoJardim';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
-import { cartaNaTela } from '../minigames/jardim/tela';
+import { cartaDaArma, cartaNaTela } from '../minigames/jardim/tela';
 import { RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigames/jardim/rodada';
 import { DECORACOES, type FichaDeDecoracao } from '../world/decoracoes';
 import { Decorador, type Cofre } from '../world/decorador';
@@ -29,7 +33,7 @@ import {
   type MarcoDoJardim,
 } from '../minigames/jardim/premios';
 import { DESCRICAO_DA_PRAGA, NOME_DO_TIER, flagDaPraga, pragasDoLivro } from '../minigames/jardim/bestiario';
-import type { AcaoNaLoja, ConteudoDaLoja, ConteudoDoLivro } from '../minigames/jardim/tela';
+import type { AcaoNaLoja, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro } from '../minigames/jardim/tela';
 import { ARI, RENAN } from '../characters/cast';
 import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 import { toon } from '../core/materials';
@@ -699,7 +703,9 @@ export const estufa: SceneDef = {
     // nao escondem nada, porque nao ha nada atras delas. Os `z` ficam todos na
     // metade `+Z` — a metade do fundo agora e caminho de bicho, e o que decora
     // ela e estrutura (os portoes), nao planta.
-    for (const [z, alta] of [[1.4, 1.9], [3.0, 1.55], [9.4, 1.75]] as const) {
+    // as duas do meio (z 1,4 e 3,0) saíram para a parede das armas entrar
+    // entre o girassol e o tomate — pedido do Renan, que não gostava delas
+    for (const [z, alta] of [[9.4, 1.75]] as const) {
       w.add(w.place(folhagemAlta(alta, ((z + 9) / 7) % 1), -hx + 1.3, 0, z));
       w.blockCircle(-hx + 1.3, z, 0.45);
     }
@@ -787,6 +793,103 @@ export const estufa: SceneDef = {
           await entregarMarco(m);
           g.lockPlayer(false);
         }
+      },
+    });
+
+    /* =================================================== A PAREDE DAS ARMAS
+     *
+     * Pedido do Renan: trocar a arma da rodada (regador → mangueira → pistola
+     * d'água → borrifador), cada uma destrancando quando a dupla vence a onda
+     * 20 USANDO A ANTERIOR (`minigames/jardim/armas.ts`). Elas moram no vão da
+     * parede entre o girassol e o tomate da esquerda, onde ficavam duas
+     * folhagens: o painel furado com as quatro penduradas (a trancada é uma
+     * sombra cinza), e na frente dele a bancada do arsenal, que abre o painel
+     * das armas — parecido com o livro, uma aba por arma.
+     */
+    const ARSENAL = { z: 2.4 };
+    const paredeDasArmas = w.add(w.place(painelDeArmas(1.8, 1.45), -hx + 0.32, 0, ARSENAL.z, Math.PI / 2));
+    w.blockBox(-hx + 0.32, ARSENAL.z, 0.12, 1.0);
+    const bancadaDasArmas = w.add(w.place(bancadaDoArsenal(1.3), -hx + 0.86, 0, ARSENAL.z, Math.PI / 2));
+    w.blockBox(-hx + 0.86, ARSENAL.z, 0.3, 0.7);
+
+    /*
+     * O RECORDE É POR ARMA. Antes das armas havia um recorde só, e toda rodada
+     * até ali foi de regador: na primeira visita depois da mudança ele vira o
+     * recorde do regador (uma vez, pela flag) — quem já passou da onda 20
+     * encontra a mangueira destrancada.
+     */
+    if (!g.flag('jardim.armas-migradas')) {
+      const velho = g.stat(RECORDE);
+      if (velho > g.stat(chaveDoRecorde('regador'))) g.bump(chaveDoRecorde('regador'), velho - g.stat(chaveDoRecorde('regador')));
+      g.setFlag('jardim.armas-migradas');
+    }
+    const recordeDe = (a: ArmaId): number => g.stat(chaveDoRecorde(a));
+    const liberada = (a: FichaDaArma): boolean => destrancada(a, recordeDe);
+    /** a arma da próxima rodada: a escolhida na bancada, se ainda vale; senão o regador */
+    const armaDaRodada = (): ArmaId => {
+      const a = ARMAS[g.stat(ARMA_ESCOLHIDA)];
+      return a && a.pronta && liberada(a) ? a.id : 'regador';
+    };
+    const modeloDaArma = (id: ArmaId): THREE.Object3D => {
+      if (id === 'mangueira') return esguichoDeMangueira({ estagio: 1 });
+      if (id === 'pistola') return pistolaDagua();
+      if (id === 'borrifador') return borrifadorDeJardim();
+      return regadorDeJardim({ estagio: 0 });
+    };
+    /** pendura (de novo) as quatro no painel: a destrancada colorida, a outra em sombra */
+    const penduradas: THREE.Object3D[] = [];
+    const montarParede = (): void => {
+      for (const o of penduradas) o.removeFromParent();
+      penduradas.length = 0;
+      const ganchos = paredeDasArmas.userData.ganchos as THREE.Vector3[];
+      ARMAS.forEach((a, i) => {
+        const gancho = ganchos[i];
+        if (!gancho) return;
+        const m = modeloDaArma(a.id);
+        if (!liberada(a)) silhuetaDeArma(m);
+        m.scale.setScalar(1.5);
+        // de perfil contra o painel, pendurada pelo gancho
+        m.rotation.y = Math.PI / 2;
+        m.position.set(gancho.x, gancho.y - (a.id === 'regador' ? 0.62 : a.id === 'borrifador' ? 0.5 : 0.36), gancho.z);
+        paredeDasArmas.add(m);
+        penduradas.push(m);
+      });
+    };
+    montarParede();
+
+    const conteudoDoArsenal = (): ConteudoDoArsenal => {
+      const escolhida = armaDaRodada();
+      return {
+        ondaParaAbrir: ONDA_PARA_ABRIR,
+        armas: ARMAS.map((a) => {
+          const aberta = liberada(a);
+          const anterior = a.anterior ? ARMAS.find((x) => x.id === a.anterior) : null;
+          return {
+            id: a.id,
+            nome: a.nome,
+            icone: a.icone,
+            descricao: a.descricao,
+            estado: !aberta ? 'trancada' : !a.pronta ? 'em-construcao' : a.id === escolhida ? 'escolhida' : 'aberta',
+            meta: anterior ? `Vençam a onda ${ONDA_PARA_ABRIR} com ${anterior.comArtigo}` : '',
+            recorde: recordeDe(a.id),
+            progresso: anterior ? Math.min(ONDA_PARA_ABRIR, recordeDe(anterior.id)) : ONDA_PARA_ABRIR,
+            cartas: CARTAS.filter((c) => servePara(c, a.id)).map((c) => cartaDaArma(c, a.id)),
+          };
+        }),
+      };
+    };
+    w.interact({
+      id: 'estufa:arsenal',
+      x: -hx + 2.0, z: ARSENAL.z, radius: 0.9,
+      label: 'Escolher a arma', icon: '🧰',
+      highlight: bancadaDasArmas,
+      onInteract: async (api) => {
+        const escolha = await api.abrirArsenal(conteudoDoArsenal());
+        const i = ARMAS.findIndex((a) => a.id === escolha);
+        if (i < 0) return;
+        g.bump(ARMA_ESCOLHIDA, i - g.stat(ARMA_ESCOLHIDA));
+        const a = ARMAS[i];
+        g.toast(`${a.nome}: é com ela a próxima rodada`, a.icone);
       },
     });
 
@@ -1405,7 +1508,7 @@ export const estufa: SceneDef = {
        * (`aoAcabarARodada`, mais abaixo).
        */
       await api.say(['Olha lá… estão vindo pelo fundo. Água neles, meu bem!'], J);
-      rodada.comecar();
+      rodada.comecar({ arma: armaDaRodada() });
       preparandoARodada = false;
     };
 
@@ -2099,6 +2202,12 @@ export const estufa: SceneDef = {
       // o recorde: a maior onda vencida numa rodada, para a aba de recompensas
       const recorde = g.stat(RECORDE);
       if (jogou && vencidas > recorde) g.bump(RECORDE, vencidas - recorde);
+      // e o recorde DA ARMA, que é o que destranca a próxima da fila
+      const trancadasAntes = ARMAS.filter((a) => !liberada(a));
+      const chaveDaArma = chaveDoRecorde(rodada.arma);
+      if (jogou && vencidas > g.stat(chaveDaArma)) g.bump(chaveDaArma, vencidas - g.stat(chaveDaArma));
+      const armasNovas = trancadasAntes.filter((a) => liberada(a));
+      if (armasNovas.length) montarParede();
       void (async () => {
         const J = 'Josefina';
         g.lockPlayer(true);
@@ -2141,6 +2250,13 @@ export const estufa: SceneDef = {
           leva,
           'Deixa que eu replanto o que foi comido.',
         ], J);
+        // arma nova destrancada: a Josefina aponta a parede
+        for (const a of armasNovas) {
+          g.toast(`${a.nome} destrancada!`, a.icone);
+          await g.say([a.pronta
+            ? `Vocês merecem: ${a.comArtigo} está liberada lá na parede das armas. É só escolher na bancada!`
+            : `Vocês destrancaram ${a.comArtigo}! Ainda estou arrumando ela, mas já está pendurada na parede.`], J);
+        }
         // a recompensa nova espera no livro: a Josefina só avisa onde
         if (novos.length) {
           await g.say([novos.length > 1
@@ -2176,20 +2292,20 @@ export const estufa: SceneDef = {
       josefina.levantar();
       josefina.encarar(OLHAR_DOS_PORTOES.x, OLHAR_DOS_PORTOES.z);
     };
-    w.root.userData.comecarRodada = (cartas: readonly string[] = []): void => {
+    w.root.userData.comecarRodada = (cartas: readonly string[] = [], arma?: ArmaId): void => {
       josefinaNoPosto();
       if (!g.hasItem('regador')) g.addItem(ITENS.regador);
       const vaga = g.handItems().findIndex((i) => i?.id === 'regador');
       if (vaga >= 0) g.setActiveHandSlot(vaga);
-      rodada.comecar({ cartas });
+      rodada.comecar({ cartas, arma: arma ?? armaDaRodada() });
     };
-    w.root.userData.vitrineDoJato = (cartas: readonly string[] = [], praga = 'lagartejo'): void => {
+    w.root.userData.vitrineDoJato = (cartas: readonly string[] = [], praga = 'lagartejo', arma?: ArmaId): void => {
       josefinaNoPosto();
       if (!g.hasItem('regador')) g.addItem(ITENS.regador);
       const vaga = g.handItems().findIndex((i) => i?.id === 'regador');
       if (vaga >= 0) g.setActiveHandSlot(vaga);
       const eu = g.playerPosition();
-      rodada.comecar({ cartas, vitrine: true });
+      rodada.comecar({ cartas, vitrine: true, arma: arma ?? armaDaRodada() });
       // em leque, na direção dos portões: a câmera vê a dupla e os três
       rodada.montarVitrine([
         { x: eu.x - 1.3, z: eu.z - 2.0 },

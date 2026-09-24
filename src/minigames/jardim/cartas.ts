@@ -1,4 +1,5 @@
 import type { EstiloDeRegador } from '../../world/regador';
+import type { ArmaId } from './armas';
 
 /**
  * AS CARTAS DO MINIGAME DO JARDIM — o catálogo.
@@ -87,6 +88,13 @@ export type RegraDoJardim =
   | 'pressao-acumulada' // o primeiro jato com o tanque cheio encharca o triplo
   | 'geiser'            // a cada 20 s o bicho mais forte é jogado pela porta
   | 'arco-iris'         // 1 jato em 10 atravessa tudo e dobra as gotas de quem espanta
+  // as ARMAS (`armas.ts`): o que a arma liga na base, e as cartas só dela
+  | 'agua-infinita'     // a água nunca acaba (a mangueira, presa no tonel)
+  | 'presa-na-estufa'   // quem joga não passa dos portões (a mangueira não chega lá fora)
+  | 'jato-continuo'     // molhando o mesmo bicho sem parar, cada jato encharca mais (até o dobro)
+  | 'chicote'           // bicho que atravessa a mangueira no chão leva um tranco e se molha
+  | 'vazamento'         // a mangueira vaza: quem cruza ela anda devagar por 2 s
+  | 'enchente'          // a cada 25 s, 3 s de jatão que atravessa a fila inteira
   // jardineiro
   | 'pique'             // andar 2 s sem parar dá +30% de velocidade, até parar
   | 'assobio'           // a cada 12 s o bicho mais perto anda 2 s para o lado errado
@@ -147,8 +155,12 @@ export interface EstiloDoJato {
   rapido?: number;
   /** um segundo cone sai para trás */
   segundoBico?: boolean;
-  /** a Mangueira: linha comprida e fina */
+  /** a Mangueira (a carta do regador, e a arma): linha comprida e fina */
   mangueira?: boolean;
+  /** o Jato contínuo: o fio engrossa enquanto molha o mesmo bicho */
+  continuo?: boolean;
+  /** a Enchente: de 25 em 25 s, a mangueira abre tudo por 3 s */
+  enchente?: boolean;
   /** o Regador de pressão: jato reto que atravessa o primeiro bicho */
   reto?: boolean;
   /** o jato sobe em parábola por cima do canteiro */
@@ -192,6 +204,10 @@ export interface EstiloDoJato {
   poca?: boolean;
   /** um rastro de gotinhas fica atrás de você */
   garoa?: boolean;
+  /** a mangueira no chão dá um tranco em quem pisa nela (ela sacode) */
+  chicote?: boolean;
+  /** a mangueira no chão vaza: gotinhas e poças ao longo dela */
+  vazamento?: boolean;
 }
 
 /**
@@ -319,6 +335,16 @@ export interface CartaDoJardim {
   readonly naHora?: EfeitoNaHora;
   /** carta de chamado: quem entra pela porta, na cutscene, quando ela é pega */
   readonly chama?: readonly AjudanteDoClube[];
+  /**
+   * SÓ SAI COM ESTAS ARMAS (`armas.ts`): a carta que é de uma arma só — as da
+   * mangueira. Sem isto, ela serve para qualquer arma.
+   */
+  readonly soPara?: readonly ArmaId[];
+  /**
+   * NÃO SAI COM ESTAS ARMAS: a genérica que não faz sentido nelas. A mangueira
+   * tem água infinita, então nada de tanque, refil, tonel ou gasto de água.
+   */
+  readonly naoServe?: readonly ArmaId[];
   /** o que ela faz com a rodada; nunca guarda estado fora da ficha */
   aplicar(f: FichaDaRodada): void;
 }
@@ -369,7 +395,7 @@ function serie(
 const REGADOR: CartaDoJardim[] = [
   ...serie('bico', 3, {
     familia: 'regador', raridade: 'comum', icone: '📏',
-    nome: 'Bico mais longo', texto: 'O regador alcança 18% mais longe',
+    nome: 'Bico mais longo', texto: 'O jato alcança 18% mais longe',
   }, (f, d, n) => {
     f.alcance *= 1.18;
     f.estilo.bico = d / n;
@@ -381,7 +407,7 @@ const REGADOR: CartaDoJardim[] = [
   }, (f, d) => {
     f.dano *= 1.2;
     f.estilo.ponteira = true;
-    f.jato.grosso = d;
+    f.jato.grosso = Math.max(f.jato.grosso ?? 0, d);
   }),
   ...serie('braco', 3, {
     familia: 'regador', raridade: 'comum', icone: '💪',
@@ -402,6 +428,7 @@ const REGADOR: CartaDoJardim[] = [
   ...serie('tanque', 3, {
     familia: 'regador', raridade: 'comum', icone: '🪣',
     nome: 'Tanque maior', texto: 'Cabem mais 4 jatos no tanque',
+    naoServe: ['mangueira'],
   }, (f, d, n) => {
     f.tanque += 4;
     f.estilo.tanque = d / n;
@@ -416,7 +443,7 @@ const REGADOR: CartaDoJardim[] = [
     },
   },
   {
-    id: 'orvalho', nome: 'Orvalho', familia: 'regador', raridade: 'incomum',
+    id: 'orvalho', nome: 'Orvalho', familia: 'regador', raridade: 'incomum', naoServe: ['mangueira'],
     icone: '🌫️', texto: 'O tanque enche sozinho 50% mais rápido',
     aplicar: (f) => {
       f.recarga *= 1.5;
@@ -425,7 +452,8 @@ const REGADOR: CartaDoJardim[] = [
     },
   },
   {
-    id: 'mangueira', nome: 'Mangueira', familia: 'regador', raridade: 'raro',
+    // era "Mangueira": o nome mudou quando a mangueira virou ARMA (o id ficou, é o do livro)
+    id: 'mangueira', nome: 'Bico de mangueira', familia: 'regador', raridade: 'raro', naoServe: ['mangueira'],
     icone: '🐍', texto: 'O alcance dobra, mas o jato demora 40% mais',
     aplicar: (f) => {
       f.alcance *= 2;
@@ -453,7 +481,7 @@ const REGADOR: CartaDoJardim[] = [
   ...serie('refil', 2, {
     familia: 'regador', raridade: 'comum', icone: '⏩',
     nome: 'Refil rápido', texto: 'Encher no tonel fica 40% mais rápido',
-    exclui: ['jean-luc-no-tonel'],
+    exclui: ['jean-luc-no-tonel'], naoServe: ['mangueira'],
   }, (f) => {
     f.refil *= 1.4;
   }),
@@ -482,7 +510,8 @@ const REGADOR: CartaDoJardim[] = [
     },
   },
   {
-    id: 'borrifador', nome: 'Borrifador', familia: 'regador', raridade: 'incomum',
+    // era "Borrifador": o nome mudou quando o borrifador virou ARMA (o id ficou)
+    id: 'borrifador', nome: 'Crivo de três furos', familia: 'regador', raridade: 'incomum',
     icone: '💧', texto: 'Cada jato sai em três gotinhas: acerta mais bichos, mais fraco',
     aplicar: (f) => {
       f.regras.add('borrifador');
@@ -491,7 +520,7 @@ const REGADOR: CartaDoJardim[] = [
   },
   {
     id: 'mira-no-grandao', nome: 'Mira no grandão', familia: 'regador', raridade: 'incomum',
-    icone: '🏋️', texto: 'O regador mira no bicho com mais vida, e não no mais perto',
+    icone: '🏋️', texto: 'O jato mira no bicho com mais vida, e não no mais perto',
     exclui: ['mira-em-quem-come'],
     aplicar: (f) => {
       f.regras.add('mira-no-grandao');
@@ -500,7 +529,7 @@ const REGADOR: CartaDoJardim[] = [
   },
   {
     id: 'mira-em-quem-come', nome: 'Mira em quem come', familia: 'regador', raridade: 'incomum',
-    icone: '🍽️', texto: 'O regador mira primeiro em quem já está num canteiro',
+    icone: '🍽️', texto: 'O jato mira primeiro em quem já está num canteiro',
     exclui: ['mira-no-grandao'],
     aplicar: (f) => {
       f.regras.add('mira-em-quem-come');
@@ -516,7 +545,7 @@ const REGADOR: CartaDoJardim[] = [
     },
   },
   {
-    id: 'pressao-acumulada', nome: 'Pressão acumulada', familia: 'regador', raridade: 'incomum',
+    id: 'pressao-acumulada', nome: 'Pressão acumulada', familia: 'regador', raridade: 'incomum', naoServe: ['mangueira'],
     icone: '🧯', texto: 'O primeiro jato depois de encher o tanque encharca o triplo',
     aplicar: (f) => {
       f.regras.add('pressao-acumulada');
@@ -525,7 +554,7 @@ const REGADOR: CartaDoJardim[] = [
   },
   {
     id: 'crivo-giratorio', nome: 'Crivo giratório', familia: 'regador', raridade: 'raro',
-    icone: '🌀', texto: 'A cada 4 s o regador gira e molha tudo em volta',
+    icone: '🌀', texto: 'A cada 4 s você gira o jato e molha tudo em volta',
     aplicar: (f) => {
       f.regras.add('crivo-giratorio');
       f.jato.crivoGiratorio = true;
@@ -548,7 +577,7 @@ const REGADOR: CartaDoJardim[] = [
     },
   },
   {
-    id: 'balde', nome: 'Balde', familia: 'regador', raridade: 'raro',
+    id: 'balde', nome: 'Balde', familia: 'regador', raridade: 'raro', naoServe: ['mangueira'],
     icone: '🌊', texto: 'Segurar E derrama o tanque inteiro num círculo de 2 m',
     aplicar: (f) => {
       f.regras.add('balde');
@@ -569,6 +598,49 @@ const REGADOR: CartaDoJardim[] = [
     aplicar: (f) => {
       f.regras.add('arco-iris');
       f.jato.arcoIris = true;
+    },
+  },
+  // ======================================================= só da MANGUEIRA
+  // (a arma presa no tonel, `armas.ts`): o que só uma mangueira faz — a linha
+  // dela no chão vira arma, e o fio que não para de sair vira pressão
+  ...serie('esguicho', 2, {
+    familia: 'regador', raridade: 'comum', icone: '🚿', soPara: ['mangueira'],
+    nome: 'Esguicho de latão', texto: 'O esguicho aperta: o jato encharca 12% mais e vai 8% mais longe',
+  }, (f, d) => {
+    f.dano *= 1.12;
+    f.alcance *= 1.08;
+    f.jato.grosso = Math.max(f.jato.grosso ?? 0, d);
+  }),
+  {
+    id: 'jato-continuo', nome: 'Jato contínuo', familia: 'regador', raridade: 'raro', soPara: ['mangueira'],
+    icone: '〰️', texto: 'No mesmo bicho sem parar, o jato engrossa até encharcar o dobro',
+    aplicar: (f) => {
+      f.regras.add('jato-continuo');
+      f.jato.continuo = true;
+    },
+  },
+  {
+    id: 'chicote', nome: 'Chicote', familia: 'regador', raridade: 'incomum', soPara: ['mangueira'],
+    icone: '🪢', texto: 'Bicho que atravessa a mangueira no chão leva um tranco e se molha',
+    aplicar: (f) => {
+      f.regras.add('chicote');
+      f.jato.chicote = true;
+    },
+  },
+  {
+    id: 'vazamento', nome: 'Vazamento', familia: 'regador', raridade: 'incomum', soPara: ['mangueira'],
+    icone: '🕳️', texto: 'A mangueira vaza no chão: quem cruza ela anda devagar por 2 s',
+    aplicar: (f) => {
+      f.regras.add('vazamento');
+      f.jato.vazamento = true;
+    },
+  },
+  {
+    id: 'enchente', nome: 'Enchente', familia: 'regador', raridade: 'lendario', soPara: ['mangueira'],
+    icone: '🚒', texto: 'A cada 25 s, 3 s de jatão que atravessa a fila inteira',
+    aplicar: (f) => {
+      f.regras.add('enchente');
+      f.jato.enchente = true;
     },
   },
 ];
@@ -596,7 +668,7 @@ const JARDINEIRO: CartaDoJardim[] = [
     aplicar: (f) => f.regras.add('bota'),
   },
   {
-    id: 'folego', nome: 'Fôlego', familia: 'jardineiro', raridade: 'incomum',
+    id: 'folego', nome: 'Fôlego', familia: 'jardineiro', raridade: 'incomum', naoServe: ['mangueira'],
     icone: '🫁', texto: 'O tanque enche enquanto você anda, e não só no tonel',
     aplicar: (f) => f.regras.add('enche-andando'),
   },
@@ -633,14 +705,14 @@ const JARDINEIRO: CartaDoJardim[] = [
   },
   // --- do banco de ideias (§6 do plano)
   {
-    id: 'chapeu-de-palha', nome: 'Chapéu de palha', familia: 'jardineiro', raridade: 'comum',
+    id: 'chapeu-de-palha', nome: 'Chapéu de palha', familia: 'jardineiro', raridade: 'comum', naoServe: ['mangueira'],
     icone: '👒', texto: 'Cada jato gasta 15% menos água',
     aplicar: (f) => {
       f.gastoPorJato *= 0.85;
     },
   },
   {
-    id: 'descanso', nome: 'Descanso na sombra', familia: 'jardineiro', raridade: 'comum',
+    id: 'descanso', nome: 'Descanso na sombra', familia: 'jardineiro', raridade: 'comum', naoServe: ['mangueira'],
     icone: '⛱️', texto: 'Parado, o tanque enche 50% mais rápido',
     aplicar: (f) => {
       f.recargaParado *= 1.5;
@@ -727,7 +799,7 @@ const JARDIM: CartaDoJardim[] = [
     f.vidaDoCanteiro *= 1.25;
   }),
   {
-    id: 'segundo-tonel', nome: 'Segundo tonel', familia: 'jardim', raridade: 'comum',
+    id: 'segundo-tonel', nome: 'Segundo tonel', familia: 'jardim', raridade: 'comum', naoServe: ['mangueira'],
     icone: '🛢️', texto: 'Nasce um tonel do outro lado: a viagem pela água encurta',
     aplicar: (f) => f.regras.add('segundo-tonel'),
   },
@@ -850,7 +922,7 @@ const JARDIM: CartaDoJardim[] = [
    * porque a II e a III pedem a I).
    */
   {
-    id: 'jean-luc-no-tonel', nome: 'O Jean-Luc no tonel', familia: 'jardim', raridade: 'incomum',
+    id: 'jean-luc-no-tonel', nome: 'O Jean-Luc no tonel', familia: 'jardim', raridade: 'incomum', naoServe: ['mangueira'],
     icone: '🦆', texto: 'O pato fica no tonel, e encher o tanque ali é na hora',
     exclui: ['refil-1', 'refil-2'],
     aplicar: (f) => f.regras.add('jean-luc-no-tonel'),

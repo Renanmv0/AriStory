@@ -3,6 +3,7 @@ import {
   CARTAS, CONSOLOS, NIVEL_MINIMO, cartaPorId, fichaInicial,
   type CartaDoJardim, type EstiloDoJato, type Familia, type FichaDaRodada, type Raridade,
 } from './cartas';
+import { armaPorId, type ArmaId } from './armas';
 
 /**
  * A MÃO DE CARTAS — quem guarda quais cartas a rodada já tem.
@@ -45,9 +46,25 @@ export function pesoDaRaridade(raridade: Raridade, nivel: number): number {
   return PESO_NO_NIVEL_1[raridade] + (PESO_NO_NIVEL_10[raridade] - PESO_NO_NIVEL_1[raridade]) * t;
 }
 
+/**
+ * A CARTA SERVE PARA ESTA ARMA? A que é só de outra (`soPara`) não; a que não
+ * faz sentido nela (`naoServe`) também não. O resto serve para todas.
+ */
+export function servePara(carta: CartaDoJardim, arma: ArmaId): boolean {
+  if (carta.soPara && !carta.soPara.includes(arma)) return false;
+  return !carta.naoServe?.includes(arma);
+}
+
 export class MaoDeCartas {
   /** os ids, na ordem em que foram escolhidos */
   private readonly pegas: string[] = [];
+
+  /**
+   * A ARMA DA RODADA (`armas.ts`). Ela decide duas coisas: quais cartas podem
+   * sair (`soPara` e `naoServe`, em `cartas.ts`) e os números de partida da
+   * ficha (`base`), antes de qualquer carta.
+   */
+  constructor(readonly arma: ArmaId = 'regador') {}
 
   /** Quantas cartas de consolo já saíram. Elas não entram na mão. */
   consolos = 0;
@@ -78,6 +95,7 @@ export class MaoDeCartas {
    */
   podeSair(carta: CartaDoJardim, nivel: number): boolean {
     if (carta.repetivel) return true;
+    if (!servePara(carta, this.arma)) return false;
     if (this.tem(carta.id)) return false;
     if (carta.requer?.some((id) => !this.tem(id))) return false;
     if (carta.exclui?.some((id) => this.tem(id))) return false;
@@ -186,6 +204,7 @@ export class MaoDeCartas {
   /** A ficha de números e regras de agora, derivada do zero. */
   ficha(): FichaDaRodada {
     const f = fichaInicial();
+    armaPorId(this.arma)?.base(f);
     for (const c of this.cartas) c.aplicar(f);
     return f;
   }
@@ -212,6 +231,7 @@ export class MaoDeCartas {
       mangueira: estilo.mangueira ?? false,
       respiro: estilo.respiro ?? false,
       nuvem: estilo.nuvem ?? false,
+      arma: this.arma,
     };
   }
 }

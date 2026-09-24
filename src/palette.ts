@@ -470,6 +470,27 @@ export const PALETTE = {
   /** a agua que se ve por cima, pela boca aberta, e os furos do crivo */
   regadorAgua: 0x8fd0e8,
   regadorFuro: 0x394045,
+  /**
+   * A MANGUEIRA, a segunda arma da estufa: a borracha verde-garrafa de toda
+   * mangueira de quintal (mais viva que o esmalte do regador, para as duas
+   * não se confundirem na parede) e o gatilho de plástico laranja do esguicho.
+   */
+  mangueiraBorracha: 0x3f8f4a,
+  mangueiraBorrachaEscura: 0x2b6634,
+  mangueiraGatilho: 0xe8873a,
+  /** a pistola d'água e o borrifador, que por enquanto só moram na parede */
+  pistolaDagua: 0x3fa7d6,
+  pistolaDaguaTanque: 0xf2c94c,
+  borrifadorFrasco: 0xe9eef0,
+  borrifadorGatilho: 0x7cc47f,
+  /**
+   * A PAREDE DAS ARMAS: o painel furado de oficina (eucatex cru, os furos em
+   * marrom escuro) e a sombra de uma arma ainda trancada — um cinza-azulado
+   * que se lê como "tem algo aqui, mas ainda não é seu".
+   */
+  painelFurado: 0xcfa874,
+  painelFuro: 0x6e4f2f,
+  armaTrancada: 0x3b4046,
 
   /**
    * A GOTA DE EXPERIÊNCIA — o que o bicho espantado deixa no chão.

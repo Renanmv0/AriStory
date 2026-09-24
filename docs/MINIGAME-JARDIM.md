@@ -21,13 +21,15 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | arquivo | o que mora lá |
 |---|---|
 | `src/minigames/jardim/rodada.ts` | a rodada inteira (`RodadaDoJardim`): ondas, bichos, regador, o jato de cada carta (`umJato`), as cartas de jardineiro/jardim/clube, os chamados agindo, a ajuda do par, o prêmio da onda e o de 5 em 5 níveis, e os ganchos de teste no fim da classe |
-| `src/minigames/jardim/cartas.ts` | o catálogo das **93 cartas** e a `FichaDaRodada` (números + `regras` + `jato`) |
+| `src/minigames/jardim/cartas.ts` | o catálogo das **99 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
+| `src/minigames/jardim/armas.ts` | as **quatro armas** (regador, mangueira, pistola d'água, borrifador): a fila de destrancar e os números de partida de cada uma (`base`) |
+| `src/minigames/jardim/mangueira.ts` | a mangueira esticada do tonel até a mão (o tubo, e o trecho no chão que o Chicote e o Vazamento leem) |
 | `src/minigames/jardim/baralho.ts` | a mão (carta não repete), o sorteio de três, a Sorte de principiante |
 | `src/minigames/jardim/progressao.ts` | a curva de nível, as gotas por praga, as **30 ondas** (`ONDAS`, `TOTAL_DE_ONDAS`) |
 | `src/minigames/jardim/jato.ts` | o DESENHO da água e de todo efeito das cartas (partículas, poças, anéis, nuvem) |
 | `src/minigames/jardim/tela.ts` | os tipos que a UI recebe (carta, painel, fim) |
 | `src/scenes/estufa.ts` | a cena: a planta que a rodada recebe (`PlantaDoJardim`), o `ElencoDaEstufa` (Josefina, Capy, Gina, Walter, Noel, Jean-Luc), as cutscenes dos chamados, o livro na bancada, as falas do fim |
-| `src/ui/telaDeCartas.ts`, `src/ui/livroDeCartas.ts` | a tela das três cartas; o livro da estufa (abas Cartas, Pragas, Recompensas) e a tela do fim |
+| `src/ui/telaDeCartas.ts`, `src/ui/livroDeCartas.ts`, `src/ui/arsenal.ts` | a tela das três cartas; o livro da estufa (abas Cartas, Pragas, Recompensas) e a tela do fim; o painel das armas (uma aba por arma) |
 | `src/world/bichosDoJardim.ts` | a geometria das **treze** pragas (`PRAGAS`): as seis da primeira leva e as sete da segunda (da 15ª onda em diante) |
 | `src/core/Oclusao.ts` | parede/árvore que tapa bicho ou gota fica translúcida (a rodada liga) |
 | `src/world/decoracoes.ts`, `src/world/decorador.ts`, `src/ui/lojaDaJosefina.ts` | os enfeites da estufa (ficha + geometria), o modo de colocar, e o painel da lojinha |
@@ -132,6 +134,22 @@ desviam. A fala de apresentação da Josefina é minha. Teste:
 `scripts/decorar.mjs`. **Enfeite novo: skill `aristory-enfeite`** (uma função e
 uma ficha em `decoracoes.ts`; foto e pegada por `scripts/enfeite.mjs`).
 
+**AS ARMAS** (pedido do Renan; `minigames/jardim/armas.ts`, §4.1): regador →
+mangueira → pistola d'água → borrifador, numa fila. Cada uma **destranca
+quando a dupla vence a onda 20 usando a anterior** — o recorde é POR ARMA
+(`jardim.recorde.<arma>`; o `jardim.recorde` global continua sendo o maior de
+todos, e é ele que abre a lojinha). Na primeira visita depois da mudança o
+recorde velho virou o do regador (flag `jardim.armas-migradas`). Elas ficam na
+**parede das armas**, entre o girassol e o tomate da esquerda (no lugar das duas
+folhagens que o Renan não gostava): painel furado com as quatro penduradas (a
+trancada em sombra cinza) e a **bancada do arsenal** na frente, que abre o
+painel das armas — parecido com o livro: uma aba por arma, a meta, o recorde e
+as cartas DELA (descobertas ou cinzas), e "Usar esta arma" (contador
+`jardim.arma`). **Hoje só a mangueira está construída** além do regador; a
+pistola e o borrifador aparecem destrancáveis mas "em construção". O **prêmio
+de destrancar** cada arma (roupinha ou item) o Renan decide depois — hoje só a
+Josefina avisa. Teste: `scripts/armas.mjs`.
+
 **O LIVRO DA ESTUFA** (a bancada) tem três abas (`ui/livroDeCartas.ts`):
 **Cartas** (cinza até escolher), **Pragas** (cinza até a praga nascer numa
 rodada — `jardim.viu-<id>`, marcado em `nascer`; retrato do próprio modelo por
@@ -140,6 +158,8 @@ rodada — `jardim.viu-<id>`, marcado em `nascer`; retrato do próprio modelo po
 recompensa esperando, o livro abre nela).
 
 **O que falta** (a escolha do próximo passo é do Renan):
+- a **pistola d'água** e o **borrifador** (os números, o jeito e as cartas só
+  deles), e o **prêmio de destrancar** cada arma;
 - a **vida dos bichos crescendo com as ondas** (hoje não cresce);
 - **equilíbrio**: ninguém jogou as 30 ondas inteiras; o Renan joga e diz.
 - perguntas em aberto: §12.
@@ -491,6 +511,40 @@ devagar, ou de uma vez encostando no **tonel** que fica no canto da estufa. É o
 que impede o jogo de virar "segure para a frente e ande em círculo": de vez em
 quando você TEM que voltar ao canto, e é nessa viagem que os canteiros ficam
 sozinhos.
+
+### 4.1. As outras armas — **a mangueira construída**
+
+Pedido do Renan: trocar a arma da rodada. Cada arma é uma ficha em
+`minigames/jardim/armas.ts` que mexe nos **números de partida** (`base`) antes
+de qualquer carta; o jeito de atirar continua o caminho único do jato
+(`umJato`), então as cartas genéricas (alcance, força, leque, gelo…) servem em
+todas de graça. O que não faz sentido numa arma a carta declara com
+`naoServe`; o que é só de uma, com `soPara` (`cartas.ts`). O baralho da rodada
+filtra por isso (`servePara`, em `baralho.ts`), e na tela a carta da família
+do regador ganha a fita da arma ("🐍 Mangueira").
+
+| arma | destranca | o jeito |
+|---|---|---|
+| 🪣 Regador | de começo | o de sempre (§4) |
+| 🐍 Mangueira | onda 20 com o regador | presa no tonel: **água infinita** (o painel mostra ∞) e **não passa dos portões** (o limite de andar da cena encolhe durante a rodada). Jato fino e quase contínuo: alcance 3,6, força 0,42 a cada 0,32 s (1,3/s contra 0,9 do regador), abertura 12°. Na mão, o esguicho (`esguichoDeMangueira`); no chão, a mangueira esticada do tonel até a mão |
+| 🔫 Pistola d'água | onda 20 com a mangueira | *ainda não construída* — a ideia: tiros rápidos e de longe, tanque pequeno |
+| 🧴 Borrifador | onda 20 com a pistola | *ainda não construído* — a ideia: leque curto que pega vários de uma vez |
+
+**Revisão das genéricas para a mangueira** (regra do Renan: "a mangueira… não
+teria a carta de 'tanque', pois a água dela já seria infinita"): não saem nela
+Tanque maior (I–III), Refil rápido (I–III), Orvalho, Bico de mangueira,
+Pressão acumulada, Balde, Fôlego, Chapéu de palha, Descanso na sombra, Segundo
+tonel e O Jean-Luc no tonel — todas de água/tanque/tonel.
+
+**As cartas só da mangueira** (família regador, `soPara: ['mangueira']`):
+
+| carta | raridade | efeito |
+|---|---|---|
+| Esguicho de latão I–II | comum | +12% força, +8% alcance, o fio engrossa |
+| Chicote | incomum | bicho que atravessa a mangueira no chão leva tranco e se molha (1,5× a força; 1,5 s por bicho) |
+| Vazamento | incomum | a mangueira pinga poças; quem cruza ela anda devagar 2 s |
+| Jato contínuo | raro | no mesmo bicho sem parar, +15% por jato até o dobro, e o fio engrossa |
+| Enchente | lendária | a cada 25 s, 3 s em que todo jato é o jatão que atravessa a fila |
 
 ---
 

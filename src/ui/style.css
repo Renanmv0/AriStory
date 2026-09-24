@@ -3784,3 +3784,34 @@ body.touch-device .posicionador kbd { display: none; }
 body.touch-device :has(> .posicionador.show) > .prompt { bottom: 150px; }
 /* e o "Mexer no…" vira botão: tocar nele é o mesmo que tocar no ✨ */
 body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-events: auto; cursor: pointer; }
+
+/* ===================== O PAINEL DAS ARMAS (ui/arsenal.ts): o livro por fora */
+.livro-de-cartas.arsenal .abas button.trancada:not(.ativa) { opacity: 0.62; }
+/* quatro abas no celular: elas dividem a largura, em vez de vazar para o lado */
+@media (max-width: 560px) {
+  .livro-de-cartas.arsenal .abas { gap: 3px; padding: 0 2px; }
+  .livro-de-cartas.arsenal .abas button { flex: 1 1 0; min-width: 0; padding: 6px 2px 5px; font-size: 11px; }
+}
+.livro-de-cartas.arsenal .arma-no-arsenal .icone { font-size: 34px; }
+.livro-de-cartas.arsenal .meta-da-arma {
+  position: relative;
+  margin-top: 6px;
+  height: 16px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+.livro-de-cartas.arsenal .meta-da-arma .enchido {
+  position: absolute; inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #7cc47f, #3f8f4a);
+}
+.livro-de-cartas.arsenal .meta-da-arma span {
+  position: relative;
+  display: block;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+  font-weight: 700;
+}
+/* a mangueira: a água nunca acaba, a barra fica cheia e o número vira ∞ */
+.painel-jardim.infinita .tanque .marcas { display: none; }

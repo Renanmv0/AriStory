@@ -3,9 +3,10 @@ import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import { TelaDeCartas, escapar } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
+import { Arsenal } from './arsenal';
 import { LojaDaJosefina } from './lojaDaJosefina';
 import type {
-  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoLivro, ContextoDaEscolha,
+  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
   EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
 import type { MemoriaPintada } from '../world/memoriasData';
@@ -111,6 +112,7 @@ export class Ui {
   private readonly mesaDeXadrez: MesaDeXadrez;
   private readonly telaDeCartas: TelaDeCartas;
   private readonly livroDeCartas: LivroDeCartas;
+  private readonly arsenal: Arsenal;
   private readonly telaDoFim: TelaDoFim;
   private readonly lojaDaJosefina: LojaDaJosefina;
   private readonly posicionador: HTMLDivElement;
@@ -335,6 +337,7 @@ export class Ui {
       <button class="ajuda-do-par" aria-label="chamar o par para ajudar"><span class="anel" aria-hidden="true"></span><span class="rosto" aria-hidden="true">💦</span><span class="rotulo"><b class="nome"></b><small class="estado"></small></span><kbd>F</kbd></button>
       <div class="cartas-do-jardim"></div>
       <div class="livro-de-cartas"></div>
+      <div class="livro-de-cartas arsenal"></div>
       <div class="fim-do-jardim"></div>
       <div class="loja-da-josefina"></div>
       <div class="posicionador" role="toolbar"></div>
@@ -409,6 +412,8 @@ export class Ui {
     this.telaDeCartas.som = (nome) => this.som?.(nome);
     this.livroDeCartas = new LivroDeCartas(ui.querySelector('.livro-de-cartas')!);
     this.livroDeCartas.som = (nome) => this.som?.(nome);
+    this.arsenal = new Arsenal(ui.querySelector('.livro-de-cartas.arsenal')!);
+    this.arsenal.som = (nome) => this.som?.(nome);
     this.telaDoFim = new TelaDoFim(ui.querySelector('.fim-do-jardim')!);
     this.telaDoFim.som = (nome) => this.som?.(nome);
     this.lojaDaJosefina = new LojaDaJosefina(ui.querySelector('.loja-da-josefina')!);
@@ -1071,8 +1076,9 @@ export class Ui {
 
   // ------------------------------------ o livro das cartas e o fim da rodada
 
+  /** o livro da bancada OU o painel das armas: os dois são o mesmo livro por fora */
   get livroOpen(): boolean {
-    return this.livroDeCartas.aberto;
+    return this.livroDeCartas.aberto || this.arsenal.aberto;
   }
 
   get fimOpen(): boolean {
@@ -1095,6 +1101,17 @@ export class Ui {
 
   fecharLivro(): void {
     this.livroDeCartas.fechar();
+    this.arsenal.fechar();
+  }
+
+  /** O painel das armas da estufa; resolve com a arma mandada usar, ou `null`. Ver `arsenal.ts`. */
+  abrirArsenal(conteudo: ConteudoDoArsenal, vistas: ReadonlySet<string>): Promise<string | null> {
+    const pedido = this.arsenal.abrir(conteudo, vistas);
+    this.marcarTelaAberta();
+    return pedido.then((arma) => {
+      this.marcarTelaAberta();
+      return arma;
+    });
   }
 
   /** Mostra a tela do fim da rodada do jardim; resolve quando a dupla volta. */
@@ -1181,7 +1198,9 @@ export class Ui {
     el.classList.add('show');
     el.querySelector('.onda b')!.textContent = String(dados.onda);
     el.querySelector('.onda small')!.textContent = `/${dados.ondas}`;
-    el.querySelector('.tanque em b')!.textContent = String(Math.floor(dados.agua));
+    // a mangueira (`armas.ts`) é presa no tonel: a água nunca acaba, e o número vira ∞
+    el.querySelector('.tanque em b')!.textContent = dados.infinita ? '∞' : String(Math.floor(dados.agua));
+    el.classList.toggle('infinita', !!dados.infinita);
     const fracao = dados.tanque > 0 ? Math.max(0, Math.min(1, dados.agua / dados.tanque)) : 0;
     el.querySelector<HTMLElement>('.tanque .agua')!.style.width = `${(fracao * 100).toFixed(1)}%`;
     // um risquinho por jato: é a régua que diz "cabem mais quantos"

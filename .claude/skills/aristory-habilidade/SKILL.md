@@ -120,6 +120,25 @@ numa tela de escolha.
 > põe na estufa entra por `pecaNaEstufa` (nasce crescendo e sai sozinha no fim
 > da rodada).
 
+### A carta é de qual ARMA? `soPara` e `naoServe`
+
+A rodada tem quatro armas numa fila (regador → mangueira → pistola d'água →
+borrifador, `minigames/jardim/armas.ts`); cada uma é uma `base()` que mexe nos
+números de partida da ficha, e o baralho da rodada é FILTRADO pela arma
+(`servePara`, em `baralho.ts`). Toda carta nasce servindo em todas. Duas marcas
+mudam isso:
+
+- `naoServe: ['mangueira']` — a carta não faz sentido naquela arma (a
+  mangueira tem água infinita: nada de tanque, refil, tonel);
+- `soPara: ['mangueira']` — a carta é SÓ daquela arma (Esguicho de latão,
+  Chicote, Vazamento, Jato contínuo, Enchente). Na tela ela ganha a fita da
+  arma (`cartaDaArma`, em `tela.ts`), no livro também.
+
+Texto de carta genérica fala do **jato**, não do regador ("O jato alcança…"):
+ela sai em qualquer arma. Carta nova de uma arma entra na tabela do §4.1 do
+plano, e `scripts/cartas.mjs` cobra que nenhuma arma sorteia carta que não
+serve nela.
+
 ---
 
 ## 2.5. As cartas SE SOMAM — regra do Renan
