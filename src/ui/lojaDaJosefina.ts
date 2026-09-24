@@ -113,30 +113,50 @@ export class LojaDaJosefina {
   private pintar(): void {
     const c = this.conteudo;
     if (!c) return;
-    this.saldo.innerHTML = `💰 <b>R$ ${c.saldo}</b> na carteira`;
+    this.saldo.innerHTML = `💰 <b>R$ ${c.saldo}</b> na carteira · <span class="girassois">🌻 <b>${c.girassois}</b> ${c.girassois === 1 ? 'girassol' : 'girassóis'}</span>`;
     this.abas.innerHTML = ABAS.map(([id, rotulo]) => `
       <button role="tab" data-aba="${id}" class="${this.aba === id ? 'ativa' : ''}" aria-selected="${this.aba === id}">${rotulo}</button>`).join('');
     this.prateleira.innerHTML = this.aba === 'roupas' ? this.pintarRoupas(c) : this.pintarDecoracoes(c);
   }
 
-  private botaoDeComprar(acao: string, id: string, preco: number, saldo: number): string {
+  /** `moeda` escreve o valor: "R$ 40" para roupa, "🌻 8" para enfeite */
+  private botaoDeComprar(acao: string, id: string, preco: number, saldo: number, moeda: (n: number) => string): string {
     return saldo >= preco
-      ? `<button class="comprar" data-acao="${acao}" data-id="${escapar(id)}">Comprar · R$ ${preco}</button>`
-      : `<button class="comprar" disabled>faltam R$ ${preco - saldo}</button>`;
+      ? `<button class="comprar" data-acao="${acao}" data-id="${escapar(id)}">Comprar · ${moeda(preco)}</button>`
+      : `<button class="comprar" disabled>faltam ${moeda(preco - saldo)}</button>`;
+  }
+
+  /** o que ainda não chegou: cadeado, e a onda que o recorde precisa alcançar */
+  private cadeado(onda: number): string {
+    return `<span class="cadeado">🔒 a Josefina traz quando vocês vencerem a onda ${onda}</span>`;
+  }
+
+  /**
+   * A LINHA DO RECORDE, no alto de cada aba: até onde a dupla já foi, e quando
+   * chega a próxima novidade daquela aba (ou que ela já está completa).
+   */
+  private proxima(recorde: number, travadas: readonly { onda: number }[]): string {
+    const falta = travadas.length ? Math.min(...travadas.map((t) => t.onda)) : null;
+    return `<p class="recorde">🏅 Recorde: onda <b>${recorde}</b> · ${falta === null
+      ? 'a Josefina já trouxe tudo desta prateleira'
+      : `mais novidade quando vocês vencerem a onda <b>${falta}</b>`}</p>`;
   }
 
   private pintarRoupas(c: ConteudoDaLoja): string {
     const cartao = (r: RoupaNaLoja): string => `
-      <div class="produto roupa${r.jaTem ? ' ja-tem' : ''}" data-id="${escapar(r.id)}">
-        <span class="amostra" style="background:${r.cor}">${r.icone}</span>
+      <div class="produto roupa${r.jaTem ? ' ja-tem' : ''}${r.travada ? ' travada' : ''}" data-id="${escapar(r.id)}">
+        <span class="amostra" style="background:${r.travada ? '#cfc6b3' : r.cor}">${r.travada ? '🔒' : r.icone}</span>
         <div class="texto">
           <h4>${escapar(r.nome)}</h4>
           ${r.nota ? `<p>${escapar(r.nota)}</p>` : ''}
         </div>
-        ${r.jaTem ? '<span class="selo">✓ é de vocês</span>' : this.botaoDeComprar('comprar-roupa', r.id, r.preco, c.saldo)}
+        ${r.jaTem ? '<span class="selo">✓ é de vocês</span>'
+          : r.travada ? this.cadeado(r.onda)
+            : this.botaoDeComprar('comprar-roupa', r.id, r.preco, c.saldo, (n) => `R$\u00a0${n}`)}
       </div>`;
     return `
-      <p class="dica">Roupa de mexer na terra. A que vocês comprarem vai para o guarda-roupa dos dois.
+      ${this.proxima(c.recorde, c.roupas.filter((r) => r.travada))}
+      <p class="dica">Roupa de mexer na terra, paga em reais. A que vocês comprarem vai para o guarda-roupa dos dois.
         <button class="provar" data-acao="provar">🪞 provar no boneco</button></p>
       <div class="grade-produtos">${c.roupas.map(cartao).join('')}</div>`;
   }
@@ -149,22 +169,23 @@ export class LojaDaJosefina {
         d.postas ? `${d.postas} na estufa` : '',
       ].filter(Boolean).join(' · ');
       return `
-        <div class="produto decoracao" data-id="${escapar(d.id)}">
-          <div class="foto">${foto ? `<img src="${foto}" alt="${escapar(d.nome)}">` : d.icone}</div>
+        <div class="produto decoracao${d.travada ? ' travada' : ''}" data-id="${escapar(d.id)}">
+          <div class="foto">${foto ? `<img src="${foto}" alt="${escapar(d.nome)}">` : d.icone}${d.travada ? '<span class="tranca">🔒</span>' : ''}</div>
           <div class="texto">
             <h4>${escapar(d.nome)}</h4>
             <p>${escapar(d.descricao)}</p>
             ${conta ? `<small class="conta">${conta}</small>` : ''}
           </div>
-          <div class="botoes">
-            ${this.botaoDeComprar('comprar-decoracao', d.id, d.preco, c.saldo)}
+          ${d.travada ? this.cadeado(d.onda) : `<div class="botoes">
+            ${this.botaoDeComprar('comprar-decoracao', d.id, d.girassois, c.girassois, (n) => `🌻\u00a0${n}`)}
             <button class="colocar" data-acao="colocar" data-id="${escapar(d.id)}" ${d.guardadas ? '' : 'disabled'}>📍 Colocar</button>
-          </div>
+          </div>`}
         </div>`;
     };
     const noChao = c.decoracoes.reduce((s, d) => s + d.postas, 0);
     return `
-      <p class="dica">Comprou, toque em <b>Colocar</b>: o enfeite vai na frente de vocês, e é só andar até o lugar —
+      ${this.proxima(c.recorde, c.decoracoes.filter((d) => d.travada))}
+      <p class="dica">Enfeite se paga em <b>girassóis 🌻</b>, que só a rodada dá (pelos bichos espantados). Comprou, toque em <b>Colocar</b>: o enfeite vai na frente de vocês, e é só andar até o lugar —
         dentro da estufa ou no pátio de fora. Os bichos passam por cima, então pode enfeitar até o caminho deles.</p>
       <div class="editar-enfeites">
         <button class="editar" data-acao="editar" ${noChao ? '' : 'disabled'}>✏️ Arrumar os enfeites</button>

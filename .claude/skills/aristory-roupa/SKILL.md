@@ -274,8 +274,11 @@ painel do guarda-roupa do quarto.
 **A outra loja é a da Josefina**, na estufa: a lista é `ROUPAS_DA_JOSEFINA`
 (mesmo arquivo), com roupa de jardim e peças temáticas do parque, do clube e
 dos personagens (tiaras do Walter e do Pelusa, boné da Gina, camisetas do Capy,
-da roda e do Noel). Preço: 35–60. Mesma ficha e mesmo `g.comprarPeca`; só muda
-a lista.
+da roda e do Noel). Preço em reais, 35–60. Mesma ficha e mesmo
+`g.comprarPeca`; só muda a lista. **E a peça entra em `LOJA_ABRE`
+(`minigames/jardim/premios.ts`)** com a onda em que a Josefina passa a
+vendê-la: o recorde da dupla na rodada do jardim destranca a banca aos poucos
+(sem entrada ali, a peça vende desde o começo).
 
 **Amostra de peça sem `cor`.** O cartão da loja pinta a amostra com
 `cor ?? corBanho ?? amostra`. Peça que é só `extra` por cima da roupa (a

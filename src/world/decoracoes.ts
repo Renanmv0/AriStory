@@ -33,8 +33,18 @@ export interface FichaDeDecoracao {
   readonly id: string;
   readonly nome: string;
   readonly icone: string;
-  /** em reais, na carteira do casal (a régua: bilhete da roda 24, peça de boutique 35–220) */
-  readonly preco: number;
+  /**
+   * O PREÇO, EM GIRASSÓIS 🌻 — a moeda da estufa, que só a rodada do jardim
+   * paga (um a cada 15 bichos espantados; ver `minigames/jardim/premios.ts`).
+   * A régua: simples 4–6, de personagem 6–11, com luz ou movimento 8–18.
+   */
+  readonly girassois: number;
+  /**
+   * A ONDA EM QUE A JOSEFINA PASSA A VENDER (pedido do Renan: "a cada onda que
+   * a gente chega, a Josefina desbloqueia mais compras"). É o RECORDE da dupla
+   * que tem que chegar lá; 0 = à venda desde o começo.
+   */
+  readonly onda: number;
   /** uma frase para o cartão da loja */
   readonly descricao: string;
   /** a pegada no chão, em metros (ver o topo do arquivo) */
@@ -949,38 +959,38 @@ function pelusaDePelucia(): THREE.Group {
  */
 export const DECORACOES: readonly FichaDeDecoracao[] = ([
   {
-    id: 'vaso-de-flores', nome: 'Vaso de flores', icone: '💐', preco: 25, artigo: 'o', raio: 0.32,
+    id: 'vaso-de-flores', nome: 'Vaso de flores', icone: '💐', girassois: 5, onda: 0, artigo: 'o', raio: 0.32,
     descricao: 'Um vaso de barro com flores rosa, brancas e lilás.',
     monta: vasoDeFlores,
   },
   {
-    id: 'flamingo', nome: 'Flamingo de jardim', icone: '🦩', preco: 35, artigo: 'o', raio: 0.26,
+    id: 'flamingo', nome: 'Flamingo de jardim', icone: '🦩', girassois: 6, onda: 0, artigo: 'o', raio: 0.26,
     descricao: 'Rosa, de plástico, numa perna de arame. Clássico.',
     monta: flamingoDeJardim,
   },
   {
-    id: 'lanterninha', nome: 'Lanterninha', icone: '🏮', preco: 40, artigo: 'a', raio: 0.2,
+    id: 'lanterninha', nome: 'Lanterninha', icone: '🏮', girassois: 8, onda: 4, artigo: 'a', raio: 0.2,
     descricao: 'Um poste baixinho com a luz sempre acesa. Clareia o chão em volta.',
     monta: lanternaDeJardim,
   },
   {
-    id: 'anao-de-jardim', nome: 'Anão de jardim', icone: '🧙', preco: 45, artigo: 'o', raio: 0.24,
+    id: 'anao-de-jardim', nome: 'Anão de jardim', icone: '🧙', girassois: 7, onda: 2, artigo: 'o', raio: 0.24,
     descricao: 'Gorro vermelho, barba branca e cara de quem cuida da horta.',
     monta: anaoDeJardim,
   },
   {
-    id: 'banquinho', nome: 'Banquinho de jardim', icone: '🪑', preco: 60, artigo: 'o', raio: 0.55,
+    id: 'banquinho', nome: 'Banquinho de jardim', icone: '🪑', girassois: 9, onda: 4, artigo: 'o', raio: 0.55,
     descricao: 'Um banquinho de madeira, do tamanho certo para dois.',
     monta: banquinhoDeJardim,
   },
   {
-    id: 'bebedouro', nome: 'Bebedouro de passarinho', icone: '🐦', preco: 70, artigo: 'o', raio: 0.34,
+    id: 'bebedouro', nome: 'Bebedouro de passarinho', icone: '🐦', girassois: 12, onda: 13, artigo: 'o', raio: 0.34,
     descricao: 'Uma taça de pedra com água, e um passarinho que já achou.',
     monta: bebedouroDePassarinho,
   },
   // --- os de jardim, simples
   {
-    id: 'cata-vento', nome: 'Cata-vento', icone: '🎐', preco: 20, artigo: 'o', raio: 0.14,
+    id: 'cata-vento', nome: 'Cata-vento', icone: '🎐', girassois: 4, onda: 0, artigo: 'o', raio: 0.14,
     descricao: 'Quatro pás coloridas que giram sem parar.',
     monta: cataVento,
     anima: (peca, t) => {
@@ -989,68 +999,68 @@ export const DECORACOES: readonly FichaDeDecoracao[] = ([
     },
   },
   {
-    id: 'cogumelos', nome: 'Cogumelos de bolinha', icone: '🍄', preco: 22, artigo: 'o', raio: 0.24,
+    id: 'cogumelos', nome: 'Cogumelos de bolinha', icone: '🍄', girassois: 4, onda: 0, artigo: 'o', raio: 0.24,
     descricao: 'Três cogumelos de chapéu vermelho e bolinha branca.',
     monta: cogumelosDeBolinha,
   },
   {
-    id: 'varal-de-luzinhas', nome: 'Varal de luzinhas', icone: '✨', preco: 55, artigo: 'o', raio: 0.8,
+    id: 'varal-de-luzinhas', nome: 'Varal de luzinhas', icone: '✨', girassois: 13, onda: 16, artigo: 'o', raio: 0.8,
     descricao: 'O corredor de luzinhas do pedido, em miniatura. Acende o chão em volta.',
     monta: varalDeLuzinhas,
   },
   // --- os de personagem e de lugar: o clube, o parque e quem mora lá
   {
-    id: 'tartaruguinha', nome: 'Tartaruguinha da Josefina', icone: '🐢', preco: 30, artigo: 'a', raio: 0.3,
+    id: 'tartaruguinha', nome: 'Tartaruguinha da Josefina', icone: '🐢', girassois: 6, onda: 2, artigo: 'a', raio: 0.3,
     descricao: 'De cerâmica, com o casco de escudos e o laço rosa dela.',
     monta: tartaruguinhaDaJosefina,
   },
   {
-    id: 'pelusa-de-pelucia', nome: 'Pelusa de pelúcia', icone: '🐱', preco: 34, artigo: 'o', raio: 0.3,
+    id: 'pelusa-de-pelucia', nome: 'Pelusa de pelúcia', icone: '🐱', girassois: 7, onda: 6, artigo: 'o', raio: 0.3,
     descricao: 'O gatinho enroladinho, dormindo com o rabo em volta.',
     monta: pelusaDePelucia,
   },
   {
-    id: 'copao-de-suco', nome: 'Copão de suco do Noel', icone: '🧃', preco: 38, artigo: 'o', raio: 0.2,
+    id: 'copao-de-suco', nome: 'Copão de suco do Noel', icone: '🧃', girassois: 8, onda: 6, artigo: 'o', raio: 0.2,
     descricao: 'Laranja, com canudo listrado — o do bar de sucos do clube.',
     monta: copaoDeSucoDoNoel,
   },
   {
-    id: 'casquinha', nome: 'Casquinha gigante do Mano', icone: '🍦', preco: 40, artigo: 'a', raio: 0.22,
+    id: 'casquinha', nome: 'Casquinha gigante do Mano', icone: '🍦', girassois: 8, onda: 8, artigo: 'a', raio: 0.22,
     descricao: 'Bola de morango escorrendo e a cereja, do quiosque do Villa Lobos.',
     monta: casquinhaGigante,
   },
   {
-    id: 'walter-de-ceramica', nome: 'Walter de cerâmica', icone: '🐕', preco: 45, artigo: 'o', raio: 0.24,
+    id: 'walter-de-ceramica', nome: 'Walter de cerâmica', icone: '🐕', girassois: 9, onda: 8, artigo: 'o', raio: 0.24,
     descricao: 'Sentadinho, de gravatinha, esperando o próximo pedido.',
     monta: walterDeCeramica,
   },
   {
-    id: 'elefantinho', nome: 'Regador elefantinho do Cookie', icone: '🐘', preco: 48, artigo: 'o', raio: 0.4,
+    id: 'elefantinho', nome: 'Regador elefantinho do Cookie', icone: '🐘', girassois: 10, onda: 10, artigo: 'o', raio: 0.4,
     descricao: 'A tromba é o bico, e o quepe é o da bilheteria.',
     monta: regadorElefantinho,
   },
   {
-    id: 'capivara', nome: 'Capivara de jardim', icone: '🦫', preco: 50, artigo: 'a', raio: 0.3,
+    id: 'capivara', nome: 'Capivara de jardim', icone: '🦫', girassois: 10, onda: 10, artigo: 'a', raio: 0.3,
     descricao: 'O Capy de óculos escuros e apito, de plantão no jardim.',
     monta: capivaraDeJardim,
   },
   {
-    id: 'girafinha', nome: 'Girafinha da Gina', icone: '🦒', preco: 55, artigo: 'a', raio: 0.28,
+    id: 'girafinha', nome: 'Girafinha da Gina', icone: '🦒', girassois: 11, onda: 13, artigo: 'a', raio: 0.28,
     descricao: 'De pescoção e chifrinhos, vigiando a estufa como a Gina vigia a portaria.',
     monta: girafinhaDaGina,
   },
   {
-    id: 'laguinho', nome: 'Laguinho do Jean-Luc', icone: '🦆', preco: 65, artigo: 'o', raio: 0.62,
+    id: 'laguinho', nome: 'Laguinho do Jean-Luc', icone: '🦆', girassois: 14, onda: 20, artigo: 'o', raio: 0.62,
     descricao: 'Água rasa, pedrinhas e o pato de boina que mora no lago do parque.',
     monta: laguinhoDoJeanLuc,
   },
   {
-    id: 'roda-gigante', nome: 'Rodinha gigante', icone: '🎡', preco: 90, artigo: 'a', raio: 0.36,
+    id: 'roda-gigante', nome: 'Rodinha gigante', icone: '🎡', girassois: 18, onda: 25, artigo: 'a', raio: 0.36,
     descricao: 'A roda do Villa Lobos em miniatura. Ela gira de verdade.',
     monta: rodaGiganteMini,
     anima: girarRoda,
   },
-] as FichaDeDecoracao[]).sort((a, b) => a.preco - b.preco);
+] as FichaDeDecoracao[]).sort((a, b) => a.onda - b.onda || a.girassois - b.girassois);
 
 export function decoracaoPorId(id: string): FichaDeDecoracao | undefined {
   return DECORACOES.find((d) => d.id === id);

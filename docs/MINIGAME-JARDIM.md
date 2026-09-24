@@ -64,9 +64,18 @@ velocidade/mordida de cada praga em `JEITO` (`rodada.ts`).
   já escolhida, em ordem de raridade.
 
 **Os prêmios** (`minigames/jardim/premios.ts`, pedido do Renan): toda rodada
-jogada até o fim paga reais na carteira do casal — R$ 3 por onda vencida, mais
-um bônus em cada marco alcançado (onda 5: +10, 10: +20, 20: +40, 30: +80;
-vencer tudo = R$ 240). E cada marco dá um **prêmio único** na primeira vez
+jogada até o fim paga **pelos bichos espantados**, em duas moedas — **R$ 1 a
+cada 8** na carteira do casal, e **🌻 1 girassol a cada 15** (contador
+`jardim.girassois`). Girassol rende menos, mas é a moeda da estufa: **só ele
+compra enfeite** na lojinha (e enfeite custa 4 a 18 🌻), então o dinheiro do
+turno do Walter não enfeita nada. Medido com `planoDaOnda`: perder na 6ª
+(~180 bichos) paga R$ 22 e 12 🌻; as trinta (~2.300) pagam ~R$ 290 e ~150 🌻.
+E o **recorde** (`jardim.recorde`, a maior onda vencida) **destranca a lojinha
+aos poucos**: cada enfeite tem a `onda` na ficha (`world/decoracoes.ts`: 4 à
+venda de começo, o resto chegando nas ondas 2, 4, 6, 8, 10, 13, 16, 20 e 25) e
+cada roupa em `LOJA_ABRE` (`premios.ts`: de 0 a 18). O que ainda não chegou
+aparece com cadeado e a onda que falta; o que já foi comprado nunca tranca.
+E cada marco dá um **prêmio único** na primeira vez
 (`jardim.marco-N` = alcançado): a **plaquinha** "Jardineiros da Josefina" na
 parede da bancada (5), o **chapéu de jardineira** (10) e o **avental da
 Josefina** (20) no guarda-roupa dos dois (`g.ganharPeca`), e o **regador de
@@ -1394,7 +1403,7 @@ trabalha rápido") virando geometria.
 | 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, com o som de cada carta |
 | 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **pronto**: as trinta ondas rodam com os treze bichos (a segunda leva estreia da 15ª), com o aviso do grandão e o JEITO de cada um (§5, "O jeito de cada bicho") |
 | 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | **pronto** (§6, "Como as cartas de jardineiro e de jardim agem") |
-| 9 | o pagamento, a memória e a fala de despedida da Josefina | **pronto**: a tela do fim, o livro das cartas, as moedas de toda rodada e os prêmios únicos dos marcos 5/10/20/30 com a memória das trinta levas (`premios.ts`) |
+| 9 | o pagamento, a memória e a fala de despedida da Josefina | **pronto**: a tela do fim, o livro das cartas, o pagamento de toda rodada (reais e girassóis, pelos bichos espantados) e os prêmios únicos dos marcos 5/10/20/30 com a memória das trinta levas (`premios.ts`) |
 
 A etapa 3 é a que decide se o resto vale: um regador que atira sozinho num
 bicho que anda devagar já é jogo ou não é. **Não construa 5 antes de jogar 3.**

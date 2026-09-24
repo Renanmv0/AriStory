@@ -1,11 +1,12 @@
 /**
  * OS PRÊMIOS DA ESTUFA (`src/minigames/jardim/premios.ts`), pedido do Renan:
  *
- *   1. toda rodada paga reais na carteira do casal — por onda vencida e pelos
- *      marcos alcançados (5, 10, 20, 30) — e a tela do fim mostra quanto;
+ *   1. toda rodada paga pelos BICHOS ESPANTADOS, em reais (R$ 1 a cada 8) e
+ *      em girassóis (🌻 1 a cada 15, a moeda dos enfeites), e a tela do fim
+ *      mostra quanto;
  *   2. cada marco dá um prêmio ÚNICO na primeira vez: a plaquinha na parede
  *      (5), o chapéu de jardineira (10), o avental (20), e o regador de ouro
- *      com a memória no quadro (30). Da segunda vez, só as moedas. O prêmio
+ *      com a memória no quadro (30). Da segunda vez, só o pagamento. O prêmio
  *      NÃO chega sozinho: o fim da rodada avisa, e a dupla RESGATA na aba de
  *      recompensas do livro da bancada, com um clique;
  *   3. a aba de PRAGAS do livro: cinza até a praga aparecer numa rodada, e
@@ -64,7 +65,7 @@ async function fimDaRodada(fim) {
       if (!tela) {
         await page.waitForTimeout(400);
         tela = await page.evaluate(() => ({
-          pago: document.querySelector('.fim-do-jardim .pagamento b')?.textContent ?? '',
+          pago: document.querySelector('.fim-do-jardim .pagamento')?.textContent.replace(/\s+/g, ' ').trim() ?? '',
           marcos: [...document.querySelectorAll('.fim-do-jardim .marco')].map((m) => m.textContent.replace(/\s+/g, ' ').trim()),
         }));
       }
@@ -148,14 +149,20 @@ async function resgatarNoLivro(onda) {
 const antes = await enfeites();
 ok(!antes.plaquinha && !antes.trofeu, 'sem marco, a estufa não tem plaquinha nem regador de ouro');
 const carteira0 = await page.evaluate(() => window.jogo.carteira());
+const flores = () => page.evaluate(() => window.jogo.stat('jardim.girassois'));
+const flor0 = await flores();
 
 // ============================ 2. uma rodada perdida na onda 12: paga, e dá 5 e 10
-const perdida = await fimDaRodada({ canteiros: 0, ondas: 12, de: 30 });
+const perdida = await fimDaRodada({ canteiros: 0, ondas: 12, de: 30, espantados: 400, porPraga: { lagartejo: 400 } });
 const carteira1 = await page.evaluate(() => window.jogo.carteira());
+const flor1 = await flores();
 console.log(`       perdida na 12: tela "${perdida.tela?.pago}" · marcos ${JSON.stringify(perdida.tela?.marcos)}`);
-// 11 vencidas × 3 + 10 + 20
-ok(carteira1 - carteira0 === 63, `rodada perdida na onda 12 paga R$ 63 (pagou ${carteira1 - carteira0})`);
-ok(/63/.test(perdida.tela?.pago ?? ''), 'a tela do fim mostra o pagamento');
+// 400 bichos: 400/8 = 50 reais, 400/15 = 26 girassóis
+ok(carteira1 - carteira0 === 50, `400 bichos espantados pagam R$ 50 (pagou ${carteira1 - carteira0})`);
+ok(flor1 - flor0 === 26, `e 26 girassóis (pagou ${flor1 - flor0})`);
+ok(flor1 - flor0 < carteira1 - carteira0, 'girassol rende menos que real');
+ok(/R\$ 50/.test(perdida.tela?.pago ?? '') && /26/.test(perdida.tela?.pago ?? ''), 'a tela do fim mostra os reais e os girassóis');
+ok(await page.evaluate(() => window.jogo.stat('jardim.recorde')) === 11, 'o recorde vira a onda 11 (as vencidas)');
 ok((perdida.tela?.marcos.length ?? 0) === 2, 'a tela do fim mostra os dois marcos novos (5 e 10)');
 const e0 = await enfeites();
 ok(!e0.plaquinha, 'o prêmio não chega sozinho: sem resgatar, nada de plaquinha');
@@ -175,17 +182,19 @@ const chapeu = await page.evaluate(() => [window.jogo.playerId(), window.jogo.co
 ok(chapeu.every(Boolean), 'o chapéu de jardineira foi para o guarda-roupa dos dois');
 
 // ======================================== 3. a mesma de novo: só as moedas
-const repetida = await fimDaRodada({ canteiros: 0, ondas: 12, de: 30 });
+const repetida = await fimDaRodada({ canteiros: 0, ondas: 12, de: 30, espantados: 400, porPraga: { lagartejo: 400 } });
 const carteira2 = await page.evaluate(() => window.jogo.carteira());
-ok(carteira2 - carteira1 === 63, 'a segunda rodada igual paga as moedas de novo');
+ok(carteira2 - carteira1 === 50 && (await flores()) - flor1 === 26, 'a segunda rodada igual paga reais e girassóis de novo');
 ok((repetida.tela?.marcos.length ?? 0) === 0, 'e não repete prêmio único');
 ok(!repetida.falantes.some((f) => /recompensa nova/.test(f)), 'e a Josefina não avisa de recompensa que já foi resgatada');
 
 // ============================================ 4. as trinta: avental, troféu, memória
-const vitoria = await fimDaRodada({ canteiros: 5, ondas: 30, de: 30 });
+const flor2 = await flores();
+const vitoria = await fimDaRodada({ canteiros: 5, ondas: 30, de: 30, espantados: 2300, porPraga: { lagartejo: 2300 } });
 const carteira3 = await page.evaluate(() => window.jogo.carteira());
 console.log(`       vitória: tela "${vitoria.tela?.pago}" · marcos ${JSON.stringify(vitoria.tela?.marcos)}`);
-ok(carteira3 - carteira2 === 240, `vencer as trinta paga R$ 240 (pagou ${carteira3 - carteira2})`);
+ok(carteira3 - carteira2 === 287 && (await flores()) - flor2 === 153,
+  `as trinta, com 2.300 bichos, pagam R$ 287 e 153 girassóis (R$ ${carteira3 - carteira2}, 🌻 ${(await flores()) - flor2})`);
 ok((vitoria.tela?.marcos.length ?? 0) === 2, 'a vitória destrava os marcos 20 e 30');
 await resgatarNoLivro(20);
 const r30 = await resgatarNoLivro(30);

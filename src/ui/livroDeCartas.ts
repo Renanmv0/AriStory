@@ -198,7 +198,7 @@ export class LivroDeCartas {
       return `<div class="recompensa ${r.estado}">
         <span class="icone">${r.estado === 'trancada' ? '🔒' : r.icone}</span>
         <div class="texto">
-          <small>Onda ${r.onda} · +R$ ${r.moedas} em toda rodada que chegar aqui</small>
+          <small>Onda ${r.onda} · prêmio de uma vez só</small>
           <h4>${escapar(r.nome)}</h4>
           <p>${escapar(r.descricao)}</p>
         </div>
@@ -207,7 +207,7 @@ export class LivroDeCartas {
     };
     this.paginas.innerHTML = `
       <section class="capitulo">
-        <p class="moedas-da-rodada">💰 Toda rodada paga <b>R$ ${c.moedasPorOnda}</b> por onda vencida, mais o bônus de cada marco alcançado. O prêmio de cada marco é de uma vez só: resgate aqui.</p>
+        <p class="moedas-da-rodada">Toda rodada paga pelos bichos espantados: <b>💰 R$ 1 a cada ${c.bichosPorReal}</b> e <b>🌻 1 girassol a cada ${c.bichosPorGirassol}</b>. Os girassóis compram os enfeites da lojinha, e cada recorde novo faz a Josefina trazer mais coisa para vender. O prêmio de cada marco é de uma vez só: resgate aqui.</p>
         <div class="lista-recompensas">${c.recompensas.map(linha).join('')}</div>
       </section>`;
   }
@@ -279,13 +279,14 @@ export class TelaDoFim {
         : '<p class="nenhuma">nenhuma carta nesta rodada</p>';
       /*
        * O PAGAMENTO e os PRÊMIOS ÚNICOS (`minigames/jardim/premios.ts`): toda
-       * rodada paga, e o marco alcançado pela primeira vez ganha um selo.
+       * rodada paga reais e girassóis pelos bichos espantados, e o marco
+       * alcançado pela primeira vez ganha um selo.
        */
       const pg = fim.pagamento;
-      const pago = pg && pg.total > 0
+      const pago = pg && (pg.dinheiro > 0 || pg.girassois > 0)
         ? `<div class="pagamento">
-            <b>💰 +R$ ${pg.total}</b> na carteira
-            <small>${pg.vencidas} ${pg.vencidas === 1 ? 'onda vencida' : 'ondas vencidas'} × R$ ${pg.vencidas ? pg.porOnda / pg.vencidas : 0}${pg.bonus ? ` · bônus dos marcos R$ ${pg.bonus}` : ''}</small>
+            <b>💰 +R$ ${pg.dinheiro}</b> na carteira · <b class="girassois">🌻 +${pg.girassois}</b> ${pg.girassois === 1 ? 'girassol' : 'girassóis'}
+            <small>pelos ${pg.espantados} bichos espantados — os girassóis compram enfeite na lojinha da Josefina</small>
           </div>`
         : '';
       const marcos = (fim.marcos ?? []).length

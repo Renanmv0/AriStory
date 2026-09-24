@@ -22,9 +22,12 @@ import { PRAGAS } from '../world/bichosDoJardim';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
 import { cartaNaTela } from '../minigames/jardim/tela';
 import { RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigames/jardim/rodada';
-import { DECORACOES } from '../world/decoracoes';
-import { Decorador } from '../world/decorador';
-import { MARCOS, MOEDAS_POR_ONDA, RECORDE, ondasVencidas, pagamentoDaRodada, type MarcoDoJardim } from '../minigames/jardim/premios';
+import { DECORACOES, type FichaDeDecoracao } from '../world/decoracoes';
+import { Decorador, type Cofre } from '../world/decorador';
+import {
+  BICHOS_POR_GIRASSOL, BICHOS_POR_REAL, GIRASSOIS, LOJA_ABRE, MARCOS, RECORDE, ondasVencidas, pagamentoDaRodada,
+  type MarcoDoJardim,
+} from '../minigames/jardim/premios';
 import { DESCRICAO_DA_PRAGA, NOME_DO_TIER, flagDaPraga, pragasDoLivro } from '../minigames/jardim/bestiario';
 import type { AcaoNaLoja, ConteudoDaLoja, ConteudoDoLivro } from '../minigames/jardim/tela';
 import { ARI, RENAN } from '../characters/cast';
@@ -825,11 +828,11 @@ export const estufa: SceneDef = {
         nome: m.nome,
         icone: m.icone,
         descricao: m.descricao,
-        moedas: m.moedas,
         estado: g.flag(m.resgate) ? 'resgatada' : g.flag(m.flag) ? 'pronta' : 'trancada',
       })),
       recorde: g.stat(RECORDE),
-      moedasPorOnda: MOEDAS_POR_ONDA,
+      bichosPorReal: BICHOS_POR_REAL,
+      bichosPorGirassol: BICHOS_POR_GIRASSOL,
     });
     w.root.userData.conteudoDoLivro = conteudoDoLivro;
 
@@ -1886,7 +1889,23 @@ export const estufa: SceneDef = {
         return null;
       },
     };
-    const decorador = new Decorador(w, regrasDoLugar);
+    /**
+     * OS GIRASSÓIS 🌻 — a moeda da estufa (pedido do Renan). Só a rodada paga
+     * (`premios.ts`, pelos bichos espantados), e só eles compram enfeite: é o
+     * que liga a lojinha ao jardim. Moram num contador do save, do casal, como
+     * a carteira.
+     */
+    const girassois: Cofre = {
+      saldo: () => g.stat(GIRASSOIS),
+      gastar: (quanto) => {
+        if (quanto > g.stat(GIRASSOIS)) return false;
+        g.bump(GIRASSOIS, -quanto);
+        return true;
+      },
+      escrever: (n) => `${n} ${n === 1 ? 'girassol' : 'girassóis'}`,
+      icone: '🌻',
+    };
+    const decorador = new Decorador(w, regrasDoLugar, girassois);
     decoradorOcupado = () => decorador.ocupado;
     /*
      * NA RODADA, ENFEITE NÃO TEM CORPO: a partir da hora em que a dupla aceita
@@ -1903,8 +1922,21 @@ export const estufa: SceneDef = {
     decorador.aoMudar();
     w.root.userData.decorador = decorador;
 
+    /**
+     * O QUE ESTÁ À VENDA DEPENDE DO RECORDE (pedido do Renan: "a cada onda que
+     * a gente chega, a Josefina desbloqueia mais compras"). O que ainda não
+     * chegou aparece com cadeado e a onda em que chega — a lista inteira fica à
+     * vista, que é o que dá vontade de ir mais longe. O que a dupla já comprou
+     * nunca tranca de novo.
+     */
+    const ondaDaRoupa = (id: string): number => LOJA_ABRE[id] ?? 0;
+    const roupaTravada = (id: string): boolean => !g.jaTemPeca(id) && g.stat(RECORDE) < ondaDaRoupa(id);
+    const enfeiteTravado = (d: FichaDeDecoracao): boolean =>
+      g.stat(RECORDE) < d.onda && decorador.guardadas(d.id) + decorador.postas(d.id) === 0;
     const conteudoDaLoja = (): ConteudoDaLoja => ({
       saldo: g.carteira(),
+      girassois: g.stat(GIRASSOIS),
+      recorde: g.stat(RECORDE),
       roupas: ROUPAS_DA_JOSEFINA.map((p) => ({
         id: p.id,
         nome: p.nome,
@@ -1913,13 +1945,17 @@ export const estufa: SceneDef = {
         preco: p.preco ?? 0,
         cor: `#${(p.cor ?? p.amostra ?? 0xcccccc).toString(16).padStart(6, '0')}`,
         jaTem: g.jaTemPeca(p.id),
+        onda: ondaDaRoupa(p.id),
+        travada: roupaTravada(p.id),
       })),
       decoracoes: DECORACOES.map((d) => ({
         id: d.id,
         nome: d.nome,
         icone: d.icone,
         descricao: d.descricao,
-        preco: d.preco,
+        girassois: d.girassois,
+        onda: d.onda,
+        travada: enfeiteTravado(d),
         guardadas: decorador.guardadas(d.id),
         postas: decorador.postas(d.id),
       })),
@@ -1927,9 +1963,10 @@ export const estufa: SceneDef = {
     const agirNaLoja = (a: AcaoNaLoja): ConteudoDaLoja => {
       if (a.tipo === 'comprar-roupa') {
         const peca = ROUPAS_DA_JOSEFINA.find((p) => p.id === a.id);
-        if (peca) g.comprarPeca(peca);
+        if (peca && !roupaTravada(peca.id)) g.comprarPeca(peca);
       } else {
-        decorador.comprar(a.id);
+        const ficha = DECORACOES.find((d) => d.id === a.id);
+        if (ficha && !enfeiteTravado(ficha)) decorador.comprar(a.id);
       }
       return conteudoDaLoja();
     };
@@ -1946,8 +1983,17 @@ export const estufa: SceneDef = {
           'Tem roupa de mexer na terra, e enfeite pra deixar a estufa mais bonita. Vocês escolhem onde fica cada um.',
         ], 'Josefina');
       }
+      // os girassóis e a banca que cresce com o recorde (fala minha também)
+      if (!g.flag('estufa.girassois-explicados')) {
+        g.setFlag('estufa.girassois-explicados');
+        await g.say([
+          'Enfeite eu vendo por girassol, viu? É o que eu colho cada vez que vocês espantam bicho da horta.',
+          'E quanto mais longe vocês forem na rodada, mais coisa eu trago pra banca.',
+        ], 'Josefina');
+      }
       const saida = await g.abrirLojaDaJosefina(conteudoDaLoja(), agirNaLoja);
-      if (saida?.tipo === 'provar') g.abrirLoja('Roupas da Josefina', ROUPAS_DA_JOSEFINA);
+      // o boneco só prova o que já está à venda (a arara da boutique também vende)
+      if (saida?.tipo === 'provar') g.abrirLoja('Roupas da Josefina', ROUPAS_DA_JOSEFINA.filter((p) => !roupaTravada(p.id)));
       else if (saida?.tipo === 'colocar') decorador.colocar(saida.id);
       else if (saida?.tipo === 'editar') decorador.editar();
     };
@@ -2035,16 +2081,17 @@ export const estufa: SceneDef = {
       const { canteiros, total, ondas, de } = fim;
       const venceu = ondas >= de && canteiros > 0;
       /*
-       * OS PRÊMIOS (pedido do Renan): toda rodada jogada até o fim PAGA — por
-       * onda vencida e pelos marcos alcançados —, e o marco alcançado pela
-       * primeira vez dá o prêmio único dele. A rodada interrompida (a dupla
-       * saiu da cena) não paga: não chegou a acabar.
+       * OS PRÊMIOS (pedido do Renan): toda rodada jogada até o fim PAGA pelos
+       * bichos espantados, em reais e em girassóis (`premios.ts`), e o marco
+       * alcançado pela primeira vez dá o prêmio único dele. A rodada
+       * interrompida (a dupla saiu da cena) não paga: não chegou a acabar.
        */
       const jogou = fim.motivo === 'fim';
       const vencidas = ondasVencidas(ondas, de, canteiros);
-      const pagamento = pagamentoDaRodada(vencidas);
+      const pagamento = pagamentoDaRodada(fim.espantados);
       const novos = jogou ? MARCOS.filter((m) => vencidas >= m.onda && !g.flag(m.flag)) : [];
-      if (jogou && pagamento.total > 0) g.ganhar(pagamento.total);
+      if (jogou && pagamento.dinheiro > 0) g.ganhar(pagamento.dinheiro);
+      if (jogou && pagamento.girassois > 0) g.bump(GIRASSOIS, pagamento.girassois);
       // o marco fica ALCANÇADO; o prêmio único se resgata no livro da bancada
       for (const m of novos) g.setFlag(m.flag);
       // o recorde: a maior onda vencida numa rodada, para a aba de recompensas

@@ -117,8 +117,8 @@ export interface FimDoJardim {
   readonly cartas: readonly CartaNaTela[];
   /** as que entraram no livro pela primeira vez nesta rodada */
   readonly novas: readonly string[];
-  /** o que a rodada pagou na carteira (`premios.ts`): por onda, o bônus dos marcos e o total */
-  readonly pagamento?: { readonly vencidas: number; readonly porOnda: number; readonly bonus: number; readonly total: number };
+  /** o que a rodada pagou pelos bichos espantados (`premios.ts`): reais e girassóis */
+  readonly pagamento?: { readonly espantados: number; readonly dinheiro: number; readonly girassois: number };
   /** os prêmios únicos que esta rodada destravou pela primeira vez */
   readonly marcos?: readonly { readonly onda: number; readonly nome: string; readonly icone: string }[];
 }
@@ -144,8 +144,6 @@ export interface RecompensaNoLivro {
   readonly nome: string;
   readonly icone: string;
   readonly descricao: string;
-  /** o bônus em reais de toda rodada que chegar nesta onda */
-  readonly moedas: number;
   /** ainda não chegaram / chegaram e podem resgatar / já resgataram */
   readonly estado: 'trancada' | 'pronta' | 'resgatada';
 }
@@ -155,8 +153,9 @@ export interface ConteudoDoLivro {
   readonly recompensas: readonly RecompensaNoLivro[];
   /** a maior onda vencida numa rodada */
   readonly recorde: number;
-  /** quanto cada onda vencida paga, para a aba explicar as moedas */
-  readonly moedasPorOnda: number;
+  /** quantos bichos valem um real e um girassol, para a aba explicar o pagamento */
+  readonly bichosPorReal: number;
+  readonly bichosPorGirassol: number;
 }
 
 /**
@@ -174,6 +173,10 @@ export interface RoupaNaLoja {
   readonly cor: string;
   /** já pagaram por ela (o armário repõe para sempre) */
   readonly jaTem: boolean;
+  /** a onda em que a Josefina passa a vender (o recorde tem que chegar lá) */
+  readonly onda: number;
+  /** o recorde ainda não chegou: cartão com cadeado, sem botão de comprar */
+  readonly travada: boolean;
 }
 
 export interface DecoracaoNaLoja {
@@ -181,7 +184,11 @@ export interface DecoracaoNaLoja {
   readonly nome: string;
   readonly icone: string;
   readonly descricao: string;
-  readonly preco: number;
+  /** o preço, em girassóis 🌻 */
+  readonly girassois: number;
+  /** a onda em que a Josefina passa a vender (o recorde tem que chegar lá) */
+  readonly onda: number;
+  readonly travada: boolean;
   /** compradas e esperando lugar */
   readonly guardadas: number;
   /** já no chão da estufa */
@@ -189,7 +196,12 @@ export interface DecoracaoNaLoja {
 }
 
 export interface ConteudoDaLoja {
+  /** reais, na carteira do casal: compram as ROUPAS */
   readonly saldo: number;
+  /** girassóis 🌻, que só a rodada paga: compram os ENFEITES */
+  readonly girassois: number;
+  /** a maior onda vencida: é ela que destranca a loja */
+  readonly recorde: number;
   readonly roupas: readonly RoupaNaLoja[];
   readonly decoracoes: readonly DecoracaoNaLoja[];
 }

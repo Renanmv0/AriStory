@@ -3,7 +3,9 @@
  *
  *   1. a banca na parede direita (balcão para o meio) abre o painel (a Josefina apresenta
  *      na primeira vez), com as abas de roupas e de decorações;
- *   2. comprar enfeite debita da carteira e GUARDA; "colocar" fecha a banca e
+ *   1b. enfeite se paga em GIRASSÓIS (a carteira de reais não mexe), e o que a
+ *      Josefina ainda não trouxe aparece com cadeado até o recorde chegar lá;
+ *   2. comprar enfeite debita os girassóis e GUARDA; "colocar" fecha a banca e
  *      o enfeite vai na frente da dupla, com o anel verde onde cabe;
  *   3. onde não cabe (o terreiro), o anel fica vermelho e o E não coloca;
  *   4. o enfeite posto tem colisor e o ponto "Mexer no…" (girar, mudar de
@@ -39,7 +41,10 @@ await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));
 await page.goto(`${BASE}/?cena=estufa&em=11,9`, { waitUntil: 'networkidle' });
 await page.waitForFunction(() => !!window.jogo?.current?.world?.root?.userData?.decorador, null, { timeout: 30000 });
 await page.waitForTimeout(1200);
-await page.evaluate(() => window.jogo.ganhar(400));
+// reais para as roupas, girassóis para os enfeites, e o recorde ZERADO: só
+// o que a Josefina vende desde o começo está destrancado
+await page.evaluate(() => { window.jogo.ganhar(400); window.jogo.bump('jardim.girassois', 60); });
+const girassois = () => deco(() => window.jogo.stat('jardim.girassois'));
 
 const deco = (fn, arg) => page.evaluate(fn, arg);
 const salvas = () => deco(() => window.jogo.decoracoes().map((d) => ({ ...d })));
@@ -67,7 +72,7 @@ for (let i = 0; i < 20 && !(await page.locator('.loja-da-josefina.show').count()
   }
   await page.waitForTimeout(350);
 }
-ok(apresentou, 'na primeira vez, a Josefina apresenta a lojinha');
+ok(apresentou, 'na primeira vez, a Josefina apresenta a lojinha (e explica os girassóis)');
 ok(await page.locator('.loja-da-josefina.show').count() === 1, 'o painel da lojinha abre');
 const abas = await page.locator('.loja-da-josefina .abas button').allTextContents();
 ok(abas.length === 2 && /Roupas/.test(abas[0]) && /Decora/.test(abas[1]), `duas abas: ${abas.map((a) => a.trim()).join(' | ')}`);
@@ -79,14 +84,43 @@ const fotos = await page.evaluate(() => ({
 }));
 ok(fotos.cartoes >= 19 && fotos.com === fotos.cartoes, `todo enfeite do catálogo tem cartão e retrato (${fotos.com} de ${fotos.cartoes})`);
 
-// comprar o anão e o flamingo
+// ====================== 1b. girassóis, e a banca que cresce com o recorde
+const topo = await page.locator('.loja-da-josefina .saldo').textContent();
+ok(/R\$ 400/.test(topo) && /60/.test(topo) && /girass/.test(topo), `o alto da banca mostra reais e girassóis ("${topo.trim()}")`);
+const trancados = await page.evaluate(() => [...document.querySelectorAll('.loja-da-josefina .produto.decoracao.travada')].map((c) => c.dataset.id));
+ok(trancados.includes('anao-de-jardim') && trancados.includes('roda-gigante') && !trancados.includes('flamingo'),
+  `com recorde 0, o anão e a rodinha estão trancados e o flamingo não (${trancados.length} trancados)`);
+ok(await page.locator('.loja-da-josefina .produto[data-id="anao-de-jardim"] [data-acao="comprar-decoracao"]').count() === 0,
+  'enfeite trancado não tem botão de comprar');
+const cadeado = await page.locator('.loja-da-josefina .produto[data-id="anao-de-jardim"] .cadeado').textContent().catch(() => '');
+ok(/onda 2/.test(cadeado ?? ''), `o cadeado diz a onda que falta ("${(cadeado ?? '').trim()}")`);
+const precoFlamingo = await page.locator('.loja-da-josefina [data-acao="comprar-decoracao"][data-id="flamingo"]').textContent();
+ok(/🌻\s6/.test(precoFlamingo), `o flamingo custa em girassóis ("${precoFlamingo.trim()}")`);
+await page.locator('.loja-da-josefina [data-aba="roupas"]').click();
+await page.waitForTimeout(300);
+const roupaTrancada = await page.locator('.loja-da-josefina .produto.roupa.travada[data-id="mochila-casco"]').count();
+ok(roupaTrancada === 1, 'a mochila-casco (onda 18) também espera o recorde');
+await page.screenshot({ path: `${OUT}-painel-trancado.png` });
+await page.locator('.loja-da-josefina .fechar').click();
+await page.waitForTimeout(300);
+// a dupla vence a onda 30: a banca abre inteira
+await page.evaluate(() => window.jogo.bump('jardim.recorde', 30));
+await page.evaluate(() => { void window.jogo.current.world.root.userData.abrirALojinha(); });
+await page.waitForSelector('.loja-da-josefina.show', { timeout: 5000 });
+await page.locator('.loja-da-josefina [data-aba="decoracoes"]').click();
+await page.waitForTimeout(300);
+ok(await page.locator('.loja-da-josefina .produto.travada').count() === 0, 'com o recorde na 30, nada está trancado');
+
+// comprar o anão e o flamingo: sai girassol, a carteira de reais não mexe
 const saldo0 = await deco(() => window.jogo.carteira());
+const flor0 = await girassois();
 await page.locator('.loja-da-josefina [data-acao="comprar-decoracao"][data-id="anao-de-jardim"]').click();
 await page.waitForTimeout(300);
 await page.locator('.loja-da-josefina [data-acao="comprar-decoracao"][data-id="flamingo"]').click();
 await page.waitForTimeout(300);
 const saldo1 = await deco(() => window.jogo.carteira());
-ok(saldo0 - saldo1 === 45 + 35, `comprar o anão e o flamingo debita R$ 80 (debitou ${saldo0 - saldo1})`);
+const flor1 = await girassois();
+ok(flor0 - flor1 === 7 + 6 && saldo0 === saldo1, `comprar o anão e o flamingo custa 13 girassóis e nenhum real (${flor0 - flor1} 🌻, R$ ${saldo0 - saldo1})`);
 const s1 = await salvas();
 ok(s1.length === 2 && s1.every((d) => d.posta === null), 'os dois ficam guardados, sem lugar');
 const contaNaTela = await page.locator('.loja-da-josefina .produto[data-id="anao-de-jardim"] .conta').textContent().catch(() => '');
@@ -286,7 +320,7 @@ const comprarEPor = (lista) => page.evaluate(async (lista) => {
   const res = [];
   for (const [id, x, z, raio] of lista) {
     if (!d.guardadas(id)) {
-      window.jogo.ganhar(200);
+      window.jogo.bump('jardim.girassois', 40);
       d.comprar(id);
     }
     const antes = d.postas(id);
@@ -351,7 +385,7 @@ ok(noPatio.every((c) => c.ficou) && postosNoPatio.join() === 'capivara,cata-vent
 // fora do pátio, pela brecha da sebe, não
 await page.evaluate(() => {
   const d = window.jogo.current.world.root.userData.decorador;
-  window.jogo.ganhar(40);
+  window.jogo.bump('jardim.girassois', 10);
   d.comprar('cogumelos');
   d.colocar('cogumelos');
   window.jogo.debugPlace(0, -24.6, Math.PI);
@@ -418,7 +452,7 @@ await page.screenshot({ path: `${OUT}-celular-painel.png` });
 await page.locator('.loja-da-josefina .fechar').click();
 await page.evaluate(() => {
   const d = window.jogo.current.world.root.userData.decorador;
-  window.jogo.ganhar(100);
+  window.jogo.bump('jardim.girassois', 10);
   d.comprar('vaso-de-flores');
   d.colocar('vaso-de-flores');
   window.jogo.debugPlace(10.4, 3.5, 0);

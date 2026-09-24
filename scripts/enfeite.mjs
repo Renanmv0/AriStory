@@ -34,8 +34,13 @@ await page.waitForFunction(() => !!window.jogo?.current?.world?.root?.userData?.
 await page.waitForTimeout(1000);
 
 // o catálogo, lido da própria loja (o painel desenha por DECORACOES)
-// com dinheiro, o cartão mostra o botão de comprar como a dupla vai ver
-await page.evaluate(() => { window.jogo.ganhar(1000); void window.jogo.current.world.root.userData.abrirALojinha(); });
+// com girassol e o recorde na 30 (a banca inteira aberta), o cartão mostra o
+// botão de comprar como a dupla vai ver
+await page.evaluate(() => {
+  window.jogo.bump('jardim.girassois', 1000);
+  window.jogo.bump('jardim.recorde', 30);
+  void window.jogo.current.world.root.userData.abrirALojinha();
+});
 for (let i = 0; i < 20 && !(await page.locator('.loja-da-josefina.show').count()); i++) {
   if (await page.locator('.dialogue.show').count()) await page.keyboard.press('KeyE');
   await page.waitForTimeout(300);
@@ -75,7 +80,7 @@ const postos = await page.evaluate(async (ids) => {
   let x = ids.length === 1 ? 3 : -7;
   let z = 0.5;
   for (const id of ids) {
-    window.jogo.ganhar(500);
+    window.jogo.bump('jardim.girassois', 50);
     d.comprar(id);
     d.colocar(id);
     // o raio vem do anel do fantasma (o decorador desenha o anel com ele)

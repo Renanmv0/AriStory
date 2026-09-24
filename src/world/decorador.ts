@@ -45,6 +45,19 @@ import { decoracaoPorId, type FichaDeDecoracao } from './decoracoes';
  * dupla: gota que cai em cima de um enfeite tem que dar para pegar.
  */
 
+/**
+ * DE ONDE SAI O PAGAMENTO de um enfeite. Na estufa são os GIRASSÓIS (a moeda
+ * que só a rodada do jardim paga): a cena diz qual é, e o decorador só pede.
+ */
+export interface Cofre {
+  saldo(): number;
+  /** tira `quanto` e devolve `true`, ou não tira nada e devolve `false` */
+  gastar(quanto: number): boolean;
+  /** "12 girassóis", para o toast */
+  escrever(quanto: number): string;
+  readonly icone: string;
+}
+
 export interface RegrasDoLugar {
   /** por que NÃO dá para pôr um enfeite de `raio` ali (a zona da cena), ou `null` */
   proibido: (x: number, z: number, raio: number) => string | null;
@@ -95,7 +108,11 @@ export class Decorador {
   /** a cena é avisada quando um enfeite entra, sai ou muda (quem passeia desvia) */
   aoMudar: (() => void) | null = null;
 
-  constructor(private readonly w: WorldBuilder, private readonly regras: RegrasDoLugar) {
+  constructor(
+    private readonly w: WorldBuilder,
+    private readonly regras: RegrasDoLugar,
+    private readonly cofre: Cofre,
+  ) {
     this.g = w.game;
     for (const d of this.g.decoracoes()) if (d.posta) this.por(d.uid, decoracaoPorId(d.id), d.posta);
     w.onUpdate((dt) => {
@@ -212,19 +229,19 @@ export class Decorador {
 
   // ------------------------------------------------------------ comprar
 
-  /** Compra uma unidade: debita e guarda (sem lugar ainda). */
+  /** Compra uma unidade: paga do cofre da cena e guarda (sem lugar ainda). */
   comprar(id: string): boolean {
     const ficha = decoracaoPorId(id);
     if (!ficha) return false;
-    if (!this.g.gastar(ficha.preco)) {
-      this.g.toast(`Faltam R$ ${ficha.preco - this.g.carteira()}`, '💸');
+    if (!this.cofre.gastar(ficha.girassois)) {
+      this.g.toast(`Faltam ${this.cofre.escrever(ficha.girassois - this.cofre.saldo())}`, this.cofre.icone);
       return false;
     }
     const lista = this.g.decoracoes();
     const uid = lista.reduce((m, d) => Math.max(m, d.uid), 0) + 1;
     this.g.salvarDecoracoes([...lista, { uid, id, posta: null }]);
     this.g.som('caixa');
-    this.g.toast(`${ficha.nome} — R$ ${ficha.preco}`, '🛍️');
+    this.g.toast(`${ficha.nome} — ${this.cofre.escrever(ficha.girassois)}`, '🛍️');
     return true;
   }
 

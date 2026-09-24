@@ -11,9 +11,9 @@ de graça, porque lê o catálogo:
 
 | o quê | quem faz | você mexe? |
 |---|---|---|
-| o cartão da loja (nome, descrição, preço) | `ui/lojaDaJosefina.ts` pelo `DECORACOES` | não |
+| o cartão da loja (nome, descrição, preço em 🌻, o cadeado até a onda) | `ui/lojaDaJosefina.ts` pelo `DECORACOES` | não |
 | a foto do cartão | `retratoDaDecoracao` → `world/retrato.ts` fotografa o `monta()` | não |
-| comprar, guardar, pôr, girar, mudar de lugar, guardar de novo | `world/decorador.ts` | não |
+| comprar (dos girassóis — o `Cofre` que a estufa passa), guardar, pôr, girar, mudar de lugar | `world/decorador.ts` | não |
 | o fantasma translúcido e o anel verde/vermelho | `world/decorador.ts` | não |
 | onde pode e onde não pode | `regrasDoLugar` em `scenes/estufa.ts` | só se a PLANTA mudar |
 | o save | `SaveState.decoracoes` (`{ uid, id, posta }`) | não |
@@ -83,7 +83,7 @@ function sapoDeJardim(): THREE.Group {
 
 ```ts
   {
-    id: 'sapo', nome: 'Sapo de jardim', icone: '🐸', preco: 32, artigo: 'o', raio: 0.24,
+    id: 'sapo', nome: 'Sapo de jardim', icone: '🐸', girassois: 6, onda: 4, artigo: 'o', raio: 0.24,
     descricao: 'Sentado de boca aberta, com uma coroinha. Esperando o beijo.',
     monta: sapoDeJardim,
   },
@@ -94,15 +94,18 @@ function sapoDeJardim(): THREE.Group {
 | `id` | kebab-case e **PARA SEMPRE**: o save guarda o enfeite pelo id. Renomear deixa órfão o que a dupla já comprou e pôs. Quer mudar o nome? Mude o `nome`, nunca o `id`. |
 | `nome` | como aparece na loja e no "Mexer no…". Com o nome do personagem quando for dele ("Girafinha da Gina"). |
 | `icone` | um emoji; aparece no toast e na barra de colocar. |
-| `preco` | em reais, a carteira do casal. Régua de hoje: simples 20–35, com personagem 30–55, com luz ou movimento 40–90. (Bilhete da roda = 24; um turno do Walter paga ~200; uma rodada do jardim paga 3 por onda.) |
+| `girassois` | o preço, em **girassóis 🌻** — a moeda da estufa, que SÓ a rodada do jardim paga (1 a cada 15 bichos espantados; `minigames/jardim/premios.ts`). Enfeite nunca custa reais: é o que amarra a lojinha ao jardim. Régua: simples 4–6, de personagem 6–11, com luz ou movimento 8–18. Para calibrar: perder na 6ª onda paga ~12 🌻, a rodada inteira ~150. |
+| `onda` | a onda em que a Josefina passa a VENDER: o recorde da dupla tem que chegar lá (antes disso o cartão aparece com cadeado). `0` = à venda desde o começo. Espalhe: o catálogo de hoje chega em 0, 2, 4, 6, 8, 10, 13, 16, 20 e 25 — enfeite novo entra onde a prateleira está mais vazia, e o mais caro/vistoso vai mais longe. |
 | `artigo` | `'o'` ou `'a'`: monta "Mexer **no** anão", "guardad**a**". Siga o NOME, não o bicho: "o Pelusa de pelúcia" (o Pelusa é macho), "a capivara". |
 | `raio` | **a pegada no chão, em metros** — ver abaixo. |
 | `descricao` | UMA frase para o cartão. Se o Renan deu o texto, vai literal. |
 | `monta` | a função do passo 2. |
 | `anima` | opcional: ver "enfeite que mexe". |
 
-A lista é ordenada por preço no fim (`.sort`), então a posição da entrada no
-arquivo é só de leitura: jardim, simples, de personagem.
+A lista é ordenada no fim (`.sort`) pela onda de chegada e depois pelo preço,
+então a posição da entrada no arquivo é só de leitura. As ROUPAS da lojinha
+seguem a mesma ideia, mas em reais e com a onda em `LOJA_ABRE`
+(`premios.ts`) — isso é da skill de roupa, não desta.
 
 ## A pegada (`raio`) — o número que mais erra
 

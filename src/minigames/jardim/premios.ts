@@ -1,10 +1,17 @@
 /**
  * OS PRÊMIOS DA ESTUFA — pedido do Renan, em dois tipos:
  *
- * 1. **Toda rodada paga moedas** (reais na carteira do casal), para dar
- *    vontade de jogar de novo: um tanto por onda vencida, e um bônus a cada
- *    marco alcançado NAQUELA rodada. Paga sempre, até na rodada perdida — o
- *    que vale é até onde a dupla chegou.
+ * 1. **Toda rodada paga, e paga pelos BICHOS ESPANTADOS** (pedido do Renan:
+ *    "o tanto de girassóis e dinheiro que a gente ganha após cada rodada deve
+ *    ser baseado no número de inimigos que derrotamos"). Em DUAS moedas:
+ *    - **reais**, na carteira do casal — a mesma do resto do jogo, que compra
+ *      roupa aqui, na boutique, prato no Mania;
+ *    - **girassóis** 🌻, a moeda da estufa: só ela compra ENFEITE na lojinha
+ *      da Josefina. Rende MENOS que o real (um a cada 15 bichos, contra um real
+ *      a cada 8), mas enfeite custa bem menos em girassol do que custava em
+ *      real — e é isso que amarra a lojinha ao jardim: o dinheiro do Walter
+ *      não compra enfeite nenhum.
+ *    Paga sempre, até na rodada perdida.
  * 2. **Cada marco tem um prêmio ÚNICO**, que só se ganha na primeira vez que
  *    a dupla passa dele: um enfeite na estufa, uma roupa exclusiva, e a
  *    memória no quadro nas trinta. São DUAS flags por marco: `flag` diz que a
@@ -12,25 +19,28 @@
  *    RESGATOU o prêmio — um clique na aba de recompensas do livro da bancada
  *    (pedido do Renan: "clicamos lá para desbloquear cada uma").
  *
- * Os marcos contam ONDAS VENCIDAS (decisão do Renan), e não o nível das
- * gotas: é o progresso que a dupla enxerga, e a 30ª é vencer a rodada.
+ * E o RECORDE (a maior onda vencida) destranca a lojinha aos poucos: cada
+ * enfeite e cada roupa tem a onda em que a Josefina passa a vender
+ * (`LOJA_ABRE`, e a `onda` de cada enfeite em `world/decoracoes.ts`).
  *
- * A ESCALA do dinheiro é a do resto do jogo: bilhete da roda 24, prato do
- * Mania 12 a 34, um turno de garçom ~200, peça de boutique 35 a 220. Vencer as
- * trinta paga 240 — um turno e pouco, que é o que a rodada inteira custa de
- * tempo.
+ * A ESCALA: uma rodada inteira de trinta ondas traz ~2.300 bichos (medido com
+ * `planoDaOnda`), então vencer tudo paga ~R$ 290 e ~150 girassóis; perder na
+ * 6ª (~180 bichos) paga R$ 22 e 12 girassóis — um ou dois enfeites simples.
+ * Um turno do Walter paga ~R$ 200; uma peça de boutique, 35 a 220.
  */
 
-/** o que cada onda vencida paga, em reais */
-export const MOEDAS_POR_ONDA = 3;
+/** quantos bichos espantados valem um real */
+export const BICHOS_POR_REAL = 8;
+/** quantos bichos espantados valem um girassol (mais do que um real: rende menos) */
+export const BICHOS_POR_GIRASSOL = 15;
+/** o contador do save com os girassóis da dupla (é do casal, como a carteira) */
+export const GIRASSOIS = 'jardim.girassois';
 
 export type PremioUnico = 'plaquinha' | 'chapeu-de-jardineira' | 'avental-da-josefina' | 'regador-de-ouro';
 
 export interface MarcoDoJardim {
   /** a onda que precisa ser VENCIDA */
   readonly onda: number;
-  /** o bônus em reais, toda rodada que chegar aqui */
-  readonly moedas: number;
   /** a flag do save que diz que a dupla já venceu esta onda alguma vez */
   readonly flag: string;
   /** a flag do save que diz que o prêmio único já foi resgatado no livro */
@@ -46,22 +56,22 @@ export interface MarcoDoJardim {
 /** pequeno no 5, e crescendo — o pedido foi "um pouco mais" a cada marco */
 export const MARCOS: readonly MarcoDoJardim[] = [
   {
-    onda: 5, moedas: 10, flag: 'jardim.marco-5', resgate: 'jardim.resgate-5', premio: 'plaquinha',
+    onda: 5, flag: 'jardim.marco-5', resgate: 'jardim.resgate-5', premio: 'plaquinha',
     nome: 'A plaquinha da estufa', icone: '🪧',
     descricao: 'Uma plaquinha de madeira na parede da bancada: "Jardineiros da Josefina".',
   },
   {
-    onda: 10, moedas: 20, flag: 'jardim.marco-10', resgate: 'jardim.resgate-10', premio: 'chapeu-de-jardineira',
+    onda: 10, flag: 'jardim.marco-10', resgate: 'jardim.resgate-10', premio: 'chapeu-de-jardineira',
     nome: 'Chapéu de jardineira', icone: '👒',
     descricao: 'Um chapéu de palha com fita verde para cada um, no guarda-roupa.',
   },
   {
-    onda: 20, moedas: 40, flag: 'jardim.marco-20', resgate: 'jardim.resgate-20', premio: 'avental-da-josefina',
+    onda: 20, flag: 'jardim.marco-20', resgate: 'jardim.resgate-20', premio: 'avental-da-josefina',
     nome: 'Avental da Josefina', icone: '🧺',
     descricao: 'Um avental verde com bolso de semente para cada um, no guarda-roupa.',
   },
   {
-    onda: 30, moedas: 80, flag: 'jardim.marco-30', resgate: 'jardim.resgate-30', premio: 'regador-de-ouro',
+    onda: 30, flag: 'jardim.marco-30', resgate: 'jardim.resgate-30', premio: 'regador-de-ouro',
     nome: 'O regador de ouro e uma memória', icone: '🏆',
     descricao: 'Um regador de ouro na bancada, e a memória "As trinta levas" no quadro do quarto.',
   },
@@ -78,19 +88,41 @@ export function ondasVencidas(ondaDoFim: number, totalDeOndas: number, canteiros
 }
 
 export interface PagamentoDaRodada {
-  readonly vencidas: number;
-  /** `vencidas × MOEDAS_POR_ONDA` */
-  readonly porOnda: number;
-  /** a soma dos bônus dos marcos alcançados */
-  readonly bonus: number;
-  readonly total: number;
+  readonly espantados: number;
+  /** reais na carteira do casal */
+  readonly dinheiro: number;
+  /** girassóis, a moeda dos enfeites */
+  readonly girassois: number;
 }
 
-export function pagamentoDaRodada(vencidas: number): PagamentoDaRodada {
-  const porOnda = vencidas * MOEDAS_POR_ONDA;
-  const bonus = MARCOS.filter((m) => vencidas >= m.onda).reduce((s, m) => s + m.moedas, 0);
-  return { vencidas, porOnda, bonus, total: porOnda + bonus };
+/** o que a rodada paga pelos bichos que a dupla espantou */
+export function pagamentoDaRodada(espantados: number): PagamentoDaRodada {
+  const n = Math.max(0, Math.floor(espantados));
+  return {
+    espantados: n,
+    dinheiro: Math.floor(n / BICHOS_POR_REAL),
+    girassois: Math.floor(n / BICHOS_POR_GIRASSOL),
+  };
 }
 
 /** o contador do save com a MAIOR onda vencida numa rodada (o recorde) */
 export const RECORDE = 'jardim.recorde';
+
+/**
+ * EM QUE ONDA A JOSEFINA PASSA A VENDER CADA ROUPA (o recorde tem que chegar
+ * lá). Os enfeites levam a onda na própria ficha (`world/decoracoes.ts`). Quem
+ * já comprou continua com a peça, destrancada ou não.
+ */
+export const LOJA_ABRE: Readonly<Record<string, number>> = {
+  'camiseta-verde-folha': 0,
+  'galocha-verde': 0,
+  'camiseta-de-girassol': 3,
+  'gorro-joaninha': 3,
+  'tiara-do-walter': 6,
+  'tiara-da-pelusa': 6,
+  'bone-da-gina': 9,
+  'camiseta-salva-vidas': 9,
+  'camiseta-bar-de-sucos': 12,
+  'camiseta-roda-gigante': 12,
+  'mochila-casco': 18,
+};

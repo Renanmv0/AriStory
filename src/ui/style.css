@@ -3592,6 +3592,33 @@ body.touch-device .ajuda-do-par kbd { display: none; }
   color: #fff;
   background: #4f8fd0;
 }
+/* a moeda da estufa no saldo, e a linha do recorde no alto de cada aba */
+.loja-da-josefina .saldo .girassois b { color: #9a6a00; }
+.loja-da-josefina .recorde {
+  margin: 0 0 10px;
+  padding: 7px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #4a3a18;
+  background: #f7e7a8;
+}
+/* o que a Josefina ainda não trouxe: apagado, com cadeado e a onda que falta */
+.loja-da-josefina .produto.travada { opacity: 0.72; background: #efe8d8; }
+.loja-da-josefina .produto.travada .foto img { filter: grayscale(1) brightness(1.08); opacity: 0.55; }
+.loja-da-josefina .produto.travada h4 { color: #6d6150; }
+.loja-da-josefina .foto { position: relative; }
+.loja-da-josefina .foto .tranca { position: absolute; right: 4px; bottom: 2px; font-size: 20px; }
+.loja-da-josefina .cadeado {
+  flex: 1 1 100%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  color: #6d6150;
+  background: #e2d6bb;
+}
+
 /* a porta do modo de edição: mexer nos enfeites que já estão no chão */
 .loja-da-josefina .editar-enfeites {
   display: flex;
