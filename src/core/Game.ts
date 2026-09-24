@@ -27,10 +27,11 @@ import {
 import {
   ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem,
 } from '../world/itens';
-import type { CartaNaTela, ContextoDaEscolha, FimDoJardim } from '../minigames/jardim/tela';
+import type { CartaNaTela, ConteudoDoLivro, ContextoDaEscolha, FimDoJardim } from '../minigames/jardim/tela';
 import { Oclusao, type VigiaDaOclusao } from './Oclusao';
 import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
+import { retratoDePraga } from '../world/retratoDePraga';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import { CARDAPIO } from '../world/cardapioData';
@@ -1231,8 +1232,9 @@ export class Game implements GameAPI {
     return this.save.livro;
   }
 
-  abrirLivroDeCartas(cartas: readonly CartaNaTela[]): Promise<void> {
-    return this.ui.abrirLivro(cartas, new Set(this.save.livro));
+  abrirLivroDeCartas(cartas: readonly CartaNaTela[], conteudo: ConteudoDoLivro | null = null): Promise<string | null> {
+    // o retrato das pragas é o modelo 3D fotografado na hora (e guardado)
+    return this.ui.abrirLivro(cartas, new Set(this.save.livro), conteudo, retratoDePraga);
   }
 
   mostrarFimDoJardim(fim: FimDoJardim): Promise<void> {

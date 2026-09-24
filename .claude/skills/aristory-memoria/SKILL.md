@@ -21,7 +21,7 @@ O pipeline inteiro cabe em dois arquivos, e só o primeiro muda quando a memóri
 
 **Memória ganha jogando** (e não de foto) leva `trava: 'uma-flag'` na ficha:
 ela só entra no quadro depois que a flag existe (`Game.abrirMemoria` filtra).
-A primeira é "As trinta levas" (`trava: 'jardim.marco-30'`), da estufa.
+A primeira é "As trinta levas" (`trava: 'jardim.resgate-30'`, marcada quando a dupla resgata o prêmio no livro), da estufa.
 `scripts/memorias.mjs` confere que ela some antes da flag e aparece depois.
 
 O quadro na parede (`muralDeMemorias` em `world/furniture.ts`), a interação

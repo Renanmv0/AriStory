@@ -4,7 +4,7 @@ import type { SomNome } from '../audio/efeitos';
 import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import type { VigiaDaOclusao } from './Oclusao';
-import type { CartaNaTela, ContextoDaEscolha, FimDoJardim, PainelDoJardim } from '../minigames/jardim/tela';
+import type { CartaNaTela, ConteudoDoLivro, ContextoDaEscolha, FimDoJardim, PainelDoJardim } from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
 
 export interface CircleCollider {
@@ -519,8 +519,13 @@ export interface GameAPI {
   desbloquearCartaDoJardim(id: string): boolean;
   /** as ids das cartas já descobertas, na ordem em que apareceram */
   cartasDoLivro(): readonly string[];
-  /** Abre o livro com o baralho inteiro; as descobertas aparecem, as outras são vaga cinza. */
-  abrirLivroDeCartas(cartas: readonly CartaNaTela[]): Promise<void>;
+  /**
+   * Abre o LIVRO DA ESTUFA com o baralho inteiro (as descobertas aparecem, as
+   * outras são vaga cinza) e, com `conteudo`, as abas de pragas e de
+   * recompensas. Resolve com a ONDA do marco que a dupla mandou resgatar, ou
+   * `null` quando só fechou.
+   */
+  abrirLivroDeCartas(cartas: readonly CartaNaTela[], conteudo?: ConteudoDoLivro | null): Promise<string | null>;
   /** A tela do fim da rodada do jardim: os números e as cartas da mão. */
   mostrarFimDoJardim(fim: FimDoJardim): Promise<void>;
   /** A barra de experiência da rodada do jardim, no alto; `null` esconde. */

@@ -347,6 +347,13 @@ dele.
 
 ## 9. Depois de criar
 
+**Escreva a descrição dela no livro**: uma linha em `DESCRICAO_DA_PRAGA`
+(`src/minigames/jardim/bestiario.ts`), dizendo o JEITO dela em linguagem de
+gente. A aba de pragas do livro da bancada mostra o retrato (o próprio modelo,
+fotografado por `world/retratoDePraga.ts`), o nome, o tier e essa linha — e a
+praga sai do cinza sozinha na primeira vez que nasce numa rodada
+(`jardim.viu-<id>`). `scripts/marcos.mjs` confere a aba.
+
 Atualize **§5 do `docs/MINIGAME-JARDIM.md`**: a tabela do elenco (mistura, cor,
 tier, altura, encharque, o que o bicho faz de diferente) é o que o Renan lê para
 decidir o balanceamento, e o plano desencontrado do código é pior que plano

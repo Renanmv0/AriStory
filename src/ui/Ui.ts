@@ -3,7 +3,7 @@ import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import { TelaDeCartas } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
-import type { CartaNaTela, ContextoDaEscolha, FimDoJardim, PainelDoJardim } from '../minigames/jardim/tela';
+import type { CartaNaTela, ConteudoDoLivro, ContextoDaEscolha, FimDoJardim, PainelDoJardim } from '../minigames/jardim/tela';
 import type { MemoriaPintada } from '../world/memoriasData';
 import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
@@ -996,10 +996,17 @@ export class Ui {
   }
 
   /** Abre o livro das cartas; resolve quando ele fecha. Ver `livroDeCartas.ts`. */
-  abrirLivro(cartas: readonly CartaNaTela[], vistas: ReadonlySet<string>): Promise<void> {
-    const pedido = this.livroDeCartas.abrir(cartas, vistas);
+  /** O livro da estufa; resolve com a onda do marco a resgatar, ou `null` */
+  abrirLivro(
+    cartas: readonly CartaNaTela[], vistas: ReadonlySet<string>,
+    conteudo: ConteudoDoLivro | null = null, retrato: ((id: string) => string) | null = null,
+  ): Promise<string | null> {
+    const pedido = this.livroDeCartas.abrir(cartas, vistas, conteudo, retrato);
     this.marcarTelaAberta();
-    return pedido.then(() => this.marcarTelaAberta());
+    return pedido.then((resgate) => {
+      this.marcarTelaAberta();
+      return resgate;
+    });
   }
 
   fecharLivro(): void {

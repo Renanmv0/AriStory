@@ -16,6 +16,7 @@ import { cartaPorId, type AjudanteDoClube, type FichaDaRodada } from './cartas';
 import { ONDAS, nivelDasGotas, planoDaOnda, type EntradaDePraga } from './progressao';
 import { cartaNaTela } from './tela';
 import { DesenhoDoJato } from './jato';
+import { flagDaPraga } from './bestiario';
 
 /**
  * A RODADA DO JARDIM — o minigame da estufa da Josefina, rodando.
@@ -1146,6 +1147,15 @@ export class RodadaDoJardim {
     this.w.root.add(raiz);
     this.w.root.add(barra);
     this.invasores.push(inv);
+    /*
+     * A ABA DE PRAGAS DO LIVRO: a primeira vez que cada praga aparece numa
+     * rodada, ela sai do cinza (pedido do Renan). A vitrine do jato não conta:
+     * lá o bicho é de mentira.
+     */
+    if (!casa && !this.g.flag(flagDaPraga(ficha.id))) {
+      this.g.setFlag(flagDaPraga(ficha.id));
+      this.g.toast(`Praga nova no livro: ${ficha.nome}`, '📖');
+    }
     /*
      * O FORMIGURIÇO VEM EM FILA: quem puxa a fila traz mais dois logo atrás,
      * pelo mesmo portão. Os de trás não puxam fila de novo.

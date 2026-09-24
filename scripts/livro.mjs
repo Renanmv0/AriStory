@@ -76,7 +76,7 @@ if (/regador/i.test(await page.evaluate(() => document.querySelector('.prompt')?
 }
 await page.screenshot({ path: `${OUT}-bancada.png` });
 const prompt = await page.evaluate(() => document.querySelector('.prompt')?.textContent ?? '');
-ok(/livro das cartas/i.test(prompt), `perto da bancada o prompt é o do livro ("${prompt.trim()}")`);
+ok(/livro da estufa/i.test(prompt), `perto da bancada o prompt é o do livro ("${prompt.trim()}")`);
 await page.keyboard.press('KeyE');
 ok(await esperar(page, () => livroAberto(page)), 'o E abre o livro');
 const vazio = await page.evaluate(() => ({

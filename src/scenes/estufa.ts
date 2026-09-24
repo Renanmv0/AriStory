@@ -22,7 +22,9 @@ import { PRAGAS } from '../world/bichosDoJardim';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
 import { cartaNaTela } from '../minigames/jardim/tela';
 import { RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigames/jardim/rodada';
-import { MARCOS, ondasVencidas, pagamentoDaRodada, type MarcoDoJardim } from '../minigames/jardim/premios';
+import { MARCOS, MOEDAS_POR_ONDA, RECORDE, ondasVencidas, pagamentoDaRodada, type MarcoDoJardim } from '../minigames/jardim/premios';
+import { DESCRICAO_DA_PRAGA, NOME_DO_TIER, flagDaPraga, pragasDoLivro } from '../minigames/jardim/bestiario';
+import type { ConteudoDoLivro } from '../minigames/jardim/tela';
 import { ARI, RENAN } from '../characters/cast';
 import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
 import { toon } from '../core/materials';
@@ -778,10 +780,23 @@ export const estufa: SceneDef = {
     w.interact({
       id: 'estufa:livro-das-cartas',
       x: LIVRO.x + 1.0, z: LIVRO.z, radius: 0.8,
-      label: 'Abrir o livro das cartas', icon: '📖',
+      label: 'Abrir o livro da estufa', icon: '📖',
       highlight: livro,
       onInteract: async (api) => {
-        await api.abrirLivroDeCartas(CARTAS.map(cartaNaTela));
+        /*
+         * O LIVRO TEM TRÊS ABAS: as cartas, as pragas já vistas e as
+         * recompensas dos marcos. O botão RESGATAR fecha o livro devolvendo a
+         * onda do marco — e a entrega é aqui, com a Josefina (pedido do
+         * Renan: "clicamos lá para desbloquear cada uma").
+         */
+        const resgate = await api.abrirLivroDeCartas(CARTAS.map(cartaNaTela), conteudoDoLivro());
+        const m = MARCOS.find((k) => String(k.onda) === resgate);
+        if (m && g.flag(m.flag) && !g.flag(m.resgate)) {
+          g.setFlag(m.resgate);
+          g.lockPlayer(true);
+          await entregarMarco(m);
+          g.lockPlayer(false);
+        }
       },
     });
 
@@ -798,17 +813,40 @@ export const estufa: SceneDef = {
     const TROFEU = { x: -hx + 1.08, z: 5.35 };
     const enfeites: { plaquinha?: THREE.Object3D; trofeu?: THREE.Object3D } = {};
     const montarEnfeites = (): void => {
-      if (!enfeites.plaquinha && g.flag('jardim.marco-5')) {
+      if (!enfeites.plaquinha && g.flag('jardim.resgate-5')) {
         enfeites.plaquinha = w.add(w.place(
           plaquinhaDaEstufa(['Jardineiros', 'da Josefina']), PLAQUINHA.x, PLAQUINHA.y, PLAQUINHA.z, Math.PI / 2,
         ));
       }
-      if (!enfeites.trofeu && g.flag('jardim.marco-30')) {
+      if (!enfeites.trofeu && g.flag('jardim.resgate-30')) {
         enfeites.trofeu = w.add(w.place(regadorDeOuro(), TROFEU.x, 0.96, TROFEU.z, 0.5));
       }
     };
     montarEnfeites();
     w.root.userData.enfeites = enfeites;
+
+    /** o que as abas de pragas e de recompensas mostram, pelas flags do save */
+    const conteudoDoLivro = (): ConteudoDoLivro => ({
+      pragas: pragasDoLivro().map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        tier: NOME_DO_TIER[p.tier],
+        mistura: p.mistura,
+        descricao: DESCRICAO_DA_PRAGA[p.id] ?? '',
+        vista: g.flag(flagDaPraga(p.id)),
+      })),
+      recompensas: MARCOS.map((m) => ({
+        onda: m.onda,
+        nome: m.nome,
+        icone: m.icone,
+        descricao: m.descricao,
+        moedas: m.moedas,
+        estado: g.flag(m.resgate) ? 'resgatada' : g.flag(m.flag) ? 'pronta' : 'trancada',
+      })),
+      recorde: g.stat(RECORDE),
+      moedasPorOnda: MOEDAS_POR_ONDA,
+    });
+    w.root.userData.conteudoDoLivro = conteudoDoLivro;
 
     let jaOlhou = false;
     w.interact({
@@ -1811,8 +1849,9 @@ export const estufa: SceneDef = {
       'vigésima sexta', 'vigésima sétima', 'vigésima oitava', 'vigésima nona', 'trigésima',
     ];
     /**
-     * A ENTREGA DE UM PRÊMIO ÚNICO — a primeira vez que a dupla vence a onda
-     * do marco. Quem entrega é a Josefina, depois da conversa do fim. As falas
+     * A ENTREGA DE UM PRÊMIO ÚNICO — quando a dupla clica em RESGATAR na aba
+     * de recompensas do livro, depois de ter vencido a onda do marco. Quem
+     * entrega é a Josefina. As falas
      * são minhas (o Renan não passou texto para estas): se ele mandar, trocar
      * aqui, literal.
      */
@@ -1882,7 +1921,11 @@ export const estufa: SceneDef = {
       const pagamento = pagamentoDaRodada(vencidas);
       const novos = jogou ? MARCOS.filter((m) => vencidas >= m.onda && !g.flag(m.flag)) : [];
       if (jogou && pagamento.total > 0) g.ganhar(pagamento.total);
+      // o marco fica ALCANÇADO; o prêmio único se resgata no livro da bancada
       for (const m of novos) g.setFlag(m.flag);
+      // o recorde: a maior onda vencida numa rodada, para a aba de recompensas
+      const recorde = g.stat(RECORDE);
+      if (jogou && vencidas > recorde) g.bump(RECORDE, vencidas - recorde);
       void (async () => {
         const J = 'Josefina';
         g.lockPlayer(true);
@@ -1925,7 +1968,12 @@ export const estufa: SceneDef = {
           leva,
           'Deixa que eu replanto o que foi comido.',
         ], J);
-        for (const m of novos) await entregarMarco(m);
+        // a recompensa nova espera no livro: a Josefina só avisa onde
+        if (novos.length) {
+          await g.say([novos.length > 1
+            ? 'E tem recompensa nova esperando vocês no livro da bancada. Mais de uma!'
+            : 'E tem uma recompensa nova esperando vocês no livro da bancada.'], J);
+        }
         g.lockPlayer(false);
         g.freeCompanion();
         josefina.pararDeEncarar();

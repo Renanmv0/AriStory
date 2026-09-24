@@ -1278,8 +1278,8 @@ export const MEMORIAS: readonly MemoriaPintada[] = [
     lugar: 'Estufa da Josefina',
     legenda: 'Trinta levas de bicho e a estufa de pé. Até a mãe deles desistiu da gente.',
     proporcao: 3 / 4,
-    // ganha jogando: só entra no quadro depois de vencer as trinta ondas
-    trava: 'jardim.marco-30',
+    // ganha jogando: só entra no quadro depois de resgatar o marco das trinta ondas
+    trava: 'jardim.resgate-30',
     pintar: trintaLevas,
   },
 ];

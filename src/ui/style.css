@@ -3092,6 +3092,136 @@ body.touch-device .dialogue .next { right: 84px; }
 .livro-de-cartas .fechar:active,
 .fim-do-jardim .fechar:active { transform: translateY(3px); box-shadow: 0 1px 0 #c68a1f; }
 
+/* as ABAS do livro: marcadores de papel saindo da borda de cima das páginas */
+.livro-de-cartas .abas { display: flex; gap: 6px; padding: 0 8px; }
+.livro-de-cartas .abas button {
+  position: relative;
+  border: 0;
+  border-radius: 10px 10px 0 0;
+  padding: 8px 14px 7px;
+  font: inherit;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  color: #4a3a22;
+  background: #d9c9a4;
+  box-shadow: inset 0 -3px 0 rgba(120, 90, 50, 0.18);
+}
+.livro-de-cartas .abas button.ativa { background: #f6ecd4; box-shadow: none; }
+.livro-de-cartas .abas .aviso {
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  color: #fff;
+  background: #d9483b;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  animation: aviso-do-livro 1.2s ease-in-out infinite;
+}
+@keyframes aviso-do-livro { 50% { transform: scale(1.15); } }
+.livro-de-cartas .abas + .paginas { border-top-left-radius: 0; }
+
+/* as PRAGAS: ficha com retrato; cinza até ela aparecer numa rodada */
+.livro-de-cartas .grade-pragas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+}
+.livro-de-cartas .praga-no-livro {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 112px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: #fffaf0;
+  box-shadow: inset 0 0 0 2px rgba(120, 90, 50, 0.2);
+}
+.livro-de-cartas .praga-no-livro .foto {
+  flex: 0 0 96px;
+  height: 96px;
+  border-radius: 12px;
+  background: radial-gradient(circle at 50% 40%, #eaf4dc, #cfe0bd);
+}
+.livro-de-cartas .praga-no-livro .foto img { width: 100%; height: 100%; object-fit: contain; }
+.livro-de-cartas .praga-no-livro h4 { margin: 0; font-size: 16px; color: #3f3220; }
+.livro-de-cartas .praga-no-livro p { margin: 3px 0 0; font-size: 13px; line-height: 1.3; color: #5a4a30; }
+.livro-de-cartas .praga-no-livro .mistura { font-style: italic; color: #8a7350; }
+.livro-de-cartas .tier {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  vertical-align: middle;
+  color: #fff;
+  background: #6aa35a;
+}
+.livro-de-cartas .tier.t-média { background: #4f8fd0; }
+.livro-de-cartas .tier.t-grandona { background: #9a6ad6; }
+.livro-de-cartas .tier.t-chefe { background: #d9483b; }
+.livro-de-cartas .praga-no-livro.trancada {
+  justify-content: center;
+  gap: 8px;
+  background: rgba(110, 110, 110, 0.16);
+  box-shadow: none;
+  border: 2px dashed rgba(90, 90, 90, 0.32);
+}
+.livro-de-cartas .praga-no-livro.trancada .interrogacao { font-size: 44px; font-weight: 900; color: rgba(80, 80, 80, 0.28); }
+.livro-de-cartas .praga-no-livro.trancada .numero { font-size: 16px; font-weight: 800; color: rgba(80, 80, 80, 0.38); }
+
+/* as RECOMPENSAS: uma linha por marco, com o botão de resgatar */
+.livro-de-cartas .moedas-da-rodada {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #6b4a08;
+  background: linear-gradient(180deg, #fff3c4, #ffe9a6);
+}
+.livro-de-cartas .lista-recompensas { display: flex; flex-direction: column; gap: 8px; }
+.livro-de-cartas .recompensa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #fffaf0;
+  box-shadow: inset 0 0 0 2px rgba(120, 90, 50, 0.2);
+}
+.livro-de-cartas .recompensa .icone { font-size: 32px; flex: 0 0 auto; }
+.livro-de-cartas .recompensa .texto { flex: 1; min-width: 0; }
+.livro-de-cartas .recompensa small { font-size: 12px; font-weight: 700; color: #8a7350; }
+.livro-de-cartas .recompensa h4 { margin: 1px 0 0; font-size: 16px; color: #3f3220; }
+.livro-de-cartas .recompensa p { margin: 2px 0 0; font-size: 13px; color: #5a4a30; }
+.livro-de-cartas .recompensa.trancada { opacity: 0.62; filter: grayscale(0.7); }
+.livro-de-cartas .recompensa.pronta { background: #eef8e6; box-shadow: inset 0 0 0 3px #7cc36a; }
+.livro-de-cartas .recompensa .resgatar {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(180deg, #7cc36a, #4f9a45);
+  box-shadow: 0 4px 0 #3c7a35, 0 6px 14px rgba(0, 0, 0, 0.2);
+  /* brilha em volta em vez de pulsar de tamanho: o botão fica parado sob o dedo */
+  animation: brilho-do-resgate 1.2s ease-in-out infinite;
+}
+@keyframes brilho-do-resgate {
+  50% { box-shadow: 0 4px 0 #3c7a35, 0 0 0 7px rgba(124, 195, 106, 0.35), 0 6px 14px rgba(0, 0, 0, 0.2); }
+}
+.livro-de-cartas .recompensa .selo { flex: 0 0 auto; font-weight: 800; color: #4f9a45; }
+.livro-de-cartas .recompensa .falta { flex: 0 0 auto; font-size: 12px; font-weight: 700; color: #8a7350; }
+
 .livro-de-cartas .paginas {
   flex: 1;
   overflow-y: auto;
@@ -3273,6 +3403,10 @@ body.touch-device .dialogue .next { right: 84px; }
   .fim-do-jardim { padding: 8px; }
   .fim-do-jardim h2 { font-size: 20px; }
   .fim-do-jardim .numeros div { min-width: 0; flex: 1 1 40%; }
+  .livro-de-cartas .abas button { padding: 7px 9px 6px; font-size: 13px; }
+  .livro-de-cartas .recompensa { flex-wrap: wrap; }
+  .livro-de-cartas .recompensa .texto { flex: 1 1 60%; }
+  .livro-de-cartas .recompensa .resgatar { width: 100%; }
 }
 
 /* =====================================================================

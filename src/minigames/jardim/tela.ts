@@ -124,6 +124,42 @@ export interface FimDoJardim {
 }
 
 /**
+ * AS OUTRAS ABAS DO LIVRO DA BANCADA (pedido do Renan): as pragas já vistas e
+ * as recompensas dos marcos. Quem monta é a cena, pelas flags do save; o
+ * retrato de cada praga o `Game` pinta na hora (`world/retratoDePraga.ts`).
+ */
+export interface PragaNoLivro {
+  readonly id: string;
+  readonly nome: string;
+  /** o tier dito como gente fala: fraca, média, grandona, chefe */
+  readonly tier: string;
+  readonly mistura: string;
+  readonly descricao: string;
+  /** já apareceu numa rodada? Se não, a vaga fica cinza */
+  readonly vista: boolean;
+}
+
+export interface RecompensaNoLivro {
+  readonly onda: number;
+  readonly nome: string;
+  readonly icone: string;
+  readonly descricao: string;
+  /** o bônus em reais de toda rodada que chegar nesta onda */
+  readonly moedas: number;
+  /** ainda não chegaram / chegaram e podem resgatar / já resgataram */
+  readonly estado: 'trancada' | 'pronta' | 'resgatada';
+}
+
+export interface ConteudoDoLivro {
+  readonly pragas: readonly PragaNoLivro[];
+  readonly recompensas: readonly RecompensaNoLivro[];
+  /** a maior onda vencida numa rodada */
+  readonly recorde: number;
+  /** quanto cada onda vencida paga, para a aba explicar as moedas */
+  readonly moedasPorOnda: number;
+}
+
+/**
  * O PAINEL DA RODADA no alto da tela, e o BOTÃO DA AJUDA DO PAR: a onda, a
  * água, os canteiros, e quanto falta para chamar quem ficou lá atrás.
  */

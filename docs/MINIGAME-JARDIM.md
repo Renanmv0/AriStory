@@ -27,7 +27,7 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | `src/minigames/jardim/jato.ts` | o DESENHO da água e de todo efeito das cartas (partículas, poças, anéis, nuvem) |
 | `src/minigames/jardim/tela.ts` | os tipos que a UI recebe (carta, painel, fim) |
 | `src/scenes/estufa.ts` | a cena: a planta que a rodada recebe (`PlantaDoJardim`), o `ElencoDaEstufa` (Josefina, Capy, Gina, Walter, Noel, Jean-Luc), as cutscenes dos chamados, o livro na bancada, as falas do fim |
-| `src/ui/telaDeCartas.ts`, `src/ui/livroDeCartas.ts` | a tela das três cartas; o livro das cartas e a tela do fim |
+| `src/ui/telaDeCartas.ts`, `src/ui/livroDeCartas.ts` | a tela das três cartas; o livro da estufa (abas Cartas, Pragas, Recompensas) e a tela do fim |
 | `src/world/bichosDoJardim.ts` | a geometria das **treze** pragas (`PRAGAS`): as seis da primeira leva e as sete da segunda (da 15ª onda em diante) |
 | `src/core/Oclusao.ts` | parede/árvore que tapa bicho ou gota fica translúcida (a rodada liga) |
 | `src/audio/musica.ts` (`'rodada-do-jardim'`) | a música da defesa |
@@ -66,14 +66,22 @@ velocidade/mordida de cada praga em `JEITO` (`rodada.ts`).
 jogada até o fim paga reais na carteira do casal — R$ 3 por onda vencida, mais
 um bônus em cada marco alcançado (onda 5: +10, 10: +20, 20: +40, 30: +80;
 vencer tudo = R$ 240). E cada marco dá um **prêmio único** na primeira vez
-(flag `jardim.marco-N`), entregue pela Josefina depois da fala do fim: a
-**plaquinha** "Jardineiros da Josefina" na parede da bancada (5), o **chapéu
-de jardineira** (10) e o **avental da Josefina** (20) no guarda-roupa dos dois
-(`g.ganharPeca`), e o **regador de ouro** na bancada com a memória **"As
-trinta levas"** no quadro do quarto (30). A tela do fim mostra o pagamento e
-os marcos novos. Teste: `scripts/marcos.mjs`. As falas da entrega são minhas
-(o Renan não passou texto): se ele mandar, troca em `entregarMarco`
-(`scenes/estufa.ts`), literal.
+(`jardim.marco-N` = alcançado): a **plaquinha** "Jardineiros da Josefina" na
+parede da bancada (5), o **chapéu de jardineira** (10) e o **avental da
+Josefina** (20) no guarda-roupa dos dois (`g.ganharPeca`), e o **regador de
+ouro** na bancada com a memória **"As trinta levas"** no quadro do quarto
+(30). O prêmio NÃO chega sozinho (decisão do Renan): a tela do fim e a
+Josefina avisam, e a dupla clica em **Resgatar** na aba de recompensas do
+livro (`jardim.resgate-N`); aí a Josefina entrega (`entregarMarco`, em
+`scenes/estufa.ts` — as falas são minhas, o Renan não passou texto: se ele
+mandar, troca ali, literal). Teste: `scripts/marcos.mjs`.
+
+**O LIVRO DA ESTUFA** (a bancada) tem três abas (`ui/livroDeCartas.ts`):
+**Cartas** (cinza até escolher), **Pragas** (cinza até a praga nascer numa
+rodada — `jardim.viu-<id>`, marcado em `nascer`; retrato do próprio modelo por
+`world/retratoDePraga.ts`, descrição em `minigames/jardim/bestiario.ts`) e
+**Recompensas** (os marcos, o recorde de onda e o botão de resgatar; com
+recompensa esperando, o livro abre nela).
 
 **O que falta** (a escolha do próximo passo é do Renan):
 - a **vida dos bichos crescendo com as ondas** (hoje não cresce);
