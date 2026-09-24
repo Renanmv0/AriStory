@@ -282,14 +282,34 @@ const CASOS = {
       `emperrou o ${e0.emperrado}, o bicho veio pelo ${porta}`);
   },
   'cerca-viva': async () => {
+    // relato do Renan: a cerca deixava o canteiro IMORTAL e a rodada nao tinha
+    // como ser perdida. Agora ela leva as mordidas primeiro, cede, e o
+    // canteiro volta a sofrer — e no fim da onda ela brota inteira de novo
     await laboratorio(['cerca-viva'], { x: -3.6, z: 6.4, folga: true });
     const e0 = await ate((s) => s.canteiros.some((c) => c.protegido), 3000);
     const i = e0.canteiros.findIndex((c) => c.protegido);
     await rodada((c) => window.jogo.current.world.root.userData.rodada.soltarBicho('lagartejo', c.x, c.z - 1.3), e0.canteiros[i]);
-    await page.waitForTimeout(5000);
-    const e = await estado();
-    confere('cerca-viva', i >= 0 && e.canteiros[i].vida >= e.canteiros[i].vidaMax - 0.01 && efeito(e, 'cerca-viva') > 0,
-      `${e0.canteiros[i]?.nome} intocado (${e.canteiros[i]?.vida.toFixed(1)}/${e.canteiros[i]?.vidaMax})`);
+    const e1 = await ate((s) => s.canteiros[i].cerca < s.canteiros[i].vidaMax - 0.5, 20000);
+    const c1 = e1.canteiros[i];
+    const primeiroACerca = c1.cerca < c1.vidaMax && c1.vida >= c1.vidaMax - 0.01;
+    // a cerca cede de uma vez (teste) e o canteiro passa a sentir a mordida
+    await page.evaluate((k) => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.canteiros[k].cerca = 0.01;
+    }, i);
+    const e2 = await ate((s) => s.canteiros[i].vida < s.canteiros[i].vidaMax - 0.5, 20000);
+    const cedeu = e2.canteiros[i].cerca === 0 && e2.canteiros[i].vida < e2.canteiros[i].vidaMax;
+    // o fim da onda: brota de novo
+    await page.evaluate(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.limparBichos();
+      r.rebrotarCercas();
+    });
+    const e3 = await estado();
+    const brotou = e3.canteiros[i].cerca >= e3.canteiros[i].vidaMax - 0.01;
+    console.log(`       cerca: mordida primeiro ${primeiroACerca} (${c1.cerca.toFixed(1)}/${c1.vidaMax}), cedeu e o canteiro sentiu ${cedeu} (${e2.canteiros[i].vida.toFixed(1)}), brotou ${brotou}`);
+    confere('cerca-viva', i >= 0 && primeiroACerca && cedeu && brotou && efeito(e3, 'cerca-viva') > 0,
+      `${e0.canteiros[i]?.nome}: a cerca leva a mordida, cede, e brota de novo`);
   },
   toldo: async () => {
     await laboratorio(['toldo'], { x: -3.6, z: 6.4, folga: true });

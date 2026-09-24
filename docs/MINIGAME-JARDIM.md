@@ -705,7 +705,7 @@ frente desde o começo, e o Renan decidiu que quem não é controlado fica atrá
 | Espantalho | raro | com três bichos na estufa, um espantalho levanta no terreiro e puxa quem está a 7 m por 20 s (uma vez por onda) |
 | Josefina ajuda | raro | ela sai do canto e rega um canteiro por conta dela, uma vez por onda |
 | Portão emperrado | raro | uma das três portas fecha pelo resto da rodada |
-| Cerca viva | lendário | um canteiro à sua escolha fica intocável até o fim |
+| Cerca viva | lendário | um canteiro à sua escolha ganha uma cerca com vida própria (= a vida do canteiro): as mordidas comem a cerca primeiro, ela cede, e brota inteira no fim de cada onda. **Era "intocável até o fim" — o Renan achou forte demais: um canteiro imortal e a rodada não tinha como ser perdida** |
 | Chuva | lendário | a estufa inteira leva um jato, de uma vez, a cada 30 s |
 | Compostagem I–II | comum | cada bicho espantado devolve 5% de vida ao canteiro mais perto (por degrau) |
 | Sino da porta ⚙ | comum | um sininho toca quando um bicho passa por um portão — conforto, como a Bota |
@@ -842,7 +842,7 @@ não é água em `jato.ts` (poeira, notinhas, onda de som, broto, ardido, adubo)
 | Espantalho | três na estufa, uma vez por onda | ele brota do chão; quem está a 7 m fica em roda olhando para ele |
 | A Josefina ajuda | canteiro abaixo de 60%, uma vez por onda | ela vira e rega em arco: +35% de vida e respingo em quem come ali |
 | Portão emperrado | na hora | tábuas pregadas no portão mais cheio; quem ia por ele vai pelo do lado, e a dupla também não passa |
-| Cerca viva | na hora (você escolhe) | uma roda de moitas abraça o canteiro, e ninguém come ali |
+| Cerca viva | na hora (você escolhe) | uma roda de moitas abraça o canteiro; ela leva as mordidas, encolhe, some quando cede, e brota de novo no fim da onda |
 | Toldo | na hora (você escolhe) | a lona listrada por cima; o canteiro aguenta 50% mais |
 | Canteiro de pimenta | na hora (você escolhe) | uma fileira de pimenteira na borda; quem morde arde e foge soltando 2 gotas |
 | Planta carnívora | na hora (você escolhe) | uma dioneia grande na borda morde quem come ali e fica fechada 15 s |

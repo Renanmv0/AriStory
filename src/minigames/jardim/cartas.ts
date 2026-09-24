@@ -70,7 +70,7 @@ export type RegraDoJardim =
   | 'portao-emperrado'  // uma das três portas fecha pelo resto da rodada
   | 'la-de-tras'        // quem ficou com a Josefina rega o canteiro mais perto dele
   | 'os-dois-na-frente' // o parceiro sai de trás e rega do seu lado
-  | 'cerca-viva'        // um canteiro à sua escolha fica intocável
+  | 'cerca-viva'        // um canteiro à sua escolha ganha uma cerca que aguenta uma vida inteira por onda
   | 'chuva'             // a estufa inteira leva um jato a cada 30 s
   // --- as do banco de ideias que o Renan mandou virar carta de uma vez
   // regador
@@ -762,7 +762,7 @@ const JARDIM: CartaDoJardim[] = [
   },
   {
     id: 'cerca-viva', nome: 'Cerca viva', familia: 'jardim', raridade: 'lendario',
-    icone: '🌳', texto: 'Um canteiro à sua escolha fica intocável até o fim',
+    icone: '🌳', texto: 'Um canteiro ganha uma cerca que leva as mordidas e brota a cada onda',
     aplicar: (f) => f.regras.add('cerca-viva'),
   },
   {

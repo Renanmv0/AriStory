@@ -185,8 +185,15 @@ interface Canteiro extends CanteiroDaPlanta {
   escalas: number[];
   giros: number[];
   terraOriginal: THREE.Material | THREE.Material[] | null;
-  /** a Cerca viva: ninguém come */
+  /**
+   * a Cerca viva. Era "ninguém come", e com isso a rodada não tinha como ser
+   * perdida (relato do Renan): agora a cerca tem VIDA PRÓPRIA — a mordida
+   * come a cerca primeiro, ela cede, e brota de novo no fim de cada onda.
+   */
   protegido: boolean;
+  /** quanto a cerca ainda aguenta nesta onda (0 = cedeu), e as moitas dela */
+  cerca: number;
+  cercaPeca: THREE.Object3D | null;
   /** o Toldo: aguenta 50% mais */
   toldo: boolean;
   /** o Canteiro de pimenta: quem morde sai correndo */
@@ -475,6 +482,8 @@ export class RodadaDoJardim {
         giros: mudas.map((m) => m.rotation.y),
         terraOriginal: terra ? terra.material : null,
         protegido: false,
+        cerca: 0,
+        cercaPeca: null,
         toldo: false,
         pimenta: false,
         carnivora: null,
@@ -701,7 +710,7 @@ export class RodadaDoJardim {
       esponjas: this.esponjas.length,
       canteiros: this.canteiros.map((c) => ({
         x: c.x, z: c.z, nome: c.nome, vida: c.vida, vidaMax: c.vidaMax,
-        protegido: c.protegido, toldo: c.toldo, pimenta: c.pimenta, carnivora: !!c.carnivora, adubado: c.adubado,
+        protegido: c.protegido, cerca: c.cerca, toldo: c.toldo, pimenta: c.pimenta, carnivora: !!c.carnivora, adubado: c.adubado,
       })),
       faltamEntrar: this.plano.length,
       gotasNoAr: this.jato.gotasNoAr,
@@ -1156,8 +1165,7 @@ export class RodadaDoJardim {
     let melhor: Canteiro | null = null;
     let d = Infinity;
     for (const c of this.canteiros) {
-      // a Cerca viva: esse ninguém nem tenta
-      if (c.vida <= 0 || c.protegido) continue;
+      if (c.vida <= 0) continue;
       const dd = Math.hypot(c.x - x, c.z - z);
       if (dd < d) { d = dd; melhor = c; }
     }
@@ -1339,7 +1347,7 @@ export class RodadaDoJardim {
       alvo = tonel;
       vaiBeber = true;
     } else if (!alvo) {
-      if (!inv.canteiro || inv.canteiro.vida <= 0 || inv.canteiro.protegido) inv.canteiro = this.canteiroMaisPerto(inv.x, inv.z);
+      if (!inv.canteiro || inv.canteiro.vida <= 0) inv.canteiro = this.canteiroMaisPerto(inv.x, inv.z);
       if (!inv.canteiro) return;
       alvo = this.pontoDeComer(inv, inv.canteiro);
       vaiComer = true;
@@ -1377,7 +1385,7 @@ export class RodadaDoJardim {
       return;
     }
     const c = inv.canteiro;
-    if (!c || c.vida <= 0 || c.protegido) {
+    if (!c || c.vida <= 0) {
       inv.estado = 'andando';
       inv.canteiro = null;
       return;
@@ -1388,7 +1396,19 @@ export class RodadaDoJardim {
       THREE.MathUtils.clamp(inv.z, c.z - c.meioZ, c.z + c.meioZ) - inv.z,
     ), dt);
     // o Adubo do Noel: canteiro regado nesta onda perde a metade
-    c.vida = Math.max(0, c.vida - inv.jeito.mordida * dt * (c.adubado ? 0.5 : 1));
+    let mordida = inv.jeito.mordida * dt * (c.adubado ? 0.5 : 1);
+    // a Cerca viva morde primeiro: o canteiro só sente o que passar dela
+    if (c.cerca > 0) {
+      const na = Math.min(c.cerca, mordida);
+      c.cerca -= na;
+      mordida -= na;
+      this.pintarCerca(c);
+      if (c.cerca <= 0) {
+        this.g.toast(`A cerca viva do canteiro de ${c.nome.toLowerCase()} cedeu`, '🍂');
+        this.g.som('brotar');
+      }
+    }
+    c.vida = Math.max(0, c.vida - mordida);
     if (Math.random() < dt * 5) {
       this.jato.folhinhas(
         THREE.MathUtils.clamp(inv.x, c.x - c.meioX, c.x + c.meioX),
@@ -1657,7 +1677,7 @@ export class RodadaDoJardim {
     if (inv.passo < inv.caminho.length) return inv.caminho[inv.passo];
     const tonel = this.tonelDoBicho(inv);
     if (tonel) return tonel;
-    if (!inv.canteiro || inv.canteiro.vida <= 0 || inv.canteiro.protegido) inv.canteiro = this.canteiroMaisPerto(inv.x, inv.z);
+    if (!inv.canteiro || inv.canteiro.vida <= 0) inv.canteiro = this.canteiroMaisPerto(inv.x, inv.z);
     return inv.canteiro ? this.pontoDeComer(inv, inv.canteiro) : null;
   }
 
@@ -2680,6 +2700,7 @@ export class RodadaDoJardim {
 
   /** o que acontece quando uma onda acaba, antes do respiro */
   private fimDeUmaOnda(): void {
+    this.rebrotarCercas();
     const r = this.ficha.regras;
     /*
      * O PRÊMIO DA ONDA (pedido do Renan): vencer uma onda dá gotas — metade do
@@ -2847,6 +2868,8 @@ export class RodadaDoJardim {
     this.crescendo = [];
     for (const c of this.canteiros) {
       c.protegido = false;
+      c.cerca = 0;
+      c.cercaPeca = null;
       c.toldo = false;
       c.pimenta = false;
       c.carnivora = null;
@@ -2884,12 +2907,7 @@ export class RodadaDoJardim {
   /** a Cerca viva: uma roda de moitas em volta, e ninguém mais come ali */
   private cercarCanteiro(c: Canteiro): void {
     c.protegido = true;
-    for (const inv of this.invasores) {
-      if (inv.canteiro === c) {
-        if (inv.estado === 'comendo') inv.estado = 'andando';
-        inv.canteiro = null;
-      }
-    }
+    c.cerca = c.vidaMax;
     const grupo = new THREE.Group();
     const bx = c.meioX + 0.35;
     const bz = c.meioZ + 0.35;
@@ -2906,11 +2924,39 @@ export class RodadaDoJardim {
       moita.position.set(x, 0, z);
       grupo.add(moita);
     }
-    this.pecaNaEstufa(grupo, c.x, c.z);
+    c.cercaPeca = this.pecaNaEstufa(grupo, c.x, c.z);
     this.g.som('brotar');
     this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
     this.g.toast(`A cerca viva abraçou o canteiro de ${c.nome.toLowerCase()}`, '🌳');
     this.contar('cerca-viva');
+  }
+
+  /**
+   * As moitas da cerca murcham junto com ela: encolhem com o que falta, e
+   * somem quando ela cede — a dupla vê de longe que aquele canteiro ficou
+   * exposto.
+   */
+  private pintarCerca(c: Canteiro): void {
+    const peca = c.cercaPeca;
+    if (!peca) return;
+    const f = c.vidaMax > 0 ? c.cerca / c.vidaMax : 0;
+    peca.visible = f > 0;
+    const k = 0.55 + 0.45 * f;
+    peca.scale.set(1, k, 1);
+  }
+
+  /** o fim de uma onda: a cerca que cedeu, ou que foi mordida, brota inteira de novo */
+  private rebrotarCercas(): void {
+    for (const c of this.canteiros) {
+      if (!c.protegido || c.vida <= 0 || c.cerca >= c.vidaMax) continue;
+      const cedeu = c.cerca <= 0;
+      c.cerca = c.vidaMax;
+      this.pintarCerca(c);
+      if (cedeu) {
+        this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
+        this.g.toast(`A cerca viva do canteiro de ${c.nome.toLowerCase()} brotou de novo`, '🌳');
+      }
+    }
   }
 
   /** o Toldo: a lona por cima, e o canteiro aguenta 50% mais */
