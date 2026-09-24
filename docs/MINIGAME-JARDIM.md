@@ -120,7 +120,8 @@ anel, os outros pontos da cena descansam, a barra de baixo diz "chegue perto e
 aperte E", e o "pronto" (X) sai. Cada enfeite posto fica no save
 (`SaveState.decoracoes`) e entra na lista do que a Josefina e os ajudantes
 desviam. A fala de apresentação da Josefina é minha. Teste:
-`scripts/decorar.mjs`.
+`scripts/decorar.mjs`. **Enfeite novo: skill `aristory-enfeite`** (uma função e
+uma ficha em `decoracoes.ts`; foto e pegada por `scripts/enfeite.mjs`).
 
 **O LIVRO DA ESTUFA** (a bancada) tem três abas (`ui/livroDeCartas.ts`):
 **Cartas** (cinza até escolher), **Pragas** (cinza até a praga nascer numa

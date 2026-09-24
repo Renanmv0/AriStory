@@ -19,6 +19,7 @@ acento — é o padrão do repositório, siga o que já está lá.
 | criar/ajustar uma carta (habilidade) do minigame do jardim | `.claude/skills/aristory-habilidade/SKILL.md` |
 | pintar uma memória para o quadro (a partir de uma foto) | `.claude/skills/aristory-memoria/SKILL.md` |
 | adicionar/ajustar roupa do guarda-roupa | `.claude/skills/aristory-roupa/SKILL.md` |
+| criar/ajustar um enfeite (decoração) da lojinha da estufa | `.claude/skills/aristory-enfeite/SKILL.md` |
 | pôr um prato novo no cardápio do restaurante | `.claude/skills/aristory-prato/SKILL.md` |
 | som, música ou efeito sonoro | `.claude/skills/aristory-som/SKILL.md` |
 | rodar, ver e validar | `.claude/skills/aristory-testar/SKILL.md` |
@@ -142,6 +143,7 @@ node scripts/cartasNaRodada.mjs /tmp/cr # as outras 41 cartas agindo (cada uma n
 node scripts/livro.mjs   /tmp/lv    # o livro das cartas na bancada (vagas cinzas, cada carta no seu lugar, a lupa, o F5) e a tela do fim da rodada
 node scripts/oclusao.mjs /tmp/oc    # na rodada, a parede que tapa gota ou bicho fica translucida e volta; e a fala esconde o botao da ajuda no celular
 node scripts/decorar.mjs /tmp/dc    # a lojinha da Josefina: comprar roupa e enfeite, colocar o enfeite no chao (terreiro e patio de fora podem; vao do portao e canteiro nao), o modo de edicao pela lojinha (mexer, girar, guardar), sem colisor na rodada, a visita nova; todo enfeite com retrato, a rodinha girando e as luzinhas acesas
+node scripts/enfeite.mjs /tmp/en [id] # um enfeite (ou todos) posto pelo modo de colocar: a pegada medida, o cartao, e fotos de perto dos dois lados
 node scripts/marcos.mjs  /tmp/mc    # os premios da estufa: moedas de toda rodada, o premio unico de cada marco resgatado no livro, e a aba de pragas
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```

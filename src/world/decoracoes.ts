@@ -1025,7 +1025,7 @@ export const DECORACOES: readonly FichaDeDecoracao[] = ([
     monta: walterDeCeramica,
   },
   {
-    id: 'elefantinho', nome: 'Regador elefantinho do Cookie', icone: '🐘', preco: 48, artigo: 'o', raio: 0.28,
+    id: 'elefantinho', nome: 'Regador elefantinho do Cookie', icone: '🐘', preco: 48, artigo: 'o', raio: 0.4,
     descricao: 'A tromba é o bico, e o quepe é o da bilheteria.',
     monta: regadorElefantinho,
   },
