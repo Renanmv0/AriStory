@@ -281,6 +281,22 @@ const CASOS = {
     confere('portao-emperrado', e0.emperrado !== null && porta !== undefined && porta !== e0.emperrado && efeito(e, 'portao-emperrado') > 0,
       `emperrou o ${e0.emperrado}, o bicho veio pelo ${porta}`);
   },
+  // BALANÇO (o Renan venceu as 30 ondas): o gêiser não espanta mais a chefe
+  // de uma vez — tira um terço, e ela fica
+  'geiser-na-chefe': async () => {
+    await laboratorio(['geiser'], { x: -4, z: 2, folga: true });
+    await rodada(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.escalaDoTempo = 1;
+      r.soltarBicho('mae-lagartejo', 0, -3);
+      r.adiantar('geiser');
+    });
+    const e = await ate((s) => s.invasores.some((i) => i.praga === 'mae-lagartejo' && i.vida < i.vidaMax - 0.1), 20000);
+    const m = e.invasores.find((i) => i.praga === 'mae-lagartejo');
+    console.log(`       chefe depois do geiser: ${m?.vida.toFixed(1)}/${m?.vidaMax} (${m?.estado})`);
+    confere('geiser-na-chefe', !!m && m.estado !== 'preso' && m.estado !== 'sacudindo'
+      && Math.abs(m.vida - m.vidaMax * 2 / 3) < 0.6, 'a chefe perde um terço e continua na estufa');
+  },
   'cerca-viva': async () => {
     // relato do Renan: a cerca deixava o canteiro IMORTAL e a rodada nao tinha
     // como ser perdida. Agora ela leva as mordidas primeiro, cede, e o

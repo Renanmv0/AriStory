@@ -67,6 +67,16 @@ const VIDA_DO_CANTEIRO = 34;
  * nenhum bicho escapar, dá umas vinte ajudas — uma a cada onda e meia.
  */
 const AJUDA_DURA = 10;
+/*
+ * BALANÇO DAS CARTAS SOMADAS — o Renan venceu as 30 ondas com uma mão forte.
+ * Os multiplicadores que viram o jogo quando se somam moram aqui, juntos:
+ */
+/** o jato de trás do Segundo bico, em fração do da frente */
+const SEGUNDO_BICO = 0.6;
+/** o regador do parceiro (Os dois na frente), em fração do seu */
+const PARCEIRO = 0.6;
+/** o máximo que a Compostagem cura um canteiro por onda, em fração da vida */
+const COMPOSTO_POR_ONDA = 0.2;
 const AJUDA_CUSTO_INICIAL = 30;
 const AJUDA_CUSTO_SOBE = 15;
 /** a distância do tonel em que o regador enche */
@@ -193,6 +203,8 @@ interface Canteiro extends CanteiroDaPlanta {
   protegido: boolean;
   /** quanto a cerca ainda aguenta nesta onda (0 = cedeu), e as moitas dela */
   cerca: number;
+  /** quanto a Compostagem já curou este canteiro nesta onda */
+  composto: number;
   cercaPeca: THREE.Object3D | null;
   /** o Toldo: aguenta 50% mais */
   toldo: boolean;
@@ -241,6 +253,8 @@ interface Invasor {
   gotasVezes: number;
   voo: { de: { x: number; z: number }; para: { x: number; z: number }; t: number; dur: number } | null;
   chineladaEspera: number;
+  /** respiro depois de um tranco da Gota pesada: jatos somados não travam o bicho */
+  trancoEspera: number;
   /** na vitrine: onde ele nasce de novo */
   casa: { x: number; z: number } | null;
   /** tonto (apito, coração, pulinho): não anda nem come */
@@ -483,6 +497,7 @@ export class RodadaDoJardim {
         terraOriginal: terra ? terra.material : null,
         protegido: false,
         cerca: 0,
+        composto: 0,
         cercaPeca: null,
         toldo: false,
         pimenta: false,
@@ -1105,6 +1120,7 @@ export class RodadaDoJardim {
       gotasVezes: 1,
       voo: null,
       chineladaEspera: 0,
+      trancoEspera: 0,
       casa,
       tonto: 0,
       recuo: null,
@@ -1221,6 +1237,7 @@ export class RodadaDoJardim {
     inv.fase += dt;
     inv.lento = Math.max(0, inv.lento - dt);
     inv.chineladaEspera = Math.max(0, inv.chineladaEspera - dt);
+    inv.trancoEspera = Math.max(0, inv.trancoEspera - dt);
     if (inv.gelado > 0) {
       inv.gelado -= dt;
       if (inv.gelado <= 0) this.jato.derreter(inv.corpo);
@@ -2150,7 +2167,14 @@ export class RodadaDoJardim {
       if (this.geiser >= 20) {
         const forte = this.invasores.filter((i) => this.vulneravel(i) && i.z > this.planta.portoes[0].z)
           .sort((a, b) => b.vida - a.vida)[0];
-        if (forte) {
+        if (forte && forte.ficha.tier === 'chefe' && forte.vida > forte.vidaMax / 3) {
+          // BALANÇO: a chefe não sai pela porta de uma vez — o gêiser tira um
+          // terço dela (espantava a mãe de cada onda sem luta)
+          this.geiser = 0;
+          this.jato.rachadura(forte.x, forte.z);
+          this.jato.geiser(forte.x, forte.z);
+          this.molhar(forte, forte.vidaMax / 3, null);
+        } else if (forte) {
           this.geiser = 0;
           forte.estado = 'preso';
           forte.relogio = 0;
@@ -2273,7 +2297,7 @@ export class RodadaDoJardim {
       // o Segundo bico: o mesmo jato, ao mesmo tempo, pelo bico de trás
       if (e.segundoBico) {
         const deTras = new THREE.Vector3(eu.x - Math.sin(rumo) * 0.25, de.y - 0.05, eu.z - Math.cos(rumo) * 0.25);
-        this.umJato({ origem, de: deTras, rumo: rumo + Math.PI, alvo: null, dano: f.dano, especial });
+        this.umJato({ origem, de: deTras, rumo: rumo + Math.PI, alvo: null, dano: f.dano * SEGUNDO_BICO, especial });
       }
     };
     if (atraso) this.jato.depois(atraso, saida);
@@ -2429,9 +2453,17 @@ export class RodadaDoJardim {
       inv.gelado = 2;
       this.jato.congelar(inv.corpo, inv.ficha.alturaDaBarra * 0.8);
     }
-    // a Gota pesada: o tranco para trás, na direção do jato
-    if (de && f.empurraoDoJato > 0) {
-      this.empurrar(inv, inv.x - de.x, inv.z - de.z, f.empurraoDoJato);
+    /*
+     * a Gota pesada: o tranco para trás, na direção do jato. BALANÇO (o Renan
+     * venceu as 30 ondas com cartas somadas): o tranco pesa menos em bicho
+     * grande, e cada bicho tem um RESPIRO de 0,4 s entre um tranco e outro —
+     * sem isso, Braço solto + Segundo bico + parceiro + Borrifador empurravam
+     * mais depressa do que qualquer bicho anda, e a chefe nunca chegava.
+     */
+    if (de && f.empurraoDoJato > 0 && inv.trancoEspera <= 0) {
+      const peso = inv.ficha.tier === 'chefe' ? 0.2 : inv.ficha.tier === 'tanque' ? 0.4 : 1;
+      inv.trancoEspera = 0.4;
+      this.empurrar(inv, inv.x - de.x, inv.z - de.z, f.empurraoDoJato * peso);
       this.jato.tranco(inv.x, inv.z, Math.atan2(inv.x - de.x, inv.z - de.z), e.tranco ?? 1);
     }
     if (inv.vida <= 0) this.espantado(inv, 'agua');
@@ -2466,10 +2498,15 @@ export class RodadaDoJardim {
         }
       });
     }
+    // BALANÇO: com 100 bichos por onda, a Compostagem sem teto curava tudo
+    // várias vezes — agora cada canteiro recebe no máximo COMPOSTO_POR_ONDA
     if (f.compostagem > 0) {
       const c = this.canteiroMaisPerto(onde.x, onde.z);
-      if (c) {
-        c.vida = Math.min(c.vidaMax, c.vida + c.vidaMax * f.compostagem);
+      const cabe = c ? c.vidaMax * COMPOSTO_POR_ONDA - c.composto : 0;
+      if (c && cabe > 0) {
+        const cura = Math.min(cabe, c.vidaMax * f.compostagem);
+        c.composto += cura;
+        c.vida = Math.min(c.vidaMax, c.vida + cura);
         this.pintarCanteiro(c);
       }
     }
@@ -2657,6 +2694,7 @@ export class RodadaDoJardim {
 
   /** o que acontece no comecinho de toda onda */
   private comecoDaOnda(): void {
+    for (const c of this.canteiros) c.composto = 0;
     const r = this.ficha.regras;
     // a Sementeira: canteiro comido até o fim brota de novo com meia vida
     if (r.has('sementeira') && this.onda > 1) {
@@ -3318,11 +3356,11 @@ export class RodadaDoJardim {
           const de = new THREE.Vector3(p.x + Math.sin(rumo) * 0.4, 1.15, p.z + Math.cos(rumo) * 0.4);
           const origem = { x: p.x, z: p.z };
           // o outro regador tem TODAS as cartas de jato da mão, como o seu:
-          // o mesmo `umJato`, só com 80% do dano (os especiais são só seus)
-          this.umJato({ origem, de, rumo, alvo, dano: f.dano * 0.8 });
+          // o mesmo `umJato`, só com parte do dano (os especiais são só seus)
+          this.umJato({ origem, de, rumo, alvo, dano: f.dano * PARCEIRO });
           if (f.jato.segundoBico) {
             const deTras = new THREE.Vector3(p.x - Math.sin(rumo) * 0.25, 1.1, p.z - Math.cos(rumo) * 0.25);
-            this.umJato({ origem, de: deTras, rumo: rumo + Math.PI, alvo: null, dano: f.dano * 0.8 });
+            this.umJato({ origem, de: deTras, rumo: rumo + Math.PI, alvo: null, dano: f.dano * PARCEIRO * SEGUNDO_BICO });
           }
           this.contar('os-dois-na-frente');
         }

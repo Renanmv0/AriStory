@@ -408,7 +408,7 @@ const REGADOR: CartaDoJardim[] = [
   }),
   {
     id: 'segundo-bico', nome: 'Segundo bico', familia: 'regador', raridade: 'incomum',
-    icone: '↔️', texto: 'O jato sai também para trás',
+    icone: '↔️', texto: 'O jato sai também para trás, com 60% da força',
     aplicar: (f) => {
       f.regras.add('segundo-bico');
       f.estilo.segundoBico = true;
@@ -445,7 +445,7 @@ const REGADOR: CartaDoJardim[] = [
   // --- do banco de ideias (§6 do plano)
   ...serie('gota-pesada', 3, {
     familia: 'regador', raridade: 'comum', icone: '🪨',
-    nome: 'Gota pesada', texto: 'Cada jato empurra o bicho 30 cm para trás',
+    nome: 'Gota pesada', texto: 'Cada jato empurra o bicho 30 cm para trás (os grandes, menos)',
   }, (f, d) => {
     f.empurraoDoJato += 0.3;
     f.jato.tranco = d;
@@ -557,7 +557,7 @@ const REGADOR: CartaDoJardim[] = [
   },
   {
     id: 'geiser', nome: 'Gêiser', familia: 'regador', raridade: 'lendario',
-    icone: '⛲', texto: 'A cada 20 s um gêiser joga o bicho mais forte pela porta',
+    icone: '⛲', texto: 'A cada 20 s um gêiser joga o mais forte pela porta (a chefe perde 1/3)',
     aplicar: (f) => {
       f.regras.add('geiser');
       f.jato.geiser = true;
@@ -777,9 +777,10 @@ const JARDIM: CartaDoJardim[] = [
   // --- do banco de ideias (§6 do plano)
   ...serie('compostagem', 2, {
     familia: 'jardim', raridade: 'comum', icone: '♻️',
-    nome: 'Compostagem', texto: 'Bicho espantado devolve 5% de vida ao canteiro mais perto',
+    nome: 'Compostagem', texto: 'Bicho espantado devolve 2% de vida ao canteiro mais perto',
   }, (f) => {
-    f.compostagem += 0.05;
+    // era 5%: somada às ondas de 100 bichos, curava tudo (teto na rodada.ts)
+    f.compostagem += 0.02;
   }),
   {
     id: 'sino-da-porta', nome: 'Sino da porta', familia: 'jardim', raridade: 'comum',

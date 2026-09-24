@@ -32,6 +32,13 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | `src/core/Oclusao.ts` | parede/árvore que tapa bicho ou gota fica translúcida (a rodada liga) |
 | `src/audio/musica.ts` (`'rodada-do-jardim'`) | a música da defesa |
 
+**Balanço das cartas somadas** (o Renan venceu as 30 ondas): os multiplicadores
+que viram o jogo quando se somam moram juntos no topo de `rodada.ts` —
+`SEGUNDO_BICO = 0,6`, `PARCEIRO = 0,6`, `COMPOSTO_POR_ONDA = 0,2` — e mais o
+peso do tranco por tamanho e o respiro de 0,4 s em `molhar`, e o Gêiser que só
+tira um terço da chefe. A Cerca viva tem vida própria (não é mais imortal).
+Ainda não mexido: a vida dos bichos **não cresce** com as ondas.
+
 **Os números que mais se ajustam** (todos no topo de `rodada.ts`, salvo aviso):
 canteiro aguenta `VIDA_DO_CANTEIRO = 34`; regador começa com alcance 3,0
 (`fichaInicial`, em `cartas.ts`); respiro entre ondas `INTERVALO = 6` s; ajuda
@@ -622,7 +629,7 @@ E as do mesmo baralho que mudam a regra do jato:
 
 | carta | raridade | efeito |
 |---|---|---|
-| Segundo bico | incomum | o jato sai também para trás |
+| Segundo bico | incomum | o jato sai também para trás, com 60% da força (`SEGUNDO_BICO`; era 100%) |
 | Orvalho | incomum | o tanque enche sozinho 50% mais rápido |
 | Mangueira | raro | o alcance dobra, mas a cadência piora 40% |
 | Regador de pressão | raro | o jato atravessa o primeiro bicho e acerta o de trás |
@@ -632,7 +639,7 @@ obedecer — ver "Do banco de ideias para o baralho", no fim desta seção):
 
 | carta | raridade | efeito |
 |---|---|---|
-| Gota pesada I–III | comum | cada jato empurra o bicho 30 cm para trás (por degrau) |
+| Gota pesada I–III | comum | cada jato empurra o bicho 30 cm para trás (por degrau); tanque leva 40%, chefe 20%, e cada bicho tem 0,4 s de respiro entre um tranco e outro |
 | Refil rápido I–II | comum | encher no tonel fica 40% mais rápido (por degrau) — exclui *O Jean-Luc no tonel* |
 | Água morna | comum | +25% de encharque em tanque e chefe |
 | Gota gelada ⚙ | incomum | o bicho molhado anda 30% mais devagar por 2 s |
@@ -646,7 +653,7 @@ obedecer — ver "Do banco de ideias para o baralho", no fim desta seção):
 | Água com sabão ⚙ | raro | bicho espantado solta uma bolha; ela estoura e molha quem está perto |
 | Jato carregado ⚙ | raro | ficar parado 1,5 s carrega um jatão que atravessa a fila inteira |
 | Balde ⚙ | raro | segurar E derrama o tanque inteiro num círculo de 2 m em volta |
-| Gêiser ⚙ | lendário | a cada 20 s um gêiser brota embaixo do bicho mais forte e o joga pela porta |
+| Gêiser ⚙ | lendário | a cada 20 s um gêiser brota embaixo do bicho mais forte e o joga pela porta — na chefe, tira um terço da vida e ela fica |
 | Arco-íris ⚙ | lendário | um jato a cada dez atravessa tudo e dobra as gotas de quem ele espanta |
 
 ### As três famílias de carta
@@ -707,7 +714,7 @@ frente desde o começo, e o Renan decidiu que quem não é controlado fica atrá
 | Portão emperrado | raro | uma das três portas fecha pelo resto da rodada |
 | Cerca viva | lendário | um canteiro à sua escolha ganha uma cerca com vida própria (= a vida do canteiro): as mordidas comem a cerca primeiro, ela cede, e brota inteira no fim de cada onda. **Era "intocável até o fim" — o Renan achou forte demais: um canteiro imortal e a rodada não tinha como ser perdida** |
 | Chuva | lendário | a estufa inteira leva um jato, de uma vez, a cada 30 s |
-| Compostagem I–II | comum | cada bicho espantado devolve 5% de vida ao canteiro mais perto (por degrau) |
+| Compostagem I–II | comum | cada bicho espantado devolve 2% de vida ao canteiro mais perto (por degrau; era 5%), no máximo 20% por canteiro por onda (`COMPOSTO_POR_ONDA`) |
 | Sino da porta ⚙ | comum | um sininho toca quando um bicho passa por um portão — conforto, como a Bota |
 | Girassol vigia ⚙ | incomum | os girassóis viram para o portão de onde vem o próximo bicho |
 | Cerquinha ⚙ | incomum | nasce uma cerca baixa no terreiro que os bichos têm que contornar |
@@ -806,7 +813,7 @@ ao regador do parceiro. Então:
 | Jato em arco | Regador de pressão | um arco que passa do bicho |
 | Crivo giratório | Poça | o anel deixa poça onde pegou |
 | Leque aberto | Mangueira, Arco, Pressão | o fio, o arco e o reto abrem junto |
-| Os dois na frente | qualquer carta de jato | o parceiro atira com todas elas (80% do dano) |
+| Os dois na frente | qualquer carta de jato | o parceiro atira com todas elas (60% do dano, `PARCEIRO`) |
 
 **Carta nova não pode apagar carta velha.** O `scripts/cartas.mjs` testa isso
 para TODO par de cartas que pode estar junto na mão (4270 pares): o que cada
@@ -836,7 +843,7 @@ não é água em `jato.ts` (poeira, notinhas, onda de som, broto, ardido, adubo)
 | Coraçãozinho | a cada 20 gotas | sobem corações da dupla e quem está a 4 m para 1 s |
 | Grito | três bichos a 4 m, uma vez por onda | uma onda laranja no chão e todos voltam até a boca do portão |
 | Dedo verde | fim da onda | faísca verde nos canteiros machucados |
-| Os dois na frente | sempre | o parceiro pega o outro regador, segue você e atira com 80% do dano |
+| Os dois na frente | sempre | o parceiro pega o outro regador, segue você e atira com 60% do dano |
 | Segundo tonel | sempre | o tonel nasce na parede da direita, espelhando o primeiro |
 | Lá de trás | a cada 5 s | quem ficou atrás rega em arco o canteiro mais perto que precisa |
 | Espantalho | três na estufa, uma vez por onda | ele brota do chão; quem está a 7 m fica em roda olhando para ele |
