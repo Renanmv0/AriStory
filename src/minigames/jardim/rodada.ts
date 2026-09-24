@@ -2327,9 +2327,26 @@ export class RodadaDoJardim {
       }
     }
 
+    // ---- a Mangueira que rega: canteiro que ela encosta sara devagar (0,5 por
+    // segundo, uns 70 s do zero ao cheio), com um brotinho de vez em quando
+    if (f.regras.has('mangueira-rega')) {
+      this.regaDaMangueira -= dt;
+      const pontos = this.mangueira.pontosNoChao();
+      for (const c of this.canteiros) {
+        if (c.vida <= 0 || c.vida >= c.vidaMax) continue;
+        if (!pontos.some((p) => distanciaAoCanteiro(p.x, p.z, c) < 0.45)) continue;
+        c.vida = Math.min(c.vidaMax, c.vida + 0.5 * dt);
+        this.pintarCanteiro(c);
+        this.contar('mangueira-rega');
+        if (this.regaDaMangueira <= 0) this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
+      }
+      if (this.regaDaMangueira <= 0) this.regaDaMangueira = 1.5;
+    }
+
     const chicote = f.regras.has('chicote');
     const vaza = f.regras.has('vazamento');
-    if (!chicote && !vaza) return;
+    const laco = f.regras.has('laco');
+    if (!chicote && !vaza && !laco) return;
     // ---- o Vazamento: a mangueira pinga pocinhas no chão
     if (vaza) {
       this.vazamento -= dt;
@@ -2347,6 +2364,14 @@ export class RodadaDoJardim {
         inv.lento = 2;
         this.contar('vazamento');
       }
+      // ---- o Laço: a mangueira se enrola em quem pisa nela (1,5 s parado;
+      // o mesmo bicho só de 6 em 6 s, senão a chefe nunca mais saía do lugar)
+      if (laco && (this.lacoEspera.get(inv) ?? 0) <= this.relogioDoChicote) {
+        this.lacoEspera.set(inv, this.relogioDoChicote + 6);
+        inv.tonto = Math.max(inv.tonto, 1.5);
+        this.jato.sacudida(inv.x, inv.ficha.alturaDaBarra * 0.4, inv.z);
+        this.contar('laco');
+      }
       // ---- o Chicote: a mangueira dá um tranco em quem pisa nela
       if (chicote && (this.chicoteEspera.get(inv) ?? 0) <= this.relogioDoChicote) {
         this.chicoteEspera.set(inv, this.relogioDoChicote + 1.5);
@@ -2361,10 +2386,16 @@ export class RodadaDoJardim {
     this.relogioDoChicote += dt;
   }
 
-  /** o relógio do Chicote (a espera de cada bicho é medida nele) */
+  /** o relógio do Chicote e do Laço (a espera de cada bicho é medida nele) */
   private relogioDoChicote = 0;
+  /** o Laço: cada bicho fica enrolado no máximo de 6 em 6 s */
+  private readonly lacoEspera = new WeakMap<Invasor, number>();
+  /** a Mangueira que rega: o relógio do próximo brotinho */
+  private regaDaMangueira = 0;
 
   private dancaEm = { x: 0, z: 0 };
+  /** para que lado sai o fio da Bifurcação desta vez */
+  private ladoDaBifurcacao = 1;
   /** quanto você andou no último quadro (o Pique e a Bota leem daqui) */
   private passoDoQuadro = 0;
   /** o multiplicador de velocidade de agora, com Pique, poça e picolé */
@@ -2425,6 +2456,16 @@ export class RodadaDoJardim {
     const saida = (): void => {
       const de = this.pontaDoBico();
       this.umJato({ origem, de, rumo, alvo, dano: f.dano, especial });
+      /*
+       * a Bifurcação (mangueira): um Y no esguicho — um segundo fio sai de
+       * lado, alternando esquerda e direita, com metade da força. É o mesmo
+       * `umJato`, então ele leva todas as outras cartas junto.
+       */
+      if (f.regras.has('bifurcacao')) {
+        this.ladoDaBifurcacao = -this.ladoDaBifurcacao;
+        this.umJato({ origem, de, rumo: rumo + this.ladoDaBifurcacao * 0.44, alvo: null, dano: f.dano * 0.5, especial });
+        this.contar('bifurcacao');
+      }
       // o Segundo bico: o mesmo jato, ao mesmo tempo, pelo bico de trás
       if (e.segundoBico) {
         const deTras = new THREE.Vector3(eu.x - Math.sin(rumo) * 0.25, de.y - 0.05, eu.z - Math.cos(rumo) * 0.25);

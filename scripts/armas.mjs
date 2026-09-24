@@ -245,6 +245,49 @@ for (const [id, nome] of [['jato-continuo', 'Jato contínuo'], ['chicote', 'Chic
 await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; });
 await page.screenshot({ path: `${OUT}-cartas.png` });
 
+// ============================================= 4c. as cartas novas da mangueira
+// a dupla no vão entre o girassol e o tomate: a mangueira, do tonel até ela,
+// passa por cima do canteiro de girassol (machucado de propósito); um bicho
+// deitado em cima da mangueira (o Laço) e outro no alcance (a Bifurcação)
+await page.evaluate(() => window.jogo.current.world.root.userData.rodada.terminar('interrompida'));
+await page.waitForTimeout(400);
+await falarAteAcabar(page);
+await page.evaluate(() => {
+  window.jogo.debugPlace(-11.6, 2.5, Math.PI);
+  const u = window.jogo.current.world.root.userData;
+  u.comecarRodada(['bifurcacao', 'laco', 'mangueira-rega'], 'mangueira');
+  u.rodada.escalaDoTempo = 2;
+});
+await page.waitForTimeout(600);
+const girassol = await page.evaluate(() => {
+  const r = window.jogo.current.world.root.userData.rodada;
+  const i = r.estado().canteiros.findIndex((c) => c.nome === 'Girassol');
+  r.ferirCanteiro(i, 0.3);
+  r.limparBichos();
+  r.soltarBicho('lagartejo', -12.7, -2.6);
+  r.soltarBicho('lagartejo', -10.2, 0.2);
+  return { i, vida: r.estado().canteiros[i].vida };
+});
+let tonto = false;
+await esperar(page, async () => {
+  if (await page.locator('.cartas-do-jardim.show').count()) {
+    await page.keyboard.press('Digit1');
+    await page.waitForTimeout(300);
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(600);
+  }
+  const e = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+  tonto ||= e.invasores.some((b) => b.tonto);
+  return ['bifurcacao', 'laco', 'mangueira-rega'].every((k) => (e.efeitos[k] ?? 0) > 0);
+}, 90000);
+const novas = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+ok((novas.efeitos.bifurcacao ?? 0) > 0, `Bifurcação: sai um segundo fio de lado (${novas.efeitos.bifurcacao ?? 0}×)`);
+ok((novas.efeitos.laco ?? 0) > 0 && tonto, `Laço: o bicho em cima da mangueira fica enrolado (${novas.efeitos.laco ?? 0}×)`);
+const vidaDepois = novas.canteiros[girassol.i].vida;
+ok(vidaDepois > girassol.vida, `Mangueira que rega: o girassol que ela encosta sarou (${girassol.vida.toFixed(1)} → ${vidaDepois.toFixed(1)})`);
+await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; });
+await page.screenshot({ path: `${OUT}-cartas-novas.png` });
+
 // ============================================= 5. a onda 20 de mangueira abre a pistola
 await page.evaluate(() => {
   const r = window.jogo.current.world.root.userData.rodada;

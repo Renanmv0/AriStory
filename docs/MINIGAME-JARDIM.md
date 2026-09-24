@@ -21,7 +21,7 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | arquivo | o que mora lá |
 |---|---|
 | `src/minigames/jardim/rodada.ts` | a rodada inteira (`RodadaDoJardim`): ondas, bichos, regador, o jato de cada carta (`umJato`), as cartas de jardineiro/jardim/clube, os chamados agindo, a ajuda do par, o prêmio da onda e o de 5 em 5 níveis, e os ganchos de teste no fim da classe |
-| `src/minigames/jardim/cartas.ts` | o catálogo das **99 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
+| `src/minigames/jardim/cartas.ts` | o catálogo das **107 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
 | `src/minigames/jardim/armas.ts` | as **quatro armas** (regador, mangueira, pistola d'água, borrifador): a fila de destrancar e os números de partida de cada uma (`base`) |
 | `src/minigames/jardim/mangueira.ts` | a mangueira esticada do tonel até a mão (o tubo, e o trecho no chão que o Chicote e o Vazamento leem) |
 | `src/minigames/jardim/baralho.ts` | a mão (carta não repete), o sorteio de três, a Sorte de principiante |
@@ -544,11 +544,25 @@ Tanque maior (I–III), Refil rápido (I–III), Orvalho, Bico de mangueira,
 Pressão acumulada, Balde, Fôlego, Chapéu de palha, Descanso na sombra, Segundo
 tonel e O Jean-Luc no tonel — todas de água/tanque/tonel.
 
-**As cartas só da mangueira** (família regador, `soPara: ['mangueira']`):
+**Toda ferramenta tem mais ou menos o mesmo tanto de cartas únicas** (pedido
+do Renan): hoje **14 do regador e 14 da mangueira**. A carta que não serve na
+mangueira mas vai servir nas outras que usam munição (o Jean-Luc no tonel, o
+Tanque maior, o Refil…) fica com `naoServe: ['mangueira']`, e não com
+`soPara: ['regador']`: quando a pistola e o borrifador existirem, ela entra na
+lista deles de graça.
+
+**As cartas só da mangueira** (`soPara: ['mangueira']`; 7 comuns, 4 incomuns,
+2 raras, 1 lendária):
 
 | carta | raridade | efeito |
 |---|---|---|
-| Esguicho de latão I–II | comum | +12% força, +8% alcance, o fio engrossa |
+| Esguicho de latão I–III | comum | +12% força, +8% alcance, o fio engrossa |
+| Torneira aberta I–II | comum | o jato sai 10% mais seguido |
+| Vedação nova | comum | o jato vai 12% mais longe |
+| Carretel (jardineiro) | comum | você anda 10% mais rápido |
+| Bifurcação | incomum | a cada jato, um segundo fio sai de lado (25°, alternando), com metade da força |
+| Mangueira que rega (jardim) | incomum | canteiro que a mangueira deitada encosta sara 0,5 por segundo, com brotinho |
+| Laço | raro | bicho que pisa na mangueira fica enrolado (parado) 1,5 s; o mesmo bicho de 6 em 6 s |
 | Chicote | incomum | bicho que atravessa a mangueira no chão leva tranco e se molha (1,5× a força; 1,5 s por bicho) |
 | Vazamento | incomum | a mangueira pinga poças; quem cruza ela anda devagar 2 s |
 | Jato contínuo | raro | no mesmo bicho sem parar, +15% por jato até o dobro, e o fio engrossa |

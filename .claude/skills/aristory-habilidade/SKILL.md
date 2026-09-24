@@ -134,6 +134,12 @@ mudam isso:
   Chicote, Vazamento, Jato contínuo, Enchente). Na tela ela ganha a fita da
   arma (`cartaDaArma`, em `tela.ts`), no livro também.
 
+**Toda ferramenta tem mais ou menos o mesmo tanto de cartas únicas** (regra do
+Renan; hoje 14 e 14 — a bancada das ferramentas conta com `soDestaArma`). Carta
+que não serve numa ferramenta mas serve nas outras que usam munição (Jean-Luc
+no tonel, Tanque maior) leva `naoServe`, e não `soPara`: assim ela entra de
+graça na lista da próxima ferramenta que tiver tanque.
+
 Texto de carta genérica fala do **jato**, não do regador ("O jato alcança…"):
 ela sai em qualquer arma. Carta nova de uma arma entra na tabela do §4.1 do
 plano, e `scripts/cartas.mjs` cobra que nenhuma arma sorteia carta que não

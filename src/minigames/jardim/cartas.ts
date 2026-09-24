@@ -95,6 +95,9 @@ export type RegraDoJardim =
   | 'chicote'           // bicho que atravessa a mangueira no chão leva um tranco e se molha
   | 'vazamento'         // a mangueira vaza: quem cruza ela anda devagar por 2 s
   | 'enchente'          // a cada 25 s, 3 s de jatão que atravessa a fila inteira
+  | 'bifurcacao'        // um segundo fio sai de lado (25°), com metade da força
+  | 'laco'              // bicho que pisa na mangueira fica enrolado (tonto) 1,5 s
+  | 'mangueira-rega'    // canteiro que a mangueira no chão encosta sara devagar
   // jardineiro
   | 'pique'             // andar 2 s sem parar dá +30% de velocidade, até parar
   | 'assobio'           // a cada 12 s o bicho mais perto anda 2 s para o lado errado
@@ -161,6 +164,8 @@ export interface EstiloDoJato {
   continuo?: boolean;
   /** a Enchente: de 25 em 25 s, a mangueira abre tudo por 3 s */
   enchente?: boolean;
+  /** a Bifurcação: um segundo fio, mais fino, sai de lado a cada jato */
+  bifurcacao?: boolean;
   /** o Regador de pressão: jato reto que atravessa o primeiro bicho */
   reto?: boolean;
   /** o jato sobe em parábola por cima do canteiro */
@@ -208,6 +213,8 @@ export interface EstiloDoJato {
   chicote?: boolean;
   /** a mangueira no chão vaza: gotinhas e poças ao longo dela */
   vazamento?: boolean;
+  /** o Laço: a mangueira se enrola em quem pisa nela (ela sacode e o bicho fica tonto) */
+  laco?: boolean;
 }
 
 /**
@@ -603,7 +610,7 @@ const REGADOR: CartaDoJardim[] = [
   // ======================================================= só da MANGUEIRA
   // (a arma presa no tonel, `armas.ts`): o que só uma mangueira faz — a linha
   // dela no chão vira arma, e o fio que não para de sair vira pressão
-  ...serie('esguicho', 2, {
+  ...serie('esguicho', 3, {
     familia: 'regador', raridade: 'comum', icone: '🚿', soPara: ['mangueira'],
     nome: 'Esguicho de latão', texto: 'O esguicho aperta: o jato encharca 12% mais e vai 8% mais longe',
   }, (f, d) => {
@@ -611,6 +618,37 @@ const REGADOR: CartaDoJardim[] = [
     f.alcance *= 1.08;
     f.jato.grosso = Math.max(f.jato.grosso ?? 0, d);
   }),
+  ...serie('torneira', 2, {
+    familia: 'regador', raridade: 'comum', icone: '🚰', soPara: ['mangueira'],
+    nome: 'Torneira aberta', texto: 'A torneira abre mais: o jato sai 10% mais seguido',
+  }, (f, d) => {
+    f.cadencia *= 0.9;
+    f.jato.rapido = Math.max(f.jato.rapido ?? 0, d);
+  }),
+  {
+    id: 'vedacao', nome: 'Vedação nova', familia: 'regador', raridade: 'comum', soPara: ['mangueira'],
+    icone: '🔧', texto: 'Nada vaza no engate: o jato vai 12% mais longe',
+    aplicar: (f) => {
+      f.alcance *= 1.12;
+      f.jato.longo = Math.max(f.jato.longo ?? 0, 1);
+    },
+  },
+  {
+    id: 'bifurcacao', nome: 'Bifurcação', familia: 'regador', raridade: 'incomum', soPara: ['mangueira'],
+    icone: '🔱', texto: 'Um Y no esguicho: sai um segundo fio de lado, com metade da força',
+    aplicar: (f) => {
+      f.regras.add('bifurcacao');
+      f.jato.bifurcacao = true;
+    },
+  },
+  {
+    id: 'laco', nome: 'Laço', familia: 'regador', raridade: 'raro', soPara: ['mangueira'],
+    icone: '➰', texto: 'Bicho que pisa na mangueira fica enrolado 1,5 s',
+    aplicar: (f) => {
+      f.regras.add('laco');
+      f.jato.laco = true;
+    },
+  },
   {
     id: 'jato-continuo', nome: 'Jato contínuo', familia: 'regador', raridade: 'raro', soPara: ['mangueira'],
     icone: '〰️', texto: 'No mesmo bicho sem parar, o jato engrossa até encharcar o dobro',
@@ -784,6 +822,14 @@ const JARDINEIRO: CartaDoJardim[] = [
     aplicar: (f) => {
       f.regras.add('danca-da-chuva');
       f.jato.dancaDaChuva = true;
+    },
+  },
+  // só da MANGUEIRA: o carretel que desenrola sozinho
+  {
+    id: 'carretel', nome: 'Carretel', familia: 'jardineiro', raridade: 'comum', soPara: ['mangueira'],
+    icone: '🧵', texto: 'A mangueira desenrola sozinha: você anda 10% mais rápido',
+    aplicar: (f) => {
+      f.velocidade *= 1.1;
     },
   },
 ];
@@ -991,6 +1037,14 @@ const JARDIM: CartaDoJardim[] = [
     icone: '🎉', texto: 'Quando a chefe chega, Capy, Gina, Walter e Noel ajudam por 30 s',
     chama: ['gina', 'capy', 'noel', 'walter'],
     aplicar: (f) => f.regras.add('mutirao-do-clube'),
+  },
+  // só da MANGUEIRA: a mangueira deitada rega o que encosta
+  {
+    id: 'mangueira-rega', nome: 'Mangueira que rega', familia: 'jardim', raridade: 'incomum', soPara: ['mangueira'],
+    icone: '🌱', texto: 'Canteiro por onde a mangueira passa sara devagar',
+    aplicar: (f) => {
+      f.regras.add('mangueira-rega');
+    },
   },
 ];
 

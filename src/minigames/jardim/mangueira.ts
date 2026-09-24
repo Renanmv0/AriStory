@@ -96,6 +96,11 @@ export class MangueiraNoChao {
     return melhor;
   }
 
+  /** os pontos do trecho deitado, do tonel até os pés (a Mangueira que rega lê daqui) */
+  pontosNoChao(): readonly { x: number; z: number }[] {
+    return this.chao;
+  }
+
   /** um ponto qualquer do trecho deitado (o Vazamento pinga ali) */
   pontoNoChao(sorte: number): { x: number; z: number } | null {
     if (this.chao.length < 2) return null;
