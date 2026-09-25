@@ -131,6 +131,19 @@ ok(await page.locator('.loja-da-josefina.show').count() === 1, 'comprar não fec
 await page.locator('.loja-da-josefina [data-aba="roupas"]').click();
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${OUT}-painel-roupas.png` });
+// separada por parte do corpo, na ordem do guarda-roupa (pedido do Renan)
+const titulos = await page.locator('.loja-da-josefina h3.parte').allTextContents();
+const ordem = ['Cabeça', 'Tronco', 'Pernas', 'Pés', 'Mãos', 'Acessórios'];
+const vistos = titulos.map((t) => ordem.findIndex((o) => t.includes(o)));
+ok(vistos.length >= 5 && vistos.every((v, i) => v >= 0 && (i === 0 || v > vistos[i - 1])),
+  `as roupas vêm por parte, na ordem cabeça → acessórios (${titulos.join(' · ')})`);
+await page.locator('.loja-da-josefina [data-parte="maos"]').click();
+await page.waitForTimeout(300);
+const soMaos = await page.locator('.loja-da-josefina .produto.roupa').evaluateAll((els) => els.map((e) => e.dataset.id));
+ok(soMaos.length > 0 && soMaos.every((id) => /^(luvas|pulseira)/.test(id)), `o botão "Mãos" mostra só luva e pulseira (${soMaos.join(', ')})`);
+await page.screenshot({ path: `${OUT}-painel-roupas-maos.png` });
+await page.locator('.loja-da-josefina [data-parte="tudo"]').click();
+await page.waitForTimeout(300);
 await page.locator('.loja-da-josefina [data-acao="comprar-roupa"][data-id="camiseta-de-girassol"]').click();
 await page.waitForTimeout(300);
 const camiseta = await deco(() => [window.jogo.playerId(), window.jogo.companionId()]

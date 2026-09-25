@@ -3643,6 +3643,23 @@ body.touch-device .ajuda-do-par kbd { display: none; }
   background: #4f8fd0;
   box-shadow: 0 3px 0 #33689e;
 }
+/* a prateleira de roupas por parte do corpo: os botões e o título de cada uma */
+.loja-da-josefina .filtro-de-partes { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.loja-da-josefina .filtro-de-partes button {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #4a3a22;
+  background: #e8d9b5;
+}
+.loja-da-josefina .filtro-de-partes button small { font-weight: 700; opacity: 0.65; }
+.loja-da-josefina .filtro-de-partes button.ativa { color: #fff; background: #5f9a4a; box-shadow: 0 3px 0 #3f7432; }
+.loja-da-josefina h3.parte { margin: 16px 0 8px; font-size: 16px; color: #4a3a22; }
+.loja-da-josefina h3.parte:first-of-type { margin-top: 4px; }
 .loja-da-josefina .grade-produtos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

@@ -1,3 +1,4 @@
+import type { SlotRoupa } from '../../core/types';
 import { CARTAS, fichaInicial, type CartaDoJardim, type Familia, type Raridade } from './cartas';
 import { armaPorId, type ArmaId } from './armas';
 
@@ -185,6 +186,8 @@ export interface ConteudoDoLivro {
  */
 export interface RoupaNaLoja {
   readonly id: string;
+  /** a parte do corpo: o painel separa a prateleira por ela */
+  readonly slot: SlotRoupa;
   readonly nome: string;
   readonly icone: string;
   readonly nota?: string;

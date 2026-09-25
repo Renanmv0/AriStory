@@ -109,7 +109,10 @@ camisetas justas de florzinhas, joaninha, abelhinha e borboleta; camisetas
 LARGAS (oversize, com manga até o cotovelo) de cogumelo, sapinho e lavanda;
 vestidos floridos de margaridas, de rosinhas e do campo; e calças LARGAS de
 jardinagem: cargo com joelheira, pantalona bordada e de jardineiro com a
-pazinha no bolso. Teste: `scripts/roupasDoJardim.mjs`) e **enfeites para a estufa** (`world/decoracoes.ts` — ficha e geometria
+pazinha no bolso. Teste: `scripts/roupasDoJardim.mjs`. A aba de roupas é
+SEPARADA POR PARTE DO CORPO, na ordem do guarda-roupa — cabeça, tronco,
+pernas, pés, mãos, acessórios —, com um botão por parte e "Tudo" mostrando
+uma embaixo da outra; o "provar no boneco" abre a arara na mesma ordem) e **enfeites para a estufa** (`world/decoracoes.ts` — ficha e geometria
 no mesmo arquivo, hoje dezenove, em ordem de preço; os de referência são a
 tartaruguinha, o Pelusa de pelúcia, o copão do Noel, a casquinha do Mano, o
 Walter de cerâmica, o elefantinho do Cookie, a capivara, a girafinha da Gina,

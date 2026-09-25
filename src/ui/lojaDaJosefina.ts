@@ -2,6 +2,7 @@ import type {
   AcaoNaLoja, ConteudoDaLoja, DecoracaoNaLoja, RoupaNaLoja, SaidaDaLoja,
 } from '../minigames/jardim/tela';
 import type { SomNome } from '../audio/efeitos';
+import { SLOTS_ROUPA, type SlotRoupa } from '../core/types';
 import { escapar } from './telaDeCartas';
 
 /**
@@ -30,6 +31,18 @@ import { escapar } from './telaDeCartas';
 type Aba = 'roupas' | 'decoracoes';
 const ABAS: ReadonlyArray<readonly [Aba, string]> = [['roupas', '👕 Roupas'], ['decoracoes', '🪴 Decorações']];
 
+/**
+ * A prateleira de roupas SEPARADA POR PARTE DO CORPO (pedido do Renan: "primeiro
+ * cabeça, depois torso, e assim por diante"), na ordem de `SLOTS_ROUPA` — a
+ * mesma do guarda-roupa. "Tudo" mostra as partes uma embaixo da outra, com
+ * título; cada botão mostra só a dela.
+ */
+type Parte = SlotRoupa | 'tudo';
+const NOME_DA_PARTE: Record<SlotRoupa, string> = {
+  cabeca: '🎩 Cabeça', tronco: '👕 Tronco', pernas: '👖 Pernas',
+  pes: '👢 Pés', maos: '🧤 Mãos', acessorio: '📌 Acessórios',
+};
+
 export class LojaDaJosefina {
   private readonly raiz: HTMLDivElement;
   private readonly prateleira: HTMLDivElement;
@@ -39,6 +52,7 @@ export class LojaDaJosefina {
   private retrato: ((id: string) => string) | null = null;
   private agir: ((a: AcaoNaLoja) => ConteudoDaLoja) | null = null;
   private aba: Aba = 'decoracoes';
+  private parte: Parte = 'tudo';
   private resolver: ((saida: SaidaDaLoja) => void) | null = null;
   som: ((nome: SomNome) => void) | null = null;
 
@@ -71,6 +85,14 @@ export class LojaDaJosefina {
       this.prateleira.scrollTop = 0;
     });
     this.prateleira.addEventListener('click', (e) => {
+      const filtro = (e.target as HTMLElement).closest<HTMLElement>('[data-parte]');
+      if (filtro) {
+        this.parte = filtro.dataset.parte as Parte;
+        this.som?.('menu');
+        this.pintar();
+        this.prateleira.scrollTop = 0;
+        return;
+      }
       const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-acao]');
       if (!b || b.disabled) return;
       const id = b.dataset.id ?? '';
@@ -154,11 +176,23 @@ export class LojaDaJosefina {
           : r.travada ? this.cadeado(r.onda)
             : this.botaoDeComprar('comprar-roupa', r.id, r.preco, c.saldo, (n) => `R$\u00a0${n}`)}
       </div>`;
+    // só as partes que têm peça viram botão; a de agora some se esvaziar
+    const partes = SLOTS_ROUPA.filter((sl) => c.roupas.some((r) => r.slot === sl));
+    if (this.parte !== 'tudo' && !partes.includes(this.parte)) this.parte = 'tudo';
+    const filtros = (['tudo', ...partes] as Parte[]).map((pt) => {
+      const n = pt === 'tudo' ? c.roupas.length : c.roupas.filter((r) => r.slot === pt).length;
+      const rotulo = pt === 'tudo' ? '✨ Tudo' : NOME_DA_PARTE[pt];
+      return `<button class="${this.parte === pt ? 'ativa' : ''}" data-parte="${pt}" aria-pressed="${this.parte === pt}">${rotulo} <small>${n}</small></button>`;
+    }).join('');
+    const secao = (sl: SlotRoupa, titulo: boolean): string => `
+      ${titulo ? `<h3 class="parte">${NOME_DA_PARTE[sl]}</h3>` : ''}
+      <div class="grade-produtos">${c.roupas.filter((r) => r.slot === sl).map(cartao).join('')}</div>`;
     return `
       ${this.proxima(c.recorde, c.roupas.filter((r) => r.travada))}
       <p class="dica">Roupa de mexer na terra, paga em reais. A que vocês comprarem vai para o guarda-roupa dos dois.
         <button class="provar" data-acao="provar">🪞 provar no boneco</button></p>
-      <div class="grade-produtos">${c.roupas.map(cartao).join('')}</div>`;
+      <div class="filtro-de-partes" role="group" aria-label="parte do corpo">${filtros}</div>
+      ${this.parte === 'tudo' ? partes.map((sl) => secao(sl, true)).join('') : secao(this.parte, false)}`;
   }
 
   private pintarDecoracoes(c: ConteudoDaLoja): string {

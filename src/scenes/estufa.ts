@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
-import type { SceneDef } from '../core/types';
+import { SLOTS_ROUPA, type ItemDef, type SceneDef } from '../core/types';
 import {
   arcoDeEstufa, bancadaDeJardinagem, canteiroDeHorta, capim, folhagemAlta, planta,
   livroDeCartas, lojinhaDaJosefina, plaquinhaDaEstufa, portaoDeJardim, regadorDeOuro, prateleiraDeMudas, regador, sebe, tonelDeAgua, tree,
@@ -2089,6 +2089,9 @@ export const estufa: SceneDef = {
      * nunca tranca de novo.
      */
     const ondaDaRoupa = (id: string): number => LOJA_ABRE[id] ?? 0;
+    /** a arara de provar na mesma ordem da banca: cabeça, tronco, pernas… */
+    const porParte = (pecas: readonly ItemDef[]): ItemDef[] =>
+      [...pecas].sort((a, b) => SLOTS_ROUPA.indexOf(a.slot ?? 'tronco') - SLOTS_ROUPA.indexOf(b.slot ?? 'tronco'));
     const roupaTravada = (id: string): boolean => !g.jaTemPeca(id) && g.stat(RECORDE) < ondaDaRoupa(id);
     const enfeiteTravado = (d: FichaDeDecoracao): boolean =>
       g.stat(RECORDE) < d.onda && decorador.guardadas(d.id) + decorador.postas(d.id) === 0;
@@ -2098,6 +2101,7 @@ export const estufa: SceneDef = {
       recorde: g.stat(RECORDE),
       roupas: ROUPAS_DA_JOSEFINA.map((p) => ({
         id: p.id,
+        slot: p.slot ?? 'tronco',
         nome: p.nome,
         icone: p.icone,
         nota: p.nota,
@@ -2152,7 +2156,7 @@ export const estufa: SceneDef = {
       }
       const saida = await g.abrirLojaDaJosefina(conteudoDaLoja(), agirNaLoja);
       // o boneco só prova o que já está à venda (a arara da boutique também vende)
-      if (saida?.tipo === 'provar') g.abrirLoja('Roupas da Josefina', ROUPAS_DA_JOSEFINA.filter((p) => !roupaTravada(p.id)));
+      if (saida?.tipo === 'provar') g.abrirLoja('Roupas da Josefina', porParte(ROUPAS_DA_JOSEFINA.filter((p) => !roupaTravada(p.id))));
       else if (saida?.tipo === 'colocar') decorador.colocar(saida.id);
       else if (saida?.tipo === 'editar') decorador.editar();
     };
