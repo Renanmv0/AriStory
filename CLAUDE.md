@@ -100,7 +100,8 @@ node scripts/mochila.mjs /tmp/mo    # as 10 vagas, o slot principal e o F5
 node scripts/itens.mjs   /tmp/it    # posse por pessoa, auto-stash, arrastar e poses
 node scripts/patins.mjs  /tmp/pat   # patins no corpo, 1,3x de velocidade e o parceiro
 node scripts/banco.mjs   /tmp/bn    # sentar nos bancos: de maos dadas e pernas balancando
-node scripts/roupas.mjs  /tmp/rp    # guarda-roupa: 4 slots sem mexer na animacao
+node scripts/roupas.mjs  /tmp/rp    # guarda-roupa: as vagas sem mexer na animacao
+node scripts/vagas.mjs   /tmp/vg    # as 6 vagas (maos e acessorio no pai certo), a bermuda vestida no parque, o banho no clube, a mochila e o armario com 6, e save antigo de 4 vagas
 node scripts/vestimenta.mjs /tmp/vt # onde cada roupa pode morar, e o armario por parte
 node scripts/falas.mjs   /tmp/fl    # as falas de premio: cada dono reparando na roupa que ele deu
 node scripts/campeao.mjs /tmp/cp    # o premio do campeao: a meta em duas etapas, a festa na mesa de piquenique, a vaquinha e a raquete dourada

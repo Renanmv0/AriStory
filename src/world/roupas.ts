@@ -2809,6 +2809,146 @@ function coroaDeDama(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.
   return g;
 }
 
+// ============================================================ MÃOS E ACESSÓRIO
+// As duas vagas que vieram depois (pedido do Renan: "itens de mão, como luvas e
+// braceletes" e "acessórios no geral — pins de cabelo, stickers, qualquer coisa
+// pequena em qualquer parte do corpo").
+
+/** o raio do antebraço e da mão do rig (`CharacterRig`, "bracos") */
+const raioDoPulso = (m: MedidasCorpo): number => m.h * 0.032 * m.w;
+const raioDaMao = (m: MedidasCorpo): number => m.h * 0.04 * m.w;
+
+/**
+ * LUVAS DE JARDIM: a mão inteira calçada e um punho dobrado de outra cor.
+ *
+ * REFERENCIAL: o pivô de CADA braço (slot `maos`), y = 0 no ombro e o braço
+ * pendendo em -Y. A mão do rig é uma esfera em `-0,92·armLen`; a luva é a mesma
+ * esfera 15% maior (casca por fora, sem brigar por pixel), e o punho é um anel
+ * no pulso. Nada aqui desloca para o lado, então o `lado` não entra na conta.
+ */
+function luvasDeJardim(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const pano = toon(peca?.cor ?? P.luvaDeJardim);
+  const punho = toon(peca?.corDetalhe ?? P.bandeirinhaVerde);
+  const mao = new THREE.Mesh(new THREE.SphereGeometry(raioDaMao(m) * 1.15, 12, 10), pano);
+  mao.position.y = -m.armLen * 0.92;
+  mao.scale.set(1, 1.08, 1);
+  g.add(mao);
+  // o punho: um cilindro curto e largo, com um frisinho na borda
+  const cano = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioDoPulso(m) * 1.45, raioDoPulso(m) * 1.3, m.h * 0.038, 14),
+    punho,
+  );
+  cano.position.y = -m.armLen * 0.8;
+  g.add(cano);
+  const friso = new THREE.Mesh(new THREE.TorusGeometry(raioDoPulso(m) * 1.45, m.h * 0.005, 5, 16), pano);
+  friso.rotation.x = Math.PI / 2;
+  friso.position.y = -m.armLen * 0.8 + m.h * 0.019;
+  g.add(friso);
+  return g;
+}
+
+/**
+ * PULSEIRA DE MIÇANGAS: um cordãozinho de contas coloridas no pulso ESQUERDO.
+ *
+ * REFERENCIAL: o pivô de cada braço (slot `maos`). A peça é chamada para os
+ * dois braços; ela só monta no de `-X` (`lado === -1`), porque a mão direita é
+ * a que segura o sorvete, o regador e o frisbee — pulseira ali some atrás do
+ * item. No outro braço volta um grupo vazio.
+ */
+function pulseiraDeMicangas(m: MedidasCorpo, lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  if (lado !== -1) return g;
+  const cores = [peca?.cor ?? P.bandeirinhaRosa, P.bandeirinhaAmarela, P.bandeirinhaAzul, P.bandeirinhaLilas, P.bandeirinhaVerde];
+  const raio = raioDoPulso(m) * 1.18;
+  const y = -m.armLen * 0.78;
+  const contas = 12;
+  for (let i = 0; i < contas; i++) {
+    const a = (i / contas) * Math.PI * 2;
+    const conta = new THREE.Mesh(new THREE.SphereGeometry(m.h * 0.0085, 8, 6), toon(cores[i % cores.length]));
+    conta.position.set(Math.cos(a) * raio, y, Math.sin(a) * raio);
+    g.add(conta);
+  }
+  // o berloque: um coraçãozinho pendurado na frente
+  const berloque = coracaoChato(m.h * 0.011, peca?.corDetalhe ?? P.cadeadoOuro);
+  berloque.position.set(0, y - m.h * 0.014, raio + m.h * 0.004);
+  g.add(berloque);
+  return g;
+}
+
+/** Uma estrela de cinco pontas, deitada no plano XY e olhando para `+Z`. */
+function estrelinha(raio: number, espessura: number, cor: number): THREE.Mesh {
+  const forma = new THREE.Shape();
+  for (let i = 0; i < 10; i++) {
+    const r = i % 2 === 0 ? raio : raio * 0.46;
+    const a = (i / 10) * Math.PI * 2 + Math.PI / 2;
+    if (i === 0) forma.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    else forma.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  forma.closePath();
+  const geo = new THREE.ExtrudeGeometry(forma, { depth: espessura, bevelEnabled: false });
+  geo.center();
+  return new THREE.Mesh(geo, toon(cor));
+}
+
+/**
+ * PRESILHA DE ESTRELA: uma estrela dourada presa no cabelo, do lado direito.
+ *
+ * REFERENCIAL: a cabeça (`acessorio` com `presoEm: 'cabeca'`), y = 0 no centro
+ * do crânio. Ela pousa em cima do CONTORNO MEDIDO do cabelo (`m.cabelo`), a
+ * ~55° do alto — a mesma conta da tiara: um raio fixo servia a um dos dois e
+ * sumia na juba do outro. A estrela olha para fora e um tanto para a frente,
+ * senão de frente ela vira um risco.
+ */
+function presilhaDeEstrela(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const r = m.headR;
+  const a = 0.95;
+  const pivo = new THREE.Group();
+  // gira o eixo +X até a direção (sen a, cos a): é ali que o cabelo termina
+  pivo.rotation.z = Math.PI / 2 - a;
+  const estrela = estrelinha(r * 0.23, r * 0.07, peca?.cor ?? P.cadeadoOuro);
+  estrela.position.x = m.cabelo(a) + r * 0.02;
+  estrela.rotation.y = Math.PI / 2 - 0.55;
+  pivo.add(estrela);
+  // o brilhinho: uma bolinha branca no meio da estrela
+  const brilho = new THREE.Mesh(new THREE.SphereGeometry(r * 0.045, 8, 6), toon(peca?.corDetalhe ?? P.metalWhite));
+  brilho.position.set(m.cabelo(a) + r * 0.05, 0, r * 0.03);
+  pivo.add(brilho);
+  const g = new THREE.Group();
+  g.position.z = -r * 0.02;
+  g.add(pivo);
+  return g;
+}
+
+/**
+ * ADESIVO DE CORAÇÃO: um coração chato colado no peito, do lado esquerdo da
+ * pessoa (o direito da camiseta de girassol já tem a flor).
+ *
+ * REFERENCIAL: o corpo (`acessorio` com `presoEm: 'corpo'`), y = 0 no CHÃO. A
+ * superfície do tronco sai da cápsula do rig — raio `0,105·h·w`, achatada em
+ * 0,82 no `z` —, e fora do meio ela recua: por isso o `z` é a conta do círculo
+ * no `x` do adesivo, e não o raio cheio (colado no raio cheio ele flutuava).
+ */
+function adesivoDeCoracao(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const raioTorso = m.h * 0.105 * m.w;
+  const x = -raioTorso * 0.38;
+  const z = Math.sqrt(raioTorso * raioTorso - x * x) * 0.82 + m.h * 0.003;
+  const coracao = coracaoChato(m.h * 0.025, peca?.cor ?? P.flowerPink);
+  coracao.scale.z = 0.5;
+  coracao.position.set(x, m.legH + m.torsoH * 0.62, z);
+  // levemente torto, como adesivo colado na pressa
+  coracao.rotation.z = 0.25;
+  g.add(coracao);
+  // a borda branca do adesivo, logo atrás
+  const borda = coracaoChato(m.h * 0.031, peca?.corDetalhe ?? P.metalWhite);
+  borda.scale.z = 0.3;
+  borda.position.set(x, m.legH + m.torsoH * 0.62 - m.h * 0.001, z - m.h * 0.003);
+  borda.rotation.z = 0.25;
+  g.add(borda);
+  return g;
+}
+
 // As FICHAS das pecas moram em `itens.ts`, junto com o resto do acervo: peca de
 // roupa e item como qualquer outro, e mora numa vaga de vestimenta do
 // inventario. Aqui fica so o corpo delas.
@@ -2821,4 +2961,5 @@ export {
   moletomComCapuz, mangaDeMoletom, oculosDeSol,
   jaquetaFrancesa, mangaDaJaquetaFrancesa, quepeDoCookie,
   blazerXadrez, mangaDoBlazer, perneiraXadrez, coroaDeDama,
+  luvasDeJardim, pulseiraDeMicangas, presilhaDeEstrela, adesivoDeCoracao,
 };

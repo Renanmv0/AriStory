@@ -12,7 +12,7 @@ import { fichaDoItem } from '../world/itens';
  */
 export const SLOTS_MAO = 10;
 /** vagas de acessorio (o que se veste) */
-export const SLOTS_VESTIVEL = 4;
+export const SLOTS_VESTIVEL = 6;
 
 /**
  * Roupa que so muda a aparencia — a que mora no guarda-roupa e so se troca la.
@@ -46,7 +46,7 @@ function podeMorarEm(item: ItemDef, lista: 'mao' | 'vestivel' | 'acervo'): boole
 /**
  * A vaga de vestimenta em que uma peca mora, pelo corpo.
  *
- * As 4 vagas SAO as 4 partes, na ordem de `SLOTS_ROUPA`. Nao ha escolha: um
+ * As 6 vagas SAO as 6 partes, na ordem de `SLOTS_ROUPA`. Nao ha escolha: um
  * gorro so pode ir para a vaga da cabeca. E isso que faz o painel conseguir
  * dizer "o que esta na cabeca" sem procurar, e que impede duas calcas.
  *
@@ -70,7 +70,7 @@ export interface SaveInventario {
   mao: (ItemDef | null)[];
   /** 0..9 */
   ativo: number;
-  /** 4 vagas de acessorio vestido */
+  /** 6 vagas de vestimenta: uma por parte do corpo (`SLOTS_ROUPA`) */
   vestiveis: (ItemDef | null)[];
   /**
    * O guarda-roupa: roupa cosmetica que a pessoa tem e nao esta usando.

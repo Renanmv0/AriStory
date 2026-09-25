@@ -52,11 +52,11 @@ export const CAMPEAO_DO_QUADRO = '__campeao';
 /**
  * O nome de cada parte do corpo na tela, na ORDEM de `SLOTS_ROUPA`.
  *
- * Um lugar so: a mochila rotula as 4 vagas de vestimenta com isto, o armario
+ * Um lugar so: a mochila rotula as 6 vagas de vestimenta com isto, o armario
  * titula as divisoes do acervo com isto, e as duas telas nao tem como
  * discordar sobre qual vaga e a do tronco.
  */
-const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés'];
+const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés', 'Mãos', 'Acessório'];
 
 /**
  * Toda a interface em DOM sobre o canvas. O jogo fala com a UI so por estes

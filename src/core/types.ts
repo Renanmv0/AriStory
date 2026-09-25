@@ -166,12 +166,20 @@ export interface ItemDef {
   /**
    * Que parte do corpo este vestivel ocupa.
    *
-   * As 4 vagas de vestimenta SAO as 4 partes, na ordem de `SLOTS_ROUPA`: a
+   * As 6 vagas de vestimenta SAO as 6 partes, na ordem de `SLOTS_ROUPA`: a
    * vaga 0 e a cabeca, a 1 o tronco, e assim por diante. E por isso que o
    * chapeu de campeao e os patins convivem — cabeca e pe sao vagas
    * diferentes — e por isso que dois chapeus nao convivem.
    */
   slot?: SlotRoupa;
+  /**
+   * So `acessorio`: ONDE a peca se prende. O acessorio e a vaga das coisas
+   * pequenas que vao em qualquer parte do corpo (presilha no cabelo, adesivo
+   * na camiseta), entao e a peca que diz em que pai ela pendura:
+   * - `cabeca`: na cabeca, y = 0 no centro do cranio (como o `cabeca`);
+   * - `corpo` (o padrao): no corpo, y = 0 no CHAO (como o `tronco`).
+   */
+  presoEm?: 'cabeca' | 'corpo';
   /** cor da parte principal (torso, perna, pe, calota do gorro) */
   cor?: number;
   /** cor da parte secundaria (manga, barra, cano); sem isto usa `cor` */
@@ -293,15 +301,19 @@ export type HoldPose = 'upright' | 'relaxed' | 'regando' | 'borrifando' | 'none'
 // --- guarda-roupa -----------------------------------------------------------
 //
 // Roupa NAO tem armazenamento proprio: peca de roupa e um `ItemDef` como
-// qualquer outro e mora numa das 4 vagas de vestimenta do inventario. E por
+// qualquer outro e mora numa das 6 vagas de vestimenta do inventario. E por
 // isso que se troca de roupa em qualquer lugar, e nao so na frente do armario.
 //
-// As 4 vagas SAO estas 4 partes, nesta ordem. A vaga e o loadout.
+// As 6 vagas SAO estas 6 partes, nesta ordem. A vaga e o loadout. As duas
+// ultimas vieram depois (pedido do Renan): `maos` e a das luvas e pulseiras, e
+// `acessorio` e a das coisas pequenas que vao em qualquer parte do corpo —
+// presilha, adesivo, broche. A ordem so CRESCE no fim: a vaga 0 continua sendo
+// a cabeca, entao save antigo de 4 vagas le certo.
 
-export type SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes';
+export type SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes' | 'maos' | 'acessorio';
 
 /** ordem canonica dos slots; usada no diff por slot e, depois, na tela */
-export const SLOTS_ROUPA: readonly SlotRoupa[] = ['cabeca', 'tronco', 'pernas', 'pes'];
+export const SLOTS_ROUPA: readonly SlotRoupa[] = ['cabeca', 'tronco', 'pernas', 'pes', 'maos', 'acessorio'];
 
 /**
  * As medidas do corpo de que a fabrica de geometria precisa.
@@ -318,6 +330,11 @@ export interface MedidasCorpo {
   headR: number;
   legH: number;
   torsoH: number;
+  /**
+   * o comprimento do braco, do ombro a ponta da mao: e dele que a luva e a
+   * pulseira (`maos`) tiram o pulso (~0,8·armLen) e a mao (~0,92·armLen)
+   */
+  armLen: number;
   /**
    * Até onde o CABELO vai, a partir do centro do crânio, na direção que faz
    * `angulo` (radianos) com o alto da cabeça, no plano de orelha a orelha
@@ -493,7 +510,7 @@ export interface GameAPI {
   moveItem(de: Vaga, para: Vaga, quem?: string): boolean;
   /** As 5 vagas da mochila, na ordem da tela; null e vaga vazia. */
   handItems(quem?: string): ReadonlyArray<ItemDef | null>;
-  /** As 4 vagas de acessorio, na ordem da tela (= a ordem de `SLOTS_ROUPA`). */
+  /** As 6 vagas de vestimenta, na ordem da tela (= a ordem de `SLOTS_ROUPA`). */
   wearables(quem?: string): ReadonlyArray<ItemDef | null>;
   /**
    * O guarda-roupa: as pecas cosmeticas que a pessoa tem e NAO esta vestindo.

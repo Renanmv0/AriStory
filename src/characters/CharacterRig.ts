@@ -255,7 +255,7 @@ export class CharacterRig {
 
     this.headTop = legH + torsoH + headR * 2.1;
     // o que as fábricas de roupa recebem; elas não veem o rig, só números
-    this.medidas = { h, w, headR, legH, torsoH, cabelo: (a) => this.cabeloNoAngulo(a, headR) };
+    this.medidas = { h, w, headR, legH, torsoH, armLen, cabelo: (a) => this.cabeloNoAngulo(a, headR) };
 
     const skin = toon(spec.skin);
     const shirt = toon(spec.shirt);
@@ -1110,8 +1110,15 @@ export class CharacterRig {
     // Nunca mutar `mat.color`: os materiais de `materials.ts` sao CACHEADOS POR
     // COR e compartilhados com o mundo inteiro — repintar um material repinta
     // todo objeto do jogo que usa aquela cor. Sempre trocar a referencia.
+    // A BERMUDA NA RUA (pedido do Renan: usar o shorts no parque e nos outros
+    // lugares, e não só no clube). A bermuda do vestiário só declara a cor do
+    // CALÇÃO (`corBanho`); fora d'água ela agora veste o mesmo calção e as
+    // mesmas pernas de shorts do traje de banho, e a perna fica de pele. A
+    // camiseta continua — sem camiseta e de shorts é só no clube.
+    const bermuda = this.roupa.pernas;
+    const deShort = !banho && bermuda?.corBanho !== undefined && bermuda.cor === undefined;
     for (const t of this.trocaMaterial) {
-      if (banho) {
+      if (banho || (deShort && t.slot === 'pernas')) {
         t.mesh.material = t.banho;
         continue;
       }
@@ -1136,12 +1143,15 @@ export class CharacterRig {
 
     for (const peca of this.soVestido) peca.visible = !banho;
     for (const peca of this.soBanho) peca.visible = banho;
+    if (deShort) {
+      this.calcao.visible = true;
+      for (const p of this.pernasDoShort) p.visible = true;
+    }
 
     // A MODA PRAIA. No banho o corpo inteiro vira pele e sobra só o calção, e
     // quem manda na cor dele é a peça das PERNAS — a mesma vaga de onde sai a
     // calça, só que noutro traje. Sem bermuda escolhida vale a cor da ficha,
     // que é como era antes de o vestiário existir.
-    const bermuda = this.roupa.pernas;
     const panoDaBermuda = bermuda?.corBanho === undefined
       ? this.calcaoDaFicha
       : toon(bermuda.corBanho);
@@ -1161,8 +1171,9 @@ export class CharacterRig {
     for (const [slot, objs] of this.extras) {
       const liga = this.roupa[slot] !== undefined
         // gorro sobrevive ao banho — e o mesmo precedente do chapeu de campeao,
-        // que ja fica na cabeca dentro da agua. Bota, nao.
-        && (slot === 'cabeca' || !banho)
+        // que ja fica na cabeca dentro da agua. Bota e luva, nao; a presilha e o
+        // adesivo (acessorio) sao pequenos e vao junto para a piscina
+        && (slot === 'cabeca' || slot === 'acessorio' || !banho)
         // o patins engole o tornozelo inteiro: o cano da bota apareceria pela
         // costura, igual ao tenis apareceria
         && !(slot === 'pes' && this.patinando);
@@ -1234,6 +1245,8 @@ export class CharacterRig {
    * - `pernas` e `pes` nos pivos das pernas, onde o patins mora, uma copia em
    *   cada, para dobrarem junto com a perna;
    * - `tronco` no CORPO, onde a jaqueta e o calcao de banho moram;
+   * - `maos` nos dois pivos de braco (luva, pulseira);
+   * - `acessorio` onde a ficha disser (`presoEm`): na cabeca ou no corpo;
    * - e o `extraBraco`, quando houver, nos dois pivos de braco.
    *
    * O corpo nao e pivo de membro: ele so gira um pouco em X e sobe e desce em
@@ -1257,7 +1270,11 @@ export class CharacterRig {
       // de uma meia tem que dobrar junto com a coxa, igual ao cano da bota
       if (slot === 'pes' || slot === 'pernas') {
         pais.push([this.legL, 'corpo', -1], [this.legR, 'corpo', 1]);
-      } else if (slot === 'cabeca') {
+      } else if (slot === 'maos') {
+        // luva e pulseira vao no PIVO de cada braco (y = 0 no ombro, o braco
+        // pendendo em -Y), uma copia em cada lado: acompanham o balanco e a pose
+        pais.push([this.armL, 'corpo', -1], [this.armR, 'corpo', 1]);
+      } else if (slot === 'cabeca' || (slot === 'acessorio' && peca.presoEm === 'cabeca')) {
         pais.push([this.head, 'corpo', 1]);
       } else {
         pais.push([this.body, 'corpo', 1]);

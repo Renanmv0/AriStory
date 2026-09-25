@@ -44,7 +44,7 @@ próprio: tirar e recolocar já vem de graça do sistema de inventário.
 | lugar | o que aceita | quem mexe |
 |---|---|---|
 | **mochila** (10 vagas) | item de mão e vestimenta **funcional** | o jogador, em qualquer lugar |
-| **corpo** (4 vagas) | qualquer vestível, na vaga da parte dele | o painel do armário |
+| **corpo** (6 vagas) | qualquer vestível, na vaga da parte dele | o painel do armário |
 | **guarda-roupa** (lista) | roupa **cosmética** que não está no corpo | o painel do armário |
 
 A regra em uma frase: **roupa cosmética nunca ocupa vaga de mão.** Ela vive no
@@ -79,12 +79,28 @@ sabe se a peça vai para o armário ou para a mochila. Por isso `quarto.ts` não
 mudou uma linha quando a regra mudou. Do lado do motor, quem lê o armário é
 `g.wardrobeItems(quem)`.
 
-## As 4 vagas SÃO as 4 partes do corpo
+## As 6 vagas SÃO as 6 partes do corpo
 
-`SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes'` (`src/core/types.ts`).
-Cabeça e pé convivem com qualquer coisa (são vagas diferentes); dois chapéus
-não convivem. Toda ficha vestível declara `slot` — é ele que decide a vaga,
-não uma escolha da tela.
+`SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes' | 'maos' | 'acessorio'`
+(`src/core/types.ts`). Cabeça e pé convivem com qualquer coisa (são vagas
+diferentes); dois chapéus não convivem. Toda ficha vestível declara `slot` —
+é ele que decide a vaga, não uma escolha da tela.
+
+As duas últimas vieram depois, a pedido do Renan:
+
+- **`maos`**: luva, pulseira, anel. Pendura no pivô de CADA braço (y = 0 no
+  ombro); o pulso fica em `~0,8·m.armLen` e a mão em `0,92·m.armLen`. Peça de
+  um pulso só monta no `lado === -1` e devolve grupo vazio no outro (a mão
+  direita é a que segura sorvete e regador). Sai no traje de banho.
+- **`acessorio`**: o que é pequeno e vai em QUALQUER parte do corpo —
+  presilha, adesivo, broche. A ficha diz onde prende com `presoEm`:
+  `'cabeca'` (referencial da cabeça) ou `'corpo'` (o padrão, referencial do
+  tronco, y = 0 no chão). Fica no traje de banho, como o gorro.
+
+A ordem só cresce no FIM: save antigo de 4 vagas abre com 6, e a cabeça
+continua na vaga 0. Exemplos prontos: `luvasDeJardim`, `pulseiraDeMicangas`,
+`presilhaDeEstrela`, `adesivoDeCoracao` (`roupas.ts`), na arara "Frio, pé e
+miudezas" da Estella. Teste: `scripts/vagas.mjs`.
 
 ## A ficha (`ItemDef`, em `src/world/itens.ts`)
 
@@ -116,6 +132,8 @@ resolver só com cor?"
 | `cabeca` | `this.head` | centro do crânio | onde o chapéu de campeão já mora |
 | `pernas` / `pes` | pivô de CADA perna (2 cópias) | quadril | onde o patins e o cano da bota já moram — a peça dobra junto com a coxa |
 | `tronco` | `this.body` | **o CHÃO**, não o quadril | onde a jaqueta e o calção de banho já moram |
+| `maos` | pivô de CADA braço (2 cópias) | ombro, braço pendendo em `-Y` | luva e pulseira acompanham o balanço e a pose |
+| `acessorio` | a cabeça ou o corpo (`presoEm`) | o da cabeça ou o do tronco | a peça pequena escolhe onde prende |
 | `extraBraco` | pivô de CADA braço (2 cópias) | ombro, braço pendendo em `-Y` | acompanha o balanço da caminhada; use para manga que passa do cotovelo |
 
 `extra`/`extraBraco` **nunca** recriam braço ou perna — a peça entra como
@@ -161,11 +179,13 @@ bermudaEstampada: {
 },
 ```
 
-A ausência de `cor` é o truque, e não um esquecimento: sem ela o resolvedor
-deixa a perna com a calça da ficha fora d'água, então a bermuda simplesmente
-não aparece na rua. É o que dispensou um segundo sistema de roupa para a
-praia — zero estado novo, zero geometria nova, e o guarda-roupa do quarto
-continua listando a peça em "Pernas" como qualquer outra.
+A ausência de `cor` é o truque, e não um esquecimento: é ela que diz ao rig
+"isto é uma bermuda". No clube (traje `banho`) ela pinta o calção, sem
+camiseta. FORA do clube — pedido do Renan: usar o shorts no parque e nos
+outros lugares — o rig veste o MESMO calção e as mesmas pernas de shorts do
+banho por cima da perna de pele, com a camiseta de sempre
+(`aplicarVisual`, "a bermuda na rua"). Zero geometria nova. Peça que declara
+`cor` numa vaga de pernas continua sendo calça: pinta a perna inteira.
 
 O painel que troca isso é o **vestiário do clube** (`clube:vestiario` →
 `g.abrirVestiario()`): o guarda-roupa encolhido em duas perguntas, óculos e

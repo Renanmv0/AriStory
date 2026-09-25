@@ -10,6 +10,7 @@ import {
   jaquetaFrancesa, maidJapones, mangaDaJaquetaFrancesa, mangaDeMoletom, mangaDeQuimono,
   mangaDoBlazer, meiaDeCoxa, moletomComCapuz, oculosDeSol, perneiraXadrez, quepeDoCookie,
   vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
+  luvasDeJardim, pulseiraDeMicangas, presilhaDeEstrela, adesivoDeCoracao,
 } from './roupas';
 
 /**
@@ -398,8 +399,11 @@ export const ITENS = {
   },
   // ------------------------------------------------------- moda praia
   // Do vestiario do clube. As bermudas declaram `corBanho` e NAO declaram
-  // `cor`: elas pintam o calcao dentro d'agua e nao pintam nada fora dele — a
-  // ficha inteira em quatro linhas, sem geometria e sem estado novo.
+  // `cor`: essa ausencia e o que diz ao rig "isto e uma bermuda". No clube ela
+  // pinta o calcao do traje de banho (sem camiseta); fora dele, desde o pedido
+  // do Renan de usar o shorts no parque e no resto, o rig veste o MESMO calcao
+  // e as mesmas pernas de shorts por cima da perna de pele, com a camiseta de
+  // sempre (`aplicarVisual`, "a bermuda na rua"). Sem geometria nova.
   oculosEscuros: {
     id: 'oculos-escuros',
     nome: 'Óculos escuros',
@@ -664,6 +668,39 @@ export const ITENS = {
     nota: 'a que ela não deixa ninguém provar de meia suja', preco: 92,
     extra: canoDaBota,
   },
+  /*
+   * AS MIUDEZAS: as primeiras peças das duas vagas novas (pedido do Renan: uma
+   * vaga de MÃOS, para luva e pulseira, e uma de ACESSÓRIO, para as coisas
+   * pequenas que vão em qualquer parte do corpo). Moram na arara de frio e pé.
+   */
+  luvasDeJardim: {
+    id: 'luvas-de-jardim', nome: 'Luvas de jardim', icone: '🧤',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.luvaDeJardim, corDetalhe: P.bandeirinhaVerde,
+    nota: 'coral com o punho verde', preco: 45,
+    extra: luvasDeJardim,
+  },
+  pulseiraDeMicangas: {
+    id: 'pulseira-micangas', nome: 'Pulseira de miçangas', icone: '📿',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.bandeirinhaRosa, corDetalhe: P.cadeadoOuro,
+    nota: 'no pulso esquerdo, com um coraçãozinho', preco: 38,
+    extra: pulseiraDeMicangas,
+  },
+  presilhaDeEstrela: {
+    id: 'presilha-estrela', nome: 'Presilha de estrela', icone: '⭐',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
+    cor: P.cadeadoOuro, corDetalhe: P.metalWhite,
+    nota: 'presa no cabelo, do lado direito', preco: 35,
+    extra: presilhaDeEstrela,
+  },
+  adesivoDeCoracao: {
+    id: 'adesivo-coracao', nome: 'Adesivo de coração', icone: '💟',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo',
+    cor: P.flowerPink, corDetalhe: P.metalWhite,
+    nota: 'colado no peito da camiseta', preco: 35,
+    extra: adesivoDeCoracao,
+  },
 
   // ------------------------------------------- mezanino: a linha premium
   vestidoDeGala: {
@@ -877,9 +914,12 @@ export const ARARAS_DA_ESTELLA: readonly AraraDaLoja[] = [
     pecas: [ITENS.calcaAlfaiataria, ITENS.calcaBege, ITENS.calcaVinho, ITENS.calcaOliva],
   },
   {
-    titulo: 'Frio e pé',
+    titulo: 'Frio, pé e miudezas',
     fala: 'Gorro e bota. Nesta cidade não faz frio, e mesmo assim isso aqui esgota.',
-    pecas: [ITENS.gorroAzul, ITENS.gorroMusgo, ITENS.botaVermelha, ITENS.botaCreme],
+    pecas: [
+      ITENS.gorroAzul, ITENS.gorroMusgo, ITENS.botaVermelha, ITENS.botaCreme,
+      ITENS.luvasDeJardim, ITENS.pulseiraDeMicangas, ITENS.presilhaDeEstrela, ITENS.adesivoDeCoracao,
+    ],
   },
 ];
 
