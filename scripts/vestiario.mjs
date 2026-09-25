@@ -70,6 +70,14 @@ const painel = () => j(() => {
     traje: a.querySelector('.traje .ativo')?.dataset.traje ?? null,
     dono: a.querySelector('.dono').textContent,
     corpo: a.querySelector('.corpo').textContent,
+    saldo: a.querySelector('.saldo').textContent,
+    // o saldo tem que estar DENTRO da área visível da folha, sem rolar
+    saldoVisivel: (() => {
+      const el = a.querySelector('.saldo');
+      const r = el.getBoundingClientRect();
+      const f = a.querySelector('.sheet').getBoundingClientRect();
+      return getComputedStyle(el).display !== 'none' && r.height > 0 && r.top >= f.top && r.bottom <= f.bottom;
+    })(),
   };
 });
 const clicarProduto = async (id) => {
@@ -125,6 +133,8 @@ const depois = await j(([a, b]) => ({
   doOutro: window.jogo.wardrobeItems(b).some((i) => i.id === 'bermuda-havaiana'),
 }), [dono1, outro1]);
 ok(depois.saldo === 102, `desbloquear cobrou R$ 18 (sobrou R$ ${depois.saldo})`);
+p = await painel();
+ok(/R\$ 102/.test(p.saldo) && p.saldoVisivel, `a carteira aparece no alto da ficha, sem rolar, e já com o desconto ("${p.saldo}")`);
 ok(depois.doDono && depois.doOutro, 'a bermuda foi para o guarda-roupa dos dois');
 p = await painel();
 ok(p.botao === 'Vestir agora', `depois de desbloquear, o botão veste ("${p.botao}")`);

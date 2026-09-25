@@ -1279,6 +1279,9 @@ body.touch-device .dialogue .next { right: 84px; }
   .armario.aba-piscina .ficha .nome { font-size: 15px; }
   .armario.aba-piscina .ficha .preco { font-size: 19px; }
   .armario.aba-piscina .ficha .agir { padding: 9px 10px; font-size: 13px; }
+  /* a carteira cabe na ficha estreita só com a moeda e o valor */
+  .armario.aba-piscina .saldo { padding: 3px 10px; }
+  .armario.aba-piscina .saldo small { display: none; }
   /* na coluna estreita do boneco o botão do traje fica só com os ícones */
   .armario.aba-piscina .traje button span { display: none; }
   .armario .traje button { padding: 4px 9px; font-size: 13px; }
@@ -1552,7 +1555,7 @@ body.touch-device .dialogue .next { right: 84px; }
   background: rgba(255, 255, 255, 0.55);
   border: 2px solid rgba(120, 105, 150, 0.16);
 }
-.armario .ficha.vazia { opacity: 0.72; }
+.armario .ficha.vazia > :not(.saldo) { opacity: 0.72; }
 .armario .ficha .nome { font-size: 17px; line-height: 1.2; }
 .armario .ficha .nota { color: var(--ink-soft); font-weight: 700; font-size: 12px; }
 .armario .ficha .preco {
@@ -1656,12 +1659,20 @@ body.touch-device .dialogue .next { right: 84px; }
 .armario .produto.ja-tem em { color: #3f8f80; }
 .armario .produto.vestida { border-color: #3f9f8f; }
 .armario .produto.caro em { color: #a8474f; }
+/* a carteira do casal, no alto da ficha: sempre à vista enquanto se escolhe */
 .armario .saldo {
-  margin: 16px 0 0;
+  align-self: flex-start;
+  margin: 0 0 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #fff4d6;
+  border: 2px solid #f0d58a;
   font-weight: 800;
-  color: var(--ink-soft);
+  color: #6b4a08;
+  white-space: nowrap;
 }
-.armario .saldo b { color: var(--ink); font-size: 17px; }
+.armario .saldo b { font-size: 16px; }
+.armario .saldo small { font-size: 12px; }
 
 /* rótulo da parte do corpo nas vagas de vestimenta da mochila */
 .mochila .slot .parte {

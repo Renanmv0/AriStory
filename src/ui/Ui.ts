@@ -286,6 +286,7 @@ export class Ui {
           </div>
           <div class="corpo"></div>
           <div class="ficha">
+            <p class="saldo"></p>
             <b class="nome"></b>
             <small class="nota"></small>
             <span class="preco"></span>
@@ -296,7 +297,6 @@ export class Ui {
         <h3 class="rotulo-acervo">O que você tem</h3>
         <div class="acervo"></div>
         <div class="vitrine-piscina"></div>
-        <p class="saldo"></p>
         <button class="close">fechar</button>
       </div></div>
       <div class="loja"><div class="sheet">
@@ -1996,7 +1996,9 @@ export class Ui {
     }>;
   }): void {
     this.donoArmario.textContent = `de ${dados.dono}`;
-    this.armario.querySelector('.saldo')!.innerHTML = `Na carteira do casal: <b>R$ ${dados.saldo}</b>`;
+    // o saldo mora no ALTO DA FICHA, que fica grudada ao lado do boneco: no pé
+    // da vitrine (depois das 30 peças) ninguém chegava a ver quanto tinha
+    this.armario.querySelector('.saldo')!.innerHTML = `💰 <b>R$ ${dados.saldo}</b> <small>na carteira</small>`;
 
     // a vitrine por parte do corpo, na mesma ordem das vagas (como o acervo)
     this.vitrineDaPiscina.innerHTML = '';
