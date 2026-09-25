@@ -836,14 +836,14 @@ export const ITENS = {
     id: 'camisa-havaiana-solta', nome: 'Camisa havaiana solta', icone: '🌺',
     tipo: 'vestivel', slot: 'tronco', preco: 20, peitoNu: true,
     cor: P.camisaHavaiana, corDetalhe: P.camisaHavaiana,
-    nota: 'larga, de botão, decote aberto de verão',
+    nota: 'larga, de botão, gola V de verão',
     extra: camisaHavaianaSolta, extraBraco: mangaHavaianaSolta,
   },
   regataListradaSolta: {
     id: 'regata-listrada-solta', nome: 'Regata listrada solta', icone: '⚓',
     tipo: 'vestivel', slot: 'tronco', preco: 18, bracosNus: true, peitoNu: true,
     cor: P.regataCreme, corDetalhe: P.regataListra,
-    nota: 'larga, de marinheiro, decote aberto',
+    nota: 'larga, de marinheiro, gola V',
     extra: regataListradaSolta,
   },
   frisbee: {
