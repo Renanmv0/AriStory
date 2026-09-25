@@ -131,18 +131,18 @@ console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 const ok =
   !erros.length &&
   JSON.stringify(guardou) === JSON.stringify(['mao', 'guardado', 'guardado', 'repetido', true, true]) &&
-  // 10 de mão + 4 de vestimenta; conta a grade em vez de cravar, porque o
+  // 10 de mão + 6 de vestimenta (cabeça, tronco, pernas, pés, mãos, acessório); conta a grade em vez de cravar, porque o
   // número de vagas de mão é uma constante do jogo e já mudou uma vez
-  aberta.caixas === aberta.deMao + 4 &&
+  aberta.caixas === aberta.deMao + 6 &&
   aberta.principais === 1 &&
   // as vagas são TIPADAS: chapéu na 0 (cabeça), patins na 3 (pés). A ordem não é
   // a de chegada, é a do corpo
-  JSON.stringify(aberta.vestiveis) === JSON.stringify(['chapeu-ping-pong', null, null, 'patins']) &&
+  JSON.stringify(aberta.vestiveis) === JSON.stringify(['chapeu-ping-pong', null, null, 'patins', null, null]) &&
   andou === 0 &&
   depoisDoClique.ativo === 2 &&
   depoisDoClique.naMao === 'Toalha' &&
   /(não pode ser vestido)/.test(recusa.aviso ?? '') &&
-  JSON.stringify(recusa.vestindo) === JSON.stringify(['chapeu-ping-pong', null, null, 'patins']) &&
+  JSON.stringify(recusa.vestindo) === JSON.stringify(['chapeu-ping-pong', null, null, 'patins', null, null]) &&
   recusa.aindaNaPinca === 1 &&
   /Descartar Toalha/.test(botaoDescarte ?? '') &&
   descartou.maos[2] === null &&
