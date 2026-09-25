@@ -1218,6 +1218,8 @@ export class CharacterRig {
       if (peca.pernasNuas && slot === 'pernas' && !this.roupa.pernas) return true;
       // a manga e o `detalhe` do tronco; o torso continua vestido
       if (peca.bracosNus && slot === 'tronco' && parte === 'detalhe') return true;
+      // a camiseta solta: o casco é a roupa, e o peito por dentro é pele
+      if (peca.peitoNu && slot === 'tronco' && parte === 'principal') return true;
       // o chinelo: pe descalco, e a peca e so a sola e a tira por cima
       if (peca.pesNus && slot === 'pes') return true;
     }

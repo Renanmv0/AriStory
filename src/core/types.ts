@@ -276,6 +276,12 @@ export interface ItemDef {
   /** Idem para a perna: vestido, saia e short. */
   pernasNuas?: boolean;
   /**
+   * Idem para o PEITO: o tronco do rig vira pele. Para a camiseta SOLTA, que é
+   * um casco por fora do corpo com o decote aberto — pelo decote tem que
+   * aparecer pele, e não o tronco pintado da cor da camiseta.
+   */
+  peitoNu?: boolean;
+  /**
    * Idem para o PÉ: chinelo. O pé do rig (a caixa do tênis) vira pele, e a
    * peça é só a sola e a tira por cima dele — pé descalço no chinelo.
    */

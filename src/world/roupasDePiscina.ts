@@ -1360,18 +1360,115 @@ function anelNoCasco(m: MedidasCorpo, t0: number, t1: number, cor: number, folga
  * baixa não ver o torso lá dentro), o ombro caído e a barra. `ombroLargo`
  * falso estreita o ombro — é a regata, que deixa o alto do braço de fora.
  */
+/**
+ * O DECOTE das camisetas soltas (pedido do Renan: a gola fechada no pescoço
+ * parecia sufocante para roupa de verão). A calota do ombro nasce ABERTA no
+ * alto: `DECOTE` é o ângulo polar onde o pano começa, e o furo tem raio
+ * `RAIO·sen(DECOTE)` — uns 0,75 do raio do tronco, bem mais largo que o
+ * pescoço. Pelo furo aparece o peito, que é pele (`peitoNu` na ficha).
+ */
+const DECOTE = 0.78;
+
+/** onde fica a borda do decote: altura, raio e o achatamento em z */
+function bordaDoDecote(m: MedidasCorpo, ombroLargo = true) {
+  const s = soltura(m);
+  const largura = ombroLargo ? 1 : 0.8;
+  return {
+    y: s.TOPO + s.RAIO * Math.cos(DECOTE) * 0.36,
+    raio: s.RAIO * Math.sin(DECOTE),
+    largura,
+    ACHATA: s.ACHATA,
+  };
+}
+
+/**
+ * O RECORTE DA FRENTE: o decote desce pelo peito. `ABERTURA` é a meia
+ * abertura em ângulo (0 = a frente) e `FUNDO` quanto do tronco ele desce a
+ * partir do ombro. O furo em cima, sozinho, ficava escondido embaixo do
+ * queixo — da câmera ninguém via decote nenhum.
+ */
+const ABERTURA = 0.46;
+const FUNDO = 0.22;
+
+/** a altura do fundo do decote, e o `t` dela no casco (0 na barra, 1 no ombro) */
+function fundoDoDecote(m: MedidasCorpo) {
+  const s = soltura(m);
+  const y = s.TOPO - m.torsoH * FUNDO;
+  return { y, t: (y - s.BARRA) / (s.TOPO - s.BARRA) };
+}
+
 function cascoSolto(m: MedidasCorpo, pano: number, barra: number, ombroLargo = true): THREE.Group {
   const g = new THREE.Group();
   const s = soltura(m);
   const mat = toon(pano);
-  const casco = new THREE.Mesh(new THREE.CylinderGeometry(s.RAIO, s.RAIO_BARRA, s.TOPO - s.BARRA, 26), mat);
-  casco.position.y = (s.TOPO + s.BARRA) / 2;
-  casco.scale.z = s.ACHATA;
-  g.add(casco);
-  const ombro = new THREE.Mesh(new THREE.SphereGeometry(s.RAIO, 26, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat);
+  const matDuplo = toon(pano, { doubleSide: true });
+  const matVies = toon(barra, { doubleSide: true });
+  const f = fundoDoDecote(m);
+  const raioNoFundo = THREE.MathUtils.lerp(s.RAIO_BARRA, s.RAIO, f.t);
+  // o casco em DOIS pedaços: embaixo a volta inteira, da barra ao fundo do
+  // decote; em cima, do fundo do decote ao ombro, com a frente recortada
+  const baixo = new THREE.Mesh(new THREE.CylinderGeometry(raioNoFundo, s.RAIO_BARRA, f.y - s.BARRA, 26, 1, true), matDuplo);
+  baixo.position.y = (f.y + s.BARRA) / 2;
+  baixo.scale.z = s.ACHATA;
+  g.add(baixo);
+  const cima = new THREE.Mesh(
+    new THREE.CylinderGeometry(s.RAIO, raioNoFundo, s.TOPO - f.y, 26, 1, true, ABERTURA, Math.PI * 2 - ABERTURA * 2),
+    matDuplo,
+  );
+  cima.position.y = (s.TOPO + f.y) / 2;
+  cima.scale.z = s.ACHATA;
+  g.add(cima);
+  // fechado embaixo por um disco, para a câmera baixa não ver o corpo pela barra
+  const fundo = new THREE.Mesh(new THREE.CircleGeometry(s.RAIO_BARRA, 26), mat);
+  fundo.rotation.x = Math.PI / 2;
+  fundo.position.y = s.BARRA;
+  fundo.scale.y = s.ACHATA;
+  g.add(fundo);
+  // o ombro caído: o furo do pescoço em cima e a cunha da frente recortada
+  // (na esfera do three a frente, `+Z`, é o ângulo `phi = PI/2`)
+  const ombro = new THREE.Mesh(
+    new THREE.SphereGeometry(
+      s.RAIO, 26, 8,
+      Math.PI / 2 + ABERTURA, Math.PI * 2 - ABERTURA * 2,
+      DECOTE, Math.PI / 2 - DECOTE,
+    ),
+    matDuplo,
+  );
   ombro.position.y = s.TOPO;
   ombro.scale.set(ombroLargo ? 1 : 0.8, 0.36, s.ACHATA);
   g.add(ombro);
+
+  // O VIÉS contornando o decote inteiro: o arco em volta do pescoço (aberto
+  // na frente), as duas beiradas descendo pelo peito e o fundo do recorte
+  const d = bordaDoDecote(m, ombroLargo);
+  const grosso = m.h * 0.0055;
+  const arco = new THREE.Mesh(new THREE.TorusGeometry(d.raio, grosso, 6, 28, Math.PI * 2 - ABERTURA * 2), matVies);
+  arco.rotation.set(Math.PI / 2, 0, Math.PI / 2 + ABERTURA);
+  arco.position.y = d.y;
+  arco.scale.set(d.largura, s.ACHATA, 1);
+  g.add(arco);
+  for (const lado of [-1, 1] as const) {
+    // do fundo do decote até a borda do furo, pela beirada do recorte
+    const de = new THREE.Vector3(
+      lado * Math.sin(ABERTURA) * raioNoFundo * 1.005, f.y, Math.cos(ABERTURA) * raioNoFundo * s.ACHATA * 1.005,
+    );
+    const meio = new THREE.Vector3(
+      lado * Math.sin(ABERTURA) * s.RAIO * 1.005, s.TOPO, Math.cos(ABERTURA) * s.RAIO * s.ACHATA * 1.005,
+    );
+    const ate = new THREE.Vector3(
+      lado * Math.sin(ABERTURA) * d.raio * d.largura, d.y, Math.cos(ABERTURA) * d.raio * s.ACHATA,
+    );
+    const beirada = new THREE.CatmullRomCurve3([de, meio, ate]);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(beirada, 10, grosso, 5, false), matVies));
+  }
+  const pe = new THREE.Mesh(
+    new THREE.CylinderGeometry(raioNoFundo * 1.006, raioNoFundo * 1.006, grosso * 2, 10, 1, true, -ABERTURA, ABERTURA * 2),
+    matVies,
+  );
+  pe.position.y = f.y;
+  pe.scale.z = s.ACHATA;
+  g.add(pe);
+
   // a barra: faixa dobrada, um degrau mais larga
   const dobra = new THREE.Mesh(
     new THREE.CylinderGeometry(s.RAIO_BARRA * 1.02, s.RAIO_BARRA * 1.03, m.h * 0.022, 26, 1, true),
@@ -1401,30 +1498,37 @@ function camisaHavaianaSolta(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef)
   const g = cascoSolto(m, pano, escuro(pano, 0.8));
   const s = soltura(m);
   const h = m.h;
-  const frente = s.RAIO * s.ACHATA;
 
   // a gola: duas lapelas deitadas no peito em V, com o avesso escuro
   const matGola = toon(pano, { doubleSide: true });
   for (const lado of [-1, 1] as const) {
-    const lapela = new THREE.Mesh(new THREE.BoxGeometry(s.RAIO * 0.36, m.torsoH * 0.3, h * 0.006), matGola);
-    lapela.position.set(lado * s.RAIO * 0.2, s.TOPO - m.torsoH * 0.1, frente * 1.04);
-    lapela.rotation.set(-0.3, lado * 0.3, -lado * 0.42);
+    const lapela = new THREE.Mesh(new THREE.BoxGeometry(s.RAIO * 0.3, m.torsoH * 0.26, h * 0.006), matGola);
+    // deitadas nas beiradas do RECORTE, abrindo para fora: a gola de
+    // acampamento aberta em V, com o peito aparecendo no meio
+    const fd = fundoDoDecote(m);
+    lapela.position.set(
+      lado * Math.sin(ABERTURA) * s.RAIO * 1.12,
+      (s.TOPO + fd.y) / 2 + m.torsoH * 0.02,
+      Math.cos(ABERTURA) * s.RAIO * s.ACHATA * 1.06,
+    );
+    lapela.rotation.set(-0.25, lado * 0.55, lado * 0.32);
     g.add(lapela);
-    const avesso = new THREE.Mesh(new THREE.BoxGeometry(s.RAIO * 0.36, m.torsoH * 0.3, h * 0.003), toon(escuro(pano, 0.7)));
+    const avesso = new THREE.Mesh(new THREE.BoxGeometry(s.RAIO * 0.3, m.torsoH * 0.26, h * 0.003), toon(escuro(pano, 0.7)));
     avesso.position.copy(lapela.position);
     avesso.rotation.copy(lapela.rotation);
     avesso.translateZ(-h * 0.004);
     g.add(avesso);
   }
   // a vista e os botões, do V da gola até a barra
-  const vista = new THREE.Mesh(new THREE.BoxGeometry(h * 0.013, s.TOPO - s.BARRA - m.torsoH * 0.28, h * 0.002), toon(escuro(pano, 0.85)));
-  const alturaVista = (s.TOPO - m.torsoH * 0.28 + s.BARRA) / 2;
+  const fundoV = fundoDoDecote(m);
+  const vista = new THREE.Mesh(new THREE.BoxGeometry(h * 0.013, fundoV.y - s.BARRA, h * 0.002), toon(escuro(pano, 0.85)));
+  const alturaVista = (fundoV.y + s.BARRA) / 2;
   vista.position.set(0, alturaVista, THREE.MathUtils.lerp(s.RAIO_BARRA, s.RAIO, 0.5) * s.ACHATA * 1.02);
   vista.rotation.x = -Math.atan2(s.RAIO_BARRA - s.RAIO, s.TOPO - s.BARRA) * s.ACHATA;
   g.add(vista);
   const botao = toon(P.camisaHavaianaBotao);
-  for (let i = 0; i < 5; i++) {
-    const t = 0.72 - i * 0.16;
+  for (let i = 0; i < 4; i++) {
+    const t = fundoV.t - 0.08 - i * (fundoV.t - 0.12) / 3.4;
     const p = noCasco(m, 0, t, 1.03);
     const b = new THREE.Mesh(new THREE.CylinderGeometry(h * 0.0058, h * 0.0058, h * 0.003, 10), botao);
     b.rotation.x = Math.PI / 2;
@@ -1498,16 +1602,9 @@ function regataListradaSolta(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef)
   const pano = peca?.cor ?? P.regataCreme;
   const listra = peca?.corDetalhe ?? P.regataListra;
   const g = cascoSolto(m, pano, listra, false);
-  const s = soltura(m);
   for (const [t0, t1] of [[0.2, 0.29], [0.4, 0.49], [0.6, 0.69]] as const) g.add(anelNoCasco(m, t0, t1, listra));
-  // o friso do decote, em volta do alto do ombro
-  const decote = new THREE.Mesh(new THREE.TorusGeometry(s.RAIO * 0.5, m.h * 0.005, 5, 22), toon(listra));
-  decote.rotation.x = Math.PI / 2;
-  decote.position.y = s.TOPO + s.RAIO * 0.36 * 0.85;
-  decote.scale.y = s.ACHATA;
-  g.add(decote);
-  const p = noCasco(m, -0.42, 0.82, 1.03);
-  colar(ancora(m.h * 0.05, P.ancoraVermelha), g, p.x, p.y, p.z, p.nx, 0, p.nz);
+  const p = noCasco(m, -0.72, 0.545, 1.03);
+  colar(ancora(m.h * 0.045, P.ancoraVermelha), g, p.x, p.y, p.z, p.nx, 0, p.nz);
   return g;
 }
 
