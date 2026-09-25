@@ -93,6 +93,7 @@ let passouPeloPortao = false;
 let congelou = null;
 let cartasPegas = 0;
 let testouTonel = false;
+let testouVida = false;
 let fotoPatio = false;
 let fim = null;
 let telaDoFim = '';
@@ -158,6 +159,26 @@ for (let i = 0; i < 700; i++) {
     }
     await page.screenshot({ path: `${OUT}-tonel.png` });
     ok(agora >= antes + 2, `perto do tonel o tanque enche (${antes.toFixed(1)} → ${agora.toFixed(1)})`);
+  }
+
+  // ---- 5: a vida cresce com a onda — um lagartejo da onda 20 nasce ×1,74
+  if (!testouVida && e.onda === 1 && e.invasores.some((b) => b.praga === 'lagartejo')) {
+    testouVida = true;
+    const base = e.invasores.find((b) => b.praga === 'lagartejo').vidaMax;
+    const ids0 = await page.evaluate(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.onda = 20;
+      r.agendar('lagartejo', 0, 0);
+      return r.estado().invasores.length;
+    });
+    await page.waitForTimeout(500);
+    const tarde = await page.evaluate(() => {
+      const r = window.jogo.current.world.root.userData.rodada;
+      r.onda = 1;
+      return r.estado().invasores.filter((b) => b.praga === 'lagartejo').map((b) => b.vidaMax);
+    });
+    const maior = Math.max(...tarde);
+    ok(Math.abs(maior / base - 1.74) < 0.02, `o lagartejo da onda 20 nasce com ${(maior / base).toFixed(2)}× a vida do da onda 1 (${base} → ${maior.toFixed(1)}; ${ids0} bichos)`);
   }
 
   await robo();

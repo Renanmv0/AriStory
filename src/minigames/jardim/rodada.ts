@@ -15,7 +15,7 @@ import { MaoDeCartas } from './baralho';
 import type { ArmaId } from './armas';
 import { MangueiraNoChao } from './mangueira';
 import { cartaPorId, type AjudanteDoClube, type FichaDaRodada } from './cartas';
-import { ONDAS, nivelDasGotas, planoDaOnda, type EntradaDePraga } from './progressao';
+import { ONDAS, nivelDasGotas, planoDaOnda, vidaDaOnda, type EntradaDePraga } from './progressao';
 import { cartaDaArma } from './tela';
 import { DesenhoDoJato } from './jato';
 import { flagDaPraga } from './bestiario';
@@ -1183,6 +1183,11 @@ export class RodadaDoJardim {
     }
   }
 
+  /** quanto a onda de agora engorda o encharque (`vidaDaOnda`); a vitrine fica na base */
+  private vidaDaOnda(): number {
+    return this.vitrine ? 1 : vidaDaOnda(this.onda);
+  }
+
   /** Um bicho aparece do lado de fora da sebe, na porta sorteada. */
   private nascer(praga: string, porta: number, casa: { x: number; z: number } | null = null, seguidor = false): Invasor {
     // o Portão emperrado: quem ia por ele vai pelo do lado
@@ -1203,8 +1208,8 @@ export class RodadaDoJardim {
       rumo: 0,
       estado: casa ? 'parado' : 'andando',
       relogio: 0,
-      vida: ficha.encharque,
-      vidaMax: ficha.encharque,
+      vida: ficha.encharque * this.vidaDaOnda(),
+      vidaMax: ficha.encharque * this.vidaDaOnda(),
       porta,
       caminho: casa ? [] : [
         this.planta.brechas[porta], this.planta.portoes[porta], this.planta.bocas[porta],

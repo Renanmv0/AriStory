@@ -48,7 +48,11 @@ canteiro aguenta `VIDA_DO_CANTEIRO = 34`; regador começa com alcance 3,0
 do par dura `AJUDA_DURA = 10` s e custa 30 gotas, +15 a cada uso; prêmio da
 onda = metade do que falta para o próximo nível; de 5 em 5 níveis, 1 ou 2
 cartas a mais (`cartasDePremio`); o ritmo de cada onda em `progressao.ts`;
-velocidade/mordida de cada praga em `JEITO` (`rodada.ts`).
+velocidade/mordida de cada praga em `JEITO` (`rodada.ts`); e a **vida que
+cresce com a onda** (`vidaDaOnda`, em `progressao.ts` — pedido do Renan, porque
+com a mão cheia a rodada ficava fácil): o encharque da ficha vezes 1,00 na
+onda 1, 1,19 na 10ª, 1,74 na 20ª e 2,79 na 30ª, devagar até a 8ª e mais
+depressa depois. Vale para todo bicho, chefe inclusive.
 
 **Decisões do Renan que valem como regra** (não reabrir):
 - carta **não se repete** (a comum que empilhava virou série I–II–III);
@@ -713,7 +717,8 @@ orelhas caídas e o rabinho de mola da Javaponja; o beiço caído e os cílios d
 camelo.
 
 A coluna `encharque` é a que está no código (`FichaDePraga.encharque`) e vale em
-**jatos do regador básico**.
+**jatos do regador básico** — na onda 1. A cada onda ela é multiplicada por
+`vidaDaOnda(n)` (`progressao.ts`): ×1,19 na 10ª, ×1,74 na 20ª, ×2,79 na 30ª.
 
 ### O jeito de cada bicho — **construído**
 

@@ -283,6 +283,19 @@ console.log('\n— a curva de nivel');
   ok(m.nivelDasGotas(0).nivel === 0, 'a rodada comeca do nivel 0');
 }
 
+// ================================================ 5b. a vida que cresce com a onda
+console.log('\n— a vida dos bichos por onda');
+{
+  const v = (n) => m.vidaDaOnda(n);
+  console.log('       onda 1/5/10/15/20/25/30:', [1, 5, 10, 15, 20, 25, 30].map((n) => v(n).toFixed(2)).join(' '));
+  ok(v(1) === 1 && v(0) === 1, 'a onda 1 fica na vida da ficha');
+  let sobe = true;
+  for (let n = 2; n <= 30; n++) if (!(v(n) > v(n - 1))) sobe = false;
+  ok(sobe, 'a vida cresce a cada onda, sem degrau para trás');
+  ok(v(8) <= 1.15, `o começo quase não muda (onda 8: ×${v(8).toFixed(2)})`);
+  ok(v(30) >= 2.5 && v(30) <= 3.2, `e a 30ª pede umas três vezes mais água (×${v(30).toFixed(2)})`);
+}
+
 // ========================================================== 6. as ondas
 console.log('\n— as ondas');
 {

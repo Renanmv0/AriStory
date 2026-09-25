@@ -233,7 +233,9 @@ laranja de aviso que diz "isto machuca a planta" — pinça, unha, dente, bico.
 
 - **`encharque`** é quantos jatos do regador BÁSICO ele aguenta. Ele **tem que
   subir junto com o tier** — o teste reprova um fraco que aguente tanto quanto
-  um médio, porque aí a ficha mente para o jogador.
+  um médio, porque aí a ficha mente para o jogador. Esse é o encharque da
+  ONDA 1: a rodada multiplica ele por `vidaDaOnda(n)` (`progressao.ts`, ×1,74
+  na 20ª, ×2,79 na 30ª), então escreva a ficha pensando no bicho da estreia.
 - **`gotas`** é a experiência que ele solta ao ser espantado, e **sobe com o
   tier** junto com o encharque (fraco 1, médio 2–3, tanque 8, chefe 25). O
   `scripts/cartas.mjs` reprova um tier que pague menos que o de baixo, e mede

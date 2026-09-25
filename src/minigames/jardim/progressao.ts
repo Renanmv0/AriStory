@@ -280,3 +280,25 @@ export function planoDaOnda(numero: number, rng: () => number): EntradaDePraga[]
 export function gotasDoPlano(plano: readonly EntradaDePraga[]): number {
   return plano.reduce((soma, e) => soma + gotasDaPraga(e.praga), 0);
 }
+
+/**
+ * A VIDA QUE CRESCE COM AS ONDAS (pedido do Renan: "a partir de uma certa
+ * wave, quando temos muitas cartas, começa a ficar um pouco fácil").
+ *
+ * A mão chega a ~30 cartas e o jato multiplica várias vezes, mas o encharque
+ * de cada bicho era o mesmo da onda 1 à 30. Agora ele cresce com a onda:
+ * devagar no começo (a mão ainda é pequena, e a rodada não pode ficar dura
+ * para quem está aprendendo) e mais depressa depois da 8ª, quando as cartas
+ * começam a somar. Vale para todo bicho, chefe inclusive.
+ *
+ *   onda   1    5    10   15   20   25   30
+ *   ×     1,00 1,08 1,19 1,40 1,74 2,20 2,79
+ */
+export const VIDA_POR_ONDA = 0.02;
+export const VIDA_DEPOIS_DA = 8;
+export const VIDA_CURVA = 0.0025;
+export function vidaDaOnda(onda: number): number {
+  const n = Math.max(1, onda);
+  const tarde = Math.max(0, n - VIDA_DEPOIS_DA);
+  return 1 + VIDA_POR_ONDA * (n - 1) + VIDA_CURVA * tarde * tarde;
+}
