@@ -161,7 +161,7 @@ const mochila = await page.evaluate(() => ({
   aberta: document.querySelector('.mochila')?.classList.contains('show') ?? false,
   vagas: document.querySelectorAll('.mochila .slot').length,
   // de mão + as 4 de vestimenta; deriva do jogo em vez de cravar o número
-  esperadas: window.jogo.handItems().length + 4,
+  esperadas: window.jogo.handItems().length + window.jogo.wearables().length,
   altura: document.querySelector('.mochila .sheet')?.getBoundingClientRect().height ?? 0,
 }));
 await page.screenshot({ path: `${OUT}-mochila.png` });
