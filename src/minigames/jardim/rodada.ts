@@ -80,6 +80,15 @@ const SEGUNDO_BICO = 0.6;
 const PARCEIRO = 0.6;
 /** o máximo que a Compostagem cura um canteiro por onda, em fração da vida */
 const COMPOSTO_POR_ONDA = 0.2;
+/**
+ * O Canteiro de pimenta DESCANSA depois de arder (segundos). Sem isso ele era
+ * uma muralha: todo bicho que mordia fugia na hora, chefe inclusive, e como a
+ * rodada só se perde quando o ÚLTIMO canteiro cai, com a carta na mão não dava
+ * para perder (pedido do Renan: "é possível perder com essa carta?"). Agora
+ * ele espanta um bicho, murcha, e nesse tempo quem chega come normal. Tanque
+ * e chefe não fogem: ardem, recuam até a porta e voltam.
+ */
+const PIMENTA_DESCANSA = 8;
 const AJUDA_CUSTO_INICIAL = 30;
 const AJUDA_CUSTO_SOBE = 15;
 /** a distância do tonel em que o regador enche */
@@ -213,6 +222,9 @@ interface Canteiro extends CanteiroDaPlanta {
   toldo: boolean;
   /** o Canteiro de pimenta: quem morde sai correndo */
   pimenta: boolean;
+  /** a pimenteira da borda, e quanto falta para ela arder de novo (ver `PIMENTA_DESCANSA`) */
+  pimentaPeca: THREE.Object3D | null;
+  pimentaEspera: number;
   /** a Planta carnívora: a dioneia na borda e quanto falta para ela abrir de novo */
   carnivora: { peca: THREE.Object3D; espera: number; fecha: number } | null;
   /** o Adubo do Noel: regado nesta onda, a mordida conta pela metade */
@@ -563,6 +575,8 @@ export class RodadaDoJardim {
         cercaPeca: null,
         toldo: false,
         pimenta: false,
+        pimentaPeca: null,
+        pimentaEspera: 0,
         carnivora: null,
         adubado: false,
         orvalho: 0,
@@ -824,7 +838,7 @@ export class RodadaDoJardim {
       esponjas: this.esponjas.length,
       canteiros: this.canteiros.map((c) => ({
         x: c.x, z: c.z, nome: c.nome, vida: c.vida, vidaMax: c.vidaMax,
-        protegido: c.protegido, cerca: c.cerca, toldo: c.toldo, pimenta: c.pimenta, carnivora: !!c.carnivora, adubado: c.adubado,
+        protegido: c.protegido, cerca: c.cerca, toldo: c.toldo, pimenta: c.pimenta, pimentaEspera: c.pimentaEspera, carnivora: !!c.carnivora, adubado: c.adubado,
       })),
       faltamEntrar: this.plano.length,
       gotasNoAr: this.jato.gotasNoAr,
@@ -3422,11 +3436,14 @@ export class RodadaDoJardim {
   /** um bicho acabou de começar a comer um canteiro */
   private aoMorder(inv: Invasor, c: Canteiro): void {
     const r = this.ficha.regras;
-    // o Canteiro de pimenta: arde, e ele sai correndo
-    if (c.pimenta) {
+    // o Canteiro de pimenta: arde, e ele sai correndo — mas a pimenteira
+    // DESCANSA depois (ver `PIMENTA_DESCANSA`), e o grandão só recua
+    if (c.pimenta && c.pimentaEspera <= 0) {
       this.jato.ardido(inv.x, inv.ficha.alturaDaBarra * 0.6, inv.z);
       this.g.som('ardido');
-      this.afugentar(inv, 2);
+      c.pimentaEspera = PIMENTA_DESCANSA;
+      if (inv.ficha.tier === 'tanque' || inv.ficha.tier === 'chefe') this.mandarParaAPorta(inv);
+      else this.afugentar(inv, 2);
       this.contar('canteiro-de-pimenta');
       return;
     }
@@ -3743,6 +3760,8 @@ export class RodadaDoJardim {
       c.cercaPeca = null;
       c.toldo = false;
       c.pimenta = false;
+      c.pimentaPeca = null;
+      c.pimentaEspera = 0;
       c.carnivora = null;
       c.adubado = false;
     }
@@ -3849,6 +3868,8 @@ export class RodadaDoJardim {
     const { x, z, giro } = this.bordaDoTerreiro(c, 0.42);
     const p = this.pecaNaEstufa(pimenteiras(3.0, 0.3), x, z, giro);
     p.userData.escala = 1.5;
+    c.pimentaPeca = p;
+    c.pimentaEspera = 0;
     this.g.som('brotar');
     this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
   }
@@ -3923,6 +3944,22 @@ export class RodadaDoJardim {
       if (t >= 1) {
         this.crescendo.splice(i, 1);
         if (c.remover) this.tirarPeca(c.peca);
+      }
+    }
+    for (const c of this.canteiros) {
+      // a pimenteira descansando fica MURCHA (baixa e caída), e volta a
+      // crescer quando pode arder de novo: o jogador vê que o canteiro está
+      // sem defesa e que precisa cuidar dele
+      const pp = c.pimentaPeca;
+      if (pp) {
+        c.pimentaEspera = Math.max(0, c.pimentaEspera - dt);
+        if (!this.crescendo.some((k) => k.peca === pp)) {
+          const escala = (pp.userData.escala as number | undefined) ?? 1;
+          const murcha = c.pimentaEspera > 0 ? 0.55 : 1;
+          const quer = escala * murcha;
+          const y = pp.scale.y + (quer - pp.scale.y) * Math.min(1, dt * 4);
+          pp.scale.set(escala, y, escala);
+        }
       }
     }
     for (const c of this.canteiros) {

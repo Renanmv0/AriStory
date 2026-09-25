@@ -134,7 +134,7 @@ export type RegraDoJardim =
   | 'girassol-vigia'    // os girassóis viram para o portão do próximo bicho
   | 'cerquinha'         // nasce uma cerca baixa no terreiro que os bichos contornam
   | 'toldo'             // um canteiro à sua escolha aguenta 50% mais
-  | 'canteiro-de-pimenta' // quem morde o canteiro escolhido foge e solta 2 gotas
+  | 'canteiro-de-pimenta' // quem morde o canteiro escolhido foge e solta 2 gotas (8 s de recarga; tanque e chefe só recuam)
   | 'aspersor'          // um aspersor no meio molha num raio de 2,5 m a cada 3 s
   | 'sementeira'        // canteiro comido até o fim volta com meia vida na onda seguinte
   | 'planta-carnivora'  // um canteiro morde o primeiro bicho que encostar, a cada 15 s
@@ -1258,7 +1258,7 @@ const JARDIM: CartaDoJardim[] = [
   },
   {
     id: 'canteiro-de-pimenta', nome: 'Canteiro de pimenta', familia: 'jardim', raridade: 'raro',
-    icone: '🌶️', texto: 'Quem morde o canteiro escolhido sai correndo e solta 2 gotas',
+    icone: '🌶️', texto: 'Quem morde o canteiro escolhido foge e solta 2 gotas; recarga de 8 s',
     aplicar: (f) => f.regras.add('canteiro-de-pimenta'),
   },
   {

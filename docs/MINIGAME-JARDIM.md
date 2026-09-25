@@ -971,7 +971,7 @@ frente desde o começo, e o Renan decidiu que quem não é controlado fica atrá
 | Girassol vigia ⚙ | incomum | os girassóis viram para o portão de onde vem o próximo bicho |
 | Cerquinha ⚙ | incomum | nasce uma cerca baixa no terreiro que os bichos têm que contornar |
 | Toldo ⚙ | incomum | um canteiro à sua escolha aguenta 50% mais |
-| Canteiro de pimenta ⚙ | raro | quem morde esse canteiro sai correndo e solta 2 gotas |
+| Canteiro de pimenta ⚙ | raro | quem morde esse canteiro sai correndo e solta 2 gotas; depois a pimenteira murcha e descansa 8 s (quem chega nesse tempo come). Tanque e chefe não fogem: ardem e recuam até a porta. *Antes não tinha recarga nem exceção e o canteiro ficava imortal — com a carta não dava para perder a rodada.* |
 | Aspersor ⚙ | raro | um aspersor no meio do terreiro molha num raio de 2,5 m a cada 3 s |
 | Sementeira ⚙ | raro | canteiro comido até o fim vira muda e volta com metade da vida na onda seguinte |
 | Planta carnívora ⚙ | lendário | um canteiro vira dioneia: morde o primeiro bicho que encostar, e recarrega em 15 s |
@@ -1103,7 +1103,7 @@ não é água em `jato.ts` (poeira, notinhas, onda de som, broto, ardido, adubo)
 | Portão emperrado | na hora | tábuas pregadas no portão mais cheio; quem ia por ele vai pelo do lado, e a dupla também não passa |
 | Cerca viva | na hora (você escolhe) | uma roda de moitas abraça o canteiro; ela leva as mordidas, encolhe, some quando cede, e brota de novo no fim da onda |
 | Toldo | na hora (você escolhe) | a lona listrada por cima; o canteiro aguenta 50% mais |
-| Canteiro de pimenta | na hora (você escolhe) | uma fileira de pimenteira na borda; quem morde arde e foge soltando 2 gotas |
+| Canteiro de pimenta | na hora (você escolhe) | uma fileira de pimenteira na borda; quem morde arde e foge soltando 2 gotas, e a fileira murcha (fica baixa) nos 8 s de descanso |
 | Planta carnívora | na hora (você escolhe) | uma dioneia grande na borda morde quem come ali e fica fechada 15 s |
 | Sino da porta | bicho passando o portão | plim, e um anel amarelo no portão |
 | Girassol vigia | sempre | as flores do canteiro de girassol viram para o portão do próximo bicho |

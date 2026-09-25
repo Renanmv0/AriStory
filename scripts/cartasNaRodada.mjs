@@ -339,9 +339,45 @@ const CASOS = {
     const e0 = await ate((s) => s.canteiros.some((c) => c.pimenta), 3000);
     const c = e0.canteiros.find((k) => k.pimenta);
     await rodada((c) => window.jogo.current.world.root.userData.rodada.soltarBicho('lagartejo', c.x + 0.5, c.z - 1.6), c);
-    const e = await ate((s) => efeito(s, 'canteiro-de-pimenta') > 0, 8000);
+    // o lagartejo anda devagar: leva uns 6 s até a borda
+    const e = await ate((s) => efeito(s, 'canteiro-de-pimenta') > 0, 15000);
     confere('canteiro-de-pimenta', efeito(e, 'canteiro-de-pimenta') > 0 && e.invasores.every((i) => i.estado === 'fugindo') && e.desenho.ardidos > 0,
       `mordeu ${c?.nome} e saiu correndo`);
+    // depois de arder a pimenteira DESCANSA: quem chega nesse tempo come de
+    // verdade — sem isso o canteiro era imortal e a rodada não se perdia
+    const ci = e.canteiros.findIndex((k) => k.pimenta);
+    confere('canteiro-de-pimenta', e.canteiros[ci].pimentaEspera > 0, `a pimenteira descansa depois de arder (${e.canteiros[ci].pimentaEspera.toFixed(1)} s)`);
+    // as duas caras da pimenteira, de perto: murcha (descansando) e em pé
+    const fotoDaPimenta = async (nome) => {
+      await page.evaluate(() => {
+        const alvo = window.__alvoDaFoto ?? (window.__alvoDaFoto = new window.jogo.current.world.root.constructor());
+        alvo.position.set(-3.6, 0, 7.6);
+        window.jogo.current.world.root.add(alvo);
+        window.jogo.focusCamera(alvo);
+        window.jogo.setZoom(4);
+      });
+      await page.waitForTimeout(900);
+      await page.screenshot({ path: `${OUT}-canteiro-de-pimenta-${nome}.png` });
+      await page.evaluate(() => { window.jogo.focusCamera(null); window.jogo.setZoom(16); });
+    };
+    await fotoDaPimenta('murcha');
+    const vida0 = e.canteiros[ci].vida;
+    await rodada((c) => window.jogo.current.world.root.userData.rodada.soltarBicho('lagartejo', c.x + 0.5, c.z - 1.6), c);
+    const e2 = await ate((s) => s.canteiros[ci].vida < vida0 - 0.3, 15000);
+    confere('canteiro-de-pimenta', e2.canteiros[ci].vida < vida0 - 0.3 && efeito(e2, 'canteiro-de-pimenta') === 1,
+      `descansando, o segundo lagartejo come ${c?.nome} (${vida0.toFixed(1)} → ${e2.canteiros[ci].vida.toFixed(1)})`);
+    // e o chefe, com a pimenteira pronta de novo, só recua (não foge de vez)
+    // (o navegador de teste roda o jogo bem abaixo do tempo real: os 8 s de
+    // descanso levam uns 20 s de relógio)
+    const e3 = await ate((s) => s.canteiros[ci].pimentaEspera <= 0, 40000);
+    confere('canteiro-de-pimenta', e3.canteiros[ci].pimentaEspera <= 0, 'e a pimenteira volta a arder');
+    await page.waitForTimeout(1500);
+    await fotoDaPimenta('pronta');
+    const antes = efeito(e3, 'canteiro-de-pimenta');
+    await rodada((c) => window.jogo.current.world.root.userData.rodada.soltarBicho('mae-lagartejo', c.x + 0.5, c.z - 1.8), c);
+    const e4 = await ate((s) => efeito(s, 'canteiro-de-pimenta') > antes, 30000);
+    const chefe = e4.invasores.find((i) => i.praga === 'mae-lagartejo');
+    confere('canteiro-de-pimenta', !!chefe && chefe.estado === 'recuando' && chefe.vida > 0, `o chefe arde e recua até a porta, vivo (${chefe?.estado})`);
   },
   'planta-carnivora': async () => {
     await laboratorio(['planta-carnivora'], { x: -3.6, z: 6.2, folga: true });
