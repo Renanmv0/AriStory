@@ -1488,6 +1488,19 @@ export class CharacterRig {
   }
 
   /**
+   * Pose de provador: os braços abertos para o lado, depois do `update`.
+   *
+   * Parado, o braço cai 0.08 rad para DENTRO (em pé no mundo fica natural),
+   * e no boneco do painel a mão sumia atrás do quadril — luva e pulseira não
+   * apareciam. Aqui abre para FORA: o esquerdo nasce em -X, então o sinal dele
+   * é negativo (a pegadinha do CLAUDE.md).
+   */
+  abrirBracos(angulo: number): void {
+    this.armL.rotation.z = -angulo;
+    this.armR.rotation.z = angulo;
+  }
+
+  /**
    * @param dt delta em segundos
    * @param speed velocidade horizontal atual em unidades/s (0 = parado)
    */

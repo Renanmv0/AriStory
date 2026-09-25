@@ -101,6 +101,9 @@ export class Previa {
     // o rig anima parado: respira e balanca de leve, que e o que faz o boneco
     // parecer vivo em vez de manequim
     this.rig.update(dt, 0);
+    // pose de provador (pedido do Renan): braço um pouco para fora, para a
+    // mão sair de trás do corpo e dar para ver luva, pulseira e manga
+    this.rig.abrirBracos(0.36);
   }
 
   /** Desenha o boneco, acompanhando o tamanho que o CSS deu ao canvas. */
