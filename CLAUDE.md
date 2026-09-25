@@ -89,6 +89,7 @@ node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para o
 node scripts/celular.mjs /tmp/cel   # tela de celular: nenhum botao pode tapar texto
 node scripts/parque.mjs  /tmp/pq    # praca da roda, cupula e margem do lago
 node scripts/pingpong.mjs /tmp/pp   # a partida de ping pong ate o quinto ponto
+node scripts/chapeu.mjs  /tmp/chp   # ganhar de gorro: o chapeu de campeao vai pro guarda-roupa, e volta sempre que descartado
 node scripts/arena.mjs   /tmp/ar    # a arena do ping pong: tablado, clareira sem arvore e as pecas em volta
 node scripts/jeanluc.mjs /tmp/jl    # o pato frances: submerso ate as 5 vitorias, emerge, atravessa e fica de vez
 node scripts/duelo.mjs   /tmp/dl    # a partida contra o Jean-Luc: o caixote, a raquete dele, e o premio

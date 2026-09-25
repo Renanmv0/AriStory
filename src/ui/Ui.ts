@@ -581,8 +581,8 @@ export class Ui {
       if (e.target === this.memorias) this.fecharMemorias();
     });
     this.ligarGiroDoBoneco();
-    // Descartar pede dois toques. Perder o chapéu de campeão num toque sem
-    // querer seria irreversível — o item não volta de lugar nenhum.
+    // Descartar pede dois toques. Prêmio e compra voltam no guarda-roupa, mas
+    // um sorvete ou um suco descartado num toque sem querer não volta.
     ui.querySelector('.mochila .descartar')!.addEventListener('click', () => {
       this.som?.('escolha');
       this.descarte.classList.add('confirmando');

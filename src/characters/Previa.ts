@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CharacterRig } from './CharacterRig';
 import type { CharacterSpec } from './spec';
 import type { Loadout } from '../core/types';
+import { ITENS } from '../world/itens';
 
 /**
  * O boneco do painel do guarda-roupa.
@@ -94,6 +95,9 @@ export class Previa {
 
   vestir(loadout: Loadout): void {
     this.rig?.vestirRoupa(loadout);
+    // o chapeu de campeao nao e roupa, e peca do RIG (`setCampeao`): sem isto
+    // o boneco vestia o chapeu na vaga e aparecia de cabeca vazia
+    this.rig?.setCampeao(loadout.cabeca === ITENS.chapeuPingPong.id);
   }
 
   /** Troca o traje do boneco (ver `traje`); vale tambem para o proximo corpo. */

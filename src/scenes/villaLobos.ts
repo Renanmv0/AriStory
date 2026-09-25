@@ -4115,10 +4115,17 @@ export const villaLobos: SceneDef = {
         if (ganhei) {
           g.som('memoria');
           g.toast('Campeão de ping pong!', '🏆');
-          // o chapéu é do personagem que estava jogando, não do "slot"
-          // o chapéu é um ITEM: entra na primeira vaga de acessório livre de
-          // quem ganhou, e some da cabeça se for arrastado para fora dela
-          g.equipWearable(ITENS.chapeuPingPong);
+          // o chapéu é do personagem que estava jogando, não do "slot". A
+          // flag é o DIREITO a ele: o motor repõe o chapéu no guarda-roupa de
+          // quem tem a flag, então descartar nunca perde o prêmio
+          g.setFlag(`chapeu-ping-pong:${g.playerId()}`);
+          // cabeça livre, ele já sai vestido; cabeça ocupada (um gorro, uma
+          // coroa), ele vai para o guarda-roupa em vez de sumir — antes ele
+          // simplesmente não era entregue
+          if (!g.equipWearable(ITENS.chapeuPingPong)
+            && g.storeItem(ITENS.chapeuPingPong) === 'guardado') {
+            g.toast('O chapéu foi pro guarda-roupa', '👑');
+          }
           await conversa([
             [A, 'Cinco a ' + partida.dele + '.'],
             [R, 'Você ganhou o chapéu. Vai ter que usar.'],

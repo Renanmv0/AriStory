@@ -296,7 +296,7 @@ export class Game implements GameAPI {
     this.oclusao.esquecer();
     // a barra do modo de decorar é da cena que saiu
     this.ui.mostrarPosicionador(null, null);
-    this.migrarPremios();
+    this.reporChapeuDeCampeao();
     this.aplicarPremios();
     this.save.scene = id;
   }
@@ -311,18 +311,23 @@ export class Game implements GameAPI {
   }
 
   /**
-   * Migracao de quem ja tinha o chapeu antes de ele virar item.
+   * O CHAPEU DE CAMPEAO E DE QUEM GANHOU, PARA SEMPRE.
    *
-   * A flag `chapeu-ping-pong:<id>` era o jeito antigo. Ela nao manda mais em
-   * nada; roda uma vez para o chapeu ganho ontem virar item hoje, e depois
-   * disso o inventario e a unica verdade.
+   * A flag `chapeu-ping-pong:<id>` e o direito ao chapeu — a cena grava na
+   * vitoria contra o parceiro. Quem tem a flag e nao tem o chapeu em lugar
+   * nenhum (descartou, ou ganhou com a cabeca ocupada por outra peca) recebe
+   * ele de volta no GUARDA-ROUPA, e nao na cabeca: e o mesmo padrao das
+   * compras e dos premios do quadro, e arrancar o gorro de alguem para por o
+   * chapeu no lugar seria o jogo vestindo a pessoa sozinho.
+   *
+   * E so dele, nao dos dois (diferente dos premios do quadro): quem ganhou
+   * foi o personagem que estava jogando.
    */
-  private migrarPremios(): void {
+  private reporChapeuDeCampeao(): void {
     for (const rig of [this.player.rig, this.parceiro.rig]) {
       const quem = rig.spec.id;
       if (!this.save.flag(`chapeu-ping-pong:${quem}`)) continue;
-      if (this.save.achouItem(quem, ITENS.chapeuPingPong.id)) continue;
-      this.save.vestir(quem, ITENS.chapeuPingPong);
+      this.save.guardar(quem, ITENS.chapeuPingPong);
     }
   }
 
@@ -1005,6 +1010,7 @@ export class Game implements GameAPI {
     this.herdarModaPraia();
     this.reporCompras();
     this.reporPremios();
+    this.reporChapeuDeCampeao();
     // o de casa é sempre o guarda-roupa, com o boneco de roupa de rua
     this.abaDoArmario = 'vestir';
     this.trajeDoBoneco = 'normal';
@@ -1114,6 +1120,7 @@ export class Game implements GameAPI {
     this.herdarModaPraia();
     this.reporCompras();
     this.reporPremios();
+    this.reporChapeuDeCampeao();
     this.trajeDoBoneco = 'banho';
     this.provandoNaPiscina = null;
     // quem ainda não tem NADA de piscina chega direto na vitrine: é o que
