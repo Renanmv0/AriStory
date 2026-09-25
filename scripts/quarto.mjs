@@ -364,8 +364,8 @@ const ok =
   // nada de chão ilhado: quase todo espaço livre alcançável a pé do spawn
   chao.alcancavel > chao.livre * 0.9 &&
   /armário/i.test(promptArmario ?? '') &&
-  // o painel, com o boneco e as 4 partes do corpo
-  painel === 1 && partes === 4 &&
+  // o painel, com o boneco e as 6 partes do corpo
+  painel === 1 && partes === 6 &&
   boneco !== null && boneco.w > 80 && boneco.h > 150 && boneco.buffer > 0 &&
   // As peças entram no GUARDA-ROUPA, e nenhuma encosta nas vagas de mão: era
   // exatamente isso que entupia o inventário de vestido. O armário ENTREGA em
