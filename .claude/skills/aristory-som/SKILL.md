@@ -45,6 +45,15 @@ pulo: ({ ctx, destino, t }) => {
   a textura (pano, água, papel) e o tom que dá o humor.
 - **Variação**: a receita recebe `n`, um contador. Use `n % 2` para alternar
   timbres — repetir idêntico vira metrônomo (é o que o `passo` faz).
+- **Som que se repete rápido e tem que soar contínuo** (a mangueira atira três
+  vezes por segundo): `chiado({ …, sustenta: 0.6 })` segura o volume por 60% do
+  `dur` antes de cair, e com `dur` maior que o intervalo um sopro emenda no
+  outro — um jorro, e não uma fila de "fsh". Sem isso o som pulsa.
+- **Cada ferramenta do jardim tem o seu jato**: o som é escolhido em
+  `disparar()` (`minigames/jardim/jato.ts`) pela forma do jato — `tiro` toca
+  `tiroPistola`, a linha da mangueira (`jato.daMangueira`) toca `mangueira`, a
+  `nevoa` do borrifador toca `borrifada`, o cone do regador toca `jato`.
+  Ferramenta nova = uma receita e uma linha ali.
 
 ## Música
 
@@ -59,6 +68,20 @@ Cada cenário tem um clima em `CLIMAS`, escolhido pelo **id da cena**:
 
 Cena nova sem clima cai no `padrao`. Para dar um clima próprio, acrescente uma
 entrada com o `id` da cena.
+
+**Clima que não é de cena** — um minigame pode trocar a música enquanto dura,
+com `g.trocarMusica('id')`, e devolver a da cena com `g.trocarMusica(null)`. É
+o que a defesa da estufa faz (`'rodada-do-jardim'`, ligada e desligada pela
+`RodadaDoJardim`).
+
+**Tensão sem perder o fofo** (o pedido do Renan para a defesa da estufa): a
+marimba e os acordes com sétima continuam, e entram chaves opcionais no
+`Clima` — `reto` (sem suingue), `ostinato` (pizzicato em colcheias), `bumbo`
+(macio, no 1 e no 3) e `tique` (bloco de madeira, relógio de cozinha). O resto
+da tensão é harmonia: tom menor, e um dominante no fim do giro que pede
+resolução. Nada de metal, nada de percussão pesada. Cuidado com o pico: o
+bumbo cai junto com o baixo no primeiro tempo, e os dois somados estouravam o
+nível dos outros climas.
 
 Coisas que já custaram foto (ou melhor: ouvido):
 
@@ -76,6 +99,14 @@ Coisas que já custaram foto (ou melhor: ouvido):
   O `Som` só monta o `AudioContext` no primeiro clique/tecla; até lá `play()` é
   um no-op. Nunca assuma que há áudio no primeiro quadro.
 - **Mudo** mora em `localStorage` (`aristory.som`) e tem botão no menu.
+- **O ganho nasce em quase zero.** O padrão do `GainNode` é 1, e o envelope
+  só vale a partir de `quando`. Quando `quando` cai um fio acima de uma
+  amostra inteira (o `currentTime` do jogo mais 10 ou 20 ms faz isso), o
+  Chromium liga a fonte uma amostra antes do envelope: uma amostra de ruído
+  passava com volume cheio, um estalo de até 0,9 nos chiados passa-alta (o
+  jato do regador estalava em ~1 de cada 8 jatos). `tom()` e `chiado()` já
+  fazem `ganho.gain.value = 0.0001`; nó novo montado à mão faz igual. O
+  `scripts/musica.mjs` toca cada efeito nesses instantes e reprova o estalo.
 - `Som.contagem` conta quantas vezes cada efeito tocou — é como os testes
   verificam som sem ouvir.
 

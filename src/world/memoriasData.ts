@@ -34,6 +34,12 @@ export interface MemoriaPintada {
   readonly legenda: string;
   /** largura / altura do quadro; a tela reserva o espaco por esta conta */
   readonly proporcao: number;
+  /**
+   * A FLAG que destrava esta memória. Sem ela, a memória já está no quadro
+   * desde o começo (as que vêm de foto). Com ela, só aparece depois de ganha
+   * jogando — a das trinta ondas da estufa é a primeira.
+   */
+  readonly trava?: string;
   /** @param t segundos desde que o painel abriu — so o que pisca usa */
   pintar(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void;
 }
@@ -991,6 +997,258 @@ function arraiaDaHelloKitty(
   ctx.fillRect(0, 0, w, h);
 }
 
+/** a estufa da Josefina no fim da tarde — a memória das trinta ondas */
+const ESTUFA = {
+  vidroTopo: '#cfe6d2',
+  vidroFundo: '#fff1c9',
+  brilhoFundo: 'rgba(255, 226, 150, 0.55)',
+  arco: '#eef3e6',
+  arcoSombra: '#b9c7b1',
+  chaoPerto: '#c7a57a',
+  chaoLonge: '#e2c99c',
+  terra: '#7a4f2e',
+  borda: '#e6d2a8',
+  folha: '#4f8f4a',
+  folhaClara: '#79b35f',
+  flor: '#b98ad6',
+  ouro: '#f0c248',
+  ouroEscuro: '#b98a1f',
+  brilho: '#fff6cf',
+  casco: '#8a7d3c',
+  cascoPlaca: '#5f5424',
+  contorno: '#3d3518',
+  peleTartaruga: '#a8bd6a',
+  gota: '#7fc8f0',
+};
+
+/**
+ * AS TRINTA LEVAS — ganha jogando, e não de foto: a primeira vez que a dupla
+ * vence as trinta ondas da estufa (`minigames/jardim/premios.ts`).
+ *
+ * Estrutura A (profundidade): os ARCOS da estufa fugindo para o fundo pelo
+ * mesmo ponto de fuga do corredor de luzes, os canteiros dos dois lados, e
+ * os dois de costas no corredor do meio erguendo o regador de ouro. A
+ * Josefina assiste do lado. O que vive: o brilho do regador e as gotinhas
+ * subindo.
+ */
+function trintaLevas(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
+  const fundo = FUGA.y * h;
+
+  // 1. o vidro do fundo e a luz da tarde entrando -------------------------
+  const vidro = ctx.createLinearGradient(0, 0, 0, fundo + h * 0.1);
+  vidro.addColorStop(0, ESTUFA.vidroTopo);
+  vidro.addColorStop(1, ESTUFA.vidroFundo);
+  ctx.fillStyle = vidro;
+  ctx.fillRect(0, 0, w, h);
+  const luz = ctx.createRadialGradient(FUGA.x * w, fundo, 0, FUGA.x * w, fundo, w * 0.28);
+  luz.addColorStop(0, ESTUFA.brilhoFundo);
+  luz.addColorStop(1, 'rgba(255, 226, 150, 0)');
+  ctx.fillStyle = luz;
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. o chão de saibro, do fundo para a frente ---------------------------
+  const esq = projetar(-LADO, CHAO, 0, w, h);
+  const dir = projetar(LADO, CHAO, 0, w, h);
+  const chao = ctx.createLinearGradient(0, fundo, 0, h);
+  chao.addColorStop(0, ESTUFA.chaoLonge);
+  chao.addColorStop(1, ESTUFA.chaoPerto);
+  ctx.fillStyle = chao;
+  ctx.beginPath();
+  ctx.moveTo(FUGA.x * w, fundo);
+  ctx.lineTo(dir.x + w, h);
+  ctx.lineTo(esq.x - w, h);
+  ctx.closePath();
+  ctx.fill();
+
+  // 3. os canteiros dos dois lados, de trás para a frente -----------------
+  for (let i = 9; i >= 0; i--) {
+    const d0 = i * 0.075;
+    const d1 = d0 + 0.055;
+    for (const lado of [-1, 1]) {
+      const perto = (x: number, y: number) => projetar(lado * x, y, d0, w, h);
+      const longe = (x: number, y: number) => projetar(lado * x, y, d1, w, h);
+      const ALTURA = 0.035;
+      // a borda de madeira, depois a terra por cima
+      ctx.fillStyle = ESTUFA.borda;
+      ctx.beginPath();
+      for (const p of [perto(0.2, CHAO), perto(0.55, CHAO), longe(0.55, CHAO), longe(0.2, CHAO)]) ctx.lineTo(p.x, p.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = ESTUFA.terra;
+      ctx.beginPath();
+      for (const p of [perto(0.22, CHAO - ALTURA), perto(0.53, CHAO - ALTURA), longe(0.53, CHAO - ALTURA), longe(0.22, CHAO - ALTURA)]) ctx.lineTo(p.x, p.y);
+      ctx.closePath();
+      ctx.fill();
+      // as mudas: três tufos por canteiro, e uma flor de vez em quando
+      for (let k = 0; k < 3; k++) {
+        const q = projetar(lado * (0.28 + k * 0.1), CHAO - ALTURA, d0 + 0.028, w, h);
+        const r = 0.05 * encolhe(d0) * w;
+        ctx.fillStyle = (i + k) % 2 ? ESTUFA.folha : ESTUFA.folhaClara;
+        ctx.beginPath();
+        ctx.arc(q.x, q.y - r * 0.6, r, 0, Math.PI * 2);
+        ctx.fill();
+        if ((i * 3 + k) % 4 === 0) {
+          ctx.fillStyle = ESTUFA.flor;
+          ctx.beginPath();
+          ctx.arc(q.x + r * 0.3, q.y - r * 1.3, r * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  }
+
+  // 4. os ARCOS da estufa, do fundo para a frente -------------------------
+  for (let i = 12; i >= 0; i--) {
+    const d = i * 0.07;
+    const f = encolhe(d);
+    const pe = projetar(-LADO * 1.05, CHAO, d, w, h);
+    const pe2 = projetar(LADO * 1.05, CHAO, d, w, h);
+    const ombro = projetar(-LADO * 1.05, TOPO_PILAR, d, w, h);
+    const raioX = (pe2.x - pe.x) / 2;
+    const raioY = (TOPO_PILAR - TETO) * f * h * 1.05;
+    ctx.lineCap = 'round';
+    for (const [cor, larg] of [[ESTUFA.arcoSombra, 0.024], [ESTUFA.arco, 0.016]] as const) {
+      ctx.strokeStyle = cor;
+      ctx.lineWidth = Math.max(1.2, larg * f * w);
+      ctx.beginPath();
+      ctx.moveTo(pe.x, pe.y);
+      ctx.lineTo(ombro.x, ombro.y);
+      ctx.ellipse(ombro.x + raioX, ombro.y, raioX, raioY, 0, Math.PI, Math.PI * 2);
+      ctx.lineTo(pe2.x, pe2.y);
+      ctx.stroke();
+    }
+  }
+
+  // 6. os dois, de costas, erguendo o regador de ouro ---------------------
+  const alt = 0.3 * h;
+  const base = 0.97 * h;
+  const ax = 0.43 * w;
+  const rx = 0.57 * w;
+  // os braços de dentro sobem até o regador (antes do tronco, como na silhueta)
+  const regY = base - alt * 1.3;
+  ctx.strokeStyle = CORES_DUPLA.ariPele;
+  ctx.lineWidth = alt * 0.055;
+  ctx.lineCap = 'round';
+  // o braço sai do ombro de DENTRO e passa por fora da cabeça (o raio dela é
+  // 0,11·alt): reto do meio do ombro, ele atravessava a cabeça e sumia
+  ctx.beginPath();
+  ctx.moveTo(ax + alt * 0.1, base - alt * 0.74);
+  ctx.quadraticCurveTo(ax + alt * 0.17, base - alt * 0.95, w * 0.5 - 0.085 * w * 0.45, regY + 0.085 * w * 0.45);
+  ctx.stroke();
+  ctx.strokeStyle = CORES_DUPLA.renanPele;
+  ctx.beginPath();
+  ctx.moveTo(rx - alt * 0.1, base - alt * 0.74);
+  ctx.quadraticCurveTo(rx - alt * 0.17, base - alt * 0.95, w * 0.5 + 0.085 * w * 0.45, regY + 0.085 * w * 0.45);
+  ctx.stroke();
+  silhueta(ctx, ax, base, alt, CORES_DUPLA.ariRoupa, CORES_DUPLA.ariCabelo, 0.3, CORES_DUPLA.ariPele);
+  silhueta(ctx, rx, base, alt, CORES_DUPLA.renanRoupa, CORES_DUPLA.renanCabelo, -0.3, CORES_DUPLA.renanPele);
+
+  // o regador de ouro, lá em cima
+  const cx = 0.5 * w;
+  const cy = regY;
+  const s = 0.085 * w;
+  ctx.fillStyle = ESTUFA.ouroEscuro;
+  ctx.beginPath();
+  ctx.moveTo(cx + s * 0.5, cy - s * 0.2);
+  ctx.lineTo(cx + s * 1.35, cy - s * 0.95);
+  ctx.lineTo(cx + s * 1.5, cy - s * 0.8);
+  ctx.lineTo(cx + s * 0.6, cy + s * 0.1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = ESTUFA.ouro;
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.62, cy + s * 0.5);
+  ctx.lineTo(cx - s * 0.5, cy - s * 0.5);
+  ctx.lineTo(cx + s * 0.5, cy - s * 0.5);
+  ctx.lineTo(cx + s * 0.62, cy + s * 0.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = ESTUFA.ouroEscuro;
+  ctx.lineWidth = s * 0.14;
+  ctx.beginPath();
+  ctx.arc(cx - s * 0.1, cy - s * 0.5, s * 0.42, Math.PI, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = ESTUFA.ouro;
+  ctx.beginPath();
+  ctx.ellipse(cx + s * 1.45, cy - s * 0.9, s * 0.18, s * 0.1, -0.7, 0, Math.PI * 2);
+  ctx.fill();
+  // o brilho que pisca na lata
+  const pisca = 0.5 + 0.5 * Math.sin(t * 2.6);
+  ctx.globalAlpha = 0.35 + 0.55 * pisca;
+  ctx.fillStyle = ESTUFA.brilho;
+  const bx = cx - s * 0.25;
+  const by = cy - s * 0.1;
+  const br = s * (0.28 + 0.12 * pisca);
+  ctx.beginPath();
+  ctx.moveTo(bx, by - br);
+  ctx.lineTo(bx + br * 0.22, by);
+  ctx.lineTo(bx, by + br);
+  ctx.lineTo(bx - br * 0.22, by);
+  ctx.closePath();
+  ctx.moveTo(bx - br, by);
+  ctx.lineTo(bx, by + br * 0.22);
+  ctx.lineTo(bx + br, by);
+  ctx.lineTo(bx, by - br * 0.22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // 7. as gotinhas subindo do regador, devagar ----------------------------
+  ctx.fillStyle = ESTUFA.gota;
+  for (let i = 0; i < 9; i++) {
+    const fase = (t * 0.18 + i * 0.137) % 1;
+    const gx = cx + Math.sin(i * 2.4 + t * 0.7) * s * (1.2 + i * 0.18);
+    const gy = cy - s * 0.8 - fase * h * 0.3;
+    const gr = s * 0.14 * (1 - fase * 0.4);
+    ctx.globalAlpha = 0.85 * (1 - fase);
+    ctx.beginPath();
+    ctx.arc(gx, gy, gr, 0, Math.PI * 2);
+    ctx.moveTo(gx - gr, gy);
+    ctx.lineTo(gx, gy - gr * 2.1);
+    ctx.lineTo(gx + gr, gy);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // 7b. a Josefina, no corredor à direita, na frente de tudo: mais escura que
+  //     as mudas e com contorno — verde no meio de canteiro some ----------
+  const jx = 0.73 * w;
+  const jy = 0.95 * h;
+  const jr = 0.085 * w;
+  ctx.fillStyle = ESTUFA.peleTartaruga;
+  ctx.beginPath();
+  ctx.ellipse(jx - jr * 1.05, jy - jr * 0.55, jr * 0.32, jr * 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+  for (const px of [-0.6, 0.6]) {
+    ctx.beginPath();
+    ctx.ellipse(jx + px * jr, jy - jr * 0.05, jr * 0.2, jr * 0.14, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = ESTUFA.casco;
+  ctx.strokeStyle = ESTUFA.contorno;
+  ctx.lineWidth = jr * 0.08;
+  ctx.beginPath();
+  ctx.ellipse(jx, jy - jr * 0.35, jr, jr * 0.62, 0, Math.PI, Math.PI * 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = ESTUFA.cascoPlaca;
+  for (const [ox, oy] of [[-0.45, -0.55], [0, -0.75], [0.45, -0.55]] as const) {
+    ctx.beginPath();
+    ctx.ellipse(jx + ox * jr, jy + oy * jr, jr * 0.22, jr * 0.16, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 8. o banho de fim de tarde, e a vinheta -------------------------------
+  ctx.fillStyle = 'rgba(255, 196, 110, 0.08)';
+  ctx.fillRect(0, 0, w, h);
+  const vinheta = ctx.createRadialGradient(w / 2, h * 0.5, w * 0.3, w / 2, h * 0.5, w * 0.85);
+  vinheta.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  vinheta.addColorStop(1, 'rgba(40, 50, 30, 0.3)');
+  ctx.fillStyle = vinheta;
+  ctx.fillRect(0, 0, w, h);
+}
+
 /**
  * O acervo do quadro.
  *
@@ -1013,5 +1271,15 @@ export const MEMORIAS: readonly MemoriaPintada[] = [
     legenda: 'Um campo inteiro de brinquedo inflável, e a gente parado olhando com cara de criança.',
     proporcao: 3 / 4,
     pintar: arraiaDaHelloKitty,
+  },
+  {
+    id: 'trinta-levas',
+    titulo: 'As trinta levas',
+    lugar: 'Estufa da Josefina',
+    legenda: 'Trinta levas de bicho e a estufa de pé. Até a mãe deles desistiu da gente.',
+    proporcao: 3 / 4,
+    // ganha jogando: só entra no quadro depois de resgatar o marco das trinta ondas
+    trava: 'jardim.resgate-30',
+    pintar: trintaLevas,
   },
 ];

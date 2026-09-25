@@ -108,6 +108,33 @@ o mesmo empurrão em todos os triângulos que o usam. É o que `rock()` faz.
 Devolva uma classe com `group` e `update(dt)`, como a `FerrisWheel`. A cena
 chama `w.onUpdate((dt) => peca.update(dt))`.
 
+## Peça que MUDA com o jogo: receita, e não peça
+
+Quando a mesma coisa precisa existir em várias versões que o jogador destranca
+jogando, ela sai de `props.ts` e ganha **arquivo próprio**, com uma função que
+recebe um `estilo` e devolve aquela versão. Hoje é o caso de um só, e ele é o
+modelo a copiar: `src/world/regador.ts`.
+
+O regador é a arma do minigame do jardim, e cada carta que melhora ele **mexe
+na peça da mão** — o bico estica de verdade, o crivo alarga, o corpo engorda,
+a mangueira aparece enrolada. Nada de ícone de buff no canto da tela: neste
+projeto todo modelo é geometria procedural, então o upgrade aparece no objeto.
+
+As regras que valeram ali, e que valem para a próxima:
+
+- **Números contínuos para o que repete, booleano para o que é único.** Cartas
+  comuns repetem (pegar "Bico mais longo" três vezes tem que esticar três
+  vezes), então elas são `0 a 1`; carta única é `true/false`.
+- **Estágios visíveis**, e a cor é o que os separa de longe. Mude a FERRAGEM
+  antes do corpo: trocar só o corpo faz os estágios parecerem objetos
+  diferentes, e trocar só a ferragem não dá salto no último.
+- **`props.ts` continua exportando o atalho** (`regador()` devolve o de
+  fábrica), para quem só quer a peça largada num canto não precisar saber que
+  existe uma receita.
+- **O teste monta as versões lado a lado e mede**, porque é fácil escrever uma
+  carta que não muda nada e impossível notar isso olhando uma foto só. Ver
+  `scripts/regador.mjs`.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

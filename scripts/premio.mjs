@@ -132,6 +132,10 @@ const forcou = await page.evaluate(() => {
   t.tempo = 0;
   return true;
 });
+// o turno fecha no quadro SEGUINTE (o salão vazio e o relógio a zero são
+// lidos no `update`), e a conversa do dia vem depois: sem esperar ela
+// aparecer, o laço de falas via a tela vazia e desistia na primeira volta
+await page.waitForSelector('.dialogue.show', { timeout: 15000 }).catch(() => {});
 const falasDoPremio = await venceAFala(70);
 await page.waitForTimeout(1200);
 

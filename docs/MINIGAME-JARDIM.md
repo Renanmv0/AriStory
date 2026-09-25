@@ -1,0 +1,1812 @@
+# A Estufa da Josefina — plano do minigame do jardim
+
+## ⭐ COMECE AQUI — o estado em uma página
+
+> Sessão nova: **leia só esta seção** para se situar. O resto do arquivo é o
+> detalhe de cada parte (os § citados), para quando for mexer nela. O `git
+> log` é a fonte da verdade do que mudou por último.
+
+**O que é.** Um roguelite-survivor na estufa da Josefina, dentro do clube: o
+regador atira SOZINHO no bicho mais perto; o jogador só anda (regar, fugir,
+buscar água no tonel, pisar nas gotas). Gotas sobem o nível; cada nível abre
+três cartas e a escolhida vale até o fim da rodada. Bicho não morre: é
+*espantado* e vai embora (§3). **Nada de rato nem golfinho, nunca.**
+
+**Estado: jogável de ponta a ponta.** Quest do adubo → convite → a Josefina
+entra junto, põe o parceiro no posto de trás → rodada de **30 ondas** (vencer
+a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala.
+
+**Onde está no código:**
+
+| arquivo | o que mora lá |
+|---|---|
+| `src/minigames/jardim/rodada.ts` | a rodada inteira (`RodadaDoJardim`): ondas, bichos, regador, o jato de cada carta (`umJato`), as cartas de jardineiro/jardim/clube, os chamados agindo, a ajuda do par, o prêmio da onda e o de 5 em 5 níveis, e os ganchos de teste no fim da classe |
+| `src/minigames/jardim/cartas.ts` | o catálogo das **147 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
+| `src/minigames/jardim/armas.ts` | as **quatro armas** (regador, mangueira, pistola d'água, borrifador): a fila de destrancar e os números de partida de cada uma (`base`) |
+| `src/minigames/jardim/mangueira.ts` | a mangueira esticada do tonel até a mão (o tubo, e o trecho no chão que o Chicote e o Vazamento leem) |
+| `src/minigames/jardim/baralho.ts` | a mão (carta não repete), o sorteio de três, a Sorte de principiante |
+| `src/minigames/jardim/progressao.ts` | a curva de nível, as gotas por praga, as **30 ondas** (`ONDAS`, `TOTAL_DE_ONDAS`) |
+| `src/minigames/jardim/jato.ts` | o DESENHO da água e de todo efeito das cartas (partículas, poças, anéis, nuvem) |
+| `src/minigames/jardim/tela.ts` | os tipos que a UI recebe (carta, painel, fim) |
+| `src/scenes/estufa.ts` | a cena: a planta que a rodada recebe (`PlantaDoJardim`), o `ElencoDaEstufa` (Josefina, Capy, Gina, Walter, Noel, Jean-Luc), as cutscenes dos chamados, o livro na bancada, as falas do fim |
+| `src/ui/telaDeCartas.ts`, `src/ui/livroDeCartas.ts`, `src/ui/arsenal.ts` | a tela das três cartas; o livro da estufa (abas Cartas, Pragas, Recompensas) e a tela do fim; o painel das armas (uma aba por arma) |
+| `src/world/bichosDoJardim.ts` | a geometria das **treze** pragas (`PRAGAS`): as seis da primeira leva e as sete da segunda (da 15ª onda em diante) |
+| `src/core/Oclusao.ts` | parede/árvore que tapa bicho ou gota fica translúcida (a rodada liga) |
+| `src/world/decoracoes.ts`, `src/world/decorador.ts`, `src/ui/lojaDaJosefina.ts` | os enfeites da estufa (ficha + geometria), o modo de colocar, e o painel da lojinha |
+| `src/audio/musica.ts` (`'rodada-do-jardim'`) | a música da defesa |
+
+**Balanço das cartas somadas** (o Renan venceu as 30 ondas): os multiplicadores
+que viram o jogo quando se somam moram juntos no topo de `rodada.ts` —
+`SEGUNDO_BICO = 0,6`, `PARCEIRO = 0,6`, `COMPOSTO_POR_ONDA = 0,2` — e mais o
+peso do tranco por tamanho e o respiro de 0,4 s em `molhar`, e o Gêiser que só
+tira um terço da chefe. A Cerca viva tem vida própria (não é mais imortal).
+Ainda não mexido: a vida dos bichos **não cresce** com as ondas.
+
+**Os números que mais se ajustam** (todos no topo de `rodada.ts`, salvo aviso):
+canteiro aguenta `VIDA_DO_CANTEIRO = 34`; regador começa com alcance 3,0
+(`fichaInicial`, em `cartas.ts`); respiro entre ondas `INTERVALO = 6` s; ajuda
+do par dura `AJUDA_DURA = 10` s e custa 30 gotas, +15 a cada uso; prêmio da
+onda = metade do que falta para o próximo nível; de 5 em 5 níveis, 1 ou 2
+cartas a mais (`cartasDePremio`); o ritmo de cada onda em `progressao.ts`;
+velocidade/mordida de cada praga em `JEITO` (`rodada.ts`); e a **vida que
+cresce com a onda** (`vidaDaOnda`, em `progressao.ts` — pedido do Renan, porque
+com a mão cheia a rodada ficava fácil): o encharque da ficha vezes 1,00 na
+onda 1, 1,19 na 10ª, 1,74 na 20ª e 2,79 na 30ª, devagar até a 8ª e mais
+depressa depois. Vale para todo bicho, chefe inclusive.
+
+**Decisões do Renan que valem como regra** (não reabrir):
+- carta **não se repete** (a comum que empilhava virou série I–II–III);
+- **as cartas se SOMAM**: tudo da mão vale junto, e carta nova não pode apagar
+  outra (§6, "As cartas se somam");
+- **carta que mexe no jato muda o jato na tela**, e toda carta se vê agindo;
+- quem não é controlado fica **atrás, com a Josefina**; o `T` só troca com a
+  carta Troca de turno;
+- os **chamados** entram numa cutscene pela porta e **agem sozinhos**, cada um
+  numa função (Capy ataca, Gina barra portão, Walter protege canteiro, Noel
+  cata gota);
+- a **ajuda do par** carrega com gotas (a escolha foi minha, ele deixou);
+- limite de **30 ondas** (eram 20; o Renan subiu); a tela do fim conta os bichos e mostra
+  as cartas; o **livro das cartas** (na bancada) guarda para sempre toda carta
+  já escolhida, em ordem de raridade.
+
+**Os prêmios** (`minigames/jardim/premios.ts`, pedido do Renan): toda rodada
+jogada até o fim paga **pelos bichos espantados**, em duas moedas — **R$ 1 a
+cada 8** na carteira do casal, e **🌻 1 girassol a cada 15** (contador
+`jardim.girassois`). Girassol rende menos, mas é a moeda da estufa: **só ele
+compra enfeite** na lojinha (e enfeite custa 4 a 18 🌻), então o dinheiro do
+turno do Walter não enfeita nada. Medido com `planoDaOnda`: perder na 6ª
+(~180 bichos) paga R$ 120 e 12 🌻; as trinta (~2.300) pagam ~R$ 1.530 e ~150 🌻
+(R$ 2 a cada 3 bichos — já foi R$ 1 a cada 8, depois a cada 3; o Renan pediu
+que as trinta chegassem perto de R$ 1.500).
+E o **recorde** (`jardim.recorde`, a maior onda vencida) **destranca a lojinha
+aos poucos**: cada enfeite tem a `onda` na ficha (`world/decoracoes.ts`: 4 à
+venda de começo, o resto chegando nas ondas 2, 4, 6, 8, 10, 13, 16, 20 e 25) e
+cada roupa em `LOJA_ABRE` (`premios.ts`: de 0 a 24). O que ainda não chegou
+aparece com cadeado e a onda que falta; o que já foi comprado nunca tranca.
+E cada marco dá um **prêmio único** na primeira vez
+(`jardim.marco-N` = alcançado): a **plaquinha** "Jardineiros da Josefina" na
+parede da bancada (5), o **chapéu de jardineira** (10) e o **avental da
+Josefina** (20) no guarda-roupa dos dois (`g.ganharPeca`), e o **regador de
+ouro** na bancada com a memória **"As trinta levas"** no quadro do quarto
+(30). O prêmio NÃO chega sozinho (decisão do Renan): a tela do fim e a
+Josefina avisam, e a dupla clica em **Resgatar** na aba de recompensas do
+livro (`jardim.resgate-N`); aí a Josefina entrega (`entregarMarco`, em
+`scenes/estufa.ts` — as falas são minhas, o Renan não passou texto: se ele
+mandar, troca ali, literal). Teste: `scripts/marcos.mjs`.
+
+**A LOJINHA DA JOSEFINA** (pedido do Renan; encostada na parede direita, no
+lugar da segunda bancada, com o BALCÃO VIRADO PARA O MEIO da estufa — a câmera
+padrão a vê por trás, por isso a estante é vazada e a lousa com o nome olha
+para a porta; os canteiros Alface e Tomate da direita recuaram 0,6 m): uma banca que vende **roupa de jardim** (`ROUPAS_DA_JOSEFINA`
+em `world/itens.ts`; comprar é `g.comprarPeca`, o mesmo caminho da boutique, e
+"provar no boneco" abre a arara da boutique com essas peças; a primeira leva são onze: quatro
+de jardim — camiseta verde-folha, camiseta de girassol, chapéu joaninha,
+galocha — e sete
+temáticas: tiara do Walter, tiara do Pelusa, boné da Gina, mochila-casco da
+Josefina, e as camisetas salva-vidas, da roda gigante e do bar de sucos,
+estampadas por `estampaNoPeito` em `world/roupas.ts`. O chapéu joaninha
+manteve o id antigo `gorro-joaninha`, então quem comprou o gorro ficou com o
+chapéu, e a aba dele pousa na altura do cabelo de quem veste (`m.cabelo(0)`:
+no Ari fica onde estava, no Renan desce). **A segunda leva** (pedido do Renan,
+23 peças, geometria em `world/roupasDoJardim.ts`, chegando da onda 0 à 24):
+luvas de folha, de girassol, de joaninha e de gotinha; pulseira de flores e de
+pedrinhas; pins de cabelo de margarida, joaninha, abelhinha e borboleta;
+camisetas justas de florzinhas, joaninha, abelhinha e borboleta; camisetas
+LARGAS (oversize, com manga até o cotovelo) de cogumelo, sapinho e lavanda;
+vestidos floridos de margaridas, de rosinhas e do campo; e calças LARGAS de
+jardinagem: cargo com joelheira, pantalona bordada e de jardineiro com a
+pazinha no bolso. Teste: `scripts/roupasDoJardim.mjs`. A aba de roupas é
+SEPARADA POR PARTE DO CORPO, na ordem do guarda-roupa — cabeça, tronco,
+pernas, pés, mãos, acessórios —, com um botão por parte e "Tudo" mostrando
+uma embaixo da outra; o "provar no boneco" abre a arara na mesma ordem) e **enfeites para a estufa** (`world/decoracoes.ts` — ficha e geometria
+no mesmo arquivo, hoje dezenove, em ordem de preço; os de referência são a
+tartaruguinha, o Pelusa de pelúcia, o copão do Noel, a casquinha do Mano, o
+Walter de cerâmica, o elefantinho do Cookie, a capivara, a girafinha da Gina,
+o laguinho do Jean-Luc e a rodinha gigante). **Luz sem luz**: a lanterninha e o
+varal de luzinhas "acendem" com uma poça aditiva no chão (`luzNoChao`) e um
+halo em sprite (`brilhoDeLuz`), ambos em `core/materials.ts` — nenhum
+`PointLight`, que recompilaria o shader de tudo a cada enfeite posto e pesaria
+no celular. **Enfeite que mexe** declara `anima(peca, t)` na ficha (o cata-vento
+gira a hélice, a rodinha gira a roda com as cabines sempre de pé); o decorador
+chama a cada quadro, tanto para os postos quanto para o fantasma na mão.
+O enfeite comprado fica guardado; "Colocar" põe ele na frente da dupla e
+é ANDANDO que se escolhe o lugar (`world/decorador.ts`: anel verde/vermelho,
+barra com girar G / colocar E / cancelar X). **Dá para enfeitar a estufa
+inteira e o PÁTIO DE FORA** (a grama com as árvores), terreiro e caminho dos
+bichos incluídos (pedido do Renan): bicho do jardim anda em linha e nunca leu
+colisor, então atravessa o enfeite; e da hora dos postos até o fim da rodada o
+enfeite perde o colisor da dupla também (`decorador.intangivel`), para gota
+que cai em cima dele dar para pegar. Continua proibido
+(`regrasDoLugar`, em `scenes/estufa.ts`): a porta até a linha dos postos, os
+vãos dos três portões, paredes e sebe, as brechas para fora do pátio,
+canteiros, mudas, a frente da bancada e da loja, e o posto de cada ajudante das
+cartas. **As moitas de três esferas (`bush`) saíram da estufa e do pátio**
+(pedido do Renan: trancavam o caminho).
+**O "Mexer no…" só existe no MODO DE EDIÇÃO** (pedido do Renan: com muitos
+enfeites as caixinhas se amontoavam e roubavam o "Regar"). A porta é o botão
+"✏️ Arrumar os enfeites" da aba de decorações da loja: cada enfeite ganha um
+anel, os outros pontos da cena descansam, a barra de baixo diz "chegue perto e
+aperte E", e o "pronto" (X) sai. Cada enfeite posto fica no save
+(`SaveState.decoracoes`) e entra na lista do que a Josefina e os ajudantes
+desviam. A fala de apresentação da Josefina é minha. Teste:
+`scripts/decorar.mjs`. **Enfeite novo: skill `aristory-enfeite`** (uma função e
+uma ficha em `decoracoes.ts`; foto e pegada por `scripts/enfeite.mjs`).
+
+**AS ARMAS** — no jogo, **"ferramentas"** (pedido do Renan: nenhum texto na
+tela usa a palavra "armas"; no código os nomes continuam `armas`/`arsenal`).
+O painel enche o vão entre as duas treliças da parede esquerda, centralizado.
+(pedido do Renan; `minigames/jardim/armas.ts`, §4.1): regador →
+mangueira → pistola d'água → borrifador, numa fila. Cada uma **destranca
+quando a dupla JOGA 15 ondas com a anterior, somando as rodadas** (pedido do
+Renan: a onda em que a rodada acabou conta — chegar na 5 numa e na 10 noutra
+são 15; contador `jardim.ondas.<arma>`). O recorde por arma
+(`jardim.recorde.<arma>`) só aparece no painel; o `jardim.recorde` global
+continua sendo o maior de todos, e é ele que abre a lojinha. Quem já jogava
+começou com o recorde de cada arma como conta de ondas (flags
+`jardim.armas-migradas` e `jardim.ondas-migradas`). Elas ficam na
+**parede das armas**, entre o girassol e o tomate da esquerda (no lugar das duas
+folhagens que o Renan não gostava): painel furado pintado de menta, com
+bandeirinhas, plaquinha "Armas da estufa" e um carimbo pastel com o nome atrás
+de cada arma, as quatro penduradas inclinadas como ferramenta (a trancada
+desbotada, com um cadeadinho dourado), e a **bancada do arsenal** na frente —
+armário amarelo-manteiga de puxadores rosa, toalhinha xadrez, lousinha, vaso e
+luvas, e o rolo de mangueira do lado (pedido do Renan: "mais fofos… falta
+cor"; as cores de cada arma estão em `palette.ts`) —, que abre o
+painel das armas — parecido com o livro: uma aba por arma, a meta, o recorde e
+só as cartas ÚNICAS dela (pedido do Renan: `soDestaArma`, em `baralho.ts` — cada uma tem 14 só dela; o regador, a pistola e o borrifador mostram também as 12 de tanque e tonel que dividem; as genéricas ficam só no livro), descobertas ou cinzas, e "Usar esta ferramenta" (contador
+`jardim.arma`). **As quatro estão construídas** (o borrifador, o último, é o
+de ÁREA: §4.1). O **prêmio
+de destrancar** cada arma (roupinha ou item) o Renan decide depois — hoje só a
+Josefina avisa. Teste: `scripts/armas.mjs`.
+
+**O LIVRO DA ESTUFA** (a bancada) tem três abas (`ui/livroDeCartas.ts`):
+**Cartas** (cinza até escolher), **Pragas** (cinza até a praga nascer numa
+rodada — `jardim.viu-<id>`, marcado em `nascer`; retrato do próprio modelo por
+`world/retratoDePraga.ts`, descrição em `minigames/jardim/bestiario.ts`) e
+**Recompensas** (os marcos, o recorde de onda e o botão de resgatar; com
+recompensa esperando, o livro abre nela).
+
+**O que falta** (a escolha do próximo passo é do Renan):
+- o **prêmio de destrancar** cada ferramenta;
+- a **vida dos bichos crescendo com as ondas** (hoje não cresce);
+- **equilíbrio**: ninguém jogou as 30 ondas inteiras; o Renan joga e diz.
+- perguntas em aberto: §12.
+
+**Testes da rodada** (rodar UM de cada vez — dois Chromium juntos dão falha
+falsa por lentidão): `cartas.mjs` (lógica, sem navegador), `rodada.mjs`,
+`jato.mjs`, `cartasNaRodada.mjs`, `livro.mjs`, `oclusao.mjs`, `postos.mjs`,
+`chamados.mjs`, `gotas.mjs`, `jeitos.mjs`, `marcos.mjs`, `armas.mjs`, `borrifador.mjs`. O que cada um prova está no `CLAUDE.md`. Para
+olhar: `?cena=estufa&rodada=1` (rodada direto) e `?cena=estufa&jato=<ids>`
+(vitrine de um jato).
+
+---
+
+O pedido do Renan, nas palavras dele: um minigame que começa numa **quest de
+achar alguma coisa pelo mundo** — um adubo, uma substância — para as plantas da
+Josefina. Ela acha bonito da nossa parte e **convida a dupla para uma área
+nova**: a estufa dela, um jardim grande. Lá dentro o jogo vira um
+**roguelite-survivor**: a gente começa com um **regador** que espanta os
+inimigos com água, melhora o regador em si (alcance, dano, velocidade), e
+depois vai pegando **melhorias aleatórias de raridades diferentes** — a cada
+tanto de experiência, escolhe uma entre três.
+
+Duas coisas ele cortou antes de começarem a existir, e elas ficam registradas
+aqui para ninguém propor de novo:
+
+- **Nada de golfinho.** Foi ideia descartada por ficar fora do escopo.
+- **Nada de rato.** Em nenhuma forma, em nenhuma raridade, nem de piada. O Ari
+  odeia rato de verdade, e este jogo é um presente para ele.
+
+---
+
+## 1. A ideia em uma frase
+
+**Você rega, e é isso que machuca.**
+
+O regador dispara sozinho — estilo survivor: você só anda, ele mira no inimigo
+mais perto do alcance e molha. Toda a jogada está em **onde você anda**, porque
+o que você está defendendo não é você: são **os canteiros**. Bicho que chega num
+canteiro para de te perseguir e começa a comer, e canteiro comido não volta.
+
+> É o inverso do survivor comum, onde a única coisa que importa é a sua vida. Aqui
+> dá para terminar a onda com vida cheia e ter perdido: se os oito canteiros
+> foram comidos, a Josefina não tem mais horta.
+
+**Quem vai para a frente é só quem você controla.** Decisão do Renan: quem não
+está sendo controlado fica **lá atrás, com a Josefina**, na linha da porta,
+olhando para os portões. A dupla continua em cena, como o jogo exige — só que
+dividida: um defende, o outro torce.
+
+> O plano antigo punha os dois regando, e isso não sumiu: virou a carta
+> lendária **Os dois na frente** (§6). É o prêmio de uma rodada boa, e não o
+> começo de toda rodada.
+
+---
+
+## 2. A quest que destranca: o adubo
+
+**Construída.** É ela que abre a estufa, e nada mais abre.
+
+A corrente inteira, e cada elo mora num lugar diferente do mundo:
+
+```
+saco de sementes, esquecido num banco do fundo do Villa-Lobos
+  → dar ao NOEL, que é peru e come semente
+  → ele retribui com um saco de ADUBO (a borra das frutas do bar, curtida)
+  → dar o adubo à JOSEFINA, que cuida de planta
+  → ela destranca a ESTUFA
+```
+
+### As duas deduções, e por que não há seta nenhuma
+
+O pedido do Renan foi explícito: **a gente tem que deduzir**. Então nenhum
+rótulo, nenhuma nota de item e nenhum diálogo diz o nome do destinatário. O que
+o jogo faz é deixar os **dois fios** soltos, um de cada lado:
+
+| fio | onde ele aparece |
+|---|---|
+| *"quem é que come semente por aqui?"* | o Renan, ao pegar o saco no banco |
+| *"alguém aqui passa o dia de joelho num canteiro"* | o Ari, quando o Noel entrega o adubo |
+| *"sete anos plantando no mesmo lugar cansa qualquer terra"* | a Josefina, na segunda visita ao jardim |
+
+Nenhuma das três cita um nome. A ligação continua sendo do jogador — e as três
+saem **uma vez cada**, nunca sorteadas: pista que o jogo pode esconder para
+sempre não é pista, é loteria. É o mesmo desenho da dica do osso.
+
+### Onde fica o saco de sementes
+
+No banco de `(-12; 9,5)` — o banco sozinho de frente para o lago, ao lado da
+loja de patins. O Renan escolheu "o banco isolado", e este é o que de fato
+cumpre isso: fora da alameda (que corre em `x = ±4,2`) e fora da praça da roda.
+
+**O primeiro candidato não sobreviveu à foto.** Era o banco de
+`(-13,2; -22,5)`, e o problema não era estético: a roda-gigante fica em
+`(0; -26)` e **manda na câmera num raio de 28**, abrindo o enquadramento até 30
+para ela caber na tela. Aquele banco está a 13,7 dela — um saco de 30 cm
+naquele zoom tem meia dúzia de pixels, e o item da quest ficava invisível. Este
+está a 37,5, fora do raio, com a câmera no zoom normal de jogo.
+
+Deu de brinde uma quase-pista boa: o banco fica na beira do lago, **com patos
+nadando a dez metros**. Quem lê "saco de sementes" ali pensa nos patos
+primeiro. A resposta é o peru, do outro lado do mapa.
+
+O raio da interação é 1,1: prompt que acende de longe entrega o segredo antes
+de o jogador chegar nele.
+
+### A estufa antes da quest
+
+Ela **está lá, e não abre**. O prédio é visível do jardim desde a primeira
+visita; a porta responde com **"Abrir a porta da estufa"** — nunca com um
+cadeado no HUD, porque isso contaria a história antes de alguém encostar nela.
+Quem clica é que descobre: *"Trancada. Tem cadeado por dentro."*
+
+E **a Josefina não comenta nada sobre a estufa** até receber o adubo. Foi
+pedido explícito, e é a diferença entre descobrir e ser avisado: ela fala da
+terra cansada, que é assunto de jardineira, e não da porta. Depois da quest ela
+ganha um repertório novo de histórias, em que a estufa finalmente existe.
+
+### Dois detalhes de implementação que já custaram bug
+
+- **Tirar antes de pôr.** O adubo entra na mochila na vaga que as sementes
+  acabaram de deixar. Na ordem inversa, quem chegasse com as dez vagas cheias
+  perderia o saco e não ganharia nada.
+- **O `onUpdate` para de arbitrar quando a flag sobe.** Os prompts de "falar" e
+  "entregar" moram no mesmo ponto e se revezam por `enabled`, decidido a cada
+  frame — mas só enquanto a quest está aberta. Sem religar o "falar" à mão no
+  momento da entrega, o bicho fica com os dois pontos desligados e emudece até
+  a cena ser remontada.
+
+**A flag é `adubo-entregue`**, e ela é a única chave da estufa.
+
+---
+
+## 3. A rodada, do começo ao fim
+
+### Como ela começa — **construído**
+
+**Não há botão de "jogar".** A estufa é um lugar onde se anda normalmente, e o
+minigame começa por dentro da ficção, num ritual de três passos que o Renan
+desenhou:
+
+1. o **regador está na bancada** da Josefina, onde sempre esteve. Dá para pegar;
+2. com ele na mão, cada canteiro oferece **Regar** — a terra escurece, as mudas
+   dão uma esticada e a água cai em arco da altura da mão;
+3. na **terceira** rega, a Josefina entra pela porta, atravessa o terreiro e
+   conta das pragas: que vêm pelos três portões, que têm umas com pinça e uma
+   que pula, e que a arma é água porque ela **não quer machucar nenhum bicho**.
+
+Isso é melhor que um botão por uma razão concreta: quando a rodada começar, o
+jogador já vai estar com o regador na mão, já vai ter andado de canteiro em
+canteiro e já vai ter visto que a lata aponta para onde ele olha. **O tutorial
+inteiro acontece sem ninguém chamar de tutorial.**
+
+E nada disso é obrigatório — dá para entrar, olhar tudo e sair sem encostar no
+regador. Quem quiser jogar, rega; quem quiser só visitar a estufa, visita.
+
+### Depois do convite: ela entra junto, e é com ela que se joga — **construído**
+
+O ritual acontece **uma vez na vida**. Depois dele (flag `jardim.convite`), o
+desenho do Renan:
+
+1. **Lá fora ela continua passeando** no caminho do jardim, como sempre.
+2. **Toda vez que a dupla entra na estufa, ela entra junto**: nasce do lado de
+   fora da porta, atrás do vidro, e atravessa a soleira um instante depois —
+   "viu a gente entrando e veio atrás". Ela anda pelo lado `x = 1` da porta,
+   e não pelo eixo, porque é no eixo que a dupla acabou de nascer.
+3. **Lá dentro ela passeia perto das plantas** — a metade da porta
+   (`z > 1`), sem nunca pisar em canteiro nem em muda. A metade dos portões é
+   o caminho dos bichos, e tartaruga ali seria tartaruga no meio do enxame.
+4. **Para jogar, fala-se com ela, e ela pede CONFIRMAÇÃO**: *"Vocês me ajudam a
+   espantar as pragas?"* — **Vamos espantar as pragas** / **Agora não**. Quem
+   só veio passear responde "agora não" e continua passeando, sem castigo.
+5. **Sem o regador na mão, não começa**: ela manda buscar na bancada (ou, se
+   quem está com ele é o parceiro, diz que vai para a frente quem está com o
+   regador). Regador na mochila vai sozinho para a mão.
+6. **Com o regador, cada um vai para o seu posto**: ela e o parceiro ANDAM até
+   a linha da porta (`(-1; 6,8)` e `(1; 6,8)`) e ficam virados para os três
+   portões. O jogador fica solto — é a hora de ele ir para onde quiser defender.
+
+**O gancho da rodada está no fim do passo 6**, marcado no código
+(`scenes/estufa.ts`, `assumirOsPostos`): a Josefina avisa ("Olha lá… estão
+vindo pelo fundo. Água neles, meu bem!") e a rodada começa (`rodada.comecar()`).
+`node scripts/postos.mjs /tmp/pt` percorre tudo isso.
+
+A rodada nasceu curta (4 a 6 minutos, cinco ondas). Hoje ela vai até a
+**trigésima onda**, a pedido do Renan: vencer é aguentar as trinta (foi
+vinte até ele pedir mais dez).
+
+| fase | o que acontece |
+|---|---|
+| **preparo** | fala-se com a Josefina, ela confirma, e ela e o parceiro vão para o posto de trás |
+| **onda** (×5) | bichos entram pelas beiradas, andam para o canteiro mais perto, você rega |
+| **escolha** | a cada nível, o jogo para e mostra **três** melhorias; você pega uma |
+| **fim** | conta quantos canteiros sobraram e paga por canteiro vivo |
+
+**O placar é canteiro, não inimigo.** Inimigo derrotado dá experiência (que é o
+que faz a rodada evoluir); **canteiro vivo no fim é o que dá dinheiro**. Assim
+matar tudo não é a estratégia ótima por definição — segurar a linha é.
+
+**Nem todo bicho morre.** "Derrotar" aqui é **espantar**: o bicho encharca,
+sacode, e vai embora pela beirada por onde entrou. Nada morre nesta estufa. É
+regra, não detalhe de texto.
+
+### Eles entram aos pouquinhos, e um bicho novo por onda
+
+A primeira onda tem **um tipo só** — o Lagartejo —, entrando **um de cada vez**,
+a cada 4 segundos. A rodada começa fácil de propósito: o jogador ainda está
+descobrindo que o regador tem alcance, que a água acaba e que o canteiro é o
+placar. Onda 1 é uma aula, e ela tem que parecer fácil.
+
+| onda | quem entra | ritmo | quantos |
+|---|---|---|---|
+| 1 | Lagartejo | 1 a cada 4 s | ~12 |
+| 2 | **+ Gafanhopo** | 2 a cada 4 s | ~20 |
+| 3 | **+ Coelhatu** | 2 a cada 3,5 s | ~22 (era 28: a terceira era a parede da rodada) |
+| 4 | **+ Tucanguru**, e um Preguipolvo | 3 a cada 3 s | ~36 |
+| 5 | todos, e a **Mãe-Lagartejo** no fim | 3 a cada 2,5 s | ~45 |
+| 6–14 | todos; um Preguipolvo por onda (dois da 12ª em diante) e a **Mãe-Lagartejo de volta na 10ª** | de 3 a 5 por leva, o intervalo encurtando | 48 → 72 |
+| 15 | **+ Libelagarto** (a segunda leva começa), e a Mãe-Lagartejo no fim | 5 a cada 2,0 s | ~75 |
+| 16 | **+ Formiguriço** | | ~78 |
+| 17 | **+ Tamandubelha** | | ~81 |
+| 18 | **+ Mosquipótamo** | | ~84 |
+| 19–21 | todos; o segundo grandão vira o **Rinocaracol** (estreia na 19ª); duas Mães na 20ª | 5 por leva, até 1,8 s | 87 → 93 |
+| 22–24 | três grandões: Preguipolvo, Rinocaracol e a **Javaponja** (estreia na 22ª) | 5 por leva, o intervalo encurtando mais devagar | 96 → 102 |
+| 25 | **o Escorpicamelo estreia**, no lugar da Mãe | 6 por leva | ~105 |
+| 26–30 | tudo; a **30ª traz os dois chefes juntos**, a Mãe-Lagartejo no meio e o Escorpicamelo no fim | até 7 por leva, a cada 1,6 s | 108 → 120 |
+
+**A RODADA TEM TRINTA ONDAS — construído** (pedido do Renan; eram vinte):
+aguentar a trigésima com pelo menos um canteiro de pé é a **vitória**. Da sexta
+à 14ª ninguém estreia; sobe o ritmo, devagar, e sobem os grandões. Da 15ª em
+diante entra a **segunda leva** de bichos (§5), um por onda, na mesma ordem do
+mais fraco para o mais forte: os dois pequenos e os dois médios estreiam de
+verdade (entram sozinhos nos primeiros 10 s), e os dois grandões e o chefe
+novo tomam o lugar de um anunciado antigo — a conta de gotas da rodada não
+muda, porque o tanque novo paga o mesmo que o Preguipolvo, e o chefe novo o
+mesmo que a Mãe. Se nenhum
+bicho escapa, a dupla chega perto do nível 10 na quinta onda, do 25 na
+vigésima e do 32 na trigésima — o prêmio de duas cartas do nível 30 cabe
+na rodada (`scripts/cartas.mjs` mede as duas marcas). O número mora em
+`TOTAL_DE_ONDAS`, em `progressao.ts`: mudar o limite é mudar ele.
+
+**AJUSTES DEPOIS DE JOGAR — construído** (o Renan achou a rodada difícil e
+jogou no celular):
+
+- **mais fácil**: o regador alcança 3,0 m (era 2,6) e cada canteiro aguenta
+  34 de mordida (era 24);
+- **o bicho comendo é sempre alvo**: o canteiro que ele está comendo não conta
+  mais como "atrás do canteiro" — quem chegava pela quina ficava sem tiro;
+- **a câmera se afasta na rodada**: ela enquadra 11 m de largura ou 13 de
+  altura, o que for maior. No computador é um passo para trás; no celular em
+  pé é mais que o dobro de chão à vista (antes eram uns 5 m de largura, e os
+  bichos dos lados sumiam). No fim da rodada volta ao zoom da estufa.
+
+**O PRÊMIO DE CINCO EM CINCO NÍVEIS — construído** (pedido do Renan). Bater
+um nível múltiplo de 5 dá cartas a mais: **no 5, uma; no 10, duas; no 15, uma;
+no 20, duas** — e segue alternando (25 → uma, 30 → duas). Cada carta a mais é
+uma tela de escolha igual à de sempre, três cartas sorteadas, logo depois da
+carta normal do nível; o topo dela fica dourado ("🎁 prêmio do nível 10 · 1 de
+2"). A conta mora em `cartasDePremio`, em `rodada.ts`.
+
+**O PRÊMIO DA ONDA — construído** (pedido do Renan). Vencer uma onda (menos
+a última, que é a tela do fim) dá gotas: **metade do que falta para o próximo
+nível**, arredondado para cima, com o aviso "🏆 Onda 3 vencida! +7 gotas de
+prêmio". Metade, e não tudo: o prêmio empurra a próxima carta, mas quem entrega
+ela ainda são os bichos. As gotas do prêmio enchem também o anel da ajuda do par.
+
+**O QUE TAPA FICA TRANSLÚCIDO — construído** (pedido do Renan: gota caída
+atrás de uma árvore ou da parede dos portões sumia). Durante a rodada, a parede,
+a árvore, o portão ou a treliça que fica entre a câmera e um bicho, uma gota
+ou a dupla vira meio transparente, e volta a ser sólido quando sai da frente.
+É do motor (`core/Oclusao.ts`, ligado com `g.vigiarOclusao`), e não da estufa:
+qualquer minigame pode pedir. Só malha ALTA entra (topo acima de 0,9 m) —
+chão e canteiro baixo não piscam. E o botão da ajuda do par some enquanto
+alguém fala: no celular ele caía em cima do texto.
+
+**A AJUDA DO PAR — construída** (ideia do Renan). Quem ficou lá atrás pode
+ser chamado: um botão no canto (ao lado do ✨ no celular; o `F` no computador)
+com um anel que **enche com as gotas pegas**. Cheio, ele brilha e diz
+"chamar!"; chamado, o par pega um **regador extra**, vem para perto de você e
+por **10 s** atira sozinho no bicho mais perto dele — e **cada jato espanta de
+uma vez** (e quem está colado no alvo vai junto). A exceção é a Mãe-Lagartejo,
+que leva um terço por jato: chefe que cai com um jato não é chefe. Acabou o
+tempo, ele devolve o regador e volta para o posto.
+
+*Por que gota, e não "a cada 3 ondas"*: o Renan deixou a escolha comigo. Com
+gota o anel anda a cada bicho espantado — o jogador VÊ a ajuda chegando, e
+jogar bem traz ela mais cedo. O custo sobe a cada uso (30, 45, 60… gotas), o
+que dá umas nove ajudas nas vinte ondas: uma a cada duas ondas e pouco, perto
+do ritmo que ele pensou. Os números moram no topo de `rodada.ts`
+(`AJUDA_DURA`, `AJUDA_CUSTO_INICIAL`, `AJUDA_CUSTO_SOBE`).
+
+**O FIM DA RODADA É UMA PÁGINA — construído.** Ganhando ou perdendo, antes da
+fala da Josefina abre a tela do fim (`ui/livroDeCartas.ts`, `TelaDoFim`):
+vitória ou "a estufa caiu na onda N", quantos bichos foram espantados e **de
+quais** (Lagartejo ×50, Gafanhopo ×21…), canteiros de pé, o nível, e a página
+com **todas as cartas da mão**, com o selo "📖 nova no livro" nas que foram
+descobertas nesta rodada.
+
+**A regra que vale mais que a tabela: bicho novo entra SOZINHO.** Nos primeiros
+10 segundos da onda em que ele estreia, só ele entra, e por uma porta só. O
+jogador precisa de um momento limpo para descobrir que o Gafanhopo pula por cima
+do jato, e esse momento não existe se ele estreia no meio de oito lagartejos.
+Depois desses 10 segundos, o sorteio mistura tudo.
+
+O tanque e o chefe são **anunciados**: a porta por onde eles vêm chacoalha e a
+Josefina fala uma linha antes. Bicho grande que aparece sem aviso não é difícil,
+é injusto.
+
+---
+
+## 4. O regador — **construído**
+
+A arma inicial, e a única que não é escolhida: ela está na bancada da estufa, e
+o jogador vai lá pegar (§3).
+
+Ele **não mora mais em `world/props.ts`**: tem arquivo próprio,
+`src/world/regador.ts`, porque deixou de ser uma peça e virou uma **receita**.
+`regadorDeJardim(estilo)` recebe o que a rodada acumulou e devolve o regador
+daquele momento — é isso que faz a regra do §6 ("carta que mexe no regador mexe
+na peça da mão") ser barata em vez de ser um projeto.
+
+Na mão ele usa a pose `regando`: **braço levantado**, pedido do Renan, e com
+razão de jogo — na altura das outras poses a lata fica na frente do tronco e
+some atrás de qualquer moita. Arma precisa aparecer acima da linha do canteiro.
+
+`node scripts/regador.mjs /tmp/rg` monta os três estágios e as versões com
+melhoria lado a lado e **mede**: que cada carta mudou a peça de verdade (bico
+mais longo cresce, tanque maior engorda, crivo aberto alarga), que os três
+estágios não renderizam iguais, e que a lata cabe na mão. Depois faz o ritual
+inteiro: pegar, regar três, e a Josefina chegar.
+
+Os quatro números que definem ela, e que as primeiras melhorias mexem:
+
+| número | começo | o que ele faz |
+|---|---|---|
+| `alcance` | 3,0 (era 2,6: a rodada estava difícil) | raio em que o regador acha alvo |
+| `dano` | 1,0 | quanto tira de encharque por jato |
+| `cadencia` | 1,1 s | intervalo entre um jato e o outro |
+| `largura` | 35° | abertura do leque de água (pega mais de um bicho) |
+
+O jato é um **cone de partículas** reaproveitando os respingos que a piscina do
+clube já tem (`espirrar()` em `clube.ts`) — nenhum sistema novo de partícula.
+
+**E o jato muda com as cartas** — decisão do Renan: toda carta que mexe no jato
+muda alguma coisa que se VÊ na animação de ataque. A tabela inteira está no §6,
+em "O jato também muda de cara".
+
+**O regador tem água, e a água acaba.** Um tanque de 12 jatos que enche sozinho
+devagar, ou de uma vez encostando no **tonel** que fica no canto da estufa. É o
+que impede o jogo de virar "segure para a frente e ande em círculo": de vez em
+quando você TEM que voltar ao canto, e é nessa viagem que os canteiros ficam
+sozinhos.
+
+### 4.1. As outras armas — **as três construídas**
+
+Pedido do Renan: trocar a arma da rodada. Cada arma é uma ficha em
+`minigames/jardim/armas.ts` que mexe nos **números de partida** (`base`) antes
+de qualquer carta; o jeito de atirar continua o caminho único do jato
+(`umJato`), então as cartas genéricas (alcance, força, leque, gelo…) servem em
+todas de graça. O que não faz sentido numa arma a carta declara com
+`naoServe`; o que é só de uma, com `soPara` (`cartas.ts`). O baralho da rodada
+filtra por isso (`servePara`, em `baralho.ts`), e na tela a carta da família
+do regador ganha a fita da arma ("🐍 Mangueira").
+
+| arma | destranca | o jeito |
+|---|---|---|
+| 🪣 Regador | de começo | o de sempre (§4) |
+| 🐍 Mangueira | 15 ondas jogadas com o regador | presa no tonel: **água infinita** (o painel mostra ∞) e **não passa dos portões** (o limite de andar da cena encolhe durante a rodada). Jato fino e quase contínuo: alcance 3,6, força 0,42 a cada 0,32 s (1,3/s contra 0,9 do regador), abertura 12°. Na mão, o esguicho (`esguichoDeMangueira`); no chão, a mangueira esticada do tonel até a mão |
+| 🔫 Pistola d'água | 15 ondas jogadas com a mangueira | **tiro de bolinhas**: uma fileira reta de gotas grandes, um bicho por vez (abertura 6°), alcance 5,0, 0,55 de força a cada 0,5 s. Tanque de 8, cada tiro gasta meia água (16 tiros): volta sempre ao tonel, e pode ir ao pátio. Na mão, a pistola lilás de tanque laranja, e cada tiro dá um COICE (o cano pula e volta) |
+| 🧴 Borrifador | 15 ondas jogadas com a pistola | **área** (pedido do Renan: "feito para ser em área, para acertar todos os inimigos dentro de uma área"): cada aperto solta uma NÉVOA que cai no bicho escolhido e vira uma nuvem de ~1,15 m de raio, e todo bicho dentro dela se molha, sem sombra de um no outro. Fraca por bicho (0,4 a cada 0,55 s = 0,73/s, contra 0,9 do regador) e curta (alcance 2,6): o forte dela é bando. O raio sai da `largura` (50°; o Leque aberto aumenta) vezes o `raioDaNevoa` (a Névoa larga). Tanque de 10, meia água por aperto. Na mão, o frasco segurado PELO GARGALO, com o braço esticado para a frente (a pose `borrifando`); o dedo puxa o gatilho a cada aperto e o frasco abaixa a cabeça e amassa um tiquinho |
+
+**Revisão das genéricas para a mangueira** (regra do Renan: "a mangueira… não
+teria a carta de 'tanque', pois a água dela já seria infinita"): não saem nela
+Tanque maior (I–III), Refil rápido (I–III), Orvalho, Bico de mangueira,
+Pressão acumulada, Balde, Fôlego, Chapéu de palha, Descanso na sombra, Segundo
+tonel e O Jean-Luc no tonel — todas de água/tanque/tonel.
+
+**Toda ferramenta tem mais ou menos o mesmo tanto de cartas dela** (pedido
+do Renan): na bancada, **26 do regador, 14 da mangueira, 26 da pistola e 26 do
+borrifador**; ÚNICAS DE VERDADE (só daquela ferramenta): **14 em cada uma**,
+as quatro com 7 comuns, 4 incomuns, 2 raras e 1 lendária. "Carta da
+ferramenta" é a que serve nela e não em todas (`soDestaArma`): as de tanque e
+tonel são do regador E da pistola, as duas de munição. O Balde e o Bico de
+mangueira viraram `soPara: ['regador']` (viram a lata, não fazem sentido em
+pistola). A carta que não serve na
+mangueira mas vai servir nas outras que usam munição (o Jean-Luc no tonel, o
+Tanque maior, o Refil…) fica com `naoServe: ['mangueira']`, e não com
+`soPara: ['regador']`: foi assim que ela entrou de graça na lista da pistola,
+e é assim que vai entrar na do borrifador.
+
+**As cartas só do regador** (`soPara: ['regador']`; as duas raras já eram
+dele, as outras doze entraram juntas), mais as 12 de tanque e tonel que ele
+divide com a pistola:
+
+| carta | raridade | efeito |
+|---|---|---|
+| Lata cheia I–II | comum | com a lata mais da metade cheia, o jato molha 15% mais (e as gotas engrossam) |
+| Crivo de flor I–II | comum | o crivo vira uma flor rosa: o leque abre 5° e molha 6% mais, e pétalas voam no jato |
+| Regada caprichada I–II | comum | o primeiro jato em cada bicho molha 25% mais, com um respingo grande |
+| Alça acolchoada (jardineiro) | comum | a alça ganha espuma coral: carregando a lata você anda 10% mais rápido |
+| Respingo | incomum | bicho molhado respinga: quem está a 1 m dele leva 30% do jato |
+| Chuveirada | incomum | de três em três jatos, o leque abre o dobro e molha todo mundo nele |
+| Transbordou | incomum | encher a lata até a boca no tonel derrama um anel de água: molha tudo em 2 m |
+| Rega de verdade (jardim) | incomum | o jato que passa por um canteiro machucado rega ele também (com brotinho) |
+| Bico de mangueira | raro | o alcance dobra, mas o jato demora 40% mais |
+| Balde | raro | segurar E derrama o tanque inteiro num círculo de 2 m |
+| Regador gigante | lendária | a cada 30 s, 5 s em que a lata cresce na mão: o leque e a força dobram (começa com um anel de água) |
+
+**As cartas só do borrifador** (`soPara: ['borrifador']`). O pedido do Renan
+tinha dois lados: ele é de ÁREA, mas precisa de carta que ajude contra os
+bichos fortes, onde a névoa é fraca. Então metade deixa a área maior e mais
+viva, e as marcadas com 💪 são as contra os grandes:
+
+| carta | raridade | efeito |
+|---|---|---|
+| Dedo ligeiro I–II | comum | o borrifador borrifa 10% mais seguido |
+| Névoa larga I–II | comum | a nuvem fica 15% maior (o bico do frasco abre em flor) |
+| 💪 Concentrado I–II | comum | a névoa molha 8% mais, e os bichos grandes (tanque e chefe) 20% mais; a água do frasco fica azul-funda |
+| Cordinha de pulso (jardineiro) | comum | a cordinha na rosca: você anda 10% mais rápido |
+| Névoa que fica | incomum | a nuvem fica 2 s no chão, e quem entra nela leva meio borrifo (uma vez por nuvem) |
+| 💪 Encharcado | incomum | cada névoa seguida no mesmo bicho molha 10% mais que a anterior, até +50%; seca em 3 s (o bicho encharcado pinga) |
+| Pontaria no bando | incomum | a névoa mira onde ela pega MAIS bichos juntos, e não no mais perto (um anel rosa mostra onde vai cair); exclui as duas Miras |
+| Folha orvalhada (jardim) | incomum | canteiro que a névoa toca fica orvalhado 2 s: a mordida nele tira metade |
+| 💪 Nuvem teimosa | raro | um aperto em cinco deixa uma nuvenzinha chovendo em cima do bicho de MAIS VIDA por 4 s: 1,2× a força a cada meio segundo nele, e meia força em quem estiver colado |
+| Redemoinho | raro | de seis em seis apertos, a névoa gira e puxa para o meio quem está em até 1,6× o raio (os grandes, menos) — o bando fica mais junto para a próxima |
+| Névoa que se espalha | lendária | bicho espantado pela névoa estoura numa nuvem nova com metade da força; quem ela espantar estoura também, até três em cadeia |
+
+As genéricas convivem com a névoa em vez de saírem dela: o Leque aberto aumenta
+a nuvem, o Crivo de três furos vira três nuvens menores em leque, a Pressão
+estica a nuvem 1,6 m para trás do alvo, o Jato em arco joga a névoa por cima
+do canteiro, a Mira no grandão põe a nuvem em cima do grandão, e o Jato
+carregado continua sendo o jatão reto.
+
+**As cartas só da pistola** (`soPara: ['pistola']`; 7 comuns, 4 incomuns, 2
+raras, 1 lendária — o mesmo desenho da mangueira), mais as 12 de tanque e
+tonel que ela divide com o regador:
+
+| carta | raridade | efeito |
+|---|---|---|
+| Cano comprido I–II | comum | o tiro vai 12% mais longe e acerta 6% mais forte |
+| Gatilho leve I–II | comum | a pistola atira 10% mais seguido |
+| Bolinha gorda I–II | comum | cada tiro molha 12% mais (a bolinha engrossa) |
+| Coldre (jardineiro) | comum | você anda 10% mais rápido |
+| Balão d'água | incomum | um tiro em cinco é um balão (bexiga colorida) que voa em curva e estoura: molha tudo em 1,2 m com 1,5× a força |
+| Ricochete | incomum | do bicho que o tiro acerta, um tiro menor pula no vizinho mais perto (até 2,5 m), com metade da força |
+| Esguicho no olho | incomum | um tiro em quatro deixa o bicho tonto 1 s (ele sacode) |
+| Tiro de longe | incomum | bicho a mais de 3,5 m leva 40% mais, e o alvinho aparece nele |
+| Rajada | raro | de quatro em quatro tiros, mais dois seguidos no mesmo bicho |
+| Pistola dupla | raro | um segundo tiro sai junto, no outro bicho mais perto, com 70% da força |
+| Super molhador | lendária | a cada 20 s, 4 s de tiros no dobro da velocidade que não gastam água (começa com um anel de água) |
+
+**As cartas só da mangueira** (`soPara: ['mangueira']`; 7 comuns, 4 incomuns,
+2 raras, 1 lendária):
+
+| carta | raridade | efeito |
+|---|---|---|
+| Esguicho de latão I–III | comum | +12% força, +8% alcance, o fio engrossa |
+| Torneira aberta I–II | comum | o jato sai 10% mais seguido |
+| Vedação nova | comum | o jato vai 12% mais longe |
+| Carretel (jardineiro) | comum | você anda 10% mais rápido |
+| Bifurcação | incomum | a cada jato, um segundo fio sai de lado (25°, alternando), com metade da força |
+| Mangueira que rega (jardim) | incomum | canteiro que a mangueira deitada encosta sara 0,5 por segundo, com brotinho |
+| Laço | raro | bicho que pisa na mangueira fica enrolado (parado) 1,5 s; o mesmo bicho de 6 em 6 s |
+| Chicote | incomum | bicho que atravessa a mangueira no chão leva tranco e se molha (1,5× a força; 1,5 s por bicho) |
+| Vazamento | incomum | a mangueira pinga poças; quem cruza ela anda devagar 2 s |
+| Jato contínuo | raro | no mesmo bicho sem parar, +15% por jato até o dobro, e o fio engrossa |
+| Enchente | lendária | a cada 25 s, 3 s em que todo jato é o jatão que atravessa a fila |
+
+**Cada ferramenta tem o seu som** (`audio/efeitos.ts`, escolhido em
+`jato.ts` pela forma do jato): o regador, o sopro de sempre (`jato`, um "fsh"
+agudo); a mangueira, um **jorro** mais grave (`mangueira`: o sopro segura o
+volume e emenda no seguinte, com um "glub" a cada três jatos; antes ela tocava
+o `jatoLongo`, que continua sendo o da carta Bico de mangueira do regador); e a
+pistola, um **"piu"** curto (`tiroPistola`: o clique do gatilho, um piu que
+desce uma oitava e o chiado da bolinha, alternando dois tons para não virar
+metrônomo); e o borrifador, um **"psst"** (`borrifada`: o tic do gatilho de
+plástico, um sopro bem agudo e aerado e um sininho que alterna mi e sol). As
+cartas especiais mantêm o delas (o jatão, o jato forte, o arco).
+
+---
+
+## 5. Os bichos que comem planta — **os modelos estão construídos**
+
+Eles **não são animais de verdade**, e essa foi a decisão do Renan com o Ari: um
+coelho comum na mira do regador dá dó, e dó estraga o jogo. Então são
+**quimeras** — bicho com parte de outro bicho, como as anomalias daqueles jogos,
+mas sem nada de terror. Cada um é uma mistura que se lê em dois segundos, e o
+desenho já diz que ele é malvado: olho semicerrado com sobrancelha brava, garra
+laranja, andar de quem vem comer a horta.
+
+Nenhum deles empresta bicho nomeado do jogo. Pelusa, Walter, Cookie, Gina,
+Noel, Capy, Estella, Mano, Jean-Luc e Josefina são **gente**, e gente não vira
+alvo. Nenhuma peça de bicho já existente foi reaproveitada: as treze são
+modelos novos, em `src/world/bichosDoJardim.ts`. **Nada de barata**, pedido do
+Renan — nem de rato, nem de golfinho (topo do arquivo).
+
+| bicho | mistura | cor | tier | altura | encharque | o que ele faz de diferente |
+|---|---|---|---|---|---|---|
+| **Lagartejo** | lagarta + caranguejo | roxo | fraco | 0,38 | 2 | o básico. Vai reto no canteiro mais perto e come. As duas garras são só ameaça |
+| **Gafanhopo** | gafanhoto + sapo | turquesa | fraco | 0,44 | 2 | pula 2 m de cada vez — o jato passa por baixo enquanto ele está no ar |
+| **Coelhatu** | coelho + tatu | ferrugem e creme | médio | 1,01 | 4 | corre, dá uma mordida e volta. Se levar jato de frente, **enrola** e os placões aguentam |
+| **Tucanguru** | tucano + canguru | azul de bico amarelo | médio | 1,23 | 3 | aos saltos longos, e **ignora canteiro**: vai direto no que estiver em vaso ou na prateleira de mudas |
+| **Preguipolvo** | preguiça + polvo | musgo | tanque | 0,83 (e 2,1 de largura) | 10 | lentíssimo e largo. Os braços alcançam **dois canteiros ao mesmo tempo**, e ele é o que mais atrapalha a passagem |
+| **Mãe-Lagartejo** | o lagartejo em tamanho de chefe | vinho | chefe | 1,36 | 18 | a chefe. Anda devagar, come um canteiro inteiro de uma vez e **solta lagartejos** pelo caminho |
+
+**A SEGUNDA LEVA — os modelos estão construídos** (pedido do Renan: mais
+bicho para as ondas difíceis, a partir da 15ª, "muito bem feitos e fofos", e
+os **tamanhos variando** — mais pequenininho e mais grandão). A régua esticou
+nas duas pontas: o Formiguriço bate no tornozelo da dupla, e o Escorpicamelo
+passa da cabeça dela. Cada um também ataca uma parte DIFERENTE da jogada —
+os seis de antes vão todos no canteiro; os novos vão no tonel, nas gotas, nos
+portões e no próprio jato — o jeito de cada um está construído (a tabela
+"O jeito de cada bicho", logo abaixo).
+
+| bicho | mistura | cor | tier | altura | encharque | a ideia de quando o modelo nasceu |
+|---|---|---|---|---|---|---|
+| **Libelagarto** | lagartixa + libélula | rosa-chiclete, asas claras | fraco | 0,31 (e 0,68 de asa) | 2 | **voa por cima do muro**: não entra pelos portões, pousa em qualquer ponto da borda (a Gina barrando portão não segura ele); a sombra no chão avisa antes |
+| **Formiguriço** | formiga + ouriço | ameixa escuro, espinho caramelo | fraco | **0,30 — o menor** | 1 | vem em **fila indiana**, cinco ou seis; espantar o da frente espalha a fila, cada um para um canteiro |
+| **Tamandubelha** | tamanduá + abelha | mel listrado de preto | médio | 1,04 (2,3 de comprido) | 3 | **aspira as gotas do chão** com a língua; espantado, devolve tudo o que aspirou, e mais um pouco |
+| **Mosquipótamo** | hipopótamo + mosquito | lilás-azulado, focinho rosa | médio | 1,14 (em seis pernas de pau) | 4 | **ignora canteiro e vai no tonel beber**: enquanto bebe, o tonel não enche o regador |
+| **Rinocaracol** | rinoceronte + caracol | cinza, concha caramelo | tanque | 1,67 | 12 | **investida reta** do portão ao canteiro, empurrando o jogador; meio encharcado, **se fecha na concha** uns 3 s sem levar água |
+| **Javaponja** | javali + esponja-do-mar | amarelo-gema furadinho | tanque | 1,40 (1,39 de largura) | 11 | **bebe o jato**: cada jato incha ele (fica lento, a barra enche devagar); espantado, **espirra a água numa poça** que recarrega o regador de quem pisar |
+| **Escorpicamelo** | camelo + escorpião | caramelo, cauda marrom, ferrão laranja | chefe | **2,59 — o maior** | 22 | o chefe novo. **Entra e bebe o tonel inteiro** (seco uns 15 s; as corcovas enchem); com meia vida as **corcovas murcham** e ele fica rápido e crava a cauda num canteiro de cada vez |
+
+O que faz cada um ser fofo, e que vale não perder num ajuste: os olhos
+grandes do Libelagarto; a carinha de ouriço e o narizinho preto do
+Formiguriço; a lingüinha rosa do Tamandubelha; os dentinhos e o focinhão rosa
+do Mosquipótamo; os olhos de caracol na ponta dos talos do Rinocaracol; as
+orelhas caídas e o rabinho de mola da Javaponja; o beiço caído e os cílios do
+camelo.
+
+A coluna `encharque` é a que está no código (`FichaDePraga.encharque`) e vale em
+**jatos do regador básico** — na onda 1. A cada onda ela é multiplicada por
+`vidaDaOnda(n)` (`progressao.ts`): ×1,19 na 10ª, ×1,74 na 20ª, ×2,79 na 30ª.
+
+### O jeito de cada bicho — **construído**
+
+Pedido do Renan: mecânicas novas "só para ficar mais divertido", **sem deixar
+os bichos complicados nem difíceis**, e cada uma **tirada do modelo** do
+bicho. Por isso é um truque por praga, no máximo, e todo truque se VÊ. A
+Josefina avisa na primeira vez que cada um acontece na rodada ("O Gafanhopo
+pula! No ar, a água passa por baixo.") — é a única explicação, e basta. As
+ideias das tabelas de cima que eram mais complicadas (a investida do
+Rinocaracol, o voo por cima do muro, a fila de seis) ficaram mais simples
+aqui.
+
+| bicho | do desenho | o truque |
+|---|---|---|
+| Lagartejo | — | nenhum: é o básico |
+| **Gafanhopo** | pernas de mola | lá dentro, **pula** 1,8 m de tempo em tempo; no ar, a água passa por baixo |
+| **Libelagarto** | quatro asas | de tempo em tempo **voa** uns dois segundos, alto e mais rápido, e pousa; no ar a água não pega |
+| **Tucanguru** | pernas de canguru | metade deles, chegando no portão, **pula para o portão do lado** e entra por ele |
+| **Coelhatu** | casco de tatu | com meia vida, **vira bolinha e rola** um tiquinho para onde ia; enrolado, a água escorre |
+| **Formiguriço** | formiga | vem **em fila de três**, pelo mesmo portão |
+| **Tamandubelha** | focinho de canudo | **aspira as gotas** do chão que estão na frente dele; espantado, devolve todas e mais a metade |
+| **Mosquipótamo** | tromba de mosquito | vai no **tonel beber**, e enquanto bebe o tonel não enche o regador (o Segundo tonel enche) |
+| Preguipolvo | — | nenhum: é o lento |
+| **Rinocaracol** | concha de caracol | com meia vida, **se fecha na concha** 3 s (a cabeça e as patas somem); fechado, a água não pega |
+| **Javaponja** | esponja | **incha** com a água que leva (até um terço maior, e mais lenta); espantada, deixa uma **poça que enche o regador** de quem pisar |
+| **Mãe-Lagartejo** | a mãe | **solta um filhote** de tempo em tempo (até cinco) |
+| **Escorpicamelo** | corcovas | vai no **tonel e seca ele** uns 6 s (as corcovas enchem); com meia vida elas **murcham** e ele corre |
+
+Os números moram na seção "O JEITO DE CADA BICHO" de `rodada.ts`
+(`truque()`), e `node scripts/jeitos.mjs` prova cada um numa estufa de
+laboratório, com foto.
+
+O elenco cresce como o do Mania: **cada bicho é uma linha numa lista**
+(`PRAGAS`, no mesmo arquivo). Bicho novo é uma entrada nova, não uma mexida no
+motor.
+
+### O tamanho é o relance; a barra de vida é o número
+
+Com cinco na tela, ninguém lê "preguiça com braço de polvo" — lê tamanho. Então
+**bicho fraco é um bicho pequeno**: a peça é a mesma, encolhida a 0,72
+(`ESCALA_DO_TIER`). Um Lagartejo de 38 cm ao lado de um Coelhatu de 1 m não
+precisa de explicação nenhuma. O teste cobra a régua: fraco não chega a dois
+terços do médio mais baixo, **o tanque é o mais LARGO** (2,1 de envergadura),
+**o chefe é o mais ALTO** (1,36) e o mais comprido, e o encharque sobe junto com
+o tier — senão a ficha mente para o jogador.
+
+Quanta água ainda falta quem diz é a **barra de vida em cima da cabeça**, que o
+minigame desenha. Cada ficha já traz o `alturaDaBarra`, em metros do chão, para
+a barra não atravessar o bicho nem desgrudar dele; o teste confere que ela cai
+de 8 a 45 cm acima do topo da peça.
+
+### Cada uma com a sua cor
+
+Não há família única de cor, e essa foi uma correção do Renan olhando a primeira
+leva: seis tons do mesmo roxo viram **uma mancha escura só** quando há cinco na
+tela, e aí o jogador sabe que vem praga mas não sabe QUAL. Agora cada uma tem a
+sua (`P.pragaLagartejo`, `P.pragaGafanhopo`, …): roxo, turquesa, ferrugem, azul,
+musgo e vinho. A cor também precisa brigar com o CHÃO — o primeiro terracota do
+Coelhatu era quase o piso do terreiro, e ele sumia nele.
+
+O que as seis dividem é só o olho, a barriga clara e a **garra laranja** de
+aviso. E nenhuma dessas cores existe num canteiro, para praga nunca se confundir
+com planta.
+
+### A cara não é assustadora
+
+A primeira versão punha uma sobrancelha em cunha sobre cada olho, para dizer
+"bravo" sem rosto. Na tela ela não leu como sobrancelha: leu como uma **faixa
+preta atravessando o olho**, e o bicho ficou assustador — que é o oposto do que
+este minigame quer ser. Agora é olho redondo com pupila redonda, e mais nada.
+
+A pupila é levantada 0,45 rad no globo, porque a câmera olha de 34° de cima e no
+equador ela some atrás da própria testa do olho (o bicho fica com dois olhos de
+bola de gude). E ela nunca vira para dentro: pupila convergindo deixa o bicho
+vesgo, e vesgo lê como bobo, não como ameaça.
+
+Malvados eles são pelo que **fazem** — vêm comer a horta —, pela garra laranja e
+pelo jeito de andar. Não precisa estar na cara.
+
+### Como olhar para eles
+
+Nenhuma praga está numa cena ainda: sem um script, não haveria como VER o que
+foi feito, e o que não se vê não se ajusta.
+
+```bash
+node scripts/pragas.mjs /tmp/pg   # enfileira as treze, retrato de cada uma e a dupla do lado para o tamanho
+```
+
+Ele mede cada bicho pela **geometria desenhada** (os oito cantos da caixa de
+cada malha levados para o mundo), e não por raio inventado: já foi medindo
+colisor que passaram verde dois defeitos que estavam na tela. Guarda o contrato
+do kit (base em `y = 0`, centrada na origem), o teto de malhas por tier (o jogo
+roda em celular e vão existir muitas ao mesmo tempo), a régua de tamanho acima,
+que **nenhuma repete a cor principal de outra**, que a barra de vida cabe em
+cima da cabeça de cada uma, e que nenhuma encosta na outra na fila.
+
+---
+
+## 6. As melhorias, e as raridades
+
+A cada nível o jogo para e oferece **três** cartas. A raridade sai de um sorteio
+com peso, e o peso muda com o nível — nível alto tira mais raro.
+
+**O catálogo e o sorteio estão construídos** (`src/minigames/jardim/`), como
+lógica pura, e `node scripts/cartas.mjs` joga mil rodadas até o baralho acabar
+para provar as regras abaixo. Hoje são 93 cartas mais 3 de consolo.
+
+### Carta nenhuma se repete — **construído**
+
+Pedido do Renan: **carta que você já tem não aparece de novo**. Quem guarda
+isso é a `MaoDeCartas` (`minigames/jardim/baralho.ts`): uma lista de ids, na
+ordem em que foram escolhidos, que nasce vazia com a rodada e morre com ela.
+Tudo o que as cartas fazem — os números, as regras, o desenho do regador, o
+estágio dele — é **derivado** dessa lista toda vez que alguém pergunta, e não
+acumulado; assim nenhum número "escorrega", e a rodada de qualquer momento se
+reconstrói só com os ids.
+
+O sorteio olha o baralho **menos a mão**, e também:
+
+- **série anda em ordem.** Empilhar alcance continua valendo, mas como três
+  cartas diferentes: *Bico mais longo*, *II* e *III*, e a II só sorteia com a I
+  na mão. É o desenho do Vampire Survivors;
+- **`exclui` é de mão dupla**: duas cartas que brigam pela mesma coisa nunca
+  convivem (*Lá de trás* × *Os dois na frente*);
+- **as três famílias na mesa**: dentro da raridade sorteada, o jogo prefere uma
+  família que ainda não está entre as três — e sorteia a família antes da carta,
+  senão o regador (15 comuns) ganharia sempre. Medido: 100% das mesas do começo
+  têm as três famílias;
+- **quando o baralho acaba**, os buracos se enchem de **consolos** (*Gole
+  d'água*, *Muda de reserva*, *Susto*): efeito na hora, podem repetir, não
+  entram na mão. Consolo nunca aparece enquanto há três cartas de verdade.
+
+| raridade | cor | peso no nível 1 | peso no nível 10 |
+|---|---|---|---|
+| comum | verde | 70 | 35 |
+| incomum | azul | 25 | 35 |
+| raro | roxo | 5 | 22 |
+| lendário | dourado | 0 | 8 |
+
+**Lendária não sai antes do nível 4.** Roguelite em que a primeira carta decide
+a rodada é roguelite que não tem rodada.
+
+### Regador — os números
+
+O Renan foi explícito: **começa melhorando o regador**. As comuns são as linhas
+da tabela do §4, cada uma numa **série de três degraus** (I, II, III) — pegar
+"mais alcance" três vezes continua sendo jogada válida, sem carta repetida.
+
+| carta | raridade | efeito (por degrau) |
+|---|---|---|
+| Bico mais longo I–III | comum | +18% alcance |
+| Jato firme I–III | comum | +20% dano |
+| Braço solto I–III | comum | −12% cadência |
+| Leque aberto I–III | comum | +10° de abertura |
+| Tanque maior I–III | comum | +4 de água |
+
+E as do mesmo baralho que mudam a regra do jato:
+
+| carta | raridade | efeito |
+|---|---|---|
+| Segundo bico | incomum | o jato sai também para trás, com 60% da força (`SEGUNDO_BICO`; era 100%) |
+| Orvalho | incomum | o tanque enche sozinho 50% mais rápido |
+| Mangueira | raro | o alcance dobra, mas a cadência piora 40% |
+| Regador de pressão | raro | o jato atravessa o primeiro bicho e acerta o de trás |
+
+E as que vieram do banco de ideias (⚙ = regra nova, que o minigame ainda precisa
+obedecer — ver "Do banco de ideias para o baralho", no fim desta seção):
+
+| carta | raridade | efeito |
+|---|---|---|
+| Gota pesada I–III | comum | cada jato empurra o bicho 30 cm para trás (por degrau); tanque leva 40%, chefe 20%, e cada bicho tem 0,4 s de respiro entre um tranco e outro |
+| Refil rápido I–II | comum | encher no tonel fica 40% mais rápido (por degrau) — exclui *O Jean-Luc no tonel* |
+| Água morna | comum | +25% de encharque em tanque e chefe |
+| Gota gelada ⚙ | incomum | o bicho molhado anda 30% mais devagar por 2 s |
+| Jato em arco ⚙ | incomum | o jato passa por cima do canteiro e acerta quem come do outro lado |
+| Borrifador ⚙ | incomum | cada jato sai em três gotinhas: acerta mais bichos, cada uma mais fraca |
+| Mira no grandão ⚙ | incomum | o regador prefere o bicho com mais vida — exclui *Mira em quem come* |
+| Mira em quem come ⚙ | incomum | o regador prefere quem já está num canteiro — exclui *Mira no grandão* |
+| Garoa ⚙ | incomum | você deixa um rastro de gotinhas; bicho que pisa leva meio jato |
+| Pressão acumulada ⚙ | incomum | o primeiro jato depois de encher o tanque encharca o triplo |
+| Crivo giratório ⚙ | raro | a cada 4 s o regador gira e molha em volta, 360° |
+| Água com sabão ⚙ | raro | bicho espantado solta uma bolha; ela estoura e molha quem está perto |
+| Jato carregado ⚙ | raro | ficar parado 1,5 s carrega um jatão que atravessa a fila inteira |
+| Balde ⚙ | raro | segurar E derrama o tanque inteiro num círculo de 2 m em volta |
+| Gêiser ⚙ | lendário | a cada 20 s um gêiser brota embaixo do bicho mais forte e o joga pela porta — na chefe, tira um terço da vida e ela fica |
+| Arco-íris ⚙ | lendário | um jato a cada dez atravessa tudo e dobra as gotas de quem ele espanta |
+
+### As três famílias de carta
+
+O sorteio tira de três baralhos misturados, e **as três precisam estar na mesa**
+para a escolha ser interessante. Três cartas que só sabem dar +% ao regador não
+é uma escolha, é um clique.
+
+| família | o que ela mexe | como ela se sente |
+|---|---|---|
+| **REGADOR** | os quatro números do §4, e as regras do jato | "eu bato mais forte" |
+| **JARDINEIRO** | você — velocidade, alcance de coleta, o corpo | "eu me viro melhor" |
+| **JARDIM** | a estufa — canteiro, tonel, portas, a Josefina | "o campo joga a meu favor" |
+
+**A regra que guia carta nova: carta comum mexe em número, carta rara mexe em
+regra.** Se uma ideia só sabe dar +X%, ela é comum, por melhor que pareça.
+
+#### Jardineiro — o que muda em você
+
+| carta | raridade | efeito |
+|---|---|---|
+| Passo leve I–II | comum | +12% de velocidade |
+| Bolso furado | comum | as gotas vêm até você de 2,5 m (sem ela, de 1,3 m) |
+| Bota de jardim | comum | terra de canteiro não te segura mais |
+| Fôlego | incomum | o tanque enche sozinho enquanto você anda, e não só no tonel |
+| Chinelada | incomum | encostar num bicho dá um empurrão que o joga 2 m para trás |
+| Grito | raro | uma vez por onda, tudo num raio de 4 m recua até a porta |
+| Dedo verde | raro | canteiro machucado recupera 15% da vida entre uma onda e outra |
+| **Os dois na frente** | lendário | quem ficou lá atrás pega o outro regador e vem regar do seu lado |
+| Chapéu de palha | comum | cada jato gasta 15% menos água |
+| Descanso na sombra | comum | parado, o tanque enche 50% mais rápido |
+| Pique ⚙ | incomum | andar 2 s sem parar dá +30% de velocidade, até você parar |
+| Assobio ⚙ | incomum | a cada 12 s o bicho mais perto vira de costas e anda 2 s para o outro lado |
+| Pé na poça ⚙ | incomum | pisar numa poça dá um impulso — **só sorteia com a Poça na mão** |
+| Olho de jardineira ⚙ | incomum | você vê para qual canteiro cada bicho está indo |
+| Troca de turno ⚙ | incomum | o `T` troca quem joga e quem fica atrás; quem entra chega de tanque cheio — exclui *Os dois na frente* |
+| Coraçãozinho ⚙ | incomum | a cada 20 gotas sobe um coração da dupla, e os bichos perto param 1 s para olhar |
+| Ímã de gota ⚙ | raro | ao subir de nível, todas as gotas do chão voam até você |
+| Sorte de principiante ⚙ | raro | a próxima tela de cartas vem com tudo uma raridade acima |
+| Pulinho ⚙ | raro | encostar num bicho pequeno dá um pulo por cima dele |
+| Bis ⚙ | raro | a próxima carta de série que sair já vem um degrau acima |
+| Dança da chuva ⚙ | lendário | ficar parado 3 s faz chover 5 s em volta de você |
+
+*Mãos dadas* e *Regador do Renan* **saíram**: as duas supunham os dois na
+frente desde o começo, e o Renan decidiu que quem não é controlado fica atrás
+(§1). No lugar entraram *Lá de trás* e *Os dois na frente*, que se excluem.
+
+#### Jardim — o que muda no campo
+
+| carta | raridade | efeito |
+|---|---|---|
+| Terra adubada I–II | comum | os canteiros aguentam 25% mais mordida |
+| Segundo tonel | comum | nasce um tonel do outro lado: a viagem pela água encurta |
+| Poça | incomum | onde o jato cai fica escorregadio 4 s, e quem passa anda devagar |
+| Lá de trás | incomum | quem ficou com a Josefina rega o canteiro mais perto dele |
+| Espantalho | raro | com três bichos na estufa, um espantalho levanta no terreiro e puxa quem está a 7 m por 20 s (uma vez por onda) |
+| Josefina ajuda | raro | ela sai do canto e rega um canteiro por conta dela, uma vez por onda |
+| Portão emperrado | raro | uma das três portas fecha pelo resto da rodada |
+| Cerca viva | lendário | um canteiro à sua escolha ganha uma cerca com vida própria (= a vida do canteiro): as mordidas comem a cerca primeiro, ela cede, e brota inteira no fim de cada onda. **Era "intocável até o fim" — o Renan achou forte demais: um canteiro imortal e a rodada não tinha como ser perdida** |
+| Chuva | lendário | a estufa inteira leva um jato, de uma vez, a cada 30 s |
+| Compostagem I–II | comum | cada bicho espantado devolve 2% de vida ao canteiro mais perto (por degrau; era 5%), no máximo 20% por canteiro por onda (`COMPOSTO_POR_ONDA`) |
+| Sino da porta ⚙ | comum | um sininho toca quando um bicho passa por um portão — conforto, como a Bota |
+| Girassol vigia ⚙ | incomum | os girassóis viram para o portão de onde vem o próximo bicho |
+| Cerquinha ⚙ | incomum | nasce uma cerca baixa no terreiro que os bichos têm que contornar |
+| Toldo ⚙ | incomum | um canteiro à sua escolha aguenta 50% mais |
+| Canteiro de pimenta ⚙ | raro | quem morde esse canteiro sai correndo e solta 2 gotas; depois a pimenteira murcha e descansa 8 s (quem chega nesse tempo come). Tanque e chefe não fogem: ardem e recuam até a porta. *Antes não tinha recarga nem exceção e o canteiro ficava imortal — com a carta não dava para perder a rodada.* |
+| Aspersor ⚙ | raro | um aspersor no meio do terreiro molha num raio de 2,5 m a cada 3 s |
+| Sementeira ⚙ | raro | canteiro comido até o fim vira muda e volta com metade da vida na onda seguinte |
+| Planta carnívora ⚙ | lendário | um canteiro vira dioneia: morde o primeiro bicho que encostar, e recarrega em 15 s |
+| Estufa trancada ⚙ | lendário | os portões seguram os bichos 10 s no começo de cada onda |
+
+**Os do clube vêm ajudar** — também família JARDIM. Usam os personagens com
+nome como AJUDANTES, nunca como alvo (a regra das pragas continua valendo: gente
+não leva jato).
+
+| carta | raridade | efeito |
+|---|---|---|
+| Apito da Gina ⚙ | incomum | uma vez por onda a Gina apita da porta e todo bicho congela 1,5 s |
+| Picolé do Mano ⚙ | incomum | no fim de cada onda cai um picolé: pegar enche o tanque e dá velocidade por 10 s |
+| O Noel avisa ⚙ | incomum | o Noel sobe no muro e grita qual portão abre na próxima onda |
+| O Jean-Luc no tonel ⚙ | incomum | o pato fica no tonel, e encher o tanque ali é na hora — exclui *Refil rápido* |
+| O Capy salva-vidas ⚙ | raro | uma vez por onda o Capy dá um jato longo pelo corredor do meio |
+| O Walter de plantão ⚙ | raro | o Walter ENTRA pela porta (cutscene, como os chamados) e a cada 12 s corre latindo até o bicho mais perto de um canteiro, que recua até a porta — carta com o nome dele traz ele (relato do Renan: espantava e ele não aparecia) |
+| Adubo do Noel ⚙ | raro | canteiro que você rega fica mais forte até o fim da onda |
+
+**Os chamados** — pedido do Renan: cartas de raridade alta que **chamam** alguém
+do clube para DENTRO da estufa, e ele ajuda por um tempo. A diferença para as de
+cima é que aqui o bicho aparece no terreiro, andando, e não só um efeito de
+longe. Cada chamado exclui a carta do mesmo bicho que já agia da porta ou do
+corredor — ninguém está em dois lugares ao mesmo tempo.
+
+| carta | raridade | efeito |
+|---|---|---|
+| Chamar o Capy ⚙ | raro | **atacante** — na primeira mordida da onda num canteiro, corre até lá e rega junto por 20 s (um jato a cada 0,9 s valendo 60% do dano por segundo da ferramenta do jogador, e metade disso na chefe — `danoDoCapy`, em `rodada.ts`) — exclui *O Capy salva-vidas* |
+| Chamar a Gina ⚙ | raro | **barreira** — no começo da onda, tranca por 20 s o portão que vai vir mais cheio — exclui *Apito da Gina* |
+| Chamar o Walter ⚙ | raro | **protetor** — quando um canteiro chega na metade da vida, corre até lá latindo e espanta todo mundo ali (sem molhar, sem gota) — exclui *O Walter de plantão* |
+| Chamar o Noel ⚙ | raro | **catador** — com 8 gotas no chão, passa 20 s catando e trazendo para você |
+| **Mutirão do clube** ⚙ | lendário | quando a chefe chega, Capy, Gina, Walter e Noel entram juntos por 30 s |
+
+**Cada um age sozinho, e cada um é bom numa coisa** (decisão do Renan): ninguém
+aperta botão para chamar. O gatilho de cada um é a situação em que ele é bom, e
+cada um age uma vez por onda. São quatro funções que não se sobrepõem — o Capy
+tira vida, a Gina segura a entrada, o Walter salva canteiro sem dar gota, o
+Noel dá experiência — então dois chamados na mão nunca são a mesma carta duas
+vezes. As cartas de longe de cada um (*Apito da Gina*, *O Capy salva-vidas*, *O
+Walter de plantão*, *O Noel avisa*/*Adubo do Noel*) seguem a mesma função do
+bicho, só que sem ele entrar.
+
+**Pegar um chamado é uma cutscene — construída** (pedido do Renan). Na hora em
+que a carta é escolhida, a porta principal da estufa abre, o bicho entra, para
+no corredor entre os canteiros e fala com a dupla — cada um com as suas falas —,
+e depois vai para o **posto** dele, na linha da frente do terreiro, virado para
+os portões. Ele fica na estufa pelo resto da rodada. No Mutirão os quatro entram
+em fila; quem já tinha sido chamado não entra de novo, mas a conversa acontece.
+A Gina é mais alta que a porta e passa **abaixando o pescoço** ("Cuidado com a
+cabeça… a minha, no caso"). O Walter não fala: late, e a dupla fala por ele,
+como no Mania.
+
+**Cada chamado AGE — construído.** Depois da cutscene o bicho fica no posto, e
+a rodada chama ele quando a situação dele aparece: o Capy corre para o canteiro
+da primeira mordida e rega por 20 s o bicho mais perto dele; a Gina vai até o
+portão mais cheio do roteiro e segura quem chega ali (o relógio dos 20 s só anda
+com bicho esperando); o Walter corre latindo até o canteiro abaixo da metade e
+todo bicho em volta vai embora, sem gota; o Noel cata as gotas do chão, de três
+em três ou quatro em quatro, e traz na sua mão. No Mutirão, quando a
+Mãe-Lagartejo nasce, os quatro fazem isso juntos por 30 s — o Capy em volta
+dela, o Walter latindo a cada 6 s no canteiro mais atacado.
+
+As falas moram em `scenes/estufa.ts` (`FALAS_DO_CHAMADO`), e quem cada carta
+chama está na própria carta (`chama`, em `cartas.ts`). Foram escritas por mim, no
+tom de cada um no clube — **o Renan pode trocar qualquer uma**. Para ver:
+`?cena=estufa&treino=gotas`, ou `node scripts/chamados.mjs /tmp/ch`, que pega
+cada carta e fotografa a entrada.
+
+### As cartas se somam: a mão inteira vale ao mesmo tempo — **construído** (regra do Renan)
+
+As cartas pegas são **melhorias permanentes da rodada**: valem desde a hora em
+que entram na mão até a rodada acabar (ganhando ou perdendo), e a rodada
+seguinte começa de mão vazia. E **todas valem juntas** — é isso que faz existir
+build. Leque aberto + Braço solto é um jato mais largo E mais rápido; nenhuma
+carta apaga outra.
+
+Os números já nascem assim (a ficha é derivada aplicando carta por carta). O
+jato também: existe UM jato só (`umJato`, em `rodada.ts`), e cada carta mexe
+numa parte dele — o mesmo caminho serve ao bico da frente, ao Segundo bico e
+ao regador do parceiro. Então:
+
+| com… | e… | sai |
+|---|---|---|
+| Borrifador | Regador de pressão | três fios, e cada um atravessa |
+| Borrifador | Segundo bico | três fios na frente e três atrás |
+| Borrifador | Jato carregado | três jatões em leque |
+| Borrifador | Pressão acumulada / Arco-íris | os três fios saem especiais |
+| Jato carregado | Poça | a linha inteira do jatão fica molhada |
+| Jato carregado | Segundo bico | jatão na frente e atrás |
+| Jato em arco | Mangueira | um arco longo e fino |
+| Jato em arco | Regador de pressão | um arco que passa do bicho |
+| Crivo giratório | Poça | o anel deixa poça onde pegou |
+| Leque aberto | Mangueira, Arco, Pressão | o fio, o arco e o reto abrem junto |
+| Os dois na frente | qualquer carta de jato | o parceiro atira com todas elas (60% do dano, `PARCEIRO`) |
+
+**Carta nova não pode apagar carta velha.** O `scripts/cartas.mjs` testa isso
+para TODO par de cartas que pode estar junto na mão (4270 pares): o que cada
+uma muda sozinha continua mudado com a outra do lado. E o `scripts/jato.mjs`
+tem um caso por combinação da tabela acima, medindo no desenho.
+
+### Como as cartas de jardineiro e de jardim agem — **construído**
+
+Toda carta de jardineiro, de jardim e do clube faz a coisa dela na rodada, e
+**toda uma se vê** — a mesma regra do jato, estendida: carta que age sem
+mostrar que agiu parece carta quebrada. O código mora em `rodada.ts`
+(`cartasDoJardineiro`, `cartasDoJardim`, `chamadosAgindo`), e o desenho do que
+não é água em `jato.ts` (poeira, notinhas, onda de som, broto, ardido, adubo).
+
+| carta | quando | o que se vê e se ouve |
+|---|---|---|
+| Bota de jardim | sempre | os canteiros deixam de ter colisor: dá para cortar caminho por cima |
+| Pique | andando há 2 s | poeirinha nos pés, +30% até parar |
+| Assobio | a cada 12 s | notinhas na sua cabeça e na do bicho; ele vira e anda 2 s para trás |
+| Pé na poça | pisou numa poça | respingo nos pés e +35% por 1,5 s |
+| Ímã de gota | subiu de nível | as gotas do chão levantam e voam até você |
+| Sorte de principiante | a próxima tela | cada vaga sobe uma raridade — no nível 1 a mesa vem sem comum |
+| Olho de jardineira | sempre | um pontilhado anda de cada bicho até o canteiro que ele quer |
+| Pulinho | encostou num fraco | você dá um pulinho e ele fica tonto 1 s |
+| Bis | a próxima de série | o degrau de cima entra junto na mão ("Bis! Bico mais longo II") |
+| Troca de turno | apertou `T` | quem entra ganha o regador e vem de tanque cheio; sem a carta o `T` fica travado na rodada |
+| Coraçãozinho | a cada 20 gotas | sobem corações da dupla e quem está a 4 m para 1 s |
+| Grito | três bichos a 4 m, uma vez por onda | uma onda laranja no chão e todos voltam até a boca do portão |
+| Dedo verde | fim da onda | faísca verde nos canteiros machucados |
+| Os dois na frente | sempre | o parceiro pega o outro regador, segue você e atira com 60% do dano |
+| Segundo tonel | sempre | o tonel nasce na parede da direita, espelhando o primeiro |
+| Lá de trás | a cada 5 s | quem ficou atrás rega em arco o canteiro mais perto que precisa |
+| Espantalho | três na estufa, uma vez por onda | ele brota do chão; quem está a 7 m fica em roda olhando para ele |
+| A Josefina ajuda | canteiro abaixo de 60%, uma vez por onda | ela vira e rega em arco: +35% de vida e respingo em quem come ali |
+| Portão emperrado | na hora | tábuas pregadas no portão mais cheio; quem ia por ele vai pelo do lado, e a dupla também não passa |
+| Cerca viva | na hora (você escolhe) | uma roda de moitas abraça o canteiro; ela leva as mordidas, encolhe, some quando cede, e brota de novo no fim da onda |
+| Toldo | na hora (você escolhe) | a lona listrada por cima; o canteiro aguenta 50% mais |
+| Canteiro de pimenta | na hora (você escolhe) | uma fileira de pimenteira na borda; quem morde arde e foge soltando 2 gotas, e a fileira murcha (fica baixa) nos 8 s de descanso |
+| Planta carnívora | na hora (você escolhe) | uma dioneia grande na borda morde quem come ali e fica fechada 15 s |
+| Sino da porta | bicho passando o portão | plim, e um anel amarelo no portão |
+| Girassol vigia | sempre | as flores do canteiro de girassol viram para o portão do próximo bicho |
+| Cerquinha | sempre | a cerca atravessa o caminho do portão do meio; eles contornam pela ponta, em dois pontos (a ponta do lado deles, depois a do lado de lá), e o ponto escolhido fica escolhido até chegarem. **Bug corrigido** (relato do Renan): o espantado fugindo para o portão do lado oposto ficava indo e voltando na ponta para sempre e a onda não acabava — a ponta era na linha da cerca e a reta ainda raspava nela. E espantado que passa de 20 s fugindo some (rede de segurança). Teste: `cartasNaRodada.mjs … cerquinha-fugindo` |
+| Aspersor | a cada 3 s, com bicho perto | a cabeça gira depressa e solta um anel de 2,5 m |
+| Sementeira | começo da onda | canteiro comido brota de novo com meia vida |
+| Estufa trancada | começo da onda | cadeado e corrente em cada portão; eles esperam 10 s do lado de fora e o cadeado cai |
+| Apito da Gina | quatro na estufa, uma vez por onda | apito da porta, e todos ficam tontos 1,5 s |
+| Picolé do Mano | fim da onda | cai um picolé no terreiro; pegar enche o tanque e dá +30% por 10 s |
+| O Noel avisa | fim da onda | "VEM PELO PORTÃO DA ESQUERDA!" — e é por ele mesmo: o roteiro já sai sorteado |
+| O Jean-Luc no tonel | sempre | o pato boia dentro do tonel, e encher ali é na hora |
+| O Capy salva-vidas | dois no corredor do meio, uma vez por onda | um jato de mangueira da porta até os portões, dobrado |
+| O Walter de plantão | a cada 12 s | ele corre até o bicho, late (prazo de 4 s), e o bicho mais perto de canteiro volta até a porta |
+| Adubo do Noel | seu jato perto de um canteiro | pitadas de adubo caem, e a mordida ali conta metade até o fim da onda |
+
+**As de "um canteiro à sua escolha"** perguntam pela boca da Josefina, com os
+quatro canteiros vivos mais perto de você. O nome de cada um ("Tomate da
+esquerda", "Alface da frente") está em `CANTEIROS`, na cena.
+
+**Os sons novos** (`audio/efeitos.ts`): `grito`, `assobio`, `nhac` (a
+dioneia), `ardido` (a pimenta), `clique` (o cadeado), `martelo` (tábuas,
+cerquinha, espantalho) e `brotar` (o que se recupera). O resto reaproveita o
+que já existia: `latido`, `apito`, `sino`, `pato`, `sorvete`, `quicar`.
+
+**Para testar:** `node scripts/cartasNaRodada.mjs /tmp/cr` monta uma estufa de
+laboratório para cada carta — os três bichos perto para o Grito, o canteiro pela
+metade com bicho em cima para o Walter — e exige o efeito no mundo, e não só a
+carta na mão. `node scripts/cartasNaRodada.mjs /tmp/cr grito,bota` roda só
+essas.
+
+### O regador MUDA DE CARA quando você melhora ele
+
+Esta é a regra que amarra as cartas ao resto do jogo, e ela é barata porque
+neste projeto todo modelo é geometria procedural: **carta que mexe no regador
+mexe também na peça na mão**. Nada de ícone de buff no canto da tela — o
+upgrade aparece no objeto.
+
+| carta | o que aparece na peça |
+|---|---|
+| Bico mais longo | o bico estica de verdade |
+| Leque aberto | o crivo da ponta alarga e ganha mais furos |
+| Tanque maior | o corpo engorda e a alça sobe |
+| Jato firme | o bico ganha uma ponteira de latão |
+| Braço solto | a alça vira um cabo de madeira lixado |
+| Segundo bico | nasce um bico atrás, virado para trás |
+| Mangueira | uma mangueira enrolada pendurada no corpo |
+| Orvalho | um respiro de cobre no topo, soltando vapor |
+| Chuva | uma nuvenzinha que flutua um palmo acima da peça |
+| Crivo de flor | cinco pétalas rosa em volta do crivo, maiores no degrau II |
+| Alça acolchoada | espuma coral na alça (no cabo de madeira, se já tiver o Braço solto) |
+| Névoa larga (borrifador) | a boca do bico vira uma florzinha rosa de seis furos, maior no II |
+| Concentrado (borrifador) | a água do frasco sobe e puxa para um azul-lavanda fundo |
+| Cordinha de pulso (borrifador) | uma cordinha amarela em volta da rosca, com uma conta rosa |
+
+E o regador tem **três estágios visíveis**, pelo número de cartas de REGADOR que
+você pegou: `0–2` o de lata amassada que a Josefina empresta, `3–5` um
+reforçado de latão, `6+` um de competição, que é o troféu de uma rodada boa. É
+o que faz o jogador olhar para a própria mão no fim e ver a rodada que ele jogou.
+
+**O parceiro carrega a mesma evolução.** São sempre dois em cena, e um regador
+de competição ao lado de uma lata amassada contaria uma história errada.
+
+Para criar carta nova sem reabrir este documento inteiro existe uma skill:
+`.claude/skills/aristory-habilidade/SKILL.md`.
+
+### O jato também muda de cara — **construído** (decisão do Renan)
+
+> "Cada carta que muda os jatos do regador precisa mudar algo visualmente na
+> animação de ataque." — o Renan
+
+É a mesma regra do regador na mão, levada para o ataque: **nada de buff
+invisível**. Se a carta mexe no jato, o jogador vê a diferença no jato. No fim
+de uma rodada boa o ataque tem que parecer outro, como a peça na mão já parece.
+
+**Carta de jato que não muda nada na tela é carta incompleta** — vale para as
+que existem e para toda carta nova. O `scripts/jato.mjs` mede e fotografa o
+jato de cada uma (e das combinações).
+
+#### As quatro camadas do jato
+
+Com vinte e tantas cartas mexendo no mesmo jato, sem regra de encaixe ele vira
+uma mancha. Então o desenho do jato tem **quatro camadas**, e cada carta escreve
+numa (ou em duas) delas. Cartas em camadas diferentes somam sem brigar: gelo +
+sabão = bolhas azuladas.
+
+| camada | o que é | exemplos |
+|---|---|---|
+| **forma** | por onde a água vai | cone (o básico), três fios, arco, jato reto |
+| **tinta** | a cor e a textura da água | azul-gelo, sabão furta-cor, arco-íris |
+| **impacto** | o que acontece no bicho que leva o jato | respingo maior, tranco, cristais, bolha estourando |
+| **chão** | o que fica depois | poça brilhando, rastro de garoa |
+
+E **cada efeito tem o seu som**, sintetizado na hora como todo som do jogo
+(`audio/efeitos.ts`): o jato básico e mais um por carta que muda o jato.
+
+#### Carta por carta
+
+As que já estavam no baralho:
+
+| carta | camada | o que se vê no ataque | som |
+|---|---|---|---|
+| **jato básico** | — | cone curto de gotas azul-água, respingo pequeno no bicho | "fsh" curto |
+| Bico mais longo I–III | forma | o cone vai mais longe, a cada degrau | — (mesmo "fsh") |
+| Jato firme I–III | impacto | gotas mais grossas e o respingo no bicho cresce a cada degrau | "fsh" mais encorpado |
+| Braço solto I–III | forma | os jatos saem mais seguidos, e o braço balança mais rápido | — |
+| Leque aberto I–III | forma | o cone abre mais, com mais gotas na borda | — |
+| Tanque maior I–III | — | (é água no tanque, não no jato: aparece na peça, que já engorda) | — |
+| Segundo bico | forma | um segundo cone sai para trás, ao mesmo tempo | "fsh" duplo |
+| Orvalho | tinta | o jato solta um vapor fininho no caminho | chiado de vapor |
+| Mangueira | forma | o jato vira uma linha comprida e fina, que demora mais a sair | "fshhhh" longo |
+| Regador de pressão | forma + impacto | o jato é reto e atravessa: o primeiro bicho respinga e o de trás também | estalo de pressão |
+
+As que vieram do banco de ideias:
+
+| carta | camada | o que se vê no ataque | som |
+|---|---|---|---|
+| Gota pesada I–III | impacto | o bicho dá um tranco para trás a cada acerto, maior a cada degrau | "tum" abafado |
+| Água morna | tinta | vapor sobe do bicho grande e da chefe quando leva jato | chiado |
+| Gota gelada | tinta + impacto | água azul-clara; o bicho molhado ganha cristaizinhos e anda devagar | tilintar de gelo |
+| Jato em arco | forma | a água sobe em parábola por cima do canteiro e cai do outro lado | assobio subindo |
+| Borrifador | forma | três fiozinhos em leque no lugar de um cone | três "fsh" curtinhos |
+| Mira no grandão | impacto | um alvinho aparece em cima do bicho de mais vida antes do jato | "tic" de mira |
+| Mira em quem come | impacto | o mesmo alvinho, em quem está num canteiro | "tic" de mira |
+| Garoa | chão | um rastro de gotinhas fica no chão atrás de você | pingos |
+| Pressão acumulada | forma + impacto | com o tanque cheio, o primeiro jato sai mais grosso e solta um anel de respingo | "FSHHH" forte |
+| Refil rápido I–II | — | (é o tonel, não o jato: a água entra no regador mais depressa, com espirro) | glub-glub mais rápido |
+| Crivo giratório | forma | a cada 4 s o regador gira na mão e solta um anel de água em volta | giro + "fsh" circular |
+| Água com sabão | tinta + impacto | o jato sai com bolhas; o bicho espantado solta uma bolha grande que estoura | "ploc" |
+| Jato carregado | forma | parado, o regador treme e brilha; sai um jatão reto que atravessa a fila | zumbido subindo + estouro |
+| Balde | forma | a pessoa vira o regador de ponta-cabeça e uma onda cai em círculo | "splash" grande |
+| **Gêiser** (lendária) | impacto | o chão racha embaixo do bicho mais forte e sobe uma coluna d'água | ronco + jorro |
+| **Arco-íris** (lendária) | tinta | um jato em dez sai nas cores do arco-íris e deixa um arco no ar por um instante | acorde brilhante |
+
+E as de outras famílias que também mexem no que o jato faz:
+
+| carta | camada | o que se vê | som |
+|---|---|---|---|
+| Poça | chão | onde o jato cai fica uma mancha molhada e brilhante por 4 s | — |
+| Chapéu de palha | — | (é a água gasta: a barra do tanque desce menos a cada jato) | — |
+| Chuva | forma | a nuvenzinha do regador cresce e despeja na estufa inteira | trovão baixinho |
+| Dança da chuva | forma | uma nuvem pequena se forma em cima de você e chove em volta | chuva fina |
+
+As três marcadas com "(…)" não mexem no jato em si, e por isso a mudança
+visível delas mora em outro lugar — é o jeito de a regra continuar verdadeira
+sem inventar enfeite num jato que a carta não muda.
+
+As só do regador (as da mangueira e da pistola estão no §4.1; o jato delas já
+muda de forma pela ferramenta, fio ou bolinha):
+
+| carta | camada | o que se vê no ataque | som |
+|---|---|---|---|
+| Lata cheia I–II | impacto | com a lata mais da metade cheia, as gotas saem mais grossas | — (o "fsh" de sempre) |
+| Crivo de flor I–II | forma + tinta | pétalas rosa voam no leque e pousam no chão | — |
+| Regada caprichada I–II | impacto | o primeiro jato em cada bicho estoura num respingo grande | "plic" do respingo |
+| Respingo | impacto | o bicho molhado respinga, e os vizinhos a 1 m levam gotas | "plic" |
+| Chuveirada | forma | de três em três jatos, o leque abre o dobro | — |
+| Transbordou | chão | a lata cheia no tonel derrama um anel de água de 2 m | "splash" do balde |
+| Rega de verdade | chão | o canteiro machucado por onde o jato passa ganha um brotinho | — |
+| **Regador gigante** (lendária) | forma | um anel de água, e por 5 s a lata cresce na mão (1,8×) e o leque dobra | o "jatão" |
+
+E o borrifador, que não tem jato: tem NÉVOA (a forma `nevoa` de `jato.ts`) — um
+leque largo de gotinhas finas saindo do bico e, onde cai, uma nuvem de sopros
+brancos com chuvisco e um anel no chão do tamanho exato da área molhada.
+
+| carta | camada | o que se vê | som |
+|---|---|---|---|
+| **a névoa** (a ferramenta) | forma | a nuvem branca e o anel da área | "psst" |
+| Dedo ligeiro I–II | forma | as nuvens saem mais seguidas | — |
+| Névoa larga I–II | forma | a nuvem e o anel maiores, com mais sopro | — |
+| Concentrado I–II | tinta | a nuvem azul-lavanda e o chuvisco mais grosso | — |
+| Névoa que fica | chão | a nuvem demora a desmanchar e continua soprando no mesmo lugar, com o anel | — |
+| Encharcado | impacto | o bicho encharcado pinga, mais quanto mais encharcado | — |
+| Pontaria no bando | impacto | o anel rosa no chão onde a névoa vai cair | — |
+| Nuvem teimosa | impacto | uma nuvenzinha em cima do bicho forte, chovendo nele e seguindo ele | pingos |
+| Redemoinho | forma | a névoa gira em espiral para dentro | o giro do anel |
+| **Névoa que se espalha** (lendária) | impacto | o bicho espantado estoura numa nuvem nova | "psst" |
+
+#### Como está no código
+
+Igual ao `estilo` do regador: a `FichaDaRodada` tem um **`jato`**
+(`EstiloDoJato`, as quatro camadas), a carta escreve nele no `aplicar`, e quem
+desenha o ataque só lê — `src/minigames/jardim/jato.ts` (`DesenhoDoJato`). A
+tela das cartas tem o selo **"💦 muda o jato"** pelo mesmo truque do selo "muda
+o regador": aplica a carta numa ficha zerada e vê se ela escreveu no `jato`.
+
+As gotas são um pool só, instanciado (`world/particulas.ts`): centenas de gotas
+numa chamada de desenho, o que o celular aguenta. Metade delas sai num fio
+contínuo (o miolo) e a outra metade abre o leque; cada gota nasce adiantada pela
+fração do quadro que lhe cabe, e é isso que mantém o fio contínuo mesmo quando
+o jogo engasga.
+
+**Três testes guardam a regra:**
+
+- `scripts/cartas.mjs` reprova carta que mexe num número ou numa regra do
+  jato e não escreve no `jato`;
+- `scripts/jato.mjs` monta a **vitrine** (`?cena=estufa&jato=gota-gelada,poca`:
+  três lagartejos parados na frente da dupla, que nascem de novo quando
+  espantados) com cada carta e confere na contagem do desenho que o efeito dela
+  apareceu: o arco passou de 2,2 m, saíram três fios, apareceu a poça. E
+  fotografa cada uma. O caso sem carta prova o contrário: nenhum efeito
+  especial aparece;
+- a vitrine serve para OLHAR também: é o jeito de ver o jato de uma carta sem
+  esperar ela sair no sorteio.
+
+**O som também existe**: cada efeito do jato escolhe o seu (`jato.ts`, `aoSoar`;
+as receitas em `audio/efeitos.ts`), e o `jato.mjs` confere que tocou.
+
+### A tela das três cartas — **construída**
+
+Um pop-up por cima do mundo, em DOM (`src/ui/telaDeCartas.ts`, e o desenho no
+bloco "TELA DAS TRÊS CARTAS" do `style.css`) — o pedido do Renan foi que não
+fosse modelo 3D, e que as cartas fossem muito bem desenhadas. Cada carta mostra,
+de cima para baixo, uma resposta para cada pergunta que o jogador faz:
+
+| parte | responde |
+|---|---|
+| a **moldura**, na cor da raridade (verde, azul, roxo, dourado; barro no consolo) | "isto é raro?" — é a primeira leitura, de longe |
+| a **fita** da família (azul-água, terracota, verde-folha) | "isto melhora o quê?" |
+| o **medalhão** com o emoji, num halo que respira | "o que é isto?" |
+| o **nome**, e as **bolinhas da série** quando é uma | "tem mais depois?" |
+| o **texto**, numa tira de papel | "o que muda?" |
+| o selo **"muda o regador"**, quando muda | "vou ver isso na mão?" |
+| o **rodapé** com a raridade e as pedrinhas (1 a 4) | a raridade de novo, para quem não lê cor |
+
+A rara pulsa, a lendária tem um reflexo de ouro atravessando e brilho fixo.
+As três entram viradas, uma depois da outra, como cartas sendo dadas. No pé da
+tela fica **a mão** — o que já foi pego, em fichinhas —, porque a escolha
+depende do que você já tem.
+
+**Ela não fecha sem escolha** (sem botão de fechar, sem Escape) e a escolha é em
+**dois tempos**: o primeiro toque marca e a carta sobe, o segundo pega. No
+teclado, `1` `2` `3` ou as setas marcam, e `E` pega. No celular em pé as três
+cartas viram faixas deitadas, uma embaixo da outra.
+
+**Tudo o que a tela mostra é derivado da carta** (`minigames/jardim/tela.ts`):
+a série sai do id, e o selo "muda o regador" sai de aplicar a carta numa ficha
+zerada e ver se ela mexeu no `estilo`. Carta nova entra na tela sem uma linha de
+CSS.
+
+**Para ver sem a rodada existir:** `?cena=estufa&treino=gotas` liga um treino na
+estufa — gotas caem perto da dupla como se um bicho tivesse sido espantado ali,
+a barra enche, a tela abre com o sorteio de verdade, e a carta pega entra na mão
+e muda o regador. `node scripts/gotas.mjs /tmp/gt` faz isso sozinho e fotografa
+uma mesa de cada raridade, no computador e no celular.
+
+### Do banco de ideias para o baralho
+
+As 46 ideias que estavam aqui numeradas **viraram carta de verdade**, todas de
+uma vez, a pedido do Renan: "pode criar todas as cartas que você mencionou" —
+ele ajusta depois de testar. Elas estão nas tabelas das famílias acima, e o
+baralho foi de 38 para **88 cartas**. Depois entraram os cinco *chamados* do
+clube, e hoje são **93** (38 de regador, 22 de jardineiro, 33 de jardim,
+contando cada degrau de série).
+
+O que isso quer dizer (escrito antes da rodada existir; **hoje todas as 93
+funcionam na rodada**, ver "Como as cartas de jardineiro e de jardim agem"):
+
+- **Já funcionam de ponta a ponta** no sorteio, na mão e na tela: saem nas três
+  cartas, não repetem, respeitam série, `exclui` e o piso da lendária.
+- **As ⚙ ligam uma regra** (`RegraDoJardim`, em `cartas.ts`, cada uma com um
+  comentário do que faz). Quem obedece a regra é o código do minigame, que entra
+  junto com a rodada — como já era o caso da Poça, do Grito ou da Chuva.
+- **As sem ⚙ mexem em número** da `FichaDaRodada`. Seis números novos entraram
+  para elas: `empurraoDoJato`, `contraOGrandao`, `refil`, `gastoPorJato`,
+  `recargaParado` e `compostagem`.
+- **Nenhuma das novas de regador muda a peça da mão ainda** — por isso a tela
+  não põe nelas o selo "muda o regador". Cada uma que ganhar desenho (a Gota
+  gelada deixando o bico azulado, o Balde trocando a lata) passa pela skill
+  `aristory-prop` e o selo aparece sozinho.
+
+Três pares se excluem, porque um deixaria o outro morto (fora os chamados, que
+excluem a carta do mesmo bicho): *Mira no grandão* ×
+*Mira em quem come*, *Refil rápido* × *O Jean-Luc no tonel* e *Troca de turno*
+× *Os dois na frente*. E o *Pé na poça* só sorteia com a *Poça* na mão.
+
+---
+
+## 7. A experiência, e o nível
+
+**A rodada começa sempre do nível 0.** Isso é o coração do gênero (o Renan citou
+o Vampire Survivors, e é exatamente isso): o que se leva de uma rodada para a
+outra é o dinheiro dos canteiros vivos e o que se aprendeu jogando — **nunca
+poder**. Duas rodadas seguidas com o mesmo começo e cartas diferentes têm que
+dar jogos diferentes, e isso só acontece se ninguém entra na rodada já forte.
+
+Bicho espantado solta uma **gota** no chão. A gota não vai sozinha para você:
+você tem que passar por cima. É o que puxa o jogador para fora da posição
+confortável, e é a mecânica mais barata de tensão que o gênero tem. Gota que
+fica no chão mais de 20 s seca e some.
+
+### Quanto cada praga solta
+
+Bicho mais forte solta mais, e a régua é a mesma do `encharque` (§5) — quem deu
+mais trabalho paga mais:
+
+| praga | tier | gotas |
+|---|---|---|
+| Lagartejo | fraco | 1 |
+| Gafanhopo | fraco | 1 |
+| Tucanguru | médio | 2 |
+| Coelhatu | médio | 3 |
+| Preguipolvo | tanque | 8 |
+| Mãe-Lagartejo | chefe | 25 |
+
+O tanque e o chefe soltam as gotas **espalhadas**, e não empilhadas: oito gotas
+no mesmo ponto é um clique, oito gotas num raio de 3 m é uma decisão.
+
+### A curva: barato no começo, caro no fim — **construído**
+
+O primeiro nível custa 5 gotas, e dali em diante **o degrau cresce 1 a cada 2
+níveis** (`custoDoNivel`, em `minigames/jardim/progressao.ts`):
+
+| nível | custo | acumulado |
+|---|---|---|
+| 0 → 1 | 5 | 5 |
+| 1 → 2 | 7 | 12 |
+| 2 → 3 | 10 | 22 |
+| 3 → 4 | 13 | 35 |
+| 4 → 5 | 17 | 52 |
+| 5 → 6 | 21 | 73 |
+| 6 → 7 | 26 | 99 |
+| 7 → 8 | 31 | 130 |
+| 8 → 9 | 37 | 167 |
+| 9 → 10 | 43 | 210 |
+
+A primeira versão era `4 + nível^1,6`, arredondada — e o arredondamento fazia
+o degrau **encolher** no meio (22 → 26 → 32): subir de nível ficava mais barato
+de repente, o contrário do pedido. Escrita como degrau, a curva só sobe, e o
+teste cobra isso.
+
+Os **três primeiros níveis saem quase de graça** — cinco lagartejos e você já
+escolheu uma carta. Isso é de propósito: roguelite que demora a dar a primeira
+carta é roguelite que o jogador abandona na primeira rodada. Do nível 5 para
+frente cada carta custa uma onda inteira, e é aí que as escolhas passam a doer.
+
+Uma rodada de 5 ondas solta perto de 210 gotas se nenhum bicho escapar, então
+ela termina por volta do **nível 10, com 10 cartas escolhidas**. Esse é o alvo,
+e o `scripts/cartas.mjs` já o confere: ele monta o roteiro das cinco ondas
+trezentas vezes e mede o nível final (hoje, 10,0 em média). Quando o minigame
+existir, a conta passa a ser com os bichos que de fato foram espantados.
+
+**As gotas de cada praga estão na ficha dela** (`FichaDePraga.gotas`, em
+`world/bichosDoJardim.ts`), ao lado do `encharque`: quem desenha o bicho diz
+quanto ele vale.
+
+**As ondas também já são lógica**: `ONDAS` é a tabela do §3, e
+`planoDaOnda(n, rng)` devolve quem entra, quando e por qual porta — a estreia
+em ordem de tier, o bicho novo sozinho por uma porta só nos primeiros 10 s, e
+o tanque e o chefe só como entrada anunciada.
+
+---
+
+## 8. Por onde os bichos entram, e o que a estufa tem
+
+### As três portas numa parede só — **construído**
+
+O Renan propôs **três portas numa parede só**, na parede oposta à da saída (o
+fundo do prédio, visto do clube). Substitui as quatro bocas de canto que a área
+tem hoje. É o desenho melhor, e por razões concretas:
+
+- **Bicho que pode vir de qualquer canto transforma o jogo em girar a câmera.**
+  A rodada vira checar as costas em vez de decidir. Com uma frente só, você
+  sempre sabe de onde vem, e o que sobra para decidir é *qual das três cobrir* —
+  que é decisão de verdade. **Três, e não uma**, é o que impede de estacionar
+  num ponto e resolver a fase;
+- **dá sentido ao espaço.** A parede das portas vira a frente de batalha e o
+  lado da saída vira o fundo que se defende. É lá que as plantas densas moram
+  (§8.2), então elas passam a ser *a coisa protegida* em vez de enfeite;
+- **a continuidade fecha:** o `-Z` da cena interna é o fundo do prédio visto do
+  jardim do clube.
+
+**A consequência veio junto, e era a parte cara:** com os bichos vindo de uma
+parede só, os canteiros tiveram que sair de lá. A fileira do fundo ficava em
+`z = -8,8`, que é exatamente onde os portões abriram — o bicho entraria e
+comeria no primeiro passo. Os oito canteiros agora formam **uma ferradura
+aberta para os portões**: quatro na parede da saída e dois em cada lateral,
+todos na metade `+Z`. Assim todo bicho que entra precisa **atravessar o
+terreiro inteiro** para chegar em qualquer horta, e essa travessia é o jogo.
+
+**O terreiro andou para o fundo junto** (`16 × 13`, centrado em `z = -1,5`): o
+campo de jogo é a faixa entre as portas e os canteiros, e o meio geométrico da
+estufa deixou de ser o meio do jogo.
+
+**A oficina e o tonel trocaram de lado**, e isso é regra de jogo disfarçada de
+decoração. A bancada foi para a metade `+Z`, perto da saída — é de lá que a
+Josefina entrega os regadores, e o posto dela não pode ser o lado por onde
+entra bicho. **O tonel foi para a metade `-Z`**, a quatro metros do portão do
+meio: o §4 diz que a água acaba e que a viagem até o tonel é o que deixa os
+canteiros sozinhos. Se reabastecer fosse seguro não custaria nada; agora custa
+andar **na direção das portas**.
+
+**A faixa de chegada ficou vazia de planta**, a pedido do Renan, e ele está
+certo pelas duas pontas: não faz sentido a Josefina plantar em cima de onde os
+bichos passam, e não faz sentido encher de enfeite justamente a faixa que
+precisa estar legível quando os três portões cospem bicho ao mesmo tempo. O que
+decora ali é **estrutura**: os três portões de pedra, os caminhos que saem
+deles e o jardim que continua do lado de fora.
+
+### O pátio de trás — e ele é jogável
+
+Começou como paisagem (grama pintada atrás do vidro, só para o portão não
+parecer um buraco na parede) e virou **chão de jogo**, por dois pedidos do
+Renan que mudam o que a área é:
+
+**1. Dá para sair.** A ideia de jogo é dele: *enquanto vem pouco bicho, você
+atravessa o portão e intercepta lá fora, antes que eles entrem; quando vier
+muito, você recua e segura do lado de dentro.* Isso transforma os três portões
+de "spawn" em **decisão** — ficar na frente ou atrás deles —, e é a melhor
+mecânica que o minigame ganhou até agora sem custar uma linha de lógica.
+
+O limite de caminhada passou a abraçar a estufa **e** o pátio. Quem segura a
+dupla dentro do vidro deixou de ser o limite e passaram a ser as **paredes**: a
+de `-Z` tem colisor em todo lugar menos nos três vãos, e as laterais acabam em
+`z = -11`.
+
+**2. Não dá para dar a volta.** A grama corria pelos quatro lados do prédio, e
+por ela dava para contornar a estufa e voltar pela frente. O chão agora são
+**dois retângulos que se encostam**, e não um gramado gigante por baixo de
+tudo: a estufa é terra batida, o pátio é grama, e não existe verde em lugar
+nenhum a não ser atrás das portas. O pátio é fechado por sebe nos dois lados e
+no fundo — um beco, de propósito. A sebe é mais alta que a do clube (1,6 contra
+1,05) porque aqui ela é **limite**, e não enfeite.
+
+**O que cresce lá fora segue a regra do terreiro**: os três corredores dos
+portões ficam limpos, e as árvores vão para as faixas entre um corredor e
+outro, onde emolduram o vão em vez de tapá-lo. (Tinha moita também; saiu a
+pedido do Renan, e o pátio virou lugar de enfeite — ver a lojinha no COMECE
+AQUI.)
+
+### A corrente de entrada, e as três chances de interceptar
+
+A sebe do fundo **abre em três brechas**, no fim de cada caminho de pedra e no
+eixo de cada portão (pedido do Renan). Com elas, o caminho do bicho tem quatro
+trechos:
+
+```
+nasce no gramado de fora  →  BRECHA da sebe  →  caminho de pedra
+                          →  PORTÃO          →  a estufa
+```
+
+**Cada trecho é uma chance de interceptar**, e é isso que faz "segurar fora"
+contra "segurar dentro" virar decisão em vez de preferência. As brechas são
+mais largas que o caminho (3,2 contra 2,2) — passagem tem eixo, e o eixo fica
+vazio. (Duas moitas ladeavam cada uma; saíram com as outras, a pedido do
+Renan.)
+
+**A cena publica `entradas`**: um ponto do lado de FORA da sebe, alinhado com
+cada brecha. É de lá que o bicho aparece — bicho que nasce dentro do pátio não
+dá tempo de ser interceptado, que é a jogada inteira. A distância dali até o
+portão é o botão que regula a dificuldade das duas posturas, e é o primeiro
+número a girar quando a fase estiver fácil ou impossível demais.
+
+**Corredor limpo é regra, e ela mede a COPA.** Árvore plantada a 2,2 do eixo
+tem copa de 1,2 de raio e debruça na calçada: o corredor continua andável (o
+colisor é o tronco) mas parece bloqueado, e num jogo isométrico parecer
+bloqueado é ser bloqueado. A folga é 3,2.
+
+### 8.2. O que a estufa já tem
+
+A área foi construída antes de tudo, de propósito — foi o pedido do Renan:
+*"comece a criar a nova área primeiro, antes de ter a quest, antes de ter
+qualquer coisa"*. Ela já nasceu com a planta do minigame desenhada no chão:
+
+- **o meio é vazio.** Um terreiro de saibro de 15 × 11 no centro, sem nada em
+  cima. É a arena, e o teste prova isso medindo os colisores;
+- **os canteiros estão na beirada**, e são oito. São eles que se defende;
+- **o tonel de água no canto**, que é onde o regador vai reabastecer;
+- **a bancada de trabalho**, de onde a Josefina vai entregar os regadores.
+
+### 8.3. A regra de altura, que a câmera impõe
+
+Ela não é estética e vale para qualquer coisa que se plante aqui depois:
+
+> **A câmera olha de `+X/+Z`.** O lado da porta de saída (`+Z`) e o lado direito
+> (`+X`) são os lados *de perto*: qualquer peça com mais de um metro ali tapa o
+> que está atrás, inclusive a dupla andando.
+
+Daí o desenho do verde: o lado da porta leva **densidade, não altura** —
+canteiro crescido, moita, capim, tudo abaixo do peito. Folhagem alta e treliça
+só nas paredes de longe (`-X` e `-Z`). No lado direito o teto é a prateleira de
+mudas (1,05), que guarda verde na **vertical** sem ocupar chão nem tapar
+ninguém.
+
+Os canteiros da estufa usam `crescimento: 1,45` — a mesma peça da horta de
+fora, com as mudas maiores. É o que faz os dois lugares não parecerem o mesmo
+canteiro copiado, e é a fala da própria Josefina depois da quest ("adubo bom
+trabalha rápido") virando geometria.
+
+---
+
+## 9. A ordem de construção
+
+| # | etapa | estado |
+|---|---|---|
+| 0 | **a área**: a estufa, a porta no jardim do clube, o caminho | **pronto** (§10) |
+| 0.5 | **a skill `aristory-praga`**, para praga nova sair barata | **pronto** |
+| 1 | a skill `aristory-habilidade`, para carta nova sair barato | **pronto** |
+| 2 | a quest do adubo (banco → Noel → Josefina → convite) | **pronto** (§2) |
+| 2.5 | as três portas na parede do fundo, e os canteiros puxados para lá | **pronto** (§8) |
+| 2.7 | **os modelos das seis pragas**, para poder olhar e ajustar antes da lógica | **pronto** (§5) — e depois os **sete da segunda leva** (da 15ª onda em diante) |
+| 2.8 | **a entrada**: pegar o regador, regar 3 canteiros, a Josefina chegar | **pronto** (§3) |
+| 2.9 | **o modelo do regador**, já pronto para as melhorias mudarem a peça | **pronto** (§4) |
+| 2.95 | **a Josefina entra junto**, passeia lá dentro, pede confirmação e leva o parceiro para o posto de trás | **pronto** (§3) |
+| 2.97 | **a lógica**: o baralho, a mão que não repete carta, a curva de nível, as gotas por praga e o roteiro das ondas | **pronto** (§6, §7) |
+| 3 | o esqueleto do minigame: onda, regador automático, um bicho só (o Lagartejo) | **pronto** (§10) |
+| 4 | os canteiros como alvo, e o placar por canteiro vivo | **pronto** (a tela do fim conta os canteiros; o pagamento é a 9) |
+| 5 | gota no chão e a tela de três cartas (a conta de nível e o sorteio já existem) | **pronto** (a peça; liga na rodada junto com a 3) |
+| 6 | as cartas comuns (as do regador), o regador mudando de cara e **o jato mudando de cara** — uma diferença visível por carta (§6) | **pronto**, com o som de cada carta |
+| 7 | o resto do elenco de bichos, um por onda, na rampa do §3 | **pronto**: as trinta ondas rodam com os treze bichos (a segunda leva estreia da 15ª), com o aviso do grandão e o JEITO de cada um (§5, "O jeito de cada bicho") |
+| 8 | as cartas de JARDINEIRO e de JARDIM, e as raras | **pronto** (§6, "Como as cartas de jardineiro e de jardim agem") |
+| 9 | o pagamento, a memória e a fala de despedida da Josefina | **pronto**: a tela do fim, o livro das cartas, o pagamento de toda rodada (reais e girassóis, pelos bichos espantados) e os prêmios únicos dos marcos 5/10/20/30 com a memória das trinta levas (`premios.ts`) |
+
+A etapa 3 é a que decide se o resto vale: um regador que atira sozinho num
+bicho que anda devagar já é jogo ou não é. **Não construa 5 antes de jogar 3.**
+
+---
+
+## 10. O que já está no jogo
+
+**A estufa** (`src/scenes/estufa.ts`), ligada ao jardim do clube pelos dois
+lados. A casca de fora é a peça `estufa()` do kit, plantada no fundo do jardim,
+no eixo do caminho de pedrinha; por dentro é um galpão de vidro de 32 × 24 com o
+terreiro no meio, oito canteiros na beirada, a bancada de trabalho, o tonel e as
+prateleiras de muda.
+
+**As peças novas do kit** (`src/world/props.ts`): `estufa()` (a casca),
+`bancadaDeJardinagem()`, `tonelDeAgua()`, `folhagemAlta()`,
+`trelicaComTrepadeira()`, `prateleiraDeMudas()` e `portaoDeJardim()`. Mais o
+parâmetro `crescimento` do `canteiroDeHorta()`.
+
+**A quest** (§2), espalhada por três arquivos: o saco no banco do fundo em
+`scenes/villaLobos.ts`, a troca com o Noel e a entrega à Josefina em
+`scenes/clube.ts`, e as duas fichas (`sementes`, `adubo`) em `world/itens.ts`.
+A peça é uma só, `sacoDeGraos()`, em dois jogos de cor.
+
+**O regador e a entrada do minigame.** A peça em `src/world/regador.ts`
+(`regadorDeJardim(estilo)`, mais `estagioDoRegador(cartas)`), a ficha de item em
+`world/itens.ts`, a pose `regando` no `CharacterRig`, e o ritual inteiro no fim
+de `scenes/estufa.ts`: pegar da bancada, regar três canteiros e a cutscene da
+Josefina. O **gancho da rodada** está marcado no código, no fim da cutscene —
+é uma chamada só, com a dupla já de regador na mão.
+
+**A Josefina dentro da estufa** (fim de `scenes/estufa.ts`): depois do convite
+ela entra atrás da dupla, passeia na metade das plantas e, na conversa, pede
+confirmação e manda cada um para o seu posto (§3).
+
+**As cartas e a progressão** (`src/minigames/jardim/`): `cartas.ts` (o
+catálogo e a `FichaDaRodada`), `baralho.ts` (a `MaoDeCartas`, o registro das
+cartas pegas e o sorteio) e `progressao.ts` (curva, gotas e ondas). Lógica
+pura, sem cena: a rodada vai importar isto pronto.
+
+**As treze pragas** (`src/world/bichosDoJardim.ts`): `lagartejo()`, `gafanhopo()`,
+`coelhatu()`, `tucanguru()`, `preguipolvo()` e `maeLagartejo()`, e a segunda
+leva — `libelagarto()`, `formigurico()`, `tamandubelha()`, `mosquipotamo()`,
+`rinocaracol()`, `javaponja()` e `escorpicamelo()` —, mais o catálogo `PRAGAS`
+que liga cada uma ao tier e ao encharque (§5).
+
+**A rodada** (`src/minigames/jardim/rodada.ts`, a `RodadaDoJardim`) — a etapa
+3. Começa quando a Josefina manda ("Água neles, meu bem!"), no fim de
+`assumirOsPostos`. O que ela já faz:
+
+- **as cinco ondas** do §3, com um respiro de 6 s entre elas ("Onda 2: chegam
+  os Gafanhopos"). Os bichos nascem do lado de FORA da sebe do pátio, passam
+  pela brecha, pelo caminho de pedra e pelo portão, e vão ao canteiro vivo mais
+  perto. O Preguipolvo e a Mãe-Lagartejo são **anunciados** 4 s antes: a
+  Josefina grita o portão e o chão ronca. Por enquanto os seis ANDAM do mesmo
+  jeito, cada um na sua velocidade e mordida — o jeito próprio de cada um é a
+  etapa 7 (construída depois: "O jeito de cada bicho", §5);
+- **o canteiro é o placar**: comido, as mudas encolhem e somem uma a uma, e no
+  fim ele vira terra seca. O bicho então procura o próximo;
+- **o regador atira sozinho**, no bicho mais perto dentro do `alcance`, a cada
+  `cadencia`, gastando água. A dupla vira para o alvo quando está parada. Bicho
+  atrás de um canteiro (do ponto de vista de quem rega) não leva jato — só o
+  Jato em arco passa por cima;
+- **a água acaba**: o painel mostra o tanque, e perto do tonel ele enche
+  (borbulhando no painel, espirrando na boca do tonel);
+- **espantado, o bicho sacode e vai embora** pela brecha dele, e solta as
+  gotas; as gotas sobem o nível, e cada nível é a tela das três cartas — com a
+  rodada CONGELADA enquanto ela está aberta;
+- **no fim** a Josefina conta quantos canteiros ficaram de pé e em que leva
+  parou (ou comemora as cinco), e replanta. O pagamento por canteiro é a etapa 9.
+
+**O que cada carta já faz na rodada: todas.** As de jato com a animação delas
+(a tabela do §6), e as de jardineiro, jardim e clube como a tabela "Como as
+cartas de jardineiro e de jardim agem" descreve — os chamados inclusive, que
+entram pela porta na cutscene e depois agem sozinhos.
+
+**O livro das cartas** (pedido do Renan): um livro verde na ponta de cima da
+bancada, "Abrir o livro das cartas". Toda carta do baralho tem um LUGAR nele, na
+ordem da raridade (comuns, incomuns, raras, lendárias; dentro de cada uma, a
+ordem do catálogo), numerado. A carta que a dupla ainda não escolheu nenhuma
+vez é um retângulo cinza translúcido com o número; escolhida uma vez, em
+qualquer rodada, ela aparece ali para sempre — é **save** (`livro`, em
+`SaveState`), e não rodada. Tocar numa carta abre ela grande (a lupa). Carta
+nova no catálogo ganha lugar no livro sozinha. `node scripts/livro.mjs /tmp/lv`
+prova o livro vazio, as cartas caindo cada uma no seu lugar, o F5, a tela do
+fim e o celular.
+
+**Para ver:** `?cena=estufa&rodada=1` começa a rodada direto;
+`?cena=estufa&jato=<cartas>` monta a vitrine do jato (e `&praga=preguipolvo`
+troca o bicho da vitrine — a Água morna só aparece em bicho grande).
+
+**Os testes**: `node scripts/rodada.mjs /tmp/rd` joga a onda inteira com um robô
+que só anda (nunca aperta ataque) e cobra do nascer lá fora ao fim com a
+Josefina (com `ondasDaRodada = 1`, para caber no tempo); `node scripts/jato.mjs
+/tmp/jt` confere o jato de cada carta; `node scripts/cartasNaRodada.mjs /tmp/cr`
+prova cada uma das outras 41 agindo.
+`node scripts/cartas.mjs` (no Node, sem navegador) joga mil
+rodadas de cartas e trezentas de ondas; `node scripts/postos.mjs /tmp/pt` faz a
+Josefina entrar junto, passear sem pisar em canteiro e mandar cada um para o
+posto. `node scripts/estufa.mjs /tmp/ef` prova que a porta abre nos dois
+sentidos, que o terreiro do meio está mesmo vazio (nenhum colisor dentro dele),
+que os oito canteiros existem e que as quatro bocas estão desobstruídas.
+Ele também **atravessa os três portões andando**, um por um, e confere que a
+dupla sai de verdade para `z < -11`: folga geométrica não prova passagem, e
+uma pilastra ou uma soleira de alvenaria no vão só aparece quando alguém tenta
+passar. Depois ele encosta na sebe de cada lado do pátio e exige que ela **não
+deixe contornar a estufa** nem voltar pela frente por fora. `node scripts/adubo.mjs /tmp/ad` percorre a
+quest inteira e guarda o que é fácil de quebrar sem perceber: a estufa trancada antes da hora, a Josefina calada
+sobre ela, os rótulos que trocam sozinhos e ninguém emudecendo depois de
+receber o presente.
+
+---
+
+## 11. Notas de implementação, para quando chegar a hora
+
+> **HISTÓRICO.** Escrito antes da rodada existir, para guiar a construção. Tudo
+> daqui já foi feito (às vezes de outro jeito); o que vale hoje é o código e o
+> "COMECE AQUI" do topo. Fica pelo raciocínio.
+
+**O minigame mora em `src/minigames/`**, como o `turnoDoMania.ts`. Ele recebe
+uma planta (`PlantaDoJardim`: onde é o terreiro, onde estão os canteiros, onde
+são as bocas, onde é o tonel) e **não sabe que existe uma estufa** — quem conhece
+o cenário é a cena.
+
+**Os bichos invasores não são `Bicho.ts`.** Aquela classe é para personagem com
+nome, rotina de passeio e conversa. Invasor é um enxame descartável: uma malha
+simples, uma posição, um alvo e um encharque. Cuidado real — vinte instâncias de
+`Bicho` por onda derrubariam o celular.
+
+**Som.** Já existem e servem: `gluglu` (o tanque enchendo), `sino` (subir de
+nível), `pegar` (a gota). Faltam receitas novas em `audio/efeitos.ts`: **jato**
+(o chiado do regador) e **sacudida** (o bicho encharcado indo embora). Sintetizadas,
+como todo o resto — nenhum `.wav` entra no repositório.
+
+**HUD.** Nem `showPlacar` nem `showTurno` servem. Entra um
+`showJardim({ onda, agua, nivel, gotas, canteiros })`, e a tela de escolha é um
+painel novo de três cartas no `Ui.ts` — o mesmo formato do painel de inscrições
+da arena, que já sabe desenhar carta com moldura por raridade.
+
+**Teste.** O Chromium sem tela roda o tempo de jogo a ~1/5 do relógio: o script
+espera por EVENTO, nunca por tempo. Asserções mínimas quando existir: o regador
+dispara sozinho sem tecla; bicho parado em canteiro para de perseguir; canteiro
+comido não volta; a tela de três cartas aparece no nível certo e some ao
+escolher; lendária não sai antes do nível 4; e a rodada fecha pagando por
+canteiro vivo.
+
+---
+
+## 12. O que está esperando resposta do Renan
+
+Isto fica escrito aqui, e não numa conversa, por um motivo prático: conversa
+acaba. Toda vez que uma decisão deste plano depender dele, a pergunta vem para
+cá — assim quem continuar o trabalho amanhã sabe o que ainda não foi decidido,
+em vez de inventar uma resposta e seguir.
+
+**Sobre as cartas (§6):**
+
+0. ~~**Quando o chamado ajuda.**~~ **Respondida pelo Renan:** ele entra numa
+   cutscene na hora em que a carta é pega, fica, e **age sozinho**, cada um
+   com a sua função (tabela dos chamados, §6).
+1. **Reroll.** Vale a Josefina dar um "não gostei, mostra outras três" por
+   rodada? A recomendação é que sim, e **um só** — o suficiente para salvar uma
+   mão ruim sem virar uma quarta escolha grátis.
+2. ~~**Carta repetida.**~~ **Respondida pelo Renan: carta não se repete.** A
+   comum que empilhava virou série de três degraus (§6).
+3. **A chefe.** (Hoje: a Mãe-Lagartejo entra nas ondas 5, 10, 15, 20 e 30, e o
+   Escorpicamelo nas ondas 25 e 30.)
+   A Mãe-Lagartejo entra na onda 5 de toda rodada, ou só a partir
+   da segunda vez que se joga? A favor da segunda: a primeira rodada é a que
+   ensina, e chefe na estreia é onde roguelite costuma perder gente.
+
+**Sobre a dupla na rodada (§1):**
+
+6. ~~**O `T` no meio da rodada.**~~ **Resolvida:** o `T` fica travado na
+   rodada, e a carta *Troca de turno* destrava ele (a opção b, virou carta).
+   O texto original, para registro: Com um na frente e o outro atrás, o `T` pode
+   fazer duas coisas: (a) ficar **desligado** durante a rodada, ou (b) **trocar
+   quem está na frente** — quem estava atrás vem com o tanque cheio, e quem
+   estava na frente vai descansar ao lado da Josefina. A recomendação é (b):
+   vira uma decisão de jogo (revezar para não voltar ao tonel) sem custar
+   carta nenhuma.
+
+**Sobre os modelos (§5):**
+
+4. **A crosta do dorso da Mãe-Lagartejo** ainda lê como uma tampa chapada
+   pousada nas costas, e não como parte do bicho. É a única coisa dos seis
+   modelos que eu mudaria sem ele pedir — mas é ajuste de gosto, e o gosto é
+   dele e do Ari.
+
+**Sobre a pose (§4):**
+
+5. **O braço do regador** ficou estendido para a frente (0,9 rad) para a lata
+   pendurada não raspar no chão. Dá para trazer mais para o lado do corpo, ao
+   preço de a lata chegar mais perto do chão — a conta está no comentário da
+   pose `regando`, em `CharacterRig.ts`.

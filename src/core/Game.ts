@@ -18,6 +18,7 @@ import type { Interactable } from '../world/Interactable';
 import {
   SLOTS_ROUPA,
   type Coleta,
+  type DecoracaoNoSave,
   type GameAPI,
   type ItemDef,
   type Memory,
@@ -25,8 +26,18 @@ import {
   type SceneDef,
   type Vaga,
 } from './types';
-import { ITENS, MODA_PRAIA, fichaDoItem, modeloDoItem } from '../world/itens';
+import {
+  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
+} from '../world/itens';
+import type {
+  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
+  EstadoDoPosicionador, FimDoJardim, SaidaDaLoja,
+} from '../minigames/jardim/tela';
+import { Oclusao, type VigiaDaOclusao } from './Oclusao';
+import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
+import { retratoDePraga } from '../world/retratoDePraga';
+import { retratoDaDecoracao } from '../world/decoracoes';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import { CARDAPIO } from '../world/cardapioData';
@@ -113,6 +124,7 @@ export class Game implements GameAPI {
     this.ui.setMemories(this.save.memories);
     this.ui.onTouchAction = () => this.input.tapAction();
     this.ui.onTouchSwap = () => this.input.tapSwap();
+    this.ui.aoPedirAjuda = () => { if (this.jardimNaTela) this.ajudaPedida = true; };
     this.ui.onTouchGirar = (dir) => this.input.tapGirar(dir);
     // clique numa vaga da mochila escolhe qual item fica na mao
     this.ui.onEscolherSlot = (i) => this.setActiveHandSlot(i);
@@ -134,30 +146,37 @@ export class Game implements GameAPI {
       this.pintarArmario();
     };
 
-    // O vestiario do clube mexe nas MESMAS vagas do guarda-roupa — ele so
-    // pergunta menos. Por isso os dois paineis passam pelos mesmos dois
-    // metodos: um jeito so de vestir, um jeito so de tirar.
-    this.ui.onAbrirVestiario = () => this.pintarVestiario();
-    this.ui.onAlternarOculos = () => {
-      const quem = this.playerId();
-      const posto = SLOTS_ROUPA.indexOf('cabeca');
-      const jaEsta = this.save.vestiveis(quem)[posto]?.id === ITENS.oculosEscuros.id;
-      if (jaEsta ? this.tirarPeca(quem, posto) : this.vestirPeca(quem, ITENS.oculosEscuros.id)) {
-        this.audio.play('escolha');
-      }
-      this.pintarVestiario();
+    // O VESTIÁRIO DO CLUBE é este mesmo guarda-roupa, com outro nome e uma
+    // aba a mais (pedido do Renan): a das roupas de piscina, que se provam no
+    // boneco e se desbloqueiam pagando. Vestir e tirar continuam passando
+    // pelos mesmos dois métodos — um jeito só de vestir, um jeito só de tirar.
+    this.ui.onTrocarAbaDoArmario = (aba) => {
+      if (this.abaDoArmario === aba) return;
+      this.abaDoArmario = aba;
+      this.provandoNaPiscina = null;
+      this.audio.play('menu');
+      this.pintarArmario();
     };
-    this.ui.onEscolherBermuda = (id) => {
-      const quem = this.playerId();
-      const posto = SLOTS_ROUPA.indexOf('pernas');
-      // a mesma cor de novo TIRA a bermuda: o botao que veste e o que despe
-      const jaEsta = this.save.vestiveis(quem)[posto]?.id === id;
-      if (jaEsta ? this.tirarPeca(quem, posto) : this.vestirPeca(quem, id)) {
-        this.audio.play('escolha');
-      }
-      this.pintarVestiario();
+    this.ui.onTrajeDoBoneco = (traje) => {
+      this.trajeDoBoneco = traje;
+      this.previa.vestirTraje(traje);
+      this.audio.play('escolha');
+      this.pintarArmario();
     };
-    this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
+    this.ui.onProvarNaPiscina = (id) => this.provarNaPiscina(id);
+    this.ui.onAgirNaPiscina = () => this.agirNaPiscina();
+    // SEGURAR o ✨ é segurar uma tecla, e qual depende de onde se está: fora
+    // da rodada é o F (a carga do frisbee); na rodada do jardim é o E, que é o
+    // que a carta do Balde lê (segurar derrama o tanque). Lá o F chamaria o
+    // par, e o dedo que queria o balde pedia ajuda sem querer. Soltar solta as
+    // duas: a rodada pode ter começado ou acabado no meio da segurada.
+    this.ui.onTouchHold = (down) => {
+      if (down) this.input.setVirtualDown(this.jardimNaTela ? 'KeyE' : 'KeyF', true);
+      else {
+        this.input.setVirtualDown('KeyE', false);
+        this.input.setVirtualDown('KeyF', false);
+      }
+    };
     this.ui.onRestart = () => this.restart();
     this.ui.som = (nome) => this.audio.play(nome);
     this.ui.onToggleSom = () => {
@@ -254,6 +273,11 @@ export class Game implements GameAPI {
     this.player.locked = false;
     this.player.riding = false;
     this.player.setVisible(true);
+    // o que a rodada do jardim liga morre com a cena
+    this.player.mira = null;
+    this.player.multiplicador = 1;
+    this.trocaBloqueada = false;
+    this.ui.showJardim(null);
 
     // o parceiro chega junto, um passo atras
     const atras = (spawn.facing ?? 0) + Math.PI;
@@ -282,7 +306,11 @@ export class Game implements GameAPI {
     this.ui.hidePrompt();
     this.ui.sceneCard(def.name, def.subtitle);
     this.audio.setClima(id);
-    this.migrarPremios();
+    // o mundo novo não tem as malhas esmaecidas do velho
+    this.oclusao.esquecer();
+    // a barra do modo de decorar é da cena que saiu
+    this.ui.mostrarPosicionador(null, null);
+    this.reporChapeuDeCampeao();
     this.aplicarPremios();
     this.save.scene = id;
   }
@@ -297,18 +325,23 @@ export class Game implements GameAPI {
   }
 
   /**
-   * Migracao de quem ja tinha o chapeu antes de ele virar item.
+   * O CHAPEU DE CAMPEAO E DE QUEM GANHOU, PARA SEMPRE.
    *
-   * A flag `chapeu-ping-pong:<id>` era o jeito antigo. Ela nao manda mais em
-   * nada; roda uma vez para o chapeu ganho ontem virar item hoje, e depois
-   * disso o inventario e a unica verdade.
+   * A flag `chapeu-ping-pong:<id>` e o direito ao chapeu — a cena grava na
+   * vitoria contra o parceiro. Quem tem a flag e nao tem o chapeu em lugar
+   * nenhum (descartou, ou ganhou com a cabeca ocupada por outra peca) recebe
+   * ele de volta no GUARDA-ROUPA, e nao na cabeca: e o mesmo padrao das
+   * compras e dos premios do quadro, e arrancar o gorro de alguem para por o
+   * chapeu no lugar seria o jogo vestindo a pessoa sozinho.
+   *
+   * E so dele, nao dos dois (diferente dos premios do quadro): quem ganhou
+   * foi o personagem que estava jogando.
    */
-  private migrarPremios(): void {
+  private reporChapeuDeCampeao(): void {
     for (const rig of [this.player.rig, this.parceiro.rig]) {
       const quem = rig.spec.id;
       if (!this.save.flag(`chapeu-ping-pong:${quem}`)) continue;
-      if (this.save.achouItem(quem, ITENS.chapeuPingPong.id)) continue;
-      this.save.vestir(quem, ITENS.chapeuPingPong);
+      this.save.guardar(quem, ITENS.chapeuPingPong);
     }
   }
 
@@ -353,9 +386,20 @@ export class Game implements GameAPI {
 
   private tick = (): void => {
     const dt = Math.min(this.clock.getDelta(), 1 / 20);
-    this.elapsed += dt;
     const world = this.current?.world;
     if (!world) return;
+    /**
+     * O MENU PAUSA O JOGO DE VERDADE (pedido do Renan: o Ari abriu o menu no
+     * meio da rodada do jardim e os bichos continuaram comendo). Antes ele só
+     * travava os controles; a cena seguia rodando por baixo. Agora, com ele
+     * aberto, nada do mundo anda: nem a dupla, nem a cena (`world.updaters` —
+     * a rodada do jardim, o turno do Mania, o ping pong, os bichos, as
+     * animações), nem o relógio `elapsed`. Só a câmera e o desenho continuam,
+     * para a tela não congelar num quadro velho. Fechou, tudo segue de onde
+     * parou.
+     */
+    const pausado = this.ui.menuOpen;
+    if (!pausado) this.elapsed += dt;
 
     // ------------------------------------------------------------ entrada
     const busy =
@@ -364,11 +408,14 @@ export class Game implements GameAPI {
       this.ui.menuOpen ||
       this.ui.mochilaOpen ||
       this.ui.armarioOpen ||
-      this.ui.vestiarioOpen ||
       this.ui.memoriasOpen ||
       this.ui.cardapioOpen ||
       this.ui.quadroOpen ||
       this.ui.lojaOpen ||
+      this.ui.cartasOpen ||
+      this.ui.livroOpen ||
+      this.ui.fimOpen ||
+      this.ui.lojaJosefinaOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
@@ -385,8 +432,6 @@ export class Game implements GameAPI {
     // Esc fecha o guarda-roupa: ele trava o movimento, então precisa de uma
     // saída de teclado além do botão
     if (this.ui.armarioOpen && this.input.justPressed('Escape')) this.ui.fecharArmario();
-    // o vestiário trava o movimento pelo mesmo motivo, e sai pela mesma tecla
-    if (this.ui.vestiarioOpen && this.input.justPressed('Escape')) this.ui.fecharVestiario();
     // o quadro trava o movimento igual ao guarda-roupa, então precisa da mesma
     // saída de teclado
     if (this.ui.memoriasOpen && this.input.justPressed('Escape')) this.ui.fecharMemorias();
@@ -401,6 +446,29 @@ export class Game implements GameAPI {
     if (this.ui.xadrezOpen && this.input.justPressed('Escape')) this.ui.fecharXadrez();
     // e a arara, pelo mesmo motivo de todas as outras: ela trava o movimento
     if (this.ui.lojaOpen && this.input.justPressed('Escape')) this.ui.fecharLoja();
+    // o livro das cartas e o fim da rodada do jardim são só leitura: Esc fecha
+    if (this.ui.livroOpen && this.input.justPressed('Escape')) this.ui.fecharLivro();
+    if (this.ui.fimOpen && this.input.justPressed('Escape')) this.ui.fecharFim();
+    // a banca da Josefina trava o movimento como a arara, e sai pela mesma tecla
+    if (this.ui.lojaJosefinaOpen && this.input.justPressed('Escape')) this.ui.fecharLojaDaJosefina();
+    /**
+     * A TELA DAS CARTAS DO JARDIM tem o teclado inteiro para ela: 1/2/3 marcam,
+     * as setas andam, E/espaço/Enter pegam. E ela NÃO tem Escape — ao contrário
+     * de todas as telas acima: subir de nível sem pegar carta seria perder a
+     * melhoria por acidente. O `return` depois é o que impede o mesmo E de
+     * chegar no diálogo ou numa interação do cenário no mesmo quadro.
+     */
+    if (this.ui.cartasOpen) {
+      const i = this.input;
+      if (i.justPressed('Digit1') || i.justPressed('Numpad1')) this.ui.teclaDasCartas('um');
+      if (i.justPressed('Digit2') || i.justPressed('Numpad2')) this.ui.teclaDasCartas('dois');
+      if (i.justPressed('Digit3') || i.justPressed('Numpad3')) this.ui.teclaDasCartas('tres');
+      if (i.justPressed('ArrowLeft') || i.justPressed('KeyA')) this.ui.teclaDasCartas('esquerda');
+      if (i.justPressed('ArrowRight') || i.justPressed('KeyD')) this.ui.teclaDasCartas('direita');
+      if (i.justPressed('KeyE') || i.justPressed('Space') || i.justPressed('Enter')) {
+        this.ui.teclaDasCartas('pegar');
+      }
+    }
     // as setas folheiam o quadro; com ele fechado elas continuam sendo andar
     if (this.ui.memoriasOpen) {
       if (this.input.justPressed('ArrowLeft')) this.ui.folhear(-1);
@@ -412,19 +480,22 @@ export class Game implements GameAPI {
     // trocar é como se vê — e se veste — o outro. O subtítulo da mochila já
     // prometia "T vê a do outro" e não funcionava: o `busy` engolia a tecla.
     const emTela =
-      this.ui.mochilaOpen || this.ui.armarioOpen || this.ui.vestiarioOpen || this.ui.lojaOpen;
+      this.ui.mochilaOpen || this.ui.armarioOpen || this.ui.lojaOpen;
     const podeTrocar = emTela
       ? !this.ui.dialogueOpen && !this.ui.menuOpen && !this.transitioning
       : !busy;
-    if (podeTrocar && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
+    if (podeTrocar && !this.trocaBloqueada && !this.player.locked && this.input.justPressed('KeyT')) this.swapCharacters();
     if (!busy) {
       if (this.input.justPressed('KeyQ')) this.iso.rotate(-1);
       if (this.input.justPressed('KeyR')) this.iso.rotate(1);
     }
 
     if (!busy && !this.player.locked && this.input.justPressed('KeyH')) this.maoNaMao();
+    // a ajuda do par, na rodada do jardim: o F (no celular, o botão do painel)
+    if (this.jardimNaTela && !busy && this.input.justPressed('KeyF')) this.ajudaPedida = true;
 
-    const acted = this.input.justPressed('KeyE') || this.input.justPressed('Space');
+    const acted =
+      !this.ui.cartasOpen && (this.input.justPressed('KeyE') || this.input.justPressed('Space'));
     if (acted && this.ui.handleAction()) {
       // o dialogo consumiu a tecla
     } else if (acted && !busy && this.hot && !this.player.locked) {
@@ -443,6 +514,12 @@ export class Game implements GameAPI {
       this.maoNaMao();
     }
 
+    if (!pausado) this.simular(dt, world);
+    this.acompanharCamera(dt, world, pausado);
+  };
+
+  /** Um passo do mundo: os corpos, os interativos e a cena. Não roda em pausa. */
+  private simular(dt: number, world: WorldBuilder): void {
     // os dois rodam antes do movimento: sao eles que mandam nos corpos
     this.beijo.update(dt, this.player, this.parceiro);
     this.maos.update(dt, this.player, this.parceiro);
@@ -465,7 +542,10 @@ export class Game implements GameAPI {
 
     // ------------------------------------------------------------- cena
     for (const fn of world.updaters) fn(dt, this.elapsed);
+  }
 
+  /** A câmera, a sombra, a oclusão e o desenho: rodam sempre, até em pausa. */
+  private acompanharCamera(dt: number, world: WorldBuilder, pausado: boolean): void {
     // ------------------------------------------------------------ camera
     if (this.cameraTarget) this.cameraTarget.getWorldPosition(this.camAim);
     else this.camAim.copy(this.player.chest);
@@ -476,6 +556,13 @@ export class Game implements GameAPI {
     const k = span / 22;
     this.sun.target.position.copy(this.camAim);
     this.sun.position.set(this.camAim.x + 14 * k, this.camAim.y + 20 * k, this.camAim.z + 9 * k);
+
+    // o que tapa quem importa fica translúcido (só com alguém vigiando: a rodada)
+    const eu = this.player.position;
+    const outro = this.parceiro.position;
+    if (!pausado) this.oclusao.update(dt, this.iso.camera, world.root, [this.player.rig.group, this.parceiro.rig.group], [
+      { x: eu.x, y: 0.9, z: eu.z }, { x: outro.x, y: 0.9, z: outro.z },
+    ]);
 
     this.renderer.render(this.scene, this.camOmbro ?? this.iso.camera);
 
@@ -656,6 +743,10 @@ export class Game implements GameAPI {
     this.iso.setViewSize(viewSize);
   }
 
+  enquadrar(largura: number, altura: number): void {
+    this.iso.setViewSizeParaCaber(largura, altura);
+  }
+
   lockPlayer(locked: boolean): void {
     this.player.locked = locked;
     if (locked) this.ui.hidePrompt();
@@ -690,6 +781,13 @@ export class Game implements GameAPI {
     if (como === 'cheio') this.ui.toast('Mochila cheia', '🎒');
     if (como === 'mao' || como === 'guardado') this.repintarMochila();
     return como;
+  }
+
+  ganharPeca(peca: ItemDef): boolean {
+    const nova = !this.save.ganhouPremio(peca.id);
+    this.save.registrarPremio(peca.id);
+    for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
+    return nova;
   }
 
   storeItem(item: ItemDef, quem = this.playerId()): Coleta {
@@ -831,9 +929,18 @@ export class Game implements GameAPI {
       const chapeu = vagas.some((i) => i?.id === ITENS.chapeuPingPong.id);
       if (quem.rig.campeao !== chapeu) quem.rig.setCampeao(chapeu);
 
-      const patins = vagas.some((i) => i?.id === ITENS.patins.id);
-      quem.patins = patins;
-      quem.rig.setPatins(patins);
+      /*
+       * DE PATINS QUEM ESTIVER COM QUALQUER PAR. Existem dois — o da lojinha e
+       * o premio do Mano —, e os dois dao a mesma 1,3x. Por isso a pergunta
+       * aqui e "tem vestimenta FUNCIONAL na vaga dos pes?" e nao "e aquele id
+       * ali": com o id cravado, calcar o premio deixava a pessoa andando no
+       * chao com um par de patins invisivel.
+       */
+      const calcado = vagas.find(
+        (i) => i?.tipo === 'vestivel' && i.slot === 'pes' && i.funcional === true,
+      ) ?? null;
+      quem.patins = calcado !== null;
+      quem.rig.setPatins(calcado !== null, calcado);
 
       // A roupa sai das MESMAS vagas: a vaga é o loadout, não há um segundo
       // armazenamento. Com o cache, `vestirRoupa` só roda quando algo mudou —
@@ -853,7 +960,7 @@ export class Game implements GameAPI {
       const id = item?.id ?? null;
       if (this.naMao.get(quem) === id) continue;
       this.naMao.set(quem, id);
-      rig.segurar(id ? modeloDoItem(id) : null, item?.holdPose ?? 'none');
+      rig.segurar(id ? modeloDoItem(id) : null, poseNaMao(item ?? null));
     }
   }
 
@@ -914,10 +1021,43 @@ export class Game implements GameAPI {
    * inventario, e as pecas sao itens. Um dia o `I` pode abrir daqui tambem.
    */
   abrirGuardaRoupa(): void {
+    this.herdarModaPraia();
     this.reporCompras();
+    this.reporPremios();
+    this.reporChapeuDeCampeao();
+    // o de casa é sempre o guarda-roupa, com o boneco de roupa de rua
+    this.abaDoArmario = 'vestir';
+    this.trajeDoBoneco = 'normal';
+    this.provandoNaPiscina = null;
+    this.previa.vestirTraje('normal');
     this.previa.mostrar(this.player.rig.spec);
+    this.ui.abrirArmario('casa');
     this.pintarArmario();
-    this.ui.abrirArmario();
+  }
+
+  /*
+   * O GUARDA-ROUPA EM MODO VESTIÁRIO: a aba aberta, o traje do boneco e a
+   * peça de piscina provada. Provar, como na Estella, NÃO mexe no save — só
+   * no boneco do painel.
+   */
+  private abaDoArmario: 'vestir' | 'piscina' = 'vestir';
+  private trajeDoBoneco: 'normal' | 'banho' = 'normal';
+  private provandoNaPiscina: ItemDef | null = null;
+
+  /**
+   * AS PEÇAS DO VESTIÁRIO ANTIGO CONTINUAM DE QUEM JÁ TINHA.
+   *
+   * O vestiário de antes dava o óculos e as quatro bermudas de graça a quem
+   * entrasse; agora elas se desbloqueiam pagando. Quem já tem alguma no
+   * guarda-roupa (ou no corpo) não paga de novo: ela vira COMPRADA, e daí em
+   * diante é reposta em todo guarda-roupa como qualquer compra.
+   */
+  private herdarModaPraia(): void {
+    const quem = [this.playerId(), this.companionId()];
+    for (const peca of MODA_PRAIA_ANTIGA) {
+      if (this.save.comprou(peca.id)) continue;
+      if (quem.some((q) => this.save.achouItem(q, peca.id))) this.save.registrarCompra(peca.id);
+    }
   }
 
   /**
@@ -940,8 +1080,31 @@ export class Game implements GameAPI {
     }
   }
 
+  /**
+   * Repoe no guarda-roupa todo premio ja resgatado no quadro da arena.
+   *
+   * Gemeo do `reporCompras`, e pela mesma razao: o armario ESTOCA o que e de
+   * voces em vez de guardar o que sobrou. A peca de premio nao esta no
+   * `ROUPAS_DO_ARMARIO` do quarto (ela nao e do acervo do Ari, foi ganha) e
+   * nem numa arara (ela nao esta a venda), entao este e o unico caminho de
+   * volta dela — e ele vale tanto para o armario do quarto quanto para o
+   * espelho do mezanino da Estella, que abrem o mesmo painel.
+   */
+  private reporPremios(): void {
+    for (const id of this.save.premios) {
+      const peca = fichaDoItem(id);
+      if (!peca) continue;
+      for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
+    }
+  }
+
   /** Redesenha o painel e o boneco a partir do save. */
   private pintarArmario(): void {
+    this.ui.mostrarAbaDoArmario(this.abaDoArmario, this.trajeDoBoneco);
+    if (this.abaDoArmario === 'piscina' && this.ui.armarioEhVestiario) {
+      this.pintarPiscina();
+      return;
+    }
     const quem = this.playerId();
     const vestindo = this.save.vestiveis(quem);
     // O que da para vestir sai do ARMARIO. A vestimenta funcional que estiver
@@ -956,19 +1119,112 @@ export class Game implements GameAPI {
   }
 
   /**
-   * Abre o vestiario do clube: o guarda-roupa encolhido na moda praia.
+   * Abre o VESTIÁRIO DO CLUBE: o guarda-roupa com outro nome e duas abas — o
+   * guarda-roupa de sempre e as roupas de piscina (pedido do Renan).
    *
-   * Nao ha um segundo armazenamento nenhum aqui. O oculos e as bermudas sao
-   * itens de acervo como qualquer outro, e as escolhas moram nas vagas do
-   * corpo — as MESMAS que o armario do quarto usa. E por isso que o Ari e o
-   * Renan tem estilos de praia independentes de graca: cada um tem o seu
-   * inventario, e o `T` troca de quem o painel esta falando.
+   * Não há armazenamento novo nenhum: as peças de piscina são itens como
+   * qualquer outro, desbloquear é comprar (`comprarPeca`, a mesma da Estella
+   * e da Josefina), e a peça comprada vira estoque de TODO guarda-roupa dos
+   * dois — o do quarto, o espelho da Estella e este.
+   *
+   * O boneco abre de TRAJE DE BANHO, que é como a peça vai ficar na piscina; o
+   * botão embaixo dele troca para a roupa de rua.
    */
   abrirVestiario(): void {
-    this.pintarVestiario();
-    this.ui.abrirVestiario();
+    this.herdarModaPraia();
+    this.reporCompras();
+    this.reporPremios();
+    this.reporChapeuDeCampeao();
+    this.trajeDoBoneco = 'banho';
+    this.provandoNaPiscina = null;
+    // quem ainda não tem NADA de piscina chega direto na vitrine: é o que
+    // veio fazer aqui
+    if (!MODA_PRAIA.some((p) => this.jaTemPeca(p.id))) this.abaDoArmario = 'piscina';
+    this.previa.vestirTraje('banho');
+    this.previa.mostrar(this.player.rig.spec);
+    this.ui.abrirArmario('vestiario');
+    this.pintarArmario();
   }
 
+  /** A peça de piscina aparece no traje de banho? (senão o boneco vai para a rua) */
+  private apareceNoBanho(peca: ItemDef): boolean {
+    return peca.slot === 'cabeca' || peca.slot === 'acessorio' || peca.praia === true
+      || (peca.slot === 'pernas' && peca.corBanho !== undefined);
+  }
+
+  /** Redesenha a aba de roupas de piscina e o boneco, com a peça provada por cima. */
+  private pintarPiscina(): void {
+    const quem = this.playerId();
+    const vestindo = this.save.vestiveis(quem);
+    const css = (cor: number): string => `#${cor.toString(16).padStart(6, '0')}`;
+    this.ui.renderPiscina({
+      dono: this.player.name,
+      saldo: this.save.carteira,
+      provando: this.provandoNaPiscina?.id ?? null,
+      pecas: MODA_PRAIA.map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        icone: p.icone,
+        nota: p.nota,
+        slot: p.slot ?? 'tronco',
+        preco: p.preco ?? 0,
+        cor: css(p.corBanho ?? p.cor ?? p.amostra ?? 0xcccccc),
+        // a amostra da bermuda leva a estampa dela: listra para a de faixas e a
+        // de marinheiro, pontinho para as de desenho (bolinha, fruta, flor, onda)
+        faixa: p.estampaBanho !== undefined ? css(p.estampaBanho)
+          : p.id === 'bermuda-listrada' && p.corDetalhe !== undefined ? css(p.corDetalhe) : undefined,
+        pontos: p.corBanho !== undefined && p.corDetalhe !== undefined && p.id !== 'bermuda-listrada'
+          ? css(p.corDetalhe) : undefined,
+        // "é de vocês" é PAGOU (ou herdou do vestiário antigo), e não "está
+        // no inventário agora": descartar do corpo não faz cobrar de novo
+        jaTem: this.save.comprou(p.id) || this.save.achouItem(quem, p.id),
+        vestida: vestindo.some((v) => v?.id === p.id),
+      })),
+    });
+    // o boneco veste o que a pessoa está usando, com a peça provada POR CIMA,
+    // na vaga dela — provar um chinelo não tira a bermuda
+    const loadout = { ...this.save.loadout(quem) };
+    if (this.provandoNaPiscina?.slot) loadout[this.provandoNaPiscina.slot] = this.provandoNaPiscina.id;
+    this.previa.vestir(loadout);
+  }
+
+  private provarNaPiscina(id: string): void {
+    const peca = MODA_PRAIA.find((p) => p.id === id) ?? null;
+    if (!peca) return;
+    // clicar de novo na mesma TIRA a prova, como na arara da Estella
+    this.provandoNaPiscina = this.provandoNaPiscina?.id === peca.id ? null : peca;
+    // camiseta e boné não aparecem no traje de banho: para ver a peça, o
+    // boneco vai para a roupa de rua
+    if (this.provandoNaPiscina && !this.apareceNoBanho(peca) && this.trajeDoBoneco === 'banho') {
+      this.trajeDoBoneco = 'normal';
+      this.previa.vestirTraje('normal');
+    }
+    this.audio.play('escolha');
+    this.pintarArmario();
+  }
+
+  /**
+   * O BOTÃO DA FICHA: desbloqueia a peça provada (paga, e ela vai para o
+   * guarda-roupa dos dois) ou, se ela já é de vocês, veste ou tira ali mesmo.
+   */
+  private agirNaPiscina(): void {
+    const peca = this.provandoNaPiscina;
+    if (!peca) return;
+    const quem = this.playerId();
+    const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
+    if (!this.jaTemPeca(peca.id)) {
+      if (this.comprarPeca(peca) !== 'comprou') return;
+    } else if (vaga >= 0 && this.save.vestiveis(quem)[vaga]?.id === peca.id) {
+      if (!this.tirarPeca(quem, vaga)) return;
+      this.audio.play('escolha');
+    } else {
+      // ela é dos dois, mas pode ter sido descartada: repõe antes de vestir
+      this.storeItem(peca, quem);
+      if (!this.vestirPeca(quem, peca.id)) return;
+      this.audio.play('escolha');
+    }
+    this.pintarArmario();
+  }
   /* ====================================================================
    *              A ARARA DA ESTELLA: provar no corpo e comprar
    * ==================================================================== */
@@ -1012,7 +1268,7 @@ export class Game implements GameAPI {
         preco: p.preco ?? 0,
         // a amostra da grade tem a COR DA PEÇA, como as bermudas do vestiário:
         // numa arara o que se escolhe é a cor, então ela tem que ser o botão
-        cor: css(p.cor ?? p.corBanho ?? 0xcccccc),
+        cor: css(p.cor ?? p.corBanho ?? p.amostra ?? 0xcccccc),
         // "já é seu" é PAGOU, não "está no inventário agora": descartar a peça
         // do corpo não pode fazer a arara cobrar de novo por ela
         jaTem: this.save.comprou(p.id) || this.save.achouItem(quem, p.id),
@@ -1050,12 +1306,26 @@ export class Game implements GameAPI {
    */
   private comprarProvada(): void {
     const peca = this.provando;
-    if (!peca || peca.preco === undefined) return;
+    if (!peca) return;
+    if (this.comprarPeca(peca) === 'comprou') this.pintarLoja();
+  }
+
+  jaTemPeca(id: string): boolean {
+    return this.save.comprou(id) || this.save.achouItem(this.playerId(), id);
+  }
+
+  /**
+   * COMPRA UMA PEÇA DE ROUPA: debita da carteira do casal e guarda nos dois.
+   * É o caminho único de compra de roupa — a arara da boutique e a lojinha da
+   * Josefina passam os dois por aqui, com os mesmos avisos.
+   */
+  comprarPeca(peca: ItemDef): 'comprou' | 'ja-tem' | 'sem-dinheiro' | 'sem-espaco' | 'sem-preco' {
+    if (peca.preco === undefined) return 'sem-preco';
     const quem = this.playerId();
-    if (this.save.comprou(peca.id) || this.save.achouItem(quem, peca.id)) return;
+    if (this.jaTemPeca(peca.id)) return 'ja-tem';
     if (!this.gastar(peca.preco)) {
       this.ui.toast(`Faltam R$ ${peca.preco - this.save.carteira}`, '💸');
-      return;
+      return 'sem-dinheiro';
     }
     /*
      * A PEÇA VAI PARA O GUARDA-ROUPA, e não para a mochila: `storeItem` é quem
@@ -1073,7 +1343,7 @@ export class Game implements GameAPI {
     if (foi === 'cheio') {
       this.ganhar(peca.preco);
       this.ui.toast('Sem espaço para levar — o dinheiro voltou', '🎒');
-      return;
+      return 'sem-espaco';
     }
     /*
      * PAGOU, É DE VOCÊS PARA SEMPRE. A anotação é o que separa "a peça está no
@@ -1087,34 +1357,26 @@ export class Game implements GameAPI {
     this.storeItem(peca, this.companionId());
     this.audio.play('caixa');
     this.ui.toast(`${peca.nome} — R$ ${peca.preco}`, '🛍️');
-    this.pintarLoja();
+    return 'comprou';
   }
 
-  /** Redesenha o painel do vestiario a partir do save. */
-  private pintarVestiario(): void {
-    const quem = this.playerId();
-    const vestindo = this.save.vestiveis(quem);
-    const naCabeca = vestindo[SLOTS_ROUPA.indexOf('cabeca')];
-    const nasPernas = vestindo[SLOTS_ROUPA.indexOf('pernas')];
-    // a paleta e numero e o CSS quer texto; a traducao mora aqui, e nao na Ui,
-    // porque e o Game quem conhece a ficha da peca
-    const css = (cor: number): string => `#${cor.toString(16).padStart(6, '0')}`;
-    this.ui.renderVestiario({
-      dono: this.player.name,
-      oculos: naCabeca?.id === ITENS.oculosEscuros.id,
-      // so as cores DESBLOQUEADAS: a lista e o que a pessoa tem, e nao o
-      // catalogo inteiro. Hoje o vestiario abastece as quatro ao abrir, mas
-      // quem manda continua sendo o inventario dela.
-      bermudas: MODA_PRAIA
-        .filter((b) => this.save.achouItem(quem, b.id))
-        .map((b) => ({
-          id: b.id,
-          nome: b.nome,
-          cor: css(b.corBanho ?? 0xffffff),
-          faixa: b.estampaBanho === undefined ? undefined : css(b.estampaBanho),
-          vestida: nasPernas?.id === b.id,
-        })),
-    });
+  // ------------------------------------------------ a lojinha da Josefina
+
+  decoracoes(): readonly DecoracaoNoSave[] {
+    return this.save.decoracoes;
+  }
+
+  salvarDecoracoes(lista: readonly DecoracaoNoSave[]): void {
+    this.save.salvarDecoracoes(lista);
+  }
+
+  abrirLojaDaJosefina(conteudo: ConteudoDaLoja, agir: (a: AcaoNaLoja) => ConteudoDaLoja): Promise<SaidaDaLoja> {
+    // o retrato de cada enfeite é o próprio modelo, fotografado na hora (e guardado)
+    return this.ui.abrirLojaDaJosefina(conteudo, retratoDaDecoracao, agir);
+  }
+
+  posicionador(estado: EstadoDoPosicionador | null, aoBotao?: (b: BotaoDoPosicionador) => void): void {
+    this.ui.mostrarPosicionador(estado, aoBotao ?? null);
   }
 
   /**
@@ -1125,8 +1387,10 @@ export class Game implements GameAPI {
    * `world/memoriasData.ts`.
    */
   abrirMemoria(id: string): void {
-    const onde = MEMORIAS.findIndex((m) => m.id === id);
-    if (onde >= 0) this.ui.abrirMemorias(MEMORIAS, onde);
+    // a memória ganha jogando só entra no quadro depois de ganha (`trava`)
+    const acervo = MEMORIAS.filter((m) => !m.trava || this.save.flag(m.trava));
+    const onde = acervo.findIndex((m) => m.id === id);
+    if (onde >= 0) this.ui.abrirMemorias(acervo, onde);
   }
 
   /**
@@ -1134,13 +1398,177 @@ export class Game implements GameAPI {
    * catalogo para a UI, que tem os canvas. A pintura mora inteira em
    * `world/cardapioData.ts`, do mesmo jeito que a das memorias.
    */
+  escolherCartaDoJardim(cartas: readonly CartaNaTela[], contexto: ContextoDaEscolha): Promise<string> {
+    return this.ui.escolherCarta(cartas, contexto);
+  }
+
+  desbloquearCartaDoJardim(id: string): boolean {
+    return this.save.desbloquearCarta(id);
+  }
+
+  cartasDoLivro(): readonly string[] {
+    return this.save.livro;
+  }
+
+  abrirLivroDeCartas(cartas: readonly CartaNaTela[], conteudo: ConteudoDoLivro | null = null): Promise<string | null> {
+    // o retrato das pragas é o modelo 3D fotografado na hora (e guardado)
+    return this.ui.abrirLivro(cartas, new Set(this.save.livro), conteudo, retratoDePraga);
+  }
+
+  abrirArsenal(conteudo: ConteudoDoArsenal): Promise<string | null> {
+    return this.ui.abrirArsenal(conteudo, new Set(this.save.livro));
+  }
+
+  mostrarFimDoJardim(fim: FimDoJardim): Promise<void> {
+    return this.ui.mostrarFim(fim);
+  }
+
+  showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void {
+    this.ui.showExperiencia(dados);
+  }
+
+  /** a rodada do jardim está com o painel na tela (só aí o F chama o par) */
+  private jardimNaTela = false;
+  private ajudaPedida = false;
+
+  /** o que tapa os bichos e as gotas fica translúcido (ver `Oclusao.ts`) */
+  readonly oclusao = new Oclusao();
+
+  vigiarOclusao(vigia: VigiaDaOclusao | null): void {
+    this.oclusao.vigiar(vigia);
+  }
+
+  trocarMusica(clima: string | null): void {
+    this.audio.setClima(clima ?? this.save.scene);
+  }
+
+  /** o clima da música tocando agora — o teste confere a troca por aqui */
+  get climaDaMusica(): string {
+    return this.audio.clima;
+  }
+
+  pedidoDeAjudaDoPar(): boolean {
+    const pediu = this.ajudaPedida;
+    this.ajudaPedida = false;
+    return pediu;
+  }
+
+  showJardim(dados: Parameters<GameAPI['showJardim']>[0]): void {
+    this.jardimNaTela = dados !== null;
+    if (!dados) this.ajudaPedida = false;
+    this.ui.showJardim(dados);
+  }
+
+  mirarJogador(alvo: { x: number; z: number } | null): void {
+    this.player.mira = alvo ? { x: alvo.x, z: alvo.z } : null;
+  }
+
+  setVelocidadeDoJogador(multiplicador: number): void {
+    this.player.multiplicador = multiplicador;
+  }
+
+  objetoNaMao(quem?: string): THREE.Object3D | null {
+    const rig = quem && quem === this.parceiro.rig.spec.id ? this.parceiro.rig : this.player.rig;
+    return rig.objetoNaMao;
+  }
+
+  anguloDaCamera(): number {
+    return this.iso.angle;
+  }
+
+  pularJogador(altura?: number, duracao?: number): void {
+    this.player.pular(altura, duracao);
+  }
+
+  /** a rodada do jardim trava o T (ver `GameAPI.bloquearTroca`) */
+  private trocaBloqueada = false;
+
+  bloquearTroca(bloqueado: boolean): void {
+    this.trocaBloqueada = bloqueado;
+  }
+
+  soltarCoracoes(quantos = 3): void {
+    const p = this.player.position;
+    for (let i = 0; i < quantos; i++) {
+      const a = (i / Math.max(1, quantos)) * Math.PI * 2 + Math.random() * 0.6;
+      this.coracoes.soltar(p, Math.cos(a) * 0.35, Math.sin(a) * 0.35, 1.7 + i * 0.12);
+    }
+    this.audio.play('coracao');
+  }
+
+  vestirRegador(estilo: Partial<EstiloDeRegador> | null): void {
+    definirEstiloDoRegador(estilo);
+    // a mao so e refeita quando o ITEM muda; aqui o item e o mesmo e o que
+    // mudou foi o desenho, entao esquece o que estava na mao dos dois e o
+    // proximo `sincronizarMaos` monta o regador de novo
+    this.naMao.clear();
+  }
+
   abrirQuadroDeInscricoes(): Promise<string | null> {
     // quem ja se inscreveu sai do save: ficha com `inscreveSe` vazio esta la
     // desde sempre, e o resto entra quando a flag dele existir
     const inscritos = new Set(
       INSCRITOS.filter((d) => !d.inscreveSe || this.save.flag(d.inscreveSe)).map((d) => d.id),
     );
-    return this.ui.abrirQuadro(INSCRITOS, inscritos, this.parceiro.name);
+    return this.ui.abrirQuadro(INSCRITOS, inscritos, this.parceiro.name, {
+      batido: (id) => this.save.flag(`batido-${id}`),
+      resgatado: (id) => (PREMIOS_DA_ARENA[id] ?? []).every((p) => this.save.ganhouPremio(p.id)),
+      resgatar: (id) => this.resgatarPremio(id),
+      campeao: () => {
+        if (this.save.flag('campeao-da-arena')) return 'pego';
+        const [batidos, pegos, total] = this.progressoDaArena();
+        return batidos === total && pegos === total ? 'aberto' : 'fechado';
+      },
+      progresso: () => this.progressoDaArena(),
+    });
+  }
+
+  /**
+   * Quanto falta para o Prêmio do Campeão: [derrotados, prêmios pegos, total].
+   *
+   * O TOTAL SAI DE `PREMIOS_DA_ARENA`, e não de um número escrito à mão: no dia
+   * em que entrar um quinto desafiante com prêmio, a meta cresce sozinha e
+   * ninguém fica campeão sem ter ganhado dele.
+   *
+   * São DUAS contas, e não uma, porque o Renan pediu as duas etapas: ganhar
+   * de todos e pegar o que cada um deu. Quem ganhou de todo mundo e deixou uma
+   * roupa pendurada no quadro ainda tem o que fazer.
+   */
+  private progressoDaArena(): readonly [number, number, number] {
+    const ids = Object.keys(PREMIOS_DA_ARENA);
+    const batidos = ids.filter((id) => this.save.flag(`batido-${id}`)).length;
+    const pegos = ids.filter(
+      (id) => (PREMIOS_DA_ARENA[id] ?? []).every((p) => this.save.ganhouPremio(p.id)),
+    ).length;
+    return [batidos, pegos, ids.length];
+  }
+
+  /**
+   * Pega o premio de um desafiante ja batido.
+   *
+   * ELE VAI PARA O GUARDA-ROUPA DOS DOIS na hora, e nao so para o de quem
+   * jogou: a peca e do casal, como tudo que se ganha aqui. E o id fica anotado
+   * em `save.premios`, que e o que faz a peca voltar a cada abertura do
+   * armario — descartar uma peca de premio tira ela do corpo, nunca da vida.
+   *
+   * Recusa em silencio o que ainda nao foi ganho: quem decide isso e a flag da
+   * vitoria, e a tela so mostra o que o save ja permite.
+   */
+  private resgatarPremio(id: string): boolean {
+    if (!this.save.flag(`batido-${id}`)) return false;
+    const pecas = PREMIOS_DA_ARENA[id] ?? [];
+    if (pecas.length === 0) return false;
+    if (pecas.every((p) => this.save.ganhouPremio(p.id))) return false;
+    for (const peca of pecas) {
+      this.save.registrarPremio(peca.id);
+      for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
+    }
+    this.som('memoria');
+    this.ui.toast(
+      pecas.length > 1 ? `${pecas.length} peças no guarda-roupa` : `${pecas[0].nome} é de vocês`,
+      pecas[0].icone,
+    );
+    return true;
   }
 
   abrirCardapio(casa?: string): Promise<string | null> {
@@ -1328,7 +1756,6 @@ export class Game implements GameAPI {
       this.previa.mostrar(this.player.rig.spec);
       this.pintarArmario();
     }
-    if (this.ui.vestiarioOpen) this.pintarVestiario();
     // a arara mostra a peca no corpo de quem esta no comando: o T troca o
     // corpo do boneco junto, e a peca provada continua provada no outro
     if (this.ui.lojaOpen) {

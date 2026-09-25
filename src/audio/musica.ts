@@ -46,10 +46,24 @@ export interface Clima {
   chocalho: boolean;
   /** graus da escala usados pela melodia, em semitons */
   escala: number[];
+  /*
+   * OS INGREDIENTES DE TENSÃO — só a defesa da estufa usa, e cada um é uma
+   * chave: o clima de passeio continua sem nenhum.
+   */
+  /** colcheias RETAS, sem o suingue preguiçoso: quem tem pressa não balança */
+  reto?: boolean;
+  /** um pizzicato correndo em colcheias (tônica, quinta, oitava): o relógio que anda */
+  ostinato?: boolean;
+  /** um bumbo macio no 1 e no 3 */
+  bumbo?: boolean;
+  /** o tique-taque de um bloco de madeira em cada tempo */
+  tique?: boolean;
 }
 
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19];
 const PENTA_MENOR_DOCE = [0, 2, 3, 5, 7, 9, 10, 12, 14];
+/** a menor com a segunda: menor para a tensão, e a segunda para não ficar triste */
+const MENOR_COM_SEGUNDA = [0, 2, 3, 7, 10, 12, 14, 15, 19];
 
 /**
  * Um clima por cenário. A casa é lenta e quentinha, o parque é o mais alegre e
@@ -79,6 +93,32 @@ export const CLIMAS: Record<string, Clima> = {
     melodia: 0.72,
     chocalho: true,
     escala: PENTA,
+  },
+  /**
+   * A DEFESA DA ESTUFA — pedido do Renan: "ainda fofa, mas com tensão". Ela
+   * não é de cena nenhuma: a rodada do jardim liga ao começar e desliga no
+   * fim (`g.trocarMusica`). É a MESMA família dos outros climas (marimba,
+   * acordes com sétima, nada de metal), com quatro ingredientes a mais:
+   *
+   * - **mais rápida e reta** (118, sem suingue): o balanço preguiçoso é o que
+   *   faz os outros climas soarem "sem pressa";
+   * - **em menor**, com um dominante (B7) no fim do giro que PEDE resolução —
+   *   a tensão de verdade vem de acorde que não descansa;
+   * - **o pizzicato em colcheias**, o relógio que não para;
+   * - **bumbo macio e tique-taque** de bloco de madeira: pressa de relógio de
+   *   cozinha, e não de filme de ação.
+   */
+  'rodada-do-jardim': {
+    bpm: 118,
+    tonica: 40, // mi
+    giro: [m7(0), maj7(8), m7(5), dom7(7)],
+    melodia: 0.7,
+    chocalho: false,
+    escala: MENOR_COM_SEGUNDA,
+    reto: true,
+    ostinato: true,
+    bumbo: true,
+    tique: true,
   },
   /** usado enquanto nenhuma cena pediu clima */
   padrao: {
@@ -154,7 +194,8 @@ export class Musica {
     while (this.proximo < segundos) {
       this.tocarPasso(this.passo, this.proximo);
       const colcheia = 30 / this.clima.bpm;
-      this.proximo += colcheia * (this.passo % 2 === 0 ? 1.18 : 0.82);
+      const suingue = this.clima.reto ? 1 : this.passo % 2 === 0 ? 1.18 : 0.82;
+      this.proximo += colcheia * suingue;
       this.passo += 1;
     }
   }
@@ -168,7 +209,8 @@ export class Musica {
       this.tocarPasso(this.passo, this.proximo);
       // suingue: a colcheia do tempo forte é mais longa que a do contratempo
       const colcheia = 30 / this.clima.bpm;
-      this.proximo += colcheia * (this.passo % 2 === 0 ? 1.18 : 0.82);
+      const suingue = this.clima.reto ? 1 : this.passo % 2 === 0 ? 1.18 : 0.82;
+      this.proximo += colcheia * suingue;
       this.passo += 1;
     }
   }
@@ -247,6 +289,30 @@ export class Musica {
       this.marimba(nota(base + alvo), t);
       // oitava por cima só nas notas graves, senão o dobro já sai estridente
       if (alvo <= 9 && this.sorte() < 0.22) this.marimba(nota(base + alvo + 12), t + 0.03, 0.4);
+    }
+
+    // ------------------------------------------- a tensão (a defesa da estufa)
+    if (c.ostinato) {
+      // tônica, quinta, oitava, quinta — em toda colcheia, curtinho e abafado:
+      // é o pizzicato que não deixa a música sentar
+      const desenho = [0, 7, 12, 7];
+      tom(this.ctx, this.destino, {
+        freq: nota(raiz + 12 + desenho[naBarra % 4]),
+        quando: t,
+        dur: 0.13,
+        vol: naBarra % 2 === 0 ? 0.05 : 0.032,
+        tipo: 'triangle',
+        abafo: 1400,
+      });
+    }
+    if (c.bumbo && (naBarra === 0 || naBarra === 4)) {
+      // baixo: o baixo já bate no 1, e somados eles estouravam o pico (0,54)
+      tom(this.ctx, this.destino, { freq: 120, glide: 48, quando: t, dur: 0.2, vol: 0.09, tipo: 'sine' });
+    }
+    if (c.tique && naBarra % 2 === 0) {
+      // bloco de madeira: um estalo afinado, mais forte no primeiro tempo
+      chiado(this.ctx, this.destino, { quando: t, dur: 0.035, vol: naBarra === 0 ? 0.05 : 0.03, freq: 2400, q: 7 });
+      tom(this.ctx, this.destino, { freq: naBarra === 0 ? 1250 : 1050, quando: t, dur: 0.05, vol: 0.02, tipo: 'sine' });
     }
 
     // ------------------------------------------------------------ chocalho

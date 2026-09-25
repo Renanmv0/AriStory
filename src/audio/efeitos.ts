@@ -43,7 +43,42 @@ export type SomNome =
   | 'balido'
   | 'menu'
   | 'diario'
-  | 'recomecar';
+  | 'recomecar'
+  // o jato do regador e as cartas do jardim (§6 do plano: um som por carta que muda o jato)
+  | 'jato'
+  | 'jatoLongo'
+  | 'jatoForte'
+  | 'jatoArco'
+  // as FERRAMENTAS da estufa (`minigames/jardim/armas.ts`): cada uma com o seu som
+  | 'tiroPistola'
+  | 'borrifada'
+  | 'mangueira'
+  | 'jatao'
+  | 'carga'
+  | 'respingo'
+  | 'tranco'
+  | 'gelo'
+  | 'bolha'
+  | 'estouro'
+  | 'mira'
+  | 'pingo'
+  | 'anel'
+  | 'balde'
+  | 'ronco'
+  | 'geiser'
+  | 'arcoIris'
+  | 'trovao'
+  | 'chuvinha'
+  | 'vapor'
+  | 'sacudida'
+  // as cartas do jardim que não mexem no jato
+  | 'grito'
+  | 'assobio'
+  | 'nhac'
+  | 'ardido'
+  | 'clique'
+  | 'martelo'
+  | 'brotar';
 
 /** graus da pentatônica maior, em semitons */
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
@@ -85,6 +120,192 @@ export const EFEITOS: Record<SomNome, Receita> = {
   agua: ({ ctx, destino, t }) => {
     chiado(ctx, destino, { quando: t, dur: 0.42, vol: 0.2, freq: 2400, glide: 500, q: 0.6 });
     tom(ctx, destino, { freq: 420, glide: 120, quando: t, dur: 0.26, vol: 0.1, tipo: 'sine' });
+  },
+
+  // ------------------------------------------------------- o jato do regador
+  /*
+   * O JATO DO REGADOR E AS CARTAS DO JARDIM.
+   *
+   * O `jato` é o som que MAIS toca na rodada — um a cada cadência, a rodada
+   * inteira —, então ele é quase um sopro: um "fsh" curto de água saindo do
+   * crivo, alternando dois timbres com `n` para não virar metrônomo. Cada
+   * carta que muda o jato muda o som dele (a tabela do §6 do plano), e todo o
+   * resto é curto e baixo pela mesma razão.
+   */
+  jato: ({ ctx, destino, t, n }) => {
+    const par = n % 2 === 0;
+    chiado(ctx, destino, { quando: t, dur: 0.34, vol: 0.06, freq: par ? 3400 : 2900, glide: 1200, q: 0.8 });
+    chiado(ctx, destino, { quando: t + 0.01, dur: 0.18, vol: 0.022, freq: 5600, q: 1.4, tipo: 'highpass' });
+  },
+
+  // a Mangueira: o mesmo sopro, comprido e fino — "fshhhhh"
+  jatoLongo: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.95, vol: 0.055, freq: 4200, glide: 2200, q: 1.1 });
+  },
+
+  // a Pressão (e o primeiro jato de tanque cheio): um estalo de pressão na frente do sopro
+  jatoForte: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 190, glide: 90, quando: t, dur: 0.1, vol: 0.09, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t, dur: 0.28, vol: 0.085, freq: 2600, glide: 900, q: 0.7 });
+  },
+
+  // o Jato em arco: a água sobe assobiando e desce
+  jatoArco: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: nota(DO + 12), glide: nota(DO + 19), quando: t, dur: 0.22, vol: 0.035, tipo: 'sine' });
+    tom(ctx, destino, { freq: nota(DO + 19), glide: nota(DO + 7), quando: t + 0.2, dur: 0.24, vol: 0.03, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t, dur: 0.2, vol: 0.035, freq: 3400, glide: 1800, q: 0.8 });
+  },
+
+  /*
+   * a PISTOLA D'ÁGUA: o "tic" do gatilho de plástico, um "piu" de brinquedo que
+   * cai uma oitava e o esguicho curto e seco — bem mais agudo e rápido que o
+   * sopro do regador. O "piu" alterna dó e ré (`n`), senão os tiros seguidos
+   * viram metrônomo
+   */
+  tiroPistola: ({ ctx, destino, t, n }) => {
+    tom(ctx, destino, { freq: nota(DO + 31), quando: t, dur: 0.018, vol: 0.03, tipo: 'square', abafo: 2400 });
+    const topo = n % 2 === 0 ? DO + 24 : DO + 26;
+    tom(ctx, destino, { freq: nota(topo), glide: nota(topo - 12), quando: t + 0.012, dur: 0.09, vol: 0.045, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t + 0.01, dur: 0.15, vol: 0.07, freq: 5200, glide: 2400, q: 1.3 });
+  },
+
+  /*
+   * o BORRIFADOR: o "tic" do gatilho de plástico e o "psst" da névoa — um
+   * sopro bem agudo e aerado (7 kHz descendo), mais curto e mais leve que o
+   * "fsh" do regador, com uma notinha de sininho por cima que alterna mi e sol
+   * (`n`), para a névoa soar leve e não virar metrônomo no aperto seguido
+   */
+  borrifada: ({ ctx, destino, t, n }) => {
+    tom(ctx, destino, { freq: nota(DO + 36), quando: t, dur: 0.014, vol: 0.018, tipo: 'triangle' });
+    chiado(ctx, destino, { quando: t + 0.006, dur: 0.2, vol: 0.05, freq: 7200, glide: 5000, q: 0.7 });
+    chiado(ctx, destino, { quando: t + 0.006, dur: 0.13, vol: 0.016, freq: 2600, q: 0.9 });
+    tom(ctx, destino, { freq: nota(n % 2 ? DO + 28 : DO + 31), quando: t + 0.03, dur: 0.18, vol: 0.016, tipo: 'sine' });
+  },
+
+  /*
+   * a MANGUEIRA: água correndo pela borracha — um sopro mais GRAVE e cheio que
+   * o do regador (1,5 kHz, e não 3 kHz), com um fiozinho de chiado em cima e um
+   * "glub" de bolha a cada três jatos. Ela atira três vezes por segundo, e cada
+   * sopro SEGURA o volume mais que o intervalo (`sustenta`): eles emendam num
+   * jorro contínuo e baixinho, com só um empurrãozinho a cada jato — sem isso
+   * soava "fsh… fsh… fsh…", de irrigador, e não de mangueira
+   */
+  mangueira: ({ ctx, destino, t, n }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.62, vol: 0.024, freq: 1500, glide: 1150, q: 0.6, sustenta: 0.6 });
+    chiado(ctx, destino, { quando: t + 0.02, dur: 0.5, vol: 0.008, freq: 5200, q: 1, tipo: 'highpass', sustenta: 0.6 });
+    if (n % 3 === 0) {
+      tom(ctx, destino, { freq: nota(DO - 5), glide: nota(DO - 12), quando: t + 0.05, dur: 0.08, vol: 0.022, tipo: 'sine' });
+    }
+  },
+
+  // o Jato carregado soltando: o jatão, grave e largo
+  jatao: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 150, glide: 60, quando: t, dur: 0.3, vol: 0.12, tipo: 'triangle' });
+    chiado(ctx, destino, { quando: t, dur: 0.55, vol: 0.13, freq: 1800, glide: 500, q: 0.5 });
+    chiado(ctx, destino, { quando: t + 0.02, dur: 0.3, vol: 0.05, freq: 5200, q: 1, tipo: 'highpass' });
+  },
+
+  // o Jato carregado ficando pronto: um zumbido que sobe e fecha num brilho
+  carga: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: nota(DO - 12), glide: nota(DO + 7), quando: t, dur: 0.42, vol: 0.05, tipo: 'triangle', ataque: 0.2 });
+    tom(ctx, destino, { freq: nota(DO + 19), quando: t + 0.36, dur: 0.3, vol: 0.05, tipo: 'sine' });
+  },
+
+  // a água batendo no bicho: um "plic" curtinho (toca muito, então é baixo)
+  respingo: ({ ctx, destino, t, n }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.16, vol: 0.05, freq: n % 2 ? 1900 : 1600, glide: 600, q: 1 });
+    tom(ctx, destino, { freq: 520, glide: 260, quando: t, dur: 0.06, vol: 0.03, tipo: 'sine' });
+  },
+
+  // a Gota pesada: o "tum" abafado do bicho sendo empurrado
+  tranco: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 120, glide: 55, quando: t, dur: 0.16, vol: 0.12, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t, dur: 0.1, vol: 0.04, freq: 400, q: 0.8, tipo: 'lowpass' });
+  },
+
+  // a Gota gelada: o tilintar do gelo, duas notas altas da pentatônica
+  gelo: ({ ctx, destino, t, n }) => {
+    const [a, b] = n % 2 ? [PENTA[5], PENTA[7]] : [PENTA[4], PENTA[6]];
+    tom(ctx, destino, { freq: nota(DO + 24 + a), quando: t, dur: 0.22, vol: 0.035, tipo: 'sine' });
+    tom(ctx, destino, { freq: nota(DO + 24 + b), quando: t + 0.06, dur: 0.26, vol: 0.03, tipo: 'sine' });
+  },
+
+  // a Água com sabão: o jato sai borbulhando — "ploc ploc"
+  bolha: ({ ctx, destino, t }) => {
+    for (const [atraso, base] of [[0, 380], [0.07, 520]] as const) {
+      tom(ctx, destino, { freq: base, glide: base * 2.2, quando: t + atraso, dur: 0.07, vol: 0.05, tipo: 'sine', ataque: 0.004 });
+    }
+  },
+
+  // a bolha grande estourando
+  estouro: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.2, vol: 0.09, freq: 2600, glide: 800, q: 0.9 });
+    tom(ctx, destino, { freq: 900, glide: 300, quando: t, dur: 0.12, vol: 0.06, tipo: 'triangle' });
+  },
+
+  // as Miras: o "tic" do alvinho fechando no bicho
+  mira: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: nota(DO + 24), quando: t, dur: 0.04, vol: 0.035, tipo: 'square', abafo: 3000 });
+    tom(ctx, destino, { freq: nota(DO + 31), quando: t + 0.05, dur: 0.05, vol: 0.03, tipo: 'square', abafo: 3000 });
+  },
+
+  // a Garoa: pingos caindo atrás de você
+  pingo: ({ ctx, destino, t, n }) => {
+    const f = n % 2 ? 1500 : 1250;
+    tom(ctx, destino, { freq: f, glide: f * 0.6, quando: t, dur: 0.11, vol: 0.045, tipo: 'sine' });
+  },
+
+  // o Crivo giratório: a água girando em volta — um "vuuush" que sobe e desce
+  anel: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.24, vol: 0.07, freq: 700, glide: 3200, q: 0.9 });
+    chiado(ctx, destino, { quando: t + 0.2, dur: 0.26, vol: 0.06, freq: 3200, glide: 900, q: 0.9 });
+  },
+
+  // o Balde: o tanque inteiro de uma vez no chão
+  balde: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.7, vol: 0.16, freq: 1500, glide: 300, q: 0.5 });
+    tom(ctx, destino, { freq: 200, glide: 70, quando: t + 0.05, dur: 0.3, vol: 0.1, tipo: 'sine' });
+  },
+
+  // o Gêiser em dois tempos: o chão roncando (a rachadura)…
+  ronco: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 58, glide: 72, quando: t, dur: 0.6, vol: 0.13, tipo: 'sawtooth', abafo: 260, ataque: 0.15 });
+    chiado(ctx, destino, { quando: t, dur: 0.6, vol: 0.05, freq: 220, q: 0.7, tipo: 'lowpass' });
+  },
+  // …e o jorro subindo
+  geiser: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.9, vol: 0.15, freq: 700, glide: 3400, q: 0.5 });
+    tom(ctx, destino, { freq: 110, glide: 220, quando: t, dur: 0.3, vol: 0.1, tipo: 'triangle' });
+  },
+
+  // o Arco-íris: um acorde que abre, nota por nota
+  arcoIris: ({ ctx, destino, t }) => {
+    [0, 2, 4, 7, 9, 12].forEach((grau, i) => {
+      tom(ctx, destino, { freq: nota(DO + 12 + grau), quando: t + i * 0.045, dur: 0.5, vol: 0.035, tipo: 'sine' });
+    });
+  },
+
+  // a Chuva: um trovão baixinho, longe — o jogo é fofo, não é tempestade
+  trovao: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 1.1, vol: 0.13, freq: 160, q: 0.6, tipo: 'lowpass' });
+    tom(ctx, destino, { freq: 48, glide: 38, quando: t + 0.05, dur: 0.9, vol: 0.08, tipo: 'sine', ataque: 0.1 });
+  },
+  // a chuva fina caindo (a Chuva e a Dança da chuva)
+  chuvinha: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 1.2, vol: 0.05, freq: 3400, q: 0.6 });
+    chiado(ctx, destino, { quando: t + 0.1, dur: 1, vol: 0.035, freq: 1800, q: 0.9 });
+  },
+
+  // o Orvalho e a Água morna: vapor chiando
+  vapor: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.45, vol: 0.04, freq: 4200, glide: 5600, q: 0.9 });
+  },
+
+  // o bicho encharcado sacudindo a água: "brrr", três sacudidas rápidas
+  sacudida: ({ ctx, destino, t }) => {
+    for (let i = 0; i < 3; i++) {
+      chiado(ctx, destino, { quando: t + i * 0.08, dur: 0.12, vol: 0.1 - i * 0.02, freq: 1300 + i * 200, glide: 700, q: 1 });
+    }
   },
 
   // ------------------------------------------------------------ interação
@@ -529,6 +750,71 @@ export const EFEITOS: Record<SomNome, Receita> = {
 
   sentar: ({ ctx, destino, t }) => {
     chiado(ctx, destino, { quando: t, dur: 0.24, vol: 0.09, freq: 700, glide: 260, q: 0.7 });
+  },
+
+  // ------------------------------------------- as cartas do jardim, fora do jato
+  /*
+   * O QUE AS CARTAS DE JARDINEIRO E DE JARDIM FAZEM TAMBÉM SE OUVE. Todos
+   * curtos, e nenhum no registro do jato (o chiado agudo): na rodada eles
+   * tocam por cima da água, e o ouvido precisa separar um do outro.
+   */
+  // o Grito: um "ÊI!" de megafone — serra abafada que sobe e cai, com o ar na frente
+  grito: ({ ctx, destino, t }) => {
+    for (const [freq, det] of [[nota(DO - 5), 0], [nota(DO + 2), 8]] as const) {
+      tom(ctx, destino, {
+        // 0,6 s de envelope para render ~0,35 s audíveis: o decaimento é
+        // exponencial, e com 0,3 s o grito saía um "ê" de 0,17 s (medido no .wav)
+        freq: freq * 0.9, glide: freq * 1.08, quando: t, dur: 0.6, vol: 0.085,
+        ataque: 0.03, tipo: 'sawtooth', abafo: 1600, detune: det,
+      });
+    }
+    chiado(ctx, destino, { quando: t, dur: 0.4, vol: 0.05, freq: 1200, glide: 800, q: 1.2 });
+  },
+
+  // o Assobio: fiu-fiuuu, três notas subindo na pentatônica
+  assobio: ({ ctx, destino, t }) => {
+    const notas = [DO + 12 + PENTA[2], DO + 12 + PENTA[4], DO + 12 + PENTA[5]];
+    notas.forEach((n, i) => {
+      tom(ctx, destino, {
+        freq: nota(n) * 0.97, glide: nota(n), quando: t + i * 0.13, dur: i === 2 ? 0.4 : 0.14,
+        vol: 0.05, ataque: 0.02, tipo: 'sine',
+      });
+    });
+  },
+
+  // a Planta carnívora fechando a boca: um estalo seco e um baque grave
+  nhac: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.06, vol: 0.12, freq: 2200, q: 2 });
+    tom(ctx, destino, { freq: 150, glide: 70, quando: t + 0.02, dur: 0.18, vol: 0.12, tipo: 'sine' });
+  },
+
+  // a pimenta ardendo: um chiado de frigideira e um "ui" agudo que cai
+  ardido: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.7, vol: 0.05, freq: 4800, glide: 3000, q: 0.6, tipo: 'highpass' });
+    tom(ctx, destino, { freq: nota(DO + 19), glide: nota(DO + 12), quando: t + 0.05, dur: 0.22, vol: 0.05, tipo: 'triangle' });
+  },
+
+  // o cadeado abrindo: dois cliques de metal
+  clique: ({ ctx, destino, t }) => {
+    for (const atraso of [0, 0.09]) {
+      chiado(ctx, destino, { quando: t + atraso, dur: 0.08, vol: 0.2, freq: 3600, q: 3 });
+      tom(ctx, destino, { freq: 1900, quando: t + atraso, dur: 0.09, vol: 0.05, tipo: 'square', abafo: 3000 });
+    }
+  },
+
+  // as tábuas sendo pregadas no portão: três marteladas
+  martelo: ({ ctx, destino, t }) => {
+    for (const atraso of [0, 0.22, 0.44]) {
+      tom(ctx, destino, { freq: 240, glide: 120, quando: t + atraso, dur: 0.12, vol: 0.11, tipo: 'triangle' });
+      chiado(ctx, destino, { quando: t + atraso, dur: 0.05, vol: 0.08, freq: 2600, q: 1.5 });
+    }
+  },
+
+  // o que brota: um arpejo curtinho subindo, como uma muda se esticando
+  brotar: ({ ctx, destino, t }) => {
+    [0, 2, 4, 5].forEach((g, i) => {
+      tom(ctx, destino, { freq: nota(DO + PENTA[g]), quando: t + i * 0.07, dur: 0.22, vol: 0.05, tipo: 'triangle' });
+    });
   },
 
   // ------------------------------------------------------------------ ui

@@ -51,6 +51,23 @@ export class Gina extends Bicho {
    */
   private static readonly CURVA = [0.15, 0.22, 0.3, 0.38];
 
+  /**
+   * QUANTO ELA ABAIXA O PESCOÇO, de 0 (em pé) a 1 (passando por uma porta).
+   * A cena escreve o alvo e o pescoço desce devagar até ele: a Gina é mais
+   * alta que a porta da estufa, e sem isto o pescoço atravessava a verga
+   * quando ela entrava num chamado do jardim.
+   */
+  abaixar = 0;
+  private abaixado = 0;
+  /** o quanto cada gomo dobra a mais, abaixada: mais embaixo, que é onde dobra */
+  private static readonly DOBRA = [0.38, 0.32, 0.22, 0.12];
+
+  /** Abaixa sem a descida devagar: para quando ela nasce já de pescoço baixo. */
+  abaixarDeUmaVez(quanto: number): void {
+    this.abaixar = quanto;
+    this.abaixado = quanto;
+  }
+
   constructor(area: AreaDoBicho) {
     super(area, {
       // ela quase não anda, mas quando o cérebro a solta é um passo de bicho
@@ -378,16 +395,19 @@ export class Gina extends Bicho {
      * mais um pouco, que é a girafa baixando a cabeça para a mão.
      */
     const balanco = andando ? 1.4 : 1;
+    this.abaixado += (this.abaixar - this.abaixado) * Math.min(1, dt * 3);
     for (let i = 0; i < this.gomos.length; i++) {
       const g = this.gomos[i];
       const amp = (0.02 + i * 0.014) * balanco;
-      g.rotation.x = Gina.CURVA[i] + carinho * 0.09 + Math.sin(fase * (0.8 + i * 0.45)) * amp;
+      g.rotation.x = Gina.CURVA[i] + carinho * 0.09 + this.abaixado * Gina.DOBRA[i]
+        + Math.sin(fase * (0.8 + i * 0.45)) * amp;
       g.rotation.z = Math.sin(fase * (0.5 + i * 0.3) + i) * amp * 0.8;
     }
 
     // a cabeça acompanha o pescoço para continuar nivelada, e olha a rua
     // no carinho ela baixa mais a cabeça, que é o gesto de chegar perto
-    this.cabeca.rotation.x = -0.8 + carinho * 0.16 + Math.sin(fase * 0.9) * 0.05;
+    // abaixada, a cabeça desfaz a dobra do pescoço para continuar olhando em frente
+    this.cabeca.rotation.x = -0.8 + carinho * 0.16 - this.abaixado * 1.04 + Math.sin(fase * 0.9) * 0.05;
     this.cabeca.rotation.y = Math.sin(fase * 0.42) * 0.42 * (1 - carinho);
 
     // orelhas: um tique de vez em quando, e abertas no carinho

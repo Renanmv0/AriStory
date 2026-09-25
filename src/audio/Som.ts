@@ -100,6 +100,11 @@ export class Som {
     this.musica?.setClima(id);
   }
 
+  /** o clima que está valendo (a cena, ou o que um minigame pediu) */
+  get clima(): string {
+    return this.climaPendente;
+  }
+
   /** Toca um efeito. Silencioso e sem erro se o áudio ainda não acordou. */
   play(nome: SomNome): void {
     this.contagem.set(nome, (this.contagem.get(nome) ?? 0) + 1);

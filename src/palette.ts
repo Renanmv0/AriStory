@@ -173,6 +173,107 @@ export const PALETTE = {
   oculosLente: 0x23212b,
   oculosArmacao: 0x3d3b48,
 
+  /*
+   * O VESTIÁRIO DO CLUBE — a moda praia inteira (pedido do Renan: mais
+   * bermudas, mais óculos, chinelo e roupa com cara de piscina, tudo a até
+   * R$ 20). As cores são as de beira de piscina: fundo cheio (a bermuda tem
+   * que ser achada de longe na água) e estampa clara por cima.
+   */
+  // bermuda listrada, de marinheiro: marinho com listras creme e a âncora
+  bermudaMarinho: 0x2b4c7e,
+  bermudaListraCreme: 0xfbf4e4,
+  ancoraVermelha: 0xd8453f,
+  // bermuda de bolinhas: verde-água com bolinha branca
+  bermudaVerdeAgua: 0x53c4b0,
+  bermudaBolinha: 0xfffaf0,
+  // bermuda havaiana: turquesa fundo, hibisco vermelho e rosa, folha escura
+  bermudaHavaiana: 0x1e8fb4,
+  hibiscoVermelho: 0xe8505b,
+  hibiscoRosa: 0xf590b6,
+  hibiscoMiolo: 0xfbd34d,
+  folhaHavaiana: 0x2a9a67,
+  // bermuda de abacaxi: rosa com abacaxi amarelo de coroa verde
+  bermudaRosaAbacaxi: 0xf6a7b9,
+  abacaxiAmarelo: 0xf7c843,
+  abacaxiQuadrado: 0xc98a2b,
+  abacaxiCoroa: 0x4aa84e,
+  // bermuda de melancia: a polpa, a semente, e a casca na barra
+  bermudaMelancia: 0xee5a66,
+  melanciaSemente: 0x2d2a2f,
+  melanciaBranco: 0xf3f7e6,
+  melanciaCasca: 0x3f9a4a,
+  // bermuda de ondinhas: azul-mar com as cristas brancas
+  bermudaAzulMar: 0x2d6cb4,
+  ondaEspuma: 0xeaf6ff,
+  // o cordão do cós das bermudas novas
+  bermudaCordao: 0xfdfaf2,
+
+  // os óculos: armação e lente de cada um
+  oculosDourado: 0xc9a043,
+  oculosAmbar: 0xa8632a,
+  oculosGatinhoRosa: 0xf07fa8,
+  oculosGatinhoLente: 0x3a2b3b,
+  oculosStrass: 0xfff4f8,
+  oculosCoracaoAro: 0xe0344e,
+  oculosCoracaoLente: 0x8c1d38,
+  oculosEspelhadoAro: 0xf1f3f6,
+  oculosEspelhado: 0x3fa4f0,
+  oculosEspelhadoReflexo: 0xc4ecff,
+  oculosNatacaoLente: 0x5fcfe4,
+  oculosNatacaoAro: 0x2b78d0,
+
+  // os chinelos: a tira, a sola de cima e a sola de baixo
+  chineloAzul: 0x2f7fd0,
+  chineloSolaBranca: 0xf4f1ea,
+  chineloSolaCinza: 0xc9c5bc,
+  chineloRosa: 0xf48fb1,
+  chineloSolaRosa: 0xfde0ea,
+  chineloAmarelo: 0xf5d33f,
+  chineloVerdeLimao: 0xa5d64a,
+  chineloSlide: 0x2fb2d8,
+
+  // chapéu de praia listrado: palha-creme com a faixa azul
+  chapeuPraia: 0xf6e6c2,
+  chapeuPraiaListra: 0x3b7fc4,
+  chapeuPraiaPesponto: 0xd8c49b,
+  // touca de natação: borracha clara e as flores de borracha
+  toucaNatacao: 0xbfe9ef,
+  toucaFlorRosa: 0xf7a1c0,
+  toucaFlorAmarela: 0xfbd96b,
+  toucaFlorLilas: 0xc5a3e8,
+  // tiara de conchinhas: a faixa de areia, a estrela, as conchas e a pérola
+  tiaraAreia: 0xe9d3a6,
+  estrelaDoMar: 0xf4a261,
+  estrelaDoMarPonto: 0xfbd6a8,
+  conchaRosa: 0xf7c3bc,
+  conchaCreme: 0xfdf1e2,
+  perola: 0xfbfaf6,
+
+  // boia de braço de patinho
+  boiaLaranja: 0xff8a3d,
+  boiaCostura: 0xfff2d6,
+  patinhoAmarelo: 0xffd84a,
+  patinhoBico: 0xf28c28,
+  boiaValvula: 0xf7f7f7,
+
+  // colar havaiano: as flores e a folhinha entre elas
+  colarRosa: 0xf06292,
+  colarAmarelo: 0xffd54f,
+  colarBranco: 0xfdfdfb,
+  colarLaranja: 0xffa24c,
+  colarLilas: 0xba68c8,
+  colarFolha: 0x3fa35b,
+
+  // camisa havaiana: azul-fundo com hibisco branco e amarelo
+  camisaHavaiana: 0x1f6fa3,
+  camisaHavaianaFlor: 0xfdfaf2,
+  camisaHavaianaFlor2: 0xfbd34d,
+  camisaHavaianaBotao: 0xf8f4ea,
+
+  // regata listrada de marinheiro
+  regataCreme: 0xfbf7ee,
+  regataListra: 0x2d4f86,
+
   // a comida servida na mesa do restaurante. São as MESMAS cores da miniatura
   // 2D do cardápio (`world/cardapioData.ts`), agora em hex de material: o prato
   // que o cachorro traz tem que ser reconhecível como o que foi escolhido no
@@ -311,6 +412,546 @@ export const PALETTE = {
   florGirassol: 0xf2c14b,
   florCamelia: 0xf2909f,
   tomateMaduro: 0xd8402f,
+
+  // A ESTUFA DA JOSEFINA, o jardim grande no fundo do jardim do clube.
+  // A estrutura e branca com um fio de verde: estufa de verdade e aluminio
+  // pintado, e branco puro aqui brigaria com o metal da piscina. O vidro e
+  // esverdeado porque ele esta sempre com planta do outro lado.
+  estufaEstrutura: 0xeaf1e6,
+  estufaVidro: 0xd2ece0,
+  estufaBase: 0xbdaa92,
+  // por dentro: terra batida no geral, saibro no terreiro do meio. Sao duas
+  // cores proximas de proposito — o terreiro precisa LER como area limpa sem
+  // virar uma mancha clara no meio da estufa.
+  estufaChao: 0xa8906f,
+  estufaSaibro: 0xc5ac87,
+  // o tonel de agua do canto: chapa galvanizada, e a agua parada dentro
+  tonelChapa: 0x8b9aa2,
+  tonelAro: 0x6d7c85,
+  tonelAgua: 0x4f9fbd,
+
+  // OS TRES PORTOES DE JARDIM no fundo da estufa — por onde os bichos vao
+  // entrar. A pedra e mais fria e mais clara que a alvenaria da soleira, para
+  // o portao nao parecer um pedaco da estufa: ele e mais VELHO que ela, como
+  // muro de chacara que ja estava ali quando o vidro subiu.
+  pedraDoPortao: 0xc4bcae,
+  pedraDoPortaoCapa: 0xa79b8a,
+  // o ferro do portao: verde escuro de jardim, e nao preto — preto puro come o
+  // degrade do toon e vira silhueta chapada
+  ferroDoPortao: 0x46594b,
+
+  /*
+   * AS PRAGAS DO JARDIM — os bichos do minigame da estufa.
+   *
+   * ELES SAO UMA FAMILIA DE COR, e isso e requisito de jogo e nao estilo: numa
+   * estufa de verde e terracota, com cinco bichos correndo ao mesmo tempo, o
+   * jogador precisa separar PRAGA de PLANTA num relance. Entao nenhuma cor
+   * daqui existe no jardim — o roxo e acinzentado (a lavanda do canteiro e
+   * clara e saturada), o verde e sujo (a folha e limpa) e o laranja de aviso
+   * das pincas e garras nao aparece em nada que se planta.
+   *
+   * E eles nao usam NENHUMA cor de bicho com nome. O Capy, a Josefina, o Noel
+   * e os outros sao gente; praga e praga.
+   */
+  /**
+   * O QUE TODAS DIVIDEM: so o olho, a barriga clara e o laranja de aviso. O
+   * CORPO de cada uma e cor propria (logo abaixo), porque o jogador precisa
+   * dizer QUAL praga e, e nao so que aquilo e uma praga. Uma familia unica de
+   * roxo fazia as seis virarem a mesma mancha escura com cinco na tela.
+   */
+  pragaBarriga: 0xd6c69a,
+  /** pinca, unha e dente: o laranja que diz "isto machuca a planta" */
+  pragaGarra: 0xe28a3a,
+  pragaGarraEscura: 0xb8641f,
+  pragaOlho: 0xfaf4e6,
+  pragaPupila: 0x211c28,
+
+  /** LAGARTEJO — o roxo acinzentado, que e o mais longe de folha que existe */
+  pragaLagartejo: 0x7b5f97,
+  pragaLagartejoEscuro: 0x5a4271,
+  /** GAFANHOPO — turquesa de sapo. Verde, mas AZULADO: folha nenhuma e assim */
+  pragaGafanhopo: 0x3fa08f,
+  pragaGafanhopoEscuro: 0x2a7468,
+  /**
+   * COELHATU — ferrugem de tatu, com as placas num creme bem mais claro.
+   *
+   * O primeiro terracota (0xb5774c) era quase o chao do terreiro: na foto o
+   * bicho sumia no piso. A regra aqui nao e so "cor propria", e tambem
+   * "contraste com o chao": o corpo desceu para um ferrugem escuro e as placas
+   * subiram para um creme mais claro que o piso, e ele voltou a ter silhueta.
+   */
+  pragaCoelhatu: 0x9c4626,
+  pragaCoelhatuEscuro: 0x74301a,
+  pragaCoelhatuCasco: 0xf0dcbb,
+  pragaCoelhatuCascoEscuro: 0xd3bc94,
+  /** TUCANGURU — azul de tucano, e o bico no amarelo que so ele tem */
+  pragaTucanguru: 0x3f5ea8,
+  pragaTucanguruEscuro: 0x2a3f78,
+  pragaTucanguruBico: 0xf2c247,
+  pragaTucanguruBicoEscuro: 0xd18a25,
+  /** PREGUIPOLVO — o verde sujo de limo nas costas, o unico esverdeado escuro */
+  pragaMusgo: 0x62744a,
+  pragaMusgoEscuro: 0x475436,
+  /** MAE-LAGARTEJO — o roxo do filho puxado para o vinho: mesma familia, outro bicho */
+  pragaMae: 0x93355f,
+  pragaMaeEscura: 0x6b2143,
+  // a crosta do dorso dela: rosa QUEIMADO, e nao rosa claro. Clara demais, a
+  // calota achatada lia como uma tampa de outro material pousada nas costas
+  pragaMaeCrosta: 0xae5c80,
+
+  /*
+   * A SEGUNDA LEVA (as que estreiam da 15ª onda em diante). A mesma regra da
+   * primeira: cada uma com a SUA cor, nenhuma que exista num canteiro, e todas
+   * brigando com o saibro bege do terreiro.
+   */
+  /** a asa de quem voa (libélula, abelha, mosquito): quase branca, um tico azulada */
+  pragaAsa: 0xe4f1f5,
+  pragaAsaNervura: 0xa9c4cf,
+  /** LIBELAGARTO — rosa-chiclete de lagartixa: nem tomate, nem lavanda */
+  pragaLibelagarto: 0xee8fb1,
+  pragaLibelagartoEscuro: 0xc9648c,
+  /**
+   * FORMIGURIÇO — ameixa escura de formiga, e os espinhos num caramelo claro.
+   * É o menor da estufa: escuro no saibro claro é o que faz ele não sumir.
+   */
+  pragaFormigurico: 0x4d3a55,
+  pragaFormiguricoEscuro: 0x35283c,
+  pragaFormiguricoEspinho: 0xe6c49a,
+  /** TAMANDUBELHA — mel de abelha com as listras quase pretas */
+  pragaTamandubelha: 0xdca535,
+  pragaTamandubelhaListra: 0x3a2f2e,
+  /** a língua comprida dele (e de quem mais tiver língua): rosa */
+  pragaLingua: 0xe98aa0,
+  /** MOSQUIPÓTAMO — hipopótamo lilás-azulado, com o focinho rosado */
+  pragaMosquipotamo: 0x9194c6,
+  pragaMosquipotamoEscuro: 0x676a9e,
+  pragaMosquipotamoFocinho: 0xe2b4c6,
+  /** RINOCARACOL — cinza de rinoceronte, e a concha de caracol em caramelo */
+  pragaRinocaracol: 0x7c8694,
+  pragaRinocaracolEscuro: 0x5b6472,
+  pragaConcha: 0xe3ac6b,
+  pragaConchaEscura: 0xb27a3f,
+  /**
+   * JAVAPONJA — amarelo de esponja, e os furinhos num marrom de miolo. O
+   * primeiro amarelo era frio (0xe8d565) e na sombra do toon puxava para
+   * oliva, que é quase folha: esquentou para gema.
+   */
+  pragaJavaponja: 0xf3cf55,
+  pragaJavaponjaEscuro: 0xd0a33a,
+  pragaJavaponjaFuro: 0x8f6c2c,
+  /**
+   * ESCORPICAMELO — o chefe novo. Caramelo de camelo, mais ESCURO que o saibro
+   * (areia no saibro sumia), e a cauda de escorpião num marrom mais fundo.
+   */
+  pragaCamelo: 0xb9854f,
+  pragaCameloEscuro: 0x8d6035,
+  pragaCameloClaro: 0xe7c89a,
+  pragaEscorpiao: 0x76492c,
+  pragaEscorpiaoClaro: 0x9a6538,
+
+  /**
+   * O REGADOR — a arma do minigame do jardim, e a unica peca do jogo que MUDA
+   * DE CARA enquanto se joga (`docs/MINIGAME-JARDIM.md` §6).
+   *
+   * Sao tres estagios, e a cor e o que os separa de longe: a lata galvanizada
+   * que a Josefina empresta, o mesmo corpo com ferragem de LATAO quando o
+   * jogador ja pegou tres cartas de regador, e o esmalte verde de competicao
+   * do fim de uma rodada boa. O latao aparece nos dois ultimos: ele e o fio
+   * que liga os estagios, senao a peca do meio parece de outra familia.
+   */
+  regadorLata: 0x9aa4aa,
+  regadorLataEscura: 0x6c767c,
+  regadorLatao: 0xc89a4c,
+  regadorLataoEscuro: 0x926d2c,
+  regadorEsmalte: 0x2f6b4f,
+  regadorEsmalteEscuro: 0x1f4a37,
+  /** o cabo lixado do "Braco solto", e o cobre do respiro do "Orvalho" */
+  regadorMadeira: 0xa97a4e,
+  regadorCobre: 0xb5613a,
+  /** a agua que se ve por cima, pela boca aberta, e os furos do crivo */
+  regadorAgua: 0x8fd0e8,
+  regadorFuro: 0x394045,
+  /**
+   * as cartas SO DO REGADOR que mudam a peca: as petalas do "Crivo de flor"
+   * (o mesmo rosa das petalas que voam no jato) e a espuma coral da "Alca
+   * acolchoada" — cores quentes para lerem contra o cinza e o verde da lata
+   */
+  regadorPetala: 0xff9ec7,
+  regadorEspuma: 0xff8c7a,
+  /**
+   * AS ARMAS DA ESTUFA, em cores de brinquedo de quintal (pedido do Renan:
+   * "mais fofos… falta cor"). Cada arma tem a SUA cor-assinatura, que é o que
+   * separa as quatro de longe na parede:
+   *
+   * - a MANGUEIRA: borracha verde-folha com a listra amarela de toda mangueira
+   *   de quintal, e o esguicho turquesa com gatilho amarelo e o anel coral do
+   *   bocal (o que gira para escolher o jato);
+   * - a PISTOLA D'ÁGUA: lilás com o tanque laranja e o gatilho rosa;
+   * - o BORRIFADOR: frasco branco-leitoso com a cabeça menta e o rótulo rosa.
+   */
+  mangueiraBorracha: 0x5bbf6a,
+  mangueiraBorrachaEscura: 0x3f9a50,
+  mangueiraListra: 0xffd166,
+  mangueiraGatilho: 0xffd166,
+  esguichoCorpo: 0x45c4c9,
+  esguichoCorpoEscuro: 0x2f9ea5,
+  esguichoAnel: 0xff7f6b,
+  pistolaDagua: 0xb38cf0,
+  pistolaDaguaEscura: 0x8f69d6,
+  pistolaDaguaTanque: 0xffa94d,
+  pistolaGatilho: 0xff8fb1,
+  borrifadorFrasco: 0xf3f6f7,
+  borrifadorGatilho: 0x8fdcb4,
+  borrifadorGatilhoEscuro: 0x5fbf8f,
+  borrifadorRotulo: 0xf6a5c0,
+  /** a água do frasco com a carta Concentrado: um azul mais fundo, puxando o lilás */
+  borrifadorConcentrado: 0x5a7ee8,
+  /**
+   * A PAREDE DAS ARMAS: o painel furado pintado de menta (e não o eucatex cru
+   * de oficina: é a estufa da Josefina), a moldura de madeira, a plaquinha
+   * creme do título, as bandeirinhas e o "carimbo" pastel atrás de cada arma
+   * — o desenho da ferramenta pintado na parede, como em toda oficina
+   * arrumada, só que em bolinha colorida. A arma trancada fica DESBOTADA
+   * (`desbotar`) com um cadeadinho dourado pendurado.
+   */
+  painelMenta: 0xbfe6cc,
+  painelMentaFuro: 0x86b896,
+  painelPlaca: 0xfff1cf,
+  painelTexto: 0x7a5230,
+  bandeirinhaRosa: 0xf7a1c0,
+  bandeirinhaAmarela: 0xffd97a,
+  bandeirinhaAzul: 0x9fd3f5,
+  bandeirinhaLilas: 0xcdb2f0,
+  bandeirinhaVerde: 0xa8e29a,
+  cadeadoOuro: 0xf2c14e,
+  cadeadoArco: 0xc9ced3,
+  /** o desbotado de uma arma trancada puxa para este creme */
+  armaDesbotada: 0xf4efe6,
+  /**
+   * A BANCADA DO ARSENAL: corpo pintado de amarelo-manteiga, puxadores rosa,
+   * tampo de madeira, e a toalhinha xadrez é a do piquenique (`toalhaXadrez`).
+   */
+  bancadaPintura: 0xfbe3a0,
+  bancadaPinturaEscura: 0xe8c77a,
+  bancadaPuxador: 0xf28fae,
+  luvaDeJardim: 0xff9f7a,
+
+  /**
+   * A GOTA DE EXPERIÊNCIA — o que o bicho espantado deixa no chão.
+   *
+   * Ela é um AZUL-PISCINA saturado, e não o azul claro da água do regador: tem
+   * que saltar do saibro bege do terreiro e do verde dos canteiros de longe,
+   * com cinco bichos na tela. Nenhuma praga e nenhuma planta usa esse tom.
+   */
+  gotaAgua: 0x3cc4ee,
+  gotaAguaFunda: 0x1f8fc4,
+  gotaBrilho: 0xf4fdff,
+  /** a sombra dela no chão, translúcida: azul-escuro, para puxar o tom da gota */
+  gotaSombra: 0x10324a,
+
+  /**
+   * O JATO DO REGADOR — a animação de ataque da rodada do jardim.
+   *
+   * A água do jato é CLARA (o azul da rega), e não o azul-piscina da gota de
+   * experiência: no meio da rodada as duas estão na tela ao mesmo tempo, e a
+   * gota no chão é a que precisa chamar o olho. O miolo do jato é quase branco
+   * — é o brilho que faz água parecer água num desenho chapado.
+   */
+  jatoAgua: 0x9fdcf2,
+  jatoMiolo: 0xeefaff,
+  jatoFundo: 0x5fb6de,
+  /** o respingo no bicho e o anel que abre no chão */
+  jatoRespingo: 0xd8f3ff,
+  /** a Poça e o rastro da Garoa: água parada, um azul mais fundo e brilhante */
+  jatoPoca: 0x6fc3e6,
+  /** o Orvalho e a Água morna: vapor branco, translúcido */
+  jatoVapor: 0xf6fbff,
+  /** a Gota gelada: água azul-gelo e os cristais no bicho */
+  jatoGelo: 0xc8f0ff,
+  jatoCristal: 0xffffff,
+  /** a Água com sabão: bolha lilás-perolada, que é o furta-cor possível em toon */
+  jatoSabao: 0xf0dcff,
+  jatoSabaoBorda: 0xbfe8ff,
+  /** o Jato carregado juntando força na ponta do bico */
+  jatoCarga: 0xfff3b0,
+  /**
+   * A NÉVOA do borrifador: a nuvem é quase branca (é névoa, não jato) com um
+   * fundo azul-lavanda que o Concentrado puxa; o anel no chão marca a área
+   */
+  jatoNevoa: 0xeaf6ff,
+  jatoNevoaFunda: 0x9fb8ff,
+  jatoNevoaAnel: 0xcfeaff,
+  /** o alvinho das miras, em cima do bicho escolhido */
+  jatoMira: 0xff9a3c,
+  /** o chão rachando antes do Gêiser */
+  jatoRachadura: 0x3a2618,
+  /** o arco-íris, na ordem de sempre */
+  arcoIris1: 0xff5e5e,
+  arcoIris2: 0xffa24a,
+  arcoIris3: 0xffe25a,
+  arcoIris4: 0x6fdc72,
+  arcoIris5: 0x5ab4ff,
+  arcoIris6: 0xa77cff,
+  /** a nuvem da Chuva e da Dança da chuva */
+  jatoNuvem: 0xdde6ee,
+  jatoNuvemFundo: 0xb4c2cf,
+
+  /**
+   * A BARRA DE VIDA DAS PRAGAS: quanta água ainda falta para espantar. O fundo
+   * é escuro para a barra ler em cima do saibro claro, e o que enche é o
+   * mesmo azul do jato — a barra é "o quanto de água cabe nele ainda".
+   */
+  barraFundo: 0x2b2f3a,
+  barraAgua: 0x6fd0f0,
+  barraMolhada: 0xffffff,
+  /** canteiro comido até o fim: a terra seca e as mudas que sobraram */
+  terraComida: 0x7a5a3e,
+
+  /*
+   * AS PEÇAS QUE AS CARTAS DO JARDIM PÕEM NA ESTUFA. Cada uma precisa ser lida
+   * de longe no meio da rodada, então as cores são mais vivas que as do
+   * cenário em volta — e nenhuma é o roxo, turquesa, ferrugem, azul, musgo ou
+   * vinho das pragas.
+   */
+  /** o Espantalho: palha, camisa xadrez desbotada e o chapéu */
+  palha: 0xe8c66a,
+  palhaEscura: 0xc59a3d,
+  espantalhoCamisa: 0xd9674a,
+  espantalhoCamisaXadrez: 0xf2d7a0,
+  espantalhoChapeu: 0x8a5a33,
+  /** o Toldo de um canteiro: lona listrada, verde e creme */
+  toldoLona: 0x5fae6e,
+  toldoLonaClara: 0xf4ecd2,
+  /** o Canteiro de pimenta */
+  pimentaVermelha: 0xe0392b,
+  pimentaFolha: 0x3f8a3a,
+  /** o Aspersor: metal e o bico azul */
+  aspersorMetal: 0xb8c3c9,
+  aspersorBico: 0x2f86c4,
+  /** a Planta carnívora: verde de dioneia, boca vermelha e dentinhos */
+  dioneia: 0x74b94a,
+  dioneiaBoca: 0xd64a4a,
+  dioneiaDente: 0xfbf6e6,
+  /** a Cerquinha do terreiro: madeira clara pintada */
+  cerquinha: 0xf1e3c4,
+  cerquinhaSombra: 0xcdb892,
+  /** o cadeado da Estufa trancada, e a corrente */
+  cadeado: 0xe0b43c,
+  corrente: 0x8f98a0,
+  /** o Picolé do Mano: sorvete de morango e o palito */
+  picoleMorango: 0xf28aa8,
+  picoleCobertura: 0x7a4a2e,
+  picolePalito: 0xe9d3a4,
+  /*
+   * OS EFEITOS DAS CARTAS QUE NÃO SÃO ÁGUA: cada um com uma cor que não se
+   * confunde com o jato (azul) nem com a gota de experiência.
+   */
+  /** as notinhas do Assobio */
+  efeitoNota: 0xffd84a,
+  /** a onda do Grito, do apito da Gina e do latido do Walter */
+  efeitoGrito: 0xffb347,
+  /** o que brota: Dedo verde, Sementeira, a rega da Josefina */
+  efeitoBroto: 0x8fe36b,
+  /** o ardido da pimenta */
+  efeitoArdido: 0xff5a36,
+  /** a poeira do Pique */
+  efeitoPoeira: 0xcdb48a,
+  /** o pontilhado do Olho de jardineira */
+  efeitoTrilha: 0xfff3c4,
+  /** o adubo do Noel caindo no canteiro */
+  efeitoAdubo: 0x9a6b3c,
+  /** a cerca viva: o verde da moita que abraça o canteiro */
+  cercaViva: 0x3f8f4a,
+  /*
+   * O LIVRO DAS CARTAS, na bancada da estufa: capa de couro verde-musgo (a cor
+   * da família Jardim), cantoneiras douradas e as páginas creme, com uma fita
+   * vermelha de marcador — lê como "álbum de colecionar" de longe.
+   */
+  livroCapa: 0x3f6f4a,
+  livroCapaEscura: 0x2c4f35,
+  livroPagina: 0xf6ecd4,
+  livroOuro: 0xe2b64a,
+  livroFita: 0xc8433b,
+
+  /*
+   * OS PRÊMIOS DOS MARCOS DA ESTUFA (`minigames/jardim/premios.ts`): a
+   * plaquinha de madeira da onda 5, o regador de ouro da 30, e as duas roupas
+   * de jardineira (10 e 20). O verde das fitas é o da família Jardim, o mesmo
+   * da capa do livro — os prêmios da estufa se reconhecem entre si.
+   */
+  plaquinhaMadeira: 0xb98a55,
+  plaquinhaMoldura: 0x7d5733,
+  plaquinhaTexto: 0x3b2712,
+  trofeuOuro: 0xe9b93c,
+  trofeuOuroEscuro: 0xb4861f,
+  trofeuPedestal: 0x5e3f24,
+  chapeuPalha: 0xe2c27a,
+  chapeuPalhaTrama: 0xc9a258,
+  chapeuPalhaFita: 0x4f8a4e,
+  aventalVerde: 0x6e9e5b,
+  aventalBolso: 0x557f45,
+  aventalAlca: 0xe9dcc0,
+  // as roupas que a lojinha da Josefina vende (`ROUPAS_DA_JOSEFINA`)
+  galochaVerde: 0x4f9a4e,
+  galochaVerdeCano: 0x3c7a3c,
+  camisetaGirassol: 0xf6e3a1,
+  camisetaGirassolManga: 0xf0d27c,
+  camisetaFolha: 0x7fb069,
+  camisetaFolhaManga: 0x6a9a57,
+  girassolPetala: 0xf2c14b,
+  girassolMiolo: 0x6b4526,
+  // o chapéu joaninha (pedido do Renan: vermelho com bolinhas BRANCAS em cima)
+  joaninhaVermelho: 0xd9373a,
+  joaninhaPreto: 0x2a2626,
+  joaninhaBolinha: 0xfaf6ee,
+  /*
+   * A SEGUNDA LEVA DA LOJINHA DA JOSEFINA (pedido do Renan: luvas estampadas
+   * com coisas do jogo, pins de flor e de bichinho, pulseiras, vestidos
+   * floridos, camisetas de natureza, camisetas largas e calças largas de
+   * jardinagem). Tudo em tom de jardim: nada de preto, pouco cinza.
+   */
+  // as luvas: cada uma com a cor da coisa do jogo que ela estampa
+  luvaGirassol: 0xf6c945,
+  luvaGirassolPunho: 0x8a5a2e,
+  luvaJoaninha: 0xe0423f,
+  luvaFolha: 0x5caa4f,
+  luvaFolhaPunho: 0xb9e39a,
+  luvaFolhaNervura: 0xe9f7d6,
+  luvaGota: 0xa9dcf5,
+  luvaGotaPunho: 0xfdfcf6,
+  // as flores e os bichinhos que se repetem nos pins, nas estampas e nos vestidos
+  florBranca: 0xfdfbf4,
+  florRosa: 0xf4a3c0,
+  florRosaFunda: 0xe0708f,
+  florLilas: 0xc9a6ef,
+  florAzul: 0x8cc6f0,
+  abelhaAmarela: 0xf7c93e,
+  abelhaListra: 0x3b2d25,
+  asaTransparente: 0xeaf6ff,
+  borboletaAsa: 0xc7a0f2,
+  borboletaAsaBaixa: 0xf6a9cf,
+  borboletaCorpo: 0x4a3a5c,
+  // as pulseiras
+  cordaDeFlor: 0x74b35f,
+  pedraQuartzo: 0xf7b7cf,
+  pedraAmetista: 0xa77be0,
+  pedraAguaMarinha: 0x86dcd7,
+  pedraCitrino: 0xf6cf5b,
+  pedraJade: 0x6cc28a,
+  fechoDourado: 0xe7b94c,
+  // os vestidos floridos
+  vestidoMargarida: 0xa9dcc2,
+  vestidoMargaridaBarra: 0xf3fbf4,
+  vestidoRosinha: 0xf8c9d6,
+  vestidoRosinhaBarra: 0xfff1f4,
+  vestidoCampo: 0x9ccbee,
+  vestidoCampoBarra: 0xfdf8e8,
+  // as camisetas de natureza
+  camisetaJoaninha: 0xfbf3df,
+  camisetaJoaninhaManga: 0xe0423f,
+  camisetaBorboleta: 0xe4d4f7,
+  camisetaBorboletaManga: 0xd2bdf0,
+  camisetaFlorzinha: 0xbfe6cf,
+  camisetaFlorzinhaManga: 0xa9dabd,
+  camisetaAbelha: 0xfbe39a,
+  camisetaAbelhaManga: 0x3b2d25,
+  // as camisetas largas (soltas do corpo, como o moletom)
+  largaCogumelo: 0xf5eee0,
+  largaCogumeloBarra: 0xd8cbb2,
+  cogumeloChapeu: 0xde4b44,
+  cogumeloPe: 0xf7ecd8,
+  largaSapo: 0xb6cf9c,
+  largaSapoBarra: 0x93b37a,
+  sapoVerde: 0x6fbf5a,
+  sapoBochecha: 0xf59eb0,
+  largaLavanda: 0xd8c8ee,
+  largaLavandaBarra: 0xbca8e0,
+  lavandaFlor: 0x8f6fd1,
+  // as calças largas de jardinagem
+  calcaCargo: 0xc8b48a,
+  calcaCargoBolso: 0xb09c72,
+  calcaCargoJoelho: 0x7fa36a,
+  calcaPantalona: 0x6f8f5a,
+  calcaPantalonaBarra: 0x5b7849,
+  calcaJardineiro: 0x6c8fc4,
+  calcaJardineiroCostura: 0xf2c14b,
+  pazinhaCabo: 0xb07c4a,
+  pazinhaLamina: 0xc9ced3,
+  // as camisetas de personagem da lojinha da Josefina
+  camisetaSalvaVidas: 0xd9483b,
+  camisetaSalvaVidasManga: 0xc23a2f,
+  camisetaRoda: 0x8fc4e8,
+  camisetaRodaManga: 0x76b0d8,
+  camisetaSucos: 0x4ec1a8,
+  camisetaSucosManga: 0x3fa891,
+  laranjaCasca: 0xf29b38,
+  laranjaPolpa: 0xf8c86a,
+  estampaBranca: 0xfbf7ee,
+
+  /*
+   * A LOJINHA DA JOSEFINA (`lojinhaDaJosefina`, na parede direita da estufa):
+   * banca de feira de madeira clara com toldo listrado verde e creme — o
+   * verde da família Jardim de novo, para a loja ler como parte da estufa e
+   * não como quiosque do clube que caiu ali dentro.
+   */
+  lojaMadeira: 0xd2a36b,
+  lojaMadeiraEscura: 0x9a6b3c,
+  lojaToldoVerde: 0x5f9e57,
+  lojaToldoCreme: 0xf3e6c4,
+  lojaPlacaTexto: 0x3b2712,
+  lojaPacoteA: 0xe06c5a,
+  lojaPacoteB: 0x6fa8dc,
+  lojaPacoteC: 0xf0c44c,
+  lojaCaixinha: 0x7d5733,
+  lojaLousa: 0x2f4a3a,
+  lojaGiz: 0xf4f1e6,
+  lojaTomate: 0xd94f3d,
+  lojaAlface: 0x8cc466,
+  lojaCenoura: 0xe98a3a,
+  lojaSino: 0xe2b64a,
+  lojaCesta: 0xc9a26b,
+  lojaSaco: 0xd9c49a,
+
+  /*
+   * OS ENFEITES DA ESTUFA (`world/decoracoes.ts`), vendidos na lojinha da
+   * Josefina. Cor viva de enfeite de jardim de verdade: gesso pintado,
+   * plástico rosa, barro — contra o marrom e o verde da estufa, eles têm que
+   * ler como "coisa que alguém pôs ali".
+   */
+  enfeiteGnomoGorro: 0xd9483b,
+  enfeiteGnomoRoupa: 0x3f76b8,
+  enfeiteGnomoBarba: 0xf5f1e8,
+  enfeiteGnomoPele: 0xf1c7a3,
+  enfeiteGnomoBota: 0x6b4526,
+  enfeiteGnomoCinto: 0x2d2a26,
+  enfeiteFlamingo: 0xf28cb0,
+  enfeiteFlamingoEscuro: 0xd9648f,
+  enfeiteFlamingoBico: 0x2d2a26,
+  enfeiteFlamingoPerna: 0x8a8f96,
+  enfeiteFlorRosa: 0xf06f9a,
+  enfeiteFlorBranca: 0xfaf3e6,
+  enfeiteFlorLilas: 0xa889e0,
+  enfeiteFlorMiolo: 0xf2c14b,
+  enfeiteLanterna: 0x3d4a3f,
+  enfeiteLanternaLuz: 0xffe39a,
+  enfeitePedra: 0xc9c2b4,
+  enfeitePedraEscura: 0xa39b8b,
+  enfeiteAguaRasa: 0x8fd0e8,
+  enfeitePassarinho: 0x5b8fd6,
+  enfeitePassarinhoPeito: 0xf2d27a,
+  /** o anel do chão no modo de decorar: verde onde dá, vermelho onde não dá */
+  decorarPode: 0x5fcf6a,
+  decorarNaoPode: 0xe0564b,
+
+  // A QUEST DO ADUBO: o saco de sementes esquecido no banco do parque, e o
+  // saco de adubo que o Noel da de presente. Sao a MESMA peca em duas cores,
+  // e a diferenca de tom e o que separa "comida de bicho" de "comida de
+  // planta" num relance — clara e dourada contra escura e terrosa.
+  estopa: 0xc9a86a,
+  estopaBarra: 0xa8854a,
+  graoDeSemente: 0xe6c86e,
+  estopaDeAdubo: 0x8d7d61,
+  estopaDeAduboBarra: 0x6e6049,
 
   // a Josefina, a tartaruga jardineira. O casco e verde-oliva com as placas
   // (escudos) mais escuras; a pele e um verde mais claro e amarelado.
@@ -562,6 +1203,64 @@ export const PALETTE = {
   pingBalde: 0x3f8fbe,     // o balde de bolinhas, plastico de clube
   pingCartela: 0x2f333c,   // a cartela de numero do placarzinho
   pingVerde: 0x4f9a7a,     // a terceira raquete do suporte, a que ninguem pega
+  pingDourada: 0xe0b33f,   // a raquete da vaquinha, que a Estella pintou em tres demaos
+
+  /* ------------------------------------------------------------------
+   * A FESTA DA MESA DE PIQUENIQUE — a toalha, o que esta em cima dela e o
+   * porta-retrato com a foto dos seis.
+   *
+   * A toalha e vermelha e branca porque toalha de piquenique e vermelha e
+   * branca: e o unico objeto deste jogo cuja cor ja estava decidida antes de
+   * alguem desenhar. O resto acompanha o quiosque do Mano e o cardapio do
+   * Walter, que sao a comida que este mundo ja tem.
+   * ------------------------------------------------------------------ */
+  toalhaPano: 0xf8f3e8,
+  toalhaXadrez: 0xd8453f,
+  cestaVime: 0xc99a5a,
+  cestaVimeEscuro: 0xa3763c,
+  sanduichePao: 0xe8c489,
+  sanduicheRecheio: 0x8fc46a,
+  sanduicheQueijo: 0xf6d066,
+  jarraSuco: 0xf2a03c,
+  jarraVidro: 0xdfeef5,
+  boloMassa: 0xf0d9a8,
+  boloCobertura: 0xf6a6c0,
+  portaRetratoMoldura: 0xb5793a,
+
+  /* ------------------------------------------------------------------
+   * OS QUATRO PREMIOS DA ARENA — um por desafiante do quadro.
+   *
+   * Cada conjunto sai do DONO dele, e nao de um gosto de cor: a jaqueta usa o
+   * mesmo azul e o mesmo vermelho da camisa do Jean-Luc, o quepe usa o pano do
+   * quepe que o Cookie de fato veste na bilheteria, e os patins usam o rosa do
+   * Mano no sorvete. Peca de premio que nao lembra de quem veio e so mais uma
+   * roupa na arara.
+   * ------------------------------------------------------------------ */
+
+  // Jean-Luc: a jaqueta azul da Franca, com o bico de pato no peito
+  jaquetaFranca: 0x14539f,        // um tom acima do `azulFranca`, que e de bandeira
+  jaquetaFrancaManga: 0x0e3d78,   // a manga, mais funda que o corpo
+  jaquetaFrancaGola: 0xf4f1e8,    // gola e punho, o branco da bandeira
+  jaquetaFrancaFita: 0xe0243c,    // a faixa vermelha do peito
+  jaquetaFrancaBico: 0xf2a23c,    // o bico do patinho bordado no peito
+
+  // Cookie: o quepe da bilheteria, o mesmo pano da manta dele
+  quepeCookie: 0x4a7fe0,
+  quepeCookieFita: 0xe0524a,      // a faixa vermelha na base da copa
+  quepeCookieBotao: 0xf3e7d3,     // o botaozinho do alto e o debrum
+
+  // Estella: o conjunto de xadrez, preto e branco de tabuleiro
+  xadrezPano: 0xf2ece0,
+  xadrezPanoEscuro: 0x2a2731,
+  xadrezDourado: 0xd8b45e,        // o broche de dama e a coroa, o mesmo ouro do oculos dela
+  xadrezForro: 0x8d3f4c,          // o forro vinho que aparece na gola e na barra
+
+  // Mano: os patins da praca de gelo, azul-claro e branco
+  patinsGelo: 0x8fd3ef,
+  patinsGeloBota: 0xf7fbfd,
+  patinsGeloRoda: 0x3fa9d6,
+  patinsGeloCasquinha: 0xe0ac63,  // o waffle da casquinha do emblema
+  patinsGeloSorvete: 0xf6a6c0,    // a bola de sorvete, o rosa do Mano
 
   // ui / afeto
   heart: 0xff6b8b,

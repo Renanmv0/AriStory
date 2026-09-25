@@ -1,4 +1,4 @@
-import { SLOTS_ROUPA, type Coleta, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
+import { SLOTS_ROUPA, type Coleta, type DecoracaoNoSave, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
 
 import { fichaDoItem } from '../world/itens';
 
@@ -12,7 +12,7 @@ import { fichaDoItem } from '../world/itens';
  */
 export const SLOTS_MAO = 10;
 /** vagas de acessorio (o que se veste) */
-export const SLOTS_VESTIVEL = 4;
+export const SLOTS_VESTIVEL = 6;
 
 /**
  * Roupa que so muda a aparencia — a que mora no guarda-roupa e so se troca la.
@@ -46,7 +46,7 @@ function podeMorarEm(item: ItemDef, lista: 'mao' | 'vestivel' | 'acervo'): boole
 /**
  * A vaga de vestimenta em que uma peca mora, pelo corpo.
  *
- * As 4 vagas SAO as 4 partes, na ordem de `SLOTS_ROUPA`. Nao ha escolha: um
+ * As 6 vagas SAO as 6 partes, na ordem de `SLOTS_ROUPA`. Nao ha escolha: um
  * gorro so pode ir para a vaga da cabeca. E isso que faz o painel conseguir
  * dizer "o que esta na cabeca" sem procurar, e que impede duas calcas.
  *
@@ -70,7 +70,7 @@ export interface SaveInventario {
   mao: (ItemDef | null)[];
   /** 0..9 */
   ativo: number;
-  /** 4 vagas de acessorio vestido */
+  /** 6 vagas de vestimenta: uma por parte do corpo (`SLOTS_ROUPA`) */
   vestiveis: (ItemDef | null)[];
   /**
    * O guarda-roupa: roupa cosmetica que a pessoa tem e nao esta usando.
@@ -121,6 +121,28 @@ interface SaveData {
    * isso que a lista e do casal, como a carteira que pagou por ela.
    */
   compradas: string[];
+  /**
+   * Os ids das pecas de PREMIO ja resgatadas no quadro de inscricoes.
+   *
+   * Lista separada da de compras porque as duas respondem perguntas
+   * diferentes: `compradas` responde "ja pagaram por isso?" (e e o que impede
+   * a arara de cobrar duas vezes), esta responde "ja pegaram o premio?". O
+   * efeito no guarda-roupa e o mesmo — a peca volta a cada abertura, entao
+   * descartar uma nao perde nada.
+   */
+  premios: string[];
+  /**
+   * O LIVRO DAS CARTAS DO JARDIM: as cartas que a dupla já escolheu alguma
+   * vez, em qualquer rodada. A mão de uma rodada morre com ela; isto não —
+   * é a coleção, e o livro da bancada desenha as que estão aqui.
+   */
+  livro: string[];
+  /**
+   * OS ENFEITES DA ESTUFA: cada um comprado na lojinha da Josefina, guardado
+   * ou posto num lugar do chão (`DecoracaoNoSave`). A estufa monta os postos
+   * ao entrar; o painel da loja conta os guardados.
+   */
+  decoracoes: DecoracaoNoSave[];
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -210,7 +232,16 @@ function normalizar(
   for (const item of vestiveis) {
     if (!item) continue;
     const vaga = vagaDoCorpo(item);
-    if (vaga >= 0 && arrumado[vaga] === null) arrumado[vaga] = item;
+    if (vaga >= 0 && arrumado[vaga] === null) {
+      arrumado[vaga] = item;
+      continue;
+    }
+    // A peca MUDOU DE PARTE DO CORPO no catalogo e a vaga nova ja esta
+    // ocupada — o oculos escuro saiu da cabeca para o acessorio (pedido do
+    // Renan: oculos junto com chapeu), e quem estava de oculos E de presilha
+    // tem duas pecas para uma vaga. A que sobra vai para o guarda-roupa, e nao
+    // para o lixo: o save nao apaga peca de ninguem.
+    if (ehCosmetico(item)) resgatadas.push(item);
   }
 
   // Migracao do guarda-roupa que morava fora do inventario: quem estava de
@@ -254,6 +285,26 @@ function normalizar(
 
 const KEY = 'aristory.save.v1';
 
+/**
+ * Lê a lista de enfeites de um save desconhecido: o que não tiver `uid`
+ * numérico e `id` texto sai, e posição com número estragado vira "guardado"
+ * — enfeite perdido no chão não pode quebrar a cena, e no guardado ele volta
+ * a ser escolhível.
+ */
+function normalizarDecoracoes(bruto: unknown): DecoracaoNoSave[] {
+  if (!Array.isArray(bruto)) return [];
+  const lista: DecoracaoNoSave[] = [];
+  const vistos = new Set<number>();
+  for (const d of bruto as Array<Partial<DecoracaoNoSave>>) {
+    if (!d || typeof d.id !== 'string' || typeof d.uid !== 'number' || vistos.has(d.uid)) continue;
+    vistos.add(d.uid);
+    const p = d.posta;
+    const ok = p && [p.x, p.z, p.giro].every((n) => typeof n === 'number' && Number.isFinite(n));
+    lista.push({ uid: d.uid, id: d.id, posta: ok ? { x: p!.x, z: p!.z, giro: p!.giro } : null });
+  }
+  return lista;
+}
+
 const EMPTY: SaveData = {
   version: 1,
   scene: '',
@@ -262,6 +313,9 @@ const EMPTY: SaveData = {
   stats: {},
   carteira: 0,
   compradas: [],
+  premios: [],
+  livro: [],
+  decoracoes: [],
   inventarios: {},
 };
 
@@ -295,6 +349,16 @@ export class SaveState {
         compradas: Array.isArray(parsed.compradas)
           ? parsed.compradas.filter((id): id is string => typeof id === 'string')
           : [],
+        // idem: save de antes do quadro de inscricoes nao tem premio nenhum
+        premios: Array.isArray(parsed.premios)
+          ? parsed.premios.filter((id): id is string => typeof id === 'string')
+          : [],
+        // save de antes do livro das cartas: coleção vazia
+        livro: Array.isArray(parsed.livro)
+          ? parsed.livro.filter((id): id is string => typeof id === 'string')
+          : [],
+        // save de antes da lojinha: estufa sem enfeite nenhum
+        decoracoes: normalizarDecoracoes(parsed.decoracoes),
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
     } catch {
@@ -371,6 +435,50 @@ export class SaveState {
     if (this.data.compradas.includes(id)) return;
     this.data.compradas.push(id);
     this.persist();
+  }
+
+  /** ids das pecas de premio ja resgatadas no quadro de inscricoes */
+  get premios(): readonly string[] {
+    return this.data.premios;
+  }
+
+  /** Ja pegaram este premio? */
+  ganhouPremio(id: string): boolean {
+    return this.data.premios.includes(id);
+  }
+
+  /** Anota o premio resgatado. Idempotente, como a compra. */
+  registrarPremio(id: string): void {
+    if (this.data.premios.includes(id)) return;
+    this.data.premios.push(id);
+    this.persist();
+  }
+
+  // ------------------------------------------------ os enfeites da estufa
+
+  get decoracoes(): readonly DecoracaoNoSave[] {
+    return this.data.decoracoes;
+  }
+
+  /** Troca a lista inteira (a estufa é quem sabe onde cada um está). */
+  salvarDecoracoes(lista: readonly DecoracaoNoSave[]): void {
+    this.data.decoracoes = normalizarDecoracoes(lista);
+    this.persist();
+  }
+
+  // ------------------------------------------------ o livro das cartas
+
+  /** as cartas do jardim já escolhidas alguma vez, na ordem em que apareceram */
+  get livro(): readonly string[] {
+    return this.data.livro;
+  }
+
+  /** Põe a carta no livro. Devolve se ela era NOVA (a primeira vez que saiu). */
+  desbloquearCarta(id: string): boolean {
+    if (this.data.livro.includes(id)) return false;
+    this.data.livro.push(id);
+    this.persist();
+    return true;
   }
 
   bump(key: string, by = 1): number {

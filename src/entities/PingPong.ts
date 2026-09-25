@@ -146,7 +146,12 @@ export class PingPong {
   readonly grupo = new THREE.Group();
 
   readonly bola: THREE.Mesh;
-  readonly minhaRaquete: THREE.Group;
+  /**
+   * A raquete de quem joga. NAO e `readonly`: a cor dela sai da escolha feita
+   * no suporte da arena, e trocar de cor e remontar a peca — a mesma coisa
+   * que `raqueteDele` ja fazia ao trocar de adversario.
+   */
+  minhaRaquete: THREE.Group;
   /**
    * NAO E `readonly`: trocar de adversario troca a cor da raquete, e a cor
    * mora no material que `raquete()` cria no construtor. Repintar malha por
@@ -220,6 +225,24 @@ export class PingPong {
     nova.position.copy(this.raqueteDele.position);
     this.grupo.remove(this.raqueteDele);
     this.raqueteDele = nova;
+    this.grupo.add(nova);
+  }
+
+  /**
+   * Troca a cor da raquete DE QUEM JOGA.
+   *
+   * Existe pelo mesmo motivo do `trocarAdversario` logo acima, e com o mesmo
+   * cuidado de copiar a posicao: quem manda na cor e a escolha feita no
+   * suporte de raquetes da arena, e sem isto ela pintava so o enfeite em cima
+   * da mesa — que some justamente quando a partida comeca.
+   */
+  trocarMinhaRaquete(cor: number): void {
+    const nova = raquete(cor);
+    nova.rotation.y = Math.PI / 2;
+    nova.scale.setScalar(1.15);
+    nova.position.copy(this.minhaRaquete.position);
+    this.grupo.remove(this.minhaRaquete);
+    this.minhaRaquete = nova;
     this.grupo.add(nova);
   }
 

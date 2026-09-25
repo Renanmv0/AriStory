@@ -15,11 +15,23 @@ pipeline inteiro:
 4. `src/scenes/quarto.ts` — `ROUPAS_DO_ARMARIO` estoca a peça; o armário
    abastece os DOIS personagens a cada abertura, então uma entrada só já
    basta para os dois poderem vestir.
-   **Peça que se GANHA jogando fica fora dessa lista** e entra por `flag` no
-   mesmo laço (a gravatinha do Walter, `gravata-do-walter`): a lista é o que o
-   Ari já tinha, e prêmio que aparece de graça deixa de ser prêmio. Quem dá o
-   prêmio chama `g.storeItem(peca, quem)` para os dois na hora, para a peça
-   não sumir até a próxima visita ao quarto.
+   **Peça que se GANHA jogando fica fora dessa lista** — a lista é o que o Ari
+   já tinha, e prêmio que aparece de graça deixa de ser prêmio. Há dois jeitos
+   de repor uma peça ganha, e o segundo é o bom:
+
+   - por `flag`, no mesmo laço do armário (a gravatinha do Walter,
+     `gravata-do-walter`). Simples, mas só vale no quarto: quem abrir o
+     espelho da boutique não vê a peça;
+   - por `save.premios`, reposto em `Game.reporPremios()` (os quatro prêmios
+     da arena de ping pong). É o gêmeo do `reporCompras` da boutique, e vale
+     nos DOIS painéis, porque os dois entram por `g.abrirGuardaRoupa()`.
+
+   **Prêmio novo: uma chamada só, `g.ganharPeca(peca)`.** Ela faz o segundo
+   jeito inteiro de uma vez — anota em `save.premios` e guarda nos dois na
+   hora — e é o que os marcos da estufa usam (chapéu de jardineira, avental
+   da Josefina). Cuidado: numa peça de TRONCO, `cor` pinta a camiseta e
+   `corDetalhe` pinta a MANGA — peça que vai POR CIMA (o avental) não leva
+   nenhuma das duas, senão a primeira foto sai de manga verde.
 5. `scripts/roupas.mjs` e `scripts/vestimenta.mjs` — asserções que provam que a
    roupa não quebrou a animação, não nasceu no lugar errado e não escapou das
    regras de armazenamento.
@@ -32,7 +44,7 @@ próprio: tirar e recolocar já vem de graça do sistema de inventário.
 | lugar | o que aceita | quem mexe |
 |---|---|---|
 | **mochila** (10 vagas) | item de mão e vestimenta **funcional** | o jogador, em qualquer lugar |
-| **corpo** (4 vagas) | qualquer vestível, na vaga da parte dele | o painel do armário |
+| **corpo** (6 vagas) | qualquer vestível, na vaga da parte dele | o painel do armário |
 | **guarda-roupa** (lista) | roupa **cosmética** que não está no corpo | o painel do armário |
 
 A regra em uma frase: **roupa cosmética nunca ocupa vaga de mão.** Ela vive no
@@ -67,12 +79,28 @@ sabe se a peça vai para o armário ou para a mochila. Por isso `quarto.ts` não
 mudou uma linha quando a regra mudou. Do lado do motor, quem lê o armário é
 `g.wardrobeItems(quem)`.
 
-## As 4 vagas SÃO as 4 partes do corpo
+## As 6 vagas SÃO as 6 partes do corpo
 
-`SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes'` (`src/core/types.ts`).
-Cabeça e pé convivem com qualquer coisa (são vagas diferentes); dois chapéus
-não convivem. Toda ficha vestível declara `slot` — é ele que decide a vaga,
-não uma escolha da tela.
+`SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes' | 'maos' | 'acessorio'`
+(`src/core/types.ts`). Cabeça e pé convivem com qualquer coisa (são vagas
+diferentes); dois chapéus não convivem. Toda ficha vestível declara `slot` —
+é ele que decide a vaga, não uma escolha da tela.
+
+As duas últimas vieram depois, a pedido do Renan:
+
+- **`maos`**: luva, pulseira, anel. Pendura no pivô de CADA braço (y = 0 no
+  ombro); o pulso fica em `~0,8·m.armLen` e a mão em `0,92·m.armLen`. Peça de
+  um pulso só monta no `lado === -1` e devolve grupo vazio no outro (a mão
+  direita é a que segura sorvete e regador). Sai no traje de banho.
+- **`acessorio`**: o que é pequeno e vai em QUALQUER parte do corpo —
+  presilha, adesivo, broche. A ficha diz onde prende com `presoEm`:
+  `'cabeca'` (referencial da cabeça) ou `'corpo'` (o padrão, referencial do
+  tronco, y = 0 no chão). Fica no traje de banho, como o gorro.
+
+A ordem só cresce no FIM: save antigo de 4 vagas abre com 6, e a cabeça
+continua na vaga 0. Exemplos prontos: `luvasDeJardim`, `pulseiraDeMicangas`,
+`presilhaDeEstrela`, `adesivoDeCoracao` (`roupas.ts`), na arara "Frio, pé e
+miudezas" da Estella. Teste: `scripts/vagas.mjs`.
 
 ## A ficha (`ItemDef`, em `src/world/itens.ts`)
 
@@ -104,6 +132,8 @@ resolver só com cor?"
 | `cabeca` | `this.head` | centro do crânio | onde o chapéu de campeão já mora |
 | `pernas` / `pes` | pivô de CADA perna (2 cópias) | quadril | onde o patins e o cano da bota já moram — a peça dobra junto com a coxa |
 | `tronco` | `this.body` | **o CHÃO**, não o quadril | onde a jaqueta e o calção de banho já moram |
+| `maos` | pivô de CADA braço (2 cópias) | ombro, braço pendendo em `-Y` | luva e pulseira acompanham o balanço e a pose |
+| `acessorio` | a cabeça ou o corpo (`presoEm`) | o da cabeça ou o do tronco | a peça pequena escolhe onde prende |
 | `extraBraco` | pivô de CADA braço (2 cópias) | ombro, braço pendendo em `-Y` | acompanha o balanço da caminhada; use para manga que passa do cotovelo |
 
 `extra`/`extraBraco` **nunca** recriam braço ou perna — a peça entra como
@@ -149,18 +179,55 @@ bermudaEstampada: {
 },
 ```
 
-A ausência de `cor` é o truque, e não um esquecimento: sem ela o resolvedor
-deixa a perna com a calça da ficha fora d'água, então a bermuda simplesmente
-não aparece na rua. É o que dispensou um segundo sistema de roupa para a
-praia — zero estado novo, zero geometria nova, e o guarda-roupa do quarto
-continua listando a peça em "Pernas" como qualquer outra.
+A ausência de `cor` é o truque, e não um esquecimento: é ela que diz ao rig
+"isto é uma bermuda". No clube (traje `banho`) ela pinta o calção, sem
+camiseta. FORA do clube — pedido do Renan: usar o shorts no parque e nos
+outros lugares — o rig veste o MESMO calção e as mesmas pernas de shorts do
+banho por cima da perna de pele, com a camiseta de sempre
+(`aplicarVisual`, "a bermuda na rua"). Zero geometria nova. Peça que declara
+`cor` numa vaga de pernas continua sendo calça: pinta a perna inteira.
 
-O painel que troca isso é o **vestiário do clube** (`clube:vestiario` →
-`g.abrirVestiario()`): o guarda-roupa encolhido em duas perguntas, óculos e
-cor. Ele mexe nas MESMAS vagas, pelos mesmos `vestirPeca`/`tirarPeca` do
-`Game`, então cada pessoa guarda o seu traje de praia de graça. Cor nova de
-bermuda é uma entrada em `ITENS` e outra em `MODA_PRAIA` (`world/itens.ts`) —
-a cena abastece por essa lista e o painel desenha por ela.
+### O que fica no corpo DENTRO do clube: `praia`
+
+No banho, de roupa, só sobram a cabeça, o acessório e o calção — bota, luva e
+camiseta são de rua. A peça feita para a beira da piscina leva **`praia: true`**
+na ficha e continua no corpo lá dentro: o chinelo, a boia de braço, o colar de
+flor, a estampa da bermuda. Camiseta **nunca** leva a marca: no clube é sem
+camiseta e de shorts (pedido do Renan).
+
+- **Bermuda estampada nova** = `corBanho` (o pano) + `corDetalhe` (a tinta da
+  estampa) + as duas fábricas de `bermudaDe(estampa)` em
+  `world/roupasDePiscina.ts`: `extraQuadril` (a estampa do CALÇÃO, pendurada no
+  corpo, y = 0 no chão) e `extra` (a da perna do shorts, no pivô de cada
+  perna). Os ajudantes `noCalcao`/`naPernaDoShort`/`anelNoCalcao`/`anelNaPerna`
+  sabem as medidas do calção do rig — é por eles que a estampa encosta no pano.
+- **Chinelo** = vaga `pes` com `pesNus: true`: o pé do rig vira PELE e a peça é
+  só a sola e a tira (`chinelo(modelo)`).
+
+## O vestiário do clube é um guarda-roupa com duas abas
+
+Pedido do Renan: o vestiário é o MESMO painel do guarda-roupa de casa e do
+espelho da Estella (`g.abrirVestiario()` → `ui.abrirArmario('vestiario')`),
+com o nome "Vestiário" e duas abas:
+
+- **Guarda-roupa**: igual ao de casa — vestir e tirar.
+- **Roupas de piscina**: a vitrine de `MODA_PRAIA` (`world/itens.ts`) por
+  parte do corpo, com o boneco de TRAJE DE BANHO (o botão embaixo dele troca
+  para a roupa de rua) e a ficha da peça provada. **Desbloquear é comprar**
+  (`comprarPeca`, a mesma da Estella e da Josefina), a até R$ 20 cada: a peça
+  vai para o guarda-roupa dos dois e vira estoque de TODO guarda-roupa
+  (`reporCompras`). Depois o mesmo botão veste e tira ali mesmo.
+
+Peça de piscina nova = a ficha em `ITENS` (com `preco` até 20, e `praia` se
+ela deve ficar no corpo dentro do clube) + uma entrada em `MODA_PRAIA`, na
+parte do corpo dela. O painel desenha por essa lista; a cena não precisa de
+nada. As cinco peças que o vestiário antigo dava de graça (`MODA_PRAIA_ANTIGA`)
+continuam de quem já tinha (`herdarModaPraia`, no `Game`).
+
+**Óculos é acessório** (`slot: 'acessorio'`, `presoEm: 'cabeca'`), para ir
+junto com chapéu — pedido do Renan. Save antigo com o óculos na vaga da
+cabeça muda ele de vaga sozinho; se o acessório já estava ocupado, a peça que
+sobra vai para o guarda-roupa (`SaveState.normalizar`).
 
 ## Pele à mostra: `bracosNus` e `pernasNuas`
 
@@ -218,6 +285,31 @@ nessa conta: ela passa as cores exatas por um ponto de entrada próprio
 (`vestidoRosa` vs `vestidoDaLoja`), senão a peça de referência muda junto com
 a variação nova.
 
+## Pôr a peça à venda na lojinha da Josefina (estufa)
+
+Roupa de JARDIM vai para `ROUPAS_DA_JOSEFINA` (`world/itens.ts`), e não para
+uma arara da Estella: é a aba de roupas da banca da estufa. Precisa de `preco`
+como qualquer peça à venda. A compra é `g.comprarPeca` (o mesmo caminho da
+boutique) e "provar no boneco" abre a arara da boutique com essa lista — então
+peça nova ali não pede código nenhum além da ficha e da entrada na lista.
+
+## Pôr a peça à venda na boutique
+
+## Pôr a peça como PRÊMIO de um desafiante da arena
+
+`world/itens.ts` tem o `PREMIOS_DA_ARENA`: um id de desafiante do quadro de
+inscrições (`world/adversariosData.ts`) para a lista de peças que ele dá. Uma
+entrada nova ali é tudo — o painel desenha a etiqueta sozinho, o clique grava
+em `save.premios` e `reporPremios` repõe para sempre nos dois guarda-roupas.
+
+A peça só abre quando a flag `batido-<id>` existir, e quem a grava é o fim da
+partida em `scenes/villaLobos.ts`. Prêmio NÃO leva `preco`: ele não está à
+venda em lugar nenhum.
+
+O conjunto da Estella são quatro peças de uma vez (uma por vaga do corpo) e o
+do Mano é um par de patins — este último é o único caso em que a ficha manda no
+modelo do RIG e não num `extra`: ver `enfeite`, em `core/types.ts`.
+
 ## Pôr a peça à venda na boutique
 
 `preco` na ficha é o que coloca a peça numa arara — sem ele, ela não está à
@@ -234,6 +326,24 @@ do Mania = 12 a 34, um turno de garçom paga ~200): peça de térreo 35–110,
 premium 150–220. Quem compra veste no espelho do mezanino, que abre o mesmo
 painel do guarda-roupa do quarto.
 
+**A outra loja é a da Josefina**, na estufa: a lista é `ROUPAS_DA_JOSEFINA`
+(mesmo arquivo), com roupa de jardim e peças temáticas do parque, do clube e
+dos personagens (tiaras do Walter e do Pelusa, boné da Gina, camisetas do Capy,
+da roda e do Noel). Preço em reais, 35–60. Mesma ficha e mesmo
+`g.comprarPeca`; só muda a lista. **E a peça entra em `LOJA_ABRE`
+(`minigames/jardim/premios.ts`)** com a onda em que a Josefina passa a
+vendê-la: o recorde da dupla na rodada do jardim destranca a banca aos poucos
+(sem entrada ali, a peça vende desde o começo).
+
+**Amostra de peça sem `cor`.** O cartão da loja pinta a amostra com
+`cor ?? corBanho ?? amostra`. Peça que é só `extra` por cima da roupa (a
+mochila-casco, que não pinta nada do corpo) declara `amostra: P.algumaCor` na
+ficha. Sem isso o quadradinho sai cinza.
+
+**Refazer uma peça que já está à venda: mantenha o `id`.** O save guarda a peça
+pelo id. O gorro joaninha virou chapéu com o mesmo `'gorro-joaninha'`, e quem
+já tinha comprado ficou com o chapéu. Id novo deixaria a compra antiga órfã.
+
 ## Ferramentas já prontas em `roupas.ts` — reaproveite antes de desenhar do zero
 
 - `laco(escala, cor, corNo?)` — laço de fita, usado no cabelo, na cintura e na
@@ -247,9 +357,53 @@ painel do guarda-roupa do quarto.
 - `mangaBufante(raio, cor)` — manga curta e estufada.
 - `coracaoChato(raio, cor)` — coraçãozinho decorativo achatado (festão do
   maid japonês).
+- `estampaNoPeito(m, desenho)` — prega um desenho (montado no plano XY,
+  olhando para `+Z`, unidade `e`) na frente do tronco, na altura e na
+  profundidade certas da cápsula. Camiseta temática = a camiseta lisa (`cor` e
+  `corDetalhe`) + uma estampa. Assim entraram a salva-vidas, a da roda e a do
+  bar de sucos.
+- `tiara(m, cor)` — a faixa de orelha a orelha que pousa POR CIMA do cabelo;
+  devolve `{ g, naFaixa(a) }` (o ponto da faixa no ângulo `a`) para quem
+  pendura orelha. Ela segue `m.cabelo(angulo)`, o contorno MEDIDO do cabelo de
+  quem veste (ver abaixo).
+
+**Peça que fica por cima do cabelo sem cobri-lo: use `m.cabelo(angulo)`.**
+O rig mede o cabelo montado e diz até onde ele vai, do centro do crânio, em
+cada ângulo a partir do alto, no plano de orelha a orelha. O cacheado do Ari
+passa de 1,5·headR; os cachos curtos do Renan ficam em ~1,3. A tiara já foi um
+arco fixo de 1,32·headR: servia no Renan e sumia na juba do Ari, orelhas
+inclusive. E confira a COR contra os dois cabelos: o `cachorroOrelha` é o
+mesmo tom das mechas claras do Ari, e a orelha do Walter sumia até sair do
+lugar certo.
 - `gorroDeLa`/`canoDaBota`/`meiaDeCoxa`/`mangaDeQuimono` — exemplos completos
   de peça de cabeça, pé, perna e braço, respectivamente; comece copiando a
   mais parecida com o que você vai fazer.
+
+## `roupasDoJardim.ts` — miudezas de natureza e roupa LARGA
+
+A segunda leva da lojinha da Josefina mora num arquivo próprio
+(`src/world/roupasDoJardim.ts`), com o kit que ela usa:
+
+- **bichinhos e florzinhas**, prontos para estampa, pin ou bordado:
+  `florzinha(raio, petala, miolo, petalas?)`, `folhinha`, `joaninha`,
+  `abelhinha`, `borboleta`, `gotinha`, `girassolzinho`;
+- `colar(obj, pai, x, y, z, nx, ny, nz)` — cola um desenho numa superfície
+  apontando para fora pela normal; `noTronco`/`noPeito` dão o ponto certo na
+  cápsula do tronco;
+- `noCabelo(m, a, pin)` + `comGrampo(m, enfeite)` — pin de cabelo: pousa no
+  contorno MEDIDO (`m.cabelo(a)`), com o grampinho dourado por trás. Serve à
+  vaga `acessorio` com `presoEm: 'cabeca'`;
+- `luvasCom(estampa)` — luva de vaga `maos`, com a estampa no DORSO da mão (o
+  `lado` decide qual face é o dorso);
+- **peça larga**: `camisetaLarga(estampa)` não pinta a cápsula, põe uma CASCA
+  fechada por cima (1,1× o raio do tronco, abrindo para 1,2× numa barra abaixo
+  do quadril, ombro caído, gola e barra), com `mangaLarga` no `extraBraco`
+  (manga até o cotovelo, com a dobra). `calcaLarga(modelo)` faz o mesmo na
+  perna: um tubo solto por perna (0,06·h·w em cima, alargando embaixo), com
+  tampa no alto e barra dobrada. Folga menor que isso some na foto; maior que
+  isso a coxa do vizinho atravessa sentado — confira sempre a foto no banco;
+- `vestidoFlorido(...)` — alça, cintura com laço e saia de dois babados
+  (1,04 → 1,55 → 2,0× o raio do tronco) com flor espalhada nos dois.
 
 Uma casca esférica de raio `R` aberta até `thetaLength` termina em
 `y = centro + R·cos(theta)` com raio `R·sen(theta)` — é a conta por trás de
@@ -279,7 +433,8 @@ npm run typecheck
 npm run build && npx vite preview --port 4173 &
 node scripts/roupas.mjs     /tmp/rp
 node scripts/vestimenta.mjs /tmp/vt
-node scripts/vestiario.mjs  /tmp/vs   # só se a peça mexer na moda praia
+node scripts/vestiario.mjs  /tmp/vs   # só se a peça mexer na moda praia (o painel do vestiário)
+node scripts/modaPraia.mjs  /tmp/mp   # as peças de piscina nos dois, no clube e no parque
 ```
 
 `roupas.mjs` mede, não só fotografa: confere que a geometria nasceu sob o pai

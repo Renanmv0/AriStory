@@ -20,9 +20,10 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 |---|---|
 | `Game.ts` | monta o renderer e as luzes, roda o loop, troca de cena, implementa `GameAPI` |
 | `IsoCamera.ts` | ortográfica a 34° de elevação; gira em passos de 45°, zoom com viés vertical |
+| `Oclusao.ts` | o que fica entre a câmera e os pontos vigiados (e a dupla) ganha a variante translúcida do material (`translucido()`); liga com `g.vigiarOclusao`, hoje só a rodada do jardim |
 | `Input.ts` | única fonte de entrada; `move()` devolve vetor de tela |
 | `SaveState.ts` | persistência; nada mais escreve em `localStorage` |
-| `materials.ts` | `toon()` / `flat()` / `line()`, todos cacheados por cor |
+| `materials.ts` | `toon()` / `flat()` / `line()`, todos cacheados por cor; `translucido()` (o fantasma do decorador) e a LUZ FALSA — `luzNoChao()` (poça aditiva de degradê no chão) e `brilhoDeLuz()` (halo em sprite) — no lugar de `PointLight`, que recompila o shader de toda a cena |
 | `matrizSoQuandoMexe.ts` | a matriz de um objeto só é refeita quando a pose ou o pai dele muda |
 | `types.ts` | `SceneDef`, `InteractableDef`, `GameAPI`, colisores |
 
@@ -88,6 +89,24 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
 - `props.ts` / `furniture.ts` — kits de peças. Ver a skill `aristory-prop`.
 - `memoriasData.ts` — o acervo do quadro de memórias: cada memória é uma função
   que pinta uma foto em Canvas 2D. Ver a skill `aristory-memoria`.
+- `decoracoes.ts` — os ENFEITES DA ESTUFA: a ficha (nome, preço, raio da
+  pegada) e a geometria de cada um, num arquivo só. Enfeite novo = uma função e
+  uma entrada em `DECORACOES`; a loja, o retrato, o modo de colocar e o save
+  leem tudo dali. Enfeite que mexe declara `anima(peca, t)` na ficha e guarda
+  as partes que giram em `userData`; enfeite que acende usa `pocaDeLuz`/
+  `haloDeLuz` (a luz falsa de `materials.ts`).
+- `decorador.ts` — o chão decorado de uma cena: monta os enfeites do save
+  (peça, colisor e o ponto "Mexer no…") e o MODO DE DECORAR (o enfeite
+  translúcido na frente de quem joga, o anel verde/vermelho, a barra com girar,
+  colocar e cancelar). A cena só diz onde é proibido (`RegrasDoLugar`); o resto
+  (colisor, outro enfeite) ele confere com `circuloEncosta` (`collision.ts`).
+  Enquanto decora, suspende os pontos da cena, como a rodada. A cada quadro
+  chama o `anima` de cada enfeite posto e do fantasma. O "Mexer no…" de cada
+  enfeite só acorda no MODO DE EDIÇÃO (`editar()`/`pararDeEditar()`, que a
+  cena liga — na estufa, pela lojinha), e `intangivel` tira o colisor de todos
+  (a estufa liga na rodada). `ocupado` diz à cena para não religar ponto seu.
+- `retrato.ts` — fotografa um modelo 3D num canvas fora da tela e guarda como
+  imagem, para `<img>` de painel (as pragas do livro, os enfeites da loja).
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**
   do grupo que gira e são reposicionadas por frame, para nunca virarem de cabeça
   para baixo.
@@ -303,7 +322,12 @@ celular, no mesmo painel) e **recomeçar o jogo**, esta em dois passos (o segund
 clique confirma), porque ela apaga o diário. `Game.restart()` zera o `SaveState`, devolve o controle ao
 primeiro da `DUPLA`, mostra as teclas de novo e volta para a cena inicial — que
 o `Game` recebe no construtor (`CENA_INICIAL`, a casa do Ari). Enquanto o menu
-está aberto o jogo não recebe entrada, igual ao diário.
+está aberto o jogo PAUSA: não recebe entrada, e os passos 3 a 6 do ciclo
+abaixo não rodam (`Game.simular`) — a rodada do jardim, o turno do Mania e o
+ping pong congelam e voltam de onde pararam. Só a câmera e o desenho seguem.
+Teste: `scripts/pausa.mjs`. (Os `g.wait` de cutscene são `setTimeout` e NÃO
+pausam; lógica de minigame que precisa parar com o menu anda pelo `dt` do
+`onUpdate`, nunca por relógio de parede.)
 
 ## Ciclo de um frame
 

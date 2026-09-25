@@ -108,6 +108,8 @@ export abstract class Bicho {
   } | null = null;
   /** de servico: ele fica parado esperando a proxima ordem em vez de passear */
   private servindo = false;
+  /** para onde ele deve virar quando esta PARADO; `null` = olha para onde anda */
+  private encarando: { x: number; z: number } | null = null;
 
   constructor(area: AreaDoBicho, jeito: JeitoDoBicho = {}) {
     this.area = area;
@@ -239,6 +241,37 @@ export abstract class Bicho {
   // ------------------------------------------------- o bicho a servico da cena
 
   /**
+   * VIRA PARA UM PONTO, devagar, ENQUANTO ESTIVER PARADO.
+   *
+   * A cena chama antes de falar com ele: bicho que atende de perfil parece que
+   * nao viu o cliente chegar.
+   *
+   * ELE SO VALE PARADO, e isso e a correcao de um bug que o Renan viu na
+   * Estella. O alvo era aplicado TODO QUADRO, por cima da rotacao que o
+   * `passo()` acabara de escrever — e aí a ovelha atravessava a loja inteira
+   * apontada para o cliente, andando de lado como caranguejo. Quem anda olha
+   * para onde anda; o alvo e para quem esta de pe.
+   */
+  encarar(x: number, z: number): void {
+    this.encarando = { x, z };
+  }
+
+  /** Larga o alvo: ele volta a olhar para onde anda. */
+  pararDeEncarar(): void {
+    this.encarando = null;
+  }
+
+  /** Vira um tanto na direcao do alvo, sem estalo. */
+  private mirarNoAlvo(dt: number): void {
+    if (!this.encarando) return;
+    const alvo = Math.atan2(this.encarando.x - this.x, this.encarando.z - this.z);
+    let d = alvo - this.group.rotation.y;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    this.group.rotation.y += d * Math.min(1, dt * 4);
+  }
+
+  /**
    * TIRA ELE DO PASSEIO e poe a cena no comando.
    *
    * Existe porque bicho que participa de cutscene nao pode continuar decidindo
@@ -255,6 +288,14 @@ export abstract class Bicho {
     this.servindo = true;
     this.missao = null;
     this.humor = 'parado';
+    /*
+     * E LARGA O ALVO DE ENCARAR. De servico quem manda e a cena, e ela escreve
+     * o `rotation.y` na mao — um alvo velho, deixado pela ultima conversa,
+     * continuaria girando o bicho por baixo. Foi assim que a Estella jogou uma
+     * partida inteira de ping pong de perfil para a mesa: ela ainda estava
+     * encarando a rua da porta da loja, a quarenta unidades dali.
+     */
+    this.encarando = null;
   }
 
   /**
@@ -383,6 +424,10 @@ export abstract class Bicho {
         andando = this.passo(dx, dz, dist, this.jeito.velocidade, dt);
       }
     }
+
+    // QUEM ANDA OLHA PARA ONDE ANDA: o alvo de `encarar` so entra com o bicho
+    // parado, depois de o `passo()` ter escrito a rotacao da caminhada
+    if (!andando) this.mirarNoAlvo(dt);
 
     this.animar(dt, {
       andando,

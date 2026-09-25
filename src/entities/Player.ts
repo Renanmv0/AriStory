@@ -48,6 +48,21 @@ export class Player {
    * gelo, e nao precisa saber.
    */
   derrapagem = 0;
+  /**
+   * Para onde ele olha quando esta PARADO. E o regador da rodada do jardim
+   * apontando para o bicho: andando, a tecla continua mandando no giro.
+   */
+  mira: { x: number; z: number } | null = null;
+  /** multiplica a velocidade maxima (as cartas de passo do jardim); 1 = normal */
+  multiplicador = 1;
+  /** o pulinho em curso: tempo que falta, duracao e altura (a carta Pulinho) */
+  private salto = { resta: 0, dur: 0.45, alto: 0.6 };
+
+  /** Um pulinho no lugar: o corpo sobe num arco e volta. */
+  pular(altura = 0.6, duracao = 0.45): void {
+    if (this.salto.resta > 0) return;
+    this.salto = { resta: duracao, dur: duracao, alto: altura };
+  }
 
   constructor(rig: CharacterRig) {
     this.body = rig;
@@ -136,7 +151,7 @@ export class Player {
     const lamina = this.patins ? gelo : 0;
     // no gelo com patins o teto sobe mais um quarto: e a passada longa de quem
     // patina de verdade, e sem ela patinar seria so andar com outra animacao
-    const teto = naAgua ? this.maxSpeed * 0.55 : this.maxSpeed * rodas * (1 + 0.25 * lamina);
+    const teto = (naAgua ? this.maxSpeed * 0.55 : this.maxSpeed * rodas * (1 + 0.25 * lamina)) * this.multiplicador;
     const empurrao = this.accel * (1 - 0.72 * gelo + 0.67 * lamina);
     const freio = this.friction * (1 - 0.86 * gelo + 0.34 * lamina);
 
@@ -164,6 +179,12 @@ export class Player {
       if (gelo > 0.35 && this.velocity.lengthSq() > 0.64) {
         this.body.setFacing(Math.atan2(this.velocity.x, this.velocity.z));
       }
+      // parado e mirando: vira para o alvo (o regador da rodada do jardim)
+      else if (this.mira && !this.locked) {
+        const dx = this.mira.x - this.position.x;
+        const dz = this.mira.z - this.position.z;
+        if (dx * dx + dz * dz > 0.01) this.body.setFacing(Math.atan2(dx, dz));
+      }
     }
 
     this.position.x += this.velocity.x * dt;
@@ -173,7 +194,13 @@ export class Player {
     clampToBounds(this.position, this.radius, bounds);
 
     // afunda o corpo na agua; na superficie da a impressao de estar nadando
-    this.body.group.position.y = -this.submersion * 0.72;
+    // o pulinho soma por cima: um arco, sem mexer na posicao do chao
+    let pulo = 0;
+    if (this.salto.resta > 0) {
+      this.salto.resta = Math.max(0, this.salto.resta - dt);
+      pulo = Math.sin((1 - this.salto.resta / this.salto.dur) * Math.PI) * this.salto.alto;
+    }
+    this.body.group.position.y = -this.submersion * 0.72 + pulo;
     this.body.setSwimming(naAgua);
     this.body.update(dt, Math.hypot(this.velocity.x, this.velocity.z));
   }

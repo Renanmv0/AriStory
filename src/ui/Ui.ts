@@ -1,20 +1,62 @@
 import type { SavedMemory } from '../core/SaveState';
-import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
+import { SLOTS_ROUPA, type ItemDef, type SlotRoupa, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
+import { TelaDeCartas, escapar } from './telaDeCartas';
+import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
+import { Arsenal } from './arsenal';
+import { LojaDaJosefina } from './lojaDaJosefina';
+import type {
+  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
+  EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
+} from '../minigames/jardim/tela';
 import type { MemoriaPintada } from '../world/memoriasData';
 import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
 import type { SecaoDoCardapio } from '../world/cardapioData';
-import type { DesafianteDoQuadro } from '../world/adversariosData';
+import { retratoDoGrupo, type DesafianteDoQuadro } from '../world/adversariosData';
+import { PREMIOS_DA_ARENA } from '../world/itens';
+
+/**
+ * O QUE O QUADRO SABE SOBRE OS PREMIOS, na hora em que ele abre.
+ *
+ * A tela nao le o save e nao escreve nele: ela pergunta e avisa. `batido` diz
+ * se a partida contra aquele ja foi ganha, `resgatado` se a roupa ja foi
+ * pegada, e `resgatar` e o clique — devolve `true` quando a peca de fato
+ * entrou no guarda-roupa, e e isso que redesenha o papel.
+ */
+export interface PremiosDoQuadro {
+  batido(id: string): boolean;
+  resgatado(id: string): boolean;
+  resgatar(id: string): boolean;
+  /**
+   * O PRÊMIO DO CAMPEÃO, o de ter batido todo mundo.
+   *
+   * - `fechado`: ainda falta alguém, ou falta pegar algum prêmio. O card conta
+   *   quanto falta, porque meta escondida não convida ninguém a jogar;
+   * - `aberto`: está tudo feito e o clique chama a festa;
+   * - `pego`: a festa já aconteceu, e o card vira a foto de grupo.
+   */
+  campeao(): 'fechado' | 'aberto' | 'pego';
+  /** o que ainda falta, para o card contar: [batidos, prêmios pegos, total] */
+  progresso(): readonly [number, number, number];
+}
+
+/**
+ * O `id` com que o quadro resolve quando alguém clica no Prêmio do Campeão.
+ *
+ * Ele não é um desafiante — é um recado para a cena: "a festa foi chamada".
+ * Os dois sublinhados são de propósito, para nunca colidir com um id de bicho.
+ */
+export const CAMPEAO_DO_QUADRO = '__campeao';
 
 /**
  * O nome de cada parte do corpo na tela, na ORDEM de `SLOTS_ROUPA`.
  *
- * Um lugar so: a mochila rotula as 4 vagas de vestimenta com isto, o armario
+ * Um lugar so: a mochila rotula as 6 vagas de vestimenta com isto, o armario
  * titula as divisoes do acervo com isto, e as duas telas nao tem como
  * discordar sobre qual vaga e a do tronco.
  */
-const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés'];
+const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés', 'Mãos', 'Acessório'];
 
 /**
  * Toda a interface em DOM sobre o canvas. O jogo fala com a UI so por estes
@@ -47,10 +89,8 @@ export class Ui {
   private readonly loja: HTMLDivElement;
   private readonly bonecoDaLoja: HTMLCanvasElement;
   private readonly vitrine: HTMLDivElement;
-  private readonly vestiario: HTMLDivElement;
-  private readonly oculos: HTMLButtonElement;
-  private readonly bermudas: HTMLDivElement;
-  private readonly donoVestiario: HTMLSpanElement;
+  /** a vitrine da aba de roupas de piscina, no guarda-roupa em modo vestiário */
+  private readonly vitrineDaPiscina: HTMLDivElement;
   private readonly slotsMao: HTMLDivElement;
   private readonly slotsVestivel: HTMLDivElement;
   private readonly dono: HTMLElement;
@@ -58,6 +98,7 @@ export class Ui {
   private readonly cardapio: HTMLDivElement;
   private readonly inscricoes: HTMLDivElement;
   private readonly fichasDoQuadro: HTMLDivElement;
+  private readonly cardDoCampeao: HTMLDivElement;
   /**
    * A MESA DE XADREZ mora numa classe propria (`mesaDeXadrez.ts`), e nao aqui.
    *
@@ -67,6 +108,17 @@ export class Ui {
    * entrada (o `abrirXadrez` esta logo abaixo); quem guarda o tabuleiro e ela.
    */
   private readonly mesaDeXadrez: MesaDeXadrez;
+  private readonly telaDeCartas: TelaDeCartas;
+  private readonly livroDeCartas: LivroDeCartas;
+  private readonly arsenal: Arsenal;
+  private readonly telaDoFim: TelaDoFim;
+  private readonly lojaDaJosefina: LojaDaJosefina;
+  private readonly posicionador: HTMLDivElement;
+  private aoBotaoDoPosicionador: ((b: BotaoDoPosicionador) => void) | null = null;
+  private readonly experiencia: HTMLDivElement;
+  private readonly painelJardim: HTMLDivElement;
+  /** o nivel que a barra mostrava, para saber quando ele SUBIU e piscar */
+  private nivelNaBarra = -1;
   private readonly secoesDoCardapio: HTMLDivElement;
   /**
    * Quem espera o cardapio fechar; a cutscene da mesa segura nele. Resolve com
@@ -105,6 +157,9 @@ export class Ui {
   onTouchAction: (() => void) | null = null;
   /** chamado quando o jogador aperta o botao de trocar de personagem */
   onTouchSwap: (() => void) | null = null;
+  /** o botão da ajuda do par, na rodada do jardim */
+  aoPedirAjuda: (() => void) | null = null;
+  private readonly botaoAjuda: HTMLButtonElement;
   /** girar a camera no celular; -1 para um lado, 1 para o outro */
   onTouchGirar: ((dir: -1 | 1) => void) | null = null;
   /** botao de acao segurado no celular: carrega o lancamento do frisbee */
@@ -215,14 +270,33 @@ export class Ui {
         <button class="close">voltar pro jogo</button>
       </div></div>
       <div class="armario"><div class="sheet">
-        <h2>Guarda-roupa <span class="dono"></span></h2>
-        <p class="sub">clique numa peça para vestir ou tirar · arraste o boneco para girar · <b>T</b> veste o outro</p>
-        <div class="prova">
-          <canvas class="boneco"></canvas>
-          <div class="corpo"></div>
+        <h2><span class="titulo">Guarda-roupa</span> <span class="dono"></span></h2>
+        <div class="abas" role="tablist">
+          <button data-aba="vestir" role="tab">👕 Guarda-roupa</button>
+          <button data-aba="piscina" role="tab">🩳 Roupas de piscina</button>
         </div>
-        <h3>O que você tem</h3>
+        <p class="sub"></p>
+        <div class="prova">
+          <div class="palco">
+            <canvas class="boneco"></canvas>
+            <div class="traje" role="group" aria-label="como o boneco aparece">
+              <button data-traje="banho" title="como fica na piscina">🏊<span> na piscina</span></button>
+              <button data-traje="normal" title="como fica na rua">👕<span> na rua</span></button>
+            </div>
+          </div>
+          <div class="corpo"></div>
+          <div class="ficha">
+            <p class="saldo"></p>
+            <b class="nome"></b>
+            <small class="nota"></small>
+            <span class="preco"></span>
+            <button class="agir"></button>
+            <p class="aviso"></p>
+          </div>
+        </div>
+        <h3 class="rotulo-acervo">O que você tem</h3>
         <div class="acervo"></div>
+        <div class="vitrine-piscina"></div>
         <button class="close">fechar</button>
       </div></div>
       <div class="loja"><div class="sheet">
@@ -242,15 +316,6 @@ export class Ui {
         <p class="saldo"></p>
         <button class="close">sair da arara</button>
       </div></div>
-      <div class="vestiario"><div class="sheet">
-        <h2>Vestiário <span class="dono"></span></h2>
-        <p class="sub">o traje de praia de cada um · <b>T</b> troca de pessoa</p>
-        <h3>Óculos escuros</h3>
-        <button class="oculos"></button>
-        <h3>Cor da bermuda</h3>
-        <div class="bermudas"></div>
-        <button class="close">voltar pra piscina</button>
-      </div></div>
       <div class="cardapio">
         <div class="papel">
           <p class="casa">Restaurante do Clube</p>
@@ -267,6 +332,7 @@ export class Ui {
           <p class="casa">Arena do Villa Lobos</p>
           <h2>Inscrições</h2>
           <p class="sub">quem quiser jogar, prega o papel aqui</p>
+          <div class="campeao"></div>
           <div class="fichas"></div>
           <p class="rodape">a mesa é de todo mundo · cinco pontos</p>
           <button class="desafiar" disabled>escolha um adversário</button>
@@ -274,6 +340,15 @@ export class Ui {
         </div>
       </div>
       <div class="xadrez"></div>
+      <div class="experiencia"><span class="nv">Nv <b>0</b></span><span class="trilho"><i class="enchido"></i></span><span class="conta">0/5</span></div>
+      <div class="painel-jardim"><span class="onda">Onda <b>1</b><small>/5</small></span><span class="tanque" title="água no regador"><i class="agua"></i><i class="marcas"></i><em>💧 <b>12</b></em></span><span class="canteiros" title="canteiros de pé">🌱 <b>8</b><small>/8</small></span></div>
+      <button class="ajuda-do-par" aria-label="chamar o par para ajudar"><span class="anel" aria-hidden="true"></span><span class="rosto" aria-hidden="true">💦</span><span class="rotulo"><b class="nome"></b><small class="estado"></small></span><kbd>F</kbd></button>
+      <div class="cartas-do-jardim"></div>
+      <div class="livro-de-cartas"></div>
+      <div class="livro-de-cartas arsenal"></div>
+      <div class="fim-do-jardim"></div>
+      <div class="loja-da-josefina"></div>
+      <div class="posicionador" role="toolbar"></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
         <p class="sub"></p>
@@ -332,14 +407,31 @@ export class Ui {
     this.loja = ui.querySelector('.loja')!;
     this.bonecoDaLoja = ui.querySelector('.loja .boneco')!;
     this.vitrine = ui.querySelector('.loja .vitrine')!;
-    this.vestiario = ui.querySelector('.vestiario')!;
-    this.oculos = ui.querySelector('.vestiario .oculos')!;
-    this.bermudas = ui.querySelector('.vestiario .bermudas')!;
-    this.donoVestiario = ui.querySelector('.vestiario .dono')!;
+    this.vitrineDaPiscina = ui.querySelector('.armario .vitrine-piscina')!;
     this.cardapio = ui.querySelector('.cardapio')!;
     this.inscricoes = ui.querySelector('.quadro-de-inscricoes')!;
     this.fichasDoQuadro = ui.querySelector('.quadro-de-inscricoes .fichas')!;
+    this.cardDoCampeao = ui.querySelector('.quadro-de-inscricoes .campeao')!;
     this.mesaDeXadrez = new MesaDeXadrez(ui.querySelector('.xadrez')!);
+    this.telaDeCartas = new TelaDeCartas(ui.querySelector('.cartas-do-jardim')!);
+    this.telaDeCartas.som = (nome) => this.som?.(nome);
+    this.livroDeCartas = new LivroDeCartas(ui.querySelector('.livro-de-cartas')!);
+    this.livroDeCartas.som = (nome) => this.som?.(nome);
+    this.arsenal = new Arsenal(ui.querySelector('.livro-de-cartas.arsenal')!);
+    this.arsenal.som = (nome) => this.som?.(nome);
+    this.telaDoFim = new TelaDoFim(ui.querySelector('.fim-do-jardim')!);
+    this.telaDoFim.som = (nome) => this.som?.(nome);
+    this.lojaDaJosefina = new LojaDaJosefina(ui.querySelector('.loja-da-josefina')!);
+    this.lojaDaJosefina.som = (nome) => this.som?.(nome);
+    this.posicionador = ui.querySelector('.posicionador')!;
+    this.posicionador.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('button[data-botao]');
+      if (b) this.aoBotaoDoPosicionador?.(b.dataset.botao as BotaoDoPosicionador);
+    });
+    this.experiencia = ui.querySelector('.experiencia')!;
+    this.painelJardim = ui.querySelector('.painel-jardim')!;
+    this.botaoAjuda = ui.querySelector('.ajuda-do-par')!;
+    this.botaoAjuda.addEventListener('click', () => this.aoPedirAjuda?.());
     this.secoesDoCardapio = ui.querySelector('.cardapio .secoes')!;
     this.memorias = ui.querySelector('.memorias')!;
     this.quadro = ui.querySelector('.memorias .quadro')!;
@@ -403,6 +495,16 @@ export class Ui {
       if (this.dialogueOpen) this.advance?.();
       else this.onTouchAction?.();
     });
+    /*
+     * NO MODO DE EDIÇÃO DOS ENFEITES, O PRÓPRIO "Mexer no…" É BOTÃO no celular
+     * (o CSS só liga o clique nele ali): é o texto que a pessoa está olhando, e
+     * tocar nele faz o mesmo que o ✨.
+     */
+    ui.querySelector('.prompt')!.addEventListener('click', () => {
+      if (!this.posicionador.classList.contains('editando') || !this.posicionador.classList.contains('show')) return;
+      if (this.dialogueOpen) return;
+      this.onTouchAction?.();
+    });
     // dedo que escorrega para fora do botao NAO vale como toque: solta a carga
     // (se houver) e nao interage com nada
     for (const ev of ['pointercancel', 'pointerleave']) {
@@ -441,15 +543,22 @@ export class Ui {
       if (peca?.dataset.id) this.onProvarPeca?.(peca.dataset.id);
     });
     ui.querySelector('.loja .comprar')!.addEventListener('click', () => this.onComprarPeca?.());
-    ui.querySelector('.vestiario .close')!.addEventListener('click', () => this.fecharVestiario());
-    this.vestiario.addEventListener('click', (e) => {
-      if (e.target === this.vestiario) this.fecharVestiario();
+    // o guarda-roupa em modo vestiário: as abas, o traje do boneco, a
+    // vitrine de piscina e o botão da ficha — um ouvinte só por grupo, pelo
+    // mesmo motivo da vitrine da Estella
+    this.armario.querySelector('.abas')!.addEventListener('click', (e) => {
+      const aba = (e.target as HTMLElement).closest<HTMLElement>('[data-aba]')?.dataset.aba;
+      if (aba === 'vestir' || aba === 'piscina') this.onTrocarAbaDoArmario?.(aba);
     });
-    this.oculos.addEventListener('click', () => this.onAlternarOculos?.());
-    this.bermudas.addEventListener('click', (e) => {
-      const peca = (e.target as HTMLElement).closest('.bermuda') as HTMLElement | null;
-      if (peca?.dataset.id) this.onEscolherBermuda?.(peca.dataset.id);
+    this.armario.querySelector('.traje')!.addEventListener('click', (e) => {
+      const traje = (e.target as HTMLElement).closest<HTMLElement>('[data-traje]')?.dataset.traje;
+      if (traje === 'banho' || traje === 'normal') this.onTrajeDoBoneco?.(traje);
     });
+    this.vitrineDaPiscina.addEventListener('click', (e) => {
+      const peca = (e.target as HTMLElement).closest<HTMLElement>('.produto');
+      if (peca?.dataset.id) this.onProvarNaPiscina?.(peca.dataset.id);
+    });
+    this.armario.querySelector('.ficha .agir')!.addEventListener('click', () => this.onAgirNaPiscina?.());
     ui.querySelector('.cardapio .pedir')!.addEventListener('click', () => {
       if (this.pratoMarcado) this.fecharCardapio(this.pratoMarcado);
     });
@@ -472,8 +581,8 @@ export class Ui {
       if (e.target === this.memorias) this.fecharMemorias();
     });
     this.ligarGiroDoBoneco();
-    // Descartar pede dois toques. Perder o chapéu de campeão num toque sem
-    // querer seria irreversível — o item não volta de lugar nenhum.
+    // Descartar pede dois toques. Prêmio e compra voltam no guarda-roupa, mas
+    // um sorvete ou um suco descartado num toque sem querer não volta.
     ui.querySelector('.mochila .descartar')!.addEventListener('click', () => {
       this.som?.('escolha');
       this.descarte.classList.add('confirmando');
@@ -564,8 +673,9 @@ export class Ui {
     document.body.classList.toggle(
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
-      this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen || this.xadrezOpen ||
-      this.lojaOpen || this.quadroOpen,
+      this.memoriasOpen || this.cardapioOpen || this.xadrezOpen ||
+      this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen ||
+      this.lojaJosefinaOpen,
     );
   }
 
@@ -913,6 +1023,233 @@ export class Ui {
     });
   }
 
+  // ---------------------------------------- as três cartas do jardim
+
+  get cartasOpen(): boolean {
+    return this.telaDeCartas.aberta;
+  }
+
+  // ------------------------------------------- a lojinha da Josefina
+
+  get lojaJosefinaOpen(): boolean {
+    return this.lojaDaJosefina.aberta;
+  }
+
+  /** A banca da Josefina; resolve com o que a dupla foi fazer (ver `SaidaDaLoja`). */
+  abrirLojaDaJosefina(
+    conteudo: ConteudoDaLoja, retrato: (id: string) => string, agir: (a: AcaoNaLoja) => ConteudoDaLoja,
+  ): Promise<SaidaDaLoja> {
+    const pedido = this.lojaDaJosefina.abrir(conteudo, retrato, agir);
+    this.marcarTelaAberta();
+    return pedido.then((saida) => {
+      this.marcarTelaAberta();
+      return saida;
+    });
+  }
+
+  fecharLojaDaJosefina(): void {
+    this.lojaDaJosefina.fechar();
+  }
+
+  /**
+   * A BARRA DO DECORADOR, embaixo da tela — a de colocar um enfeite e a do
+   * modo de edição. Não é painel: a dupla anda com ela aberta (é andando que se
+   * escolhe o lugar, e que se chega no enfeite a mexer), então ela não entra
+   * em `tela-aberta`. Os botões são o caminho do celular; no teclado são G, E
+   * e X.
+   */
+  mostrarPosicionador(estado: EstadoDoPosicionador | null, aoBotao: ((b: BotaoDoPosicionador) => void) | null): void {
+    this.aoBotaoDoPosicionador = aoBotao;
+    this.posicionador.classList.toggle('show', !!estado);
+    this.posicionador.classList.toggle('editando', estado?.tipo === 'editar');
+    if (!estado) return;
+    let html: string;
+    if (estado.tipo === 'editar') {
+      const quantos = estado.postos === 1 ? '1 enfeite' : `${estado.postos} enfeites`;
+      html = `
+        <span class="enfeite"><span class="icone">✏️</span><b>Arrumando os enfeites</b>
+          <small class="pode">${quantos} · chegue perto de um e ${document.body.classList.contains('touch-device') ? 'toque no ✨' : 'aperte E'}</small></span>
+        <button data-botao="pronto" class="colocar">✓ pronto <kbd>X</kbd></button>`;
+    } else {
+      const aviso = estado.valido ? '✓ aqui dá' : `✗ ${escapar(estado.motivo ?? 'aqui não dá')}`;
+      html = `
+        <span class="enfeite"><span class="icone">${estado.icone}</span><b>${escapar(estado.nome)}</b>
+          <small class="${estado.valido ? 'pode' : 'nao-pode'}">${aviso}</small></span>
+        <button data-botao="girar">↻ girar <kbd>G</kbd></button>
+        <button data-botao="colocar" class="colocar" ${estado.valido ? '' : 'disabled'}>✓ colocar <kbd>E</kbd></button>
+        <button data-botao="cancelar">✕ <kbd>X</kbd></button>`;
+    }
+    // redesenha só quando muda: a cena chama isto todo quadro
+    if (this.posicionador.dataset.html !== html) {
+      this.posicionador.dataset.html = html;
+      this.posicionador.innerHTML = html;
+    }
+  }
+
+  // ------------------------------------ o livro das cartas e o fim da rodada
+
+  /** o livro da bancada OU o painel das armas: os dois são o mesmo livro por fora */
+  get livroOpen(): boolean {
+    return this.livroDeCartas.aberto || this.arsenal.aberto;
+  }
+
+  get fimOpen(): boolean {
+    return this.telaDoFim.aberta;
+  }
+
+  /** Abre o livro das cartas; resolve quando ele fecha. Ver `livroDeCartas.ts`. */
+  /** O livro da estufa; resolve com a onda do marco a resgatar, ou `null` */
+  abrirLivro(
+    cartas: readonly CartaNaTela[], vistas: ReadonlySet<string>,
+    conteudo: ConteudoDoLivro | null = null, retrato: ((id: string) => string) | null = null,
+  ): Promise<string | null> {
+    const pedido = this.livroDeCartas.abrir(cartas, vistas, conteudo, retrato);
+    this.marcarTelaAberta();
+    return pedido.then((resgate) => {
+      this.marcarTelaAberta();
+      return resgate;
+    });
+  }
+
+  fecharLivro(): void {
+    this.livroDeCartas.fechar();
+    this.arsenal.fechar();
+  }
+
+  /** O painel das armas da estufa; resolve com a arma mandada usar, ou `null`. Ver `arsenal.ts`. */
+  abrirArsenal(conteudo: ConteudoDoArsenal, vistas: ReadonlySet<string>): Promise<string | null> {
+    const pedido = this.arsenal.abrir(conteudo, vistas);
+    this.marcarTelaAberta();
+    return pedido.then((arma) => {
+      this.marcarTelaAberta();
+      return arma;
+    });
+  }
+
+  /** Mostra a tela do fim da rodada do jardim; resolve quando a dupla volta. */
+  mostrarFim(fim: FimDoJardim): Promise<void> {
+    const pedido = this.telaDoFim.abrir(fim);
+    this.marcarTelaAberta();
+    return pedido.then(() => this.marcarTelaAberta());
+  }
+
+  fecharFim(): void {
+    this.telaDoFim.fechar();
+  }
+
+  /**
+   * Mostra as três cartas da subida de nível e SÓ RESOLVE com uma pega.
+   *
+   * Não existe `null` aqui, ao contrário do cardápio: subir de nível sem pegar
+   * carta seria perder a melhoria, então a tela não fecha sem escolha. Ver
+   * `telaDeCartas.ts`.
+   */
+  escolherCarta(cartas: readonly CartaNaTela[], contexto: ContextoDaEscolha): Promise<string> {
+    const pedido = this.telaDeCartas.abrir(cartas, contexto);
+    this.marcarTelaAberta();
+    return pedido.then((id) => {
+      this.marcarTelaAberta();
+      return id;
+    });
+  }
+
+  /**
+   * As teclas da tela de cartas. Quem lê o teclado é o `Game`, que manda para
+   * cá só com a tela aberta: 1/2/3 marcam direto, as setas andam, E pega.
+   */
+  teclaDasCartas(tecla: 'um' | 'dois' | 'tres' | 'esquerda' | 'direita' | 'pegar'): void {
+    const t = this.telaDeCartas;
+    if (tecla === 'um') t.marcar(0);
+    else if (tecla === 'dois') t.marcar(1);
+    else if (tecla === 'tres') t.marcar(2);
+    else if (tecla === 'esquerda') t.mover(-1);
+    else if (tecla === 'direita') t.mover(1);
+    else t.confirmar();
+  }
+
+  /**
+   * A BARRA DE EXPERIÊNCIA da rodada do jardim, no alto da tela.
+   *
+   * `null` esconde. Quando o nível SOBE entre duas chamadas a barra dá uma
+   * piscada dourada: é o aviso de meio segundo antes de a tela das cartas
+   * cobrir tudo — sem ele a tela aparece "do nada".
+   */
+  showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void {
+    const el = this.experiencia;
+    if (!dados) {
+      el.classList.remove('show');
+      this.nivelNaBarra = -1;
+      return;
+    }
+    el.classList.add('show');
+    el.querySelector('.nv b')!.textContent = String(dados.nivel);
+    el.querySelector('.conta')!.textContent = `${dados.noNivel}/${dados.custo}`;
+    const fracao = dados.custo > 0 ? Math.min(1, dados.noNivel / dados.custo) : 0;
+    el.querySelector<HTMLElement>('.enchido')!.style.width = `${(fracao * 100).toFixed(1)}%`;
+    if (this.nivelNaBarra >= 0 && dados.nivel > this.nivelNaBarra) {
+      el.classList.remove('subiu');
+      void el.offsetWidth;
+      el.classList.add('subiu');
+    }
+    this.nivelNaBarra = dados.nivel;
+  }
+
+  /**
+   * O PAINEL DA RODADA DO JARDIM, logo abaixo da barra de experiência: a onda,
+   * a ÁGUA do regador e os canteiros de pé. A água é o número que mais importa
+   * no meio da rodada — ela acaba, e acabar é o que manda a pessoa ao tonel —,
+   * então ela é a peça maior, e pisca quando está no fim.
+   */
+  showJardim(dados: PainelDoJardim | null): void {
+    const el = this.painelJardim;
+    this.pintarAjuda(dados?.ajuda ?? null);
+    if (!dados) {
+      el.classList.remove('show');
+      return;
+    }
+    el.classList.add('show');
+    el.querySelector('.onda b')!.textContent = String(dados.onda);
+    el.querySelector('.onda small')!.textContent = `/${dados.ondas}`;
+    // a mangueira (`armas.ts`) é presa no tonel: a água nunca acaba, e o número vira ∞
+    el.querySelector('.tanque em b')!.textContent = dados.infinita ? '∞' : String(Math.floor(dados.agua));
+    el.classList.toggle('infinita', !!dados.infinita);
+    const fracao = dados.tanque > 0 ? Math.max(0, Math.min(1, dados.agua / dados.tanque)) : 0;
+    el.querySelector<HTMLElement>('.tanque .agua')!.style.width = `${(fracao * 100).toFixed(1)}%`;
+    // um risquinho por jato: é a régua que diz "cabem mais quantos"
+    const marcas = el.querySelector<HTMLElement>('.tanque .marcas')!;
+    const passo = 100 / Math.max(1, dados.tanque);
+    marcas.style.backgroundSize = `${passo}% 100%`;
+    el.classList.toggle('seco', dados.agua < 1);
+    el.classList.toggle('pouca', dados.agua >= 1 && fracao < 0.25);
+    el.classList.toggle('enchendo', dados.enchendo);
+    el.querySelector('.canteiros b')!.textContent = String(dados.canteiros);
+    el.querySelector('.canteiros small')!.textContent = `/${dados.totalDeCanteiros}`;
+    el.classList.toggle('perdendo', dados.canteiros < dados.totalDeCanteiros);
+  }
+
+  /**
+   * O BOTÃO DA AJUDA DO PAR: um anel que enche com as gotas pegas; cheio, ele
+   * brilha e diz "chamar!"; durante a ajuda, conta os segundos. No celular ele
+   * mora ao lado do ✨, onde o polegar já está.
+   */
+  private pintarAjuda(ajuda: PainelDoJardim['ajuda'] | null): void {
+    const b = this.botaoAjuda;
+    if (!ajuda) {
+      b.classList.remove('show');
+      return;
+    }
+    b.classList.add('show');
+    const ativa = ajuda.resta > 0;
+    b.style.setProperty('--carga', String(ativa ? ajuda.resta / 10 : Math.max(0, Math.min(1, ajuda.carga))));
+    b.classList.toggle('pronta', ajuda.pronta);
+    b.classList.toggle('ativa', ativa);
+    b.disabled = !ajuda.pronta;
+    b.querySelector('.nome')!.textContent = ajuda.nome;
+    b.querySelector('.estado')!.textContent = ativa
+      ? `ajudando · ${Math.ceil(ajuda.resta)} s`
+      : ajuda.pronta ? 'chamar!' : `${Math.floor(ajuda.carga * 100)}%`;
+  }
+
   // ------------------------------------------------ quadro de inscrições
 
   get quadroOpen(): boolean {
@@ -937,6 +1274,7 @@ export class Ui {
     quem: readonly DesafianteDoQuadro[],
     inscritos: ReadonlySet<string>,
     parceiro: string,
+    premios: PremiosDoQuadro,
   ): Promise<string | null> {
     return new Promise((resolve) => {
       if (this.quadroOpen) {
@@ -945,7 +1283,7 @@ export class Ui {
       }
       this.som?.('escolha');
       this.desafianteMarcado = null;
-      this.desenharQuadro(quem, inscritos, parceiro);
+      this.desenharQuadro(quem, inscritos, parceiro, premios);
       this.pintarBotaoDeDesafiar();
       this.inscricoes.classList.add('show');
       this.marcarTelaAberta();
@@ -1001,9 +1339,11 @@ export class Ui {
     quem: readonly DesafianteDoQuadro[],
     inscritos: ReadonlySet<string>,
     parceiro: string,
+    premios: PremiosDoQuadro,
   ): void {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const LADO = Math.round(76 * dpr);
+    this.desenharCampeao(premios);
     this.fichasDoQuadro.innerHTML = '';
 
     for (const [i, d] of quem.entries()) {
@@ -1041,10 +1381,122 @@ export class Ui {
         + `<p>${d.historia}</p>`
         + `<span class="assinatura">${d.assinatura}</span>`;
 
+      const premio = this.pregarPremio(d.id, premios, () => {
+        this.desenharQuadro(quem, inscritos, parceiro, premios);
+        this.pintarBotaoDeDesafiar();
+      });
+      if (premio) texto.appendChild(premio);
+
       ficha.append(foto, texto);
       ficha.addEventListener('click', () => this.marcarDesafiante(d.id));
       this.fichasDoQuadro.appendChild(ficha);
     }
+
+    // o papel marcado sobrevive ao redesenho: sem isto, pegar o premio de um
+    // desapontava a marca de quem estava escolhido e o botao de baixo mentia
+    if (this.desafianteMarcado) {
+      for (const f of this.fichasDoQuadro.querySelectorAll('.ficha')) {
+        f.classList.toggle('marcada', (f as HTMLElement).dataset.id === this.desafianteMarcado);
+      }
+    }
+  }
+
+  /**
+   * O CARD DO PRÊMIO DO CAMPEÃO, pregado acima de todos os papéis.
+   *
+   * Ele é o único item do quadro que não é uma inscrição: é o que sobra
+   * quando não há mais ninguém para desafiar. Três estados, e o terceiro é o
+   * prêmio em si — o card VIRA a foto de grupo, e fica pregada ali para
+   * sempre, no lugar onde o trabalho aconteceu.
+   *
+   * O clique no estado `aberto` FECHA o quadro resolvendo com
+   * `CAMPEAO_DO_QUADRO`: quem faz a festa é a cena, não a tela.
+   */
+  private desenharCampeao(premios: PremiosDoQuadro): void {
+    const estado = premios.campeao();
+    const [batidos, pegos, total] = premios.progresso();
+    this.cardDoCampeao.className = `campeao ${estado}`;
+    this.cardDoCampeao.innerHTML = '';
+
+    if (estado === 'pego') {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const foto = document.createElement('canvas');
+      foto.className = 'foto-do-grupo';
+      // 2,1 de proporção: é uma foto DEITADA, e seis cabeças num quadrado
+      // viram sopa de bolinha
+      foto.width = Math.round(300 * dpr);
+      foto.height = Math.round(143 * dpr);
+      const ctx = foto.getContext('2d');
+      if (ctx) retratoDoGrupo(ctx, foto.width, foto.height);
+      const legenda = document.createElement('p');
+      legenda.className = 'legenda';
+      legenda.textContent = 'A festa na mesa de piquenique, no dia em que vocês '
+        + 'ganharam de todo mundo. O Mano derrubou as casquinhas no caminho.';
+      this.cardDoCampeao.append(foto, legenda);
+      return;
+    }
+
+    const titulo = document.createElement('div');
+    titulo.className = 'titulo';
+    titulo.innerHTML = estado === 'aberto'
+      ? '<b>🏆 Prêmio do Campeão</b><em>eles querem falar com vocês</em>'
+      : '<b>🔒 Prêmio do Campeão</b><em>ganhe de todos e pegue os prêmios</em>';
+    const linha = document.createElement('p');
+    linha.textContent = estado === 'aberto'
+      ? 'Vocês ganharam de todo mundo do quadro, e pegaram tudo que cada um deu. '
+        + 'Tem gente esperando na mesa de piquenique.'
+      : `Derrotados: ${batidos} de ${total} · prêmios pegos: ${pegos} de ${total}.`;
+    this.cardDoCampeao.append(titulo, linha);
+
+    if (estado === 'aberto') {
+      this.cardDoCampeao.addEventListener('click', () => {
+        this.fecharQuadro(CAMPEAO_DO_QUADRO);
+      });
+    }
+  }
+
+  /**
+   * O PREMIO no pe do papel — a etiqueta da roupa que aquele desafiante da.
+   *
+   * Tres estados, e eles contam a historia inteira sem precisar de tela nova:
+   *
+   * - **fechado**: ainda nao ganharam dele. A etiqueta mostra o que esta em
+   *   jogo, porque premio escondido nao convida ninguem a jogar;
+   * - **aberto**: ja ganharam e a roupa esta pendurada esperando o clique. E o
+   *   unico estado clicavel, e ele para o clique de subir — sem isso pegar a
+   *   roupa marcaria o desafiante e, no segundo clique, comecaria uma partida;
+   * - **pego**: a peca ja esta no guarda-roupa, e continua la para sempre.
+   *
+   * Quem nao da premio nenhum (a dupla) nao ganha etiqueta.
+   */
+  private pregarPremio(
+    id: string, premios: PremiosDoQuadro, redesenhar: () => void,
+  ): HTMLElement | null {
+    const pecas = PREMIOS_DA_ARENA[id];
+    if (!pecas || pecas.length === 0) return null;
+
+    const caixa = document.createElement('div');
+    caixa.className = 'premio';
+    const nomes = pecas.map((p) => `${p.icone} ${p.nome}`).join(' · ');
+
+    if (!premios.batido(id)) {
+      caixa.classList.add('fechado');
+      caixa.innerHTML = `<span class="rotulo">🔒 prêmio</span><span class="peca">${nomes}</span>`;
+      return caixa;
+    }
+    if (premios.resgatado(id)) {
+      caixa.classList.add('pego');
+      caixa.innerHTML = `<span class="rotulo">✓ no guarda-roupa</span><span class="peca">${nomes}</span>`;
+      return caixa;
+    }
+
+    caixa.classList.add('aberto');
+    caixa.innerHTML = `<span class="rotulo">🎁 clique para pegar</span><span class="peca">${nomes}</span>`;
+    caixa.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (premios.resgatar(id)) redesenhar();
+    });
+    return caixa;
   }
 
   // ---------------------------------------------------------------- xadrez
@@ -1397,12 +1849,47 @@ export class Ui {
     return this.armario.classList.contains('show');
   }
 
-  abrirArmario(): void {
+  /**
+   * Abre o guarda-roupa. No modo `vestiario` (o do clube) ele vira o
+   * VESTIÁRIO: o mesmo painel, com outro nome, com as duas abas — o
+   * guarda-roupa de sempre e a vitrine das roupas de piscina — e o botão que
+   * troca o boneco entre o traje de banho e o de rua.
+   */
+  abrirArmario(modo: 'casa' | 'vestiario' = 'casa'): void {
     if (this.armarioOpen) return;
     this.som?.('escolha');
+    this.armario.classList.toggle('modo-vestiario', modo === 'vestiario');
+    this.armario.querySelector('.titulo')!.textContent = modo === 'vestiario' ? 'Vestiário' : 'Guarda-roupa';
     this.onAbrirArmario?.();
     this.armario.classList.add('show');
     this.marcarTelaAberta();
+  }
+
+  /** O painel está no modo vestiário (o do clube)? */
+  get armarioEhVestiario(): boolean {
+    return this.armario.classList.contains('modo-vestiario');
+  }
+
+  /**
+   * Qual aba do vestiário aparece, e em que traje está o boneco. Fora do modo
+   * vestiário, o painel é sempre o guarda-roupa, e isto só marca o botão.
+   */
+  mostrarAbaDoArmario(aba: 'vestir' | 'piscina', traje: 'normal' | 'banho'): void {
+    const piscina = aba === 'piscina' && this.armarioEhVestiario;
+    this.armario.classList.toggle('aba-piscina', piscina);
+    this.armario.classList.toggle('aba-vestir', !piscina);
+    for (const b of this.armario.querySelectorAll<HTMLElement>('.abas [data-aba]')) {
+      const ativa = b.dataset.aba === (piscina ? 'piscina' : 'vestir');
+      b.classList.toggle('ativa', ativa);
+      b.setAttribute('aria-selected', String(ativa));
+    }
+    for (const b of this.armario.querySelectorAll<HTMLElement>('.traje [data-traje]')) {
+      b.classList.toggle('ativo', b.dataset.traje === traje);
+    }
+    this.armario.querySelector('.sub')!.innerHTML = piscina
+      ? 'clique numa peça para <b>provar no boneco</b> · desbloqueada, ela vai para o guarda-roupa dos dois · <b>T</b> troca de pessoa'
+      : 'clique numa peça para vestir ou tirar · arraste o boneco para girar · <b>T</b> veste o outro';
+    this.armario.querySelector('.rotulo-acervo')!.textContent = piscina ? 'Roupas de piscina' : 'O que você tem';
   }
 
   fecharArmario(): void {
@@ -1488,6 +1975,105 @@ export class Ui {
     });
   }
 
+  /**
+   * A ABA DE ROUPAS DE PISCINA do vestiário: a vitrine por parte do corpo,
+   * a ficha da peça provada ao lado do boneco e a carteira.
+   *
+   * É a arara da Estella dentro do guarda-roupa, com uma diferença que vem da
+   * própria aba: a peça já desbloqueada não some da vitrine — o botão da
+   * ficha passa a VESTIR (ou tirar) ali mesmo, sem trocar de aba.
+   *
+   * PROVAR NÃO É DESBLOQUEAR: clicar na grade só veste o boneco; quem paga é
+   * o botão da ficha, do outro lado do painel (mesmo motivo da Estella).
+   */
+  renderPiscina(dados: {
+    dono: string;
+    saldo: number;
+    provando: string | null;
+    pecas: ReadonlyArray<{
+      id: string; nome: string; icone: string; nota?: string; slot: SlotRoupa;
+      preco: number; cor: string; faixa?: string; pontos?: string; jaTem: boolean; vestida: boolean;
+    }>;
+  }): void {
+    this.donoArmario.textContent = `de ${dados.dono}`;
+    // o saldo mora no ALTO DA FICHA, que fica grudada ao lado do boneco: no pé
+    // da vitrine (depois das 30 peças) ninguém chegava a ver quanto tinha
+    this.armario.querySelector('.saldo')!.innerHTML = `💰 <b>R$ ${dados.saldo}</b> <small>na carteira</small>`;
+
+    // a vitrine por parte do corpo, na mesma ordem das vagas (como o acervo)
+    this.vitrineDaPiscina.innerHTML = '';
+    SLOTS_ROUPA.forEach((slot, i) => {
+      const doSlot = dados.pecas.filter((p) => p.slot === slot);
+      if (doSlot.length === 0) return;
+      const secao = document.createElement('section');
+      secao.className = 'grupo';
+      secao.dataset.slot = slot;
+      const titulo = document.createElement('h4');
+      const tem = doSlot.filter((p) => p.jaTem).length;
+      titulo.innerHTML = `${PARTES[i]} <span>${tem}/${doSlot.length}</span>`;
+      secao.appendChild(titulo);
+      const grade = document.createElement('div');
+      grade.className = 'produtos';
+      for (const p of doSlot) {
+        const botao = document.createElement('button');
+        botao.className = 'produto';
+        botao.dataset.id = p.id;
+        botao.classList.toggle('provando', p.id === dados.provando);
+        botao.classList.toggle('ja-tem', p.jaTem);
+        botao.classList.toggle('vestida', p.vestida);
+        botao.classList.toggle('caro', !p.jaTem && p.preco > dados.saldo);
+        const amostra = document.createElement('i');
+        // a amostra é a COR DA PEÇA (a bermuda estampada leva as listras dela)
+        amostra.style.background = p.faixa
+          ? `repeating-linear-gradient(160deg, ${p.cor} 0 12px, ${p.faixa} 12px 18px)`
+          : p.pontos
+            ? `radial-gradient(circle, ${p.pontos} 0 2.5px, transparent 3px) 0 0 / 11px 11px, ${p.cor}`
+            : p.cor;
+        amostra.textContent = p.icone;
+        botao.appendChild(amostra);
+        const nome = document.createElement('b');
+        nome.textContent = p.nome;
+        botao.appendChild(nome);
+        const etiqueta = document.createElement('em');
+        etiqueta.textContent = p.vestida ? 'vestindo' : p.jaTem ? '✓ é de vocês' : `R$ ${p.preco}`;
+        botao.appendChild(etiqueta);
+        grade.appendChild(botao);
+      }
+      secao.appendChild(grade);
+      this.vitrineDaPiscina.appendChild(secao);
+    });
+
+    // a ficha da peça provada, ao lado do boneco
+    const escolhida = dados.pecas.find((p) => p.id === dados.provando) ?? null;
+    const ficha = this.armario.querySelector<HTMLElement>('.ficha')!;
+    const botao = ficha.querySelector<HTMLButtonElement>('.agir')!;
+    ficha.classList.toggle('vazia', escolhida === null);
+    ficha.querySelector('.nome')!.textContent = escolhida?.nome ?? 'Escolha uma peça';
+    ficha.querySelector('.nota')!.textContent = escolhida?.nota ?? 'clique numa da vitrine para ver no corpo';
+    ficha.querySelector('.preco')!.textContent =
+      !escolhida ? '' : escolhida.jaTem ? '✓ é de vocês' : `R$ ${escolhida.preco}`;
+    const falta = escolhida && !escolhida.jaTem ? escolhida.preco - dados.saldo : 0;
+    botao.disabled = !escolhida || falta > 0;
+    botao.classList.toggle('vestir', !!escolhida?.jaTem);
+    botao.textContent = !escolhida
+      ? 'Desbloquear'
+      : escolhida.jaTem
+        ? escolhida.vestida ? 'Tirar' : 'Vestir agora'
+        : falta > 0
+          ? `Faltam R$ ${falta}`
+          : `Desbloquear por R$ ${escolhida.preco}`;
+    ficha.querySelector('.aviso')!.textContent = falta > 0 ? 'O vestiário não fia. Nem para vocês.' : '';
+  }
+
+  /** Trocou de aba no vestiário. */
+  onTrocarAbaDoArmario: ((aba: 'vestir' | 'piscina') => void) | null = null;
+  /** Trocou o boneco entre o traje de banho e o de rua. */
+  onTrajeDoBoneco: ((traje: 'normal' | 'banho') => void) | null = null;
+  /** Clicou numa peça da vitrine de piscina: prova no boneco. */
+  onProvarNaPiscina: ((id: string) => void) | null = null;
+  /** Apertou o botão da ficha: desbloquear, vestir ou tirar a peça provada. */
+  onAgirNaPiscina: (() => void) | null = null;
+
   /** Clicou numa das 4 partes do corpo para TIRAR o que está lá. */
   onTirarParte: ((indice: number) => void) | null = null;
   /** Clicou numa peça guardada para VESTIR. */
@@ -1533,14 +2119,6 @@ export class Ui {
       this.onVestirPeca?.(peca.dataset.id);
     });
   }
-
-  // --------------------------------------------------------------- vestiário
-  //
-  // O vestiário do clube é o guarda-roupa ENCOLHIDO na moda praia: as mesmas
-  // vagas do corpo e o mesmo save, só que com duas perguntas em vez do acervo
-  // inteiro. Ele não tem boneco 3D de propósito — a folha é baixa e estreita, e
-  // o corpo de verdade continua aparecendo atrás dela na beira da piscina. É o
-  // único painel em que dá para ver a peça no lugar certo enquanto se escolhe.
 
   /* ====================================================================
    *                   A ARARA DA ESTELLA — provar e comprar
@@ -1645,70 +2223,6 @@ export class Ui {
   onAbrirLoja: (() => void) | null = null;
   onFecharLoja: (() => void) | null = null;
 
-  get vestiarioOpen(): boolean {
-    return this.vestiario.classList.contains('show');
-  }
-
-  abrirVestiario(): void {
-    if (this.vestiarioOpen) return;
-    this.som?.('escolha');
-    this.onAbrirVestiario?.();
-    this.vestiario.classList.add('show');
-    this.marcarTelaAberta();
-  }
-
-  fecharVestiario(): void {
-    if (!this.vestiarioOpen) return;
-    this.vestiario.classList.remove('show');
-    this.marcarTelaAberta();
-    this.onFecharVestiario?.();
-  }
-
-  /**
-   * Desenha o painel: o botão do óculos e a fileira de bermudas.
-   *
-   * `cor` e `faixa` são cores CSS, e não da paleta: quem traduz da peça para a
-   * tela é o Game. A amostra tem a cor DA PEÇA, e não um emoji colorido — na
-   * beira da piscina o que se escolhe é a cor, então ela tem que ser o botão.
-   */
-  renderVestiario(dados: {
-    dono: string;
-    oculos: boolean;
-    bermudas: ReadonlyArray<{ id: string; nome: string; cor: string; faixa?: string; vestida: boolean }>;
-  }): void {
-    this.donoVestiario.textContent = `de ${dados.dono}`;
-
-    this.oculos.classList.toggle('ligado', dados.oculos);
-    this.oculos.innerHTML =
-      `<span class="icone">🕶️</span><b>Óculos escuros</b>` +
-      `<em>${dados.oculos ? 'tirar' : 'colocar'}</em>`;
-
-    this.bermudas.innerHTML = '';
-    for (const b of dados.bermudas) {
-      const botao = document.createElement('button');
-      botao.className = 'bermuda';
-      botao.classList.toggle('vestida', b.vestida);
-      botao.dataset.id = b.id;
-      const amostra = document.createElement('i');
-      // estampada: a faixa entra como duas listras na própria amostra, que é
-      // como ela aparece no calção
-      amostra.style.background = b.faixa
-        ? `repeating-linear-gradient(160deg, ${b.cor} 0 12px, ${b.faixa} 12px 18px)`
-        : b.cor;
-      botao.appendChild(amostra);
-      const nome = document.createElement('b');
-      nome.textContent = b.nome;
-      botao.appendChild(nome);
-      this.bermudas.appendChild(botao);
-    }
-  }
-
-  /** Clicou no botão do óculos: liga se estiver desligado, e vice-versa. */
-  onAlternarOculos: (() => void) | null = null;
-  /** Clicou numa cor de bermuda. A mesma de novo tira a bermuda. */
-  onEscolherBermuda: ((id: string) => void) | null = null;
-  onAbrirVestiario: (() => void) | null = null;
-  onFecharVestiario: (() => void) | null = null;
 
   /** Clique numa vaga da mão: quem decide o que fazer é o Game. */
   onEscolherSlot: ((indice: number) => void) | null = null;

@@ -1,5 +1,10 @@
 # AriStory — Documento de Contexto Integral
 
+> **RETRATO ANTIGO — não use para saber o estado atual.** É de antes da
+> boutique, do Mania de Churrasco, dos bichos do clube e da estufa. Para o que
+> existe hoje: `CLAUDE.md`, as skills, e o "COMECE AQUI" de
+> `docs/MINIGAME-JARDIM.md`. Fica pelo panorama das regras de ouro.
+>
 > Gerado para consulta externa (brainstorming de novas mecânicas com outra IA).
 > Reflete o estado do código na branch `claude/aristory-continuous-dev-cgl6b5`
 > após a rodada de melhorias de frisbee, som, UI mobile e ambientação do

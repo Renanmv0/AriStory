@@ -49,8 +49,6 @@ export class Cookie extends Bicho {
    * so a cabeca e a tromba sobem.
    */
   private sonhando = 0;
-  /** para onde ele deve virar o corpo, quando a cena manda encarar alguem */
-  private encarando: { x: number; z: number } | null = null;
 
   constructor(area: AreaDoBicho) {
     super(area, {
@@ -500,21 +498,8 @@ export class Cookie extends Bicho {
 
   // ------------------------------------------------------- ordens da cena
 
-  /**
-   * Vira o corpo para um ponto, devagar. A cena chama antes de falar com ele:
-   * NPC que conversa de perfil parece que nao viu ninguem chegar.
-   *
-   * Ele guarda o PONTO, e nao o angulo, porque quem chama sabe onde o jogador
-   * esta e nao precisa fazer a conta do `atan2` de novo.
-   */
-  encarar(x: number, z: number): void {
-    this.encarando = { x, z };
-  }
-
-  /** Larga o alvo: ele volta a olhar para onde anda. */
-  pararDeEncarar(): void {
-    this.encarando = null;
-  }
+  // `encarar`/`pararDeEncarar` moram na base: eram identicos aqui e na Estella,
+  // e a regra "quem anda olha para onde anda" tinha que valer para os dois.
 
   /** Levanta a cabeca e a tromba para o ceu — o sonho da roda gigante. */
   olharProAlto(segundos: number): void {
@@ -526,15 +511,6 @@ export class Cookie extends Bicho {
   protected animar(dt: number, { andando, carinho, fase }: PoseDoBicho): void {
     if (this.sonhando > 0) this.sonhando = Math.max(0, this.sonhando - dt);
     const sonho = this.sonhando > 0 ? 1 : 0;
-
-    // vira o corpo para quem ele esta encarando, sem estalo
-    if (this.encarando) {
-      const alvo = Math.atan2(this.encarando.x - this.x, this.encarando.z - this.z);
-      let d = alvo - this.group.rotation.y;
-      while (d > Math.PI) d -= Math.PI * 2;
-      while (d < -Math.PI) d += Math.PI * 2;
-      this.group.rotation.y += d * Math.min(1, dt * 4);
-    }
 
     /**
      * O PASSO. Patas em diagonal (dianteira esquerda com traseira direita), num

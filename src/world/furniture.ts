@@ -532,9 +532,20 @@ export function interiorDoor(
   profundidade = 0.24,
 ): THREE.Group {
   const g = new THREE.Group();
+  /*
+   * A FOLHA E A MAÇANETA MORAM NUMA DOBRADIÇA, na lateral esquerda: é o que
+   * deixa a cena abrir a porta girando `dobradica.rotation.y` (positivo abre
+   * para `-Z`, para dentro de quem olha a porta de frente). Achada pelo NOME
+   * (`getObjectByName('dobradica')`), e não por `userData`: peça do kit é
+   * clonada, e o clone copia `userData` como JSON.
+   */
+  const dobradica = new THREE.Group();
+  dobradica.name = 'dobradica';
+  dobradica.position.x = -largura / 2;
+  g.add(dobradica);
   const folha = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.08), toon(cor));
-  folha.position.y = altura / 2;
-  g.add(folha);
+  folha.position.set(largura / 2, altura / 2, 0);
+  dobradica.add(folha);
   for (const side of [-1, 1]) {
     const batente = new THREE.Mesh(
       new THREE.BoxGeometry(0.09, altura + 0.1, profundidade),
@@ -550,8 +561,8 @@ export function interiorDoor(
   verga.position.y = altura + 0.05;
   g.add(verga);
   const maca = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), toon(P.gold, { glow: 0.15 }));
-  maca.position.set(largura / 2 - 0.14, altura * 0.45, 0.07);
-  g.add(maca);
+  maca.position.set(largura - 0.14, altura * 0.45, 0.07);
+  dobradica.add(maca);
   return g;
 }
 

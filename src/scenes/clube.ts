@@ -4,7 +4,7 @@ import type { GameAPI, SceneDef } from '../core/types';
 import { flat, toon } from '../core/materials';
 import {
   bin, bleachers, bus, busStop, bush, cadeiraDeSalvaVidas, canteiro, canteiroComPalmeira,
-  canteiroDeHorta, planta, regador, terraRemexida, vasoDePlanta,
+  canteiroDeHorta, estufa, planta, regador, terraRemexida, vasoDePlanta,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
   guarita, meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante, sebe,
@@ -18,7 +18,7 @@ import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
 import { Josefina } from '../entities/bichos/Josefina';
 import { ARI, RENAN } from '../characters/cast';
-import { ITENS, MODA_PRAIA } from '../world/itens';
+import { ITENS } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
 import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
 
@@ -46,6 +46,25 @@ const HISTORIAS_DA_JOSEFINA = [
   'Alface a gente colhe de fora pra dentro. Assim ela continua crescendo pelo meio.',
   'Quando chove forte eu fico aqui, olhando. Não tem por que correr, já tá tudo regado.',
   'Essa daqui no meu casco eu levo comigo. É que ela ainda é pequenininha.',
+];
+
+/**
+ * O que ela conta DEPOIS de a estufa abrir.
+ *
+ * Elas existem porque uma pessoa que acabou de te deixar entrar no lugar mais
+ * particular dela nao pode continuar contando exatamente as mesmas sete
+ * historinhas de antes — o jardim mudou de tamanho, e a conversa tem que
+ * mudar junto. Antes da quest a estufa NAO APARECE em fala nenhuma dela: foi
+ * pedido explicito do Renan.
+ */
+const HISTORIAS_DA_JOSEFINA_DEPOIS = [
+  'A terra lá de dentro já tá mais escura. Adubo bom trabalha rápido.',
+  'Pode entrar quando quiser, viu? Só fecha a porta atrás, que lá dentro é quentinho de propósito.',
+  'Eu levei quatro anos pra montar aquela estufa. Quatro. Um vidro de cada vez.',
+  'O Noel passou aqui pra ver as plantas. Ficou meia hora. Não falou de suco nenhuma vez.',
+  'Lá dentro eu ponho as que não aguentam vento. Tem planta que é igual gente: precisa de um canto.',
+  'Aquele chão do meio eu deixo limpo de propósito. Um dia eu te explico pra quê.',
+  'Se um dia eu não tiver aqui fora, é porque eu tô lá dentro. É sempre isso.',
 ];
 
 const FALAS_DO_NOEL = [
@@ -158,6 +177,9 @@ export const clube: SceneDef = {
     // quem volta do Mania de Churrasco sai pela porta de serviço, atrás do
     // prédio: um passo para fora dela, já de costas para a parede
     'dos-fundos-do-restaurante': { x: -14.6, z: -18.9, facing: Math.PI },
+    // quem volta da estufa sai um passo a frente da porta dela, ja de costas
+    // para o vidro e olhando o caminho do jardim
+    'da-estufa': { x: 25.6, z: -20.9, facing: 0 },
   },
 
   build(w) {
@@ -213,7 +235,7 @@ export const clube: SceneDef = {
      * concreto e já marca onde as próximas atrações vão morar. É decalque: entra
      * DEPOIS do deck, então aparece por cima dele sem brigar por profundidade.
      */
-    w.patch(23, -14, 12, 20, P.grass, 0, 0.018, tapeteDeGrama(9));
+    w.patch(23, -14.5, 12, 21, P.grass, 0, 0.018, tapeteDeGrama(9));
     // A RUA, na borda esquerda: o ônibus não podia continuar estacionado em
     // cima do piso do clube. Vem por cima do deck e da grama, na mesma ordem do
     // Villa-Lobos — calçada, guia, asfalto — para os dois lados da viagem
@@ -1099,7 +1121,7 @@ export const clube: SceneDef = {
 
     // o caminho de pedrinha entre as duas colunas de canteiros. Decalque, então
     // entra por cima da grama sem brigar por profundidade.
-    w.patch(JARDIM.caminho, -13.8, 1.3, 15, P.concrete, 0, 0.022, calcadaDePedrinha(0.4, 5));
+    w.patch(JARDIM.caminho, -14.5, 1.3, 16.4, P.concrete, 0, 0.022, calcadaDePedrinha(0.4, 5));
 
     /**
      * OS CANTEIROS, quatro fileiras em duas colunas. Cada um com uma espécie
@@ -1124,9 +1146,13 @@ export const clube: SceneDef = {
      * lavanda alinhada em `z = -21,2`, sem mureta e sem colisor: são 30 cm de
      * altura, e cercar isso faria o jardim virar um labirinto.
      */
-    for (let i = 0; i < 5; i++) {
-      const x = 22.8 + i * 1.4;
-      w.add(w.place(planta('lavanda', 1.15, (i * 0.27) % 1), x, 0, -21.2));
+    //
+    // A FILEIRA ABRE NO MEIO desde que a estufa entrou: o caminho de pedrinha
+    // passa por aqui para chegar na porta dela, e "passagem tem eixo, e o eixo
+    // fica vazio" (skill de cenario). Duas de cada lado, e nada em cima do
+    // `x = 25,6`.
+    for (const x of [22.7, 23.8, 27.4, 28.5]) {
+      w.add(w.place(planta('lavanda', 1.15, ((x - 22) * 0.31) % 1), x, 0, -21.2));
     }
     // e uma fileira de suculentas na frente, que é a borda baixa do jardim
     for (let i = 0; i < 6; i++) {
@@ -1152,6 +1178,91 @@ export const clube: SceneDef = {
     // o regador largado no meio do caminho: é o que diz que alguém TRABALHA
     // aqui, e não que o jardim se cuida sozinho
     w.add(w.place(regador(), JARDIM.caminho + 0.4, 0, -17.6, 0.6));
+
+    /**
+     * ============================================ A ESTUFA, no fundo do jardim
+     *
+     * A casca de vidro fecha o caminho de pedrinha, e a porta dela leva para a
+     * cena `estufa` — o jardim grande da Josefina, onde o roguelite vai morar
+     * (o plano inteiro está em `docs/MINIGAME-JARDIM.md`).
+     *
+     * ONDE ELA COUBE. Entre a última fileira de lavanda (`z = -21,2`) e o
+     * limite de caminhada do clube (`z = -25,1`): 3,2 de profundidade e 6 de
+     * largura, centrada em `z = -23,4`. Atrás dela só tem a sebe, que é o
+     * lugar certo para pôr um prédio de 3,3 de altura — ele come uns 5 metros
+     * de chão na direção da câmera, e ali não há chão nenhum para comer.
+     *
+     * O EIXO DO CAMINHO FICOU VAZIO para ela: a lavanda do meio saiu e as duas
+     * jardineiras que ladeiam a boca do caminho viraram, sem mudar de lugar, o
+     * par de vasos da entrada.
+     *
+     * A PORTA NÃO É UM VÃO DE VERDADE: quem entra troca de cena, então o
+     * colisor cobre a casca inteira e a interação fica um passo à frente dela.
+     */
+    const ESTUFA = { x: JARDIM.caminho, z: -23.4, largura: 6, profundidade: 3.2 };
+    const casca = w.add(w.place(estufa(ESTUFA.largura, ESTUFA.profundidade), ESTUFA.x, 0, ESTUFA.z));
+    w.blockBox(ESTUFA.x, ESTUFA.z, ESTUFA.largura / 2, ESTUFA.profundidade / 2);
+    const portaDaEstufa = casca.userData.porta as THREE.Object3D;
+
+    /**
+     * ------------------------------------------- A ESTUFA NASCE TRANCADA
+     *
+     * A chave é a flag `adubo-entregue`, que só existe depois da quest inteira
+     * (§2 do `docs/MINIGAME-JARDIM.md`). Antes dela a estufa está no cenário,
+     * visível, e simplesmente NÃO ABRE — foi o pedido do Renan: "ao clicar,
+     * você vê que está fechado".
+     *
+     * DE NOVO SÃO DUAS INTERAÇÕES NO MESMO PONTO, e só uma ligada por vez. A
+     * trancada não se anuncia como trancada: o rótulo é "Abrir a porta da
+     * estufa" e o ícone é uma porta comum, porque um cadeado no HUD contaria a
+     * história antes de o jogador encostar nela. Quem clica é que descobre.
+     */
+    const estufaAberta = (): boolean => g.flag('adubo-entregue');
+
+    const entrarNaEstufa = w.door({
+      x: ESTUFA.x, z: -20.9,
+      to: 'estufa', entry: 'do-jardim',
+      label: 'Entrar na estufa', icon: '🪴',
+      highlight: portaDaEstufa,
+      radius: 1.8,
+    });
+    entrarNaEstufa.enabled = estufaAberta();
+
+    const estufaTrancada = w.interact({
+      id: 'clube:estufa-trancada',
+      x: ESTUFA.x, z: -20.9, radius: 1.8,
+      label: 'Abrir a porta da estufa', icon: '🚪',
+      highlight: portaDaEstufa,
+      onInteract: async (api) => {
+        api.som('porta');
+        await conversa([
+          [A, 'Trancada.'],
+          [R, 'Trancada mesmo, ou trancada de empurrar mais forte?'],
+          [A, 'Trancada de chave. Tem cadeado por dentro.'],
+        ]);
+        // o que se vê pelo vidro muda depois de conhecer a Josefina: antes ela
+        // é "alguém", e o mistério é maior
+        await conversa(
+          api.flag('josefina-conhecida')
+            ? [
+              [R, 'Dá pra ver alguma coisa pelo vidro?'],
+              [A, 'Dá pra ver que é grande. Bem maior que a horta aqui de fora.'],
+              [R, 'E ela nunca falou disso.'],
+            ]
+            : [
+              [R, 'Tem uma estufa inteira no fundo do jardim e ninguém comentou nada.'],
+              [A, 'Alguém cuida disso aqui. E esse alguém tem a chave.'],
+            ],
+        );
+      },
+    });
+    estufaTrancada.enabled = !estufaAberta();
+
+    /** Destranca a estufa com a cena já em pé, sem esperar uma recarga. */
+    const destrancarAEstufa = (): void => {
+      entrarNaEstufa.enabled = true;
+      estufaTrancada.enabled = false;
+    };
 
     /**
      * ============================================ O OSSO ENTERRADO NO JARDIM
@@ -1243,6 +1354,10 @@ export const clube: SceneDef = {
      * Ela é a MAIS LENTA do jogo (0,3 contra 0,85 do Noel) e descansa de 3 a
      * 7 s. É a personalidade que o Renan pediu, e ela mora inteira nesses dois
      * números.
+     *
+     * Depois do convite das pragas, ela continua passeando AQUI — e, quando a
+     * dupla entra na estufa, entra junto: a cena `estufa` monta a entrada dela
+     * pela porta (e é lá dentro que se fala com ela para jogar).
      */
     const josefina = new Josefina({
       minX: JARDIM.caminho - 0.55, maxX: JARDIM.caminho + 0.55,
@@ -1311,14 +1426,143 @@ export const clube: SceneDef = {
           return;
         }
 
+        /**
+         * A DICA DO ADUBO, no mesmo desenho da dica do osso: uma vez só, na
+         * volta seguinte, e não sorteada — pista que o jogo pode esconder para
+         * sempre não é pista, é loteria.
+         *
+         * ELA NÃO CITA A ESTUFA, e isso é regra e não esquecimento: o Renan
+         * pediu que a Josefina não comente nada sobre a estufa até a quest
+         * acabar. Ela fala da TERRA dela estar cansada, que é assunto de
+         * jardineira e não de porta trancada. Quem ouvir isso e depois ganhar
+         * um saco de adubo do Noel fecha a conta sozinho.
+         */
+        if (!api.flag('adubo-entregue') && !api.flag('josefina-dica-adubo')) {
+          api.setFlag('josefina-dica-adubo');
+          await api.say([
+            'Sabe o que me incomoda? A terra. Sete anos plantando no mesmo lugar cansa qualquer terra.',
+          ], J);
+          await conversa([
+            [R, 'E não dá pra fazer nada?'],
+          ]);
+          await api.say([
+            'Dá. Terra cansada pede adubo bom, desses curtidos de verdade. Só que isso não se compra: alguém tem que juntar.',
+          ], J);
+          return;
+        }
+
         // toda visita seguinte rende uma historinha dela — é o que ela mais
         // gosta de fazer, e o que faz valer a pena voltar no jardim
-        await api.say([w.pick(HISTORIAS_DA_JOSEFINA)], J);
+        await api.say([
+          w.pick(api.flag('adubo-entregue') ? HISTORIAS_DA_JOSEFINA_DEPOIS : HISTORIAS_DA_JOSEFINA),
+        ], J);
       },
     });
 
+    /**
+     * ============================== DAR O ADUBO À JOSEFINA, e a estufa abrir
+     *
+     * O fim da quest (§2 do `docs/MINIGAME-JARDIM.md`), e a única coisa no jogo
+     * que destranca a estufa.
+     *
+     * Mesmo desenho do Noel e do Walter: duas interações no mesmo ponto, uma
+     * ligada por vez, as duas andando junto com ela no `onUpdate`.
+     */
+    const quemTemOAdubo = (api: GameAPI): string | null => {
+      if (api.hasItem(ITENS.adubo.id)) return api.playerId();
+      if (api.hasItem(ITENS.adubo.id, api.companionId())) return api.companionId();
+      return null;
+    };
+
+    const darOAdubo = w.interact({
+      id: 'clube:dar-o-adubo',
+      x: josefina.x, z: josefina.z, radius: 1.6,
+      label: 'Dar o adubo pra Josefina', icon: '🪱',
+      highlight: josefina.group,
+      priority: 1,
+      onInteract: async (api) => {
+        const dono = quemTemOAdubo(api);
+        if (!dono) return;
+        const J = 'Josefina';
+        josefina.receberCarinho();
+
+        await conversa([
+          [R, 'Josefina. A senhora falou que a terra tava cansada.'],
+          [A, 'A gente trouxe uma coisa.'],
+        ]);
+        api.removeItem(ITENS.adubo.id, dono);
+        api.som('cantarolar');
+        await api.say(['…'], J);
+        await api.say([
+          'Isso aqui é borra de fruta curtida. Isso aqui tá curtindo há meses. Onde é que vocês acharam isso?',
+        ], J);
+        await conversa([
+          [A, 'No bar de sucos. O Noel juntou.'],
+        ]);
+        await api.say(['O peru juntou adubo o ano inteiro e não contou pra ninguém.'], J);
+        await conversa([
+          [R, 'Ele disse que não tinha onde usar.'],
+        ]);
+        await api.say([
+          'Pois agora tem. Eu sou devagar, meus bem, mas eu sei reconhecer gentileza quando ela chega de saco na mão.',
+        ], J);
+
+        api.setFlag('adubo-entregue');
+        darOAdubo.enabled = false;
+        // mesma armadilha do Noel: o `onUpdate` para de arbitrar quando a flag
+        // sobe, então quem religa a conversa normal é esta linha
+        falarComAJosefina.enabled = true;
+        destrancarAEstufa();
+
+        /**
+         * O CONVITE, e é ele que muda o jardim de tamanho. A câmera abre um
+         * pouco e ela olha para o fundo — a estufa está lá desde sempre, e é a
+         * primeira vez que alguém aponta para ela.
+         */
+        api.focusCamera(casca);
+        api.setZoom(11);
+        await api.say([
+          'Vem cá. Tá vendo aquela porta de vidro lá no fundo? Aquilo ali não é depósito.',
+        ], J);
+        await conversa([
+          [A, 'A gente tentou abrir. Tava trancada.'],
+        ]);
+        await api.say([
+          'Tava. Eu não abro aquilo pra qualquer um — é onde eu guardo as coisas sérias.',
+        ], J);
+        await api.say([
+          'Mas quem carrega saco de adubo do outro lado do clube pra uma tartaruga que mal conhece… esse pode entrar.',
+        ], J);
+        await conversa([
+          [R, 'A gente pode mesmo?'],
+        ]);
+        await api.say([
+          'Pode. E se vocês quiserem me ajudar a passar isso aqui nas plantas de lá dentro, melhor ainda.',
+        ], J);
+        api.focusCamera(null);
+        api.setZoom(10);
+
+        api.toast('A estufa está aberta', '🪴');
+        api.unlock({
+          id: 'a-chave-da-estufa',
+          title: 'A porta de vidro do fundo',
+          place: 'Clube',
+          note: 'Ela não abre aquela porta pra qualquer um. Um saco de adubo atravessado no clube foi o bastante.',
+          icon: '🪴',
+        });
+      },
+    });
+    darOAdubo.enabled = false;
+
     w.onUpdate((dt) => {
       josefina.update(dt);
+      darOAdubo.moveTo(josefina.x, josefina.z);
+      // quem está com o adubo vê "dar o adubo"; quem não está, vê "falar"
+      if (!g.flag('adubo-entregue')) {
+        const comigo = quemTemOAdubo(g) !== null;
+        darOAdubo.enabled = comigo;
+        falarComAJosefina.enabled = !comigo;
+      }
       falarComAJosefina.moveTo(josefina.x, josefina.z);
     });
 
@@ -1628,10 +1872,120 @@ export const clube: SceneDef = {
       },
     });
 
-    // ele passeia, então o balão passeia junto
+    /**
+     * ================================ DAR AS SEMENTES AO NOEL, e ganhar o adubo
+     *
+     * O meio da quest do adubo (`docs/MINIGAME-JARDIM.md` §2). A corrente
+     * inteira: saco de sementes esquecido num banco do parque → dar ao Noel →
+     * ele retribui com adubo → dar o adubo à Josefina → ela destranca a estufa.
+     *
+     * SÃO DUAS INTERAÇÕES NO MESMO PONTO, e não uma com dois caminhos por
+     * dentro — é o mesmo desenho do osso do Walter. `Interactable.label` é
+     * fixo, e aqui o rótulo é metade da graça: quem chega com o saco lê "Dar as
+     * sementes pro Noel" no HUD e sabe que acertou o palpite. Só uma das duas
+     * fica ligada por vez, então elas nunca disputam o prompt.
+     *
+     * O SACO PODE ESTAR COM QUALQUER UM DOS DOIS: `hasItem` olha a mochila de
+     * quem está sendo controlado, e o `T` troca isso a qualquer momento — quem
+     * achou no parque pode não ser quem entrou no clube.
+     */
+    const quemTemAsSementes = (api: GameAPI): string | null => {
+      if (api.hasItem(ITENS.sementes.id)) return api.playerId();
+      if (api.hasItem(ITENS.sementes.id, api.companionId())) return api.companionId();
+      return null;
+    };
+
+    const darAsSementes = w.interact({
+      id: 'clube:dar-as-sementes',
+      x: noel.x, z: noel.z, radius: 1.4,
+      label: 'Dar as sementes pro Noel', icon: '🌾',
+      highlight: noel.group,
+      priority: 1,
+      onInteract: async (api) => {
+        const dono = quemTemAsSementes(api);
+        if (!dono) return;
+        const N = 'Noel';
+
+        await conversa([
+          [R, 'Noel. A gente achou isso num banco lá do parque.'],
+          [A, 'Você come semente, né? Você come semente.'],
+        ]);
+        api.som('gluglu');
+        noel.receberCarinho();
+        await api.say(['…'], N);
+        await api.say(['GENTE. GENTE! Milho quebrado! E girassol! GIRASSOL!'], N);
+        await conversa([
+          [A, 'Ele abriu o leque inteiro.'],
+          [R, 'Ele abriu o leque inteiro pra um saco de semente.'],
+        ]);
+
+        /**
+         * O ADUBO SÓ ENTRA DEPOIS DE AS SEMENTES SAÍREM, nesta ordem.
+         *
+         * Tirar primeiro abre a vaga que o adubo vai ocupar, então a mochila
+         * cheia nunca aparece aqui — o item novo cai exatamente no buraco que o
+         * antigo deixou. Na ordem inversa, quem chegasse com dez vagas cheias
+         * perderia as sementes e não ganharia nada.
+         */
+        api.removeItem(ITENS.sementes.id, dono);
+        api.addItem(ITENS.adubo, dono);
+        api.setFlag('sementes-entregues');
+        darAsSementes.enabled = false;
+        /**
+         * E A CONVERSA NORMAL VOLTA NA MESMA HORA.
+         *
+         * O `onUpdate` abaixo só arbitra os dois prompts ENQUANTO a quest está
+         * aberta; assim que a flag sobe ele para de mexer neles, e o estado que
+         * ficar aqui é o que vale até a próxima recarga da cena. Sem esta
+         * linha o Noel ficava mudo depois do presente — os dois pontos
+         * desligados, nenhum prompt no jardim do quiosque.
+         */
+        falarComONoel.enabled = true;
+
+        await api.say([
+          'Espera. Espera aí. Vocês me trouxeram presente, eu trago presente de volta. É a regra.',
+        ], N);
+        await api.say([
+          'Toma. É a borra das frutas do dia, curtida no fundo do quiosque. Eu junto isso há meses.',
+        ], N);
+        await conversa([
+          [A, 'Ele acabou de nos dar um saco de casca de fruta velha.'],
+          [R, 'Isso é adubo, Ari. Isso é adubo BOM.'],
+        ]);
+        await api.say([
+          'É o melhor que tem! Só que eu não tenho onde usar. Sucos eu faço; planta eu mato.',
+        ], N);
+        await conversa([
+          // A SEGUNDA DICA, e de novo sem nome: o jogo diz que existe alguém
+          // que cuida de planta, e não quem é.
+          [R, 'Alguém aqui no clube vai saber o que fazer com isso.'],
+          [A, 'Alguém aqui no clube passa o dia todo de joelho num canteiro.'],
+        ]);
+        api.toast('Saco de adubo', '🪱');
+        api.unlock({
+          id: 'adubo-do-noel',
+          title: 'O presente do Noel',
+          place: 'Clube',
+          note: 'Um saco de sementes esquecido num banco do parque virou um saco de adubo curtido no fundo do bar de sucos. Ele fez questão de retribuir.',
+          icon: '🪱',
+        });
+      },
+    });
+    darAsSementes.enabled = !g.flag('sementes-entregues');
+    falarComONoel.enabled = g.flag('sementes-entregues') || !g.flag('sementes-achadas');
+
+    // ele passeia, então os dois balões passeiam junto
     w.onUpdate((dt) => {
       noel.update(dt);
       falarComONoel.moveTo(noel.x, noel.z);
+      darAsSementes.moveTo(noel.x, noel.z);
+      // quem está com o saco vê "dar as sementes"; quem não está, vê "falar".
+      // Os dois pontos andam com o Noel, então a troca é por `enabled`.
+      if (!g.flag('sementes-entregues')) {
+        const comigo = quemTemAsSementes(g) !== null;
+        darAsSementes.enabled = comigo;
+        falarComONoel.enabled = !comigo;
+      }
     });
 
     w.interact({
@@ -1651,14 +2005,10 @@ export const clube: SceneDef = {
       label: 'Vestiário', icon: '🩳',
       highlight: vestiario,
       onInteract: async (api) => {
-        // Abastece os DOIS a cada abertura, como o armário do quarto: as peças
-        // são de cada pessoa, e o `storeItem` recusa o que ela já tem, então
-        // repor sai de graça e o vestiário também repõe o que foi descartado.
-        for (const quem of [api.playerId(), api.companionId()]) {
-          api.storeItem(ITENS.oculosEscuros, quem);
-          for (const peca of MODA_PRAIA) api.storeItem(peca, quem);
-        }
-
+        // O vestiário é um GUARDA-ROUPA com a aba das roupas de piscina (pedido
+        // do Renan): as peças não são mais dadas de graça — desbloqueia-se
+        // pagando, e aí elas repõem sozinhas em todo guarda-roupa dos dois.
+        // Quem manda no que está à venda é `MODA_PRAIA`, lida pelo painel.
         if (!api.flag('vestiario-clube')) {
           api.setFlag('vestiario-clube');
           await conversa([

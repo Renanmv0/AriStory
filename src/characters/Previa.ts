@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CharacterRig } from './CharacterRig';
 import type { CharacterSpec } from './spec';
 import type { Loadout } from '../core/types';
+import { ITENS } from '../world/itens';
 
 /**
  * O boneco do painel do guarda-roupa.
@@ -36,6 +37,12 @@ export class Previa {
   private giro = 0;
   /** para onde ele esta girando; o giro e suave, como no rig do jogo */
   private alvo = 0;
+  /**
+   * O TRAJE do boneco: o de rua, ou o de banho (sem camiseta e de calcao).
+   * O vestiario do clube mostra o boneco de banho, que e como a peca vai
+   * ficar na piscina; o guarda-roupa de casa, o de rua.
+   */
+  private traje: 'normal' | 'banho' = 'normal';
 
   constructor(canvas: HTMLCanvasElement) {
     // `alpha` para o painel aparecer por tras do boneco; sem antialias o
@@ -71,6 +78,7 @@ export class Previa {
     }
     this.spec = spec;
     this.rig = new CharacterRig(spec);
+    this.rig.setOutfit(this.traje);
     this.pedestal.add(this.rig.group);
 
     // Enquadra pela altura da pessoa — o Renan e 6 cm mais alto que o Ari.
@@ -87,6 +95,15 @@ export class Previa {
 
   vestir(loadout: Loadout): void {
     this.rig?.vestirRoupa(loadout);
+    // o chapeu de campeao nao e roupa, e peca do RIG (`setCampeao`): sem isto
+    // o boneco vestia o chapeu na vaga e aparecia de cabeca vazia
+    this.rig?.setCampeao(loadout.cabeca === ITENS.chapeuPingPong.id);
+  }
+
+  /** Troca o traje do boneco (ver `traje`); vale tambem para o proximo corpo. */
+  vestirTraje(traje: 'normal' | 'banho'): void {
+    this.traje = traje;
+    this.rig?.setOutfit(traje);
   }
 
   /** Gira o boneco. Positivo vai para a direita. */
@@ -101,6 +118,9 @@ export class Previa {
     // o rig anima parado: respira e balanca de leve, que e o que faz o boneco
     // parecer vivo em vez de manequim
     this.rig.update(dt, 0);
+    // pose de provador (pedido do Renan): braço um pouco para fora, para a
+    // mão sair de trás do corpo e dar para ver luva, pulseira e manga
+    this.rig.abrirBracos(0.36);
   }
 
   /** Desenha o boneco, acompanhando o tamanho que o CSS deu ao canvas. */

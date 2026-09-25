@@ -390,6 +390,176 @@ const moletom = await page.evaluate(() => {
 });
 await page.screenshot({ path: `${OUT}-moletom.png` });
 
+// ------------------------------------------ 9. os quatro prêmios da arena
+//
+// Peça de prêmio passa pelo MESMO caminho de qualquer roupa — é justamente por
+// isso que ela pode ser testada aqui, com o catálogo, sem ganhar partida
+// nenhuma. O que se guarda:
+//
+// - a jaqueta do Jean-Luc é casca no CORPO com uma manga em cada braço, e não
+//   sobe até o rosto nem engole a mão (a mesma régua do moletom, que é a peça
+//   de onde ela herdou as cotas);
+// - o quepe do Cookie nasce na CABEÇA e POUSA em cima da juba, sem escondê-la
+//   — e o gorro de lã, que era justo e sumia com o cabelo, segue a mesma régua
+//   agora: nenhuma peça de cabeça pode nascer na linha do rosto;
+// - o conjunto da Estella ocupa as QUATRO vagas ao mesmo tempo, e as peças de
+//   perna nascem uma em cada perna (é o que prova que o mapa de pais continua
+//   mandando `pernas`/`pes` para os dois pivôs);
+// - os patins do Mano SUBSTITUEM o pé como os da lojinha e saem na cor da
+//   ficha deles, e não na do sapato do personagem — era o caso que não existia
+//   enquanto havia um par só, e o que faria o prêmio ser invisível.
+await page.evaluate(() => {
+  const j = window.jogo;
+  const cat = window.aristoryItens;
+  j.removeItem('moletom-preto', 'ari');
+  // a vaga da cabeça está com a gargantilha desde o vestido, e vaga ocupada
+  // RECUSA a peça nova em vez de sobrescrever — é a regra do inventário
+  j.removeItem('gargantilha-laco', 'ari');
+  j.equipWearable(cat['jaqueta-jean-luc'], 'ari');
+  j.equipWearable(cat['quepe-cookie'], 'ari');
+});
+await page.waitForTimeout(900);
+
+const medirPeca = (id) =>
+  page.evaluate((peca) => {
+    const rig = window.jogo.player.rig;
+    const dele = (pai) => pai.children.filter((o) => o.userData?.roupa === peca);
+    const chao = rig.group.position.clone();
+    rig.group.getWorldPosition(chao);
+    const v = rig.group.position.clone();
+    let topo = -Infinity;
+    let base = Infinity;
+    for (const p of [...dele(rig.body), ...dele(rig.head)]) {
+      p.traverse((n) => {
+        if (!n.isMesh) return;
+        const pos = n.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          v.set(pos.getX(i), pos.getY(i), pos.getZ(i));
+          n.localToWorld(v);
+          if (v.y > topo) topo = v.y;
+          if (v.y < base) base = v.y;
+        }
+      });
+    }
+    const olhos = rig.group.position.clone();
+    rig.head.getWorldPosition(olhos);
+    const mao = rig.group.position.clone();
+    rig.maoDir.getWorldPosition(mao);
+    return {
+      noCorpo: dele(rig.body).length,
+      naCabeca: dele(rig.head).length,
+      mangas: [dele(rig.armL).length, dele(rig.armR).length],
+      pernas: [dele(rig.legL).length, dele(rig.legR).length],
+      topo: Number.isFinite(topo) ? +(topo - chao.y).toFixed(3) : null,
+      base: Number.isFinite(base) ? +(base - chao.y).toFixed(3) : null,
+      olhos: +(olhos.y - chao.y).toFixed(3),
+      mao: +(mao.y - chao.y).toFixed(3),
+      cabeloVisivel: rig.cabelo.filter((o) => o.visible).length,
+    };
+  }, id);
+
+const jaqueta = await medirPeca('jaqueta-jean-luc');
+const quepe = await medirPeca('quepe-cookie');
+await page.screenshot({ path: `${OUT}-premio-jean-luc.png` });
+
+// e o GORRO DE LÃ, pela mesma régua: ele deixou de ser justo e passou a pousar
+// em cima da juba, como o quepe. Medido pelo crânio (a versão antiga, com
+// `cobreCabelo`), ele sumia com o cabelo e a barra caía na linha dos olhos.
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.removeItem('quepe-cookie', 'ari');
+  j.equipWearable(window.aristoryItens['gorro-la'], 'ari');
+});
+await page.waitForTimeout(900);
+const gorro = await medirPeca('gorro-la');
+
+// o conjunto inteiro da Estella, as quatro vagas de uma vez
+await page.evaluate(() => {
+  const j = window.jogo;
+  const cat = window.aristoryItens;
+  j.removeItem('jaqueta-jean-luc', 'ari');
+  j.removeItem('quepe-cookie', 'ari');
+  // e o gorro, que ficou na vaga da cabeça na medição logo acima: vaga
+  // ocupada RECUSA a peça nova, e a coroa não entraria
+  j.removeItem('gorro-la', 'ari');
+  j.removeItem('bota-amarela', 'ari');
+  for (const id of ['blazer-xadrez', 'calca-xadrez', 'coroa-dama', 'bota-xadrez']) {
+    j.equipWearable(cat[id], 'ari');
+  }
+});
+await page.waitForTimeout(1000);
+const conjunto = {
+  vagas: await page.evaluate(() => window.jogo.wearables('ari').map((i) => i?.id ?? null)),
+  blazer: await medirPeca('blazer-xadrez'),
+  calca: await medirPeca('calca-xadrez'),
+  coroa: await medirPeca('coroa-dama'),
+  bota: await medirPeca('bota-xadrez'),
+  noCorpo: await vestindo('ari'),
+};
+await page.screenshot({ path: `${OUT}-premio-estella.png` });
+// de perfil, para a coroa e a lapela aparecerem
+await page.keyboard.down('KeyD');
+await page.waitForTimeout(700);
+await page.keyboard.up('KeyD');
+await page.waitForTimeout(500);
+await page.screenshot({ path: `${OUT}-premio-estella-andando.png` });
+
+// e os patins do Mano, que não são `extra` nenhum: são o modelo do rig
+await page.evaluate(() => {
+  const j = window.jogo;
+  for (const id of ['blazer-xadrez', 'calca-xadrez', 'coroa-dama', 'bota-xadrez']) {
+    j.removeItem(id, 'ari');
+  }
+  j.equipWearable(window.aristoryItens['patins-mano'], 'ari');
+});
+await page.waitForTimeout(900);
+const patinsDoMano = await page.evaluate(() => {
+  const rig = window.jogo.player.rig;
+  const pares = [];
+  for (const pivo of [rig.legL, rig.legR]) {
+    const p = pivo.children.find((o) => o.userData?.patins);
+    if (!p) continue;
+    const cores = [];
+    let casquinha = null;
+    p.traverse((n) => {
+      if (!n.isMesh) return;
+      cores.push('#' + n.material.color.getHexString());
+    });
+    // o enfeite é um grupo, e é o x dele que diz para que lado a casquinha
+    // aponta — tem que ser espelhado entre as duas pernas
+    const grupo = p.children.find((o) => o.isGroup);
+    if (grupo) casquinha = +grupo.position.x.toFixed(3);
+    pares.push({ visivel: p.visible, cores: [...new Set(cores)], casquinha });
+  }
+  return {
+    pares,
+    patinando: rig.patinandoAgora,
+    peVisivel: rig.pes.filter((o) => o.visible).length,
+    sapatoDaFicha: '#' + rig.spec.shoes.toString(16),
+  };
+});
+await page.screenshot({ path: `${OUT}-premio-mano.png` });
+
+// e trocar de volta para o patins da lojinha devolve a cor da ficha: os dois
+// pares dividem a mesma vaga, e o modelo tem que acompanhar quem está calçado
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.removeItem('patins-mano', 'ari');
+  j.equipWearable(window.aristoryItens['patins'], 'ari');
+});
+await page.waitForTimeout(900);
+const patinsDaLoja = await page.evaluate(() => {
+  const rig = window.jogo.player.rig;
+  const p = rig.legR.children.find((o) => o.userData?.patins);
+  const cores = [];
+  p?.traverse((n) => { if (n.isMesh) cores.push('#' + n.material.color.getHexString()); });
+  return {
+    visivel: p?.visible ?? false,
+    temCasquinha: (p?.children ?? []).some((o) => o.isGroup),
+    cores: [...new Set(cores)],
+  };
+});
+
 // ------------------------------------------------------------------- relatório
 const perto = (a, b, tol) => Math.abs(a - b) <= tol;
 /**
@@ -459,6 +629,33 @@ console.log('  a mão pende em', moletom.mao, '— a barra tem que parar acima d
 console.log('  perna:', moletom.pernas, '(a calça da ficha,', moletom.calcaDaFicha,
   '— não a pele,', moletom.pele + ')');
 console.log('  laço/cinto da ficha visíveis:', moletom.fichaVisivel, '(tem que ser 0)');
+console.log('— os prêmios da arena');
+console.log('  jaqueta da França · corpo:', jaqueta.noCorpo, '· cabeça:', jaqueta.naCabeca,
+  '· mangas:', JSON.stringify(jaqueta.mangas));
+console.log('    base', jaqueta.base, '· topo', jaqueta.topo, '· olhos', jaqueta.olhos,
+  '· mão', jaqueta.mao, '(topo abaixo dos olhos, base acima da mão)');
+console.log('  gorro de lã · cabeça:', gorro.naCabeca, '· cabelo visível:', gorro.cabeloVisivel,
+  '· pousa em', gorro.base, '(a cabeça está em', gorro.olhos + ')');
+console.log('  quepe da bilheteria · cabeça:', quepe.naCabeca, '· corpo:', quepe.noCorpo,
+  '· cabelo visível:', quepe.cabeloVisivel, '(ele POUSA: o cabelo fica)');
+console.log('    ele pousa em', quepe.base, '· a cabeça está em', quepe.olhos);
+console.log('  conjunto de xadrez · vagas:', JSON.stringify(conjunto.vagas));
+console.log('    blazer no corpo:', conjunto.blazer.noCorpo,
+  '· mangas:', JSON.stringify(conjunto.blazer.mangas),
+  '· calça nas pernas:', JSON.stringify(conjunto.calca.pernas),
+  '· bota nas pernas:', JSON.stringify(conjunto.bota.pernas),
+  '· coroa na cabeça:', conjunto.coroa.naCabeca);
+console.log('    a coroa pousa em', conjunto.coroa.base, 'e o cabelo fica:',
+  conjunto.coroa.cabeloVisivel, '(ela não cobre)');
+console.log('  patins do Mano · patinando:', patinsDoMano.patinando,
+  '· pé visível:', patinsDoMano.peVisivel, '(tem que ser 0)');
+for (const [i, p] of patinsDoMano.pares.entries()) {
+  console.log(`    pé ${i}:`, p.visivel ? 'calçado' : 'SUMIU',
+    '· casquinha em x', p.casquinha, '· cores', JSON.stringify(p.cores));
+}
+console.log('  de volta ao patins da lojinha:', JSON.stringify(patinsDaLoja.cores),
+  '· sem casquinha:', !patinsDaLoja.temCasquinha,
+  '(o sapato da ficha é', patinsDoMano.sapatoDaFicha + ')');
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 
 const ok =
@@ -516,7 +713,42 @@ const ok =
   // a perna continua com a calça da ficha: ele não deixa perna nua
   moletom.pernas === moletom.calcaDaFicha &&
   // e o laço e o cinto do Ari somem por baixo dele, como por baixo do vestido
-  moletom.fichaVisivel === 0;
+  moletom.fichaVisivel === 0 &&
+  // 9. os prêmios da arena
+  // a jaqueta: casca no corpo, uma manga em cada braço, e as mesmas cotas do
+  // moletom — não sobe até a cara nem passa da mão
+  jaqueta.noCorpo === 1 && jaqueta.naCabeca === 0 && jaqueta.mangas.join() === '1,1' &&
+  jaqueta.topo < jaqueta.olhos && jaqueta.base > jaqueta.mao &&
+  /*
+   * o quepe: na cabeça, e o cabelo CONTINUA aparecendo por baixo dele.
+   *
+   * Ele não declara `cobreCabelo` — um boné pousa em cima da juba, ao
+   * contrário do gorro de lã, que é justo e some com ela. E a peça tem que
+   * nascer ACIMA DOS OLHOS: medida pelo crânio (a primeira versão), a aba
+   * caía na linha do rosto e, na câmera isométrica, tapava a cara inteira.
+   */
+  quepe.naCabeca === 1 && quepe.noCorpo === 0 && quepe.cabeloVisivel > 0 &&
+  quepe.base > quepe.olhos &&
+  // o gorro de lã segue a MESMA régua desde que deixou de ser justo
+  gorro.naCabeca === 1 && gorro.cabeloVisivel > 0 && gorro.base > gorro.olhos &&
+  // o conjunto: as quatro vagas ocupadas ao mesmo tempo
+  conjunto.vagas.filter(Boolean).length === 4 &&
+  conjunto.blazer.noCorpo === 1 && conjunto.blazer.mangas.join() === '1,1' &&
+  conjunto.calca.pernas.join() === '1,1' && conjunto.bota.pernas.join() === '1,1' &&
+  conjunto.coroa.naCabeca === 1 &&
+  // a coroa POUSA por cima: o cabelo continua aparecendo por baixo dela
+  conjunto.coroa.cabeloVisivel > 0 &&
+  // os patins do prêmio: dois pés calçados, pé escondido, e a casquinha
+  // espelhada — o sinal do lado, de novo
+  patinsDoMano.patinando && patinsDoMano.peVisivel === 0 &&
+  patinsDoMano.pares.length === 2 &&
+  patinsDoMano.pares.every((p) => p.visivel && p.casquinha !== null) &&
+  patinsDoMano.pares[0].casquinha === -patinsDoMano.pares[1].casquinha &&
+  // a bota sai na cor da FICHA da peça, e não na do sapato do personagem
+  patinsDoMano.pares.every((p) => p.cores.includes('#f7fbfd')) &&
+  // e o par da lojinha volta sem casquinha e com o sapato da ficha
+  patinsDaLoja.visivel && !patinsDaLoja.temCasquinha &&
+  patinsDaLoja.cores.includes(patinsDoMano.sapatoDaFicha);
 
 await browser.close();
 process.exit(ok ? 0 : 1);

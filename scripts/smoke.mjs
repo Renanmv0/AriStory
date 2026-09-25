@@ -20,7 +20,9 @@ page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
 page.on('console', (m) => {
   const t = m.text();
   // a fonte do Google nao carrega em ambiente sem rede: nao e erro do jogo
-  const ruido = ['favicon', 'fonts.googleapis', 'fonts.gstatic', 'ERR_CONNECTION_RESET'];
+  // ERR_CERT: a fonte do Google barrada pelo proxy da máquina de teste — a
+  // mensagem não traz a URL, então o filtro por domínio acima não pega
+  const ruido = ['favicon', 'fonts.googleapis', 'fonts.gstatic', 'ERR_CONNECTION_RESET', 'ERR_CERT_AUTHORITY_INVALID'];
   if (m.type() === 'error' && !ruido.some((r) => t.includes(r))) erros.push(t);
 });
 
@@ -32,6 +34,7 @@ const cenas = [
   ['clube', 'portaria', 3000],
   ['clube', 'beira', 3000],
   ['lojinha', '', 3000],
+  ['estufa', '', 3000],
 ];
 
 for (const [cena, entrada, espera] of cenas) {

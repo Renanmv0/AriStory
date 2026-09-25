@@ -9,8 +9,8 @@
  * o mundo do pai antigo), a diferença aparece aqui com o caminho do objeto.
  *
  * Roda com movimento de verdade, que é quando a comparação importa: a dupla
- * andando em cada cena, sentando no sofá e o frisbee indo da mão para o ar e
- * voltando para a mão (troca de pai).
+ * andando em cada cena, sentando no sofá, o frisbee indo da mão para o ar e
+ * voltando para a mão (troca de pai), e a rodada do jardim numa onda cheia.
  *
  * Uso: node scripts/matriz.mjs /caminho/prefixo
  */
@@ -154,6 +154,31 @@ for (let k = 0; k < 40 && !voltou; k++) {
 }
 await page.screenshot({ path: `${OUT}-frisbee.png` });
 await registrar(`frisbee (${voltou ? 'voltou à mão' : 'não voltou'})`);
+
+// ---------------------- o minigame do jardim, numa onda avançada e cheia
+// é o pior caso: dezenas de bichos andando, o jato, as gotas e as partículas.
+// `onda = 19` + plano vazio: o respiro puxa a onda 20 sozinho, como no jogo.
+await page.goto(`${BASE}/?cena=estufa`, { waitUntil: 'networkidle' });
+await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));
+await page.goto(`${BASE}/?cena=estufa&em=0,-2&rodada=1`, { waitUntil: 'networkidle' });
+const rodada = () => page.evaluate(() => window.jogo?.current?.world?.root?.userData?.rodada?.estado() ?? {});
+for (let i = 0; i < 60 && !(await rodada()).rodando; i++) await page.waitForTimeout(250);
+await page.evaluate(() => {
+  const r = window.jogo.current.world.root.userData.rodada;
+  r.escalaDoTempo = 3;
+  r.ondasDaRodada = 30;
+  r.fixarNivel(99); // sem isto a tela de cartas abre e congela a rodada
+  r.onda = 19;
+  r.plano = [];
+  r.limparBichos();
+});
+for (let i = 0; i < 80 && (await rodada()).onda !== 20; i++) await page.waitForTimeout(250);
+await page.waitForTimeout(3000);
+await andar(['KeyW', 'KeyD', 'KeyS', 'KeyA'], 900);
+await page.waitForTimeout(2000);
+const naOnda = await rodada();
+await page.screenshot({ path: `${OUT}-jardim.png` });
+await registrar(`jardim, onda ${naOnda.onda}`);
 
 console.log(erros.length ? 'ERROS:\n' + erros.slice(0, 10).join('\n') : 'sem erros de console');
 await browser.close();

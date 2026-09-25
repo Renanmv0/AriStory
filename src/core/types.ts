@@ -3,6 +3,12 @@ import type { WorldBuilder } from '../world/WorldBuilder';
 import type { SomNome } from '../audio/efeitos';
 import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
+import type { VigiaDaOclusao } from './Oclusao';
+import type {
+  AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
+  EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
+} from '../minigames/jardim/tela';
+import type { EstiloDeRegador } from '../world/regador';
 
 export interface CircleCollider {
   kind: 'circle';
@@ -24,6 +30,19 @@ export interface BoxCollider {
 }
 
 export type Collider = CircleCollider | BoxCollider;
+
+/**
+ * UM ENFEITE DA ESTUFA NO SAVE (a lojinha da Josefina vende, a dupla põe onde
+ * quiser). Cada compra é uma UNIDADE com número próprio: dois anões são dois
+ * enfeites, cada um no seu lugar. `posta` é onde ele está no chão da estufa;
+ * `null` quer dizer guardado, esperando lugar.
+ */
+export interface DecoracaoNoSave {
+  readonly uid: number;
+  /** o id da ficha em `world/decoracoes.ts` */
+  readonly id: string;
+  readonly posta: { readonly x: number; readonly z: number; readonly giro: number } | null;
+}
 
 export interface Bounds {
   minX: number;
@@ -132,9 +151,10 @@ export interface ItemDef {
    * QUANTO CUSTA, em reais, na arara da Estella.
    *
    * So a loja le isto. Peca sem preco nao esta a venda — e o caso de tudo o
-   * que ja estava no armario do Ari, da bermuda do vestiario e do premio do
-   * Walter: eles nao aparecem em vitrine nenhuma, e nao ha "preco 0" para
-   * significar isso (zero e um preco, e um preco de graca).
+   * que ja estava no armario do Ari e do premio do Walter: eles nao aparecem
+   * em vitrine nenhuma, e nao ha "preco 0" para significar isso (zero e um
+   * preco, e um preco de graca). As pecas do vestiario do clube tem preco
+   * (ate R$ 20, pedido do Renan): la, "desbloquear" e comprar.
    *
    * O numero e inteiro e em reais cheios, na mesma escala do resto do jogo: o
    * bilhete da roda gigante custa 24, um prato do Mania sai por 12 a 34, e um
@@ -147,12 +167,20 @@ export interface ItemDef {
   /**
    * Que parte do corpo este vestivel ocupa.
    *
-   * As 4 vagas de vestimenta SAO as 4 partes, na ordem de `SLOTS_ROUPA`: a
+   * As 6 vagas de vestimenta SAO as 6 partes, na ordem de `SLOTS_ROUPA`: a
    * vaga 0 e a cabeca, a 1 o tronco, e assim por diante. E por isso que o
    * chapeu de campeao e os patins convivem — cabeca e pe sao vagas
    * diferentes — e por isso que dois chapeus nao convivem.
    */
   slot?: SlotRoupa;
+  /**
+   * So `acessorio`: ONDE a peca se prende. O acessorio e a vaga das coisas
+   * pequenas que vao em qualquer parte do corpo (presilha no cabelo, adesivo
+   * na camiseta), entao e a peca que diz em que pai ela pendura:
+   * - `cabeca`: na cabeca, y = 0 no centro do cranio (como o `cabeca`);
+   * - `corpo` (o padrao): no corpo, y = 0 no CHAO (como o `tronco`).
+   */
+  presoEm?: 'cabeca' | 'corpo';
   /** cor da parte principal (torso, perna, pe, calota do gorro) */
   cor?: number;
   /** cor da parte secundaria (manga, barra, cano); sem isto usa `cor` */
@@ -173,6 +201,12 @@ export interface ItemDef {
   corBanho?: number;
   /** Idem: as duas faixas da bermuda estampada. Sem isto, o calcao e liso. */
   estampaBanho?: number;
+  /**
+   * A cor da AMOSTRA nos painéis de loja, quando a peça não pinta nada no
+   * corpo (a mochila casco da Josefina: sem `cor`, a camiseta continua a da
+   * pessoa, e a amostra sairia cinza).
+   */
+  amostra?: number;
   /**
    * So `cabeca`: esconde o cabelo enquanto a peca estiver vestida.
    *
@@ -242,29 +276,80 @@ export interface ItemDef {
   /** Idem para a perna: vestido, saia e short. */
   pernasNuas?: boolean;
   /**
+   * Idem para o PEITO: o tronco do rig vira pele. Para a camiseta SOLTA, que é
+   * um casco por fora do corpo com o decote aberto — pelo decote tem que
+   * aparecer pele, e não o tronco pintado da cor da camiseta.
+   */
+  peitoNu?: boolean;
+  /**
+   * Idem para o PÉ: chinelo. O pé do rig (a caixa do tênis) vira pele, e a
+   * peça é só a sola e a tira por cima dele — pé descalço no chinelo.
+   */
+  pesNus?: boolean;
+  /**
+   * PEÇA DE PISCINA: aparece também no traje de banho (o clube).
+   *
+   * No banho o corpo inteiro vira pele e, de roupa, só ficam a cabeça e o
+   * acessório — bota, luva e camiseta são de rua. O vestiário do clube vende
+   * o que é feito para a beira da piscina (chinelo, boia de braço, colar de
+   * flor, bermuda estampada), e é esta marca que deixa a peça continuar no
+   * corpo dentro do clube. Camiseta NUNCA leva a marca: no clube é sem
+   * camiseta e de shorts (pedido do Renan).
+   */
+  praia?: boolean;
+  /**
+   * Só `pernas`: a geometria que a peça tem no QUADRIL.
+   *
+   * O `extra` de pernas pendura no pivô de CADA perna, e não alcança o quadril
+   * — e é no quadril que mora o calção da bermuda. Uma bermuda estampada põe
+   * as listras, as bolinhas ou as flores do calção aqui, e as da perna do
+   * shorts no `extra`.
+   *
+   * REFERENCIAL: o corpo, y = 0 no CHÃO — o mesmo do `tronco`. O calção do rig
+   * é um cilindro de raio `0,118·h·w` (embaixo `0,112`), `0,105·h` de altura,
+   * centrado em `legH + 0,012·h` e achatado em 0,85 no z.
+   */
+  extraQuadril?(m: MedidasCorpo, lado: -1 | 1, peca: ItemDef): THREE.Object3D;
+  /**
+   * Um enfeite a mais na peca, quando ela tem um modelo PROPRIO do rig.
+   *
+   * Hoje so o patins tem: ele nao e um `extra` de roupa, ele nasce no
+   * construtor do rig e SUBSTITUI o pe (a bota engole o tornozelo, entao o
+   * tenis por dentro apareceria pela costura). Enquanto existia um par so, a
+   * cor dele vinha da ficha do personagem; com o premio do Mano passaram a
+   * existir dois, e a ficha da peca ganhou voz: `cor` pinta a bota, `corDetalhe`
+   * as rodas e o cadarco, e isto acrescenta a casquinha de sorvete na lateral.
+   */
+  enfeite?: 'sorvete';
+  /**
    * Como o personagem segura isto na mao.
    *
    * - `upright`: braco esticado para a frente e o objeto em pe — sorvete, suco;
    * - `relaxed`: braco so descolado do tronco, objeto pendurado na mao — frisbee;
+   * - `regando`: braco LEVANTADO e o objeto inclinado para a frente — regador;
    * - `none`: nao muda a pose (padrao para o que nem aparece na mao).
    */
   holdPose?: HoldPose;
 }
 
-export type HoldPose = 'upright' | 'relaxed' | 'none';
+export type HoldPose = 'upright' | 'relaxed' | 'regando' | 'borrifando' | 'none';
 
 // --- guarda-roupa -----------------------------------------------------------
 //
 // Roupa NAO tem armazenamento proprio: peca de roupa e um `ItemDef` como
-// qualquer outro e mora numa das 4 vagas de vestimenta do inventario. E por
+// qualquer outro e mora numa das 6 vagas de vestimenta do inventario. E por
 // isso que se troca de roupa em qualquer lugar, e nao so na frente do armario.
 //
-// As 4 vagas SAO estas 4 partes, nesta ordem. A vaga e o loadout.
+// As 6 vagas SAO estas 6 partes, nesta ordem. A vaga e o loadout. As duas
+// ultimas vieram depois (pedido do Renan): `maos` e a das luvas e pulseiras, e
+// `acessorio` e a das coisas pequenas que vao em qualquer parte do corpo —
+// presilha, adesivo, broche. A ordem so CRESCE no fim: a vaga 0 continua sendo
+// a cabeca, entao save antigo de 4 vagas le certo.
 
-export type SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes';
+export type SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes' | 'maos' | 'acessorio';
 
 /** ordem canonica dos slots; usada no diff por slot e, depois, na tela */
-export const SLOTS_ROUPA: readonly SlotRoupa[] = ['cabeca', 'tronco', 'pernas', 'pes'];
+export const SLOTS_ROUPA: readonly SlotRoupa[] = ['cabeca', 'tronco', 'pernas', 'pes', 'maos', 'acessorio'];
 
 /**
  * As medidas do corpo de que a fabrica de geometria precisa.
@@ -281,6 +366,20 @@ export interface MedidasCorpo {
   headR: number;
   legH: number;
   torsoH: number;
+  /**
+   * o comprimento do braco, do ombro a ponta da mao: e dele que a luva e a
+   * pulseira (`maos`) tiram o pulso (~0,8·armLen) e a mao (~0,92·armLen)
+   */
+  armLen: number;
+  /**
+   * Até onde o CABELO vai, a partir do centro do crânio, na direção que faz
+   * `angulo` (radianos) com o alto da cabeça, no plano de orelha a orelha
+   * (positivo para `+X`). É o chão de peça que pousa POR CIMA do cabelo sem
+   * cobri-lo (tiara, orelhinha). Medido do cabelo montado, não chutado: o
+   * cacheado do Ari passa de 1,5·headR e os cachos curtos do Renan ficam em
+   * ~1,3 — um número só servia para um dos dois, e a orelhinha sumia no outro.
+   */
+  cabelo(angulo: number): number;
 }
 
 /** O que uma pessoa esta vestindo: slot -> id da peca. Sai das vagas. */
@@ -345,6 +444,19 @@ export interface GameAPI {
   } | null): void;
   /** muda o enquadramento: valores maiores afastam a camera */
   setZoom(viewSize: number): void;
+  /**
+   * Enquadra um retangulo do MUNDO, em vez de fixar so a altura.
+   *
+   * `setZoom` diz a ALTURA do enquadramento, e a largura sai do formato da
+   * tela (`w = h * aspecto`). Num monitor deitado sobra largura; num celular
+   * em pe, o mesmo numero da menos de um terco dela, e quem estiver nas
+   * pontas da cena some do quadro.
+   *
+   * Use isto em cutscene com gente espalhada: a cena diz o que precisa CABER,
+   * em unidades de mundo, e a camera escolhe o zoom que serve para as duas
+   * telas. Em tela larga o resultado e identico ao `setZoom(altura)`.
+   */
+  enquadrar(largura: number, altura: number): void;
   /** trava/destrava o controle do jogador (usado em cutscenes) */
   lockPlayer(locked: boolean): void;
   setPlayerVisible(visible: boolean): void;
@@ -386,6 +498,36 @@ export interface GameAPI {
    * vao para as vagas da mochila.
    */
   storeItem(item: ItemDef, quem?: string): Coleta;
+  /**
+   * Uma peça GANHA jogando (os marcos da estufa, e o que vier): vai para o
+   * guarda-roupa DOS DOIS e fica anotada em `save.premios`, então volta a cada
+   * abertura do armário e do espelho da boutique — descartar tira do corpo,
+   * nunca da vida. Devolve `false` se ela já era de vocês.
+   */
+  ganharPeca(peca: ItemDef): boolean;
+  /** já pagaram por esta peça (ou ela já está com quem joga)? */
+  jaTemPeca(id: string): boolean;
+  /**
+   * COMPRA UMA ROUPA com preço: debita da carteira do casal e guarda no
+   * guarda-roupa dos dois, com o aviso na tela. O mesmo caminho da arara da
+   * boutique — a lojinha da Josefina usa este.
+   */
+  comprarPeca(peca: ItemDef): 'comprou' | 'ja-tem' | 'sem-dinheiro' | 'sem-espaco' | 'sem-preco';
+  /** os enfeites da estufa no save (ver `DecoracaoNoSave`) */
+  decoracoes(): readonly DecoracaoNoSave[];
+  /** troca a lista de enfeites inteira no save */
+  salvarDecoracoes(lista: readonly DecoracaoNoSave[]): void;
+  /**
+   * Abre a banca da Josefina (abas de roupas e de decorações). `agir` faz as
+   * compras sem fechar o painel e devolve o conteúdo novo; o painel resolve
+   * quando fecha, dizendo se a dupla foi provar roupa ou colocar um enfeite.
+   */
+  abrirLojaDaJosefina(conteudo: ConteudoDaLoja, agir: (a: AcaoNaLoja) => ConteudoDaLoja): Promise<SaidaDaLoja>;
+  /**
+   * A barra do modo de decorar (o enfeite na mão, se cabe, e os botões de
+   * girar, colocar e cancelar). `null` esconde. A cena chama todo quadro.
+   */
+  posicionador(estado: EstadoDoPosicionador | null, aoBotao?: (b: BotaoDoPosicionador) => void): void;
   /** Tira um item da mochila ou dos acessorios, onde quer que ele esteja. */
   removeItem(id: string, quem?: string): boolean;
   hasItem(id: string, quem?: string): boolean;
@@ -404,7 +546,7 @@ export interface GameAPI {
   moveItem(de: Vaga, para: Vaga, quem?: string): boolean;
   /** As 5 vagas da mochila, na ordem da tela; null e vaga vazia. */
   handItems(quem?: string): ReadonlyArray<ItemDef | null>;
-  /** As 4 vagas de acessorio, na ordem da tela (= a ordem de `SLOTS_ROUPA`). */
+  /** As 6 vagas de vestimenta, na ordem da tela (= a ordem de `SLOTS_ROUPA`). */
   wearables(quem?: string): ReadonlyArray<ItemDef | null>;
   /**
    * O guarda-roupa: as pecas cosmeticas que a pessoa tem e NAO esta vestindo.
@@ -420,8 +562,11 @@ export interface GameAPI {
    */
   abrirGuardaRoupa(): void;
   /**
-   * Abre o vestiario do clube: o guarda-roupa encolhido na moda praia — o
-   * oculos escuros e a cor da bermuda. Trava o movimento igual ao armario.
+   * Abre o VESTIARIO do clube: o painel do guarda-roupa com o nome
+   * "Vestiario" e duas abas — o guarda-roupa de sempre e as ROUPAS DE PISCINA
+   * (`MODA_PRAIA`), que se provam no boneco (de traje de banho) e se
+   * desbloqueiam pagando, a ate R$ 20. Desbloqueada, a peca vira roupa de todo
+   * guarda-roupa dos dois. Trava o movimento igual ao armario.
    *
    * Nao e um segundo sistema de roupa: ele mexe nas mesmas vagas do corpo, com
    * os mesmos itens, no mesmo save. Cada pessoa tem o seu.
@@ -468,6 +613,101 @@ export interface GameAPI {
    * dizer "abre" — e o quadro se monta sozinho conforme o jogo anda.
    */
   abrirQuadroDeInscricoes(): Promise<string | null>;
+  /**
+   * A TELA DAS TRÊS CARTAS da rodada do jardim: resolve com o `id` da carta
+   * pega. Nunca com `null` — ela não fecha sem escolha, porque subir de nível
+   * sem pegar carta seria perder a melhoria. Trava o movimento enquanto aberta.
+   *
+   * Quem monta as cartas é o minigame (`minigames/jardim/tela.ts`); a tela só
+   * desenha e devolve.
+   */
+  escolherCartaDoJardim(cartas: readonly CartaNaTela[], contexto: ContextoDaEscolha): Promise<string>;
+  /**
+   * O LIVRO DAS CARTAS: põe uma carta na coleção (fica no save, entre
+   * rodadas). Devolve se ela era nova.
+   */
+  desbloquearCartaDoJardim(id: string): boolean;
+  /** as ids das cartas já descobertas, na ordem em que apareceram */
+  cartasDoLivro(): readonly string[];
+  /**
+   * Abre o LIVRO DA ESTUFA com o baralho inteiro (as descobertas aparecem, as
+   * outras são vaga cinza) e, com `conteudo`, as abas de pragas e de
+   * recompensas. Resolve com a ONDA do marco que a dupla mandou resgatar, ou
+   * `null` quando só fechou.
+   */
+  abrirLivroDeCartas(cartas: readonly CartaNaTela[], conteudo?: ConteudoDoLivro | null): Promise<string | null>;
+  /**
+   * Abre o PAINEL DAS ARMAS da estufa (a bancada ao lado da parede das armas):
+   * uma aba por arma, com a meta e as cartas dela. Resolve com o id da arma que
+   * a dupla mandou usar, ou `null` quando só fechou.
+   */
+  abrirArsenal(conteudo: ConteudoDoArsenal): Promise<string | null>;
+  /** A tela do fim da rodada do jardim: os números e as cartas da mão. */
+  mostrarFimDoJardim(fim: FimDoJardim): Promise<void>;
+  /** A barra de experiência da rodada do jardim, no alto; `null` esconde. */
+  showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void;
+  /**
+   * TROCA O DESENHO DO REGADOR QUE ESTÁ NA MÃO dos dois.
+   *
+   * É a regra do §6 do plano: carta que mexe no regador mexe na peça da mão. A
+   * mão de cartas calcula o estilo (`MaoDeCartas.estiloDoRegador()`) e a cena
+   * entrega aqui; `null` volta para o regador de fábrica.
+   */
+  vestirRegador(estilo: Partial<EstiloDeRegador> | null): void;
+  /**
+   * O PAINEL DA RODADA DO JARDIM: a onda, a água no tanque e quantos canteiros
+   * ainda estão de pé. `null` esconde. A barra de experiência é outra
+   * (`showExperiencia`), porque ela também aparece no treino.
+   */
+  showJardim(dados: PainelDoJardim | null): void;
+  /**
+   * O BOTÃO DA AJUDA DO PAR foi apertado (o botão do painel ou a tecla F)?
+   * Devolve uma vez e esquece: quem pergunta é a rodada, a cada quadro.
+   */
+  pedidoDeAjudaDoPar(): boolean;
+  /**
+   * TROCA A MÚSICA por um clima de `CLIMAS` que não é de cena (a defesa da
+   * estufa). `null` volta para o clima da cena atual. A troca espera o
+   * compasso fechar, como toda virada de clima.
+   */
+  trocarMusica(clima: string | null): void;
+  /**
+   * A OCLUSÃO (`core/Oclusao.ts`): o que fica entre a câmera e estes pontos
+   * (e a dupla, sempre) fica translúcido. `ignorar` são os objetos dos próprios
+   * pontos, que nunca esmaecem. `null` desliga e devolve tudo como estava.
+   */
+  vigiarOclusao(vigia: VigiaDaOclusao | null): void;
+  /**
+   * VIRA O JOGADOR PARA UM PONTO enquanto ele está PARADO — é o regador da
+   * rodada apontando para o bicho que ele rega. Andando, quem manda no giro
+   * continua sendo a direção da tecla. `null` solta.
+   */
+  mirarJogador(alvo: { x: number; z: number } | null): void;
+  /** Multiplica a velocidade de andar de quem é controlado (as cartas de passo). 1 = normal. */
+  setVelocidadeDoJogador(multiplicador: number): void;
+  /**
+   * A PEÇA QUE ESTÁ NA MÃO de quem é controlado (ou de `quem`), ou `null`.
+   *
+   * É o objeto pendurado na mão: a rodada do jardim gira, sacode e vira ele
+   * de ponta-cabeça nas animações de ataque, e acha a ponta do bico por ele.
+   * O objeto é refeito quando o item muda — pegue de novo a cada quadro.
+   */
+  objetoNaMao(quem?: string): THREE.Object3D | null;
+  /** o giro atual da câmera, em radianos (ela gira de 45 em 45 graus) */
+  anguloDaCamera(): number;
+  /**
+   * UM PULINHO de quem é controlado: o corpo sobe e desce num arco curto,
+   * sem sair do lugar no chão. É a carta Pulinho, do jardim, passando por cima
+   * de um bicho pequeno.
+   */
+  pularJogador(altura?: number, duracao?: number): void;
+  /**
+   * TRAVA O T (a troca de personagem). A rodada do jardim trava: quem está
+   * atrás fica atrás, e só a carta Troca de turno destrava.
+   */
+  bloquearTroca(bloqueado: boolean): void;
+  /** Solta `quantos` corações subindo da dupla — o mesmo coração do beijo. */
+  soltarCoracoes(quantos?: number): void;
   /**
    * Abre a mesa de xadrez em DOM e resolve quando a PARTIDA acaba (por mate,
    * empate ou desistencia). Trava o movimento enquanto estiver aberta.
