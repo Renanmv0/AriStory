@@ -174,8 +174,9 @@ export interface ConteudoDoLivro {
   readonly recompensas: readonly RecompensaNoLivro[];
   /** a maior onda vencida numa rodada */
   readonly recorde: number;
-  /** quantos bichos valem um real e um girassol, para a aba explicar o pagamento */
-  readonly bichosPorReal: number;
+  /** quantos reais cada tantos bichos pagam, e quantos bichos valem um girassol, para a aba explicar o pagamento */
+  readonly reaisPorLote: number;
+  readonly bichosPorLote: number;
   readonly bichosPorGirassol: number;
 }
 

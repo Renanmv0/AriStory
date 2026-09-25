@@ -207,7 +207,7 @@ export class LivroDeCartas {
     };
     this.paginas.innerHTML = `
       <section class="capitulo">
-        <p class="moedas-da-rodada">Toda rodada paga pelos bichos espantados: <b>💰 R$ 1 a cada ${c.bichosPorReal}</b> e <b>🌻 1 girassol a cada ${c.bichosPorGirassol}</b>. Os girassóis compram os enfeites da lojinha, e cada recorde novo faz a Josefina trazer mais coisa para vender. O prêmio de cada marco é de uma vez só: resgate aqui.</p>
+        <p class="moedas-da-rodada">Toda rodada paga pelos bichos espantados: <b>💰 R$ ${c.reaisPorLote} a cada ${c.bichosPorLote}</b> e <b>🌻 1 girassol a cada ${c.bichosPorGirassol}</b>. Os girassóis compram os enfeites da lojinha, e cada recorde novo faz a Josefina trazer mais coisa para vender. O prêmio de cada marco é de uma vez só: resgate aqui.</p>
         <div class="lista-recompensas">${c.recompensas.map(linha).join('')}</div>
       </section>`;
   }

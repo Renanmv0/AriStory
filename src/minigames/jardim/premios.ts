@@ -7,8 +7,8 @@
  *    - **reais**, na carteira do casal — a mesma do resto do jogo, que compra
  *      roupa aqui, na boutique, prato no Mania;
  *    - **girassóis** 🌻, a moeda da estufa: só ela compra ENFEITE na lojinha
- *      da Josefina. Rende MENOS que o real (um a cada 15 bichos, contra um real
- *      a cada 3), mas enfeite custa bem menos em girassol do que custava em
+ *      da Josefina. Rende MENOS que o real (um a cada 15 bichos, contra dois
+ *      reais a cada 3), mas enfeite custa bem menos em girassol do que custava em
  *      real — e é isso que amarra a lojinha ao jardim: o dinheiro do Walter
  *      não compra enfeite nenhum.
  *    Paga sempre, até na rodada perdida.
@@ -24,16 +24,20 @@
  * (`LOJA_ABRE`, e a `onda` de cada enfeite em `world/decoracoes.ts`).
  *
  * A ESCALA: uma rodada inteira de trinta ondas traz ~2.300 bichos (medido com
- * `planoDaOnda`), então vencer tudo paga ~R$ 770 e ~150 girassóis; perder na
- * 6ª (~180 bichos) paga R$ 60 e 12 girassóis — um ou dois enfeites simples.
+ * `planoDaOnda`), então vencer tudo paga ~R$ 1.530 e ~150 girassóis; perder na
+ * 6ª (~180 bichos) paga R$ 120 e 12 girassóis — um ou dois enfeites simples.
  * Um turno do Walter paga ~R$ 200; uma peça de boutique, 35 a 220.
  *
- * O real já foi um a cada 8 bichos (~R$ 290 nas trinta); o Renan pediu "uma
- * boa quantia" a mais, com os girassóis como estavam.
+ * O real já foi um a cada 8 bichos (~R$ 290 nas trinta), depois um a cada 3
+ * (~R$ 770); o Renan pediu mais, "de forma que ao completar as 30 ondas chegue
+ * próximo a $1500" — daí dois reais a cada três bichos. Os girassóis seguem
+ * como estavam.
  */
 
-/** quantos bichos espantados valem um real */
-export const BICHOS_POR_REAL = 3;
+/** a cada quantos bichos espantados a carteira ganha `REAIS_POR_LOTE` */
+export const BICHOS_POR_LOTE = 3;
+/** quantos reais cada lote de `BICHOS_POR_LOTE` bichos paga */
+export const REAIS_POR_LOTE = 2;
 /** quantos bichos espantados valem um girassol (mais do que um real: rende menos) */
 export const BICHOS_POR_GIRASSOL = 15;
 /** o contador do save com os girassóis da dupla (é do casal, como a carteira) */
@@ -103,7 +107,7 @@ export function pagamentoDaRodada(espantados: number): PagamentoDaRodada {
   const n = Math.max(0, Math.floor(espantados));
   return {
     espantados: n,
-    dinheiro: Math.floor(n / BICHOS_POR_REAL),
+    dinheiro: Math.floor((n * REAIS_POR_LOTE) / BICHOS_POR_LOTE),
     girassois: Math.floor(n / BICHOS_POR_GIRASSOL),
   };
 }

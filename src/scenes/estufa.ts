@@ -29,7 +29,7 @@ import { RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigame
 import { DECORACOES, type FichaDeDecoracao } from '../world/decoracoes';
 import { Decorador, type Cofre } from '../world/decorador';
 import {
-  BICHOS_POR_GIRASSOL, BICHOS_POR_REAL, GIRASSOIS, LOJA_ABRE, MARCOS, RECORDE, ondasVencidas, pagamentoDaRodada,
+  BICHOS_POR_GIRASSOL, BICHOS_POR_LOTE, GIRASSOIS, LOJA_ABRE, REAIS_POR_LOTE, MARCOS, RECORDE, ondasVencidas, pagamentoDaRodada,
   type MarcoDoJardim,
 } from '../minigames/jardim/premios';
 import { DESCRICAO_DA_PRAGA, NOME_DO_TIER, flagDaPraga, pragasDoLivro } from '../minigames/jardim/bestiario';
@@ -990,7 +990,8 @@ export const estufa: SceneDef = {
         estado: g.flag(m.resgate) ? 'resgatada' : g.flag(m.flag) ? 'pronta' : 'trancada',
       })),
       recorde: g.stat(RECORDE),
-      bichosPorReal: BICHOS_POR_REAL,
+      bichosPorLote: BICHOS_POR_LOTE,
+      reaisPorLote: REAIS_POR_LOTE,
       bichosPorGirassol: BICHOS_POR_GIRASSOL,
     });
     w.root.userData.conteudoDoLivro = conteudoDoLivro;
