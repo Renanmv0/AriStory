@@ -118,6 +118,7 @@ node scripts/xadrez.mjs  /tmp/xa    # o xadrez da Estella: 14 posicoes de regra,
 node scripts/estella.mjs /tmp/es    # a Estella: fica no posto, aparece inteira fora do toldo, da o biscoitinho pros dois e tem o xadrez montado
 node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena, a mesinha servida pelo Mano, o deslize e a patinacao
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
+node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

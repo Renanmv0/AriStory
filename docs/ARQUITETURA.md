@@ -23,6 +23,7 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 | `Input.ts` | única fonte de entrada; `move()` devolve vetor de tela |
 | `SaveState.ts` | persistência; nada mais escreve em `localStorage` |
 | `materials.ts` | `toon()` / `flat()` / `line()`, todos cacheados por cor |
+| `matrizSoQuandoMexe.ts` | a matriz de um objeto só é refeita quando a pose ou o pai dele muda |
 | `types.ts` | `SceneDef`, `InteractableDef`, `GameAPI`, colisores |
 
 ### Detalhes que custaram caro
@@ -35,6 +36,15 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 - **Viés vertical da câmera**: ao afastar o zoom a mira sobe
   (`(viewSize − 14) × 0.38`), senão coisas altas como a roda gigante saem
   cortadas no topo.
+
+- **Matriz só quando mexe**: o Three refaz a matriz de todo objeto a cada
+  frame, e quase tudo numa cena é peça parada (6.900 objetos no Villa Lobos,
+  ~1 ms de CPU por frame à toa). `matrizSoQuandoMexe()` troca o
+  `updateMatrix()` por um que guarda a pose e o pai da última vez e não faz
+  nada se os dois não mudaram — e sem refazer a local, a de mundo e a dos
+  filhos também ficam. É automático por objeto: **não** use
+  `matrixAutoUpdate = false` à mão, e não escreva direto em `.matrix` (o Three
+  já jogaria isso fora). `scripts/matriz.mjs` recalcula tudo do zero e compara.
 
 ### A dupla
 
