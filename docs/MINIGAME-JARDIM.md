@@ -75,7 +75,8 @@ cada 8** na carteira do casal, e **🌻 1 girassol a cada 15** (contador
 `jardim.girassois`). Girassol rende menos, mas é a moeda da estufa: **só ele
 compra enfeite** na lojinha (e enfeite custa 4 a 18 🌻), então o dinheiro do
 turno do Walter não enfeita nada. Medido com `planoDaOnda`: perder na 6ª
-(~180 bichos) paga R$ 22 e 12 🌻; as trinta (~2.300) pagam ~R$ 290 e ~150 🌻.
+(~180 bichos) paga R$ 60 e 12 🌻; as trinta (~2.300) pagam ~R$ 770 e ~150 🌻
+(R$ 1 a cada 3 bichos — era a cada 8, e o Renan pediu mais dinheiro).
 E o **recorde** (`jardim.recorde`, a maior onda vencida) **destranca a lojinha
 aos poucos**: cada enfeite tem a `onda` na ficha (`world/decoracoes.ts`: 4 à
 venda de começo, o resto chegando nas ondas 2, 4, 6, 8, 10, 13, 16, 20 e 25) e

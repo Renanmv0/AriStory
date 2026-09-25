@@ -8,7 +8,7 @@
  *      roupa aqui, na boutique, prato no Mania;
  *    - **girassóis** 🌻, a moeda da estufa: só ela compra ENFEITE na lojinha
  *      da Josefina. Rende MENOS que o real (um a cada 15 bichos, contra um real
- *      a cada 8), mas enfeite custa bem menos em girassol do que custava em
+ *      a cada 3), mas enfeite custa bem menos em girassol do que custava em
  *      real — e é isso que amarra a lojinha ao jardim: o dinheiro do Walter
  *      não compra enfeite nenhum.
  *    Paga sempre, até na rodada perdida.
@@ -24,13 +24,16 @@
  * (`LOJA_ABRE`, e a `onda` de cada enfeite em `world/decoracoes.ts`).
  *
  * A ESCALA: uma rodada inteira de trinta ondas traz ~2.300 bichos (medido com
- * `planoDaOnda`), então vencer tudo paga ~R$ 290 e ~150 girassóis; perder na
- * 6ª (~180 bichos) paga R$ 22 e 12 girassóis — um ou dois enfeites simples.
+ * `planoDaOnda`), então vencer tudo paga ~R$ 770 e ~150 girassóis; perder na
+ * 6ª (~180 bichos) paga R$ 60 e 12 girassóis — um ou dois enfeites simples.
  * Um turno do Walter paga ~R$ 200; uma peça de boutique, 35 a 220.
+ *
+ * O real já foi um a cada 8 bichos (~R$ 290 nas trinta); o Renan pediu "uma
+ * boa quantia" a mais, com os girassóis como estavam.
  */
 
 /** quantos bichos espantados valem um real */
-export const BICHOS_POR_REAL = 8;
+export const BICHOS_POR_REAL = 3;
 /** quantos bichos espantados valem um girassol (mais do que um real: rende menos) */
 export const BICHOS_POR_GIRASSOL = 15;
 /** o contador do save com os girassóis da dupla (é do casal, como a carteira) */

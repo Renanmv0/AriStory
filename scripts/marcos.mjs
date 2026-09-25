@@ -158,7 +158,7 @@ const carteira1 = await page.evaluate(() => window.jogo.carteira());
 const flor1 = await flores();
 console.log(`       perdida na 12: tela "${perdida.tela?.pago}" · marcos ${JSON.stringify(perdida.tela?.marcos)}`);
 // 400 bichos: 400/8 = 50 reais, 400/15 = 26 girassóis
-ok(carteira1 - carteira0 === 50, `400 bichos espantados pagam R$ 50 (pagou ${carteira1 - carteira0})`);
+ok(carteira1 - carteira0 === 133, `400 bichos espantados pagam R$ 133 (pagou ${carteira1 - carteira0})`);
 ok(flor1 - flor0 === 26, `e 26 girassóis (pagou ${flor1 - flor0})`);
 ok(flor1 - flor0 < carteira1 - carteira0, 'girassol rende menos que real');
 ok(/R\$ 50/.test(perdida.tela?.pago ?? '') && /26/.test(perdida.tela?.pago ?? ''), 'a tela do fim mostra os reais e os girassóis');
@@ -184,7 +184,7 @@ ok(chapeu.every(Boolean), 'o chapéu de jardineira foi para o guarda-roupa dos d
 // ======================================== 3. a mesma de novo: só as moedas
 const repetida = await fimDaRodada({ canteiros: 0, ondas: 12, de: 30, espantados: 400, porPraga: { lagartejo: 400 } });
 const carteira2 = await page.evaluate(() => window.jogo.carteira());
-ok(carteira2 - carteira1 === 50 && (await flores()) - flor1 === 26, 'a segunda rodada igual paga reais e girassóis de novo');
+ok(carteira2 - carteira1 === 133 && (await flores()) - flor1 === 26, 'a segunda rodada igual paga reais e girassóis de novo');
 ok((repetida.tela?.marcos.length ?? 0) === 0, 'e não repete prêmio único');
 ok(!repetida.falantes.some((f) => /recompensa nova/.test(f)), 'e a Josefina não avisa de recompensa que já foi resgatada');
 
@@ -193,8 +193,8 @@ const flor2 = await flores();
 const vitoria = await fimDaRodada({ canteiros: 5, ondas: 30, de: 30, espantados: 2300, porPraga: { lagartejo: 2300 } });
 const carteira3 = await page.evaluate(() => window.jogo.carteira());
 console.log(`       vitória: tela "${vitoria.tela?.pago}" · marcos ${JSON.stringify(vitoria.tela?.marcos)}`);
-ok(carteira3 - carteira2 === 287 && (await flores()) - flor2 === 153,
-  `as trinta, com 2.300 bichos, pagam R$ 287 e 153 girassóis (R$ ${carteira3 - carteira2}, 🌻 ${(await flores()) - flor2})`);
+ok(carteira3 - carteira2 === 766 && (await flores()) - flor2 === 153,
+  `as trinta, com 2.300 bichos, pagam R$ 766 e 153 girassóis (R$ ${carteira3 - carteira2}, 🌻 ${(await flores()) - flor2})`);
 ok((vitoria.tela?.marcos.length ?? 0) === 2, 'a vitória destrava os marcos 20 e 30');
 await resgatarNoLivro(20);
 const r30 = await resgatarNoLivro(30);
