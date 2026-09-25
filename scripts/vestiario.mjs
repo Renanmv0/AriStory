@@ -136,7 +136,7 @@ await page.waitForTimeout(500);
 const fechou = !(await page.locator('.vestiario.show').count());
 const soltou = !(await travado());
 
-// ---------------------------------------- fora d'água a bermuda não aparece
+// ------------------ fora d'água a bermuda CONTINUA vestida (pedido do Renan: shorts no parque também)
 await page.evaluate(() => window.jogo.setOutfit('normal'));
 await page.waitForTimeout(500);
 const naRua = await traje(dono1);
@@ -188,8 +188,8 @@ const ok =
   // 4. estilos independentes: o outro começa sem bermuda e o primeiro não muda
   antesDoOutro.calcao !== AZUL && azul.calcao === AZUL &&
   primeiroDepois.calcao === ESTAMPA &&
-  // 2. fora do banho a perna volta para a calça da ficha e o calção some
-  naRua.perna === naRua.calcaDaFicha && !naRua.calcaoVisivel &&
+  // 2. fora do banho a bermuda continua: o calção na cor escolhida e a perna de pele
+  naRua.calcaoVisivel && naRua.calcao === ESTAMPA && naRua.perna === naRua.pele &&
   // 3. o óculos sobrevive à água, e a sombra do chão continua sendo cortada
   naAgua.oculos?.visivel === true && naAgua.calcao === ESTAMPA && naAgua.sombra === false &&
   vermelha.sombra === true &&
