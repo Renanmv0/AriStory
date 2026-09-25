@@ -69,6 +69,10 @@ export interface EstiloDeRegador {
   respiro: boolean;
   /** "Chuva": uma nuvenzinha flutuando um palmo acima da peca */
   nuvem: boolean;
+  /** "Crivo de flor" (so do regador): 0 a 1 — petalas cor-de-rosa em volta do crivo */
+  crivoDeFlor: number;
+  /** "Alca acolchoada" (so do regador): uma luva de espuma na alca de cima */
+  alcaAcolchoada: boolean;
   /**
    * A ARMA da rodada (`minigames/jardim/armas.ts`): sem isto, ou `regador`, a
    * mao carrega o regador; `mangueira` troca pelo esguicho e `pistola` pela pistola d'agua.
@@ -87,6 +91,8 @@ const PADRAO: EstiloDeRegador = {
   mangueira: false,
   respiro: false,
   nuvem: false,
+  crivoDeFlor: 0,
+  alcaAcolchoada: false,
 };
 
 /**
@@ -276,6 +282,26 @@ export function regadorDeJardim(
   }
 
   /**
+   * "CRIVO DE FLOR" (so do regador): cinco petalas cor-de-rosa abrem em volta
+   * do crivo, e o crivo furado vira o miolo da flor. Elas crescem com o degrau
+   * da serie (I e II), e ficam no plano do crivo — de frente para onde a agua
+   * sai, que e o lado que a camera ve quando o regador rega.
+   */
+  if (e.crivoDeFlor > 0) {
+    const petala = toon(P.regadorPetala);
+    const tamanho = (0.028 + e.crivoDeFlor * 0.016) * s;
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2 + Math.PI / 2;
+      const p = new THREE.Mesh(new THREE.SphereGeometry(tamanho, 8, 6), petala);
+      p.scale.set(1.45, 0.62, 0.3);
+      p.rotation.z = a;
+      const r = raioCrivo + tamanho * 0.95;
+      p.position.set(Math.cos(a) * r, Math.sin(a) * r, pontaDoBico + 0.03 * s);
+      bico.add(p);
+    }
+  }
+
+  /**
    * "SEGUNDO BICO": o mesmo desenho virado para tras, e mais curto.
    *
    * Ele e curto de proposito — dois bicos do mesmo tamanho fazem a peca virar
@@ -322,6 +348,16 @@ export function regadorDeJardim(
     cabo.position.y = alturaBoca + 0.105 * s;
     alturaDaAlca = cabo.position.y;
     g.add(cabo);
+    // "Alca acolchoada": a luva de espuma no meio do cabo, onde a mao fecha
+    if (e.alcaAcolchoada) {
+      const espuma = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.036 * s, 0.036 * s, raioBoca * 0.95, 10), toon(P.regadorEspuma),
+      );
+      espuma.rotation.z = Math.PI / 2;
+      espuma.position.y = cabo.position.y;
+      espuma.name = 'espuma';
+      g.add(espuma);
+    }
     for (const lado of [-1, 1] as const) {
       const suporte = new THREE.Mesh(
         new THREE.CylinderGeometry(0.012 * s, 0.012 * s, 0.11 * s, 6), metal,
@@ -336,6 +372,24 @@ export function regadorDeJardim(
     alca.position.y = alturaBoca;
     alca.rotation.y = Math.PI / 2;
     g.add(alca);
+    /*
+     * "ALCA ACOLCHOADA": um pedaco de espuma no alto do arco, onde a mao pega.
+     * E um toro mais grosso que o arco, so no trecho de cima (0,9 rad),
+     * girado para ficar centrado no topo.
+     */
+    if (e.alcaAcolchoada) {
+      const trecho = 0.9;
+      const suporte = new THREE.Group();
+      suporte.position.y = alturaBoca;
+      suporte.rotation.y = Math.PI / 2;
+      g.add(suporte);
+      const espuma = new THREE.Mesh(
+        new THREE.TorusGeometry(raioBoca * 0.92, 0.034 * s, 6, 8, trecho), toon(P.regadorEspuma),
+      );
+      espuma.rotation.z = Math.PI / 2 - trecho / 2;
+      espuma.name = 'espuma';
+      suporte.add(espuma);
+    }
     // o alto do arco, que e por onde a mao passa
     alturaDaAlca = alturaBoca + raioBoca * 0.92;
   }

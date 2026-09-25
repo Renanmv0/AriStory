@@ -38,6 +38,8 @@ export function tom(ctx: AudioContext, destino: AudioNode, n: Nota): void {
   const ganho = ctx.createGain();
   const pico = n.vol ?? 0.2;
   const ataque = n.ataque ?? 0.006;
+  // o ganho NASCE em quase zero (o padrão do Web Audio é 1): ver `chiado`
+  ganho.gain.value = 0.0001;
   ganho.gain.setValueAtTime(0.0001, n.quando);
   ganho.gain.exponentialRampToValueAtTime(pico, n.quando + ataque);
   // decaimento exponencial: é o que dá a cara de marimba/sininho
@@ -81,6 +83,12 @@ export interface Chiado {
   tipo?: BiquadFilterType;
   /** desliza o filtro até esta frequência: vira "tchhh" ou "vuup" */
   glide?: number;
+  /**
+   * fração do `dur` em que o chiado SEGURA o volume antes de começar a cair
+   * (0 = cai logo depois do ataque, que é o de sempre). É o que faz um som
+   * repetido emendar num jorro contínuo, em vez de pulsar
+   */
+  sustenta?: number;
 }
 
 /** Ruído filtrado: passo, chocalho, água, folha, virar de página. */
@@ -97,8 +105,19 @@ export function chiado(ctx: AudioContext, destino: AudioNode, c: Chiado): void {
 
   const ganho = ctx.createGain();
   const pico = c.vol ?? 0.14;
+  /*
+   * O GANHO NASCE EM QUASE ZERO. O padrão do Web Audio é 1, e o envelope só
+   * vale a partir de `quando`. Quando `quando` cai um fio ACIMA de uma amostra
+   * inteira (o `currentTime` do jogo mais 10 ou 20 ms faz isso), o Chromium
+   * liga a fonte uma amostra antes do envelope, e essa amostra de ruído passava
+   * com volume cheio: um estalo de até ~0,9 no chiado passa-alta, que o
+   * `scripts/musica.mjs` mede
+   */
+  ganho.gain.value = 0.0001;
   ganho.gain.setValueAtTime(0.0001, c.quando);
   ganho.gain.exponentialRampToValueAtTime(pico, c.quando + 0.008);
+  const segura = Math.max(0.008, (c.sustenta ?? 0) * c.dur);
+  if (segura > 0.008) ganho.gain.setValueAtTime(pico, c.quando + segura);
   ganho.gain.exponentialRampToValueAtTime(0.0001, c.quando + c.dur);
 
   fonte.connect(filtro);

@@ -279,6 +279,8 @@ interface Invasor {
   desvioDepois: Ponto2 | null;
   /** segundos em que ele ignora a cerca: acabou de contornar, segue em frente */
   semCerca: number;
+  /** já levou jato nesta rodada (a Regada caprichada vale no primeiro) */
+  regado: boolean;
   /** o jeito dele (§5): o pulo, o voo, a concha… — ver "O JEITO DE CADA BICHO" */
   truque: Truque;
 }
@@ -328,6 +330,8 @@ interface Tiro {
   alvo: Invasor | null;
   dano: number;
   especial?: Especial;
+  /** a abertura do leque deste jato, quando não é a da ficha (a Chuveirada dobra) */
+  largura?: number;
 }
 
 /** o que a rodada anima na peça da mão */
@@ -592,6 +596,8 @@ export class RodadaDoJardim {
     this.continuo = null;
     this.superMolhador = 0;
     this.superResta = 0;
+    this.giganteRelogio = 0;
+    this.giganteResta = 0;
     this.enchente = 0;
     this.enchenteResta = 0;
     this.vazamento = 0;
@@ -762,6 +768,7 @@ export class RodadaDoJardim {
       limiteZ: this.w.bounds.minZ,
       mangueira: this.mangueira.malha.visible,
       continuo: this.continuo?.vezes ?? 0,
+      gigante: this.giganteResta,
       enchente: this.enchenteResta,
       onda: this.onda,
       ondas: this.ondasDaRodada,
@@ -1189,6 +1196,7 @@ export class RodadaDoJardim {
       desvio: null,
       desvioDepois: null,
       semCerca: 0,
+      regado: false,
       truque: {
         // a Mãe demora um pouco mais para o primeiro filhote: ela acabou de chegar
         espera: (ficha.id === 'mae-lagartejo' ? 4 : 1.2) + this.sorte() * 2,
@@ -2175,6 +2183,7 @@ export class RodadaDoJardim {
       this.g.som('gluglu');
       this.jato.espirroDoTonel(tonel.x, tonel.altura, tonel.z, 3);
       this.contar('jean-luc-no-tonel');
+      if (f.regras.has('transbordou')) this.transbordar(eu);
     }
     let enche = f.recarga * (estaParado ? f.recargaParado : 1);
     if (!estaParado && f.regras.has('enche-andando')) enche += 0.6;
@@ -2192,7 +2201,11 @@ export class RodadaDoJardim {
     }
     const antes = this.agua;
     this.agua = Math.min(f.tanque, this.agua + enche * dt);
-    if (antes < f.tanque && this.agua >= f.tanque) this.tanqueCheio = true;
+    if (antes < f.tanque && this.agua >= f.tanque) {
+      this.tanqueCheio = true;
+      // o Transbordou (regador): encheu até a boca NO TONEL, derrama em volta
+      if (perto && f.regras.has('transbordou')) this.transbordar(eu);
+    }
     // a mangueira: presa no tonel, a água nunca acaba
     if (f.regras.has('agua-infinita')) {
       this.agua = f.tanque;
@@ -2320,6 +2333,32 @@ export class RodadaDoJardim {
           // alta e pequena o bastante para não tapar a cabeça da dupla
           em: new THREE.Vector3(eu.x, 3.9, eu.z), raio: 1.3,
         });
+      }
+    }
+
+    /*
+     * ---- o Regador gigante (regador): de 30 em 30 s, 5 s em que a lata da mão
+     * cresce quase o dobro, o leque abre o dobro e cada jato molha o dobro. A
+     * peça cresce e encolhe devagar, a partir da mão (o grupo da mão é o pivô)
+     */
+    if (f.regras.has('regador-gigante')) {
+      if (this.giganteResta > 0) {
+        this.giganteResta -= dt;
+      } else {
+        this.giganteRelogio += dt;
+        if (this.giganteRelogio >= 30) {
+          this.giganteRelogio = 0;
+          this.giganteResta = 5;
+          this.g.som('jatao');
+          this.jato.anelDeAgua(new THREE.Vector3(eu.x, 1.2, eu.z), 1.6, 'giro', e);
+          this.contar('regador-gigante');
+        }
+      }
+      const peca = this.g.objetoNaMao();
+      if (peca) {
+        const alvo = this.giganteResta > 0 ? 1.8 : 1;
+        const agora = peca.scale.x + (alvo - peca.scale.x) * Math.min(1, dt * 6);
+        peca.scale.setScalar(Math.abs(agora - alvo) < 0.005 ? alvo : agora);
       }
     }
 
@@ -2458,6 +2497,9 @@ export class RodadaDoJardim {
   /** o Super molhador: o relógio até o próximo, e quanto falta do que está valendo */
   private superMolhador = 0;
   private superResta = 0;
+  /** o Regador gigante: o relógio até o próximo, e quanto falta do que está valendo */
+  private giganteRelogio = 0;
+  private giganteResta = 0;
   /** quanto você andou no último quadro (o Pique e a Bota leem daqui) */
   private passoDoQuadro = 0;
   /** o multiplicador de velocidade de agora, com Pique, poça e picolé */
@@ -2526,6 +2568,9 @@ export class RodadaDoJardim {
     const rajada = f.regras.has('rajada') && this.jatosDados % 4 === 0;
     // o Esguicho no olho (pistola): um tiro em quatro, defasado da Rajada
     const olho = f.regras.has('esguicho-no-olho') && this.jatosDados % 4 === 2;
+    // a Chuveirada (regador): de três em três jatos, o leque abre o dobro
+    const chuveirada = f.regras.has('chuveirada') && this.jatosDados % 3 === 0;
+    if (chuveirada) this.contar('chuveirada');
     const saida = (): void => {
       const de = this.pontaDoBico();
       if (balao) {
@@ -2539,7 +2584,7 @@ export class RodadaDoJardim {
         });
         this.contar('balao-dagua');
       } else {
-        this.umJato({ origem, de, rumo, alvo, dano: f.dano, especial });
+        this.umJato({ origem, de, rumo, alvo, dano: f.dano, especial, largura: chuveirada ? f.largura * 2 : undefined });
       }
       /*
        * a Pistola dupla: uma em cada mão — um segundo tiro sai junto, no
@@ -2632,8 +2677,26 @@ export class RodadaDoJardim {
         this.contar('jato-continuo');
       }
     }
+    /*
+     * o Regador gigante (regador): enquanto a lata está gigante, o leque abre
+     * o dobro e cada jato molha o dobro — soma com a Chuveirada
+     */
+    let largura = t.largura ?? f.largura;
+    if (this.giganteResta > 0) {
+      largura *= 2;
+      multiplicador *= 2;
+    }
+    /*
+     * a Lata cheia (regador): com a lata mais da metade cheia, o jato molha
+     * mais e sai mais grosso — é o peso da água que se vê
+     */
+    if (f.lataCheia > 0 && this.agua > f.tanque / 2) {
+      multiplicador *= 1 + f.lataCheia;
+      e = { ...e, grosso: (e.grosso ?? 0) + 1 };
+      this.contar('lata-cheia');
+    }
     const atravessa = f.regras.has('atravessa') || t.especial === 'arco-iris';
-    const meia = THREE.MathUtils.degToRad(f.largura) / 2;
+    const meia = THREE.MathUtils.degToRad(largura) / 2;
     // o Borrifador divide o jato em três, em leque; sem ele, é um jato só
     const desvios = e.borrifador ? [-meia, 0, meia] : [0];
     const parte = e.borrifador ? 0.4 : 1;
@@ -2654,7 +2717,7 @@ export class RodadaDoJardim {
         ? pontoAFrente(t.origem, rumo, Math.max(longe ? Math.hypot(longe.x - t.origem.x, longe.z - t.origem.z) + 1.2 : 0, f.alcance * 0.9))
         : new THREE.Vector3((alvo ?? atingidos[0]).x, 0.25, (alvo ?? atingidos[0]).z);
       const tempo = this.jato.disparar({
-        de: t.de, para, estilo: e, largura: e.borrifador ? 6 : f.largura, especial: t.especial,
+        de: t.de, para, estilo: e, largura: e.borrifador ? 6 : largura, especial: t.especial,
         forma: e.borrifador ? 'fio' : undefined,
       });
       const alcancePara = Math.max(0.5, Math.hypot(para.x - t.origem.x, para.z - t.origem.z));
@@ -2670,7 +2733,26 @@ export class RodadaDoJardim {
           this.jato.mirar(inv.raiz, inv.ficha.alturaDaBarra, 0.35);
           this.contar('tiro-de-longe');
         }
-        this.jato.depois(chega, () => this.acertar(inv, t.dano * multiplicador * parte * longe, t.origem, t.especial));
+        /*
+         * a Regada caprichada (regador): o PRIMEIRO jato em cada bicho molha
+         * mais, com um respingo grande. Quem já levou jato fica marcado sempre,
+         * com ou sem a carta: pegar a carta no meio da rodada não dá bônus em
+         * bicho velho
+         */
+        let capricho = 1;
+        if (!inv.regado) {
+          inv.regado = true;
+          if (f.primeiraRegada > 0) capricho = 1 + f.primeiraRegada;
+        }
+        const dano = t.dano * multiplicador * parte * longe * capricho;
+        this.jato.depois(chega, () => {
+          if (capricho > 1 && this.invasores.includes(inv)) {
+            this.jato.respingo(inv.x, inv.ficha.alturaDaBarra * 0.5, inv.z, e, 2.4);
+            this.contar('regada-caprichada');
+          }
+          this.acertar(inv, dano, t.origem, t.especial);
+          if (f.regras.has('respingo')) this.respingar(inv, dano * 0.3);
+        });
         // o Ricochete (pistola): do bicho que o tiro da frente acertou, um
         // tiro menor pula no vizinho mais perto (até 2,5 m)
         if (inv === t.alvo && f.regras.has('ricochete')) {
@@ -2684,7 +2766,66 @@ export class RodadaDoJardim {
         this.jato.depois(tempo, () => this.jato.anelDeAgua(onde, 0.9 * Math.sqrt(parte), 'giro', e));
       }
       if (e.poca) this.jato.depois(tempo, () => this.jato.poca(para.x, para.z, e.borrifador ? 0.45 : 0.7));
+      /*
+       * a Rega de verdade (regador): o jato que passa por cima de um canteiro
+       * machucado — ou cai perto dele, no bicho que está comendo — rega ele
+       * também: +1 de vida por jato (o Borrifador divide), com um brotinho
+       */
+      if (f.regras.has('rega-de-verdade')) {
+        for (const c of this.canteiros) {
+          if (c.vida <= 0 || c.vida >= c.vidaMax) continue;
+          const passa = segmentoCruzaRetangulo(t.origem.x, t.origem.z, para.x, para.z, c.x, c.z, c.meioX + 0.3, c.meioZ + 0.3)
+            || distanciaAoCanteiro(para.x, para.z, c) < 0.6;
+          if (!passa) continue;
+          this.jato.depois(tempo, () => {
+            if (c.vida <= 0) return;
+            c.vida = Math.min(c.vidaMax, c.vida + parte);
+            this.pintarCanteiro(c);
+            this.jato.broto(c.x, c.z, c.meioX * 0.6, c.meioZ * 0.6);
+            this.contar('rega-de-verdade');
+          });
+        }
+      }
     }
+  }
+
+  /**
+   * o Respingo (regador): o bicho que levou jato espirra água em volta — quem
+   * está a 1 m dele leva uma parte, com um respingo em cada um
+   */
+  private respingar(de: Invasor, dano: number): void {
+    const e = this.ficha.jato;
+    let alguem = false;
+    for (const outro of [...this.invasores]) {
+      if (outro === de || !this.vulneravel(outro)) continue;
+      if (Math.hypot(outro.x - de.x, outro.z - de.z) > 1 + outro.jeito.raio) continue;
+      alguem = true;
+      this.jato.respingo(outro.x, outro.ficha.alturaDaBarra * 0.5, outro.z, e, 0.8);
+      this.molhar(outro, dano, { x: de.x, z: de.z });
+    }
+    if (alguem) {
+      this.jato.respingo(de.x, de.ficha.alturaDaBarra * 0.5, de.z, e, 1.8);
+      this.contar('respingo');
+    }
+  }
+
+  /**
+   * o Transbordou (regador): a lata encheu até a boca no tonel e derrama num
+   * anel de 2 m em volta de quem rega — molha todo bicho ali (é justamente onde
+   * os bichos que bebem no tonel ficam)
+   */
+  private transbordar(eu: THREE.Vector3): void {
+    const f = this.ficha;
+    const onde = new THREE.Vector3(eu.x, 0.4, eu.z);
+    this.jato.anelDeAgua(onde, 2, 'balde', f.jato);
+    this.contar('transbordou');
+    this.jato.depois(0.3, () => {
+      for (const inv of [...this.invasores]) {
+        if (this.vulneravel(inv) && Math.hypot(inv.x - onde.x, inv.z - onde.z) <= 2 + inv.jeito.raio) {
+          this.molhar(inv, f.dano, { x: onde.x, z: onde.z });
+        }
+      }
+    });
   }
 
   /** o Ricochete: do bicho acertado, um tiro menor pula no vizinho mais perto */

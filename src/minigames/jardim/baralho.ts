@@ -247,6 +247,8 @@ export class MaoDeCartas {
       mangueira: estilo.mangueira ?? false,
       respiro: estilo.respiro ?? false,
       nuvem: estilo.nuvem ?? false,
+      crivoDeFlor: estilo.crivoDeFlor ?? 0,
+      alcaAcolchoada: estilo.alcaAcolchoada ?? false,
       arma: this.arma,
     };
   }

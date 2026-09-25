@@ -31,6 +31,8 @@ function wav(amostras, taxa) {
   buf.writeUInt16LE(2, 32);
   buf.writeUInt16LE(16, 34);
   buf.write('data', 36);
+  // o tamanho do bloco de dados: sem ele o .wav abre com 0 s em player exigente
+  buf.writeUInt32LE(amostras.length * 2, 40);
   for (let i = 0; i < amostras.length; i++) {
     const v = Math.max(-1, Math.min(1, amostras[i]));
     buf.writeInt16LE(Math.round(v * 32767), 44 + i * 2);
@@ -138,6 +140,65 @@ writeFileSync(`${OUT}-efeitos.wav`, wav(pcmEfeitos, 44100));
 console.log(`efeitos     ${efeitos.nomes.length} sons, um por segundo, pico ${picoEfeitos.toFixed(2)} → ${OUT}-efeitos.wav`);
 console.log('ordem:', efeitos.nomes.join(' · '));
 if (picoEfeitos < 0.02 || picoEfeitos > 0.99) ruim += 1;
+
+/*
+ * O ESTALO DE UMA AMOSTRA. No jogo todo efeito começa em `ctx.currentTime`,
+ * que é sempre uma borda de bloco (128 amostras), e as camadas de dentro entram
+ * 10, 20 ms depois. Às vezes essa soma cai um FIO acima de uma amostra inteira
+ * (0,07 × 44100 = 3087,0000000000005), e aí o Chromium liga a fonte uma amostra
+ * antes de o envelope valer. O ganho do Web Audio nasce em 1, então essa
+ * amostra de ruído passava com o volume cheio: um estalo de até ~0,9 nos
+ * chiados passa-alta (o jato do regador estalava em ~1 de cada 8 jatos). A fila
+ * acima começa em amostra redonda e não pega isso. Aqui cada efeito toca nos
+ * instantes que o jogo produz e que caem um fio acima, e também meia amostra
+ * depois (que nunca estala): o pico não pode pular de um para o outro.
+ */
+const estalos = await page.evaluate(async () => {
+  const { EFEITOS } = window.aristoryAudio;
+  /*
+   * A 48 kHz o jogo cria um buffer de ruído NOVO (ele é guardado por taxa), e é
+   * nessa hora que o sorteio fica preso num valor alto: o tamanho do estalo é o
+   * da primeira amostra do ruído, e com o sorteio solto ele podia cair perto de
+   * zero e passar despercebido
+   */
+  const taxa = 48000;
+  const acima = (q) => q * taxa > Math.round(q * taxa);
+  const instantes = [];
+  for (let k = 40; instantes.length < 3 && k < 4000; k++) {
+    const t = (k * 128) / taxa;
+    if (acima(t + 0.01) && acima(t + 0.02)) instantes.push(t);
+  }
+  if (instantes.length < 3) return ['(nenhum instante torto achado: o teste não mediu nada)'];
+  const sorteio = Math.random;
+  Math.random = () => 0.97;
+  const pico = async (nome, t) => {
+    const ctx = new OfflineAudioContext(1, Math.ceil(taxa * (t + 1.4)), taxa);
+    const saida = ctx.createGain();
+    saida.connect(ctx.destination);
+    EFEITOS[nome]({ ctx, destino: saida, t, n: 1 });
+    const a = (await ctx.startRendering()).getChannelData(0);
+    let p = 0;
+    for (const v of a) p = Math.max(p, Math.abs(v));
+    return p;
+  };
+  const ruins = [];
+  try {
+    for (const nome of Object.keys(EFEITOS)) {
+      let certo = 0;
+      let torto = 0;
+      for (const t of instantes) {
+        torto = Math.max(torto, await pico(nome, t));
+        certo = Math.max(certo, await pico(nome, t + 0.5 / taxa));
+      }
+      if (torto > Math.max(0.3, certo * 2)) ruins.push(`${nome} (${certo.toFixed(2)} → ${torto.toFixed(2)})`);
+    }
+  } finally {
+    Math.random = sorteio;
+  }
+  return ruins;
+});
+console.log(estalos.length ? `ESTALO no começo de: ${estalos.join(', ')}` : 'nenhum efeito estala começando onde o relógio do jogo começa');
+if (estalos.length) ruim += 1;
 
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 await browser.close();

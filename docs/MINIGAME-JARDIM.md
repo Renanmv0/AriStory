@@ -21,7 +21,7 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | arquivo | o que mora lá |
 |---|---|
 | `src/minigames/jardim/rodada.ts` | a rodada inteira (`RodadaDoJardim`): ondas, bichos, regador, o jato de cada carta (`umJato`), as cartas de jardineiro/jardim/clube, os chamados agindo, a ajuda do par, o prêmio da onda e o de 5 em 5 níveis, e os ganchos de teste no fim da classe |
-| `src/minigames/jardim/cartas.ts` | o catálogo das **121 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
+| `src/minigames/jardim/cartas.ts` | o catálogo das **133 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
 | `src/minigames/jardim/armas.ts` | as **quatro armas** (regador, mangueira, pistola d'água, borrifador): a fila de destrancar e os números de partida de cada uma (`base`) |
 | `src/minigames/jardim/mangueira.ts` | a mangueira esticada do tonel até a mão (o tubo, e o trecho no chão que o Chicote e o Vazamento leem) |
 | `src/minigames/jardim/baralho.ts` | a mão (carta não repete), o sorteio de três, a Sorte de principiante |
@@ -155,7 +155,7 @@ armário amarelo-manteiga de puxadores rosa, toalhinha xadrez, lousinha, vaso e
 luvas, e o rolo de mangueira do lado (pedido do Renan: "mais fofos… falta
 cor"; as cores de cada arma estão em `palette.ts`) —, que abre o
 painel das armas — parecido com o livro: uma aba por arma, a meta, o recorde e
-só as cartas ÚNICAS dela (pedido do Renan: `soDestaArma`, em `baralho.ts` — na mangueira as seis só dela, no regador as de tanque e tonel que a mangueira não tira; as genéricas ficam só no livro), descobertas ou cinzas, e "Usar esta ferramenta" (contador
+só as cartas ÚNICAS dela (pedido do Renan: `soDestaArma`, em `baralho.ts` — cada uma tem 14 só dela; o regador e a pistola mostram também as 12 de tanque e tonel que dividem; as genéricas ficam só no livro), descobertas ou cinzas, e "Usar esta ferramenta" (contador
 `jardim.arma`). **Regador, mangueira e pistola d'água estão construídos**; o
 borrifador aparece destrancável mas "em construção". O **prêmio
 de destrancar** cada arma (roupinha ou item) o Renan decide depois — hoje só a
@@ -169,8 +169,8 @@ rodada — `jardim.viu-<id>`, marcado em `nascer`; retrato do próprio modelo po
 recompensa esperando, o livro abre nela).
 
 **O que falta** (a escolha do próximo passo é do Renan):
-- a **pistola d'água** e o **borrifador** (os números, o jeito e as cartas só
-  deles), e o **prêmio de destrancar** cada arma;
+- o **borrifador** (os números, o jeito e as cartas só dele), e o **prêmio
+  de destrancar** cada arma;
 - a **vida dos bichos crescendo com as ondas** (hoje não cresce);
 - **equilíbrio**: ninguém jogou as 30 ondas inteiras; o Renan joga e diz.
 - perguntas em aberto: §12.
@@ -523,7 +523,7 @@ que impede o jogo de virar "segure para a frente e ande em círculo": de vez em
 quando você TEM que voltar ao canto, e é nessa viagem que os canteiros ficam
 sozinhos.
 
-### 4.1. As outras armas — **a mangueira construída**
+### 4.1. As outras armas — **a mangueira e a pistola construídas**
 
 Pedido do Renan: trocar a arma da rodada. Cada arma é uma ficha em
 `minigames/jardim/armas.ts` que mexe nos **números de partida** (`base`) antes
@@ -548,16 +548,35 @@ Pressão acumulada, Balde, Fôlego, Chapéu de palha, Descanso na sombra, Segund
 tonel e O Jean-Luc no tonel — todas de água/tanque/tonel.
 
 **Toda ferramenta tem mais ou menos o mesmo tanto de cartas dela** (pedido
-do Renan): na bancada, **14 do regador, 14 da mangueira e 26 da pistola**; ÚNICAS
-DE VERDADE (só daquela ferramenta): **regador 2, mangueira 14, pistola 14**. "Carta da
+do Renan): na bancada, **26 do regador, 14 da mangueira e 26 da pistola**; ÚNICAS
+DE VERDADE (só daquela ferramenta): **regador 14, mangueira 14, pistola 14**, as
+três com 7 comuns, 4 incomuns, 2 raras e 1 lendária. "Carta da
 ferramenta" é a que serve nela e não em todas (`soDestaArma`): as de tanque e
 tonel são do regador E da pistola, as duas de munição. O Balde e o Bico de
 mangueira viraram `soPara: ['regador']` (viram a lata, não fazem sentido em
 pistola). A carta que não serve na
 mangueira mas vai servir nas outras que usam munição (o Jean-Luc no tonel, o
 Tanque maior, o Refil…) fica com `naoServe: ['mangueira']`, e não com
-`soPara: ['regador']`: quando a pistola e o borrifador existirem, ela entra na
-lista deles de graça.
+`soPara: ['regador']`: foi assim que ela entrou de graça na lista da pistola,
+e é assim que vai entrar na do borrifador.
+
+**As cartas só do regador** (`soPara: ['regador']`; as duas raras já eram
+dele, as outras doze entraram juntas), mais as 12 de tanque e tonel que ele
+divide com a pistola:
+
+| carta | raridade | efeito |
+|---|---|---|
+| Lata cheia I–II | comum | com a lata mais da metade cheia, o jato molha 15% mais (e as gotas engrossam) |
+| Crivo de flor I–II | comum | o crivo vira uma flor rosa: o leque abre 5° e molha 6% mais, e pétalas voam no jato |
+| Regada caprichada I–II | comum | o primeiro jato em cada bicho molha 25% mais, com um respingo grande |
+| Alça acolchoada (jardineiro) | comum | a alça ganha espuma coral: carregando a lata você anda 10% mais rápido |
+| Respingo | incomum | bicho molhado respinga: quem está a 1 m dele leva 30% do jato |
+| Chuveirada | incomum | de três em três jatos, o leque abre o dobro e molha todo mundo nele |
+| Transbordou | incomum | encher a lata até a boca no tonel derrama um anel de água: molha tudo em 2 m |
+| Rega de verdade (jardim) | incomum | o jato que passa por um canteiro machucado rega ele também (com brotinho) |
+| Bico de mangueira | raro | o alcance dobra, mas o jato demora 40% mais |
+| Balde | raro | segurar E derrama o tanque inteiro num círculo de 2 m |
+| Regador gigante | lendária | a cada 30 s, 5 s em que a lata cresce na mão: o leque e a força dobram (começa com um anel de água) |
 
 **As cartas só da pistola** (`soPara: ['pistola']`; 7 comuns, 4 incomuns, 2
 raras, 1 lendária — o mesmo desenho da mangueira), mais as 12 de tanque e
@@ -593,6 +612,15 @@ tonel que ela divide com o regador:
 | Vazamento | incomum | a mangueira pinga poças; quem cruza ela anda devagar 2 s |
 | Jato contínuo | raro | no mesmo bicho sem parar, +15% por jato até o dobro, e o fio engrossa |
 | Enchente | lendária | a cada 25 s, 3 s em que todo jato é o jatão que atravessa a fila |
+
+**Cada ferramenta tem o seu som** (`audio/efeitos.ts`, escolhido em
+`jato.ts` pela forma do jato): o regador, o sopro de sempre (`jato`, um "fsh"
+agudo); a mangueira, um **jorro** mais grave (`mangueira`: o sopro segura o
+volume e emenda no seguinte, com um "glub" a cada três jatos; antes ela tocava
+o `jatoLongo`, que continua sendo o da carta Bico de mangueira do regador); e a
+pistola, um **"piu"** curto (`tiroPistola`: o clique do gatilho, um piu que
+desce uma oitava e o chiado da bolinha, alternando dois tons para não virar
+metrônomo). As cartas especiais mantêm o delas (o jatão, o jato forte, o arco).
 
 ---
 
@@ -1079,6 +1107,8 @@ upgrade aparece no objeto.
 | Mangueira | uma mangueira enrolada pendurada no corpo |
 | Orvalho | um respiro de cobre no topo, soltando vapor |
 | Chuva | uma nuvenzinha que flutua um palmo acima da peça |
+| Crivo de flor | cinco pétalas rosa em volta do crivo, maiores no degrau II |
+| Alça acolchoada | espuma coral na alça (no cabo de madeira, se já tiver o Braço solto) |
 
 E o regador tem **três estágios visíveis**, pelo número de cartas de REGADOR que
 você pegou: `0–2` o de lata amassada que a Josefina empresta, `3–5` um
@@ -1171,6 +1201,20 @@ E as de outras famílias que também mexem no que o jato faz:
 As três marcadas com "(…)" não mexem no jato em si, e por isso a mudança
 visível delas mora em outro lugar — é o jeito de a regra continuar verdadeira
 sem inventar enfeite num jato que a carta não muda.
+
+As só do regador (as da mangueira e da pistola estão no §4.1; o jato delas já
+muda de forma pela ferramenta, fio ou bolinha):
+
+| carta | camada | o que se vê no ataque | som |
+|---|---|---|---|
+| Lata cheia I–II | impacto | com a lata mais da metade cheia, as gotas saem mais grossas | — (o "fsh" de sempre) |
+| Crivo de flor I–II | forma + tinta | pétalas rosa voam no leque e pousam no chão | — |
+| Regada caprichada I–II | impacto | o primeiro jato em cada bicho estoura num respingo grande | "plic" do respingo |
+| Respingo | impacto | o bicho molhado respinga, e os vizinhos a 1 m levam gotas | "plic" |
+| Chuveirada | forma | de três em três jatos, o leque abre o dobro | — |
+| Transbordou | chão | a lata cheia no tonel derrama um anel de água de 2 m | "splash" do balde |
+| Rega de verdade | chão | o canteiro machucado por onde o jato passa ganha um brotinho | — |
+| **Regador gigante** (lendária) | forma | um anel de água, e por 5 s a lata cresce na mão (1,8×) e o leque dobra | o "jatão" |
 
 #### Como está no código
 

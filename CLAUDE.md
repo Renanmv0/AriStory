@@ -85,7 +85,7 @@ node scripts/forca.mjs   /tmp/fo    # a barra de forca: mais tempo, mais longe
 node scripts/menu.mjs    /tmp/menu  # o menu e o recomecar do zero
 node scripts/pausa.mjs   /tmp/pa    # o menu pausa de verdade: no meio da rodada do jardim, relogio, bichos e parceiro param, e voltam de onde pararam
 node scripts/audio.mjs             # o som acorda e cada acao dispara o seu efeito
-node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para ouvir
+node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para ouvir, e reprova o estalo de uma amostra no comeco de um efeito
 node scripts/celular.mjs /tmp/cel   # tela de celular: nenhum botao pode tapar texto
 node scripts/parque.mjs  /tmp/pq    # praca da roda, cupula e margem do lago
 node scripts/pingpong.mjs /tmp/pp   # a partida de ping pong ate o quinto ponto
@@ -146,7 +146,7 @@ node scripts/oclusao.mjs /tmp/oc    # na rodada, a parede que tapa gota ou bicho
 node scripts/decorar.mjs /tmp/dc    # a lojinha da Josefina: enfeite em girassol, a banca destrancando pelo recorde, comprar roupa e enfeite, colocar o enfeite no chao (terreiro e patio de fora podem; vao do portao e canteiro nao), o modo de edicao pela lojinha (mexer, girar, guardar), sem colisor na rodada, a visita nova; todo enfeite com retrato, a rodinha girando e as luzinhas acesas
 node scripts/enfeite.mjs /tmp/en [id] # um enfeite (ou todos) posto pelo modo de colocar: a pegada medida, o cartao, e fotos de perto dos dois lados
 node scripts/marcos.mjs  /tmp/mc    # os premios da estufa: reais e girassois de toda rodada pelos bichos espantados, o premio unico de cada marco resgatado no livro, e a aba de pragas
-node scripts/armas.mjs  /tmp/ar    # as ferramentas da estufa: a parede, o painel por ferramenta (meta e cartas de cada uma), destrancar com 15 ondas somadas, a rodada de mangueira (esguicho, mangueira no chao, agua infinita, presa na estufa e as cartas dela) e a de pistola (pistola na mao, tiro de bolinhas, coice, Rajada e Balao d'agua)
+node scripts/armas.mjs  /tmp/ar    # as ferramentas da estufa: a parede, o painel por ferramenta (meta e cartas de cada uma), destrancar com 15 ondas somadas, a rodada de mangueira (esguicho, mangueira no chao, agua infinita, presa na estufa e as cartas dela) e a de pistola (pistola na mao, tiro de bolinhas, coice, Rajada e Balao d'agua), cada uma com o seu som (jorro e piu), e as cartas so do regador agindo (a espuma na alca, as petalas do Crivo de flor, a Chuveirada, o Transbordou e o Regador gigante crescendo na mao)
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 ```
 

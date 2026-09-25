@@ -262,7 +262,8 @@ console.log('\n— o baralho de cada arma');
   const soDela = Object.fromEntries(prontas.map((a) => [a.id,
     todas.filter((c) => !c.repetivel && servePara(c, a.id) && prontas.every((o) => o.id === a.id || !servePara(c, o.id))).length]));
   console.log(`       únicas de verdade: ${prontas.map((a) => `${a.id} ${soDela[a.id]}`).join(', ')}`);
-  ok(Math.abs(soDela.pistola - soDela.mangueira) <= 2, `a pistola tem mais ou menos tantas únicas quanto a mangueira (${soDela.pistola} e ${soDela.mangueira})`);
+  const qtd = prontas.map((a) => soDela[a.id]);
+  ok(Math.max(...qtd) - Math.min(...qtd) <= 2, `as ferramentas têm mais ou menos o mesmo tanto de cartas únicas (${qtd.join(', ')})`);
   ok(ARMAS.every((a, i) => i === 0 ? a.anterior === null : a.anterior === ARMAS[i - 1].id),
     'as armas são uma fila: cada uma destranca pela anterior');
 }

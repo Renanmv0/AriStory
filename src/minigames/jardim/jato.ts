@@ -64,6 +64,8 @@ interface JatoNoAr {
   /** o vapor do Orvalho e as bolhas do sabão vão junto */
   vapor: boolean;
   bolhas: boolean;
+  /** as pétalas do Crivo de flor (regador) vão junto */
+  petalas: boolean;
 }
 
 type Tinta = 'agua' | 'gelo' | 'sabao' | 'arco-iris' | 'carga';
@@ -117,6 +119,8 @@ export interface ContagemDoJato {
   especiais: Record<string, number>;
   /** o vapor do Orvalho no caminho do jato */
   vaporDoCaminho: number;
+  /** as pétalas do Crivo de flor que voaram no leque */
+  petalas: number;
   /** a gota mais alta que já subiu (o Jato em arco) */
   alturaMaxima: number;
   // o que não é jato: as cartas de jardineiro e de jardim
@@ -132,7 +136,7 @@ function contagemZerada(): ContagemDoJato {
   return {
     disparos: 0, formas: {}, tintas: {}, respingos: 0, trancos: 0, cristais: 0, vapores: 0,
     bolhas: 0, pocas: 0, garoas: 0, rachaduras: 0, geiseres: 0, aneis: 0, carga: 0,
-    arcosIris: 0, sacudidas: 0, baloes: 0, miras: 0, chuvas: 0, especiais: {}, vaporDoCaminho: 0, alturaMaxima: 0,
+    arcosIris: 0, sacudidas: 0, baloes: 0, miras: 0, chuvas: 0, especiais: {}, vaporDoCaminho: 0, petalas: 0, alturaMaxima: 0,
     poeiras: 0, notas: 0, ondas: 0, brotos: 0, ardidos: 0, adubos: 0,
   };
 }
@@ -459,12 +463,16 @@ export class DesenhoDoJato {
       contador: 0,
       vapor: !!e.vapor,
       bolhas: !!e.sabao,
+      petalas: !!e.petalas,
     });
 
     // O SOM DA SAÍDA: o especial manda, depois a forma, depois a tinta
     if (especial === 'carregado') this.soar('jatao');
-    else if (especial === 'pressao-cheia' || forma === 'reto' || forma === 'tiro') this.soar('jatoForte');
-    else if (forma === 'linha') this.soar('jatoLongo');
+    else if (especial === 'pressao-cheia' || forma === 'reto') this.soar('jatoForte');
+    // as ferramentas têm som próprio: o tiro da pistola, e o jorro da mangueira
+    // (a carta Bico de mangueira do regador continua com o sopro longo dela)
+    else if (forma === 'tiro') this.soar('tiroPistola');
+    else if (forma === 'linha') this.soar(e.daMangueira ? 'mangueira' : 'jatoLongo');
     else if (forma === 'arco') this.soar('jatoArco');
     else this.soar('jato');
     if (especial === 'arco-iris') this.soar('arcoIris');
@@ -530,6 +538,20 @@ export class DesenhoDoJato {
         x: j.de.x, y: j.de.y, z: j.de.z,
         vx: Math.sin(r) * j.velocidade * 0.9, vy: vy * 0.9, vz: Math.cos(r) * j.velocidade * 0.9,
         vida: tempo, tamanho: 0.018, cor: P.jatoCristal, gravidade: j.gravidade,
+      });
+    }
+    /*
+     * o CRIVO DE FLOR (regador): uma pétala cor-de-rosa a cada quatro gotas.
+     * Ela sai junto com a água mas é leve — cai devagar, balançando, e fica um
+     * instante no chão antes de sumir (é o "regou flor" que se vê)
+     */
+    if (j.petalas && j.contador % 4 === 0) {
+      this.contagem.petalas += 1;
+      this.terra.emitir({
+        x: j.de.x, y: j.de.y, z: j.de.z,
+        vx: Math.sin(r) * j.velocidade * 0.75, vy: vy * 0.8, vz: Math.cos(r) * j.velocidade * 0.75,
+        vida: tempo + 0.9, tamanho: 0.034, cor: P.regadorPetala,
+        gravidade: 3, arrasto: 0.8, balanco: 0.6, chao: 'fica',
       });
     }
     // o ORVALHO: vapor fininho nascendo ao longo do caminho, subindo devagar

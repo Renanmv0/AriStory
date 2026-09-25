@@ -132,10 +132,20 @@ mudam isso:
   mangueira tem água infinita: nada de tanque, refil, tonel);
 - `soPara: ['mangueira']` — a carta é SÓ daquela arma (Esguicho de latão,
   Chicote, Vazamento, Jato contínuo, Enchente). Na tela ela ganha a fita da
-  arma (`cartaDaArma`, em `tela.ts`), no livro também.
+  arma (`cartaDaArma`, em `tela.ts`), no livro também. Carta só do regador é
+  `soPara: ['regador']` (Lata cheia, Chuveirada, Regador gigante…): o regador
+  é uma arma como as outras, e a genérica NÃO conta como dele.
+
+"Única de verdade" é a que serve nesta ferramenta e falta em alguma outra
+PRONTA (`soDestaArma`): uma carta de tanque serve no regador e na pistola, e
+por isso aparece na lista das duas, mas não é única de nenhuma. O
+`scripts/cartas.mjs` imprime a conta ("únicas de verdade: regador 14,
+mangueira 14, pistola 14") e reprova quando uma ferramenta pronta se afasta
+mais de 2 das outras.
 
 **Toda ferramenta tem mais ou menos o mesmo tanto de cartas únicas** (regra do
-Renan; hoje 14 e 14 — a bancada das ferramentas conta com `soDestaArma`). Carta
+Renan; hoje 14, 14 e 14, cada uma com 7 comuns, 4 incomuns, 2 raras e 1
+lendária — a bancada das ferramentas conta com `soDestaArma`). Carta
 que não serve numa ferramenta mas serve nas outras que usam munição (Jean-Luc
 no tonel, Tanque maior) leva `naoServe`, e não `soPara`: assim ela entra de
 graça na lista da próxima ferramenta que tiver tanque.
@@ -223,8 +233,11 @@ mesa vira dois regadores — prefira dar comum à família mais magra.
 
 Carta de REGADOR que mexe num número **mexe também na peça da mão** (§6 do
 plano). Ela escreve em `f.estilo`, com os campos de `EstiloDeRegador`
-(`world/regador.ts`): `bico`, `crivo`, `tanque` (0 a 1), `ponteira`,
-`caboDeMadeira`, `segundoBico`, `mangueira`, `respiro`, `nuvem`.
+(`world/regador.ts`): `bico`, `crivo`, `tanque`, `crivoDeFlor` (0 a 1),
+`ponteira`, `caboDeMadeira`, `segundoBico`, `mangueira`, `respiro`, `nuvem`,
+`alcaAcolchoada`. Campo novo = a linha no tipo e no `PADRAO` (`regador.ts`),
+o mapeamento em `estiloDoRegador()` (`baralho.ts`) e uma versão no
+`scripts/regador.mjs` que conta as malhas a mais.
 
 O `estagio` (lata → latão → competição) **não é escrito por carta**: sai de
 quantas cartas de regador a mão tem (0–2, 3–5, 6+). Carta nova de regador que

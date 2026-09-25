@@ -225,6 +225,8 @@ await page.evaluate(() => {
 await esperar(page, () => page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado().jatosDados > 2), 60000);
 const r1 = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
 ok(r1.jatosDados > 2, `o jato sai da mangueira (${r1.jatosDados} jatos)`);
+const somDaMangueira = await page.evaluate(() => Object.fromEntries(window.jogo.audio.contagem));
+ok((somDaMangueira.mangueira ?? 0) > 0, `e com o som de jorro dela (${somDaMangueira.mangueira ?? 0}×), e não o sopro do regador`);
 ok(r1.agua === r1.tanque, 'e a água não baixa');
 await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; });
 await page.screenshot({ path: `${OUT}-rodada.png` });
@@ -375,6 +377,8 @@ await esperar(page, async () => {
 const pr1 = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
 if (pr1.jatosDados <= 3) console.log('       estado:', JSON.stringify({ pausada: pr1.pausada, bichos: pr1.invasores.length, jatos: pr1.jatosDados, onda: pr1.onda, rodando: pr1.rodando }));
 ok((pr1.desenho.formas.tiro ?? 0) > 0, `o tiro sai em bolinhas (forma "tiro": ${pr1.desenho.formas.tiro ?? 0}×)`);
+const somDaPistola = await page.evaluate(() => Object.fromEntries(window.jogo.audio.contagem));
+ok((somDaPistola.tiroPistola ?? 0) > 0, `com o som de tiro dela (${somDaPistola.tiroPistola ?? 0}×)`);
 ok(pr1.agua < pr1.tanque, `e a água acaba: tanque pequeno (${pr1.agua.toFixed(1)} de ${pr1.tanque})`);
 await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; window.jogo.setZoom(4); });
 await page.waitForTimeout(500);
@@ -448,6 +452,102 @@ for (const [id, nome] of [['ricochete', 'Ricochete: o tiro pula no vizinho'], ['
 await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; window.jogo.setZoom(4); });
 await page.waitForTimeout(300);
 await page.screenshot({ path: `${OUT}-pistola-novas.png` });
+await page.evaluate(() => window.jogo.current.world.root.userData.rodada.terminar('interrompida'));
+await page.waitForTimeout(400);
+await falarAteAcabar(page);
+
+// ============================================= 5c. as cartas únicas do REGADOR agindo
+// a dupla ao pé do canteiro de lavanda (machucado), dois bichos colados na
+// borda dele: o jato cai ali (Rega de verdade), um respinga no outro
+// (Respingo), a lata começa cheia (Lata cheia), cada bicho novo leva a
+// regada caprichada, de três em três o leque dobra (Chuveirada), e o relógio
+// do Regador gigante começa quase no fim
+const DO_REGADOR = ['lata-cheia-1', 'crivo-de-flor-1', 'regada-caprichada-1', 'alca-acolchoada',
+  'respingo', 'chuveirada', 'transbordou', 'regador-gigante', 'rega-de-verdade'];
+await page.evaluate((cartas) => {
+  window.jogo.debugPlace(-3.6, 5.4, 0);
+  const u = window.jogo.current.world.root.userData;
+  u.comecarRodada(cartas, 'regador');
+  const r = u.rodada;
+  r.escalaDoTempo = 3;
+  r.giganteRelogio = 26;
+  r.limparBichos();
+  r.ferirCanteiro(r.estado().canteiros.findIndex((c) => c.nome === 'Lavanda'), 0.4);
+}, DO_REGADOR);
+// a mão é refeita no quadro seguinte ao das cartas: espera ela trocar
+await page.waitForTimeout(700);
+const naMaoR = await page.evaluate(() => {
+  let espuma = false;
+  let peca = null;
+  window.jogo.objetoNaMao()?.traverse((o) => {
+    if (o.name === 'espuma') espuma = true;
+    if (o.userData.peca && !peca) peca = o.userData.peca;
+  });
+  return { espuma, peca };
+});
+ok(naMaoR.peca === 'regador' && naMaoR.espuma, `Alça acolchoada: o regador da mão ganha a espuma na alça (${naMaoR.peca}, espuma ${naMaoR.espuma})`);
+/** subiu de nível ou entrou um chamado: pega a carta e passa as falas */
+const destravar = async () => {
+  if (await page.locator('.cartas-do-jardim.show').count()) {
+    await page.keyboard.press('Digit1');
+    await page.waitForTimeout(300);
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(600);
+  }
+  if (await page.evaluate(() => document.querySelector('.dialogue')?.classList.contains('show'))) {
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(300);
+  }
+};
+const soltarDupla = () => page.evaluate(() => {
+  const r = window.jogo.current.world.root.userData.rodada;
+  if (r.invasores.length >= 2) return;
+  r.soltarBicho('lagartejo', -3.6, 7.95);
+  r.soltarBicho('lagartejo', -3.05, 7.9);
+});
+await soltarDupla();
+let escalaMaxima = 1;
+let fotoGigante = false;
+const QUER = ['lata-cheia', 'regada-caprichada', 'respingo', 'chuveirada', 'rega-de-verdade', 'regador-gigante'];
+await esperar(page, async () => {
+  await destravar();
+  await soltarDupla();
+  const escala = await page.evaluate(() => window.jogo.objetoNaMao()?.scale.x ?? 1);
+  escalaMaxima = Math.max(escalaMaxima, escala);
+  if (escala > 1.6 && !fotoGigante) {
+    fotoGigante = true;
+    await page.evaluate(() => window.jogo.setZoom(4));
+    await page.screenshot({ path: `${OUT}-regador-gigante.png` });
+  }
+  const e = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+  return QUER.every((k) => (e.efeitos[k] ?? 0) > 0) && e.desenho.petalas > 0 && escalaMaxima > 1.6;
+}, 150000);
+const rr = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+for (const [id, nome] of [['lata-cheia', 'Lata cheia: com a lata cheia o jato molha mais'],
+  ['regada-caprichada', 'Regada caprichada: o primeiro jato em cada bicho'], ['respingo', 'Respingo: o bicho molhado respinga no vizinho'],
+  ['chuveirada', 'Chuveirada: de três em três o leque dobra'], ['rega-de-verdade', 'Rega de verdade: o jato que cai na lavanda rega ela'],
+  ['regador-gigante', 'Regador gigante: a cada 30 s']]) {
+  ok((rr.efeitos[id] ?? 0) > 0, `${nome} (${rr.efeitos[id] ?? 0}×)`);
+}
+ok(rr.desenho.petalas > 0, `Crivo de flor: pétalas voam no leque (${rr.desenho.petalas})`);
+ok(escalaMaxima > 1.6, `e o regador da mão cresce (${escalaMaxima.toFixed(2)}×)`);
+await page.evaluate(() => window.jogo.setZoom(3));
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${OUT}-regador-cartas.png` });
+
+// o Transbordou: a lata quase vazia, a dupla no tonel, encheu até a boca
+await page.evaluate(() => {
+  const r = window.jogo.current.world.root.userData.rodada;
+  r.agua = 1;
+  window.jogo.debugPlace(-12.9, -7.4, 0);
+});
+await esperar(page, async () => {
+  await destravar();
+  return page.evaluate(() => (window.jogo.current.world.root.userData.rodada.estado().efeitos.transbordou ?? 0) > 0);
+}, 90000);
+const rt = await page.evaluate(() => window.jogo.current.world.root.userData.rodada.estado());
+ok((rt.efeitos.transbordou ?? 0) > 0, `Transbordou: encher a lata até a boca no tonel derrama em volta (${rt.efeitos.transbordou ?? 0}×)`);
+await page.evaluate(() => { window.jogo.current.world.root.userData.rodada.escalaDoTempo = 1; });
 await page.evaluate(() => window.jogo.current.world.root.userData.rodada.terminar('interrompida'));
 await page.close();
 

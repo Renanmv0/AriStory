@@ -471,6 +471,13 @@ export const PALETTE = {
   regadorAgua: 0x8fd0e8,
   regadorFuro: 0x394045,
   /**
+   * as cartas SO DO REGADOR que mudam a peca: as petalas do "Crivo de flor"
+   * (o mesmo rosa das petalas que voam no jato) e a espuma coral da "Alca
+   * acolchoada" — cores quentes para lerem contra o cinza e o verde da lata
+   */
+  regadorPetala: 0xff9ec7,
+  regadorEspuma: 0xff8c7a,
+  /**
    * AS ARMAS DA ESTUFA, em cores de brinquedo de quintal (pedido do Renan:
    * "mais fofos… falta cor"). Cada arma tem a SUA cor-assinatura, que é o que
    * separa as quatro de longe na parede:

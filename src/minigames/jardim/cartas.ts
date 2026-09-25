@@ -99,6 +99,11 @@ export type RegraDoJardim =
   | 'laco'              // bicho que pisa na mangueira fica enrolado (tonto) 1,5 s
   | 'mangueira-rega'    // canteiro que a mangueira no chão encosta sara devagar
   | 'rajada'            // (pistola) todo 4º tiro sai em rajada de três no mesmo bicho
+  | 'rega-de-verdade'   // (regador) o jato que passa por um canteiro machucado rega ele: +1 de vida
+  | 'respingo'          // (regador) bicho molhado respinga: quem está a 1 m dele leva 30% do jato
+  | 'chuveirada'        // (regador) a cada três jatos, o leque abre o dobro
+  | 'transbordou'       // (regador) encher a lata até a boca no tonel transborda: molha tudo em 2 m
+  | 'regador-gigante'   // (regador) a cada 30 s, 5 s de regador gigante: leque e força dobrados
   | 'balao-dagua'       // (pistola) um tiro em cinco é um balão que estoura e molha em 1,2 m
   | 'ricochete'         // (pistola) o tiro que acerta pula no bicho mais perto (até 2,5 m), com metade da força
   | 'esguicho-no-olho'  // (pistola) um tiro em quatro deixa o bicho tonto 1 s
@@ -175,6 +180,11 @@ export interface EstiloDoJato {
   bifurcacao?: boolean;
   /** a PISTOLA D'ÁGUA (a arma): o tiro é uma fileira reta de bolinhas grandes */
   pistola?: boolean;
+  /**
+   * a MANGUEIRA (a arma, e não a carta Bico de mangueira do regador): o mesmo
+   * fio comprido, com o som de jorro dela
+   */
+  daMangueira?: boolean;
   /** a Rajada: de quatro em quatro tiros, saem três seguidos */
   rajada?: boolean;
   /** o Balão d'água: um tiro em cinco é um balão que estoura em volta */
@@ -189,6 +199,20 @@ export interface EstiloDoJato {
   dupla?: boolean;
   /** o Super molhador: de 20 em 20 s, a pistola dispara no dobro */
   superMolhador?: boolean;
+  /** o Crivo de flor (regador): pétalas cor-de-rosa voam no meio do leque */
+  petalas?: boolean;
+  /** a Lata cheia (regador): com a lata mais da metade cheia, o jato sai mais grosso */
+  lataCheia?: boolean;
+  /** a Regada caprichada (regador): o primeiro jato em cada bicho dá um respingo grande */
+  caprichada?: boolean;
+  /** o Respingo (regador): o bicho molhado espirra água em volta */
+  respingo?: boolean;
+  /** a Chuveirada (regador): de três em três jatos, o leque abre o dobro */
+  chuveirada?: boolean;
+  /** o Transbordou (regador): a lata cheia no tonel derrama num anel em volta */
+  transbordou?: boolean;
+  /** o Regador gigante: de 30 em 30 s a peça da mão cresce e o leque dobra */
+  gigante?: boolean;
   /** o Regador de pressão: jato reto que atravessa o primeiro bicho */
   reto?: boolean;
   /** o jato sobe em parábola por cima do canteiro */
@@ -279,6 +303,16 @@ export interface FichaDaRodada {
   recargaParado: number;
   /** fração da vida que um bicho espantado devolve ao canteiro mais perto */
   compostagem: number;
+  /**
+   * A LATA CHEIA (regador): quanto o jato molha a MAIS enquanto a lata está
+   * mais da metade cheia (0 = sem a carta; 0,15 por degrau)
+   */
+  lataCheia: number;
+  /**
+   * A REGADA CAPRICHADA (regador): quanto o PRIMEIRO jato em cada bicho molha
+   * a mais (0 = sem a carta; 0,25 por degrau)
+   */
+  primeiraRegada: number;
   /** os interruptores ligados */
   regras: Set<RegraDoJardim>;
   /**
@@ -311,6 +345,8 @@ export function fichaInicial(): FichaDaRodada {
     gastoPorJato: 1,
     recargaParado: 1,
     compostagem: 0,
+    lataCheia: 0,
+    primeiraRegada: 0,
     regras: new Set(),
     estilo: {},
     jato: {},
@@ -630,6 +666,65 @@ const REGADOR: CartaDoJardim[] = [
       f.jato.arcoIris = true;
     },
   },
+  // ======================================================= só do REGADOR
+  // (a lata de sempre, `armas.ts`): o que só um regador faz — a lata que pesa
+  // cheia, o crivo que abre em leque, e regar de verdade, que é o nome dele
+  ...serie('lata-cheia', 2, {
+    familia: 'regador', raridade: 'comum', icone: '⚖️', soPara: ['regador'],
+    nome: 'Lata cheia', texto: 'Com a lata mais da metade cheia, o jato molha 15% mais',
+  }, (f) => {
+    f.lataCheia += 0.15;
+    f.jato.lataCheia = true;
+  }),
+  ...serie('crivo-de-flor', 2, {
+    familia: 'regador', raridade: 'comum', icone: '🌸', soPara: ['regador'],
+    nome: 'Crivo de flor', texto: 'O crivo vira uma flor: o leque abre 5° e molha 6% mais',
+  }, (f, d, total) => {
+    f.largura += 5;
+    f.dano *= 1.06;
+    f.estilo.crivoDeFlor = d / total;
+    f.jato.aberto = Math.max(f.jato.aberto ?? 0, d);
+    f.jato.petalas = true;
+  }),
+  ...serie('regada-caprichada', 2, {
+    familia: 'regador', raridade: 'comum', icone: '✨', soPara: ['regador'],
+    nome: 'Regada caprichada', texto: 'O primeiro jato em cada bicho molha 25% mais',
+  }, (f) => {
+    f.primeiraRegada += 0.25;
+    f.jato.caprichada = true;
+  }),
+  {
+    id: 'respingo', nome: 'Respingo', familia: 'regador', raridade: 'incomum', soPara: ['regador'],
+    icone: '💨', texto: 'Bicho molhado respinga: quem está a 1 m dele leva 30% do jato',
+    aplicar: (f) => {
+      f.regras.add('respingo');
+      f.jato.respingo = true;
+    },
+  },
+  {
+    id: 'chuveirada', nome: 'Chuveirada', familia: 'regador', raridade: 'incomum', soPara: ['regador'],
+    icone: '☔', texto: 'A cada três jatos, o leque abre o dobro e molha todo mundo nele',
+    aplicar: (f) => {
+      f.regras.add('chuveirada');
+      f.jato.chuveirada = true;
+    },
+  },
+  {
+    id: 'transbordou', nome: 'Transbordou', familia: 'regador', raridade: 'incomum', soPara: ['regador'],
+    icone: '🫙', texto: 'Encher a lata até a boca no tonel transborda: molha tudo em 2 m',
+    aplicar: (f) => {
+      f.regras.add('transbordou');
+      f.jato.transbordou = true;
+    },
+  },
+  {
+    id: 'regador-gigante', nome: 'Regador gigante', familia: 'regador', raridade: 'lendario', soPara: ['regador'],
+    icone: '🏺', texto: 'A cada 30 s o regador fica gigante por 5 s: o leque e a força dobram',
+    aplicar: (f) => {
+      f.regras.add('regador-gigante');
+      f.jato.gigante = true;
+    },
+  },
   // ======================================================= só da PISTOLA
   // (`armas.ts`): o tiro de longe, um bicho por vez — as cartas dela brincam
   // com o que um brinquedo de piscina faz: cano comprido, rajada, balão
@@ -681,7 +776,7 @@ const REGADOR: CartaDoJardim[] = [
   },
   {
     id: 'tiro-de-longe', nome: 'Tiro de longe', familia: 'regador', raridade: 'incomum', soPara: ['pistola'],
-    icone: '🎯', texto: 'Bicho a mais de 3,5 m de você leva 40% mais',
+    icone: '🏹', texto: 'Bicho a mais de 3,5 m de você leva 40% mais',
     aplicar: (f) => {
       f.regras.add('tiro-de-longe');
       f.jato.longe = true;
@@ -697,7 +792,7 @@ const REGADOR: CartaDoJardim[] = [
   },
   {
     id: 'super-molhador', nome: 'Super molhador', familia: 'regador', raridade: 'lendario', soPara: ['pistola'],
-    icone: '💧', texto: 'A cada 20 s, 4 s de tiros dobrados que não gastam água',
+    icone: '🌟', texto: 'A cada 20 s, 4 s de tiros dobrados que não gastam água',
     aplicar: (f) => {
       f.regras.add('super-molhador');
       f.jato.superMolhador = true;
@@ -705,7 +800,7 @@ const REGADOR: CartaDoJardim[] = [
   },
   {
     id: 'rajada', nome: 'Rajada', familia: 'regador', raridade: 'raro', soPara: ['pistola'],
-    icone: '💦', texto: 'De quatro em quatro tiros, saem três seguidos no mesmo bicho',
+    icone: '🎇', texto: 'De quatro em quatro tiros, saem três seguidos no mesmo bicho',
     aplicar: (f) => {
       f.regras.add('rajada');
       f.jato.rajada = true;
@@ -715,7 +810,7 @@ const REGADOR: CartaDoJardim[] = [
   // (a arma presa no tonel, `armas.ts`): o que só uma mangueira faz — a linha
   // dela no chão vira arma, e o fio que não para de sair vira pressão
   ...serie('esguicho', 3, {
-    familia: 'regador', raridade: 'comum', icone: '🚿', soPara: ['mangueira'],
+    familia: 'regador', raridade: 'comum', icone: '🔩', soPara: ['mangueira'],
     nome: 'Esguicho de latão', texto: 'O esguicho aperta: o jato encharca 12% mais e vai 8% mais longe',
   }, (f, d) => {
     f.dano *= 1.12;
@@ -944,6 +1039,15 @@ const JARDINEIRO: CartaDoJardim[] = [
       f.velocidade *= 1.1;
     },
   },
+  // só do REGADOR: a alça com espuma, que a mão não sente o peso da lata
+  {
+    id: 'alca-acolchoada', nome: 'Alça acolchoada', familia: 'jardineiro', raridade: 'comum', soPara: ['regador'],
+    icone: '🧽', texto: 'A alça ganha espuma: carregando a lata você anda 10% mais rápido',
+    aplicar: (f) => {
+      f.velocidade *= 1.1;
+      f.estilo.alcaAcolchoada = true;
+    },
+  },
 ];
 
 // ================================================================== JARDIM
@@ -1150,10 +1254,18 @@ const JARDIM: CartaDoJardim[] = [
     chama: ['gina', 'capy', 'noel', 'walter'],
     aplicar: (f) => f.regras.add('mutirao-do-clube'),
   },
+  // só do REGADOR: é regador, e rega — o jato que passa pela horta cuida dela
+  {
+    id: 'rega-de-verdade', nome: 'Rega de verdade', familia: 'jardim', raridade: 'incomum', soPara: ['regador'],
+    icone: '🌷', texto: 'O jato que passa por um canteiro machucado rega ele também',
+    aplicar: (f) => {
+      f.regras.add('rega-de-verdade');
+    },
+  },
   // só da MANGUEIRA: a mangueira deitada rega o que encosta
   {
     id: 'mangueira-rega', nome: 'Mangueira que rega', familia: 'jardim', raridade: 'incomum', soPara: ['mangueira'],
-    icone: '🌱', texto: 'Canteiro por onde a mangueira passa sara devagar',
+    icone: '🌿', texto: 'Canteiro por onde a mangueira passa sara devagar',
     aplicar: (f) => {
       f.regras.add('mangueira-rega');
     },

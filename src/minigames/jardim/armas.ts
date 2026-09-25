@@ -71,6 +71,7 @@ export const ARMAS: readonly FichaDaArma[] = [
       f.regras.add('agua-infinita');
       f.regras.add('presa-na-estufa');
       f.jato.mangueira = true;
+      f.jato.daMangueira = true;
     },
   },
   /*

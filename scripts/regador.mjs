@@ -49,9 +49,14 @@ const VERSOES = [
   ['bico-longo', { bico: 1 }],
   ['tanque-cheio', { tanque: 1 }],
   ['crivo-aberto', { crivo: 1 }],
+  // as cartas SÓ DO REGADOR que mexem na peça
+  ['crivo-de-flor', { crivoDeFlor: 1 }],
+  ['alca-acolchoada', { alcaAcolchoada: true }],
+  ['cabo-acolchoado', { alcaAcolchoada: true, caboDeMadeira: true }],
   ['tudo', {
     estagio: 2, bico: 1, crivo: 1, tanque: 1, ponteira: true,
     caboDeMadeira: true, segundoBico: true, mangueira: true, respiro: true, nuvem: true,
+    crivoDeFlor: 1, alcaAcolchoada: true,
   }],
 ];
 
@@ -190,6 +195,12 @@ const aberto = v('crivo-aberto');
 if (aberto.comprimento <= base.comprimento || aberto.malhas <= base.malhas) {
   problemas.push('"Leque aberto" não alargou o crivo nem abriu furos novos');
 }
+// o Crivo de flor abre cinco pétalas em volta do crivo, e a Alça acolchoada
+// põe a espuma na alça (a do arco e a do cabo de madeira do Braço solto)
+if (v('crivo-de-flor').malhas < base.malhas + 5) problemas.push('"Crivo de flor" não abriu as pétalas');
+if (v('alca-acolchoada').malhas !== base.malhas + 1) problemas.push('"Alça acolchoada" não pôs a espuma na alça');
+const cabo = medidas.find((m) => m.nome === 'cabo-acolchoado');
+if (!cabo || !/ff8c7a/.test(cabo.cores)) problemas.push('a espuma não aparece no cabo de madeira do Braço solto');
 if (v('tudo').malhas <= base.malhas + 6) {
   problemas.push('a versão com todas as cartas não ganhou peça nenhuma');
 }
@@ -209,7 +220,7 @@ const enquadrar = async (nome, zoom) => {
 };
 await enquadrar('bico-longo', 8);
 await page.screenshot({ path: `${OUT}-fila.png` });
-for (const nome of ['lata', 'competicao', 'tudo']) {
+for (const nome of ['lata', 'competicao', 'crivo-de-flor', 'alca-acolchoada', 'tudo']) {
   await enquadrar(nome, 1.5);
   await page.screenshot({ path: `${OUT}-${nome}.png` });
 }
