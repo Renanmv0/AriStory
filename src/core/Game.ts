@@ -162,7 +162,18 @@ export class Game implements GameAPI {
     };
     this.ui.onProvarNaPiscina = (id) => this.provarNaPiscina(id);
     this.ui.onAgirNaPiscina = () => this.agirNaPiscina();
-    this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
+    // SEGURAR o ✨ é segurar uma tecla, e qual depende de onde se está: fora
+    // da rodada é o F (a carga do frisbee); na rodada do jardim é o E, que é o
+    // que a carta do Balde lê (segurar derrama o tanque). Lá o F chamaria o
+    // par, e o dedo que queria o balde pedia ajuda sem querer. Soltar solta as
+    // duas: a rodada pode ter começado ou acabado no meio da segurada.
+    this.ui.onTouchHold = (down) => {
+      if (down) this.input.setVirtualDown(this.jardimNaTela ? 'KeyE' : 'KeyF', true);
+      else {
+        this.input.setVirtualDown('KeyE', false);
+        this.input.setVirtualDown('KeyF', false);
+      }
+    };
     this.ui.onRestart = () => this.restart();
     this.ui.som = (nome) => this.audio.play(nome);
     this.ui.onToggleSom = () => {

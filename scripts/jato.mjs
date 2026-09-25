@@ -22,6 +22,8 @@
 import { chromium } from 'playwright';
 
 const OUT = process.argv[2] ?? './jato';
+// opcional: só os casos cujo nome começa com isto (ex.: `balde`)
+const SO = process.argv[3];
 const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
@@ -58,6 +60,9 @@ const CASOS = [
   { cartas: 'agua-com-sabao', som: 'bolha', ok: (d) => (d.tintas.sabao ?? 0) > 0 && d.bolhas > 0, o: 'bolhas e a bolha grande' },
   { cartas: 'jato-carregado', som: 'jatao', adiantar: 'carga', ok: (d) => (d.especiais.carregado ?? 0) > 0 && d.carga > 0, o: 'carga e jatao' },
   { cartas: 'balde', som: 'balde', acao: 'balde', ok: (d) => d.aneis > 0, o: 'onda em circulo' },
+  // o mesmo balde pelo celular: SEGURAR o ✨ tem que valer como segurar o E
+  // (antes a segurada virava o F, que na rodada chama o par, e o balde nunca vinha)
+  { nome: 'balde-no-toque', cartas: 'balde', som: 'balde', acao: 'balde-toque', ok: (d) => d.aneis > 0, o: 'onda em circulo segurando o ✨' },
   { cartas: 'geiser', som: 'geiser', adiantar: 'geiser', ok: (d) => d.rachaduras > 0 && d.geiseres > 0, o: 'racha e coluna' },
   { cartas: 'arco-iris', som: 'arcoIris', adiantar: 'arco-iris', ok: (d) => d.arcosIris > 0 && (d.tintas['arco-iris'] ?? 0) > 0, o: 'arco-iris no ar' },
   { cartas: 'poca', ok: (d) => d.pocas > 0, o: 'poca no chao' },
@@ -95,6 +100,7 @@ const rodada = () => page.evaluate(() => window.jogo.current.world.root.userData
 
 for (const caso of CASOS) {
   const nome = caso.nome ?? caso.cartas.split(',')[0];
+  if (SO && !nome.startsWith(SO)) continue;
   await page.goto(
     `${BASE}/?cena=estufa&em=0,1&zoom=5&jato=${caso.cartas}${caso.praga ? `&praga=${caso.praga}` : ''}`,
     { waitUntil: 'networkidle' },
@@ -116,6 +122,8 @@ for (const caso of CASOS) {
   let fotografou = false;
   let e = await rodada();
   if (caso.acao === 'balde') await page.keyboard.down('KeyE');
+  const dedo = (tipo) => page.evaluate((t) => document.querySelector('.action-btn').dispatchEvent(new PointerEvent(t)), tipo);
+  if (caso.acao === 'balde-toque') await dedo('pointerdown');
   if (caso.acao === 'andar') await page.keyboard.down('KeyD');
   for (let i = 0; i < 40; i++) {
     if (!caso.acao) await page.evaluate(() => window.jogo.current.world.root.userData.rodada.forcarJato());
@@ -129,6 +137,7 @@ for (const caso of CASOS) {
     if (caso.ok(e.desenho, e) && fotografou && i >= 3) break;
   }
   if (caso.acao === 'balde') await page.keyboard.up('KeyE');
+  if (caso.acao === 'balde-toque') await dedo('pointerup');
   if (caso.acao === 'andar') await page.keyboard.up('KeyD');
   e = await rodada();
   const passou = caso.ok(e.desenho, e);
