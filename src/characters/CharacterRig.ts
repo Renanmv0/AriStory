@@ -21,6 +21,14 @@ import { PALETTE as P } from '../palette';
  * Mexer aqui sem mexer em LADO (entities/MaosDadas.ts) descola as maos.
  */
 const ABRE_MAO = 0.75;
+/**
+ * O braço solto, em pé e andando: quanto ele se afasta do corpo, em radianos,
+ * PARA FORA (pedido do Renan). Era 0,08 para DENTRO — o sinal do esquerdo
+ * estava trocado (ver a pegadinha do CLAUDE.md) e os dois braços entravam no
+ * tronco. 0,17 é só o bastante para a mão sair da cápsula do corpo: a de
+ * patins (0,34) e a do provador (0,36) abrem bem mais.
+ */
+const BRACO_SOLTO = 0.17;
 
 /**
  * Altura da sola do patins, na escala nativa da peca em `props.ts`.
@@ -1346,8 +1354,8 @@ export class CharacterRig {
       this.poeAltura(0);
       this.legL.rotation.x = 0;
       this.legR.rotation.x = 0;
-      this.armL.rotation.set(0, 0, 0.08);
-      this.armR.rotation.set(0, 0, -0.08);
+      this.armL.rotation.set(0, 0, -BRACO_SOLTO);
+      this.armR.rotation.set(0, 0, BRACO_SOLTO);
     }
   }
 
@@ -1366,8 +1374,8 @@ export class CharacterRig {
       this.poeAltura(0);
       this.legL.rotation.set(0, 0, 0);
       this.legR.rotation.set(0, 0, 0);
-      this.armL.rotation.set(0, 0, 0.08);
-      this.armR.rotation.set(0, 0, -0.08);
+      this.armL.rotation.set(0, 0, -BRACO_SOLTO);
+      this.armR.rotation.set(0, 0, BRACO_SOLTO);
       this.body.rotation.x = 0;
     }
   }
@@ -1533,8 +1541,10 @@ export class CharacterRig {
       this.legR.rotation.x = 0;
       this.body.rotation.x = k * 0.3;
       this.poeAltura(k * 0.045); // na pontinha do pe
-      this.armL.rotation.set(-k * 0.55, 0, 0.08 + k * 0.16);
-      this.armR.rotation.set(-k * 0.55, 0, -0.08 - k * 0.16);
+      // parte do braço solto (para fora) e fecha até o abraço de sempre (0,24
+      // para dentro), que é o braço recolhido do beijo
+      this.armL.rotation.set(-k * 0.55, 0, -BRACO_SOLTO + k * (0.24 + BRACO_SOLTO));
+      this.armR.rotation.set(-k * 0.55, 0, BRACO_SOLTO - k * (0.24 + BRACO_SOLTO));
       this.head.rotation.x = k * 0.18;
       this.head.rotation.z *= 1 - Math.min(1, dt * 8);
       return;
@@ -1672,8 +1682,8 @@ export class CharacterRig {
       this.legR.rotation.x = walking ? -s * swing : 0;
       this.armL.rotation.x = walking ? -s * swing * 0.85 : Math.sin(this.phase) * 0.05;
       this.armR.rotation.x = walking ? s * swing * 0.85 : -Math.sin(this.phase) * 0.05;
-      this.armL.rotation.z = 0.08;
-      this.armR.rotation.z = -0.08;
+      this.armL.rotation.z = -BRACO_SOLTO;
+      this.armR.rotation.z = BRACO_SOLTO;
     }
 
     // De maos dadas o braco de dentro para de balancar e abre para o lado do

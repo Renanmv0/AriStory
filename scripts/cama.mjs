@@ -175,7 +175,7 @@ for (const [nome, p] of [['jogador', deitado.jogador], ['parceiro', deitado.parc
 
 // 4. levantar desfaz tudo
 if (Math.abs(dePeDeNovo.jogador.giroDoPai) > 0.01) problemas.push('continuou preso à âncora deitada');
-if (Math.abs(dePeDeNovo.jogador.bracoE[1] - 0.08) > 0.001) problemas.push('a pose do braço não voltou ao normal');
+if (Math.abs(dePeDeNovo.jogador.bracoE[1] + 0.17) > 0.001) problemas.push('a pose do braço não voltou ao normal');
 if (dePeDeNovo.jogador.raiz[1] > 0.2) problemas.push('levantou mas ficou flutuando');
 if (Math.abs(depoisDeAndar - andou.antes) < 0.15) problemas.push('não deu para andar depois de levantar');
 if (!noDiario) problemas.push('a memória de deitar junto não entrou no diário');
