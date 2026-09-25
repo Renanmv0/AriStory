@@ -1121,8 +1121,10 @@ function boiaDePatinho(m: MedidasCorpo, lado: -1 | 1 = 1, peca?: ItemDef): THREE
  * COLAR HAVAIANO — o de flores: uma volta de flores coloridas em volta do
  * pescoço, alta atrás e caindo em U no peito, com folhinhas entre elas.
  *
- * Vaga `tronco`, SEM `cor` (a camiseta de baixo continua a de quem veste) e
- * com `praia`: no clube ele fica no peito nu, que é onde colar de flor mora.
+ * Vaga `acessorio` preso no CORPO (pedido do Renan: acessório, e não
+ * tronco) — y = 0 no chão, o mesmo referencial do tronco. Assim ele vai junto
+ * com qualquer camiseta e não esconde a jaqueta nem a mochila da ficha, e no
+ * clube fica no peito nu, que é onde colar de flor mora.
  *
  * O CAMINHO pousa na CÁPSULA do tronco do rig: atrás, na cúpula de cima (onde
  * o ombro vira pescoço); na frente, no meio do peito. A altura desce com

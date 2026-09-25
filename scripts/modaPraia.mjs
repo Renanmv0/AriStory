@@ -38,18 +38,18 @@ page.on('console', (m) => { if (m.type() === 'error' && !/net::ERR_|ERR_CERT/.te
 const COMBINACOES = [
   {
     nome: 'a',
-    ari: ['chapeu-de-praia', 'oculos-de-coracao', 'bermuda-havaiana', 'chinelo-florido', 'colar-havaiano'],
-    renan: ['oculos-espelhado', 'bermuda-listrada', 'chinelo-slide', 'boia-de-patinho'],
+    ari: ['chapeu-de-praia', 'oculos-de-coracao', 'bermuda-havaiana', 'chinelo-florido'],
+    renan: ['colar-havaiano', 'bermuda-listrada', 'chinelo-slide', 'boia-de-patinho'],
   },
   {
     nome: 'b',
     ari: ['touca-de-natacao', 'oculos-de-natacao', 'bermuda-de-melancia', 'chinelo-de-melancia', 'boia-de-patinho'],
-    renan: ['tiara-de-conchinhas', 'oculos-gatinho', 'bermuda-de-abacaxi', 'chinelo-verde-limao', 'colar-havaiano'],
+    renan: ['tiara-de-conchinhas', 'oculos-gatinho', 'bermuda-de-abacaxi', 'chinelo-verde-limao'],
   },
   {
     nome: 'c',
-    ari: ['oculos-redondo', 'bermuda-de-bolinhas', 'chinelo-azul', 'regata-listrada'],
-    renan: ['chapeu-de-praia', 'oculos-escuros', 'bermuda-de-ondinhas', 'camisa-havaiana', 'chinelo-azul'],
+    ari: ['oculos-espelhado', 'bermuda-de-bolinhas', 'chinelo-azul', 'regata-listrada'],
+    renan: ['chapeu-de-praia', 'bermuda-de-ondinhas', 'camisa-havaiana', 'chinelo-azul', 'colar-havaiano'],
   },
 ];
 
@@ -140,7 +140,7 @@ ok(bermudas.every(([, e]) => e.pais.includes('corpo') && e.pais.includes('perna'
   'a bermuda estampada tem estampa no quadril (corpo) e na perna');
 // no clube: a peça de piscina aparece, a camisa não
 const a = noClube.a;
-ok(a.ari.pecas['bermuda-havaiana']?.visivel && a.ari.pecas['chinelo-florido']?.visivel && a.ari.pecas['colar-havaiano']?.visivel,
+ok(a.ari.pecas['bermuda-havaiana']?.visivel && a.ari.pecas['chinelo-florido']?.visivel && a.renan.pecas['colar-havaiano']?.visivel,
   'no clube a estampa da bermuda, o chinelo e o colar continuam no corpo');
 ok(a.renan.pecas['boia-de-patinho']?.visivel, 'a boia de patinho vai para a piscina');
 ok(a.ari.pecas['chapeu-de-praia']?.visivel && a.ari.pecas['oculos-de-coracao']?.visivel, 'chapéu e óculos juntos, os dois visíveis');

@@ -810,7 +810,7 @@ export const ITENS = {
   },
   colarHavaiano: {
     id: 'colar-havaiano', nome: 'Colar havaiano', icone: '🌼',
-    tipo: 'vestivel', slot: 'tronco', praia: true, preco: 12, amostra: P.colarRosa,
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', praia: true, preco: 12, amostra: P.colarRosa,
     nota: 'de flor, fica até dentro do clube',
     extra: colarHavaiano,
   },
@@ -1332,7 +1332,7 @@ export const MODA_PRAIA: readonly ItemDef[] = [
   // cabeça
   ITENS.chapeuDePraia, ITENS.toucaDeNatacao, ITENS.tiaraDeConchinhas,
   // tronco
-  ITENS.colarHavaiano, ITENS.camisaHavaiana, ITENS.regataListrada,
+  ITENS.camisaHavaiana, ITENS.regataListrada,
   // pernas
   ITENS.bermudaAzul, ITENS.bermudaVermelha, ITENS.bermudaAmarela, ITENS.bermudaEstampada,
   ITENS.bermudaListrada, ITENS.bermudaDeBolinhas, ITENS.bermudaDeOndinhas,
@@ -1342,7 +1342,7 @@ export const MODA_PRAIA: readonly ItemDef[] = [
   // mãos
   ITENS.boiaDePatinho,
   // acessório
-  ITENS.oculosEscuros, ITENS.oculosRedondo, ITENS.oculosDeNatacao, ITENS.oculosGatinho,
+  ITENS.colarHavaiano, ITENS.oculosEscuros, ITENS.oculosRedondo, ITENS.oculosDeNatacao, ITENS.oculosGatinho,
   ITENS.oculosDeCoracao, ITENS.oculosEspelhado,
 ];
 
