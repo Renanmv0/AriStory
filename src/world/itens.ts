@@ -9,6 +9,7 @@ import {
   chineloAzul, chineloFlorido, chineloDeMelancia, chineloSlide,
   chapeuDePraia, toucaDeNatacao, tiaraDeConchinhas,
   boiaDePatinho, colarHavaiano, camisaHavaiana, mangaHavaiana, regataListrada,
+  camisaHavaianaSolta, mangaHavaianaSolta, regataListradaSolta,
 } from './roupasDePiscina';
 import {
   aventalDaJosefina, blazerXadrez, canoDaBota, chapeuDeJardineira, coroaDeDama, gargantilhaDeLaco,
@@ -815,18 +816,35 @@ export const ITENS = {
     extra: colarHavaiano,
   },
   camisaHavaiana: {
-    id: 'camisa-havaiana', nome: 'Camisa havaiana', icone: '🌴',
+    id: 'camisa-havaiana', nome: 'Camisa havaiana justa', icone: '🌴',
     tipo: 'vestivel', slot: 'tronco', preco: 20,
     cor: P.camisaHavaiana, corDetalhe: P.camisaHavaiana,
     nota: 'para depois da piscina',
     extra: camisaHavaiana, extraBraco: mangaHavaiana,
   },
   regataListrada: {
-    id: 'regata-listrada', nome: 'Regata listrada', icone: '🎽',
+    id: 'regata-listrada', nome: 'Regata listrada justa', icone: '🎽',
     tipo: 'vestivel', slot: 'tronco', preco: 16, bracosNus: true,
     cor: P.regataCreme, corDetalhe: P.regataListra,
     nota: 'de marinheiro, com a âncora no peito',
     extra: regataListrada,
+  },
+  // as versões SOLTAS das duas camisetas (pedido do Renan): o casco largo da
+  // camiseta da Josefina, barra abaixo do quadril e manga folgada; a justa
+  // manteve o id, então quem já comprou continua com ela
+  camisaHavaianaSolta: {
+    id: 'camisa-havaiana-solta', nome: 'Camisa havaiana solta', icone: '🌺',
+    tipo: 'vestivel', slot: 'tronco', preco: 20,
+    cor: P.camisaHavaiana, corDetalhe: P.camisaHavaiana,
+    nota: 'larga, de botão, caindo abaixo do quadril',
+    extra: camisaHavaianaSolta, extraBraco: mangaHavaianaSolta,
+  },
+  regataListradaSolta: {
+    id: 'regata-listrada-solta', nome: 'Regata listrada solta', icone: '⚓',
+    tipo: 'vestivel', slot: 'tronco', preco: 18, bracosNus: true,
+    cor: P.regataCreme, corDetalhe: P.regataListra,
+    nota: 'larga, de marinheiro, com a âncora',
+    extra: regataListradaSolta,
   },
   frisbee: {
     id: 'frisbee',
@@ -1332,7 +1350,7 @@ export const MODA_PRAIA: readonly ItemDef[] = [
   // cabeça
   ITENS.chapeuDePraia, ITENS.toucaDeNatacao, ITENS.tiaraDeConchinhas,
   // tronco
-  ITENS.camisaHavaiana, ITENS.regataListrada,
+  ITENS.camisaHavaiana, ITENS.camisaHavaianaSolta, ITENS.regataListrada, ITENS.regataListradaSolta,
   // pernas
   ITENS.bermudaAzul, ITENS.bermudaVermelha, ITENS.bermudaAmarela, ITENS.bermudaEstampada,
   ITENS.bermudaListrada, ITENS.bermudaDeBolinhas, ITENS.bermudaDeOndinhas,

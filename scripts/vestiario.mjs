@@ -179,9 +179,13 @@ await page.waitForTimeout(400);
 const etiqueta = await j(() => document.querySelector('.armario .produto[data-id="bermuda-havaiana"] em').textContent);
 ok(/é de vocês/.test(etiqueta), `para o outro a bermuda também já é dos dois ("${etiqueta}")`);
 await page.keyboard.press('Escape');
-await page.waitForTimeout(500);
+// o jogo solta o movimento no QUADRO seguinte ao fechar; no Chromium sem GPU
+// um quadro pode passar de meio segundo, então espera a condição (até 4 s)
+await page.waitForFunction(() => !document.querySelector('.armario').classList.contains('show') && !window.jogo.input.blocked,
+  null, { timeout: 4000 }).catch(() => {});
 p = await painel();
-ok(!p.aberto && !(await j(() => window.jogo.input.blocked)), 'o Escape fecha e solta o movimento');
+const bloqueio = await j(() => ({ blocked: window.jogo.input.blocked, locked: window.jogo.player.locked, dialogo: document.querySelector('.dialogue')?.classList.contains('show'), telas: document.body.className }));
+ok(!p.aberto && !bloqueio.blocked, `o Escape fecha e solta o movimento (${JSON.stringify({ aberto: p.aberto, ...bloqueio })})`);
 
 // persistência: recarregar não perde nada
 await abrirCena();

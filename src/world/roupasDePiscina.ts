@@ -1304,10 +1304,218 @@ function regataListrada(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THR
   return g;
 }
 
+// ====================================================== AS VERSÕES SOLTAS
+
+/*
+ * AS CAMISETAS SOLTAS (pedido do Renan: "camisetas com o modelo largo, não
+ * coladas no modelo"). A justa continua existindo — com "justa" no nome — e a
+ * solta é o casco da camiseta larga da Josefina (`camisetaLarga`, em
+ * `roupasDoJardim.ts`), com as MESMAS cotas e pelo mesmo motivo: raio de
+ * `1,1·raioTorso` (mais gordo, o casco engole o braço colado no corpo),
+ * abrindo para `1,2·` numa barra abaixo do quadril, achatado em 0,92. A folga
+ * que se vê vem da barra comprida e aberta e da manga larga.
+ */
+
+/** as cotas do casco solto, no corpo (y = 0 no chão) */
+function soltura(m: MedidasCorpo) {
+  const c = corpo(m);
+  const ombroY = c.quadril + m.torsoH * 0.86;
+  return {
+    RAIO: c.raioTorso * 1.1,
+    RAIO_BARRA: c.raioTorso * 1.2,
+    ACHATA: 0.92,
+    BARRA: c.quadril - m.h * 0.035,
+    TOPO: ombroY + m.torsoH * 0.02,
+  };
+}
+
+/** um ponto no casco solto: `a` = 0 na frente, `t` = 0 na barra e 1 no ombro */
+function noCasco(m: MedidasCorpo, a: number, t: number, folga = 1.02): NaSuperficie {
+  const s = soltura(m);
+  const raio = THREE.MathUtils.lerp(s.RAIO_BARRA, s.RAIO, t) * folga;
+  return {
+    x: Math.sin(a) * raio,
+    y: THREE.MathUtils.lerp(s.BARRA, s.TOPO, t),
+    z: Math.cos(a) * raio * s.ACHATA,
+    nx: Math.sin(a),
+    nz: Math.cos(a),
+  };
+}
+
+/** uma faixa em volta do casco solto, de `t0` a `t1` */
+function anelNoCasco(m: MedidasCorpo, t0: number, t1: number, cor: number, folga = 1.012): THREE.Mesh {
+  const s = soltura(m);
+  const r0 = THREE.MathUtils.lerp(s.RAIO_BARRA, s.RAIO, t0) * folga;
+  const r1 = THREE.MathUtils.lerp(s.RAIO_BARRA, s.RAIO, t1) * folga;
+  const y0 = THREE.MathUtils.lerp(s.BARRA, s.TOPO, t0);
+  const y1 = THREE.MathUtils.lerp(s.BARRA, s.TOPO, t1);
+  const anel = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, y1 - y0, 26, 1, true), toon(cor, { doubleSide: true }));
+  anel.position.y = (y0 + y1) / 2;
+  anel.scale.z = s.ACHATA;
+  return anel;
+}
+
+/**
+ * O CASCO SOLTO: o cilindro FECHADO em volta do tronco (fechado para a câmera
+ * baixa não ver o torso lá dentro), o ombro caído e a barra. `ombroLargo`
+ * falso estreita o ombro — é a regata, que deixa o alto do braço de fora.
+ */
+function cascoSolto(m: MedidasCorpo, pano: number, barra: number, ombroLargo = true): THREE.Group {
+  const g = new THREE.Group();
+  const s = soltura(m);
+  const mat = toon(pano);
+  const casco = new THREE.Mesh(new THREE.CylinderGeometry(s.RAIO, s.RAIO_BARRA, s.TOPO - s.BARRA, 26), mat);
+  casco.position.y = (s.TOPO + s.BARRA) / 2;
+  casco.scale.z = s.ACHATA;
+  g.add(casco);
+  const ombro = new THREE.Mesh(new THREE.SphereGeometry(s.RAIO, 26, 10, 0, Math.PI * 2, 0, Math.PI / 2), mat);
+  ombro.position.y = s.TOPO;
+  ombro.scale.set(ombroLargo ? 1 : 0.8, 0.36, s.ACHATA);
+  g.add(ombro);
+  // a barra: faixa dobrada, um degrau mais larga
+  const dobra = new THREE.Mesh(
+    new THREE.CylinderGeometry(s.RAIO_BARRA * 1.02, s.RAIO_BARRA * 1.03, m.h * 0.022, 26, 1, true),
+    toon(barra, { doubleSide: true }),
+  );
+  dobra.position.y = s.BARRA + m.h * 0.011;
+  dobra.scale.z = s.ACHATA;
+  g.add(dobra);
+  // as costuras de lado, descendo do ombro à barra: o caimento
+  for (const lado of [-1, 1] as const) {
+    const costura = new THREE.Mesh(new THREE.BoxGeometry(m.h * 0.004, s.TOPO - s.BARRA, m.h * 0.004), toon(escuro(pano, 0.85)));
+    costura.position.set(lado * (s.RAIO + s.RAIO_BARRA) * 0.5 * 1.005, (s.TOPO + s.BARRA) / 2, 0);
+    costura.rotation.z = lado * Math.atan2(s.RAIO_BARRA - s.RAIO, s.TOPO - s.BARRA);
+    g.add(costura);
+  }
+  return g;
+}
+
+/**
+ * CAMISA HAVAIANA SOLTA — a mesma camisa (azul-fundo, hibisco branco e
+ * amarelo, folhagem), no casco solto: gola de acampamento aberta em V, a
+ * carreira de botões com a vista, a barra reta caindo abaixo do quadril e a
+ * estampa espalhada em volta, fugindo dos botões.
+ */
+function camisaHavaianaSolta(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const pano = peca?.cor ?? P.camisaHavaiana;
+  const g = cascoSolto(m, pano, escuro(pano, 0.8));
+  const s = soltura(m);
+  const h = m.h;
+  const frente = s.RAIO * s.ACHATA;
+
+  // a gola: duas lapelas deitadas no peito em V, com o avesso escuro
+  const matGola = toon(pano, { doubleSide: true });
+  for (const lado of [-1, 1] as const) {
+    const lapela = new THREE.Mesh(new THREE.BoxGeometry(s.RAIO * 0.36, m.torsoH * 0.3, h * 0.006), matGola);
+    lapela.position.set(lado * s.RAIO * 0.2, s.TOPO - m.torsoH * 0.1, frente * 1.04);
+    lapela.rotation.set(-0.3, lado * 0.3, -lado * 0.42);
+    g.add(lapela);
+    const avesso = new THREE.Mesh(new THREE.BoxGeometry(s.RAIO * 0.36, m.torsoH * 0.3, h * 0.003), toon(escuro(pano, 0.7)));
+    avesso.position.copy(lapela.position);
+    avesso.rotation.copy(lapela.rotation);
+    avesso.translateZ(-h * 0.004);
+    g.add(avesso);
+  }
+  // a vista e os botões, do V da gola até a barra
+  const vista = new THREE.Mesh(new THREE.BoxGeometry(h * 0.013, s.TOPO - s.BARRA - m.torsoH * 0.28, h * 0.002), toon(escuro(pano, 0.85)));
+  const alturaVista = (s.TOPO - m.torsoH * 0.28 + s.BARRA) / 2;
+  vista.position.set(0, alturaVista, THREE.MathUtils.lerp(s.RAIO_BARRA, s.RAIO, 0.5) * s.ACHATA * 1.02);
+  vista.rotation.x = -Math.atan2(s.RAIO_BARRA - s.RAIO, s.TOPO - s.BARRA) * s.ACHATA;
+  g.add(vista);
+  const botao = toon(P.camisaHavaianaBotao);
+  for (let i = 0; i < 5; i++) {
+    const t = 0.72 - i * 0.16;
+    const p = noCasco(m, 0, t, 1.03);
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(h * 0.0058, h * 0.0058, h * 0.003, 10), botao);
+    b.rotation.x = Math.PI / 2;
+    b.position.set(p.x, p.y, p.z);
+    g.add(b);
+  }
+
+  // a estampa: hibiscos brancos e amarelos com folhagem, em volta do casco
+  const flores: Array<[number, number, number]> = [
+    [0.62, 0.62, P.camisaHavaianaFlor], [-0.68, 0.45, P.camisaHavaianaFlor2], [-0.55, 0.78, P.camisaHavaianaFlor],
+    [0.72, 0.28, P.camisaHavaianaFlor2], [-0.4, 0.15, P.camisaHavaianaFlor], [1.5, 0.5, P.camisaHavaianaFlor],
+    [-1.5, 0.62, P.camisaHavaianaFlor2], [1.45, 0.15, P.camisaHavaianaFlor2], [2.5, 0.4, P.camisaHavaianaFlor],
+    [-2.4, 0.3, P.camisaHavaianaFlor2], [Math.PI, 0.62, P.camisaHavaianaFlor], [2.2, 0.75, P.camisaHavaianaFlor2],
+    [-2.9, 0.12, P.camisaHavaianaFlor],
+  ];
+  flores.forEach(([a, t, cor], i) => {
+    const p = noCasco(m, a, t, 1.03);
+    const f = hibisco(h * 0.028, cor, cor === P.camisaHavaianaFlor ? P.hibiscoMiolo : P.hibiscoVermelho);
+    colar(f, g, p.x, p.y, p.z, p.nx, 0, p.nz);
+    f.rotateZ(i * 1.3);
+  });
+  const folhas: Array<[number, number]> = [
+    [0.35, 0.42], [-0.3, 0.6], [1.1, 0.7], [-1.15, 0.28], [1.9, 0.3], [-2.0, 0.7], [2.85, 0.75], [-2.8, 0.5], [0.95, 0.05],
+  ];
+  folhas.forEach(([a, t], i) => {
+    const p = noCasco(m, a, t, 1.025);
+    const f = folhinha(h * 0.038, P.folhaHavaiana, P.colarFolha);
+    colar(f, g, p.x, p.y, p.z, p.nx, 0, p.nz);
+    f.rotateZ(0.5 + i * 1.1);
+  });
+  return g;
+}
+
+/**
+ * A MANGA DA CAMISA HAVAIANA SOLTA: tubo folgado e curto (camisa de botão
+ * não vai até o cotovelo), a barra dobrada e um hibisco do lado de FORA.
+ */
+function mangaHavaianaSolta(m: MedidasCorpo, lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const ATE = 0.4;
+  const pano = peca?.cor ?? P.camisaHavaiana;
+  const ombro = new THREE.Mesh(new THREE.SphereGeometry(h * 0.06 * w, 12, 10), toon(pano));
+  ombro.position.y = -m.armLen * 0.04;
+  ombro.scale.set(1, 0.9, 0.95);
+  g.add(ombro);
+  const tubo = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.058 * w, h * 0.068 * w, m.armLen * ATE, 16, 1, true),
+    toon(pano, { doubleSide: true }),
+  );
+  tubo.position.y = -m.armLen * ATE * 0.5;
+  g.add(tubo);
+  const dobra = new THREE.Mesh(
+    new THREE.CylinderGeometry(h * 0.07 * w, h * 0.072 * w, h * 0.02, 16, 1, true),
+    toon(escuro(pano, 0.8), { doubleSide: true }),
+  );
+  dobra.position.y = -m.armLen * ATE + h * 0.01;
+  g.add(dobra);
+  const flor = hibisco(h * 0.022, P.camisaHavaianaFlor);
+  colar(flor, g, lado * h * 0.066 * w, -m.armLen * 0.22, 0, lado, 0, 0.25);
+  return g;
+}
+
+/**
+ * REGATA LISTRADA SOLTA — a de marinheiro no casco solto: creme com as
+ * listras marinho dando a volta, o ombro estreito (a cava deixa o alto do
+ * braço de fora), o friso marinho na cava e no decote, e a âncora no peito.
+ * `bracosNus` na ficha, como a justa.
+ */
+function regataListradaSolta(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const pano = peca?.cor ?? P.regataCreme;
+  const listra = peca?.corDetalhe ?? P.regataListra;
+  const g = cascoSolto(m, pano, listra, false);
+  const s = soltura(m);
+  for (const [t0, t1] of [[0.2, 0.29], [0.4, 0.49], [0.6, 0.69]] as const) g.add(anelNoCasco(m, t0, t1, listra));
+  // o friso do decote, em volta do alto do ombro
+  const decote = new THREE.Mesh(new THREE.TorusGeometry(s.RAIO * 0.5, m.h * 0.005, 5, 22), toon(listra));
+  decote.rotation.x = Math.PI / 2;
+  decote.position.y = s.TOPO + s.RAIO * 0.36 * 0.85;
+  decote.scale.y = s.ACHATA;
+  g.add(decote);
+  const p = noCasco(m, -0.42, 0.82, 1.03);
+  colar(ancora(m.h * 0.05, P.ancoraVermelha), g, p.x, p.y, p.z, p.nx, 0, p.nz);
+  return g;
+}
+
 export {
   bermudaListrada, bermudaDeBolinhas, bermudaHavaiana, bermudaDeAbacaxi, bermudaDeMelancia, bermudaDeOndinhas,
   oculosRedondo, oculosGatinho, oculosDeCoracao, oculosEspelhado, oculosDeNatacao,
   chineloAzul, chineloFlorido, chineloDeMelancia, chineloSlide,
   chapeuDePraia, toucaDeNatacao, tiaraDeConchinhas,
   boiaDePatinho, colarHavaiano, camisaHavaiana, mangaHavaiana, regataListrada,
+  camisaHavaianaSolta, mangaHavaianaSolta, regataListradaSolta,
 };
