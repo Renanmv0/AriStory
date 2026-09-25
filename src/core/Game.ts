@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { IsoCamera } from './IsoCamera';
 import { Input } from './Input';
 import { SaveState } from './SaveState';
+import { matrizSoQuandoMexe } from './matrizSoQuandoMexe';
 import { Ui } from '../ui/Ui';
 import { Player } from '../entities/Player';
 import { Companion } from '../entities/Companion';
@@ -108,6 +109,8 @@ export class Game implements GameAPI {
     /** onde o jogo começa quando não há progresso salvo */
     private readonly cenaInicial = Object.keys(scenes)[0],
   ) {
+    // peça parada não refaz a matriz a cada frame (ver o arquivo)
+    matrizSoQuandoMexe();
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
