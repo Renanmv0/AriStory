@@ -992,7 +992,7 @@ corredor — ninguém está em dois lugares ao mesmo tempo.
 
 | carta | raridade | efeito |
 |---|---|---|
-| Chamar o Capy ⚙ | raro | **atacante** — na primeira mordida da onda num canteiro, corre até lá e rega junto por 20 s — exclui *O Capy salva-vidas* |
+| Chamar o Capy ⚙ | raro | **atacante** — na primeira mordida da onda num canteiro, corre até lá e rega junto por 20 s (um jato a cada 0,9 s valendo 60% do dano por segundo da ferramenta do jogador, e metade disso na chefe — `danoDoCapy`, em `rodada.ts`) — exclui *O Capy salva-vidas* |
 | Chamar a Gina ⚙ | raro | **barreira** — no começo da onda, tranca por 20 s o portão que vai vir mais cheio — exclui *Apito da Gina* |
 | Chamar o Walter ⚙ | raro | **protetor** — quando um canteiro chega na metade da vida, corre até lá latindo e espanta todo mundo ali (sem molhar, sem gota) — exclui *O Walter de plantão* |
 | Chamar o Noel ⚙ | raro | **catador** — com 8 gotas no chão, passa 20 s catando e trazendo para você |

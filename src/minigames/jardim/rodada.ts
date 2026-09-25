@@ -344,6 +344,25 @@ interface Tiro {
   redemoinho?: boolean;
 }
 
+
+/**
+ * O JATO DO CAPY (balanço, pedido do Renan: "talvez esteja muito forte" em
+ * chefão). Ele atirava o dano INTEIRO do jogador a cada 0,9 s — mais depressa
+ * que o regador de base (1,1 s), sem gastar água e sem parar —, e sozinho
+ * espantava a chefe (18–22 de encharque) nos 20 s do Chamado ou nos 30 s do
+ * Mutirão. Agora ele acompanha o jogador pelo dano POR SEGUNDO da ferramenta
+ * (o que também o deixa igual de útil com pistola, mangueira e borrifador), a
+ * 60% dele; e na chefe, metade disso: ajuda de verdade, mas quem espanta a
+ * chefe é a dupla.
+ */
+export const CAPY_ATIRA_A_CADA = 0.9;
+export const CAPY_PARTE_DO_JOGADOR = 0.6;
+export const CAPY_NA_CHEFE = 0.5;
+export function danoDoCapy(f: { dano: number; cadencia: number }, chefe: boolean): number {
+  const porSegundo = f.dano / Math.max(0.05, f.cadencia);
+  return porSegundo * CAPY_ATIRA_A_CADA * CAPY_PARTE_DO_JOGADOR * (chefe ? CAPY_NA_CHEFE : 1);
+}
+
 /** o que a rodada anima na peça da mão */
 type GestoDaMao = { tipo: 'giro' | 'balde' | 'treme' | 'coice' | 'aperto'; t: number; dur: number };
 
@@ -4518,13 +4537,14 @@ export class RodadaDoJardim {
       if (k.recarga <= 0) {
         const alvo = this.maisPerto(onde.x, onde.z, 5);
         if (alvo) {
-          k.recarga = 0.9;
+          k.recarga = CAPY_ATIRA_A_CADA;
           E.encarar('capy', alvo.x, alvo.z);
           const rumo = Math.atan2(alvo.x - onde.x, alvo.z - onde.z);
           const de = new THREE.Vector3(onde.x + Math.sin(rumo) * 0.5, 0.75, onde.z + Math.cos(rumo) * 0.5);
           const tempo = this.jato.disparar({ de, para: new THREE.Vector3(alvo.x, 0.25, alvo.z), estilo: {}, largura: 25 });
           const origem = { x: onde.x, z: onde.z };
-          this.jato.depois(tempo, () => this.acertar(alvo, this.ficha.dano, origem));
+          const dano = danoDoCapy(this.ficha, alvo.ficha.tier === 'chefe');
+          this.jato.depois(tempo, () => this.acertar(alvo, dano, origem));
           this.contar(this.mutirao > 0 ? 'mutirao-do-clube' : 'chama-capy');
         }
       }
