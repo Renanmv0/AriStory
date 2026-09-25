@@ -51,8 +51,9 @@ pulo: ({ ctx, destino, t }) => {
   outro — um jorro, e não uma fila de "fsh". Sem isso o som pulsa.
 - **Cada ferramenta do jardim tem o seu jato**: o som é escolhido em
   `disparar()` (`minigames/jardim/jato.ts`) pela forma do jato — `tiro` toca
-  `tiroPistola`, a linha da mangueira (`jato.daMangueira`) toca `mangueira`, o
-  cone do regador toca `jato`. Ferramenta nova = uma receita e uma linha ali.
+  `tiroPistola`, a linha da mangueira (`jato.daMangueira`) toca `mangueira`, a
+  `nevoa` do borrifador toca `borrifada`, o cone do regador toca `jato`.
+  Ferramenta nova = uma receita e uma linha ali.
 
 ## Música
 

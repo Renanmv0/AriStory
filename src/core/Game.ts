@@ -26,7 +26,7 @@ import {
   type Vaga,
 } from './types';
 import {
-  ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem,
+  ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
 } from '../world/itens';
 import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
@@ -948,7 +948,7 @@ export class Game implements GameAPI {
       const id = item?.id ?? null;
       if (this.naMao.get(quem) === id) continue;
       this.naMao.set(quem, id);
-      rig.segurar(id ? modeloDoItem(id) : null, item?.holdPose ?? 'none');
+      rig.segurar(id ? modeloDoItem(id) : null, poseNaMao(item ?? null));
     }
   }
 

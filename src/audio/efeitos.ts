@@ -51,6 +51,7 @@ export type SomNome =
   | 'jatoArco'
   // as FERRAMENTAS da estufa (`minigames/jardim/armas.ts`): cada uma com o seu som
   | 'tiroPistola'
+  | 'borrifada'
   | 'mangueira'
   | 'jatao'
   | 'carga'
@@ -166,6 +167,19 @@ export const EFEITOS: Record<SomNome, Receita> = {
     const topo = n % 2 === 0 ? DO + 24 : DO + 26;
     tom(ctx, destino, { freq: nota(topo), glide: nota(topo - 12), quando: t + 0.012, dur: 0.09, vol: 0.045, tipo: 'sine' });
     chiado(ctx, destino, { quando: t + 0.01, dur: 0.15, vol: 0.07, freq: 5200, glide: 2400, q: 1.3 });
+  },
+
+  /*
+   * o BORRIFADOR: o "tic" do gatilho de plástico e o "psst" da névoa — um
+   * sopro bem agudo e aerado (7 kHz descendo), mais curto e mais leve que o
+   * "fsh" do regador, com uma notinha de sininho por cima que alterna mi e sol
+   * (`n`), para a névoa soar leve e não virar metrônomo no aperto seguido
+   */
+  borrifada: ({ ctx, destino, t, n }) => {
+    tom(ctx, destino, { freq: nota(DO + 36), quando: t, dur: 0.014, vol: 0.018, tipo: 'triangle' });
+    chiado(ctx, destino, { quando: t + 0.006, dur: 0.2, vol: 0.05, freq: 7200, glide: 5000, q: 0.7 });
+    chiado(ctx, destino, { quando: t + 0.006, dur: 0.13, vol: 0.016, freq: 2600, q: 0.9 });
+    tom(ctx, destino, { freq: nota(n % 2 ? DO + 28 : DO + 31), quando: t + 0.03, dur: 0.18, vol: 0.016, tipo: 'sine' });
   },
 
   /*

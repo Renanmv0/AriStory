@@ -83,6 +83,17 @@ const POSES = {
    * lata de agua voar, e agua pesa.
    */
   regando: { bracoX: -0.9, bracoZ: 0.42, balanco: 0.3, itemZ: 0, itemX: 0.05 },
+  /**
+   * BORRIFADOR: segurado PELO GARGALO, com o braco esticado para a frente, na
+   * altura do peito — como quem aponta o borrifador para a planta. A mao fecha
+   * na rosca (a ficha do item desce a peca ate ela), o frasco pende embaixo do
+   * punho e a cabeca de gatilho fica em cima, com o bico para a frente.
+   *
+   * Em -1,15 rad a mao para em ~0,73 m e ~0,47 m a frente do ombro: o bico
+   * sai acima da linha dos canteiros, e o frasco nao raspa na barriga.
+   * `balanco` baixo: quem esta mirando nao balanca o braco.
+   */
+  borrifando: { bracoX: -1.15, bracoZ: 0.22, balanco: 0.12, itemZ: 0, itemX: 0.02 },
 } as const;
 
 /**

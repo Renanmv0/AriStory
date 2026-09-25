@@ -140,11 +140,19 @@ mudam isso:
 PRONTA (`soDestaArma`): uma carta de tanque serve no regador e na pistola, e
 por isso aparece na lista das duas, mas não é única de nenhuma. O
 `scripts/cartas.mjs` imprime a conta ("únicas de verdade: regador 14,
-mangueira 14, pistola 14") e reprova quando uma ferramenta pronta se afasta
-mais de 2 das outras.
+mangueira 14, pistola 14, borrifador 14") e reprova quando uma ferramenta
+pronta se afasta mais de 2 das outras.
+
+**O borrifador não tem jato, tem NÉVOA** (`f.jato.nevoa`): em `umJato` o
+"quem leva" dele é `naNevoa` (todo mundo no raio, sem sombra) em vez de
+`noCone`, e o resto do caminho — dano, Regada, Respingo, Poça, especiais — é o
+mesmo. Carta genérica nova tem que fazer sentido nas duas formas; o jeito de
+conviver já feito está no §4.1 do plano (Pressão estica a nuvem, Três furos
+vira três nuvens, Leque aumenta o raio). O raio é `raioDaNevoa()` (a
+`largura` vezes o número `raioDaNevoa` da ficha).
 
 **Toda ferramenta tem mais ou menos o mesmo tanto de cartas únicas** (regra do
-Renan; hoje 14, 14 e 14, cada uma com 7 comuns, 4 incomuns, 2 raras e 1
+Renan; hoje 14 em cada uma das quatro, cada uma com 7 comuns, 4 incomuns, 2 raras e 1
 lendária — a bancada das ferramentas conta com `soDestaArma`). Carta
 que não serve numa ferramenta mas serve nas outras que usam munição (Jean-Luc
 no tonel, Tanque maior) leva `naoServe`, e não `soPara`: assim ela entra de
@@ -235,7 +243,9 @@ Carta de REGADOR que mexe num número **mexe também na peça da mão** (§6 do
 plano). Ela escreve em `f.estilo`, com os campos de `EstiloDeRegador`
 (`world/regador.ts`): `bico`, `crivo`, `tanque`, `crivoDeFlor` (0 a 1),
 `ponteira`, `caboDeMadeira`, `segundoBico`, `mangueira`, `respiro`, `nuvem`,
-`alcaAcolchoada`. Campo novo = a linha no tipo e no `PADRAO` (`regador.ts`),
+`alcaAcolchoada`, e os do borrifador: `nevoaLarga` e `concentrado` (0 a 1) e
+`cordinha`. Cada ferramenta lê os que fazem sentido na peça dela
+(`borrifadorDeJardim` lê `tanque`, `estagio` e os três dele). Campo novo = a linha no tipo e no `PADRAO` (`regador.ts`),
 o mapeamento em `estiloDoRegador()` (`baralho.ts`) e uma versão no
 `scripts/regador.mjs` que conta as malhas a mais.
 

@@ -217,6 +217,8 @@ interface Canteiro extends CanteiroDaPlanta {
   carnivora: { peca: THREE.Object3D; espera: number; fecha: number } | null;
   /** o Adubo do Noel: regado nesta onda, a mordida conta pela metade */
   adubado: boolean;
+  /** a Folha orvalhada (borrifador): segundos em que a mordida tira metade */
+  orvalho: number;
   /** a altura da terra do canteiro (onde a pimenteira planta) */
   alturaDaTerra: number;
 }
@@ -281,6 +283,12 @@ interface Invasor {
   semCerca: number;
   /** já levou jato nesta rodada (a Regada caprichada vale no primeiro) */
   regado: boolean;
+  /**
+   * o Encharcado (borrifador): quantas névoas seguidas ele levou (0 a 5) e
+   * quanto falta para secar — seco, a conta volta a zero
+   */
+  umidade: number;
+  umidadeResta: number;
   /** o jeito dele (§5): o pulo, o voo, a concha… — ver "O JEITO DE CADA BICHO" */
   truque: Truque;
 }
@@ -332,10 +340,12 @@ interface Tiro {
   especial?: Especial;
   /** a abertura do leque deste jato, quando não é a da ficha (a Chuveirada dobra) */
   largura?: number;
+  /** o Redemoinho (borrifador): esta névoa gira e puxa os bichos em volta */
+  redemoinho?: boolean;
 }
 
 /** o que a rodada anima na peça da mão */
-type GestoDaMao = { tipo: 'giro' | 'balde' | 'treme' | 'coice'; t: number; dur: number };
+type GestoDaMao = { tipo: 'giro' | 'balde' | 'treme' | 'coice' | 'aperto'; t: number; dur: number };
 
 export class RodadaDoJardim {
   rodando = false;
@@ -536,6 +546,7 @@ export class RodadaDoJardim {
         pimenta: false,
         carnivora: null,
         adubado: false,
+        orvalho: 0,
         alturaDaTerra,
       };
     });
@@ -598,6 +609,8 @@ export class RodadaDoJardim {
     this.superResta = 0;
     this.giganteRelogio = 0;
     this.giganteResta = 0;
+    this.nevoasParadas = [];
+    this.teimosa = null;
     this.enchente = 0;
     this.enchenteResta = 0;
     this.vazamento = 0;
@@ -769,6 +782,8 @@ export class RodadaDoJardim {
       mangueira: this.mangueira.malha.visible,
       continuo: this.continuo?.vezes ?? 0,
       gigante: this.giganteResta,
+      nevoasParadas: this.nevoasParadas.length,
+      teimosa: this.teimosa ? this.teimosa.alvo.ficha.id : null,
       enchente: this.enchenteResta,
       onda: this.onda,
       ondas: this.ondasDaRodada,
@@ -1017,6 +1032,7 @@ export class RodadaDoJardim {
     this.pisarNaEsponja(dt);
     this.animarGesto(dt);
     this.garoa(dt);
+    this.nevoaNoAr(dt);
     this.ajudaDoPar(dt);
     this.cartasDoJardineiro(dt);
     this.cartasDoJardim(dt);
@@ -1197,6 +1213,8 @@ export class RodadaDoJardim {
       desvioDepois: null,
       semCerca: 0,
       regado: false,
+      umidade: 0,
+      umidadeResta: 0,
       truque: {
         // a Mãe demora um pouco mais para o primeiro filhote: ela acabou de chegar
         espera: (ficha.id === 'mae-lagartejo' ? 4 : 1.2) + this.sorte() * 2,
@@ -1494,6 +1512,11 @@ export class RodadaDoJardim {
     ), dt);
     // o Adubo do Noel: canteiro regado nesta onda perde a metade
     let mordida = inv.jeito.mordida * dt * (c.adubado ? 0.5 : 1);
+    // a Folha orvalhada (borrifador): canteiro que a névoa tocou há pouco perde a metade
+    if (c.orvalho > 0) {
+      mordida *= 0.5;
+      this.contar('folha-orvalhada');
+    }
     // a Cerca viva morde primeiro: o canteiro só sente o que passar dela
     if (c.cerca > 0) {
       const na = Math.min(c.cerca, mordida);
@@ -2500,6 +2523,10 @@ export class RodadaDoJardim {
   /** o Regador gigante: o relógio até o próximo, e quanto falta do que está valendo */
   private giganteRelogio = 0;
   private giganteResta = 0;
+  /** a Névoa que fica (borrifador): as nuvens paradas, e quem já se molhou em cada uma */
+  private nevoasParadas: Array<{ x: number; z: number; raio: number; resta: number; puff: number; molhados: Set<Invasor> }> = [];
+  /** a Nuvem teimosa (borrifador): em quem ela chove, quanto falta, e a próxima chuvinha */
+  private teimosa: { alvo: Invasor; resta: number; tique: number } | null = null;
   /** quanto você andou no último quadro (o Pique e a Bota leem daqui) */
   private passoDoQuadro = 0;
   /** o multiplicador de velocidade de agora, com Pique, poça e picolé */
@@ -2521,6 +2548,14 @@ export class RodadaDoJardim {
       && (f.jato.arco || !this.atrasDeCanteiro(eu, i)));
     if (candidatos.length === 0) return null;
     const dist = (i: Invasor): number => Math.hypot(i.x - eu.x, i.z - eu.z);
+    // a Pontaria no bando (borrifador): o alvo é onde a névoa pega MAIS bichos
+    // juntos; no empate, o mais perto
+    if (f.regras.has('pontaria-no-bando')) {
+      const raio = this.raioDaNevoa();
+      const noBando = (i: Invasor): number => this.invasores.filter((o) => this.vulneravel(o)
+        && Math.hypot(o.x - i.x, o.z - i.z) <= raio + o.jeito.raio).length;
+      return candidatos.map((i) => ({ i, n: noBando(i), d: dist(i) })).sort((a, b) => b.n - a.n || a.d - b.d)[0].i;
+    }
     if (f.jato.mira === 'grandao') return candidatos.sort((a, b) => b.vida - a.vida || dist(a) - dist(b))[0];
     if (f.jato.mira === 'come') {
       const comendo = candidatos.filter((i) => i.estado === 'comendo');
@@ -2559,6 +2594,32 @@ export class RodadaDoJardim {
     const origem = { x: eu.x, z: eu.z };
     // a PISTOLA dá um coice a cada tiro: o cano pula e volta
     if (e.pistola && (!this.gesto || this.gesto.tipo === 'coice')) this.gesto = { tipo: 'coice', t: 0, dur: 0.22 };
+    // o BORRIFADOR: o dedo aperta o gatilho, e o frasco abaixa a cabeça e volta
+    if (e.nevoa && (!this.gesto || this.gesto.tipo === 'aperto')) this.gesto = { tipo: 'aperto', t: 0, dur: 0.26 };
+    // a Pontaria no bando (borrifador): o anel rosa mostra no chão onde a névoa vai cair
+    if (f.regras.has('pontaria-no-bando')) {
+      this.jato.miraNoBando(alvo.x, alvo.z, this.raioDaNevoa());
+      const maisPerto = this.invasores
+        .filter((i) => this.vulneravel(i) && Math.hypot(i.x - eu.x, i.z - eu.z) <= f.alcance)
+        .sort((a, b) => Math.hypot(a.x - eu.x, a.z - eu.z) - Math.hypot(b.x - eu.x, b.z - eu.z))[0];
+      if (maisPerto && maisPerto !== alvo) this.contar('pontaria-no-bando');
+    }
+    /*
+     * a Nuvem teimosa (borrifador): um aperto em cinco deixa uma nuvenzinha
+     * chovendo em cima do bicho mais FORTE do alcance por 4 s — é a carta que
+     * dá ao borrifador como vencer um grandão
+     */
+    if (f.regras.has('nuvem-teimosa') && this.jatosDados % 5 === 0) {
+      const forte = this.invasores
+        .filter((i) => this.vulneravel(i) && Math.hypot(i.x - eu.x, i.z - eu.z) <= f.alcance + 1.5)
+        .sort((a, b) => b.vida - a.vida)[0];
+      if (forte) {
+        this.teimosa = { alvo: forte, resta: 4, tique: 0.25 };
+        this.g.som('chuvinha');
+      }
+    }
+    // o Redemoinho (borrifador): de seis em seis apertos, a névoa gira e puxa
+    const redemoinho = f.regras.has('redemoinho') && this.jatosDados % 6 === 0;
     /*
      * o BALÃO D'ÁGUA (pistola): um tiro em cinco sai como balão, que voa numa
      * curvinha e estoura onde cai, molhando todo mundo em 1,2 m com 1,5× a força
@@ -2584,7 +2645,7 @@ export class RodadaDoJardim {
         });
         this.contar('balao-dagua');
       } else {
-        this.umJato({ origem, de, rumo, alvo, dano: f.dano, especial, largura: chuveirada ? f.largura * 2 : undefined });
+        this.umJato({ origem, de, rumo, alvo, dano: f.dano, especial, largura: chuveirada ? f.largura * 2 : undefined, redemoinho });
       }
       /*
        * a Pistola dupla: uma em cada mão — um segundo tiro sai junto, no
@@ -2706,23 +2767,45 @@ export class RodadaDoJardim {
         this.jatao(t, rumo, parte);
         continue;
       }
-      // o cone do jato comum, ou o fiozinho estreito de cada parte do Borrifador
-      const abertura = e.borrifador ? 0.22 : meia;
       const alvo = desvio === 0 ? t.alvo : null;
-      const atingidos = this.noCone(t.origem, rumo, f.alcance, abertura, alvo, atravessa);
-      const longe = atingidos.length ? atingidos[atingidos.length - 1] : null;
-      // a água vai até o último atingido; a Pressão e o Arco-íris passam dele,
-      // e jato que não acha ninguém cai no chão a um passo do fim do alcance
-      const para = atravessa || !longe
-        ? pontoAFrente(t.origem, rumo, Math.max(longe ? Math.hypot(longe.x - t.origem.x, longe.z - t.origem.z) + 1.2 : 0, f.alcance * 0.9))
-        : new THREE.Vector3((alvo ?? atingidos[0]).x, 0.25, (alvo ?? atingidos[0]).z);
-      const tempo = this.jato.disparar({
-        de: t.de, para, estilo: e, largura: e.borrifador ? 6 : largura, especial: t.especial,
-        forma: e.borrifador ? 'fio' : undefined,
-      });
+      let atingidos: Invasor[];
+      let longe: Invasor | null;
+      let para: THREE.Vector3;
+      let tempo: number;
+      let raioDaNuvem = 0;
+      if (e.nevoa) {
+        /*
+         * A NÉVOA do borrifador: o aperto solta uma nuvem que cai no bicho
+         * escolhido e molha TODO MUNDO dentro dela, sem a sombra de um bicho
+         * no outro (é névoa, contorna). O Crivo de três furos faz três
+         * nuvens menores em leque; a Pressão estica a nuvem para trás do alvo.
+         */
+        const dist = t.alvo ? Math.hypot(t.alvo.x - t.origem.x, t.alvo.z - t.origem.z) : f.alcance * 0.75;
+        para = alvo ? new THREE.Vector3(alvo.x, 0.25, alvo.z) : pontoAFrente(t.origem, rumo, dist).setY(0.25);
+        raioDaNuvem = this.raioDaNevoa(largura) * (e.borrifador ? 0.7 : 1);
+        atingidos = this.naNevoa(para, raioDaNuvem, atravessa ? rumo : null);
+        longe = null;
+        tempo = this.jato.disparar({
+          de: t.de, para, estilo: e, largura, especial: t.especial, raio: raioDaNuvem, atravessa,
+        });
+      } else {
+        // o cone do jato comum, ou o fiozinho estreito de cada parte do Borrifador
+        const abertura = e.borrifador ? 0.22 : meia;
+        atingidos = this.noCone(t.origem, rumo, f.alcance, abertura, alvo, atravessa);
+        longe = atingidos.length ? atingidos[atingidos.length - 1] : null;
+        // a água vai até o último atingido; a Pressão e o Arco-íris passam dele,
+        // e jato que não acha ninguém cai no chão a um passo do fim do alcance
+        para = atravessa || !longe
+          ? pontoAFrente(t.origem, rumo, Math.max(longe ? Math.hypot(longe.x - t.origem.x, longe.z - t.origem.z) + 1.2 : 0, f.alcance * 0.9))
+          : new THREE.Vector3((alvo ?? atingidos[0]).x, 0.25, (alvo ?? atingidos[0]).z);
+        tempo = this.jato.disparar({
+          de: t.de, para, estilo: e, largura: e.borrifador ? 6 : largura, especial: t.especial,
+          forma: e.borrifador ? 'fio' : undefined,
+        });
+      }
       const alcancePara = Math.max(0.5, Math.hypot(para.x - t.origem.x, para.z - t.origem.z));
       for (const inv of atingidos) {
-        const chega = atravessa ? tempo * (Math.hypot(inv.x - t.origem.x, inv.z - t.origem.z) / alcancePara) : tempo;
+        const chega = atravessa && !e.nevoa ? tempo * (Math.hypot(inv.x - t.origem.x, inv.z - t.origem.z) / alcancePara) : tempo;
         /*
          * o Tiro de longe (pistola): bicho a mais de 3,5 m de quem atira leva
          * 40% mais — e o alvinho aparece nele, que é como se vê
@@ -2744,14 +2827,29 @@ export class RodadaDoJardim {
           inv.regado = true;
           if (f.primeiraRegada > 0) capricho = 1 + f.primeiraRegada;
         }
-        const dano = t.dano * multiplicador * parte * longe * capricho;
+        /*
+         * o Encharcado (borrifador): cada névoa seguida no mesmo bicho molha
+         * 10% mais que a anterior, até +50%. É o que faz a névoa, fraca num
+         * bicho só, vencer um grandão que fica muito tempo dentro dela
+         */
+        let encharca = 1;
+        if (e.nevoa && f.regras.has('encharcado')) {
+          encharca = 1 + 0.1 * inv.umidade;
+          if (inv.umidade > 0) this.contar('encharcado');
+          inv.umidade = Math.min(5, inv.umidade + 1);
+          inv.umidadeResta = 3;
+        }
+        const dano = t.dano * multiplicador * parte * longe * capricho * encharca;
         this.jato.depois(chega, () => {
           if (capricho > 1 && this.invasores.includes(inv)) {
             this.jato.respingo(inv.x, inv.ficha.alturaDaBarra * 0.5, inv.z, e, 2.4);
             this.contar('regada-caprichada');
           }
+          const vivo = this.vulneravel(inv) && this.invasores.includes(inv);
           this.acertar(inv, dano, t.origem, t.especial);
           if (f.regras.has('respingo')) this.respingar(inv, dano * 0.3);
+          // a Névoa que se espalha (borrifador): quem a névoa espantou vira nuvem nova
+          if (vivo && e.nevoa && f.regras.has('nevoa-que-se-espalha') && inv.vida <= 0) this.nevoaEmCadeia(inv.x, inv.z, 1);
         });
         // o Ricochete (pistola): do bicho que o tiro da frente acertou, um
         // tiro menor pula no vizinho mais perto (até 2,5 m)
@@ -2759,13 +2857,14 @@ export class RodadaDoJardim {
           this.jato.depois(chega, () => this.ricochetear(inv, t.dano * multiplicador * 0.5));
         }
       }
-      if (atingidos.length === 0) this.jato.depois(tempo, () => this.jato.respingo(para.x, 0.05, para.z, e, 0.5));
+      if (atingidos.length === 0 && !e.nevoa) this.jato.depois(tempo, () => this.jato.respingo(para.x, 0.05, para.z, e, 0.5));
+      if (e.nevoa) this.depoisDaNevoa(para, raioDaNuvem, tempo, atingidos, !!t.redemoinho && desvio === 0);
       if (t.especial === 'arco-iris') this.jato.depois(tempo * 0.6, () => this.jato.arcoNoAr(t.de, para));
       if (t.especial === 'pressao-cheia' && longe) {
         const onde = new THREE.Vector3(longe.x, 0.3, longe.z);
         this.jato.depois(tempo, () => this.jato.anelDeAgua(onde, 0.9 * Math.sqrt(parte), 'giro', e));
       }
-      if (e.poca) this.jato.depois(tempo, () => this.jato.poca(para.x, para.z, e.borrifador ? 0.45 : 0.7));
+      if (e.poca) this.jato.depois(tempo, () => this.jato.poca(para.x, para.z, e.nevoa ? raioDaNuvem * 0.6 : e.borrifador ? 0.45 : 0.7));
       /*
        * a Rega de verdade (regador): o jato que passa por cima de um canteiro
        * machucado — ou cai perto dele, no bicho que está comendo — rega ele
@@ -2786,6 +2885,149 @@ export class RodadaDoJardim {
           });
         }
       }
+    }
+  }
+
+  /** o raio da nuvem do borrifador: sai da `largura` (o Leque aberto) vezes a Névoa larga */
+  private raioDaNevoa(largura = this.ficha.largura): number {
+    return (0.75 + largura * 0.008) * this.ficha.raioDaNevoa;
+  }
+
+  /**
+   * OS BICHOS DENTRO DA NUVEM: todos, sem sombra de um no outro — é névoa, e
+   * não jato. Com a Pressão (`atravessa`) a névoa passa do alvo e segue um
+   * tubo de 1,6 m para trás dele.
+   */
+  private naNevoa(centro: { x: number; z: number }, raio: number, atravessaRumo: number | null): Invasor[] {
+    return this.invasores.filter((i) => {
+      if (!this.vulneravel(i)) return false;
+      const dx = i.x - centro.x;
+      const dz = i.z - centro.z;
+      if (Math.hypot(dx, dz) <= raio + i.jeito.raio) return true;
+      if (atravessaRumo === null) return false;
+      const frente = dx * Math.sin(atravessaRumo) + dz * Math.cos(atravessaRumo);
+      const lado = Math.abs(dx * Math.cos(atravessaRumo) - dz * Math.sin(atravessaRumo));
+      return frente > 0 && frente <= raio + 1.6 && lado <= raio * 0.6 + i.jeito.raio;
+    });
+  }
+
+  /**
+   * O QUE A NÉVOA DEIXA quando cai, carta por carta do borrifador: a nuvem
+   * que fica parada (Névoa que fica), o orvalho no canteiro (Folha orvalhada)
+   * e o giro que puxa os bichos (Redemoinho).
+   */
+  private depoisDaNevoa(
+    centro: THREE.Vector3, raio: number, tempo: number, atingidos: Invasor[], redemoinho: boolean,
+  ): void {
+    const f = this.ficha;
+    this.jato.depois(tempo, () => {
+      if (f.regras.has('nevoa-que-fica')) {
+        this.nevoasParadas.push({ x: centro.x, z: centro.z, raio, resta: 2, puff: 0.2, molhados: new Set(atingidos) });
+      }
+      if (f.regras.has('folha-orvalhada')) {
+        for (const c of this.canteiros) {
+          if (c.vida <= 0 || distanciaAoCanteiro(centro.x, centro.z, c) > raio) continue;
+          if (c.orvalho < 0.5) this.jato.orvalho(c.x, c.z, c.meioX, c.meioZ);
+          c.orvalho = 2;
+        }
+      }
+      if (redemoinho) this.redemoinhar(centro, raio);
+    });
+  }
+
+  /** o Redemoinho: a névoa gira em espiral e puxa quem está em volta para o meio */
+  private redemoinhar(centro: { x: number; z: number }, raio: number): void {
+    const alcance = raio * 1.6;
+    this.jato.redemoinho(new THREE.Vector3(centro.x, 0.3, centro.z), alcance);
+    let puxou = false;
+    for (const inv of this.invasores) {
+      if (!this.vulneravel(inv)) continue;
+      const d = Math.hypot(inv.x - centro.x, inv.z - centro.z);
+      if (d > alcance + inv.jeito.raio || d < 0.2) continue;
+      const peso = inv.ficha.tier === 'chefe' ? 0.2 : inv.ficha.tier === 'tanque' ? 0.4 : 1;
+      this.empurrar(inv, centro.x - inv.x, centro.z - inv.z, Math.min(d * 0.8, 0.9) * peso);
+      puxou = true;
+    }
+    if (puxou) this.contar('redemoinho');
+  }
+
+  /**
+   * a Névoa que se espalha (borrifador, lendária): o bicho que a névoa
+   * espantou estoura numa nuvem nova, com metade da força — e quem ESSA nuvem
+   * espantar estoura também, até três vezes em cadeia
+   */
+  private nevoaEmCadeia(x: number, z: number, vez: number): void {
+    const f = this.ficha;
+    const raio = this.raioDaNevoa() * 0.8;
+    this.jato.depois(0.25, () => {
+      const centro = new THREE.Vector3(x, 0.25, z);
+      this.jato.nuvemDeNevoa(centro, raio, f.jato, true);
+      this.contar('nevoa-que-se-espalha');
+      for (const inv of this.naNevoa(centro, raio, null)) {
+        const vivo = this.invasores.includes(inv);
+        this.acertar(inv, f.dano * 0.5, { x, z });
+        if (vivo && inv.vida <= 0 && vez < 3) this.nevoaEmCadeia(inv.x, inv.z, vez + 1);
+      }
+    });
+  }
+
+  /**
+   * A NÉVOA, A CADA QUADRO (borrifador): as nuvens da Névoa que fica molhando
+   * quem entra, a chuvinha da Nuvem teimosa, o bicho encharcado secando (e
+   * pingando enquanto isso) e o orvalho dos canteiros secando.
+   */
+  private nevoaNoAr(dt: number): void {
+    const f = this.ficha;
+    for (let k = this.nevoasParadas.length - 1; k >= 0; k--) {
+      const n = this.nevoasParadas[k];
+      n.resta -= dt;
+      n.puff -= dt;
+      if (n.resta <= 0) {
+        this.nevoasParadas.splice(k, 1);
+        continue;
+      }
+      if (n.puff <= 0) {
+        n.puff = 0.3;
+        this.jato.nevoaParada(n.x, n.z, n.raio, f.jato);
+      }
+      for (const inv of [...this.invasores]) {
+        if (n.molhados.has(inv) || !this.vulneravel(inv)) continue;
+        if (Math.hypot(inv.x - n.x, inv.z - n.z) > n.raio + inv.jeito.raio) continue;
+        n.molhados.add(inv);
+        this.acertar(inv, f.dano * 0.5, { x: n.x, z: n.z });
+        this.contar('nevoa-que-fica');
+      }
+    }
+    if (this.teimosa) {
+      const t = this.teimosa;
+      t.resta -= dt;
+      t.tique -= dt;
+      if (t.resta <= 0 || !this.invasores.includes(t.alvo) || t.alvo.vida <= 0) {
+        this.teimosa = null;
+      } else if (t.tique <= 0) {
+        t.tique = 0.5;
+        const a = t.alvo;
+        this.jato.chuvinhaNoBicho(a.x, a.ficha.alturaDaBarra, a.z);
+        if (this.vulneravel(a)) {
+          this.molhar(a, f.dano * 1.2, null);
+          this.contar('nuvem-teimosa');
+        }
+        // a chuvinha respinga em quem está colado nele
+        for (const o of [...this.invasores]) {
+          if (o !== a && this.vulneravel(o) && Math.hypot(o.x - a.x, o.z - a.z) <= 1 + o.jeito.raio) this.molhar(o, f.dano * 0.5, null);
+        }
+      }
+    }
+    for (const inv of this.invasores) {
+      if (inv.umidade <= 0) continue;
+      inv.umidadeResta -= dt;
+      if (inv.umidadeResta <= 0) inv.umidade = 0;
+      else if (Math.random() < dt * inv.umidade * 1.5) this.jato.pingar(inv.x, inv.ficha.alturaDaBarra * 0.6, inv.z);
+    }
+    for (const c of this.canteiros) {
+      if (c.orvalho <= 0) continue;
+      c.orvalho -= dt;
+      if (Math.random() < dt * 3) this.jato.orvalho(c.x, c.z, c.meioX, c.meioZ, 2);
     }
   }
 
@@ -3038,6 +3280,16 @@ export class RodadaDoJardim {
       // o COICE da pistola: o cano pula para cima no tiro e volta devagar
       const pulo = t < 0.25 ? t / 0.25 : 1 - (t - 0.25) / 0.75;
       obj.rotation.set(-pulo * 0.5, 0, 0);
+    } else if (gs.tipo === 'aperto') {
+      /*
+       * o APERTO do borrifador: o dedo puxa o gatilho, o frasco abaixa a
+       * cabeça e amassa um tiquinho (é borrifador de plástico), e volta
+       */
+      const aperta = t < 0.3 ? t / 0.3 : 1 - (t - 0.3) / 0.7;
+      obj.rotation.set(aperta * 0.2, 0, 0);
+      obj.scale.set(1 + aperta * 0.05, 1 - aperta * 0.07, 1 + aperta * 0.05);
+      const gatilho = this.gatilhoNaMao(obj);
+      if (gatilho) gatilho.rotation.x = (gatilho.userData.repouso as number) + aperta * 0.6;
     } else if (gs.tipo === 'balde') {
       // vira rápido, segura de ponta-cabeça, e volta
       const vira = t < 0.3 ? t / 0.3 : t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
@@ -3050,8 +3302,24 @@ export class RodadaDoJardim {
   }
 
   private pararGesto(): void {
+    const obj = this.g.objetoNaMao();
+    if (this.gesto?.tipo === 'aperto' && obj) {
+      obj.scale.set(1, 1, 1);
+      const gatilho = this.gatilhoNaMao(obj);
+      if (gatilho) gatilho.rotation.x = gatilho.userData.repouso as number;
+    }
     this.gesto = null;
-    this.g.objetoNaMao()?.rotation.set(0, 0, 0);
+    obj?.rotation.set(0, 0, 0);
+  }
+
+  /** o gatilho da peça da mão (só o borrifador publica um, em `partes.gatilho`) */
+  private gatilhoNaMao(obj: THREE.Object3D): THREE.Object3D | null {
+    let achou: THREE.Object3D | null = null;
+    obj.traverse((o) => {
+      const partes = o.userData.partes as { gatilho?: THREE.Object3D } | undefined;
+      if (!achou && partes?.gatilho) achou = partes.gatilho;
+    });
+    return achou;
   }
 
   // ================================================================ os bichos, de novo

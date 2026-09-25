@@ -110,6 +110,13 @@ export type RegraDoJardim =
   | 'tiro-de-longe'     // (pistola) bicho a mais de 3,5 m de quem atira leva 40% mais
   | 'pistola-dupla'     // (pistola) um segundo tiro sai junto, no outro bicho mais perto, com 70% da força
   | 'super-molhador'    // (pistola) a cada 20 s, 4 s de tiros no dobro da velocidade que não gastam água
+  | 'nevoa-que-fica'    // (borrifador) a névoa fica 2 s no ar, e quem entra nela leva meio borrifo
+  | 'encharcado'        // (borrifador) névoa seguida no mesmo bicho molha 10% mais a cada vez, até +50%
+  | 'pontaria-no-bando' // (borrifador) a névoa mira onde tem mais bichos juntos, e não no mais perto
+  | 'folha-orvalhada'   // (borrifador) canteiro que a névoa toca fica orvalhado 2 s: a mordida tira metade
+  | 'nuvem-teimosa'     // (borrifador) um aperto em cinco vira nuvem que segue o bicho mais forte por 4 s
+  | 'redemoinho'        // (borrifador) de seis em seis apertos, a névoa gira e puxa os bichos para o meio
+  | 'nevoa-que-se-espalha' // (borrifador) bicho espantado pela névoa vira uma nuvem nova, com metade da força
   // jardineiro
   | 'pique'             // andar 2 s sem parar dá +30% de velocidade, até parar
   | 'assobio'           // a cada 12 s o bicho mais perto anda 2 s para o lado errado
@@ -185,6 +192,27 @@ export interface EstiloDoJato {
    * fio comprido, com o som de jorro dela
    */
   daMangueira?: boolean;
+  /**
+   * o BORRIFADOR (a arma): o aperto solta uma NÉVOA que vira nuvem em cima do
+   * bicho e molha todo mundo dentro dela — a forma `nevoa` de `jato.ts`
+   */
+  nevoa?: boolean;
+  /** degraus da Névoa larga: a nuvem fica maior */
+  nevoaLarga?: number;
+  /** degraus do Concentrado: a névoa sai mais azul e cai mais chuvisco */
+  concentrado?: number;
+  /** a Névoa que fica: a nuvem demora a desmanchar */
+  nevoaQueFica?: boolean;
+  /** o Encharcado: o bicho encharcado pinga */
+  encharcado?: boolean;
+  /** a Pontaria no bando: um anel rosa no chão mostra onde a névoa vai cair */
+  bando?: boolean;
+  /** a Nuvem teimosa: uma nuvenzinha chove em cima do bicho mais forte */
+  teimosa?: boolean;
+  /** o Redemoinho: a névoa gira em espiral e puxa os bichos */
+  redemoinho?: boolean;
+  /** a Névoa que se espalha: o bicho espantado estoura numa nuvem nova */
+  espalha?: boolean;
   /** a Rajada: de quatro em quatro tiros, saem três seguidos */
   rajada?: boolean;
   /** o Balão d'água: um tiro em cinco é um balão que estoura em volta */
@@ -313,6 +341,11 @@ export interface FichaDaRodada {
    * a mais (0 = sem a carta; 0,25 por degrau)
    */
   primeiraRegada: number;
+  /**
+   * O TAMANHO DA NÉVOA (borrifador): multiplica o raio da nuvem, que sai da
+   * `largura` (1 = sem carta; a Névoa larga dá +15% por degrau)
+   */
+  raioDaNevoa: number;
   /** os interruptores ligados */
   regras: Set<RegraDoJardim>;
   /**
@@ -347,6 +380,7 @@ export function fichaInicial(): FichaDaRodada {
     compostagem: 0,
     lataCheia: 0,
     primeiraRegada: 0,
+    raioDaNevoa: 1,
     regras: new Set(),
     estilo: {},
     jato: {},
@@ -587,7 +621,7 @@ const REGADOR: CartaDoJardim[] = [
   {
     id: 'mira-no-grandao', nome: 'Mira no grandão', familia: 'regador', raridade: 'incomum',
     icone: '🏋️', texto: 'O jato mira no bicho com mais vida, e não no mais perto',
-    exclui: ['mira-em-quem-come'],
+    exclui: ['mira-em-quem-come', 'pontaria-no-bando'],
     aplicar: (f) => {
       f.regras.add('mira-no-grandao');
       f.jato.mira = 'grandao';
@@ -596,7 +630,7 @@ const REGADOR: CartaDoJardim[] = [
   {
     id: 'mira-em-quem-come', nome: 'Mira em quem come', familia: 'regador', raridade: 'incomum',
     icone: '🍽️', texto: 'O jato mira primeiro em quem já está num canteiro',
-    exclui: ['mira-no-grandao'],
+    exclui: ['mira-no-grandao', 'pontaria-no-bando'],
     aplicar: (f) => {
       f.regras.add('mira-em-quem-come');
       f.jato.mira = 'come';
@@ -804,6 +838,83 @@ const REGADOR: CartaDoJardim[] = [
     aplicar: (f) => {
       f.regras.add('rajada');
       f.jato.rajada = true;
+    },
+  },
+  // ======================================================= só do BORRIFADOR
+  // (`armas.ts`): a névoa que molha um bando inteiro. As cartas dele fazem
+  // duas coisas, a pedido do Renan: deixam a área ainda maior e mais viva, e
+  // dão a ele como vencer os bichos grandes, que é onde a névoa é fraca
+  ...serie('dedo-ligeiro', 2, {
+    familia: 'regador', raridade: 'comum', icone: '🤏', soPara: ['borrifador'],
+    nome: 'Dedo ligeiro', texto: 'O dedo pega o jeito: o borrifador borrifa 10% mais seguido',
+  }, (f, d) => {
+    f.cadencia *= 0.9;
+    f.jato.rapido = Math.max(f.jato.rapido ?? 0, d);
+  }),
+  ...serie('nevoa-larga', 2, {
+    familia: 'regador', raridade: 'comum', icone: '☁️', soPara: ['borrifador'],
+    nome: 'Névoa larga', texto: 'O bico abre em flor: a nuvem de névoa fica 15% maior',
+  }, (f, d, total) => {
+    f.raioDaNevoa *= 1.15;
+    f.estilo.nevoaLarga = d / total;
+    f.jato.nevoaLarga = d;
+  }),
+  ...serie('concentrado', 2, {
+    familia: 'regador', raridade: 'comum', icone: '🧪', soPara: ['borrifador'],
+    nome: 'Concentrado', texto: 'A névoa molha 8% mais, e os bichos grandes 20% mais',
+  }, (f, d, total) => {
+    f.dano *= 1.08;
+    f.contraOGrandao *= 1.2;
+    f.estilo.concentrado = d / total;
+    f.jato.concentrado = d;
+  }),
+  {
+    id: 'nevoa-que-fica', nome: 'Névoa que fica', familia: 'regador', raridade: 'incomum', soPara: ['borrifador'],
+    icone: '🌁', texto: 'A névoa fica 2 s no ar, e quem entra nela leva meio borrifo',
+    aplicar: (f) => {
+      f.regras.add('nevoa-que-fica');
+      f.jato.nevoaQueFica = true;
+    },
+  },
+  {
+    id: 'encharcado', nome: 'Encharcado', familia: 'regador', raridade: 'incomum', soPara: ['borrifador'],
+    icone: '🛁', texto: 'Cada névoa seguida no mesmo bicho molha 10% mais, até +50%',
+    aplicar: (f) => {
+      f.regras.add('encharcado');
+      f.jato.encharcado = true;
+    },
+  },
+  {
+    id: 'pontaria-no-bando', nome: 'Pontaria no bando', familia: 'regador', raridade: 'incomum', soPara: ['borrifador'],
+    icone: '🎳', texto: 'A névoa mira onde tem mais bichos juntos, e não no mais perto',
+    exclui: ['mira-no-grandao', 'mira-em-quem-come'],
+    aplicar: (f) => {
+      f.regras.add('pontaria-no-bando');
+      f.jato.bando = true;
+    },
+  },
+  {
+    id: 'nuvem-teimosa', nome: 'Nuvem teimosa', familia: 'regador', raridade: 'raro', soPara: ['borrifador'],
+    icone: '⛅', texto: 'Um aperto em cinco vira nuvem que chove no bicho mais forte por 4 s',
+    aplicar: (f) => {
+      f.regras.add('nuvem-teimosa');
+      f.jato.teimosa = true;
+    },
+  },
+  {
+    id: 'redemoinho', nome: 'Redemoinho', familia: 'regador', raridade: 'raro', soPara: ['borrifador'],
+    icone: '🌪️', texto: 'De seis em seis apertos, a névoa gira e puxa os bichos para o meio',
+    aplicar: (f) => {
+      f.regras.add('redemoinho');
+      f.jato.redemoinho = true;
+    },
+  },
+  {
+    id: 'nevoa-que-se-espalha', nome: 'Névoa que se espalha', familia: 'regador', raridade: 'lendario', soPara: ['borrifador'],
+    icone: '🎆', texto: 'Bicho espantado pela névoa vira uma nuvem nova, com metade da força',
+    aplicar: (f) => {
+      f.regras.add('nevoa-que-se-espalha');
+      f.jato.espalha = true;
     },
   },
   // ======================================================= só da MANGUEIRA
@@ -1039,6 +1150,15 @@ const JARDINEIRO: CartaDoJardim[] = [
       f.velocidade *= 1.1;
     },
   },
+  // só do BORRIFADOR: o frasco numa cordinha de pulso, que não escorrega da mão
+  {
+    id: 'cordinha-de-pulso', nome: 'Cordinha de pulso', familia: 'jardineiro', raridade: 'comum', soPara: ['borrifador'],
+    icone: '🎀', texto: 'O borrifador vai numa cordinha: você anda 10% mais rápido',
+    aplicar: (f) => {
+      f.velocidade *= 1.1;
+      f.estilo.cordinha = true;
+    },
+  },
   // só do REGADOR: a alça com espuma, que a mão não sente o peso da lata
   {
     id: 'alca-acolchoada', nome: 'Alça acolchoada', familia: 'jardineiro', raridade: 'comum', soPara: ['regador'],
@@ -1253,6 +1373,14 @@ const JARDIM: CartaDoJardim[] = [
     icone: '🎉', texto: 'Quando a chefe chega, Capy, Gina, Walter e Noel ajudam por 30 s',
     chama: ['gina', 'capy', 'noel', 'walter'],
     aplicar: (f) => f.regras.add('mutirao-do-clube'),
+  },
+  // só do BORRIFADOR: névoa é o que se põe em folha — a planta orvalhada aguenta
+  {
+    id: 'folha-orvalhada', nome: 'Folha orvalhada', familia: 'jardim', raridade: 'incomum', soPara: ['borrifador'],
+    icone: '🍃', texto: 'Canteiro que a névoa toca fica orvalhado 2 s: a mordida tira metade',
+    aplicar: (f) => {
+      f.regras.add('folha-orvalhada');
+    },
   },
   // só do REGADOR: é regador, e rega — o jato que passa pela horta cuida dela
   {

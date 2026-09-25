@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
-import type { ItemDef } from '../core/types';
+import type { HoldPose, ItemDef } from '../core/types';
 import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
-import { esguichoDeMangueira, pistolaDagua, regadorDeJardim, type EstiloDeRegador } from './regador';
+import { borrifadorDeJardim, esguichoDeMangueira, pistolaDagua, regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
   aventalDaJosefina, blazerXadrez, canoDaBota, chapeuDeJardineira, coroaDeDama, gargantilhaDeLaco,
   boneDaGina, chapeuJoaninha, estampaLaranja, estampaRodaGigante, estampaSalvaVidas, girassolNoPeito,
@@ -936,6 +936,17 @@ export function definirEstiloDoRegador(estilo: Partial<EstiloDeRegador> | null):
   estiloDoRegadorNaMao = estilo ? { ...estilo } : {};
 }
 
+/**
+ * A POSE DE SEGURAR um item. É a `holdPose` da ficha — menos o regador na
+ * rodada de BORRIFADOR: borrifador não se carrega pendurado como lata, se
+ * segura pelo gargalo com o braço esticado para a frente, apontando
+ * (`borrifando`, em `CharacterRig`).
+ */
+export function poseNaMao(item: ItemDef | null): HoldPose {
+  if (item?.id === 'regador' && estiloDoRegadorNaMao.arma === 'borrifador') return 'borrifando';
+  return item?.holdPose ?? 'none';
+}
+
 const MODELOS: Record<string, () => THREE.Object3D> = {
   'sorvete-morango': () => iceCream(P.morango),
   'sorvete-maracuja': () => iceCream(P.maracuja),
@@ -967,11 +978,12 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
     const g = new THREE.Group();
     // na rodada de mangueira (`armas.ts`) a mão carrega o esguicho no lugar
     const arma = estiloDoRegadorNaMao.arma;
-    // o esguicho e a pistola são bem menores que a lata: na mão eles crescem
-    // para os detalhes aparecerem
+    // o esguicho, a pistola e o borrifador são bem menores que a lata: na mão
+    // eles crescem para os detalhes aparecerem
     const lata = arma === 'mangueira' ? esguichoDeMangueira(estiloDoRegadorNaMao, 1.6)
       : arma === 'pistola' ? pistolaDagua(1.6)
-        : regadorDeJardim(estiloDoRegadorNaMao);
+        : arma === 'borrifador' ? borrifadorDeJardim(estiloDoRegadorNaMao, 1.45)
+          : regadorDeJardim(estiloDoRegadorNaMao);
     const ESCALA = 0.78;
     lata.scale.setScalar(ESCALA);
     lata.position.y = -(lata.userData.partes.alturaDaAlca as number) * ESCALA;

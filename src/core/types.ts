@@ -288,7 +288,7 @@ export interface ItemDef {
   holdPose?: HoldPose;
 }
 
-export type HoldPose = 'upright' | 'relaxed' | 'regando' | 'none';
+export type HoldPose = 'upright' | 'relaxed' | 'regando' | 'borrifando' | 'none';
 
 // --- guarda-roupa -----------------------------------------------------------
 //

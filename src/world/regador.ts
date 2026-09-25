@@ -73,9 +73,16 @@ export interface EstiloDeRegador {
   crivoDeFlor: number;
   /** "Alca acolchoada" (so do regador): uma luva de espuma na alca de cima */
   alcaAcolchoada: boolean;
+  /** "Nevoa larga" (so do borrifador): 0 a 1 — a boca do bico vira uma flor de furos */
+  nevoaLarga: number;
+  /** "Concentrado" (so do borrifador): 0 a 1 — a agua do frasco sobe e fica mais azul */
+  concentrado: number;
+  /** "Cordinha de pulso" (so do borrifador): um laco amarelo com uma conta rosa na rosca */
+  cordinha: boolean;
   /**
    * A ARMA da rodada (`minigames/jardim/armas.ts`): sem isto, ou `regador`, a
-   * mao carrega o regador; `mangueira` troca pelo esguicho e `pistola` pela pistola d'agua.
+   * mao carrega o regador; `mangueira` troca pelo esguicho, `pistola` pela
+   * pistola d'agua e `borrifador` pelo borrifador.
    */
   arma?: string;
 }
@@ -93,6 +100,9 @@ const PADRAO: EstiloDeRegador = {
   nuvem: false,
   crivoDeFlor: 0,
   alcaAcolchoada: false,
+  nevoaLarga: 0,
+  concentrado: 0,
+  cordinha: false,
 };
 
 /**
@@ -698,31 +708,56 @@ export function pistolaDagua(escala = 1): THREE.Group {
 }
 
 /**
- * O BORRIFADOR — a quarta arma, tambem so na parede por enquanto: o frasco de
- * borrifar planta, de ombro redondo (um torno, e nao um cilindro reto), com a
- * agua azul no fundo, o rotulo rosa com uma florzinha e duas folhas, e a
- * cabeca de gatilho menta. De pe, com a boca para `+Z`.
+ * O BORRIFADOR — a quarta arma da estufa, a da NÉVOA (`minigames/jardim/armas.ts`):
+ * o frasco de borrifar planta, de ombro redondo (um torno, e nao um cilindro
+ * reto), com a agua azul no fundo, o rotulo rosa com uma florzinha e duas
+ * folhas, e a cabeca de gatilho menta. De pe, com a boca para `+Z`.
+ *
+ * NA MAO ele e segurado PELO GARGALO, que e como se segura um borrifador de
+ * verdade: a mao fecha na rosca, o frasco pende embaixo do punho e a cabeca
+ * fica em cima, com o bico apontando para a frente — e o dedo no gatilho
+ * (`partes.gatilho`, que a rodada puxa a cada borrifada). Por isso a
+ * `alturaDaAlca` aqui e a da rosca, e nao o alto de uma alca.
+ *
+ * As cartas SO DO BORRIFADOR mudam a peca, como as do regador mudam a lata:
+ * - `nevoaLarga` (Nevoa larga, 0 a 1): o bico vira uma florzinha de furos, larga;
+ * - `concentrado` (Concentrado, 0 a 1): a agua do frasco sobe e fica mais azul;
+ * - `cordinha` (Cordinha de pulso): uma cordinha amarela com uma conta rosa;
+ * - `tanque` (o Tanque maior generico): o frasco engorda;
+ * - o `estagio` doura a rosca (latao) e, no ultimo, o gatilho tambem.
  */
-export function borrifadorDeJardim(escala = 1): THREE.Group {
+export function borrifadorDeJardim(
+  estilo: Partial<EstiloDeRegador> = {}, escala = 1,
+): THREE.Group {
+  const e = { ...PADRAO, ...estilo };
   const s = escala;
   const g = new THREE.Group();
   g.userData.peca = 'borrifador';
+  g.userData.estilo = { ...e };
+  // o Tanque maior engorda o frasco (mais largo do que alto: continua baixinho)
+  const gordo = 1 + e.tanque * 0.18;
+  const alto = 1 + e.tanque * 0.1;
   const perfil = [
     [0, 0], [0.055, 0], [0.066, 0.012], [0.068, 0.03], [0.068, 0.15],
     [0.058, 0.19], [0.03, 0.212], [0.026, 0.225], [0, 0.225],
-  ].map(([x, y]) => new THREE.Vector2(x * s, y * s));
+  ].map(([x, y]) => new THREE.Vector2(x * s * (y > 0.2 ? 1 : gordo), y * s * alto));
   const frasco = new THREE.Mesh(new THREE.LatheGeometry(perfil, 16), toon(P.borrifadorFrasco));
   g.add(frasco);
-  // a agua no fundo e o rotulo, cada um um anel um tico mais largo que o frasco
-  const agua = new THREE.Mesh(new THREE.CylinderGeometry(0.07 * s, 0.07 * s, 0.045 * s, 16), toon(P.regadorAgua));
-  agua.position.y = 0.04 * s;
+  const topo = 0.225 * s * alto;
+  const r = 0.07 * s * gordo;
+  // a agua no fundo e o rotulo, cada um um anel um tico mais largo que o frasco.
+  // O Concentrado sobe a agua e puxa ela para um azul mais fundo
+  const corDaAgua = new THREE.Color(P.regadorAgua).lerp(new THREE.Color(P.borrifadorConcentrado), e.concentrado);
+  const nivel = (0.045 + e.concentrado * 0.03) * s * alto;
+  const agua = new THREE.Mesh(new THREE.CylinderGeometry(r, r, nivel, 16), toon(corDaAgua.getHex()));
+  agua.position.y = 0.018 * s * alto + nivel / 2;
   g.add(agua);
-  const rotulo = new THREE.Mesh(new THREE.CylinderGeometry(0.071 * s, 0.071 * s, 0.065 * s, 16), toon(P.borrifadorRotulo));
-  rotulo.position.y = 0.105 * s;
+  const rotulo = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.015, r * 1.015, 0.065 * s * alto, 16), toon(P.borrifadorRotulo));
+  rotulo.position.y = 0.105 * s * alto + (e.concentrado * 0.012 * s);
   g.add(rotulo);
   // a florzinha e as folhas no rotulo, na frente (+Z)
   const flor = new THREE.Group();
-  flor.position.set(0, 0.105 * s, 0.071 * s);
+  flor.position.set(0, rotulo.position.y, r * 1.015);
   g.add(flor);
   for (let k = 0; k < 5; k++) {
     const a = (k / 5) * Math.PI * 2;
@@ -742,23 +777,74 @@ export function borrifadorDeJardim(escala = 1): THREE.Group {
     flor.add(folha);
   }
 
-  // a cabeca de gatilho
+  // a cabeca de gatilho: a rosca (dourada a partir do latao), a cabeca e o bico
   const menta = toon(P.borrifadorGatilho);
   const mentaEscura = toon(P.borrifadorGatilhoEscuro);
-  const rosca = new THREE.Mesh(new THREE.CylinderGeometry(0.032 * s, 0.034 * s, 0.03 * s, 12), mentaEscura);
-  rosca.position.y = 0.235 * s;
+  const latao = toon(P.regadorLatao, e.estagio === 2 ? { glow: 0.15 } : {});
+  const yRosca = topo + 0.01 * s;
+  const rosca = new THREE.Mesh(new THREE.CylinderGeometry(0.032 * s, 0.034 * s, 0.03 * s, 12),
+    e.estagio >= 1 ? latao : mentaEscura);
+  rosca.position.y = yRosca;
   g.add(rosca);
+  const yCabeca = topo + 0.045 * s;
   const cabeca = new THREE.Mesh(new THREE.CapsuleGeometry(0.028 * s, 0.07 * s, 4, 10), menta);
   cabeca.rotation.x = Math.PI / 2;
-  cabeca.position.set(0, 0.27 * s, 0.015 * s);
+  cabeca.position.set(0, yCabeca, 0.015 * s);
   g.add(cabeca);
-  const gatilho = new THREE.Mesh(new THREE.CapsuleGeometry(0.012 * s, 0.05 * s, 3, 8), mentaEscura);
-  gatilho.position.set(0, 0.225 * s, 0.065 * s);
+  // o gatilho: pendurado na frente da rosca, e e ELE que o dedo puxa
+  const gatilho = new THREE.Mesh(new THREE.CapsuleGeometry(0.012 * s, 0.05 * s, 3, 8),
+    e.estagio === 2 ? latao : mentaEscura);
+  gatilho.position.set(0, topo, 0.065 * s);
   gatilho.rotation.x = -0.3;
+  gatilho.userData.repouso = -0.3;
   g.add(gatilho);
-  const bico = new THREE.Mesh(new THREE.CylinderGeometry(0.012 * s, 0.016 * s, 0.025 * s, 10), toon(P.metalWhite));
-  bico.rotation.x = Math.PI / 2;
-  bico.position.set(0, 0.272 * s, 0.075 * s);
+
+  // o bico, num grupo virado para +Z: e dele que a nevoa sai (`partes.bico`)
+  const bico = new THREE.Group();
+  bico.position.set(0, yCabeca, 0.062 * s);
   g.add(bico);
+  const ponteira = new THREE.Mesh(new THREE.CylinderGeometry(0.012 * s, 0.016 * s, 0.025 * s, 10), toon(P.metalWhite));
+  ponteira.rotation.x = Math.PI / 2;
+  ponteira.position.z = 0.013 * s;
+  bico.add(ponteira);
+  // a Nevoa larga: a boca do bico vira uma florzinha de furos, cada vez maior
+  const boca = (0.016 + e.nevoaLarga * 0.014) * s;
+  const disco = new THREE.Mesh(new THREE.CylinderGeometry(boca, boca, 0.008 * s, 14), e.nevoaLarga > 0 ? toon(P.borrifadorRotulo) : toon(P.metalWhite));
+  disco.rotation.x = Math.PI / 2;
+  disco.position.z = 0.027 * s;
+  bico.add(disco);
+  const furos = e.nevoaLarga > 0 ? 6 : 1;
+  for (let k = 0; k < furos; k++) {
+    const a = (k / furos) * Math.PI * 2;
+    const d = furos > 1 ? boca * 0.55 : 0;
+    const furo = new THREE.Mesh(new THREE.CircleGeometry(0.0045 * s, 8), toon(P.regadorFuro));
+    furo.position.set(Math.cos(a) * d, Math.sin(a) * d, 0.0315 * s);
+    bico.add(furo);
+  }
+  const pontaDoBico = 0.035 * s;
+
+  // a Cordinha de pulso: um laço amarelo em volta da rosca, com uma conta rosa
+  if (e.cordinha) {
+    const corda = toon(P.mangueiraListra);
+    const volta = new THREE.Mesh(new THREE.TorusGeometry(0.037 * s, 0.005 * s, 5, 16), corda);
+    volta.rotation.x = Math.PI / 2;
+    volta.position.y = yRosca;
+    g.add(volta);
+    const alca = new THREE.Mesh(new THREE.TorusGeometry(0.05 * s, 0.005 * s, 5, 16), corda);
+    alca.position.set(-0.055 * s, yRosca - 0.05 * s, 0);
+    alca.rotation.y = Math.PI / 2;
+    g.add(alca);
+    const conta = new THREE.Mesh(new THREE.SphereGeometry(0.012 * s, 8, 6), toon(P.flowerPink));
+    conta.position.set(-0.04 * s, yRosca - 0.012 * s, 0);
+    conta.name = 'cordinha';
+    g.add(conta);
+  }
+
+  /*
+   * As MESMAS `partes` do regador, do esguicho e da pistola: a mao fecha na
+   * ROSCA (`alturaDaAlca`) e a nevoa sai da ponta do bico. O `gatilho` e o
+   * que a rodada puxa a cada borrifada.
+   */
+  g.userData.partes = { corpo: frasco, bico, pontaDoBico, alturaBoca: yCabeca, alturaDaAlca: yRosca, gatilho };
   return g;
 }

@@ -53,7 +53,7 @@ interface JatoNoAr {
   /** quantas gotas por segundo */
   taxa: number;
   acumulado: number;
-  forma: 'cone' | 'fio' | 'linha' | 'arco' | 'reto' | 'tiro';
+  forma: 'cone' | 'fio' | 'linha' | 'arco' | 'reto' | 'tiro' | 'nevoa';
   /** meia abertura do leque, em radianos */
   abertura: number;
   tamanho: number;
@@ -87,6 +87,10 @@ export interface Disparo {
   especial?: 'pressao-cheia' | 'carregado' | 'arco-iris';
   /** força a forma (o borrifador desenha três fios, o segundo bico um cone) */
   forma?: JatoNoAr['forma'];
+  /** a NÉVOA do borrifador: o raio da nuvem que abre onde ela cai */
+  raio?: number;
+  /** a névoa com a Pressão: a nuvem se estica para trás do alvo */
+  atravessa?: boolean;
 }
 
 /**
@@ -121,6 +125,20 @@ export interface ContagemDoJato {
   vaporDoCaminho: number;
   /** as pétalas do Crivo de flor que voaram no leque */
   petalas: number;
+  /** as nuvens de névoa do borrifador que abriram */
+  nevoas: number;
+  /** a Pontaria no bando: o anel rosa de onde a névoa vai cair */
+  bandos: number;
+  /** a Névoa que fica: os sopros da nuvem parada */
+  nevoasParadas: number;
+  /** a Nuvem teimosa: as chuvinhas em cima do bicho forte */
+  chuvinhas: number;
+  /** o Encharcado: as gotas pingando do bicho encharcado */
+  pingos: number;
+  /** a Folha orvalhada: os brilhos de orvalho no canteiro */
+  orvalhos: number;
+  /** o Redemoinho: as espirais de névoa */
+  redemoinhos: number;
   /** a gota mais alta que já subiu (o Jato em arco) */
   alturaMaxima: number;
   // o que não é jato: as cartas de jardineiro e de jardim
@@ -137,6 +155,7 @@ function contagemZerada(): ContagemDoJato {
     disparos: 0, formas: {}, tintas: {}, respingos: 0, trancos: 0, cristais: 0, vapores: 0,
     bolhas: 0, pocas: 0, garoas: 0, rachaduras: 0, geiseres: 0, aneis: 0, carga: 0,
     arcosIris: 0, sacudidas: 0, baloes: 0, miras: 0, chuvas: 0, especiais: {}, vaporDoCaminho: 0, petalas: 0, alturaMaxima: 0,
+    nevoas: 0, bandos: 0, nevoasParadas: 0, chuvinhas: 0, pingos: 0, orvalhos: 0, redemoinhos: 0,
     poeiras: 0, notas: 0, ondas: 0, brotos: 0, ardidos: 0, adubos: 0,
   };
 }
@@ -159,7 +178,8 @@ export class DesenhoDoJato {
   /** faíscas: brilho forte (arco-íris, gelo, carga) */
   private readonly faiscas = new Particulas(420, 0.4, 1, 5);
   /** o que é translúcido: vapor e bolhas */
-  private readonly nevoa = new Particulas(220, 0.35, 0.45, 8);
+  // (o borrifador enche este pool de nuvem: por isso ele é o maior depois da água)
+  private readonly nevoa = new Particulas(560, 0.35, 0.45, 8);
   /** poeirinha de terra e folhas picadas: opaco e sem brilho */
   private readonly terra = new Particulas(160, 0, 1, 4);
   private readonly aneis = new Marcas('anel', 60, 0.7, 0.3);
@@ -394,6 +414,7 @@ export class DesenhoDoJato {
      */
     const forma: JatoNoAr['forma'] = d.forma
       ?? (especial === 'carregado' ? 'reto'
+        : e.nevoa ? 'nevoa'
         : e.arco ? 'arco'
           : e.reto ? 'reto'
             : e.mangueira ? 'linha'
@@ -409,15 +430,19 @@ export class DesenhoDoJato {
     // cada forma tem a sua velocidade, e é isso que dá o caráter dela
     // o TIRO da pistola: bolinhas grandes, rápidas e quase sem cair — um
     // brinquedo de piscina, e não um jato
-    const gravidade = forma === 'reto' ? 0.6 : forma === 'arco' ? 9 : forma === 'linha' ? 4 : forma === 'tiro' ? 1.2 : GRAVIDADE;
+    // a NÉVOA do borrifador: gotinhas finas e leves, que quase flutuam — e,
+    // com o Jato em arco, sobem por cima do canteiro como o arco
+    const emArco = forma === 'arco' || (forma === 'nevoa' && !!e.arco);
+    const gravidade = forma === 'reto' ? 0.6 : emArco ? 9 : forma === 'linha' ? 4 : forma === 'tiro' ? 1.2
+      : forma === 'nevoa' ? 1.6 : GRAVIDADE;
     /*
      * O ARCO é decidido pela ALTURA, e não pela velocidade: a carta diz que
      * ele passa por cima do canteiro, então o topo fica bem acima do bico
      * (1,2 m, mais um pouco quanto mais longe). A velocidade de lado sai da
      * conta do tempo de voo que essa altura dá.
      */
-    let velocidade = forma === 'reto' ? 14 : forma === 'linha' ? 11 : forma === 'tiro' ? 16 : VELOCIDADE;
-    if (forma === 'arco') {
+    let velocidade = forma === 'reto' ? 14 : forma === 'linha' ? 11 : forma === 'tiro' ? 16 : forma === 'nevoa' ? 6.5 : VELOCIDADE;
+    if (emArco) {
       const topo = 1.2 + dist * 0.12;
       const sobe = Math.sqrt(2 * gravidade * topo);
       const desce = d.para.y - d.de.y;
@@ -435,12 +460,14 @@ export class DesenhoDoJato {
         : forma === 'linha' ? 0.025 + aberto * 0.03
           : forma === 'reto' ? 0.02 + aberto * 0.02
             : forma === 'tiro' ? 0.008 + aberto * 0.02
-              : (arcoFino ? 0.04 : 0.1) + aberto * 0.04;
+              : forma === 'nevoa' ? 0.3 + aberto * 0.04
+                : (arcoFino ? 0.04 : 0.1) + aberto * 0.04;
     const duracao = forma === 'linha' || arcoFino ? 0.34 : forma === 'reto' ? 0.22 : forma === 'arco' ? 0.2
       : forma === 'tiro' ? 0.12 : DURACAO;
     // mais gotas quando o leque abre (as da borda) e quando o jato engrossa
     const quantas = forma === 'tiro'
       ? 9 + grosso * 2 + (especial ? 6 : 0)
+      : forma === 'nevoa' ? 22 + (e.nevoaLarga ?? 0) * 4 + grosso * 3 + (especial ? 10 : 0)
       : (forma === 'linha' || arcoFino ? 56 : forma === 'fio' ? 22 : 44) + aberto * 8 + grosso * 5 + (especial ? 18 : 0);
 
     this.contagem.disparos += 1;
@@ -456,7 +483,8 @@ export class DesenhoDoJato {
       acumulado: 0,
       forma,
       abertura,
-      tamanho: (forma === 'linha' || forma === 'fio' ? 0.02 : forma === 'reto' ? 0.036 : forma === 'tiro' ? 0.07 : 0.03) * (1 + grosso * 0.22),
+      tamanho: (forma === 'linha' || forma === 'fio' ? 0.02 : forma === 'reto' ? 0.036 : forma === 'tiro' ? 0.07
+        : forma === 'nevoa' ? 0.017 : 0.03) * (1 + grosso * 0.22),
       velocidade,
       gravidade,
       tinta,
@@ -468,6 +496,8 @@ export class DesenhoDoJato {
 
     // O SOM DA SAÍDA: o especial manda, depois a forma, depois a tinta
     if (especial === 'carregado') this.soar('jatao');
+    // o borrifador: o "psst" do gatilho, mesmo no aperto especial
+    else if (forma === 'nevoa') this.soar('borrifada');
     else if (especial === 'pressao-cheia' || forma === 'reto') this.soar('jatoForte');
     // as ferramentas têm som próprio: o tiro da pistola, e o jorro da mangueira
     // (a carta Bico de mangueira do regador continua com o sopro longo dela)
@@ -483,7 +513,160 @@ export class DesenhoDoJato {
 
     const tempo = dist / velocidade + duracao * 0.5;
     if (d.aoChegar) this.depois(tempo, d.aoChegar);
+    // a névoa vira NUVEM onde cai: é a área que ela molha, desenhada
+    if (forma === 'nevoa') {
+      const para = d.para.clone();
+      const rumo = Math.atan2(d.para.x - d.de.x, d.para.z - d.de.z);
+      this.depois(tempo, () => this.nuvemDeNevoa(para, d.raio ?? 1, e, false, tinta, d.atravessa ? rumo : null));
+    }
     return tempo;
+  }
+
+  // ======================================================== a NÉVOA (borrifador)
+
+  /**
+   * A NUVEM DO BORRIFADOR: onde a névoa cai, ela abre — sopros brancos
+   * translúcidos no raio inteiro, um chuvisco fino caindo deles, e um anel no
+   * chão do tamanho exato da área (é ele que diz, de longe, "tudo aqui dentro
+   * se molhou"). A Névoa larga põe mais sopro; o Concentrado pinta de azul e
+   * engrossa o chuvisco; a Névoa que fica demora a desmanchar; a Pressão
+   * estica a nuvem para trás do alvo.
+   */
+  nuvemDeNevoa(
+    centro: THREE.Vector3, raio: number, estilo: EstiloDoJato, comSom = false,
+    tinta: Tinta = 'agua', atravessa: number | null = null,
+  ): void {
+    this.contagem.nevoas += 1;
+    if (comSom) this.soar('borrifada');
+    const forte = estilo.concentrado ?? 0;
+    const dura = estilo.nevoaQueFica ? 1.4 : 0.9;
+    const cor = (i: number): number => tinta === 'arco-iris' ? ARCO_IRIS[i % ARCO_IRIS.length]
+      : tinta === 'gelo' ? P.jatoGelo
+        : tinta === 'sabao' ? (i % 2 ? P.jatoSabao : P.jatoNevoa)
+          : tinta === 'carga' ? P.jatoCarga
+            : forte > 0 && i % 3 !== 0 ? P.jatoNevoaFunda : P.jatoNevoa;
+    const sopro = (x: number, z: number, i: number, tam = 1): void => {
+      const a = Math.random() * Math.PI * 2;
+      this.nevoa.emitir({
+        x, y: 0.2 + Math.random() * 0.5, z,
+        vx: Math.cos(a) * 0.3, vy: 0.08 + Math.random() * 0.12, vz: Math.sin(a) * 0.3,
+        vida: dura * (0.75 + Math.random() * 0.5), tamanho: (0.07 + Math.random() * 0.06) * tam,
+        cor: cor(i), gravidade: -0.05, arrasto: 1.6, cresce: 1.6, balanco: 0.25,
+      });
+    };
+    const n = Math.round(12 + raio * 10 + (estilo.nevoaLarga ?? 0) * 3);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = raio * Math.sqrt(Math.random()) * 0.85;
+      sopro(centro.x + Math.cos(a) * r, centro.z + Math.sin(a) * r, i);
+    }
+    // a Pressão: a névoa segue um tubo de 1,6 m para trás do alvo
+    if (atravessa !== null) {
+      for (let k = 1; k <= 4; k++) {
+        const d = raio * 0.6 + k * 0.4;
+        for (let i = 0; i < 3; i++) sopro(centro.x + Math.sin(atravessa) * d, centro.z + Math.cos(atravessa) * d, i, 0.8);
+      }
+    }
+    // o chuvisco que cai da nuvem
+    const gotas = 10 + forte * 6;
+    for (let i = 0; i < gotas; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = raio * Math.sqrt(Math.random()) * 0.8;
+      this.agua.emitir({
+        x: centro.x + Math.cos(a) * r, y: 0.75 + Math.random() * 0.35, z: centro.z + Math.sin(a) * r,
+        vx: 0, vy: -0.4, vz: 0, vida: 0.55, tamanho: 0.014 + forte * 0.003,
+        cor: forte > 0 ? P.jatoNevoaFunda : i % 2 ? P.jatoAgua : P.jatoMiolo, gravidade: 4, esticar: 0.02,
+      });
+    }
+    this.aneis.deixar({ x: centro.x, z: centro.z, raio, vida: 0.55, cor: P.jatoNevoaAnel, crescer: 0.12 });
+  }
+
+  /** a Pontaria no bando: o anel rosa no chão, onde a névoa vai cair */
+  miraNoBando(x: number, z: number, raio: number): void {
+    this.contagem.bandos += 1;
+    this.aneis.deixar({ x, z, raio, vida: 0.4, cor: P.bandeirinhaRosa, crescer: 0.1 });
+  }
+
+  /** a Névoa que fica: a nuvem parada sopra de novo, e o anel continua marcando a área */
+  nevoaParada(x: number, z: number, raio: number, estilo: EstiloDoJato): void {
+    this.contagem.nevoasParadas += 1;
+    for (let i = 0; i < 6; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = raio * Math.sqrt(Math.random()) * 0.85;
+      this.nevoa.emitir({
+        x: x + Math.cos(a) * r, y: 0.2 + Math.random() * 0.45, z: z + Math.sin(a) * r,
+        vx: 0, vy: 0.06, vz: 0, vida: 0.7, tamanho: 0.08 + Math.random() * 0.05,
+        cor: (estilo.concentrado ?? 0) > 0 && i % 2 ? P.jatoNevoaFunda : P.jatoNevoa,
+        gravidade: -0.04, arrasto: 1.5, cresce: 1.3, balanco: 0.3,
+      });
+    }
+    this.aneis.deixar({ x, z, raio, vida: 0.32, cor: P.jatoNevoaAnel });
+  }
+
+  /**
+   * a Nuvem teimosa: uma nuvenzinha em cima do bicho, chovendo nele. A rodada
+   * chama a cada chuvinha (meio segundo), sempre onde o bicho ESTÁ — por isso
+   * ela o segue.
+   */
+  chuvinhaNoBicho(x: number, altura: number, z: number): void {
+    this.contagem.chuvinhas += 1;
+    this.soar('pingo');
+    const topo = altura + 0.55;
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      this.nevoa.emitir({
+        x: x + Math.cos(a) * 0.22, y: topo + Math.random() * 0.08, z: z + Math.sin(a) * 0.22,
+        vx: 0, vy: 0, vz: 0, vida: 0.6, tamanho: 0.1 + Math.random() * 0.04,
+        cor: i % 2 ? P.jatoNevoaFunda : P.jatoNevoa, gravidade: 0, arrasto: 2, cresce: 1.2,
+      });
+    }
+    for (let i = 0; i < 7; i++) {
+      this.agua.emitir({
+        x: x + (Math.random() - 0.5) * 0.4, y: topo - 0.05, z: z + (Math.random() - 0.5) * 0.4,
+        vx: 0, vy: -0.8, vz: 0, vida: 0.45, tamanho: 0.018, cor: P.jatoAgua, gravidade: 7, esticar: 0.03,
+      });
+    }
+  }
+
+  /** o Encharcado: uma gota pingando do bicho molhado */
+  pingar(x: number, y: number, z: number): void {
+    this.contagem.pingos += 1;
+    this.agua.emitir({
+      x: x + (Math.random() - 0.5) * 0.3, y, z: z + (Math.random() - 0.5) * 0.3,
+      vx: 0, vy: -0.2, vz: 0, vida: 0.5, tamanho: 0.022, cor: P.jatoFundo, gravidade: 7, esticar: 0.02,
+    });
+  }
+
+  /** a Folha orvalhada: brilhinhos de orvalho subindo das folhas do canteiro */
+  orvalho(x: number, z: number, meioX: number, meioZ: number, quantos = 10): void {
+    this.contagem.orvalhos += 1;
+    for (let i = 0; i < quantos; i++) {
+      this.faiscas.emitir({
+        x: x + (Math.random() * 2 - 1) * meioX, y: 0.3 + Math.random() * 0.25, z: z + (Math.random() * 2 - 1) * meioZ,
+        vx: 0, vy: 0.15, vz: 0, vida: 0.8, tamanho: 0.022, cor: P.jatoCristal, gravidade: -0.1, arrasto: 1,
+      });
+    }
+  }
+
+  /** o Redemoinho: a névoa gira em espiral para dentro, puxando os bichos junto */
+  redemoinho(centro: THREE.Vector3, raio: number): void {
+    this.contagem.redemoinhos += 1;
+    this.soar('anel');
+    const n = 40;
+    for (let i = 0; i < n; i++) {
+      const a = i * 0.55;
+      const r = raio * (1 - (i / n) * 0.8);
+      const x = centro.x + Math.cos(a) * r;
+      const z = centro.z + Math.sin(a) * r;
+      // de lado (o giro) e um pouco para dentro (o puxão)
+      const vx = -Math.sin(a) * 2.2 - Math.cos(a) * 0.8;
+      const vz = Math.cos(a) * 2.2 - Math.sin(a) * 0.8;
+      this.depois((i / n) * 0.25, () => this.nevoa.emitir({
+        x, y: 0.25 + (i / n) * 0.5, z, vx, vy: 0.2, vz, vida: 0.7, tamanho: 0.06,
+        cor: i % 3 ? P.jatoNevoa : P.jatoNevoaFunda, gravidade: -0.1, arrasto: 0.8, cresce: 1.2,
+      }));
+    }
+    this.aneis.deixar({ x: centro.x, z: centro.z, raio, vida: 0.6, cor: P.jatoNevoaAnel, crescer: 0.3 });
   }
 
   /** uma gota do jato, com a forma e a tinta dele */
@@ -501,7 +684,8 @@ export class DesenhoDoJato {
      * do meio, algumas na borda) — é ela que desenha o cone e que o Leque
      * aberto alarga.
      */
-    const miolo = j.contador % 2 === 0;
+    // (a névoa não tem miolo: é toda espalhada, gotinha fina em leque largo)
+    const miolo = j.forma !== 'nevoa' && j.contador % 2 === 0;
     const sorteio = Math.random() * 2 - 1;
     const desvio = miolo
       ? sorteio * 0.015
@@ -528,7 +712,7 @@ export class DesenhoDoJato {
       tamanho: j.tamanho * (miolo ? 1.25 : 0.8) * (0.85 + Math.random() * 0.3),
       cor,
       gravidade: j.gravidade,
-      esticar: j.forma === 'linha' || j.forma === 'reto' ? 0.02 : j.forma === 'tiro' ? 0.006 : 0.011,
+      esticar: j.forma === 'linha' || j.forma === 'reto' ? 0.02 : j.forma === 'tiro' || j.forma === 'nevoa' ? 0.006 : 0.011,
       adiantar,
     });
 

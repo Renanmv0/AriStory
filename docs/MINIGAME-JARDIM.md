@@ -21,7 +21,7 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | arquivo | o que mora lá |
 |---|---|
 | `src/minigames/jardim/rodada.ts` | a rodada inteira (`RodadaDoJardim`): ondas, bichos, regador, o jato de cada carta (`umJato`), as cartas de jardineiro/jardim/clube, os chamados agindo, a ajuda do par, o prêmio da onda e o de 5 em 5 níveis, e os ganchos de teste no fim da classe |
-| `src/minigames/jardim/cartas.ts` | o catálogo das **133 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
+| `src/minigames/jardim/cartas.ts` | o catálogo das **147 cartas** e a `FichaDaRodada` (números + `regras` + `jato`); `soPara`/`naoServe` dizem em que arma cada carta sai |
 | `src/minigames/jardim/armas.ts` | as **quatro armas** (regador, mangueira, pistola d'água, borrifador): a fila de destrancar e os números de partida de cada uma (`base`) |
 | `src/minigames/jardim/mangueira.ts` | a mangueira esticada do tonel até a mão (o tubo, e o trecho no chão que o Chicote e o Vazamento leem) |
 | `src/minigames/jardim/baralho.ts` | a mão (carta não repete), o sorteio de três, a Sorte de principiante |
@@ -155,9 +155,9 @@ armário amarelo-manteiga de puxadores rosa, toalhinha xadrez, lousinha, vaso e
 luvas, e o rolo de mangueira do lado (pedido do Renan: "mais fofos… falta
 cor"; as cores de cada arma estão em `palette.ts`) —, que abre o
 painel das armas — parecido com o livro: uma aba por arma, a meta, o recorde e
-só as cartas ÚNICAS dela (pedido do Renan: `soDestaArma`, em `baralho.ts` — cada uma tem 14 só dela; o regador e a pistola mostram também as 12 de tanque e tonel que dividem; as genéricas ficam só no livro), descobertas ou cinzas, e "Usar esta ferramenta" (contador
-`jardim.arma`). **Regador, mangueira e pistola d'água estão construídos**; o
-borrifador aparece destrancável mas "em construção". O **prêmio
+só as cartas ÚNICAS dela (pedido do Renan: `soDestaArma`, em `baralho.ts` — cada uma tem 14 só dela; o regador, a pistola e o borrifador mostram também as 12 de tanque e tonel que dividem; as genéricas ficam só no livro), descobertas ou cinzas, e "Usar esta ferramenta" (contador
+`jardim.arma`). **As quatro estão construídas** (o borrifador, o último, é o
+de ÁREA: §4.1). O **prêmio
 de destrancar** cada arma (roupinha ou item) o Renan decide depois — hoje só a
 Josefina avisa. Teste: `scripts/armas.mjs`.
 
@@ -169,8 +169,7 @@ rodada — `jardim.viu-<id>`, marcado em `nascer`; retrato do próprio modelo po
 recompensa esperando, o livro abre nela).
 
 **O que falta** (a escolha do próximo passo é do Renan):
-- o **borrifador** (os números, o jeito e as cartas só dele), e o **prêmio
-  de destrancar** cada arma;
+- o **prêmio de destrancar** cada ferramenta;
 - a **vida dos bichos crescendo com as ondas** (hoje não cresce);
 - **equilíbrio**: ninguém jogou as 30 ondas inteiras; o Renan joga e diz.
 - perguntas em aberto: §12.
@@ -178,7 +177,7 @@ recompensa esperando, o livro abre nela).
 **Testes da rodada** (rodar UM de cada vez — dois Chromium juntos dão falha
 falsa por lentidão): `cartas.mjs` (lógica, sem navegador), `rodada.mjs`,
 `jato.mjs`, `cartasNaRodada.mjs`, `livro.mjs`, `oclusao.mjs`, `postos.mjs`,
-`chamados.mjs`, `gotas.mjs`, `jeitos.mjs`, `marcos.mjs`. O que cada um prova está no `CLAUDE.md`. Para
+`chamados.mjs`, `gotas.mjs`, `jeitos.mjs`, `marcos.mjs`, `armas.mjs`, `borrifador.mjs`. O que cada um prova está no `CLAUDE.md`. Para
 olhar: `?cena=estufa&rodada=1` (rodada direto) e `?cena=estufa&jato=<ids>`
 (vitrine de um jato).
 
@@ -523,7 +522,7 @@ que impede o jogo de virar "segure para a frente e ande em círculo": de vez em
 quando você TEM que voltar ao canto, e é nessa viagem que os canteiros ficam
 sozinhos.
 
-### 4.1. As outras armas — **a mangueira e a pistola construídas**
+### 4.1. As outras armas — **as três construídas**
 
 Pedido do Renan: trocar a arma da rodada. Cada arma é uma ficha em
 `minigames/jardim/armas.ts` que mexe nos **números de partida** (`base`) antes
@@ -539,7 +538,7 @@ do regador ganha a fita da arma ("🐍 Mangueira").
 | 🪣 Regador | de começo | o de sempre (§4) |
 | 🐍 Mangueira | 15 ondas jogadas com o regador | presa no tonel: **água infinita** (o painel mostra ∞) e **não passa dos portões** (o limite de andar da cena encolhe durante a rodada). Jato fino e quase contínuo: alcance 3,6, força 0,42 a cada 0,32 s (1,3/s contra 0,9 do regador), abertura 12°. Na mão, o esguicho (`esguichoDeMangueira`); no chão, a mangueira esticada do tonel até a mão |
 | 🔫 Pistola d'água | 15 ondas jogadas com a mangueira | **tiro de bolinhas**: uma fileira reta de gotas grandes, um bicho por vez (abertura 6°), alcance 5,0, 0,55 de força a cada 0,5 s. Tanque de 8, cada tiro gasta meia água (16 tiros): volta sempre ao tonel, e pode ir ao pátio. Na mão, a pistola lilás de tanque laranja, e cada tiro dá um COICE (o cano pula e volta) |
-| 🧴 Borrifador | 15 ondas jogadas com a pistola | *ainda não construído* — a ideia: leque curto que pega vários de uma vez |
+| 🧴 Borrifador | 15 ondas jogadas com a pistola | **área** (pedido do Renan: "feito para ser em área, para acertar todos os inimigos dentro de uma área"): cada aperto solta uma NÉVOA que cai no bicho escolhido e vira uma nuvem de ~1,15 m de raio, e todo bicho dentro dela se molha, sem sombra de um no outro. Fraca por bicho (0,4 a cada 0,55 s = 0,73/s, contra 0,9 do regador) e curta (alcance 2,6): o forte dela é bando. O raio sai da `largura` (50°; o Leque aberto aumenta) vezes o `raioDaNevoa` (a Névoa larga). Tanque de 10, meia água por aperto. Na mão, o frasco segurado PELO GARGALO, com o braço esticado para a frente (a pose `borrifando`); o dedo puxa o gatilho a cada aperto e o frasco abaixa a cabeça e amassa um tiquinho |
 
 **Revisão das genéricas para a mangueira** (regra do Renan: "a mangueira… não
 teria a carta de 'tanque', pois a água dela já seria infinita"): não saem nela
@@ -548,9 +547,9 @@ Pressão acumulada, Balde, Fôlego, Chapéu de palha, Descanso na sombra, Segund
 tonel e O Jean-Luc no tonel — todas de água/tanque/tonel.
 
 **Toda ferramenta tem mais ou menos o mesmo tanto de cartas dela** (pedido
-do Renan): na bancada, **26 do regador, 14 da mangueira e 26 da pistola**; ÚNICAS
-DE VERDADE (só daquela ferramenta): **regador 14, mangueira 14, pistola 14**, as
-três com 7 comuns, 4 incomuns, 2 raras e 1 lendária. "Carta da
+do Renan): na bancada, **26 do regador, 14 da mangueira, 26 da pistola e 26 do
+borrifador**; ÚNICAS DE VERDADE (só daquela ferramenta): **14 em cada uma**,
+as quatro com 7 comuns, 4 incomuns, 2 raras e 1 lendária. "Carta da
 ferramenta" é a que serve nela e não em todas (`soDestaArma`): as de tanque e
 tonel são do regador E da pistola, as duas de munição. O Balde e o Bico de
 mangueira viraram `soPara: ['regador']` (viram a lata, não fazem sentido em
@@ -577,6 +576,31 @@ divide com a pistola:
 | Bico de mangueira | raro | o alcance dobra, mas o jato demora 40% mais |
 | Balde | raro | segurar E derrama o tanque inteiro num círculo de 2 m |
 | Regador gigante | lendária | a cada 30 s, 5 s em que a lata cresce na mão: o leque e a força dobram (começa com um anel de água) |
+
+**As cartas só do borrifador** (`soPara: ['borrifador']`). O pedido do Renan
+tinha dois lados: ele é de ÁREA, mas precisa de carta que ajude contra os
+bichos fortes, onde a névoa é fraca. Então metade deixa a área maior e mais
+viva, e as marcadas com 💪 são as contra os grandes:
+
+| carta | raridade | efeito |
+|---|---|---|
+| Dedo ligeiro I–II | comum | o borrifador borrifa 10% mais seguido |
+| Névoa larga I–II | comum | a nuvem fica 15% maior (o bico do frasco abre em flor) |
+| 💪 Concentrado I–II | comum | a névoa molha 8% mais, e os bichos grandes (tanque e chefe) 20% mais; a água do frasco fica azul-funda |
+| Cordinha de pulso (jardineiro) | comum | a cordinha na rosca: você anda 10% mais rápido |
+| Névoa que fica | incomum | a nuvem fica 2 s no chão, e quem entra nela leva meio borrifo (uma vez por nuvem) |
+| 💪 Encharcado | incomum | cada névoa seguida no mesmo bicho molha 10% mais que a anterior, até +50%; seca em 3 s (o bicho encharcado pinga) |
+| Pontaria no bando | incomum | a névoa mira onde ela pega MAIS bichos juntos, e não no mais perto (um anel rosa mostra onde vai cair); exclui as duas Miras |
+| Folha orvalhada (jardim) | incomum | canteiro que a névoa toca fica orvalhado 2 s: a mordida nele tira metade |
+| 💪 Nuvem teimosa | raro | um aperto em cinco deixa uma nuvenzinha chovendo em cima do bicho de MAIS VIDA por 4 s: 1,2× a força a cada meio segundo nele, e meia força em quem estiver colado |
+| Redemoinho | raro | de seis em seis apertos, a névoa gira e puxa para o meio quem está em até 1,6× o raio (os grandes, menos) — o bando fica mais junto para a próxima |
+| Névoa que se espalha | lendária | bicho espantado pela névoa estoura numa nuvem nova com metade da força; quem ela espantar estoura também, até três em cadeia |
+
+As genéricas convivem com a névoa em vez de saírem dela: o Leque aberto aumenta
+a nuvem, o Crivo de três furos vira três nuvens menores em leque, a Pressão
+estica a nuvem 1,6 m para trás do alvo, o Jato em arco joga a névoa por cima
+do canteiro, a Mira no grandão põe a nuvem em cima do grandão, e o Jato
+carregado continua sendo o jatão reto.
 
 **As cartas só da pistola** (`soPara: ['pistola']`; 7 comuns, 4 incomuns, 2
 raras, 1 lendária — o mesmo desenho da mangueira), mais as 12 de tanque e
@@ -620,7 +644,9 @@ volume e emenda no seguinte, com um "glub" a cada três jatos; antes ela tocava
 o `jatoLongo`, que continua sendo o da carta Bico de mangueira do regador); e a
 pistola, um **"piu"** curto (`tiroPistola`: o clique do gatilho, um piu que
 desce uma oitava e o chiado da bolinha, alternando dois tons para não virar
-metrônomo). As cartas especiais mantêm o delas (o jatão, o jato forte, o arco).
+metrônomo); e o borrifador, um **"psst"** (`borrifada`: o tic do gatilho de
+plástico, um sopro bem agudo e aerado e um sininho que alterna mi e sol). As
+cartas especiais mantêm o delas (o jatão, o jato forte, o arco).
 
 ---
 
@@ -1109,6 +1135,9 @@ upgrade aparece no objeto.
 | Chuva | uma nuvenzinha que flutua um palmo acima da peça |
 | Crivo de flor | cinco pétalas rosa em volta do crivo, maiores no degrau II |
 | Alça acolchoada | espuma coral na alça (no cabo de madeira, se já tiver o Braço solto) |
+| Névoa larga (borrifador) | a boca do bico vira uma florzinha rosa de seis furos, maior no II |
+| Concentrado (borrifador) | a água do frasco sobe e puxa para um azul-lavanda fundo |
+| Cordinha de pulso (borrifador) | uma cordinha amarela em volta da rosca, com uma conta rosa |
 
 E o regador tem **três estágios visíveis**, pelo número de cartas de REGADOR que
 você pegou: `0–2` o de lata amassada que a Josefina empresta, `3–5` um
@@ -1215,6 +1244,23 @@ muda de forma pela ferramenta, fio ou bolinha):
 | Transbordou | chão | a lata cheia no tonel derrama um anel de água de 2 m | "splash" do balde |
 | Rega de verdade | chão | o canteiro machucado por onde o jato passa ganha um brotinho | — |
 | **Regador gigante** (lendária) | forma | um anel de água, e por 5 s a lata cresce na mão (1,8×) e o leque dobra | o "jatão" |
+
+E o borrifador, que não tem jato: tem NÉVOA (a forma `nevoa` de `jato.ts`) — um
+leque largo de gotinhas finas saindo do bico e, onde cai, uma nuvem de sopros
+brancos com chuvisco e um anel no chão do tamanho exato da área molhada.
+
+| carta | camada | o que se vê | som |
+|---|---|---|---|
+| **a névoa** (a ferramenta) | forma | a nuvem branca e o anel da área | "psst" |
+| Dedo ligeiro I–II | forma | as nuvens saem mais seguidas | — |
+| Névoa larga I–II | forma | a nuvem e o anel maiores, com mais sopro | — |
+| Concentrado I–II | tinta | a nuvem azul-lavanda e o chuvisco mais grosso | — |
+| Névoa que fica | chão | a nuvem demora a desmanchar e continua soprando no mesmo lugar, com o anel | — |
+| Encharcado | impacto | o bicho encharcado pinga, mais quanto mais encharcado | — |
+| Pontaria no bando | impacto | o anel rosa no chão onde a névoa vai cair | — |
+| Nuvem teimosa | impacto | uma nuvenzinha em cima do bicho forte, chovendo nele e seguindo ele | pingos |
+| Redemoinho | forma | a névoa gira em espiral para dentro | o giro do anel |
+| **Névoa que se espalha** (lendária) | impacto | o bicho espantado estoura numa nuvem nova | "psst" |
 
 #### Como está no código
 

@@ -94,10 +94,29 @@ export const ARMAS: readonly FichaDaArma[] = [
       f.jato.pistola = true;
     },
   },
+  /*
+   * O BORRIFADOR: o de ÁREA (pedido do Renan: "o ataque padrão dele é feito
+   * para ser em área, para acertar todos os inimigos dentro de uma área"). Cada
+   * aperto no gatilho solta uma NÉVOA que cai no bicho escolhido e vira uma
+   * nuvem de ~1,15 m de raio: todo bicho dentro dela se molha, sem sombra de um
+   * no outro. Por bicho ela é fraca — 0,4 a cada 0,55 s (0,73 por segundo,
+   * contra 0,9 do regador) —, e o alcance é curto (2,6): o forte dele é bando.
+   * Contra os grandes quem ajuda são as cartas dele (Concentrado, Encharcado,
+   * Nuvem teimosa). O raio da nuvem sai da `largura` (o Leque aberto aumenta)
+   * vezes o `raioDaNevoa` (a Névoa larga). Tanque de 10, meia água por aperto.
+   */
   {
-    id: 'borrifador', nome: 'Borrifador', comArtigo: 'o borrifador', icone: '🧴', anterior: 'pistola', pronta: false,
-    descricao: 'Um leque curto que pega vários bichos de uma vez: contra enxame.',
-    base: () => {},
+    id: 'borrifador', nome: 'Borrifador', comArtigo: 'o borrifador', icone: '🧴', anterior: 'pistola', pronta: true,
+    descricao: 'Uma névoa que molha todos os bichos de uma área. Fraca num só, forte contra bando.',
+    base: (f) => {
+      f.alcance = 2.6;
+      f.dano = 0.4;
+      f.cadencia = 0.55;
+      f.largura = 50;
+      f.tanque = 10;
+      f.gastoPorJato = 0.5;
+      f.jato.nevoa = true;
+    },
   },
 ];
 

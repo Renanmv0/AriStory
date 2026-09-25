@@ -503,6 +503,8 @@ export const PALETTE = {
   borrifadorGatilho: 0x8fdcb4,
   borrifadorGatilhoEscuro: 0x5fbf8f,
   borrifadorRotulo: 0xf6a5c0,
+  /** a água do frasco com a carta Concentrado: um azul mais fundo, puxando o lilás */
+  borrifadorConcentrado: 0x5a7ee8,
   /**
    * A PAREDE DAS ARMAS: o painel furado pintado de menta (e não o eucatex cru
    * de oficina: é a estufa da Josefina), a moldura de madeira, a plaquinha
@@ -571,6 +573,13 @@ export const PALETTE = {
   jatoSabaoBorda: 0xbfe8ff,
   /** o Jato carregado juntando força na ponta do bico */
   jatoCarga: 0xfff3b0,
+  /**
+   * A NÉVOA do borrifador: a nuvem é quase branca (é névoa, não jato) com um
+   * fundo azul-lavanda que o Concentrado puxa; o anel no chão marca a área
+   */
+  jatoNevoa: 0xeaf6ff,
+  jatoNevoaFunda: 0x9fb8ff,
+  jatoNevoaAnel: 0xcfeaff,
   /** o alvinho das miras, em cima do bicho escolhido */
   jatoMira: 0xff9a3c,
   /** o chão rachando antes do Gêiser */
