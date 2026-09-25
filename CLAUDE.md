@@ -103,6 +103,7 @@ node scripts/banco.mjs   /tmp/bn    # sentar nos bancos: de maos dadas e pernas 
 node scripts/roupas.mjs  /tmp/rp    # guarda-roupa: as vagas sem mexer na animacao
 node scripts/vagas.mjs   /tmp/vg    # as 6 vagas (maos e acessorio no pai certo), a bermuda vestida no parque, o banho no clube, a mochila e o armario com 6, e save antigo de 4 vagas
 node scripts/vestimenta.mjs /tmp/vt # onde cada roupa pode morar, e o armario por parte
+node scripts/roupasDoJardim.mjs /tmp/rj # a segunda leva da lojinha da Josefina: luvas, pins, pulseiras, vestidos, camisetas e calças largas nos dois (de frente, costas, andando e sentados) e o chapeu joaninha no cabelo do Renan
 node scripts/falas.mjs   /tmp/fl    # as falas de premio: cada dono reparando na roupa que ele deu
 node scripts/campeao.mjs /tmp/cp    # o premio do campeao: a meta em duas etapas, a festa na mesa de piquenique, a vaquinha e a raquete dourada
 node scripts/vestiario.mjs /tmp/vs  # o vestiario do clube: oculos, cor da bermuda e um estilo por pessoa

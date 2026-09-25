@@ -12,6 +12,15 @@ import {
   vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
   luvasDeJardim, pulseiraDeMicangas, presilhaDeEstrela, adesivoDeCoracao,
 } from './roupas';
+import {
+  luvasDeGirassol, luvasDeJoaninha, luvasDeFolha, luvasDeGotinha,
+  pulseiraDeFlores, pulseiraDePedrinhas,
+  pinDeMargarida, pinDeJoaninha, pinDeAbelhinha, pinDeBorboleta,
+  estampaJoaninha, estampaBorboleta, estampaAbelha, estampaFlorzinhas, mangaDeFlorzinhas,
+  camisetaLargaCogumelo, camisetaLargaSapo, camisetaLargaLavanda, mangaLarga,
+  vestidoDeMargaridas, vestidoDeRosinhas, vestidoDoCampo,
+  calcaCargoDeJardim, calcaPantalona, calcaDeJardineiro,
+} from './roupasDoJardim';
 
 /**
  * O catalogo de itens do jogo.
@@ -371,6 +380,182 @@ export const ITENS = {
     cor: P.camisetaSalvaVidas, corDetalhe: P.camisetaSalvaVidasManga,
     nota: 'da piscina do clube', preco: 40,
     extra: estampaSalvaVidas,
+  },
+  /* ====================================================================
+   *      A SEGUNDA LEVA DA LOJINHA DA JOSEFINA (`world/roupasDoJardim.ts`)
+   * ====================================================================
+   * Pedido do Renan: luvas estampadas com coisas do jogo (uma verde), pins de
+   * flor e de bichinho, pulseiras de flor e de pedrinha, vestidos floridos,
+   * camisetas de natureza, camisetas largas e calças largas de jardinagem.
+   * Destrancam aos poucos pelo recorde da estufa (`LOJA_ABRE`, em
+   * `minigames/jardim/premios.ts`).
+   */
+  // ---- luvas (vaga das mãos): cada uma estampa uma coisa do jogo
+  luvasDeFolha: {
+    id: 'luvas-de-folha', nome: 'Luvas verde-folha', icone: '🌿',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.luvaFolha, corDetalhe: P.luvaFolhaPunho,
+    nota: 'com uma folha no dorso, da cor da estufa', preco: 34,
+    extra: luvasDeFolha,
+  },
+  luvasDeGirassol: {
+    id: 'luvas-de-girassol', nome: 'Luvas de girassol', icone: '🌻',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.luvaGirassol, corDetalhe: P.luvaGirassolPunho,
+    nota: 'o girassol da estufa bordado no dorso', preco: 36,
+    extra: luvasDeGirassol,
+  },
+  luvasDeJoaninha: {
+    id: 'luvas-de-joaninha', nome: 'Luvas de joaninha', icone: '🐞',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.luvaJoaninha, corDetalhe: P.joaninhaPreto,
+    nota: 'de bolinha, com uma joaninha pousada', preco: 38,
+    extra: luvasDeJoaninha,
+  },
+  luvasDeGotinha: {
+    id: 'luvas-de-gotinha', nome: 'Luvas de gotinha', icone: '💧',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.luvaGota, corDetalhe: P.luvaGotaPunho,
+    nota: 'com as gotinhas azuis que os bichos soltam', preco: 38,
+    extra: luvasDeGotinha,
+  },
+  // ---- pulseiras (vaga das mãos), no pulso esquerdo
+  pulseiraDeFlores: {
+    id: 'pulseira-de-flores', nome: 'Pulseira de florzinhas', icone: '🌼',
+    tipo: 'vestivel', slot: 'maos',
+    nota: 'um cordão verde cheio de flor', preco: 28,
+    amostra: P.florRosa,
+    extra: pulseiraDeFlores,
+  },
+  pulseiraDePedrinhas: {
+    id: 'pulseira-de-pedrinhas', nome: 'Pulseira de pedrinhas', icone: '💎',
+    tipo: 'vestivel', slot: 'maos',
+    nota: 'quartzo, ametista, água-marinha, citrino e jade', preco: 34,
+    amostra: P.pedraAmetista,
+    extra: pulseiraDePedrinhas,
+  },
+  // ---- pins de cabelo (vaga do acessório, presos na cabeça)
+  pinDeMargarida: {
+    id: 'pin-de-margarida', nome: 'Pin de margarida', icone: '🌼',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
+    nota: 'preso no cabelo', preco: 22, amostra: P.florBranca,
+    extra: pinDeMargarida,
+  },
+  pinDeJoaninha: {
+    id: 'pin-de-joaninha', nome: 'Pin de joaninha', icone: '🐞',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
+    nota: 'uma joaninha subindo pelo cabelo', preco: 24, amostra: P.joaninhaVermelho,
+    extra: pinDeJoaninha,
+  },
+  pinDeAbelhinha: {
+    id: 'pin-de-abelhinha', nome: 'Pin de abelhinha', icone: '🐝',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
+    nota: 'a abelha e a florzinha dela', preco: 24, amostra: P.abelhaAmarela,
+    extra: pinDeAbelhinha,
+  },
+  pinDeBorboleta: {
+    id: 'pin-de-borboleta', nome: 'Pin de borboleta', icone: '🦋',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
+    nota: 'lilás e rosa, de asa aberta', preco: 26, amostra: P.borboletaAsa,
+    extra: pinDeBorboleta,
+  },
+  // ---- camisetas de natureza (justas, com estampa)
+  camisetaDeFlorzinhas: {
+    id: 'camiseta-de-florzinhas', nome: 'Camiseta de florzinhas', icone: '🌸',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.camisetaFlorzinha, corDetalhe: P.camisetaFlorzinhaManga,
+    nota: 'florida de ponta a ponta, até na manga', preco: 42,
+    extra: estampaFlorzinhas, extraBraco: mangaDeFlorzinhas,
+  },
+  camisetaDeJoaninha: {
+    id: 'camiseta-de-joaninha', nome: 'Camiseta de joaninha', icone: '🐞',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.camisetaJoaninha, corDetalhe: P.camisetaJoaninhaManga,
+    nota: 'a joaninha subindo pela folha', preco: 40,
+    extra: estampaJoaninha,
+  },
+  camisetaDeAbelhinha: {
+    id: 'camiseta-de-abelhinha', nome: 'Camiseta de abelhinha', icone: '🐝',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.camisetaAbelha, corDetalhe: P.camisetaAbelhaManga,
+    nota: 'a abelha voando até a flor', preco: 40,
+    extra: estampaAbelha,
+  },
+  camisetaDeBorboleta: {
+    id: 'camiseta-de-borboleta', nome: 'Camiseta de borboleta', icone: '🦋',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.camisetaBorboleta, corDetalhe: P.camisetaBorboletaManga,
+    nota: 'três borboletas no peito', preco: 42,
+    extra: estampaBorboleta,
+  },
+  // ---- camisetas largas (soltas do corpo, manga larga até o cotovelo)
+  camisetaLargaCogumelo: {
+    id: 'larga-de-cogumelo', nome: 'Camiseta larga de cogumelo', icone: '🍄',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.largaCogumelo, corDetalhe: P.largaCogumeloBarra,
+    nota: 'larguinha, com o cogumelo de bolinha', preco: 52,
+    extra: camisetaLargaCogumelo, extraBraco: mangaLarga,
+  },
+  camisetaLargaSapo: {
+    id: 'larga-de-sapinho', nome: 'Camiseta larga de sapinho', icone: '🐸',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.largaSapo, corDetalhe: P.largaSapoBarra,
+    nota: 'larguinha, com a carinha do sapo', preco: 52,
+    extra: camisetaLargaSapo, extraBraco: mangaLarga,
+  },
+  camisetaLargaLavanda: {
+    id: 'larga-de-lavanda', nome: 'Camiseta larga de lavanda', icone: '💜',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.largaLavanda, corDetalhe: P.largaLavandaBarra,
+    nota: 'larguinha, com o raminho de lavanda', preco: 55,
+    extra: camisetaLargaLavanda, extraBraco: mangaLarga,
+  },
+  // ---- vestidos floridos (de alça: braço e perna à mostra)
+  vestidoDeMargaridas: {
+    id: 'vestido-de-margaridas', nome: 'Vestido de margaridas', icone: '🌼',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.vestidoMargarida, corDetalhe: P.vestidoMargaridaBarra,
+    nota: 'verde-água, com margaridas nos dois babados', preco: 68,
+    bracosNus: true, pernasNuas: true,
+    extra: vestidoDeMargaridas,
+  },
+  vestidoDeRosinhas: {
+    id: 'vestido-de-rosinhas', nome: 'Vestido de rosinhas', icone: '🌷',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.vestidoRosinha, corDetalhe: P.vestidoRosinhaBarra,
+    nota: 'rosa-claro, florido de rosinha', preco: 68,
+    bracosNus: true, pernasNuas: true,
+    extra: vestidoDeRosinhas,
+  },
+  vestidoDoCampo: {
+    id: 'vestido-do-campo', nome: 'Vestido do campo', icone: '💐',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.vestidoCampo, corDetalhe: P.vestidoCampoBarra,
+    nota: 'azul-céu, com flor amarela, branca e lilás', preco: 72,
+    bracosNus: true, pernasNuas: true,
+    extra: vestidoDoCampo,
+  },
+  // ---- calças largas de jardinagem
+  calcaCargoDeJardim: {
+    id: 'calca-cargo-de-jardim', nome: 'Calça cargo de jardim', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.calcaCargo, corDetalhe: P.calcaCargoBolso,
+    nota: 'larga, com bolsão e joelheira para ajoelhar na horta', preco: 58,
+    extra: calcaCargoDeJardim,
+  },
+  calcaPantalona: {
+    id: 'calca-pantalona', nome: 'Pantalona verde-musgo', icone: '🌱',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.calcaPantalona, corDetalhe: P.calcaPantalonaBarra,
+    nota: 'bem aberta embaixo, com um raminho bordado', preco: 60,
+    extra: calcaPantalona,
+  },
+  calcaDeJardineiro: {
+    id: 'calca-de-jardineiro', nome: 'Calça de jardineiro', icone: '🪴',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.calcaJardineiro, corDetalhe: P.calcaJardineiroCostura,
+    nota: 'de brim, com a pazinha no bolso e remendo de flor', preco: 58,
+    extra: calcaDeJardineiro,
   },
   camisetaRodaGigante: {
     id: 'camiseta-roda-gigante', nome: 'Camiseta da roda gigante', icone: '🎡',
@@ -1078,4 +1263,12 @@ export const ROUPAS_DA_JOSEFINA: readonly ItemDef[] = [
   ITENS.camisetaSalvaVidas,
   ITENS.camisetaBarDeSucos,
   ITENS.camisetaRodaGigante,
+  // a segunda leva (pedido do Renan)
+  ITENS.luvasDeFolha, ITENS.luvasDeGirassol, ITENS.luvasDeJoaninha, ITENS.luvasDeGotinha,
+  ITENS.pulseiraDeFlores, ITENS.pulseiraDePedrinhas,
+  ITENS.pinDeMargarida, ITENS.pinDeJoaninha, ITENS.pinDeAbelhinha, ITENS.pinDeBorboleta,
+  ITENS.camisetaDeFlorzinhas, ITENS.camisetaDeJoaninha, ITENS.camisetaDeAbelhinha, ITENS.camisetaDeBorboleta,
+  ITENS.camisetaLargaCogumelo, ITENS.camisetaLargaSapo, ITENS.camisetaLargaLavanda,
+  ITENS.vestidoDeMargaridas, ITENS.vestidoDeRosinhas, ITENS.vestidoDoCampo,
+  ITENS.calcaCargoDeJardim, ITENS.calcaPantalona, ITENS.calcaDeJardineiro,
 ];

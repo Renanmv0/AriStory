@@ -2086,7 +2086,14 @@ function chapeuJoaninha(m: MedidasCorpo): THREE.Object3D {
   const vermelho = toon(P.joaninhaVermelho, { doubleSide: true });
   const preto = toon(P.joaninhaPreto);
   const branco = toon(P.joaninhaBolinha);
-  const BORDA = r * 1.28;
+  /*
+   * A BASE POUSA NO CABELO DE QUEM VESTE (pedido do Renan: no Renan ele
+   * "parecia voando"). Era `1,28·headR` fixo: nos cachos do Ari (alto em
+   * ~1,44) a copa afundava 0,16 e ficava certinho; no cabelo curto do Renan
+   * (alto em ~1,24) a aba ficava acima do cabelo. Agora é o alto MEDIDO menos
+   * os mesmos 0,16 — o Ari fica exatamente como estava.
+   */
+  const BORDA = m.cabelo(0) - r * 0.16;
   const RAIO = r * 0.84;
   const ABA = r * 1.32;
   const ALTO = 0.78;

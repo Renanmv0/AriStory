@@ -75,7 +75,7 @@ turno do Walter não enfeita nada. Medido com `planoDaOnda`: perder na 6ª
 E o **recorde** (`jardim.recorde`, a maior onda vencida) **destranca a lojinha
 aos poucos**: cada enfeite tem a `onda` na ficha (`world/decoracoes.ts`: 4 à
 venda de começo, o resto chegando nas ondas 2, 4, 6, 8, 10, 13, 16, 20 e 25) e
-cada roupa em `LOJA_ABRE` (`premios.ts`: de 0 a 18). O que ainda não chegou
+cada roupa em `LOJA_ABRE` (`premios.ts`: de 0 a 24). O que ainda não chegou
 aparece com cadeado e a onda que falta; o que já foi comprado nunca tranca.
 E cada marco dá um **prêmio único** na primeira vez
 (`jardim.marco-N` = alcançado): a **plaquinha** "Jardineiros da Josefina" na
@@ -93,14 +93,23 @@ lugar da segunda bancada, com o BALCÃO VIRADO PARA O MEIO da estufa — a câme
 padrão a vê por trás, por isso a estante é vazada e a lousa com o nome olha
 para a porta; os canteiros Alface e Tomate da direita recuaram 0,6 m): uma banca que vende **roupa de jardim** (`ROUPAS_DA_JOSEFINA`
 em `world/itens.ts`; comprar é `g.comprarPeca`, o mesmo caminho da boutique, e
-"provar no boneco" abre a arara da boutique com essas peças; hoje onze: quatro
+"provar no boneco" abre a arara da boutique com essas peças; a primeira leva são onze: quatro
 de jardim — camiseta verde-folha, camiseta de girassol, chapéu joaninha,
 galocha — e sete
 temáticas: tiara do Walter, tiara do Pelusa, boné da Gina, mochila-casco da
 Josefina, e as camisetas salva-vidas, da roda gigante e do bar de sucos,
 estampadas por `estampaNoPeito` em `world/roupas.ts`. O chapéu joaninha
 manteve o id antigo `gorro-joaninha`, então quem comprou o gorro ficou com o
-chapéu) e **enfeites para a estufa** (`world/decoracoes.ts` — ficha e geometria
+chapéu, e a aba dele pousa na altura do cabelo de quem veste (`m.cabelo(0)`:
+no Ari fica onde estava, no Renan desce). **A segunda leva** (pedido do Renan,
+23 peças, geometria em `world/roupasDoJardim.ts`, chegando da onda 0 à 24):
+luvas de folha, de girassol, de joaninha e de gotinha; pulseira de flores e de
+pedrinhas; pins de cabelo de margarida, joaninha, abelhinha e borboleta;
+camisetas justas de florzinhas, joaninha, abelhinha e borboleta; camisetas
+LARGAS (oversize, com manga até o cotovelo) de cogumelo, sapinho e lavanda;
+vestidos floridos de margaridas, de rosinhas e do campo; e calças LARGAS de
+jardinagem: cargo com joelheira, pantalona bordada e de jardineiro com a
+pazinha no bolso. Teste: `scripts/roupasDoJardim.mjs`) e **enfeites para a estufa** (`world/decoracoes.ts` — ficha e geometria
 no mesmo arquivo, hoje dezenove, em ordem de preço; os de referência são a
 tartaruguinha, o Pelusa de pelúcia, o copão do Noel, a casquinha do Mano, o
 Walter de cerâmica, o elefantinho do Cookie, a capivara, a girafinha da Gina,

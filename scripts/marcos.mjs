@@ -239,7 +239,7 @@ await page.screenshot({ path: `${OUT}-livro-pragas.png` });
 await page.locator('.livro-de-cartas [data-aba="recompensas"]').click();
 await page.waitForTimeout(400);
 await page.screenshot({ path: `${OUT}-livro-recompensas.png` });
-await page.locator('.livro-de-cartas .fechar').click();
+await page.getByLabel('fechar o livro').click();
 await page.waitForTimeout(400);
 
 // ======================================= 5. voltar na estufa: os enfeites ficam

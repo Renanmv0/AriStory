@@ -344,6 +344,32 @@ lugar certo.
   de peça de cabeça, pé, perna e braço, respectivamente; comece copiando a
   mais parecida com o que você vai fazer.
 
+## `roupasDoJardim.ts` — miudezas de natureza e roupa LARGA
+
+A segunda leva da lojinha da Josefina mora num arquivo próprio
+(`src/world/roupasDoJardim.ts`), com o kit que ela usa:
+
+- **bichinhos e florzinhas**, prontos para estampa, pin ou bordado:
+  `florzinha(raio, petala, miolo, petalas?)`, `folhinha`, `joaninha`,
+  `abelhinha`, `borboleta`, `gotinha`, `girassolzinho`;
+- `colar(obj, pai, x, y, z, nx, ny, nz)` — cola um desenho numa superfície
+  apontando para fora pela normal; `noTronco`/`noPeito` dão o ponto certo na
+  cápsula do tronco;
+- `noCabelo(m, a, pin)` + `comGrampo(m, enfeite)` — pin de cabelo: pousa no
+  contorno MEDIDO (`m.cabelo(a)`), com o grampinho dourado por trás. Serve à
+  vaga `acessorio` com `presoEm: 'cabeca'`;
+- `luvasCom(estampa)` — luva de vaga `maos`, com a estampa no DORSO da mão (o
+  `lado` decide qual face é o dorso);
+- **peça larga**: `camisetaLarga(estampa)` não pinta a cápsula, põe uma CASCA
+  fechada por cima (1,1× o raio do tronco, abrindo para 1,2× numa barra abaixo
+  do quadril, ombro caído, gola e barra), com `mangaLarga` no `extraBraco`
+  (manga até o cotovelo, com a dobra). `calcaLarga(modelo)` faz o mesmo na
+  perna: um tubo solto por perna (0,06·h·w em cima, alargando embaixo), com
+  tampa no alto e barra dobrada. Folga menor que isso some na foto; maior que
+  isso a coxa do vizinho atravessa sentado — confira sempre a foto no banco;
+- `vestidoFlorido(...)` — alça, cintura com laço e saia de dois babados
+  (1,04 → 1,55 → 2,0× o raio do tronco) com flor espalhada nos dois.
+
 Uma casca esférica de raio `R` aberta até `thetaLength` termina em
 `y = centro + R·cos(theta)` com raio `R·sen(theta)` — é a conta por trás de
 qualquer calota (gorro, capuz): errar as duas vira sombrero.
