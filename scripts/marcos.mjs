@@ -161,7 +161,7 @@ console.log(`       perdida na 12: tela "${perdida.tela?.pago}" · marcos ${JSON
 ok(carteira1 - carteira0 === 133, `400 bichos espantados pagam R$ 133 (pagou ${carteira1 - carteira0})`);
 ok(flor1 - flor0 === 26, `e 26 girassóis (pagou ${flor1 - flor0})`);
 ok(flor1 - flor0 < carteira1 - carteira0, 'girassol rende menos que real');
-ok(/R\$ 50/.test(perdida.tela?.pago ?? '') && /26/.test(perdida.tela?.pago ?? ''), 'a tela do fim mostra os reais e os girassóis');
+ok(/R\$ 133/.test(perdida.tela?.pago ?? '') && /26/.test(perdida.tela?.pago ?? ''), 'a tela do fim mostra os reais e os girassóis');
 ok(await page.evaluate(() => window.jogo.stat('jardim.recorde')) === 11, 'o recorde vira a onda 11 (as vencidas)');
 ok((perdida.tela?.marcos.length ?? 0) === 2, 'a tela do fim mostra os dois marcos novos (5 e 10)');
 const e0 = await enfeites();
