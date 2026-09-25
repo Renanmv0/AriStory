@@ -880,6 +880,22 @@ export class RodadaDoJardim {
   private async subir(ate: number): Promise<void> {
     this.pausada = true;
     this.g.mirarJogador(null);
+    /*
+     * O `finally` é o que garante que a rodada volta a andar. Esta função roda
+     * solta (`void this.subir`), então um erro no meio dela não aparecia em
+     * lugar nenhum: a promessa morria calada e a rodada ficava pausada para
+     * sempre, com os bichos parados e a dupla andando.
+     */
+    try {
+      await this.telasDaSubida(ate);
+    } catch (erro) {
+      console.error('a subida de nível falhou; a rodada segue', erro);
+    } finally {
+      this.pausada = false;
+    }
+  }
+
+  private async telasDaSubida(ate: number): Promise<void> {
     while (this.nivel < ate && this.rodando) {
       this.nivel += 1;
       await this.umaTelaDeCartas();
@@ -895,7 +911,6 @@ export class RodadaDoJardim {
         await this.umaTelaDeCartas({ atual: i, total: extras });
       }
     }
-    this.pausada = false;
   }
 
   /** uma tela das três cartas no nível de agora, e a carta pega entra na mão */

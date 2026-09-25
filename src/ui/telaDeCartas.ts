@@ -43,6 +43,8 @@ export class TelaDeCartas {
   private cartas: readonly CartaNaTela[] = [];
   private marcada = -1;
   private resolver: ((id: string) => void) | null = null;
+  /** quantas vezes a tela já abriu: o fechamento atrasado só vale para a dele */
+  private vez = 0;
   som: ((nome: SomNome) => void) | null = null;
 
   constructor(raiz: HTMLDivElement) {
@@ -93,6 +95,7 @@ export class TelaDeCartas {
         resolve(cartas[0]?.id ?? '');
         return;
       }
+      this.vez += 1;
       this.cartas = cartas;
       this.marcada = -1;
       this.titulo.textContent = String(contexto.nivel);
@@ -120,7 +123,8 @@ export class TelaDeCartas {
 
   /** Marca a carta `i` (0, 1 ou 2): ela sobe, e o botão diz o nome dela. */
   marcar(i: number): void {
-    if (!this.aberta || i < 0 || i >= this.cartas.length) return;
+    // já pegou: durante o pulo da carta nada mais muda de lugar
+    if (!this.aberta || !this.resolver || i < 0 || i >= this.cartas.length) return;
     this.marcada = i;
     this.mesa.querySelectorAll<HTMLElement>('.carta-jardim').forEach((el) => {
       el.classList.toggle('marcada', Number(el.dataset.i) === i);
@@ -137,20 +141,31 @@ export class TelaDeCartas {
     this.marcar((daqui + passo + n) % n);
   }
 
-  /** Pega a marcada. Sem nada marcado não faz nada — é o "dois tempos". */
+  /**
+   * Pega a marcada. Sem nada marcado não faz nada — é o "dois tempos".
+   *
+   * UM "PEGAR" POR TELA. O toque a mais durante o pulo da carta (dedo que
+   * bate duas vezes, ou E e clique juntos) agendava um segundo fechamento; no
+   * nível de prêmio a tela seguinte já tinha aberto quando ele disparava, e ele
+   * a escondia com a escolha pendente — a rodada ficava congelada para sempre,
+   * sem tela nenhuma (o Ari perdeu uma rodada no nível 10 assim). Por isso o
+   * `resolver` vazio barra o segundo, e o fechamento só vale para a tela que o
+   * agendou (`vez`).
+   */
   confirmar(): void {
-    if (!this.aberta || this.marcada < 0) return;
+    if (!this.aberta || this.marcada < 0 || !this.resolver) return;
     const carta = this.cartas[this.marcada];
     const el = this.mesa.querySelector<HTMLElement>(`.carta-jardim[data-i="${this.marcada}"]`);
     el?.classList.add('pega');
     this.som?.('confirma');
     const avisar = this.resolver;
     this.resolver = null;
+    const vez = this.vez;
     // a carta pega dá o "pulo" dela antes de a tela sumir: é o que confirma
     // para o jogador QUAL ele pegou, antes de o mundo voltar a andar
     window.setTimeout(() => {
-      this.raiz.classList.remove('show');
-      avisar?.(carta.id);
+      if (vez === this.vez) this.raiz.classList.remove('show');
+      avisar(carta.id);
     }, 420);
   }
 

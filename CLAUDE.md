@@ -140,6 +140,7 @@ node scripts/jeitos.mjs  /tmp/jt    # o jeito de cada praga na rodada: o pulo, o
 node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena, a mesinha servida pelo Mano, o deslize e a patinacao
 node scripts/cartas.mjs            # as cartas do jardim: nenhuma repete em mil rodadas, a curva de nivel e as ondas (sem navegador)
 node scripts/gotas.mjs   /tmp/gt    # as gotas no chao e a tela das tres cartas: pisar pega, sobe de nivel, escolhe em dois tempos, e uma mesa de cada raridade no computador e no celular
+node scripts/premioDeNivel.mjs /tmp/pn # as telas de prêmio do nível 5 e do 10 com o dedo nervoso (dois "pegar" em cada tela): nenhuma some, e a rodada volta a andar
 node scripts/postos.mjs  /tmp/pt    # a Josefina entra junto na estufa, passeia, pede confirmacao e leva o parceiro pro posto de tras
 node scripts/chamados.mjs /tmp/ch   # as cartas de chamado: Capy, Gina, Walter e Noel entram pela porta da estufa, falam e ficam no posto
 node scripts/rodada.mjs  /tmp/rd    # a rodada do jardim: a onda 1 inteira, o regador atirando sozinho, o tonel, as cartas congelando e o fim com a Josefina
