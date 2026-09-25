@@ -954,6 +954,10 @@ export class CharacterRig {
       presilha.position.set(-headR * 0.78 * vol, headR * 0.92 * vol, headR * 0.62 * vol);
       presilha.rotation.set(0.35, -0.6, 0.3);
       this.head.add(presilha);
+      // a presilha é DO CABELO: some com ele quando uma touca ou um gorro o
+      // esconde (`cobreCabelo`) — antes ela ficava boiando no ar, presa em
+      // nada. O contorno do cabelo já foi medido, então ela não o engorda.
+      this.cabelo.push(presilha);
     }
 
     if (acc.includes('laco')) {
@@ -1172,8 +1176,10 @@ export class CharacterRig {
       const liga = this.roupa[slot] !== undefined
         // gorro sobrevive ao banho — e o mesmo precedente do chapeu de campeao,
         // que ja fica na cabeca dentro da agua. Bota e luva, nao; a presilha e o
-        // adesivo (acessorio) sao pequenos e vao junto para a piscina
-        && (slot === 'cabeca' || slot === 'acessorio' || !banho)
+        // adesivo (acessorio) sao pequenos e vao junto para a piscina. E a peca
+        // de PISCINA (`praia`: chinelo, boia, colar, a estampa da bermuda) e
+        // justamente a que foi feita para ficar no corpo dentro do clube
+        && (slot === 'cabeca' || slot === 'acessorio' || !banho || this.roupa[slot]?.praia === true)
         // o patins engole o tornozelo inteiro: o cano da bota apareceria pela
         // costura, igual ao tenis apareceria
         && !(slot === 'pes' && this.patinando);
@@ -1204,6 +1210,8 @@ export class CharacterRig {
       if (peca.pernasNuas && slot === 'pernas' && !this.roupa.pernas) return true;
       // a manga e o `detalhe` do tronco; o torso continua vestido
       if (peca.bracosNus && slot === 'tronco' && parte === 'detalhe') return true;
+      // o chinelo: pe descalco, e a peca e so a sola e a tira por cima
+      if (peca.pesNus && slot === 'pes') return true;
     }
     return false;
   }
@@ -1257,14 +1265,14 @@ export class CharacterRig {
    * cabeca: um vestido teria nascido no pescoco.
    */
   private porExtras(slot: SlotRoupa, peca: ItemDef): void {
-    if (!peca.extra && !peca.extraBraco) return;
+    if (!peca.extra && !peca.extraBraco && !peca.extraQuadril) return;
     // Cada pai leva o LADO junto: -1 no membro de -X, 1 no de +X.
     //
     // Sem isso a mesma geometria vai nos dois membros, e uma peca que se
     // desloca para fora do corpo entra para DENTRO do lado esquerdo — foi o que
     // torceu a manga de quimono. E a mesma pegadinha de sinal do frisbee e dos
     // bracos sentados.
-    const pais: Array<[THREE.Object3D, 'corpo' | 'braco', -1 | 1]> = [];
+    const pais: Array<[THREE.Object3D, 'corpo' | 'braco' | 'quadril', -1 | 1]> = [];
     if (peca.extra) {
       // pernas E pes vao para os pivos das pernas, uma copia em cada: a liga
       // de uma meia tem que dobrar junto com a coxa, igual ao cano da bota
@@ -1284,13 +1292,19 @@ export class CharacterRig {
     if (peca.extraBraco) {
       pais.push([this.armL, 'braco', -1], [this.armR, 'braco', 1]);
     }
+    // o quadril da bermuda (a estampa do calcao) vai no CORPO: o calcao do
+    // rig mora la, e o pivo da perna — de onde sai o `extra` de pernas — nao
+    // alcanca o quadril
+    if (peca.extraQuadril) pais.push([this.body, 'quadril', 1]);
     const postos: THREE.Object3D[] = [];
     for (const [pai, tipo, lado] of pais) {
       // uma malha NOVA por pai: o mesmo Object3D nao pode ter dois pais, que e
       // a mesma razao de `modeloDoItem` nunca devolver a mesma instancia
       const obj = tipo === 'braco'
         ? peca.extraBraco!(this.medidas, lado, peca)
-        : peca.extra!(this.medidas, lado, peca);
+        : tipo === 'quadril'
+          ? peca.extraQuadril!(this.medidas, lado, peca)
+          : peca.extra!(this.medidas, lado, peca);
       // etiqueta para o teste conseguir dizer o que cada corpo esta vestindo
       obj.userData.roupa = peca.id;
       // o `traverse` que liga sombra roda no CONSTRUTOR, entao nada criado

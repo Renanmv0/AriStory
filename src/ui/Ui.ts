@@ -1,5 +1,5 @@
 import type { SavedMemory } from '../core/SaveState';
-import { SLOTS_ROUPA, type ItemDef, type Vaga } from '../core/types';
+import { SLOTS_ROUPA, type ItemDef, type SlotRoupa, type Vaga } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import { TelaDeCartas, escapar } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
@@ -89,10 +89,8 @@ export class Ui {
   private readonly loja: HTMLDivElement;
   private readonly bonecoDaLoja: HTMLCanvasElement;
   private readonly vitrine: HTMLDivElement;
-  private readonly vestiario: HTMLDivElement;
-  private readonly oculos: HTMLButtonElement;
-  private readonly bermudas: HTMLDivElement;
-  private readonly donoVestiario: HTMLSpanElement;
+  /** a vitrine da aba de roupas de piscina, no guarda-roupa em modo vestiário */
+  private readonly vitrineDaPiscina: HTMLDivElement;
   private readonly slotsMao: HTMLDivElement;
   private readonly slotsVestivel: HTMLDivElement;
   private readonly dono: HTMLElement;
@@ -272,14 +270,33 @@ export class Ui {
         <button class="close">voltar pro jogo</button>
       </div></div>
       <div class="armario"><div class="sheet">
-        <h2>Guarda-roupa <span class="dono"></span></h2>
-        <p class="sub">clique numa peça para vestir ou tirar · arraste o boneco para girar · <b>T</b> veste o outro</p>
-        <div class="prova">
-          <canvas class="boneco"></canvas>
-          <div class="corpo"></div>
+        <h2><span class="titulo">Guarda-roupa</span> <span class="dono"></span></h2>
+        <div class="abas" role="tablist">
+          <button data-aba="vestir" role="tab">👕 Guarda-roupa</button>
+          <button data-aba="piscina" role="tab">🩳 Roupas de piscina</button>
         </div>
-        <h3>O que você tem</h3>
+        <p class="sub"></p>
+        <div class="prova">
+          <div class="palco">
+            <canvas class="boneco"></canvas>
+            <div class="traje" role="group" aria-label="como o boneco aparece">
+              <button data-traje="banho" title="como fica na piscina">🏊<span> na piscina</span></button>
+              <button data-traje="normal" title="como fica na rua">👕<span> na rua</span></button>
+            </div>
+          </div>
+          <div class="corpo"></div>
+          <div class="ficha">
+            <b class="nome"></b>
+            <small class="nota"></small>
+            <span class="preco"></span>
+            <button class="agir"></button>
+            <p class="aviso"></p>
+          </div>
+        </div>
+        <h3 class="rotulo-acervo">O que você tem</h3>
         <div class="acervo"></div>
+        <div class="vitrine-piscina"></div>
+        <p class="saldo"></p>
         <button class="close">fechar</button>
       </div></div>
       <div class="loja"><div class="sheet">
@@ -298,15 +315,6 @@ export class Ui {
         <div class="vitrine"></div>
         <p class="saldo"></p>
         <button class="close">sair da arara</button>
-      </div></div>
-      <div class="vestiario"><div class="sheet">
-        <h2>Vestiário <span class="dono"></span></h2>
-        <p class="sub">o traje de praia de cada um · <b>T</b> troca de pessoa</p>
-        <h3>Óculos escuros</h3>
-        <button class="oculos"></button>
-        <h3>Cor da bermuda</h3>
-        <div class="bermudas"></div>
-        <button class="close">voltar pra piscina</button>
       </div></div>
       <div class="cardapio">
         <div class="papel">
@@ -399,10 +407,7 @@ export class Ui {
     this.loja = ui.querySelector('.loja')!;
     this.bonecoDaLoja = ui.querySelector('.loja .boneco')!;
     this.vitrine = ui.querySelector('.loja .vitrine')!;
-    this.vestiario = ui.querySelector('.vestiario')!;
-    this.oculos = ui.querySelector('.vestiario .oculos')!;
-    this.bermudas = ui.querySelector('.vestiario .bermudas')!;
-    this.donoVestiario = ui.querySelector('.vestiario .dono')!;
+    this.vitrineDaPiscina = ui.querySelector('.armario .vitrine-piscina')!;
     this.cardapio = ui.querySelector('.cardapio')!;
     this.inscricoes = ui.querySelector('.quadro-de-inscricoes')!;
     this.fichasDoQuadro = ui.querySelector('.quadro-de-inscricoes .fichas')!;
@@ -538,15 +543,22 @@ export class Ui {
       if (peca?.dataset.id) this.onProvarPeca?.(peca.dataset.id);
     });
     ui.querySelector('.loja .comprar')!.addEventListener('click', () => this.onComprarPeca?.());
-    ui.querySelector('.vestiario .close')!.addEventListener('click', () => this.fecharVestiario());
-    this.vestiario.addEventListener('click', (e) => {
-      if (e.target === this.vestiario) this.fecharVestiario();
+    // o guarda-roupa em modo vestiário: as abas, o traje do boneco, a
+    // vitrine de piscina e o botão da ficha — um ouvinte só por grupo, pelo
+    // mesmo motivo da vitrine da Estella
+    this.armario.querySelector('.abas')!.addEventListener('click', (e) => {
+      const aba = (e.target as HTMLElement).closest<HTMLElement>('[data-aba]')?.dataset.aba;
+      if (aba === 'vestir' || aba === 'piscina') this.onTrocarAbaDoArmario?.(aba);
     });
-    this.oculos.addEventListener('click', () => this.onAlternarOculos?.());
-    this.bermudas.addEventListener('click', (e) => {
-      const peca = (e.target as HTMLElement).closest('.bermuda') as HTMLElement | null;
-      if (peca?.dataset.id) this.onEscolherBermuda?.(peca.dataset.id);
+    this.armario.querySelector('.traje')!.addEventListener('click', (e) => {
+      const traje = (e.target as HTMLElement).closest<HTMLElement>('[data-traje]')?.dataset.traje;
+      if (traje === 'banho' || traje === 'normal') this.onTrajeDoBoneco?.(traje);
     });
+    this.vitrineDaPiscina.addEventListener('click', (e) => {
+      const peca = (e.target as HTMLElement).closest<HTMLElement>('.produto');
+      if (peca?.dataset.id) this.onProvarNaPiscina?.(peca.dataset.id);
+    });
+    this.armario.querySelector('.ficha .agir')!.addEventListener('click', () => this.onAgirNaPiscina?.());
     ui.querySelector('.cardapio .pedir')!.addEventListener('click', () => {
       if (this.pratoMarcado) this.fecharCardapio(this.pratoMarcado);
     });
@@ -661,7 +673,7 @@ export class Ui {
     document.body.classList.toggle(
       'tela-aberta',
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
-      this.memoriasOpen || this.vestiarioOpen || this.cardapioOpen || this.xadrezOpen ||
+      this.memoriasOpen || this.cardapioOpen || this.xadrezOpen ||
       this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen ||
       this.lojaJosefinaOpen,
     );
@@ -1837,12 +1849,47 @@ export class Ui {
     return this.armario.classList.contains('show');
   }
 
-  abrirArmario(): void {
+  /**
+   * Abre o guarda-roupa. No modo `vestiario` (o do clube) ele vira o
+   * VESTIÁRIO: o mesmo painel, com outro nome, com as duas abas — o
+   * guarda-roupa de sempre e a vitrine das roupas de piscina — e o botão que
+   * troca o boneco entre o traje de banho e o de rua.
+   */
+  abrirArmario(modo: 'casa' | 'vestiario' = 'casa'): void {
     if (this.armarioOpen) return;
     this.som?.('escolha');
+    this.armario.classList.toggle('modo-vestiario', modo === 'vestiario');
+    this.armario.querySelector('.titulo')!.textContent = modo === 'vestiario' ? 'Vestiário' : 'Guarda-roupa';
     this.onAbrirArmario?.();
     this.armario.classList.add('show');
     this.marcarTelaAberta();
+  }
+
+  /** O painel está no modo vestiário (o do clube)? */
+  get armarioEhVestiario(): boolean {
+    return this.armario.classList.contains('modo-vestiario');
+  }
+
+  /**
+   * Qual aba do vestiário aparece, e em que traje está o boneco. Fora do modo
+   * vestiário, o painel é sempre o guarda-roupa, e isto só marca o botão.
+   */
+  mostrarAbaDoArmario(aba: 'vestir' | 'piscina', traje: 'normal' | 'banho'): void {
+    const piscina = aba === 'piscina' && this.armarioEhVestiario;
+    this.armario.classList.toggle('aba-piscina', piscina);
+    this.armario.classList.toggle('aba-vestir', !piscina);
+    for (const b of this.armario.querySelectorAll<HTMLElement>('.abas [data-aba]')) {
+      const ativa = b.dataset.aba === (piscina ? 'piscina' : 'vestir');
+      b.classList.toggle('ativa', ativa);
+      b.setAttribute('aria-selected', String(ativa));
+    }
+    for (const b of this.armario.querySelectorAll<HTMLElement>('.traje [data-traje]')) {
+      b.classList.toggle('ativo', b.dataset.traje === traje);
+    }
+    this.armario.querySelector('.sub')!.innerHTML = piscina
+      ? 'clique numa peça para <b>provar no boneco</b> · desbloqueada, ela vai para o guarda-roupa dos dois · <b>T</b> troca de pessoa'
+      : 'clique numa peça para vestir ou tirar · arraste o boneco para girar · <b>T</b> veste o outro';
+    this.armario.querySelector('.rotulo-acervo')!.textContent = piscina ? 'Roupas de piscina' : 'O que você tem';
   }
 
   fecharArmario(): void {
@@ -1928,6 +1975,103 @@ export class Ui {
     });
   }
 
+  /**
+   * A ABA DE ROUPAS DE PISCINA do vestiário: a vitrine por parte do corpo,
+   * a ficha da peça provada ao lado do boneco e a carteira.
+   *
+   * É a arara da Estella dentro do guarda-roupa, com uma diferença que vem da
+   * própria aba: a peça já desbloqueada não some da vitrine — o botão da
+   * ficha passa a VESTIR (ou tirar) ali mesmo, sem trocar de aba.
+   *
+   * PROVAR NÃO É DESBLOQUEAR: clicar na grade só veste o boneco; quem paga é
+   * o botão da ficha, do outro lado do painel (mesmo motivo da Estella).
+   */
+  renderPiscina(dados: {
+    dono: string;
+    saldo: number;
+    provando: string | null;
+    pecas: ReadonlyArray<{
+      id: string; nome: string; icone: string; nota?: string; slot: SlotRoupa;
+      preco: number; cor: string; faixa?: string; pontos?: string; jaTem: boolean; vestida: boolean;
+    }>;
+  }): void {
+    this.donoArmario.textContent = `de ${dados.dono}`;
+    this.armario.querySelector('.saldo')!.innerHTML = `Na carteira do casal: <b>R$ ${dados.saldo}</b>`;
+
+    // a vitrine por parte do corpo, na mesma ordem das vagas (como o acervo)
+    this.vitrineDaPiscina.innerHTML = '';
+    SLOTS_ROUPA.forEach((slot, i) => {
+      const doSlot = dados.pecas.filter((p) => p.slot === slot);
+      if (doSlot.length === 0) return;
+      const secao = document.createElement('section');
+      secao.className = 'grupo';
+      secao.dataset.slot = slot;
+      const titulo = document.createElement('h4');
+      const tem = doSlot.filter((p) => p.jaTem).length;
+      titulo.innerHTML = `${PARTES[i]} <span>${tem}/${doSlot.length}</span>`;
+      secao.appendChild(titulo);
+      const grade = document.createElement('div');
+      grade.className = 'produtos';
+      for (const p of doSlot) {
+        const botao = document.createElement('button');
+        botao.className = 'produto';
+        botao.dataset.id = p.id;
+        botao.classList.toggle('provando', p.id === dados.provando);
+        botao.classList.toggle('ja-tem', p.jaTem);
+        botao.classList.toggle('vestida', p.vestida);
+        botao.classList.toggle('caro', !p.jaTem && p.preco > dados.saldo);
+        const amostra = document.createElement('i');
+        // a amostra é a COR DA PEÇA (a bermuda estampada leva as listras dela)
+        amostra.style.background = p.faixa
+          ? `repeating-linear-gradient(160deg, ${p.cor} 0 12px, ${p.faixa} 12px 18px)`
+          : p.pontos
+            ? `radial-gradient(circle, ${p.pontos} 0 2.5px, transparent 3px) 0 0 / 11px 11px, ${p.cor}`
+            : p.cor;
+        amostra.textContent = p.icone;
+        botao.appendChild(amostra);
+        const nome = document.createElement('b');
+        nome.textContent = p.nome;
+        botao.appendChild(nome);
+        const etiqueta = document.createElement('em');
+        etiqueta.textContent = p.vestida ? 'vestindo' : p.jaTem ? '✓ é de vocês' : `R$ ${p.preco}`;
+        botao.appendChild(etiqueta);
+        grade.appendChild(botao);
+      }
+      secao.appendChild(grade);
+      this.vitrineDaPiscina.appendChild(secao);
+    });
+
+    // a ficha da peça provada, ao lado do boneco
+    const escolhida = dados.pecas.find((p) => p.id === dados.provando) ?? null;
+    const ficha = this.armario.querySelector<HTMLElement>('.ficha')!;
+    const botao = ficha.querySelector<HTMLButtonElement>('.agir')!;
+    ficha.classList.toggle('vazia', escolhida === null);
+    ficha.querySelector('.nome')!.textContent = escolhida?.nome ?? 'Escolha uma peça';
+    ficha.querySelector('.nota')!.textContent = escolhida?.nota ?? 'clique numa da vitrine para ver no corpo';
+    ficha.querySelector('.preco')!.textContent =
+      !escolhida ? '' : escolhida.jaTem ? '✓ é de vocês' : `R$ ${escolhida.preco}`;
+    const falta = escolhida && !escolhida.jaTem ? escolhida.preco - dados.saldo : 0;
+    botao.disabled = !escolhida || falta > 0;
+    botao.classList.toggle('vestir', !!escolhida?.jaTem);
+    botao.textContent = !escolhida
+      ? 'Desbloquear'
+      : escolhida.jaTem
+        ? escolhida.vestida ? 'Tirar' : 'Vestir agora'
+        : falta > 0
+          ? `Faltam R$ ${falta}`
+          : `Desbloquear por R$ ${escolhida.preco}`;
+    ficha.querySelector('.aviso')!.textContent = falta > 0 ? 'O vestiário não fia. Nem para vocês.' : '';
+  }
+
+  /** Trocou de aba no vestiário. */
+  onTrocarAbaDoArmario: ((aba: 'vestir' | 'piscina') => void) | null = null;
+  /** Trocou o boneco entre o traje de banho e o de rua. */
+  onTrajeDoBoneco: ((traje: 'normal' | 'banho') => void) | null = null;
+  /** Clicou numa peça da vitrine de piscina: prova no boneco. */
+  onProvarNaPiscina: ((id: string) => void) | null = null;
+  /** Apertou o botão da ficha: desbloquear, vestir ou tirar a peça provada. */
+  onAgirNaPiscina: (() => void) | null = null;
+
   /** Clicou numa das 4 partes do corpo para TIRAR o que está lá. */
   onTirarParte: ((indice: number) => void) | null = null;
   /** Clicou numa peça guardada para VESTIR. */
@@ -1973,14 +2117,6 @@ export class Ui {
       this.onVestirPeca?.(peca.dataset.id);
     });
   }
-
-  // --------------------------------------------------------------- vestiário
-  //
-  // O vestiário do clube é o guarda-roupa ENCOLHIDO na moda praia: as mesmas
-  // vagas do corpo e o mesmo save, só que com duas perguntas em vez do acervo
-  // inteiro. Ele não tem boneco 3D de propósito — a folha é baixa e estreita, e
-  // o corpo de verdade continua aparecendo atrás dela na beira da piscina. É o
-  // único painel em que dá para ver a peça no lugar certo enquanto se escolhe.
 
   /* ====================================================================
    *                   A ARARA DA ESTELLA — provar e comprar
@@ -2085,70 +2221,6 @@ export class Ui {
   onAbrirLoja: (() => void) | null = null;
   onFecharLoja: (() => void) | null = null;
 
-  get vestiarioOpen(): boolean {
-    return this.vestiario.classList.contains('show');
-  }
-
-  abrirVestiario(): void {
-    if (this.vestiarioOpen) return;
-    this.som?.('escolha');
-    this.onAbrirVestiario?.();
-    this.vestiario.classList.add('show');
-    this.marcarTelaAberta();
-  }
-
-  fecharVestiario(): void {
-    if (!this.vestiarioOpen) return;
-    this.vestiario.classList.remove('show');
-    this.marcarTelaAberta();
-    this.onFecharVestiario?.();
-  }
-
-  /**
-   * Desenha o painel: o botão do óculos e a fileira de bermudas.
-   *
-   * `cor` e `faixa` são cores CSS, e não da paleta: quem traduz da peça para a
-   * tela é o Game. A amostra tem a cor DA PEÇA, e não um emoji colorido — na
-   * beira da piscina o que se escolhe é a cor, então ela tem que ser o botão.
-   */
-  renderVestiario(dados: {
-    dono: string;
-    oculos: boolean;
-    bermudas: ReadonlyArray<{ id: string; nome: string; cor: string; faixa?: string; vestida: boolean }>;
-  }): void {
-    this.donoVestiario.textContent = `de ${dados.dono}`;
-
-    this.oculos.classList.toggle('ligado', dados.oculos);
-    this.oculos.innerHTML =
-      `<span class="icone">🕶️</span><b>Óculos escuros</b>` +
-      `<em>${dados.oculos ? 'tirar' : 'colocar'}</em>`;
-
-    this.bermudas.innerHTML = '';
-    for (const b of dados.bermudas) {
-      const botao = document.createElement('button');
-      botao.className = 'bermuda';
-      botao.classList.toggle('vestida', b.vestida);
-      botao.dataset.id = b.id;
-      const amostra = document.createElement('i');
-      // estampada: a faixa entra como duas listras na própria amostra, que é
-      // como ela aparece no calção
-      amostra.style.background = b.faixa
-        ? `repeating-linear-gradient(160deg, ${b.cor} 0 12px, ${b.faixa} 12px 18px)`
-        : b.cor;
-      botao.appendChild(amostra);
-      const nome = document.createElement('b');
-      nome.textContent = b.nome;
-      botao.appendChild(nome);
-      this.bermudas.appendChild(botao);
-    }
-  }
-
-  /** Clicou no botão do óculos: liga se estiver desligado, e vice-versa. */
-  onAlternarOculos: (() => void) | null = null;
-  /** Clicou numa cor de bermuda. A mesma de novo tira a bermuda. */
-  onEscolherBermuda: ((id: string) => void) | null = null;
-  onAbrirVestiario: (() => void) | null = null;
-  onFecharVestiario: (() => void) | null = null;
 
   /** Clique numa vaga da mão: quem decide o que fazer é o Game. */
   onEscolherSlot: ((indice: number) => void) | null = null;

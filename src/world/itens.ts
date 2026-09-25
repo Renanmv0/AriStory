@@ -4,6 +4,13 @@ import type { HoldPose, ItemDef } from '../core/types';
 import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
 import { borrifadorDeJardim, esguichoDeMangueira, pistolaDagua, regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
+  bermudaListrada, bermudaDeBolinhas, bermudaHavaiana, bermudaDeAbacaxi, bermudaDeMelancia, bermudaDeOndinhas,
+  oculosRedondo, oculosGatinho, oculosDeCoracao, oculosEspelhado, oculosDeNatacao,
+  chineloAzul, chineloFlorido, chineloDeMelancia, chineloSlide,
+  chapeuDePraia, toucaDeNatacao, tiaraDeConchinhas,
+  boiaDePatinho, colarHavaiano, camisaHavaiana, mangaHavaiana, regataListrada,
+} from './roupasDePiscina';
+import {
   aventalDaJosefina, blazerXadrez, canoDaBota, chapeuDeJardineira, coroaDeDama, gargantilhaDeLaco,
   boneDaGina, chapeuJoaninha, estampaLaranja, estampaRodaGigante, estampaSalvaVidas, girassolNoPeito,
   gorroDeLa, gravataDoWalter, mochilaCascoDaJosefina, tiaraDoPelusa, tiaraDoWalter,
@@ -583,20 +590,74 @@ export const ITENS = {
     extra: canoDaBota,
   },
   // ------------------------------------------------------- moda praia
-  // Do vestiario do clube. As bermudas declaram `corBanho` e NAO declaram
-  // `cor`: essa ausencia e o que diz ao rig "isto e uma bermuda". No clube ela
-  // pinta o calcao do traje de banho (sem camiseta); fora dele, desde o pedido
-  // do Renan de usar o shorts no parque e no resto, o rig veste o MESMO calcao
-  // e as mesmas pernas de shorts por cima da perna de pele, com a camiseta de
-  // sempre (`aplicarVisual`, "a bermuda na rua"). Sem geometria nova.
+  // O VESTIÁRIO DO CLUBE (pedido do Renan: o vestiário virou guarda-roupa, com
+  // uma aba de roupas de piscina para desbloquear a até R$ 20 cada). Tudo aqui
+  // tem `preco` — desbloquear é comprar, pela carteira do casal — e a lista do
+  // que o vestiário vende é `MODA_PRAIA`, lá embaixo.
+  //
+  // As BERMUDAS declaram `corBanho` e NÃO declaram `cor`: essa ausência é o
+  // que diz ao rig "isto é uma bermuda". No clube ela pinta o calção do traje
+  // de banho (sem camiseta); fora dele, desde o pedido do Renan de usar o
+  // shorts no parque e no resto, o rig veste o MESMO calção e as mesmas pernas
+  // de shorts por cima da perna de pele, com a camiseta de sempre
+  // (`aplicarVisual`, "a bermuda na rua"). As estampadas novas põem a estampa
+  // por cima do calção: `extraQuadril` no quadril, `extra` em cada perna, e
+  // `corDetalhe` é a cor da estampa.
+  //
+  // `praia` é a marca da peça que continua no corpo DENTRO do clube (chinelo,
+  // boia, colar, a estampa da bermuda): lá é traje de banho, e sem a marca só
+  // ficam a cabeça e o acessório.
+  //
+  // O ÓCULOS ESCURO é ACESSÓRIO (preso na cabeça), e não mais cabeça: pedido
+  // do Renan, para dar para usar óculos junto com chapéu. O save antigo que o
+  // tinha na vaga da cabeça muda ele de vaga sozinho (`SaveState`).
   oculosEscuros: {
     id: 'oculos-escuros',
     nome: 'Óculos escuros',
     icone: '🕶️',
     tipo: 'vestivel',
-    slot: 'cabeca',
-    nota: 'do vestiário do clube',
+    slot: 'acessorio',
+    presoEm: 'cabeca',
+    praia: true,
+    preco: 10,
+    amostra: P.oculosLente,
+    nota: 'o de sempre do vestiário',
     extra: oculosDeSol,
+  },
+  oculosRedondo: {
+    id: 'oculos-redondo', nome: 'Óculos redondinho', icone: '👓',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
+    preco: 14, amostra: P.oculosDourado,
+    nota: 'aro dourado fino e lente âmbar',
+    extra: oculosRedondo,
+  },
+  oculosGatinho: {
+    id: 'oculos-gatinho', nome: 'Óculos gatinho', icone: '😼',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
+    preco: 15, amostra: P.oculosGatinhoRosa,
+    nota: 'rosa, de pontinha, com strass',
+    extra: oculosGatinho,
+  },
+  oculosDeCoracao: {
+    id: 'oculos-de-coracao', nome: 'Óculos de coração', icone: '😍',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
+    preco: 15, amostra: P.oculosCoracaoAro,
+    nota: 'para ver a piscina toda cor-de-rosa',
+    extra: oculosDeCoracao,
+  },
+  oculosEspelhado: {
+    id: 'oculos-espelhado', nome: 'Óculos espelhado', icone: '😎',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
+    preco: 18, amostra: P.oculosEspelhado,
+    nota: 'esportivo, a lente azul dando a volta',
+    extra: oculosEspelhado,
+  },
+  oculosDeNatacao: {
+    id: 'oculos-de-natacao', nome: 'Óculos de natação', icone: '🥽',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
+    preco: 12, amostra: P.oculosNatacaoLente,
+    nota: 'com a tira em volta da cabeça',
+    extra: oculosDeNatacao,
   },
   bermudaAzul: {
     id: 'bermuda-azul',
@@ -605,6 +666,8 @@ export const ITENS = {
     tipo: 'vestivel',
     slot: 'pernas',
     corBanho: P.bermudaAzul,
+    praia: true,
+    preco: 10,
     nota: 'a cor da própria piscina',
   },
   bermudaVermelha: {
@@ -614,6 +677,8 @@ export const ITENS = {
     tipo: 'vestivel',
     slot: 'pernas',
     corBanho: P.bermudaVermelha,
+    praia: true,
+    preco: 10,
     nota: 'dá pra achar de longe',
   },
   bermudaAmarela: {
@@ -623,6 +688,8 @@ export const ITENS = {
     tipo: 'vestivel',
     slot: 'pernas',
     corBanho: P.bermudaAmarela,
+    praia: true,
+    preco: 10,
     nota: 'sol de tarde',
   },
   bermudaEstampada: {
@@ -633,7 +700,133 @@ export const ITENS = {
     slot: 'pernas',
     corBanho: P.bermudaEstampa,
     estampaBanho: P.bermudaEstampaFaixa,
+    praia: true,
+    preco: 12,
     nota: 'duas faixas cor de areia',
+  },
+  bermudaListrada: {
+    id: 'bermuda-listrada', nome: 'Bermuda listrada', icone: '⚓',
+    tipo: 'vestivel', slot: 'pernas', praia: true, preco: 14,
+    corBanho: P.bermudaMarinho, corDetalhe: P.bermudaListraCreme,
+    nota: 'de marinheiro, com âncora e cordão',
+    extra: bermudaListrada.perna, extraQuadril: bermudaListrada.quadril,
+  },
+  bermudaDeBolinhas: {
+    id: 'bermuda-de-bolinhas', nome: 'Bermuda de bolinhas', icone: '🫧',
+    tipo: 'vestivel', slot: 'pernas', praia: true, preco: 14,
+    corBanho: P.bermudaVerdeAgua, corDetalhe: P.bermudaBolinha,
+    nota: 'verde-água de bolinha branca',
+    extra: bermudaDeBolinhas.perna, extraQuadril: bermudaDeBolinhas.quadril,
+  },
+  bermudaHavaiana: {
+    id: 'bermuda-havaiana', nome: 'Bermuda havaiana', icone: '🌺',
+    tipo: 'vestivel', slot: 'pernas', praia: true, preco: 18,
+    corBanho: P.bermudaHavaiana, corDetalhe: P.hibiscoVermelho,
+    nota: 'hibisco vermelho e rosa, folha escura',
+    extra: bermudaHavaiana.perna, extraQuadril: bermudaHavaiana.quadril,
+  },
+  bermudaDeAbacaxi: {
+    id: 'bermuda-de-abacaxi', nome: 'Bermuda de abacaxi', icone: '🍍',
+    tipo: 'vestivel', slot: 'pernas', praia: true, preco: 18,
+    corBanho: P.bermudaRosaAbacaxi, corDetalhe: P.abacaxiAmarelo,
+    nota: 'rosa, de abacaxizinho',
+    extra: bermudaDeAbacaxi.perna, extraQuadril: bermudaDeAbacaxi.quadril,
+  },
+  bermudaDeMelancia: {
+    id: 'bermuda-de-melancia', nome: 'Bermuda de melancia', icone: '🍉',
+    tipo: 'vestivel', slot: 'pernas', praia: true, preco: 18,
+    corBanho: P.bermudaMelancia, corDetalhe: P.melanciaSemente,
+    nota: 'com semente, e a casca na barra',
+    extra: bermudaDeMelancia.perna, extraQuadril: bermudaDeMelancia.quadril,
+  },
+  bermudaDeOndinhas: {
+    id: 'bermuda-de-ondinhas', nome: 'Bermuda de ondinhas', icone: '🌊',
+    tipo: 'vestivel', slot: 'pernas', praia: true, preco: 16,
+    corBanho: P.bermudaAzulMar, corDetalhe: P.ondaEspuma,
+    nota: 'azul-mar com a crista das ondas',
+    extra: bermudaDeOndinhas.perna, extraQuadril: bermudaDeOndinhas.quadril,
+  },
+  chineloAzul: {
+    id: 'chinelo-azul', nome: 'Chinelo azul', icone: '🩴',
+    tipo: 'vestivel', slot: 'pes', praia: true, pesNus: true, preco: 8,
+    cor: P.chineloAzul, corDetalhe: P.chineloSolaBranca,
+    nota: 'o de dedo, de sola branca',
+    extra: chineloAzul,
+  },
+  chineloVerdeLimao: {
+    id: 'chinelo-verde-limao', nome: 'Chinelo verde-limão', icone: '🩴',
+    tipo: 'vestivel', slot: 'pes', praia: true, pesNus: true, preco: 8,
+    cor: P.chineloAmarelo, corDetalhe: P.chineloVerdeLimao,
+    nota: 'sola verde e tira amarela',
+    extra: chineloAzul,
+  },
+  chineloFlorido: {
+    id: 'chinelo-florido', nome: 'Chinelo florido', icone: '🌸',
+    tipo: 'vestivel', slot: 'pes', praia: true, pesNus: true, preco: 12,
+    cor: P.chineloRosa, corDetalhe: P.chineloSolaRosa,
+    nota: 'rosa, com a florzinha na tira',
+    extra: chineloFlorido,
+  },
+  chineloDeMelancia: {
+    id: 'chinelo-de-melancia', nome: 'Chinelo de melancia', icone: '🍉',
+    tipo: 'vestivel', slot: 'pes', praia: true, pesNus: true, preco: 14,
+    cor: P.melanciaCasca, corDetalhe: P.bermudaMelancia,
+    nota: 'a sola é uma fatia, com semente',
+    extra: chineloDeMelancia,
+  },
+  chineloSlide: {
+    id: 'chinelo-slide', nome: 'Chinelo slide do clube', icone: '🌊',
+    tipo: 'vestivel', slot: 'pes', praia: true, pesNus: true, preco: 16,
+    cor: P.chineloSlide, corDetalhe: P.chineloSolaBranca,
+    nota: 'faixa larga com a ondinha do clube',
+    extra: chineloSlide,
+  },
+  chapeuDePraia: {
+    id: 'chapeu-de-praia', nome: 'Chapéu de praia', icone: '👒',
+    tipo: 'vestivel', slot: 'cabeca', preco: 18,
+    cor: P.chapeuPraia, corDetalhe: P.chapeuPraiaListra,
+    nota: 'de pescador, listrado de azul',
+    extra: chapeuDePraia,
+  },
+  toucaDeNatacao: {
+    id: 'touca-de-natacao', nome: 'Touca de natação', icone: '🏊',
+    tipo: 'vestivel', slot: 'cabeca', preco: 15, cobreCabelo: true,
+    cor: P.toucaNatacao,
+    nota: 'das antigas, com flor de borracha',
+    extra: toucaDeNatacao,
+  },
+  tiaraDeConchinhas: {
+    id: 'tiara-de-conchinhas', nome: 'Tiara de conchinhas', icone: '🐚',
+    tipo: 'vestivel', slot: 'cabeca', preco: 16, amostra: P.estrelaDoMar,
+    nota: 'estrela-do-mar, concha e pérola',
+    extra: tiaraDeConchinhas,
+  },
+  boiaDePatinho: {
+    id: 'boia-de-patinho', nome: 'Boia de braço de patinho', icone: '🦆',
+    tipo: 'vestivel', slot: 'maos', praia: true, preco: 14,
+    cor: P.boiaLaranja, corDetalhe: P.boiaCostura,
+    nota: 'as braçadeiras, com um patinho',
+    extra: boiaDePatinho,
+  },
+  colarHavaiano: {
+    id: 'colar-havaiano', nome: 'Colar havaiano', icone: '🌼',
+    tipo: 'vestivel', slot: 'tronco', praia: true, preco: 12, amostra: P.colarRosa,
+    nota: 'de flor, fica até dentro do clube',
+    extra: colarHavaiano,
+  },
+  camisaHavaiana: {
+    id: 'camisa-havaiana', nome: 'Camisa havaiana', icone: '🌴',
+    tipo: 'vestivel', slot: 'tronco', preco: 20,
+    cor: P.camisaHavaiana, corDetalhe: P.camisaHavaiana,
+    nota: 'para depois da piscina',
+    extra: camisaHavaiana, extraBraco: mangaHavaiana,
+  },
+  regataListrada: {
+    id: 'regata-listrada', nome: 'Regata listrada', icone: '🎽',
+    tipo: 'vestivel', slot: 'tronco', preco: 16, bracosNus: true,
+    cor: P.regataCreme, corDetalhe: P.regataListra,
+    nota: 'de marinheiro, com a âncora no peito',
+    extra: regataListrada,
   },
   frisbee: {
     id: 'frisbee',
@@ -1128,14 +1321,38 @@ export const PREMIUM_DA_ESTELLA: readonly AraraDaLoja[] = [
 ];
 
 /**
- * O que o vestiario do clube tem para vestir.
+ * O que o vestiário do clube VENDE — a aba "Roupas de piscina".
  *
- * Um lugar so: a cena ABASTECE por esta lista e o painel DESENHA por ela, e as
- * duas nao tem como discordar sobre quais cores existem. Na ordem em que
- * aparecem na fileira.
+ * Um lugar só: o painel DESENHA por esta lista, e a conta de quem já tinha as
+ * peças de antes (o óculos e as quatro bermudas saíam de graça no vestiário
+ * antigo) também passa por ela. Na ordem das partes do corpo, que é a ordem
+ * em que o painel as mostra.
  */
 export const MODA_PRAIA: readonly ItemDef[] = [
+  // cabeça
+  ITENS.chapeuDePraia, ITENS.toucaDeNatacao, ITENS.tiaraDeConchinhas,
+  // tronco
+  ITENS.colarHavaiano, ITENS.camisaHavaiana, ITENS.regataListrada,
+  // pernas
   ITENS.bermudaAzul, ITENS.bermudaVermelha, ITENS.bermudaAmarela, ITENS.bermudaEstampada,
+  ITENS.bermudaListrada, ITENS.bermudaDeBolinhas, ITENS.bermudaDeOndinhas,
+  ITENS.bermudaHavaiana, ITENS.bermudaDeAbacaxi, ITENS.bermudaDeMelancia,
+  // pés
+  ITENS.chineloAzul, ITENS.chineloVerdeLimao, ITENS.chineloFlorido, ITENS.chineloDeMelancia, ITENS.chineloSlide,
+  // mãos
+  ITENS.boiaDePatinho,
+  // acessório
+  ITENS.oculosEscuros, ITENS.oculosRedondo, ITENS.oculosDeNatacao, ITENS.oculosGatinho,
+  ITENS.oculosDeCoracao, ITENS.oculosEspelhado,
+];
+
+/**
+ * As peças que o vestiário ANTIGO dava de graça (o óculos e as quatro
+ * bermudas). Quem já tem alguma delas no guarda-roupa não paga de novo: o
+ * `Game` registra como comprada (e aí ela é reposta como qualquer compra).
+ */
+export const MODA_PRAIA_ANTIGA: readonly ItemDef[] = [
+  ITENS.oculosEscuros, ITENS.bermudaAzul, ITENS.bermudaVermelha, ITENS.bermudaAmarela, ITENS.bermudaEstampada,
 ];
 
 /**

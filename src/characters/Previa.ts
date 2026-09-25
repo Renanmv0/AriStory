@@ -36,6 +36,12 @@ export class Previa {
   private giro = 0;
   /** para onde ele esta girando; o giro e suave, como no rig do jogo */
   private alvo = 0;
+  /**
+   * O TRAJE do boneco: o de rua, ou o de banho (sem camiseta e de calcao).
+   * O vestiario do clube mostra o boneco de banho, que e como a peca vai
+   * ficar na piscina; o guarda-roupa de casa, o de rua.
+   */
+  private traje: 'normal' | 'banho' = 'normal';
 
   constructor(canvas: HTMLCanvasElement) {
     // `alpha` para o painel aparecer por tras do boneco; sem antialias o
@@ -71,6 +77,7 @@ export class Previa {
     }
     this.spec = spec;
     this.rig = new CharacterRig(spec);
+    this.rig.setOutfit(this.traje);
     this.pedestal.add(this.rig.group);
 
     // Enquadra pela altura da pessoa — o Renan e 6 cm mais alto que o Ari.
@@ -87,6 +94,12 @@ export class Previa {
 
   vestir(loadout: Loadout): void {
     this.rig?.vestirRoupa(loadout);
+  }
+
+  /** Troca o traje do boneco (ver `traje`); vale tambem para o proximo corpo. */
+  vestirTraje(traje: 'normal' | 'banho'): void {
+    this.traje = traje;
+    this.rig?.setOutfit(traje);
   }
 
   /** Gira o boneco. Positivo vai para a direita. */

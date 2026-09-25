@@ -18,7 +18,7 @@ import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
 import { Josefina } from '../entities/bichos/Josefina';
 import { ARI, RENAN } from '../characters/cast';
-import { ITENS, MODA_PRAIA } from '../world/itens';
+import { ITENS } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
 import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
 
@@ -2005,14 +2005,10 @@ export const clube: SceneDef = {
       label: 'Vestiário', icon: '🩳',
       highlight: vestiario,
       onInteract: async (api) => {
-        // Abastece os DOIS a cada abertura, como o armário do quarto: as peças
-        // são de cada pessoa, e o `storeItem` recusa o que ela já tem, então
-        // repor sai de graça e o vestiário também repõe o que foi descartado.
-        for (const quem of [api.playerId(), api.companionId()]) {
-          api.storeItem(ITENS.oculosEscuros, quem);
-          for (const peca of MODA_PRAIA) api.storeItem(peca, quem);
-        }
-
+        // O vestiário é um GUARDA-ROUPA com a aba das roupas de piscina (pedido
+        // do Renan): as peças não são mais dadas de graça — desbloqueia-se
+        // pagando, e aí elas repõem sozinhas em todo guarda-roupa dos dois.
+        // Quem manda no que está à venda é `MODA_PRAIA`, lida pelo painel.
         if (!api.flag('vestiario-clube')) {
           api.setFlag('vestiario-clube');
           await conversa([

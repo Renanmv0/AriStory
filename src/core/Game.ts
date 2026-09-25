@@ -26,7 +26,7 @@ import {
   type Vaga,
 } from './types';
 import {
-  ITENS, MODA_PRAIA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
+  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
 } from '../world/itens';
 import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
@@ -143,29 +143,25 @@ export class Game implements GameAPI {
       this.pintarArmario();
     };
 
-    // O vestiario do clube mexe nas MESMAS vagas do guarda-roupa — ele so
-    // pergunta menos. Por isso os dois paineis passam pelos mesmos dois
-    // metodos: um jeito so de vestir, um jeito so de tirar.
-    this.ui.onAbrirVestiario = () => this.pintarVestiario();
-    this.ui.onAlternarOculos = () => {
-      const quem = this.playerId();
-      const posto = SLOTS_ROUPA.indexOf('cabeca');
-      const jaEsta = this.save.vestiveis(quem)[posto]?.id === ITENS.oculosEscuros.id;
-      if (jaEsta ? this.tirarPeca(quem, posto) : this.vestirPeca(quem, ITENS.oculosEscuros.id)) {
-        this.audio.play('escolha');
-      }
-      this.pintarVestiario();
+    // O VESTIÁRIO DO CLUBE é este mesmo guarda-roupa, com outro nome e uma
+    // aba a mais (pedido do Renan): a das roupas de piscina, que se provam no
+    // boneco e se desbloqueiam pagando. Vestir e tirar continuam passando
+    // pelos mesmos dois métodos — um jeito só de vestir, um jeito só de tirar.
+    this.ui.onTrocarAbaDoArmario = (aba) => {
+      if (this.abaDoArmario === aba) return;
+      this.abaDoArmario = aba;
+      this.provandoNaPiscina = null;
+      this.audio.play('menu');
+      this.pintarArmario();
     };
-    this.ui.onEscolherBermuda = (id) => {
-      const quem = this.playerId();
-      const posto = SLOTS_ROUPA.indexOf('pernas');
-      // a mesma cor de novo TIRA a bermuda: o botao que veste e o que despe
-      const jaEsta = this.save.vestiveis(quem)[posto]?.id === id;
-      if (jaEsta ? this.tirarPeca(quem, posto) : this.vestirPeca(quem, id)) {
-        this.audio.play('escolha');
-      }
-      this.pintarVestiario();
+    this.ui.onTrajeDoBoneco = (traje) => {
+      this.trajeDoBoneco = traje;
+      this.previa.vestirTraje(traje);
+      this.audio.play('escolha');
+      this.pintarArmario();
     };
+    this.ui.onProvarNaPiscina = (id) => this.provarNaPiscina(id);
+    this.ui.onAgirNaPiscina = () => this.agirNaPiscina();
     this.ui.onTouchHold = (down) => this.input.setVirtualDown('KeyF', down);
     this.ui.onRestart = () => this.restart();
     this.ui.som = (nome) => this.audio.play(nome);
@@ -393,7 +389,6 @@ export class Game implements GameAPI {
       this.ui.menuOpen ||
       this.ui.mochilaOpen ||
       this.ui.armarioOpen ||
-      this.ui.vestiarioOpen ||
       this.ui.memoriasOpen ||
       this.ui.cardapioOpen ||
       this.ui.quadroOpen ||
@@ -418,8 +413,6 @@ export class Game implements GameAPI {
     // Esc fecha o guarda-roupa: ele trava o movimento, então precisa de uma
     // saída de teclado além do botão
     if (this.ui.armarioOpen && this.input.justPressed('Escape')) this.ui.fecharArmario();
-    // o vestiário trava o movimento pelo mesmo motivo, e sai pela mesma tecla
-    if (this.ui.vestiarioOpen && this.input.justPressed('Escape')) this.ui.fecharVestiario();
     // o quadro trava o movimento igual ao guarda-roupa, então precisa da mesma
     // saída de teclado
     if (this.ui.memoriasOpen && this.input.justPressed('Escape')) this.ui.fecharMemorias();
@@ -468,7 +461,7 @@ export class Game implements GameAPI {
     // trocar é como se vê — e se veste — o outro. O subtítulo da mochila já
     // prometia "T vê a do outro" e não funcionava: o `busy` engolia a tecla.
     const emTela =
-      this.ui.mochilaOpen || this.ui.armarioOpen || this.ui.vestiarioOpen || this.ui.lojaOpen;
+      this.ui.mochilaOpen || this.ui.armarioOpen || this.ui.lojaOpen;
     const podeTrocar = emTela
       ? !this.ui.dialogueOpen && !this.ui.menuOpen && !this.transitioning
       : !busy;
@@ -1009,11 +1002,42 @@ export class Game implements GameAPI {
    * inventario, e as pecas sao itens. Um dia o `I` pode abrir daqui tambem.
    */
   abrirGuardaRoupa(): void {
+    this.herdarModaPraia();
     this.reporCompras();
     this.reporPremios();
+    // o de casa é sempre o guarda-roupa, com o boneco de roupa de rua
+    this.abaDoArmario = 'vestir';
+    this.trajeDoBoneco = 'normal';
+    this.provandoNaPiscina = null;
+    this.previa.vestirTraje('normal');
     this.previa.mostrar(this.player.rig.spec);
+    this.ui.abrirArmario('casa');
     this.pintarArmario();
-    this.ui.abrirArmario();
+  }
+
+  /*
+   * O GUARDA-ROUPA EM MODO VESTIÁRIO: a aba aberta, o traje do boneco e a
+   * peça de piscina provada. Provar, como na Estella, NÃO mexe no save — só
+   * no boneco do painel.
+   */
+  private abaDoArmario: 'vestir' | 'piscina' = 'vestir';
+  private trajeDoBoneco: 'normal' | 'banho' = 'normal';
+  private provandoNaPiscina: ItemDef | null = null;
+
+  /**
+   * AS PEÇAS DO VESTIÁRIO ANTIGO CONTINUAM DE QUEM JÁ TINHA.
+   *
+   * O vestiário de antes dava o óculos e as quatro bermudas de graça a quem
+   * entrasse; agora elas se desbloqueiam pagando. Quem já tem alguma no
+   * guarda-roupa (ou no corpo) não paga de novo: ela vira COMPRADA, e daí em
+   * diante é reposta em todo guarda-roupa como qualquer compra.
+   */
+  private herdarModaPraia(): void {
+    const quem = [this.playerId(), this.companionId()];
+    for (const peca of MODA_PRAIA_ANTIGA) {
+      if (this.save.comprou(peca.id)) continue;
+      if (quem.some((q) => this.save.achouItem(q, peca.id))) this.save.registrarCompra(peca.id);
+    }
   }
 
   /**
@@ -1056,6 +1080,11 @@ export class Game implements GameAPI {
 
   /** Redesenha o painel e o boneco a partir do save. */
   private pintarArmario(): void {
+    this.ui.mostrarAbaDoArmario(this.abaDoArmario, this.trajeDoBoneco);
+    if (this.abaDoArmario === 'piscina' && this.ui.armarioEhVestiario) {
+      this.pintarPiscina();
+      return;
+    }
     const quem = this.playerId();
     const vestindo = this.save.vestiveis(quem);
     // O que da para vestir sai do ARMARIO. A vestimenta funcional que estiver
@@ -1070,19 +1099,111 @@ export class Game implements GameAPI {
   }
 
   /**
-   * Abre o vestiario do clube: o guarda-roupa encolhido na moda praia.
+   * Abre o VESTIÁRIO DO CLUBE: o guarda-roupa com outro nome e duas abas — o
+   * guarda-roupa de sempre e as roupas de piscina (pedido do Renan).
    *
-   * Nao ha um segundo armazenamento nenhum aqui. O oculos e as bermudas sao
-   * itens de acervo como qualquer outro, e as escolhas moram nas vagas do
-   * corpo — as MESMAS que o armario do quarto usa. E por isso que o Ari e o
-   * Renan tem estilos de praia independentes de graca: cada um tem o seu
-   * inventario, e o `T` troca de quem o painel esta falando.
+   * Não há armazenamento novo nenhum: as peças de piscina são itens como
+   * qualquer outro, desbloquear é comprar (`comprarPeca`, a mesma da Estella
+   * e da Josefina), e a peça comprada vira estoque de TODO guarda-roupa dos
+   * dois — o do quarto, o espelho da Estella e este.
+   *
+   * O boneco abre de TRAJE DE BANHO, que é como a peça vai ficar na piscina; o
+   * botão embaixo dele troca para a roupa de rua.
    */
   abrirVestiario(): void {
-    this.pintarVestiario();
-    this.ui.abrirVestiario();
+    this.herdarModaPraia();
+    this.reporCompras();
+    this.reporPremios();
+    this.trajeDoBoneco = 'banho';
+    this.provandoNaPiscina = null;
+    // quem ainda não tem NADA de piscina chega direto na vitrine: é o que
+    // veio fazer aqui
+    if (!MODA_PRAIA.some((p) => this.jaTemPeca(p.id))) this.abaDoArmario = 'piscina';
+    this.previa.vestirTraje('banho');
+    this.previa.mostrar(this.player.rig.spec);
+    this.ui.abrirArmario('vestiario');
+    this.pintarArmario();
   }
 
+  /** A peça de piscina aparece no traje de banho? (senão o boneco vai para a rua) */
+  private apareceNoBanho(peca: ItemDef): boolean {
+    return peca.slot === 'cabeca' || peca.slot === 'acessorio' || peca.praia === true
+      || (peca.slot === 'pernas' && peca.corBanho !== undefined);
+  }
+
+  /** Redesenha a aba de roupas de piscina e o boneco, com a peça provada por cima. */
+  private pintarPiscina(): void {
+    const quem = this.playerId();
+    const vestindo = this.save.vestiveis(quem);
+    const css = (cor: number): string => `#${cor.toString(16).padStart(6, '0')}`;
+    this.ui.renderPiscina({
+      dono: this.player.name,
+      saldo: this.save.carteira,
+      provando: this.provandoNaPiscina?.id ?? null,
+      pecas: MODA_PRAIA.map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        icone: p.icone,
+        nota: p.nota,
+        slot: p.slot ?? 'tronco',
+        preco: p.preco ?? 0,
+        cor: css(p.corBanho ?? p.cor ?? p.amostra ?? 0xcccccc),
+        // a amostra da bermuda leva a estampa dela: listra para a de faixas e a
+        // de marinheiro, pontinho para as de desenho (bolinha, fruta, flor, onda)
+        faixa: p.estampaBanho !== undefined ? css(p.estampaBanho)
+          : p.id === 'bermuda-listrada' && p.corDetalhe !== undefined ? css(p.corDetalhe) : undefined,
+        pontos: p.corBanho !== undefined && p.corDetalhe !== undefined && p.id !== 'bermuda-listrada'
+          ? css(p.corDetalhe) : undefined,
+        // "é de vocês" é PAGOU (ou herdou do vestiário antigo), e não "está
+        // no inventário agora": descartar do corpo não faz cobrar de novo
+        jaTem: this.save.comprou(p.id) || this.save.achouItem(quem, p.id),
+        vestida: vestindo.some((v) => v?.id === p.id),
+      })),
+    });
+    // o boneco veste o que a pessoa está usando, com a peça provada POR CIMA,
+    // na vaga dela — provar um chinelo não tira a bermuda
+    const loadout = { ...this.save.loadout(quem) };
+    if (this.provandoNaPiscina?.slot) loadout[this.provandoNaPiscina.slot] = this.provandoNaPiscina.id;
+    this.previa.vestir(loadout);
+  }
+
+  private provarNaPiscina(id: string): void {
+    const peca = MODA_PRAIA.find((p) => p.id === id) ?? null;
+    if (!peca) return;
+    // clicar de novo na mesma TIRA a prova, como na arara da Estella
+    this.provandoNaPiscina = this.provandoNaPiscina?.id === peca.id ? null : peca;
+    // camiseta e boné não aparecem no traje de banho: para ver a peça, o
+    // boneco vai para a roupa de rua
+    if (this.provandoNaPiscina && !this.apareceNoBanho(peca) && this.trajeDoBoneco === 'banho') {
+      this.trajeDoBoneco = 'normal';
+      this.previa.vestirTraje('normal');
+    }
+    this.audio.play('escolha');
+    this.pintarArmario();
+  }
+
+  /**
+   * O BOTÃO DA FICHA: desbloqueia a peça provada (paga, e ela vai para o
+   * guarda-roupa dos dois) ou, se ela já é de vocês, veste ou tira ali mesmo.
+   */
+  private agirNaPiscina(): void {
+    const peca = this.provandoNaPiscina;
+    if (!peca) return;
+    const quem = this.playerId();
+    const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
+    if (!this.jaTemPeca(peca.id)) {
+      if (this.comprarPeca(peca) !== 'comprou') return;
+    } else if (vaga >= 0 && this.save.vestiveis(quem)[vaga]?.id === peca.id) {
+      if (!this.tirarPeca(quem, vaga)) return;
+      this.audio.play('escolha');
+    } else {
+      // ela é dos dois, mas pode ter sido descartada: repõe antes de vestir
+      this.storeItem(peca, quem);
+      if (!this.vestirPeca(quem, peca.id)) return;
+      this.audio.play('escolha');
+    }
+    this.pintarArmario();
+  }
   /* ====================================================================
    *              A ARARA DA ESTELLA: provar no corpo e comprar
    * ==================================================================== */
@@ -1235,33 +1356,6 @@ export class Game implements GameAPI {
 
   posicionador(estado: EstadoDoPosicionador | null, aoBotao?: (b: BotaoDoPosicionador) => void): void {
     this.ui.mostrarPosicionador(estado, aoBotao ?? null);
-  }
-
-  /** Redesenha o painel do vestiario a partir do save. */
-  private pintarVestiario(): void {
-    const quem = this.playerId();
-    const vestindo = this.save.vestiveis(quem);
-    const naCabeca = vestindo[SLOTS_ROUPA.indexOf('cabeca')];
-    const nasPernas = vestindo[SLOTS_ROUPA.indexOf('pernas')];
-    // a paleta e numero e o CSS quer texto; a traducao mora aqui, e nao na Ui,
-    // porque e o Game quem conhece a ficha da peca
-    const css = (cor: number): string => `#${cor.toString(16).padStart(6, '0')}`;
-    this.ui.renderVestiario({
-      dono: this.player.name,
-      oculos: naCabeca?.id === ITENS.oculosEscuros.id,
-      // so as cores DESBLOQUEADAS: a lista e o que a pessoa tem, e nao o
-      // catalogo inteiro. Hoje o vestiario abastece as quatro ao abrir, mas
-      // quem manda continua sendo o inventario dela.
-      bermudas: MODA_PRAIA
-        .filter((b) => this.save.achouItem(quem, b.id))
-        .map((b) => ({
-          id: b.id,
-          nome: b.nome,
-          cor: css(b.corBanho ?? 0xffffff),
-          faixa: b.estampaBanho === undefined ? undefined : css(b.estampaBanho),
-          vestida: nasPernas?.id === b.id,
-        })),
-    });
   }
 
   /**
@@ -1641,7 +1735,6 @@ export class Game implements GameAPI {
       this.previa.mostrar(this.player.rig.spec);
       this.pintarArmario();
     }
-    if (this.ui.vestiarioOpen) this.pintarVestiario();
     // a arara mostra a peca no corpo de quem esta no comando: o T troca o
     // corpo do boneco junto, e a peca provada continua provada no outro
     if (this.ui.lojaOpen) {

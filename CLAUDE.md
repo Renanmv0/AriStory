@@ -106,7 +106,8 @@ node scripts/vestimenta.mjs /tmp/vt # onde cada roupa pode morar, e o armario po
 node scripts/roupasDoJardim.mjs /tmp/rj # a segunda leva da lojinha da Josefina: luvas, pins, pulseiras, vestidos, camisetas e calças largas nos dois (de frente, costas, andando e sentados) e o chapeu joaninha no cabelo do Renan
 node scripts/falas.mjs   /tmp/fl    # as falas de premio: cada dono reparando na roupa que ele deu
 node scripts/campeao.mjs /tmp/cp    # o premio do campeao: a meta em duas etapas, a festa na mesa de piquenique, a vaquinha e a raquete dourada
-node scripts/vestiario.mjs /tmp/vs  # o vestiario do clube: oculos, cor da bermuda e um estilo por pessoa
+node scripts/vestiario.mjs /tmp/vs  # o vestiario do clube: o guarda-roupa com as duas abas, a vitrine de piscina (provar, faltar dinheiro, desbloquear e vestir), o T, o save antigo e o celular
+node scripts/modaPraia.mjs /tmp/mp  # as roupas de piscina nos dois: bermudas estampadas, oculos, chinelos, boia, colar, chapeu, touca, tiara e camisas, no clube e no parque
 node scripts/quarto.mjs  /tmp/qt    # quarto do Ari: porta nos dois sentidos e o armario
 node scripts/memorias.mjs /tmp/me   # o quadro de memorias: pintado, vivo e travando o jogo
 node scripts/cardapio.mjs /tmp/cd   # a mesa do restaurante: sentar, pedir, o garcom entregar e comer

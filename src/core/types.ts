@@ -151,9 +151,10 @@ export interface ItemDef {
    * QUANTO CUSTA, em reais, na arara da Estella.
    *
    * So a loja le isto. Peca sem preco nao esta a venda — e o caso de tudo o
-   * que ja estava no armario do Ari, da bermuda do vestiario e do premio do
-   * Walter: eles nao aparecem em vitrine nenhuma, e nao ha "preco 0" para
-   * significar isso (zero e um preco, e um preco de graca).
+   * que ja estava no armario do Ari e do premio do Walter: eles nao aparecem
+   * em vitrine nenhuma, e nao ha "preco 0" para significar isso (zero e um
+   * preco, e um preco de graca). As pecas do vestiario do clube tem preco
+   * (ate R$ 20, pedido do Renan): la, "desbloquear" e comprar.
    *
    * O numero e inteiro e em reais cheios, na mesma escala do resto do jogo: o
    * bilhete da roda gigante custa 24, um prato do Mania sai por 12 a 34, e um
@@ -274,6 +275,35 @@ export interface ItemDef {
   bracosNus?: boolean;
   /** Idem para a perna: vestido, saia e short. */
   pernasNuas?: boolean;
+  /**
+   * Idem para o PÉ: chinelo. O pé do rig (a caixa do tênis) vira pele, e a
+   * peça é só a sola e a tira por cima dele — pé descalço no chinelo.
+   */
+  pesNus?: boolean;
+  /**
+   * PEÇA DE PISCINA: aparece também no traje de banho (o clube).
+   *
+   * No banho o corpo inteiro vira pele e, de roupa, só ficam a cabeça e o
+   * acessório — bota, luva e camiseta são de rua. O vestiário do clube vende
+   * o que é feito para a beira da piscina (chinelo, boia de braço, colar de
+   * flor, bermuda estampada), e é esta marca que deixa a peça continuar no
+   * corpo dentro do clube. Camiseta NUNCA leva a marca: no clube é sem
+   * camiseta e de shorts (pedido do Renan).
+   */
+  praia?: boolean;
+  /**
+   * Só `pernas`: a geometria que a peça tem no QUADRIL.
+   *
+   * O `extra` de pernas pendura no pivô de CADA perna, e não alcança o quadril
+   * — e é no quadril que mora o calção da bermuda. Uma bermuda estampada põe
+   * as listras, as bolinhas ou as flores do calção aqui, e as da perna do
+   * shorts no `extra`.
+   *
+   * REFERENCIAL: o corpo, y = 0 no CHÃO — o mesmo do `tronco`. O calção do rig
+   * é um cilindro de raio `0,118·h·w` (embaixo `0,112`), `0,105·h` de altura,
+   * centrado em `legH + 0,012·h` e achatado em 0,85 no z.
+   */
+  extraQuadril?(m: MedidasCorpo, lado: -1 | 1, peca: ItemDef): THREE.Object3D;
   /**
    * Um enfeite a mais na peca, quando ela tem um modelo PROPRIO do rig.
    *
@@ -526,8 +556,11 @@ export interface GameAPI {
    */
   abrirGuardaRoupa(): void;
   /**
-   * Abre o vestiario do clube: o guarda-roupa encolhido na moda praia — o
-   * oculos escuros e a cor da bermuda. Trava o movimento igual ao armario.
+   * Abre o VESTIARIO do clube: o painel do guarda-roupa com o nome
+   * "Vestiario" e duas abas — o guarda-roupa de sempre e as ROUPAS DE PISCINA
+   * (`MODA_PRAIA`), que se provam no boneco (de traje de banho) e se
+   * desbloqueiam pagando, a ate R$ 20. Desbloqueada, a peca vira roupa de todo
+   * guarda-roupa dos dois. Trava o movimento igual ao armario.
    *
    * Nao e um segundo sistema de roupa: ele mexe nas mesmas vagas do corpo, com
    * os mesmos itens, no mesmo save. Cada pessoa tem o seu.

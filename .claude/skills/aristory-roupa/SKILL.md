@@ -187,12 +187,47 @@ banho por cima da perna de pele, com a camiseta de sempre
 (`aplicarVisual`, "a bermuda na rua"). Zero geometria nova. Peça que declara
 `cor` numa vaga de pernas continua sendo calça: pinta a perna inteira.
 
-O painel que troca isso é o **vestiário do clube** (`clube:vestiario` →
-`g.abrirVestiario()`): o guarda-roupa encolhido em duas perguntas, óculos e
-cor. Ele mexe nas MESMAS vagas, pelos mesmos `vestirPeca`/`tirarPeca` do
-`Game`, então cada pessoa guarda o seu traje de praia de graça. Cor nova de
-bermuda é uma entrada em `ITENS` e outra em `MODA_PRAIA` (`world/itens.ts`) —
-a cena abastece por essa lista e o painel desenha por ela.
+### O que fica no corpo DENTRO do clube: `praia`
+
+No banho, de roupa, só sobram a cabeça, o acessório e o calção — bota, luva e
+camiseta são de rua. A peça feita para a beira da piscina leva **`praia: true`**
+na ficha e continua no corpo lá dentro: o chinelo, a boia de braço, o colar de
+flor, a estampa da bermuda. Camiseta **nunca** leva a marca: no clube é sem
+camiseta e de shorts (pedido do Renan).
+
+- **Bermuda estampada nova** = `corBanho` (o pano) + `corDetalhe` (a tinta da
+  estampa) + as duas fábricas de `bermudaDe(estampa)` em
+  `world/roupasDePiscina.ts`: `extraQuadril` (a estampa do CALÇÃO, pendurada no
+  corpo, y = 0 no chão) e `extra` (a da perna do shorts, no pivô de cada
+  perna). Os ajudantes `noCalcao`/`naPernaDoShort`/`anelNoCalcao`/`anelNaPerna`
+  sabem as medidas do calção do rig — é por eles que a estampa encosta no pano.
+- **Chinelo** = vaga `pes` com `pesNus: true`: o pé do rig vira PELE e a peça é
+  só a sola e a tira (`chinelo(modelo)`).
+
+## O vestiário do clube é um guarda-roupa com duas abas
+
+Pedido do Renan: o vestiário é o MESMO painel do guarda-roupa de casa e do
+espelho da Estella (`g.abrirVestiario()` → `ui.abrirArmario('vestiario')`),
+com o nome "Vestiário" e duas abas:
+
+- **Guarda-roupa**: igual ao de casa — vestir e tirar.
+- **Roupas de piscina**: a vitrine de `MODA_PRAIA` (`world/itens.ts`) por
+  parte do corpo, com o boneco de TRAJE DE BANHO (o botão embaixo dele troca
+  para a roupa de rua) e a ficha da peça provada. **Desbloquear é comprar**
+  (`comprarPeca`, a mesma da Estella e da Josefina), a até R$ 20 cada: a peça
+  vai para o guarda-roupa dos dois e vira estoque de TODO guarda-roupa
+  (`reporCompras`). Depois o mesmo botão veste e tira ali mesmo.
+
+Peça de piscina nova = a ficha em `ITENS` (com `preco` até 20, e `praia` se
+ela deve ficar no corpo dentro do clube) + uma entrada em `MODA_PRAIA`, na
+parte do corpo dela. O painel desenha por essa lista; a cena não precisa de
+nada. As cinco peças que o vestiário antigo dava de graça (`MODA_PRAIA_ANTIGA`)
+continuam de quem já tinha (`herdarModaPraia`, no `Game`).
+
+**Óculos é acessório** (`slot: 'acessorio'`, `presoEm: 'cabeca'`), para ir
+junto com chapéu — pedido do Renan. Save antigo com o óculos na vaga da
+cabeça muda ele de vaga sozinho; se o acessório já estava ocupado, a peça que
+sobra vai para o guarda-roupa (`SaveState.normalizar`).
 
 ## Pele à mostra: `bracosNus` e `pernasNuas`
 
@@ -398,7 +433,8 @@ npm run typecheck
 npm run build && npx vite preview --port 4173 &
 node scripts/roupas.mjs     /tmp/rp
 node scripts/vestimenta.mjs /tmp/vt
-node scripts/vestiario.mjs  /tmp/vs   # só se a peça mexer na moda praia
+node scripts/vestiario.mjs  /tmp/vs   # só se a peça mexer na moda praia (o painel do vestiário)
+node scripts/modaPraia.mjs  /tmp/mp   # as peças de piscina nos dois, no clube e no parque
 ```
 
 `roupas.mjs` mede, não só fotografa: confere que a geometria nasceu sob o pai

@@ -232,7 +232,16 @@ function normalizar(
   for (const item of vestiveis) {
     if (!item) continue;
     const vaga = vagaDoCorpo(item);
-    if (vaga >= 0 && arrumado[vaga] === null) arrumado[vaga] = item;
+    if (vaga >= 0 && arrumado[vaga] === null) {
+      arrumado[vaga] = item;
+      continue;
+    }
+    // A peca MUDOU DE PARTE DO CORPO no catalogo e a vaga nova ja esta
+    // ocupada — o oculos escuro saiu da cabeca para o acessorio (pedido do
+    // Renan: oculos junto com chapeu), e quem estava de oculos E de presilha
+    // tem duas pecas para uma vaga. A que sobra vai para o guarda-roupa, e nao
+    // para o lixo: o save nao apaga peca de ninguem.
+    if (ehCosmetico(item)) resgatadas.push(item);
   }
 
   // Migracao do guarda-roupa que morava fora do inventario: quem estava de

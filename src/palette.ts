@@ -173,6 +173,107 @@ export const PALETTE = {
   oculosLente: 0x23212b,
   oculosArmacao: 0x3d3b48,
 
+  /*
+   * O VESTIÁRIO DO CLUBE — a moda praia inteira (pedido do Renan: mais
+   * bermudas, mais óculos, chinelo e roupa com cara de piscina, tudo a até
+   * R$ 20). As cores são as de beira de piscina: fundo cheio (a bermuda tem
+   * que ser achada de longe na água) e estampa clara por cima.
+   */
+  // bermuda listrada, de marinheiro: marinho com listras creme e a âncora
+  bermudaMarinho: 0x2b4c7e,
+  bermudaListraCreme: 0xfbf4e4,
+  ancoraVermelha: 0xd8453f,
+  // bermuda de bolinhas: verde-água com bolinha branca
+  bermudaVerdeAgua: 0x53c4b0,
+  bermudaBolinha: 0xfffaf0,
+  // bermuda havaiana: turquesa fundo, hibisco vermelho e rosa, folha escura
+  bermudaHavaiana: 0x1e8fb4,
+  hibiscoVermelho: 0xe8505b,
+  hibiscoRosa: 0xf590b6,
+  hibiscoMiolo: 0xfbd34d,
+  folhaHavaiana: 0x2a9a67,
+  // bermuda de abacaxi: rosa com abacaxi amarelo de coroa verde
+  bermudaRosaAbacaxi: 0xf6a7b9,
+  abacaxiAmarelo: 0xf7c843,
+  abacaxiQuadrado: 0xc98a2b,
+  abacaxiCoroa: 0x4aa84e,
+  // bermuda de melancia: a polpa, a semente, e a casca na barra
+  bermudaMelancia: 0xee5a66,
+  melanciaSemente: 0x2d2a2f,
+  melanciaBranco: 0xf3f7e6,
+  melanciaCasca: 0x3f9a4a,
+  // bermuda de ondinhas: azul-mar com as cristas brancas
+  bermudaAzulMar: 0x2d6cb4,
+  ondaEspuma: 0xeaf6ff,
+  // o cordão do cós das bermudas novas
+  bermudaCordao: 0xfdfaf2,
+
+  // os óculos: armação e lente de cada um
+  oculosDourado: 0xc9a043,
+  oculosAmbar: 0xa8632a,
+  oculosGatinhoRosa: 0xf07fa8,
+  oculosGatinhoLente: 0x3a2b3b,
+  oculosStrass: 0xfff4f8,
+  oculosCoracaoAro: 0xe0344e,
+  oculosCoracaoLente: 0x8c1d38,
+  oculosEspelhadoAro: 0xf1f3f6,
+  oculosEspelhado: 0x3fa4f0,
+  oculosEspelhadoReflexo: 0xc4ecff,
+  oculosNatacaoLente: 0x5fcfe4,
+  oculosNatacaoAro: 0x2b78d0,
+
+  // os chinelos: a tira, a sola de cima e a sola de baixo
+  chineloAzul: 0x2f7fd0,
+  chineloSolaBranca: 0xf4f1ea,
+  chineloSolaCinza: 0xc9c5bc,
+  chineloRosa: 0xf48fb1,
+  chineloSolaRosa: 0xfde0ea,
+  chineloAmarelo: 0xf5d33f,
+  chineloVerdeLimao: 0xa5d64a,
+  chineloSlide: 0x2fb2d8,
+
+  // chapéu de praia listrado: palha-creme com a faixa azul
+  chapeuPraia: 0xf6e6c2,
+  chapeuPraiaListra: 0x3b7fc4,
+  chapeuPraiaPesponto: 0xd8c49b,
+  // touca de natação: borracha clara e as flores de borracha
+  toucaNatacao: 0xbfe9ef,
+  toucaFlorRosa: 0xf7a1c0,
+  toucaFlorAmarela: 0xfbd96b,
+  toucaFlorLilas: 0xc5a3e8,
+  // tiara de conchinhas: a faixa de areia, a estrela, as conchas e a pérola
+  tiaraAreia: 0xe9d3a6,
+  estrelaDoMar: 0xf4a261,
+  estrelaDoMarPonto: 0xfbd6a8,
+  conchaRosa: 0xf7c3bc,
+  conchaCreme: 0xfdf1e2,
+  perola: 0xfbfaf6,
+
+  // boia de braço de patinho
+  boiaLaranja: 0xff8a3d,
+  boiaCostura: 0xfff2d6,
+  patinhoAmarelo: 0xffd84a,
+  patinhoBico: 0xf28c28,
+  boiaValvula: 0xf7f7f7,
+
+  // colar havaiano: as flores e a folhinha entre elas
+  colarRosa: 0xf06292,
+  colarAmarelo: 0xffd54f,
+  colarBranco: 0xfdfdfb,
+  colarLaranja: 0xffa24c,
+  colarLilas: 0xba68c8,
+  colarFolha: 0x3fa35b,
+
+  // camisa havaiana: azul-fundo com hibisco branco e amarelo
+  camisaHavaiana: 0x1f6fa3,
+  camisaHavaianaFlor: 0xfdfaf2,
+  camisaHavaianaFlor2: 0xfbd34d,
+  camisaHavaianaBotao: 0xf8f4ea,
+
+  // regata listrada de marinheiro
+  regataCreme: 0xfbf7ee,
+  regataListra: 0x2d4f86,
+
   // a comida servida na mesa do restaurante. São as MESMAS cores da miniatura
   // 2D do cardápio (`world/cardapioData.ts`), agora em hex de material: o prato
   // que o cachorro traz tem que ser reconhecível como o que foi escolhido no

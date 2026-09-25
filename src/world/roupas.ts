@@ -2969,4 +2969,5 @@ export {
   jaquetaFrancesa, mangaDaJaquetaFrancesa, quepeDoCookie,
   blazerXadrez, mangaDoBlazer, perneiraXadrez, coroaDeDama,
   luvasDeJardim, pulseiraDeMicangas, presilhaDeEstrela, adesivoDeCoracao,
+  tiara,
 };

@@ -5,7 +5,7 @@ import { SCENES, CENA_INICIAL } from './scenes';
 import { DUPLA } from './characters/cast';
 import { CLIMAS, Musica } from './audio/musica';
 import { EFEITOS } from './audio/efeitos';
-import { ITENS } from './world/itens';
+import { ITENS, MODA_PRAIA } from './world/itens';
 import { MEMORIAS } from './world/memoriasData';
 import { PRAGAS } from './world/bichosDoJardim';
 import { regadorDeJardim } from './world/regador';
@@ -80,6 +80,8 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 (window as unknown as { aristoryItens: unknown }).aristoryItens = Object.fromEntries(
   Object.values(ITENS).map((i) => [i.id, i]),
 );
+// o que o vestiario do clube vende, na ordem da vitrine
+(window as unknown as { aristoryModaPraia: unknown }).aristoryModaPraia = MODA_PRAIA;
 // o acervo do quadro de memorias, para o teste conferir quantas pecas existem
 // sem ter que contar os pontinhos da tela
 (window as unknown as { aristoryMemorias: unknown }).aristoryMemorias = MEMORIAS.map(
