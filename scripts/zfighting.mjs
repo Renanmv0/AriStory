@@ -29,6 +29,10 @@ const PECAS = [
   ['loja-de-roupas', 'villa-lobos'],
   ['mesinha-de-xadrez', 'villa-lobos'],
   ['cesta-de-biscoitos', 'villa-lobos'],
+  // o piquenique da Luna (nasce escondido até o quadro encher: a medida é da
+  // geometria, e não da tela, então vale do mesmo jeito)
+  ['cesta-de-piquenique', 'villa-lobos'],
+  ['flamula', 'villa-lobos'],
   ['arquibancada', 'villa-lobos'],
   ['estante', 'quarto'],
   ['loja-de-patins', 'villa-lobos'],

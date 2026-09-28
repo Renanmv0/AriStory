@@ -8,7 +8,7 @@ import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/PingPong';
 import {
   aroDeFrisbee, bin, bleachers, bonecoDeNeve, bordaDeGelo, building, bus, busStop, bush,
-  cestaDeBiscoitos, mesinhaDeXadrez,
+  cestaDeBiscoitos, cestaDePiquenique, flamula, mesinhaDeXadrez,
   canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro, duck,
   fence, floodlight, flowers, iceCream, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
   comidinhasDePiquenique, mesaPingPong, nenufar, picnicTable, portaRetrato, posteDeGelo,
@@ -30,6 +30,7 @@ import { INSCRITOS, retratoDoGrupo } from '../world/adversariosData';
 import { CAMPEAO_DO_QUADRO } from '../ui/Ui';
 import { flat } from '../core/materials';
 import { Estella } from '../entities/bichos/Estella';
+import { Luna } from '../entities/bichos/Luna';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -2004,14 +2005,233 @@ export const villaLobos: SceneDef = {
       w.blockCircle(x, z, 0.45 * scale);
       plantadas++;
     }
+    /*
+     * O QUE ESTE SORTEIO PLANTA FICA ANOTADO, e só isso muda nele: o piquenique
+     * da Luna (mais abaixo) esconde o que caiu no lugar dele. Tirar o canteiro
+     * do sorteio com o `livre()` pularia um `w.range()` do arbusto e mudaria a
+     * posição de TUDO que é sorteado depois — o parque inteiro se mexeria para
+     * abrir espaço para uma toalha.
+     */
+    const soltosNoGramado: THREE.Object3D[] = [];
     for (let i = 0; i < 90; i++) {
       const x = w.range(-42, 42);
       const z = w.range(-32, 30);
       if (!livre(x, z)) continue;
-      if (i % 3 === 0) w.add(w.place(flowers(6, 1.1), x, 0, z));
-      else if (i % 3 === 1) w.add(w.place(bush(w.range(0.7, 1.2)), x, 0, z));
-      else w.add(w.place(rock(w.range(0.5, 1)), x, 0, z));
+      if (i % 3 === 0) soltosNoGramado.push(w.add(w.place(flowers(6, 1.1), x, 0, z)));
+      else if (i % 3 === 1) soltosNoGramado.push(w.add(w.place(bush(w.range(0.7, 1.2)), x, 0, z)));
+      else soltosNoGramado.push(w.add(w.place(rock(w.range(0.5, 1)), x, 0, z)));
     }
+
+    /* ================================================ A LUNA E O PIQUENIQUE
+     *
+     * A Luna é a cheerleader dos Gatitos, a atlética da Escola do Gatito, e é
+     * por ela que a escola abre: depois que o quadro de inscrições da arena
+     * enche (`jean-luc-batido`), ela aparece fazendo piquenique no gramado do
+     * lado da roda gigante, no lugar das florzinhas que o Renan apontou numa
+     * foto. Conversar com ela destrava a parada da escola no ônibus
+     * (`escola-aberta`).
+     *
+     * O LUGAR É ONDE O SORTEIO PÔS QUATRO CANTEIROS E UM ARBUSTO, entre a
+     * cúpula e a mata. Enquanto ela não chegou, eles continuam lá; quando ela
+     * chega, somem os que ficam debaixo da toalha e em volta dela — o sorteio
+     * não muda (ver `soltosNoGramado`), a cena só apaga.
+     *
+     * NADA AQUI FICA ACIMA E À FRENTE DELA (a regra dos postos, na skill de
+     * bicho): a flâmula é alta, então vai atrás, no `-X/-Z`, e a cesta, que é
+     * baixa, fica do lado. A frente dela é o `+X/+Z`, virada para a câmera e
+     * para o caminho da roda, de onde a dupla chega.
+     */
+    const PIQUENIQUE_DA_LUNA = { x: -24, z: -27.6 };
+    const LUNA_SENTADA = { x: PIQUENIQUE_DA_LUNA.x - 0.35, z: PIQUENIQUE_DA_LUNA.z - 0.3 };
+    const OLHANDO_O_CAMINHO = Math.PI / 4;
+    const piquenique = new THREE.Group();
+    piquenique.name = 'piquenique-da-luna';
+    piquenique.add(w.place(toalhaDePiquenique(2.3, 1.7, P.lunaToalha, P.lunaToalhaXadrez),
+      PIQUENIQUE_DA_LUNA.x, 0, PIQUENIQUE_DA_LUNA.z, 0.12));
+    const CESTA_DA_LUNA = { x: PIQUENIQUE_DA_LUNA.x + 0.55, z: PIQUENIQUE_DA_LUNA.z - 0.45 };
+    piquenique.add(w.place(cestaDePiquenique(), CESTA_DA_LUNA.x, 0.02, CESTA_DA_LUNA.z, 0.4));
+    /*
+     * A FLÂMULA vai atrás e À ESQUERDA dela na tela (o `-X/+Z` da tela), e não
+     * atrás em linha reta: ali o mastro caía na mesma visada da cabeça e, de
+     * perto, parecia sair das orelhas. O giro de 5π/4 abre o pano para FORA
+     * (para a esquerda da tela) e mostra para a câmera a face de trás — que
+     * também tem o nome escrito.
+     */
+    const FLAMULA = { x: PIQUENIQUE_DA_LUNA.x - 1.45, z: PIQUENIQUE_DA_LUNA.z + 0.55 };
+    piquenique.add(w.place(flamula('GATITOS'), FLAMULA.x, 0, FLAMULA.z, Math.PI * 1.25));
+    w.add(piquenique);
+
+    const luna = new Luna({
+      minX: LUNA_SENTADA.x - 0.2, maxX: LUNA_SENTADA.x + 0.2,
+      minZ: LUNA_SENTADA.z - 0.2, maxZ: LUNA_SENTADA.z + 0.2,
+    });
+    const sentarALuna = (): void => luna.sentarEm(LUNA_SENTADA.x, LUNA_SENTADA.z, OLHANDO_O_CAMINHO, 0.02);
+    sentarALuna();
+    w.add(luna.group);
+    /** gancho de teste: o `scripts/luna.mjs` aciona os gestos para fotografar */
+    luna.group.userData.teste = { luna, sentar: sentarALuna };
+
+    // o que o sorteio plantou onde a toalha vai: some quando ela chega. O raio
+    // pega os quatro canteiros da foto do Renan (o mais longe fica a 3,1)
+    const RAIO_DO_PIQUENIQUE = 3.4;
+    const noLugarDoPiquenique = soltosNoGramado.filter(
+      (o) => Math.hypot(o.position.x - PIQUENIQUE_DA_LUNA.x, o.position.z - PIQUENIQUE_DA_LUNA.z) < RAIO_DO_PIQUENIQUE,
+    );
+
+    /*
+     * OS COLISORES SÓ EXISTEM COM ELA AQUI. `blockCircle` é para sempre, e aí
+     * quem passasse por este gramado antes do quadro encher trombaria numa
+     * coelha invisível. A toalha não bloqueia: dá para pisar nela, como numa
+     * toalha de verdade.
+     */
+    const colisoresDoPiquenique = [
+      { kind: 'circle' as const, x: LUNA_SENTADA.x, z: LUNA_SENTADA.z, r: 0.42 },
+      { kind: 'circle' as const, x: CESTA_DA_LUNA.x, z: CESTA_DA_LUNA.z, r: 0.3 },
+      { kind: 'circle' as const, x: FLAMULA.x, z: FLAMULA.z, r: 0.14 },
+    ];
+
+    let lunaNoParque: boolean | null = null;
+    const mostrarALuna = (sim: boolean): void => {
+      lunaNoParque = sim;
+      piquenique.visible = sim;
+      luna.group.visible = sim;
+      for (const o of noLugarDoPiquenique) o.visible = !sim;
+      falarComALuna.enabled = sim;
+      for (const c of colisoresDoPiquenique) {
+        const i = w.colliders.indexOf(c);
+        if (sim && i < 0) w.colliders.push(c);
+        if (!sim && i >= 0) w.colliders.splice(i, 1);
+      }
+    };
+
+    /**
+     * AS FALAS DELA. Ela fala português — faz aula com o Gatito há bastante
+     * tempo — e o que escapa é espanhol: "épale" (oi!), "naguará" (nossa!),
+     * "chévere" (legal), "burda de" (muito), "pana" (amigo), "ya va" (espera),
+     * "¡qué pena!" (que vergonha), "¡qué fino!" (que ótimo), "vale" (tá bom).
+     * De onde ela veio, ela não conta: é contexto, não assunto.
+     *
+     * O RITMO É O DELA: empolga falando dos Gatitos, dispara, percebe e fica
+     * tímida. Os gestos (`torcer`, `ficarTimida`) entram entre uma fala e outra,
+     * então o corpo dela acompanha o que ela diz.
+     */
+    const L = 'Luna';
+    const falarComALuna = w.interact({
+      id: 'parque:luna',
+      x: LUNA_SENTADA.x, z: LUNA_SENTADA.z, radius: 1.9,
+      label: 'Falar com a coelhinha', icon: '🐰',
+      highlight: luna.group,
+      onInteract: async (api) => {
+        const eu = api.playerPosition();
+        luna.levantar();
+        luna.encarar(eu.x, eu.z);
+        /*
+         * A CÂMERA CHEGA PERTO NA CONVERSA. O piquenique fica dentro da zona
+         * da roda gigante, que abre o enquadramento em ~19 — bom para ver a
+         * roda, e pequeno demais para ver uma coelha torcendo. Durante a
+         * conversa a zona solta a câmera (`zoomLivre`, mais abaixo) e ela
+         * mira na Luna; no fim tudo volta, mesmo se a conversa sair no meio.
+         */
+        zoomLivre = false;
+        api.focusCamera(luna.group);
+        api.setZoom(8);
+        try {
+          await conversarComALuna(api);
+        } finally {
+          api.focusCamera(null);
+          zoomLivre = true;
+          luna.pararDeEncarar();
+          sentarALuna();
+        }
+      },
+    });
+    falarComALuna.label = g.flag('escola-aberta') ? 'Falar com a Luna' : 'Falar com a coelhinha';
+
+    const conversarComALuna = async (api: typeof g): Promise<void> => {
+      const diz = (texto: string, quem = L): Promise<void> => api.say([texto], quem);
+
+      if (!api.flag('escola-aberta')) {
+        await diz('¡Épale! Oi, oi! Vieram ver o piquenique?', 'Coelhinha');
+        await diz('Que toalha bonita.', R);
+        await diz('É nas cores dos Gatitos! Azul e amarelo. Eu que escolhi, óbvio.', 'Coelhinha');
+        await diz('Gatitos?', A);
+        luna.torcer(2.6);
+        api.som('sacudida');
+        await diz('¡Los Gatitos! A atlética da Escola do Gatito! Eu sou a Luna, cheerleader oficial deles!');
+        luna.torcer(2.6);
+        api.som('sacudida');
+        await diz('G-A-T-I-T-O-S! Gaaatitos! ¡Vamos, Gatitos!');
+        await diz('Tem jogo de basquete no ginásio, e a gente ensaia toda semana, e o pompom novo chegou, e ele é burda de brilhante, e a coreografia tem um salto que—');
+        luna.ficarTimida(3.2);
+        await diz('...¡Ay, qué pena! Ya va. Tô falando demais, né?');
+        await diz('Que nada. Pode continuar.', A);
+        luna.ficarTimida(2);
+        await diz('É que eu fico assim quando falo dos Gatitos. Me emociono.');
+        await diz('Mas eu não sou só da torcida, viu? Eu faço aula de português lá na escola.');
+        await diz('Quem dá é o professor Gatito. Ele é uma pelúcia. Assim, pelúcia mesmo.');
+        await diz('Uma pelúcia dá aula?', R);
+        await diz('Dá, e dá muito bem! Ele corrige com carinho. Ninguém tira nota vermelha com ele.');
+        await diz('Eu faço faz tempão. Ainda escapa uma palavra ou outra, mas o Gatito diz que isso é chévere. Que é tempero.');
+        await diz('Eu gostei do tempero.', A);
+        luna.torcer(2.2);
+        api.som('sacudida');
+        await diz('¡Qué fino! Então vocês TÊM que conhecer a escola. Sério, sério.');
+        await diz('O ônibus do ponto, lá na saída do parque, para na Escola do Gatito. Eu aviso lá que vocês são meus panas.');
+        await diz('Panas?', R);
+        await diz('Amigos! Panas. Pronto: agora vocês já aprenderam uma palavra comigo.');
+        await diz('E se virem um gato de pelúcia pulando pelo corredor... é ele! Vale?');
+        api.setFlag('escola-aberta');
+        falarComALuna.label = 'Falar com a Luna';
+        api.som('memoria');
+        api.toast('Nova parada no ônibus: Escola do Gatito', '🚌');
+        api.unlock({
+          id: 'luna-piquenique',
+          title: 'A torcedora dos Gatitos',
+          place: 'Parque Villa Lobos',
+          note: 'Do lado da roda gigante tinha uma coelhinha de pompom fazendo piquenique. '
+            + 'É a Luna, cheerleader dos Gatitos. Ela falou da escola sem parar, ficou com '
+            + 'vergonha, e convidou a gente para conhecer as aulas do professor Gatito.',
+          icon: '🐰',
+        });
+      } else {
+        const vezes = api.bump('luna.conversas');
+        const rodada: Array<() => Promise<void>> = [
+          async () => {
+            await diz('¡Épale, panas! Já foram na escola? O ônibus tá ali no ponto, ó.');
+          },
+          async () => {
+            await diz('Tô ensaiando uma coreografia nova. Olha só!');
+            luna.torcer(2.8);
+            api.som('sacudida');
+            await diz('¡Vamos, Gatitos! ¡Vamos, Gatitos! ¡Uh!');
+            luna.ficarTimida(2.4);
+            await diz('...Não olhem tanto. ¡Qué pena!');
+          },
+          async () => {
+            await diz('Hoje na aula o Gatito explicou que "esquisito" é estranho. Estranho!');
+            await diz('Eu achava que era gostoso. Passei um mês elogiando a comida dos outros de esquisita.');
+            luna.ficarTimida(2.2);
+            await diz('Naguará... ninguém me avisou.');
+          },
+          async () => {
+            await diz('Sabiam que o Gatito pula em vez de andar? Ele é pelúcia, né. Pelúcia não tem joelho.');
+          },
+          async () => {
+            luna.torcer(1.8);
+            api.som('sacudida');
+            await diz('¡Gatitos! ...Desculpa. Às vezes sai sozinho.');
+          },
+        ];
+        await rodada[(vezes - 1) % rodada.length]();
+      }
+    };
+
+    // ela só existe depois do quadro encher; e só vive (anima) enquanto existe
+    w.onUpdate((dt) => {
+      const aqui = g.flag('jean-luc-batido');
+      if (aqui !== lunaNoParque) mostrarALuna(aqui);
+      if (aqui) luna.update(dt);
+    });
 
     // ---------------------------------------------------------- horizonte
     // o rio, os predios e a mata que aparecem quando a roda gigante sobe
@@ -2145,12 +2365,29 @@ export const villaLobos: SceneDef = {
       w.blockCircle(32.2, z, 0.9);
     }
 
-    w.door({
-      x: 37.6, z: 13,
-      to: 'clube', entry: 'portaria',
+    /*
+     * O ÔNIBUS TEM DUAS LINHAS depois da Luna: o clube de sempre e a Escola do
+     * Gatito. Antes dela ele é a porta direta de antes (mesmo id, mesmo
+     * rótulo); depois, ele pergunta para onde — e "ficar" é uma resposta, para
+     * quem abriu sem querer.
+     */
+    const pegarOOnibus = w.interact({
+      id: 'door:clube:portaria',
+      x: 37.6, z: 13, radius: 2.6,
       label: 'Pegar o ônibus pro clube', icon: '🚌',
       highlight: onibus,
-      radius: 2.6,
+      onInteract: async (api) => {
+        if (!api.flag('escola-aberta')) {
+          api.goTo('clube', 'portaria');
+          return;
+        }
+        const destino = await api.ask('Pra onde a gente vai?', ['Clube', 'Escola do Gatito', 'Ficar no parque']);
+        if (destino === 0) api.goTo('clube', 'portaria');
+        else if (destino === 1) api.goTo('escola', 'da-rua');
+      },
+    });
+    w.onUpdate(() => {
+      pegarOOnibus.label = g.flag('escola-aberta') ? 'Pegar o ônibus' : 'Pegar o ônibus pro clube';
     });
 
     w.door({
@@ -2939,11 +3176,16 @@ export const villaLobos: SceneDef = {
       x: 36.0, z: 19, radius: 2.6,
       label: 'Esperar no ponto', icon: '🚏',
       highlight: parada,
-      onInteract: () =>
-        conversa([
-          [A, 'Esse é o que passa no clube?'],
-          [R, 'É esse. Já tá parado, é só subir.'],
-        ]),
+      onInteract: (api) =>
+        api.flag('escola-aberta')
+          ? conversa([
+            [A, 'Agora ele passa na escola também?'],
+            [R, 'Passa. É a linha dos Gatitos, a Luna disse. Com exclamação e tudo.'],
+          ])
+          : conversa([
+            [A, 'Esse é o que passa no clube?'],
+            [R, 'É esse. Já tá parado, é só subir.'],
+          ]),
     });
 
     w.interact({

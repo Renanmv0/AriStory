@@ -1626,12 +1626,24 @@ export const clube: SceneDef = {
     const onibus = w.add(w.place(bus(P.onibusAzul, 'Parque'), PARADA.x, 0, PARADA.z, Math.PI / 2));
     w.blockBox(PARADA.x, PARADA.z, 1.4, 4.5);
 
-    w.door({
-      x: EMBARQUE.x, z: EMBARQUE.z,
-      to: 'villa-lobos', entry: 'clube',
+    // depois da Luna o ônibus também para na Escola do Gatito (ver o do parque)
+    const pegarOOnibus = w.interact({
+      id: 'door:villa-lobos:clube',
+      x: EMBARQUE.x, z: EMBARQUE.z, radius: 2.4,
       label: 'Pegar o ônibus pro parque', icon: '🚌',
       highlight: onibus,
-      radius: 2.4,
+      onInteract: async (api) => {
+        if (!api.flag('escola-aberta')) {
+          api.goTo('villa-lobos', 'clube');
+          return;
+        }
+        const destino = await api.ask('Pra onde a gente vai?', ['Parque', 'Escola do Gatito', 'Ficar no clube']);
+        if (destino === 0) api.goTo('villa-lobos', 'clube');
+        else if (destino === 1) api.goTo('escola', 'da-rua');
+      },
+    });
+    w.onUpdate(() => {
+      pegarOOnibus.label = g.flag('escola-aberta') ? 'Pegar o ônibus' : 'Pegar o ônibus pro parque';
     });
 
     // -------------------------------------------------------------- respingos

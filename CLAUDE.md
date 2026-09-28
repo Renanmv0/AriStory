@@ -158,6 +158,8 @@ node scripts/armas.mjs  /tmp/ar    # as ferramentas da estufa: a parede, o paine
 node scripts/borrifador.mjs /tmp/bf # o borrifador: destranca pela pistola, o frasco pelo gargalo, o gatilho, o "psst", a nevoa molhando o bando inteiro, e as 14 cartas so dele agindo
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
+node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso
+node scripts/luna.mjs    /tmp/lu    # a Luna e a porta da escola: some antes do quadro encher, aparece no piquenique, torce e fica timida, e o onibus passa a ir pra escola
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

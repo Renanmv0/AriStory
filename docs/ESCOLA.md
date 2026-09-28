@@ -21,9 +21,13 @@ bonitinho.
 aula do Gatito no jogo **é uma aula de português de verdade**: o conteúdo sai
 do que o Renan ensina em casa (§6). A escola é o cenário; a aula é o presente.
 
-**Estado: só plano.** A cena não existe, e não vai ter porta no mapa até o
-Renan mandar abrir (§10). Enquanto estiver sendo construída, entra-se só por
-`?cena=escola` na URL — o jogador comum nunca chega lá.
+**Estado: construída e aberta, ainda sem aula.** O saguão com o corredor e o
+refeitório, as cinco salas atrás das portas (Sala 1 de português, Sala 2 de
+espanhol, descanso, professores e ginásio) e o Gatito já estão no jogo
+(`scenes/escola*.ts`, `entities/bichos/Gatito.ts`). Chega-se de ônibus,
+depois de conhecer a **Luna** no Villa Lobos (§10, §14). A aula (§6), as
+etiquetas (§5) e a formatura (§7) ainda não existem. Para testar sem jogar a
+missão, `?cena=escola` continua valendo.
 
 **O que este plano propõe** (tudo provisório até o Renan aprovar):
 
@@ -584,18 +588,24 @@ Cada um com o `.wav` ouvido antes de dar por pronto (`scripts/musica.mjs`).
 
 ---
 
-## 10. Como se chega (quando o Renan mandar abrir)
+## 10. Como se chega — decidido: de ônibus, depois da Luna
 
-Hoje o mundo tem dois pontos de ônibus, o do parque e o do clube, cada um
-levando ao outro. Duas saídas, e a escolha é do Renan:
+O Renan escolheu o ônibus, e amarrou a abertura numa missão:
 
-1. **o ônibus ganha um destino** — no ponto, "Pra onde?" com as opções, e a
-   escola ganha na frente uma calçada com o seu ponto. Recomendo esta: a
-   escola vira um lugar da cidade, como o clube;
-2. **uma porta a partir da casa do Ari** — mais íntimo ("é pertinho de
-   casa"), mas a casa é pequena e já tem a porta da rua e a do quarto.
+1. **o quadro de inscrições da arena de ping pong enche** (a flag
+   `jean-luc-batido`, quando se ganha do Jean-Luc pela primeira vez);
+2. a **Luna** aparece fazendo piquenique no gramado do lado da roda gigante,
+   no lugar das florzinhas que o Renan apontou numa foto (§14);
+3. **conversar com ela** abre a escola: flag `escola-aberta`, o aviso "Nova
+   parada no ônibus: Escola do Gatito" e a memória "A torcedora dos Gatitos"
+   no diário;
+4. daí em diante **os dois ônibus perguntam o destino**: o do parque oferece
+   clube ou escola, o do clube oferece parque ou escola, e a porta da rua da
+   escola é o ponto de volta (parque ou clube). Antes da Luna, os ônibus são
+   exatamente o que eram — mesma porta, mesmo rótulo, sem pergunta.
 
-Enquanto isso, só `?cena=escola`.
+`scripts/luna.mjs` joga isso de ponta a ponta. `?cena=escola` continua valendo
+para testar sem a missão.
 
 ---
 
@@ -686,4 +696,51 @@ O plano não inventa nada do que é da vida de vocês. O que falta, por etapa:
     **texto do diploma**? São os lugares que pedem a sua voz.
 
 **E para abrir**
-14. Como se chega: **pelo ônibus** ou **por uma porta da casa do Ari**?
+14. ~~Como se chega~~ — respondido: de ônibus, depois de conhecer a Luna
+    (§10, §14).
+
+**Sobre a Luna (§14)**
+15. **A aparência dela** é chute meu: pelo cinza-pérola, olhos pretos,
+    uniforme no azul e amarelo da escola, laço amarelo na orelha e a ponta
+    de uma orelha dobrada. Ela tem uma cor de pelo, um olho ou um uniforme
+    na sua cabeça?
+16. **As falas** dela são rascunho meu, com expressões venezuelanas
+    ("épale", "naguará", "chévere", "burda de", "pana", "ya va", "¡qué
+    pena!", "¡qué fino!", "vale"). Se o Ari usa outras — ou se alguma soa
+    errada para ele — troco na hora.
+17. Depois de levar vocês à escola, **ela continua no piquenique**, ou passa
+    a morar na escola (torcendo no ginásio, por exemplo)?
+
+---
+
+## 14. A Luna — a primeira personagem da escola
+
+A coelhinha **cheerleader dos Gatitos**, a atlética da Escola do Gatito. O
+nome, o time e o jeito são do Renan:
+
+- **super fã dos Gatitos**, se anima quando fala deles — e, quando percebe
+  que está falando demais, **fica tímida**;
+- faz **aula de português** na escola, com o Gatito, há bastante tempo. A
+  língua dela é o espanhol, e ela é da Venezuela — **mas ela não fala sobre
+  isso**: é contexto, não assunto. Ela fala português, e o que escapa são as
+  **expressões venezuelanas**;
+- ela é a **primeira** personagem da escola; outras virão.
+
+**Onde ela mora no código.** O corpo e os gestos em
+`entities/bichos/Luna.ts` (um bicho, como o Mano: em pé, com posto). O
+piquenique, a conversa e a abertura da escola no `scenes/villaLobos.ts`
+(procure "A LUNA E O PIQUENIQUE"). A toalha é a `toalhaDePiquenique` do kit,
+nas cores dos Gatitos; a cesta (`cestaDePiquenique`) e a flâmula "GATITOS"
+(`flamula`) são peças novas do kit.
+
+**Os três jeitos dela**, que a conversa aciona entre uma fala e outra:
+`torcer()` (pula e sacode os pompons no alto, em V), `ficarTimida()` (as
+patas com os pompons na altura da boca, os olhos espiando por cima, as
+orelhas caídas para trás e a bochecha mais corada) e sentada no piquenique.
+
+**A câmera na conversa.** O piquenique fica dentro da zona da roda gigante,
+que abre o enquadramento; durante a conversa a zona solta a câmera, que mira
+nela em zoom 8, e devolve tudo no fim.
+
+**O que é chute meu** (perguntas 15–17 do §13): a cor do pelo, o uniforme e
+todas as falas.

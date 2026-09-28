@@ -1310,6 +1310,28 @@ export const PALETTE = {
   refeitorioFrango: 0xd98d4a,
   refeitorioBandeja: 0xe46b5e,
 
+  // A LUNA, a coelhinha cheerleader dos Gatitos (a atlética da escola). O pelo
+  // é cinza-pérola, e não creme: o Gatito e o Pelusa já são creme, e três
+  // bichos claros da mesma cor viram uma família só. O uniforme é o azul e o
+  // amarelo da escola, porque torcida veste a cor da casa
+  lunaPelo: 0xd8d4de,
+  lunaPeloClaro: 0xf8f5f2,
+  lunaOrelhaDentro: 0xf3a9ba,
+  lunaNariz: 0xe8839a,
+  lunaBochecha: 0xf6a3b4,
+  lunaOlho: 0x2a2229,
+  lunaUniforme: 0x3f6fc6,
+  lunaUniformeFaixa: 0xf2c14a,
+  lunaUniformeBranco: 0xf7f7f4,
+  lunaPomponAmarelo: 0xf6c940,
+  lunaPomponAzul: 0x4b7fd6,
+  lunaLaco: 0xf2c14a,
+  // o piquenique dela: a toalha xadrez nas cores dos Gatitos (a cesta usa o
+  // `cestaVime` da cesta da Estella)
+  lunaToalha: 0xf7f1dc,
+  lunaToalhaXadrez: 0x5b86d2,
+  flamulaGatitos: 0x3f6fc6,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

@@ -371,12 +371,18 @@ export const escola: SceneDef = {
       to: ESCOLA.professores, entry: 'do-corredor',
       label: 'Entrar na sala dos professores', icon: '☕',
     });
-    // Por enquanto a escola não tem porta no mapa (o Renan decide quando
-    // abrir): quem sai por aqui pega o ônibus e desce no ponto do parque.
-    w.door({
+    // A escola abre pelo ônibus, depois de conhecer a Luna no piquenique do
+    // Villa Lobos (`escola-aberta`). A porta da rua é o ponto: dali o ônibus
+    // volta para o parque ou segue para o clube.
+    w.interact({
+      id: 'door:villa-lobos:clube',
       x: PORTA.rua.x, z: PORTA.rua.z - 0.9, radius: 1.5,
-      to: 'villa-lobos', entry: 'clube',
-      label: 'Sair da escola (ônibus pro parque)', icon: '🚌',
+      label: 'Sair da escola (pegar o ônibus)', icon: '🚌',
+      onInteract: async (g) => {
+        const destino = await g.ask('Pra onde a gente vai?', ['Parque', 'Clube', 'Ficar na escola']);
+        if (destino === 0) g.goTo('villa-lobos', 'clube');
+        else if (destino === 1) g.goTo('clube', 'portaria');
+      },
     });
 
     // ------------------------------------------------------------ a escada

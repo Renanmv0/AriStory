@@ -24,8 +24,8 @@ export const SCENES: Record<string, SceneDef> = {
   [estufa.id]: estufa,
   [maniaDeChurrasco.id]: maniaDeChurrasco,
   [lojinha.id]: lojinha,
-  // a Escola do Gatito: o saguão e as salas atrás de cada porta. Ainda sem
-  // porta no mapa — só se chega por `?cena=escola` (ver docs/ESCOLA.md)
+  // a Escola do Gatito: o saguão e as salas atrás de cada porta. Chega-se de
+  // ônibus, depois de conhecer a Luna no Villa Lobos (ver docs/ESCOLA.md)
   [escola.id]: escola,
   [escolaSala1.id]: escolaSala1,
   [escolaSala2.id]: escolaSala2,
