@@ -551,15 +551,15 @@ export const escola: SceneDef = {
               [G, 'Oi, Ari! Oi, Renan! Bem-vindos à Escola do Gatito.'],
               [G, 'Eu sou o professor de português daqui.'],
               [G, 'As aulas ainda estão sendo preparadas. Por enquanto, explorem a escola!'],
-              [A, 'Ele é igualzinho ao de casa.'],
-              [R, 'É ele. Só que aqui ele anda.'],
+              [A, 'Um gato professor de português...'],
+              [R, 'Olha a língua pra fora. Ele já gostou de você.'],
             ]);
             gatito.sixSeven();
             g.unlock({
               id: 'o-professor-gatito',
               title: 'O professor Gatito',
               place: 'Escola do Gatito',
-              note: 'O Gatito de casa virou professor de português. Passeia pela escola inteira e, de vez em quando, faz o six seven.',
+              note: 'Um gato de verdade, de língua pra fora e meia cara caramelo, é o professor de português da escola. Passeia pela escola inteira e, de vez em quando, faz o six seven.',
               icon: '🐱',
             });
             return;

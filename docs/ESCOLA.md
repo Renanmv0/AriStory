@@ -41,9 +41,11 @@ missão, `?cena=escola` continua valendo.
   professores (§4);
 - **placas bilíngues**: o nome da sala em português, grande, e em espanhol
   embaixo, pequeno — a escola já ensina só de andar por ela (§4);
-- o Gatito é um **bicho** (`entities/bichos/Gatito.ts`), do tamanho de uma
-  pelúcia grande. Ele **não anda: pula**, como pelúcia carregada; e na aula
-  fica **em cima da mesa do professor** (§2);
+- o Gatito é um **bicho** (`entities/bichos/Gatito.ts`) — e, no jogo, **um
+  gato de verdade**, não uma pelúcia: a pelúcia da casa deles é de onde o
+  Renan tirou a inspiração (a aparência sai dela), e só isso. Nenhuma fala
+  chama ele de pelúcia. Na aula ele fica **em cima da mesa do professor**
+  (§2);
 - **etiquetas** com o nome em português coladas nos objetos da escola, que
   viram palavras num **caderno** (§5);
 - a **Aula do Gatito**: lições curtas de perguntas, com estrelinhas, e errar
@@ -72,13 +74,23 @@ Três coisas separam este cenário dos outros:
    cômodos, o Mania tem dois (cozinha e salão). Aqui são oito áreas, e a
    planta inteira precisa caber na câmera isométrica sem uma sala tapar a
    outra (§3.2);
-3. **o professor já existe na vida real.** O Gatito é uma pelúcia de verdade,
+3. **o professor foi inspirado na vida real.** O Gatito nasceu de uma pelúcia
    da casa deles, e a voz dele é a do Renan quando dá aula. O modelo sai das
-   fotos; o jeito de falar tem que sair do Renan (§13).
+   fotos da pelúcia; o jeito de falar tem que sair do Renan (§13). **Mas no
+   jogo ele é um gato de verdade** (decisão do Renan, depois de a escola
+   estar construída).
 
 ---
 
 ## 2. O Gatito
+
+> **Decisão do Renan: no jogo, o Gatito é um GATO DE VERDADE.** A pelúcia foi
+> só a inspiração — as fotos dela continuam sendo a referência da aparência
+> (a meia cara caramelo, as orelhas de duas cores, a língua para fora), mas
+> ninguém no jogo trata ele como pelúcia: nem a Luna, nem a dupla, nem as
+> memórias. O que está abaixo sobre "jeito de pelúcia" (§2.4, §2.7) foi
+> escrito antes dessa decisão; o pulinho está no jogo, e mudar para um andar
+> de gato é a pergunta 18 do §13.
 
 ### 2.1 Como ele é (das três fotos que o Renan mandou)
 
@@ -698,6 +710,11 @@ O plano não inventa nada do que é da vida de vocês. O que falta, por etapa:
 **E para abrir**
 14. ~~Como se chega~~ — respondido: de ônibus, depois de conhecer a Luna
     (§10, §14).
+
+**Sobre o Gatito, gato de verdade (§2)**
+18. Ele ainda **anda aos pulinhos**, como foi pensado para uma pelúcia. Quer
+    que ele passe a andar como gato (as quatro patas dando passo), ou o
+    pulinho fica como o jeito dele?
 
 **Sobre a Luna (§14)**
 15. ~~A aparência dela~~ — aprovada pelo Renan: pelo cinza-pérola, uniforme
