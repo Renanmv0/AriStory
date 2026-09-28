@@ -10,7 +10,11 @@ import { bin, mesaDePatio, waterFountain } from '../world/props';
 import { ladrilhoDeEscola, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
 import { Gatito } from '../entities/bichos/Gatito';
-import { ESCOLA, LUZ_DA_ESCOLA, conversa, paredeComVaos, pontoNoMundo, sentarOsDois } from './escolaComum';
+import { Luna } from '../entities/bichos/Luna';
+import {
+  ESCOLA, LUZ_DA_ESCOLA, conversa, paredeComVaos, pontoNoMundo, posicionarParaConversar, sentarOsDois,
+  soltarDaConversa,
+} from './escolaComum';
 
 /**
  * ============================================= A ESCOLA DO GATITO — O SAGUÃO
@@ -569,6 +573,92 @@ export const escola: SceneDef = {
           conversando = false;
         }
       },
+    });
+
+    /* ============================================ A LUNA MOSTRA A ESCOLA
+     *
+     * Na PRIMEIRA chegada depois do convite (`escola-aberta`), a Luna está
+     * esperando na entrada: ela dá um resumo de como é o lugar e o que tem
+     * nele, diz para procurar por ela no ginásio e vai para lá treinar. Daí
+     * em diante ela mora no ginásio (`luna-na-escola`), e o saguão volta a ser
+     * só do Gatito.
+     *
+     * ELA ESPERA ONDE A DUPLA DESCE, meio passo à esquerda na tela: o
+     * `posicionarParaConversar` põe os dois na diagonal dela, e deste ponto a
+     * diagonal cai quase em cima da entrada — ninguém é teleportado para
+     * longe de onde desceu do ônibus.
+     *
+     * O CAMINHO ATÉ O GINÁSIO passa ENTRE as mesas e a mureta da frente (z =
+     * 6,9): em linha reta, na altura da porta, ela atravessaria a mesa de
+     * (7; 4,8) como fantasma.
+     */
+    const LUNA_NA_ENTRADA = { x: 11.45, z: 6.05 };
+    const PELO_CANTO = { x: 7, z: 6.9 };
+    const NA_PORTA_DO_GINASIO = { x: PORTA.ginasio.x + 0.9, z: PORTA.ginasio.z };
+    const vaiMostrar = g0.flag('escola-aberta') && !g0.flag('luna-na-escola');
+    const luna = new Luna({
+      minX: LUNA_NA_ENTRADA.x - 0.2, maxX: LUNA_NA_ENTRADA.x + 0.2,
+      minZ: LUNA_NA_ENTRADA.z - 0.2, maxZ: LUNA_NA_ENTRADA.z + 0.2,
+    });
+    luna.entrarEmServico();
+    luna.group.position.set(LUNA_NA_ENTRADA.x, 0, LUNA_NA_ENTRADA.z);
+    luna.group.rotation.y = Math.PI / 4;
+    luna.group.visible = vaiMostrar;
+    if (vaiMostrar) w.add(luna.group);
+    /** gancho de teste: o `scripts/luna.mjs` confere onde ela foi parar */
+    luna.group.userData.teste = { luna };
+
+    const L = 'Luna';
+    const mostrarAEscola = async (): Promise<void> => {
+      const meio = posicionarParaConversar(g0, LUNA_NA_ENTRADA);
+      luna.encarar(meio.x, meio.z);
+      g0.focusCamera(luna.group);
+      g0.setZoom(8);
+      try {
+        await conversa(g0, [
+          [L, '¡Llegaron! Bem-vindos, panas! Esta é a Escola do Gatito.'],
+          [L, 'Eu prometi um tour, então lá vai. Rapidinho.'],
+          [L, 'Aqui é o saguão. Os armários azuis e amarelos são dos alunos, e a vitrine lá no fundo é a dos troféus dos Gatitos. Eu conto eles toda semana.'],
+          [L, 'A escada vai pro segundo andar, mas ele tá fechado. Ninguém sabe o que tem lá em cima. Eu acho que o Gatito sabe.'],
+          [L, 'As duas portas do fundo são as salas: a Sala 1 é de português, a do professor Gatito. A Sala 2 é de espanhol.'],
+          [L, 'Pelo corredor tem a sala de descanso, com sofá e pufe, e a sala dos professores. Lá tem cafezinho. Não conta pra ninguém que eu falei.'],
+          [L, 'E no fim do corredor fica o refeitório. Arroz, feijão, frango... e sexta tem arepa!'],
+        ]);
+        luna.torcer(2.6);
+        g0.som('sacudida');
+        await conversa(g0, [[L, 'E aquela porta ali do lado é o ginásio! A casa dos Gatitos! Quadra, arquibancada, placar, tudo!']]);
+        luna.ficarTimida(3);
+        await conversa(g0, [
+          [L, '...Ya va. Falei tudo de uma vez, né? ¡Qué pena! Eu ensaiei esse tour.'],
+          [R, 'Foi o melhor tour que eu já fiz.'],
+          [A, 'E eu nem me perdi.'],
+          [L, 'Bom! Se quiserem conversar, eu tô no ginásio treinando a coreografia nova. É só me procurar.'],
+        ]);
+        luna.torcer(2);
+        g0.som('sacudida');
+        await conversa(g0, [[L, '¡Chao, panas! ¡Vamos, Gatitos!']]);
+      } finally {
+        g0.focusCamera(null);
+        g0.setZoom(13);
+        soltarDaConversa(g0);
+        g0.setFlag('luna-na-escola');
+      }
+      g0.toast('A Luna está treinando no ginásio', '🏀');
+      luna.pararDeEncarar();
+      await luna.irPara(PELO_CANTO.x, PELO_CANTO.z, 1.5);
+      await luna.irPara(NA_PORTA_DO_GINASIO.x, NA_PORTA_DO_GINASIO.z, 1.5);
+      luna.group.visible = false;
+    };
+
+    let esperaDaLuna = vaiMostrar ? 0 : -1;
+    w.onUpdate((dt) => {
+      if (luna.group.visible) luna.update(dt);
+      if (esperaDaLuna < 0) return;
+      esperaDaLuna += dt;
+      // depois da memória de chegar (1,2 s), para o aviso dela não cair no meio
+      if (esperaDaLuna < 1.6) return;
+      esperaDaLuna = -1;
+      void mostrarAEscola();
     });
 
     // ------------------------------------------- a memória de chegar aqui

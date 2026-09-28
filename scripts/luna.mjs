@@ -15,8 +15,14 @@
  *   das aulas de português do Gatito, e no fim a escola abre (flag, aviso,
  *   memória no diário) e ela volta a sentar;
  * - a segunda conversa já é outra fala;
- * - o ônibus do parque pergunta o destino e leva à escola; a saída da escola
- *   leva ao clube, e o ônibus do clube também oferece a escola.
+ * - o ônibus do parque pergunta o destino e leva à escola;
+ * - na primeira chegada, a Luna dá o resumo da escola (cada lugar tem que
+ *   aparecer no texto), diz para procurá-la no ginásio e vai andando para lá;
+ *   a dupla fica fora da frente dela e sai livre; voltando, o tour não repete;
+ * - a saída da escola leva ao clube, e o ônibus do clube também oferece a
+ *   escola; de volta ao parque, o piquenique foi recolhido;
+ * - no ginásio ela treina (os pompons sobem e descem de verdade), para de
+ *   treinar para conversar e volta ao treino no fim.
  *
  * Uso: node scripts/luna.mjs /tmp/lu
  */
@@ -120,6 +126,8 @@ const corpo = () =>
       pomponsY: pompons.map((p) => +p.y.toFixed(3)),
       pomponsAoRosto: pompons.map((p) => +p.distanceTo(c).toFixed(3)),
       estado: t.luna.estado,
+      visivel: g.visible,
+      treinando: t.luna.estaTreinando,
       torcendo: t.luna.estaTorcendo,
       timida: t.luna.estaTimida,
     };
@@ -135,9 +143,9 @@ const luna = (fn) =>
   }, fn);
 
 /** avança a conversa com E, anotando quem fala e os gestos que ela faz */
-const conversar = async (max = 60) => {
+const conversar = async (max = 60, alvo = LUNA, foto = 'conversa') => {
   const falas = [];
-  const gestos = { torceu: false, ficouTimida: false, tapando: null };
+  const gestos = { torceu: false, ficouTimida: false, tapando: null, parouDeTreinar: false };
   for (let i = 0; i < max; i++) {
     if (!(await page.locator('.dialogue.show').count())) {
       await page.waitForTimeout(500);
@@ -161,11 +169,12 @@ const conversar = async (max = 60) => {
           const aoLado = Math.abs(dx * c - dz * c);
           return aFrente > 0 && aoLado < 0.6;
         }).length;
-      }, [LUNA]);
+      }, [alvo]);
     }
+    gestos.parouDeTreinar ||= !c.treinando;
     // a primeira torcida e a primeira vergonha da conversa ficam em foto
-    if (c.torcendo && !gestos.torceu) await page.screenshot({ path: `${OUT}-conversa-torcendo.png` });
-    if (c.timida && !gestos.ficouTimida) await page.screenshot({ path: `${OUT}-conversa-timida.png` });
+    if (c.torcendo && !gestos.torceu) await page.screenshot({ path: `${OUT}-${foto}-torcendo.png` });
+    if (c.timida && !gestos.ficouTimida) await page.screenshot({ path: `${OUT}-${foto}-timida.png` });
     gestos.torceu ||= c.torcendo;
     gestos.ficouTimida ||= c.timida;
     const quem = await page.locator('.dialogue .who').textContent().catch(() => '');
@@ -331,7 +340,31 @@ const opcoesParque = await escolher('Escola do Gatito');
 conferir(opcoesParque.includes('Clube') && opcoesParque.includes('Escola do Gatito'), 'no parque: clube ou escola', opcoesParque.join(' / '));
 const naEscola = await cenaAgora();
 conferir(naEscola === 'escola', 'o ônibus deixa na escola', naEscola ?? '');
-await page.waitForTimeout(1500);
+
+// ------------------------------------------------- a Luna mostra a escola
+/** tem que bater com `scenes/escola.ts` */
+const LUNA_NA_ENTRADA = { x: 11.45, z: 6.05 };
+for (let i = 0; i < 40 && !(await page.locator('.dialogue.show').count()); i++) await page.waitForTimeout(250);
+const tour = await conversar(60, LUNA_NA_ENTRADA, 'tour');
+console.log('      ' + tour.falas.join('\n      '));
+const noTour = tour.falas.join(' ');
+const lugares = ['saguão', 'troféus', 'segundo andar', 'Sala 1', 'Sala 2', 'sala de descanso', 'sala dos professores', 'refeitório', 'ginásio'];
+const faltando = lugares.filter((l) => !noTour.includes(l));
+conferir(faltando.length === 0, 'na chegada, a Luna dá o resumo da escola', faltando.length ? `faltou: ${faltando.join(', ')}` : `${lugares.length} lugares`);
+conferir(noTour.includes('ginásio treinando'), 'e diz para procurar por ela no ginásio');
+conferir(tour.gestos.torceu && tour.gestos.ficouTimida, 'no tour ela torce e fica tímida', JSON.stringify(tour.gestos));
+conferir(tour.gestos.tapando === 0, 'no tour, nenhum dos dois fica entre ela e a câmera', `${tour.gestos.tapando} tapando`);
+let foiProGinasio = false;
+for (let i = 0; i < 160 && !foiProGinasio; i++) {
+  await page.waitForTimeout(250);
+  foiProGinasio = !(await corpo()).visivel;
+}
+const depoisDoTour = await page.evaluate(() => ({
+  flag: window.jogo.flag('luna-na-escola'),
+  travado: window.jogo.player.locked,
+}));
+conferir(depoisDoTour.flag && foiProGinasio, 'depois do tour ela vai para o ginásio (e sai do saguão)');
+conferir(!depoisDoTour.travado, 'e a dupla fica livre');
 await page.screenshot({ path: `${OUT}-chegando-na-escola.png` });
 
 // ------------------------------------------- da escola ao clube, e de volta
@@ -356,6 +389,66 @@ await page.keyboard.press('KeyE');
 const opcoesClube = await escolher('Parque');
 conferir(opcoesClube.includes('Escola do Gatito') && opcoesClube.includes('Parque'), 'no clube: parque ou escola', opcoesClube.join(' / '));
 conferir((await cenaAgora()) === 'villa-lobos', 'e o clube leva de volta ao parque');
+await page.waitForTimeout(1500);
+const parqueDepois = await estado();
+conferir(parqueDepois.luna === false && parqueDepois.piquenique === false, 'de volta ao parque, o piquenique foi recolhido');
+conferir(parqueDepois.soltosVisiveis === parqueDepois.soltos && parqueDepois.colisoresNela === 0, 'as florzinhas voltam e não sobra colisor', `${parqueDepois.soltosVisiveis}/${parqueDepois.soltos}`);
+
+// ------------------------------------------ a escola de novo: sem tour
+await page.goto(`${BASE}/?cena=escola`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(4000);
+const tourDeNovo = await page.locator('.dialogue.show').count();
+conferir(tourDeNovo === 0 && !(await corpo()).visivel, 'voltando à escola, o tour não se repete e ela não está no saguão');
+
+// ------------------------------------------------------ o ginásio: o treino
+await page.goto(`${BASE}/?cena=escola-ginasio`, { waitUntil: 'networkidle' });
+await page.waitForTimeout(2500);
+const treino = [];
+for (let i = 0; i < 10; i++) {
+  treino.push(await corpo());
+  await page.waitForTimeout(600);
+}
+const alturas = treino.flatMap((q) => q.pomponsY);
+const amplitude = Math.max(...alturas) - Math.min(...alturas);
+conferir(treino.every((q) => q.visivel && q.treinando), 'no ginásio a Luna está treinando');
+conferir(amplitude > 0.2, 'e a coreografia mexe os pompons de verdade', `sobem e descem ${amplitude.toFixed(2)}`);
+conferir(Math.min(...treino.map((q) => q.minY)) > -0.01, 'treinando, nada afunda no chão');
+await page.evaluate(() => {
+  let g = null;
+  window.jogo.current.world.root.traverse((o) => {
+    if (o.userData?.peca === 'luna') g = o;
+  });
+  window.jogo.focusCamera(g);
+  window.jogo.setZoom(4);
+});
+for (let i = 0; i < 40 && (await page.evaluate(() => window.jogo.iso.currentViewSize)) > 4.3; i++) {
+  await page.waitForTimeout(250);
+}
+for (let i = 0; i < 3; i++) {
+  await page.screenshot({ path: `${OUT}-treino-${i + 1}.png` });
+  await page.waitForTimeout(1300);
+}
+await page.evaluate(() => {
+  window.jogo.focusCamera(null);
+  window.jogo.setZoom(13);
+});
+
+/** tem que bater com `scenes/escolaGinasio.ts` */
+const TREINO = { x: 0, z: 2.4 };
+await page.evaluate(([T]) => window.jogo.debugPlace(T.x + 1.2, T.z + 0.6, -2.0), [TREINO]);
+await page.waitForTimeout(1200);
+const promptGin = await page.locator('.prompt.show .label').textContent().catch(() => null);
+conferir(promptGin === 'Falar com a Luna', 'no ginásio dá para falar com ela', promptGin ?? '(nenhum)');
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(500);
+const noGinasio = await conversar(12, TREINO, 'ginasio');
+console.log('      ' + noGinasio.falas.join('\n      '));
+conferir(noGinasio.falas.some((f) => f.includes('Vieram me ver treinar')), 'a primeira conversa no ginásio', noGinasio.falas[0] ?? '');
+conferir(noGinasio.gestos.parouDeTreinar, 'para conversar, ela para de treinar');
+conferir(noGinasio.gestos.tapando === 0, 'no ginásio, nenhum dos dois fica entre ela e a câmera', `${noGinasio.gestos.tapando} tapando`);
+await page.waitForTimeout(1000);
+const voltou = await corpo();
+conferir(voltou.treinando && !(await page.evaluate(() => window.jogo.player.locked)), 'no fim ela volta a treinar e a dupla fica livre');
 
 // ------------------------------------ e sem a Luna, o ônibus é o de sempre
 await page.evaluate(() => localStorage.removeItem('aristory.save.v1'));

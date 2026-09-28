@@ -2217,41 +2217,21 @@ export const villaLobos: SceneDef = {
           icon: '🐰',
         });
       } else {
-        const vezes = api.bump('luna.conversas');
-        const rodada: Array<() => Promise<void>> = [
-          async () => {
-            await diz('¡Épale, panas! Já foram na escola? O ônibus tá ali no ponto, ó.');
-          },
-          async () => {
-            await diz('Tô ensaiando uma coreografia nova. Olha só!');
-            luna.torcer(2.8);
-            api.som('sacudida');
-            await diz('¡Vamos, Gatitos! ¡Vamos, Gatitos! ¡Uh!');
-            luna.ficarTimida(2.4);
-            await diz('...Não olhem tanto. ¡Qué pena!');
-          },
-          async () => {
-            await diz('Hoje na aula o Gatito explicou que "esquisito" é estranho. Estranho!');
-            await diz('Eu achava que era gostoso. Passei um mês elogiando a comida dos outros de esquisita.');
-            luna.ficarTimida(2.2);
-            await diz('Naguará... ninguém me avisou.');
-          },
-          async () => {
-            await diz('Sabiam que o Gatito pula em vez de andar? Ele é pelúcia, né. Pelúcia não tem joelho.');
-          },
-          async () => {
-            luna.torcer(1.8);
-            api.som('sacudida');
-            await diz('¡Gatitos! ...Desculpa. Às vezes sai sozinho.');
-          },
-        ];
-        await rodada[(vezes - 1) % rodada.length]();
+        // o convite já foi feito: ela está de saída, o treino é na escola
+        await diz('Vão lá! O ônibus tá ali no ponto, ó. Eu vou logo depois: hoje tem treino no ginásio.');
       }
     };
 
-    // ela só existe depois do quadro encher; e só vive (anima) enquanto existe
+    /*
+     * ELA SÓ EXISTE DEPOIS DO QUADRO ENCHER, E ATÉ IR PARA A ESCOLA. Depois da
+     * conversa ela passa a treinar no ginásio da escola — mas não some na cara
+     * da dupla: quem decide é o `escola-aberta` de QUANDO A CENA MONTOU. Na
+     * visita em que ela convida, ela fica no piquenique; na próxima vez que a
+     * dupla vier ao parque, a toalha já foi recolhida e as florzinhas voltam.
+     */
+    const lunaFoiPraEscola = g.flag('escola-aberta');
     w.onUpdate((dt) => {
-      const aqui = g.flag('jean-luc-batido');
+      const aqui = g.flag('jean-luc-batido') && !lunaFoiPraEscola;
       if (aqui !== lunaNoParque) mostrarALuna(aqui);
       if (aqui) luna.update(dt);
     });

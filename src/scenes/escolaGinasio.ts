@@ -7,7 +7,11 @@ import {
 import { bleachers, waterFountain } from '../world/props';
 import { assoalhoDeMadeira } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
-import { ESCOLA, LUZ_DA_ESCOLA, cascaDeSala, conversa, pontoNoMundo, sentarOsDois } from './escolaComum';
+import { Luna } from '../entities/bichos/Luna';
+import {
+  ESCOLA, LUZ_DA_ESCOLA, cascaDeSala, conversa, pontoNoMundo, posicionarParaConversar, sentarOsDois,
+  soltarDaConversa,
+} from './escolaComum';
 
 /**
  * =============================================== O GINÁSIO DA ESCOLA DO GATITO
@@ -152,6 +156,94 @@ export const escolaGinasio: SceneDef = {
           [R, 'Six seven. Isso tem a pata do Gatito.'],
         ]),
     });
+
+    // ====================================================== A LUNA TREINANDO
+    /*
+     * Depois de mostrar a escola, a Luna mora aqui (`luna-na-escola`),
+     * treinando a coreografia com os pompons em loop. Ela fica no meio da
+     * quadra, entre o círculo central e a lateral da frente: de frente para a
+     * câmera, sem nada em cima nem na frente dela, e longe das duas linhas de
+     * lance livre, que são do arremesso.
+     *
+     * Conversar PARA o treino: ela se vira para a dupla, fala, e volta a
+     * treinar. As falas se revezam, uma por conversa.
+     */
+    if (g0.flag('luna-na-escola')) {
+      const TREINO = { x: QUADRA.x, z: QUADRA.z + 2.9 };
+      const PARA_A_CAMERA = { x: TREINO.x + 10, z: TREINO.z + 10 };
+      const luna = new Luna({
+        minX: TREINO.x - 0.2, maxX: TREINO.x + 0.2,
+        minZ: TREINO.z - 0.2, maxZ: TREINO.z + 0.2,
+      });
+      luna.entrarEmServico();
+      luna.group.position.set(TREINO.x, 0, TREINO.z);
+      luna.group.rotation.y = Math.PI / 4;
+      luna.encarar(PARA_A_CAMERA.x, PARA_A_CAMERA.z);
+      luna.treinar(true);
+      w.add(luna.group);
+      w.blockCircle(TREINO.x, TREINO.z, 0.42);
+      /** gancho de teste: o `scripts/luna.mjs` mede a coreografia */
+      luna.group.userData.teste = { luna };
+      w.onUpdate((dt) => luna.update(dt));
+
+      const L = 'Luna';
+      const falas: Array<(g: GameAPI) => Promise<void>> = [
+        async (g) => {
+          await conversa(g, [
+            [L, '¡Épale, panas! Vieram me ver treinar?'],
+            [L, 'Senta ali na arquibancada que eu faço a coreografia inteira. Do começo!'],
+          ]);
+        },
+        async (g) => {
+          await conversa(g, [[L, 'Tô ensaiando uma parte nova. Olha só!']]);
+          luna.torcer(2.8);
+          g.som('sacudida');
+          await conversa(g, [[L, '¡Vamos, Gatitos! ¡Vamos, Gatitos! ¡Uh!']]);
+          luna.ficarTimida(2.4);
+          await conversa(g, [[L, '...Não olhem tanto. ¡Qué pena!']]);
+        },
+        async (g) => {
+          await conversa(g, [
+            [L, 'Hoje na aula o Gatito explicou que "esquisito" é estranho. Estranho!'],
+            [L, 'Eu achava que era gostoso. Passei um mês elogiando a comida dos outros de esquisita.'],
+          ]);
+          luna.ficarTimida(2.2);
+          await conversa(g, [[L, 'Naguará... ninguém me avisou.']]);
+        },
+        async (g) => {
+          await conversa(g, [[L, 'Sabiam que o Gatito pula em vez de andar? Ele é pelúcia, né. Pelúcia não tem joelho.']]);
+        },
+        async (g) => {
+          luna.torcer(1.8);
+          g.som('sacudida');
+          await conversa(g, [[L, '¡Gatitos! ...Desculpa. Às vezes sai sozinho.']]);
+        },
+      ];
+
+      w.interact({
+        id: 'ginasio:luna',
+        x: TREINO.x, z: TREINO.z, radius: 1.8,
+        label: 'Falar com a Luna', icon: '🐰',
+        highlight: luna.group,
+        onInteract: async (g) => {
+          luna.treinar(false);
+          const meio = posicionarParaConversar(g, TREINO);
+          luna.encarar(meio.x, meio.z);
+          g.focusCamera(luna.group);
+          g.setZoom(8);
+          try {
+            const vez = g.bump('luna.conversas');
+            await falas[(vez - 1) % falas.length](g);
+          } finally {
+            g.focusCamera(null);
+            g.setZoom(13);
+            soltarDaConversa(g);
+            luna.encarar(PARA_A_CAMERA.x, PARA_A_CAMERA.z);
+            luna.treinar(true);
+          }
+        },
+      });
+    }
 
     // ======================================================== O ARREMESSO
     const bola = bolaDeBasquete(0.12);

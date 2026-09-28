@@ -700,16 +700,13 @@ O plano não inventa nada do que é da vida de vocês. O que falta, por etapa:
     (§10, §14).
 
 **Sobre a Luna (§14)**
-15. **A aparência dela** é chute meu: pelo cinza-pérola, olhos pretos,
-    uniforme no azul e amarelo da escola, laço amarelo na orelha e a ponta
-    de uma orelha dobrada. Ela tem uma cor de pelo, um olho ou um uniforme
-    na sua cabeça?
-16. **As falas** dela são rascunho meu, com expressões venezuelanas
-    ("épale", "naguará", "chévere", "burda de", "pana", "ya va", "¡qué
-    pena!", "¡qué fino!", "vale"). Se o Ari usa outras — ou se alguma soa
-    errada para ele — troco na hora.
-17. Depois de levar vocês à escola, **ela continua no piquenique**, ou passa
-    a morar na escola (torcendo no ginásio, por exemplo)?
+15. ~~A aparência dela~~ — aprovada pelo Renan: pelo cinza-pérola, uniforme
+    no azul e amarelo da escola, laço amarelo na orelha e a ponta de uma
+    orelha dobrada.
+16. ~~As falas~~ — o Renan manteve as do rascunho, sem ler: são surpresa
+    para o Ari.
+17. ~~Onde ela fica depois~~ — respondido: no ginásio, treinando a
+    coreografia com os pompons (§14).
 
 ---
 
@@ -740,7 +737,25 @@ orelhas caídas para trás e a bochecha mais corada) e sentada no piquenique.
 
 **A câmera na conversa.** O piquenique fica dentro da zona da roda gigante,
 que abre o enquadramento; durante a conversa a zona solta a câmera, que mira
-nela em zoom 8, e devolve tudo no fim.
+nela em zoom 8, e devolve tudo no fim. Em toda conversa com ela (parque,
+saguão, ginásio) a dupla é posta na DIAGONAL dela, fora da linha da câmera
+(`posicionarParaConversar` em `escolaComum.ts`): quem chega para falar tende
+a parar bem na frente, tapando a coelha.
 
-**O que é chute meu** (perguntas 15–17 do §13): a cor do pelo, o uniforme e
-todas as falas.
+**Onde ela mora, na ordem da história** (decisão do Renan):
+
+1. **no piquenique do Villa Lobos**, depois do quadro encher, até o convite.
+   Ela fica lá o resto daquela visita; na próxima vez que a dupla vier ao
+   parque, a toalha foi recolhida e as florzinhas voltaram;
+2. **na entrada da escola**, na primeira chegada depois do convite: ela
+   espera onde a dupla desce do ônibus e dá o **resumo do lugar** — saguão,
+   troféus, a escada do segundo andar fechado, Sala 1 (português, do
+   Gatito), Sala 2 (espanhol), sala de descanso, sala dos professores,
+   refeitório e ginásio —, fica tímida por ter falado tudo de uma vez, diz
+   para procurá-la no ginásio e vai andando até lá (`luna-na-escola`);
+3. **no ginásio**, de vez: treinando a coreografia (`treinar()`, quatro
+   passos de dois segundos em loop — alto-e-baixo, V alto e V baixo, o giro
+   e os chutes). Conversar para o treino; as falas se revezam, uma por
+   conversa, e no fim ela volta a treinar.
+
+A aparência e as falas estão aprovadas (§13, 15–17).

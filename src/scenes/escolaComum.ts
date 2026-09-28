@@ -210,3 +210,40 @@ export function pontoNoMundo(w: WorldBuilder, x: number, y: number, z: number, r
   w.root.add(o);
   return o;
 }
+
+/**
+ * PÕE A DUPLA NA DIAGONAL DE QUEM FALA, fora da linha da câmera.
+ *
+ * A câmera olha de `+X/+Z`, e quem chega para conversar tende a parar
+ * exatamente entre o bicho e a tela — a Luna sumiu inteira atrás dos dois na
+ * primeira foto do piquenique. Aqui os dois vão para a frente-direita da tela
+ * dele (`lado` para a direita, `frente` para a câmera), olhando para ele, e o
+ * parceiro fica segurado. Quem chama devolve com `soltarDaConversa`.
+ */
+export function posicionarParaConversar(
+  g: GameAPI,
+  alvo: { x: number; z: number },
+  lado = 1.3,
+  frente = 0.9,
+): { x: number; z: number } {
+  const c = Math.SQRT1_2;
+  const ponto = (l: number, f: number): { x: number; z: number } => ({
+    x: alvo.x + c * l + c * f,
+    z: alvo.z - c * l + c * f,
+  });
+  const olhar = (p: { x: number; z: number }): number => Math.atan2(alvo.x - p.x, alvo.z - p.z);
+  const eu = ponto(lado, frente);
+  const par = ponto(lado + 0.7, frente - 0.2);
+  g.lockPlayer(true);
+  g.releasePlayer(eu.x, eu.z, olhar(eu));
+  g.releaseCompanion(par.x, par.z, olhar(par));
+  g.holdCompanion(alvo.x, alvo.z);
+  // o meio dos dois: é para lá que quem fala se vira
+  return { x: (eu.x + par.x) / 2, z: (eu.z + par.z) / 2 };
+}
+
+/** Devolve a dupla depois de `posicionarParaConversar`. */
+export function soltarDaConversa(g: GameAPI): void {
+  g.freeCompanion();
+  g.lockPlayer(false);
+}

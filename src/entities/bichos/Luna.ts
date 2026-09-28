@@ -60,6 +60,10 @@ export class Luna extends Bicho {
   private misturaTorcida = 0;
   private misturaTimida = 0;
   private misturaSentada = 0;
+  /** o treino no ginásio: ligado pela cena, e o relógio da coreografia */
+  private treinoLigado = false;
+  private relogioDoTreino = 0;
+  private misturaTreino = 0;
 
   constructor(area: AreaDoBicho) {
     super(area, {
@@ -349,12 +353,75 @@ export class Luna extends Bicho {
     this.torcendo = 0;
   }
 
+  /**
+   * O TREINO NO GINÁSIO: a coreografia com os pompons, em loop, até a cena
+   * mandar parar (para conversar, por exemplo). Os gestos da conversa
+   * (`torcer`, `ficarTimida`) passam por cima dele enquanto duram.
+   */
+  treinar(sim: boolean): void {
+    this.treinoLigado = sim;
+  }
+
   /** o teste pergunta isto */
+  get estaTreinando(): boolean {
+    return this.treinoLigado;
+  }
   get estaTorcendo(): boolean {
     return this.torcendo > 0;
   }
   get estaTimida(): boolean {
     return this.timida > 0;
+  }
+
+  /**
+   * A COREOGRAFIA DO TREINO: quatro passos de dois segundos, em loop, na
+   * contagem de torcida (quatro tempos por segundo). Cada passo devolve só os
+   * ALVOS — o `animar` chega neles com a mesma suavização de sempre, então a
+   * troca de um passo para o outro não estala.
+   *
+   *  1. alto-e-baixo: um braço no alto e o outro embaixo, trocando a cada
+   *     tempo, com um pulinho em cada troca;
+   *  2. V alto, V baixo: os dois no alto, os dois embaixo;
+   *  3. o giro: uma volta inteira com os pompons no alto, e a pose final;
+   *  4. os chutes: braços em T e uma perna de cada vez chutando à frente.
+   *
+   * `bracos` é quanto cada braço abre (o `rotation.z` sem o sinal do lado),
+   * `pernas` é o `rotation.x` de cada perna (negativo é para a frente).
+   */
+  private passoDaCoreografia(ct: number): {
+    bracos: [number, number]; frente: number; pernas: [number, number];
+    pulo: number; giro: number; sacode: number;
+  } {
+    const passo = Math.floor(ct / 2) % 4;
+    const u = (ct % 2) / 2;
+    const tempo = Math.floor(ct * 4) % 2;
+    const quique = Math.abs(Math.sin(ct * Math.PI * 4));
+    const ALTO = 2.7;
+    if (passo === 0) {
+      return {
+        bracos: tempo ? [ALTO, 0.55] : [0.55, ALTO], frente: -0.15, pernas: [0, 0],
+        pulo: quique * 0.05, giro: 0, sacode: 0.4,
+      };
+    }
+    if (passo === 1) {
+      return {
+        bracos: tempo ? [ALTO, ALTO] : [0.95, 0.95], frente: tempo ? -0.1 : -0.35, pernas: [0, 0],
+        pulo: tempo ? quique * 0.06 : 0, giro: 0, sacode: 0.35,
+      };
+    }
+    if (passo === 2) {
+      // a volta ocupa a primeira metade; a segunda é a pose, de pompom no alto
+      const volta = Math.min(1, u * 2);
+      const suave = volta * volta * (3 - 2 * volta);
+      return {
+        bracos: [ALTO, ALTO], frente: -0.1, pernas: [0, 0],
+        pulo: u < 0.5 ? 0.03 : 0, giro: suave * Math.PI * 2, sacode: u < 0.5 ? 0.2 : 0.5,
+      };
+    }
+    return {
+      bracos: [Math.PI / 2, Math.PI / 2], frente: 0, pernas: tempo ? [-1.05, 0] : [0, -1.05],
+      pulo: 0, giro: 0, sacode: 0.25,
+    };
   }
 
   // ------------------------------------------------------------------- pose
@@ -375,6 +442,13 @@ export class Luna extends Bicho {
     const tim = this.misturaTimida;
     const senta = this.misturaSentada;
 
+    // o treino só vale em pé, parada, e sem gesto de conversa por cima
+    const treinando = this.treinoLigado && !sentado && !andando;
+    if (treinando) this.relogioDoTreino += dt;
+    this.misturaTreino += ((treinando ? 1 : 0) - this.misturaTreino) * Math.min(1, dt * 4);
+    const tr = this.misturaTreino * Math.max(0, 1 - torce - tim);
+    const passoDoTreino = this.passoDaCoreografia(this.relogioDoTreino);
+
     /**
      * SENTADA: as pernas giram para a frente (`rotation.x` negativo leva o
      * `-Y` da perna para o `+Z`) e o corpo desce o tamanho da perna menos a
@@ -384,7 +458,8 @@ export class Luna extends Bicho {
     const passo = andando ? Math.sin(fase * 9) * 0.5 : 0;
     for (const [i, perna] of this.pernas.entries()) {
       const lado = i === 0 ? -1 : 1;
-      const alvo = -Math.PI / 2 * senta + passo * lado * (1 - senta);
+      const base = -Math.PI / 2 * senta + passo * lado * (1 - senta);
+      const alvo = base + (passoDoTreino.pernas[i] - base) * tr;
       perna.rotation.x += (alvo - perna.rotation.x) * Math.min(1, dt * 10);
       perna.rotation.z = lado * 0.12 * senta;
     }
@@ -393,9 +468,11 @@ export class Luna extends Bicho {
     const pulo = Math.abs(Math.sin(t * 8.5)) * 0.07 * torce * (1 - senta);
     const respiro = Math.sin(fase * 1.6) * 0.008;
     const pulinhoDoPasso = andando ? Math.abs(Math.sin(fase * 9)) * 0.02 : 0;
-    this.corpo.position.y = -0.15 * 1.15 * senta + respiro + pulo + pulinhoDoPasso;
-    // tímida, ela se encolhe e balança de um lado para o outro
-    this.corpo.rotation.y = Math.sin(t * 3) * 0.12 * tim;
+    this.corpo.position.y = -0.15 * 1.15 * senta + respiro + pulo + pulinhoDoPasso
+      + passoDoTreino.pulo * tr;
+    // tímida, ela se encolhe e balança de um lado para o outro; no treino, o
+    // giro da coreografia
+    this.corpo.rotation.y = Math.sin(t * 3) * 0.12 * tim + passoDoTreino.giro * tr;
 
     /**
      * OS BRAÇOS. Três destinos misturados pelas poses:
@@ -416,8 +493,10 @@ export class Luna extends Bicho {
       // tapavam a cara inteira, e a graça é os olhos espiando por cima deles
       const xAlvo = -0.3 * (1 - torce - tim) - 0.1 * torce - 1.95 * tim
         + (andando ? Math.sin(fase * 9 + (lado > 0 ? Math.PI : 0)) * 0.35 : 0);
-      braco.rotation.z += (zAlvo - braco.rotation.z) * Math.min(1, dt * 12);
-      braco.rotation.x += (xAlvo - braco.rotation.x) * Math.min(1, dt * 12);
+      const zFinal = zAlvo + (lado * passoDoTreino.bracos[i] - zAlvo) * tr;
+      const xFinal = xAlvo + (passoDoTreino.frente - xAlvo) * tr;
+      braco.rotation.z += (zFinal - braco.rotation.z) * Math.min(1, dt * 12);
+      braco.rotation.x += (xFinal - braco.rotation.x) * Math.min(1, dt * 12);
     }
     /*
      * os pompons sacodem rápido na torcida, e quase nada no resto. E na
@@ -425,11 +504,13 @@ export class Luna extends Bicho {
      * régua chibi), e só com ele o pompom não passava da altura da cabeça.
      */
     for (const [i, pompom] of this.pompons.entries()) {
-      pompom.position.y = -0.2 - 0.07 * torce;
-      const chacoalha = Math.sin(t * 26 + i * 1.7) * 0.45 * torce;
+      pompom.position.y = -0.2 - 0.07 * Math.min(1, torce + tr);
+      const relogio = t + this.relogioDoTreino;
+      const forca = 0.45 * torce + passoDoTreino.sacode * tr;
+      const chacoalha = Math.sin(relogio * 26 + i * 1.7) * forca;
       pompom.rotation.z = chacoalha;
       pompom.rotation.x = chacoalha * 0.6;
-      pompom.scale.setScalar(1 + Math.abs(Math.sin(t * 26 + i)) * 0.1 * torce);
+      pompom.scale.setScalar(1 + Math.abs(Math.sin(relogio * 26 + i)) * 0.22 * forca);
     }
 
     /**
