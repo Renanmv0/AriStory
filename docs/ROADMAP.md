@@ -58,6 +58,9 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [ ] Um ronronado próprio, diferente do miado
 
 ### Cenários
+- [ ] **A escola do Gatito**: curso de idiomas com recepção, cafeteria, sala de
+  descanso, salas de aula e sala dos professores, e a aula de português do
+  Gatito — plano em `docs/ESCOLA.md`
 - [ ] Casa do Renan
 - [ ] O restaurante/bar de sempre
 - [ ] A praia daquela viagem

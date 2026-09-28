@@ -38,7 +38,10 @@ falta — **úteis para se situar rápido, mas podem estar desatualizados**; o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,
 decisões do Renan, o que falta): para trabalhar no jardim, leia só ele e a
-skill da tarefa; o resto do arquivo é detalhe por seção. São projeto,
+skill da tarefa; o resto do arquivo é detalhe por seção. `ESCOLA.md` é o
+plano de um cenário inteiro — a escola de cursos com o Gatito, o gato de
+pelúcia professor —, também aberto por um "COMECE AQUI", e com as perguntas
+ao Renan que ainda estão em aberto. São projeto,
 não código: nada deles está no jogo até o `git log` dizer que está, e cada um
 marca no próprio texto o que já foi construído. Ajuste do minigame começa no
 arquivo dele, não no código.
