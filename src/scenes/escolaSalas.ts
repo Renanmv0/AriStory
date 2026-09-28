@@ -277,11 +277,11 @@ export const escolaSala1 = salaDeAula({
 export const escolaSala2 = salaDeAula({
   id: ESCOLA.sala2,
   name: 'Sala 2 — Espanhol',
-  subtitle: 'aqui o professor é o Ari',
+  subtitle: 'procura-se professor',
   volta: 'da-sala-2',
   parede: P.escolaParedeSala2,
   barra: P.escolaBarraSala2,
-  lousa: ['Clase de español', '¡Bienvenido, Renan!', 'Prof. Ari'],
+  lousa: ['Clase de español', 'Se busca profesor', '¡Pregunte en la dirección!'],
   cartaz: {
     titulo: 'El abecedario',
     linhas: ['A de arepa · B de beso', 'C de corazón · G de gato', 'Ñ de ñapa · Z de zapato'],
@@ -289,11 +289,11 @@ export const escolaSala2 = salaDeAula({
   oculinhos: false,
   falas: {
     lousa: [
-      [R, '"¡Bienvenido, Renan!"... isso é pra mim?'],
-      [A, 'Sí. Aquí el alumno eres tú.'],
+      [R, '"Se busca profesor"... a sala de espanhol tá sem professor.'],
+      [A, 'Hmm. Eu conheço alguém.'],
     ],
     mesa: [
-      [R, 'A mesa do professor Ari.'],
+      [R, 'A mesa do professor. Vazia.'],
       [A, 'Siéntate, por favor.'],
       [R, 'Sí, profesor.'],
     ],
@@ -317,8 +317,8 @@ export const escolaSala2 = salaDeAula({
   },
   memoria: {
     id: 'o-professor-ari',
-    title: 'O professor Ari',
-    note: 'Na Sala 2 os papéis se invertem: quem ensina é o Ari, e o aluno de espanhol sou eu.',
+    title: 'A sala sem professor',
+    note: 'A Sala 2, de espanhol, ainda procura professor. O Ari sentou na mesa vazia e me deu a primeira aula de brincadeira.',
     icon: '📙',
   },
 });
@@ -545,8 +545,8 @@ export const escolaProfessores: SceneDef = {
       onInteract: (g) =>
         conversa(g, [
           [A, 'Tem um com o nome do Gatito.'],
-          [R, 'E outro com o seu. Professor de espanhol, lembra?'],
-          [A, 'Profesor Ari. Me gusta.'],
+          [R, 'E um com a etiqueta em branco. "Espanhol".'],
+          [A, 'Ainda não acharam o professor, então.'],
         ]),
     });
     w.interact({
@@ -565,7 +565,7 @@ export const escolaProfessores: SceneDef = {
             id: 'sala-dos-professores',
             title: 'A sala dos professores',
             place: 'Escola do Gatito',
-            note: 'Café forte, escaninho com o nome do Gatito e outro com o do Ari, e a caminha azul com o novelo rosa do lado.',
+            note: 'Café forte, escaninho com o nome do Gatito e outro esperando o professor de espanhol, e a caminha azul com o novelo rosa do lado.',
             icon: '☕',
           });
         }

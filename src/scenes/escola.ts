@@ -26,7 +26,7 @@ import {
  * sem copiar: escola padrão, espaçosa. O plano está em `docs/ESCOLA.md`.
  *
  * CADA SALA TEM UMA PORTA, e atrás dela mora um cenário próprio e menor:
- * Sala 1 (português, a do Gatito), Sala 2 (espanhol, com o Ari de professor),
+ * Sala 1 (português, a do Gatito), Sala 2 (espanhol, ainda sem professor),
  * sala de descanso, sala dos professores e ginásio. O refeitório fica AQUI,
  * no mesmo cenário (pedido do Renan).
  *
@@ -113,7 +113,7 @@ const FALAS_DO_GATITO = [
   'Oi, Ari! Tudo bem? Pode falar comigo em português, viu.',
   'Uma palavra nova por dia já é muita coisa.',
   'Errar faz parte. É errando que a gente aprende.',
-  'Renan, a sua aula de espanhol é na Sala 2. Com o professor Ari!',
+  'A Sala 2 é de espanhol, mas ainda estou procurando professor. Se souberem de alguém...',
   'Já passaram no refeitório? Sexta tem arepa.',
   'Quando as aulas começarem, a gente se vê na Sala 1.',
 ];
@@ -237,7 +237,7 @@ export const escola: SceneDef = {
     const mural = w.add(w.place(
       cartazDeParede('Mural de avisos', [
         'Aula de português: com o Prof. Gatito',
-        'Clase de español: con el Prof. Ari',
+        'Clase de español: ¡se busca profesor!',
         'Treino dos Gatitos: terça e quinta',
         'Achados e perdidos: um novelo de lã rosa',
       ], 3.2, 1.35),
@@ -445,7 +445,8 @@ export const escola: SceneDef = {
       onInteract: (g) =>
         conversa(g, [
           [A, 'Aula de português, com o professor Gatito.'],
-          [R, 'Clase de español, con el profesor Ari.'],
+          [R, 'Clase de español... "se busca profesor".'],
+          [A, 'Tão procurando professor de espanhol.'],
           [A, 'Achados e perdidos: um novelo de lã rosa.'],
           [R, 'Esse aí é do Gatito, certeza.'],
         ]),
@@ -547,11 +548,14 @@ export const escola: SceneDef = {
             g.setFlag('gatito-conhecido');
             await conversa(g, [
               [R, 'Ari... olha quem tá aqui.'],
-              [A, '¡Gatito!'],
-              [G, 'Oi, Ari! Oi, Renan! Bem-vindos à Escola do Gatito.'],
-              [G, 'Eu sou o professor de português daqui.'],
-              [G, 'As aulas ainda estão sendo preparadas. Por enquanto, explorem a escola!'],
-              [A, 'Um gato professor de português...'],
+              [A, '¡Un gatito!'],
+              [G, 'Gatito, com G maiúsculo. Oi, Ari! Oi, Renan! Bem-vindos à Escola do Gatito.'],
+              [G, 'Eu sou o diretor da escola. E o professor de português também.'],
+              [G, 'As aulas começam em breve. Vocês não querem ser meus alunos?'],
+              [A, 'Eu quero! Tô muito interessado.'],
+              [R, 'Eu já sei português... mas eu vou junto, pra te acompanhar.'],
+              [G, 'Combinado: dois alunos novos na Sala 1!'],
+              [A, 'Um gato diretor de escola...'],
               [R, 'Olha a língua pra fora. Ele já gostou de você.'],
             ]);
             gatito.sixSeven();
@@ -559,7 +563,7 @@ export const escola: SceneDef = {
               id: 'o-professor-gatito',
               title: 'O professor Gatito',
               place: 'Escola do Gatito',
-              note: 'Um gato de verdade, de língua pra fora e meia cara caramelo, é o professor de português da escola. Passeia pela escola inteira e, de vez em quando, faz o six seven.',
+              note: 'Um gato de verdade, de língua pra fora e meia cara caramelo, é o diretor da escola e o professor de português. Convidou a gente para as aulas: o Ari topou na hora, e eu vou junto.',
               icon: '🐱',
             });
             return;

@@ -91,6 +91,11 @@ Três coisas separam este cenário dos outros:
 > memórias. O que está abaixo sobre "jeito de pelúcia" (§2.4, §2.7) foi
 > escrito antes dessa decisão; o pulinho está no jogo, e mudar para um andar
 > de gato é a pergunta 18 do §13.
+>
+> **E ele é o DIRETOR da escola**, além de professor de português. Na
+> primeira conversa ele se apresenta assim e convida a dupla para as aulas:
+> o Ari diz que está interessado; o Renan diz que já sabe português, mas vai
+> junto para acompanhar (pedido do Renan).
 
 ### 2.1 Como ele é (das três fotos que o Renan mandou)
 
@@ -371,13 +376,19 @@ A sala mais caprichada, porque é onde o presente acontece.
   lado a lado;
 - um **varal de post-its** com palavras.
 
-### Sala 2 — a decidir
+### Sala 2 — Espanhol, procurando professor
 
-Montada como sala de aula (lousa, mesa, carteiras), mas o que se aprende nela
-é pergunta para o Renan (§13). A ideia de que eu mais gosto: **aula de
-espanhol, com o Ari de professor**. A virada de papel — o Renan de aluno,
-errando o espanhol, e o Ari de verdade, fluente, corrigindo. Outras: inglês,
-ou uma sala de artes.
+**Decisão do Renan:** a Sala 2 é de espanhol, mas **ainda sem professor**. A
+dupla acabou de conhecer a escola; não faz sentido o nome do Ari já estar no
+mural, na lousa e no escaninho. No jogo: o mural diz "Clase de español: ¡se
+busca profesor!", a lousa diz "Se busca profesor", o escaninho de espanhol
+tem a etiqueta em branco, e o Gatito comenta que está procurando alguém.
+
+A virada de papel (o Ari fluente ensinando, o Renan de aluno) continua viva
+como BRINCADEIRA na sala vazia — o Ari senta na mesa e dá uma aula de
+mentira — e como gancho: diante da lousa ele diz "Hmm. Eu conheço alguém."
+Se o Ari vai assumir a vaga um dia, e como, é decisão do Renan (§13,
+pergunta 19).
 
 ### Sala de conversação
 
@@ -715,6 +726,9 @@ O plano não inventa nada do que é da vida de vocês. O que falta, por etapa:
 18. Ele ainda **anda aos pulinhos**, como foi pensado para uma pelúcia. Quer
     que ele passe a andar como gato (as quatro patas dando passo), ou o
     pulinho fica como o jeito dele?
+
+19. A **vaga de professor de espanhol** da Sala 2: o Ari assume um dia
+    (uma missão? um convite do Gatito?), ou ela fica aberta?
 
 **Sobre a Luna (§14)**
 15. ~~A aparência dela~~ — aprovada pelo Renan: pelo cinza-pérola, uniforme
