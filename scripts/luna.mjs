@@ -398,7 +398,15 @@ conferir(parqueDepois.soltosVisiveis === parqueDepois.soltos && parqueDepois.col
 await page.goto(`${BASE}/?cena=escola`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(4000);
 const tourDeNovo = await page.locator('.dialogue.show').count();
-conferir(tourDeNovo === 0 && !(await corpo()).visivel, 'voltando à escola, o tour não se repete e ela não está no saguão');
+// no saguão ela nem é montada depois do tour: não achar é o certo
+const noSaguao = await page.evaluate(() => {
+  let g = null;
+  window.jogo.current.world.root.traverse((o) => {
+    if (o.userData?.peca === 'luna') g = o;
+  });
+  return g ? g.visible : false;
+});
+conferir(tourDeNovo === 0 && !noSaguao, 'voltando à escola, o tour não se repete e ela não está no saguão');
 
 // ------------------------------------------------------ o ginásio: o treino
 await page.goto(`${BASE}/?cena=escola-ginasio`, { waitUntil: 'networkidle' });
