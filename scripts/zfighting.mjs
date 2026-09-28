@@ -29,6 +29,10 @@ const PECAS = [
   ['loja-de-roupas', 'villa-lobos'],
   ['mesinha-de-xadrez', 'villa-lobos'],
   ['cesta-de-biscoitos', 'villa-lobos'],
+  // o piquenique da Luna (nasce escondido até o quadro encher: a medida é da
+  // geometria, e não da tela, então vale do mesmo jeito)
+  ['cesta-de-piquenique', 'villa-lobos'],
+  ['flamula', 'villa-lobos'],
   ['arquibancada', 'villa-lobos'],
   ['estante', 'quarto'],
   ['loja-de-patins', 'villa-lobos'],
@@ -89,6 +93,30 @@ const PECAS = [
   ['prateleira-da-loja', 'lojinha'],
   ['escada-rolante', 'lojinha'],
   ['espelho-magico', 'lojinha'],
+  // a Escola do Gatito
+  ['armarios-de-escola', 'escola'],
+  ['escadaria', 'escola'],
+  ['vitrine-de-trofeus', 'escola'],
+  ['mesa-de-refeitorio', 'escola'],
+  ['balcao-de-refeitorio', 'escola'],
+  ['maquina-de-lanches', 'escola'],
+  ['cartaz', 'escola'],
+  ['placa-de-porta', 'escola'],
+  ['logo-da-escola', 'escola'],
+  ['relogio', 'escola'],
+  ['lousa', 'escola-sala-1'],
+  ['carteira-escolar', 'escola-sala-1'],
+  ['mesa-do-professor', 'escola-sala-1'],
+  ['globo', 'escola-sala-1'],
+  ['bandeira-brasil', 'escola-sala-1'],
+  ['oculinhos-do-gatito', 'escola-sala-1'],
+  ['pufe-saco', 'escola-descanso'],
+  ['escaninhos', 'escola-professores'],
+  ['cafeteira', 'escola-professores'],
+  ['caminha-do-gatito', 'escola-professores'],
+  ['cesta-de-basquete', 'escola-ginasio'],
+  ['carrinho-de-bolas', 'escola-ginasio'],
+  ['placar-de-ginasio', 'escola-ginasio'],
 ];
 
 const browser = await chromium.launch({

@@ -5759,6 +5759,114 @@ export function toalhaDePiquenique(
 }
 
 /**
+ * A cesta de piquenique de vime: corpo baixo, a tampa por cima e a ALÇA em arco.
+ *
+ * Ela vai no chão, em cima da toalha — ao contrário da cesta de biscoitos da
+ * Estella, que precisou de um caixote para ser lida de 34°. Aqui quem dá a
+ * altura é a alça: é o arco de cima que diz "cesta de piquenique" antes de
+ * qualquer detalhe, e ele sobe o dobro do corpo.
+ *
+ * A trama são faixas um tom mais escuras, cada uma um fio MAIOR que o corpo
+ * (nunca no mesmo plano da parede dele), e o guardanapo xadrez escapando pela
+ * tampa é o que diz que tem lanche lá dentro.
+ */
+export function cestaDePiquenique(
+  cor: number = P.cestaVime,
+  corTrama: number = P.cestaVimeEscuro,
+  corGuardanapo: number = P.lunaToalhaXadrez,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cesta-de-piquenique';
+  const vime = toon(cor);
+  const trama = toon(corTrama);
+  const LARG = 0.44;
+  const FUNDO = 0.3;
+  const ALT = 0.22;
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(LARG, ALT, FUNDO), vime);
+  corpo.position.y = ALT / 2;
+  g.add(corpo);
+  for (const y of [0.05, 0.11, 0.17]) {
+    const faixa = new THREE.Mesh(new THREE.BoxGeometry(LARG + 0.012, 0.018, FUNDO + 0.012), trama);
+    faixa.position.y = y;
+    g.add(faixa);
+  }
+
+  // a tampa fica 2 mm ACIMA do topo do corpo: encostada, as duas faces
+  // nasceriam no mesmo plano
+  const tampa = new THREE.Mesh(new THREE.BoxGeometry(LARG + 0.03, 0.02, FUNDO + 0.03), trama);
+  tampa.position.y = ALT + 0.012;
+  g.add(tampa);
+
+  // o guardanapo escapando pela frente da tampa, meio caído
+  const guardanapo = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.01, 0.09), toon(corGuardanapo));
+  guardanapo.position.set(0.08, ALT + 0.004, FUNDO / 2 + 0.035);
+  guardanapo.rotation.x = 0.5;
+  g.add(guardanapo);
+
+  // a alça: meio toro em pé, de uma ponta à outra da tampa
+  const alca = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.016, 8, 18, Math.PI), trama);
+  alca.position.y = ALT + 0.022;
+  g.add(alca);
+  return g;
+}
+
+/**
+ * Flâmula de torcida fincada na grama: um mastro fino e o pano com o nome do
+ * time escrito, terminando na ponta triangular — é a ponta que separa flâmula
+ * de placa.
+ *
+ * O TEXTO VAI NAS DUAS FACES. De um lado só, qualquer giro que a cena dê
+ * mostraria as costas em branco para a câmera. O pano nasce à direita do
+ * mastro (`+X`) e olha para `+Z`.
+ */
+export function flamula(
+  texto: string,
+  cor: number = P.flamulaGatitos,
+  corTexto = '#f2c14a',
+  altura = 1.5,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'flamula';
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, altura, 8), toon(P.wood));
+  mastro.position.y = altura / 2;
+  g.add(mastro);
+  const ponteira = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), toon(corTexto === '#f2c14a' ? P.lunaUniformeFaixa : P.metalWhite));
+  ponteira.position.y = altura + 0.02;
+  g.add(ponteira);
+
+  const LARG = 0.72;
+  const ALTO = 0.34;
+  const ESP = 0.02;
+  const meioY = altura - 0.06 - ALTO / 2;
+  const tecido = toon(cor);
+  const pano = new THREE.Mesh(new THREE.BoxGeometry(LARG, ALTO, ESP), tecido);
+  pano.position.set(0.03 + LARG / 2, meioY, 0);
+  g.add(pano);
+
+  // a ponta: um triângulo extrudado, com a base 1 cm DENTRO do pano para as
+  // duas peças não encostarem face com face
+  const tri = new THREE.Shape();
+  tri.moveTo(0, -ALTO / 2);
+  tri.lineTo(0.3, 0);
+  tri.lineTo(0, ALTO / 2);
+  tri.closePath();
+  const pontaGeo = new THREE.ExtrudeGeometry(tri, { depth: ESP * 0.9, bevelEnabled: false });
+  pontaGeo.translate(0, 0, -ESP * 0.45);
+  const ponta = new THREE.Mesh(pontaGeo, tecido);
+  ponta.position.set(0.03 + LARG - 0.01, meioY, 0);
+  g.add(ponta);
+
+  for (const lado of [1, -1] as const) {
+    const escrito = letreiro(texto, LARG * 0.9, ALTO * 0.8, corTexto);
+    escrito.position.set(0.03 + LARG / 2, meioY, lado * (ESP / 2 + 0.004));
+    if (lado < 0) escrito.rotation.y = Math.PI;
+    g.add(escrito);
+  }
+  return g;
+}
+
+/**
  * O QUE ESTÁ EM CIMA DA MESA na festa: cesta, sanduíches, jarra, copos, bolo
  * e uma tigela de morango.
  *

@@ -2,6 +2,9 @@ import type { SceneDef } from '../core/types';
 import { casa } from './casa';
 import { lojinha } from './lojinha';
 import { clube } from './clube';
+import { escola } from './escola';
+import { escolaGinasio } from './escolaGinasio';
+import { escolaDescanso, escolaProfessores, escolaSala1, escolaSala2 } from './escolaSalas';
 import { estufa } from './estufa';
 import { maniaDeChurrasco } from './maniaDeChurrasco';
 import { quarto } from './quarto';
@@ -21,6 +24,14 @@ export const SCENES: Record<string, SceneDef> = {
   [estufa.id]: estufa,
   [maniaDeChurrasco.id]: maniaDeChurrasco,
   [lojinha.id]: lojinha,
+  // a Escola do Gatito: o saguão e as salas atrás de cada porta. Chega-se de
+  // ônibus, depois de conhecer a Luna no Villa Lobos (ver docs/ESCOLA.md)
+  [escola.id]: escola,
+  [escolaSala1.id]: escolaSala1,
+  [escolaSala2.id]: escolaSala2,
+  [escolaDescanso.id]: escolaDescanso,
+  [escolaProfessores.id]: escolaProfessores,
+  [escolaGinasio.id]: escolaGinasio,
 };
 
 export const CENA_INICIAL = casa.id;
