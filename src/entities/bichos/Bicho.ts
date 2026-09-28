@@ -84,6 +84,14 @@ export abstract class Bicho {
   get estado(): EstadoDoBicho {
     return this.humor;
   }
+  /**
+   * Se a cena está no comando (ronda, cutscene). Existe para um gesto da
+   * subclasse — o six seven do Gatito — saber se deve tirar o bicho do passeio
+   * e devolver depois, ou se a cena já está mandando e é só não atrapalhar.
+   */
+  protected get deServico(): boolean {
+    return this.servindo;
+  }
 
   protected readonly area: AreaDoBicho;
   private readonly jeito: Required<JeitoDoBicho>;

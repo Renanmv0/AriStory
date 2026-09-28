@@ -1262,6 +1262,54 @@ export const PALETTE = {
   patinsGeloCasquinha: 0xe0ac63,  // o waffle da casquinha do emblema
   patinsGeloSorvete: 0xf6a6c0,    // a bola de sorvete, o rosa do Mano
 
+  // O GATITO, o professor da escola, das fotos da pelúcia da casa deles:
+  // creme no corpo, meia cara caramelo (com a orelha caramelo do mesmo lado),
+  // a outra orelha chocolate, a língua rosa para fora e o bordado preto
+  gatitoCreme: 0xf3ecdf,
+  gatitoCaramelo: 0xcf8d5c,
+  gatitoChocolate: 0x5f4a3f,
+  gatitoLingua: 0xe57b90,
+  gatitoBordado: 0x1f1b1d,
+  // os oculinhos de professor: armação fina, castanho de casco de tartaruga
+  gatitoOculos: 0x4a3226,
+
+  // A ESCOLA DO GATITO. O amarelo e o azul são as cores que as bandeiras do
+  // Brasil e da Venezuela têm em comum — a escola é pintada com elas, e o
+  // verde e o vermelho ficam para os detalhes
+  escolaParede: 0xf6e7b8,
+  escolaParedeAzul: 0xd3e3f3,
+  // a Sala 2 (espanhol), em pêssego, para não ser a Sala 1 com outra placa
+  escolaParedeSala2: 0xf6d6bf,
+  // a barra pintada na metade de baixo da parede, a "barra de tinta" de escola
+  escolaBarra: 0x9fbde3,
+  escolaBarraSala2: 0xe6a98a,
+  escolaRodape: 0x3d68ad,
+  escolaPiso: 0xe9e4da,
+  escolaPisoSala: 0xd9b27c,
+  escolaArmarioAzul: 0x4677c9,
+  escolaArmarioAmarelo: 0xf0bf45,
+  escolaArmarioPorta: 0x2f5596,
+  escolaDegrau: 0xc99a62,
+  escolaCorrimao: 0xf2f5f7,
+  escolaLousa: 0x2f5a46,
+  escolaCarteira: 0xd9a869,
+  escolaCarteiraPe: 0x5d6770,
+  escolaFaixa: 0xd9483f,
+  escolaQuadra: 0xd8a466,
+  escolaQuadraLinha: 0xf7f3ea,
+  escolaQuadraGarrafao: 0x4677c9,
+  escolaPufe: 0xf08a5d,
+  escolaSofa: 0x5f8f6b,
+  escolaBolaDeBasquete: 0xe8792f,
+  escolaTabela: 0xf7f7f4,
+  // as cubas do balcão do refeitório: o prato feito de escola
+  refeitorioArroz: 0xf7f2e6,
+  refeitorioFeijao: 0x6a432b,
+  refeitorioSalada: 0x74c150,
+  refeitorioMacarrao: 0xf1c75a,
+  refeitorioFrango: 0xd98d4a,
+  refeitorioBandeja: 0xe46b5e,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

@@ -1075,12 +1075,14 @@ export function arandela(): THREE.Group {
  * QUADRO DE GIZ com o cardápio do dia. O texto sai de um canvas em tempo de
  * execução — a mesma exceção do letreiro das placas, nenhum arquivo entra.
  */
-export function quadroDeGiz(linhas: readonly string[], largura = 1.6, altura = 1.2): THREE.Group {
+export function quadroDeGiz(
+  linhas: readonly string[], largura = 1.6, altura = 1.2, cor: number = P.churrascoQuadroNegro,
+): THREE.Group {
   const g = new THREE.Group();
   const moldura = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.06), toon(P.woodDark));
   g.add(moldura);
   const lousa = new THREE.Mesh(
-    new THREE.BoxGeometry(largura - 0.12, altura - 0.12, 0.03), toon(P.churrascoQuadroNegro),
+    new THREE.BoxGeometry(largura - 0.12, altura - 0.12, 0.03), toon(cor),
   );
   lousa.position.z = 0.03;
   g.add(lousa);
@@ -2526,5 +2528,1117 @@ export function araraPremium(opts: AraraOpts & { prata?: boolean } = {}): THREE.
     conjunto.rotation.y = (rnd() - 0.5) * 0.24;
     g.add(conjunto);
   }
+  return g;
+}
+
+// ===================================================== A ESCOLA DO GATITO
+//
+// As peças da escola: o saguão (armários, a escadaria, a vitrine de troféus),
+// o refeitório, as salas de aula, a sala de descanso, a dos professores e o
+// ginásio. Toda peça olha para `+Z` e nasce com a base em `y = 0`, como o resto
+// do kit. O plano da escola está em `docs/ESCOLA.md`.
+
+/**
+ * Uma pintura em `<canvas>` num plano, para placa, cartaz e bandeira.
+ *
+ * É a mesma técnica do `quadroDeGiz` e do `letreiro`: o desenho é código, e
+ * nenhum arquivo de imagem entra no repositório. A resolução acompanha a
+ * proporção do plano, para a letra não sair esticada.
+ */
+function pinturaEmCanvas(
+  largura: number, altura: number,
+  pintar: (ctx: CanvasRenderingContext2D, w: number, h: number) => void,
+  px = 512,
+): THREE.Mesh {
+  const canvas = document.createElement('canvas');
+  canvas.width = px;
+  canvas.height = Math.max(32, Math.round((px * altura) / largura));
+  const ctx = canvas.getContext('2d');
+  if (ctx) pintar(ctx, canvas.width, canvas.height);
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  textura.anisotropy = 4;
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(largura, altura),
+    new THREE.MeshBasicMaterial({ map: textura, transparent: true }),
+  );
+}
+
+/** a fonte arredondada de toda placa do jogo */
+const fonteRedonda = (px: number, negrito = true): string =>
+  `${negrito ? 'bold ' : ''}${Math.round(px)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+
+/** Escreve centrado, encolhendo a letra até caber na largura. */
+function escreverCabendo(
+  ctx: CanvasRenderingContext2D, texto: string, x: number, y: number, larguraMax: number, px: number, negrito = true,
+): void {
+  let tamanho = px;
+  ctx.font = fonteRedonda(tamanho, negrito);
+  while (tamanho > 8 && ctx.measureText(texto).width > larguraMax) {
+    tamanho -= 2;
+    ctx.font = fonteRedonda(tamanho, negrito);
+  }
+  ctx.fillText(texto, x, y);
+}
+
+/**
+ * ARMÁRIOS DE ESCOLA, a fileira de portinhas com as grades de ventilação — a
+ * peça que mais diz "corredor de escola" de longe.
+ *
+ * O corpo é UM bloco só, e as portas são placas por cima dele com uma fresta
+ * entre uma e outra: é a fresta escura que conta as portas. As cores vêm numa
+ * lista e se revezam (azul e amarelo, as duas cores da escola).
+ *
+ * Nenhuma face encosta em outra do mesmo lado: o rodapé é mais raso que o
+ * corpo, e o chapéu de cima é mais largo e mais fundo.
+ */
+export function armariosDeEscola(
+  portas = 5, cores: readonly number[] = [P.escolaArmarioAzul, P.escolaArmarioAmarelo],
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'armarios-de-escola';
+  const L = 0.46;
+  const A = 1.86;
+  const F = 0.46;
+  const largura = portas * L;
+
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(largura, A - 0.08, F), toon(P.escolaArmarioPorta));
+  corpo.position.y = 0.08 + (A - 0.08) / 2;
+  g.add(corpo);
+  const rodape = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.04, 0.08, F - 0.06), toon(P.woodDark));
+  rodape.position.y = 0.04;
+  g.add(rodape);
+  const chapeu = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.04, 0.05, F + 0.04), toon(P.escolaArmarioPorta));
+  chapeu.position.y = A + 0.025;
+  g.add(chapeu);
+
+  const grade = toon(P.escolaArmarioPorta);
+  const metal = toon(P.metalGrey);
+  for (let i = 0; i < portas; i++) {
+    const x = -largura / 2 + L * (i + 0.5);
+    const porta = new THREE.Mesh(new THREE.BoxGeometry(L - 0.04, A - 0.2, 0.025), toon(cores[i % cores.length]));
+    porta.position.set(x, 0.1 + (A - 0.2) / 2 + 0.02, F / 2 + 0.012);
+    g.add(porta);
+    // a grade de ventilação: três risquinhos escuros perto do alto
+    for (let r = 0; r < 3; r++) {
+      const risco = new THREE.Mesh(new THREE.BoxGeometry(L - 0.16, 0.022, 0.01), grade);
+      risco.position.set(x, A - 0.28 - r * 0.06, F / 2 + 0.029);
+      g.add(risco);
+    }
+    const trinco = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.12, 0.03), metal);
+    trinco.position.set(x + L / 2 - 0.09, 0.98, F / 2 + 0.035);
+    g.add(trinco);
+    // a plaquinha do número, um retângulo claro
+    const numero = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.01), toon(P.metalWhite));
+    numero.position.set(x, A - 0.52, F / 2 + 0.029);
+    g.add(numero);
+  }
+  return g;
+}
+
+/**
+ * A ESCADARIA DO SAGUÃO: dois lances que sobem das pontas e se encontram num
+ * patamar no meio, encostados na parede do fundo — a escada de escola de filme.
+ *
+ * Por enquanto ela não leva a lugar nenhum (pedido do Renan): o patamar para
+ * numa porta fechada na parede, que a cena põe. A peça é MACIÇA — cada degrau é
+ * um bloco do chão até o piso dele — porque vazada ela pediria o avesso dos
+ * degraus, e ninguém vê o avesso de uma escada encostada na parede.
+ *
+ * Correndo no X, com o fundo (`-Z`) contra a parede e o corrimão na frente
+ * (`+Z`), que é o lado da câmera. O lance da esquerda sobe para `+X`, o da
+ * direita sobe para `-X`, e os dois chegam ao patamar em `x = ±patamar/2`.
+ *
+ * Os pisos de madeira são um tico mais largos que o bloco (na frente e atrás)
+ * e avançam 3 cm sobre o degrau de baixo: é esse bocel que desenha a serrilha,
+ * e é ele que mantém as faces do piso fora do plano das faces do bloco.
+ */
+export function escadariaDoSaguao(
+  altura = 3.2, lance = 5.6, larguraLance = 2.2, patamar = 4, cor: number = P.escolaCorrimao,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'escadaria';
+  const n = Math.round(altura / 0.19);
+  const espelho = altura / n;
+  const piso = lance / n;
+  const L = larguraLance;
+  const bloco = toon(cor);
+  const madeira = toon(P.escolaDegrau);
+  const corrimao = toon(P.escolaRodape);
+  const metal = toon(P.metalGrey);
+
+  // o patamar: um bloco do chão até o alto, com o piso de madeira por cima
+  const base = new THREE.Mesh(new THREE.BoxGeometry(patamar, altura, L), bloco);
+  base.position.y = altura / 2;
+  g.add(base);
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(patamar + 0.02, 0.05, L + 0.04), madeira);
+  tampo.position.y = altura + 0.025;
+  g.add(tampo);
+  // um painel de rodapé azul na frente do patamar, para ele não ser um muro liso
+  const faixa = new THREE.Mesh(new THREE.BoxGeometry(patamar - 0.3, altura - 0.5, 0.02), toon(P.escolaParedeAzul));
+  faixa.position.set(0, (altura - 0.5) / 2 + 0.2, L / 2 + 0.01);
+  g.add(faixa);
+
+  for (const lado of [-1, 1]) {
+    // lado -1 = lance da esquerda, que sobe para +X; +1 = o da direita
+    const x0 = lado * (patamar / 2 + lance);
+    for (let i = 1; i <= n; i++) {
+      const h = espelho * i;
+      // o i-ésimo degrau, contado de baixo: fica entre `x0` e o patamar
+      const xc = x0 - lado * piso * (i - 0.5);
+      const degrau = new THREE.Mesh(new THREE.BoxGeometry(piso, h, L), bloco);
+      degrau.position.set(xc, h / 2, 0);
+      g.add(degrau);
+      const tabua = new THREE.Mesh(new THREE.BoxGeometry(piso + 0.03, 0.045, L + 0.04), madeira);
+      // o bocel avança para o lado de baixo (o lado de `x0`)
+      tabua.position.set(xc + lado * 0.015, h + 0.0225, 0);
+      g.add(tabua);
+    }
+
+    // O CORRIMÃO, na frente: pilaretes e um tubo inclinado por cima deles
+    const zc = L / 2 - 0.08;
+    const pilaretes = 5;
+    for (let k = 0; k <= pilaretes; k++) {
+      const f = k / pilaretes;
+      const x = x0 - lado * lance * f;
+      const chao = Math.max(espelho, altura * f);
+      const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.95, 6), metal);
+      pil.position.set(x, chao + 0.475, zc);
+      g.add(pil);
+    }
+    const comp = Math.hypot(lance, altura);
+    const tubo = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, comp, 8), corrimao);
+    tubo.position.set(x0 - lado * lance / 2, altura / 2 + 0.95, zc);
+    // o tubo nasce em pé (no Y): deitar na direção (lance, altura) do lance
+    tubo.rotation.z = lado * Math.atan2(lance, altura);
+    g.add(tubo);
+  }
+
+  // o guarda-corpo do patamar, na frente dele
+  const zc = L / 2 - 0.08;
+  for (let k = 0; k <= 4; k++) {
+    const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.95, 6), metal);
+    pil.position.set(-patamar / 2 + (patamar * k) / 4, altura + 0.475, zc);
+    g.add(pil);
+  }
+  const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, patamar, 8), corrimao);
+  barra.rotation.z = Math.PI / 2;
+  barra.position.set(0, altura + 0.95, zc);
+  g.add(barra);
+  return g;
+}
+
+/** Um troféu de taça: pedestal, haste, a taça e as duas alças. */
+function tacinha(escala = 1, gato = false): THREE.Group {
+  const g = new THREE.Group();
+  const ouro = toon(P.trofeuOuro);
+  const pe = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.14), toon(P.trofeuPedestal));
+  pe.position.y = 0.03;
+  g.add(pe);
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.03, 0.1, 8), ouro);
+  haste.position.y = 0.11;
+  g.add(haste);
+  const taca = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.035, 0.13, 12), ouro);
+  taca.position.y = 0.225;
+  g.add(taca);
+  for (const lado of [-1, 1]) {
+    const alca = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.009, 5, 10, Math.PI), ouro);
+    alca.position.set(lado * 0.085, 0.235, 0);
+    alca.rotation.z = -lado * Math.PI / 2;
+    g.add(alca);
+  }
+  if (gato) {
+    // o troféu dos Gatitos: uma cabecinha de gato em cima da taça
+    const cabeca = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), ouro);
+    cabeca.position.y = 0.33;
+    g.add(cabeca);
+    for (const lado of [-1, 1]) {
+      const orelha = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.04, 6), ouro);
+      orelha.position.set(lado * 0.03, 0.38, 0);
+      orelha.rotation.z = -lado * 0.3;
+      g.add(orelha);
+    }
+  }
+  g.scale.setScalar(escala);
+  return g;
+}
+
+/**
+ * A VITRINE DE TROFÉUS do saguão: armário baixo embaixo, prateleiras com as
+ * taças em cima, e um vidro bem de leve na frente.
+ *
+ * O vidro é quase invisível de propósito — é o que deixa as taças à vista (a
+ * lição do quiosque: vidro fechado some no toon e tapa o que está dentro). O
+ * que diz "vitrine" é a moldura e o reflexo em diagonal.
+ */
+export function vitrineDeTrofeus(largura = 2.2): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'vitrine-de-trofeus';
+  const F = 0.5;
+  const madeira = toon(P.woodDark);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.8, F), toon(P.wood));
+  base.position.y = 0.4;
+  g.add(base);
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.1, 1.3, 0.04), toon(P.escolaRodape));
+  fundo.position.set(0, 0.8 + 0.65, -F / 2 + 0.04);
+  g.add(fundo);
+  // as laterais e o chapéu: moldura grossa, mais funda que o armário de baixo
+  for (const lado of [-1, 1]) {
+    const lat = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.36, F + 0.02), madeira);
+    lat.position.set(lado * (largura / 2 - 0.03), 0.8 + 0.68, 0);
+    g.add(lat);
+  }
+  const chapeu = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.06, 0.08, F + 0.06), madeira);
+  chapeu.position.y = 2.2;
+  g.add(chapeu);
+
+  const vidroMat = toon(P.glass, { opacity: 0.16 });
+  const prateleira = toon(P.glass, { opacity: 0.5 });
+  for (const [y, itens] of [
+    [0.82, [[-0.7, 1.15, false], [-0.2, 1.5, true], [0.35, 1.1, false], [0.75, 0.9, false]]],
+    [1.42, [[-0.6, 0.85, false], [-0.1, 1.0, false], [0.5, 1.2, false]]],
+  ] as const) {
+    if (y > 1) {
+      const tabua = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.14, 0.025, F - 0.1), prateleira);
+      tabua.position.set(0, y - 0.015, 0);
+      g.add(tabua);
+    }
+    for (const [x, esc, gato] of itens) {
+      const t = tacinha(esc, gato);
+      t.position.set(x * (largura / 2.2), y, 0.02);
+      g.add(t);
+    }
+  }
+  const vidro = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.12, 1.3, 0.015), vidroMat);
+  vidro.position.set(0, 0.8 + 0.66, F / 2 - 0.01);
+  g.add(vidro);
+  // o reflexo: duas faixas brancas em diagonal, que é como vidro se lê
+  for (const dx of [-0.35, -0.15]) {
+    const brilho = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.0, 0.004), toon(0xffffff, { opacity: 0.45 }));
+    brilho.position.set(dx * largura, 1.5, F / 2 + 0.002);
+    brilho.rotation.z = -0.5;
+    g.add(brilho);
+  }
+  return g;
+}
+
+/**
+ * MESA DE REFEITÓRIO, a comprida com os dois bancos presos — a mesa de
+ * escola de filme.
+ *
+ * As medidas batem com a mesa de piquenique (tampo em 0,78, assento em 0,47,
+ * banco a 0,74 do meio), para a mesma âncora de sentar servir nas duas.
+ */
+export function mesaDeRefeitorio(comprimento = 3.2, cor: number = P.escolaArmarioAzul): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesa-de-refeitorio';
+  const metal = toon(P.metalGrey);
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(comprimento, 0.06, 0.92), toon(P.metalWhite));
+  tampo.position.y = 0.75;
+  g.add(tampo);
+  // a borda colorida, um tico mais baixa e mais larga que o tampo
+  const borda = new THREE.Mesh(new THREE.BoxGeometry(comprimento + 0.03, 0.035, 0.95), toon(cor));
+  borda.position.y = 0.705;
+  g.add(borda);
+  for (const lado of [-1, 1]) {
+    const assento = new THREE.Mesh(new THREE.BoxGeometry(comprimento - 0.1, 0.06, 0.34), toon(cor));
+    assento.position.set(0, 0.44, lado * 0.74);
+    g.add(assento);
+  }
+  // os cavaletes: um de cada ponta, segurando mesa e bancos juntos
+  for (const ponta of [-1, 1]) {
+    const x = ponta * (comprimento / 2 - 0.35);
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.7, 0.06), metal);
+    pe.position.set(x, 0.36, 0);
+    g.add(pe);
+    const travessa = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 1.56), metal);
+    travessa.position.set(x, 0.38, 0);
+    g.add(travessa);
+    for (const lado of [-1, 1]) {
+      const pezinho = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.4, 0.05), metal);
+      pezinho.position.set(x, 0.2, lado * 0.74);
+      g.add(pezinho);
+    }
+  }
+  return g;
+}
+
+/**
+ * O BALCÃO DO REFEITÓRIO: o bufê de escola, com as cubas do prato feito e o
+ * trilho de bandeja correndo na frente.
+ *
+ * As cubas ficam ABERTAS (a lição do quiosque: vidro fechado por cima de
+ * comida some no toon e tapa o que está dentro). Não tem ninguém servindo
+ * ainda — o Renan vai pôr um personagem novo aqui depois.
+ */
+export function balcaoDeRefeitorio(largura = 6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'balcao-de-refeitorio';
+  const F = 0.85;
+  const inox = toon(P.churrascoInox);
+  const inoxEscuro = toon(P.churrascoInoxEscuro);
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(largura, 0.88, F), toon(P.escolaParedeAzul));
+  corpo.position.y = 0.44;
+  g.add(corpo);
+  // a faixa de inox na frente do corpo, e o tampo por cima de tudo
+  const saia = new THREE.Mesh(new THREE.BoxGeometry(largura - 0.2, 0.3, 0.02), inoxEscuro);
+  saia.position.set(0, 0.2, F / 2 + 0.01);
+  g.add(saia);
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.06, 0.05, F + 0.06), inox);
+  tampo.position.y = 0.905;
+  g.add(tampo);
+
+  // as cubas: caixinha de inox com a comida um tico abaixo da borda
+  const comidas = [P.refeitorioArroz, P.refeitorioFeijao, P.refeitorioMacarrao, P.refeitorioFrango, P.refeitorioSalada, P.laranja];
+  const n = Math.max(3, Math.floor((largura - 1.4) / 0.62));
+  for (let i = 0; i < n; i++) {
+    const x = -largura / 2 + 0.55 + i * 0.62;
+    const cuba = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.42), inoxEscuro);
+    cuba.position.set(x, 0.98, -0.05);
+    g.add(cuba);
+    const comida = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.03, 0.36), toon(comidas[i % comidas.length]));
+    comida.position.set(x, 1.025, -0.05);
+    g.add(comida);
+    // um monte no meio de cada cuba, para ler como comida e não como tinta
+    const monte = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), toon(comidas[i % comidas.length]));
+    monte.scale.set(1.3, 0.35, 1);
+    monte.position.set(x, 1.04, -0.05);
+    g.add(monte);
+  }
+
+  // o trilho de bandeja: três tubos na frente, em mãos-francesas
+  for (let k = 0; k < 3; k++) {
+    const tubo = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, largura - 0.3, 6), inox);
+    tubo.rotation.z = Math.PI / 2;
+    tubo.position.set(0, 0.84, F / 2 + 0.12 + k * 0.1);
+    g.add(tubo);
+  }
+  for (const x of [-largura / 2 + 0.3, 0, largura / 2 - 0.3]) {
+    const mao = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.34), inoxEscuro);
+    mao.position.set(x, 0.82, F / 2 + 0.17);
+    g.add(mao);
+  }
+
+  // a pilha de bandejas na ponta da direita
+  for (let k = 0; k < 6; k++) {
+    const bandeja = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.02, 0.34), toon(P.refeitorioBandeja));
+    bandeja.position.set(largura / 2 - 0.4, 0.94 + k * 0.024, 0.12);
+    g.add(bandeja);
+  }
+  return g;
+}
+
+/**
+ * MÁQUINA DE LANCHES: a de moedinha, com as fileiras de pacotinho coloridos
+ * atrás do vidro e o teclado do lado.
+ */
+export function maquinaDeLanches(cor: number = P.escolaFaixa): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'maquina-de-lanches';
+  const L = 0.95;
+  const A = 1.85;
+  const F = 0.75;
+  const corpo = new THREE.Mesh(new THREE.BoxGeometry(L, A, F), toon(cor));
+  corpo.position.y = A / 2;
+  g.add(corpo);
+  // a janela: um fundo escuro recuado, com os lanches em quatro prateleiras
+  const janela = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.2, 0.02), toon(P.screen));
+  janela.position.set(-0.1, 1.12, F / 2 + 0.005);
+  g.add(janela);
+  const cores = [P.gold, P.escolaArmarioAzul, P.flowerPink, P.limao, P.laranja, P.metalWhite];
+  for (let linha = 0; linha < 4; linha++) {
+    const y = 0.65 + linha * 0.28;
+    const prateleira = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.015, 0.05), toon(P.metalGrey));
+    prateleira.position.set(-0.1, y - 0.03, F / 2 + 0.03);
+    g.add(prateleira);
+    for (let c = 0; c < 4; c++) {
+      const pacote = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.04), toon(cores[(linha * 2 + c) % cores.length]));
+      pacote.position.set(-0.1 - 0.22 + c * 0.146, y + 0.06, F / 2 + 0.035);
+      g.add(pacote);
+    }
+  }
+  // o teclado: botõezinhos em grade, e a boca do troco embaixo dele
+  for (let i = 0; i < 9; i++) {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.02), toon(P.metalWhite));
+    b.position.set(0.3 + (i % 3) * 0.055, 1.3 - Math.floor(i / 3) * 0.055, F / 2 + 0.01);
+    g.add(b);
+  }
+  const moeda = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.02), toon(P.metalGrey));
+  moeda.position.set(0.355, 1.02, F / 2 + 0.01);
+  g.add(moeda);
+  const retirada = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.18, 0.02), toon(P.screen));
+  retirada.position.set(-0.1, 0.25, F / 2 + 0.005);
+  g.add(retirada);
+  // a faixa de luz no alto: acesa de leve
+  const luz = new THREE.Mesh(new THREE.BoxGeometry(L - 0.1, 0.12, 0.02), toon(P.metalWhite, { glow: 0.5 }));
+  luz.position.set(0, A - 0.12, F / 2 + 0.005);
+  g.add(luz);
+  return g;
+}
+
+/**
+ * A LOUSA DE SALA DE AULA: o quadro de giz verde (o mesmo `quadroDeGiz` do
+ * Mania, na cor de escola) com a canaleta embaixo, o giz e o apagador.
+ */
+export function lousaDeSala(linhas: readonly string[], largura = 3.4, altura = 1.4): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'lousa';
+  const quadro = quadroDeGiz(linhas, largura, altura, P.escolaLousa);
+  g.add(quadro);
+  const canaleta = new THREE.Mesh(new THREE.BoxGeometry(largura * 0.9, 0.04, 0.12), toon(P.woodDark));
+  canaleta.position.set(0, -altura / 2 - 0.02, 0.06);
+  g.add(canaleta);
+  for (const [x, cor] of [[-0.6, P.metalWhite], [-0.45, P.gold], [0.3, P.flowerPink]] as const) {
+    const giz = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.09, 6), toon(cor));
+    giz.rotation.z = Math.PI / 2;
+    giz.position.set(x, -altura / 2 + 0.012, 0.08);
+    g.add(giz);
+  }
+  const apagador = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.07), toon(P.escolaArmarioAzul));
+  apagador.position.set(0.8, -altura / 2 + 0.025, 0.07);
+  g.add(apagador);
+  return g;
+}
+
+/**
+ * CARTEIRA ESCOLAR: a mesinha com a cadeira de escola atrás dela. Quem senta
+ * olha para `+Z` (a peça olha para `+Z`, como todo o kit): a cena gira meia
+ * volta para a turma olhar para a lousa no fundo.
+ *
+ * O assento fica com o topo em 0,47 — o mesmo da mesa de piquenique, para a
+ * âncora de sentar servir nas duas.
+ */
+export function carteiraEscolar(cor: number = P.escolaCarteira): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'carteira-escolar';
+  const metal = toon(P.escolaCarteiraPe);
+  const madeira = toon(cor);
+  // a mesinha
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.035, 0.46), madeira);
+  tampo.position.set(0, 0.72, 0.16);
+  g.add(tampo);
+  const gradinha = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.02, 0.36), metal);
+  gradinha.position.set(0, 0.54, 0.18);
+  g.add(gradinha);
+  for (const [x, z] of [[-0.29, -0.03], [0.29, -0.03], [-0.29, 0.35], [0.29, 0.35]] as const) {
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.7, 6), metal);
+    perna.position.set(x, 0.35, z);
+    g.add(perna);
+  }
+  // a cadeira, atrás
+  const assento = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.4), madeira);
+  assento.position.set(0, 0.45, -0.38);
+  g.add(assento);
+  const encosto = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.24, 0.03), madeira);
+  encosto.position.set(0, 0.72, -0.6);
+  encosto.rotation.x = -0.08;
+  g.add(encosto);
+  for (const [x, z] of [[-0.18, -0.2], [0.18, -0.2], [-0.18, -0.56], [0.18, -0.56]] as const) {
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.44, 6), metal);
+    perna.position.set(x, 0.22, z);
+    g.add(perna);
+  }
+  for (const x of [-0.18, 0.18]) {
+    const montante = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.36, 6), metal);
+    montante.position.set(x, 0.62, -0.58);
+    g.add(montante);
+  }
+  return g;
+}
+
+/**
+ * MESA DO PROFESSOR: a mesa grande de madeira com gaveteiro, o painel da
+ * frente virado para a turma (`+Z`), e o que todo professor tem em cima dela —
+ * a pilha de livros, o pote de lápis e a maçã.
+ */
+export function mesaDoProfessor(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesa-do-professor';
+  const madeira = toon(P.wood);
+  const escura = toon(P.woodDark);
+  const tampo = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 0.8), madeira);
+  tampo.position.y = 0.76;
+  g.add(tampo);
+  // o painel da frente e o gaveteiro, recuados do tampo
+  const painel = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 0.04), escura);
+  painel.position.set(0, 0.46, 0.33);
+  g.add(painel);
+  const gaveteiro = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.72, 0.7), escura);
+  gaveteiro.position.set(0.55, 0.36, -0.02);
+  g.add(gaveteiro);
+  const lateral = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.72, 0.7), escura);
+  lateral.position.set(-0.74, 0.36, -0.02);
+  g.add(lateral);
+  for (let k = 0; k < 3; k++) {
+    const puxador = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.025, 0.02), toon(P.gold));
+    puxador.position.set(0.55, 0.62 - k * 0.2, -0.38);
+    g.add(puxador);
+  }
+  // em cima: livros, lápis e a maçã
+  const livros = [P.escolaArmarioAzul, P.escolaFaixa, P.escolaArmarioAmarelo];
+  livros.forEach((cor, k) => {
+    const livro = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.22), toon(cor));
+    livro.position.set(-0.5, 0.815 + k * 0.05, -0.05);
+    livro.rotation.y = (k - 1) * 0.12;
+    g.add(livro);
+  });
+  const pote = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.12, 10), toon(P.escolaRodape));
+  pote.position.set(0.5, 0.85, -0.2);
+  g.add(pote);
+  for (const [dx, cor] of [[-0.015, P.gold], [0.018, P.escolaFaixa], [0, P.escolaArmarioAzul]] as const) {
+    const lapis = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.18, 5), toon(cor));
+    lapis.position.set(0.5 + dx, 0.94, -0.2 + dx);
+    lapis.rotation.z = dx * 6;
+    g.add(lapis);
+  }
+  const maca = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), toon(P.fabricRed));
+  maca.position.set(0.15, 0.85, 0.12);
+  g.add(maca);
+  const folha = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 4), toon(P.leafMid));
+  folha.scale.set(1.4, 0.4, 0.8);
+  folha.position.set(0.17, 0.915, 0.12);
+  g.add(folha);
+  return g;
+}
+
+/**
+ * GLOBO TERRESTRE na mesinha: a bola azul inclinada no eixo, com manchas de
+ * continente, dentro do arco de metal. A esfera tem nome (`globo`) para a
+ * cena poder girar ela.
+ */
+export function globoTerrestre(dePe = false): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'globo';
+  // de pé, ele ganha um pedestal de madeira da altura de uma mesa
+  const alto = dePe ? 0.72 : 0;
+  const pe = new THREE.Mesh(new THREE.CylinderGeometry(dePe ? 0.2 : 0.1, dePe ? 0.24 : 0.13, 0.05, 12), toon(P.woodDark));
+  pe.position.y = 0.025;
+  g.add(pe);
+  if (dePe) {
+    const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, alto, 8), toon(P.wood));
+    coluna.position.y = alto / 2 + 0.03;
+    g.add(coluna);
+  }
+  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.14, 6), toon(P.gold));
+  haste.position.y = 0.1 + alto;
+  g.add(haste);
+  const inclinado = new THREE.Group();
+  inclinado.position.y = 0.36 + alto;
+  inclinado.rotation.z = 0.41;
+  g.add(inclinado);
+  const arco = new THREE.Mesh(new THREE.TorusGeometry(0.235, 0.012, 5, 20, Math.PI), toon(P.gold));
+  arco.rotation.z = -Math.PI / 2;
+  inclinado.add(arco);
+  const globo = new THREE.Group();
+  globo.name = 'globo';
+  inclinado.add(globo);
+  globo.add(new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 12), toon(P.water)));
+  // os continentes: calotas verdes coladas na bola, um tico para fora dela
+  const terra = toon(P.leafMid);
+  for (const [lat, lon, tam] of [
+    [0.3, 0.2, 0.09], [-0.25, 0.5, 0.08], [0.45, 2.1, 0.11], [0.1, 2.6, 0.07],
+    [-0.4, 3.4, 0.06], [0.55, 4.2, 0.09], [-0.1, 5.2, 0.08],
+  ] as const) {
+    const mancha = new THREE.Mesh(new THREE.SphereGeometry(tam, 8, 6), terra);
+    mancha.scale.set(1.3, 1, 0.35);
+    const dir = new THREE.Vector3(Math.cos(lat) * Math.sin(lon), Math.sin(lat), Math.cos(lat) * Math.cos(lon));
+    mancha.position.copy(dir.clone().multiplyScalar(0.205));
+    mancha.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir);
+    globo.add(mancha);
+  }
+  return g;
+}
+
+/**
+ * CARTAZ DE PAREDE: uma folha colorida com título e linhas, em `<canvas>`.
+ * Serve para o alfabeto da sala, o mural de avisos e as faixas do ginásio.
+ */
+export function cartazDeParede(
+  titulo: string, linhas: readonly string[], largura = 1.2, altura = 0.9,
+  fundo = '#fff6dc', tinta = '#2f5596',
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cartaz';
+  const papel = pinturaEmCanvas(largura, altura, (ctx, w, h) => {
+    ctx.fillStyle = fundo;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = tinta;
+    ctx.lineWidth = Math.max(4, w * 0.012);
+    ctx.strokeRect(ctx.lineWidth, ctx.lineWidth, w - ctx.lineWidth * 2, h - ctx.lineWidth * 2);
+    ctx.fillStyle = tinta;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const temTitulo = titulo.length > 0;
+    const faixas = linhas.length + (temTitulo ? 1.3 : 0);
+    const passo = h / (faixas + 0.6);
+    let y = passo * 0.8;
+    if (temTitulo) {
+      escreverCabendo(ctx, titulo, w / 2, y, w * 0.88, passo * 0.9);
+      y += passo * 1.3;
+    }
+    for (const linha of linhas) {
+      escreverCabendo(ctx, linha, w / 2, y, w * 0.88, passo * 0.62, false);
+      y += passo;
+    }
+  });
+  papel.position.z = 0.012;
+  g.add(papel);
+  // a folha tem corpo: um cartão fininho atrás da pintura
+  const cartao = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.015), toon(P.metalWhite));
+  g.add(cartao);
+  return g;
+}
+
+/**
+ * PLACA DE PORTA, bilíngue: o nome da sala em português, grande, e em
+ * espanhol embaixo, pequeno. A escola ensina só de andar por ela.
+ */
+export function placaDePorta(portugues: string, espanhol = ''): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'placa-de-porta';
+  const L = 1.5;
+  const A = espanhol ? 0.46 : 0.34;
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(L, A, 0.04), toon(P.escolaRodape));
+  g.add(fundo);
+  const texto = pinturaEmCanvas(L - 0.08, A - 0.06, (ctx, w, h) => {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    if (espanhol) {
+      escreverCabendo(ctx, portugues, w / 2, h * 0.36, w * 0.94, h * 0.46);
+      ctx.fillStyle = '#ffe39a';
+      escreverCabendo(ctx, espanhol, w / 2, h * 0.78, w * 0.94, h * 0.26, false);
+    } else {
+      escreverCabendo(ctx, portugues, w / 2, h / 2, w * 0.94, h * 0.62);
+    }
+  });
+  texto.position.z = 0.022;
+  g.add(texto);
+  return g;
+}
+
+/**
+ * BANDEIRA pendurada na parede, pintada em `<canvas>`: a do Brasil e a da
+ * Venezuela, lado a lado na sala de português e na de espanhol.
+ *
+ * Desenhadas por forma, não por foto: o losango e o círculo do Brasil, e as
+ * três faixas com o arco de oito estrelas da Venezuela.
+ */
+export function bandeira(pais: 'brasil' | 'venezuela', largura = 0.9): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = `bandeira-${pais}`;
+  const altura = largura * 0.66;
+  const pano = pinturaEmCanvas(largura, altura, (ctx, w, h) => {
+    if (pais === 'brasil') {
+      ctx.fillStyle = '#1f9e4a';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#ffd52e';
+      ctx.beginPath();
+      ctx.moveTo(w * 0.5, h * 0.08);
+      ctx.lineTo(w * 0.92, h * 0.5);
+      ctx.lineTo(w * 0.5, h * 0.92);
+      ctx.lineTo(w * 0.08, h * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#233d8f';
+      ctx.beginPath();
+      ctx.arc(w * 0.5, h * 0.5, h * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      // a faixa branca, curvada
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = h * 0.05;
+      ctx.beginPath();
+      ctx.arc(w * 0.44, h * 0.95, h * 0.55, -Math.PI * 0.62, -Math.PI * 0.26);
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      for (const [x, y] of [[0.44, 0.58], [0.5, 0.64], [0.56, 0.57], [0.47, 0.68], [0.53, 0.7]]) {
+        ctx.beginPath();
+        ctx.arc(w * x, h * y, h * 0.012, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      const faixas = ['#ffcc00', '#00247d', '#cf142b'];
+      faixas.forEach((cor, i) => {
+        ctx.fillStyle = cor;
+        ctx.fillRect(0, (h * i) / 3, w, h / 3 + 1);
+      });
+      // o arco de oito estrelas na faixa azul
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 8; i++) {
+        const a = Math.PI * (0.18 + (0.64 * i) / 7);
+        const x = w * 0.5 - Math.cos(a) * h * 0.3;
+        const y = h * 0.62 - Math.sin(a) * h * 0.2;
+        estrela(ctx, x, y, h * 0.035);
+      }
+    }
+  });
+  pano.position.z = 0.02;
+  g.add(pano);
+  // a vareta em cima, de onde ela pende
+  const vareta = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, largura + 0.14, 6), toon(P.woodDark));
+  vareta.rotation.z = Math.PI / 2;
+  vareta.position.set(0, altura / 2 + 0.015, 0.02);
+  g.add(vareta);
+  return g;
+}
+
+/** RELÓGIO DE PAREDE redondo, virado para `+Z`. */
+export function relogioDeParede(raio = 0.28): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'relogio';
+  const mostrador = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio, 0.04, 24), toon(P.metalWhite));
+  mostrador.rotation.x = Math.PI / 2;
+  g.add(mostrador);
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(raio, 0.03, 6, 24), toon(P.escolaRodape));
+  aro.position.z = 0.02;
+  g.add(aro);
+  const escuro = toon(P.screen);
+  for (let i = 0; i < 12; i++) {
+    const a = (i * Math.PI) / 6;
+    const marca = new THREE.Mesh(new THREE.BoxGeometry(0.02, i % 3 === 0 ? 0.06 : 0.035, 0.01), escuro);
+    marca.position.set(Math.sin(a) * raio * 0.8, Math.cos(a) * raio * 0.8, 0.025);
+    marca.rotation.z = -a;
+    g.add(marca);
+  }
+  // os ponteiros: dez para as duas, a hora de relógio de vitrine
+  for (const [comp, ang] of [[raio * 0.5, 1.1], [raio * 0.72, -0.55]] as const) {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.018, comp, 0.01), escuro);
+    p.geometry.translate(0, comp / 2, 0);
+    p.position.z = 0.032;
+    p.rotation.z = ang;
+    g.add(p);
+  }
+  return g;
+}
+
+/**
+ * CESTA DE BASQUETE, a de ginásio: o poste com a proteção azul, o braço, a
+ * tabela branca com o quadradinho vermelho, o aro e a rede. O aro fica a 3,05
+ * do chão, como o de verdade, e a tabela olha para `+Z` (a quadra).
+ */
+export function cestaDeBasquete(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cesta-de-basquete';
+  const metal = toon(P.metalGrey);
+  const protecao = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.6, 0.5), toon(P.escolaArmarioAzul));
+  protecao.position.set(0, 0.8, -1.2);
+  g.add(protecao);
+  const poste = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.0, 0.2), metal);
+  poste.position.set(0, 1.5, -1.2);
+  g.add(poste);
+  const braco = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 1.1), metal);
+  braco.position.set(0, 3.25, -0.62);
+  g.add(braco);
+  const tabela = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.05, 0.06), toon(P.escolaTabela));
+  tabela.position.set(0, 3.45, -0.04);
+  g.add(tabela);
+  // a borda e o quadradinho de mira, vermelhos, por cima da tabela
+  const vermelho = toon(P.escolaFaixa);
+  for (const [w, h, x, y] of [
+    [1.8, 0.05, 0, 0.5], [1.8, 0.05, 0, -0.5], [0.05, 1.05, -0.88, 0], [0.05, 1.05, 0.88, 0],
+    [0.6, 0.04, 0, 0.22], [0.6, 0.04, 0, -0.2], [0.04, 0.42, -0.28, 0.01], [0.04, 0.42, 0.28, 0.01],
+  ] as const) {
+    const risco = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.01), vermelho);
+    risco.position.set(x, 3.45 + y, -0.005);
+    g.add(risco);
+  }
+  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.02, 6, 20), toon(P.escolaBolaDeBasquete));
+  aro.rotation.x = Math.PI / 2;
+  aro.position.set(0, 3.05, 0.26);
+  g.add(aro);
+  // a rede: fios caindo do aro e fechando embaixo
+  const fio = toon(P.metalWhite);
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const topo = new THREE.Vector3(Math.cos(a) * 0.22, 3.04, 0.26 + Math.sin(a) * 0.22);
+    const pe = new THREE.Vector3(Math.cos(a) * 0.12, 2.64, 0.26 + Math.sin(a) * 0.12);
+    const meio = topo.clone().add(pe).multiplyScalar(0.5);
+    const dir = pe.clone().sub(topo);
+    const f = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, dir.length(), 4), fio);
+    f.position.copy(meio);
+    f.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    g.add(f);
+  }
+  return g;
+}
+
+/** A BOLA DE BASQUETE: laranja, com os gomos pretos. */
+export function bolaDeBasquete(raio = 0.12): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'bola-de-basquete';
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(raio, 14, 10), toon(P.escolaBolaDeBasquete)));
+  const gomo = toon(P.screen);
+  for (const [rx, ry] of [[0, 0], [Math.PI / 2, 0], [0, Math.PI / 2]] as const) {
+    const anel = new THREE.Mesh(new THREE.TorusGeometry(raio * 1.005, raio * 0.04, 4, 20), gomo);
+    anel.rotation.set(rx, ry, 0);
+    g.add(anel);
+  }
+  return g;
+}
+
+/** O CARRINHO DE BOLAS do ginásio: a cesta de arame com as bolas dentro. */
+export function carrinhoDeBolas(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'carrinho-de-bolas';
+  const metal = toon(P.metalGrey);
+  for (const [x, z] of [[-0.35, -0.25], [0.35, -0.25], [-0.35, 0.25], [0.35, 0.25]] as const) {
+    const perna = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.75, 6), metal);
+    perna.position.set(x, 0.42, z);
+    g.add(perna);
+    const roda = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.03, 10), toon(P.screen));
+    roda.rotation.x = Math.PI / 2;
+    roda.position.set(x, 0.05, z);
+    g.add(roda);
+  }
+  for (const y of [0.3, 0.78]) {
+    for (const z of [-0.25, 0.25]) {
+      const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.72, 6), metal);
+      barra.rotation.z = Math.PI / 2;
+      barra.position.set(0, y, z);
+      g.add(barra);
+    }
+  }
+  for (const [x, y, z] of [[-0.2, 0.44, -0.1], [0.05, 0.44, 0.1], [0.22, 0.44, -0.08], [-0.08, 0.6, 0.02], [0.14, 0.62, 0.12]] as const) {
+    const b = bolaDeBasquete(0.12);
+    b.position.set(x, y, z);
+    b.rotation.set(x * 3, z * 5, y);
+    g.add(b);
+  }
+  return g;
+}
+
+/**
+ * O PLACAR DO GINÁSIO, pendurado na parede: o painel escuro com os números
+ * vermelhos. O texto vem da cena.
+ */
+export function placarDeGinasio(casa: string, pontosCasa: string, visita: string, pontosVisita: string): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'placar-de-ginasio';
+  const L = 2.6;
+  const A = 1.2;
+  const caixa = new THREE.Mesh(new THREE.BoxGeometry(L, A, 0.2), toon(P.screen));
+  g.add(caixa);
+  const moldura = new THREE.Mesh(new THREE.BoxGeometry(L + 0.1, A + 0.1, 0.16), toon(P.escolaRodape));
+  moldura.position.z = -0.04;
+  g.add(moldura);
+  const tela = pinturaEmCanvas(L - 0.14, A - 0.14, (ctx, w, h) => {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffe39a';
+    escreverCabendo(ctx, casa, w * 0.25, h * 0.22, w * 0.46, h * 0.2);
+    escreverCabendo(ctx, visita, w * 0.75, h * 0.22, w * 0.46, h * 0.2);
+    ctx.fillStyle = '#ff5a4a';
+    escreverCabendo(ctx, pontosCasa, w * 0.25, h * 0.64, w * 0.4, h * 0.52);
+    escreverCabendo(ctx, pontosVisita, w * 0.75, h * 0.64, w * 0.4, h * 0.52);
+    ctx.fillStyle = '#7fd6ff';
+    escreverCabendo(ctx, '·', w * 0.5, h * 0.6, w * 0.1, h * 0.4);
+  });
+  tela.position.z = 0.105;
+  g.add(tela);
+  return g;
+}
+
+/** PUFE DE SACO, o da sala de descanso: largado, afundado no meio. */
+export function pufeSaco(cor: number = P.escolaPufe): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'pufe-saco';
+  const saco = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 12), toon(cor));
+  saco.scale.set(1, 0.62, 1);
+  saco.position.y = 0.3;
+  g.add(saco);
+  // o encosto: o saco sobe atrás, onde a pessoa afundou na frente
+  const encosto = new THREE.Mesh(new THREE.SphereGeometry(0.36, 14, 10), toon(cor));
+  encosto.scale.set(1.15, 0.9, 0.7);
+  encosto.position.set(0, 0.5, -0.26);
+  g.add(encosto);
+  return g;
+}
+
+/**
+ * ESCANINHOS da sala dos professores: a estante de nichos, um por professor,
+ * com papel dentro e a plaquinha do nome embaixo de cada um.
+ */
+export function escaninhos(colunas = 4, linhas = 3): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'escaninhos';
+  const C = 0.42;
+  const F = 0.4;
+  const L = colunas * C;
+  const A = linhas * C;
+  const madeira = toon(P.wood);
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(L, A, 0.03), toon(P.estanteFundo));
+  fundo.position.set(0, 0.2 + A / 2, -F / 2 + 0.015);
+  g.add(fundo);
+  const pe = new THREE.Mesh(new THREE.BoxGeometry(L - 0.04, 0.2, F - 0.04), toon(P.woodDark));
+  pe.position.y = 0.1;
+  g.add(pe);
+  for (let i = 0; i <= linhas; i++) {
+    const tabua = new THREE.Mesh(new THREE.BoxGeometry(L + 0.02, 0.03, F), madeira);
+    tabua.position.set(0, 0.2 + i * C, 0);
+    g.add(tabua);
+  }
+  for (let i = 0; i <= colunas; i++) {
+    const div = new THREE.Mesh(new THREE.BoxGeometry(0.03, A - 0.03, F - 0.02), madeira);
+    div.position.set(-L / 2 + i * C, 0.2 + A / 2, 0.01);
+    g.add(div);
+  }
+  const papel = toon(P.metalWhite);
+  for (let c = 0; c < colunas; c++) {
+    for (let l = 0; l < linhas; l++) {
+      if ((c + l) % 3 === 2) continue;
+      const folhas = new THREE.Mesh(new THREE.BoxGeometry(C * 0.6, 0.03 + ((c * 7 + l) % 3) * 0.02, F * 0.7), papel);
+      folhas.position.set(-L / 2 + C * (c + 0.5), 0.2 + l * C + 0.035, -0.02);
+      g.add(folhas);
+      const plaquinha = new THREE.Mesh(new THREE.BoxGeometry(C * 0.5, 0.05, 0.01), toon(P.gold));
+      plaquinha.position.set(-L / 2 + C * (c + 0.5), 0.2 + l * C + 0.005, F / 2 + 0.006);
+      g.add(plaquinha);
+    }
+  }
+  return g;
+}
+
+/** A CAFETEIRA da sala dos professores: a máquina e a jarra de vidro com café. */
+export function cafeteira(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cafeteira';
+  const preto = toon(P.screen);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.26), preto);
+  base.position.y = 0.02;
+  g.add(base);
+  const torre = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.38, 0.1), preto);
+  torre.position.set(0, 0.21, -0.08);
+  g.add(torre);
+  const topo = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.24), preto);
+  topo.position.set(0, 0.36, -0.01);
+  g.add(topo);
+  const jarra = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.16, 12), toon(P.glass, { opacity: 0.55 }));
+  jarra.position.set(0, 0.12, 0.04);
+  g.add(jarra);
+  const cafe = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 0.08, 12), toon(P.chocolate));
+  cafe.position.set(0, 0.085, 0.04);
+  g.add(cafe);
+  const luz = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.01), toon(P.escolaFaixa, { glow: 0.8 }));
+  luz.position.set(0.1, 0.36, 0.11);
+  g.add(luz);
+  return g;
+}
+
+/**
+ * A CAMINHA DO GATITO, na sala dos professores: a almofada redonda de
+ * borda alta, com um novelo de lã do lado.
+ */
+export function caminhaDoGatito(cor: number = P.escolaArmarioAzul): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'caminha-do-gatito';
+  const fundo = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.44, 0.1, 18), toon(cor));
+  fundo.position.y = 0.05;
+  g.add(fundo);
+  const borda = new THREE.Mesh(new THREE.TorusGeometry(0.4, 0.1, 8, 20), toon(cor));
+  borda.rotation.x = Math.PI / 2;
+  borda.position.y = 0.14;
+  g.add(borda);
+  const almofada = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.05, 18), toon(P.gatitoCreme));
+  almofada.position.y = 0.12;
+  g.add(almofada);
+  const novelo = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), toon(P.flowerPink));
+  novelo.position.set(0.55, 0.09, 0.2);
+  g.add(novelo);
+  const fio = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.008, 4, 12, Math.PI), toon(P.flowerPink));
+  fio.rotation.x = Math.PI / 2;
+  fio.position.set(0.62, 0.01, 0.3);
+  g.add(fio);
+  return g;
+}
+
+/**
+ * OS OCULINHOS DO GATITO, largados em cima da mesa do professor: os mesmos
+ * aros redondos que ele põe na hora da aula, com as hastes dobradas.
+ */
+export function oculinhosDoGatito(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'oculinhos-do-gatito';
+  const aro = toon(P.gatitoOculos);
+  for (const lado of [-1, 1]) {
+    const lente = new THREE.Mesh(new THREE.TorusGeometry(0.036, 0.0055, 6, 18), aro);
+    lente.position.set(lado * 0.045, 0.038, 0);
+    lente.rotation.x = -0.25;
+    g.add(lente);
+    const haste = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.006, 0.006), aro);
+    haste.position.set(lado * 0.035, 0.012, -0.03);
+    g.add(haste);
+  }
+  const ponte = new THREE.Mesh(new THREE.TorusGeometry(0.012, 0.005, 4, 10, Math.PI), aro);
+  ponte.position.set(0, 0.045, 0);
+  ponte.rotation.x = -0.25;
+  g.add(ponte);
+  return g;
+}
+
+/**
+ * O LOGO DA ESCOLA num painel: a cara do Gatito — o círculo metade creme,
+ * metade caramelo, os dois olhinhos e a linguinha — e o nome ao lado.
+ */
+export function logoDaEscola(nome: string, largura = 4.2, altura = 1.1): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'logo-da-escola';
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.06), toon(P.escolaRodape));
+  g.add(placa);
+  const borda = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.1, altura + 0.1, 0.03), toon(P.escolaArmarioAmarelo));
+  borda.position.z = -0.02;
+  g.add(borda);
+  const pintura = pinturaEmCanvas(largura - 0.1, altura - 0.1, (ctx, w, h) => {
+    const r = h * 0.4;
+    const cx = h * 0.52;
+    const cy = h * 0.5;
+    // as orelhas: chocolate à esquerda de quem olha, caramelo à direita
+    for (const [lado, cor] of [[-1, '#5f4a3f'], [1, '#cf8d5c']] as const) {
+      ctx.fillStyle = cor;
+      ctx.beginPath();
+      ctx.moveTo(cx + lado * r * 0.35, cy - r * 0.8);
+      ctx.lineTo(cx + lado * r * 0.9, cy - r * 1.18);
+      ctx.lineTo(cx + lado * r * 0.88, cy - r * 0.45);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // a cara: metade creme, metade caramelo (a costura passa ao lado do nariz)
+    ctx.fillStyle = '#f3ecdf';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = '#cf8d5c';
+    ctx.fillRect(cx + r * 0.18, cy - r, r, r * 2);
+    ctx.restore();
+    ctx.fillStyle = '#1f1b1d';
+    for (const lado of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(cx + lado * r * 0.42, cy - r * 0.02, r * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + r * 0.2, r * 0.1, r * 0.07, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#1f1b1d';
+    ctx.lineWidth = r * 0.06;
+    for (const lado of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(cx + lado * r * 0.12, cy + r * 0.3, r * 0.12, 0, Math.PI);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#e57b90';
+    ctx.beginPath();
+    ctx.ellipse(cx - r * 0.06, cy + r * 0.5, r * 0.09, r * 0.12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // o nome
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    escreverCabendo(ctx, nome, (w + h) / 2, h * 0.52, w - h * 1.15, h * 0.5);
+  });
+  pintura.position.z = 0.035;
+  g.add(pintura);
   return g;
 }

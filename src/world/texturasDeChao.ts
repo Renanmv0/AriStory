@@ -549,3 +549,46 @@ export function porcelanatoPolido(lado = 1.8): THREE.CanvasTexture {
     ctx.fillRect(junta, 0, junta, s);
   });
 }
+
+/**
+ * LADRILHO DE ESCOLA, para o saguão e o corredor da Escola do Gatito.
+ *
+ * O piso vinílico de corredor de escola: placas quadradas em xadrez de dois
+ * tons muito próximos, com pintinhas de granilite e a junta fina. Cada azulejo
+ * da textura carrega QUATRO placas (2 × 2), para o xadrez fechar na emenda.
+ *
+ * O tom escuro do xadrez é só 8% abaixo do claro. Mais que isso e o chão vira
+ * tabuleiro de damas — a regra de sempre: a cor é da paleta, a textura só dá o
+ * relevo.
+ */
+export function ladrilhoDeEscola(lado = 2.4): THREE.CanvasTexture {
+  return novaTextura(`ladrilho-escola:${lado}`, lado, (ctx, s) => {
+    const rnd = sorteio(20260928);
+    const meia = s / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s, s);
+    // o xadrez: duas das quatro placas um tico mais escuras
+    ctx.fillStyle = 'rgba(96,104,122,0.08)';
+    ctx.fillRect(meia, 0, meia, meia);
+    ctx.fillRect(0, meia, meia, meia);
+
+    // as pintinhas de granilite: pequenas, coloridas e bem apagadas
+    const cores = ['rgba(70,110,190,0.16)', 'rgba(220,170,60,0.18)', 'rgba(120,120,120,0.14)', 'rgba(210,90,80,0.12)'];
+    for (let i = 0; i < 900; i++) {
+      ctx.fillStyle = cores[i % cores.length];
+      const r = 0.8 + rnd() * 1.6;
+      ctx.beginPath();
+      ctx.arc(rnd() * s, rnd() * s, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // as juntas: só a borda de cima e a da esquerda de cada placa (ver o
+    // `pisoDePlacas`: com as quatro, a repetição dobra a linha)
+    const junta = s * 0.008;
+    ctx.fillStyle = 'rgba(90,96,110,0.3)';
+    for (const p of [0, meia]) {
+      ctx.fillRect(0, p, s, junta);
+      ctx.fillRect(p, 0, junta, s);
+    }
+  });
+}
