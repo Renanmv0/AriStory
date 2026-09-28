@@ -2954,6 +2954,8 @@ export function maquinaDeLanches(cor: number = P.escolaFaixa): THREE.Group {
     for (let c = 0; c < 4; c++) {
       const pacote = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.16, 0.04), toon(cores[(linha * 2 + c) % cores.length]));
       pacote.position.set(-0.1 - 0.22 + c * 0.146, y + 0.06, F / 2 + 0.035);
+      // o nome deixa a cena achar o pacote que "caiu" e escondê-lo até repor
+      pacote.name = `pacote-${linha}-${c}`;
       g.add(pacote);
     }
   }

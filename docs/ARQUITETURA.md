@@ -333,7 +333,9 @@ pausam; lógica de minigame que precisa parar com o menu anda pelo `dt` do
 
 1. lê a entrada (bloqueada se há diálogo, diário ou transição aberta)
 2. resolve a tecla de ação: diálogo primeiro, depois o interativo mais próximo,
-   e por último o beijo
+   o beijo, **comer** (um item `comivel` na mão: o prompt vira "Comer o …", o
+   corpo dá duas mordidas com `morder()` e o item sai da mochila no fim) e,
+   sem nada disso, dar a mão
 3. roda o beijo (é ele que segura os dois no lugar enquanto dura)
 4. move o jogador e resolve colisão
 5. recalcula qual interativo está "quente" (prioridade, depois distância) e,

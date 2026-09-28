@@ -1332,6 +1332,21 @@ export const PALETTE = {
   lunaToalhaXadrez: 0x5b86d2,
   flamulaGatitos: 0x3f6fc6,
 
+  // OS LANCHES DA MÁQUINA da escola: o pacote de biscoito, o chocolatinho, o
+  // suco de caixinha e o salgadinho — cada um com a cor de embalagem que se
+  // reconhece de longe no corredor
+  lancheBiscoito: 0xe9b949,
+  lancheBiscoitoFaixa: 0xb5552f,
+  lancheBiscoitoMassa: 0xd9a05b,
+  lancheChocolate: 0xd9483f,
+  lancheChocolateMassa: 0x5a3322,
+  lancheChocolatePapel: 0xd7dce0,
+  lancheSuco: 0x6fbf5a,
+  lancheSucoFruta: 0xf29a3a,
+  lancheCanudo: 0xf7f7f4,
+  lancheSalgadinho: 0x4677c9,
+  lancheSalgadinhoFaixa: 0xf2c14a,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

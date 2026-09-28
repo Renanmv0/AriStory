@@ -330,6 +330,12 @@ export interface ItemDef {
    * - `none`: nao muda a pose (padrao para o que nem aparece na mao).
    */
   holdPose?: HoldPose;
+  /**
+   * DÁ PARA COMER (ou beber). Segurando na mão, o E de contexto vira "Comer o
+   * …": o braço leva à boca, e o item some da mochila. O verbo é o que aparece
+   * no prompt e no aviso. Hoje só os lanches da máquina da escola.
+   */
+  comivel?: 'comer' | 'beber';
 }
 
 export type HoldPose = 'upright' | 'relaxed' | 'regando' | 'borrifando' | 'none';

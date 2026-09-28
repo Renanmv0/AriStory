@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
-import type { GameAPI, SceneDef } from '../core/types';
-import type { WorldBuilder } from '../world/WorldBuilder';
+import type { SceneDef } from '../core/types';
 import {
   bandeira, bookshelf, cafeteira, caminhaDoGatito, carteiraEscolar, cartazDeParede, chair, coffeeTable,
   counter, diningTable, escaninhos, floorLamp, fridge, globoTerrestre, lousaDeSala, maquinaDeLanches,
@@ -9,7 +8,9 @@ import {
 } from '../world/furniture';
 import { assoalhoDeMadeira } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
-import { ESCOLA, LUZ_DA_ESCOLA, cascaDeSala, conversa, pontoNoMundo, sentarOsDois } from './escolaComum';
+import {
+  ESCOLA, LUZ_DA_ESCOLA, cascaDeSala, conversa, maquinaQueEntrega, pontoNoMundo, sentarOsDois,
+} from './escolaComum';
 
 /**
  * ========================================= AS SALAS DA ESCOLA DO GATITO
@@ -36,18 +37,6 @@ function revezar<T>(lista: readonly T[]): () => T {
   return () => lista[i++ % lista.length];
 }
 
-/** Comprar um lanchinho na máquina: a mesma do refeitório. */
-async function comprarLanche(g: GameAPI, w: WorldBuilder): Promise<void> {
-  if (!g.gastar(3)) {
-    await conversa(g, [
-      [g.companionName(), 'Tá sem moeda?'],
-      [g.playerName(), 'A carteira tá vazia. Depois a gente volta.'],
-    ]);
-    return;
-  }
-  g.som('caixa');
-  g.toast(`${w.pick(['Um pacotinho de biscoito', 'Um chocolatinho', 'Um suco de caixinha'])} caiu da máquina!`, '🍫');
-}
 
 // ===================================================== AS SALAS DE AULA
 
@@ -445,13 +434,8 @@ export const escolaDescanso: SceneDef = {
           [R, 'Com a luz acesa. Deve ter treino dos Gatitos.'],
         ]),
     });
-    w.interact({
-      id: 'descanso:lanches',
-      x: x0 + 1.5, z: 1.9, radius: 1.1,
-      label: 'Comprar um lanchinho (R$ 3)', icon: '🍫',
-      highlight: maquina,
-      onInteract: (g) => comprarLanche(g, w),
-    });
+    // a mesma máquina do refeitório: comprar, ver cair na gaveta e pegar
+    maquinaQueEntrega(w, { id: 'descanso:lanches', maquina, x: x0 + 1.5, z: 1.9, radius: 1.1 });
   },
 };
 

@@ -4,6 +4,7 @@ import type { GameAPI, SceneAmbient } from '../core/types';
 import type { WorldBuilder } from '../world/WorldBuilder';
 import { toon } from '../core/materials';
 import { interiorDoor } from '../world/furniture';
+import { LANCHES_DA_MAQUINA, modeloDoItem } from '../world/itens';
 
 /**
  * ============================================ O QUE AS CENAS DA ESCOLA DIVIDEM
@@ -178,14 +179,22 @@ export async function sentarOsDois(
     jogador: THREE.Vector3;
     parceiro: THREE.Vector3;
     facing: number;
+    /**
+     * Para onde o PARCEIRO olha, quando não é o mesmo lado do jogador. Na
+     * carteira e no sofá os dois olham para a mesma frente; na mesa do
+     * refeitório cada um senta num banco, e com um ângulo só o do banco de
+     * trás ficava de costas para a mesa (a foto do Renan).
+     */
+    facingParceiro?: number;
     foco: THREE.Object3D;
     falas: ReadonlyArray<readonly [string, string]>;
     saida: { jogador: [number, number]; parceiro: [number, number]; facing: number };
   },
 ): Promise<void> {
+  const olharDoParceiro = o.facingParceiro ?? o.facing;
   g.lockPlayer(true);
   g.ridePlayer(o.ancora, o.jogador, 1, o.facing);
-  g.rideCompanion(o.ancora, o.parceiro, 1, o.facing);
+  g.rideCompanion(o.ancora, o.parceiro, 1, olharDoParceiro);
   g.setSitting(true);
   g.focusCamera(o.foco);
   await g.wait(0.5);
@@ -198,7 +207,7 @@ export async function sentarOsDois(
   g.setSitting(false);
   g.focusCamera(null);
   g.releasePlayer(o.saida.jogador[0], o.saida.jogador[1], o.saida.facing);
-  g.releaseCompanion(o.saida.parceiro[0], o.saida.parceiro[1], o.saida.facing);
+  g.releaseCompanion(o.saida.parceiro[0], o.saida.parceiro[1], olharDoParceiro);
   g.lockPlayer(false);
 }
 
@@ -246,4 +255,149 @@ export function posicionarParaConversar(
 export function soltarDaConversa(g: GameAPI): void {
   g.freeCompanion();
   g.lockPlayer(false);
+}
+
+/**
+ * A MÁQUINA DE LANCHES QUE ENTREGA DE VERDADE.
+ *
+ * Antes ela cobrava e só avisava "caiu da máquina!" — e nada caía. Agora a
+ * compra é uma pequena cena, toda dentro da peça (filha do grupo da máquina,
+ * então vale em qualquer máquina, girada como estiver):
+ *
+ * 1. a mola empurra: o pacote da prateleira some e uma cópia dele — o MESMO
+ *    modelo que vai para a mão — anda para a frente e tomba;
+ * 2. ele cai até a gaveta de retirada, quica uma vez e deita;
+ * 3. o prompt vira "Pegar o …": pegar põe na mochila de quem joga (ou do
+ *    parceiro, se a de quem joga já tem um igual ou está cheia), e a
+ *    prateleira repõe o pacote.
+ *
+ * A mochila não guarda dois itens iguais na mesma pessoa, então a máquina só
+ * sorteia lanche que algum dos dois ainda não tem — e, se os dois já têm os
+ * quatro, ela nem cobra.
+ */
+export function maquinaQueEntrega(
+  w: WorldBuilder,
+  o: { id: string; maquina: THREE.Object3D; x: number; z: number; radius?: number },
+): void {
+  const PRECO = 3;
+  const ROTULO = `Comprar um lanchinho (R$ ${PRECO})`;
+  /** a gaveta de retirada, no espaço da peça (ver `maquinaDeLanches`) */
+  const GAVETA = { x: -0.1, y: 0.18, z: 0.43 };
+  /** deitado de costas, um pouco inclinado para a câmera */
+  const DEITADO = -Math.PI / 2 + 0.3;
+
+  let estado: 'pronta' | 'caindo' | 'na-gaveta' = 'pronta';
+  let lanche: (typeof LANCHES_DA_MAQUINA)[number] | null = null;
+  let peca: THREE.Object3D | null = null;
+  let pacote: THREE.Object3D | null = null;
+  let t = 0;
+  let vy = 0;
+  let quicou = false;
+  let origemZ = 0;
+
+  const nomeMiudo = (nome: string): string => nome.charAt(0).toLowerCase() + nome.slice(1);
+
+  const comprar = async (g: GameAPI): Promise<void> => {
+    const donos = [g.playerId(), g.companionId()];
+    const cabem = LANCHES_DA_MAQUINA.filter((l) => donos.some((q) => !g.hasItem(l.item.id, q)));
+    if (!cabem.length) {
+      await conversa(g, [
+        [g.companionName(), 'A gente já tem um de cada lanche.'],
+        [g.playerName(), 'Então primeiro a gente come um. Depois compra outro.'],
+      ]);
+      return;
+    }
+    if (!g.gastar(PRECO)) {
+      await conversa(g, [
+        [g.companionName(), 'Tá sem moeda?'],
+        [g.playerName(), 'A carteira tá vazia. Depois a gente volta.'],
+      ]);
+      return;
+    }
+    g.som('caixa');
+    lanche = cabem[Math.floor(w.rng() * cabem.length)];
+    pacote = o.maquina.getObjectByName(`pacote-${Math.floor(w.rng() * 4)}-${Math.floor(w.rng() * 4)}`) ?? null;
+    const origem = pacote ? pacote.position.clone() : new THREE.Vector3(-0.1, 1.2, 0.41);
+    if (pacote) pacote.visible = false;
+    peca = modeloDoItem(lanche.item.id);
+    if (!peca) return;
+    // o pacote da prateleira tem o CENTRO na posição; a peça do lanche tem a base
+    peca.position.set(origem.x, origem.y - 0.08, origem.z + 0.012);
+    origemZ = peca.position.z;
+    o.maquina.add(peca);
+    estado = 'caindo';
+    t = 0;
+    vy = 0;
+    quicou = false;
+    ponto.enabled = false;
+  };
+
+  const pegar = (g: GameAPI): void => {
+    if (!lanche || !peca) return;
+    let ficou: string | null = null;
+    for (const quem of [g.playerId(), g.companionId()]) {
+      const r = g.addItem(lanche.item, quem);
+      if (r === 'mao' || r === 'guardado') {
+        ficou = quem === g.playerId() ? g.playerName() : g.companionName();
+        break;
+      }
+    }
+    if (!ficou) {
+      g.toast('As duas mochilas estão cheias', '🎒');
+      return;
+    }
+    g.som('pegar');
+    g.toast(`${ficou} pegou o ${nomeMiudo(lanche.item.nome)}`, lanche.item.icone);
+    o.maquina.remove(peca);
+    if (pacote) pacote.visible = true; // a mola traz o próximo
+    peca = null;
+    pacote = null;
+    lanche = null;
+    estado = 'pronta';
+    ponto.label = ROTULO;
+    ponto.icon = '🍫';
+  };
+
+  const ponto = w.interact({
+    id: o.id,
+    x: o.x, z: o.z, radius: o.radius ?? 1.2,
+    label: ROTULO, icon: '🍫',
+    highlight: o.maquina,
+    onInteract: async (g) => {
+      if (estado === 'na-gaveta') pegar(g);
+      else if (estado === 'pronta') await comprar(g);
+    },
+  });
+
+  w.onUpdate((dt) => {
+    if (estado !== 'caindo' || !peca || !lanche) return;
+    t += dt;
+    // 1. a mola empurra o lanche para a frente e ele tomba na beira
+    if (t < 0.7) {
+      const k = t / 0.7;
+      peca.position.z = origemZ + 0.06 * k;
+      peca.rotation.x = 0.5 * k * k;
+      return;
+    }
+    // 2. a queda, indo para a frente da gaveta e girando para deitar
+    vy -= 9.8 * dt;
+    peca.position.y += vy * dt;
+    peca.position.x += (GAVETA.x - peca.position.x) * Math.min(1, dt * 4);
+    peca.position.z += (GAVETA.z - peca.position.z) * Math.min(1, dt * 4);
+    peca.rotation.x += (DEITADO - peca.rotation.x) * Math.min(1, dt * 5);
+    if (peca.position.y > GAVETA.y) return;
+    peca.position.y = GAVETA.y;
+    if (!quicou) {
+      quicou = true;
+      vy = Math.abs(vy) * 0.25;
+      w.game.som('quicar');
+      return;
+    }
+    // 3. deitou na gaveta: agora é pegar
+    peca.rotation.x = DEITADO;
+    estado = 'na-gaveta';
+    ponto.enabled = true;
+    ponto.label = `Pegar o ${nomeMiudo(lanche.item.nome)}`;
+    ponto.icon = lanche.item.icone;
+  });
 }

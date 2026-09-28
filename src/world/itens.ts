@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { HoldPose, ItemDef } from '../core/types';
-import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, osso } from './props';
+import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, lancheDaMaquina, osso, type LancheDaMaquina } from './props';
 import { borrifadorDeJardim, esguichoDeMangueira, pistolaDagua, regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
   bermudaListrada, bermudaDeBolinhas, bermudaHavaiana, bermudaDeAbacaxi, bermudaDeMelancia, bermudaDeOndinhas,
@@ -113,6 +113,26 @@ export const ITENS = {
     tipo: 'mao',
     nota: 'brinde da lojinha do parque',
     holdPose: 'upright',
+  },
+  /**
+   * OS LANCHES DA MÁQUINA DA ESCOLA (R$ 3 cada): caem da prateleira, a dupla
+   * pega na gaveta, eles vão para a mochila e, na mão, dão para comer.
+   */
+  lancheBiscoito: {
+    id: 'lanche-biscoito', nome: 'Pacotinho de biscoito', icone: '🍪',
+    tipo: 'mao', nota: 'da máquina da escola', holdPose: 'upright', comivel: 'comer',
+  },
+  lancheChocolate: {
+    id: 'lanche-chocolate', nome: 'Chocolatinho', icone: '🍫',
+    tipo: 'mao', nota: 'da máquina da escola', holdPose: 'upright', comivel: 'comer',
+  },
+  lancheSuco: {
+    id: 'lanche-suco', nome: 'Suco de caixinha', icone: '🧃',
+    tipo: 'mao', nota: 'da máquina da escola', holdPose: 'upright', comivel: 'beber',
+  },
+  lancheSalgadinho: {
+    id: 'lanche-salgadinho', nome: 'Salgadinho', icone: '🥨',
+    tipo: 'mao', nota: 'da máquina da escola', holdPose: 'upright', comivel: 'comer',
   },
 
   // ------------------------------------------------------------ vestiveis
@@ -1417,6 +1437,10 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'frisbee': () => frisbee(P.frisbee),
   'osso': () => osso(P.osso),
   'biscoito-estella': () => biscoitoDaEstella(),
+  'lanche-biscoito': () => lancheDaMaquina('biscoito'),
+  'lanche-chocolate': () => lancheDaMaquina('chocolate'),
+  'lanche-suco': () => lancheDaMaquina('suco'),
+  'lanche-salgadinho': () => lancheDaMaquina('salgadinho'),
   /**
    * O REGADOR PENDURA PELA ALCA DE CIMA, e nao nasce apoiado na mao.
    *
@@ -1506,4 +1530,15 @@ export const ROUPAS_DA_JOSEFINA: readonly ItemDef[] = [
   ITENS.camisetaLargaCogumelo, ITENS.camisetaLargaSapo, ITENS.camisetaLargaLavanda,
   ITENS.vestidoDeMargaridas, ITENS.vestidoDeRosinhas, ITENS.vestidoDoCampo,
   ITENS.calcaCargoDeJardim, ITENS.calcaPantalona, ITENS.calcaDeJardineiro,
+];
+
+/**
+ * O QUE A MÁQUINA DE LANCHES DA ESCOLA VENDE, cada um com a peça que cai da
+ * prateleira (a mesma que vai para a mão). A cena sorteia um por compra.
+ */
+export const LANCHES_DA_MAQUINA: ReadonlyArray<{ item: ItemDef; tipo: LancheDaMaquina; artigo: 'o' | 'a' }> = [
+  { item: ITENS.lancheBiscoito, tipo: 'biscoito', artigo: 'o' },
+  { item: ITENS.lancheChocolate, tipo: 'chocolate', artigo: 'o' },
+  { item: ITENS.lancheSuco, tipo: 'suco', artigo: 'o' },
+  { item: ITENS.lancheSalgadinho, tipo: 'salgadinho', artigo: 'o' },
 ];
