@@ -282,9 +282,15 @@ const pomponsNoAlto = [0, 1].map((i) => +media((q) => q.pomponsY[i] - q.cabecaY)
 conferir(pomponsNoAlto.every((d) => d > 0), 'torcendo, os dois pompons ficam acima da cabeça', `em média ${pomponsNoAlto} acima do centro dela`);
 conferir(Math.min(...quadros.map((q) => q.minY)) > -0.01, 'torcendo, nada afunda no chão');
 
-await luna('t.luna.ficarTimida(6)');
-await page.waitForTimeout(1600);
-const timida = await corpo();
+await luna('t.luna.ficarTimida(12)');
+// a pose chega por interpolação, e com a máquina ocupada 1,6 s de relógio
+// são poucos quadros de jogo: espera ela assentar (até 12 s) em vez de um
+// tempo fixo — se a pose estiver errada, ela assenta longe do rosto e falha
+let timida = await corpo();
+for (let i = 0; i < 40 && timida.pomponsAoRosto.some((d) => d >= 0.38); i++) {
+  await page.waitForTimeout(300);
+  timida = await corpo();
+}
 await page.screenshot({ path: `${OUT}-timida.png` });
 conferir(timida.pomponsAoRosto.every((d) => d < 0.38), 'tímida, as patas vêm para perto do rosto', `${timida.pomponsAoRosto}`);
 conferir(timida.minY > -0.01, 'tímida, nada afunda no chão', `${timida.minY}`);
