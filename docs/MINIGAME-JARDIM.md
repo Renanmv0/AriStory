@@ -399,14 +399,19 @@ a cada 4 segundos. A rodada começa fácil de propósito: o jogador ainda está
 descobrindo que o regador tem alcance, que a água acaba e que o canteiro é o
 placar. Onda 1 é uma aula, e ela tem que parecer fácil.
 
+**O alívio da 3ª à 7ª** (pedido do Renan, depois de testar a rodada: "suavize
+levemente"): uns 10% menos bichos da 3ª à 5ª e um pouco menos na 6ª e na 7ª
+(`ALIVIO`, em `progressao.ts`), minguando para a 8ª não virar degrau. O RITMO
+não mudou — a onda fica mais curta, e não mais espaçada.
+
 | onda | quem entra | ritmo | quantos |
 |---|---|---|---|
 | 1 | Lagartejo | 1 a cada 4 s | ~12 |
 | 2 | **+ Gafanhopo** | 2 a cada 4 s | ~20 |
-| 3 | **+ Coelhatu** | 2 a cada 3,5 s | ~22 (era 28: a terceira era a parede da rodada) |
-| 4 | **+ Tucanguru**, e um Preguipolvo | 3 a cada 3 s | ~36 |
-| 5 | todos, e a **Mãe-Lagartejo** no fim | 3 a cada 2,5 s | ~45 |
-| 6–14 | todos; um Preguipolvo por onda (dois da 12ª em diante) e a **Mãe-Lagartejo de volta na 10ª** | de 3 a 5 por leva, o intervalo encurtando | 48 → 72 |
+| 3 | **+ Coelhatu** | 2 a cada 3,5 s | ~20 (era 28, depois 22: a terceira era a parede da rodada) |
+| 4 | **+ Tucanguru**, e um Preguipolvo | 3 a cada 3 s | ~32 (era 36) |
+| 5 | todos, e a **Mãe-Lagartejo** no fim | 3 a cada 2,5 s | ~40 (era 45) |
+| 6–14 | todos; um Preguipolvo por onda (dois da 12ª em diante) e a **Mãe-Lagartejo de volta na 10ª** | de 3 a 5 por leva, o intervalo encurtando | 44, 48, e da 8ª em diante 54 → 72 |
 | 15 | **+ Libelagarto** (a segunda leva começa), e a Mãe-Lagartejo no fim | 5 a cada 2,0 s | ~75 |
 | 16 | **+ Formiguriço** | | ~78 |
 | 17 | **+ Tamandubelha** | | ~81 |

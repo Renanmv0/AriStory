@@ -112,14 +112,16 @@ const ESTREIAS: readonly OndaDoJardim[] = [
   { estreia: 'lagartejo', quantos: 1, aCada: 4, total: 12 },
   { estreia: 'gafanhopo', quantos: 2, aCada: 4, total: 20 },
   // a terceira era a parede da rodada (o Renan quase nunca passava sem carta
-  // boa): 28 → 22 bichos, e um a cada 3,5 s em vez de 3
-  { estreia: 'coelhatu', quantos: 2, aCada: 3.5, total: 22 },
+  // boa): 28 → 22 bichos, e um a cada 3,5 s em vez de 3. Da 3ª à 7ª o Renan
+  // pediu mais um alívio leve, uns 10% a menos: 22 → 20, 36 → 32, 45 → 40
+  // (a 6ª e a 7ª estão em `ALIVIO`, mais abaixo)
+  { estreia: 'coelhatu', quantos: 2, aCada: 3.5, total: 20 },
   {
-    estreia: 'tucanguru', quantos: 3, aCada: 3, total: 36,
+    estreia: 'tucanguru', quantos: 3, aCada: 3, total: 32,
     anunciados: [{ praga: 'preguipolvo', quando: 0.6 }],
   },
   {
-    estreia: null, quantos: 3, aCada: 2.5, total: 45,
+    estreia: null, quantos: 3, aCada: 2.5, total: 40,
     anunciados: [
       { praga: 'preguipolvo', quando: 0.4 },
       { praga: 'mae-lagartejo', quando: 1 },
@@ -151,7 +153,8 @@ const ESTREIAS_TARDIAS: Readonly<Record<number, string>> = {
  *   depois da 20ª, um a mais a cada cinco (6 na 25ª, 7 na 30ª);
  * - **intervalo**: encurta 0,05 s por onda até 1,8 s (na 19ª); depois da 20ª
  *   encurta mais devagar, 0,02 s por onda, até 1,6 s na 30ª;
- * - **quantos**: três bichos a mais por onda, o tempo todo (48 → 120);
+ * - **quantos**: três bichos a mais por onda, o tempo todo (48 → 120), menos o
+ *   `ALIVIO` da 6ª e da 7ª;
  * - **grandões**: um tanque anunciado por onda, dois da 12ª em diante e três
  *   da 22ª. Até a 18ª todos são Preguipolvo; da 19ª o segundo vira o
  *   Rinocaracol, e o terceiro (da 22ª) é a Javaponja;
@@ -176,10 +179,17 @@ function depoisDasEstreias(n: number): OndaDoJardim {
     aCada: depoisDaVigesima > 0
       ? Math.max(1.6, 1.8 - depoisDaVigesima * 0.02)
       : Math.max(1.8, 2.5 - alem * 0.05),
-    total: 45 + alem * 3,
+    total: 45 + alem * 3 - (ALIVIO[n] ?? 0),
     anunciados,
   };
 }
+
+/**
+ * O ALÍVIO DA 6ª E DA 7ª (pedido do Renan: "suavize levemente" da 3ª à 7ª).
+ * Menos que nas três de antes, e minguando, para a 8ª (54) não virar degrau:
+ * 48 → 44 e 51 → 48.
+ */
+const ALIVIO: Readonly<Record<number, number>> = { 6: 4, 7: 3 };
 
 /** Quantas ondas a rodada tem: a trigésima é a vitória. */
 export const TOTAL_DE_ONDAS = 30;
