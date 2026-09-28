@@ -137,7 +137,7 @@ const luna = (fn) =>
 /** avança a conversa com E, anotando quem fala e os gestos que ela faz */
 const conversar = async (max = 60) => {
   const falas = [];
-  const gestos = { torceu: false, ficouTimida: false };
+  const gestos = { torceu: false, ficouTimida: false, tapando: null };
   for (let i = 0; i < max; i++) {
     if (!(await page.locator('.dialogue.show').count())) {
       await page.waitForTimeout(500);
@@ -146,6 +146,23 @@ const conversar = async (max = 60) => {
     }
     await page.waitForTimeout(650);
     const c = await corpo();
+    /*
+     * NINGUÉM NA FRENTE DELA: a câmera olha de `+X/+Z`, então quem estiver
+     * à frente dela nessa direção (produto escalar positivo) e a menos de
+     * 0,6 da linha de visada tapa a coelha.
+     */
+    if (gestos.tapando === null) {
+      gestos.tapando = await page.evaluate(([L]) => {
+        const c = Math.SQRT1_2;
+        return [window.jogo.playerPosition(), window.jogo.companionPosition()].filter((p) => {
+          const dx = p.x - L.x;
+          const dz = p.z - L.z;
+          const aFrente = dx * c + dz * c;
+          const aoLado = Math.abs(dx * c - dz * c);
+          return aFrente > 0 && aoLado < 0.6;
+        }).length;
+      }, [LUNA]);
+    }
     // a primeira torcida e a primeira vergonha da conversa ficam em foto
     if (c.torcendo && !gestos.torceu) await page.screenshot({ path: `${OUT}-conversa-torcendo.png` });
     if (c.timida && !gestos.ficouTimida) await page.screenshot({ path: `${OUT}-conversa-timida.png` });
@@ -282,6 +299,7 @@ const inteira = primeira.falas.join(' ');
 conferir(inteira.includes('Eu sou a Luna'), 'ela se apresenta');
 conferir(inteira.includes('aula de português') && inteira.includes('Gatito'), 'ela conta das aulas de português do Gatito');
 conferir(primeira.gestos.torceu && primeira.gestos.ficouTimida, 'ela torce e fica tímida no meio da conversa', JSON.stringify(primeira.gestos));
+conferir(primeira.gestos.tapando === 0, 'na conversa, nenhum dos dois fica entre ela e a câmera', `${primeira.gestos.tapando} tapando`);
 const fim = await page.evaluate(() => {
   const save = JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}');
   return {

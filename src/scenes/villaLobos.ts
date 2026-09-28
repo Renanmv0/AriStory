@@ -2122,9 +2122,30 @@ export const villaLobos: SceneDef = {
       label: 'Falar com a coelhinha', icon: '🐰',
       highlight: luna.group,
       onInteract: async (api) => {
-        const eu = api.playerPosition();
+        /*
+         * A DUPLA VAI PARA A FRENTE-DIREITA DELA, e não fica onde estava. O
+         * lado natural de chegar é o da câmera — e aí os dois paravam
+         * exatamente entre a Luna e a tela, tapando a coelha inteira (a foto
+         * do teste mostrou só as orelhas). Na diagonal, 1,3 para o lado da
+         * tela e um pouco à frente, eles ficam fora dessa linha, ela se vira
+         * três quartos para eles, e a cesta fica entre os três.
+         */
+        const DIREITA_DA_TELA = { x: Math.SQRT1_2, z: -Math.SQRT1_2 };
+        const PARA_A_CAMERA = { x: Math.SQRT1_2, z: Math.SQRT1_2 };
+        const ponto = (lado: number, frente: number): { x: number; z: number } => ({
+          x: LUNA_SENTADA.x + DIREITA_DA_TELA.x * lado + PARA_A_CAMERA.x * frente,
+          z: LUNA_SENTADA.z + DIREITA_DA_TELA.z * lado + PARA_A_CAMERA.z * frente,
+        });
+        const eu = ponto(1.3, 0.9);
+        const par = ponto(2.0, 0.7);
+        const olhandoPraEla = (p: { x: number; z: number }): number =>
+          Math.atan2(LUNA_SENTADA.x - p.x, LUNA_SENTADA.z - p.z);
+        api.lockPlayer(true);
+        api.releasePlayer(eu.x, eu.z, olhandoPraEla(eu));
+        api.releaseCompanion(par.x, par.z, olhandoPraEla(par));
+        api.holdCompanion(LUNA_SENTADA.x, LUNA_SENTADA.z);
         luna.levantar();
-        luna.encarar(eu.x, eu.z);
+        luna.encarar((eu.x + par.x) / 2, (eu.z + par.z) / 2);
         /*
          * A CÂMERA CHEGA PERTO NA CONVERSA. O piquenique fica dentro da zona
          * da roda gigante, que abre o enquadramento em ~19 — bom para ver a
@@ -2140,6 +2161,8 @@ export const villaLobos: SceneDef = {
         } finally {
           api.focusCamera(null);
           zoomLivre = true;
+          api.freeCompanion();
+          api.lockPlayer(false);
           luna.pararDeEncarar();
           sentarALuna();
         }
