@@ -45,8 +45,10 @@ Ainda não mexido: a vida dos bichos **não cresce** com as ondas.
 **Os números que mais se ajustam** (todos no topo de `rodada.ts`, salvo aviso):
 canteiro aguenta `VIDA_DO_CANTEIRO = 34`; regador começa com alcance 3,0
 (`fichaInicial`, em `cartas.ts`); respiro entre ondas `INTERVALO = 6` s; ajuda
-do par dura `AJUDA_DURA = 10` s e custa 30 gotas, +15 a cada uso; prêmio da
-onda = metade do que falta para o próximo nível; de 5 em 5 níveis, 1 ou 2
+do par dura `AJUDA_DURA = 10` s e custa 30 gotas, +15 a cada uso; cada nível
+custa a METADE da curva original (`METADE_DA_CURVA`, em `progressao.ts` —
+pedido do Renan: subir mais de nível); prêmio da onda = metade do que falta
+para o próximo nível; de 5 em 5 níveis, 1 ou 2
 cartas a mais (`cartasDePremio`); o ritmo de cada onda em `progressao.ts`;
 velocidade/mordida de cada praga em `JEITO` (`rodada.ts`); e a **vida que
 cresce com a onda** (`vidaDaOnda`, em `progressao.ts` — pedido do Renan, porque
@@ -423,9 +425,9 @@ verdade (entram sozinhos nos primeiros 10 s), e os dois grandões e o chefe
 novo tomam o lugar de um anunciado antigo — a conta de gotas da rodada não
 muda, porque o tanque novo paga o mesmo que o Preguipolvo, e o chefe novo o
 mesmo que a Mãe. Se nenhum
-bicho escapa, a dupla chega perto do nível 10 na quinta onda, do 25 na
-vigésima e do 32 na trigésima — o prêmio de duas cartas do nível 30 cabe
-na rodada (`scripts/cartas.mjs` mede as duas marcas). O número mora em
+bicho escapa, a dupla chega perto do nível 13 na quinta onda, do 32 na
+vigésima e do 41 na trigésima (com a curva pela metade — §7) — o prêmio de
+duas cartas do nível 40 cabe na rodada (`scripts/cartas.mjs` mede as duas marcas). O número mora em
 `TOTAL_DE_ONDAS`, em `progressao.ts`: mudar o limite é mudar ele.
 
 **AJUSTES DEPOIS DE JOGAR — construído** (o Renan achou a rodada difícil e
@@ -1413,36 +1415,44 @@ no mesmo ponto é um clique, oito gotas num raio de 3 m é uma decisão.
 
 ### A curva: barato no começo, caro no fim — **construído**
 
-O primeiro nível custa 5 gotas, e dali em diante **o degrau cresce 1 a cada 2
-níveis** (`custoDoNivel`, em `minigames/jardim/progressao.ts`):
+**A curva é a METADE da original** (pedido do Renan, depois de testar: "ficaria
+mais divertido se subíssemos mais de nível"). A forma continua a mesma — o
+degrau da curva original cresce 1 a cada 2 níveis — e cada nível custa a metade
+dela, arredondada para cima (`custoDoNivel` × `METADE_DA_CURVA`, em
+`minigames/jardim/progressao.ts`):
 
-| nível | custo | acumulado |
-|---|---|---|
-| 0 → 1 | 5 | 5 |
-| 1 → 2 | 7 | 12 |
-| 2 → 3 | 10 | 22 |
-| 3 → 4 | 13 | 35 |
-| 4 → 5 | 17 | 52 |
-| 5 → 6 | 21 | 73 |
-| 6 → 7 | 26 | 99 |
-| 7 → 8 | 31 | 130 |
-| 8 → 9 | 37 | 167 |
-| 9 → 10 | 43 | 210 |
+| nível | custo | acumulado | (a curva original) |
+|---|---|---|---|
+| 0 → 1 | 3 | 3 | 5 |
+| 1 → 2 | 4 | 7 | 7 |
+| 2 → 3 | 5 | 12 | 10 |
+| 3 → 4 | 7 | 19 | 13 |
+| 4 → 5 | 9 | 28 | 17 |
+| 5 → 6 | 11 | 39 | 21 |
+| 6 → 7 | 13 | 52 | 26 |
+| 7 → 8 | 16 | 68 | 31 |
+| 8 → 9 | 19 | 87 | 37 |
+| 9 → 10 | 22 | 109 | 43 |
+
+Como o custo cresce, cortar pela metade **não** dobra o nível: a rodada chega
+na 5ª onda por volta do **nível 13** (era 10) e termina a 30ª por volta do
+**41** (era 32), sem contar o prêmio de cada onda. O baralho aguenta: cada
+ferramenta tem 93 a 105 cartas, e só depois delas a tela vira consolo.
 
 A primeira versão era `4 + nível^1,6`, arredondada — e o arredondamento fazia
 o degrau **encolher** no meio (22 → 26 → 32): subir de nível ficava mais barato
 de repente, o contrário do pedido. Escrita como degrau, a curva só sobe, e o
 teste cobra isso.
 
-Os **três primeiros níveis saem quase de graça** — cinco lagartejos e você já
+Os **três primeiros níveis saem quase de graça** — três lagartejos e você já
 escolheu uma carta. Isso é de propósito: roguelite que demora a dar a primeira
 carta é roguelite que o jogador abandona na primeira rodada. Do nível 5 para
 frente cada carta custa uma onda inteira, e é aí que as escolhas passam a doer.
 
-Uma rodada de 5 ondas solta perto de 210 gotas se nenhum bicho escapar, então
-ela termina por volta do **nível 10, com 10 cartas escolhidas**. Esse é o alvo,
-e o `scripts/cartas.mjs` já o confere: ele monta o roteiro das cinco ondas
-trezentas vezes e mede o nível final (hoje, 10,0 em média). Quando o minigame
+As cinco primeiras ondas soltam perto de 210 gotas se nenhum bicho escapar, e
+com a curva de hoje isso dá o **nível 13** (eram 10 na curva original). O
+`scripts/cartas.mjs` confere: ele monta o roteiro das ondas trezentas vezes e
+mede o nível na 5ª (entre 12 e 15) e na 30ª (entre 38 e 45). Quando o minigame
 existir, a conta passa a ser com os bichos que de fato foram espantados.
 
 **As gotas de cada praga estão na ficha dela** (`FichaDePraga.gotas`, em

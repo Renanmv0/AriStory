@@ -293,9 +293,11 @@ a mesa é só consolo.
 
 ## 7. A curva e as gotas (progressao.ts)
 
-- **Nível**: o primeiro custa 5 gotas e o degrau cresce 1 a cada 2 níveis
-  (5, 7, 10, 13, 17, 21, 26, 31, 37, 43). Escrito como degrau, não potência:
-  a potência arredondada fazia o degrau ENCOLHER no meio.
+- **Nível**: a METADE da curva original, arredondada para cima (3, 4, 5, 7,
+  9, 11, 13, 16, 19, 22 — a original era 5, 7, 10, 13, 17…; pedido do Renan:
+  subir mais de nível). O corte é `METADE_DA_CURVA` em `progressao.ts`. Escrito
+  como degrau, não potência: a potência arredondada fazia o degrau ENCOLHER no
+  meio.
 - **Gotas por praga** ficam na ficha da praga (`FichaDePraga.gotas`, em
   `world/bichosDoJardim.ts`), e sobem com o tier: fraco 1, médio 2–3, tanque 8,
   chefe 25.
@@ -303,8 +305,8 @@ a mesa é só consolo.
   quando e por qual porta. Cada onda estreia um bicho em ordem de tier, e ele
   entra **sozinho, por uma porta só, nos primeiros 10 s**. Tanque e chefe
   entram só como `anunciados`, numa hora marcada.
-- **O alvo**: uma rodada inteira, sem ninguém escapar, termina perto do
-  **nível 10**. Carta nova não muda isso; bicho novo ou onda nova muda — rode o
+- **O alvo**: sem ninguém escapar, a 5ª onda chega perto do **nível 13** e a
+  30ª perto do **41**. Carta nova não muda isso; bicho novo ou onda nova muda — rode o
   teste.
 
 ---

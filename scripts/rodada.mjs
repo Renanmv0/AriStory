@@ -274,9 +274,9 @@ await page.screenshot({ path: `${OUT}-fim.png` });
   const e5 = await estado();
   ok(e5.onda === 5 && e5.rodando, `as ondas se seguem até a quinta (está na ${e5.onda})`);
   ok(avisos.some((t) => /Onda 2: chegam os Gafanhopos/.test(t)), 'a onda 2 avisa quem estreia');
-  // o prêmio: metade do que falta para o próximo nível (0 gotas → faltam 5 → +3)
+  // o prêmio: metade do que falta para o próximo nível (0 gotas → faltam 3 → +2)
   console.log('       avisos:', avisos.filter((t) => /vencida/.test(t)).join(' · '));
-  ok(avisos.some((t) => /Onda 1 vencida! \+3 gotas de prêmio/.test(t)), 'vencer a onda 1 dá +3 gotas (metade das 5 que faltavam)');
+  ok(avisos.some((t) => /Onda 1 vencida! \+2 gotas de prêmio/.test(t)), 'vencer a onda 1 dá +2 gotas (metade das 3 que faltavam)');
   ok(avisos.filter((t) => /vencida/.test(t)).length >= 4, 'cada onda vencida avisa o prêmio');
   ok(e5.juntadas >= 3, `as gotas do prêmio entram na conta (${e5.juntadas})`);
   ok(avisos.some((t) => /Onda 5: a última leva/.test(t)), 'a onda 5 avisa que é a última');

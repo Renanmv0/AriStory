@@ -23,9 +23,11 @@ import { PRAGAS, type FichaDePraga } from '../../world/bichosDoJardim';
 /**
  * QUANTAS GOTAS CUSTA CHEGAR NO NÍVEL `alvo`, saindo do anterior.
  *
- * 5, 7, 10, 13, 17, 21, 26, 31, 37, 43… O primeiro nível custa 5, e dali em
- * diante o DEGRAU cresce um a cada dois níveis (+2, +3, +3, +4, +4, +5…). O
- * começo é barato de propósito — roguelite que demora a dar a primeira carta é
+ * 3, 4, 5, 7, 9, 11, 13, 16, 19, 22… — a METADE da curva antiga (5, 7, 10,
+ * 13, 17…), arredondada para cima. Pedido do Renan: subir mais de nível deixa
+ * a rodada mais divertida, e a dupla chega nas ondas 3 a 5 (a parede da
+ * rodada) com mais cartas na mão. A forma não mudou: o degrau cresce devagar
+ * e nunca encolhe. O começo é barato de propósito — roguelite que demora a dar a primeira carta é
  * roguelite que o jogador abandona na primeira rodada — e o fim vai ficando
  * caro devagar, para as escolhas passarem a doer do meio para o fim.
  *
@@ -38,8 +40,11 @@ export function custoDoNivel(alvo: number): number {
   if (alvo <= 0) return 0;
   let custo = 5;
   for (let k = 2; k <= alvo; k++) custo += 1 + Math.ceil(k / 2);
-  return custo;
+  return Math.ceil(custo * METADE_DA_CURVA);
 }
+
+/** quanto da curva antiga cada nível custa hoje (pedido do Renan: a metade) */
+export const METADE_DA_CURVA = 0.5;
 
 /** O total de gotas acumuladas para ESTAR no nível `nivel`. */
 export function gotasParaONivel(nivel: number): number {

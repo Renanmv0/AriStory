@@ -27,7 +27,7 @@
  *    baratos.
  * 6. AS ONDAS: a estreia em ordem de tier, o solo de 10 s por uma porta só, o
  *    tanque e o chefe anunciados, e a rodada inteira terminando perto do
- *    nível 10 — o alvo do §7 do plano.
+ *    nível 13 — o alvo do §7 do plano (a curva é a metade da antiga).
  *
  * Uso: node scripts/cartas.mjs
  */
@@ -360,8 +360,9 @@ console.log('\n— as ondas');
   const media = mediaDe(niveisFinais);
   console.log(`       nivel medio se nenhum bicho escapar: ${naQuinta.toFixed(1)} na onda 5, ${media.toFixed(1)} na onda ${ONDAS.length}`);
   ok(ONDAS.length === 30 && m.TOTAL_DE_ONDAS === 30, 'a rodada tem trinta ondas (a trigésima é a vitória)');
-  ok(naQuinta >= 9 && naQuinta <= 12, 'as cinco primeiras ondas levam perto do nivel 10 (entre 9 e 12)');
-  ok(media >= 30 && media <= 36, 'as trinta ondas terminam entre o nivel 30 e o 36 (o premio do 30 cabe na rodada)');
+  // a curva custa a METADE da antiga (pedido do Renan: subir mais de nivel)
+  ok(naQuinta >= 12 && naQuinta <= 15, 'as cinco primeiras ondas levam perto do nivel 13 (entre 12 e 15)');
+  ok(media >= 38 && media <= 45, 'as trinta ondas terminam entre o nivel 38 e o 45 (o premio do 40 cabe na rodada)');
   const chefeEm = (n) => ONDAS[n - 1].anunciados.filter((a) => PRAGAS.find((p) => p.id === a.praga).tier === 'chefe');
   ok([10, 15, 20, 25, 30].every((n) => chefeEm(n).length > 0), 'tem chefe nas ondas 10, 15, 20, 25 e 30');
   ok(chefeEm(25).some((a) => a.praga === 'escorpicamelo')
