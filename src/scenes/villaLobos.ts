@@ -2191,8 +2191,8 @@ export const villaLobos: SceneDef = {
         luna.ficarTimida(2);
         await diz('É que eu fico assim quando falo dos Gatitos. Me emociono.');
         await diz('Mas eu não sou só da torcida, viu? Eu faço aula de português lá na escola.');
-        await diz('Quem dá é o professor Gatito. Ele é uma pelúcia. Assim, pelúcia mesmo.');
-        await diz('Uma pelúcia dá aula?', R);
+        await diz('Quem dá é o professor Gatito. Ele é um gato. Assim, gato mesmo, de bigode e tudo.');
+        await diz('Um gato dá aula?', R);
         await diz('Dá, e dá muito bem! Ele corrige com carinho. Ninguém tira nota vermelha com ele.');
         await diz('Eu faço faz tempão. Ainda escapa uma palavra ou outra, mas o Gatito diz que isso é chévere. Que é tempero.');
         await diz('Eu gostei do tempero.', A);
@@ -2202,7 +2202,7 @@ export const villaLobos: SceneDef = {
         await diz('O ônibus do ponto, lá na saída do parque, para na Escola do Gatito. Eu aviso lá que vocês são meus panas.');
         await diz('Panas?', R);
         await diz('Amigos! Panas. Pronto: agora vocês já aprenderam uma palavra comigo.');
-        await diz('E se virem um gato de pelúcia pulando pelo corredor... é ele! Vale?');
+        await diz('E se virem um gato de meia cara caramelo passeando pelo corredor... é ele! Vale?');
         api.setFlag('escola-aberta');
         falarComALuna.label = 'Falar com a Luna';
         api.som('memoria');

@@ -211,7 +211,7 @@ export const escolaGinasio: SceneDef = {
           await conversa(g, [[L, 'Naguará... ninguém me avisou.']]);
         },
         async (g) => {
-          await conversa(g, [[L, 'Sabiam que o Gatito pula em vez de andar? Ele é pelúcia, né. Pelúcia não tem joelho.']]);
+          await conversa(g, [[L, 'Sabiam que o Gatito cochila na sala dos professores entre uma aula e outra? Tem até caminha. Eu queria ser professora só por isso.']]);
         },
         async (g) => {
           luna.torcer(1.8);
