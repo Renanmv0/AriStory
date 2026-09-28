@@ -417,6 +417,15 @@ floreiras baixas com vão no meio. Café de escola que se vê passando.
   (`g.gastar`); depois é sentar numa mesinha e comer juntos;
 - quem atende o balcão é pergunta (§13).
 
+**No jogo hoje** (o refeitório construído, no fim do corredor): as mesas
+compridas sentam a dupla **um em cada banco, de frente um para o outro**
+(`facingParceiro` no `sentarOsDois`), e as **máquinas de lanche** — duas no
+refeitório e uma na sala de descanso — entregam de verdade
+(`maquinaQueEntrega`, em `escolaComum.ts`): R$ 3, o lanche cai da prateleira
+até a gaveta, "Pegar o …" põe na mochila, e na mão ele se come (ou bebe) com
+o E. São quatro: pacotinho de biscoito, chocolatinho, suco de caixinha e
+salgadinho (`LANCHES_DA_MAQUINA`, em `world/itens.ts`).
+
 ### Sala de descanso
 
 Na frente, à esquerda, a mais aconchegante.

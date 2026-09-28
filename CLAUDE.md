@@ -159,6 +159,7 @@ node scripts/borrifador.mjs /tmp/bf # o borrifador: destranca pela pistola, o fr
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso
+node scripts/lanche.mjs  /tmp/la    # a maquina de lanches da escola: pagar, o lanche cair na gaveta, pegar pra mochila e comer; e sentar a mesa do refeitorio de frente um pro outro
 node scripts/luna.mjs    /tmp/lu    # a Luna e a porta da escola: some antes do quadro encher, aparece no piquenique, torce e fica timida, o onibus passa a ir pra escola, o tour da chegada e o treino no ginasio
 ```
 

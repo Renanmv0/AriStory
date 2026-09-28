@@ -89,6 +89,14 @@ export class Game implements GameAPI {
   private transitioning = false;
   /** o beijo esta ao alcance neste frame (checado no fim do frame anterior) */
   private podeBeijar = false;
+  /**
+   * COMENDO O QUE ESTÁ NA MÃO (um lanche da máquina da escola): o braço leva
+   * à boca por pouco mais de um segundo e só então o item some da mochila.
+   * `null` fora disso.
+   */
+  private comendo: { resta: number; item: ItemDef } | null = null;
+  /** o prompt na tela agora é o de comer (e não o de um interativo) */
+  private promptDeComer = false;
   /** id do item que cada rig esta segurando agora, para nao reconstruir a malha */
   private readonly naMao = new Map<string, string | null>();
   /** distância andada desde o último passo ouvido */
@@ -302,6 +310,8 @@ export class Game implements GameAPI {
     // nenhuma pose de cutscene atravessa uma troca de cena: sair da praca de
     // gelo comendo nao pode deixar os dois lambendo o ar no cenario seguinte
     this.setSaboreando(false);
+    this.comendo = null;
+    this.promptDeComer = false;
     this.setOutfit(def.outfit ?? 'normal');
     this.ui.hidePrompt();
     this.ui.sceneCard(def.name, def.subtitle);
@@ -507,6 +517,9 @@ export class Game implements GameAPI {
     } else if (acted && !busy && this.podeBeijar && !this.player.locked) {
       this.maos.soltar(this.player, this.parceiro);
       this.beijo.iniciar(this.player, this.parceiro, this.iso.angle);
+    } else if (acted && !busy && !this.player.locked && !this.comendo && this.comivelNaMao()) {
+      // com um lanche na mão e nada por perto, o E (o ✨ no celular) come
+      this.comecarAComer();
     } else if (acted && !busy && !this.player.locked) {
       // sem interativo por perto e sem estar de frente um para o outro, o E
       // vira o carinho de contexto: de lado a lado, da a mao. E o que permite
@@ -520,6 +533,7 @@ export class Game implements GameAPI {
 
   /** Um passo do mundo: os corpos, os interativos e a cena. Não roda em pausa. */
   private simular(dt: number, world: WorldBuilder): void {
+    this.mastigar(dt);
     // os dois rodam antes do movimento: sao eles que mandam nos corpos
     this.beijo.update(dt, this.player, this.parceiro);
     this.maos.update(dt, this.player, this.parceiro);
@@ -646,8 +660,69 @@ export class Game implements GameAPI {
       if (best && !this.player.locked) this.ui.showPrompt(best.icon, best.label);
       else this.ui.hidePrompt();
     }
-    if (this.player.locked || this.ui.dialogueOpen) this.ui.hidePrompt();
-    else if (this.hot) this.ui.showPrompt(this.hot.icon, this.hot.label);
+    if (this.player.locked || this.ui.dialogueOpen) {
+      this.ui.hidePrompt();
+      this.promptDeComer = false;
+    } else if (this.hot) {
+      this.ui.showPrompt(this.hot.icon, this.hot.label);
+      this.promptDeComer = false;
+    } else {
+      // nada do cenário por perto: com um lanche na mão, o prompt é o de comer
+      const lanche = this.comendo ? null : this.comivelNaMao();
+      if (lanche) {
+        this.ui.showPrompt(lanche.icone, `${lanche.comivel === 'beber' ? 'Beber' : 'Comer'} o ${this.nomeMiudo(lanche)}`);
+        this.promptDeComer = true;
+      } else if (this.promptDeComer) {
+        this.ui.hidePrompt();
+        this.promptDeComer = false;
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------- comer
+
+  /** O item da mão de quem joga, se der para comer (ou beber). */
+  private comivelNaMao(): ItemDef | null {
+    const item = this.getActiveHandItem();
+    return item?.comivel ? item : null;
+  }
+
+  /** "Chocolatinho" vira "chocolatinho" no meio da frase. */
+  private nomeMiudo(item: ItemDef): string {
+    return item.nome.charAt(0).toLowerCase() + item.nome.slice(1);
+  }
+
+  /**
+   * O GESTO DE COMER: duas mordidas, o braço levando o lanche à boca
+   * (`morder`, no corpo) — e o item só sai da mochila no fim — até lá ele está na
+   * mão, que é onde a pessoa está olhando. O artigo é "o" porque todo comível
+   * de hoje é masculino (biscoito, chocolatinho, suco, salgadinho).
+   */
+  private comecarAComer(): void {
+    const item = this.comivelNaMao();
+    if (!item) return;
+    this.maos.soltar(this.player, this.parceiro);
+    this.player.rig.morder(1.4);
+    this.comendo = { resta: 1.4, item };
+    this.audio.play('nhac');
+  }
+
+  private mastigar(dt: number): void {
+    if (!this.comendo) return;
+    const { item } = this.comendo;
+    // trocou de vaga no meio: não comeu nada, o lanche continua na mochila
+    if (this.getActiveHandItem()?.id !== item.id) {
+      this.player.rig.morder(0);
+      this.comendo = null;
+      return;
+    }
+    this.comendo.resta -= dt;
+    if (this.comendo.resta > 0) return;
+    this.comendo = null;
+    this.removeItem(item.id);
+    this.audio.play('nhac');
+    const fez = item.comivel === 'beber' ? 'bebeu' : 'comeu';
+    this.ui.toast(`${this.player.name} ${fez} o ${this.nomeMiudo(item)}`, '😋');
   }
 
   // ------------------------------------------------------------- GameAPI

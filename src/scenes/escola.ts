@@ -12,7 +12,8 @@ import { ARI, RENAN } from '../characters/cast';
 import { Gatito } from '../entities/bichos/Gatito';
 import { Luna } from '../entities/bichos/Luna';
 import {
-  ESCOLA, LUZ_DA_ESCOLA, conversa, paredeComVaos, pontoNoMundo, posicionarParaConversar, sentarOsDois,
+  ESCOLA, LUZ_DA_ESCOLA, conversa, maquinaQueEntrega, paredeComVaos, pontoNoMundo, posicionarParaConversar,
+  sentarOsDois,
   soltarDaConversa,
 } from './escolaComum';
 
@@ -118,8 +119,6 @@ const FALAS_DO_GATITO = [
   'Quando as aulas começarem, a gente se vê na Sala 1.',
 ];
 
-/** o que sai da máquina de lanches */
-const LANCHES = ['Um pacotinho de biscoito', 'Um chocolatinho', 'Um suco de caixinha', 'Um salgadinho'];
 
 export const escola: SceneDef = {
   id: ESCOLA.saguao,
@@ -305,10 +304,10 @@ export const escola: SceneDef = {
       { z: -9.8, cor: P.escolaFaixa },
       { z: 8.4, cor: P.escolaArmarioAzul },
     ];
-    for (const m of maquinas) {
-      w.add(w.place(maquinaDeLanches(m.cor), REFEITORIO.x0 + 0.53, 0, m.z, Math.PI / 2));
+    const pecasDasMaquinas = maquinas.map((m) => {
       w.blockBox(REFEITORIO.x0 + 0.53, m.z, 0.4, 0.5);
-    }
+      return w.add(w.place(maquinaDeLanches(m.cor), REFEITORIO.x0 + 0.53, 0, m.z, Math.PI / 2));
+    });
     for (const [x, z] of [[REFEITORIO.x0 + 0.5, -8.2], [-17.4, REFEITORIO.z0 + 0.5]] as const) {
       w.add(w.place(bin(), x, 0, z));
       w.blockCircle(x, z, 0.3);
@@ -337,9 +336,11 @@ export const escola: SceneDef = {
           // mesa é peça genérica: quem fala é quem está em cena (o T troca)
           await sentarOsDois(g, {
             ancora,
+            // um em cada banco, os dois olhando para o meio da mesa
             jogador: new THREE.Vector3(0, 0, 0.74),
             parceiro: new THREE.Vector3(0, 0, -0.74),
             facing: Math.PI,
+            facingParceiro: 0,
             foco,
             falas: falas.map(([doJogador, t]) => [doJogador ? g.playerName() : g.companionName(), t] as const),
             saida: { jogador: [x, z + 1.75], parceiro: [x, z - 1.75], facing: Math.PI },
@@ -477,22 +478,11 @@ export const escola: SceneDef = {
         ]),
     });
 
+    // comprar, ver o lanche cair na gaveta e pegar (ver `maquinaQueEntrega`)
     maquinas.forEach((m, i) => {
-      w.interact({
-        id: `escola:lanches-${i}`,
-        x: REFEITORIO.x0 + 1.5, z: m.z, radius: 1.2,
-        label: 'Comprar um lanchinho (R$ 3)', icon: '🍫',
-        onInteract: async (g) => {
-          if (!g.gastar(3)) {
-            await conversa(g, [
-              [g.companionName(), 'Tá sem moeda?'],
-              [g.playerName(), 'A carteira tá vazia. Depois a gente volta.'],
-            ]);
-            return;
-          }
-          g.som('caixa');
-          g.toast(`${w.pick(LANCHES)} caiu da máquina!`, '🍫');
-        },
+      maquinaQueEntrega(w, {
+        id: `escola:lanches-${i}`, maquina: pecasDasMaquinas[i],
+        x: REFEITORIO.x0 + 1.5, z: m.z,
       });
     });
 

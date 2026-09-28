@@ -4675,6 +4675,77 @@ export function biscoitoDaEstella(): THREE.Group {
   return g;
 }
 
+export type LancheDaMaquina = 'biscoito' | 'chocolate' | 'suco' | 'salgadinho';
+
+/**
+ * OS LANCHES DA MÁQUINA DA ESCOLA, no tamanho de mão (10 a 15 cm, a régua do
+ * biscoito da Estella). É a mesma peça que cai da prateleira até a gaveta e
+ * a que fica na mão depois de pegar — o que se viu cair é o que se come.
+ *
+ * Cada um é lido pela SILHUETA antes da cor: o pacote é uma caixa em pé com
+ * a janelinha de biscoito; o chocolate é uma barra deitada com a ponta do
+ * papel aberta mostrando o marrom; a caixinha tem o canudo; o salgadinho é o
+ * saquinho estufado, que é o único redondo. Base em `y = 0`, como o kit.
+ */
+export function lancheDaMaquina(tipo: LancheDaMaquina): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = `lanche-${tipo}`;
+  if (tipo === 'biscoito') {
+    const pacote = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.14, 0.035), toon(P.lancheBiscoito));
+    pacote.position.y = 0.07;
+    g.add(pacote);
+    // a faixa e a janelinha ficam 2 mm À FRENTE da face do pacote
+    const faixa = new THREE.Mesh(new THREE.BoxGeometry(0.104, 0.025, 0.037), toon(P.lancheBiscoitoFaixa));
+    faixa.position.y = 0.115;
+    g.add(faixa);
+    for (const x of [-0.022, 0.022]) {
+      const biscoito = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.006, 12), toon(P.lancheBiscoitoMassa));
+      biscoito.rotation.x = Math.PI / 2;
+      biscoito.position.set(x, 0.06, 0.0205);
+      g.add(biscoito);
+    }
+  } else if (tipo === 'chocolate') {
+    const barra = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.05, 0.018), toon(P.lancheChocolate));
+    barra.position.y = 0.025;
+    g.add(barra);
+    // a ponta aberta: o papel prateado e o chocolate aparecendo, um fio menor
+    const papel = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.054, 0.02), toon(P.lancheChocolatePapel));
+    papel.position.set(0.072, 0.025, 0);
+    g.add(papel);
+    const massa = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.044, 0.014), toon(P.lancheChocolateMassa));
+    massa.position.set(0.098, 0.025, 0);
+    g.add(massa);
+  } else if (tipo === 'suco') {
+    const caixa = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.11, 0.045), toon(P.lancheSuco));
+    caixa.position.y = 0.055;
+    g.add(caixa);
+    const fruta = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), toon(P.lancheSucoFruta));
+    fruta.scale.z = 0.3;
+    fruta.position.set(0, 0.05, 0.0235);
+    g.add(fruta);
+    const canudo = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.07, 6), toon(P.lancheCanudo));
+    canudo.position.set(0.014, 0.135, 0);
+    canudo.rotation.z = -0.25;
+    g.add(canudo);
+  } else {
+    const saco = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), toon(P.lancheSalgadinho));
+    saco.scale.set(0.055, 0.07, 0.03);
+    saco.position.y = 0.07;
+    g.add(saco);
+    // as duas pontas soldadas do saquinho, em cima e embaixo
+    for (const y of [0.005, 0.135]) {
+      const solda = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.012, 0.012), toon(P.lancheSalgadinho));
+      solda.position.y = y;
+      g.add(solda);
+    }
+    const faixa = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), toon(P.lancheSalgadinhoFaixa));
+    faixa.scale.set(0.035, 0.022, 0.012);
+    faixa.position.set(0, 0.075, 0.024);
+    g.add(faixa);
+  }
+  return g;
+}
+
 /**
  * A CESTA DE BISCOITOS que fica ao lado da Estella, na porta da loja.
  *

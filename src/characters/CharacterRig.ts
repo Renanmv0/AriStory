@@ -183,6 +183,13 @@ export class CharacterRig {
    * tomando sorvete" seriam dois bonecos parados com uma casquinha na mao.
    */
   private saboreando = false;
+  /**
+   * AS MORDIDAS de um lanche: quanto falta do gesto e quanto ele durava. É um
+   * gesto que ACABA (o lanche da máquina some no fim), diferente do
+   * `saboreando`, que é o vaivém sem fim de quem toma sorvete conversando.
+   */
+  private mordendo = 0;
+  private duracaoDaMordida = 1;
 
   /**
    * Peças que trocam de material entre roupa normal e traje de banho.
@@ -1472,6 +1479,22 @@ export class CharacterRig {
    * So faz efeito em quem esta SEGURANDO alguma coisa com pose — de mao vazia
    * nao ha o que saborear, e a pose de item e que diz onde o braco comeca.
    */
+  /**
+   * Leva o que está na mão à boca DUAS VEZES em `segundos` — "nhac, nhac" — e
+   * para sozinho. É o comer dos lanches da escola: a lambida do sorvete é
+   * lenta demais (uma a cada três segundos, presa ao relógio do corpo) para
+   * caber num lanche que dura pouco mais de um segundo.
+   */
+  morder(segundos = 1.4): void {
+    this.mordendo = segundos;
+    this.duracaoDaMordida = segundos;
+  }
+
+  /** o teste pergunta isto */
+  get estaMordendo(): boolean {
+    return this.mordendo > 0;
+  }
+
   setSaboreando(v: boolean): void {
     this.saboreando = v;
   }
@@ -1529,6 +1552,7 @@ export class CharacterRig {
    * @param speed velocidade horizontal atual em unidades/s (0 = parado)
    */
   update(dt: number, speed: number): void {
+    if (this.mordendo > 0) this.mordendo = Math.max(0, this.mordendo - dt);
     // giro suave para o angulo alvo, pelo caminho mais curto
     let delta = this.targetFacing - this.group.rotation.y;
     delta = Math.atan2(Math.sin(delta), Math.cos(delta));
@@ -1750,7 +1774,8 @@ export class CharacterRig {
      * quem segura com a direita não conseguiria levar o sorvete à boca. O braço
      * de fora continua dado; o de dentro come.
      */
-    if (this.pose === 'none' || (this.maos > 0 && !this.saboreando)) {
+    const mordendo = this.mordendo > 0;
+    if (this.pose === 'none' || (this.maos > 0 && !this.saboreando && !mordendo)) {
       this.maoDir.rotation.set(0, 0, 0);
       this.maoDir.position.x = 0;
       return;
@@ -1768,10 +1793,18 @@ export class CharacterRig {
      * A cabeca desce um tico junto. Sem ela o braco sobe sozinho e parece que
      * a pessoa esta erguendo um brinde, e nao comendo.
      */
-    if (this.saboreando) {
-      const leva = ((Math.sin(this.phase * 1.8) + 1) / 2) ** 2;
+    if (this.saboreando || mordendo) {
+      // na mordida, duas subidas em seguida: o seno ao quadrado de duas voltas
+      // tem dois picos, e começa e termina com o braço embaixo
+      const k = 1 - this.mordendo / this.duracaoDaMordida;
+      const leva = mordendo
+        ? Math.sin(k * Math.PI * 2) ** 2
+        : ((Math.sin(this.phase * 1.8) + 1) / 2) ** 2;
       this.armR.rotation.x = p.bracoX - 0.85 * leva;
-      this.armR.rotation.z = p.bracoZ - 0.12 * leva;
+      // na mordida o braço também FECHA para o meio do rosto: o braço direito
+      // nasce em +X, então fechar é `rotation.z` negativo. O sorvete fecha
+      // pouco (0,12), porque lambida é de lado; mordida é na frente da boca
+      this.armR.rotation.z = p.bracoZ - (mordendo ? 0.42 : 0.12) * leva;
       this.head.rotation.x = 0.17 * leva;
     }
     // o objeto desfaz a rotacao do braco: e assim que o sorvete continua em pe
