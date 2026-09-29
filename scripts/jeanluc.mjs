@@ -104,7 +104,11 @@ await page.evaluate(() => {
 });
 
 const falas = [];
-for (let i = 0; i < 90; i++) {
+// 400 VOLTAS, e não 90: o parque ficou mais pesado para o renderizador por
+// software e o tempo de jogo passou a correr a ~15% do relógio. Com 90 a
+// cutscene inteira não cabia e o teste acusava "nunca terminou" com a cena
+// no meio. O laço sai sozinho quando ele chega, então não custa nada a mais.
+for (let i = 0; i < 400; i++) {
   if (await page.evaluate(() => window.__chegou)) break;
   const t = await page.locator('.dialogue .text').textContent().catch(() => '');
   if (t && t.length > 3 && !falas.includes(t)) falas.push(t);
