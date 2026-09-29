@@ -144,7 +144,11 @@ let comendo = false;
  * software o tempo de jogo corre a um terço do relógio: em menos que isto a
  * foto pega o pinguim no meio do caminho e a entrega nunca acontece.
  */
-for (let i = 0; i < 200; i++) {
+// 800 VOLTAS (eram 200): o parque ficou mais pesado para o renderizador por
+// software, o tempo de jogo passou a correr a ~15% do relógio, e com 200 a
+// entrega nunca chegava — o teste acusava a dupla travada com a cena no
+// meio. O laço sai sozinho quando a dupla levanta.
+for (let i = 0; i < 800; i++) {
   const m = await oMano();
   if (m) {
     longeDoPosto = Math.max(longeDoPosto, Math.hypot(m.x - POSTO.x, m.z - POSTO.z));
@@ -185,7 +189,7 @@ const fim = await page.evaluate(() => ({
  * neste renderizador: daí os 30 s de paciência.
  */
 let distanciaDoPosto = 99;
-for (let i = 0; i < 30; i++) {
+for (let i = 0; i < 90; i++) {
   const m = await oMano();
   distanciaDoPosto = m ? Math.hypot(m.x - POSTO.x, m.z - POSTO.z) : 99;
   if (distanciaDoPosto < 0.5) break;
@@ -256,7 +260,18 @@ const medirDeslize = async (x, z) => {
    */
   await page.keyboard.up('KeyS');
   const [ax, az, derrapagem] = await onde();
-  await page.waitForTimeout(4000);
+  /*
+   * A JANELA É EM TEMPO DE JOGO (3,5 s do relógio interno), e não de parede.
+   * Eram 4 s de parede, escritos quando o jogo corria a um terço do relógio
+   * aqui; com o parque mais pesado ele passou a correr a ~15%, os 4 s viraram
+   * 0,6 s de jogo — a grama parava inteira dentro da janela e o gelo era
+   * cortado no meio do deslize. Medindo no relógio do jogo, o teste mede a
+   * física, seja qual for a velocidade da máquina.
+   */
+  const t0 = await page.evaluate(() => window.jogo.elapsed);
+  for (let i = 0; i < 200 && (await page.evaluate(() => window.jogo.elapsed)) - t0 < 3.5; i++) {
+    await page.waitForTimeout(200);
+  }
   const [bx, bz] = await onde();
   return { deslize: Math.hypot(bx - ax, bz - az), velocidade, derrapagem };
 };
