@@ -329,8 +329,10 @@ export const escolaGinasio: SceneDef = {
  * a Estrella). Conversar com a dona: a conversa de sempre, a APRESENTAÇÃO
  * dela (a Sol mostra o salto, a Estrella a estrelinha, a Luna torce), e então
  * o SINAL toca e ela avisa da aula — e as irmãs do ginásio vão na frente
- * guardar lugar. Conversar com outra irmã, ela manda falar com a dona. Com a
- * aula chamada, elas estão na Sala 1, e não aqui.
+ * guardar lugar. Conversar com outra irmã, ela manda falar com a dona. Da
+ * aula 4 em diante (`qualquer`), não há dona: qualquer uma das três torce e
+ * chama, e as três vão juntas. Com a aula chamada, elas estão na Sala 1, e
+ * não aqui.
  */
 function montarAsIrmas(w: WorldBuilder): void {
   const g0 = w.game;
@@ -574,7 +576,15 @@ function montarAsIrmas(w: WorldBuilder): void {
           const licao = aulaDaVez(g);
           if (licao && podeChamarAula(g)) {
             const dona = licao.aula.chama;
-            if (dona === quem.id) {
+            if (dona === 'qualquer') {
+              // sem dona: quem a dupla escolheu comemora, e o sinal toca
+              b.encarar(meio.x, meio.z);
+              b.torcer(1.6);
+              g.som('sacudida');
+              await g.wait(0.5);
+              await chamarAula(g);
+              chamou = true;
+            } else if (dona === quem.id) {
               b.encarar(meio.x, meio.z);
               await apresentar(g, quem);
               b.encarar(meio.x, meio.z);

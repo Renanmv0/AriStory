@@ -877,8 +877,11 @@ os pompons são os mesmos, é o time.
    enquanto treinam;
 4. **quem chama cada aula** é da lição (`aula.chama`): a 1 a **Luna** (como
    sempre), a 2 a **Sol** — ela mostra o salto e aí o sinal toca —, a 3 a
-   **Estrella** — ela mostra a estrelinha. Daí em diante revezam (Luna, Sol,
-   Estrella). Falar com outra irmã, ela manda falar com a dona da aula;
+   **Estrella** — ela mostra a estrelinha. Falar com outra irmã, ela manda
+   falar com a dona da aula. **Da 4 em diante a aula não tem dona**
+   (`chama: 'qualquer'`, pedido do Renan enquanto a escola não ganha mais
+   gente): falar com qualquer uma das três chama, ela torce, o sinal toca, e
+   as três vão juntas na frente da dupla;
 5. **na aula estão sempre as três**: a Luna na ponta da primeira fila, a Sol
    e a Estrella na segunda. No fim, as três saem juntas.
 

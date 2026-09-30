@@ -229,7 +229,7 @@ export const LICAO_6: Licao = {
     'pedir um cafezinho (e esperar um "minutinho").',
   ],
   aula: {
-    chama: 'estrella',
+    chama: 'qualquer',
     chamada: [
       { quem: 'estrella', texto: 'O sinal. É a última aula do módulo, panas.' },
       { quem: 'estrella', texto: 'Eu já tô com... como é que o Gatito diz... saudade. Saudade das aulas.' },

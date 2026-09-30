@@ -149,10 +149,16 @@ export interface AulaDaLicao {
   /**
    * QUEM CHAMA ESTA AULA no ginásio: é com ela que a dupla tem de falar (a
    * missão). A 1 é da Luna, a 2 da Sol (depois do salto dela), a 3 da
-   * Estrella (depois da estrelinha), e daí revezam — pedido do Renan.
+   * Estrella (depois da estrelinha) — pedido do Renan. `qualquer`: a aula
+   * não tem dona, e falar com qualquer uma das três chama (as 4, 5 e 6, até
+   * a escola ganhar mais gente — também pedido dele).
    */
-  chama: 'luna' | 'sol' | 'estrella';
-  /** quem chama, no ginásio, avisando que a aula vai começar — logo depois do sinal */
+  chama: 'luna' | 'sol' | 'estrella' | 'qualquer';
+  /**
+   * no ginásio, logo depois do sinal: quem chama avisando que a aula vai
+   * começar. Numa aula de `qualquer`, é a turma toda reagindo ao sinal —
+   * vale do mesmo jeito com quem quer que a dupla tenha falado.
+   */
   chamada: readonly Fala[];
   /** o Gatito abrindo a aula, antes da apostila */
   abertura: readonly Fala[];
