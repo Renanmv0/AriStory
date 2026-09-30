@@ -73,6 +73,11 @@ quebrado.licoes[1].exercicios.find((e) => e.tipo === 'lacunas').distratores = ['
 const pegos = A.conferirModulo(quebrado);
 ok(pegos.length >= 2, `o conferidor pega a lição sabotada (${pegos.length} problemas)`);
 
+// quem chama cada aula (pedido do Renan): a Luna a 1, a Sol a 2, a Estrella a 3
+ok(M.licoes.slice(0, 3).map((l) => l.aula.chama).join(',') === 'luna,sol,estrella', 'a Luna chama a 1ª aula, a Sol a 2ª e a Estrella a 3ª');
+ok(A.irmasNoGinasio(0).join() === 'luna' && A.irmasNoGinasio(1).join() === 'luna,sol' && A.irmasNoGinasio(2).length === 3,
+  'no ginásio: só a Luna, depois a Luna e a Sol, depois as três');
+
 // ------------------------------------------------------------- 2. a nota
 console.log('\n2. a nota');
 ok(A.estrelasPor(0, 25) === 1, 'terminar com tudo errado ainda vale uma estrela');

@@ -163,6 +163,7 @@ node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as port
 node scripts/lanche.mjs  /tmp/la    # a maquina de lanches da escola: pagar, o lanche cair na gaveta, pegar pra mochila e comer; e sentar a mesa do refeitorio de frente um pro outro
 node scripts/luna.mjs    /tmp/lu    # a Luna e a porta da escola: some antes do quadro encher, aparece no piquenique, torce e fica timida, o onibus passa a ir pra escola, o tour da chegada e o treino no ginasio
 node scripts/apostila.mjs          # as licoes da apostila do Gatito e as regras (nota, trava, digitado, livro), sem navegador
+node scripts/irmas.mjs   /tmp/ir    # a Luna, a Sol e a Estrella: as três no piquenique, quem treina no ginasio antes de cada aula, o salto da Sol, a estrelinha da Estrella e as tres sentadas na Sala 1
 node scripts/aula.mjs    /tmp/au    # a aula inteira: a Luna chama no ginasio, o Gatito na mesa da Sala 1, a apostila respondida pela tela (com erro de proposito), o fim da aula, e o livro no celular
 ```
 

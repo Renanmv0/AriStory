@@ -252,6 +252,7 @@ export const LICAO_1: Licao = {
     'escrever sem ¿ nem ¡.',
   ],
   aula: {
+    chama: 'luna',
     chamada: [
       { quem: 'luna', texto: '¡Ya va! Ouviram o sinal? A primeira aula do Gatito vai começar!' },
       { quem: 'luna', texto: 'Hoje é cumprimento: "oi", "tudo bem", essas coisas. Parece fácil, mas tem pegadinha.' },
@@ -259,6 +260,9 @@ export const LICAO_1: Licao = {
     ],
     abertura: [
       { quem: 'gatito', texto: 'Bom dia, turma! Bem-vindos à primeira aula de português.' },
+      { quem: 'sol', texto: '¡BUENOS DÍAS, PROFE! Quer dizer... BOM DIA!' },
+      { quem: 'gatito', texto: 'Bom dia, Sol. Um pouquinho mais baixo, por favor.' },
+      { quem: 'estrella', texto: 'Desculpa, professor. Ela acordou assim.' },
       { quem: 'gatito', texto: 'Hoje a gente aprende a dizer oi do jeito brasileiro. Parece fácil... mas tem pegadinha.' },
       { quem: 'luna', texto: 'Tem pegadinha, Ari. Eu caí em todas.' },
       { quem: 'gatito', texto: 'Abram a apostila na lição 1: "Oi, tudo bem?".' },

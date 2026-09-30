@@ -218,8 +218,13 @@ function salaDeAula(f: FichaDaSala): SceneDef {
           parceiro: new THREE.Vector3(meio, 0, 0),
           x: (xEsq + xDir) / 2, z: 0.15,
           saida: { jogador: [(xEsq + xDir) / 2 - 0.45, 0.15], parceiro: [(xEsq + xDir) / 2 + 0.45, 0.15] },
-          // a Luna na ponta da primeira fila, do lado dos dois
-          lugarDaLuna: { x: COLUNAS[0], z: zCadeira },
+          // a Luna na ponta da primeira fila, do lado dos dois; a Sol e a
+          // Estrella logo atrás, na segunda
+          lugares: {
+            luna: { x: COLUNAS[0], z: zCadeira },
+            sol: { x: COLUNAS[0], z: FILEIRAS[1] + 0.38 },
+            estrella: { x: COLUNAS[1], z: FILEIRAS[1] + 0.38 },
+          },
           mesa: { x: -0.1, y: 0.79, z: -2.8 },
           porta: { x: SALA.portaX, z: SALA.fundo / 2 - 0.8 },
           corredor: 3.3,

@@ -7,12 +7,16 @@ import {
 import { bleachers, waterFountain } from '../world/props';
 import { assoalhoDeMadeira } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
-import { Luna } from '../entities/bichos/Luna';
+import type { CoelhaDaTorcida } from '../entities/bichos/CoelhaDaTorcida';
 import {
   ESCOLA, LUZ_DA_ESCOLA, cascaDeSala, conversa, pontoNoMundo, posicionarParaConversar, sentarOsDois,
   soltarDaConversa,
 } from './escolaComum';
-import { aulaDaVez, chamarAula, emAula, podeChamarAula } from './escolaAula';
+import type { Irma } from '../minigames/aula/apostila';
+import type { WorldBuilder } from '../world/WorldBuilder';
+import {
+  NOME_DA_IRMA, aulaDaVez, chamarAula, emAula, irmasNoGinasioAgora, novaIrma, podeChamarAula,
+} from './escolaAula';
 
 /**
  * =============================================== O GINÁSIO DA ESCOLA DO GATITO
@@ -158,126 +162,8 @@ export const escolaGinasio: SceneDef = {
         ]),
     });
 
-    // ====================================================== A LUNA TREINANDO
-    /*
-     * Depois de mostrar a escola, a Luna mora aqui (`luna-na-escola`),
-     * treinando a coreografia com os pompons em loop. Ela fica no meio da
-     * quadra, entre o círculo central e a lateral da frente: de frente para a
-     * câmera, sem nada em cima nem na frente dela, e longe das duas linhas de
-     * lance livre, que são do arremesso.
-     *
-     * Conversar PARA o treino: ela se vira para a dupla, fala, e volta a
-     * treinar. As falas se revezam, uma por conversa.
-     *
-     * A MISSÃO DA AULA (pedido do Renan: "para começar a aula, precisamos
-     * primeiro completar alguma missão lá dentro, por exemplo falar com a
-     * Luna no ginásio. Daí, depois ela falaria que está para começar a
-     * aula"): com lição para dar, depois da conversa de sempre o SINAL toca,
-     * e ela avisa que a aula vai começar — com as falas da própria lição
-     * (`escolaAula.ts`) — e vai na frente guardar lugar. Com a aula chamada,
-     * ela está na Sala 1, e não aqui.
-     */
-    if (g0.flag('luna-na-escola') && !emAula(g0)) {
-      const TREINO = { x: QUADRA.x, z: QUADRA.z + 2.9 };
-      const PARA_A_CAMERA = { x: TREINO.x + 10, z: TREINO.z + 10 };
-      const luna = new Luna({
-        minX: TREINO.x - 0.2, maxX: TREINO.x + 0.2,
-        minZ: TREINO.z - 0.2, maxZ: TREINO.z + 0.2,
-      });
-      luna.entrarEmServico();
-      luna.group.position.set(TREINO.x, 0, TREINO.z);
-      luna.group.rotation.y = Math.PI / 4;
-      luna.encarar(PARA_A_CAMERA.x, PARA_A_CAMERA.z);
-      luna.treinar(true);
-      w.add(luna.group);
-      w.blockCircle(TREINO.x, TREINO.z, 0.42);
-      /** gancho de teste: o `scripts/luna.mjs` mede a coreografia */
-      luna.group.userData.teste = { luna };
-      w.onUpdate((dt) => luna.update(dt));
-
-      const L = 'Luna';
-      const falas: Array<(g: GameAPI) => Promise<void>> = [
-        async (g) => {
-          await conversa(g, [
-            [L, '¡Épale, panas! Vieram me ver treinar?'],
-            [L, 'Senta ali na arquibancada que eu faço a coreografia inteira. Do começo!'],
-          ]);
-        },
-        async (g) => {
-          await conversa(g, [[L, 'Tô ensaiando uma parte nova. Olha só!']]);
-          luna.torcer(2.8);
-          g.som('sacudida');
-          await conversa(g, [[L, '¡Vamos, Gatitos! ¡Vamos, Gatitos! ¡Uh!']]);
-          luna.ficarTimida(2.4);
-          await conversa(g, [[L, '...Não olhem tanto. ¡Qué pena!']]);
-        },
-        async (g) => {
-          await conversa(g, [
-            [L, 'Hoje na aula o Gatito explicou que "esquisito" é estranho. Estranho!'],
-            [L, 'Eu achava que era gostoso. Passei um mês elogiando a comida dos outros de esquisita.'],
-          ]);
-          luna.ficarTimida(2.2);
-          await conversa(g, [[L, 'Naguará... ninguém me avisou.']]);
-        },
-        async (g) => {
-          await conversa(g, [[L, 'Sabiam que o Gatito cochila na sala dos professores entre uma aula e outra? Tem até caminha. Eu queria ser professora só por isso.']]);
-        },
-        async (g) => {
-          luna.torcer(1.8);
-          g.som('sacudida');
-          await conversa(g, [[L, '¡Gatitos! ...Desculpa. Às vezes sai sozinho.']]);
-        },
-      ];
-
-      /** ela sai correndo para a Sala 1: pela quadra até a porta, e some */
-      const irParaAula = async (): Promise<void> => {
-        // o colisor dela sai junto: quadra vazia não tem parede invisível
-        w.usarColisores(w.colisoresAgora().filter((c) => !(c.kind === 'circle' && c.x === TREINO.x && c.z === TREINO.z)));
-        luna.pararDeEncarar();
-        await luna.irPara(GIN.portaX - 1.5, GIN.fundo / 2 - 2.5, 1.5);
-        await luna.irPara(GIN.portaX, GIN.fundo / 2 - 0.8, 1.5);
-        luna.group.visible = false;
-      };
-
-      const conversar = w.interact({
-        id: 'ginasio:luna',
-        x: TREINO.x, z: TREINO.z, radius: 1.8,
-        label: 'Falar com a Luna', icon: '🐰',
-        highlight: luna.group,
-        onInteract: async (g) => {
-          luna.treinar(false);
-          const meio = posicionarParaConversar(g, TREINO);
-          luna.encarar(meio.x, meio.z);
-          g.focusCamera(luna.group);
-          g.setZoom(8);
-          let chamou = false;
-          try {
-            // a conversa de sempre primeiro; a aula vem DEPOIS, com o sinal tocando no meio
-            const vez = g.bump('luna.conversas');
-            await falas[(vez - 1) % falas.length](g);
-            if (podeChamarAula(g)) {
-              luna.torcer(1.6);
-              await chamarAula(g);
-              chamou = true;
-            } else if (aulaDaVez(g) && !g.flag('gatito-conhecido')) {
-              // a aula é do Gatito: sem conhecer o professor, ela manda conhecer primeiro
-              await conversa(g, [[L, 'Ah! Já conheceram o professor Gatito? Ele vive passeando pelo saguão. Vão lá dar um oi! Depois voltem aqui, que eu sei o horário de todas as aulas.']]);
-            }
-          } finally {
-            g.focusCamera(null);
-            g.setZoom(13);
-            soltarDaConversa(g);
-            if (chamou) {
-              conversar.enabled = false;
-              void irParaAula();
-            } else {
-              luna.encarar(PARA_A_CAMERA.x, PARA_A_CAMERA.z);
-              luna.treinar(true);
-            }
-          }
-        },
-      });
-    }
+    // ======================================================= AS IRMÃS TREINANDO
+    montarAsIrmas(w);
 
     // ======================================================== O ARREMESSO
     const bola = bolaDeBasquete(0.12);
@@ -419,3 +305,337 @@ export const escolaGinasio: SceneDef = {
     }
   },
 };
+
+/**
+ * =================================================== AS IRMÃS NO GINÁSIO
+ *
+ * Depois de mostrar a escola, a Luna mora aqui (`luna-na-escola`), treinando
+ * a coreografia com os pompons em loop — e, conforme as aulas passam, as
+ * irmãs chegam (pedido do Renan): antes da primeira aula só a Luna; depois
+ * dela, a Luna e a SOL; depois da segunda, as três, a ESTRELLA também
+ * (`irmasNoGinasio`). Treinam juntas, no mesmo tempo, como torcida de verdade.
+ *
+ * ONDE CADA UMA FICA: numa fila na HORIZONTAL DA TELA, a Luna no meio da
+ * quadra, a Sol à esquerda e a Estrella à direita, a 3 de distância. Na
+ * horizontal da tela nenhuma tapa a outra; e a 3, quem conversa com uma (a
+ * dupla vai para a frente-direita dela, `posicionarParaConversar`) não pisa
+ * na vizinha. De frente para a câmera, longe das linhas de lance livre, que
+ * são do arremesso.
+ *
+ * O TREINO TEM ACROBACIA: de tempos em tempos a Sol dá o SALTO e a Estrella a
+ * ESTRELINHA — uma vez para cada lado, então ela sempre volta ao lugar.
+ *
+ * A MISSÃO DA AULA: a aula tem dona (`aula.chama`: a 1 a Luna, a 2 a Sol, a 3
+ * a Estrella). Conversar com a dona: a conversa de sempre, a APRESENTAÇÃO
+ * dela (a Sol mostra o salto, a Estrella a estrelinha, a Luna torce), e então
+ * o SINAL toca e ela avisa da aula — e as irmãs do ginásio vão na frente
+ * guardar lugar. Conversar com outra irmã, ela manda falar com a dona. Com a
+ * aula chamada, elas estão na Sala 1, e não aqui.
+ */
+function montarAsIrmas(w: WorldBuilder): void {
+  const g0 = w.game;
+  if (!g0.flag('luna-na-escola') || emAula(g0)) return;
+
+  const TREINO = { x: QUADRA.x, z: QUADRA.z + 2.9 };
+  /** a horizontal da tela (a câmera olha de `+X/+Z`) */
+  const DIREITA_DA_TELA = { x: Math.SQRT1_2, z: -Math.SQRT1_2 };
+  const ESPACO = 3;
+  const POSTOS: Record<Irma, { x: number; z: number }> = {
+    luna: TREINO,
+    sol: { x: TREINO.x - DIREITA_DA_TELA.x * ESPACO, z: TREINO.z - DIREITA_DA_TELA.z * ESPACO },
+    estrella: { x: TREINO.x + DIREITA_DA_TELA.x * ESPACO, z: TREINO.z + DIREITA_DA_TELA.z * ESPACO },
+  };
+  const PARA_A_CAMERA = { x: 10, z: 10 };
+  const L = NOME_DA_IRMA.luna;
+  const S = NOME_DA_IRMA.sol;
+  const E = NOME_DA_IRMA.estrella;
+
+  interface NoGinasio {
+    id: Irma;
+    bicho: CoelhaDaTorcida;
+    colisor: { kind: 'circle'; x: number; z: number; r: number };
+    conversando: boolean;
+    indo: boolean;
+  }
+  const presentes: NoGinasio[] = irmasNoGinasioAgora(g0).map((id) => {
+    const p = POSTOS[id];
+    const bicho = novaIrma(id, { minX: p.x - 0.2, maxX: p.x + 0.2, minZ: p.z - 0.2, maxZ: p.z + 0.2 });
+    bicho.entrarEmServico();
+    bicho.group.position.set(p.x, 0, p.z);
+    bicho.group.rotation.y = Math.PI / 4;
+    bicho.encarar(p.x + PARA_A_CAMERA.x, p.z + PARA_A_CAMERA.z);
+    bicho.treinar(true);
+    w.add(bicho.group);
+    const colisor = { kind: 'circle' as const, x: p.x, z: p.z, r: 0.42 };
+    w.colliders.push(colisor);
+    return { id, bicho, colisor, conversando: false, indo: false };
+  });
+  const achar = (id: Irma): NoGinasio | undefined => presentes.find((p) => p.id === id);
+
+  // ------------------------------------------------------ as falas de sempre
+  /**
+   * UMA CONVERSA POR VEZ, revezando. A Luna é a de sempre; a SOL fala alto e
+   * está sempre feliz (os gritos saem em maiúscula); a ESTRELLA é calma e
+   * sempre preocupada com as irmãs. As três falam português com o espanhol da
+   * Venezuela escapando — e nenhuma fala DE ONDE veio.
+   */
+  const FALAS: Record<Irma, Array<(g: GameAPI, b: CoelhaDaTorcida) => Promise<void>>> = {
+    luna: [
+      async (g) => {
+        await conversa(g, [
+          [L, '¡Épale, panas! Vieram me ver treinar?'],
+          [L, 'Senta ali na arquibancada que eu faço a coreografia inteira. Do começo!'],
+        ]);
+      },
+      async (g, b) => {
+        await conversa(g, [[L, 'Tô ensaiando uma parte nova. Olha só!']]);
+        b.torcer(2.8);
+        g.som('sacudida');
+        await conversa(g, [[L, '¡Vamos, Gatitos! ¡Vamos, Gatitos! ¡Uh!']]);
+        b.ficarTimida(2.4);
+        await conversa(g, [[L, '...Não olhem tanto. ¡Qué pena!']]);
+      },
+      async (g, b) => {
+        await conversa(g, [
+          [L, 'Hoje na aula o Gatito explicou que "esquisito" é estranho. Estranho!'],
+          [L, 'Eu achava que era gostoso. Passei um mês elogiando a comida dos outros de esquisita.'],
+        ]);
+        b.ficarTimida(2.2);
+        await conversa(g, [[L, 'Naguará... ninguém me avisou.']]);
+      },
+      async (g) => {
+        await conversa(g, [[L, 'Sabiam que o Gatito cochila na sala dos professores entre uma aula e outra? Tem até caminha. Eu queria ser professora só por isso.']]);
+      },
+      async (g, b) => {
+        b.torcer(1.8);
+        g.som('sacudida');
+        await conversa(g, [[L, '¡Gatitos! ...Desculpa. Às vezes sai sozinho.']]);
+      },
+    ],
+    sol: [
+      async (g, b) => {
+        b.torcer(2);
+        g.som('sacudida');
+        await conversa(g, [[S, '¡ÉPALE, PANAS! ¡Vocês vieram! Hoje eu tô com energia pra treinar o dia INTEIRO!']]);
+      },
+      async (g) => {
+        await conversa(g, [
+          [S, 'Sabiam que eu sou a que grita mais alto da torcida? A Estrella diz que dá pra ouvir do estacionamento.'],
+          [S, '¡Y ES VERDAD! ¡Jajaja!'],
+        ]);
+      },
+      async (g, b) => {
+        b.torcer(2.4);
+        g.som('sacudida');
+        await conversa(g, [[S, 'G-A-T-I-T-O-S! ¡GATITOS!'], [S, '...Foi alto? Foi alto. ¡Chévere!']]);
+      },
+      async (g) => {
+        await conversa(g, [[S, 'A Luna sabe as coreografias, a Estrella lembra da água, e eu faço o barulho. ¡Time perfeito!']]);
+      },
+    ],
+    estrella: [
+      async (g) => {
+        await conversa(g, [[E, 'Oi, panas. Tudo bem? Beberam água hoje? Aqui no ginásio faz um calor...']]);
+      },
+      async (g) => {
+        await conversa(g, [
+          [E, 'A Sol pula alto demais. Eu fico embaixo, com o coração na mão.'],
+          [E, '¡Ay, Dios! Um dia ela vai parar no placar.'],
+        ]);
+      },
+      async (g) => {
+        await conversa(g, [[E, 'A Luna fala muito dos Gatitos, né? Deixa ela. É o jeito dela de ser feliz.']]);
+      },
+      async (g) => {
+        await conversa(g, [[E, 'Eu treino a estrelinha todo dia. Devagar e bem feita, que é pra ninguém se machucar.']]);
+      },
+    ],
+  };
+
+  /** o que cada uma diz quando a aula é de OUTRA irmã: "fala com ela" */
+  const MANDA_PARA: Record<Irma, Record<Irma, string>> = {
+    luna: {
+      luna: '',
+      sol: 'A Sol tá doida pra mostrar uma coisa pra vocês. Falem com ela, antes que ela exploda!',
+      estrella: 'A Estrella quer mostrar uma coisa pra vocês, mas é tímida pra pedir. Falem com ela!',
+    },
+    sol: {
+      luna: '¡La Luna! A Luna é que sabe o horário da aula! Fala com ela!',
+      sol: '',
+      estrella: '¡PANAS! A Estrella tem uma surpresa! Falem com ela, falem!',
+    },
+    estrella: {
+      luna: 'A Luna sabe o horário da aula. Pergunta pra ela, tá?',
+      sol: 'A Sol quer mostrar o salto dela. Vão lá, senão ela não sossega.',
+      estrella: '',
+    },
+  };
+
+  /** sem conhecer o Gatito, ninguém chama aula: elas mandam conhecer o professor */
+  const CONHECAM_O_GATITO: Record<Irma, string> = {
+    luna: 'Ah! Já conheceram o professor Gatito? Ele vive passeando pelo saguão. Vão lá dar um oi! Depois voltem aqui, que eu sei o horário de todas as aulas.',
+    sol: '¡YA VA! Vocês nem conheceram o professor Gatito? ¡Vayan! Ele fica passeando pelo saguão!',
+    estrella: 'Vocês já conheceram o professor Gatito? Ele fica no saguão. É um amor.',
+  };
+
+  const esperar = async (g: GameAPI, ate: () => boolean): Promise<void> => {
+    for (let i = 0; i < 80 && !ate(); i++) await g.wait(0.1);
+  };
+
+  // ---------------------------------------------- a apresentação da dona da aula
+  /**
+   * ANTES DO SINAL, a dona da aula mostra o que treinou (pedido do Renan: "ver
+   * ela dando um salto no ginásio", "a Estrella quer mostrar ela dando uma
+   * estrelinha"). As irmãs que estão ali reagem.
+   */
+  const apresentar = async (g: GameAPI, quem: NoGinasio): Promise<void> => {
+    const b = quem.bicho;
+    if (quem.id === 'sol') {
+      await conversa(g, [[S, '¡ÉPALE! Querem ver o meu salto novo? O mais alto dos Gatitos! ¡Miren!']]);
+      b.saltar();
+      g.som('sacudida');
+      await g.wait(0.4);
+      await esperar(g, () => !b.estaSaltando);
+      b.torcer(1.6);
+      await conversa(g, [[S, '¡¿VIRAM?! ¡QUÉ NOTA! Dois metros, no mínimo!']]);
+      if (achar('luna')) await conversa(g, [[L, 'Uns setenta centímetros, Sol.'], [S, '¡DOS METROS!']]);
+      return;
+    }
+    if (quem.id === 'estrella') {
+      await conversa(g, [
+        [E, 'Eu treinei uma coisa... vocês querem ver? Uma estrelinha.'],
+        [E, 'Com cuidado, tá? Sem ninguém muito perto.'],
+      ]);
+      b.estrelinha(-1);
+      g.som('trocar');
+      await g.wait(0.4);
+      await esperar(g, () => !b.estaFazendoEstrelinha);
+      const sol = achar('sol');
+      sol?.bicho.torcer(2);
+      g.som('sacudida');
+      if (sol) await conversa(g, [[S, '¡BRAVO! ¡BRAVÍSIMO, MANA!']]);
+      if (achar('luna')) await conversa(g, [[L, 'Perfeita, Estrella!']]);
+      await conversa(g, [[E, 'Ay... obrigada. Ninguém se machucou, né?']]);
+      // e volta andando para o lugar dela
+      await b.irPara(POSTOS.estrella.x, POSTOS.estrella.z, 0.9);
+      return;
+    }
+    b.torcer(1.6);
+    g.som('sacudida');
+  };
+
+  // ------------------------------------------------------------ a saída
+  /** chamada a aula, as irmãs do ginásio vão para a Sala 1: uma atrás da outra, até a porta */
+  const irParaAula = (): void => {
+    presentes.forEach((p, n) => {
+      p.indo = true;
+      p.bicho.treinar(false);
+      p.bicho.pararDeEncarar();
+      const i = w.colliders.indexOf(p.colisor);
+      if (i >= 0) w.colliders.splice(i, 1);
+      void (async () => {
+        await g0.wait(n * 0.5);
+        await p.bicho.irPara(GIN.portaX - 1.5, GIN.fundo / 2 - 2.5, 1.5);
+        await p.bicho.irPara(GIN.portaX, GIN.fundo / 2 - 0.8, 1.5);
+        p.bicho.group.visible = false;
+      })();
+    });
+    for (const c of conversas) c.enabled = false;
+  };
+
+  // --------------------------------------------------------- as conversas
+  const conversas = presentes.map((quem) => {
+    const ponto = w.interact({
+      id: `ginasio:${quem.id}`,
+      x: POSTOS[quem.id].x, z: POSTOS[quem.id].z,
+      // sozinha, a Luna tem a quadra toda; com as irmãs, cada uma a sua vez
+      radius: presentes.length > 1 ? 1.4 : 1.8,
+      label: `Falar com a ${NOME_DA_IRMA[quem.id]}`, icon: quem.id === 'sol' ? '🌞' : quem.id === 'estrella' ? '⭐' : '🐰',
+      highlight: quem.bicho.group,
+      onInteract: async (g) => {
+        const b = quem.bicho;
+        quem.conversando = true;
+        // uma acrobacia no meio termina antes da conversa (a estrelinha volta ao lugar)
+        await esperar(g, () => !b.estaSaltando && !b.estaFazendoEstrelinha);
+        if (quem.id === 'estrella') await b.irPara(POSTOS.estrella.x, POSTOS.estrella.z, 0.9);
+        b.treinar(false);
+        const aqui = { x: b.x, z: b.z };
+        const meio = posicionarParaConversar(g, aqui);
+        b.encarar(meio.x, meio.z);
+        g.focusCamera(b.group);
+        g.setZoom(8);
+        let chamou = false;
+        try {
+          // a conversa de sempre primeiro; a aula vem DEPOIS, com o sinal tocando no meio
+          const chave = `${quem.id}.conversas`;
+          const vez = g.bump(chave);
+          const lista = FALAS[quem.id];
+          await lista[(vez - 1) % lista.length](g, b);
+          const licao = aulaDaVez(g);
+          if (licao && podeChamarAula(g)) {
+            const dona = licao.aula.chama;
+            if (dona === quem.id) {
+              b.encarar(meio.x, meio.z);
+              await apresentar(g, quem);
+              b.encarar(meio.x, meio.z);
+              await chamarAula(g);
+              chamou = true;
+            } else if (achar(dona)) {
+              await conversa(g, [[NOME_DA_IRMA[quem.id], MANDA_PARA[quem.id][dona]]]);
+            }
+          } else if (licao && !g.flag('gatito-conhecido')) {
+            // a aula é do Gatito: sem conhecer o professor, ela manda conhecer primeiro
+            await conversa(g, [[NOME_DA_IRMA[quem.id], CONHECAM_O_GATITO[quem.id]]]);
+          }
+        } finally {
+          g.focusCamera(null);
+          g.setZoom(13);
+          soltarDaConversa(g);
+          quem.conversando = false;
+          if (chamou) {
+            irParaAula();
+          } else {
+            b.encarar(b.x + PARA_A_CAMERA.x, b.z + PARA_A_CAMERA.z);
+            b.treinar(true);
+          }
+        }
+      },
+    });
+    return ponto;
+  });
+
+  // ------------------------------------------------ o treino e as acrobacias
+  /** quanto falta para a próxima acrobacia de cada uma (tempo de jogo) */
+  const falta: Record<Irma, number> = { luna: 1e9, sol: 7, estrella: 11 };
+  let ladoDaEstrelinha: 1 | -1 = -1;
+  /** gancho de teste: o `scripts/irmas.mjs` segura as acrobacias sozinhas e aciona na hora */
+  let acrobaciasLigadas = true;
+  for (const p of presentes) {
+    p.bicho.group.userData.teste = {
+      [p.id]: p.bicho,
+      luna: p.id === 'luna' ? p.bicho : undefined,
+      acrobacias: (sim: boolean) => {
+        acrobaciasLigadas = sim;
+      },
+    };
+  }
+  w.onUpdate((dt) => {
+    for (const [n, p] of presentes.entries()) {
+      p.bicho.update(dt);
+      conversas[n].moveTo(p.bicho.x, p.bicho.z);
+      p.colisor.x = p.bicho.x;
+      p.colisor.z = p.bicho.z;
+      if (!acrobaciasLigadas || p.conversando || p.indo || p.id === 'luna') continue;
+      falta[p.id] -= dt;
+      if (falta[p.id] > 0) continue;
+      if (p.id === 'sol') {
+        p.bicho.saltar();
+        falta.sol = 9 + ((n * 7 + Math.floor(p.bicho.x * 13)) % 5);
+      } else {
+        p.bicho.estrelinha(ladoDaEstrelinha);
+        ladoDaEstrelinha = ladoDaEstrelinha === 1 ? -1 : 1;
+        falta.estrella = 12 + ((n * 5) % 4);
+      }
+    }
+  });
+}

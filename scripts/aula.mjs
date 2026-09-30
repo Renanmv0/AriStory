@@ -96,7 +96,8 @@ const conversar = async (max = 40) => {
   for (let i = 0; i < max; i++) {
     if (!(await page.locator('.dialogue.show').count())) {
       let voltou = false;
-      for (let j = 0; j < 12 && !voltou; j++) {
+      // o salto da Sol é uma pausa longa sem fala (o tempo do jogo anda devagar sem tela)
+      for (let j = 0; j < 32 && !voltou; j++) {
         await page.waitForTimeout(500);
         voltou = (await page.locator('.dialogue.show').count()) > 0;
       }
@@ -395,8 +396,18 @@ await page.evaluate(() => window.jogo.debugPlace(0.9, 3.3, -2.4));
 await esperarPrompt(/Luna/);
 await page.keyboard.press('KeyE');
 await page.waitForTimeout(500);
-const chamada2 = await conversar();
-conferir(chamada2.some((f) => f.includes('falsos amigos')), 'e a conversa com ela chama a lição 2', chamada2[1] ?? '');
+const comALuna = await conversar();
+conferir(comALuna.some((f) => f.includes('Sol')) && !(await page.evaluate(() => window.jogo.flag('aula-chamada'))),
+  'a lição 2 não é da Luna: ela manda falar com a Sol', comALuna.at(-1) ?? '');
+// a 2ª aula é da Sol: ela salta, e daí vem o sinal (o scripts/irmas.mjs mede o salto)
+const sol = await bicho('sol');
+conferir(sol?.visivel, 'a Sol treina junto');
+await page.evaluate(([S]) => window.jogo.debugPlace(S.x + 0.9, S.z + 0.9, -2.4), [sol]);
+await esperarPrompt(/Sol/);
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(500);
+const chamada2 = await conversar(60);
+conferir(chamada2.some((f) => f.includes('falsos amigos')), 'e a conversa com a Sol chama a lição 2', chamada2.at(-1) ?? '');
 
 // reabrindo o jogo: a lição 1 vem em gabarito
 await ir('escola-sala-1');

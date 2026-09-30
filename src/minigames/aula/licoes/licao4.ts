@@ -246,6 +246,7 @@ export const LICAO_4: Licao = {
     'pedir melancia, maracujá e mamão na feira.',
   ],
   aula: {
+    chama: 'luna',
     chamada: [
       { quem: 'luna', texto: '¡Panas! Aula do Gatito daqui a pouco! Hoje é sobre o gênero das palavras.' },
       { quem: 'luna', texto: 'Eu sempre falo "a leite". Sempre! ¡Qué vaina! Bora, que eu guardo o lugar.' },

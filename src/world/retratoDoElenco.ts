@@ -3,7 +3,7 @@ import { CharacterRig } from '../characters/CharacterRig';
 import { ARI, RENAN } from '../characters/cast';
 import { Gatito } from '../entities/bichos/Gatito';
 import { Josefina } from '../entities/bichos/Josefina';
-import { Luna } from '../entities/bichos/Luna';
+import { Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 import { Walter } from '../entities/bichos/Walter';
 import type { Falante } from '../minigames/aula/tipos';
 import { retratoDoRosto } from './retrato';
@@ -29,6 +29,8 @@ const MONTA: Record<Falante, { monta: () => THREE.Object3D; cabeca?: string }> =
     },
   },
   luna: { monta: () => new Luna(PARADO).group, cabeca: 'cabeca-da-luna' },
+  sol: { monta: () => new Sol(PARADO).group, cabeca: 'cabeca-da-sol' },
+  estrella: { monta: () => new Estrella(PARADO).group, cabeca: 'cabeca-da-estrella' },
   walter: { monta: () => new Walter(PARADO).group },
   josefina: { monta: () => new Josefina(PARADO).group },
 };

@@ -249,9 +249,12 @@ export const LICAO_3: Licao = {
     'lembrar que "cerca", em português, é grade.',
   ],
   aula: {
+    chama: 'estrella',
     chamada: [
-      { quem: 'luna', texto: '¡Épale! Vocês viram o Gatito? Ele tá procurando alguma coisa pela escola inteira...' },
-      { quem: 'luna', texto: 'Ah, e a aula já vai começar! Corre, corre, eu guardo o lugar!' },
+      { quem: 'estrella', texto: 'Ouviram? É o sinal. A aula do Gatito.' },
+      { quem: 'estrella', texto: 'Ele passou a manhã inteira procurando alguma coisa pela escola... Tomara que ache antes da aula, coitadinho.' },
+      { quem: 'estrella', texto: 'Vamos sem correr, tá? ...Sol. Sem correr.' },
+      { quem: 'sol', texto: '¡YA VOY, YA VOY! ¡Sem correr! ...Rapidinho!' },
     ],
     abertura: [
       { quem: 'gatito', texto: 'Turma, antes da aula... alguém viu o meu novelo?' },

@@ -17,7 +17,8 @@ contrastar**.
 | `src/minigames/aula/licoes/licaoN.ts` | **uma lição por arquivo**: todo o conteúdo |
 | `src/minigames/aula/apostila.ts` | o `MODULO_1` (a lista das lições), a nota, a trava, o conferidor |
 | `src/ui/apostila.ts` + `style.css` (fim do arquivo) | o livro: páginas, espiral, exercícios, folhear |
-| `src/scenes/escolaAula.ts` | a aula na Sala 1: a Luna chama, o Gatito na mesa, abrir o livro |
+| `src/scenes/escolaAula.ts` | a aula na Sala 1: o Gatito na mesa, as três irmãs nas carteiras, abrir o livro |
+| `src/scenes/escolaGinasio.ts` (`montarAsIrmas`) | o ginásio: quem treina, quem chama a aula, o salto e a estrelinha |
 | `docs/ESCOLA.md` §6 | o plano e o que já foi decidido |
 
 ## O molde de uma lição (não mude sem motivo)
@@ -99,7 +100,11 @@ uma estrela, 65% duas, 90% três; o save guarda a **melhor** vez, e o
   pelúcia). Chama a turma de "turma", faz o six seven.
 - **Luna**: coelha venezuelana, fala português com expressões da Venezuela —
   ¡Épale!, panas, chamo, ¡Qué nota!, ¡Qué vaina!, ¡Ya va!, Naguará, burda de…
-  Nunca fala da Venezuela em si.
+  Nunca fala da Venezuela em si. A do meio: carinhosa, animada sem gritar.
+- **Sol**: a irmã laranja. Animada, FALA ALTO (caixa alta e ¡!), sempre
+  feliz, exagera ("dois metros, no mínimo!"). Começa em espanhol e se corrige.
+- **Estrella**: a irmã marrom. Calma, na dela, fala baixinho com reticências —
+  e sempre preocupada com as duas ("Beberam água?", "Sem correr, Sol.").
 - **Walter**: o cachorro garçom **só late** ("Au!", "Au?!").
 - **Josefina**: a tartaruga jardineira, devagar e carinhosa ("meu bem").
 - **Ari** erra do jeito de quem fala espanhol; **Renan** já sabe português e
@@ -108,9 +113,17 @@ uma estrela, 65% duas, 90% três; o save guarda a **melhor** vez, e o
 
 ### As falas da aula (`aula`)
 
-`chamada` é a Luna no ginásio avisando (a missão: ela diz a fala de sempre,
-o sinal toca, e vem a `chamada` — por isso ela começa como quem foi
-interrompida, "¡Ya va! Ouviram o sinal?"), `abertura` é o Gatito na
+`chama` diz **quem chama a aula** no ginásio — é com ela que a dupla tem de
+falar. O Renan pediu: a 1 é da Luna, a 2 da Sol (depois do salto dela), a 3
+da Estrella (depois da estrelinha), e daí revezam na mesma ordem. Quem treina
+no ginásio depende de quantas lições já têm estrela (`irmasNoGinasio`): antes
+da 1ª só a Luna, antes da 2ª a Luna e a Sol, daí em diante as três — e
+`scripts/apostila.mjs` reprova uma lição chamada por quem ainda não está lá.
+Na Sala 1, as três estão SEMPRE sentadas.
+
+`chamada` é quem chama, no ginásio, avisando (a missão: ela diz a fala de
+sempre, o sinal toca, e vem a `chamada` — por isso ela começa como quem foi
+interrompida, "¡Ya va! Ouviram o sinal?", e é ela quem fala primeiro), `abertura` é o Gatito na
 Sala 1 antes de abrir o livro (termina mandando abrir na lição), e
 `encerramento` vem depois da lição concluída. O Gatito fala das estrelas
 sozinho (`escolaAula.ts`).
@@ -119,7 +132,7 @@ sozinho (`escolaAula.ts`).
 
 Uma lição só abre quando **o Gatito a deu numa aula** (`abertas` no save) **e
 a anterior está concluída**. A aula da vez é a primeira lição sem estrela: a
-Luna chama (`aula-chamada`), e a dupla senta na Sala 1. Fora da aula, a
+irmã da vez (`aula.chama`) chama (`aula-chamada`), e a dupla senta na Sala 1. Fora da aula, a
 carteira vira "Estudar a apostila" (rever e refazer o que já foi dado).
 
 ## Coisas que já custaram foto
@@ -145,6 +158,7 @@ carteira vira "Estudar a apostila" (rever e refazer o que já foi dado).
 node scripts/apostila.mjs            # as lições e as regras, sem navegador
 npm run build && npx vite preview --port 4173 &
 node scripts/aula.mjs /tmp/au        # a aula inteira e o livro, no computador e no celular
+node scripts/irmas.mjs /tmp/ir       # as três no piquenique, quem treina e quem chama cada aula, o salto e a estrelinha
 ```
 
 Para só OLHAR uma lição no livro, com o jogo aberto no console do navegador:

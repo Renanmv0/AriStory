@@ -5,6 +5,24 @@ import { letreiro } from '../../world/props';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
 
 /**
+ * AS COELHAS DA TORCIDA: a LUNA e as irmãs dela, a SOL e a ESTRELLA — as três
+ * cheerleaders dos Gatitos. É UM corpo só, montado por uma FICHA (`FichaDeCoelha`):
+ * o pelo, as orelhas, o enfeite da cabeça, a boca, o jeito do olho e o
+ * tamanho. O uniforme e os pompons são os mesmos — é o time.
+ *
+ * - a LUNA (a primeira que a dupla conhece): cinza-pérola, a orelha direita
+ *   com a ponta dobrada e o laço amarelo na esquerda;
+ * - a SOL, a animada, que fala alto e está sempre feliz: cor de damasco, as
+ *   duas orelhas BEM em pé, a presilha de sol e o sorrisão de boca aberta. O
+ *   gesto dela é o SALTO (`saltar`);
+ * - a ESTRELLA, a calma, sempre preocupada com as duas: chocolate ao leite,
+ *   as orelhas CAÍDAS dos lados (coelha de orelha caída é a silhueta mais
+ *   tranquila que existe), a estrelinha dourada no alto da cabeça, as
+ *   pálpebras meio baixas e um sorriso pequeno. O gesto dela é a ESTRELINHA
+ *   (`estrelinha`), a ginástica — o nome dela, feito movimento.
+ *
+ * O resto deste comentário é o da Luna, que continua valendo para as três.
+ *
  * A LUNA, a coelhinha cheerleader dos Gatitos — a atlética da Escola do
  * Gatito. O nome, o time e o jeito são do Renan: ela é SUPER fã dos Gatitos e
  * se anima quando fala deles, e quando percebe que está falando demais fica
@@ -37,7 +55,62 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * para trás, bochecha mais corada) e SENTADA (o piquenique). O pelo é
  * cinza-pérola: o Gatito e o Pelusa já são creme.
  */
-export class Luna extends Bicho {
+/** o que muda de uma irmã para a outra */
+export interface FichaDeCoelha {
+  /** a etiqueta (`userData.peca`) e o nome da cabeça: `cabeca-da-<id>` */
+  id: 'luna' | 'sol' | 'estrella';
+  pelo: number;
+  peloClaro: number;
+  orelhaDentro: number;
+  bochecha: number;
+  /**
+   * as orelhas: `dobrada` (a da Luna: a esquerda em pé, a direita com a
+   * ponta dobrada), `em-pe` (as duas retas e compridas) ou `caidas` (as duas
+   * pendendo dos lados da cabeça)
+   */
+  orelhas: 'dobrada' | 'em-pe' | 'caidas';
+  enfeite: 'laco' | 'sol' | 'estrela';
+  boca: 'linha' | 'sorrisao' | 'sorrisinho';
+  /** pálpebra meio baixa: o olhar calmo */
+  palpebra: boolean;
+  /** o tamanho no fim (a Luna é 1,15) */
+  escala: number;
+  semente: number;
+}
+
+export const FICHA_DA_LUNA: FichaDeCoelha = {
+  id: 'luna', pelo: P.lunaPelo, peloClaro: P.lunaPeloClaro, orelhaDentro: P.lunaOrelhaDentro,
+  bochecha: P.lunaBochecha, orelhas: 'dobrada', enfeite: 'laco', boca: 'linha', palpebra: false,
+  escala: 1.15, semente: 20260928,
+};
+
+export const FICHA_DA_SOL: FichaDeCoelha = {
+  id: 'sol', pelo: P.solPelo, peloClaro: P.solPeloClaro, orelhaDentro: P.solOrelhaDentro,
+  bochecha: P.solBochecha, orelhas: 'em-pe', enfeite: 'sol', boca: 'sorrisao', palpebra: false,
+  // a menor das três, e a mais barulhenta
+  escala: 1.08, semente: 20261001,
+};
+
+export const FICHA_DA_ESTRELLA: FichaDeCoelha = {
+  id: 'estrella', pelo: P.estrellaPelo, peloClaro: P.estrellaPeloClaro, orelhaDentro: P.estrellaOrelhaDentro,
+  bochecha: P.estrellaBochecha, orelhas: 'caidas', enfeite: 'estrela', boca: 'sorrisinho', palpebra: true,
+  // a mais alta: a que cuida das outras duas
+  escala: 1.21, semente: 20261002,
+};
+
+/** o salto da Sol: agacha, sobe, abre as pernas no alto (o "toe touch") e aterrissa */
+const DURA_SALTO = 1.55;
+/** quanto o salto sobe, em unidades do mundo */
+const ALTURA_DO_SALTO = 0.72;
+/** a estrelinha da Estrella: prepara, roda uma volta inteira de lado, e a pose */
+const DURA_ESTRELINHA = 1.7;
+/** quanto ela anda de lado durante a volta */
+const PASSO_DA_ESTRELINHA = 1.15;
+/** o centro da volta, na altura do quadril (em unidades do corpo, antes da escala) */
+const CENTRO_DA_VOLTA = 0.4;
+
+export class CoelhaDaTorcida extends Bicho {
+  readonly ficha: FichaDeCoelha;
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly pernas: THREE.Group[] = [];
@@ -47,8 +120,11 @@ export class Luna extends Bicho {
   readonly pompons: THREE.Group[] = [];
   /** as orelhas: [esquerda, direita] */
   private readonly orelhas: THREE.Group[] = [];
-  /** a ponta dobrada da orelha direita, que balança atrasada */
+  /** a ponta dobrada da orelha direita (só a da Luna), que balança atrasada */
   private readonly pontaDaOrelha = new THREE.Group();
+  private temPontaDobrada = false;
+  /** o quanto cada orelha abre para fora, em repouso (caída é quase 2,3 rad) */
+  private aberturaDaOrelha = 0.12;
   private readonly olhos: THREE.Group[] = [];
   private readonly bochechas: THREE.Mesh[] = [];
 
@@ -64,8 +140,15 @@ export class Luna extends Bicho {
   private treinoLigado = false;
   private relogioDoTreino = 0;
   private misturaTreino = 0;
+  /** o salto e a estrelinha: o relógio de cada um, negativo quando parado */
+  private relogioDoSalto = -1;
+  private relogioDaEstrelinha = -1;
+  /** para que lado (do corpo dela) a estrelinha anda: 1 é o +X dela */
+  private sentidoDaEstrelinha: 1 | -1 = 1;
+  /** a altura do salto neste quadro (o teste lê) */
+  private alturaAgora = 0;
 
-  constructor(area: AreaDoBicho) {
+  constructor(area: AreaDoBicho, ficha: FichaDeCoelha) {
     super(area, {
       // ela é de POSTO (o piquenique): a área que a cena passa a segura ali
       velocidade: 0.6,
@@ -76,17 +159,18 @@ export class Luna extends Bicho {
       somCadaMin: 1e6,
       somCadaMax: 1e6,
       duracaoDoCarinho: 2.5,
-      semente: 20260928,
+      semente: ficha.semente,
     });
+    this.ficha = ficha;
     this.montar();
-    this.prontoParaAparecer('luna');
+    this.prontoParaAparecer(ficha.id);
   }
 
   // ------------------------------------------------------------------ corpo
 
   private montar(): void {
-    const pelo = toon(P.lunaPelo);
-    const peloClaro = toon(P.lunaPeloClaro);
+    const pelo = toon(this.ficha.pelo);
+    const peloClaro = toon(this.ficha.peloClaro);
     const uniforme = toon(P.lunaUniforme);
     const faixa = toon(P.lunaUniformeFaixa);
 
@@ -186,7 +270,7 @@ export class Luna extends Bicho {
      * cabeça chega a 0,87 e a ponta das orelhas a 1,28 — no peito da dupla,
      * que é a altura certa para uma coelha em pé ao lado de gente.
      */
-    this.corpo.scale.setScalar(1.15);
+    this.corpo.scale.setScalar(this.ficha.escala);
     this.group.add(this.corpo);
   }
 
@@ -217,11 +301,12 @@ export class Luna extends Bicho {
   }
 
   private montarCabeca(): void {
-    const pelo = toon(P.lunaPelo);
-    const peloClaro = toon(P.lunaPeloClaro);
-    const dentro = toon(P.lunaOrelhaDentro);
+    const f = this.ficha;
+    const pelo = toon(f.pelo);
+    const peloClaro = toon(f.peloClaro);
+    const dentro = toon(f.orelhaDentro);
 
-    this.cabeca.name = 'cabeca-da-luna';
+    this.cabeca.name = `cabeca-da-${f.id}`;
     this.cabeca.position.set(0, 0.62, 0.005);
     const cranio = new THREE.Mesh(new THREE.SphereGeometry(1, 18, 14), pelo);
     cranio.scale.set(0.15, 0.14, 0.14);
@@ -236,9 +321,7 @@ export class Luna extends Bicho {
     nariz.scale.set(0.022, 0.016, 0.014);
     nariz.position.set(0, -0.014, 0.156);
     this.cabeca.add(nariz);
-    const boca = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.006, 0.008), toon(P.lunaOlho));
-    boca.position.set(0, -0.05, 0.158);
-    this.cabeca.add(boca);
+    this.cabeca.add(this.fazerBoca());
 
     /**
      * OS OLHOS, cada um num grupo com pivô no centro dele: a piscada é o
@@ -260,10 +343,23 @@ export class Luna extends Bicho {
       cilio.position.set(lado * 0.03, 0.026, 0.014);
       cilio.rotation.z = lado * 0.5;
       olho.add(cilio);
+      if (f.palpebra) {
+        /*
+         * A PÁLPEBRA da Estrella: meia esfera de pelo por cima do olho, que
+         * cobre o terço de cima — o olhar calmo, de quem está sempre de
+         * olho nas irmãs. Ela é filha do olho, então pisca junto.
+         */
+        const palpebra = new THREE.Mesh(
+          new THREE.SphereGeometry(0.039, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.42), pelo,
+        );
+        palpebra.rotation.x = 0.35;
+        palpebra.position.set(0, 0.001, 0.004);
+        olho.add(palpebra);
+      }
       this.cabeca.add(olho);
       this.olhos.push(olho);
 
-      const bochecha = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), toon(P.lunaBochecha));
+      const bochecha = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), toon(f.bochecha));
       bochecha.scale.set(0.034, 0.022, 0.015);
       bochecha.position.set(lado * 0.09, -0.035, 0.105);
       this.cabeca.add(bochecha);
@@ -279,12 +375,15 @@ export class Luna extends Bicho {
      * A DIREITA TEM DOIS GOMOS: a base em pé e a ponta dobrada para a frente
      * (`rotation.x` positivo leva o `+Y` para o `+Z`, para onde ela olha).
      */
+    const caidas = f.orelhas === 'caidas';
+    this.aberturaDaOrelha = caidas ? 2.2 : f.orelhas === 'em-pe' ? 0.07 : 0.12;
     for (const lado of [-1, 1] as const) {
       const orelha = new THREE.Group();
-      orelha.position.set(lado * 0.062, 0.115, -0.01);
-      orelha.rotation.z = lado * -0.12;
-      const inteira = lado < 0;
-      const comprimento = inteira ? 0.19 : 0.1;
+      // a caída nasce mais para o lado do crânio, senão ela atravessa a testa
+      orelha.position.set(lado * (caidas ? 0.1 : 0.062), caidas ? 0.09 : 0.115, -0.01);
+      orelha.rotation.z = -lado * this.aberturaDaOrelha;
+      const dobrada = f.orelhas === 'dobrada' && lado > 0;
+      const comprimento = dobrada ? 0.1 : f.orelhas === 'em-pe' ? 0.21 : caidas ? 0.16 : 0.19;
       const fora = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), pelo);
       fora.scale.set(0.045, comprimento, 0.03);
       fora.position.y = comprimento * 0.95;
@@ -293,7 +392,8 @@ export class Luna extends Bicho {
       miolo.scale.set(0.027, comprimento * 0.78, 0.012);
       miolo.position.set(0, comprimento * 0.95, 0.02);
       orelha.add(miolo);
-      if (!inteira) {
+      if (dobrada) {
+        this.temPontaDobrada = true;
         this.pontaDaOrelha.position.y = 0.18;
         const ponta = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), pelo);
         ponta.scale.set(0.043, 0.095, 0.028);
@@ -305,12 +405,90 @@ export class Luna extends Bicho {
         this.pontaDaOrelha.add(pontaDentro);
         this.pontaDaOrelha.rotation.x = 0.55;
         orelha.add(this.pontaDaOrelha);
-      } else {
+      } else if (lado < 0 && f.enfeite === 'laco') {
         orelha.add(this.fazerLaco());
+      } else if (lado < 0 && f.enfeite === 'sol') {
+        orelha.add(this.fazerPresilhaDeSol());
       }
       this.cabeca.add(orelha);
       this.orelhas.push(orelha);
     }
+    // a estrelinha da Estrella vai no ALTO da cabeça, entre as orelhas caídas:
+    // é a parte da cabeça que a câmera de cima mais vê
+    if (f.enfeite === 'estrela') this.cabeca.add(this.fazerEstrelinhaDeCabelo());
+  }
+
+  /**
+   * A BOCA: a linha da Luna; o SORRISÃO da Sol, meia-lua escura de boca
+   * aberta com a língua rosa (é a que fala alto); o SORRISINHO da Estrella,
+   * um arco pequeno e fechado.
+   */
+  private fazerBoca(): THREE.Object3D {
+    const escuro = toon(P.lunaOlho);
+    const f = this.ficha;
+    if (f.boca === 'sorrisao') {
+      const g = new THREE.Group();
+      const aberta = new THREE.Mesh(
+        new THREE.SphereGeometry(0.026, 12, 8, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), escuro,
+      );
+      aberta.scale.set(1.2, 1, 0.45);
+      aberta.position.set(0, -0.047, 0.152);
+      g.add(aberta);
+      const lingua = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), toon(P.lunaNariz));
+      lingua.scale.set(1.4, 0.7, 0.6);
+      lingua.position.set(0, -0.064, 0.158);
+      g.add(lingua);
+      return g;
+    }
+    if (f.boca === 'sorrisinho') {
+      const arco = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.0035, 5, 12, Math.PI), escuro);
+      arco.rotation.z = Math.PI;
+      arco.position.set(0, -0.044, 0.157);
+      return arco;
+    }
+    const linha = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.006, 0.008), escuro);
+    linha.position.set(0, -0.05, 0.158);
+    return linha;
+  }
+
+  /** A PRESILHA DE SOL da Sol: o miolo amarelo e oito raios laranja, na base da orelha. */
+  private fazerPresilhaDeSol(): THREE.Group {
+    const g = new THREE.Group();
+    g.position.set(0, 0.04, 0.042);
+    const miolo = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.014, 16), toon(P.solPresilhaMiolo));
+    miolo.rotation.x = Math.PI / 2;
+    g.add(miolo);
+    const laranja = toon(P.solPresilha);
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      const raio = new THREE.Mesh(new THREE.ConeGeometry(0.012, 0.03, 5), laranja);
+      raio.position.set(Math.cos(a) * 0.043, Math.sin(a) * 0.043, -0.002);
+      raio.rotation.z = a - Math.PI / 2;
+      g.add(raio);
+    }
+    return g;
+  }
+
+  /** A ESTRELINHA da Estrella: cinco pontas, achatada, deitada um pouco para a frente. */
+  private fazerEstrelinhaDeCabelo(): THREE.Mesh {
+    const forma = new THREE.Shape();
+    for (let i = 0; i < 10; i++) {
+      const a = Math.PI / 2 + (i / 10) * Math.PI * 2;
+      const r = i % 2 ? 0.022 : 0.052;
+      const x = Math.cos(a) * r;
+      const y = Math.sin(a) * r;
+      if (i === 0) forma.moveTo(x, y);
+      else forma.lineTo(x, y);
+    }
+    forma.closePath();
+    const geo = new THREE.ExtrudeGeometry(forma, { depth: 0.016, bevelEnabled: false });
+    geo.translate(0, 0, -0.008);
+    const estrela = new THREE.Mesh(geo, toon(P.estrellaEstrela));
+    estrela.name = 'estrelinha-da-estrella';
+    // em cima da cabeça, um pouco para a frente e inclinada para a câmera
+    estrela.position.set(0.035, 0.135, 0.05);
+    estrela.rotation.set(-0.55, 0, -0.25);
+    return estrela;
   }
 
   /**
@@ -360,6 +538,38 @@ export class Luna extends Bicho {
    */
   treinar(sim: boolean): void {
     this.treinoLigado = sim;
+  }
+
+  /**
+   * O SALTO DA SOL: agacha (a preparação), sobe ~0,7, abre as pernas para os
+   * lados lá no alto com os pompons em V — o "toe touch" das cheerleaders —,
+   * e aterrissa dobrando. Ela para de treinar enquanto salta, e volta.
+   */
+  saltar(): void {
+    if (this.relogioDoSalto >= 0 || this.relogioDaEstrelinha >= 0) return;
+    this.relogioDoSalto = 0;
+  }
+
+  /**
+   * A ESTRELINHA DA ESTRELLA: braços para cima, e uma volta inteira de lado
+   * com braços e pernas abertos em X (a estrela), andando ~1,15 para o lado
+   * `sentido` DELA (1 é a direita dela). No fim ela fica onde a volta acabou.
+   */
+  estrelinha(sentido: 1 | -1 = 1): void {
+    if (this.relogioDoSalto >= 0 || this.relogioDaEstrelinha >= 0) return;
+    this.relogioDaEstrelinha = 0;
+    this.sentidoDaEstrelinha = sentido;
+  }
+
+  get estaSaltando(): boolean {
+    return this.relogioDoSalto >= 0;
+  }
+  get estaFazendoEstrelinha(): boolean {
+    return this.relogioDaEstrelinha >= 0;
+  }
+  /** o quanto o corpo está acima do chão agora (o salto), e o giro da estrelinha */
+  get medidaDoGesto(): { altura: number; giro: number } {
+    return { altura: this.alturaAgora, giro: this.corpo.rotation.z };
   }
 
   /** o teste pergunta isto */
@@ -442,8 +652,19 @@ export class Luna extends Bicho {
     const tim = this.misturaTimida;
     const senta = this.misturaSentada;
 
+    // o salto e a estrelinha andam no relógio deles, e pausam o treino
+    if (this.relogioDoSalto >= 0) {
+      this.relogioDoSalto += dt;
+      if (this.relogioDoSalto >= DURA_SALTO) this.relogioDoSalto = -1;
+    }
+    if (this.relogioDaEstrelinha >= 0) {
+      this.relogioDaEstrelinha += dt;
+      if (this.relogioDaEstrelinha >= DURA_ESTRELINHA) this.terminarEstrelinha();
+    }
+    const acrobacia = this.relogioDoSalto >= 0 || this.relogioDaEstrelinha >= 0;
+
     // o treino só vale em pé, parada, e sem gesto de conversa por cima
-    const treinando = this.treinoLigado && !sentado && !andando;
+    const treinando = this.treinoLigado && !sentado && !andando && !acrobacia;
     if (treinando) this.relogioDoTreino += dt;
     this.misturaTreino += ((treinando ? 1 : 0) - this.misturaTreino) * Math.min(1, dt * 4);
     const tr = this.misturaTreino * Math.max(0, 1 - torce - tim);
@@ -468,7 +689,7 @@ export class Luna extends Bicho {
     const pulo = Math.abs(Math.sin(t * 8.5)) * 0.07 * torce * (1 - senta);
     const respiro = Math.sin(fase * 1.6) * 0.008;
     const pulinhoDoPasso = andando ? Math.abs(Math.sin(fase * 9)) * 0.02 : 0;
-    this.corpo.position.y = -0.15 * 1.15 * senta + respiro + pulo + pulinhoDoPasso
+    this.corpo.position.y = -0.15 * this.ficha.escala * senta + respiro + pulo + pulinhoDoPasso
       + passoDoTreino.pulo * tr;
     // tímida, ela se encolhe e balança de um lado para o outro; no treino, o
     // giro da coreografia
@@ -531,13 +752,15 @@ export class Luna extends Bicho {
       const tremelique = Math.max(0, Math.sin(fase * 1.55 + i * 2.4) - 0.93) * 4;
       const xAlvo = -0.85 * tim + 0.05 * torce - tremelique * 0.25;
       orelha.rotation.x += (xAlvo - orelha.rotation.x) * Math.min(1, dt * 9);
-      const zAlvo = lado * (-0.12 + 0.2 * tim) + Math.sin(t * 8.5) * 0.12 * torce;
+      const zAlvo = -lado * this.aberturaDaOrelha + lado * 0.2 * tim + Math.sin(t * 8.5) * 0.12 * torce;
       orelha.rotation.z += (zAlvo - orelha.rotation.z) * Math.min(1, dt * 9);
     }
     // a ponta dobrada chega atrasada: é a defasagem que faz ela parecer mole
     // (0,55 e não mais: dobrada demais, vista de cima, a ponta lia como bolinha)
-    this.pontaDaOrelha.rotation.x = 0.55 + Math.sin(fase * 2.1 - 0.6) * 0.08
-      + Math.sin(t * 8.5 - 0.8) * 0.3 * torce;
+    if (this.temPontaDobrada) {
+      this.pontaDaOrelha.rotation.x = 0.55 + Math.sin(fase * 2.1 - 0.6) * 0.08
+        + Math.sin(t * 8.5 - 0.8) * 0.3 * torce;
+    }
 
     // a piscada, a cada ~3,5 s; no carinho os olhos fecham contentes
     const piscando = Math.max(0, Math.sin(fase * 1.8) - 0.985) * 60;
@@ -551,5 +774,128 @@ export class Luna extends Bicho {
       bochecha.scale.x = 0.034 * alvo;
       bochecha.scale.y = 0.022 * alvo;
     }
+
+    // --------------------------------------------------- as acrobacias
+    this.corpo.position.x = 0;
+    this.corpo.rotation.z = 0;
+    this.alturaAgora = 0;
+    if (this.relogioDoSalto >= 0) this.poseDoSalto(this.relogioDoSalto);
+    else if (this.relogioDaEstrelinha >= 0) this.poseDaEstrelinha(this.relogioDaEstrelinha);
+  }
+
+  /** 0 a 1 entre `a` e `b`, suave nas duas pontas */
+  private static janela(x: number, a: number, b: number): number {
+    const u = Math.min(1, Math.max(0, (x - a) / (b - a)));
+    return u * u * (3 - 2 * u);
+  }
+
+  /**
+   * A POSE DO SALTO, por cima da pose normal (quem chama é o `animar`, no fim).
+   * Tempos: 0–0,28 agacha; 0,28–1,18 no ar (uma parábola); o "toe touch" no
+   * alto, entre 0,5 e 0,95; 1,18–1,55 aterrissa e endireita.
+   */
+  private poseDoSalto(t: number): void {
+    const J = CoelhaDaTorcida.janela;
+    const agacha = J(t, 0, 0.22) * (1 - J(t, 0.22, 0.32)) + J(t, 1.16, 1.24) * (1 - J(t, 1.3, 1.55));
+    const noAr = t > 0.28 && t < 1.18 ? (t - 0.28) / 0.9 : -1;
+    const h = noAr >= 0 ? 4 * ALTURA_DO_SALTO * noAr * (1 - noAr) : 0;
+    const abre = J(t, 0.42, 0.62) * (1 - J(t, 0.88, 1.05));
+    this.alturaAgora = h;
+    this.corpo.position.y += h - agacha * 0.07;
+    // no ar, pernas para os lados (a esquerda nasce em -X: abrir é `lado * ângulo`)
+    for (const [i, perna] of this.pernas.entries()) {
+      const lado = i === 0 ? -1 : 1;
+      perna.rotation.z = lado * (1.3 * abre);
+      perna.rotation.x = -0.35 * abre + 0.3 * agacha;
+    }
+    // agachada, braços para trás e para baixo; subindo, V alto; no toe touch, T aberto
+    const sobe = J(t, 0.22, 0.4) * (1 - J(t, 1.1, 1.4));
+    for (const [i, braco] of this.bracos.entries()) {
+      const lado = i === 0 ? -1 : 1;
+      braco.rotation.z = lado * (0.3 * agacha + 2.55 * sobe * (1 - abre) + 1.75 * abre);
+      braco.rotation.x = 0.5 * agacha - 0.1 * sobe;
+    }
+    for (const [i, pompom] of this.pompons.entries()) {
+      const chacoalha = Math.sin(t * 30 + i * 1.7) * 0.5 * sobe;
+      pompom.rotation.z = chacoalha;
+      pompom.scale.setScalar(1 + Math.abs(chacoalha) * 0.3);
+    }
+    // o queixo sobe no alto, e as orelhas ficam para trás com o vento da subida
+    this.cabeca.rotation.x = -0.22 * sobe;
+    for (const orelha of this.orelhas) orelha.rotation.x = -0.45 * (noAr >= 0 ? Math.sin(noAr * Math.PI) : 0);
+  }
+
+  /**
+   * A POSE DA ESTRELINHA. Tempos: 0–0,35 prepara (braços no alto, o corpo
+   * inclina para o lado da volta); 0,35–1,3 a volta, com o corpo girando no
+   * plano da frente dela em volta do QUADRIL, andando para o lado; 1,3–1,7 a
+   * pose final, de braços em V.
+   *
+   * O giro é em volta de um ponto na altura do quadril (`CENTRO_DA_VOLTA`), e
+   * não do pé: girando em volta do pé, ela entraria no chão de cabeça. A
+   * conta: o centro fica parado (só anda para o lado), então a posição do
+   * corpo é o centro menos o centro girado.
+   */
+  private poseDaEstrelinha(t: number): void {
+    const J = CoelhaDaTorcida.janela;
+    const s = this.sentidoDaEstrelinha;
+    const prepara = J(t, 0, 0.3);
+    const volta = J(t, 0.35, 1.3);
+    const aberta = J(t, 0.3, 0.45) * (1 - J(t, 1.25, 1.45));
+    const pose = J(t, 1.3, 1.45) * (1 - J(t, 1.55, 1.7));
+    const h = CENTRO_DA_VOLTA * this.ficha.escala;
+    // inclina uns 15° antes de ir; a volta é negativa para a direita dela
+    const giro = -s * (prepara * 0.26 * (1 - volta) + volta * Math.PI * 2);
+    const anda = volta * PASSO_DA_ESTRELINHA * s;
+    // um tico de voo no meio da volta, para mão e pé não raspar o chão
+    const voo = Math.sin(volta * Math.PI) * 0.05;
+    this.corpo.rotation.z = giro;
+    this.corpo.rotation.y = 0;
+    this.corpo.position.x = anda + h * Math.sin(giro);
+    this.corpo.position.y += h - h * Math.cos(giro) + voo;
+    this.alturaAgora = voo;
+    // a estrela: braços para o alto e abertos, pernas abertas — um X
+    for (const [i, braco] of this.bracos.entries()) {
+      const lado = i === 0 ? -1 : 1;
+      braco.rotation.z = lado * (2.45 * Math.max(prepara, pose) * (1 - aberta) + 2.35 * aberta);
+      braco.rotation.x = 0;
+    }
+    for (const [i, perna] of this.pernas.entries()) {
+      const lado = i === 0 ? -1 : 1;
+      perna.rotation.z = lado * 0.85 * aberta;
+      perna.rotation.x = 0;
+    }
+    for (const orelha of this.orelhas) orelha.rotation.x = -0.3 * aberta;
+  }
+
+  /** a volta acabou: o passo para o lado vira posição de verdade, sem pulo */
+  private terminarEstrelinha(): void {
+    this.relogioDaEstrelinha = -1;
+    const passo = new THREE.Vector3(PASSO_DA_ESTRELINHA * this.sentidoDaEstrelinha, 0, 0)
+      .applyAxisAngle(new THREE.Vector3(0, 1, 0), this.group.rotation.y);
+    this.group.position.add(passo);
+    this.corpo.position.x = 0;
+    this.corpo.rotation.z = 0;
+  }
+}
+
+/** A LUNA, a primeira irmã: é ela quem convida a dupla e mostra a escola. */
+export class Luna extends CoelhaDaTorcida {
+  constructor(area: AreaDoBicho) {
+    super(area, FICHA_DA_LUNA);
+  }
+}
+
+/** A SOL, a animada: fala alto, está sempre feliz, e o gesto dela é o salto. */
+export class Sol extends CoelhaDaTorcida {
+  constructor(area: AreaDoBicho) {
+    super(area, FICHA_DA_SOL);
+  }
+}
+
+/** A ESTRELLA, a calma, sempre de olho nas duas: o gesto dela é a estrelinha. */
+export class Estrella extends CoelhaDaTorcida {
+  constructor(area: AreaDoBicho) {
+    super(area, FICHA_DA_ESTRELLA);
   }
 }
