@@ -854,7 +854,7 @@ Gatitos**, treinando juntas no ginásio.
 | jeito | super fã dos Gatitos, fala demais e fica tímida | **animada, fala alto, sempre muito feliz** (os gritos saem em maiúscula) | **calma, na dela, sempre preocupada com as duas** |
 | pelo | cinza-pérola | **damasco** | **chocolate ao leite** |
 | orelhas | a direita com a ponta dobrada | as duas bem em pé, compridas | as duas **caídas** dos lados |
-| enfeite | laço amarelo | presilha de **sol** | **estrelinha** dourada no alto da cabeça |
+| enfeite | laço amarelo e presilha de **lua** | presilha de **sol** | **estrelinha** dourada no alto da cabeça |
 | rosto | boca em linha | **sorrisão** de boca aberta | olhar sereno (o traço escuro da pálpebra, o olho um tico mais fechado), sorriso pequeno |
 | tamanho | 1,15 | 1,08 (a menor) | 1,21 (a mais alta: a que cuida) |
 | gesto | torcer | o **SALTO** (`saltar`): agacha, sobe ~0,7 e abre as pernas no alto — o "toe touch" | a **ESTRELINHA** (`estrelinha`): a volta inteira de lado, braços e pernas em X, andando ~1,15 |

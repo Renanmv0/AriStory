@@ -48,7 +48,9 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  *  - o top azul da escola com o "G" num círculo amarelo no peito, e a saia
  *    azul com a barra amarela — as cores que a escola do Gatito já tem
  *    (amarelo e azul, as que Brasil e Venezuela dividem nas bandeiras);
- *  - o LAÇO amarelo na base da orelha esquerda, que é o laço de torcida.
+ *  - o LAÇO amarelo na base da orelha esquerda, que é o laço de torcida;
+ *  - a PRESILHA DE LUA na frente da orelha dobrada, que combina com o sol da
+ *    Sol e a estrela da Estrella (pedido do Renan: as três de céu).
  *
  * E ELA TEM TRÊS JEITOS, que a cena aciona durante a conversa: TORCER (pula e
  * sacode os pompons no alto), FICAR TÍMIDA (patas no rosto, orelhas caídas
@@ -69,7 +71,10 @@ export interface FichaDeCoelha {
    * pendendo dos lados da cabeça)
    */
   orelhas: 'dobrada' | 'em-pe' | 'caidas';
-  enfeite: 'laco' | 'sol' | 'estrela';
+  /** a presilha de céu de cada uma: a lua da Luna, o sol da Sol, a estrela da Estrella */
+  enfeite: 'lua' | 'sol' | 'estrela';
+  /** o laço de torcida na orelha esquerda (só a Luna) */
+  laco: boolean;
   boca: 'linha' | 'sorrisao' | 'sorrisinho';
   /** o olhar calmo: o olho um tico mais fechado, com o traço da pálpebra */
   olhoSereno: boolean;
@@ -80,20 +85,20 @@ export interface FichaDeCoelha {
 
 export const FICHA_DA_LUNA: FichaDeCoelha = {
   id: 'luna', pelo: P.lunaPelo, peloClaro: P.lunaPeloClaro, orelhaDentro: P.lunaOrelhaDentro,
-  bochecha: P.lunaBochecha, orelhas: 'dobrada', enfeite: 'laco', boca: 'linha', olhoSereno: false,
+  bochecha: P.lunaBochecha, orelhas: 'dobrada', enfeite: 'lua', laco: true, boca: 'linha', olhoSereno: false,
   escala: 1.15, semente: 20260928,
 };
 
 export const FICHA_DA_SOL: FichaDeCoelha = {
   id: 'sol', pelo: P.solPelo, peloClaro: P.solPeloClaro, orelhaDentro: P.solOrelhaDentro,
-  bochecha: P.solBochecha, orelhas: 'em-pe', enfeite: 'sol', boca: 'sorrisao', olhoSereno: false,
+  bochecha: P.solBochecha, orelhas: 'em-pe', enfeite: 'sol', laco: false, boca: 'sorrisao', olhoSereno: false,
   // a menor das três, e a mais barulhenta
   escala: 1.08, semente: 20261001,
 };
 
 export const FICHA_DA_ESTRELLA: FichaDeCoelha = {
   id: 'estrella', pelo: P.estrellaPelo, peloClaro: P.estrellaPeloClaro, orelhaDentro: P.estrellaOrelhaDentro,
-  bochecha: P.estrellaBochecha, orelhas: 'caidas', enfeite: 'estrela', boca: 'sorrisinho', olhoSereno: true,
+  bochecha: P.estrellaBochecha, orelhas: 'caidas', enfeite: 'estrela', laco: false, boca: 'sorrisinho', olhoSereno: true,
   // a mais alta: a que cuida das outras duas
   escala: 1.21, semente: 20261002,
 };
@@ -409,7 +414,7 @@ export class CoelhaDaTorcida extends Bicho {
         this.pontaDaOrelha.add(pontaDentro);
         this.pontaDaOrelha.rotation.x = 0.55;
         orelha.add(this.pontaDaOrelha);
-      } else if (lado < 0 && f.enfeite === 'laco') {
+      } else if (lado < 0 && f.laco) {
         orelha.add(this.fazerLaco());
       } else if (lado < 0 && f.enfeite === 'sol') {
         orelha.add(this.fazerPresilhaDeSol());
@@ -420,6 +425,8 @@ export class CoelhaDaTorcida extends Bicho {
     // a estrelinha da Estrella vai no ALTO da cabeça, entre as orelhas caídas:
     // é a parte da cabeça que a câmera de cima mais vê
     if (f.enfeite === 'estrela') this.cabeca.add(this.fazerEstrelinhaDeCabelo());
+    // a lua da Luna vai do outro lado do laço, na frente da orelha dobrada
+    if (f.enfeite === 'lua') this.cabeca.add(this.fazerPresilhaDeLua());
   }
 
   /**
@@ -493,6 +500,38 @@ export class CoelhaDaTorcida extends Bicho {
     estrela.position.set(0.035, 0.135, 0.05);
     estrela.rotation.set(-0.55, 0, -0.25);
     return estrela;
+  }
+
+  /**
+   * A PRESILHA DE LUA da Luna: uma lua crescente — o arco de fora é meio
+   * círculo, o de dentro meia elipse fina, e as duas pontas se encontram em
+   * cima e embaixo. Presa na cabeça, na frente da orelha dobrada (a direita
+   * dela, x positivo), e virada para a câmera.
+   */
+  private fazerPresilhaDeLua(): THREE.Mesh {
+    const R = 0.052;
+    const forma = new THREE.Shape();
+    const passos = 14;
+    for (let i = 0; i <= passos; i++) {
+      const a = Math.PI / 2 + (i / passos) * Math.PI;
+      if (i === 0) forma.moveTo(Math.cos(a) * R, Math.sin(a) * R);
+      else forma.lineTo(Math.cos(a) * R, Math.sin(a) * R);
+    }
+    for (let i = passos - 1; i > 0; i--) {
+      const a = Math.PI / 2 + (i / passos) * Math.PI;
+      forma.lineTo(Math.cos(a) * R * 0.3, Math.sin(a) * R);
+    }
+    forma.closePath();
+    // a borda arredondada (o bisel) é o que faz ela ser presilha, e não pintura no pelo
+    const geo = new THREE.ExtrudeGeometry(forma, {
+      depth: 0.012, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.004, bevelSegments: 2,
+    });
+    geo.translate(0, 0, -0.006);
+    const lua = new THREE.Mesh(geo, toon(P.lunaLua));
+    lua.name = 'lua-da-luna';
+    lua.position.set(0.08, 0.102, 0.078);
+    lua.rotation.set(-0.5, 0.55, -0.35);
+    return lua;
   }
 
   /**

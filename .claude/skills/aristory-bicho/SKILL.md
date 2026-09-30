@@ -227,7 +227,7 @@ parece só uma curva estranha. Quem pegou foi a MEDIDA — o `z` da cabeça esta
 
 A Luna, a Sol e a Estrella são a mesma coelha com fichas diferentes
 (`entities/bichos/CoelhaDaTorcida.ts`): cor do pelo, orelha (dobrada, em pé,
-caída), enfeite, boca, olhar e escala moram na `FichaDeCoelha`, e cada
+caída), enfeite (a lua, o sol e a estrela: as três de céu), boca, olhar e escala moram na `FichaDeCoelha`, e cada
 irmã é uma subclasse de uma linha (`class Sol extends CoelhaDaTorcida`). Bicho
 parecido com outro que já existe ganha ficha, não cópia do arquivo. A
 PERSONALIDADE também é modelo: o sorrisão e a orelha em pé da Sol, o olhar
