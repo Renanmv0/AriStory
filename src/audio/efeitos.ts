@@ -44,6 +44,10 @@ export type SomNome =
   | 'menu'
   | 'diario'
   | 'recomecar'
+  // a apostila do Gatito: a folha virando, o acerto e o erro (que é gentil: errar não pune)
+  | 'folhear'
+  | 'acertou'
+  | 'errou'
   // o jato do regador e as cartas do jardim (§6 do plano: um som por carta que muda o jato)
   | 'jato'
   | 'jatoLongo'
@@ -825,6 +829,24 @@ export const EFEITOS: Record<SomNome, Receita> = {
 
   diario: ({ ctx, destino, t }) => {
     chiado(ctx, destino, { quando: t, dur: 0.22, vol: 0.09, freq: 1200, glide: 3000, q: 0.6 });
+  },
+
+  // a folha da apostila virando: o papel levanta (sobe) e assenta do outro lado (desce)
+  folhear: ({ ctx, destino, t, n }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.2, vol: 0.075, freq: 1500 + (n % 2) * 250, glide: 4200, q: 0.5 });
+    chiado(ctx, destino, { quando: t + 0.17, dur: 0.16, vol: 0.05, freq: 3000, glide: 1100, q: 0.7 });
+  },
+
+  // resposta certa na apostila: dois sininhos subindo, curtinhos
+  acertou: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: nota(DO + 12), quando: t, dur: 0.1, vol: 0.085, tipo: 'triangle' });
+    tom(ctx, destino, { freq: nota(DO + 19), quando: t + 0.07, dur: 0.2, vol: 0.075, tipo: 'sine' });
+  },
+
+  // resposta errada: um "hum" macio que desce — aviso, nunca castigo
+  errou: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: nota(DO + 4), glide: nota(DO + 2), quando: t, dur: 0.13, vol: 0.07, tipo: 'triangle' });
+    tom(ctx, destino, { freq: nota(DO - 3), quando: t + 0.11, dur: 0.2, vol: 0.06, tipo: 'triangle', abafo: 1600 });
   },
 
   recomecar: ({ ctx, destino, t }) => {

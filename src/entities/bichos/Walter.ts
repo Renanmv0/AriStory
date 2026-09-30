@@ -104,6 +104,8 @@ export class Walter extends Bicho {
     // Cabeca GRANDE, mesma regua chibi do resto do jogo: no tamanho que ele
     // ocupa na tela, e a cabeca que faz ele ser lido como cachorro.
     this.cabeca.position.set(0, 0.44, 0.19);
+    // o estúdio de retrato enquadra por este nome (o rosto dele na apostila)
+    this.cabeca.name = 'cabeca';
     const cranio = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), pelo);
     cranio.scale.set(0.108, 0.1, 0.105);
     this.cabeca.add(cranio);

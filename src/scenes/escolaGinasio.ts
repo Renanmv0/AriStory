@@ -12,6 +12,7 @@ import {
   ESCOLA, LUZ_DA_ESCOLA, cascaDeSala, conversa, pontoNoMundo, posicionarParaConversar, sentarOsDois,
   soltarDaConversa,
 } from './escolaComum';
+import { aulaDaVez, chamarAula, emAula, podeChamarAula } from './escolaAula';
 
 /**
  * =============================================== O GINÁSIO DA ESCOLA DO GATITO
@@ -167,8 +168,16 @@ export const escolaGinasio: SceneDef = {
      *
      * Conversar PARA o treino: ela se vira para a dupla, fala, e volta a
      * treinar. As falas se revezam, uma por conversa.
+     *
+     * A MISSÃO DA AULA (pedido do Renan: "para começar a aula, precisamos
+     * primeiro completar alguma missão lá dentro, por exemplo falar com a
+     * Luna no ginásio. Daí, depois ela falaria que está para começar a
+     * aula"): com lição para dar, depois da conversa de sempre o SINAL toca,
+     * e ela avisa que a aula vai começar — com as falas da própria lição
+     * (`escolaAula.ts`) — e vai na frente guardar lugar. Com a aula chamada,
+     * ela está na Sala 1, e não aqui.
      */
-    if (g0.flag('luna-na-escola')) {
+    if (g0.flag('luna-na-escola') && !emAula(g0)) {
       const TREINO = { x: QUADRA.x, z: QUADRA.z + 2.9 };
       const PARA_A_CAMERA = { x: TREINO.x + 10, z: TREINO.z + 10 };
       const luna = new Luna({
@@ -220,7 +229,17 @@ export const escolaGinasio: SceneDef = {
         },
       ];
 
-      w.interact({
+      /** ela sai correndo para a Sala 1: pela quadra até a porta, e some */
+      const irParaAula = async (): Promise<void> => {
+        // o colisor dela sai junto: quadra vazia não tem parede invisível
+        w.usarColisores(w.colisoresAgora().filter((c) => !(c.kind === 'circle' && c.x === TREINO.x && c.z === TREINO.z)));
+        luna.pararDeEncarar();
+        await luna.irPara(GIN.portaX - 1.5, GIN.fundo / 2 - 2.5, 1.5);
+        await luna.irPara(GIN.portaX, GIN.fundo / 2 - 0.8, 1.5);
+        luna.group.visible = false;
+      };
+
+      const conversar = w.interact({
         id: 'ginasio:luna',
         x: TREINO.x, z: TREINO.z, radius: 1.8,
         label: 'Falar com a Luna', icon: '🐰',
@@ -231,15 +250,30 @@ export const escolaGinasio: SceneDef = {
           luna.encarar(meio.x, meio.z);
           g.focusCamera(luna.group);
           g.setZoom(8);
+          let chamou = false;
           try {
+            // a conversa de sempre primeiro; a aula vem DEPOIS, com o sinal tocando no meio
             const vez = g.bump('luna.conversas');
             await falas[(vez - 1) % falas.length](g);
+            if (podeChamarAula(g)) {
+              luna.torcer(1.6);
+              await chamarAula(g);
+              chamou = true;
+            } else if (aulaDaVez(g) && !g.flag('gatito-conhecido')) {
+              // a aula é do Gatito: sem conhecer o professor, ela manda conhecer primeiro
+              await conversa(g, [[L, 'Ah! Já conheceram o professor Gatito? Ele vive passeando pelo saguão. Vão lá dar um oi! Depois voltem aqui, que eu sei o horário de todas as aulas.']]);
+            }
           } finally {
             g.focusCamera(null);
             g.setZoom(13);
             soltarDaConversa(g);
-            luna.encarar(PARA_A_CAMERA.x, PARA_A_CAMERA.z);
-            luna.treinar(true);
+            if (chamou) {
+              conversar.enabled = false;
+              void irParaAula();
+            } else {
+              luna.encarar(PARA_A_CAMERA.x, PARA_A_CAMERA.z);
+              luna.treinar(true);
+            }
           }
         },
       });

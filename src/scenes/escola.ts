@@ -10,6 +10,7 @@ import { bin, mesaDePatio, waterFountain } from '../world/props';
 import { ladrilhoDeEscola, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
 import { Gatito } from '../entities/bichos/Gatito';
+import { aulaDaVez, emAula } from './escolaAula';
 import { Luna } from '../entities/bichos/Luna';
 import {
   ESCOLA, LUZ_DA_ESCOLA, conversa, maquinaQueEntrega, paredeComVaos, pontoNoMundo, posicionarParaConversar,
@@ -116,8 +117,13 @@ const FALAS_DO_GATITO = [
   'Errar faz parte. É errando que a gente aprende.',
   'A Sala 2 é de espanhol, mas ainda estou procurando professor. Se souberem de alguém...',
   'Já passaram no refeitório? Sexta tem arepa.',
-  'Quando as aulas começarem, a gente se vê na Sala 1.',
+  'A lousa da Sala 1 eu mesmo escrevo. Não me perguntem como.',
 ];
+
+/** com lição para dar, ele lembra quem sabe o horário (a missão da aula: `escolaGinasio.ts`) */
+const DICA_DA_AULA = 'A próxima aula está quase na hora! Quem sabe o horário de tudo é a Luna: ela vive no ginásio.';
+/** e com o Módulo 1 inteiro feito */
+const DEPOIS_DO_MODULO = 'O Módulo 2 ainda está no forno. Enquanto isso, revisem a apostila: tem estrelinha pra melhorar.';
 
 
 export const escola: SceneDef = {
@@ -494,6 +500,10 @@ export const escola: SceneDef = {
     gatito.group.rotation.y = Math.PI;
     gatito.entrarEmServico();
     w.add(gatito.group);
+    // com a aula chamada pela Luna, ele está na Sala 1 esperando a turma
+    // (`escolaAula.ts`): o saguão fica sem o diretor até a aula acabar
+    const naAula = emAula(g0);
+    gatito.group.visible = !naAula;
 
     const pertoDaDupla = (raio: number): boolean => {
       const p = g0.playerPosition();
@@ -562,7 +572,9 @@ export const escola: SceneDef = {
             gatito.sixSeven();
             return;
           }
-          await g.say([w.pick(FALAS_DO_GATITO)], G);
+          const vez = aulaDaVez(g);
+          const dica = vez ? DICA_DA_AULA : g.progressoDaApostila().abertas.length ? DEPOIS_DO_MODULO : null;
+          await g.say([dica && w.rng() < 0.5 ? dica : w.pick(FALAS_DO_GATITO)], G);
         } finally {
           conversando = false;
         }
@@ -675,11 +687,13 @@ export const escola: SceneDef = {
       }
     });
 
+    falarComGatito.enabled = !naAula;
     w.onUpdate((dt, t) => {
-      gatito.update(dt);
-      falarComGatito.moveTo(gatito.x, gatito.z);
       // o aviso de "em breve" balança de leve, pendurado na porta
       emBreve.rotation.z = Math.sin(t * 1.3) * 0.03;
+      if (naAula) return;
+      gatito.update(dt);
+      falarComGatito.moveTo(gatito.x, gatito.z);
 
       if (andando || conversando || pausado || gatito.fazendoSixSeven) return;
       espera -= dt;

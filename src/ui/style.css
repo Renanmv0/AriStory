@@ -3947,3 +3947,958 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
 }
 /* a mangueira: a água nunca acaba, a barra fica cheia e o número vira ∞ */
 .painel-jardim.infinita .tanque .marcas { display: none; }
+
+/* =========================================================================
+ * A APOSTILA DO GATITO — o livro da aula de português (`ui/apostila.ts`).
+ *
+ * Apostila de curso de verdade: papel creme, ENCADERNAÇÃO EM ESPIRAL no meio
+ * (no celular, na borda esquerda), uma cor por lição na faixa do alto e nos
+ * números, e a folha virando em 3D em volta da espiral. Cada bloco da
+ * explicação tem o seu desenho — o quadrinho, a tabela, o espanhol × o
+ * português, o bilhetinho da dica do Gatito — e cada tipo de exercício o seu.
+ * ========================================================================= */
+.apostila {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 12px 10px;
+  background: radial-gradient(ellipse at 50% 40%, rgba(70, 56, 96, 0.62), rgba(24, 18, 36, 0.86));
+}
+.apostila.show { display: flex; pointer-events: auto; }
+
+.livro-apostila {
+  --cor: #7a67b0;
+  --cor-clara: #ece6f7;
+  --cor-escura: #54438a;
+  --papel: #fffdf6;
+  --tinta: #3b3346;
+  --tinta-suave: #6d6479;
+  --linha: #e7dfcf;
+  --espiral: 28px;
+  position: relative;
+  width: min(1180px, 100%);
+  height: min(820px, calc(100% - 58px));
+  color: var(--tinta);
+}
+.livro-apostila.simples { width: min(580px, 100%); --espiral: 22px; }
+.livro-apostila.abrindo { animation: apostila-abre 0.42s cubic-bezier(0.2, 0.8, 0.3, 1.1); }
+@keyframes apostila-abre {
+  from { opacity: 0; transform: translateY(18px) scale(0.95); }
+  to { opacity: 1; transform: none; }
+}
+
+/* as cores das lições: a faixa, o número, os botões */
+.livro-apostila .cor-coral { --cor: #ea6a58; --cor-clara: #fde4de; --cor-escura: #b3463a; }
+.livro-apostila .cor-mostarda { --cor: #dd9a17; --cor-clara: #fcefd0; --cor-escura: #996206; }
+.livro-apostila .cor-rosa { --cor: #df6597; --cor-clara: #fbe1ec; --cor-escura: #a63c69; }
+.livro-apostila .cor-verde { --cor: #4c9f67; --cor-clara: #dff1e3; --cor-escura: #2d6d43; }
+.livro-apostila .cor-azul { --cor: #4889d0; --cor-clara: #dfeaf8; --cor-escura: #2b5f9c; }
+.livro-apostila .cor-lilas { --cor: #9468cc; --cor-clara: #ece2f8; --cor-escura: #66419c; }
+
+.livro-apostila .folhas { position: absolute; inset: 0; display: flex; perspective: 2600px; }
+.livro-apostila .pagina {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--papel);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.38);
+  overflow: hidden;
+}
+/* a sombrinha da dobra, do lado da espiral, e os furos do papel */
+.livro-apostila.duplo .pagina.esq {
+  border-radius: 16px 3px 3px 16px;
+  background:
+    radial-gradient(circle at calc(100% - 9px) 50%, rgba(60, 50, 70, 0.28) 0 3.2px, transparent 3.8px) 0 0 / 100% 22px repeat-y,
+    linear-gradient(270deg, rgba(90, 70, 40, 0.14), transparent 30px),
+    var(--papel);
+}
+.livro-apostila.duplo .pagina.dir,
+.livro-apostila.simples .pagina.esq {
+  border-radius: 3px 16px 16px 3px;
+  background:
+    radial-gradient(circle at 9px 50%, rgba(60, 50, 70, 0.28) 0 3.2px, transparent 3.8px) 0 0 / 100% 22px repeat-y,
+    linear-gradient(90deg, rgba(90, 70, 40, 0.14), transparent 30px),
+    var(--papel);
+}
+.livro-apostila.simples .pagina.dir { display: none; }
+.livro-apostila.simples .espiral { order: -1; }
+.livro-apostila .pagina.em-branco { background: var(--papel); }
+
+/* a ESPIRAL: argolas de arame atravessando as duas páginas, e a capa lilás
+   aparecendo no vão entre elas */
+.livro-apostila .espiral {
+  position: relative;
+  z-index: 7;
+  flex: 0 0 var(--espiral);
+  height: 100%;
+  margin: 0 -6px;
+  background:
+    radial-gradient(ellipse calc(var(--espiral) / 2 + 6px) 4.2px at 50% 50%,
+      transparent 52%, #585d6b 58%, #d4d8e0 70%, #7b808d 84%, transparent 92%) 0 0 / 100% 22px repeat-y;
+  pointer-events: none;
+}
+.livro-apostila .espiral::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 6px;
+  bottom: 6px;
+  left: 8px;
+  right: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #4b3778, #6a519e 50%, #4b3778);
+}
+
+/* ------------------------------------------------------ a folha virando */
+.livro-apostila .folha-virando {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 6;
+  width: calc((100% - var(--espiral)) / 2 + 6px);
+  transform-style: preserve-3d;
+  transition: transform 0.62s cubic-bezier(0.45, 0.05, 0.3, 1), opacity 0.5s ease;
+  pointer-events: none;
+}
+.livro-apostila .folha-virando.pra-frente {
+  left: calc(50% + var(--espiral) / 2 - 6px);
+  transform-origin: calc(var(--espiral) / -2 + 6px) 50%;
+}
+.livro-apostila .folha-virando.pra-frente.vai { transform: rotateY(-180deg); }
+.livro-apostila .folha-virando.pra-tras {
+  right: calc(50% + var(--espiral) / 2 - 6px);
+  transform-origin: calc(100% + var(--espiral) / 2 - 6px) 50%;
+}
+.livro-apostila .folha-virando.pra-tras.vai { transform: rotateY(180deg); }
+.livro-apostila .folha-virando .face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.livro-apostila .folha-virando .face.verso { transform: rotateY(180deg); }
+.livro-apostila .folha-virando .face > .pagina { flex: 1; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); }
+.livro-apostila .folha-virando .face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.1), transparent 45%);
+  pointer-events: none;
+}
+/* uma página só: a de cima vira para longe, e a anterior volta de trás da espiral */
+.livro-apostila.simples .folha-virando {
+  left: calc(var(--espiral) - 6px);
+  right: 0;
+  width: auto;
+  transform-origin: calc(var(--espiral) / -2 + 6px) 50%;
+}
+.livro-apostila.simples .folha-virando.pra-frente.vai { transform: rotateY(-100deg); opacity: 0; }
+.livro-apostila.simples .folha-virando.volta { transform: rotateY(-100deg); opacity: 0; }
+.livro-apostila.simples .folha-virando.volta.vai { transform: rotateY(0deg); opacity: 1; }
+
+/* ------------------------------------------------ o alto, o miolo e o pé */
+.livro-apostila .topo {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 18px 10px 26px;
+  background: var(--cor);
+  color: #fff;
+  font-weight: 800;
+}
+.livro-apostila .topo .rotulo {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  background: rgba(255, 255, 255, 0.24);
+}
+.livro-apostila .topo .secao { flex: 1; font-size: 16px; }
+.livro-apostila .placar-da-licao { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.livro-apostila .placar-da-licao .barra {
+  width: 64px;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+.livro-apostila .placar-da-licao .barra i { display: block; height: 100%; background: #fff; transition: width 0.3s; }
+.livro-apostila .placar-da-licao .estrelinhas { font-size: 14px; }
+.livro-apostila .miolo {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  padding: 14px 22px 18px 28px;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+.livro-apostila.duplo .pagina.esq .miolo { padding: 14px 28px 18px 24px; }
+.livro-apostila .pe {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 20px 9px 28px;
+  font-size: 11.5px;
+  color: var(--tinta-suave);
+  border-top: 1px dashed var(--linha);
+}
+.livro-apostila .pe b { color: var(--cor-escura); font-size: 13px; }
+.livro-apostila h4 { margin: 0 0 6px; font-size: 15px; color: var(--cor-escura); }
+
+/* --------------------------------------------------- blocos da explicação */
+.livro-apostila .abertura-da-licao { display: flex; align-items: center; gap: 14px; margin: 2px 0 12px; }
+.livro-apostila .abertura-da-licao .numero-grande {
+  flex: 0 0 auto;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--cor);
+  box-shadow: 0 4px 0 var(--cor-escura);
+  transform: rotate(-4deg);
+}
+.livro-apostila .abertura-da-licao h2 { margin: 0; font-size: 23px; line-height: 1.15; }
+.livro-apostila .abertura-da-licao p { margin: 3px 0 0; color: var(--tinta-suave); font-size: 13.5px; }
+
+.livro-apostila .objetivos {
+  margin: 0 0 12px;
+  padding: 9px 12px 9px 14px;
+  border-left: 5px solid var(--cor);
+  border-radius: 4px 12px 12px 4px;
+  background: var(--cor-clara);
+}
+.livro-apostila .objetivos ul,
+.livro-apostila .consigo { margin: 0; padding: 0; list-style: none; }
+.livro-apostila .objetivos li { position: relative; padding-left: 20px; margin: 2px 0; }
+.livro-apostila .objetivos li::before { content: '🎯'; position: absolute; left: 0; font-size: 12px; top: 2px; }
+
+/* o QUADRINHO da situação */
+.livro-apostila .cena {
+  margin: 0 0 12px;
+  border: 2px solid var(--linha);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fbf7ef;
+}
+.livro-apostila .cena-titulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 7px 12px;
+  background: #f2ebdd;
+}
+.livro-apostila .cena-titulo small { color: var(--tinta-suave); }
+.livro-apostila .falas { display: flex; flex-direction: column; gap: 7px; padding: 10px 12px 12px; }
+.livro-apostila .fala { display: flex; align-items: flex-end; gap: 8px; }
+.livro-apostila .fala.minha { flex-direction: row-reverse; }
+.livro-apostila .rosto {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+.livro-apostila .rosto.emoji { display: grid; place-items: center; font-size: 22px; }
+.livro-apostila .balao {
+  position: relative;
+  max-width: 82%;
+  padding: 6px 11px 7px;
+  border-radius: 14px 14px 14px 4px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.livro-apostila .fala.minha .balao { border-radius: 14px 14px 4px 14px; background: var(--cor-clara); }
+.livro-apostila .balao b { display: block; font-size: 11.5px; color: var(--cor-escura); }
+
+/* o VOCABULÁRIO: cartões */
+.livro-apostila .palavras { margin: 0 0 12px; }
+.livro-apostila .grade-palavras { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 7px; }
+.livro-apostila .palavra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1.5px solid var(--linha);
+  border-radius: 10px;
+  background: #fff;
+}
+.livro-apostila .palavra.larga { grid-column: 1 / -1; }
+.livro-apostila .palavra .emoji { font-size: 22px; }
+.livro-apostila .palavra .texto { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.livro-apostila .palavra small { color: var(--tinta-suave); font-size: 12px; }
+.livro-apostila .palavra em { color: var(--cor-escura); font-size: 12px; }
+
+.livro-apostila .texto { margin: 0 0 10px; }
+.livro-apostila .texto p { margin: 0; }
+.livro-apostila .tabela,
+.livro-apostila .contraste,
+.livro-apostila .exemplos { margin: 0 0 12px; }
+.livro-apostila table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13.5px;
+  border: 1.5px solid var(--linha);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.livro-apostila th {
+  padding: 6px 9px;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--cor-escura);
+  background: var(--cor-clara);
+}
+.livro-apostila td { padding: 5px 9px; border-top: 1px dashed var(--linha); vertical-align: top; }
+.livro-apostila .tabela td:first-child { font-weight: 800; }
+.livro-apostila .tabela .nota { margin: 5px 2px 0; font-size: 12.5px; color: var(--tinta-suave); }
+.livro-apostila .contraste td:first-child { background: #fff8dc; }
+.livro-apostila .contraste td:last-child { background: #eaf7ec; font-weight: 800; }
+.livro-apostila .contraste th:first-child { background: #fff0b8; color: #7a5d00; }
+.livro-apostila .contraste th:last-child { background: #cfeed6; color: #1f6a35; }
+.livro-apostila .contraste th:nth-child(2) { background: #fff; }
+.livro-apostila .contraste .seta { width: 18px; padding: 5px 0; text-align: center; color: var(--tinta-suave); background: #fff; }
+.livro-apostila .exemplos ul { margin: 0; padding: 0; list-style: none; }
+.livro-apostila .exemplos li { position: relative; margin: 3px 0; padding-left: 22px; }
+.livro-apostila .exemplos li::before { content: '💬'; position: absolute; left: 0; font-size: 13px; }
+
+/* a DICA DO GATITO: o bilhetinho amarelo, torto, com o retrato dele */
+.livro-apostila .dica {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 4px 4px 14px;
+  padding: 10px 12px;
+  background: #fff3b0;
+  border-radius: 3px 14px 3px 14px;
+  box-shadow: 0 3px 8px rgba(120, 90, 0, 0.18);
+  transform: rotate(-0.8deg);
+}
+.livro-apostila .dica p,
+.livro-apostila .atencao p,
+.livro-apostila .brasil p { margin: 3px 0 0; }
+.livro-apostila .dica b { color: #8a6100; }
+.livro-apostila .atencao {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border: 2px solid #f0a33c;
+  border-radius: 12px;
+  background: #fff5e8;
+}
+.livro-apostila .atencao b { color: #b0620a; }
+.livro-apostila .brasil {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: linear-gradient(#f3fbf1, #f3fbf1) padding-box, linear-gradient(90deg, #2e9b4f, #f2c230) border-box;
+  border: 2.5px solid transparent;
+}
+.livro-apostila .brasil b { color: #22723c; }
+
+/* ------------------------------------------------------ os exercícios */
+.livro-apostila .exercicio { margin: 0 0 18px; }
+.livro-apostila .exercicio h4 {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14.5px;
+  color: var(--tinta);
+}
+.livro-apostila .exercicio h4 .n {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: #fff;
+  background: var(--cor);
+}
+.livro-apostila .instrucao { margin: -2px 0 6px; font-size: 12.5px; color: var(--tinta-suave); }
+.livro-apostila .item {
+  margin: 0 0 7px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #faf5ea;
+}
+.livro-apostila .pergunta { margin: 0 0 6px; font-weight: 700; }
+.livro-apostila .opcoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.livro-apostila .op,
+.livro-apostila .ficha,
+.livro-apostila .peca,
+.livro-apostila .lado {
+  border: 2px solid var(--linha);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tinta);
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, transform 0.08s;
+}
+.livro-apostila .op:not(:disabled):hover,
+.livro-apostila .ficha:not(:disabled):hover,
+.livro-apostila .peca:not(:disabled):hover,
+.livro-apostila .lado:not(:disabled):hover { border-color: var(--cor); }
+.livro-apostila .op:not(:disabled):active,
+.livro-apostila .ficha:not(:disabled):active,
+.livro-apostila .peca:not(:disabled):active,
+.livro-apostila .lado:not(:disabled):active { transform: scale(0.96); }
+.livro-apostila .op:disabled { cursor: default; }
+.livro-apostila .op.certa { border-color: #57a85d; background: #dff3df; color: #245f2a; }
+.livro-apostila .op.errada { border-color: #d9534f; background: #fde2e0; color: #8a2622; text-decoration: line-through; }
+.livro-apostila .op.apagada { opacity: 0.42; }
+
+.livro-apostila .retorno { margin: 7px 0 0; font-size: 13.5px; }
+.livro-apostila .retorno.certo { color: #2f7d36; font-weight: 800; animation: retorno-pula 0.35s ease; }
+.livro-apostila .retorno.errado {
+  padding: 6px 10px;
+  border-left: 4px solid #f0a33c;
+  border-radius: 4px 10px 10px 4px;
+  background: #fff3e2;
+  animation: retorno-pula 0.35s ease;
+}
+.livro-apostila .retorno.errado ul { margin: 4px 0; padding-left: 18px; }
+.livro-apostila .porque { display: block; margin-top: 2px; color: #6b4a1d; }
+.livro-apostila .porque.solto { margin: 4px 0 0; font-size: 13px; }
+@keyframes retorno-pula { from { opacity: 0; transform: translateY(-4px); } }
+
+/* o bate-papo */
+.livro-apostila .chat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #e6eef4;
+}
+.livro-apostila .msg { display: flex; align-items: flex-end; gap: 7px; }
+.livro-apostila .msg.minha { justify-content: flex-end; }
+.livro-apostila .msg .rosto { width: 32px; height: 32px; }
+.livro-apostila .bolha {
+  max-width: 80%;
+  padding: 6px 11px 7px;
+  border-radius: 14px 14px 14px 4px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+.livro-apostila .bolha b { display: block; font-size: 11.5px; color: var(--cor-escura); }
+.livro-apostila .bolha .contexto { display: block; font-size: 12px; color: var(--tinta-suave); }
+.livro-apostila .msg.minha .bolha { border-radius: 14px 14px 4px 14px; background: #d4f4c6; }
+.livro-apostila .msg.minha.errada .bolha { background: #fde2e0; text-decoration: line-through; color: #8a2622; }
+.livro-apostila .chat .retorno { align-self: stretch; }
+.livro-apostila .responder {
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  animation: retorno-pula 0.3s ease;
+}
+.livro-apostila .responder small { display: block; margin-bottom: 5px; font-weight: 800; color: var(--tinta-suave); }
+
+/* ligar as colunas */
+.livro-apostila .colunas-de-ligar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.livro-apostila .colunas-de-ligar .coluna { display: flex; flex-direction: column; gap: 6px; }
+.livro-apostila .lado { display: flex; align-items: center; gap: 6px; width: 100%; border-radius: 12px; text-align: left; }
+.livro-apostila .lado.marcada { border-color: var(--cor); background: var(--cor-clara); box-shadow: 0 0 0 3px var(--cor-clara); }
+.livro-apostila .lado.ligada { border-color: #b9dcb9; background: #eef8ee; color: #2e5f31; }
+.livro-apostila .lado.ligada.errada { border-color: #f1b7b3; background: #fdeeed; color: #8a2622; }
+.livro-apostila .lado .par {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11.5px;
+  color: #fff;
+  background: var(--cor);
+}
+
+/* as lacunas: o bilhete pautado e o banco de palavras */
+.livro-apostila .bilhete {
+  margin: 0 0 8px;
+  padding: 8px 14px 10px;
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 29px, rgba(80, 120, 180, 0.18) 29px 30px),
+    #fffbe9;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.livro-apostila .titulo-bilhete {
+  margin: 0;
+  font-family: 'Segoe Script', 'Bradley Hand', cursive;
+  font-size: 15px;
+  color: #3d5a8a;
+}
+.livro-apostila .texto-lacunas { margin: 0; line-height: 30px; }
+.livro-apostila .lacuna {
+  display: inline-block;
+  min-width: 56px;
+  margin: 0 2px;
+  padding: 0 8px;
+  border: 0;
+  border-bottom: 2px dashed var(--cor);
+  border-radius: 6px 6px 0 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 22px;
+  color: var(--cor-escura);
+  background: var(--cor-clara);
+  cursor: pointer;
+}
+.livro-apostila .lacuna.ativa { outline: 2px solid var(--cor); animation: lacuna-pisca 1.2s ease-in-out infinite; }
+@keyframes lacuna-pisca { 50% { background: #fff; } }
+.livro-apostila .lacuna.preenchida { cursor: default; font-size: 14px; border-bottom-style: solid; }
+.livro-apostila .lacuna.preenchida.certa { color: #245f2a; background: #dff3df; border-bottom-color: #57a85d; }
+.livro-apostila .lacuna.preenchida.errada { color: #245f2a; background: #fff1dc; border-bottom-color: #f0a33c; }
+.livro-apostila .lacuna.preenchida s { color: #b3372f; font-weight: 700; }
+.livro-apostila .banco { display: flex; flex-wrap: wrap; gap: 6px; }
+.livro-apostila .ficha { border-color: var(--cor); }
+.livro-apostila .ficha.usada { opacity: 0.3; text-decoration: line-through; border-style: dashed; }
+
+/* montar a frase */
+.livro-apostila .montagem {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 42px;
+  margin: 0 0 7px;
+  padding: 6px;
+  border: 2px dashed var(--linha);
+  border-radius: 12px;
+  background: #fff;
+}
+.livro-apostila .montagem .vazia { align-self: center; padding: 0 4px; font-size: 13px; color: var(--tinta-suave); }
+.livro-apostila .pecas { display: flex; flex-wrap: wrap; gap: 6px; }
+.livro-apostila .peca.posta { border-color: var(--cor); background: var(--cor-clara); }
+.livro-apostila .peca.usada { opacity: 0.25; }
+.livro-apostila .conferir {
+  margin-top: 7px;
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font: inherit;
+  font-weight: 800;
+  color: #fff;
+  background: var(--cor);
+  box-shadow: 0 3px 0 var(--cor-escura);
+  cursor: pointer;
+}
+.livro-apostila .conferir:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--cor-escura); }
+.livro-apostila .frase-montada { margin: 0; font-weight: 800; font-size: 15px; }
+.livro-apostila .frase-montada.certa { color: #245f2a; }
+.livro-apostila .frase-montada.errada { color: #8a2622; text-decoration: line-through; }
+
+/* escrever */
+.livro-apostila .linha-de-digitar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.livro-apostila .campo {
+  width: 8.5em;
+  padding: 4px 8px;
+  border: 0;
+  border-bottom: 2px solid var(--cor);
+  border-radius: 6px 6px 0 0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--tinta);
+  background: var(--cor-clara);
+  -webkit-user-select: text;
+  user-select: text;
+  outline: none;
+}
+.livro-apostila .campo:focus { background: #fff; box-shadow: 0 0 0 2px var(--cor); }
+.livro-apostila .campo.certo { color: #245f2a; background: #dff3df; border-bottom-color: #57a85d; }
+.livro-apostila .campo.errado { color: #8a2622; background: #fde2e0; border-bottom-color: #d9534f; text-decoration: line-through; }
+.livro-apostila .linha-de-digitar .conferir { margin-top: 0; padding: 5px 12px; font-size: 13px; }
+
+/* separar em grupos */
+.livro-apostila .item.classificar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.livro-apostila .item.classificar .frase { flex: 1 1 45%; font-weight: 700; }
+.livro-apostila .item.classificar .retorno { flex: 1 1 100%; margin-top: 0; }
+.livro-apostila .item.classificar .op { padding: 5px 10px; font-size: 13px; }
+
+/* ache o erro */
+.livro-apostila .frase-erro { margin: 0; font-size: 16px; line-height: 2; }
+.livro-apostila .palavra-da-frase {
+  padding: 1px 4px;
+  border: 0;
+  border-bottom: 2px dotted #c9bda6;
+  border-radius: 4px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--tinta);
+  background: transparent;
+  cursor: pointer;
+}
+.livro-apostila button.palavra-da-frase:hover { background: var(--cor-clara); border-bottom-color: var(--cor); }
+.livro-apostila span.palavra-da-frase { cursor: default; border-bottom-color: transparent; }
+.livro-apostila .palavra-da-frase.corrigida s { color: #b3372f; }
+.livro-apostila .palavra-da-frase.corrigida b { color: #245f2a; background: #dff3df; border-radius: 4px; padding: 0 3px; }
+.livro-apostila .palavra-da-frase.tocada { text-decoration: underline wavy #d9534f; }
+
+/* o desenho do "onde está?" */
+.livro-apostila .figura {
+  position: relative;
+  width: 150px;
+  height: 92px;
+  margin: 2px auto 8px;
+}
+.livro-apostila .figura .chao {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: #d8cdb8;
+}
+.livro-apostila .figura .base { position: absolute; z-index: 2; }
+.livro-apostila .figura.base-caixa .base {
+  left: 43px;
+  bottom: 8px;
+  width: 64px;
+  height: 42px;
+  border-radius: 3px;
+  background: linear-gradient(#d9a066, #c4884d);
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.12);
+}
+.livro-apostila .figura.base-caixa .tampa {
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: -6px;
+  height: 8px;
+  border-radius: 2px;
+  background: #b97a3e;
+}
+.livro-apostila .figura.base-mesa .base {
+  left: 30px;
+  bottom: 8px;
+  width: 90px;
+  height: 50px;
+  border-top: 8px solid #a8744a;
+  border-radius: 3px 3px 0 0;
+}
+.livro-apostila .figura.base-mesa .perna {
+  position: absolute;
+  bottom: 0;
+  width: 7px;
+  height: 42px;
+  background: #8f5f38;
+}
+.livro-apostila .figura.base-mesa .perna.e { left: 6px; }
+.livro-apostila .figura.base-mesa .perna.d { right: 6px; }
+.livro-apostila .figura .objeto { position: absolute; left: 61px; font-size: 26px; line-height: 1; z-index: 3; }
+.livro-apostila .figura.lugar-em-cima.base-caixa .objeto { bottom: 55px; }
+.livro-apostila .figura.lugar-em-cima.base-mesa .objeto { bottom: 58px; }
+.livro-apostila .figura.lugar-embaixo .objeto { bottom: 9px; }
+/* dentro: a caixa ABERTA (sem tampa, com as abas para fora) e o novelo espiando da boca */
+.livro-apostila .figura.lugar-dentro .objeto { bottom: 38px; z-index: 1; }
+.livro-apostila .figura.lugar-dentro .tampa { display: none; }
+.livro-apostila .figura.lugar-dentro .base::before,
+.livro-apostila .figura.lugar-dentro .base::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  width: 30px;
+  height: 7px;
+  border-radius: 2px;
+  background: #b97a3e;
+}
+.livro-apostila .figura.lugar-dentro .base::before { left: -26px; transform: rotate(-28deg); transform-origin: right bottom; }
+.livro-apostila .figura.lugar-dentro .base::after { right: -26px; transform: rotate(28deg); transform-origin: left bottom; }
+.livro-apostila .figura.lugar-ao-lado .objeto { left: 114px; bottom: 9px; }
+.livro-apostila .figura.lugar-atras .objeto { left: 80px; bottom: 42px; z-index: 1; }
+.livro-apostila .figura.lugar-na-frente .objeto { bottom: 2px; }
+
+/* ------------------------------------------------------ o fechamento */
+.livro-apostila .consigo li {
+  position: relative;
+  margin: 5px 0;
+  padding-left: 30px;
+  font-weight: 700;
+}
+.livro-apostila .consigo li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: #fff;
+  background: var(--cor);
+}
+.livro-apostila .fechamento.esperando .consigo { opacity: 0.45; }
+.livro-apostila .fechamento.esperando .consigo li::before { content: ''; background: #fff; box-shadow: inset 0 0 0 2px var(--linha); }
+.livro-apostila .nota-da-licao { position: relative; margin: 16px 0 12px; text-align: center; }
+.livro-apostila .estrelinhas { color: #f5b50a; letter-spacing: 2px; text-shadow: 0 2px 0 rgba(160, 110, 0, 0.25); }
+.livro-apostila .estrelinhas i { font-style: normal; color: #e4dccb; text-shadow: none; }
+.livro-apostila .nota-da-licao .estrelinhas { font-size: 42px; }
+.livro-apostila .de-primeira { margin: 0; color: var(--tinta-suave); font-size: 13px; }
+.livro-apostila .de-primeira .estrelinhas { font-size: 14px; }
+.livro-apostila .carimbo {
+  position: absolute;
+  top: -6px;
+  right: 4%;
+  padding: 2px 10px;
+  border: 3px solid var(--cor);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--cor);
+  transform: rotate(-9deg);
+  opacity: 0.85;
+}
+.livro-apostila .nota-da-licao.agora .carimbo { animation: carimbo 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+.livro-apostila .nota-da-licao.agora .estrelinhas { animation: estrelas-pulam 0.7s ease 0.2s both; }
+@keyframes carimbo {
+  from { opacity: 0; transform: rotate(-9deg) scale(2.4); }
+  to { opacity: 0.85; transform: rotate(-9deg) scale(1); }
+}
+@keyframes estrelas-pulam {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.livro-apostila .bilhete-do-gatito {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 8px 4px 14px;
+  padding: 10px 12px;
+  background: #fff3b0;
+  border-radius: 14px 3px 14px 3px;
+  box-shadow: 0 3px 8px rgba(120, 90, 0, 0.18);
+  transform: rotate(0.7deg);
+}
+.livro-apostila .bilhete-do-gatito p { margin: 0; }
+.livro-apostila .assinatura {
+  display: block;
+  margin-top: 4px;
+  font-family: 'Segoe Script', 'Bradley Hand', cursive;
+  color: #3d5a8a;
+}
+.livro-apostila .botoes-do-fim { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.livro-apostila .refazer,
+.livro-apostila .seguir {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 15px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.livro-apostila .refazer { color: var(--cor-escura); background: var(--cor-clara); box-shadow: inset 0 0 0 2px var(--cor); }
+.livro-apostila .seguir { color: #fff; background: var(--cor); box-shadow: 0 3px 0 var(--cor-escura); }
+.livro-apostila .proxima-aula { margin: 0; text-align: center; font-size: 13.5px; color: var(--tinta-suave); }
+.livro-apostila .aviso-gabarito {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  background: #e9f6ea;
+}
+.livro-apostila .aviso-gabarito .refazer { padding: 5px 12px; font-size: 13px; }
+
+.livro-apostila .pagina-trancada {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 70%;
+  text-align: center;
+  color: var(--tinta-suave);
+  font-weight: 700;
+}
+.livro-apostila .pagina-trancada .icone { font-size: 46px; opacity: 0.75; }
+.livro-apostila .pagina-trancada.leve { min-height: 0; margin-top: 18px; }
+.livro-apostila .pagina-trancada.leve .icone { font-size: 30px; }
+
+/* ------------------------------------ a folha de rosto, o sumário e o fim */
+.livro-apostila .pagina.folha-de-rosto .miolo { text-align: center; }
+.livro-apostila .escola { margin: 4px 0 0; font-weight: 800; color: var(--tinta-suave); letter-spacing: 0.5px; }
+.livro-apostila .retrato-da-capa { margin: 6px auto 4px; }
+.livro-apostila .gatito-da-capa {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: radial-gradient(circle, #fff5d6, #f7dfa8);
+  box-shadow: 0 0 0 5px #fff, 0 0 0 9px var(--cor-clara);
+}
+.livro-apostila .gatito-da-capa.emoji { display: inline-grid; place-items: center; font-size: 70px; }
+.livro-apostila .pagina.folha-de-rosto h1 { margin: 8px 0 0; font-size: 28px; line-height: 1.1; color: var(--cor-escura); }
+.livro-apostila .pagina.folha-de-rosto .modulo { margin: 4px 0 10px; color: var(--tinta-suave); font-weight: 700; }
+.livro-apostila .dono { margin: 0 0 14px; }
+.livro-apostila .caligrafia {
+  display: inline-block;
+  min-width: 120px;
+  padding: 0 12px;
+  border-bottom: 1.5px solid var(--tinta-suave);
+  font-family: 'Segoe Script', 'Bradley Hand', cursive;
+  font-size: 20px;
+  color: #2f4f8f;
+}
+.livro-apostila .legenda {
+  padding: 10px 14px;
+  text-align: left;
+  border-radius: 12px;
+  background: var(--cor-clara);
+}
+.livro-apostila .legenda h3 { margin: 0 0 4px; font-size: 14.5px; color: var(--cor-escura); }
+.livro-apostila .legenda ul { margin: 0 0 6px; padding-left: 18px; font-size: 13px; }
+.livro-apostila .legenda p { margin: 0; font-size: 12.5px; color: var(--tinta-suave); }
+
+.livro-apostila .titulo-sumario { margin: 0 0 10px; font-size: 19px; color: var(--cor-escura); }
+.livro-apostila .indice { margin: 0; padding: 0; list-style: none; }
+.livro-apostila .indice li {
+  display: grid;
+  grid-template-columns: 30px 28px 1fr auto;
+  grid-template-areas: 'num emoji titulos pag' 'num emoji estado estado';
+  align-items: center;
+  gap: 1px 8px;
+  padding: 9px 6px;
+  border-bottom: 1.5px dashed var(--linha);
+  cursor: pointer;
+}
+.livro-apostila .indice li:hover { background: var(--cor-clara); }
+.livro-apostila .indice .num {
+  grid-area: num;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: #fff;
+  background: var(--cor);
+}
+.livro-apostila .indice .emoji { grid-area: emoji; font-size: 20px; }
+.livro-apostila .indice .titulos { grid-area: titulos; display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.livro-apostila .indice .titulos small { color: var(--tinta-suave); font-size: 12px; }
+.livro-apostila .indice .estado { grid-area: estado; font-size: 13px; }
+.livro-apostila .indice .estado .estrelinhas { font-size: 15px; }
+.livro-apostila .indice .pag { grid-area: pag; font-size: 12px; color: var(--tinta-suave); }
+.livro-apostila .indice .andamento { color: var(--cor-escura); font-weight: 800; }
+.livro-apostila .indice .cadeado { color: var(--tinta-suave); }
+.livro-apostila .indice li.trancada { opacity: 0.6; cursor: default; }
+.livro-apostila .indice li.trancada .num { background: #b9b2c4; }
+.livro-apostila .total-de-estrelas { margin: 12px 0 0; text-align: center; font-weight: 800; color: var(--tinta-suave); }
+
+.livro-apostila .fim-do-modulo { text-align: center; }
+.livro-apostila .fim-do-modulo .selo-fim { margin: 4px 0; font-size: 22px; font-weight: 800; color: var(--cor-escura); }
+.livro-apostila .fim-do-modulo .total .estrelinhas { font-size: 24px; letter-spacing: 0; }
+.livro-apostila .fim-do-modulo .em-breve { color: var(--tinta-suave); }
+.livro-apostila .pagina.contracapa { background: linear-gradient(160deg, #8a6cc4, #5e4596); color: #fff; }
+.livro-apostila .contracapa-miolo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  text-align: center;
+}
+.livro-apostila .pagina.contracapa .escola { color: #fff; font-size: 18px; }
+.livro-apostila .contracapa-miolo .edicao { font-size: 12px; opacity: 0.8; }
+
+/* o aviso da trava: "a lição 3 abre na próxima aula" */
+.livro-apostila .aviso-trava {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  z-index: 9;
+  width: max-content;
+  max-width: 88%;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 14px;
+  text-align: center;
+  color: #fff;
+  background: rgba(52, 44, 64, 0.94);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transform: translate(-50%, 10px);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+.livro-apostila .aviso-trava.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* a barra de baixo: folhear, o sumário, onde estou e fechar */
+.apostila .navegacao { display: flex; align-items: center; gap: 8px; }
+.apostila .navegacao button {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 800;
+  color: #4a3d63;
+  background: #fff;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+.apostila .navegacao button:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.28); }
+.apostila .navegacao .virar { width: 48px; height: 40px; padding: 0; font-size: 16px; }
+.apostila .navegacao .virar:disabled { opacity: 0.35; cursor: default; }
+.apostila .navegacao .virar.trancado { color: #9a8fae; background: #ece6dc; }
+.apostila .navegacao .virar.chamando { background: #ffd66b; animation: aviso-do-livro 1.1s ease-in-out infinite; }
+.apostila .navegacao .fechar-apostila { color: #5a3d0c; background: linear-gradient(180deg, #ffe39a, #f2b134); box-shadow: 0 3px 0 #c68a1f; }
+.apostila .navegacao .onde { min-width: 104px; text-align: center; font-size: 13px; font-weight: 800; color: #fff; }
+
+/* o celular: uma página, letra um pouco menor, a barra mais enxuta */
+.livro-apostila.simples .miolo { padding: 12px 14px 16px 18px; font-size: 14px; }
+.livro-apostila.simples .topo { padding: 10px 14px 9px 18px; }
+.livro-apostila.simples .pe { padding: 5px 14px 8px 18px; }
+.livro-apostila.simples .abertura-da-licao h2 { font-size: 20px; }
+.livro-apostila.simples .grade-palavras { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+/* numa página estreita o carimbo vai para cima das estrelas, e não por cima da terceira */
+.livro-apostila.simples .carimbo { position: static; display: inline-block; margin: 0 0 8px; }
+@media (max-width: 520px) {
+  .apostila { padding: 8px 6px 8px; gap: 8px; }
+  .apostila .navegacao { gap: 6px; }
+  .apostila .navegacao .largo { display: none; }
+  .apostila .navegacao .onde { min-width: 0; font-size: 12px; }
+  .livro-apostila .colunas-de-ligar { gap: 6px; }
+  .livro-apostila .lado { padding: 6px 8px; font-size: 13px; }
+  .livro-apostila .topo .secao { font-size: 14.5px; }
+  .livro-apostila .placar-da-licao .barra { width: 40px; }
+}

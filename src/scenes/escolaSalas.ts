@@ -11,6 +11,7 @@ import { ARI, RENAN } from '../characters/cast';
 import {
   ESCOLA, LUZ_DA_ESCOLA, cascaDeSala, conversa, maquinaQueEntrega, pontoNoMundo, sentarOsDois,
 } from './escolaComum';
+import { emAula, lousaDaSala1, montarAulaDoGatito } from './escolaAula';
 
 /**
  * ========================================= AS SALAS DA ESCOLA DO GATITO
@@ -20,9 +21,11 @@ import {
  * cenário"). Aqui estão as duas salas de aula, a sala de descanso e a dos
  * professores; o ginásio tem arquivo próprio, porque tem a cesta de basquete.
  *
- * AS AULAS AINDA NÃO EXISTEM, de propósito: o Renan quer fazer as aulas com
- * calma, depois. Por enquanto as salas são cenário e algumas interações — a
- * lousa, a mesa do professor, o globo, as bandeiras, sentar na carteira.
+ * A AULA DO GATITO mora na Sala 1 (`escolaAula.ts`): com a aula chamada
+ * pela Luna, o Gatito está em cima da mesa e a Luna na primeira fila, e a
+ * carteira do meio vira "Sentar para a aula" — que abre a apostila. As outras
+ * salas são cenário e algumas interações — a lousa, a mesa do professor, o
+ * globo, as bandeiras, sentar na carteira.
  *
  * Todas seguem a casca de sala (`cascaDeSala`): parede alta em `-X` e `-Z`,
  * mureta do lado da câmera, e a saída de volta ao saguão na mureta da frente.
@@ -53,6 +56,8 @@ interface FichaDaSala {
   cartaz: { titulo: string; linhas: readonly string[] };
   /** os oculinhos do Gatito em cima da mesa (só na sala dele) */
   oculinhos: boolean;
+  /** a sala tem a aula do Gatito (`escolaAula.ts`): só a Sala 1 */
+  aula?: boolean;
   falas: {
     lousa: ReadonlyArray<readonly [string, string]>;
     mesa: ReadonlyArray<readonly [string, string]>;
@@ -84,9 +89,14 @@ function salaDeAula(f: FichaDaSala): SceneDef {
       const { x0, z0 } = cascaDeSala(w, {
         ...SALA, parede: f.parede, barra: f.barra, chao: P.escolaPisoSala, textura: assoalhoDeMadeira(2.4, 8),
       });
+      const g0 = w.game;
+      // com a aula chamada, o Gatito está na sala (de oculinhos, em cima da mesa)
+      const naAula = f.aula === true && emAula(g0);
+      // a lousa da Sala 1 lembra a lição da aula; antes de qualquer aula, as boas-vindas
+      const daAula = f.aula ? lousaDaSala1(g0) : null;
 
       // ---------------------------------------------------- a parede da lousa
-      const lousa = w.add(w.place(lousaDeSala(f.lousa, 3.6, 1.4), 0, 1.62, z0 + 0.2));
+      const lousa = w.add(w.place(lousaDeSala(daAula ?? f.lousa, 3.6, 1.4), 0, 1.62, z0 + 0.2));
       w.add(w.place(relogioDeParede(0.24), 0, 2.66, z0 + 0.19));
       const flagBr = w.add(w.place(bandeira('brasil', 0.9), -2.95, 1.95, z0 + 0.17));
       w.add(w.place(bandeira('venezuela', 0.9), 2.95, 1.95, z0 + 0.17));
@@ -95,7 +105,8 @@ function salaDeAula(f: FichaDaSala): SceneDef {
       const mesa = w.add(w.place(mesaDoProfessor(), 0, 0, -2.75));
       w.blockBox(0, -2.75, 0.82, 0.42);
       if (f.oculinhos) {
-        w.add(w.place(oculinhosDoGatito(), 0.15, 0.79, -2.55, 0.3));
+        // na aula os oculinhos estão na cara dele, e não na mesa
+        if (!naAula) w.add(w.place(oculinhosDoGatito(), 0.15, 0.79, -2.55, 0.3));
       } else {
         w.add(w.place(mug(P.escolaFaixa), 0.2, 0.79, -2.6));
       }
@@ -136,7 +147,7 @@ function salaDeAula(f: FichaDaSala): SceneDef {
         label: 'Ler a lousa', icon: '🟩',
         highlight: lousa,
         onInteract: async (g) => {
-          await conversa(g, f.falas.lousa);
+          await conversa(g, daAula ? [[R, `${daAula[0]}: ${daAula[1]}.`], ...f.falas.lousa.slice(1)] : f.falas.lousa);
           if (!g.flag(`${f.id}-lousa`)) {
             g.setFlag(`${f.id}-lousa`);
             g.unlock({ ...f.memoria, place: 'Escola do Gatito' });
@@ -144,13 +155,16 @@ function salaDeAula(f: FichaDaSala): SceneDef {
         },
       });
 
-      w.interact({
-        id: `${f.id}:mesa`,
-        x: 0, z: -1.78, radius: 0.95,
-        label: 'Olhar a mesa do professor', icon: '🍎',
-        highlight: mesa,
-        onInteract: (g) => conversa(g, f.falas.mesa),
-      });
+      // na aula, quem está na mesa é o Gatito: o ponto dela vira o dele
+      if (!naAula) {
+        w.interact({
+          id: `${f.id}:mesa`,
+          x: 0, z: -1.78, radius: 0.95,
+          label: 'Olhar a mesa do professor', icon: '🍎',
+          highlight: mesa,
+          onInteract: (g) => conversa(g, f.falas.mesa),
+        });
+      }
 
       // o globo gira quando alguém mexe nele, e para devagar
       let giro = 0;
@@ -196,6 +210,24 @@ function salaDeAula(f: FichaDaSala): SceneDef {
       const ancora = pontoNoMundo(w, (xEsq + xDir) / 2, 0, zCadeira);
       const foco = pontoNoMundo(w, (xEsq + xDir) / 2, 0.9, zCadeira - 1.2);
       const meio = (xDir - xEsq) / 2;
+      if (f.aula) {
+        montarAulaDoGatito(w, {
+          id: f.id,
+          ancora, foco,
+          jogador: new THREE.Vector3(-meio, 0, 0),
+          parceiro: new THREE.Vector3(meio, 0, 0),
+          x: (xEsq + xDir) / 2, z: 0.15,
+          saida: { jogador: [(xEsq + xDir) / 2 - 0.45, 0.15], parceiro: [(xEsq + xDir) / 2 + 0.45, 0.15] },
+          // a Luna na ponta da primeira fila, do lado dos dois
+          lugarDaLuna: { x: COLUNAS[0], z: zCadeira },
+          mesa: { x: -0.1, y: 0.79, z: -2.8 },
+          porta: { x: SALA.portaX, z: SALA.fundo / 2 - 0.8 },
+          corredor: 3.3,
+          vaoDasFileiras: (FILEIRAS[1] + FILEIRAS[2]) / 2 + 0.1,
+          falasDeSentar: f.falas.sentar,
+        });
+        return;
+      }
       w.interact({
         id: `${f.id}:sentar`,
         x: (xEsq + xDir) / 2, z: 0.15, radius: 1.2,
@@ -228,6 +260,7 @@ export const escolaSala1 = salaDeAula({
     linhas: ['A de abacaxi · B de bola', 'C de cafuné · D de doce', 'G de gato · S de saudade'],
   },
   oculinhos: true,
+  aula: true,
   falas: {
     lousa: [
       [R, 'Bem-vindos, turma. Professor Gatito.'],
