@@ -288,6 +288,14 @@ export interface ItemDef {
    */
   pesNus?: boolean;
   /**
+   * Só `pes`: a peça SUBSTITUI o pé do rig, como o patins. O pé é uma caixa, e
+   * um tênis de bico redondo e cano acolchoado não cabe em volta de uma caixa
+   * sem que as quinas furem — então, com a peça vestida, a caixa some e o
+   * `extra` é o sapato inteiro. No traje de banho (onde o `extra` não aparece)
+   * o pé de pele volta.
+   */
+  substituiPe?: boolean;
+  /**
    * PEÇA DE PISCINA: aparece também no traje de banho (o clube).
    *
    * No banho o corpo inteiro vira pele e, de roupa, só ficam a cabeça e o

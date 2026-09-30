@@ -1621,3 +1621,7 @@ export {
   boiaDePatinho, colarHavaiano, camisaHavaiana, mangaHavaiana, regataListrada,
   camisaHavaianaSolta, mangaHavaianaSolta, regataListradaSolta,
 };
+
+// as medidas do calção, da perna do shorts e do pé, que outras levas (o
+// uniforme dos Gatitos) reaproveitam para colar peça no lugar certo
+export { short, noCalcao, naPernaDoShort, anelNoCalcao, anelNaPerna, pe, formaDaSola, camadaDeSola };

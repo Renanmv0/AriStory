@@ -27,7 +27,7 @@ import {
   type Vaga,
 } from './types';
 import {
-  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
+  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PREMIOS_DA_APOSTILA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
 } from '../world/itens';
 import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
@@ -1175,6 +1175,12 @@ export class Game implements GameAPI {
    * espelho do mezanino da Estella, que abrem o mesmo painel.
    */
   private reporPremios(): void {
+    // O prêmio de lição da apostila vale para quem já tinha concluído a lição
+    // antes de ele existir: a lição com estrela conta como prêmio entregue
+    for (const [licao, pecas] of Object.entries(PREMIOS_DA_APOSTILA)) {
+      if (!this.save.apostila.estrelas[licao]) continue;
+      for (const p of pecas) this.save.registrarPremio(p.id);
+    }
     for (const id of this.save.premios) {
       const peca = fichaDoItem(id);
       if (!peca) continue;

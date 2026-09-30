@@ -310,6 +310,15 @@ O conjunto da Estella são quatro peças de uma vez (uma por vaga do corpo) e o
 do Mano é um par de patins — este último é o único caso em que a ficha manda no
 modelo do RIG e não num `extra`: ver `enfeite`, em `core/types.ts`.
 
+## Pôr a peça como PRÊMIO de uma lição da apostila do Gatito
+
+O mesmo molde, noutra lista: `PREMIOS_DA_APOSTILA` (`world/itens.ts`), do `id`
+da lição para as peças. O Gatito entrega no fim da aula
+(`entregarPremio` em `scenes/escolaAula.ts`, com falas e o `g.ganharPeca` de
+cada peça) e marca a flag `premio-da-licao-<id>`; o `reporPremios` repõe — e dá
+a quem já tinha concluído a lição antes de o prêmio existir. O da lição 3 é o
+UNIFORME DOS GATITOS inteiro (sete peças). Teste: `scripts/uniforme.mjs`.
+
 ## Pôr a peça à venda na boutique
 
 `preco` na ficha é o que coloca a peça numa arara — sem ele, ela não está à
@@ -408,6 +417,39 @@ A segunda leva da lojinha da Josefina mora num arquivo próprio
 Uma casca esférica de raio `R` aberta até `thetaLength` termina em
 `y = centro + R·cos(theta)` com raio `R·sen(theta)` — é a conta por trás de
 qualquer calota (gorro, capuz): errar as duas vira sombrero.
+
+## `uniformeDosGatitos.ts` — o kit de roupa de TIME
+
+O uniforme dos Gatitos (prêmio da lição 3) trouxe o que faltava para roupa de
+time e de atlética. Reaproveite para qualquer uniforme novo:
+
+- `emblemaDosGatitos(e, fundo?, tinta?)` — o escudo (disco, aro, "G" de
+  geometria e as orelhinhas de gato), olhando para `+Z`;
+- `textoEmArco(pai, texto, arco)` — uma PALAVRA EM ARCO no peito ou nas costas,
+  letra por letra colada na casca (letra de canvas com `toon` + `alphaTest`, e
+  `contorno` para a letra de time com borda). **Nas costas a primeira letra
+  fica no `+X`** (quem lê está atrás): a primeira versão escreveu "SOTITAG";
+- `letraG`, `estrela`, `patinha` — remendos e estampas;
+- **jaqueta de atlética** (`jaquetonaDosGatitos` + `mangaDaJaquetona`): o casco
+  de 1,13× que FRANZE num cós de ribana, gola em pé, botões de pressão, manga
+  de couro por fora; as ribanas são marinho com dois filetes (`ribana(...)`);
+- **short de treino** (`corBanho` sem `cor`, como a bermuda, + `extraQuadril`
+  para o cós e o cordão + `extra` com um tubo mais comprido que a perna de
+  shorts do rig);
+- **jogger** (`calcaDosGatitos`): tubo que AFINA até o punho de ribana no
+  tornozelo, com as três listras de lado;
+- **tênis** (`tenisDosGatitos`): a sola do chinelo (`formaDaSola`) extrudada e
+  REBAIXADA para o bico. Ele leva `substituiPe: true` na ficha — o pé do rig é
+  uma caixa, e o tênis some com ela (como o patins); no banho o pé volta.
+
+**Nas costas, desça as estampas.** O cacheado do Ari cobre o alto das costas:
+o "GATITOS" da jaquetona na altura de uma jaqueta de verdade sumia na juba.
+Hoje ele fica em `0,585·torsoH` acima do quadril.
+
+**Foto de perto** (`scripts/uniforme.mjs`): o zoom do jogo tem piso, então o
+teste põe a câmera num ponto e RECORTA a foto em volta dele (`clip`), com
+`deviceScaleFactor: 2`. No ginásio da escola — no parque, a zona da roda
+gigante manda no zoom e as árvores tapam.
 
 ## De foto para peça: o que olhar
 

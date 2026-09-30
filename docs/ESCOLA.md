@@ -589,6 +589,13 @@ esperando o Renan: só ele sabe quais são.
 
 ## 7. Prêmios e a formatura
 
+- **CONSTRUÍDO — o uniforme dos Gatitos, prêmio da lição 3** (pedido do
+  Renan): no fim da aula o Gatito diz que, por completar a lição, a dupla
+  ganha o uniforme, e as sete peças vão para o guarda-roupa dos dois — boné
+  com orelhinhas de gato, camiseta justa, camiseta larga, jaquetona de
+  atlética, short, calça jogger e tênis, nas cores do time e com o emblema dos
+  Gatitos (`world/uniformeDosGatitos.ts`, `PREMIOS_DA_APOSTILA` em
+  `world/itens.ts`, teste `scripts/uniforme.mjs`).
 - **Estrelinhas somadas destravam roupa** no guarda-roupa dos dois
   (`g.ganharPeca`), no molde do chapéu de campeão. Propostas: a **tiara de
   orelhinhas do Gatito** (uma chocolate, uma caramelo), a **mochila da

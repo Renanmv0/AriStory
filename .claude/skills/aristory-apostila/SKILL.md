@@ -145,6 +145,14 @@ Sala 1 antes de abrir o livro (termina mandando abrir na lição), e
 `encerramento` vem depois da lição concluída. O Gatito fala das estrelas
 sozinho (`escolaAula.ts`).
 
+### O prêmio de uma lição
+
+Lição pode dar roupa: `PREMIOS_DA_APOSTILA` (`world/itens.ts`), do `id` da
+lição para as peças. O Gatito entrega no fim da aula, depois do
+`encerramento` (`entregarPremio` em `scenes/escolaAula.ts` — as falas de lá
+são as da lição 3, a do uniforme dos Gatitos; lição nova com prêmio pede falas
+próprias ali). A peça em si é da skill `aristory-roupa`.
+
 ## A trava
 
 Uma lição só abre quando **o Gatito a deu numa aula** (`abertas` no save) **e

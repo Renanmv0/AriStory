@@ -1203,7 +1203,10 @@ export class CharacterRig {
       for (const o of objs) o.visible = liga;
     }
 
-    for (const pe of this.pes) pe.visible = !this.patinando;
+    // o tênis que SUBSTITUI o pé (`substituiPe`): fora d'água, a caixa do pé
+    // some e o `extra` é o sapato inteiro — a mesma troca do patins
+    const tenisNoLugar = !banho && this.roupa.pes?.substituiPe === true;
+    for (const pe of this.pes) pe.visible = !this.patinando && !tenisNoLugar;
     for (const p of this.patins) p.visible = this.patinando;
 
     // gorro achata o cabelo, pelo mesmo motivo que o patins engole o pe
