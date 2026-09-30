@@ -236,7 +236,7 @@ export const LICAO_5: Licao = {
     'conjugar: fico, fica, fiquei, ficou, ficamos, ficaram.',
   ],
   aula: {
-    chama: 'sol',
+    chama: 'qualquer',
     chamada: [
       { quem: 'sol', texto: '¡EL SINAL! Hoje é o verbo ficar! O Gatito disse que é o verbo mais importante do Brasil!' },
       { quem: 'estrella', texto: 'Sol, é "o sinal". "El timbre" é em espanhol.' },

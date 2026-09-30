@@ -31,7 +31,7 @@ import { chromium } from 'playwright';
 const OUT = process.argv[2] ?? './irmas';
 const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-const IDS = ['oi-tudo-bem', 'jantar-das-confusoes', 'cade-o-novelo'];
+const IDS = ['oi-tudo-bem', 'jantar-das-confusoes', 'cade-o-novelo', 'horta-da-josefina', 'fica-a-dica', 'tudo-acaba-em-inho'];
 
 const browser = await chromium.launch({
   executablePath: CHROME,
@@ -307,6 +307,38 @@ conferir(menorY > -0.03, 'e nada entra no chão durante a volta', menorY.toFixed
 conferir(fotoDaEstrelinha, 'e a foto pegou ela de cabeça para baixo');
 conferir(estrelinha.some((f) => /Estrella: Ouviram\? É o sinal/.test(f)) && (await page.evaluate(() => window.jogo.flag('aula-chamada'))),
   'depois da estrelinha, a chamada da aula 3');
+
+// ================================== 4b. as aulas 4, 5 e 6: qualquer uma chama
+console.log('\n4b. as aulas 4, 5 e 6: qualquer uma das três chama');
+const PERTO = { luna: [0.9, 0.9, -2.4], sol: [0.9, 0.9, -2.4], estrella: [1.0, 0.5, -2.2] };
+for (const [concluidas, quem, marca] of [[3, 'sol', /gênero das palavras/], [4, 'estrella', /verbo ficar/], [5, 'luna', /última aula do módulo/]]) {
+  await salvar(['escola-aberta', 'luna-na-escola', 'gatito-conhecido', 'jean-luc-batido'], concluidas);
+  await ir('escola-ginasio', '1.6,4');
+  await semAcrobacias();
+  const aqui = await irmas();
+  conferir(['luna', 'sol', 'estrella'].every((id) => aqui[id]?.visivel), `aula ${concluidas + 1}: as três no ginásio`);
+  const [dx, dz, olhar] = PERTO[quem];
+  await page.evaluate(([P, dx, dz, olhar]) => window.jogo.debugPlace(P.x + dx, P.z + dz, olhar), [aqui[quem], dx, dz, olhar]);
+  const nome = quem === 'luna' ? 'Luna' : quem === 'sol' ? 'Sol' : 'Estrella';
+  conferir(new RegExp(nome).test((await esperarPrompt(new RegExp(nome))) ?? ''), `aula ${concluidas + 1}: o prompt é o da ${nome}`);
+  await page.keyboard.press('KeyE');
+  await page.waitForTimeout(500);
+  const falas = await conversar(40);
+  console.log('      ' + falas.join('\n      '));
+  conferir(falas.some((f) => marca.test(f)) && (await page.evaluate(() => window.jogo.flag('aula-chamada'))),
+    `aula ${concluidas + 1}: falar com a ${nome} chama a aula`, falas.at(-1) ?? '');
+  if (concluidas === 3) {
+    const foram = await (async () => {
+      for (let i = 0; i < 120; i++) {
+        const r = await irmas();
+        if (['luna', 'sol', 'estrella'].every((id) => !r[id]?.visivel)) return true;
+        await page.waitForTimeout(500);
+      }
+      return false;
+    })();
+    conferir(foram, 'e as três vão juntas para a aula pela porta');
+  }
+}
 
 // ================================================================= 5. a aula
 console.log('\n5. a Sala 1 na aula');

@@ -211,8 +211,13 @@ export function conferirModulo(m: Modulo): string[] {
     }
     // quem chama e quem fala na chamada tem que ESTAR no ginásio naquela hora
     const noGinasio: readonly string[] = irmasNoGinasio(i);
-    if (!noGinasio.includes(l.aula.chama)) erros.push(`${onde}: a ${l.aula.chama} chama a aula, mas não está no ginásio`);
-    if (l.aula.chamada[0]?.quem !== l.aula.chama) erros.push(`${onde}: a chamada tem de começar por quem chama (${l.aula.chama})`);
+    if (l.aula.chama === 'qualquer') {
+      // sem dona, a dupla fala com quem quiser: as três têm de estar lá
+      if (noGinasio.length < 3) erros.push(`${onde}: qualquer uma chama, mas as três ainda não estão no ginásio`);
+    } else {
+      if (!noGinasio.includes(l.aula.chama)) erros.push(`${onde}: a ${l.aula.chama} chama a aula, mas não está no ginásio`);
+      if (l.aula.chamada[0]?.quem !== l.aula.chama) erros.push(`${onde}: a chamada tem de começar por quem chama (${l.aula.chama})`);
+    }
     for (const f of l.aula.chamada) {
       if (!noGinasio.includes(f.quem)) erros.push(`${onde}: "${f.quem}" fala na chamada, mas não está no ginásio`);
     }

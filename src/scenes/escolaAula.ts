@@ -19,7 +19,8 @@ import { conversa, sentarOsDois } from './escolaComum';
  * AS IRMÃS DA LUNA (pedido do Renan): a Sol e a Estrella também são alunas.
  * Na aula estão SEMPRE as três; no ginásio, antes da primeira aula só a Luna,
  * depois a Luna e a Sol, depois as três (`irmasNoGinasio`). Quem chama cada
- * aula é da lição (`aula.chama`): a 1 a Luna, a 2 a Sol, a 3 a Estrella.
+ * aula é da lição (`aula.chama`): a 1 a Luna, a 2 a Sol, a 3 a Estrella, e
+ * da 4 em diante qualquer uma das três.
  *
  * O CICLO, uma lição por aula:
  *
@@ -108,8 +109,8 @@ export function lousaDaSala1(g: GameAPI): string[] | null {
 }
 
 /**
- * A LUNA CHAMA A AULA (no ginásio): o sinal, as falas da lição da vez, o
- * aviso, e a flag. Quem a chama cuida de levar a Luna embora do ginásio.
+ * UMA IRMÃ CHAMA A AULA (no ginásio): o sinal, as falas da lição da vez, o
+ * aviso, e a flag. Quem a chama cuida de levar as irmãs embora do ginásio.
  */
 export async function chamarAula(g: GameAPI): Promise<void> {
   const licao = aulaDaVez(g);

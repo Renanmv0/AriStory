@@ -115,7 +115,10 @@ uma estrela, 65% duas, 90% três; o save guarda a **melhor** vez, e o
 
 `chama` diz **quem chama a aula** no ginásio — é com ela que a dupla tem de
 falar. O Renan pediu: a 1 é da Luna, a 2 da Sol (depois do salto dela), a 3
-da Estrella (depois da estrelinha), e daí revezam na mesma ordem. Quem treina
+da Estrella (depois da estrelinha); da 4 em diante é `'qualquer'` — falar com
+qualquer uma das três chama, até a escola ganhar mais personagens. Numa aula
+de `'qualquer'`, a `chamada` é a turma reagindo ao sinal (vale seja quem for
+que a dupla escolheu), e as três têm de estar no ginásio. Quem treina
 no ginásio depende de quantas lições já têm estrela (`irmasNoGinasio`): antes
 da 1ª só a Luna, antes da 2ª a Luna e a Sol, daí em diante as três — e
 `scripts/apostila.mjs` reprova uma lição chamada por quem ainda não está lá.
