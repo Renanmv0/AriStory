@@ -18,7 +18,7 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * - a ESTRELLA, a calma, sempre preocupada com as duas: chocolate ao leite,
  *   as orelhas CAÍDAS dos lados (coelha de orelha caída é a silhueta mais
  *   tranquila que existe), a estrelinha dourada no alto da cabeça, as
- *   pálpebras meio baixas e um sorriso pequeno. O gesto dela é a ESTRELINHA
+ *   olhar sereno (o traço da pálpebra) e um sorriso pequeno. O gesto dela é a ESTRELINHA
  *   (`estrelinha`), a ginástica — o nome dela, feito movimento.
  *
  * O resto deste comentário é o da Luna, que continua valendo para as três.
@@ -71,8 +71,8 @@ export interface FichaDeCoelha {
   orelhas: 'dobrada' | 'em-pe' | 'caidas';
   enfeite: 'laco' | 'sol' | 'estrela';
   boca: 'linha' | 'sorrisao' | 'sorrisinho';
-  /** pálpebra meio baixa: o olhar calmo */
-  palpebra: boolean;
+  /** o olhar calmo: o olho um tico mais fechado, com o traço da pálpebra */
+  olhoSereno: boolean;
   /** o tamanho no fim (a Luna é 1,15) */
   escala: number;
   semente: number;
@@ -80,20 +80,20 @@ export interface FichaDeCoelha {
 
 export const FICHA_DA_LUNA: FichaDeCoelha = {
   id: 'luna', pelo: P.lunaPelo, peloClaro: P.lunaPeloClaro, orelhaDentro: P.lunaOrelhaDentro,
-  bochecha: P.lunaBochecha, orelhas: 'dobrada', enfeite: 'laco', boca: 'linha', palpebra: false,
+  bochecha: P.lunaBochecha, orelhas: 'dobrada', enfeite: 'laco', boca: 'linha', olhoSereno: false,
   escala: 1.15, semente: 20260928,
 };
 
 export const FICHA_DA_SOL: FichaDeCoelha = {
   id: 'sol', pelo: P.solPelo, peloClaro: P.solPeloClaro, orelhaDentro: P.solOrelhaDentro,
-  bochecha: P.solBochecha, orelhas: 'em-pe', enfeite: 'sol', boca: 'sorrisao', palpebra: false,
+  bochecha: P.solBochecha, orelhas: 'em-pe', enfeite: 'sol', boca: 'sorrisao', olhoSereno: false,
   // a menor das três, e a mais barulhenta
   escala: 1.08, semente: 20261001,
 };
 
 export const FICHA_DA_ESTRELLA: FichaDeCoelha = {
   id: 'estrella', pelo: P.estrellaPelo, peloClaro: P.estrellaPeloClaro, orelhaDentro: P.estrellaOrelhaDentro,
-  bochecha: P.estrellaBochecha, orelhas: 'caidas', enfeite: 'estrela', boca: 'sorrisinho', palpebra: true,
+  bochecha: P.estrellaBochecha, orelhas: 'caidas', enfeite: 'estrela', boca: 'sorrisinho', olhoSereno: true,
   // a mais alta: a que cuida das outras duas
   escala: 1.21, semente: 20261002,
 };
@@ -108,6 +108,8 @@ const DURA_ESTRELINHA = 1.7;
 const PASSO_DA_ESTRELINHA = 1.15;
 /** o centro da volta, na altura do quadril (em unidades do corpo, antes da escala) */
 const CENTRO_DA_VOLTA = 0.4;
+/** quanto o olho sereno (o da Estrella) fica aberto, de 0 a 1 */
+const ABERTURA_SERENA = 0.8;
 
 export class CoelhaDaTorcida extends Bicho {
   readonly ficha: FichaDeCoelha;
@@ -343,18 +345,20 @@ export class CoelhaDaTorcida extends Bicho {
       cilio.position.set(lado * 0.03, 0.026, 0.014);
       cilio.rotation.z = lado * 0.5;
       olho.add(cilio);
-      if (f.palpebra) {
+      if (f.olhoSereno) {
         /*
-         * A PÁLPEBRA da Estrella: meia esfera de pelo por cima do olho, que
-         * cobre o terço de cima — o olhar calmo, de quem está sempre de
-         * olho nas irmãs. Ela é filha do olho, então pisca junto.
+         * O OLHAR CALMO da Estrella: um TRAÇO de pálpebra, escuro, abraçando
+         * o alto da pupila — e o olho um tico mais fechado (`ABERTURA_SERENA`
+         * na piscada). Começou como uma meia esfera de pelo por cima do olho,
+         * e de perto virou um calombo marrom tapando o branco, com o cílio
+         * boiando acima dele: olho de sono, não de calma.
          */
-        const palpebra = new THREE.Mesh(
-          new THREE.SphereGeometry(0.039, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.42), pelo,
+        const traco = new THREE.Mesh(
+          new THREE.TorusGeometry(0.0255, 0.0042, 6, 14, Math.PI * 0.86), toon(P.lunaOlho),
         );
-        palpebra.rotation.x = 0.35;
-        palpebra.position.set(0, 0.001, 0.004);
-        olho.add(palpebra);
+        traco.rotation.z = Math.PI * 0.07;
+        traco.position.set(lado * 0.002, -0.002, 0.033);
+        olho.add(traco);
       }
       this.cabeca.add(olho);
       this.olhos.push(olho);
@@ -765,7 +769,8 @@ export class CoelhaDaTorcida extends Bicho {
     // a piscada, a cada ~3,5 s; no carinho os olhos fecham contentes
     const piscando = Math.max(0, Math.sin(fase * 1.8) - 0.985) * 60;
     for (const olho of this.olhos) {
-      const alvo = Math.max(0.12, 1 - carinho * 0.8 - Math.min(1, piscando));
+      const aberto = this.ficha.olhoSereno ? ABERTURA_SERENA : 1;
+      const alvo = Math.max(0.12, aberto - carinho * 0.8 - Math.min(1, piscando));
       olho.scale.y += (alvo - olho.scale.y) * Math.min(1, dt * 18);
     }
     // tímida, a bochecha fica mais corada (cresce um pouco)

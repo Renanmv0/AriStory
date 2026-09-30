@@ -227,11 +227,18 @@ parece só uma curva estranha. Quem pegou foi a MEDIDA — o `z` da cabeça esta
 
 A Luna, a Sol e a Estrella são a mesma coelha com fichas diferentes
 (`entities/bichos/CoelhaDaTorcida.ts`): cor do pelo, orelha (dobrada, em pé,
-caída), enfeite, boca, pálpebra e escala moram na `FichaDeCoelha`, e cada
+caída), enfeite, boca, olhar e escala moram na `FichaDeCoelha`, e cada
 irmã é uma subclasse de uma linha (`class Sol extends CoelhaDaTorcida`). Bicho
 parecido com outro que já existe ganha ficha, não cópia do arquivo. A
-PERSONALIDADE também é modelo: o sorrisão e a orelha em pé da Sol, a pálpebra
-baixa e a orelha caída da Estrella — ela é lida de longe antes da fala.
+PERSONALIDADE também é modelo: o sorrisão e a orelha em pé da Sol, o olhar
+sereno e a orelha caída da Estrella — ela é lida de longe antes da fala.
+
+**Olhar calmo é um TRAÇO, não uma tampa.** A primeira pálpebra da Estrella
+foi uma meia esfera de pelo por cima do olho: de longe passava, de perto era
+um calombo marrom tapando o branco, com o cílio boiando acima — olho de sono.
+O que funcionou: um arco fino e escuro (`TorusGeometry` com arco) abraçando o
+alto da pupila, e o olho um tico mais fechado na própria piscada. Rosto se
+olha DE PERTO (câmera na cabeça, `clip` no rosto), não no zoom do jogo.
 
 ## Acrobacia: gire pelo QUADRIL, não pela origem
 
