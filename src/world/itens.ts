@@ -1381,6 +1381,21 @@ export const PREMIOS_DA_APOSTILA: Record<string, readonly ItemDef[]> = {
   ],
 };
 
+/** o número da lição de cada prêmio, para dizer onde a peça se ganha */
+const NUMERO_DA_LICAO: Record<string, number> = { 'cade-o-novelo': 3 };
+
+/**
+ * OS UNIFORMES DA ESCOLA: o que a aba "Uniformes" do vestiário do ginásio
+ * mostra — todas as peças que as lições da apostila dão, na ordem, cada uma
+ * com a frase de onde ela se ganha (para a vaga trancada).
+ */
+export const UNIFORMES_DA_ESCOLA: ReadonlyArray<{ peca: ItemDef; comoGanhar: string }> =
+  Object.entries(PREMIOS_DA_APOSTILA).flatMap(([licao, pecas]) =>
+    pecas.map((peca) => ({
+      peca,
+      comoGanhar: NUMERO_DA_LICAO[licao] ? `ganha na lição ${NUMERO_DA_LICAO[licao]}` : 'ganha numa lição',
+    })));
+
 /**
  * AS ARARAS DA BOUTIQUE: o que cada uma vende, na ordem em que elas estao na
  * planta da loja (`scenes/lojinha.ts`).

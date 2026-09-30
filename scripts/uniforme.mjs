@@ -11,7 +11,10 @@
  *   4. A AULA: concluir a lição 3 na Sala 1 faz o Gatito entregar o uniforme,
  *      e as sete peças vão para o guarda-roupa dos DOIS — uma vez só;
  *   5. save antigo: quem já tinha concluído a lição 3 ganha o uniforme ao abrir
- *      o guarda-roupa.
+ *      o guarda-roupa;
+ *   6. o VESTIÁRIO DA ESCOLA (a porta do fundo do ginásio): abre na aba dos
+ *      uniformes, trancados antes da lição 3; depois, um clique veste e outro
+ *      tira; a aba do guarda-roupa é a de sempre; e no celular nada vaza.
  *
  *   node scripts/uniforme.mjs /tmp/un
  */
@@ -354,6 +357,126 @@ if (!SO || SO.includes('antigo')) {
   });
   ok(r.antes === 0 && r.depois === 7, `quem já tinha a lição 3 ganha o uniforme ao abrir o guarda-roupa (${r.antes} → ${r.depois})`);
   await pv.close();
+}
+
+// ============================================= 6. o vestiário da escola
+if (!SO || SO.includes('vestiario')) {
+  console.log('\n6. o vestiário da escola');
+  for (const [nome, viewport, escala] of [['pc', { width: 1100, height: 800 }, 1], ['cel', { width: 390, height: 844 }, 2]]) {
+    const pv = await browser.newPage({ viewport, deviceScaleFactor: escala, isMobile: nome === 'cel', hasTouch: nome === 'cel' });
+    ouvir(pv);
+    await pv.goto(`${BASE}/?cena=escola-ginasio`, { waitUntil: 'networkidle' });
+    await pv.evaluate(() => localStorage.removeItem('aristory.save.v1'));
+    await pv.goto(`${BASE}/?cena=escola-ginasio&em=11.4,-6.6&olhar=3.14`, { waitUntil: 'networkidle' });
+    await pv.waitForFunction(() => !!window.jogo?.current?.world && !window.jogo.transitioning, null, { timeout: 30000 });
+    await pv.evaluate(() => window.jogo.debugPlace(11.4, -7.5, Math.PI));
+    await pv.waitForTimeout(1200);
+    if (nome === 'pc') await pv.screenshot({ path: `${OUT}-vestiario-porta.png` });
+    let rotulo = '';
+    for (let i = 0; i < 24 && !/Vestiário/.test(rotulo); i++) {
+      rotulo = await pv.evaluate(() => document.querySelector('.prompt.show .label')?.textContent ?? '');
+      await pv.waitForTimeout(250);
+    }
+    if (nome === 'pc') ok(rotulo === 'Vestiário', `na frente da porta do fundo, o prompt é "Vestiário" (${rotulo})`);
+    const abrir = async () => {
+      await pv.keyboard.press('KeyE');
+      for (let i = 0; i < 30 && !(await pv.evaluate(() => window.jogo.ui.armarioOpen)); i++) {
+        if (await pv.locator('.dialogue.show').count()) await pv.keyboard.press('KeyE');
+        await pv.waitForTimeout(350);
+      }
+      await pv.waitForTimeout(700);
+    };
+    await abrir();
+    const estado = () => pv.evaluate(() => {
+      const a = document.querySelector('.armario');
+      return {
+        aberto: a.classList.contains('show'),
+        titulo: a.querySelector('.titulo').textContent,
+        abaUniforme: a.classList.contains('aba-piscina'),
+        rotuloDaAba: a.querySelector('.aba-segunda').textContent,
+        pecas: [...a.querySelectorAll('.vitrine-piscina .produto')].map((b) => ({
+          id: b.dataset.id, trancada: b.classList.contains('trancada'), vestida: b.classList.contains('vestida'),
+          etiqueta: b.querySelector('em').textContent,
+        })),
+      };
+    });
+    let e = await estado();
+    if (nome === 'pc') {
+      ok(e.aberto && e.titulo === 'Vestiário' && e.abaUniforme && e.rotuloDaAba === '🐱 Uniformes',
+        'a porta abre o vestiário direto na aba dos uniformes');
+      ok(e.pecas.length === 7 && e.pecas.every((p) => p.trancada && /lição 3/.test(p.etiqueta)),
+        `antes da lição 3: as sete peças trancadas, dizendo onde se ganha (${e.pecas[0]?.etiqueta})`);
+      await pv.screenshot({ path: `${OUT}-vestiario-trancado.png` });
+      // ganha o uniforme (o fim da lição 3) e reabre
+      await pv.keyboard.press('Escape');
+      await pv.waitForTimeout(500);
+      await pv.evaluate(() => {
+        const j = window.jogo;
+        for (const id of ['oi-tudo-bem', 'jantar-das-confusoes', 'cade-o-novelo']) {
+          j.save.abrirLicao(id);
+          j.save.concluirLicao(id, 3);
+        }
+      });
+      await abrir();
+      e = await estado();
+      ok(e.pecas.every((p) => !p.trancada && p.etiqueta === 'vestir'), 'depois da lição 3: as sete destrancadas, prontas para vestir');
+    } else {
+      await pv.evaluate(() => {
+        const j = window.jogo;
+        for (const id of ['oi-tudo-bem', 'jantar-das-confusoes', 'cade-o-novelo']) {
+          j.save.abrirLicao(id);
+          j.save.concluirLicao(id, 3);
+        }
+        j.ui.fecharArmario();
+      });
+      await pv.waitForTimeout(400);
+      await pv.evaluate(() => window.jogo.abrirVestiarioDaEscola());
+      await pv.waitForTimeout(800);
+    }
+    // um clique veste; outro tira
+    const vestidoDe = (id) => pv.evaluate((id) => window.jogo.save.vestiveis(window.jogo.playerId()).some((v) => v?.id === id), id);
+    for (const id of ['jaquetona-dos-gatitos', 'bone-dos-gatitos', 'calca-dos-gatitos', 'tenis-dos-gatitos']) {
+      await pv.click(`.armario .vitrine-piscina .produto[data-id="${id}"]`);
+      await pv.waitForTimeout(300);
+    }
+    const vestiu = await Promise.all(['jaquetona-dos-gatitos', 'bone-dos-gatitos', 'calca-dos-gatitos', 'tenis-dos-gatitos'].map(vestidoDe));
+    if (nome === 'pc') ok(vestiu.every(Boolean), 'um clique em cada peça veste: jaquetona, boné, calça e tênis');
+    await pv.waitForTimeout(600);
+    await pv.screenshot({ path: `${OUT}-vestiario-${nome}.png` });
+    // o celular: nada da vitrine vaza para o lado
+    if (nome === 'cel') {
+      const vaza = await pv.evaluate(() => {
+        const s = document.querySelector('.armario .sheet');
+        return s.scrollWidth > s.clientWidth + 1;
+      });
+      ok(!vaza, 'no celular, o painel não vaza para o lado');
+    }
+    if (nome === 'pc') {
+      await pv.click('.armario .vitrine-piscina .produto[data-id="bone-dos-gatitos"]');
+      await pv.waitForTimeout(300);
+      ok(!(await vestidoDe('bone-dos-gatitos')), 'outro clique no boné tira ele');
+      // troca por peça da mesma vaga: a camiseta larga entra no lugar da jaquetona
+      await pv.click('.armario .vitrine-piscina .produto[data-id="camiseta-larga-dos-gatitos"]');
+      await pv.waitForTimeout(300);
+      ok(await vestidoDe('camiseta-larga-dos-gatitos') && !(await vestidoDe('jaquetona-dos-gatitos')),
+        'a camiseta larga entra no lugar da jaquetona (mesma vaga)');
+      // a aba do guarda-roupa continua a de sempre
+      await pv.click('.armario .abas [data-aba="vestir"]');
+      await pv.waitForTimeout(500);
+      const abaVestir = await pv.evaluate(() => {
+        const a = document.querySelector('.armario');
+        return a.classList.contains('aba-vestir') && a.querySelectorAll('.corpo .parte').length === 6;
+      });
+      ok(abaVestir, 'a aba do guarda-roupa é a de sempre (as seis vagas do corpo)');
+      await pv.screenshot({ path: `${OUT}-vestiario-guarda-roupa.png` });
+      await pv.keyboard.press('Escape');
+      await pv.waitForTimeout(600);
+      await pv.evaluate(() => window.jogo.setZoom(4));
+      await pv.waitForTimeout(1200);
+      await pv.screenshot({ path: `${OUT}-vestiario-saindo.png` });
+    }
+    await pv.close();
+  }
 }
 
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'console limpo');

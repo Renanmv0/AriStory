@@ -1463,6 +1463,12 @@ body.touch-device .dialogue .next { right: 84px; }
  */
 .armario:not(.modo-vestiario) .abas,
 .armario:not(.modo-vestiario) .traje { display: none; }
+/* o vestiário da ESCOLA: sem traje de banho e sem carteira (uniforme se ganha) */
+.armario.modo-escola .traje,
+.armario.modo-escola .saldo { display: none; }
+.armario .produto.uniforme.trancada { opacity: 0.55; }
+.armario .produto.uniforme.trancada i { filter: grayscale(0.7); }
+.armario .vitrine-piscina > .nada { margin: 6px 2px 12px; color: #6b6178; font-weight: 700; }
 .armario.aba-vestir .ficha,
 .armario.aba-vestir .vitrine-piscina,
 .armario.aba-vestir .saldo { display: none; }

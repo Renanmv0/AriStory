@@ -588,6 +588,12 @@ export interface GameAPI {
    */
   abrirVestiario(): void;
   /**
+   * O VESTIÁRIO DA ESCOLA (a porta do fundo do ginásio): o mesmo painel, com
+   * a aba do guarda-roupa de sempre e a dos UNIFORMES — as peças que as lições
+   * dão, para vestir e tirar com um clique.
+   */
+  abrirVestiarioDaEscola(): void;
+  /**
    * Abre uma ARARA da boutique da Estella: a vitrine daquela fila, com o
    * boneco de prova ao lado. Trava o movimento igual ao armario.
    *

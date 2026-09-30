@@ -229,6 +229,17 @@ junto com chapéu — pedido do Renan. Save antigo com o óculos na vaga da
 cabeça muda ele de vaga sozinho; se o acessório já estava ocupado, a peça que
 sobra vai para o guarda-roupa (`SaveState.normalizar`).
 
+## O vestiário da ESCOLA: a aba dos uniformes
+
+A porta do fundo do ginásio da escola (`scenes/escolaGinasio.ts`) abre o
+MESMO painel em modo `escola` (`g.abrirVestiarioDaEscola()` →
+`ui.abrirArmario('escola')`): a aba do guarda-roupa de sempre e a dos
+**Uniformes** — `UNIFORMES_DA_ESCOLA` (`world/itens.ts`), que é tudo o que
+`PREMIOS_DA_APOSTILA` dá. Sem preço, sem traje de banho, sem carteira: a peça
+que ainda não foi ganha aparece trancada dizendo em que lição se ganha, e a
+ganha se VESTE ou se TIRA com um clique (`alternarUniforme` no `Game`).
+Uniforme novo = a peça ganha como prêmio de lição; a aba se desenha sozinha.
+
 ## Pele à mostra: `bracosNus` e `pernasNuas`
 
 A peça não pode dizer "cor de pele" — a pele é do personagem

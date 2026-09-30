@@ -596,6 +596,12 @@ esperando o Renan: só ele sabe quais são.
   atlética, short, calça jogger e tênis, nas cores do time e com o emblema dos
   Gatitos (`world/uniformeDosGatitos.ts`, `PREMIOS_DA_APOSTILA` em
   `world/itens.ts`, teste `scripts/uniforme.mjs`).
+- **CONSTRUÍDO — o vestiário da escola** (pedido do Renan: "para facilitar a
+  troca de roupa"): uma porta com a placa VESTIÁRIO na parede do fundo do
+  ginásio, no canto direito. Ela abre direto o painel do vestiário — o do
+  clube, com a aba do guarda-roupa de sempre e a aba dos **Uniformes**, onde
+  cada peça se veste ou se tira com um clique (trancada, dizendo a lição, até
+  ser ganha). Não é cenário novo, só a porta.
 - **Estrelinhas somadas destravam roupa** no guarda-roupa dos dois
   (`g.ganharPeca`), no molde do chapéu de campeão. Propostas: a **tiara de
   orelhinhas do Gatito** (uma chocolate, uma caramelo), a **mochila da
