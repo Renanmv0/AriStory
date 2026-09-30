@@ -223,11 +223,11 @@ const depois = await estado();
 conferir(depois.luna === true && depois.piquenique === true, 'o quadro encheu: a Luna aparece fazendo piquenique');
 conferir(depois.soltosVisiveis === 0, 'os canteiros de florzinha somem', `${depois.soltosVisiveis} visíveis`);
 conferir(depois.prompt?.ativo && depois.prompt.label === 'Falar com a coelhinha', 'o prompt aparece, e ela ainda é "a coelhinha"', depois.prompt?.label);
-conferir(depois.colisoresNela === 3, 'os colisores dela, da cesta e da flâmula entram', String(depois.colisoresNela));
+conferir(depois.colisoresNela === 5, 'os colisores dela, das duas irmãs, da cesta e da flâmula entram', String(depois.colisoresNela));
 const intrusos = await page.evaluate(([P]) => {
   const w = window.jogo.current.world;
   return w.root.children
-    .filter((o) => o.visible && o.name !== 'piquenique-da-luna' && o.userData?.peca !== 'luna')
+    .filter((o) => o.visible && o.name !== 'piquenique-da-luna' && !['luna', 'sol', 'estrella'].includes(o.userData?.peca))
     .filter((o) => Math.hypot(o.position.x - P.x, o.position.z - P.z) < 1.6)
     .map((o) => `${o.userData?.peca ?? o.type}@${o.position.x.toFixed(1)},${o.position.z.toFixed(1)}`);
 }, [PIQUENIQUE]);
