@@ -7,6 +7,7 @@ import { ARI, RENAN } from '../characters/cast';
 import { MODULO_1, irmasNoGinasio, licaoDaVez, licoesConcluidas, type Irma } from '../minigames/aula/apostila';
 import type { Fala, Falante, Licao } from '../minigames/aula/tipos';
 import { conversa, sentarOsDois } from './escolaComum';
+import { PREMIOS_DA_APOSTILA } from '../world/itens';
 
 /**
  * ============================================== A AULA DO GATITO, NA SALA 1
@@ -329,6 +330,36 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
     levantar(g);
   };
 
+  /**
+   * O PRÊMIO DA LIÇÃO (`PREMIOS_DA_APOSTILA`), entregue pelo Gatito logo
+   * depois do encerramento. O da lição 3 é o UNIFORME DOS GATITOS inteiro —
+   * pedido do Renan: "o Gatito iria falar que por completar essa aula nós
+   * receberíamos os uniformes", e as peças vão para o guarda-roupa dos dois.
+   */
+  const entregarPremio = async (g: GameAPI, licao: Licao): Promise<void> => {
+    const pecas = PREMIOS_DA_APOSTILA[licao.id];
+    const chave = `premio-da-licao-${licao.id}`;
+    if (!pecas?.length || g.flag(chave)) return;
+    await conversa(g, [
+      [G, 'Ah, antes de vocês irem: três lições! Agora vocês são oficialmente da turma.'],
+      [G, 'E quem é da turma veste as cores da escola. Por completar esta aula, vocês ganham o uniforme dos Gatitos!'],
+    ]);
+    for (const i of irmas) i.bicho.torcer(2.6);
+    g.som('sacudida');
+    await conversa(g, [
+      [NOMES.sol, '¡EL UNIFORME! ¡QUÉ NOTA! ¡Agora vocês são Gatitos de verdade, panas!'],
+      [NOMES.luna, 'Tem de tudo: boné, camiseta, a larguinha, a jaquetona, short, calça... e até tênis!'],
+      [NOMES.estrella, 'A jaquetona é quentinha. Usem quando esfriar, tá? Aqui venta de tarde.'],
+      [g.companionName(), 'Um uniforme pra cada um? A gente vai ficar igualzinho.'],
+      [G, 'Já está tudo no guarda-roupa de vocês. Vistam com orgulho, turma!'],
+    ]);
+    gatito?.sixSeven();
+    for (const p of pecas) g.ganharPeca(p);
+    g.setFlag(chave);
+    g.som('memoria');
+    g.toast('Uniforme dos Gatitos no guarda-roupa dos dois', '🧢');
+  };
+
   /** A AULA: o sinal, o Gatito, a apostila na lição da vez, e o fim */
   const darAula = async (g: GameAPI): Promise<void> => {
     const licao = aulaDaVez(g);
@@ -354,6 +385,7 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
     g.som('sacudida');
     await conversa(g, [[G, DAS_ESTRELAS[feita.estrelas].replace('{aluno}', ARI.name)]]);
     await conversa(g, falasDaAula(licao.aula.encerramento));
+    await entregarPremio(g, licao);
     g.setFlag(AULA_CHAMADA, false);
     if (primeira) {
       g.unlock({

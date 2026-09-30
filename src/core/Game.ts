@@ -27,7 +27,7 @@ import {
   type Vaga,
 } from './types';
 import {
-  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PREMIOS_DA_ARENA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
+  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PREMIOS_DA_APOSTILA, PREMIOS_DA_ARENA, UNIFORMES_DA_ESCOLA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
 } from '../world/itens';
 import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
@@ -1175,6 +1175,12 @@ export class Game implements GameAPI {
    * espelho do mezanino da Estella, que abrem o mesmo painel.
    */
   private reporPremios(): void {
+    // O prêmio de lição da apostila vale para quem já tinha concluído a lição
+    // antes de ele existir: a lição com estrela conta como prêmio entregue
+    for (const [licao, pecas] of Object.entries(PREMIOS_DA_APOSTILA)) {
+      if (!this.save.apostila.estrelas[licao]) continue;
+      for (const p of pecas) this.save.registrarPremio(p.id);
+    }
     for (const id of this.save.premios) {
       const peca = fichaDoItem(id);
       if (!peca) continue;
@@ -1186,7 +1192,8 @@ export class Game implements GameAPI {
   private pintarArmario(): void {
     this.ui.mostrarAbaDoArmario(this.abaDoArmario, this.trajeDoBoneco);
     if (this.abaDoArmario === 'piscina' && this.ui.armarioEhVestiario) {
-      this.pintarPiscina();
+      if (this.ui.armarioEhDaEscola) this.pintarUniformes();
+      else this.pintarPiscina();
       return;
     }
     const quem = this.playerId();
@@ -1227,6 +1234,84 @@ export class Game implements GameAPI {
     this.previa.vestirTraje('banho');
     this.previa.mostrar(this.player.rig.spec);
     this.ui.abrirArmario('vestiario');
+    this.pintarArmario();
+  }
+
+  /**
+   * Abre o VESTIÁRIO DA ESCOLA (a porta do fundo do ginásio): o mesmo painel
+   * do vestiário do clube, com a segunda aba dos UNIFORMES em vez das roupas
+   * de piscina (pedido do Renan). Lá cada peça de uniforme se veste e se tira
+   * com um clique; a aba do guarda-roupa é a de sempre. O boneco é de roupa de
+   * rua — uniforme não vai para a piscina.
+   */
+  abrirVestiarioDaEscola(): void {
+    this.herdarModaPraia();
+    this.reporCompras();
+    this.reporPremios();
+    this.reporChapeuDeCampeao();
+    // chega direto nos uniformes: é o que veio fazer aqui
+    this.abaDoArmario = 'piscina';
+    this.trajeDoBoneco = 'normal';
+    this.provandoNaPiscina = null;
+    this.previa.vestirTraje('normal');
+    this.previa.mostrar(this.player.rig.spec);
+    this.ui.abrirArmario('escola');
+    this.pintarArmario();
+  }
+
+  /** A peça de uniforme é da dupla? (ganha e anotada, ou guardada no armário) */
+  private temUniforme(id: string): boolean {
+    return this.save.ganhouPremio(id) || this.save.achouItem(this.playerId(), id);
+  }
+
+  /** Redesenha a aba dos uniformes e o boneco, com o que a pessoa está vestindo. */
+  private pintarUniformes(): void {
+    const quem = this.playerId();
+    const vestindo = this.save.vestiveis(quem);
+    const css = (cor: number): string => `#${cor.toString(16).padStart(6, '0')}`;
+    this.ui.renderPiscina({
+      dono: this.player.name,
+      saldo: this.save.carteira,
+      provando: this.provandoNaPiscina?.id ?? null,
+      uniforme: true,
+      pecas: UNIFORMES_DA_ESCOLA.map(({ peca: p, comoGanhar }) => ({
+        id: p.id,
+        nome: p.nome,
+        icone: p.icone,
+        nota: p.nota,
+        slot: p.slot ?? 'tronco',
+        preco: 0,
+        cor: css(p.cor ?? p.corBanho ?? p.amostra ?? 0xcccccc),
+        jaTem: this.temUniforme(p.id),
+        vestida: vestindo.some((v) => v?.id === p.id),
+        comoGanhar,
+      })),
+    });
+    this.previa.vestir(this.save.loadout(quem));
+  }
+
+  /**
+   * UM CLIQUE NUMA PEÇA DE UNIFORME: marca ela na ficha e, se ela é da dupla,
+   * já VESTE (ou TIRA, se estava vestida) — "vestir cada uma delas que
+   * quisermos ou tirá-las", pedido do Renan.
+   */
+  private alternarUniforme(id: string): void {
+    const entrada = UNIFORMES_DA_ESCOLA.find((u) => u.peca.id === id);
+    if (!entrada) return;
+    const peca = entrada.peca;
+    this.provandoNaPiscina = peca;
+    const quem = this.playerId();
+    if (this.temUniforme(peca.id)) {
+      const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
+      if (vaga >= 0 && this.save.vestiveis(quem)[vaga]?.id === peca.id) {
+        this.tirarPeca(quem, vaga);
+      } else {
+        // é dos dois, mas pode ter sido descartada: repõe antes de vestir
+        this.storeItem(peca, quem);
+        this.vestirPeca(quem, peca.id);
+      }
+    }
+    this.audio.play('escolha');
     this.pintarArmario();
   }
 
@@ -1273,6 +1358,10 @@ export class Game implements GameAPI {
   }
 
   private provarNaPiscina(id: string): void {
+    if (this.ui.armarioEhDaEscola) {
+      this.alternarUniforme(id);
+      return;
+    }
     const peca = MODA_PRAIA.find((p) => p.id === id) ?? null;
     if (!peca) return;
     // clicar de novo na mesma TIRA a prova, como na arara da Estella
@@ -1294,6 +1383,10 @@ export class Game implements GameAPI {
   private agirNaPiscina(): void {
     const peca = this.provandoNaPiscina;
     if (!peca) return;
+    if (this.ui.armarioEhDaEscola) {
+      this.alternarUniforme(peca.id);
+      return;
+    }
     const quem = this.playerId();
     const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
     if (!this.jaTemPeca(peca.id)) {

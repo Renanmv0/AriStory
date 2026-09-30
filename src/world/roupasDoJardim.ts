@@ -1040,4 +1040,4 @@ export {
 
 // os desenhos e as contas de corpo que as outras levas reaproveitam (o
 // vestiário do clube, em `roupasDePiscina.ts`)
-export { corpo, florzinha, folhinha, colar, noTronco };
+export { corpo, florzinha, folhinha, colar, noTronco, camisetaLarga };

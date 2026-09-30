@@ -29,6 +29,11 @@ import {
   vestidoDeMargaridas, vestidoDeRosinhas, vestidoDoCampo,
   calcaCargoDeJardim, calcaPantalona, calcaDeJardineiro,
 } from './roupasDoJardim';
+import {
+  boneDosGatitos, calcaDosGatitos, camisetaDosGatitos, camisetaLargaDosGatitos, cosDoShortDosGatitos,
+  jaquetonaDosGatitos, mangaDaCamisetaDosGatitos, mangaDaJaquetona, mangaLargaDosGatitos,
+  pernaDoShortDosGatitos, tenisDosGatitos,
+} from './uniformeDosGatitos';
 
 /**
  * O catalogo de itens do jogo.
@@ -1276,6 +1281,68 @@ export const ITENS = {
     enfeite: 'sorvete',
     nota: 'do Mano · +velocidade, e uma casquinha de cada lado',
   },
+
+  /* ====================================================================
+   *      O UNIFORME DOS GATITOS (`world/uniformeDosGatitos.ts`)
+   * ====================================================================
+   * O prêmio do fim da lição 3 da apostila (`PREMIOS_DA_APOSTILA`): o Gatito
+   * entrega o uniforme inteiro do time, nas cores dos Gatitos. Prêmio não tem
+   * `preco` — não está à venda em lugar nenhum.
+   */
+  boneDosGatitos: {
+    id: 'bone-dos-gatitos', nome: 'Boné dos Gatitos', icone: '🧢',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.gatitosAzul, corDetalhe: P.gatitosAmarelo,
+    nota: 'do time · com orelhinhas de gato e o G na testa',
+    // SEM `cobreCabelo`: boné pousa no cabelo, não some com ele
+    extra: boneDosGatitos,
+  },
+  camisetaDosGatitos: {
+    id: 'camiseta-dos-gatitos', nome: 'Camiseta dos Gatitos', icone: '👕',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.gatitosAzul, corDetalhe: P.gatitosAzul,
+    nota: 'do time · justinha, com a gola amarela',
+    extra: camisetaDosGatitos, extraBraco: mangaDaCamisetaDosGatitos,
+  },
+  camisetaLargaDosGatitos: {
+    id: 'camiseta-larga-dos-gatitos', nome: 'Camiseta larga dos Gatitos', icone: '🐱',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.gatitosBranco, corDetalhe: P.gatitosAzul,
+    nota: 'do time · larguinha, com o emblema grandão e três estrelas',
+    extra: camisetaLargaDosGatitos, extraBraco: mangaLargaDosGatitos,
+  },
+  jaquetonaDosGatitos: {
+    id: 'jaquetona-dos-gatitos', nome: 'Jaquetona dos Gatitos', icone: '🧥',
+    tipo: 'vestivel', slot: 'tronco',
+    // `cor` pinta o tronco do rig por baixo; `corDetalhe`, a manga de couro
+    cor: P.gatitosAzul, corDetalhe: P.gatitosBranco,
+    nota: 'do time · de atlética, com o G bordado e GATITOS nas costas',
+    extra: jaquetonaDosGatitos, extraBraco: mangaDaJaquetona,
+  },
+  shortDosGatitos: {
+    id: 'short-dos-gatitos', nome: 'Short dos Gatitos', icone: '🩳',
+    tipo: 'vestivel', slot: 'pernas',
+    // SEM `cor`: é uma bermuda do rig (o calção e as pernas de shorts), na rua
+    // e no clube; o `praia` deixa a faixa e o cós aparecerem na piscina também
+    corBanho: P.gatitosAzul, amostra: P.gatitosAzul, praia: true,
+    nota: 'do time · de treino, com a faixa amarela do lado',
+    extra: pernaDoShortDosGatitos, extraQuadril: cosDoShortDosGatitos,
+  },
+  calcaDosGatitos: {
+    id: 'calca-dos-gatitos', nome: 'Calça dos Gatitos', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.gatitosAzul, corDetalhe: P.gatitosAzulEscuro,
+    nota: 'do time · de moletom, com as três listras e o punho no tornozelo',
+    extra: calcaDosGatitos,
+  },
+  tenisDosGatitos: {
+    id: 'tenis-dos-gatitos', nome: 'Tênis dos Gatitos', icone: '👟',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.gatitosBranco, corDetalhe: P.gatitosAzul,
+    substituiPe: true,
+    nota: 'do time · com o cadarço amarelo e o emblema na língua',
+    extra: tenisDosGatitos,
+  },
 } as const satisfies Record<string, ItemDef>;
 
 /**
@@ -1297,6 +1364,37 @@ export const PREMIOS_DA_ARENA: Record<string, readonly ItemDef[]> = {
   ],
   mano: [ITENS.patinsDoMano],
 };
+
+/**
+ * O PRÊMIO DE CADA LIÇÃO DA APOSTILA DO GATITO, pelo `id` da lição.
+ *
+ * Quem entrega é o Gatito, no fim da aula (`scenes/escolaAula.ts`); quem
+ * repõe é o guarda-roupa (`Game.reporPremios`), que também dá a quem já tinha
+ * concluído a lição antes de o prêmio existir.
+ */
+export const PREMIOS_DA_APOSTILA: Record<string, readonly ItemDef[]> = {
+  // pedido do Renan: "após completar a lição 3, desbloquear o uniforme dos
+  // Gatitos" — o uniforme inteiro, as sete peças
+  'cade-o-novelo': [
+    ITENS.boneDosGatitos, ITENS.camisetaDosGatitos, ITENS.camisetaLargaDosGatitos, ITENS.jaquetonaDosGatitos,
+    ITENS.shortDosGatitos, ITENS.calcaDosGatitos, ITENS.tenisDosGatitos,
+  ],
+};
+
+/** o número da lição de cada prêmio, para dizer onde a peça se ganha */
+const NUMERO_DA_LICAO: Record<string, number> = { 'cade-o-novelo': 3 };
+
+/**
+ * OS UNIFORMES DA ESCOLA: o que a aba "Uniformes" do vestiário do ginásio
+ * mostra — todas as peças que as lições da apostila dão, na ordem, cada uma
+ * com a frase de onde ela se ganha (para a vaga trancada).
+ */
+export const UNIFORMES_DA_ESCOLA: ReadonlyArray<{ peca: ItemDef; comoGanhar: string }> =
+  Object.entries(PREMIOS_DA_APOSTILA).flatMap(([licao, pecas]) =>
+    pecas.map((peca) => ({
+      peca,
+      comoGanhar: NUMERO_DA_LICAO[licao] ? `ganha na lição ${NUMERO_DA_LICAO[licao]}` : 'ganha numa lição',
+    })));
 
 /**
  * AS ARARAS DA BOUTIQUE: o que cada uma vende, na ordem em que elas estao na

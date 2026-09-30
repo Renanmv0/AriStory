@@ -40,6 +40,14 @@ const A = ARI.name;
 const R = RENAN.name;
 
 const GIN = { largura: 26, fundo: 18, altura: 5.0, portaX: 9 };
+/**
+ * A PORTA DO VESTIÁRIO (pedido do Renan: "um vestiário para a escola, para
+ * facilitar a troca de roupa" — só a porta, sem cenário novo): na parede do
+ * FUNDO, no canto direito, depois da arquibancada e fora da quadra. É a parede
+ * que a câmera vê de frente, e o corredor entre a cesta e a parede da direita
+ * leva até ela.
+ */
+const VESTIARIO = { x: 11.4, largura: 1.2 };
 /** a quadra: 22 × 12, com o meio em z = -0,5 */
 const QUADRA = { x: 0, z: -0.5, largura: 22, fundo: 12 };
 /** o aro: altura de verdade (3,05), e onde cada cesta fica */
@@ -59,6 +67,7 @@ export const escolaGinasio: SceneDef = {
     const g0 = w.game;
     const { x0, z0 } = cascaDeSala(w, {
       ...GIN, parede: P.escolaParede, barra: P.escolaBarra, chao: P.escolaQuadra, textura: assoalhoDeMadeira(2.4, 10),
+      vaosDoFundo: [{ c: VESTIARIO.x, largura: VESTIARIO.largura, porta: { cor: P.escolaArmarioAzul, largura: 1.0 } }],
     });
 
     // ================================================================ QUADRA
@@ -121,6 +130,26 @@ export const escolaGinasio: SceneDef = {
     w.blockCircle(-9.5, 7.3, 0.55);
     w.add(w.place(waterFountain(), x0 + 0.42, 0, 7.6, Math.PI / 2));
     w.blockCircle(x0 + 0.42, 7.6, 0.32);
+
+    // ====================================================== O VESTIÁRIO
+    // A porta abre direto o painel: o guarda-roupa de sempre e a aba dos
+    // UNIFORMES da escola (`abrirVestiarioDaEscola`)
+    w.add(w.place(cartazDeParede('VESTIÁRIO', [], 1.5, 0.42, '#3d68ad', '#ffe39a'), VESTIARIO.x, 2.5, z0 + 0.17));
+    w.interact({
+      id: 'ginasio:vestiario',
+      x: VESTIARIO.x, z: z0 + 1.1, radius: 1.3,
+      label: 'Vestiário', icon: '👕',
+      onInteract: async (g) => {
+        if (!g.flag('vestiario-da-escola')) {
+          g.setFlag('vestiario-da-escola');
+          await conversa(g, [
+            [R, 'O vestiário dos Gatitos. Tem armário até pra gente.'],
+            [A, 'Então dá pra trocar de roupa aqui mesmo, sem voltar pra casa?'],
+          ]);
+        }
+        g.abrirVestiarioDaEscola();
+      },
+    });
 
     w.door({
       x: GIN.portaX, z: GIN.fundo / 2 - 0.8, radius: 1.2,

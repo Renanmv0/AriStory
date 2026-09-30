@@ -1350,6 +1350,19 @@ export const PALETTE = {
   lunaToalhaXadrez: 0x5b86d2,
   flamulaGatitos: 0x3f6fc6,
 
+  // O UNIFORME DOS GATITOS, o prêmio da lição 3 (pedido do Renan: "das mesmas
+  // paletas de cores que o time dos Gatitos"). O azul e o amarelo são os do
+  // uniforme da Luna (`lunaUniforme`, `lunaUniformeFaixa`) — azul e amarelo,
+  // as cores que Brasil e Venezuela dividem nas bandeiras. O azul-marinho é o
+  // da ribana (gola, punho e cós de jaqueta de atlética), o branco é o do
+  // couro da manga da jaquetona e da sola do tênis
+  gatitosAzul: 0x3f6fc6,
+  gatitosAzulEscuro: 0x243f78,
+  gatitosAmarelo: 0xf2c14a,
+  gatitosBranco: 0xf7f5ef,
+  gatitosCreme: 0xefe6d2,
+  gatitosIlhos: 0x1c2a4a,
+
   // OS LANCHES DA MÁQUINA da escola: o pacote de biscoito, o chocolatinho, o
   // suco de caixinha e o salgadinho — cada um com a cor de embalagem que se
   // reconhece de longe no corredor

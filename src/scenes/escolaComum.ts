@@ -147,6 +147,8 @@ export function cascaDeSala(
   o: {
     largura: number; fundo: number; altura: number; parede: number; chao: number;
     textura?: THREE.Texture; portaX: number; barra?: number;
+    /** portas na parede do FUNDO (a de `-Z`), como a do vestiário do ginásio */
+    vaosDoFundo?: readonly Vao[];
   },
 ): { x0: number; z0: number; x1: number; z1: number } {
   const x0 = -o.largura / 2;
@@ -155,7 +157,7 @@ export function cascaDeSala(
   const z1 = o.fundo / 2;
   w.ground({ width: o.largura, depth: o.fundo, color: o.chao, textura: o.textura });
   w.setBounds(x0 + 0.45, z0 + 0.45, x1 - 0.45, z1 - 0.45);
-  paredeComVaos(w, 'x', z0, x0, x1, o.altura, o.parede, [], 1, o.barra);
+  paredeComVaos(w, 'x', z0, x0, x1, o.altura, o.parede, o.vaosDoFundo ?? [], 1, o.barra);
   paredeComVaos(w, 'z', x0, z0, z1, o.altura, o.parede, [], 1, o.barra);
   w.wall(x1, z0, x1, z1, 0.45, o.parede);
   const vao = 1.3;

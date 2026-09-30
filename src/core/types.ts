@@ -288,6 +288,14 @@ export interface ItemDef {
    */
   pesNus?: boolean;
   /**
+   * Só `pes`: a peça SUBSTITUI o pé do rig, como o patins. O pé é uma caixa, e
+   * um tênis de bico redondo e cano acolchoado não cabe em volta de uma caixa
+   * sem que as quinas furem — então, com a peça vestida, a caixa some e o
+   * `extra` é o sapato inteiro. No traje de banho (onde o `extra` não aparece)
+   * o pé de pele volta.
+   */
+  substituiPe?: boolean;
+  /**
    * PEÇA DE PISCINA: aparece também no traje de banho (o clube).
    *
    * No banho o corpo inteiro vira pele e, de roupa, só ficam a cabeça e o
@@ -579,6 +587,12 @@ export interface GameAPI {
    * os mesmos itens, no mesmo save. Cada pessoa tem o seu.
    */
   abrirVestiario(): void;
+  /**
+   * O VESTIÁRIO DA ESCOLA (a porta do fundo do ginásio): o mesmo painel, com
+   * a aba do guarda-roupa de sempre e a dos UNIFORMES — as peças que as lições
+   * dão, para vestir e tirar com um clique.
+   */
+  abrirVestiarioDaEscola(): void;
   /**
    * Abre uma ARARA da boutique da Estella: a vitrine daquela fila, com o
    * boneco de prova ao lado. Trava o movimento igual ao armario.
