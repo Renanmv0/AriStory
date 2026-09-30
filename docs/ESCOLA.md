@@ -885,4 +885,9 @@ os pompons são os mesmos, é o time.
 5. **na aula estão sempre as três**: a Luna na ponta da primeira fila, a Sol
    e a Estrella na segunda. No fim, as três saem juntas.
 
+**Em aberto:** o pedido falava da "estrelinha da Luna"; foi lida como a da
+**Estrella** (é ela quem chama a aula 3). O Renan não corrigiu, mas também não
+confirmou — se for a Luna, é trocar quem faz o gesto em `apresentar`
+(`escolaGinasio.ts`).
+
 `scripts/irmas.mjs` guarda tudo isto, com o salto e a estrelinha medidos.
