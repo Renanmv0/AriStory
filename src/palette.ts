@@ -1326,6 +1326,8 @@ export const PALETTE = {
   lunaPomponAmarelo: 0xf6c940,
   lunaPomponAzul: 0x4b7fd6,
   lunaLaco: 0xf2c14a,
+  // a presilha de lua, que combina com o sol da Sol e a estrela da Estrella
+  lunaLua: 0xf9d45c,
   // AS IRMÃS DA LUNA, também cheerleaders dos Gatitos (mesmo uniforme, mesmos
   // pompons). Cada uma de uma cor que a câmera separa de longe da cinza-pérola
   // da Luna: a SOL, a animada, cor de damasco — quente como o nome; a
