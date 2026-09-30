@@ -75,6 +75,10 @@ ruído. Qualquer outro erro de console é erro de verdade.
   trava até o painel fechar: use `void` dentro do evaluate.
 - **O servidor de preview serve o `dist/`**: mudou código, `npm run build`
   antes de testar, senão o teste roda a versão velha.
+- **`locator(...).textContent()` ESPERA o elemento aparecer** (30 s por
+  padrão). Para perguntar "qual é o prompt agora?", num laço, isso vira 30 s
+  por volta quando não há prompt — o `aula.mjs` ficou doze minutos parado
+  assim. Leia com `page.evaluate(() => document.querySelector(sel)?.textContent)`.
 
 ## Checklist antes de fechar
 

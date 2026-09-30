@@ -172,6 +172,8 @@ export class Josefina extends Bicho {
 
     this.cabeca.name = 'cabeca-da-josefina';
     this.cabeca.position.set(0, 0.035, 0.17);
+    // o estúdio de retrato enquadra por este nome (o rosto dela na apostila)
+    this.cabeca.name = 'cabeca';
     // CABECA GRANDE, regua chibi do jogo. Na primeira versao ela tinha 0,082 de
     // raio e ficava metade enfiada na borda do casco: de longe a Josefina era
     // uma cupula verde com um vaso em cima, sem cara nenhuma.

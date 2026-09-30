@@ -21,13 +21,17 @@ bonitinho.
 aula do Gatito no jogo **é uma aula de português de verdade**: o conteúdo sai
 do que o Renan ensina em casa (§6). A escola é o cenário; a aula é o presente.
 
-**Estado: construída e aberta, ainda sem aula.** O saguão com o corredor e o
+**Estado: construída, aberta e COM AULA.** O saguão com o corredor e o
 refeitório, as cinco salas atrás das portas (Sala 1 de português, Sala 2 de
 espanhol, descanso, professores e ginásio) e o Gatito já estão no jogo
 (`scenes/escola*.ts`, `entities/bichos/Gatito.ts`). Chega-se de ônibus,
-depois de conhecer a **Luna** no Villa Lobos (§10, §14). A aula (§6), as
-etiquetas (§5) e a formatura (§7) ainda não existem. Para testar sem jogar a
-missão, `?cena=escola` continua valendo.
+depois de conhecer a **Luna** no Villa Lobos (§10, §14). **A aula do Gatito
+existe** (§6): a Luna chama no ginásio, o Gatito dá a aula em cima da mesa da
+Sala 1, e a lição é uma **apostila de verdade**, de folhear — o Módulo 1, seis
+lições (`minigames/aula/`, `ui/apostila.ts`, `scenes/escolaAula.ts`; como
+escrever lição nova: a skill `aristory-apostila`). As etiquetas (§5) e a
+formatura (§7) ainda não existem. Para testar sem jogar a missão,
+`?cena=escola` continua valendo.
 
 **O que este plano propõe** (tudo provisório até o Renan aprovar):
 
@@ -478,28 +482,64 @@ placa), com o cuidado de sempre com face colada: `decal: true` e
 
 ---
 
-## 6. A Aula do Gatito
+## 6. A Aula do Gatito — CONSTRUÍDA
+
+> **No jogo.** O pedido do Renan: "o Gatito continua passeando pela escola
+> enquanto não começou a aula. Para começar a aula, precisamos primeiro
+> completar alguma missão lá dentro — por exemplo, falar com a Luna no
+> ginásio" — e a aula em si como **"uma apostila mesmo, de verdade, igual uma
+> escola de inglês"**, um livro de folhear em que a lição seguinte só abre
+> com a anterior terminada. O que está abaixo é o que foi construído; o
+> rascunho antigo (a aula de perguntas pela escolha do jogo, a matrícula na
+> sineta) ficou para trás.
 
 ### 6.1 Como uma aula corre
 
-A primeira visita tem uma **matrícula**: na recepção, tocar a sineta traz o
-Gatito, que se apresenta e matricula o Ari no curso de português. Daí em
-diante:
+Uma lição por aula, sempre neste ciclo (`scenes/escolaAula.ts`):
 
-1. na Sala 1, o prompt **"Assistir à aula do Gatito"** 📚 nas carteiras;
-2. os **dois sentam lado a lado** na primeira fila (âncora + `ridePlayer` /
-   `rideCompanion` + `setSitting` — o padrão de cutscene com os dois); a
-   câmera foca a mesa do professor;
-3. toca o **sinal**, o Gatito dá bom dia com um pulinho, e o tema aparece na
-   lousa;
-4. **cinco perguntas**: a pergunta vai para a lousa e para a escolha na tela;
-5. acertou → estrelinha na lousa, miado feliz, o parceiro comemora;
-   errou → o Gatito corrige com carinho, numa linha, e explica o porquê;
-6. no fim, as **estrelinhas da lição** (0 a 5), as palavras novas vão para o
-   caderno, e a dupla levanta.
+1. **a missão**: a lição da vez é a primeira da apostila sem estrela. No
+   ginásio, a conversa com a Luna é a de sempre — e aí **o sinal toca**, e ela
+   **avisa que a aula vai começar**, com falas da própria lição (a da lição 2
+   fala de falsos amigos, a da 3 do Gatito procurando o novelo), e vai na
+   frente guardar lugar (`aula-chamada`). Sem ter conhecido o Gatito, ela
+   manda conhecer primeiro;
+2. com a aula chamada, o Gatito **sai do saguão** e a Luna **do ginásio**:
+   na Sala 1, ele está **sentado em cima da mesa do professor, de
+   oculinhos**, e ela na ponta da primeira fila. A lousa mostra a lição;
+3. a carteira do meio diz **"Sentar para a aula"**: a dupla senta, toca o
+   **sinal**, o Gatito abre a aula e manda abrir a apostila — e o livro abre
+   **na lição da vez**;
+4. lição concluída, o Gatito fala das **estrelas** (três estrelas, ele faz o
+   six seven; a Luna torce), as falas de encerramento, e os dois **descem e
+   saem pela porta** — ele volta a passear pelo saguão, ela a treinar no
+   ginásio. A primeira aula e o módulo completo viram **memória** no diário.
+   Fechou o livro no meio? A aula continua chamada; sentar de novo retoma;
+5. fora da aula, a mesma carteira vira **"Estudar a apostila"**: o livro abre
+   onde parou, com as lições já dadas, para rever e refazer.
 
-Uma lição tem **dois a três minutos** — dá para fazer uma de cada vez, e
-repetir para melhorar a nota.
+### 6.2 A apostila
+
+O molde dos livros de curso de idioma (Interchange, English File) e dos de
+português para quem fala espanhol (Mano a Mano): **situação antes da regra,
+regra com o espanhol do lado, prática variada, e a autoavaliação no fim**.
+Cada lição tem **quatro páginas** — no computador, duas duplas; no celular,
+uma página por vez:
+
+| página | o que tem |
+|---|---|
+| 💬 **Para começar** | título, os objetivos ("Nesta lição você vai…"), a **cena** em quadrinho (com o rosto de cada um, o modelo 3D fotografado) e as palavras da cena |
+| 📐 **Como funciona** | a regra: texto, tabelas, 🇻🇪 × 🇧🇷, exemplos, ⚠️ Fique de olho!, 🐾 Dica do Gatito, 🇧🇷 Cantinho do Brasil |
+| ✏️ **Mãos à obra!** | sete exercícios de sete tipos diferentes |
+| ✅ **Agora eu consigo…** | a autoavaliação ("can do"), as estrelas, o carimbo e o bilhete do Gatito |
+
+**Os dez tipos de exercício**: múltipla escolha (com o desenho do "onde
+está?"), bate-papo de celular, verdadeiro ou falso, ligar colunas, texto com
+lacunas e banco de palavras, montar a frase, escrever, separar em grupos,
+ache o erro e qual não combina.
+
+**A trava**: uma lição só abre quando o Gatito a deu numa aula **e** a
+anterior está concluída. O livro diz o porquê ("🔔 A lição 3 abre na próxima
+aula do Gatito").
 
 **Quem é o aluno é o Ari**, e a aula fala com ele pelo nome (`ARI.name`),
 seja quem estiver no controle — porque quem está aprendendo português é ele
@@ -507,47 +547,40 @@ seja quem estiver no controle — porque quem está aprendendo português é ele
 `g.companionName()`. O Renan do jogo fica de colega do lado, torcendo e
 soprando a resposta de vez em quando.
 
-### 6.2 Tipos de pergunta
-
-Três opções cada, pela escolha que o jogo já tem (`g.ask`):
-
-| tipo | exemplo |
-|---|---|
-| **como se diz** | *"Como se diz 'ventana' em português?"* — janela · ventana · venda |
-| **falso amigo** | *"Em português, 'esquisito' quer dizer…"* — estranho · delicioso · caro |
-| **complete** | *"Eu ___ com fome."* — estou · sou · tenho |
-| **qual está certo** | acento e grafia: avó · avô, *"você" ou "voce"* |
-| **o que o Gatito aponta** | ele pula até um objeto da sala que tem etiqueta, e pergunta o nome |
-
-Pergunta de **ouvir** fica de fora: não há voz gravada (zero asset), e a voz
-sintética do navegador muda de aparelho para aparelho.
+Ideia guardada para quando as etiquetas (§5) existirem: o Gatito **pula até
+um objeto da sala** que tem etiqueta e pergunta o nome dele. Pergunta de
+**ouvir** continua de fora: não há voz gravada (zero asset), e a
+voz sintética do navegador muda de aparelho para aparelho.
 
 ### 6.3 Errar não pune
 
-Não tem vida, não tem reprovação, não tem "tente de novo". Errar mostra a
-certa, o Gatito explica, e a aula segue. A nota da lição guarda a **melhor**
-vez, nunca a última.
+Não tem vida, não tem reprovação, não tem "tente de novo". Cada item é
+conferido uma vez: errou, o livro mostra a certa e o Gatito explica o porquê,
+e a lição segue. A nota é quanto saiu certo DE PRIMEIRA — terminar vale uma
+estrela, 65% duas, 90% três —, o save guarda a **melhor** vez, e o "Refazer
+os exercícios" recomeça a lição. Digitar sem acento vale (com aviso): o
+teclado do celular esconde o acento, e a lição não é de digitação.
 
-### 6.4 As lições — rascunho meu, o conteúdo é do Renan
+### 6.4 O Módulo 1 — seis lições, cada uma num lugar do jogo
 
-**Esta é a parte mais importante de perguntar** (§13): o conteúdo que vale é
-o que o Renan ensina ao Ari de verdade, as palavras em que ele tropeça e os
-erros engraçados que já aconteceram. Como ponto de partida:
+O conteúdo é meu, pesquisado nos pontos que mais pegam quem fala espanhol
+(falsos amigos, gênero trocado, contrações, o "ficar", o diminutivo); o que
+vale mais, e ainda falta, é o que o Renan ensina ao Ari de verdade (§13,
+pergunta 11) — as palavras em que ele tropeça viram exercício.
 
-1. **Oi, tudo bem?** — cumprimentos e apresentação;
-2. **No Mania** — comida e restaurante (picanha, farofa, guardanapo, a conta),
-   ligando com o que já existe no jogo;
-3. **Pelo mapa** — os lugares do jogo (parque, clube, piscina, roda gigante,
-   estufa);
-4. **Falsos amigos** — a lição mais engraçada para quem fala espanhol:
-   *exquisito* (delicioso) × *esquisito* (estranho); *embarazada* (grávida) ×
-   *embaraçada*; *polvo* (pó) × *polvo* (o bicho); *borracha* (bêbada) ×
-   *borracha* (de apagar); *apellido* (sobrenome) × *apelido*; *rojo* ×
-   *roxo*; *taza* (xícara) × *taça*; *cachorro* (filhote) × *cachorro* (o
-   Walter!); *largo* (comprido) × *largo*;
-5. **Palavras que não se traduzem** — saudade, cafuné, xodó;
-6. **Do nosso jeito** — as expressões de carinho que os dois usam (só o
-   Renan sabe quais são).
+| # | lição | a situação | a língua |
+|---|---|---|---|
+| 1 | **Oi, tudo bem?** | o primeiro dia na Sala 1 | cumprimentos, você/o senhor, "a gente", nada de ¿ ¡ |
+| 2 | **O jantar das confusões** | sexta à noite no Mania (o Walter só late) | falsos amigos: esquisito, propina, vaso, cena, embarazada, pelado… |
+| 3 | **Cadê o novelo?** | caça ao novelo do Gatito pela escola | preposições de lugar, no/na/do/da/pelo, "cadê", "cerca" |
+| 4 | **Na horta da Josefina** | sábado de colheita no clube | o leite, a árvore: gênero trocado, -agem; patilla, cambur, lechosa… |
+| 5 | **Fica a dica!** | domingo no Villa Lobos | o verbo ficar e os seus cinco jeitos |
+| 6 | **Tudo acaba em -inho** | o cafezinho da sala dos professores | diminutivo; saudade, cafuné, xodó, chamego |
+
+A lição 2 paga o "esquisito" que a Luna conta no ginásio, e a 6 paga o
+"C de cafuné?" do cartaz da Sala 1 ("Depois eu te mostro o que é", diz o
+Renan). **"Do nosso jeito"** — as expressões de carinho dos dois — continua
+esperando o Renan: só ele sabe quais são.
 
 ---
 
@@ -648,12 +681,14 @@ para testar sem a missão.
 | `src/scenes/escola.ts` | a cena (`id: 'escola'`), a planta do §3, as falas do lugar, a ronda do Gatito |
 | `src/scenes/index.ts` | o registro da cena |
 | `src/entities/bichos/Gatito.ts` | o corpo e a pose do Gatito (o cérebro é o `Bicho.ts`) |
-| `src/world/licoesDoGatito.ts` | o acervo das lições e das etiquetas, no molde de `cardapioData.ts` |
-| `src/minigames/aulaDoGatito.ts` | a aula: perguntas, estrelinhas, fim. Recebe pontos da cena, não conhece a planta |
+| `src/minigames/aula/licoes/` | as lições da apostila, uma por arquivo (dados puros) |
+| `src/minigames/aula/apostila.ts` | o módulo, a nota, a trava e o conferidor das lições |
+| `src/ui/apostila.ts` | o livro de folhear: páginas, espiral, exercícios |
+| `src/scenes/escolaAula.ts` | a aula na Sala 1: a Luna chama, o Gatito na mesa, abrir o livro, o fim |
 | `src/world/furniture.ts`, `src/world/texturasDeChao.ts` | as peças e o granilite (§8) |
 | `src/palette.ts` | as cores do Gatito e da escola |
 | `src/audio/efeitos.ts`, `src/audio/musica.ts` | os sons e o clima (§9) |
-| `scripts/escola.mjs`, `scripts/gatito.mjs`, `scripts/aula.mjs` | os testes de cada etapa |
+| `scripts/escola.mjs`, `scripts/apostila.mjs`, `scripts/aula.mjs` | os testes: a escola, as lições (sem navegador) e a aula inteira |
 
 ---
 
@@ -674,8 +709,10 @@ emendadas.
    distância, e ele nunca dentro de um móvel.
 3. **A escola viva.** A cafeteria (pedir, pagar, sentar e comer), a sala de
    descanso (sofá, pufe), as etiquetas e o caderno, a sineta.
-4. **A Aula do Gatito.** A lousa escrevível, a matrícula, as primeiras
-   lições com o conteúdo do Renan, as estrelinhas. `scripts/aula.mjs`.
+4. **A Aula do Gatito.** ✅ **Feita**: a missão da Luna, o Gatito na mesa, a
+   apostila de folhear com o Módulo 1 e as estrelinhas (§6).
+   `scripts/aula.mjs`. Ficou para depois: a matrícula na sineta e o conteúdo
+   vindo do Renan (pergunta 11).
 5. **A sala dos professores e o fim.** O convite, o boletim, os prêmios de
    roupa e a formatura com o diploma no quarto.
 
@@ -720,8 +757,9 @@ O plano não inventa nada do que é da vida de vocês. O que falta, por etapa:
 11. **O que você ensina ao Ari de verdade?** Em que nível ele está, em que
     palavras tropeça, que erros engraçados ele já cometeu, que falsos amigos
     já pegaram ele?
-12. As explicações do Gatito são **só em português**, ou com uma ajudinha em
-    espanhol (ou inglês) quando aperta?
+12. ~~Só em português?~~ — respondido: "ele já entende português, então pode
+    deixar a maioria escrita em português". A apostila explica em português,
+    com o espanhol só na coluna do contraste.
 
 **Para o fim (etapa 5)**
 13. Quer escrever o **boletim do Ari**, o **discurso da formatura** e o

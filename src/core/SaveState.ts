@@ -143,6 +143,12 @@ interface SaveData {
    * ao entrar; o painel da loja conta os guardados.
    */
   decoracoes: DecoracaoNoSave[];
+  /**
+   * A APOSTILA DO GATITO: as estrelas de cada lição concluída (a MELHOR vez,
+   * de 1 a 3) e as lições que o Gatito já deu numa aula — só essas o livro
+   * deixa ler. As regras moram em `minigames/aula/apostila.ts`.
+   */
+  apostila: ApostilaNoSave;
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -305,6 +311,26 @@ function normalizarDecoracoes(bruto: unknown): DecoracaoNoSave[] {
   return lista;
 }
 
+/** o progresso da apostila, do jeito que vai para o save */
+interface ApostilaNoSave {
+  estrelas: Record<string, number>;
+  abertas: string[];
+}
+
+/** Save antigo não tem apostila; estrela fora de 1–3 ou id que não é texto somem. */
+function normalizarApostila(bruto: unknown): ApostilaNoSave {
+  const a = (bruto ?? {}) as Partial<ApostilaNoSave>;
+  const estrelas: Record<string, number> = {};
+  if (a.estrelas && typeof a.estrelas === 'object') {
+    for (const [id, n] of Object.entries(a.estrelas)) {
+      const v = Math.floor(Number(n));
+      if (v >= 1 && v <= 3) estrelas[id] = v;
+    }
+  }
+  const abertas = Array.isArray(a.abertas) ? a.abertas.filter((id): id is string => typeof id === 'string') : [];
+  return { estrelas, abertas };
+}
+
 const EMPTY: SaveData = {
   version: 1,
   scene: '',
@@ -316,6 +342,7 @@ const EMPTY: SaveData = {
   premios: [],
   livro: [],
   decoracoes: [],
+  apostila: { estrelas: {}, abertas: [] },
   inventarios: {},
 };
 
@@ -359,6 +386,8 @@ export class SaveState {
           : [],
         // save de antes da lojinha: estufa sem enfeite nenhum
         decoracoes: normalizarDecoracoes(parsed.decoracoes),
+        // save de antes da escola ter aula: nenhuma lição dada ainda
+        apostila: normalizarApostila(parsed.apostila),
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
     } catch {
@@ -464,6 +493,29 @@ export class SaveState {
   salvarDecoracoes(lista: readonly DecoracaoNoSave[]): void {
     this.data.decoracoes = normalizarDecoracoes(lista);
     this.persist();
+  }
+
+  // ------------------------------------------------ a apostila do Gatito
+
+  /** as estrelas de cada lição concluída e as lições já dadas numa aula */
+  get apostila(): { estrelas: Readonly<Record<string, number>>; abertas: readonly string[] } {
+    return this.data.apostila;
+  }
+
+  /** O Gatito deu a lição numa aula: a partir daqui o livro deixa ler. */
+  abrirLicao(id: string): void {
+    if (this.data.apostila.abertas.includes(id)) return;
+    this.data.apostila.abertas.push(id);
+    this.persist();
+  }
+
+  /** Lição concluída: guarda as estrelas se forem a MELHOR vez. Devolve se melhorou. */
+  concluirLicao(id: string, estrelas: number): boolean {
+    const n = Math.max(1, Math.min(3, Math.floor(estrelas)));
+    if ((this.data.apostila.estrelas[id] ?? 0) >= n) return false;
+    this.data.apostila.estrelas[id] = n;
+    this.persist();
+    return true;
   }
 
   // ------------------------------------------------ o livro das cartas

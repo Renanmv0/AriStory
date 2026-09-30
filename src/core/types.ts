@@ -9,6 +9,7 @@ import type {
   EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
+import type { ProgressoDaApostila, ResultadoDaApostila } from '../minigames/aula/tipos';
 
 export interface CircleCollider {
   kind: 'circle';
@@ -650,6 +651,18 @@ export interface GameAPI {
   abrirArsenal(conteudo: ConteudoDoArsenal): Promise<string | null>;
   /** A tela do fim da rodada do jardim: os números e as cartas da mão. */
   mostrarFimDoJardim(fim: FimDoJardim): Promise<void>;
+  /**
+   * A APOSTILA DO GATITO (`ui/apostila.ts`): o livro da aula de português.
+   *
+   * Com `licao`, é a AULA: a lição passa a estar dada (o livro deixa ler) e o
+   * livro abre direto nela. Sem, é o ESTUDO: abre onde parou, e só deixa ler
+   * as lições já dadas. Resolve quando o livro fecha, com as lições
+   * concluídas nesta abertura — que já estão salvas, lição por lição, no
+   * instante em que o último exercício é respondido.
+   */
+  abrirApostila(o?: { licao?: string }): Promise<ResultadoDaApostila>;
+  /** o que o save sabe da apostila: as estrelas por lição e as lições já dadas */
+  progressoDaApostila(): ProgressoDaApostila;
   /** A barra de experiência da rodada do jardim, no alto; `null` esconde. */
   showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void;
   /**

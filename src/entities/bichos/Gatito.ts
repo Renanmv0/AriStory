@@ -306,6 +306,8 @@ export class Gatito extends Bicho {
     }
 
     this.cabeca.position.set(0, 0.39, 0.25);
+    // o estúdio de retrato enquadra por este nome (o rosto dele na apostila)
+    this.cabeca.name = 'cabeca';
     this.corpo.add(this.cabeca);
 
     // -------------------------------------------------------------- patas

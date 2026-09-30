@@ -26,6 +26,15 @@ export class Input {
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
+    /*
+     * TECLA DIGITADA NUM CAMPO DE TEXTO É DO CAMPO (a apostila do Gatito tem
+     * exercício de escrever). Sem isto o `preventDefault` de baixo engolia o
+     * "e", o "t", o "j" e o espaço — e o "j" ainda abria o diário no meio da
+     * palavra. Só o Escape passa: ele fecha o painel até com o cursor no campo.
+     */
+    const alvo = e.target as HTMLElement | null;
+    const campo = alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.isContentEditable);
+    if (campo && e.code !== 'Escape') return;
     const code = e.code;
     if (MOVEMENT_KEYS.has(code) || ACTION_KEYS.has(code)) e.preventDefault();
     if (!this.down.has(code)) this.pressed.add(code);

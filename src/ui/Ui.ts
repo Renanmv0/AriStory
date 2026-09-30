@@ -5,6 +5,8 @@ import { TelaDeCartas, escapar } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
 import { Arsenal } from './arsenal';
 import { LojaDaJosefina } from './lojaDaJosefina';
+import { Apostila, type PedidoDaApostila } from './apostila';
+import type { ResultadoDaApostila } from '../minigames/aula/tipos';
 import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
   EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
@@ -113,6 +115,8 @@ export class Ui {
   private readonly arsenal: Arsenal;
   private readonly telaDoFim: TelaDoFim;
   private readonly lojaDaJosefina: LojaDaJosefina;
+  /** a apostila da aula do Gatito: o livro de folhear (`apostila.ts`) */
+  private readonly apostila: Apostila;
   private readonly posicionador: HTMLDivElement;
   private aoBotaoDoPosicionador: ((b: BotaoDoPosicionador) => void) | null = null;
   private readonly experiencia: HTMLDivElement;
@@ -348,6 +352,7 @@ export class Ui {
       <div class="livro-de-cartas arsenal"></div>
       <div class="fim-do-jardim"></div>
       <div class="loja-da-josefina"></div>
+      <div class="apostila"></div>
       <div class="posicionador" role="toolbar"></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
@@ -423,6 +428,8 @@ export class Ui {
     this.telaDoFim.som = (nome) => this.som?.(nome);
     this.lojaDaJosefina = new LojaDaJosefina(ui.querySelector('.loja-da-josefina')!);
     this.lojaDaJosefina.som = (nome) => this.som?.(nome);
+    this.apostila = new Apostila(ui.querySelector('.apostila')!);
+    this.apostila.som = (nome) => this.som?.(nome);
     this.posicionador = ui.querySelector('.posicionador')!;
     this.posicionador.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest<HTMLElement>('button[data-botao]');
@@ -675,7 +682,7 @@ export class Ui {
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
       this.memoriasOpen || this.cardapioOpen || this.xadrezOpen ||
       this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen ||
-      this.lojaJosefinaOpen,
+      this.lojaJosefinaOpen || this.apostilaOpen,
     );
   }
 
@@ -1114,6 +1121,26 @@ export class Ui {
   fecharLivro(): void {
     this.livroDeCartas.fechar();
     this.arsenal.fechar();
+  }
+
+  // ------------------------------------------------ a apostila do Gatito
+
+  get apostilaOpen(): boolean {
+    return this.apostila.aberto;
+  }
+
+  /** Abre a apostila; resolve quando ela fecha, com as lições concluídas. Ver `apostila.ts`. */
+  abrirApostila(pedido: PedidoDaApostila): Promise<ResultadoDaApostila> {
+    const pedidoFeito = this.apostila.abrir(pedido);
+    this.marcarTelaAberta();
+    return pedidoFeito.then((r) => {
+      this.marcarTelaAberta();
+      return r;
+    });
+  }
+
+  fecharApostila(): void {
+    this.apostila.fechar();
   }
 
   /** O painel das armas da estufa; resolve com a arma mandada usar, ou `null`. Ver `arsenal.ts`. */

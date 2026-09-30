@@ -21,7 +21,7 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 | `Game.ts` | monta o renderer e as luzes, roda o loop, troca de cena, implementa `GameAPI` |
 | `IsoCamera.ts` | ortográfica a 34° de elevação; gira em passos de 45°, zoom com viés vertical |
 | `Oclusao.ts` | o que fica entre a câmera e os pontos vigiados (e a dupla) ganha a variante translúcida do material (`translucido()`); liga com `g.vigiarOclusao`, hoje só a rodada do jardim |
-| `Input.ts` | única fonte de entrada; `move()` devolve vetor de tela |
+| `Input.ts` | única fonte de entrada; `move()` devolve vetor de tela. Tecla digitada num `<input>` é do campo, não do jogo (menos o Escape) — a apostila do Gatito tem exercício de escrever |
 | `SaveState.ts` | persistência; nada mais escreve em `localStorage` |
 | `materials.ts` | `toon()` / `flat()` / `line()`, todos cacheados por cor; `translucido()` (o fantasma do decorador) e a LUZ FALSA — `luzNoChao()` (poça aditiva de degradê no chão) e `brilhoDeLuz()` (halo em sprite) — no lugar de `PointLight`, que recompila o shader de toda a cena |
 | `matrizSoQuandoMexe.ts` | a matriz de um objeto só é refeita quando a pose ou o pai dele muda |
@@ -107,6 +107,9 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
   (a estufa liga na rodada). `ocupado` diz à cena para não religar ponto seu.
 - `retrato.ts` — fotografa um modelo 3D num canvas fora da tela e guarda como
   imagem, para `<img>` de painel (as pragas do livro, os enfeites da loja).
+  `retratoDoRosto` enquadra só a cabeça (o objeto `cabeca` do modelo, contando
+  só o que aparece): é o rosto de quem fala nos quadrinhos da apostila
+  (`retratoDoElenco.ts`).
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**
   do grupo que gira e são reposicionadas por frame, para nunca virarem de cabeça
   para baixo.

@@ -21,6 +21,7 @@ acento — é o padrão do repositório, siga o que já está lá.
 | adicionar/ajustar roupa do guarda-roupa | `.claude/skills/aristory-roupa/SKILL.md` |
 | criar/ajustar um enfeite (decoração) da lojinha da estufa | `.claude/skills/aristory-enfeite/SKILL.md` |
 | pôr um prato novo no cardápio do restaurante | `.claude/skills/aristory-prato/SKILL.md` |
+| escrever/ajustar uma lição da apostila de português do Gatito | `.claude/skills/aristory-apostila/SKILL.md` |
 | som, música ou efeito sonoro | `.claude/skills/aristory-som/SKILL.md` |
 | rodar, ver e validar | `.claude/skills/aristory-testar/SKILL.md` |
 
@@ -161,6 +162,8 @@ node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso
 node scripts/lanche.mjs  /tmp/la    # a maquina de lanches da escola: pagar, o lanche cair na gaveta, pegar pra mochila e comer; e sentar a mesa do refeitorio de frente um pro outro
 node scripts/luna.mjs    /tmp/lu    # a Luna e a porta da escola: some antes do quadro encher, aparece no piquenique, torce e fica timida, o onibus passa a ir pra escola, o tour da chegada e o treino no ginasio
+node scripts/apostila.mjs          # as licoes da apostila do Gatito e as regras (nota, trava, digitado, livro), sem navegador
+node scripts/aula.mjs    /tmp/au    # a aula inteira: a Luna chama no ginasio, o Gatito na mesa da Sala 1, a apostila respondida pela tela (com erro de proposito), o fim da aula, e o livro no celular
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

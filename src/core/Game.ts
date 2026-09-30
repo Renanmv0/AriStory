@@ -37,6 +37,10 @@ import { Oclusao, type VigiaDaOclusao } from './Oclusao';
 import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
 import { retratoDePraga } from '../world/retratoDePraga';
+import { retratoDoFalante } from '../world/retratoDoElenco';
+import { MODULO_1 } from '../minigames/aula/apostila';
+import type { ProgressoDaApostila, ResultadoDaApostila } from '../minigames/aula/tipos';
+import { ARI, RENAN } from '../characters/cast';
 import { retratoDaDecoracao } from '../world/decoracoes';
 import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
@@ -426,14 +430,17 @@ export class Game implements GameAPI {
       this.ui.livroOpen ||
       this.ui.fimOpen ||
       this.ui.lojaJosefinaOpen ||
+      this.ui.apostilaOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
-    if (this.input.justPressed('KeyJ') && !this.ui.menuOpen) this.ui.toggleJournal();
+    // com a apostila aberta, J e I não abrem nada por cima do livro
+    if (this.input.justPressed('KeyJ') && !this.ui.menuOpen && !this.ui.apostilaOpen) this.ui.toggleJournal();
     if (
       (this.input.justPressed('KeyI') || this.input.justPressed('Tab')) &&
       !this.ui.menuOpen &&
-      !this.ui.dialogueOpen
+      !this.ui.dialogueOpen &&
+      !this.ui.apostilaOpen
     ) {
       if (this.ui.armarioOpen) this.ui.fecharArmario();
       else if (this.ui.mochilaOpen) this.ui.closeMochila();
@@ -461,6 +468,8 @@ export class Game implements GameAPI {
     if (this.ui.fimOpen && this.input.justPressed('Escape')) this.ui.fecharFim();
     // a banca da Josefina trava o movimento como a arara, e sai pela mesma tecla
     if (this.ui.lojaJosefinaOpen && this.input.justPressed('Escape')) this.ui.fecharLojaDaJosefina();
+    // a apostila é leitura e exercício: o Escape fecha, e quem esperava por ela (a aula) segue
+    if (this.ui.apostilaOpen && this.input.justPressed('Escape')) this.ui.fecharApostila();
     /**
      * A TELA DAS CARTAS DO JARDIM tem o teclado inteiro para ela: 1/2/3 marcam,
      * as setas andam, E/espaço/Enter pegam. E ela NÃO tem Escape — ao contrário
@@ -1496,6 +1505,30 @@ export class Game implements GameAPI {
 
   mostrarFimDoJardim(fim: FimDoJardim): Promise<void> {
     return this.ui.mostrarFim(fim);
+  }
+
+  /**
+   * A APOSTILA DO GATITO. A aula passa `licao`: ela vira "dada" no save antes
+   * de o livro abrir, e o livro abre nela. Cada lição concluída é salva na
+   * hora, pelo `aoConcluir` — fechar a aba no meio não perde a estrela.
+   */
+  abrirApostila(o: { licao?: string } = {}): Promise<ResultadoDaApostila> {
+    if (o.licao) this.save.abrirLicao(o.licao);
+    return this.ui.abrirApostila({
+      modulo: MODULO_1,
+      progresso: this.progressoDaApostila(),
+      licao: o.licao,
+      nomes: { ari: ARI.name, renan: RENAN.name, gatito: 'Gatito', luna: 'Luna', walter: 'Walter', josefina: 'Josefina' },
+      retrato: retratoDoFalante,
+      aoConcluir: (id, estrelas) => {
+        this.save.concluirLicao(id, estrelas);
+      },
+    });
+  }
+
+  progressoDaApostila(): ProgressoDaApostila {
+    const p = this.save.apostila;
+    return { estrelas: { ...p.estrelas }, abertas: [...p.abertas] };
   }
 
   showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void {

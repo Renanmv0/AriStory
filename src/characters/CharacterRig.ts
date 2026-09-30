@@ -476,6 +476,8 @@ export class CharacterRig {
 
     // ------------------------------------------------------------- cabeca
     this.head.position.y = legH + torsoH + headR * 0.92;
+    // o nome é o que o estúdio de retrato procura para enquadrar o rosto (a apostila)
+    this.head.name = 'cabeca';
 
     const neck = new THREE.Mesh(
       new THREE.CylinderGeometry(h * 0.035, h * 0.04, h * 0.05, 10),
