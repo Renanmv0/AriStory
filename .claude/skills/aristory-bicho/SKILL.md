@@ -223,6 +223,26 @@ parece só uma curva estranha. Quem pegou foi a MEDIDA — o `z` da cabeça esta
    em `x` negativo, então `rotation.z` **negativo** nela é que abre para fora.
    Vale para orelha, pata e perna.
 
+## Irmãos: UMA classe e uma FICHA por bicho
+
+A Luna, a Sol e a Estrella são a mesma coelha com fichas diferentes
+(`entities/bichos/CoelhaDaTorcida.ts`): cor do pelo, orelha (dobrada, em pé,
+caída), enfeite, boca, pálpebra e escala moram na `FichaDeCoelha`, e cada
+irmã é uma subclasse de uma linha (`class Sol extends CoelhaDaTorcida`). Bicho
+parecido com outro que já existe ganha ficha, não cópia do arquivo. A
+PERSONALIDADE também é modelo: o sorrisão e a orelha em pé da Sol, a pálpebra
+baixa e a orelha caída da Estrella — ela é lida de longe antes da fala.
+
+## Acrobacia: gire pelo QUADRIL, não pela origem
+
+O `group` do bicho tem a origem nos pés. Girar a estrelinha nele faz o corpo
+varrer o chão como um ponteiro. A estrelinha da Estrella gira o `corpo` em
+torno de um ponto a `CENTRO_DA_VOLTA` do chão: `x = anda + h·sen(giro)`,
+`y = h − h·cos(giro)` — e no fim o grupo anda o passo, para ela não voltar
+de ré. Meça o ponto mais baixo da malha na volta inteira (o
+`scripts/irmas.mjs` exige que nada passe de 3 cm abaixo do chão), e o salto
+pelo pico (`medidaDoGesto`), não pela foto.
+
 ## A pose
 
 Tudo por seno, como o resto do jogo. A base entrega `andando`, `sentado`,

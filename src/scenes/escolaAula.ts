@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import type { GameAPI } from '../core/types';
 import type { WorldBuilder } from '../world/WorldBuilder';
 import { Gatito } from '../entities/bichos/Gatito';
-import { Luna } from '../entities/bichos/Luna';
+import { CoelhaDaTorcida, Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 import { ARI, RENAN } from '../characters/cast';
-import { MODULO_1, licaoDaVez } from '../minigames/aula/apostila';
+import { MODULO_1, irmasNoGinasio, licaoDaVez, licoesConcluidas, type Irma } from '../minigames/aula/apostila';
 import type { Fala, Falante, Licao } from '../minigames/aula/tipos';
 import { conversa, sentarOsDois } from './escolaComum';
 
@@ -15,6 +15,11 @@ import { conversa, sentarOsDois } from './escolaComum';
  * para começar, uma missão lá dentro — falar com a Luna no ginásio, e ela
  * avisa que a aula vai começar. Aí, na Sala 1, o Gatito está na mesa dele e
  * os três — o Ari, o Renan e a Luna — têm a aula.
+ *
+ * AS IRMÃS DA LUNA (pedido do Renan): a Sol e a Estrella também são alunas.
+ * Na aula estão SEMPRE as três; no ginásio, antes da primeira aula só a Luna,
+ * depois a Luna e a Sol, depois as três (`irmasNoGinasio`). Quem chama cada
+ * aula é da lição (`aula.chama`): a 1 a Luna, a 2 a Sol, a 3 a Estrella.
  *
  * O CICLO, uma lição por aula:
  *
@@ -44,6 +49,8 @@ export const AULA_CHAMADA = 'aula-chamada';
 const NOMES: Record<Falante, string> = {
   gatito: 'Gatito',
   luna: 'Luna',
+  sol: 'Sol',
+  estrella: 'Estrella',
   ari: ARI.name,
   renan: RENAN.name,
   walter: 'Walter',
@@ -51,7 +58,19 @@ const NOMES: Record<Falante, string> = {
 };
 
 const G = NOMES.gatito;
-const L = NOMES.luna;
+
+/** o nome de cada irmã nos balões */
+export const NOME_DA_IRMA: Record<Irma, string> = { luna: NOMES.luna, sol: NOMES.sol, estrella: NOMES.estrella };
+
+/** as irmãs que estão no ginásio agora (quando a aula não está chamada) */
+export function irmasNoGinasioAgora(g: GameAPI): Irma[] {
+  return irmasNoGinasio(licoesConcluidas(MODULO_1, g.progressoDaApostila()));
+}
+
+/** uma irmã nova, pelo nome */
+export function novaIrma(id: Irma, area: { minX: number; maxX: number; minZ: number; maxZ: number }): CoelhaDaTorcida {
+  return id === 'sol' ? new Sol(area) : id === 'estrella' ? new Estrella(area) : new Luna(area);
+}
 
 /** as falas de uma lição, com o nome certo em cada balão */
 export function falasDaAula(falas: readonly Fala[]): Array<[string, string]> {
@@ -124,8 +143,11 @@ export interface SalaDaAula {
   z: number;
   /** onde cada um fica de pé ao levantar */
   saida: { jogador: [number, number]; parceiro: [number, number] };
-  /** o assento da carteira da Luna (a ponta da primeira fila) */
-  lugarDaLuna: { x: number; z: number };
+  /**
+   * o assento de cada irmã: a Luna na ponta da primeira fila, a Sol e a
+   * Estrella na segunda, atrás dela e atrás de quem joga
+   */
+  lugares: Record<Irma, { x: number; z: number }>;
   /** o tampo da mesa do professor: é ali que o Gatito senta */
   mesa: { x: number; y: number; z: number };
   /** a porta da sala, por onde os dois vão embora no fim */
@@ -155,7 +177,8 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
     minX: x, maxX: x, minZ: z, maxZ: z,
   });
   let gatito: Gatito | null = null;
-  let luna: Luna | null = null;
+  /** as três, sentadas, com a aula chamada */
+  const irmas: Array<{ id: Irma; bicho: CoelhaDaTorcida }> = [];
   if (naAula) {
     gatito = new Gatito(parado(s.mesa.x, s.mesa.z));
     gatito.usarOculos(true);
@@ -163,11 +186,17 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
     // miado de professor é espaçado: ele está dando aula
     gatito.aoSoar = () => g0.som('miado');
     w.add(gatito.group);
-    luna = new Luna(parado(s.lugarDaLuna.x, s.lugarDaLuna.z));
-    luna.sentarEm(s.lugarDaLuna.x, s.lugarDaLuna.z, Math.PI, ASSENTO);
-    w.add(luna.group);
-    /** gancho de teste: o `scripts/aula.mjs` mede os dois na sala */
-    gatito.group.userData.teste = { gatito, luna };
+    for (const id of ['luna', 'sol', 'estrella'] as const) {
+      const lugar = s.lugares[id];
+      const bicho = novaIrma(id, parado(lugar.x, lugar.z));
+      bicho.sentarEm(lugar.x, lugar.z, Math.PI, ASSENTO);
+      w.add(bicho.group);
+      /** gancho de teste: o `scripts/irmas.mjs` mede cada uma sentada */
+      bicho.group.userData.teste = { [id]: bicho };
+      irmas.push({ id, bicho });
+    }
+    /** gancho de teste: o `scripts/aula.mjs` mede todo mundo na sala */
+    gatito.group.userData.teste = { gatito, irmas: Object.fromEntries(irmas.map((i) => [i.id, i.bicho])) };
   }
   /**
    * O PULO PARA O CHÃO: o Gatito desce da mesa para a FRENTE dela, e a Luna
@@ -175,14 +204,14 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
    * debaixo do tampo e a coelha dentro da cadeira. Um arco curto, com um
    * tico de subida antes de cair.
    */
-  const pulando: Array<{ quem: Gatito | Luna; de: THREE.Vector3; para: THREE.Vector3; t: number; pronto: () => void }> = [];
-  const pular = (quem: Gatito | Luna, x: number, z: number): Promise<void> =>
+  const pulando: Array<{ quem: Gatito | CoelhaDaTorcida; de: THREE.Vector3; para: THREE.Vector3; t: number; pronto: () => void }> = [];
+  const pular = (quem: Gatito | CoelhaDaTorcida, x: number, z: number): Promise<void> =>
     new Promise((pronto) => {
       pulando.push({ quem, de: quem.group.position.clone(), para: new THREE.Vector3(x, 0, z), t: 0, pronto });
     });
   w.onUpdate((dt) => {
     gatito?.update(dt);
-    luna?.update(dt);
+    for (const i of irmas) i.bicho.update(dt);
     for (let i = pulando.length - 1; i >= 0; i--) {
       const p = pulando[i];
       p.t = Math.min(1, p.t + dt * 2.6);
@@ -207,22 +236,33 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
       },
     })
     : null;
-  const falarComLuna = luna
-    ? w.interact({
-      id: `${s.id}:luna`,
-      x: s.lugarDaLuna.x + 0.2, z: s.lugarDaLuna.z + 0.75, radius: 0.8,
-      label: 'Falar com a Luna', icon: '🐰',
-      highlight: luna.group,
-      onInteract: async (g) => {
-        await conversa(g, [[L, 'Guardei os lugares do meu lado, panas! Senta, senta!']]);
-      },
-    })
-    : null;
+  /** o que cada uma diz na carteira, antes de a aula começar */
+  const NA_CARTEIRA: Record<Irma, ReadonlyArray<readonly [string, string]>> = {
+    luna: [[NOMES.luna, 'Guardei os lugares do meu lado, panas! Senta, senta!']],
+    sol: [
+      [NOMES.sol, '¡ÉPALE! Hoje eu vou tirar três estrelinhas! ...Ou duas. ¡Una por lo menos!'],
+    ],
+    estrella: [
+      [NOMES.estrella, 'Trouxeram lápis? Eu trouxe um a mais pra cada um. Por via das dúvidas.'],
+    ],
+  };
+  const falarComIrmas = irmas.map(({ id, bicho }) => w.interact({
+    id: `${s.id}:${id}`,
+    x: s.lugares[id].x + 0.2, z: s.lugares[id].z + 0.75, radius: 0.8,
+    label: `Falar com a ${NOME_DA_IRMA[id]}`, icon: id === 'sol' ? '🌞' : id === 'estrella' ? '⭐' : '🐰',
+    highlight: bicho.group,
+    onInteract: async (g) => {
+      await conversa(g, NA_CARTEIRA[id]);
+    },
+  }));
+  const ligarConversas = (sim: boolean): void => {
+    if (falarComGatito) falarComGatito.enabled = sim;
+    for (const i of falarComIrmas) i.enabled = sim;
+  };
 
-  /** no fim da aula, os dois descem e vão embora pela porta */
+  /** no fim da aula, todo mundo desce e vai embora pela porta */
   const irEmbora = async (): Promise<void> => {
-    if (falarComGatito) falarComGatito.enabled = false;
-    if (falarComLuna) falarComLuna.enabled = false;
+    ligarConversas(false);
     const saem: Array<Promise<void>> = [];
     /*
      * OS CAMINHOS fogem das carteiras: o Gatito pelo vão entre a mesa dele e
@@ -241,18 +281,20 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
         gt.group.visible = false;
       })());
     }
-    if (luna) {
-      const ln = luna;
-      ln.levantar();
+    // as três saem da carteira para o lado (a esquerda dela, onde não tem
+    // carteira), uma depois da outra, e vão em fila pelo vão das fileiras
+    irmas.forEach(({ id, bicho }, n) => {
+      const lugar = s.lugares[id];
+      bicho.levantar();
       saem.push((async () => {
-        await g0.wait(0.5);
-        await pular(ln, s.lugarDaLuna.x - 0.5, s.lugarDaLuna.z);
-        await ln.irPara(s.lugarDaLuna.x - 0.5, s.vaoDasFileiras, 1.3);
-        await ln.irPara(s.corredor, s.vaoDasFileiras, 1.3);
-        await ln.irPara(s.porta.x, s.porta.z, 1.3);
-        ln.group.visible = false;
+        await g0.wait(0.5 + n * 0.6);
+        await pular(bicho, lugar.x - 0.5, lugar.z);
+        await bicho.irPara(lugar.x - 0.5, s.vaoDasFileiras, 1.3);
+        await bicho.irPara(s.corredor, s.vaoDasFileiras, 1.3);
+        await bicho.irPara(s.porta.x, s.porta.z, 1.3);
+        bicho.group.visible = false;
       })());
-    }
+    });
     await Promise.all(saem);
   };
 
@@ -293,8 +335,7 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
     const primeira = !g.progressoDaApostila().abertas.length;
     sentar(g);
     g.setZoom(8.5);
-    if (falarComGatito) falarComGatito.enabled = false;
-    if (falarComLuna) falarComLuna.enabled = false;
+    ligarConversas(false);
     await g.wait(0.6);
     g.som('sino');
     await g.wait(0.7);
@@ -304,12 +345,11 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
     if (!feita) {
       await conversa(g, [[G, 'Sem pressa, Ari. Quando quiser continuar, é só sentar de novo: a apostila espera na mesma lição.']]);
       levantar(g);
-      if (falarComGatito) falarComGatito.enabled = true;
-      if (falarComLuna) falarComLuna.enabled = true;
+      ligarConversas(true);
       return;
     }
     if (feita.estrelas === 3) gatito?.sixSeven();
-    luna?.torcer(2.2);
+    for (const i of irmas) i.bicho.torcer(2.2);
     g.som('sacudida');
     await conversa(g, [[G, DAS_ESTRELAS[feita.estrelas].replace('{aluno}', ARI.name)]]);
     await conversa(g, falasDaAula(licao.aula.encerramento));
@@ -319,7 +359,7 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
         id: 'primeira-aula-do-gatito',
         title: 'A primeira aula do Gatito',
         place: 'Escola do Gatito',
-        note: 'Sala 1, primeira fila: você, eu e a Luna, e o Gatito de oculinhos em cima da mesa. Primeira lição: "tudo bem?" se responde com "tudo!". E a apostila tem o seu nome na capa.',
+        note: 'Sala 1, primeira fila: você, eu e a Luna — e a Sol e a Estrella logo atrás —, e o Gatito de oculinhos em cima da mesa. Primeira lição: "tudo bem?" se responde com "tudo!". E a apostila tem o seu nome na capa.',
         icon: '📘',
       });
     }

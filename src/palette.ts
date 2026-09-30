@@ -1326,6 +1326,22 @@ export const PALETTE = {
   lunaPomponAmarelo: 0xf6c940,
   lunaPomponAzul: 0x4b7fd6,
   lunaLaco: 0xf2c14a,
+  // AS IRMÃS DA LUNA, também cheerleaders dos Gatitos (mesmo uniforme, mesmos
+  // pompons). Cada uma de uma cor que a câmera separa de longe da cinza-pérola
+  // da Luna: a SOL, a animada, cor de damasco — quente como o nome; a
+  // ESTRELLA, a calma, chocolate ao leite. O enfeite de cabeça de cada uma é o
+  // próprio nome: a presilha de sol, laranja, e a estrelinha dourada
+  solPelo: 0xf0b27c,
+  solPeloClaro: 0xfff2e1,
+  solOrelhaDentro: 0xf59aa6,
+  solBochecha: 0xf8907f,
+  solPresilha: 0xff9a2c,
+  solPresilhaMiolo: 0xffd24a,
+  estrellaPelo: 0x8c6a55,
+  estrellaPeloClaro: 0xf1e3d3,
+  estrellaOrelhaDentro: 0xd99aa0,
+  estrellaBochecha: 0xe3928f,
+  estrellaEstrela: 0xf7d24e,
   // o piquenique dela: a toalha xadrez nas cores dos Gatitos (a cesta usa o
   // `cestaVime` da cesta da Estella)
   lunaToalha: 0xf7f1dc,

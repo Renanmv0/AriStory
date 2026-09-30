@@ -71,7 +71,7 @@ interface EstadoDaLicao {
 }
 
 const ICONE: Record<Falante, string> = {
-  gatito: '🐱', luna: '🐰', ari: '🙂', renan: '😄', walter: '🐶', josefina: '🐢',
+  gatito: '🐱', luna: '🐰', sol: '🌞', estrella: '⭐', ari: '🙂', renan: '😄', walter: '🐶', josefina: '🐢',
 };
 
 const ELOGIOS = ['Isso!', 'Muito bem!', 'Perfeito!', 'Arrasou!', 'Acertou!', 'Miau, que beleza!', 'Mandou bem!', 'É isso aí!'];

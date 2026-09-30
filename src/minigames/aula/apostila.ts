@@ -103,6 +103,24 @@ export function licaoDaVez(m: Modulo, p: ProgressoDaApostila): Licao | null {
   return m.licoes.find((l) => !concluida(p, l.id)) ?? null;
 }
 
+export type Irma = 'luna' | 'sol' | 'estrella';
+
+/**
+ * AS IRMÃS QUE ESTÃO NO GINÁSIO, pelo tanto de lições já concluídas (pedido
+ * do Renan): antes da primeira aula, só a Luna; depois da primeira, a Luna e
+ * a Sol (é a Sol quem chama a segunda); depois da segunda, as três. Na aula,
+ * na Sala 1, estão sempre as três.
+ */
+export function irmasNoGinasio(concluidas: number): Irma[] {
+  if (concluidas <= 0) return ['luna'];
+  if (concluidas === 1) return ['luna', 'sol'];
+  return ['luna', 'sol', 'estrella'];
+}
+
+export function licoesConcluidas(m: Modulo, p: ProgressoDaApostila): number {
+  return m.licoes.filter((l) => concluida(p, l.id)).length;
+}
+
 export function estrelasDoModulo(m: Modulo, p: ProgressoDaApostila): number {
   return m.licoes.reduce((soma, l) => soma + (p.estrelas[l.id] ?? 0), 0);
 }
@@ -190,6 +208,13 @@ export function conferirModulo(m: Modulo): string[] {
     if (!l.consigo.length) erros.push(`${onde}: sem "agora eu consigo"`);
     if (!l.aula.chamada.length || !l.aula.abertura.length || !l.aula.encerramento.length) {
       erros.push(`${onde}: falta fala da aula`);
+    }
+    // quem chama e quem fala na chamada tem que ESTAR no ginásio naquela hora
+    const noGinasio: readonly string[] = irmasNoGinasio(i);
+    if (!noGinasio.includes(l.aula.chama)) erros.push(`${onde}: a ${l.aula.chama} chama a aula, mas não está no ginásio`);
+    if (l.aula.chamada[0]?.quem !== l.aula.chama) erros.push(`${onde}: a chamada tem de começar por quem chama (${l.aula.chama})`);
+    for (const f of l.aula.chamada) {
+      if (!noGinasio.includes(f.quem)) erros.push(`${onde}: "${f.quem}" fala na chamada, mas não está no ginásio`);
     }
     l.explicacao.forEach((pagina, k) => {
       if (!pagina.length) erros.push(`${onde}: a página ${k + 1} da explicação está vazia`);

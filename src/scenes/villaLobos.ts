@@ -30,7 +30,7 @@ import { INSCRITOS, retratoDoGrupo } from '../world/adversariosData';
 import { CAMPEAO_DO_QUADRO } from '../ui/Ui';
 import { flat } from '../core/materials';
 import { Estella } from '../entities/bichos/Estella';
-import { Luna } from '../entities/bichos/Luna';
+import { Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -2043,12 +2043,21 @@ export const villaLobos: SceneDef = {
      */
     const PIQUENIQUE_DA_LUNA = { x: -24, z: -27.6 };
     const LUNA_SENTADA = { x: PIQUENIQUE_DA_LUNA.x - 0.35, z: PIQUENIQUE_DA_LUNA.z - 0.3 };
+    /*
+     * AS IRMÃS DELA (pedido do Renan: "ela não estaria tendo um piquenique
+     * sozinha"): a SOL à direita dela na tela, a ESTRELLA à esquerda — na
+     * horizontal da tela, para nenhuma tapar a outra —, cada uma virada um
+     * pouco para a Luna, como quem está conversando na toalha.
+     */
+    const SOL_SENTADA = { x: PIQUENIQUE_DA_LUNA.x + 0.45, z: PIQUENIQUE_DA_LUNA.z - 0.55 };
+    const ESTRELLA_SENTADA = { x: PIQUENIQUE_DA_LUNA.x - 0.95, z: PIQUENIQUE_DA_LUNA.z + 0.25 };
     const OLHANDO_O_CAMINHO = Math.PI / 4;
     const piquenique = new THREE.Group();
     piquenique.name = 'piquenique-da-luna';
     piquenique.add(w.place(toalhaDePiquenique(2.3, 1.7, P.lunaToalha, P.lunaToalhaXadrez),
       PIQUENIQUE_DA_LUNA.x, 0, PIQUENIQUE_DA_LUNA.z, 0.12));
-    const CESTA_DA_LUNA = { x: PIQUENIQUE_DA_LUNA.x + 0.55, z: PIQUENIQUE_DA_LUNA.z - 0.45 };
+    // a cesta vai ATRÁS das três, entre a Luna e a Sol: na frente, ela tapava as patas de uma
+    const CESTA_DA_LUNA = { x: PIQUENIQUE_DA_LUNA.x - 0.1, z: PIQUENIQUE_DA_LUNA.z - 0.8 };
     piquenique.add(w.place(cestaDePiquenique(), CESTA_DA_LUNA.x, 0.02, CESTA_DA_LUNA.z, 0.4));
     /*
      * A FLÂMULA vai atrás e À ESQUERDA dela na tela (o `-X/+Z` da tela), e não
@@ -2057,7 +2066,8 @@ export const villaLobos: SceneDef = {
      * (para a esquerda da tela) e mostra para a câmera a face de trás — que
      * também tem o nome escrito.
      */
-    const FLAMULA = { x: PIQUENIQUE_DA_LUNA.x - 1.45, z: PIQUENIQUE_DA_LUNA.z + 0.55 };
+    // com a Estrella à esquerda, a flâmula foi mais para a esquerda da tela, fora da toalha
+    const FLAMULA = { x: PIQUENIQUE_DA_LUNA.x - 1.75, z: PIQUENIQUE_DA_LUNA.z + 0.9 };
     piquenique.add(w.place(flamula('GATITOS'), FLAMULA.x, 0, FLAMULA.z, Math.PI * 1.25));
     w.add(piquenique);
 
@@ -2070,6 +2080,24 @@ export const villaLobos: SceneDef = {
     w.add(luna.group);
     /** gancho de teste: o `scripts/luna.mjs` aciona os gestos para fotografar */
     luna.group.userData.teste = { luna, sentar: sentarALuna };
+    const sol = new Sol({
+      minX: SOL_SENTADA.x - 0.2, maxX: SOL_SENTADA.x + 0.2, minZ: SOL_SENTADA.z - 0.2, maxZ: SOL_SENTADA.z + 0.2,
+    });
+    const estrella = new Estrella({
+      minX: ESTRELLA_SENTADA.x - 0.2, maxX: ESTRELLA_SENTADA.x + 0.2,
+      minZ: ESTRELLA_SENTADA.z - 0.2, maxZ: ESTRELLA_SENTADA.z + 0.2,
+    });
+    const sentarAsIrmas = (): void => {
+      sol.sentarEm(SOL_SENTADA.x, SOL_SENTADA.z, OLHANDO_O_CAMINHO - 0.3, 0.02);
+      estrella.sentarEm(ESTRELLA_SENTADA.x, ESTRELLA_SENTADA.z, OLHANDO_O_CAMINHO + 0.3, 0.02);
+      sol.pararDeEncarar();
+      estrella.pararDeEncarar();
+    };
+    sentarAsIrmas();
+    w.add(sol.group);
+    w.add(estrella.group);
+    sol.group.userData.teste = { sol };
+    estrella.group.userData.teste = { estrella };
 
     // o que o sorteio plantou onde a toalha vai: some quando ela chega. O raio
     // pega os quatro canteiros da foto do Renan (o mais longe fica a 3,1)
@@ -2086,6 +2114,8 @@ export const villaLobos: SceneDef = {
      */
     const colisoresDoPiquenique = [
       { kind: 'circle' as const, x: LUNA_SENTADA.x, z: LUNA_SENTADA.z, r: 0.42 },
+      { kind: 'circle' as const, x: SOL_SENTADA.x, z: SOL_SENTADA.z, r: 0.4 },
+      { kind: 'circle' as const, x: ESTRELLA_SENTADA.x, z: ESTRELLA_SENTADA.z, r: 0.42 },
       { kind: 'circle' as const, x: CESTA_DA_LUNA.x, z: CESTA_DA_LUNA.z, r: 0.3 },
       { kind: 'circle' as const, x: FLAMULA.x, z: FLAMULA.z, r: 0.14 },
     ];
@@ -2095,8 +2125,12 @@ export const villaLobos: SceneDef = {
       lunaNoParque = sim;
       piquenique.visible = sim;
       luna.group.visible = sim;
+      sol.group.visible = sim;
+      estrella.group.visible = sim;
       for (const o of noLugarDoPiquenique) o.visible = !sim;
       falarComALuna.enabled = sim;
+      falarComASol.enabled = sim;
+      falarComAEstrella.enabled = sim;
       for (const c of colisoresDoPiquenique) {
         const i = w.colliders.indexOf(c);
         if (sim && i < 0) w.colliders.push(c);
@@ -2136,8 +2170,9 @@ export const villaLobos: SceneDef = {
           x: LUNA_SENTADA.x + DIREITA_DA_TELA.x * lado + PARA_A_CAMERA.x * frente,
           z: LUNA_SENTADA.z + DIREITA_DA_TELA.z * lado + PARA_A_CAMERA.z * frente,
         });
-        const eu = ponto(1.3, 0.9);
-        const par = ponto(2.0, 0.7);
+        // um pouco mais longe que o de costume: a Sol está sentada logo ali
+        const eu = ponto(1.6, 1.0);
+        const par = ponto(2.3, 0.8);
         const olhandoPraEla = (p: { x: number; z: number }): number =>
           Math.atan2(LUNA_SENTADA.x - p.x, LUNA_SENTADA.z - p.z);
         api.lockPlayer(true);
@@ -2146,6 +2181,9 @@ export const villaLobos: SceneDef = {
         api.holdCompanion(LUNA_SENTADA.x, LUNA_SENTADA.z);
         luna.levantar();
         luna.encarar((eu.x + par.x) / 2, (eu.z + par.z) / 2);
+        // as irmãs viram o rosto para quem chegou (sentadas: só o giro do encarar)
+        sol.encarar((eu.x + par.x) / 2, (eu.z + par.z) / 2);
+        estrella.encarar((eu.x + par.x) / 2, (eu.z + par.z) / 2);
         /*
          * A CÂMERA CHEGA PERTO NA CONVERSA. O piquenique fica dentro da zona
          * da roda gigante, que abre o enquadramento em ~19 — bom para ver a
@@ -2165,10 +2203,77 @@ export const villaLobos: SceneDef = {
           api.lockPlayer(false);
           luna.pararDeEncarar();
           sentarALuna();
+          sentarAsIrmas();
         }
       },
     });
     falarComALuna.label = g.flag('escola-aberta') ? 'Falar com a Luna' : 'Falar com a coelhinha';
+
+    /**
+     * AS IRMÃS TAMBÉM CONVERSAM, cada uma do seu jeito — mas o convite é da
+     * Luna: antes dele, elas mandam falar com ela. A dupla vai para a
+     * frente-DIREITA da Sol (a toalha está à esquerda dela) e para a
+     * frente-ESQUERDA da Estrella (à direita dela estão a Luna e a Sol).
+     */
+    const conversarComIrma = async (
+      api: typeof g, irma: Sol | Estrella, lugar: { x: number; z: number }, paraDireita: boolean,
+      falas: (apresentadas: boolean) => Array<[string, string]>,
+    ): Promise<void> => {
+      const c = Math.SQRT1_2;
+      const ponto = (lado: number, frente: number): { x: number; z: number } => ({
+        x: lugar.x + c * lado + c * frente,
+        z: lugar.z - c * lado + c * frente,
+      });
+      const s = paraDireita ? 1 : -1;
+      const eu = ponto(1.3 * s, 1.0);
+      const par = ponto(2.0 * s, 0.8);
+      const olhando = (p: { x: number; z: number }): number => Math.atan2(lugar.x - p.x, lugar.z - p.z);
+      api.lockPlayer(true);
+      api.releasePlayer(eu.x, eu.z, olhando(eu));
+      api.releaseCompanion(par.x, par.z, olhando(par));
+      api.holdCompanion(lugar.x, lugar.z);
+      irma.encarar((eu.x + par.x) / 2, (eu.z + par.z) / 2);
+      zoomLivre = false;
+      api.focusCamera(irma.group);
+      api.setZoom(8);
+      try {
+        for (const [quem, texto] of falas(api.flag('escola-aberta'))) {
+          if (quem === 'Sol') {
+            irma.torcer(1.4);
+            api.som('sacudida');
+          }
+          await api.say([texto], quem);
+        }
+      } finally {
+        api.focusCamera(null);
+        zoomLivre = true;
+        api.freeCompanion();
+        api.lockPlayer(false);
+        sentarAsIrmas();
+      }
+    };
+    const falarComASol = w.interact({
+      id: 'parque:sol',
+      x: SOL_SENTADA.x, z: SOL_SENTADA.z, radius: 1.1,
+      label: 'Falar com a coelhinha laranja', icon: '🌞',
+      highlight: sol.group,
+      onInteract: (api) => conversarComIrma(api, sol, SOL_SENTADA, true, (apresentadas) => apresentadas
+        ? [['Sol', '¡VÃO NA ESCOLA! ¡QUÉ NOTA! A gente se vê no ginásio, panas!'], ['Sol', 'O ônibus é ali! ¡Rapidito!']]
+        : [['Sol', '¡ÉPALE! ¡Oi, oi, OI!'], ['Sol', 'Fala com a Luna primeiro, ela que tá com o convite! ¡Luna! ¡LUNA! Visita!']]),
+    });
+    const falarComAEstrella = w.interact({
+      id: 'parque:estrella',
+      x: ESTRELLA_SENTADA.x, z: ESTRELLA_SENTADA.z, radius: 1.1,
+      label: 'Falar com a coelhinha marrom', icon: '⭐',
+      highlight: estrella.group,
+      onInteract: (api) => conversarComIrma(api, estrella, ESTRELLA_SENTADA, false, (apresentadas) => apresentadas
+        ? [['Estrella', 'Vão pegar o ônibus? Cuidado na rua, tá?'], ['Estrella', 'E levem água. A escola é longe e a Sol vai querer mostrar o ginásio inteiro.']]
+        : [['Estrella', 'Oi. Tudo bem? Senta aí na sombra, se quiser.'], ['Estrella', 'Pode falar com a Luna. Ela adora visita... e adora falar.']]),
+    });
+    if (g.flag('escola-aberta')) {
+      falarComASol.label = 'Falar com a Sol';
+      falarComAEstrella.label = 'Falar com a Estrella';
+    }
 
     const conversarComALuna = async (api: typeof g): Promise<void> => {
       const diz = (texto: string, quem = L): Promise<void> => api.say([texto], quem);
@@ -2203,17 +2308,36 @@ export const villaLobos: SceneDef = {
         await diz('Panas?', R);
         await diz('Amigos! Panas. Pronto: agora vocês já aprenderam uma palavra comigo.');
         await diz('E se virem um gato de meia cara caramelo passeando pelo corredor... é ele! Vale?');
+        /*
+         * AS IRMÃS se apresentam no fim (pedido do Renan: a Luna fala
+         * primeiro). A Sol, animada e alta; a Estrella, calma, e já cuidando
+         * das duas.
+         */
+        luna.torcer(1.6);
+        await diz('Ah! E essas são as minhas irmãs: a Sol e a Estrella. Também são cheerleaders dos Gatitos!');
+        sol.torcer(2.4);
+        api.som('sacudida');
+        await diz('¡HOLA, PANAS! ¡Épale! Prazer, prazer, PRAZER!', 'Sol');
+        await diz('Oi. Prazer. Desculpa a Sol, ela é assim mesmo.', 'Estrella');
+        await diz('Luna, você passou protetor solar? O sol tá forte hoje.', 'Estrella');
+        sol.torcer(1.4);
+        await diz('¡EU TÔ AQUI!', 'Sol');
+        await diz('...O outro sol, Sol.', 'Estrella');
+        await diz('Três cheerleaders. Os Gatitos estão bem servidos.', R);
         api.setFlag('escola-aberta');
         falarComALuna.label = 'Falar com a Luna';
+        falarComASol.label = 'Falar com a Sol';
+        falarComAEstrella.label = 'Falar com a Estrella';
         api.som('memoria');
         api.toast('Nova parada no ônibus: Escola do Gatito', '🚌');
         api.unlock({
           id: 'luna-piquenique',
           title: 'A torcedora dos Gatitos',
           place: 'Parque Villa Lobos',
-          note: 'Do lado da roda gigante tinha uma coelhinha de pompom fazendo piquenique. '
-            + 'É a Luna, cheerleader dos Gatitos. Ela falou da escola sem parar, ficou com '
-            + 'vergonha, e convidou a gente para conhecer as aulas do professor Gatito.',
+          note: 'Do lado da roda gigante tinha três coelhinhas de pompom fazendo piquenique. '
+            + 'A Luna, cheerleader dos Gatitos, falou da escola sem parar, ficou com vergonha, '
+            + 'e convidou a gente para conhecer as aulas do professor Gatito. As irmãs dela '
+            + 'são a Sol, que fala gritando de tão feliz, e a Estrella, que cuida das duas.',
           icon: '🐰',
         });
       } else {
@@ -2233,7 +2357,11 @@ export const villaLobos: SceneDef = {
     w.onUpdate((dt) => {
       const aqui = g.flag('jean-luc-batido') && !lunaFoiPraEscola;
       if (aqui !== lunaNoParque) mostrarALuna(aqui);
-      if (aqui) luna.update(dt);
+      if (aqui) {
+        luna.update(dt);
+        sol.update(dt);
+        estrella.update(dt);
+      }
     });
 
     // ---------------------------------------------------------- horizonte

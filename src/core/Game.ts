@@ -1518,7 +1518,10 @@ export class Game implements GameAPI {
       modulo: MODULO_1,
       progresso: this.progressoDaApostila(),
       licao: o.licao,
-      nomes: { ari: ARI.name, renan: RENAN.name, gatito: 'Gatito', luna: 'Luna', walter: 'Walter', josefina: 'Josefina' },
+      nomes: {
+        ari: ARI.name, renan: RENAN.name, gatito: 'Gatito', luna: 'Luna', sol: 'Sol', estrella: 'Estrella',
+        walter: 'Walter', josefina: 'Josefina',
+      },
       retrato: retratoDoFalante,
       aoConcluir: (id, estrelas) => {
         this.save.concluirLicao(id, estrelas);

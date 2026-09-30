@@ -229,9 +229,12 @@ export const LICAO_6: Licao = {
     'pedir um cafezinho (e esperar um "minutinho").',
   ],
   aula: {
+    chama: 'estrella',
     chamada: [
-      { quem: 'luna', texto: '¡Panas! Última aula do módulo! Hoje é sobre as palavras mais fofas do português.' },
-      { quem: 'luna', texto: 'Eu já tô com... como é mesmo? Saudade! Já tô com saudade das aulas. Vamos!' },
+      { quem: 'estrella', texto: 'O sinal. É a última aula do módulo, panas.' },
+      { quem: 'estrella', texto: 'Eu já tô com... como é que o Gatito diz... saudade. Saudade das aulas.' },
+      { quem: 'luna', texto: '¡Ay, Estrella! Não fala assim que eu choro.' },
+      { quem: 'estrella', texto: 'Vamos. Com calma, que ainda dá tempo.' },
     ],
     abertura: [
       { quem: 'gatito', texto: 'Boa tarde, turma! Última lição do Módulo 1.' },

@@ -22,7 +22,7 @@
  */
 
 /** quem fala nos quadrinhos da apostila e nas falas da aula */
-export type Falante = 'gatito' | 'luna' | 'ari' | 'renan' | 'walter' | 'josefina';
+export type Falante = 'gatito' | 'luna' | 'sol' | 'estrella' | 'ari' | 'renan' | 'walter' | 'josefina';
 
 export interface Fala {
   quem: Falante;
@@ -146,7 +146,13 @@ export type Exercicio =
 
 /** as falas da aula na Sala 1, fora do livro */
 export interface AulaDaLicao {
-  /** a Luna, no ginásio, avisando que a aula vai começar */
+  /**
+   * QUEM CHAMA ESTA AULA no ginásio: é com ela que a dupla tem de falar (a
+   * missão). A 1 é da Luna, a 2 da Sol (depois do salto dela), a 3 da
+   * Estrella (depois da estrelinha), e daí revezam — pedido do Renan.
+   */
+  chama: 'luna' | 'sol' | 'estrella';
+  /** quem chama, no ginásio, avisando que a aula vai começar — logo depois do sinal */
   chamada: readonly Fala[];
   /** o Gatito abrindo a aula, antes da apostila */
   abertura: readonly Fala[];

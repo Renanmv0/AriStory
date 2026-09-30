@@ -270,10 +270,12 @@ export const LICAO_2: Licao = {
     'desconfiar de palavra que parece igual ao espanhol.',
   ],
   aula: {
+    chama: 'sol',
     chamada: [
-      { quem: 'luna', texto: '¡Panas! A próxima aula do Gatito já vai começar!' },
-      { quem: 'luna', texto: 'Hoje é falsos amigos. Eu sou especialista em cair neles... ¡Qué pena!' },
-      { quem: 'luna', texto: 'Vou na frente guardar os lugares!' },
+      { quem: 'sol', texto: '¡EL TIMBRE! ¡O SINAL, PANAS! A aula do Gatito!' },
+      { quem: 'sol', texto: 'Hoje é falsos amigos! Uma vez eu ofereci uma propina pro Walter. PROPINA! Ele latiu comigo uma semana!' },
+      { quem: 'luna', texto: 'Ela queria dizer gorjeta, gente...' },
+      { quem: 'sol', texto: '¡VAMOS, VAMOS! Eu guardo os lugares! ¡Corran!' },
     ],
     abertura: [
       { quem: 'gatito', texto: 'Boa tarde, turma! Hoje a aula é sobre amigos.' },

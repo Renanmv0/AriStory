@@ -25,8 +25,9 @@ do que o Renan ensina em casa (§6). A escola é o cenário; a aula é o present
 refeitório, as cinco salas atrás das portas (Sala 1 de português, Sala 2 de
 espanhol, descanso, professores e ginásio) e o Gatito já estão no jogo
 (`scenes/escola*.ts`, `entities/bichos/Gatito.ts`). Chega-se de ônibus,
-depois de conhecer a **Luna** no Villa Lobos (§10, §14). **A aula do Gatito
-existe** (§6): a Luna chama no ginásio, o Gatito dá a aula em cima da mesa da
+depois de conhecer a **Luna** — e as irmãs dela, a **Sol** e a **Estrella**
+(§15) — no Villa Lobos (§10, §14). **A aula do Gatito existe** (§6): uma
+das três chama no ginásio (a 1ª é a Luna, a 2ª a Sol, a 3ª a Estrella), o Gatito dá a aula em cima da mesa da
 Sala 1, e a lição é uma **apostila de verdade**, de folhear — o Módulo 1, seis
 lições (`minigames/aula/`, `ui/apostila.ts`, `scenes/escolaAula.ts`; como
 escrever lição nova: a skill `aristory-apostila`). As etiquetas (§5) e a
@@ -802,7 +803,8 @@ nome, o time e o jeito são do Renan:
 - ela é a **primeira** personagem da escola; outras virão.
 
 **Onde ela mora no código.** O corpo e os gestos em
-`entities/bichos/Luna.ts` (um bicho, como o Mano: em pé, com posto). O
+`entities/bichos/CoelhaDaTorcida.ts` (um bicho, como o Mano: em pé, com
+posto) — o mesmo corpo das irmãs (§15), montado pela ficha `FICHA_DA_LUNA`. O
 piquenique, a conversa e a abertura da escola no `scenes/villaLobos.ts`
 (procure "A LUNA E O PIQUENIQUE"). A toalha é a `toalhaDePiquenique` do kit,
 nas cores dos Gatitos; a cesta (`cestaDePiquenique`) e a flâmula "GATITOS"
@@ -837,3 +839,47 @@ a parar bem na frente, tapando a coelha.
    conversa, e no fim ela volta a treinar.
 
 A aparência e as falas estão aprovadas (§13, 15–17).
+
+---
+
+## 15. As irmãs da Luna: a Sol e a Estrella
+
+**Pedido do Renan**: a Luna não faz piquenique sozinha. Ela tem duas irmãs
+coelhinhas, de cores e jeitos diferentes, as três de origem venezuelana (e,
+como a Luna, nenhuma fala disso: é contexto) e as três **cheerleaders dos
+Gatitos**, treinando juntas no ginásio.
+
+| | a LUNA | a SOL | a ESTRELLA |
+|---|---|---|---|
+| jeito | super fã dos Gatitos, fala demais e fica tímida | **animada, fala alto, sempre muito feliz** (os gritos saem em maiúscula) | **calma, na dela, sempre preocupada com as duas** |
+| pelo | cinza-pérola | **damasco** | **chocolate ao leite** |
+| orelhas | a direita com a ponta dobrada | as duas bem em pé, compridas | as duas **caídas** dos lados |
+| enfeite | laço amarelo | presilha de **sol** | **estrelinha** dourada no alto da cabeça |
+| rosto | boca em linha | **sorrisão** de boca aberta | pálpebras meio baixas, sorriso pequeno |
+| tamanho | 1,15 | 1,08 (a menor) | 1,21 (a mais alta: a que cuida) |
+| gesto | torcer | o **SALTO** (`saltar`): agacha, sobe ~0,7 e abre as pernas no alto — o "toe touch" | a **ESTRELINHA** (`estrelinha`): a volta inteira de lado, braços e pernas em X, andando ~1,15 |
+
+As cores e os traços são meus (o Renan pediu "cores diferentes"): a Sol
+quente como o nome, a Estrella escura e tranquila, e cada enfeite é o próprio
+nome. **O corpo é um só** (`CoelhaDaTorcida`), montado por ficha — o uniforme e
+os pompons são os mesmos, é o time.
+
+**Na história** (decisão do Renan):
+
+1. **o piquenique** no Villa Lobos é das três, sentadas juntas na toalha — a
+   Sol à direita da Luna na tela, a Estrella à esquerda. A **Luna fala
+   primeiro** (a conversa de sempre), e as irmãs se apresentam no fim. A Sol e
+   a Estrella também conversam, mas o convite é da Luna;
+2. **a primeira ida à escola** continua só com a Luna (o tour da entrada);
+3. **o ginásio muda com as aulas** (`irmasNoGinasio`): antes da primeira,
+   só a Luna; depois dela, **a Luna e a Sol**; depois da segunda, **as três**.
+   A Sol salta e a Estrella dá estrelinha sozinhas, de tempos em tempos,
+   enquanto treinam;
+4. **quem chama cada aula** é da lição (`aula.chama`): a 1 a **Luna** (como
+   sempre), a 2 a **Sol** — ela mostra o salto e aí o sinal toca —, a 3 a
+   **Estrella** — ela mostra a estrelinha. Daí em diante revezam (Luna, Sol,
+   Estrella). Falar com outra irmã, ela manda falar com a dona da aula;
+5. **na aula estão sempre as três**: a Luna na ponta da primeira fila, a Sol
+   e a Estrella na segunda. No fim, as três saem juntas.
+
+`scripts/irmas.mjs` guarda tudo isto, com o salto e a estrelinha medidos.

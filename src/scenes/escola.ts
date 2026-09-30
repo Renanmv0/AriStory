@@ -11,7 +11,7 @@ import { ladrilhoDeEscola, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
 import { Gatito } from '../entities/bichos/Gatito';
 import { aulaDaVez, emAula } from './escolaAula';
-import { Luna } from '../entities/bichos/Luna';
+import { Luna } from '../entities/bichos/CoelhaDaTorcida';
 import {
   ESCOLA, LUZ_DA_ESCOLA, conversa, maquinaQueEntrega, paredeComVaos, pontoNoMundo, posicionarParaConversar,
   sentarOsDois,
