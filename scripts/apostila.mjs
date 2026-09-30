@@ -117,15 +117,42 @@ ok(A.estrelasDoModulo(M, tudo) === 18, 'dezoito estrelas no máximo');
 // ------------------------------------------------------------ 5. o livro
 console.log('\n5. o livro');
 const paginas = A.paginasDoModulo(M);
-ok(paginas.length === 2 + 6 * 4 + 2, `${paginas.length} páginas`);
-ok(paginas.length % 2 === 0, 'número par: a última dupla fecha');
-M.licoes.forEach((_, i) => {
-  const p = A.primeiraPaginaDa(i);
-  ok(p % 2 === 0 && paginas[p].tipo === 'explicacao' && paginas[p + 1].tipo === 'explicacao',
-    `lição ${i + 1}: a explicação ocupa uma dupla inteira (páginas ${p + 1} e ${p + 2})`);
-  ok(paginas[p + 2].tipo === 'exercicios' && paginas[p + 3].tipo === 'fechamento',
-    `lição ${i + 1}: exercícios e fechamento na dupla seguinte`);
+ok(paginas.length % 2 === 0, `${paginas.length} páginas, número par: a última dupla fecha`);
+/** a ordem das páginas de uma lição: explicação(ões), exercício(s), fechamento, e a de anotações se der ímpar */
+const conferirLicao = (m, pgs, i) => {
+  const l = m.licoes[i];
+  const p = A.primeiraPaginaDa(m, i);
+  const minhas = pgs.filter((x) => x.licao === i);
+  const tipos = minhas.map((x) => x.tipo);
+  const esperado = [
+    ...l.explicacao.map(() => 'explicacao'),
+    ...A.paginasDeExercicio(l).map(() => 'exercicios'),
+    'fechamento',
+  ];
+  if (esperado.length % 2) esperado.push('anotacoes');
+  return p % 2 === 0 && pgs[p] === minhas[0] && tipos.join() === esperado.join()
+    && A.paginaDosExercicios(m, i) === p + l.explicacao.length;
+};
+M.licoes.forEach((l, i) => {
+  ok(conferirLicao(M, paginas, i), `lição ${i + 1}: começa na esquerda da dupla (p. ${A.primeiraPaginaDa(M, i) + 1}), ${l.explicacao.length} de explicação, exercícios e fechamento`);
 });
+// O LIVRO FLEXÍVEL: uma lição com três páginas de explicação e exercícios em
+// duas, outra com três de explicação (dá ímpar: ganha a de anotações)
+const flex = structuredClone(M);
+flex.licoes[0].explicacao = [...flex.licoes[0].explicacao, flex.licoes[0].explicacao[1]];
+flex.licoes[0].exercicios[3].novaPagina = true;
+flex.licoes[1].explicacao = [...flex.licoes[1].explicacao, flex.licoes[1].explicacao[1]];
+const pf = A.paginasDoModulo(flex);
+ok(A.paginasDeExercicio(flex.licoes[0]).map((x) => `${x.de}-${x.ate}`).join() === `0-3,3-${flex.licoes[0].exercicios.length}`,
+  '`novaPagina` quebra os exercícios em duas páginas');
+ok(pf.filter((x) => x.licao === 0).length === 6 && pf.filter((x) => x.licao === 1).at(-1).tipo === 'anotacoes',
+  'três de explicação e dois de exercício: seis páginas; três e um: cinco, e a de anotações completa');
+ok(flex.licoes.every((_, i) => conferirLicao(flex, pf, i)) && pf.length % 2 === 0,
+  'com páginas a mais, toda lição continua começando na esquerda da dupla');
+ok(A.conferirModulo(flex).length === 0, 'o conferidor aceita lição de qualquer tamanho');
+const semExplicacao = structuredClone(M);
+semExplicacao.licoes[2].explicacao = [];
+ok(A.conferirModulo(semExplicacao).some((e) => e.includes('explicação')), 'mas não aceita lição sem nenhuma página de explicação');
 
 // --------------------------------------------------------- 6. o embaralho
 console.log('\n6. o embaralho');

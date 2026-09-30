@@ -523,15 +523,17 @@ Uma lição por aula, sempre neste ciclo (`scenes/escolaAula.ts`):
 O molde dos livros de curso de idioma (Interchange, English File) e dos de
 português para quem fala espanhol (Mano a Mano): **situação antes da regra,
 regra com o espanhol do lado, prática variada, e a autoavaliação no fim**.
-Cada lição tem **quatro páginas** — no computador, duas duplas; no celular,
-uma página por vez:
+Cada lição tem **quantas páginas o tema pedir** (pedido do Renan: "as aulas
+só precisam ser dinâmicas e únicas") — no computador, em duplas; no celular,
+uma página por vez. As seis do Módulo 1 têm quatro:
 
 | página | o que tem |
 |---|---|
-| 💬 **Para começar** | título, os objetivos ("Nesta lição você vai…"), a **cena** em quadrinho (com o rosto de cada um, o modelo 3D fotografado) e as palavras da cena |
-| 📐 **Como funciona** | a regra: texto, tabelas, 🇻🇪 × 🇧🇷, exemplos, ⚠️ Fique de olho!, 🐾 Dica do Gatito, 🇧🇷 Cantinho do Brasil |
-| ✏️ **Mãos à obra!** | sete exercícios de sete tipos diferentes |
+| 💬 **Para começar** (a primeira de explicação) | título, os objetivos ("Nesta lição você vai…"), a **cena** em quadrinho (com o rosto de cada um, o modelo 3D fotografado) e as palavras da cena |
+| 📐 **Como funciona** (uma ou mais) | a regra: texto, tabelas, 🇻🇪 × 🇧🇷, exemplos, ⚠️ Fique de olho!, 🐾 Dica do Gatito, 🇧🇷 Cantinho do Brasil |
+| ✏️ **Mãos à obra!** (uma ou mais; `novaPagina` quebra) | os exercícios, de tipos variados |
 | ✅ **Agora eu consigo…** | a autoavaliação ("can do"), as estrelas, o carimbo e o bilhete do Gatito |
+| 📝 **Anotações** (só se a conta der ímpar) | a página pautada que fecha a dupla, para a lição seguinte começar na esquerda |
 
 **Os dez tipos de exercício**: múltipla escolha (com o desenho do "onde
 está?"), bate-papo de celular, verdadeiro ou falso, ligar colunas, texto com

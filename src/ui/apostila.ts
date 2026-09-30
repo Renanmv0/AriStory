@@ -1,7 +1,7 @@
 import type { SomNome } from '../audio/efeitos';
 import {
   concluida, conferirDigitado, embaralhar, estrelasDoModulo, estrelasPor, itensDaLicao,
-  licaoLiberada, normalizar, paginasDoModulo, primeiraPaginaDa, type PaginaDoLivro,
+  licaoLiberada, normalizar, paginaDosExercicios, paginasDoModulo, primeiraPaginaDa, type PaginaDoLivro,
 } from '../minigames/aula/apostila';
 import type {
   Bloco, Exercicio, Falante, Figura, ItemDeEscolha, Licao, Modulo, ProgressoDaApostila, ResultadoDaApostila,
@@ -209,7 +209,7 @@ export class Apostila {
       this.resultado = { concluidas: [] };
       this.medirTela();
       const i = pedido.licao ? pedido.modulo.licoes.findIndex((l) => l.id === pedido.licao) : -1;
-      let alvo = i >= 0 ? primeiraPaginaDa(i) : this.ultima;
+      let alvo = i >= 0 ? primeiraPaginaDa(pedido.modulo, i) : this.ultima;
       if (!this.acessivel(alvo)) alvo = 1;
       this.pagina = this.alinhar(alvo);
       this.pintarTudo();
@@ -471,13 +471,16 @@ export class Apostila {
     }
     const secao = pg.tipo === 'explicacao'
       ? (pg.parte === 0 ? '💬 Para começar' : '📐 Como funciona')
-      : pg.tipo === 'exercicios' ? '✏️ Mãos à obra!' : '✅ Agora eu consigo…';
+      : pg.tipo === 'exercicios' ? '✏️ Mãos à obra!'
+        : pg.tipo === 'anotacoes' ? '📝 Anotações' : '✅ Agora eu consigo…';
     const extra = pg.tipo === 'exercicios' ? `<span class="placar-da-licao">${this.placar(l)}</span>` : '';
     let miolo = '';
     if (pg.tipo === 'explicacao') {
       miolo = (pg.parte === 0 ? this.aberturaDaLicao(l) : '') + l.explicacao[pg.parte].map((b) => this.bloco(b)).join('');
     } else if (pg.tipo === 'exercicios') {
-      miolo = this.paginaDeExercicios(l);
+      miolo = this.paginaDeExercicios(l, pg.de, pg.ate, pg.parte === 0);
+    } else if (pg.tipo === 'anotacoes') {
+      miolo = this.anotacoes();
     } else {
       miolo = this.fechamento(l, pg.licao);
     }
@@ -522,7 +525,7 @@ export class Apostila {
     const p = this.pedido!;
     const prog = this.progresso();
     const itens = p.modulo.licoes.map((l, i) => {
-      const pagina = primeiraPaginaDa(i);
+      const pagina = primeiraPaginaDa(p.modulo, i);
       const liberada = licaoLiberada(p.modulo, prog, i);
       const feita = concluida(prog, l.id);
       const estado = feita
@@ -703,12 +706,24 @@ export class Apostila {
     return `<span class="barra"><i style="width:${Math.round((a.feitos / a.total) * 100)}%"></i></span> ${a.feitos}/${a.total}`;
   }
 
-  private paginaDeExercicios(l: Licao): string {
+  /** os exercícios de `de` até antes de `ate`; o aviso do gabarito só na primeira página deles */
+  private paginaDeExercicios(l: Licao, de: number, ate: number, primeira: boolean): string {
     const e = this.estado(l);
-    const aviso = e.gabarito
+    const aviso = e.gabarito && primeira
       ? `<div class="aviso-gabarito">📗 Lição concluída: estas são as respostas certas. <button class="refazer" data-refazer="${l.id}">↺ Refazer os exercícios</button></div>`
       : '';
-    return aviso + l.exercicios.map((_, k) => this.exercicio(l, k)).join('');
+    let html = aviso;
+    for (let k = de; k < ate; k++) html += this.exercicio(l, k);
+    return html;
+  }
+
+  /** a página pautada do fim de uma lição de páginas ímpares: é do aluno */
+  private anotacoes(): string {
+    return `
+      <div class="anotacoes">
+        <p class="bilhete-das-anotacoes">🐾 Este espaço é seu: as palavras novas, as dúvidas, um desenho do professor…</p>
+        <div class="pauta" aria-hidden="true"></div>
+      </div>`;
   }
 
   private exercicio(l: Licao, k: number): string {
@@ -1014,7 +1029,7 @@ export class Apostila {
       return `
         <div class="fechamento esperando">
           ${consigo}
-          <div class="pagina-trancada leve"><span class="icone">✏️</span><p>Termine os exercícios ${this.duplo ? 'da página ao lado' : 'da página anterior'} para fechar a lição.</p></div>
+          <div class="pagina-trancada leve"><span class="icone">✏️</span><p>Termine os exercícios de <b>✏️ Mãos à obra!</b> para fechar a lição.</p></div>
         </div>`;
     }
     const m = this.pedido!.modulo;
@@ -1029,7 +1044,7 @@ export class Apostila {
     let seguir = '';
     if (proxima) {
       seguir = licaoLiberada(m, this.progresso(), i + 1)
-        ? `<button class="seguir" data-ir="${primeiraPaginaDa(i + 1)}">Lição ${proxima.numero}: ${escapar(proxima.titulo)} ▶</button>`
+        ? `<button class="seguir" data-ir="${primeiraPaginaDa(m, i + 1)}">Lição ${proxima.numero}: ${escapar(proxima.titulo)} ▶</button>`
         : `<p class="proxima-aula">🔔 A lição ${proxima.numero}, <b>${escapar(proxima.titulo)}</b>, abre na próxima aula do Gatito.</p>`;
     } else {
       seguir = `<button class="seguir" data-ir="${this.paginas.length - 2}">🎓 O fim do módulo ▶</button>`;
@@ -1251,7 +1266,7 @@ export class Apostila {
     const e = this.estado(l);
     e.gabarito = false;
     this.som?.('trocar');
-    const alvo = primeiraPaginaDa(l.numero - 1) + 2;
+    const alvo = paginaDosExercicios(this.pedido!.modulo, l.numero - 1);
     if (this.alinhar(alvo) === this.pagina) this.pintarTudo();
     else this.virar(this.alinhar(alvo));
     this.depois.classList.remove('chamando');
