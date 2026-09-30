@@ -21,19 +21,33 @@ contrastar**.
 | `src/scenes/escolaGinasio.ts` (`montarAsIrmas`) | o ginásio: quem treina, quem chama a aula, o salto e a estrelinha |
 | `docs/ESCOLA.md` §6 | o plano e o que já foi decidido |
 
-## O molde de uma lição (não mude sem motivo)
+## O molde de uma lição
 
-Toda lição tem **quatro páginas**, que no computador caem em duas duplas:
+**O número de páginas é LIVRE** (pedido do Renan: "as aulas só precisam ser
+dinâmicas e únicas, cada uma com desenhos e exercícios que fazem sentido com
+o tópico"). O que não muda é a ORDEM:
 
-1. **💬 Para começar** — o título (número, emoji, situação, assunto), os
-   **objetivos** ("Nesta lição você vai…"), a **cena** (um diálogo em
-   quadrinho, com o rosto de cada um) e as **palavras da cena**;
-2. **📐 Como funciona** — a regra: texto curto, **tabela**, o **contraste**
-   🇻🇪 × 🇧🇷, **exemplos**, e as três caixas fixas: **⚠️ Fique de olho!** (a
-   pegadinha), **🐾 Dica do Gatito** e **🇧🇷 Cantinho do Brasil** (a cultura);
-3. **✏️ Mãos à obra!** — os exercícios;
+1. **💬 Para começar** — a primeira página de `explicacao`: o título (número,
+   emoji, situação, assunto) sai sozinho em cima; depois os **objetivos**
+   ("Nesta lição você vai…"), a **cena** (um diálogo em quadrinho, com o
+   rosto de cada um) e as **palavras da cena**;
+2. **📐 Como funciona** — as outras páginas de `explicacao`, UMA OU MAIS: a
+   regra, com texto curto, **tabela**, o **contraste** 🇻🇪 × 🇧🇷, **exemplos**,
+   e as caixas **⚠️ Fique de olho!** (a pegadinha), **🐾 Dica do Gatito** e
+   **🇧🇷 Cantinho do Brasil** (a cultura). Tema grande ganha mais páginas;
+   tema pequeno pode caber numa só (aí a lição tem só a "Para começar");
+3. **✏️ Mãos à obra!** — os exercícios, numa página ou em várias:
+   `novaPagina: true` num exercício faz ele começar a página seguinte (bom
+   para separar "reconhecer" de "produzir", ou quando a página fica longa);
 4. **✅ Agora eu consigo…** — sai sozinha do `consigo` da lição, com as
-   estrelas e o bilhete do Gatito.
+   estrelas e o bilhete do Gatito;
+5. **📝 Anotações** — o livro põe sozinho quando a conta dá ímpar, para a
+   lição seguinte começar na página da esquerda da dupla. Não escreva.
+
+As seis lições do Módulo 1 têm duas de explicação e uma de exercícios (quatro
+páginas). O que faz uma lição ser BOA não é o tamanho: é a cena, os desenhos
+(`figura`, emoji das palavras) e os exercícios terem a ver com o tema dela, e
+cada uma ter a sua cara — não copiar o formato da anterior.
 
 Isso é o que os livros de curso fazem (Interchange, English File): situação
 antes da regra, a regra com exemplo, prática variada, e a autoavaliação em
@@ -161,6 +175,7 @@ carteira vira "Estudar a apostila" (rever e refazer o que já foi dado).
 node scripts/apostila.mjs            # as lições e as regras, sem navegador
 npm run build && npx vite preview --port 4173 &
 node scripts/aula.mjs /tmp/au        # a aula inteira e o livro, no computador e no celular
+node scripts/paginas.mjs /tmp/pag    # o livro flexível: lição com mais páginas de explicação e de exercício, e a de anotações
 node scripts/irmas.mjs /tmp/ir       # as três no piquenique, quem treina e quem chama cada aula, o salto e a estrelinha
 ```
 

@@ -19,10 +19,11 @@ import { LICAO_6 } from './licoes/licao6';
  * - A TRAVA: uma lição só abre quando o Gatito a dá numa aula (`abertas`) E a
  *   anterior está concluída — "para passar para a próxima, ele precisa
  *   terminar a lição anterior" (pedido do Renan).
- * - O LIVRO: duas páginas de rosto (folha de rosto e sumário), quatro por
- *   lição, e duas de fim. Com um número par antes de cada lição, a explicação
- *   de uma lição cai sempre na MESMA dupla de páginas no computador, e os
- *   exercícios na dupla seguinte.
+ * - O LIVRO: duas páginas de rosto (folha de rosto e sumário), as de cada
+ *   lição, e duas de fim. Cada lição tem QUANTAS PÁGINAS O TEMA PEDIR (pedido
+ *   do Renan): as de explicação, as de exercício e a de fechamento. Quando a
+ *   conta dá ímpar, entra uma página de ANOTAÇÕES no fim da lição — assim toda
+ *   lição começa na página da esquerda da dupla, no computador.
  */
 
 export const MODULO_1: Modulo = {
@@ -130,33 +131,58 @@ export function estrelasDoModulo(m: Modulo, p: ProgressoDaApostila): number {
 export type PaginaDoLivro =
   | { tipo: 'rosto' }
   | { tipo: 'sumario' }
-  | { tipo: 'explicacao'; licao: number; parte: 0 | 1 }
-  | { tipo: 'exercicios'; licao: number }
+  | { tipo: 'explicacao'; licao: number; parte: number }
+  /** uma página de exercícios: os de índice `de` até antes de `ate` */
+  | { tipo: 'exercicios'; licao: number; parte: number; de: number; ate: number }
   | { tipo: 'fechamento'; licao: number }
+  /** a página pautada que completa a dupla quando a lição dá ímpar */
+  | { tipo: 'anotacoes'; licao: number }
   | { tipo: 'fim' }
   | { tipo: 'contracapa' };
 
 /** páginas antes da primeira lição (a folha de rosto e o sumário) */
 export const PAGINAS_DE_ROSTO = 2;
-export const PAGINAS_POR_LICAO = 4;
+
+/**
+ * AS PÁGINAS DE EXERCÍCIO de uma lição: os exercícios em ordem, e um que
+ * tenha `novaPagina` começa a página seguinte. Sem nenhum, é uma página só.
+ */
+export function paginasDeExercicio(l: Licao): Array<{ de: number; ate: number }> {
+  const cortes = [0];
+  l.exercicios.forEach((ex, k) => {
+    if (k > 0 && ex.novaPagina) cortes.push(k);
+  });
+  return cortes.map((de, i) => ({ de, ate: cortes[i + 1] ?? l.exercicios.length }));
+}
+
+/** as páginas de UMA lição, na ordem, já com a de anotações se a conta der ímpar */
+export function paginasDaLicao(l: Licao, licao: number): PaginaDoLivro[] {
+  const paginas: PaginaDoLivro[] = [
+    ...l.explicacao.map((_, parte) => ({ tipo: 'explicacao' as const, licao, parte })),
+    ...paginasDeExercicio(l).map((p, parte) => ({ tipo: 'exercicios' as const, licao, parte, ...p })),
+    { tipo: 'fechamento', licao },
+  ];
+  if (paginas.length % 2) paginas.push({ tipo: 'anotacoes', licao });
+  return paginas;
+}
 
 export function paginasDoModulo(m: Modulo): PaginaDoLivro[] {
   const paginas: PaginaDoLivro[] = [{ tipo: 'rosto' }, { tipo: 'sumario' }];
-  m.licoes.forEach((_, licao) => {
-    paginas.push(
-      { tipo: 'explicacao', licao, parte: 0 },
-      { tipo: 'explicacao', licao, parte: 1 },
-      { tipo: 'exercicios', licao },
-      { tipo: 'fechamento', licao },
-    );
-  });
+  m.licoes.forEach((l, licao) => paginas.push(...paginasDaLicao(l, licao)));
   paginas.push({ tipo: 'fim' }, { tipo: 'contracapa' });
   return paginas;
 }
 
 /** o índice (a partir de zero) da primeira página da lição `i`; o número impresso é esse + 1 */
-export function primeiraPaginaDa(i: number): number {
-  return PAGINAS_DE_ROSTO + i * PAGINAS_POR_LICAO;
+export function primeiraPaginaDa(m: Modulo, i: number): number {
+  let p = PAGINAS_DE_ROSTO;
+  for (let k = 0; k < i && k < m.licoes.length; k++) p += paginasDaLicao(m.licoes[k], k).length;
+  return p;
+}
+
+/** o índice da primeira página de exercícios da lição `i` */
+export function paginaDosExercicios(m: Modulo, i: number): number {
+  return primeiraPaginaDa(m, i) + m.licoes[i].explicacao.length;
 }
 
 // ------------------------------------------------------------- o embaralho
@@ -221,6 +247,7 @@ export function conferirModulo(m: Modulo): string[] {
     for (const f of l.aula.chamada) {
       if (!noGinasio.includes(f.quem)) erros.push(`${onde}: "${f.quem}" fala na chamada, mas não está no ginásio`);
     }
+    if (!l.explicacao.length) erros.push(`${onde}: sem nenhuma página de explicação`);
     l.explicacao.forEach((pagina, k) => {
       if (!pagina.length) erros.push(`${onde}: a página ${k + 1} da explicação está vazia`);
       for (const b of pagina) {

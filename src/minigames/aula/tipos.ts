@@ -5,8 +5,12 @@
  * uma escola de inglês"), com o molde dos livros de curso de idioma — Interchange,
  * English File — e dos de português para quem fala espanhol:
  *
- * - toda lição tem QUATRO PÁGINAS: duas de explicação (a situação e a regra),
- *   uma de exercícios e uma de fechamento ("Agora eu consigo…", as estrelas);
+ * - toda lição tem QUANTAS PÁGINAS O TEMA PEDIR (pedido do Renan: "as aulas
+ *   só precisam ser dinâmicas e únicas"): uma ou mais de explicação (a
+ *   primeira é a situação, "Para começar"; as outras, a regra), uma ou mais
+ *   de exercícios (`novaPagina` quebra) e a de fechamento ("Agora eu
+ *   consigo…", as estrelas). O livro completa com uma página de anotações
+ *   quando a conta dá ímpar;
  * - a explicação é feita de BLOCOS (um diálogo em quadrinho, uma tabela, a
  *   comparação com o espanhol, a dica do Gatito…), e a página se monta sozinha
  *   com eles — escrever uma lição é escrever dados, não HTML;
@@ -95,6 +99,12 @@ export interface TurnoDeConversa {
   porque: string;
 }
 
+/** o que todo exercício pode ter, seja qual for o tipo */
+interface ComumAoExercicio {
+  /** começa uma PÁGINA NOVA de exercícios (o primeiro já começa a dele) */
+  novaPagina?: boolean;
+}
+
 /**
  * OS DEZ TIPOS DE EXERCÍCIO. Todo exercício tem um `enunciado` (a instrução,
  * em negrito ao lado do número) e ITENS — e cada item vale um ponto.
@@ -103,7 +113,7 @@ export interface TurnoDeConversa {
  * certa e o Gatito explica o porquê (§6.3 do `docs/ESCOLA.md`: errar não
  * pune). A nota da lição sai de quantos itens saíram certos de primeira.
  */
-export type Exercicio =
+export type Exercicio = ComumAoExercicio & (
   /** múltipla escolha, com figura opcional */
   | { tipo: 'escolha'; enunciado: string; itens: readonly ItemDeEscolha[] }
   /** um bate-papo de celular: `com` fala, o Ari escolhe a resposta, e a conversa anda */
@@ -142,7 +152,8 @@ export type Exercicio =
       itens: readonly { palavras: readonly string[]; errada: number; correcao: string; porque: string }[];
     }
   /** qual não combina: uma pergunta e quatro opções, uma delas diferente das outras */
-  | { tipo: 'intruso'; enunciado: string; itens: readonly ItemDeEscolha[] };
+  | { tipo: 'intruso'; enunciado: string; itens: readonly ItemDeEscolha[] }
+);
 
 /** as falas da aula na Sala 1, fora do livro */
 export interface AulaDaLicao {
@@ -179,8 +190,12 @@ export interface Licao {
   assunto: string;
   emoji: string;
   cor: CorDaLicao;
-  /** as DUAS páginas de explicação */
-  explicacao: readonly [readonly Bloco[], readonly Bloco[]];
+  /**
+   * as páginas de EXPLICAÇÃO, quantas o tema pedir (pelo menos uma): cada uma
+   * é uma lista de blocos. A primeira abre com o título da lição e é a
+   * "💬 Para começar"; as outras são "📐 Como funciona".
+   */
+  explicacao: readonly (readonly Bloco[])[];
   exercicios: readonly Exercicio[];
   /** "Agora eu consigo…": a autoavaliação do fim da lição */
   consigo: readonly string[];

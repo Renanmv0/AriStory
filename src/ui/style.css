@@ -4752,6 +4752,23 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
 .livro-apostila .pagina-trancada.leve { min-height: 0; margin-top: 18px; }
 .livro-apostila .pagina-trancada.leve .icone { font-size: 30px; }
 
+/* a página de ANOTAÇÕES: pautada, para completar a dupla quando a lição dá ímpar */
+.livro-apostila .anotacoes { display: flex; flex-direction: column; min-height: 100%; }
+.livro-apostila .bilhete-das-anotacoes {
+  margin: 2px 0 10px;
+  color: var(--tinta-suave);
+  font-style: italic;
+  font-size: 14px;
+}
+.livro-apostila .anotacoes .pauta {
+  flex: 1;
+  min-height: 260px;
+  background: repeating-linear-gradient(
+    to bottom, transparent 0 29px, rgba(70, 105, 170, 0.28) 29px 30px
+  );
+  border-left: 2px solid rgba(214, 96, 96, 0.35);
+}
+
 /* ------------------------------------ a folha de rosto, o sumário e o fim */
 .livro-apostila .pagina.folha-de-rosto .miolo { text-align: center; }
 .livro-apostila .escola { margin: 4px 0 0; font-weight: 800; color: var(--tinta-suave); letter-spacing: 0.5px; }
