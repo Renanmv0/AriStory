@@ -31,7 +31,8 @@ das três chama no ginásio (a 1ª é a Luna, a 2ª a Sol, a 3ª a Estrella), o 
 Sala 1, e a lição é uma **apostila de verdade**, de folhear — o Módulo 1, seis
 lições (`minigames/aula/`, `ui/apostila.ts`, `scenes/escolaAula.ts`; como
 escrever lição nova: a skill `aristory-apostila`). Terminar o módulo leva à
-**festa da torcida** no ginásio, com a roupa de cheerleader de prêmio (§7).
+**festa da torcida** no ginásio, com a roupa de cheerleader de prêmio (§7),
+e abre o **Módulo 2**, "Indo mais longe" — lições 7 a 12 (§6.5).
 As etiquetas (§5) e a formatura (§7) ainda não existem. Para testar sem jogar a missão,
 `?cena=escola` continua valendo.
 
@@ -585,6 +586,35 @@ A lição 2 paga o "esquisito" que a Luna conta no ginásio, e a 6 paga o
 "C de cafuné?" do cartaz da Sala 1 ("Depois eu te mostro o que é", diz o
 Renan). **"Do nosso jeito"** — as expressões de carinho dos dois — continua
 esperando o Renan: só ele sabe quais são.
+
+### 6.5 O Módulo 2 — "Indo mais longe" (CONSTRUÍDO)
+
+Pedido do Renan: seis lições novas, no mesmo estilo, liberadas só depois do
+Módulo 1 — "bem no estilo de escolinha de línguas", com temas como esporte e
+viagem. É o A2 dos livros para hispanofalantes (Novo Avenida Brasil 2:
+corpo, esporte, turismo; Brasil Intercultural: "É rotina todo santo dia!";
+Mano a Mano), e cada tema traz a pegadinha previsível de quem fala espanhol.
+A **numeração continua** (lições 7 a 12, como no Novo Avenida Brasil), e
+todas as aulas são chamadas por `'qualquer'` uma das três.
+
+| # | lição | a situação | a língua |
+|---|---|---|---|
+| 7 | **Um dia de Gatito** | a rotina do diretor, na sala de descanso | as horas ("são sete", sem artigo); acordo, levanto, tomo banho — sem o "me" |
+| 8 | **Bola pra frente!** | a revanche de basquete no ginásio | jogar × brincar (que em espanhol é pular!) × tocar; quadra, time, placar, torcer |
+| 9 | **Ai, que dor!** | o tombo do Ari na pista de gelo do Villa Lobos | o corpo ("as costas" não é a praia); tener → estar com fome, frio, dor |
+| 10 | **Partiu, praia!** | a viagem planejada no ponto de ônibus | o futuro ir + verbo, sem o "a"; pegar o ônibus; amanhã, semana que vem |
+| 11 | **Um cartão-postal do Rio** | as férias do Gatito, lidas no refeitório | o pretérito perfeito (fui, tive, fiz, vi) e o "he ido" ≠ "tenho ido" |
+| 12 | **Quanto custa, Josefina?** | compras na lojinha da estufa | números e preços ("trinta e oito"); o plural de -ão, -l, -m (girassóis!) |
+
+**Como o curso passa de um módulo ao outro** (`apostila.ts`): `MODULOS` é a
+lista; a aula da vez é a primeira lição sem estrela do curso inteiro
+(`licaoDaVezNoCurso`), então o Módulo 2 só tem aula com o 1 completo. A
+festa da torcida acontece logo ao entrar no ginásio, e a Sol termina avisando
+que agora vem o Módulo 2. Fora da aula, a carteira abre o livro do módulo da
+última lição dada (`moduloAtual`), e o sumário tem o botão para **trocar de
+apostila** (rever o Módulo 1 de dentro do 2). O fim do livro do 1 promete o
+2; o do 2 diz "em breve: Módulo 3". Terminar o Módulo 2 dá a memória "O
+Módulo 2 completinho". Teste: `scripts/modulo2.mjs`.
 
 ---
 

@@ -17,7 +17,7 @@ import {
 import type { Irma } from '../minigames/aula/apostila';
 import type { WorldBuilder } from '../world/WorldBuilder';
 import {
-  NOME_DA_IRMA, aulaDaVez, chamarAula, emAula, irmasNoGinasioAgora, novaIrma, podeChamarAula,
+  NOME_DA_IRMA, aulaDaVez, chamarAula, emAula, irmasNoGinasioAgora, moduloUmConcluido, novaIrma, podeChamarAula,
 } from './escolaAula';
 
 /**
@@ -697,7 +697,7 @@ function montarAsIrmas(w: WorldBuilder): void {
    * (`dancarAFesta`, 10,8 s): a cena só as põe no lugar, liga a música da
    * festa, chama as três no mesmo quadro, e solta o confete no salto final.
    */
-  const festaPendente = aulaDaVez(g0) === null && !g0.flag('festa-da-torcida') && presentes.length === 3;
+  const festaPendente = moduloUmConcluido(g0) && !g0.flag('festa-da-torcida') && presentes.length === 3;
   if (!festaPendente) return;
   const D = DIREITA_DA_TELA;
   const PALCO = TREINO;
@@ -802,6 +802,7 @@ function montarAsIrmas(w: WorldBuilder): void {
         [S, '¡CON POMPONES Y TODO! ¡Y EL LAZO!'],
         [E, 'E o meião, que o ginásio é friozinho de manhã. Já deixamos tudo no guarda-roupa de vocês.'],
         [g.companionName(), 'A gente vai ficar a cara de vocês.'],
+        [S, '¡Y AHORA VIENE EL MÓDULO 2! ...Quer dizer: e agora vem o Módulo 2! É só chamar a gente pra aula!'],
       ]);
       for (const peca of PREMIOS_DA_FESTA) g.ganharPeca(peca);
       g.setFlag('festa-da-torcida');
