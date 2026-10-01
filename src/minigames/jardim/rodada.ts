@@ -76,8 +76,8 @@ const AJUDA_DURA = 10;
  * Os multiplicadores que viram o jogo quando se somam moram aqui, juntos:
  */
 /** o jato de trás do Segundo bico, em fração do da frente */
-/** quantas vezes o passo normal o bicho espantado anda indo embora */
-const FUGA = 7;
+/** a velocidade (m/s) do bicho espantado indo embora — a mesma para todos */
+const FUGA = 8.75;
 const SEGUNDO_BICO = 0.6;
 /** o regador do parceiro (Os dois na frente), em fração do seu */
 const PARCEIRO = 0.6;
@@ -1770,10 +1770,10 @@ export class RodadaDoJardim {
     const dx = alvo.x - inv.x;
     const dz = alvo.z - inv.z;
     const d = Math.hypot(dx, dz);
-    // ESPANTADO VAI EMBORA A 7× O PASSO DELE (pedido do Renan): a onda só
+    // ESPANTADO VAI EMBORA A 8,75 m/s, TODO BICHO IGUAL (pedido do Renan): a onda só
     // acaba quando o último sai, e esperar bicho molhado voltar devagar pela
     // trilha era tempo de rodada jogado fora
-    const v = inv.jeito.velocidade * FUGA;
+    const v = FUGA;
     if (d < 0.3 && destino === volta[volta.length - 1]) {
       this.tirar(inv);
       this.invasores.splice(this.invasores.indexOf(inv), 1);
