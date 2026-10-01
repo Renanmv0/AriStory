@@ -5,6 +5,8 @@ import {
   bolaDeBasquete, carrinhoDeBolas, cartazDeParede, cestaDeBasquete, logoDaEscola, placarDeGinasio, windowFrame,
 } from '../world/furniture';
 import { bleachers, waterFountain } from '../world/props';
+import { PREMIOS_DA_FESTA } from '../world/itens';
+import { Particulas } from '../world/particulas';
 import { assoalhoDeMadeira } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
 import type { CoelhaDaTorcida } from '../entities/bichos/CoelhaDaTorcida';
@@ -676,5 +678,165 @@ function montarAsIrmas(w: WorldBuilder): void {
         falta.estrella = 12 + ((n * 5) % 4);
       }
     }
+  });
+
+  // ================================================== A FESTA DA TORCIDA
+  /**
+   * Pedido do Renan: "depois de terminar a última aula desse módulo, as 3
+   * coelhinhas chamam para comemorar no ginásio e fazem uma dança de uns 10
+   * segundos, uma cutscene inteira. Após isso elas ficam felizes e liberam a
+   * roupa das cheerleaders".
+   *
+   * O convite é no fim da lição 6 (`escolaAula.ts`); a festa acontece na
+   * próxima vez que a dupla entra aqui com o módulo inteiro concluído — e vale
+   * também para quem já tinha terminado o módulo antes de a festa existir.
+   *
+   * O PALCO é o lugar de treino, com as três em fila na horizontal da tela (a
+   * Estrella à esquerda, a Luna no meio, a Sol à direita) viradas para a
+   * câmera; a dupla assiste da frente, à direita. A dança é das coelhinhas
+   * (`dancarAFesta`, 10,8 s): a cena só as põe no lugar, liga a música da
+   * festa, chama as três no mesmo quadro, e solta o confete no salto final.
+   */
+  const festaPendente = aulaDaVez(g0) === null && !g0.flag('festa-da-torcida') && presentes.length === 3;
+  if (!festaPendente) return;
+  const D = DIREITA_DA_TELA;
+  const PALCO = TREINO;
+  const LUGAR: Record<Irma, { x: number; z: number }> = {
+    estrella: { x: PALCO.x - D.x * 1.7, z: PALCO.z - D.z * 1.7 },
+    luna: { x: PALCO.x, z: PALCO.z },
+    sol: { x: PALCO.x + D.x * 1.7, z: PALCO.z + D.z * 1.7 },
+  };
+
+  // o confete: bolinhas nas cores dos Gatitos, chovendo devagar e balançando
+  const confete = new Particulas(360, 0.2, 1, 4);
+  w.add(confete.malha);
+  w.onUpdate((dt) => confete.update(dt));
+  /** quem marca a hora do confete: enquanto houver alguém aqui, ele cai quando a dança dela chegar no salto final */
+  let confeteNoSalto: CoelhaDaTorcida | null = null;
+  w.onUpdate(() => {
+    if (!confeteNoSalto || (confeteNoSalto.estaNaFesta && confeteNoSalto.tempoNaFesta < 9.95)) return;
+    confeteNoSalto = null;
+    soltarConfete();
+    g0.som('sacudida');
+  });
+  const soltarConfete = (): void => {
+    const cores = [P.gatitosAmarelo, P.gatitosAzul, P.gatitosBranco, P.lunaPomponAzul, P.flowerPink];
+    for (let i = 0; i < 220; i++) {
+      const a = i * 2.39996;
+      const r = 0.3 + (i % 9) * 0.32;
+      confete.emitir({
+        x: PALCO.x + Math.cos(a) * r, y: 3.0 + (i % 6) * 0.22, z: PALCO.z + Math.sin(a) * r,
+        vx: Math.cos(a) * 0.5, vy: 0.8, vz: Math.sin(a) * 0.5,
+        vida: 3.4, tamanho: 0.03 + (i % 3) * 0.008, cor: cores[i % cores.length],
+        gravidade: 2.0, arrasto: 1.4, balanco: 0.7,
+      });
+    }
+  };
+
+  /*
+   * A câmera mira o MEIO DA DANÇA, não a Luna: a estrelinha da Estrella sai
+   * 1,15 para a esquerda da tela, então o que se mexe vai de ~3,3 à esquerda
+   * da Luna a ~2,2 à direita — o meio fica 0,58 à esquerda dela, e um tico à
+   * frente (para a câmera). A largura (9) cabe isso e a dupla assistindo à
+   * direita; `enquadrar`, e não `setZoom`, porque no celular em pé a mesma
+   * altura cortava as pontas da fila (lá a dupla sai do quadro, e as três
+   * ficam inteiras e centradas).
+   */
+  const foco = new THREE.Object3D();
+  foco.position.set(PALCO.x + 0.78 - D.x * 0.58, 0.7, PALCO.z + 0.78 - D.z * 0.58);
+  w.add(foco);
+
+  const festa = async (g: GameAPI): Promise<void> => {
+    acrobaciasLigadas = false;
+    for (const c of conversas) c.enabled = false;
+    const meio = posicionarParaConversar(g, PALCO, 2.6, 2.3);
+    g.focusCamera(foco);
+    g.enquadrar(9, 5.2);
+    try {
+      // cada uma termina o que estava fazendo e vai para o seu lugar no palco
+      await Promise.all(presentes.map(async (p) => {
+        p.bicho.treinar(false);
+        await esperar(g, () => !p.bicho.estaSaltando && !p.bicho.estaFazendoEstrelinha);
+        await p.bicho.irPara(LUGAR[p.id].x, LUGAR[p.id].z, 1.6);
+        p.bicho.encarar(meio.x, meio.z);
+      }));
+      for (const p of presentes) p.bicho.torcer(2);
+      g.som('sacudida');
+      await conversa(g, [
+        [L, '¡LLEGARON! Seis lições, panas. O Módulo 1 inteirinho!'],
+        [S, '¡ESTO HAY QUE CELEBRARLO! A gente montou uma coreografia SÓ pra vocês!'],
+        [E, 'Ensaiamos a semana toda. Fiquem aí, tá? Pra ninguém levar pompom na cara.'],
+      ]);
+      // as três de frente para a plateia (a câmera, e a dupla ao lado dela)
+      for (const p of presentes) p.bicho.encarar(p.bicho.x + PARA_A_CAMERA.x, p.bicho.z + PARA_A_CAMERA.z);
+      await conversa(g, [[L, '¡Cinco, seis, siete, ocho!']]);
+      g.trocarMusica('festa-da-torcida');
+      /*
+       * O LADO DE FORA DA ESTRELLA, no corpo dela: a estrelinha anda no `+X`
+       * dela vezes o sentido, e de frente para a câmera o `+X` dela aponta para
+       * a direita da tela — onde estão as irmãs. Fora é o contrário.
+       */
+      const olhar = Math.atan2(PARA_A_CAMERA.x, PARA_A_CAMERA.z);
+      const xDela = { x: Math.cos(olhar), z: -Math.sin(olhar) };
+      const paraFora = { x: LUGAR.estrella.x - PALCO.x, z: LUGAR.estrella.z - PALCO.z };
+      const fora: 1 | -1 = xDela.x * paraFora.x + xDela.z * paraFora.z >= 0 ? 1 : -1;
+      for (const p of presentes) p.bicho.dancarAFesta(p.id, fora);
+      /*
+       * O confete cai no salto final (as três sobem juntas aos 10 s), no
+       * RELÓGIO DA DANÇA e não no `g.wait`: aquele é de parede, e num celular
+       * lento (ou no navegador do teste) o jogo anda mais devagar que ela — o
+       * confete caía antes do salto, ou depois de tudo.
+       */
+      confeteNoSalto = presentes[0].bicho;
+      // a dança dura 10,8 s de jogo; a trava só existe para não prender a dupla
+      for (let i = 0; i < 900 && presentes.some((p) => p.bicho.estaNaFesta || p.bicho.estaFazendoEstrelinha); i++) {
+        await g.wait(0.1);
+      }
+      await g.wait(0.6);
+      for (const p of presentes) p.bicho.torcer(2.8);
+      await conversa(g, [
+        [S, '¡¿VIRAAAM?! ¡PERFEITA! ¡Nem a Estrella errou!'],
+        [E, 'Eu nunca erro, Sol. Eu só vou devagar.'],
+        [L, 'Panas... quem termina o Módulo vira torcida oficial dos Gatitos. É a regra. Eu acabei de inventar, mas é a regra.'],
+        [L, 'Então a roupa de cheerleader agora é de vocês também! Igualzinha à nossa!'],
+        [S, '¡CON POMPONES Y TODO! ¡Y EL LAZO!'],
+        [E, 'E o meião, que o ginásio é friozinho de manhã. Já deixamos tudo no guarda-roupa de vocês.'],
+        [g.companionName(), 'A gente vai ficar a cara de vocês.'],
+      ]);
+      for (const peca of PREMIOS_DA_FESTA) g.ganharPeca(peca);
+      g.setFlag('festa-da-torcida');
+      g.som('memoria');
+      g.toast('Roupa de cheerleader no guarda-roupa dos dois', '📣');
+      g.unlock({
+        id: 'festa-da-torcida',
+        title: 'A festa da torcida',
+        place: 'Ginásio da Escola do Gatito',
+        note: 'O Módulo 1 inteiro — e a Luna, a Sol e a Estrella fizeram uma coreografia só pra gente, com confete e tudo. Agora a gente também é da torcida dos Gatitos.',
+        icon: '📣',
+      });
+    } finally {
+      g.trocarMusica(null);
+      g.focusCamera(null);
+      g.setZoom(13);
+      soltarDaConversa(g);
+      acrobaciasLigadas = true;
+      for (const c of conversas) c.enabled = true;
+      // de volta ao treino, cada uma no seu posto
+      for (const p of presentes) {
+        void p.bicho.irPara(POSTOS[p.id].x, POSTOS[p.id].z, 1.2).then(() => {
+          p.bicho.encarar(p.bicho.x + PARA_A_CAMERA.x, p.bicho.z + PARA_A_CAMERA.z);
+          p.bicho.treinar(true);
+        });
+      }
+    }
+  };
+  // um tiquinho depois de entrar (o nome da sala aparece primeiro)
+  let espera = 0;
+  w.onUpdate((dt) => {
+    if (espera < 0) return;
+    espera += dt;
+    if (espera < 1.4) return;
+    espera = -1;
+    void festa(g0);
   });
 }

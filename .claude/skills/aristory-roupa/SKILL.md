@@ -235,10 +235,13 @@ A porta do fundo do ginásio da escola (`scenes/escolaGinasio.ts`) abre o
 MESMO painel em modo `escola` (`g.abrirVestiarioDaEscola()` →
 `ui.abrirArmario('escola')`): a aba do guarda-roupa de sempre e a dos
 **Uniformes** — `UNIFORMES_DA_ESCOLA` (`world/itens.ts`), que é tudo o que
-`PREMIOS_DA_APOSTILA` dá. Sem preço, sem traje de banho, sem carteira: a peça
-que ainda não foi ganha aparece trancada dizendo em que lição se ganha, e a
-ganha se VESTE ou se TIRA com um clique (`alternarUniforme` no `Game`).
-Uniforme novo = a peça ganha como prêmio de lição; a aba se desenha sozinha.
+`PREMIOS_DA_APOSTILA` dá, mais a roupa de cheerleader da festa do fim do
+módulo (`PREMIOS_DA_FESTA`, com o `comoGanhar` "ganha ao terminar o
+módulo"). Sem preço, sem traje de banho, sem carteira: a peça que ainda não
+foi ganha aparece trancada dizendo onde se ganha, e a ganha se VESTE ou se
+TIRA com um clique (`alternarUniforme` no `Game`). Uniforme novo = a peça
+ganha como prêmio (de lição ou de festa) e uma linha na lista; a aba se
+desenha sozinha.
 
 ## Pele à mostra: `bracosNus` e `pernasNuas`
 
@@ -456,6 +459,31 @@ time e de atlética. Reaproveite para qualquer uniforme novo:
 **Nas costas, desça as estampas.** O cacheado do Ari cobre o alto das costas:
 o "GATITOS" da jaquetona na altura de uma jaqueta de verdade sumia na juba.
 Hoje ele fica em `0,585·torsoH` acima do quadril.
+
+## `torcidaDosGatitos.ts` — a roupa de cheerleader
+
+O prêmio da festa da torcida (o fim do Módulo 1): o MESMO modelo das
+coelhinhas, em quatro peças. O que ela ensinou:
+
+- **saia pregueada de verdade** (`saiaPregueada`): uma `BufferGeometry` só,
+  com N gomos azuis que estreitam para baixo e, entre eles, o fundo da prega
+  amarelo um degrau para dentro — em cima as pregas fecham, embaixo abrem. Um
+  cone com listras não lê "prega" de longe;
+- **o cós tampa o calção do rig**: `max(1,17·raioTorso, 0,122·h·w)` de raio
+  e até `legH + 0,078·h` de altura, com um anel (`RingGeometry`) fechando o
+  vão de cima. Mais estreito ou mais baixo, o shortinho azul vazava;
+- **vivo de acabamento** (`vivo`): um `TubeGeometry` por pontos colados na
+  cápsula do tronco (`naFrente`, que também faz as costas). O decote em V é
+  três deles (amarelo, branco, amarelo), e as costas repetem num U raso;
+- **laço no cabelo SEM o `noCabelo`**: aquele aponta o enfeite para FORA da
+  cabeça, e um laço de duas abas fica com uma enterrada e a outra espetada (de
+  lado parecia uma folha). O laço de torcida é posto à mão no cocuruto, no
+  contorno do cabelo (`m.cabelo(a)`), com as abas tangentes à cabeça e
+  deitado 0,6 rad para trás — inteiro na câmera do jogo E no boneco do
+  painel, que é visto na altura dos olhos. Fica à direita de quem veste: a
+  esquerda é da presilha de estrela da Ari;
+- **pompom na mão** (`maos`): o mesmo das coelhinhas (bolotas em espiral de
+  Fibonacci, sem sorteio) na escala de gente, com fitinhas de franja.
 
 **Foto de perto** (`scripts/uniforme.mjs`): o zoom do jogo tem piso, então o
 teste põe a câmera num ponto e RECORTA a foto em volta dele (`clip`), com

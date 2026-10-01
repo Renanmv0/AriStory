@@ -167,6 +167,7 @@ node scripts/paginas.mjs /tmp/pag   # o livro flexivel: licao com quantas pagina
 node scripts/irmas.mjs   /tmp/ir    # a Luna, a Sol e a Estrella: as três no piquenique, quem treina no ginasio antes de cada aula, o salto da Sol, a estrelinha da Estrella e as tres sentadas na Sala 1
 node scripts/uniforme.mjs /tmp/un   # o uniforme dos Gatitos: as sete pecas nos dois (frente, costas, andando, sentados e de perto), o tenis no lugar do pe, o boneco do painel, o Gatito entregando no fim da licao 3, o save antigo, e o vestiario do ginasio (a aba dos uniformes: trancada, vestir e tirar num clique, no computador e no celular)
 node scripts/aula.mjs    /tmp/au    # a aula inteira: a Luna chama no ginasio, o Gatito na mesa da Sala 1, a apostila respondida pela tela (com erro de proposito), o fim da aula, e o livro no celular
+node scripts/festa.mjs   /tmp/fe    # a festa da torcida no fim do modulo: o convite na licao 6, a danca medida (o salto da Sol, as duas estrelinhas da Estrella, o giro da Luna, o confete), as tres cabendo no celular, a roupa de cheerleader nos dois (frente, costas, andando, sentados e de perto) e no vestiario  (SO=danca, SO=roupa… roda uma parte)
 ```
 
 Mudança visual **precisa** de foto olhada antes de ser dada como pronta, e

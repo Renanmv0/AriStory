@@ -115,6 +115,14 @@ const PASSO_DA_ESTRELINHA = 1.15;
 const CENTRO_DA_VOLTA = 0.4;
 /** quanto o olho sereno (o da Estrella) fica aberto, de 0 a 1 */
 const ABERTURA_SERENA = 0.8;
+/**
+ * A DANÇA DA FESTA do fim do Módulo 1 (pedido do Renan: "uma dança de uns 10
+ * segundos"): 10,8 s na contagem de torcida, a 120 por minuto — dois tempos
+ * por segundo, a mesma batida da música da festa (`festa-da-torcida`).
+ */
+export const DURA_DA_FESTA = 10.8;
+/** o lugar de cada uma na dança: a Estrella à esquerda da tela, a Luna no meio, a Sol à direita */
+export type PapelNaFesta = 'luna' | 'sol' | 'estrella';
 
 export class CoelhaDaTorcida extends Bicho {
   readonly ficha: FichaDeCoelha;
@@ -154,6 +162,11 @@ export class CoelhaDaTorcida extends Bicho {
   private sentidoDaEstrelinha: 1 | -1 = 1;
   /** a altura do salto neste quadro (o teste lê) */
   private alturaAgora = 0;
+  /** a dança da festa: o relógio dela (negativo parada), o papel e o lado de fora */
+  private relogioDaFesta = -1;
+  private papelNaFesta: PapelNaFesta = 'luna';
+  private sentidoDaFesta: 1 | -1 = 1;
+  private maiorGiroDaFesta = 0;
 
   constructor(area: AreaDoBicho, ficha: FichaDeCoelha) {
     super(area, {
@@ -604,6 +617,38 @@ export class CoelhaDaTorcida extends Bicho {
     this.sentidoDaEstrelinha = sentido;
   }
 
+  /**
+   * A DANÇA DA FESTA, do começo ao fim, sozinha (`DURA_DA_FESTA`): a cena só
+   * põe as três no lugar e chama as três no mesmo quadro — o relógio é de cada
+   * uma, mas começa junto e anda com o mesmo `dt`, então elas não se perdem.
+   * `sentidoDeFora` é o lado (do corpo dela) que se afasta das irmãs: é para
+   * lá que a Estrella dá a primeira estrelinha, e de lá que ela volta.
+   */
+  dancarAFesta(papel: PapelNaFesta = this.ficha.id, sentidoDeFora: 1 | -1 = 1): void {
+    this.papelNaFesta = papel;
+    this.sentidoDaFesta = sentidoDeFora;
+    this.relogioDaFesta = 0;
+    this.maiorGiroDaFesta = 0;
+    this.torcendo = 0;
+    this.timida = 0;
+  }
+
+  get estaNaFesta(): boolean {
+    return this.relogioDaFesta >= 0;
+  }
+  /** em que segundo da dança ela está (-1 fora dela) */
+  get tempoNaFesta(): number {
+    return this.relogioDaFesta;
+  }
+  /** a maior volta que o corpo deu na última dança (o teste não pega o pico por amostra) */
+  get giroDaFesta(): number {
+    return this.maiorGiroDaFesta;
+  }
+  /** quanto o corpo girou em volta de si (o giro da Luna na dança) */
+  get giroNoEixo(): number {
+    return this.corpo.rotation.y;
+  }
+
   get estaSaltando(): boolean {
     return this.relogioDoSalto >= 0;
   }
@@ -677,6 +722,84 @@ export class CoelhaDaTorcida extends Bicho {
     };
   }
 
+  /**
+   * A COREOGRAFIA DA FESTA, em seis partes, na contagem de 120 por minuto
+   * (um tempo a cada meio segundo). Devolve os mesmos ALVOS do treino, e o
+   * `animar` chega neles suavizando — o salto e a estrelinha passam por cima,
+   * no relógio deles.
+   *
+   *  0–2 s   ABERTURA: as três juntas, V alto e V baixo, com um pulinho no alto;
+   *  2–4 s   A ONDA: os pompons sobem em sequência, da esquerda da tela para a
+   *          direita (Estrella, Luna, Sol), duas vezes;
+   *  4–6 s   O DESTAQUE DA SOL: ela dá o salto no meio; as outras sacodem os
+   *          pompons alto-e-baixo para ela;
+   *  6–8 s   O GIRO DA LUNA, uma volta inteira de pompons no alto; a Sol chuta;
+   *          a Estrella dá a estrelinha para fora;
+   *  8–9,6 s OS CHUTES: a Luna e a Sol chutam juntas enquanto a Estrella volta
+   *          rodando para o lugar;
+   *  9,6 s→  O FINAL: agacham, saltam juntas e param na pose — a Luna de V alto,
+   *          a Sol e a Estrella espelhadas, um pompom no alto e a outra mão na
+   *          cintura —, sacudindo.
+   */
+  private passoDaFesta(t: number): {
+    bracos: [number, number]; frente: number; pernas: [number, number];
+    pulo: number; giro: number; sacode: number;
+  } {
+    const J = CoelhaDaTorcida.janela;
+    const ALTO = 2.7;
+    const BAIXO = 0.55;
+    const papel = this.papelNaFesta;
+    const tempo = Math.floor(t * 2) % 2;
+    const quique = Math.abs(Math.sin(t * Math.PI * 2));
+    const chutes = {
+      bracos: [Math.PI / 2, Math.PI / 2] as [number, number], frente: 0,
+      pernas: (tempo ? [-1.05, 0] : [0, -1.05]) as [number, number], pulo: 0, giro: 0, sacode: 0.35,
+    };
+    if (t < 2) {
+      return {
+        bracos: tempo ? [0.95, 0.95] : [ALTO, ALTO], frente: tempo ? -0.35 : -0.1, pernas: [0, 0],
+        pulo: tempo ? 0 : quique * 0.06, giro: 0, sacode: 0.45,
+      };
+    }
+    if (t < 4) {
+      const atraso = papel === 'estrella' ? 0 : papel === 'luna' ? 0.25 : 0.5;
+      const c = t - 2 - atraso;
+      const no = c >= 0 && c % 1 < 0.5;
+      return {
+        bracos: no ? [ALTO, ALTO] : [BAIXO, BAIXO], frente: no ? -0.1 : -0.3, pernas: [0, 0],
+        pulo: no ? Math.sin(((c % 1) / 0.5) * Math.PI) * 0.07 : 0, giro: 0, sacode: no ? 0.6 : 0.2,
+      };
+    }
+    if (t < 6) {
+      return {
+        bracos: tempo ? [ALTO, BAIXO] : [BAIXO, ALTO], frente: -0.15, pernas: [0, 0],
+        pulo: quique * 0.04, giro: 0, sacode: 0.6,
+      };
+    }
+    if (t < 8) {
+      if (papel === 'luna') {
+        const volta = J(t, 6.0, 7.0);
+        return {
+          bracos: [ALTO, ALTO], frente: -0.1, pernas: [0, 0],
+          pulo: t < 7 ? 0.03 : quique * 0.04, giro: volta * Math.PI * 2, sacode: t < 7 ? 0.3 : 0.6,
+        };
+      }
+      return chutes;
+    }
+    if (t < 9.6) return chutes;
+    // o final: agacha, salta junta, e a pose
+    const agacha = J(t, 9.6, 9.85) * (1 - J(t, 9.95, 10.05));
+    const noAr = t > 10.0 && t < 10.4 ? (t - 10.0) / 0.4 : -1;
+    if (noAr < 0 && t < 10.0) {
+      return { bracos: [0.3, 0.3], frente: 0.35 * agacha, pernas: [0, 0], pulo: -0.025 * agacha, giro: 0, sacode: 0.2 };
+    }
+    if (noAr >= 0) {
+      return { bracos: [ALTO, ALTO], frente: -0.1, pernas: [0, 0], pulo: 4 * 0.16 * noAr * (1 - noAr), giro: 0, sacode: 0.8 };
+    }
+    const pose: [number, number] = papel === 'luna' ? [ALTO, ALTO] : papel === 'sol' ? [0.2, ALTO] : [ALTO, 0.2];
+    return { bracos: pose, frente: papel === 'luna' ? -0.1 : 0.15, pernas: [0, 0], pulo: 0, giro: 0, sacode: 0.9 };
+  }
+
   // ------------------------------------------------------------------- pose
 
   protected animar(dt: number, { andando, sentado, carinho, fase }: PoseDoBicho): void {
@@ -695,6 +818,23 @@ export class CoelhaDaTorcida extends Bicho {
     const tim = this.misturaTimida;
     const senta = this.misturaSentada;
 
+    // A FESTA: o relógio dela anda, e nos tempos certos ela mesma dispara as
+    // acrobacias (o salto da Sol, as duas estrelinhas da Estrella)
+    if (this.relogioDaFesta >= 0) {
+      const antes = this.relogioDaFesta;
+      this.relogioDaFesta += dt;
+      const agora = this.relogioDaFesta;
+      const passou = (marca: number): boolean => antes < marca && agora >= marca;
+      if (this.papelNaFesta === 'sol' && passou(4.1)) this.saltar();
+      if (this.papelNaFesta === 'estrella' && passou(6.0)) this.estrelinha(this.sentidoDaFesta);
+      if (this.papelNaFesta === 'estrella' && passou(8.0)) this.estrelinha(this.sentidoDaFesta === 1 ? -1 : 1);
+      if (agora >= DURA_DA_FESTA) {
+        this.relogioDaFesta = -1;
+        this.torcer(1.8);
+      }
+    }
+    const naFesta = this.relogioDaFesta >= 0;
+
     // o salto e a estrelinha andam no relógio deles, e pausam o treino
     if (this.relogioDoSalto >= 0) {
       this.relogioDoSalto += dt;
@@ -707,11 +847,13 @@ export class CoelhaDaTorcida extends Bicho {
     const acrobacia = this.relogioDoSalto >= 0 || this.relogioDaEstrelinha >= 0;
 
     // o treino só vale em pé, parada, e sem gesto de conversa por cima
-    const treinando = this.treinoLigado && !sentado && !andando && !acrobacia;
-    if (treinando) this.relogioDoTreino += dt;
-    this.misturaTreino += ((treinando ? 1 : 0) - this.misturaTreino) * Math.min(1, dt * 4);
+    // a dança da festa é um "treino" com outra coreografia e outro relógio
+    const treinando = (this.treinoLigado || naFesta) && !sentado && !andando && !acrobacia;
+    if (treinando && !naFesta) this.relogioDoTreino += dt;
+    // na festa a pose entra mais depressa: a dança começa no "oito" da contagem
+    this.misturaTreino += ((treinando ? 1 : 0) - this.misturaTreino) * Math.min(1, dt * (naFesta ? 10 : 4));
     const tr = this.misturaTreino * Math.max(0, 1 - torce - tim);
-    const passoDoTreino = this.passoDaCoreografia(this.relogioDoTreino);
+    const passoDoTreino = naFesta ? this.passoDaFesta(this.relogioDaFesta) : this.passoDaCoreografia(this.relogioDoTreino);
 
     /**
      * SENTADA: as pernas giram para a frente (`rotation.x` negativo leva o
@@ -737,6 +879,7 @@ export class CoelhaDaTorcida extends Bicho {
     // tímida, ela se encolhe e balança de um lado para o outro; no treino, o
     // giro da coreografia
     this.corpo.rotation.y = Math.sin(t * 3) * 0.12 * tim + passoDoTreino.giro * tr;
+    if (naFesta) this.maiorGiroDaFesta = Math.max(this.maiorGiroDaFesta, Math.abs(this.corpo.rotation.y));
 
     /**
      * OS BRAÇOS. Três destinos misturados pelas poses:
@@ -769,7 +912,7 @@ export class CoelhaDaTorcida extends Bicho {
      */
     for (const [i, pompom] of this.pompons.entries()) {
       pompom.position.y = -0.2 - 0.07 * Math.min(1, torce + tr);
-      const relogio = t + this.relogioDoTreino;
+      const relogio = t + this.relogioDoTreino + Math.max(0, this.relogioDaFesta);
       const forca = 0.45 * torce + passoDoTreino.sacode * tr;
       const chacoalha = Math.sin(relogio * 26 + i * 1.7) * forca;
       pompom.rotation.z = chacoalha;

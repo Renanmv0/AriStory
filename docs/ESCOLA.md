@@ -30,8 +30,9 @@ depois de conhecer a **Luna** — e as irmãs dela, a **Sol** e a **Estrella**
 das três chama no ginásio (a 1ª é a Luna, a 2ª a Sol, a 3ª a Estrella), o Gatito dá a aula em cima da mesa da
 Sala 1, e a lição é uma **apostila de verdade**, de folhear — o Módulo 1, seis
 lições (`minigames/aula/`, `ui/apostila.ts`, `scenes/escolaAula.ts`; como
-escrever lição nova: a skill `aristory-apostila`). As etiquetas (§5) e a
-formatura (§7) ainda não existem. Para testar sem jogar a missão,
+escrever lição nova: a skill `aristory-apostila`). Terminar o módulo leva à
+**festa da torcida** no ginásio, com a roupa de cheerleader de prêmio (§7).
+As etiquetas (§5) e a formatura (§7) ainda não existem. Para testar sem jogar a missão,
 `?cena=escola` continua valendo.
 
 **O que este plano propõe** (tudo provisório até o Renan aprovar):
@@ -602,6 +603,26 @@ esperando o Renan: só ele sabe quais são.
   clube, com a aba do guarda-roupa de sempre e a aba dos **Uniformes**, onde
   cada peça se veste ou se tira com um clique (trancada, dizendo a lição, até
   ser ganha). Não é cenário novo, só a porta.
+- **CONSTRUÍDO — a festa da torcida, o fim do Módulo 1** (pedido do Renan:
+  "as 3 coelhinhas chamam para comemorar no ginásio e fazem uma dança de uns
+  10 segundos, uma cutscene inteira", e depois liberam "a roupa das
+  cheerleaders"). No fim da lição 6 as três convidam a dupla para o ginásio
+  (`escolaAula.ts`, flag `festa-da-torcida-convite`); na próxima entrada no
+  ginásio com o módulo inteiro — vale também para quem já tinha terminado
+  antes da festa existir — elas vão ao palco (o lugar de treino), falam,
+  a Luna conta "¡Cinco, seis, siete, ocho!", a música vira a da festa
+  (`'festa-da-torcida'`, com palmas no contratempo) e as três dançam 10,8 s
+  juntas (`dancarAFesta`, em `CoelhaDaTorcida.ts`): o V alto e baixo, a onda
+  dos braços, o SALTO da Sol, as DUAS estrelinhas da Estrella (para fora e de
+  volta), o GIRO de uma volta inteira da Luna, os chutes, e o salto final das
+  três com chuva de confete. Depois, felizes, dão a **roupa de cheerleader**
+  — o mesmo modelo da delas, em quatro peças: o uniforme (top de decote em V
+  com o vivo triplo, o laçinho, o G no peito e "GATITOS" nas costas, e a saia
+  pregueada azul com o fundo das pregas amarelo), o shortinho com o meião
+  listrado, o laço de torcida no cocuruto e os pompons
+  (`world/torcidaDosGatitos.ts`, `PREMIOS_DA_FESTA` em `world/itens.ts`), na
+  aba dos Uniformes do vestiário também. Memória no diário: "A festa da
+  torcida". Teste: `scripts/festa.mjs`.
 - **Estrelinhas somadas destravam roupa** no guarda-roupa dos dois
   (`g.ganharPeca`), no molde do chapéu de campeão. Propostas: a **tiara de
   orelhinhas do Gatito** (uma chocolate, uma caramelo), a **mochila da

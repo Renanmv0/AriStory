@@ -58,6 +58,8 @@ export interface Clima {
   bumbo?: boolean;
   /** o tique-taque de um bloco de madeira em cada tempo */
   tique?: boolean;
+  /** PALMAS no 2 e no 4 — a batida de torcida (a festa das coelhinhas) */
+  palmas?: boolean;
 }
 
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19];
@@ -119,6 +121,25 @@ export const CLIMAS: Record<string, Clima> = {
     ostinato: true,
     bumbo: true,
     tique: true,
+  },
+  /**
+   * A FESTA DA TORCIDA: a dança das três coelhinhas no fim do Módulo 1
+   * (ligada e desligada pela cena do ginásio com `g.trocarMusica`). A família
+   * de sempre — marimba, acordes com sétima —, só que de torcida: 120 por
+   * minuto (dois tempos por segundo, a contagem da coreografia), colcheia reta
+   * para a dança não mancar, bumbo macio, chocalho e PALMAS no 2 e no 4. Em
+   * maior e de giro subindo, sem dominante pendurado: é comemoração.
+   */
+  'festa-da-torcida': {
+    bpm: 120,
+    tonica: 38, // ré
+    giro: [maj7(0), maj7(5), m7(9), maj7(7)],
+    melodia: 0.92,
+    chocalho: true,
+    escala: PENTA,
+    reto: true,
+    bumbo: true,
+    palmas: true,
   },
   /** usado enquanto nenhuma cena pediu clima */
   padrao: {
@@ -313,6 +334,14 @@ export class Musica {
       // bloco de madeira: um estalo afinado, mais forte no primeiro tempo
       chiado(this.ctx, this.destino, { quando: t, dur: 0.035, vol: naBarra === 0 ? 0.05 : 0.03, freq: 2400, q: 7 });
       tom(this.ctx, this.destino, { freq: naBarra === 0 ? 1250 : 1050, quando: t, dur: 0.05, vol: 0.02, tipo: 'sine' });
+    }
+
+    if (c.palmas && (naBarra === 2 || naBarra === 6)) {
+      // a palma: três estalinhos de ruído quase juntos (são várias mãos, não
+      // uma), na faixa do meio — mais grave que o chocalho, mais agudo que o bumbo
+      for (const [atraso, forca] of [[0, 1], [0.011, 0.7], [0.023, 0.5]] as const) {
+        chiado(this.ctx, this.destino, { quando: t + atraso, dur: 0.07, vol: 0.05 * forca, freq: 1500, q: 1.1 });
+      }
     }
 
     // ------------------------------------------------------------ chocalho
