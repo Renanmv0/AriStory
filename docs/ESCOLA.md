@@ -32,7 +32,8 @@ Sala 1, e a lição é uma **apostila de verdade**, de folhear — o Módulo 1, 
 lições (`minigames/aula/`, `ui/apostila.ts`, `scenes/escolaAula.ts`; como
 escrever lição nova: a skill `aristory-apostila`). Terminar o módulo leva à
 **festa da torcida** no ginásio, com a roupa de cheerleader de prêmio (§7),
-e abre o **Módulo 2**, "Indo mais longe" — lições 7 a 12 (§6.5).
+e abre o **Módulo 2**, "Indo mais longe" — lições 7 a 12 (§6.5). No
+refeitório mora o **Flynn**, a raposa presidente da atlética (§16).
 As etiquetas (§5) e a formatura (§7) ainda não existem. Para testar sem jogar a missão,
 `?cena=escola` continua valendo.
 
@@ -975,7 +976,9 @@ fina que o peito e braços finos. A cabeça e o rosto ficaram como estavam — �
 deles que vem o fofo. Raposa pelas orelhas em triângulo com a ponta marrom, o
 focinho comprido creme com o nariz preto, as bochechas brancas com o tufo, as
 "meias" marrons nas patas da frente e o rabo enorme em gomos, curvado para
-cima, com a ponta branca. Olho âmbar e sorrisão. **Os acessórios**: a bandana
+cima, com a ponta branca. Sorrisão, e os olhos COLADOS NA CARA (oval escuro
+com a metade de baixo âmbar e dois brilhos, como os do Gatito) — a primeira
+versão, de esferas saltadas com o branco em volta, o Renan achou assustadora. **Os acessórios**: a bandana
 azul com as listras amarelas, o emblema na frente e o nó atrás com as pontas
 balançando; a regata azul com o **1** no peito (branco com borda amarela),
 "GATITOS" em arco, "FLYNN" e o 1 nas costas, gola e cavas amarelas e o pin de
