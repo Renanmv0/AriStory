@@ -256,6 +256,15 @@ roupa de time por cima do corpo. Três coisas que a foto de perto pegou:
   número da regata, e o número desceu. Estampa, colar e pin, cada um na sua
   altura do peito, conferido de frente.
 
+**Olho de bicho fofo é COLADO NA CARA.** O primeiro olho do Flynn eram três
+esferas empilhadas para a frente (o branco, a íris, a pupila): saltava uns
+2 cm do crânio, com o branco em volta, e de perto ficou um olhar arregalado
+que o Renan achou assustador. O que funciona (o mesmo do Gatito): um grupo
+POUSADO na superfície do crânio, virado pela normal do elipsoide
+(`lookAt(ponto + normal)`), e tudo dentro dele achatado no `z` local — um
+oval escuro, a cor do olho só como a metade de baixo, e dois brilhos. Sem
+branco em volta.
+
 **Atlético é proporção, não músculo.** A primeira versão tinha o corpo das
 coelhinhas (perna curta e grossa, tronco redondo) e lia como mascote; o
 Renan pediu "mais magro, com aparência mais atlética, e continuar fofo". O

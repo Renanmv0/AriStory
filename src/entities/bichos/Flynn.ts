@@ -517,26 +517,39 @@ export class Flynn extends Bicho {
 
     // ------------------------------------------------------------- os olhos
     /**
-     * Grandes e ÂMBAR, cada um num grupo com pivô no centro (a piscada é o
-     * `scale.y`): o branco, a íris âmbar, a pupila e dois brilhos. Em cima, a
-     * SOBRANCELHA em arco, alta — o olhar de quem acha tudo ótimo.
+     * OLHOS COLADOS NA CARA, como os do Gatito. A primeira versão empilhava
+     * três esferas (o branco, a íris âmbar e a pupila) para a frente do
+     * crânio: o olho saltava uns 2 cm para fora da cara, com o branco em volta
+     * — de perto, um olhar arregalado, assustador (o Renan viu).
+     *
+     * Agora cada olho é um grupo POUSADO na superfície do crânio e virado pela
+     * normal dela (`lookAt`), e tudo dentro dele é achatado no `z` local: um
+     * oval marrom-escuro, a metade de baixo âmbar (o tom da raposa, sem
+     * anel nem branco) e dois brilhos. A piscada é o `scale.y` do grupo.
      */
+    const CRANIO = { x: 0.155, y: 0.135, z: 0.14 };
     for (const lado of [-1, 1] as const) {
+      const x = lado * 0.058;
+      const y = 0.006;
+      const z = CRANIO.z * Math.sqrt(1 - (x / CRANIO.x) ** 2 - (y / CRANIO.y) ** 2);
+      const normal = new THREE.Vector3(x / CRANIO.x ** 2, y / CRANIO.y ** 2, z / CRANIO.z ** 2).normalize();
       const olho = new THREE.Group();
-      olho.position.set(lado * 0.06, 0.012, 0.112);
-      const branco = new THREE.Mesh(new THREE.SphereGeometry(0.033, 12, 10), claro);
-      olho.add(branco);
-      const iris = new THREE.Mesh(new THREE.SphereGeometry(0.025, 12, 10), toon(P.flynnOlho));
-      iris.position.set(lado * 0.002, -0.001, 0.019);
-      olho.add(iris);
-      const pupila = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), toon(P.flynnPupila));
-      pupila.position.set(lado * 0.002, -0.002, 0.032);
-      olho.add(pupila);
-      const brilho = new THREE.Mesh(new THREE.SphereGeometry(0.0075, 6, 6), claro);
-      brilho.position.set(lado * 0.007, 0.011, 0.045);
+      olho.position.set(x, y, z).addScaledVector(normal, 0.001);
+      olho.lookAt(olho.position.clone().add(normal));
+      const escuroDoOlho = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), toon(P.flynnPupila));
+      escuroDoOlho.scale.set(0.023, 0.028, 0.006);
+      olho.add(escuroDoOlho);
+      const ambar = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), toon(P.flynnOlho));
+      ambar.scale.set(0.017, 0.013, 0.004);
+      ambar.position.set(0, -0.011, 0.0035);
+      olho.add(ambar);
+      const brilho = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), claro);
+      brilho.scale.set(0.0085, 0.0085, 0.003);
+      brilho.position.set(lado * 0.007, 0.011, 0.0055);
       olho.add(brilho);
-      const brilhinho = new THREE.Mesh(new THREE.SphereGeometry(0.0038, 6, 6), claro);
-      brilhinho.position.set(-lado * 0.007, -0.009, 0.046);
+      const brilhinho = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 6), claro);
+      brilhinho.scale.set(0.0042, 0.0042, 0.002);
+      brilhinho.position.set(-lado * 0.007, -0.006, 0.0068);
       olho.add(brilhinho);
       this.cabeca.add(olho);
       this.olhos.push(olho);
