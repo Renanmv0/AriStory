@@ -957,3 +957,41 @@ confirmou — se for a Luna, é trocar quem faz o gesto em `apresentar`
 (`escolaGinasio.ts`).
 
 `scripts/irmas.mjs` guarda tudo isto, com o salto e a estrelinha medidos.
+
+## 16. O Flynn — o presidente da atlética (CONSTRUÍDO)
+
+Pedido do Renan: o **primeiro atleta da atlética dos Gatitos**, uma
+**raposa**, o presidente, super entusiasta de esporte e muito respeitoso,
+sempre de **bandana dos Gatitos**, e com vários acessórios do time — nas cores
+dos Gatitos, com poucos detalhes de outra cor. Por enquanto ele fica no
+**refeitório**, para a dupla conhecer.
+
+**O modelo** (`entities/bichos/Flynn.ts`): bicho de duas patas, no molde das
+coelhinhas, um pouco mais alto que elas (escala 1,4 — a cabeça na altura do
+ombro da dupla). Raposa pelas orelhas em triângulo com a ponta marrom, o
+focinho comprido creme com o nariz preto, as bochechas brancas com o tufo, as
+"meias" marrons nas patas da frente e o rabo enorme em gomos, curvado para
+cima, com a ponta branca. Olho âmbar e sorrisão. **Os acessórios**: a bandana
+azul com as listras amarelas, o emblema na frente e o nó atrás com as pontas
+balançando; a regata azul com o **1** no peito (branco com borda amarela),
+"GATITOS" em arco, "FLYNN" e o 1 nas costas, gola e cavas amarelas e o pin de
+estrela; a **braçadeira de capitão** amarela com o "C"; as munhequeiras
+brancas com a listra azul; o **apito** prateado no cordão **vermelho**; o
+short marinho com a listra e o cordão do cós; o meião listrado; e o tênis
+branco com a faixa **coral** e o cadarço amarelo. O vermelho e o coral são os
+dois detalhes fora do time.
+
+**O jeito** (`scenes/escolaAtletica.ts`): o mais animado da escola quando o
+assunto é esporte, e o mais respeitoso — convida "sem pressão nenhuma", acha
+lugar para todo mundo no time, comemora a vitória dos outros, dá os parabéns
+ao time que ganhou dele, trata perder como aprender e lembra o nome de todo
+mundo. Na conversa ele **acena** ao ver a dupla e **comemora** (punhos para
+cima, pulinhos, o rabo a mil) nos "vão, Gatitos!". A apresentação termina no
+apito, com a memória "O presidente da atlética"; depois, uma conversa de
+esporte por vez, e uma sobre a coreografia das coelhinhas quando a festa da
+torcida já aconteceu. **As falas são rascunho meu**, no jeito que o Renan
+descreveu — as dele entram literais.
+
+Ele anda pelo corredor do meio do refeitório, entre as duas colunas de mesas,
+e é sólido para a dupla (um colisor que anda com ele). Teste:
+`scripts/flynn.mjs`.

@@ -11,6 +11,7 @@ import { ladrilhoDeEscola, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
 import { Gatito } from '../entities/bichos/Gatito';
 import { aulaDaVez, emAula } from './escolaAula';
+import { montarOFlynn } from './escolaAtletica';
 import { Luna } from '../entities/bichos/CoelhaDaTorcida';
 import {
   ESCOLA, LUZ_DA_ESCOLA, conversa, maquinaQueEntrega, paredeComVaos, pontoNoMundo, posicionarParaConversar,
@@ -122,8 +123,8 @@ const FALAS_DO_GATITO = [
 
 /** com lição para dar, ele lembra quem sabe o horário (a missão da aula: `escolaGinasio.ts`) */
 const DICA_DA_AULA = 'A próxima aula está quase na hora! Quem sabe o horário de tudo é a Luna: ela vive no ginásio.';
-/** e com o Módulo 1 inteiro feito */
-const DEPOIS_DO_MODULO = 'O Módulo 2 ainda está no forno. Enquanto isso, revisem a apostila: tem estrelinha pra melhorar.';
+/** e com o curso inteiro feito (os dois módulos) */
+const DEPOIS_DO_MODULO = 'O Módulo 3 ainda está no forno. Enquanto isso, revisem a apostila: tem estrelinha pra melhorar.';
 
 
 export const escola: SceneDef = {
@@ -491,6 +492,10 @@ export const escola: SceneDef = {
         x: REFEITORIO.x0 + 1.5, z: m.z,
       });
     });
+
+    // ============================================== O FLYNN, NO REFEITÓRIO
+    // o presidente da atlética dos Gatitos (`escolaAtletica.ts`)
+    montarOFlynn(w, REFEITORIO);
 
     // =============================================================== GATITO
     // Ele nasce na ÚLTIMA parada da fila (a lição da Estella: nascendo fora
