@@ -148,6 +148,7 @@ node scripts/premioDeNivel.mjs /tmp/pn # as telas de prêmio do nível 5 e do 10
 node scripts/postos.mjs  /tmp/pt    # a Josefina entra junto na estufa, passeia, pede confirmacao e leva o parceiro pro posto de tras
 node scripts/chamados.mjs /tmp/ch   # as cartas de chamado: Capy, Gina, Walter e Noel entram pela porta da estufa, falam e ficam no posto
 node scripts/rodada.mjs  /tmp/rd    # a rodada do jardim: a onda 1 inteira, o regador atirando sozinho, o tonel, as cartas congelando e o fim com a Josefina
+node scripts/retomada.mjs /tmp/rt   # o ponto de retorno: a pagina recarrega no meio da rodada e a Josefina oferece continuar da onda certa, com a mesma ficha, as mesmas cartas no chao e a mesma conta; acabar ou comecar do zero apaga
 node scripts/jato.mjs    /tmp/jt    # o jato de cada carta: a vitrine mede o efeito que a carta descreve (poça, gelo, arco, três fios…) e fotografa
 node scripts/cartasNaRodada.mjs /tmp/cr # as outras 41 cartas agindo (cada uma numa estufa de laboratorio, efeito medido no mundo e foto), a ajuda do par e o bicho comendo visto pela quina
 node scripts/livro.mjs   /tmp/lv    # o livro das cartas na bancada (vagas cinzas, cada carta no seu lugar, a lupa, o F5) e a tela do fim da rodada

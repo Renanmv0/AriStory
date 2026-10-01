@@ -149,6 +149,13 @@ interface SaveData {
    * deixa ler. As regras moram em `minigames/aula/apostila.ts`.
    */
   apostila: ApostilaNoSave;
+  /**
+   * OS PONTOS DE RETORNO dos minigames, pela chave ('jardim'): o retrato de
+   * uma rodada no começo da onda, para a página que recarregou no meio dela
+   * continuar dali (o celular do Ari descarta a aba). O save não sabe o que
+   * tem dentro — quem grava e quem lê é o minigame, que confere tudo ao ler.
+   */
+  retomadas: Record<string, unknown>;
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -343,6 +350,7 @@ const EMPTY: SaveData = {
   livro: [],
   decoracoes: [],
   apostila: { estrelas: {}, abertas: [] },
+  retomadas: {},
   inventarios: {},
 };
 
@@ -388,6 +396,10 @@ export class SaveState {
         decoracoes: normalizarDecoracoes(parsed.decoracoes),
         // save de antes da escola ter aula: nenhuma lição dada ainda
         apostila: normalizarApostila(parsed.apostila),
+        // save de antes do ponto de retorno: nenhuma rodada para continuar
+        retomadas: parsed.retomadas && typeof parsed.retomadas === 'object' && !Array.isArray(parsed.retomadas)
+          ? { ...parsed.retomadas }
+          : {},
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
     } catch {
@@ -531,6 +543,25 @@ export class SaveState {
     this.data.livro.push(id);
     this.persist();
     return true;
+  }
+
+  // ------------------------------------------------ os pontos de retorno
+
+  /** o ponto de retorno guardado nesta chave (uma cópia), ou `null` */
+  retomada(chave: string): unknown {
+    const dados = this.data.retomadas[chave];
+    return dados === undefined || dados === null ? null : structuredClone(dados);
+  }
+
+  /**
+   * Grava (ou apaga, com `null`) o ponto de retorno desta chave. Guarda uma
+   * CÓPIA: o save regrava tudo a cada `persist`, e um objeto vivo da rodada
+   * guardado por referência sairia diferente na gravação seguinte.
+   */
+  guardarRetomada(chave: string, dados: unknown): void {
+    if (dados === null || dados === undefined) delete this.data.retomadas[chave];
+    else this.data.retomadas[chave] = structuredClone(dados);
+    this.persist();
   }
 
   bump(key: string, by = 1): number {
