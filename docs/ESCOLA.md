@@ -967,8 +967,12 @@ dos Gatitos, com poucos detalhes de outra cor. Por enquanto ele fica no
 **refeitório**, para a dupla conhecer.
 
 **O modelo** (`entities/bichos/Flynn.ts`): bicho de duas patas, no molde das
-coelhinhas, um pouco mais alto que elas (escala 1,4 — a cabeça na altura do
-ombro da dupla). Raposa pelas orelhas em triângulo com a ponta marrom, o
+coelhinhas, um pouco mais alto que elas (escala 1,35 — a cabeça na altura do
+ombro da dupla) e de **corpo de atleta** (pedido do Renan, depois da primeira
+versão: "mais magro, com uma aparência mais atlética", sem deixar de ser
+fofo): perna comprida e fina, tronco estreito e alto, a cintura no short mais
+fina que o peito e braços finos. A cabeça e o rosto ficaram como estavam — é
+deles que vem o fofo. Raposa pelas orelhas em triângulo com a ponta marrom, o
 focinho comprido creme com o nariz preto, as bochechas brancas com o tufo, as
 "meias" marrons nas patas da frente e o rabo enorme em gomos, curvado para
 cima, com a ponta branca. Olho âmbar e sorrisão. **Os acessórios**: a bandana

@@ -256,6 +256,14 @@ roupa de time por cima do corpo. Três coisas que a foto de perto pegou:
   número da regata, e o número desceu. Estampa, colar e pin, cada um na sua
   altura do peito, conferido de frente.
 
+**Atlético é proporção, não músculo.** A primeira versão tinha o corpo das
+coelhinhas (perna curta e grossa, tronco redondo) e lia como mascote; o
+Renan pediu "mais magro, com aparência mais atlética, e continuar fofo". O
+que resolveu, sem tocar na cabeça: a perna 1,5× mais comprida e uns 20% mais
+fina, o tronco mais estreito e mais alto, o short (a cintura) mais estreito
+que o peito — o V — e os braços finos. A cabeça grande fica: é ela que
+segura o fofo.
+
 As estampas usam o kit da roupa de time (`letra`, `textoEmArco`, `estrela`,
 `emblemaDosGatitos` de `world/uniformeDosGatitos.ts` e o `colar` de
 `world/roupasDoJardim.ts`), posicionadas na casca da regata por uma função
