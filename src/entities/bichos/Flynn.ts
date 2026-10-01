@@ -50,7 +50,7 @@ const AMARELO = P.gatitosAmarelo;
 const BRANCO = P.gatitosBranco;
 
 /** a casca da regata (o elipsoide por fora do tronco), em números do corpo */
-const REGATA = { y: 0.41, rx: 0.14, ry: 0.125, rz: 0.121 };
+const REGATA = { y: 0.452, rx: 0.12, ry: 0.138, rz: 0.098 };
 
 /** um ponto na casca da regata, na frente (`costas` atrás), com uma folga para fora */
 function naRegata(x: number, y: number, folga = 0.004, costas = false): THREE.Vector3 {
@@ -141,32 +141,36 @@ export class Flynn extends Bicho {
 
     // ------------------------------------------------------------ as pernas
     /**
-     * Pivô no QUADRIL (`y = 0,25`). De cima para baixo: a coxa de pelo, a
+     * Pivô no QUADRIL (`y = 0,29`). De cima para baixo: a coxa de pelo, a
      * perna do short por cima dela, o meião branco do joelho ao tornozelo e o
-     * tênis. A sola do tênis termina em `-0,25`: encosta no chão.
+     * tênis. A sola do tênis termina em `-0,29`: encosta no chão.
+     *
+     * PERNA DE ATLETA (pedido do Renan: "mais magro, com uma aparência mais
+     * atlética"): comprida e fina — a primeira versão tinha a perna curta e
+     * gordinha das coelhinhas, e ele lia como mascote, não como capitão.
      */
     for (const lado of [-1, 1] as const) {
       const perna = new THREE.Group();
-      perna.position.set(lado * 0.066, 0.25, 0);
-      const coxa = new THREE.Mesh(new THREE.CapsuleGeometry(0.046, 0.1, 4, 10), pelo);
-      coxa.position.y = -0.085;
+      perna.position.set(lado * 0.054, 0.29, 0);
+      const coxa = new THREE.Mesh(new THREE.CapsuleGeometry(0.037, 0.13, 4, 10), pelo);
+      coxa.position.y = -0.1;
       perna.add(coxa);
-      // a perna do short, larguinha, com a listra amarela do lado de fora
-      const doShort = new THREE.Mesh(new THREE.CapsuleGeometry(0.058, 0.035, 4, 12), marinho);
-      doShort.position.y = -0.03;
+      // a perna do short, solta na coxa, com a listra amarela do lado de fora
+      const doShort = new THREE.Mesh(new THREE.CapsuleGeometry(0.047, 0.04, 4, 12), marinho);
+      doShort.position.y = -0.035;
       perna.add(doShort);
-      const listra = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.075, 0.022), amarelo);
-      listra.position.set(lado * 0.058, -0.03, 0);
+      const listra = new THREE.Mesh(new THREE.BoxGeometry(0.005, 0.08, 0.02), amarelo);
+      listra.position.set(lado * 0.047, -0.035, 0);
       perna.add(listra);
       // o meião: o tubo branco, a dobra de cima e as duas listras (azul e amarela)
-      const meiao = new THREE.Mesh(new THREE.CylinderGeometry(0.049, 0.045, 0.085, 14), branco);
-      meiao.position.y = -0.158;
+      const meiao = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.035, 0.1, 14), branco);
+      meiao.position.y = -0.19;
       perna.add(meiao);
-      const dobra = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.051, 0.016, 14), branco);
-      dobra.position.y = -0.118;
+      const dobra = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.041, 0.016, 14), branco);
+      dobra.position.y = -0.145;
       perna.add(dobra);
-      for (const [y, alto, mat] of [[-0.134, 0.008, azul], [-0.146, 0.006, amarelo]] as const) {
-        const faixa = new THREE.Mesh(new THREE.CylinderGeometry(0.0495, 0.0492, alto, 14), mat);
+      for (const [y, alto, mat] of [[-0.161, 0.008, azul], [-0.173, 0.006, amarelo]] as const) {
+        const faixa = new THREE.Mesh(new THREE.CylinderGeometry(0.0395, 0.0392, alto, 14), mat);
         faixa.position.y = y;
         perna.add(faixa);
       }
@@ -176,20 +180,21 @@ export class Flynn extends Bicho {
     }
 
     // -------------------------------------------------------------- o short
-    const short = new THREE.Mesh(new THREE.CylinderGeometry(0.118, 0.13, 0.11, 20), marinho);
-    short.position.y = 0.265;
+    // cintura fina: o short é mais estreito que o peito (o V do atleta)
+    const short = new THREE.Mesh(new THREE.CylinderGeometry(0.094, 0.108, 0.11, 20), marinho);
+    short.position.y = 0.305;
     this.corpo.add(short);
-    const cos = new THREE.Mesh(new THREE.CylinderGeometry(0.121, 0.122, 0.02, 20, 1, true), toon(BRANCO, { doubleSide: true }));
-    cos.position.y = 0.312;
+    const cos = new THREE.Mesh(new THREE.CylinderGeometry(0.097, 0.098, 0.02, 20, 1, true), toon(BRANCO, { doubleSide: true }));
+    cos.position.y = 0.352;
     this.corpo.add(cos);
     // o cordão do cós, as duas pontinhas caindo na frente
     for (const lado of [-1, 1] as const) {
       const cordao = new THREE.Mesh(new THREE.CapsuleGeometry(0.004, 0.026, 3, 6), amarelo);
-      cordao.position.set(lado * 0.012, 0.29, 0.122);
+      cordao.position.set(lado * 0.011, 0.33, 0.098);
       cordao.rotation.z = lado * 0.15;
       this.corpo.add(cordao);
       const listra = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.1, 0.024), amarelo);
-      listra.position.set(lado * 0.125, 0.262, 0);
+      listra.position.set(lado * 0.102, 0.302, 0);
       listra.rotation.z = -lado * 0.1;
       this.corpo.add(listra);
     }
@@ -199,61 +204,61 @@ export class Flynn extends Bicho {
     // o tecido em bicos (o serrilhado de duas esferas se cortando); quem
     // aparece em cima é o pescoço
     const tronco = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), pelo);
-    tronco.scale.set(0.128, 0.116, 0.108);
-    tronco.position.y = 0.408;
+    tronco.scale.set(0.11, 0.128, 0.086);
+    tronco.position.y = REGATA.y - 0.002;
     this.corpo.add(tronco);
     const regata = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), azul);
     regata.scale.set(REGATA.rx, REGATA.ry, REGATA.rz);
     regata.position.y = REGATA.y;
     this.corpo.add(regata);
     // o peito branco de raposa aparecendo na gola, e o pescoço
-    const pescoco = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.06, 0.09, 14), pelo);
-    pescoco.position.y = 0.55;
+    const pescoco = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.054, 0.09, 14), pelo);
+    pescoco.position.y = 0.6;
     this.corpo.add(pescoco);
     const peito = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 10), claro);
     peito.scale.set(0.048, 0.04, 0.03);
-    peito.position.set(0, 0.535, 0.042);
+    peito.position.set(0, 0.578, 0.034);
     this.corpo.add(peito);
     // a gola e as cavas amarelas
-    const gola = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.009, 6, 24), amarelo);
+    const gola = new THREE.Mesh(new THREE.TorusGeometry(0.052, 0.008, 6, 24), amarelo);
     gola.rotation.x = Math.PI / 2;
-    gola.scale.set(1, 0.9, 1);
-    gola.position.y = 0.527;
+    gola.scale.set(1, 0.85, 1);
+    gola.position.y = 0.575;
     this.corpo.add(gola);
     // a cava abraça a raiz do braço: estreita e comprida, rente a ele (um aro
     // largo e redondo virava uma argola solta do lado do ombro)
     for (const lado of [-1, 1] as const) {
-      const cava = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.0065, 6, 18), amarelo);
+      const cava = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.006, 6, 18), amarelo);
       cava.rotation.y = Math.PI / 2;
       cava.scale.set(1, 1.3, 0.85);
-      cava.position.set(lado * 0.133, 0.478, 0);
+      cava.position.set(lado * 0.113, 0.522, 0);
       this.corpo.add(cava);
     }
     // o NÚMERO 1 no peito: branco com a borda amarela (a letra de time)
     // um tico abaixo do meio do peito: mais alto, o apito tapava o número
-    const n1 = naRegata(0, 0.372);
-    colar(letra('1', 0.098, AMARELO, true), this.corpo, n1.x, n1.y, n1.z, 0, 0, 1);
-    const n1b = naRegata(0, 0.372, 0.006);
-    colar(letra('1', 0.086, BRANCO), this.corpo, n1b.x, n1b.y, n1b.z, 0, 0, 1);
+    const n1 = naRegata(0, REGATA.y - 0.04);
+    colar(letra('1', 0.088, AMARELO, true), this.corpo, n1.x, n1.y, n1.z, 0, 0, 1);
+    const n1b = naRegata(0, REGATA.y - 0.04, 0.006);
+    colar(letra('1', 0.077, BRANCO), this.corpo, n1b.x, n1b.y, n1b.z, 0, 0, 1);
     // "GATITOS" em arco no alto do peito, e "FLYNN" e o 1 nas costas
     const raioEm = (y: number): number => REGATA.rx * Math.sqrt(1 - ((y - REGATA.y) / REGATA.ry) ** 2);
-    const yPeito = 0.463;
+    const yPeito = REGATA.y + 0.05;
     textoEmArco(this.corpo, 'GATITOS', {
       raio: raioEm(yPeito) * 1.02, achata: REGATA.rz / REGATA.rx, y: yPeito,
-      passo: 0.15, curva: 0.0006, inclina: 0.05, alto: 0.022, cor: AMARELO,
+      passo: 0.17, curva: 0.0006, inclina: 0.05, alto: 0.02, cor: AMARELO,
     });
-    const yNome = 0.462;
+    const yNome = REGATA.y + 0.052;
     textoEmArco(this.corpo, 'FLYNN', {
       raio: raioEm(yNome) * 1.02, achata: REGATA.rz / REGATA.rx, y: yNome, costas: true,
-      passo: 0.19, curva: 0.0007, inclina: 0.05, alto: 0.03, cor: BRANCO, contorno: AMARELO,
+      passo: 0.22, curva: 0.0007, inclina: 0.05, alto: 0.027, cor: BRANCO, contorno: AMARELO,
     });
-    const c1 = naRegata(0, 0.385, 0.004, true);
-    colar(letra('1', 0.098, AMARELO, true), this.corpo, c1.x, c1.y, c1.z, 0, 0, -1);
-    const c1b = naRegata(0, 0.385, 0.006, true);
-    colar(letra('1', 0.086, BRANCO), this.corpo, c1b.x, c1b.y, c1b.z, 0, 0, -1);
+    const c1 = naRegata(0, REGATA.y - 0.025, 0.004, true);
+    colar(letra('1', 0.088, AMARELO, true), this.corpo, c1.x, c1.y, c1.z, 0, 0, -1);
+    const c1b = naRegata(0, REGATA.y - 0.025, 0.006, true);
+    colar(letra('1', 0.077, BRANCO), this.corpo, c1b.x, c1b.y, c1b.z, 0, 0, -1);
     // o PIN de estrela amarela, no peito esquerdo dele
-    const pin = naRegata(-0.078, 0.43, 0.002);
-    const estrelinha = estrela(0.014, AMARELO);
+    const pin = naRegata(-0.066, REGATA.y + 0.02, 0.002);
+    const estrelinha = estrela(0.012, AMARELO);
     colar(estrelinha, this.corpo, pin.x, pin.y, pin.z, pin.x / REGATA.rx ** 2, (pin.y - REGATA.y) / REGATA.ry ** 2, pin.z / REGATA.rz ** 2);
 
     this.corpo.add(this.fazerApito());
@@ -268,35 +273,36 @@ export class Flynn extends Bicho {
      */
     for (const lado of [-1, 1] as const) {
       const braco = new THREE.Group();
-      braco.position.set(lado * 0.145, 0.5, 0);
-      const cima = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.08, 4, 10), pelo);
-      cima.position.y = -0.062;
+      // o ombro um tico mais largo que a cintura: o V do atleta
+      braco.position.set(lado * 0.13, 0.55, 0);
+      const cima = new THREE.Mesh(new THREE.CapsuleGeometry(0.029, 0.1, 4, 10), pelo);
+      cima.position.y = -0.07;
       braco.add(cima);
-      const antebraco = new THREE.Mesh(new THREE.CapsuleGeometry(0.033, 0.05, 4, 10), escuro);
-      antebraco.position.y = -0.128;
+      const antebraco = new THREE.Mesh(new THREE.CapsuleGeometry(0.027, 0.06, 4, 10), escuro);
+      antebraco.position.y = -0.148;
       braco.add(antebraco);
-      const pata = new THREE.Mesh(new THREE.SphereGeometry(0.039, 10, 8), escuro);
-      pata.position.y = -0.178;
+      const pata = new THREE.Mesh(new THREE.SphereGeometry(0.034, 10, 8), escuro);
+      pata.position.y = -0.205;
       braco.add(pata);
-      const munhequeira = new THREE.Mesh(new THREE.CylinderGeometry(0.0395, 0.0395, 0.032, 14), branco);
-      munhequeira.position.y = -0.146;
+      const munhequeira = new THREE.Mesh(new THREE.CylinderGeometry(0.033, 0.033, 0.032, 14), branco);
+      munhequeira.position.y = -0.168;
       braco.add(munhequeira);
-      const listra = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.008, 14), azul);
-      listra.position.y = -0.146;
+      const listra = new THREE.Mesh(new THREE.CylinderGeometry(0.0335, 0.0335, 0.008, 14), azul);
+      listra.position.y = -0.168;
       braco.add(listra);
       if (lado < 0) {
-        const bracadeira = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.038, 0.034, 14), amarelo);
+        const bracadeira = new THREE.Mesh(new THREE.CylinderGeometry(0.0325, 0.032, 0.034, 14), amarelo);
         bracadeira.name = 'bracadeira-de-capitao';
-        bracadeira.position.y = -0.05;
+        bracadeira.position.y = -0.058;
         braco.add(bracadeira);
-        for (const y of [-0.0345, -0.0655]) {
-          const filete = new THREE.Mesh(new THREE.CylinderGeometry(0.0395, 0.0395, 0.004, 14), marinho);
+        for (const y of [-0.0425, -0.0735]) {
+          const filete = new THREE.Mesh(new THREE.CylinderGeometry(0.033, 0.033, 0.004, 14), marinho);
           filete.position.y = y;
           braco.add(filete);
         }
-        colar(letra('C', 0.026, MARINHO), braco, lado * 0.0405, -0.05, 0, lado, 0, 0);
+        colar(letra('C', 0.024, MARINHO), braco, lado * 0.0335, -0.058, 0, lado, 0, 0);
       }
-      braco.rotation.z = lado * 0.16;
+      braco.rotation.z = lado * 0.14;
       this.corpo.add(braco);
       this.bracos.push(braco);
     }
@@ -306,12 +312,12 @@ export class Flynn extends Bicho {
 
     /**
      * ELE CRESCE NO FIM, como as coelhinhas: montado em números de bicho de
-     * chão, a escala 1,4 põe a cabeça na altura do ombro da dupla e a ponta
+     * chão, a escala 1,35 põe a cabeça na altura do ombro da dupla e a ponta
      * das orelhas na da testa — o mais alto da atlética, e ainda um bicho (com
-     * 1,25 ele ficava do tamanho das coelhinhas, e o capitão sumia no
-     * refeitório).
+     * 1,25 e o corpo das coelhinhas ele ficava do tamanho delas, e o capitão
+     * sumia no refeitório).
      */
-    this.corpo.scale.setScalar(1.4);
+    this.corpo.scale.setScalar(1.35);
     this.group.add(this.corpo);
   }
 
@@ -319,39 +325,41 @@ export class Flynn extends Bicho {
    * O TÊNIS: o corpo branco (um elipsoide comprido no `z`), a sola creme um
    * tico maior por baixo, a faixa coral dos dois lados, o bico, a lingueta e
    * três passadas de cadarço amarelo em cima. No referencial da perna (pivô
-   * no quadril): a sola encosta no chão em `y = -0,25`.
+   * no quadril): a sola encosta no chão em `y = -0,29`.
    */
   private fazerTenis(lado: -1 | 1): THREE.Group {
     const g = new THREE.Group();
-    const Z = 0.03;
+    const Z = 0.028;
+    // `Y` é o centro do corpo do tênis: a sola fica 0,022 abaixo, e o fundo dela no chão
+    const Y = -0.252;
     const corpo = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), toon(BRANCO));
-    corpo.scale.set(0.054, 0.036, 0.085);
-    corpo.position.set(0, -0.212, Z);
+    corpo.scale.set(0.048, 0.034, 0.082);
+    corpo.position.set(0, Y, Z);
     g.add(corpo);
     const sola = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 8), toon(P.gatitosCreme));
-    sola.scale.set(0.058, 0.016, 0.09);
-    sola.position.set(0, -0.234, Z);
+    sola.scale.set(0.052, 0.016, 0.087);
+    sola.position.set(0, Y - 0.022, Z);
     g.add(sola);
     const faixa = toon(P.flynnTenisFaixa);
     for (const s of [-1, 1] as const) {
-      const risco = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.011, 0.07), faixa);
-      risco.position.set(s * 0.052, -0.214, Z - 0.004);
+      const risco = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.011, 0.066), faixa);
+      risco.position.set(s * 0.046, Y - 0.002, Z - 0.004);
       risco.rotation.x = 0.25;
       g.add(risco);
     }
     // o bico, um tico mais claro, e a lingueta azul atrás do cadarço
     const bico = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), toon(P.gatitosCreme));
-    bico.scale.set(0.044, 0.024, 0.03);
-    bico.position.set(0, -0.222, Z + 0.065);
+    bico.scale.set(0.04, 0.022, 0.028);
+    bico.position.set(0, Y - 0.01, Z + 0.062);
     g.add(bico);
-    const lingueta = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.022, 0.012), toon(AZUL));
-    lingueta.position.set(0, -0.178, Z - 0.012);
+    const lingueta = new THREE.Mesh(new THREE.BoxGeometry(0.027, 0.022, 0.012), toon(AZUL));
+    lingueta.position.set(0, Y + 0.033, Z - 0.012);
     lingueta.rotation.x = -0.4;
     g.add(lingueta);
     const cadarco = toon(AMARELO);
-    for (const [dz, dy] of [[0.0, 0.036], [0.022, 0.033], [0.042, 0.027]] as const) {
-      const passada = new THREE.Mesh(new THREE.BoxGeometry(0.034, 0.005, 0.006), cadarco);
-      passada.position.set(0, -0.212 + dy, Z + dz);
+    for (const [dz, dy] of [[0.0, 0.034], [0.021, 0.031], [0.04, 0.025]] as const) {
+      const passada = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.005, 0.006), cadarco);
+      passada.position.set(0, Y + dy, Z + dz);
       g.add(passada);
     }
     void lado;
@@ -368,19 +376,19 @@ export class Flynn extends Bicho {
     const g = new THREE.Group();
     const frente = (x: number, y: number): THREE.Vector3 => naRegata(x, y, 0.006);
     const pontos = [
-      new THREE.Vector3(0, 0.575, -0.05),
-      new THREE.Vector3(-0.058, 0.565, -0.012),
-      frente(-0.06, 0.515),
-      frente(-0.03, 0.47),
-      frente(0, 0.452),
-      frente(0.03, 0.47),
-      frente(0.06, 0.515),
-      new THREE.Vector3(0.058, 0.565, -0.012),
+      new THREE.Vector3(0, 0.622, -0.046),
+      new THREE.Vector3(-0.052, 0.612, -0.01),
+      frente(-0.05, 0.56),
+      frente(-0.025, 0.512),
+      frente(0, 0.494),
+      frente(0.025, 0.512),
+      frente(0.05, 0.56),
+      new THREE.Vector3(0.052, 0.612, -0.01),
     ];
     const curva = new THREE.CatmullRomCurve3(pontos, true);
     g.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 48, 0.0042, 6, true), toon(P.flynnCordao)));
     const prata = toon(P.flynnApito);
-    const onde = naRegata(0, 0.438, 0.016);
+    const onde = naRegata(0, 0.48, 0.016);
     const apito = new THREE.Group();
     apito.name = 'apito';
     apito.position.copy(onde);
@@ -413,7 +421,7 @@ export class Flynn extends Bicho {
    */
   private fazerRabo(): THREE.Group {
     const base = new THREE.Group();
-    base.position.set(0, 0.26, -0.11);
+    base.position.set(0, 0.3, -0.09);
     const pelo = toon(P.flynnPelo);
     const claro = toon(P.flynnPeloClaro);
     const GOMOS = [
@@ -454,7 +462,7 @@ export class Flynn extends Bicho {
     const preto = toon(P.flynnNariz);
 
     this.cabeca.name = 'cabeca-do-flynn';
-    this.cabeca.position.set(0, 0.68, 0.01);
+    this.cabeca.position.set(0, 0.73, 0.008);
     const cranio = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 16), pelo);
     cranio.scale.set(0.155, 0.135, 0.14);
     this.cabeca.add(cranio);
