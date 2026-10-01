@@ -651,6 +651,14 @@ export interface GameAPI {
   /** as ids das cartas já descobertas, na ordem em que apareceram */
   cartasDoLivro(): readonly string[];
   /**
+   * O PONTO DE RETORNO de um minigame (a rodada do jardim): o que ele gravou
+   * no começo da onda, para continuar depois de a página recarregar. Vem como
+   * o minigame deixou, sem conferência — quem lê é que confere.
+   */
+  retomada(chave: string): unknown;
+  /** grava o ponto de retorno (ou apaga, com `null`) */
+  guardarRetomada(chave: string, dados: unknown): void;
+  /**
    * Abre o LIVRO DA ESTUFA com o baralho inteiro (as descobertas aparecem, as
    * outras são vaga cinza) e, com `conteudo`, as abas de pragas e de
    * recompensas. Resolve com a ONDA do marco que a dupla mandou resgatar, ou

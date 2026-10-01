@@ -120,6 +120,27 @@ numa tela de escolha.
 > põe na estufa entra por `pecaNaEstufa` (nasce crescendo e sai sozinha no fim
 > da rodada).
 
+### A carta sobrevive a um reload? (o ponto de retorno)
+
+No começo de cada onda a rodada grava um RETRATO no save
+(`minigames/jardim/retomada.ts`): a página recarregou (o celular do Ari
+descarta a aba), a Josefina oferece continuar daquela onda. O retrato guarda
+a mão em ordem — e a ficha, que é derivada da mão, sai igual sozinha. Então:
+
+- **carta de número ou de regra** (o caso comum) não precisa de nada;
+- **carta que guarda ESTADO FORA DA FICHA e que atravessa de uma onda para a
+  outra** — escolheu um canteiro, pregou um portão, deixou uma peça que fica,
+  conta algo pela rodada inteira — precisa de um campo em `PontoDaRodada`,
+  gravado em `retrato()` e devolvido em `restaurar()` (`rodada.ts`), CALADO:
+  sem perguntar de novo, sem som, sem aviso. Foi o que a cerca viva, o toldo,
+  a pimenta, a dioneia, o portão emperrado e o picolé ganharam;
+- o que zera no começo de toda onda (`usadoNaOnda`) e relógio de segundos
+  não entram.
+
+`node scripts/retomada.mjs /tmp/rt` compara a ficha, a mão, os canteiros, as
+peças e o roteiro da onda antes e depois de um reload de verdade: ponha a
+carta nova na lista do teste.
+
 ### A carta é de qual ARMA? `soPara` e `naoServe`
 
 A rodada tem quatro armas numa fila (regador → mangueira → pistola d'água →

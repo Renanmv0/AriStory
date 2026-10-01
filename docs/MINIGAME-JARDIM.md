@@ -32,6 +32,7 @@ a 30ª com um canteiro de pé é a vitória) → tela do fim → a Josefina fala
 | `src/ui/telaDeCartas.ts`, `src/ui/livroDeCartas.ts`, `src/ui/arsenal.ts` | a tela das três cartas; o livro da estufa (abas Cartas, Pragas, Recompensas) e a tela do fim; o painel das armas (uma aba por arma) |
 | `src/world/bichosDoJardim.ts` | a geometria das **treze** pragas (`PRAGAS`): as seis da primeira leva e as sete da segunda (da 15ª onda em diante) |
 | `src/core/Oclusao.ts` | parede/árvore que tapa bicho ou gota fica translúcida (a rodada liga) |
+| `src/minigames/jardim/retomada.ts` | o **ponto de retorno**: o retrato da rodada no começo de cada onda (mão, canteiros, peças, conta, semente), no save; recarregou a página, a Josefina oferece continuar da onda em que parou |
 | `src/world/decoracoes.ts`, `src/world/decorador.ts`, `src/ui/lojaDaJosefina.ts` | os enfeites da estufa (ficha + geometria), o modo de colocar, e o painel da lojinha |
 | `src/audio/musica.ts` (`'rodada-do-jardim'`) | a música da defesa |
 

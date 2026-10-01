@@ -19,6 +19,7 @@ import { ONDAS, nivelDasGotas, planoDaOnda, vidaDaOnda, type EntradaDePraga } fr
 import { cartaDaArma } from './tela';
 import { DesenhoDoJato } from './jato';
 import { flagDaPraga } from './bestiario';
+import { CHAVE_DA_RETOMADA, versaoDoRetrato, type PontoDaRodada } from './retomada';
 
 /**
  * A RODADA DO JARDIM — o minigame da estufa da Josefina, rodando.
@@ -612,8 +613,13 @@ export class RodadaDoJardim {
    * entra na rodada já forte (§7). `cartas` só serve ao teste e à vitrine —
    * uma rodada de verdade começa sempre de mão vazia.
    */
-  comecar(opcoes: { cartas?: readonly string[]; vitrine?: boolean; arma?: ArmaId } = {}): void {
+  comecar(opcoes: {
+    cartas?: readonly string[]; vitrine?: boolean; arma?: ArmaId;
+    /** continuar do ponto de retorno (`retomada.ts`): a mão, o chão e a conta dele */
+    retomar?: PontoDaRodada;
+  } = {}): void {
     if (this.rodando) return;
+    const ponto = opcoes.vitrine ? undefined : opcoes.retomar;
     this.rodando = true;
     this.pausada = false;
     this.vitrine = !!opcoes.vitrine;
@@ -633,9 +639,21 @@ export class RodadaDoJardim {
      * rodada e nunca mais: a segunda rodada na mesma visita à estufa começava
      * com as cartas da primeira — e o teste das cartas pegou isso.
      */
-    this.arma = opcoes.arma ?? 'regador';
+    this.arma = ponto?.arma ?? opcoes.arma ?? 'regador';
     this.mao = new MaoDeCartas(this.arma);
     for (const id of opcoes.cartas ?? []) this.mao.pegar(id);
+    /*
+     * CONTINUANDO: a mão é remontada NA ORDEM em que foi pega — é a mesma
+     * ordem que respeitou as séries (`requer`) e as que brigam (`exclui`), e
+     * a ficha, que é sempre derivada da mão, sai igual à de antes do reload.
+     * Os regadores que a rodada já tinha dado continuam na mochila de quem
+     * recebeu (o save guardou): a lista volta antes, para o fim tirar.
+     */
+    if (ponto) {
+      for (const id of ponto.cartas) this.mao.pegar(id);
+      this.mao.consolos = ponto.consolos;
+      this.regadoresDados = [...ponto.regadores];
+    }
     this.aplicarFicha(true);
     this.continuo = null;
     this.superMolhador = 0;
@@ -705,8 +723,11 @@ export class RodadaDoJardim {
       for (const q of cartaPorId(id)?.chama ?? []) this.planta.elenco.jaEsta(q);
       void this.cartaNova(id);
     }
+    if (ponto) this.restaurar(ponto);
+    // uma rodada NOVA abandona a que tinha parado no meio: o retrato velho sai
+    else if (!this.vitrine) this.g.guardarRetomada(CHAVE_DA_RETOMADA, null);
 
-    this.g.showExperiencia(nivelDasGotas(0));
+    this.g.showExperiencia(nivelDasGotas(this.juntadas));
     this.enquadrarRodada();
     /*
      * A OCLUSÃO (pedido do Renan): gota que cai atrás de uma árvore ou da
@@ -730,6 +751,119 @@ export class RodadaDoJardim {
       this.proximaOnda();
     }
     this.pintarPainel();
+    // as gotas do retrato já passavam do nível (o prêmio da onda caiu com a
+    // tela fechada): a tela que faltou abre agora, e a carta não se perde
+    if (ponto && nivelDasGotas(this.juntadas).nivel > this.nivel) void this.subir(nivelDasGotas(this.juntadas).nivel);
+  }
+
+  /**
+   * O RETRATO DE AGORA, para o ponto de retorno (`retomada.ts`). Tirado no
+   * começo de cada onda, antes do sorteio dela: a semente guardada é a que
+   * vai sortear a onda, e por isso ela volta com os mesmos bichos.
+   */
+  private retrato(): PontoDaRodada {
+    return {
+      versao: versaoDoRetrato(),
+      arma: this.arma,
+      onda: this.onda + 1,
+      ondas: this.ondasDaRodada,
+      cartas: [...this.mao.ids],
+      consolos: this.mao.consolos,
+      nivel: this.nivel,
+      juntadas: this.juntadas,
+      proximoCoracao: this.proximoCoracao,
+      sorteGasta: this.sorteGasta,
+      bisGasto: this.bisGasto,
+      semente: this.semente,
+      proximoPlano: this.proximoPlano ? this.proximoPlano.map((e) => ({ ...e })) : null,
+      espantados: this.espantados,
+      porPraga: { ...this.espantadosPorPraga },
+      novas: [...this.novasNoLivro],
+      agua: this.agua,
+      ajuda: { carga: this.ajudaCarga, custo: this.ajudaCusto, vezes: this.ajudaVezes },
+      emperrado: this.emperrado,
+      canteiros: this.canteiros.map((c) => ({
+        vida: c.vidaMax > 0 ? Math.max(0, Math.min(1, c.vida / c.vidaMax)) : 0,
+        protegido: c.protegido,
+        cerca: c.vidaMax > 0 ? Math.max(0, Math.min(1, c.cerca / c.vidaMax)) : 0,
+        toldo: c.toldo,
+        pimenta: c.pimenta,
+        carnivora: !!c.carnivora,
+      })),
+      picole: this.picolePeca ? { x: this.picolePeca.position.x, z: this.picolePeca.position.z } : null,
+      regadores: [...this.regadoresDados],
+      dicas: [...this.dicasDadas],
+    };
+  }
+
+  /**
+   * DEVOLVE À ESTUFA O QUE O RETRATO GUARDOU, já com a mão remontada e a
+   * ficha aplicada. É o que as cartas de canteiro e o Portão emperrado fazem
+   * quando chegam, só que SEM PERGUNTAR (o canteiro já tinha sido escolhido)
+   * e calado — sem som, aviso nem contagem de efeito.
+   */
+  private restaurar(p: PontoDaRodada): void {
+    const r = this.ficha.regras;
+    this.ondasDaRodada = p.ondas;
+    this.nivel = p.nivel;
+    this.juntadas = p.juntadas;
+    this.proximoCoracao = p.proximoCoracao;
+    this.sorteGasta = p.sorteGasta;
+    this.bisGasto = p.bisGasto;
+    this.semente = p.semente;
+    this.espantados = p.espantados;
+    this.espantadosPorPraga = { ...p.porPraga };
+    this.novasNoLivro = [...p.novas];
+    this.ajudaCarga = Math.min(p.ajuda.carga, p.ajuda.custo);
+    this.ajudaCusto = p.ajuda.custo;
+    this.ajudaVezes = p.ajuda.vezes;
+    for (const d of p.dicas) this.dicasDadas.add(d);
+    // a água: a infinita é sempre o tanque; a outra volta como estava
+    this.agua = r.has('agua-infinita') ? this.ficha.tanque : Math.min(this.ficha.tanque, p.agua);
+    this.tanqueCheio = this.agua >= this.ficha.tanque;
+
+    // quem a mão chama já está no posto dele (a cutscene foi da primeira vez)
+    for (const c of this.mao.cartas) for (const q of c.chama ?? []) this.planta.elenco.jaEsta(q);
+
+    // os canteiros: o mesmo número da cena, ou o retrato não é desta estufa
+    if (p.canteiros.length === this.canteiros.length) {
+      p.canteiros.forEach((q, i) => {
+        const c = this.canteiros[i];
+        if (q.toldo && this.mao.tem('toldo')) this.cobrirCanteiro(c, true);
+        c.vida = c.vidaMax * q.vida;
+        if (q.protegido && this.mao.tem('cerca-viva')) {
+          this.cercarCanteiro(c, true);
+          c.cerca = c.vidaMax * q.cerca;
+          this.pintarCerca(c);
+        }
+        if (q.pimenta && this.mao.tem('canteiro-de-pimenta')) this.apimentarCanteiro(c, true);
+        if (q.carnivora && this.mao.tem('planta-carnivora')) this.plantarDioneia(c, true);
+        this.pintarCanteiro(c);
+      });
+    }
+    if (p.emperrado !== null && this.mao.tem('portao-emperrado')) this.emperrar(p.emperrado, true);
+    if (p.picole && r.has('picole-do-mano')) {
+      this.picolePeca = this.pecaNaEstufa(picole(), p.picole.x, p.picole.z);
+      this.picolePeca.scale.setScalar(1.6);
+    }
+    /*
+     * O REGADOR DA AJUDA DO PAR: se o retrato saiu com a ajuda no meio, quem
+     * ajudava ficou com o regador extra na mochila. A ajuda não continua (ela
+     * dura segundos), então o regador que só ela tinha dado sai já.
+     */
+    const quemPrecisa = r.has('os-dois-na-frente') || r.has('la-de-tras') ? this.g.companionId() : null;
+    const ficam: string[] = [];
+    for (const quem of [...new Set(this.regadoresDados)]) {
+      // quem rega agora (o T trocou antes de continuar) fica com o dele até o fim
+      if (quem === quemPrecisa || quem === this.g.playerId()) ficam.push(quem);
+      else this.g.removeItem('regador', quem);
+    }
+    this.regadoresDados = ficam;
+
+    // a onda: a de ANTES, para o `proximaOnda` andar uma e sortear (ou usar o roteiro do Noel)
+    this.onda = p.onda - 1;
+    this.proximoPlano = p.proximoPlano ? p.proximoPlano.map((e) => ({ ...e })) : null;
+    this.g.toast(`Continuando da onda ${p.onda}`, '🌱');
   }
 
   /**
@@ -738,6 +872,9 @@ export class RodadaDoJardim {
    * (a Sementeira brota, os portões trancam, a Gina vai para o portão dela).
    */
   private proximaOnda(): void {
+    // o PONTO DE RETORNO (`retomada.ts`): da segunda onda em diante, antes do
+    // sorteio dela — recarregou a página, a rodada continua daqui
+    if (!this.vitrine && this.onda >= 1) this.g.guardarRetomada(CHAVE_DA_RETOMADA, this.retrato());
     this.onda += 1;
     this.tempoDaOnda = 0;
     this.plano = this.proximoPlano ?? planoDaOnda(this.onda, this.dado);
@@ -767,6 +904,12 @@ export class RodadaDoJardim {
   terminar(motivo: 'fim' | 'interrompida' = 'interrompida'): void {
     if (!this.rodando) return;
     this.rodando = false;
+    /*
+     * ACABOU DE VERDADE (vitória, ou o último canteiro caiu): não sobra nada
+     * para continuar. A INTERROMPIDA (a dupla saiu da estufa) guarda o
+     * retrato — ela não pagou nada, e continuar paga a rodada inteira no fim.
+     */
+    if (motivo === 'fim' && !this.vitrine) this.g.guardarRetomada(CHAVE_DA_RETOMADA, null);
     const vivos = this.canteiros.filter((c) => c.vida > 0).length;
     for (const inv of this.invasores) this.tirar(inv);
     this.invasores = [];
@@ -3795,7 +3938,7 @@ export class RodadaDoJardim {
   }
 
   /** a Cerca viva: uma roda de moitas em volta, e ninguém mais come ali */
-  private cercarCanteiro(c: Canteiro): void {
+  private cercarCanteiro(c: Canteiro, calado = false): void {
     c.protegido = true;
     c.cerca = c.vidaMax;
     const grupo = new THREE.Group();
@@ -3815,6 +3958,7 @@ export class RodadaDoJardim {
       grupo.add(moita);
     }
     c.cercaPeca = this.pecaNaEstufa(grupo, c.x, c.z);
+    if (calado) return;
     this.g.som('brotar');
     this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
     this.g.toast(`A cerca viva abraçou o canteiro de ${c.nome.toLowerCase()}`, '🌳');
@@ -3850,10 +3994,11 @@ export class RodadaDoJardim {
   }
 
   /** o Toldo: a lona por cima, e o canteiro aguenta 50% mais */
-  private cobrirCanteiro(c: Canteiro): void {
+  private cobrirCanteiro(c: Canteiro, calado = false): void {
     c.toldo = true;
     this.recalcularVida();
     this.pecaNaEstufa(toldoDeCanteiro(3.2, 1.6), c.x, c.z, c.giro);
+    if (calado) return;
     this.g.som('martelo');
     this.contar('toldo');
   }
@@ -3863,13 +4008,14 @@ export class RodadaDoJardim {
    * terreiro, do lado de fora da madeira. Dentro da terra elas sumiam no meio
    * da lavanda — e o jogador precisa ver de longe qual canteiro arde.
    */
-  private apimentarCanteiro(c: Canteiro): void {
+  private apimentarCanteiro(c: Canteiro, calado = false): void {
     c.pimenta = true;
     const { x, z, giro } = this.bordaDoTerreiro(c, 0.42);
     const p = this.pecaNaEstufa(pimenteiras(3.0, 0.3), x, z, giro);
     p.userData.escala = 1.5;
     c.pimentaPeca = p;
     c.pimentaEspera = 0;
+    if (calado) return;
     this.g.som('brotar');
     this.jato.broto(c.x, c.z, c.meioX, c.meioZ);
   }
@@ -3889,24 +4035,29 @@ export class RodadaDoJardim {
   }
 
   /** a Planta carnívora: uma dioneia grande na borda do canteiro, virada para o terreiro */
-  private plantarDioneia(c: Canteiro): void {
+  private plantarDioneia(c: Canteiro, calado = false): void {
     const { x, z, olhar } = this.bordaDoTerreiro(c, 0.35);
     const peca = this.pecaNaEstufa(dioneia(), x, z, olhar);
     peca.userData.escala = 1.8;
     c.carnivora = { peca, espera: 0, fecha: 0 };
-    this.g.som('nhac');
+    if (!calado) this.g.som('nhac');
   }
 
   /**
    * O Portão emperrado: tábuas pregadas no portão que vem mais cheio, e quem
    * ia por ele vai pelo do lado — o resto da rodada inteira.
    */
-  private emperrar(): void {
+  private emperrar(qual: number | null = null, calado = false): void {
     if (this.emperrado !== null) return;
-    const porta = portaMaisCheia(this.plano, null) ?? 1;
+    // continuando (`restaurar`): o portão é o que já estava pregado
+    const porta = qual ?? portaMaisCheia(this.plano, null) ?? 1;
     this.emperrado = porta;
     const pt = this.planta.portoes[porta];
     this.pecaNaEstufa(tabuasPregadas(3, 1.6), pt.x, pt.z + 0.25);
+    if (calado) {
+      this.recolidir();
+      return;
+    }
     this.g.som('martelo');
     this.g.toast(`O portão ${NOME_DO_PORTAO[porta]} emperrou!`, '🚧');
     this.remapearEmperrado(this.plano);

@@ -25,7 +25,8 @@ import { CARTAS, cartaPorId, type AjudanteDoClube } from '../minigames/jardim/ca
 import { PRAGAS } from '../world/bichosDoJardim';
 import { nivelDasGotas } from '../minigames/jardim/progressao';
 import { cartaDaArma, cartaNaTela } from '../minigames/jardim/tela';
-import { RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigames/jardim/rodada';
+import { ONDAS_DA_RODADA, RodadaDoJardim, type ElencoDaEstufa, type QuemAjuda } from '../minigames/jardim/rodada';
+import { CHAVE_DA_RETOMADA, lerPontoDaRodada, type PontoDaRodada } from '../minigames/jardim/retomada';
 import { DECORACOES, type FichaDeDecoracao } from '../world/decoracoes';
 import { Decorador, type Cofre } from '../world/decorador';
 import {
@@ -1492,12 +1493,31 @@ export const estufa: SceneDef = {
        * A CONFIRMACAO. Pedido explicito do Renan: a rodada so comeca se o
        * jogador disser que quer. Quem so veio passear pela estufa responde
        * "agora nao" e continua passeando, sem castigo e sem insistencia.
+       *
+       * COM UMA RODADA PARADA NO MEIO (a pagina recarregou — o celular do Ari
+       * descarta a aba), a pergunta oferece continuar da onda em que ela
+       * parou (`minigames/jardim/retomada.ts`). Comecar do zero apaga o
+       * ponto; "agora nao" deixa ele guardado para depois.
        */
-      const escolha = await api.ask(
-        'Eles andam rondando os portões de novo. Vocês me ajudam a espantar as pragas?',
-        ['Vamos espantar as pragas', 'Agora não'],
-        J,
-      );
+      const ponto = lerPontoDaRodada(api.retomada(CHAVE_DA_RETOMADA), ONDAS_DA_RODADA);
+      let continuar: PontoDaRodada | null = null;
+      let escolha: number;
+      if (ponto) {
+        escolha = await api.ask(
+          `Da outra vez a gente parou na onda ${ponto.onda}. Continuamos de lá?`,
+          [`Continuar da onda ${ponto.onda}`, 'Começar do zero', 'Agora não'],
+          J,
+        );
+        if (escolha === 0) continuar = ponto;
+        if (escolha === 1) escolha = 0;
+        else if (escolha === 2) escolha = 1;
+      } else {
+        escolha = await api.ask(
+          'Eles andam rondando os portões de novo. Vocês me ajudam a espantar as pragas?',
+          ['Vamos espantar as pragas', 'Agora não'],
+          J,
+        );
+      }
       if (escolha !== 0) {
         await api.say(['Tudo bem, meu bem. Eu fico aqui com as mudas. É só me chamar.'], J);
         josefina.pararDeEncarar();
@@ -1515,7 +1535,7 @@ export const estufa: SceneDef = {
         return;
       }
 
-      await assumirOsPostos(api);
+      await assumirOsPostos(api, continuar);
     };
 
     /**
@@ -1528,7 +1548,7 @@ export const estufa: SceneDef = {
      * O PARCEIRO ANDA ATE LA, e nao aparece la. E o jogador fica SOLTO
      * enquanto isso: e a hora de ele ir para onde quiser defender.
      */
-    const assumirOsPostos = async (api: typeof g): Promise<void> => {
+    const assumirOsPostos = async (api: typeof g, continuar: PontoDaRodada | null = null): Promise<void> => {
       const J = 'Josefina';
       const outro = api.companionName();
       preparandoARodada = true;
@@ -1563,7 +1583,7 @@ export const estufa: SceneDef = {
        * (`aoAcabarARodada`, mais abaixo).
        */
       await api.say(['Olha lá… estão vindo pelo fundo. Água neles, meu bem!'], J);
-      rodada.comecar({ arma: armaDaRodada() });
+      rodada.comecar(continuar ? { retomar: continuar } : { arma: armaDaRodada() });
       preparandoARodada = false;
     };
 

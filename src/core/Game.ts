@@ -1587,6 +1587,14 @@ export class Game implements GameAPI {
     return this.save.livro;
   }
 
+  retomada(chave: string): unknown {
+    return this.save.retomada(chave);
+  }
+
+  guardarRetomada(chave: string, dados: unknown): void {
+    this.save.guardarRetomada(chave, dados);
+  }
+
   abrirLivroDeCartas(cartas: readonly CartaNaTela[], conteudo: ConteudoDoLivro | null = null): Promise<string | null> {
     // o retrato das pragas é o modelo 3D fotografado na hora (e guardado)
     return this.ui.abrirLivro(cartas, new Set(this.save.livro), conteudo, retratoDePraga);
