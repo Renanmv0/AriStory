@@ -240,6 +240,38 @@ O que funcionou: um arco fino e escuro (`TorusGeometry` com arco) abraçando o
 alto da pupila, e o olho um tico mais fechado na própria piscada. Rosto se
 olha DE PERTO (câmera na cabeça, `clip` no rosto), não no zoom do jogo.
 
+## Bicho de duas patas com roupa (o Flynn)
+
+O Flynn (`entities/bichos/Flynn.ts`) é o molde de um bicho em pé VESTIDO —
+roupa de time por cima do corpo. Três coisas que a foto de perto pegou:
+
+- **o tronco fica INTEIRO dentro da roupa.** Com o tronco de pelo mais alto
+  que a casca da regata, os dois elipsoides se cortavam e o pelo furava o
+  tecido em bicos serrilhados. O tronco menor que a casca nos três eixos, e
+  um cilindro de pescoço saindo por cima: a gola tapa a junta;
+- **tufo de topete visto de cima vira narina.** Dois cones curtos na testa
+  apareciam, da câmera de 34°, como dois furos escuros — um focinho de
+  porquinho no alto da cabeça. Saíram;
+- **o que se pendura na frente tapa o que se estampa nela**: o apito cobria o
+  número da regata, e o número desceu. Estampa, colar e pin, cada um na sua
+  altura do peito, conferido de frente.
+
+**Atlético é proporção, não músculo.** A primeira versão tinha o corpo das
+coelhinhas (perna curta e grossa, tronco redondo) e lia como mascote; o
+Renan pediu "mais magro, com aparência mais atlética, e continuar fofo". O
+que resolveu, sem tocar na cabeça: a perna 1,5× mais comprida e uns 20% mais
+fina, o tronco mais estreito e mais alto, o short (a cintura) mais estreito
+que o peito — o V — e os braços finos. A cabeça grande fica: é ela que
+segura o fofo.
+
+As estampas usam o kit da roupa de time (`letra`, `textoEmArco`, `estrela`,
+`emblemaDosGatitos` de `world/uniformeDosGatitos.ts` e o `colar` de
+`world/roupasDoJardim.ts`), posicionadas na casca da regata por uma função
+de "ponto na casca" (`naRegata`) — o mesmo truque do `naFrente` da roupa da
+dupla. E o rabo de raposa é a cadeia de gomos de sempre, com o primeiro
+apontando para trás e para baixo e os outros dobrando para cima: um "J"
+deitado, gordo no meio e com a ponta branca.
+
 ## Acrobacia: gire pelo QUADRIL, não pela origem
 
 O `group` do bicho tem a origem nos pés. Girar a estrelinha nele faz o corpo

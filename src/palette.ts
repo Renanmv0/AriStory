@@ -1363,6 +1363,23 @@ export const PALETTE = {
   gatitosCreme: 0xefe6d2,
   gatitosIlhos: 0x1c2a4a,
 
+  // O FLYNN, a raposa presidente da atlética dos Gatitos: o laranja de
+  // raposa-vermelha, o creme do focinho, do peito e da ponta do rabo, e o
+  // marrom-café das "meias" (patas da frente e ponta das orelhas). O olho é
+  // âmbar. Fora do azul e amarelo do time, só dois detalhes: o cordão
+  // vermelho do apito e a faixa coral do tênis
+  flynnPelo: 0xe5793a,
+  flynnPeloClaro: 0xfff4e6,
+  flynnPeloEscuro: 0x5b3b2e,
+  flynnOrelhaDentro: 0xfbdcc8,
+  flynnNariz: 0x2b2020,
+  flynnOlho: 0xc98a2b,
+  flynnPupila: 0x2a2220,
+  flynnBochecha: 0xf5a08a,
+  flynnCordao: 0xd9473a,
+  flynnApito: 0xc9d1d9,
+  flynnTenisFaixa: 0xf26b4a,
+
   // OS LANCHES DA MÁQUINA da escola: o pacote de biscoito, o chocolatinho, o
   // suco de caixinha e o salgadinho — cada um com a cor de embalagem que se
   // reconhece de longe no corredor

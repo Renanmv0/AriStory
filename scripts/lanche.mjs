@@ -130,11 +130,13 @@ conferir(reposto.y === undefined && reposto.escondidos === 0, 'a gaveta esvazia 
 conferir(/Comprar/.test((await prompt()) ?? ''), 'e a máquina volta a vender', (await prompt()) ?? '');
 
 // ------------------------------------------------------------- comer
-// o lanche na mão, longe de qualquer interativo (o corredor entre as mesas)
+// o lanche na mão, longe de qualquer interativo: o vão entre as mesas da
+// direita e a parede do corredor (o corredor do meio é o passeio do Flynn,
+// e perto dele o prompt é o de conversar)
 await page.evaluate((id) => {
   const i = window.jogo.handItems().findIndex((x) => x?.id === id);
   if (i >= 0) window.jogo.setActiveHandSlot(i);
-  window.jogo.debugPlace(-27, 0, 1.57);
+  window.jogo.debugPlace(-19, 5.5, 1.57);
 }, qual);
 const rotuloDeComer = await esperarPrompt(/^(Comer|Beber) o /, 20);
 conferir(/^(Comer|Beber) o /.test(rotuloDeComer ?? ''), 'com o lanche na mão, o prompt é o de comer', rotuloDeComer ?? '(nenhum)');
