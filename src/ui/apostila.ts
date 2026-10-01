@@ -33,6 +33,11 @@ import { escapar } from './telaDeCartas';
 
 export interface PedidoDaApostila {
   modulo: Modulo;
+  /**
+   * o curso inteiro: o sumário oferece trocar para os outros módulos que já
+   * tiveram aula (rever o Módulo 1 de dentro do livro do 2)
+   */
+  modulos?: readonly Modulo[];
   progresso: ProgressoDaApostila;
   /** abre direto nesta lição (a aula); sem ela, onde o livro parou */
   licao?: string;
@@ -110,8 +115,8 @@ export class Apostila {
   private readonly estados = new Map<string, EstadoDaLicao>();
   /** a página aberta (no computador, a da esquerda da dupla) */
   private pagina = 0;
-  /** onde o livro parou, para abrir ali de novo */
-  private ultima = 1;
+  /** onde cada livro (módulo) parou, para abrir ali de novo */
+  private readonly ultimaDe = new Map<string, number>();
   private duplo = true;
   private virando = false;
   private resultado: ResultadoDaApostila = { concluidas: [] };
@@ -209,7 +214,7 @@ export class Apostila {
       this.resultado = { concluidas: [] };
       this.medirTela();
       const i = pedido.licao ? pedido.modulo.licoes.findIndex((l) => l.id === pedido.licao) : -1;
-      let alvo = i >= 0 ? primeiraPaginaDa(pedido.modulo, i) : this.ultima;
+      let alvo = i >= 0 ? primeiraPaginaDa(pedido.modulo, i) : (this.ultimaDe.get(pedido.modulo.id) ?? 1);
       if (!this.acessivel(alvo)) alvo = 1;
       this.pagina = this.alinhar(alvo);
       this.pintarTudo();
@@ -225,7 +230,7 @@ export class Apostila {
   fechar(): void {
     if (!this.aberto) return;
     this.raiz.classList.remove('show');
-    this.ultima = this.pagina;
+    if (this.pedido) this.ultimaDe.set(this.pedido.modulo.id, this.pagina);
     this.som?.('menu');
     const r = this.resolver;
     this.resolver = null;
@@ -272,9 +277,9 @@ export class Apostila {
     if (pg.tipo === 'rosto' || pg.tipo === 'sumario') return '';
     const i = pg.licao;
     if (i > 0 && !concluida(this.progresso(), m.licoes[i - 1].id)) {
-      return `🔒 Termine a lição ${i} para virar a página.`;
+      return `🔒 Termine a lição ${m.licoes[i - 1].numero} para virar a página.`;
     }
-    return `🔔 A lição ${i + 1} abre na próxima aula do Gatito.`;
+    return `🔔 A lição ${m.licoes[i].numero} abre na próxima aula do Gatito.`;
   }
 
   private folhear(sentido: 1 | -1): void {
@@ -545,10 +550,16 @@ export class Apostila {
         </li>`;
     }).join('');
     const total = estrelasDoModulo(p.modulo, prog);
+    // os outros livros do curso que já tiveram aula: dá para trocar daqui
+    const outros = (p.modulos ?? []).filter((m) => m.id !== p.modulo.id && m.licoes.some((l) => prog.abertas.includes(l.id)));
+    const trocar = outros.length
+      ? `<p class="outras-apostilas">📚 Outras apostilas: ${outros.map((m) => `<button class="trocar-modulo" data-modulo="${m.id}">📗 Módulo ${m.numero}</button>`).join(' ')}</p>`
+      : '';
     return `
       <h2 class="titulo-sumario">${escapar(p.modulo.subtitulo)}</h2>
       <ol class="indice">${itens}</ol>
-      <p class="total-de-estrelas">⭐ ${total} de ${p.modulo.licoes.length * 3} estrelinhas</p>`;
+      <p class="total-de-estrelas">⭐ ${total} de ${p.modulo.licoes.length * 3} estrelinhas</p>
+      ${trocar}`;
   }
 
   private trancada(p: number): string {
@@ -560,11 +571,11 @@ export class Apostila {
     const total = estrelasDoModulo(p.modulo, this.progresso());
     return `
       <div class="fim-do-modulo">
-        <p class="selo-fim">🎓 Módulo 1 concluído!</p>
+        <p class="selo-fim">🎓 Módulo ${p.modulo.numero} concluído!</p>
         <div class="retrato-da-capa">${this.rosto('gatito', 'gatito-da-capa')}</div>
         <p class="total">${estrelas(total, p.modulo.licoes.length * 3)}</p>
-        <p>Parabéns, <b>${escapar(p.nomes.ari)}</b>! Seis lições, dez tipos de exercício, e um professor muito orgulhoso.</p>
-        <p class="em-breve">Em breve: <b>Módulo 2</b>. Fica a dica! 🐾</p>
+        <p>Parabéns, <b>${escapar(p.nomes.ari)}</b>! ${escapar(p.modulo.parabens)}</p>
+        <p class="em-breve">${p.modulo.seguinte.pronto ? 'Agora vem o' : 'Em breve:'} <b>${escapar(p.modulo.seguinte.nome)}</b>${p.modulo.seguinte.pronto ? ', na próxima aula do Gatito' : ''}. Fica a dica! 🐾</p>
       </div>`;
   }
 
@@ -1081,6 +1092,11 @@ export class Apostila {
       this.irPara(Number(ir.dataset.ir));
       return;
     }
+    const troca = alvo.closest<HTMLElement>('[data-modulo]');
+    if (troca && !alvo.closest('.copia')) {
+      this.trocarModulo(troca.dataset.modulo!);
+      return;
+    }
     const refazer = alvo.closest<HTMLElement>('[data-refazer]');
     if (refazer) {
       this.refazer(refazer.dataset.refazer!);
@@ -1259,6 +1275,19 @@ export class Apostila {
     if (!this.duplo) this.depois.classList.add('chamando');
   }
 
+  /** troca de livro (de módulo) pelo sumário: abre o outro também no sumário */
+  private trocarModulo(id: string): void {
+    const p = this.pedido;
+    const m = p?.modulos?.find((x) => x.id === id);
+    if (!p || !m || m.id === p.modulo.id) return;
+    this.ultimaDe.set(p.modulo.id, this.pagina);
+    this.pedido = { ...p, modulo: m, licao: undefined };
+    this.paginas = paginasDoModulo(m);
+    this.pagina = this.alinhar(1);
+    this.som?.('folhear');
+    this.pintarTudo();
+  }
+
   private refazer(id: string): void {
     const l = this.pedido?.modulo.licoes.find((x) => x.id === id);
     if (!l) return;
@@ -1266,7 +1295,8 @@ export class Apostila {
     const e = this.estado(l);
     e.gabarito = false;
     this.som?.('trocar');
-    const alvo = paginaDosExercicios(this.pedido!.modulo, l.numero - 1);
+    const m = this.pedido!.modulo;
+    const alvo = paginaDosExercicios(m, m.licoes.indexOf(l));
     if (this.alinhar(alvo) === this.pagina) this.pintarTudo();
     else this.virar(this.alinhar(alvo));
     this.depois.classList.remove('chamando');

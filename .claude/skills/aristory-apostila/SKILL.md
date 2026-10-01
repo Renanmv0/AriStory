@@ -15,7 +15,7 @@ contrastar**.
 |---|---|
 | `src/minigames/aula/tipos.ts` | os tipos: `Licao`, `Bloco`, `Exercicio`, `Fala` — leia os comentários |
 | `src/minigames/aula/licoes/licaoN.ts` | **uma lição por arquivo**: todo o conteúdo |
-| `src/minigames/aula/apostila.ts` | o `MODULO_1` (a lista das lições), a nota, a trava, o conferidor |
+| `src/minigames/aula/apostila.ts` | os módulos (`MODULO_1`, `MODULO_2`, e `MODULOS`, o curso), a nota, a trava, o conferidor |
 | `src/ui/apostila.ts` + `style.css` (fim do arquivo) | o livro: páginas, espiral, exercícios, folhear |
 | `src/scenes/escolaAula.ts` | a aula na Sala 1: o Gatito na mesa, as três irmãs nas carteiras, abrir o livro |
 | `src/scenes/escolaGinasio.ts` (`montarAsIrmas`) | o ginásio: quem treina, quem chama a aula, o salto e a estrelinha |
@@ -45,7 +45,11 @@ o tópico"). O que não muda é a ORDEM:
    lição seguinte começar na página da esquerda da dupla. Não escreva.
 
 As seis lições do Módulo 1 têm duas de explicação e uma de exercícios (quatro
-páginas). O que faz uma lição ser BOA não é o tamanho: é a cena, os desenhos
+páginas); as do Módulo 2, três de explicação e duas de exercícios (seis) —
+os temas são maiores, e uma página de exercícios que rola mais de três vezes
+a própria altura pede o `novaPagina`. **Tabela de muitas colunas não cabe no
+celular**: com cinco colunas, "estiveram" vazou da página (lição 11) — junte
+formas aos pares ("fui · foi") e fique em três ou quatro. O que faz uma lição ser BOA não é o tamanho: é a cena, os desenhos
 (`figura`, emoji das palavras) e os exercícios terem a ver com o tema dela, e
 cada uma ter a sua cara — não copiar o formato da anterior.
 
@@ -54,13 +58,37 @@ antes da regra, a regra com exemplo, prática variada, e a autoavaliação em
 "can do" no fim. E o que os livros de português para hispanofalantes fazem
 (Mano a Mano): tudo **contrastivo** — o erro de quem fala espanhol é previsível.
 
+## Os módulos
+
+O curso é a lista `MODULOS` (`apostila.ts`), um livro por módulo:
+**Módulo 1 · Primeiros passos** (lições 1 a 6) e **Módulo 2 · Indo mais
+longe** (7 a 12). O que vale para módulo novo:
+
+- **a numeração CONTINUA** (o 2 começa na 7, como no Novo Avenida Brasil): o
+  `numero` é o da lição no curso, e o conferidor cobra (`conferirModulo` sabe
+  quantas vieram antes com `licoesAntesDe`). O livro usa a POSIÇÃO no módulo
+  para as páginas — nunca `numero - 1`;
+- a aula da vez é do curso inteiro (`licaoDaVezNoCurso`): um módulo só tem
+  aula com o anterior completo. O que acontece no fim de um módulo é da cena
+  (`escolaAula.ts`: o convite da festa no fim do 1, as memórias de cada um);
+- o `Modulo` diz o seu `numero`, o `parabens` do fim do livro e o
+  `seguinte` (o próximo módulo e se ele já existe: "Agora vem o Módulo 2" ou
+  "Em breve: Módulo 3");
+- fora da aula, a carteira abre o livro do módulo da última lição dada
+  (`moduloAtual`), e o sumário oferece trocar para os outros que já tiveram
+  aula (`modulos` no pedido do livro).
+
+Módulo novo = os arquivos `licoes/licaoN.ts`, o `MODULO_N` com eles, uma
+entrada em `MODULOS`, e o `seguinte` do anterior passando a `pronto: true`.
+
 ## Escrever uma lição nova
 
 1. Copie `licoes/licao1.ts` para `licoes/licaoN.ts`, troque `id` (texto
    curto, sem acento, **nunca mais muda**: é a chave do save), `numero`,
    `titulo`, `subtitulo` (a SITUAÇÃO criativa), `assunto` (a língua), `emoji`,
    `cor` (`coral · mostarda · rosa · verde · azul · lilas`).
-2. Registre em `MODULO_1.licoes` (`apostila.ts`), na ordem.
+2. Registre na lista `licoes` do módulo dela (`apostila.ts`), na ordem — e
+   o `numero` continua do módulo anterior.
 3. `node scripts/apostila.mjs` — o conferidor diz o que está errado.
 4. Olhe o livro (abaixo) e as falas da aula no jogo.
 
@@ -183,6 +211,7 @@ carteira vira "Estudar a apostila" (rever e refazer o que já foi dado).
 node scripts/apostila.mjs            # as lições e as regras, sem navegador
 npm run build && npx vite preview --port 4173 &
 node scripts/aula.mjs /tmp/au        # a aula inteira e o livro, no computador e no celular
+node scripts/modulo2.mjs /tmp/m2     # o Módulo 2: a aula da lição 7, as seis lições folheadas, trocar de apostila e o fim de cada livro
 node scripts/paginas.mjs /tmp/pag    # o livro flexível: lição com mais páginas de explicação e de exercício, e a de anotações
 node scripts/irmas.mjs /tmp/ir       # as três no piquenique, quem treina e quem chama cada aula, o salto e a estrelinha
 ```

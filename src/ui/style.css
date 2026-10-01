@@ -4845,6 +4845,13 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
 .livro-apostila .indice li.trancada { opacity: 0.6; cursor: default; }
 .livro-apostila .indice li.trancada .num { background: #b9b2c4; }
 .livro-apostila .total-de-estrelas { margin: 12px 0 0; text-align: center; font-weight: 800; color: var(--tinta-suave); }
+/* trocar de livro: os outros módulos que já tiveram aula */
+.livro-apostila .outras-apostilas { margin: 10px 0 0; text-align: center; font-weight: 700; color: var(--tinta-suave); font-size: .92em; }
+.livro-apostila .trocar-modulo {
+  margin: 4px 3px 0; padding: 5px 12px; border: 2px solid var(--cor-borda, #c9b8e6); border-radius: 999px;
+  background: #fff; color: inherit; font: inherit; font-weight: 800; cursor: pointer;
+}
+.livro-apostila .trocar-modulo:hover { background: #f5efff; }
 
 .livro-apostila .fim-do-modulo { text-align: center; }
 .livro-apostila .fim-do-modulo .selo-fim { margin: 4px 0; font-size: 22px; font-weight: 800; color: var(--cor-escura); }

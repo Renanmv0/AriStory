@@ -38,7 +38,7 @@ import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
 import { retratoDePraga } from '../world/retratoDePraga';
 import { retratoDoFalante } from '../world/retratoDoElenco';
-import { MODULO_1 } from '../minigames/aula/apostila';
+import { MODULOS, moduloAtual, moduloDaLicao } from '../minigames/aula/apostila';
 import type { ProgressoDaApostila, ResultadoDaApostila } from '../minigames/aula/tipos';
 import { ARI, RENAN } from '../characters/cast';
 import { retratoDaDecoracao } from '../world/decoracoes';
@@ -1607,8 +1607,11 @@ export class Game implements GameAPI {
    */
   abrirApostila(o: { licao?: string } = {}): Promise<ResultadoDaApostila> {
     if (o.licao) this.save.abrirLicao(o.licao);
+    // o livro é o do módulo da lição da aula; fora dela, o do módulo em que a dupla está
+    const progresso = this.progressoDaApostila();
     return this.ui.abrirApostila({
-      modulo: MODULO_1,
+      modulo: (o.licao ? moduloDaLicao(o.licao) : null) ?? moduloAtual(progresso),
+      modulos: MODULOS,
       progresso: this.progressoDaApostila(),
       licao: o.licao,
       nomes: {

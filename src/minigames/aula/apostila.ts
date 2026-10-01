@@ -5,6 +5,12 @@ import { LICAO_3 } from './licoes/licao3';
 import { LICAO_4 } from './licoes/licao4';
 import { LICAO_5 } from './licoes/licao5';
 import { LICAO_6 } from './licoes/licao6';
+import { LICAO_7 } from './licoes/licao7';
+import { LICAO_8 } from './licoes/licao8';
+import { LICAO_9 } from './licoes/licao9';
+import { LICAO_10 } from './licoes/licao10';
+import { LICAO_11 } from './licoes/licao11';
+import { LICAO_12 } from './licoes/licao12';
 
 /**
  * ======================================= A APOSTILA DO GATITO — as regras
@@ -28,10 +34,84 @@ import { LICAO_6 } from './licoes/licao6';
 
 export const MODULO_1: Modulo = {
   id: 'modulo-1',
+  numero: 1,
   titulo: 'Português com o Gatito',
   subtitulo: 'Módulo 1 · Primeiros passos',
+  seguinte: { nome: 'Módulo 2', pronto: true },
+  parabens: 'Seis lições, dez tipos de exercício, e um professor muito orgulhoso.',
   licoes: [LICAO_1, LICAO_2, LICAO_3, LICAO_4, LICAO_5, LICAO_6],
 };
+
+/**
+ * O MÓDULO 2 — "Indo mais longe" (pedido do Renan: seis lições novas, no
+ * mesmo estilo, liberadas só depois do Módulo 1). É o A2 dos cursos para
+ * hispanofalantes (Novo Avenida Brasil 2, Brasil Intercultural, Mano a
+ * Mano): a rotina, o esporte, o corpo, a viagem planejada, a viagem contada e
+ * as compras — cada tema com a pegadinha previsível de quem fala espanhol (o
+ * "me levanto", o "jugar", o "tengo hambre", o "voy a viajar", o "he ido", o
+ * "animales"). A numeração continua: lições 7 a 12.
+ */
+export const MODULO_2: Modulo = {
+  id: 'modulo-2',
+  numero: 2,
+  titulo: 'Português com o Gatito',
+  subtitulo: 'Módulo 2 · Indo mais longe',
+  seguinte: { nome: 'Módulo 3', pronto: false },
+  parabens: 'Doze lições no curso — da rotina ao cartão-postal — e um professor que já não cabe de orgulho.',
+  licoes: [LICAO_7, LICAO_8, LICAO_9, LICAO_10, LICAO_11, LICAO_12],
+};
+
+/** O CURSO INTEIRO, na ordem: um módulo só abre depois do anterior terminado. */
+export const MODULOS: readonly Modulo[] = [MODULO_1, MODULO_2];
+
+/** o módulo de uma lição (pelo id), ou `null` */
+export function moduloDaLicao(id: string): Modulo | null {
+  return MODULOS.find((m) => m.licoes.some((l) => l.id === id)) ?? null;
+}
+
+/** quantas lições vêm antes deste módulo no curso (o Módulo 2 começa na 7) */
+export function licoesAntesDe(m: Modulo): number {
+  let n = 0;
+  for (const x of MODULOS) {
+    if (x.id === m.id) return n;
+    n += x.licoes.length;
+  }
+  return 0;
+}
+
+/** todas as lições do módulo têm estrela */
+export function moduloConcluido(m: Modulo, p: ProgressoDaApostila): boolean {
+  return m.licoes.every((l) => concluida(p, l.id));
+}
+
+/**
+ * A LIÇÃO DA PRÓXIMA AULA NO CURSO: a primeira sem estrela, módulo por
+ * módulo — o Módulo 2 só tem aula da vez com o Módulo 1 inteiro. `null` é
+ * o curso terminado.
+ */
+export function licaoDaVezNoCurso(p: ProgressoDaApostila): Licao | null {
+  for (const m of MODULOS) {
+    const l = licaoDaVez(m, p);
+    if (l) return l;
+  }
+  return null;
+}
+
+/** quantas lições do curso inteiro já têm estrela */
+export function licoesConcluidasNoCurso(p: ProgressoDaApostila): number {
+  return MODULOS.reduce((soma, m) => soma + licoesConcluidas(m, p), 0);
+}
+
+/**
+ * O MÓDULO DO LIVRO na carteira, fora da aula: o da última lição que o
+ * Gatito deu (quem está no Módulo 2 estuda no livro do Módulo 2).
+ */
+export function moduloAtual(p: ProgressoDaApostila): Modulo {
+  for (let i = MODULOS.length - 1; i >= 0; i--) {
+    if (MODULOS[i].licoes.some((l) => p.abertas.includes(l.id))) return MODULOS[i];
+  }
+  return MODULOS[0];
+}
 
 // ------------------------------------------------------------------ a nota
 
@@ -222,7 +302,7 @@ export function embaralhar<T>(lista: readonly T[], semente: string): T[] {
  * resposta, distrator igual a uma resposta, grupo que ninguém usa, realce
  * sem fechar… Módulo bom devolve lista vazia.
  */
-export function conferirModulo(m: Modulo): string[] {
+export function conferirModulo(m: Modulo, antes = licoesAntesDe(m)): string[] {
   const erros: string[] = [];
   const ids = new Set<string>();
   const realceAberto = (t: string): boolean => (t.match(/\*\*/g) ?? []).length % 2 !== 0;
@@ -230,13 +310,14 @@ export function conferirModulo(m: Modulo): string[] {
     const onde = `lição ${l.numero} (${l.id})`;
     if (ids.has(l.id)) erros.push(`${onde}: id repetido`);
     ids.add(l.id);
-    if (l.numero !== i + 1) erros.push(`${onde}: número ${l.numero} na posição ${i + 1}`);
+    // a numeração continua de um módulo para o outro
+    if (l.numero !== antes + i + 1) erros.push(`${onde}: número ${l.numero} na posição ${antes + i + 1} do curso`);
     if (!l.consigo.length) erros.push(`${onde}: sem "agora eu consigo"`);
     if (!l.aula.chamada.length || !l.aula.abertura.length || !l.aula.encerramento.length) {
       erros.push(`${onde}: falta fala da aula`);
     }
     // quem chama e quem fala na chamada tem que ESTAR no ginásio naquela hora
-    const noGinasio: readonly string[] = irmasNoGinasio(i);
+    const noGinasio: readonly string[] = irmasNoGinasio(antes + i);
     if (l.aula.chama === 'qualquer') {
       // sem dona, a dupla fala com quem quiser: as três têm de estar lá
       if (noGinasio.length < 3) erros.push(`${onde}: qualquer uma chama, mas as três ainda não estão no ginásio`);

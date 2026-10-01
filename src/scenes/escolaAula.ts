@@ -4,7 +4,9 @@ import type { WorldBuilder } from '../world/WorldBuilder';
 import { Gatito } from '../entities/bichos/Gatito';
 import { CoelhaDaTorcida, Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 import { ARI, RENAN } from '../characters/cast';
-import { MODULO_1, irmasNoGinasio, licaoDaVez, licoesConcluidas, type Irma } from '../minigames/aula/apostila';
+import {
+  MODULOS, MODULO_1, MODULO_2, irmasNoGinasio, licaoDaVezNoCurso, licoesConcluidasNoCurso, moduloConcluido, type Irma,
+} from '../minigames/aula/apostila';
 import type { Fala, Falante, Licao } from '../minigames/aula/tipos';
 import { conversa, sentarOsDois } from './escolaComum';
 import { PREMIOS_DA_APOSTILA } from '../world/itens';
@@ -66,7 +68,7 @@ export const NOME_DA_IRMA: Record<Irma, string> = { luna: NOMES.luna, sol: NOMES
 
 /** as irmãs que estão no ginásio agora (quando a aula não está chamada) */
 export function irmasNoGinasioAgora(g: GameAPI): Irma[] {
-  return irmasNoGinasio(licoesConcluidas(MODULO_1, g.progressoDaApostila()));
+  return irmasNoGinasio(licoesConcluidasNoCurso(g.progressoDaApostila()));
 }
 
 /** uma irmã nova, pelo nome */
@@ -79,9 +81,14 @@ export function falasDaAula(falas: readonly Fala[]): Array<[string, string]> {
   return falas.map((f) => [NOMES[f.quem], f.texto]);
 }
 
-/** a lição da próxima aula; `null` quando o módulo acabou */
+/** a lição da próxima aula, no curso inteiro (o Módulo 2 depois do 1); `null` quando o curso acabou */
 export function aulaDaVez(g: GameAPI): Licao | null {
-  return licaoDaVez(MODULO_1, g.progressoDaApostila());
+  return licaoDaVezNoCurso(g.progressoDaApostila());
+}
+
+/** o Módulo 1 inteiro já tem estrela (é o que leva à festa da torcida) */
+export function moduloUmConcluido(g: GameAPI): boolean {
+  return moduloConcluido(MODULO_1, g.progressoDaApostila());
 }
 
 /** a aula está chamada e ainda tem lição para dar */
@@ -97,7 +104,7 @@ export function podeChamarAula(g: GameAPI): boolean {
 /** a última lição que o Gatito deu (para a lousa lembrar dela) */
 function ultimaDada(g: GameAPI): Licao | null {
   const abertas = g.progressoDaApostila().abertas;
-  return [...MODULO_1.licoes].reverse().find((l) => abertas.includes(l.id)) ?? null;
+  return MODULOS.flatMap((m) => m.licoes).reverse().find((l) => abertas.includes(l.id)) ?? null;
 }
 
 /**
@@ -396,7 +403,8 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
         icon: '📘',
       });
     }
-    if (!aulaDaVez(g) && !g.flag('festa-da-torcida')) {
+    const fechouUm = licao.id === MODULO_1.licoes[MODULO_1.licoes.length - 1].id && moduloUmConcluido(g);
+    if (fechouUm && !g.flag('festa-da-torcida')) {
       // O CONVITE PARA A FESTA (pedido do Renan): terminado o módulo, as três
       // chamam a dupla para comemorar no ginásio — a dança e a roupa de
       // cheerleader estão lá (`escolaGinasio.ts`, "a festa da torcida")
@@ -410,13 +418,22 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
       g.setFlag('festa-da-torcida-convite');
       g.toast('As coelhinhas esperam vocês no ginásio', '📣');
     }
-    if (!aulaDaVez(g)) {
+    if (moduloUmConcluido(g)) {
       g.unlock({
         id: 'modulo-1-do-gatito',
         title: 'O Módulo 1 completinho',
         place: 'Escola do Gatito',
         note: 'Seis lições, a apostila inteira, e um professor muito orgulhoso de você. No fim, o Gatito pediu um cafuné — e agora você sabe o que é.',
         icon: '🎓',
+      });
+    }
+    if (moduloConcluido(MODULO_2, g.progressoDaApostila())) {
+      g.unlock({
+        id: 'modulo-2-do-gatito',
+        title: 'O Módulo 2 completinho',
+        place: 'Escola do Gatito',
+        note: 'Doze lições! A rotina do Gatito, o basquete no ginásio, o tombo na pista de gelo, a viagem pra praia e o cartão-postal do Rio — e as compras na lojinha da Josefina. Você já vai longe em português.',
+        icon: '🎒',
       });
     }
     levantar(g);

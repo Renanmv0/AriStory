@@ -204,8 +204,22 @@ export interface Licao {
 
 export interface Modulo {
   id: string;
+  /** o número do módulo (o "Módulo 2" do fim do livro) */
+  numero: number;
   titulo: string;
   subtitulo: string;
+  /**
+   * o que a última página promete: o próximo módulo e se ele já existe
+   * ("Agora vem o Módulo 2" ou "Em breve: Módulo 3")
+   */
+  seguinte: { nome: string; pronto: boolean };
+  /** o parabéns da última página, depois do nome do aluno */
+  parabens: string;
+  /**
+   * AS LIÇÕES. A numeração CONTINUA de um módulo para o outro (o Módulo 2
+   * começa na lição 7), como no Novo Avenida Brasil: o número é o da lição no
+   * curso inteiro, e não a posição dela no livro.
+   */
   licoes: readonly Licao[];
 }
 
