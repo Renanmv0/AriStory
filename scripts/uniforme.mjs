@@ -394,7 +394,9 @@ if (!SO || SO.includes('vestiario')) {
         titulo: a.querySelector('.titulo').textContent,
         abaUniforme: a.classList.contains('aba-piscina'),
         rotuloDaAba: a.querySelector('.aba-segunda').textContent,
-        pecas: [...a.querySelectorAll('.vitrine-piscina .produto')].map((b) => ({
+        // só as sete do uniforme: a roupa de torcida (`-de-torcida`, prêmio do fim do
+        // módulo) mora na mesma aba, e tem o teste dela (`scripts/festa.mjs`)
+        pecas: [...a.querySelectorAll('.vitrine-piscina .produto')].filter((b) => !b.dataset.id.endsWith('-de-torcida')).map((b) => ({
           id: b.dataset.id, trancada: b.classList.contains('trancada'), vestida: b.classList.contains('vestida'),
           etiqueta: b.querySelector('em').textContent,
         })),

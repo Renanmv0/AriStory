@@ -74,6 +74,11 @@ com `g.trocarMusica('id')`, e devolver a da cena com `g.trocarMusica(null)`. É
 o que a defesa da estufa faz (`'rodada-do-jardim'`, ligada e desligada pela
 `RodadaDoJardim`).
 
+**Festa** (`'festa-da-torcida'`, a dança das coelhinhas no fim do módulo):
+120 bpm, reto, bumbo, chocalho e a chave `palmas` — três chiados curtinhos
+colados (o "clap" de várias mãos) no contratempo, nos tempos 2 e 4. O pico
+dela fica abaixo do da rodada do jardim.
+
 **Tensão sem perder o fofo** (o pedido do Renan para a defesa da estufa): a
 marimba e os acordes com sétima continuam, e entram chaves opcionais no
 `Clima` — `reto` (sem suingue), `ostinato` (pizzicato em colcheias), `bumbo`

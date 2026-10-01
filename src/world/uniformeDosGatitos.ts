@@ -164,7 +164,7 @@ function textoEmArco(pai: THREE.Object3D, texto: string, a: Arco): void {
  * é a marca, e ela aparece pequena no boné, no tênis e na manga, onde uma
  * textura de 128 px viraria borrão.
  */
-function emblemaDosGatitos(e: number, fundo: number = AMARELO, tinta: number = AZUL): THREE.Group {
+function emblemaDosGatitos(e: number, fundo: number = AMARELO, tinta: number = AZUL, orelhas = true): THREE.Group {
   const g = new THREE.Group();
   const matFundo = toon(fundo);
   const matTinta = toon(tinta);
@@ -191,7 +191,8 @@ function emblemaDosGatitos(e: number, fundo: number = AMARELO, tinta: number = A
   miolo.closePath();
   const geoOrelha = new THREE.ExtrudeGeometry(orelha, { depth: esp, bevelEnabled: false });
   const geoMiolo = new THREE.ExtrudeGeometry(miolo, { depth: esp * 0.3, bevelEnabled: false });
-  for (const lado of [-1, 1] as const) {
+  // sem orelhas, é o emblema da TORCIDA — o círculo com o G do top das coelhinhas
+  for (const lado of orelhas ? [-1, 1] as const : []) {
     const o = new THREE.Mesh(geoOrelha, toon(fundo, { doubleSide: true }));
     o.scale.x = lado;
     g.add(o);
@@ -1027,7 +1028,7 @@ function tenisDosGatitos(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): TH
 }
 
 export {
-  emblemaDosGatitos,
+  emblemaDosGatitos, letra, textoEmArco, estrela, patinha, raioDoTronco,
   boneDosGatitos,
   camisetaDosGatitos, mangaDaCamisetaDosGatitos,
   camisetaLargaDosGatitos, mangaLargaDosGatitos,

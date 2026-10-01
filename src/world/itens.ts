@@ -34,6 +34,7 @@ import {
   jaquetonaDosGatitos, mangaDaCamisetaDosGatitos, mangaDaJaquetona, mangaLargaDosGatitos,
   pernaDoShortDosGatitos, tenisDosGatitos,
 } from './uniformeDosGatitos';
+import { lacoDeTorcida, meiaoDeTorcida, pomponsDeTorcida, uniformeDeTorcida } from './torcidaDosGatitos';
 
 /**
  * O catalogo de itens do jogo.
@@ -1343,6 +1344,46 @@ export const ITENS = {
     nota: 'do time · com o cadarço amarelo e o emblema na língua',
     extra: tenisDosGatitos,
   },
+
+  /* ====================================================================
+   *      A ROUPA DE CHEERLEADER DOS GATITOS (`world/torcidaDosGatitos.ts`)
+   * ====================================================================
+   * O prêmio da FESTA DA TORCIDA: no fim do Módulo 1, as três coelhinhas
+   * dançam no ginásio e dão à dupla a roupa delas (`PREMIOS_DA_FESTA`). O
+   * mesmo modelo do uniforme da Luna, da Sol e da Estrella.
+   */
+  uniformeDeTorcida: {
+    id: 'uniforme-de-torcida', nome: 'Uniforme de cheerleader', icone: '📣',
+    tipo: 'vestivel', slot: 'tronco',
+    // o top pinta o tronco do rig; o braço e a perna saem de pele (sem manga, de saia)
+    cor: P.gatitosAzul,
+    bracosNus: true, pernasNuas: true,
+    nota: 'das coelhinhas · top com o G e saia pregueada',
+    extra: uniformeDeTorcida,
+  },
+  meiaoDeTorcida: {
+    id: 'meiao-de-torcida', nome: 'Shortinho e meião de torcida', icone: '🧦',
+    tipo: 'vestivel', slot: 'pernas',
+    // SEM `cor`: o shortinho é o calção do rig (como as bermudas), e a perna
+    // sai de pele até o meião
+    corBanho: P.gatitosAzul, amostra: P.gatitosBranco,
+    nota: 'das coelhinhas · o shortinho de baixo da saia e o meião listrado',
+    extra: meiaoDeTorcida,
+  },
+  lacoDeTorcida: {
+    id: 'laco-de-torcida', nome: 'Laço de torcida', icone: '🎀',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
+    cor: P.gatitosAmarelo, corDetalhe: P.gatitosAzul,
+    nota: 'das coelhinhas · o laçarote amarelo de cheerleader',
+    extra: lacoDeTorcida,
+  },
+  pomponsDeTorcida: {
+    id: 'pompons-de-torcida', nome: 'Pompons dos Gatitos', icone: '✨',
+    tipo: 'vestivel', slot: 'maos',
+    amostra: P.lunaPomponAmarelo,
+    nota: 'das coelhinhas · um em cada mão, amarelo e azul',
+    extra: pomponsDeTorcida,
+  },
 } as const satisfies Record<string, ItemDef>;
 
 /**
@@ -1381,6 +1422,15 @@ export const PREMIOS_DA_APOSTILA: Record<string, readonly ItemDef[]> = {
   ],
 };
 
+/**
+ * O PRÊMIO DA FESTA DA TORCIDA: a roupa de cheerleader, que as três
+ * coelhinhas dão depois da dança no ginásio, no fim do Módulo 1
+ * (`scenes/escolaGinasio.ts`). Quem repõe é o `reporPremios`, pelo `save.premios`.
+ */
+export const PREMIOS_DA_FESTA: readonly ItemDef[] = [
+  ITENS.uniformeDeTorcida, ITENS.meiaoDeTorcida, ITENS.lacoDeTorcida, ITENS.pomponsDeTorcida,
+];
+
 /** o número da lição de cada prêmio, para dizer onde a peça se ganha */
 const NUMERO_DA_LICAO: Record<string, number> = { 'cade-o-novelo': 3 };
 
@@ -1389,12 +1439,14 @@ const NUMERO_DA_LICAO: Record<string, number> = { 'cade-o-novelo': 3 };
  * mostra — todas as peças que as lições da apostila dão, na ordem, cada uma
  * com a frase de onde ela se ganha (para a vaga trancada).
  */
-export const UNIFORMES_DA_ESCOLA: ReadonlyArray<{ peca: ItemDef; comoGanhar: string }> =
-  Object.entries(PREMIOS_DA_APOSTILA).flatMap(([licao, pecas]) =>
+export const UNIFORMES_DA_ESCOLA: ReadonlyArray<{ peca: ItemDef; comoGanhar: string }> = [
+  ...Object.entries(PREMIOS_DA_APOSTILA).flatMap(([licao, pecas]) =>
     pecas.map((peca) => ({
       peca,
       comoGanhar: NUMERO_DA_LICAO[licao] ? `ganha na lição ${NUMERO_DA_LICAO[licao]}` : 'ganha numa lição',
-    })));
+    }))),
+  ...PREMIOS_DA_FESTA.map((peca) => ({ peca, comoGanhar: 'ganha ao terminar o módulo' })),
+];
 
 /**
  * AS ARARAS DA BOUTIQUE: o que cada uma vende, na ordem em que elas estao na

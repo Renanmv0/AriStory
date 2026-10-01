@@ -396,6 +396,20 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
         icon: '📘',
       });
     }
+    if (!aulaDaVez(g) && !g.flag('festa-da-torcida')) {
+      // O CONVITE PARA A FESTA (pedido do Renan): terminado o módulo, as três
+      // chamam a dupla para comemorar no ginásio — a dança e a roupa de
+      // cheerleader estão lá (`escolaGinasio.ts`, "a festa da torcida")
+      for (const i of irmas) i.bicho.torcer(2.6);
+      g.som('sacudida');
+      await conversa(g, [
+        [NOMES.sol, '¡TERMINARAM O MÓDULO! ¡TODO, TODITO!'],
+        [NOMES.luna, 'Panas, isso não pode passar em branco. Encontrem a gente no ginásio!'],
+        [NOMES.estrella, 'A gente preparou uma surpresa. Podem ir com calma, tá? A gente espera.'],
+      ]);
+      g.setFlag('festa-da-torcida-convite');
+      g.toast('As coelhinhas esperam vocês no ginásio', '📣');
+    }
     if (!aulaDaVez(g)) {
       g.unlock({
         id: 'modulo-1-do-gatito',

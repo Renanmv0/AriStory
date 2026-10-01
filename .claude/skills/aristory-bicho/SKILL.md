@@ -250,6 +250,27 @@ de ré. Meça o ponto mais baixo da malha na volta inteira (o
 `scripts/irmas.mjs` exige que nada passe de 3 cm abaixo do chão), e o salto
 pelo pico (`medidaDoGesto`), não pela foto.
 
+## Coreografia de cutscene: um relógio próprio, no bicho
+
+A dança da festa da torcida (`dancarAFesta`, 10,8 s) é um "treino" com outra
+coreografia: um `relogioDaFesta` que anda no `animar`, e uma função pura
+`passoDaFesta(t)` que devolve braços, pernas, pulo e giro para cada segundo
+(as três dançam o mesmo relógio, cada uma com o seu papel). As acrobacias
+entram por MARCA de tempo (`passou(4.1)` → o salto da Sol), e o fim da
+dança é o bicho que decide. Duas coisas que custaram um teste:
+
+- **a cena NÃO cronometra a dança com `g.wait`**: ele é de relógio de parede
+  (`setTimeout`), e o jogo anda mais devagar que a parede num celular lento ou
+  no navegador do teste — o confete do salto final caía antes da hora. O que a
+  cena quer sincronizar ela lê do bicho (`tempoNaFesta`) num `w.onUpdate`;
+- **giro por `rotation.y` direto, não misturado**: a volta da Luna vai a 2π e
+  volta a 0 de uma vez — é a mesma pose, ninguém vê. Misturar com
+  interpolação desenrolaria a volta de ré.
+
+Meça a dança pelos picos (`medidaDoGesto`, `giroDaFesta`) num laço que corre
+até ela ACABAR, nunca por número de amostras: o navegador do teste roda o
+jogo a ~1/5 da velocidade (`scripts/festa.mjs`).
+
 ## A pose
 
 Tudo por seno, como o resto do jogo. A base entrega `andando`, `sentado`,
