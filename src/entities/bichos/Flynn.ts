@@ -42,7 +42,31 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * E DOIS GESTOS que a cena aciona na conversa: ACENAR (a pata direita no alto,
  * abanando — é como ele chega em todo mundo) e COMEMORAR (os dois punhos para
  * cima, pulinhos, o rabo a mil).
+ *
+ * E O TREINO, no ginásio (a partir do Módulo 2): CORRER (a passada larga e
+ * rápida, inclinado para a frente, os braços bombeando) e o ARREMESSO — dobra
+ * na cintura, pega a bola do chão, sobe com ela no peito, pula e solta no alto
+ * do pulo, de uma mão, pelo lado da cabeça. A bola é da cena: ele só oferece a MÃO (`maoDaBola`, o meio das
+ * duas patas, que anda com a pose) e o relógio do gesto (`tempoNoArremesso`),
+ * e a cena prende e solta a bola nas marcas `PEGA` e `SOLTA`.
  */
+
+/** as marcas do arremesso, em segundos do gesto */
+export const ARREMESSO = {
+  /** o fundo da dobra: a bola sai do chão e vai para as patas */
+  PEGA: 0.42,
+  /** de pé, a bola no peito; dali ele toma impulso */
+  NO_PEITO: 0.72,
+  /** o alto do pulo: a bola sai da mão */
+  SOLTA: 1.04,
+  /** os pés de volta no chão, e o gesto acabou */
+  FIM: 1.5,
+} as const;
+
+/** a altura do quadril, em números do corpo: é em volta dele que o tronco dobra */
+const QUADRIL = 0.29;
+/** a escala do corpo (ver o fim de `montar`) */
+const ESCALA = 1.35;
 
 const AZUL = P.gatitosAzul;
 const MARINHO = P.gatitosAzulEscuro;
@@ -83,6 +107,21 @@ export class Flynn extends Bicho {
   private orelhada = -1;
   /** a altura do pulinho neste quadro (o teste lê) */
   private puloAgora = 0;
+  /** o treino: correndo (a mistura da passada larga) e o relógio do arremesso (-1 parado) */
+  private correndo = false;
+  private misturaCorrida = 0;
+  private tempoDoArremesso = -1;
+  /** o relógio das passadas: a cadência muda com a corrida, e a fase não pode pular */
+  private passada = 0;
+  private readonly balancoDasPernas = [0, 0];
+  /**
+   * A MÃO QUE SEGURA A BOLA: o meio das duas patas, no referencial do corpo,
+   * refeito a cada quadro pela pose. A cena prende a bola aqui (`attach`) e
+   * solta no alto do pulo.
+   */
+  readonly maoDaBola = new THREE.Object3D();
+  private readonly pata = new THREE.Vector3();
+  private readonly outraPata = new THREE.Vector3();
 
   constructor(area: AreaDoBicho) {
     super(area, {
@@ -111,6 +150,28 @@ export class Flynn extends Bicho {
   /** os dois punhos para cima e pulinhos: o "vão, Gatitos!" */
   comemorar(segundos = 1.8): void {
     this.comemorando = Math.max(this.comemorando, segundos);
+  }
+
+  /** a passada de corrida (o treino no ginásio), no lugar da caminhada */
+  correr(sim: boolean): void {
+    this.correndo = sim;
+  }
+
+  /** pega a bola do chão à frente dele e arremessa (o relógio em `tempoNoArremesso`) */
+  arremessar(): void {
+    this.tempoDoArremesso = 0;
+  }
+
+  get estaArremessando(): boolean {
+    return this.tempoDoArremesso >= 0;
+  }
+  /** quanto do arremesso já passou (s); -1 sem arremesso */
+  get tempoNoArremesso(): number {
+    return this.tempoDoArremesso;
+  }
+  /** o quanto o tronco está dobrado agora (rad): o teste mede a pegada */
+  get dobraDaCintura(): number {
+    return this.corpo.rotation.x;
   }
 
   /** o teste pergunta isto */
@@ -309,6 +370,7 @@ export class Flynn extends Bicho {
 
     this.montarCabeca();
     this.corpo.add(this.cabeca);
+    this.corpo.add(this.maoDaBola);
 
     /**
      * ELE CRESCE NO FIM, como as coelhinhas: montado em números de bicho de
@@ -317,7 +379,7 @@ export class Flynn extends Bicho {
      * 1,25 e o corpo das coelhinhas ele ficava do tamanho delas, e o capitão
      * sumia no refeitório).
      */
-    this.corpo.scale.setScalar(1.35);
+    this.corpo.scale.setScalar(ESCALA);
     this.group.add(this.corpo);
   }
 
@@ -649,7 +711,7 @@ export class Flynn extends Bicho {
 
   // ------------------------------------------------------------------- pose
 
-  protected animar(dt: number, { andando, carinho, fase }: PoseDoBicho): void {
+  protected animar(dt: number, { andando, carinho }: PoseDoBicho): void {
     this.relogio += dt;
     const t = this.relogio;
     this.acenando = Math.max(0, this.acenando - dt);
@@ -657,30 +719,102 @@ export class Flynn extends Bicho {
     const suave = Math.min(1, dt * 7);
     this.misturaAceno += ((this.acenando > 0 ? 1 : 0) - this.misturaAceno) * suave;
     this.misturaFesta += ((this.comemorando > 0 ? 1 : 0) - this.misturaFesta) * suave;
+    this.misturaCorrida += ((this.correndo && andando ? 1 : 0) - this.misturaCorrida) * suave;
     const aceno = this.misturaAceno;
     const festa = this.misturaFesta;
+    const corre = this.misturaCorrida;
+    // correndo, a cadência sobe de 10 para 17: num relógio próprio, para a fase não pular
+    if (andando) this.passada += dt * (10 + corre * 7);
+
+    // ------------------------------------------------------------ o arremesso
+    /**
+     * A DOBRA é na CINTURA: o tronco inclina para a frente em volta do quadril
+     * e as pernas giram o mesmo ângulo ao contrário, ficando em pé. Correndo,
+     * ele inclina um tico (0,24); para pegar a bola, dobra fundo (1,15) e os
+     * braços descem até o chão. Os ângulos dos braços abaixo são do MUNDO
+     * (`… - dobra`), e por isso a pata vai ao chão com o tronco dobrado.
+     */
+    let dobra = corre * 0.24;
+    let pulo = 0;
+    /** os pesos dos três jeitos de braço do arremesso: no chão, no peito, no alto */
+    let noChao = 0;
+    let noPeito = 0;
+    let noAlto = 0;
+    if (this.tempoDoArremesso >= 0) {
+      this.tempoDoArremesso += dt;
+      const a = this.tempoDoArremesso;
+      const { PEGA, NO_PEITO, SOLTA, FIM } = ARREMESSO;
+      const liso = (x: number): number => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
+      if (a < PEGA) {
+        const k = liso(a / PEGA);
+        dobra += (1.15 - dobra) * k;
+        noChao = k;
+      } else if (a < NO_PEITO) {
+        const k = liso((a - PEGA) / (NO_PEITO - PEGA));
+        dobra = 1.15 * (1 - k);
+        noChao = 1 - k;
+        noPeito = k;
+      } else if (a < SOLTA) {
+        const k = liso((a - NO_PEITO) / (SOLTA - NO_PEITO));
+        noPeito = 1 - k;
+        noAlto = k;
+      } else {
+        noAlto = 1 - liso((a - SOLTA) / (FIM - SOLTA));
+      }
+      // o pulo é simétrico em volta da SOLTA: a bola sai no alto dele
+      const meio = SOLTA - NO_PEITO - 0.04;
+      if (Math.abs(a - SOLTA) < meio) pulo = Math.cos(((a - SOLTA) / meio) * (Math.PI / 2)) * 0.26;
+      if (a >= FIM) this.tempoDoArremesso = -1;
+    }
 
     // ------------------------------------------------ as pernas e o pulinho
-    const passo = andando ? Math.sin(fase * 10) : 0;
+    const passo = andando ? Math.sin(this.passada) : 0;
+    const amplitude = 0.6 + corre * 0.45;
     for (const [i, perna] of this.pernas.entries()) {
       const lado = i === 0 ? -1 : 1;
-      perna.rotation.x += (passo * 0.6 * lado - perna.rotation.x) * Math.min(1, dt * 12);
+      // o balanço guardado à parte: a dobra entra EXATA, senão o pé sai do chão
+      const b = this.balancoDasPernas;
+      b[i] += (passo * amplitude * lado - b[i]) * Math.min(1, dt * 12);
+      perna.rotation.x = b[i] - dobra;
     }
-    this.puloAgora = festa * Math.abs(Math.sin(t * 8)) * 0.07;
+    this.puloAgora = festa * Math.abs(Math.sin(t * 8)) * 0.07 + pulo;
     const respiro = Math.sin(t * 1.8) * 0.006;
-    const doPasso = andando ? Math.abs(Math.sin(fase * 10)) * 0.018 : 0;
-    this.corpo.position.y = respiro + doPasso + this.puloAgora;
+    const doPasso = andando ? Math.abs(Math.sin(this.passada)) * (0.018 + corre * 0.03) : 0;
+    const h = ESCALA * QUADRIL;
+    this.corpo.rotation.x = dobra;
+    this.corpo.position.z = -h * Math.sin(dobra);
+    this.corpo.position.y = respiro + doPasso + this.puloAgora + h * (1 - Math.cos(dobra));
 
     // ------------------------------------------------------------ os braços
     /**
-     * Três destinos misturados: o balanço da caminhada (oposto às pernas), o
-     * ACENO (a direita bem no alto, abanando) e a COMEMORAÇÃO (os dois punhos
-     * para cima, sacudindo). Abrir para fora é `lado · ângulo` em `rotation.z`.
+     * O balanço da caminhada (oposto às pernas; correndo, bombeando mais e um
+     * tico para a frente), os três jeitos do arremesso, o ACENO (a direita bem
+     * no alto, abanando) e a COMEMORAÇÃO (os dois punhos para cima, sacudindo).
+     * Abrir para fora é `lado · ângulo` em `rotation.z`; segurando a bola, as
+     * patas FECHAM um tico (`-lado · 0,1`) e apertam a bola dos lados.
      */
     for (const [i, braco] of this.bracos.entries()) {
       const lado = i === 0 ? -1 : 1;
       let z = lado * 0.16;
-      let x = -passo * 0.5 * lado;
+      let x = -passo * (0.5 + corre * 0.5) * lado - corre * 0.3;
+      for (const [peso, mundo] of [[noChao, -0.25], [noPeito, -1.15]] as const) {
+        if (peso <= 0) continue;
+        z += (-lado * 0.1 - z) * peso;
+        x += (mundo - dobra - x) * peso;
+      }
+      /*
+       * NO ALTO, O ARREMESSO É DE UMA MÃO: o braço do chibi é curto e a cabeça
+       * é grande — com os dois braços para cima a pata para na altura da
+       * testa, e a bola entraria na cara. Então a direita sobe PELO LADO da
+       * cabeça (aberta 2,5 e um tico para a frente: com o braço para cima, é
+       * `rotation.x` POSITIVO que leva a pata para a frente) com a bola em cima
+       * da pata, e a esquerda vem guiando na frente.
+       */
+      if (noAlto > 0) {
+        const [zAlto, xAlto] = lado > 0 ? [2.5, 0.4] : [-lado * 0.15, -1.7];
+        z += (zAlto - z) * noAlto;
+        x += (xAlto - dobra - x) * noAlto;
+      }
       if (lado > 0 && aceno > 0) {
         const alto = lado * (Math.PI - 0.45) + Math.sin(t * 13) * 0.3;
         z += (alto - z) * aceno;
@@ -694,15 +828,29 @@ export class Flynn extends Bicho {
       braco.rotation.z += (z - braco.rotation.z) * Math.min(1, dt * 12);
       braco.rotation.x += (x - braco.rotation.x) * Math.min(1, dt * 12);
     }
+    // a mão da bola: o meio das duas patas, onde elas estão DE FATO neste quadro
+    const [esq, dir] = this.bracos;
+    esq.updateMatrix();
+    dir.updateMatrix();
+    this.pata.set(0, -0.205, 0).applyMatrix4(esq.matrix);
+    this.outraPata.set(0, -0.205, 0).applyMatrix4(dir.matrix);
+    this.maoDaBola.position.addVectors(this.pata, this.outraPata).multiplyScalar(0.5);
+    // no alto, a bola vai para cima da pata direita, do lado da cabeça
+    if (noAlto > 0) {
+      this.outraPata.y += 0.085;
+      this.outraPata.z += 0.02;
+      this.maoDaBola.position.lerp(this.outraPata, noAlto);
+    }
 
     // -------------------------------------------------------------- a cabeça
-    // inclinada de leve, simpática; no aceno, inclina mais para o lado de quem chega
+    // inclinada de leve, simpática; no aceno, inclina mais para o lado de quem
+    // chega; correndo, olha para a frente; arremessando, olha para a cesta
     this.cabeca.rotation.z = Math.sin(t * 1.3) * 0.04 + aceno * 0.12 - festa * 0.05 * Math.sin(t * 8);
-    this.cabeca.rotation.x = Math.sin(t * 0.9) * 0.02 - festa * 0.08;
+    this.cabeca.rotation.x = Math.sin(t * 0.9) * 0.02 - festa * 0.08 - corre * 0.2 - noAlto * 0.3;
 
     // ---------------------------------------------------------------- o rabo
     // abana sempre (é uma raposa feliz), mais rápido andando, no carinho e na festa
-    const animo = Math.min(1, (andando ? 0.5 : 0) + carinho + festa + aceno * 0.6);
+    const animo = Math.min(1, (andando ? 0.5 : 0) + corre + carinho + festa + aceno * 0.6);
     const vel = 3.2 + animo * 6;
     const amp = 0.14 + animo * 0.2;
     for (const [i, gomo] of this.gomosDoRabo.entries()) {
@@ -712,7 +860,7 @@ export class Flynn extends Bicho {
     // ------------------------------------------- as pontas da bandana balançam
     for (const [i, ponta] of this.pontasDaBandana.entries()) {
       const lado = i === 0 ? -1 : 1;
-      ponta.rotation.x = 0.55 + Math.sin(t * 2.6 + i) * 0.08 + (andando ? Math.abs(Math.sin(fase * 10)) * 0.25 : 0) + festa * 0.3;
+      ponta.rotation.x = 0.55 + Math.sin(t * 2.6 + i) * 0.08 + (andando ? Math.abs(Math.sin(this.passada)) * (0.25 + corre * 0.25) : 0) + festa * 0.3;
       ponta.rotation.z = -lado * 0.35 + Math.sin(t * 2.1 + i * 2) * 0.06;
     }
 

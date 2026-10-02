@@ -5,7 +5,8 @@ import { Gatito } from '../entities/bichos/Gatito';
 import { CoelhaDaTorcida, Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 import { ARI, RENAN } from '../characters/cast';
 import {
-  MODULOS, MODULO_1, MODULO_2, irmasNoGinasio, licaoDaVezNoCurso, licoesConcluidasNoCurso, moduloConcluido, type Irma,
+  MODULOS, MODULO_1, MODULO_2, concluida, irmasNoGinasio, licaoDaVezNoCurso, licoesConcluidasNoCurso, moduloConcluido,
+  type Irma,
 } from '../minigames/aula/apostila';
 import type { Fala, Falante, Licao } from '../minigames/aula/tipos';
 import { conversa, sentarOsDois } from './escolaComum';
@@ -89,6 +90,18 @@ export function aulaDaVez(g: GameAPI): Licao | null {
 /** o Módulo 1 inteiro já tem estrela (é o que leva à festa da torcida) */
 export function moduloUmConcluido(g: GameAPI): boolean {
   return moduloConcluido(MODULO_1, g.progressoDaApostila());
+}
+
+/**
+ * O MÓDULO 2 JÁ COMEÇOU: a lição 7 (ou outra do módulo) já foi chamada,
+ * aberta ou feita. É o que leva o Flynn do refeitório para o ginásio
+ * (`escolaAtletica.ts`).
+ */
+export function moduloDoisComecou(g: GameAPI): boolean {
+  const p = g.progressoDaApostila();
+  if (MODULO_2.licoes.some((l) => p.abertas.includes(l.id) || concluida(p, l.id))) return true;
+  const vez = emAula(g) ? aulaDaVez(g) : null;
+  return !!vez && MODULO_2.licoes.some((l) => l.id === vez.id);
 }
 
 /** a aula está chamada e ainda tem lição para dar */

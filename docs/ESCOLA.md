@@ -33,7 +33,9 @@ lições (`minigames/aula/`, `ui/apostila.ts`, `scenes/escolaAula.ts`; como
 escrever lição nova: a skill `aristory-apostila`). Terminar o módulo leva à
 **festa da torcida** no ginásio, com a roupa de cheerleader de prêmio (§7),
 e abre o **Módulo 2**, "Indo mais longe" — lições 7 a 12 (§6.5). No
-refeitório mora o **Flynn**, a raposa presidente da atlética (§16).
+refeitório mora o **Flynn**, a raposa presidente da atlética (§16) — e,
+quando o Módulo 2 começa, ele muda para o ginásio e treina no meio da
+quadra, e as coelhinhas vão para a lateral.
 As etiquetas (§5) e a formatura (§7) ainda não existem. Para testar sem jogar a missão,
 `?cena=escola` continua valendo.
 
@@ -1002,3 +1004,22 @@ descreveu — as dele entram literais.
 Ele anda pelo corredor do meio do refeitório, entre as duas colunas de mesas,
 e é sólido para a dupla (um colisor que anda com ele). Teste:
 `scripts/flynn.mjs`.
+
+**No ginásio, do Módulo 2 em diante** (pedido do Renan: "ele fica na cantina
+até nós terminarmos o primeiro módulo… logo quando começamos o segundo, ele
+fica dentro do ginásio"). A regra é `flynnNoGinasio` (`escolaAtletica.ts`):
+a lição 7 já chamada, aberta ou feita — e a festa da torcida já passou, que
+é dela o meio da quadra. A partir daí o refeitório fica sem ele, e ele
+**treina no meio da quadra**: corre até uma ponta, dobra na cintura, pega a
+bola que espera no chão, sobe com ela no peito, pula e arremessa no alto do
+pulo (sempre entra — é o presidente); vira de costas e atravessa a quadra
+inteira até a outra cesta, e volta. Corre a 6,2 (a dupla anda a 4,4), "para
+mostrar que é o presidente por um bom motivo". São **duas bolas**, uma por
+ponta: a arremessada cai pela rede, quica e rola de volta para o lugar de
+onde ele a pegou. A raia dele fica 1,6 à frente da linha das cestas (as marcas
+do lance livre são da dupla, e atrás dela a tabela da direita o tapava); se a dupla para na frente, ele espera, e se
+ela não sai, vira e vai para a outra cesta. Na conversa ele termina o
+arremesso, para, e na primeira vez conta do treino; depois volta de onde
+parou. **As coelhinhas** cedem o meio da quadra e ensaiam na **lateral**,
+fora da quadra, na faixa da frente (em fila no `x`, de frente para a
+câmera). Teste: `scripts/treino.mjs`.

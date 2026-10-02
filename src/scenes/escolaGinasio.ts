@@ -16,6 +16,7 @@ import {
 } from './escolaComum';
 import type { Irma } from '../minigames/aula/apostila';
 import type { WorldBuilder } from '../world/WorldBuilder';
+import { flynnNoGinasio, montarOTreinoDoFlynn } from './escolaAtletica';
 import {
   NOME_DA_IRMA, aulaDaVez, chamarAula, emAula, irmasNoGinasioAgora, moduloUmConcluido, novaIrma, podeChamarAula,
 } from './escolaAula';
@@ -196,6 +197,14 @@ export const escolaGinasio: SceneDef = {
     // ======================================================= AS IRMÃS TREINANDO
     montarAsIrmas(w);
 
+    // ================================================ O FLYNN, NO MEIO DA QUADRA
+    // Do Módulo 2 em diante (`flynnNoGinasio`). A raia dele fica 1,6 À FRENTE
+    // da linha das cestas (do lado da câmera): as marcas do lance livre, nessa
+    // linha, são da dupla; e atrás dela a tabela da direita o engolia na
+    // ponta (ela tapa o que fica acima e à esquerda dela na tela). Ele para a
+    // 3,3 da linha de fundo, na beira do garrafão.
+    montarOTreinoDoFlynn(w, { aros, aroY: ARO_Y, raiaZ: QUADRA.z + 1.6, pontaX: meiaL - 3.3 });
+
     // ======================================================== O ARREMESSO
     const bola = bolaDeBasquete(0.12);
     bola.visible = false;
@@ -353,6 +362,11 @@ export const escolaGinasio: SceneDef = {
  * na vizinha. De frente para a câmera, longe das linhas de lance livre, que
  * são do arremesso.
  *
+ * DO MÓDULO 2 EM DIANTE o meio da quadra é do FLYNN, treinando (pedido do
+ * Renan), e elas ensaiam na LATERAL: fora da quadra, na faixa da frente
+ * entre a linha lateral e a parede, em fila no `x` — a Sol à esquerda, a Luna
+ * no meio e a Estrella à direita, ainda de frente para a câmera.
+ *
  * O TREINO TEM ACROBACIA: de tempos em tempos a Sol dá o SALTO e a Estrella a
  * ESTRELINHA — uma vez para cada lado, então ela sempre volta ao lugar.
  *
@@ -373,11 +387,19 @@ function montarAsIrmas(w: WorldBuilder): void {
   /** a horizontal da tela (a câmera olha de `+X/+Z`) */
   const DIREITA_DA_TELA = { x: Math.SQRT1_2, z: -Math.SQRT1_2 };
   const ESPACO = 3;
-  const POSTOS: Record<Irma, { x: number; z: number }> = {
-    luna: TREINO,
-    sol: { x: TREINO.x - DIREITA_DA_TELA.x * ESPACO, z: TREINO.z - DIREITA_DA_TELA.z * ESPACO },
-    estrella: { x: TREINO.x + DIREITA_DA_TELA.x * ESPACO, z: TREINO.z + DIREITA_DA_TELA.z * ESPACO },
-  };
+  /** na lateral (com o Flynn no meio): 1,4 para fora da linha da frente, e 3,4 entre uma e outra */
+  const LATERAL = { x: QUADRA.x - 1, z: QUADRA.z + QUADRA.fundo / 2 + 1.4 };
+  const POSTOS: Record<Irma, { x: number; z: number }> = flynnNoGinasio(g0)
+    ? {
+      luna: LATERAL,
+      sol: { x: LATERAL.x - 3.4, z: LATERAL.z },
+      estrella: { x: LATERAL.x + 3.4, z: LATERAL.z },
+    }
+    : {
+      luna: TREINO,
+      sol: { x: TREINO.x - DIREITA_DA_TELA.x * ESPACO, z: TREINO.z - DIREITA_DA_TELA.z * ESPACO },
+      estrella: { x: TREINO.x + DIREITA_DA_TELA.x * ESPACO, z: TREINO.z + DIREITA_DA_TELA.z * ESPACO },
+    };
   const PARA_A_CAMERA = { x: 10, z: 10 };
   const L = NOME_DA_IRMA.luna;
   const S = NOME_DA_IRMA.sol;
