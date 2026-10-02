@@ -281,7 +281,28 @@ dupla. E o rabo de raposa é a cadeia de gomos de sempre, com o primeiro
 apontando para trás e para baixo e os outros dobrando para cima: um "J"
 deitado, gordo no meio e com a ponta branca.
 
-## Acrobacia: gire pelo QUADRIL, não pela origem
+## Bicho que treina com uma bola (o Flynn no ginásio)
+
+O treino do Flynn (`montarOTreinoDoFlynn`, `scenes/escolaAtletica.ts`) é o
+molde de um bicho que mexe num objeto da cena:
+
+- **dobrar na cintura, não na origem.** O tronco gira em volta do quadril
+  (`corpo.rotation.x = dobra`, o corpo recuado `h·sen` e erguido
+  `h·(1−cos)`), e as pernas giram o mesmo ângulo ao contrário — ficam em pé,
+  e os pés não saem do chão. Os ângulos dos braços na pegada são do MUNDO
+  (`alvo − dobra`): é o que leva a pata até o chão com o tronco dobrado;
+- **a bola é da cena; o bicho dá a MÃO e o RELÓGIO.** `maoDaBola` é um
+  `Object3D` no meio das duas patas, refeito a cada quadro pela pose real
+  dos braços (`braco.matrix`); `tempoNoArremesso` e as marcas `ARREMESSO`
+  (`PEGA`, `SOLTA`) dizem quando prender (`maoDaBola.attach(bola)`) e
+  soltar (`raiz.attach(bola)`). `attach`, e não `add`: ele guarda a
+  posição e a escala do mundo — o corpo do Flynn tem escala 1,35;
+- **corrida é cadência num relógio próprio** (`passada`), não `fase × 10`:
+  mudar a frequência de um seno de relógio fixo faz a perna pular;
+- **o treino anda por `seguir`, não por `irPara`**: parar no meio (a dupla
+  na frente, a conversa) com `irPara` deixaria uma promessa sem resolver.
+
+
 
 O `group` do bicho tem a origem nos pés. Girar a estrelinha nele faz o corpo
 varrer o chão como um ponteiro. A estrelinha da Estrella gira o `corpo` em
