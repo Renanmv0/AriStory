@@ -93,6 +93,20 @@ export const PALETTE = {
   folhaEspadaClara: 0x6aa35a,
   folhaEspadaBorda: 0xc9cf6a,
   terraDeVaso: 0x5a4030,
+  // a sala e a cozinha do Ari: a TV grafite, a cuba e a torneira de inox, o
+  // vidro do fogão, os ímãs da geladeira, o creme do vaso grande e a roupa
+  // rodando na máquina
+  tvCorpo: 0x23262d,
+  tvTelaApagada: 0x2a2f3a,
+  inox: 0xd5dbe0,
+  inoxEscuro: 0x9aa4ad,
+  fogaoVidro: 0x2b2d33,
+  fogaoBoca: 0x55585f,
+  imaRosa: 0xff9fbf,
+  imaAzul: 0x8fc9ff,
+  imaAmarelo: 0xffe07a,
+  vasoCreme: 0xf1e6d6,
+  detergente: 0x9be0a8,
   pcPostit: 0xffe27a,
   luzDeJanela: 0xfff1d6,
   sofa: 0x6d8fd6,

@@ -172,6 +172,24 @@ do quarto conta com o topo do edredom perto de 0,68.
 `SO=armario,estante node scripts/zfighting.mjs` caça faces coplanares só
 nessas peças (a lista inteira passa de cinco minutos).
 
+## Os móveis da casa do Ari (`world/moveisDaCasa.ts`)
+
+A sala e a cozinha têm peças PRÓPRIAS (`rackComTv`, `pia`, `armarioAereo`,
+`geladeira`, `mesaDeJantar`, `cadeiraDeJantar`, `sofaFofo`, `mesinhaDeCentro`,
+`abajurDePe`, `maquinaDeLavar`, `prateleiraDeParede`, `jiboiaEmVaso`), e não as
+do `furniture.ts` reescritas: a escola e o Mania usam as antigas. O tamanho
+por fora é o das antigas, para colisor e interação não mudarem. O que deixa
+fofo: quina arredondada em tudo (`macia()`), pé palito, puxador, e um sinal de
+gente morando (ímãs na geladeira, chaleira no fogão, almofada torta).
+
+- A TV tem a malha `tela`, e `telaDeTvLigada()` é o show desenhado em canvas.
+- A máquina tem o grupo `tambor`, que a cena gira enquanto lava.
+- A jiboia é um `InstancedMesh` de folhas de coração (`ShapeGeometry`
+  dobrada): as de dentro sobem quase em pé, as de fora abrem, e um terço cai
+  pela borda. Folha nascida na borda do vaso vira roseta rente à terra.
+- `acabar()` agora decide o UV por triângulo em peça curva (tudo que não é
+  `BoxGeometry`), então dá veio e tecido nas peças de quina macia também.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
