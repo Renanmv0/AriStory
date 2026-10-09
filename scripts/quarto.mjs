@@ -291,6 +291,9 @@ await page.waitForTimeout(900);
 const promptEstante = await promptAgora();
 const falas = [];
 await page.keyboard.press('KeyE');
+// a fala não aparece no mesmo quadro do E: sem esperar, o laço achava "sem
+// diálogo" e saía antes da primeira linha (e a conversa ficava aberta)
+await page.waitForSelector('.dialogue.show', { timeout: 3000 }).catch(() => {});
 for (let i = 0; i < 24; i++) {
   if (!(await page.locator('.dialogue.show').count())) break;
   // espera a máquina de escrever terminar antes de ler, senão sai meia frase

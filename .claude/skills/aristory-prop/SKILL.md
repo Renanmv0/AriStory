@@ -135,6 +135,23 @@ As regras que valeram ali, e que valem para a próxima:
   carta que não muda nada e impossível notar isso olhando uma foto só. Ver
   `scripts/regador.mjs`.
 
+## Pano que dobra (edredom) e tapete com franja
+
+Tecido não é caixa sobre caixa. O `edredom()` (`furniture.ts`) é uma folha
+plana medida em metros que é DOBRADA em volta do colchão: o que passa da
+largura faz um quarto de volta na quina e cai reto, e o UV é o comprimento do
+pano — o matelassê segue a dobra sem esticar. Nas quinas do pé a dobra maior
+manda e a menor só puxa um pouco (somadas inteiras, a ponta furava o chão).
+
+O `tapete()` é uma forma de canto arredondado extrudada, com o desenho inteiro
+pintado em canvas na proporção dele (borda e losango só existem uma vez,
+então nada de azulejo), e a franja é um `InstancedMesh`: ~100 fiozinhos numa
+malha só, cada um com giro e comprimento sorteados. O `rug()` antigo continua
+para quem só quer mancha de cor.
+
+A cama (`bed()`) manteve as alturas da antiga de propósito: a cena de deitar
+do quarto conta com o topo do edredom perto de 0,68.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

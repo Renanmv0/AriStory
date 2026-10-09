@@ -263,3 +263,51 @@ export function brilhoDeLuz(color: number, forca = 0.8): THREE.SpriteMaterial {
   brilhos.set(key, mat);
   return mat;
 }
+
+/**
+ * A CLARIDADE DA JANELA: a mancha de luz do dia que a janela joga no chão (e,
+ * bem mais fraca, o feixe que desce até ela). Mesma família da `luzNoChao` —
+ * cor SOMADA ao que está embaixo, sem luz de verdade no motor —, só que com o
+ * desenho de um RETÂNGULO de borda macia, que é a forma de uma janela. O
+ * degradê das bordas é o que separa "claridade" de "tinta amarela no chão".
+ */
+let texturaDeJanela: THREE.CanvasTexture | null = null;
+function retanguloMacio(): THREE.CanvasTexture {
+  if (texturaDeJanela) return texturaDeJanela;
+  const lado = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = lado;
+  canvas.height = lado;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const img = ctx.createImageData(lado, lado);
+    for (let y = 0; y < lado; y++) {
+      for (let x = 0; x < lado; x++) {
+        // distância até a borda mais perto, de 0 (borda) a 1 (a 22% para dentro)
+        const d = Math.min(x, y, lado - 1 - x, lado - 1 - y) / (lado * 0.22);
+        const t = Math.min(1, d);
+        const v = t * t * (3 - 2 * t);
+        const i = (y * lado + x) * 4;
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
+        img.data[i + 3] = Math.round(v * 255);
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+  texturaDeJanela = new THREE.CanvasTexture(canvas);
+  return texturaDeJanela;
+}
+
+const claridades = new Map<string, THREE.MeshBasicMaterial>();
+export function claridade(color: number, forca = 0.3): THREE.MeshBasicMaterial {
+  const key = `${color}|${forca}`;
+  const hit = claridades.get(key);
+  if (hit) return hit;
+  const mat = new THREE.MeshBasicMaterial({
+    color, map: retanguloMacio(), transparent: true, opacity: forca,
+    blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+  });
+  aplicarDecal(mat);
+  claridades.set(key, mat);
+  return mat;
+}

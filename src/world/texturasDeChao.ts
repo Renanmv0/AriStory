@@ -35,7 +35,7 @@ const cache = new Map<string, THREE.CanvasTexture>();
  * teria chão diferente a cada partida — e depurar "a mancha está no lugar
  * errado" viraria impossível.
  */
-function sorteio(semente: number): () => number {
+export function sorteio(semente: number): () => number {
   let s = semente >>> 0;
   return () => {
     s = (s * 1664525 + 1013904223) >>> 0;
@@ -43,7 +43,7 @@ function sorteio(semente: number): () => number {
   };
 }
 
-function novaTextura(chave: string, lado: number, pintar: (ctx: CanvasRenderingContext2D, s: number) => void): THREE.CanvasTexture {
+export function novaTextura(chave: string, lado: number, pintar: (ctx: CanvasRenderingContext2D, s: number) => void): THREE.CanvasTexture {
   const pronta = cache.get(chave);
   if (pronta) return pronta;
 

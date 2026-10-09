@@ -1,6 +1,9 @@
 import * as THREE from 'three';
-import { toon, flat } from '../core/materials';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { brilhoDeLuz, claridade, toon, flat, luzNoChao } from '../core/materials';
 import { PALETTE as P } from '../palette';
+import { uvEmMetros, uvEmMetrosPorTriangulo } from './acabamento';
+import { desenhoDeTapete, matelasse, veioDeMadeira, type EstiloDeTapete } from './texturasDeCasa';
 
 /**
  * Kit de interiores. Mesma convencao dos props: Group com base em y=0.
@@ -11,6 +14,155 @@ export function rug(width = 3, depth = 2.2, color: number = P.rug): THREE.Mesh {
   m.position.y = 0.02;
   m.receiveShadow = true;
   return m;
+}
+
+/**
+ * O TAPETE DE VERDADE: canto arredondado, um dedo de espessura, o desenho
+ * inteiro pintado em canvas (`desenhoDeTapete`) e, no felpudo, a FRANJA de
+ * algodão nas duas pontas curtas.
+ *
+ * O `rug()` de cima continua existindo para quem só quer uma mancha de cor no
+ * chão (a escola, o Mania); este é o tapete de casa.
+ *
+ * A franja é um `InstancedMesh`: sessenta fiozinhos por ponta são UMA malha
+ * só, e cada um sai com um giro e um comprimento sorteados — fio alinhado
+ * como pente parece régua.
+ */
+export function tapete(
+  largura = 2.6, profundidade = 2.0, cor: number = P.rug, estilo: EstiloDeTapete = 'felpudo',
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'tapete';
+  const alto = estilo === 'felpudo' ? 0.035 : 0.025;
+  const r = Math.min(largura, profundidade) * 0.04;
+  const forma = new THREE.Shape();
+  const hx = largura / 2;
+  const hz = profundidade / 2;
+  forma.moveTo(-hx + r, -hz);
+  forma.lineTo(hx - r, -hz);
+  forma.quadraticCurveTo(hx, -hz, hx, -hz + r);
+  forma.lineTo(hx, hz - r);
+  forma.quadraticCurveTo(hx, hz, hx - r, hz);
+  forma.lineTo(-hx + r, hz);
+  forma.quadraticCurveTo(-hx, hz, -hx, hz - r);
+  forma.lineTo(-hx, -hz + r);
+  forma.quadraticCurveTo(-hx, -hz, -hx + r, -hz);
+  const geo = new THREE.ExtrudeGeometry(forma, { depth: alto, bevelEnabled: false, curveSegments: 4 });
+  // o UV cobre o tapete inteiro de 0 a 1: o desenho tem borda e não se repete
+  const pos = geo.getAttribute('position');
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    uv[i * 2] = pos.getX(i) / largura + 0.5;
+    uv[i * 2 + 1] = pos.getY(i) / profundidade + 0.5;
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  const corpo = new THREE.Mesh(geo, toon(cor, { mapa: desenhoDeTapete(largura, profundidade, estilo) }));
+  // deitado: a forma nasce em XY e é extrudada em +Z; girada, o +Y dela vira -Z
+  // e a espessura sobe a partir do chão
+  corpo.rotation.x = -Math.PI / 2;
+  g.add(corpo);
+
+  if (estilo === 'felpudo') {
+    // a franja vai nas pontas CURTAS (as que ficam no eixo mais comprido)
+    const noX = largura >= profundidade;
+    const lado = noX ? profundidade : largura;
+    const passo = 0.034;
+    const porPonta = Math.floor((lado - 2 * r) / passo);
+    const fio = new THREE.BoxGeometry(0.014, 0.008, 0.075);
+    fio.translate(0, 0.004, 0.0375);
+    const franja = new THREE.InstancedMesh(fio, toon(P.franjaDeTapete), porPonta * 2);
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const escala = new THREE.Vector3();
+    let n = 0;
+    let semente = 17;
+    const rnd = (): number => {
+      semente = (semente * 16807) % 2147483647;
+      return semente / 2147483647;
+    };
+    for (const ponta of [-1, 1] as const) {
+      for (let k = 0; k < porPonta; k++) {
+        const ao = -lado / 2 + r + passo * (k + 0.5);
+        const giro = (rnd() - 0.5) * 0.5;
+        // o fio sai para fora da ponta: +X (ou -X) no tapete largo
+        const angulo = noX ? (ponta > 0 ? Math.PI / 2 : -Math.PI / 2) + giro : (ponta > 0 ? 0 : Math.PI) + giro;
+        q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), angulo);
+        escala.set(1, 1, 0.75 + rnd() * 0.5);
+        const x = noX ? ponta * (hx - 0.01) : ao;
+        const z = noX ? ao : ponta * (hz - 0.01);
+        m.compose(new THREE.Vector3(x, 0, z), q, escala);
+        franja.setMatrixAt(n++, m);
+      }
+    }
+    franja.instanceMatrix.needsUpdate = true;
+    g.add(franja);
+  }
+  return g;
+}
+
+/**
+ * A POÇA DE LUZ de uma lâmpada: o degradê redondo da `luzNoChao`, somado ao
+ * que está embaixo. Deitada (no chão, embaixo do abajur de pé) ou EM PÉ (o
+ * leque de luz que o abajur da cabeceira joga na parede atrás dele, olhando
+ * para +Z).
+ */
+export function pocaDeLuz(raio: number, cor: number = P.luzDeAbajur, forca = 0.45, emPe = false): THREE.Mesh {
+  const poca = new THREE.Mesh(new THREE.PlaneGeometry(raio * 2, raio * 2), luzNoChao(cor, forca));
+  if (!emPe) poca.rotation.x = -Math.PI / 2;
+  poca.renderOrder = 2;
+  poca.userData.semSombra = true;
+  return poca;
+}
+
+/** O HALO macio em volta de uma cúpula acesa, sempre de frente para a câmera. */
+export function haloDeLampada(tamanho: number, cor: number = P.luzDeAbajur, forca = 0.6): THREE.Sprite {
+  const halo = new THREE.Sprite(brilhoDeLuz(cor, forca));
+  halo.scale.set(tamanho, tamanho, 1);
+  halo.renderOrder = 3;
+  return halo;
+}
+
+/**
+ * A CLARIDADE DA JANELA: o retângulo de luz do dia que a janela joga no chão,
+ * e o feixe bem fraco que desce até ele.
+ *
+ * Origem no pé da parede, embaixo do meio da janela; +Z é para dentro do
+ * cômodo (pendure com `w.place(…, rot)` do mesmo jeito que a janela). A luz
+ * entra descendo num ângulo `inclinacao` (rad, a partir do chão): o canto de
+ * cima da janela cai mais longe da parede, o de baixo mais perto, e a mancha
+ * é a sombra da janela ao contrário.
+ *
+ * Não é sol de verdade, e nem quer ser: o sol do cenário vem do outro lado.
+ * É claridade — fraca, de borda macia, a cor de luz do dia —, e por isso não
+ * briga com as sombras dos móveis.
+ */
+export function claridadeDaJanela(
+  largura: number, altura: number, centro: number, inclinacao = 0.95, forca = 0.22,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'claridade';
+  const t = Math.tan(inclinacao);
+  const perto = (centro - altura / 2) / t;
+  const longe = (centro + altura / 2) / t;
+  const mancha = new THREE.Mesh(new THREE.PlaneGeometry(largura, longe - perto), claridade(P.luzDeJanela, forca));
+  mancha.rotation.x = -Math.PI / 2;
+  mancha.position.set(0, 0.004, (perto + longe) / 2);
+  mancha.renderOrder = 2;
+  mancha.userData.semSombra = true;
+  g.add(mancha);
+
+  // o feixe: dois planos (o de cima e o de baixo do volume de luz), bem fracos
+  for (const [y0, z1] of [[centro + altura / 2, longe], [centro - altura / 2, perto]] as const) {
+    const comp = Math.hypot(y0, z1);
+    const feixe = new THREE.Mesh(new THREE.PlaneGeometry(largura, comp), claridade(P.luzDeJanela, forca * 0.28));
+    feixe.position.set(0, y0 / 2, z1 / 2);
+    // o plano nasce em pé (XY); deitar até ligar o vão da janela ao chão
+    feixe.rotation.x = -Math.atan2(z1, y0);
+    feixe.renderOrder = 3;
+    feixe.userData.semSombra = true;
+    g.add(feixe);
+  }
+  return g;
 }
 
 export function sofa(color: number = P.sofa, width = 2.2): THREE.Group {
@@ -166,24 +318,146 @@ export function bookshelf(height = 2.1, width = 1.2, cor: number = P.woodDark): 
   return g;
 }
 
+/**
+ * A CAMA (a do quarto do Ari): estrado e cabeceira de madeira com veio,
+ * colchão de canto arredondado, o edredom de matelassê caindo pelas beiradas,
+ * o lençol dobrado por cima dele e dois travesseiros.
+ *
+ * Lençol e fronha ficam LISOS, de propósito: são o descanso do olho ao lado
+ * do matelassê, e a mescla de tecido no branco virava mancha cinzenta.
+ *
+ * AS ALTURAS SÃO AS DA CAMA ANTIGA, e não por acaso: a cena de deitar
+ * (`scenes/quarto.ts`) põe a âncora dos dois em cima do colchão contando com
+ * o topo do edredom perto de 0,68. Mexer aqui é mexer lá.
+ *
+ * O EDREDOM NÃO É CAIXA. Caixa sobre caixa era o que fazia a cama parecer um
+ * bloco: tecido de verdade dobra na quina do colchão e cai. Aqui ele é uma
+ * folha (`edredom()`, abaixo) dobrada em volta do colchão, com a beirada
+ * caindo nos lados e no pé — e o UV dela é o comprimento do pano em metros,
+ * então os losangos do matelassê seguem a dobra sem esticar.
+ */
 export function bed(color: number = P.fabricBlue): THREE.Group {
   const g = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 2.1), toon(P.woodDark));
+  g.userData.peca = 'cama';
+  const veio = veioDeMadeira();
+  const madeira = (cor: number): THREE.Material => toon(cor, { mapa: veio });
+
+  const base = new THREE.Mesh(new BoxGeometryMetro(1.5, 0.35, 2.1), madeira(P.woodDark));
   base.position.y = 0.2;
   g.add(base);
-  const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.24, 2.0), toon(0xf6f2e8));
+
+  const mattress = new THREE.Mesh(panoArredondado(1.44, 0.24, 2.0, 0.05), toon(P.lencol));
   mattress.position.y = 0.49;
   g.add(mattress);
-  const duvet = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.14, 1.35), toon(color));
-  duvet.position.set(0, 0.62, 0.3);
+
+  const duvet = new THREE.Mesh(
+    edredom({ largura: 1.44, comprimento: 1.375, topo: 0.665, raio: 0.07, cai: 0.4 }),
+    toon(color, { mapa: matelasse(), doubleSide: true }),
+  );
+  duvet.position.z = -0.375;
+  duvet.name = 'edredom';
   g.add(duvet);
-  const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.16, 0.4), toon(0xffffff));
-  pillow.position.set(0, 0.66, -0.72);
-  g.add(pillow);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.7, 0.12), toon(P.wood));
+
+  // o lençol dobrado por cima da beirada de cima do edredom
+  const dobra = new THREE.Mesh(panoArredondado(1.5, 0.06, 0.24, 0.028), toon(P.lencol));
+  dobra.position.set(0, 0.675, -0.3);
+  g.add(dobra);
+
+  // dois travesseiros, um de cada lado, encostados na cabeceira
+  for (const lado of [-1, 1] as const) {
+    const travesseiro = new THREE.Mesh(
+      panoArredondado(0.62, 0.15, 0.38, 0.07),
+      toon(P.fronha),
+    );
+    travesseiro.position.set(lado * 0.36, 0.69, -0.76);
+    travesseiro.rotation.set(-0.16, lado * 0.04, 0);
+    g.add(travesseiro);
+  }
+
+  const head = new THREE.Mesh(new BoxGeometryMetro(1.55, 0.7, 0.12), madeira(P.wood));
   head.position.set(0, 0.6, -1.06);
   g.add(head);
+  // o friso de cima da cabeceira: uma régua mais escura, um dedo mais larga
+  const friso = new THREE.Mesh(new BoxGeometryMetro(1.61, 0.06, 0.16), madeira(P.woodDark));
+  friso.position.set(0, 0.97, -1.06);
+  g.add(friso);
+
   return g;
+}
+
+/**
+ * Caixa de canto arredondado (colchão, travesseiro, lençol) com o UV em
+ * metros, decidido por triângulo (ver `uvEmMetrosPorTriangulo`): o UV de
+ * fábrica do `RoundedBoxGeometry` é de 0 a 1 por face, e qualquer textura
+ * posta nele esticaria diferente em cada pedaço da quina.
+ */
+function panoArredondado(l: number, a: number, p: number, raio: number): THREE.BufferGeometry {
+  return uvEmMetrosPorTriangulo(new RoundedBoxGeometry(l, a, p, 3, raio));
+}
+
+/** `BoxGeometry` que já nasce com o UV em metros (ver `uvEmMetros`). */
+class BoxGeometryMetro extends THREE.BoxGeometry {
+  constructor(l: number, a: number, p: number) {
+    super(l, a, p);
+    uvEmMetros(this);
+  }
+}
+
+/**
+ * A folha do edredom, dobrada em volta de um colchão.
+ *
+ * Nasce como um pano plano, medido em metros: `u` atravessa a largura (com a
+ * sobra das duas beiradas) e `v` vai da cabeceira ao pé (com a sobra do pé).
+ * Cada ponto do pano é então "dobrado": o que passa da largura do colchão faz
+ * um quarto de volta de raio `raio` na quina e desce reto; o mesmo no pé. Nas
+ * duas quinas do pé a ponta desce um pouco mais que as beiradas — que é como
+ * a ponta de um edredom cai de verdade —, mas sem chegar ao chão.
+ *
+ * O meio estufa de leve (um dedo mais alto no centro que na beirada), senão a
+ * folha sai lisa como tampo de mesa.
+ *
+ * Origem: o meio da beirada de CIMA do edredom, no chão; o pano anda para +Z.
+ */
+export function edredom(opts: {
+  largura: number; comprimento: number; topo: number; raio: number; cai: number;
+}): THREE.BufferGeometry {
+  const { largura, comprimento, topo, raio, cai } = opts;
+  const arco = (Math.PI / 2) * raio;
+  const totalU = largura + cai * 2;
+  const totalV = comprimento + cai;
+  const geo = new THREE.PlaneGeometry(totalU, totalV, 48, 44);
+  const pos = geo.getAttribute('position');
+  const uv = new Float32Array(pos.count * 2);
+  /** a dobra de uma ponta: quanto anda para fora e quanto desce */
+  const dobrar = (s: number): [number, number] => {
+    if (s <= 0) return [s, 0];
+    if (s < arco) {
+      const t = s / raio;
+      return [raio * Math.sin(t), raio * (1 - Math.cos(t))];
+    }
+    return [raio, raio + (s - arco)];
+  };
+  for (let i = 0; i < pos.count; i++) {
+    // o PlaneGeometry nasce em XY: x é o `u`, e o `y` (de cima para baixo) vira o `v`
+    const u = pos.getX(i);
+    const v = totalV / 2 - pos.getY(i);
+    const [fx, dx] = dobrar(Math.abs(u) - largura / 2);
+    const [fz, dz] = dobrar(v - comprimento);
+    const x = Math.sign(u) * (largura / 2 + fx);
+    const z = comprimento + fz;
+    const dentroX = Math.max(0, 1 - Math.abs(u) / (largura / 2));
+    const dentroZ = Math.min(1, v / 0.25) * Math.max(0, Math.min(1, (comprimento - v) / 0.3));
+    const estufa = 0.03 * Math.sin((dentroX * Math.PI) / 2) * dentroZ;
+    // nas quinas do pé as duas dobras se encontram: a maior manda, e a menor
+    // só puxa um pouco mais (somadas inteiras, a ponta furava o chão)
+    const desce = Math.max(dx, dz) + 0.3 * Math.min(dx, dz);
+    pos.setXYZ(i, x, topo - desce + estufa, z);
+    uv[i * 2] = u;
+    uv[i * 2 + 1] = v;
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  geo.computeVertexNormals();
+  return geo;
 }
 
 export function desk(): THREE.Group {
@@ -454,9 +728,10 @@ export function floorLamp(lit = true): THREE.Group {
   g.add(pole);
   const shade = new THREE.Mesh(
     new THREE.CylinderGeometry(0.22, 0.3, 0.34, 14, 1, true),
-    toon(lit ? 0xfff0cc : 0xe6ded0, { glow: lit ? 0.5 : 0, doubleSide: true }),
+    toon(lit ? P.cupula : P.cupulaApagada, { glow: lit ? 0.5 : 0, doubleSide: true }),
   );
   shade.position.y = 1.68;
+  shade.name = 'cupula';
   g.add(shade);
   return g;
 }
@@ -674,9 +949,10 @@ export function nightstand(): THREE.Group {
   g.add(base);
   const cupula = new THREE.Mesh(
     new THREE.CylinderGeometry(0.11, 0.15, 0.18, 12, 1, true),
-    toon(0xfff0cc, { glow: 0.45, doubleSide: true }),
+    toon(P.cupula, { glow: 0.45, doubleSide: true }),
   );
   cupula.position.y = 0.75;
+  cupula.name = 'cupula';
   g.add(cupula);
   return g;
 }

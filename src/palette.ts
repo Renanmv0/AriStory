@@ -62,6 +62,19 @@ export const PALETTE = {
   pelusaOrelha: 0xdba9a8,
   floorWood: 0xc9975c,
   rug: 0xd98fa6,
+  // a roupa de cama do quarto do Ari: o lencol cru que dobra por cima do
+  // edredom, a fronha e a franja de algodao do tapete
+  lencol: 0xf6f2e8,
+  fronha: 0xfbf8f2,
+  franjaDeTapete: 0xf3e6d6,
+  // o capacho de fibra da porta da rua
+  capacho: 0xc0a882,
+  // a luz morna do abajur e a claridade que entra pela janela (so luz somada,
+  // nunca superficie: ver `luzNoChao` e `claridade` em core/materials.ts)
+  luzDeAbajur: 0xffc98a,
+  cupula: 0xfff0cc,
+  cupulaApagada: 0xe6ded0,
+  luzDeJanela: 0xfff1d6,
   sofa: 0x6d8fd6,
   screen: 0x2a2f3a,
   plantPot: 0xd08a5f,
