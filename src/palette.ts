@@ -1395,6 +1395,48 @@ export const PALETTE = {
   lancheSalgadinho: 0x4677c9,
   lancheSalgadinhoFaixa: 0xf2c14a,
 
+  // O LABORATÓRIO — o mundo dentro do computador do Ari. Um chão de tela
+  // desligada, azul-marinho, e o NEON por cima: é a única parte do jogo com
+  // cor acima de 1 (ver `neon()` em `core/shaders.ts`), que o brilho da tela
+  // faz vazar
+  labCeu: 0x0b1030,
+  // a luz da noite do laboratório: o céu azulado e o luar
+  labLuzAmbiente: 0x7d8de0,
+  labLuar: 0xc4ceff,
+  labChao: 0x1b2347,
+  labChaoBorda: 0x10173a,
+  labPedestal: 0x2a3566,
+  labPedestalClaro: 0x3c4b88,
+  labMetal: 0x8d9bc7,
+  labBranco: 0xe9eefc,
+  labCiano: 0x3fe0ff,
+  labRosa: 0xff5fb3,
+  labAmarelo: 0xffd84f,
+  labVerde: 0x52f2a0,
+  labRoxo: 0xa77bff,
+  labLaranja: 0xff9a4d,
+  labVermelho: 0xff5a5a,
+  labAzul: 0x4f7bff,
+  // a grama de vento: verde de tela, mais escura na raiz
+  labGrama: 0x45d68a,
+  labGramaRaiz: 0x1f7d55,
+  // o lago de pixels
+  labAguaFundo: 0x0c3f74,
+  labAguaRaso: 0x1c9bd6,
+  labAguaBrilho: 0xc9f7ff,
+  labHolograma: 0x6ff5ff,
+  // o sistema solar: o sol, o planeta Ari (cobre, como o cabelo), o planeta
+  // Renan (escuro, como o moletom) e a lua Pelusa (branca e cinza)
+  labSol: 0xffc24a,
+  labPlanetaAri: 0xc8743f,
+  labPlanetaRenan: 0x3d3a52,
+  labLuaPelusa: 0xdfe3ea,
+  // o robozinho e a cobrinha da estação de animação
+  labRobo: 0xdfe6f5,
+  labRoboTela: 0x101a36,
+  labCobra: 0x63d672,
+  labCobraBarriga: 0xf1e28c,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,
