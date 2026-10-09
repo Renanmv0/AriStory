@@ -34,6 +34,9 @@ import type {
   EstadoDoPosicionador, FimDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
 import { Oclusao, type VigiaDaOclusao } from './Oclusao';
+import { PosProcessamento, type EfeitosDeTela } from './posProcessamento';
+import { Apontador } from './Apontador';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
 import { retratoDePraga } from '../world/retratoDePraga';
@@ -113,6 +116,24 @@ export class Game implements GameAPI {
   private readonly camAim = new THREE.Vector3();
   /** camera de perspectiva do ping pong; só nasce quando alguém pede */
   private camOmbro: THREE.PerspectiveCamera | null = null;
+  /**
+   * O PÓS-PROCESSAMENTO (`core/posProcessamento.ts`): só nasce quando uma cena
+   * pede efeito de tela, e só desenha enquanto estiver `ativo`. Sem ele o
+   * quadro sai pelo `renderer.render()` puro, como sempre saiu.
+   */
+  private pos: PosProcessamento | null = null;
+  /** clicar, passar o mouse e arrastar no mundo (`core/Apontador.ts`) */
+  private readonly apontador: Apontador;
+  /**
+   * A CÂMERA LIVRE do laboratório: perspectiva + `OrbitControls`. Enquanto
+   * existe, é ela que desenha (ganha até da câmera de cutscene).
+   */
+  private drone: { camera: THREE.PerspectiveCamera; controles: OrbitControls } | null = null;
+  /**
+   * De onde o sol vem, em relação a quem a câmera segue. É o `(14, 20, 9)` de
+   * sempre; só o `luzDoCeu({ sunDir })` muda, e a troca de cena devolve.
+   */
+  private readonly dirDoSol = DIR_DO_SOL.clone();
 
   constructor(
     private readonly root: HTMLElement,
@@ -231,6 +252,15 @@ export class Game implements GameAPI {
     this.parceiro.setVisible(dupla.length > 1);
     this.scene.add(this.parceiro.object);
 
+    // o apontador: o Input repassa cada evento de ponteiro, e o clique vira
+    // uma chamada da peça com o próprio jogo como GameAPI
+    this.apontador = new Apontador(
+      this.renderer.domElement,
+      (alvo, ponto) => alvo.def.aoClicar?.(this, ponto),
+      (texto, x, y) => this.ui.mostrarDica(texto, x, y),
+    );
+    this.input.aoApontar = (e) => this.apontador.evento(e);
+
     window.addEventListener('resize', this.onResize);
     this.renderer.domElement.addEventListener('wheel', this.onWheel, { passive: false });
   }
@@ -271,6 +301,13 @@ export class Game implements GameAPI {
       this.scene.remove(this.current.world.root);
       this.current.world.dispose();
     }
+    // nenhum efeito de tela, câmera livre, luz mexida ou clique pela metade
+    // atravessa a troca. ANTES do `def.build()`: é na montagem que a cena nova
+    // pede os efeitos dela (o laboratório liga o brilho ali)
+    this.pos?.configurar(null, this.iso.camera);
+    this.cameraLivre(null);
+    this.dirDoSol.copy(DIR_DO_SOL);
+    this.apontador.soltarTudo();
 
     const world = new WorldBuilder(this);
     world.setSeed(hashSeed(id));
@@ -281,6 +318,17 @@ export class Game implements GameAPI {
     this.applyAmbient(def.ambient);
 
     const spawn = (entry && def.entries?.[entry]) || def.spawn;
+    /*
+     * NENHUMA CARONA ATRAVESSA A TROCA DE CENA. Quem está numa âncora (o
+     * `ridePlayer`) é FILHO dela, e a âncora mora no mundo que acabou de ser
+     * jogado fora — sem voltar para a cena, o corpo some junto. A travessia do
+     * computador do Ari é a primeira cutscene a trocar de cena com os dois
+     * ainda na âncora (encolhidos dentro da tela); o motor devolve os dois aqui.
+     */
+    for (const corpo of [this.player.object, this.parceiro.object]) {
+      if (corpo.parent !== this.scene) this.scene.add(corpo);
+      corpo.scale.setScalar(1);
+    }
     this.player.teleport(spawn.x, spawn.z, spawn.facing ?? 0);
     this.player.locked = false;
     this.player.riding = false;
@@ -578,7 +626,11 @@ export class Game implements GameAPI {
     this.setShadowSpan(span);
     const k = span / 22;
     this.sun.target.position.copy(this.camAim);
-    this.sun.position.set(this.camAim.x + 14 * k, this.camAim.y + 20 * k, this.camAim.z + 9 * k);
+    this.sun.position.set(
+      this.camAim.x + this.dirDoSol.x * k,
+      this.camAim.y + this.dirDoSol.y * k,
+      this.camAim.z + this.dirDoSol.z * k,
+    );
 
     // o que tapa quem importa fica translúcido (só com alguém vigiando: a rodada)
     const eu = this.player.position;
@@ -587,7 +639,22 @@ export class Game implements GameAPI {
       { x: eu.x, y: 0.9, z: eu.z }, { x: outro.x, y: 0.9, z: outro.z },
     ]);
 
-    this.renderer.render(this.scene, this.camOmbro ?? this.iso.camera);
+    // a câmera do quadro: o drone ganha da cutscene, que ganha da isométrica
+    if (this.drone) this.drone.controles.update(dt);
+    const camera = this.drone?.camera ?? this.camOmbro ?? this.iso.camera;
+
+    // o mouse e o dedo no mundo: nada de clique com painel, fala, troca de
+    // cena, cutscene ou drone no ar
+    const ocupado =
+      pausado || this.transitioning || this.player.locked || this.drone !== null ||
+      this.ui.dialogueOpen || this.ui.journalOpen || this.ui.mochilaOpen || this.ui.armarioOpen ||
+      this.ui.memoriasOpen || this.ui.cardapioOpen || this.ui.quadroOpen || this.ui.lojaOpen ||
+      this.ui.cartasOpen || this.ui.livroOpen || this.ui.fimOpen || this.ui.lojaJosefinaOpen ||
+      this.ui.apostilaOpen || this.ui.xadrezOpen;
+    this.apontador.atualizar(camera, world.clicaveis, ocupado);
+
+    if (this.pos?.ativo) this.pos.desenhar(camera, dt);
+    else this.renderer.render(this.scene, camera);
 
     // O boneco tem canvas proprio, dentro do painel; so gasta quadro quando o
     // painel esta aberto
@@ -757,15 +824,16 @@ export class Game implements GameAPI {
     this.audio.play(nome);
   }
 
-  goTo(sceneId: string, entry?: string): void {
+  goTo(sceneId: string, entry?: string, veu?: 'digital'): void {
     if (this.transitioning) return;
     this.transitioning = true;
-    this.audio.play('porta');
+    // o clarão digital tem o som dele, que a cena toca; a porta é das portas
+    if (veu !== 'digital') this.audio.play('porta');
     void (async () => {
-      await this.ui.fade(true);
+      await this.ui.fade(true, veu);
       this.build(sceneId, entry);
       this.iso.snapTo(this.player.chest);
-      await this.ui.fade(false);
+      await this.ui.fade(false, veu);
       this.transitioning = false;
     })();
   }
@@ -2119,25 +2187,97 @@ export class Game implements GameAPI {
   private onResize = (): void => {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.iso.resize(window.innerWidth, window.innerHeight);
-    if (this.camOmbro) {
-      this.camOmbro.aspect = window.innerWidth / window.innerHeight;
-      this.camOmbro.updateProjectionMatrix();
+    for (const cam of [this.camOmbro, this.drone?.camera]) {
+      if (!cam) continue;
+      cam.aspect = window.innerWidth / window.innerHeight;
+      cam.updateProjectionMatrix();
     }
+    this.pos?.setSize(window.innerWidth, window.innerHeight);
   };
 
   private onWheel = (e: WheelEvent): void => {
     e.preventDefault();
+    // com o drone no ar, a rodinha é dele (o OrbitControls aproxima)
+    if (this.drone) return;
     this.iso.zoomBy(Math.sign(e.deltaY) * 1.1);
   };
 
+  // ------------------------------------------------- tela, céu e drone
+
+  telaComEfeitos(efeitos: EfeitosDeTela | null): void {
+    if (!efeitos && !this.pos) return;
+    this.pos ??= new PosProcessamento(this.renderer, this.scene);
+    this.pos.configurar(efeitos, this.drone?.camera ?? this.camOmbro ?? this.iso.camera);
+  }
+
+  efeitosDeTela(): { efeitos: EfeitosDeTela | null; passes: readonly string[] } {
+    return { efeitos: this.pos?.efeitos ?? null, passes: this.pos?.passes ?? [] };
+  }
+
+  luzDoCeu(ajuste: Partial<SceneAmbient> | null): void {
+    const base = this.current?.def.ambient;
+    if (!base) return;
+    const a: SceneAmbient = ajuste ? { ...base, ...ajuste } : base;
+    // sem alocar nada: isto pode rodar todo quadro (o ciclo do dia)
+    const fundo = this.scene.background;
+    if (fundo instanceof THREE.Color) fundo.setHex(a.sky);
+    if (this.scene.fog instanceof THREE.Fog && a.fog !== undefined) this.scene.fog.color.setHex(a.fog);
+    this.hemi.color.setHex(a.ambientColor ?? a.sky);
+    this.hemi.intensity = a.ambientIntensity ?? (a.indoor ? 1.35 : 1.0);
+    this.sun.color.setHex(a.sunColor ?? 0xfff2d0);
+    this.sun.intensity = a.sunIntensity ?? (a.indoor ? 0.85 : 1.6);
+    // a direção só vale quando o AJUSTE pede: o `sunDir` das cenas nunca moveu
+    // a sombra (ela sempre veio de 14, 20, 9), e não é aqui que isso muda
+    if (ajuste?.sunDir) this.dirDoSol.set(...ajuste.sunDir).setLength(DIR_DO_SOL.length());
+    else this.dirDoSol.copy(DIR_DO_SOL);
+  }
+
+  cameraLivre(alvo: THREE.Vector3 | null): void {
+    if (!alvo) {
+      if (!this.drone) return;
+      this.drone.controles.dispose();
+      this.drone = null;
+      return;
+    }
+    if (this.drone) {
+      this.drone.controles.target.copy(alvo);
+      return;
+    }
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 400);
+    // nasce do lado de onde a isométrica olha, um pouco mais baixa: a troca
+    // de câmera não vira o mundo de ponta-cabeça
+    const giro = this.iso.angle;
+    camera.position.set(alvo.x + Math.sin(giro) * 15, alvo.y + 10, alvo.z + Math.cos(giro) * 15);
+    const controles = new OrbitControls(camera, this.renderer.domElement);
+    controles.target.copy(alvo);
+    controles.enableDamping = true;
+    controles.dampingFactor = 0.08;
+    controles.minDistance = 4;
+    controles.maxDistance = 42;
+    // nunca por baixo do chão: o laboratório flutua, mas o chão não é de vidro
+    controles.maxPolarAngle = Math.PI * 0.47;
+    controles.enablePan = false;
+    // gira sozinho até a pessoa encostar
+    controles.autoRotate = true;
+    controles.autoRotateSpeed = 0.8;
+    controles.addEventListener('start', () => { controles.autoRotate = false; });
+    controles.update();
+    this.drone = { camera, controles };
+  }
+
   dispose(): void {
     this.renderer.setAnimationLoop(null);
+    this.pos?.dispose();
+    this.cameraLivre(null);
     window.removeEventListener('resize', this.onResize);
     this.input.dispose();
     this.renderer.dispose();
     this.root.replaceChildren();
   }
 }
+
+/** de onde o sol vem, relativo a quem a câmera segue (ver `dirDoSol`) */
+const DIR_DO_SOL = new THREE.Vector3(14, 20, 9);
 
 function hashSeed(text: string): number {
   let h = 2166136261;

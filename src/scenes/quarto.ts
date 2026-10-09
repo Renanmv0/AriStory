@@ -9,6 +9,9 @@ import { toon } from '../core/materials';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
 import { Pelusa } from '../entities/bichos/Pelusa';
+import { telaDoComputador } from '../world/laboratorio/telaDoComputador';
+import { Travessia } from '../world/laboratorio/travessia';
+import { ajustarSombras } from '../world/laboratorio/comum';
 
 /**
  * Quarto do Ari.
@@ -35,6 +38,13 @@ const ARMARIO = { x: 2.65, z: z0 + 0.36 };
 
 /** o quadro de memórias, na parede do fundo */
 const MURAL = { x: -1.15 };
+
+/**
+ * ONDE A DUPLA PÕE O PÉ ao voltar do laboratório: cuspida pela tela do
+ * computador, na frente da escrivaninha. É também o jeito de a cena saber que
+ * eles chegaram pelo computador — ver o primeiro quadro, lá embaixo.
+ */
+const DO_COMPUTADOR = { x: -1.9, z: 1.45 };
 
 /**
  * O que o Ari diz a cada carinho, depois do primeiro.
@@ -77,6 +87,8 @@ export const quarto: SceneDef = {
   spawn: { x: 0.9, z: 1.7, facing: Math.PI },
   entries: {
     'da-sala': { x: 0.9, z: 1.7, facing: Math.PI },
+    // a volta do laboratório: a cena faz os dois saírem da tela (ver o fim do `build`)
+    'do-computador': { x: DO_COMPUTADOR.x, z: DO_COMPUTADOR.z, facing: Math.PI / 2 },
   },
 
   build(w) {
@@ -166,11 +178,30 @@ export const quarto: SceneDef = {
 
     w.add(w.place(windowFrame(1.6, 1.2), x0 + 0.16, 1.7, 1.0, Math.PI / 2));
 
-    // escrivaninha virada para -X: assim o monitor olha para dentro do quarto
-    // e quem senta fica de costas para a parede, não para a câmera
-    const escrivaninha = w.add(w.place(desk(), x0 + 0.5, 0, 2.0, -Math.PI / 2));
+    // A escrivaninha encostada na parede de -X, com o monitor olhando para
+    // DENTRO do quarto (`+PI/2`): a frente da peça vira para `+X`, que é onde
+    // fica a cadeira e quem senta nela. Ela já esteve girada para o outro lado
+    // (`-PI/2`), e aí a tela olhava para a parede e o quarto via só as costas
+    // pretas do monitor — o laboratório, que entra por essa tela, achou isso.
+    const escrivaninha = w.add(w.place(desk(), x0 + 0.5, 0, 2.0, Math.PI / 2));
     w.blockBox(x0 + 0.5, 2.0, 0.4, 0.82);
     w.add(w.place(chair(P.woodDark), x0 + 1.35, 0, 2.0, -Math.PI / 2));
+
+    // A TELA DE VERDADE do computador, 1,5 cm à frente do plano azul do kit:
+    // a área de trabalho com a pasta `AriStory_teste`, que é a porta do
+    // laboratório. Filha da escrivaninha, então gira com ela.
+    const tela = telaDoComputador();
+    tela.grupo.position.set(0, 1.08, -0.125);
+    escrivaninha.add(tela.grupo);
+    ajustarSombras(escrivaninha);
+    w.onUpdate((dt) => tela.tique(dt));
+    w.aoDesmontar(() => tela.descartar());
+    const travessia = new Travessia(w);
+    /** o meio da tela, no mundo: é para lá que os dois são sugados */
+    const meioDaTela = (): THREE.Vector3 => {
+      escrivaninha.updateMatrixWorld(true);
+      return tela.grupo.getWorldPosition(new THREE.Vector3());
+    };
 
     // ------------------------------------------------------------- enfeites
     w.add(w.place(rug(2.6, 2.0, P.rug), 0.3, 0, 1.1));
@@ -416,16 +447,88 @@ export const quarto: SceneDef = {
       },
     });
 
+    /*
+     * O COMPUTADOR: a porta do laboratório (`scenes/laboratorio.ts`), o mundo
+     * de teste dentro dele. A conversa da escrivaninha de sempre continua na
+     * primeira vez, e é ela que leva até a pasta nova.
+     *
+     * A cutscene de entrar, com os dois: eles param em frente à tela, a câmera
+     * passa para trás deles, a pasta abre, a tela vira redemoinho, e os dois
+     * são SUGADOS (a `Travessia`: um clipe de keyframes por âncora). Encolhidos
+     * dentro da tela, a cena troca para o laboratório com o véu digital.
+     */
     w.interact({
       id: 'quarto:mesa',
       x: x0 + 1.5, z: 2.0, radius: 1.5,
-      label: 'Olhar a escrivaninha', icon: '💻',
+      label: 'Usar o computador', icon: '💻',
       highlight: escrivaninha,
-      onInteract: () =>
-        conversa([
-          [A, 'É daqui que eu te mando mensagem de madrugada.'],
-          [R, 'Eu sei. Eu tô acordado do outro lado.'],
-        ]),
+      onInteract: async (g) => {
+        if (!g.flag('lab:pasta-vista')) {
+          await conversa([
+            [A, 'É daqui que eu te mando mensagem de madrugada.'],
+            [R, 'Eu sei. Eu tô acordado do outro lado.'],
+            [R, 'Ué. Que pasta é essa? "AriStory_teste".'],
+            [A, 'Não lembro de ter criado isso.'],
+          ]);
+          g.setFlag('lab:pasta-vista');
+        }
+        const abrir = await g.ask('Abrir a pasta AriStory_teste?', ['Abrir', 'Agora não']);
+        if (abrir !== 0) return;
+
+        // os dois em frente à tela, um de cada lado dela, olhando para ela; a
+        // câmera atrás e acima, no meio dos dois — é o vão entre as duas
+        // cabeças que deixa a tela aparecer (colados, o cabelo do Renan tapava)
+        g.lockPlayer(true);
+        const olharTela = -Math.PI / 2;
+        g.releasePlayer(-2.2, 1.38, olharTela);
+        g.releaseCompanion(-2.2, 2.62, olharTela);
+        g.lockPlayer(true);
+        const alvo = meioDaTela();
+        g.setCameraOmbro(new THREE.Vector3(-0.25, 2.75, 2.05), new THREE.Vector3(-3.6, 1.05, 2.0));
+        tela.mudar('abrindo');
+        g.som('clique');
+        await g.wait(1.7);
+        tela.mudar('redemoinho');
+        g.som('anel');
+        await g.wait(1.0);
+        g.som('arcoIris');
+        await travessia.sugar(g, alvo, 1.7);
+        g.goTo('laboratorio', 'chegada', 'digital');
+      },
+    });
+
+    /*
+     * A VOLTA DO LABORATÓRIO: chegando pela entrada `do-computador`, os dois
+     * saem da tela miudinhos e pousam na frente da escrivaninha. A cena
+     * descobre que eles vieram de lá pelo lugar onde o motor os pôs no
+     * primeiro quadro — pela porta da sala eles nascem do outro lado.
+     */
+    let primeiroQuadro = true;
+    w.onUpdate(() => {
+      if (!primeiroQuadro) return;
+      primeiroQuadro = false;
+      const p = g0.playerPosition();
+      if (Math.hypot(p.x - DO_COMPUTADOR.x, p.z - DO_COMPUTADOR.z) > 0.05) return;
+      void (async () => {
+        tela.mudar('redemoinho');
+        g0.focusCamera(travessia.foco);
+        g0.som('arcoIris');
+        await travessia.cuspir(
+          g0,
+          meioDaTela(),
+          [new THREE.Vector3(DO_COMPUTADOR.x, 0, DO_COMPUTADOR.z), new THREE.Vector3(-1.75, 0, 2.45)],
+          Math.PI / 2,
+          1.3,
+        );
+        g0.focusCamera(null);
+        tela.mudar('area-de-trabalho');
+        if (g0.flag('lab:voltou')) return;
+        g0.setFlag('lab:voltou');
+        await conversa([
+          [R, 'Voltamos.'],
+          [A, 'A pasta continua aí. A gente entra quando quiser.'],
+        ]);
+      })();
     });
 
     w.interact({

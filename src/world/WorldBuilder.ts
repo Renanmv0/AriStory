@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { polido, toon } from '../core/materials';
 import { Interactable } from './Interactable';
-import type { Bounds, Collider, GameAPI, InteractableDef } from '../core/types';
+import type { Bounds, Clicavel, ClicavelDef, Collider, GameAPI, InteractableDef } from '../core/types';
 import { bench, picnicTable } from './props';
 
 export type Updater = (dt: number, elapsed: number) => void;
@@ -79,10 +79,14 @@ export class WorldBuilder {
   readonly root = new THREE.Group();
   readonly colliders: Collider[] = [];
   readonly interactables: Interactable[] = [];
+  /** o que o mouse e o dedo alcançam (ver `clicavel()`) */
+  readonly clicaveis: Clicavel[] = [];
   readonly updaters: Updater[] = [];
   bounds: Bounds = { minX: -40, minZ: -40, maxX: 40, maxZ: 40 };
 
   private seed = 1337;
+  /** o que a cena pediu para soltar quando ela for embora (ver `aoDesmontar`) */
+  private readonly desmontes: Array<() => void> = [];
   /**
    * Ordem de pintura dos decalques de chao. Eles nao gravam profundidade (ver
    * `ToonOptions.decal`), entao nao ha disputa de pixel entre eles: quem for
@@ -366,6 +370,19 @@ export class WorldBuilder {
     return it;
   }
 
+  /**
+   * Uma peça que se CLICA de longe (o `Raycaster` do motor, `core/Apontador.ts`).
+   *
+   * O raio testa o objeto e tudo que estiver pendurado nele, e devolve o
+   * registro dono do que acertou — então registre o grupo da peça, não cada
+   * malha. A peça precisa estar no mundo (`w.add`) para ser acertada.
+   */
+  clicavel(obj: THREE.Object3D, def: ClicavelDef): Clicavel {
+    const c: Clicavel = { obj, def, ligado: true };
+    this.clicaveis.push(c);
+    return c;
+  }
+
   /** Interativo que leva para outra cena. */
   door(opts: DoorOptions): Interactable {
     return this.interact({
@@ -541,6 +558,16 @@ export class WorldBuilder {
     this.updaters.push(fn);
   }
 
+  /**
+   * Roda quando a cena for embora (a troca de cena). O `dispose()` daqui solta
+   * as GEOMETRIAS sozinho; o que a cena criou de pesado e próprio — alvo de
+   * render, textura de canvas, o reflexo da vitrine do laboratório — ela solta
+   * aqui. Material e textura do cache do `toon()` NÃO: são do jogo inteiro.
+   */
+  aoDesmontar(fn: () => void): void {
+    this.desmontes.push(fn);
+  }
+
   // ----------------------------------------------------------------- utils
 
   /** Random deterministico: a mesma cena espalha as arvores sempre igual. */
@@ -562,6 +589,8 @@ export class WorldBuilder {
   }
 
   dispose(): void {
+    for (const fn of this.desmontes) fn();
+    this.desmontes.length = 0;
     this.root.traverse((n) => {
       const mesh = n as THREE.Mesh;
       if (mesh.isMesh) mesh.geometry.dispose();
@@ -569,6 +598,7 @@ export class WorldBuilder {
     this.root.clear();
     this.colliders.length = 0;
     this.interactables.length = 0;
+    this.clicaveis.length = 0;
     this.updaters.length = 0;
     this.decalque = 0;
   }

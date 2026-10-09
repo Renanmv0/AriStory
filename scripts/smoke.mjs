@@ -35,6 +35,8 @@ const cenas = [
   ['clube', 'beira', 3000],
   ['lojinha', '', 3000],
   ['estufa', '', 3000],
+  // o mundo dentro do computador do Ari: a chegada pelo pouso, com o brilho de tela
+  ['laboratorio', 'chegada', 6000],
 ];
 
 for (const [cena, entrada, espera] of cenas) {

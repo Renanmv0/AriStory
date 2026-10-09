@@ -4,6 +4,7 @@ import type { SomNome } from '../audio/efeitos';
 import type { ChessEngine, Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import type { VigiaDaOclusao } from './Oclusao';
+import type { EfeitosDeTela } from './posProcessamento';
 import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
   EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
@@ -106,6 +107,41 @@ export interface InteractableDef {
   /** desempate quando dois prompts se sobrepoem: maior ganha (padrao 0) */
   priority?: number;
   onInteract(g: GameAPI): void | Promise<void>;
+}
+
+/**
+ * UMA PEÇA QUE O MOUSE (OU O DEDO) ALCANÇA — o `Raycaster` do motor, em
+ * `core/Apontador.ts`. É o outro jeito de mexer no mundo, ao lado do
+ * `InteractableDef`: o interativo é "chegar perto e apertar E"; o clicável é
+ * "apontar e clicar", de longe. Registrado pela cena com `w.clicavel()`.
+ */
+export interface ClicavelDef {
+  /** a dica que aparece em cima da peça quando o mouse passa (e enquanto arrasta) */
+  dica?: string;
+  /** a que altura acima da origem da peça a dica fica (padrão 1,1) */
+  alturaDaDica?: number;
+  /** clicou (ou tocou) e soltou em cima; `ponto` é onde o raio acertou, no mundo */
+  aoClicar?(g: GameAPI, ponto: THREE.Vector3): void;
+  /** o mouse entrou (`true`) ou saiu (`false`) de cima da peça */
+  aoPassar?(dentro: boolean): void;
+  /**
+   * ARRASTAR: a peça segue o ponteiro num plano horizontal na `altura` dada
+   * (padrão 0, o chão). O motor só entrega o ponto; quem decide até onde a
+   * peça pode ir é a cena.
+   */
+  arrastar?: {
+    altura?: number;
+    aoPegar?(): void;
+    aoArrastar(ponto: THREE.Vector3): void;
+    aoSoltar?(): void;
+  };
+}
+
+/** Um clicável registrado. `ligado = false` tira do alcance do raio sem desregistrar. */
+export interface Clicavel {
+  readonly obj: THREE.Object3D;
+  readonly def: ClicavelDef;
+  ligado: boolean;
 }
 
 /**
@@ -433,8 +469,12 @@ export interface GameAPI {
   toast(text: string, icon?: string): void;
   /** toca um efeito sonoro; a lista está em audio/efeitos.ts */
   som(nome: SomNome): void;
-  /** troca de cena; entry e o nome de uma entrada da cena destino */
-  goTo(sceneId: string, entry?: string): void;
+  /**
+   * Troca de cena; `entry` é o nome de uma entrada da cena destino. `veu` muda
+   * a cortina da troca: `'digital'` é o clarão de tela de computador, o de
+   * entrar e sair do laboratório.
+   */
+  goTo(sceneId: string, entry?: string, veu?: 'digital'): void;
   /** camera passa a seguir outro objeto; null volta pro jogador */
   focusCamera(target: THREE.Object3D | null): void;
   /**
@@ -777,6 +817,30 @@ export interface GameAPI {
    * visivel e quais interacoes ligam. Isto aqui e so a altura do piso.
    */
   elevarDupla(altura: number): void;
+
+  /**
+   * EFEITOS DE TELA (pós-processamento, `core/posProcessamento.ts`): brilho
+   * neon, pixel art, contorno, filme antigo, glitch, rastro, quadrinho,
+   * monitor de tubo e lente. `null` desliga e o jogo volta a desenhar direto no
+   * canvas. Morre com a troca de cena. Hoje só o laboratório usa.
+   */
+  telaComEfeitos(efeitos: EfeitosDeTela | null): void;
+  /** o que está na tela agora: os efeitos pedidos e os passes montados */
+  efeitosDeTela(): { efeitos: EfeitosDeTela | null; passes: readonly string[] };
+  /**
+   * MEXE NA LUZ DO CÉU em tempo real, por cima da que a cena declarou no
+   * `ambient`: céu, cor e força do sol e da luz ambiente, e a DIREÇÃO do sol
+   * (que move as sombras). Pode ser chamado todo quadro — é o ciclo do dia do
+   * laboratório. `null` volta para a luz da cena; trocar de cena também volta.
+   */
+  luzDoCeu(ajuste: Partial<SceneAmbient> | null): void;
+  /**
+   * A CÂMERA LIVRE (o drone do laboratório): uma perspectiva que gira em volta
+   * de `alvo` arrastando o mouse ou o dedo, e aproxima na rodinha ou na
+   * pinça — o `OrbitControls` da skill de interação. Enquanto ela está no ar,
+   * clicar no mundo não vale. `null` devolve a isométrica.
+   */
+  cameraLivre(alvo: THREE.Vector3 | null): void;
 
   wait(seconds: number): Promise<void>;
   /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */

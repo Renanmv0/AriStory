@@ -119,6 +119,33 @@ w.onUpdate((dt, tempo) => { /* roda todo frame */ });
 w.rng() / w.range(min, max) / w.pick([...])   // determinístico: a mesma cena sempre igual
 ```
 
+### Mouse e dedo no mundo (o `Raycaster`)
+```ts
+w.clicavel(peca, {
+  dica: 'Cristal: o sino',          // flutua em cima da peça com o mouse por cima
+  alturaDaDica: 1.75,
+  aoPassar: (dentro) => { /* acende */ },
+  aoClicar: (g, ponto) => { /* ponto = onde o raio acertou, no mundo */ },
+  // ou, para ARRASTAR num plano horizontal:
+  arrastar: { altura: 0.4, aoArrastar: (p) => { /* a cena limita a área */ }, aoSoltar: () => {} },
+});
+```
+O raio testa só o que foi registrado (registre o GRUPO da peça). Toque num
+clicável não vira joystick. Hoje só o laboratório usa — é o jeito "apontar e
+clicar", ao lado do "chegar perto e apertar E" do `w.interact`.
+
+### Efeito de tela, luz do céu e câmera livre
+```ts
+g.telaComEfeitos({ brilho: { forca: 0.8, raio: 0.42, limiar: 0.92 } }); // null desliga
+g.telaComEfeitos({ pixel: 4 });  // contorno, filme, glitch, rastro, quadrinho, monitor, lente
+g.luzDoCeu({ sky, sunColor, sunIntensity, sunDir: [x, y, z] });           // null volta
+g.cameraLivre(new THREE.Vector3(0, 0.5, 0));                               // null devolve a isométrica
+g.goTo('quarto', 'do-computador', 'digital');                              // o véu de tela de computador
+```
+Os três morrem na troca de cena. O brilho pega só o que passa de ~1: cor de
+neon vem de `neon()` (`core/shaders.ts`), e luz de verdade forte demais estoura
+superfície branca — o palco do laboratório já estourou assim.
+
 ## API do jogo (`g` / `w.game`)
 
 ```ts

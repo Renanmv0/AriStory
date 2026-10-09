@@ -6,6 +6,7 @@ import { escola } from './escola';
 import { escolaGinasio } from './escolaGinasio';
 import { escolaDescanso, escolaProfessores, escolaSala1, escolaSala2 } from './escolaSalas';
 import { estufa } from './estufa';
+import { laboratorio } from './laboratorio';
 import { maniaDeChurrasco } from './maniaDeChurrasco';
 import { quarto } from './quarto';
 import { villaLobos } from './villaLobos';
@@ -32,6 +33,9 @@ export const SCENES: Record<string, SceneDef> = {
   [escolaDescanso.id]: escolaDescanso,
   [escolaProfessores.id]: escolaProfessores,
   [escolaGinasio.id]: escolaGinasio,
+  // o mundo dentro do computador do Ari: a área de teste das skills de
+  // Three.js. Só se chega pela tela da escrivaninha do quarto
+  [laboratorio.id]: laboratorio,
 };
 
 export const CENA_INICIAL = casa.id;

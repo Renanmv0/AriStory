@@ -1,6 +1,9 @@
+import type { EventoDeApontar } from './Apontador';
+
 /**
  * Entrada unificada: teclado, mouse e um joystick virtual para celular.
- * Ninguem mais no jogo le eventos de DOM.
+ * Ninguem mais no jogo le eventos de DOM. (A excecao e a camera livre do
+ * laboratorio: o `OrbitControls` ouve o canvas sozinho enquanto esta no ar.)
  */
 export class Input {
   private readonly down = new Set<string>();
@@ -15,6 +18,15 @@ export class Input {
   /** true enquanto o dialogo/menu esta aberto: movimento e ignorado */
   blocked = false;
 
+  /**
+   * O APONTADOR (`core/Apontador.ts`): cada evento de ponteiro passa por ele
+   * primeiro. Quando ele responde `true` no aperto, o ponteiro era de uma
+   * peca clicavel — e o dedo NAO vira joystick.
+   */
+  aoApontar: ((e: EventoDeApontar) => boolean) | null = null;
+  /** o dedo que apertou um clicavel (e nao o joystick) */
+  private apontadorId: number | null = null;
+
   constructor(private readonly surface: HTMLElement) {
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -23,7 +35,20 @@ export class Input {
     surface.addEventListener('pointermove', this.onPointerMove);
     surface.addEventListener('pointerup', this.onPointerUp);
     surface.addEventListener('pointercancel', this.onPointerUp);
+    surface.addEventListener('pointerleave', this.onPointerLeave);
   }
+
+  /** o ponteiro em -1..1 e em pixels, do jeito que o apontador quer */
+  private apontar(tipo: EventoDeApontar['tipo'], e: PointerEvent): boolean {
+    const r = this.surface.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    const y = 1 - ((e.clientY - r.top) / r.height) * 2;
+    return this.aoApontar?.({ tipo, x, y, px: e.clientX, py: e.clientY, toque: e.pointerType !== 'mouse' }) ?? false;
+  }
+
+  private onPointerLeave = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse') this.apontar('sai', e);
+  };
 
   private onKeyDown = (e: KeyboardEvent): void => {
     /*
@@ -53,6 +78,12 @@ export class Input {
   };
 
   private onPointerDown = (e: PointerEvent): void => {
+    // um clicavel debaixo do ponteiro fica com ele: o dedo nao vira joystick
+    if (this.apontar('desce', e)) {
+      this.apontadorId = e.pointerId;
+      this.surface.setPointerCapture(e.pointerId);
+      return;
+    }
     if (e.pointerType === 'mouse') return;
     this.stickId = e.pointerId;
     this.stickOrigin = { x: e.clientX, y: e.clientY };
@@ -65,6 +96,7 @@ export class Input {
     const r = this.surface.getBoundingClientRect();
     this.ponteiro.x = ((e.clientX - r.left) / r.width) * 2 - 1;
     this.ponteiro.y = 1 - ((e.clientY - r.top) / r.height) * 2;
+    if (e.pointerType === 'mouse' || e.pointerId === this.apontadorId) this.apontar('move', e);
 
     if (e.pointerId !== this.stickId) return;
     const max = 60;
@@ -75,6 +107,10 @@ export class Input {
   };
 
   private onPointerUp = (e: PointerEvent): void => {
+    if (e.pointerType === 'mouse' || e.pointerId === this.apontadorId) {
+      this.apontar('sobe', e);
+      if (e.pointerId === this.apontadorId) this.apontadorId = null;
+    }
     if (e.pointerId !== this.stickId) return;
     this.stickId = null;
     this.stickX = 0;
