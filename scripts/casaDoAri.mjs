@@ -9,7 +9,9 @@
  *   que é onde a cena de deitar põe os dois (`scripts/cama.mjs` vê a cena);
  * - o abajur do quarto e o de pé da sala apagam e acendem num clique, e a luz
  *   que se vê (halo, leque, poça) some e volta junto;
- * - a claridade das janelas está no chão e não faz sombra.
+ * - a claridade das janelas está no chão e não faz sombra;
+ * - a sala é um retângulo: a Rubi e o banheiro são portas na parede do fundo,
+ *   cada uma com a sua interação.
  *
  * Uso: node scripts/casaDoAri.mjs /caminho/prefixo
  */
@@ -147,6 +149,34 @@ await foto('06-sala-abajur-apagado');
 conferir('o abajur de pé da sala apaga num clique', apagadoSala === antesSala - 2, `${antesSala} → ${apagadoSala}`);
 await clicar(await cupulaNaTela(0));
 conferir('e acende de novo', (await luzesAcesas()) === antesSala);
+
+// a sala é um retângulo só: a Rubi e o banheiro são PORTAS na parede do
+// fundo, cada uma com a sua conversa na frente dela (já foram um bloco
+// fechado com teto no meio da sala)
+const promptEm = async (x, z) => {
+  await page.evaluate(([x, z]) => window.jogo.debugPlace(x, z, Math.PI), [x, z]);
+  await page.waitForTimeout(900);
+  return (await page.locator('.prompt.show').textContent().catch(() => '')).replace(/\s+/g, ' ').trim();
+};
+const naRubi = await promptEm(1.5, -3.3);
+const noBanheiro = await promptEm(4.3, -3.3);
+conferir('a porta da Rubi chama a conversa dela', /Porta do quarto/.test(naRubi), naRubi);
+conferir('a porta do banheiro chama bater na porta', /banheiro/.test(noBanheiro), noBanheiro);
+const semBloco = await mundo(`
+  // nada de teto nem parede alta solta no meio da sala (o bloco antigo)
+  let solto = 0;
+  R.traverse((o) => {
+    if (!o.isMesh || !o.geometry?.parameters) return;
+    const p = o.geometry.parameters;
+    if (p.height >= 2.7 && p.depth > 0.2 && o.position.z > -4.3 && o.position.z < 4.3 && o.position.x > -5.8 && o.position.x < 5.8) solto++;
+    if (o.geometry.type === "BoxGeometry" && o.position.y > 2.7 && p.width > 3) solto++;
+  });
+  return solto;
+`);
+conferir('a sala não tem mais o bloco no meio', semBloco === 0, `${semBloco} peças`);
+await page.evaluate(() => window.jogo.debugPlace(3, -2.5, Math.PI));
+await page.waitForTimeout(900);
+await foto('07-portas-do-fundo');
 
 conferir('sem erro de console', erros.length === 0, erros.join(' | '));
 await browser.close();

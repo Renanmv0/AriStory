@@ -17,13 +17,13 @@ import { ARI, RENAN } from '../characters/cast';
  * Casa do Ari — apartamento pequeno, montado a partir do esboço do Renan.
  *
  * Planta (a câmera padrão vê -Z subindo à direita e -X subindo à esquerda):
- *   fundo (-Z), da esquerda p/ direita: cozinha · quarto · banheiro
- *   parede esquerda (-X): janela e a TV
- *   sofá encostado na lateral do quarto, de frente para a TV
+ *   fundo (-Z), da esquerda p/ direita: cozinha · porta da Rubi · porta do banheiro
+ *   parede esquerda (-X): porta do quarto do Ari, a TV e a janela
+ *   sofá no meio da sala, de frente para a TV
  *   máquina de lavar no canto direito, perto da porta da rua
  *
- * Convenção de interiores: parede inteira só em -X e -Z (e no banheiro, que é
- * fechado); o resto é mureta, senão a parede tapa a câmera isométrica.
+ * Convenção de interiores: parede inteira só em -X e -Z; o resto é mureta,
+ * senão a parede tapa a câmera isométrica. A sala é um retângulo só.
  */
 export const casa: SceneDef = {
   id: 'casa',
@@ -75,69 +75,54 @@ export const casa: SceneDef = {
     const envernizar = <T extends THREE.Object3D>(obj: T): T =>
       acabar(obj, [[P.wood, veio], [P.woodDark, veio]]);
 
-    w.wall(x0, z0, W / 2, z0, H, P.wallCream);
-
     // Parede da esquerda, com um VÃO para a porta do quarto do Ari.
     //
     // Duas coisas decidiram este lugar. O vão em si não é enfeite: a parede tem
     // 0,3 de espessura e a folha da porta 0,08, então porta largada no meio de
     // parede inteira fica enterrada dentro dela e some — é por isso que a
-    // parede do bloco da Rubi também é feita em pedaços.
+    // parede do fundo também é feita em pedaços.
     //
-    // E a parede escolhida é esta, e não a do fundo: no fundo só sobrava o
-    // trecho entre a cozinha e o bloco da Rubi, e dali a porta fica ATRÁS do
-    // bloco na câmera isométrica. Nesta parede a face olha para a câmera, do
-    // mesmo jeito que a TV e a janela.
+    // E a porta dele fica nesta parede, e não na do fundo: o fundo tem a
+    // cozinha na ponta da esquerda e as duas portas da Rubi e do banheiro na
+    // da direita. Nesta parede a face olha para a câmera, do mesmo jeito que a
+    // TV e a janela.
     const zDoAri = -1.2;
     const vaoAri = 0.95;
     w.wall(x0, z0, x0, zDoAri - vaoAri / 2, H, P.wallMint);
     w.wall(x0, zDoAri + vaoAri / 2, x0, D / 2, H, P.wallMint);
     w.wall(x0, D / 2, W / 2, D / 2, 0.45, P.wallCream);
-    w.wall(W / 2, -1.3, W / 2, D / 2, 0.45, P.wallCream);
+    w.wall(W / 2, z0, W / 2, D / 2, 0.45, P.wallCream);
 
-    // ----------------------------------------- o quarto e o banheiro (fundo)
-    // Dois cômodos fechados, no mesmo tamanho de sempre: o quarto (que o Ari
-    // divide com a Rubina, a roommate) e o banheiro. Ficam com teto — é o teto
-    // que impede de ver dentro numa câmera que olha de cima.
-    const qx0 = 0.4; // lateral do bloco
-    const qx1 = 4.2; // divisória entre quarto e banheiro
-    const qz2 = -1.3; // frente do bloco
-    const xQuarto = (qx0 + qx1) / 2;
-    const xBanheiro = (qx1 + W / 2) / 2;
-
-    // parede da frente, com um vão para cada porta
+    // ------------------------------- parede do fundo: a Rubi e o banheiro
+    // A sala é um retângulo só. O quarto da Rubina (a roommate do Ari) e o
+    // banheiro são PORTAS na parede do fundo, do lado direito — a cozinha fica
+    // na ponta da esquerda da mesma parede.
+    //
+    // Já foram um bloco fechado, com paredes e teto, no meio da sala: a caixa
+    // tapava a sala na câmera e ficava com pedaços faltando. O Renan pediu
+    // portas na parede, e é o que a casa de verdade tem.
+    //
+    // A parede vai em pedaços, com um VÃO por porta (porta largada no meio da
+    // parede inteira some dentro dela), e cada porta fica CENTRADA na linha da
+    // parede: o batente (0,24) é mais fino que a parede (0,3), e posto à frente
+    // a face dele encostava na da parede e as duas piscavam.
+    const xQuarto = 1.5; // a porta do quarto da Rubi
+    const xBanheiro = 4.3; // a porta do banheiro
     const vao = 0.95;
     const bordas = [
-      qx0, xQuarto - vao / 2,
+      x0, xQuarto - vao / 2,
       xQuarto + vao / 2, xBanheiro - vao / 2,
       xBanheiro + vao / 2, W / 2,
     ];
     for (let i = 0; i < bordas.length; i += 2) {
-      if (bordas[i + 1] - bordas[i] > 0.05) {
-        w.wall(bordas[i], qz2, bordas[i + 1], qz2, H, P.wallCream);
-      }
+      w.wall(bordas[i], z0, bordas[i + 1], z0, H, P.wallCream);
     }
-    w.wall(qx0, z0, qx0, qz2, H, P.wallCream); // lateral esquerda
-    w.wall(qx1, z0, qx1, qz2, H, P.wallCream); // divisória
-    w.wall(W / 2, z0, W / 2, qz2, H, P.wallCream); // lateral direita, alta aqui
+    const portaQuarto = w.add(envernizar(w.place(interiorDoor(P.woodDark, 0.85, 2.05), xQuarto, 0, z0)));
+    const portaBanheiro = w.add(w.place(interiorDoor(P.gold, 0.85, 2.05), xBanheiro, 0, z0));
 
-    // teto: fecha os dois cômodos por cima
-    const teto = new THREE.Mesh(
-      new THREE.BoxGeometry(W / 2 - qx0, 0.16, qz2 - z0),
-      toon(0xe6d9c4),
-    );
-    teto.position.set((qx0 + W / 2) / 2, H + 0.08, (z0 + qz2) / 2);
-    w.add(teto);
-
-    // As portas ficam CENTRADAS na linha da parede. O batente é mais fino que
-    // a parede (0.24 contra 0.3): posta à frente, a face do batente encostava
-    // na face da parede e as duas piscavam.
-    const portaQuarto = w.add(envernizar(w.place(interiorDoor(P.woodDark, 0.85, 2.05), xQuarto, 0, qz2)));
-    const portaBanheiro = w.add(w.place(interiorDoor(P.gold, 0.85, 2.05), xBanheiro, 0, qz2));
-
-    // uns enfeites para o bege não ficar liso
-    w.add(envernizar(w.place(pictureFrame(0.6, 0.75, P.wallMint), 3.55, 1.75, qz2 + 0.17)));
-    w.add(envernizar(w.place(wallShelf(0.9), 1.1, 1.7, qz2 + 0.19)));
+    // uns enfeites no trecho de parede entre as duas portas
+    w.add(envernizar(w.place(pictureFrame(0.6, 0.75, P.wallMint), (xQuarto + xBanheiro) / 2, 1.75, z0 + 0.17)));
+    w.add(envernizar(w.place(wallShelf(0.9), 5.3, 1.7, z0 + 0.19)));
 
     // ------------------------------------------------- porta do quarto do Ari
     // Centrada na linha da parede, pela mesma razão das outras: batente posto à
@@ -361,7 +346,7 @@ export const casa: SceneDef = {
 
     w.interact({
       id: 'casa:banheiro',
-      x: xBanheiro, z: qz2 + 1.2, radius: 1.3,
+      x: xBanheiro, z: z0 + 1.2, radius: 1.3,
       label: 'Bater na porta do banheiro', icon: '🚪',
       highlight: portaBanheiro,
       onInteract: () =>
@@ -373,7 +358,7 @@ export const casa: SceneDef = {
 
     w.interact({
       id: 'casa:quarto',
-      x: xQuarto, z: qz2 + 1.2, radius: 1.4,
+      x: xQuarto, z: z0 + 1.2, radius: 1.4,
       label: 'Porta do quarto', icon: '🎧',
       highlight: portaQuarto,
       onInteract: async (g) => {
