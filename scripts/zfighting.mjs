@@ -16,6 +16,7 @@
  * encostar, ou recuar a peça de dentro para longe da face.
  *
  * Uso: node scripts/zfighting.mjs
+ *      SO=armario,estante node scripts/zfighting.mjs   (só essas peças)
  */
 import { chromium } from 'playwright';
 
@@ -35,6 +36,10 @@ const PECAS = [
   ['flamula', 'villa-lobos'],
   ['arquibancada', 'villa-lobos'],
   ['estante', 'quarto'],
+  ['armario', 'quarto'],
+  ['planta-do-quarto', 'quarto'],
+  ['escrivaninha', 'quarto'],
+  ['cama', 'quarto'],
   ['loja-de-patins', 'villa-lobos'],
   ['borda-de-gelo', 'villa-lobos'],
   ['cristal-de-gelo', 'villa-lobos'],
@@ -118,6 +123,10 @@ const PECAS = [
   ['carrinho-de-bolas', 'escola-ginasio'],
   ['placar-de-ginasio', 'escola-ginasio'],
 ];
+
+// `SO=a,b` roda só essas peças: a lista inteira passa de cinco minutos
+const SO = process.env.SO ? process.env.SO.split(',') : null;
+if (SO) PECAS.splice(0, PECAS.length, ...PECAS.filter(([p]) => SO.includes(p)));
 
 const browser = await chromium.launch({
   executablePath: CHROME,

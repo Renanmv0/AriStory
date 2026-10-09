@@ -83,6 +83,16 @@ export const PALETTE = {
   pcMousepad: 0x7d6bb0,
   pcLed: 0x7fe3ff,
   pcGrelha: 0x3b4150,
+  // o armário do Ari por dentro: o fundo escuro, o cabideiro e a caixa
+  // organizadora em cima dele
+  armarioFundo: 0x3a2b1f,
+  armarioCaixa: 0xe9d8c4,
+  // a espada-de-são-jorge do quarto: verde-escuro com a beirada amarelada,
+  // e a terra do vaso
+  folhaEspada: 0x3f7f46,
+  folhaEspadaClara: 0x6aa35a,
+  folhaEspadaBorda: 0xc9cf6a,
+  terraDeVaso: 0x5a4030,
   pcPostit: 0xffe27a,
   luzDeJanela: 0xfff1d6,
   sofa: 0x6d8fd6,
