@@ -141,6 +141,7 @@ node scripts/pausa.mjs   /tmp/pa    # o menu pausa de verdade: no meio da rodada
 node scripts/audio.mjs             # o som acorda e cada acao dispara o seu efeito
 node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para ouvir, e reprova o estalo de uma amostra no comeco de um efeito
 node scripts/celular.mjs /tmp/cel   # tela de celular: nenhum botao pode tapar texto
+node scripts/joystick.mjs          # o joystick do celular: parar com o dedo encostado e voltar a andar, ate com o Safari cancelando o toque
 node scripts/parque.mjs  /tmp/pq    # praca da roda, cupula e margem do lago
 node scripts/pingpong.mjs /tmp/pp   # a partida de ping pong ate o quinto ponto
 node scripts/chapeu.mjs  /tmp/chp   # ganhar de gorro: o chapeu de campeao vai pro guarda-roupa, e volta sempre que descartado

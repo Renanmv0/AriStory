@@ -26,6 +26,11 @@ export class Input {
   aoApontar: ((e: EventoDeApontar) => boolean) | null = null;
   /** o dedo que apertou um clicavel (e nao o joystick) */
   private apontadorId: number | null = null;
+  /**
+   * O MESMO dedo do joystick, visto pelos eventos de TOQUE (`touchmove`), e
+   * nao pelos de ponteiro. Ver `onTouchStart`: e a rede de seguranca do iPhone.
+   */
+  private toqueDoManche: number | null = null;
 
   constructor(private readonly surface: HTMLElement) {
     window.addEventListener('keydown', this.onKeyDown);
@@ -36,6 +41,81 @@ export class Input {
     surface.addEventListener('pointerup', this.onPointerUp);
     surface.addEventListener('pointercancel', this.onPointerUp);
     surface.addEventListener('pointerleave', this.onPointerLeave);
+    // `passive: false` e o que deixa o `preventDefault` valer (ver `onTouchStart`)
+    surface.addEventListener('touchstart', this.onTouchStart, { passive: false });
+    surface.addEventListener('touchmove', this.onTouchMove, { passive: false });
+    surface.addEventListener('touchend', this.onTouchEnd);
+    surface.addEventListener('touchcancel', this.onTouchEnd);
+    surface.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
+  /**
+   * O JOYSTICK QUE SÓ VIRAVA O CORPO, no iPhone.
+   *
+   * Andando, a pessoa parava com o dedo encostado e, ao voltar a arrastar, o
+   * corpo virava para o lado certo mas não saía do lugar — e só voltava a
+   * andar depois de tirar o dedo e encostar de novo. No computador nunca
+   * acontecia.
+   *
+   * Era o Safari: dedo parado por um instante é o começo de um TOQUE LONGO
+   * (arrastar a imagem, a lupa de texto, o menu), e quando o dedo volta a
+   * andar ele decide que aquilo é gesto dele e manda `pointercancel`. O
+   * `touch-action: none` do canvas não cobre o toque longo. O jogo zerava o
+   * manche no cancelamento e, dali em diante, o navegador não manda mais
+   * nenhum `pointermove` daquele dedo: sobrava o primeiro quadro de direção,
+   * que vira o corpo, e mais nada.
+   *
+   * Duas medidas, e uma segura a outra:
+   *  - `preventDefault` no `touchstart`/`touchmove` do canvas: é o jeito de
+   *    dizer ao Safari que o toque é do jogo, e o toque longo nem começa;
+   *  - o manche também é lido pelos eventos de TOQUE. Se mesmo assim chegar
+   *    um `pointercancel`, o `touchmove` continua chegando, e o manche segue.
+   *
+   * Os eventos de ponteiro vêm antes dos de toque, então quando o `touchstart`
+   * chega o `pointerdown` já decidiu se o dedo é manche ou clique numa peça —
+   * aqui só se acha QUAL toque é o do manche, pela posição de origem.
+   */
+  private onTouchStart = (e: TouchEvent): void => {
+    e.preventDefault();
+    if (this.stickId === null || this.toqueDoManche !== null) return;
+    let melhor: Touch | null = null;
+    let perto = Infinity;
+    for (const t of Array.from(e.changedTouches)) {
+      const d = Math.hypot(t.clientX - this.stickOrigin.x, t.clientY - this.stickOrigin.y);
+      if (d < perto) {
+        perto = d;
+        melhor = t;
+      }
+    }
+    if (melhor && perto < 24) this.toqueDoManche = melhor.identifier;
+  };
+
+  private onTouchMove = (e: TouchEvent): void => {
+    e.preventDefault();
+    if (this.toqueDoManche === null) return;
+    for (const t of Array.from(e.changedTouches)) {
+      if (t.identifier === this.toqueDoManche) this.mancheEm(t.clientX, t.clientY);
+    }
+  };
+
+  private onTouchEnd = (e: TouchEvent): void => {
+    if (this.toqueDoManche === null) return;
+    for (const t of Array.from(e.changedTouches)) {
+      if (t.identifier !== this.toqueDoManche) continue;
+      this.toqueDoManche = null;
+      this.stickId = null;
+      this.stickX = 0;
+      this.stickY = 0;
+    }
+  };
+
+  /** o manche a partir de onde o dedo está agora (a origem é onde ele encostou) */
+  private mancheEm(x: number, y: number): void {
+    const max = 60;
+    const dx = Math.max(-max, Math.min(max, x - this.stickOrigin.x));
+    const dy = Math.max(-max, Math.min(max, y - this.stickOrigin.y));
+    this.stickX = dx / max;
+    this.stickY = dy / max;
   }
 
   /** o ponteiro em -1..1 e em pixels, do jeito que o apontador quer */
@@ -73,6 +153,7 @@ export class Input {
   private onBlur = (): void => {
     this.down.clear();
     this.stickId = null;
+    this.toqueDoManche = null;
     this.stickX = 0;
     this.stickY = 0;
   };
@@ -87,6 +168,7 @@ export class Input {
     if (e.pointerType === 'mouse') return;
     this.stickId = e.pointerId;
     this.stickOrigin = { x: e.clientX, y: e.clientY };
+    this.toqueDoManche = null;
     this.surface.setPointerCapture(e.pointerId);
   };
 
@@ -99,11 +181,7 @@ export class Input {
     if (e.pointerType === 'mouse' || e.pointerId === this.apontadorId) this.apontar('move', e);
 
     if (e.pointerId !== this.stickId) return;
-    const max = 60;
-    const dx = Math.max(-max, Math.min(max, e.clientX - this.stickOrigin.x));
-    const dy = Math.max(-max, Math.min(max, e.clientY - this.stickOrigin.y));
-    this.stickX = dx / max;
-    this.stickY = dy / max;
+    this.mancheEm(e.clientX, e.clientY);
   };
 
   private onPointerUp = (e: PointerEvent): void => {
@@ -112,7 +190,11 @@ export class Input {
       if (e.pointerId === this.apontadorId) this.apontadorId = null;
     }
     if (e.pointerId !== this.stickId) return;
+    // cancelado pelo navegador com o dedo ainda na tela: quem segue o manche
+    // agora são os eventos de toque (ver `onTouchStart`), e ele não zera
+    if (e.type === 'pointercancel' && this.toqueDoManche !== null) return;
     this.stickId = null;
+    this.toqueDoManche = null;
     this.stickX = 0;
     this.stickY = 0;
   };

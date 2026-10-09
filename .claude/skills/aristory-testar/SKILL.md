@@ -62,6 +62,12 @@ ruído. Qualquer outro erro de console é erro de verdade.
 
 ## Lições de teste que já custaram tempo
 
+- **O Chromium daqui não é o Safari do iPhone.** Gesto do sistema (toque
+  longo, lupa, arrastar imagem) só existe lá, e cancela o toque do jogo com
+  `pointercancel`. Bug de toque que "não reproduz" aqui: IMITE o navegador
+  (`scripts/joystick.mjs` dispara o `pointercancel` e engole os `pointermove`
+  seguintes) e prove que o teste falha no código antigo antes de consertar.
+
 - **Um Chromium de cada vez.** Dois scripts rodando juntos deixam a máquina
   lenta, e testes de tempo (`postos.mjs`, `estufa.mjs`, `livro.mjs`) falham
   de mentira. Rode em fila: `for t in a b c; do node scripts/$t.mjs …; done`.
