@@ -248,12 +248,21 @@ desenha sozinha.
 O boneco do armário e da loja é um `<canvas>` com renderer próprio
 (`characters/Previa.ts`). No iPhone ele dava "zoom" sem parar ao trocar de
 peça, até travar o painel: o canvas tem 2x mais pixels que o tamanho na tela
-(o `pixelRatio`), o Safari usava esses pixels para medir a linha do painel, o
-painel esticava o canvas e o quadro seguinte dobrava de novo. A trava tem
-duas partes, e as duas ficam: `contain: size` (e um `max-height`) no
-`.armario .boneco` e no `.loja .boneco`, e o `Previa.desenhar` comparando o
-tamanho em pixels do aparelho (com o `pixelRatio`) antes de chamar o
-`setSize`. Canvas novo dentro de painel segue o mesmo molde.
+(o `pixelRatio`), o Safari usava esses pixels para medir o painel, o painel
+esticava o canvas, e o quadro seguinte dobrava de novo. A primeira trava
+(`contain: size` no canvas) NÃO segurou no Safari. O que segura, em
+qualquer navegador:
+
+- o canvas mora numa `.moldura` (`position: relative`, com o `min-height`, o
+  `max-height` e o fundo), e ele fica `position: absolute; inset: 0` lá
+  dentro — elemento absoluto não entra na medida de ninguém;
+- o `Previa.desenhar` mede a MOLDURA (`canvas.parentElement`), nunca o
+  próprio canvas, com teto de 2048, e compara em pixels do aparelho antes do
+  `setSize`.
+
+Forçando o canvas a medir pelo tamanho interno, ele ia de 2 mil a 33 milhões
+de pixels em dois toques; com a moldura, fica parado. Canvas novo dentro de
+painel segue o mesmo molde.
 
 ## Pele à mostra: `bracosNus` e `pernasNuas`
 

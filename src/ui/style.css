@@ -1159,23 +1159,36 @@ body.touch-device .dialogue .next { right: 84px; }
  * translúcida. `display: block` porque canvas é inline e ganharia uma tira
  * branca embaixo.
  */
-.armario .boneco {
+.armario .moldura,
+.loja .moldura {
+  /*
+   * A MOLDURA DO BONECO, e o canvas PRESO dentro dela (`position: absolute`).
+   * O Renan e o Ari viram no iPhone: trocar de peça fazia o boneco dar zoom
+   * sem parar, até travar o armário. O canvas tem 2x mais pixels que o
+   * tamanho na tela, e o Safari usava esses pixels para medir a linha do
+   * painel — a linha crescia, esticava o canvas, o boneco era redesenhado
+   * maior, e assim por diante. A primeira trava (`contain: size` no próprio
+   * canvas) não segurou no Safari. Elemento com `position: absolute` não entra
+   * na medida de ninguém, em navegador nenhum: quem tem tamanho é a moldura
+   * (o mínimo, o esticar do painel e o teto), e o canvas só a preenche.
+   */
+  position: relative;
+  width: 100%;
+  min-height: 260px;
+  max-height: 72vh;
+  overflow: hidden;
+  border-radius: 18px;
+}
+.armario .moldura {
+  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(226,214,240,0.4));
+}
+.armario .boneco,
+.loja .boneco {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 260px;
-  /*
-   * O TAMANHO INTERNO DO CANVAS NAO ENTRA NA CONTA DO PAINEL. O canvas tem
-   * 2x mais pixels que o tamanho na tela (a tela do celular), e o Safari usava
-   * esses pixels para medir a linha do painel: a linha crescia, esticava o
-   * canvas, o boneco era redesenhado maior, e o "zoom" nao parava ate travar o
-   * armario (o Renan viu, no iPhone). `contain: size` faz o canvas medir so
-   * pelo CSS; o `max-height` e o cinto de seguranca.
-   */
-  contain: size;
-  max-height: 72vh;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(226,214,240,0.4));
   cursor: grab;
   touch-action: none;
 }
@@ -1280,11 +1293,11 @@ body.touch-device .dialogue .next { right: 84px; }
 
 @media (max-width: 560px) {
   .armario .prova { grid-template-columns: 1fr; }
-  .armario .boneco { min-height: 220px; }
+  .armario .moldura { min-height: 220px; }
   /* na aba de piscina a faixa grudada é boneco e ficha LADO A LADO, menores:
    * empilhados eles comiam metade da tela e a vitrine não aparecia */
   .armario.aba-piscina .prova { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 10px; }
-  .armario.aba-piscina .boneco { min-height: 180px; }
+  .armario.aba-piscina .moldura { min-height: 180px; }
   .armario.aba-piscina .ficha { padding: 10px; gap: 4px; }
   .armario.aba-piscina .ficha .nome { font-size: 15px; }
   .armario.aba-piscina .ficha .preco { font-size: 19px; }
@@ -1343,15 +1356,8 @@ body.touch-device .dialogue .next { right: 84px; }
   align-items: stretch;
   margin-bottom: 16px;
 }
-.loja .boneco {
-  display: block;
-  width: 100%;
-  height: 100%;
+.loja .moldura {
   min-height: 250px;
-  /* a mesma trava do boneco do armário: o tamanho interno do canvas fora da conta */
-  contain: size;
-  max-height: 72vh;
-  border-radius: 18px;
   background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(240,225,205,0.45));
 }
 .loja .ficha {
@@ -1460,7 +1466,7 @@ body.touch-device .dialogue .next { right: 84px; }
 
 @media (max-width: 560px) {
   .loja .prova { grid-template-columns: 1fr; }
-  .loja .boneco { min-height: 210px; }
+  .loja .moldura { min-height: 210px; }
 }
 
 /* --------------------------------------------------- o vestiário do clube
@@ -1523,7 +1529,7 @@ body.touch-device .dialogue .next { right: 84px; }
   align-items: center;
   gap: 6px;
 }
-.armario .palco .boneco { flex: 1; }
+.armario .palco .moldura { flex: 1; }
 .armario .traje {
   display: flex;
   gap: 2px;
