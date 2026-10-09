@@ -28,6 +28,28 @@ acento — é o padrão do repositório, siga o que já está lá.
 Elas existem para você **não precisar varrer o código** a cada tarefa. Comece
 por elas.
 
+### As skills genéricas de Three.js
+
+Além das `aristory-*`, a conta tem dez skills genéricas de Three.js
+(`threejs-*`). São manuais de técnica, não do jogo: ensinam o que o motor ainda
+não usa, mas **não sabem das regras daqui**. Quando uma delas discordar das
+`aristory-*` ou das invariantes abaixo, valem as do AriStory: a cor sai da
+paleta, o material sai de `toon()`/`flat()` (e efeito novo de material entra
+no kit, em `core/materials.ts`, nunca dentro de uma cena).
+
+| skill | vale? | para quê, aqui |
+|---|---|---|
+| `threejs-shaders` | **sim** | `onBeforeCompile` em cima do `MeshToonMaterial` sem perder o degrau do toon: vento em árvore e grama, água ondulando, brilho pulsando. O jogo ainda não tem shader próprio |
+| `threejs-postprocessing` | **sim, medindo no celular** | contorno de desenho, bloom suave nas luzes, tom de cor por cenário. Código do próprio Three (`three/addons`), sem asset — mas pesa no celular: só entra com foto e medição nos dois |
+| `threejs-geometry` | **sim** | `mergeGeometries` e `InstancedMesh` para aliviar o celular, e `BufferGeometry` própria (folha, tecido, curva) |
+| `threejs-lighting` | sim | cena de noite, abajur e poste, ajuste de sombra. **Ignore a parte de IBL/HDR**: pede arquivo externo |
+| `threejs-interaction` | em parte | `Raycaster` para tocar no mundo (pôr enfeite, peça do xadrez, NPC no celular). **OrbitControls e afins não**: a câmera é isométrica fixa (`core/IsoCamera.ts`) |
+| `threejs-animation` | em parte | os padrões de animação procedural e easing, e trilhas de keyframe para cutscene. **Esqueleto, GLTF e morph de modelo carregado não se aplicam**: o corpo é o `CharacterRig`, animado em código |
+| `threejs-textures` | pouco | só textura procedural em `<canvas>` e render target (como o espelho). Carregar imagem, cubemap ou HDR é proibido |
+| `threejs-fundamentals` | pouco | consulta de transformação e de `dispose`; o motor já está montado |
+| `threejs-materials` | pouco | quase tudo é PBR, que não é a cara do jogo. Serve a seção de toon e as propriedades comuns — e nunca para instanciar material numa cena |
+| `threejs-loaders` | **não vale** | é toda sobre carregar `.glb`, imagem e HDR, o que a primeira invariante proíbe. Não use neste projeto |
+
 Fora do código, tem mais três documentos em `docs/`: `PERSONAGENS.md` diz
 como o Ari e o Renan são de verdade (cabelo, roupa de referência, os NPCs já
 mencionados mas nunca modelados) — leia antes de perguntar ao Renan algo que
