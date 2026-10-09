@@ -145,10 +145,15 @@ export const casa: SceneDef = {
     w.add(w.place(geladeira(), x0 + 0.5, 0, -2.6, Math.PI / 2));
     w.blockBox(x0 + 0.45, -2.6, 0.38, 0.42);
 
-    const mesa = w.add(envernizar(w.place(mesaDeJantar(1.5, 0.9), -3.6, 0, -1.9, 0.08)));
-    w.blockBox(-3.6, -1.9, 0.8, 0.52, 0.08);
-    w.add(envernizar(w.place(cadeiraDeJantar(P.flowerPink), -4.7, 0, -1.9, Math.PI / 2)));
-    w.add(envernizar(w.place(cadeiraDeJantar(P.wallMint), -2.5, 0, -1.9, -Math.PI / 2)));
+    // A MESA DE JANTAR mora no lado direito da sala, onde antes ficava o bloco
+    // do quarto da Rubi e do banheiro: no meio do caminho entre a porta da rua
+    // e a do banheiro, longe das duas. A cozinha ficava cheia e esse lado,
+    // vazio.
+    const MESA = { x: 3.5, z: -0.6 };
+    const mesa = w.add(envernizar(w.place(mesaDeJantar(1.5, 0.9), MESA.x, 0, MESA.z)));
+    w.blockBox(MESA.x, MESA.z, 0.8, 0.52);
+    w.add(envernizar(w.place(cadeiraDeJantar(P.flowerPink), MESA.x - 1.1, 0, MESA.z, Math.PI / 2)));
+    w.add(envernizar(w.place(cadeiraDeJantar(P.wallMint), MESA.x + 1.1, 0, MESA.z, -Math.PI / 2)));
 
     // ------------------------------------- sala: TV na esquerda, sofá de frente
     const tv = w.add(envernizar(w.place(rackComTv(), x0 + 0.4, 0, 0.6, Math.PI / 2)));
@@ -316,7 +321,7 @@ export const casa: SceneDef = {
 
     w.interact({
       id: 'casa:mesa',
-      x: -3.6, z: -0.9, radius: 1.4,
+      x: MESA.x, z: MESA.z + 1.0, radius: 1.4,
       label: 'Pôr a mesa', icon: '🍽️',
       highlight: mesa,
       onInteract: async (g) => {

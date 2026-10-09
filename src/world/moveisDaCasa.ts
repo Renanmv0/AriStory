@@ -33,11 +33,20 @@ function macia(l: number, a: number, p: number, raio = 0.02): THREE.BufferGeomet
   return new RoundedBoxGeometry(l, a, p, 2, Math.min(raio, l / 2 - 0.001, a / 2 - 0.001, p / 2 - 0.001));
 }
 
-/** um pé de palito cônico, da base `y = 0` até `alto`, com uma leve abertura */
+/**
+ * Um pé de palito cônico, da base `y = 0` até `alto`.
+ *
+ * A ORIGEM É A PONTA DE BAIXO, dentro da própria geometria (e não um
+ * `position.y = alto / 2`): quem usa faz `pe.position.set(x, 0, z)` e gira o pé
+ * para abrir, e as duas coisas só dão certo assim. Com a origem no meio, o
+ * `set(x, 0, z)` jogava metade do pé para baixo do chão — a mesa, as cadeiras,
+ * a mesinha e o sofá ficaram flutuando, o tampo sem pé nenhum embaixo — e o
+ * giro levantava a ponta do chão.
+ */
 function pePalito(alto: number, cor: number = P.woodDark, raio = 0.022): THREE.Mesh {
-  const pe = new THREE.Mesh(new THREE.CylinderGeometry(raio, raio * 0.6, alto, 8), toon(cor));
-  pe.position.y = alto / 2;
-  return pe;
+  const geo = new THREE.CylinderGeometry(raio, raio * 0.6, alto, 8);
+  geo.translate(0, alto / 2, 0);
+  return new THREE.Mesh(geo, toon(cor));
 }
 
 // =================================================================== TV
