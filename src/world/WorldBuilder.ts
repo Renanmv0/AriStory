@@ -107,7 +107,8 @@ export class WorldBuilder {
   add<T extends THREE.Object3D>(...objs: T[]): T {
     for (const obj of objs) {
       obj.traverse((n) => {
-        if ((n as THREE.Mesh).isMesh) {
+        // luz que se vê (poça, claridade) não faz sombra: ela é luz, não coisa
+        if ((n as THREE.Mesh).isMesh && !n.userData.semSombra) {
           n.castShadow = true;
           n.receiveShadow = true;
         }

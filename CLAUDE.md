@@ -50,6 +50,12 @@ no kit, em `core/materials.ts`, nunca dentro de uma cena).
 | `threejs-materials` | pouco | quase tudo é PBR, que não é a cara do jogo. Serve a seção de toon e as propriedades comuns — e nunca para instanciar material numa cena |
 | `threejs-loaders` | **não vale** | é toda sobre carregar `.glb`, imagem e HDR, o que a primeira invariante proíbe. Não use neste projeto |
 
+**O quarto e a casa do Ari já usam quatro delas no jogo de verdade**
+(textures, geometry, lighting e interaction): o acabamento dos móveis, o
+edredom dobrado e a franja instanciada, a luz pintada do abajur e da janela,
+e o abajur que apaga num clique — ver "Textura em móvel" e "Luz que se vê"
+na skill de cenário.
+
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em
 `world/laboratorio/`) com uma estação por skill: o sistema solar em
@@ -162,6 +168,7 @@ node scripts/memorias.mjs /tmp/me   # o quadro de memorias: pintado, vivo e trav
 node scripts/cardapio.mjs /tmp/cd   # a mesa do restaurante: sentar, pedir, o garcom entregar e comer
 node scripts/cama.mjs    /tmp/cm    # deitar junto: lado a lado, e os bracos balancando
 node scripts/pelusa.mjs  /tmp/pe    # o gato: passeia sem entrar em movel, mia e recebe carinho
+node scripts/casaDoAri.mjs /tmp/ca # o acabamento da casa e do quarto: assoalho, veio nos moveis, sofa de tecido, granito, tapete com franja e capacho, a cama nova na altura antiga, a claridade da janela e os abajures apagando num clique
 node scripts/deque.mjs   /tmp/dq    # o deque de descanso: deitar nas espreguicadeiras a beira da piscina
 node scripts/muro.mjs    /tmp/mu    # o muro da rua do clube fecha, e o portao grande deixa passar
 node scripts/guarita.mjs /tmp/gu    # a portaria: a Gina fica no posto, apita e manda aproveitar o dia

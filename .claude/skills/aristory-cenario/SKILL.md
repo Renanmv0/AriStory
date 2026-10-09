@@ -366,6 +366,61 @@ Três coisas que essa parte cobra:
   retângulo liso saltava. Se um pedaço do chão ganhou textura, os vizinhos da
   mesma matéria precisam ganhar também.
 
+## Textura em móvel: o acabamento
+
+O kit de interiores nasce liso, e continua liso para quem não pediu nada (a
+escola e o Mania usam as mesmas peças). Quem quer madeira com veio, sofá de
+tecido ou bancada de granito passa a peça por `acabar()`
+(`world/acabamento.ts`) com as cores que devem ganhar desenho:
+
+```ts
+const veio = veioDeMadeira();
+const envernizar = <T extends THREE.Object3D>(obj: T): T =>
+  acabar(obj, [[P.wood, veio], [P.woodDark, veio]]);
+w.add(envernizar(w.place(desk(), x, 0, z, rot)));
+w.add(acabar(w.place(counter(3.6), x, 0, z), [[P.concrete, granito()]]));
+```
+
+Ela troca só a malha cujo material É `toon(cor)` (o objeto do cache) por
+`toon(cor, { mapa })`, e reescreve o UV da malha **em metros**
+(`uvEmMetros`, projeção de caixa): o veio sai do mesmo tamanho na tampa de
+1,6 m e no pé de 6 cm, e corre sempre no lado mais comprido da peça. As
+texturas moram em `world/texturasDeCasa.ts` (veio, tecido mesclado,
+matelassê, granito, o desenho do tapete). O quarto e a casa do Ari são o
+exemplo inteiro.
+
+O que já custou foto:
+
+- **Nada de padrão fino.** A trama de 6 mm do tecido virava moiré (manchas
+  de 5 cm) — nada menor que uns 2 cm sobrevive a esta câmera.
+- **Nada de grade.** Soma de senos e ruído de grade deixam a treliça à mostra
+  (o sofá saiu quadriculado, como capitonê). Mescla boa é mancha solta em
+  lugar sorteado mais granulado de 2 px.
+- **Branco não aguenta mescla.** Lençol e fronha com 4% de variação já liam
+  como sujeira cinza; ficaram lisos, e o matelassê do edredom ao lado faz o
+  trabalho.
+- **Peça arredondada (`RoundedBoxGeometry`) decide o UV por TRIÂNGULO**
+  (`uvEmMetrosPorTriangulo`): na quina a normal gira de vértice para vértice,
+  e decidir por vértice espreme o desenho dentro do triângulo.
+
+## Luz que se vê (sem luz de verdade)
+
+`PointLight` nova faz o three recompilar o shader da cena inteira e pesa no
+celular. Abajur e janela são LUZ PINTADA, somada ao que está embaixo
+(`AdditiveBlending`), e nenhuma faz sombra (`userData.semSombra`, que o
+`w.add` respeita):
+
+| peça (kit) | o que é |
+|---|---|
+| `haloDeLampada(tam)` | o brilho macio em volta da cúpula (sprite) |
+| `pocaDeLuz(raio, cor, forca, emPe?)` | o degradê redondo no chão — ou em pé, o leque na parede atrás do abajur |
+| `claridadeDaJanela(larg, alt, centro)` | o retângulo de luz do dia que a janela joga no chão, mais o feixe fraquinho; pendure no pé da parede com o mesmo giro da janela |
+
+O abajur do quarto e o de pé da sala **apagam num clique** (`w.clicavel`,
+não `w.interact`: o criado-mudo é colado no quadro de memórias, e um segundo
+balão disputaria o E). A cúpula de `nightstand()`/`floorLamp()` tem o nome
+`cupula` para a cena achar e trocar o material.
+
 ## Regras da casa
 
 1. **Cor sempre da paleta** (`src/palette.ts`). Se falta uma cor, adicione lá.

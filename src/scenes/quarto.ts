@@ -2,10 +2,14 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
-  armario, bed, bookshelf, chair, desk, espelho, muralDeMemorias, nightstand,
-  pictureFrame, pottedPlant, rug, wallShelf, windowFrame,
+  armario, bed, bookshelf, chair, claridadeDaJanela, desk, espelho, haloDeLampada,
+  muralDeMemorias, nightstand, pictureFrame, pocaDeLuz, pottedPlant, tapete, wallShelf,
+  windowFrame,
 } from '../world/furniture';
 import { toon } from '../core/materials';
+import { acabar } from '../world/acabamento';
+import { assoalhoDeMadeira } from '../world/texturasDeChao';
+import { veioDeMadeira } from '../world/texturasDeCasa';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
 import { Pelusa } from '../entities/bichos/Pelusa';
@@ -102,8 +106,18 @@ export const quarto: SceneDef = {
     const R = RENAN.name;
 
     // --------------------------------------------------------------- casca
-    w.ground({ width: W, depth: D, color: P.floorWood });
+    // o assoalho de tábua, o mesmo desenho das salas da escola: tábua de 30 cm
+    w.ground({ width: W, depth: D, color: P.floorWood, textura: assoalhoDeMadeira(2.4, 8) });
     w.setBounds(x0 + 0.45, z0 + 0.45, W / 2 - 0.45, D / 2 - 0.45);
+
+    /**
+     * A madeira dos móveis ganha veio (`acabar`, em `world/acabamento.ts`):
+     * as duas cores de madeira da paleta passam a ter desenho, e o resto da
+     * peça — a porta pintada do armário, os livros, o monitor — fica igual.
+     */
+    const veio = veioDeMadeira();
+    const MADEIRA = [[P.wood, veio], [P.woodDark, veio]] as const;
+    const envernizar = <T extends THREE.Object3D>(obj: T): T => acabar(obj, MADEIRA);
 
     // Parede inteira só em -X e -Z; nos dois lados abertos, mureta. Parede alta
     // do lado da câmera taparia o quarto inteiro.
@@ -162,19 +176,19 @@ export const quarto: SceneDef = {
     deitados.rotation.x = -Math.PI / 2;
     w.add(deitados);
 
-    w.add(w.place(nightstand(), -1.05, 0, -2.72));
+    const criado = w.add(envernizar(w.place(nightstand(), -1.05, 0, -2.72)));
     w.blockBox(-1.05, -2.72, 0.24, 0.22);
 
-    const estante = w.add(w.place(bookshelf(1.9, 1.1), 0.15, 0, z0 + 0.22));
+    const estante = w.add(envernizar(w.place(bookshelf(1.9, 1.1), 0.15, 0, z0 + 0.22)));
     w.blockBox(0.15, z0 + 0.22, 0.55, 0.18);
 
-    const movel = w.add(w.place(armario(P.wallMint), ARMARIO.x, 0, ARMARIO.z));
+    const movel = w.add(envernizar(w.place(armario(P.wallMint), ARMARIO.x, 0, ARMARIO.z)));
     w.blockBox(ARMARIO.x, ARMARIO.z, 0.8, 0.32);
 
     // ---------------------------------------------- parede da esquerda (-X)
     // O espelho fica ao lado do armário na hora de se olhar, mas na parede de
     // -X ele aparece de frente para a câmera em vez de de perfil.
-    const espelhoObj = w.add(w.place(espelho(P.woodDark), x0 + 0.12, 0, -0.6, Math.PI / 2));
+    const espelhoObj = w.add(envernizar(w.place(espelho(P.woodDark), x0 + 0.12, 0, -0.6, Math.PI / 2)));
 
     w.add(w.place(windowFrame(1.6, 1.2), x0 + 0.16, 1.7, 1.0, Math.PI / 2));
 
@@ -183,9 +197,9 @@ export const quarto: SceneDef = {
     // fica a cadeira e quem senta nela. Ela já esteve girada para o outro lado
     // (`-PI/2`), e aí a tela olhava para a parede e o quarto via só as costas
     // pretas do monitor — o laboratório, que entra por essa tela, achou isso.
-    const escrivaninha = w.add(w.place(desk(), x0 + 0.5, 0, 2.0, Math.PI / 2));
+    const escrivaninha = w.add(envernizar(w.place(desk(), x0 + 0.5, 0, 2.0, Math.PI / 2)));
     w.blockBox(x0 + 0.5, 2.0, 0.4, 0.82);
-    w.add(w.place(chair(P.woodDark), x0 + 1.35, 0, 2.0, -Math.PI / 2));
+    w.add(envernizar(w.place(chair(P.woodDark), x0 + 1.35, 0, 2.0, -Math.PI / 2)));
 
     // A TELA DE VERDADE do computador, 1,5 cm à frente do plano azul do kit:
     // a área de trabalho com a pasta `AriStory_teste`, que é a porta do
@@ -204,18 +218,48 @@ export const quarto: SceneDef = {
     };
 
     // ------------------------------------------------------------- enfeites
-    w.add(w.place(rug(2.6, 2.0, P.rug), 0.3, 0, 1.1));
+    // o tapete felpudo, com a franja nas duas pontas
+    w.add(w.place(tapete(2.6, 2.0, P.rug), 0.3, 0, 1.1));
     // o canto de +X ficava um vazio marrom do tamanho de meia sala
     w.add(w.place(pottedPlant(1.15), W / 2 - 0.75, 0, 0.9));
     w.blockCircle(W / 2 - 0.75, 0.9, 0.3);
-    w.add(w.place(pictureFrame(0.6, 0.75, P.flowerPink), -2.2, 1.85, z0 + 0.17));
-    w.add(w.place(wallShelf(0.9), 1.05, 1.9, z0 + 0.19));
+    w.add(envernizar(w.place(pictureFrame(0.6, 0.75, P.flowerPink), -2.2, 1.85, z0 + 0.17)));
+    w.add(envernizar(w.place(wallShelf(0.9), 1.05, 1.9, z0 + 0.19)));
 
     // O quadro de memórias mora no único trecho de parede do fundo que sobrou:
     // entre o quadrinho da cabeceira (acaba em -1.9) e a estante (começa em
     // -0.4). Fica de frente para quem entra, e dá para chegar nele pelo vão
     // entre a cama e a estante, na frente do criado-mudo.
     const mural = w.add(w.place(muralDeMemorias(1.3, 1.0), MURAL.x, 1.72, z0 + 0.17));
+
+    // ------------------------------------------------------------------ luz
+    // Luz que se VÊ, sem luz de verdade no motor (cada `PointLight` nova faz o
+    // three recompilar o shader da cena inteira): o halo da cúpula, o leque
+    // morno que o abajur joga na parede atrás dele, e a claridade da janela no
+    // chão. Ver `pocaDeLuz` e `claridadeDaJanela` no kit.
+    const halo = w.add(w.place(haloDeLampada(0.75), -1.05, 0.76, -2.72));
+    const leque = w.add(w.place(pocaDeLuz(0.75, P.luzDeAbajur, 0.4, true), -1.05, 0.95, z0 + 0.16));
+    w.add(w.place(claridadeDaJanela(1.6, 1.2, 1.7), x0 + 0.15, 0, 1.0, Math.PI / 2));
+
+    /*
+     * O ABAJUR ACENDE E APAGA com um clique (ou um toque) nele — o jeito
+     * "apontar e clicar" do laboratório (`w.clicavel`). Não é um `w.interact`
+     * de propósito: o criado-mudo fica colado no quadro de memórias, e um
+     * segundo balão ali disputaria o "E" com ele.
+     */
+    const cupula = criado.getObjectByName('cupula') as THREE.Mesh;
+    let abajurAceso = true;
+    w.clicavel(criado, {
+      dica: 'Abajur',
+      alturaDaDica: 1.05,
+      aoClicar: (g) => {
+        abajurAceso = !abajurAceso;
+        cupula.material = toon(abajurAceso ? P.cupula : P.cupulaApagada, { glow: abajurAceso ? 0.45 : 0, doubleSide: true });
+        halo.visible = abajurAceso;
+        leque.visible = abajurAceso;
+        g.som('clique');
+      },
+    });
 
     // ------------------------------------------------------- porta pra sala
     w.door({
