@@ -108,7 +108,10 @@ export function acabar<T extends THREE.Object3D>(obj: T, trocas: ReadonlyArray<r
     if (!m.isMesh || Array.isArray(m.material)) return;
     const novo = porMaterial.get(m.material);
     if (!novo) return;
-    uvEmMetros(m.geometry);
+    // caixa reta decide o UV por vértice; peça curva (arredondada, cilindro,
+    // torneada) por triângulo, senão o desenho se espreme na quina
+    if (m.geometry.type === 'BoxGeometry') uvEmMetros(m.geometry);
+    else m.geometry = uvEmMetrosPorTriangulo(m.geometry);
     m.material = novo;
   });
   return obj;

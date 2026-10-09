@@ -2,10 +2,13 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
-  chair, claridadeDaJanela, coffeeTable, counter, diningTable, floorLamp, fridge,
-  haloDeLampada, interiorDoor, mug, pictureFrame, pocaDeLuz, pottedPlant, sofa, tapete,
-  tvSet, upperCabinets, wallShelf, washingMachine, windowFrame,
+  claridadeDaJanela, haloDeLampada, interiorDoor, mug, pictureFrame, pocaDeLuz, tapete,
+  windowFrame,
 } from '../world/furniture';
+import {
+  abajurDePe, armarioAereo, cadeiraDeJantar, geladeira, jiboiaEmVaso, maquinaDeLavar,
+  mesaDeJantar, mesinhaDeCentro, pia, prateleiraDeParede, rackComTv, sofaFofo, telaDeTvLigada,
+} from '../world/moveisDaCasa';
 import { heart } from '../world/props';
 import { toon } from '../core/materials';
 import { acabar } from '../world/acabamento';
@@ -122,7 +125,7 @@ export const casa: SceneDef = {
 
     // uns enfeites no trecho de parede entre as duas portas
     w.add(envernizar(w.place(pictureFrame(0.6, 0.75, P.wallMint), (xQuarto + xBanheiro) / 2, 1.75, z0 + 0.17)));
-    w.add(envernizar(w.place(wallShelf(0.9), 5.3, 1.7, z0 + 0.19)));
+    w.add(envernizar(w.place(prateleiraDeParede(0.9), 5.3, 1.7, z0 + 0.26)));
 
     // ------------------------------------------------- porta do quarto do Ari
     // Centrada na linha da parede, pela mesma razão das outras: batente posto à
@@ -135,35 +138,35 @@ export const casa: SceneDef = {
     });
 
     // ------------------------------------------------------ cozinha (lilás)
-    w.add(acabar(w.place(counter(3.6), -3.4, 0, z0 + 0.42), [[P.concrete, granito()]]));
+    w.add(envernizar(acabar(w.place(pia(3.6), -3.4, 0, z0 + 0.48), [[P.concrete, granito()]])));
     w.blockBox(-3.4, z0 + 0.42, 1.8, 0.4);
-    w.add(w.place(upperCabinets(2.6), -3.4, 2.0, z0 + 0.2));
+    w.add(envernizar(w.place(armarioAereo(2.6), -3.4, 2.0, z0 + 0.32)));
     // na parede da esquerda: no fundo ela ficava escondida atrás do bloco
-    w.add(w.place(fridge(), x0 + 0.45, 0, -2.6, Math.PI / 2));
+    w.add(w.place(geladeira(), x0 + 0.5, 0, -2.6, Math.PI / 2));
     w.blockBox(x0 + 0.45, -2.6, 0.38, 0.42);
 
-    const mesa = w.add(envernizar(w.place(diningTable(1.5, 0.9), -3.6, 0, -1.9, 0.08)));
+    const mesa = w.add(envernizar(w.place(mesaDeJantar(1.5, 0.9), -3.6, 0, -1.9, 0.08)));
     w.blockBox(-3.6, -1.9, 0.8, 0.52, 0.08);
-    w.add(envernizar(w.place(chair(), -4.7, 0, -1.9, Math.PI / 2)));
-    w.add(envernizar(w.place(chair(), -2.5, 0, -1.9, -Math.PI / 2)));
+    w.add(envernizar(w.place(cadeiraDeJantar(P.flowerPink), -4.7, 0, -1.9, Math.PI / 2)));
+    w.add(envernizar(w.place(cadeiraDeJantar(P.wallMint), -2.5, 0, -1.9, -Math.PI / 2)));
 
     // ------------------------------------- sala: TV na esquerda, sofá de frente
-    const tv = w.add(envernizar(w.place(tvSet(false), x0 + 0.35, 0, 0.6, Math.PI / 2)));
+    const tv = w.add(envernizar(w.place(rackComTv(), x0 + 0.4, 0, 0.6, Math.PI / 2)));
     w.blockBox(x0 + 0.35, 0.6, 0.3, 0.9);
     const tela = tv.getObjectByName('tela') as THREE.Mesh;
 
     w.add(w.place(tapete(3.0, 2.6, P.rug), -2.5, 0, 0.6));
     const tecido = tramaDeTecido(0.5);
     const sofaObj = w.add(envernizar(acabar(
-      w.place(sofa(P.fabricRed, 2.4), -0.3, 0, 0.6, -Math.PI / 2),
-      [[P.fabricRed, tecido], [P.flowerPink, tecido]],
+      w.place(sofaFofo(P.fabricRed, 2.4), -0.3, 0, 0.6, -Math.PI / 2),
+      [[P.fabricRed, tecido], [P.flowerPink, tecido], [P.cupula, tecido]],
     )));
     w.blockBox(-0.3, 0.6, 0.5, 1.2);
-    w.add(envernizar(w.place(coffeeTable(), -2.4, 0, 0.6, Math.PI / 2)));
+    w.add(envernizar(w.place(mesinhaDeCentro(), -2.4, 0, 0.6, Math.PI / 2)));
     w.blockBox(-2.4, 0.6, 0.38, 0.62);
     const caneca = w.add(w.place(mug(0xfff2e0), -2.4, 0.5, 0.9));
 
-    const abajur = w.add(envernizar(w.place(floorLamp(true), -0.4, 0, 2.3)));
+    const abajur = w.add(envernizar(w.place(abajurDePe(true), -0.4, 0, 2.3)));
     w.blockCircle(-0.4, 2.3, 0.3);
     // a luz que se vê (ver o quarto): a poça morna no chão e o halo da cúpula
     const poca = w.add(w.place(pocaDeLuz(1.05, P.luzDeAbajur, 0.4), -0.4, 0.006, 2.3));
@@ -185,17 +188,19 @@ export const casa: SceneDef = {
 
     // --------------------------------------------- área de serviço (verde)
     // longe das portas do fundo: aqui ela não tranca a passagem de ninguém
-    const maquina = w.add(w.place(washingMachine(), W / 2 - 0.65, 0, 2.9, -Math.PI / 2));
-    w.blockBox(W / 2 - 0.65, 2.9, 0.35, 0.4);
+    // de frente para a sala (+Z), e não para a parede de dentro: virada para
+    // -X a escotilha ficava do lado que a câmera nunca vê
+    const maquina = w.add(w.place(maquinaDeLavar(), W / 2 - 0.65, 0, 2.9));
+    w.blockBox(W / 2 - 0.65, 2.9, 0.36, 0.35);
 
     // ------------------------------------------------ janela (rosa) e enfeites
     w.add(w.place(windowFrame(1.8, 1.3), x0 + 0.16, 1.75, 2.4, Math.PI / 2));
     // a claridade que essa janela joga no chão da sala
     w.add(w.place(claridadeDaJanela(1.8, 1.3, 1.75), x0 + 0.15, 0, 2.4, Math.PI / 2));
     w.add(envernizar(w.place(pictureFrame(0.8, 0.6, P.skyDusk), -3.4, 1.95, z0 + 0.17)));
-    w.add(envernizar(w.place(wallShelf(1.1), -1.6, 1.8, z0 + 0.2)));
-    w.add(w.place(pottedPlant(1.1), x0 + 0.8, 0, D / 2 - 1.0));
-    const plantinha = w.add(w.place(pottedPlant(0.75), 4.9, 0, 1.4));
+    w.add(envernizar(w.place(prateleiraDeParede(1.1), -1.6, 1.8, z0 + 0.27)));
+    w.add(w.place(jiboiaEmVaso(1.15), x0 + 0.8, 0, D / 2 - 1.0));
+    const plantinha = w.add(w.place(jiboiaEmVaso(0.8, P.plantPot), 4.9, 0, 1.4));
 
     const coracao = w.place(heart(0.75), -0.3, 2.4, 0.6);
     coracao.visible = false;
@@ -226,7 +231,8 @@ export const casa: SceneDef = {
     let tvLigada = false;
     const ligarTv = (ligada: boolean): void => {
       tvLigada = ligada;
-      tela.material = toon(ligada ? 0x8fd7ff : P.screen, { glow: ligada ? 0.55 : 0 });
+      // ligada, a tela mostra o show (o palco, o holofote e o piano, em canvas)
+      tela.material = ligada ? telaDeTvLigada() : toon(P.tvTelaApagada);
     };
 
     // ------------------------------------------------------------ interações
@@ -324,7 +330,7 @@ export const casa: SceneDef = {
 
     w.interact({
       id: 'casa:maquina',
-      x: W / 2 - 1.7, z: 2.9, radius: 1.4,
+      x: W / 2 - 0.9, z: 3.7, radius: 1.4,
       label: 'Ver a máquina de lavar', icon: '🧺',
       highlight: maquina,
       onInteract: async (g) => {
@@ -432,6 +438,11 @@ export const casa: SceneDef = {
     });
 
     // -------------------------------------------------------------- ambiente
+    // a roupa rodando atrás do vidro enquanto a máquina está ligada
+    const tambor = maquina.getObjectByName('tambor');
+    w.onUpdate((dt) => {
+      if (tambor && w.game.flag('roupa-lavando')) tambor.rotation.z -= dt * 5;
+    });
     w.onUpdate((_dt, t) => {
       coracao.visible = w.game.flag('planta-regada');
       coracao.position.y = 2.4 + Math.sin(t * 1.6) * 0.12;
