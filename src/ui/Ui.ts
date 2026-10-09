@@ -77,6 +77,8 @@ export class Ui {
   private readonly journalGrid: HTMLDivElement;
   private readonly hints: HTMLDivElement;
   private readonly veil: HTMLDivElement;
+  /** a dica que flutua em cima da peça apontada (ver `core/Apontador.ts`) */
+  private readonly dica: HTMLDivElement;
   private readonly escolhas: HTMLDivElement;
   private readonly carga: HTMLDivElement;
   private readonly menu: HTMLDivElement;
@@ -182,6 +184,7 @@ export class Ui {
     ui.id = 'ui';
     ui.innerHTML = `
       <div class="veil"></div>
+      <div class="dica-3d"></div>
       <div class="scene-card"><b></b><span></span></div>
       <div class="toasts"></div>
       <div class="hints">
@@ -394,6 +397,7 @@ export class Ui {
     this.journalGrid = ui.querySelector('.journal .grid')!;
     this.hints = ui.querySelector('.hints')!;
     this.veil = ui.querySelector('.veil')!;
+    this.dica = ui.querySelector('.dica-3d')!;
     this.escolhas = ui.querySelector('.escolhas')!;
     this.carga = ui.querySelector('.carga')!;
     this.menu = ui.querySelector('.menu')!;
@@ -706,9 +710,35 @@ export class Ui {
   }
 
   /** Escurece (on=true) ou clareia a tela, resolvendo no fim da transicao. */
-  fade(on: boolean): Promise<void> {
+  /**
+   * A cortina da troca de cena. `'digital'` é o clarão de tela de computador
+   * (entrar e sair do laboratório): a classe entra ANTES de a cortina subir e
+   * só sai depois que ela desceu, senão a cor troca no meio do esmaecer.
+   */
+  fade(on: boolean, estilo?: 'digital'): Promise<void> {
+    if (on) this.veil.classList.toggle('digital', estilo === 'digital');
     this.veil.classList.toggle('on', on);
-    return new Promise((resolve) => window.setTimeout(resolve, 360));
+    return new Promise((resolve) =>
+      window.setTimeout(() => {
+        if (!on) this.veil.classList.remove('digital');
+        resolve();
+      }, 360),
+    );
+  }
+
+  /**
+   * A DICA EM CIMA DA PEÇA APONTADA: `x`/`y` em pixels de tela, já convertidos
+   * do mundo pelo apontador. `null` esconde.
+   */
+  mostrarDica(texto: string | null, x = 0, y = 0): void {
+    if (!texto) {
+      this.dica.classList.remove('show');
+      return;
+    }
+    if (this.dica.textContent !== texto) this.dica.textContent = texto;
+    this.dica.style.left = `${Math.round(x)}px`;
+    this.dica.style.top = `${Math.round(y)}px`;
+    this.dica.classList.add('show');
   }
 
   // ------------------------------------------------------------ cartao cena
