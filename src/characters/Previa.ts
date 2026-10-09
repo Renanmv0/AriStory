@@ -130,9 +130,20 @@ export class Previa {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     if (w < 2 || h < 2) return;
-    // `false` para o renderer NAO escrever width/height no style: quem manda no
-    // tamanho aqui e o CSS do painel
-    if (canvas.width !== w || canvas.height !== h) this.renderer.setSize(w, h, false);
+    /*
+     * `false` para o renderer NAO escrever width/height no style: quem manda no
+     * tamanho aqui e o CSS do painel.
+     *
+     * A COMPARACAO E EM PIXELS DO APARELHO. O renderer multiplica pelo
+     * `pixelRatio` (2 no celular): o `canvas.width` sai 2x o `clientWidth`, e a
+     * conta antiga (`canvas.width !== w`) nunca batia — redimensionava todo
+     * quadro. No Safari do iPhone isso virava o "zoom que nao para" no
+     * armario: o canvas maior empurrava a altura do painel (ver `contain:
+     * size` no CSS do `.boneco`), o painel esticava o canvas, e o quadro
+     * seguinte dobrava de novo, ate o boneco tomar a tela.
+     */
+    const pr = this.renderer.getPixelRatio();
+    if (canvas.width !== Math.floor(w * pr) || canvas.height !== Math.floor(h * pr)) this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.render(this.cena, this.camera);

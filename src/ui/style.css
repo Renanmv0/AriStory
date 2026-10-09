@@ -1164,6 +1164,16 @@ body.touch-device .dialogue .next { right: 84px; }
   width: 100%;
   height: 100%;
   min-height: 260px;
+  /*
+   * O TAMANHO INTERNO DO CANVAS NAO ENTRA NA CONTA DO PAINEL. O canvas tem
+   * 2x mais pixels que o tamanho na tela (a tela do celular), e o Safari usava
+   * esses pixels para medir a linha do painel: a linha crescia, esticava o
+   * canvas, o boneco era redesenhado maior, e o "zoom" nao parava ate travar o
+   * armario (o Renan viu, no iPhone). `contain: size` faz o canvas medir so
+   * pelo CSS; o `max-height` e o cinto de seguranca.
+   */
+  contain: size;
+  max-height: 72vh;
   border-radius: 18px;
   background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(226,214,240,0.4));
   cursor: grab;
@@ -1338,6 +1348,9 @@ body.touch-device .dialogue .next { right: 84px; }
   width: 100%;
   height: 100%;
   min-height: 250px;
+  /* a mesma trava do boneco do armário: o tamanho interno do canvas fora da conta */
+  contain: size;
+  max-height: 72vh;
   border-radius: 18px;
   background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(240,225,205,0.45));
 }
