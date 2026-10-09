@@ -874,3 +874,103 @@ function folhaDeCoracao(): THREE.BufferGeometry {
   folhaPronta = geo;
   return geo;
 }
+
+// ============================================================ porta da rua
+
+/**
+ * A PORTA DA RUA: folha de madeira com quatro almofadas em relevo dos DOIS
+ * lados (ela é vista de dentro e, girando a câmera, de fora), maçaneta
+ * redonda com espelho, olho mágico, soleira de pedra no chão, batente com
+ * guarnição e uma plaquinha de número em cima, do lado da sala.
+ *
+ * Mesmo contrato da `interiorDoor`: a folha mora na `dobradica` (lateral
+ * esquerda) e a porta vai CENTRADA na linha da parede. O vão que ela pede tem
+ * `largura + 0.2` (folha mais os dois batentes): é essa a medida que a cena
+ * deixa aberta na parede, sem mureta passando por baixo.
+ *
+ * Frente: +Z.
+ */
+export function portaDaRua(cor: number = P.woodDark, largura = 0.95, altura = 2.1): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'porta-da-rua';
+  const ESP = 0.06;
+  const BAT = 0.1; // largura do batente
+  const PROF = 0.24; // mais fino que a parede (0,3): não divide plano com ela
+  const FACE = 0.15; // a face da parede (meia espessura): a guarnição fica à frente dela
+
+  // a soleira: uma régua de pedra no chão, de um batente ao outro
+  const soleira = new THREE.Mesh(macia(largura + BAT * 2, 0.025, PROF + 0.06, 0.008), toon(P.concrete));
+  soleira.position.y = 0.0125;
+  g.add(soleira);
+
+  for (const lado of [-1, 1]) {
+    const batente = new THREE.Mesh(new THREE.BoxGeometry(BAT, altura + BAT, PROF), toon(P.woodDark));
+    batente.position.set(lado * (largura / 2 + BAT / 2), (altura + BAT) / 2, 0);
+    g.add(batente);
+  }
+  // A verga ENCAIXA entre os dois batentes (1 mm dentro de cada um), um dedo
+  // mais rasa e 5 mm mais baixa: com a mesma largura total e a mesma
+  // profundidade, as faces dela e as dos batentes caíam nos mesmos planos.
+  const verga = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.002, BAT - 0.005, PROF - 0.02), toon(P.woodDark));
+  verga.position.y = altura + (BAT - 0.005) / 2;
+  g.add(verga);
+  // a guarnição: a moldura arredondada que cobre a junta do batente com a
+  // parede, nas duas faces
+  for (const face of [-1, 1]) {
+    for (const lado of [-1, 1]) {
+      const g1 = new THREE.Mesh(macia(0.06, altura + BAT + 0.05, 0.03, 0.01), toon(P.wood));
+      g1.position.set(lado * (largura / 2 + BAT - 0.02), (altura + BAT + 0.05) / 2, face * (FACE + 0.012));
+      g.add(g1);
+    }
+    const topo = new THREE.Mesh(macia(largura + BAT * 2 + 0.06, 0.06, 0.03, 0.01), toon(P.wood));
+    topo.position.set(0, altura + BAT + 0.02, face * (FACE + 0.012));
+    g.add(topo);
+  }
+
+  // a folha, na dobradiça
+  const dobradica = new THREE.Group();
+  dobradica.name = 'dobradica';
+  dobradica.position.x = -largura / 2;
+  g.add(dobradica);
+  const folha = new THREE.Mesh(macia(largura - 0.01, altura - 0.03, ESP, 0.015), toon(cor));
+  folha.position.set(largura / 2, 0.025 + (altura - 0.03) / 2, 0);
+  dobradica.add(folha);
+  // as quatro almofadas, nas duas faces: duas compridas em cima, duas curtas
+  // embaixo, cada uma um degrauzinho saltado da folha
+  const larg = (largura - 0.3) / 2;
+  const almofadas: Array<[number, number, number]> = [
+    [-1, altura * 0.66, altura * 0.42],
+    [1, altura * 0.66, altura * 0.42],
+    [-1, altura * 0.22, altura * 0.28],
+  ];
+  almofadas.push([1, altura * 0.22, altura * 0.28]);
+  for (const face of [-1, 1]) {
+    for (const [lado, y, alto] of almofadas) {
+      const almofada = new THREE.Mesh(macia(larg, alto, 0.02, 0.01), toon(cor));
+      almofada.position.set(largura / 2 + lado * (larg / 2 + 0.05), y, face * (ESP / 2 + 0.006));
+      dobradica.add(almofada);
+    }
+    // a maçaneta: espelho (a plaquinha) e a bola
+    const espelho = new THREE.Mesh(macia(0.05, 0.16, 0.012, 0.006), toon(P.gold));
+    espelho.position.set(largura - 0.11, altura * 0.47, face * (ESP / 2 + 0.006));
+    dobradica.add(espelho);
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(0.035, 14, 10), toon(P.gold, { glow: 0.15 }));
+    bola.position.set(largura - 0.11, altura * 0.47, face * (ESP / 2 + 0.04));
+    dobradica.add(bola);
+  }
+  // o olho mágico, no meio, na altura do olho
+  const olho = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, ESP + 0.02, 12), toon(P.gold));
+  olho.rotation.x = Math.PI / 2;
+  olho.position.set(largura / 2, altura * 0.78, 0);
+  dobradica.add(olho);
+
+  // a plaquinha do número, em cima da verga, do lado da frente
+  const placa = new THREE.Mesh(macia(0.22, 0.12, 0.02, 0.02), toon(P.cupula));
+  placa.position.set(0, altura + BAT + 0.14, FACE + 0.035);
+  g.add(placa);
+  const coracao = new THREE.Mesh(new THREE.SphereGeometry(0.02, 10, 8), toon(P.heart));
+  coracao.scale.set(1.2, 1, 0.5);
+  coracao.position.set(0, altura + BAT + 0.14, FACE + 0.047);
+  g.add(coracao);
+  return g;
+}

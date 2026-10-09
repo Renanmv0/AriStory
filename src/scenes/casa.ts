@@ -7,7 +7,8 @@ import {
 } from '../world/furniture';
 import {
   abajurDePe, armarioAereo, cadeiraDeJantar, geladeira, jiboiaEmVaso, maquinaDeLavar,
-  mesaDeJantar, mesinhaDeCentro, pia, prateleiraDeParede, rackComTv, sofaFofo, telaDeTvLigada,
+  mesaDeJantar, mesinhaDeCentro, pia, portaDaRua, prateleiraDeParede, rackComTv, sofaFofo,
+  telaDeTvLigada,
 } from '../world/moveisDaCasa';
 import { heart } from '../world/props';
 import { toon } from '../core/materials';
@@ -93,7 +94,12 @@ export const casa: SceneDef = {
     const vaoAri = 0.95;
     w.wall(x0, z0, x0, zDoAri - vaoAri / 2, H, P.wallMint);
     w.wall(x0, zDoAri + vaoAri / 2, x0, D / 2, H, P.wallMint);
-    w.wall(x0, D / 2, W / 2, D / 2, 0.45, P.wallCream);
+    // a mureta da frente vem em dois trechos: o vão da porta da rua (ver lá
+    // embaixo) fica ABERTO até o chão
+    const PORTA_DA_RUA = { x: 3.4, largura: 0.95 };
+    const vaoDaRua = PORTA_DA_RUA.largura / 2 + 0.1;
+    w.wall(x0, D / 2, 2.0, D / 2, 0.45, P.wallCream);
+    w.wall(4.9, D / 2, W / 2, D / 2, 0.45, P.wallCream);
     w.wall(W / 2, z0, W / 2, D / 2, 0.45, P.wallCream);
 
     // ------------------------------- parede do fundo: a Rubi e o banheiro
@@ -191,12 +197,12 @@ export const casa: SceneDef = {
       },
     });
 
-    // --------------------------------------------- área de serviço (verde)
-    // longe das portas do fundo: aqui ela não tranca a passagem de ninguém
-    // de frente para a sala (+Z), e não para a parede de dentro: virada para
-    // -X a escotilha ficava do lado que a câmera nunca vê
-    const maquina = w.add(w.place(maquinaDeLavar(), W / 2 - 0.65, 0, 2.9));
-    w.blockBox(W / 2 - 0.65, 2.9, 0.36, 0.35);
+    // --------------------------------------------------- a máquina de lavar
+    // Na cozinha, encostada na ponta direita da pia e alinhada com ela: o
+    // fundo das duas na mesma linha, a escotilha olhando para a sala.
+    const MAQUINA = { x: -3.4 + 1.8 + 0.06 + 0.34, z: z0 + 0.48 };
+    const maquina = w.add(w.place(maquinaDeLavar(), MAQUINA.x, 0, MAQUINA.z));
+    w.blockBox(MAQUINA.x, MAQUINA.z, 0.36, 0.34);
 
     // ------------------------------------------------ janela (rosa) e enfeites
     w.add(w.place(windowFrame(1.8, 1.3), x0 + 0.16, 1.75, 2.4, Math.PI / 2));
@@ -212,12 +218,29 @@ export const casa: SceneDef = {
     w.add(coracao);
 
     // ---------------------------------------------------------- porta da rua
-    // trecho de parede alta na mureta da frente, só para a porta ter onde morar
+    // Um trecho de parede alta na mureta da frente, só para a porta ter onde
+    // morar: os dois lados do vão e a parede EM CIMA da porta.
+    //
+    // Antes a mureta baixa corria inteira por baixo da porta (um degrau de
+    // 45 cm atravessando a soleira, que aparecia girando a câmera) e não havia
+    // nada acima do batente — o buraco ia até o alto da parede. Agora o vão
+    // tem exatamente a largura da porta com os batentes, aberto até o chão.
     const zPorta = D / 2;
-    w.wall(2.0, zPorta, 2.9, zPorta, 2.6, P.wallCream);
-    w.wall(3.9, zPorta, 4.9, zPorta, 2.6, P.wallCream);
-    const porta = w.add(envernizar(w.place(interiorDoor(P.woodDark, 0.95, 2.1), 3.4, 0, zPorta, Math.PI)));
-    w.blockBox(3.4, zPorta, 0.5, 0.12);
+    const ALTO = 2.6;
+    const xa = PORTA_DA_RUA.x - vaoDaRua;
+    const xb = PORTA_DA_RUA.x + vaoDaRua;
+    w.wall(2.0, zPorta, xa, zPorta, ALTO, P.wallCream);
+    w.wall(xb, zPorta, 4.9, zPorta, ALTO, P.wallCream);
+    // a parede de cima da porta: só malha, sem colisor (ninguém passa ali)
+    const ALTURA_DO_VAO = 2.2;
+    const acima = new THREE.Mesh(
+      new THREE.BoxGeometry(xb - xa + 0.02, ALTO - ALTURA_DO_VAO, 0.3),
+      toon(P.wallCream),
+    );
+    acima.position.set(PORTA_DA_RUA.x, (ALTO + ALTURA_DO_VAO) / 2, zPorta);
+    w.add(acima);
+    const porta = w.add(envernizar(w.place(portaDaRua(P.woodDark, PORTA_DA_RUA.largura, 2.1), PORTA_DA_RUA.x, 0, zPorta, Math.PI)));
+    w.blockBox(PORTA_DA_RUA.x, zPorta, vaoDaRua, 0.15);
     w.add(w.place(tapete(1.4, 0.8, P.capacho, 'capacho'), 3.4, 0, D / 2 - 1.0));
 
     // ----------------------------------------------- âncoras da cena do sofá
@@ -314,7 +337,7 @@ export const casa: SceneDef = {
 
     w.interact({
       id: 'casa:pia',
-      x: -2.2, z: z0 + 1.3, radius: 1.4,
+      x: -2.4, z: z0 + 1.3, radius: 1.2,
       label: 'Olhar a pia', icon: '🚰',
       onInteract: (g) => g.say(['Por algum milagre, a pia está limpa…']),
     });
@@ -335,7 +358,7 @@ export const casa: SceneDef = {
 
     w.interact({
       id: 'casa:maquina',
-      x: W / 2 - 0.9, z: 3.7, radius: 1.4,
+      x: MAQUINA.x, z: z0 + 1.35, radius: 1.0,
       label: 'Ver a máquina de lavar', icon: '🧺',
       highlight: maquina,
       onInteract: async (g) => {
