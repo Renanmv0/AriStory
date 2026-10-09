@@ -460,8 +460,20 @@ export function edredom(opts: {
   return geo;
 }
 
+/**
+ * A ESCRIVANINHA COM O COMPUTADOR (a do quarto do Ari).
+ *
+ * O monitor é o de sempre — a cena cola a tela de verdade nele (a área de
+ * trabalho com a pasta do laboratório, 1,5 cm à frente do plano azul) —, e em
+ * volta dele mora o resto do computador: pé de verdade, teclado com as teclas,
+ * mouse no mousepad, duas caixinhas de som, a webcam em cima da tela, um
+ * post-it colado na borda e o gabinete no chão, embaixo da mesa, com a
+ * luzinha acesa. A frente da peça é +Z (onde senta quem usa); a mão do mouse
+ * é +X, que é a direita de quem senta olhando a tela.
+ */
 export function desk(): THREE.Group {
   const g = new THREE.Group();
+  g.userData.peca = 'escrivaninha';
   const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 0.7), toon(P.wood));
   top.position.y = 0.74;
   g.add(top);
@@ -470,15 +482,177 @@ export function desk(): THREE.Group {
     leg.position.set(x, 0.37, 0);
     g.add(leg);
   }
-  const monitor = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.06), toon(0x2b2f38));
+  const monitor = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.06), toon(P.pcCorpo));
   monitor.position.set(0, 1.08, -0.18);
   g.add(monitor);
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.72, 0.42), flat(0x9fd8ff));
   glow.position.set(0, 1.08, -0.14);
   g.add(glow);
-  const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.12, 0.24, 8), toon(0x2b2f38));
-  stand.position.set(0, 0.86, -0.18);
+  // O pescoço do monitor, ATRÁS da tela. O pé antigo era um cone de 12 cm de
+  // raio no meio do monitor: a boca dele passava da frente da tela e aparecia
+  // como um triângulo escuro tapando a parte de baixo da área de trabalho.
+  const stand = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.2, 0.03), toon(P.pcCorpo));
+  stand.position.set(0, 0.88, -0.228);
   g.add(stand);
+  g.add(computador());
+  return g;
+}
+
+/** O resto do computador, em volta do monitor (ver `desk`). */
+function computador(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'computador';
+  const MESA = 0.78; // o tampo da escrivaninha
+  const corpo = toon(P.pcCorpo);
+
+  // o pé do monitor: uma base oval no tampo, e não o cilindro saindo da madeira
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.16, 0.018, 20), corpo);
+  base.scale.z = 0.62;
+  base.position.set(0, MESA + 0.009, -0.2);
+  g.add(base);
+
+  // ------------------------------------------------------------ o teclado
+  // A carcaça arredondada e as teclas num `InstancedMesh`: sessenta e poucas
+  // teclas são UMA malha. Quatro fileiras de 13, mais a barra de espaço e as
+  // teclas de canto num lilás mais forte, como teclado de gente que gosta de
+  // teclado. Inclinado de leve para quem senta, como os pezinhos fazem.
+  const teclado = new THREE.Group();
+  teclado.position.set(-0.04, MESA, 0.13);
+  teclado.rotation.x = 0.06;
+  const LARG = 0.46;
+  const PROF = 0.155;
+  const carcaca = new THREE.Mesh(new RoundedBoxGeometry(LARG, 0.022, PROF, 2, 0.008), toon(P.pcTeclado));
+  carcaca.position.y = 0.011;
+  teclado.add(carcaca);
+  const passo = 0.031;
+  const tecla = new RoundedBoxGeometry(0.025, 0.012, 0.025, 1, 0.004);
+  const comuns: THREE.Matrix4[] = [];
+  const fortes: THREE.Matrix4[] = [];
+  const m = (x: number, z: number, larg = 1): THREE.Matrix4 =>
+    new THREE.Matrix4().compose(
+      new THREE.Vector3(x, 0.026, z),
+      new THREE.Quaternion(),
+      new THREE.Vector3(larg, 1, 1),
+    );
+  const x0 = -LARG / 2 + 0.03;
+  for (let fila = 0; fila < 4; fila++) {
+    const z = -PROF / 2 + 0.026 + fila * passo;
+    for (let k = 0; k < 13; k++) {
+      const canto = k === 0 || k === 12;
+      (canto ? fortes : comuns).push(m(x0 + k * passo + (fila % 2) * 0.008, z));
+    }
+  }
+  // a fileira de baixo: dois cantos e a barra de espaço comprida
+  const zBaixo = -PROF / 2 + 0.026 + 4 * passo;
+  fortes.push(m(x0, zBaixo), m(x0 + 12 * passo, zBaixo));
+  for (const k of [1, 2, 10, 11]) comuns.push(m(x0 + k * passo, zBaixo));
+  comuns.push(m(x0 + 6 * passo, zBaixo, 6.4));
+  for (const [lista, cor] of [[comuns, P.pcTecla], [fortes, P.pcTeclaForte]] as const) {
+    const teclas = new THREE.InstancedMesh(tecla, toon(cor), lista.length);
+    lista.forEach((mat, i) => teclas.setMatrixAt(i, mat));
+    teclas.instanceMatrix.needsUpdate = true;
+    teclado.add(teclas);
+  }
+  g.add(teclado);
+
+  // ------------------------------------------------- o mouse no mousepad
+  const pad = new THREE.Mesh(new RoundedBoxGeometry(0.22, 0.006, 0.19, 2, 0.003), toon(P.pcMousepad));
+  pad.position.set(0.4, MESA + 0.003, 0.12);
+  g.add(pad);
+  const mouse = new THREE.Group();
+  mouse.position.set(0.41, MESA + 0.006, 0.13);
+  mouse.rotation.y = -0.18;
+  const casco = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon(P.pcTeclado));
+  casco.scale.set(0.82, 0.62, 1.35);
+  mouse.add(casco);
+  // o risco entre os dois botões e a rodinha
+  const risco = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.004, 0.03), toon(P.pcTeclaForte));
+  risco.position.set(0, 0.02, -0.02);
+  mouse.add(risco);
+  const rodinha = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.005, 10), toon(P.pcCorpo));
+  rodinha.rotation.z = Math.PI / 2;
+  rodinha.position.set(0, 0.021, -0.016);
+  mouse.add(rodinha);
+  g.add(mouse);
+  // o fio do mouse, uma curva macia até atrás do monitor
+  const fio = new THREE.Mesh(
+    new THREE.TubeGeometry(
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.41, MESA + 0.012, 0.085),
+        new THREE.Vector3(0.39, MESA + 0.006, 0.0),
+        new THREE.Vector3(0.3, MESA + 0.004, -0.12),
+        new THREE.Vector3(0.12, MESA + 0.004, -0.26),
+      ]),
+      20, 0.0035, 5,
+    ),
+    toon(P.pcCorpo),
+  );
+  g.add(fio);
+
+  // ------------------------------------------------- as caixinhas de som
+  for (const lado of [-1, 1] as const) {
+    const caixa = new THREE.Group();
+    caixa.position.set(lado * 0.56, MESA, -0.17);
+    caixa.rotation.y = -lado * 0.25;
+    const gabinete = new THREE.Mesh(new RoundedBoxGeometry(0.11, 0.18, 0.1, 2, 0.012), corpo);
+    gabinete.position.y = 0.09;
+    caixa.add(gabinete);
+    // o alto-falante: um anel claro e o miolo escuro, na frente
+    const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.034, 0.034, 0.008, 18), toon(P.pcTecla));
+    cone.rotation.x = Math.PI / 2;
+    cone.position.set(0, 0.075, 0.052);
+    caixa.add(cone);
+    const miolo = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.008, 14), corpo);
+    miolo.rotation.x = Math.PI / 2;
+    miolo.position.set(0, 0.075, 0.056);
+    caixa.add(miolo);
+    const tweeter = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.008, 12), toon(P.pcTecla));
+    tweeter.rotation.x = Math.PI / 2;
+    tweeter.position.set(0, 0.145, 0.052);
+    caixa.add(tweeter);
+    g.add(caixa);
+  }
+
+  // --------------------------------------------- em cima e na borda da tela
+  const webcam = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.03, 0.035, 2, 0.01), corpo);
+  webcam.position.set(0, 1.348, -0.175);
+  g.add(webcam);
+  const lente = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.006, 12), toon(P.pcLed, { glow: 0.3 }));
+  lente.rotation.x = Math.PI / 2;
+  lente.position.set(0, 1.348, -0.155);
+  g.add(lente);
+  // o post-it, metade para fora da borda direita da tela, um pouco torto
+  const postit = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.075, 0.003), toon(P.pcPostit));
+  postit.position.set(0.415, 1.2, -0.146);
+  postit.rotation.z = -0.12;
+  g.add(postit);
+
+  // --------------------------------------- o gabinete, no chão, embaixo da mesa
+  const torre = new THREE.Group();
+  torre.position.set(-0.46, 0, 0.0);
+  const caixaDoPc = new THREE.Mesh(new RoundedBoxGeometry(0.2, 0.44, 0.44, 2, 0.015), corpo);
+  caixaDoPc.position.y = 0.23;
+  torre.add(caixaDoPc);
+  // os pezinhos, para ele não nascer do chão
+  for (const z of [-0.16, 0.16]) {
+    const pe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.012, 0.03), corpo);
+    pe.position.set(0, 0.006, z);
+    torre.add(pe);
+  }
+  // a frente: as grelhas de ventilação e a luzinha acesa (a que diz "ligado")
+  for (let i = 0; i < 4; i++) {
+    const grelha = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.008, 0.004), toon(P.pcGrelha));
+    grelha.position.set(0, 0.32 - i * 0.03, 0.222);
+    torre.add(grelha);
+  }
+  const led = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.008, 0.004), toon(P.pcLed, { glow: 0.9 }));
+  led.position.set(0, 0.405, 0.222);
+  torre.add(led);
+  const botao = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.006, 14), toon(P.pcLed, { glow: 0.6 }));
+  botao.rotation.x = Math.PI / 2;
+  botao.position.set(0, 0.375, 0.222);
+  torre.add(botao);
+  g.add(torre);
   return g;
 }
 

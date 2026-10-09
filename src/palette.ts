@@ -74,6 +74,16 @@ export const PALETTE = {
   luzDeAbajur: 0xffc98a,
   cupula: 0xfff0cc,
   cupulaApagada: 0xe6ded0,
+  // o computador do Ari: monitor e gabinete grafite, teclado branquinho de
+  // teclas lilás, o mousepad e o post-it amarelo colado na borda da tela
+  pcCorpo: 0x2b2f38,
+  pcTeclado: 0xf3f1f7,
+  pcTecla: 0xd9d2ec,
+  pcTeclaForte: 0xb7a9de,
+  pcMousepad: 0x7d6bb0,
+  pcLed: 0x7fe3ff,
+  pcGrelha: 0x3b4150,
+  pcPostit: 0xffe27a,
   luzDeJanela: 0xfff1d6,
   sofa: 0x6d8fd6,
   screen: 0x2a2f3a,
