@@ -25,7 +25,10 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
 | `SaveState.ts` | persistência; nada mais escreve em `localStorage` |
 | `materials.ts` | `toon()` / `flat()` / `line()`, todos cacheados por cor; `translucido()` (o fantasma do decorador) e a LUZ FALSA — `luzNoChao()` (poça aditiva de degradê no chão) e `brilhoDeLuz()` (halo em sprite) — no lugar de `PointLight`, que recompila o shader de toda a cena |
 | `matrizSoQuandoMexe.ts` | a matriz de um objeto só é refeita quando a pose ou o pai dele muda |
-| `types.ts` | `SceneDef`, `InteractableDef`, `GameAPI`, colisores |
+| `types.ts` | `SceneDef`, `InteractableDef`, `ClicavelDef`, `GameAPI`, colisores |
+| `posProcessamento.ts` | o EFEITO DE TELA (`EffectComposer`): a cena pede com `g.telaComEfeitos({ brilho, pixel, contorno, filme, glitch, rastro, quadrinho, monitor, lente })` e o motor monta a fila de passes, sempre com o `OutputPass` no fim (linear → sRGB) e a textura multiamostrada (o antisserrilhado). Sem pedido, o quadro sai pelo `renderer.render()` puro; trocar de cena desliga. Hoje só o laboratório usa |
+| `Apontador.ts` | CLICAR, PASSAR O MOUSE E ARRASTAR no mundo (`Raycaster`): a cena registra com `w.clicavel(obj, def)`, o `Input` repassa os eventos de ponteiro, e o raio só testa a lista. A dica em cima da peça é DOM, posta pela conversão mundo→tela a cada quadro. Toque num clicável não vira joystick |
+| `shaders.ts` | o kit dos MATERIAIS DE SHADER: `Vento` (o toon que balança, instanciado), `gradeDigital` (o chão do laboratório), `dissolver`, `holograma`, `AguaDePixel`, `portal` e `neon()` (cor acima de 1, a única que o brilho de tela pega). Toon estendido por `onBeforeCompile` quando ainda tem que parecer do jogo; `ShaderMaterial` próprio quando não é matéria |
 
 ### Detalhes que custaram caro
 
@@ -46,6 +49,18 @@ main.ts  →  Game  ──┬── IsoCamera      câmera ortográfica isométr
   filhos também ficam. É automático por objeto: **não** use
   `matrixAutoUpdate = false` à mão, e não escreva direto em `.matrix` (o Three
   já jogaria isso fora). `scripts/matriz.mjs` recalcula tudo do zero e compara.
+
+- **Nenhuma carona atravessa a troca de cena**: quem está numa âncora
+  (`ridePlayer`/`rideCompanion`) é filho dela, e a âncora vai embora junto
+  com o mundo velho. O `build()` devolve os dois corpos para a cena principal
+  (e a escala para 1) antes de nascer na cena nova — a travessia do computador
+  troca de cena com os dois ainda encolhidos dentro da tela.
+- **Luz e câmera de laboratório**: `g.luzDoCeu(parcial)` mexe no céu, no sol
+  e na luz ambiente em tempo real, inclusive na DIREÇÃO do sol (o `sunDir` do
+  `ambient` nunca moveu a sombra, que vem sempre de `14, 20, 9` — e continua
+  assim para as cenas antigas). `g.cameraLivre(alvo)` é o drone: perspectiva
+  com `OrbitControls`, que ouve o canvas sozinho enquanto está no ar. As duas
+  voltam ao normal na troca de cena.
 
 ### A dupla
 
@@ -110,6 +125,19 @@ molhado; o motor só aplica. O piso precisa de buraco de verdade
   `retratoDoRosto` enquadra só a cabeça (o objeto `cabeca` do modelo, contando
   só o que aparece): é o rosto de quem fala nos quadrinhos da apostila
   (`retratoDoElenco.ts`).
+- `laboratorio/` — as peças do LABORATÓRIO (o mundo dentro do computador do
+  Ari, `scenes/laboratorio.ts`): uma por skill de Three.js — `fundamentos`
+  (sistema solar em hierarquia), `luz` (palco com luz de verdade e o ciclo do
+  dia), `materiais` (a vitrine com uma amostra de cada classe — a única
+  exceção à regra do `toon()`, porque os materiais são o assunto),
+  `estacaoShaders`, `estacaoTexturas` (canvas, câmera ao vivo, `DataTexture`
+  e a bola espelhada com `CubeCamera`), `geometria`, `estacaoInteracao`,
+  `estacaoAnimacao` (clipes com `AnimationMixer`, `SkinnedMesh` e morph),
+  `plataforma` (o chão em grade, o pouso, o portal e a mesa dos filtros),
+  `telaDoComputador` (a tela do quarto) e `travessia` (sugar e cuspir a dupla
+  com um clipe de keyframes por âncora). Desenho extra de cena (a TV e a bola)
+  passa por `desenharDeOutroLugar()`, em `comum.ts`: esconde a peça, reaproveita
+  a sombra do quadro e não deixa um desenho extra rodar dentro do outro.
 - `ferrisWheel.ts` — peça animada com classe própria. As cabines ficam **fora**
   do grupo que gira e são reposicionadas por frame, para nunca virarem de cabeça
   para baixo.

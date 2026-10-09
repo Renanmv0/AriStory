@@ -39,16 +39,38 @@ no kit, em `core/materials.ts`, nunca dentro de uma cena).
 
 | skill | vale? | para quê, aqui |
 |---|---|---|
-| `threejs-shaders` | **sim** | `onBeforeCompile` em cima do `MeshToonMaterial` sem perder o degrau do toon: vento em árvore e grama, água ondulando, brilho pulsando. O jogo ainda não tem shader próprio |
+| `threejs-shaders` | **sim** | `onBeforeCompile` em cima do `MeshToonMaterial` sem perder o degrau do toon: vento em árvore e grama, água ondulando, brilho pulsando. O kit já existe (`core/shaders.ts`, nascido no laboratório); o jogo de sempre ainda não usa |
 | `threejs-postprocessing` | **sim, medindo no celular** | contorno de desenho, bloom suave nas luzes, tom de cor por cenário. Código do próprio Three (`three/addons`), sem asset — mas pesa no celular: só entra com foto e medição nos dois |
 | `threejs-geometry` | **sim** | `mergeGeometries` e `InstancedMesh` para aliviar o celular, e `BufferGeometry` própria (folha, tecido, curva) |
 | `threejs-lighting` | sim | cena de noite, abajur e poste, ajuste de sombra. **Ignore a parte de IBL/HDR**: pede arquivo externo |
-| `threejs-interaction` | em parte | `Raycaster` para tocar no mundo (pôr enfeite, peça do xadrez, NPC no celular). **OrbitControls e afins não**: a câmera é isométrica fixa (`core/IsoCamera.ts`) |
-| `threejs-animation` | em parte | os padrões de animação procedural e easing, e trilhas de keyframe para cutscene. **Esqueleto, GLTF e morph de modelo carregado não se aplicam**: o corpo é o `CharacterRig`, animado em código |
+| `threejs-interaction` | em parte | `Raycaster` para tocar no mundo (pôr enfeite, peça do xadrez, NPC no celular) — já está no motor (`w.clicavel`). **OrbitControls e afins, só no drone do laboratório**: no jogo a câmera é isométrica fixa (`core/IsoCamera.ts`) |
+| `threejs-animation` | em parte | os padrões de animação procedural e easing, e trilhas de keyframe para cutscene (a travessia do computador já é assim). Ossos e morph **feitos em código** servem (a cobrinha e o coração do laboratório); **GLTF e modelo carregado, não**: o corpo é o `CharacterRig`, animado em código |
 | `threejs-textures` | pouco | só textura procedural em `<canvas>` e render target (como o espelho). Carregar imagem, cubemap ou HDR é proibido |
 | `threejs-fundamentals` | pouco | consulta de transformação e de `dispose`; o motor já está montado |
 | `threejs-materials` | pouco | quase tudo é PBR, que não é a cara do jogo. Serve a seção de toon e as propriedades comuns — e nunca para instanciar material numa cena |
 | `threejs-loaders` | **não vale** | é toda sobre carregar `.glb`, imagem e HDR, o que a primeira invariante proíbe. Não use neste projeto |
+
+**O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
+a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em
+`world/laboratorio/`) com uma estação por skill: o sistema solar em
+hierarquia, o palco com luz de verdade e o ciclo do dia, a vitrine dos
+materiais, o holograma/presente/lago/grama de vento, o telão/TV ao vivo/
+quadros de pixel/bola espelhada, o coração extrudado/cidade fundida/tornado
+instanciado, os cristais de clicar/bola de arrastar/drone, e o robô de
+keyframes/cobrinha de ossos/coração de morph — mais a mesa dos dez filtros de
+tela. Antes de trazer uma técnica para o jogo de verdade, veja como ela já
+roda lá dentro. O motor ganhou para ele: `core/posProcessamento.ts`
+(`g.telaComEfeitos`), `core/Apontador.ts` (`w.clicavel`), `core/shaders.ts`,
+`g.luzDoCeu`, `g.cameraLivre` e o véu `'digital'` do `goTo`.
+
+Três pontos em que as skills estão **desatualizadas** para o three 0.180 do
+jogo (o laboratório já usa o certo): o fim da fila de pós-processamento é o
+`OutputPass`, e não o `GammaCorrectionShader`; o `FilmPass` é
+`new FilmPass(intensidade, cinza)`; e o `HalftonePass` recebe só os parâmetros
+(`new HalftonePass({ shape, radius, … })`), sem largura e altura. E um
+defeito do próprio three 0.180: o `GlitchPass` guarda o mapa em `_heightMap` e
+lê `heightMap` — o `dispose()` estoura e travava a troca de cena; use o
+`glitchConsertado()` de `core/posProcessamento.ts`.
 
 Fora do código, tem mais três documentos em `docs/`: `PERSONAGENS.md` diz
 como o Ari e o Renan são de verdade (cabelo, roupa de referência, os NPCs já
@@ -193,6 +215,7 @@ node scripts/uniforme.mjs /tmp/un   # o uniforme dos Gatitos: as sete pecas nos 
 node scripts/aula.mjs    /tmp/au    # a aula inteira: a Luna chama no ginasio, o Gatito na mesa da Sala 1, a apostila respondida pela tela (com erro de proposito), o fim da aula, e o livro no celular
 node scripts/flynn.mjs   /tmp/fl    # o Flynn no refeitorio: o passeio entre as mesas (o ponto de conversa e o colisor junto), os pes no chao, a altura, os acessorios, o aceno e a comemoracao medidos, a apresentacao com o apito e a memoria, e fotos de perto de todos os lados
 node scripts/treino.mjs  /tmp/tr    # o Flynn no ginasio do Modulo 2 em diante: sai do refeitorio, corre de ponta a ponta mais rapido que a dupla, pega a bola, arremessa e ela volta pro lugar, espera a dupla sair da raia, conversa e volta a treinar; as coelhinhas na lateral
+node scripts/laboratorio.mjs /tmp/lab # o mundo dentro do computador do Ari: entrar pela tela do quarto (sugados), a chegada no pouso, os dez filtros de tela (passes conferidos), o mouse no cristal (dica e som), arrastar a bola, clicar na agua, o presente, o arame, o holofote, o dia passando, o drone e sair pelo portal de volta pra frente da escrivaninha
 node scripts/festa.mjs   /tmp/fe    # a festa da torcida no fim do modulo: o convite na licao 6, a danca medida (o salto da Sol, as duas estrelinhas da Estrella, o giro da Luna, o confete), as tres cabendo no celular, a roupa de cheerleader nos dois (frente, costas, andando, sentados e de perto) e no vestiario  (SO=danca, SO=roupa… roda uma parte)
 ```
 

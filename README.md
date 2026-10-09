@@ -55,6 +55,10 @@ Para pular direto num cenário: `?cena=villa-lobos&entrada=roda`.
   ida e volta. Tem também lago com patos, quiosque de água de coco e piquenique.
 - **Clube** — a piscina, com os dois de calção. A água é um buraco de verdade no
   piso: quem entra afunda e passa a nadar, e dá pra pular do trampolim.
+- **Dentro do computador** — o computador do quarto do Ari abre a pasta
+  `AriStory_teste`: os dois são sugados pela tela para uma ilha de neon onde
+  cada plataforma testa uma técnica de Three.js — shader, efeito de tela, luz de
+  verdade, clique com o mouse, ossos, morph, textura ao vivo e materiais.
 - **A dupla** — Ari e Renan andam juntos; `T` troca quem você controla.
 - **Diário de memórias** — doze memórias para desbloquear até agora.
 
