@@ -152,6 +152,26 @@ para quem só quer mancha de cor.
 A cama (`bed()`) manteve as alturas da antiga de propósito: a cena de deitar
 do quarto conta com o topo do edredom perto de 0,68.
 
+## Móvel oco, vaso torneado e folha instanciada (o quarto do Ari)
+
+- **Armário que abre tem que ser OCO** (`armario()`): laterais, fundo, rodapé,
+  cornija e prateleiras, e não um bloco — porta entreaberta num bloco mostra a
+  própria madeira. Pela fresta aparecem o varão, as roupas nos cabides e a
+  roupa dobrada. Moldura de porta: as réguas em pé ficam ENTRE as deitadas e
+  são mais grossas, senão as faces da frente coincidem nas quinas.
+- **Vaso é `LatheGeometry`**: meia dúzia de pontos de perfil (pé, barriga,
+  borda virada) girados no eixo (`plantaDeEspada()`).
+- **Folha é geometria própria** (`folhaDeEspada()`): a silhueta de lança
+  dobrada em calha e curvada para fora, e as nove folhas são UM
+  `InstancedMesh` com cor por instância (`setColorAt`, material
+  `toon(0xffffff)`).
+- **Estante com enfeite** (`estanteDeLivros()`): o contrato do `quarto.mjs`
+  continua — carcaça como malha filha direta, livro num pivô com
+  `userData.livro` —, e os enfeites moram num GRUPO, fora da conta.
+
+`SO=armario,estante node scripts/zfighting.mjs` caça faces coplanares só
+nessas peças (a lista inteira passa de cinco minutos).
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

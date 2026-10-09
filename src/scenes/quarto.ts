@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
-  armario, bed, bookshelf, chair, claridadeDaJanela, desk, espelho, haloDeLampada,
-  muralDeMemorias, nightstand, pictureFrame, pocaDeLuz, pottedPlant, tapete, wallShelf,
+  armario, bed, chair, claridadeDaJanela, desk, espelho, estanteDeLivros, haloDeLampada,
+  muralDeMemorias, nightstand, pictureFrame, plantaDeEspada, pocaDeLuz, tapete, wallShelf,
   windowFrame,
 } from '../world/furniture';
 import { toon } from '../core/materials';
@@ -179,7 +179,7 @@ export const quarto: SceneDef = {
     const criado = w.add(envernizar(w.place(nightstand(), -1.05, 0, -2.72)));
     w.blockBox(-1.05, -2.72, 0.24, 0.22);
 
-    const estante = w.add(envernizar(w.place(bookshelf(1.9, 1.1), 0.15, 0, z0 + 0.22)));
+    const estante = w.add(envernizar(w.place(estanteDeLivros(1.9, 1.1), 0.15, 0, z0 + 0.22)));
     w.blockBox(0.15, z0 + 0.22, 0.55, 0.18);
 
     const movel = w.add(envernizar(w.place(armario(P.wallMint), ARMARIO.x, 0, ARMARIO.z)));
@@ -221,7 +221,7 @@ export const quarto: SceneDef = {
     // o tapete felpudo, com a franja nas duas pontas
     w.add(w.place(tapete(2.6, 2.0, P.rug), 0.3, 0, 1.1));
     // o canto de +X ficava um vazio marrom do tamanho de meia sala
-    w.add(w.place(pottedPlant(1.15), W / 2 - 0.75, 0, 0.9));
+    w.add(w.place(plantaDeEspada(1.15), W / 2 - 0.75, 0, 0.9));
     w.blockCircle(W / 2 - 0.75, 0.9, 0.3);
     w.add(envernizar(w.place(pictureFrame(0.6, 0.75, P.flowerPink), -2.2, 1.85, z0 + 0.17)));
     w.add(envernizar(w.place(wallShelf(0.9), 1.05, 1.9, z0 + 0.19)));
