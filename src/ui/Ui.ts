@@ -282,7 +282,7 @@ export class Ui {
         <p class="sub"></p>
         <div class="prova">
           <div class="palco">
-            <canvas class="boneco"></canvas>
+            <div class="moldura"><canvas class="boneco"></canvas></div>
             <div class="traje" role="group" aria-label="como o boneco aparece">
               <button data-traje="banho" title="como fica na piscina">🏊<span> na piscina</span></button>
               <button data-traje="normal" title="como fica na rua">👕<span> na rua</span></button>
@@ -307,7 +307,7 @@ export class Ui {
         <h2><span class="arara"></span> <span class="dono"></span></h2>
         <p class="sub">clique numa peça para <b>provar no corpo</b> · comprar guarda no guarda-roupa · <b>T</b> troca de pessoa</p>
         <div class="prova">
-          <canvas class="boneco"></canvas>
+          <div class="moldura"><canvas class="boneco"></canvas></div>
           <div class="ficha">
             <b class="nome"></b>
             <small class="nota"></small>

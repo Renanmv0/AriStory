@@ -127,8 +127,16 @@ export class Previa {
   desenhar(): void {
     if (!this.rig) return;
     const canvas = this.renderer.domElement;
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
+    /*
+     * O TAMANHO VEM DA MOLDURA, NUNCA DO PRÓPRIO CANVAS. Medindo o canvas, o
+     * tamanho do desenho podia virar o tamanho dele na tela no quadro seguinte
+     * (o Safari faz isso) — e cada quadro dobrava o anterior: o boneco "dava
+     * zoom" sem parar e travava o armário. A moldura (`.moldura`, no CSS) tem
+     * tamanho só de layout; o canvas fica preso dentro dela.
+     */
+    const moldura = canvas.parentElement ?? canvas;
+    const w = Math.min(moldura.clientWidth, 2048);
+    const h = Math.min(moldura.clientHeight, 2048);
     if (w < 2 || h < 2) return;
     /*
      * `false` para o renderer NAO escrever width/height no style: quem manda no
