@@ -65,6 +65,62 @@ AriStory, valem as regras daqui (ver abaixo), mas a técnica entra.
 E sempre, no fim: `aristory-testar` (foto olhada, testes, e o
 `scripts/zfighting.mjs` com `SO=` nas peças novas).
 
+### Qualidade é bonito E leve — e leveza nunca custa beleza
+
+As `threejs-*` deixam as peças bonitas com muitos pedaços pequenos (livro,
+ripa, puxador, almofada), e cada pedaço é um desenho a mais por quadro. Medido
+em outubro: a sala do Ari sozinha desenhava 436 objetos por quadro e 62 mil
+triângulos — perto do parque inteiro (547) e quase o dobro de triângulos dele.
+Por isso toda peça nova passa também por esta regra. **Não há teto de
+objetos nem de triângulos**: o que vale é o princípio abaixo.
+
+**A regra de ouro: só entra mudança de desempenho que NÃO perde nada de
+qualidade.** Nenhum detalhe some, nenhuma cor muda, nenhum segmento a menos
+numa curva que aparece, nenhuma textura mais pobre, nenhuma sombra a menos. A
+foto de antes e a de depois têm que ser a mesma imagem. Se a otimização muda
+o que se vê, ela não entra.
+
+O que pode (e deve) ser feito, porque não muda a imagem:
+
+- **Juntar os pedaços de mesmo material numa malha só**
+  (`mergeGeometries`, de `three/addons/utils/BufferGeometryUtils.js`, ver
+  `threejs-geometry`). Vale para o que está parado E para o que SE MEXE: o
+  que se mexe junto vira uma malha só DENTRO do grupo que se mexe. A folha da
+  porta, as almofadas dela, a maçaneta e o olho mágico são uma malha só dentro
+  da `dobradica`, e a porta continua abrindo; o tambor da máquina e as roupas
+  dentro dele são uma malha só dentro do `tambor`, e ele continua girando. O
+  que se mexe SEPARADO continua em grupos separados — o pivô é o que decide.
+- **Repetição vira `InstancedMesh`** (teclas, fios de franja, folhas, livros
+  iguais): uma malha, centenas de cópias, cor por instância se precisar.
+- **Material e textura compartilhados** — já é o padrão do `toon()` (cacheado)
+  e das texturas de canvas (desenhadas uma vez). Nunca uma cópia por peça.
+- **Luz pintada em vez de luz de verdade** (`pocaDeLuz`, `claridadeDaJanela`,
+  `haloDeLampada`): o efeito na tela é o mesmo, e luz nova recompila o shader
+  da cena inteira.
+
+Cuidados ao juntar, para não quebrar nada:
+
+- O que a cena ACHA PELO NOME (`tela`, `cupula`, `tambor`, `dobradica`,
+  `floreira`, o `userData.livro` da estante que o `quarto.mjs` mede) continua
+  existindo com o mesmo nome — junta-se em volta, não por cima.
+- A peça que é `highlight` de uma interação ou alvo de `w.clicavel` continua
+  sendo o mesmo grupo.
+- Quem troca material em tempo de jogo (o abajur que apaga, a TV que liga)
+  fica numa malha própria.
+- Depois de juntar: foto de antes e depois lado a lado, os testes da peça, e
+  o `scripts/zfighting.mjs` (malha juntada não pode criar face coplanar nova).
+
+**Efeitos pesados** (filtros de tela do `threejs-postprocessing`, shader
+animado, sombra extra, luz de verdade): entram quando melhoram o que se vê, e
+sempre medidos no celular — o laboratório, que usa todos ao mesmo tempo, é o
+que mais trava. Se um efeito pesa, a saída é deixá-lo mais esperto (desenhar
+em resolução menor só o que não se nota, ligar só quando está na tela), e
+nunca trocar por uma versão mais feia.
+
+Para medir, no console do jogo: `window.jogo.renderer.info.render` (`calls` é
+quantos objetos foram desenhados no quadro, `triangles` os triângulos). Anote
+o antes e o depois no commit.
+
 ### As skills genéricas de Three.js
 
 Além das `aristory-*`, a conta tem dez skills genéricas de Three.js
