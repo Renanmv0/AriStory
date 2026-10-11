@@ -13,6 +13,7 @@ import {
 import { heart } from '../world/props';
 import { toon } from '../core/materials';
 import { acabar } from '../world/acabamento';
+import { fundir } from '../world/fundir';
 import { assoalhoDeMadeira } from '../world/texturasDeChao';
 import { granito, tramaDeTecido, veioDeMadeira } from '../world/texturasDeCasa';
 import { ARI, RENAN } from '../characters/cast';
@@ -76,8 +77,10 @@ export const casa: SceneDef = {
      * cores da lista mudam; o resto da peça fica como o kit fez.
      */
     const veio = veioDeMadeira();
+    // ...e depois `fundir` (`world/fundir.ts`): os pedaços de mesmo material
+    // de cada móvel viram uma malha só — mesma imagem, menos desenho por quadro
     const envernizar = <T extends THREE.Object3D>(obj: T): T =>
-      acabar(obj, [[P.wood, veio], [P.woodDark, veio]]);
+      fundir(acabar(obj, [[P.wood, veio], [P.woodDark, veio]]));
 
     // Parede da esquerda, com um VÃO para a porta do quarto do Ari.
     //
@@ -127,7 +130,7 @@ export const casa: SceneDef = {
       w.wall(bordas[i], z0, bordas[i + 1], z0, H, P.wallCream);
     }
     const portaQuarto = w.add(envernizar(w.place(interiorDoor(P.woodDark, 0.85, 2.05), xQuarto, 0, z0)));
-    const portaBanheiro = w.add(w.place(interiorDoor(P.gold, 0.85, 2.05), xBanheiro, 0, z0));
+    const portaBanheiro = w.add(fundir(w.place(interiorDoor(P.gold, 0.85, 2.05), xBanheiro, 0, z0)));
 
     // uns enfeites no trecho de parede entre as duas portas
     w.add(envernizar(w.place(pictureFrame(0.6, 0.75, P.wallMint), (xQuarto + xBanheiro) / 2, 1.75, z0 + 0.17)));
@@ -136,7 +139,7 @@ export const casa: SceneDef = {
     // ------------------------------------------------- porta do quarto do Ari
     // Centrada na linha da parede, pela mesma razão das outras: batente posto à
     // frente encosta na face da parede e as duas piscam.
-    w.add(w.place(interiorDoor(P.fabricBlue, 0.9, 2.1), x0, 0, zDoAri, Math.PI / 2));
+    w.add(fundir(w.place(interiorDoor(P.fabricBlue, 0.9, 2.1), x0, 0, zDoAri, Math.PI / 2)));
     w.door({
       x: x0 + 0.85, z: zDoAri,
       to: 'quarto', entry: 'da-sala',
@@ -148,7 +151,7 @@ export const casa: SceneDef = {
     w.blockBox(-3.4, z0 + 0.42, 1.8, 0.4);
     w.add(envernizar(w.place(armarioAereo(2.6), -3.4, 2.0, z0 + 0.32)));
     // na parede da esquerda: no fundo ela ficava escondida atrás do bloco
-    w.add(w.place(geladeira(), x0 + 0.5, 0, -2.6, Math.PI / 2));
+    w.add(fundir(w.place(geladeira(), x0 + 0.5, 0, -2.6, Math.PI / 2)));
     w.blockBox(x0 + 0.45, -2.6, 0.38, 0.42);
 
     // A MESA DE JANTAR mora no lado direito da sala, onde antes ficava o bloco
@@ -166,7 +169,7 @@ export const casa: SceneDef = {
     w.blockBox(x0 + 0.35, 0.6, 0.3, 0.9);
     const tela = tv.getObjectByName('tela') as THREE.Mesh;
 
-    w.add(w.place(tapete(3.0, 2.6, P.rug), -2.5, 0, 0.6));
+    w.add(fundir(w.place(tapete(3.0, 2.6, P.rug), -2.5, 0, 0.6)));
     const tecido = tramaDeTecido(0.5);
     const sofaObj = w.add(envernizar(acabar(
       w.place(sofaFofo(P.fabricRed, 2.4), -0.3, 0, 0.6, -Math.PI / 2),
@@ -201,17 +204,17 @@ export const casa: SceneDef = {
     // Na cozinha, encostada na ponta direita da pia e alinhada com ela: o
     // fundo das duas na mesma linha, a escotilha olhando para a sala.
     const MAQUINA = { x: -3.4 + 1.8 + 0.06 + 0.34, z: z0 + 0.48 };
-    const maquina = w.add(w.place(maquinaDeLavar(), MAQUINA.x, 0, MAQUINA.z));
+    const maquina = w.add(fundir(w.place(maquinaDeLavar(), MAQUINA.x, 0, MAQUINA.z)));
     w.blockBox(MAQUINA.x, MAQUINA.z, 0.36, 0.34);
 
     // ------------------------------------------------ janela (rosa) e enfeites
-    w.add(w.place(windowFrame(1.8, 1.3), x0 + 0.16, 1.75, 2.4, Math.PI / 2));
+    w.add(fundir(w.place(windowFrame(1.8, 1.3), x0 + 0.16, 1.75, 2.4, Math.PI / 2)));
     // a claridade que essa janela joga no chão da sala
     w.add(w.place(claridadeDaJanela(1.8, 1.3, 1.75), x0 + 0.15, 0, 2.4, Math.PI / 2));
     w.add(envernizar(w.place(pictureFrame(0.8, 0.6, P.skyDusk), -3.4, 1.95, z0 + 0.17)));
     w.add(envernizar(w.place(prateleiraDeParede(1.1), -1.6, 1.8, z0 + 0.27)));
-    w.add(w.place(jiboiaEmVaso(1.15), x0 + 0.8, 0, D / 2 - 1.0));
-    const plantinha = w.add(w.place(jiboiaEmVaso(0.8, P.plantPot), 4.9, 0, 1.4));
+    w.add(fundir(w.place(jiboiaEmVaso(1.15), x0 + 0.8, 0, D / 2 - 1.0)));
+    const plantinha = w.add(fundir(w.place(jiboiaEmVaso(0.8, P.plantPot), 4.9, 0, 1.4)));
 
     const coracao = w.place(heart(0.75), -0.3, 2.4, 0.6);
     coracao.visible = false;
@@ -241,7 +244,7 @@ export const casa: SceneDef = {
     w.add(acima);
     const porta = w.add(envernizar(w.place(portaDaRua(P.woodDark, PORTA_DA_RUA.largura, 2.1), PORTA_DA_RUA.x, 0, zPorta, Math.PI)));
     w.blockBox(PORTA_DA_RUA.x, zPorta, vaoDaRua, 0.15);
-    w.add(w.place(tapete(1.4, 0.8, P.capacho, 'capacho'), 3.4, 0, D / 2 - 1.0));
+    w.add(fundir(w.place(tapete(1.4, 0.8, P.capacho, 'capacho'), 3.4, 0, D / 2 - 1.0)));
 
     // ----------------------------------------------- âncoras da cena do sofá
     // o "assento" carrega os dois durante a cutscene; a rotação mora nele,

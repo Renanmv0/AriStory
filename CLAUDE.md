@@ -82,9 +82,14 @@ o que se vê, ela não entra.
 
 O que pode (e deve) ser feito, porque não muda a imagem:
 
-- **Juntar os pedaços de mesmo material numa malha só**
-  (`mergeGeometries`, de `three/addons/utils/BufferGeometryUtils.js`, ver
-  `threejs-geometry`). Vale para o que está parado E para o que SE MEXE: o
+- **Juntar os pedaços de mesmo material numa malha só** — já existe a
+  ferramenta: `fundir(peca)` (`world/fundir.ts`, por cima do `mergeGeometries`
+  do three; ver `threejs-geometry`). Ela já respeita sozinha os cuidados
+  abaixo. No quarto e na casa do Ari ela cortou os desenhos por quadro quase
+  pela metade (308 → 158 e 279 → 143, na vista de entrada) com a MESMA imagem:
+  comparadas pixel a pixel, as fotos de antes e depois só diferem em 1 a 6
+  pixels de quina, por arredondamento. `?semFundir` na URL desliga, para
+  comparar. Vale para o que está parado E para o que SE MEXE: o
   que se mexe junto vira uma malha só DENTRO do grupo que se mexe. A folha da
   porta, as almofadas dela, a maçaneta e o olho mágico são uma malha só dentro
   da `dobradica`, e a porta continua abrindo; o tambor da máquina e as roupas

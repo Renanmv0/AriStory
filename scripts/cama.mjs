@@ -78,12 +78,18 @@ await page.screenshot({ path: `${OUT}-deitado.png` });
 const deitado = await pose();
 
 // ------------------------------------------------------ 2. os braços mexem
-await page.waitForTimeout(1400);
-const maisTarde = await pose();
-await page.screenshot({ path: `${OUT}-depois.png` });
-
+// O balanço é lento de propósito (ciclo de ~11 s de jogo), e o Chromium daqui
+// anda a uma fração do relógio: uma janela fixa de 1,4 s às vezes caía no topo
+// da onda, onde o braço quase não muda, e o teste reprovava uma pose que mexe.
+// Espera por EVENTO, com teto: o braço tem que sair do lugar em até 10 s.
 const mexeu = (a, b) =>
   Math.abs(a.bracoE[1] - b.bracoE[1]) + Math.abs(a.bracoD[1] - b.bracoD[1]);
+let maisTarde = await pose();
+for (let t = 0; t < 20 && mexeu(deitado.jogador, maisTarde.jogador) < 0.01; t++) {
+  await page.waitForTimeout(500);
+  maisTarde = await pose();
+}
+await page.screenshot({ path: `${OUT}-depois.png` });
 const balancoJogador = +mexeu(deitado.jogador, maisTarde.jogador).toFixed(4);
 const balancoParceiro = +mexeu(deitado.parceiro, maisTarde.parceiro).toFixed(4);
 
@@ -128,7 +134,7 @@ console.log('   lado a lado · x:', deitado.jogador.raiz[0], 'e', deitado.parcei
   '· mesma profundidade:', deitado.jogador.raiz[2] === deitado.parceiro.raiz[2]);
 console.log('3. braços · jogador', JSON.stringify(deitado.jogador.bracoE),
   JSON.stringify(deitado.jogador.bracoD));
-console.log('   mexeram em 1,4 s ·', balancoJogador, 'e', balancoParceiro);
+console.log('   mexeram ·', balancoJogador, 'e', balancoParceiro);
 console.log('4. levantou · giro da âncora:', dePeDeNovo.jogador.giroDoPai,
   '· braços:', JSON.stringify(dePeDeNovo.jogador.bracoE), JSON.stringify(dePeDeNovo.jogador.bracoD));
 console.log('   andou depois de levantar:', andou.antes, '→', depoisDeAndar);

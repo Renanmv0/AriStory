@@ -9,10 +9,15 @@ description: Adicionar uma peça nova ao kit de cenário do AriStory — árvore
 > TAREFA" do `CLAUDE.md`** (`geometry`, `textures`, e `lighting` se a peça acende). Elas são a técnica; esta é a regra do
 > jogo. Peça feita só de caixa lisa é o jeito antigo.
 >
-> E bonito **e leve**: no fim, junte os pedaços de mesmo material numa malha
-> só (o que se mexe junto vira uma malha dentro do grupo que se mexe) e repita
-> com `InstancedMesh` — sem perder nenhum detalhe. Ver "Qualidade é bonito E
-> leve" no `CLAUDE.md`.
+> E bonito **e leve**: na cena, passe a peça por `fundir()` (`world/fundir.ts`)
+> depois do acabamento — `w.add(fundir(acabar(w.place(peca(), …), …)))` — e
+> use `InstancedMesh` no que se repete. Sem perder nenhum detalhe. Ver
+> "Qualidade é bonito E leve" no `CLAUDE.md`.
+>
+> Para a `fundir` saber o que NÃO juntar: dê NOME ao grupo que se mexe
+> (`dobradica`, `tambor`) e à malha que a cena procura ou troca (`tela`,
+> `cupula`), e ponha em `userData` o que um teste mede (`livro`). Malha
+> transparente e decalque ficam de fora sozinhos.
 
 Duas caixas de peças:
 

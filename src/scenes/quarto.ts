@@ -8,6 +8,7 @@ import {
 } from '../world/furniture';
 import { toon } from '../core/materials';
 import { acabar } from '../world/acabamento';
+import { fundir } from '../world/fundir';
 import { assoalhoDeMadeira } from '../world/texturasDeChao';
 import { veioDeMadeira } from '../world/texturasDeCasa';
 import { ARI, RENAN } from '../characters/cast';
@@ -117,7 +118,13 @@ export const quarto: SceneDef = {
      */
     const veio = veioDeMadeira();
     const MADEIRA = [[P.wood, veio], [P.woodDark, veio]] as const;
-    const envernizar = <T extends THREE.Object3D>(obj: T): T => acabar(obj, MADEIRA);
+    /**
+     * E depois do acabamento, `fundir` (`world/fundir.ts`): os pedaços de
+     * mesmo material de cada móvel viram uma malha só. Mesma imagem, bem menos
+     * desenho por quadro — o que se mexe ou que a cena procura pelo nome fica
+     * de fora sozinho.
+     */
+    const envernizar = <T extends THREE.Object3D>(obj: T): T => fundir(acabar(obj, MADEIRA));
 
     // Parede inteira só em -X e -Z; nos dois lados abertos, mureta. Parede alta
     // do lado da câmera taparia o quarto inteiro.
@@ -152,7 +159,7 @@ export const quarto: SceneDef = {
     }
 
     // ------------------------------------------------- parede do fundo (-Z)
-    const cama = w.add(w.place(bed(P.fabricBlue), -2.2, 0, -1.75));
+    const cama = w.add(fundir(w.place(bed(P.fabricBlue), -2.2, 0, -1.75)));
     w.blockBox(-2.2, -1.75, 0.78, 1.08);
 
     // A âncora que DEITA os dois.
@@ -190,7 +197,7 @@ export const quarto: SceneDef = {
     // -X ele aparece de frente para a câmera em vez de de perfil.
     const espelhoObj = w.add(envernizar(w.place(espelho(P.woodDark), x0 + 0.12, 0, -0.6, Math.PI / 2)));
 
-    w.add(w.place(windowFrame(1.6, 1.2), x0 + 0.16, 1.7, 1.0, Math.PI / 2));
+    w.add(fundir(w.place(windowFrame(1.6, 1.2), x0 + 0.16, 1.7, 1.0, Math.PI / 2)));
 
     // A escrivaninha encostada na parede de -X, com o monitor olhando para
     // DENTRO do quarto (`+PI/2`): a frente da peça vira para `+X`, que é onde
@@ -219,9 +226,9 @@ export const quarto: SceneDef = {
 
     // ------------------------------------------------------------- enfeites
     // o tapete felpudo, com a franja nas duas pontas
-    w.add(w.place(tapete(2.6, 2.0, P.rug), 0.3, 0, 1.1));
+    w.add(fundir(w.place(tapete(2.6, 2.0, P.rug), 0.3, 0, 1.1)));
     // o canto de +X ficava um vazio marrom do tamanho de meia sala
-    w.add(w.place(plantaDeEspada(1.15), W / 2 - 0.75, 0, 0.9));
+    w.add(fundir(w.place(plantaDeEspada(1.15), W / 2 - 0.75, 0, 0.9)));
     w.blockCircle(W / 2 - 0.75, 0.9, 0.3);
     w.add(envernizar(w.place(pictureFrame(0.6, 0.75, P.flowerPink), -2.2, 1.85, z0 + 0.17)));
     w.add(envernizar(w.place(wallShelf(0.9), 1.05, 1.9, z0 + 0.19)));
@@ -230,7 +237,7 @@ export const quarto: SceneDef = {
     // entre o quadrinho da cabeceira (acaba em -1.9) e a estante (começa em
     // -0.4). Fica de frente para quem entra, e dá para chegar nele pelo vão
     // entre a cama e a estante, na frente do criado-mudo.
-    const mural = w.add(w.place(muralDeMemorias(1.3, 1.0), MURAL.x, 1.72, z0 + 0.17));
+    const mural = w.add(fundir(w.place(muralDeMemorias(1.3, 1.0), MURAL.x, 1.72, z0 + 0.17)));
 
     // ------------------------------------------------------------------ luz
     // Luz que se VÊ, sem luz de verdade no motor (cada `PointLight` nova faz o
