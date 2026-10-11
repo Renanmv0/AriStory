@@ -81,7 +81,7 @@ import { desenhoDeTapete, veioDeMadeira } from './texturasDeCasa';
  * borda esta a 1,05 da parede, e a Estella esta bem mais longe que isso.
  */
 export interface LojaOpts {
-  /** o nome no letreiro — provisorio ate o Renan batizar a loja */
+  /** o nome no letreiro — o Renan batizou: "Boutique da Estella" */
   nome?: string;
   corToldo?: number;
 }
@@ -295,12 +295,22 @@ function letreiroDaLoja(texto: string, largura: number, altura: number): THREE.M
     const H = canvas.height;
     const fonte = (px: number): string => `bold ${px}px ui-rounded, "Nunito", system-ui, sans-serif`;
     let tamanho = Math.round(H * 0.8);
-    const espaco = (px: number): number => px * 0.32;
+    /*
+     * NOME CURTO E NOME COMPRIDO. O letreiro nasceu para "MODAS" (5 letras),
+     * com as letras bem abertas e um enfeite comprido de cada lado. O nome de
+     * verdade tem 19 ("BOUTIQUE DA ESTELLA"): com o mesmo espaçamento e os
+     * mesmos enfeites, a letra encolhia até ficar ilegível do parque. Nome
+     * longo aperta o espaço entre letras, ganha mais da largura da placa, e o
+     * enfeite fica do tamanho que sobrar.
+     */
+    const longo = texto.length > 8;
+    const espaco = (px: number): number => px * (longo ? 0.16 : 0.32);
+    const ocupa = longo ? 0.76 : 0.62;
     const medir = (px: number): number => {
       ctx.font = fonte(px);
       return [...texto].reduce((soma, c) => soma + ctx.measureText(c).width, 0) + espaco(px) * (texto.length - 1);
     };
-    while (tamanho > 10 && medir(tamanho) > W * 0.62) tamanho -= 2;
+    while (tamanho > 10 && medir(tamanho) > W * ocupa) tamanho -= 2;
     const total = medir(tamanho);
     ctx.font = fonte(tamanho);
     ctx.textBaseline = 'middle';
@@ -313,8 +323,8 @@ function letreiroDaLoja(texto: string, largura: number, altura: number): THREE.M
     // o fio e o losango, de cada lado
     const rosa = `#${P.lojaToldo.toString(16).padStart(6, '0')}`;
     for (const lado of [-1, 1]) {
-      const perto = W / 2 + lado * (total / 2 + W * 0.035);
-      const longe = W / 2 + lado * (total / 2 + W * 0.15);
+      const perto = W / 2 + lado * (total / 2 + W * (longo ? 0.02 : 0.035));
+      const longe = W / 2 + lado * Math.min(total / 2 + W * 0.15, W * 0.485);
       ctx.strokeStyle = '#fdfaf6';
       ctx.lineWidth = Math.max(3, H * 0.035);
       ctx.setLineDash([H * 0.09, H * 0.06]);
@@ -1314,7 +1324,7 @@ export function lojaDeRoupas(opts: LojaOpts = {}): THREE.Group {
     const filete = retangulo(new THREE.Shape(), -W / 2 + 0.1, yc - H / 2 + 0.1, W / 2 - 0.1, yc + H / 2 - 0.1);
     filete.holes.push(retangulo(new THREE.Path(), -W / 2 + 0.14, yc - H / 2 + 0.14, W / 2 - 0.14, yc + H / 2 - 0.14));
     peca(q, extrudar(filete, 0.012, 0.205), esquadria);
-    const nome = letreiroDaLoja(opts.nome ?? 'MODAS', W - 0.4, H - 0.22);
+    const nome = letreiroDaLoja(opts.nome ?? 'BOUTIQUE DA ESTELLA', W - 0.4, H - 0.22);
     nome.position.set(0, yc, 0.222);
     q.add(nome);
     const n = 20;
