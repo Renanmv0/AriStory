@@ -5,6 +5,10 @@ description: Criar ou ajustar uma praga do minigame do jardim do AriStory — os
 
 # Criar uma praga do jardim
 
+> **Junto desta skill, carregue as `threejs-*` da tabela "REGRA DE TODA
+> TAREFA" do `CLAUDE.md`** (`geometry`, `animation`). Elas são a técnica; esta é a regra do
+> jogo. Peça feita só de caixa lisa é o jeito antigo.
+
 Praga é **inimigo do minigame da estufa**, e não bicho de cenário. Se o pedido
 for um gato que passeia pela casa e aceita carinho, a skill é a
 `aristory-bicho` — outro arquivo, outra classe, outro contrato.

@@ -5,6 +5,10 @@ description: Adicionar uma peça nova ao kit de cenário do AriStory — árvore
 
 # Criar uma peça nova para o kit
 
+> **Junto desta skill, carregue as `threejs-*` da tabela "REGRA DE TODA
+> TAREFA" do `CLAUDE.md`** (`geometry`, `textures`, e `lighting` se a peça acende). Elas são a técnica; esta é a regra do
+> jogo. Peça feita só de caixa lisa é o jeito antigo.
+
 Duas caixas de peças:
 
 - `src/world/props.ts` — externo: natureza, parque, rua, praia.
@@ -182,6 +186,13 @@ por fora é o das antigas, para colisor e interação não mudarem. O que deixa
 fofo: quina arredondada em tudo (`macia()`), pé palito, puxador, e um sinal de
 gente morando (ímãs na geladeira, chaleira no fogão, almofada torta).
 
+- **Pé que gira nasce com a origem na PONTA DE BAIXO** (`pePalito`: a
+  geometria é transladada `alto/2` para cima). Com a origem no meio, o
+  `pe.position.set(x, 0, z)` de quem usa enterrava metade do pé e a mesa, as
+  cadeiras, a mesinha e o sofá flutuaram; e o giro de abrir o pé levantava a
+  ponta do chão. Vale para toda perna, pé e haste que a peça posiciona e gira.
+- A porta da rua (`portaDaRua`) segue o contrato da `interiorDoor` (folha na
+  `dobradica`, centrada na linha da parede) e pede um vão de `largura + 0.2`.
 - A TV tem a malha `tela`, e `telaDeTvLigada()` é o show desenhado em canvas.
 - A máquina tem o grupo `tambor`, que a cena gira enquanto lava.
 - A jiboia é um `InstancedMesh` de folhas de coração (`ShapeGeometry`
