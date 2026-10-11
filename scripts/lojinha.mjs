@@ -544,6 +544,21 @@ await page.screenshot({ path: `${OUT}-premium.png` });
 await page.keyboard.press('Escape');
 await page.waitForTimeout(600);
 
+// e as duas vendas novas do mezanino: a vitrine de joias e a mesa de chapéus
+const abrirNoMezanino = async (x, z) => {
+  const abriu = await abrirArara(x, z);
+  const r = {
+    abriu,
+    titulo: await page.locator('.loja .arara').textContent().catch(() => ''),
+    quantas: await page.locator('.loja .vitrine .peca').count(),
+  };
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(600);
+  return r;
+};
+const naVitrineDeJoias = await abrirNoMezanino(-2.4, 4.1);
+const naMesaDeChapeus = await abrirNoMezanino(-2.4, 0.45);
+
 /**
  * 7b. O CARINHO NO MEZANINO NÃO AFUNDA A DUPLA.
  *
@@ -634,6 +649,7 @@ for (const [peca, quantas] of [
   ['arara-de-roupas', 4], ['provadores', 1], ['manequim-de-loja', 2],
   ['balcao-da-loja', 1], ['mesa-de-dobrar', 1], ['prateleira-da-loja', 2], ['estella', 1],
   ['escada-rolante', 1], ['arara-premium', 3], ['espelho-magico', 1],
+  ['vitrine-de-joias', 1], ['mesa-de-chapeus', 1],
 ]) {
   if ((salao.conta[peca] ?? 0) !== quantas) {
     falhas.push(`o salao tem ${salao.conta[peca] ?? 0} de "${peca}" (esperado ${quantas})`);
@@ -697,7 +713,13 @@ else {
 // ------------------------------------------------------- a arara que vende
 if (!araraAbriu) falhas.push('a arara nao abriu o painel da loja');
 if (naArara.titulo !== 'Vestidos') falhas.push(`a arara errada abriu: "${naArara.titulo}"`);
-if (naArara.quantas !== 4) falhas.push(`a arara tem ${naArara.quantas} pecas (esperado 4)`);
+if (naArara.quantas !== 8) falhas.push(`a arara tem ${naArara.quantas} pecas (esperado 8)`);
+if (!naVitrineDeJoias.abriu || naVitrineDeJoias.titulo !== 'Joias' || naVitrineDeJoias.quantas !== 3) {
+  falhas.push(`a vitrine de joias nao vende: ${JSON.stringify(naVitrineDeJoias)}`);
+}
+if (!naMesaDeChapeus.abriu || naMesaDeChapeus.titulo !== 'Chapéus e bolsas' || naMesaDeChapeus.quantas !== 5) {
+  falhas.push(`a mesa de chapeus nao vende: ${JSON.stringify(naMesaDeChapeus)}`);
+}
 if (!provado.travado) falhas.push(`sem saldo o botao vende: "${provado.botao}"`);
 if (!/faltam/i.test(provado.botao)) falhas.push(`o botao nao diz o que falta: "${provado.botao}"`);
 if (provado.acervo.length) falhas.push(`provar guardou peca: ${JSON.stringify(provado.acervo)}`);

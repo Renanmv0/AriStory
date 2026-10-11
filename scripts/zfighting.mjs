@@ -122,6 +122,7 @@ const PECAS = [
   ['podio', 'lojinha'],
   ['manequim-de-loja', 'lojinha'],
   ['vitrine-de-joias', 'lojinha'],
+  ['mesa-de-chapeus', 'lojinha'],
   // a Escola do Gatito
   ['armarios-de-escola', 'escola'],
   ['escadaria', 'escola'],

@@ -35,6 +35,14 @@ import {
   pernaDoShortDosGatitos, tenisDosGatitos,
 } from './uniformeDosGatitos';
 import { lacoDeTorcida, meiaoDeTorcida, pomponsDeTorcida, uniformeDeTorcida } from './torcidaDosGatitos';
+import {
+  blusaCiganinha, mangaDaCiganinha, camisaDeSeda, mangaDeSeda, sueterDeTrancas, mangaDoSueter, casacoTrench, mangaDoTrench,
+  vestidoDePoa, mangaDoPoa, vestidoDeLinho, vestidoEnvelope, mangaDoEnvelope, vestidoChemise, mangaDoChemise,
+  vestidoDeBaile, mangaDoBaile, vestidoDeCetim, vestidoDeVeludo, mangaDeVeludo,
+  saiaPlissada, saiaDeTule, jardineira, pernaDaJardineira, nadaNaPerna,
+  sapatilha, botaDeMontaria, chapeuDePalha, chapeuFedora, tiaraDePerolas,
+  relogioDourado, luvasLongas, bolsaDeMao, colarDePerolas, lencoDeSeda, bolsaTransversal,
+} from './roupasDaBoutique';
 
 /**
  * O catalogo de itens do jogo.
@@ -1161,6 +1169,223 @@ export const ITENS = {
   },
 
   /* ====================================================================
+   *        A COLEÇÃO NOVA DA ESTELLA — peças com MODELO próprio
+   * ====================================================================
+   *
+   * Pedido do Renan: "vestidos detalhados, vestido mais simples porém bem
+   * feitos, diversos acessórios", de todo tipo de roupa. Ao contrário das
+   * vinte de cima, estas têm geometria própria (`world/roupasDaBoutique.ts`):
+   * o corpete com o decote na malha, a saia viva que acompanha a perna, a
+   * gola dobrada no corpo, a estampa pintada em canvas.
+   *
+   * `peitoNu` nos vestidos de corpete: a cápsula do tronco vira pele e o
+   * corpete é a roupa — é o que deixa o decote ser decote.
+   */
+  // ------------------------------------------ térreo: camisas e casacos
+  blusaCiganinha: {
+    id: 'blusa-ciganinha', nome: 'Blusa ciganinha', icone: '👚',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.ciganinha, corDetalhe: P.ciganinhaBordado,
+    nota: 'ombro a ombro, bordada à mão', preco: 58,
+    peitoNu: true, bracosNus: true,
+    extra: blusaCiganinha, extraBraco: mangaDaCiganinha,
+  },
+  camisaDeSeda: {
+    id: 'camisa-de-seda', nome: 'Camisa de seda com laço', icone: '👔',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.sedaChampanhe, corDetalhe: P.sedaChampanheLaco,
+    nota: 'champanhe, com o laço na gola', preco: 78,
+    extra: camisaDeSeda, extraBraco: mangaDeSeda,
+  },
+  sueterDeTrancas: {
+    id: 'sueter-de-trancas', nome: 'Suéter de tranças', icone: '🧶',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.sueterAveia, corDetalhe: P.sueterAveiaRibana,
+    nota: 'tricô grosso cor de aveia', preco: 92,
+    extra: sueterDeTrancas, extraBraco: mangaDoSueter,
+  },
+  casacoTrench: {
+    id: 'casaco-trench', nome: 'Casaco trench', icone: '🧥',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.trenchCaqui, corDetalhe: P.trenchCaquiEscuro,
+    nota: 'transpassado, de cinto e dragona', preco: 110,
+    extra: casacoTrench, extraBraco: mangaDoTrench,
+  },
+
+  // ------------------------------------------------- térreo: vestidos
+  vestidoDeLinho: {
+    id: 'vestido-de-linho', nome: 'Vestido de alcinha de linho', icone: '🌿',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.linhoSalvia, corDetalhe: P.linhoSalviaPesponto,
+    nota: 'simples, de botão de coco', preco: 68,
+    peitoNu: true, bracosNus: true, pernasNuas: true,
+    extra: vestidoDeLinho,
+  },
+  vestidoDePoa: {
+    id: 'vestido-de-poa', nome: 'Vestido de poá', icone: '👗',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.poaVermelho, corDetalhe: P.poaBolinha,
+    nota: 'gola Peter Pan e manga bufante', preco: 86,
+    peitoNu: true, pernasNuas: true,
+    extra: vestidoDePoa, extraBraco: mangaDoPoa,
+  },
+  vestidoChemise: {
+    id: 'vestido-chemise', nome: 'Vestido chemise listrado', icone: '👗',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.chemiseFundo, corDetalhe: P.chemiseListra,
+    nota: 'a camisa que virou vestido, com cinto', preco: 98,
+    peitoNu: true, bracosNus: true, pernasNuas: true,
+    extra: vestidoChemise, extraBraco: mangaDoChemise,
+  },
+  vestidoEnvelope: {
+    id: 'vestido-envelope', nome: 'Vestido envelope floral', icone: '🌺',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.envelopeFundo, corDetalhe: P.envelopeFlor,
+    nota: 'transpassado, amarra na cintura', preco: 104,
+    peitoNu: true, bracosNus: true, pernasNuas: true,
+    extra: vestidoEnvelope, extraBraco: mangaDoEnvelope,
+  },
+
+  // --------------------------------------------- térreo: calças e saias
+  saiaPlissada: {
+    id: 'saia-plissada', nome: 'Saia plissada midi', icone: '🌸',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.plissadaRosa, corDetalhe: P.plissadaRosaCos,
+    nota: 'rosa antigo, pregas até a canela', preco: 82,
+    pernasNuas: true,
+    extra: nadaNaPerna, extraQuadril: saiaPlissada,
+  },
+  saiaDeTule: {
+    id: 'saia-de-tule', nome: 'Saia de tule', icone: '🎀',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.tuleRosaBale, corDetalhe: P.tuleRosaBaleCetim,
+    nota: 'três camadas, rosa-balé', preco: 76,
+    pernasNuas: true,
+    extra: nadaNaPerna, extraQuadril: saiaDeTule,
+  },
+  jardineira: {
+    id: 'jardineira-jeans', nome: 'Jardineira jeans', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.jardineiraJeans, corDetalhe: P.jardineiraPesponto,
+    nota: 'de peitilho, pesponto mostarda', preco: 88,
+    extra: pernaDaJardineira, extraQuadril: jardineira,
+  },
+
+  // ------------------------------------------------------ térreo: pés
+  sapatilhaRosa: {
+    id: 'sapatilha-rosa', nome: 'Sapatilha rosa de laço', icone: '🩰',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.sapatilhaRosa, corDetalhe: P.sapatilhaRosaLaco,
+    nota: 'de balé, com lacinho no bico', preco: 68,
+    substituiPe: true, extra: sapatilha,
+  },
+  sapatilhaPreta: {
+    id: 'sapatilha-preta', nome: 'Sapatilha preta de laço', icone: '🩰',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.sapatilhaPreta, corDetalhe: P.sapatilhaPretaLaco,
+    nota: 'a que vai com tudo', preco: 68,
+    substituiPe: true, extra: sapatilha,
+  },
+  botaDeMontaria: {
+    id: 'bota-de-montaria', nome: 'Bota de montaria', icone: '👢',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.montariaCouro, corDetalhe: P.montariaSola,
+    nota: 'couro chocolate, cano até o joelho', preco: 108,
+    substituiPe: true, extra: botaDeMontaria,
+  },
+
+  // ------------------------------------------------ mezanino: a gala
+  vestidoDeBaile: {
+    id: 'vestido-de-baile', nome: 'Vestido de baile rosé', icone: '👑',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.baileRose, corDetalhe: P.baileChampanhe,
+    nota: 'até o chão, com tule e laçarote', preco: 220,
+    peitoNu: true, bracosNus: true, pernasNuas: true,
+    extra: vestidoDeBaile, extraBraco: mangaDoBaile,
+  },
+  vestidoDeCetim: {
+    id: 'vestido-de-cetim', nome: 'Vestido longo de cetim', icone: '💚',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.cetimEsmeralda, corDetalhe: P.cetimEsmeraldaFundo,
+    nota: 'esmeralda, cortado no viés', preco: 195,
+    peitoNu: true, bracosNus: true, pernasNuas: true,
+    extra: vestidoDeCetim,
+  },
+  vestidoDeVeludo: {
+    id: 'vestido-de-veludo', nome: 'Vestido de veludo com renda', icone: '🪻',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.veludoNoite, corDetalhe: P.rendaMarfim,
+    nota: 'azul-noite, gola e punho de renda', preco: 180,
+    peitoNu: true, pernasNuas: true,
+    extra: vestidoDeVeludo, extraBraco: mangaDeVeludo,
+  },
+  luvasLongas: {
+    id: 'luvas-longas', nome: 'Luvas longas de cetim', icone: '🧤',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.luvaMarfim, corDetalhe: P.perolaDeColar,
+    nota: 'de ópera, até acima do cotovelo', preco: 150,
+    extra: luvasLongas,
+  },
+
+  // ------------------------------------------ mezanino: joias e chapéus
+  colarDePerolas: {
+    id: 'colar-de-perolas', nome: 'Colar de pérolas', icone: '📿',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo',
+    cor: P.perolaDeColar, corDetalhe: P.ouroDeJoia,
+    nota: 'duas voltas', preco: 190,
+    extra: colarDePerolas,
+  },
+  tiaraDePerolas: {
+    id: 'tiara-de-perolas', nome: 'Tiara de pérolas', icone: '👑',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.tiaraVeludo, corDetalhe: P.perolaDeColar,
+    nota: 'veludo marinho e pérolas graduadas', preco: 160,
+    extra: tiaraDePerolas,
+  },
+  relogioDourado: {
+    id: 'relogio-dourado', nome: 'Relógio dourado', icone: '⌚',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.ouroDeJoia, corDetalhe: P.relogioMostrador,
+    nota: 'no pulso esquerdo', preco: 170,
+    extra: relogioDourado,
+  },
+  chapeuDePalha: {
+    id: 'chapeu-de-palha', nome: 'Chapéu de palha com fita', icone: '👒',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.palhaDeChapeu, corDetalhe: P.palhaDeChapeuFita,
+    nota: 'aba larga e mole', preco: 150,
+    extra: chapeuDePalha,
+  },
+  chapeuFedora: {
+    id: 'chapeu-fedora', nome: 'Chapéu fedora', icone: '🎩',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.fedoraFeltro, corDetalhe: P.fedoraFita,
+    nota: 'feltro caramelo', preco: 155,
+    extra: chapeuFedora,
+  },
+  bolsaDeMao: {
+    id: 'bolsa-de-mao', nome: 'Bolsa de mão vinho', icone: '👜',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.bolsaVinho, corDetalhe: P.ouroDeJoia,
+    nota: 'na mão esquerda, de alça curta', preco: 185,
+    extra: bolsaDeMao,
+  },
+  bolsaTransversal: {
+    id: 'bolsa-transversal', nome: 'Bolsa transversal matelassê', icone: '👛',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo',
+    cor: P.bolsaCaramelo, corDetalhe: P.ouroDeJoia,
+    nota: 'caramelo, alça na diagonal', preco: 165,
+    extra: bolsaTransversal,
+  },
+  lencoDeSeda: {
+    id: 'lenco-de-seda', nome: 'Lenço de seda', icone: '🧣',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo',
+    cor: P.lencoAmarelo, corDetalhe: P.lencoEstampa,
+    nota: 'amarrado no pescoço', preco: 150,
+    extra: lencoDeSeda,
+  },
+
+  /* ====================================================================
    *        OS PREMIOS DA ARENA — o que cada desafiante batido da
    * ====================================================================
    *
@@ -1465,25 +1690,35 @@ export interface AraraDaLoja {
 
 export const ARARAS_DA_ESTELLA: readonly AraraDaLoja[] = [
   {
-    titulo: 'Camisaria',
+    titulo: 'Camisas e casacos',
     fala: 'Essa fila é a que mais sai. Linho não amassa se você não sentar em cima.',
-    pecas: [ITENS.camisaLinho, ITENS.camisaMenta, ITENS.camisaTerracota, ITENS.regataPiscina],
+    pecas: [
+      ITENS.camisaLinho, ITENS.camisaMenta, ITENS.camisaTerracota, ITENS.regataPiscina,
+      ITENS.blusaCiganinha, ITENS.camisaDeSeda, ITENS.sueterDeTrancas, ITENS.casacoTrench,
+    ],
   },
   {
     titulo: 'Vestidos',
     fala: 'Aqui eu não deixo ninguém mexer sem provar. Prova, meu amor. PROVA.',
-    pecas: [ITENS.vestidoNoite, ITENS.vestidoJade, ITENS.vestidoLilas, ITENS.vestidoManteiga],
+    pecas: [
+      ITENS.vestidoNoite, ITENS.vestidoJade, ITENS.vestidoLilas, ITENS.vestidoManteiga,
+      ITENS.vestidoDeLinho, ITENS.vestidoDePoa, ITENS.vestidoChemise, ITENS.vestidoEnvelope,
+    ],
   },
   {
-    titulo: 'Calçaria',
+    titulo: 'Calças e saias',
     fala: 'Cintura alta. Todas. Não me venha pedir cintura baixa que eu não faço.',
-    pecas: [ITENS.calcaAlfaiataria, ITENS.calcaBege, ITENS.calcaVinho, ITENS.calcaOliva],
+    pecas: [
+      ITENS.calcaAlfaiataria, ITENS.calcaBege, ITENS.calcaVinho, ITENS.calcaOliva,
+      ITENS.saiaPlissada, ITENS.saiaDeTule, ITENS.jardineira,
+    ],
   },
   {
     titulo: 'Frio, pé e miudezas',
     fala: 'Gorro e bota. Nesta cidade não faz frio, e mesmo assim isso aqui esgota.',
     pecas: [
       ITENS.gorroAzul, ITENS.gorroMusgo, ITENS.botaVermelha, ITENS.botaCreme,
+      ITENS.sapatilhaRosa, ITENS.sapatilhaPreta, ITENS.botaDeMontaria,
       ITENS.luvasDeJardim, ITENS.pulseiraDeMicangas, ITENS.presilhaDeEstrela, ITENS.adesivoDeCoracao,
     ],
   },
@@ -1493,20 +1728,38 @@ export const ARARAS_DA_ESTELLA: readonly AraraDaLoja[] = [
 export const PREMIUM_DA_ESTELLA: readonly AraraDaLoja[] = [
   {
     titulo: 'Gala',
-    fala: 'Estes dois eu não vendo pra qualquer um. Vocês eu vendo.',
-    pecas: [ITENS.vestidoDeGala, ITENS.vestidoDePrata],
+    fala: 'Estes aqui eu não vendo pra qualquer um. Vocês eu vendo.',
+    pecas: [ITENS.vestidoDeGala, ITENS.vestidoDePrata, ITENS.vestidoDeBaile, ITENS.vestidoDeCetim],
   },
   {
     titulo: 'Veludo',
     fala: 'Veludo pede ocasião. Arrumem uma ocasião.',
-    pecas: [ITENS.boinaDeVeludo, ITENS.calcaDeVeludo],
+    pecas: [ITENS.boinaDeVeludo, ITENS.calcaDeVeludo, ITENS.vestidoDeVeludo],
   },
   {
     titulo: 'Acabamento',
     fala: 'A bota fecha o look. Sem ela vocês são gente bonita de pé descalço.',
-    pecas: [ITENS.botaDeGala],
+    pecas: [ITENS.botaDeGala, ITENS.luvasLongas],
   },
 ];
+
+/**
+ * A VITRINE DE JOIAS do mezanino, que antes só enfeitava: agora ela vende, e
+ * o que está debaixo do vidro são as próprias peças (o colar, a tiara, o
+ * relógio), como nas araras.
+ */
+export const JOIAS_DA_ESTELLA: AraraDaLoja = {
+  titulo: 'Joias',
+  fala: 'Pérola de verdade não, meu bem. Mas ninguém precisa saber.',
+  pecas: [ITENS.colarDePerolas, ITENS.tiaraDePerolas, ITENS.relogioDourado],
+};
+
+/** a mesa redonda de chapéus e bolsas, no meio do mezanino */
+export const CHAPEUS_DA_ESTELLA: AraraDaLoja = {
+  titulo: 'Chapéus e bolsas',
+  fala: 'O chapéu é a última coisa que se põe e a primeira que se vê. Anotem.',
+  pecas: [ITENS.chapeuDePalha, ITENS.chapeuFedora, ITENS.bolsaDeMao, ITENS.bolsaTransversal, ITENS.lencoDeSeda],
+};
 
 /**
  * O que o vestiário do clube VENDE — a aba "Roupas de piscina".

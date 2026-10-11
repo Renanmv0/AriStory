@@ -283,6 +283,16 @@ PERNAS — o rig resolve isso olhando o loadout inteiro (`mostraPele()`), não
 o slot isolado. E uma meia vestida (`slot: 'pernas'`) sempre ganha da marca:
 "perna nua" quer dizer "o vestido não cobre", não "nada pode cobrir".
 
+**A exceção é a SAIA**: ela mora na vaga das pernas e é ela mesma quem deixa
+a perna nua — o `mostraPele` aceita a marca quando a peça das pernas é a
+própria dona dela (`this.roupa.pernas === peca`). Sem isso a saia achava que
+"tinha uma calça vestida" (ela) e pintava a perna da cor da saia.
+
+- `peitoNu`: o TRONCO da cápsula vira pele. Era da camiseta solta (o casco é a
+  roupa); agora é também de todo vestido de DECOTE da boutique: a casca do
+  corpete (`corpete()`, em `roupasDaBoutique.ts`) é a roupa, e o colo acima do
+  decote é pele de verdade.
+
 ## Peças fixas da ficha que a roupa nova precisa esconder
 
 O laço, o cinto, a listra da camiseta, o casco/capuz da jaqueta e a mochila
@@ -364,8 +374,10 @@ UNIFORME DOS GATITOS inteiro (sete peças). Teste: `scripts/uniforme.mjs`.
 venda em lugar nenhum (é o caso de tudo o que já estava no armário do Ari, da
 moda praia e do prêmio do Walter; não existe "preço 0").
 
-Depois, a peça entra numa fila de `ARARAS_DA_ESTELLA` (térreo) ou
-`PREMIUM_DA_ESTELLA` (mezanino), em `world/itens.ts`. A cena LIGA por essa
+Depois, a peça entra numa fila de `ARARAS_DA_ESTELLA` (térreo),
+`PREMIUM_DA_ESTELLA` (mezanino), ou nas duas vendas avulsas do mezanino —
+`JOIAS_DA_ESTELLA` (a vitrine de joias) e `CHAPEUS_DA_ESTELLA` (a mesa de
+chapéus e bolsas) —, em `world/itens.ts`. A cena LIGA por essa
 lista e o painel DESENHA por ela — a `lojinha.ts` não sabe quanto custa um
 vestido, sabe onde fica a arara.
 
@@ -515,6 +527,62 @@ teste põe a câmera num ponto e RECORTA a foto em volta dele (`clip`), com
 `deviceScaleFactor: 2`. No ginásio da escola — no parque, a zona da roda
 gigante manda no zoom e as árvores tapam.
 
+## `roupasDaBoutique.ts` — a coleção nova da Estella (o kit de alfaiataria)
+
+Pedido do Renan: "vestidos detalhados, vestido mais simples porém bem feitos,
+diversos acessórios", de todo tipo de peça, com as skills `threejs-*`. São 26
+peças com MODELO próprio (não cor em cima de geometria pronta), e o kit que
+nasceu com elas serve à próxima:
+
+- **`corpete(m, { decote, baixo?, folga?, solto? })`** — a casca justa do
+  tronco, uma `BufferGeometry` em grade (coluna = ângulo em volta do corpo) que
+  sobe do fundo da cápsula até `decote(a)`. O RECORTE É A MALHA: coração,
+  ombro a ombro, V de transpasse, gola alta — sem furo nem máscara. Fecha numa
+  tigela no fundo da cápsula (o tronco do rig desce até entre as pernas). UV em
+  metros. Com `peitoNu` na ficha, o colo acima do decote é pele.
+- **`saiaViva(m, opções, material)`** — A SAIA QUE ACOMPANHA A PERNA, o que
+  deixou existir vestido LONGO. Ela lê os pivôs das pernas a cada quadro
+  (`MedidasCorpo.pernas`, só leitura) e o pano CAI COMO CORTINA: numa altura,
+  ele cerca tudo da perna que está acima dela (a "função de apoio" de cada
+  disco, `c·u + ρ`, com máximo suave). A passada levanta a barra na frente da
+  perna; sentado, o pano cai do colo e o sapato sai pela frente; o pano abre
+  na hora e volta devagar (amortecido). `arco` faz um PAINEL em vez da volta
+  inteira (o trench e o envelope transpassam dois); `cortes` troca de material
+  numa faixa (a barra, o pesponto); `camada` dá folga à camada de fora (o tule
+  sobre o cetim). Malha própria, fora da `fundir()` (`userData.viva`).
+- **`noTronco(geo, m, folga)`** — dobra uma forma plana (`x` = arco em volta
+  do corpo, `y` = altura, `z` = quanto sai) por cima do tronco: gola Peter
+  Pan, lapela, gola de camisa, peitilho, bolso, a renda VAZADA (forma com
+  `holes`). Com `chapa(forma, espessura)` para dar quina macia.
+- **`torneada(perfil, gomos, fundo)`** — o torno de pano com FRANZIDO (o raio
+  ondula em `gomos` onde `fundo` manda) e UV em metros: manga bufante, punho,
+  gola de ribana, copa de chapéu. Escreva o perfil em qualquer sentido: ela
+  desvira sozinha (o torno do three vira a face para fora só quando sobe).
+- **`fitaPorPontos(pontos, largura, pontaEmV, seg, normal?)`** — fita CHATA
+  deitada numa superfície (alça, ponta de laço, cinto, alça da bolsa); com
+  `normalDoTronco(m)` ela deita certo também na cúpula do ombro.
+- **As estampas em canvas**, uma vez por combinação de cores: `estampaFloral`,
+  `listras`, `poa`, `estampaDeLenco`, `mostrador` (as coloridas: material
+  branco, a textura manda) e `linho`, `cetim` (o brilho é LUZ PINTADA em
+  faixas), `veludo`, `malha`, `palha`, `brilhinhos` (as de trama: quase
+  brancas, multiplicam a cor da ficha).
+- **`MedidasCorpo.pele`**: a cor de pele de quem veste, para a peça que tem
+  uma abertura por onde a pele aparece (a sapatilha mostra o peito do pé).
+
+**SAIA NA VAGA DAS PERNAS**: o pano é o `extraQuadril` (no corpo, y = 0 no
+chão, onde o calção do rig mora), a ficha leva `pernasNuas`, e o `extra` das
+pernas é `nadaNaPerna` (o rig só pendura a peça se houver `extra`). O cós cobre
+o calção: `max(1,17·r, 0,122·h·w)` até `quadril + 0,08·h`.
+
+**Na loja**: a silhueta de cada peça nova na arara sai de `TIPO_POR_ID`
+(`roupasNaArara.ts`) — uma saia e uma calça moram na mesma vaga, então o slot
+não basta. Peça de um tipo que ainda não existe na arara pede silhueta nova
+(`forma…`/`detalhe…` de pendurar, ou `geo…` de sentar). Além das araras, o
+mezanino vende em mais dois móveis: a VITRINE DE JOIAS (`JOIAS_DA_ESTELLA`,
+as joias sob o vidro) e a MESA DE CHAPÉUS (`CHAPEUS_DA_ESTELLA`, chapéus nas
+cabecinhas, bolsas e o lenço). Teste: `scripts/roupasDaBoutique.mjs` (mede a
+saia viva vértice a vértice, andando e sentada).
+
 ## De foto para peça: o que olhar
 
 Quando o Renan mandar uma foto ou ilustração:
@@ -539,6 +607,7 @@ npm run typecheck
 npm run build && npx vite preview --port 4173 &
 node scripts/roupas.mjs     /tmp/rp
 node scripts/vestimenta.mjs /tmp/vt
+node scripts/roupasDaBoutique.mjs /tmp/rb   # peça da coleção nova da Estella (a saia viva, o painel, as fotos)
 node scripts/vestiario.mjs  /tmp/vs   # só se a peça mexer na moda praia (o painel do vestiário)
 node scripts/modaPraia.mjs  /tmp/mp   # as peças de piscina nos dois, no clube e no parque
 ```

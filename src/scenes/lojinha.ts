@@ -7,11 +7,11 @@ import type { Interactable } from '../world/Interactable';
 import { pocaDeLuz, tapete } from '../world/furniture';
 import {
   arandelaDeBoutique, araraDaBoutique, araraPremiumDaBoutique, balcaoDaBoutique, boiserie, bustoDeCostura,
-  estanteEmArco, figueiraLira, lustreDeGlobos, mesaDeExposicao, mesinhaLateral, namoradeira, podio,
+  estanteEmArco, figueiraLira, lustreDeGlobos, mesaDeChapeus, mesaDeExposicao, mesinhaLateral, namoradeira, podio,
   provadoresDaBoutique, pufeCapitone, quadroDeArte, tapeteRedondo, vitrineDeJoias,
 } from '../world/moveisDaBoutique';
 import { EscadaRolante } from '../world/escadaRolante';
-import { ARARAS_DA_ESTELLA, ITENS, PREMIUM_DA_ESTELLA, type AraraDaLoja } from '../world/itens';
+import { ARARAS_DA_ESTELLA, CHAPEUS_DA_ESTELLA, ITENS, JOIAS_DA_ESTELLA, PREMIUM_DA_ESTELLA, type AraraDaLoja } from '../world/itens';
 import { espelhoMagico } from '../world/espelhoMagico';
 import { acabar, uvDeParede } from '../world/acabamento';
 import { fundir } from '../world/fundir';
@@ -620,6 +620,9 @@ export const lojinha: SceneDef = {
      * O PROMPT TEM RAIO 1,75: o pedestal é colisor, e quem para na beira dele
      * fica a 0,95 + 0,42 = 1,37 do centro da arara.
      */
+    /** a vitrine de joias e a mesa de chapéus: as duas vendas novas do mezanino */
+    const JOIAS = { x: -2.4, z: 3.3 };
+    const CHAPEUS = { x: -2.4, z: -0.6 };
     const PREMIUM = [
       { x: 0.4, z: -2.35, prata: false },
       { x: 0.4, z: 0.5, prata: true },
@@ -680,8 +683,21 @@ export const lojinha: SceneDef = {
      * premium: é a peça baixa que segura o meio do mezanino (sem ela, o andar
      * era um salão vazio com três araras numa ponta).
      */
-    peca(superior, vitrineDeJoias(1.3), -2.4, ALTURA, 3.3);
-    w.blockBox(-2.4, 3.3, 0.68, 0.31);
+    peca(superior, vitrineDeJoias(1.3, JOIAS_DA_ESTELLA.pecas), JOIAS.x, ALTURA, JOIAS.z);
+    w.blockBox(JOIAS.x, JOIAS.z, 0.68, 0.31);
+
+    /*
+     * A MESA DE CHAPÉUS E BOLSAS, no meio do mezanino, entre o patamar da
+     * escada e a fila das premium: a mesa redonda de dois andares com os
+     * chapéus nas cabecinhas, as bolsas e o lenço — e o foco de luz pintado
+     * em cima, como nas premium. Sobra mais de 2 m de vão para todo lado.
+     */
+    peca(superior, tapeteRedondo(1.05, P.boutiqueRosaClaro), CHAPEUS.x, ALTURA, CHAPEUS.z);
+    peca(superior, mesaDeChapeus(CHAPEUS_DA_ESTELLA.pecas), CHAPEUS.x, ALTURA, CHAPEUS.z, 0.5);
+    w.blockCircle(CHAPEUS.x, CHAPEUS.z, 0.62);
+    const focoDosChapeus = pocaDeLuz(0.95, P.luzDeAbajur, 0.26);
+    focoDosChapeus.position.set(CHAPEUS.x, ALTURA + 0.03, CHAPEUS.z);
+    superior.add(focoDosChapeus);
 
     const colisoresSuperior: Collider[] = w.colisoresAgora();
     w.usarColisores(colisoresTerreo);
@@ -821,6 +837,7 @@ export const lojinha: SceneDef = {
       z: number,
       chave: string,
       raio = 1.5,
+      movel = 'a arara',
     ): Interactable => w.interact({
       id: `lojinha:arara-${chave}`,
       /*
@@ -830,7 +847,7 @@ export const lojinha: SceneDef = {
        * pela PONTA para a 1,37, que é o que um raio de 1,3 deixava de fora.
        */
       x, z, radius: raio,
-      label: `Ver a arara: ${fila.titulo.toLowerCase()}`, icon: '🛍️',
+      label: `Ver ${movel}: ${fila.titulo.toLowerCase()}`, icon: '🛍️',
       onInteract: async () => {
         if (!g.flag(`arara-${chave}`)) {
           g.setFlag(`arara-${chave}`);
@@ -846,6 +863,9 @@ export const lojinha: SceneDef = {
     for (const [i, a] of PREMIUM.entries()) {
       doSuperior.push(araraQueVende(PREMIUM_DA_ESTELLA[i], a.x, a.z, `premium-${i}`, 1.75));
     }
+    // a vitrine (1,3 × 0,56): quem para na frente, atrás ou na ponta fica no raio
+    doSuperior.push(araraQueVende(JOIAS_DA_ESTELLA, JOIAS.x, JOIAS.z, 'joias', 1.3, 'a vitrine'));
+    doSuperior.push(araraQueVende(CHAPEUS_DA_ESTELLA, CHAPEUS.x, CHAPEUS.z, 'chapeus', 1.45, 'a mesa'));
 
     doTerreo.push(w.interact({
       id: 'lojinha:subir',

@@ -183,6 +183,73 @@ export const PALETTE = {
   lojaGalaPrataRenda: 0xeef1f5,
   lojaVeludo: 0x5c2a4d,
   lojaVeludoBarra: 0x8d4b78,
+  /*
+   * A COLEÇÃO NOVA DA ESTELLA (`world/roupasDaBoutique.ts`): peças com
+   * geometria própria — o pano estampado é desenhado em canvas com ESTAS cores
+   * (o material fica branco e a textura manda), e o liso usa a cor direto.
+   */
+  // camisas e casacos
+  ciganinha: 0xfbf7f0,
+  ciganinhaBordado: 0xd9637a,
+  ciganinhaBordadoAzul: 0x5d7fc4,
+  sedaChampanhe: 0xf0e0c6,
+  sedaChampanheLaco: 0xd9c19c,
+  sueterAveia: 0xe8dcc4,
+  sueterAveiaRibana: 0xd6c6a8,
+  trenchCaqui: 0xc9a571,
+  trenchCaquiEscuro: 0xa58349,
+  trenchBotao: 0x4a3524,
+  // vestidos do térreo
+  envelopeFundo: 0x2f3f6e,
+  envelopeFlor: 0xf2a3b5,
+  envelopeFlorClara: 0xfdf3e7,
+  envelopeFolha: 0x7fae8a,
+  chemiseFundo: 0xfbfaf6,
+  chemiseListra: 0x5683c2,
+  chemiseCinto: 0x2c3a63,
+  poaVermelho: 0xc63d4b,
+  poaBolinha: 0xfdf6ee,
+  linhoSalvia: 0xaec3a2,
+  linhoSalviaPesponto: 0xe9efe2,
+  botaoDeCoco: 0x8a6748,
+  // a linha de gala do mezanino
+  baileRose: 0xf1c3cb,
+  baileChampanhe: 0xf4e2c2,
+  baileTule: 0xf9dde2,
+  cetimEsmeralda: 0x1f7f60,
+  cetimEsmeraldaFundo: 0x135a43,
+  veludoNoite: 0x2b3a6e,
+  rendaMarfim: 0xfbf6ec,
+  // calças e saias
+  plissadaRosa: 0xd897a3,
+  plissadaRosaCos: 0xb7707e,
+  tuleRosaBale: 0xf6c8d1,
+  tuleRosaBaleCetim: 0xe79bb0,
+  jardineiraJeans: 0x4e6ea3,
+  jardineiraPesponto: 0xe7b24c,
+  // pés
+  sapatilhaRosa: 0xf2c3c9,
+  sapatilhaRosaLaco: 0xe08f9e,
+  sapatilhaPreta: 0x2a2830,
+  sapatilhaPretaLaco: 0x5a5562,
+  montariaCouro: 0x5b3523,
+  montariaSola: 0x2a1a11,
+  // cabeça
+  palhaDeChapeu: 0xe6c98b,
+  palhaDeChapeuFita: 0x2f3f6e,
+  fedoraFeltro: 0x8a7158,
+  fedoraFita: 0x2b241f,
+  // joias e miudezas
+  perolaDeColar: 0xf8f1e5,
+  ouroDeJoia: 0xddb662,
+  tiaraVeludo: 0x2f3f6e,
+  relogioMostrador: 0xfbf6ea,
+  relogioPonteiro: 0x2b2a33,
+  luvaMarfim: 0xf4ece0,
+  bolsaVinho: 0x8b2e45,
+  bolsaCaramelo: 0xb8743f,
+  lencoAmarelo: 0xf1c35e,
+  lencoEstampa: 0x2f3f6e,
   // os dois maid da mesma loja: preto lavado (preto puro come o degrade do toon
   // e vira silhueta chapada), creme do avental e a fita preta do debrum
   maidPreto: 0x2b2a33,

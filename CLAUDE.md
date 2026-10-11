@@ -295,7 +295,8 @@ node scripts/turno.mjs   /tmp/tn    # o turno do Mania: levar a mesa, anotar, se
 node scripts/premio.mjs  /tmp/pr    # a carteira do casal (uma so para os dois) e a gravatinha das 3 estrelas
 node scripts/mano.mjs    /tmp/pg    # o Mano no quiosque: fica no posto, aparece inteiro, fala, danca e entrega
 node scripts/cookie.mjs  /tmp/ck    # o Cookie: patrulha ao lado da cabine, vira nas pontas, e vende o bilhete
-node scripts/lojinha.mjs /tmp/lj    # a boutique inteira: as pecas do salao (e as roupas do catalogo nas araras), a ronda da Estella, a escada rolante, o espelho refletindo, e a arara vendendo (provar, faltar dinheiro, comprar e ir pro guarda-roupa)
+node scripts/lojinha.mjs /tmp/lj    # a boutique inteira: as pecas do salao (e as roupas do catalogo nas araras), a ronda da Estella, a escada rolante, o espelho refletindo, a arara vendendo (provar, faltar dinheiro, comprar e ir pro guarda-roupa), e a vitrine de joias e a mesa de chapeus do mezanino vendendo
+node scripts/roupasDaBoutique.mjs /tmp/rb # a colecao nova da Estella: as 26 pecas a venda (uma fila cada, preco do andar), o pai certo, a pele da saia e do decote, a saia viva medida vertice a vertice (andando e sentada), e fotos nos dois e no painel
 node scripts/xadrez.mjs  /tmp/xa    # o xadrez da Estella: 14 posicoes de regra, 300 partidas de fuzz e o tabuleiro na tela
 node scripts/estella.mjs /tmp/es    # a Estella: fica no posto, aparece inteira fora do toldo, da o biscoitinho pros dois e tem o xadrez montado
 node scripts/estufa.mjs  /tmp/ef    # a estufa da Josefina: a porta nos dois sentidos, o terreiro vazio e as quatro bocas livres

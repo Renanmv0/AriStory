@@ -6,7 +6,7 @@ import { PALETTE as P } from '../palette';
 import { acabar } from './acabamento';
 import { haloDeLampada, pocaDeLuz } from './furniture';
 import { cavetinho, contorno, type Perfil } from './molduras';
-import { geoDaBota, geoDoCanoDaBota, PENDURA, pendurar, roupaSolta, sentar, tipoNaArara, Vitrine } from './roupasNaArara';
+import { CALCADOS, geoDaBota, geoDoCanoDaBota, PENDURA, pendurar, roupaSolta, sentar, tipoNaArara, Vitrine } from './roupasNaArara';
 import { desenhoDeTapeteRedondo, marmore, tramaDeTecido, veioDeMadeira } from './texturasDeCasa';
 import { sorteio } from './texturasDeChao';
 
@@ -586,8 +586,10 @@ export function araraDaBoutique(fila: FilaDaArara, comprimento = 1.7): THREE.Gro
   const vao = L - 2 * r - 0.08;
 
   if (penduradas.length >= 3) {
-    // de lado, três de cada, em blocos de cor
-    const porPeca = Math.max(1, Math.floor(vao / 0.112 / penduradas.length));
+    // de lado, em blocos de cor: três de cada quando a fila é curta, dois
+    // quando ela cresce — sem passar de um cabide a cada 7,5 cm
+    let porPeca = Math.max(1, Math.round(vao / 0.112 / penduradas.length));
+    while (porPeca > 1 && vao / (porPeca * penduradas.length) < 0.075) porPeca--;
     const total = porPeca * penduradas.length;
     const passo = vao / total;
     let k = 0;
@@ -610,13 +612,15 @@ export function araraDaBoutique(fila: FilaDaArara, comprimento = 1.7): THREE.Gro
   if (sentadas.length) {
     const carvalho = toon(P.boutiqueCarvalho);
     for (const y of [0.34, 0.98]) por(g, macia(L, 0.03, 0.4, 0.008), carvalho, 0, y, 0);
-    // a bota embaixo, dois pares de cada; o resto no meio, um de cada
-    const botas = sentadas.filter((p) => tipoNaArara(p) === 'bota').flatMap((p) => [p, p]);
+    // os calçados embaixo (dois pares de cada quando são poucos, um de cada
+    // quando a fila cresce); o resto no meio, um de cada
+    const soCalcados = sentadas.filter((p) => CALCADOS.has(tipoNaArara(p)));
+    const botas = soCalcados.length > 3 ? soCalcados : soCalcados.flatMap((p) => [p, p]);
     botas.forEach((item, i) => {
       const x = -(L - 0.24) / 2 + ((L - 0.24) / botas.length) * (i + 0.5);
       sentar(v, item, x, 0.355, 0.02, (rnd() - 0.5) * 0.2);
     });
-    const meio = sentadas.filter((p) => tipoNaArara(p) !== 'bota');
+    const meio = sentadas.filter((p) => !CALCADOS.has(tipoNaArara(p)));
     meio.forEach((item, i) => {
       const x = -(L - 0.2) / 2 + ((L - 0.2) / meio.length) * (i + 0.5);
       if (tipoNaArara(item) === 'pulseira') {
@@ -697,12 +701,15 @@ export function araraPremiumDaBoutique(fila: FilaDaArara, opts: { prata?: boolea
   const gorros = sentadas.filter((p) => tipoNaArara(p) === 'gorro');
   const botas = sentadas.filter((p) => tipoNaArara(p) === 'bota');
 
-  // as que penduram, de frente; se divide o arco com um chapeleiro, vão para a esquerda
+  // as que penduram, de frente; se divide o arco com um chapeleiro, vão para a esquerda.
+  // Mais de duas não cabem de frente no arco: aí elas viram DE LADO, como na
+  // arara do térreo, e cada uma aparece pela silhueta
   const espaco = gorros.length ? L * 0.55 : L - 0.3;
   const x0 = gorros.length ? -L / 2 + 0.12 : -espaco / 2;
+  const deLado = penduradas.length > 2;
   penduradas.forEach((item, i) => {
     const x = x0 + (espaco / penduradas.length) * (i + 0.5);
-    pendurar(v, item, x, BARRA, 0, false, 0);
+    pendurar(v, item, x, BARRA, 0, deLado, deLado ? 0.18 : 0);
   });
 
   gorros.forEach((item, i) => {
@@ -1585,7 +1592,7 @@ export function bustoDeCostura(roupa: ItemDef): THREE.Group {
  *
  * Frente em `+Z`.
  */
-export function vitrineDeJoias(largura = 1.3): THREE.Group {
+export function vitrineDeJoias(largura = 1.3, pecas: readonly ItemDef[] = []): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'vitrine-de-joias';
   const L = largura;
@@ -1612,8 +1619,29 @@ export function vitrineDeJoias(largura = 1.3): THREE.Group {
   const sobre = topo + 0.04;
   // a bandeja de veludo e as joias
   por(g, macia(L - 0.12, 0.025, F - 0.14, 0.01), P.boutiqueVinho, 0, sobre + 0.0125, 0);
+  if (pecas.length) {
+    /*
+     * A VITRINE VENDE: as joias da fila dela (o colar, a tiara, o relógio) são
+     * as peças debaixo do vidro, cada uma no seu suporte — o colar deitado no
+     * veludo, a tiara em pé, o relógio na almofadinha —, com um par de
+     * brincos de enfeite entre elas.
+     */
+    const v = new Vitrine();
+    const passo = (L - 0.3) / pecas.length;
+    pecas.forEach((item, i) => {
+      const x = -L / 2 + 0.15 + passo * (i + 0.5);
+      if (tipoNaArara(item) === 'relogio') {
+        por(g, macia(0.11, 0.05, 0.08, 0.02), P.boutiqueRosaAntigo, x, sobre + 0.05, 0);
+        sentar(v, item, x, sobre + 0.04, -0.005, 0.15);
+      } else {
+        sentar(v, item, x, sobre + 0.025, 0, (i - 1) * 0.12);
+      }
+    });
+    v.montar(g);
+    g.userData.roupas = v.pecas;
+  }
   const rnd = sorteio(888);
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < (pecas.length ? 0 : 7); i++) {
     const x = -L / 2 + 0.16 + ((L - 0.32) / 6) * i;
     if (i % 3 === 0) {
       const colar = new THREE.TorusGeometry(0.075, 0.006, 5, 28);
@@ -1642,4 +1670,66 @@ export function vitrineDeJoias(largura = 1.3): THREE.Group {
   }
   for (const sz of [-1, 1] as const) por(g, new THREE.BoxGeometry(L - 0.04, 0.02, 0.012), latao, 0, sobre + alto, sz * (F / 2 - 0.02));
   return acabar(g, [[P.boutiqueMarmore, marmore()], [P.boutiqueVinho, tramaDeTecido()]]);
+}
+
+// ===================================================== a mesa de chapéus
+
+/**
+ * A MESA DE CHAPÉUS E BOLSAS, no meio do mezanino: uma mesa redonda de dois
+ * andares (o tampo de mármore grande embaixo, o pequeno em cima, como um
+ * prato de bolo), no pé torneado de latão. Em cima, o que ela VENDE (a fila
+ * do catálogo): os chapéus nas cabecinhas de mármore em hastes de latão, as
+ * bolsas sentadas no tampo, o lenço dobrado no andar de cima com a ponta
+ * caindo pela beira.
+ *
+ * `userData.roupas` é quantas peças da fila estão à mostra — como nas araras.
+ */
+export function mesaDeChapeus(pecas: readonly ItemDef[], raio = 0.6): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'mesa-de-chapeus';
+  const latao = toon(P.boutiqueOuro);
+  const ALT = 0.74;
+  // o pé: a base redonda, a coluna torneada e o colarinho embaixo do tampo
+  por(g, torneado([[0.001, 0.05], [0.24, 0.045], [0.28, 0.02], [0.27, 0.0], [0.001, 0.0]].reverse() as Array<[number, number]>, 40), P.boutiqueMarmore);
+  por(g, torneado([[0.05, 0.05], [0.07, 0.09], [0.045, 0.18], [0.04, 0.5], [0.06, 0.62], [0.1, ALT - 0.03]], 24), latao);
+  por(g, new THREE.CylinderGeometry(raio, raio * 0.97, 0.05, 48), P.boutiqueMarmore, 0, ALT - 0.005, 0);
+  // o friso de latão na beira do tampo
+  const friso = new THREE.TorusGeometry(raio * 0.985, 0.01, 6, 64);
+  friso.rotateX(Math.PI / 2);
+  por(g, friso, latao, 0, ALT - 0.004, 0);
+  // o andar de cima, no pezinho torneado
+  const cima = ALT + 0.3;
+  por(g, torneado([[0.04, ALT + 0.02], [0.03, ALT + 0.1], [0.025, cima - 0.05], [0.06, cima - 0.02]], 20), latao);
+  por(g, new THREE.CylinderGeometry(raio * 0.45, raio * 0.44, 0.035, 40), P.boutiqueMarmore, 0, cima, 0);
+  const frisoCima = new THREE.TorusGeometry(raio * 0.44, 0.008, 6, 48);
+  frisoCima.rotateX(Math.PI / 2);
+  por(g, frisoCima, latao, 0, cima + 0.002, 0);
+
+  const v = new Vitrine();
+  const tipos = pecas.map((p) => tipoNaArara(p));
+  const chapeus = pecas.filter((_, i) => tipos[i] === 'chapeu' || tipos[i] === 'fedora');
+  const resto = pecas.filter((_, i) => !(tipos[i] === 'chapeu' || tipos[i] === 'fedora'));
+  // os chapéus: cada um numa cabecinha de mármore em haste de latão, na beira
+  chapeus.forEach((item, i) => {
+    const a = Math.PI * 0.75 + i * Math.PI * 0.55;
+    const x = Math.sin(a) * raio * 0.62;
+    const z = Math.cos(a) * raio * 0.62;
+    por(g, new THREE.CylinderGeometry(0.008, 0.01, 0.3, 8), latao, x, ALT + 0.17, z);
+    por(g, torneado([[0.001, 0.0], [0.05, 0.005], [0.075, 0.04], [0.07, 0.09], [0.001, 0.1]], 20), P.boutiqueMarmore, x, ALT + 0.3, z);
+    sentar(v, item, x, ALT + 0.37, z, a);
+  });
+  // as bolsas no tampo de baixo, e o lenço lá em cima
+  let k = 0;
+  for (const item of resto) {
+    if (tipoNaArara(item) === 'lenco') {
+      sentar(v, item, 0, cima + 0.018, raio * 0.14, 0.4);
+      continue;
+    }
+    const a = -Math.PI * 0.05 + k * Math.PI * 0.42;
+    sentar(v, item, Math.sin(a) * raio * 0.66, ALT + 0.02, Math.cos(a) * raio * 0.66, a);
+    k++;
+  }
+  v.montar(g);
+  g.userData.roupas = v.pecas;
+  return acabar(g, [[P.boutiqueMarmore, marmore()]]);
 }
