@@ -4,6 +4,7 @@ import type { GameAPI, ItemDef, SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
 import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
+import { fundir } from '../world/fundir';
 import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/PingPong';
 import {
@@ -1598,7 +1599,8 @@ export const villaLobos: SceneDef = {
      *    dela para em `−10,7`, com 70 cm de folga da boca da pista.
      */
     const LOJINHA = { x: -40, z: -16.5 };
-    w.add(w.place(lojaDeRoupas(), LOJINHA.x, 0, LOJINHA.z, Math.PI / 2));
+    // fundida: as pecas de mesmo material viram uma malha so (`world/fundir.ts`)
+    w.add(fundir(w.place(lojaDeRoupas(), LOJINHA.x, 0, LOJINHA.z, Math.PI / 2)));
     /*
      * O COLISOR DO PRÉDIO PARA NA LINHA DOS VASOS, e não um metro antes dela.
      *

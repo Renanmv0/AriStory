@@ -155,7 +155,11 @@ oco, a espada-de-são-jorge torneada, os móveis fofos da sala e da cozinha
 (`world/moveisDaCasa.ts`), a porta da rua, a luz pintada do abajur e da
 janela, e o abajur que apaga num clique — ver "Textura em móvel" e "Luz que
 se vê" na skill de cenário, e as seções do quarto e da casa na skill de peça.
-Antes de criar peça nova, olhe como essas foram feitas.
+Antes de criar peça nova, olhe como essas foram feitas. Para PRÉDIO por fora,
+o exemplo é a lojinha da Estella (`world/lojaDeRoupas.ts`): parede com furo
+de verdade, moldura com perfil (`world/molduras.ts`), reboco, friso e
+tijolinho em canvas (`world/texturasDeFachada.ts`) — ver "Prédio de rua" na
+skill de peça.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em

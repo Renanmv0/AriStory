@@ -77,6 +77,69 @@ export function uvEmMetrosPorTriangulo(original: THREE.BufferGeometry): THREE.Bu
   return geo;
 }
 
+/**
+ * UV EM METROS PARA PAREDE: o `v` é SEMPRE a altura.
+ *
+ * O `uvEmMetros` dos móveis põe o U no lado mais comprido da peça, que é o
+ * certo para veio de madeira e o errado para parede: o friso do térreo e a
+ * fiada de tijolo têm que correr DEITADOS em toda face, e no montante
+ * estreito da fachada (mais alto que largo) eles teriam ficado em pé. Aqui a
+ * face em pé usa (o eixo do chão, `y`), e a deitada usa (`x`, `z`).
+ *
+ * `dx, dy, dz` é onde a malha está (o `position` dela): o desenho é lido na
+ * posição de MUNDO DA PEÇA, e não da malha, e é isso que faz o friso do
+ * montante continuar na mesma linha do friso da parede ao lado. A malha
+ * continua posicionada pelo `position` — o caçador de z-fighting lê as caixas
+ * por ele.
+ *
+ * Decide por TRIÂNGULO (devolve a geometria sem índice), pelo mesmo motivo do
+ * `uvEmMetrosPorTriangulo`: em quina arredondada a normal gira de vértice
+ * para vértice.
+ */
+export function uvDeParede(original: THREE.BufferGeometry, dx = 0, dy = 0, dz = 0): THREE.BufferGeometry {
+  const ler = (x: number, y: number, z: number, ax: number, ay: number, az: number): [number, number] =>
+    ay > ax && ay > az ? [x + dx, z + dz] : ax > az ? [z + dz, y + dy] : [x + dx, y + dy];
+  /*
+   * A CAIXA FICA CAIXA: os vértices dela não são compartilhados entre faces
+   * (cada face tem os seus, com a normal da face), então dá para decidir por
+   * vértice sem tirar o índice — e ela continua `BoxGeometry`, que é o que o
+   * `scripts/zfighting.mjs` mede.
+   */
+  if (original.type === 'BoxGeometry') {
+    const pos = original.getAttribute('position');
+    const nor = original.getAttribute('normal');
+    const uv = new Float32Array(pos.count * 2);
+    for (let i = 0; i < pos.count; i++) {
+      const [u, v] = ler(pos.getX(i), pos.getY(i), pos.getZ(i),
+        Math.abs(nor.getX(i)), Math.abs(nor.getY(i)), Math.abs(nor.getZ(i)));
+      uv[i * 2] = u;
+      uv[i * 2 + 1] = v;
+    }
+    original.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    return original;
+  }
+  const geo = original.index ? original.toNonIndexed() : original;
+  const pos = geo.getAttribute('position');
+  const uv = new Float32Array(pos.count * 2);
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  const n = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i += 3) {
+    a.fromBufferAttribute(pos, i);
+    b.fromBufferAttribute(pos, i + 1);
+    c.fromBufferAttribute(pos, i + 2);
+    n.subVectors(b, a).cross(c.clone().sub(a));
+    for (let k = 0; k < 3; k++) {
+      const [u, v] = ler(pos.getX(i + k), pos.getY(i + k), pos.getZ(i + k), Math.abs(n.x), Math.abs(n.y), Math.abs(n.z));
+      uv[(i + k) * 2] = u;
+      uv[(i + k) * 2 + 1] = v;
+    }
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  return geo;
+}
+
 function extensao(geo: THREE.BufferGeometry): number[] {
   geo.computeBoundingBox();
   const tam = geo.boundingBox!.getSize(new THREE.Vector3());
