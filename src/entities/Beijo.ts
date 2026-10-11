@@ -89,8 +89,16 @@ export class Beijo {
     const meioZ = (a.position.z + b.position.z) / 2;
     const px = (Math.sin(eixo) * ALCANCE) / 2;
     const pz = (Math.cos(eixo) * ALCANCE) / 2;
-    this.alvoA.set(meioX - px, 0, meioZ - pz);
-    this.alvoB.set(meioX + px, 0, meioZ + pz);
+    /*
+     * A ALTURA DO ALVO É A DE CADA UM, e não zero. O deslize até o perfil é um
+     * `lerp` do vetor inteiro: com o alvo em `y = 0`, quem estava num andar
+     * de cima (o mezanino da boutique, a 3,9 m) era puxado para o chão do
+     * térreo durante a inclinação — o beijo "teleportava" a dupla para baixo
+     * do piso, que foi o bug que o Renan viu no celular. A física de caminhada
+     * só escreve `x` e `z`, então nada a devolvia ao andar.
+     */
+    this.alvoA.set(meioX - px, a.position.y, meioZ - pz);
+    this.alvoB.set(meioX + px, b.position.y, meioZ + pz);
 
     a.rig.setFacing(eixo);
     b.rig.setFacing(eixo + Math.PI);
