@@ -254,34 +254,39 @@ const estante = await page.evaluate(() => {
   });
   if (!peca) return null;
 
-  // a face mais à frente da carcaça, e a de cada livro, no espaço da peça
-  const frenteDe = (m, extra = 0) =>
-    m.position.z + extra + (m.geometry?.parameters?.depth ?? 0) / 2;
-  const fundoDe = (m, extra = 0) =>
-    m.position.z + extra - (m.geometry?.parameters?.depth ?? 0) / 2;
-
+  // a face mais à frente da carcaça, e a de cada livro, no espaço da peça.
+  // Medido pela CAIXA da malha (e não pelos parâmetros do BoxGeometry): a
+  // carcaça é fundida numa malha só (`world/fundir.ts`) e não tem mais
+  // `parameters`.
+  const inversa = peca.matrixWorld.clone().invert();
+  const caixa = (m) => {
+    m.geometry.computeBoundingBox();
+    return m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld.clone().premultiply(inversa));
+  };
   let bocaDaPeca = -Infinity;
   let fundoDaPeca = Infinity;
   const livros = [];
-  for (const filho of peca.children) {
-    if (filho.isMesh && !filho.userData?.livro) {
-      bocaDaPeca = Math.max(bocaDaPeca, frenteDe(filho));
-      fundoDaPeca = Math.min(fundoDaPeca, fundoDe(filho));
+  const malhasDaCarcaca = [];
+  peca.updateMatrixWorld(true);
+  peca.traverse((o) => {
+    if (!o.isMesh) return;
+    if (o.userData?.livro) {
+      const c = caixa(o);
+      livros.push({ frente: c.max.z, fundo: c.min.z });
+    } else if (o.parent === peca) {
+      const c = caixa(o);
+      malhasDaCarcaca.push(c);
+      bocaDaPeca = Math.max(bocaDaPeca, c.max.z);
+      fundoDaPeca = Math.min(fundoDaPeca, c.min.z);
     }
-    // os livros moram num pivô (é ele que dá o tombo girando pela base)
-    for (const neto of filho.children ?? []) {
-      if (neto.userData?.livro) {
-        livros.push({ frente: frenteDe(neto, filho.position.z), fundo: fundoDe(neto, filho.position.z) });
-      }
-    }
-  }
+  });
   return {
     bocaDaPeca, fundoDaPeca,
     quantos: livros.length,
     folgaNaFrente: Math.min(...livros.map((l) => bocaDaPeca - l.frente)),
     folgaNoFundo: Math.min(...livros.map((l) => l.fundo - fundoDaPeca)),
     // a peça é OCA: alguma tábua tem que estar recuada em relação à boca
-    temVao: peca.children.some((c) => c.isMesh && frenteDe(c) < bocaDaPeca - 0.05),
+    temVao: malhasDaCarcaca.some((c) => c.max.z < bocaDaPeca - 0.05),
   };
 });
 

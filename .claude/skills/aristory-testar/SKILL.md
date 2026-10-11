@@ -62,6 +62,15 @@ ruído. Qualquer outro erro de console é erro de verdade.
 
 ## Lições de teste que já custaram tempo
 
+- **Mudança de desempenho se prova com foto igual.** A comparação pixel a
+  pixel de duas cargas da página tem RUÍDO de fundo (textura granulada, como a
+  do tapete, varia entre a primeira e a segunda carga): compare antes a página
+  com ela mesma (`?semFundir` contra `?semFundir`) para saber o ruído, e só
+  depois a de antes com a de depois.
+- **Teste que olha uma janela fixa de tempo oscila.** O balanço dos braços
+  deitados (`cama.mjs`) tem ciclo de ~11 s de jogo, e 1,4 s de espera às vezes
+  caía no topo da onda; agora espera o braço sair do lugar, com teto.
+
 - **O Chromium daqui não é o Safari do iPhone.** Gesto do sistema (toque
   longo, lupa, arrastar imagem) só existe lá, e cancela o toque do jogo com
   `pointercancel`. Bug de toque que "não reproduz" aqui: IMITE o navegador

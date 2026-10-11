@@ -78,7 +78,11 @@ await foto('01-quarto');
 
 conferir('o chão do quarto tem assoalho', (await comTextura(0xc9975c)) >= 1);
 const madeira = (await comTextura(0xb5793a)) + (await comTextura(0x8a5a2a));
-conferir('os móveis de madeira do quarto têm veio', madeira >= 15, `${madeira} malhas`);
+// os móveis são fundidos (`world/fundir.ts`): poucos pedaços, todos com veio,
+// e NENHUM pedaço de madeira lisa sobrando
+const madeiraLisa = (onde) => mundo(`let n = 0; R.traverse((o) => { if (o.isMesh && !o.isInstancedMesh && o.material && !o.material.map && [0xb5793a, 0x8a5a2a].includes(o.material.color.getHex())) n++; }); return n;`);
+const lisaQuarto = await madeiraLisa();
+conferir('os móveis de madeira do quarto têm veio', madeira >= 5 && lisaQuarto <= 2, `${madeira} com veio, ${lisaQuarto} lisas`);
 
 const tapete = await mundo(`
   let t = null; R.traverse((o) => { if (o.userData.peca === 'tapete') t = o; });
@@ -129,9 +133,10 @@ await page.waitForTimeout(3000);
 await foto('04-casa');
 
 conferir('o chão da sala tem assoalho', (await comTextura(0xc9975c)) >= 1);
-conferir('o sofá tem tecido', (await comTextura(0xe0524a)) >= 4);
+conferir('o sofá tem tecido', (await comTextura(0xe0524a)) >= 1);
 const madeiraSala = (await comTextura(0xb5793a)) + (await comTextura(0x8a5a2a));
-conferir('os móveis de madeira da sala têm veio', madeiraSala >= 20, `${madeiraSala} malhas`);
+const lisaSala = await madeiraLisa();
+conferir('os móveis de madeira da sala têm veio', madeiraSala >= 5 && lisaSala <= 2, `${madeiraSala} com veio, ${lisaSala} lisas`);
 conferir('a bancada da cozinha é de granito', (await comTextura(0xc9c8c2)) >= 1);
 const capacho = await mundo(`
   const t = []; R.traverse((o) => { if (o.userData.peca === 'tapete') t.push(o); });
