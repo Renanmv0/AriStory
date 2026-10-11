@@ -431,6 +431,21 @@ export interface MedidasCorpo {
    * ~1,3 — um número só servia para um dos dois, e a orelhinha sumia no outro.
    */
   cabelo(angulo: number): number;
+  /**
+   * Os dois PIVÔS DAS PERNAS (esquerda, direita), irmãos de qualquer peça
+   * pendurada no corpo. Só para LER a pose: a saia comprida
+   * (`world/roupasDaBoutique.ts`, `saiaViva`) olha onde cada perna está a cada
+   * quadro e abre o pano por cima dela — a passada levanta a barra e, sentado,
+   * o pano cai do colo. Peça nenhuma mexe neles; mexer é recriar membro.
+   */
+  pernas?: readonly [THREE.Object3D, THREE.Object3D];
+  /**
+   * A COR DA PELE de quem veste. A peça não inventa pele (a pele é do
+   * personagem), mas a que tem uma abertura por onde a pele aparece e que
+   * substitui o pé do rig — a sapatilha, com o peito do pé à mostra — precisa
+   * desenhar esse pedaço na cor certa.
+   */
+  pele?: number;
 }
 
 /** O que uma pessoa esta vestindo: slot -> id da peca. Sai das vagas. */

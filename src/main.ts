@@ -5,7 +5,7 @@ import { SCENES, CENA_INICIAL } from './scenes';
 import { DUPLA } from './characters/cast';
 import { CLIMAS, Musica } from './audio/musica';
 import { EFEITOS } from './audio/efeitos';
-import { ITENS, MODA_PRAIA } from './world/itens';
+import { ARARAS_DA_ESTELLA, CHAPEUS_DA_ESTELLA, ITENS, JOIAS_DA_ESTELLA, MODA_PRAIA, PREMIUM_DA_ESTELLA } from './world/itens';
 import { MEMORIAS } from './world/memoriasData';
 import { PRAGAS } from './world/bichosDoJardim';
 import { regadorDeJardim } from './world/regador';
@@ -82,6 +82,14 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 );
 // o que o vestiario do clube vende, na ordem da vitrine
 (window as unknown as { aristoryModaPraia: unknown }).aristoryModaPraia = MODA_PRAIA;
+// o que a boutique da Estella vende, fila por fila (as araras do térreo, as
+// premium do mezanino, a vitrine de joias e a mesa de chapéus)
+(window as unknown as { aristoryBoutique: unknown }).aristoryBoutique = [
+  ...ARARAS_DA_ESTELLA.map((f) => ({ ...f, andar: 'terreo' })),
+  ...PREMIUM_DA_ESTELLA.map((f) => ({ ...f, andar: 'mezanino' })),
+  { ...JOIAS_DA_ESTELLA, andar: 'mezanino' },
+  { ...CHAPEUS_DA_ESTELLA, andar: 'mezanino' },
+].map((f) => ({ titulo: f.titulo, andar: f.andar, ids: f.pecas.map((p) => p.id) }));
 // o acervo do quadro de memorias, para o teste conferir quantas pecas existem
 // sem ter que contar os pontinhos da tela
 (window as unknown as { aristoryMemorias: unknown }).aristoryMemorias = MEMORIAS.map(

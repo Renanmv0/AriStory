@@ -270,7 +270,13 @@ export class CharacterRig {
 
     this.headTop = legH + torsoH + headR * 2.1;
     // o que as fábricas de roupa recebem; elas não veem o rig, só números
-    this.medidas = { h, w, headR, legH, torsoH, armLen, cabelo: (a) => this.cabeloNoAngulo(a, headR) };
+    this.medidas = {
+      h, w, headR, legH, torsoH, armLen,
+      cabelo: (a) => this.cabeloNoAngulo(a, headR),
+      // só para a saia comprida LER a pose (ver `MedidasCorpo.pernas`)
+      pernas: [this.legL, this.legR],
+      pele: spec.skin,
+    };
 
     const skin = toon(spec.skin);
     const shirt = toon(spec.shirt);
@@ -1227,7 +1233,13 @@ export class CharacterRig {
       // "perna nua" quer dizer que o VESTIDO nao cobre a perna — nao que nada
       // possa cobrir. Uma meia vestida ganha da marca, senao o vestido
       // apagaria a meia que veio junto com ele no mesmo conjunto.
-      if (peca.pernasNuas && slot === 'pernas' && !this.roupa.pernas) return true;
+      //
+      // A SAIA é a exceção que confirma: ela MORA na vaga das pernas e é ela
+      // mesma quem deixa a perna nua (a saia da boutique: o pano é o
+      // `extraQuadril`, e a perna por baixo é pele). Sem o `=== peca`, a saia
+      // achava que havia "uma calça vestida" — ela própria — e pintava a perna
+      // inteira da cor da saia.
+      if (peca.pernasNuas && slot === 'pernas' && (!this.roupa.pernas || this.roupa.pernas === peca)) return true;
       // a manga e o `detalhe` do tronco; o torso continua vestido
       if (peca.bracosNus && slot === 'tronco' && parte === 'detalhe') return true;
       // a camiseta solta: o casco é a roupa, e o peito por dentro é pele

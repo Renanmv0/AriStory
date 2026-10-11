@@ -262,16 +262,23 @@ exemplo de INTERIOR de comércio. O que serve para a próxima loja:
   sai do `slot` (`tipoNaArara`: vestido é tronco com `pernasNuas`, regata é
   tronco com `bracosNus`…). Quem abre a arara de vestidos vê no painel os
   vestidos pendurados nela. O que não pendura (gorro, bota, pulseira, cartela)
-  vai para duas prateleiras de carvalho entre os montantes.
+  vai para duas prateleiras de carvalho entre os montantes. As peças da
+  coleção nova têm silhueta por id (`TIPO_POR_ID`: saia, casaco, vestido
+  longo, jardineira, sapatilha, bota alta…), e o mezanino vende também em
+  dois móveis que mostram o que vendem do mesmo jeito: a VITRINE DE JOIAS
+  (`vitrineDeJoias(largura, pecas)` — o colar, a tiara e o relógio sob o
+  vidro) e a MESA DE CHAPÉUS (`mesaDeChapeus(pecas)`, redonda de dois andares:
+  chapéus nas cabecinhas de mármore, bolsas no tampo, lenço em cima).
 - **Roupa é silhueta estofada, em instância.** Cada peça é a forma dela
   (`Shape`) extrudada com bisel e as normais alisadas (`mergeVertices` sem UV);
   o detalhe (gola, punho, renda, cós) é uma segunda silhueta um fio mais
   GROSSA, que atravessa o pano. Doze camisas são um `InstancedMesh` (a classe
   `Vitrine`), e a arara anota em `userData.roupas` quantas peças mostra — é o
   que o `scripts/lojinha.mjs` conta.
-- **Organizado é**: três tamanhos de cada peça, em bloco de cor, todas no
-  mesmo cabide de madeira, de lado; na premium, uma peça de cada, DE FRENTE
-  (o gancho é giratório). E a plaquinha da seção em cima de cada arara —
+- **Organizado é**: três tamanhos de cada peça (dois quando a fila passa de
+  seis), em bloco de cor, todas no mesmo cabide de madeira, de lado; na
+  premium, uma peça de cada, DE FRENTE (o gancho é giratório) — e de lado
+  quando o arco tem mais de duas. E a plaquinha da seção em cima de cada arara —
   DUAS faces de costas uma para a outra: o plano `DoubleSide` mostra o verso
   espelhado.
 - **Boiserie** (`boiserie(comprimento, altura)`): rodapé, friso e cornija com
