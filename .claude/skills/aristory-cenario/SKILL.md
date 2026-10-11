@@ -5,6 +5,10 @@ description: Criar ou editar um cenário do AriStory (casa, parque, praia, resta
 
 # Criar um cenário no AriStory
 
+> **Junto desta skill, carregue as `threejs-*` da tabela "REGRA DE TODA
+> TAREFA" do `CLAUDE.md`** (`geometry`, `textures`, `lighting`, e `interaction` se tiver coisa de tocar). Elas são a técnica; esta é a regra do
+> jogo. Peça feita só de caixa lisa é o jeito antigo.
+
 Um cenário é **um arquivo só**: `src/scenes/<nome>.ts`, exportando um `SceneDef`.
 Nunca mexa no renderer, na câmera, nas luzes ou no loop — a cena só fala com o
 `WorldBuilder` (`w`) e com o `GameAPI` (`w.game`, ou o `g` que chega em cada interação).
@@ -464,6 +468,13 @@ balão disputaria o E). A cúpula de `nightstand()`/`floorLamp()` tem o nome
    `comp/2 - 1.9` (2,6 à frente do centro): para ela cair num `z`, o ônibus
    inteiro anda 2,6 para trás. Mexer na porta dentro do prop move onde a dupla
    desembarca nas duas cenas.
+
+12. **Porta em mureta: o vão vai até o chão, e a parede fecha em cima.** A
+   porta da rua da casa do Ari ficou com a mureta baixa da frente correndo
+   POR BAIXO dela (um degrau de 45 cm atravessando a soleira, visto girando a
+   câmera) e sem nada acima do batente. O certo: a mureta em dois trechos, dois
+   pedaços de parede alta ladeando o vão, e um bloco só de malha (sem colisor)
+   em cima da porta. Ver a porta da rua em `scenes/casa.ts`.
 
 ## Depurar posição
 

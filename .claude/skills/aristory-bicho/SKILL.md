@@ -5,6 +5,10 @@ description: Criar ou ajustar um bicho do AriStory — gato, cachorro, passarinh
 
 # Adicionar um bicho ao jogo
 
+> **Junto desta skill, carregue as `threejs-*` da tabela "REGRA DE TODA
+> TAREFA" do `CLAUDE.md`** (`geometry`, `animation`). Elas são a técnica; esta é a regra do
+> jogo. Peça feita só de caixa lisa é o jeito antigo.
+
 Bicho é a terceira categoria de coisa que aparece em cena, e ela existe porque
 as outras duas não servem:
 

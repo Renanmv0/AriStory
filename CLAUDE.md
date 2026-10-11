@@ -28,6 +28,43 @@ acento — é o padrão do repositório, siga o que já está lá.
 Elas existem para você **não precisar varrer o código** a cada tarefa. Comece
 por elas.
 
+### REGRA DE TODA TAREFA: as duas camadas de skill
+
+Pedido de cenário, personagem, modelo, peça, móvel, bicho, enfeite, roupa,
+efeito, luz, interação — **qualquer coisa que se vê ou se toca no jogo** —
+começa carregando (com a ferramenta `Skill`) as DUAS camadas, antes de
+escrever código:
+
+1. **a skill `aristory-*` da tarefa** (tabela acima): as regras e o kit do
+   jogo — o que já existe, onde mora, o que já custou foto;
+2. **as skills `threejs-*` que a tarefa pede** (tabela abaixo): a técnica para
+   o modelo sair bonito e leve. Foram elas que fizeram a casa e o quarto do
+   Ari: textura de canvas, quina arredondada, vaso torneado, folha
+   instanciada, luz pintada, abajur de clicar.
+
+Não é opcional e não é "se der tempo": peça nova feita só de caixa e cilindro
+liso, sem passar pelas `threejs-*`, é o jeito antigo — o Renan pediu
+explicitamente que as novas sejam usadas sempre. Quando uma delas discordar do
+AriStory, valem as regras daqui (ver abaixo), mas a técnica entra.
+
+| o pedido | `aristory-*` | `threejs-*` a carregar |
+|---|---|---|
+| cenário novo ou mexer num cenário | `cenario` (+ `prop` para as peças) | `geometry`, `textures`, `lighting`; `interaction` se tiver coisa de tocar |
+| móvel, peça, objeto, modelo | `prop` | `geometry`, `textures`; `lighting` se acende |
+| personagem ou NPC | `personagem` | `geometry`, `animation` |
+| bicho | `bicho` | `geometry`, `animation` |
+| roupa | `roupa` | `geometry` |
+| enfeite da estufa | `enfeite` | `geometry`, `textures`, `lighting` |
+| praga do jardim | `praga` | `geometry`, `animation` |
+| prato do cardápio | `prato` | `geometry`, `textures` |
+| efeito (vento, água, brilho, tela) | a do lugar onde ele entra | `shaders`; `postprocessing` medindo no celular |
+| clique, toque, arrastar no mundo | a do lugar | `interaction` |
+| cutscene, coreografia, movimento | a do lugar | `animation` |
+| noite, abajur, poste, sombra | `cenario` | `lighting` |
+
+E sempre, no fim: `aristory-testar` (foto olhada, testes, e o
+`scripts/zfighting.mjs` com `SO=` nas peças novas).
+
 ### As skills genéricas de Three.js
 
 Além das `aristory-*`, a conta tem dez skills genéricas de Three.js
@@ -45,16 +82,19 @@ no kit, em `core/materials.ts`, nunca dentro de uma cena).
 | `threejs-lighting` | sim | cena de noite, abajur e poste, ajuste de sombra. **Ignore a parte de IBL/HDR**: pede arquivo externo |
 | `threejs-interaction` | em parte | `Raycaster` para tocar no mundo (pôr enfeite, peça do xadrez, NPC no celular) — já está no motor (`w.clicavel`). **OrbitControls e afins, só no drone do laboratório**: no jogo a câmera é isométrica fixa (`core/IsoCamera.ts`) |
 | `threejs-animation` | em parte | os padrões de animação procedural e easing, e trilhas de keyframe para cutscene (a travessia do computador já é assim). Ossos e morph **feitos em código** servem (a cobrinha e o coração do laboratório); **GLTF e modelo carregado, não**: o corpo é o `CharacterRig`, animado em código |
-| `threejs-textures` | pouco | só textura procedural em `<canvas>` e render target (como o espelho). Carregar imagem, cubemap ou HDR é proibido |
+| `threejs-textures` | **sim, só canvas** | textura procedural em `<canvas>` (o veio, o tecido, o matelassê, o tapete e o assoalho da casa — `world/texturasDeCasa.ts`, `world/texturasDeChao.ts`) e render target (o espelho). Carregar imagem, cubemap ou HDR é proibido |
 | `threejs-fundamentals` | pouco | consulta de transformação e de `dispose`; o motor já está montado |
 | `threejs-materials` | pouco | quase tudo é PBR, que não é a cara do jogo. Serve a seção de toon e as propriedades comuns — e nunca para instanciar material numa cena |
 | `threejs-loaders` | **não vale** | é toda sobre carregar `.glb`, imagem e HDR, o que a primeira invariante proíbe. Não use neste projeto |
 
-**O quarto e a casa do Ari já usam quatro delas no jogo de verdade**
-(textures, geometry, lighting e interaction): o acabamento dos móveis, o
-edredom dobrado e a franja instanciada, a luz pintada do abajur e da janela,
-e o abajur que apaga num clique — ver "Textura em móvel" e "Luz que se vê"
-na skill de cenário.
+**O quarto e a casa do Ari são o exemplo inteiro, no jogo de verdade**
+(textures, geometry, lighting e interaction): o acabamento dos móveis
+(`world/acabamento.ts`), o edredom dobrado e a franja instanciada, o armário
+oco, a espada-de-são-jorge torneada, os móveis fofos da sala e da cozinha
+(`world/moveisDaCasa.ts`), a porta da rua, a luz pintada do abajur e da
+janela, e o abajur que apaga num clique — ver "Textura em móvel" e "Luz que
+se vê" na skill de cenário, e as seções do quarto e da casa na skill de peça.
+Antes de criar peça nova, olhe como essas foram feitas.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em

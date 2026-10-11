@@ -5,6 +5,10 @@ description: Adicionar um prato novo ao cardápio do restaurante do clube — a 
 
 # Adicionar um prato ao cardápio
 
+> **Junto desta skill, carregue as `threejs-*` da tabela "REGRA DE TODA
+> TAREFA" do `CLAUDE.md`** (`geometry`, `textures`). Elas são a técnica; esta é a regra do
+> jogo. Peça feita só de caixa lisa é o jeito antigo.
+
 Um prato vive em **três lugares**. Esquecer um deles é o defeito clássico
 daqui, e cada um falha de um jeito diferente:
 

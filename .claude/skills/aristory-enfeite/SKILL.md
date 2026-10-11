@@ -5,6 +5,10 @@ description: Criar ou ajustar um enfeite (decoração) da estufa do AriStory —
 
 # Criar um enfeite da estufa
 
+> **Junto desta skill, carregue as `threejs-*` da tabela "REGRA DE TODA
+> TAREFA" do `CLAUDE.md`** (`geometry`, `textures`, `lighting`). Elas são a técnica; esta é a regra do
+> jogo. Peça feita só de caixa lisa é o jeito antigo.
+
 Um enfeite custa **UMA função e UMA entrada de catálogo**, as duas em
 `src/world/decoracoes.ts`, e as cores dele em `src/palette.ts`. Todo o resto sai
 de graça, porque lê o catálogo:

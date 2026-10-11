@@ -5,6 +5,10 @@ description: Ajustar ou criar um personagem do AriStory (o Ari, o Renan, qualque
 
 # Mexer nos personagens do AriStory
 
+> **Junto desta skill, carregue as `threejs-*` da tabela "REGRA DE TODA
+> TAREFA" do `CLAUDE.md`** (`geometry`, `animation`). Elas são a técnica; esta é a regra do
+> jogo. Peça feita só de caixa lisa é o jeito antigo.
+
 Personagem é **ficha declarativa**, não modelo 3D. Para mudar alguém você edita
 `src/characters/cast.ts` e mais nada. A geometria é montada em
 `src/characters/CharacterRig.ts` a partir da ficha.

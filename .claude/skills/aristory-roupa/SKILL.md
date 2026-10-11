@@ -5,6 +5,10 @@ description: Adicionar uma peça nova ao guarda-roupa do AriStory a partir de um
 
 # Adicionar uma peça ao guarda-roupa
 
+> **Junto desta skill, carregue as `threejs-*` da tabela "REGRA DE TODA
+> TAREFA" do `CLAUDE.md`** (`geometry`). Elas são a técnica; esta é a regra do
+> jogo. Peça feita só de caixa lisa é o jeito antigo.
+
 Roupa é **item do inventário**, não parte fixa da ficha do personagem. O
 pipeline inteiro:
 
