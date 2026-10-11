@@ -25,6 +25,8 @@
  *   cima e para baixo, e na chegada o térreo some, o mezanino aparece e a LISTA
  *   DE COLISORES troca — as três, porque cada uma sozinha passa com o bug da
  *   outra.
+ * - O CARINHO LÁ EM CIMA FICA LÁ EM CIMA: dar as mãos e beijar no mezanino
+ *   não pode levar a dupla para o chão do térreo (o beijo já fez isso).
  * - O ESPELHO REFLETE QUEM ESTÁ NA FRENTE DELE. E isso é medido comparando a
  *   textura do reflexo com a dupla no lugar e com a dupla longe: um teste de
  *   "tem pixel aceso" passa com o espelho refletindo a sala e ESQUECENDO as
@@ -542,6 +544,49 @@ await page.screenshot({ path: `${OUT}-premium.png` });
 await page.keyboard.press('Escape');
 await page.waitForTimeout(600);
 
+/**
+ * 7b. O CARINHO NO MEZANINO NÃO AFUNDA A DUPLA.
+ *
+ * O bug que o Renan viu no celular: no andar de cima, dar um beijo (ou o E de
+ * contexto, que vira beijo quando os dois estão de frente) levava a dupla
+ * para o chão do térreo, debaixo do piso do mezanino — o deslize até o perfil
+ * do beijo mirava `y = 0`. O teste dá as mãos (H), solta, e beija, e mede a
+ * altura dos DOIS ao longo de todo o gesto: ninguém pode passar de 3,5 para
+ * baixo.
+ */
+await page.evaluate(() => {
+  window.jogo.debugPlace(-3.2, 0.2, Math.PI / 2);
+  window.jogo.elevarDupla(3.9);
+});
+await page.waitForTimeout(1200);
+const alturaDaDupla = () => page.evaluate(() =>
+  Math.min(window.jogo.player.position.y, window.jogo.parceiro.position.y));
+let maisBaixo = await alturaDaDupla();
+await page.keyboard.press('KeyH');
+for (let i = 0; i < 3; i++) {
+  await page.waitForTimeout(500);
+  maisBaixo = Math.min(maisBaixo, await alturaDaDupla());
+}
+const deuAsMaos = await page.evaluate(() => window.jogo.maos.ativo);
+await page.keyboard.press('KeyH');
+await page.waitForTimeout(500);
+// o beijo direto (o E faz exatamente isto quando os dois estão de frente)
+await page.evaluate(() => {
+  const j = window.jogo;
+  j.beijo.iniciar(j.player, j.parceiro, j.iso.angle);
+});
+/*
+ * ESPERA O BEIJO ACABAR, por condição e não por relógio: o headless roda o
+ * tempo do jogo umas cinco vezes mais devagar, e com o beijo ainda no meio o
+ * jogador continua travado — a viagem de volta, logo abaixo, não acontecia.
+ */
+for (let i = 0; i < 60 && (await page.evaluate(() => window.jogo.beijo.rodando || window.jogo.player.locked)); i++) {
+  await page.waitForTimeout(400);
+  maisBaixo = Math.min(maisBaixo, await alturaDaDupla());
+}
+maisBaixo = Math.min(maisBaixo, await alturaDaDupla());
+const carinhoLaEmCima = { deuAsMaos, maisBaixo: +maisBaixo.toFixed(2) };
+
 // e a viagem de volta: o topo da escada devolve a dupla ao térreo
 await page.evaluate(([x, z]) => {
   window.jogo.debugPlace(x, z, 0);
@@ -698,6 +743,10 @@ if (!naPremium.precos.some((p) => Number(String(p).replace(/\D+/g, '')) >= 150))
   falhas.push(`a linha premium nao esta cara: ${JSON.stringify(naPremium.precos)}`);
 }
 
+if (!carinhoLaEmCima.deuAsMaos) falhas.push('nao deu para dar as maos no mezanino');
+if (carinhoLaEmCima.maisBaixo < 3.5) {
+  falhas.push(`o carinho no mezanino afundou a dupla para o terreo (y ${carinhoLaEmCima.maisBaixo})`);
+}
 if (!/descer/i.test(promptDoTopo)) falhas.push(`nao da para descer no topo: "${promptDoTopo}"`);
 if (segundosDescendo === null) falhas.push('a viagem de descida nunca terminou (90 s)');
 if (laEmBaixo[1] > 0.4) falhas.push(`a descida nao devolveu o terreo: ${JSON.stringify(laEmBaixo)}`);
@@ -731,6 +780,7 @@ console.log('7. espelho:', JSON.stringify(promptDoEspelho), '·', aceso, 'de', p
   mudou, 'mudaram quando a dupla saiu da frente');
 console.log('   armario pelo espelho:', espelhoAbreArmario, JSON.stringify(noArmario),
   '· premium:', JSON.stringify(naPremium));
+console.log('7b. carinho no mezanino:', JSON.stringify(carinhoLaEmCima), '(a dupla nao pode descer de 3,5)');
 console.log('8. volta:', JSON.stringify(promptDeSair), '→', voltou.cena, JSON.stringify(voltou.onde),
   '· andou la fora:', andouLaFora.toFixed(2));
 

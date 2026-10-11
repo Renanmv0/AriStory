@@ -252,6 +252,17 @@ g.lockPlayer(false);
 Cuidado com móvel na frente: numa câmera isométrica o encosto do sofá tapa quem
 senta colado nele. Sente **à frente** do encosto e confira com foto.
 
+## Andar de cima (o mezanino da boutique)
+
+O motor não tem "andar": a física de caminhada escreve só `x` e `z`, e a
+altura da dupla é o `y` que a cena pôs (`g.elevarDupla`). Por isso **toda
+mecânica que mexe no corpo tem que preservar o `y`**: nada de mirar
+`Vector3(x, 0, z)` num `lerp`, nem `teleport` sem a altura. O beijo fazia isso
+(o deslize até o perfil mirava `y = 0`) e, no mezanino, levava a dupla para o
+chão do térreo, debaixo do piso — o Renan viu no celular. O mesmo valia para
+o parceiro que reaparece perto quando fica longe. O `scripts/lojinha.mjs` dá
+as mãos e beija lá em cima e mede a altura dos dois.
+
 ## Decoração que não é decalque
 
 Canteiro, vitória-régia, pedra na beira d'água: sempre que der, faça a peça ter

@@ -201,9 +201,11 @@ export class Companion {
     this.dir.set(alvo.x - this.position.x, 0, alvo.z - this.position.z);
     const dist = this.dir.length();
 
-    // se ficou muito para tras (porta, cutscene, colisor chato), reaparece perto
+    // se ficou muito para tras (porta, cutscene, colisor chato), reaparece
+    // perto — no ANDAR do jogador: o `teleport` sem altura põe no chão, e num
+    // andar de cima (o mezanino da boutique) ele reapareceria embaixo do piso
     if (!this.ordem && dist > 22) {
-      this.teleport(alvo.x - 1.2, alvo.z - 1.2, Math.atan2(this.dir.x, this.dir.z));
+      this.teleport(alvo.x - 1.2, alvo.z - 1.2, Math.atan2(this.dir.x, this.dir.z), seguindo.y);
       return;
     }
 
