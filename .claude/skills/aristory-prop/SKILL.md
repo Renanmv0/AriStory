@@ -211,6 +211,46 @@ gente morando (ímãs na geladeira, chaleira no fogão, almofada torta).
 - `acabar()` agora decide o UV por triângulo em peça curva (tudo que não é
   `BoxGeometry`), então dá veio e tecido nas peças de quina macia também.
 
+## Prédio de rua: a fachada da lojinha (`world/lojaDeRoupas.ts`)
+
+A loja da Estella no Villa Lobos é o exemplo de PRÉDIO por fora (a casa do
+Ari é o de móvel). O kit que nasceu com ela serve a qualquer fachada:
+
+- **Parede é forma com furo**, e não caixa com desenho: `THREE.Shape` com
+  `holes` (vitrine, porta com bandeira em arco, janela de arco), extrudada na
+  espessura (`ExtrudeGeometry`). O vão ganha o "batente" de reboco por dentro
+  de graça, e não há emenda de caixa na fachada. O caixilho mora DENTRO do vão
+  e entra 1 cm no reboco (casado com o furo, as faces de dentro brigam).
+- **Moldura com perfil** (`world/molduras.ts`): `contorno(perfil, hx, hz,
+  vaos)` dá a volta no prédio com um perfil `[saída, y]` (plinto, rodapé,
+  faixa entre andares, cornija com `cavetinho()`, capeamento da platibanda
+  com saída negativa para descer por dentro). A quina sai em meia-esquadria
+  sozinha, a normal segue a curva, e `vaos` corta a frente ou o fundo na porta.
+- **Parede com textura** (`world/texturasDeFachada.ts`): `reboco()`,
+  `rebocoComFrisos()` (o térreo) e `tijolinho()` (o rodapé — pinta o tijolo
+  com `P.lojaTijolo` sobre branco, com o material creme: rejunte é claro, e
+  multiplicar só escurece). O UV é `uvDeParede(geo, x, y, z)`
+  (`world/acabamento.ts`): `v` SEMPRE na altura (o friso não fica em pé no
+  montante estreito) e lido na posição da peça (o friso do montante continua
+  na linha do da parede ao lado). `BoxGeometry` continua `BoxGeometry`.
+- **Quadro por parede**: um grupo sem nome por face (`FRENTE`, `DIREITA`,
+  `FUNDOS`, `ESQUERDA`) com a face de fora em `z = 0`. A janela é montada uma
+  vez e serve às quatro; a `fundir()` atravessa grupo sem nome.
+- **O que se repete é um lote** (`Lote`: flor, folha, lâmpada do letreiro,
+  palheta de veneziana) — um `InstancedMesh` para o prédio inteiro, cor por
+  cópia, a matriz levada do quadro da parede para o da peça.
+- **O vidro do prédio é UMA malha** (juntado à mão: transparente não entra na
+  `fundir()`), com `renderOrder` acima da luz pintada da vitrine — o vidro grava
+  profundidade, e pintado antes ele apagaria a poça de luz atrás dele.
+- **Toldo de lona**: gomos que embarrigam entre as varetas, aba recortada em
+  meia-lua, e o mesmo avanço de 1,05 (a conta da câmera da Estella).
+- O tamanho por fora e o plano da fachada são os de antes: colisor, porta,
+  posto da Estella e `scripts/estella.mjs` continuam valendo.
+
+`?semFundir` + uma caixa envolvente por malha (no quadro da peça) acha face
+coplanar também em peça arredondada e extrudada — o `zfighting.mjs` só mede
+`BoxGeometry`, e depois da `fundir()` sobram poucas.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
