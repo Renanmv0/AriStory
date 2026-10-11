@@ -1171,6 +1171,21 @@ export const PALETTE = {
   // luz que entra e a do lanternim e nao a da vitrine
   mezaninoPiso: 0xeee5d6,
   mezaninoGuarda: 0xf7f1ea,
+  // A SEGUNDA REFORMA: chique E confortavel. O piso virou parquet em chevron de
+  // carvalho claro (madeira esquenta a sala), os tampos e as bases sao de
+  // marmore branco, e entra o ROSA ANTIGO — o rosa da fachada, apagado — no
+  // veludo do sofa, das cortinas e do fundo dos nichos. O vinho fica para o
+  // que pede peso (o pufe, a cortina do provador), e o ouro continua so em fio.
+  boutiqueCarvalho: 0xe6c9a1,
+  boutiqueMarmore: 0xf4f1ec,
+  boutiqueRosaAntigo: 0xd9a2ab,
+  boutiqueRosaClaro: 0xf3dfe0,
+  boutiqueNicho: 0xf1dcdc,
+  boutiqueCabide: 0xc89a66,
+  boutiqueSacola: 0xe7b8c0,
+  boutiqueBiscoito: 0xe0b072,
+  // a fita metrica amarela da costureira
+  boutiqueFita: 0xf2cf5b,
 
   // o Cookie, o elefante da bilheteria. Cinza de elefante de verdade puxa para
   // o ROXO, e nao para o azul — cinza azulado sai como pedra. A orelha por

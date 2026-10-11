@@ -1,5 +1,9 @@
 import * as THREE from 'three';
-import { toon } from '../core/materials';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { brilhoDeLuz, toon } from '../core/materials';
+import { acabar } from './acabamento';
+import { contorno } from './molduras';
+import { marmore } from './texturasDeCasa';
 import { PALETTE as P } from '../palette';
 
 /**
@@ -218,7 +222,14 @@ class VidroDeEspelho extends THREE.Mesh {
 }
 
 /**
- * O espelho inteiro: o vidro que reflete, o aro dourado e a base.
+ * O espelho inteiro: o vidro que reflete, a moldura dourada e a base.
+ *
+ * A MOLDURA TEM PERFIL (o `contorno()` das molduras de fachada, de pé): o
+ * filete de fora, a meia-cana e o friso que cobre a borda do vidro — a luz do
+ * toon em cada inclinação é o que desenha o "dourado entalhado" sem uma
+ * textura. Em cima, o BRASÃO em leque (a concha de espelho de época); em
+ * baixo, a base de mármore em degrau; e dos dois lados os braços de latão com
+ * os globinhos acesos e o halo.
  *
  * Ele nasce virado para `+Z`, como toda peça do kit, com a base em `y = 0`.
  */
@@ -227,51 +238,88 @@ export function espelhoMagico(opts: EspelhoOpts = {}): THREE.Group {
   g.userData.peca = 'espelho-magico';
   const largura = opts.largura ?? 2.2;
   const altura = opts.altura ?? 2.6;
-  const aro = toon(opts.corAro ?? P.boutiqueOuro);
+  const ouro = toon(opts.corAro ?? P.boutiqueOuro);
+  const BASE = 0.2;
+  const cy = altura / 2 + BASE;
 
   const vidro = new VidroDeEspelho(largura, altura, opts.resolucao ?? 512);
   vidro.name = 'vidro-do-espelho';
-  vidro.position.set(0, altura / 2 + 0.16, 0.05);
+  vidro.position.set(0, cy, 0.05);
   g.add(vidro);
 
-  // o aro: quatro barras em volta do vidro, e um friso interno um degrau mais
-  // escuro — moldura de uma barra só lê como quadro de escola
-  const grossura = 0.14;
-  for (const [x, y, larg, altu] of [
-    [0, altura + 0.16 + grossura / 2, largura + grossura * 2, grossura],
-    [0, 0.16 - grossura / 2, largura + grossura * 2, grossura],
-    [-largura / 2 - grossura / 2, altura / 2 + 0.16, grossura, altura],
-    [largura / 2 + grossura / 2, altura / 2 + 0.16, grossura, altura],
-  ] as const) {
-    const barra = new THREE.Mesh(new THREE.BoxGeometry(larg, altu, 0.12), aro);
-    barra.position.set(x, y, 0.02);
-    g.add(barra);
+  // o fundo: a tábua escura atrás do vidro (a moldura cobre a borda dele)
+  const fundo = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.08, altura + 0.08, 0.05), toon(P.boutiqueOuroEscuro));
+  fundo.position.set(0, cy, 0.0);
+  g.add(fundo);
+
+  // a moldura com perfil, de fora para dentro por cima (o vão é o vidro)
+  const perfil: ReadonlyArray<readonly [number, number]> = [
+    [0.15, 0], [0.15, 0.02], [0.135, 0.04], [0.11, 0.05], [0.085, 0.038], [0.06, 0.048],
+    [0.035, 0.06], [0.015, 0.05], [0.004, 0.035], [0, 0.02], [0, 0],
+  ];
+  const moldura = contorno(perfil, largura / 2 - 0.025, altura / 2 - 0.025);
+  moldura.rotateX(Math.PI / 2);
+  const m = new THREE.Mesh(moldura, ouro);
+  m.position.set(0, cy, 0.035);
+  g.add(m);
+
+  // o brasão em leque no alto: meio-disco de gomos recortados, em relevo
+  const leque = new THREE.Shape();
+  const R = 0.36;
+  leque.moveTo(-R, 0);
+  const gomos = 9;
+  for (let i = 0; i < gomos; i++) {
+    const a0 = Math.PI - (i / gomos) * Math.PI;
+    const a1 = Math.PI - ((i + 1) / gomos) * Math.PI;
+    const am = (a0 + a1) / 2;
+    leque.quadraticCurveTo(Math.cos(am) * R * 1.16, Math.sin(am) * R * 1.16, Math.cos(a1) * R, Math.sin(a1) * R);
   }
-  const friso = new THREE.Mesh(
-    new THREE.BoxGeometry(largura + 0.04, altura + 0.04, 0.06),
-    toon(P.boutiqueOuroEscuro),
-  );
-  friso.position.set(0, altura / 2 + 0.16, -0.02);
+  leque.lineTo(0.09, 0);
+  leque.absarc(0, 0, 0.09, 0, Math.PI, false);
+  leque.closePath();
+  const geoLeque = new THREE.ExtrudeGeometry(leque, {
+    depth: 0.03, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.012, bevelSegments: 2, curveSegments: 6,
+  });
+  const brasao = new THREE.Mesh(geoLeque, ouro);
+  brasao.position.set(0, altura + BASE + 0.1, 0.03);
+  g.add(brasao);
+  // os raios do leque, um fio em relevo do miolo até cada gomo
+  for (let i = 1; i < gomos; i++) {
+    const a = Math.PI - (i / gomos) * Math.PI;
+    const raio = new THREE.Mesh(new THREE.BoxGeometry(0.012, R - 0.1, 0.012), toon(P.boutiqueOuroEscuro));
+    raio.position.set(Math.cos(a) * (0.09 + (R - 0.1) / 2), altura + BASE + 0.1 + Math.sin(a) * (0.09 + (R - 0.1) / 2), 0.083);
+    raio.rotation.z = a - Math.PI / 2;
+    g.add(raio);
+  }
+
+  // a base de mármore em degrau, com o friso de latão
+  const pedra = toon(P.boutiqueMarmore);
+  for (const [l, a, p, y] of [[largura + 0.6, 0.1, 0.5, 0.05], [largura + 0.36, 0.1, 0.38, 0.15]] as const) {
+    const degrau = new THREE.Mesh(new RoundedBoxGeometry(l, a, p, 2, 0.02), pedra);
+    degrau.position.set(0, y, 0.0);
+    g.add(degrau);
+  }
+  const friso = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.62, 0.02, 0.52), ouro);
+  friso.position.set(0, 0.1, 0.0);
   g.add(friso);
 
-  /*
-   * O pedestal, que é o que impede o espelho de nascer flutuando. Ele é 2 cm
-   * MAIS BAIXO que a barra de baixo do aro de propósito: com os dois topos em
-   * `y = 0,16` sobravam 0,32 m² de faces coplanares olhando para cima, e é
-   * exatamente isso que serrilha na tela (`scripts/zfighting.mjs` pegou).
-   */
-  const base = new THREE.Mesh(new THREE.BoxGeometry(largura + 0.5, 0.14, 0.42), aro);
-  base.position.set(0, 0.07, 0);
-  g.add(base);
-
-  // e dois castiçais de luz nas laterais, como todo espelho de provador chique
+  // os braços de luz dos lados: braço curvo de latão e o globinho aceso
   for (const lado of [-1, 1] as const) {
-    const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8), aro);
-    haste.position.set(lado * (largura / 2 + 0.3), altura * 0.62, 0.1);
-    g.add(haste);
-    const globo = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 10), toon(P.boutiqueLuz, { glow: 0.7 }));
-    globo.position.set(lado * (largura / 2 + 0.3), altura * 0.62 + 0.32, 0.1);
+    const x = lado * (largura / 2 + 0.24);
+    const braco = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([
+      new THREE.Vector3(lado * (largura / 2 + 0.1), altura * 0.6, 0.06),
+      new THREE.Vector3(x, altura * 0.6 + 0.02, 0.12),
+      new THREE.Vector3(x, altura * 0.6 + 0.2, 0.14),
+    ]), 12, 0.014, 6, false), ouro);
+    g.add(braco);
+    const globo = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12), toon(P.boutiqueLuz, { glow: 0.8 }));
+    globo.position.set(x, altura * 0.6 + 0.3, 0.14);
     g.add(globo);
+    const halo = new THREE.Sprite(brilhoDeLuz(P.luzDeAbajur, 0.45));
+    halo.scale.set(0.7, 0.7, 1);
+    halo.position.copy(globo.position);
+    halo.renderOrder = 3;
+    g.add(halo);
   }
-  return g;
+  return acabar(g, [[P.boutiqueMarmore, marmore()]]);
 }

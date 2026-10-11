@@ -109,6 +109,19 @@ const PECAS = [
   ['prateleira-da-loja', 'lojinha'],
   ['escada-rolante', 'lojinha'],
   ['espelho-magico', 'lojinha'],
+  // a segunda reforma da boutique (`world/moveisDaBoutique.ts`)
+  ['boiserie', 'lojinha'],
+  ['tapete-redondo', 'lojinha'],
+  ['lustre', 'lojinha'],
+  ['namoradeira', 'lojinha'],
+  ['mesinha-lateral', 'lojinha'],
+  ['pufe-de-loja', 'lojinha'],
+  ['figueira', 'lojinha'],
+  ['arandela', 'lojinha'],
+  ['quadro-de-arte', 'lojinha'],
+  ['podio', 'lojinha'],
+  ['manequim-de-loja', 'lojinha'],
+  ['vitrine-de-joias', 'lojinha'],
   // a Escola do Gatito
   ['armarios-de-escola', 'escola'],
   ['escadaria', 'escola'],
@@ -135,6 +148,12 @@ const PECAS = [
   ['placar-de-ginasio', 'escola-ginasio'],
 ];
 
+/*
+ * `SEM_FUNDIR=1` mede as peças ANTES da junção (`?semFundir`): depois dela
+ * os pedaços de mesmo material viram uma malha só, e o detector — que mede
+ * caixa por caixa — não tem mais caixa para medir.
+ */
+const SEM_FUNDIR = process.env.SEM_FUNDIR ? '&semFundir' : '';
 // `SO=a,b` roda só essas peças: a lista inteira passa de cinco minutos
 const SO = process.env.SO ? process.env.SO.split(',') : null;
 if (SO) PECAS.splice(0, PECAS.length, ...PECAS.filter(([p]) => SO.includes(p)));
@@ -244,7 +263,7 @@ const caçar = (etiqueta) =>
 
 const relatorio = [];
 for (const [etiqueta, cena] of PECAS) {
-  await page.goto(`${BASE}/?cena=${cena}`, { waitUntil: 'networkidle' });
+  await page.goto(`${BASE}/?cena=${cena}${SEM_FUNDIR}`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(3200);
   const r = await caçar(etiqueta);
   relatorio.push([etiqueta, r]);

@@ -200,6 +200,146 @@ export type EstiloDeTapete = 'felpudo' | 'capacho';
 const tapetes = new Map<string, THREE.CanvasTexture>();
 
 /**
+ * MÁRMORE CLARO, para o tampo do balcão, da mesa de expor e a base das
+ * araras da boutique.
+ *
+ * O que separa mármore de granito é o VEIO: o granito é grão sem direção, o
+ * mármore é pedra lisa cortada por umas poucas linhas compridas que vagueiam
+ * e se bifurcam. Aqui são seis veios, cada um uma linha que anda em passos
+ * curtos mudando de rumo aos poucos, com um galho fino saindo de vez em
+ * quando, e duas nuvens largas por baixo. Tudo desenhado em volta da emenda
+ * (o veio que sai por um lado entra pelo outro), senão a repetição do
+ * azulejo corta a linha.
+ */
+export function marmore(lado = 0.8): THREE.CanvasTexture {
+  return novaTextura(`marmore:${lado}`, lado, (ctx, s) => {
+    const rnd = sorteio(7171);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s, s);
+    const emVolta = (desenhar: (dx: number, dy: number) => void): void => {
+      for (const dx of [-s, 0, s]) for (const dy of [-s, 0, s]) desenhar(dx, dy);
+    };
+    // as nuvens: a pedra nunca é de um branco só
+    for (let i = 0; i < 5; i++) {
+      const x = rnd() * s;
+      const y = rnd() * s;
+      const r = s * (0.2 + rnd() * 0.25);
+      emVolta((dx, dy) => {
+        const g = ctx.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r);
+        g.addColorStop(0, 'rgba(214,210,206,0.16)');
+        g.addColorStop(1, 'rgba(214,210,206,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(x + dx - r, y + dy - r, r * 2, r * 2);
+      });
+    }
+    /** um veio: passos curtos que mudam de rumo devagar */
+    const veio = (x0: number, y0: number, rumo: number, passos: number, grosso: number, alfa: number): void => {
+      const pts: Array<[number, number]> = [[x0, y0]];
+      let x = x0;
+      let y = y0;
+      let a = rumo;
+      for (let k = 0; k < passos; k++) {
+        a += (rnd() - 0.5) * 0.7;
+        x += Math.cos(a) * 9;
+        y += Math.sin(a) * 9;
+        pts.push([x, y]);
+        if (grosso > 1.6 && rnd() < 0.07) veio(x, y, a + (rnd() < 0.5 ? 0.9 : -0.9), 6 + Math.floor(rnd() * 8), grosso * 0.55, alfa * 0.8);
+      }
+      emVolta((dx, dy) => {
+        ctx.strokeStyle = `rgba(170,166,168,${alfa})`;
+        ctx.lineWidth = grosso;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        pts.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px + dx, py + dy) : ctx.lineTo(px + dx, py + dy)));
+        ctx.stroke();
+      });
+    };
+    for (let i = 0; i < 6; i++) {
+      // fraco: o veio forte demais virou rachadura (a primeira foto mostrou)
+      veio(rnd() * s, rnd() * s, 0.5 + rnd() * 0.6, 28 + Math.floor(rnd() * 16), 1.6 + rnd() * 1.0, 0.1 + rnd() * 0.08);
+    }
+  });
+}
+
+/**
+ * O DESENHO DE UM TAPETE REDONDO, inteiro (UV de 0 a 1, como o retangular).
+ *
+ * Anéis concêntricos: a barra larga da borda com uma fileira de bolinhas, um
+ * filete, o campo liso, e um medalhão de oito pétalas no meio. É o tapete de
+ * centro de boutique — redondo porque a mesa e as araras em volta dele formam
+ * um pátio, e pátio redondo pede tapete redondo.
+ */
+export function desenhoDeTapeteRedondo(): THREE.CanvasTexture {
+  const chave = 'redondo';
+  const pronto = tapetes.get(chave);
+  if (pronto) return pronto;
+  const S = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = S;
+  canvas.height = S;
+  const ctx = canvas.getContext('2d');
+  const rnd = sorteio(5353);
+  if (ctx) {
+    const c = S / 2;
+    ctx.fillStyle = '#f6f6f6';
+    ctx.fillRect(0, 0, S, S);
+    // o pelo: tufinhos claros e escuros, como no retangular
+    for (let i = 0; i < S * S * 0.08; i++) {
+      const x = rnd() * S;
+      const y = rnd() * S;
+      const claro = rnd() < 0.5;
+      const t = claro ? 255 : 190 + rnd() * 40;
+      ctx.strokeStyle = `rgba(${t},${t},${t},${claro ? 0.6 : 0.35})`;
+      ctx.lineWidth = 1.6 + rnd();
+      const a = rnd() * Math.PI;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(a) * 3, y + Math.sin(a) * 3);
+      ctx.stroke();
+    }
+    const anel = (r0: number, r1: number, cor: string): void => {
+      ctx.fillStyle = cor;
+      ctx.beginPath();
+      ctx.arc(c, c, r1, 0, Math.PI * 2);
+      ctx.arc(c, c, r0, 0, Math.PI * 2, true);
+      ctx.fill();
+    };
+    const R = S / 2;
+    // a barra da borda, mais escura, e o filete claro por dentro dela
+    anel(R * 0.82, R * 0.985, 'rgba(120,70,80,0.26)');
+    anel(R * 0.775, R * 0.8, 'rgba(255,255,255,0.55)');
+    // as bolinhas da barra
+    for (let k = 0; k < 40; k++) {
+      const a = (k / 40) * Math.PI * 2;
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath();
+      ctx.arc(c + Math.cos(a) * R * 0.9, c + Math.sin(a) * R * 0.9, R * 0.025, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // o medalhão: oito pétalas e o miolo
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2;
+      ctx.save();
+      ctx.translate(c, c);
+      ctx.rotate(a);
+      ctx.fillStyle = 'rgba(120,70,80,0.16)';
+      ctx.beginPath();
+      ctx.ellipse(R * 0.2, 0, R * 0.17, R * 0.07, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    anel(0, R * 0.07, 'rgba(255,255,255,0.55)');
+    anel(R * 0.4, R * 0.42, 'rgba(120,70,80,0.18)');
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 8;
+  tex.needsUpdate = true;
+  tapetes.set(chave, tex);
+  return tex;
+}
+
+/**
  * O DESENHO INTEIRO DE UM TAPETE, e não um azulejo.
  *
  * Tapete tem borda: a faixa da beirada e o losango do meio só existem uma vez,

@@ -40,8 +40,8 @@ const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome
 
 /** tem que bater com o `RONDA` da cena */
 const RONDA = [
-  [-4.4, 0.35], [-2.75, 0.4], [-2.75, -3.0], [0.9, -3.0], [3.6, -2.8],
-  [1.6, -2.9], [1.6, -0.6], [1.05, 1.2], [1.1, 3.3], [3.4, 3.8],
+  [-4.6, 1.6], [-4.6, -0.8], [-3.0, -2.75], [0.9, -2.75], [4.3, -3.25],
+  [2.4, -2.9], [2.3, -0.6], [2.6, 1.6], [0.0, 4.3], [3.4, 3.9],
 ];
 /**
  * O pé e o topo da escada rolante, na planta da loja. O do topo é o PATAMAR de
@@ -87,11 +87,14 @@ const salao = await page.evaluate(() => {
     const p = o.userData?.peca;
     if (p) conta[p] = (conta[p] ?? 0) + 1;
   });
-  // as peças de roupa penduradas: cada cabide é um grupo com uma peça dentro
+  /*
+   * AS PEÇAS À MOSTRA nas araras do térreo. A roupa agora é instância (doze
+   * camisas são um `InstancedMesh` só), então não há mais um grupo por cabide
+   * para contar: a arara anota em `userData.roupas` quantas peças do catálogo
+   * ela pendurou ou pôs na prateleira.
+   */
   window.jogo.current.world.root.traverse((o) => {
-    if (o.userData?.peca === 'arara-de-roupas') {
-      roupas += o.children.filter((c) => c.isGroup).length;
-    }
+    if (o.userData?.peca === 'arara-de-roupas') roupas += o.userData.roupas ?? 0;
   });
   return { conta, roupas, malhas: window.jogo.scene.children.length };
 });
@@ -249,7 +252,8 @@ const guardaRoupa = () => page.evaluate(() => window.jogo.wardrobeItems().map((i
 const carteira = () => page.evaluate(() => window.jogo.carteira());
 
 await page.evaluate(() => window.jogo.setZoom(9));
-const araraAbriu = await abrirArara(-1.3, -0.6);
+// dentro do pátio, entre a mesa e a arara dos vestidos (o lado da entrada)
+const araraAbriu = await abrirArara(0.35, 0.85);
 const naArara = {
   titulo: await page.locator('.loja .arara').textContent().catch(() => ''),
   quantas: await page.locator('.loja .vitrine .peca').count(),
@@ -527,7 +531,8 @@ await page.keyboard.press('Escape');
 await page.waitForTimeout(600);
 
 // e a arara premium do mezanino vende as peças caras
-const premiumAbriu = await abrirArara(0.4, 1.7);
+// do lado de +X da arara do meio (a de prata), fora do pedestal dela
+const premiumAbriu = await abrirArara(1.85, 0.5);
 const naPremium = {
   titulo: await page.locator('.loja .arara').textContent().catch(() => ''),
   precos: await page.evaluate(() =>

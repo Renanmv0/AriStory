@@ -251,6 +251,47 @@ Ari é o de móvel). O kit que nasceu com ela serve a qualquer fachada:
 coplanar também em peça arredondada e extrudada — o `zfighting.mjs` só mede
 `BoxGeometry`, e depois da `fundir()` sobram poucas.
 
+## A boutique da Estella por dentro (`world/moveisDaBoutique.ts`)
+
+A segunda reforma da loja ("chique, mas confortável, bem organizada") é o
+exemplo de INTERIOR de comércio. O que serve para a próxima loja:
+
+- **A arara pendura o CATÁLOGO, e não cores soltas** (`world/roupasNaArara.ts`).
+  `araraDaBoutique(fila)` recebe a fila de `world/itens.ts` e pendura as peças
+  dela: a cor e o detalhe saem da ficha (`ItemDef.cor`/`corDetalhe`), e o tipo
+  sai do `slot` (`tipoNaArara`: vestido é tronco com `pernasNuas`, regata é
+  tronco com `bracosNus`…). Quem abre a arara de vestidos vê no painel os
+  vestidos pendurados nela. O que não pendura (gorro, bota, pulseira, cartela)
+  vai para duas prateleiras de carvalho entre os montantes.
+- **Roupa é silhueta estofada, em instância.** Cada peça é a forma dela
+  (`Shape`) extrudada com bisel e as normais alisadas (`mergeVertices` sem UV);
+  o detalhe (gola, punho, renda, cós) é uma segunda silhueta um fio mais
+  GROSSA, que atravessa o pano. Doze camisas são um `InstancedMesh` (a classe
+  `Vitrine`), e a arara anota em `userData.roupas` quantas peças mostra — é o
+  que o `scripts/lojinha.mjs` conta.
+- **Organizado é**: três tamanhos de cada peça, em bloco de cor, todas no
+  mesmo cabide de madeira, de lado; na premium, uma peça de cada, DE FRENTE
+  (o gancho é giratório). E a plaquinha da seção em cima de cada arara —
+  DUAS faces de costas uma para a outra: o plano `DoubleSide` mostra o verso
+  espelhado.
+- **Boiserie** (`boiserie(comprimento, altura)`): rodapé, friso e cornija com
+  perfil (`frisoReto`, uma extrusão do perfil com a ponta em meia-esquadria
+  nos cantos de dentro) e os quadros de moldura (o `contorno()` de pé). Branca
+  na parede rosa-claro. `semQuadro` tira os quadros atrás de móvel alto.
+- **Furo de arco extrudado** para o que tem vão: os provadores (a fachada é o
+  contorno com as portas recortadas até o chão — porta que toca a borda é
+  recorte no contorno, não `hole`) e a estante de nichos (aí é `hole`: o nicho
+  não toca a borda). A parede do vão sai do próprio furo.
+- **Canelado sem ripa**: a frente do balcão é uma forma com a borda em
+  meias-luas, extrudada para cima — o toon desenha cada canelura.
+- **Capitonê de verdade**: o pufe é torneado e cada botão afunda o tampo em
+  volta dele (um sino nos vértices); o toon desenha a covinha.
+- **A escada rolante ANDA** (`world/escadaRolante.ts`, classe com `update`): os
+  degraus são três `InstancedMesh` (piso, espelho, quina) reposicionados a
+  cada quadro; no plano das pontas o espelho encolhe a zero e o degrau some
+  debaixo da placa pente. O corrimão é UM tubo com a volta nas duas pontas. A
+  esfera envolvente dos degraus é a do lance inteiro (eles andam).
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
