@@ -67,6 +67,12 @@ ruído. Qualquer outro erro de console é erro de verdade.
   do tapete, varia entre a primeira e a segunda carga): compare antes a página
   com ela mesma (`?semFundir` contra `?semFundir`) para saber o ruído, e só
   depois a de antes com a de depois.
+- **O caçador de z-fighting mede ANTES da junção.** Depois da `fundir()` os
+  pedaços de mesmo material viram uma malha só e o `scripts/zfighting.mjs`
+  (que mede caixa por caixa) não acha mais caixa nenhuma — passa sem medir.
+  Rode com `SEM_FUNDIR=1` (ele carrega a cena com `?semFundir`). Ele mede só
+  `BoxGeometry` sem giro: peça torneada, extrudada ou `RoundedBoxGeometry`
+  se confere na foto de perto.
 - **Teste que olha uma janela fixa de tempo oscila.** O balanço dos braços
   deitados (`cama.mjs`) tem ciclo de ~11 s de jogo, e 1,4 s de espera às vezes
   caía no topo da onda; agora espera o braço sair do lugar, com teto.

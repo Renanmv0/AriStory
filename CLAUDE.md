@@ -159,7 +159,12 @@ Antes de criar peça nova, olhe como essas foram feitas. Para PRÉDIO por fora,
 o exemplo é a lojinha da Estella (`world/lojaDeRoupas.ts`): parede com furo
 de verdade, moldura com perfil (`world/molduras.ts`), reboco, friso e
 tijolinho em canvas (`world/texturasDeFachada.ts`) — ver "Prédio de rua" na
-skill de peça.
+skill de peça. Para LOJA por dentro, a boutique da Estella
+(`world/moveisDaBoutique.ts`): a arara que pendura o catálogo de verdade em
+instância (`world/roupasNaArara.ts`), a boiserie com perfil, o balcão
+canelado, o pufe capitonê e a escada rolante que anda
+(`world/escadaRolante.ts`) — ver "A boutique da Estella por dentro" na skill
+de peça.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em
@@ -290,7 +295,7 @@ node scripts/turno.mjs   /tmp/tn    # o turno do Mania: levar a mesa, anotar, se
 node scripts/premio.mjs  /tmp/pr    # a carteira do casal (uma so para os dois) e a gravatinha das 3 estrelas
 node scripts/mano.mjs    /tmp/pg    # o Mano no quiosque: fica no posto, aparece inteiro, fala, danca e entrega
 node scripts/cookie.mjs  /tmp/ck    # o Cookie: patrulha ao lado da cabine, vira nas pontas, e vende o bilhete
-node scripts/lojinha.mjs /tmp/lj    # a boutique inteira: a ronda da Estella, a escada rolante, o espelho refletindo, e a arara vendendo (provar, faltar dinheiro, comprar e ir pro guarda-roupa)
+node scripts/lojinha.mjs /tmp/lj    # a boutique inteira: as pecas do salao (e as roupas do catalogo nas araras), a ronda da Estella, a escada rolante, o espelho refletindo, e a arara vendendo (provar, faltar dinheiro, comprar e ir pro guarda-roupa)
 node scripts/xadrez.mjs  /tmp/xa    # o xadrez da Estella: 14 posicoes de regra, 300 partidas de fuzz e o tabuleiro na tela
 node scripts/estella.mjs /tmp/es    # a Estella: fica no posto, aparece inteira fora do toldo, da o biscoitinho pros dois e tem o xadrez montado
 node scripts/estufa.mjs  /tmp/ef    # a estufa da Josefina: a porta nos dois sentidos, o terreiro vazio e as quatro bocas livres
@@ -315,7 +320,7 @@ node scripts/enfeite.mjs /tmp/en [id] # um enfeite (ou todos) posto pelo modo de
 node scripts/marcos.mjs  /tmp/mc    # os premios da estufa: reais e girassois de toda rodada pelos bichos espantados, o premio unico de cada marco resgatado no livro, e a aba de pragas
 node scripts/armas.mjs  /tmp/ar    # as ferramentas da estufa: a parede, o painel por ferramenta (meta e cartas de cada uma), destrancar com 15 ondas somadas, a rodada de mangueira (esguicho, mangueira no chao, agua infinita, presa na estufa e as cartas dela) e a de pistola (pistola na mao, tiro de bolinhas, coice, Rajada e Balao d'agua), cada uma com o seu som (jorro e piu), e as cartas so do regador agindo (a espuma na alca, as petalas do Crivo de flor, a Chuveirada, o Transbordou e o Regador gigante crescendo na mao)
 node scripts/borrifador.mjs /tmp/bf # o borrifador: destranca pela pistola, o frasco pelo gargalo, o gatilho, o "psst", a nevoa molhando o bando inteiro, e as 14 cartas so dele agindo
-node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha); SO=armario,estante roda so essas
+node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha); SO=armario,estante roda so essas; SEM_FUNDIR=1 mede antes da juncao (depois dela nao sobra caixa para medir)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso
 node scripts/lanche.mjs  /tmp/la    # a maquina de lanches da escola: pagar, o lanche cair na gaveta, pegar pra mochila e comer; e sentar a mesa do refeitorio de frente um pro outro

@@ -43,15 +43,17 @@ export function sorteio(semente: number): () => number {
   };
 }
 
-export function novaTextura(chave: string, lado: number, pintar: (ctx: CanvasRenderingContext2D, s: number) => void): THREE.CanvasTexture {
+export function novaTextura(
+  chave: string, lado: number, pintar: (ctx: CanvasRenderingContext2D, s: number) => void, px = 256,
+): THREE.CanvasTexture {
   const pronta = cache.get(chave);
   if (pronta) return pronta;
 
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
+  canvas.width = px;
+  canvas.height = px;
   const ctx = canvas.getContext('2d');
-  if (ctx) pintar(ctx, 256);
+  if (ctx) pintar(ctx, px);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.wrapS = THREE.RepeatWrapping;
@@ -307,6 +309,72 @@ export function assoalhoDeMadeira(lado = 2.4, tabuas = 8): THREE.CanvasTexture {
       }
     }
   });
+}
+
+/**
+ * PARQUET EM CHEVRON (o "ponto húngaro"), para a Boutique da Estella.
+ *
+ * É o piso de loja chique de Paris: tacos de madeira clara cortados a 45° nas
+ * pontas, que se encontram numa costura em zigue-zague. Ele foi escolhido no
+ * lugar do porcelanato da primeira reforma porque é o que deixa a sala
+ * CONFORTÁVEL sem deixar de ser chique: madeira é quente, e o desenho em V é
+ * organizado — o olho lê "alguém escolheu este piso".
+ *
+ * A CONTA DO DESENHO, e por que ele fecha na emenda: o azulejo tem quatro
+ * COLUNAS de taco, alternando a inclinação (`+45°`, `−45°`). Dentro da coluna
+ * o taco é a faixa entre duas retas diagonais (`t = y ∓ x`); a largura da
+ * coluna é um múltiplo exato da largura do taco, e por isso a junta de uma
+ * coluna cai exatamente na ponta da junta da vizinha — é o V. Quatro colunas
+ * e dezesseis fiadas por azulejo dão 64 tacos diferentes antes de repetir, o
+ * suficiente para a grade não aparecer.
+ *
+ * Cada taco tem o seu tom (entre 0,9 e 1,0 de luz: quem dá a cor é a paleta),
+ * um veio que corre NO COMPRIDO do taco, e a junta de 2 px. Pintado pixel a
+ * pixel, porque o taco é uma faixa inclinada e o `fillRect` só sabe fazer
+ * retângulo em pé.
+ */
+export function parquetEmChevron(lado = 2.4): THREE.CanvasTexture {
+  return novaTextura(`chevron:${lado}`, lado, (ctx, s) => {
+    const COLUNAS = 4;
+    const FIADAS = 16;
+    const c = s / COLUNAS;
+    const larg = s / FIADAS;
+    // o tom e a fase do veio de cada taco, sorteados uma vez
+    const rnd = sorteio(1952);
+    const tom: number[] = [];
+    const fase: number[] = [];
+    for (let i = 0; i < COLUNAS * FIADAS; i++) {
+      tom.push(0.9 + rnd() * 0.1);
+      fase.push(rnd() * Math.PI * 2);
+    }
+    const img = ctx.createImageData(s, s);
+    for (let y = 0; y < s; y++) {
+      for (let x = 0; x < s; x++) {
+        const j = Math.floor(x / c);
+        const xl = x - j * c;
+        // a coordenada que atravessa o taco: sobe numa coluna, desce na outra
+        const t = j % 2 === 0 ? y - xl : y + xl;
+        const fiada = Math.floor(t / larg);
+        const f = t / larg - fiada;
+        const id = j * FIADAS + (((fiada % FIADAS) + FIADAS) % FIADAS);
+        let v = tom[id];
+        // o veio: ondas finas no comprido do taco (que é a direção de `xl`
+        // andando junto com `t` constante), com a fase própria de cada taco
+        const veio = Math.sin(f * 19 + Math.sin(xl * 0.09 + fase[id]) * 1.6 + fase[id]);
+        v -= Math.max(0, veio - 0.55) * 0.07;
+        // a junta comprida (entre um taco e o vizinho de coluna) e a costura do V
+        if (f < 0.06 || xl < 1.6) v *= 0.8;
+        // o bisel: um fio de luz logo depois da junta
+        else if (f < 0.12) v = Math.min(1, v + 0.04);
+        const i = (y * s + x) * 4;
+        img.data[i] = Math.round(255 * v);
+        img.data[i + 1] = Math.round(250 * v);
+        img.data[i + 2] = Math.round(242 * v);
+        img.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }, 512);
 }
 
 /**

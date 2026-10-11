@@ -420,6 +420,18 @@ celular. Abajur e janela são LUZ PINTADA, somada ao que está embaixo
 | `pocaDeLuz(raio, cor, forca, emPe?)` | o degradê redondo no chão — ou em pé, o leque na parede atrás do abajur |
 | `claridadeDaJanela(larg, alt, centro)` | o retângulo de luz do dia que a janela joga no chão, mais o feixe fraquinho; pendure no pé da parede com o mesmo giro da janela |
 
+Duas lições da boutique (segunda reforma):
+
+- **Globo pendurado num fio não serve em interior sem teto.** A câmera olha
+  de cima, e uma bolinha acesa a 2,3 m cai, na projeção, dois metros atrás do
+  móvel que ela ilumina — os globos do caixa apareciam boiando na frente da
+  escada rolante. Lustre grande, de braços, passa (lê como lustre de qualquer
+  ângulo); para o resto, arandela na parede (com o leque pintado) ou só o
+  FOCO — a `pocaDeLuz` no chão ou em cima do pedestal, sem lâmpada à vista.
+- **Poça em cima de tampo: 2 cm, não 6 mm.** A poça não grava profundidade,
+  mas TESTA; a 6 mm do tampo de um pedestal torneado (`LatheGeometry`, os
+  triângulos todos convergindo no meio) ela brigou com ele e saiu em raios.
+
 O abajur do quarto e o de pé da sala **apagam num clique** (`w.clicavel`,
 não `w.interact`: o criado-mudo é colado no quadro de memórias, e um segundo
 balão disputaria o E). A cúpula de `nightstand()`/`floorLamp()` tem o nome

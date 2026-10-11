@@ -1,16 +1,22 @@
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { falarDoPremio } from '../world/falasDePremio';
 import { PALETTE as P } from '../palette';
 import type { Collider, SceneDef } from '../core/types';
 import type { Interactable } from '../world/Interactable';
+import { pocaDeLuz, tapete } from '../world/furniture';
 import {
-  araraDeRoupas, araraPremium, balcaoDaLoja, caixaRegistradora, escadaRolante,
-  luminariaPendente, manequimDeLoja, mesaDeDobrar, pottedPlant, prateleiraDaLoja,
-  provadores, pufeDeLoja,
-} from '../world/furniture';
-import { ARARAS_DA_ESTELLA, PREMIUM_DA_ESTELLA, type AraraDaLoja } from '../world/itens';
+  arandelaDeBoutique, araraDaBoutique, araraPremiumDaBoutique, balcaoDaBoutique, boiserie, bustoDeCostura,
+  estanteEmArco, figueiraLira, lustreDeGlobos, mesaDeExposicao, mesinhaLateral, namoradeira, podio,
+  provadoresDaBoutique, pufeCapitone, quadroDeArte, tapeteRedondo, vitrineDeJoias,
+} from '../world/moveisDaBoutique';
+import { EscadaRolante } from '../world/escadaRolante';
+import { ARARAS_DA_ESTELLA, ITENS, PREMIUM_DA_ESTELLA, type AraraDaLoja } from '../world/itens';
 import { espelhoMagico } from '../world/espelhoMagico';
-import { porcelanatoPolido } from '../world/texturasDeChao';
+import { acabar, uvDeParede } from '../world/acabamento';
+import { fundir } from '../world/fundir';
+import { parquetEmChevron } from '../world/texturasDeChao';
+import { reboco } from '../world/texturasDeFachada';
 import { polido, toon } from '../core/materials';
 import { ARI, RENAN } from '../characters/cast';
 import { Estella } from '../entities/bichos/Estella';
@@ -42,18 +48,33 @@ import { Estella } from '../entities/bichos/Estella';
  * interior de dois pisos, que é a laje de cima tapar a de baixo. A única peça
  * que fica nos dois é a ESCADA, que é a costura entre eles.
  *
+ * A SEGUNDA REFORMA (o pedido do Renan: "remodele o lugar inteiro, bem chique,
+ * mas confortável — não precisa ser extremamente luxuoso, mas bem organizado
+ * como uma loja chique de roupa") trocou TODAS as peças pelas do kit novo
+ * (`world/moveisDaBoutique.ts`, `world/roupasNaArara.ts`,
+ * `world/escadaRolante.ts`): parede rosa-claro com boiserie branca, parquet em
+ * chevron, mármore, veludo e latão. O que funcionava continua igual — as
+ * mesmas araras vendendo as mesmas filas, a escada rolante, o mezanino, o
+ * espelho, o provador, o caixa e a ronda da Estella.
+ *
  * A PLANTA DO TÉRREO (a câmera vê `-Z` subindo à direita, `-X` à esquerda):
  *
- *     fundo (-Z) ............ a escada rolante, e as duas prateleiras ao lado
- *     esquerda (-X) ......... os três provadores
- *     meio .................. duas ilhas de tapete, duas araras em cada
- *     entrada (+X/+Z) ....... o balcão do caixa, o pódio dos manequins, o pufe
+ *     fundo (-Z) ............ a escada rolante; e, atrás do caixa, as duas
+ *                             estantes de nicho em arco, acesas por dentro
+ *     esquerda (-X) ......... os três provadores de arco, e o CANTINHO de
+ *                             esperar (namoradeira, mesinha, pufe, quadro)
+ *     meio .................. o PÁTIO: quatro araras em volta da mesa de
+ *                             mármore, num tapete redondo, debaixo do lustre
+ *     entrada (+X/+Z) ....... o caixa canelado, e o pódio com os dois bustos
+ *                             de costura
  *
  * A PLANTA DO MEZANINO:
  *
  *     o vão da escada ....... no canto de `-X/-Z`, cercado de guarda-corpo
  *     fundo (-Z) ............ O ESPELHO GRANDE, que reflete de verdade
- *     meio .................. três araras premium, douradas, bem espaçadas
+ *     meio .................. três araras premium em arco, cada uma no seu
+ *                             pedestal de mármore com um foco de luz
+ *     esquerda (-X) ......... o cantinho de cima, com a namoradeira vinho
  */
 
 /** o salão: 13 × 10, que é o miolo do prédio de fora (11,6 × 9,5) mais folga */
@@ -79,8 +100,12 @@ const PORTA = { x: 4.1, vao: 1.5 };
  *
  * 6,4 de corrida para 3,9 de altura dão 31°, que é a inclinação de escada
  * rolante de verdade (30°). Abaixo de 25° ela lê como esteira de aeroporto.
+ *
+ * O EIXO FICA A 73 cm DA PAREDE: a escada nova tem a lateral revestida (1,4
+ * de largura por fora), e no eixo antigo a balaustrada de trás entrava na
+ * parede do fundo.
  */
-const ESCADA = { x: -1.6, z: -4.35, corrida: 6.4 };
+const ESCADA = { x: -1.6, z: -4.12, corrida: 6.4 };
 const BASE_DA_ESCADA = { x: ESCADA.x + ESCADA.corrida / 2, z: ESCADA.z };
 const TOPO_DA_ESCADA = { x: ESCADA.x - ESCADA.corrida / 2, z: ESCADA.z };
 
@@ -97,23 +122,23 @@ const TOPO_DA_ESCADA = { x: ESCADA.x - ESCADA.corrida / 2, z: ESCADA.z };
  * A variação vem do TEMPO, não do destino: a pausa em cada parada é sorteada
  * entre 3,5 e 7,5 s.
  *
- * AS DUAS PONTAS SÃO OS DOIS EXTREMOS DA LOJA — a boca dos provadores, no fundo
- * de `−X`, e a porta. E é uma FILA e não um anel porque os provadores são um
- * BECO: entre a parede deles e a primeira arara sobra uma fresta de 29 cm, e
- * ninguém de 80 cm de lombo passa por ali. Quem for mexer nesta lista mede
- * antes com o `scripts/lojinha.mjs`, que varre cada trecho de 10 em 10 cm.
+ * AS DUAS PONTAS SÃO OS DOIS EXTREMOS DA LOJA — a boca dos provadores, no
+ * fundo de `−X`, e a porta. Ela contorna o pátio das araras por fora (pelo
+ * corredor dos provadores, por trás da camisaria e do caixa, e pela frente),
+ * e não entra nele: o pátio é da dupla. Quem for mexer nesta lista mede antes
+ * com o `scripts/lojinha.mjs`, que varre cada trecho de 10 em 10 cm.
  */
 const RONDA: ReadonlyArray<{ x: number; z: number; onde: string }> = [
-  { x: -4.4, z: 0.35, onde: 'na boca dos provadores' },
-  { x: -2.75, z: 0.4, onde: 'no cruzamento das duas ilhas' },
-  { x: -2.75, z: -3.0, onde: 'no topo do corredor central' },
-  { x: 0.9, z: -3.0, onde: 'no pé da escada rolante' },
-  { x: 3.6, z: -2.8, onde: 'atrás do balcão do caixa' },
-  { x: 1.6, z: -2.9, onde: 'no corredor do fundo' },
-  { x: 1.6, z: -0.6, onde: 'na lateral do caixa' },
-  { x: 1.05, z: 1.2, onde: 'no meio do salão' },
-  { x: 1.1, z: 3.3, onde: 'na ponta da ilha da frente' },
-  { x: 3.4, z: 3.8, onde: 'na porta, recebendo quem chega' },
+  { x: -4.6, z: 1.6, onde: 'na boca dos provadores' },
+  { x: -4.6, z: -0.8, onde: 'no corredor dos provadores' },
+  { x: -3.0, z: -2.75, onde: 'atrás da camisaria' },
+  { x: 0.9, z: -2.75, onde: 'no corredor do fundo' },
+  { x: 4.3, z: -3.25, onde: 'atrás do balcão do caixa' },
+  { x: 2.4, z: -2.9, onde: 'no pé da escada rolante' },
+  { x: 2.3, z: -0.6, onde: 'na lateral do caixa' },
+  { x: 2.6, z: 1.6, onde: 'no meio do salão' },
+  { x: 0.0, z: 4.3, onde: 'na frente da arara das calças' },
+  { x: 3.4, z: 3.9, onde: 'na porta, recebendo quem chega' },
 ];
 
 /**
@@ -196,231 +221,190 @@ export const lojinha: SceneDef = {
     w.add(escada);
 
     /** atalho: monta a peça e pendura no grupo do andar certo */
-    const por = (grupo: THREE.Group, obj: THREE.Object3D): THREE.Object3D => {
+    const por = <T extends THREE.Object3D>(grupo: THREE.Group, obj: T): T => {
       grupo.add(obj);
       obj.traverse((o) => {
-        if ((o as THREE.Mesh).isMesh) {
+        // luz que se vê (poça, leque) não faz sombra
+        if ((o as THREE.Mesh).isMesh && !o.userData.semSombra) {
           o.castShadow = true;
           o.receiveShadow = true;
         }
       });
       return obj;
     };
+    /** a peça do kit, posta e FUNDIDA (`world/fundir.ts`): mesma imagem, menos desenho */
+    const peca = <T extends THREE.Object3D>(grupo: THREE.Group, obj: T, x: number, y: number, z: number, rot = 0): T =>
+      por(grupo, fundir(w.place(obj, x, y, z, rot)));
+    /** a face de dentro das paredes (elas têm 30 cm, centradas na linha) */
+    const INTERNA = 0.15;
+    /** a parede rosa-claro, com a demão de reboco */
+    const rebocar = (parede: THREE.Mesh): THREE.Mesh => acabar(parede, [[P.boutiqueRosaClaro, reboco()]]);
 
     /* ==================================================================
      *                          O TÉRREO
      * ================================================================== */
 
     /**
-     * O PISO POLIDO. É a mudança que mais muda a sala, e ela não é a cor: é o
-     * `brilho`, que troca o `toon()` (degraus chapados, sem reflexo) pelo
-     * `polido()` — o único material do jogo com especular. A mancha de luz anda
-     * com a câmera, e é ela que diz "encerado" em vez de "pintado".
-     *
-     * 0,16 de brilho é cera. Acima de 0,3 o piso claro estoura em branco e vira
-     * pista de gelo — testado, e é exatamente o que aconteceu com 0,45.
+     * O PARQUET EM CHEVRON, encerado. A primeira reforma pôs porcelanato bege
+     * (chique, e frio); a segunda trocou por madeira clara em ponto húngaro, que
+     * é o piso de boutique de Paris — e é a mudança que mais deixa a sala
+     * CONFORTÁVEL. Continua `polido()` (o único material com especular): a
+     * mancha de luz que anda com a câmera é o que diz "encerado".
      */
     w.ground({
       width: W, depth: D,
-      color: P.boutiquePiso,
-      textura: porcelanatoPolido(1.8),
-      brilho: 0.16,
+      color: P.boutiqueCarvalho,
+      textura: parquetEmChevron(2.4),
+      brilho: 0.14,
     });
     w.setBounds(x0 + 0.5, z0 + 0.5, W / 2 - 0.5, D / 2 - 0.5);
 
-    w.wall(x0, z0, W / 2, z0, H, P.boutiqueParede);
-    w.wall(x0, z0, x0, D / 2, H, P.boutiqueParede);
-    w.wall(W / 2, z0, W / 2, D / 2, 0.45, P.boutiqueParede);
-    w.wall(x0, D / 2, PORTA.x - PORTA.vao / 2, D / 2, 0.45, P.boutiqueParede);
-    w.wall(PORTA.x + PORTA.vao / 2, D / 2, W / 2, D / 2, 0.45, P.boutiqueParede);
+    rebocar(w.wall(x0, z0, W / 2, z0, H, P.boutiqueRosaClaro));
+    rebocar(w.wall(x0, z0, x0, D / 2, H, P.boutiqueRosaClaro));
+    rebocar(w.wall(W / 2, z0, W / 2, D / 2, 0.45, P.boutiqueRosaClaro));
+    rebocar(w.wall(x0, D / 2, PORTA.x - PORTA.vao / 2, D / 2, 0.45, P.boutiqueRosaClaro));
+    rebocar(w.wall(PORTA.x + PORTA.vao / 2, D / 2, W / 2, D / 2, 0.45, P.boutiqueRosaClaro));
+    // o capeamento branco das muretas da frente
+    const capear = (cx: number, cz: number, comp: number, rot: number): void => {
+      const cap = new THREE.Mesh(new RoundedBoxGeometry(comp, 0.04, 0.36, 2, 0.012), toon(P.lojaEsquadria));
+      cap.position.set(cx, 0.47, cz);
+      cap.rotation.y = rot;
+      por(terreo, cap);
+    };
+    // o da mureta de +X cobre o canto; o da frente para antes dele (as duas
+    // tampas no mesmo plano, por cima uma da outra, serrilhariam)
+    capear(W / 2, (z0 + 0.15 + D / 2 + 0.18) / 2, D / 2 + 0.18 - (z0 + 0.15), Math.PI / 2);
+    const esquerdaDaPorta = PORTA.x - PORTA.vao / 2;
+    const direitaDaPorta = PORTA.x + PORTA.vao / 2;
+    capear((x0 + INTERNA + esquerdaDaPorta) / 2, D / 2, esquerdaDaPorta - (x0 + INTERNA), 0);
+    capear((direitaDaPorta + W / 2 - 0.18) / 2, D / 2, W / 2 - 0.18 - direitaDaPorta, 0);
 
     /*
-     * A BOISERIE. Uma parede lisa de treze metros é um galpão; o que faz ela
-     * virar boutique são três linhas horizontais — rodapé alto, friso na altura
-     * do peito e cimalha no alto — mais os QUADROS de moldura entre elas. É
-     * marcenaria de parede, e custa seis caixas.
+     * A BOISERIE nas duas paredes altas: rodapé, friso, cornija e os quadros de
+     * moldura, brancos na parede rosa. As duas se encontram no canto de `−X/−Z`
+     * em meia-esquadria. Onde um móvel alto encosta (os provadores, o quadro do
+     * cantinho), a parede fica sem quadro — ninguém emoldura o que está atrás
+     * de um armário.
      */
-    for (const [px, pz, larg, rot] of [
-      [0, z0 + 0.09, W, 0],
-      [x0 + 0.09, 0, D, Math.PI / 2],
-    ] as const) {
-      for (const [y, alt, cor] of [
-        [0.11, 0.22, P.boutiqueBoiserie],
-        [1.15, 0.06, P.boutiqueBoiserie],
-        [H - 0.16, 0.12, P.boutiqueBoiserie],
-      ] as const) {
-        const faixa = new THREE.Mesh(new THREE.BoxGeometry(larg, alt, 0.07), toon(cor));
-        faixa.position.set(px, y, pz);
-        faixa.rotation.y = rot;
-        por(terreo, faixa);
-      }
-      // os painéis almofadados entre o rodapé e o friso
-      const quantos = Math.floor(larg / 2.1);
-      for (let i = 0; i < quantos; i++) {
-        const passo = larg / quantos;
-        const d = -larg / 2 + passo * (i + 0.5);
-        const painel = new THREE.Mesh(
-          new THREE.BoxGeometry(passo - 0.35, 0.7, 0.04),
-          toon(P.boutiqueBoiserie),
-        );
-        painel.position.set(px + (rot ? 0 : d), 0.68, pz + (rot ? d : 0));
-        painel.rotation.y = rot;
-        por(terreo, painel);
-      }
-    }
+    // (sem quadro atrás das estantes do fundo, em X local da parede de −Z)
+    peca(terreo, boiserie(W - INTERNA, H, { mitraEsq: true, semQuadro: [[2.5, 6.5]] }), INTERNA / 2, 0, z0 + INTERNA);
+    peca(terreo, boiserie(D - 2 * INTERNA, H, {
+      mitraDir: true,
+      // em X local da parede de −X (que é o −Z do mundo): provadores e o quadro
+      semQuadro: [[-2.3, 1.7], [-4.9, -2.6]],
+    }), x0 + INTERNA, 0, 0, Math.PI / 2);
 
     /*
-     * AS DUAS ILHAS DE TAPETE.
+     * O PÁTIO DAS ARARAS, no meio do salão: as quatro araras em volta de uma
+     * mesa de mármore, em cima de um tapete redondo, debaixo do lustre. Cada
+     * arara fecha um lado do pátio (duas correndo em X, duas em Z), e os quatro
+     * cantos ficam ABERTOS — é por eles que se entra. É a planta de boutique
+     * de verdade: o cliente entra no pátio e as araras olham para ele.
      *
-     * Elas são DECALQUE (`w.patch`), e não peça com volume, e isso é uma escolha
-     * de cena: tapete de boutique é raso e enorme, e um plano de verdade a 4 cm
-     * do chão com dois metros de lado brigaria pelo pixel com o piso inteiro.
-     * Decalque não grava profundidade — não tem como piscar.
-     *
-     * São dois por ilha: a borda escura e o miolo claro por cima, na ordem de
-     * criação (quem vem depois fica por cima). Uma borda só já transforma um
-     * retângulo pintado em "tapete".
+     * As contas do vão: o colisor da arara tem 0,3 de meia-profundidade e o da
+     * mesa, 0,45; entre a mesa e cada arara sobram 1,33 m (de lado) e 1,85 m
+     * (nas pontas) — a dupla anda em volta da mesa lado a lado.
      */
-    const ILHAS = [
-      { x: -2.6, z: -1.5 },
-      { x: -2.6, z: 2.2 },
-    ];
-    for (const ilha of ILHAS) {
-      w.patch(ilha.x, ilha.z, 4.9, 3.0, P.boutiqueTapeteBorda, 0, 0.012);
-      w.patch(ilha.x, ilha.z, 4.5, 2.6, P.boutiqueTapete, 0, 0.016);
-    }
+    const C = { x: -1.3, z: 0.85 };
+    peca(terreo, tapeteRedondo(2.15, P.boutiqueRosaAntigo), C.x, 0, C.z);
+    peca(terreo, mesaDeExposicao(ARARAS_DA_ESTELLA[0].pecas.concat(ARARAS_DA_ESTELLA[2].pecas)), C.x, 0, C.z);
+    w.blockBox(C.x, C.z, 0.82, 0.45);
+    peca(terreo, lustreDeGlobos(2.5, H, 1.8), C.x, 0, C.z);
 
-    /*
-     * AS ARARAS: duas por ilha, VIRADAS no eixo Z e de frente uma para a outra.
-     *
-     * Esta é a diferença de layout que faz a loja parecer boutique em vez de
-     * depósito: antes eram quatro araras paralelas enfileiradas; agora são dois
-     * pares que formam um CORREDOR entre si, com o tapete embaixo marcando a
-     * ilha. É como uma loja de verdade organiza — o cliente entra no corredor,
-     * não passa raspando por fora.
-     *
-     * A conta do corredor manda nas coordenadas: o colisor de cada arara tem
-     * 0,35 de meia-profundidade e o jogador é um círculo de 0,42. Com os
-     * montantes em `x = −3,9` e `x = −1,3`, sobram 1,9 de vão livre — a dupla
-     * passa lado a lado.
-     */
     /**
      * A ORDEM DAQUI É A ORDEM DE `ARARAS_DA_ESTELLA` — camisaria, vestidos,
-     * calçaria, frio e pé. Cada arara do chão é a vitrine de uma fila do
-     * catálogo, e o `colecao` (que pinta o pano pendurado) foi escolhido para
-     * combinar com as cores que aquela fila vende: quem clica numa arara de
-     * pano azul não pode receber um painel de terracota.
+     * calçaria, e frio, pé e miudezas. Cada arara do chão é a vitrine de uma
+     * fila do catálogo e PENDURA AS PEÇAS DELA (`araraDaBoutique` lê a ficha):
+     * quem abre a arara de vestidos vê no painel os vestidos que estão
+     * pendurados nela. A plaquinha em cima de cada uma diz a seção.
      *
-     * O PROMPT FICA NO CORREDOR, e não em cima da arara: o colisor dela tem
-     * 0,35 de meia-profundidade, então o raio de 1,3 a partir do eixo pega
-     * quem passa pelos dois lados sem pegar quem só atravessa a ilha.
+     * O PROMPT FICA NO EIXO DA ARARA, com raio 1,5: o colisor tem 0,3 de
+     * meia-profundidade, então quem para dos dois lados (e nas pontas) está no
+     * raio, e quem só atravessa o pátio pelo meio, não.
      */
     const ARARAS = [
-      { x: -3.9, z: -1.5, colecao: 0, semente: 101 },
-      { x: -1.3, z: -1.5, colecao: 1, semente: 303, tipos: ['vestido', 'vestido', 'camisa'] as const },
-      { x: -3.9, z: 2.2, colecao: 2, semente: 202 },
-      { x: -1.3, z: 2.2, colecao: 3, semente: 404 },
+      // a frente de cada uma (a plaquinha, a bota na prateleira) olha para a câmera
+      { x: C.x, z: C.z - 2.6, rot: 0 },             // camisaria, fechando o fundo do pátio
+      { x: C.x + 2.45, z: C.z, rot: Math.PI / 2 },   // vestidos, o lado da entrada
+      { x: C.x, z: C.z + 2.6, rot: 0 },             // calçaria, o lado da frente
+      { x: C.x - 2.45, z: C.z, rot: Math.PI / 2 },   // frio e pé, o lado dos provadores
     ];
-    for (const a of ARARAS) {
-      por(terreo, w.place(
-        araraDeRoupas({ largura: 1.9, colecao: a.colecao, semente: a.semente, tipos: a.tipos }),
-        a.x, 0, a.z, Math.PI / 2,
-      ));
-      w.blockBox(a.x, a.z, 0.95, 0.35, Math.PI / 2);
+    for (const [i, a] of ARARAS.entries()) {
+      peca(terreo, araraDaBoutique(ARARAS_DA_ESTELLA[i]), a.x, 0, a.z, a.rot);
+      w.blockBox(a.x, a.z, 0.92, 0.3, a.rot);
     }
 
-    // os provadores mudaram para a parede de -X: a do fundo agora é da escada
-    const PROVADORES = { x: x0 + 1.1, z: 0.3 };
-    por(terreo, w.place(provadores(3), PROVADORES.x, 0, PROVADORES.z, Math.PI / 2));
-    w.blockBox(PROVADORES.x - 0.52, PROVADORES.z, 1.78, 0.58, Math.PI / 2);
-
-    // o balcão do caixa, perto da porta e olhando para +Z (de onde o cliente vem)
-    const CAIXA = { x: 3.6, z: -1.4 };
-    por(terreo, w.place(balcaoDaLoja(2.4), CAIXA.x, 0, CAIXA.z));
-    w.blockBox(CAIXA.x, CAIXA.z, 1.25, 0.4);
-    por(terreo, w.place(caixaRegistradora(), CAIXA.x - 0.75, 1.02, CAIXA.z, Math.PI));
-    for (const [dx, cor] of [[-0.1, P.tecidoCoral], [0.12, P.tecidoCeu]] as const) {
-      const novelo = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), toon(cor));
-      novelo.position.set(CAIXA.x + dx, 1.09, CAIXA.z - 0.12);
-      por(terreo, novelo);
-    }
+    // os provadores na parede de −X, com a cabine aberta virada para o cantinho
+    const PROVADORES = { x: x0 + INTERNA + 1.04, z: 0.3 };
+    peca(terreo, provadoresDaBoutique(3, 1.2), PROVADORES.x, 0, PROVADORES.z, Math.PI / 2);
+    w.blockBox(PROVADORES.x - 0.5, PROVADORES.z, 1.84, 0.58, Math.PI / 2);
+    /** onde se para para espiar a cabine aberta (a de `+Z`, a do canto) */
+    const CABINE_ABERTA = { x: PROVADORES.x + 0.95, z: PROVADORES.z + 1.2 };
 
     /*
-     * O PÓDIO DOS MANEQUINS, na entrada. Um degrau redondo de 12 cm com dois
-     * manequins em cima: é o primeiro objeto de uma boutique, e é ele que faz a
-     * entrada valer a pena olhar. Sem o pódio eles são dois bonecos no meio do
-     * chão; com ele, são uma vitrine.
+     * O CANTINHO DE ESPERAR, entre os provadores e a mureta da frente: a
+     * namoradeira de veludo encostada na parede, a mesinha de mármore, um pufe
+     * capitonê de frente, o tapete, duas arandelas e um quadro. É o "conforto"
+     * do pedido do Renan — loja chique em que dá vontade de sentar enquanto o
+     * outro prova.
      */
-    const PODIO = { x: 4.9, z: 2.2 };
-    const degrau = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.2, 0.12, 24), polido(P.boutiqueBoiserie, { brilho: 0.1 }));
-    degrau.position.set(PODIO.x, 0.06, PODIO.z);
-    por(terreo, degrau);
-    const fioDourado = new THREE.Mesh(new THREE.TorusGeometry(1.16, 0.022, 6, 28), toon(P.boutiqueOuro));
-    fioDourado.rotation.x = Math.PI / 2;
-    fioDourado.position.set(PODIO.x, 0.12, PODIO.z);
-    por(terreo, fioDourado);
-    por(terreo, w.place(manequimDeLoja(P.tecidoRosa, 'vestido'), PODIO.x - 0.4, 0.12, PODIO.z + 0.3, -0.5));
-    por(terreo, w.place(manequimDeLoja(P.boutiqueVinho, 'casaco'), PODIO.x + 0.42, 0.12, PODIO.z - 0.35, -1.3));
-    w.blockCircle(PODIO.x, PODIO.z, 1.2);
+    peca(terreo, tapete(1.7, 2.4, P.boutiqueRosaClaro), -5.0, 0, 3.45);
+    peca(terreo, namoradeira(P.boutiqueRosaAntigo, 1.6), x0 + INTERNA + 0.4, 0, 3.45, Math.PI / 2);
+    w.blockBox(x0 + INTERNA + 0.4, 3.45, 0.8, 0.4, Math.PI / 2);
+    peca(terreo, mesinhaLateral(), -5.95, 0, 2.42);
+    w.blockCircle(-5.95, 2.42, 0.27);
+    peca(terreo, pufeCapitone(P.boutiqueVinho), -4.72, 0, 3.45);
+    w.blockCircle(-4.72, 3.45, 0.38);
+    peca(terreo, figueiraLira(0.95), -5.95, 0, 4.5);
+    w.blockCircle(-5.95, 4.5, 0.24);
+    for (const z of [2.85, 4.05]) peca(terreo, arandelaDeBoutique(), x0 + INTERNA, 1.85, z, Math.PI / 2);
+    peca(terreo, quadroDeArte(0.62, 0.8, 3), x0 + INTERNA, 1.95, 3.45, Math.PI / 2);
 
-    por(terreo, w.place(mesaDeDobrar(1.7, 77), -1.2, 0, 4.2, 0.1));
-    w.blockBox(-1.2, 4.2, 0.9, 0.5, 0.1);
-    por(terreo, w.place(pufeDeLoja(P.boutiqueVinho), 2.2, 0, 2.2));
-    w.blockCircle(2.2, 2.2, 0.42);
     /*
-     * AS DUAS PRATELEIRAS FICAM NA PAREDE DO FUNDO, lado a lado: é a única
-     * parede que a reforma deixou livre (a de `−X` virou provador, a de `+X`
-     * virou pódio de vitrine), e parede nua de 13 m lê como salão por montar.
-     * A segunda entra ENTRE a escada rolante e a primeira, que é o vão que
-     * sobrou — daí ela ser 20 cm mais estreita.
+     * O CAIXA, de frente para a entrada; atrás dele,
+     * as duas estantes de nicho em arco na parede do fundo — acesas por
+     * dentro, como vitrine.
      */
-    por(terreo, w.place(prateleiraDaLoja(2.2, 11), 5.4, 0, z0 + 0.18));
-    w.blockBox(5.4, z0 + 0.3, 1.15, 0.22);
-    por(terreo, w.place(prateleiraDaLoja(2.0, 29), 2.9, 0, z0 + 0.18));
-    w.blockBox(2.9, z0 + 0.3, 1.05, 0.22);
+    const CAIXA = { x: 4.3, z: -1.7 };
+    peca(terreo, balcaoDaBoutique(2.4), CAIXA.x, 0, CAIXA.z);
+    w.blockBox(CAIXA.x, CAIXA.z, 1.25, 0.42);
+    for (const [x, semente] of [[3.6, 11], [5.45, 29]] as const) {
+      peca(terreo, estanteEmArco(1.8, semente), x, 0, z0 + INTERNA + 0.45);
+      w.blockBox(x, z0 + INTERNA + 0.23, 0.9, 0.24);
+    }
+    peca(terreo, figueiraLira(0.9), 6.0, 0, -3.6);
+    w.blockCircle(6.0, -3.6, 0.24);
 
-    /**
-     * OS POSTES DE LUZ. Uma coluna fina com um globo aceso no alto, nos cantos
-     * das ilhas.
-     *
-     * Eles NÃO iluminam de verdade (`PointLight` por poste seria quatro luzes
-     * dinâmicas a mais por quadro, e o jogo roda no celular): o globo é um
-     * material com `glow`, que acende sozinho sem custar nada. Numa cena que já
-     * é clara, o que a luz precisa fazer é APARECER, e não iluminar.
+    /*
+     * O PÓDIO DA VITRINE, do lado da porta: um disco de mármore com dois
+     * BUSTOS DE COSTURA (a Estella é costureira; o manequim dela é o do
+     * ateliê), vestindo peças da loja — o vestido jade e a camisa terracota —,
+     * e o foco de luz pintado em cima. O eixo da porta (`x = 4,1`) fica livre: o pódio
+     * começa 45 cm à direita dele.
      */
-    for (const [lx, lz] of [
-      [-5.4, 0.35], [-5.4, 4.1], [0.5, 0.35], [0.5, 4.1],
-    ] as const) {
-      const poste = new THREE.Group();
-      const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 1.9, 10), toon(P.boutiqueOuro));
-      haste.position.y = 0.95;
-      poste.add(haste);
-      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.07, 12), toon(P.boutiqueOuroEscuro));
-      base.position.y = 0.035;
-      poste.add(base);
-      const cupula = new THREE.Mesh(
-        new THREE.SphereGeometry(0.17, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.62),
-        toon(P.boutiqueLuz, { glow: 0.75 }),
-      );
-      cupula.rotation.x = Math.PI;
-      cupula.position.y = 1.96;
-      poste.add(cupula);
-      por(terreo, w.place(poste, lx, 0, lz));
-      w.blockCircle(lx, lz, 0.22);
-    }
+    const PODIO = { x: 5.45, z: 2.0 };
+    peca(terreo, podio(0.9, 0.12), PODIO.x, 0, PODIO.z);
+    peca(terreo, bustoDeCostura(ITENS.vestidoJade), PODIO.x - 0.3, 0.12, PODIO.z + 0.25, 0.55);
+    peca(terreo, bustoDeCostura(ITENS.camisaTerracota), PODIO.x + 0.32, 0.12, PODIO.z - 0.28, 0.95);
+    w.blockCircle(PODIO.x, PODIO.z, 0.9);
+    // o foco de vitrine em cima do pódio: luz pintada, como a das araras premium
+    const focoDoPodio = pocaDeLuz(0.95, P.luzDeAbajur, 0.26);
+    focoDoPodio.position.set(PODIO.x, 0.14, PODIO.z);
+    terreo.add(focoDoPodio);
+    // o capacho da porta
+    peca(terreo, tapete(1.4, 0.8, P.boutiqueVinho, 'capacho'), PORTA.x, 0, D / 2 - 0.6);
 
-    for (const [px, pz] of [[x0 + 0.9, D / 2 - 1.0], [W / 2 - 0.9, z0 + 0.9]] as const) {
-      por(terreo, w.place(pottedPlant(1.25), px, 0, pz));
-      w.blockCircle(px, pz, 0.32);
-    }
-    for (const px of [-3.4, 1.5]) {
-      por(terreo, w.place(luminariaPendente(P.boutiqueOuro, 2.6), px, 0, 1.0));
-    }
+    // o canto de baixo da escada: a figueira e uma arandela
+    peca(terreo, figueiraLira(1.0), -5.85, 0, -4.3);
+    w.blockCircle(-5.85, -4.3, 0.24);
+    peca(terreo, arandelaDeBoutique(), x0 + INTERNA, 1.85, -2.42, Math.PI / 2);
 
     /* ==================================================================
      *                      A ESCADA E O VÃO
      * ================================================================== */
-    por(escada, w.place(escadaRolante(ALTURA, ESCADA.corrida), ESCADA.x, 0, ESCADA.z, Math.PI / 2));
+    const escadaRolante = new EscadaRolante(ALTURA, ESCADA.corrida);
+    por(escada, fundir(w.place(escadaRolante.group, ESCADA.x, 0, ESCADA.z, Math.PI / 2)));
+    w.onUpdate((dt) => escadaRolante.update(dt));
     /*
      * O CORPO DA ESCADA BARRA, MENOS AS DUAS PONTAS: é por elas que se entra.
      * O colisor cobre o lance do meio (4,6 dos 6,4), deixando 0,9 livres em
@@ -467,7 +451,13 @@ export const lojinha: SceneDef = {
      * vidro a setenta centímetros do nariz de quem chegava.
      */
     const VAO = { x0: -5.05, x1: -0.8, z0: z0, z1: -3.1 };
-    const laje = polido(P.mezaninoPiso, { brilho: 0.14 });
+    /*
+     * O PISO DE CIMA É O MESMO PARQUET, e o desenho CONTINUA de um pedaço de
+     * laje para o outro: o UV é lido na posição do mundo (`uvDeParede`), e não
+     * na de cada caixa — senão a emenda entre o patamar e o resto da laje
+     * mostraria o chevron desencontrado.
+     */
+    const laje = polido(P.boutiqueCarvalho, { brilho: 0.12, mapa: parquetEmChevron(2.4) });
     /*
      * A LAJE RECEBE **E PROJETA** SOMBRA.
      *
@@ -477,7 +467,8 @@ export const lojinha: SceneDef = {
      * seguia reto e ia cair no térreo, cinco metros abaixo.
      */
     const pedacoDeLaje = (cx: number, cz: number, larg: number, prof: number): THREE.Mesh => {
-      const piso = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.26, prof), laje);
+      const geo = uvDeParede(new THREE.BoxGeometry(larg, 0.26, prof), cx, ALTURA - 0.13, cz);
+      const piso = new THREE.Mesh(geo, laje);
       piso.position.set(cx, ALTURA - 0.13, cz);
       piso.receiveShadow = true;
       piso.castShadow = true;
@@ -519,49 +510,67 @@ export const lojinha: SceneDef = {
     arremate.position.set((VAO.x0 + VAO.x1) / 2, ALTURA - 0.13, VAO.z1 - 0.05);
     por(superior, arremate);
 
-    // paredes altas do mezanino (as mesmas duas do térreo) e guarda-corpo nas
-    // duas bordas que dão para a câmera
     /*
      * As duas paredes altas do mezanino são as MESMAS de baixo, um andar acima:
      * `w.wall` devolve a malha e já registra o colisor (que, aqui, entra na
-     * lista do mezanino) — então basta subir a malha e mudá-la de grupo.
+     * lista do mezanino) — então basta subir a malha e mudá-la de grupo. Com
+     * a mesma boiserie de baixo, na altura de cima.
      */
+    const H2 = H - 0.9;
     for (const parede of [
-      w.wall(x0, z0, W / 2, z0, H - 0.9, P.boutiqueParede),
-      w.wall(x0, z0, x0, D / 2, H - 0.9, P.boutiqueParede),
+      w.wall(x0, z0, W / 2, z0, H2, P.boutiqueRosaClaro),
+      w.wall(x0, z0, x0, D / 2, H2, P.boutiqueRosaClaro),
     ]) {
       parede.position.y += ALTURA;
-      por(superior, parede);
+      por(superior, rebocar(parede));
     }
+    peca(superior, boiserie(W - INTERNA, H2, { mitraEsq: true, semQuadro: [[1.45, 5.35]] }), INTERNA / 2, ALTURA, z0 + INTERNA);
+    peca(superior, boiserie(D - 2 * INTERNA, H2, { mitraDir: true, semQuadro: [[-1.9, -0.2]] }), x0 + INTERNA, ALTURA, 0, Math.PI / 2);
 
     /**
-     * O GUARDA-CORPO: mureta baixa de vidro com o corrimão dourado em cima, nas
-     * bordas de `+X` e `+Z` e em volta do vão da escada.
+     * O GUARDA-CORPO: vidro baixo entre um trilho de latão no pé e o corrimão
+     * de latão redondo em cima, com um montante a cada metro e pouco, nas
+     * bordas de `+X` e `+Z` e na borda comprida do rasgo.
      *
      * Ele é BAIXO (0,95) pelo mesmo motivo de toda mureta de interior aqui: a
      * câmera olha de 34°, e um peitoril de altura normal taparia o mezanino
      * inteiro. E ele é de VIDRO, que é o que o faz existir sem pesar na tela.
      */
+    const latao = toon(P.boutiqueOuro);
+    const vidroDoGuarda = toon(P.escadaVidro, { opacity: 0.22, doubleSide: true });
+    /** todo o guarda-corpo num grupo só, FUNDIDO no fim: o latão vira uma malha */
+    const guarda = new THREE.Group();
     const guardaCorpo = (ax: number, az: number, bx: number, bz: number): void => {
       const comp = Math.hypot(bx - ax, bz - az);
       const ang = Math.atan2(bx - ax, bz - az);
       const mx = (ax + bx) / 2;
       const mz = (az + bz) / 2;
-      const vidro = new THREE.Mesh(
-        new THREE.BoxGeometry(0.06, 0.8, comp),
-        toon(P.escadaVidro, { opacity: 0.3, doubleSide: true }),
-      );
-      vidro.position.set(mx, ALTURA + 0.42, mz);
+      const vidro = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.78, comp), vidroDoGuarda);
+      vidro.position.set(mx, ALTURA + 0.48, mz);
       vidro.rotation.y = ang;
-      por(superior, vidro);
-      const mao = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, comp), toon(P.boutiqueOuro));
-      mao.position.set(mx, ALTURA + 0.86, mz);
-      mao.rotation.y = ang;
-      por(superior, mao);
+      vidro.renderOrder = 4;
+      guarda.add(vidro);
+      const trilho = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.08, comp), latao);
+      trilho.position.set(mx, ALTURA + 0.04, mz);
+      trilho.rotation.y = ang;
+      guarda.add(trilho);
+      const mao = new THREE.CylinderGeometry(0.032, 0.032, comp + 0.064, 12);
+      mao.rotateX(Math.PI / 2);
+      const corrimao = new THREE.Mesh(mao, latao);
+      corrimao.position.set(mx, ALTURA + 0.9, mz);
+      corrimao.rotation.y = ang;
+      guarda.add(corrimao);
+      const montantes = Math.max(1, Math.round(comp / 1.3));
+      for (let i = 0; i <= montantes; i++) {
+        const t = i / montantes;
+        const m = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.82, 8), latao);
+        m.position.set(ax + (bx - ax) * t, ALTURA + 0.49, az + (bz - az) * t);
+        guarda.add(m);
+      }
       w.blockBox(mx, mz, 0.12, comp / 2, ang);
     };
     guardaCorpo(W / 2 - 0.1, z0, W / 2 - 0.1, D / 2 - 0.1);
-    guardaCorpo(x0 + 0.1, D / 2 - 0.1, W / 2 - 0.1, D / 2 - 0.1);
+    guardaCorpo(x0 + 0.1, D / 2 - 0.1, W / 2 - 0.16, D / 2 - 0.1);
     /*
      * O RASGO TEM UM GUARDA-CORPO SÓ: a borda comprida, a que dá para o salão.
      *
@@ -575,19 +584,15 @@ export const lojinha: SceneDef = {
      *
      * Quem impede de andar rasgo adentro a partir do patamar é o colisor da
      * escada, logo abaixo, e não uma mureta.
-     */
-    /*
-     * O VIDRO COMEÇA 85 cm PARA DENTRO, e não na ponta do rasgo.
      *
-     * Quem fecha a ponta de `−X` é a BALAUSTRADA DA PRÓPRIA ESCADA, que sobe
-     * junto com o lance e chega mais alta que o piso do mezanino — é assim num
-     * shopping de verdade, e é o que deixa a boca livre para desembarcar.
-     *
-     * Com o vidro indo até `VAO.x0`, o patamar virava um beco: a dupla saía da
-     * escada e ficava entalada entre o vidro (a `+Z`) e o rasgo (a `+X`), com
-     * 25 cm de corredor para escapar. Foi medido andando, não estimado.
+     * O VIDRO COMEÇA 85 cm PARA DENTRO, e não na ponta do rasgo. Quem fecha a
+     * ponta de `−X` é a BALAUSTRADA DA PRÓPRIA ESCADA, que sobe junto com o
+     * lance e chega mais alta que o piso do mezanino — é assim num shopping de
+     * verdade, e é o que deixa a boca livre para desembarcar. Com o vidro indo
+     * até `VAO.x0`, o patamar virava um beco (medido andando, não estimado).
      */
     guardaCorpo(VAO.x0 + 0.85, VAO.z1, VAO.x1, VAO.z1);
+    por(superior, fundir(guarda));
     /*
      * E O RASGO INTEIRO É COLISOR.
      *
@@ -602,53 +607,38 @@ export const lojinha: SceneDef = {
     w.setBounds(x0 + 0.5, z0 + 0.5, W / 2 - 0.5, D / 2 - 0.5);
 
     /**
-     * AS ARARAS PREMIUM: três, douradas, em fila com o mesmo afastamento.
-     * Repetição regular aqui é de propósito — no térreo a bagunça controlada é
-     * o charme, e em cima o alinhamento é o luxo.
+     * AS ARARAS PREMIUM: três arcos (dois dourados e um de prata) em fila, cada
+     * um num PEDESTAL redondo de mármore com o seu foco de luz pintado em cima
+     * — a peça cara exposta como em galeria.
      *
-     * DÁ PARA ANDAR ENTRE ELAS, e a conta que garante isso tem um passo que é
-     * fácil de esquecer — o RAIO DA DUPLA ENTRA DUAS VEZES:
+     * DÁ PARA ANDAR ENTRE ELAS, e a conta tem um passo fácil de esquecer — o
+     * RAIO DA DUPLA ENTRA DUAS VEZES: entre dois pedestais de 0,95 de raio a
+     * 2,85 m um do outro sobram 0,95 m de vão, e a faixa por onde o CENTRO da
+     * dupla passa é esse vão menos 2 × 0,42 = 11 cm de folga. Passa — e a fila
+     * cabe no comprimento do mezanino com o espelho e o cantinho em volta.
      *
-     *   vão entre os colisores = afastamento − 2 × meia-largura
-     *                          = 3,0 − 1,44 = 1,56 m
-     *   faixa por onde o CENTRO passa = vão − 2 × 0,42 = 0,72 m
-     *
-     * É a segunda linha que decide se passa. Antes eram araras de 2,2 a cada
-     * 2,8: vão de 0,60, faixa NEGATIVA — a fila virava uma parede de sete
-     * metros no meio do mezanino, e a única saída era contornar pelas pontas,
-     * que foi o que o Renan viu. Encolher a arara para 1,9 ainda deixava uma
-     * faixa de 26 cm: passa, mas só mirando.
-     *
-     * Com 1,4 de arara a cada 3,0 a faixa é de 72 cm — a mesma ordem do
-     * corredor entre as ilhas do térreo — e de quebra a fila passa a caber
-     * EXATAMENTE no tapete do mezanino (z de −3,3 a 4,1), que é onde ela
-     * deveria estar desde o começo. Arara premium curta também não mente: são
-     * duas peças em cada.
+     * O PROMPT TEM RAIO 1,75: o pedestal é colisor, e quem para na beira dele
+     * fica a 0,95 + 0,42 = 1,37 do centro da arara.
      */
     const PREMIUM = [
-      { x: 0.4, z: -2.6, colecao: 1, prata: false },
-      { x: 0.4, z: 0.4, colecao: 3, prata: true },
-      { x: 0.4, z: 3.4, colecao: 2, prata: false },
+      { x: 0.4, z: -2.35, prata: false },
+      { x: 0.4, z: 0.5, prata: true },
+      { x: 0.4, z: 3.35, prata: false },
     ];
+    // a passadeira: o tapete comprido debaixo da fila, de um pedestal ao outro
+    peca(superior, tapete(2.5, 7.8, P.boutiqueRosaClaro), PREMIUM[1].x, ALTURA, PREMIUM[1].z);
     for (const [i, a] of PREMIUM.entries()) {
-      por(superior, w.place(
-        araraPremium({ largura: 1.4, colecao: a.colecao, prata: a.prata, semente: 900 + i * 31 }),
-        a.x, ALTURA, a.z, Math.PI / 2,
-      ));
-      // 0,72 = o pé da arara (1,4/2 − 0,18) mais a meia-base de 0,21
-      w.blockBox(a.x, a.z, 0.72, 0.32, Math.PI / 2);
+      peca(superior, podio(0.95, 0.08), a.x, ALTURA, a.z);
+      peca(superior, araraPremiumDaBoutique(PREMIUM_DA_ESTELLA[i], { prata: a.prata }), a.x, ALTURA + 0.08, a.z, Math.PI / 2);
+      const foco = pocaDeLuz(0.9, P.luzDeAbajur, 0.3);
+      // 2 cm acima do tampo: a 6 mm o foco brigava com ele e saía em raios
+      foco.position.set(a.x, ALTURA + 0.1, a.z);
+      superior.add(foco);
+      w.blockCircle(a.x, a.z, 0.95);
     }
 
-    // o tapete do mezanino, desenhado por peça (decalque não sobe de altura)
-    const tapeteDeCima = new THREE.Mesh(
-      new THREE.BoxGeometry(4.6, 0.03, 7.4),
-      toon(P.boutiqueTapete),
-    );
-    tapeteDeCima.position.set(-0.9, ALTURA + 0.015, 0.4);
-    por(superior, tapeteDeCima);
-
     /**
-     * O PROVADOR ABERTO E O ESPELHO GRANDE, no fundo do mezanino.
+     * O ESPELHO GRANDE, no fundo do mezanino.
      *
      * O espelho é a peça que reflete de verdade (`world/espelhoMagico.ts`): uma
      * segunda câmera e um `WebGLRenderTarget`, com o frustum montado em cima do
@@ -660,23 +650,38 @@ export const lojinha: SceneDef = {
      * olha nele está entre ele e a câmera — e aparece no reflexo de frente.
      */
     const ESPELHO = { x: 3.4, z: z0 + 0.6 };
-    por(superior, w.place(espelhoMagico({ largura: 2.4, altura: 2.7 }), ESPELHO.x, ALTURA, ESPELHO.z));
-    w.blockBox(ESPELHO.x, ESPELHO.z - 0.1, 1.6, 0.3);
+    peca(superior, espelhoMagico({ largura: 2.4, altura: 2.7 }), ESPELHO.x, ALTURA, ESPELHO.z);
+    w.blockBox(ESPELHO.x, ESPELHO.z - 0.1, 1.75, 0.32);
     // o tapetinho redondo na frente dele, que é onde se para para olhar
-    const alvoDoEspelho = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.15, 1.15, 0.03, 24),
-      toon(P.boutiqueTapeteBorda),
-    );
-    alvoDoEspelho.position.set(ESPELHO.x, ALTURA + 0.015, ESPELHO.z + 1.5);
-    por(superior, alvoDoEspelho);
+    peca(superior, tapeteRedondo(1.15, P.boutiqueRosaAntigo), ESPELHO.x, ALTURA, ESPELHO.z + 1.5);
+    peca(superior, pufeCapitone(P.boutiqueRosaAntigo, 0.32), ESPELHO.x + 2.05, ALTURA, ESPELHO.z + 1.6);
+    w.blockCircle(ESPELHO.x + 2.05, ESPELHO.z + 1.6, 0.34);
+    peca(superior, figueiraLira(0.95), 5.85, ALTURA, z0 + 0.5);
+    w.blockCircle(5.85, z0 + 0.5, 0.24);
 
-    por(superior, w.place(pufeDeLoja(P.boutiqueVinho), 5.2, ALTURA, 0.4));
-    w.blockCircle(5.2, 0.4, 0.42);
-    por(superior, w.place(pottedPlant(1.3), 5.5, ALTURA, 3.6));
-    w.blockCircle(5.5, 3.6, 0.32);
-    for (const px of [-2.4, 2.6]) {
-      por(superior, w.place(luminariaPendente(P.boutiqueOuro, 2.2), px, ALTURA, 1.0));
-    }
+    // o cantinho de cima: namoradeira de veludo vinho, mesinha, pufe e quadro
+    peca(superior, tapete(1.7, 2.4, P.boutiqueRosaClaro), -5.0, ALTURA, 1.05);
+    peca(superior, namoradeira(P.boutiqueVinho, 1.6), x0 + INTERNA + 0.4, ALTURA, 1.05, Math.PI / 2);
+    w.blockBox(x0 + INTERNA + 0.4, 1.05, 0.8, 0.4, Math.PI / 2);
+    peca(superior, mesinhaLateral(), -5.95, ALTURA, 2.25);
+    w.blockCircle(-5.95, 2.25, 0.27);
+    peca(superior, pufeCapitone(P.boutiqueRosaAntigo, 0.34), -4.72, ALTURA, 1.05);
+    w.blockCircle(-4.72, 1.05, 0.36);
+    for (const z of [0.25, 1.85]) peca(superior, arandelaDeBoutique(), x0 + INTERNA, ALTURA + 1.6, z, Math.PI / 2);
+    peca(superior, quadroDeArte(0.62, 0.72, 4), x0 + INTERNA, ALTURA + 1.45, 1.05, Math.PI / 2);
+    peca(superior, figueiraLira(0.9), -5.9, ALTURA, 4.35);
+    w.blockCircle(-5.9, 4.35, 0.24);
+    peca(superior, figueiraLira(0.9), 5.75, ALTURA, 4.3);
+    w.blockCircle(5.75, 4.3, 0.24);
+    for (const x of [-1.2, 1.2]) peca(superior, arandelaDeBoutique(), x, ALTURA + 1.6, z0 + INTERNA);
+
+    /*
+     * A VITRINE DE JOIAS, no meio do caminho entre o cantinho e a fila das
+     * premium: é a peça baixa que segura o meio do mezanino (sem ela, o andar
+     * era um salão vazio com três araras numa ponta).
+     */
+    peca(superior, vitrineDeJoias(1.3), -2.4, ALTURA, 3.3);
+    w.blockBox(-2.4, 3.3, 0.68, 0.31);
 
     const colisoresSuperior: Collider[] = w.colisoresAgora();
     w.usarColisores(colisoresTerreo);
@@ -815,6 +820,7 @@ export const lojinha: SceneDef = {
       x: number,
       z: number,
       chave: string,
+      raio = 1.5,
     ): Interactable => w.interact({
       id: `lojinha:arara-${chave}`,
       /*
@@ -823,7 +829,7 @@ export const lojinha: SceneDef = {
        * de 0,42 — quem chega pela frente para a 0,77 do eixo, mas quem chega
        * pela PONTA para a 1,37, que é o que um raio de 1,3 deixava de fora.
        */
-      x, z, radius: 1.5,
+      x, z, radius: raio,
       label: `Ver a arara: ${fila.titulo.toLowerCase()}`, icon: '🛍️',
       onInteract: async () => {
         if (!g.flag(`arara-${chave}`)) {
@@ -838,7 +844,7 @@ export const lojinha: SceneDef = {
       doTerreo.push(araraQueVende(ARARAS_DA_ESTELLA[i], a.x, a.z, `terreo-${i}`));
     }
     for (const [i, a] of PREMIUM.entries()) {
-      doSuperior.push(araraQueVende(PREMIUM_DA_ESTELLA[i], a.x, a.z, `premium-${i}`));
+      doSuperior.push(araraQueVende(PREMIUM_DA_ESTELLA[i], a.x, a.z, `premium-${i}`, 1.75));
     }
 
     doTerreo.push(w.interact({
@@ -912,7 +918,7 @@ export const lojinha: SceneDef = {
     }));
     doTerreo.push(w.interact({
       id: 'lojinha:provador',
-      x: PROVADORES.x + 1.0, z: PROVADORES.z, radius: 1.5,
+      x: CABINE_ABERTA.x, z: CABINE_ABERTA.z, radius: 1.5,
       label: 'Espiar o provador', icon: '🪞',
       onInteract: async () => {
         await conversa([
@@ -1001,7 +1007,7 @@ export const lojinha: SceneDef = {
               id: 'lojinha-por-dentro',
               title: 'A boutique da Estella',
               place: 'Boutique da Estella',
-              note: 'A loja de roupas do parque por dentro, depois da reforma: piso polido, duas ilhas de arara com tapete, provadores de cortina e uma escada rolante que sobe pro mezanino das peças premium. A Estella circula entre tudo chamando a gente de "meus queridos".',
+              note: 'A loja de roupas do parque por dentro, depois da reforma: parquet de madeira, quatro araras em volta de uma mesa de mármore, provadores de arco com cortina de veludo, um sofazinho pra esperar, e uma escada rolante que sobe pro mezanino das peças premium. A Estella circula entre tudo chamando a gente de "meus queridos".',
               icon: '👗',
             });
           } else if (!(await falarDoPremio(api, 'estella'))) {
