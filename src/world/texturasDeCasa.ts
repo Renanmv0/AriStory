@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PALETTE as P } from '../palette';
 import { novaTextura, sorteio } from './texturasDeChao';
 
 /**
@@ -429,4 +430,40 @@ export function desenhoDeTapete(largura: number, profundidade: number, estilo: E
   tex.needsUpdate = true;
   tapetes.set(chave, tex);
   return tex;
+}
+
+/**
+ * TOALHA XADREZ, para as mesas da área externa do restaurante do clube.
+ *
+ * É o xadrez de cantina (o "vichy"): faixas de cor em pé e deitadas, meio
+ * transparentes, sobre o pano branco. Onde as duas se cruzam a cor fica
+ * cheia; onde passa só uma, fica no meio do caminho; onde não passa nenhuma,
+ * fica o branco. São esses TRÊS tons, e não dois, que fazem ler tecido de
+ * algodão em vez de tabuleiro de damas.
+ *
+ * Esta é das texturas que trazem a COR no desenho (como o tijolinho da
+ * fachada): o material é `toon(0xffffff, { mapa })`, e o vermelho sai da
+ * paleta pintado aqui. Quadrado de 10 cm — mais miúdo que isso vira moiré a
+ * esta distância de câmera (a lição da trama do sofá).
+ */
+export function toalhaXadrez(lado = 0.4, cor: number = P.churrascoToalha): THREE.CanvasTexture {
+  return novaTextura(`xadrez:${lado}:${cor}`, lado, (ctx, s) => {
+    const rnd = sorteio(1960);
+    const rgb = `${(cor >> 16) & 255},${(cor >> 8) & 255},${cor & 255}`;
+    ctx.fillStyle = '#fbf8f2';
+    ctx.fillRect(0, 0, s, s);
+    const faixas = 4;
+    const passo = s / faixas;
+    ctx.fillStyle = `rgba(${rgb},0.58)`;
+    for (let i = 0; i < faixas; i += 2) {
+      ctx.fillRect(i * passo, 0, passo, s);
+      ctx.fillRect(0, i * passo, s, passo);
+    }
+    // o fio do algodão: granulado de 2 px, claro e escuro
+    for (let i = 0; i < 3800; i++) {
+      const claro = rnd() < 0.5;
+      ctx.fillStyle = claro ? 'rgba(255,255,255,0.22)' : 'rgba(90,40,40,0.1)';
+      ctx.fillRect(Math.floor(rnd() * s), Math.floor(rnd() * s), 2, 2);
+    }
+  });
 }

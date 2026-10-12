@@ -121,9 +121,13 @@ function rgb(hex: number, k = 1): string {
  * Cada tijolo tem o próprio tom (queimado um pouco mais ou menos), uma borda
  * de cima mais clara e uma de baixo mais escura — o mesmo par de luz e sombra
  * do friso, que dá relevo sem geometria.
+ *
+ * `cor` é o barro: o rosado da lojinha da Estella por padrão, e o tijolo de
+ * churrascaria (`P.churrascoTijolo`, o mesmo da parede da grelha por dentro)
+ * no restaurante do clube.
  */
-export function tijolinho(lado = 0.84): THREE.CanvasTexture {
-  return novaTextura(`tijolinho:${lado}`, lado, (ctx, s) => {
+export function tijolinho(lado = 0.84, cor: number = P.lojaTijolo): THREE.CanvasTexture {
+  return novaTextura(`tijolinho:${lado}:${cor}`, lado, (ctx, s) => {
     const rnd = sorteio(8423);
     // o fundo é o rejunte: branco, que o material tinge de creme
     ctx.fillStyle = '#ffffff';
@@ -145,7 +149,7 @@ export function tijolinho(lado = 0.84): THREE.CanvasTexture {
         const h = alt - junta;
         if (x0 > s || x0 + w < 0) continue;
         const tom = tons[((k % porFiada) + porFiada) % porFiada];
-        ctx.fillStyle = `rgb(${rgb(P.lojaTijolo, tom)})`;
+        ctx.fillStyle = `rgb(${rgb(cor, tom)})`;
         ctx.fillRect(x0, y0, w, h);
         // a luz na aresta de cima e a sombra na de baixo
         ctx.fillStyle = 'rgba(255,255,255,0.22)';
@@ -155,7 +159,7 @@ export function tijolinho(lado = 0.84): THREE.CanvasTexture {
         // o queimado do barro: pintas de 2 px dentro do tijolo
         for (let p = 0; p < 10; p++) {
           const escuro = rnd() < 0.6;
-          ctx.fillStyle = escuro ? `rgba(${rgb(P.lojaTijolo, 0.72)},0.5)` : 'rgba(255,240,230,0.35)';
+          ctx.fillStyle = escuro ? `rgba(${rgb(cor, 0.72)},0.5)` : 'rgba(255,240,230,0.35)';
           ctx.fillRect(x0 + 2 + rnd() * (w - 6), y0 + 3 + rnd() * (h - 8), 2 + rnd() * 2, 2);
         }
       }

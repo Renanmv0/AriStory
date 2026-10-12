@@ -69,17 +69,25 @@ const venceAFala = async (voltas = 16) => {
   return ditas;
 };
 
-/** a menor opacidade de qualquer malha do prédio do restaurante */
+/**
+ * A menor opacidade de qualquer malha do prédio do restaurante.
+ *
+ * Ficam de fora o que é transparente DE PROPÓSITO desde a reforma: o vidro
+ * das janelas (`userData.vidro`) e a luz pintada e a fumaça (`semSombra`).
+ * O que o teste guarda é a parede não desbotar — e é ela que conta.
+ */
 const opacidadeDoPredio = () =>
   page.evaluate(() => {
     let predio = null;
     window.jogo.scene.traverse((o) => {
-      if (!predio && o.userData?.peca === 'restaurante') predio = o;
+      if (!predio && o.userData?.peca === 'restaurante-do-clube') predio = o;
     });
     if (!predio) return null;
     let op = 1;
     predio.traverse((o) => {
-      if (o.isMesh && o.material) op = Math.min(op, o.material.opacity ?? 1);
+      if (o.isMesh && o.material && !o.userData.vidro && !o.userData.semSombra) {
+        op = Math.min(op, o.material.opacity ?? 1);
+      }
     });
     return +op.toFixed(2);
   });

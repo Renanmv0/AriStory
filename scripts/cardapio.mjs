@@ -187,9 +187,16 @@ for (let t = 0; t < 80 && !levantou; t++) {
   levantou = await page.evaluate(() => window.jogo.player.rig.sitting === false);
 }
 const emPe = await onde();
-await page.keyboard.down('KeyW');
-await page.waitForTimeout(900);
-await page.keyboard.up('KeyW');
+/*
+ * PARA TRÁS, e não para a frente: quem levanta fica 2 m na frente da mesa,
+ * virado para ela, e o W leva direto para o colisor dela (a 33 cm dali) —
+ * a dupla esbarrava, deslizava pela borda e o teste dizia "presa". O S anda
+ * para o lado livre do deque, e o tempo é folgado porque o Chromium daqui
+ * corre a uma fração do relógio.
+ */
+await page.keyboard.down('KeyS');
+await page.waitForTimeout(1600);
+await page.keyboard.up('KeyS');
 const andou = await onde();
 const soltou =
   Math.abs(emPe.jogador[0] - andou.jogador[0]) > 0.3 ||

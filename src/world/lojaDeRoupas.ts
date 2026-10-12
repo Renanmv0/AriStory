@@ -87,7 +87,7 @@ export interface LojaOpts {
 }
 
 /** caixa de quina quebrada: o chanfro pega um filete de luz do toon */
-function quina(l: number, a: number, p: number, r = 0.02): THREE.BufferGeometry {
+export function quina(l: number, a: number, p: number, r = 0.02): THREE.BufferGeometry {
   return new RoundedBoxGeometry(l, a, p, 1, Math.min(r, l / 2 - 0.001, a / 2 - 0.001, p / 2 - 0.001));
 }
 
@@ -97,7 +97,7 @@ function quina(l: number, a: number, p: number, r = 0.02): THREE.BufferGeometry 
  * matriz de cada copia e lida no quadro da parede onde ela mora e levada para
  * o quadro da peca.
  */
-class Lote {
+export class Lote {
   private readonly matrizes: THREE.Matrix4[] = [];
   private readonly cores: THREE.Color[] = [];
   constructor(private readonly geo: THREE.BufferGeometry, private readonly mat: THREE.Material) {}
@@ -128,7 +128,7 @@ class Lote {
  * cima — a concha e o que faz a luz do toon separar uma petala da outra.
  * Raio 1, olhando para `+Y`; o lote escala e pinta.
  */
-function geoFlor(): THREE.BufferGeometry {
+export function geoFlor(): THREE.BufferGeometry {
   // quatro pontos por petala: a flor tem uns 6 px na tela, e mais que isso some
   const N = 20;
   const borda = (i: number): [number, number, number] => {
@@ -149,7 +149,7 @@ function geoFlor(): THREE.BufferGeometry {
  * e arqueada — dobrada, ela pega luz de um lado e sombra do outro, e deixa de
  * ser um adesivo verde.
  */
-function geoFolha(): THREE.BufferGeometry {
+export function geoFolha(): THREE.BufferGeometry {
   const passos = 4;
   const meio: THREE.Vector3[] = [];
   const esq: THREE.Vector3[] = [];
@@ -220,7 +220,7 @@ function geoCortina(largura: number, altura: number, lado: 1 | -1): THREE.Buffer
 }
 
 /** um anel ou um U de forma: a moldura em volta de um arco (`rx`, `ry`) com a base em `y0` */
-function moldeEmArco(
+export function moldeEmArco(
   cx: number, y0: number, ys: number,
   rxDentro: number, ryDentro: number, rxFora: number, ryFora: number,
 ): THREE.Shape {
@@ -241,7 +241,7 @@ function moldeEmArco(
 }
 
 /** o contorno de um vao em arco (ou de um arco abatido, com `ry` menor) */
-function arco<T extends THREE.Path>(alvo: T, cx: number, y0: number, ys: number, rx: number, ry: number): T {
+export function arco<T extends THREE.Path>(alvo: T, cx: number, y0: number, ys: number, rx: number, ry: number): T {
   alvo.moveTo(cx - rx, y0);
   alvo.lineTo(cx + rx, y0);
   alvo.lineTo(cx + rx, ys);
@@ -250,7 +250,7 @@ function arco<T extends THREE.Path>(alvo: T, cx: number, y0: number, ys: number,
   return alvo;
 }
 
-function retangulo<T extends THREE.Path>(alvo: T, x0: number, y0: number, x1: number, y1: number): T {
+export function retangulo<T extends THREE.Path>(alvo: T, x0: number, y0: number, x1: number, y1: number): T {
   alvo.moveTo(x0, y0);
   alvo.lineTo(x1, y0);
   alvo.lineTo(x1, y1);
@@ -260,7 +260,7 @@ function retangulo<T extends THREE.Path>(alvo: T, x0: number, y0: number, x1: nu
 }
 
 /** um U reto: a moldura de reboco em volta de uma janela, aberta embaixo (o peitoril fecha) */
-function moldeReto(cx: number, y0: number, topo: number, meia: number, aba: number): THREE.Shape {
+export function moldeReto(cx: number, y0: number, topo: number, meia: number, aba: number): THREE.Shape {
   const s = new THREE.Shape();
   s.moveTo(cx - meia - aba, y0);
   s.lineTo(cx - meia - aba, topo + aba);
@@ -274,7 +274,7 @@ function moldeReto(cx: number, y0: number, topo: number, meia: number, aba: numb
   return s;
 }
 
-function extrudar(forma: THREE.Shape, prof: number, z0: number, curvas = 14): THREE.BufferGeometry {
+export function extrudar(forma: THREE.Shape, prof: number, z0: number, curvas = 14): THREE.BufferGeometry {
   const geo = new THREE.ExtrudeGeometry(forma, { depth: prof, bevelEnabled: false, curveSegments: curvas });
   geo.translate(0, 0, z0);
   return geo;
