@@ -159,10 +159,14 @@ Antes de criar peça nova, olhe como essas foram feitas. Para PRÉDIO por fora,
 o exemplo é a lojinha da Estella (`world/lojaDeRoupas.ts`): parede com furo
 de verdade, moldura com perfil (`world/molduras.ts`), reboco, friso e
 tijolinho em canvas (`world/texturasDeFachada.ts`) — ver "Prédio de rua" na
-skill de peça. Para LOJA por dentro, a boutique da Estella
-(`world/moveisDaBoutique.ts`): a arara que pendura o catálogo de verdade em
-instância (`world/roupasNaArara.ts`), a boiserie com perfil, o balcão
-canelado, o pufe capitonê e a escada rolante que anda
+skill de peça. Para prédio de TELHADO, o Mania de Churrasco do clube
+(`world/restauranteDoClube.ts`): telha colonial em geometria, toldo por
+janela, chaminé com fumaça e eólico girando numa peça fundida, e a mesa com
+toalha xadrez — ver "Prédio de telhado" na skill de peça. Para LOJA por
+dentro, a boutique da Estella (`world/moveisDaBoutique.ts`): a arara que
+pendura o catálogo de verdade em instância (`world/roupasNaArara.ts`), a
+boiserie com perfil, o balcão canelado, o pufe capitonê e a escada rolante
+que anda
 (`world/escadaRolante.ts`) — ver "A boutique da Estella por dentro" na skill
 de peça.
 

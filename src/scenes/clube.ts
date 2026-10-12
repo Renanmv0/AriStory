@@ -7,12 +7,17 @@ import {
   canteiroDeHorta, estufa, planta, regador, terraRemexida, vasoDePlanta,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
-  guarita, meioFio, mesaDePatio, muroDoClube, poolShell, poolWater, portaoDoClube, restaurante, sebe,
+  guarita, meioFio, muroDoClube, poolShell, poolWater, portaoDoClube, sebe,
   showerPost, sunLounger, textSign,
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
 } from '../world/props';
 import { interiorDoor } from '../world/furniture';
+import {
+  MESA_DO_RESTAURANTE, RESTAURANTE_ESPESSURA_DA_PAREDE, RestauranteDoClube, cavaleteDeCardapio,
+  mesaDoRestaurante, ombrelone,
+} from '../world/restauranteDoClube';
+import { fundir } from '../world/fundir';
 import { Gina } from '../entities/bichos/Gina';
 import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
@@ -20,7 +25,7 @@ import { Josefina } from '../entities/bichos/Josefina';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
 import { pratoPorId } from '../world/cardapioData';
-import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
+import { asfalto, calcadaDePedrinha, dequeDeMadeira, pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
 
 /**
  * Clube — a piscina.
@@ -723,25 +728,42 @@ export const clube: SceneDef = {
     // -------------------------------------------------------- restaurante
     // Ele fica no fundo à ESQUERDA, o canto mais vazio do deck. Com `x` e `z`
     // menores que os da piscina, a câmera (que vem de `+X/+Z`) o desenha ATRÁS
-    // de tudo: um prédio de 5,5 de altura no meio do cenário taparia a água.
+    // de tudo: um prédio alto no meio do cenário taparia a água.
     const RESTAURANTE = { x: -17, z: -14, largura: 13, profundidade: 7 };
     const fachadaZ = RESTAURANTE.z + RESTAURANTE.profundidade / 2;
 
-    const predio = w.add(w.place(
-      restaurante(RESTAURANTE.largura, RESTAURANTE.profundidade),
-      RESTAURANTE.x, 0, RESTAURANTE.z,
-    ));
-    // a caixa vai um pouco além da parede para engolir os dois degraus da
-    // entrada — sem isso o jogador sobe neles e fica com o pé no ar
+    /*
+     * O MANIA DE CHURRASCO POR FORA (`world/restauranteDoClube.ts`): parede
+     * com furo, tijolinho, telha colonial, toldos de lona, a chaminé com
+     * fumaça e o eólico girando. Fundido — as peças de mesmo material viram
+     * uma malha só — e animado pelo `update`.
+     */
+    const mania = new RestauranteDoClube();
+    const predio = w.add(fundir(w.place(mania.group, RESTAURANTE.x, 0, RESTAURANTE.z)));
+    w.onUpdate((dt) => mania.update(dt));
+    // a caixa vai um pouco além da parede para engolir o patamar e o degrau
+    // da entrada — sem isso o jogador sobe neles e fica com o pé no ar
     w.blockBox(RESTAURANTE.x, RESTAURANTE.z, RESTAURANTE.largura / 2 + 0.3, RESTAURANTE.profundidade / 2 + 0.9);
 
-    // O DEQUE da área externa, em ripas. Decalque não briga com decalque, e a
-    // ordem de criação é que manda: o deque primeiro, as ripas por cima.
+    /*
+     * O DEQUE da área externa: as réguas, a fresta e a fila de parafusos são
+     * textura de canvas (`dequeDeMadeira`), numa malha só. Em volta, a
+     * MOLDURA de régua atravessada, um tom mais escura — é ela que dá a borda
+     * de varanda. Decalque não briga com decalque, e a ordem de criação é que
+     * manda: o deque primeiro, a moldura por cima.
+     */
     const DEQUE = { x: -16.5, z: -6.8, largura: 12.4, profundidade: 7 };
-    w.patch(DEQUE.x, DEQUE.z, DEQUE.largura, DEQUE.profundidade, P.restauranteDeck, 0, 0.02);
-    for (let i = 0; i < 9; i++) {
-      const z = DEQUE.z - DEQUE.profundidade / 2 + 0.5 + i * 0.78;
-      w.patch(DEQUE.x, z, DEQUE.largura - 0.3, 0.1, P.restauranteDeckRipa, 0, 0.024);
+    const deque = dequeDeMadeira(2.4, 12);
+    w.patch(DEQUE.x, DEQUE.z, DEQUE.largura, DEQUE.profundidade, P.restauranteDeck, 0, 0.02, deque);
+    {
+      const B = 0.24;
+      const { x, z, largura: L, profundidade: D } = DEQUE;
+      // as de frente e de fundo correm em `x`; as dos lados, giradas, em `z`
+      w.patch(x, z + D / 2 - B / 2, L, B, P.restauranteDeckRipa, 0, 0.024, deque);
+      w.patch(x, z - D / 2 + B / 2, L, B, P.restauranteDeckRipa, 0, 0.024, deque);
+      for (const s of [-1, 1] as const) {
+        w.patch(x + s * (L / 2 - B / 2), z, D - 2 * B, B, P.restauranteDeckRipa, Math.PI / 2, 0.024, deque);
+      }
     }
 
     // As mesas, em duas fileiras desencontradas — enfileirar tudo em grade
@@ -751,7 +773,8 @@ export const clube: SceneDef = {
     for (const [x, z] of [
       [-20.6, -8.6], [MESA.x, MESA.z], [-12.4, -8.6], [-18.6, -4.2], [-13.6, -4.2],
     ] as const) {
-      w.add(w.place(mesaDePatio(), x, 0, z));
+      // fundida: a madeira da mesa e das quatro cadeiras vira uma malha só
+      w.add(fundir(w.place(mesaDoRestaurante(), x, 0, z)));
       // o raio pega a mesa mais as quatro cadeiras; sobra 1,4 de vão entre uma
       // mesa e a vizinha, e o jogador tem 0,42 de raio
       w.blockCircle(x, z, 1.25);
@@ -771,7 +794,7 @@ export const clube: SceneDef = {
     foco.position.set(MESA.x, 1.0, MESA.z);
     w.root.add(foco);
     /** as cadeiras nascem a 1,02 do centro, e o assento tem o topo em 0,485 */
-    const CADEIRA = 1.02;
+    const CADEIRA = MESA_DO_RESTAURANTE.raioDaCadeira;
     const ALTURA = 0.02;
 
     /**
@@ -931,9 +954,16 @@ export const clube: SceneDef = {
       },
     });
     for (const x of [-20.6, -12.4]) {
-      w.add(w.place(parasol(P.restauranteToldo), x, 0, -4.8));
-      w.blockCircle(x, -4.8, 0.3);
+      w.add(fundir(w.place(ombrelone(), x, 0, -4.8)));
+      w.blockCircle(x, -4.8, 0.36);
     }
+    /*
+     * O CAVALETE com o prato do dia, à direita da porta. Ele fica FORA do
+     * caminho do garçom (que sai da porta, em `x = -17`, para a mesa da dupla)
+     * e meio virado para a câmera, para a lousa ler de longe.
+     */
+    w.add(fundir(w.place(cavaleteDeCardapio(), -14.3, 0, -9.25, 0.35)));
+    w.blockCircle(-14.3, -9.25, 0.36);
 
     /**
      * A PORTA DE SERVIÇO, na parede DOS FUNDOS — que é onde o Renan quis, e é
@@ -952,9 +982,12 @@ export const clube: SceneDef = {
       x: RESTAURANTE.x + 2.4,
       z: RESTAURANTE.z - RESTAURANTE.profundidade / 2,
     };
+    // A porta mora DENTRO do vão que o prédio deixa na parede dos fundos,
+    // centrada na espessura dela, com o batente (0,2) mais raso que a parede
+    // (0,24): com a mesma espessura, as faces dos dois piscariam.
     const portaDeServico = w.add(w.place(
-      interiorDoor(P.restauranteEsquadria, 1.0, 2.15),
-      FUNDO_DO_RESTAURANTE.x, 0, FUNDO_DO_RESTAURANTE.z - 0.06, Math.PI,
+      interiorDoor(P.restauranteEsquadria, 1.0, 2.15, 0.2),
+      FUNDO_DO_RESTAURANTE.x, 0, FUNDO_DO_RESTAURANTE.z + RESTAURANTE_ESPESSURA_DA_PAREDE / 2, Math.PI,
     ));
     // duas caixas e uma lixeira: é o que faz uma porta no fundo virar "entrada
     // de serviço" em vez de porta esquecida

@@ -431,6 +431,17 @@ export const PALETTE = {
   restauranteEsquadria: 0x6b4a2c,
   restauranteDeck: 0xc08a52,
   restauranteDeckRipa: 0xb07c46,
+  // a reforma do prédio (o Mania de Churrasco por fora): a pedra clara do
+  // embasamento, dos cunhais e do peitoril; a tábua escura do letreiro; o
+  // vidro das janelas, a listra creme do toldo, o miolo escuro de dentro, a
+  // fumaça da churrasqueira e o botijão de gás do abrigo dos fundos
+  restaurantePedra: 0xdccbab,
+  restauranteLetreiro: 0x4a3020,
+  restauranteVidro: 0xcfe8ec,
+  restauranteLona: 0xf6eedc,
+  restauranteMiolo: 0x5e4330,
+  restauranteFumaca: 0xd9d5cf,
+  restauranteBotijao: 0x5f7f99,
 
   // o muro e o portão da entrada do clube. O corpo é a mesma massa clara do
   // restaurante, meio tom acima; a base e o chapim são o reboco mais queimado

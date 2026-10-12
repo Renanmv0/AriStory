@@ -50,7 +50,7 @@ nas duas cenas (ida e volta).
 A câmera olha em **34°** de inclinação. A conta que decide tudo: uma peça de
 altura `h` esconde **`h / tan(34°) ≈ 1,5 · h`** de chão atrás dela, na direção
 da câmera — que é a diagonal `(sen giro, cos giro)`, e o giro muda quando o
-jogador aperta `Q`/`E`. Um prédio de 5,5 come quase 8 m.
+jogador aperta `Q`/`R` (o `E` é interagir). Um prédio de 5,5 come quase 8 m.
 
 Duas saídas, e **nenhuma delas é fazer a peça sumir**:
 
@@ -337,8 +337,9 @@ chão ou na vertical.
 Decalque resolve MANCHA (um caminho de terra, uma quadra). Ele não resolve
 TEXTURA: um piso de placas de 2 m num deque de 48 × 38 daria mais de 400 malhas
 só para desenhar as juntas. Para isso existe `src/world/texturasDeChao.ts` —
-`pisoDePlacas(lado)`, `calcadaDePedrinha(lado, porLinha)`, `asfalto(lado)` e
-`tapeteDeGrama(lado)`, desenhadas em `<canvas>` na hora em que o jogo sobe e
+`pisoDePlacas(lado)`, `calcadaDePedrinha(lado, porLinha)`, `asfalto(lado)`,
+`tapeteDeGrama(lado)` e `dequeDeMadeira(lado, reguas)` (o deque do restaurante do
+clube: fresta, fila de parafusos e uma moldura de régua atravessada em volta), desenhadas em `<canvas>` na hora em que o jogo sobe e
 passadas em `textura:` para `ground()`, `groundWithHoles()`, `patch()` e
 `disc()`:
 

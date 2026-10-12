@@ -312,6 +312,77 @@ export function assoalhoDeMadeira(lado = 2.4, tabuas = 8): THREE.CanvasTexture {
 }
 
 /**
+ * DEQUE DE MADEIRA, para a área externa do restaurante do clube.
+ *
+ * Não é o assoalho do salão com outra cor. Deque de varanda tem três coisas
+ * que o assoalho não tem, e são elas que fazem ler "lá fora":
+ *
+ *  1. FRESTA entre as réguas, e não junta: um vão escuro de 3 px (a sombra
+ *     lá embaixo) com um filete de luz na borda da régua de baixo;
+ *  2. a LINHA DE PARAFUSOS em cima de cada barrote, a cada 60 cm — dois
+ *     pontinhos por régua, sempre na mesma coluna. É o único desenho
+ *     regular daqui, e é de propósito: deque de verdade é parafusado em fila;
+ *  3. régua LARGA (20 cm) e de tom mais solto que o do assoalho, como
+ *     madeira que pega sol e chuva.
+ *
+ * As emendas de topo caem em cima de um barrote (é onde se emenda régua de
+ * verdade), desencontradas de uma fiada para a outra.
+ */
+export function dequeDeMadeira(lado = 2.4, reguas = 12): THREE.CanvasTexture {
+  return novaTextura(`deque:${lado}:${reguas}`, lado, (ctx, s) => {
+    const rnd = sorteio(19990417);
+    const passo = s / reguas;
+    const barrotes = 4;
+    const vao = s / barrotes;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s, s);
+
+    for (let i = 0; i < reguas; i++) {
+      const y = i * passo;
+      // cada régua com o seu tom, mais solto que o do assoalho
+      const luz = 0.86 + rnd() * 0.14;
+      const v = Math.round(255 * luz);
+      ctx.fillStyle = `rgb(${v},${v - 5},${v - 12})`;
+      ctx.fillRect(0, y, s, passo);
+
+      // o veio: riscos claros e um escuro, no comprimento
+      for (let k = 0; k < 3; k++) {
+        const claro = k < 2;
+        ctx.strokeStyle = claro ? `rgba(255,255,255,${0.3 + rnd() * 0.3})` : `rgba(150,110,70,${0.12 + rnd() * 0.1})`;
+        ctx.lineWidth = 1 + rnd() * 0.8;
+        ctx.beginPath();
+        const yy = y + passo * (0.22 + k * 0.27) + rnd() * 2;
+        ctx.moveTo(0, yy);
+        ctx.bezierCurveTo(s * 0.3, yy + (rnd() - 0.5) * 3, s * 0.7, yy + (rnd() - 0.5) * 3, s, yy);
+        ctx.stroke();
+      }
+
+      // a emenda de topo, em cima de um barrote sorteado
+      const emenda = Math.floor(rnd() * barrotes) * vao + vao / 2;
+      ctx.fillStyle = 'rgba(96,66,40,0.45)';
+      ctx.fillRect(emenda - 1, y + 2, 2, passo - 4);
+
+      // os parafusos: dois por régua em cada barrote
+      for (let b = 0; b < barrotes; b++) {
+        const x = b * vao + vao / 2;
+        for (const f of [0.3, 0.68]) {
+          const px = x + (Math.abs(x - emenda) < 1 ? 4 : 0);
+          ctx.fillStyle = 'rgba(92,70,52,0.5)';
+          ctx.fillRect(px - 1, y + passo * f - 1, 3, 3);
+        }
+      }
+
+      // a fresta embaixo da régua, e a luz na borda da de baixo
+      ctx.fillStyle = 'rgba(80,54,32,0.55)';
+      ctx.fillRect(0, y + passo - 3, s, 3);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.fillRect(0, y, s, 1.5);
+    }
+  });
+}
+
+/**
  * PARQUET EM CHEVRON (o "ponto húngaro"), para a Boutique da Estella.
  *
  * É o piso de loja chique de Paris: tacos de madeira clara cortados a 45° nas

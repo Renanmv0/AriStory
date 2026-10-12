@@ -251,6 +251,50 @@ Ari é o de móvel). O kit que nasceu com ela serve a qualquer fachada:
 coplanar também em peça arredondada e extrudada — o `zfighting.mjs` só mede
 `BoxGeometry`, e depois da `fundir()` sobram poucas.
 
+## Prédio de telhado: o Mania de Churrasco por fora (`world/restauranteDoClube.ts`)
+
+O restaurante do clube é o exemplo de prédio de TELHADO (a lojinha da Estella
+é de platibanda). Usa o mesmo kit dela — `Lote`, `extrudar`, `retangulo`,
+`moldeEmArco`, `moldeReto`, `quina`, `geoFlor` e `geoFolha` são exportados de
+`lojaDeRoupas.ts` — e acrescenta:
+
+- **A conta da fachada é 0,95 por metro, e não 0,67.** A câmera padrão vem
+  pela DIAGONAL: para avançar 1 m em `z`, o raio anda √2 no chão, e cai
+  `tan(34°) · √2 ≈ 0,95`. O 0,67 só vale com a câmera girada de frente. É a
+  conta de tudo que avança da fachada (beiral, toldo, marquise): com a
+  testeira do beiral em 4,82 e 62 cm para fora, a fachada some acima de
+  ~4,25, e o letreiro mora abaixo disso; o toldo da janela (ponta em 3,0, 86
+  cm para fora) tapa a janela acima de ~2,2; e o lampião da direita da porta,
+  a 2,4, caía inteiro na sombra do toldo vizinho — desceu para 2,05.
+- **Telha colonial em geometria** (`aguaDeTelhas`): cada água é uma malha de
+  fiadas que sobem um pouco de cima para baixo e se sobrepõem, com o LÁBIO em
+  pé fechando a boca entre uma fiada e a de baixo — é o lábio, na sombra do
+  toon, que desenha a linha da fiada; a canaleta é um cosseno (cava nas
+  pontas, onde a testeira cobre). A cumeeira é uma fila de troncos de cone que
+  se engolem. ~14 mil triângulos as duas águas: a parte mais pesada do
+  prédio, e a que mais mudou a cara dele.
+- **Peça animada e fundida ao mesmo tempo**: a cabeça do exaustor eólico é um
+  grupo com NOME (`eolico`, a `fundir()` junta as aletas lá dentro e ele
+  continua girando) e a fumaça da chaminé é um `InstancedMesh` com
+  `semSombra` e `frustumCulled = false` (as bolotas andam). A classe devolve
+  `group` e `update(dt)`, e a cena faz `w.add(fundir(w.place(mania.group, …)))`.
+- **Tijolo de churrascaria**: `tijolinho(lado, cor)` recebe o barro; o
+  restaurante usa o `P.churrascoTijolo` da parede da grelha lá dentro, para
+  o prédio e o salão serem a mesma casa.
+- **Janelas vizinhas não se tocam**: peitoril e caixa de toldo param antes do
+  meio do vão entre duas janelas. Passando disso, o peitoril de uma encostava
+  no da outra, face com face (achado medindo a caixa envolvente de cada malha
+  no quadro da parede — o `zfighting.mjs` não mede quadro girado).
+- **A mesa da área externa** (`mesaDoRestaurante`) guarda as três medidas que
+  a cena da mesa usa (`MESA_DO_RESTAURANTE`): tampo em 0,775 (o prato pousa em
+  0,78), cadeira a 1,02 do centro e assento em 0,485 (a pose de sentado). A
+  TOALHA XADREZ (`toalhaXadrez()`, a cor vem pintada na textura) são duas
+  malhas — o tampo com o UV no chão, a saia com o UV desenrolado —, cai pouco
+  do lado das cadeiras (senão engole o joelho de quem senta) e desce nas
+  quatro pontas, nas diagonais. As cadeiras perdem a etiqueta dentro da mesa,
+  para a `fundir()` juntar a madeira das quatro com a da mesa.
+- **O porta-temperos é lote**: três frascos e três bicos, cor por cópia.
+
 ## A boutique da Estella por dentro (`world/moveisDaBoutique.ts`)
 
 A segunda reforma da loja ("chique, mas confortável, bem organizada") é o
