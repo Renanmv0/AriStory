@@ -45,12 +45,35 @@ const onde = () =>
     +window.jogo.player.object.position.z.toFixed(2),
   ]);
 
-/** larga a dupla num ponto e empurra para o lado pedido por `segundos` */
-const empurrar = async (x, z, teclas, segundos) => {
+/**
+ * Larga a dupla num ponto e empurra para o lado pedido ATÉ ELA PARAR: ou
+ * porque `chegou(pos)` (atravessou), ou porque esbarrou em alguma coisa e não
+ * sai do lugar há 1,5 s, ou porque passou de `maxSegundos`.
+ *
+ * NÃO É POR TEMPO FIXO, e já foi. O passo do jogo é limitado a 1/20 s, então
+ * no Chromium sem placa de vídeo (a 2 quadros por segundo) a dupla anda bem
+ * menos por segundo de relógio que no celular — com 4 s fixos ela nem
+ * chegava ao balcão, e o "o balcão segura" passava sem ela ter encostado
+ * nele. Andando até parar, o teste vale em qualquer máquina.
+ */
+const empurrar = async (x, z, teclas, chegou, maxSegundos = 40) => {
   await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, 0), [x, z]);
   await page.waitForTimeout(600);
   for (const t of teclas) await page.keyboard.down(t);
-  await page.waitForTimeout(segundos * 1000);
+  const inicio = Date.now();
+  let ultimo = await onde();
+  let paradoDesde = Date.now();
+  while (Date.now() - inicio < maxSegundos * 1000) {
+    await page.waitForTimeout(500);
+    const agora = await onde();
+    if (chegou(agora)) break;
+    if (Math.hypot(agora[0] - ultimo[0], agora[1] - ultimo[1]) > 0.02) {
+      ultimo = agora;
+      paradoDesde = Date.now();
+    } else if (Date.now() - paradoDesde > 1500) {
+      break;
+    }
+  }
   for (const t of teclas) await page.keyboard.up(t);
   await page.waitForTimeout(300);
   return onde();
@@ -137,11 +160,12 @@ const inventario = await page.evaluate(() => {
  * atravessa: o balcão vai de `x = -11,5` a `-2` em `z = -2`. Pelo vão de
  * serviço (`x` entre -2 e 0), a mesma caminhada passa.
  */
-const noBalcao = await empurrar(-7, 1.4, ['KeyW', 'KeyD'], 4);
-// 9 s, e não 5: são 4 m do salão até dentro da cozinha, e a dupla anda a ~0,7
-// por segundo. Com 5 s o teste acusava um vão fechado que estava aberto — ela
-// só não tinha chegado ainda (o mesmo erro que o teste do portão do clube deu).
-const peloVao = await empurrar(-0.9, 1.4, ['KeyW', 'KeyD'], 9);
+// as duas caminhadas param ao entrar na cozinha (z < -2,7) ou ao esbarrar.
+// Antes eram 4 s e 9 s cravados — e com 5 s o teste já tinha acusado um vão
+// fechado que estava aberto: a dupla só não tinha chegado ainda
+const naCozinha = ([, pz]) => pz < -2.7;
+const noBalcao = await empurrar(-7, 1.4, ['KeyW', 'KeyD'], naCozinha);
+const peloVao = await empurrar(-0.9, 1.4, ['KeyW', 'KeyD'], naCozinha);
 await page.screenshot({ path: `${OUT}-cozinha.png` });
 
 // ------------------------------------------------- 4. a porta de volta
@@ -187,6 +211,8 @@ if (inventario.passagem < 3) problemas.push('faltam trechos de balcão (passagem
 if (inventario.bebidas !== 1) problemas.push('o bar não tem a estante de bebidas');
 // o balcão está em z = -2 e tem 0,5 de meia-espessura; o corpo tem 0,42 de raio
 if (noBalcao[1] < -1.1) problemas.push(`o balcão de passagem deixou passar (foi até z ${noBalcao[1]})`);
+// e ela tem que ter CHEGADO nele: parada longe do balcão, o "segura" não prova nada
+if (noBalcao[1] > -0.9) problemas.push(`a dupla nem chegou ao balcão de passagem (parou em z ${noBalcao[1]})`);
 if (peloVao[1] > -2.6) problemas.push(`o vão de serviço não deixa entrar na cozinha (parou em z ${peloVao[1]})`);
 if (!/clube/i.test(promptDeVolta ?? '')) problemas.push('o prompt de voltar pro clube não apareceu');
 if (cenaDeVolta !== 'clube') problemas.push(`a volta não levou para o clube (caiu em ${cenaDeVolta})`);

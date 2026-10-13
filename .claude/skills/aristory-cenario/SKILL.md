@@ -385,7 +385,8 @@ Três coisas que essa parte cobra:
 ## Textura em móvel: o acabamento
 
 O kit de interiores nasce liso, e continua liso para quem não pediu nada (a
-escola e o Mania usam as mesmas peças). Quem quer madeira com veio, sofá de
+escola usa as mesmas peças; a casa, a boutique e o Mania ganharam as suas).
+Quem quer madeira com veio, sofá de
 tecido ou bancada de granito passa a peça por `acabar()`
 (`world/acabamento.ts`) com as cores que devem ganhar desenho:
 
@@ -404,6 +405,12 @@ Ela troca só a malha cujo material É `toon(cor)` (o objeto do cache) por
 texturas moram em `world/texturasDeCasa.ts` (veio, tecido mesclado,
 matelassê, granito, o desenho do tapete). O quarto e a casa do Ari são o
 exemplo inteiro.
+
+Parede levantada com `w.wall` também se texturiza: `revestir(parede,
+'reboco' | 'tijolo')` (`world/moveisDoMania.ts`) troca o material da malha
+que o `w.wall` devolve e põe o UV de parede (o `v` na altura, do chão). O
+colisor não muda. Pano colado na parede (o tijolinho atrás da grelha, o
+azulejo de metrô atrás da pia) é `panoDeParede(comprimento, altura, tipo)`.
 
 O que já custou foto:
 
@@ -443,6 +450,19 @@ Duas lições da boutique (segunda reforma):
 - **Poça em cima de tampo: 2 cm, não 6 mm.** A poça não grava profundidade,
   mas TESTA; a 6 mm do tampo de um pedestal torneado (`LatheGeometry`, os
   triângulos todos convergindo no meio) ela brigou com ele e saiu em raios.
+
+Três do Mania por dentro (`world/moveisDoMania.ts`):
+
+- **Pendente em cima de BALCÃO, nunca de mesa**, e sem sombra: o pendente é a
+  luz, e a sombra dele (o sol da cena é que faz sombra) caía bem em cima da
+  poça que ele pinta no tampo — as peças dele levam `semSombra`.
+- **Luz de brasa é laranja pintado em três lugares**: o halo sobre o carvão,
+  o leque no tijolo entre a grelha e a coifa, e uma poça fraca no chão da
+  frente. Uma só não lê como fogo aceso.
+- **Antes de pendurar na parede, olhe o que fica NA FRENTE dela** naquela
+  altura. A lousa do prato do dia morou anos atrás da coifa e da chaminé da
+  churrasqueira (de 1,94 a 3,5, bem na frente dela): existia e ninguém via.
+  Foi para o salão, e o ponto de ler foi junto.
 
 O abajur do quarto e o de pé da sala **apagam num clique** (`w.clicavel`,
 não `w.interact`: o criado-mudo é colado no quadro de memórias, e um segundo

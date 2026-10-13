@@ -216,7 +216,7 @@ function aguaDeTelhas(meia: number, agua: number): THREE.BufferGeometry {
  * O LETREIRO: "Mania de Churrasco" em dourado sobre a tábua escura, com uma
  * chaminha de brasa de cada lado — o mesmo dourado da placa do bar lá dentro.
  */
-function letreiroDoMania(texto: string, largura: number, altura: number): THREE.Mesh {
+export function letreiroDoMania(texto: string, largura: number, altura: number): THREE.Mesh {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
   canvas.height = Math.max(64, Math.round((1024 * altura) / largura));

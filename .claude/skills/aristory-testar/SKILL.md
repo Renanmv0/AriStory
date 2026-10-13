@@ -90,6 +90,12 @@ ruído. Qualquer outro erro de console é erro de verdade.
   condição, com teto), nunca por tempo fixo. A rodada do jardim tem
   `escalaDoTempo` para acelerar; os bichos do clube (Noel, Capy) andam no
   relógio do jogo, e não no da rodada.
+- **Cena mais bonita anda mais devagar AQUI.** O passo do jogo é limitado a
+  1/20 s, e a quadros por segundo do Chromium sem placa caem com a cena
+  (o Mania reformado e a boutique rodam a ~2 q/s; o Mania antigo, a 3,7).
+  O `mania.mjs` empurrava a dupla 4 s e 9 s cravados e passou a reprovar —
+  pior: o "o balcão segura" passava SEM ela ter chegado ao balcão. Empurrar
+  é andar ATÉ PARAR (esbarrou ou atravessou), e conferir que ela encostou.
 - **`pkill -f` com o nome do script mata o seu próprio shell** (a linha de
   comando contém o nome). Deixe o teste acabar ou use o id do processo.
 - **`page.evaluate` que devolve uma promessa de painel** (livro, fim, fala)

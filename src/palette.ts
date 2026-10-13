@@ -1141,6 +1141,40 @@ export const PALETTE = {
   churrascoGrelha: 0x5b5f63,
   churrascoToalha: 0xd94f43,
   churrascoQuadroNegro: 0x2f3b33,
+  // a reforma do salão por dentro (as peças de `world/moveisDoMania.ts`): o
+  // granito escuro dos balcões — o "café imperial" de toda churrascaria —, o
+  // latão do bar e da registradora, a carne no espeto (a picanha, a capa de
+  // gordura, a linguiça), a lenha (a casca e o corte), o azulejo de metrô da
+  // parede da pia, o espelho do bar, a chama azul do fogão, o vidro do forno
+  // aceso, o couro da banqueta, a farofa na frigideira e o que mora na
+  // cozinha (tomate, cebola, os potes) e no bar (as garrafas e o rótulo)
+  churrascoGranito: 0x5e5049,
+  churrascoLatao: 0xc9984f,
+  churrascoLataoEscuro: 0x9c7536,
+  churrascoCarne: 0xa04a2c,
+  churrascoGordura: 0xf2dcb0,
+  churrascoLinguica: 0x9c3f2a,
+  churrascoLenha: 0x6b4529,
+  churrascoLenhaCorte: 0xdcb07a,
+  churrascoAzulejo: 0xf7f5ef,
+  churrascoRejunteAzulejo: 0xc4c8c3,
+  churrascoEspelho: 0xc6d4d6,
+  churrascoChamaDeGas: 0x8cc4ff,
+  churrascoForno: 0x7a4026,
+  churrascoCouro: 0x7a3326,
+  churrascoFarofa: 0xe2b766,
+  churrascoTomate: 0xd9452f,
+  churrascoCebola: 0xd8a35a,
+  churrascoFeijao: 0x5a2f22,
+  churrascoArroz: 0xf4f0e4,
+  churrascoGarrafaVerde: 0x3f7d4a,
+  churrascoGarrafaAmbar: 0x9a5a22,
+  churrascoGarrafaVinho: 0x6e1f2b,
+  churrascoGarrafaClara: 0xd5e4df,
+  churrascoGarrafaAzul: 0x4f7fa8,
+  churrascoGarrafaOuro: 0xe0b050,
+  churrascoRotulo: 0xf3ead6,
+  churrascoChopp: 0xe9a73a,
 
   // A LOJINHA DE ROUPAS do Villa Lobos — o "mini shopping". As cores sao dela,
   // e nao as do vestido do guarda-roupa, porque ela e um PREDIO: um rosa

@@ -191,7 +191,8 @@ nessas peças (a lista inteira passa de cinco minutos).
 A sala e a cozinha têm peças PRÓPRIAS (`rackComTv`, `pia`, `armarioAereo`,
 `geladeira`, `mesaDeJantar`, `cadeiraDeJantar`, `sofaFofo`, `mesinhaDeCentro`,
 `abajurDePe`, `maquinaDeLavar`, `prateleiraDeParede`, `jiboiaEmVaso`), e não as
-do `furniture.ts` reescritas: a escola e o Mania usam as antigas. O tamanho
+do `furniture.ts` reescritas: a escola usa as antigas (o Mania ganhou as
+dele, em `world/moveisDoMania.ts`). O tamanho
 por fora é o das antigas, para colisor e interação não mudarem. O que deixa
 fofo: quina arredondada em tudo (`macia()`), pé palito, puxador, e um sinal de
 gente morando (ímãs na geladeira, chaleira no fogão, almofada torta).
@@ -342,6 +343,71 @@ exemplo de INTERIOR de comércio. O que serve para a próxima loja:
   cada quadro; no plano das pontas o espelho encolhe a zero e o degrau some
   debaixo da placa pente. O corrimão é UM tubo com a volta nas duas pontas. A
   esfera envolvente dos degraus é a do lance inteiro (eles andam).
+
+## O Mania de Churrasco por dentro (`world/moveisDoMania.ts`)
+
+A reforma da cozinha e do salão ("melhore todos os objetos, os móveis, a
+iluminação — mantenha as funcionalidades") é o exemplo de RESTAURANTE por
+dentro. Cada peça nova ocupa o lugar da antiga, com o mesmo tamanho por fora
+e a MESMA etiqueta (`churrasqueira`, `fogao-industrial`, `pia-industrial`,
+`bancada-inox`, `balcao-de-passagem`, `estante-de-bebidas`,
+`placa-de-fachada`, `quadro-empregado-do-mes`) — o `mania.mjs`, o
+`mesas.mjs`, o turno e os colisores da cena continuam valendo. As medidas
+que a cena e o turno usam moram em comentário e constante:
+
+- o BALCÃO tem o tampo em 1,15 (1,06 de corpo + 0,09 de granito), que é
+  onde o prato pronto espera, a louça é largada e o osso do Walter fica;
+- a MESA (`mesaDoSalao`, `MESA_DO_SALAO`) tem a toalha em 0,812 — entre a
+  louça suja (pousa em 0,8) e o prato servido (0,82) —, as cadeiras em
+  `x = ±0,55, z = ±0,95` com o assento em 0,50 (a pose de sentado), e o
+  vasinho no grupo `floreira` com o atalho em `userData.floreira`.
+
+O que deu a cara nova, e serve para o próximo restaurante:
+
+- **Churrasqueira de alvenaria com NICHO EM ARCO**: a frente é uma forma com
+  os dois furos (`arco` de `lojaDeRoupas.ts`) extrudada na profundidade do
+  nicho, e o miolo de trás é uma caixa — o fundo do nicho é a face dele, com
+  a fuligem por cima. A lenha é casca (cilindro aberto) e corte (disco na
+  ponta) em dois lotes; a brasa é três lotes (apagada, acesa, viva), porque
+  o `glow` é do material, e a cor por cópia não acende.
+- **Inox escovado é textura** (`inoxEscovado`): faixa deitada larga e fraca,
+  no lado mais comprido da chapa (o `uvEmMetros` acerta sozinho).
+- **Cuba de verdade**: o tampo da pia é uma forma com os furos, deitada; a
+  cuba é uma caixa ABERTA com a normal para dentro (`cubaAberta`), 3 mm por
+  fora do furo — de cima se vê o fundo e o ralo.
+- **Moldura e almofada** no balcão: montante mais grosso que a travessa, e
+  a almofada é um retângulo extrudado com BISEL largo (o chanfro é o
+  degrau de luz do toon).
+- **Garrafa, tecla, pote, botão, comanda, tempero: tudo lote**, a cor por
+  cópia. O rótulo é um cilindro dos mesmos gomos da garrafa, e por isso a
+  garrafa NÃO gira (girada, ela fura o rótulo pelas arestas).
+- **`torneado()` acerta o sentido do perfil sozinho** (pela área): o
+  `LatheGeometry` só vira a face para fora com o perfil anti-horário, e
+  escrito de cima para baixo a peça nasce do avesso. Foi assim que a cúpula
+  do pendente saiu BRANCA (via-se o forro, e o teal de fora sumia). O forro
+  pede `avesso = true`.
+- **Toalha de mesa retangular** (`toalhaRetangular`): o contorno de quina
+  redonda amostrado com o comprimento acumulado; a saia cai pouco no meio de
+  cada lado e mais nas quatro pontas, com a dobra só embaixo. A ordem dos
+  índices é a do pano redondo do clube — invertida, a toalha some (só
+  sobravam os riscos das pontas) e o tampo de madeira aparece.
+- **Quina de até 2 cm em um degrau só** (`macia`): 108 triângulos em vez de
+  300 por caixa, e a mesma imagem. Cilindro cuja tampa encosta em outra
+  coisa (pé de cadeira, travessa, barra de grelha) nasce sem tampa.
+- **A porta de serviço fecha o resto do vão** (`portaDeServico`): o vão da
+  parede tem 2,2 e a porta 1,1, e sobrava um buraco dos dois lados. Os dois
+  panos e o alto de reboco moram na peça, sem colisor novo. A folha continua
+  na `dobradica`.
+- **O peso**: 904 → ~500 desenhos por quadro na vista de longe, e os
+  triângulos de ~35 mil para ~170–195 mil — a mesma régua da boutique
+  (~170 mil). No Chromium sem placa as duas rodam igual (~2 q/s).
+
+As faces coplanares de peça arredondada não aparecem no `zfighting.mjs`
+(ele mede só `BoxGeometry`). Aqui elas foram caçadas com a caixa envolvente
+de cada malha no quadro da peça, com `?semFundir` — e eram as de sempre:
+espelho de bancada com a ponta no plano da do tampo, o alto do batente no
+plano do alto da verga, a pilastra da estante com o topo no da tábua de
+cima, a ponta das tábuas do lambri na do rodapé.
 
 ## Depois de criar
 
