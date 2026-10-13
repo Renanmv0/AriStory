@@ -2574,3 +2574,96 @@ export function carrinhoDeLouca(): THREE.Group {
   g.userData.pilhas = [[0.2, -0.1], [0.2, 0.12]];
   return g;
 }
+
+// ============================================ AS PEÇAS DOS TURNOS 3 E 4
+
+/**
+ * O VAPOR DO PRATO QUENTE — do turno 4 em diante o prato esfria, e o jogador
+ * precisa VER quanto calor sobra. São quatro baforadas brancas e macias que
+ * sobem do prato e somem; o motor do turno anima (`animarVapor`) e encolhe as
+ * três conforme o prato esfria. Frio, não sai vapor nenhum.
+ *
+ * As baforadas são transparentes: ficam fora da `fundir()` sozinhas, e não
+ * fazem sombra.
+ */
+export function vaporDePrato(): THREE.Group {
+  const g = new THREE.Group();
+  g.name = 'vapor';
+  // grande de propósito: é para ler no zoom do turno, do outro lado do
+  // salão — com 3 cm a baforada virava um pontinho até de perto
+  const bola = new THREE.IcosahedronGeometry(0.065, 1);
+  for (let i = 0; i < 4; i++) {
+    const b = new THREE.Mesh(bola, flat(P.churrascoVapor, 0.55));
+    b.userData.semSombra = true;
+    g.add(b);
+  }
+  return g;
+}
+
+/**
+ * Anima o vapor: cada baforada sobe 30 cm num ciclo, abrindo e sumindo, e o
+ * tamanho de todas acompanha o `calor` (1 = saiu da chapa, 0 = frio).
+ */
+export function animarVapor(vapor: THREE.Object3D, tempo: number, calor: number): void {
+  vapor.visible = calor > 0.02;
+  if (!vapor.visible) return;
+  vapor.children.forEach((b, i) => {
+    const k = (tempo * 0.5 + i / vapor.children.length) % 1;
+    b.position.set(Math.sin(k * 6 + i * 2) * 0.05, 0.12 + k * 0.5, Math.cos(k * 5 + i) * 0.03);
+    b.scale.setScalar(calor * (0.6 + k * 0.9) * Math.min(1, (1 - k) * 3));
+  });
+}
+
+/** o texto do cartão de reservado, a mão, com o elefantinho no canto */
+let cartaoReservado: THREE.CanvasTexture | null = null;
+function texturaDoReservado(): THREE.CanvasTexture {
+  if (cartaoReservado) return cartaoReservado;
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = hex(P.churrascoReservado);
+    ctx.fillRect(0, 0, 256, 128);
+    ctx.strokeStyle = hex(P.churrascoTomate);
+    ctx.lineWidth = 5;
+    ctx.strokeRect(9, 9, 238, 110);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = hex(P.churrascoCouro);
+    ctx.font = 'bold 44px ui-rounded, "Nunito", system-ui, sans-serif';
+    ctx.fillText('Reservado', 128, 52);
+    ctx.font = 'italic 24px Georgia, serif';
+    ctx.fillText('pro Cookie', 128, 92);
+  }
+  cartaoReservado = new THREE.CanvasTexture(canvas);
+  cartaoReservado.colorSpace = THREE.SRGBColorSpace;
+  cartaoReservado.anisotropy = 4;
+  return cartaoReservado;
+}
+
+/**
+ * A PLAQUINHA DE RESERVADO — o Cookie é grande demais para uma mesa só, e a
+ * mesa do lado fica fechada enquanto ele estiver: em cima dela o garçom põe o
+ * cartão dobrado em "A", "Reservado — pro Cookie", dos dois lados.
+ *
+ * Origem no tampo; a face escrita olha para `+Z` (e a de trás para `-Z`).
+ */
+export function reservadoNaMesa(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'reservado-na-mesa';
+  // o dobro de um cartão de verdade: é para ler no zoom do turno, do outro
+  // lado do salão (no tamanho real ele virava um quadradinho bege)
+  const L = 0.5;
+  const A = 0.25;
+  const ABRE = 0.32;
+  const papel = toon(0xffffff, { mapa: texturaDoReservado(), doubleSide: true });
+  for (const s of [1, -1] as const) {
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(L, A), papel);
+    // as duas faces se encontram no alto, e a de trás é a mesma gira de costas
+    face.position.set(0, (A / 2) * Math.cos(ABRE), s * (A / 2) * Math.sin(ABRE));
+    face.rotation.set(-s * ABRE, s < 0 ? Math.PI : 0, 0);
+    g.add(face);
+  }
+  return g;
+}

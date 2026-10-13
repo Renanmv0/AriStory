@@ -11,8 +11,11 @@ import { Gina } from '../entities/bichos/Gina';
 import { Mano } from '../entities/bichos/Mano';
 import { CARDAPIO, pratoPorId, type PratoDoCardapio } from '../world/cardapioData';
 import { loucaSuja, pratoServido } from '../world/props';
-import { bandejaDeGarcom, bloquinhoDeComandas } from '../world/moveisDoMania';
-import { ITENS } from '../world/itens';
+import { animarVapor, bandejaDeGarcom, bloquinhoDeComandas, reservadoNaMesa, vaporDePrato } from '../world/moveisDoMania';
+import { ITENS, ehPecaDoMania } from '../world/itens';
+import { Cookie } from '../entities/bichos/Cookie';
+import { JeanLuc } from '../entities/bichos/JeanLuc';
+import { Estella } from '../entities/bichos/Estella';
 import { BalaoDeCliente } from './balaoDeCliente';
 import {
   TURNOS, estrelasDoTurno, type ChegadaDoTurno, type NiveisDasMelhorias, type TurnoDaEscala,
@@ -68,6 +71,11 @@ const COZINHA = 7;
 const COZINHA_NA_CHAPA_NOVA = 5;
 /** vagas na bandeja de CADA personagem — prato limpo e louça suja disputam (a "Bandeja grande" dá 3) */
 const BANDEJA = 2;
+/** do turno 4 em diante, o prato pronto esfria nisto (no balcão e na bandeja) */
+const ESFRIA = 24;
+/** o biscoitinho da Estella: segundos de passo mais rápido para quem entregou o prato dela */
+const BISCOITO = 20;
+const PASSO_DO_BISCOITO = 1.25;
 /** o tamanho do prato e da louça EM CIMA da bandeja, na mão: o de mesa não cabe dois */
 const ESCALA_NA_BANDEJA = 0.46;
 /** vagas de prato pronto no balcão */
@@ -120,6 +128,36 @@ interface FichaDeCliente {
   sobremesa?: string;
   /** o que ele faz quando a sobremesa chega na mesa */
   festejar?(bicho: Bicho): void;
+  /** o que ele pede: só estes pratos (o Cookie só toma suco) */
+  cardapio?: readonly string[];
+  /** segundos que o Walter leva no prato dele (o suco do Cookie sai num instante) */
+  preparo?: number;
+  /** segundos que ele leva comendo */
+  refeicao?: number;
+  /**
+   * OCUPA DUAS MESAS: grande demais para uma, ele senta e a mesa livre mais
+   * perto fica fechada enquanto ele estiver ("Reservado pro Cookie")
+   */
+  ocupaVizinha?: boolean;
+  /** como ele senta: a altura do assento e quanto se afasta da mesa (o Cookie é grande para a cadeira) */
+  assento?: { altura: number; afasta: number };
+  /**
+   * SÓ ACEITA PRATO QUENTE (o Jean-Luc): quente, ele comemora e paga em
+   * dobro; frio, paga com o coração apagado
+   */
+  exigeQuente?: boolean;
+  /** o que ele faz quando o prato chega quente */
+  comemorar?(bicho: Bicho): void;
+  /**
+   * REPARA NO UNIFORME (a Estella): se quem anota o pedido dela estiver
+   * vestindo uma peça do Mania, ela dá gorjeta dobrada
+   */
+  repara?: boolean;
+  /**
+   * DÁ O BISCOITINHO (a Estella) a quem entrega o prato dela: 20 s de passo
+   * mais rápido para aquele garçom
+   */
+  biscoito?(bicho: Bicho): void;
   fala: string;
 }
 
@@ -190,6 +228,63 @@ const ELENCO: readonly FichaDeCliente[] = [
     festejar: (bicho) => (bicho as Mano).dancar(2.4),
     fala: 'Hoje eu vim comer, não vender! Mas guarda espaço pra sobremesa.',
   },
+  {
+    id: 'cookie',
+    nome: 'Cookie',
+    criar: () => new Cookie({ minX: 0, maxX: 0, minZ: 0, maxZ: 0 }),
+    balao: 2.55,
+    /**
+     * O ELEFANTE DA BILHETERIA, grande e manso: OCUPA DUAS MESAS (a do lado
+     * fica fechada enquanto ele estiver), mas só pede suco — o Walter faz num
+     * instante e ele toma rápido. Onde você senta o Cookie decide se ele fecha
+     * uma mesa vazia ou uma mesa que ia render: é o Capy ao contrário.
+     * Ele não cabe na cadeira: fica de pé no lugar dela, um passo para fora.
+     */
+    calma: 1.5,
+    anotar: 0.8,
+    cardapio: ['suco-morango'],
+    preparo: 3,
+    refeicao: 5,
+    ocupaVizinha: true,
+    // de pé, um passo inteiro para fora da cadeira: com meio passo o corpo
+    // dele invadia o tampo da mesa
+    assento: { altura: 0, afasta: 1.0 },
+    fala: 'Só um suquinho de morango, por favor. Desculpa o espaço!',
+  },
+  {
+    id: 'jean-luc',
+    nome: 'Jean-Luc',
+    criar: () => new JeanLuc({ minX: 0, maxX: 0, minZ: 0, maxZ: 0 }),
+    balao: 1.0,
+    /**
+     * O PATO FRANCÊS, exigente: SÓ ACEITA PRATO QUENTE. Do turno 4 em diante o
+     * prato esfria no balcão; quente, ele comemora ("Magnifique!") e paga em
+     * dobro; frio, paga com o coração apagado. Ensina a não deixar prato
+     * parado no balcão.
+     */
+    calma: 0.9,
+    anotar: 1.4,
+    exigeQuente: true,
+    comemorar: (bicho) => (bicho as JeanLuc).comemorar(2.4),
+    fala: 'Bonsoir! Eu só como prato quente, hein? Bem quente!',
+  },
+  {
+    id: 'estella',
+    nome: 'Estella',
+    criar: () => new Estella({ minX: 0, maxX: 0, minZ: 0, maxZ: 0 }),
+    balao: 1.45,
+    /**
+     * A OVELHA COSTUREIRA: REPARA NO UNIFORME (gorjeta dobrada se quem anota o
+     * pedido dela estiver vestindo uma peça do Mania) e sempre dá um
+     * BISCOITINHO a quem entrega o prato — 20 s de passo mais rápido. É o traço
+     * que liga os prêmios ao jogo: a roupa ganha num turno ajuda no seguinte.
+     */
+    calma: 1.3,
+    anotar: 1.0,
+    repara: true,
+    biscoito: (bicho) => (bicho as Estella).oferecerBiscoito(2.2),
+    fala: 'Que salão bonito! Deixa eu ver o uniforme de vocês…',
+  },
 ];
 
 /** as fichas que o motor sabe montar — o painel da escala usa para conferir a tabela */
@@ -250,6 +345,10 @@ interface Cliente {
   gasto: number;
   /** já está na sobremesa: o próximo "acabou de comer" é para pedir a conta */
   naSobremesa: boolean;
+  /** o prato chegou quente (`true`), frio (`false`), ou ainda não chegou (`null`) */
+  quente: boolean | null;
+  /** a Estella reparou no uniforme de quem anotou */
+  reparou: boolean;
 }
 
 type Vaga =
@@ -294,6 +393,12 @@ export class TurnoDoMania {
   private pilhaNoCarrinho: THREE.Object3D[] = [];
   /** quem está anotando agora (com o bloquinho na mão no lugar da bandeja) */
   private anotando: string | null = null;
+  /** as mesas fechadas pelo Cookie: a mesa, quem fechou e o cartão de reservado em cima */
+  private bloqueadas = new Map<MesaDoTurno, { por: Cliente; cartao: THREE.Object3D }>();
+  /** o biscoitinho da Estella: segundos de passo rápido que ainda sobram, por pessoa */
+  private biscoitos = new Map<string, number>();
+  private passoAtual = 1;
+  private relogioDoVapor = 0;
   private prontos: PratoPronto[] = [];
   private pilhaDeLouca: THREE.Object3D[] = [];
   private semente = 20260906;
@@ -402,6 +507,8 @@ export class TurnoDoMania {
     this.niveis = niveis;
     this.cozinhando = [];
     this.anotando = null;
+    this.biscoitos.clear();
+    this.bloqueadas.clear();
     this.tempo = turno.duracao;
     this.dinheiro = 0;
     this.coracoes = 0;
@@ -437,7 +544,8 @@ export class TurnoDoMania {
     }
     // o tênis anda 10% por nível — vale para quem estiver no comando, e o T
     // não tira (a velocidade é do comando, não do corpo)
-    this.g.setVelocidadeDoJogador(1 + 0.1 * this.nivel('tenis'));
+    this.passoAtual = 1 + 0.1 * this.nivel('tenis');
+    this.g.setVelocidadeDoJogador(this.passoAtual);
 
     // o Walter vai para a cozinha e fica lá: durante o turno ele é a cozinha
     this.walter.entrarEmServico();
@@ -456,6 +564,11 @@ export class TurnoDoMania {
     this.g.setVelocidadeDoJogador(1);
     for (const pilha of this.pilhaNoCarrinho) this.apagar(pilha);
     this.pilhaNoCarrinho = [];
+    for (const [mesa, { cartao }] of this.bloqueadas) {
+      this.apagar(cartao);
+      mesa.floreira.visible = true;
+    }
+    this.bloqueadas.clear();
     this.g.showTurno(null);
     this.g.setZoom(9.5);
     this.g.som('caixa');
@@ -492,6 +605,8 @@ export class TurnoDoMania {
     this.chegadas();
     this.cozinhar(dt);
     for (const c of [...this.clientes]) this.viverUmCliente(c, dt);
+    this.esfriar(dt);
+    this.passoDoBiscoito(dt);
     this.arrumarOsPontos();
 
     this.g.showTurno({
@@ -499,7 +614,9 @@ export class TurnoDoMania {
       dinheiro: this.dinheiro,
       coracoes: this.coracoes,
       bandeja: this.minhaBandeja().map((v) => v.tipo === 'prato'
-        ? { icone: '🍽️', titulo: v.prato.nome }
+        ? (this.calorDe(v.malha) > 0
+          ? { icone: '🍽️', titulo: v.prato.nome }
+          : { icone: '🥶', titulo: `${v.prato.nome} (frio)` })
         : { icone: '🧽', titulo: 'Louça suja' }),
     });
 
@@ -508,6 +625,49 @@ export class TurnoDoMania {
     // corte seco num fim com respiração.
     if (this.tempo <= 0 && this.clientes.length === 0) {
       void this.terminar().then(() => this.aoAcabar?.());
+    }
+  }
+
+  /** o turno tem a regra de o prato esfriar (do turno 4 em diante) */
+  private get esfria(): boolean {
+    return this.turno.regras?.includes('esfria') ?? false;
+  }
+
+  /** o calor de um prato (1 = saiu da chapa, 0 = frio); sem a regra, todo prato é quente */
+  private calorDe(malha: THREE.Object3D): number {
+    return (malha.userData?.calor as number | undefined) ?? 1;
+  }
+
+  /**
+   * O PRATO ESFRIA no balcão e na bandeja — do turno 4 em diante. O vapor que
+   * sobe dele encolhe junto, e frio ele para de sair: é o relógio que se VÊ.
+   */
+  private esfriar(dt: number): void {
+    if (!this.esfria) return;
+    this.relogioDoVapor += dt;
+    const pratos = [
+      ...this.prontos.map((p) => p.malha),
+      ...[...this.bandejas.values()].flatMap((b) => b.filter((v) => v.tipo === 'prato').map((v) => v.malha)),
+    ];
+    for (const malha of pratos) {
+      if (!(malha as THREE.Object3D).isObject3D) continue;
+      const calor = Math.max(0, this.calorDe(malha) - dt / ESFRIA);
+      malha.userData.calor = calor;
+      const vapor = malha.getObjectByName('vapor');
+      if (vapor) animarVapor(vapor, this.relogioDoVapor, calor);
+    }
+  }
+
+  /** o biscoitinho da Estella: quem está no comando com biscoito anda 25% mais */
+  private passoDoBiscoito(dt: number): void {
+    for (const [quem, falta] of this.biscoitos) {
+      if (falta - dt <= 0) this.biscoitos.delete(quem);
+      else this.biscoitos.set(quem, falta - dt);
+    }
+    const passo = (1 + 0.1 * this.nivel('tenis')) * (this.biscoitos.has(this.g.playerId()) ? PASSO_DO_BISCOITO : 1);
+    if (passo !== this.passoAtual) {
+      this.passoAtual = passo;
+      this.g.setVelocidadeDoJogador(passo);
     }
   }
 
@@ -526,6 +686,17 @@ export class TurnoDoMania {
       if (this.naFila().length >= this.lugaresNaFila) continue;
       this.entrar(ELENCO.find((f) => f.id === marcado.ficha) ?? ELENCO[0]);
     }
+  }
+
+  /**
+   * GANCHO DE TESTE: faz entrar agora um cliente da ficha `id`, fora da
+   * escala de chegada (como o `debugPlace` do motor). Os testes dos traços
+   * (`scripts/turnos34.mjs`) chamam o bicho que querem medir sem esperar a
+   * vez dele — no Chromium sem placa, esperar seriam minutos.
+   */
+  forcarChegada(id: string): void {
+    const ficha = ELENCO.find((f) => f.id === id);
+    if (ficha) this.entrar(ficha);
   }
 
   private entrar(ficha: FichaDeCliente): void {
@@ -547,6 +718,8 @@ export class TurnoDoMania {
       sujou: false,
       gasto: 0,
       naSobremesa: false,
+      quente: null,
+      reparou: false,
     };
     this.clientes.push(cliente);
     balao.mostrar({ tipo: 'chegando' }, 1);
@@ -555,7 +728,10 @@ export class TurnoDoMania {
 
   /** quem vai querer sobremesa começa por algo de COMER: smoothie de entrada e de sobremesa não é jantar */
   private sortearPrato(ficha: FichaDeCliente): PratoDoCardapio {
-    const lista = ficha.sobremesa ? PRATOS_DE_COMER : TODOS_OS_PRATOS;
+    const doCardapio = ficha.cardapio
+      ? TODOS_OS_PRATOS.filter((p) => ficha.cardapio!.includes(p.id))
+      : [];
+    const lista = doCardapio.length ? doCardapio : ficha.sobremesa ? PRATOS_DE_COMER : TODOS_OS_PRATOS;
     return lista[Math.floor(this.sorte() * lista.length)];
   }
 
@@ -596,7 +772,8 @@ export class TurnoDoMania {
            * três cadeiras o cliente fica ATRÁS do tampo, e um bicho de meio
            * metro atrás de uma mesa de 0,75 é um bicho invisível.
            */
-          c.bicho.sentarEm(c.mesa.x + 0.55, c.mesa.z + 0.95, Math.PI, 0.5);
+          const assento = c.ficha.assento ?? { altura: 0.5, afasta: 0 };
+          c.bicho.sentarEm(c.mesa.x + 0.55, c.mesa.z + 0.95 + assento.afasta, Math.PI, assento.altura);
           if (c.ficha.jaSabe) {
             this.paraPedir(c);
           } else {
@@ -736,6 +913,13 @@ export class TurnoDoMania {
    * trabalho que nunca é urgente e sempre é o mais caro de adiar.
    */
   private soltarAMesa(c: Cliente): void {
+    // a mesa que ele fechou do lado abre de novo
+    for (const [vizinha, b] of [...this.bloqueadas]) {
+      if (b.por !== c) continue;
+      this.apagar(b.cartao);
+      vizinha.floreira.visible = true;
+      this.bloqueadas.delete(vizinha);
+    }
     if (!c.mesa) return;
     const mesa = c.mesa;
     this.ocupadas.delete(mesa);
@@ -750,6 +934,32 @@ export class TurnoDoMania {
       mesa.floreira.visible = true;
     }
     c.mesa = null;
+  }
+
+  /**
+   * O COOKIE FECHA A MESA DO LADO: a mais perto que esteja livre (nem
+   * ocupada, nem suja, nem já reservada) ganha o cartão "Reservado pro
+   * Cookie" e não recebe ninguém até ele ir embora. Sem mesa livre, ele senta
+   * sem fechar nada — o salão cheio já pagou o preço dele.
+   */
+  private fecharAVizinha(mesa: MesaDoTurno, c: Cliente): void {
+    let melhor: MesaDoTurno | null = null;
+    let perto = Infinity;
+    for (const outra of this.mesas) {
+      if (outra === mesa || this.ocupadas.has(outra) || this.sujeira.has(outra) || this.bloqueadas.has(outra)) continue;
+      const d = Math.hypot(outra.x - mesa.x, outra.z - mesa.z);
+      if (d < perto) {
+        perto = d;
+        melhor = outra;
+      }
+    }
+    if (!melhor) return;
+    const cartao = reservadoNaMesa();
+    cartao.position.set(melhor.x, 0.815, melhor.z);
+    cartao.rotation.y = Math.PI / 4;
+    this.w.root.add(cartao);
+    melhor.floreira.visible = false;
+    this.bloqueadas.set(melhor, { por: c, cartao });
   }
 
   private apagarCliente(c: Cliente): void {
@@ -777,7 +987,8 @@ export class TurnoDoMania {
     while (this.cozinhando.length < vagas) {
       const proxima = this.comandas.shift();
       if (!proxima) return;
-      this.cozinhando.push({ dono: proxima, falta: this.nivel('chapa') >= 1 ? COZINHA_NA_CHAPA_NOVA : COZINHA });
+      const daChapa = this.nivel('chapa') >= 1 ? COZINHA_NA_CHAPA_NOVA : COZINHA;
+      this.cozinhando.push({ dono: proxima, falta: Math.min(daChapa, proxima.ficha.preparo ?? daChapa) });
     }
   }
 
@@ -796,6 +1007,8 @@ export class TurnoDoMania {
     const onde = this.planta.saidas[vaga];
     malha.position.set(onde.x, this.planta.tampo, onde.z);
     this.w.root.add(malha);
+    malha.userData.calor = 1;
+    if (this.esfria) malha.add(vaporDePrato());
     this.prontos.push({ prato: dono.prato, para: dono, malha, vaga });
     this.g.som('sino');
     // ele encosta na janela para entregar e volta para a cozinha
@@ -837,6 +1050,11 @@ export class TurnoDoMania {
   private naMesa(mesa: MesaDoTurno): void {
     const c = this.ocupadas.get(mesa);
 
+    if (this.bloqueadas.has(mesa)) {
+      this.g.toast(`Reservada pro ${this.bloqueadas.get(mesa)!.por.ficha.nome}`, '🐘');
+      return;
+    }
+
     // 1. sentar quem está sendo levado
     if (!c && this.guiado && !this.sujeira.has(mesa)) {
       const convidado = this.guiado;
@@ -846,6 +1064,7 @@ export class TurnoDoMania {
       convidado.relogio = 0.1;
       convidado.paciencia = 1;
       this.ocupadas.set(mesa, convidado);
+      if (convidado.ficha.ocupaVizinha) this.fecharAVizinha(mesa, convidado);
       this.g.som('sentar');
       void this.g.say([convidado.ficha.fala], convidado.ficha.nome);
       return;
@@ -884,6 +1103,9 @@ export class TurnoDoMania {
       }
       const vaga = bandeja[i] as Extract<Vaga, { tipo: 'prato' }>;
       bandeja.splice(i, 1);
+      // o prato chegou quente ou frio? (sem a regra de esfriar, sempre quente)
+      c.quente = this.calorDe(vaga.malha) > 0;
+      vaga.malha.getObjectByName('vapor')?.removeFromParent();
       if (c.mesa) {
         c.mesa.floreira.visible = false;
         // da bandeja para a mesa: volta para o mundo, no tamanho de mesa
@@ -895,18 +1117,39 @@ export class TurnoDoMania {
       }
       this.arrumarABandeja();
       c.fase = 'comendo';
-      c.relogio = REFEICAO;
+      c.relogio = c.ficha.refeicao ?? REFEICAO;
       c.gasto += valor(c.prato);
       this.g.som('sorvete');
       if (c.naSobremesa) c.ficha.festejar?.(c.bicho);
+      if (c.ficha.exigeQuente) {
+        if (c.quente) {
+          c.ficha.comemorar?.(c.bicho);
+          this.g.toast(`${c.ficha.nome}: "Magnifique!"`, '🦆');
+        } else {
+          this.g.toast(`${c.ficha.nome}: "Está frio…"`, '🥶');
+        }
+      } else if (c.quente === false) {
+        this.g.toast(`${c.prato.nome} chegou frio`, '🥶');
+      }
+      // O BISCOITINHO DA ESTELLA: quem entregou anda mais rápido por 20 s
+      if (c.ficha.biscoito) {
+        c.ficha.biscoito(c.bicho);
+        this.biscoitos.set(this.g.playerId(), BISCOITO);
+        this.g.toast('Biscoitinho da Estella — 20 s mais rápido', '🍪');
+      }
       return;
     }
 
     // 5. receber a conta
     if (c.fase === 'quer-pagar') {
-      const bom = c.paciencia > 0.6 ? 1.5 : c.paciencia > 0.25 ? 1 : 0.5;
+      let bom = c.paciencia > 0.6 ? 1.5 : c.paciencia > 0.25 ? 1 : 0.5;
+      // PRATO FRIO NÃO DÁ CORAÇÃO DOURADO — e o Jean-Luc paga com o apagado
+      if (c.quente === false) bom = c.ficha.exigeQuente ? 0.5 : Math.min(bom, 1);
+      const gorjeta = (c.ficha.gorjeta ? 2 : 1)
+        * (c.ficha.exigeQuente && c.quente ? 2 : 1)
+        * (c.ficha.repara && c.reparou ? 2 : 1);
       // paga TUDO o que comeu: o prato, e a sobremesa de quem pediu
-      const pago = Math.round(c.gasto * bom * (c.ficha.gorjeta ? 2 : 1));
+      const pago = Math.round(c.gasto * bom * gorjeta);
       this.dinheiro += pago;
       /**
        * O DINHEIRO CAI NA CARTEIRA NA HORA, e não no fim do turno.
@@ -948,6 +1191,12 @@ export class TurnoDoMania {
     if (comBloquinho) {
       this.anotando = quem;
       this.g.segurarNaCena(quem, bloquinhoDeComandas(), 'upright');
+    }
+    // A ESTELLA REPARA NO UNIFORME de quem anota: uma peça do Mania vestida
+    // (a gravatinha, o avental, o colete…) e ela dá gorjeta dobrada
+    if (c.ficha.repara && this.g.wearables(quem).some((p) => p !== null && ehPecaDoMania(p.id))) {
+      c.reparou = true;
+      this.g.toast(`${c.ficha.nome} reparou no uniforme — gorjeta dobrada`, '👀');
     }
     await this.g.wait(c.ficha.anotar * (comBloquinho ? 0.5 : 1));
     if (comBloquinho && this.anotando === quem) {
@@ -1077,7 +1326,9 @@ export class TurnoDoMania {
       const mesa = this.mesas[i];
       const ponto = this.pontoDaMesa[i];
       const c = this.ocupadas.get(mesa);
-      if (!c && this.guiado && !this.sujeira.has(mesa)) {
+      if (this.bloqueadas.has(mesa)) {
+        ponto.enabled = false;
+      } else if (!c && this.guiado && !this.sujeira.has(mesa)) {
         ponto.enabled = true;
         ponto.label = 'Sentar aqui';
         ponto.icon = '🪑';

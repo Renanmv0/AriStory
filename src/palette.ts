@@ -930,6 +930,11 @@ export const PALETTE = {
   // avental, a sola creme e o cadarço branco, com as listras no dourado do bordado
   tenisGarcomSola: 0xece4d2,
   tenisGarcomCadarco: 0xf4f1ea,
+  // o COLETE DE GARÇOM (prêmio do turno 4): grafite com um fio de vinho, a
+  // camisa branca por baixo, os botões no dourado do bordado do avental
+  coleteGarcom: 0x2e2a31,
+  coleteGarcomForro: 0x5a2230,
+  camisaDeGarcom: 0xf6f3ec,
   // as roupas que a lojinha da Josefina vende (`ROUPAS_DA_JOSEFINA`)
   galochaVerde: 0x4f9a4e,
   galochaVerdeCano: 0x3c7a3c,
@@ -1204,6 +1209,10 @@ export const PALETTE = {
   churrascoMostrador: 0xffd27a,
   churrascoBacia: 0x7f8b93,
   churrascoNota: 0xe9bf5c,
+  // o vapor do prato quente (do turno 4 em diante o prato esfria) e o
+  // cartãozinho de "Reservado" que o Cookie deixa na mesa do lado
+  churrascoVapor: 0xfffaf0,
+  churrascoReservado: 0xfbf3df,
 
   // A LOJINHA DE ROUPAS do Villa Lobos — o "mini shopping". As cores sao dela,
   // e nao as do vestido do guarda-roupa, porque ela e um PREDIO: um rosa

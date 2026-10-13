@@ -43,7 +43,15 @@ export interface TurnoDaEscala {
    * regras deles entram nas etapas C e D do plano.
    */
   pronto: boolean;
+  /**
+   * as REGRAS NOVAS do salão que valem neste turno. `esfria`: o prato pronto
+   * esfria no balcão (e na bandeja) — do turno 4 em diante, e a regra nova de
+   * um turno continua valendo nos seguintes
+   */
+  regras?: readonly RegraDoSalao[];
 }
+
+export type RegraDoSalao = 'esfria';
 
 /**
  * O ROSTO DE CADA CLIENTE NA ESCALA — o emoji que o resto do jogo já usa
@@ -124,28 +132,62 @@ export const TURNOS: readonly TurnoDaEscala[] = [
   {
     numero: 3,
     nome: 'O grandão da bilheteria',
-    novidade: 'O Cookie é grande demais para uma mesa só: ele ocupa duas.',
+    novidade: 'O Cookie é grande demais para uma mesa só: ele ocupa duas — mas só pede suco, e toma num instante.',
     duracao: 195,
-    chegadas: [],
+    // o Cookie estreia sozinho, como o Mano no turno 2, e volta duas vezes no
+    // meio do salão cheio — é aí que escolher a mesa dele pesa
+    chegadas: [
+      { aos: 3, ficha: 'cookie' },
+      { aos: 18, ficha: 'josefina' },
+      { aos: 30, ficha: 'noel' },
+      { aos: 42, ficha: 'mano' },
+      { aos: 55, ficha: 'capy' },
+      { aos: 68, ficha: 'gina' },
+      { aos: 82, ficha: 'cookie' },
+      { aos: 96, ficha: 'noel' },
+      { aos: 110, ficha: 'josefina' },
+      { aos: 124, ficha: 'mano' },
+      { aos: 138, ficha: 'capy' },
+      { aos: 152, ficha: 'cookie' },
+      { aos: 166, ficha: 'noel' },
+    ],
     metas: [180, 280],
     quem: [...OS_QUATRO, 'mano', 'cookie'],
     novos: ['cookie'],
     premio: { icone: '✏️', nome: 'Bloquinho e lápis na orelha' },
-    pronto: false,
+    pronto: true,
   },
   {
     numero: 4,
     // o trocadilho que o Renan pediu: o "canard à l'orange", com o pato
     // francês no lugar da laranja
     nome: 'Canard à la Mania',
-    novidade: 'O Jean-Luc só aceita prato quente, e a Estella repara no uniforme.',
+    novidade: 'Agora o prato esfria no balcão. O Jean-Luc só aceita prato quente, e a Estella repara no uniforme.',
     duracao: 195,
-    chegadas: [],
+    // os dois estreiam juntos, um logo depois do outro: o pato que cobra
+    // pressa e a ovelha que dá o biscoito de quem tem pressa
+    chegadas: [
+      { aos: 3, ficha: 'jean-luc' },
+      { aos: 16, ficha: 'estella' },
+      { aos: 28, ficha: 'josefina' },
+      { aos: 40, ficha: 'noel' },
+      { aos: 52, ficha: 'cookie' },
+      { aos: 64, ficha: 'capy' },
+      { aos: 76, ficha: 'mano' },
+      { aos: 90, ficha: 'jean-luc' },
+      { aos: 104, ficha: 'gina' },
+      { aos: 118, ficha: 'estella' },
+      { aos: 130, ficha: 'noel' },
+      { aos: 144, ficha: 'mano' },
+      { aos: 156, ficha: 'jean-luc' },
+      { aos: 168, ficha: 'capy' },
+    ],
     metas: [200, 320],
     quem: [...OS_QUATRO, 'mano', 'cookie', 'jean-luc', 'estella'],
     novos: ['jean-luc', 'estella'],
     premio: { icone: '🦺', nome: 'Colete de garçom' },
-    pronto: false,
+    regras: ['esfria'],
+    pronto: true,
   },
   {
     numero: 5,
@@ -157,6 +199,7 @@ export const TURNOS: readonly TurnoDaEscala[] = [
     quem: [...OS_QUATRO, 'mano', 'cookie', 'jean-luc', 'estella', 'coelhas', 'flynn'],
     novos: ['coelhas', 'flynn'],
     premio: { icone: '🧣', nome: 'Bandana de churrasqueiro' },
+    regras: ['esfria'],
     pronto: false,
   },
   {
@@ -169,6 +212,7 @@ export const TURNOS: readonly TurnoDaEscala[] = [
     quem: [...OS_QUATRO, 'mano', 'cookie', 'jean-luc', 'estella', 'coelhas', 'flynn', 'gatito', 'pelusa'],
     novos: ['gatito', 'pelusa'],
     premio: { icone: '👨‍🍳', nome: 'Dólmã e chapéu de cozinheiro' },
+    regras: ['esfria'],
     pronto: false,
   },
 ];
