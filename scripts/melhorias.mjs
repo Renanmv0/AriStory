@@ -130,7 +130,8 @@ const medir = () => page.evaluate(async () => {
 const anotarEOlhar = () => page.evaluate(async () => {
   const j = window.jogo;
   const t = j.current.world.root.userData.turno;
-  const c = { fase: 'quer-pedir', ficha: { anotar: 1.2, nome: 'teste' }, prato: { nome: 'Prato de teste' }, paciencia: 1 };
+  // `faltam` vazio: o pedido de mentira não manda comanda nenhuma para a cozinha
+  const c = { fase: 'quer-pedir', ficha: { anotar: 1.2, nome: 'teste' }, prato: { nome: 'Prato de teste' }, paciencia: 1, faltam: [] };
   // o tempo que o motor PEDE ao relógio (a espera de anotar): medir na parede
   // pegava o atraso da máquina carregada junto, e a metade sumia no ruído
   let pedido = null;
