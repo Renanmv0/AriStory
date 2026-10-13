@@ -130,6 +130,14 @@ const anotarEOlhar = () => page.evaluate(async () => {
   const j = window.jogo;
   const t = j.current.world.root.userData.turno;
   const c = { fase: 'quer-pedir', ficha: { anotar: 1.2, nome: 'teste' }, prato: { nome: 'Prato de teste' }, paciencia: 1 };
+  // o tempo que o motor PEDE ao relógio (a espera de anotar): medir na parede
+  // pegava o atraso da máquina carregada junto, e a metade sumia no ruído
+  let pedido = null;
+  const esperar = t.g.wait;
+  t.g.wait = (seg) => {
+    if (pedido === null) pedido = seg;
+    return esperar.call(t.g, seg);
+  };
   const t0 = performance.now();
   const fim = t.anotar(c);
   await new Promise((r) => setTimeout(r, 150));
@@ -137,7 +145,8 @@ const anotarEOlhar = () => page.evaluate(async () => {
   await fim;
   const segundos = (performance.now() - t0) / 1000;
   await new Promise((r) => setTimeout(r, 300));
-  return { durante, depois: j.objetoNaMao()?.name ?? null, segundos: +segundos.toFixed(2) };
+  t.g.wait = esperar;
+  return { durante, depois: j.objetoNaMao()?.name ?? null, segundos: +segundos.toFixed(2), pedido };
 });
 
 // =================================================== 1. a compra, na escala
@@ -283,7 +292,7 @@ checar(com.chapa.length === 2 && com.chapa.every((x) => x === 5), `a chapa dupla
 checar(Math.abs(com.paciencia - 0.91) < 1e-3, `o radio devia segurar 10% da queda (0,91): ${com.paciencia}`);
 checar(Math.abs(com.paciencaNaPorta - (1 - 1 / (13 / 0.9))) < 1e-3, `na porta, a plaquinha (30%) e o radio juntos: ${com.paciencaNaPorta}`);
 checar(anotarCom.durante === 'bloquinho' && anotarCom.depois === 'bandeja', `o bloquinho devia aparecer ao anotar e a bandeja voltar: ${JSON.stringify(anotarCom)}`);
-checar(anotarCom.segundos < anotarSem.segundos * 0.7, `o bloquinho devia cortar o tempo de anotar pela metade: ${anotarSem.segundos} → ${anotarCom.segundos}`);
+checar(anotarSem.pedido === 1.2 && anotarCom.pedido === 0.6, `o bloquinho devia cortar o tempo de anotar pela metade: ${anotarSem.pedido} → ${anotarCom.pedido}`);
 checar(naBandejaAntes.n === 1 && naBandejaAntes.naCarga, `a louca recolhida devia pousar na bandeja: ${JSON.stringify(naBandejaAntes)}`);
 checar(/carrinho/i.test(rotuloDoCarrinho ?? ''), `o carrinho nao ofereceu largar a louca: ${rotuloDoCarrinho}`);
 checar(noCarrinho.pilhas === 1 && noCarrinho.bandeja === 0, `a louca nao foi para o carrinho: ${JSON.stringify(noCarrinho)}`);
