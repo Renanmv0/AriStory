@@ -393,6 +393,25 @@ baixo troca. Medir só os VÉRTICES não serve: o cilindro de uma saia tem
 vértice só em cima e embaixo, e os laços da barra furavam o avental em
 pontinhos brancos. Teste: `scripts/avental.mjs`.
 
+Os prêmios dos turnos 5 e 6 são o molde de peça de CABEÇA que cobre o
+cabelo e de UNIFORME branco:
+
+- **a bandana de churrasqueiro** (`cabeca`) é uma calota de grade própria
+  cujo raio em cada altura é o do CABELO (`m.cabelo(te)`), não o do crânio:
+  ela cobre os cachos inteiros, desce pouco na frente (acima da sobrancelha)
+  e mais na nuca, onde mora o nó com as duas pontas. O pano (o vinho com as
+  gotas douradas) é canvas com três voltas em torno da cabeça;
+- **o dólmã** (`tronco`) pinta o corpo e as mangas de branco pela ficha e
+  põe o TRANSPASSE como um painel do `corpete` só de um lado (a função do
+  decote devolve a barra fora do painel: coluna de altura zero), com o vivo
+  preto na beira, duas fileiras de botões e a gola padre torneada;
+- **o chapéu de cozinheiro** (`cabeca`) pousa por cima do cabelo pela conta
+  dos chapéus da boutique (`alturaDaAba`, agora exportada) e as pregas são o
+  `gomos` do torno, mais fundas onde o pano estufa. De costas, prega rasa
+  some: 0,1·headR é o que lê.
+
+Teste: `scripts/turnos56.mjs` (as fotos de frente e de costas nos dois).
+
 ## Pôr a peça como PRÊMIO de uma lição da apostila do Gatito
 
 O mesmo molde, noutra lista: `PREMIOS_DA_APOSTILA` (`world/itens.ts`), do `id`

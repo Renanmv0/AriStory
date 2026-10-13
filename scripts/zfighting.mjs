@@ -112,6 +112,7 @@ const PECAS = [
   ['cavalete-da-fila', 'mania-de-churrasco'],
   ['radio-do-bar', 'mania-de-churrasco'],
   ['carrinho-de-louca', 'mania-de-churrasco'],
+  ['plaquinha-funcionarios-do-mes', 'mania-de-churrasco'],
   ['arara-de-roupas', 'lojinha'],
   ['arara-premium', 'lojinha'],
   ['provadores', 'lojinha'],

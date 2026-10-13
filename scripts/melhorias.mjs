@@ -101,7 +101,8 @@ const medir = () => page.evaluate(async () => {
 
   // a cozinha: duas comandas na fila, e um quadro da chapa
   const fake = (nome) => ({ fase: 'esperando', prato: { id: 'quarteirao', nome }, ficha: { nome } });
-  t.comandas.push(fake('a'), fake('b'));
+  // uma comanda é UM prato de uma mesa (a mesa grande das coelhas manda três)
+  t.comandas.push(...[fake('a'), fake('b')].map((c) => ({ para: c, prato: c.prato })));
   t.cozinhar(0);
   const chapa = t.cozinhando.map((c) => +c.falta.toFixed(2));
   t.cozinhando = [];
@@ -232,7 +233,7 @@ await page.evaluate(() => {
   const t = j.current.world.root.userData.turno;
   for (const nome of ['Quarteirão', 'Perro']) {
     const c = { fase: 'esperando', prato: { id: nome === 'Perro' ? 'perro-tradicional' : 'quarteirao', nome }, ficha: { nome } };
-    t.servirDaChapa(c);
+    t.servirDaChapa({ para: c, prato: c.prato });
     t.pegarOPrato();
   }
   const mesa = t.mesas[1];

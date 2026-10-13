@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { flat, toon } from '../core/materials';
+import { ARI, RENAN } from '../characters/cast';
 import { PALETTE as P } from '../palette';
 import { uvDeParede, uvEmMetros, uvEmMetrosPorTriangulo } from './acabamento';
 import { haloDeLampada, pintarOWalter, pocaDeLuz } from './furniture';
@@ -1557,6 +1558,140 @@ export function quadroDoWalter(largura = 0.82, altura = 1.02): THREE.Group {
   leque.scale.set(1.15, 1.3, 1);
   leque.position.set(0, altura * 0.12, 0.037);
   g.add(leque);
+  return g;
+}
+
+/**
+ * UM ROSTINHO NA PLAQUINHA: a cabeça redonda, os cachos em bolotas por cima
+ * (a cor e a pele saem da ficha da pessoa, `characters/cast.ts`), os olhos,
+ * as bochechas e o sorriso — e a presilha de estrela, no Ari.
+ */
+function pintarUmRosto(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, pele: number, cabelo: number, estrela: boolean): void {
+  // o medalhão dourado atrás
+  ctx.fillStyle = hex(P.churrascoLatao);
+  ctx.beginPath();
+  ctx.arc(x, y, r * 1.55, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#f6ecd6';
+  ctx.beginPath();
+  ctx.arc(x, y, r * 1.42, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r * 1.42, 0, Math.PI * 2);
+  ctx.clip();
+  // os cachos de trás, o rosto, e os cachos da frente em cima da testa
+  ctx.fillStyle = hex(cabelo);
+  for (const [dx, dy, k] of [[-0.85, -0.2, 0.5], [0.85, -0.2, 0.5], [-0.95, 0.35, 0.42], [0.95, 0.35, 0.42]] as const) {
+    ctx.beginPath();
+    ctx.arc(x + dx * r, y + dy * r, k * r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = hex(pele);
+  ctx.beginPath();
+  ctx.ellipse(x, y + r * 0.18, r * 0.82, r * 0.78, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = hex(cabelo);
+  for (const [dx, dy, k] of [[-0.6, -0.55, 0.42], [-0.15, -0.75, 0.45], [0.35, -0.7, 0.44], [0.75, -0.45, 0.4], [-0.85, -0.15, 0.36], [0.88, -0.1, 0.34], [0.05, -0.42, 0.34]] as const) {
+    ctx.beginPath();
+    ctx.arc(x + dx * r, y + dy * r, k * r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // os olhos, as bochechas e o sorriso
+  ctx.fillStyle = '#2b2320';
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(x + s * r * 0.3, y + r * 0.22, r * 0.09, r * 0.13, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(240,120,130,0.55)';
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(x + s * r * 0.52, y + r * 0.45, r * 0.13, r * 0.08, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = '#2b2320';
+  ctx.lineWidth = r * 0.07;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(x, y + r * 0.42, r * 0.16, 0.15 * Math.PI, 0.85 * Math.PI);
+  ctx.stroke();
+  // a presilha de estrela do Ari, no cacho da esquerda
+  if (estrela) {
+    ctx.fillStyle = '#f7e7a8';
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      const rr = i % 2 === 0 ? r * 0.24 : r * 0.1;
+      const px = x - r * 0.62 + Math.cos(a) * rr;
+      const py = y - r * 0.5 + Math.sin(a) * rr;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/**
+ * A ARTE DA PLAQUINHA: o papel creme com o fio vinho, o título, os dois
+ * rostinhos lado a lado nos medalhões dourados, os nomes embaixo e o rodapé
+ * com a casa e as dezoito estrelas da temporada (seis turnos, três cada).
+ */
+function pintarAPlaquinha(ctx: CanvasRenderingContext2D, W: number, H: number): void {
+  const papel = '#f4e8cc';
+  const vinho = hex(P.gravataBorboleta);
+  ctx.fillStyle = papel;
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = vinho;
+  ctx.lineWidth = 6;
+  ctx.strokeRect(12, 12, W - 24, H - 24);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(22, 22, W - 44, H - 44);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = vinho;
+  ctx.font = `bold ${Math.round(H * 0.105)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+  ctx.fillText('FUNCIONÁRIOS DO MÊS', W / 2, H * 0.14);
+  const r = H * 0.17;
+  pintarUmRosto(ctx, W * 0.32, H * 0.47, r, ARI.skin, ARI.hair.color, true);
+  pintarUmRosto(ctx, W * 0.68, H * 0.47, r, RENAN.skin, RENAN.hair.color, false);
+  ctx.fillStyle = '#3a2a22';
+  ctx.font = `bold ${Math.round(H * 0.1)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+  ctx.fillText(`${ARI.name} e ${RENAN.name}`, W / 2, H * 0.76);
+  ctx.fillStyle = hex(P.churrascoLatao);
+  ctx.font = `${Math.round(H * 0.058)}px ui-rounded, "Nunito", system-ui, sans-serif`;
+  ctx.fillText('Mania de Churrasco · ★★★ nos seis turnos', W / 2, H * 0.88);
+}
+
+/**
+ * A PLAQUINHA DE FUNCIONÁRIOS DO MÊS — o prêmio da temporada (decisão do
+ * Renan): fechar os seis turnos com três estrelas pendura ela ao lado do
+ * quadro do Walter. Mesma família do quadro dele (moldura dourada de bisel,
+ * a arte em canvas sob o vidro), mas deitada e menor — o quadro do patrão
+ * continua sendo o maior da parede. Origem no meio, com a parede em `z = 0`.
+ */
+export function plaquinhaDosFuncionarios(largura = 0.78, altura = 0.52): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'plaquinha-funcionarios-do-mes';
+  por(g, molduraDeBisel(largura, altura, 0.06, 0.04, 0.01), latao(), 0, 0, 0.004);
+  por(g, new THREE.BoxGeometry(largura - 0.08, altura - 0.08, 0.01), carvao(), 0, 0, 0.012);
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = Math.round((512 * altura) / largura);
+  const ctx = canvas.getContext('2d');
+  if (ctx) pintarAPlaquinha(ctx, canvas.width, canvas.height);
+  const textura = new THREE.CanvasTexture(canvas);
+  textura.colorSpace = THREE.SRGBColorSpace;
+  const arte = new THREE.Mesh(new THREE.PlaneGeometry(largura - 0.1, altura - 0.1), new THREE.MeshBasicMaterial({ map: textura }));
+  arte.position.z = 0.03;
+  arte.renderOrder = 1;
+  g.add(arte);
+  const vidro = new THREE.Mesh(new THREE.PlaneGeometry(largura - 0.12, (altura - 0.12) * 0.4), flat(0xffffff, 0.09, true));
+  vidro.position.set(0, altura * 0.2, 0.034);
+  vidro.renderOrder = 2;
+  g.add(vidro);
   return g;
 }
 

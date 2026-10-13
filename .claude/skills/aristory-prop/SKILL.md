@@ -426,6 +426,14 @@ todas e mostra só as compradas (`mostrarMelhorias`), sem remontar a cena.
   triângulos de ~35 mil para ~170–195 mil — a mesma régua da boutique
   (~170 mil). No Chromium sem placa as duas rodam igual (~2 q/s).
 
+- **A plaquinha de funcionários do mês** (`plaquinhaDosFuncionarios`): a
+  mesma família do quadro do Walter (moldura dourada de bisel, a arte em
+  canvas sob o vidro), deitada e menor — o do patrão continua o maior da
+  parede. Os rostinhos são pintados com a pele e o cabelo das fichas
+  (`characters/cast.ts`), então mudar o Ari muda a plaquinha. Em cima do
+  quadro ela ficava espremida no teto e a câmera cortava; embaixo do
+  lampião, entre ele e o quadro, a luz dele cai nela.
+
 As faces coplanares de peça arredondada não aparecem no `zfighting.mjs`
 (ele mede só `BoxGeometry`). Aqui elas foram caçadas com a caixa envolvente
 de cada malha no quadro da peça, com `?semFundir` — e eram as de sempre:

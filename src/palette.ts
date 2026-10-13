@@ -935,6 +935,13 @@ export const PALETTE = {
   coleteGarcom: 0x2e2a31,
   coleteGarcomForro: 0x5a2230,
   camisaDeGarcom: 0xf6f3ec,
+  /** a bandana de churrasqueiro (prêmio do turno 5): o vinho do Mania com o miolo dourado */
+  bandanaChurrasco: 0x8a2230,
+  bandanaChurrascoEstampa: 0xe9c46e,
+  bandanaChurrascoBainha: 0x5e1520,
+  /** o dólmã e o chapéu de cozinheiro (prêmio do turno 6): o branco de chef, um tom mais frio que a camisa */
+  dolmaBranco: 0xf7f6f1,
+  dolmaVivo: 0x241f22,
   // as roupas que a lojinha da Josefina vende (`ROUPAS_DA_JOSEFINA`)
   galochaVerde: 0x4f9a4e,
   galochaVerdeCano: 0x3c7a3c,

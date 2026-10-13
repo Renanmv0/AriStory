@@ -15,7 +15,7 @@
  *   - a ESTELLA repara no uniforme (uma peça do Mania vestida por quem anota
  *     = gorjeta dobrada) e dá o BISCOITINHO a quem entrega (passo 25% mais
  *     rápido por 20 s);
- * - a escala abre os turnos 3 e 4 (o 5 continua "em preparo"), e as três
+ * - a escala abre os turnos 3 e 4 (e o 5, com o 4 vencido), e as três
  *   estrelas de cada um dão o prêmio dele uma vez: o lápis na orelha e o
  *   bloquinho (turno 3) e o colete (turno 4).
  *
@@ -126,10 +126,12 @@ const servir = (i, esfriar = 0) => page.evaluate(async ([i, esfriar]) => {
   await t.anotar(c);
   // a chapa: o tempo que o Walter vai levar no prato dele
   t.cozinhar(0);
-  const preparo = t.cozinhando.find((x) => x.dono === c)?.falta ?? null;
-  t.cozinhando = t.cozinhando.filter((x) => x.dono !== c);
-  t.comandas = t.comandas.filter((x) => x !== c);
-  t.servirDaChapa(c);
+  // uma comanda por prato: o teste tira as do cliente da fila e serve na hora
+  const preparo = t.cozinhando.find((x) => x.comanda.para === c)?.falta ?? null;
+  const dele = [...t.cozinhando.filter((x) => x.comanda.para === c).map((x) => x.comanda), ...t.comandas.filter((x) => x.para === c)];
+  t.cozinhando = t.cozinhando.filter((x) => x.comanda.para !== c);
+  t.comandas = t.comandas.filter((x) => x.para !== c);
+  for (const k of dele) t.servirDaChapa(k);
   const pronto = t.prontos.find((p) => p.para === c);
   const vaporAntes = !!pronto?.malha.getObjectByName('vapor');
   if (esfriar) t.esfriar(esfriar);
@@ -181,7 +183,7 @@ await abrirAEscala();
 const linhas = await page.evaluate(() => [...document.querySelectorAll('.escala-do-walter .linha')]
   .map((l) => ['aberto', 'trancado', 'em-preparo'].find((c) => l.classList.contains(c))));
 checar(linhas[2] === 'aberto' && linhas[3] === 'aberto', `os turnos 3 e 4 deviam estar abertos e jogaveis: ${JSON.stringify(linhas)}`);
-checar(linhas[4] === 'em-preparo', `o turno 5 devia continuar em preparo: ${linhas[4]}`);
+checar(linhas[4] === 'aberto', `com o 4 em tres estrelas, o turno 5 devia abrir: ${linhas[4]}`);
 await page.keyboard.press('Escape');
 
 // ====================================================== 2. turno 3: o Cookie
@@ -260,7 +262,7 @@ await page.evaluate(() => {
   t.forcarChegada('noel');
   const c = t.clientes[t.clientes.length - 1];
   c.fase = 'esperando';
-  t.servirDaChapa(c);
+  t.servirDaChapa({ para: c, prato: c.prato });
 });
 await irPara(-1.5, 0.6, 0.6);
 await page.evaluate(() => { window.jogo.focusCamera(null); window.jogo.setZoom(5); });

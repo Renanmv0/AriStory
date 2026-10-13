@@ -20,6 +20,9 @@ export class Pelusa extends Bicho {
   private readonly orelhas: THREE.Group[] = [];
   private readonly olhos: THREE.Mesh[] = [];
   private readonly gomosDoRabo: THREE.Group[] = [];
+  /** deitado em "pãozinho" (a mesa suja do turno 6): 0 a 1, entra e sai sem estalo */
+  private deitado = 0;
+  private querDeitar = false;
 
   constructor(area: AreaDoBicho) {
     super(area, {
@@ -148,6 +151,19 @@ export class Pelusa extends Bicho {
     this.group.add(this.corpo);
   }
 
+  /**
+   * DEITA EM PÃOZINHO — o Pelusa em cima da mesa suja, no turno do Mania: a
+   * barriga encosta no tampo, as patas somem embaixo dele, a cabeça baixa e
+   * os olhos meio fechados. Quem decide onde é a cena (`sentarEm` no tampo).
+   */
+  deitar(sim: boolean): void {
+    this.querDeitar = sim;
+  }
+
+  get estaDeitado(): boolean {
+    return this.deitado > 0.5;
+  }
+
   // ------------------------------------------------------------------ pose
 
   /**
@@ -190,6 +206,12 @@ export class Pelusa extends Bicho {
       const amp = (0.1 + i * 0.075) * forte + carinho * 0.1;
       g.rotation.z = Math.sin(fase * (2.1 + i * 0.9)) * amp;
       if (i === 0) g.rotation.x = -0.75 + Math.sin(fase * 1.3) * 0.12 * forte;
+      // deitado, o rabo deita junto (em pé ele vira antena) e só a ponta bate
+      if (this.deitado > 0.001) {
+        const alvo = i === 0 ? -1.45 : 0.12;
+        g.rotation.x = THREE.MathUtils.lerp(g.rotation.x, alvo, this.deitado);
+        g.rotation.z *= 1 - this.deitado * (i < 2 ? 0.8 : 0.3);
+      }
     }
 
     // cabeca: olha em volta parado, e sobe encostando na mao no carinho
@@ -203,8 +225,18 @@ export class Pelusa extends Bicho {
       this.orelhas[i].rotation.z = lado * (0.17 + carinho * 0.12) + tique * 0.05 * lado;
     }
 
-    // no carinho ele fecha os olhos de contente
-    const abertura = 1 - carinho * 0.85;
+    // o pãozinho por cima de tudo: a barriga no tampo, a cabeça baixa
+    this.deitado += ((this.querDeitar ? 1 : 0) - this.deitado) * Math.min(1, dt * 6);
+    if (this.deitado > 0.001) {
+      const d = this.deitado;
+      this.corpo.position.y = THREE.MathUtils.lerp(this.corpo.position.y, -0.072, d);
+      this.corpo.rotation.x *= 1 - d;
+      this.cabeca.rotation.x = THREE.MathUtils.lerp(this.cabeca.rotation.x, 0.22, d);
+      this.cabeca.rotation.y *= 1 - d * 0.6;
+    }
+
+    // no carinho ele fecha os olhos de contente (e deitado, de preguiça)
+    const abertura = Math.min(1 - carinho * 0.85, 1 - this.deitado * 0.6);
     for (const olho of this.olhos) olho.scale.y = Math.max(0.12, abertura);
   }
 }

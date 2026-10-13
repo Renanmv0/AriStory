@@ -7,15 +7,15 @@
 
 ## COMECE AQUI
 
-**O que existe no jogo hoje** (etapas 1 e 2, e as **etapas A, B e C** da
-temporada): o osso no jardim, o Walter convidando, e a escala na parede
+**O que existe no jogo hoje** (etapas 1 e 2, e a **temporada inteira** —
+etapas A, B, C e D): o osso no jardim, o Walter convidando, e a escala na parede
 abrindo **a escala do Walter** — o menu dos turnos (`src/ui/escalaDoWalter.ts`)
 com a aba das **melhorias**, compradas com petiscos e cada uma aparecendo no
 salão (§13.6). Jogáveis: o **turno 1** (o de
 antes, igualzinho: 2:45, quatro clientes, gravatinha nas três estrelas) e o
 **turno 2, "Sobremesa de pinguim"** (3:00, o Mano estreia pedindo
-sobremesa, avental de garçom nas três estrelas). Os turnos 3 a 6 aparecem
-na escala (trancados, ou "em preparo" quando abertos). No fim de todo turno
+sobremesa, avental de garçom nas três estrelas). Os seis turnos estão na
+escala, cada um abrindo com as três estrelas do anterior. No fim de todo turno
 o Walter dá **petiscos**, um por estrela. Os dados moram em
 `src/minigames/turnosDoMania.ts`; o motor, em `turnoDoMania.ts`.
 
@@ -23,8 +23,10 @@ Os **turnos 3 e 4** também são jogáveis (etapa C): o Cookie fechando a mesa
 do lado e tomando suco, o prato esfriando com o vapor sumindo, o Jean-Luc só
 de prato quente e a Estella reparando no uniforme e dando o biscoitinho.
 
-O que o plano antigo previa e **ainda não entrou**: o Pelusa e as três levas
-(etapa D, com os turnos 5 e 6).
+Os **turnos 5 e 6** fecham a temporada (etapa D): a mesa grande das três
+coelhinhas, o Flynn torcendo, o Gatito e o six seven, e o Pelusa solto no
+salão. Os seis turnos com três estrelas penduram **a plaquinha de
+funcionários do mês** ao lado do quadro do Walter.
 
 **O pedido novo do Renan** (outubro de 2026), que é o que está sendo feito:
 
@@ -780,7 +782,7 @@ Cada etapa é jogável sozinha e vai para `main` antes da próxima, como no §11
 | A ✅ | **A escala e os dois primeiros turnos** *(no jogo)* | o painel com as duas abas (a das melhorias ainda vazia), a tabela de turnos, as estrelas e o recorde por turno, a trava das três estrelas, o save antigo; o turno 1 (o de hoje) e o turno 2 com o Mano e o avental |
 | B ✅ | **As melhorias** *(no jogo)* | a aba de melhorias com as sete, a compra com petiscos e cada uma aparecendo no salão |
 | C ✅ | **Turnos 3 e 4** *(no jogo)* | o Cookie, o Jean-Luc, a Estella, o prato esfriando, o bloquinho e o colete |
-| D | **Turnos 5 e 6** | as coelhinhas e a mesa grande, o Flynn, o Gatito, o Pelusa, a bandana, o uniforme de chef e o retrato dos empregados do mês |
+| D ✅ | **Turnos 5 e 6** *(no jogo)* | as coelhinhas e a mesa grande, o Flynn, o Gatito, o Pelusa, a bandana, o uniforme de chef e o retrato dos empregados do mês |
 
 **O que a etapa A decidiu pelo caminho** (para o Renan conferir):
 
@@ -821,6 +823,33 @@ Cada etapa é jogável sozinha e vai para `main` antes da próxima, como no §11
 - falas: as das apresentações dos turnos 3 e 4 e as dos clientes novos são
   provisórias, minhas;
 - teste: `scripts/turnos34.mjs`.
+
+**O que a etapa D decidiu pelo caminho** (para o Renan conferir):
+
+- **a mesa grande** é UM cliente com as irmãs junto: a Luna leva o balão e a
+  fila, a Sol senta na outra cadeira da frente e a Estrella, a mais alta, na
+  de trás. Anotar manda TRÊS comandas (um prato cada, sorteado do cardápio);
+  o prato que chega antes fica na frente da cadeira e esfria ali, e a mesa
+  só é "quente" se os três chegarem quentes. Cada prato entregue devolve um
+  pouco de paciência à mesa, e elas comemoram juntas quando chega o último;
+- **o Flynn**: a cada prato entregue em qualquer mesa, ele comemora e dá
+  +12% de paciência a ele e às mesas vizinhas (até 5,2 — as mesas do salão
+  ficam a 4,6–4,8 uma da outra, então é a vizinha, e não a da diagonal);
+- **o Gatito** come em 18 s (os outros em 11) e, pagando, faz o six seven em
+  pé antes de sair: +20% de paciência para o salão inteiro;
+- **o Pelusa** entra aos 50 s e aos 150 s do turno 6 e vai atrás, nesta
+  ordem, do prato parado no balcão há 6 s, do prato na bandeja de quem
+  ficou largado (o que não está no comando) e da mesa suja mais perto, onde
+  deita em pãozinho. Prato roubado volta para a FRENTE da fila do Walter (a
+  mesa espera de novo); a mesa com ele não se recolhe, e as vizinhas drenam
+  em dobro. "Psiu, Pelusa!" espanta, e ele sai pela porta;
+- **a plaquinha** fica embaixo do lampião, entre ele e o quadro do Walter, com
+  os dois rostinhos pintados das fichas e "Funcionários do mês: Ari e
+  Renan". Lê-se na parede ("Ler a plaquinha") e entra no diário;
+- as metas dos turnos 5 e 6 são as do §13.2 (230/360 e 270/420);
+- falas: as das apresentações dos turnos 5 e 6, as dos clientes novos e as
+  da entrega dos prêmios são provisórias, minhas;
+- teste: `scripts/turnos56.mjs`.
 
 ### 13.10 As decisões do Renan
 
