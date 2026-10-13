@@ -192,9 +192,11 @@ await page.keyboard.press('KeyE');
 await page.waitForTimeout(900);
 
 // a volta olímpica dele acontece no meio do diálogo: aperta E até aparecer a
-// pergunta, e aí escolhe "Topo"
+// pergunta, e aí escolhe "Topo". O teto é largo (~3 min de relógio): a volta
+// é andada no tempo do jogo, e no Chromium sem tela, a ~2 quadros por segundo
+// num salão mais detalhado, ela passa de um minuto
 let perguntou = false;
-for (let i = 0; i < 80; i++) {
+for (let i = 0; i < 240; i++) {
   if (await page.locator('.escolhas.show button').count()) {
     perguntou = true;
     break;

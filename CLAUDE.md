@@ -168,7 +168,13 @@ pendura o catálogo de verdade em instância (`world/roupasNaArara.ts`), a
 boiserie com perfil, o balcão canelado, o pufe capitonê e a escada rolante
 que anda
 (`world/escadaRolante.ts`) — ver "A boutique da Estella por dentro" na skill
-de peça.
+de peça. Para COZINHA E SALÃO de restaurante, o Mania por dentro
+(`world/moveisDoMania.ts`): a churrasqueira de tijolinho com os nichos de
+lenha em arco e a brasa acesa em lote, o inox escovado em canvas, a pia de
+duas cubas abertas com a ducha de mola, o balcão de moldura e almofada com
+tampo de granito, a estante do bar de garrafas torneadas em lote, a mesa com
+a toalha xadrez caindo nas pontas e o pendente de esmalte — ver "O Mania de
+Churrasco por dentro" na skill de peça.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em

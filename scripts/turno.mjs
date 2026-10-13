@@ -83,6 +83,25 @@ const agir = async (x, z, padrao, voltas = 60) => {
   return null;
 };
 
+/**
+ * Encurta a leitura do cardápio de quem acabou de sentar (6 s de jogo): no
+ * Chromium sem tela, a ~2 quadros por segundo, ela passava do teto do `agir`
+ * e o "anotar" às vezes nem acendia. O que se prova aqui é o laço, e não
+ * quanto tempo o bicho lê.
+ */
+const pularALeitura = async () => {
+  for (let i = 0; i < 30; i++) {
+    const pediu = await page.evaluate(() => {
+      const t = window.jogo.current.world.root.userData.turno;
+      // o sentar e o ler são dois relógios em fila: zera os dois
+      for (const c of t.clientes) if (c.fase === 'sentando' || c.fase === 'lendo') c.relogio = 0.01;
+      return t.clientes.some((c) => c.fase === 'quer-pedir');
+    });
+    if (pediu) return;
+    await page.waitForTimeout(600);
+  }
+};
+
 /** o turno por dentro: o que não dá para ver na tela */
 const dentro = () => page.evaluate(() => {
   const t = window.jogo.current.world.root.userData.turno;
@@ -169,8 +188,11 @@ const orfao = {};
 orfao.levar = await agir(9.4, 5.4, /levar à mesa/i);
 orfao.sentar = await agir(MESA_ORFA.x, MESA_ORFA.z + 1.4, /sentar aqui/i);
 await venceAFala(6);
-orfao.anotar = await agir(MESA_ORFA.x, MESA_ORFA.z + 1.4, /anotar o pedido/i);
-orfao.pegar = await agir(-3.6, -0.6, /pegar /i, 90);
+await page.waitForTimeout(1500);
+await pularALeitura();
+orfao.anotar = await agir(MESA_ORFA.x, MESA_ORFA.z + 1.4, /anotar o pedido/i, 120);
+// a cozinha do Walter leva 7 s de jogo: o teto é largo pela mesma razão
+orfao.pegar = await agir(-3.6, -0.6, /pegar /i, 240);
 const comOOrfao = await dentro();
 
 await page.evaluate(() => {
@@ -198,17 +220,36 @@ await venceAFala(6);
  * regra que faz o jogo ser de planejar, e a única que dá para medir por dentro.
  */
 
-passos.anotar = await agir(MESA.x, MESA.z + 1.4, /anotar o pedido/i);
+await page.waitForTimeout(1500);
+await pularALeitura();
+passos.anotar = await agir(MESA.x, MESA.z + 1.4, /anotar o pedido/i, 120);
 await page.waitForTimeout(2500);
 await page.screenshot({ path: `${OUT}-pedido.png` });
 
 // o Walter cozinha; o prompt do balcão só acende quando o prato sai
-passos.pegar = await agir(-3.6, -0.6, /pegar /i, 90);
-const comPrato = await estado();
+passos.pegar = await agir(-3.6, -0.6, /pegar /i, 240);
+// o painel da bandeja é redesenhado no quadro seguinte: a 2 quadros por
+// segundo, ler logo depois do E ainda pega a bandeja vazia
+let comPrato = await estado();
+for (let i = 0; i < 20 && comPrato.bandeja.length === 0; i++) {
+  await page.waitForTimeout(500);
+  comPrato = await estado();
+}
 
 passos.entregar = await agir(MESA.x, MESA.z + 1.4, /entregar /i, 40);
 await page.screenshot({ path: `${OUT}-servido.png` });
 
+/**
+ * A REFEIÇÃO É ENCURTADA por dentro, como a paciência do órfão: o cliente come
+ * 11 s de tempo de jogo, e no Chromium sem tela (a ~2 quadros por segundo,
+ * com o passo limitado a 1/20 s) isso passa de um minuto e meio de relógio —
+ * o "receber" nunca chegava a acender, nem na versão de antes da reforma do
+ * salão. O que este passo prova é a conta, e não o tempo de comer.
+ */
+await page.evaluate(() => {
+  const t = window.jogo.current.world.root.userData.turno;
+  for (const c of t.clientes) if (c.fase === 'comendo') c.relogio = 0.01;
+});
 passos.receber = await agir(MESA.x, MESA.z + 1.4, /receber a conta/i, 90);
 const depoisDePagar = await estado();
 

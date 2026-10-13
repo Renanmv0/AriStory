@@ -1,16 +1,19 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, SceneDef } from '../core/types';
+import { plantaDeEspada, tapete } from '../world/furniture';
+import { figueiraLira } from '../world/moveisDaBoutique';
+import { jiboiaEmVaso } from '../world/moveisDaCasa';
 import {
-  arandela, balcaoDePassagem, bancadaInox, banquetaAlta, caixaRegistradora, chair,
-  churrasqueira, diningTable, estanteDeBebidas, fogaoIndustrial, fridge, interiorDoor,
-  luminariaPendente, pictureFrame, piaIndustrial, placaDeFachada, pottedPlant, quadroDeGiz,
-  quadroDoEmpregadoDoMes, rug, upperCabinets, wallShelf,
-} from '../world/furniture';
-import { letreiro, osso, pratoServido } from '../world/props';
+  balcaoDoMania, bancadaDoMania, banquetaDoBar, caixaRegistradoraAntiga, capaDeMureta, cartazDosCortes,
+  churrasqueiraDoMania, estanteDoBar, fogaoDoMania, geladeiraDoMania, lambriDoSalao, lampiaoDeParede,
+  lousaDoMania, mesaDoSalao, panoDeParede, pendenteDeEsmalte, piaDoMania, pilarete, placaDoSalao,
+  portaDeServico, prateleiraDaCozinha, quadroDoWalter, revestir,
+} from '../world/moveisDoMania';
+import { fundir } from '../world/fundir';
+import { osso, pratoServido } from '../world/props';
 import { pratoPorId } from '../world/cardapioData';
 import { Walter } from '../entities/bichos/Walter';
-import { toon } from '../core/materials';
 import { assoalhoDeMadeira, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS } from '../world/itens';
@@ -169,8 +172,11 @@ export const maniaDeChurrasco: SceneDef = {
 
     // Parede inteira só em -X e -Z. Nos dois lados que dão para a câmera,
     // mureta: parede alta ali taparia o salão inteiro.
-    w.wall(x0, z0, W / 2, z0, H, P.churrascoParede);
-    w.wall(W / 2, z0, W / 2, D / 2, 0.5, P.churrascoParede);
+    //
+    // A parede alta é de REBOCO e a mureta é de TIJOLINHO com a capa de
+    // madeira — o mesmo tijolo de churrascaria do prédio por fora e da grelha.
+    revestir(w.wall(x0, z0, W / 2, z0, H, P.churrascoParede), 'reboco');
+    revestir(w.wall(W / 2, z0, W / 2, D / 2, 0.5, P.churrascoParede), 'tijolo');
     /**
      * A MURETA DA FRENTE VEM EM DOIS TRECHOS, com o VÃO DA ENTRADA entre eles.
      *
@@ -178,62 +184,60 @@ export const maniaDeChurrasco: SceneDef = {
      * apareciam do nada num canto do salão — e "apareceu do nada" é a coisa que
      * mais rápido desfaz a ilusão de que aquele lugar existe.
      */
-    w.wall(x0, D / 2, ENTRADA.x - 0.85, D / 2, 0.5, P.churrascoParede);
-    w.wall(ENTRADA.x + 0.85, D / 2, W / 2, D / 2, 0.5, P.churrascoParede);
+    revestir(w.wall(x0, D / 2, ENTRADA.x - 0.85, D / 2, 0.5, P.churrascoParede), 'tijolo');
+    revestir(w.wall(ENTRADA.x + 0.85, D / 2, W / 2, D / 2, 0.5, P.churrascoParede), 'tijolo');
     // a parede da esquerda vem em dois trechos, com o vão da porta no meio
-    w.wall(x0, z0, x0, PORTA.z - 1.1, H, P.churrascoParede);
-    w.wall(x0, PORTA.z + 1.1, x0, D / 2, H, P.churrascoParede);
+    revestir(w.wall(x0, z0, x0, PORTA.z - 1.1, H, P.churrascoParede), 'reboco');
+    revestir(w.wall(x0, PORTA.z + 1.1, x0, D / 2, H, P.churrascoParede), 'reboco');
 
     /**
-     * A FAIXA DE TIJOLO do fundo, atrás da churrasqueira. Ela é o que dá o
-     * cheiro do lugar antes de qualquer texto: churrascaria é tijolo aparente,
-     * e o tijolo só aparece onde o fogo está.
+     * A CAPA DE MADEIRA das muretas. As pontas se ENCONTRAM, não se cruzam: a
+     * da direita para onde começa a da frente (que cobre a quina inteira) —
+     * duas tábuas sobrepostas teriam o tampo no mesmo plano, e serrilhariam.
      */
-    const tijolo = new THREE.Mesh(new THREE.BoxGeometry(13, H - 0.1, 0.06), toon(P.churrascoTijolo));
-    tijolo.position.set(x0 + 6.5, (H - 0.1) / 2, z0 + 0.17);
-    w.add(tijolo);
-    for (let i = 0; i < 7; i++) {
-      const fiada = new THREE.Mesh(new THREE.BoxGeometry(13, 0.035, 0.075), toon(P.churrascoRejunte));
-      fiada.position.set(x0 + 6.5, 0.4 + i * 0.42, z0 + 0.17);
-      w.add(fiada);
+    const PAREDE = 0.15;
+    const CAPA = 0.19;
+    const capaDireita = D / 2 - CAPA - (z0 + PAREDE);
+    w.add(fundir(w.place(capaDeMureta(capaDireita), W / 2, 0.5, z0 + PAREDE + capaDireita / 2, Math.PI / 2)));
+    for (const [de, ate] of [[x0 + PAREDE, ENTRADA.x - 0.85], [ENTRADA.x + 0.85, W / 2 + CAPA]] as const) {
+      w.add(fundir(w.place(capaDeMureta(ate - de), (de + ate) / 2, 0.5, D / 2)));
     }
 
     /**
-     * O lambri de madeira do salão: meia parede, da altura de uma cadeira.
+     * O TIJOLINHO do fundo da cozinha, atrás da churrasqueira e do fogão. Ele
+     * é o que dá o cheiro do lugar antes de qualquer texto: churrascaria é
+     * tijolo aparente, e o tijolo só aparece onde o fogo está. Na parede da
+     * pia, o AZULEJO DE METRÔ até 1,65 — é onde se lava, e lá é azulejo.
+     */
+    w.add(fundir(w.place(panoDeParede(13, H - 0.1, 'tijolo'), x0 + 6.5, 0, z0 + PAREDE)));
+    const azulejoAte = PORTA.z - 1.1;
+    const azulejoDe = z0 + PAREDE + 0.04;
+    w.add(fundir(w.place(
+      panoDeParede(azulejoAte - azulejoDe, 1.65, 'azulejo'), x0 + PAREDE, 0, (azulejoDe + azulejoAte) / 2, Math.PI / 2,
+    )));
+
+    /**
+     * O LAMBRI de tábuas do salão, com rodapé e cimalha: meia parede, da
+     * altura de uma cadeira.
      *
      * SÓ NAS PAREDES DE VERDADE. Ele nasceu também na borda `+X`, que é MURETA
      * de 0,5 — e um lambri de 1,05 numa mureta de 0,5 é uma tábua flutuando no
      * ar. Vale para tudo que se pendura: nesta cena só `-X` e `-Z` têm parede.
+     * No fundo, ele PULA a estante do bar (que desce até 0,7 na parede) e
+     * começa depois do balcão lateral; na esquerda, começa depois da ponta do
+     * balcão de passagem.
      */
-    for (const [x, z, larg, rot] of [
-      [x0 + 18.5, z0 + 0.16, 11, 0],
-      [x0 + 0.16, D / 2 - 5.5, 7, Math.PI / 2],
-    ] as const) {
-      const lambri = new THREE.Mesh(new THREE.BoxGeometry(larg, 1.05, 0.06), toon(P.churrascoFaixa));
-      lambri.position.set(x, 0.525, z);
-      lambri.rotation.y = rot;
-      w.add(lambri);
-      const trilho = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.09, 0.12), toon(P.woodDark));
-      trilho.position.set(x, 1.08, z);
-      trilho.rotation.y = rot;
-      w.add(trilho);
+    for (const [de, ate] of [[1.05, 4.7], [8.3, W / 2 - PAREDE]] as const) {
+      w.add(fundir(w.place(lambriDoSalao(ate - de), (de + ate) / 2, 0, z0 + PAREDE)));
     }
-
-    // rodapé em toda a volta: o risco escuro que tira o ar de caixa vazia
-    for (const [x, z, larg, rot] of [
-      [0, z0 + 0.06, W, 0],
-      [x0 + 0.06, 0, D, Math.PI / 2],
-    ] as const) {
-      const rodape = new THREE.Mesh(new THREE.BoxGeometry(larg, 0.14, 0.05), toon(P.woodDark));
-      rodape.position.set(x, 0.07, z);
-      rodape.rotation.y = rot;
-      w.add(rodape);
-    }
+    w.add(fundir(w.place(lambriDoSalao(D / 2 - PAREDE + 1.45), x0 + PAREDE, 0, (D / 2 - PAREDE - 1.45) / 2, Math.PI / 2)));
 
     // ------------------------------------------------------------- a porta
-    const porta = w.add(w.place(
-      interiorDoor(P.churrascoFaixa, 1.1, 2.2), x0 + 0.1, 0, PORTA.z, Math.PI / 2,
-    ));
+    // a porta de serviço, vai e vem, com a escotilha; ela fecha também o
+    // resto do vão da parede (2,2) em volta da folha (1,1)
+    const porta = w.add(fundir(w.place(
+      portaDeServico(P.churrascoFaixa, 1.1, 2.2, 2.2, H, -0.1), x0 + 0.1, 0, PORTA.z, Math.PI / 2,
+    )));
     w.door({
       x: x0 + 1.0, z: PORTA.z,
       to: 'clube', entry: 'dos-fundos-do-restaurante',
@@ -249,18 +253,20 @@ export const maniaDeChurrasco: SceneDef = {
      * portanto o que nunca tapa ninguém.
      */
     const GRELHA = { x: x0 + 3.6, z: z0 + 0.7 };
-    const grelha = w.add(w.place(churrasqueira(4.4), GRELHA.x, 0, GRELHA.z));
+    const grelha = w.add(fundir(w.place(churrasqueiraDoMania(4.4), GRELHA.x, 0, GRELHA.z)));
     w.blockBox(GRELHA.x, GRELHA.z, 2.3, 0.6);
 
-    w.add(w.place(fridge(), x0 + 0.75, 0, z0 + 0.6));
+    w.add(fundir(w.place(geladeiraDoMania(), x0 + 0.75, 0, z0 + 0.6)));
     w.blockBox(x0 + 0.75, z0 + 0.6, 0.45, 0.4);
 
-    w.add(w.place(fogaoIndustrial(2.4), x0 + 7.4, 0, z0 + 0.55));
+    w.add(fundir(w.place(fogaoDoMania(2.4), x0 + 7.4, 0, z0 + 0.55)));
     w.blockBox(x0 + 7.4, z0 + 0.55, 1.25, 0.45);
 
-    w.add(w.place(bancadaInox(3.2), x0 + 10.4, 0, z0 + 0.5));
+    w.add(fundir(w.place(bancadaDoMania(3.2, true, 'panelas', true), x0 + 10.4, 0, z0 + 0.5)));
     w.blockBox(x0 + 10.4, z0 + 0.5, 1.6, 0.4);
-    w.add(w.place(upperCabinets(2.4), x0 + 10.4, 1.75, z0 + 0.2));
+    // a prateleira de parede com os potes e os utensílios: 20 cm à esquerda
+    // do meio da bancada, para o cartaz dos cortes caber ao lado dela
+    w.add(fundir(w.place(prateleiraDaCozinha(1.6, true), x0 + 10.2, 1.62, z0 + 0.19)));
 
     /**
      * A PIA, na parede da esquerda, entre a geladeira e a porta de serviço.
@@ -272,9 +278,9 @@ export const maniaDeChurrasco: SceneDef = {
      * comprida, sair da porta era esbarrar nela.
      */
     const PIA = { x: x0 + 0.5, z: z0 + 2.25 };
-    const pia = w.add(w.place(piaIndustrial(2.2), PIA.x, 0, PIA.z, Math.PI / 2));
+    const pia = w.add(fundir(w.place(piaDoMania(2.2), PIA.x, 0, PIA.z, Math.PI / 2)));
     w.blockBox(PIA.x, PIA.z, 0.42, 1.1);
-    w.add(w.place(wallShelf(1.2), x0 + 0.16, 1.75, PIA.z, Math.PI / 2));
+    w.add(fundir(w.place(prateleiraDaCozinha(1.2, false), x0 + 0.19, 1.75, PIA.z, Math.PI / 2)));
 
     /**
      * A ILHA DE MONTAGEM, solta no meio da cozinha. É a bancada onde o prato
@@ -282,15 +288,20 @@ export const maniaDeChurrasco: SceneDef = {
      * o que tem que aparecer nela é a comida.
      */
     const ILHA = { x: x0 + 6.2, z: z0 + 4.6 };
-    const ilha = w.add(w.place(bancadaInox(3.6, false), ILHA.x, 0, ILHA.z));
+    const ilha = w.add(fundir(w.place(bancadaDoMania(3.6, false, 'cubas', false), ILHA.x, 0, ILHA.z)));
     w.blockBox(ILHA.x, ILHA.z, 1.8, 0.42);
 
     // ==================================================== BALCÃO DE PASSAGEM
     const larguraPassagem = PASSAGEM.xFim - PASSAGEM.xIni;
-    const passagem = w.add(w.place(
-      balcaoDePassagem(larguraPassagem),
+    /*
+     * A campainha e o trilho das comandas moram na ponta da ESQUERDA (`x`
+     * local negativo, perto da parede): as vagas do prato pronto ficam na da
+     * direita, a pilha da louça no meio, e o osso do Walter perto do vão.
+     */
+    const passagem = w.add(fundir(w.place(
+      balcaoDoMania(larguraPassagem, { cozinha: true, sino: -3.9, comandas: [-4.5, -2.2] }),
       (PASSAGEM.xIni + PASSAGEM.xFim) / 2, 0, PASSAGEM.z,
-    ));
+    )));
     w.blockBox((PASSAGEM.xIni + PASSAGEM.xFim) / 2, PASSAGEM.z, larguraPassagem / 2, 0.5);
 
     // O OSSO GUARDADO fica no balcão para sempre, depois de entregue: é o
@@ -302,10 +313,10 @@ export const maniaDeChurrasco: SceneDef = {
 
     // o trecho que corre no Z e fecha a cozinha do lado do bar
     const comprimentoLateral = LATERAL.zFim - LATERAL.zIni;
-    w.add(w.place(
-      balcaoDePassagem(comprimentoLateral),
+    w.add(fundir(w.place(
+      balcaoDoMania(comprimentoLateral, { cozinha: true }),
       LATERAL.x, 0, (LATERAL.zIni + LATERAL.zFim) / 2, Math.PI / 2,
-    ));
+    )));
     w.blockBox(LATERAL.x, (LATERAL.zIni + LATERAL.zFim) / 2, 0.5, comprimentoLateral / 2);
 
     // ============================================================== SALÃO
@@ -317,22 +328,25 @@ export const maniaDeChurrasco: SceneDef = {
      * então elas não apagam a cabeça de ninguém.
      */
     const BAR = { x: 6.5, z: z0 + 0.9 };
-    const bar = w.add(w.place(balcaoDePassagem(6.4), BAR.x, 0, BAR.z));
+    const bar = w.add(fundir(w.place(balcaoDoMania(6.4, { bar: true }), BAR.x, 0, BAR.z)));
     w.blockBox(BAR.x, BAR.z, 3.3, 0.5);
-    w.add(w.place(estanteDeBebidas(3.4, 1.7), BAR.x, 0.7, z0 + 0.2));
-    w.add(w.place(caixaRegistradora(), BAR.x + 2.4, 1.16, BAR.z + 0.1));
+    w.add(fundir(w.place(estanteDoBar(3.4, 1.3), BAR.x, 0.7, z0 + 0.2)));
+    w.add(fundir(w.place(caixaRegistradoraAntiga(), BAR.x + 2.4, 1.15, BAR.z + 0.1)));
     for (const dx of [-2.2, -0.8, 0.6, 2.0]) {
-      w.add(w.place(banquetaAlta(), BAR.x + dx, 0, BAR.z + 0.95, Math.PI));
+      w.add(fundir(w.place(banquetaDoBar(), BAR.x + dx, 0, BAR.z + 0.95, Math.PI)));
       w.blockCircle(BAR.x + dx, BAR.z + 0.95, 0.3);
     }
-    for (const dx of [-1.9, 1.9]) w.add(w.place(luminariaPendente(), BAR.x + dx, 0, BAR.z + 0.2));
+    // os pendentes jogam a poça de luz no tampo do bar (1,15), 2 cm acima dele
+    for (const dx of [-1.9, 1.9]) w.add(fundir(w.place(pendenteDeEsmalte(2.35, H, 1.17), BAR.x + dx, 0, BAR.z + 0.2)));
 
     /**
-     * AS MESAS. Nove, em três fileiras desencontradas — enfileirar tudo em
+     * AS MESAS. Onze, em três fileiras desencontradas — enfileirar tudo em
      * grade dá cara de refeitório, e não de casa que enche no domingo.
      *
-     * A toalha xadrez é um decalque fino em cima do tampo: com ela, a mesa
-     * deixa de ser um disco de madeira e vira mesa posta.
+     * Cada mesa é UMA peça (`mesaDoSalao`): o tampo de pés torneados, a
+     * toalha xadrez caindo, o porta-temperos, o vasinho na `floreira` e as
+     * quatro cadeiras de bistrô nos mesmos lugares das antigas — e a
+     * `fundir()` junta a madeira das cinco numa malha só.
      */
     const MESAS = [
       [3.6, -5.2], [9.4, -5.2],
@@ -352,7 +366,7 @@ export const maniaDeChurrasco: SceneDef = {
     }> = [];
 
     for (const [x, z] of MESAS) {
-      const mesa = w.add(w.place(diningTable(1.5, 1.0), x, 0, z));
+      const mesa = w.add(fundir(w.place(mesaDoSalao(), x, 0, z)));
       w.blockBox(x, z, 0.8, 0.55);
       const posta = new THREE.Object3D();
       posta.position.set(x, 0, z);
@@ -362,21 +376,15 @@ export const maniaDeChurrasco: SceneDef = {
       w.root.add(foco);
       postas.push({ x, z, posta, foco, floreira: mesa.userData.floreira as THREE.Object3D });
       /**
-       * A TOALHA COBRE O TAMPO E CAI 12 CM DOS LADOS. A primeira versão era um
-       * decalque de 2 cm em `y = 0,755` — dentro do tampo, que vai de 0,705 a
-       * 0,795: ela existia e não aparecia. Toalha que não pendura não é toalha,
-       * é adesivo.
+       * A TOALHA COBRE O TAMPO E CAI DOS LADOS (mais nas quatro pontas). A
+       * primeira versão era um decalque de 2 cm dentro do tampo: ela existia e
+       * não aparecia. Toalha que não pendura não é toalha, é adesivo.
+       *
+       * As quatro cadeiras moram dentro da mesa, duas de frente para a câmera
+       * e duas de costas — é essa alternância que faz a fileira parecer
+       * ocupada por gente diferente. O colisor de cada uma continua aqui.
        */
-      const toalha = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.17, 1.14), toon(P.churrascoToalha));
-      toalha.position.set(x, 0.73, z);
-      w.add(toalha);
-      // as quatro cadeiras: duas de frente para a câmera e duas de costas, e é
-      // essa alternância que faz a fileira parecer ocupada por gente diferente
-      for (const [dx, dz, rot] of [
-        [-0.55, 0.95, Math.PI], [0.55, 0.95, Math.PI],
-        [-0.55, -0.95, 0], [0.55, -0.95, 0],
-      ] as const) {
-        w.add(w.place(chair(P.churrascoFaixa), x + dx, 0, z + dz, rot));
+      for (const [dx, dz] of [[-0.55, 0.95], [0.55, 0.95], [-0.55, -0.95], [0.55, -0.95]] as const) {
         w.blockCircle(x + dx, z + dz, 0.26);
       }
     }
@@ -710,7 +718,7 @@ export const maniaDeChurrasco: SceneDef = {
      * a outra: são as duas cadeiras que já existem alinhadas no mesmo `x`. As
      * da direita ficam vazias, como mesa de restaurante de verdade.
      */
-    const ASSENTO = 0.03;   // o topo do assento da `chair()` está em 0,50
+    const ASSENTO = 0.03;   // o topo do assento da `cadeiraDoSalao()` está em 0,50
     for (let i = 0; i < postas.length; i++) {
       const alvo = postas[i];
       w.interact({
@@ -864,26 +872,34 @@ export const maniaDeChurrasco: SceneDef = {
 
     // ------------------------------------------------------------- enfeites
     // a placa do nome, em cima do bar: é a primeira coisa que se lê ao entrar
-    w.add(w.place(
-      placaDeFachada(letreiro('Mania de Churrasco', 5.4, 0.6, '#ffd88a'), 6.2, 0.98),
-      BAR.x, 2.5, z0 + 0.22,
-    ));
-
-    const lousa = w.add(w.place(
-      quadroDeGiz(['Hoje', 'picanha na brasa', 'arepa recheada', 'suco de morango'], 1.7, 1.35),
-      -8.5, 1.85, z0 + 0.18,
-    ));
+    w.add(fundir(w.place(placaDoSalao('Mania de Churrasco', 6.2, 0.9), BAR.x, 2.5, z0 + PAREDE)));
 
     /**
-     * As arandelas moram nas DUAS paredes de verdade (`-Z` e `-X`). Estavam na
+     * A LOUSA DO DIA, na parede da esquerda do SALÃO, entre os dois lampiões.
+     *
+     * Ela morava no fundo da cozinha, em `x = -8,5` — exatamente atrás da
+     * coifa e da chaminé da churrasqueira, que vão de 1,94 a 3,5 bem na
+     * frente dela: a lousa existia e ninguém via (as fotos da reforma
+     * mostraram). Prato do dia é para quem vem comer, então ela passou para
+     * o salão, e o ponto de ler foi junto.
+     */
+    const LOUSA = { x: x0 + PAREDE, z: 3.75 };
+    const lousa = w.add(fundir(w.place(
+      lousaDoMania(['Hoje', 'picanha na brasa', 'arepa recheada', 'suco de morango'], 1.7, 1.35),
+      LOUSA.x, 1.85, LOUSA.z, Math.PI / 2,
+    )));
+
+    /**
+     * Os LAMPIÕES moram nas DUAS paredes de verdade (`-Z` e `-X`). Estavam na
      * borda `+X`, que é mureta de 0,5: cinco luminárias boiando no vazio a dois
-     * metros do chão.
+     * metros do chão. O do fundo à direita foi para `x = 10,35`: em 11,0 ele
+     * entrava 8 cm na moldura do quadro do Walter.
      */
     for (const [x, z, rot] of [
-      [-2.0, z0 + 0.14, 0], [1.6, z0 + 0.14, 0], [11.0, z0 + 0.14, 0],
-      [x0 + 0.14, 1.5, Math.PI / 2], [x0 + 0.14, 6.0, Math.PI / 2],
+      [-2.0, z0 + PAREDE + 0.04, 0], [1.6, z0 + PAREDE, 0], [10.35, z0 + PAREDE, 0],
+      [x0 + PAREDE, 1.5, Math.PI / 2], [x0 + PAREDE, 6.0, Math.PI / 2],
     ] as const) {
-      w.add(w.place(arandela(), x, 2.15, z, rot));
+      w.add(fundir(w.place(lampiaoDeParede(), x, 2.15, z, rot)));
     }
 
     /**
@@ -892,13 +908,13 @@ export const maniaDeChurrasco: SceneDef = {
      * registradora — que é onde uma churrascaria de verdade pendura o troféu
      * do funcionário: onde o cliente paga a conta e lê o nome de quem serviu.
      */
-    const quadroDoWalter = w.add(w.place(quadroDoEmpregadoDoMes(), 11.4, 1.95, z0 + 0.16));
+    const quadroDoEmpregado = w.add(fundir(w.place(quadroDoWalter(), 11.4, 1.95, z0 + PAREDE)));
     w.interact({
       id: 'mania:empregado-do-mes',
       // o balcão do bar vai até z = -7,6; o ponto fica na frente dele
       x: 11.4, z: z0 + 1.5, radius: 1.8,
       label: 'Ler o quadro de empregado do mês', icon: '🏆',
-      highlight: quadroDoWalter,
+      highlight: quadroDoEmpregado,
       onInteract: async (api) => {
         await conversa([
           [R, '"Empregado do mês: Walter."'],
@@ -916,7 +932,8 @@ export const maniaDeChurrasco: SceneDef = {
         });
       },
     });
-    w.add(w.place(pictureFrame(0.7, 0.9, P.grassDark), -0.6, 1.95, z0 + 0.16));
+    // o cartaz dos cortes do boi, no tijolinho entre a prateleira e o balcão lateral
+    w.add(fundir(w.place(cartazDosCortes(0.62, 0.82), -0.6, 1.9, z0 + PAREDE + 0.04)));
 
     /**
      * A ESCALA DE TRABALHO, ao lado do quadro do Empregado do Mês.
@@ -936,10 +953,10 @@ export const maniaDeChurrasco: SceneDef = {
      * para `x = 2,4` (1,9 a 2,9): 0,4 de folga para a placa, e a arandela de
      * `x = 1,6` fica do outro lado sem encostar.
      */
-    const escala = w.add(w.place(
-      quadroDeGiz(['Escala de amanhã', 'Walter', ARI.name, RENAN.name], 1.2, 1.05),
-      2.4, 1.7, z0 + 0.18,
-    ));
+    const escala = w.add(fundir(w.place(
+      lousaDoMania(['Escala de amanhã', 'Walter', ARI.name, RENAN.name], 1.2, 1.05),
+      2.4, 1.7, z0 + PAREDE,
+    )));
     escala.visible = g.flag('turno-aceito');
 
     const lerAEscala = w.interact({
@@ -978,22 +995,25 @@ export const maniaDeChurrasco: SceneDef = {
     lerAEscala.enabled = g.flag('turno-aceito');
 
     // o vaso que estava em `(11; 7,8)` saiu do caminho: ele nasceu antes do vão
-    // da entrada, e depois passou a ficar plantado bem na soleira
+    // da entrada, e depois passou a ficar plantado bem na soleira.
+    //
+    // As três plantas são do kit, cada uma no canto que combina com ela: a
+    // jiboia baixa perto da mureta (alta ali, ela taparia a mesa de trás), a
+    // figueira no canto da parede, e a espada-de-são-jorge no fim do bar.
+    w.add(fundir(w.place(jiboiaEmVaso(1.4, P.plantPot), W / 2 - 1.0, 0, 3.2)));
+    w.add(fundir(w.place(figueiraLira(1.0), x0 + 1.1, 0, D / 2 - 1.2)));
+    w.add(fundir(w.place(plantaDeEspada(1.3), 11.2, 0, -1.4)));
     for (const [x, z] of [[W / 2 - 1.0, 3.2], [x0 + 1.1, D / 2 - 1.2], [11.2, -1.4]] as const) {
-      w.add(w.place(pottedPlant(1.2), x, 0, z));
       w.blockCircle(x, z, 0.32);
     }
 
     // o capacho da entrada de serviço, para a porta não abrir no vazio
-    w.add(w.place(rug(1.6, 1.1, P.churrascoTijolo), x0 + 1.5, 0, PORTA.z));
+    w.add(w.place(tapete(1.6, 1.1, P.churrascoTijolo, 'capacho'), x0 + 1.5, 0, PORTA.z));
     // e o capacho da ENTRADA DA FRENTE, no vão da mureta: é por onde entra
     // quem vem comer, e ele marca a soleira sem construir porta nenhuma
-    w.add(w.place(rug(1.5, 1.0, P.churrascoToalha), ENTRADA.x, 0, D / 2 - 0.62));
-    for (const dx of [-0.85, 0.85]) {
-      const balaustre = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.78, 0.16), toon(P.woodDark));
-      balaustre.position.set(ENTRADA.x + dx, 0.39, D / 2);
-      w.add(balaustre);
-    }
+    w.add(w.place(tapete(1.5, 1.0, P.churrascoToalha, 'capacho'), ENTRADA.x, 0, D / 2 - 0.62));
+    // os pilaretes torneados arrematam as duas pontas da mureta na entrada
+    for (const dx of [-0.85, 0.85]) w.add(fundir(w.place(pilarete(0.82), ENTRADA.x + dx, 0, D / 2)));
 
     // ========================================================= interações
 
@@ -1053,7 +1073,7 @@ export const maniaDeChurrasco: SceneDef = {
 
     w.interact({
       id: 'mania:lousa',
-      x: -8.5, z: z0 + 1.5, radius: 2,
+      x: LOUSA.x + 1.35, z: LOUSA.z, radius: 2,
       label: 'Ler o quadro do dia', icon: '🖍️',
       highlight: lousa,
       onInteract: async () => {

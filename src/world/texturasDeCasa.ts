@@ -467,3 +467,186 @@ export function toalhaXadrez(lado = 0.4, cor: number = P.churrascoToalha): THREE
     }
   });
 }
+
+// ============================================== a cozinha e o bar do Mania
+
+/**
+ * INOX ESCOVADO, para a cozinha do Mania de Churrasco: o fogão, as bancadas,
+ * a pia, a coifa e a geladeira.
+ *
+ * Escovado é RISCO DEITADO, comprido, correndo no lado maior da chapa — o
+ * `uvEmMetros` põe o U no lado mais comprido, então a faixa sai deitada na
+ * bancada e em pé na porta da geladeira, como chapa de verdade. As faixas
+ * são LARGAS (2 a 8 px num azulejo de 80 cm): o risco fino de verdade viraria
+ * moiré a esta distância, e o que se quer ler é "metal escovado", não o fio.
+ * Por cima, duas manchas macias de reflexo, que tiram a chapa do chapado.
+ */
+export function inoxEscovado(lado = 0.8): THREE.CanvasTexture {
+  return novaTextura(`inox:${lado}`, lado, (ctx, s) => {
+    const rnd = sorteio(9091);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s, s);
+    for (let i = 0; i < 64; i++) {
+      const y = rnd() * s;
+      const h = 2 + rnd() * 6;
+      const claro = rnd() < 0.35;
+      ctx.fillStyle = claro ? 'rgba(255,255,255,0.45)' : `rgba(140,152,164,${0.035 + rnd() * 0.05})`;
+      ctx.fillRect(0, y, s, h);
+      if (y + h > s) ctx.fillRect(0, y - s, s, h);
+    }
+    // o reflexo: duas manchas largas e fracas, com cópias para fechar a emenda
+    for (const [cx, cy, rx, ry] of [[0.3, 0.35, 0.34, 0.12], [0.75, 0.8, 0.28, 0.1]] as const) {
+      for (const [dx, dy] of [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+        const g = ctx.createRadialGradient((cx + dx) * s, (cy + dy) * s, 0, (cx + dx) * s, (cy + dy) * s, rx * s);
+        g.addColorStop(0, 'rgba(160,172,182,0.1)');
+        g.addColorStop(1, 'rgba(160,172,182,0)');
+        ctx.fillStyle = g;
+        ctx.save();
+        ctx.translate((cx + dx) * s, (cy + dy) * s);
+        ctx.scale(1, ry / rx);
+        ctx.translate(-(cx + dx) * s, -(cy + dy) * s);
+        ctx.fillRect((cx + dx - rx) * s, (cy + dy - rx) * s, rx * 2 * s, rx * 2 * s);
+        ctx.restore();
+      }
+    }
+  });
+}
+
+/**
+ * ARDÓSIA, para as lousas de giz do Mania. Esta traz a COR no desenho (como a
+ * toalha xadrez): o material é `toon(0xffffff, { mapa })`, porque o que dá
+ * vida a uma lousa é o pó de giz e o rastro do apagador, e os dois são MAIS
+ * CLAROS que o verde — e textura multiplicada só escurece.
+ */
+export function ardosia(lado = 1.2, cor: number = P.churrascoQuadroNegro): THREE.CanvasTexture {
+  return novaTextura(`ardosia:${lado}:${cor}`, lado, (ctx, s) => {
+    const rnd = sorteio(6061);
+    ctx.fillStyle = `#${cor.toString(16).padStart(6, '0')}`;
+    ctx.fillRect(0, 0, s, s);
+    // o rastro do apagador: arcos largos e fracos, em várias direções
+    for (let i = 0; i < 16; i++) {
+      const x = rnd() * s;
+      const y = rnd() * s;
+      const r = s * (0.18 + rnd() * 0.3);
+      const a = rnd() * 6.28;
+      ctx.strokeStyle = `rgba(235,240,232,${0.025 + rnd() * 0.04})`;
+      ctx.lineWidth = 14 + rnd() * 26;
+      for (const [dx, dy] of [[0, 0], [-s, 0], [s, 0], [0, -s], [0, s]] as const) {
+        ctx.beginPath();
+        ctx.arc(x + dx, y + dy, r, a, a + 0.9 + rnd() * 0.8);
+        ctx.stroke();
+      }
+    }
+    // o pó de giz que nunca sai: granulado de 2 px
+    for (let i = 0; i < 1600; i++) {
+      ctx.fillStyle = `rgba(240,244,236,${0.04 + rnd() * 0.08})`;
+      ctx.fillRect(Math.floor(rnd() * s), Math.floor(rnd() * s), 2, 2);
+    }
+  });
+}
+
+/**
+ * AZULEJO DE METRÔ, para a parede da pia: o retângulo de 30 × 10 assentado
+ * em amarração, com o rejunte cinza e a borda de cima mais clara (o brilho
+ * do esmalte). Traz a cor no desenho — o rejunte é MAIS ESCURO que o
+ * azulejo e o branco do esmalte não aguenta ser tingido —, então o material
+ * é `toon(0xffffff, { mapa })`.
+ */
+export function azulejoDeMetro(
+  lado = 0.6, cor: number = P.churrascoAzulejo, rejunte: number = P.churrascoRejunteAzulejo,
+): THREE.CanvasTexture {
+  return novaTextura(`azulejo:${lado}:${cor}:${rejunte}`, lado, (ctx, s) => {
+    const rnd = sorteio(3141);
+    const css = (c: number, k = 1): string =>
+      `rgb(${Math.min(255, ((c >> 16) & 255) * k)},${Math.min(255, ((c >> 8) & 255) * k)},${Math.min(255, (c & 255) * k)})`;
+    ctx.fillStyle = css(rejunte);
+    ctx.fillRect(0, 0, s, s);
+    const fiadas = 6;
+    const porFiada = 2;
+    const alt = s / fiadas;
+    const comp = s / porFiada;
+    const junta = Math.max(3, Math.round(s * 0.014));
+    for (let f = 0; f < fiadas; f++) {
+      const desloca = f % 2 ? comp / 2 : 0;
+      const tons = Array.from({ length: porFiada }, () => 0.97 + rnd() * 0.03);
+      for (let k = -1; k <= porFiada; k++) {
+        const x0 = k * comp + desloca + junta / 2;
+        const y0 = f * alt + junta / 2;
+        const w = comp - junta;
+        const h = alt - junta;
+        if (x0 > s || x0 + w < 0) continue;
+        ctx.fillStyle = css(cor, tons[((k % porFiada) + porFiada) % porFiada]);
+        ctx.fillRect(x0, y0, w, h);
+        // o esmalte: a luz na borda de cima e a sombrinha na de baixo
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fillRect(x0, y0, w, 2);
+        ctx.fillStyle = 'rgba(120,124,120,0.16)';
+        ctx.fillRect(x0, y0 + h - 2, w, 2);
+      }
+    }
+  });
+}
+
+/**
+ * O ESPELHO DO BAR: o cinza-azulado do vidro com três faixas de reflexo na
+ * diagonal — sem elas, espelho na parede lê como chapa de metal. As faixas
+ * atravessam a emenda do azulejo (desenhadas com cópias), então o espelho
+ * pode ter o tamanho que for. Traz a cor no desenho.
+ */
+export function espelhoDeBar(lado = 1.6, cor: number = P.churrascoEspelho): THREE.CanvasTexture {
+  return novaTextura(`espelho:${lado}:${cor}`, lado, (ctx, s) => {
+    ctx.fillStyle = `#${cor.toString(16).padStart(6, '0')}`;
+    ctx.fillRect(0, 0, s, s);
+    for (const [x, larg, forca] of [[0.12, 0.1, 0.32], [0.3, 0.035, 0.4], [0.62, 0.16, 0.18]] as const) {
+      ctx.fillStyle = `rgba(255,255,255,${forca})`;
+      for (const d of [-1, 0, 1]) {
+        ctx.beginPath();
+        ctx.moveTo((x + d) * s, s);
+        ctx.lineTo((x + larg + d) * s, s);
+        ctx.lineTo((x + larg + d + 1) * s, 0);
+        ctx.lineTo((x + d + 1) * s, 0);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  });
+}
+
+/**
+ * O LAMBRI DO SALÃO: tábuas EM PÉ de 10 cm, macho e fêmea — o friso escuro
+ * da junta com o filete claro ao lado (a luz na borda da tábua), e o veio
+ * fraco correndo de cima para baixo. É para `uvDeParede` (o `v` é a altura),
+ * então a junta é uma linha vertical do canvas.
+ */
+export function tabuasDeLambri(lado = 0.6, tabuas = 6): THREE.CanvasTexture {
+  return novaTextura(`lambri:${lado}:${tabuas}`, lado, (ctx, s) => {
+    const rnd = sorteio(2424);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, s, s);
+    const passo = s / tabuas;
+    for (let t = 0; t < tabuas; t++) {
+      const x0 = t * passo;
+      // cada tábua com o próprio tom
+      ctx.fillStyle = `rgba(120,80,40,${rnd() * 0.08})`;
+      ctx.fillRect(x0, 0, passo, s);
+      // o veio em pé: riscos ondulados, finos e fracos
+      for (let k = 0; k < 5; k++) {
+        const x = x0 + 4 + rnd() * (passo - 8);
+        ctx.strokeStyle = `rgba(110,70,35,${0.06 + rnd() * 0.08})`;
+        ctx.lineWidth = 1.5 + rnd();
+        ctx.beginPath();
+        for (let y = 0; y <= s; y += 8) {
+          const xx = x + Math.sin((y / s) * Math.PI * 2 * (1 + (k % 2)) + k) * 2;
+          if (y === 0) ctx.moveTo(xx, y);
+          else ctx.lineTo(xx, y);
+        }
+        ctx.stroke();
+      }
+      // a junta: o sulco escuro e o filete de luz
+      ctx.fillStyle = 'rgba(60,35,15,0.45)';
+      ctx.fillRect(x0, 0, 3, s);
+      ctx.fillStyle = 'rgba(255,240,220,0.5)';
+      ctx.fillRect(x0 + 3, 0, 2, s);
+    }
+  });
+}

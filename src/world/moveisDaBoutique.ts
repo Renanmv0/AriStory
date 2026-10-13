@@ -177,7 +177,7 @@ function plaquinhaDaSecao(titulo: string, largura: number, altura: number): THRE
  * diagonal — sem sobrar ponta e sem as tampas de cima no mesmo plano (que é
  * a briga de z-fighting de friso de caixa colado no canto).
  */
-function frisoReto(perfil: Perfil, comprimento: number, mitraEsq = false, mitraDir = false): THREE.BufferGeometry {
+export function frisoReto(perfil: Perfil, comprimento: number, mitraEsq = false, mitraDir = false): THREE.BufferGeometry {
   const forma = new THREE.Shape();
   const [o0, y0] = perfil[0];
   forma.moveTo(0, y0);
