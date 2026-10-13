@@ -377,7 +377,21 @@ a camisa é o corpo do rig, o colete é a geometria.
 O avental de garçom (turno 2) é o molde de peça COMPRIDA por cima da roupa:
 um PAINEL de `saiaViva` (`arco`, aberto atrás) para a perna não atravessar,
 e o bordado na TEXTURA do pano, com o UV refeito de 0 a 1 no painel — um
-"Mania" de geometria ficaria parado no ar enquanto o pano anda.
+"Mania" de geometria ficaria parado no ar enquanto o pano anda. E ele é
+ACESSÓRIO com `presoEm: 'corpo'`, não tronco: nasceu tronco, e o Renan
+reparou que aí não dava para usar com mais nada. **Peça que vai POR CIMA
+da roupa (avental, faixa, capa) é acessório preso no corpo** — o
+referencial é o mesmo do tronco (y = 0 no chão), então a geometria não muda,
+e o save antigo muda a peça de vaga sozinho (a vaga sai do catálogo).
+
+Por cima de vestido rodado, a peça precisa saber o que está por baixo: o
+rig mede a geometria do tronco vestido (triângulo por triângulo, os enfeites
+em lote também) e entrega ao acessório do corpo em `m.porBaixo(angulo, y)`.
+O avental usa isso para cair como pano — cortina por cima do babado e reto da
+cintura até o ponto mais largo — e o rig refaz o acessório quando a roupa de
+baixo troca. Medir só os VÉRTICES não serve: o cilindro de uma saia tem
+vértice só em cima e embaixo, e os laços da barra furavam o avental em
+pontinhos brancos. Teste: `scripts/avental.mjs`.
 
 ## Pôr a peça como PRÊMIO de uma lição da apostila do Gatito
 

@@ -1257,9 +1257,15 @@ export class CharacterRig {
    * Sem isso o `Game`, que chama isto todo quadro, recriaria geometria a 60 fps.
    */
   vestirRoupa(novo: Loadout): void {
+    let troncoMudou = false;
     for (const slot of SLOTS_ROUPA) {
       const id = novo[slot] ?? null;
-      if ((this.roupa[slot]?.id ?? null) === id) continue;
+      const atual = this.roupa[slot];
+      // o acessório que vai POR CIMA da roupa (o avental do Mania) é medido
+      // contra a peça de tronco: trocou a de baixo, ele é refeito também
+      const porCima = slot === 'acessorio' && troncoMudou && !!atual?.extra && atual.presoEm !== 'cabeca';
+      if ((atual?.id ?? null) === id && !porCima) continue;
+      if (slot === 'tronco') troncoMudou = true;
       this.tirarExtras(slot);
       const peca = id ? fichaDoItem(id) : null;
       this.roupa[slot] = peca ?? undefined;
@@ -1330,15 +1336,20 @@ export class CharacterRig {
     // rig mora la, e o pivo da perna — de onde sai o `extra` de pernas — nao
     // alcanca o quadril
     if (peca.extraQuadril) pais.push([this.body, 'quadril', 1]);
+    // o acessório do CORPO vai por cima da roupa de tronco: ele ganha a
+    // medida do que está por baixo (`MedidasCorpo.porBaixo`)
+    const medidas = slot === 'acessorio' && peca.presoEm !== 'cabeca'
+      ? { ...this.medidas, porBaixo: this.medirPorBaixo() }
+      : this.medidas;
     const postos: THREE.Object3D[] = [];
     for (const [pai, tipo, lado] of pais) {
       // uma malha NOVA por pai: o mesmo Object3D nao pode ter dois pais, que e
       // a mesma razao de `modeloDoItem` nunca devolver a mesma instancia
       const obj = tipo === 'braco'
-        ? peca.extraBraco!(this.medidas, lado, peca)
+        ? peca.extraBraco!(medidas, lado, peca)
         : tipo === 'quadril'
-          ? peca.extraQuadril!(this.medidas, lado, peca)
-          : peca.extra!(this.medidas, lado, peca);
+          ? peca.extraQuadril!(medidas, lado, peca)
+          : peca.extra!(medidas, lado, peca);
       // etiqueta para o teste conseguir dizer o que cada corpo esta vestindo
       obj.userData.roupa = peca.id;
       // o `traverse` que liga sombra roda no CONSTRUTOR, entao nada criado
@@ -1353,6 +1364,85 @@ export class CharacterRig {
       postos.push(obj);
     }
     this.extras.set(slot, postos);
+  }
+
+  /**
+   * O PERFIL DA ROUPA DE TRONCO que está no corpo, para a peça que vai por
+   * cima dela (`MedidasCorpo.porBaixo`): os vértices da geometria do tronco,
+   * no referencial do corpo, guardados numa grade de ângulo × altura com a
+   * maior distância do eixo em cada casa. A consulta olha a casa e as
+   * vizinhas, para o pano de cima não achar um vão entre duas casas.
+   *
+   * Roda só quando o acessório é montado (trocar de roupa), nunca por quadro:
+   * um vestido rodado dá umas dezenas de milhares de amostras.
+   */
+  private medirPorBaixo(): (angulo: number, y: number) => number {
+    const ANGULOS = 32;
+    const PASSO = 0.02;
+    const grade = new Map<number, number>();
+    const casa = (ia: number, iy: number): number => iy * ANGULOS + ((ia % ANGULOS) + ANGULOS) % ANGULOS;
+    const v = new THREE.Vector3();
+    const a = new THREE.Vector3();
+    const b = new THREE.Vector3();
+    const cc = new THREE.Vector3();
+    const noCorpo = new THREE.Matrix4();
+    const daCopia = new THREE.Matrix4();
+    for (const obj of this.extras.get('tronco') ?? []) {
+      obj.traverse((n: THREE.Object3D) => {
+        const malha = n as THREE.Mesh;
+        if (!malha.isMesh) return;
+        const pos = malha.geometry.getAttribute('position');
+        if (!pos) return;
+        // a matriz da malha no referencial do corpo: as locais, até o corpo
+        noCorpo.identity();
+        for (let o: THREE.Object3D | null = malha; o && o !== this.body; o = o.parent) {
+          o.updateMatrix();
+          noCorpo.premultiply(o.matrix);
+        }
+        // o enfeite em lote (as bolinhas e os lacinhos do vestido) conta cópia
+        // por cópia: pulado, ele furava o avental em pontinhos
+        const lote = (malha as THREE.InstancedMesh).isInstancedMesh ? (malha as THREE.InstancedMesh) : null;
+        const copias = lote ? lote.count : 1;
+        const indice = malha.geometry.getIndex();
+        const triangulos = (indice ? indice.count : pos.count) / 3;
+        const canto = (t: number, q: number): number => (indice ? indice.getX(t * 3 + q) : t * 3 + q);
+        for (let c = 0; c < copias; c++) {
+          if (lote) { lote.getMatrixAt(c, daCopia); daCopia.premultiply(noCorpo); }
+          else daCopia.copy(noCorpo);
+          // os TRIÂNGULOS, e não só os vértices: o cilindro da saia do vestido
+          // tem vértice só em cima e embaixo, e o meio dele ficava sem medida.
+          // Cada triângulo é amostrado numa grade de ~1,5 cm
+          for (let t = 0; t < triangulos; t++) {
+            a.fromBufferAttribute(pos, canto(t, 0)).applyMatrix4(daCopia);
+            b.fromBufferAttribute(pos, canto(t, 1)).applyMatrix4(daCopia);
+            cc.fromBufferAttribute(pos, canto(t, 2)).applyMatrix4(daCopia);
+            const lado = Math.max(a.distanceTo(b), b.distanceTo(cc), cc.distanceTo(a));
+            const n = Math.min(40, Math.max(1, Math.ceil(lado / 0.015)));
+            for (let i = 0; i <= n; i++) {
+              for (let jj = 0; jj <= n - i; jj++) {
+                const u = i / n;
+                const w = jj / n;
+                v.copy(a).multiplyScalar(1 - u - w).addScaledVector(b, u).addScaledVector(cc, w);
+                const d = Math.hypot(v.x, v.z);
+                const ia = Math.floor(((Math.atan2(v.x, v.z) + Math.PI) / (Math.PI * 2)) * ANGULOS);
+                const k = casa(ia, Math.floor(v.y / PASSO));
+                if (d > (grade.get(k) ?? 0)) grade.set(k, d);
+              }
+            }
+          }
+        }
+      });
+    }
+    return (angulo, y) => {
+      if (!grade.size) return 0;
+      const ia = Math.floor(((Math.atan2(Math.sin(angulo), Math.cos(angulo)) + Math.PI) / (Math.PI * 2)) * ANGULOS);
+      const iy = Math.floor(y / PASSO);
+      let maior = 0;
+      for (let da = -1; da <= 1; da++) {
+        for (let dy = -1; dy <= 1; dy++) maior = Math.max(maior, grade.get(casa(ia + da, iy + dy)) ?? 0);
+      }
+      return maior;
+    };
   }
 
   private tirarExtras(slot: SlotRoupa): void {

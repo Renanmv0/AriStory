@@ -654,7 +654,7 @@ dois e voltam sempre (`g.ganharPeca`, como os prêmios da arena e da apostila).
 | turno | prêmio | vaga | ideia |
 |---|---|---|---|
 | 1 | gravatinha do Walter | — | *já existe* |
-| 2 | **avental de garçom do Mania** | tronco, por cima | comprido, preto, com o "Mania" bordado em dourado |
+| 2 | **avental de garçom do Mania** | acessório, no corpo (vai por cima de qualquer roupa) | comprido, preto, com o "Mania" bordado em dourado |
 | 3 | **bloquinho e lápis na orelha** | acessório, na cabeça | o lápis atrás da orelha e o bloquinho no bolso |
 | 4 | **colete de garçom** | tronco | colete escuro com camisa branca — e a Estella diz que foi ela que costurou |
 | 5 | **bandana de churrasqueiro** | cabeça | no molde da bandana do Flynn, nas cores do Mania |

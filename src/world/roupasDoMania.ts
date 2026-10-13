@@ -167,7 +167,11 @@ function texturaDoAvental(): THREE.CanvasTexture {
  * como avental de verdade): a perna que avança empurra o pano, e sentado ele
  * cai do colo como cortina.
  *
- * REFERENCIAL: o tronco, y = 0 no CHÃO.
+ * É ACESSÓRIO preso no corpo (`presoEm: 'corpo'`), e não peça de tronco:
+ * assim ele vai por cima de QUALQUER roupa — o colete, a camiseta, um
+ * vestido — sem tomar a vaga dela (pedido do Renan).
+ *
+ * REFERENCIAL: o do corpo, y = 0 no CHÃO (o mesmo do tronco).
  */
 function aventalDeGarcom(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
@@ -185,13 +189,53 @@ function aventalDeGarcom(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): T
   const COLUNAS = 40;
   const LINHAS = 16;
   const ARCO = 1.3;
+  const yTopo = cintura + h * 0.004;
+  const yBarra = quadril * 0.36;
+  /*
+   * POR CIMA DO QUE ESTIVER POR BAIXO. O avental é acessório e veste com
+   * qualquer roupa de tronco; com um vestido rodado, o pano dele sumia dentro
+   * da saia do vestido. `m.porBaixo` é a medida da roupa de baixo (o rig mede
+   * a geometria montada), com 3,5% de folga, e o pano cai como pano:
+   *
+   * - como CORTINA: em cada altura ele cerca tudo o que está por baixo dali
+   *   para cima (não entra debaixo de um babado);
+   * - e RETO da cintura até o ponto mais largo abaixo: o vestido rosa tem duas
+   *   camadas, e o avental que só seguia a medida fazia o degrau delas.
+   *
+   * Sem roupa rodada por baixo a conta não muda nada: o avental é o de sempre.
+   */
+  const ACHATA = 0.86; // o padrão da `saiaViva`
+  const debaixo = m.porBaixo;
+  const solto = evase(r0, r0 * 1.42, 4, h * 0.003, 0.9);
+  const AMOSTRAS = 16;
+  const precisa = (a: number, t: number): number => {
+    if (!debaixo) return 0;
+    // o ângulo do painel vira a direção de verdade no corpo achatado
+    const sen = Math.sin(a);
+    const cos = ACHATA * Math.cos(a);
+    const direcao = Math.atan2(sen, cos);
+    const escala = 1.035 / Math.hypot(sen, cos);
+    const topo = solto(a, 0);
+    const naAltura = (s: number): number => debaixo(direcao, THREE.MathUtils.lerp(yTopo, yBarra, s)) * escala;
+    let r = naAltura(t);
+    for (let k = 0; k <= AMOSTRAS; k++) {
+      const s = k / AMOSTRAS;
+      const d = naAltura(s);
+      // acima: a cortina; abaixo: a reta que sai da cintura e passa por fora dele
+      r = Math.max(r, s <= t ? d : topo + ((d - topo) * t) / s);
+    }
+    return r;
+  };
+  const rodado = precisa(0, 1) > solto(0, 1);
   const saia = saiaViva(m, {
-    yTopo: cintura + h * 0.004,
-    yBarra: quadril * 0.36,
-    raio: evase(r0, r0 * 1.42, 4, h * 0.003, 0.9),
+    yTopo,
+    yBarra,
+    raio: (a, t) => Math.max(solto(a, t), precisa(a, t)),
     arco: [-ARCO, ARCO],
     colunas: COLUNAS,
     linhas: LINHAS,
+    // por cima de uma saia viva, a folga a mais contra a perna da de dentro
+    camada: rodado ? h * 0.012 : 0,
   }, pano);
   /**
    * O UV DA SAIA VIVA É EM METROS (para a estampa de azulejo da boutique ter
@@ -213,10 +257,16 @@ function aventalDeGarcom(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): T
 
   // A FITA da cintura, a volta inteira, e o laço com as pontas nas costas
   const yFita = cintura + h * 0.002;
-  g.add(new THREE.Mesh(cintaNaPele(m, yFita, h * 0.009, 1.1), fita));
+  const cinta = new THREE.Mesh(cintaNaPele(m, yFita, h * 0.009, 1.1), fita);
+  // a cintura do vestido mais larga que a fita: a fita abre junto, por cima
+  let maiorNaCintura = 0;
+  for (let k = 0; k < 16; k++) maiorNaCintura = Math.max(maiorNaCintura, debaixo?.((k / 16) * Math.PI * 2, yFita) ?? 0);
+  const abre = Math.max(1, (maiorNaCintura * 1.03) / (raioDoTronco(m, yFita) * 1.1));
+  cinta.scale.set(abre, 1, abre);
+  g.add(cinta);
   const laco = lacoDeFita(h * 0.022, fita, 2.4);
   // nas costas e virado para fora (o laço olha para `+Z`)
-  laco.position.copy(naPele(m, Math.PI, yFita, 1.13));
+  laco.position.copy(naPele(m, Math.PI, yFita, 1.13 * abre));
   laco.rotation.y = Math.PI;
   g.add(laco);
 
@@ -386,5 +436,7 @@ function coleteDeGarcom(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): TH
   }
   return fundir(g);
 }
+
+
 
 export { aventalDeGarcom, tenisDeGarcom, lapisNaOrelha, bloquinhoNaMao, coleteDeGarcom };
