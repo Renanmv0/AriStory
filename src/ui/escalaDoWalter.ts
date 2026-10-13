@@ -56,7 +56,7 @@ export interface ConteudoDaEscala {
   turnos: readonly TurnoNaEscala[];
   melhorias: readonly MelhoriaNaEscala[];
   petiscos: number;
-  /** as melhorias já podem ser compradas (etapa B do plano); antes disso a aba só mostra */
+  /** as melhorias já podem ser compradas; `false` só mostra o que vem */
   lojaAberta: boolean;
   /** o turno em que a escala abre marcada: o primeiro aberto que ainda não tem três estrelas */
   sugerido: number;
@@ -84,6 +84,10 @@ export class EscalaDoWalter {
   private aba: Aba = 'turnos';
   private marcado: number | null = null;
   private resolver: ((turno: number | null) => void) | null = null;
+  /** compra o próximo nível de uma melhoria; devolve a escala redesenhada, ou `null` se não deu */
+  private comprar: ((id: string) => ConteudoDaEscala | null) | null = null;
+  /** a melhoria que acabou de ser comprada, para o cartão dela piscar */
+  private recem: string | null = null;
   som: ((nome: SomNome) => void) | null = null;
 
   constructor(raiz: HTMLDivElement) {
@@ -128,6 +132,11 @@ export class EscalaDoWalter {
       this.pintar();
     });
     this.lista.addEventListener('click', (e) => {
+      const compra = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-comprar]');
+      if (compra) {
+        if (!compra.disabled) this.comprarMelhoria(compra.dataset.comprar!);
+        return;
+      }
       const linha = (e.target as HTMLElement).closest<HTMLElement>('.linha[data-numero]');
       if (!linha) return;
       this.marcar(Number(linha.dataset.numero));
@@ -138,13 +147,18 @@ export class EscalaDoWalter {
     return this.raiz.classList.contains('show');
   }
 
-  abrir(conteudo: ConteudoDaEscala): Promise<number | null> {
+  abrir(
+    conteudo: ConteudoDaEscala,
+    comprar: ((id: string) => ConteudoDaEscala | null) | null = null,
+  ): Promise<number | null> {
     return new Promise((resolve) => {
       if (this.aberto) {
         resolve(null);
         return;
       }
       this.conteudo = conteudo;
+      this.comprar = comprar;
+      this.recem = null;
       this.aba = 'turnos';
       this.marcado = conteudo.turnos.some((t) => t.numero === conteudo.sugerido && t.estado === 'aberto')
         ? conteudo.sugerido : null;
@@ -185,6 +199,25 @@ export class EscalaDoWalter {
     // na aba das melhorias não há turno a começar: o botão sai, e não deixa buraco
     this.comecar.style.display = this.aba === 'turnos' ? '' : 'none';
     this.comecar.textContent = ok ? `Começar o turno ${this.marcado}` : 'escolha um turno';
+  }
+
+  /**
+   * COMPRA E FICA: a escala continua aberta na aba das melhorias, com o pote
+   * já descontado e o cartão comprado piscando. Comprar não é escolher turno —
+   * a dupla pode comprar duas coisas e só depois ir trabalhar.
+   */
+  private comprarMelhoria(id: string): void {
+    const novo = this.comprar?.(id) ?? null;
+    if (!novo) {
+      this.som?.('menu');
+      return;
+    }
+    this.conteudo = novo;
+    this.recem = id;
+    this.som?.('caixa');
+    const rolagem = this.lista.scrollTop;
+    this.pintar();
+    this.lista.scrollTop = rolagem;
   }
 
   private pintar(): void {
@@ -235,17 +268,31 @@ export class EscalaDoWalter {
 
   private pintarMelhorias(c: ConteudoDaEscala): string {
     const aviso = c.lojaAberta
-      ? ''
+      ? `<p class="aviso">Cada melhoria vale para todos os turnos, até os que já foram vencidos.
+         O Walter dá um petisco por estrela no fim de cada turno.</p>`
       : `<p class="aviso">O Walter está encomendando as melhorias do salão. Enquanto isso, vá juntando
          petiscos: ele dá um por estrela no fim de cada turno.</p>`;
     const cartas = c.melhorias.map((m) => {
-      const niveis = m.precos.map((p, i) => `
-        <li class="${i < m.nivel ? 'feito' : ''}">
+      const niveis = m.precos.map((p, i) => {
+        // nível a nível: só o PRÓXIMO tem botão, os de depois esperam a vez
+        const feito = i < m.nivel;
+        const proximo = i === m.nivel && c.lojaAberta;
+        const falta = p - c.petiscos;
+        const preco = feito
+          ? '<span class="preco">✓</span>'
+          : proximo
+            ? `<button class="comprar" data-comprar="${escapar(m.id)}" ${falta > 0 ? 'disabled' : ''}>`
+              + (falta > 0 ? `faltam 🍢 ${falta}` : `comprar · 🍢 ${p}`) + '</button>'
+            : `<span class="preco">🍢 ${p}</span>`;
+        return `
+        <li class="${feito ? 'feito' : ''} ${proximo ? 'proximo' : ''}">
           <span class="efeito">${escapar(m.efeitos[i] ?? '')}</span>
-          <span class="preco">${i < m.nivel ? '✓' : `🍢 ${p}`}</span>
-        </li>`).join('');
+          ${preco}
+        </li>`;
+      }).join('');
+      const completa = m.nivel >= m.precos.length;
       return `
-        <div class="melhoria ${c.lojaAberta ? '' : 'em-breve'}">
+        <div class="melhoria ${c.lojaAberta ? '' : 'em-breve'} ${completa ? 'completa' : ''} ${this.recem === m.id ? 'recem' : ''}" data-id="${escapar(m.id)}">
           <span class="icone">${m.icone}</span>
           <div class="texto">
             <b>${escapar(m.nome)}</b>

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { flat, toon } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { uvDeParede, uvEmMetros, uvEmMetrosPorTriangulo } from './acabamento';
@@ -2109,5 +2110,467 @@ export function portaDeServico(
     m.position.set(0, altura + 0.1 + sobra / 2, recuo);
     g.add(m);
   }
+  return g;
+}
+
+// ================================================== AS MELHORIAS DO TURNO
+
+/*
+ * As peças das MELHORIAS da escala do Walter (§13.6 de
+ * `docs/MINIGAME-RESTAURANTE.md`). O princípio é o do regador da estufa: a
+ * melhoria não é um ícone no canto da tela, é uma coisa que se vê no salão —
+ * a bandeja na mão dos dois, o bloquinho na hora de anotar, a chapa nova na
+ * ilha, o cavalete na entrada, o rádio no bar e o carrinho entre as mesas.
+ */
+
+/** onde cada prato pousa na bandeja (x, z), na de sempre e na grande */
+export const VAGAS_DA_BANDEJA = {
+  normal: [[-0.075, 0.005], [0.075, -0.005]],
+  grande: [[-0.125, 0.03], [0, -0.05], [0.125, 0.03]],
+} as const;
+
+/**
+ * A BANDEJA DE GARÇOM — a de inox redonda que os dois seguram durante o turno,
+ * e a GRANDE (a melhoria "Bandeja grande"), oval, que cabe três coisas.
+ *
+ * O prato é torneado: o fundo raso, a borda que sobe e vira para fora, e a
+ * cortiça antiderrapante por dentro. O que a dupla carrega pousa no grupo
+ * `carga` (as vagas em `VAGAS_DA_BANDEJA`), e anda junto com a mão.
+ *
+ * A origem é a MÃO: o prato fica um dedo acima dela e um tico para a frente,
+ * que é como garçom segura — a palma por baixo do meio.
+ */
+export function bandejaDeGarcom(grande = false): THREE.Group {
+  const g = new THREE.Group();
+  g.name = 'bandeja';
+  g.userData.peca = 'bandeja-de-garcom';
+  const R = grande ? 0.185 : 0.155;
+  const prato = new THREE.Group();
+  prato.position.set(0, 0.025, 0.05);
+  if (grande) prato.scale.x = 1.35;
+  g.add(prato);
+  por(prato, torneado([
+    [0.001, 0], [R * 0.93, 0], [R * 0.985, 0.006], [R * 1.02, 0.024], [R * 1.035, 0.027],
+    [R * 1.01, 0.028], [R * 0.975, 0.012], [R * 0.95, 0.009], [0.001, 0.009],
+  ], 36), inox());
+  // a cortiça fica um fio ACIMA do fundo (0,0095 a 0,0125): encostada nele, as
+  // duas faces de cima brigariam pelo pixel
+  por(prato, new THREE.CylinderGeometry(R * 0.74, R * 0.74, 0.003, 36), P.churrascoCortica, 0, 0.011, 0);
+  const carga = new THREE.Group();
+  carga.name = 'carga';
+  carga.position.set(0, 0.038, 0.05);
+  g.add(carga);
+  g.userData.carga = carga;
+  g.userData.vagas = grande ? VAGAS_DA_BANDEJA.grande : VAGAS_DA_BANDEJA.normal;
+  return g;
+}
+
+/** a folha da comanda: as linhas azuis, a margem e o pedido rabiscado a lápis */
+let folhaDaComanda: THREE.CanvasTexture | null = null;
+function texturaDaComanda(): THREE.CanvasTexture {
+  if (folhaDaComanda) return folhaDaComanda;
+  const canvas = document.createElement('canvas');
+  canvas.width = 192;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = hex(P.churrascoComanda);
+    ctx.fillRect(0, 0, 192, 256);
+    ctx.strokeStyle = hex(P.churrascoComandaLinha);
+    ctx.lineWidth = 3;
+    for (let y = 46; y < 256; y += 26) {
+      ctx.beginPath();
+      ctx.moveTo(10, y);
+      ctx.lineTo(182, y);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = hex(P.churrascoTomate);
+    ctx.beginPath();
+    ctx.moveTo(34, 10);
+    ctx.lineTo(34, 250);
+    ctx.stroke();
+    // o pedido: três linhas a lápis, cada uma do seu tamanho
+    ctx.strokeStyle = 'rgba(60,60,70,0.85)';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    for (const [y, fim] of [[40, 150], [66, 120], [92, 165]] as const) {
+      ctx.beginPath();
+      ctx.moveTo(44, y);
+      for (let x = 44; x < fim; x += 10) ctx.lineTo(x + 5, y - 4 + ((x / 10) % 2) * 8);
+      ctx.stroke();
+    }
+  }
+  folhaDaComanda = new THREE.CanvasTexture(canvas);
+  folhaDaComanda.colorSpace = THREE.SRGBColorSpace;
+  folhaDaComanda.anisotropy = 4;
+  return folhaDaComanda;
+}
+
+/**
+ * O BLOQUINHO DE COMANDAS — a melhoria que corta pela metade o tempo de
+ * anotar. Ele aparece na mão de quem anota, na hora de anotar: a capa de
+ * couro, o maço de folhas, a espiral em cima, a folha pautada com o pedido
+ * rabiscado, e o lápis amarelo deitado por cima, de borracha cor-de-rosa.
+ *
+ * Inclinado para quem segura (é para ele que a folha está virada), mas não
+ * tanto que a câmera de cima perca a folha.
+ */
+export function bloquinhoDeComandas(): THREE.Group {
+  const g = new THREE.Group();
+  g.name = 'bloquinho';
+  g.userData.peca = 'bloquinho-de-comandas';
+  const b = new THREE.Group();
+  b.position.set(0, 0.03, 0.05);
+  b.rotation.x = -0.45;
+  // NA ESCALA DO CORPO CHIBI: do tamanho de um bloquinho de verdade ele some
+  // na mão (a foto mostrou um risquinho na cintura). Cabeção pede bloco grande
+  b.scale.setScalar(1.7);
+  g.add(b);
+  const L = 0.085;
+  const C = 0.115;
+  por(b, macia(L, 0.008, C, 0.004), P.churrascoCouro, 0, 0.004, 0);
+  por(b, macia(L - 0.006, 0.01, C - 0.01, 0.002), P.churrascoComanda, 0, 0.012, 0.003);
+  const folha = new THREE.Mesh(new THREE.PlaneGeometry(L - 0.01, C - 0.016), toon(0xffffff, { mapa: texturaDaComanda() }));
+  folha.rotation.x = -Math.PI / 2;
+  folha.position.set(0, 0.0175, 0.004);
+  b.add(folha);
+  // a espiral: sete argolinhas atravessando a beira de cima
+  for (let i = 0; i < 7; i++) {
+    por(b, new THREE.TorusGeometry(0.0055, 0.0011, 4, 10).rotateY(Math.PI / 2), P.metalWhite, -L / 2 + 0.012 + i * ((L - 0.024) / 6), 0.012, -C / 2 + 0.004);
+  }
+  // o lápis: o corpo sextavado, a ponta de madeira, o grafite, a virola e a borracha
+  const lapis = new THREE.Group();
+  lapis.position.set(0.008, 0.024, 0.008);
+  lapis.rotation.set(0, 0.55, Math.PI / 2);
+  b.add(lapis);
+  por(lapis, new THREE.CylinderGeometry(0.0045, 0.0045, 0.1, 6), P.churrascoLapis, 0, 0, 0);
+  por(lapis, new THREE.ConeGeometry(0.0045, 0.018, 6), P.churrascoLapisMadeira, 0, -0.059, 0).rotation.x = Math.PI;
+  por(lapis, new THREE.ConeGeometry(0.0016, 0.006, 6), P.churrascoCarvao, 0, -0.0675, 0).rotation.x = Math.PI;
+  por(lapis, new THREE.CylinderGeometry(0.0048, 0.0048, 0.01, 8), latao(), 0, 0.055, 0);
+  por(lapis, new THREE.CylinderGeometry(0.0044, 0.0044, 0.009, 8), P.churrascoBorracha, 0, 0.0645, 0);
+  return g;
+}
+
+/**
+ * A CHAPA NOVA DO WALTER — a melhoria "Chapa nova", em cima da ilha da cozinha.
+ *
+ * Uma chapa de lanchonete de verdade: o corpo de inox ESCOVADO com o painel
+ * dos botões inclinado na frente, a chapa de ferro grossa com a canaleta de
+ * gordura, o espelho e as abas dos lados, os pés de sapata — e comida em cima:
+ * hambúrguer, linguiça e a cebola dourando. As chamas azuis acesas por baixo da
+ * beira são o que diz "está ligada".
+ *
+ * `dupla` é o segundo nível ("dois pratos de cada vez"): a chapa larga de duas
+ * zonas, com a divisória no meio, dois pares de botões e comida dos dois lados.
+ */
+export function chapaDoWalter(dupla = false): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = dupla ? 'chapa-dupla' : 'chapa-nova';
+  const L = dupla ? 1.0 : 0.62;
+  const P0 = 0.46;
+  const corpo = 0.11;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) por(g, sapata(), inoxEscuro(), sx * (L / 2 - 0.05), 0, sz * (P0 / 2 - 0.06)).scale.set(0.8, 0.5, 0.8);
+  por(g, macia(L, corpo, P0, 0.012), inox(), 0, 0.037 + corpo / 2, 0);
+  // o painel dos botões: uma rampa na frente, de inox mais escuro
+  const rampa = macia(L - 0.02, 0.07, 0.05, 0.008);
+  por(g, rampa, inoxEscuro(), 0, 0.075, P0 / 2 + 0.012).rotation.x = -0.5;
+  const zonas = dupla ? [-L / 4, L / 4] : [0];
+  for (const zx of zonas) {
+    for (const dx of [-0.07, 0.07]) {
+      const botao = por(g, torneado([[0.001, 0], [0.019, 0], [0.02, 0.012], [0.014, 0.022], [0.001, 0.024]], 14), carvao(), zx + dx, 0.08, P0 / 2 + 0.03);
+      botao.rotation.x = Math.PI / 2 - 0.5;
+    }
+  }
+  const topo = 0.037 + corpo;
+  // a CHAPA de ferro, grossa, e a canaleta de gordura na frente
+  por(g, macia(L - 0.04, 0.022, P0 - 0.1, 0.004), ferro(), 0, topo + 0.011, -0.02);
+  por(g, macia(L - 0.04, 0.012, 0.04, 0.004), inoxEscuro(), 0, topo + 0.006, P0 / 2 - 0.035);
+  // o espelho atrás e as abas dos lados, de inox
+  por(g, macia(L, 0.09, 0.012, 0.004), inox(), 0, topo + 0.045, -P0 / 2 + 0.006);
+  for (const s of [-1, 1]) por(g, macia(0.012, 0.06, P0 - 0.07, 0.004), inox(), s * (L / 2 - 0.006), topo + 0.03, -0.02);
+  if (dupla) por(g, macia(0.012, 0.028, P0 - 0.1, 0.003), inox(), 0, topo + 0.035, -0.02);
+
+  // A COMIDA: hambúrguer (torneado, com a casca mais escura em cima),
+  // linguiça em gomo e a cebola em anéis
+  const yComida = topo + 0.022;
+  const hamburguer = torneado([[0.001, 0], [0.042, 0], [0.046, 0.008], [0.043, 0.016], [0.001, 0.017]], 16);
+  for (const zx of zonas) {
+    for (const [dx, dz] of [[-0.12, -0.06], [0.0, 0.03], [0.12, -0.05]] as const) {
+      por(g, hamburguer, P.churrascoCarne, zx + dx * (dupla ? 0.85 : 1), yComida, dz);
+    }
+    const linguica = tubo([[-0.07, 0, 0], [-0.02, 0, 0.012], [0.03, 0, 0.006], [0.07, 0, -0.01]], 0.013, 12, 8);
+    por(g, linguica, P.churrascoLinguica, zx + 0.02, yComida + 0.012, 0.11);
+    for (const [cx, cz] of [[-0.11, 0.1], [0.12, 0.1]] as const) {
+      const anel = por(g, new THREE.TorusGeometry(0.018, 0.005, 5, 12).rotateX(Math.PI / 2), P.churrascoCebola, zx + cx * (dupla ? 0.85 : 1), yComida + 0.006, cz);
+      anel.scale.set(1, 1, 0.8);
+    }
+  }
+  // AS CHAMAS por baixo da beira da chapa, acesas (glow), uma fileira por zona
+  const chama = toon(P.churrascoChamaDeGas, { glow: 0.9 });
+  for (const zx of zonas) {
+    const largura = dupla ? L / 2 - 0.12 : L - 0.14;
+    const n = Math.round(largura / 0.035);
+    for (let i = 0; i < n; i++) {
+      const c = por(g, new THREE.ConeGeometry(0.008, 0.022, 5), chama, zx - largura / 2 + (i + 0.5) * (largura / n), topo - 0.006, P0 / 2 - 0.004);
+      c.userData.semSombra = true;
+    }
+  }
+  return g;
+}
+
+/**
+ * O CAVALETE DA FILA — a melhoria "Plaquinha de reserva", na entrada.
+ *
+ * A lousa de calçada que todo restaurante cheio põe na porta: dois painéis
+ * de ardósia em "A", na moldura de madeira, presos em cima pela dobradiça de
+ * latão, com o recado a giz virado para a câmera. É o que diz a quem chega
+ * que tem lugar na fila (o quarto) e que vale a pena esperar (a paciência
+ * dura mais).
+ *
+ * Origem no chão, no meio da base; a face escrita olha para `+Z`.
+ */
+export function cavaleteDaFila(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'cavalete-da-fila';
+  const LARG = 0.56;
+  const ALT = 0.86;
+  const ABRE = 0.2;
+  for (const s of [1, -1] as const) {
+    const painel = new THREE.Group();
+    // os dois painéis se encontram no alto, e as pernas abrem embaixo
+    painel.position.set(0, ALT, 0);
+    // o pé da face escrita (`s = 1`) vai para a FRENTE: é ela que a câmera vê
+    painel.rotation.x = -s * ABRE;
+    g.add(painel);
+    const face = new THREE.Group();
+    face.position.set(0, -ALT / 2, s * 0.018);
+    if (s < 0) face.rotation.y = Math.PI;
+    painel.add(face);
+    por(face, molduraDeBisel(LARG, ALT, 0.05, 0.03, 0.008), madeiraEscura(), 0, 0, -0.015);
+    por(face, new THREE.BoxGeometry(LARG - 0.08, ALT - 0.08, 0.012), toon(P.churrascoQuadroNegro, { mapa: ardosia() }), 0, 0, -0.008);
+    if (s > 0) {
+      // linhas CURTAS: a letra de giz sai do tamanho da altura da linha, e
+      // "Aguarde aqui" numa linha só estourava a largura da lousa
+      const texto = escreverAGiz(['Fila', 'aguarde', 'aqui, que', 'o Walter', 'já vem!'], LARG - 0.12, ALT - 0.16);
+      texto.position.set(0, 0.02, 0.0005);
+      face.add(texto);
+    }
+  }
+  // a dobradiça de latão no alto, atravessada
+  por(g, new THREE.CylinderGeometry(0.012, 0.012, LARG - 0.06, 10).rotateZ(Math.PI / 2), latao(), 0, ALT - 0.005, 0);
+  return g;
+}
+
+/** a frente do alto-falante: o tecido de trama e as ripas de madeira por cima */
+let tecidoDoRadio: THREE.CanvasTexture | null = null;
+function texturaDoRadio(): THREE.CanvasTexture {
+  if (tecidoDoRadio) return tecidoDoRadio;
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = hex(P.churrascoRadioTecido);
+    ctx.fillRect(0, 0, 256, 256);
+    // a trama: manchinhas soltas, nada de grade (ver "Textura em móvel")
+    const sorte = sorteio(17);
+    for (let i = 0; i < 900; i++) {
+      ctx.fillStyle = `rgba(90,70,40,${0.05 + sorte() * 0.06})`;
+      ctx.fillRect(sorte() * 256, sorte() * 256, 2 + sorte() * 2, 2);
+    }
+    // as ripas em pé, de madeira escura, com a sombra de um lado
+    for (let x = 22; x < 256; x += 42) {
+      ctx.fillStyle = 'rgba(70,40,20,0.9)';
+      ctx.fillRect(x, 0, 12, 256);
+      ctx.fillStyle = 'rgba(40,20,10,0.35)';
+      ctx.fillRect(x + 12, 0, 4, 256);
+    }
+  }
+  tecidoDoRadio = new THREE.CanvasTexture(canvas);
+  tecidoDoRadio.colorSpace = THREE.SRGBColorSpace;
+  return tecidoDoRadio;
+}
+
+/** a nota musical (colcheia), chata, olhando para `+Z`, com 1 de altura */
+function geoNota(): THREE.BufferGeometry {
+  const s = new THREE.Shape();
+  // a cabeça inclinada, a haste e a bandeirinha
+  s.absellipse(0, 0.12, 0.2, 0.14, 0, Math.PI * 2, false, -0.4);
+  const cabeca = new THREE.ShapeGeometry(s, 12);
+  const haste = new THREE.ShapeGeometry(new THREE.Shape([
+    new THREE.Vector2(0.14, 0.14), new THREE.Vector2(0.2, 0.14), new THREE.Vector2(0.2, 1), new THREE.Vector2(0.14, 1),
+  ]));
+  const bandeira = new THREE.Shape();
+  bandeira.moveTo(0.2, 1);
+  bandeira.quadraticCurveTo(0.42, 0.85, 0.44, 0.58);
+  bandeira.quadraticCurveTo(0.36, 0.76, 0.2, 0.8);
+  bandeira.closePath();
+  const geo = mergeGeometries([cabeca, haste, new THREE.ShapeGeometry(bandeira, 8)]);
+  return geo ?? cabeca;
+}
+
+/**
+ * O RÁDIO DO SALÃO — a melhoria "Rádio do salão", no balcão do bar.
+ *
+ * Rádio de mesa antigo, de capela: a caixa de madeira com o alto em arco
+ * (forma extrudada com bisel), a frente de tecido com as ripas, o mostrador
+ * aceso de âmbar com os risquinhos da sintonia, os dois botões de latão e os
+ * pezinhos. E ele TOCA: as notas sobem, balançam e somem em cima dele — um
+ * `InstancedMesh` só, refeito a cada quadro pelo `update`.
+ *
+ * A origem é o tampo onde ele pousa; a frente olha para `+Z`.
+ */
+export class RadioDoBar {
+  readonly group = new THREE.Group();
+  private readonly notas: THREE.InstancedMesh;
+  private tempo = 0;
+  private readonly matriz = new THREE.Matrix4();
+  private readonly NOTAS = 4;
+
+  constructor() {
+    const g = this.group;
+    g.userData.peca = 'radio-do-bar';
+    const L = 0.34;
+    const A = 0.24;
+    const F = 0.13;
+    // a caixa: base reta, o alto em arco
+    const forma = new THREE.Shape();
+    forma.moveTo(-L / 2, 0);
+    forma.lineTo(L / 2, 0);
+    forma.lineTo(L / 2, A - L / 2 + 0.04);
+    forma.absarc(0, A - L / 2 + 0.04, L / 2, 0, Math.PI, false);
+    forma.lineTo(-L / 2, 0);
+    const caixa = new THREE.ExtrudeGeometry(forma, {
+      depth: F - 0.02, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.008, bevelSegments: 2, curveSegments: 18,
+    });
+    caixa.translate(0, 0.018, -F / 2 + 0.01);
+    por(g, caixa, madeiraEscura());
+    // a frente: o arco de tecido com ripas, um pouco menor, saindo 3 mm
+    const frente = new THREE.Shape();
+    const r = L / 2 - 0.04;
+    const yArco = A - L / 2 + 0.04;
+    frente.moveTo(-r, 0.09);
+    frente.lineTo(r, 0.09);
+    frente.lineTo(r, yArco);
+    frente.absarc(0, yArco, r, 0, Math.PI, false);
+    frente.lineTo(-r, 0.09);
+    const tecido = new THREE.ShapeGeometry(frente, 16);
+    // o UV da forma vem em metros: leva para 0..1 na caixa da frente
+    const uv = tecido.attributes.uv as THREE.BufferAttribute;
+    const pos = tecido.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getX(i) + r) / (2 * r), (pos.getY(i) - 0.09) / (yArco + r - 0.09));
+    const pano = new THREE.Mesh(tecido, toon(0xffffff, { mapa: texturaDoRadio() }));
+    pano.position.set(0, 0.018, F / 2 + 0.003);
+    g.add(pano);
+    // o mostrador aceso, embaixo do tecido, com o ponteiro
+    por(g, macia(0.16, 0.034, 0.008, 0.003), toon(P.churrascoMostrador, { glow: 0.55 }), 0, 0.06, F / 2 + 0.004);
+    por(g, new THREE.BoxGeometry(0.003, 0.03, 0.004), P.churrascoTomate, 0.025, 0.06, F / 2 + 0.009);
+    for (const s of [-1, 1]) {
+      const botao = por(g, torneado([[0.001, 0], [0.018, 0], [0.019, 0.01], [0.013, 0.02], [0.001, 0.021]], 14), latao(), s * 0.125, 0.06, F / 2 + 0.002);
+      botao.rotation.x = Math.PI / 2;
+    }
+    for (const s of [-1, 1]) por(g, macia(0.05, 0.018, F - 0.02, 0.005), carvao(), s * 0.11, 0.009, 0);
+
+    this.notas = new THREE.InstancedMesh(geoNota(), toon(P.churrascoNota, { glow: 0.35, doubleSide: true }), this.NOTAS);
+    // as notas andam: a esfera envolvente é a da subida inteira
+    this.notas.frustumCulled = false;
+    this.notas.userData.semSombra = true;
+    g.add(this.notas);
+    this.update(0);
+  }
+
+  /** as notas sobem do alto do rádio, balançando, e somem lá em cima */
+  update(dt: number): void {
+    this.tempo += dt;
+    const q = new THREE.Quaternion();
+    const giro = new THREE.Euler();
+    for (let i = 0; i < this.NOTAS; i++) {
+      const k = (this.tempo * 0.32 + i / this.NOTAS) % 1;
+      // cresce na saída, fica, e encolhe a zero no fim
+      const s = 0.07 * Math.min(1, k * 6) * Math.min(1, (1 - k) * 4);
+      giro.set(0, Math.PI / 4, Math.sin(this.tempo * 3 + i) * 0.35);
+      q.setFromEuler(giro);
+      this.matriz.compose(
+        new THREE.Vector3(Math.sin(k * 7 + i * 2.1) * 0.08 + (i % 2 ? 0.05 : -0.05), 0.3 + k * 0.55, 0),
+        q, new THREE.Vector3(s, s, s),
+      );
+      this.notas.setMatrixAt(i, this.matriz);
+    }
+    this.notas.instanceMatrix.needsUpdate = true;
+  }
+}
+
+/**
+ * O CARRINHO DE LOUÇA — a melhoria "Carrinho de louça", entre as mesas.
+ *
+ * O carrinho de serviço de inox: duas bandejas de borda levantada, os quatro
+ * tubos, a alça de empurrar numa ponta e os rodízios de borracha com o garfo.
+ * Em cima, a bacia cinza de recolher a louça (com pratos e uma caneca dentro);
+ * embaixo, a pilha de pratos limpos e os guardanapos dobrados.
+ *
+ * Quem larga a louça nele vê a pilha crescer em cima: `userData.pilhas` são
+ * os lugares (no quadro da peça) e `userData.tampo` a altura da bandeja de cima.
+ */
+export function carrinhoDeLouca(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'carrinho-de-louca';
+  const L = 0.86;
+  const P0 = 0.5;
+  const RODA = 0.045;
+  const Y_BAIXO = 0.24;
+  const Y_CIMA = 0.8;
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      const x = sx * (L / 2 - 0.04);
+      const z = sz * (P0 / 2 - 0.04);
+      // o tubo para 3 mm ABAIXO do tampo de cima: rente a ele, a tampa do tubo
+      // e o tampo brigariam pelo pixel
+      const alto = Y_CIMA + 0.007 - RODA * 2;
+      por(g, new THREE.CylinderGeometry(0.013, 0.013, alto, 10), inox(), x, RODA * 2 + alto / 2, z);
+      // o rodízio: o garfo e a roda de borracha
+      por(g, macia(0.03, 0.04, 0.05, 0.006), inoxEscuro(), x, RODA * 2 + 0.005, z);
+      por(g, new THREE.CylinderGeometry(RODA, RODA, 0.022, 14).rotateZ(Math.PI / 2), carvao(), x, RODA, z);
+    }
+  }
+  // as duas bandejas, cada uma com a borda levantada nos quatro lados
+  for (const y of [Y_BAIXO, Y_CIMA]) {
+    por(g, macia(L, 0.02, P0, 0.006), inox(), 0, y, 0);
+    // as bordas passam 2 mm da bandeja nas pontas, e as compridas param antes
+    // das curtas: nenhuma ponta rente a outra
+    for (const s of [-1, 1]) {
+      por(g, macia(L - 0.03, 0.04, 0.012, 0.004), inox(), 0, y + 0.025, s * (P0 / 2 - 0.004));
+      por(g, macia(0.012, 0.04, P0 - 0.02, 0.004), inox(), s * (L / 2 - 0.004), y + 0.025, 0);
+    }
+  }
+  // a alça de empurrar, na ponta da direita
+  const empurrar = alca(P0 - 0.12, 0.09, 0.013).rotateY(-Math.PI / 2);
+  por(g, empurrar, inox(), L / 2, Y_CIMA + 0.05, 0);
+
+  // A BACIA de recolher, na metade da esquerda de cima: as paredes, o fundo e
+  // a borda virada; dentro, três pratos inclinados e uma caneca
+  const bx = -0.17;
+  const BL = 0.4;
+  const BP = 0.36;
+  const BA = 0.13;
+  const yb = Y_CIMA + 0.01;
+  // o fundo é um fio mais baixo que as paredes, e as paredes curtas ficam
+  // por dentro das compridas: nada de face rente a face nas quinas
+  por(g, macia(BL - 0.01, 0.012, BP - 0.01, 0.004), P.churrascoBacia, bx, yb + 0.004, 0);
+  for (const s of [-1, 1]) {
+    por(g, macia(BL, BA, 0.012, 0.004), P.churrascoBacia, bx, yb + 0.002 + BA / 2, s * (BP / 2 - 0.006));
+    por(g, macia(0.012, BA - 0.006, BP - 0.02, 0.004), P.churrascoBacia, bx + s * (BL / 2 - 0.009), yb + 0.002 + BA / 2, 0);
+  }
+  const prato = torneado([[0.001, 0], [0.06, 0], [0.085, 0.012], [0.1, 0.02], [0.098, 0.023], [0.08, 0.016], [0.001, 0.01]], 18);
+  for (const [dx, dz, inc] of [[-0.06, -0.05, 0.5], [0.0, 0.0, 0.45], [0.06, 0.05, 0.4]] as const) {
+    const p = por(g, prato, P.churrascoAzulejo, bx + dx, yb + 0.07, dz);
+    p.rotation.set(inc, 0.3, 0);
+  }
+  por(g, torneado([[0.001, 0], [0.03, 0], [0.032, 0.06], [0.029, 0.062], [0.026, 0.008], [0.001, 0.008]], 14), P.churrascoAzulejo, bx + 0.11, yb + 0.012, -0.1);
+  // embaixo: a pilha de pratos limpos e os guardanapos dobrados
+  for (let i = 0; i < 9; i++) por(g, prato, P.churrascoAzulejo, -0.18, Y_BAIXO + 0.012 + i * 0.016, 0);
+  for (let i = 0; i < 3; i++) por(g, macia(0.16, 0.022, 0.16, 0.008), P.churrascoToalha, 0.18, Y_BAIXO + 0.022 + i * 0.023, 0).rotation.y = i * 0.12;
+
+  g.userData.tampo = Y_CIMA + 0.012;
+  g.userData.pilhas = [[0.2, -0.1], [0.2, 0.12]];
   return g;
 }

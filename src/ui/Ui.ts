@@ -1179,8 +1179,11 @@ export class Ui {
   }
 
   /** A escala do Walter, no Mania; resolve com o número do turno escolhido, ou `null`. Ver `escalaDoWalter.ts`. */
-  abrirEscala(conteudo: ConteudoDaEscala): Promise<number | null> {
-    const pedido = this.escala.abrir(conteudo);
+  abrirEscala(
+    conteudo: ConteudoDaEscala,
+    comprar: ((id: string) => ConteudoDaEscala | null) | null = null,
+  ): Promise<number | null> {
+    const pedido = this.escala.abrir(conteudo, comprar);
     this.marcarTelaAberta();
     return pedido.then((turno) => {
       this.marcarTelaAberta();

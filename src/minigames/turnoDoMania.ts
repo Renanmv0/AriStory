@@ -11,8 +11,12 @@ import { Gina } from '../entities/bichos/Gina';
 import { Mano } from '../entities/bichos/Mano';
 import { CARDAPIO, pratoPorId, type PratoDoCardapio } from '../world/cardapioData';
 import { loucaSuja, pratoServido } from '../world/props';
+import { bandejaDeGarcom, bloquinhoDeComandas } from '../world/moveisDoMania';
+import { ITENS } from '../world/itens';
 import { BalaoDeCliente } from './balaoDeCliente';
-import { TURNOS, estrelasDoTurno, type ChegadaDoTurno, type TurnoDaEscala } from './turnosDoMania';
+import {
+  TURNOS, estrelasDoTurno, type ChegadaDoTurno, type NiveisDasMelhorias, type TurnoDaEscala,
+} from './turnosDoMania';
 
 /**
  * O TURNO NO MANIA DE CHURRASCO — o minigame de servir as mesas.
@@ -59,10 +63,13 @@ const DRENO = {
 /** as fases que passam sozinhas, e em quanto tempo */
 const LEITURA = 6;
 const REFEICAO = 11;
-/** o Walter leva isto por prato, um de cada vez */
+/** o Walter leva isto por prato (a "Chapa nova" baixa para 5) */
 const COZINHA = 7;
-/** vagas na bandeja de CADA personagem — prato limpo e louça suja disputam */
+const COZINHA_NA_CHAPA_NOVA = 5;
+/** vagas na bandeja de CADA personagem — prato limpo e louça suja disputam (a "Bandeja grande" dá 3) */
 const BANDEJA = 2;
+/** o tamanho do prato e da louça EM CIMA da bandeja, na mão: o de mesa não cabe dois */
+const ESCALA_NA_BANDEJA = 0.46;
 /** vagas de prato pronto no balcão */
 const SAIDAS = 3;
 
@@ -200,7 +207,7 @@ export interface MesaDoTurno {
 export interface PlantaDoTurno {
   /** onde o cliente entra e por onde ele sai */
   entrada: { x: number; z: number };
-  /** os três lugares da fila, o primeiro é a frente */
+  /** os lugares da fila, o primeiro é a frente: três, e o QUARTO só com a "Plaquinha de reserva" */
   fila: readonly { x: number; z: number }[];
   /** o ponto de interação de "levar à mesa" */
   recepcao: { x: number; z: number };
@@ -208,6 +215,11 @@ export interface PlantaDoTurno {
   saidas: readonly { x: number; z: number }[];
   /** o ponto de interação de pegar o prato */
   balcao: { x: number; z: number };
+  /**
+   * o CARRINHO DE LOUÇA (a melhoria): onde ele fica, o ponto de largar a
+   * louça nele, os lugares das pilhas em cima e a altura da bandeja de cima
+   */
+  carrinho?: { x: number; z: number; ponto: { x: number; z: number }; pilha: readonly { x: number; z: number }[]; tampo: number };
   /** onde a louça suja se empilha, e o ponto de largar */
   pilha: readonly { x: number; z: number }[];
   copa: { x: number; z: number };
@@ -273,8 +285,15 @@ export class TurnoDoMania {
   private ocupadas = new Map<MesaDoTurno, Cliente>();
   /** comandas na cozinha, na ordem */
   private comandas: Cliente[] = [];
-  private cozinhando: Cliente | null = null;
-  private ateSair = 0;
+  /** o que está na chapa: um prato de cada vez, ou dois com a chapa dupla */
+  private cozinhando: Array<{ dono: Cliente; falta: number }> = [];
+  /** o nível de cada melhoria neste turno */
+  private niveis: NiveisDasMelhorias = {};
+  /** a bandeja de verdade na mão de cada um, pelo id da pessoa */
+  private bandejasNaMao = new Map<string, THREE.Group>();
+  private pilhaNoCarrinho: THREE.Object3D[] = [];
+  /** quem está anotando agora (com o bloquinho na mão no lugar da bandeja) */
+  private anotando: string | null = null;
   private prontos: PratoPronto[] = [];
   private pilhaDeLouca: THREE.Object3D[] = [];
   private semente = 20260906;
@@ -285,6 +304,7 @@ export class TurnoDoMania {
   private readonly pontoDaMesa: Interactable[];
   private readonly pontoDoBalcao: Interactable;
   private readonly pontoDaCopa: Interactable;
+  private readonly pontoDoCarrinho: Interactable | null;
 
   constructor(
     private readonly w: WorldBuilder,
@@ -317,6 +337,13 @@ export class TurnoDoMania {
       priority: 3,
       onInteract: () => this.largarALouca(),
     });
+    this.pontoDoCarrinho = planta.carrinho ? w.interact({
+      id: 'turno:carrinho',
+      x: planta.carrinho.ponto.x, z: planta.carrinho.ponto.z, radius: 1.5,
+      label: 'Largar a louça no carrinho', icon: '🛒',
+      priority: 3,
+      onInteract: () => this.largarALouca('carrinho'),
+    }) : null;
     this.pontoDaMesa = mesas.map((mesa, i) => w.interact({
       id: `turno:mesa-${i}`,
       x: mesa.x, z: mesa.z + 1.4, radius: 1.6,
@@ -324,9 +351,29 @@ export class TurnoDoMania {
       priority: 4,
       onInteract: () => this.naMesa(mesa),
     }));
-    for (const p of [this.pontoDaRecepcao, this.pontoDoBalcao, this.pontoDaCopa, ...this.pontoDaMesa]) {
-      p.enabled = false;
-    }
+    for (const p of this.todosOsPontos()) p.enabled = false;
+  }
+
+  private todosOsPontos(): Interactable[] {
+    return [
+      this.pontoDaRecepcao, this.pontoDoBalcao, this.pontoDaCopa,
+      ...(this.pontoDoCarrinho ? [this.pontoDoCarrinho] : []), ...this.pontoDaMesa,
+    ];
+  }
+
+  /** o nível de uma melhoria neste turno (0 = não tem) */
+  private nivel(id: string): number {
+    return this.niveis[id] ?? 0;
+  }
+
+  /** quantas coisas cabem na bandeja de cada um */
+  private get capacidade(): number {
+    return BANDEJA + (this.nivel('bandeja') > 0 ? 1 : 0);
+  }
+
+  /** quantos lugares a fila tem: o quarto vem com a plaquinha de reserva */
+  private get lugaresNaFila(): number {
+    return Math.min(this.planta.fila.length, this.nivel('reserva') > 0 ? 4 : 3);
   }
 
   private sorte(): number {
@@ -348,10 +395,13 @@ export class TurnoDoMania {
    * plataforma. E é o que deixa o teste medir alguma coisa: com chegada
    * aleatória, `scripts/turno.mjs` não teria o que afirmar.
    */
-  async comecar(turno: TurnoDaEscala = TURNOS[0]): Promise<void> {
+  async comecar(turno: TurnoDaEscala = TURNOS[0], niveis: NiveisDasMelhorias = {}): Promise<void> {
     if (this.rodando) return;
     this.rodando = true;
     this.turno = turno;
+    this.niveis = niveis;
+    this.cozinhando = [];
+    this.anotando = null;
     this.tempo = turno.duracao;
     this.dinheiro = 0;
     this.coracoes = 0;
@@ -374,6 +424,21 @@ export class TurnoDoMania {
     for (const p of this.suspensas) p.enabled = false;
     this.pontoDaRecepcao.enabled = true;
 
+    /**
+     * A BANDEJA NA MÃO DOS DOIS, a de sempre ou a grande, e o TÊNIS DE GARÇOM
+     * nos pés de quem tem a melhoria. As duas coisas são da cena: não mexem no
+     * save, e o fim do turno (ou a troca de cena) tira.
+     */
+    for (const quem of [this.g.playerId(), this.g.companionId()]) {
+      const bandeja = bandejaDeGarcom(this.nivel('bandeja') > 0);
+      this.bandejasNaMao.set(quem, bandeja);
+      this.g.segurarNaCena(quem, bandeja, 'upright');
+      if (this.nivel('tenis') > 0) this.g.vestirNaCena(quem, 'pes', ITENS.tenisDeGarcom);
+    }
+    // o tênis anda 10% por nível — vale para quem estiver no comando, e o T
+    // não tira (a velocidade é do comando, não do corpo)
+    this.g.setVelocidadeDoJogador(1 + 0.1 * this.nivel('tenis'));
+
     // o Walter vai para a cozinha e fica lá: durante o turno ele é a cozinha
     this.walter.entrarEmServico();
     void this.walter.irPara(this.planta.cozinha.x, this.planta.cozinha.z, 2.4);
@@ -381,9 +446,16 @@ export class TurnoDoMania {
 
   private async terminar(): Promise<void> {
     this.rodando = false;
-    for (const p of [this.pontoDaRecepcao, this.pontoDoBalcao, this.pontoDaCopa, ...this.pontoDaMesa]) {
-      p.enabled = false;
+    for (const p of this.todosOsPontos()) p.enabled = false;
+    for (const [quem, bandeja] of this.bandejasNaMao) {
+      this.g.segurarNaCena(quem, null);
+      this.g.vestirNaCena(quem, 'pes', null);
+      this.apagar(bandeja);
     }
+    this.bandejasNaMao.clear();
+    this.g.setVelocidadeDoJogador(1);
+    for (const pilha of this.pilhaNoCarrinho) this.apagar(pilha);
+    this.pilhaNoCarrinho = [];
     this.g.showTurno(null);
     this.g.setZoom(9.5);
     this.g.som('caixa');
@@ -451,7 +523,7 @@ export class TurnoDoMania {
       this.proximaChegada += 1;
       // fila cheia: o quarto vai embora antes de entrar. Perda seca, sem drama
       // e sem barulho — só uma linha a menos na conta do dia
-      if (this.naFila().length >= this.planta.fila.length) continue;
+      if (this.naFila().length >= this.lugaresNaFila) continue;
       this.entrar(ELENCO.find((f) => f.id === marcado.ficha) ?? ELENCO[0]);
     }
   }
@@ -499,12 +571,12 @@ export class TurnoDoMania {
     switch (c.fase) {
       case 'na-porta': {
         // cada um anda até o seu lugar na fila; quem está na frente é quem sai
-        const lugar = this.planta.fila[Math.min(this.naFila().indexOf(c), this.planta.fila.length - 1)];
+        const lugar = this.planta.fila[Math.min(this.naFila().indexOf(c), this.lugaresNaFila - 1)];
         if (Math.hypot(c.bicho.x - lugar.x, c.bicho.z - lugar.z) > 0.25) {
           c.bicho.seguir(lugar.x, lugar.z, 1.5);
         }
         c.balao.mostrar({ tipo: 'chegando' }, c.paciencia);
-        this.drenar(c, dt, DRENO['na-porta']);
+        this.drenar(c, dt, DRENO['na-porta'] * this.folgaDaFila);
         break;
       }
       case 'indo': {
@@ -512,7 +584,7 @@ export class TurnoDoMania {
         const eu = this.g.playerPosition();
         c.bicho.seguir(eu.x - 0.7, eu.z - 0.7, 1.7);
         c.balao.mostrar({ tipo: 'chegando' }, c.paciencia);
-        this.drenar(c, dt, DRENO['na-porta']);
+        this.drenar(c, dt, DRENO['na-porta'] * this.folgaDaFila);
         break;
       }
       case 'sentando': {
@@ -575,8 +647,14 @@ export class TurnoDoMania {
    * ficha multiplica esse tempo — é ela que faz a Josefina praticamente não se
    * irritar e o Noel viver no vermelho.
    */
+  /** a plaquinha de reserva: quem está na porta espera 30% mais */
+  private get folgaDaFila(): number {
+    return this.nivel('reserva') > 0 ? 1.3 : 1;
+  }
+
   private drenar(c: Cliente, dt: number, segundos: number): void {
-    let calma = c.ficha.calma;
+    // o rádio do salão: a paciência de todo mundo cai 10% mais devagar
+    let calma = c.ficha.calma / (this.nivel('radio') > 0 ? 0.9 : 1);
     for (const outro of this.clientes) {
       if (outro === c || !outro.ficha.acalma || !outro.mesa || !c.mesa) continue;
       if (Math.hypot(outro.mesa.x - c.mesa.x, outro.mesa.z - c.mesa.z) < 5) {
@@ -648,6 +726,7 @@ export class TurnoDoMania {
       for (const v of fora) this.apagar(v.malha);
       this.bandejas.set(quem, bandeja.filter((v) => !(v.tipo === 'prato' && v.para === c)));
     }
+    this.arrumarABandeja();
   }
 
   /**
@@ -683,37 +762,45 @@ export class TurnoDoMania {
 
   // --------------------------------------------------------------- a cozinha
 
+  /**
+   * A CHAPA DO WALTER: um prato de cada vez (7 s), 5 s com a chapa nova, e
+   * DOIS de cada vez com a chapa dupla — cada um no seu relógio.
+   */
   private cozinhar(dt: number): void {
-    if (this.cozinhando) {
-      this.ateSair -= dt;
-      if (this.ateSair > 0) return;
-      const dono = this.cozinhando;
-      this.cozinhando = null;
-      // o cliente pode ter ido embora enquanto o prato ficava pronto
-      if (dono.fase !== 'esperando') return;
-      const vaga = this.vagaLivreNoBalcao();
-      if (vaga < 0) {
-        // balcão cheio TRAVA a cozinha: o prato não sai porque ninguém buscou.
-        // A comanda volta para o fim da fila em vez de sumir.
-        this.comandas.unshift(dono);
-        return;
-      }
-      const malha = pratoServido(dono.prato.id);
-      if (!malha) return;
-      const onde = this.planta.saidas[vaga];
-      malha.position.set(onde.x, this.planta.tampo, onde.z);
-      this.w.root.add(malha);
-      this.prontos.push({ prato: dono.prato, para: dono, malha, vaga });
-      this.g.som('sino');
-      // ele encosta na janela para entregar e volta para a cozinha
-      void this.walter.irPara(this.planta.janela.x, this.planta.janela.z, 2.6)
-        .then(() => this.walter.irPara(this.planta.cozinha.x, this.planta.cozinha.z, 2.2));
+    const vagas = this.nivel('chapa') >= 2 ? 2 : 1;
+    for (const c of [...this.cozinhando]) {
+      c.falta -= dt;
+      if (c.falta > 0) continue;
+      this.cozinhando = this.cozinhando.filter((x) => x !== c);
+      this.servirDaChapa(c.dono);
+    }
+    while (this.cozinhando.length < vagas) {
+      const proxima = this.comandas.shift();
+      if (!proxima) return;
+      this.cozinhando.push({ dono: proxima, falta: this.nivel('chapa') >= 1 ? COZINHA_NA_CHAPA_NOVA : COZINHA });
+    }
+  }
+
+  private servirDaChapa(dono: Cliente): void {
+    // o cliente pode ter ido embora enquanto o prato ficava pronto
+    if (dono.fase !== 'esperando') return;
+    const vaga = this.vagaLivreNoBalcao();
+    if (vaga < 0) {
+      // balcão cheio TRAVA a cozinha: o prato não sai porque ninguém buscou.
+      // A comanda volta para a frente da fila em vez de sumir.
+      this.comandas.unshift(dono);
       return;
     }
-    const proxima = this.comandas.shift();
-    if (!proxima) return;
-    this.cozinhando = proxima;
-    this.ateSair = COZINHA;
+    const malha = pratoServido(dono.prato.id);
+    if (!malha) return;
+    const onde = this.planta.saidas[vaga];
+    malha.position.set(onde.x, this.planta.tampo, onde.z);
+    this.w.root.add(malha);
+    this.prontos.push({ prato: dono.prato, para: dono, malha, vaga });
+    this.g.som('sino');
+    // ele encosta na janela para entregar e volta para a cozinha
+    void this.walter.irPara(this.planta.janela.x, this.planta.janela.z, 2.6)
+      .then(() => this.walter.irPara(this.planta.cozinha.x, this.planta.cozinha.z, 2.2));
   }
 
   private vagaLivreNoBalcao(): number {
@@ -767,14 +854,14 @@ export class TurnoDoMania {
     // 2. recolher a louça
     if (!c && this.sujeira.has(mesa)) {
       const bandeja = this.minhaBandeja();
-      if (bandeja.length >= BANDEJA) {
+      if (bandeja.length >= this.capacidade) {
         this.g.toast('Bandeja cheia — larga a louça na copa', '🖐');
         return;
       }
       const louca = this.sujeira.get(mesa)!;
       this.sujeira.delete(mesa);
-      louca.visible = false;
       bandeja.push({ tipo: 'louca', malha: louca });
+      this.arrumarABandeja();
       mesa.floreira.visible = true;
       this.g.som('pegar');
       return;
@@ -799,9 +886,14 @@ export class TurnoDoMania {
       bandeja.splice(i, 1);
       if (c.mesa) {
         c.mesa.floreira.visible = false;
+        // da bandeja para a mesa: volta para o mundo, no tamanho de mesa
+        this.w.root.add(vaga.malha);
+        vaga.malha.scale.setScalar(1);
+        vaga.malha.rotation.set(0, 0, 0);
         vaga.malha.visible = true;
         vaga.malha.position.set(c.mesa.x, 0.82, c.mesa.z);
       }
+      this.arrumarABandeja();
       c.fase = 'comendo';
       c.relogio = REFEICAO;
       c.gasto += valor(c.prato);
@@ -847,7 +939,22 @@ export class TurnoDoMania {
     this.g.lockPlayer(true);
     this.g.som('escolha');
     this.g.toast(`${c.prato.nome}`, '📝');
-    await this.g.wait(c.ficha.anotar);
+    /**
+     * O BLOQUINHO DE COMANDAS (a melhoria): anotar leva metade do tempo, e ele
+     * aparece na mão de quem anota — no lugar da bandeja, só enquanto anota.
+     */
+    const comBloquinho = this.nivel('bloquinho') > 0;
+    const quem = this.g.playerId();
+    if (comBloquinho) {
+      this.anotando = quem;
+      this.g.segurarNaCena(quem, bloquinhoDeComandas(), 'upright');
+    }
+    await this.g.wait(c.ficha.anotar * (comBloquinho ? 0.5 : 1));
+    if (comBloquinho && this.anotando === quem) {
+      this.anotando = null;
+      const bandeja = this.bandejasNaMao.get(quem);
+      if (bandeja && this.rodando) this.g.segurarNaCena(quem, bandeja, 'upright');
+    }
     this.g.lockPlayer(false);
     if (c.fase !== 'quer-pedir') return;      // ele desistiu enquanto eu anotava
     c.fase = 'esperando';
@@ -858,14 +965,14 @@ export class TurnoDoMania {
 
   private pegarOPrato(): void {
     const bandeja = this.minhaBandeja();
-    if (bandeja.length >= BANDEJA) {
+    if (bandeja.length >= this.capacidade) {
       this.g.toast('Bandeja cheia — larga a louça na copa', '🖐');
       return;
     }
     const pronto = this.prontos.shift();
     if (!pronto) return;
-    pronto.malha.visible = false;
     bandeja.push({ tipo: 'prato', prato: pronto.prato, malha: pronto.malha, para: pronto.para });
+    this.arrumarABandeja();
     this.g.som('pegar');
   }
 
@@ -878,7 +985,7 @@ export class TurnoDoMania {
    * dia sobrar um jeito de a bandeja guardar um prato sem dono, a copa desatola,
    * em vez de a bandeja ficar travada até o fim do turno.
    */
-  private largarALouca(): void {
+  private largarALouca(onde: 'copa' | 'carrinho' = 'copa'): void {
     const bandeja = this.minhaBandeja();
     const inutil = (v: Vaga): boolean =>
       v.tipo === 'louca' || !this.clientes.includes(v.para);
@@ -886,17 +993,50 @@ export class TurnoDoMania {
     if (!sujas.length) return;
     for (const v of sujas) this.apagar(v.malha);
     this.bandejas.set(this.g.playerId(), bandeja.filter((v) => !inutil(v)));
+    this.arrumarABandeja();
 
-    // a pilha na copa cresce: é o placar visível de um trabalho que ninguém
-    // aplaude, e some no fim do turno
-    for (let i = 0; i < sujas.length && this.pilhaDeLouca.length < this.planta.pilha.length; i++) {
-      const onde = this.planta.pilha[this.pilhaDeLouca.length];
+    // a pilha cresce na copa (ou em cima do carrinho): é o placar visível de
+    // um trabalho que ninguém aplaude, e some no fim do turno
+    const carrinho = onde === 'carrinho' ? this.planta.carrinho : undefined;
+    const pilhas = carrinho ? this.pilhaNoCarrinho : this.pilhaDeLouca;
+    const lugares = carrinho ? carrinho.pilha : this.planta.pilha;
+    const altura = carrinho ? carrinho.tampo : this.planta.tampo;
+    for (let i = 0; i < sujas.length && pilhas.length < lugares.length; i++) {
+      const lugar = lugares[pilhas.length];
       const pilha = loucaSuja(this.sorte());
-      pilha.position.set(onde.x, this.planta.tampo, onde.z);
+      pilha.position.set(lugar.x, altura, lugar.z);
+      if (carrinho) pilha.scale.setScalar(0.7);
       this.w.root.add(pilha);
-      this.pilhaDeLouca.push(pilha);
+      pilhas.push(pilha);
     }
     this.g.som('louca');
+  }
+
+  /**
+   * O QUE ESTÁ NA BANDEJA APARECE NA BANDEJA: cada prato (e cada pilha de
+   * louça) pousa numa vaga do grupo `carga` da bandeja da mão de quem carrega,
+   * no tamanho de bandeja. Refeito a cada mudança, nas duas bandejas.
+   */
+  private arrumarABandeja(): void {
+    for (const [quem, vagas] of this.bandejas) {
+      const bandeja = this.bandejasNaMao.get(quem);
+      const carga = bandeja?.userData.carga as THREE.Object3D | undefined;
+      const lugares = (bandeja?.userData.vagas ?? []) as ReadonlyArray<readonly [number, number]>;
+      vagas.forEach((v, i) => {
+        // o teste injeta vagas de mentira (sem malha de verdade): essas ficam de fora
+        if (!(v.malha as THREE.Object3D)?.isObject3D) return;
+        if (!carga) {
+          v.malha.visible = false;
+          return;
+        }
+        const [x, z] = lugares[Math.min(i, lugares.length - 1)] ?? [0, 0];
+        carga.add(v.malha);
+        v.malha.position.set(x, 0, z);
+        v.malha.rotation.set(0, i * 0.7, 0);
+        v.malha.scale.setScalar(ESCALA_NA_BANDEJA);
+        v.malha.visible = true;
+      });
+    }
   }
 
   // ------------------------------------------------------ os rótulos do HUD
@@ -922,14 +1062,16 @@ export class TurnoDoMania {
      * tela explicando que o problema eram as duas mãos ocupadas. Prompt que
      * some é a pior forma de dizer "não dá".
      */
-    const cheia = bandeja.length >= BANDEJA;
+    const cheia = bandeja.length >= this.capacidade;
     this.pontoDoBalcao.enabled = this.prontos.length > 0;
     this.pontoDoBalcao.label = !this.prontos.length
       ? 'Pegar o prato'
       : cheia ? 'Bandeja cheia — larga a louça na copa' : `Pegar ${this.prontos[0].prato.nome}`;
     this.pontoDoBalcao.icon = cheia ? '🖐' : '🍽️';
 
-    this.pontoDaCopa.enabled = bandeja.some((v) => v.tipo === 'louca' || !this.clientes.includes(v.para));
+    const temLouca = bandeja.some((v) => v.tipo === 'louca' || !this.clientes.includes(v.para));
+    this.pontoDaCopa.enabled = temLouca;
+    if (this.pontoDoCarrinho) this.pontoDoCarrinho.enabled = temLouca && this.nivel('carrinho') > 0;
 
     for (let i = 0; i < this.mesas.length; i++) {
       const mesa = this.mesas[i];

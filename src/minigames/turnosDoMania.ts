@@ -190,8 +190,9 @@ export function estrelasDoTurno(turno: TurnoDaEscala, dinheiro: number): 1 | 2 |
  * a moeda é ideia do Renan, e é só do Mania: o dinheiro do turno continua
  * indo para a carteira do casal.
  *
- * Na etapa A elas só APARECEM (a aba mostra o que vem e quanto custa); a
- * compra e o efeito de cada uma entram na etapa B. Os preços são provisórios.
+ * Compradas na aba "Melhorias" da escala (`comprarMelhoria`); o nível de
+ * cada uma mora no contador `mania:<id>`. O motor do turno recebe os níveis
+ * no `comecar()`, e a cena mostra a peça de cada uma no salão.
  */
 export interface MelhoriaDoMania {
   id: string;
@@ -238,8 +239,11 @@ export const MELHORIAS: readonly MelhoriaDoMania[] = [
   },
   {
     id: 'carrinho', nome: 'Carrinho de louça', icone: '🛒',
-    efeitos: ['Guarda uma pilha de louça sem ocupar a bandeja.'],
-    precos: [4], ondeSeVe: 'o carrinho parado na copa',
+    // o plano dizia "guarda uma pilha sem ocupar a bandeja", mas um carrinho
+    // parado na copa não ajudaria em nada: ele mora no MEIO do salão, e é um
+    // segundo lugar de largar a louça — meia viagem a menos
+    efeitos: ['Um carrinho no meio do salão: dá para largar a louça nele, sem ir até a copa.'],
+    precos: [4], ondeSeVe: 'o carrinho de louça entre as mesas',
   },
 ];
 
@@ -254,6 +258,7 @@ export const CHAVE = {
   recorde: (n: number) => `turno:${n}:recorde`,
   vezes: (n: number) => `turno:${n}:vezes`,
   petiscos: 'mania:petiscos',
+  melhoria: (id: string) => `mania:${id}`,
   /** o save de antes da temporada já foi lido (uma vez só) */
   migrado: 'turnos-migrados',
 } as const;
@@ -344,4 +349,32 @@ export function registrarOTurno(s: SaveDoTurno, turno: TurnoDaEscala, dinheiro: 
     abriu: proximo && !proximoAbertoAntes && turnoAberto(s, proximo.numero) ? proximo : null,
     temporadaFechada: !fechadaAntes && TURNOS.every((t) => s.stat(CHAVE.estrelas(t.numero)) >= 3),
   };
+}
+
+// ------------------------------------------------------- comprar melhorias
+
+/** o nível de cada melhoria comprada (0 = não tem), pelo `id` */
+export type NiveisDasMelhorias = Readonly<Record<string, number>>;
+
+export function niveisDasMelhorias(s: SaveDoTurno): NiveisDasMelhorias {
+  return Object.fromEntries(MELHORIAS.map((m) => [m.id, s.stat(CHAVE.melhoria(m.id))]));
+}
+
+export type Compra = 'comprou' | 'faltam-petiscos' | 'no-maximo' | 'nao-existe';
+
+/**
+ * COMPRA O PRÓXIMO NÍVEL de uma melhoria com os petiscos do pote. Nível a
+ * nível: o tênis de 20% só depois do de 10%. Os contadores só somam, então
+ * gastar é um `bump` negativo.
+ */
+export function comprarMelhoria(s: SaveDoTurno, id: string): Compra {
+  const m = MELHORIAS.find((x) => x.id === id);
+  if (!m) return 'nao-existe';
+  const nivel = s.stat(CHAVE.melhoria(id));
+  if (nivel >= m.precos.length) return 'no-maximo';
+  const preco = m.precos[nivel];
+  if (s.stat(CHAVE.petiscos) < preco) return 'faltam-petiscos';
+  s.bump(CHAVE.petiscos, -preco);
+  s.bump(CHAVE.melhoria(id), 1);
+  return 'comprou';
 }

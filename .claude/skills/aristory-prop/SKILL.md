@@ -398,6 +398,30 @@ O que deu a cara nova, e serve para o próximo restaurante:
   parede tem 2,2 e a porta 1,1, e sobrava um buraco dos dois lados. Os dois
   panos e o alto de reboco moram na peça, sem colisor novo. A folha continua
   na `dobradica`.
+
+### As melhorias do turno (mesmo arquivo)
+
+As peças que a escala do Walter vende (§13.6 de `docs/MINIGAME-RESTAURANTE.md`)
+seguem o princípio do regador: a melhoria é uma coisa que se VÊ. A cena monta
+todas e mostra só as compradas (`mostrarMelhorias`), sem remontar a cena.
+
+- **A bandeja na mão** (`bandejaDeGarcom`): a origem é a MÃO, o prato fica um
+  dedo acima e um tico à frente. O que a dupla carrega pousa no grupo
+  `carga`, nas vagas de `VAGAS_DA_BANDEJA`, a 0,46 do tamanho de mesa (o
+  prato de mesa não cabe dois numa bandeja). Quem põe na mão é o motor do
+  turno, por `g.segurarNaCena` — nada de item de mochila.
+- **Coisa de mão no corpo chibi é maior que a de verdade**: o bloquinho de
+  comandas do tamanho real virou um risquinho na cintura; com 1,7× ele lê.
+- **Lousa de giz: linha CURTA.** `escreverAGiz` tira o tamanho da letra da
+  altura da linha; "Aguarde aqui" numa linha estourou a lousa do cavalete.
+  Mais linhas = letra menor.
+- **Peça de chão nunca colada na mureta**: o cavalete nasceu no canto da
+  direita e a mureta (do lado da câmera) engolia metade dele.
+- **Coisa que toca anima por `InstancedMesh`**: as notas do rádio são um lote
+  de quatro, refeito no `update` (a cena só chama enquanto ele está à vista).
+- **Carrinho, tubo e borda**: o tubo que atravessa a bandeja para 3 mm
+  abaixo do tampo (rente, as tampas brigam), e as bordas compridas param
+  antes das curtas.
 - **O peso**: 904 → ~500 desenhos por quadro na vista de longe, e os
   triângulos de ~35 mil para ~170–195 mil — a mesma régua da boutique
   (~170 mil). No Chromium sem placa as duas rodam igual (~2 q/s).

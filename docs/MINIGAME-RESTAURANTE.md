@@ -7,10 +7,11 @@
 
 ## COMECE AQUI
 
-**O que existe no jogo hoje** (etapas 1 e 2, e a **etapa A** da temporada):
-o osso no jardim, o Walter convidando, e a escala na parede abrindo **a
-escala do Walter** — o menu dos turnos (`src/ui/escalaDoWalter.ts`), com a
-aba das melhorias ainda só mostrando o que vem. Jogáveis: o **turno 1** (o de
+**O que existe no jogo hoje** (etapas 1 e 2, e as **etapas A e B** da
+temporada): o osso no jardim, o Walter convidando, e a escala na parede
+abrindo **a escala do Walter** — o menu dos turnos (`src/ui/escalaDoWalter.ts`)
+com a aba das **melhorias**, compradas com petiscos e cada uma aparecendo no
+salão (§13.6). Jogáveis: o **turno 1** (o de
 antes, igualzinho: 2:45, quatro clientes, gravatinha nas três estrelas) e o
 **turno 2, "Sobremesa de pinguim"** (3:00, o Mano estreia pedindo
 sobremesa, avental de garçom nas três estrelas). Os turnos 3 a 6 aparecem
@@ -19,7 +20,7 @@ o Walter dá **petiscos**, um por estrela. Os dados moram em
 `src/minigames/turnosDoMania.ts`; o motor, em `turnoDoMania.ts`.
 
 O que o plano antigo previa e **ainda não entrou**: o Pelusa, as três
-levas, o prato esfriando no balcão e as melhorias funcionando (etapa B).
+levas e o prato esfriando no balcão (etapas C e D).
 
 **O pedido novo do Renan** (outubro de 2026), que é o que está sendo feito:
 
@@ -680,7 +681,7 @@ salão** — o mesmo princípio do regador da estufa: a melhoria não é um íco
 | **Chapa nova** | o Walter faz o prato em 5 s em vez de 7 / dois pratos de cada vez | 3 / 6 | a chapa nova na cozinha |
 | **Plaquinha de reserva** | a fila espera 30% mais, e ganha o quarto lugar | 3 | a plaquinha na entrada |
 | **Rádio do salão** | a paciência de todo mundo cai 10% mais devagar | 5 | o rádio no balcão do bar, tocando |
-| **Carrinho de louça** | guarda uma pilha de louça sem ocupar a bandeja | 4 | o carrinho parado na copa |
+| **Carrinho de louça** | um segundo lugar de largar a louça, no meio do salão | 4 | o carrinho entre as mesas |
 
 São 36 petiscos no total. Os seis turnos vencidos dão 18 (no mínimo); o
 resto vem de rejogar — umas seis ou sete partidas a mais para o salão
@@ -690,6 +691,32 @@ etapa B.
 
 **Quem já jogou não perde nada aqui também**: o save antigo com a gravatinha
 (três estrelas no turno 1) já ganha os 3 petiscos dessas estrelas.
+
+**Como ficou no jogo (etapa B):**
+
+- a aba "Melhorias" da escala tem um botão no PRÓXIMO nível de cada uma
+  ("comprar · 🍢 5", ou "faltam 🍢 3" quando o pote não dá); comprar desconta
+  na hora, o cartão pisca e a escala continua aberta. O nível mora no
+  contador `mania:<id>` (`comprarMelhoria`, em `turnosDoMania.ts`);
+- **a bandeja agora existe sempre**: durante o turno os dois seguram uma
+  bandeja de inox, e o que carregam (o prato, a louça) aparece EM CIMA dela.
+  A melhoria troca pela oval grande, de três vagas. O motor ganhou
+  `g.segurarNaCena` para isso (por cima do item da mochila, sem mexer no save);
+- **o tênis de garçom** é o tênis de time dos Gatitos (`montarTenis`) no preto
+  do avental, com as listras douradas; ele calça os dois só durante o turno
+  (`g.vestirNaCena`), e a velocidade é do comando (10% por nível);
+- **o bloquinho** aparece na mão de quem anota, no lugar da bandeja, só
+  enquanto anota (e anotar leva metade);
+- **a chapa nova** fica na ilha da cozinha (a dupla, de duas zonas, no nível
+  2), com comida e as chamas acesas; **o cavalete de giz** ("Fila — aguarde
+  aqui, que o Walter já vem!") fica na frente da fila; **o rádio** de capela
+  toca no bar, com as notas subindo; **o carrinho de louça** fica no vão entre
+  as duas mesas do meio da fileira da frente;
+- **o carrinho mudou de efeito**: o plano dizia "guarda uma pilha sem ocupar a
+  bandeja", mas parado na copa ele não ajudaria em nada. Ele é um SEGUNDO
+  LUGAR DE LARGAR A LOUÇA, no meio do salão — meia viagem a menos;
+- teste: `scripts/melhorias.mjs` (a compra, cada efeito medido sem e com, as
+  peças no salão, a bandeja carregada e o fim do turno tirando tudo).
 
 ### 13.7 Ideias para depois (fora da primeira leva)
 
@@ -747,7 +774,7 @@ Cada etapa é jogável sozinha e vai para `main` antes da próxima, como no §11
 | # | etapa | o que fica em pé no fim |
 |---|---|---|
 | A ✅ | **A escala e os dois primeiros turnos** *(no jogo)* | o painel com as duas abas (a das melhorias ainda vazia), a tabela de turnos, as estrelas e o recorde por turno, a trava das três estrelas, o save antigo; o turno 1 (o de hoje) e o turno 2 com o Mano e o avental |
-| B | **As melhorias** | a aba de melhorias com as sete, a compra com petiscos e cada uma aparecendo no salão |
+| B ✅ | **As melhorias** *(no jogo)* | a aba de melhorias com as sete, a compra com petiscos e cada uma aparecendo no salão |
 | C | **Turnos 3 e 4** | o Cookie, o Jean-Luc, a Estella, o prato esfriando, o bloquinho e o colete |
 | D | **Turnos 5 e 6** | as coelhinhas e a mesa grande, o Flynn, o Gatito, o Pelusa, a bandana, o uniforme de chef e o retrato dos empregados do mês |
 

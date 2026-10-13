@@ -3,7 +3,7 @@ import { PALETTE as P } from '../palette';
 import { toon } from '../core/materials';
 import type { ItemDef, MedidasCorpo } from '../core/types';
 import { fundir } from './fundir';
-import { raioDoTronco } from './uniformeDosGatitos';
+import { montarTenis, raioDoTronco } from './uniformeDosGatitos';
 import { cintaNaPele, evase, lacoDeFita, naPele, saiaViva } from './roupasDaBoutique';
 
 /**
@@ -222,4 +222,22 @@ function aventalDeGarcom(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): T
   return fundir(g);
 }
 
-export { aventalDeGarcom };
+/**
+ * O TÊNIS DE GARÇOM — a melhoria "Tênis de garçom" do turno, e não uma peça
+ * do guarda-roupa: a cena calça os dois só enquanto o turno roda
+ * (`g.vestirNaCena`), e tira no fim. O sapato é o mesmo do time dos Gatitos
+ * (`montarTenis`), no preto do avental, com as listras no dourado do bordado
+ * e sem o emblema do time.
+ */
+function tenisDeGarcom(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  return montarTenis(m, {
+    cabedal: peca?.cor ?? P.aventalGarcom,
+    listra: peca?.corDetalhe ?? P.aventalGarcomBordado,
+    sola: P.tenisGarcomSola, filete: P.aventalGarcomFita, entressola: P.tenisGarcomSola,
+    fileteDoMeio: P.aventalGarcomBordado,
+    cadarco: P.tenisGarcomCadarco, colarinho: P.aventalGarcomFita, alca: P.aventalGarcomBordado,
+    emblema: false,
+  });
+}
+
+export { aventalDeGarcom, tenisDeGarcom };
