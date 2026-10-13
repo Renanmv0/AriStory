@@ -123,14 +123,9 @@ const estado = () => page.evaluate(() => ({
   relogio: document.querySelector('.turno .relogio')?.textContent ?? '',
   grana: document.querySelector('.turno .grana')?.textContent ?? '',
   bandeja: [...document.querySelectorAll('.turno .bandeja i')].map((e) => e.title),
-  clientes: (() => {
-    const nomes = ['josefina', 'capy', 'noel', 'girafa', 'mano'];
-    let n = 0;
-    window.jogo.scene.traverse((o) => {
-      if (nomes.includes(o.userData?.peca)) n += 1;
-    });
-    return n;
-  })(),
+  // contados pelo motor, e não pela etiqueta de cada bicho na cena: o turno 6
+  // abre com o Gatito, e uma lista de nomes fixa não via ninguém chegar
+  clientes: window.jogo.current.world.root.userData.turno?.clientes.length ?? 0,
   louca: (() => {
     let n = 0;
     window.jogo.scene.traverse((o) => {
