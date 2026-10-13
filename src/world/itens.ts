@@ -349,13 +349,20 @@ export const ITENS = {
    * OS PRÊMIOS DA TEMPORADA DE TURNOS DO MANIA (`PREMIOS_DO_MANIA`, lá
    * embaixo): o Walter dá na primeira vez das três estrelas de cada turno.
    * Como o avental da Josefina, vão POR CIMA e não levam `cor`.
+   *
+   * O avental é ACESSÓRIO preso no corpo, e não peça de tronco (pedido do
+   * Renan: dá para usar com qualquer roupa — o colete, a camiseta, o
+   * vestido). O referencial é o mesmo do tronco (y = 0 no chão, no corpo), então
+   * a geometria não mudou; save antigo com ele na vaga do tronco muda de vaga
+   * sozinho (a vaga sai do catálogo, `SaveState.normalizar`).
    */
   aventalDoMania: {
     id: 'avental-do-mania',
     nome: 'Avental de garçom do Mania',
     icone: '🍽️',
     tipo: 'vestivel',
-    slot: 'tronco',
+    slot: 'acessorio',
+    presoEm: 'corpo',
     nota: 'do Walter, pelas três estrelas do turno 2',
     extra: aventalDeGarcom,
   },

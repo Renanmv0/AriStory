@@ -446,6 +446,16 @@ export interface MedidasCorpo {
    * desenhar esse pedaço na cor certa.
    */
   pele?: number;
+  /**
+   * O QUE ESTÁ POR BAIXO, para a peça que vai POR CIMA da roupa (o avental do
+   * Mania, que é acessório preso no corpo e veste com qualquer coisa). A
+   * distância horizontal do eixo do corpo até a roupa de tronco que a pessoa
+   * está usando, na direção `angulo` (0 = frente, positivo para `+X`) e na
+   * altura `y` (no chão); 0 onde não há pano. Medido da geometria montada:
+   * é ele que faz o avental abrir por cima do vestido rodado em vez de
+   * sumir dentro da saia. Só o rig preenche, e só para o acessório do corpo.
+   */
+  porBaixo?: (angulo: number, y: number) => number;
 }
 
 /** O que uma pessoa esta vestindo: slot -> id da peca. Sai das vagas. */
