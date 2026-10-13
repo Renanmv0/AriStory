@@ -2865,6 +2865,6 @@ export {
   sapatilha, botaDeMontaria, chapeuDePalha, chapeuFedora, tiaraDePerolas,
   relogioDourado, luvasLongas, bolsaDeMao, colarDePerolas, lencoDeSeda, bolsaTransversal,
   // o kit, para quem for fazer a próxima
-  corpete, saiaViva, noTronco, torneada, evase, naPele, vivoNaPele,
+  corpete, saiaViva, noTronco, torneada, evase, naPele, vivoNaPele, cintaNaPele, lacoDeFita,
   estampaFloral, listras, poa, linho, cetim, veludo, malha, palha,
 };

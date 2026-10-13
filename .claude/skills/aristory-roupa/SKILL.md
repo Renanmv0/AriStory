@@ -359,6 +359,19 @@ O conjunto da Estella são quatro peças de uma vez (uma por vaga do corpo) e o
 do Mano é um par de patins — este último é o único caso em que a ficha manda no
 modelo do RIG e não num `extra`: ver `enfeite`, em `core/types.ts`.
 
+## Pôr a peça como PRÊMIO de um turno do Mania
+
+`PREMIOS_DO_MANIA` (`world/itens.ts`): o NÚMERO do turno para as peças. O
+Walter entrega na primeira vez das três estrelas daquele turno
+(`darOPremio`, em `scenes/maniaDeChurrasco.ts`, com `g.ganharPeca`), e o
+`reporPremios` repõe. A geometria mora em `world/roupasDoMania.ts`. O turno 1
+não está na lista: a gravatinha é de antes da temporada e volta pela flag.
+
+O avental de garçom (turno 2) é o molde de peça COMPRIDA por cima da roupa:
+um PAINEL de `saiaViva` (`arco`, aberto atrás) para a perna não atravessar,
+e o bordado na TEXTURA do pano, com o UV refeito de 0 a 1 no painel — um
+"Mania" de geometria ficaria parado no ar enquanto o pano anda.
+
 ## Pôr a peça como PRÊMIO de uma lição da apostila do Gatito
 
 O mesmo molde, noutra lista: `PREMIOS_DA_APOSTILA` (`world/itens.ts`), do `id`

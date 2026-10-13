@@ -301,7 +301,9 @@ node scripts/garcom.mjs  /tmp/gc    # o cao garcom passeando pelo salao, e a por
 node scripts/mesas.mjs   /tmp/ms    # sentar em qualquer mesa do Mania, pedir, e o Walter buscar na cozinha
 node scripts/onibus.mjs  /tmp/ob    # o onibus e o ponto de perto, nas duas ruas (parque e clube)
 node scripts/osso.mjs    /tmp/os    # o osso: cavar no jardim, dar ao Walter e ele convidar pro turno
-node scripts/turno.mjs   /tmp/tn    # o turno do Mania: levar a mesa, anotar, servir, receber e a louca
+node scripts/turno.mjs   /tmp/tn    # o turno do Mania: levar a mesa, anotar, servir, receber e a louca (TURNO=2 joga outro turno da escala)
+node scripts/escala.mjs  /tmp/el    # a escala do Walter: o menu dos turnos, a trava das 3 estrelas, os petiscos, o premio de cada turno uma vez so, o save antigo e o celular
+node scripts/sobremesa.mjs /tmp/sb  # o Mano no turno 2: come, pede a sobremesa na mesma mesa, danca e paga as duas
 node scripts/premio.mjs  /tmp/pr    # a carteira do casal (uma so para os dois) e a gravatinha das 3 estrelas
 node scripts/mano.mjs    /tmp/pg    # o Mano no quiosque: fica no posto, aparece inteiro, fala, danca e entrega
 node scripts/cookie.mjs  /tmp/ck    # o Cookie: patrulha ao lado da cabine, vira nas pontas, e vende o bilhete

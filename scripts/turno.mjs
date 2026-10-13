@@ -124,7 +124,7 @@ const estado = () => page.evaluate(() => ({
   grana: document.querySelector('.turno .grana')?.textContent ?? '',
   bandeja: [...document.querySelectorAll('.turno .bandeja i')].map((e) => e.title),
   clientes: (() => {
-    const nomes = ['josefina', 'capy', 'noel', 'girafa'];
+    const nomes = ['josefina', 'capy', 'noel', 'girafa', 'mano'];
     let n = 0;
     window.jogo.scene.traverse((o) => {
       if (nomes.includes(o.userData?.peca)) n += 1;
@@ -143,11 +143,14 @@ const estado = () => page.evaluate(() => ({
 // ===================================================== o turno já destravado
 await page.goto(`${BASE}/?cena=mania-de-churrasco`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2600);
-await page.evaluate(() => {
+await page.evaluate((turnoPedido) => {
   const s = JSON.parse(localStorage.getItem('aristory.save.v1') ?? '{}');
-  s.flags = { ...(s.flags ?? {}), 'turno-aceito': true, 'osso-entregue': true };
+  s.flags = { ...(s.flags ?? {}), 'turno-aceito': true, 'osso-entregue': true, 'turno-2-explicado': true };
+  // `TURNO=N` precisa dos anteriores com três estrelas: é a trava da escala
+  s.stats = { ...(s.stats ?? {}) };
+  for (let n = 1; n < turnoPedido; n++) s.stats[`turno:${n}:estrelas`] = 3;
   localStorage.setItem('aristory.save.v1', JSON.stringify(s));
-});
+}, Number(process.env.TURNO ?? 1));
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(3400);
 await page.mouse.click(500, 440);
@@ -155,9 +158,22 @@ await page.waitForTimeout(600);
 
 // ============================================ 1. começar o turno pela escala
 const promptDaEscala = await agir(2.4, -7.5, /escala/i, 10);
+// a primeira leitura tem falas, e depois abre A ESCALA DO WALTER (o menu dos
+// turnos): o turno marcado é o sugerido (o 1, num save novo); `TURNO=2` marca
+// outro antes de começar
+for (let i = 0; i < 40 && !(await page.locator('.escala-do-walter.show').count()); i++) {
+  if (await page.locator('.dialogue.show').count()) await page.keyboard.press('KeyE');
+  await page.waitForTimeout(420);
+}
+const TURNO = Number(process.env.TURNO ?? 1);
+const linhaDoTurno = page.locator(`.escala-do-walter .linha[data-numero="${TURNO}"]`);
+// a escala abre marcada no primeiro turno sem três estrelas: marca o pedido só se precisar
+if (!(await linhaDoTurno.evaluate((e) => e.classList.contains('marcado')))) await linhaDoTurno.click();
+await page.locator('.escala-do-walter .comecar').click();
 await venceAFala();
 await page.waitForTimeout(1200);
 const comecou = await estado();
+const turnoJogado = await page.evaluate(() => window.jogo.current.world.root.userData.turno.turno.numero);
 await page.screenshot({ path: `${OUT}-comecou.png` });
 
 // ============================================ 2. o primeiro cliente chega
@@ -209,7 +225,9 @@ const depoisDoOrfao = await dentro();
 // ============================================ 4. o laço inteiro, uma volta
 const MESA = { x: 5.2, z: 1.2 };
 const passos = {};
-passos.levar = await agir(9.4, 5.4, /levar à mesa/i);
+// a próxima chegada depende da escala do turno (aos 15 s no 1, aos 18 no 2):
+// a ~2 quadros por segundo isso é mais de um minuto de relógio, e o teto é largo
+passos.levar = await agir(9.4, 5.4, /levar à mesa/i, 240);
 // ele segue o garçom: andar até a mesa e sentar
 passos.sentar = await agir(MESA.x, MESA.z + 1.4, /sentar aqui/i);
 await venceAFala(6);
@@ -314,6 +332,7 @@ await page.screenshot({ path: `${OUT}-cheio.png` });
 const falhas = [];
 if (!/escala/i.test(promptDaEscala ?? '')) falhas.push('a escala nao ofereceu comecar o turno');
 if (!comecou.painel) falhas.push('o painel do turno nao apareceu');
+if (turnoJogado !== Number(process.env.TURNO ?? 1)) falhas.push(`a escala comecou o turno ${turnoJogado}, e nao o ${process.env.TURNO ?? 1}`);
 if (!chegou) falhas.push('nenhum cliente chegou no salao');
 for (const [nome, valor] of Object.entries(orfao)) {
   if (!valor) falhas.push(`o passo "${nome}" do prato orfao nunca ficou disponivel`);

@@ -8,15 +8,19 @@ import { Josefina } from '../entities/bichos/Josefina';
 import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
 import { Gina } from '../entities/bichos/Gina';
-import { CARDAPIO, type PratoDoCardapio } from '../world/cardapioData';
+import { Mano } from '../entities/bichos/Mano';
+import { CARDAPIO, pratoPorId, type PratoDoCardapio } from '../world/cardapioData';
 import { loucaSuja, pratoServido } from '../world/props';
 import { BalaoDeCliente } from './balaoDeCliente';
+import { TURNOS, estrelasDoTurno, type ChegadaDoTurno, type TurnoDaEscala } from './turnosDoMania';
 
 /**
  * O TURNO NO MANIA DE CHURRASCO — o minigame de servir as mesas.
  *
- * O plano inteiro está em `docs/MINIGAME-RESTAURANTE.md`. Esta é a etapa 2: o
- * laço completo rodando com quatro clientes, paciência e o painel na tela.
+ * O plano inteiro está em `docs/MINIGAME-RESTAURANTE.md`. Este é o MOTOR: o
+ * laço completo, a paciência e o painel na tela. QUAL turno se joga (quanto
+ * dura, quem chega e quando, as metas das estrelas) é dado, e mora em
+ * `turnosDoMania.ts` — a escala do Walter escolhe um e passa no `comecar()`.
  *
  * ELE NÃO É UMA CUTSCENE, e essa é a diferença de tudo o que já existe neste
  * repositório. `servir()` — o Walter levando o prato à mesa — é uma sequência
@@ -45,8 +49,6 @@ import { BalaoDeCliente } from './balaoDeCliente';
 
 // ------------------------------------------------------------------ ajustes
 
-/** quanto dura um turno, em segundos */
-const DURACAO = 165;
 /** quantos segundos cada fase leva para a paciência ir de cheia a zero */
 const DRENO = {
   'na-porta': 42,
@@ -65,6 +67,10 @@ const BANDEJA = 2;
 const SAIDAS = 3;
 
 const TODOS_OS_PRATOS: readonly PratoDoCardapio[] = CARDAPIO.flatMap((s) => s.pratos);
+/** o que se COME (tudo menos as bebidas): é o primeiro pedido de quem vai querer sobremesa */
+const PRATOS_DE_COMER: readonly PratoDoCardapio[] = CARDAPIO
+  .filter((s) => s.titulo !== 'Bebidas')
+  .flatMap((s) => s.pratos);
 
 /** o preço vem formatado ("R$ 18"); o turno precisa do número */
 function valor(prato: PratoDoCardapio): number {
@@ -99,6 +105,14 @@ interface FichaDeCliente {
   gorjeta?: boolean;
   /** acalma quem senta perto: fração a menos de dreno, num raio de 5 */
   acalma?: number;
+  /**
+   * PEDE SOBREMESA: depois de comer, em vez de pedir a conta ele levanta a mão
+   * de novo — um segundo "anotar" e uma segunda entrega na MESMA mesa, e ele
+   * paga as duas. É o `id` do prato da sobremesa.
+   */
+  sobremesa?: string;
+  /** o que ele faz quando a sobremesa chega na mesa */
+  festejar?(bicho: Bicho): void;
   fala: string;
 }
 
@@ -151,27 +165,28 @@ const ELENCO: readonly FichaDeCliente[] = [
     jaSabe: true,
     fala: 'Eu já escolhi lá da porta. Dá pra ver o cardápio daqui de cima.',
   },
+  {
+    id: 'mano',
+    nome: 'Mano',
+    criar: () => new Mano({ minX: 0, maxX: 0, minZ: 0, maxZ: 0 }),
+    balao: 1.55,
+    /**
+     * O PINGUIM DO QUIOSQUE DE SORVETE, do outro lado do balcão hoje: ele
+     * come e PEDE SOBREMESA. A mesa dele fica ocupada o dobro do tempo —
+     * ótimo dinheiro, péssimo para o giro do salão. É o bicho que ensina a
+     * pensar na mesa como recurso. A sobremesa é o smoothie gelado do
+     * cardápio: o Mania não vende sorvete, e o Mano não é de reclamar.
+     */
+    calma: 1.25,
+    anotar: 1.0,
+    sobremesa: 'smoothie-manga-banana',
+    festejar: (bicho) => (bicho as Mano).dancar(2.4),
+    fala: 'Hoje eu vim comer, não vender! Mas guarda espaço pra sobremesa.',
+  },
 ];
 
-/**
- * A ESCALA DE CHEGADA, fixa e não sorteada.
- *
- * Um turno igual toda vez é o que deixa o jogador APRENDER o turno — é o mesmo
- * princípio de uma fase de plataforma. E é o que deixa o teste medir alguma
- * coisa: com chegada aleatória, `scripts/turno.mjs` não teria o que afirmar.
- */
-const CHEGADAS: readonly { aos: number; ficha: string }[] = [
-  { aos: 3, ficha: 'josefina' },
-  { aos: 15, ficha: 'capy' },
-  { aos: 27, ficha: 'noel' },
-  { aos: 40, ficha: 'gina' },
-  { aos: 54, ficha: 'josefina' },
-  { aos: 68, ficha: 'noel' },
-  { aos: 83, ficha: 'capy' },
-  { aos: 99, ficha: 'gina' },
-  { aos: 116, ficha: 'noel' },
-  { aos: 132, ficha: 'capy' },
-];
+/** as fichas que o motor sabe montar — o painel da escala usa para conferir a tabela */
+export const FICHAS_DO_ELENCO: readonly string[] = ELENCO.map((f) => f.id);
 
 // ------------------------------------------------------------------- planta
 
@@ -219,6 +234,10 @@ interface Cliente {
   prato: PratoDoCardapio;
   /** já comeu: se sair agora, deixa louça */
   sujou: boolean;
+  /** o valor do que ele já comeu: é isto que ele paga (o Mano paga duas coisas) */
+  gasto: number;
+  /** já está na sobremesa: o próximo "acabou de comer" é para pedir a conta */
+  naSobremesa: boolean;
 }
 
 type Vaga =
@@ -237,6 +256,8 @@ interface PratoPronto {
 export class TurnoDoMania {
   /** o turno está rodando */
   rodando = false;
+  /** qual turno da escala está sendo jogado (o último, depois que acaba) */
+  turno: TurnoDaEscala = TURNOS[0];
 
   private tempo = 0;
   private dinheiro = 0;
@@ -319,17 +340,26 @@ export class TurnoDoMania {
 
   // ------------------------------------------------------------ liga/desliga
 
-  async comecar(): Promise<void> {
+  /**
+   * Começa o turno que a escala mandou.
+   *
+   * A ESCALA DE CHEGADA É FIXA, e não sorteada: um turno igual toda vez é o
+   * que deixa o jogador APRENDER o turno — o mesmo princípio de uma fase de
+   * plataforma. E é o que deixa o teste medir alguma coisa: com chegada
+   * aleatória, `scripts/turno.mjs` não teria o que afirmar.
+   */
+  async comecar(turno: TurnoDaEscala = TURNOS[0]): Promise<void> {
     if (this.rodando) return;
     this.rodando = true;
-    this.tempo = DURACAO;
+    this.turno = turno;
+    this.tempo = turno.duracao;
     this.dinheiro = 0;
     this.coracoes = 0;
     this.proximaChegada = 0;
     this.bandejas.clear();
     this.g.setZoom(11.5);
     this.g.som('sino');
-    this.g.toast('O turno começou', '⏱');
+    this.g.toast(`Turno ${turno.numero}: ${turno.nome}`, '⏱');
 
     /**
      * TUDO O QUE NÃO É DO TURNO DESLIGA — inclusive a porta de volta pro clube.
@@ -370,14 +400,13 @@ export class TurnoDoMania {
     for (const p of this.suspensas) p.enabled = true;
     this.suspensas = [];
 
-    const estrelas = this.dinheiro >= 220 ? 3 : this.dinheiro >= 140 ? 2 : 1;
-    this.g.toast(`R$ ${this.dinheiro} · ${'⭐'.repeat(estrelas)}`, '📋');
+    this.g.toast(`R$ ${this.dinheiro} · ${'⭐'.repeat(this.conta.estrelas)}`, '📋');
   }
 
   /** o fim do turno é público para a cena poder contar o dia depois */
-  get conta(): { dinheiro: number; coracoes: number; estrelas: number } {
-    const estrelas = this.dinheiro >= 220 ? 3 : this.dinheiro >= 140 ? 2 : 1;
-    return { dinheiro: this.dinheiro, coracoes: this.coracoes, estrelas };
+  get conta(): { dinheiro: number; coracoes: number; estrelas: number; turno: TurnoDaEscala } {
+    const estrelas = estrelasDoTurno(this.turno, this.dinheiro);
+    return { dinheiro: this.dinheiro, coracoes: this.coracoes, estrelas, turno: this.turno };
   }
 
   aoAcabar: (() => void) | null = null;
@@ -412,12 +441,13 @@ export class TurnoDoMania {
 
   private chegadas(): void {
     if (this.tempo <= 0) return;
-    const decorrido = DURACAO - this.tempo;
+    const chegadas: readonly ChegadaDoTurno[] = this.turno.chegadas;
+    const decorrido = this.turno.duracao - this.tempo;
     while (
-      this.proximaChegada < CHEGADAS.length
-      && CHEGADAS[this.proximaChegada].aos <= decorrido
+      this.proximaChegada < chegadas.length
+      && chegadas[this.proximaChegada].aos <= decorrido
     ) {
-      const marcado = CHEGADAS[this.proximaChegada];
+      const marcado = chegadas[this.proximaChegada];
       this.proximaChegada += 1;
       // fila cheia: o quarto vai embora antes de entrar. Perda seca, sem drama
       // e sem barulho — só uma linha a menos na conta do dia
@@ -441,12 +471,20 @@ export class TurnoDoMania {
       paciencia: 1,
       relogio: 0,
       mesa: null,
-      prato: TODOS_OS_PRATOS[Math.floor(this.sorte() * TODOS_OS_PRATOS.length)],
+      prato: this.sortearPrato(ficha),
       sujou: false,
+      gasto: 0,
+      naSobremesa: false,
     };
     this.clientes.push(cliente);
     balao.mostrar({ tipo: 'chegando' }, 1);
     this.g.som('porta');
+  }
+
+  /** quem vai querer sobremesa começa por algo de COMER: smoothie de entrada e de sobremesa não é jantar */
+  private sortearPrato(ficha: FichaDeCliente): PratoDoCardapio {
+    const lista = ficha.sobremesa ? PRATOS_DE_COMER : TODOS_OS_PRATOS;
+    return lista[Math.floor(this.sorte() * lista.length)];
   }
 
   private naFila(): Cliente[] {
@@ -558,9 +596,20 @@ export class TurnoDoMania {
 
   private acabouDeComer(c: Cliente): void {
     if (c.mesa) this.tirarOPrato(c.mesa);
+    c.sujou = true;
+    // O MANO LEVANTA A MÃO DE NOVO: a sobremesa é um pedido inteiro, com
+    // anotar e entregar, na mesma mesa — e só depois dela vem a conta
+    const sobremesa = c.ficha.sobremesa && !c.naSobremesa ? pratoPorId(c.ficha.sobremesa) : null;
+    if (sobremesa) {
+      c.naSobremesa = true;
+      c.prato = sobremesa;
+      if (c.mesa) c.mesa.floreira.visible = true;
+      this.paraPedir(c);
+      this.g.toast(`${c.ficha.nome} quer sobremesa!`, '🍨');
+      return;
+    }
     c.fase = 'quer-pagar';
     c.paciencia = 1;
-    c.sujou = true;
     c.balao.mostrar({ tipo: 'conta' }, 1);
   }
 
@@ -755,14 +804,17 @@ export class TurnoDoMania {
       }
       c.fase = 'comendo';
       c.relogio = REFEICAO;
+      c.gasto += valor(c.prato);
       this.g.som('sorvete');
+      if (c.naSobremesa) c.ficha.festejar?.(c.bicho);
       return;
     }
 
     // 5. receber a conta
     if (c.fase === 'quer-pagar') {
       const bom = c.paciencia > 0.6 ? 1.5 : c.paciencia > 0.25 ? 1 : 0.5;
-      const pago = Math.round(valor(c.prato) * bom * (c.ficha.gorjeta ? 2 : 1));
+      // paga TUDO o que comeu: o prato, e a sobremesa de quem pediu
+      const pago = Math.round(c.gasto * bom * (c.ficha.gorjeta ? 2 : 1));
       this.dinheiro += pago;
       /**
        * O DINHEIRO CAI NA CARTEIRA NA HORA, e não no fim do turno.

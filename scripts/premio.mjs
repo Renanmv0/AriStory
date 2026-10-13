@@ -114,6 +114,11 @@ await page.waitForTimeout(500);
 await page.evaluate(() => window.jogo.debugPlace(2.4, -7.5, 0));
 await page.waitForTimeout(1200);
 await page.keyboard.press('KeyE');
+// a escala abre o menu dos turnos (a escala do Walter), marcado no turno 1
+for (let i = 0; i < 30 && !(await page.locator('.escala-do-walter.show').count()); i++) {
+  await page.waitForTimeout(300);
+}
+await page.locator('.escala-do-walter .comecar').click();
 await page.waitForTimeout(900);
 await venceAFala(12);
 await page.waitForTimeout(1500);
