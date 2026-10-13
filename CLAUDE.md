@@ -307,6 +307,7 @@ node scripts/sobremesa.mjs /tmp/sb  # o Mano no turno 2: come, pede a sobremesa 
 node scripts/melhorias.mjs /tmp/mh  # as melhorias do Mania: comprar com petiscos na escala, cada efeito medido sem e com (bandeja, tenis, bloquinho, chapa, fila, radio, carrinho), as pecas no salao e a bandeja carregada na mao
 node scripts/avental.mjs /tmp/av   # o avental do Mania e acessorio: veste junto com o colete, a camisa e o vestido (abrindo por cima da saia rodada), e o save antigo com ele no tronco muda de vaga
 node scripts/turnos34.mjs /tmp/t34 # os turnos 3 e 4 do Mania: o Cookie fechando a mesa do lado (o cartao de reservado) e tomando suco, o prato esfriando com o vapor, o Jean-Luc quente e frio, a Estella reparando no uniforme e o biscoitinho, e os premios (lapis, bloquinho e colete)
+node scripts/turnos56.mjs /tmp/t56 # os turnos 5 e 6 do Mania: a mesa grande das tres coelhinhas (tres pedidos, o prato que chega antes esfria esperando as irmas, a conta dos tres), o Flynn torcendo, o Gatito comendo devagar e o six seven, o Pelusa (deita na mesa suja e a vizinha drena em dobro, o psiu, rouba o prato parado e o Walter refaz), a bandana, o dolma e o chapeu de cozinheiro nos dois, e a plaquinha de funcionarios do mes na parede
 node scripts/premio.mjs  /tmp/pr    # a carteira do casal (uma so para os dois) e a gravatinha das 3 estrelas
 node scripts/mano.mjs    /tmp/pg    # o Mano no quiosque: fica no posto, aparece inteiro, fala, danca e entrega
 node scripts/cookie.mjs  /tmp/ck    # o Cookie: patrulha ao lado da cabine, vira nas pontas, e vende o bilhete

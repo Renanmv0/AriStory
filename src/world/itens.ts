@@ -35,7 +35,10 @@ import {
   pernaDoShortDosGatitos, tenisDosGatitos,
 } from './uniformeDosGatitos';
 import { lacoDeTorcida, meiaoDeTorcida, pomponsDeTorcida, uniformeDeTorcida } from './torcidaDosGatitos';
-import { aventalDeGarcom, bloquinhoNaMao, coleteDeGarcom, lapisNaOrelha, tenisDeGarcom } from './roupasDoMania';
+import {
+  aventalDeGarcom, bandanaDeChurrasqueiro, bloquinhoNaMao, chapeuDeCozinheiro, coleteDeGarcom, dolmaDeCozinheiro,
+  lapisNaOrelha, tenisDeGarcom,
+} from './roupasDoMania';
 import {
   blusaCiganinha, mangaDaCiganinha, camisaDeSeda, mangaDeSeda, sueterDeTrancas, mangaDoSueter, casacoTrench, mangaDoTrench,
   vestidoDePoa, mangaDoPoa, vestidoDeLinho, vestidoEnvelope, mangaDoEnvelope, vestidoChemise, mangaDoChemise,
@@ -401,6 +404,37 @@ export const ITENS = {
     corDetalhe: P.camisaDeGarcom,
     nota: 'do Walter, pelas três estrelas do turno 4 — a Estella que costurou',
     extra: coleteDeGarcom,
+  },
+  bandanaDeChurrasqueiro: {
+    id: 'bandana-de-churrasqueiro',
+    nome: 'Bandana de churrasqueiro',
+    icone: '🧣',
+    tipo: 'vestivel',
+    slot: 'cabeca',
+    nota: 'do Walter, pelas três estrelas do turno 5',
+    extra: bandanaDeChurrasqueiro,
+  },
+  // o prêmio do turno 6 são DUAS peças, que vestem juntas: o dólmã (tronco,
+  // pinta o corpo e as mangas de branco) e o chapéu de cozinheiro (cabeça)
+  dolmaDeCozinheiro: {
+    id: 'dolma-de-cozinheiro',
+    nome: 'Dólmã de cozinheiro',
+    icone: '👨‍🍳',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.dolmaBranco,
+    corDetalhe: P.dolmaBranco,
+    nota: 'do Walter, pelas três estrelas do turno 6',
+    extra: dolmaDeCozinheiro,
+  },
+  chapeuDeCozinheiro: {
+    id: 'chapeu-de-cozinheiro',
+    nome: 'Chapéu de cozinheiro',
+    icone: '🍳',
+    tipo: 'vestivel',
+    slot: 'cabeca',
+    nota: 'do Walter, pelas três estrelas do turno 6',
+    extra: chapeuDeCozinheiro,
   },
   /*
    * O TÊNIS DO TURNO: a melhoria "Tênis de garçom" do Mania. Não é prêmio
@@ -1717,6 +1751,8 @@ export const PREMIOS_DO_MANIA: Readonly<Record<number, readonly ItemDef[]>> = {
   2: [ITENS.aventalDoMania],
   3: [ITENS.lapisNaOrelha, ITENS.bloquinhoNaMao],
   4: [ITENS.coleteDeGarcom],
+  5: [ITENS.bandanaDeChurrasqueiro],
+  6: [ITENS.dolmaDeCozinheiro, ITENS.chapeuDeCozinheiro],
 };
 
 /**

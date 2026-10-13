@@ -8,7 +8,7 @@ import {
   balcaoDoMania, bancadaDoMania, banquetaDoBar, caixaRegistradoraAntiga, capaDeMureta, cartazDosCortes,
   churrasqueiraDoMania, estanteDoBar, fogaoDoMania, geladeiraDoMania, lambriDoSalao, lampiaoDeParede,
   lousaDoMania, mesaDoSalao, panoDeParede, pendenteDeEsmalte, piaDoMania, pilarete, placaDoSalao,
-  portaDeServico, prateleiraDaCozinha, quadroDoWalter, revestir,
+  plaquinhaDosFuncionarios, portaDeServico, prateleiraDaCozinha, quadroDoWalter, revestir,
   RadioDoBar, carrinhoDeLouca, cavaleteDaFila, chapaDoWalter,
 } from '../world/moveisDoMania';
 import { fundir } from '../world/fundir';
@@ -61,6 +61,12 @@ const D = 18;
 const x0 = -W / 2;
 const z0 = -D / 2;
 const H = 3.3;
+/**
+ * a plaquinha de funcionários do mês: do lado do quadro do Walter, embaixo do
+ * lampião (a luz dele cai nela). Em cima do quadro ela ficava espremida no
+ * teto e a câmera cortava
+ */
+const PLAQUINHA = { x: 10.3, y: 1.6 };
 
 /** a fronteira entre a cozinha e o salão */
 const PASSAGEM = { z: -2, xIni: -11.5, xFim: -2 };
@@ -843,6 +849,8 @@ export const maniaDeChurrasco: SceneDef = {
        * presente, senão o gesto vira máquina de roupa.
        */
       if (r.primeiraVezTres) await darOPremio(jogado.numero);
+      // OS SEIS TURNOS COM TRÊS ESTRELAS: a plaquinha de funcionários do mês
+      if (r.temporadaFechada) await penduraAPlaquinha();
 
       if (r.abriu) {
         g.toast(`Turno ${r.abriu.numero} liberado na escala`, '🔓');
@@ -1008,8 +1016,89 @@ export const maniaDeChurrasco: SceneDef = {
         });
         return;
       }
+      if (numero === 5) {
+        // A BANDANA: a mesma do Walter da grelha, numa versão para cada um
+        g.som('latido');
+        cachorro.receberCarinho();
+        await conversa([
+          [R, 'Ele veio da grelha com dois panos vinho na boca.'],
+          [A, 'Bandana de churrasqueiro! Com a estampinha dourada.'],
+        ]);
+        g.som('memoria');
+        for (const p of pecas) g.ganharPeca(p);
+        await conversa([
+          [A, 'A gente torceu tanto pelo salão que virou da casa.'],
+          [R, 'O Flynn ia falar que é bandana de time.'],
+        ]);
+        g.toast('Bandana de churrasqueiro — no guarda-roupa', '🧣');
+        g.unlock({
+          id: 'bandana-de-churrasqueiro',
+          title: 'A bandana de churrasqueiro',
+          place: 'Mania de Churrasco',
+          note: 'Três estrelas no dia de jogo, com as coelhinhas na mesa grande e o Flynn torcendo por cada prato. O Walter trouxe da grelha duas bandanas vinho.',
+          icon: '🧣',
+        });
+        return;
+      }
+      if (numero === 6) {
+        // O UNIFORME DE CHEF: o dólmã e o chapéu, os dois de uma vez
+        g.som('latido');
+        cachorro.receberCarinho();
+        await conversa([
+          [A, 'Ele sumiu na cozinha e voltou puxando um cabide com a boca.'],
+          [R, 'Dólmã de cozinheiro! E o chapéu alto. Dois de cada.'],
+          [A, 'Uniforme de chef. Ele tá dizendo que agora a gente pode até entrar na cozinha.'],
+        ]);
+        g.som('memoria');
+        for (const p of pecas) g.ganharPeca(p);
+        await conversa([
+          [R, 'Pode entrar, mas a chapa continua sendo dele.'],
+          [A, 'Claro. Ninguém mexe na chapa do Walter.'],
+        ]);
+        g.toast('Dólmã e chapéu de cozinheiro — no guarda-roupa', '👨‍🍳');
+        g.unlock({
+          id: 'dolma-de-cozinheiro',
+          title: 'O uniforme de chef',
+          place: 'Mania de Churrasco',
+          note: 'Três estrelas na casa cheia — com o Gatito fazendo o six seven e o Pelusa roubando prato. O Walter deu um dólmã e um chapéu de cozinheiro para cada um.',
+          icon: '👨‍🍳',
+        });
+        return;
+      }
       for (const p of pecas) g.ganharPeca(p);
       g.toast(`${pecas.map((p) => p.nome).join(', ')} — no guarda-roupa`, pecas[0].icone);
+    };
+
+    /**
+     * A PLAQUINHA DE FUNCIONÁRIOS DO MÊS (decisão do Renan): os seis turnos
+     * com três estrelas, e o Walter pendura do lado do quadro dele. Ela nasce
+     * escondida e aparece pela flag, a cada visita.
+     */
+    const penduraAPlaquinha = async (): Promise<void> => {
+      if (g.flag('funcionarios-do-mes')) return;
+      g.setFlag('funcionarios-do-mes');
+      g.som('latido');
+      cachorro.receberCarinho();
+      await conversa([
+        [R, 'Ele foi até a parede, do lado do quadro dele.'],
+        [A, 'Tá pendurando uma plaquinha. Com martelo e tudo.'],
+      ]);
+      plaquinha.visible = true;
+      lerAPlaquinha.enabled = true;
+      g.som('memoria');
+      await conversa([
+        [R, `"Funcionários do mês: ${ARI.name} e ${RENAN.name}."`],
+        [A, 'Ele colocou a gente do lado dele. Na parede.'],
+        [R, 'Seis turnos, três estrelas em todos. A gente é bom nisso.'],
+      ]);
+      g.toast('Funcionários do mês — na parede do Mania', '🏅');
+      g.unlock({
+        id: 'funcionarios-do-mes',
+        title: 'Funcionários do mês',
+        place: 'Mania de Churrasco',
+        note: 'Os seis turnos do Mania com três estrelas, e o Walter pendurou uma plaquinha com os dois do lado do quadro dele: "Funcionários do mês: Ari e Renan".',
+        icon: '🏅',
+      });
     };
 
     /**
@@ -1120,6 +1209,25 @@ export const maniaDeChurrasco: SceneDef = {
         });
       },
     });
+    /**
+     * A PLAQUINHA DE FUNCIONÁRIOS DO MÊS, do lado do quadro do Walter: só
+     * existe depois que a dupla fecha os seis turnos com três estrelas.
+     */
+    const plaquinha = w.add(fundir(w.place(plaquinhaDosFuncionarios(0.6, 0.4), PLAQUINHA.x, PLAQUINHA.y, z0 + PAREDE)));
+    plaquinha.visible = g.flag('funcionarios-do-mes');
+    const lerAPlaquinha = w.interact({
+      id: 'mania:funcionarios-do-mes',
+      x: PLAQUINHA.x, z: z0 + 1.5, radius: 1.4,
+      label: 'Ler a plaquinha', icon: '🏅',
+      highlight: plaquinha,
+      onInteract: async () => {
+        await conversa([
+          [R, `"Funcionários do mês: ${ARI.name} e ${RENAN.name}."`],
+          [A, 'Do lado do quadro do Walter. A gente é da casa mesmo.'],
+        ]);
+      },
+    });
+    lerAPlaquinha.enabled = g.flag('funcionarios-do-mes');
     // o cartaz dos cortes do boi, no tijolinho entre a prateleira e o balcão lateral
     w.add(fundir(w.place(cartazDosCortes(0.62, 0.82), -0.6, 1.9, z0 + PAREDE + 0.04)));
 
@@ -1205,6 +1313,24 @@ export const maniaDeChurrasco: SceneDef = {
             [R, 'E hoje o prato esfria no balcão. O vapor some quando ele esfria.'],
             [A, 'O Jean-Luc só come quente. E a Estella vem também.'],
             [R, 'Ela vai reparar na nossa roupa. Melhor vir de uniforme.'],
+          ]);
+        }
+        if (escolhido.numero === 5 && !api.flag('turno-5-explicado')) {
+          api.setFlag('turno-5-explicado');
+          await conversa([
+            [A, '"Dia de jogo." As três coelhinhas vêm juntas.'],
+            [R, 'Mesa pra três. Elas só comem quando os três pratos chegarem.'],
+            [A, 'E o Flynn vem torcer. Cada prato que a gente entrega, ele comemora.'],
+            [R, 'Senta ele no meio do salão. Torcida boa é a que todo mundo ouve.'],
+          ]);
+        }
+        if (escolhido.numero === 6 && !api.flag('turno-6-explicado')) {
+          api.setFlag('turno-6-explicado');
+          await conversa([
+            [A, '"Casa cheia." Vem todo mundo. Até o professor Gatito.'],
+            [R, 'Ele come devagar, mas quando paga faz o six seven e o salão inteiro ri.'],
+            [A, 'E o Walter escreveu embaixo: "cuidado com o Pelusa".'],
+            [R, 'Prato parado no balcão ele rouba. Mesa suja ele deita em cima. Psiu nele!'],
           ]);
         }
         await turno.comecar(escolhido, niveisDasMelhorias(api));

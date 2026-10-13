@@ -49,6 +49,11 @@ export interface TurnoDaEscala {
    * um turno continua valendo nos seguintes
    */
   regras?: readonly RegraDoSalao[];
+  /**
+   * O PELUSA (turno 6): os segundos em que ele se enfia no salão. Ele não é
+   * cliente nem entra na fila — é um evento do turno (§13.3 do plano)
+   */
+  pelusa?: readonly number[];
 }
 
 export type RegraDoSalao = 'esfria';
@@ -194,26 +199,69 @@ export const TURNOS: readonly TurnoDaEscala[] = [
     nome: 'Dia de jogo',
     novidade: 'As três coelhinhas sentam juntas, e o Flynn torce por cada prato.',
     duracao: 210,
-    chegadas: [],
+    // as três irmãs abrem o turno sozinhas (a mesa grande é o tutorial dela),
+    // e o Flynn chega logo depois para torcer pelos pratos delas
+    chegadas: [
+      { aos: 3, ficha: 'coelhas' },
+      { aos: 18, ficha: 'flynn' },
+      { aos: 30, ficha: 'josefina' },
+      { aos: 42, ficha: 'noel' },
+      { aos: 54, ficha: 'jean-luc' },
+      { aos: 66, ficha: 'capy' },
+      { aos: 80, ficha: 'estella' },
+      { aos: 92, ficha: 'cookie' },
+      { aos: 104, ficha: 'gina' },
+      { aos: 116, ficha: 'coelhas' },
+      { aos: 128, ficha: 'mano' },
+      { aos: 140, ficha: 'noel' },
+      { aos: 152, ficha: 'flynn' },
+      { aos: 164, ficha: 'jean-luc' },
+      { aos: 176, ficha: 'capy' },
+      { aos: 188, ficha: 'gina' },
+    ],
     metas: [230, 360],
     quem: [...OS_QUATRO, 'mano', 'cookie', 'jean-luc', 'estella', 'coelhas', 'flynn'],
     novos: ['coelhas', 'flynn'],
     premio: { icone: '🧣', nome: 'Bandana de churrasqueiro' },
     regras: ['esfria'],
-    pronto: false,
+    pronto: true,
   },
   {
     numero: 6,
     nome: 'Casa cheia',
     novidade: 'Todo mundo, o Gatito fazendo o six seven, e o Pelusa solto no salão.',
     duracao: 240,
-    chegadas: [],
+    // a casa cheia: o Gatito abre sozinho, e daí em diante todo mundo
+    chegadas: [
+      { aos: 3, ficha: 'gatito' },
+      { aos: 16, ficha: 'josefina' },
+      { aos: 28, ficha: 'noel' },
+      { aos: 40, ficha: 'coelhas' },
+      { aos: 52, ficha: 'flynn' },
+      { aos: 64, ficha: 'jean-luc' },
+      { aos: 76, ficha: 'capy' },
+      { aos: 88, ficha: 'estella' },
+      { aos: 100, ficha: 'gatito' },
+      { aos: 112, ficha: 'cookie' },
+      { aos: 124, ficha: 'gina' },
+      { aos: 136, ficha: 'mano' },
+      { aos: 148, ficha: 'noel' },
+      { aos: 160, ficha: 'coelhas' },
+      { aos: 172, ficha: 'jean-luc' },
+      { aos: 184, ficha: 'estella' },
+      { aos: 196, ficha: 'capy' },
+      { aos: 206, ficha: 'flynn' },
+      { aos: 216, ficha: 'gina' },
+      { aos: 226, ficha: 'noel' },
+    ],
+    // o Pelusa se enfia duas vezes: quando o salão começa a encher, e no meio
+    pelusa: [50, 150],
     metas: [270, 420],
     quem: [...OS_QUATRO, 'mano', 'cookie', 'jean-luc', 'estella', 'coelhas', 'flynn', 'gatito', 'pelusa'],
     novos: ['gatito', 'pelusa'],
     premio: { icone: '👨‍🍳', nome: 'Dólmã e chapéu de cozinheiro' },
     regras: ['esfria'],
-    pronto: false,
+    pronto: true,
   },
 ];
 

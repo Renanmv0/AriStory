@@ -101,7 +101,8 @@ const medir = () => page.evaluate(async () => {
 
   // a cozinha: duas comandas na fila, e um quadro da chapa
   const fake = (nome) => ({ fase: 'esperando', prato: { id: 'quarteirao', nome }, ficha: { nome } });
-  t.comandas.push(fake('a'), fake('b'));
+  // uma comanda é UM prato de uma mesa (a mesa grande das coelhas manda três)
+  t.comandas.push(...[fake('a'), fake('b')].map((c) => ({ para: c, prato: c.prato })));
   t.cozinhar(0);
   const chapa = t.cozinhando.map((c) => +c.falta.toFixed(2));
   t.cozinhando = [];
@@ -129,7 +130,8 @@ const medir = () => page.evaluate(async () => {
 const anotarEOlhar = () => page.evaluate(async () => {
   const j = window.jogo;
   const t = j.current.world.root.userData.turno;
-  const c = { fase: 'quer-pedir', ficha: { anotar: 1.2, nome: 'teste' }, prato: { nome: 'Prato de teste' }, paciencia: 1 };
+  // `faltam` vazio: o pedido de mentira não manda comanda nenhuma para a cozinha
+  const c = { fase: 'quer-pedir', ficha: { anotar: 1.2, nome: 'teste' }, prato: { nome: 'Prato de teste' }, paciencia: 1, faltam: [] };
   // o tempo que o motor PEDE ao relógio (a espera de anotar): medir na parede
   // pegava o atraso da máquina carregada junto, e a metade sumia no ruído
   let pedido = null;
@@ -232,7 +234,7 @@ await page.evaluate(() => {
   const t = j.current.world.root.userData.turno;
   for (const nome of ['Quarteirão', 'Perro']) {
     const c = { fase: 'esperando', prato: { id: nome === 'Perro' ? 'perro-tradicional' : 'quarteirao', nome }, ficha: { nome } };
-    t.servirDaChapa(c);
+    t.servirDaChapa({ para: c, prato: c.prato });
     t.pegarOPrato();
   }
   const mesa = t.mesas[1];

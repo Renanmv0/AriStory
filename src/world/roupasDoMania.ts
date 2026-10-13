@@ -4,7 +4,9 @@ import { toon } from '../core/materials';
 import type { ItemDef, MedidasCorpo } from '../core/types';
 import { fundir } from './fundir';
 import { montarTenis, raioDoTronco } from './uniformeDosGatitos';
-import { cintaNaPele, corpete, evase, lacoDeFita, naPele, noTronco, saiaViva, vivoNaPele } from './roupasDaBoutique';
+import {
+  alturaDaAba, cintaNaPele, corpete, evase, lacoDeFita, naPele, noTronco, saiaViva, torneada, vivoNaPele,
+} from './roupasDaBoutique';
 import { bloquinhoDeComandas } from './moveisDoMania';
 
 /**
@@ -438,5 +440,310 @@ function coleteDeGarcom(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): TH
 }
 
 
+// ------------------------------------------ o prêmio do turno 5
 
-export { aventalDeGarcom, tenisDeGarcom, lapisNaOrelha, bloquinhoNaMao, coleteDeGarcom };
+/**
+ * O PANO DA BANDANA: o vinho do Mania com a estampa de bandana de verdade —
+ * a barra de dois fios perto da beira, as gotas (o "paisley", com a voltinha
+ * na ponta) e os pontinhos entre elas, tudo no dourado do bordado do avental.
+ * Desenhado uma vez só; o UV da bandana dá três voltas dele em torno da
+ * cabeça (`u`) e vai do alto à beira (`v`).
+ */
+let panoDaBandana: THREE.CanvasTexture | null = null;
+function texturaDaBandana(): THREE.CanvasTexture {
+  if (panoDaBandana) return panoDaBandana;
+  const W = 256;
+  const H = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = css(P.bandanaChurrasco);
+    ctx.fillRect(0, 0, W, H);
+    const ouro = css(P.bandanaChurrascoEstampa);
+    // a barra perto da beira (v = 0 é a beira, embaixo no canvas é o v = 0)
+    ctx.fillStyle = ouro;
+    ctx.fillRect(0, H - 34, W, 5);
+    ctx.fillRect(0, H - 22, W, 2);
+    // os pontinhos da barra
+    for (let x = 6; x < W; x += 16) {
+      ctx.beginPath();
+      ctx.arc(x, H - 12, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // AS GOTAS: a gota com a voltinha na ponta e o miolo vazado
+    const gota = (x: number, y: number, s: number, giro: number): void => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(giro);
+      ctx.scale(s, s);
+      ctx.beginPath();
+      ctx.moveTo(0, 12);
+      ctx.bezierCurveTo(-11, 10, -12, -4, -2, -9);
+      ctx.bezierCurveTo(3, -12, 9, -14, 8, -19);
+      ctx.bezierCurveTo(13, -12, 12, 8, 0, 12);
+      ctx.fillStyle = ouro;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(-1, 2, 3.6, 5.2, 0.3, 0, Math.PI * 2);
+      ctx.fillStyle = css(P.bandanaChurrasco);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-1, 2, 1.4, 0, Math.PI * 2);
+      ctx.fillStyle = ouro;
+      ctx.fill();
+      ctx.restore();
+    };
+    const lugares: Array<[number, number, number, number]> = [
+      [40, 50, 1.1, 0.4], [128, 38, 1.0, -0.6], [212, 60, 1.15, 1.2],
+      [84, 120, 1.05, 2.4], [176, 132, 1.1, -1.8], [36, 180, 0.95, -0.2], [140, 196, 1.0, 0.9], [230, 190, 0.9, 2.9],
+    ];
+    for (const [x, y, s, giro] of lugares) gota(x, y, s, giro);
+    ctx.fillStyle = ouro;
+    for (const [x, y] of [[84, 70], [168, 92], [20, 120], [236, 118], [100, 166], [196, 166], [60, 216], [176, 224]]) {
+      ctx.beginPath();
+      ctx.arc(x, y, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  panoDaBandana = new THREE.CanvasTexture(canvas);
+  panoDaBandana.colorSpace = THREE.SRGBColorSpace;
+  panoDaBandana.wrapS = THREE.RepeatWrapping;
+  return panoDaBandana;
+}
+
+/**
+ * A BANDANA DE CHURRASQUEIRO — prêmio das três estrelas do turno 5, no molde
+ * da bandana do Flynn (a faixa, o nó atrás e as duas pontas caindo), só que
+ * de churrasqueiro: o pano COBRE a cabeça, como quem trabalha na grelha, no
+ * vinho do Mania com a estampa dourada.
+ *
+ * O PANO SEGUE O CABELO, não o crânio: o raio em cada altura é o de
+ * `m.cabelo` (o cacheado do Ari vai a 1,5·headR, os cachos do Renan a 1,3), e
+ * a beira desce pouco na frente (fica acima da sobrancelha), passa por cima da
+ * orelha e desce mais atrás, na nuca, onde mora o nó.
+ *
+ * REFERENCIAL: a cabeça, y = 0 no centro do crânio, olhando para `+Z`.
+ */
+function bandanaDeChurrasqueiro(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const r = m.headR;
+  const COLUNAS = 48;
+  const LINHAS = 14;
+  // até onde o pano desce, pelo ângulo `fi` em volta da cabeça (0 = frente)
+  const ateOnde = (fi: number): number => 0.98 + 0.7 * (0.5 - 0.5 * Math.cos(fi));
+  // a distância do centro até o pano, pelo ângulo `te` a partir do alto
+  const raio = (te: number): number => Math.max(m.cabelo(Math.min(te, 1.5)), r * 1.02) * 1.035 + r * 0.012;
+  const ponto = (fi: number, te: number): THREE.Vector3 => {
+    const R = raio(te);
+    return new THREE.Vector3(Math.sin(te) * Math.sin(fi) * R, Math.cos(te) * R, Math.sin(te) * Math.cos(fi) * R);
+  };
+  const pos: number[] = [];
+  const uv: number[] = [];
+  for (let i = 0; i <= COLUNAS; i++) {
+    const fi = -Math.PI + (i / COLUNAS) * Math.PI * 2;
+    for (let j = 0; j <= LINHAS; j++) {
+      const t = j / LINHAS;
+      const p = ponto(fi, t * ateOnde(fi));
+      pos.push(p.x, p.y, p.z);
+      uv.push((i / COLUNAS) * 3, 1 - t);
+    }
+  }
+  const idx: number[] = [];
+  for (let i = 0; i < COLUNAS; i++) {
+    for (let j = 0; j < LINHAS; j++) {
+      const a = i * (LINHAS + 1) + j;
+      const b = (i + 1) * (LINHAS + 1) + j;
+      idx.push(a, a + 1, b, b, a + 1, b + 1);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  g.add(new THREE.Mesh(geo, toon(0xffffff, { mapa: texturaDaBandana(), doubleSide: true })));
+
+  // A BAINHA: a beira enrolada, um tom abaixo do pano
+  const bainha = toon(P.bandanaChurrascoBainha);
+  const beira: THREE.Vector3[] = [];
+  for (let i = 0; i < 48; i++) {
+    const fi = -Math.PI + (i / 48) * Math.PI * 2;
+    beira.push(ponto(fi, ateOnde(fi)));
+  }
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(beira, true), 96, r * 0.022, 6, true), bainha));
+
+  // O NÓ na nuca, e as duas pontas caindo para trás e para fora
+  const pano = toon(P.bandanaChurrasco, { doubleSide: true });
+  const no = ponto(Math.PI, ateOnde(Math.PI) - 0.08);
+  no.multiplyScalar(1.03);
+  for (const s of [-1, 1] as const) {
+    const bolota = new THREE.Mesh(new THREE.SphereGeometry(r * 0.14, 12, 8), pano);
+    bolota.scale.set(1, 0.8, 0.7);
+    bolota.position.set(no.x + s * r * 0.1, no.y, no.z);
+    g.add(bolota);
+    const pivo = new THREE.Group();
+    pivo.position.set(no.x + s * r * 0.05, no.y - r * 0.04, no.z);
+    // `rotation.x` positivo leva o `-Y` (para onde a ponta cai) para o `-Z`: para trás
+    pivo.rotation.set(0.45, 0, -s * 0.32);
+    const forma = new THREE.Shape();
+    forma.moveTo(-r * 0.12, 0);
+    forma.lineTo(r * 0.12, 0);
+    forma.lineTo(r * 0.15, -r * 0.62);
+    forma.lineTo(0, -r * 0.8);
+    forma.lineTo(-r * 0.15, -r * 0.62);
+    forma.closePath();
+    const ponta = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, { depth: r * 0.02, bevelEnabled: false }), pano);
+    pivo.add(ponta);
+    g.add(pivo);
+  }
+  return fundir(g);
+}
+
+// ------------------------------------------ o prêmio do turno 6
+
+/**
+ * O BORDADO DO PEITO do dólmã: "Mania" em preto com a chama dourada, no
+ * molde do bordado do avental. Um decalque pequeno, desenhado uma vez.
+ */
+let bordadoDoDolma: THREE.CanvasTexture | null = null;
+function texturaDoBordadoDoDolma(): THREE.CanvasTexture {
+  if (bordadoDoDolma) return bordadoDoDolma;
+  const W = 256;
+  const H = 96;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = css(P.dolmaBranco);
+    ctx.fillRect(0, 0, W, H);
+    // a chama dourada
+    ctx.fillStyle = css(P.aventalGarcomBordado);
+    ctx.beginPath();
+    ctx.moveTo(34, 78);
+    ctx.bezierCurveTo(12, 70, 14, 40, 34, 16);
+    ctx.bezierCurveTo(36, 34, 52, 40, 50, 60);
+    ctx.bezierCurveTo(50, 70, 44, 78, 34, 78);
+    ctx.fill();
+    ctx.fillStyle = css(P.dolmaVivo);
+    ctx.font = 'bold 50px ui-rounded, "Nunito", system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Mania', 62, 50);
+  }
+  bordadoDoDolma = new THREE.CanvasTexture(canvas);
+  bordadoDoDolma.colorSpace = THREE.SRGBColorSpace;
+  return bordadoDoDolma;
+}
+
+/**
+ * O DÓLMÃ DE COZINHEIRO — metade do prêmio do turno 6 (a outra é o chapéu).
+ * O branco de chef: a `cor` e a `corDetalhe` da ficha pintam o corpo e as
+ * mangas do rig, e a geometria é o que faz um dólmã ser dólmã:
+ *
+ * - o TRANSPASSE: a frente da esquerda cruza por cima da direita (um painel
+ *   do `corpete`, um fio por fora), com o vivo preto na beira;
+ * - as DUAS FILEIRAS de botões de pano preto, quatro de cada lado;
+ * - a GOLA PADRE em pé, com o vivo preto em cima;
+ * - e o "Mania" bordado no peito, com a chama dourada.
+ *
+ * REFERENCIAL: o tronco, y = 0 no CHÃO.
+ */
+function dolmaDeCozinheiro(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const quadril = m.legH;
+  const r = h * 0.105 * w;
+  const yGola = quadril + m.torsoH * 0.77 + r * 0.55;
+  const baixo = quadril + m.torsoH * 0.04;
+  // o transpasse: da costura do lado esquerdo até a beira, um pouco à direita do meio
+  const BEIRA = 0.36;
+  const LADO = -1.45;
+  const branco = toon(P.dolmaBranco, { doubleSide: true });
+  const preto = toon(P.dolmaVivo);
+  const painel = (a: number): number => (a > LADO && a < BEIRA ? yGola - h * 0.006 : baixo + h * 0.002);
+  g.add(new THREE.Mesh(corpete(m, { decote: painel, baixo, folga: 1.055, colunas: 96, linhas: 18 }), branco));
+  // O VIVO PRETO na beira do transpasse, de cima a baixo, e na barra dele
+  const beira: Array<[number, number]> = [];
+  for (let k = 0; k <= 10; k++) beira.push([BEIRA - 0.012, THREE.MathUtils.lerp(yGola - h * 0.008, baixo + h * 0.004, k / 10)]);
+  g.add(new THREE.Mesh(vivoNaPele(m, beira, h * 0.003, 1.065), preto));
+  const barra: Array<[number, number]> = [];
+  for (let k = 0; k <= 12; k++) barra.push([THREE.MathUtils.lerp(LADO + 0.05, BEIRA - 0.012, k / 12), baixo + h * 0.004]);
+  g.add(new THREE.Mesh(vivoNaPele(m, barra, h * 0.003, 1.065), preto));
+
+  // AS DUAS FILEIRAS DE BOTÕES de pano: a de fora no painel, a de dentro do outro lado
+  const yBotao = (k: number): number => yGola - h * 0.04 - k * h * 0.045;
+  for (const a of [BEIRA - 0.13, -0.48] as const) {
+    for (let k = 0; k < 4; k++) {
+      const b = new THREE.Mesh(new THREE.SphereGeometry(h * 0.0062, 10, 6), preto);
+      b.position.copy(naPele(m, a, yBotao(k), a > LADO && a < BEIRA ? 1.075 : 1.06));
+      b.scale.set(1, 1, 0.6);
+      b.lookAt(b.position.clone().multiplyScalar(2).setY(b.position.y));
+      g.add(b);
+    }
+  }
+
+  // A GOLA PADRE: uma faixa em pé, um tico mais aberta em cima, com o vivo preto
+  const rGola = r * 0.62;
+  const gola = new THREE.Mesh(torneada([[rGola, 0], [rGola * 1.04, h * 0.032]], 0, () => 0, 36), branco);
+  gola.position.y = yGola - h * 0.012;
+  gola.scale.z = 0.92;
+  g.add(gola);
+  const vivoDaGola = new THREE.Mesh(new THREE.TorusGeometry(rGola * 1.045, h * 0.0028, 6, 36), preto);
+  vivoDaGola.rotation.x = Math.PI / 2;
+  vivoDaGola.position.y = yGola - h * 0.012 + h * 0.032;
+  vivoDaGola.scale.y = 0.92;
+  g.add(vivoDaGola);
+
+  // O BORDADO no peito do lado de fora do transpasse (o esquerdo de quem veste)
+  const yPeito = quadril + m.torsoH * 0.6;
+  const largura = h * 0.07;
+  const bordado = new THREE.PlaneGeometry(largura, largura * 0.375, 8, 2);
+  bordado.translate(-r * 0.62, yPeito, h * 0.002);
+  g.add(new THREE.Mesh(noTronco(bordado, m, 1.062), toon(0xffffff, { mapa: texturaDoBordadoDoDolma() })));
+  return fundir(g);
+}
+
+/**
+ * O CHAPÉU DE COZINHEIRO — a outra metade do prêmio do turno 6. O toque
+ * branco alto: a faixa lisa embaixo, com o vivo preto, e o pano PREGUEADO que
+ * estufa em cogumelo em cima. As pregas são o `gomos` do torno (o mesmo
+ * franzido das saias da boutique), mais fundas no alto, onde o pano estufa.
+ *
+ * A faixa pousa POR CIMA DO CABELO (`alturaDaAba`, a conta dos chapéus da
+ * boutique) — no cacheado do Ari ela sobe, e o chapéu continua inteiro.
+ *
+ * REFERENCIAL: a cabeça, y = 0 no centro do crânio.
+ */
+function chapeuDeCozinheiro(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const r = m.headR;
+  const RC = r * 0.9;
+  const base = alturaDaAba(m, RC) - r * 0.06;
+  const branco = toon(P.dolmaBranco, { doubleSide: true });
+  const chapeu = new THREE.Group();
+  chapeu.rotation.set(-0.06, 0, 0.05);
+  g.add(chapeu);
+  // a faixa lisa
+  const faixa = torneada([[RC, 0], [RC * 1.01, r * 0.34]], 0, () => 0, 40);
+  faixa.translate(0, base, 0);
+  chapeu.add(new THREE.Mesh(faixa, branco));
+  const vivo = new THREE.Mesh(new THREE.TorusGeometry(RC * 1.012, r * 0.022, 6, 40), toon(P.dolmaVivo));
+  vivo.rotation.x = Math.PI / 2;
+  vivo.position.y = base + r * 0.3;
+  chapeu.add(vivo);
+  // o pano pregueado, estufando em cogumelo
+  const copa = torneada([
+    [RC * 0.97, r * 0.3], [RC * 1.12, r * 0.6], [RC * 1.26, r * 0.92], [RC * 1.32, r * 1.08],
+    [RC * 1.24, r * 1.22], [RC * 0.9, r * 1.33], [RC * 0.45, r * 1.38], [0.0001, r * 1.39],
+  ], 12, (t) => r * 0.1 * Math.min(1, t * 1.6) * (1 - Math.max(0, t - 0.7) * 3), 96);
+  copa.translate(0, base, 0);
+  chapeu.add(new THREE.Mesh(copa, branco));
+  return fundir(g);
+}
+
+export {
+  aventalDeGarcom, tenisDeGarcom, lapisNaOrelha, bloquinhoNaMao, coleteDeGarcom,
+  bandanaDeChurrasqueiro, dolmaDeCozinheiro, chapeuDeCozinheiro,
+};

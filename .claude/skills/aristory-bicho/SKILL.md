@@ -136,6 +136,20 @@ const girafa = new Girafa({
 Nada de `enabled = false` nem de uma subclasse "BichoParado": a área é a
 coleira.
 
+## Bicho que vem em GRUPO, e bicho como EVENTO (o turno do Mania)
+
+- **Três bichos, um cliente**: as coelhinhas do turno 5 são UMA ficha do
+  elenco com `junto()` — a Luna é o cliente (balão, fila, paciência) e a Sol
+  e a Estrella vão atrás dela andando e sentam nas outras cadeiras. Não são
+  três clientes que por acaso sentam juntos: a conta, a paciência e a mesa
+  são uma só, e é isso que faz a regra ("só comem quando os três pratos
+  chegam") caber num campo.
+- **O Pelusa no turno 6 não é cliente**, é evento: uma máquina de estados
+  própria (`procurando → indo → deitado/fugindo`) no motor do turno, com o
+  ponto de "psiu" andando com ele (`moveTo`). O gato ganhou uma pose nova,
+  `deitar(true)` — o pãozinho: a barriga no tampo, as patas somem embaixo,
+  a cabeça baixa e o RABO DEITA JUNTO (em pé, de longe, ele vira antena).
+
 ## Bicho que entra numa cutscene
 
 Bicho que participa de uma cena marcada **não pode continuar decidindo para
