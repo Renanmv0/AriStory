@@ -35,7 +35,7 @@ import {
   pernaDoShortDosGatitos, tenisDosGatitos,
 } from './uniformeDosGatitos';
 import { lacoDeTorcida, meiaoDeTorcida, pomponsDeTorcida, uniformeDeTorcida } from './torcidaDosGatitos';
-import { aventalDeGarcom } from './roupasDoMania';
+import { aventalDeGarcom, tenisDeGarcom } from './roupasDoMania';
 import {
   blusaCiganinha, mangaDaCiganinha, camisaDeSeda, mangaDeSeda, sueterDeTrancas, mangaDoSueter, casacoTrench, mangaDoTrench,
   vestidoDePoa, mangaDoPoa, vestidoDeLinho, vestidoEnvelope, mangaDoEnvelope, vestidoChemise, mangaDoChemise,
@@ -358,6 +358,23 @@ export const ITENS = {
     slot: 'tronco',
     nota: 'do Walter, pelas três estrelas do turno 2',
     extra: aventalDeGarcom,
+  },
+  /*
+   * O TÊNIS DO TURNO: a melhoria "Tênis de garçom" do Mania. Não é prêmio
+   * nem está à venda — não entra em lista nenhuma: a cena calça os dois só
+   * enquanto o turno roda (`g.vestirNaCena`). Ele mora no catálogo porque o
+   * rig acha a peça pelo id.
+   */
+  tenisDeGarcom: {
+    id: 'tenis-de-garcom',
+    nome: 'Tênis de garçom',
+    icone: '👟',
+    tipo: 'vestivel',
+    slot: 'pes',
+    cor: P.aventalGarcom, corDetalhe: P.aventalGarcomBordado,
+    substituiPe: true,
+    nota: 'do turno do Mania',
+    extra: tenisDeGarcom,
   },
   /*
    * A LOJINHA DA JOSEFINA (a banca no canto da estufa): roupa de mexer na

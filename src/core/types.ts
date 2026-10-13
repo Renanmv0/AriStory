@@ -789,6 +789,17 @@ export interface GameAPI {
   /** Multiplica a velocidade de andar de quem é controlado (as cartas de passo). 1 = normal. */
   setVelocidadeDoJogador(multiplicador: number): void;
   /**
+   * PÕE UM OBJETO DA CENA NA MÃO de `quem` (o id da pessoa), por cima do item
+   * da mochila e sem mexer no save — a bandeja do turno do Mania. `null`
+   * devolve a mão ao que a mochila manda. Morre na troca de cena.
+   */
+  segurarNaCena(quem: string, obj: THREE.Object3D | null, pose?: HoldPose): void;
+  /**
+   * VESTE UMA PEÇA SÓ ENQUANTO A CENA QUER, por cima da roupa do save e sem
+   * gravar nada — o tênis de garçom do turno. `null` tira. Morre na troca de cena.
+   */
+  vestirNaCena(quem: string, slot: SlotRoupa, peca: ItemDef | null): void;
+  /**
    * A PEÇA QUE ESTÁ NA MÃO de quem é controlado (ou de `quem`), ou `null`.
    *
    * É o objeto pendurado na mão: a rodada do jardim gira, sacode e vira ele

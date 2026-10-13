@@ -129,7 +129,9 @@ const almocar = async (id, mx, mz, comFoto) => {
   let vasoNoPrato = false;
   let floreiraNoFim = null;
   let deLevantar = false;
-  for (let i = 0; i < 120; i++) {
+  // o teto é largo (o laço sai quando a dupla levanta): com a máquina
+  // carregada, 120 voltas acabavam com o Walter no meio do salão, prato na boca
+  for (let i = 0; i < 360; i++) {
     const passo = await page.evaluate(([x, z]) => {
       let cao = null;
       window.jogo.scene.traverse((o) => {

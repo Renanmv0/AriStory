@@ -926,6 +926,10 @@ export const PALETTE = {
   aventalGarcomBordado: 0xe9bf5c,
   aventalGarcomBordadoEscuro: 0xa8822c,
   aventalGarcomFita: 0x1f1d1c,
+  // o TÊNIS DE GARÇOM (a melhoria "Tênis de garçom" do turno): o preto do
+  // avental, a sola creme e o cadarço branco, com as listras no dourado do bordado
+  tenisGarcomSola: 0xece4d2,
+  tenisGarcomCadarco: 0xf4f1ea,
   // as roupas que a lojinha da Josefina vende (`ROUPAS_DA_JOSEFINA`)
   galochaVerde: 0x4f9a4e,
   galochaVerdeCano: 0x3c7a3c,
@@ -1185,6 +1189,21 @@ export const PALETTE = {
   churrascoGarrafaOuro: 0xe0b050,
   churrascoRotulo: 0xf3ead6,
   churrascoChopp: 0xe9a73a,
+  /*
+   * AS MELHORIAS DO TURNO (`world/moveisDoMania.ts`): a cortiça da bandeja,
+   * o bloquinho de comandas com o lápis, o rádio de madeira com o tecido do
+   * alto-falante e o mostrador aceso, e a bacia de plástico do carrinho.
+   */
+  churrascoCortica: 0x9c6b45,
+  churrascoComanda: 0xfbf6e8,
+  churrascoComandaLinha: 0x9fb6cf,
+  churrascoLapis: 0xf2c14e,
+  churrascoLapisMadeira: 0xe8c39a,
+  churrascoBorracha: 0xef8f9a,
+  churrascoRadioTecido: 0xd8c7a0,
+  churrascoMostrador: 0xffd27a,
+  churrascoBacia: 0x7f8b93,
+  churrascoNota: 0xe9bf5c,
 
   // A LOJINHA DE ROUPAS do Villa Lobos — o "mini shopping". As cores sao dela,
   // e nao as do vestido do guarda-roupa, porque ela e um PREDIO: um rosa

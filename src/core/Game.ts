@@ -20,10 +20,13 @@ import {
   type Coleta,
   type DecoracaoNoSave,
   type GameAPI,
+  type HoldPose,
   type ItemDef,
+  type Loadout,
   type Memory,
   type SceneAmbient,
   type SceneDef,
+  type SlotRoupa,
   type Vaga,
 } from './types';
 import {
@@ -49,8 +52,8 @@ import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import { CARDAPIO } from '../world/cardapioData';
 import { INSCRITOS } from '../world/adversariosData';
-import { CHAVE, MELHORIAS, ROSTO_DO_CLIENTE, TURNOS, turnoAberto } from '../minigames/turnosDoMania';
-import type { TurnoNaEscala } from '../ui/escalaDoWalter';
+import { CHAVE, MELHORIAS, ROSTO_DO_CLIENTE, TURNOS, comprarMelhoria, turnoAberto } from '../minigames/turnosDoMania';
+import type { ConteudoDaEscala, TurnoNaEscala } from '../ui/escalaDoWalter';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -339,6 +342,12 @@ export class Game implements GameAPI {
     this.player.mira = null;
     this.player.multiplicador = 1;
     this.trocaBloqueada = false;
+    // a bandeja e o tênis do turno são da cena: não atravessam a porta
+    if (this.naMaoDaCena.size || this.roupaDaCena.size) {
+      for (const quem of this.naMaoDaCena.keys()) this.naMao.delete(quem);
+      this.naMaoDaCena.clear();
+      this.roupaDaCena.clear();
+    }
     this.ui.showJardim(null);
 
     // o parceiro chega junto, um passo atras
@@ -1099,7 +1108,9 @@ export class Game implements GameAPI {
       // A roupa sai das MESMAS vagas: a vaga é o loadout, não há um segundo
       // armazenamento. Com o cache, `vestirRoupa` só roda quando algo mudou —
       // sem ele a geometria do gorro e das botas seria refeita a 60 fps.
-      const loadout = this.save.loadout(id);
+      // a roupa DA CENA (o tênis de garçom no turno) vai por cima da do save,
+      // sem gravar nada: acabou a cena, volta o que a pessoa estava vestindo
+      const loadout = { ...this.save.loadout(id), ...this.roupaDaCena.get(id) };
       const chave = SLOTS_ROUPA.map((s) => loadout[s] ?? '').join('|');
       if (this.roupaAplicada.get(id) === chave) continue;
       this.roupaAplicada.set(id, chave);
@@ -1110,12 +1121,41 @@ export class Game implements GameAPI {
   private sincronizarMaos(): void {
     for (const rig of [this.player.rig, this.parceiro.rig]) {
       const quem = rig.spec.id;
+      // o que a CENA pôs na mão (a bandeja do turno) ganha do item da mochila
+      const daCena = this.naMaoDaCena.get(quem);
+      if (daCena) {
+        const chave = `cena:${daCena.obj.uuid}`;
+        if (this.naMao.get(quem) === chave) continue;
+        this.naMao.set(quem, chave);
+        rig.segurar(daCena.obj, daCena.pose);
+        continue;
+      }
       const item = this.save.itemAtivo(quem);
       const id = item?.id ?? null;
       if (this.naMao.get(quem) === id) continue;
       this.naMao.set(quem, id);
       rig.segurar(id ? modeloDoItem(id) : null, poseNaMao(item ?? null));
     }
+  }
+
+  /** o que a cena pôs na mão de cada um (`segurarNaCena`), pelo id da pessoa */
+  private readonly naMaoDaCena = new Map<string, { obj: THREE.Object3D; pose: HoldPose }>();
+  /** a roupa que a cena veste por cima do save (`vestirNaCena`), pelo id da pessoa */
+  private readonly roupaDaCena = new Map<string, Loadout>();
+
+  segurarNaCena(quem: string, obj: THREE.Object3D | null, pose: HoldPose = 'upright'): void {
+    if (obj) this.naMaoDaCena.set(quem, { obj, pose });
+    else this.naMaoDaCena.delete(quem);
+    // esquece o que estava na mão: o próximo `sincronizarMaos` monta de novo
+    this.naMao.delete(quem);
+  }
+
+  vestirNaCena(quem: string, slot: SlotRoupa, peca: ItemDef | null): void {
+    const l = { ...this.roupaDaCena.get(quem) };
+    if (peca) l[slot] = peca.id;
+    else delete l[slot];
+    if (Object.keys(l).length) this.roupaDaCena.set(quem, l);
+    else this.roupaDaCena.delete(quem);
   }
 
   /** o loadout que cada corpo ja esta vestindo, serializado, para o diff */
@@ -1797,6 +1837,19 @@ export class Game implements GameAPI {
    * estrelas no anterior.
    */
   abrirEscalaDoWalter(): Promise<number | null> {
+    // comprar é com o pote de petiscos, e a escala volta redesenhada
+    const comprar = (id: string): ConteudoDaEscala | null => {
+      const r = comprarMelhoria(this.save, id);
+      if (r !== 'comprou') return null;
+      const m = MELHORIAS.find((x) => x.id === id);
+      const nivel = this.save.stat(CHAVE.melhoria(id));
+      this.ui.toast(`Comprado: ${m?.nome ?? id}${(m?.precos.length ?? 1) > 1 ? ` (nível ${nivel})` : ''}`, m?.icone ?? '🛠️');
+      return this.conteudoDaEscala();
+    };
+    return this.ui.abrirEscala(this.conteudoDaEscala(), comprar);
+  }
+
+  private conteudoDaEscala(): ConteudoDaEscala {
     const turnos: TurnoNaEscala[] = TURNOS.map((t) => {
       const estrelas = this.save.stat(CHAVE.estrelas(t.numero));
       return {
@@ -1821,13 +1874,13 @@ export class Game implements GameAPI {
     // abre marcado no primeiro turno jogável que ainda não tem as três
     const jogaveis = turnos.filter((t) => t.estado === 'aberto');
     const sugerido = (jogaveis.find((t) => t.estrelas < 3) ?? jogaveis[jogaveis.length - 1])?.numero ?? 1;
-    return this.ui.abrirEscala({
+    return {
       turnos,
-      melhorias: MELHORIAS.map((m) => ({ ...m, nivel: this.save.stat(`mania:${m.id}`) })),
+      melhorias: MELHORIAS.map((m) => ({ ...m, nivel: this.save.stat(CHAVE.melhoria(m.id)) })),
       petiscos: this.save.stat(CHAVE.petiscos),
-      lojaAberta: false,
+      lojaAberta: true,
       sugerido,
-    });
+    };
   }
 
   abrirQuadroDeInscricoes(): Promise<string | null> {

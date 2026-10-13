@@ -917,20 +917,43 @@ function calcaDosGatitos(m: MedidasCorpo, lado: -1 | 1 = 1, peca?: ItemDef): THR
  * acolchoado em volta do tornozelo e a alça amarela do calcanhar.
  */
 function tenisDosGatitos(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  return montarTenis(m, {
+    cabedal: peca?.cor ?? BRANCO,
+    listra: peca?.corDetalhe ?? AZUL,
+    sola: P.gatitosCreme, filete: MARINHO, entressola: BRANCO, fileteDoMeio: AMARELO,
+    cadarco: AMARELO, colarinho: MARINHO, alca: AMARELO, emblema: true,
+  });
+}
+
+/** as cores de um tênis de time, e se ele leva o emblema dos Gatitos */
+export interface CoresDoTenis {
+  cabedal: number; listra: number;
+  sola: number; filete: number; entressola: number; fileteDoMeio: number;
+  cadarco: number; colarinho: number; alca: number;
+  emblema: boolean;
+}
+
+/**
+ * O TÊNIS DE TIME, montado com as cores dadas: o dos Gatitos e o de garçom do
+ * Mania (`world/roupasDoMania.ts`) são o mesmo sapato — a sola em camadas, o
+ * cabedal rebaixado para o bico, as três listras, o cadarço em X, a língua e o
+ * colarinho —, e só o dos Gatitos leva o emblema.
+ */
+export function montarTenis(m: MedidasCorpo, c: CoresDoTenis): THREE.Object3D {
   const g = new THREE.Group();
   const h = m.h;
   const p = pe(m);
-  const cabedal = peca?.cor ?? BRANCO;
-  const azul = peca?.corDetalhe ?? AZUL;
+  const cabedal = c.cabedal;
+  const azul = c.listra;
   const ENC = 1.04;
 
   // o solado CREME (sentado, a sola vira a maior mancha do tênis na tela, e
   // escura ela lia como um bloco preto), o filete marinho, e a entressola
   // branca com o filete amarelo no meio
-  g.add(camadaDeSola(m, p.chao, h * 0.005, P.gatitosCreme, ENC * 1.03));
-  g.add(camadaDeSola(m, p.chao + h * 0.0042, h * 0.0016, MARINHO, ENC * 1.036));
-  g.add(camadaDeSola(m, p.chao + h * 0.005, h * 0.011, BRANCO, ENC * 1.02));
-  g.add(camadaDeSola(m, p.chao + h * 0.0095, h * 0.0018, AMARELO, ENC * 1.028));
+  g.add(camadaDeSola(m, p.chao, h * 0.005, c.sola, ENC * 1.03));
+  g.add(camadaDeSola(m, p.chao + h * 0.0042, h * 0.0016, c.filete, ENC * 1.036));
+  g.add(camadaDeSola(m, p.chao + h * 0.005, h * 0.011, c.entressola, ENC * 1.02));
+  g.add(camadaDeSola(m, p.chao + h * 0.0095, h * 0.0018, c.fileteDoMeio, ENC * 1.028));
 
   // O CABEDAL: a sola extrudada para cima, com o bisel arredondando as quinas,
   // e depois REBAIXADA para o bico — o alto de um tênis desce do calcanhar
@@ -969,7 +992,7 @@ function tenisDosGatitos(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): TH
   }
 
   // O CADARÇO: quatro X amarelos do peito do pé até a língua, com os ilhoses
-  const cadarco = toon(AMARELO);
+  const cadarco = toon(c.cadarco);
   const ilhos = toon(P.gatitosIlhos);
   for (let k = 0; k < 4; k++) {
     const z = p.z + h * 0.024 - k * h * 0.0095;
@@ -1005,25 +1028,27 @@ function tenisDosGatitos(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): TH
   const almofada = new THREE.Mesh(new THREE.BoxGeometry(h * 0.024, h * 0.022, h * 0.007), matAzul);
   almofada.position.y = h * 0.008;
   lingua.add(almofada);
-  const emblema = emblemaDosGatitos(h * 0.0065);
-  emblema.position.set(0, h * 0.009, h * 0.0036);
-  lingua.add(emblema);
+  if (c.emblema) {
+    const emblema = emblemaDosGatitos(h * 0.0065);
+    emblema.position.set(0, h * 0.009, h * 0.0036);
+    lingua.add(emblema);
+  }
   g.add(lingua);
 
   // O COLARINHO acolchoado em volta do tornozelo, e a alça do calcanhar
   const zCano = p.z - h * 0.024;
-  const colarinho = new THREE.Mesh(new THREE.TorusGeometry(h * 0.043 * m.w, h * 0.0065, 8, 22), toon(MARINHO));
+  const colarinho = new THREE.Mesh(new THREE.TorusGeometry(h * 0.043 * m.w, h * 0.0065, 8, 22), toon(c.colarinho));
   colarinho.rotation.x = Math.PI / 2;
   colarinho.scale.set(0.98, 1.12, 1);
   colarinho.position.set(0, topoEm(zCano) - h * 0.002, zCano);
   g.add(colarinho);
   const zCalcanhar = p.z - (p.meioComprimento + h * 0.006) * escalaDoCabedal - h * 0.004;
-  const alca = new THREE.Mesh(new THREE.BoxGeometry(h * 0.013, h * 0.022, h * 0.005), toon(AMARELO));
+  const alca = new THREE.Mesh(new THREE.BoxGeometry(h * 0.013, h * 0.022, h * 0.005), toon(c.alca));
   alca.position.set(0, topoEm(zCalcanhar) + h * 0.002, zCalcanhar);
   alca.rotation.x = 0.22;
   g.add(alca);
   // e o emblema do calcanhar, virado para trás
-  colar(emblemaDosGatitos(h * 0.007), g, 0, y0 + H * 0.45, zCalcanhar - h * 0.0015, 0, 0, -1);
+  if (c.emblema) colar(emblemaDosGatitos(h * 0.007), g, 0, y0 + H * 0.45, zCalcanhar - h * 0.0015, 0, 0, -1);
   return g;
 }
 

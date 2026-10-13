@@ -9,6 +9,7 @@ import {
   churrasqueiraDoMania, estanteDoBar, fogaoDoMania, geladeiraDoMania, lambriDoSalao, lampiaoDeParede,
   lousaDoMania, mesaDoSalao, panoDeParede, pendenteDeEsmalte, piaDoMania, pilarete, placaDoSalao,
   portaDeServico, prateleiraDaCozinha, quadroDoWalter, revestir,
+  RadioDoBar, carrinhoDeLouca, cavaleteDaFila, chapaDoWalter,
 } from '../world/moveisDoMania';
 import { fundir } from '../world/fundir';
 import { osso, pratoServido } from '../world/props';
@@ -18,7 +19,9 @@ import { assoalhoDeMadeira, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
 import { ITENS, PREMIOS_DO_MANIA } from '../world/itens';
 import { TurnoDoMania, type MesaDoTurno, type PlantaDoTurno } from '../minigames/turnoDoMania';
-import { CHAVE, migrarOTurnoAntigo, registrarOTurno, turnoPorNumero, type ResultadoDoTurno } from '../minigames/turnosDoMania';
+import {
+  CHAVE, migrarOTurnoAntigo, niveisDasMelhorias, registrarOTurno, turnoPorNumero, type ResultadoDoTurno,
+} from '../minigames/turnosDoMania';
 
 /**
  * Mania de Churrasco — o restaurante do clube POR DENTRO.
@@ -101,13 +104,27 @@ const GUARDADO = { x: -3.4, y: 1.193, z: -2 };
  *   encosta para deixar o prato. Os dois do lado de lá do balcão.
  */
 const ENTRADA = { x: 10.15 };
+/**
+ * O CARRINHO DE LOUÇA (a melhoria) mora no vão entre as duas mesas do meio da
+ * fileira da frente — longe da copa, que é o ponto dele: meia viagem a menos
+ * para quem recolhe do lado de cá do salão. O ponto de largar fica na frente
+ * dele, do lado da câmera.
+ */
+const CARRINHO = { x: 0.1, z: 5.6 };
 
 const TURNO: PlantaDoTurno = {
   entrada: { x: ENTRADA.x, z: 9.4 },
-  fila: [{ x: ENTRADA.x, z: 7.2 }, { x: ENTRADA.x - 1.8, z: 7.9 }, { x: ENTRADA.x + 1.5, z: 7.9 }],
+  // o quarto lugar só existe com a "Plaquinha de reserva" (o motor decide)
+  fila: [{ x: ENTRADA.x, z: 7.2 }, { x: ENTRADA.x - 1.8, z: 7.9 }, { x: ENTRADA.x + 1.5, z: 7.9 }, { x: ENTRADA.x - 1.25, z: 8.6 }],
   recepcao: { x: ENTRADA.x, z: 6.5 },
   saidas: [{ x: -2.6, z: -2 }, { x: -3.6, z: -2 }, { x: -4.6, z: -2 }],
   balcao: { x: -3.6, z: -1.0 },
+  carrinho: {
+    x: CARRINHO.x, z: CARRINHO.z,
+    ponto: { x: CARRINHO.x, z: CARRINHO.z + 1.0 },
+    pilha: [{ x: CARRINHO.x + 0.2, z: CARRINHO.z - 0.1 }, { x: CARRINHO.x + 0.2, z: CARRINHO.z + 0.12 }],
+    tampo: 0.812,
+  },
   pilha: [{ x: -6.2, z: -2 }, { x: -7.0, z: -2 }, { x: -7.8, z: -2 }, { x: -8.6, z: -2 }],
   copa: { x: -7.0, z: -1.0 },
   tampo: 1.15,
@@ -945,6 +962,52 @@ export const maniaDeChurrasco: SceneDef = {
       g.toast(`${pecas.map((p) => p.nome).join(', ')} — no guarda-roupa`, pecas[0].icone);
     };
 
+    /**
+     * =========================================== AS MELHORIAS, NO SALÃO
+     *
+     * Cada melhoria comprada na escala aparece no lugar: a chapa nova (ou a
+     * dupla) na ilha da cozinha, o cavalete da fila na entrada, o rádio
+     * tocando no bar e o carrinho de louça entre as mesas. As peças são
+     * montadas sempre e ficam escondidas até a compra — a compra acontece com
+     * a escala aberta, e a peça tem que aparecer quando ela fecha, sem
+     * remontar a cena. A bandeja, o tênis e o bloquinho vão no corpo da
+     * dupla, e quem os põe é o turno.
+     */
+    const ILHA_DA_CHAPA = { x: x0 + 7.25, z: z0 + 4.6 };
+    const chapaNova = w.add(fundir(w.place(chapaDoWalter(false), ILHA_DA_CHAPA.x, 0.92, ILHA_DA_CHAPA.z)));
+    const chapaDupla = w.add(fundir(w.place(chapaDoWalter(true), ILHA_DA_CHAPA.x - 0.2, 0.92, ILHA_DA_CHAPA.z)));
+    // o cavalete fica NA FRENTE da fila, do lado de dentro: colado na mureta da
+    // direita (onde ele nasceu) a mureta engolia metade dele na câmera
+    const CAVALETE = { x: 8.95, z: 7.05 };
+    const cavalete = w.add(fundir(w.place(cavaleteDaFila(), CAVALETE.x, 0, CAVALETE.z, 0.6)));
+    const radio = new RadioDoBar();
+    w.add(fundir(w.place(radio.group, 4.05, 1.15, z0 + 0.85, 0.15)));
+    const carrinho = w.add(fundir(w.place(carrinhoDeLouca(), CARRINHO.x, 0, CARRINHO.z)));
+    const colisor = { cavalete: false, carrinho: false };
+    const mostrarMelhorias = (): void => {
+      const n = niveisDasMelhorias(g);
+      chapaNova.visible = n.chapa === 1;
+      chapaDupla.visible = n.chapa >= 2;
+      cavalete.visible = n.reserva > 0;
+      radio.group.visible = n.radio > 0;
+      carrinho.visible = n.carrinho > 0;
+      // o cavalete e o carrinho estão no chão do salão: ganham colisor quando
+      // aparecem (uma vez só — comprado, não sai mais)
+      if (n.reserva > 0 && !colisor.cavalete) {
+        colisor.cavalete = true;
+        w.blockCircle(CAVALETE.x, CAVALETE.z, 0.32);
+      }
+      if (n.carrinho > 0 && !colisor.carrinho) {
+        colisor.carrinho = true;
+        w.blockBox(CARRINHO.x, CARRINHO.z, 0.5, 0.3);
+      }
+    };
+    mostrarMelhorias();
+    // o rádio toca: as notas sobem enquanto ele está à vista
+    w.onUpdate((dt) => {
+      if (radio.group.visible) radio.update(dt);
+    });
+
     // ------------------------------------------------------------- enfeites
     // a placa do nome, em cima do bar: é a primeira coisa que se lê ao entrar
     w.add(fundir(w.place(placaDoSalao('Mania de Churrasco', 6.2, 0.9), BAR.x, 2.5, z0 + PAREDE)));
@@ -1052,6 +1115,8 @@ export const maniaDeChurrasco: SceneDef = {
         }
         // A ESCALA DO WALTER: o menu dos turnos (`ui/escalaDoWalter.ts`)
         const numero = await api.abrirEscalaDoWalter();
+        // o que foi comprado com a escala aberta aparece agora no salão
+        mostrarMelhorias();
         const escolhido = numero === null ? null : turnoPorNumero(numero);
         if (!escolhido || turno.rodando) return;
 
@@ -1075,7 +1140,7 @@ export const maniaDeChurrasco: SceneDef = {
             [A, 'Então a mesa dele demora o dobro. Senta ele onde não atrapalha.'],
           ]);
         }
-        await turno.comecar(escolhido);
+        await turno.comecar(escolhido, niveisDasMelhorias(api));
       },
     });
     lerAEscala.enabled = g.flag('turno-aceito');

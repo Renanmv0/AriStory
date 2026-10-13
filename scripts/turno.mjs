@@ -300,9 +300,14 @@ await page.evaluate(() => {
     vaga: 2,
   });
 });
-await irPara(-3.6, -0.6);
-await page.waitForTimeout(600);
-const comBandejaCheia = await prompt();
+// o rótulo do ponto é refeito no quadro seguinte: espera ele mudar, em vez de
+// ler logo depois de chegar (a ~2 quadros por segundo, ainda é o da copa)
+let comBandejaCheia = '';
+for (let i = 0; i < 30 && !/cheia/i.test(comBandejaCheia ?? ''); i++) {
+  await irPara(-3.6, -0.6);
+  await page.waitForTimeout(400);
+  comBandejaCheia = await prompt();
+}
 await page.evaluate(() => {
   const t = window.jogo.current.world.root.userData.turno;
   t.prontos = t.prontos.filter((p) => p.prato.id !== 'de-mentira');

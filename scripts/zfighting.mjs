@@ -106,6 +106,12 @@ const PECAS = [
   ['balcao-de-passagem', 'mania-de-churrasco'],
   ['estante-de-bebidas', 'mania-de-churrasco'],
   ['placa-de-fachada', 'mania-de-churrasco'],
+  // as melhorias do turno (montadas sempre, escondidas até a compra)
+  ['chapa-nova', 'mania-de-churrasco'],
+  ['chapa-dupla', 'mania-de-churrasco'],
+  ['cavalete-da-fila', 'mania-de-churrasco'],
+  ['radio-do-bar', 'mania-de-churrasco'],
+  ['carrinho-de-louca', 'mania-de-churrasco'],
   ['arara-de-roupas', 'lojinha'],
   ['arara-premium', 'lojinha'],
   ['provadores', 'lojinha'],

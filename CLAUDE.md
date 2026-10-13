@@ -304,6 +304,7 @@ node scripts/osso.mjs    /tmp/os    # o osso: cavar no jardim, dar ao Walter e e
 node scripts/turno.mjs   /tmp/tn    # o turno do Mania: levar a mesa, anotar, servir, receber e a louca (TURNO=2 joga outro turno da escala)
 node scripts/escala.mjs  /tmp/el    # a escala do Walter: o menu dos turnos, a trava das 3 estrelas, os petiscos, o premio de cada turno uma vez so, o save antigo e o celular
 node scripts/sobremesa.mjs /tmp/sb  # o Mano no turno 2: come, pede a sobremesa na mesma mesa, danca e paga as duas
+node scripts/melhorias.mjs /tmp/mh  # as melhorias do Mania: comprar com petiscos na escala, cada efeito medido sem e com (bandeja, tenis, bloquinho, chapa, fila, radio, carrinho), as pecas no salao e a bandeja carregada na mao
 node scripts/premio.mjs  /tmp/pr    # a carteira do casal (uma so para os dois) e a gravatinha das 3 estrelas
 node scripts/mano.mjs    /tmp/pg    # o Mano no quiosque: fica no posto, aparece inteiro, fala, danca e entrega
 node scripts/cookie.mjs  /tmp/ck    # o Cookie: patrulha ao lado da cabine, vira nas pontas, e vende o bilhete

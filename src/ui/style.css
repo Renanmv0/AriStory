@@ -2680,6 +2680,36 @@ body.touch-device .dialogue .next { right: 84px; }
 .escala-do-walter .melhoria li .preco { white-space: nowrap; color: var(--giz-amarelo); }
 .escala-do-walter .melhoria li.feito .preco { color: var(--giz-verde); }
 .escala-do-walter .melhoria small { font-size: 11px; color: var(--giz-fraco); }
+.escala-do-walter .melhoria li { align-items: center; }
+.escala-do-walter .melhoria li + li { margin-top: 3px; }
+/* o botão de comprar: giz amarelo como o de começar, só que pequeno */
+.escala-do-walter .melhoria .comprar {
+  flex: none;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--giz-amarelo);
+  color: #3a2f12;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #a8873a;
+}
+.escala-do-walter .melhoria .comprar:disabled {
+  background: rgba(241, 239, 230, 0.12);
+  color: var(--giz-fraco);
+  box-shadow: none;
+  cursor: default;
+}
+.escala-do-walter .melhoria.completa { border-color: rgba(169, 220, 179, 0.45); }
+/* o cartão que acabou de ser comprado pisca uma vez em verde */
+.escala-do-walter .melhoria.recem { animation: melhoria-comprada 0.9s ease-out; }
+@keyframes melhoria-comprada {
+  0% { background: rgba(169, 220, 179, 0.35); }
+  100% { background: transparent; }
+}
 
 .escala-do-walter .pe {
   display: grid;
