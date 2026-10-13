@@ -16,8 +16,9 @@ import { pratoPorId } from '../world/cardapioData';
 import { Walter } from '../entities/bichos/Walter';
 import { assoalhoDeMadeira, pisoDePlacas } from '../world/texturasDeChao';
 import { ARI, RENAN } from '../characters/cast';
-import { ITENS } from '../world/itens';
+import { ITENS, PREMIOS_DO_MANIA } from '../world/itens';
 import { TurnoDoMania, type MesaDoTurno, type PlantaDoTurno } from '../minigames/turnoDoMania';
+import { CHAVE, migrarOTurnoAntigo, registrarOTurno, turnoPorNumero, type ResultadoDoTurno } from '../minigames/turnosDoMania';
 
 /**
  * Mania de Churrasco — o restaurante do clube POR DENTRO.
@@ -145,6 +146,8 @@ export const maniaDeChurrasco: SceneDef = {
 
   build(w) {
     const g = w.game;
+    // quem jogou o turno de antes da temporada já entra com o turno 1 contado
+    migrarOTurnoAntigo(g);
 
     /** Vai e volta de falas, com o nome certo em cada balão. */
     const conversa = async (falas: Array<readonly [string, string]>): Promise<void> => {
@@ -800,7 +803,9 @@ export const maniaDeChurrasco: SceneDef = {
      * transforma um corte seco num fim com respiração.
      */
     turno.aoAcabar = async () => {
-      const { dinheiro, coracoes, estrelas } = turno.conta;
+      const { dinheiro, coracoes, turno: jogado } = turno.conta;
+      // o save primeiro: se a dupla fechar o jogo no meio das falas, o turno já contou
+      const r = registrarOTurno(g, jogado, dinheiro);
       await conversa([
         [R, `Fechou. R$ ${dinheiro} no caixa.`],
         [A, coracoes >= 4
@@ -809,17 +814,74 @@ export const maniaDeChurrasco: SceneDef = {
             ? `${coracoes} saíram felizes. Dá pra melhorar.`
             : 'Ninguém saiu pulando de alegria. Mas ninguém passou fome.'],
       ]);
-      await g.say([`${'⭐'.repeat(estrelas)}  — ${estrelas} de 3`], 'Walter');
+      await g.say([`${'⭐'.repeat(r.estrelas)}  — ${r.estrelas} de 3`], 'Walter');
+      if (r.recorde && g.stat(CHAVE.vezes(jogado.numero)) > 1) {
+        g.toast(`Recorde do turno ${jogado.numero}: R$ ${dinheiro}`, '🏆');
+      }
+      await darOsPetiscos(r);
 
       /**
-       * AS TRÊS ESTRELAS TÊM PRÊMIO, e o prêmio é a gravatinha dele.
-       *
-       * Ele tira do próprio pescoço — e saca outra igual da gaveta no quadro
-       * seguinte, porque tirar a gravata do Walter para sempre seria tirar o
-       * que faz ele ser o Walter. Uma vez só: da segunda vez em diante ele
-       * comemora sem repetir o presente, senão o gesto vira máquina de gravata.
+       * AS TRÊS ESTRELAS TÊM PRÊMIO, um por turno, na primeira vez delas
+       * (§13.5 do plano). Da segunda vez em diante ele comemora sem repetir o
+       * presente, senão o gesto vira máquina de roupa.
        */
-      if (estrelas === 3 && !g.flag('gravata-do-walter')) {
+      if (r.primeiraVezTres) await darOPremio(jogado.numero);
+
+      if (r.abriu) {
+        g.toast(`Turno ${r.abriu.numero} liberado na escala`, '🔓');
+        await conversa([
+          [R, 'Ele foi na parede e escreveu mais uma linha na escala.'],
+          [A, `"Turno ${r.abriu.numero}: ${r.abriu.nome}."`],
+          ...(r.abriu.pronto ? [] : [[R, 'Do lado tá escrito "em preparo". Ele ainda tá montando esse.'] as const]),
+        ]);
+      }
+
+      await conversa([
+        [R, 'Ele tá abanando. Acho que a gente pode voltar amanhã.'],
+        [A, 'A escala tá ali na parede.'],
+      ]);
+      if (!g.flag('primeiro-turno-feito')) {
+        g.setFlag('primeiro-turno-feito');
+        g.unlock({
+          id: 'turno-no-mania',
+          title: 'O primeiro turno',
+          place: 'Mania de Churrasco',
+          note: 'Os dois de garçom no Mania de Churrasco, revezando o salão enquanto o Walter dava conta da cozinha.',
+          icon: '📋',
+        });
+      }
+    };
+
+    /**
+     * OS PETISCOS: a moeda do Mania, ideia do Renan. O Walter dá um por
+     * estrela no fim de TODO turno (inclusive turno já vencido), e eles
+     * compram as melhorias do salão na escala. Na primeira vez ele explica.
+     */
+    const darOsPetiscos = async (r: ResultadoDoTurno): Promise<void> => {
+      const total = g.stat(CHAVE.petiscos);
+      if (!g.flag('petiscos-explicados')) {
+        g.setFlag('petiscos-explicados');
+        g.som('latido');
+        await conversa([
+          [A, 'Ele voltou da cozinha com um potinho na boca.'],
+          [R, `Petiscos! ${r.petiscos === 1 ? 'Um' : r.petiscos === 2 ? 'Dois' : 'Três'}. Um pra cada estrela.`],
+          [A, 'Ele guarda o resto num pote com os nossos nomes.'],
+          [R, 'E diz que dá pra trocar por melhoria pro salão. Tá na escala.'],
+        ]);
+      }
+      g.som('pegar');
+      g.toast(`+${r.petiscos} ${r.petiscos === 1 ? 'petisco' : 'petiscos'} · ${total} no pote`, '🍢');
+    };
+
+    const darOPremio = async (numero: number): Promise<void> => {
+      if (numero === 1) {
+        /**
+         * A GRAVATINHA DELE, o prêmio de antes da temporada: ele tira do
+         * próprio pescoço — e saca outra igual da gaveta no quadro seguinte,
+         * porque tirar a gravata do Walter para sempre seria tirar o que faz
+         * ele ser o Walter.
+         */
+        if (g.flag('gravata-do-walter')) return;
         g.setFlag('gravata-do-walter');
         g.som('latido');
         cachorro.receberCarinho();
@@ -849,25 +911,38 @@ export const maniaDeChurrasco: SceneDef = {
           note: 'Três estrelas no turno, e ele tirou a própria gravata do pescoço para dar de presente. Tinha outra igual na gaveta.',
           icon: '🎀',
         });
+        return;
       }
-
-      await conversa([
-        [R, 'Ele tá abanando. Acho que a gente pode voltar amanhã.'],
-        [A, 'A escala tá ali na parede.'],
-      ]);
-      // o recorde: `stat` guarda o melhor turno, e só sobe quando é melhor
-      const antes = g.stat('turno-recorde');
-      if (dinheiro > antes) g.bump('turno-recorde', dinheiro - antes);
-      if (!g.flag('primeiro-turno-feito')) {
-        g.setFlag('primeiro-turno-feito');
+      const pecas = PREMIOS_DO_MANIA[numero] ?? [];
+      if (!pecas.length) return;
+      if (numero === 2) {
+        // O AVENTAL: ele some na cozinha e volta arrastando dois, um de cada
+        // dupla de mãos — uniforme oficial da casa
+        g.som('latido');
+        cachorro.receberCarinho();
+        await conversa([
+          [A, 'Ele saiu correndo pra cozinha.'],
+          [R, 'Voltou arrastando um pano preto pela boca.'],
+          [A, 'Dois! São dois aventais. Com "Mania" bordado em dourado.'],
+        ]);
+        g.som('memoria');
+        for (const p of pecas) g.ganharPeca(p);
+        await conversa([
+          [R, 'Uniforme oficial. Agora a gente é da casa.'],
+          [A, 'Eu vou usar com a gravatinha. Combina.'],
+        ]);
+        g.toast('Avental de garçom do Mania — no guarda-roupa', '🍽️');
         g.unlock({
-          id: 'turno-no-mania',
-          title: 'O primeiro turno',
+          id: 'avental-do-mania',
+          title: 'O avental do Mania',
           place: 'Mania de Churrasco',
-          note: 'Os dois de garçom no Mania de Churrasco, revezando o salão enquanto o Walter dava conta da cozinha.',
-          icon: '📋',
+          note: 'Três estrelas no turno da sobremesa, e o Walter trouxe da cozinha dois aventais pretos com o nome do restaurante bordado em dourado.',
+          icon: '🍽️',
         });
+        return;
       }
+      for (const p of pecas) g.ganharPeca(p);
+      g.toast(`${pecas.map((p) => p.nome).join(', ')} — no guarda-roupa`, pecas[0].icone);
     };
 
     // ------------------------------------------------------------- enfeites
@@ -975,8 +1050,10 @@ export const maniaDeChurrasco: SceneDef = {
             [A, 'Eu vou ser o melhor garçom que esse salão já viu.'],
           ]);
         }
-        const vai = await api.ask('Começar o turno?', ['Bora', 'Ainda não'], A);
-        if (vai !== 0) return;
+        // A ESCALA DO WALTER: o menu dos turnos (`ui/escalaDoWalter.ts`)
+        const numero = await api.abrirEscalaDoWalter();
+        const escolhido = numero === null ? null : turnoPorNumero(numero);
+        if (!escolhido || turno.rodando) return;
 
         if (!api.flag('primeiro-turno')) {
           api.setFlag('primeiro-turno');
@@ -989,7 +1066,16 @@ export const maniaDeChurrasco: SceneDef = {
             [A, 'Mas o que você largar fica parado onde estava. Pensa em onde larga.'],
           ]);
         }
-        await turno.comecar();
+        // o bicho novo do turno, apresentado na primeira vez
+        if (escolhido.numero === 2 && !api.flag('turno-2-explicado')) {
+          api.setFlag('turno-2-explicado');
+          await conversa([
+            [A, 'Turno dois. Diz aqui que o Mano vem jantar.'],
+            [R, 'O Mano do sorvete? Aposto que ele pede sobremesa.'],
+            [A, 'Então a mesa dele demora o dobro. Senta ele onde não atrapalha.'],
+          ]);
+        }
+        await turno.comecar(escolhido);
       },
     });
     lerAEscala.enabled = g.flag('turno-aceito');

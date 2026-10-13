@@ -690,6 +690,13 @@ export interface GameAPI {
    */
   abrirQuadroDeInscricoes(): Promise<string | null>;
   /**
+   * A ESCALA DO WALTER, no Mania: o menu dos turnos (e a aba das melhorias).
+   * Resolve com o NÚMERO do turno que a dupla mandou começar, ou `null` quando
+   * só fechou. Ela se monta do save e de `minigames/turnosDoMania.ts`; a cena
+   * só abre. Trava o movimento enquanto aberta.
+   */
+  abrirEscalaDoWalter(): Promise<number | null>;
+  /**
    * A TELA DAS TRÊS CARTAS da rodada do jardim: resolve com o `id` da carta
    * pega. Nunca com `null` — ela não fecha sem escolha, porque subir de nível
    * sem pegar carta seria perder a melhoria. Trava o movimento enquanto aberta.

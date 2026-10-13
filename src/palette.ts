@@ -916,6 +916,16 @@ export const PALETTE = {
   aventalVerde: 0x6e9e5b,
   aventalBolso: 0x557f45,
   aventalAlca: 0xe9dcc0,
+  /*
+   * O AVENTAL DE GARÇOM DO MANIA (prêmio do turno 2): preto de sarja — um
+   * grafite, e não o preto puro, que no toon vira um buraco sem dobra — com o
+   * "Mania" bordado no dourado do letreiro do restaurante.
+   */
+  aventalGarcom: 0x2b2826,
+  aventalGarcomCostura: 0x4d4844,
+  aventalGarcomBordado: 0xe9bf5c,
+  aventalGarcomBordadoEscuro: 0xa8822c,
+  aventalGarcomFita: 0x1f1d1c,
   // as roupas que a lojinha da Josefina vende (`ROUPAS_DA_JOSEFINA`)
   galochaVerde: 0x4f9a4e,
   galochaVerdeCano: 0x3c7a3c,

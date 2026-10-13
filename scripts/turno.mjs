@@ -155,6 +155,16 @@ await page.waitForTimeout(600);
 
 // ============================================ 1. começar o turno pela escala
 const promptDaEscala = await agir(2.4, -7.5, /escala/i, 10);
+// a primeira leitura tem falas, e depois abre A ESCALA DO WALTER (o menu dos
+// turnos): o turno marcado é o sugerido (o 1, num save novo); `TURNO=2` marca
+// outro antes de começar
+for (let i = 0; i < 40 && !(await page.locator('.escala-do-walter.show').count()); i++) {
+  if (await page.locator('.dialogue.show').count()) await page.keyboard.press('KeyE');
+  await page.waitForTimeout(420);
+}
+const TURNO = Number(process.env.TURNO ?? 1);
+if (TURNO !== 1) await page.locator(`.escala-do-walter .linha[data-numero="${TURNO}"]`).click();
+await page.locator('.escala-do-walter .comecar').click();
 await venceAFala();
 await page.waitForTimeout(1200);
 const comecou = await estado();

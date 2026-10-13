@@ -4,6 +4,7 @@ import type { SomNome } from '../audio/efeitos';
 import { TelaDeCartas, escapar } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
 import { Arsenal } from './arsenal';
+import { EscalaDoWalter, type ConteudoDaEscala } from './escalaDoWalter';
 import { LojaDaJosefina } from './lojaDaJosefina';
 import { Apostila, type PedidoDaApostila } from './apostila';
 import type { ResultadoDaApostila } from '../minigames/aula/tipos';
@@ -115,6 +116,7 @@ export class Ui {
   private readonly telaDeCartas: TelaDeCartas;
   private readonly livroDeCartas: LivroDeCartas;
   private readonly arsenal: Arsenal;
+  private readonly escala: EscalaDoWalter;
   private readonly telaDoFim: TelaDoFim;
   private readonly lojaDaJosefina: LojaDaJosefina;
   /** a apostila da aula do Gatito: o livro de folhear (`apostila.ts`) */
@@ -346,6 +348,7 @@ export class Ui {
           <button class="close">só olhando as fichas</button>
         </div>
       </div>
+      <div class="escala-do-walter"></div>
       <div class="xadrez"></div>
       <div class="experiencia"><span class="nv">Nv <b>0</b></span><span class="trilho"><i class="enchido"></i></span><span class="conta">0/5</span></div>
       <div class="painel-jardim"><span class="onda">Onda <b>1</b><small>/5</small></span><span class="tanque" title="água no regador"><i class="agua"></i><i class="marcas"></i><em>💧 <b>12</b></em></span><span class="canteiros" title="canteiros de pé">🌱 <b>8</b><small>/8</small></span></div>
@@ -428,6 +431,8 @@ export class Ui {
     this.livroDeCartas.som = (nome) => this.som?.(nome);
     this.arsenal = new Arsenal(ui.querySelector('.livro-de-cartas.arsenal')!);
     this.arsenal.som = (nome) => this.som?.(nome);
+    this.escala = new EscalaDoWalter(ui.querySelector('.escala-do-walter')!);
+    this.escala.som = (nome) => this.som?.(nome);
     this.telaDoFim = new TelaDoFim(ui.querySelector('.fim-do-jardim')!);
     this.telaDoFim.som = (nome) => this.som?.(nome);
     this.lojaDaJosefina = new LojaDaJosefina(ui.querySelector('.loja-da-josefina')!);
@@ -1173,6 +1178,16 @@ export class Ui {
     this.apostila.fechar();
   }
 
+  /** A escala do Walter, no Mania; resolve com o número do turno escolhido, ou `null`. Ver `escalaDoWalter.ts`. */
+  abrirEscala(conteudo: ConteudoDaEscala): Promise<number | null> {
+    const pedido = this.escala.abrir(conteudo);
+    this.marcarTelaAberta();
+    return pedido.then((turno) => {
+      this.marcarTelaAberta();
+      return turno;
+    });
+  }
+
   /** O painel das armas da estufa; resolve com a arma mandada usar, ou `null`. Ver `arsenal.ts`. */
   abrirArsenal(conteudo: ConteudoDoArsenal, vistas: ReadonlySet<string>): Promise<string | null> {
     const pedido = this.arsenal.abrir(conteudo, vistas);
@@ -1309,8 +1324,13 @@ export class Ui {
 
   // ------------------------------------------------ quadro de inscrições
 
+  /**
+   * o quadro de inscrições da arena OU a escala do Walter: os dois são papel
+   * pregado na parede que trava a dupla em pé na frente dele, e saem pela
+   * mesma porta (o Escape, o "não estou ocupado" do motor)
+   */
   get quadroOpen(): boolean {
-    return this.inscricoes.classList.contains('show');
+    return this.inscricoes.classList.contains('show') || this.escala.aberto;
   }
 
   /**
@@ -1334,7 +1354,7 @@ export class Ui {
     premios: PremiosDoQuadro,
   ): Promise<string | null> {
     return new Promise((resolve) => {
-      if (this.quadroOpen) {
+      if (this.inscricoes.classList.contains('show')) {
         resolve(null);
         return;
       }
@@ -1349,7 +1369,11 @@ export class Ui {
   }
 
   fecharQuadro(escolha: string | null = null): void {
-    if (!this.quadroOpen) return;
+    if (this.escala.aberto) {
+      this.escala.fechar();
+      return;
+    }
+    if (!this.inscricoes.classList.contains('show')) return;
     this.inscricoes.classList.remove('show');
     this.marcarTelaAberta();
     const avisar = this.fecharQuadroResolve;

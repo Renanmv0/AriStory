@@ -49,6 +49,8 @@ import { ChessEngine, type Cor } from '../entities/ChessEngine';
 import type { ConviteDeXadrez, FimDeXadrez } from '../ui/mesaDeXadrez';
 import { CARDAPIO } from '../world/cardapioData';
 import { INSCRITOS } from '../world/adversariosData';
+import { CHAVE, MELHORIAS, ROSTO_DO_CLIENTE, TURNOS, turnoAberto } from '../minigames/turnosDoMania';
+import type { TurnoNaEscala } from '../ui/escalaDoWalter';
 import type { CharacterSpec } from '../characters/spec';
 
 interface LoadedScene {
@@ -1785,6 +1787,47 @@ export class Game implements GameAPI {
     // mudou foi o desenho, entao esquece o que estava na mao dos dois e o
     // proximo `sincronizarMaos` monta o regador de novo
     this.naMao.clear();
+  }
+
+  /**
+   * A ESCALA DO WALTER se monta inteira do save e da tabela de turnos
+   * (`minigames/turnosDoMania.ts`): a cena só diz "abre" e recebe o número do
+   * turno escolhido. As estrelas, o recorde e os petiscos são contadores
+   * (`turno:2:estrelas`, `mania:petiscos`), e a trava é a do Renan — três
+   * estrelas no anterior.
+   */
+  abrirEscalaDoWalter(): Promise<number | null> {
+    const turnos: TurnoNaEscala[] = TURNOS.map((t) => {
+      const estrelas = this.save.stat(CHAVE.estrelas(t.numero));
+      return {
+        numero: t.numero,
+        nome: t.nome,
+        novidade: t.novidade,
+        duracao: t.duracao,
+        quem: t.quem.map((id) => ({
+          icone: ROSTO_DO_CLIENTE[id]?.icone ?? '❔',
+          nome: ROSTO_DO_CLIENTE[id]?.nome ?? id,
+          novo: t.novos.includes(id),
+        })),
+        estrelas,
+        recorde: this.save.stat(CHAVE.recorde(t.numero)),
+        vezes: this.save.stat(CHAVE.vezes(t.numero)),
+        metas: t.metas,
+        // o prêmio vem na primeira vez das três estrelas: ter as três É ter ganho
+        premio: { ...t.premio, ganho: estrelas >= 3 },
+        estado: !turnoAberto(this.save, t.numero) ? 'trancado' : t.pronto ? 'aberto' : 'em-preparo',
+      };
+    });
+    // abre marcado no primeiro turno jogável que ainda não tem as três
+    const jogaveis = turnos.filter((t) => t.estado === 'aberto');
+    const sugerido = (jogaveis.find((t) => t.estrelas < 3) ?? jogaveis[jogaveis.length - 1])?.numero ?? 1;
+    return this.ui.abrirEscala({
+      turnos,
+      melhorias: MELHORIAS.map((m) => ({ ...m, nivel: this.save.stat(`mania:${m.id}`) })),
+      petiscos: this.save.stat(CHAVE.petiscos),
+      lojaAberta: false,
+      sugerido,
+    });
   }
 
   abrirQuadroDeInscricoes(): Promise<string | null> {

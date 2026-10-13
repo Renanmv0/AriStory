@@ -1,21 +1,27 @@
 # Turno no Mania de Churrasco — plano do minigame
 
 > Documento de PROJETO. As etapas 1 e 2 já estão no jogo (§11). A
-> **reformulação em turnos** (§13) é plano, à espera das decisões do Renan
-> (§13.10). Quando uma etapa for construída, marque-a aqui — e deixe o
+> **reformulação em turnos** (§13) está sendo construída por etapas (§13.9),
+> com as decisões do Renan já tomadas (§13.10). Quando uma etapa for construída, marque-a aqui — e deixe o
 > `git log` ser a fonte da verdade do que de fato existe.
 
 ## COMECE AQUI
 
-**O que existe no jogo hoje** (etapas 1 e 2): o osso no jardim, o Walter
-convidando, a escala na parede e **um turno só** —
-`src/minigames/turnoDoMania.ts`, 2:45 de jogo, 10 chegadas FIXAS de quatro
-clientes (Josefina, Capy, Noel, Gina), estrelas pelo dinheiro do dia (2★ com
-R$ 140, 3★ com R$ 220) e a gravatinha do Walter na primeira vez das três
-estrelas. O que o plano antigo previa e **nunca entrou**: o Pelusa, as três
-levas, o prato esfriando no balcão e o quadro de melhorias.
+**O que existe no jogo hoje** (etapas 1 e 2, e a **etapa A** da temporada):
+o osso no jardim, o Walter convidando, e a escala na parede abrindo **a
+escala do Walter** — o menu dos turnos (`src/ui/escalaDoWalter.ts`), com a
+aba das melhorias ainda só mostrando o que vem. Jogáveis: o **turno 1** (o de
+antes, igualzinho: 2:45, quatro clientes, gravatinha nas três estrelas) e o
+**turno 2, "Sobremesa de pinguim"** (3:00, o Mano estreia pedindo
+sobremesa, avental de garçom nas três estrelas). Os turnos 3 a 6 aparecem
+na escala (trancados, ou "em preparo" quando abertos). No fim de todo turno
+o Walter dá **petiscos**, um por estrela. Os dados moram em
+`src/minigames/turnosDoMania.ts`; o motor, em `turnoDoMania.ts`.
 
-**O pedido novo do Renan** (outubro de 2026), que é o que está por fazer:
+O que o plano antigo previa e **ainda não entrou**: o Pelusa, as três
+levas, o prato esfriando no balcão e as melhorias funcionando (etapa B).
+
+**O pedido novo do Renan** (outubro de 2026), que é o que está sendo feito:
 
 - manter as mecânicas e o funcionamento de hoje, mas com VARIAÇÃO — não pode
   ser sempre a mesma coisa;
@@ -28,8 +34,10 @@ levas, o prato esfriando no balcão e o quadro de melhorias.
 O desenho disso está no §13: a escala vira menu (§13.1), os seis turnos
 (§13.2), o elenco novo — todos os bichos do jogo entram (§13.3), as estrelas e
 a trava (§13.4), os prêmios (§13.5), as melhorias (§13.6), as notas técnicas
-(§13.8) e a ordem de construção (§13.9). **As perguntas que só o Renan
-responde estão no §13.10** — comece por elas.
+(§13.8) e a ordem de construção (§13.9). **As perguntas do §13.10 já foram
+respondidas pelo Renan** — a principal: as melhorias se compram com
+**Petiscos**, uma moeda que o Walter dá no fim de cada turno, um por estrela
+(§13.6). Veja no §13.9 que etapa já está no jogo.
 
 Regras que não mudam com a reformulação: **não dá para perder** (§10), o
 jogo é **só das mesas** (a cozinha é do Walter), o elenco é **uma tabela**
@@ -483,7 +491,7 @@ desenhada como a do quadro de inscrições da arena, com duas abas.
 
 ```
  ┌──────────────────────────────────────────────────────────────┐
- │ ESCALA DO WALTER                         💰 R$ 340 (carteira)  │
+ │ ESCALA DO WALTER                                 🍢 7 petiscos │
  │──────────────────────────────────────────────────────────────│
  │ 1  O primeiro turno        ⭐⭐⭐   🎀 gravatinha ✓           │
  │    Josefina · Capy · Noel · Gina          recorde R$ 268      │
@@ -522,7 +530,7 @@ abrir.
 | 1 | **O primeiro turno** | 2:45 | 10 | Josefina, Capy, Noel, Gina | — (é o turno de hoje, igualzinho) | gravatinha do Walter *(já existe)* |
 | 2 | **Sobremesa de pinguim** | 3:00 | 12 | **Mano** 🐧 | a sobremesa: um segundo pedido na mesma mesa | avental de garçom do Mania |
 | 3 | **O grandão da bilheteria** | 3:15 | 13 | **Cookie** 🐘 | uma mesa que ocupa duas | bloquinho e lápis na orelha |
-| 4 | **Tem francês no salão** | 3:15 | 14 | **Jean-Luc** 🦆 e **Estella** 🐑 | o **prato esfria** no balcão | colete de garçom (costurado pela Estella) |
+| 4 | **Canard à la Mania** | 3:15 | 14 | **Jean-Luc** 🦆 e **Estella** 🐑 | o **prato esfria** no balcão | colete de garçom (costurado pela Estella) |
 | 5 | **Dia de jogo** | 3:30 | 16 | **Luna, Sol e Estrella** 🐰 e **Flynn** 🦊 | a **mesa grande**: três numa mesa, três pratos juntos | bandana de churrasqueiro |
 | 6 | **Casa cheia** | 4:00 | 20 | **Gatito** 🐱 e o **Pelusa** 😼 | o Pelusa solto no salão | dólmã e chapéu de cozinheiro + o retrato |
 
@@ -617,8 +625,8 @@ o olho.
 
 **A trava é a do Renan: o turno seguinte só abre com três estrelas no
 anterior.** E ela não fere o "não dá para perder" (§10), porque **todo turno
-paga**: mesmo o turno de uma estrela põe dinheiro na carteira, e o dinheiro
-compra melhorias (§13.6). Quem empacou num turno sempre tem o que fazer —
+paga**: mesmo o turno de uma estrela põe dinheiro na carteira e um
+**petisco** no bolso, e os petiscos compram melhorias (§13.6). Quem empacou num turno sempre tem o que fazer —
 rejogar o anterior, juntar, melhorar o salão e voltar. A curva é desenhada
 assim de propósito:
 
@@ -647,33 +655,41 @@ dois e voltam sempre (`g.ganharPeca`, como os prêmios da arena e da apostila).
 | 5 | **bandana de churrasqueiro** | cabeça | no molde da bandana do Flynn, nas cores do Mania |
 | 6 | **dólmã e chapéu de cozinheiro** | tronco e cabeça | o uniforme branco de chef, com o chapéu alto |
 
-**E o prêmio da temporada**: fechar os seis turnos com três estrelas pendura,
-ao lado do quadro do Walter, um segundo quadro — **"Empregados do mês: Ari e
-Renan"**, pintado em canvas como o dele, os dois de uniforme. Com memória no
-diário. O Walter continua sendo o empregado do mês; os dois só ganharam a
-parede do lado.
+**E o prêmio da temporada** (decisão do Renan): fechar os seis turnos com
+três estrelas libera **a plaquinha de funcionários do mês** — pendurada ao
+lado do quadro do Walter, **"Funcionários do mês: Ari e Renan"**, pintada em
+canvas como a dele, os dois de uniforme. Com memória no diário. O Walter
+continua sendo o empregado do mês; os dois só ganharam a parede do lado.
 
 ### 13.6 As melhorias permanentes
 
-Compradas na aba "Melhorias" da escala, com a carteira do casal (§8.2).
+Compradas na aba "Melhorias" da escala com **Petiscos** — a moeda do Mania,
+decisão do Renan. No fim de cada turno o Walter dá **um petisco por
+estrela** (de 1 a 3, toda vez que se joga, inclusive turno já vencido). O
+dinheiro do turno continua indo para a carteira do casal (§8.2) e
+comprando roupa na Estella; os petiscos só servem aqui.
 Valem para todos os turnos, inclusive os já vencidos, e **aparecem no
 salão** — o mesmo princípio do regador da estufa: a melhoria não é um ícone,
 é uma coisa que dá para ver.
 
-| melhoria | efeito | níveis (R$) | onde se vê |
+| melhoria | efeito | níveis (🍢 petiscos) | onde se vê |
 |---|---|---|---|
-| **Bandeja grande** | 2 → 3 vagas na bandeja de cada um | 180 | a bandeja maior na mão |
-| **Tênis de garçom** | anda 10% / 20% mais rápido durante o turno | 120 / 260 | o tênis nos pés durante o turno |
-| **Bloquinho de comandas** | anotar leva metade do tempo (a história da Josefina também encurta) | 140 | o bloquinho na mão ao anotar |
-| **Chapa nova** | o Walter faz o prato em 5 s em vez de 7 / dois pratos de cada vez | 160 / 380 | a chapa nova na cozinha |
-| **Plaquinha de reserva** | a fila espera 30% mais, e ganha o quarto lugar | 150 | a plaquinha na entrada |
-| **Rádio do salão** | a paciência de todo mundo cai 10% mais devagar | 220 | o rádio no balcão do bar, tocando |
-| **Carrinho de louça** | guarda uma pilha de louça sem ocupar a bandeja | 200 | o carrinho parado na copa |
+| **Bandeja grande** | 2 → 3 vagas na bandeja de cada um | 5 | a bandeja maior na mão |
+| **Tênis de garçom** | anda 10% / 20% mais rápido durante o turno | 2 / 5 | o tênis nos pés durante o turno |
+| **Bloquinho de comandas** | anotar leva metade do tempo (a história da Josefina também encurta) | 3 | o bloquinho na mão ao anotar |
+| **Chapa nova** | o Walter faz o prato em 5 s em vez de 7 / dois pratos de cada vez | 3 / 6 | a chapa nova na cozinha |
+| **Plaquinha de reserva** | a fila espera 30% mais, e ganha o quarto lugar | 3 | a plaquinha na entrada |
+| **Rádio do salão** | a paciência de todo mundo cai 10% mais devagar | 5 | o rádio no balcão do bar, tocando |
+| **Carrinho de louça** | guarda uma pilha de louça sem ocupar a bandeja | 4 | o carrinho parado na copa |
 
-São R$ 1.810 no total — umas oito ou dez boas partidas. O dinheiro é o MESMO
-da boutique e da lojinha da Josefina (a carteira é uma só), e é de propósito:
-o turno do Mania passa a ser o emprego do casal, e a roupa da Estella sai
-dele.
+São 36 petiscos no total. Os seis turnos vencidos dão 18 (no mínimo); o
+resto vem de rejogar — umas seis ou sete partidas a mais para o salão
+inteiro, o que casa com a curva do §13.4 (turnos 3 e 4 com duas ou três
+melhorias, 5 e 6 com quase todas). Os preços são PROVISÓRIOS, acertados na
+etapa B.
+
+**Quem já jogou não perde nada aqui também**: o save antigo com a gravatinha
+(três estrelas no turno 1) já ganha os 3 petiscos dessas estrelas.
 
 ### 13.7 Ideias para depois (fora da primeira leva)
 
@@ -730,24 +746,42 @@ Cada etapa é jogável sozinha e vai para `main` antes da próxima, como no §11
 
 | # | etapa | o que fica em pé no fim |
 |---|---|---|
-| A | **A escala e os dois primeiros turnos** | o painel com as duas abas (a das melhorias ainda vazia), a tabela de turnos, as estrelas e o recorde por turno, a trava das três estrelas, o save antigo; o turno 1 (o de hoje) e o turno 2 com o Mano e o avental |
-| B | **As melhorias** | a aba de melhorias com as sete, a compra pela carteira e cada uma aparecendo no salão |
+| A ✅ | **A escala e os dois primeiros turnos** *(no jogo)* | o painel com as duas abas (a das melhorias ainda vazia), a tabela de turnos, as estrelas e o recorde por turno, a trava das três estrelas, o save antigo; o turno 1 (o de hoje) e o turno 2 com o Mano e o avental |
+| B | **As melhorias** | a aba de melhorias com as sete, a compra com petiscos e cada uma aparecendo no salão |
 | C | **Turnos 3 e 4** | o Cookie, o Jean-Luc, a Estella, o prato esfriando, o bloquinho e o colete |
 | D | **Turnos 5 e 6** | as coelhinhas e a mesa grande, o Flynn, o Gatito, o Pelusa, a bandana, o uniforme de chef e o retrato dos empregados do mês |
 
-### 13.10 Perguntas para o Renan
+**O que a etapa A decidiu pelo caminho** (para o Renan conferir):
 
-1. **Os traços dos bichos novos** (§13.3) estão com a cara deles? Em especial
-   o Cookie ocupando duas mesas, a Estella reparando no uniforme e o Gatito
-   fazendo o six seven quando paga.
-2. **Os prêmios** (§13.5): avental, bloquinho com lápis, colete, bandana e o
-   uniforme de chef — é isso, ou tem alguma roupa de garçom ou de cozinheiro
-   que vocês querem de verdade? E as cores (o avental preto com o nome em
-   dourado, o colete escuro)?
-3. **Os nomes dos turnos**: os do §13.2 ("Sobremesa de pinguim", "Casa
-   cheia"…) ou os dias da semana em que o Mania abre de verdade? Se for dia
-   da semana, quais são?
-4. **O dinheiro das melhorias** sair da mesma carteira da boutique está bom,
-   ou preferem uma moeda só do Mania (as gorjetas, por exemplo)?
-5. **O prêmio da temporada** — o quadro "Empregados do mês: Ari e Renan" ao
-   lado do do Walter — combina?
+- **a sobremesa do Mano é o smoothie de manga com banana** do cardápio: o
+  Mania não vende sorvete, e inventar um doce no cardápio de um restaurante
+  de verdade seria inventar. Se o Mania tiver sobremesa, ela entra pela
+  skill `aristory-prato` e a ficha do Mano passa a pedir ela (`sobremesa`,
+  em `turnoDoMania.ts`). O primeiro pedido dele é sempre de comer;
+- quando a sobremesa chega, **o Mano dança** (a dança do quiosque);
+- os **petiscos** moram no contador `mania:petiscos`, as estrelas e o recorde
+  em `turno:N:estrelas` / `turno:N:recorde`, e as vezes jogadas em
+  `turno:N:vezes`. A migração do save antigo é `migrarOTurnoAntigo` (a flag
+  `turnos-migrados` garante uma vez só);
+- o prêmio de cada turno mora em `PREMIOS_DO_MANIA` (`world/itens.ts`), e a
+  geometria em `world/roupasDoMania.ts`;
+- testes: `scripts/escala.mjs` (o painel, a trava, os petiscos, o prêmio uma
+  vez só, o save antigo e o celular), `scripts/sobremesa.mjs` (o Mano
+  inteiro, do salão à conta) e `TURNO=2 node scripts/turno.mjs`.
+
+### 13.10 As decisões do Renan
+
+As cinco perguntas do plano, respondidas em outubro de 2026:
+
+1. **Os traços dos bichos novos** (§13.3): "cada personagem tem suas próprias
+   características" — valem os do §13.3.
+2. **Os prêmios** (§13.5): "estão bons" — avental, bloquinho com lápis,
+   colete, bandana e o uniforme de chef.
+3. **Os nomes dos turnos**: os do §13.2, trocando só o do turno 4 por um
+   trocadilho em francês — virou **"Canard à la Mania"** (o *canard à
+   l'orange*, com o pato francês no lugar da laranja).
+4. **A moeda das melhorias**: "crie uma moeda chamada **Petiscos** que o
+   Walter dá pra gente ao final dos turnos de acordo com o número de estrelas
+   que conseguirmos" — um petisco por estrela (§13.6).
+5. **O prêmio da temporada**: "após terminar todos os 6 turnos, liberamos a
+   plaquinha como funcionários do mês" (§13.5).

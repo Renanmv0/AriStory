@@ -35,6 +35,7 @@ import {
   pernaDoShortDosGatitos, tenisDosGatitos,
 } from './uniformeDosGatitos';
 import { lacoDeTorcida, meiaoDeTorcida, pomponsDeTorcida, uniformeDeTorcida } from './torcidaDosGatitos';
+import { aventalDeGarcom } from './roupasDoMania';
 import {
   blusaCiganinha, mangaDaCiganinha, camisaDeSeda, mangaDeSeda, sueterDeTrancas, mangaDoSueter, casacoTrench, mangaDoTrench,
   vestidoDePoa, mangaDoPoa, vestidoDeLinho, vestidoEnvelope, mangaDoEnvelope, vestidoChemise, mangaDoChemise,
@@ -343,6 +344,20 @@ export const ITENS = {
     // O avental vai por cima e não mexe no que está embaixo
     nota: 'da Josefina, pelas vinte levas',
     extra: aventalDaJosefina,
+  },
+  /*
+   * OS PRÊMIOS DA TEMPORADA DE TURNOS DO MANIA (`PREMIOS_DO_MANIA`, lá
+   * embaixo): o Walter dá na primeira vez das três estrelas de cada turno.
+   * Como o avental da Josefina, vão POR CIMA e não levam `cor`.
+   */
+  aventalDoMania: {
+    id: 'avental-do-mania',
+    nome: 'Avental de garçom do Mania',
+    icone: '🍽️',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    nota: 'do Walter, pelas três estrelas do turno 2',
+    extra: aventalDeGarcom,
   },
   /*
    * A LOJINHA DA JOSEFINA (a banca no canto da estufa): roupa de mexer na
@@ -1629,6 +1644,17 @@ export const PREMIOS_DA_ARENA: Record<string, readonly ItemDef[]> = {
     ITENS.blazerDaEstella, ITENS.calcaDaEstella, ITENS.coroaDaEstella, ITENS.botaDaEstella,
   ],
   mano: [ITENS.patinsDoMano],
+};
+
+/**
+ * O PRÊMIO DE CADA TURNO DO MANIA, pelo NÚMERO do turno (§13.5 de
+ * `docs/MINIGAME-RESTAURANTE.md`). Quem entrega é o Walter, no fim do turno
+ * (`scenes/maniaDeChurrasco.ts`), com `g.ganharPeca`; quem repõe é o
+ * `reporPremios`. O turno 1 não está aqui: a gravatinha é de antes da
+ * temporada e volta pela flag `gravata-do-walter`, como sempre voltou.
+ */
+export const PREMIOS_DO_MANIA: Readonly<Record<number, readonly ItemDef[]>> = {
+  2: [ITENS.aventalDoMania],
 };
 
 /**
