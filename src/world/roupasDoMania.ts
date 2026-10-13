@@ -4,7 +4,8 @@ import { toon } from '../core/materials';
 import type { ItemDef, MedidasCorpo } from '../core/types';
 import { fundir } from './fundir';
 import { montarTenis, raioDoTronco } from './uniformeDosGatitos';
-import { cintaNaPele, evase, lacoDeFita, naPele, saiaViva } from './roupasDaBoutique';
+import { cintaNaPele, corpete, evase, lacoDeFita, naPele, noTronco, saiaViva, vivoNaPele } from './roupasDaBoutique';
+import { bloquinhoDeComandas } from './moveisDoMania';
 
 /**
  * AS ROUPAS DO MANIA DE CHURRASCO — os prêmios da temporada de turnos.
@@ -240,4 +241,150 @@ function tenisDeGarcom(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THRE
   });
 }
 
-export { aventalDeGarcom, tenisDeGarcom };
+// ------------------------------------------ o prêmio do turno 3
+
+/**
+ * O LÁPIS NA ORELHA — metade do prêmio das três estrelas do turno 3 (a outra
+ * metade é o bloquinho na mão). O lápis amarelo de garçom, apontado, com a
+ * virola de latão e a borracha, deitado atrás da orelha direita e por cima do
+ * cabelo: a ponta para a frente, a borracha para trás e um tico para cima.
+ *
+ * REFERENCIAL: a cabeça (`acessorio` com `presoEm: 'cabeca'`), y = 0 no
+ * centro do crânio, olhando para `+Z`. O lado é o `+X` da pessoa (a direita
+ * dela), e ele pousa onde o CABELO termina naquele lado (`m.cabelo`), senão o
+ * cabelo cacheado do Ari engoliria o lápis inteiro.
+ */
+function lapisNaOrelha(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const r = m.headR;
+  const ANGULO = 1.38;
+  const x = Math.max(m.cabelo(ANGULO), r * 1.02) + r * 0.03;
+  const lapis = new THREE.Group();
+  lapis.position.set(x, -r * 0.12, -r * 0.08);
+  // deitado no eixo da frente para trás, a borracha subindo um pouco atrás
+  lapis.rotation.set(Math.PI / 2 - 0.25, 0, 0.12);
+  g.add(lapis);
+  const L = r * 1.1;
+  const R = r * 0.045;
+  lapis.add(new THREE.Mesh(new THREE.CylinderGeometry(R, R, L, 6), toon(P.churrascoLapis)));
+  const ponta = new THREE.Mesh(new THREE.ConeGeometry(R, L * 0.18, 6), toon(P.churrascoLapisMadeira));
+  ponta.position.y = L / 2 + L * 0.09;
+  lapis.add(ponta);
+  const grafite = new THREE.Mesh(new THREE.ConeGeometry(R * 0.36, L * 0.06, 6), toon(P.churrascoCarvao));
+  grafite.position.y = L / 2 + L * 0.155;
+  lapis.add(grafite);
+  const virola = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.06, R * 1.06, L * 0.09, 10), toon(P.churrascoLatao));
+  virola.position.y = -L / 2 - L * 0.045;
+  lapis.add(virola);
+  const borracha = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.98, R * 0.98, L * 0.08, 10), toon(P.churrascoBorracha));
+  borracha.position.y = -L / 2 - L * 0.13;
+  lapis.add(borracha);
+  return fundir(g);
+}
+
+/**
+ * O BLOQUINHO NA MÃO — a outra metade do prêmio do turno 3: o MESMO bloquinho
+ * de comandas que aparece na hora de anotar (a melhoria), agora para levar
+ * para casa, na mão ESQUERDA (a direita é a do sorvete e do regador).
+ *
+ * REFERENCIAL: o pivô do braço (`maos`), y = 0 no ombro, o braço pendendo em
+ * `-Y`. Monta só no braço esquerdo (`lado === -1`): no outro devolve vazio.
+ * A capa fica de pé ao lado da mão, virada para a frente e um tico para fora.
+ */
+function bloquinhoNaMao(m: MedidasCorpo, lado: -1 | 1 = 1, _peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  if (lado !== -1) return g;
+  const bloco = bloquinhoDeComandas();
+  // ele nasce deitado (para a pose de anotar): de pé, com a folha para a frente
+  bloco.rotation.set(Math.PI / 2 - 0.2, 0, 0.45);
+  bloco.scale.setScalar(m.h / 1.75 * 0.85);
+  bloco.position.set(-m.h * 0.012, -m.armLen * 0.96, m.h * 0.03);
+  g.add(bloco);
+  return fundir(g);
+}
+
+// ------------------------------------------ o prêmio do turno 4
+
+/**
+ * O COLETE DE GARÇOM — prêmio das três estrelas do turno 4, que a Estella diz
+ * que costurou. Colete grafite de alfaiataria por cima da camisa branca (a
+ * `cor` da ficha pinta a camiseta do rig de branco, e a `corDetalhe` a manga):
+ * o decote em V fundo, a gola da camisa em pontas aparecendo no V, os quatro
+ * botões dourados, os dois bolsos de vivo embaixo e o de peito, e nas costas
+ * o forro vinho com a fivela de ajuste.
+ *
+ * O CORPO DO COLETE é o `corpete` da boutique (a casca que segue o tronco com
+ * o decote como topo); o V é a função do decote, fundo na frente e reto nas
+ * costas. REFERENCIAL: o tronco, y = 0 no CHÃO.
+ */
+function coleteDeGarcom(m: MedidasCorpo, _lado: -1 | 1 = 1, _peca?: ItemDef): THREE.Object3D {
+  const g = new THREE.Group();
+  const { h, w } = m;
+  const quadril = m.legH;
+  const r = h * 0.105 * w;
+  const alto = quadril + m.torsoH * 0.77;
+  const yGola = alto + r * 0.55;
+  const fundoDoV = quadril + m.torsoH * 0.5;
+  const ABRE = 0.62;
+  // o V: na frente desce até o meio do peito, abrindo para os lados em reta
+  const decote = (a: number): number => {
+    const k = Math.min(1, Math.abs(a) / ABRE);
+    return fundoDoV + (yGola - fundoDoV) * k;
+  };
+  const pano = toon(P.coleteGarcom, { doubleSide: true });
+  const baixo = quadril + m.torsoH * 0.12;
+  g.add(new THREE.Mesh(corpete(m, { decote, baixo, folga: 1.06, colunas: 72, linhas: 18 }), pano));
+  // as costas de forro vinho: um painel do mesmo corpete, só atrás, um fio por fora
+  const costas = (a: number): number => (Math.abs(a) > 2.3 ? yGola - h * 0.012 : baixo + h * 0.012);
+  g.add(new THREE.Mesh(corpete(m, { decote: costas, baixo: baixo + h * 0.012, folga: 1.075, colunas: 72, linhas: 14 }), toon(P.coleteGarcomForro, { doubleSide: true })));
+  // a fivela de ajuste nas costas, na cintura
+  const yAjuste = quadril + m.torsoH * 0.3;
+  const fivela = new THREE.Mesh(new THREE.BoxGeometry(h * 0.022, h * 0.012, h * 0.004), toon(P.aventalGarcomBordado));
+  fivela.position.copy(naPele(m, Math.PI, yAjuste, 1.1));
+  fivela.lookAt(fivela.position.clone().multiplyScalar(2).setY(yAjuste));
+  g.add(fivela);
+  g.add(new THREE.Mesh(vivoNaPele(m, [[Math.PI - 0.35, yAjuste], [Math.PI, yAjuste], [Math.PI + 0.35, yAjuste]], h * 0.004, 1.09), toon(P.coleteGarcom)));
+
+  // o vivo da borda do V, um tom acima do pano
+  const vivo = toon(P.aventalGarcomFita);
+  const borda: Array<[number, number]> = [];
+  for (let i = 0; i <= 12; i++) {
+    const a = -ABRE + (2 * ABRE * i) / 12;
+    borda.push([a, decote(a) + h * 0.001]);
+  }
+  g.add(new THREE.Mesh(vivoNaPele(m, borda, h * 0.0035, 1.075), vivo));
+
+  // OS QUATRO BOTÕES dourados, descendo do fundo do V
+  const dourado = toon(P.aventalGarcomBordado);
+  for (let k = 0; k < 4; k++) {
+    const y = fundoDoV - h * 0.012 - k * h * 0.024;
+    const b = new THREE.Mesh(new THREE.SphereGeometry(h * 0.0055, 10, 6), dourado);
+    b.position.copy(naPele(m, 0, y, 1.085));
+    b.scale.set(1, 1, 0.55);
+    g.add(b);
+  }
+  // os BOLSOS de vivo: dois embaixo, um de cada lado, e o de peito à esquerda
+  for (const s of [-1, 1] as const) {
+    const y = quadril + m.torsoH * 0.27;
+    g.add(new THREE.Mesh(vivoNaPele(m, [[s * 0.45, y], [s * 0.62, y - h * 0.004], [s * 0.8, y - h * 0.008]], h * 0.0032, 1.08), vivo));
+  }
+  const yPeito = quadril + m.torsoH * 0.62;
+  g.add(new THREE.Mesh(vivoNaPele(m, [[-0.72, yPeito], [-0.86, yPeito + h * 0.003], [-1.0, yPeito + h * 0.006]], h * 0.0032, 1.08), vivo));
+
+  // A GOLA DA CAMISA em pontas, aparecendo no V: duas abas brancas dobradas
+  // sobre o tronco (`noTronco`), uma de cada lado do pescoço
+  const branco = toon(P.camisaDeGarcom, { doubleSide: true });
+  for (const s of [-1, 1] as const) {
+    const f = new THREE.Shape();
+    f.moveTo(s * h * 0.004, 0);
+    f.lineTo(s * h * 0.05, h * 0.004);
+    f.lineTo(s * h * 0.022, -h * 0.042);
+    f.closePath();
+    const geo = new THREE.ExtrudeGeometry(f, { depth: h * 0.002, bevelEnabled: true, bevelThickness: h * 0.001, bevelSize: h * 0.001, bevelSegments: 1 });
+    geo.translate(0, yGola - h * 0.004, 0);
+    g.add(new THREE.Mesh(noTronco(geo, m, 1.07), branco));
+  }
+  return fundir(g);
+}
+
+export { aventalDeGarcom, tenisDeGarcom, lapisNaOrelha, bloquinhoNaMao, coleteDeGarcom };

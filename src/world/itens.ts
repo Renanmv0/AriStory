@@ -35,7 +35,7 @@ import {
   pernaDoShortDosGatitos, tenisDosGatitos,
 } from './uniformeDosGatitos';
 import { lacoDeTorcida, meiaoDeTorcida, pomponsDeTorcida, uniformeDeTorcida } from './torcidaDosGatitos';
-import { aventalDeGarcom, tenisDeGarcom } from './roupasDoMania';
+import { aventalDeGarcom, bloquinhoNaMao, coleteDeGarcom, lapisNaOrelha, tenisDeGarcom } from './roupasDoMania';
 import {
   blusaCiganinha, mangaDaCiganinha, camisaDeSeda, mangaDeSeda, sueterDeTrancas, mangaDoSueter, casacoTrench, mangaDoTrench,
   vestidoDePoa, mangaDoPoa, vestidoDeLinho, vestidoEnvelope, mangaDoEnvelope, vestidoChemise, mangaDoChemise,
@@ -358,6 +358,42 @@ export const ITENS = {
     slot: 'tronco',
     nota: 'do Walter, pelas três estrelas do turno 2',
     extra: aventalDeGarcom,
+  },
+  // o prêmio do turno 3 são DUAS peças, que vestem juntas: o lápis na
+  // orelha (acessório, na cabeça) e o bloquinho na mão esquerda (mãos)
+  lapisNaOrelha: {
+    id: 'lapis-na-orelha',
+    nome: 'Lápis na orelha',
+    icone: '✏️',
+    tipo: 'vestivel',
+    slot: 'acessorio',
+    presoEm: 'cabeca',
+    nota: 'do Walter, pelas três estrelas do turno 3',
+    extra: lapisNaOrelha,
+  },
+  bloquinhoNaMao: {
+    id: 'bloquinho-na-mao',
+    nome: 'Bloquinho de comandas',
+    icone: '📒',
+    tipo: 'vestivel',
+    slot: 'maos',
+    nota: 'do Walter, pelas três estrelas do turno 3',
+    extra: bloquinhoNaMao,
+  },
+  /*
+   * O colete do turno 4 é de TRONCO e pinta a camiseta: a `cor` é a camisa
+   * branca por baixo, a `corDetalhe` a manga dela — o colete é a geometria.
+   */
+  coleteDeGarcom: {
+    id: 'colete-de-garcom',
+    nome: 'Colete de garçom',
+    icone: '🦺',
+    tipo: 'vestivel',
+    slot: 'tronco',
+    cor: P.camisaDeGarcom,
+    corDetalhe: P.camisaDeGarcom,
+    nota: 'do Walter, pelas três estrelas do turno 4 — a Estella que costurou',
+    extra: coleteDeGarcom,
   },
   /*
    * O TÊNIS DO TURNO: a melhoria "Tênis de garçom" do Mania. Não é prêmio
@@ -1672,7 +1708,18 @@ export const PREMIOS_DA_ARENA: Record<string, readonly ItemDef[]> = {
  */
 export const PREMIOS_DO_MANIA: Readonly<Record<number, readonly ItemDef[]>> = {
   2: [ITENS.aventalDoMania],
+  3: [ITENS.lapisNaOrelha, ITENS.bloquinhoNaMao],
+  4: [ITENS.coleteDeGarcom],
 };
+
+/**
+ * A PEÇA É DO UNIFORME DO MANIA: a gravatinha do Walter ou qualquer prêmio
+ * da temporada de turnos. É o que a Estella repara no turno 4 (gorjeta
+ * dobrada para quem anota o pedido dela de uniforme).
+ */
+export function ehPecaDoMania(id: string): boolean {
+  return id === ITENS.gravataDoWalter.id || Object.values(PREMIOS_DO_MANIA).some((pecas) => pecas.some((p) => p.id === id));
+}
 
 /**
  * O PRÊMIO DE CADA LIÇÃO DA APOSTILA DO GATITO, pelo `id` da lição.

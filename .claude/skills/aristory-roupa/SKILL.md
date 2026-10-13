@@ -367,6 +367,13 @@ Walter entrega na primeira vez das três estrelas daquele turno
 `reporPremios` repõe. A geometria mora em `world/roupasDoMania.ts`. O turno 1
 não está na lista: a gravatinha é de antes da temporada e volta pela flag.
 
+Prêmio de DUAS peças que vestem juntas (o do turno 3): cada uma na sua vaga
+— o lápis na orelha é `acessorio` com `presoEm: 'cabeca'` (ele pousa onde o
+cabelo termina, `m.cabelo`), e o bloquinho é `maos`, montado só no braço
+esquerdo (`lado === -1`). O colete (turno 4) é o `corpete` da boutique com
+o decote em V e PINTA a camiseta de branco pela ficha (`cor`/`corDetalhe`):
+a camisa é o corpo do rig, o colete é a geometria.
+
 O avental de garçom (turno 2) é o molde de peça COMPRIDA por cima da roupa:
 um PAINEL de `saiaViva` (`arco`, aberto atrás) para a perna não atravessar,
 e o bordado na TEXTURA do pano, com o UV refeito de 0 a 1 no painel — um

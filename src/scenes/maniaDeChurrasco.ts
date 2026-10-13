@@ -958,6 +958,56 @@ export const maniaDeChurrasco: SceneDef = {
         });
         return;
       }
+      if (numero === 3) {
+        // O BLOQUINHO E O LÁPIS: o Walter traz da gaveta do bar o mesmo
+        // bloquinho de comandas da casa, um para cada um
+        g.som('latido');
+        cachorro.receberCarinho();
+        await conversa([
+          [R, 'Ele foi na gaveta do bar e voltou com a boca cheia.'],
+          [A, 'Bloquinho de comanda! E um lápis pra cada um.'],
+        ]);
+        g.som('memoria');
+        for (const p of pecas) g.ganharPeca(p);
+        await conversa([
+          [R, 'Lápis atrás da orelha. Agora sim eu pareço garçom.'],
+          [A, 'E o bloquinho na outra mão. Profissional.'],
+        ]);
+        g.toast('Bloquinho e lápis na orelha — no guarda-roupa', '✏️');
+        g.unlock({
+          id: 'lapis-na-orelha',
+          title: 'O lápis na orelha',
+          place: 'Mania de Churrasco',
+          note: 'Três estrelas no turno do Cookie, e o Walter tirou da gaveta do bar um bloquinho de comandas e um lápis para cada um.',
+          icon: '✏️',
+        });
+        return;
+      }
+      if (numero === 4) {
+        // O COLETE: o Walter traz dois, e a Estella já tinha contado que foi
+        // ela que costurou
+        g.som('latido');
+        cachorro.receberCarinho();
+        await conversa([
+          [A, 'Ele trouxe dois cabides da cozinha. Com colete!'],
+          [R, 'A Estella falou que foi ela que costurou. Pra gente.'],
+        ]);
+        g.som('memoria');
+        for (const p of pecas) g.ganharPeca(p);
+        await conversa([
+          [A, 'Colete de garçom com camisa branca. Isso é nível restaurante francês.'],
+          [R, 'O Jean-Luc vai aprovar.'],
+        ]);
+        g.toast('Colete de garçom — no guarda-roupa', '🦺');
+        g.unlock({
+          id: 'colete-de-garcom',
+          title: 'O colete da Estella',
+          place: 'Mania de Churrasco',
+          note: 'Três estrelas no turno do Jean-Luc, e o Walter entregou dois coletes de garçom — costurados pela Estella.',
+          icon: '🦺',
+        });
+        return;
+      }
       for (const p of pecas) g.ganharPeca(p);
       g.toast(`${pecas.map((p) => p.nome).join(', ')} — no guarda-roupa`, pecas[0].icone);
     };
@@ -1138,6 +1188,23 @@ export const maniaDeChurrasco: SceneDef = {
             [A, 'Turno dois. Diz aqui que o Mano vem jantar.'],
             [R, 'O Mano do sorvete? Aposto que ele pede sobremesa.'],
             [A, 'Então a mesa dele demora o dobro. Senta ele onde não atrapalha.'],
+          ]);
+        }
+        if (escolhido.numero === 3 && !api.flag('turno-3-explicado')) {
+          api.setFlag('turno-3-explicado');
+          await conversa([
+            [A, 'Turno três. O Cookie vem tomar um suco.'],
+            [R, 'O Cookie não cabe numa mesa só. A do lado vai ficar fechada pra ele.'],
+            [A, 'Mas ele só toma suco, e rápido. Escolhe bem onde ele senta.'],
+          ]);
+        }
+        if (escolhido.numero === 4 && !api.flag('turno-4-explicado')) {
+          api.setFlag('turno-4-explicado');
+          await conversa([
+            [A, '"Canard à la Mania." O Jean-Luc vem jantar.'],
+            [R, 'E hoje o prato esfria no balcão. O vapor some quando ele esfria.'],
+            [A, 'O Jean-Luc só come quente. E a Estella vem também.'],
+            [R, 'Ela vai reparar na nossa roupa. Melhor vir de uniforme.'],
           ]);
         }
         await turno.comecar(escolhido, niveisDasMelhorias(api));

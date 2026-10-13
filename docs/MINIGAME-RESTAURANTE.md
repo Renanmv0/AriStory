@@ -7,7 +7,7 @@
 
 ## COMECE AQUI
 
-**O que existe no jogo hoje** (etapas 1 e 2, e as **etapas A e B** da
+**O que existe no jogo hoje** (etapas 1 e 2, e as **etapas A, B e C** da
 temporada): o osso no jardim, o Walter convidando, e a escala na parede
 abrindo **a escala do Walter** — o menu dos turnos (`src/ui/escalaDoWalter.ts`)
 com a aba das **melhorias**, compradas com petiscos e cada uma aparecendo no
@@ -19,8 +19,12 @@ na escala (trancados, ou "em preparo" quando abertos). No fim de todo turno
 o Walter dá **petiscos**, um por estrela. Os dados moram em
 `src/minigames/turnosDoMania.ts`; o motor, em `turnoDoMania.ts`.
 
-O que o plano antigo previa e **ainda não entrou**: o Pelusa, as três
-levas e o prato esfriando no balcão (etapas C e D).
+Os **turnos 3 e 4** também são jogáveis (etapa C): o Cookie fechando a mesa
+do lado e tomando suco, o prato esfriando com o vapor sumindo, o Jean-Luc só
+de prato quente e a Estella reparando no uniforme e dando o biscoitinho.
+
+O que o plano antigo previa e **ainda não entrou**: o Pelusa e as três levas
+(etapa D, com os turnos 5 e 6).
 
 **O pedido novo do Renan** (outubro de 2026), que é o que está sendo feito:
 
@@ -775,7 +779,7 @@ Cada etapa é jogável sozinha e vai para `main` antes da próxima, como no §11
 |---|---|---|
 | A ✅ | **A escala e os dois primeiros turnos** *(no jogo)* | o painel com as duas abas (a das melhorias ainda vazia), a tabela de turnos, as estrelas e o recorde por turno, a trava das três estrelas, o save antigo; o turno 1 (o de hoje) e o turno 2 com o Mano e o avental |
 | B ✅ | **As melhorias** *(no jogo)* | a aba de melhorias com as sete, a compra com petiscos e cada uma aparecendo no salão |
-| C | **Turnos 3 e 4** | o Cookie, o Jean-Luc, a Estella, o prato esfriando, o bloquinho e o colete |
+| C ✅ | **Turnos 3 e 4** *(no jogo)* | o Cookie, o Jean-Luc, a Estella, o prato esfriando, o bloquinho e o colete |
 | D | **Turnos 5 e 6** | as coelhinhas e a mesa grande, o Flynn, o Gatito, o Pelusa, a bandana, o uniforme de chef e o retrato dos empregados do mês |
 
 **O que a etapa A decidiu pelo caminho** (para o Renan conferir):
@@ -795,6 +799,28 @@ Cada etapa é jogável sozinha e vai para `main` antes da próxima, como no §11
 - testes: `scripts/escala.mjs` (o painel, a trava, os petiscos, o prêmio uma
   vez só, o save antigo e o celular), `scripts/sobremesa.mjs` (o Mano
   inteiro, do salão à conta) e `TURNO=2 node scripts/turno.mjs`.
+
+**O que a etapa C decidiu pelo caminho** (para o Renan conferir):
+
+- **o Cookie só toma o suco de morango** do cardápio (pelo mesmo motivo da
+  sobremesa do Mano: o Mania não tem doce no cardápio). O Walter faz em 3 s
+  e ele toma em 5. Ele não cabe na cadeira: fica DE PÉ no lugar dela, um
+  passo para fora da mesa, e a mesa livre mais perto ganha o cartão
+  "Reservado pro Cookie" até ele ir embora;
+- **o prato esfria em 24 s** (no balcão e na bandeja), do turno 4 em diante.
+  O vapor que sobe dele encolhe junto e some quando esfria; na bandeja do
+  HUD o prato frio vira 🥶. Prato frio não dá coração dourado a ninguém;
+- **o Jean-Luc**: quente, comemora ("Magnifique!") e paga em dobro; frio,
+  paga a metade;
+- **a Estella**: a peça do Mania que ela reconhece é qualquer prêmio da
+  temporada ou a gravatinha (`ehPecaDoMania`), vestida por quem ANOTA o
+  pedido dela; o biscoitinho vai para quem ENTREGA, e é 25% de passo por
+  20 s (soma com o tênis);
+- **o prêmio do turno 3 são duas peças** que vestem juntas: o lápis atrás da
+  orelha (acessório) e o bloquinho na mão esquerda (mãos);
+- falas: as das apresentações dos turnos 3 e 4 e as dos clientes novos são
+  provisórias, minhas;
+- teste: `scripts/turnos34.mjs`.
 
 ### 13.10 As decisões do Renan
 

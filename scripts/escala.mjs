@@ -9,7 +9,7 @@
  *   melhorias mostra as sete; "agora não" e o Escape fecham sem começar nada;
  * - A TRAVA DO RENAN: o turno seguinte só abre com três estrelas no anterior.
  *   Três estrelas no turno 1 dão a gravatinha e abrem o 2; três no 2 dão o
- *   AVENTAL e abrem o 3 (que aparece "em preparo": é da etapa C);
+ *   AVENTAL e abrem o 3;
  * - OS PETISCOS: um por estrela, no fim de TODO turno — inclusive turno já
  *   vencido, que é o que faz rejogar valer a pena;
  * - o prêmio vem UMA vez só: rejogar o turno 2 não dá um segundo avental, e
@@ -224,9 +224,9 @@ checar(s.stats?.['turno:2:vezes'] === 2, `o turno 2 devia contar duas vezes: ${s
 
 await abrirAEscala();
 const depoisDo2 = await painel();
-await page.screenshot({ path: `${OUT}-turno3-em-preparo.png` });
+await page.screenshot({ path: `${OUT}-turno3-aberto.png` });
 checar(depoisDo2.turnos[1]?.premioGanho, 'o turno 2 nao mostra o avental ganho');
-checar(depoisDo2.turnos[2]?.estado === 'em-preparo', `o turno 3 devia estar aberto mas em preparo: ${depoisDo2.turnos[2]?.estado}`);
+checar(depoisDo2.turnos[2]?.estado === 'aberto', `tres estrelas no turno 2 deviam abrir o turno 3: ${depoisDo2.turnos[2]?.estado}`);
 checar(depoisDo2.turnos[3]?.estado === 'trancado', 'o turno 4 devia continuar trancado');
 await page.keyboard.press('Escape');
 
