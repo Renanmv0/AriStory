@@ -95,12 +95,28 @@ const camAntes = await ondeAcamera();
 // interpola até lá. Com 1,4 s a medida caía no meio do movimento e a volta ao
 // ponto de partida dava 1,2 de sobra — o teste acusava um giro torto que não
 // existe. Medido: em 2,5 s a diferença é 0,15, e em 4 s é 0,00.
+/**
+ * ESPERA A CÂMERA PARAR, e não um tempo fixo: o giro é interpolado no relógio
+ * do jogo, e no Chromium sem placa o jogo anda mais devagar que a parede — com
+ * a máquina carregada, 2,6 s de relógio caíam no meio do giro e a volta dava
+ * 1,3 de sobra. Duas leituras iguais seguidas = parou.
+ */
+const esperarACameraParar = async () => {
+  let antes = await ondeAcamera();
+  for (let i = 0; i < 40; i++) {
+    await page.waitForTimeout(500);
+    const agora = await ondeAcamera();
+    if (Math.hypot(agora[0] - antes[0], agora[1] - antes[1]) < 0.005) return agora;
+    antes = agora;
+  }
+  return antes;
+};
 await page.locator('.girar-btn.dir').tap();
-await page.waitForTimeout(2600);
-const camDepois = await ondeAcamera();
+await page.waitForTimeout(600);
+const camDepois = await esperarACameraParar();
 await page.locator('.girar-btn.esq').tap();
-await page.waitForTimeout(2600);
-const camVoltou = await ondeAcamera();
+await page.waitForTimeout(600);
+const camVoltou = await esperarACameraParar();
 const girou = Math.hypot(camDepois[0] - camAntes[0], camDepois[1] - camAntes[1]);
 const desfez = Math.hypot(camVoltou[0] - camAntes[0], camVoltou[1] - camAntes[1]);
 
