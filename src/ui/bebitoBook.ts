@@ -924,7 +924,7 @@ export class BebitoBook {
       <div class="regras">
         <p class="rotulo">regras do caderno</p>
         <ol>
-          <li class="escrita de-ari">Só vale escrever deitadinho.</li>
+          <li class="escrita de-ari">Só nós dois podemos escrever aqui.</li>
           <li class="escrita de-renan">Cada um com a sua letra.</li>
           <li class="escrita de-ari">Plano escrito é plano prometido.</li>
         </ol>
@@ -938,7 +938,7 @@ export class BebitoBook {
       return `
         <div class="bilhete-de-achados">
           <p class="impresso">se você achar este caderno,</p>
-          <p class="escrita de-renan">devolve pro ${escapar(this.nome('ari'))} ou pro ${escapar(this.nome('renan'))}</p>
+          <p class="escrita de-renan">Devolver para o ${escapar(this.nome('ari'))} ou para o ${escapar(this.nome('renan'))}</p>
         </div>`;
     }
     return `

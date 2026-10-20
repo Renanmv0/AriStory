@@ -5701,10 +5701,10 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
 .bebito-book .pagina.guarda.lado-dir { background: linear-gradient(90deg, rgba(110, 80, 45, 0.24), transparent 46px), var(--guarda) 0 0 / 120px 120px, #fbf1e2; }
 .bebito-book .bilhete-de-achados {
   position: absolute;
-  left: 70px;
+  left: 50px;
   top: 250px;
-  width: 374px;
-  padding: 22px 18px 20px;
+  width: 420px;
+  padding: 22px 16px 20px;
   box-sizing: border-box;
   background: var(--papel), #fffdf6;
   border-radius: 6px;
@@ -5726,7 +5726,7 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
 }
 .bebito-book .bilhete-de-achados p { margin: 0; }
 .bebito-book .impresso { font: 800 11px Nunito, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #9aa9bf; }
-.bebito-book .bilhete-de-achados .de-renan { font-size: 23px; line-height: 1.4; margin-top: 8px; white-space: nowrap; }
+.bebito-book .bilhete-de-achados .de-renan { font-size: 22px; line-height: 1.4; margin-top: 8px; white-space: nowrap; }
 .bebito-book .bolso { position: absolute; left: 70px; right: 70px; bottom: 80px; height: 250px; }
 .bebito-book .cartaozinho {
   position: absolute;
