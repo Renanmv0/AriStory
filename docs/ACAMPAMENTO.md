@@ -119,9 +119,29 @@ Mano, o Jean-Luc, a Estella…) — fica para depois, por decisão do Renan.
   que se revezam) e sair — as brincadeiras da etapa C entram nessa lista;
 - **na canga** os dois sentam no chão e ficam mais um pouco se quiserem; o
   **fogareiro** por enquanto só promete o chocolate quente (etapa D);
-- todas as falas desta etapa são provisórias, minhas;
+- todas as falas desta etapa são provisórias, minhas — **menos** a que o
+  Renan escreveu depois (ver abaixo);
 - o peso: na vista da clareira, 354 → 413 desenhos por quadro e 27 → 73 mil
   triângulos (a régua do Mania é ~170 mil); na entrada do parque, 765 → 733.
+
+**Depois da etapa A, a pedido do Renan:**
+
+- **o beijinho na barraca tem animação**: os dois viram de lado, um de
+  frente para o outro (rolam na âncora de deitar), chegam perto, fecham os
+  olhos e se beijam — o braço de cima de um deles passa por cima do ombro
+  do outro, as mãos de baixo se encontram no meio, e um coração sobe de
+  cada um. A câmera desliza até quase em cima das cabeças
+  (de lado, o perfil dos dois só se vê de cima) e volta depois da conversa,
+  com os dois de barriga para cima de novo. Motor:
+  `entities/BeijoDeitado.ts` (`g.beijarDeitados`, `g.virarDeitados`);
+- **"Agora é só a gente bebito"** — fala do Renan, literal — fecha a conversa
+  de quando eles entram, na boca do Ari (o lugar foi ideia dele). **Bebito**
+  é como os dois se chamam, e **bebitolito** quando é mais fofo: o primeiro
+  beijinho termina com o Ari chamando o Renan de bebitolito (fala minha,
+  provisória);
+- de quebra, os corações dos abraçadinhos nasciam no meio do mapa (a posição
+  de quem está montado numa âncora é local a ela) — agora nascem em cima da
+  cabeça de quem está jogando.
 
 ## 4. Perguntas em aberto
 

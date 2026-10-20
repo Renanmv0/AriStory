@@ -174,6 +174,17 @@ export class CharacterRig {
   private sitting = false;
   private deitado = false;
   /**
+   * Deitado DE LADO, de frente para quem está ao lado: 0 de barriga para
+   * cima, 1 de lado. Quem rola o corpo é o `facing` (na âncora de deitar,
+   * girar em Y é rolar em volta da espinha) — isto só mistura a pose dos
+   * braços e das pernas. Quem anima é o `entities/BeijoDeitado.ts`.
+   */
+  private deLado = 0;
+  /** de lado, o braço de cima passa por cima de quem está na frente */
+  private abracando = false;
+  /** os dois olhos, que fecham no beijo deitado */
+  private readonly olhos: THREE.Mesh[] = [];
+  /**
    * Levando o que segura a boca, de vez em quando: comer o sorvete, beber o
    * suco.
    *
@@ -503,6 +514,7 @@ export class CharacterRig {
       eye.position.set(side * headR * 0.35, 0, headR * 0.9);
       eye.scale.set(1, 1.25, 0.6);
       this.head.add(eye);
+      this.olhos.push(eye);
 
       if (spec.blush !== undefined) {
         // Decalque: nesta altura do rosto a superficie da cabeca passa a
@@ -1487,6 +1499,9 @@ export class CharacterRig {
   setLying(v: boolean): void {
     this.deitado = v;
     if (!v) {
+      this.deLado = 0;
+      this.abracando = false;
+      for (const olho of this.olhos) olho.scale.y = 1.25;
       this.poeAltura(0);
       this.legL.rotation.set(0, 0, 0);
       this.legR.rotation.set(0, 0, 0);
@@ -1623,6 +1638,44 @@ export class CharacterRig {
   }
 
   /**
+   * DEITADO DE LADO, de frente para quem está ao lado — misturado por cima
+   * da pose de barriga para cima pelo `deLado`, para a virada ser contínua.
+   *
+   * QUAL LADO FICA EM CIMA sai do giro: com a âncora de deitar em -90° em X,
+   * o `facing` positivo deita o lado +X (o braço e a perna direitos) para
+   * baixo, e o negativo deita o esquerdo. O braço de baixo dobra na frente
+   * do peito (pendurado ao longo do corpo, ele afundaria no colchão); o de
+   * cima, de quem abraça, vai para a frente e abre um tico — que, de lado, é
+   * para CIMA, por cima do ombro de quem está na frente. Quem não abraça
+   * descansa o de cima no quadril. As pernas encolhem um pouco, a de cima
+   * mais: é o jeito de quem deita de lado, e não de um boneco tombado.
+   */
+  private poseDeLado(solto: number): void {
+    const s = this.deLado;
+    const bj = this.beijo;
+    const esquerdoEmCima = Math.sin(this.group.rotation.y) > 0;
+    const [armCima, armBaixo] = esquerdoEmCima ? [this.armL, this.armR] : [this.armR, this.armL];
+    const [pernaCima, pernaBaixo] = esquerdoEmCima ? [this.legL, this.legR] : [this.legR, this.legL];
+    // o "para fora" de cada lado — a pegadinha de sinal: o esquerdo abre em -Z
+    const fora = esquerdoEmCima ? -1 : 1;
+    const mistura = (alvo: THREE.Object3D, x: number, z: number): void => {
+      alvo.rotation.x += (x - alvo.rotation.x) * s;
+      alvo.rotation.y *= 1 - s;
+      alvo.rotation.z += (z - alvo.rotation.z) * s;
+    };
+    if (this.abracando) mistura(armCima, -1.3 - bj * 0.12 + solto * 0.3, fora * (0.16 + bj * 0.04));
+    else mistura(armCima, -0.42 + solto * 0.3, 0);
+    // o de baixo fecha um tico para DENTRO (o "para fora" dele é o contrário
+    // do de cima), que de lado é para cima, longe do colchão
+    mistura(armBaixo, -0.78, fora * 0.06);
+    mistura(pernaCima, -0.34, 0);
+    mistura(pernaBaixo, -0.12, 0);
+    // no beijo, o queixo desce um tico e o tronco chega para a frente
+    this.head.rotation.x += bj * 0.12 * s;
+    this.body.rotation.x += bj * 0.03 * s;
+  }
+
+  /**
    * Inclinacao do beijo: 0 e parado normal, 1 e inclinado para a frente na
    * pontinha do pe. Quem controla a curva e a mecanica em entities/Beijo.ts.
    */
@@ -1632,6 +1685,21 @@ export class CharacterRig {
 
   get kissing(): boolean {
     return this.beijo > 0.001;
+  }
+
+  /**
+   * Deitado, o quanto está DE LADO (0 a 1), e se o braço de cima abraça quem
+   * está na frente. Só vale com `setLying(true)`; o giro do corpo é o
+   * `facing`, que quem chama escreve junto (ver `entities/BeijoDeitado.ts`).
+   */
+  setDeLado(valor: number, abraca = false): void {
+    this.deLado = Math.max(0, Math.min(1, valor));
+    this.abracando = abraca;
+  }
+
+  /** onde está o centro da cabeça, no mundo (os corações do beijo deitado) */
+  cabecaNoMundo(alvo: THREE.Vector3): THREE.Vector3 {
+    return this.head.getWorldPosition(alvo);
   }
 
   /** dentro da agua: bracada em vez de caminhada, e sem sombra no chao */
@@ -1667,7 +1735,7 @@ export class CharacterRig {
 
     // o beijo manda em tudo enquanto dura: inclina o tronco e a cabeca para a
     // frente e recolhe os bracos, sem passo nenhum
-    if (this.beijo > 0.001) {
+    if (this.beijo > 0.001 && !this.deitado) {
       const k = this.beijo;
       this.phase += dt * 1.2;
       this.legL.rotation.x = 0;
@@ -1706,6 +1774,10 @@ export class CharacterRig {
       this.body.rotation.x = Math.sin(this.phase) * 0.02;
       this.head.rotation.x = Math.sin(this.phase * 0.6) * 0.025;
       this.head.rotation.z *= 1 - Math.min(1, dt * 8);
+      if (this.deLado > 0.001) this.poseDeLado(solto);
+      // os olhos fecham no beijo (achatados viram um risquinho)
+      const fecha = this.deLado > 0.001 ? this.beijo : 0;
+      for (const olho of this.olhos) olho.scale.y = 1.25 * (1 - 0.86 * fecha);
       return;
     }
 

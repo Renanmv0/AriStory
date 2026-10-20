@@ -7,6 +7,7 @@ import { Ui } from '../ui/Ui';
 import { Player } from '../entities/Player';
 import { Companion } from '../entities/Companion';
 import { Beijo } from '../entities/Beijo';
+import { BeijoDeitado } from '../entities/BeijoDeitado';
 import { Coracoes } from '../entities/Coracoes';
 import { MaosDadas } from '../entities/MaosDadas';
 import { Som } from '../audio/Som';
@@ -89,6 +90,8 @@ export class Game implements GameAPI {
   private readonly clock = new THREE.Clock();
   private readonly coracoes: Coracoes;
   private readonly beijo: Beijo;
+  /** o beijo DEITADO (a barraca da clareira): da cena, por `beijarDeitados` */
+  private readonly beijoDeitado: BeijoDeitado;
   private readonly maos: MaosDadas;
   private readonly audio = new Som();
 
@@ -250,6 +253,8 @@ export class Game implements GameAPI {
     this.coracoes = new Coracoes(this.scene);
     this.beijo = new Beijo(this.coracoes);
     this.beijo.onSom = (nome) => this.audio.play(nome);
+    this.beijoDeitado = new BeijoDeitado(this.coracoes);
+    this.beijoDeitado.onSom = (nome) => this.audio.play(nome);
     this.maos = new MaosDadas(this.coracoes);
     this.maos.onSom = (nome) => this.audio.play(nome);
 
@@ -362,6 +367,7 @@ export class Game implements GameAPI {
     this.cameraTarget = null;
     this.hot = null;
     this.beijo.cancelar(this.player, this.parceiro);
+    this.beijoDeitado.cancelar(this.player, this.parceiro);
     this.maos.soltar(this.player, this.parceiro);
     this.coracoes.limpar();
     this.podeBeijar = false;
@@ -604,6 +610,7 @@ export class Game implements GameAPI {
     this.mastigar(dt);
     // os dois rodam antes do movimento: sao eles que mandam nos corpos
     this.beijo.update(dt, this.player, this.parceiro);
+    this.beijoDeitado.update(dt, this.player, this.parceiro);
     this.maos.update(dt, this.player, this.parceiro);
 
     // ---------------------------------------------------------- movimento
@@ -1813,10 +1820,17 @@ export class Game implements GameAPI {
   }
 
   soltarCoracoes(quantos = 3): void {
-    const p = this.player.position;
+    /*
+     * Em cima da CABEÇA, no mundo — e não do `player.position`. Montado numa
+     * âncora (deitado na barraca, sentado no banco), a posição do corpo é
+     * LOCAL a ela: os corações dos abraçadinhos da clareira nasciam perto do
+     * meio do mapa, longe de tudo. E a altura sai da cabeça, para valer de pé
+     * (a mesma de antes, ~1,7), deitado ou num andar de cima.
+     */
+    const p = this.player.rig.cabecaNoMundo(new THREE.Vector3());
     for (let i = 0; i < quantos; i++) {
       const a = (i / Math.max(1, quantos)) * Math.PI * 2 + Math.random() * 0.6;
-      this.coracoes.soltar(p, Math.cos(a) * 0.35, Math.sin(a) * 0.35, 1.7 + i * 0.12);
+      this.coracoes.soltar(p, Math.cos(a) * 0.35, Math.sin(a) * 0.35, p.y + 0.4 + i * 0.12);
     }
     this.audio.play('coracao');
   }
@@ -2163,6 +2177,7 @@ export class Game implements GameAPI {
   }
 
   rideCompanion(host: THREE.Object3D, local: THREE.Vector3, scale = 1, facing = Math.PI): void {
+    this.beijoDeitado.cancelar(this.player, this.parceiro);
     host.add(this.parceiro.object);
     this.parceiro.object.position.copy(local);
     this.parceiro.object.scale.setScalar(scale);
@@ -2227,6 +2242,7 @@ export class Game implements GameAPI {
    * devolve as maos ao estado da mecanica propria, e nao ao chao.
    */
   setLying(deitados: boolean): void {
+    if (!deitados) this.beijoDeitado.cancelar(this.player, this.parceiro);
     if (deitados) this.audio.play('sentar');
     this.player.rig.setLying(deitados);
     this.parceiro.rig.setLying(deitados);
@@ -2236,6 +2252,14 @@ export class Game implements GameAPI {
     }
   }
 
+  virarDeitados(deFrente: boolean): Promise<void> {
+    return this.beijoDeitado.virar(deFrente, this.player, this.parceiro);
+  }
+
+  beijarDeitados(): Promise<void> {
+    return this.beijoDeitado.beijar(this.player, this.parceiro);
+  }
+
   setOutfit(traje: 'normal' | 'banho'): void {
     this.player.rig.setOutfit(traje);
     this.parceiro.rig.setOutfit(traje);
@@ -2243,6 +2267,7 @@ export class Game implements GameAPI {
   }
 
   releaseCompanion(x: number, z: number, facing = 0): void {
+    this.beijoDeitado.cancelar(this.player, this.parceiro);
     this.scene.add(this.parceiro.object);
     this.parceiro.object.scale.setScalar(1);
     this.parceiro.riding = false;
@@ -2260,6 +2285,7 @@ export class Game implements GameAPI {
    * nao.
    */
   ridePlayer(host: THREE.Object3D, local: THREE.Vector3, scale = 1, facing = Math.PI): void {
+    this.beijoDeitado.cancelar(this.player, this.parceiro);
     host.add(this.player.object);
     this.player.object.position.copy(local);
     this.player.object.scale.setScalar(scale);
@@ -2271,6 +2297,7 @@ export class Game implements GameAPI {
   }
 
   releasePlayer(x: number, z: number, facing = 0): void {
+    this.beijoDeitado.cancelar(this.player, this.parceiro);
     this.scene.add(this.player.object);
     this.player.object.scale.setScalar(1);
     this.player.riding = false;
