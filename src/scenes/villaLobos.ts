@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, ItemDef, SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
@@ -32,6 +33,10 @@ import { CAMPEAO_DO_QUADRO } from '../ui/Ui';
 import { flat } from '../core/materials';
 import { Estella } from '../entities/bichos/Estella';
 import { Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
+import {
+  BARRACA, barracaIglu, canecaEsmaltada, canga, fogareiroDeMontanha, folhasSecas, interiorDaBarraca,
+  mesinhaDobravel, mochilaCargueira, panelinha, samambaias, troncoCaido, varalDeLuzinhas,
+} from '../world/acampamento';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -1996,6 +2001,29 @@ export const villaLobos: SceneDef = {
       return !proibido.some(([px, pz, r]) => Math.hypot(x - px, z - pz) < r);
     };
 
+    /**
+     * A CLAREIRA ATRÁS DO LAGO (`docs/ACAMPAMENTO.md`): o lugar dos dois, com
+     * a barraca. Ela é aberta NO MEIO do bosque do sorteio, e o sorteio não
+     * muda: a árvore que cai dentro dela continua sendo sorteada e contada
+     * (senão todo `w.range()` depois dela andaria, e o parque inteiro se
+     * mexeria), só não entra no mundo — nem a malha, nem o colisor.
+     *
+     * A JANELA DA CÂMERA: a câmera vem do `+X/+Z`, e árvore desse lado tapa a
+     * barraca (a conta do ponto cego: uma copa de 4 m come 6 m de chão atrás
+     * dela). A faixa da diagonal, até 9 m, fica sem árvore alta — o bosque
+     * fecha a clareira pelo fundo e pelos lados, e na frente só tem moita e
+     * samambaia. Árvore translúcida está descartada (decisão do Renan).
+     */
+    const CLAREIRA = { x: -38.5, z: 12.5, raio: 4.6 };
+    const naClareira = (x: number, z: number, folga = 0): boolean => {
+      const dx = x - CLAREIRA.x;
+      const dz = z - CLAREIRA.z;
+      if (Math.hypot(dx, dz) < CLAREIRA.raio + folga) return true;
+      const adiante = (dx + dz) / Math.SQRT2;
+      const deLado = Math.abs(dx - dz) / Math.SQRT2;
+      return adiante > 0 && adiante < 9 && deLado < 3.4 + folga;
+    };
+
     const kinds = ['redonda', 'redonda', 'pinheiro', 'florida', 'palmeira'] as const;
     let plantadas = 0;
     for (let i = 0; i < 260 && plantadas < 64; i++) {
@@ -2003,9 +2031,12 @@ export const villaLobos: SceneDef = {
       const z = w.range(-32, 30);
       if (!livre(x, z)) continue;
       const scale = w.range(0.85, 1.5);
-      w.add(w.place(tree(w.pick(kinds), scale, w.rng()), x, 0, z, w.range(0, 6.28)));
-      w.blockCircle(x, z, 0.45 * scale);
+      // a MESMA ordem de sorteio de sempre (o tipo, a semente, o giro)
+      const arvore = w.place(tree(w.pick(kinds), scale, w.rng()), x, 0, z, w.range(0, 6.28));
       plantadas++;
+      if (naClareira(x, z, 0.9)) continue;
+      w.add(arvore);
+      w.blockCircle(x, z, 0.45 * scale);
     }
     /*
      * O QUE ESTE SORTEIO PLANTA FICA ANOTADO, e só isso muda nele: o piquenique
@@ -2019,9 +2050,378 @@ export const villaLobos: SceneDef = {
       const x = w.range(-42, 42);
       const z = w.range(-32, 30);
       if (!livre(x, z)) continue;
-      if (i % 3 === 0) soltosNoGramado.push(w.add(w.place(flowers(6, 1.1), x, 0, z)));
-      else if (i % 3 === 1) soltosNoGramado.push(w.add(w.place(bush(w.range(0.7, 1.2)), x, 0, z)));
-      else soltosNoGramado.push(w.add(w.place(rock(w.range(0.5, 1)), x, 0, z)));
+      // o sorteio igual de sempre; o que cai dentro da clareira não entra
+      const solto = i % 3 === 0 ? w.place(flowers(6, 1.1), x, 0, z)
+        : i % 3 === 1 ? w.place(bush(w.range(0.7, 1.2)), x, 0, z)
+          : w.place(rock(w.range(0.5, 1)), x, 0, z);
+      if (Math.hypot(x - CLAREIRA.x, z - CLAREIRA.z) < CLAREIRA.raio + 0.5) continue;
+      soltosNoGramado.push(w.add(solto));
+    }
+
+    montarAClareira();
+
+    /**
+     * ================================================ A CLAREIRA ATRÁS DO LAGO
+     *
+     * O lugar dos dois (pedido do Renan, ideia do Ari): uma clareira no meio do
+     * bosque, uns 8 m atrás da água, com a barraca iglu laranja e cinza, os
+     * colchões no chão, o fogareiro de montanha e a canga. O plano inteiro, com
+     * as etapas que ainda vêm (a noite, as brincadeiras), está em
+     * `docs/ACAMPAMENTO.md`; as peças, em `world/acampamento.ts`.
+     *
+     * A BARRACA OLHA PARA A CÂMERA (a porta em `+X/+Z`), com a canga e a
+     * mesinha do fogareiro na frente dela e as mochilas do lado. As árvores
+     * fecham a clareira num arco pelo fundo e pelos lados; o varal de
+     * luzinhas passa entre duas delas, atrás da barraca. Na frente, do lado de
+     * onde a câmera olha, só samambaia e moita (ver `naClareira`).
+     *
+     * A TRILHA sai da margem do lago e entra na clareira entre as samambaias,
+     * sem placa nenhuma: o lugar é deles.
+     */
+    function montarAClareira(): void {
+      const CL = CLAREIRA;
+      const GIRO = Math.PI / 4;
+      const TENDA = { x: CL.x - 0.9, z: CL.z - 0.9 };
+      const cos = Math.cos(GIRO);
+      const sen = Math.sin(GIRO);
+      /** um ponto no referencial da barraca (a porta em `+Z`) levado para o mundo */
+      const daTenda = (lx: number, lz: number): { x: number; z: number } => ({
+        x: TENDA.x + lx * cos + lz * sen,
+        z: TENDA.z - lx * sen + lz * cos,
+      });
+
+      // ---------------------------------------------------------------- o chão
+      // a grama da clareira um tom mais escura (mais sombra, mais pisada), e a
+      // terra gasta na frente da barraca, onde eles passam
+      w.disc(CL.x, CL.z, CL.raio + 0.5, P.grassDark, 0.004);
+      /*
+       * A TERRA BATIDA — a gasta na frente da barraca e a trilha da margem do
+       * lago até a clareira — é UM decalque só: o primeiro disco entra na fila
+       * de pintura do chão pelo `w.disc`, e a geometria dele vira a união de
+       * todos os círculos (a mesma cor, sem profundidade: sobrepor não muda
+       * nada). Eram 23 desenhos por quadro para a mesma mancha.
+       */
+      const gasto = daTenda(0.3, 2.4);
+      const gasto2 = daTenda(0.9, 1.6);
+      const circulos: Array<[number, number, number]> = [[gasto.x, gasto.z, 1.7], [gasto2.x, gasto2.z, 1.05]];
+      const TRILHA: Array<[number, number]> = [[-30.9, 15.6], [-32.2, 15.4], [-33.4, 14.9], [-34.6, 14.3], [-35.6, 13.9]];
+      const trilha = new THREE.CatmullRomCurve3(TRILHA.map(([x, z]) => new THREE.Vector3(x, 0, z)));
+      for (let k = 0; k <= 20; k++) {
+        const p = trilha.getPointAt(k / 20);
+        circulos.push([p.x, p.z, 0.5 + 0.08 * Math.sin(k * 1.7)]);
+      }
+      const terra = w.disc(gasto.x, gasto.z, 1.7, P.trilhaDeTerra, 0.006);
+      // o disco está deitado (`rotation.x = -π/2`): o `y` local dele é o `-z` do mundo
+      const uniao = mergeGeometries(circulos.map(([x, z, r]) => new THREE.CircleGeometry(r, 28).translate(x - gasto.x, -(z - gasto.z), 0)));
+      if (uniao) {
+        terra.geometry.dispose();
+        terra.geometry = uniao;
+      }
+
+      // ---------------------------------------------------------- a barraca
+      const barraca = barracaIglu();
+      barraca.add(interiorDaBarraca());
+      w.add(fundir(w.place(barraca, TENDA.x, 0, TENDA.z, GIRO)));
+      // o giro do colisor tem o sinal contrário ao do `rotation.y` do three
+      // (`world/collision.ts`): com o mesmo sinal a caixa comprida ficava
+      // atravessada em relação à barraca
+      w.blockBox(TENDA.x, TENDA.z, BARRACA.meiaLargura + 0.05, BARRACA.meioComprimento + 0.05, -GIRO);
+      const teto = barraca.getObjectByName('teto');
+      /*
+       * A ÂNCORA QUE DEITA OS DOIS, a mesma da cama do quarto: um `Object3D`
+       * girado -90° em X, filho da barraca (herda o giro dela). Os pés ficam
+       * do lado da porta e a cabeça no fundo, em cima dos travesseiros.
+       */
+      const deitados = new THREE.Object3D();
+      deitados.position.set(0, BARRACA.deitar.y, BARRACA.deitar.z);
+      deitados.rotation.x = -Math.PI / 2;
+      barraca.add(deitados);
+
+      // ------------------------------------------------- a frente da barraca
+      const CANGA = daTenda(0.15, 2.75);
+      const pano = w.add(w.place(canga(), CANGA.x, 0, CANGA.z, GIRO + 0.12));
+      const naCanga = new THREE.Object3D();
+      naCanga.position.set(0, 0, 0.1);
+      naCanga.rotation.y = Math.PI;
+      pano.add(naCanga);
+      const focoDaCanga = new THREE.Object3D();
+      focoDaCanga.position.set(CANGA.x, 0.6, CANGA.z);
+      w.root.add(focoDaCanga);
+
+      // a mesinha do fogareiro, com a panelinha em cima dele e as duas canecas
+      const MESINHA = daTenda(1.35, 1.95);
+      const mesinha = mesinhaDobravel();
+      const fogareiro = fogareiroDeMontanha();
+      fogareiro.scale.setScalar(1.6);
+      fogareiro.position.set(-0.14, 0.314, 0);
+      const panela = panelinha();
+      panela.scale.setScalar(1.6);
+      panela.position.set(-0.14, 0.314 + 0.186 * 1.6, 0);
+      mesinha.add(fogareiro, panela);
+      for (const [x, z, r] of [[0.13, -0.08, 0.6], [0.19, 0.09, 2.4]] as const) {
+        const caneca = canecaEsmaltada();
+        caneca.scale.setScalar(1.6);
+        caneca.position.set(x, 0.314, z);
+        caneca.rotation.y = r;
+        mesinha.add(caneca);
+      }
+      // o que está em cima da mesinha se junta com ela, material por material
+      // (o alumínio da panela com o da mesa, o esmalte das duas canecas): sem a
+      // etiqueta de peça, a `fundir()` não para em cada uma
+      for (const filho of mesinha.children) filho.userData.peca = undefined;
+      w.add(fundir(w.place(mesinha, MESINHA.x, 0, MESINHA.z, GIRO - 0.35)));
+      w.blockCircle(MESINHA.x, MESINHA.z, 0.36);
+
+      // as duas mochilas cargueiras, de pé do lado da barraca — juntas numa
+      // peça só, para as fitas, o cantil e o isolante das duas virarem um
+      // desenho cada
+      const mochilas = new THREE.Group();
+      mochilas.userData.peca = 'mochilas';
+      for (const [lx, lz, cor, giro, tomba] of [
+        [-1.4, 0.55, P.mochilaMusgo, 0.5, 0.06], [-1.3, -0.25, P.mochilaVinho, 0.9, -0.05],
+      ] as const) {
+        const onde = daTenda(lx, lz);
+        const mochila = mochilaCargueira(cor);
+        mochila.userData.peca = undefined;
+        mochila.position.set(onde.x, 0, onde.z);
+        mochila.rotation.set(0, GIRO + giro, tomba);
+        mochilas.add(mochila);
+        w.blockCircle(onde.x, onde.z, 0.28);
+      }
+      w.add(fundir(mochilas));
+
+      /*
+       * O TRONCO CAÍDO, de banco, na frente e de lado — DENTRO da janela da
+       * câmera. No fundo da clareira (onde ele nasceu) a árvore da frente dele
+       * o engolia inteiro. Deitado de través para a barraca, com os
+       * cogumelinhos virados para quem chega, e longe o bastante da ponta da
+       * trilha para não fechar a entrada.
+       */
+      const TRONCO = { x: CL.x + 2.9, z: CL.z - 0.6 };
+      const giroDoTronco = 1.214;
+      w.add(fundir(w.place(troncoCaido(1.9), TRONCO.x, 0, TRONCO.z, giroDoTronco)));
+      w.blockBox(TRONCO.x, TRONCO.z, 0.95, 0.24, -giroDoTronco);
+
+      // --------------------------------------------------- as árvores em volta
+      // um arco pelo fundo e pelos lados (`a` é o ângulo de `(cos a, sin a)`
+      // no chão; a câmera fica no 45°). Duas delas seguram o varal.
+      const ARCO: Array<[number, number, 'redonda' | 'pinheiro' | 'florida', number, number]> = [
+        [100, 5.6, 'pinheiro', 1.35, 0.21], [123, 5.3, 'redonda', 1.4, 0.37], [148, 5.4, 'florida', 1.25, 0.52],
+        [175, 4.9, 'redonda', 1.45, 0.66], [200, 4.95, 'pinheiro', 1.5, 0.13], [222, 5.0, 'redonda', 1.3, 0.81],
+        [245, 5.2, 'florida', 1.35, 0.44], [268, 4.9, 'redonda', 1.4, 0.29], [292, 5.3, 'pinheiro', 1.3, 0.92],
+        [316, 5.5, 'redonda', 1.35, 0.58], [338, 5.6, 'florida', 1.2, 0.71], [355, 6.0, 'redonda', 1.3, 0.05],
+      ];
+      const posDoArco = (a: number, r: number): { x: number; z: number } => ({
+        x: CL.x + Math.cos((a * Math.PI) / 180) * r,
+        z: CL.z + Math.sin((a * Math.PI) / 180) * r,
+      });
+      for (const [a, r, tipo, esc, semente] of ARCO) {
+        const p = posDoArco(a, r);
+        w.add(fundir(w.place(tree(tipo, esc, semente), p.x, 0, p.z, semente * 6.28)));
+        w.blockCircle(p.x, p.z, 0.45 * esc);
+      }
+
+      // o varal de luzinhas entre a árvore do 175° e a do 268° (atrás da barraca)
+      const T1 = posDoArco(175, 4.9);
+      const T2 = posDoArco(268, 4.9);
+      const meio = { x: (T1.x + T2.x) / 2, z: (T1.z + T2.z) / 2 };
+      const ida = new THREE.Vector3(T2.x - T1.x, 0, T2.z - T1.z);
+      const comprimento = ida.length();
+      ida.normalize();
+      // o nó encosta na casca, e não no meio do tronco
+      const de = new THREE.Vector3(-comprimento / 2 + 0.22, 2.0, 0);
+      const ate = new THREE.Vector3(comprimento / 2 - 0.22, 1.95, 0);
+      const varal = varalDeLuzinhas(de, ate, 0.42, 18);
+      w.add(fundir(w.place(varal, meio.x, 0, meio.z, -Math.atan2(ida.z, ida.x))));
+
+      // ------------------------------------- samambaias, moitas e flores baixas
+      w.add(fundir(w.place(samambaias([
+        [3.4, 1.0, 1.0, 1], [1.0, 3.6, 1.1, 2], [4.2, 3.3, 0.9, 3], [2.6, 4.4, 0.8, 4],
+        [-3.9, -0.8, 1.1, 5], [-0.7, -4.0, 1.0, 6], [3.1, -3.3, 0.9, 7], [-3.4, 2.9, 0.95, 8],
+      ]), CL.x, 0, CL.z)));
+      // moitas e flores numa peça só (o mesmo verde e as mesmas pétalas)
+      const baixas = new THREE.Group();
+      baixas.userData.peca = 'baixas-da-clareira';
+      for (const [dx, dz, esc] of [[5.0, 1.8, 0.9], [1.9, 5.1, 0.85], [5.2, -0.6, 0.75], [-0.4, 5.3, 0.8]] as const) {
+        const moita = w.place(bush(esc, P.leafDark), CL.x + dx, 0, CL.z + dz);
+        moita.userData.peca = undefined;
+        baixas.add(moita);
+      }
+      for (const [dx, dz] of [[2.3, 2.0], [3.8, -1.4], [-2.4, 3.6], [0.4, 4.2]] as const) {
+        const flor = w.place(flowers(5, 0.7), CL.x + dx, 0, CL.z + dz);
+        flor.userData.peca = undefined;
+        baixas.add(flor);
+      }
+      w.add(fundir(baixas));
+      // as folhas secas no chão, fora da barraca e da canga
+      w.add(folhasSecas(150, (rnd) => {
+        const a = rnd() * Math.PI * 2;
+        const r = Math.sqrt(rnd()) * (CL.raio + 0.3);
+        const x = CL.x + Math.cos(a) * r;
+        const z = CL.z + Math.sin(a) * r;
+        if (Math.hypot(x - TENDA.x, z - TENDA.z) < 1.95) return null;
+        if (Math.hypot(x - CANGA.x, z - CANGA.z) < 1.0) return null;
+        return [x, z];
+      }));
+
+      // ======================================================= as interações
+      const chegou = { agora: false };
+      w.onUpdate(() => {
+        if (chegou.agora || g.flag('clareira-achada')) return;
+        const eu = g.playerPosition();
+        if (Math.hypot(eu.x - CL.x, eu.z - CL.z) > CL.raio - 0.4) return;
+        chegou.agora = true;
+        g.setFlag('clareira-achada');
+        void (async () => {
+          await conversa([
+            [R, 'Olha isso. Uma clareirinha escondida atrás do lago.'],
+            [A, 'E tem uma barraca montada. Laranja, do jeito que eu gosto.'],
+            [R, 'Ninguém passa por aqui. É só nosso.'],
+            [A, 'Então é aqui que a gente vem quando quiser sumir um pouquinho.'],
+          ]);
+          g.unlock({
+            id: 'clareira-atras-do-lago',
+            title: 'A nossa clareira',
+            place: 'Parque Villa Lobos',
+            note: 'Atrás do lago, no meio das árvores, uma clareira com uma barraca laranja montada e um fogareirinho na frente. Ninguém passa por ali: é o canto dos dois.',
+            icon: '⛺',
+          });
+        })();
+      });
+
+      const PORTA = daTenda(0, 1.95);
+      w.interact({
+        id: 'clareira:barraca',
+        x: PORTA.x, z: PORTA.z, radius: 1.05,
+        label: 'Entrar na barraca', icon: '⛺',
+        highlight: barraca,
+        onInteract: async (api) => {
+          const quer = await api.ask('Entrar na barraca?', ['Entrar', 'Agora não']);
+          if (quer !== 0) return;
+          api.lockPlayer(true);
+          api.ridePlayer(deitados, new THREE.Vector3(-BARRACA.deitar.x, 0, 0), 1, 0);
+          api.rideCompanion(deitados, new THREE.Vector3(BARRACA.deitar.x, 0, 0), 1, 0);
+          api.setLying(true);
+          /*
+           * O TETO SAI e a câmera olha de cima, do lado da porta: os dois
+           * aparecem inteiros nos colchões, com as paredes baixas da barraca em
+           * volta. Da isométrica, a barraca fechada não deixaria ver ninguém.
+           */
+          if (teto) teto.visible = false;
+          barraca.updateWorldMatrix(true, false);
+          api.setCameraOmbro(
+            barraca.localToWorld(new THREE.Vector3(0.8, 3.4, 2.2)),
+            barraca.localToWorld(new THREE.Vector3(0, 0.25, -0.15)),
+          );
+          await api.wait(1.0);
+          await conversa([
+            [A, 'Cabe direitinho nós dois.'],
+            [R, 'Colchão no chão, saco de dormir aberto… isso aqui é um hotel.'],
+            [A, 'Um hotel de uma estrela só. E ela tá aqui do meu lado.'],
+          ]);
+          for (;;) {
+            const i = await api.ask('E agora?', ['Ficar abraçadinhos', 'Dar um beijinho', 'Sair da barraca']);
+            if (i === 0) {
+              // mais perto: os dois escorregam para o meio dos colchões
+              api.ridePlayer(deitados, new THREE.Vector3(-0.2, 0, 0), 1, 0);
+              api.rideCompanion(deitados, new THREE.Vector3(0.2, 0, 0), 1, 0);
+              await conversa([
+                [R, 'Vem mais pra cá.'],
+                [A, 'Mais? Já tô quase em cima de você.'],
+                [R, 'É a ideia.'],
+              ]);
+              api.soltarCoracoes(2);
+              await api.wait(2.4);
+            } else if (i === 1) {
+              api.som('beijo');
+              api.soltarCoracoes(5);
+              const vez = api.bump('clareira:beijinhos');
+              const falas: Array<Array<readonly [string, string]>> = [
+                [[A, 'Mais um?'], [R, 'Sempre mais um.']],
+                [[R, 'Esse foi pra contar.'], [A, 'Então eu tô te devendo vários.']],
+                [[A, 'Aqui ninguém vê.'], [R, 'Por isso mesmo.']],
+              ];
+              await conversa(falas[(vez - 1) % falas.length]);
+            } else {
+              break;
+            }
+          }
+          await conversa([
+            [R, 'Depois a gente volta.'],
+            [A, 'Quando escurecer, de preferência.'],
+          ]);
+          api.setLying(false);
+          if (teto) teto.visible = true;
+          api.setCameraOmbro(null);
+          const saidaA = daTenda(-0.4, 2.2);
+          const saidaB = daTenda(0.4, 2.2);
+          api.releasePlayer(saidaA.x, saidaA.z, GIRO);
+          api.releaseCompanion(saidaB.x, saidaB.z, GIRO);
+          api.lockPlayer(false);
+          api.unlock({
+            id: 'barraca-a-dois',
+            title: 'Os dois na barraca',
+            place: 'Parque Villa Lobos',
+            note: 'Deitados nos colchões da barraca laranja, um do lado do outro, com o barulho do parque lá fora bem baixinho.',
+            icon: '⛺',
+          });
+        },
+      });
+
+      const NA_CANGA = daTenda(0.15, 3.45);
+      w.interact({
+        id: 'clareira:canga',
+        x: NA_CANGA.x, z: NA_CANGA.z, radius: 1.0,
+        label: 'Sentar na canga', icon: '🧺',
+        highlight: pano,
+        onInteract: async (api) => {
+          api.lockPlayer(true);
+          // sentados NO CHÃO: o quadril do rig fica ~0,45 acima da origem, e a
+          // canga está a 2 cm — a âncora desce o resto
+          api.ridePlayer(naCanga, new THREE.Vector3(-0.32, -0.42, 0), 1, Math.PI);
+          api.rideCompanion(naCanga, new THREE.Vector3(0.32, -0.42, 0), 1, Math.PI);
+          api.setSitting(true);
+          api.focusCamera(focoDaCanga);
+          await api.wait(0.6);
+          await conversa([
+            [A, 'Dá pra ver um pedacinho do lago daqui.'],
+            [R, 'E ninguém vê a gente.'],
+            [A, 'Melhor ainda.'],
+          ]);
+          const ficar = await api.ask('Ficar mais um pouco?', ['Fica', 'Levantar']);
+          if (ficar === 0) {
+            api.soltarCoracoes(2);
+            await conversa([
+              [R, 'Encosta aqui.'],
+              [A, 'Já encostei.'],
+            ]);
+            await api.wait(2.2);
+          }
+          api.setSitting(false);
+          api.focusCamera(null);
+          api.releasePlayer(NA_CANGA.x - 0.4, NA_CANGA.z + 0.3, GIRO);
+          api.releaseCompanion(NA_CANGA.x + 0.3, NA_CANGA.z - 0.4, GIRO);
+          api.lockPlayer(false);
+        },
+      });
+
+      const NO_FOGAREIRO = daTenda(1.95, 2.45);
+      w.interact({
+        id: 'clareira:fogareiro',
+        x: NO_FOGAREIRO.x, z: NO_FOGAREIRO.z, radius: 0.95,
+        label: 'Olhar o fogareiro', icon: '🔥',
+        highlight: mesinha,
+        onInteract: async () => {
+          await conversa([
+            [R, 'Fogareirinho de montanha. Cabe na palma da mão.'],
+            [A, 'E a gente vai cozinhar o quê aí?'],
+            [R, 'Chocolate quente. Quando escurecer.'],
+          ]);
+        },
+      });
+
+      /** gancho de teste: o `scripts/clareira.mjs` mede por aqui */
+      barraca.userData.teste = { CLAREIRA: CL, TENDA, PORTA, NA_CANGA, NO_FOGAREIRO, teto, deitados };
     }
 
     /* ================================================ A LUNA E O PIQUENIQUE
