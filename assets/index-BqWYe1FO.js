@@ -4330,7 +4330,7 @@ void main() {
       <div class="regras">
         <p class="rotulo">regras do caderno</p>
         <ol>
-          <li class="escrita de-ari">Só vale escrever deitadinho.</li>
+          <li class="escrita de-ari">Só nós dois podemos escrever aqui.</li>
           <li class="escrita de-renan">Cada um com a sua letra.</li>
           <li class="escrita de-ari">Plano escrito é plano prometido.</li>
         </ol>
@@ -4339,7 +4339,7 @@ void main() {
       <footer class="pe-da-pagina"><span class="folha-n">${e}</span></footer>`}htmlDaGuarda(e){return e==="guarda-frente"?`
         <div class="bilhete-de-achados">
           <p class="impresso">se você achar este caderno,</p>
-          <p class="escrita de-renan">devolve pro ${ut(this.nome("ari"))} ou pro ${ut(this.nome("renan"))}</p>
+          <p class="escrita de-renan">Devolver para o ${ut(this.nome("ari"))} ou para o ${ut(this.nome("renan"))}</p>
         </div>`:`
       <div class="bolso">
         <div class="cartaozinho"><span class="escrita de-ari">pra ler daqui a dez anos</span></div>
