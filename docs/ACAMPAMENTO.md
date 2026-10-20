@@ -173,10 +173,12 @@ passar a noite lá, lembrar de fechar a cabana se formos passar a noite"):
 - falas provisórias minhas (fora o boa noite e o "Agora é só a gente
   bebito", que são do Renan): o convite para passar a noite, o "Escureceu
   de vez", o pedido de fechar a barraca, o bom dia e o nascer do sol;
-- o peso, na vista da clareira: de noite somam UM desenho para todos os
-  halos do varal, DOIS para os vaga-lumes e nada de luz nova no motor (a
-  noite é o mesmo sol, com outra cor); a cúpula do céu só existe nas
-  tomadas de câmera de cena.
+- o peso, na vista da clareira: de dia, nada muda (301 desenhos por
+  quadro, antes e depois); de noite, 308 (+7: um para todos os halos do
+  varal, um para a faixa de luz no chão, dois para os vaga-lumes, a luz que
+  vaza pela porta e o halo e a poça da lanterna) e +2,3 mil triângulos.
+  Nenhuma luz nova no motor (a noite é o mesmo sol, com outra cor), e a
+  cúpula do céu só existe nas tomadas de câmera de cena.
 
 ## 4. Perguntas em aberto
 
