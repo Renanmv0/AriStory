@@ -874,12 +874,14 @@ export const EFEITOS: Record<SomNome, Receita> = {
   ziper: ({ ctx, destino, t, n }) => {
     const sobe = n % 2 === 0;
     chiado(ctx, destino, {
-      quando: t, dur: 0.82, vol: 0.035, freq: sobe ? 1700 : 3300, glide: sobe ? 3300 : 1700, q: 1.6, sustenta: 0.75,
+      quando: t, dur: 0.82, vol: 0.05, freq: sobe ? 1700 : 3300, glide: sobe ? 3300 : 1700, q: 1.2, sustenta: 0.75,
     });
+    // os dentes: o filtro estreito come quase todo o ruído, então o volume
+    // de cada estalinho é alto para ele sobressair do "zzzz" (medido no .wav)
     let quando = t;
     for (let i = 0; i < 16; i++) {
       const k = sobe ? i / 15 : 1 - i / 15;
-      chiado(ctx, destino, { quando, dur: 0.03, vol: 0.05, freq: 2200 + k * 2200, q: 5, tipo: 'bandpass' });
+      chiado(ctx, destino, { quando, dur: 0.028, vol: 0.2, freq: 2200 + k * 2200, q: 2.4, tipo: 'bandpass' });
       quando += 0.06 - 0.025 * (i / 15);
     }
   },
