@@ -221,6 +221,9 @@ export class CeuDaClareira {
     const haloDaLua = new THREE.Sprite(brilhoDeLuz(P.lua, 0.55));
     haloDaLua.scale.set(15, 15, 1);
     haloDaLua.renderOrder = -8;
+    // o halo ATRÁS do disco: no mesmo plano, o quadrado do halo (de frente
+    // para a câmera) cortava o disco na diagonal e clareava metade dele
+    haloDaLua.position.z = -2;
     this.lua.add(disco, mares, haloDaLua);
     this.lua.position.set(-0.52, 0.62, -0.59).normalize().multiplyScalar(raio * 0.9);
     deFrenteParaOMeio(this.lua);
@@ -232,6 +235,7 @@ export class CeuDaClareira {
     const haloDoSol = new THREE.Sprite(brilhoDeLuz(P.solNascente, 0.7));
     haloDoSol.scale.set(26, 26, 1);
     haloDoSol.renderOrder = -8;
+    haloDoSol.position.z = -2;
     this.sol.add(discoDoSol, haloDoSol);
     this.sol.visible = false;
     this.group.add(this.sol);

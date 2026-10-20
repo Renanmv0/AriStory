@@ -61,6 +61,17 @@ const passarFalas = async (limite = 400) => {
   }
   return lidas;
 };
+/** a fala INTEIRA: ela aparece letra por letra, então lê até parar de mudar */
+const lerFala = async () => {
+  let antes = null;
+  for (let i = 0; i < 40; i++) {
+    const agora = (await page.locator('.dialogue .text').textContent().catch(() => '')) ?? '';
+    if (agora === antes && agora.length) return agora;
+    antes = agora;
+    await page.waitForTimeout(350);
+  }
+  return antes ?? '';
+};
 /** o estado da noite, pelo gancho de teste da barraca */
 const noite = () => page.evaluate(() => {
   const j = window.jogo;
@@ -196,8 +207,9 @@ for (let i = 0; i < 1500; i++) {
     await page.waitForTimeout(200);
     await foto('5-barraca-fechada');
   }
-  if (n.jeito === 'conchinha' && !dormir.conchinha) {
-    // de conchinha: os dois virados para o MESMO lado, e quem está na frente é o Ari
+  // de conchinha (já virados de todo): os dois para o MESMO lado, e quem está na frente é o Ari
+  const virou = n.jeito === 'conchinha' && (await page.evaluate(() => Math.abs(window.jogo.player.rig.group.rotation.y) > 1.56));
+  if (virou && !dormir.conchinha) {
     dormir.conchinha = await page.evaluate(() => {
       const j = window.jogo;
       const quem = (ator) => ({ nome: ator.rig.spec.name, x: ator.object.position.x, giro: ator.rig.group.rotation.y, abraca: ator.rig.abracando });
@@ -219,8 +231,7 @@ for (let i = 0; i < 1500; i++) {
   }
   if (dormir.nascer && n.estado === 'dia' && !n.cameraDeCena) break;
   if (await temFala()) {
-    await page.waitForTimeout(1500);
-    const texto = (await page.locator('.dialogue .text').textContent().catch(() => '')) ?? '';
+    const texto = await lerFala();
     if (/^Boa noite/.test(texto)) {
       dormir.boaNoite.push(texto);
       if (!dormir.fotos.has('c')) { dormir.fotos.add('c'); await foto('6-conchinha'); }
@@ -262,7 +273,7 @@ checar(renan && ari && (ari.x - renan.x) * Math.sign(ari.giro) > 0.3, `o Renan a
 checar(renan?.abraca === true && ari?.abraca === false, `quem abraca e o Renan: ${JSON.stringify(dormir.conchinha)}`);
 checar(dormir.boaNoite.join('|') === 'Boa noite, bebito|Boa noite, bebitolito', `o boa noite literal: ${JSON.stringify(dormir.boaNoite)}`);
 checar(dormir.sono && dormir.apagouAntesDoSono, `a lanterna apaga e a tela escurece com o sono: ${JSON.stringify(dormir)}`);
-checar(dormir.manha && (dormir.manha.sons.passarinho ?? 0) > 0, `de manha, o passarinho: ${JSON.stringify(dormir.manha?.sons)}`);
+checar(dormir.manha && (fim.sons.passarinho ?? 0) > 0, `de manha, o passarinho: ${JSON.stringify(fim.sons)}`);
 checar(dormir.abriu, 'de manha a porta abre e os dois saem');
 checar(dormir.nascer?.solVisivel, `o sol nascendo na cupula: ${JSON.stringify(dormir.nascer)}`);
 checar(fim.estado === 'dia' && !fim.cameraDeCena && fim.fundo === diaAntes.fundo, `o dia de volta no fim: ${JSON.stringify(fim)}`);
