@@ -264,7 +264,7 @@ node scripts/celular.mjs /tmp/cel   # tela de celular: nenhum botao pode tapar t
 node scripts/joystick.mjs          # o joystick do celular: parar com o dedo encostado e voltar a andar, ate com o Safari cancelando o toque
 node scripts/parque.mjs  /tmp/pq    # praca da roda, cupula e margem do lago
 node scripts/clareira.mjs /tmp/cl   # a clareira atras do lago: aberta sem mexer no sorteio, a janela da camera, a trilha andavel, a chegada com memoria, entrar na barraca (deitados, o teto sai, o "Agora é só a gente bebito", o beijinho virando de frente um pro outro com os olhos fechando e os coracoes na barraca, abracadinhos, sair), a canga e o fogareiro
-node scripts/noite.mjs   /tmp/no    # a noite na clareira: passar a noite (o ceu escurecendo, o varal, a lanterna, os vaga-lumes, os grilos e a musica), sair da clareira volta o dia, e dormir (a barraca fechando com o ziper, a conchinha com o Renan atras, o boa noite, o sono, a aurora e o sol nascendo atras do lago)
+node scripts/noite.mjs   /tmp/no    # a noite na clareira: passar a noite (o ceu escurecendo, o varal, a lanterna, os vaga-lumes, os grilos e a musica), sair da clareira volta o dia, e dormir (a barraca fechando com o ziper, a conchinha com o Renan atras, o boa noite, o sono, a aurora e o sol nascendo atras do lago, na tela e sem arvore na frente); CEL=1 roda no celular em pe
 node scripts/pingpong.mjs /tmp/pp   # a partida de ping pong ate o quinto ponto
 node scripts/chapeu.mjs  /tmp/chp   # ganhar de gorro: o chapeu de campeao vai pro guarda-roupa, e volta sempre que descartado
 node scripts/arena.mjs   /tmp/ar    # a arena do ping pong: tablado, clareira sem arvore e as pecas em volta

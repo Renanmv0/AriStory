@@ -72,13 +72,25 @@ export const NOITE: MomentoDoCeu = {
 };
 export const AURORA: MomentoDoCeu = {
   alto: P.ceuAuroraAlto, baixo: P.ceuAuroraBaixo, ambiente: P.luzDaAurora, forcaAmbiente: 0.88,
-  // um tico ao norte do leste: da porta, o sol sai à direita das árvores da margem
-  sol: P.solNascente, forcaSol: 1.05, dirSol: [22, 3, 7], estrelas: 0.15,
+  // um tico ao norte do leste: da porta da barraca, o sol nasce quase no meio
+  // da tomada — dentro do quadro estreito do celular em pé também (±18°)
+  sol: P.solNascente, forcaSol: 1.05, dirSol: [22, 3, 2.5], estrelas: 0.15,
 };
 
 const ca = new THREE.Color();
 const cb = new THREE.Color();
 const misturaCor = (a: number, b: number, k: number): number => ca.setHex(a).lerp(cb.setHex(b), k).getHex();
+
+/**
+ * A MANHÃ CEDO, entre a aurora e o dia: o sol já subiu um palmo, NO MESMO
+ * RUMO da aurora — sobe quase reto, sem deslizar para o lado. Sem ela, a
+ * fila ia direto para o sol do meio-dia (alto e bem mais ao sul), e na tela
+ * estreita do celular em pé o sol escapava do quadro no meio da conversa.
+ */
+export const MANHA_CEDO: MomentoDoCeu = {
+  alto: P.ceuManhaAlto, baixo: P.ceuManhaBaixo, ambiente: P.luzDaManha, forcaAmbiente: 0.95,
+  sol: P.solDaManha, forcaSol: 1.35, dirSol: [22, 7.5, 2.8], estrelas: 0,
+};
 
 /** o momento entre `a` e `b` (`k` de 0 a 1), escrito em `alvo` */
 export function misturarMomentos(a: MomentoDoCeu, b: MomentoDoCeu, k: number, alvo: MomentoDoCeu): MomentoDoCeu {
@@ -253,8 +265,9 @@ export class CeuDaClareira {
     this.baixo.setHex(m.baixo);
     this.clarao.setHex(m.sol);
     this.dir.set(...m.dirSol).normalize();
-    // o sol só aparece (e o clarão só pinta o horizonte) quando está BAIXO
-    const baixo = THREE.MathUtils.clamp(1 - this.dir.y / 0.32, 0, 1);
+    // o sol só aparece (e o clarão só pinta o horizonte) quando está BAIXO —
+    // até uns 26° (a manhã cedo ainda mostra o disco)
+    const baixo = THREE.MathUtils.clamp(1 - this.dir.y / 0.45, 0, 1);
     const forcaDoClarao = baixo * Math.min(1, m.forcaSol);
     for (let i = 0; i < this.direcoes.length; i++) {
       const d = this.direcoes[i];

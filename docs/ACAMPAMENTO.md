@@ -180,6 +180,17 @@ passar a noite lá, lembrar de fechar a cabana se formos passar a noite"):
   Nenhuma luz nova no motor (a noite é o mesmo sol, com outra cor), e a
   cúpula do céu só existe nas tomadas de câmera de cena.
 
+**Depois da etapa B, a pedido do Renan** (visto no celular): de manhã, quando
+a câmera vira para o sol, as duas árvores do arco que ficavam bem na linha
+da porta para o lago (a florida rosa e a redonda, no leste da clareira)
+tapavam o sol nascendo. Viraram dois **arbustos floridos** baixinhos (~1 m:
+um rosa e branco, outro branco e lilás — `arbustoFlorido`), e agora da porta
+se vê o lago, o parque e o sol nascendo lá no fim. O sol da manhã sobe quase
+reto antes de ir para o lugar do dia (a `MANHA_CEDO`, entre a aurora e o
+dia), para não escapar do quadro estreito do celular em pé no meio da
+conversa. O `scripts/noite.mjs` mede: o sol na tela e nenhuma árvore entre a
+câmera e ele (`CEL=1` roda no celular).
+
 ## 4. Perguntas em aberto
 
 - As respostas do **papo de travesseiro**: o Renan quer escrever as dele e as

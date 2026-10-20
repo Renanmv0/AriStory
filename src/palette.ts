@@ -1728,9 +1728,18 @@ export const PALETTE = {
   ceuAuroraBaixo: 0xf7b48f,
   luzDaAurora: 0xe3bcc6,
   solNascente: 0xffb47c,
+  ceuManhaAlto: 0x8fc3ec,
+  ceuManhaBaixo: 0xfbe0c2,
+  luzDaManha: 0xf3e2d6,
+  solDaManha: 0xffd9a0,
   estrela: 0xfff6dc,
   lua: 0xfff3cf,
   solDoCeu: 0xfff0b0,
+  // os arbustos floridos da beira da clareira (no lugar das duas árvores que
+  // tapavam o sol nascendo atrás do lago, pedido do Renan)
+  florDoArbusto: 0xffa6c9,
+  florDoArbustoBranca: 0xfff4f6,
+  florDoArbustoLilas: 0xcfa8f0,
   vagaLume: 0xd8ff6a,
   vagaLumeBrilho: 0xb8f04a,
   // acesas: o globo da lanterna, as lâmpadas do varal e o quente que vaza delas
