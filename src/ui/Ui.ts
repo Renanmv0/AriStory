@@ -7,6 +7,7 @@ import { Arsenal } from './arsenal';
 import { EscalaDoWalter, type ConteudoDaEscala } from './escalaDoWalter';
 import { LojaDaJosefina } from './lojaDaJosefina';
 import { Apostila, type PedidoDaApostila } from './apostila';
+import { BebitoBook, type PedidoDoBebitoBook, type ResultadoDoBebitoBook } from './bebitoBook';
 import type { ResultadoDaApostila } from '../minigames/aula/tipos';
 import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
@@ -121,6 +122,8 @@ export class Ui {
   private readonly lojaDaJosefina: LojaDaJosefina;
   /** a apostila da aula do Gatito: o livro de folhear (`apostila.ts`) */
   private readonly apostila: Apostila;
+  /** o caderninho dos planos da barraca (`bebitoBook.ts`) */
+  readonly bebitoBook: BebitoBook;
   private readonly posicionador: HTMLDivElement;
   private aoBotaoDoPosicionador: ((b: BotaoDoPosicionador) => void) | null = null;
   private readonly experiencia: HTMLDivElement;
@@ -359,6 +362,7 @@ export class Ui {
       <div class="fim-do-jardim"></div>
       <div class="loja-da-josefina"></div>
       <div class="apostila"></div>
+      <div class="bebito-book"></div>
       <div class="posicionador" role="toolbar"></div>
       <div class="memorias"><div class="sheet">
         <h2></h2>
@@ -439,6 +443,8 @@ export class Ui {
     this.lojaDaJosefina.som = (nome) => this.som?.(nome);
     this.apostila = new Apostila(ui.querySelector('.apostila')!);
     this.apostila.som = (nome) => this.som?.(nome);
+    this.bebitoBook = new BebitoBook(ui.querySelector('.bebito-book')!);
+    this.bebitoBook.som = (nome) => this.som?.(nome);
     this.posicionador = ui.querySelector('.posicionador')!;
     this.posicionador.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest<HTMLElement>('button[data-botao]');
@@ -691,7 +697,7 @@ export class Ui {
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
       this.memoriasOpen || this.cardapioOpen || this.xadrezOpen ||
       this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen ||
-      this.lojaJosefinaOpen || this.apostilaOpen,
+      this.lojaJosefinaOpen || this.apostilaOpen || this.bebitoOpen,
     );
   }
 
@@ -1181,6 +1187,26 @@ export class Ui {
 
   fecharApostila(): void {
     this.apostila.fechar();
+  }
+
+  // ------------------------------------------------ o Bebito book
+
+  get bebitoOpen(): boolean {
+    return this.bebitoBook.aberto;
+  }
+
+  /** Abre o caderninho da barraca; resolve quando ele fecha. Ver `bebitoBook.ts`. */
+  abrirBebitoBook(pedido: PedidoDoBebitoBook): Promise<ResultadoDoBebitoBook> {
+    const pedidoFeito = this.bebitoBook.abrir(pedido);
+    this.marcarTelaAberta();
+    return pedidoFeito.then((r) => {
+      this.marcarTelaAberta();
+      return r;
+    });
+  }
+
+  fecharBebitoBook(): void {
+    this.bebitoBook.fechar();
   }
 
   /** A escala do Walter, no Mania; resolve com o número do turno escolhido, ou `null`. Ver `escalaDoWalter.ts`. */

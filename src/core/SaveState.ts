@@ -1,3 +1,4 @@
+import { normalizarBebitoBook, type BebitoBookNoSave } from '../minigames/bebitoBook';
 import { SLOTS_ROUPA, type Coleta, type DecoracaoNoSave, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
 
 import { fichaDoItem } from '../world/itens';
@@ -149,6 +150,13 @@ interface SaveData {
    * deixa ler. As regras moram em `minigames/aula/apostila.ts`.
    */
   apostila: ApostilaNoSave;
+  /**
+   * O BEBITO BOOK, o caderninho dos planos da barraca: o que cada um escreveu
+   * em cada página (linha por linha, com a letra de quem escreveu), a data da
+   * folha de rosto e a fitinha de marcar página. As regras moram em
+   * `minigames/bebitoBook.ts`.
+   */
+  bebitoBook: BebitoBookNoSave;
   /**
    * OS PONTOS DE RETORNO dos minigames, pela chave ('jardim'): o retrato de
    * uma rodada no começo da onda, para a página que recarregou no meio dela
@@ -350,6 +358,7 @@ const EMPTY: SaveData = {
   livro: [],
   decoracoes: [],
   apostila: { estrelas: {}, abertas: [] },
+  bebitoBook: { comecadoEm: null, quemComecou: null, marcador: null, folhas: {} },
   retomadas: {},
   inventarios: {},
 };
@@ -396,6 +405,8 @@ export class SaveState {
         decoracoes: normalizarDecoracoes(parsed.decoracoes),
         // save de antes da escola ter aula: nenhuma lição dada ainda
         apostila: normalizarApostila(parsed.apostila),
+        // save de antes do caderninho: em branco
+        bebitoBook: normalizarBebitoBook(parsed.bebitoBook),
         // save de antes do ponto de retorno: nenhuma rodada para continuar
         retomadas: parsed.retomadas && typeof parsed.retomadas === 'object' && !Array.isArray(parsed.retomadas)
           ? { ...parsed.retomadas }
@@ -528,6 +539,19 @@ export class SaveState {
     this.data.apostila.estrelas[id] = n;
     this.persist();
     return true;
+  }
+
+  // ------------------------------------------------ o Bebito book
+
+  /** o caderninho dos planos, do jeito que está no save */
+  get bebitoBook(): Readonly<BebitoBookNoSave> {
+    return this.data.bebitoBook;
+  }
+
+  /** O caderno inteiro, de uma vez: o livro manda depois de cada letra (com um respiro). */
+  salvarBebitoBook(caderno: BebitoBookNoSave): void {
+    this.data.bebitoBook = normalizarBebitoBook(caderno);
+    this.persist();
   }
 
   // ------------------------------------------------ o livro das cartas

@@ -1,3 +1,4 @@
+import type { ResultadoDoBebitoBook } from '../ui/bebitoBook';
 import type * as THREE from 'three';
 import type { WorldBuilder } from '../world/WorldBuilder';
 import type { SomNome } from '../audio/efeitos';
@@ -757,6 +758,13 @@ export interface GameAPI {
   abrirApostila(o?: { licao?: string }): Promise<ResultadoDaApostila>;
   /** o que o save sabe da apostila: as estrelas por lição e as lições já dadas */
   progressoDaApostila(): ProgressoDaApostila;
+  /**
+   * O BEBITO BOOK (`ui/bebitoBook.ts`): o caderninho dos planos pro futuro,
+   * aberto na barraca. Mostra o caderno fechado; os dois abrem a capa,
+   * escrevem cada um com a sua letra e fecham. Resolve ao fechar, dizendo se
+   * abriram, se escreveram e quantas perguntas têm resposta (antes e agora).
+   */
+  abrirBebitoBook(): Promise<ResultadoDoBebitoBook>;
   /** A barra de experiência da rodada do jardim, no alto; `null` esconde. */
   showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void;
   /**

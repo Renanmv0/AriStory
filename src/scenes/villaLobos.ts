@@ -2621,6 +2621,67 @@ export const villaLobos: SceneDef = {
         note: 'Deitados nos colchões da barraca laranja, um do lado do outro, com o barulho do parque lá fora bem baixinho.',
         icon: '⛺',
       };
+      /*
+       * O BEBITO BOOK (pedido do Renan, no lugar do "papo de travesseiro"): o
+       * caderninho dos planos pro futuro. Os dois viram de lado, de frente um
+       * para o outro (a pose do beijo, sem o beijo), a câmera chega perto e o
+       * caderno aparece fechado na tela (`ui/bebitoBook.ts`): eles abrem a
+       * capa, escrevem cada um com a sua letra e fecham. O caderno é um só —
+       * o que foi escrito fica, e a fitinha marca onde pararam.
+       *
+       * As falas são PROVISÓRIAS (do Claude), até o Renan mandar as dele.
+       */
+      const escreverNoCaderno = async (api: GameAPI): Promise<void> => {
+        void deslizarCamera(CAMERA_DO_BEIJO);
+        await api.virarDeitados(true);
+        const vez = api.bump('clareira:bebito-book');
+        if (vez === 1) {
+          await conversa([
+            [R, 'Trouxe uma coisa na mochila.'],
+            [A, 'Um caderninho? Com adesivo de barraca?'],
+            [R, 'O Bebito book. Pra gente escrever os nossos planos.'],
+            [A, 'Os planos pro futuro? Aqui, deitadinhos?'],
+            [R, 'Uma pergunta em cada página. Cada um responde com a sua letra.'],
+          ]);
+        } else {
+          const falas: Array<Array<readonly [string, string]>> = [
+            [[A, 'Cadê o Bebito book?'], [R, 'Aqui. Onde a gente parou?']],
+            [[R, 'Bora escrever mais um plano?'], [A, 'Me passa a caneta.']],
+            [[A, 'Pega o caderninho, bebito.'], [R, 'Já tá na mão.']],
+          ];
+          await conversa(falas[(vez - 2) % falas.length]);
+        }
+        const r = await api.abrirBebitoBook();
+        if (r.escreveu) {
+          if (r.respondidas >= 12 && r.respondidasAntes < 12) {
+            await conversa([
+              [A, 'Bebitolito… a gente respondeu todas.'],
+              [R, 'O caderno inteiro de planos. Agora é só ir vivendo um por um.'],
+            ]);
+          } else {
+            await conversa([
+              [A, 'Gostei dos nossos planos.'],
+              [R, 'Agora tá escrito. Tem que cumprir.'],
+            ]);
+          }
+          api.soltarCoracoes(2);
+          api.unlock({
+            id: 'bebito-book',
+            title: 'O Bebito book',
+            place: 'Parque Villa Lobos',
+            note: 'Deitados de frente um pro outro na barraca, os dois abriram o caderninho de capa de pano e escreveram os planos pro futuro — cada um com a sua letra.',
+            icon: '📔',
+          });
+        } else if (r.abriu) {
+          await conversa([
+            [R, 'Depois a gente escreve mais.'],
+            [A, 'Tem o caderno inteiro pela frente.'],
+          ]);
+        }
+        void deslizarCamera(CAMERA_LARGA);
+        await api.virarDeitados(false);
+      };
+
       const PORTA = daTenda(0, 1.95);
       w.interact({
         id: 'clareira:barraca',
@@ -2653,8 +2714,9 @@ export const villaLobos: SceneDef = {
           for (;;) {
             // de dia, a terceira escolha é a noite chegar; de noite, é dormir
             const terceira = estado === 'noite' ? 'Dormir' : 'Passar a noite aqui';
-            const i = await api.ask('E agora?', ['Ficar abraçadinhos', 'Dar um beijinho', terceira, 'Sair da barraca']);
-            if (i === 0) {
+            const opcoes = ['Ficar abraçadinhos', 'Dar um beijinho', 'Escrever no Bebito book', terceira, 'Sair da barraca'];
+            const escolha = opcoes[await api.ask('E agora?', opcoes)];
+            if (escolha === 'Ficar abraçadinhos') {
               // mais perto: os dois escorregam para o meio dos colchões
               api.ridePlayer(deitados, new THREE.Vector3(-0.2, 0, 0), 1, 0);
               api.rideCompanion(deitados, new THREE.Vector3(0.2, 0, 0), 1, 0);
@@ -2665,7 +2727,7 @@ export const villaLobos: SceneDef = {
               ]);
               api.soltarCoracoes(2);
               await api.wait(2.4);
-            } else if (i === 1) {
+            } else if (escolha === 'Dar um beijinho') {
               /*
                * O BEIJO DEITADO (`entities/BeijoDeitado.ts`): os dois viram de
                * lado, um de frente para o outro, chegam perto, fecham os olhos
@@ -2685,9 +2747,11 @@ export const villaLobos: SceneDef = {
               await conversa(falas[(vez - 1) % falas.length]);
               void deslizarCamera(CAMERA_LARGA);
               await api.virarDeitados(false);
-            } else if (i === 2 && estado !== 'noite') {
+            } else if (escolha === 'Escrever no Bebito book') {
+              await escreverNoCaderno(api);
+            } else if (escolha === 'Passar a noite aqui') {
               await anoitecer(api);
-            } else if (i === 2) {
+            } else if (escolha === 'Dormir') {
               // a noite inteira, até sair de manhã: termina lá fora
               await dormir(api);
               ocupados = false;

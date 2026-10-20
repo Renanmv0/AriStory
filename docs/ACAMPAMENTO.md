@@ -21,15 +21,17 @@ frente: **convidar os amigos do parque** — por enquanto, só os dois.
    o céu vai do pôr do sol à noite: estrelas, vaga-lumes na clareira, a
    lanterna da barraca acesa. Eles dormem e acordam de manhã, com o sol
    nascendo atrás do lago. Sair da clareira antes de dormir volta o dia.
-3. **Dentro da barraca**, as quatro: **papo de travesseiro**, **sombras na
-   lona**, **dormir de conchinha** e **cócegas e guerra de travesseiro**.
+3. **Dentro da barraca**, as quatro: **papo de travesseiro** (virou o
+   **Bebito book**, ver §3), **sombras na lona**, **dormir de conchinha** e
+   **cócegas e guerra de travesseiro**.
 4. **Na clareira**, as quatro: **cozinhar no fogareiro**, **olhar as
    estrelas**, **vaga-lumes** e **música e dança lenta**.
 
 **O que está no jogo** (veja §5): a **etapa A** — a clareira, a barraca
-com o que tem dentro, o fogareiro, entrar e deitar, e sentar na canga — e a
+com o que tem dentro, o fogareiro, entrar e deitar, e sentar na canga —, a
 **etapa B**, a noite: passar a noite, fechar a barraca, a conchinha, dormir
-e acordar com o sol nascendo atrás do lago.
+e acordar com o sol nascendo atrás do lago — e, da etapa C, o **Bebito
+book**: o caderninho dos planos pro futuro, escrito deitado de frente.
 
 **Onde mora o código**:
 
@@ -40,7 +42,11 @@ e acordar com o sol nascendo atrás do lago.
   (virar de lado: o beijo e a conchinha);
 - a clareira: a seção "A CLAREIRA ATRÁS DO LAGO" em
   `src/scenes/villaLobos.ts` (a noite é o bloco "A NOITE (etapa B)");
-- os testes: `scripts/clareira.mjs` (o lugar, de dia) e `scripts/noite.mjs`.
+- o Bebito book: `src/ui/bebitoBook.ts` (o caderno na tela) e
+  `src/minigames/bebitoBook.ts` (as perguntas, a regra de escrever na linha
+  e o save);
+- os testes: `scripts/clareira.mjs` (o lugar, de dia), `scripts/noite.mjs` e
+  `scripts/bebitoBook.mjs`.
 
 ## 1. O lugar
 
@@ -93,13 +99,44 @@ abraçadinhos, a tela escurece e eles acordam com o sol nascendo atrás do lago
 — memória no diário. Sair da clareira antes disso volta o dia.
 
 **Dentro da barraca (C)**:
-- **papo de travesseiro**: deitados, um sorteio de perguntas carinhosas e
-  bobas, cada uma com a resposta dos dois (as respostas de verdade são do
-  Renan e do Ari; as provisórias são marcadas como provisórias);
+- ✅ **o Bebito book** *(no jogo)* — o pedido do Renan, no lugar do papo de
+  travesseiro: uma conversa sobre os **planos pro futuro**, escrita num
+  caderninho. "Escrever no Bebito book" vira os dois de lado, **de frente um
+  para o outro** (a pose do beijo, sem o beijo), a câmera chega perto e o
+  caderno aparece **fechado** na tela:
+  - **a capa**, de pano costurado (linho desenhado em canvas), com a lombada,
+    a etiqueta do nome ("Bebito book — os nossos planos pro futuro — Ari &
+    Renan"), adesivos (a barraca laranja, a lua, uma estrela, um coração
+    "A+R"), uma **polaroid dos dois** (os modelos 3D fotografados) presa com
+    fita, rabiscos de caneta de gel, o **elástico** de fechar e a **fitinha**
+    de marcar página. Um toque abre: o elástico escorrega para fora e a capa
+    vira em 3D na lombada (no verso, a guarda estampada de barraquinhas e o
+    bilhete "se você achar este caderno… recompensa: um beijinho");
+  - **a folha de rosto** é a ficha de caderno de escola: Nome, Matéria (os
+    nossos planos pro futuro), Começado em (o dia em que abriram pela
+    primeira vez) e Onde; e as três "regras do caderno";
+  - **o miolo** é caderno comum: papel creme, pauta azul, margem vermelha,
+    "Data __/__/__" no alto e **uma pergunta por página**, escrita a caneta
+    com marca-texto. Doze perguntas e uma página de "espaço livre"; no
+    computador, duas páginas abertas, no celular uma; a folha vira em 3D;
+  - **escrever**: toca na linha e digita. **Cada um escreve com a sua letra**
+    e a sua tinta — **Caveat** (azul) para o Ari, **Kalam** (roxo) para o
+    Renan, as duas do Google Fonts e com os acentos do português. A caneta
+    troca de mão no botão (ou no `T`). A palavra que não cabe desce inteira
+    para a linha de baixo, a data da página se escreve na primeira letra, e
+    a linha que é da letra do outro fica só de leitura (cada um com a sua);
+  - **o caderno é um só e fica**: o save guarda cada linha com o dono, a
+    data e a fitinha (aberto de novo, ele abre onde pararam). Fechou (o `Esc`
+    ou o ✕), a cena segue: os dois comentam, corações, e a memória "O Bebito
+    book". O caderno inteiro é desenhado numa medida fixa e escalado para a
+    tela — a linha cabe o mesmo tanto de letra no computador e no celular.
+  - **Provisório**: as doze perguntas e as falas de antes e depois são do
+    Claude, até o Renan mandar as dele (ver §4).
 - **sombras na lona**: com a lanterna, bichinhos de sombra com a mão na
   parede da barraca (coelho, pato, cachorro — e o Walter);
 - **cócegas e guerra de travesseiro**: travesseiros voando, risada, e
-  termina num beijo.
+  termina num beijo. **É o Ari que faz cócegas no Renan** (pedido do Renan:
+  é assim na vida real).
 
 **Na clareira (D)**:
 - **cozinhar no fogareiro**: chocolate quente, miojo ou café de manhã — a
@@ -193,8 +230,11 @@ câmera e ele (`CEL=1` roda no celular).
 
 ## 4. Perguntas em aberto
 
-- As respostas do **papo de travesseiro**: o Renan quer escrever as dele e as
-  do Ari, ou começamos com provisórias?
+- As **perguntas do Bebito book**: as doze de agora são provisórias
+  (`PERGUNTAS`, em `minigames/bebitoBook.ts`) — o Renan pode mandar as dele, e
+  elas entram literais (as respostas ficam presas ao `id`, então trocar o
+  texto não apaga nada). E as letras: a Caveat ficou com o Ari e a Kalam com
+  o Renan — dá para trocar se ele achar que é o contrário.
 - A **música** da dança: uma melodia própria, ou o Renan tem uma música do
   casal para servir de inspiração (o som é sintetizado, então seria uma
   versão "de caixinha de música")?
@@ -205,6 +245,6 @@ câmera e ele (`CEL=1` roda no celular).
 |---|---|---|
 | A ✅ | **O lugar** *(no jogo)* | a clareira e a trilha, a barraca com o teto que sai, colchões, sacos de dormir, travesseiros, lanterna, fogareiro, panelinha, canecas, mesinha, canga, mochilas, tronco, varal de luzinhas; entrar na barraca e deitar, sentar na canga; a memória da chegada |
 | B ✅ | **A noite** *(no jogo)* | anoitecer e amanhecer, estrelas, vaga-lumes, luzes acesas, fechar a barraca, dormir de conchinha |
-| C | **Dentro da barraca** | papo de travesseiro, sombras na lona, guerra de travesseiro |
+| C | **Dentro da barraca** | ✅ o Bebito book *(no jogo)*; sombras na lona, cócegas (o Ari no Renan) e guerra de travesseiro |
 | D | **Na clareira** | fogareiro, estrelas e estrela cadente, pegar vaga-lume, música e dança lenta |
 | E | **Os amigos** | convidar quem é do parque (futuro) |
