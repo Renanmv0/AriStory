@@ -5358,6 +5358,10 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
   align-items: center;
   gap: 8px;
   padding: 10px;
+  /* nada do caderno passa da borda da tela, nem a capa girando em 3D; e
+     tocar duas vezes rápido (virar duas páginas) não dá zoom no iPhone */
+  overflow: hidden;
+  touch-action: manipulation;
   background: radial-gradient(ellipse at 50% 42%, rgba(70, 40, 58, 0.5), rgba(18, 10, 22, 0.86));
 }
 .bebito-book.show { display: flex; pointer-events: auto; }
@@ -5697,10 +5701,10 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
 .bebito-book .pagina.guarda.lado-dir { background: linear-gradient(90deg, rgba(110, 80, 45, 0.24), transparent 46px), var(--guarda) 0 0 / 120px 120px, #fbf1e2; }
 .bebito-book .bilhete-de-achados {
   position: absolute;
-  left: 92px;
+  left: 70px;
   top: 250px;
-  width: 330px;
-  padding: 22px 22px 18px;
+  width: 374px;
+  padding: 22px 18px 20px;
   box-sizing: border-box;
   background: var(--papel), #fffdf6;
   border-radius: 6px;
@@ -5722,9 +5726,7 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
 }
 .bebito-book .bilhete-de-achados p { margin: 0; }
 .bebito-book .impresso { font: 800 11px Nunito, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #9aa9bf; }
-.bebito-book .bilhete-de-achados .de-renan { font-size: 22px; line-height: 1.5; margin-top: 6px; }
-.bebito-book .bilhete-de-achados .recompensa { font-size: 30px; line-height: 1.1; display: flex; align-items: center; justify-content: center; gap: 6px; }
-.bebito-book .bilhete-de-achados svg { width: 26px; height: 26px; }
+.bebito-book .bilhete-de-achados .de-renan { font-size: 23px; line-height: 1.4; margin-top: 8px; white-space: nowrap; }
 .bebito-book .bolso { position: absolute; left: 70px; right: 70px; bottom: 80px; height: 250px; }
 .bebito-book .cartaozinho {
   position: absolute;

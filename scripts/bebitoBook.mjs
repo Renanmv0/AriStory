@@ -360,6 +360,27 @@ ls = await linhas(slot);
 checar(ls.map((x) => x.valor).filter(Boolean).length === escrito.length + 1, 'o que foi escrito continua lá', ls.map((x) => x.valor));
 await page.waitForTimeout(300);
 await foto('7-de-novo');
+// GIRAR O CELULAR (ou mudar a janela) com o caderno aberto: ele se mede de
+// novo e continua inteiro na tela — no iPhone ele ficava do tamanho da tela
+// velha, com a página e a barra cortadas na borda
+const cabeNaTela = () => page.evaluate(() => {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const fora = (sel) => {
+    const r = document.querySelector(sel).getBoundingClientRect();
+    return r.left < -1 || r.top < -1 || r.right > vw + 1 || r.bottom > vh + 1 ? { sel, r: [r.left, r.top, r.right, r.bottom].map(Math.round) } : null;
+  };
+  return { vw, vh, duplo: window.jogo.ui.bebitoBook.estado.duplo,
+    fora: ['.bebito-book .caderno', '.bebito-book .barra-do-caderno'].map(fora).filter(Boolean) };
+});
+const giros = [];
+for (const [w, h] of CEL ? [[844, 390], [390, 780]] : [[700, 900], [1280, 860]]) {
+  await page.setViewportSize({ width: w, height: h });
+  await page.waitForTimeout(900);
+  giros.push(await cabeNaTela());
+}
+checar(giros.every((g) => g.fora.length === 0) && giros[0].duplo === (CEL ? true : false) && giros[1].duplo === !CEL,
+  'girar a tela: o caderno se mede de novo e cabe inteiro', giros);
 await page.locator('.bebito-book .fechar-caderno').click();
 await esperarLivro((x) => !x.aberto, 80);
 await passarAte(async () => (await temEscolha()) > 0);

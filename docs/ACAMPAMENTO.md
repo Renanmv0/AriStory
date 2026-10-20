@@ -111,7 +111,7 @@ abraçadinhos, a tela escurece e eles acordam com o sol nascendo atrás do lago
     fita, rabiscos de caneta de gel, o **elástico** de fechar e a **fitinha**
     de marcar página. Um toque abre: o elástico escorrega para fora e a capa
     vira em 3D na lombada (no verso, a guarda estampada de barraquinhas e o
-    bilhete "se você achar este caderno… recompensa: um beijinho");
+    bilhete "se você achar este caderno, devolve pro Ari ou pro Renan");
   - **a folha de rosto** é a ficha de caderno de escola: Nome, Matéria (os
     nossos planos pro futuro), Começado em (o dia em que abriram pela
     primeira vez) e Onde; e as três "regras do caderno";
