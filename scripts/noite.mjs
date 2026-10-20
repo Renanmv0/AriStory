@@ -61,16 +61,14 @@ const passarFalas = async (limite = 400) => {
   }
   return lidas;
 };
-/** a fala INTEIRA: ela aparece letra por letra, então lê até parar de mudar */
+/**
+ * a fala INTEIRA: ela aparece letra por letra, e o navegador do teste às
+ * vezes engasga no meio (duas leituras iguais ainda incompletas) — então
+ * espera a máquina de escrever da `Ui` terminar (`typing` volta a `null`)
+ */
 const lerFala = async () => {
-  let antes = null;
-  for (let i = 0; i < 40; i++) {
-    const agora = (await page.locator('.dialogue .text').textContent().catch(() => '')) ?? '';
-    if (agora === antes && agora.length) return agora;
-    antes = agora;
-    await page.waitForTimeout(350);
-  }
-  return antes ?? '';
+  for (let i = 0; i < 60 && (await page.evaluate(() => window.jogo.ui.typing !== null)); i++) await page.waitForTimeout(150);
+  return (await page.locator('.dialogue .text').textContent().catch(() => '')) ?? '';
 };
 /** o estado da noite, pelo gancho de teste da barraca */
 const noite = () => page.evaluate(() => {
