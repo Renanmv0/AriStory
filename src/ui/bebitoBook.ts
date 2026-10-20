@@ -437,21 +437,31 @@ export class BebitoBook {
       // o T troca a caneta de mão, como troca quem joga
       if (e.code === 'KeyT') this.trocarCaneta(this.caneta === 'ari' ? 'renan' : 'ari');
     });
-    let larguraDaJanela = window.innerWidth;
-    window.addEventListener('resize', () => {
+    /*
+     * A TELA MUDOU (o celular girou, a barra do navegador sumiu, a janela
+     * mudou de tamanho): o caderno se mede DE NOVO pela caixa dele mesmo, e
+     * não pelo `window.innerWidth` — no iPhone, girar o aparelho dispara o
+     * aviso antes de a medida nova chegar, e o caderno ficava do tamanho da
+     * tela velha, cortado na borda. O `ResizeObserver` vê a caixa de verdade;
+     * a volta de 400 ms depois de girar é a rede para o aviso atrasado.
+     */
+    const remedir = (): void => {
       if (!this.aberto) return;
+      const caixa = this.raiz.getBoundingClientRect();
       // o teclado do celular que encolhe a janela não encolhe o caderno: quem
       // cuida dele é o `ajustarAoTeclado`, que sobe a linha
-      const soAltura = window.innerWidth === larguraDaJanela;
-      larguraDaJanela = window.innerWidth;
-      if (soAltura && this.escrevendo()) return;
+      if (Math.abs(caixa.width - this.medida.w) < 1 && caixa.height < this.medida.h && this.escrevendo()) return;
+      if (Math.abs(caixa.width - this.medida.w) < 1 && Math.abs(caixa.height - this.medida.h) < 1) return;
       const antes = this.duplo;
       this.medirTela();
       if (antes !== this.duplo) {
         this.pagina = this.alinhar(this.pagina);
         this.pintarTudo();
       }
-    });
+    };
+    if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => remedir()).observe(this.raiz);
+    window.addEventListener('resize', remedir);
+    window.addEventListener('orientationchange', () => window.setTimeout(remedir, 400));
     window.visualViewport?.addEventListener('resize', () => this.ajustarAoTeclado());
     window.visualViewport?.addEventListener('scroll', () => this.ajustarAoTeclado());
     // a aba que some (o celular descarta) não perde a última palavra
@@ -642,9 +652,14 @@ export class BebitoBook {
 
   // ============================================================== a medida
 
+  /** o tamanho da tela (a caixa do caderno) na última medida */
+  private medida = { w: 0, h: 0 };
+
   private medirTela(): void {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const tela = this.raiz.getBoundingClientRect();
+    const w = tela.width || window.innerWidth;
+    const h = tela.height || window.innerHeight;
+    this.medida = { w, h };
     this.duplo = w >= 820 && w > h * 1.05;
     this.livro.classList.toggle('duplo', this.duplo);
     this.livro.classList.toggle('simples', !this.duplo);
@@ -924,8 +939,6 @@ export class BebitoBook {
         <div class="bilhete-de-achados">
           <p class="impresso">se você achar este caderno,</p>
           <p class="escrita de-renan">devolve pro ${escapar(this.nome('ari'))} ou pro ${escapar(this.nome('renan'))}</p>
-          <p class="escrita de-ari recompensa">recompensa: um beijinho
-            <svg viewBox="0 0 64 64" aria-hidden="true"><path d="${CORACAO}" fill="#e9768f"/></svg></p>
         </div>`;
     }
     return `
