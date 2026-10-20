@@ -72,8 +72,9 @@ export const NOITE: MomentoDoCeu = {
 };
 export const AURORA: MomentoDoCeu = {
   alto: P.ceuAuroraAlto, baixo: P.ceuAuroraBaixo, ambiente: P.luzDaAurora, forcaAmbiente: 0.88,
-  // um tico ao norte do leste: da porta, o sol sai à direita das árvores da margem
-  sol: P.solNascente, forcaSol: 1.05, dirSol: [22, 3, 7], estrelas: 0.15,
+  // um tico ao norte do leste: da porta da barraca, o sol nasce quase no meio
+  // da tomada — dentro do quadro estreito do celular em pé também (±18°)
+  sol: P.solNascente, forcaSol: 1.05, dirSol: [22, 3, 2.5], estrelas: 0.15,
 };
 
 const ca = new THREE.Color();

@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { brilhoDeLuz, brilhoEmLote, luzNoChao, toon } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { novaTextura, sorteio } from './texturasDeChao';
+import { geoFlor, geoFolha } from './lojaDeRoupas';
 
 /**
  * ===================================================== O ACAMPAMENTO DA CLAREIRA
@@ -1457,6 +1458,120 @@ export function folhasSecas(quantas: number, onde: (rnd: () => number) => [numbe
   lote.instanceMatrix.needsUpdate = true;
   if (lote.instanceColor) lote.instanceColor.needsUpdate = true;
   return lote;
+}
+
+/**
+ * O ARBUSTO FLORIDO, baixinho (uns 95 cm), da beira da clareira — no lugar
+ * das duas árvores que tapavam, da porta da barraca, o sol nascendo atrás
+ * do lago (pedido do Renan: "arbustos bonitinhos com algumas flores").
+ *
+ * A COPA são sete bolotas de folha amassadas pela POSIÇÃO (como a pedra: a
+ * mesma quina recebe o mesmo empurrão em todo triângulo que a usa), em dois
+ * verdes, as de fora mais baixas — um domo, e não três bolas em fila. Por
+ * cima, em LOTE, as folhinhas que escapam do contorno (é o que tira a cara
+ * de bola lisa) e as flores de cinco pétalas (`geoFlor`), cada uma deitada na
+ * copa pela normal dela, com o miolo amarelo. `cores` sorteia a cor de cada
+ * flor. Base no chão, centrada.
+ */
+export function arbustoFlorido(
+  escala = 1, semente = 1, cores: readonly number[] = [P.florDoArbusto, P.florDoArbustoBranca],
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'arbusto-florido';
+  const rnd = sorteio(9000 + Math.round(semente * 97));
+  // as bolotas: [x, y, z, raio], a do meio mais alta
+  const bolotas: Array<[number, number, number, number]> = [[0, 0.5, 0, 0.44]];
+  for (let k = 0; k < 6; k++) {
+    const a = (k / 6) * Math.PI * 2 + rnd() * 0.5;
+    const d = 0.36 + rnd() * 0.1;
+    bolotas.push([Math.cos(a) * d, 0.3 + rnd() * 0.1, Math.sin(a) * d * 0.85, 0.28 + rnd() * 0.08]);
+  }
+  const verdes = [toon(P.leafDark), toon(P.bush)];
+  bolotas.forEach(([x, y, z, r], i) => {
+    const geo = new THREE.IcosahedronGeometry(r, 2);
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+    for (let v = 0; v < pos.count; v++) {
+      const px = pos.getX(v);
+      const py = pos.getY(v);
+      const pz = pos.getZ(v);
+      // o empurrão sorteado pela posição arredondada (a geometria não é indexada)
+      const h = Math.sin(Math.round(px * 400) * 12.9898 + Math.round(py * 400) * 78.233 + Math.round(pz * 400) * 37.719 + semente) * 43758.5453;
+      const k = 1 + ((h - Math.floor(h)) - 0.5) * 0.16;
+      pos.setXYZ(v, px * k, py * k * 0.92, pz * k);
+    }
+    geo.computeVertexNormals();
+    por(g, geo, verdes[i % 2 === 0 ? 0 : 1], x, y, z);
+  });
+
+  // pontos na casca da copa (por fora de todas as bolotas), virados para fora
+  const naCopa = (acima: number): { p: THREE.Vector3; n: THREE.Vector3 } | null => {
+    for (let tentativa = 0; tentativa < 30; tentativa++) {
+      const [x, y, z, r] = bolotas[Math.floor(rnd() * bolotas.length)];
+      const n = new THREE.Vector3(rnd() * 2 - 1, rnd() * 1.4 - 0.4, rnd() * 2 - 1).normalize();
+      if (n.y < acima) continue;
+      const p = new THREE.Vector3(x, y, z).addScaledVector(n, r * 0.97);
+      if (p.y < 0.14) continue;
+      const dentro = bolotas.some(([bx, by, bz, br]) => (bx !== x || by !== y || bz !== z) && p.distanceTo(new THREE.Vector3(bx, by, bz)) < br * 0.95);
+      if (!dentro) return { p, n };
+    }
+    return null;
+  };
+
+  // AS FOLHINHAS que escapam do contorno: em pé na copa, um tico para cima
+  const folhas = new THREE.InstancedMesh(geoFolha(), toon(0xffffff), 34);
+  const m = new THREE.Object3D();
+  const cor = new THREE.Color();
+  const Z = new THREE.Vector3(0, 0, 1);
+  let nf = 0;
+  for (let i = 0; i < 34; i++) {
+    const ponto = naCopa(-0.1);
+    if (!ponto) continue;
+    const rumo = ponto.n.clone().add(new THREE.Vector3(0, 0.45, 0)).normalize();
+    m.position.copy(ponto.p).addScaledVector(ponto.n, -0.03);
+    m.quaternion.setFromUnitVectors(Z, rumo);
+    m.rotateZ(rnd() * Math.PI * 2);
+    m.scale.setScalar(0.14 + rnd() * 0.06);
+    m.updateMatrix();
+    folhas.setMatrixAt(nf, m.matrix);
+    folhas.setColorAt(nf, cor.setHex(rnd() < 0.5 ? P.leafDark : P.bush));
+    nf++;
+  }
+  folhas.count = nf;
+  g.add(folhas);
+
+  // AS FLORES: deitadas na copa pela normal, mais em cima que embaixo
+  const QUANTAS = 30;
+  const flores = new THREE.InstancedMesh(geoFlor(), toon(0xffffff, { doubleSide: true }), QUANTAS);
+  const miolos = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 6, 4), toon(P.flowerYellow), QUANTAS);
+  const Y = new THREE.Vector3(0, 1, 0);
+  let n = 0;
+  for (let i = 0; i < QUANTAS; i++) {
+    const ponto = naCopa(0.05);
+    if (!ponto) continue;
+    const tam = 0.055 + rnd() * 0.025;
+    m.position.copy(ponto.p).addScaledVector(ponto.n, 0.012);
+    m.quaternion.setFromUnitVectors(Y, ponto.n);
+    m.rotateY(rnd() * Math.PI * 2);
+    m.scale.setScalar(tam);
+    m.updateMatrix();
+    flores.setMatrixAt(n, m.matrix);
+    flores.setColorAt(n, cor.setHex(cores[Math.floor(rnd() * cores.length)]));
+    m.position.copy(ponto.p).addScaledVector(ponto.n, 0.012 + tam * 0.25);
+    m.scale.setScalar(tam * 0.28);
+    m.updateMatrix();
+    miolos.setMatrixAt(n, m.matrix);
+    n++;
+  }
+  flores.count = n;
+  miolos.count = n;
+  g.add(flores, miolos);
+  for (const lote of [folhas, flores, miolos]) {
+    lote.instanceMatrix.needsUpdate = true;
+    if (lote.instanceColor) lote.instanceColor.needsUpdate = true;
+    lote.computeBoundingSphere();
+  }
+  g.scale.setScalar(escala);
+  return g;
 }
 
 /**

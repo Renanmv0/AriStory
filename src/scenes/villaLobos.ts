@@ -34,7 +34,7 @@ import { flat } from '../core/materials';
 import { Estella } from '../entities/bichos/Estella';
 import { Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 import {
-  BARRACA, acenderBarraca, acenderVaral, barracaIglu, canecaEsmaltada, canga, fecharPortaDaBarraca,
+  BARRACA, acenderBarraca, acenderVaral, arbustoFlorido, barracaIglu, canecaEsmaltada, canga, fecharPortaDaBarraca,
   fogareiroDeMontanha, folhasSecas, interiorDaBarraca, mesinhaDobravel, mochilaCargueira, panelinha,
   samambaias, troncoCaido, varalDeLuzinhas,
 } from '../world/acampamento';
@@ -2214,7 +2214,7 @@ export const villaLobos: SceneDef = {
         [100, 5.6, 'pinheiro', 1.35, 0.21], [123, 5.3, 'redonda', 1.4, 0.37], [148, 5.4, 'florida', 1.25, 0.52],
         [175, 4.9, 'redonda', 1.45, 0.66], [200, 4.95, 'pinheiro', 1.5, 0.13], [222, 5.0, 'redonda', 1.3, 0.81],
         [245, 5.2, 'florida', 1.35, 0.44], [268, 4.9, 'redonda', 1.4, 0.29], [292, 5.3, 'pinheiro', 1.3, 0.92],
-        [316, 5.5, 'redonda', 1.35, 0.58], [338, 5.6, 'florida', 1.2, 0.71], [355, 6.0, 'redonda', 1.3, 0.05],
+        [316, 5.5, 'redonda', 1.35, 0.58],
       ];
       const posDoArco = (a: number, r: number): { x: number; z: number } => ({
         x: CL.x + Math.cos((a * Math.PI) / 180) * r,
@@ -2224,6 +2224,23 @@ export const villaLobos: SceneDef = {
         const p = posDoArco(a, r);
         w.add(fundir(w.place(tree(tipo, esc, semente), p.x, 0, p.z, semente * 6.28)));
         w.blockCircle(p.x, p.z, 0.45 * esc);
+      }
+      /*
+       * NO LESTE, ARBUSTO E NÃO ÁRVORE (pedido do Renan, visto no celular): as
+       * duas árvores do arco que ficavam no 338° e no 355° — a florida rosa e
+       * a redonda — estavam bem na linha da porta da barraca para o lago, e
+       * de manhã tapavam o sol nascendo. Viraram dois arbustos floridos
+       * baixinhos (`arbustoFlorido`), no mesmo lugar: a rosa continua rosa, e
+       * a outra floresce em branco e lilás. A clareira continua fechada pelos
+       * outros lados.
+       */
+      for (const [a, r, esc, semente, cores] of [
+        [338, 5.5, 1.15, 3, [P.florDoArbusto, P.florDoArbusto, P.florDoArbustoBranca]],
+        [355, 5.9, 1.05, 7, [P.florDoArbustoBranca, P.florDoArbustoLilas]],
+      ] as const) {
+        const p = posDoArco(a, r);
+        w.add(fundir(w.place(arbustoFlorido(esc, semente, cores), p.x, 0, p.z, semente)));
+        w.blockCircle(p.x, p.z, 0.62 * esc);
       }
 
       // o varal de luzinhas entre a árvore do 175° e a do 268° (atrás da barraca)
