@@ -467,6 +467,13 @@ molde de peça que se ENTRA sem virar cena nova:
   peça do fogareiro, da panelinha e das canecas, a `fundir()` junta material
   por material com a mesinha (o alumínio, o esmalte).
 - Samambaias de um lugar inteiro são UM lote (`samambaias([...])`).
+- **Arbusto florido** (`arbustoFlorido(escala, semente, cores)`), ~1 m: sete
+  bolotas amassadas pela POSIÇÃO em dois verdes (um domo, as de fora mais
+  baixas), folhinhas em lote escapando do contorno e flores (`geoFlor`, de
+  `lojaDeRoupas.ts`) deitadas na copa pela normal, com o miolo — os três em
+  lote, as flores com a cor sorteada de `cores`. Nasceu no lugar das duas
+  árvores que tapavam o sol nascendo da porta da barraca: onde a câmera de
+  cena precisa olhar por cima, arbusto, e não árvore.
 - **A porta FECHA** (`fecharPortaDaBarraca(raiz, k)`): o pano do sobreteto
   é a casca do domo dentro do D, em COLUNAS da direita (o lado do rolo) para
   a esquerda — fechar é mostrar colunas (`setDrawRange`), atrás do puxador

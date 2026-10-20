@@ -39,7 +39,7 @@ import {
   samambaias, troncoCaido, varalDeLuzinhas,
 } from '../world/acampamento';
 import {
-  AURORA, CREPUSCULO, CeuDaClareira, NOITE, POR_DO_SOL, TARDE_DOURADA, VagaLumes, luzDoMomento,
+  AURORA, CREPUSCULO, CeuDaClareira, MANHA_CEDO, NOITE, POR_DO_SOL, TARDE_DOURADA, VagaLumes, luzDoMomento,
   misturarMomentos, momentoDoDia, momentoEmBranco, momentoNaFila, type MomentoDoCeu,
 } from '../world/noite';
 
@@ -2334,7 +2334,7 @@ export const villaLobos: SceneDef = {
        */
       const DIA = momentoDoDia(villaLobos.ambient);
       const FILA_DA_NOITE = [DIA, TARDE_DOURADA, POR_DO_SOL, CREPUSCULO, NOITE];
-      const FILA_DA_MANHA = [AURORA, DIA];
+      const FILA_DA_MANHA = [AURORA, MANHA_CEDO, DIA];
       const agora = misturarMomentos(DIA, DIA, 0, momentoEmBranco());
       let estado: 'dia' | 'noite' | 'manha' = 'dia';
       /** a lanterna apagada para dormir: o céu da noite não acende ela de novo */
@@ -2591,7 +2591,7 @@ export const villaLobos: SceneDef = {
         ceu.aplicar(agora);
         ceu.visivel = true;
         await deslizarCamera(CAMERA_DO_NASCER, 1.8);
-        const manha = passarOCeu(FILA_DA_MANHA, 8);
+        const manha = passarOCeu(FILA_DA_MANHA, 12);
         await conversa([
           [A, 'Olha o sol nascendo atrás do lago.'],
           [R, 'Só por isso já valeu a noite.'],
