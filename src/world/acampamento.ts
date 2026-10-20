@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { toon } from '../core/materials';
+import { brilhoDeLuz, brilhoEmLote, luzNoChao, toon } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { novaTextura, sorteio } from './texturasDeChao';
 
@@ -541,6 +541,17 @@ export function barracaIglu(): THREE.Group {
   const laranja = toon(P.barracaLaranja, { mapa: lona, doubleSide: true });
   const cinza = toon(P.barracaCinza, { mapa: lona, doubleSide: true });
   const creme = toon(P.barracaInterna, { mapa: lona, doubleSide: true });
+  /*
+   * A LONA ACESA: de noite, com a lanterna ligada lá dentro, a barraca
+   * inteira brilha laranja — é a cara de barraca na noite. O mesmo pano com
+   * `glow` (`acenderBarraca` troca um pelo outro); o cinza da barra de baixo
+   * acende menos (é mais grosso), e a barraca de dentro, creme, mais.
+   */
+  raiz.userData.lonas = [
+    [laranja, toon(P.barracaLaranja, { mapa: lona, doubleSide: true, glow: 0.5 })],
+    [cinza, toon(P.barracaCinza, { mapa: lona, doubleSide: true, glow: 0.3 })],
+    [creme, toon(P.barracaInterna, { mapa: lona, doubleSide: true, glow: 0.42 })],
+  ] satisfies Array<[THREE.Material, THREE.Material]>;
   const ziper = toon(P.barracaZiper);
   const aluminio = toon(P.barracaVareta);
   const preto = toon(P.barracaClip);
@@ -614,9 +625,41 @@ export function barracaIglu(): THREE.Group {
     const y = 0.14 + (0.8 * k) / 8;
     enrolado.push(naFrente(FORA, 0.53, y).multiplyScalar(1.02));
   }
-  por(teto, tubo(enrolado, 0.042, 24, 10), laranja);
+  // com NOME: ao fechar a porta, o pano desenrola e o rolo some (`fecharPortaDaBarraca`)
+  por(teto, tubo(enrolado, 0.042, 24, 10), laranja).name = 'roloDaPorta';
   const presilha = naFrente(FORA, 0.53, 0.62).multiplyScalar(1.06);
-  por(teto, macia(0.11, 0.025, 0.012, 0.004), ziper, presilha.x, presilha.y, presilha.z);
+  por(teto, macia(0.11, 0.025, 0.012, 0.004), ziper, presilha.x, presilha.y, presilha.z).name = 'presilhaDaPorta';
+
+  /*
+   * A PORTA FECHADA: o pano do sobreteto que desenrola por cima do vão. É a
+   * casca do domo DENTRO do D (2,5 cm além da beira, e 1,2% para fora da
+   * lona, para a sobra não ficar coplanar com ela), em COLUNAS da direita
+   * para a esquerda — o lado do rolo. Fechar é mostrar as colunas aos
+   * poucos (`setDrawRange`), atrás do puxador do zíper que dá a volta no D.
+   * São dois panos, cortados no corte do teto como a barraca: o laranja de
+   * cima mora no `teto` (de dentro, a câmera de cima ainda vê a porta
+   * fechada embaixo), o cinza de baixo, com as paredes.
+   */
+  const alta = painelDaPorta(CORTE, PORTA_TOPO + 0.025, 15);
+  const baixa = painelDaPorta(0.1, CORTE, 7);
+  const panoAlto = por(teto, alta, laranja);
+  panoAlto.name = 'portaFechadaAlta';
+  const panoBaixo = por(g, baixa, cinza);
+  panoBaixo.name = 'portaFechadaBaixa';
+  for (const pano of [panoAlto, panoBaixo]) {
+    pano.geometry.setDrawRange(0, 0);
+    pano.visible = false;
+  }
+  // o PUXADOR do zíper, que corre pelo contorno do D (embaixo à direita = aberta)
+  const puxador = por(g, macia(0.04, 0.075, 0.018, 0.006), ziper);
+  puxador.name = 'puxadorDaPorta';
+  posicionarPuxador(puxador, 0);
+  // e o ZÍPER fechado atrás dele: o risco escuro que se desenha pelo D
+  // conforme o puxador anda (`setDrawRange`), em cima da beira cinza
+  const fecho = por(teto, new THREE.TubeGeometry(CAMINHO_DO_ZIPER, ZIPER_GOMOS, 0.009, 5, false), ziper);
+  fecho.name = 'ziperDaPorta';
+  fecho.geometry.setDrawRange(0, 0);
+  fecho.visible = false;
 
   // A ABA SOBRE A PORTA: uma meia-lua de lona que sai do sobreteto e avança
   // 30 cm, sustentada pela vareta de testa na beira
@@ -727,7 +770,155 @@ export function barracaIglu(): THREE.Group {
     tirante(de, new THREE.Vector3(s * 0.95, 0, de.z + 0.75));
   }
 
+  /*
+   * A LUZ QUE VAZA PELA PORTA aberta, de noite com a lanterna acesa: o
+   * leque quente no chão na frente dela (luz pintada, sem luz de verdade).
+   * Na raiz, e não na casca que cresce: é medida no chão do mundo.
+   */
+  const vazada = new THREE.Group();
+  vazada.name = 'luzDaPorta';
+  vazada.visible = false;
+  const leque = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.2), luzNoChao(P.luzDaLanterna, 0.4));
+  leque.rotation.x = -Math.PI / 2;
+  leque.position.set(0, 0.03, BARRACA.porta.z - 0.25);
+  leque.renderOrder = 60;
+  leque.userData.semSombra = true;
+  vazada.add(leque);
+  raiz.add(vazada);
+  raiz.userData.portaFechada = 0;
+
   return raiz;
+}
+
+/** onde termina o D em cima (a mesma conta de `dentroDaPorta` com a folga do sobreteto) */
+const PORTA_TOPO = 0.98 + 0.05;
+const PORTA_MEIA = 0.42 + 0.05;
+
+/**
+ * Um pano da porta fechada, de `y0` a `y1`, em colunas da DIREITA para a
+ * esquerda (`userData.colunas[c]` é onde a coluna `c` termina no índice).
+ */
+function painelDaPorta(y0: number, y1: number, linhas: number, colunas = 26): THREE.BufferGeometry {
+  const meia = PORTA_MEIA + 0.025;
+  const pos: number[] = [];
+  const uv: number[] = [];
+  const L = linhas + 1;
+  for (let c = 0; c <= colunas; c++) {
+    const x = meia - (2 * meia * c) / colunas;
+    for (let r = 0; r <= linhas; r++) {
+      const y = y0 + ((y1 - y0) * r) / linhas;
+      const p = naFrente(FORA, x, y).multiplyScalar(1.012);
+      pos.push(p.x, p.y, p.z);
+      uv.push(x, y);
+    }
+  }
+  const idx: number[] = [];
+  const fimDaColuna: number[] = [0];
+  for (let c = 0; c < colunas; c++) {
+    const xm = meia - (2 * meia * (c + 0.5)) / colunas;
+    for (let r = 0; r < linhas; r++) {
+      const ym = y0 + ((y1 - y0) * (r + 0.5)) / linhas;
+      if (!dentroDaPorta(xm, ym, 0.07)) continue;
+      const a = c * L + r;
+      const b = a + 1;
+      const d = a + L;
+      const e = d + 1;
+      idx.push(a, d, b, b, d, e);
+    }
+    fimDaColuna.push(idx.length);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  geo.userData.colunas = fimDaColuna;
+  return geo;
+}
+
+/** o caminho do zíper: o contorno do D de baixo à direita, por cima, até embaixo à esquerda */
+const ZIPER_GOMOS = 90;
+const CAMINHO_DO_ZIPER = (() => {
+  // 2% para fora: encostado no pano fechado (1,2%), por cima da beira cinza
+  const pts = contornoDaPorta(0.05, 0.1).reverse().map(([x, y]) => naFrente(FORA, x, y).multiplyScalar(1.02));
+  const curva = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+  return curva;
+})();
+
+/** o puxador no ponto `k` do caminho (0 = porta aberta, 1 = fechada), deitado na lona */
+function posicionarPuxador(puxador: THREE.Object3D, k: number): void {
+  const p = CAMINHO_DO_ZIPER.getPointAt(Math.min(1, Math.max(0, k)));
+  puxador.position.copy(p);
+  // pendurado do zíper: a cabeça no caminho e o corpo para fora, de frente
+  puxador.rotation.set(-0.35, Math.atan2(p.x, p.z) * 0.6, 0);
+}
+
+/**
+ * FECHA (ou abre) A PORTA da barraca: `k` de 0 (aberta, o pano enrolado do
+ * lado) a 1 (fechada). O puxador anda pelo contorno do D e o pano aparece
+ * atrás dele, coluna por coluna, da direita (o lado do rolo) para a
+ * esquerda; o rolo some logo no começo (desenrolou). Quem anima é a cena,
+ * pelo relógio do jogo.
+ */
+export function fecharPortaDaBarraca(raiz: THREE.Object3D, k: number): void {
+  const t = Math.min(1, Math.max(0, k));
+  raiz.userData.portaFechada = t;
+  const puxador = raiz.getObjectByName('puxadorDaPorta');
+  if (puxador) posicionarPuxador(puxador, t);
+  // quanto do D já passou pelo puxador, de leste a oeste (pela posição dele)
+  const px = CAMINHO_DO_ZIPER.getPointAt(t).x / 1.02;
+  const fechou = t >= 1 ? 1 : THREE.MathUtils.clamp((PORTA_MEIA - px) / (2 * PORTA_MEIA), 0, 1);
+  for (const nome of ['portaFechadaAlta', 'portaFechadaBaixa']) {
+    const pano = raiz.getObjectByName(nome) as THREE.Mesh | undefined;
+    if (!pano) continue;
+    const colunas = pano.geometry.userData.colunas as number[];
+    const n = Math.round(fechou * (colunas.length - 1));
+    pano.geometry.setDrawRange(0, colunas[n]);
+    pano.visible = n > 0;
+  }
+  for (const nome of ['roloDaPorta', 'presilhaDaPorta']) {
+    const peca = raiz.getObjectByName(nome);
+    if (peca) peca.visible = fechou < 0.08;
+  }
+  const fecho = raiz.getObjectByName('ziperDaPorta') as THREE.Mesh | undefined;
+  if (fecho) {
+    // o TubeGeometry tem o índice em ordem ao longo do caminho: 5 lados × 6 por gomo
+    fecho.geometry.setDrawRange(0, Math.floor(t * ZIPER_GOMOS) * 5 * 6);
+    fecho.visible = t > 0;
+  }
+  atualizarLuzDaPorta(raiz);
+}
+
+function atualizarLuzDaPorta(raiz: THREE.Object3D): void {
+  const vazada = raiz.getObjectByName('luzDaPorta');
+  if (vazada) vazada.visible = raiz.userData.acesa === true && (raiz.userData.portaFechada ?? 0) < 0.5;
+}
+
+/**
+ * ACENDE (ou apaga) A LANTERNA DA BARRACA, e com ela a barraca inteira: o
+ * globo da lanterna, o halo e a poça quente lá dentro, a lona brilhando por
+ * fora (o pano com `glow`) e o leque de luz que vaza pela porta aberta.
+ * Tudo luz pintada: nenhuma luz nova no motor.
+ */
+export function acenderBarraca(raiz: THREE.Object3D, acesa: boolean): void {
+  raiz.userData.acesa = acesa;
+  const pares: Array<[THREE.Material, THREE.Material]> = [
+    ...(raiz.userData.lonas ?? []),
+    [toon(P.lanternaGlobo), toon(P.lanternaAcesa, { glow: 1 })],
+  ];
+  raiz.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh || Array.isArray(m.material)) return;
+    for (const [apagada, acendida] of pares) {
+      if (acesa && m.material === apagada) m.material = acendida;
+      else if (!acesa && m.material === acendida) m.material = apagada;
+    }
+  });
+  for (const nome of ['luzDaLanterna', 'luzDeDentro']) {
+    const luz = raiz.getObjectByName(nome);
+    if (luz) luz.visible = acesa;
+  }
+  atualizarLuzDaPorta(raiz);
 }
 
 // ======================================================= dentro da barraca
@@ -849,6 +1040,16 @@ export function lanternaDeCamping(): THREE.Group {
   }
   // a alça de arame
   por(g, new THREE.TorusGeometry(0.04, 0.004, 4, 12, Math.PI), toon(P.barracaZiper), 0, 0.22, 0);
+  // o HALO quando acesa (`acenderBarraca`): o brilho macio em volta do globo
+  const luz = new THREE.Group();
+  luz.name = 'luzDaLanterna';
+  luz.visible = false;
+  const halo = new THREE.Sprite(brilhoDeLuz(P.luzDaLanterna, 0.75));
+  halo.scale.set(0.62, 0.62, 1);
+  halo.position.y = 0.12;
+  halo.renderOrder = 61;
+  luz.add(halo);
+  g.add(luz);
   return g;
 }
 
@@ -884,6 +1085,21 @@ export function interiorDaBarraca(): THREE.Group {
   lanterna.position.set(0, 0.02, -0.98);
   lanterna.scale.setScalar(1.25);
   g.add(lanterna);
+  /*
+   * A POÇA QUENTE DA LANTERNA, lá dentro: na altura de cima dos sacos de
+   * dormir (no chão, os colchões a esconderiam), mais forte na cabeceira,
+   * onde a lanterna está. Vista de cima, é a luz caindo nos travesseiros.
+   */
+  const dentro = new THREE.Group();
+  dentro.name = 'luzDeDentro';
+  dentro.visible = false;
+  const poca = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.9), luzNoChao(P.luzDaLanterna, 0.42));
+  poca.rotation.x = -Math.PI / 2;
+  poca.position.set(0, 0.2, -0.62);
+  poca.renderOrder = 60;
+  poca.userData.semSombra = true;
+  dentro.add(poca);
+  g.add(dentro);
   return g;
 }
 
@@ -1277,10 +1493,63 @@ export function varalDeLuzinhas(de: THREE.Vector3, ate: THREE.Vector3, barriga =
   soquetes.instanceMatrix.needsUpdate = true;
   bolas.instanceMatrix.needsUpdate = true;
   g.add(soquetes, bolas);
+  /*
+   * ACESO (`acenderVaral`): um halo em cada lâmpada — UM desenho só para
+   * todos (`brilhoEmLote`), e a força de cada um é a cor da cópia, para elas
+   * acenderem uma de cada vez — e a faixa quente no chão embaixo do fio.
+   */
+  const brilho = new THREE.Group();
+  brilho.name = 'brilhoDoVaral';
+  brilho.visible = false;
+  const halos = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(P.luzDoVaral, 0.85), lampadas);
+  halos.name = 'halosDoVaral';
+  halos.userData.semSombra = true;
+  halos.renderOrder = 61;
+  const preto = new THREE.Color(0, 0, 0);
+  for (let i = 0; i < lampadas; i++) {
+    const p = ponto((i + 0.5) / lampadas);
+    m.position.set(p.x, p.y - 0.058, p.z);
+    m.scale.setScalar(0.46);
+    m.updateMatrix();
+    halos.setMatrixAt(i, m.matrix);
+    halos.setColorAt(i, preto);
+  }
+  halos.instanceMatrix.needsUpdate = true;
+  brilho.add(halos);
+  const faixa = new THREE.Mesh(new THREE.PlaneGeometry(de.distanceTo(ate) * 0.92, 1.7), luzNoChao(P.luzDoVaral, 0.26));
+  faixa.rotation.x = -Math.PI / 2;
+  const meioDoFio = ponto(0.5);
+  faixa.position.set(meioDoFio.x, 0.03, meioDoFio.z);
+  faixa.renderOrder = 60;
+  faixa.userData.semSombra = true;
+  brilho.add(faixa);
+  g.add(brilho);
   for (const p of [de, ate]) {
     const no = new THREE.TorusGeometry(0.2, 0.012, 4, 14);
     no.rotateX(Math.PI / 2);
     por(g, no, fio, p.x, p.y, p.z);
   }
   return g;
+}
+
+/**
+ * ACENDE O VARAL aos poucos: `k` de 0 (apagado) a 1 (todas acesas). As
+ * lâmpadas acendem uma de cada vez, da primeira para a última — o halo de
+ * cada uma sobe quando chega a vez dela —, e o vidro de todas vira luz no
+ * primeiro instante (a malha é uma só).
+ */
+export function acenderVaral(varal: THREE.Object3D, k: number): void {
+  const bolas = varal.getObjectByName('lampadas') as THREE.InstancedMesh | undefined;
+  const halos = varal.getObjectByName('halosDoVaral') as THREE.InstancedMesh | undefined;
+  const brilho = varal.getObjectByName('brilhoDoVaral');
+  if (bolas) bolas.material = k > 0 ? toon(P.luzinhaAcesa, { glow: 1 }) : toon(P.luzinha);
+  if (brilho) brilho.visible = k > 0;
+  if (!halos) return;
+  const n = halos.count;
+  const cor = new THREE.Color();
+  for (let i = 0; i < n; i++) {
+    const forca = THREE.MathUtils.clamp(k * n - i, 0, 1);
+    halos.setColorAt(i, cor.setScalar(forca));
+  }
+  if (halos.instanceColor) halos.instanceColor.needsUpdate = true;
 }

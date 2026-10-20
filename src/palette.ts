@@ -1702,6 +1702,42 @@ export const PALETTE = {
   samambaia: 0x4d9442,
   folhaSeca: 0xc98a3e,
   trilhaDeTerra: 0xb08857,
+  /*
+   * A NOITE NA CLAREIRA (etapa B do acampamento): os céus de cada momento
+   * (o alto e o horizonte — o horizonte é também a névoa, para o fundo do
+   * parque sumir na mesma cor), a luz ambiente e a do sol/lua de cada um, e
+   * as luzes acesas. O dia é o `ambient` do próprio Villa Lobos.
+   */
+  ceuDouradoAlto: 0x9cc6ea,
+  ceuDouradoBaixo: 0xf8d39c,
+  luzDourada: 0xffdcb4,
+  solDourado: 0xffc27a,
+  ceuPorDoSolAlto: 0x7b8fcb,
+  ceuPorDoSolBaixo: 0xf59a6e,
+  luzPorDoSol: 0xf2b39b,
+  solPorDoSol: 0xff8c5a,
+  ceuCrepusculoAlto: 0x2f3d78,
+  ceuCrepusculoBaixo: 0x9a6f9e,
+  luzCrepusculo: 0x8279b9,
+  solCrepusculo: 0xb48ad6,
+  ceuNoiteAlto: 0x0e1634,
+  ceuNoiteBaixo: 0x26355e,
+  luzDaNoite: 0x6273b6,
+  luar: 0xbfcbff,
+  ceuAuroraAlto: 0x6479bd,
+  ceuAuroraBaixo: 0xf7b48f,
+  luzDaAurora: 0xe3bcc6,
+  solNascente: 0xffb47c,
+  estrela: 0xfff6dc,
+  lua: 0xfff3cf,
+  solDoCeu: 0xfff0b0,
+  vagaLume: 0xd8ff6a,
+  vagaLumeBrilho: 0xb8f04a,
+  // acesas: o globo da lanterna, as lâmpadas do varal e o quente que vaza delas
+  lanternaAcesa: 0xfff1c4,
+  luzDaLanterna: 0xffd59a,
+  luzinhaAcesa: 0xffe7a0,
+  luzDoVaral: 0xffcf7a,
 
   // ui / afeto
   heart: 0xff6b8b,

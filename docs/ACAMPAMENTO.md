@@ -27,14 +27,20 @@ frente: **convidar os amigos do parque** — por enquanto, só os dois.
    estrelas**, **vaga-lumes** e **música e dança lenta**.
 
 **O que está no jogo** (veja §5): a **etapa A** — a clareira, a barraca
-com o que tem dentro, o fogareiro, entrar e deitar, e sentar na canga.
+com o que tem dentro, o fogareiro, entrar e deitar, e sentar na canga — e a
+**etapa B**, a noite: passar a noite, fechar a barraca, a conchinha, dormir
+e acordar com o sol nascendo atrás do lago.
 
 **Onde mora o código**:
 
-- as peças: `src/world/acampamento.ts` (a barraca, os colchões, o fogareiro…);
+- as peças: `src/world/acampamento.ts` (a barraca, os colchões, o fogareiro…,
+  e a porta que fecha, a lanterna e o varal que acendem);
+- a noite: `src/world/noite.ts` (os céus de cada momento, a cúpula com as
+  estrelas, a lua e o sol baixo, os vaga-lumes) e o `entities/BeijoDeitado.ts`
+  (virar de lado: o beijo e a conchinha);
 - a clareira: a seção "A CLAREIRA ATRÁS DO LAGO" em
-  `src/scenes/villaLobos.ts`;
-- o teste: `scripts/clareira.mjs`.
+  `src/scenes/villaLobos.ts` (a noite é o bloco "A NOITE (etapa B)");
+- os testes: `scripts/clareira.mjs` (o lugar, de dia) e `scripts/noite.mjs`.
 
 ## 1. O lugar
 
@@ -143,6 +149,35 @@ Mano, o Jean-Luc, a Estella…) — fica para depois, por decisão do Renan.
   de quem está montado numa âncora é local a ela) — agora nascem em cima da
   cabeça de quem está jogando.
 
+**A etapa B, como ficou** (pedido do Renan: "dando a opção de dormirmos e
+passar a noite lá, lembrar de fechar a cabana se formos passar a noite"):
+
+- **de dia, lá dentro**, "E agora?" tem **Passar a noite aqui**: a câmera
+  sai da barraca e olha o céu por cima dela, e o dia vira noite em ~10 s —
+  a tarde dourada, o pôr do sol atrás da barraca (a oeste), o crepúsculo
+  roxo com as primeiras estrelas e a noite com a lua. As luzes vêm com o céu:
+  o varal acende lâmpada por lâmpada, a lanterna acende (a barraca inteira
+  brilha laranja e a luz vaza pela porta), os vaga-lumes aparecem na borda
+  da clareira, os grilos começam e a música vira uma de ninar;
+- **de noite** dá para sair e andar pela clareira; **sair dela volta o
+  dia** (o resto do parque não anoitece) — um aviso, e o céu clareia;
+- **de noite, lá dentro**, a escolha vira **Dormir**: o Renan pede para
+  fechar a barraca ("que de noite entra bicho"), a câmera vê de fora o
+  **zíper dar a volta na porta** e o pano do sobreteto fechar o D; lá dentro,
+  os dois deitam **de conchinha, o Renan atrás abraçando** (escolha dele), o
+  boa noite deles — **"Boa noite, bebito" / "Boa noite, bebitolito"** (escolha
+  dele) —, a lanterna apaga num clique, a tela escurece com a luazinha;
+- **de manhã**: a aurora, o passarinho, o bom dia, a barraca abrindo e os
+  dois na porta vendo **o sol nascer atrás do lago**; a memória "A primeira
+  noite na barraca" entra no diário e o dia volta;
+- falas provisórias minhas (fora o boa noite e o "Agora é só a gente
+  bebito", que são do Renan): o convite para passar a noite, o "Escureceu
+  de vez", o pedido de fechar a barraca, o bom dia e o nascer do sol;
+- o peso, na vista da clareira: de noite somam UM desenho para todos os
+  halos do varal, DOIS para os vaga-lumes e nada de luz nova no motor (a
+  noite é o mesmo sol, com outra cor); a cúpula do céu só existe nas
+  tomadas de câmera de cena.
+
 ## 4. Perguntas em aberto
 
 - As respostas do **papo de travesseiro**: o Renan quer escrever as dele e as
@@ -156,7 +191,7 @@ Mano, o Jean-Luc, a Estella…) — fica para depois, por decisão do Renan.
 | # | etapa | o que fica em pé no fim |
 |---|---|---|
 | A ✅ | **O lugar** *(no jogo)* | a clareira e a trilha, a barraca com o teto que sai, colchões, sacos de dormir, travesseiros, lanterna, fogareiro, panelinha, canecas, mesinha, canga, mochilas, tronco, varal de luzinhas; entrar na barraca e deitar, sentar na canga; a memória da chegada |
-| B | **A noite** | anoitecer e amanhecer, estrelas, vaga-lumes, luzes acesas, dormir de conchinha |
+| B ✅ | **A noite** *(no jogo)* | anoitecer e amanhecer, estrelas, vaga-lumes, luzes acesas, fechar a barraca, dormir de conchinha |
 | C | **Dentro da barraca** | papo de travesseiro, sombras na lona, guerra de travesseiro |
 | D | **Na clareira** | fogareiro, estrelas e estrela cadente, pegar vaga-lume, música e dança lenta |
 | E | **Os amigos** | convidar quem é do parque (futuro) |

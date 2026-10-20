@@ -79,6 +79,13 @@ o que a defesa da estufa faz (`'rodada-do-jardim'`, ligada e desligada pela
 colados (o "clap" de várias mãos) no contratempo, nos tempos 2 e 4. O pico
 dela fica abaixo do da rodada do jardim.
 
+**A noite na clareira** (`'noite-na-clareira'`): canção de ninar de caixinha,
+66 bpm em fá, marimba rara e sem chocalho; a cena liga quando anoitece e
+devolve quando o dia volta. Os sons dela: `ziper` (os dentinhos passando
+por cima de um "zzzz" que sobe; `n` par sobe, ímpar desce — fechar e abrir),
+`grilo` (três trinadinhos a ~4,4 kHz, bem baixo: é fundo, tocado pela cena a
+cada 1,4–4 s de noite) e `passarinho` (dois piados na pentatônica, de manhã).
+
 **Tensão sem perder o fofo** (o pedido do Renan para a defesa da estufa): a
 marimba e os acordes com sétima continuam, e entram chaves opcionais no
 `Clima` — `reto` (sem suingue), `ostinato` (pizzicato em colcheias), `bumbo`

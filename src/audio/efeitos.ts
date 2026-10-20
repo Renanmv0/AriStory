@@ -82,7 +82,11 @@ export type SomNome =
   | 'ardido'
   | 'clique'
   | 'martelo'
-  | 'brotar';
+  | 'brotar'
+  // a noite na clareira: o zíper da barraca, o grilo e o passarinho da manhã
+  | 'ziper'
+  | 'grilo'
+  | 'passarinho';
 
 /** graus da pentatônica maior, em semitons */
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
@@ -859,5 +863,39 @@ export const EFEITOS: Record<SomNome, Receita> = {
         tipo: 'triangle',
       });
     });
+  },
+  // ------------------------------------------------- a noite na clareira
+  /*
+   * O ZÍPER DA BARRACA fechando (e abrindo): os dentinhos passando um a um —
+   * uma fila de estalinhos de ruído, cada vez mais agudos e mais juntos —
+   * por cima de um "zzzz" contínuo que sobe. ~0,8 s, o tempo do puxador dar a
+   * volta no D da porta.
+   */
+  ziper: ({ ctx, destino, t, n }) => {
+    const sobe = n % 2 === 0;
+    chiado(ctx, destino, {
+      quando: t, dur: 0.82, vol: 0.035, freq: sobe ? 1700 : 3300, glide: sobe ? 3300 : 1700, q: 1.6, sustenta: 0.75,
+    });
+    let quando = t;
+    for (let i = 0; i < 16; i++) {
+      const k = sobe ? i / 15 : 1 - i / 15;
+      chiado(ctx, destino, { quando, dur: 0.03, vol: 0.05, freq: 2200 + k * 2200, q: 5, tipo: 'bandpass' });
+      quando += 0.06 - 0.025 * (i / 15);
+    }
+  },
+
+  // O GRILO: três trinadinhos agudos e curtos, baixinho (é fundo de noite)
+  grilo: ({ ctx, destino, t, n }) => {
+    const freq = n % 3 === 0 ? 4400 : n % 3 === 1 ? 4150 : 4600;
+    for (let i = 0; i < 3; i++) {
+      tom(ctx, destino, { freq, glide: freq * 0.97, quando: t + i * 0.075, dur: 0.045, vol: 0.022, ataque: 0.006, tipo: 'sine' });
+    }
+  },
+
+  // O PASSARINHO da manhã: dois piados que sobem e descem, na pentatônica
+  passarinho: ({ ctx, destino, t, n }) => {
+    const alto = n % 2 === 0 ? DO + 24 : DO + 26;
+    tom(ctx, destino, { freq: nota(alto), glide: nota(alto + 7), quando: t, dur: 0.09, vol: 0.05, ataque: 0.008, tipo: 'sine' });
+    tom(ctx, destino, { freq: nota(alto + 9), glide: nota(alto + 4), quando: t + 0.14, dur: 0.12, vol: 0.045, ataque: 0.008, tipo: 'sine' });
   },
 };

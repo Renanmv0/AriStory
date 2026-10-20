@@ -21,16 +21,32 @@ const FOLGA_DE_FRENTE = 1.14;
 /** no beijo: as cabeças encostadas (a bochecha cede um tico) */
 const FOLGA_NO_BEIJO = 0.95;
 /**
+ * DE CONCHINHA: quem abraça fica atrás, encostado nas costas do outro — as
+ * cabeças a menos de um palmo (o rosto de quem abraça no cabelo da nuca do
+ * outro) e quem abraça um tico mais para os pés, com o queixo na altura do
+ * pescoço de quem está na frente.
+ */
+const FOLGA_NA_CONCHINHA = 0.86;
+const ATRAS_DESCE = 0.07;
+/**
  * O quanto o corpo SOBE ao virar de lado, para o ombro de baixo não afundar
  * no colchão: de costas, quem encosta é a espessura do tronco; de lado, é a
  * largura dos ombros, que é maior.
  */
 const ERGUE = 0.06;
 
+/** de lado, um de frente para o outro (o beijo), ou os dois virados para o mesmo lado (a conchinha) */
+type Jeito = 'frente' | 'conchinha';
+
 /**
  * O BEIJO DEITADO: os dois, deitados lado a lado, viram de lado um de frente
  * para o outro, chegam perto, fecham os olhos e se beijam — e os corações
  * sobem de cada um.
+ *
+ * E A CONCHINHA, com o mesmo corpo: os dois virados para o MESMO lado, quem
+ * abraça atrás (o Renan, a escolha dele), encostado nas costas do outro e com
+ * o braço por cima. Trocar de um jeito para o outro passa por barriga para
+ * cima — ninguém rola por cima de ninguém.
  *
  * O beijo de pé (`Beijo.ts`) é do jogador, no E; este é da CENA, por
  * `g.virarDeitados` e `g.beijarDeitados`, porque só existe dentro de uma
@@ -54,6 +70,9 @@ export class BeijoDeitado {
   private readonly origemB = new THREE.Vector3();
   /** +1 se o parceiro está no +X da âncora em relação ao jogador */
   private lado = 1;
+  private jeito: Jeito = 'frente';
+  /** na conchinha: quem fica atrás, abraçando — o jogador (`true`) ou o parceiro */
+  private atrasEhOJogador = true;
   private aoVirar: Array<() => void> = [];
   private aoBeijar: (() => void) | null = null;
   private readonly tmpA = new THREE.Vector3();
@@ -74,17 +93,47 @@ export class BeijoDeitado {
    * para cima). Resolve quando a virada acaba.
    */
   virar(deFrente: boolean, a: Player, b: Companion): Promise<void> {
+    return deFrente ? this.virarPara('frente', a, b) : this.virarPara(null, a, b);
+  }
+
+  /**
+   * De conchinha: os dois virados para o mesmo lado, `quemAbraca` atrás
+   * (o nome da ficha, `RENAN.name`), encostado nas costas do outro.
+   */
+  conchinha(quemAbraca: string, a: Player, b: Companion): Promise<void> {
     if (!this.podem(a, b)) return Promise.resolve();
-    const alvo = deFrente ? 1 : 0;
-    if (this.p === alvo && this.alvo === alvo) return Promise.resolve();
+    const atras = a.rig.spec.name === quemAbraca;
+    if (this.jeito === 'conchinha' && this.p > 0 && this.atrasEhOJogador !== atras) {
+      // trocou quem abraça: desvira primeiro
+      return this.virarPara(null, a, b).then(() => this.conchinha(quemAbraca, a, b));
+    }
+    this.atrasEhOJogador = atras;
+    return this.virarPara('conchinha', a, b);
+  }
+
+  /** `null` é de barriga para cima; de um jeito para o outro, passa por ele */
+  private async virarPara(jeito: Jeito | null, a: Player, b: Companion): Promise<void> {
+    if (!this.podem(a, b)) return;
+    if (jeito && this.jeito !== jeito && (this.p > 0 || this.alvo > 0)) {
+      await this.virarPara(null, a, b);
+      if (!this.podem(a, b)) return;
+    }
+    const alvo = jeito ? 1 : 0;
+    if (this.p === alvo && this.alvo === alvo) return;
     if (this.p === 0 && alvo === 1) {
       // sai de onde estão agora (os abraçadinhos já deixam os dois mais perto)
       this.origemA.copy(a.object.position);
       this.origemB.copy(b.object.position);
       this.lado = this.origemB.x >= this.origemA.x ? 1 : -1;
     }
+    if (jeito) this.jeito = jeito;
     this.alvo = alvo;
-    return new Promise((resolve) => this.aoVirar.push(resolve));
+    await new Promise<void>((resolve) => this.aoVirar.push(resolve));
+  }
+
+  /** de que jeito estão agora (`null` é de barriga para cima) — o teste lê */
+  get comoEstao(): Jeito | null {
+    return this.p > 0 ? this.jeito : null;
   }
 
   /**
@@ -159,33 +208,55 @@ export class BeijoDeitado {
     // ------------------------------------------- o corpo: giro, lugar e pose
     const ra = RAIO_DA_CABECA * a.rig.spec.height;
     const rb = RAIO_DA_CABECA * b.rig.spec.height;
-    const deFrente = (ra + rb) * FOLGA_DE_FRENTE;
-    const noBeijo = (ra + rb) * FOLGA_NO_BEIJO;
-    const distancia = deFrente + (noBeijo - deFrente) * beijo;
     const meio = (this.origemA.x + this.origemB.x) / 2;
-    const xa = meio - (this.lado * distancia) / 2;
-    const xb = meio + (this.lado * distancia) / 2;
+    let xa: number;
+    let xb: number;
+    let ya = this.origemA.y;
+    let yb = this.origemB.y;
+    let giroA: number;
+    let giroB: number;
+    let abracaA: boolean;
+    if (this.jeito === 'frente') {
+      const deFrente = (ra + rb) * FOLGA_DE_FRENTE;
+      const noBeijo = (ra + rb) * FOLGA_NO_BEIJO;
+      const distancia = deFrente + (noBeijo - deFrente) * beijo;
+      xa = meio - (this.lado * distancia) / 2;
+      xb = meio + (this.lado * distancia) / 2;
+      giroA = (this.lado * Math.PI) / 2;
+      giroB = (-this.lado * Math.PI) / 2;
+      // quem abraça é quem está no -X da âncora; o outro descansa o braço
+      abracaA = this.lado > 0;
+    } else {
+      // os dois olham para o lado de quem está NA FRENTE (as costas dele)
+      const paraAFrente = this.atrasEhOJogador ? this.lado : -this.lado;
+      const distancia = (ra + rb) * FOLGA_NA_CONCHINHA;
+      xa = meio + (this.atrasEhOJogador ? -paraAFrente : paraAFrente) * (distancia / 2);
+      xb = meio + (this.atrasEhOJogador ? paraAFrente : -paraAFrente) * (distancia / 2);
+      giroA = (paraAFrente * Math.PI) / 2;
+      giroB = giroA;
+      abracaA = this.atrasEhOJogador;
+      // quem abraça desce um tico para os pés (o Y da âncora é o da cabeça)
+      if (this.atrasEhOJogador) ya -= ATRAS_DESCE;
+      else yb -= ATRAS_DESCE;
+    }
     a.object.position.set(
       this.origemA.x + (xa - this.origemA.x) * k,
-      this.origemA.y,
+      this.origemA.y + (ya - this.origemA.y) * k,
       this.origemA.z + ERGUE * k,
     );
     b.object.position.set(
       this.origemB.x + (xb - this.origemB.x) * k,
-      this.origemB.y,
+      this.origemB.y + (yb - this.origemB.y) * k,
       this.origemB.z + ERGUE * k,
     );
     // o giro é escrito direto (e no alvo do rig, senão o `update` dele puxa
     // de volta): a curva da virada é esta, e não a do giro rápido de andar
-    const giroA = ((this.lado * Math.PI) / 2) * k;
-    const giroB = ((-this.lado * Math.PI) / 2) * k;
-    a.rig.group.rotation.y = giroA;
-    a.rig.setFacing(giroA);
-    b.rig.group.rotation.y = giroB;
-    b.rig.setFacing(giroB);
-    // quem abraça é quem está no -X da âncora; o outro descansa o braço
-    a.rig.setDeLado(k, this.lado > 0);
-    b.rig.setDeLado(k, this.lado < 0);
+    a.rig.group.rotation.y = giroA * k;
+    a.rig.setFacing(giroA * k);
+    b.rig.group.rotation.y = giroB * k;
+    b.rig.setFacing(giroB * k);
+    a.rig.setDeLado(k, abracaA);
+    b.rig.setDeLado(k, !abracaA);
     a.rig.setKiss(beijo);
     b.rig.setKiss(beijo);
 

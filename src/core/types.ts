@@ -951,6 +951,19 @@ export interface GameAPI {
    * quiser e depois chama `virarDeitados(false)`. Ver `entities/BeijoDeitado.ts`.
    */
   beijarDeitados(): Promise<void>;
+  /**
+   * DE CONCHINHA: deitados na mesma âncora, os dois viram de lado para o
+   * MESMO lado, com `quemAbraca` (o nome da ficha: `RENAN.name`) atrás,
+   * encostado nas costas do outro e com o braço por cima. Resolve quando a
+   * virada acaba; `virarDeitados(false)` desfaz.
+   */
+  deitarDeConchinha(quemAbraca: string): Promise<void>;
+  /**
+   * A cortina da tela, sem trocar de cena: escurece (`true`) ou clareia. O
+   * estilo `'sono'` é o de dormir — devagar, com a luazinha e o "zzz" — e é
+   * por baixo dele que a cena faz a noite passar.
+   */
+  escurecerTela(escuro: boolean, estilo?: 'sono'): Promise<void>;
   releaseCompanion(x: number, z: number, facing?: number): void;
   /** troca quem o jogador controla */
   swapCharacters(): void;

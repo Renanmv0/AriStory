@@ -34,9 +34,14 @@ import { flat } from '../core/materials';
 import { Estella } from '../entities/bichos/Estella';
 import { Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 import {
-  BARRACA, barracaIglu, canecaEsmaltada, canga, fogareiroDeMontanha, folhasSecas, interiorDaBarraca,
-  mesinhaDobravel, mochilaCargueira, panelinha, samambaias, troncoCaido, varalDeLuzinhas,
+  BARRACA, acenderBarraca, acenderVaral, barracaIglu, canecaEsmaltada, canga, fecharPortaDaBarraca,
+  fogareiroDeMontanha, folhasSecas, interiorDaBarraca, mesinhaDobravel, mochilaCargueira, panelinha,
+  samambaias, troncoCaido, varalDeLuzinhas,
 } from '../world/acampamento';
+import {
+  AURORA, CREPUSCULO, CeuDaClareira, NOITE, POR_DO_SOL, TARDE_DOURADA, VagaLumes, luzDoMomento,
+  misturarMomentos, momentoDoDia, momentoEmBranco, momentoNaFila, type MomentoDoCeu,
+} from '../world/noite';
 
 /**
  * Parque Villa Lobos — o cenario grande, com a roda gigante ao fundo,
@@ -2290,39 +2295,315 @@ export const villaLobos: SceneDef = {
       });
 
       /*
-       * AS DUAS CÂMERAS DE DENTRO, no referencial da barraca: a LARGA, do
-       * lado da porta e bem alta, mostra os dois inteiros nos colchões; a DO
-       * BEIJO desce quase em cima das cabeças. Deitados de lado, um de frente
-       * para o outro, o perfil dos dois só se vê DE CIMA — pelo lado dos pés
-       * o braço e o queixo tapam o rosto. Ela não corta: desliza durante a
-       * virada, no relógio do jogo (o `w.onUpdate`), e volta do mesmo jeito.
+       * ===================================================== A NOITE (etapa B)
+       *
+       * Pedido do Renan: poder dormir e passar a noite lá — e fechar a
+       * barraca antes de dormir. Lá dentro, "Passar a noite aqui" escurece o
+       * céu de verdade: o mesmo sol e o mesmo céu do motor (`g.luzDoCeu`),
+       * numa fila de momentos — o dia, a tarde dourada, o pôr do sol atrás
+       * da barraca, o crepúsculo e a noite (`world/noite.ts`). Com a noite
+       * chegam as luzes pintadas: o varal acendendo lâmpada por lâmpada, a
+       * lanterna lá dentro (a barraca inteira brilha), os vaga-lumes na borda
+       * da clareira, os grilos e a música de ninar.
+       *
+       * De noite dá para sair e andar pela clareira; SAIR DELA volta o dia (o
+       * resto do parque não anoitece). "Dormir" fecha a barraca — o zíper dando
+       * a volta na porta —, os dois deitam de conchinha (o Renan atrás, a
+       * escolha dele), a lanterna apaga, a tela escurece e eles acordam com a
+       * aurora: o sol nascendo atrás do lago, que eles veem da porta.
+       *
+       * Tudo anda no RELÓGIO DO JOGO (as `animacoes` do `w.onUpdate`), e não
+       * no `g.wait`: num celular lento o céu e a câmera chegam juntos.
        */
-      const CAMERA_LARGA = [new THREE.Vector3(0.8, 3.4, 2.2), new THREE.Vector3(0, 0.25, -0.15)] as const;
-      const CAMERA_DO_BEIJO = [new THREE.Vector3(0.3, 2.2, 0.45), new THREE.Vector3(0, 0.38, -0.5)] as const;
+      const DIA = momentoDoDia(villaLobos.ambient);
+      const FILA_DA_NOITE = [DIA, TARDE_DOURADA, POR_DO_SOL, CREPUSCULO, NOITE];
+      const FILA_DA_MANHA = [AURORA, DIA];
+      const agora = misturarMomentos(DIA, DIA, 0, momentoEmBranco());
+      let estado: 'dia' | 'noite' | 'manha' = 'dia';
+      /** a lanterna apagada para dormir: o céu da noite não acende ela de novo */
+      let lanternaApagada = false;
+      /** numa cena (deitados, sentados na canga): a posição do corpo é da âncora */
+      let ocupados = false;
+      /** o teste acelera o relógio da noite (o navegador do teste anda devagar) */
+      const ritmo = { vezes: 1 };
+
+      const ceu = new CeuDaClareira();
+      w.add(w.place(ceu.group, CL.x, 0, CL.z));
+      const vagaLumes = new VagaLumes(CL, 2.2, CL.raio + 1.4, 28, 4242, [{ x: TENDA.x, z: TENDA.z, r: 1.8 }]);
+      w.add(vagaLumes.group);
+      let brilhoDosVagaLumes = 0;
+
+      /** o céu do momento e as luzes que vão com ele: o varal, a lanterna e os vaga-lumes */
+      const pintarMomento = (): void => {
+        g.luzDoCeu(luzDoMomento(agora));
+        ceu.aplicar(agora);
+        const k = agora.estrelas;
+        acenderVaral(varal, THREE.MathUtils.smoothstep(k, 0.12, 0.6));
+        const acesa = k > 0.3 && !lanternaApagada;
+        if (acesa !== (barraca.userData.acesa === true)) {
+          acenderBarraca(barraca, acesa);
+          if (acesa) g.som('clique');
+        }
+        brilhoDosVagaLumes = THREE.MathUtils.clamp((k - 0.25) / 0.6, 0, 1);
+      };
+
+      // ------------------------------------------- as animações do relógio do jogo
+      interface Animacao { t: number; dur: number; passo: (k: number) => void; fim: () => void }
+      const animacoes: Animacao[] = [];
+      const animar = (dur: number, passo: (k: number) => void): Promise<void> =>
+        new Promise((fim) => animacoes.push({ t: 0, dur, passo, fim }));
+      const passarOCeu = (fila: readonly MomentoDoCeu[], dur: number): Promise<void> =>
+        animar(dur, (k) => {
+          momentoNaFila(fila, k, agora);
+          pintarMomento();
+        });
+      const moverPorta = (de: number, ate: number, dur = 0.85): Promise<void> =>
+        animar(dur, (k) => fecharPortaDaBarraca(barraca, de + (ate - de) * k));
+
+      /*
+       * AS CÂMERAS DE CENA, no referencial da barraca. Dentro: a LARGA, do
+       * lado da porta e bem alta, mostra os dois inteiros nos colchões; a DO
+       * BEIJO desce quase em cima das cabeças (deitados de lado, o perfil dos
+       * dois só se vê DE CIMA — pelo lado dos pés, o braço e o queixo tapam o
+       * rosto); a DA CONCHINHA é a mesma, um tico mais aberta. Fora: a DO
+       * ANOITECER, baixa na frente da barraca, olha por cima dela o céu do
+       * pôr do sol (a oeste, atrás); a DA PORTA olha o zíper fechar; e a DO
+       * NASCER fica atrás dos dois, na porta, olhando o lago a leste.
+       *
+       * A câmera não corta: desliza no relógio do jogo, e um deslize novo
+       * interrompe o anterior saindo de onde ele parou.
+       */
+      type Tomada = readonly [THREE.Vector3, THREE.Vector3];
+      const CAMERA_LARGA: Tomada = [new THREE.Vector3(0.8, 3.4, 2.2), new THREE.Vector3(0, 0.25, -0.15)];
+      const CAMERA_DO_BEIJO: Tomada = [new THREE.Vector3(0.3, 2.2, 0.45), new THREE.Vector3(0, 0.38, -0.5)];
+      const CAMERA_DA_CONCHINHA: Tomada = [new THREE.Vector3(0.45, 2.55, 0.85), new THREE.Vector3(0, 0.34, -0.35)];
+      const CAMERA_DO_ANOITECER: Tomada = [new THREE.Vector3(1.1, 1.0, 5.4), new THREE.Vector3(-0.5, 3.4, -4)];
+      const CAMERA_DA_PORTA: Tomada = [new THREE.Vector3(1.2, 1.65, 4.3), new THREE.Vector3(0, 0.62, 1.2)];
+      const CAMERA_DO_NASCER: Tomada = [new THREE.Vector3(-1.1, 2.7, -0.4), new THREE.Vector3(6.5, 1.5, 6.2)];
       const camera = { de: CAMERA_LARGA[0].clone(), para: CAMERA_LARGA[1].clone() };
-      let travelling: { de: THREE.Vector3; para: THREE.Vector3; t: number } | null = null;
-      const deslizarCamera = (alvo: readonly [THREE.Vector3, THREE.Vector3]): void => {
-        travelling = { de: alvo[0], para: alvo[1], t: 0 };
-      };
-      const apontarCamera = (api: GameAPI, de: THREE.Vector3, para: THREE.Vector3): void => {
+      const apontarCamera = (api: GameAPI): void => {
         barraca.updateWorldMatrix(true, false);
-        api.setCameraOmbro(barraca.localToWorld(de.clone()), barraca.localToWorld(para.clone()));
+        api.setCameraOmbro(barraca.localToWorld(camera.de.clone()), barraca.localToWorld(camera.para.clone()));
       };
-      w.onUpdate((dt) => {
-        if (!travelling) return;
-        const antes = travelling.t;
-        travelling.t = Math.min(1, antes + dt / 1.1);
-        // o passo da curva suave aplicado ao que FALTA: chega no alvo em 1,1 s
-        // saindo de onde estiver, mesmo se um deslize interromper o outro
-        const k0 = antes * antes * (3 - 2 * antes);
-        const k1 = travelling.t * travelling.t * (3 - 2 * travelling.t);
-        const passo = k0 >= 1 ? 1 : (k1 - k0) / (1 - k0);
-        camera.de.lerp(travelling.de, passo);
-        camera.para.lerp(travelling.para, passo);
-        apontarCamera(w.game, camera.de, camera.para);
-        if (travelling.t >= 1) travelling = null;
+      let deslize: Animacao | null = null;
+      const pararCamera = (): void => {
+        if (!deslize) return;
+        animacoes.splice(animacoes.indexOf(deslize), 1);
+        deslize.fim();
+        deslize = null;
+      };
+      const deslizarCamera = (alvo: Tomada, dur = 1.1): Promise<void> => {
+        pararCamera();
+        const de0 = camera.de.clone();
+        const para0 = camera.para.clone();
+        return new Promise((fim) => {
+          const a: Animacao = {
+            t: 0, dur, fim,
+            passo: (k) => {
+              const s = k * k * (3 - 2 * k);
+              camera.de.lerpVectors(de0, alvo[0], s);
+              camera.para.lerpVectors(para0, alvo[1], s);
+              apontarCamera(w.game);
+              if (k >= 1 && deslize === a) deslize = null;
+            },
+          };
+          deslize = a;
+          animacoes.push(a);
+        });
+      };
+
+      let proximoGrilo = 0;
+      w.onUpdate((dt0) => {
+        const dt = dt0 * ritmo.vezes;
+        for (const a of [...animacoes]) {
+          a.t = Math.min(a.dur, a.t + dt);
+          a.passo(a.dur > 0 ? a.t / a.dur : 1);
+          if (a.t >= a.dur) {
+            const i = animacoes.indexOf(a);
+            if (i >= 0) animacoes.splice(i, 1);
+            a.fim();
+          }
+        }
+        ceu.update(dt);
+        vagaLumes.update(dt, brilhoDosVagaLumes);
+        if (estado !== 'noite') return;
+        proximoGrilo -= dt;
+        if (proximoGrilo <= 0) {
+          g.som('grilo');
+          proximoGrilo = 1.4 + Math.random() * 2.6;
+        }
+        // SAIR DA CLAREIRA VOLTA O DIA: o resto do parque não anoitece
+        if (ocupados) return;
+        const eu = g.playerPosition();
+        if (Math.hypot(eu.x - CL.x, eu.z - CL.z) > CL.raio + 2.2) void voltarODia();
       });
 
+      /** a noite acaba (os dois saíram da clareira): o céu volta ao dia em 2 s */
+      const voltarODia = async (): Promise<void> => {
+        if (estado === 'dia') return;
+        estado = 'dia';
+        lanternaApagada = false;
+        g.trocarMusica(null);
+        g.toast('Longe da clareira, o dia voltou', '☀️');
+        await passarOCeu([misturarMomentos(agora, agora, 0, momentoEmBranco()), DIA], 2.2);
+        g.luzDoCeu(null);
+        if ((barraca.userData.portaFechada ?? 0) > 0) fecharPortaDaBarraca(barraca, 0);
+      };
+
+      // ------------------------------------------------------------- deitar
+      const deitarNaBarraca = (api: GameAPI): void => {
+        api.lockPlayer(true);
+        api.ridePlayer(deitados, new THREE.Vector3(-BARRACA.deitar.x, 0, 0), 1, 0);
+        api.rideCompanion(deitados, new THREE.Vector3(BARRACA.deitar.x, 0, 0), 1, 0);
+        api.setLying(true);
+        /*
+         * O TETO SAI e a câmera olha de cima, do lado da porta: os dois
+         * aparecem inteiros nos colchões, com as paredes baixas da barraca em
+         * volta. Da isométrica, a barraca fechada não deixaria ver ninguém.
+         */
+        if (teto) teto.visible = false;
+        pararCamera();
+        camera.de.copy(CAMERA_LARGA[0]);
+        camera.para.copy(CAMERA_LARGA[1]);
+        apontarCamera(api);
+      };
+
+      /** os dois de pé na frente da porta, olhando `para` */
+      const sairDaBarraca = (api: GameAPI, para: number): void => {
+        api.setLying(false);
+        if (teto) teto.visible = true;
+        pararCamera();
+        api.setCameraOmbro(null);
+        const saidaA = daTenda(-0.4, 2.2);
+        const saidaB = daTenda(0.4, 2.2);
+        api.releasePlayer(saidaA.x, saidaA.z, para);
+        api.releaseCompanion(saidaB.x, saidaB.z, para);
+      };
+
+      // -------------------------------------------------------- a noite cai
+      const anoitecer = async (api: GameAPI): Promise<void> => {
+        await conversa([
+          [R, 'E se a gente passasse a noite aqui?'],
+          [A, 'A noite inteira? Na barraca?'],
+          [R, 'Com estrela, vaga-lume… e você do lado.'],
+          [A, 'Fechado. Mas primeiro eu quero ver o céu escurecer.'],
+        ]);
+        // a tomada de fora: o teto volta e a câmera sai da barraca para olhar o
+        // céu por cima dela — o pôr do sol fica atrás, a oeste
+        if (teto) teto.visible = true;
+        ceu.aplicar(agora);
+        ceu.visivel = true;
+        void deslizarCamera(CAMERA_DO_ANOITECER, 2.2);
+        api.trocarMusica('noite-na-clareira');
+        await passarOCeu(FILA_DA_NOITE, 10);
+        estado = 'noite';
+        api.toast('Anoiteceu na clareira', '🌙');
+        await animar(1.4, () => {});
+        // de volta para dentro (o teto sai quando a câmera já está em cima)
+        await deslizarCamera(CAMERA_LARGA, 1.6);
+        ceu.visivel = false;
+        if (teto) teto.visible = false;
+        await conversa([
+          [A, 'Escureceu de vez.'],
+          [R, 'Lá fora tá cheio de vaga-lume. E aqui dentro tem a lanterna.'],
+        ]);
+      };
+
+      // ----------------------------------------- dormir: fechar, conchinha, sono
+      const dormir = async (api: GameAPI): Promise<void> => {
+        await conversa([
+          [R, 'Bora dormir?'],
+          [A, 'Bora. Mas fecha a barraca antes, que de noite entra bicho.'],
+          [R, 'Fechando…'],
+        ]);
+        // FECHAR A BARRACA, visto de fora: o zíper dá a volta na porta
+        if (teto) teto.visible = true;
+        await deslizarCamera(CAMERA_DA_PORTA, 1.4);
+        api.som('ziper');
+        await moverPorta(0, 1);
+        await animar(0.7, () => {});
+        // de volta para dentro, e de conchinha: o Renan atrás, abraçando
+        await deslizarCamera(CAMERA_LARGA, 1.2);
+        if (teto) teto.visible = false;
+        void deslizarCamera(CAMERA_DA_CONCHINHA, 1.3);
+        await api.deitarDeConchinha(RENAN.name);
+        // o boa noite dos dois (a escolha do Renan)
+        await conversa([
+          [A, 'Boa noite, bebito'],
+          [R, 'Boa noite, bebitolito'],
+        ]);
+        await animar(0.6, () => {});
+        // a lanterna apaga
+        lanternaApagada = true;
+        acenderBarraca(barraca, false);
+        api.som('clique');
+        await animar(1.4, () => {});
+        // DORMEM: a tela escurece devagar e a noite passa lá embaixo
+        await api.escurecerTela(true, 'sono');
+        api.trocarMusica(null);
+        estado = 'manha';
+        misturarMomentos(AURORA, AURORA, 0, agora);
+        pintarMomento();
+        lanternaApagada = false;
+        await api.wait(1.6);
+        await api.escurecerTela(false, 'sono');
+        api.som('passarinho');
+        await animar(0.8, () => {});
+        await conversa([
+          [R, 'Bom dia…'],
+          [A, 'Já é de manhã? A gente dormiu a noite inteira assim?'],
+          [R, 'De conchinha. Não te soltei nenhuma vez.'],
+        ]);
+        api.som('passarinho');
+        void deslizarCamera(CAMERA_LARGA, 1.1);
+        await api.virarDeitados(false);
+        // ABRIR A BARRACA de manhã, e os dois saem para ver o sol nascer
+        if (teto) teto.visible = true;
+        await deslizarCamera(CAMERA_DA_PORTA, 1.2);
+        api.som('ziper');
+        await moverPorta(1, 0);
+        const paraOLago = Math.atan2(NO_LAGO.x - TENDA.x, NO_LAGO.z - TENDA.z);
+        api.setLying(false);
+        const saidaA = daTenda(-0.4, 2.2);
+        const saidaB = daTenda(0.4, 2.2);
+        api.releasePlayer(saidaA.x, saidaA.z, paraOLago);
+        api.releaseCompanion(saidaB.x, saidaB.z, paraOLago);
+        api.lockPlayer(true);
+        api.holdCompanion(NO_LAGO.x, NO_LAGO.z);
+        // O SOL NASCENDO ATRÁS DO LAGO: a câmera fica atrás dos dois, na porta
+        ceu.aplicar(agora);
+        ceu.visivel = true;
+        await deslizarCamera(CAMERA_DO_NASCER, 1.8);
+        const manha = passarOCeu(FILA_DA_MANHA, 8);
+        await conversa([
+          [A, 'Olha o sol nascendo atrás do lago.'],
+          [R, 'Só por isso já valeu a noite.'],
+          [A, 'Valeu por você, bebito.'],
+        ]);
+        await manha;
+        api.unlock({
+          id: 'noite-na-barraca',
+          title: 'A primeira noite na barraca',
+          place: 'Parque Villa Lobos',
+          note: 'Uma noite inteira na clareira: o varal aceso, os vaga-lumes, a barraca fechadinha e os dois de conchinha. E de manhã, o sol nascendo atrás do lago.',
+          icon: '🌅',
+        });
+        estado = 'dia';
+        g.luzDoCeu(null);
+        ceu.visivel = false;
+        pararCamera();
+        api.setCameraOmbro(null);
+        api.freeCompanion();
+        api.lockPlayer(false);
+      };
+
+      const MEMORIA_DA_BARRACA = {
+        id: 'barraca-a-dois',
+        title: 'Os dois na barraca',
+        place: 'Parque Villa Lobos',
+        note: 'Deitados nos colchões da barraca laranja, um do lado do outro, com o barulho do parque lá fora bem baixinho.',
+        icon: '⛺',
+      };
       const PORTA = daTenda(0, 1.95);
       w.interact({
         id: 'clareira:barraca',
@@ -2332,32 +2613,30 @@ export const villaLobos: SceneDef = {
         onInteract: async (api) => {
           const quer = await api.ask('Entrar na barraca?', ['Entrar', 'Agora não']);
           if (quer !== 0) return;
-          api.lockPlayer(true);
-          api.ridePlayer(deitados, new THREE.Vector3(-BARRACA.deitar.x, 0, 0), 1, 0);
-          api.rideCompanion(deitados, new THREE.Vector3(BARRACA.deitar.x, 0, 0), 1, 0);
-          api.setLying(true);
-          /*
-           * O TETO SAI e a câmera olha de cima, do lado da porta: os dois
-           * aparecem inteiros nos colchões, com as paredes baixas da barraca em
-           * volta. Da isométrica, a barraca fechada não deixaria ver ninguém.
-           */
-          if (teto) teto.visible = false;
-          travelling = null;
-          camera.de.copy(CAMERA_LARGA[0]);
-          camera.para.copy(CAMERA_LARGA[1]);
-          apontarCamera(api, camera.de, camera.para);
+          ocupados = true;
+          deitarNaBarraca(api);
           await api.wait(1.0);
-          await conversa([
-            [R, 'Cabe direitinho nós dois.'],
-            [A, 'Colchão no chão, saco de dormir aberto… isso aqui é um hotel.'],
-            [R, 'Um hotel de uma estrela só. E ela tá aqui do meu lado.'],
-            // fala do Renan, literal: "bebito" é como os dois se chamam (e
-            // "bebitolito", quando é mais fofo). O lugar foi ideia do Ari —
-            // é ele quem diz
-            [A, 'Agora é só a gente bebito'],
-          ]);
+          if (estado === 'noite') {
+            await conversa([
+              [R, 'Aqui dentro tá quentinho.'],
+              // a fala do Renan, literal, também de noite
+              [A, 'Agora é só a gente bebito'],
+            ]);
+          } else {
+            await conversa([
+              [R, 'Cabe direitinho nós dois.'],
+              [A, 'Colchão no chão, saco de dormir aberto… isso aqui é um hotel.'],
+              [R, 'Um hotel de uma estrela só. E ela tá aqui do meu lado.'],
+              // fala do Renan, literal: "bebito" é como os dois se chamam (e
+              // "bebitolito", quando é mais fofo). O lugar foi ideia do Ari —
+              // é ele quem diz
+              [A, 'Agora é só a gente bebito'],
+            ]);
+          }
           for (;;) {
-            const i = await api.ask('E agora?', ['Ficar abraçadinhos', 'Dar um beijinho', 'Sair da barraca']);
+            // de dia, a terceira escolha é a noite chegar; de noite, é dormir
+            const terceira = estado === 'noite' ? 'Dormir' : 'Passar a noite aqui';
+            const i = await api.ask('E agora?', ['Ficar abraçadinhos', 'Dar um beijinho', terceira, 'Sair da barraca']);
             if (i === 0) {
               // mais perto: os dois escorregam para o meio dos colchões
               api.ridePlayer(deitados, new THREE.Vector3(-0.2, 0, 0), 1, 0);
@@ -2377,7 +2656,7 @@ export const villaLobos: SceneDef = {
                * A conversa é DE FRENTE, e só depois eles voltam de barriga
                * para cima, para o lugar de antes.
                */
-              deslizarCamera(CAMERA_DO_BEIJO);
+              void deslizarCamera(CAMERA_DO_BEIJO);
               await api.beijarDeitados();
               const vez = api.bump('clareira:beijinhos');
               const falas: Array<Array<readonly [string, string]>> = [
@@ -2387,32 +2666,35 @@ export const villaLobos: SceneDef = {
                 [[A, 'Aqui ninguém vê.'], [R, 'Por isso mesmo.']],
               ];
               await conversa(falas[(vez - 1) % falas.length]);
-              deslizarCamera(CAMERA_LARGA);
+              void deslizarCamera(CAMERA_LARGA);
               await api.virarDeitados(false);
+            } else if (i === 2 && estado !== 'noite') {
+              await anoitecer(api);
+            } else if (i === 2) {
+              // a noite inteira, até sair de manhã: termina lá fora
+              await dormir(api);
+              ocupados = false;
+              api.unlock(MEMORIA_DA_BARRACA);
+              return;
             } else {
               break;
             }
           }
-          await conversa([
-            [R, 'Depois a gente volta.'],
-            [A, 'Quando escurecer, de preferência.'],
-          ]);
-          api.setLying(false);
-          if (teto) teto.visible = true;
-          travelling = null;
-          api.setCameraOmbro(null);
-          const saidaA = daTenda(-0.4, 2.2);
-          const saidaB = daTenda(0.4, 2.2);
-          api.releasePlayer(saidaA.x, saidaA.z, GIRO);
-          api.releaseCompanion(saidaB.x, saidaB.z, GIRO);
+          if (estado === 'noite') {
+            await conversa([
+              [R, 'Vamos ver os vaga-lumes lá fora?'],
+              [A, 'Vamos. Mas depois a gente volta pra dormir.'],
+            ]);
+          } else {
+            await conversa([
+              [R, 'Depois a gente volta.'],
+              [A, 'Quando escurecer, de preferência.'],
+            ]);
+          }
+          sairDaBarraca(api, GIRO);
           api.lockPlayer(false);
-          api.unlock({
-            id: 'barraca-a-dois',
-            title: 'Os dois na barraca',
-            place: 'Parque Villa Lobos',
-            note: 'Deitados nos colchões da barraca laranja, um do lado do outro, com o barulho do parque lá fora bem baixinho.',
-            icon: '⛺',
-          });
+          ocupados = false;
+          api.unlock(MEMORIA_DA_BARRACA);
         },
       });
 
@@ -2423,6 +2705,7 @@ export const villaLobos: SceneDef = {
         label: 'Sentar na canga', icon: '🧺',
         highlight: pano,
         onInteract: async (api) => {
+          ocupados = true;
           api.lockPlayer(true);
           // sentados NO CHÃO: o quadril do rig fica ~0,45 acima da origem, e a
           // canga está a 2 cm — a âncora desce o resto
@@ -2450,6 +2733,7 @@ export const villaLobos: SceneDef = {
           api.releasePlayer(NA_CANGA.x - 0.4, NA_CANGA.z + 0.3, GIRO);
           api.releaseCompanion(NA_CANGA.x + 0.3, NA_CANGA.z - 0.4, GIRO);
           api.lockPlayer(false);
+          ocupados = false;
         },
       });
 
@@ -2460,6 +2744,13 @@ export const villaLobos: SceneDef = {
         label: 'Olhar o fogareiro', icon: '🔥',
         highlight: mesinha,
         onInteract: async () => {
+          if (estado === 'noite') {
+            await conversa([
+              [A, 'Já escureceu. E o chocolate quente?'],
+              [R, 'Fica pra próxima noite. Prometo.'],
+            ]);
+            return;
+          }
           await conversa([
             [R, 'Fogareirinho de montanha. Cabe na palma da mão.'],
             [A, 'E a gente vai cozinhar o quê aí?'],
@@ -2469,7 +2760,11 @@ export const villaLobos: SceneDef = {
       });
 
       /** gancho de teste: o `scripts/clareira.mjs` mede por aqui */
-      barraca.userData.teste = { CLAREIRA: CL, TENDA, PORTA, NA_CANGA, NO_FOGAREIRO, teto, deitados };
+      barraca.userData.teste = {
+        CLAREIRA: CL, TENDA, PORTA, NA_CANGA, NO_FOGAREIRO, teto, deitados, ceu, vagaLumes, varal, ritmo,
+        estado: () => estado,
+        momento: () => ({ ...agora }),
+      };
     }
 
     /* ================================================ A LUNA E O PIQUENIQUE

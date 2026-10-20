@@ -275,6 +275,39 @@ câmera até quase em cima das cabeças durante a virada e volta depois
 `g.soltarCoracoes()` solta em cima da CABEÇA de quem joga, no mundo — vale
 montado numa âncora (a posição do corpo ali é local a ela).
 
+**De conchinha** é o mesmo motor: `await g.deitarDeConchinha(RENAN.name)`
+vira os dois para o MESMO lado, com quem foi nomeado atrás, abraçando (a
+escolha do Renan na barraca). Trocar de jeito (beijo ↔ conchinha) passa
+sozinho por barriga para cima.
+
+## A noite (a clareira atrás do lago)
+
+Um pedaço do cenário pode ANOITECER sem luz nova no motor: a noite é o mesmo
+sol e o mesmo céu, com outras cores, pelo `g.luzDoCeu` a cada quadro. O kit é
+o `world/noite.ts`:
+
+- **os momentos** (`TARDE_DOURADA`, `POR_DO_SOL`, `CREPUSCULO`, `NOITE`,
+  `AURORA`, e o dia do próprio cenário por `momentoDoDia(cena.ambient)`) e
+  `momentoNaFila(fila, t, alvo)` para passar de um ao outro; `luzDoMomento`
+  dá o que o `g.luzDoCeu` pede. O horizonte do momento é também a névoa;
+- **a cúpula** (`CeuDaClareira`): só para as tomadas de câmera de cena (a
+  isométrica olha o chão e nunca vê o céu) — o degradê, o clarão em volta do
+  sol baixo, as estrelas em lote, a lua e o disco do sol. Ligue só na tomada
+  (`ceu.visivel`): de dentro da isométrica ela é desenho jogado fora;
+- **os vaga-lumes** (`VagaLumes`): dois lotes para todos, cada um piscando
+  no seu tempo.
+
+As luzes acompanham o céu num lugar só (`pintarMomento` na clareira): o
+varal acende pela força das estrelas, a lanterna liga passando de 0,3. E a
+noite é LOCAL: sair da clareira devolve o dia (o resto do parque não
+anoitece). A cena tem um relógio de animações próprio no `w.onUpdate`
+(`animar`, o deslize de câmera, a porta) — não `g.wait`, que é de parede: num
+celular lento o céu e a câmera chegariam em tempos diferentes. O teste o
+acelera pelo gancho (`ritmo.vezes`).
+
+Para dormir, `g.escurecerTela(true, 'sono')` (a cortina azul devagar, com a
+luazinha) — é por baixo dela que a cena troca a noite pela aurora.
+
 ## Andar de cima (o mezanino da boutique)
 
 O motor não tem "andar": a física de caminhada escreve só `x` e `z`, e a

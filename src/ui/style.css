@@ -1041,6 +1041,24 @@ body.touch-device .dialogue .next { right: 84px; }
     radial-gradient(circle at 50% 50%, #ffffff 0%, #d6f6ff 42%, #59b9ef 100%);
 }
 
+/* dormir (a noite na barraca): a cortina desce devagar, azul-noite, com a
+   luazinha e o "zzz" no meio — é por baixo dela que a noite passa */
+.veil.sono {
+  background: radial-gradient(circle at 50% 46%, #26305a 0%, #141a33 55%, #0b0f22 100%);
+  transition: opacity 1.6s ease;
+}
+.veil.sono::after {
+  content: '🌙 zzz';
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  font-size: 34px;
+  letter-spacing: 6px;
+  color: #e9e4ff;
+  opacity: 0.85;
+}
+
 /* ------------------------------------------------- a dica da peça apontada */
 .dica-3d {
   position: fixed;

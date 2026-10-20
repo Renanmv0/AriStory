@@ -234,7 +234,9 @@ braço de baixo dobra na frente do peito, o de cima de quem abraça passa por
 cima do ombro do outro, as pernas encolhem, e no beijo os olhos fecham. A
 distância é da CABEÇA, não do corpo: na régua chibi ela é bem mais larga que o
 tronco. Deitados de lado, o perfil dos dois só se vê DE CIMA — pelo lado dos
-pés, o braço e o queixo tapam o rosto.
+pés, o braço e o queixo tapam o rosto. A CONCHINHA é o mesmo corpo com os dois
+virados para o mesmo lado (`g.deitarDeConchinha(nome)`, quem é nomeado fica
+atrás, abraçando); de um jeito para o outro, passa por barriga para cima.
 
 ### Zonas de mecânica
 

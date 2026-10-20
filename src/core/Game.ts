@@ -2260,6 +2260,14 @@ export class Game implements GameAPI {
     return this.beijoDeitado.beijar(this.player, this.parceiro);
   }
 
+  deitarDeConchinha(quemAbraca: string): Promise<void> {
+    return this.beijoDeitado.conchinha(quemAbraca, this.player, this.parceiro);
+  }
+
+  escurecerTela(escuro: boolean, estilo?: 'sono'): Promise<void> {
+    return this.ui.fade(escuro, estilo);
+  }
+
   setOutfit(traje: 'normal' | 'banho'): void {
     this.player.rig.setOutfit(traje);
     this.parceiro.rig.setOutfit(traje);
