@@ -258,6 +258,18 @@ await page.waitForTimeout(300);
 await foto('3-aberto');
 const rosto = await page.evaluate(() => document.querySelector('.bebito-book .pagina.rosto')?.textContent ?? '');
 checar(/Bebito/.test(rosto) && /\d{2}\/\d{2}\/\d{2}/.test(rosto) && /Ari/.test(rosto) && /Renan/.test(rosto), 'a folha de rosto: nomes e data', rosto.replace(/\s+/g, ' ').slice(0, 200));
+// as frases do Renan, literais: a regra de que só os dois escrevem, e o bilhete da guarda
+checar(rosto.includes('Só nós dois podemos escrever aqui.'), 'a primeira regra do caderno', rosto.replace(/\s+/g, ' ').slice(0, 400));
+if (!CEL) {
+  const bilhete = await page.evaluate(() => {
+    const b = document.querySelector('.bebito-book .pagina.esq .bilhete-de-achados');
+    const linha = b?.querySelector('.escrita');
+    if (!b || !linha) return null;
+    return { texto: b.textContent.replace(/\s+/g, ' ').trim(), cabe: linha.getBoundingClientRect().right <= b.getBoundingClientRect().right + 1 };
+  });
+  checar(bilhete && bilhete.texto.endsWith('Devolver para o Ari ou para o Renan') && !/recompensa/.test(bilhete.texto) && bilhete.cabe,
+    'o bilhete da guarda: só devolver, numa linha dentro do papel', bilhete);
+}
 
 // ------------------------------------------------- c. folhear e escrever
 await page.locator('.bebito-book .virar.depois').click();
