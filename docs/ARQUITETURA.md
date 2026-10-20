@@ -223,6 +223,19 @@ A cutscene da cama também troca a câmera por `setCameraOmbro`, e não pelo
 justamente essa direção que a isométrica encurta — os corpos viravam dois tocos
 ao lado das cabeças.
 
+**Virar de lado é o `facing`.** Na âncora de deitar, girar o rig em Y (o mesmo
+`group.rotation.y` de andar) é rolar o corpo em volta da espinha. É assim que
+o beijo deitado da barraca (`entities/BeijoDeitado.ts`, pela cena com
+`g.beijarDeitados()` e `g.virarDeitados()`) vira os dois de frente um para o
+outro: o giro e o lugar são escritos a cada quadro, o corpo sobe uns
+centímetros (de lado, quem encosta no colchão é a largura dos ombros, maior que
+a espessura do tronco), e o rig só mistura a pose por cima (`setDeLado`): o
+braço de baixo dobra na frente do peito, o de cima de quem abraça passa por
+cima do ombro do outro, as pernas encolhem, e no beijo os olhos fecham. A
+distância é da CABEÇA, não do corpo: na régua chibi ela é bem mais larga que o
+tronco. Deitados de lado, o perfil dos dois só se vê DE CIMA — pelo lado dos
+pés, o braço e o queixo tapam o rosto.
+
 ### Zonas de mecânica
 
 Uma mecânica pode valer só num pedaço do cenário. A quadra de frisbee é o

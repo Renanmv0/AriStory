@@ -938,6 +938,19 @@ export interface GameAPI {
    * isto so troca a animacao para a pose de descanso, com o balanco dos bracos.
    */
   setLying(deitados: boolean): void;
+  /**
+   * Deitados lado a lado na mesma âncora (`setLying`), os dois VIRAM DE LADO,
+   * um de frente para o outro (`true`), ou voltam de barriga para cima
+   * (`false`, para o lugar de antes). Resolve quando a virada acaba.
+   */
+  virarDeitados(deFrente: boolean): Promise<void>;
+  /**
+   * O BEIJO DEITADO: viram de frente (se ainda não viraram), chegam perto,
+   * fecham os olhos e se beijam, com o estalinho e um coração de cada um.
+   * Resolve no fim do beijo com os dois AINDA de frente — a cena fala o que
+   * quiser e depois chama `virarDeitados(false)`. Ver `entities/BeijoDeitado.ts`.
+   */
+  beijarDeitados(): Promise<void>;
   releaseCompanion(x: number, z: number, facing?: number): void;
   /** troca quem o jogador controla */
   swapCharacters(): void;

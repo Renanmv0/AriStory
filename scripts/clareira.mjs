@@ -10,12 +10,18 @@
  *   cima dela, com o raio do jogador);
  * - chegar na clareira pela primeira vez dispara a conversa e a memória;
  * - ENTRAR NA BARRACA: os dois deitados nos colchões (filhos da âncora), o
- *   `teto` some e a câmera olha de cima; o beijinho solta corações, os
- *   abraçadinhos aproximam os dois, e sair devolve o teto, a câmera e a dupla
- *   na frente da porta — com a memória no diário;
+ *   `teto` some e a câmera olha de cima; a conversa de entrada fecha com a
+ *   fala do Renan ("Agora é só a gente bebito"); o BEIJINHO vira os dois de
+ *   lado, um de frente para o outro (giro de ±90° na âncora), as cabeças
+ *   chegam perto, os olhos fecham, e um coração nasce em cima de cada um —
+ *   na barraca, e não no meio do mapa —, e depois da conversa eles voltam de
+ *   barriga para cima, para o lugar de antes; os abraçadinhos aproximam os
+ *   dois, e sair devolve o teto, a câmera e a dupla na frente da porta — com
+ *   a memória no diário;
  * - sentar na canga e olhar o fogareiro;
  * - fotos: de longe, de perto, com a câmera girada, a barraca de dentro, os
- *   dois na canga e o fogareiro de perto.
+ *   dois virados de frente e no beijo (a câmera do beijo, de cima), os dois na
+ *   canga e o fogareiro de perto.
  *
  * Uso: node scripts/clareira.mjs /caminho/prefixo
  */
@@ -170,7 +176,16 @@ await page.evaluate(() => window.jogo.focusCamera(null));
 const promptDaPorta = await ate(/entrar na barraca/i, P.PORTA.x, P.PORTA.z, Math.PI + Math.PI / 4);
 await page.keyboard.press('KeyE');
 await escolher('Entrar');
-await passarFalas();
+// a conversa de entrada, lida fala por fala (depois de cada uma terminar de escrever)
+const falasDeEntrada = [];
+for (let i = 0; i < 80 && !(await page.locator('.escolhas.show button').count()); i++) {
+  if (await page.locator('.dialogue.show').count()) {
+    await page.waitForTimeout(1800);
+    falasDeEntrada.push((await page.locator('.dialogue .text').textContent().catch(() => '')) ?? '');
+    await page.keyboard.press('KeyE');
+  }
+  await page.waitForTimeout(300);
+}
 const deitados = await page.evaluate(() => {
   const j = window.jogo;
   let t = null;
@@ -184,10 +199,47 @@ const deitados = await page.evaluate(() => {
 });
 await page.screenshot({ path: `${OUT}-dentro.png` });
 const coracoesAntes = await page.evaluate(() => window.jogo.scene.children.length);
+/** o estado do beijo deitado: o giro de cada um, as cabeças, os olhos e os corações no ar */
+const doBeijo = () => page.evaluate(() => {
+  const j = window.jogo;
+  const V = j.player.object.position.constructor;
+  const a = j.player.rig.cabecaNoMundo(new V());
+  const b = j.parceiro.rig.cabecaNoMundo(new V());
+  const coracoes = [];
+  j.scene.traverse((o) => { if (o.userData?.coracao) coracoes.push(o.getWorldPosition(new V())); });
+  let t = null;
+  j.current.world.root.traverse((o) => { if (o.userData?.peca === 'barraca-iglu') t = o.userData.teste; });
+  return {
+    giros: [j.player.rig.group.rotation.y, j.parceiro.rig.group.rotation.y],
+    cabecas: a.distanceTo(b),
+    olho: Math.min(...[j.player.rig, j.parceiro.rig].map((r) => r.olhos[0].scale.y)),
+    // a que distância da barraca nasceu o coração mais longe dela
+    coracaoLonge: coracoes.length ? Math.max(...coracoes.map((c) => Math.hypot(c.x - t.TENDA.x, c.z - t.TENDA.z))) : null,
+    xs: [j.player.object.position.x, j.parceiro.object.position.x],
+    dialogo: !!document.querySelector('.dialogue.show'),
+  };
+});
+const antesDoBeijo = await doBeijo();
 await escolher('Dar um beijinho');
-await page.waitForTimeout(500);
-await page.screenshot({ path: `${OUT}-beijinho.png` });
+// o beijo roda no relógio do jogo (o navegador do teste anda devagar): segue
+// o estado até a conversa de depois aparecer
+const beijo = { giroMax: 0, sinaisOpostos: false, cabecasMin: Infinity, olhoMin: Infinity, coracaoLonge: null, fotos: 0 };
+for (let i = 0; i < 600; i++) {
+  const e = await doBeijo();
+  beijo.giroMax = Math.max(beijo.giroMax, Math.abs(e.giros[0]), Math.abs(e.giros[1]));
+  if (Math.abs(e.giros[0]) > 1.5 && Math.sign(e.giros[0]) !== Math.sign(e.giros[1])) beijo.sinaisOpostos = true;
+  beijo.cabecasMin = Math.min(beijo.cabecasMin, e.cabecas);
+  beijo.olhoMin = Math.min(beijo.olhoMin, e.olho);
+  if (e.coracaoLonge !== null) beijo.coracaoLonge = Math.max(beijo.coracaoLonge ?? 0, e.coracaoLonge);
+  if (beijo.fotos === 0 && Math.abs(e.giros[0]) > 1.55) { beijo.fotos = 1; await page.screenshot({ path: `${OUT}-de-frente.png` }); }
+  if (beijo.fotos === 1 && e.coracaoLonge !== null) { beijo.fotos = 2; await page.screenshot({ path: `${OUT}-beijinho.png` }); }
+  if (e.dialogo) break;
+  await page.waitForTimeout(50);
+}
 await passarFalas();
+// o "E agora?" só volta depois que os dois desviraram: mede aí
+for (let i = 0; i < 240 && !(await page.locator('.escolhas.show button').count()); i++) await page.waitForTimeout(250);
+const depoisDoBeijo = await doBeijo();
 await escolher('Ficar abraçadinhos');
 await passarFalas();
 const abracados = await page.evaluate(() => [+window.jogo.player.object.position.x.toFixed(2), +window.jogo.parceiro.object.position.x.toFixed(2)]);
@@ -239,6 +291,13 @@ checar(['clareira:barraca', 'clareira:canga', 'clareira:fogareiro'].every((id) =
 checar(promptDaPorta, 'o prompt de entrar na barraca nao apareceu na porta');
 checar(!deitados.tetoVisivel && deitados.euNaAncora && deitados.eleNaAncora, `dentro: o teto devia sumir e os dois deitar na ancora: ${JSON.stringify(deitados)}`);
 checar(Math.abs(deitados.lados[0] - deitados.lados[1]) > 0.6, `cada um no seu colchao: ${JSON.stringify(deitados.lados)}`);
+checar(falasDeEntrada.at(-1) === 'Agora é só a gente bebito', `a entrada devia fechar com a fala do Renan, literal: ${JSON.stringify(falasDeEntrada)}`);
+checar(beijo.giroMax > 1.55 && beijo.sinaisOpostos, `no beijinho, os dois viram de lado, um de frente para o outro: ${JSON.stringify(beijo)}`);
+checar(beijo.cabecasMin < antesDoBeijo.cabecas - 0.12, `no beijinho, as cabecas chegam perto: de ${antesDoBeijo.cabecas.toFixed(2)} a ${beijo.cabecasMin.toFixed(2)}`);
+checar(beijo.olhoMin < 0.3, `no beijinho, os olhos fecham: ${beijo.olhoMin.toFixed(2)}`);
+checar(beijo.coracaoLonge !== null && beijo.coracaoLonge < 2, `os coracoes do beijinho nascem na barraca: ${beijo.coracaoLonge}`);
+checar(depoisDoBeijo.giros.every((g) => Math.abs(g) < 0.01) && depoisDoBeijo.olho > 1.2, `depois do beijinho, de barriga para cima de novo: ${JSON.stringify(depoisDoBeijo)}`);
+checar(depoisDoBeijo.xs.every((x, i) => Math.abs(x - antesDoBeijo.xs[i]) < 0.01), `depois do beijinho, cada um no lugar de antes: ${JSON.stringify(antesDoBeijo.xs)} -> ${JSON.stringify(depoisDoBeijo.xs)}`);
 checar(Math.abs(abracados[0] - abracados[1]) < 0.45, `abracadinhos, os dois mais perto: ${JSON.stringify(abracados)}`);
 checar(saiu.tetoVisivel && saiu.solto && saiu.daPorta < 1.2, `sair devolve o teto e poe a dupla na porta: ${JSON.stringify(saiu)}`);
 checar(memoriaDaBarraca, 'a memoria da barraca nao entrou no diario');
@@ -249,6 +308,8 @@ falhas.push(...erros);
 
 console.log('1. chegada:', JSON.stringify(chegada), '· memoria', memoriaDaChegada);
 console.log('2. planta:', JSON.stringify(planta));
+console.log('4. entrada:', JSON.stringify(falasDeEntrada));
+console.log('4. beijinho:', JSON.stringify({ ...beijo, antes: antesDoBeijo.cabecas, depois: depoisDoBeijo.giros }));
 console.log('4. dentro:', JSON.stringify(deitados), '· abracados', JSON.stringify(abracados), '· saiu', JSON.stringify(saiu), '· coracoes', coracoesAntes);
 console.log('5. canga:', JSON.stringify(sentados), '· fogareiro', JSON.stringify(falaDoFogareiro));
 await browser.close();

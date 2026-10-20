@@ -2289,6 +2289,40 @@ export const villaLobos: SceneDef = {
         })();
       });
 
+      /*
+       * AS DUAS CÂMERAS DE DENTRO, no referencial da barraca: a LARGA, do
+       * lado da porta e bem alta, mostra os dois inteiros nos colchões; a DO
+       * BEIJO desce quase em cima das cabeças. Deitados de lado, um de frente
+       * para o outro, o perfil dos dois só se vê DE CIMA — pelo lado dos pés
+       * o braço e o queixo tapam o rosto. Ela não corta: desliza durante a
+       * virada, no relógio do jogo (o `w.onUpdate`), e volta do mesmo jeito.
+       */
+      const CAMERA_LARGA = [new THREE.Vector3(0.8, 3.4, 2.2), new THREE.Vector3(0, 0.25, -0.15)] as const;
+      const CAMERA_DO_BEIJO = [new THREE.Vector3(0.3, 2.2, 0.45), new THREE.Vector3(0, 0.38, -0.5)] as const;
+      const camera = { de: CAMERA_LARGA[0].clone(), para: CAMERA_LARGA[1].clone() };
+      let travelling: { de: THREE.Vector3; para: THREE.Vector3; t: number } | null = null;
+      const deslizarCamera = (alvo: readonly [THREE.Vector3, THREE.Vector3]): void => {
+        travelling = { de: alvo[0], para: alvo[1], t: 0 };
+      };
+      const apontarCamera = (api: GameAPI, de: THREE.Vector3, para: THREE.Vector3): void => {
+        barraca.updateWorldMatrix(true, false);
+        api.setCameraOmbro(barraca.localToWorld(de.clone()), barraca.localToWorld(para.clone()));
+      };
+      w.onUpdate((dt) => {
+        if (!travelling) return;
+        const antes = travelling.t;
+        travelling.t = Math.min(1, antes + dt / 1.1);
+        // o passo da curva suave aplicado ao que FALTA: chega no alvo em 1,1 s
+        // saindo de onde estiver, mesmo se um deslize interromper o outro
+        const k0 = antes * antes * (3 - 2 * antes);
+        const k1 = travelling.t * travelling.t * (3 - 2 * travelling.t);
+        const passo = k0 >= 1 ? 1 : (k1 - k0) / (1 - k0);
+        camera.de.lerp(travelling.de, passo);
+        camera.para.lerp(travelling.para, passo);
+        apontarCamera(w.game, camera.de, camera.para);
+        if (travelling.t >= 1) travelling = null;
+      });
+
       const PORTA = daTenda(0, 1.95);
       w.interact({
         id: 'clareira:barraca',
@@ -2308,16 +2342,19 @@ export const villaLobos: SceneDef = {
            * volta. Da isométrica, a barraca fechada não deixaria ver ninguém.
            */
           if (teto) teto.visible = false;
-          barraca.updateWorldMatrix(true, false);
-          api.setCameraOmbro(
-            barraca.localToWorld(new THREE.Vector3(0.8, 3.4, 2.2)),
-            barraca.localToWorld(new THREE.Vector3(0, 0.25, -0.15)),
-          );
+          travelling = null;
+          camera.de.copy(CAMERA_LARGA[0]);
+          camera.para.copy(CAMERA_LARGA[1]);
+          apontarCamera(api, camera.de, camera.para);
           await api.wait(1.0);
           await conversa([
-            [A, 'Cabe direitinho nós dois.'],
-            [R, 'Colchão no chão, saco de dormir aberto… isso aqui é um hotel.'],
-            [A, 'Um hotel de uma estrela só. E ela tá aqui do meu lado.'],
+            [R, 'Cabe direitinho nós dois.'],
+            [A, 'Colchão no chão, saco de dormir aberto… isso aqui é um hotel.'],
+            [R, 'Um hotel de uma estrela só. E ela tá aqui do meu lado.'],
+            // fala do Renan, literal: "bebito" é como os dois se chamam (e
+            // "bebitolito", quando é mais fofo). O lugar foi ideia do Ari —
+            // é ele quem diz
+            [A, 'Agora é só a gente bebito'],
           ]);
           for (;;) {
             const i = await api.ask('E agora?', ['Ficar abraçadinhos', 'Dar um beijinho', 'Sair da barraca']);
@@ -2333,15 +2370,25 @@ export const villaLobos: SceneDef = {
               api.soltarCoracoes(2);
               await api.wait(2.4);
             } else if (i === 1) {
-              api.som('beijo');
-              api.soltarCoracoes(5);
+              /*
+               * O BEIJO DEITADO (`entities/BeijoDeitado.ts`): os dois viram de
+               * lado, um de frente para o outro, chegam perto, fecham os olhos
+               * e se beijam — o estalinho e um coração de cada um saem de lá.
+               * A conversa é DE FRENTE, e só depois eles voltam de barriga
+               * para cima, para o lugar de antes.
+               */
+              deslizarCamera(CAMERA_DO_BEIJO);
+              await api.beijarDeitados();
               const vez = api.bump('clareira:beijinhos');
               const falas: Array<Array<readonly [string, string]>> = [
+                [[A, 'Bebitolito…'], [R, 'Hm?'], [A, 'Nada. Só queria te chamar assim.']],
                 [[A, 'Mais um?'], [R, 'Sempre mais um.']],
                 [[R, 'Esse foi pra contar.'], [A, 'Então eu tô te devendo vários.']],
                 [[A, 'Aqui ninguém vê.'], [R, 'Por isso mesmo.']],
               ];
               await conversa(falas[(vez - 1) % falas.length]);
+              deslizarCamera(CAMERA_LARGA);
+              await api.virarDeitados(false);
             } else {
               break;
             }
@@ -2352,6 +2399,7 @@ export const villaLobos: SceneDef = {
           ]);
           api.setLying(false);
           if (teto) teto.visible = true;
+          travelling = null;
           api.setCameraOmbro(null);
           const saidaA = daTenda(-0.4, 2.2);
           const saidaB = daTenda(0.4, 2.2);

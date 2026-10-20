@@ -252,6 +252,29 @@ g.lockPlayer(false);
 Cuidado com móvel na frente: numa câmera isométrica o encosto do sofá tapa quem
 senta colado nele. Sente **à frente** do encosto e confira com foto.
 
+### Deitados: a cama e a barraca
+
+Deitar é a mesma âncora girada `-π/2` em X (os dois lado a lado no X dela,
+os pés no `+Z`), `g.setLying(true)` e a câmera de cima por `g.setCameraOmbro`
+— a isométrica encurta os corpos. Deitados na mesma âncora, os dois também
+**viram de lado, um de frente para o outro** e se beijam:
+
+```ts
+await g.beijarDeitados();      // viram de lado, chegam perto, fecham os olhos, beijo e corações
+await conversa([...]);         // a conversa DE FRENTE
+await g.virarDeitados(false);  // de barriga para cima, no lugar de antes
+```
+
+Quem anima é o motor (`entities/BeijoDeitado.ts`, no relógio do jogo); a cena
+só escolhe a câmera. De lado, o perfil dos dois só se vê **de cima** — pelo
+lado dos pés o braço e o queixo tapam o rosto. A barraca da clareira desliza a
+câmera até quase em cima das cabeças durante a virada e volta depois
+(`CAMERA_DO_BEIJO` em `scenes/villaLobos.ts`): sem corte seco, num
+`w.onUpdate` que aplica a curva suave ao que falta.
+
+`g.soltarCoracoes()` solta em cima da CABEÇA de quem joga, no mundo — vale
+montado numa âncora (a posição do corpo ali é local a ela).
+
 ## Andar de cima (o mezanino da boutique)
 
 O motor não tem "andar": a física de caminhada escreve só `x` e `z`, e a
