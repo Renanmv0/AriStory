@@ -467,6 +467,24 @@ molde de peça que se ENTRA sem virar cena nova:
   peça do fogareiro, da panelinha e das canecas, a `fundir()` junta material
   por material com a mesinha (o alumínio, o esmalte).
 - Samambaias de um lugar inteiro são UM lote (`samambaias([...])`).
+- **A porta FECHA** (`fecharPortaDaBarraca(raiz, k)`): o pano do sobreteto
+  é a casca do domo dentro do D, em COLUNAS da direita (o lado do rolo) para
+  a esquerda — fechar é mostrar colunas (`setDrawRange`), atrás do puxador
+  que corre pelo contorno do D, com o zíper (um tubo) se desenhando junto. O
+  pano é cortado no corte do teto, como a barraca, e fica 1,2% para fora da
+  lona (a sobra não é coplanar).
+- **A barraca ACENDE** (`acenderBarraca(raiz, acesa)`): a lona troca pelo
+  mesmo pano com `glow` (os pares ficam em `userData.lonas`), o globo da
+  lanterna acende, o halo e a poça quente lá dentro aparecem — a poça na
+  altura de cima dos sacos de dormir, senão os colchões a escondem — e o
+  leque de luz vaza pela porta enquanto ela está aberta. O **varal**
+  (`acenderVaral(varal, k)`) acende lâmpada por lâmpada pela cor do halo de
+  cada uma.
+- **Muitas luzes num desenho** é o `brilhoEmLote` (`core/materials.ts`): um
+  `InstancedMesh` de quadradinhos que o vertex shader vira para a câmera; o
+  tamanho é a escala da cópia e a força é a cor dela (somada: preto é
+  apagado). O `Sprite` não se instancia. Os halos do varal, os vaga-lumes e
+  as estrelas (`world/noite.ts`) usam ele, sempre com `semSombra`.
 
 ## Depois de criar
 

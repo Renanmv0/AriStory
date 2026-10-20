@@ -720,14 +720,19 @@ export class Ui {
    * (entrar e sair do laboratório): a classe entra ANTES de a cortina subir e
    * só sai depois que ela desceu, senão a cor troca no meio do esmaecer.
    */
-  fade(on: boolean, estilo?: 'digital'): Promise<void> {
-    if (on) this.veil.classList.toggle('digital', estilo === 'digital');
+  fade(on: boolean, estilo?: 'digital' | 'sono'): Promise<void> {
+    if (on) {
+      this.veil.classList.toggle('digital', estilo === 'digital');
+      this.veil.classList.toggle('sono', estilo === 'sono');
+    }
     this.veil.classList.toggle('on', on);
+    // o sono é devagar (o `transition` do `.veil.sono` no CSS)
+    const espera = this.veil.classList.contains('sono') ? 1700 : 360;
     return new Promise((resolve) =>
       window.setTimeout(() => {
-        if (!on) this.veil.classList.remove('digital');
+        if (!on) this.veil.classList.remove('digital', 'sono');
         resolve();
-      }, 360),
+      }, espera),
     );
   }
 

@@ -265,6 +265,68 @@ export function brilhoDeLuz(color: number, forca = 0.8): THREE.SpriteMaterial {
 }
 
 /**
+ * O BRILHO EM LOTE: o mesmo halo macio do `brilhoDeLuz`, para MUITAS luzes
+ * num desenho só — as lâmpadas do varal, os vaga-lumes, as estrelas.
+ *
+ * `THREE.Sprite` não se instancia (cada um é um desenho por quadro). Aqui o
+ * halo é um `InstancedMesh` de um quadradinho (`PlaneGeometry(1, 1)`), e o
+ * vertex shader vira cada cópia de frente para a câmera: o CENTRO da cópia
+ * vai para o espaço da câmera e o quadrado é aberto lá, no plano da tela —
+ * vale para a isométrica e para a câmera de cena. O TAMANHO é a escala da
+ * cópia (a matriz dela) e a FORÇA é a cor por cópia (`setColorAt`): como a
+ * cor é somada (`AdditiveBlending`), preto é apagado. É assim que o
+ * vaga-lume pisca e a estrela aparece aos poucos sem mexer no material, que
+ * é um só para todo mundo da mesma cor. Sem névoa: a estrela está longe, e
+ * apagaria.
+ *
+ * Halo não faz sombra: quem usa marca `userData.semSombra` (o shader de
+ * sombra não sabe virar o quadrado para a câmera).
+ */
+const brilhosEmLote = new Map<string, THREE.MeshBasicMaterial>();
+export function brilhoEmLote(color: number, forca = 0.8): THREE.MeshBasicMaterial {
+  const key = `${color}|${forca}`;
+  const hit = brilhosEmLote.get(key);
+  if (hit) return hit;
+  const mat = new THREE.MeshBasicMaterial({
+    color, map: degradeDeLuz(), transparent: true, opacity: forca,
+    blending: THREE.AdditiveBlending, depthWrite: false, fog: false,
+  });
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace(
+      '#include <project_vertex>',
+      `vec4 mvPosition = vec4( 0.0, 0.0, 0.0, 1.0 );
+      float tamanhoDoBrilho = length( modelMatrix[ 0 ].xyz );
+      #ifdef USE_INSTANCING
+        mvPosition = instanceMatrix * mvPosition;
+        tamanhoDoBrilho *= length( instanceMatrix[ 0 ].xyz );
+      #endif
+      mvPosition = modelViewMatrix * mvPosition;
+      mvPosition.xy += transformed.xy * tamanhoDoBrilho;
+      gl_Position = projectionMatrix * mvPosition;`,
+    );
+  };
+  mat.customProgramCacheKey = () => 'brilho-em-lote';
+  brilhosEmLote.set(key, mat);
+  return mat;
+}
+
+/**
+ * O CÉU EM DEGRADÊ: a cúpula das tomadas de câmera de cena (o pôr do sol e a
+ * noite na clareira). A cor vem por VÉRTICE — o horizonte, o alto e o
+ * clarão em volta do sol, que a cena repinta a cada quadro da virada —, sem
+ * luz, sem névoa, de dentro (`BackSide`) e sem gravar profundidade: tudo o
+ * que é do mundo passa na frente dela.
+ */
+let materialDoCeu: THREE.MeshBasicMaterial | null = null;
+export function ceuEmDegrade(): THREE.MeshBasicMaterial {
+  if (materialDoCeu) return materialDoCeu;
+  materialDoCeu = new THREE.MeshBasicMaterial({
+    vertexColors: true, side: THREE.BackSide, depthWrite: false, fog: false,
+  });
+  return materialDoCeu;
+}
+
+/**
  * A CLARIDADE DA JANELA: a mancha de luz do dia que a janela joga no chão (e,
  * bem mais fraca, o feixe que desce até ela). Mesma família da `luzNoChao` —
  * cor SOMADA ao que está embaixo, sem luz de verdade no motor —, só que com o

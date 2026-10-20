@@ -141,6 +141,19 @@ export const CLIMAS: Record<string, Clima> = {
     bumbo: true,
     palmas: true,
   },
+  /**
+   * A NOITE NA CLAREIRA (a etapa B do acampamento): uma canção de ninar de
+   * caixinha — devagar, em fá, a marimba rara e sem chocalho. Ligada pela
+   * cena quando anoitece e desligada quando o dia volta.
+   */
+  'noite-na-clareira': {
+    bpm: 66,
+    tonica: 41, // fá
+    giro: [maj7(0), m7(9), maj7(5), m7(2)],
+    melodia: 0.42,
+    chocalho: false,
+    escala: PENTA,
+  },
   /** usado enquanto nenhuma cena pediu clima */
   padrao: {
     bpm: 88,
