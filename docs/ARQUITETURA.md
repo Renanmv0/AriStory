@@ -337,6 +337,31 @@ por trás do painel.
 `node scripts/celular.mjs /tmp/cel` mede isso: reprova se qualquer botão cobrir
 um pixel do prompt, da fala ou dos botões de escolha.
 
+### O Bebito book: um caderno de MEDIDA FIXA
+
+O caderninho da barraca (`ui/bebitoBook.ts`, regras em
+`minigames/bebitoBook.ts`) é o único painel desenhado numa medida fixa — a
+página tem 520 × 740 px de desenho — e escalado inteiro (`transform: scale`
+no `.palco`) para caber na tela. Foi de propósito: o texto quebra de linha
+pela LARGURA da linha, e com a medida fixa a mesma linha cabe o mesmo tanto
+de letra no computador e no celular; numa página fluida, o que se escreveu
+no computador transbordaria no celular.
+
+Três coisas que andam juntas e não podem se separar:
+
+- **a letra é do Google Fonts** (`index.html`: Caveat do Ari, Kalam do
+  Renan), com reserva de letra do sistema;
+- **a medida da linha mora em `LETRA` e `LARGURA_DA_LINHA`** (o
+  `measureText` de um canvas), e tem que bater com o CSS de
+  `.bebito-book .linha.de-ari` / `.de-renan` — é por ela que a palavra desce;
+- **a letra senta na pauta** pelo `--desce` de cada fonte (a base medida da
+  Caveat fica a 31 px do alto da linha de 42, a da Kalam a 28).
+
+No celular, o teclado sobe por cima da linha: o caderno sobe junto
+(`ajustarAoTeclado`, pelo `visualViewport`). Cada linha é um `<input>`, e o
+`Input` do motor já ignora tecla digitada em campo (menos o Escape). O
+caderno vai inteiro para o save um tiquinho depois de cada letra.
+
 ### Quadro de memórias
 
 Duas coisas parecidas com nomes parecidos, e não são a mesma:

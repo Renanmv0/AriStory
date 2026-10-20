@@ -85,6 +85,11 @@ devolve quando o dia volta. Os sons dela: `ziper` (os dentinhos passando
 por cima de um "zzzz" que sobe; `n` par sobe, ímpar desce — fechar e abrir),
 `grilo` (três trinadinhos a ~4,4 kHz, bem baixo: é fundo, tocado pela cena a
 cada 1,4–4 s de noite) e `passarinho` (dois piados na pentatônica, de manhã).
+O **Bebito book** (o caderninho da barraca) tem dois: `rabisco` (a caneta no
+papel, uma letra — um risquinho de chiado agudo de ~50 ms a 0,032, que o
+caderno toca no máximo a cada 45 ms; o `n` muda o filtro) e `caneta` (o
+clique duplo da esferográfica quando a caneta troca de mão e quando o
+elástico sai e volta).
 
 **Tensão sem perder o fofo** (o pedido do Renan para a defesa da estufa): a
 marimba e os acordes com sétima continuam, e entram chaves opcionais no

@@ -45,6 +45,8 @@ import type { EstiloDeRegador } from '../world/regador';
 import { MEMORIAS } from '../world/memoriasData';
 import { retratoDePraga } from '../world/retratoDePraga';
 import { retratoDoFalante } from '../world/retratoDoElenco';
+import type { BebitoBookNoSave, Escritor } from '../minigames/bebitoBook';
+import type { ResultadoDoBebitoBook } from '../ui/bebitoBook';
 import { MODULOS, moduloAtual, moduloDaLicao } from '../minigames/aula/apostila';
 import type { ProgressoDaApostila, ResultadoDaApostila } from '../minigames/aula/tipos';
 import { ARI, RENAN } from '../characters/cast';
@@ -496,16 +498,18 @@ export class Game implements GameAPI {
       this.ui.fimOpen ||
       this.ui.lojaJosefinaOpen ||
       this.ui.apostilaOpen ||
+      this.ui.bebitoOpen ||
       this.transitioning;
     this.input.blocked = busy || this.player.locked;
 
-    // com a apostila aberta, J e I não abrem nada por cima do livro
-    if (this.input.justPressed('KeyJ') && !this.ui.menuOpen && !this.ui.apostilaOpen) this.ui.toggleJournal();
+    // com a apostila ou o Bebito book abertos, J e I não abrem nada por cima do livro
+    const livroAberto = this.ui.apostilaOpen || this.ui.bebitoOpen;
+    if (this.input.justPressed('KeyJ') && !this.ui.menuOpen && !livroAberto) this.ui.toggleJournal();
     if (
       (this.input.justPressed('KeyI') || this.input.justPressed('Tab')) &&
       !this.ui.menuOpen &&
       !this.ui.dialogueOpen &&
-      !this.ui.apostilaOpen
+      !livroAberto
     ) {
       if (this.ui.armarioOpen) this.ui.fecharArmario();
       else if (this.ui.mochilaOpen) this.ui.closeMochila();
@@ -535,6 +539,8 @@ export class Game implements GameAPI {
     if (this.ui.lojaJosefinaOpen && this.input.justPressed('Escape')) this.ui.fecharLojaDaJosefina();
     // a apostila é leitura e exercício: o Escape fecha, e quem esperava por ela (a aula) segue
     if (this.ui.apostilaOpen && this.input.justPressed('Escape')) this.ui.fecharApostila();
+    // o caderninho da barraca também: o Escape fecha a capa, e a cena segue
+    if (this.ui.bebitoOpen && this.input.justPressed('Escape')) this.ui.fecharBebitoBook();
     /**
      * A TELA DAS CARTAS DO JARDIM tem o teclado inteiro para ela: 1/2/3 marcam,
      * as setas andam, E/espaço/Enter pegam. E ela NÃO tem Escape — ao contrário
@@ -668,7 +674,7 @@ export class Game implements GameAPI {
       this.ui.dialogueOpen || this.ui.journalOpen || this.ui.mochilaOpen || this.ui.armarioOpen ||
       this.ui.memoriasOpen || this.ui.cardapioOpen || this.ui.quadroOpen || this.ui.lojaOpen ||
       this.ui.cartasOpen || this.ui.livroOpen || this.ui.fimOpen || this.ui.lojaJosefinaOpen ||
-      this.ui.apostilaOpen || this.ui.xadrezOpen;
+      this.ui.apostilaOpen || this.ui.xadrezOpen || this.ui.bebitoOpen;
     this.apontador.atualizar(camera, world.clicaveis, ocupado);
 
     if (this.pos?.ativo) this.pos.desenhar(camera, dt);
@@ -1747,6 +1753,23 @@ export class Game implements GameAPI {
       aoConcluir: (id, estrelas) => {
         this.save.concluirLicao(id, estrelas);
       },
+    });
+  }
+
+  /**
+   * O BEBITO BOOK (`ui/bebitoBook.ts`): o caderninho dos planos, aberto na
+   * barraca. A caneta começa na mão de quem está sendo controlado; o caderno
+   * é gravado inteiro um tiquinho depois de cada letra (`aoSalvar`), então
+   * fechar a aba no meio de uma frase não perde a frase.
+   */
+  abrirBebitoBook(): Promise<ResultadoDoBebitoBook> {
+    const caneta: Escritor = this.player.rig.spec.id === RENAN.id ? 'renan' : 'ari';
+    return this.ui.abrirBebitoBook({
+      caderno: structuredClone(this.save.bebitoBook) as BebitoBookNoSave,
+      nomes: { ari: ARI.name, renan: RENAN.name },
+      caneta,
+      retrato: (quem) => retratoDoFalante(quem),
+      aoSalvar: (caderno) => this.save.salvarBebitoBook(caderno),
     });
   }
 

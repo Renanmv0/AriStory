@@ -86,7 +86,10 @@ export type SomNome =
   // a noite na clareira: o zíper da barraca, o grilo e o passarinho da manhã
   | 'ziper'
   | 'grilo'
-  | 'passarinho';
+  | 'passarinho'
+  // o Bebito book: a caneta riscando o papel e o clique da caneta trocando de mão
+  | 'rabisco'
+  | 'caneta';
 
 /** graus da pentatônica maior, em semitons */
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
@@ -864,6 +867,29 @@ export const EFEITOS: Record<SomNome, Receita> = {
       });
     });
   },
+  /*
+   * A CANETA NO PAPEL, uma letra do Bebito book: um risquinho de chiado agudo
+   * e curtíssimo, bem baixo — toca a cada tecla, então tem que sumir debaixo
+   * de tudo (a régua do `passo`). O `n` muda o filtro e o tamanho: duas
+   * letras seguidas nunca riscam igual.
+   */
+  rabisco: ({ ctx, destino, t, n }) => {
+    // o chiado passa-banda perde quase toda a energia no filtro: o pico de
+    // verdade sai em ~0,04, o mesmo da letra do diálogo (medido no .wav)
+    chiado(ctx, destino, {
+      quando: t, dur: 0.05 + (n % 3) * 0.012, vol: 0.064, sustenta: 0.4,
+      freq: 3000 + (n % 4) * 380, glide: 2200 + (n % 2) * 1100, q: 1.4,
+    });
+  },
+
+  // a caneta trocando de mão: o botão de esferográfica — o clique descendo e a ponta saindo
+  caneta: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.03, vol: 0.12, freq: 4400, q: 3 });
+    tom(ctx, destino, { freq: nota(DO + 24), quando: t, dur: 0.035, vol: 0.03, tipo: 'triangle' });
+    chiado(ctx, destino, { quando: t + 0.075, dur: 0.028, vol: 0.1, freq: 3100, q: 3 });
+    tom(ctx, destino, { freq: nota(DO + 19), quando: t + 0.075, dur: 0.045, vol: 0.028, tipo: 'triangle' });
+  },
+
   // ------------------------------------------------- a noite na clareira
   /*
    * O ZÍPER DA BARRACA fechando (e abrindo): os dentinhos passando um a um —

@@ -5339,3 +5339,749 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
   .livro-apostila .topo .secao { font-size: 14.5px; }
   .livro-apostila .placar-da-licao .barra { width: 40px; }
 }
+
+/* =========================================================================
+ * O BEBITO BOOK — o caderninho dos planos, na barraca (`ui/bebitoBook.ts`).
+ *
+ * Tudo dentro do `.palco` é medido em pixels de DESENHO (a página tem
+ * 520 × 740, a capa 532 × 764) e o palco inteiro é escalado para caber na
+ * tela: a linha cabe o mesmo tanto de letra no computador e no celular. A
+ * letra de cada um vem do Google Fonts (`index.html`): Caveat para o Ari,
+ * Kalam para o Renan.
+ * ========================================================================= */
+.bebito-book {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: radial-gradient(ellipse at 50% 42%, rgba(70, 40, 58, 0.5), rgba(18, 10, 22, 0.86));
+}
+.bebito-book.show { display: flex; pointer-events: auto; }
+.bebito-book .mesa {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+}
+.bebito-book .caderno { position: relative; flex: 0 0 auto; }
+.bebito-book .caderno.chegando { animation: caderno-chega 0.55s cubic-bezier(0.2, 0.8, 0.3, 1.08); }
+@keyframes caderno-chega {
+  from { opacity: 0; transform: translateY(34px) scale(0.94) rotate(-1.5deg); }
+  to { opacity: 1; transform: none; }
+}
+.bebito-book .palco { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+
+/* as tintas e as letras: o mesmo par em todo lugar do caderno */
+.bebito-book .de-ari { --tinta: #284c9c; font-family: Caveat, 'Segoe Print', 'Bradley Hand', cursive; font-weight: 400; }
+.bebito-book .de-renan { --tinta: #71368d; font-family: Kalam, 'Comic Sans MS', 'Segoe Print', cursive; font-weight: 400; }
+.bebito-book .escrita { color: var(--tinta); }
+
+/* ------------------------------------------------------------- o livro */
+.bebito-book .livro {
+  position: absolute;
+  left: 22px;
+  top: 0;
+  width: 1064px;
+  height: 764px;
+  perspective: 2600px;
+  transition: transform 0.9s cubic-bezier(0.45, 0.02, 0.25, 1);
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+.bebito-book .livro.simples { width: 532px; }
+/* fechado no computador: só a capa, no meio da mesa */
+.bebito-book .livro.duplo.fechado { transform: translateX(-266px); }
+
+/* as TÁBUAS da capa dura, forradas do mesmo pano: a de trás e (aberta) a da frente */
+.bebito-book .tabua {
+  position: absolute;
+  top: 0;
+  width: 532px;
+  height: 764px;
+  background: var(--pano), linear-gradient(135deg, #d0786a, #bb6156);
+}
+.bebito-book .tabua.dir {
+  left: 532px;
+  border-radius: 3px 16px 16px 3px;
+  /* a grossura do caderno fechado: a beira da tábua, o miolo creme e a outra tábua */
+  box-shadow: 0 3px 0 #9d4c43, 0 5px 0 #f1e7d4, 1px 6px 0 #e3d6bf, 0 8px 0 #8f443c, 0 24px 36px rgba(30, 10, 20, 0.5);
+}
+.bebito-book .tabua.esq {
+  left: 0;
+  visibility: hidden;
+  border-radius: 16px 3px 3px 16px;
+  box-shadow: 0 3px 0 #9d4c43, 0 5px 0 #8f443c, 0 24px 36px rgba(30, 10, 20, 0.5);
+}
+.bebito-book .livro.aberto .tabua.esq { visibility: visible; }
+.bebito-book .simples .tabua.dir { left: 0; }
+.bebito-book .simples .tabua.esq { display: none; }
+/* o elástico, solto na tábua de trás com o caderno aberto */
+.bebito-book .elastico-solto {
+  position: absolute;
+  right: 38px;
+  width: 17px;
+  height: 13px;
+  background: linear-gradient(90deg, #2e2233, #4a3650 45%, #261b2a);
+  border-radius: 2px;
+}
+.bebito-book .elastico-solto.cima { top: -1px; }
+.bebito-book .elastico-solto.baixo { bottom: -1px; }
+
+/* ------------------------------------------------------------- as páginas */
+.bebito-book .pagina {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  width: 520px;
+  height: 740px;
+  overflow: hidden;
+  color: #4a3b46;
+  background: var(--papel), #fffdf6;
+}
+.bebito-book .pagina.esq { left: 12px; visibility: hidden; }
+.bebito-book .livro.aberto .pagina.esq { visibility: visible; }
+.bebito-book .pagina.dir { left: 532px; }
+.bebito-book .simples .pagina.esq { display: none; }
+.bebito-book .simples .pagina.dir { left: 0; }
+/* a dobra: o papel escurece de leve perto da costura, e as beiradas das folhas aparecem do lado de fora */
+.bebito-book .pagina.lado-esq {
+  border-radius: 8px 0 0 8px;
+  background: linear-gradient(270deg, rgba(110, 80, 45, 0.2), rgba(110, 80, 45, 0.06) 26px, transparent 60px), var(--papel), #fffdf6;
+  box-shadow: -1px 0 0 #ece2cf, -2px 1px 0 #fffaf1, -3px 1px 0 #e3d8c3, -4px 2px 0 #fffaf1, -5px 2px 0 #dcd0b8;
+}
+.bebito-book .pagina.lado-dir {
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(90deg, rgba(110, 80, 45, 0.2), rgba(110, 80, 45, 0.06) 26px, transparent 60px), var(--papel), #fffdf6;
+  box-shadow: 1px 0 0 #ece2cf, 2px 1px 0 #fffaf1, 3px 1px 0 #e3d8c3, 4px 2px 0 #fffaf1, 5px 2px 0 #dcd0b8;
+}
+.bebito-book .simples .pagina.lado-dir,
+.bebito-book .simples .folha-virando .pagina {
+  border-radius: 0 8px 8px 0;
+  background: linear-gradient(90deg, rgba(110, 80, 45, 0.24), rgba(110, 80, 45, 0.07) 22px, transparent 52px), var(--papel), #fffdf6;
+}
+.bebito-book .pagina.vazia { visibility: hidden; }
+.bebito-book .dobra {
+  position: absolute;
+  z-index: 3;
+  left: 500px;
+  top: 12px;
+  width: 64px;
+  height: 740px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(90, 60, 30, 0.06) 32%, rgba(70, 45, 25, 0.2) 49.6%, rgba(255, 255, 255, 0.3) 50.4%, rgba(90, 60, 30, 0.06) 68%, transparent);
+}
+.bebito-book .livro.duplo.aberto .dobra { opacity: 1; }
+
+/* a margem vermelha, de cima a baixo, nas páginas de escrever */
+.bebito-book .pergunta-normal::before,
+.bebito-book .pergunta-livre::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: 61px;
+  width: 4px;
+  border-left: 1.5px solid #f09aa5;
+  border-right: 1px solid #f7c8cd;
+  box-sizing: border-box;
+}
+.bebito-book .cabeca-da-pagina {
+  position: absolute;
+  left: 70px;
+  right: 22px;
+  top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font: 800 11px Nunito, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #93abcb;
+}
+.bebito-book .cabeca-da-pagina .vao {
+  position: relative;
+  display: inline-block;
+  min-width: 104px;
+  margin-left: 6px;
+  text-align: right;
+  font-style: normal;
+  letter-spacing: 0;
+  color: #b2c4dc;
+}
+.bebito-book .cabeca-da-pagina .vao em { font-style: normal; letter-spacing: 0.06em; }
+.bebito-book .cabeca-da-pagina .vao b {
+  position: absolute;
+  right: 2px;
+  bottom: 1px;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0.06em;
+  font-size: 23px;
+  line-height: 1;
+  transform: rotate(-2deg);
+}
+.bebito-book .cabeca-da-pagina .vao b.de-renan { font-size: 17px; bottom: 2px; }
+
+/* a PERGUNTA: escrita a caneta de ponta grossa, com marca-texto por baixo */
+.bebito-book .pagina h3.pergunta {
+  position: absolute;
+  left: 70px;
+  right: 22px;
+  top: 38px;
+  height: 90px;
+  margin: 0;
+  display: flex;
+  align-items: flex-end;
+  font: 700 31px/1.04 Caveat, 'Segoe Print', cursive;
+  color: #5a2c55;
+  transform: rotate(-0.6deg);
+  transform-origin: left bottom;
+}
+.bebito-book .pagina h3.pergunta > div { min-width: 0; }
+.bebito-book .pagina h3.pergunta span {
+  padding: 0 6px 1px 3px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  border-radius: 3px 9px 4px 11px;
+  background: linear-gradient(176deg, transparent 46%, var(--marca) 47% 90%, transparent 91%);
+}
+.bebito-book .marca-amarelo { --marca: rgba(255, 214, 80, 0.62); }
+.bebito-book .marca-rosa { --marca: rgba(255, 150, 182, 0.5); }
+.bebito-book .marca-verde { --marca: rgba(140, 222, 168, 0.56); }
+.bebito-book .marca-lilas { --marca: rgba(190, 160, 244, 0.5); }
+.bebito-book .pergunta-livre h3.pergunta { height: 64px; font-size: 36px; }
+.bebito-book .sub-livre { position: absolute; left: 74px; top: 102px; margin: 0; font: 400 17px Kalam, cursive; color: #957195; }
+
+/* a PAUTA: a linha do cabeçalho e treze linhas azuis */
+.bebito-book .pauta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 132px;
+  height: 548px;
+  border-top: 2px solid #a5c3e6;
+  background: repeating-linear-gradient(180deg, transparent 0 41px, #bcd4ee 41px 42px);
+}
+.bebito-book .linha {
+  display: block;
+  box-sizing: border-box;
+  width: 428px;
+  height: 42px;
+  margin: 0 22px 0 70px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  outline: 0;
+  background: transparent;
+  color: var(--tinta);
+  caret-color: var(--tinta);
+  line-height: 42px;
+  transform: translate(var(--anda, 0px), var(--desce, 0px)) rotate(var(--giro, 0deg));
+  transform-origin: 0 80%;
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-tap-highlight-color: transparent;
+}
+/* a letra SENTA NA PAUTA: a base da Caveat fica a 31 px do alto da linha e a
+   da Kalam a 28 (medido); o `--desce` leva as duas para um tiquinho acima do
+   risco azul, e o rabinho do "g" e do "p" passa dele, como na mão */
+.bebito-book .linha.de-ari { font-size: 31px; --desce: 8px; }
+.bebito-book .linha.de-renan { font-size: 23px; --desce: 11px; }
+/* a tinta da esferográfica espalha um fio no papel */
+.bebito-book .linha,
+.bebito-book .escrita { text-shadow: 0 0 0.7px color-mix(in srgb, var(--tinta) 45%, transparent); }
+.bebito-book .linha:focus:not([readonly]) {
+  background: linear-gradient(180deg, transparent 16%, color-mix(in srgb, var(--tinta) 8%, transparent) 16% 94%, transparent 94%);
+}
+.bebito-book .linha::placeholder { color: color-mix(in srgb, var(--tinta) 36%, transparent); opacity: 1; }
+.bebito-book .linha::selection { background: color-mix(in srgb, var(--tinta) 22%, transparent); }
+.bebito-book .linha.alheia { cursor: default; }
+
+.bebito-book .pe-da-pagina { position: absolute; left: 0; right: 0; bottom: 0; height: 60px; pointer-events: none; }
+.bebito-book .pe-da-pagina .rabisco { position: absolute; bottom: 5px; width: 48px; height: 48px; color: #8c5c87; opacity: 0.55; }
+.bebito-book .lado-dir .pe-da-pagina .rabisco { right: 62px; transform: rotate(-8deg); }
+.bebito-book .lado-esq .pe-da-pagina .rabisco { left: 82px; transform: rotate(7deg); }
+.bebito-book .folha-n { position: absolute; bottom: 18px; font: 800 11.5px Nunito, sans-serif; color: #a5b6cd; }
+.bebito-book .lado-dir .folha-n { right: 24px; }
+.bebito-book .lado-esq .folha-n { left: 24px; }
+
+/* ------------------------------------------------------- a folha de rosto */
+.bebito-book .titulo-rosto { position: absolute; left: 0; right: 0; top: 40px; text-align: center; color: #5a2c55; }
+.bebito-book .titulo-rosto .bebito { font: 700 74px/1 Caveat, cursive; }
+.bebito-book .titulo-rosto .book {
+  display: inline-block;
+  margin-left: 10px;
+  font: 700 46px/1 Caveat, cursive;
+  color: #d75a78;
+  transform: rotate(-7deg) translateY(-6px);
+}
+.bebito-book .titulo-rosto .sublinha { display: block; width: 290px; height: 22px; margin: -2px auto 0; color: #eaa3b6; }
+.bebito-book .ficha {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  top: 172px;
+  padding: 14px 22px 4px;
+  border: 2px solid #b8cfea;
+  border-radius: 14px;
+  background: rgba(232, 241, 252, 0.5);
+}
+.bebito-book .ficha::before {
+  content: 'identificação';
+  position: absolute;
+  left: 18px;
+  top: -9px;
+  padding: 0 8px;
+  background: #fffdf6;
+  font: 800 10.5px Nunito, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #93abcb;
+}
+.bebito-book .ficha p { display: flex; align-items: flex-end; gap: 10px; height: 42px; margin: 0 0 8px; }
+.bebito-book .rotulo {
+  flex: 0 0 auto;
+  padding-bottom: 7px;
+  font: 800 11px Nunito, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #809dc4;
+}
+.bebito-book .ficha .vaozinho {
+  flex: 1;
+  min-width: 0;
+  height: 42px;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 0 0 2px 6px;
+  border-bottom: 1.5px solid #b8cfea;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.bebito-book .ficha .de-ari { font-size: 30px; line-height: 1.1; }
+.bebito-book .ficha .de-renan { font-size: 21px; line-height: 1.35; }
+.bebito-book .ficha .e { color: #9d6f98; }
+.bebito-book .regras { position: absolute; left: 52px; right: 52px; top: 428px; }
+.bebito-book .regras .rotulo { margin: 0; padding: 0; }
+.bebito-book .regras ol { margin: 6px 0 0; padding-left: 26px; color: #93abcb; font: 800 13px Nunito, sans-serif; }
+.bebito-book .regras li { margin: 2px 0; }
+.bebito-book .regras li.de-ari { font: 400 29px/1.2 Caveat, cursive; color: var(--tinta); }
+.bebito-book .regras li.de-renan { font: 400 21px/1.55 Kalam, cursive; color: var(--tinta); }
+.bebito-book .rabisco.grande {
+  position: absolute;
+  left: 50%;
+  bottom: 52px;
+  width: 112px;
+  height: 112px;
+  margin-left: -56px;
+  color: #c4733f;
+  opacity: 0.85;
+  transform: rotate(-4deg);
+}
+
+/* ------------------------------------------------ as guardas (o verso das capas) */
+.bebito-book .pagina.guarda { background: var(--guarda) 0 0 / 120px 120px, #fbf1e2; }
+.bebito-book .pagina.guarda.lado-esq { background: linear-gradient(270deg, rgba(110, 80, 45, 0.24), transparent 46px), var(--guarda) 0 0 / 120px 120px, #fbf1e2; }
+.bebito-book .pagina.guarda.lado-dir { background: linear-gradient(90deg, rgba(110, 80, 45, 0.24), transparent 46px), var(--guarda) 0 0 / 120px 120px, #fbf1e2; }
+.bebito-book .bilhete-de-achados {
+  position: absolute;
+  left: 92px;
+  top: 250px;
+  width: 330px;
+  padding: 22px 22px 18px;
+  box-sizing: border-box;
+  background: var(--papel), #fffdf6;
+  border-radius: 6px;
+  text-align: center;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.12), 0 10px 18px rgba(80, 40, 20, 0.22);
+  transform: rotate(-3deg);
+}
+.bebito-book .bilhete-de-achados::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -13px;
+  width: 92px;
+  height: 26px;
+  margin-left: -46px;
+  background: repeating-linear-gradient(45deg, rgba(255, 186, 205, 0.8) 0 7px, rgba(255, 220, 230, 0.8) 7px 14px);
+  transform: rotate(3deg);
+  clip-path: polygon(3% 0, 97% 0, 100% 22%, 97% 48%, 100% 74%, 97% 100%, 3% 100%, 0 76%, 2% 50%, 0 24%);
+}
+.bebito-book .bilhete-de-achados p { margin: 0; }
+.bebito-book .impresso { font: 800 11px Nunito, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #9aa9bf; }
+.bebito-book .bilhete-de-achados .de-renan { font-size: 22px; line-height: 1.5; margin-top: 6px; }
+.bebito-book .bilhete-de-achados .recompensa { font-size: 30px; line-height: 1.1; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.bebito-book .bilhete-de-achados svg { width: 26px; height: 26px; }
+.bebito-book .bolso { position: absolute; left: 70px; right: 70px; bottom: 80px; height: 250px; }
+.bebito-book .cartaozinho {
+  position: absolute;
+  left: 46px;
+  top: 0;
+  width: 250px;
+  height: 160px;
+  padding: 18px 16px;
+  box-sizing: border-box;
+  background: repeating-linear-gradient(180deg, #fffefa 0 29px, #c8daf0 29px 30px), #fffefa;
+  border-top: 3px solid #f2a0ad;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
+  transform: rotate(-6deg);
+}
+.bebito-book .cartaozinho .de-ari { font-size: 27px; }
+.bebito-book .frente-do-bolso {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 176px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(97deg, rgba(255, 255, 255, 0.06) 0 3px, rgba(90, 50, 20, 0.05) 3px 6px), linear-gradient(180deg, #d4a873, #c4945d);
+  clip-path: path('M0 22 L128 22 A 52 52 0 0 0 252 22 L380 22 L380 176 L0 176 Z');
+  filter: drop-shadow(0 -2px 2px rgba(0, 0, 0, 0.15));
+}
+.bebito-book .frente-do-bolso .de-renan { font-size: 26px; color: #6b3f1e; margin-top: 30px; }
+.bebito-book .colofao { position: absolute; left: 0; right: 0; top: 56px; margin: 0; text-align: center; font: 800 10.5px Nunito, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; color: #b58d6d; }
+
+/* ------------------------------------------------------------- a capa */
+.bebito-book .capa {
+  position: absolute;
+  z-index: 10;
+  left: 532px;
+  top: 0;
+  width: 532px;
+  height: 764px;
+  transform-origin: 0 50%;
+  transform-style: preserve-3d;
+  transition: transform 1.05s cubic-bezier(0.45, 0.02, 0.25, 1), opacity 0.22s ease;
+  cursor: pointer;
+  outline: none;
+}
+.bebito-book .simples .capa { left: 0; transition: transform 1s cubic-bezier(0.45, 0.02, 0.25, 1), opacity 0.95s ease-in; }
+.bebito-book .livro.fechado .capa:hover,
+.bebito-book .livro.fechado .capa:focus-visible { transform: rotateY(-7deg); }
+.bebito-book .capa.virada { transform: rotateY(-180deg); }
+.bebito-book .simples .capa.virada { transform: rotateY(-100deg); opacity: 0; }
+.bebito-book .capa.some { opacity: 0; }
+.bebito-book .livro.capa-fora .capa { visibility: hidden; }
+.bebito-book .capa .face {
+  position: absolute;
+  inset: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.bebito-book .capa .frente {
+  border-radius: 3px 16px 16px 3px;
+  background: var(--pano), linear-gradient(135deg, #db7f70, #c86b5f 55%, #b75d52);
+  box-shadow: inset 0 0 0 1px rgba(90, 25, 25, 0.25), inset 0 2px 0 rgba(255, 255, 255, 0.12);
+}
+.bebito-book .capa .verso {
+  transform: rotateY(180deg);
+  border-radius: 16px 3px 3px 16px;
+  background: var(--pano), linear-gradient(225deg, #d0786a, #bb6156);
+}
+.bebito-book .capa .verso .pagina { left: 12px; top: 12px; }
+/* a LOMBADA, de pano mais escuro, com a costura e o vinco da dobradiça */
+.bebito-book .lombada {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 46px;
+  border-radius: 3px 0 0 3px;
+  background: var(--pano), linear-gradient(90deg, #8a4239, #a9544a 40%, #9c4b42 82%, #7a3831);
+  box-shadow: inset -2px 0 0 rgba(0, 0, 0, 0.16), 3px 0 4px rgba(60, 15, 15, 0.22);
+}
+.bebito-book .costura-da-lombada { position: absolute; top: 10px; bottom: 10px; right: 9px; border-right: 2px dashed rgba(255, 228, 206, 0.75); }
+.bebito-book .costura-da-capa {
+  position: absolute;
+  left: 62px;
+  right: 16px;
+  top: 16px;
+  bottom: 16px;
+  border: 2px dashed rgba(255, 234, 212, 0.78);
+  border-radius: 10px;
+}
+.bebito-book .desgaste {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 100% 0, rgba(255, 238, 222, 0.22), transparent 64px),
+    radial-gradient(circle at 100% 100%, rgba(255, 238, 222, 0.2), transparent 64px),
+    radial-gradient(ellipse at 62% 34%, rgba(255, 255, 255, 0.1), transparent 62%);
+}
+.bebito-book .rabiscos-de-gel { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.8; pointer-events: none; }
+/* a ETIQUETA do nome, de papel, com fio duplo */
+.bebito-book .etiqueta {
+  position: absolute;
+  left: 116px;
+  top: 158px;
+  width: 340px;
+  height: 204px;
+  box-sizing: border-box;
+  padding-top: 20px;
+  text-align: center;
+  color: #5a2c55;
+  background: var(--papel), #fdf5e4;
+  border-radius: 18px;
+  box-shadow: 0 2px 0 rgba(120, 60, 40, 0.28), 0 12px 24px rgba(70, 20, 20, 0.34);
+  transform: rotate(-2deg);
+}
+.bebito-book .etiqueta::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 2px solid #e5a6b6;
+  border-radius: 12px;
+}
+.bebito-book .etiqueta::after {
+  content: '';
+  position: absolute;
+  inset: 13px;
+  border: 1.5px dashed #d8b2cc;
+  border-radius: 9px;
+}
+.bebito-book .titulo-da-capa { position: relative; z-index: 1; white-space: nowrap; }
+.bebito-book .titulo-da-capa .bebito { font: 700 78px/0.95 Caveat, cursive; }
+.bebito-book .titulo-da-capa .book {
+  display: inline-block;
+  margin-left: 8px;
+  font: 700 48px/1 Caveat, cursive;
+  color: #d75a78;
+  transform: rotate(-8deg) translateY(-6px);
+}
+.bebito-book .floreio { position: relative; display: block; width: 230px; height: 20px; margin: -2px auto 0; color: #dc93aa; overflow: visible; }
+.bebito-book .sub-da-capa { position: relative; font: 400 19px Kalam, cursive; color: #82597b; margin-top: 2px; }
+.bebito-book .donos-da-capa { position: relative; font: 700 25px Caveat, cursive; color: #8d6488; margin-top: 0; }
+.bebito-book .donos-da-capa .de-ari,
+.bebito-book .donos-da-capa .de-renan { font-family: inherit; color: var(--tinta); }
+/* os ADESIVOS: o desenho com a borda branca de adesivo recortado */
+.bebito-book .adesivo {
+  position: absolute;
+  filter: drop-shadow(0 1.5px 1px rgba(60, 20, 20, 0.4)) drop-shadow(0 6px 7px rgba(60, 20, 20, 0.22));
+}
+.bebito-book .adesivo svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.bebito-book .adesivo .recorte,
+.bebito-book .adesivo .recorte * { fill: #fffdf8; stroke: #fffdf8; stroke-width: 12; stroke-linejoin: round; }
+.bebito-book .adesivo-barraca { right: 74px; top: 404px; width: 150px; height: 120px; transform: rotate(6deg); }
+.bebito-book .adesivo-lua { left: 78px; top: 46px; width: 112px; height: 98px; transform: rotate(-10deg); }
+.bebito-book .adesivo-coracao { right: 96px; top: 566px; width: 80px; height: 80px; transform: rotate(14deg); }
+.bebito-book .adesivo-estrela { right: 92px; top: 62px; width: 56px; height: 56px; transform: rotate(14deg); }
+/* a POLAROID dos dois, presa com fita */
+.bebito-book .polaroid {
+  position: absolute;
+  left: 92px;
+  top: 446px;
+  width: 178px;
+  height: 210px;
+  box-sizing: border-box;
+  padding: 12px 12px 0;
+  background: #fffdf8;
+  border-radius: 3px;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2), 0 12px 20px rgba(60, 20, 20, 0.32);
+  transform: rotate(-7deg);
+}
+.bebito-book .polaroid .foto {
+  position: relative;
+  height: 146px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 1px;
+  background: linear-gradient(180deg, #2c2a5c, #6c4b8e 52%, #f2a27a);
+}
+.bebito-book .polaroid .foto img { position: relative; z-index: 1; width: 52%; margin: 0 -4%; height: auto; }
+.bebito-book .polaroid .sem-foto { font-size: 44px; margin-bottom: 18px; }
+.bebito-book .estrelinhas-da-foto {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1.5px 1.5px at 18% 16%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 42% 9%, #fff, transparent),
+    radial-gradient(1.6px 1.6px at 70% 20%, #fff, transparent),
+    radial-gradient(1.1px 1.1px at 86% 8%, #fff, transparent),
+    radial-gradient(1.3px 1.3px at 58% 30%, #fff, transparent);
+}
+.bebito-book .polaroid .legenda { display: block; text-align: center; font-size: 27px; line-height: 1.7; color: var(--tinta); }
+.bebito-book .polaroid .durex {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: -13px;
+  width: 88px;
+  height: 26px;
+  margin-left: -44px;
+  background: repeating-linear-gradient(45deg, rgba(150, 214, 196, 0.8) 0 7px, rgba(204, 240, 228, 0.8) 7px 14px);
+  transform: rotate(4deg);
+  clip-path: polygon(3% 0, 97% 0, 100% 22%, 97% 48%, 100% 74%, 97% 100%, 3% 100%, 0 76%, 2% 50%, 0 24%);
+}
+/* o ELÁSTICO de fechar: escorrega para fora antes de a capa abrir */
+.bebito-book .capa .elastico {
+  position: absolute;
+  right: 38px;
+  top: -6px;
+  bottom: -6px;
+  width: 17px;
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 2px, rgba(0, 0, 0, 0.1) 2px 4px),
+    linear-gradient(90deg, #2e2233, #4b3751 45%, #3a2a40 70%, #261b2a);
+  box-shadow: -3px 0 6px rgba(40, 10, 20, 0.35), 3px 0 4px rgba(40, 10, 20, 0.2);
+  transition: transform 0.3s ease-in, opacity 0.3s ease-in;
+}
+.bebito-book .livro.elastico-fora .capa .elastico { transform: translateX(64px); opacity: 0; }
+/* a FITINHA de marcar página: sai por baixo do caderno fechado e deita na dobra do aberto */
+.bebito-book .fitinha {
+  position: absolute;
+  z-index: 4;
+  left: 566px;
+  top: 740px;
+  width: 13px;
+  height: 62px;
+  pointer-events: none;
+  transform-origin: 50% 0;
+  background: linear-gradient(90deg, #c98f2c, #ecc161 42%, #f4d27e 52%, #d9a440 74%, #ba8423);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 9px), 0 100%);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  transition: left 0.9s cubic-bezier(0.45, 0.02, 0.25, 1), top 0.9s, height 0.9s;
+}
+.bebito-book .livro.duplo.aberto .fitinha { left: 530px; top: 4px; height: 798px; transform: rotate(0.9deg); }
+.bebito-book .simples .fitinha { left: 34px; top: 712px; height: 90px; }
+
+/* ------------------------------------------------------- a folha virando */
+.bebito-book .folha-virando {
+  position: absolute;
+  z-index: 6;
+  top: 12px;
+  width: 520px;
+  height: 740px;
+  transform-style: preserve-3d;
+  transition: transform 0.75s cubic-bezier(0.45, 0.05, 0.3, 1), opacity 0.55s ease;
+  pointer-events: none;
+}
+.bebito-book .folha-virando .face {
+  left: 0;
+  top: 0;
+  visibility: visible;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.bebito-book .folha-virando .face.verso { transform: rotateY(180deg); }
+.bebito-book .duplo .folha-virando.pra-frente { left: 532px; transform-origin: 0 50%; }
+.bebito-book .duplo .folha-virando.pra-frente.vai { transform: rotateY(-180deg); }
+.bebito-book .duplo .folha-virando.pra-tras { left: 12px; transform-origin: 100% 50%; }
+.bebito-book .duplo .folha-virando.pra-tras.vai { transform: rotateY(180deg); }
+.bebito-book .simples .folha-virando { left: 0; transform-origin: 0 50%; }
+.bebito-book .simples .folha-virando.pra-frente.vai { transform: rotateY(-100deg); opacity: 0; }
+.bebito-book .simples .folha-virando.volta { transform: rotateY(-100deg); opacity: 0; }
+.bebito-book .simples .folha-virando.volta.vai { transform: rotateY(0deg); opacity: 1; }
+
+/* ------------------------------------------------------------- o recado */
+.bebito-book .dica-do-caderno {
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  top: 12px;
+  max-width: min(440px, 86%);
+  padding: 10px 16px;
+  font: 400 19px/1.3 Kalam, cursive;
+  color: #6b4a2a;
+  background: #fff6b0;
+  border-radius: 2px 2px 10px 2px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  transform: translate(-50%, -8px) rotate(-1.5deg);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+.bebito-book .dica-do-caderno.show { opacity: 1; transform: translate(-50%, 0) rotate(-1.5deg); }
+
+/* ------------------------------------------------------------ a barra */
+.bebito-book .barra-do-caderno {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(255, 250, 241, 0.97);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.36);
+}
+.bebito-book .barra-do-caderno button { font-family: Nunito, sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.bebito-book .barra-do-caderno .virar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  background: #f3e2d2;
+  color: #7a3f50;
+  font-size: 15px;
+}
+.bebito-book .barra-do-caderno button:disabled { opacity: 0.32; cursor: default; }
+.bebito-book .canetas { display: flex; gap: 3px; padding: 3px; border-radius: 999px; background: #efe1cf; }
+.bebito-book .caneta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px 3px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  opacity: 0.6;
+  transition: background 0.2s, opacity 0.2s, box-shadow 0.2s;
+}
+.bebito-book .caneta.na-mao { opacity: 1; background: #fff; box-shadow: 0 2px 7px rgba(0, 0, 0, 0.18); }
+.bebito-book .desenho-caneta { width: 46px; height: 11px; transition: transform 0.25s; }
+.bebito-book .caneta.na-mao .desenho-caneta { transform: rotate(-14deg); }
+.bebito-book .desenho-caneta .tampa { transition: transform 0.25s; }
+.bebito-book .caneta.na-mao .desenho-caneta .tampa { transform: translateX(15px); }
+.bebito-book .caneta .nome { color: var(--tinta); line-height: 1; white-space: nowrap; }
+.bebito-book .caneta .nome.de-ari { font-size: 25px; }
+.bebito-book .caneta .nome.de-renan { font-size: 18px; }
+.bebito-book .onde { display: flex; flex-direction: column; align-items: center; min-width: 120px; line-height: 1.15; color: #6d4458; text-align: center; }
+.bebito-book .onde b { font-size: 13px; font-weight: 800; }
+.bebito-book .onde small { font-size: 11px; font-weight: 600; color: #a7869a; }
+.bebito-book .onde .toque { font-size: 13px; font-weight: 700; color: #8a5a70; }
+.bebito-book .fechar-caderno {
+  height: 40px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #7a3f5c;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+@media (max-width: 560px) {
+  .bebito-book { padding: 8px 6px; gap: 6px; }
+  .bebito-book .barra-do-caderno { gap: 5px; padding: 5px 6px; }
+  .bebito-book .barra-do-caderno .virar { width: 36px; height: 36px; }
+  .bebito-book .fechar-caderno { width: 36px; height: 36px; padding: 0; }
+  .bebito-book .fechar-caderno .largo { display: none; }
+  .bebito-book .caneta { padding: 3px 9px 3px 4px; gap: 4px; }
+  .bebito-book .desenho-caneta { width: 32px; height: 8px; }
+  .bebito-book .onde { min-width: 0; }
+  .bebito-book .onde small { display: none; }
+}
+@media (max-width: 400px) {
+  .bebito-book .onde { display: none; }
+}
