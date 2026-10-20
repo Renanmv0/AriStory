@@ -263,6 +263,7 @@ node scripts/musica.mjs  /tmp/som   # rende a musica e os efeitos em .wav para o
 node scripts/celular.mjs /tmp/cel   # tela de celular: nenhum botao pode tapar texto
 node scripts/joystick.mjs          # o joystick do celular: parar com o dedo encostado e voltar a andar, ate com o Safari cancelando o toque
 node scripts/parque.mjs  /tmp/pq    # praca da roda, cupula e margem do lago
+node scripts/clareira.mjs /tmp/cl   # a clareira atras do lago: aberta sem mexer no sorteio, a janela da camera, a trilha andavel, a chegada com memoria, entrar na barraca (deitados, o teto sai, beijinho, abracadinhos, sair), a canga e o fogareiro
 node scripts/pingpong.mjs /tmp/pp   # a partida de ping pong ate o quinto ponto
 node scripts/chapeu.mjs  /tmp/chp   # ganhar de gorro: o chapeu de campeao vai pro guarda-roupa, e volta sempre que descartado
 node scripts/arena.mjs   /tmp/ar    # a arena do ping pong: tablado, clareira sem arvore e as pecas em volta

@@ -1656,6 +1656,53 @@ export const PALETTE = {
   labCobra: 0x63d672,
   labCobraBarriga: 0xf1e28c,
 
+  // ---------------------------------------------- a clareira atrás do lago
+  // a barraca iglu (escolha do Renan: laranja e cinza, a clássica de camping)
+  barracaLaranja: 0xf07a2e,
+  barracaCinza: 0x6f747a,
+  barracaInterna: 0xeee4cf,
+  barracaChao: 0x4b5157,
+  barracaVareta: 0xc7ccd1,
+  barracaClip: 0x2b2d30,
+  barracaCorda: 0xffd23f,
+  barracaTela: 0x3a3f45,
+  barracaZiper: 0x34373b,
+  // os colchões infláveis e os sacos de dormir (um de cada, para cada um)
+  colchaoAzul: 0x3d8fb3,
+  colchaoMostarda: 0xe2a93b,
+  sacoVinho: 0xb5363f,
+  sacoMarinho: 0x2f4d7a,
+  sacoForro: 0xf2e6c4,
+  travesseiroCamping: 0xe9edf0,
+  // a lanterna de LED e o varal de luzinhas (acendem à noite)
+  lanternaCorpo: 0x2f6b4f,
+  lanternaGlobo: 0xfff4d6,
+  luzinha: 0xfff0b8,
+  luzinhaFio: 0x2d2a26,
+  // o fogareiro de montanha, a panelinha e as canecas esmaltadas
+  cartuchoAzul: 0x2a6fd1,
+  cartuchoRotulo: 0xf3ead7,
+  fogareiroMetal: 0xb9bec4,
+  fogareiroLatao: 0xc9a14a,
+  panelaAluminio: 0xc9cdd2,
+  canecaEsmalte: 0xf7f4ee,
+  canecaBorda: 0x2c4f86,
+  mesinhaAluminio: 0xb7bcc2,
+  // a canga listrada, as mochilas cargueiras e o tronco caído
+  cangaCoral: 0xf08a6e,
+  cangaTurquesa: 0x47b5b0,
+  cangaCreme: 0xf6ead2,
+  mochilaMusgo: 0x5f7a3a,
+  mochilaVinho: 0x8e2f3c,
+  mochilaAlca: 0x2e3033,
+  troncoCasca: 0x6e4a2d,
+  troncoMiolo: 0xd9b07a,
+  cogumelo: 0xd9583f,
+  musgo: 0x6d9b3a,
+  samambaia: 0x4d9442,
+  folhaSeca: 0xc98a3e,
+  trilhaDeTerra: 0xb08857,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

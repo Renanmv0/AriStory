@@ -263,6 +263,25 @@ chão do térreo, debaixo do piso — o Renan viu no celular. O mesmo valia para
 o parceiro que reaparece perto quando fica longe. O `scripts/lojinha.mjs` dá
 as mãos e beija lá em cima e mede a altura dos dois.
 
+## Abrir uma clareira no meio do sorteio (a clareira atrás do lago)
+
+O Villa Lobos planta o bosque por sorteio (`w.range`). Para abrir um lugar no
+meio dele **sem mexer no resto do parque**, o sorteio continua sorteando e
+CONTANDO a árvore que cai lá dentro — ela só não entra no mundo (nem malha,
+nem colisor). Tirar com o `livre()` pularia chamadas de sorte e todo o
+parque depois dela andaria. Ver `naClareira` em `scenes/villaLobos.ts`.
+
+- **A janela da câmera**: além do círculo, a faixa da diagonal `+X/+Z` (até
+  9 m, 3,4 de cada lado) fica sem árvore alta. O bosque fecha o lugar pelo
+  fundo e pelos lados; na frente, só samambaia e moita.
+- **O giro do colisor tem o sinal contrário ao do `rotation.y`**
+  (`world/collision.ts`): caixa comprida girada pede `-giro` no `blockBox`,
+  senão fica atravessada.
+- **Mancha de chão feita de muitos círculos é UM decalque**: o primeiro
+  entra pelo `w.disc` (para ter o lugar na fila de pintura) e a geometria
+  dele vira a união dos círculos (`mergeGeometries`). A trilha da clareira
+  eram 23 desenhos por quadro.
+
 ## Decoração que não é decalque
 
 Canteiro, vitória-régia, pedra na beira d'água: sempre que der, faça a peça ter

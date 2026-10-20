@@ -441,6 +441,33 @@ espelho de bancada com a ponta no plano da do tampo, o alto do batente no
 plano do alto da verga, a pilastra da estante com o topo no da tábua de
 cima, a ponta das tábuas do lambri na do rodapé.
 
+## A barraca da clareira (`world/acampamento.ts`)
+
+O acampamento atrás do lago do Villa Lobos (`docs/ACAMPAMENTO.md`) é o
+molde de peça que se ENTRA sem virar cena nova:
+
+- **Domo de geometria própria** (`cascaDoDomo`): planta de superelipse
+  (`|x/a|⁴ + |z/b|⁴`, retângulo de quina redonda), perfil de quarto de elipse
+  e o pano CEDENDO entre as varetas (`entreVaretas`) — é o que faz ler barraca
+  e não meia bola. No polo os vértices coincidem: a normal deles é posta à
+  mão para cima, senão o topo fica com um ponto preto.
+- **A porta é furo de verdade**: o quadradinho cujo meio cai dentro do D
+  não entra no índice; o sobreteto tem o furo 5 cm maior e a beira creme da
+  barraca de dentro aparece em volta. A porta, a aba e os rolos são
+  desenhados no plano e assentados na lona por `naFrente` (busca do ângulo).
+- **O TETO SAI.** Tudo acima de 42 cm mora no grupo `teto`; a costura entre o
+  laranja e o cinza passa exatamente ali, então o corte cai numa emenda que a
+  barraca já tem. A cena esconde o grupo, deita os dois na âncora (a da cama
+  do quarto) e olha de cima com `setCameraOmbro`: casinha de boneca.
+- **A casca cresce, o recheio não.** A barraca é desenhada em metros de
+  barraca de verdade e um grupo interno a cresce 10% (perto do corpo chibi
+  ela parecia de criança); os colchões e a âncora são filhos da raiz e
+  ficam do tamanho de quem deita.
+- **Miudeza de cima da mesa se junta com a mesa**: tirando a etiqueta de
+  peça do fogareiro, da panelinha e das canecas, a `fundir()` junta material
+  por material com a mesinha (o alumínio, o esmalte).
+- Samambaias de um lugar inteiro são UM lote (`samambaias([...])`).
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
