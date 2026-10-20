@@ -16,10 +16,15 @@
  *   aurora, o passarinho, a porta abrindo, os dois na porta olhando o lago e
  *   o sol nascendo na cúpula — com a memória no diário, e o dia de volta.
  *
+ * - DE MANHÃ, O SOL APARECE: na tomada do nascer, o disco do sol cai dentro
+ *   do quadro e nenhuma árvore fica entre a câmera e ele (as duas do leste
+ *   viraram arbustos floridos, pedido do Renan, que viu no celular). `CEL=1`
+ *   roda tudo na tela de celular em pé, onde o quadro é mais estreito.
+ *
  * O navegador do teste anda devagar: o relógio da noite é acelerado pelo
  * gancho da cena (`ritmo`), e tudo é esperado por estado, nunca por tempo.
  *
- * Uso: node scripts/noite.mjs /caminho/prefixo
+ * Uso: node scripts/noite.mjs /caminho/prefixo   (CEL=1 para o celular)
  */
 import { chromium } from 'playwright';
 
@@ -32,7 +37,10 @@ const browser = await chromium.launch({
   executablePath: CHROME,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
 });
-const page = await browser.newPage({ viewport: { width: 1000, height: 880 } });
+const CEL = process.env.CEL === '1';
+const page = await browser.newPage(CEL
+  ? { viewport: { width: 390, height: 780 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true }
+  : { viewport: { width: 1000, height: 880 } });
 const erros = [];
 const falhas = [];
 const checar = (ok, msg) => { if (!ok) falhas.push(msg); };
@@ -226,6 +234,40 @@ for (let i = 0; i < 1500; i++) {
     dormir.nascer = n;
     await page.waitForTimeout(500);
     await foto('8-nascer-do-sol');
+    /*
+     * O SOL NA TELA E SEM NADA NA FRENTE: o centro do disco projetado na
+     * câmera de cena cai dentro do quadro, e o raio da câmera até ele não
+     * passa por dentro da caixa de nenhuma árvore (caixa é generosa: se ela
+     * não pega, a copa também não).
+     */
+    dormir.visao = await page.evaluate(() => {
+      const j = window.jogo;
+      const cam = j.cameraDeCena();
+      let b = null;
+      const caixas = [];
+      j.current.world.root.traverse((o) => {
+        if (o.userData?.peca === 'barraca-iglu') b = o;
+      });
+      const sol = b.userData.teste.ceu.sol;
+      const V = cam.position.constructor;
+      const p = sol.getWorldPosition(new V());
+      const ndc = p.clone().project(cam);
+      let Box3 = null;
+      j.current.world.root.traverse((o) => { if (!Box3 && o.geometry?.boundingBox) Box3 = o.geometry.boundingBox.constructor; });
+      if (!Box3) {
+        j.current.world.root.traverse((o) => { if (!Box3 && o.geometry) { o.geometry.computeBoundingBox(); Box3 = o.geometry.boundingBox.constructor; } });
+      }
+      j.current.world.root.traverse((o) => { if (o.userData?.peca === 'arvore') caixas.push(new Box3().setFromObject(o)); });
+      const dir = p.clone().sub(cam.position).normalize();
+      const q = new V();
+      let tapadoPor = null;
+      for (let d = 0.5; d < 45 && !tapadoPor; d += 0.25) {
+        q.copy(cam.position).addScaledVector(dir, d);
+        const caixa = caixas.find((c) => c.containsPoint(q));
+        if (caixa) tapadoPor = [+q.x.toFixed(1), +q.y.toFixed(1), +q.z.toFixed(1)];
+      }
+      return { naTela: Math.abs(ndc.x) < 0.9 && Math.abs(ndc.y) < 0.9 && ndc.z < 1, ndc: [+ndc.x.toFixed(2), +ndc.y.toFixed(2)], tapadoPor };
+    });
   }
   if (dormir.nascer && n.estado === 'dia' && !n.cameraDeCena) break;
   if (await temFala()) {
@@ -274,6 +316,7 @@ checar(dormir.sono && dormir.apagouAntesDoSono, `a lanterna apaga e a tela escur
 checar(dormir.manha && (fim.sons.passarinho ?? 0) > 0, `de manha, o passarinho: ${JSON.stringify(fim.sons)}`);
 checar(dormir.abriu, 'de manha a porta abre e os dois saem');
 checar(dormir.nascer?.solVisivel, `o sol nascendo na cupula: ${JSON.stringify(dormir.nascer)}`);
+checar(dormir.visao?.naTela && !dormir.visao?.tapadoPor, `da porta, o sol nasce na tela e sem arvore na frente: ${JSON.stringify(dormir.visao)}`);
 checar(fim.estado === 'dia' && !fim.cameraDeCena && fim.fundo === diaAntes.fundo, `o dia de volta no fim: ${JSON.stringify(fim)}`);
 checar(!solto.locked && !solto.riding, `a dupla solta no fim: ${JSON.stringify(solto)}`);
 checar((save.memories ?? []).some((m) => m.id === 'noite-na-barraca'), 'a memoria da noite nao entrou no diario');
@@ -281,6 +324,7 @@ falhas.push(...erros);
 
 console.log('1. noite:', JSON.stringify({ estado: deNoite.estado, clima: deNoite.clima, varal: `${deNoite.acesasNoVaral}/${deNoite.lampadas}`, acesa: deNoite.acesa, menu: menuDeNoite }));
 console.log('2. la fora:', JSON.stringify({ vagaLumes: laFora.vagaLumes, grilos: laFora.sons.grilo }), '· de volta:', JSON.stringify({ estado: deVolta.estado, clima: deVolta.clima }));
+console.log('3. o sol:', JSON.stringify(dormir.visao));
 console.log('3. dormir:', JSON.stringify({ fechou: dormir.fechou, conchinha: dormir.conchinha, boaNoite: dormir.boaNoite, sono: dormir.sono, abriu: dormir.abriu, sol: dormir.nascer?.solVisivel }));
 await browser.close();
 if (falhas.length) {
