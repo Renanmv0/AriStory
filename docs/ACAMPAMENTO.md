@@ -227,12 +227,18 @@ manhã não faz nada; tudo com muito detalhe e animação"):
 - **Provisório**: todas as falas da etapa D são do Claude, e a música da
   dança é uma melodia nossa (ver §4).
 
-**O peso da etapa D** (vista da clareira, de dia): o caixote e as coisas
-dele, o radinho e o pote entram fundidos (um desenho por material); de
-noite, os soltos são três lotes (os pontos, os halos e as poças) para todos
-os pontos juntos, e a constelação são dois (as estrelas e o risco). Nenhuma
-luz de verdade nova: a chama, o mostrador, o pote e as poças são luz
-pintada.
+**O peso da etapa D** (a dupla na frente da canga, medido no
+`renderer.info`): de dia, **390 → 466 desenhos por quadro** e 80 → 99 mil
+triângulos; de noite, 473 e 101 mil. Quase tudo é o que SE MEXE sozinho e
+por isso é grupo próprio (a `fundir()` junta material por material dentro
+de cada um): as catorze coisas do caixote, que voam uma a uma para a mesa
+(31 desenhos), o radinho (23: os gomos da antena, os botões, a agulha, o
+miolo do alto-falante e o led), o pote (12, com a tampa que abre) e o
+fogareiro, a panelinha e as canecas, que antes se juntavam com a mesinha e
+agora acendem, tremem e voam. De noite, os soltos são três lotes (os pontos,
+os halos e as poças) para todos os pontos juntos, e a constelação são dois
+(as estrelas e o risco). Nenhuma luz de verdade nova: a chama, o mostrador,
+o pote e as poças são luz pintada.
 
 **Os amigos (E, futuro)**: convidar os bichos do parque para a clareira (o
 Mano, o Jean-Luc, a Estella…) — fica para depois, por decisão do Renan.
