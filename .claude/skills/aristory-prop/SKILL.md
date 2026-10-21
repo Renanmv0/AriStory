@@ -611,6 +611,44 @@ O banco do parque e do clube (`w.banco` usa ele por padrão; o reto antigo,
   frente): é por ali que a perna de quem senta dobra e balança.
 - O `w.banco` passa a peça pela `fundir()`: o ferro, a madeira e o latão
   viram três malhas por banco.
+- **O peso mora nos gomos do ferro** (80% do banco): trecho quase reto leva
+  poucos gomos, e as volutas, que são as curvas que se veem, ficam com os
+  delas; a cabeça do parafuso (1 cm) é um octaedro achatado; o reforço da
+  cabeceira do meio, escondido debaixo do assento, não existe. 4,4 mil →
+  3,1 mil triângulos por banco, com a mesma foto de perto.
+
+## As árvores (`world/arvores.ts`)
+
+O `tree(tipo, escala, semente)` de sempre chama `arvore()`. As quatro
+espécies (redonda, florida, pinheiro, palmeira) são **uma malha e um
+material cada** — o `toon(0xffffff, { corPorVertice: true })`, com a cor
+pintada nos vértices:
+
+- **o detalhe é FOLHA, não bola**: a copa é de sete tufos amassados (ruído
+  pela posição, normal da esfera de antes de amassar) cobertos de folhinhas
+  — losangos dobrados na nervura, espalhados pela espiral de Fibonacci, com
+  a ponta levantando. São elas que recortam a borda da copa e pegam a luz
+  uma a uma. Uma primeira versão só com tufos e um mosaico de cor por face
+  (mais leve) ficou com cara de cristal, e o Renan pediu mais detalhe;
+- **a cor por vértice faz o resto**: o degradê da copa (escura embaixo,
+  clara em cima), o tom de cada folha (sorteado pelo número da face: os
+  três cantos iguais), a folha nova mais clara, os anéis da palmeira;
+- **florida**: metade das folhinhas vira florzinha de cinco pétalas com o
+  miolo amarelo, e caem pétalas em volta do pé;
+- **raiz é curta, grossa e afunda na terra** — fina e comprida por cima do
+  chão, liava como espinho;
+- **pinheiro**: cinco saias de nove pontas, a borda em estrela caída e a
+  barriga funda escura (faceta é o estilo);
+- **palmeira**: tubo curvo em degraus (cada anel um tico mais gordo ou mais
+  magro, reescalado em volta do centro da curva), dez folhas de FOLÍOLOS
+  pendendo dos dois lados da nervura (o pente é que lê "palmeira"), duas
+  folhas secas penduradas, cocos redondos — material dos dois lados;
+- o tamanho por fora é o das antigas: o ponto cego da câmera, a clareira e o
+  sol nascendo da barraca foram medidos com elas.
+
+Peso (as 93 árvores do parque): 467 malhas → 93; 28,8 mil → 80,8 mil
+triângulos (redonda ~1 mil, florida ~1,2 mil, pinheiro ~0,4 mil, palmeira
+~1 mil).
 
 ## Depois de criar
 

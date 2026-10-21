@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon, flat } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { regadorDeJardim } from './regador';
+import { arvore } from './arvores';
 
 /**
  * Kit de cenario ao ar livre. Toda peca volta como um Group com a base em y=0,
@@ -11,59 +12,12 @@ import { regadorDeJardim } from './regador';
 
 export type TreeKind = 'redonda' | 'pinheiro' | 'palmeira' | 'florida';
 
+/**
+ * A árvore do parque: a peça mora em `world/arvores.ts` (uma malha só, a cor
+ * pintada nos vértices). O `tree()` continua aqui para quem já chamava.
+ */
 export function tree(kind: TreeKind = 'redonda', scale = 1, seed = 0.5): THREE.Group {
-  const g = new THREE.Group();
-  // a etiqueta e o que deixa um teste CONTAR arvore sem adivinhar pela
-  // geometria: sem ela, "cilindro mais esfera" tambem casa com poste e com a
-  // propria mesa de ping pong (ver `scripts/arena.mjs`)
-  g.userData.peca = 'arvore';
-  const trunkH = 2.1 * scale;
-
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.13 * scale, 0.2 * scale, trunkH, 8),
-    toon(P.trunk),
-  );
-  trunk.position.y = trunkH / 2;
-  g.add(trunk);
-
-  if (kind === 'pinheiro') {
-    for (let i = 0; i < 3; i++) {
-      const r = (1.1 - i * 0.26) * scale;
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(r, 1.3 * scale, 9), toon(i === 0 ? P.leafDark : P.leafMid));
-      cone.position.y = trunkH * 0.7 + i * 0.72 * scale;
-      g.add(cone);
-    }
-  } else if (kind === 'palmeira') {
-    trunk.scale.y = 1.5;
-    trunk.position.y = trunkH * 0.75;
-    for (let i = 0; i < 7; i++) {
-      const a = (i / 7) * Math.PI * 2;
-      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.75 * scale, 8, 6), toon(P.leafMid));
-      leaf.scale.set(1.5, 0.14, 0.5);
-      leaf.position.set(Math.cos(a) * 0.85 * scale, trunkH * 1.5 - 0.1, Math.sin(a) * 0.85 * scale);
-      leaf.rotation.y = -a;
-      leaf.rotation.z = -0.32;
-      g.add(leaf);
-    }
-  } else {
-    const leafColor = kind === 'florida' ? P.flowerPink : P.leafMid;
-    const blobs: Array<[number, number, number, number]> = [
-      [0, trunkH + 0.55 * scale, 0, 1.15],
-      [0.62 * scale, trunkH + 0.15 * scale, 0.2 * scale, 0.78],
-      [-0.5 * scale, trunkH + 0.3 * scale, -0.35 * scale, 0.88],
-      [0.1 * scale, trunkH + 1.05 * scale, -0.3 * scale, 0.66],
-    ];
-    blobs.forEach(([x, y, z, r], i) => {
-      const blob = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(r * scale, 1),
-        toon(i % 2 === 0 ? leafColor : kind === 'florida' ? P.flowerPink : P.leafLight),
-      );
-      blob.position.set(x, y, z);
-      blob.rotation.set(seed * 3, seed * 5, seed * 2);
-      g.add(blob);
-    });
-  }
-  return g;
+  return arvore(kind, scale, seed);
 }
 
 export function bush(scale = 1, color: number = P.bush): THREE.Group {

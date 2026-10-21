@@ -50,25 +50,32 @@ function ponta(z: number, y: number, raio: number): THREE.BufferGeometry {
  * A CABECEIRA de ferro, no plano `x = 0`: as barras numa geometria só (a
  * `fundir()` da cena junta as três cabeceiras do banco depois).
  */
+/*
+ * OS GOMOS DE CADA BARRA são o que pesa (o ferro era 80% dos triângulos do
+ * banco): os trechos quase retos levam poucos, e as volutas do pé e do braço,
+ * que são as curvas que se veem, ficam com os delas. 4,4 mil → 3,1 mil
+ * triângulos por banco, a mesma imagem na distância do jogo.
+ */
 function cabeceira(comBraco: boolean): THREE.BufferGeometry[] {
   const R = 0.024;
   const partes: THREE.BufferGeometry[] = [
     // a perna da frente: a voluta no pé, e sobe até debaixo da ripa da frente
-    barra([[0.335, 0.075], [0.345, 0.03], [0.31, 0.012], [0.27, 0.03], [0.255, 0.12], [0.25, 0.3], [0.235, 0.47]], R, 18),
+    barra([[0.335, 0.075], [0.345, 0.03], [0.31, 0.012], [0.27, 0.03], [0.255, 0.12], [0.25, 0.3], [0.235, 0.47]], R, 14),
     // a perna de trás, que vira o encosto inclinado para trás
-    barra([[-0.33, 0.012], [-0.27, 0.16], [-0.215, 0.42], [-0.225, 0.56], [-0.27, 0.78], [-0.33, 0.97], [-0.36, 1.02]], R, 22),
+    barra([[-0.33, 0.012], [-0.27, 0.16], [-0.215, 0.42], [-0.225, 0.56], [-0.27, 0.78], [-0.33, 0.97], [-0.36, 1.02]], R, 14),
     // o trilho do assento, com a barriguinha onde se senta
-    barra([[-0.23, 0.47], [-0.1, 0.455], [0.08, 0.458], [0.24, 0.475]], R * 0.9, 10),
-    // o reforço em arco entre as duas pernas, embaixo
-    barra([[-0.29, 0.13], [-0.05, 0.2], [0.18, 0.18], [0.255, 0.13]], R * 0.7, 10),
+    barra([[-0.23, 0.47], [-0.1, 0.455], [0.08, 0.458], [0.24, 0.475]], R * 0.9, 6),
     ponta(-0.36, 1.02, R),
     // o pé: a sapatinha de cada perna no chão
     new THREE.CylinderGeometry(0.035, 0.04, 0.02, 8).translate(0, 0.01, -0.33),
   ];
   if (comBraco) {
-    // o braço: sai do encosto, corre para a frente e enrola na ponta
     partes.push(
-      barra([[-0.235, 0.6], [-0.12, 0.67], [0.1, 0.675], [0.25, 0.655], [0.305, 0.61], [0.3, 0.56], [0.262, 0.548], [0.245, 0.575], [0.268, 0.595]], R * 1.05, 26),
+      // o reforço em arco entre as duas pernas, embaixo (o do meio fica
+      // escondido debaixo do assento, e não entra)
+      barra([[-0.29, 0.13], [-0.05, 0.2], [0.18, 0.18], [0.255, 0.13]], R * 0.7, 6),
+      // o braço: sai do encosto, corre para a frente e enrola na ponta
+      barra([[-0.235, 0.6], [-0.12, 0.67], [0.1, 0.675], [0.25, 0.655], [0.305, 0.61], [0.3, 0.56], [0.262, 0.548], [0.245, 0.575], [0.268, 0.595]], R * 1.05, 20),
       // o pilarzinho que segura o braço na perna da frente
       barra([[0.25, 0.48], [0.255, 0.555]], R * 0.75, 2),
       ponta(0.268, 0.595, R * 1.05),
@@ -122,7 +129,9 @@ export function bancoDePraca(corMadeira: number = P.wood, corFerro: number = P.b
   for (const [y, z] of encosto) ripa(y, z + NA_FRENTE, 0.105, 0.04, -0.28);
 
   // ----------------------------------------------- os parafusos e a plaquinha
-  const cabeca = new THREE.CylinderGeometry(0.012, 0.012, 0.01, 6);
+  // a cabeça do parafuso tem 1 cm: um octaedro achatado (8 triângulos) lê
+  // igual ao cilindro de 24 que estava aqui
+  const cabeca = new THREE.OctahedronGeometry(0.012, 0).scale(1, 0.45, 1);
   for (const x of [-0.86, 0, 0.86]) {
     // no assento, por cima de cada ripa onde ela passa sobre a cabeceira
     for (const z of [-0.175, -0.05, 0.075]) {

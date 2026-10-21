@@ -61,6 +61,14 @@ export interface ToonOptions {
    * cor da paleta, e o chao perde o tom.
    */
   mapa?: THREE.Texture;
+  /**
+   * A cor vem PINTADA NOS VERTICES (o atributo `color` da geometria), e o
+   * material entra branco. E o que as arvores usam (`world/arvores.ts`): o
+   * degrade da copa, o salpicado das folhas e os aneis do tronco da palmeira
+   * saem de graca, sem um triangulo a mais, e a arvore inteira (tronco,
+   * galho e copa) vira UMA malha com UM material.
+   */
+  corPorVertice?: boolean;
 }
 
 /**
@@ -72,7 +80,7 @@ const DECAL_OFFSET = 4;
 const cache = new Map<string, THREE.MeshToonMaterial>();
 
 export function toon(color: number, opts: ToonOptions = {}): THREE.MeshToonMaterial {
-  const key = `${color}|${opts.glow ?? 0}|${opts.opacity ?? 1}|${opts.doubleSide ? 1 : 0}|${opts.decal ? 1 : 0}|${opts.mapa?.uuid ?? ''}`;
+  const key = `${color}|${opts.glow ?? 0}|${opts.opacity ?? 1}|${opts.doubleSide ? 1 : 0}|${opts.decal ? 1 : 0}|${opts.mapa?.uuid ?? ''}|${opts.corPorVertice ? 1 : 0}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -83,6 +91,7 @@ export function toon(color: number, opts: ToonOptions = {}): THREE.MeshToonMater
     opacity: opts.opacity ?? 1,
     side: opts.doubleSide ? THREE.DoubleSide : THREE.FrontSide,
     map: opts.mapa ?? null,
+    vertexColors: opts.corPorVertice ?? false,
   });
   if (opts.glow) {
     mat.emissive = new THREE.Color(color);
