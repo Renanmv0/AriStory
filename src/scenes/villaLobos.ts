@@ -189,7 +189,9 @@ export const villaLobos: SceneDef = {
     w.disc(0, -16.5, 8.6, P.sand, 0.008); // borda da praça
     w.disc(0, -16.5, 8, P.concrete, 0.012, calcadaDePedrinha()); // praça
     w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016, asfalto()); // caminho principal
-    w.patch(0, 9, 62, 4.5, P.asphalt, 0, 0.02, asfalto()); // caminho transversal
+    // caminho transversal: do lado do lago ele para na trilha da loja (x −8,5).
+    // Ia até −31 e passava por baixo da água, reaparecendo do outro lado
+    w.patch(11.25, 9, 39.5, 4.5, P.asphalt, 0, 0.02, asfalto());
 
     /**
      * A pista oval, composta à mão.

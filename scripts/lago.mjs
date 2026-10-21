@@ -36,7 +36,8 @@ const browser = await chromium.launch({
   executablePath: CHROME,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
 });
-const page = await browser.newPage({ viewport: { width: 1100, height: 820 }, ignoreHTTPSErrors: true });
+// CEL=1: tela de celular em pé (o aviso quebra em linhas e não pode tapar a barra de força)
+const page = await browser.newPage({ viewport: process.env.CEL ? { width: 390, height: 760 } : { width: 1100, height: 820 }, ignoreHTTPSErrors: true });
 const erros = [];
 const falhas = [];
 const checar = (ok, msg, dado) => {
@@ -353,9 +354,13 @@ if (parte('pedrinha')) {
   await page.keyboard.down('KeyF');
   for (let i = 0; i < 40 && !(await page.locator('.carga.show').count()); i++) await page.waitForTimeout(150);
   const barra = await page.locator('.carga.show').count();
+  await page.waitForTimeout(300);
+  // carregando, o aviso sai da frente da barra (no celular ele a tapava inteira)
+  const avisoNaFrente = await page.evaluate(() => Number(getComputedStyle(document.querySelector('.prompt')).opacity));
   await foto('pedrinha-barra');
   await page.keyboard.up('KeyF');
   checar(barra > 0, 'segurar F mostra a barra de força');
+  checar(avisoNaFrente < 0.05, 'o aviso some enquanto a barra carrega', avisoNaFrente);
   const saiu = await por('return t.minhaPedra.voando || t.minhaPedra.terminou;', 6);
   checar(saiu, 'soltar o F joga a pedrinha');
   await por('return t.minhaPedra.terminou;', 20);
