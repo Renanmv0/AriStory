@@ -755,156 +755,186 @@ export class AguaDoLago {
             cor = mix(cor, uAreiaMolhada * (0.96 + grao * 0.05), molhada);
 
             // ------------------------------------------------- a água
+            // as derivadas ficam TODAS aqui em cima, fora de \`if\`: dentro de
+            // um desvio que cada pixel toma de um jeito, elas não valem nada
             float aaBeira = max(fwidth(dentro), 1e-4);
             float agua = smoothstep(-aaBeira, aaBeira, dentro);
             float fundura = dentro + (mancha - 0.5) * 1.1;
             float aaF = max(fwidth(fundura), 1e-4);
-            vec3 corDaAgua = uRaso;
-            corDaAgua = mix(corDaAgua, uMeio, smoothstep(0.8 - aaF, 0.8 + aaF, fundura));
-            corDaAgua = mix(corDaAgua, uFundo, smoothstep(2.5 - aaF, 2.5 + aaF, fundura));
-            corDaAgua = mix(corDaAgua, uMaisFundo, smoothstep(4.6 - aaF, 4.6 + aaF, fundura));
-
-            // o veio de luz do raso
-            float veio = abs(sin(p.x * 2.1 + t * 0.7 + sin(p.y * 1.6 - t * 0.5) * 1.3) + sin(p.y * 2.3 - t * 0.6 + sin(p.x * 1.4 + t * 0.4) * 1.2));
-            float caustica = (1.0 - smoothstep(0.0, 0.22, veio)) * (1.0 - smoothstep(0.3, 1.5, fundura));
-            corDaAgua = mix(corDaAgua, uCrista, caustica * 0.3);
-
-            // as moedas do fundo, perto do deque ("o fundo do lago é cheio de moeda")
-            if (uMoedas.z > 0.0) {
-              float perto = 1.0 - smoothstep(uMoedas.z * 0.6, uMoedas.z, distance(mundo, uMoedas.xy));
-              if (perto > 0.0) {
-                vec2 c = mundo * 4.6;
-                vec2 id = floor(c);
-                float tem = step(0.9, lagoSorte(id + 9.3));
-                vec2 onde = (vec2(lagoSorte(id + 2.2), lagoSorte(id + 5.9)) - 0.5) * 0.6;
-                vec2 q = fract(c) - 0.5 - onde;
-                q.x *= 1.0 + lagoSorte(id + 4.4) * 0.8;
-                float moeda = lagoTraco(length(q), 0.12, px * 4.6) * tem * perto;
-                corDaAgua = mix(corDaAgua, uMoeda, moeda * 0.75);
-              }
-            }
-            // a moedinha que acabou de cair: afunda encolhendo
-            float idadeDaMoeda = t - uMoedaNova.z;
-            if (idadeDaMoeda > 0.0 && idadeDaMoeda < 2.6) {
-              float some = 1.0 - idadeDaMoeda / 2.6;
-              float moeda = lagoTraco(distance(mundo, uMoedaNova.xy), 0.05 * some + 0.02, px);
-              corDaAgua = mix(corDaAgua, uMoeda, moeda * (0.5 + 0.5 * some));
-            }
-
-            // as sombras dos peixes
-            for (int i = 0; i < ${PEIXES}; i++) {
-              vec4 peixe = uPeixes[i];
-              if (peixe.w <= 0.0) continue;
-              vec2 rel = mundo - peixe.xy;
-              if (abs(rel.x) > peixe.w * 2.2 || abs(rel.y) > peixe.w * 2.2) continue;
-              vec2 frente = vec2(sin(peixe.z), cos(peixe.z));
-              float u = dot(rel, frente) / peixe.w;
-              float v = dot(rel, vec2(frente.y, -frente.x)) / peixe.w;
-              // o corpo ondula: a cauda mexe mais que a cabeça
-              v += sin(u * 3.2 - t * 7.5) * 0.09 * (0.6 - u);
-              float corpo = length(vec2(u * 0.75, v / 0.36)) - 0.75;
-              float cauda = max(abs(v) - (-u - 0.85) * 0.75, max(u + 0.85, -u - 1.45));
-              float forma = min(corpo, cauda * 1.4);
-              float sombra = 1.0 - smoothstep(-0.12, 0.14, forma);
-              corDaAgua = mix(corDaAgua, uPeixe, sombra * 0.42 * smoothstep(0.3, 1.1, fundura));
-            }
-
-            // as marolinhas do vento
+            float foraLiso = d - (margem + areia);
+            float aaFora = max(fwidth(foraLiso), 1e-4);
             vec2 vento = normalize(uVento);
-            vec2 deLado = vec2(-vento.y, vento.x);
-            float ao = dot(p, vento);
-            float ac = dot(p, deLado);
-            float torto = labRuido(vec3(ac * 0.55, ao * 0.22, t * 0.12));
-            float onda = fract(ao * 1.45 - t * (0.42 + uRajada * 0.35) + torto * 2.2);
-            float crista = smoothstep(0.0, 0.05, onda) * (1.0 - smoothstep(0.05, 0.13, onda));
-            float tracos = smoothstep(0.62 - uRajada * 0.14, 0.8 - uRajada * 0.1, labRuido(vec3(ac * 2.1, ao * 0.45, t * 0.3 + 3.0)));
-            float marolinha = crista * tracos * smoothstep(0.4, 1.5, dentro);
-            corDaAgua = mix(corDaAgua, uCrista, marolinha * (0.32 + uRajada * 0.22));
 
-            // as marolas (anéis abrindo)
-            float anel = 0.0;
-            float cava = 0.0;
-            for (int i = 0; i < ${MAROLAS}; i++) {
-              vec4 m = uMarolas[i];
-              float idade = t - m.z;
-              if (m.w <= 0.0 || idade < 0.0 || idade > 3.6) continue;
-              float raio = idade * (0.85 + m.w * 0.35);
-              float r = distance(mundo, m.xy);
-              if (r > raio + 0.5) continue;
-              float some = exp(-idade * 1.05) * min(m.w, 1.6);
-              float largura = 0.035 + idade * 0.018;
-              anel += lagoTraco(r - raio, largura, px) * some;
-              anel += lagoTraco(r - (raio - 0.32), largura * 0.8, px) * some * 0.55 * step(0.32, raio);
-              cava += lagoTraco(r - (raio - largura * 3.0), largura * 1.4, px) * some * 0.5;
-            }
+            /*
+             * SÓ ONDE TEM ÁGUA (ou quase: a beira molhada): o pixel de areia e
+             * o de grama não pagam pela água. O lago e a areia são manchas
+             * grandes e inteiras, então o desvio é o mesmo para a vizinhança
+             * toda e não custa nada à placa de vídeo — e o renderizador por
+             * software do teste (e o celular fraco) agradecem.
+             */
+            if (dentro > -0.3) {
+              vec3 corDaAgua = uRaso;
+              corDaAgua = mix(corDaAgua, uMeio, smoothstep(0.8 - aaF, 0.8 + aaF, fundura));
+              corDaAgua = mix(corDaAgua, uFundo, smoothstep(2.5 - aaF, 2.5 + aaF, fundura));
+              corDaAgua = mix(corDaAgua, uMaisFundo, smoothstep(4.6 - aaF, 4.6 + aaF, fundura));
 
-            // o rastro de quem nada: o V e o anel de espuma em volta do corpo
-            float rastro = 0.0;
-            float contato = 0.0;
-            for (int i = 0; i < ${RASTROS}; i++) {
-              vec4 b = uRastros[i];
-              if (b.w <= 0.0) continue;
-              float tam = floor(b.w) / 10.0;
-              float vel = fract(b.w);
-              vec2 rel = mundo - b.xy;
-              if (abs(rel.x) > 3.4 || abs(rel.y) > 3.4) continue;
-              vec2 frente = vec2(sin(b.z), cos(b.z));
-              float atras = -dot(rel, frente);
-              float lado = abs(dot(rel, vec2(frente.y, -frente.x)));
-              float r = length(rel);
-              contato += lagoTraco(r - 0.26 * tam, 0.025 + 0.01 * tam, px) * (0.55 + 0.25 * sin(t * 3.0 + float(i)));
-              if (vel > 0.02 && atras > 0.0) {
-                // o V é curto e fino, e some aos poucos: rastro de pato é
-                // delicado (comprido e forte, virava esteira de lancha)
-                float comprimento = (0.5 + vel * 1.3) * tam;
-                float braco = lagoTraco(lado - atras * 0.36 - 0.1 * tam, 0.016 + atras * 0.01, px);
-                float tracejado = smoothstep(0.05, 0.6, sin(atras * 15.0 / max(tam, 0.4) - t * 8.0));
-                float some = pow(max(0.0, 1.0 - atras / comprimento), 1.5);
-                rastro += braco * tracejado * some * vel;
+              // o veio de luz do raso
+              // (só no raso: no fundo ela vale zero, e não precisa ser conta)
+              if (fundura < 1.5) {
+                float veio = abs(sin(p.x * 2.1 + t * 0.7 + sin(p.y * 1.6 - t * 0.5) * 1.3) + sin(p.y * 2.3 - t * 0.6 + sin(p.x * 1.4 + t * 0.4) * 1.2));
+                float caustica = (1.0 - smoothstep(0.0, 0.22, veio)) * (1.0 - smoothstep(0.3, 1.5, fundura));
+                corDaAgua = mix(corDaAgua, uCrista, caustica * 0.3);
+              }
+
+              // as moedas do fundo, perto do deque ("o fundo do lago é cheio de moeda")
+              if (uMoedas.z > 0.0) {
+                float perto = 1.0 - smoothstep(uMoedas.z * 0.6, uMoedas.z, distance(mundo, uMoedas.xy));
+                if (perto > 0.0) {
+                  vec2 c = mundo * 4.6;
+                  vec2 id = floor(c);
+                  float tem = step(0.9, lagoSorte(id + 9.3));
+                  vec2 onde = (vec2(lagoSorte(id + 2.2), lagoSorte(id + 5.9)) - 0.5) * 0.6;
+                  vec2 q = fract(c) - 0.5 - onde;
+                  q.x *= 1.0 + lagoSorte(id + 4.4) * 0.8;
+                  float moeda = lagoTraco(length(q), 0.12, px * 4.6) * tem * perto;
+                  corDaAgua = mix(corDaAgua, uMoeda, moeda * 0.75);
+                }
+              }
+              // a moedinha que acabou de cair: afunda encolhendo
+              float idadeDaMoeda = t - uMoedaNova.z;
+              if (idadeDaMoeda > 0.0 && idadeDaMoeda < 2.6) {
+                float some = 1.0 - idadeDaMoeda / 2.6;
+                float moeda = lagoTraco(distance(mundo, uMoedaNova.xy), 0.05 * some + 0.02, px);
+                corDaAgua = mix(corDaAgua, uMoeda, moeda * (0.5 + 0.5 * some));
+              }
+
+              // as sombras dos peixes
+              for (int i = 0; i < ${PEIXES}; i++) {
+                vec4 peixe = uPeixes[i];
+                if (peixe.w <= 0.0) continue;
+                vec2 rel = mundo - peixe.xy;
+                if (abs(rel.x) > peixe.w * 2.2 || abs(rel.y) > peixe.w * 2.2) continue;
+                vec2 frente = vec2(sin(peixe.z), cos(peixe.z));
+                float u = dot(rel, frente) / peixe.w;
+                float v = dot(rel, vec2(frente.y, -frente.x)) / peixe.w;
+                // o corpo ondula: a cauda mexe mais que a cabeça
+                v += sin(u * 3.2 - t * 7.5) * 0.09 * (0.6 - u);
+                float corpo = length(vec2(u * 0.75, v / 0.36)) - 0.75;
+                float cauda = max(abs(v) - (-u - 0.85) * 0.75, max(u + 0.85, -u - 1.45));
+                float forma = min(corpo, cauda * 1.4);
+                float sombra = 1.0 - smoothstep(-0.12, 0.14, forma);
+                corDaAgua = mix(corDaAgua, uPeixe, sombra * 0.42 * smoothstep(0.3, 1.1, fundura));
+              }
+
+              // as marolinhas do vento
+              vec2 deLado = vec2(-vento.y, vento.x);
+              float ao = dot(p, vento);
+              float ac = dot(p, deLado);
+              if (dentro > 0.4) {
+                float torto = labRuido(vec3(ac * 0.55, ao * 0.22, t * 0.12));
+                float onda = fract(ao * 1.45 - t * (0.42 + uRajada * 0.35) + torto * 2.2);
+                float crista = smoothstep(0.0, 0.05, onda) * (1.0 - smoothstep(0.05, 0.13, onda));
+                float tracos = smoothstep(0.62 - uRajada * 0.14, 0.8 - uRajada * 0.1, labRuido(vec3(ac * 2.1, ao * 0.45, t * 0.3 + 3.0)));
+                float marolinha = crista * tracos * smoothstep(0.4, 1.5, dentro);
+                corDaAgua = mix(corDaAgua, uCrista, marolinha * (0.32 + uRajada * 0.22));
+              }
+
+              // as marolas (anéis abrindo)
+              float anel = 0.0;
+              float cava = 0.0;
+              for (int i = 0; i < ${MAROLAS}; i++) {
+                vec4 m = uMarolas[i];
+                float idade = t - m.z;
+                if (m.w <= 0.0 || idade < 0.0 || idade > 3.6) continue;
+                float raio = idade * (0.85 + m.w * 0.35);
+                float r = distance(mundo, m.xy);
+                if (r > raio + 0.5) continue;
+                float some = exp(-idade * 1.05) * min(m.w, 1.6);
+                float largura = 0.035 + idade * 0.018;
+                anel += lagoTraco(r - raio, largura, px) * some;
+                anel += lagoTraco(r - (raio - 0.32), largura * 0.8, px) * some * 0.55 * step(0.32, raio);
+                cava += lagoTraco(r - (raio - largura * 3.0), largura * 1.4, px) * some * 0.5;
+              }
+
+              // o rastro de quem nada: o V e o anel de espuma em volta do corpo
+              float rastro = 0.0;
+              float contato = 0.0;
+              for (int i = 0; i < ${RASTROS}; i++) {
+                vec4 b = uRastros[i];
+                if (b.w <= 0.0) continue;
+                float tam = floor(b.w) / 10.0;
+                float vel = fract(b.w);
+                vec2 rel = mundo - b.xy;
+                if (abs(rel.x) > 3.4 || abs(rel.y) > 3.4) continue;
+                vec2 frente = vec2(sin(b.z), cos(b.z));
+                float atras = -dot(rel, frente);
+                float lado = abs(dot(rel, vec2(frente.y, -frente.x)));
+                float r = length(rel);
+                contato += lagoTraco(r - 0.26 * tam, 0.025 + 0.01 * tam, px) * (0.55 + 0.25 * sin(t * 3.0 + float(i)));
+                if (vel > 0.02 && atras > 0.0) {
+                  // o V é curto e fino, e some aos poucos: rastro de pato é
+                  // delicado (comprido e forte, virava esteira de lancha)
+                  float comprimento = (0.5 + vel * 1.3) * tam;
+                  float braco = lagoTraco(lado - atras * 0.36 - 0.1 * tam, 0.016 + atras * 0.01, px);
+                  float tracejado = smoothstep(0.05, 0.6, sin(atras * 15.0 / max(tam, 0.4) - t * 8.0));
+                  float some = pow(max(0.0, 1.0 - atras / comprimento), 1.5);
+                  rastro += braco * tracejado * some * vel;
+                }
+              }
+
+              // a espuma em volta do que fura a água
+              float colar = 0.0;
+              for (int i = 0; i < ${ESTACAS}; i++) {
+                vec4 e = uEstacas[i];
+                if (e.z <= 0.0) continue;
+                vec2 rel = mundo - e.xy;
+                if (abs(rel.x) > e.z + 0.5 || abs(rel.y) > e.z + 0.5) continue;
+                float r = length(rel) - e.z;
+                float pulso = 0.5 + 0.5 * sin(t * 1.6 + e.w * 6.28);
+                colar += lagoTraco(r - 0.03 - pulso * 0.05, 0.022, px) * 0.9;
+                colar += lagoTraco(r - 0.16 - pulso * 0.1, 0.014, px) * 0.45 * (1.0 - pulso * 0.6);
+              }
+
+              // a espuma da beira: a linha onde a água encosta, picotada, e a
+              // segunda linha chegando atrás dela
+              float beira = 0.0;
+              float segunda = 0.0;
+              if (dentro < 0.6) {
+                float picote = smoothstep(0.32, 0.55, labRuido(vec3(ang * 11.0, d * 0.5, t * 0.25)));
+                beira = lagoTraco(dentro - 0.04, 0.035, px) * (0.55 + 0.45 * picote);
+                float chegando = 0.18 + (1.0 - vaiVem) * 0.32;
+                segunda = lagoTraco(dentro - chegando, 0.022, px) * picote * 0.6;
+              }
+
+              float claro = clamp(anel + rastro * 0.55 + contato + colar + beira + segunda, 0.0, 1.0);
+              corDaAgua = mix(corDaAgua, corDaAgua * 0.82, clamp(cava, 0.0, 0.6));
+              corDaAgua = mix(corDaAgua, uEspuma, claro * 0.92);
+
+              cor = mix(cor, corDaAgua, agua);
+
+              // ------------------------------------------- a faísca do sol
+              // (lida na luz, no RE_Direct_Lago: aqui só a máscara e a normal)
+              float fundoBastante = smoothstep(0.5, 1.6, dentro);
+              if (fundoBastante > 0.0) {
+                float faisca = lagoFaisca(mundo + vento * t * 0.25, 2.2, t, 0.0, px) + lagoFaisca(mundo - vento * t * 0.18, 3.6, t * 1.3, 17.0, px) * 0.6;
+                lagoFaiscas = faisca * fundoBastante * (0.75 + uRajada * 0.4) * (1.0 - claro);
+              }
+              // a normal da superfície, mexida pelas mesmas ondas, em espaço de
+              // vista — só onde tem faísca, que é o único lugar em que ela conta
+              if (lagoFaiscas > 0.0) {
+                float e1 = labRuido(vec3(mundo * 1.7 + vento * t * 0.6, t * 0.4));
+                float e2 = labRuido(vec3(mundo.yx * 1.7 - vento * t * 0.5, t * 0.4 + 5.0));
+                vec3 normalNoMundo = normalize(vec3((e1 - 0.5) * 0.5, 1.0, (e2 - 0.5) * 0.5));
+                lagoNormal = normalize((viewMatrix * vec4(normalNoMundo, 0.0)).xyz) * agua;
               }
             }
-
-            // a espuma em volta do que fura a água
-            float colar = 0.0;
-            for (int i = 0; i < ${ESTACAS}; i++) {
-              vec4 e = uEstacas[i];
-              if (e.z <= 0.0) continue;
-              vec2 rel = mundo - e.xy;
-              if (abs(rel.x) > e.z + 0.5 || abs(rel.y) > e.z + 0.5) continue;
-              float r = length(rel) - e.z;
-              float pulso = 0.5 + 0.5 * sin(t * 1.6 + e.w * 6.28);
-              colar += lagoTraco(r - 0.03 - pulso * 0.05, 0.022, px) * 0.9;
-              colar += lagoTraco(r - 0.16 - pulso * 0.1, 0.014, px) * 0.45 * (1.0 - pulso * 0.6);
-            }
-
-            // a espuma da beira: a linha onde a água encosta, picotada, e a
-            // segunda linha chegando atrás dela
-            float picote = smoothstep(0.32, 0.55, labRuido(vec3(ang * 11.0, d * 0.5, t * 0.25)));
-            float beira = lagoTraco(dentro - 0.04, 0.035, px) * (0.55 + 0.45 * picote);
-            float chegando = 0.18 + (1.0 - vaiVem) * 0.32;
-            float segunda = lagoTraco(dentro - chegando, 0.022, px) * picote * 0.6;
-
-            float claro = clamp(anel + rastro * 0.55 + contato + colar + beira + segunda, 0.0, 1.0);
-            corDaAgua = mix(corDaAgua, corDaAgua * 0.82, clamp(cava, 0.0, 0.6));
-            corDaAgua = mix(corDaAgua, uEspuma, claro * 0.92);
-
-            cor = mix(cor, corDaAgua, agua);
-
-            // ------------------------------------------- a faísca do sol
-            // (lida na luz, no RE_Direct_Lago: aqui só a máscara e a normal)
-            float fundoBastante = smoothstep(0.5, 1.6, dentro);
-            float faisca = lagoFaisca(mundo + vento * t * 0.25, 2.2, t, 0.0, px) + lagoFaisca(mundo - vento * t * 0.18, 3.6, t * 1.3, 17.0, px) * 0.6;
-            lagoFaiscas = faisca * fundoBastante * (0.75 + uRajada * 0.4) * (1.0 - claro);
-            // a normal da superfície, mexida pelas mesmas ondas, em espaço de vista
-            float e1 = labRuido(vec3(mundo * 1.7 + vento * t * 0.6, t * 0.4));
-            float e2 = labRuido(vec3(mundo.yx * 1.7 - vento * t * 0.5, t * 0.4 + 5.0));
-            vec3 normalNoMundo = normalize(vec3((e1 - 0.5) * 0.5, 1.0, (e2 - 0.5) * 0.5));
-            lagoNormal = normalize((viewMatrix * vec4(normalNoMundo, 0.0)).xyz) * agua;
 
             // ---------------------------------------- a borda com a grama
-            float fora = d - (margem + areia + (labRuido(vec3(mundo * 1.9, 7.0)) - 0.5) * 0.2);
+            // o ruído da borda só perto dela; a medida do pixel é a da borda lisa
+            float fora = foraLiso;
+            if (foraLiso > -0.4) fora += (labRuido(vec3(mundo * 1.9, 7.0)) - 0.5) * 0.2;
             diffuseColor.rgb = cor;
-            diffuseColor.a = clamp(0.5 - fora / max(fwidth(fora), 1e-4) * 0.5, 0.0, 1.0);
+            diffuseColor.a = clamp(0.5 - fora / aaFora * 0.5, 0.0, 1.0);
           }`,
         )
         .replace(

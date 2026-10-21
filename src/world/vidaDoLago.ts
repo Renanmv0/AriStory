@@ -147,7 +147,12 @@ export class Cardume {
   private readonly rnd: () => number;
   private readonly agua: AguaDoLago;
   private readonly peixeNoAr: THREE.Group;
-  private readonly respingos = new Particulas(140, 0.3, 1, 5);
+  /**
+   * Os respingos: o pool é pequeno de propósito. O `Particulas` desenha TODAS
+   * as vagas todo quadro (as mortas encolhidas a zero), e um pulo de peixe
+   * solta no máximo uns 16 pingos vivos ao mesmo tempo.
+   */
+  private readonly respingos = new Particulas(48, 0.3, 1, 5);
   readonly grupo = new THREE.Group();
   /** o pulo em curso */
   private pulo: { i: number; de: THREE.Vector3; rumo: number; t: number; comprimento: number } | null = null;

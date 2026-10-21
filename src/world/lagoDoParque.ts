@@ -213,12 +213,14 @@ export function trapiche(): THREE.Group {
       poste.position.set(s * X_DO_POSTE, altura - 0.16 + 0.52, z);
       g.add(poste);
     }
-    const comp = fimDoCorrimao - rampa + 0.075;
+    // o corrimão passa 1 cm de cada poste das pontas: rente, a ponta dele caía
+    // no mesmo plano da face do poste
+    const comp = fimDoCorrimao - rampa + 0.095;
     const corrimao = new THREE.Mesh(new THREE.BoxGeometry(0.095, 0.05, comp), toon(P.trapicheTabuaClara));
-    corrimao.position.set(s * X_DO_POSTE, altura + 0.9, rampa + comp / 2 - 0.0375);
+    corrimao.position.set(s * X_DO_POSTE, altura + 0.9, rampa + comp / 2 - 0.0475);
     g.add(corrimao);
-    const meio = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.045, comp - 0.02), toon(P.trapicheViga));
-    meio.position.set(s * (X_DO_POSTE + 0.002), altura + 0.47, rampa + comp / 2 - 0.0375);
+    const meio = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.045, comp - 0.04), toon(P.trapicheViga));
+    meio.position.set(s * (X_DO_POSTE + 0.002), altura + 0.47, rampa + comp / 2 - 0.0475);
     g.add(meio);
   }
 
@@ -273,9 +275,14 @@ export function placaDoLago(): THREE.Group {
   const tabua = new THREE.Mesh(new THREE.BoxGeometry(L, A, 0.035), toon(P.placaDoLago));
   tabua.position.set(0, Y, 0.06);
   g.add(tabua);
-  // a moldura vermelha, 4 réguas por cima da frente (1,5 mm à frente da tábua)
-  for (const [w, h, x, y] of [[L, 0.03, 0, A / 2 - 0.015], [L, 0.03, 0, -A / 2 + 0.015], [0.03, A, L / 2 - 0.015, 0], [0.03, A, -L / 2 + 0.015, 0]] as const) {
-    const regua = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.012), toon(P.placaDoLagoTinta));
+  // a moldura vermelha, 4 réguas por cima da frente. As de pé são um tico
+  // mais finas, mais curtas e recuadas que as deitadas: na quina, réguas do
+  // mesmo tamanho dividiam o plano da ponta, do topo e das duas faces
+  for (const [w, h, x, y, fundo] of [
+    [L, 0.03, 0, A / 2 - 0.015, 0.012], [L, 0.03, 0, -A / 2 + 0.015, 0.012],
+    [0.028, A - 0.012, L / 2 - 0.018, 0, 0.009], [0.028, A - 0.012, -L / 2 + 0.018, 0, 0.009],
+  ] as const) {
+    const regua = new THREE.Mesh(new THREE.BoxGeometry(w, h, fundo), toon(P.placaDoLagoTinta));
     regua.position.set(x, Y + y, 0.06 + 0.0175 + 0.0045);
     g.add(regua);
   }
