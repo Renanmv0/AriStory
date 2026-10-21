@@ -14,7 +14,7 @@ import {
   canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro,
   fence, floodlight, flowers, iceCream, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
   comidinhasDePiquenique, mesaPingPong, picnicTable, portaRetrato, posteDeGelo,
-  raquete, skateShop, toalhaDePiquenique,
+  raquete, toalhaDePiquenique,
   rock, sacoDeGraos, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
   bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong,
   quadroDeInscricoes, suporteDeRaquetes,
@@ -44,6 +44,7 @@ import {
   TRAPICHE, TRONCO, alturaNoTrapiche, aguaDoLago, coloniaDeNinfeias, moedinha, Ninfeias, placaDoLago,
   seixosDaBeira, taboal, topoDoTronco, trapiche, troncoDoLago, type TufoDeTaboa,
 } from '../world/lagoDoParque';
+import { LOJA_DE_PATINS, lojaDePatins } from '../world/lojaDePatins';
 import { Cardume, Libelulas } from '../world/vidaDoLago';
 import { PATINHO, PATO_BRANCO, PATO_CREME, PatoDoLago } from '../entities/bichos/PatoDoLago';
 import { Garca, type PontoDePesca } from '../entities/bichos/Garca';
@@ -121,14 +122,13 @@ export const villaLobos: SceneDef = {
      */
     const PISTA = { x: -21, z: -5, reta: 5, raio: 5, miolo: 2.4 };
     /**
-     * O balcão de entrega, no lado +X da loja.
+     * O balcão do aluguel, colado no lado +X da loja.
      *
-     * Estes números saem da geometria de `skateShop()`, e é por não terem saído
-     * que a colisão estava quebrada: a caixa antiga ficava a 5,9 do centro
-     * enquanto o balcão de verdade está a 4,65 — dava para atravessar o móvel e
-     * esbarrar no vazio ao lado dele.
+     * Os números saem de `LOJA_DE_PATINS` (a peça), e não são repetidos aqui:
+     * na primeira loja eles eram copiados à mão, a caixa ficava a 5,9 do centro
+     * com o balcão a 4,65, e dava para atravessar o móvel.
      */
-    const BALCAO = { x: LOJA.x + 4.72, z: LOJA.z + 0.2 };
+    const BALCAO = { x: LOJA.x + LOJA_DE_PATINS.balcao.x, z: LOJA.z + LOJA_DE_PATINS.balcao.z };
 
     // A quadra de frisbee: fora dela o disco nem aparece na mão.
     const QUADRA = { x: 18, z: -4.5, largura: 26, profundidade: 19 };
@@ -2223,21 +2223,20 @@ export const villaLobos: SceneDef = {
     });
 
     // --------------------------------------------------- loja de patins
-    const loja = w.add(w.place(skateShop(P.fabricBlue), LOJA.x, 0, LOJA.z));
+    const loja = w.add(fundir(w.place(lojaDePatins(), LOJA.x, 0, LOJA.z)));
     // o teste acha a loja por aqui para comparar o colisor com o desenho
     loja.userData.loja = true;
     /**
-     * A colisão, decalcada da geometria de `skateShop()`:
-     *  - o prédio vai de x −3,7 a 3,7 e de z −2,33 (parede do fundo) a 2,2
-     *    (a vitrine);
-     *  - o balcão e os pés do abrigo ocupam x 4,08 a 5,32 e z −1,4 a 1,8;
-     *  - as duas colunas da frente ficam nos cantos do beiral.
-     * A laje e o toldo não entram: passam bem acima da cabeça.
+     * A colisão, lida de `LOJA_DE_PATINS`: o prédio (do fundo até a floreira e
+     * o degrau da porta, na frente) e o balcão do aluguel. Os toldos e o
+     * letreiro não entram: passam bem acima da cabeça.
+     * `scripts/lojaDePatins.mjs` confere que nada da loja na altura do corpo
+     * fica fora destas caixas.
      */
-    w.blockBox(LOJA.x, LOJA.z - 0.05, 3.7, 2.3);
-    w.blockBox(BALCAO.x, BALCAO.z, 0.65, 1.6);
-    for (const lado of [-1, 1]) {
-      w.blockCircle(LOJA.x + lado * 4.05, LOJA.z + 2.82, 0.16);
+    {
+      const L = LOJA_DE_PATINS;
+      w.blockBox(LOJA.x, LOJA.z + (L.frente - L.meiaZ) / 2, L.meiaX, (L.frente + L.meiaZ) / 2);
+      w.blockBox(BALCAO.x, BALCAO.z, L.balcao.meiaX, L.balcao.meiaZ);
     }
 
     // bancos de calçar, na lateral livre da loja — e não mais perto do lago
