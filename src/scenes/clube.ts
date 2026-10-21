@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { LuzesDosPostes } from '../world/mobiliarioDoParque';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, SceneDef } from '../core/types';
 import { flat, toon } from '../core/materials';
@@ -1098,6 +1099,11 @@ export const clube: SceneDef = {
       w.add(w.place(lamp(), x, 0, 12));
       w.blockCircle(x, 12, 0.25);
     }
+    // a luz de verdade dos postes (world/mobiliarioDoParque.ts): quatro luzes
+    // que vão para os postes mais perto da dupla
+    const luzesDosPostes = new LuzesDosPostes(w.root);
+    w.add(luzesDosPostes.grupo);
+    w.onUpdate((dt) => luzesDosPostes.update(dt, w.game.playerPosition()));
     w.add(w.place(waterFountain(), 11.5, 0, 3.4));
     w.blockBox(11.5, 3.4, 0.3, 0.25);
     w.add(w.place(bin(), 6.5, 0, 11.4));

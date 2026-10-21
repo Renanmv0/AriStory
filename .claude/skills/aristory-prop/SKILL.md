@@ -650,6 +650,34 @@ Peso (as 93 árvores do parque): 467 malhas → 93; 28,8 mil → 80,8 mil
 triângulos (redonda ~1 mil, florida ~1,2 mil, pinheiro ~0,4 mil, palmeira
 ~1 mil).
 
+## O poste e a lixeira (`world/mobiliarioDoParque.ts`)
+
+A família do banco de praça (ferro verde-garrafa, madeira com veio, um fio
+de dourado). `lamp()` e `bin()` do `props.ts` chamam `poste()` e
+`lixeira()`, então toda cena que já tinha poste e lixeira trocou junto.
+
+- **Coluna canelada sem textura**: cilindro de 16 gomos com um sim, um não
+  recolhido, SEM índice — cada face com a sua normal, e o toon pinta cada
+  canelura de um tom.
+- **A lanterna sextavada** é o vidro aceso (`toon` com `glow`, malha com nome
+  `vidro-aceso`), e as quinas dele casam com as da bandeja e do telhadinho
+  porque o `LatheGeometry` e o `CylinderGeometry` começam o giro no mesmo
+  ângulo (6 gomos nos três).
+- **LUZ DE VERDADE, com conta**: `LuzesDosPostes` são QUATRO `PointLight`
+  para a cena inteira, que vão para os postes mais perto da dupla (a cena
+  chama `update(dt, g.playerPosition())`). Número fixo de luzes: o shader é
+  compilado uma vez e o peso não cresce com os postes. A força cai com a
+  distância (some a 16 m), e a luz só troca de poste quando já apagou (ela
+  estava longe) — nada de estalo. `noite` (0 a 1) é da cena: a clareira sobe
+  ao anoitecer. Os postes longe brilham só com o vidro, o halo e a poça
+  pintada. De dia, com força 5, a luz sumia no sol: ficou 11.
+- **A lixeira**: ripas em roda com dois aros abertos por fora, o saco escuro
+  dobrado na borda, o chapéu de chuva fechado embaixo (o lixo entra pelo
+  vão dos três pezinhos) e a plaquinha de reciclagem em canvas (o material
+  é um só, guardado no módulo).
+- Tamanho dos antigos (poste com 0,25 de raio de pé, lixeira 0,27): os
+  colisores das cenas continuam valendo.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

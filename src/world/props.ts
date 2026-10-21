@@ -3,6 +3,7 @@ import { toon, flat } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { regadorDeJardim } from './regador';
 import { arvore } from './arvores';
+import { lixeira, poste } from './mobiliarioDoParque';
 
 /**
  * Kit de cenario ao ar livre. Toda peca volta como um Group com a base em y=0,
@@ -409,37 +410,17 @@ export function bench(color: number = P.wood): THREE.Group {
   return g;
 }
 
-export function lamp(lit = false): THREE.Group {
-  const g = new THREE.Group();
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.4, 8), toon(P.metalGrey));
-  pole.position.y = 1.7;
-  g.add(pole);
-  const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.3, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.62),
-    toon(P.metalWhite),
-  );
-  head.position.y = 3.45;
-  head.rotation.x = Math.PI;
-  g.add(head);
-  const bulb = new THREE.Mesh(
-    new THREE.SphereGeometry(0.2, 10, 8),
-    toon(lit ? P.gold : 0xe8e8e0, { glow: lit ? 0.9 : 0 }),
-  );
-  bulb.position.y = 3.32;
-  g.add(bulb);
-  return g;
+/**
+ * O poste e a lixeira do parque moram em `world/mobiliarioDoParque.ts` (a
+ * família do banco de praça). Os nomes de sempre continuam aqui para quem
+ * já chamava; `lit` ficou sem uso (a lanterna nasce acesa).
+ */
+export function lamp(_lit = false): THREE.Group {
+  return poste();
 }
 
 export function bin(): THREE.Group {
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.75, 10), toon(0x4f7a4a));
-  body.position.y = 0.38;
-  g.add(body);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.04, 6, 14), toon(P.metalGrey));
-  rim.position.y = 0.76;
-  rim.rotation.x = Math.PI / 2;
-  g.add(rim);
-  return g;
+  return lixeira();
 }
 
 export function picnicTable(): THREE.Group {
