@@ -89,7 +89,24 @@ export type SomNome =
   | 'passarinho'
   // o Bebito book: a caneta riscando o papel e o clique da caneta trocando de mão
   | 'rabisco'
-  | 'caneta';
+  | 'caneta'
+  // a cozinha do fogareiro (etapa D do acampamento)
+  | 'gasDoFogareiro'
+  | 'faisca'
+  | 'chamaAcende'
+  | 'chamaApaga'
+  | 'tampaTremendo'
+  | 'despejar'
+  | 'fritar'
+  | 'colherNaCaneca'
+  | 'virar'
+  | 'radioLiga'
+  | 'radioDesliga'
+  | 'antena'
+  | 'vagaLume'
+  | 'soltarVagaLumes'
+  | 'constelacao'
+  | 'estrelaCadente';
 
 /** graus da pentatônica maior, em semitons */
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
@@ -888,6 +905,140 @@ export const EFEITOS: Record<SomNome, Receita> = {
     tom(ctx, destino, { freq: nota(DO + 24), quando: t, dur: 0.035, vol: 0.03, tipo: 'triangle' });
     chiado(ctx, destino, { quando: t + 0.075, dur: 0.028, vol: 0.1, freq: 3100, q: 3 });
     tom(ctx, destino, { freq: nota(DO + 19), quando: t + 0.075, dur: 0.045, vol: 0.028, tipo: 'triangle' });
+  },
+
+  // ------------------------------------------- a cozinha do fogareiro
+  /*
+   * O GÁS SAINDO do fogareiro aceso: um chiado agudo e baixinho, que a
+   * cozinha toca a cada 0,55 s com `sustenta` e duração maior que o
+   * intervalo — um sopro emenda no outro (a técnica da mangueira) e soa
+   * contínuo, como gás de verdade.
+   */
+  gasDoFogareiro: ({ ctx, destino, t, n }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.8, vol: 0.016, freq: 5200 + (n % 2) * 300, q: 0.7, tipo: 'highpass', sustenta: 0.7 });
+  },
+
+  // o acendedor piezo: um estalo seco e agudo, com um "tic" de metal por cima
+  faisca: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.03, vol: 0.13, freq: 6000, q: 4 });
+    tom(ctx, destino, { freq: nota(DO + 31), quando: t, dur: 0.025, vol: 0.02, tipo: 'square', abafo: 5000 });
+  },
+
+  // a chama pegando: o "fum" grave do gás inflamando, que abre e assenta
+  chamaAcende: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.42, vol: 0.13, freq: 500, glide: 1600, q: 0.6, tipo: 'lowpass' });
+    tom(ctx, destino, { freq: 95, glide: 62, quando: t, dur: 0.3, vol: 0.07, tipo: 'sine' });
+  },
+
+  // fechou o gás: um "puf" curtinho
+  chamaApaga: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.2, vol: 0.14, freq: 900, glide: 260, q: 0.8, tipo: 'lowpass' });
+  },
+
+  // a tampa da panelinha pulando na boca: dois tilintares de alumínio
+  tampaTremendo: ({ ctx, destino, t, n }) => {
+    tom(ctx, destino, { freq: nota(DO + 26 + (n % 2) * 2), quando: t, dur: 0.05, vol: 0.035, tipo: 'triangle' });
+    tom(ctx, destino, { freq: nota(DO + 31), quando: t + 0.045, dur: 0.06, vol: 0.026, tipo: 'triangle' });
+    chiado(ctx, destino, { quando: t, dur: 0.03, vol: 0.035, freq: 4200, q: 3 });
+  },
+
+  /*
+   * DESPEJAR: o fio de líquido caindo na caneca — um chiado de banda do meio
+   * que dura o despejo inteiro, mais três "glub" subindo (o nível chegando
+   * perto da boca deixa o som mais agudo, como numa caneca de verdade).
+   */
+  despejar: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 1.6, vol: 0.05, freq: 1100, glide: 1700, q: 1.6, sustenta: 0.75 });
+    [0.25, 0.7, 1.15].forEach((d, i) => {
+      tom(ctx, destino, { freq: nota(DO - 5 + i * 4), glide: nota(DO + i * 4), quando: t + d, dur: 0.09, vol: 0.03, tipo: 'sine' });
+    });
+  },
+
+  // a manteiga e a arepa no budare quente: o chiado de fritura, com os estalinhos
+  fritar: ({ ctx, destino, t, n }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.7, vol: 0.028, freq: 4800, q: 0.6, tipo: 'highpass', sustenta: 0.5 });
+    for (let i = 0; i < 5; i++) {
+      const d = ((n * 7 + i * 13) % 17) / 17 * 0.55;
+      chiado(ctx, destino, { quando: t + d, dur: 0.018, vol: 0.05, freq: 3000 + i * 400, q: 3 });
+    }
+  },
+
+  // a colher batendo na lata ou na beira da panela: um "tlim" fininho
+  colherNaCaneca: ({ ctx, destino, t, n }) => {
+    tom(ctx, destino, { freq: nota(DO + 24 + (n % 3) * 2), quando: t, dur: 0.09, vol: 0.04, tipo: 'sine' });
+    tom(ctx, destino, { freq: nota(DO + 36), quando: t, dur: 0.04, vol: 0.012, tipo: 'sine' });
+  },
+
+  // a arepa caindo (ou virando) no budare: um "tuc" macio
+  virar: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.06, vol: 0.07, freq: 700, q: 1.2, tipo: 'lowpass' });
+    tom(ctx, destino, { freq: 210, glide: 160, quando: t, dur: 0.07, vol: 0.05, tipo: 'sine' });
+  },
+
+  // ------------------------------------------------- o radinho de pilha
+  /*
+   * LIGAR O RADINHO: o clique do botão de volume (um estalo de plástico) e a
+   * estática da sintonia — o chiado que varre de grave para agudo enquanto a
+   * agulha corre, com um assobio fininho de estação passando no meio. ~1 s,
+   * o tempo da agulha chegar no coraçãozinho do mostrador.
+   */
+  radioLiga: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.025, vol: 0.3, freq: 2600, q: 3 });
+    tom(ctx, destino, { freq: nota(DO + 7), quando: t, dur: 0.03, vol: 0.03, tipo: 'square', abafo: 3000 });
+    chiado(ctx, destino, { quando: t + 0.08, dur: 0.95, vol: 0.085, freq: 900, glide: 3600, q: 1.4, tipo: 'bandpass', sustenta: 0.6 });
+    tom(ctx, destino, { freq: nota(DO + 19), glide: nota(DO + 24), quando: t + 0.42, dur: 0.22, vol: 0.012, tipo: 'sine' });
+  },
+
+  // desligar: o mesmo clique, e a estática que some num "fff" descendo
+  radioDesliga: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.025, vol: 0.3, freq: 2300, q: 3 });
+    chiado(ctx, destino, { quando: t + 0.02, dur: 0.28, vol: 0.07, freq: 2600, glide: 700, q: 1.2, tipo: 'bandpass' });
+  },
+
+  // a antena telescópica esticando: os gomos estalando um depois do outro, subindo
+  antena: ({ ctx, destino, t }) => {
+    for (const [i, grau] of [0, 4, 7].entries()) {
+      const q = t + i * 0.12;
+      tom(ctx, destino, { freq: nota(DO + 24 + grau), quando: q, dur: 0.05, vol: 0.04, tipo: 'triangle' });
+      chiado(ctx, destino, { quando: q, dur: 0.02, vol: 0.11, freq: 5200, q: 4 });
+    }
+  },
+
+  // ------------------------------------------------- o pote de vaga-lumes
+  // pegou um: o "plim" de vidro de quando ele entra, e a tampa de lata fechando
+  vagaLume: ({ ctx, destino, t, n }) => {
+    const grau = [0, 4, 7, 9, 12][n % 5];
+    tom(ctx, destino, { freq: nota(DO + 19 + grau), quando: t, dur: 0.22, vol: 0.06, tipo: 'sine' });
+    tom(ctx, destino, { freq: nota(DO + 31 + grau), quando: t + 0.01, dur: 0.12, vol: 0.016, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t + 0.42, dur: 0.03, vol: 0.16, freq: 3400, q: 3 });
+    tom(ctx, destino, { freq: nota(DO + 7), quando: t + 0.42, dur: 0.04, vol: 0.03, tipo: 'triangle' });
+  },
+
+  // abriu o pote: a tampa estalando e os vaga-lumes subindo num arpejo brilhante
+  soltarVagaLumes: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.04, vol: 0.16, freq: 3000, q: 3 });
+    for (const [i, grau] of [0, 4, 7, 12, 16, 19].entries()) {
+      tom(ctx, destino, { freq: nota(DO + 12 + grau), quando: t + 0.08 + i * 0.075, dur: 0.3, vol: 0.05 - i * 0.004, tipo: 'sine' });
+    }
+    chiado(ctx, destino, { quando: t + 0.08, dur: 0.55, vol: 0.03, freq: 6500, glide: 9000, q: 0.8, tipo: 'highpass' });
+  },
+
+  // ------------------------------------------------- olhar as estrelas
+  // acharam o coração: um carrilhão de vidro bem baixinho, descendo devagar
+  constelacao: ({ ctx, destino, t }) => {
+    for (const [i, grau] of [24, 19, 16, 12].entries()) {
+      tom(ctx, destino, { freq: nota(DO + grau), quando: t + i * 0.16, dur: 0.6, vol: 0.04, tipo: 'sine' });
+      tom(ctx, destino, { freq: nota(DO + grau) * 2, quando: t + i * 0.16, dur: 0.15, vol: 0.008, tipo: 'sine' });
+    }
+  },
+
+  // a estrela cadente: um "fiiu" agudo que desce e um brilhinho no fim
+  estrelaCadente: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 1.1, vol: 0.035, freq: 7800, glide: 2600, q: 2.2, tipo: 'bandpass', sustenta: 0.5 });
+    tom(ctx, destino, { freq: nota(DO + 31), glide: nota(DO + 19), quando: t, dur: 1.0, vol: 0.022, tipo: 'sine' });
+    for (const [i, grau] of [28, 31, 36].entries()) {
+      tom(ctx, destino, { freq: nota(DO + grau), quando: t + 0.95 + i * 0.07, dur: 0.25, vol: 0.022, tipo: 'sine' });
+    }
   },
 
   // ------------------------------------------------- a noite na clareira

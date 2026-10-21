@@ -91,6 +91,33 @@ caderno toca no máximo a cada 45 ms; o `n` muda o filtro) e `caneta` (o
 clique duplo da esferográfica quando a caneta troca de mão e quando o
 elástico sai e volta).
 
+**A etapa D da clareira** tem a música de dançar e uma família de sons:
+
+- **`'danca-lenta'`** (o radinho): a balada de baile — 66 bpm em sol, o giro
+  I–vi–ii–V das músicas de dançar agarradinho, e a chave `arpejo` no
+  `Clima`: as notas do acorde uma por colcheia, subindo e descendo, num
+  "plim" de caixinha (seno com um harmônico curtinho), e o acorde vira um
+  fundo comprido no primeiro tempo em vez do comping. O suingue de sempre
+  deixa tudo num 12/8 preguiçoso. A batida do radinho (`BATIDA_DO_RADINHO`)
+  e o balanço da dança (`entities/DancaLenta.ts`) usam os mesmos 66.
+- **o fogareiro**: `faisca` (o piezo), `chamaAcende` (o "fum" do gás
+  pegando), `chamaApaga` (o "puf"), `gasDoFogareiro` (o chiado contínuo,
+  emendado como a mangueira, ~0,016 — é fundo), `tampaTremendo`, `despejar`,
+  `fritar` (a manteiga e as arepas no budare), `colherNaCaneca` e `virar`
+  (o "tuc" da espátula);
+- **o radinho**: `radioLiga` (o clique e a estática varrendo a sintonia),
+  `radioDesliga` e `antena` (os gomos estalando, subindo);
+- **o pote**: `vagaLume` (o "plim" de vidro de quando ele entra, a nota sobe
+  com o `n`, e a tampa de lata fechando) e `soltarVagaLumes` (a tampa
+  estalando e um arpejo brilhante subindo);
+- **as estrelas**: `constelacao` (um carrilhão de vidro descendo, quando eles
+  acham o coração) e `estrelaCadente` (um "fiiu" agudo descendo e um
+  brilhinho no fim).
+
+Medidos no `.wav`: o clique do radinho e o "puf" da chama saíam baixos
+demais (~0,03) — o filtro estreito do `chiado` come quase todo o ruído, e o
+volume dele precisa compensar.
+
 **Tensão sem perder o fofo** (o pedido do Renan para a defesa da estufa): a
 marimba e os acordes com sétima continuam, e entram chaves opcionais no
 `Clima` — `reto` (sem suingue), `ostinato` (pizzicato em colcheias), `bumbo`

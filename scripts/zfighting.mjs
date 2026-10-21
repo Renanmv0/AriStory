@@ -119,6 +119,10 @@ const PECAS = [
   ['mochila-cargueira', 'villa-lobos'],
   ['tronco-caido', 'villa-lobos'],
   ['varal-de-luzinhas', 'villa-lobos'],
+  // a etapa D da clareira: o caixote de feira da cozinha, o radinho e o pote
+  ['caixote-de-feira', 'villa-lobos'],
+  ['radinho', 'villa-lobos'],
+  ['pote-de-vaga-lumes', 'villa-lobos'],
   ['arara-de-roupas', 'lojinha'],
   ['arara-premium', 'lojinha'],
   ['provadores', 'lojinha'],

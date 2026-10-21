@@ -308,6 +308,38 @@ acelera pelo gancho (`ritmo.vezes`).
 Para dormir, `g.escurecerTela(true, 'sono')` (a cortina azul devagar, com a
 luazinha) — é por baixo dela que a cena troca a noite pela aurora.
 
+### A etapa D: cozinhar, dançar, o pote e as estrelas
+
+- **Montado numa âncora, a câmera agora segue o MUNDO**: o `chest` do
+  jogador lê a posição de mundo quando ele está montado (antes lia a local,
+  e a isométrica ficava perto da origem do parque durante a tomada de cena e
+  voltava de lá quando ela acabava — o "foi parar no lago").
+- **A tomada de cena de uma mesa vem do lado LIVRE dela**: com um sentado
+  no `−X` e outro no `+Z`, a câmera pelo `+Z` via a nuca do ajudante na
+  frente do fogareiro.
+- **A dança** (`g.dancaLenta(RENAN.name)`, `g.voltinhaNaDanca()`): os dois
+  montados na MESMA âncora; o motor põe os dois de frente no X dela, à
+  distância das cabeças, e dá a mesma fase do balanço com meia volta de
+  diferença (de frente um para o outro, o `+X` de um é o `−X` do outro). A
+  cena gira a âncora num vaivém e a câmera ACOMPANHA, balançando ~30° de
+  cada lado do perfil: na régua chibi o rosto é a frente de uma bola e o
+  cabelo dá a volta — de perfil puro só se vê cabelo, e com a âncora girando
+  sem parar o par se alinhava com a câmera.
+- **Prompt que persegue** (o vaga-lume mais perto): `it.moveTo` todo quadro
+  e `enabled` quando há alvo; e o prompt que anda com quem joga ("Soltar os
+  vaga-lumes aqui") tem a menor prioridade de todas. Os dois não podem
+  brigar pelo E: o de pegar só vale PERTINHO (70 cm).
+- **Deitar na canga olhando o céu** é a âncora de deitar girada também em
+  Y (`rotation.set(-π/2, π/2, 0, 'YXZ')`: o corpo no X do pano, que é o lado
+  comprido); o `BeijoDeitado` vale nela igual. A constelação e a estrela
+  cadente moram no `CeuDaClareira` (`coracaoEm`, `acharCoracao`,
+  `estrelaCadente`), e o coração fica a 70° de altura — mais baixo, as copas
+  da borda da clareira tapavam.
+- **Dado da cena no save durante o `build`**: o `g.vagaLumesSoltos()` lê a
+  cena que está SUBINDO (o `current` do motor só muda no fim do `build`; antes
+  dele, ler pelo `current` devolvia a cena velha e os soltos sumiam ao
+  recarregar).
+
 ## Andar de cima (o mezanino da boutique)
 
 O motor não tem "andar": a física de caminhada escreve só `x` e `z`, e a

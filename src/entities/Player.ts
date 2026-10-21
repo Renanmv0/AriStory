@@ -92,6 +92,14 @@ export class Player {
 
   /** ponto na altura do peito, bom alvo para a camera */
   get chest(): THREE.Vector3 {
+    // montado numa âncora, a posição é a do quadro DELA: a câmera quer o mundo
+    // (sem isso, a isométrica seguia um ponto perto da origem durante a tomada
+    // de cena, e voltava de lá — do outro lado do parque — quando ela acabava)
+    if (this.riding && this.object.parent) {
+      const p = this.object.getWorldPosition(new THREE.Vector3());
+      p.y += 1.0;
+      return p;
+    }
     return new THREE.Vector3(this.position.x, this.position.y + 1.0, this.position.z);
   }
 

@@ -493,6 +493,42 @@ molde de peça que se ENTRA sem virar cena nova:
   apagado). O `Sprite` não se instancia. Os halos do varal, os vaga-lumes e
   as estrelas (`world/noite.ts`) usam ele, sempre com `semSombra`.
 
+## A etapa D da clareira: o fogareiro, o radinho e o pote
+
+Três peças que SE MEXEM o tempo todo, e o molde de cada uma:
+
+- **A cozinha do fogareiro** (`world/cozinhaDeAcampamento.ts`, a classe
+  `CozinhaDoFogareiro`): a cena só chama `preparar(prato)` e `update(dt)`; a
+  cozinha faz o prato inteiro no relógio dela. O que voa do caixote para a
+  mesa e volta é um grupo com nome (fronteira da `fundir()`), registrado com
+  a casa dele (pai, posição e giro) e devolvido EXATAMENTE para lá. A chama é
+  o shader `ChamaDeGas` (`core/shaders.ts`: aditivo, a base presa e a ponta
+  dançando, a fase de cada linguinha pela posição no mundo) e ABAFA com
+  panela em cima — o cone encolhe e as linguinhas deitam para fora; alta, a
+  ponta furava o budare. Sprite novo nasce VISÍVEL e do tamanho de um metro
+  (a faísca do acendedor era um clarão branco em cima da mesa, de dia e de
+  noite): esconda no construtor o que só aparece num momento. O coador de
+  pano senta 3,4 cm ACIMA da boca da caneca (rente, só se via o arame). O
+  que vai para a mão na canga (a arepa, o garfo) sai na escala da cozinha
+  (`ESCALA_DA_COZINHA`), senão vira um pontinho.
+- **O radinho de pilha** (`world/radinho.ts`, `Radinho`): ligar é uma
+  COREOGRAFIA de promessas (o botão, o led, o mostrador piscando, a antena
+  que levanta e estica gomo por gomo, a agulha que passa do ponto e volta —
+  a curva de "voltar" é a `easeOutBack`), e cada `ligar`/`desligar` pega uma
+  VEZ e para no meio se outro chegou depois (sem isso, o `ligar` velho
+  acendia o led de volta). O led aceso e o apagado são DUAS malhas com nome
+  (trocar material em malha juntada não pode); o mostrador aceso é luz
+  pintada. Tocando, o corpo (`corpo`, com nome) pulsa no tempo da música
+  (estica e achata: o volume se conserva) e as notinhas são UM lote (colcheia
+  extrudada com bisel, cor por cópia, encolhendo até sumir).
+- **O pote de vaga-lumes** (`world/poteDeVagaLumes.ts`): o vidro torneado
+  transparente fica fora da `fundir()` sozinho; a tampa é um grupo com nome
+  e dobradiça (`tampa`). Na mão, vai PELA ALÇA (um grupo em volta com o pote
+  pendurado embaixo): segurado pelo fundo, a mão atravessava o vidro. Os
+  soltos (`VagaLumesSoltos`) de TODOS os pontos são três lotes — os pontos,
+  os halos (`brilhoEmLote`) e as poças de luz no chão (`luzNoChao` com cor
+  por cópia).
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

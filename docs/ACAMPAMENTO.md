@@ -30,8 +30,13 @@ frente: **convidar os amigos do parque** — por enquanto, só os dois.
 **O que está no jogo** (veja §5): a **etapa A** — a clareira, a barraca
 com o que tem dentro, o fogareiro, entrar e deitar, e sentar na canga —, a
 **etapa B**, a noite: passar a noite, fechar a barraca, a conchinha, dormir
-e acordar com o sol nascendo atrás do lago — e, da etapa C, o **Bebito
-book**: o caderninho dos planos pro futuro, escrito deitado de frente.
+e acordar com o sol nascendo atrás do lago —, da etapa C, o **Bebito
+book**: o caderninho dos planos pro futuro, escrito deitado de frente — e a
+**etapa D** inteira: **cozinhar no fogareiro** (café coado e mini arepas de
+dia, chocolate quente e miojo de noite), o **radinho e a dança lenta**, os
+**vaga-lumes no pote** (pegar e soltar onde quiser, guardado no save) e
+**olhar as estrelas** deitados na canga (a constelação de coração, a estrela
+cadente e o pedido).
 
 **Onde mora o código**:
 
@@ -45,8 +50,15 @@ book**: o caderninho dos planos pro futuro, escrito deitado de frente.
 - o Bebito book: `src/ui/bebitoBook.ts` (o caderno na tela) e
   `src/minigames/bebitoBook.ts` (as perguntas, a regra de escrever na linha
   e o save);
-- os testes: `scripts/clareira.mjs` (o lugar, de dia), `scripts/noite.mjs` e
-  `scripts/bebitoBook.mjs`.
+- a etapa D: `src/world/cozinhaDeAcampamento.ts` (a cozinha do fogareiro:
+  o caixote de feira, a chama, as receitas), `src/world/radinho.ts`,
+  `src/world/poteDeVagaLumes.ts` (o pote e os vaga-lumes soltos), a
+  constelação e a estrela cadente no `CeuDaClareira` (`world/noite.ts`), a
+  dança no `entities/DancaLenta.ts` (com a pose no `CharacterRig`) e a
+  música dela no clima `'danca-lenta'` (`audio/musica.ts`);
+- os testes: `scripts/clareira.mjs` (o lugar, de dia), `scripts/noite.mjs`,
+  `scripts/bebitoBook.mjs` e `scripts/acampamento.mjs` (a etapa D, por
+  parte: `SO=cozinha`, `SO=radinho`, `SO=vagalumes`, `SO=estrelas`).
 
 ## 1. O lugar
 
@@ -141,14 +153,86 @@ abraçadinhos, a tela escurece e eles acordam com o sol nascendo atrás do lago
   termina num beijo. **É o Ari que faz cócegas no Renan** (pedido do Renan:
   é assim na vida real).
 
-**Na clareira (D)**:
-- **cozinhar no fogareiro**: chocolate quente, miojo ou café de manhã — a
-  chama azul, o vapor, e os dois tomando sentados na canga;
-- **olhar as estrelas**: deitados na canga, a câmera vira para o céu, uma
-  estrela cadente e um pedido;
-- **vaga-lumes**: tentar pegar um no pote e soltar;
-- **música e dança lenta**: o celular tocando baixinho (som sintetizado) e os
-  dois dançando agarradinhos na frente da barraca.
+**Na clareira (D)** — ✅ *no jogo*, com os pedidos do Renan ("no cardápio
+da manhã, mini arepas além do café; o mini fogão com animação do fogo e
+dele próprio; pegar os vaga-lumes e soltar onde quisermos, que eles
+iluminariam o parque; um radinho bonitinho para dançar à noite, que de
+manhã não faz nada; tudo com muito detalhe e animação"):
+
+- ✅ **cozinhar no fogareiro** ("Cozinhar no fogareiro", na mesinha). Os
+  dois sentam no chão em volta da mesinha (quem joga perto do fogo, o outro
+  na frente) e a câmera chega perto pelo lado livre da mesa. Do lado da
+  mesinha, um **caixote de feira** com o que se usa: o pacote de café (o
+  rótulo em canvas), a lata de chocolate, o miojo, o potinho das arepas, a
+  manteigueira, o canequinho dos talheres, o saquinho de marshmallow, o
+  coador de pano, o budare e o prato — cada coisa voa do caixote para a mesa
+  e volta para o mesmo lugar.
+  - **o fogareiro vive**: a manopla gira na válvula, o acendedor estala
+    duas faíscas, a chama de gás azul (um shader, `ChamaDeGas`) estoura e
+    assenta, as catorze linguinhas da coroa tremem cada uma no seu tempo (e
+    deitam para fora quando tem panela em cima — a chama abafa), a coroa vai
+    ficando em brasa, o fogareiro inteiro treme fininho enquanto queima e
+    joga uma luz azul pintada no tampo (de noite é o que se vê);
+  - **de dia (e no café da manhã depois de dormir)**: **café coado** (a água
+    ferve com a tampa sacudindo, o coador de pano senta em cima da caneca, o
+    pó cai nele e a água passa pingando — uma caneca de cada vez),
+    **mini arepas** (o pedido do Renan: o budare vai para o fogo, a manteiga
+    derrete chiando, as quatro arepas cruas douram, viram na espátula e
+    douram do outro lado com a marca de tostado, queijinho em duas, e vão
+    para o prato) ou **café com mini arepas**;
+  - **de noite**: **chocolate quente** (três colheradas de pó no leite, a
+    colher mexendo em roda até ficar marrom, três marshmallows em cada caneca
+    — um rosinha) ou **miojo** (o tijolinho amolece e solta os fios, o
+    tempero laranja tinge o caldo, e eles comem os dois da panelinha);
+  - pronto, a tela pisca e eles estão **na canga com a comida na mão** (a
+    caneca soltando vapor, a arepa, o garfo com o miojo enrolado), com a
+    câmera de frente; a memória "Café da manhã na clareira" ou "Jantarzinho
+    no fogareiro", e a louça volta limpa para a mesinha.
+- ✅ **o radinho e a dança lenta**: um **radinho de pilha** verde-menta no
+  chão do lado da canga — painel creme, alto-falante de grade furadinha com
+  aro cromado, mostrador de FM com um coraçãozinho na estação deles, dois
+  botões serrilhados, o ledzinho, a alça de couro e a antena telescópica.
+  **De dia ele não faz nada** (nem prompt). **De noite**, "Ligar o radinho":
+  o botão estala, o led e o mostrador acendem (piscando, como lâmpada
+  velha), a antena levanta e estica gomo por gomo, a agulha corre a escala,
+  passa do coraçãozinho e volta; tocando, ele pulsa no tempo, balança e solta
+  notinhas coloridas. A música vira a **balada de baile** (o clima
+  `'danca-lenta'`: 66 bpm, I–vi–ii–V, arpejo de caixinha). "Dança comigo?" e
+  os dois dançam agarradinhos na frente da canga — **o Renan com as mãos na
+  cintura e o Ari pelos ombros** (provisório: o Renan é o mais alto) —,
+  balançando juntos de olhos fechados, girando devagar no lugar, com a câmera
+  passeando em volta e o céu estrelado atrás. No fim de cada música, **a
+  voltinha** (o Ari gira por baixo do braço do Renan) e "Mais uma música?".
+  Ligado, o prompt vira "Dançar" (e "Desligar o radinho"); o dia voltando ou
+  dormir desliga na hora.
+- ✅ **os vaga-lumes no pote**: um **pote de vidro** de conserva no chão do
+  lado das mochilas — tampa de lata furadinha, alça de arame, barbante com
+  laço e a etiqueta "vaga-lumes". De noite, "Pegar o pote" (ele vai na mão,
+  pela alça), e o prompt **persegue o vaga-lume mais perto**: a tampa abre,
+  ele voa para dentro e a tampa fecha (cabem oito, cada um piscando lá
+  dentro, e o pote brilha mais quanto mais tem). "**Soltar os vaga-lumes
+  aqui**" anda junto com quem segura o pote: eles saem voando e ficam
+  rodando ali, com uma poça de luz verde no chão. **Cada ponto vai para o
+  save** (`vagaLumesSoltos`, os 24 mais recentes): hoje só a clareira tem
+  noite, e é lá que eles brilham — a lista é o que **o parque de noite
+  (futuro)** vai ler para se iluminar onde os dois soltaram. O pote volta
+  para o lugar quando outra coisa começa, e quando a noite acaba os que
+  estavam nele são soltos do lado das mochilas.
+- ✅ **olhar as estrelas**: de noite, a canga oferece "Deitar e olhar as
+  estrelas". Os dois deitam lado a lado, a câmera vê de cima e desce até as
+  cabeças olhando o céu; doze estrelas fazem um **coração** e, quando eles
+  acham, o risco da constelação é desenhado traço por traço. Passa uma
+  **estrela cadente**, cada um faz um **pedido que não conta**, e a câmera
+  volta para cima deles para o beijo deitado. Memória "A estrela cadente".
+- **Provisório**: todas as falas da etapa D são do Claude, e a música da
+  dança é uma melodia nossa (ver §4).
+
+**O peso da etapa D** (vista da clareira, de dia): o caixote e as coisas
+dele, o radinho e o pote entram fundidos (um desenho por material); de
+noite, os soltos são três lotes (os pontos, os halos e as poças) para todos
+os pontos juntos, e a constelação são dois (as estrelas e o risco). Nenhuma
+luz de verdade nova: a chama, o mostrador, o pote e as poças são luz
+pintada.
 
 **Os amigos (E, futuro)**: convidar os bichos do parque para a clareira (o
 Mano, o Jean-Luc, a Estella…) — fica para depois, por decisão do Renan.
@@ -238,9 +322,15 @@ câmera e ele (`CEL=1` roda no celular).
   elas entram literais (as respostas ficam presas ao `id`, então trocar o
   texto não apaga nada). E as letras: a Caveat ficou com o Ari e a Kalam com
   o Renan — dá para trocar se ele achar que é o contrário.
-- A **música** da dança: uma melodia própria, ou o Renan tem uma música do
-  casal para servir de inspiração (o som é sintetizado, então seria uma
-  versão "de caixinha de música")?
+- A **música** da dança: hoje é uma balada nossa (o clima `'danca-lenta'`).
+  O Renan tem uma música do casal para servir de inspiração (o som é
+  sintetizado, então seria uma versão "de caixinha de música")?
+- **Quem leva na cintura** na dança: hoje o Renan (o mais alto), com o Ari
+  pelos ombros — é assim que eles dançam?
+- O **recheio das mini arepas**: hoje é queijinho branco em duas (e manteiga
+  no budare). Tem um jeito que eles fazem?
+- O **pedido da estrela cadente** e as falas da etapa D (a cozinha, a dança,
+  os vaga-lumes, as estrelas): todas provisórias, minhas.
 
 ## 5. A ordem de construção
 
@@ -249,5 +339,5 @@ câmera e ele (`CEL=1` roda no celular).
 | A ✅ | **O lugar** *(no jogo)* | a clareira e a trilha, a barraca com o teto que sai, colchões, sacos de dormir, travesseiros, lanterna, fogareiro, panelinha, canecas, mesinha, canga, mochilas, tronco, varal de luzinhas; entrar na barraca e deitar, sentar na canga; a memória da chegada |
 | B ✅ | **A noite** *(no jogo)* | anoitecer e amanhecer, estrelas, vaga-lumes, luzes acesas, fechar a barraca, dormir de conchinha |
 | C | **Dentro da barraca** | ✅ o Bebito book *(no jogo)*; sombras na lona, cócegas (o Ari no Renan) e guerra de travesseiro |
-| D | **Na clareira** | fogareiro, estrelas e estrela cadente, pegar vaga-lume, música e dança lenta |
+| D ✅ | **Na clareira** *(no jogo)* | cozinhar no fogareiro (café coado, mini arepas, chocolate quente, miojo), o radinho e a dança lenta, os vaga-lumes no pote (soltos guardados no save), olhar as estrelas (a constelação de coração e a estrela cadente) |
 | E | **Os amigos** | convidar quem é do parque (futuro) |

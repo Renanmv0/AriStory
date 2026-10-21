@@ -18,7 +18,7 @@
  *   barriga para cima, para o lugar de antes; os abraçadinhos aproximam os
  *   dois, e sair devolve o teto, a câmera e a dupla na frente da porta — com
  *   a memória no diário;
- * - sentar na canga e olhar o fogareiro;
+ * - sentar na canga e abrir o cardápio do fogareiro;
  * - fotos: de longe, de perto, com a câmera girada, a barraca de dentro, os
  *   dois virados de frente e no beijo (a câmera do beijo, de cima), os dois na
  *   canga e o fogareiro de perto.
@@ -272,11 +272,12 @@ await escolher('Levantar');
 await passarFalas();
 const promptDoFogareiro = await ate(/fogareiro/i, P.NO_FOGAREIRO.x, P.NO_FOGAREIRO.z, Math.PI + Math.PI / 4);
 await page.keyboard.press('KeyE');
-const falaDoFogareiro = await (async () => {
-  for (let i = 0; i < 20 && !(await page.locator('.dialogue.show').count()); i++) await page.waitForTimeout(250);
-  await page.waitForTimeout(2200);
-  return page.locator('.dialogue .text').textContent().catch(() => '');
+// o fogareiro abre o cardápio (a cozinha inteira é do scripts/acampamento.mjs): de dia, café e mini arepas
+const cardapioDoFogareiro = await (async () => {
+  for (let i = 0; i < 40 && !(await page.locator('.escolhas.show button').count()); i++) await page.waitForTimeout(250);
+  return page.locator('.escolhas.show button').allTextContents();
 })();
+if (cardapioDoFogareiro.includes('Agora não')) await escolher('Agora não');
 await passarFalas();
 
 // ======================================================================= laudo
@@ -303,7 +304,7 @@ checar(saiu.tetoVisivel && saiu.solto && saiu.daPorta < 1.2, `sair devolve o tet
 checar(memoriaDaBarraca, 'a memoria da barraca nao entrou no diario');
 checar(promptDaCanga, 'o prompt da canga nao apareceu');
 checar(sentados.every((y) => y < 0), `na canga, sentados no chao (a ancora desce): ${JSON.stringify(sentados)}`);
-checar(promptDoFogareiro && /^Fogar/.test(falaDoFogareiro ?? ''), `o fogareiro: prompt ${promptDoFogareiro}, fala "${falaDoFogareiro}"`);
+checar(promptDoFogareiro && ['Café coado', 'Mini arepas', 'Agora não'].every((o) => cardapioDoFogareiro.includes(o)), `o fogareiro: prompt ${promptDoFogareiro}, cardápio ${JSON.stringify(cardapioDoFogareiro)}`);
 falhas.push(...erros);
 
 console.log('1. chegada:', JSON.stringify(chegada), '· memoria', memoriaDaChegada);
@@ -311,7 +312,7 @@ console.log('2. planta:', JSON.stringify(planta));
 console.log('4. entrada:', JSON.stringify(falasDeEntrada));
 console.log('4. beijinho:', JSON.stringify({ ...beijo, antes: antesDoBeijo.cabecas, depois: depoisDoBeijo.giros }));
 console.log('4. dentro:', JSON.stringify(deitados), '· abracados', JSON.stringify(abracados), '· saiu', JSON.stringify(saiu), '· coracoes', coracoesAntes);
-console.log('5. canga:', JSON.stringify(sentados), '· fogareiro', JSON.stringify(falaDoFogareiro));
+console.log('5. canga:', JSON.stringify(sentados), '· fogareiro', JSON.stringify(cardapioDoFogareiro));
 await browser.close();
 if (falhas.length) {
   console.log('\nFALHAS:');

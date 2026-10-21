@@ -265,6 +265,49 @@ export function brilhoDeLuz(color: number, forca = 0.8): THREE.SpriteMaterial {
 }
 
 /**
+ * O RASTRO DE LUZ: um risco que é forte numa ponta e some na outra — a
+ * estrela cadente do céu da clareira. Um degradê de canvas no comprimento
+ * (a cabeça em `u = 1`) e outro na largura (macio nas beiradas), somado ao
+ * que está atrás, sem gravar profundidade. Um por cor, como os outros brilhos.
+ */
+let texturaDeRastro: THREE.CanvasTexture | null = null;
+const rastros = new Map<number, THREE.MeshBasicMaterial>();
+export function rastroDeLuz(color: number): THREE.MeshBasicMaterial {
+  const hit = rastros.get(color);
+  if (hit) return hit;
+  if (!texturaDeRastro) {
+    const tela = document.createElement('canvas');
+    tela.width = 256;
+    tela.height = 32;
+    const ctx = tela.getContext('2d');
+    if (ctx) {
+      const comprido = ctx.createLinearGradient(0, 0, 256, 0);
+      comprido.addColorStop(0, 'rgba(255,255,255,0)');
+      comprido.addColorStop(0.75, 'rgba(255,255,255,0.45)');
+      comprido.addColorStop(0.97, 'rgba(255,255,255,1)');
+      comprido.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = comprido;
+      ctx.fillRect(0, 0, 256, 32);
+      // a largura: macia nas beiradas (apaga o retângulo por cima e por baixo)
+      ctx.globalCompositeOperation = 'destination-in';
+      const largo = ctx.createLinearGradient(0, 0, 0, 32);
+      largo.addColorStop(0, 'rgba(255,255,255,0)');
+      largo.addColorStop(0.5, 'rgba(255,255,255,1)');
+      largo.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = largo;
+      ctx.fillRect(0, 0, 256, 32);
+    }
+    texturaDeRastro = new THREE.CanvasTexture(tela);
+  }
+  const mat = new THREE.MeshBasicMaterial({
+    color, map: texturaDeRastro, transparent: true, blending: THREE.AdditiveBlending,
+    depthWrite: false, fog: false, side: THREE.DoubleSide,
+  });
+  rastros.set(color, mat);
+  return mat;
+}
+
+/**
  * O BRILHO EM LOTE: o mesmo halo macio do `brilhoDeLuz`, para MUITAS luzes
  * num desenho só — as lâmpadas do varal, os vaga-lumes, as estrelas.
  *
