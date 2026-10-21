@@ -1916,6 +1916,8 @@ export const PALETTE = {
   pessego: 0xffb066,
   // ---- a loja de patins do Villa Lobos (world/lojaDePatins.ts): pista de
   // patinação dos anos 80 — água-marinha, creme, coral e o amarelo do letreiro
+  // o cascalho da beira dos caminhos do parque (world/caminhos.ts)
+  beiraDoCaminho: 0xcdbd98,
   lojaPatinsParede: 0x9fd8d0,
   lojaPatinsCreme: 0xfbf1de,
   lojaPatinsCoral: 0xf2766b,

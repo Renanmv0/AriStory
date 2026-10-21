@@ -52,6 +52,7 @@ import { TigreDagua, type LugarNoTronco } from '../entities/bichos/TigreDagua';
 import { CARGA_CERTA, FAIXA_CERTA, PedrinhaQuicando } from '../entities/Pedrinha';
 import { ARREMESSO, SOLTA_DO_ARREMESSO } from '../characters/CharacterRig';
 import { Vento } from '../core/shaders';
+import { BeiraDoCaminho, beiraTorta, caixaRedonda, capsula, cascalho, disco as largo, mancha, retanguloRedondo, ruidoLiso, uniaoSuave, type Distancia } from '../world/caminhos';
 import { PoteDeVagaLumes, VagaLumesSoltos } from '../world/poteDeVagaLumes';
 import {
   AURORA, CREPUSCULO, CeuDaClareira, MANHA_CEDO, NOITE, POR_DO_SOL, TARDE_DOURADA, VagaLumes, luzDoMomento,
@@ -186,12 +187,50 @@ export const villaLobos: SceneDef = {
     for (let i = 0; i < 14; i++) {
       w.disc(w.range(-40, 40), w.range(-30, 30), w.range(2, 6), P.grassDark, 0.004);
     }
-    w.disc(0, -16.5, 8.6, P.sand, 0.008); // borda da praça
-    w.disc(0, -16.5, 8, P.concrete, 0.012, calcadaDePedrinha()); // praça
-    w.patch(0, 4, 5.5, 56, P.asphalt, 0, 0.016, asfalto()); // caminho principal
-    // caminho transversal: do lado do lago ele para na trilha da loja (x −8,5).
-    // Ia até −31 e passava por baixo da água, reaparecendo do outro lado
-    w.patch(11.25, 9, 39.5, 4.5, P.asphalt, 0, 0.02, asfalto());
+    /*
+     * OS CAMINHOS (world/caminhos.ts). Eram retângulos colados: a junção era
+     * um "T" de quina viva e a beira com a grama era uma reta de esquadro.
+     * Agora a rede inteira é UMA mancha, desenhada por uma conta de distância:
+     * cada trecho é uma cápsula na mesma linha de antes (os bancos, os postes
+     * e as interações não andam), e a união SUAVE abre cada junção numa curva
+     * de ~2,4 m. Um ruído leve deixa a beira torta e a largura respirando, e
+     * por fora corre o cascalho, com tufos de capim e pedrinhas soltas.
+     *
+     * A ordem de pintura: o cascalho, o asfalto, e só DEPOIS a praça — o disco
+     * da praça entra na conta para a boca do caminho alargar na chegada, e a
+     * pedrinha dela pinta por cima do resto.
+     */
+    const caminho = beiraTorta(uniaoSuave(2.4,
+      capsula(0, -16.5, 0, 30.6, 2.75), // o principal, da praça ao largo do fim
+      largo(0, -16.5, 8.0), // a praça
+      largo(0, 31.2, 3.2), // o largo no fim do principal (era um corte a régua)
+      capsula(LOJA.x + 1.6, 9, 30.4, 9, 2.25), // o transversal: da trilha da loja ao vão da cerca
+      capsula(LOJA.x + 1.6, 4.6, LOJA.x + 1.6, 9, 1.5), // a trilha da loja
+      caixaRedonda(28.8, 13, 4.8, 3, 0.8), // a boca do vão da cerca, para a rua
+    ), 2610);
+    const ruidoDaBeira = ruidoLiso(2611);
+    const comCascalho: Distancia = (x, z) => caminho(x, z) - 0.3 - (ruidoDaBeira(x * 1.7, z * 1.7) - 0.5) * 0.24;
+    const CAIXA_DOS_CAMINHOS = { x0: -10.5, z0: -25.5, x1: 35, z1: 35.5 };
+    // o decalque de 1 × 1 dá o lugar na fila de pintura e a textura em metros
+    const pintarCom = (decal: THREE.Mesh, geo: THREE.BufferGeometry): void => {
+      decal.geometry.dispose();
+      decal.geometry = geo;
+    };
+    pintarCom(w.patch(0, 0, 1, 1, P.beiraDoCaminho, 0, 0.01, cascalho()), mancha(comCascalho, CAIXA_DOS_CAMINHOS));
+    pintarCom(w.patch(0, 0, 1, 1, P.asphalt, 0, 0.012, asfalto()), mancha(caminho, CAIXA_DOS_CAMINHOS));
+    w.disc(0, -16.5, 8.6, P.sand, 0.014); // borda da praça
+    w.disc(0, -16.5, 8, P.concrete, 0.016, calcadaDePedrinha()); // praça
+    {
+      // o capim e as pedrinhas da beira, fora da praça, das calçadas e do vão
+      const ventoDaBeira = new Vento({ forca: 0.09, altura: 0.22, direcao: [0.86, 0.5] });
+      const naCalcadaDaLoja = (x: number, z: number): boolean =>
+        Math.abs(x - LOJA.x - 0.4) < 5.3 && Math.abs(z - LOJA.z - 0.2) < 3.5;
+      const beira = new BeiraDoCaminho(caminho, CAIXA_DOS_CAMINHOS, ventoDaBeira, (x, z) =>
+        Math.hypot(x, z + 16.5) > 9.1 && !naCalcadaDaLoja(x, z) && x < 31.6);
+      w.add(beira.grupo);
+      beira.grupo.userData.beira = { tufos: beira.tufos, pedrinhas: beira.pedrinhas };
+      w.onUpdate((dt) => ventoDaBeira.tique(dt));
+    }
 
     /**
      * A pista oval, composta à mão.
@@ -259,8 +298,8 @@ export const villaLobos: SceneDef = {
     // calçada da loja e a trilha que sobe até o caminho transversal
     // colada no prédio de propósito: mais larga que isto e o canto de cima
     // invade a areia do lago, que chega a 9,2 do centro em (-21, 11)
-    w.patch(LOJA.x + 0.4, LOJA.z + 0.2, 10, 6.4, P.concrete, 0, 0.02, calcadaDePedrinha());
-    w.patch(LOJA.x + 1.6, 7.2, 3, 7, P.asphalt, 0, 0.022, asfalto());
+    // (de quina redonda; a trilha até o transversal agora é parte dos caminhos)
+    pintarCom(w.patch(LOJA.x + 0.4, LOJA.z + 0.2, 1, 1, P.concrete, 0, 0.02, calcadaDePedrinha()), retanguloRedondo(5, 3.2, 1.1));
 
     // ---------------------------------------------------------- roda gigante
     const wheel = new FerrisWheel({ radius: 12, cabins: 32, rpm: 1.0 });
@@ -301,7 +340,7 @@ export const villaLobos: SceneDef = {
      * campo do outro, então dá para ir da roda ao frisbee sem pisar na grama.
      */
     const BILHETERIA = { x: 10.6, z: -20.4 };
-    w.patch(BILHETERIA.x, -16.9, 6.4, 6.6, P.concrete, 0, 0.014, calcadaDePedrinha());
+    pintarCom(w.patch(BILHETERIA.x, -16.9, 1, 1, P.concrete, 0, 0.018, calcadaDePedrinha()), retanguloRedondo(3.2, 3.3, 1.0));
     const bilheteria = w.add(w.place(ticketBooth(), BILHETERIA.x, 0, BILHETERIA.z));
     w.blockBox(BILHETERIA.x, BILHETERIA.z, 1.53, 1.08);
 
@@ -449,9 +488,12 @@ export const villaLobos: SceneDef = {
       const x = Math.cos(a) * d;
       const z = -18 + Math.sin(a) * d * 0.7;
       if (Math.abs(x) < 4.5 && z > -14) continue; // deixa o caminho principal livre
-      if (i % 3 === 0) w.add(w.place(bush(w.range(0.6, 1), P.leafDark), x, 0, z));
-      else if (i % 3 === 1) w.add(w.place(capim(w.range(0.9, 1.4)), x, 0, z, w.range(0, 6.28)));
-      else w.add(w.place(rock(w.range(0.4, 0.8), w.rng()), x, 0, z, w.range(0, 6.28)));
+      // sorteada sempre do mesmo jeito; a que cai na boca alargada do caminho
+      // só não entra no mundo (pular o sorteio mexeria no parque inteiro)
+      const peca = i % 3 === 0 ? w.place(bush(w.range(0.6, 1), P.leafDark), x, 0, z)
+        : i % 3 === 1 ? w.place(capim(w.range(0.9, 1.4)), x, 0, z, w.range(0, 6.28))
+          : w.place(rock(w.range(0.4, 0.8), w.rng()), x, 0, z, w.range(0, 6.28));
+      if (caminho(x, z) > 0.4) w.add(peca);
     }
 
     /* ============================================================== O LAGO
@@ -2759,7 +2801,9 @@ export const villaLobos: SceneDef = {
       // a MESMA ordem de sorteio de sempre (o tipo, a semente, o giro)
       const arvore = w.place(tree(w.pick(kinds), scale, w.rng()), x, 0, z, w.range(0, 6.28));
       plantadas++;
-      if (naClareira(x, z, 0.9)) continue;
+      // a que cai no caminho também fica de fora: o espalhador só conhecia o
+      // principal, e plantava árvore no meio do transversal e da boca do vão
+      if (naClareira(x, z, 0.9) || caminho(x, z) < 0.5 * scale) continue;
       w.add(arvore);
       w.blockCircle(x, z, 0.45 * scale);
     }
@@ -2780,6 +2824,7 @@ export const villaLobos: SceneDef = {
         : i % 3 === 1 ? w.place(bush(w.range(0.7, 1.2)), x, 0, z)
           : w.place(rock(w.range(0.5, 1)), x, 0, z);
       if (Math.hypot(x - CLAREIRA.x, z - CLAREIRA.z) < CLAREIRA.raio + 0.5) continue;
+      if (caminho(x, z) < 0.6) continue;
       soltosNoGramado.push(w.add(solto));
     }
 
@@ -4670,7 +4715,7 @@ export const villaLobos: SceneDef = {
     // na faixa antiga metade dele nasceria dentro da rua.
     // O caminho tem a largura do vão (6, e não 5): assim ele encosta na soleira
     // sem deixar duas listras de grama sobrando nos cantos do portão.
-    w.patch(28.8, 13, 9.6, 6, P.asphalt, 0, 0.01, asfalto()); // caminho do parque até o vão
+    // (o caminho do parque até o vão é a `caixaRedonda` da rede de caminhos, lá em cima)
     // A rua atravessa o cenário INTEIRO (80 de comprimento, contra os 44 de
     // área jogável): rua que começa e acaba dentro da tela vira pátio. Ela
     // some no horizonte nas duas pontas, como rua de verdade.
