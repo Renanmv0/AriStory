@@ -130,6 +130,11 @@ elástico sai e volta).
   batida;
 - `piado`: o "piu" do patinho, agudinho e subindo (às vezes dois).
 
+Picos medidos no `.wav`: `tibum` 0,20 (o mais alto, de propósito), `garca`
+0,14, `ploft` 0,12, `peixePula` 0,09, `ploc` 0,09, `quique` 0,07, `gota`
+0,06, `moeda` 0,05, `piado` 0,03 e `asas` 0,02 (é fundo: toca junto do
+grasnado, quando a garça levanta voo).
+
 Medidos no `.wav`: o clique do radinho e o "puf" da chama saíam baixos
 demais (~0,03) — o filtro estreito do `chiado` come quase todo o ruído, e o
 volume dele precisa compensar.

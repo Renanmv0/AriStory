@@ -426,14 +426,18 @@ if (parte('clique')) {
   }
   const ondeOlhar = await lago('return t.agua.naBeira(0.15, -1.6);');
   await ir(ondeOlhar.x, ondeOlhar.z);
+  // a câmera de volta ao normal: as partes de antes deixam o zoom colado, e o
+  // ponto da água caía fora da tela
+  await page.evaluate(() => { window.jogo.focusCamera(null); window.jogo.setZoom(15); });
   await page.waitForTimeout(1500);
-  // projeta um ponto da água na tela pela câmera de verdade
-  const tela = await page.evaluate(() => {
+  // projeta um ponto da água, na frente da dupla, na tela pela câmera de verdade
+  const naAgua = await lago('return t.agua.naBeira(0.15, 2.2);');
+  const tela = await page.evaluate(({ x, z }) => {
     const j = window.jogo;
-    const v = j.playerPosition().clone().set(-17.6, 0, 12.2).project(j.iso.camera);
+    const v = j.playerPosition().clone().set(x, 0, z).project(j.iso.camera);
     const r = document.querySelector('canvas').getBoundingClientRect();
     return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
-  });
+  }, naAgua);
   const g0 = (await sons()).gota ?? 0;
   await page.mouse.move(tela.x, tela.y);
   await page.waitForTimeout(200);
