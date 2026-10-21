@@ -52,6 +52,7 @@ import { TigreDagua, type LugarNoTronco } from '../entities/bichos/TigreDagua';
 import { CARGA_CERTA, FAIXA_CERTA, PedrinhaQuicando } from '../entities/Pedrinha';
 import { ARREMESSO, SOLTA_DO_ARREMESSO } from '../characters/CharacterRig';
 import { Vento } from '../core/shaders';
+import { LuzesDosPostes } from '../world/mobiliarioDoParque';
 import { BeiraDoCaminho, beiraTorta, caixaRedonda, capsula, cascalho, disco as largo, mancha, retanguloRedondo, ruidoLiso, uniaoSuave, type Distancia } from '../world/caminhos';
 import { PoteDeVagaLumes, VagaLumesSoltos } from '../world/poteDeVagaLumes';
 import {
@@ -471,6 +472,17 @@ export const villaLobos: SceneDef = {
       w.add(w.place(lamp(false), x, 0, z));
       w.blockCircle(x, z, 0.35);
     }
+    /*
+     * A LUZ DE VERDADE DOS POSTES (world/mobiliarioDoParque.ts): quatro
+     * `PointLight` que vão para os postes mais perto da dupla — o parque
+     * inteiro, e não só estes quatro (ela acha os postes na primeira
+     * atualização, depois de a cena toda montada). A noite da clareira sobe
+     * a força (`luzesDosPostes.noite`, em `pintarMomento`).
+     */
+    const luzesDosPostes = new LuzesDosPostes(w.root);
+    w.add(luzesDosPostes.grupo);
+    luzesDosPostes.grupo.userData.luzes = luzesDosPostes;
+    w.onUpdate((dt) => luzesDosPostes.update(dt, w.game.playerPosition()));
 
     for (const [x, z, r] of [[-3.6, -12.2, 0.1], [3.6, -12.2, -0.1], [-13.2, -22.5, 1.1]] as const) {
       w.banco(x, z, r);
@@ -3153,6 +3165,7 @@ export const villaLobos: SceneDef = {
           if (acesa) g.som('clique');
         }
         brilhoDosVagaLumes = THREE.MathUtils.clamp((k - 0.25) / 0.6, 0, 1);
+        luzesDosPostes.noite = THREE.MathUtils.smoothstep(k, 0.1, 0.6);
       };
 
       // ------------------------------------------- as animações do relógio do jogo

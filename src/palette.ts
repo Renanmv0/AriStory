@@ -1931,6 +1931,9 @@ export const PALETTE = {
   palmeiraFolha: 0x4f9a45,
   palmeiraFolhaClara: 0x9ccc5a,
   coco: 0x7a5a32,
+  // a luz da lanterna dos postes e o saco da lixeira (world/mobiliarioDoParque.ts)
+  luzDoPoste: 0xffe1a6,
+  lixeiraSaco: 0x2f3437,
   // o ferro fundido do banco de praça (world/bancoDePraca.ts): verde-garrafa
   bancoFerro: 0x35574a,
   // o cascalho da beira dos caminhos do parque (world/caminhos.ts)
