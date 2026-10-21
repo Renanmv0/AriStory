@@ -1916,6 +1916,21 @@ export const PALETTE = {
   pessego: 0xffb066,
   // ---- a loja de patins do Villa Lobos (world/lojaDePatins.ts): pista de
   // patinação dos anos 80 — água-marinha, creme, coral e o amarelo do letreiro
+  // as árvores (world/arvores.ts): a copa vai do fundo ao claro de baixo para
+  // cima, e cada espécie tem o seu par
+  copaFundo: 0x3d8a3f,
+  copaClara: 0x8fd468,
+  floridaFunda: 0xd9668f,
+  floridaClara: 0xffc4d8,
+  petala: 0xfff0f4,
+  pinheiroFundo: 0x2b5e36,
+  pinheiroClaro: 0x5f9e55,
+  troncoEscuro: 0x6b4a2e,
+  palmeiraTronco: 0xb39468,
+  palmeiraTroncoEscuro: 0x8c7049,
+  palmeiraFolha: 0x4f9a45,
+  palmeiraFolhaClara: 0x9ccc5a,
+  coco: 0x7a5a32,
   // o ferro fundido do banco de praça (world/bancoDePraca.ts): verde-garrafa
   bancoFerro: 0x35574a,
   // o cascalho da beira dos caminhos do parque (world/caminhos.ts)

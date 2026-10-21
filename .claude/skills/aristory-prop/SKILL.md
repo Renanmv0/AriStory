@@ -611,6 +611,38 @@ O banco do parque e do clube (`w.banco` usa ele por padrão; o reto antigo,
   frente): é por ali que a perna de quem senta dobra e balança.
 - O `w.banco` passa a peça pela `fundir()`: o ferro, a madeira e o latão
   viram três malhas por banco.
+- **O peso mora nos gomos do ferro** (80% do banco): trecho quase reto leva
+  poucos gomos, e as volutas, que são as curvas que se veem, ficam com os
+  delas; a cabeça do parafuso (1 cm) é um octaedro achatado; o reforço da
+  cabeceira do meio, escondido debaixo do assento, não existe. 4,4 mil →
+  3,1 mil triângulos por banco, com a mesma foto de perto.
+
+## As árvores (`world/arvores.ts`)
+
+O `tree(tipo, escala, semente)` de sempre chama `arvore()`. As quatro
+espécies (redonda, florida, pinheiro, palmeira) são **uma malha e um
+material cada** — o `toon(0xffffff, { corPorVertice: true })`, com a cor
+pintada nos vértices:
+
+- **a cor por vértice faz o trabalho dos triângulos**: o degradê da copa
+  (escura embaixo, clara em cima), a barriga de cada tufo mais escura, os
+  anéis do tronco da palmeira e o MOSAICO — cada triângulo da copa sorteia
+  um tom pelo NÚMERO DA FACE (os três cantos iguais), e uns inteiros claros
+  são a flor da florida e a folha nova da redonda;
+- **tufo amassado** (icosaedro com ruído pela posição, achatado embaixo) com
+  a normal da esfera de antes de amassar: a luz continua redonda e o
+  amassado aparece na silhueta;
+- **pinheiro de saias**: bico, anel do meio e borda em estrela caída, com a
+  barriga funda escura (`computeVertexNormals` sem índice: a faceta é o
+  estilo);
+- **palmeira**: tubo curvo afinando (o raio de cada anel reescalado em volta
+  do centro da curva), oito folhas em arco dobradas em V na nervura, com
+  um gomo sim e um não mais estreito (a serra) — material dos dois lados;
+- o tamanho por fora é o das antigas: o ponto cego da câmera, a clareira e o
+  sol nascendo da barraca foram medidos com elas.
+
+Peso (as 93 árvores do parque): 467 malhas → 93; 28,8 mil → 36,4 mil
+triângulos.
 
 ## Depois de criar
 
