@@ -1914,6 +1914,17 @@ export const PALETTE = {
   laranja: 0xff9b3d,
   limao: 0xc7de52,
   pessego: 0xffb066,
+  // ---- a loja de patins do Villa Lobos (world/lojaDePatins.ts): pista de
+  // patinação dos anos 80 — água-marinha, creme, coral e o amarelo do letreiro
+  lojaPatinsParede: 0x9fd8d0,
+  lojaPatinsCreme: 0xfbf1de,
+  lojaPatinsCoral: 0xf2766b,
+  lojaPatinsAmarelo: 0xffcf5a,
+  lojaPatinsTijolo: 0xc96f5e,
+  lojaPatinsTeto: 0x8d9aa3,
+  lojaPatinsPisoClaro: 0xf7efe2,
+  lojaPatinsPisoEscuro: 0x3d4f5c,
+  lojaPatinsBorracha: 0x4a4a52,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

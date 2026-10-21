@@ -561,6 +561,33 @@ Três peças que SE MEXEM o tempo todo, e o molde de cada uma:
 - **As peças que voam**: `pedrinhaDeQuicar`, `moedinha`, `peixeQuePula`,
   `libelula` (do tamanho de verdade não se vê: a cena usa 2,4×).
 
+## A loja de patins do Villa Lobos (`world/lojaDePatins.ts`)
+
+O segundo prédio de rua feito com o kit da lojinha da Estella, e o molde de
+loja PEQUENA de um andar só (platibanda, sem telhado à vista):
+
+- **As medidas que a cena usa moram na peça** (`LOJA_DE_PATINS`: o prédio,
+  até onde vão a floreira e o degrau, e o balcão do aluguel). A cena monta os
+  colisores e o ponto do "Alugar patins" lendo dali, e o
+  `scripts/lojaDePatins.mjs` confere que todo vértice da loja na altura do
+  corpo (25 cm a 1,9 m) cabe nos colisores — a primeira loja tinha os números
+  copiados à mão, e dava para atravessar o balcão.
+- **Porta que toca o rodapé é recorte no contorno da parede de cima**, e não
+  furo: o tijolinho vai dos dois lados dela, e embaixo fica a soleira de pedra.
+- **Toldo raso e alto** (0,95 por metro, a câmera da diagonal): a saia em
+  meia-lua tem uma meia-lua por listra, e o `x` em metros é o `u` da lona e
+  da saia — a listra continua de uma para a outra. O braço do toldo corre
+  por baixo da lona: descendo da parede, ele pousava no vidro.
+- **O que se vê pelo vidro está perto dele**: a câmera de cima enxerga só
+  ~1,2 m para dentro da vitrine e ~0,5 m da janela do aluguel (o tablado, a
+  parede de exposição e o escaninho moram aí). O fundo da loja fica vazio.
+- **`patinsRetro()`** é o patins de vitrine (bota de cano alto com quina
+  macia, biqueira, lingueta, cadarço cruzado, raia, placa, eixos, rodas com
+  cubo e freio). O `patins()` do kit continua sendo o do pé da dupla. O
+  gigante do telhado é o mesmo, a 4,1×, numa travessa de dois pés.
+- A luz pintada lá dentro é do tamanho da loja: maior, a poça saía pela
+  parede e acendia a calçada.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
