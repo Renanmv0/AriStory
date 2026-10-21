@@ -388,6 +388,44 @@ qualquer água nova:
   passa da linha d'água e o chão do mundo esconde o pé. O "chute" faz marola
   pelo `onUpdate` da cena.
 
+## Caminho de parque: uma mancha de borda viva (`world/caminhos.ts`)
+
+Caminho feito de `w.patch` colados dá junção em "T" de quina viva e beira de
+régua com a grama — o Renan reparou no parque inteiro. O Villa Lobos agora
+desenha a rede de asfalto como UMA conta de distância:
+
+```ts
+const caminho = beiraTorta(uniaoSuave(2.4,
+  capsula(0, -16.5, 0, 30.6, 2.75),     // um trecho: de a até b, meia largura
+  largo(0, 31.2, 3.2),                   // um largo redondo (a ponta não acaba a régua)
+  caixaRedonda(28.8, 13, 4.8, 3, 0.8),   // um largo de quina redonda
+), 2610);                                // ruído: a beira torta e a largura respirando
+pintarCom(w.patch(0, 0, 1, 1, P.beiraDoCaminho, 0, 0.01, cascalho()), mancha(comCascalho, CAIXA));
+pintarCom(w.patch(0, 0, 1, 1, P.asphalt, 0, 0.012, asfalto()), mancha(caminho, CAIXA));
+```
+
+- **A união SUAVE é que faz a curva** da junção (o "smooth min" de raio
+  `k`), sem desenhar curva nenhuma. Os trechos ficam na MESMA linha dos
+  retângulos de antes: banco, poste e interação não andam.
+- **`mancha()` é marching squares**: os quadradinhos de 25 cm inteiros
+  viram um retângulo por linha, e a beira é o corte interpolado onde a
+  conta passa por zero (lisa, sem degrau). ~2,6 mil triângulos o parque
+  todo. O `w.patch` de 1 × 1 dá o lugar na fila de pintura e a textura em
+  metros; a geometria troca por cima (`pintarCom`).
+- **A ordem**: o cascalho (a mesma conta, 30 cm para fora e com outro
+  ruído), o asfalto, e o que pinta por cima depois (a praça entra na conta
+  como um largo, para a boca do caminho alargar na chegada, e a pedrinha
+  dela cobre o resto).
+- **A beira viva** (`BeiraDoCaminho`): tufos de capim (lote com o `Vento`) e
+  pedrinhas (lote, sem sombra) pela linha do cascalho, fora do que a cena
+  proíbe (`livre`: praça, calçada de prédio, vão da cerca).
+- **O espalhador do parque respeita a mancha** sem andar o sorteio: árvore,
+  moita e pedra que caem no caminho são sorteadas e contadas, e só não
+  entram no mundo (`caminho(x, z) < folga`). Antes ele só conhecia o
+  principal, e plantava árvore no meio do transversal e da boca do vão.
+- Calçada em volta de prédio é `retanguloRedondo(meiaX, meiaZ, raio)`, no
+  lugar do retângulo do `patch`.
+
 ## Andar de cima (o mezanino da boutique)
 
 O motor não tem "andar": a física de caminhada escreve só `x` e `z`, e a
