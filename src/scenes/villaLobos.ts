@@ -11,9 +11,9 @@ import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/Ping
 import {
   aroDeFrisbee, bin, bleachers, bonecoDeNeve, bordaDeGelo, building, bus, busStop, bush,
   cestaDeBiscoitos, cestaDePiquenique, flamula, mesinhaDeXadrez,
-  canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro, duck,
-  fence, floodlight, flowers, iceCream, junco, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
-  comidinhasDePiquenique, mesaPingPong, nenufar, picnicTable, portaRetrato, posteDeGelo,
+  canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro,
+  fence, floodlight, flowers, iceCream, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
+  comidinhasDePiquenique, mesaPingPong, picnicTable, portaRetrato, posteDeGelo,
   raquete, skateShop, toalhaDePiquenique,
   rock, sacoDeGraos, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
   bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong,
@@ -40,6 +40,17 @@ import {
 } from '../world/acampamento';
 import { CozinhaDoFogareiro, ESCALA_DA_COZINHA, garfoComMiojo, miniArepa, type PratoDoFogareiro } from '../world/cozinhaDeAcampamento';
 import { Radinho } from '../world/radinho';
+import {
+  TRAPICHE, TRONCO, alturaNoTrapiche, aguaDoLago, coloniaDeNinfeias, moedinha, Ninfeias, placaDoLago,
+  seixosDaBeira, taboal, topoDoTronco, trapiche, troncoDoLago, type TufoDeTaboa,
+} from '../world/lagoDoParque';
+import { Cardume, Libelulas } from '../world/vidaDoLago';
+import { PATINHO, PATO_BRANCO, PATO_CREME, PatoDoLago } from '../entities/bichos/PatoDoLago';
+import { Garca, type PontoDePesca } from '../entities/bichos/Garca';
+import { TigreDagua, type LugarNoTronco } from '../entities/bichos/TigreDagua';
+import { CARGA_CERTA, FAIXA_CERTA, PedrinhaQuicando } from '../entities/Pedrinha';
+import { ARREMESSO, SOLTA_DO_ARREMESSO } from '../characters/CharacterRig';
+import { Vento } from '../core/shaders';
 import { PoteDeVagaLumes, VagaLumesSoltos } from '../world/poteDeVagaLumes';
 import {
   AURORA, CREPUSCULO, CeuDaClareira, MANHA_CEDO, NOITE, POR_DO_SOL, TARDE_DOURADA, VagaLumes, luzDoMomento,
@@ -441,21 +452,123 @@ export const villaLobos: SceneDef = {
       else w.add(w.place(rock(w.range(0.4, 0.8), w.rng()), x, 0, z, w.range(0, 6.28)));
     }
 
-    // ------------------------------------------------------------- o lago
-    w.disc(-21, 11, 9.2, P.sand, 0.024); // acima do caminho, que encosta aqui
-    w.disc(-21, 11, 8.5, P.water, 0.028);
-    w.blockCircle(-21, 11, 8.8);
-    const patos = [duck(), duck(0xe8e2d0), duck()];
-    patos.forEach((d, i) => {
-      w.place(d, -21 + Math.cos(i * 2.1) * 4.5, 0.1, 11 + Math.sin(i * 2.1) * 3.5, i * 1.7);
-      w.add(d);
+    /* ============================================================== O LAGO
+     *
+     * Uma das primeiras coisas do parque, e a que nunca tinha sido mexida: dois
+     * discos, três patos parados, quatro juncos e seis vitórias-régias. Agora
+     * (pedido do Renan: "mais vivo e com uma nova cara") ele é:
+     *
+     *  - **a água** num shader só (`AguaDoLago`), com a margem torta, os
+     *    degraus de fundura, as marolinhas do vento, o brilho do sol, a espuma
+     *    em volta de tudo que fura a água, as sombras do cardume, o V atrás de
+     *    quem nada e as marolas de tudo que toca nela;
+     *  - **o trapiche** que entra no lago, com a placa de proibido nadar;
+     *  - **a beira**: seixos, ninféias em flor e o taboal balançando no vento;
+     *  - **os bichos**: os patos (e a pata com a fila de patinhos), a garça que
+     *    pesca no raso e voa quando a dupla chega, os tigres-d'água no tronco,
+     *    as libélulas e o peixe que pula;
+     *  - **as brincadeiras**: quicar pedrinha (segurar F na beira), sentar na
+     *    ponta do trapiche com o pé na água, jogar a moedinha do desejo e, no
+     *    computador, tocar a água com o mouse.
+     *
+     * O SORTEIO DO PARQUE NÃO MEXE: a margem de arbustos e os quatro juncos
+     * antigos consumiam `w.range()` aqui, e eles continuam consumindo do mesmo
+     * jeito e na mesma ordem (os juncos viraram a altura de quatro tufos do
+     * taboal) — senão toda árvore sorteada depois mudaria de lugar.
+     */
+    const NO_LAGO = { x: -21, z: 11 };
+    const agua = aguaDoLago();
+    // o disco entra na fila de pintura do chão no lugar do de areia de antes;
+    // quem pinta areia, água e margem é o material da água
+    const lagoMalha = w.disc(NO_LAGO.x, NO_LAGO.z, agua.raioDaMalha, P.water, 0.024);
+    lagoMalha.material = agua.material;
+    lagoMalha.name = 'agua-do-lago';
+
+    // ------------------------------------------------------------ o trapiche
+    /*
+     * Ele entra na água pela beira de `+X/+Z` (a 25° do centro), que é o lado
+     * de onde a câmera olha: a dupla sentada na ponta aparece de costas, de
+     * frente para o lago inteiro — e longe do caminho do Jean-Luc (que emerge
+     * a 67°) e do "Olhar o lago" (a 0°).
+     */
+    const ANGULO_DO_TRAPICHE = 0.436;
+    const pontaDeTerra = agua.naBeira(ANGULO_DO_TRAPICHE, -1.45);
+    const GIRO_DO_TRAPICHE = Math.atan2(-Math.cos(ANGULO_DO_TRAPICHE), -Math.sin(ANGULO_DO_TRAPICHE));
+    const cosT = Math.cos(GIRO_DO_TRAPICHE);
+    const senT = Math.sin(GIRO_DO_TRAPICHE);
+    /** um ponto do referencial do trapiche (a terra no zero, a ponta em `+Z`) levado ao mundo */
+    const doTrapiche = (lx: number, lz: number): { x: number; z: number } => ({
+      x: pontaDeTerra.x + lx * cosT + lz * senT,
+      z: pontaDeTerra.z - lx * senT + lz * cosT,
     });
+    /** e o contrário: onde (x, z) cai no referencial do trapiche */
+    const noTrapiche = (x: number, z: number): { x: number; z: number } => {
+      const dx = x - pontaDeTerra.x;
+      const dz = z - pontaDeTerra.z;
+      return { x: dx * cosT - dz * senT, z: dx * senT + dz * cosT };
+    };
+    /** a faixa do trapiche (com folga): nada de pedra, junco ou ninféia em cima */
+    const naFaixaDoTrapiche = (x: number, z: number, folga = 0.4): boolean => {
+      const l = noTrapiche(x, z);
+      return Math.abs(l.x) < TRAPICHE.largura / 2 + folga && l.z > -folga - 0.6 && l.z < TRAPICHE.comprimento + folga;
+    };
+    const deque = w.add(w.place(trapiche(), pontaDeTerra.x, 0, pontaDeTerra.z, GIRO_DO_TRAPICHE));
+    // a altura das tábuas sob os pés de cada um (a rampinha e o deque)
+    g.relevo((x, z) => {
+      const l = noTrapiche(x, z);
+      if (Math.abs(l.x) > TRAPICHE.largura / 2 + 0.05 || l.z < -0.1 || l.z > TRAPICHE.comprimento + 0.1) return 0;
+      return alturaNoTrapiche(l.z);
+    });
+
+    /*
+     * A ÁGUA NÃO SE PISA, E A BEIRA É TORTA: no lugar do círculo de colisão de
+     * antes, um anel de 72 círculos seguindo a margem (a borda de fora deles
+     * 30 cm além da água: o pé para na areia molhada). O anel é aberto onde
+     * passa o trapiche, e o trapiche é cercado pelos dois lados e na ponta —
+     * dá para andar até o fim dele, e só.
+     */
+    for (let i = 0; i < 72; i++) {
+      const c = agua.naBeira((i / 72) * Math.PI * 2, 0.6);
+      const l = noTrapiche(c.x, c.z);
+      if (Math.abs(l.x) < 2.25 && l.z > -1 && l.z < TRAPICHE.comprimento + 1.2) continue;
+      w.blockCircle(c.x, c.z, 0.9);
+    }
+    {
+      const INICIO = 0.95;
+      const meio = doTrapiche(0, (INICIO + TRAPICHE.comprimento) / 2);
+      const metade = (TRAPICHE.comprimento - INICIO) / 2 + 0.06;
+      for (const s of [-1, 1]) {
+        const lado = doTrapiche(s * (TRAPICHE.largura / 2 + 0.06), (INICIO + TRAPICHE.comprimento) / 2);
+        // o giro do colisor tem o sinal contrário ao do `rotation.y` (`world/collision.ts`)
+        w.blockBox(lado.x, lado.z, 0.06, metade, -GIRO_DO_TRAPICHE);
+      }
+      void meio;
+      /*
+       * OS DOIS LADOS DA RAIZ DO TRAPICHE: o anel foi aberto numa faixa larga
+       * (os círculos dele têm 0,9 de raio, e os que sobram não podem invadir
+       * as tábuas), e entre a cerca e o primeiro círculo de cada lado sobrava
+       * um corredor de água — dava para descer ao lado do trapiche e sair
+       * andando no lago. Uma caixa de cada lado tapa esse vão em toda a
+       * largura do anel. `scripts/lago.mjs` varre a beira inteira atrás de
+       * ponto pisável.
+       */
+      for (const s of [-1, 1]) {
+        const vao = doTrapiche(s * 1.85, 2.3);
+        w.blockBox(vao.x, vao.z, 0.85, 1.35, -GIRO_DO_TRAPICHE);
+      }
+      const fim = doTrapiche(0, TRAPICHE.comprimento + 0.06);
+      w.blockBox(fim.x, fim.z, TRAPICHE.largura / 2 + 0.12, 0.06, -GIRO_DO_TRAPICHE);
+    }
+
+    // a placa de proibido nadar, na entrada do trapiche, virada para quem chega
+    const ONDE_DA_PLACA = doTrapiche(TRAPICHE.largura / 2 + 0.55, -0.15);
+    const placa = w.add(w.place(placaDoLago(), ONDE_DA_PLACA.x, 0, ONDE_DA_PLACA.z, GIRO_DO_TRAPICHE + Math.PI));
+    w.blockCircle(ONDE_DA_PLACA.x, ONDE_DA_PLACA.z, 0.18);
 
     // Margem: o anel regular de arbustos de antes lia como cerca viva plantada
     // por régua. Agora é sorteio na faixa da beira, misturando pedra de tamanhos
     // bem diferentes, capim e arbusto — e a distância varia, então a silhueta
     // da margem deixa de ser um círculo perfeito.
-    const NO_LAGO = { x: -21, z: 11 };
     for (let i = 0; i < 34; i++) {
       const a = (i / 34) * Math.PI * 2 + w.range(-0.09, 0.09);
       const d = w.range(9.1, 11.4);
@@ -466,33 +579,636 @@ export const villaLobos: SceneDef = {
       // madeira da arena de ping pong
       if (NA_ARENA(x, z, 1)) continue;
       const sorte = i % 4;
-      if (sorte === 0) w.add(w.place(bush(w.range(0.6, 1), P.leafDark), x, 0, z));
-      else if (sorte === 1) w.add(w.place(capim(w.range(0.9, 1.5)), x, 0, z, w.range(0, 6.28)));
-      else if (sorte === 2) w.add(w.place(rock(w.range(0.45, 1.5), w.rng()), x, 0, z, w.range(0, 6.28)));
-      else w.add(w.place(flowers(5, 0.8), x, 0, z));
+      // a peça é sorteada SEMPRE (o sorteio do parque não pode andar); a que
+      // cai na entrada do trapiche só não entra no mundo
+      const peca = sorte === 0 ? w.place(bush(w.range(0.6, 1), P.leafDark), x, 0, z)
+        : sorte === 1 ? w.place(capim(w.range(0.9, 1.5)), x, 0, z, w.range(0, 6.28))
+          : sorte === 2 ? w.place(rock(w.range(0.45, 1.5), w.rng()), x, 0, z, w.range(0, 6.28))
+            : w.place(flowers(5, 0.8), x, 0, z);
+      if (!naFaixaDoTrapiche(x, z, 0.9)) w.add(peca);
     }
 
-    // pedras grandes meio dentro d'água, que é o que dá profundidade à borda
-    for (const [a, d, esc] of [[0.9, 8.4, 1.6], [2.6, 8.7, 1.1], [4.3, 8.3, 1.9], [5.6, 8.9, 1.2]] as const) {
-      const x = NO_LAGO.x + Math.cos(a) * d;
-      const z = NO_LAGO.z + Math.sin(a) * d;
+    // pedras grandes meio dentro d'água, que é o que dá profundidade à borda —
+    // agora sentadas na margem torta, metade na água e metade na areia
+    const PEDRAS_DO_LAGO: Array<[number, number, number]> = [];
+    for (const [a, esc] of [[0.9, 1.6], [2.6, 1.1], [4.3, 1.9], [5.6, 1.2]] as const) {
+      const { x, z } = agua.naBeira(a, 0.05);
       w.add(w.place(rock(esc, (a % 1), 0x8f959b), x, -0.12, z, a));
       w.blockCircle(x, z, 0.4 * esc);
+      PEDRAS_DO_LAGO.push([x, z, 0.42 * esc]);
     }
 
-    // juncos na beira e vitórias-régias boiando (calotas acima da água: não
-    // encostam no decalque do lago, então não há z-fighting)
-    for (const [a, d] of [[1.5, 8.2], [3.4, 8.4], [5.1, 8.1], [0.2, 8.5]] as const) {
-      w.add(w.place(junco(w.range(1.1, 1.6)), NO_LAGO.x + Math.cos(a) * d, 0, NO_LAGO.z + Math.sin(a) * d));
-    }
-    const lirios = [
-      [1.1, 6.6, 1, true], [2.9, 7.2, 0.8, false], [4.6, 6.1, 1.15, true],
-      [0.4, 7.4, 0.9, true], [3.8, 5.2, 1.05, false], [5.9, 6.8, 0.85, true],
-    ] as const;
-    for (const [a, d, esc, flor] of lirios) {
-      const lirio = w.place(nenufar(esc, flor), NO_LAGO.x + Math.cos(a) * d, 0.045, NO_LAGO.z + Math.sin(a) * d);
-      lirio.rotation.y = a;
-      w.add(lirio);
+    // os juncos antigos eram estes quatro sorteios de altura: viraram quatro
+    // tufos do taboal (e o sorteio do parque segue igual)
+    const alturasDosJuncos = [0, 1, 2, 3].map(() => w.range(1.1, 1.6));
+    montarOLago();
+
+    /**
+     * A BEIRA, OS BICHOS E AS BRINCADEIRAS DO LAGO. Nada daqui sorteia com o
+     * `w.range()` do parque: cada coisa tem a semente dela.
+     */
+    function montarOLago(): void {
+      const C = NO_LAGO;
+      const cabeNaAgua = (x: number, z: number, fundo = 0.6): boolean => agua.fundura(x, z) > fundo && !naFaixaDoTrapiche(x, z);
+
+      // -------------------------------------------------------------- seixos
+      w.add(seixosDaBeira(agua, 170, (x, z) => !naFaixaDoTrapiche(x, z, 0.3)));
+
+      // ------------------------------------------------------------ o tronco
+      // caído da beira de -X/-Z para dentro d'água: é onde os tigres-d'água
+      // tomam sol, longe do trapiche e à vista de quem está nele
+      const ANG_DO_TRONCO = 3.95;
+      const raizDoTronco = agua.naBeira(ANG_DO_TRONCO, -0.45);
+      const giroDoTronco = Math.atan2(C.x - raizDoTronco.x, C.z - raizDoTronco.z) + 0.35;
+      const tronco = w.add(w.place(troncoDoLago(), raizDoTronco.x, 0, raizDoTronco.z, giroDoTronco));
+      const doTronco = (lx: number, lz: number): { x: number; z: number } => ({
+        x: raizDoTronco.x + lx * Math.cos(giroDoTronco) + lz * Math.sin(giroDoTronco),
+        z: raizDoTronco.z - lx * Math.sin(giroDoTronco) + lz * Math.cos(giroDoTronco),
+      });
+      const meioDoTronco = doTronco(0, TRONCO.comprimento * 0.55);
+      w.blockCircle(doTronco(0, 0.3).x, doTronco(0, 0.3).z, 0.3);
+
+      // ---------------------------------------------------------- ninféias
+      const colonias: Array<[number, number, number, number, number]> = [
+        // ângulo, recuo da beira, raio, quantas, semente
+        [1.92, 1.7, 1.35, 14, 101],
+        [3.4, 1.9, 1.7, 18, 202],
+        [5.24, 1.4, 1.25, 12, 303],
+      ];
+      const PONTO_DO_JEAN_LUC = { x: -18.4, z: 17.2 };
+      const cabeNinfeia = (x: number, z: number): boolean => cabeNaAgua(x, z, 0.55)
+        && Math.hypot(x - PONTO_DO_JEAN_LUC.x, z - PONTO_DO_JEAN_LUC.z) > 1.3
+        && Math.hypot(x - meioDoTronco.x, z - meioDoTronco.z) > 1.6;
+      const folhasDeNinfeia = colonias.flatMap(([a, recuo, raio, n, semente]) => {
+        const c = agua.naBeira(a, recuo);
+        return coloniaDeNinfeias(c.x, c.z, raio, n, semente, cabeNinfeia);
+      });
+      // e umas soltas pelo lago
+      folhasDeNinfeia.push(...coloniaDeNinfeias(C.x, C.z, 5.6, 7, 404, cabeNinfeia));
+      const ninfeias = new Ninfeias(folhasDeNinfeia);
+      w.add(ninfeias.grupo);
+
+      // ------------------------------------------------------------ o taboal
+      const ventoDoLago = new Vento({ forca: 0.1, altura: 1, direcao: [0.86, 0.5] });
+      const TUFOS: Array<[number, number, number, number, number]> = [
+        // ângulo, raio do tufo, folhas, altura, espigas
+        [2.45, 0.75, 42, alturasDosJuncos[0], 4],
+        [3.05, 0.55, 30, 1.2, 2],
+        [4.75, 0.7, 38, alturasDosJuncos[1], 3],
+        [5.75, 0.5, 26, 1.05, 2],
+        [1.2, 0.6, 32, alturasDosJuncos[2], 3],
+        [0.12, 0.55, 28, alturasDosJuncos[3], 2],
+        [0.72, 0.45, 22, 1.0, 1],
+      ];
+      const tufos: TufoDeTaboa[] = TUFOS.map(([a, raio, folhas, altura, espigas]) => {
+        const c = agua.naBeira(a, 0.12);
+        return { x: c.x, z: c.z, raio, folhas, altura, espigas };
+      }).filter((t) => !naFaixaDoTrapiche(t.x, t.z, 0.8));
+      w.add(taboal(tufos, ventoDoLago));
+
+      // as coisas que furam a água ganham o colar de espuma
+      const estacas: Array<[number, number, number]> = [];
+      {
+        const z0 = TRAPICHE.rampa + 0.3;
+        const fileiras: number[] = [];
+        for (let z = z0; z < TRAPICHE.comprimento - 0.5; z += 1.3) fileiras.push(z);
+        fileiras.push(TRAPICHE.comprimento - 0.1);
+        for (const lz of fileiras) {
+          for (const s of [-1, 1]) {
+            const p = doTrapiche(s * (TRAPICHE.largura / 2 + 0.04), lz);
+            if (agua.fundura(p.x, p.z) > 0) estacas.push([p.x, p.z, 0.09]);
+          }
+        }
+      }
+      estacas.push(...PEDRAS_DO_LAGO);
+      for (const t of tufos) estacas.push([t.x, t.z, t.raio * 0.75]);
+      for (const k of [0.45, 0.7, 0.95]) {
+        const p = doTronco(0, TRONCO.comprimento * k);
+        if (agua.fundura(p.x, p.z) > 0) estacas.push([p.x, p.z, TRONCO.raio * 1.05]);
+      }
+      agua.furos(estacas.slice(0, 20));
+      // o fundo cheio de moeda, em volta da ponta do trapiche
+      const pontaNaAgua = doTrapiche(0, TRAPICHE.comprimento + 0.6);
+      agua.moedas(pontaNaAgua.x, pontaNaAgua.z, 2.2);
+
+      // ------------------------------------------------------------- os patos
+      const proibidoAosPatos = [
+        ...colonias.map(([a, recuo, raio]) => ({ ...agua.naBeira(a, recuo), r: raio * 0.55 })),
+        { x: meioDoTronco.x, z: meioDoTronco.z, r: 1.5 },
+      ];
+      const areaDosPatos = {
+        minX: C.x - 7, maxX: C.x + 7, minZ: C.z - 7, maxZ: C.z + 7,
+        proibido: proibidoAosPatos,
+        dentro: (x: number, z: number) => agua.fundura(x, z) > 1.1 && !naFaixaDoTrapiche(x, z, 0.9),
+      };
+      const nascerEm = (pato: PatoDoLago, a: number, recuo: number): PatoDoLago => {
+        const p = agua.naBeira(a, recuo);
+        pato.group.position.set(p.x, 0, p.z);
+        pato.group.rotation.y = a + Math.PI / 2;
+        return pato;
+      };
+      const patoSozinho = nascerEm(new PatoDoLago({ ...areaDosPatos }, { ...PATO_BRANCO, semente: 11 }), 5.3, 3.2);
+      const patoCreme = nascerEm(new PatoDoLago({ ...areaDosPatos }, { ...PATO_CREME, semente: 23 }), 2.8, 3.1);
+      const mae = nascerEm(new PatoDoLago({ ...areaDosPatos }, { ...PATO_BRANCO, semente: 37 }), 0.9, 3.4);
+      const patinhos = [51, 52, 53, 54].map((semente, i) => {
+        const filhote = new PatoDoLago({ ...areaDosPatos }, { ...PATINHO, semente });
+        filhote.entrarEmServico();
+        filhote.group.position.set(mae.x - 0.4 * (i + 1), 0, mae.z - 0.2 * (i + 1));
+        return filhote;
+      });
+      const adultos = [patoSozinho, patoCreme, mae];
+      const todosOsPatos = [...adultos, ...patinhos];
+      for (const pato of todosOsPatos) {
+        w.add(pato.group);
+        const filhote = pato.escala < 0.6;
+        pato.aoSoar = () => g.som(filhote ? 'piado' : 'pato');
+        pato.aoTocarAAgua = (forca) => {
+          const frente = 0.22 * pato.escala;
+          const x = pato.x + Math.sin(pato.group.rotation.y) * frente;
+          const z = pato.z + Math.cos(pato.group.rotation.y) * frente;
+          agua.marola(x, z, forca * (filhote ? 0.4 : 0.75));
+          ninfeias.balancar(x, z, forca * 0.6, 1.2);
+        };
+      }
+
+      // ------------------------------------------------------------ a garça
+      // nos vãos da beira: longe das ninféias, do taboal, das pedras e do tronco
+      const PONTOS_DE_PESCA: PontoDePesca[] = [4.62, 6.05, 2.2].map((a) => {
+        const p = agua.naBeira(a, 0.45);
+        return { ...p, olhando: Math.atan2(C.x - p.x, C.z - p.z) + 0.5 };
+      });
+      const garca = new Garca(PONTOS_DE_PESCA[0]);
+      w.add(garca.group);
+      garca.aoBicar = (x, z) => {
+        agua.marola(x, z, 0.55);
+        cardume.atrair(x, z, 1.2);
+      };
+      garca.aoVoar = () => {
+        g.som('garca');
+        g.som('asas');
+        agua.marola(garca.x, garca.z, 1);
+      };
+      garca.aoPousar = (x, z) => agua.marola(x, z, 0.8);
+      let garcaDescansa = 75;
+
+      // ---------------------------------------------------- os tigres-d'água
+      const voltaDosTigres = doTronco(0.9, TRONCO.comprimento + 1.2);
+      const tigres = [[0.03, 0.8, 0.9], [-0.02, 1.45, -0.7], [0.02, 2.05, 1.2]].map(([lx, lz, vira], i) => {
+        const p = doTronco(lx, lz);
+        const lugar: LugarNoTronco = { x: p.x, y: topoDoTronco() - 0.012, z: p.z, olhando: giroDoTronco + vira };
+        return new TigreDagua(lugar, voltaDosTigres, 7 + i * 13);
+      });
+      for (const t of tigres) {
+        w.add(t.group);
+        t.aoCair = (x, z) => {
+          g.som('ploc');
+          agua.marola(x, z, 0.7);
+          cardume.respingar(x, z, 4);
+        };
+      }
+
+      // ---------------------------------------------- libélulas e o cardume
+      const libelulas = new Libelulas(tufos.slice(0, 4).map((t) => ({ x: t.x, z: t.z })), agua);
+      w.add(libelulas.grupo);
+      libelulas.aoMolhar = (x, z) => agua.marola(x, z, 0.35);
+      const cardume = new Cardume(agua, 6);
+      w.add(cardume.grupo);
+      cardume.podePularEm = (x, z) => !naFaixaDoTrapiche(x, z, 1.2);
+      cardume.aoPular = (x, z, saindo) => {
+        g.som('peixePula');
+        agua.marola(x, z, saindo ? 0.9 : 1.1);
+        ninfeias.balancar(x, z, 0.8, 1.4);
+        for (const pato of adultos) if (Math.hypot(pato.x - x, pato.z - z) < 1.4) pato.fazer('olhar');
+      };
+
+      // --------------------------------------------------- a pedrinha
+      const minhaPedra = new PedrinhaQuicando(agua);
+      const pedraDoOutro = new PedrinhaQuicando(agua);
+      w.add(minhaPedra.mesh);
+      w.add(pedraDoOutro.mesh);
+      /** um pato perto de onde a pedra (ou a moeda) caiu sai batendo asa */
+      const espantarPatos = (x: number, z: number, raio: number): void => {
+        for (const pato of adultos) {
+          const d = Math.hypot(pato.x - x, pato.z - z);
+          if (d > raio) continue;
+          const a = Math.atan2(pato.z - z, pato.x - x);
+          let para = { x: pato.x + Math.cos(a) * 2.6, z: pato.z + Math.sin(a) * 2.6 };
+          if (agua.fundura(para.x, para.z) < 1.4) para = agua.naBeira(a + Math.PI, 3.5);
+          pato.assustar(x, z, para);
+          g.som('asas');
+        }
+      };
+      const tocouAgua = (x: number, z: number, forca: number): void => {
+        agua.marola(x, z, forca);
+        ninfeias.balancar(x, z, forca, 1.5);
+        cardume.atrair(x, z);
+      };
+      for (const pedra of [minhaPedra, pedraDoOutro]) {
+        pedra.aoQuicar = (x, z) => {
+          g.som('quique');
+          tocouAgua(x, z, 0.75);
+          espantarPatos(x, z, 1.4);
+        };
+      }
+
+      /**
+       * QUICAR PEDRINHA, na beira ou na ponta do trapiche: segurar F (no
+       * celular, segurar o botão de ação) carrega a barra, e a faixa dourada é
+       * a força que dá mais quiques; forte demais e é "tibum". O E (ou o toque
+       * no botão) joga uma no meio da faixa, sem mirar.
+       */
+      const naBeira = (): boolean => {
+        const p = g.playerPosition();
+        const l = noTrapiche(p.x, p.z);
+        const naPontaDoDeque = Math.abs(l.x) < TRAPICHE.largura / 2 + 0.1 && l.z > TRAPICHE.comprimento - 2.2 && l.z < TRAPICHE.comprimento + 0.2;
+        return naPontaDoDeque || agua.fundura(p.x, p.z) > -1.25;
+      };
+      let carga = 0;
+      let carregando = false;
+      /** a pedra sai da mão no meio do arremesso: o relógio até soltar */
+      let soltarEm = -1;
+      let cargaDoLance = 0;
+      let lances = 0;
+      /** quem joga a próxima do outro lado: depois da pedra do jogador cair */
+      let vezDoOutro = false;
+
+      const jogarPedrinha = (forca: number): void => {
+        if (minhaPedra.voando || soltarEm >= 0) return;
+        g.arremessar('jogador');
+        cargaDoLance = forca;
+        soltarEm = ARREMESSO * SOLTA_DO_ARREMESSO;
+      };
+      const quique = w.interact({
+        id: 'lago:pedrinha',
+        x: NO_LAGO.x, z: NO_LAGO.z, radius: 1.2,
+        label: 'Quicar pedrinha (segure F)', icon: '🪨',
+        priority: -3,
+        onInteract: () => jogarPedrinha(CARGA_CERTA + (Math.random() - 0.5) * 0.24),
+      });
+      quique.enabled = false;
+
+      const resultado = async (n: number, naAreia: boolean): Promise<void> => {
+        lances++;
+        g.bump('lago.pedrinhas');
+        if (naAreia) {
+          g.toast(n ? `${n} ${n === 1 ? 'quique' : 'quiques'}, e parou na areia do outro lado!` : 'Foi parar na areia…', '🪨');
+        } else if (n === 0) {
+          g.toast('Tibum! Forte demais', '💦');
+        } else {
+          g.toast(`${n} ${n === 1 ? 'quique' : 'quiques'}!`, '🪨');
+        }
+        const recorde = g.stat('lago.recorde');
+        if (n > recorde) {
+          g.bump('lago.recorde', n - recorde);
+          if (recorde > 0 && n >= 4) g.toast(`Recorde novo: ${n}!`, '🏆');
+        }
+        if (n >= 5) {
+          g.unlock({
+            id: 'lago-quiques',
+            title: 'Cinco quiques',
+            place: 'Parque Villa Lobos',
+            note: 'Na ponta do lago, uma pedrinha chata saiu de lado e quicou cinco vezes na água antes de afundar. Os patos não gostaram.',
+            icon: '🪨',
+          });
+        }
+        // de vez em quando o outro também joga uma (e compara)
+        vezDoOutro = lances % 3 === 0;
+      };
+
+      minhaPedra.aoAfundar = (x, z, n) => {
+        g.som(n === 0 ? 'tibum' : 'ploft');
+        tocouAgua(x, z, n === 0 ? 1.6 : 1.1);
+        cardume.respingar(x, z, n === 0 ? 14 : 5);
+        espantarPatos(x, z, n === 0 ? 2.4 : 1.4);
+        void resultado(n, false);
+      };
+      minhaPedra.aoParar = (_x, _z, n) => {
+        g.som('passo');
+        void resultado(n, true);
+      };
+      let meusQuiques = 0;
+      pedraDoOutro.aoAfundar = (x, z, n) => {
+        g.som('ploft');
+        tocouAgua(x, z, 1.1);
+        cardume.respingar(x, z, 5);
+        void (async () => {
+          const ele = g.companionName();
+          if (n > meusQuiques) await g.say([`${n}! Ganhei essa.`], ele);
+          else if (n === meusQuiques) await g.say([`${n} também. Empate!`], ele);
+          else await g.say(['Essa escorregou da mão. Não valeu.'], ele);
+        })();
+      };
+      pedraDoOutro.aoParar = () => g.som('passo');
+
+      /**
+       * A vez do outro: ele joga a dele, mirando no meio do lago. A pedra sai
+       * da mão pelo relógio do quadro (`outroSoltaEm`), e não por
+       * `setTimeout`: o relógio de parede corre na frente do jogo num celular
+       * lento, e a pedra sairia antes do braço.
+       */
+      let outroSoltaEm = -1;
+      const outroJoga = (): void => {
+        const p = g.companionPosition();
+        if (agua.fundura(p.x, p.z) < -1.6 || pedraDoOutro.voando || outroSoltaEm >= 0) return;
+        meusQuiques = minhaPedra.quiques;
+        g.arremessar('parceiro');
+        outroSoltaEm = ARREMESSO * SOLTA_DO_ARREMESSO;
+      };
+
+      // ------------------------------------------- tocar a água (o mouse)
+      w.clicavel(lagoMalha, {
+        soMouse: true,
+        aoClicar: (api, ponto) => {
+          if (agua.fundura(ponto.x, ponto.z) < 0.15) return;
+          api.som('gota');
+          tocouAgua(ponto.x, ponto.z, 0.8);
+          for (const pato of adultos) if (Math.hypot(pato.x - ponto.x, pato.z - ponto.z) < 2.5) pato.fazer('olhar');
+        },
+      });
+
+      // ------------------------------------------------ a placa e a ponta
+      w.interact({
+        id: 'lago:placa',
+        x: ONDE_DA_PLACA.x, z: ONDE_DA_PLACA.z, radius: 1.3,
+        label: 'Ler a placa', icon: '🪧',
+        highlight: placa,
+        // [provisório] falas minhas, até o Renan mandar as dele
+        onInteract: () => conversa([
+          [R, '"Proibido nadar." Tá vendo? Até a placa concorda comigo.'],
+          [A, 'A placa não conhece a gente.'],
+        ]),
+      });
+
+      /*
+       * A PONTA DO TRAPICHE: sentar na beirada com o pé na água, ou jogar a
+       * moedinha do desejo ("o fundo do lago é cheio de moeda", diz o
+       * Jean-Luc). Os dois sentam na ponta de frente para o lago, as pernas
+       * penduradas — o chão do mundo esconde o pé abaixo da água, e é isso que
+       * faz parecer o pé dentro d'água; o chute de cada perna faz uma marolinha.
+       */
+      const PONTA = doTrapiche(0, TRAPICHE.comprimento - 0.5);
+      const assentoNaPonta = new THREE.Object3D();
+      const beirada = doTrapiche(0, TRAPICHE.comprimento - 0.02);
+      // a âncora no chão, como a do banco: quem decide a altura é o `ALTURA`
+      assentoNaPonta.position.set(beirada.x, 0, beirada.z);
+      // `ridePlayer` põe o rig virado para o `-Z` da âncora (ver `w.banco`)
+      assentoNaPonta.rotation.y = GIRO_DO_TRAPICHE + Math.PI;
+      w.root.add(assentoNaPonta);
+      const focoDaPonta = new THREE.Object3D();
+      focoDaPonta.position.set(beirada.x, 0.9, beirada.z);
+      w.root.add(focoDaPonta);
+      let sentadosNaPonta = false;
+      let pesNaAgua = 0;
+      const LADO = 0.36;
+      /**
+       * A altura do corpo na âncora: o banco tem o assento a 0,53 e usa 0,06
+       * (o quadril do rig fica ~0,45 acima da origem); a tábua da ponta está a
+       * 0,20 — então o corpo desce 0,27 abaixo do chão, e a perna pendurada
+       * passa da linha d'água.
+       */
+      const ALTURA = TRAPICHE.altura - 0.53 + 0.06;
+
+      const sentarNaPonta = async (): Promise<void> => {
+        g.lockPlayer(true);
+        g.ridePlayer(assentoNaPonta, new THREE.Vector3(-LADO, ALTURA, -0.06), 1, Math.PI);
+        g.rideCompanion(assentoNaPonta, new THREE.Vector3(LADO, ALTURA, -0.06), 1, Math.PI);
+        g.setSitting(true, 'beirada');
+        g.focusCamera(focoDaPonta);
+        sentadosNaPonta = true;
+        // a pata traz os patinhos para ver quem chegou
+        const perto = doTrapiche(0.6, TRAPICHE.comprimento + 1.5);
+        mae.entrarEmServico();
+        void mae.irPara(perto.x, perto.z, 0.5).then(() => mae.encarar(beirada.x, beirada.z));
+        await g.wait(0.8);
+        // [provisório] falas minhas, até o Renan mandar as dele
+        await conversa([
+          [A, 'A água tá geladinha.'],
+          [R, 'E os patos vieram ver quem chegou.'],
+        ]);
+        g.unlock({
+          id: 'lago-pe-na-agua',
+          title: 'Pé na água',
+          place: 'Parque Villa Lobos',
+          note: 'Sentados na ponta do trapiche do lago, com o pé na água gelada e uma fila de patinhos passando para ver quem tinha chegado.',
+          icon: '🦶',
+        });
+        let escolha = 0;
+        while (escolha === 0) {
+          escolha = await g.ask('Ficar mais um pouco?', ['Ficar', 'Levantar']);
+          if (escolha === 0) await g.wait(5);
+        }
+        sentadosNaPonta = false;
+        g.setSitting(false);
+        g.focusCamera(null);
+        mae.pararDeEncarar();
+        mae.voltarAPassear();
+        const sai = (lx: number): { x: number; z: number } => doTrapiche(lx, TRAPICHE.comprimento - 0.8);
+        g.releasePlayer(sai(-0.38).x, sai(-0.38).z, GIRO_DO_TRAPICHE);
+        g.releaseCompanion(sai(0.38).x, sai(0.38).z, GIRO_DO_TRAPICHE);
+        g.lockPlayer(false);
+      };
+
+      let moedaVoando: { de: THREE.Vector3; para: THREE.Vector3; t: number; caiu: () => void } | null = null;
+      const moedinhaNoAr = moedinha();
+      moedinhaNoAr.scale.setScalar(1.6);
+      moedinhaNoAr.visible = false;
+      w.add(moedinhaNoAr);
+      const jogarMoedinha = async (): Promise<void> => {
+        const eu = g.playerName();
+        if (!g.gastar(1)) {
+          await g.say(['Nem uma moedinha… fica pro próximo pedido.'], eu);
+          return;
+        }
+        g.lockPlayer(true);
+        const de = g.playerPosition();
+        const rumo = GIRO_DO_TRAPICHE;
+        g.arremessar('jogador');
+        await g.wait(ARREMESSO * SOLTA_DO_ARREMESSO);
+        g.som('moeda');
+        const cai = doTrapiche(-0.3 + Math.random() * 0.6, TRAPICHE.comprimento + 2.2 + Math.random() * 0.8);
+        moedinhaNoAr.visible = true;
+        const inicio = new THREE.Vector3(de.x + Math.sin(rumo) * 0.25, de.y + 1.0, de.z + Math.cos(rumo) * 0.25);
+        // o voo anda no relógio do quadro (ver `moedaVoando`); aqui só se espera ele cair
+        await new Promise<void>((caiu) => {
+          moedaVoando = { de: inicio, para: new THREE.Vector3(cai.x, 0, cai.z), t: 0, caiu };
+        });
+        moedinhaNoAr.visible = false;
+        agua.moedaCaiu(cai.x, cai.z);
+        g.som('ploc');
+        tocouAgua(cai.x, cai.z, 0.7);
+        g.bump('lago.moedas');
+        await g.wait(0.6);
+        // [provisório] falas minhas, até o Renan mandar as dele
+        await conversa([
+          [g.companionName(), 'Pediu o quê?'],
+          [eu, 'Não posso contar. Senão não vale.'],
+        ]);
+        g.unlock({
+          id: 'lago-moedinha',
+          title: 'Uma moedinha no lago',
+          place: 'Parque Villa Lobos',
+          note: 'O Jean-Luc jura que o fundo do lago é cheio de moeda. Agora tem uma nossa lá embaixo, com um pedido que não pode ser contado.',
+          icon: '🪙',
+        });
+        g.lockPlayer(false);
+      };
+
+      const ponta = w.interact({
+        id: 'lago:ponta',
+        x: PONTA.x, z: PONTA.z, radius: 1.0,
+        label: 'Na ponta do trapiche', icon: '🌊',
+        highlight: deque,
+        onInteract: async () => {
+          const i = await g.ask('Na ponta do trapiche', ['Sentar na beirada', 'Jogar uma moedinha (R$ 1)', 'Agora não']);
+          if (i === 0) await sentarNaPonta();
+          else if (i === 1) await jogarMoedinha();
+        },
+      });
+
+      // ------------------------------------------------------- o quadro
+      const pernaNaAgua = new THREE.Vector3();
+      /** o relógio do lago: o teste acelera (o navegador dele anda devagar) */
+      const ritmo = { vezes: 1 };
+      w.onUpdate((dt0) => {
+        const dt = dt0 * ritmo.vezes;
+        agua.tique(dt);
+        ventoDoLago.tique(dt);
+        agua.soprar(ventoDoLago.uniforms.uDirecao.value, ventoDoLago.rajada);
+        ninfeias.atualizar(dt);
+        libelulas.update(dt);
+        cardume.update(dt);
+        // a rajada de vez em quando: o taboal deita e a água arrepia
+        if (Math.random() < dt / 22) ventoDoLago.soprar(1.2 + Math.random() * 0.8);
+
+        const eu = g.playerPosition();
+        const ele = g.companionPosition();
+
+        // ----------------------------------------------------- os patos
+        for (const pato of adultos) pato.update(dt);
+        // os patinhos atrás da mãe, em fila; com ela parada, em volta dela
+        patinhos.forEach((filhote, i) => {
+          const frente = i === 0 ? mae : patinhos[i - 1];
+          let alvo: { x: number; z: number };
+          if (mae.velocidade < 0.06) {
+            const a = mae.group.rotation.y + Math.PI + (i - 1.5) * 0.75;
+            alvo = { x: mae.x + Math.sin(a) * 0.55, z: mae.z + Math.cos(a) * 0.55 };
+          } else {
+            const gap = i === 0 ? 0.42 : 0.3;
+            alvo = { x: frente.x - Math.sin(frente.group.rotation.y) * gap, z: frente.z - Math.cos(frente.group.rotation.y) * gap };
+          }
+          filhote.seguir(alvo.x, alvo.z, Math.max(0.25, mae.velocidade * 1.25 + 0.15));
+          filhote.update(dt);
+        });
+        todosOsPatos.forEach((pato, i) => {
+          agua.rastro(i, pato.x, pato.z, pato.group.rotation.y, Math.min(1, pato.velocidade / 0.6), pato.escala);
+        });
+
+        // ------------------------------------------------------- a garça
+        garca.update(dt);
+        const pertoDaGarca = Math.min(Math.hypot(eu.x - garca.x, eu.z - garca.z), Math.hypot(ele.x - garca.x, ele.z - garca.z));
+        garca.sentir(pertoDaGarca);
+        garcaDescansa -= dt;
+        if (!garca.voando && (pertoDaGarca < 2.5 || garcaDescansa <= 0)) {
+          // voa para o ponto de pesca mais longe da dupla
+          const longe = [...PONTOS_DE_PESCA]
+            .filter((p) => Math.hypot(p.x - garca.x, p.z - garca.z) > 2)
+            .sort((a, b) => Math.hypot(b.x - eu.x, b.z - eu.z) - Math.hypot(a.x - eu.x, a.z - eu.z))[0];
+          if (longe) garca.voarPara(longe);
+          garcaDescansa = 80 + Math.random() * 50;
+        }
+
+        // ----------------------------------------------- os tigres-d'água
+        const pertoDoTronco = Math.min(Math.hypot(eu.x - meioDoTronco.x, eu.z - meioDoTronco.z), Math.hypot(ele.x - meioDoTronco.x, ele.z - meioDoTronco.z));
+        tigres.forEach((t, i) => {
+          if (pertoDoTronco < 3.2) {
+            t.assustar(i * 0.35 + 0.1);
+            t.podeVoltar(false);
+          } else if (pertoDoTronco > 5) t.podeVoltar(true);
+          t.update(dt);
+          agua.rastro(todosOsPatos.length + i, t.x, t.z, t.group.rotation.y, t.naAgua ? Math.min(1, t.velocidade / 0.3) : 0, t.naAgua ? 0.45 : 0);
+        });
+
+        // ------------------------------------------------ as pedrinhas
+        minhaPedra.update(dt);
+        pedraDoOutro.update(dt);
+        if (soltarEm >= 0) {
+          soltarEm -= dt;
+          if (soltarEm < 0) {
+            const olhar = g.playerFacing();
+            // a mão direita, na altura do quadril, um palmo à frente e ao lado
+            const mao = new THREE.Vector3(
+              eu.x + Math.sin(olhar) * 0.3 + Math.cos(olhar) * 0.22,
+              eu.y + 0.7,
+              eu.z + Math.cos(olhar) * 0.3 - Math.sin(olhar) * 0.22,
+            );
+            minhaPedra.lancar(mao, olhar, cargaDoLance, Math.random());
+          }
+        }
+        if (outroSoltaEm >= 0) {
+          outroSoltaEm -= dt;
+          if (outroSoltaEm < 0) {
+            const rumo = Math.atan2(C.x - ele.x, C.z - ele.z) + (Math.random() - 0.5) * 0.5;
+            const mao = new THREE.Vector3(ele.x + Math.sin(rumo) * 0.3, ele.y + 0.7, ele.z + Math.cos(rumo) * 0.3);
+            pedraDoOutro.lancar(mao, rumo, 0.55 + Math.random() * 0.35, Math.random());
+          }
+        }
+        if (vezDoOutro && minhaPedra.terminou) {
+          vezDoOutro = false;
+          outroJoga();
+        }
+        const beira = naBeira() && !sentadosNaPonta;
+        quique.enabled = beira && !minhaPedra.voando && soltarEm < 0;
+        quique.moveTo(eu.x, eu.z);
+        if (beira && g.keyDown('KeyF') && !minhaPedra.voando && soltarEm < 0) {
+          carregando = true;
+          // segurar demais passa da faixa dourada e chega no "tibum"
+          carga = Math.min(1, carga + dt / 1.25);
+          g.showCharge(carga, CARGA_CERTA, FAIXA_CERTA);
+        } else if (carregando) {
+          carregando = false;
+          g.showCharge(null);
+          if (carga >= 0.12) jogarPedrinha(carga);
+          carga = 0;
+        }
+
+        // ------------------------------------------------ a moedinha no ar
+        if (moedaVoando) {
+          const DUR = 0.9;
+          moedaVoando.t += dt;
+          const k = Math.min(1, moedaVoando.t / DUR);
+          const { de, para } = moedaVoando;
+          moedinhaNoAr.position.set(de.x + (para.x - de.x) * k, de.y * (1 - k) + Math.sin(k * Math.PI) * 1.1, de.z + (para.z - de.z) * k);
+          moedinhaNoAr.rotation.x = moedaVoando.t * 22;
+          if (k >= 1) {
+            const caiu = moedaVoando.caiu;
+            moedaVoando = null;
+            caiu();
+          }
+        }
+
+        // ------------------------------------------- o pé na água, sentados
+        if (sentadosNaPonta) {
+          pesNaAgua -= dt;
+          if (pesNaAgua <= 0) {
+            pesNaAgua = 0.55 + Math.random() * 0.4;
+            const lado = Math.random() < 0.5 ? -1 : 1;
+            const p = doTrapiche(lado * (LADO + (Math.random() - 0.5) * 0.12), TRAPICHE.comprimento + 0.22);
+            pernaNaAgua.set(p.x, 0, p.z);
+            agua.marola(p.x, p.z, 0.35);
+            ninfeias.balancar(p.x, p.z, 0.3, 1);
+          }
+        }
+        ponta.enabled = !sentadosNaPonta;
+      });
+
+      /** gancho de teste: o `scripts/lago.mjs` mede por aqui */
+      lagoMalha.userData.teste = {
+        agua, ninfeias, garca, tigres, cardume, libelulas, patos: todosOsPatos, mae, patinhos, minhaPedra, pedraDoOutro,
+        trapiche: { doTrapiche, noTrapiche, ponta: PONTA, beirada, giro: GIRO_DO_TRAPICHE },
+        placa: ONDE_DA_PLACA, pontosDePesca: PONTOS_DE_PESCA, tronco: meioDoTronco, tufos,
+        jogarPedrinha, outroJoga, sentados: () => sentadosNaPonta, ritmo, moedaNoAr: moedinhaNoAr,
+      };
+      void tronco;
     }
 
     // ------------------------------------------------- quadra de frisbee
@@ -5683,13 +6399,19 @@ export const villaLobos: SceneDef = {
       jeanLuc.group.visible = true;
       marola.visible = true;
       marola.scale.setScalar(0.3);
+      // e a água do lago responde junto: os anéis abrindo de onde ele sai
+      agua.marola(JEANLUC_LAGO.x, JEANLUC_LAGO.z, 1.6);
       const passos = 26;
       for (let i = 1; i <= passos; i++) {
         const t = i / passos;
         // a subida termina antes do fim (em 82%) para o salto ter onde cair
         const subida = Math.min(1, t / 0.82);
         const salto = Math.sin(t * Math.PI) * 0.2;
-        jeanLuc.emergirAte(-0.85 + 0.85 * subida + salto);
+        const y = -0.85 + 0.85 * subida + salto;
+        jeanLuc.emergirAte(y);
+        // o pico do salto dura um passo só: fica anotado para o teste, que
+        // olha a altura de tempos em tempos e pode passar por cima dele
+        jeanLuc.group.userData.maiorSalto = Math.max(jeanLuc.group.userData.maiorSalto ?? -9, y);
         marola.scale.setScalar(0.3 + t * 3.4);
         await api.wait(0.055);
       }
@@ -6716,9 +7438,6 @@ export const villaLobos: SceneDef = {
           g.setZoom(36 - t * 21);
         }
       }
-      patos.forEach((d, i) => {
-        d.position.y = 0.1 + Math.sin(performance.now() / 900 + i) * 0.05;
-      });
       if (voltaAtual && wheel.turnsSince(voltaAtual.de) >= voltaAtual.voltas) {
         const done = voltaAtual.resolve;
         voltaAtual = null;

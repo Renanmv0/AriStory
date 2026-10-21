@@ -105,6 +105,8 @@ export class Apontador {
       if (this.bloqueado || !this.camera) return false;
       const acerto = this.atirar();
       if (!acerto) return false;
+      // a peça que é só de mouse deixa o dedo virar joystick (ver \`soMouse\`)
+      if (e.toque && acerto.alvo.def.soMouse) return false;
       if (acerto.alvo.def.arrastar) {
         this.arrastando = acerto.alvo;
         acerto.alvo.def.arrastar.aoPegar?.();

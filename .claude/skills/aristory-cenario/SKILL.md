@@ -340,6 +340,54 @@ luazinha) — é por baixo dela que a cena troca a noite pela aurora.
   dele, ler pelo `current` devolvia a cena velha e os soltos sumiam ao
   recarregar).
 
+## O lago do Villa Lobos: água em shader, margem torta e trapiche
+
+O lago (`montarOLago` em `scenes/villaLobos.ts`, peças em
+`world/lagoDoParque.ts`, vida miúda em `world/vidaDoLago.ts`) é o molde para
+qualquer água nova:
+
+- **Água e areia são UM decalque** com o material `AguaDoLago`
+  (`core/shaders.ts`, toon estendido): o `w.disc` dá o lugar na fila de
+  pintura do chão e o material troca por cima (`lagoMalha.material =
+  agua.material`). A margem torta é CONTA (`FormaDoLago`: raio + ondas de
+  seno com número inteiro de voltas), feita no shader e no TS
+  (`agua.fundura(x, z)`, `agua.naBeira(ângulo, recuo)`) — tudo que pergunta
+  "é água?" (colisor, seixo, junco, pato, peixe, pedrinha) usa a mesma conta.
+  A borda com a grama é `alphaTest` + `alphaToCoverage`: continua opaca e na
+  fila dos decalques. Derivada (`fwidth`) dentro de laço com `continue` é
+  indefinida: o tamanho do pixel é medido UMA vez no topo e passado adiante.
+- **O que mexe na água vem da cena**: `agua.marola(x, z, força)` (pedrinha,
+  peixe, bico da garça, pé, mouse), `agua.rastro(i, …)` (o V de quem nada, uma
+  vaga por bicho), `agua.peixe(i, …)` (sombra do cardume), `agua.furos(lista)`
+  (espuma em volta do que fura a água) e `agua.moedas`/`moedaCaiu`. A faísca
+  do sol entra pelo `RE_Direct` do toon: vem na cor da luz e some na sombra.
+- **A margem torta não cabe num `blockCircle`**: o lago é um ANEL de 72
+  círculos seguindo a margem (30 cm além da água), aberto onde passa o
+  trapiche — que é cercado pelos lados, na ponta e com uma caixa de cada lado
+  da raiz (o vão entre a cerca e o primeiro círculo era um corredor para
+  dentro do lago). O meio do anel nunca é alcançado. `scripts/lago.mjs` prova
+  isso varrendo a beira inteira atrás de ponto pisável, em vez de andar (o
+  navegador do teste roda a poucos quadros).
+- **Chão que se pisa acima do zero, um de cada vez**: `g.relevo((x, z) =>
+  altura)` — o trapiche com a rampinha. Diferente do `elevarDupla`, cada um
+  fica no piso do lugar dele (um na tábua, o outro na areia).
+- **O sorteio do parque não pode andar**: a margem de arbustos e os juncos
+  antigos consumiam `w.range()` ali, e continuam consumindo na mesma ordem
+  (a peça que cai na entrada do trapiche é sorteada e só não entra no mundo;
+  os quatro juncos viraram a altura de quatro tufos). Tudo que é novo tem
+  semente própria.
+- **Tocar a água com o mouse** é um `w.clicavel(lagoMalha, { soMouse: true })`:
+  no celular o dedo que encosta num clicável não vira joystick, e um lago
+  inteiro clicável roubaria o manche.
+- **Brincadeira livre na beira** (quicar pedrinha): o prompt anda com o
+  jogador (`moveTo` no `onUpdate`, prioridade baixa) e só liga perto da água;
+  segurar F carrega a barra (`showCharge` com alvo e faixa), e a pedra sai da
+  mão no meio do `g.arremessar` — por relógio do quadro, nunca `setTimeout`.
+- **Sentar com o pé na água**: `g.setSitting(true, 'beirada')` com a âncora no
+  chão e a altura descontada como no banco (`deque - 0,53 + 0,06`); a perna
+  passa da linha d'água e o chão do mundo esconde o pé. O "chute" faz marola
+  pelo `onUpdate` da cena.
+
 ## Andar de cima (o mezanino da boutique)
 
 O motor não tem "andar": a física de caminhada escreve só `x` e `z`, e a

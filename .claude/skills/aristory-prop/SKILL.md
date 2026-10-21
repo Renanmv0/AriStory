@@ -529,6 +529,38 @@ Três peças que SE MEXEM o tempo todo, e o molde de cada uma:
   os halos (`brilhoEmLote`) e as poças de luz no chão (`luzNoChao` com cor
   por cópia).
 
+## O lago do Villa Lobos (`world/lagoDoParque.ts`)
+
+- **O trapiche** (`trapiche()`, constantes em `TRAPICHE`): tábua por tábua
+  atravessada, com fresta, cada uma num de três tons e um tico mais comprida
+  ou curta que a vizinha (a mão de quem pregou); as vigas entram 4 mm nas
+  tábuas (encostar seria face coplanar); as estacas saem da água e as duas da
+  ponta sobem como cabeço, uma com o rolo de corda; guarda-corpo só na metade
+  de terra (a ponta é aberta, é de onde se senta); a boia salva-vidas com
+  faixas que são arcos de toro um tico mais grossos que o anel. Veio pelo
+  `acabar` e tudo pela `fundir()`: ~120 peças, meia dúzia de desenhos.
+  `alturaNoTrapiche(lz)` é o relevo da rampinha (a cena passa para o
+  `g.relevo`).
+- **As ninféias** (`Ninfeias`, `coloniaDeNinfeias`): quatro lotes (folha,
+  flor, miolo, botão). A folha tem a FENDA (disco com um gomo faltando) e a
+  borda virada para cima, e o veio é canvas; rosa e branca são a MESMA flor
+  com cor por cópia. Pétala de flor miúda é esfera 6×4 (a flor tem 23): 8×6
+  dobrava os triângulos da cena sem ninguém ver diferença. Flor e botão não
+  fazem sombra (`userData.semSombra`), a folha faz. Elas boiam, e
+  `balancar(x, z)` sacode as de perto quando passa uma marola.
+- **O taboal** (`taboal(tufos, vento)`): folha, haste e espiga em lote com o
+  material do `Vento` (`core/shaders.ts`). A espiga já NASCE na altura da
+  ponta da haste (em vez de ser filha dela) e divide a matriz da haste: as
+  duas balançam juntas sem conta nenhuma.
+- **Os seixos** (`seixosDaBeira`): um lote de icosaedro achatado com cor por
+  cópia, na linha d'água; os de dentro d'água afundam até só a corcova
+  aparecer. Sem sombra (5 cm não fazem sombra que se veja).
+- **O tronco dos tigres-d'água** (`troncoDoLago`, `TRONCO`, `topoDoTronco`):
+  deitado com o fundo abaixo da água (o chão do mundo esconde), corte claro
+  com anéis 2 mm à frente da tampa, toco de galho e musgo.
+- **As peças que voam**: `pedrinhaDeQuicar`, `moedinha`, `peixeQuePula`,
+  `libelula` (do tamanho de verdade não se vê: a cena usa 2,4×).
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

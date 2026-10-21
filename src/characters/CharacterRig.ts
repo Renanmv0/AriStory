@@ -28,6 +28,11 @@ const ABRE_MAO = 0.75;
  * tronco. 0,17 é só o bastante para a mão sair da cápsula do corpo: a de
  * patins (0,34) e a do provador (0,36) abrem bem mais.
  */
+/** sentado no banco (as pernas para a frente) ou na beirada (penduradas) */
+export type JeitoDeSentar = 'banco' | 'beirada';
+/** a duração do arremesso de lado, e o instante (fração) em que a pedra sai da mão */
+export const ARREMESSO = 0.62;
+export const SOLTA_DO_ARREMESSO = 0.55;
 const BRACO_SOLTO = 0.17;
 
 /**
@@ -175,6 +180,14 @@ export class CharacterRig {
   private targetFacing = 0;
   private swimming = false;
   private sitting = false;
+  /**
+   * COMO está sentado: no banco (pernas para a frente, o de sempre) ou na
+   * BEIRADA (a ponta do trapiche do lago): as pernas penduradas para baixo,
+   * com o pé dentro d'água, balançando mais — é o chutinho na água.
+   */
+  private jeitoDeSentar: JeitoDeSentar = 'banco';
+  /** o arremesso de lado (a pedrinha no lago): o relógio, em segundos; 0 = parado */
+  private arremesso = 0;
   private deitado = false;
   /**
    * Deitado DE LADO, de frente para quem está ao lado: 0 de barriga para
@@ -1119,6 +1132,21 @@ export class CharacterRig {
     this.bounce = 1;
   }
 
+  /**
+   * O ARREMESSO DE LADO, o de quicar pedrinha: o braço direito vai para trás
+   * e abre, o tronco gira junto, e o braço varre baixo e de lado para a
+   * frente, soltando na altura do quadril. Dura `ARREMESSO` segundos; a cena
+   * solta a pedra em `SOLTA_DO_ARREMESSO` do caminho.
+   */
+  arremessar(): void {
+    this.arremesso = ARREMESSO;
+  }
+
+  /** o arremesso em curso (0 = nenhum), em fração de 0 a 1 */
+  get noArremesso(): number {
+    return this.arremesso > 0 ? 1 - this.arremesso / ARREMESSO : 0;
+  }
+
   /** Liga o chapéu de campeão do ping pong (prêmio, não parte da ficha). */
   setCampeao(v: boolean): void {
     this.chapeu.visible = v;
@@ -1490,8 +1518,9 @@ export class CharacterRig {
   // --- fim guarda-roupa -----------------------------------------------------
 
   /** Sentado: pernas para a frente e corpo mais baixo. */
-  setSitting(v: boolean): void {
+  setSitting(v: boolean, jeito: JeitoDeSentar = 'banco'): void {
     this.sitting = v;
+    this.jeitoDeSentar = jeito;
     if (!v) {
       this.poeAltura(0);
       this.legL.rotation.x = 0;
@@ -1903,9 +1932,18 @@ export class CharacterRig {
       // Pernas balancando BEM devagar: um vaivem a cada ~3 s. E o gesto de quem
       // senta no banco e deixa o pe solto, e ele so le como calma se a
       // frequencia for baixa — mais rapido que isto vira perna nervosa.
-      const balanco = Math.sin(this.phase * 2.2) * 0.17;
-      this.legL.rotation.x = -Math.PI / 2 + 0.06 + balanco;
-      this.legR.rotation.x = -Math.PI / 2 - 0.02 - balanco;
+      if (this.jeitoDeSentar === 'beirada') {
+        // NA BEIRADA a perna cai pela borda: a coxa quase reta para baixo (um
+        // tico para a frente) e o chute na água é maior e um pouco mais
+        // rápido que o do banco — é o pé brincando com a água
+        const chute = Math.sin(this.phase * 2.6) * 0.32;
+        this.legL.rotation.x = -0.42 + chute;
+        this.legR.rotation.x = -0.42 - chute;
+      } else {
+        const balanco = Math.sin(this.phase * 2.2) * 0.17;
+        this.legL.rotation.x = -Math.PI / 2 + 0.06 + balanco;
+        this.legR.rotation.x = -Math.PI / 2 - 0.02 - balanco;
+      }
       // Bracos apoiados, abertos para FORA. Mesma pegadinha de sinal de sempre:
       // o braco esquerdo nasce em -X e `rotation.z` positivo joga a mao para
       // +X, ou seja para dentro do corpo — sentado, isso vira um abraco em si
@@ -2023,6 +2061,23 @@ export class CharacterRig {
     }
 
     this.aplicarPose();
+
+    // o arremesso de lado (a pedrinha): por cima da pose de pé
+    if (this.arremesso > 0) {
+      this.arremesso = Math.max(0, this.arremesso - dt);
+      const k = 1 - this.arremesso / ARREMESSO;
+      // prepara até 0,45 (o braço vai para trás e abre), varre até 0,62 e volta
+      const atras = k < 0.45 ? Math.sin((k / 0.45) * Math.PI / 2) : k < 0.62 ? 1 - ((k - 0.45) / 0.17) * 2 : -1 + ((k - 0.62) / 0.38);
+      const abre = k < 0.62 ? Math.min(1, k / 0.3) : 1 - (k - 0.62) / 0.38;
+      // `rotation.x` positivo leva o braço para TRÁS; o direito nasce em +X e
+      // abre para fora com `z` positivo
+      this.armR.rotation.x = atras * 1.0;
+      this.armR.rotation.z = BRACO_SOLTO + abre * 0.95;
+      this.body.rotation.y = atras * 0.32;
+      this.armL.rotation.z = -BRACO_SOLTO - abre * 0.35;
+    } else {
+      this.body.rotation.y *= 1 - Math.min(1, dt * 10);
+    }
 
     // pulinho de comemoracao
     if (this.bounce > 0) {

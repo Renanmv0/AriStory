@@ -59,6 +59,7 @@ import { INSCRITOS } from '../world/adversariosData';
 import { CHAVE, MELHORIAS, ROSTO_DO_CLIENTE, TURNOS, comprarMelhoria, turnoAberto } from '../minigames/turnosDoMania';
 import type { ConteudoDaEscala, TurnoNaEscala } from '../ui/escalaDoWalter';
 import type { CharacterSpec } from '../characters/spec';
+import type { JeitoDeSentar } from '../characters/CharacterRig';
 
 interface LoadedScene {
   def: SceneDef;
@@ -103,6 +104,8 @@ export class Game implements GameAPI {
 
   private readonly hemi: THREE.HemisphereLight;
   private readonly sun: THREE.DirectionalLight;
+  /** a altura do piso onde a cena tem relevo (o trapiche do lago); `null` = chão em `y = 0` */
+  private relevoDaCena: ((x: number, z: number) => number) | null = null;
 
   private current: LoadedScene | null = null;
   private hot: Interactable | null = null;
@@ -324,6 +327,8 @@ export class Game implements GameAPI {
     this.cameraLivre(null);
     this.dirDoSol.copy(DIR_DO_SOL);
     this.apontador.soltarTudo();
+    // o relevo (o trapiche do lago) é da cena: a próxima começa no chão
+    this.relevoDaCena = null;
 
     const world = new WorldBuilder(this);
     world.setSeed(hashSeed(id));
@@ -634,6 +639,13 @@ export class Game implements GameAPI {
     this.player.update(this.moveDir, dt, world.colliders, world.bounds);
     this.ouvirPassos(antes);
     this.parceiro.update(this.player.position, dt, world.colliders, world.bounds);
+    // o piso de cada um, onde a cena tem relevo (o trapiche do lago): cada um
+    // no seu — um pode estar na tábua e o outro ainda na areia
+    if (this.relevoDaCena) {
+      for (const quem of [this.player, this.parceiro]) {
+        if (!quem.riding) quem.position.y = this.relevoDaCena(quem.position.x, quem.position.z);
+      }
+    }
 
     this.coracoes.update(dt);
     this.sincronizarMaos();
@@ -2041,6 +2053,17 @@ export class Game implements GameAPI {
    * A camera acompanha de graca: ela mira no `chest`, que e a posicao do
    * jogador mais um metro.
    */
+  relevo(fn: ((x: number, z: number) => number) | null): void {
+    this.relevoDaCena = fn;
+    if (!fn) {
+      for (const quem of [this.player, this.parceiro]) if (!quem.riding) quem.position.y = 0;
+    }
+  }
+
+  arremessar(quem: 'jogador' | 'parceiro'): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.arremessar();
+  }
+
   elevarDupla(altura: number): void {
     /*
      * QUEM ESTÁ DE CARONA NÃO SE ELEVA, e isto é a correção de um defeito que
@@ -2245,10 +2268,10 @@ export class Game implements GameAPI {
    * `facing` do rig e local. Por isso o eixo lateral e tirado do quaternion de
    * mundo do proprio rig, que ja carrega a rotacao da ancora junto.
    */
-  setSitting(sentados: boolean): void {
+  setSitting(sentados: boolean, jeito: JeitoDeSentar = 'banco'): void {
     if (sentados) this.audio.play('sentar');
-    this.player.rig.setSitting(sentados);
-    this.parceiro.rig.setSitting(sentados);
+    this.player.rig.setSitting(sentados, jeito);
+    this.parceiro.rig.setSitting(sentados, jeito);
 
     if (!sentados) {
       // de pe as maos so ficam dadas se a mecanica propria estiver ligada

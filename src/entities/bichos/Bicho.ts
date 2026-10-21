@@ -35,6 +35,13 @@ export interface AreaDoBicho {
    * nao passa, entao quem decide o que e obstaculo PARA ELE e quem monta a cena.
    */
   proibido?: Array<{ x: number; z: number; r: number }>;
+  /**
+   * A FORMA da área, quando ela não é um retângulo: o pato só nada onde é
+   * água, e o lago é redondo e torto. O retângulo continua valendo como caixa
+   * em volta (é nele que o destino é sorteado); isto aqui recusa o que cair
+   * fora da forma.
+   */
+  dentro?: (x: number, z: number) => boolean;
 }
 
 export interface JeitoDoBicho {
@@ -52,6 +59,13 @@ export interface JeitoDoBicho {
   duracaoDoCarinho?: number;
   /** semente do sorteio: mesma semente, mesmo passeio em todo build */
   semente?: number;
+  /**
+   * NADAR EM CURVA (rad/s): quem tem isto não gira no lugar — ele segue em
+   * frente virando no máximo este tanto por segundo, e diminui o passo
+   * enquanto a curva é fechada. É o jeito de pato e de peixe: na água ninguém
+   * dá meia-volta parado. 0 (o padrão) é o andar de sempre, que aponta e vai.
+   */
+  curva?: number;
 }
 
 /** o que a subclasse recebe para desenhar a pose do quadro */
@@ -130,6 +144,7 @@ export abstract class Bicho {
       somCadaMax: jeito.somCadaMax ?? 20,
       duracaoDoCarinho: jeito.duracaoDoCarinho ?? 3.4,
       semente: jeito.semente ?? 20260902,
+      curva: jeito.curva ?? 0,
     };
     this.semente = this.jeito.semente >>> 0 || 1;
     this.ateSoar = this.jeito.somCadaMin * 0.7;
@@ -167,6 +182,7 @@ export abstract class Bicho {
   private cabe(x: number, z: number): boolean {
     const a = this.area;
     if (x < a.minX || x > a.maxX || z < a.minZ || z > a.maxZ) return false;
+    if (a.dentro && !a.dentro(x, z)) return false;
     for (const p of a.proibido ?? []) {
       if (Math.hypot(x - p.x, z - p.z) < p.r) return false;
     }
@@ -447,6 +463,7 @@ export abstract class Bicho {
 
   /** Um passo na direcao dada, virando para onde anda sem estalo. */
   private passo(dx: number, dz: number, dist: number, velocidade: number, dt: number): boolean {
+    if (this.jeito.curva > 0) return this.passoEmCurva(dx, dz, dist, velocidade, dt);
     const anda = Math.min(dist, velocidade * dt);
     this.group.position.x += (dx / dist) * anda;
     this.group.position.z += (dz / dist) * anda;
@@ -455,6 +472,27 @@ export abstract class Bicho {
     while (d > Math.PI) d -= Math.PI * 2;
     while (d < -Math.PI) d += Math.PI * 2;
     this.group.rotation.y += d * Math.min(1, dt * 7);
+    return true;
+  }
+
+  /**
+   * O passo de quem nada: vira no máximo `curva` por segundo e anda para a
+   * FRENTE dele, e não reto para o alvo. Com a curva fechada (alvo de lado ou
+   * atrás) o passo encolhe até um quinto — é isso que faz o pato descrever um
+   * arco em vez de orbitar o alvo sem nunca chegar.
+   */
+  private passoEmCurva(dx: number, dz: number, dist: number, velocidade: number, dt: number): boolean {
+    const alvoAng = Math.atan2(dx, dz);
+    let d = alvoAng - this.group.rotation.y;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    // perto do alvo a curva aperta, senão o raio mínimo passa por cima dele
+    const giro = this.jeito.curva * (dist < 0.6 ? 2.5 : 1) * dt;
+    this.group.rotation.y += Math.max(-giro, Math.min(giro, d));
+    const alinhado = Math.max(0.2, Math.cos(d));
+    const anda = Math.min(dist, velocidade * alinhado * dt);
+    this.group.position.x += Math.sin(this.group.rotation.y) * anda;
+    this.group.position.z += Math.cos(this.group.rotation.y) * anda;
     return true;
   }
 }
