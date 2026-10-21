@@ -106,7 +106,20 @@ export type SomNome =
   | 'vagaLume'
   | 'soltarVagaLumes'
   | 'constelacao'
-  | 'estrelaCadente';
+  | 'estrelaCadente'
+  // o lago de cara nova: a pedrinha quicando e afundando, o peixe pulando, a
+  // garça, as asas, o tigre-d'água caindo n'água, o dedo na água, a moedinha e
+  // o patinho
+  | 'quique'
+  | 'ploft'
+  | 'tibum'
+  | 'peixePula'
+  | 'garca'
+  | 'asas'
+  | 'ploc'
+  | 'gota'
+  | 'moeda'
+  | 'piado';
 
 /** graus da pentatônica maior, em semitons */
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
@@ -1076,5 +1089,87 @@ export const EFEITOS: Record<SomNome, Receita> = {
     const alto = n % 2 === 0 ? DO + 24 : DO + 26;
     tom(ctx, destino, { freq: nota(alto), glide: nota(alto + 7), quando: t, dur: 0.09, vol: 0.05, ataque: 0.008, tipo: 'sine' });
     tom(ctx, destino, { freq: nota(alto + 9), glide: nota(alto + 4), quando: t + 0.14, dur: 0.12, vol: 0.045, ataque: 0.008, tipo: 'sine' });
+  },
+
+  // ---------------------------------------------------------------- o lago
+  /*
+   * A PEDRINHA QUICANDO: um "tic" de pedra na água — o estalinho seco e um
+   * plim curto por cima, subindo na pentatônica a cada quique (o `n` conta as
+   * vezes, e os quiques de uma pedra vêm em fila), então a sequência inteira
+   * soa como uma escadinha acelerando.
+   */
+  quique: ({ ctx, destino, t, n }) => {
+    const grau = PENTA[n % 6];
+    chiado(ctx, destino, { quando: t, dur: 0.07, vol: 0.12, freq: 2600, glide: 1400, q: 1.4 });
+    tom(ctx, destino, { freq: nota(DO + 12 + grau), glide: nota(DO + 7 + grau), quando: t, dur: 0.11, vol: 0.05, ataque: 0.004, tipo: 'sine' });
+  },
+
+  // a pedra afundando: o "plop" redondo, que desce, e a bolhinha depois
+  ploft: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 520, glide: 170, quando: t, dur: 0.2, vol: 0.12, ataque: 0.004, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t, dur: 0.22, vol: 0.06, freq: 900, glide: 300, q: 0.9 });
+    tom(ctx, destino, { freq: 700, glide: 1100, quando: t + 0.24, dur: 0.06, vol: 0.03, tipo: 'sine' });
+  },
+
+  // TIBUM: forte demais, a pedra entra de bico e espirra água para todo lado
+  tibum: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 300, glide: 90, quando: t, dur: 0.28, vol: 0.14, ataque: 0.004, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t, dur: 0.5, vol: 0.13, freq: 2200, glide: 500, q: 0.6 });
+  },
+
+  // o peixe saindo (e voltando) da água: um "tchup" curto e úmido
+  peixePula: ({ ctx, destino, t, n }) => {
+    const sai = n % 2 === 0;
+    chiado(ctx, destino, { quando: t, dur: sai ? 0.16 : 0.24, vol: 0.09, freq: sai ? 1900 : 1400, glide: sai ? 3200 : 600, q: 0.9 });
+    tom(ctx, destino, { freq: sai ? 380 : 460, glide: sai ? 720 : 200, quando: t, dur: 0.12, vol: 0.06, tipo: 'sine' });
+  },
+
+  /*
+   * A GARÇA: garça não canta, ela GRASNA — um "kraac" rouco e grave, duas
+   * sílabas. Dente-de-serra grave, abafado, com um chiado áspero por baixo
+   * para tirar o ar de buzina.
+   */
+  garca: ({ ctx, destino, t }) => {
+    for (const [atraso, f0, f1, dur] of [[0, 210, 150, 0.2], [0.24, 185, 120, 0.26]] as const) {
+      tom(ctx, destino, { freq: f0, glide: f1, quando: t + atraso, dur, vol: 0.1, tipo: 'sawtooth', abafo: 900, ataque: 0.012 });
+      tom(ctx, destino, { freq: f0 * 1.51, glide: f1 * 1.5, quando: t + atraso, dur, vol: 0.035, tipo: 'square', abafo: 1200, ataque: 0.012 });
+      chiado(ctx, destino, { quando: t + atraso, dur, vol: 0.05, freq: 700, q: 1.6, tipo: 'bandpass' });
+    }
+  },
+
+  // as asas grandes batendo: três sopros graves, um por batida
+  asas: ({ ctx, destino, t }) => {
+    for (let i = 0; i < 3; i++) {
+      chiado(ctx, destino, { quando: t + i * 0.22, dur: 0.18, vol: 0.09 - i * 0.015, freq: 380, glide: 900, q: 0.7, tipo: 'bandpass' });
+    }
+  },
+
+  // o tigre-d'água caindo do tronco: um "ploc" pequeno e agudo
+  ploc: ({ ctx, destino, t, n }) => {
+    const f = n % 2 ? 820 : 720;
+    tom(ctx, destino, { freq: f, glide: f * 0.42, quando: t, dur: 0.11, vol: 0.09, ataque: 0.003, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t, dur: 0.1, vol: 0.04, freq: 1600, glide: 700, q: 1.1 });
+  },
+
+  // o dedo (o mouse) tocando a água: um "plim" de gota, bem leve
+  gota: ({ ctx, destino, t, n }) => {
+    const f = n % 3 === 0 ? 1320 : n % 3 === 1 ? 1180 : 1480;
+    tom(ctx, destino, { freq: f, glide: f * 0.55, quando: t, dur: 0.14, vol: 0.06, ataque: 0.003, tipo: 'sine' });
+    tom(ctx, destino, { freq: f * 2.02, glide: f * 1.1, quando: t, dur: 0.05, vol: 0.012, tipo: 'sine' });
+  },
+
+  // a moedinha girando no ar: o "tlin" metálico de moeda batendo no dedo
+  moeda: ({ ctx, destino, t }) => {
+    for (const [atraso, grau] of [[0, 28], [0.05, 33]] as const) {
+      tom(ctx, destino, { freq: nota(DO + grau), quando: t + atraso, dur: 0.35, vol: 0.035, tipo: 'triangle' });
+      tom(ctx, destino, { freq: nota(DO + grau) * 2.76, quando: t + atraso, dur: 0.12, vol: 0.012, tipo: 'sine' });
+    }
+  },
+
+  // o patinho: um "piu" agudinho, que sobe (às vezes dois)
+  piado: ({ ctx, destino, t, n }) => {
+    const f = n % 2 ? 2700 : 2450;
+    tom(ctx, destino, { freq: f, glide: f * 1.3, quando: t, dur: 0.08, vol: 0.035, ataque: 0.006, tipo: 'sine' });
+    if (n % 3 === 0) tom(ctx, destino, { freq: f * 1.05, glide: f * 1.35, quando: t + 0.12, dur: 0.07, vol: 0.03, ataque: 0.006, tipo: 'sine' });
   },
 };

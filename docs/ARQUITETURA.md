@@ -95,6 +95,25 @@ troca a animação para braçada e apaga a sombra do chão. A cena decide quem e
 molhado; o motor só aplica. O piso precisa de buraco de verdade
 (`w.groundWithHoles`), senão o corpo submerso some por baixo do plano.
 
+Água que NÃO se entra (o lago do Villa Lobos) é o contrário: sem buraco, e é
+o chão do mundo que esconde o que fica abaixo da linha d'água — o pé de quem
+senta na ponta do trapiche, o corpo do pato, a canela da garça. A pintura é
+a `AguaDoLago` (`core/shaders.ts`).
+
+### Relevo, arremesso e sentar na beirada
+
+- `g.relevo((x, z) => altura)`: o piso de cada um onde a cena tem chão acima
+  do zero que se anda (o trapiche, com a rampinha). Roda depois do movimento,
+  para o jogador e o parceiro separados; quem está de carona fica com a
+  âncora. Morre com a troca de cena.
+- `g.arremessar('jogador' | 'parceiro')`: o arremesso de lado do rig
+  (`ARREMESSO`, `SOLTA_DO_ARREMESSO`): o braço vai para trás e varre baixo;
+  a cena solta a coisa no instante certo pelo relógio do quadro.
+- `g.setSitting(true, 'beirada')`: sentado com as pernas penduradas, o chute
+  maior — a ponta do trapiche.
+- `w.clicavel(obj, { soMouse: true })`: só o mouse clica; o dedo que encosta
+  ali vira joystick como em qualquer chão.
+
 ## `world/`
 
 - `WorldBuilder.ts` — a API que as cenas usam. Ver a skill `aristory-cenario`.
@@ -164,6 +183,12 @@ decide o que é obstáculo *para ele* é quem monta a cena); o `aoSoar` ligado n
 
 `montar()` é chamado pela subclasse, nunca pela base: método abstrato chamado
 do construtor da base roda antes de os campos da subclasse existirem.
+
+Bicho de água (o lago do Villa Lobos) usa dois opcionais da base: a área com
+FORMA (`area.dentro`, o lago é redondo e torto) e o nado em curva
+(`jeito.curva`: vira no máximo tanto por segundo e segue em frente, em vez de
+girar no lugar). E a `Pedrinha` (`entities/Pedrinha.ts`) é ator como o
+frisbee: monta os pulinhos no lançamento e avisa a cena a cada quique.
 
 Ver a skill `aristory-bicho`.
 

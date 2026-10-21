@@ -64,15 +64,21 @@ await page.waitForTimeout(900);
 const sentado = await estado();
 await page.screenshot({ path: `${OUT}-sentados.png` });
 
-/** o balanço das pernas, amostrado no relógio */
+/**
+ * O balanço das pernas, amostrado no relógio DO JOGO (`elapsed`), e não no da
+ * parede: o navegador do teste desenha por software e roda o parque a poucos
+ * quadros por segundo — em 6 s de parede as pernas mal saíam do lugar, e a
+ * medida virava "quanto o computador do teste aguenta". São 6 s de jogo.
+ */
 const balanco = await page.evaluate(
   () =>
     new Promise((ok) => {
-      const rig = window.jogo.player.rig;
+      const jogo = window.jogo;
+      const rig = jogo.player.rig;
       const vals = [];
-      const t0 = performance.now();
+      const t0 = jogo.elapsed;
       const passo = () => {
-        const t = (performance.now() - t0) / 1000;
+        const t = jogo.elapsed - t0;
         vals.push(rig.legL.rotation.x);
         if (t > 6) ok({ vals, dur: t });
         else requestAnimationFrame(passo);
@@ -120,7 +126,7 @@ console.log('prompt:', (prompt ?? '').replace(/\s+/g, ' ').trim());
 console.log('sentados:', sentado.sentados, '· de mãos dadas:', sentado.maos, '· nos dois assentos:', sentado.riding);
 console.log('para onde olham:', JSON.stringify(sentado.olhando), '(têm que ser iguais)');
 console.log('posição de mundo sentado:', JSON.stringify(sentado.mundo), '(perto de -4.2, 14)');
-console.log('pernas · amplitude', amplitude.toFixed(3), 'rad ·', ciclos.toFixed(2), 'ciclos/s de relógio');
+console.log('pernas · amplitude', amplitude.toFixed(3), 'rad ·', ciclos.toFixed(2), 'ciclos/s de jogo');
 console.log('depois de levantar · sentados:', empe.sentados, '· de mãos dadas:', empe.maos);
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros');
 

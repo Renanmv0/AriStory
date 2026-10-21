@@ -121,7 +121,14 @@ const depois = await espiar();
 await page.screenshot({ path: `${OUT}-chegou.png` });
 
 const fundo = Math.min(...alturas);
-const topo = Math.max(...alturas);
+// o pico do salto dura um passo de 55 ms e a amostra é de 120 ms: a cena anota
+// o maior y que ele alcançou, e é ele que vale (a amostra ainda prova o fundo)
+const maiorSalto = await page.evaluate(() => {
+  let mesa = null;
+  window.jogo.current.world.root.traverse((n) => { if (n.userData?.pingpong) mesa = n; });
+  return mesa.userData.jeanLuc.bicho.group.userData.maiorSalto ?? -9;
+});
+const topo = Math.max(...alturas, +maiorSalto.toFixed(3));
 const doLagoNoFim = Math.hypot(depois.x - LAGO.x, depois.z - LAGO.z);
 const naArena = Math.hypot(depois.x - ARENA.x, depois.z - ARENA.z);
 

@@ -121,6 +121,12 @@ export interface ClicavelDef {
   dica?: string;
   /** a que altura acima da origem da peça a dica fica (padrão 1,1) */
   alturaDaDica?: number;
+  /**
+   * SÓ O MOUSE clica nela, o dedo não. É para peça GRANDE no chão (a água do
+   * lago): no celular o dedo que encosta num clicável não vira joystick, e um
+   * lago inteiro clicável roubaria o manche de quem só queria andar na beira.
+   */
+  soMouse?: boolean;
   /** clicou (ou tocou) e soltou em cima; `ponto` é onde o raio acertou, no mundo */
   aoClicar?(g: GameAPI, ponto: THREE.Vector3): void;
   /** o mouse entrou (`true`) ou saiu (`false`) de cima da peça */
@@ -872,6 +878,14 @@ export interface GameAPI {
    * visivel e quais interacoes ligam. Isto aqui e so a altura do piso.
    */
   elevarDupla(altura: number): void;
+  /**
+   * O RELEVO: a altura do piso em cada ponto, onde a cena tem um chão que não
+   * está no zero e se ANDA nele — o trapiche do lago, com a rampinha da areia
+   * até as tábuas. Diferente do \`elevarDupla\`, vale para CADA UM no lugar em
+   * que está: um pode estar na tábua e o outro na areia. \`null\` devolve os dois
+   * ao chão. Morre com a troca de cena.
+   */
+  relevo(fn: ((x: number, z: number) => number) | null): void;
 
   /**
    * EFEITOS DE TELA (pós-processamento, `core/posProcessamento.ts`): brilho
@@ -943,7 +957,18 @@ export interface GameAPI {
   /** para o parceiro onde ele esta e vira ele para encarar um ponto */
   holdCompanion(olharX: number, olharZ: number): void;
   /** os dois sentam (ou levantam) */
-  setSitting(sentados: boolean): void;
+  /**
+   * Os dois sentam (ou levantam). `jeito` muda as pernas: `'banco'` (o de
+   * sempre, as pernas para a frente) ou `'beirada'` — a ponta do trapiche do
+   * lago, com as pernas penduradas e o pé na água.
+   */
+  setSitting(sentados: boolean, jeito?: 'banco' | 'beirada'): void;
+  /**
+   * O ARREMESSO DE LADO de quem é controlado ou do parceiro: o braço direito
+   * vai para trás e varre baixo para a frente. É o gesto de quicar pedrinha e
+   * de jogar a moedinha no lago; quem solta a coisa na hora certa é a cena.
+   */
+  arremessar(quem: 'jogador' | 'parceiro'): void;
   /**
    * Os dois deitam (ou levantam). Quem VIRA o corpo e a ancora da cena — um
    * `Object3D` com `rotation.x = -PI/2` passado ao `ridePlayer`/`rideCompanion`;

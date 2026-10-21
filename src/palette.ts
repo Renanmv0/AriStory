@@ -1830,6 +1830,80 @@ export const PALETTE = {
   barbante: 0xd8bf8a,
   etiquetaDoPote: 0xfbf1d8,
 
+  /*
+   * O LAGO DO VILLA LOBOS, de cara nova (`world/lagoDoParque.ts` e a
+   * `AguaDoLago` de `core/shaders.ts`).
+   *
+   * A água em quatro degraus, do raso turquesa (lago de parque puxa para o
+   * verde na beira) ao azul fundo do meio — o `water` de sempre é o degrau do
+   * meio. A crista e a espuma são quase brancas, e a sombra do peixe é um azul
+   * fundo, nunca preto: debaixo d'água tudo fica da cor da água.
+   */
+  aguaRasa: 0x7fd3cf,
+  aguaFunda: 0x3a9ccb,
+  aguaMaisFunda: 0x2f84b8,
+  cristaDaAgua: 0xd8f4f6,
+  espumaDoLago: 0xf4fbfb,
+  areiaMolhada: 0xc9b07c,
+  sombraDePeixe: 0x255f86,
+  moedaNoFundo: 0xe8c25a,
+  // os seixos da beira, quatro cinzas de pedra de rio
+  seixoClaro: 0xcfc6b5,
+  seixoMeio: 0xb2ab9f,
+  seixoEscuro: 0x948e85,
+  seixoVerde: 0x8f9a86,
+  // o trapiche (o deque que entra no lago): tábua de madeira tratada que já tomou sol e chuva (puxa para o
+  // cinza), a viga e as estacas mais escuras, a corda e a boia salva-vidas
+  trapicheTabua: 0xb88d5f,
+  trapicheTabuaClara: 0xc9a172,
+  trapicheTabuaVelha: 0xa58566,
+  trapicheViga: 0x7f5b3a,
+  trapicheEstaca: 0x6b4c33,
+  cordaDoTrapiche: 0xd6c193,
+  boiaSalvaVidas: 0xff6a3d,
+  boiaSalvaVidasFaixa: 0xf7f3ea,
+  placaDoLago: 0xfbf6ea,
+  placaDoLagoTinta: 0xd84a3a,
+  // a ninféia: folha em dois verdes, flor rosa e branca, o miolo amarelo e o botão
+  ninfeiaFolha: 0x5fb257,
+  ninfeiaFolhaEscura: 0x47984a,
+  ninfeiaRosa: 0xf7a8c9,
+  ninfeiaBranca: 0xfff7f9,
+  ninfeiaMiolo: 0xffd24a,
+  ninfeiaBotao: 0xe892b9,
+  // o taboal: três verdes de folha e a espiga marrom da taboa
+  juncoClaro: 0x8cc65a,
+  juncoMeio: 0x5fa648,
+  juncoEscuro: 0x3f8a3c,
+  espigaDaTaboa: 0x7a5532,
+  // os patinhos amarelos atrás da mãe
+  patinho: 0xffe07a,
+  patinhoSombra: 0xf2c24e,
+  // a garça-branca: pena branca, bico amarelo, perna escura (grafite, não
+  // preto: preto puro some no toon) e o olho amarelo
+  garcaPena: 0xfbfbf6,
+  garcaPenaSombra: 0xe2e6e1,
+  garcaBico: 0xf4c430,
+  garcaPerna: 0x3a3833,
+  garcaOlho: 0xf2d43a,
+  // o tigre-d'água: casco verde-oliva com a listra amarela, a pele e as
+  // listras laranja da cabeça; o tronco, com a casca, o miolo e o musgo
+  tigreDaguaCasco: 0x56703c,
+  tigreDaguaCascoEscuro: 0x3f5530,
+  tigreDaguaListra: 0xe0c65a,
+  tigreDaguaPele: 0x5e7040,
+  tigreDaguaRisco: 0xf0a640,
+  troncoDoLago: 0x6b4f37,
+  troncoDoLagoMiolo: 0xc49b6b,
+  musgoDoTronco: 0x6f9a48,
+  // a libélula: o corpo azul ou vermelho, a asa de vidro
+  libelulaAzul: 0x3cb6e8,
+  libelulaVermelha: 0xe8553c,
+  asaDeLibelula: 0xe6f6ff,
+  // o peixe que pula: barriga prateada, dorso escuro
+  peixePrata: 0xc2ccd1,
+  peixeDorso: 0x627888,
+
   // ui / afeto
   heart: 0xff6b8b,
   gold: 0xffc94d,

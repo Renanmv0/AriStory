@@ -114,6 +114,27 @@ elástico sai e volta).
   acham o coração) e `estrelaCadente` (um "fiiu" agudo descendo e um
   brilhinho no fim).
 
+**O lago do Villa Lobos** (`scenes/villaLobos.ts`, `montarOLago`):
+
+- `quique`: o "tic" seco da pedrinha na água e um plim por cima, subindo na
+  pentatônica com o `n` — os quiques de uma pedra vêm em fila, então a
+  sequência inteira vira uma escadinha acelerando;
+- `ploft` (a pedra afundando: o "plop" redondo e a bolhinha depois) e `tibum`
+  (forte demais: entra de bico e espirra);
+- `peixePula` (o "tchup" de sair e o de voltar, alternando pelo `n`), `ploc`
+  (o tigre-d'água caindo do tronco), `gota` (o mouse tocando a água) e
+  `moeda` (o "tlin" da moedinha girando no ar);
+- `garca`: garça não canta, GRASNA — um "kraac" rouco em duas sílabas
+  (dente-de-serra grave e abafado, um quadrado uma quinta acima e chiado
+  áspero por baixo, senão vira buzina); `asas`: três sopros graves, um por
+  batida;
+- `piado`: o "piu" do patinho, agudinho e subindo (às vezes dois).
+
+Picos medidos no `.wav`: `tibum` 0,20 (o mais alto, de propósito), `garca`
+0,14, `ploft` 0,12, `peixePula` 0,09, `ploc` 0,09, `quique` 0,07, `gota`
+0,06, `moeda` 0,05, `piado` 0,03 e `asas` 0,02 (é fundo: toca junto do
+grasnado, quando a garça levanta voo).
+
 Medidos no `.wav`: o clique do radinho e o "puf" da chama saíam baixos
 demais (~0,03) — o filtro estreito do `chiado` come quase todo o ruído, e o
 volume dele precisa compensar.

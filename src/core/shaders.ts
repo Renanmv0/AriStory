@@ -495,6 +495,552 @@ export class AguaDePixel {
   }
 }
 
+// ========================================================== a água do lago
+
+/**
+ * O CONTORNO DE UM LAGO: um raio médio e umas ondas em volta dele.
+ *
+ * Cada onda é `[k, amplitude, fase]` — `k` voltas inteiras de seno em volta do
+ * lago, então o contorno fecha sem emenda. A margem e a largura da faixa de
+ * areia são feitas do mesmo jeito, e a MESMA conta roda nos dois lados: aqui no
+ * TypeScript (a cena pergunta "isto está dentro d'água?") e no shader (que
+ * pinta). Um contorno só, escrito uma vez.
+ */
+export interface FormaDoLago {
+  centro: readonly [number, number];
+  raio: number;
+  margem: ReadonlyArray<readonly [number, number, number]>;
+  areia: { base: number; ondas: ReadonlyArray<readonly [number, number, number]> };
+}
+
+/** as cores da água, da margem e do que vive nela (todas da paleta) */
+export interface CoresDoLago {
+  raso: number;
+  meio: number;
+  fundo: number;
+  maisFundo: number;
+  crista: number;
+  espuma: number;
+  areia: number;
+  areiaMolhada: number;
+  peixe: number;
+  moeda: number;
+}
+
+/** quantas marolas o shader desenha de uma vez (a mais velha dá lugar) */
+const MAROLAS = 12;
+/** quantos bichos deixam rastro na água de uma vez (patos, garça, pedrinha) */
+const RASTROS = 12;
+/** quantas sombras de peixe nadam debaixo d'água */
+const PEIXES = 6;
+/** quantas coisas paradas furam a água (pilar, pedra, junco, tronco) */
+const ESTACAS = 20;
+
+function somaDeOndas(nome: string, base: string, ondas: ReadonlyArray<readonly [number, number, number]>): string {
+  const termos = ondas.map(([k, amp, f]) => `${amp.toFixed(4)} * sin(${k.toFixed(1)} * a + ${f.toFixed(4)})`);
+  return `float ${nome}(float a) { return ${base} + ${termos.join(' + ')}; }`;
+}
+
+/**
+ * ============================================ A ÁGUA DO LAGO DO VILLA LOBOS
+ *
+ * Toon ESTENDIDO, e não shader próprio: a água continua recebendo a sombra do
+ * junco e da árvore, apagando com a noite e ficando laranja no nascer do sol —
+ * tudo isso vem do three; só a pintura da superfície é nossa. Um desenho só
+ * para a água E a areia, numa malha só, e é por isso que a margem pode ser
+ * torta: o contorno é uma conta no shader, e não a borda de um polígono.
+ *
+ * DE DENTRO PARA FORA:
+ *
+ *  - **as faixas de fundo**: raso turquesa na beira, azul no meio e azul fundo
+ *    no centro, em DEGRAUS como o toon — com a borda de cada degrau mexida por
+ *    ruído, que é o que tira a cara de alvo de tiro;
+ *  - **o veio de luz** do raso (a cáustica), fraquinho, só na faixa clara;
+ *  - **as marolinhas do vento**: traços claros cruzados ao vento, andando na
+ *    direção dele — mais e mais longos quando vem uma rajada (o mesmo `Vento`
+ *    que balança o junco);
+ *  - **as sombras dos peixes**, escuras e macias, nadando por baixo;
+ *  - **o rastro dos patos**: o V aberto atrás de quem nada, tracejado pelas
+ *    cristas, e o anelzinho de espuma em volta do corpo;
+ *  - **as marolas**: os anéis que abrem de onde algo tocou a água (a
+ *    pedrinha quicando, o peixe pulando, a garça bicando, o dedo no mouse);
+ *  - **a espuma** em volta de tudo que fura a superfície (pilar do deque,
+ *    pedra, junco), indo e voltando;
+ *  - **a beira**: a água avança e recua na areia, deixa uma faixa molhada, e
+ *    uma segunda linha de espuma vem chegando atrás;
+ *  - **a areia**: grão miúdo, e a borda com a grama torta e lisa.
+ *
+ * O BRILHO DO SOL entra pela LUZ, e não pela cor: o `RE_Direct` do toon é
+ * embrulhado por um que, para cada luz direta, soma uma faísca onde a água
+ * cintila. Assim a faísca vem na cor da luz (branca de dia, laranja no nascer,
+ * azulada e fraca à noite) e SOME NA SOMBRA — o three já multiplicou a sombra
+ * na cor da luz antes de chamar o `RE_Direct`. E quanto mais a superfície
+ * espelha a luz para a câmera, mais faísca: na isométrica isso dá o lago
+ * inteiro cintilando por igual; virada contra o sol (ou na tomada do nascer
+ * do sol), mais faísca e mais forte no caminho da luz.
+ *
+ * A BORDA DE FORA (areia com grama) é um `alphaTest` com `alphaToCoverage`: o
+ * multisample do renderer suaviza o recorte, e a água continua opaca e na
+ * fila dos decalques de chão (ela é um, e quem dá o lugar dela na fila é o
+ * `w.disc` da cena).
+ */
+export class AguaDoLago {
+  readonly material: THREE.MeshToonMaterial;
+  readonly forma: FormaDoLago;
+  /** o tamanho da malha: até onde a areia pode chegar, com folga */
+  readonly raioDaMalha: number;
+  private readonly marolas = Array.from({ length: MAROLAS }, () => new THREE.Vector4(0, 0, -99, 0));
+  private proxima = 0;
+  private readonly rastros = Array.from({ length: RASTROS }, () => new THREE.Vector4(0, 0, 0, 0));
+  private readonly peixes = Array.from({ length: PEIXES }, () => new THREE.Vector4(0, 0, 0, 0));
+  private readonly estacas = Array.from({ length: ESTACAS }, () => new THREE.Vector4(0, 0, 0, 0));
+  readonly uniforms: {
+    uTempo: { value: number };
+    uVento: { value: THREE.Vector2 };
+    uRajada: { value: number };
+    uMarolas: { value: THREE.Vector4[] };
+    uRastros: { value: THREE.Vector4[] };
+    uPeixes: { value: THREE.Vector4[] };
+    uEstacas: { value: THREE.Vector4[] };
+    /** (x, z, raio): onde o fundo é cheio de moeda */
+    uMoedas: { value: THREE.Vector3 };
+    /** (x, z, quando caiu): a moedinha que acabou de afundar */
+    uMoedaNova: { value: THREE.Vector3 };
+  };
+
+  constructor(forma: FormaDoLago, cores: CoresDoLago) {
+    this.forma = forma;
+    const picoDaMargem = forma.raio + forma.margem.reduce((s, [, amp]) => s + Math.abs(amp), 0);
+    const picoDaAreia = forma.areia.base + forma.areia.ondas.reduce((s, [, amp]) => s + Math.abs(amp), 0);
+    this.raioDaMalha = picoDaMargem + picoDaAreia + 0.3;
+    this.uniforms = {
+      uTempo: { value: 0 },
+      uVento: { value: new THREE.Vector2(0.86, 0.5).normalize() },
+      uRajada: { value: 0 },
+      uMarolas: { value: this.marolas },
+      uRastros: { value: this.rastros },
+      uPeixes: { value: this.peixes },
+      uEstacas: { value: this.estacas },
+      uMoedas: { value: new THREE.Vector3(0, 0, 0) },
+      uMoedaNova: { value: new THREE.Vector3(0, 0, -99) },
+    };
+    const cor = (c: number): THREE.Color => new THREE.Color(c);
+    const fixos = {
+      uCentro: { value: new THREE.Vector2(forma.centro[0], forma.centro[1]) },
+      uRaso: { value: cor(cores.raso) },
+      uMeio: { value: cor(cores.meio) },
+      uFundo: { value: cor(cores.fundo) },
+      uMaisFundo: { value: cor(cores.maisFundo) },
+      uCrista: { value: cor(cores.crista) },
+      uEspuma: { value: cor(cores.espuma) },
+      uAreia: { value: cor(cores.areia) },
+      uAreiaMolhada: { value: cor(cores.areiaMolhada) },
+      uPeixe: { value: cor(cores.peixe) },
+      uMoeda: { value: cor(cores.moeda) },
+    };
+
+    const mat = toon(cores.meio, { decal: true }).clone();
+    mat.alphaTest = 0.5;
+    mat.alphaToCoverage = true;
+    const u = this.uniforms;
+    const margem = somaDeOndas('raioDaMargem', forma.raio.toFixed(4), forma.margem);
+    const areia = somaDeOndas('larguraDaAreia', forma.areia.base.toFixed(4), forma.areia.ondas);
+    mat.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, u, fixos);
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vChaoDoLago;')
+        .replace(
+          '#include <begin_vertex>',
+          `#include <begin_vertex>
+          vChaoDoLago = (modelMatrix * vec4(transformed, 1.0)).xz;`,
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+          varying vec2 vChaoDoLago;
+          uniform float uTempo;
+          uniform vec2 uVento;
+          uniform float uRajada;
+          uniform vec4 uMarolas[${MAROLAS}];
+          uniform vec4 uRastros[${RASTROS}];
+          uniform vec4 uPeixes[${PEIXES}];
+          uniform vec4 uEstacas[${ESTACAS}];
+          uniform vec3 uMoedas;
+          uniform vec3 uMoedaNova;
+          uniform vec2 uCentro;
+          uniform vec3 uRaso;
+          uniform vec3 uMeio;
+          uniform vec3 uFundo;
+          uniform vec3 uMaisFundo;
+          uniform vec3 uCrista;
+          uniform vec3 uEspuma;
+          uniform vec3 uAreia;
+          uniform vec3 uAreiaMolhada;
+          uniform vec3 uPeixe;
+          uniform vec3 uMoeda;
+          ${RUIDO_GLSL}
+          ${margem}
+          ${areia}
+          float lagoSorte(vec2 c) { return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453); }
+          /*
+           * a faixa macia de um traço: 1 no centro, 0 a partir de \`largura\`,
+           * com um pixel de borda. O tamanho do pixel (\`px\`, em metros) vem
+           * de fora, medido uma vez no topo: derivada dentro de laço com
+           * \`continue\` é indefinida (cada pixel do quadradinho de 2×2 pode
+           * ter tomado um caminho)
+           */
+          float lagoTraco(float d, float largura, float px) {
+            return 1.0 - smoothstep(largura - px, largura + px, abs(d));
+          }
+          /* a faísca de um azulejo: um ponto com cruzinha, que acende e apaga no seu tempo */
+          float lagoFaisca(vec2 p, float escala, float tempo, float semente, float pxNoMundo) {
+            vec2 c = p * escala;
+            vec2 id = floor(c);
+            vec2 f = fract(c) - 0.5;
+            float h = lagoSorte(id + semente);
+            // só um azulejo em cinco tem faísca, e ela acende rápido e apaga:
+            // água cintila, não chuvisca
+            if (lagoSorte(id + semente + 7.7) < 0.78) return 0.0;
+            vec2 onde = (vec2(lagoSorte(id + semente + 1.7), lagoSorte(id + semente + 3.1)) - 0.5) * 0.55;
+            float vida = pow(max(0.0, sin(tempo * (0.9 + h * 1.6) + h * 6.2831)), 12.0);
+            vec2 q = (f - onde) / max(vida, 0.001);
+            float px = pxNoMundo * escala / max(vida, 0.001);
+            float miolo = 1.0 - smoothstep(0.07, 0.07 + px * 1.5, length(q));
+            float cruz = (1.0 - smoothstep(0.012, 0.012 + px, min(abs(q.x), abs(q.y)))) * (1.0 - smoothstep(0.08, 0.26, length(q)));
+            return max(miolo, cruz * 0.8) * step(0.0001, vida);
+          }`,
+        )
+        .replace(
+          '#include <lights_toon_pars_fragment>',
+          `#include <lights_toon_pars_fragment>
+          vec3 lagoBrilho = vec3(0.0);
+          float lagoFaiscas = 0.0;
+          vec3 lagoNormal = vec3(0.0, 0.0, 1.0);
+          void RE_Direct_Lago( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in ToonMaterial material, inout ReflectedLight reflectedLight ) {
+            RE_Direct_Toon( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+            vec3 meio = normalize( directLight.direction + geometryViewDir );
+            float espelha = max( dot( lagoNormal, meio ), 0.0 );
+            // só a faísca, mais forte onde a água espelha a luz para a câmera: um
+            // reflexo contínuo aqui virava mancha branca de nuvem na água
+            // quando a câmera olha contra o sol
+            lagoBrilho += directLight.color * lagoFaiscas * ( 0.4 + 1.5 * pow( espelha, 24.0 ) );
+          }
+          #undef RE_Direct
+          #define RE_Direct RE_Direct_Lago`,
+        )
+        .replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+          {
+            float t = uTempo;
+            vec2 mundo = vChaoDoLago;
+            // quanto mede um pixel, em metros (uma vez, aqui em cima: ver \`lagoTraco\`)
+            float px = max(length(fwidth(mundo)) * 0.7071, 1e-4);
+            vec2 p = mundo - uCentro;
+            float d = length(p);
+            float ang = atan(p.y, p.x);
+            float margem = raioDaMargem(ang);
+            float areia = larguraDaAreia(ang);
+            float mancha = labNuvem(vec3(mundo * 0.33, 1.3));
+            // a beira vai e vem: a água sobe 12 cm na areia e volta
+            float vaiVem = 0.5 + 0.5 * sin(t * 1.05 + ang * 3.0 + mancha * 5.0);
+            float dentro = margem - d + vaiVem * 0.12;
+
+            // ------------------------------------------------- a areia
+            float grao = lagoSorte(floor(mundo * 26.0));
+            vec3 cor = uAreia * (0.95 + grao * 0.07) * (0.97 + mancha * 0.06);
+            // a faixa molhada: até onde a água chegou, e escurece perto dela
+            float molhada = smoothstep(-0.42, -0.02, margem - d + 0.12);
+            cor = mix(cor, uAreiaMolhada * (0.96 + grao * 0.05), molhada);
+
+            // ------------------------------------------------- a água
+            // as derivadas ficam TODAS aqui em cima, fora de \`if\`: dentro de
+            // um desvio que cada pixel toma de um jeito, elas não valem nada
+            float aaBeira = max(fwidth(dentro), 1e-4);
+            float agua = smoothstep(-aaBeira, aaBeira, dentro);
+            float fundura = dentro + (mancha - 0.5) * 1.1;
+            float aaF = max(fwidth(fundura), 1e-4);
+            float foraLiso = d - (margem + areia);
+            float aaFora = max(fwidth(foraLiso), 1e-4);
+            vec2 vento = normalize(uVento);
+
+            /*
+             * SÓ ONDE TEM ÁGUA (ou quase: a beira molhada): o pixel de areia e
+             * o de grama não pagam pela água. O lago e a areia são manchas
+             * grandes e inteiras, então o desvio é o mesmo para a vizinhança
+             * toda e não custa nada à placa de vídeo — e o renderizador por
+             * software do teste (e o celular fraco) agradecem.
+             */
+            if (dentro > -0.3) {
+              vec3 corDaAgua = uRaso;
+              corDaAgua = mix(corDaAgua, uMeio, smoothstep(0.8 - aaF, 0.8 + aaF, fundura));
+              corDaAgua = mix(corDaAgua, uFundo, smoothstep(2.5 - aaF, 2.5 + aaF, fundura));
+              corDaAgua = mix(corDaAgua, uMaisFundo, smoothstep(4.6 - aaF, 4.6 + aaF, fundura));
+
+              // o veio de luz do raso
+              // (só no raso: no fundo ela vale zero, e não precisa ser conta)
+              if (fundura < 1.5) {
+                float veio = abs(sin(p.x * 2.1 + t * 0.7 + sin(p.y * 1.6 - t * 0.5) * 1.3) + sin(p.y * 2.3 - t * 0.6 + sin(p.x * 1.4 + t * 0.4) * 1.2));
+                float caustica = (1.0 - smoothstep(0.0, 0.22, veio)) * (1.0 - smoothstep(0.3, 1.5, fundura));
+                corDaAgua = mix(corDaAgua, uCrista, caustica * 0.3);
+              }
+
+              // as moedas do fundo, perto do deque ("o fundo do lago é cheio de moeda")
+              if (uMoedas.z > 0.0) {
+                float perto = 1.0 - smoothstep(uMoedas.z * 0.6, uMoedas.z, distance(mundo, uMoedas.xy));
+                if (perto > 0.0) {
+                  vec2 c = mundo * 4.6;
+                  vec2 id = floor(c);
+                  float tem = step(0.9, lagoSorte(id + 9.3));
+                  vec2 onde = (vec2(lagoSorte(id + 2.2), lagoSorte(id + 5.9)) - 0.5) * 0.6;
+                  vec2 q = fract(c) - 0.5 - onde;
+                  q.x *= 1.0 + lagoSorte(id + 4.4) * 0.8;
+                  float moeda = lagoTraco(length(q), 0.12, px * 4.6) * tem * perto;
+                  corDaAgua = mix(corDaAgua, uMoeda, moeda * 0.75);
+                }
+              }
+              // a moedinha que acabou de cair: afunda encolhendo
+              float idadeDaMoeda = t - uMoedaNova.z;
+              if (idadeDaMoeda > 0.0 && idadeDaMoeda < 2.6) {
+                float some = 1.0 - idadeDaMoeda / 2.6;
+                float moeda = lagoTraco(distance(mundo, uMoedaNova.xy), 0.05 * some + 0.02, px);
+                corDaAgua = mix(corDaAgua, uMoeda, moeda * (0.5 + 0.5 * some));
+              }
+
+              // as sombras dos peixes
+              for (int i = 0; i < ${PEIXES}; i++) {
+                vec4 peixe = uPeixes[i];
+                if (peixe.w <= 0.0) continue;
+                vec2 rel = mundo - peixe.xy;
+                if (abs(rel.x) > peixe.w * 2.2 || abs(rel.y) > peixe.w * 2.2) continue;
+                vec2 frente = vec2(sin(peixe.z), cos(peixe.z));
+                float u = dot(rel, frente) / peixe.w;
+                float v = dot(rel, vec2(frente.y, -frente.x)) / peixe.w;
+                // o corpo ondula: a cauda mexe mais que a cabeça
+                v += sin(u * 3.2 - t * 7.5) * 0.09 * (0.6 - u);
+                float corpo = length(vec2(u * 0.75, v / 0.36)) - 0.75;
+                float cauda = max(abs(v) - (-u - 0.85) * 0.75, max(u + 0.85, -u - 1.45));
+                float forma = min(corpo, cauda * 1.4);
+                float sombra = 1.0 - smoothstep(-0.12, 0.14, forma);
+                corDaAgua = mix(corDaAgua, uPeixe, sombra * 0.42 * smoothstep(0.3, 1.1, fundura));
+              }
+
+              // as marolinhas do vento
+              vec2 deLado = vec2(-vento.y, vento.x);
+              float ao = dot(p, vento);
+              float ac = dot(p, deLado);
+              if (dentro > 0.4) {
+                float torto = labRuido(vec3(ac * 0.55, ao * 0.22, t * 0.12));
+                float onda = fract(ao * 1.45 - t * (0.42 + uRajada * 0.35) + torto * 2.2);
+                float crista = smoothstep(0.0, 0.05, onda) * (1.0 - smoothstep(0.05, 0.13, onda));
+                float tracos = smoothstep(0.62 - uRajada * 0.14, 0.8 - uRajada * 0.1, labRuido(vec3(ac * 2.1, ao * 0.45, t * 0.3 + 3.0)));
+                float marolinha = crista * tracos * smoothstep(0.4, 1.5, dentro);
+                corDaAgua = mix(corDaAgua, uCrista, marolinha * (0.32 + uRajada * 0.22));
+              }
+
+              // as marolas (anéis abrindo)
+              float anel = 0.0;
+              float cava = 0.0;
+              for (int i = 0; i < ${MAROLAS}; i++) {
+                vec4 m = uMarolas[i];
+                float idade = t - m.z;
+                if (m.w <= 0.0 || idade < 0.0 || idade > 3.6) continue;
+                float raio = idade * (0.85 + m.w * 0.35);
+                float r = distance(mundo, m.xy);
+                if (r > raio + 0.5) continue;
+                float some = exp(-idade * 1.05) * min(m.w, 1.6);
+                float largura = 0.035 + idade * 0.018;
+                anel += lagoTraco(r - raio, largura, px) * some;
+                anel += lagoTraco(r - (raio - 0.32), largura * 0.8, px) * some * 0.55 * step(0.32, raio);
+                cava += lagoTraco(r - (raio - largura * 3.0), largura * 1.4, px) * some * 0.5;
+              }
+
+              // o rastro de quem nada: o V e o anel de espuma em volta do corpo
+              float rastro = 0.0;
+              float contato = 0.0;
+              for (int i = 0; i < ${RASTROS}; i++) {
+                vec4 b = uRastros[i];
+                if (b.w <= 0.0) continue;
+                float tam = floor(b.w) / 10.0;
+                float vel = fract(b.w);
+                vec2 rel = mundo - b.xy;
+                if (abs(rel.x) > 3.4 || abs(rel.y) > 3.4) continue;
+                vec2 frente = vec2(sin(b.z), cos(b.z));
+                float atras = -dot(rel, frente);
+                float lado = abs(dot(rel, vec2(frente.y, -frente.x)));
+                float r = length(rel);
+                contato += lagoTraco(r - 0.26 * tam, 0.025 + 0.01 * tam, px) * (0.55 + 0.25 * sin(t * 3.0 + float(i)));
+                if (vel > 0.02 && atras > 0.0) {
+                  // o V é curto e fino, e some aos poucos: rastro de pato é
+                  // delicado (comprido e forte, virava esteira de lancha)
+                  float comprimento = (0.5 + vel * 1.3) * tam;
+                  float braco = lagoTraco(lado - atras * 0.36 - 0.1 * tam, 0.016 + atras * 0.01, px);
+                  float tracejado = smoothstep(0.05, 0.6, sin(atras * 15.0 / max(tam, 0.4) - t * 8.0));
+                  float some = pow(max(0.0, 1.0 - atras / comprimento), 1.5);
+                  rastro += braco * tracejado * some * vel;
+                }
+              }
+
+              // a espuma em volta do que fura a água
+              float colar = 0.0;
+              for (int i = 0; i < ${ESTACAS}; i++) {
+                vec4 e = uEstacas[i];
+                if (e.z <= 0.0) continue;
+                vec2 rel = mundo - e.xy;
+                if (abs(rel.x) > e.z + 0.5 || abs(rel.y) > e.z + 0.5) continue;
+                float r = length(rel) - e.z;
+                float pulso = 0.5 + 0.5 * sin(t * 1.6 + e.w * 6.28);
+                colar += lagoTraco(r - 0.03 - pulso * 0.05, 0.022, px) * 0.9;
+                colar += lagoTraco(r - 0.16 - pulso * 0.1, 0.014, px) * 0.45 * (1.0 - pulso * 0.6);
+              }
+
+              // a espuma da beira: a linha onde a água encosta, picotada, e a
+              // segunda linha chegando atrás dela
+              float beira = 0.0;
+              float segunda = 0.0;
+              if (dentro < 0.6) {
+                float picote = smoothstep(0.32, 0.55, labRuido(vec3(ang * 11.0, d * 0.5, t * 0.25)));
+                beira = lagoTraco(dentro - 0.04, 0.035, px) * (0.55 + 0.45 * picote);
+                float chegando = 0.18 + (1.0 - vaiVem) * 0.32;
+                segunda = lagoTraco(dentro - chegando, 0.022, px) * picote * 0.6;
+              }
+
+              float claro = clamp(anel + rastro * 0.55 + contato + colar + beira + segunda, 0.0, 1.0);
+              corDaAgua = mix(corDaAgua, corDaAgua * 0.82, clamp(cava, 0.0, 0.6));
+              corDaAgua = mix(corDaAgua, uEspuma, claro * 0.92);
+
+              cor = mix(cor, corDaAgua, agua);
+
+              // ------------------------------------------- a faísca do sol
+              // (lida na luz, no RE_Direct_Lago: aqui só a máscara e a normal)
+              float fundoBastante = smoothstep(0.5, 1.6, dentro);
+              if (fundoBastante > 0.0) {
+                float faisca = lagoFaisca(mundo + vento * t * 0.25, 2.2, t, 0.0, px) + lagoFaisca(mundo - vento * t * 0.18, 3.6, t * 1.3, 17.0, px) * 0.6;
+                lagoFaiscas = faisca * fundoBastante * (0.75 + uRajada * 0.4) * (1.0 - claro);
+              }
+              // a normal da superfície, mexida pelas mesmas ondas, em espaço de
+              // vista — só onde tem faísca, que é o único lugar em que ela conta
+              if (lagoFaiscas > 0.0) {
+                float e1 = labRuido(vec3(mundo * 1.7 + vento * t * 0.6, t * 0.4));
+                float e2 = labRuido(vec3(mundo.yx * 1.7 - vento * t * 0.5, t * 0.4 + 5.0));
+                vec3 normalNoMundo = normalize(vec3((e1 - 0.5) * 0.5, 1.0, (e2 - 0.5) * 0.5));
+                lagoNormal = normalize((viewMatrix * vec4(normalNoMundo, 0.0)).xyz) * agua;
+              }
+            }
+
+            // ---------------------------------------- a borda com a grama
+            // o ruído da borda só perto dela; a medida do pixel é a da borda lisa
+            float fora = foraLiso;
+            if (foraLiso > -0.4) fora += (labRuido(vec3(mundo * 1.9, 7.0)) - 0.5) * 0.2;
+            diffuseColor.rgb = cor;
+            diffuseColor.a = clamp(0.5 - fora / aaFora * 0.5, 0.0, 1.0);
+          }`,
+        )
+        .replace(
+          '#include <lights_fragment_end>',
+          `#include <lights_fragment_end>
+          totalEmissiveRadiance += lagoBrilho;`,
+        );
+    };
+    mat.customProgramCacheKey = () => 'agua-do-lago';
+    this.material = mat;
+  }
+
+  // ------------------------------------------------------- o contorno no TS
+
+  /** o raio da margem (até onde vai a água) no ângulo `a`, a partir do centro */
+  raioDaMargem(a: number): number {
+    return this.forma.raio + this.forma.margem.reduce((s, [k, amp, f]) => s + amp * Math.sin(k * a + f), 0);
+  }
+
+  /** a largura da faixa de areia no ângulo `a` */
+  larguraDaAreia(a: number): number {
+    const ar = this.forma.areia;
+    return ar.base + ar.ondas.reduce((s, [k, amp, f]) => s + amp * Math.sin(k * a + f), 0);
+  }
+
+  /** o ângulo do ponto (x, z) em volta do centro, do jeito que o shader conta */
+  angulo(x: number, z: number): number {
+    return Math.atan2(z - this.forma.centro[1], x - this.forma.centro[0]);
+  }
+
+  /** um ponto da beira no ângulo `a`, recuado `recuo` para dentro d'água */
+  naBeira(a: number, recuo = 0): { x: number; z: number } {
+    const r = this.raioDaMargem(a) - recuo;
+    return { x: this.forma.centro[0] + Math.cos(a) * r, z: this.forma.centro[1] + Math.sin(a) * r };
+  }
+
+  /** quanto o ponto está para dentro d'água (negativo: na areia ou na grama) */
+  fundura(x: number, z: number): number {
+    const d = Math.hypot(x - this.forma.centro[0], z - this.forma.centro[1]);
+    return this.raioDaMargem(this.angulo(x, z)) - d;
+  }
+
+  // ---------------------------------------------------------- o que mexe
+
+  /** algo tocou a água em (x, z): um anel que abre */
+  marola(x: number, z: number, forca = 1): void {
+    this.marolas[this.proxima].set(x, z, this.uniforms.uTempo.value, forca);
+    this.proxima = (this.proxima + 1) % MAROLAS;
+  }
+
+  /**
+   * Quem está nadando na vaga `i` agora. `tamanho` é a escala do bicho (o
+   * patinho é metade do pato) e `velocidade` vai de 0 (boiando parado: só o
+   * anel em volta) a 1 (o V inteiro). Tamanho 0 apaga a vaga.
+   */
+  rastro(i: number, x: number, z: number, rumo: number, velocidade: number, tamanho = 1): void {
+    const v = this.rastros[i];
+    if (!v) return;
+    if (tamanho <= 0) {
+      v.w = 0;
+      return;
+    }
+    v.set(x, z, rumo, Math.round(Math.max(0.1, tamanho) * 10) + Math.min(0.99, Math.max(0, velocidade)));
+  }
+
+  /** a sombra do peixe da vaga `i`; tamanho 0 apaga */
+  peixe(i: number, x: number, z: number, rumo: number, tamanho: number): void {
+    this.peixes[i]?.set(x, z, rumo, tamanho);
+  }
+
+  /** as coisas paradas que furam a água: [x, z, raio]; o resto das vagas apaga */
+  furos(lista: ReadonlyArray<readonly [number, number, number]>): void {
+    this.estacas.forEach((v, i) => {
+      const e = lista[i];
+      if (e) v.set(e[0], e[1], e[2], (i * 0.37) % 1);
+      else v.set(0, 0, 0, 0);
+    });
+  }
+
+  /** onde o fundo é cheio de moeda */
+  moedas(x: number, z: number, raio: number): void {
+    this.uniforms.uMoedas.value.set(x, z, raio);
+  }
+
+  /** uma moedinha caiu agora em (x, z) */
+  moedaCaiu(x: number, z: number): void {
+    this.uniforms.uMoedaNova.value.set(x, z, this.uniforms.uTempo.value);
+    this.marola(x, z, 0.7);
+  }
+
+  /** o vento que mexe as marolinhas (o mesmo do junco) */
+  soprar(direcao: THREE.Vector2, rajada: number): void {
+    this.uniforms.uVento.value.copy(direcao);
+    this.uniforms.uRajada.value = rajada;
+  }
+
+  get tempo(): number {
+    return this.uniforms.uTempo.value;
+  }
+
+  /** o relógio (o `dt` da cena: pausa com o mundo) */
+  tique(dt: number): void {
+    this.uniforms.uTempo.value += dt;
+  }
+}
+
 // ================================================================== portal
 
 /**

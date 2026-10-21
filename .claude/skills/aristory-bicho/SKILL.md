@@ -351,6 +351,46 @@ Meça a dança pelos picos (`medidaDoGesto`, `giroDaFesta`) num laço que corre
 até ela ACABAR, nunca por número de amostras: o navegador do teste roda o
 jogo a ~1/5 da velocidade (`scripts/festa.mjs`).
 
+## Bicho de água (os patos, a garça e os tigres-d'água do lago)
+
+O lago do Villa Lobos tem três bichos que não pisam no chão, e eles pediram
+duas coisas novas à base — opcionais, e os bichos de sempre não mudam:
+
+- **`area.dentro(x, z)`**: a forma da área quando ela não é retângulo. O pato
+  só nada onde `agua.fundura(x, z) > 1,1` e fora da faixa do trapiche; o
+  retângulo continua sendo onde o destino é sorteado.
+- **`jeito.curva` (rad/s)**: nadar em curva. Quem tem isso não gira no lugar:
+  segue em frente virando no máximo isso por segundo, e encolhe o passo com
+  a curva fechada (sem isso ele orbita o alvo sem chegar). Pato que apontava
+  e ia parecia carrinho de controle remoto.
+
+**O pato** (`PatoDoLago`, fichas `PATO_BRANCO`, `PATO_CREME`, `PATINHO`): o
+corpo nasce com o terço de baixo ABAIXO da linha d'água — o chão do mundo
+esconde, e é isso que faz boiar. As asas deitam no LOMBO (no flanco, de
+frente, liam como dois bracinhos). Os gestos de parado — mergulhar de cabeça
+(tomba até o rabo ficar de pé), arrumar a pena, bater as asas, olhar em volta
+— se desfazem se ele voltar a nadar; o teste põe o pato de serviço antes de
+pedir um. Os patinhos são a mesma classe e seguem a mãe por `seguir()` (em
+fila quando ela nada, em volta dela quando ela para). O que se mexe tem nome
+e o resto vai pela `fundir()` DENTRO de cada parte: cada pato desenha ~8
+vezes, e não 15.
+
+**A garça** (`Garca`): as POSES DO PESCOÇO não foram chutadas — saíram de
+uma busca (corpo + 4 gomos + cabeça) que pôs a cabeça e a ponta do bico onde
+cada pose pede: espreitando, o S para a frente; no bote, o bico a 4 cm da
+água e 57 cm à frente do pé. E o bote é MEDIDO no próprio bicho
+(`bicoMaisBaixo`, o `medidaDoGesto` daqui): ele dura um piscar, e o navegador
+do teste mostra poucos quadros. Pegadinha que custou uma rodada: o
+construtor do `Bicho` põe o grupo em `y = 0` — a altura "dentro d'água"
+(`-0,1`) tem que ser escrita DEPOIS dele; sem isso ela ficava em pé em cima
+da água e o bico parava a 14 cm. O voo é um `irPara` de serviço, e a altura,
+as asas abertas e as pernas para trás saem de quanto falta para chegar. Os
+pontos de pesca ficam nos vãos da beira (longe de ninféia, pedra e tronco).
+
+**Os tigres-d'água** (`TigreDagua`): não passeiam, então são uma máquina de
+estados própria (sol, pulando, nadando só com a cabeça de fora, subindo). O
+casco é canvas visto de cima, com o UV projetado de cima também.
+
 ## A pose
 
 Tudo por seno, como o resto do jogo. A base entrega `andando`, `sentado`,
