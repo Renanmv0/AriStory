@@ -1125,6 +1125,9 @@ body.touch-device .dialogue .next { right: 84px; }
   transition: opacity 0.14s ease, transform 0.14s ease;
 }
 .carga.show { opacity: 1; transform: translate(-50%, 0); }
+/* carregando, o aviso já foi entendido (o F está apertado) e sai da frente:
+   no celular ele quebra em três linhas e tapava a barra inteira */
+:has(> .carga.show) > .prompt.show { opacity: 0; transform: translate(-50%, 12px) scale(0.94); }
 .carga .barra {
   width: 0%;
   height: 100%;
