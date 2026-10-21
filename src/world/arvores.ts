@@ -5,26 +5,24 @@
  * esferas achatadas), e cada uma eram de 4 a 8 malhas. Estas:
  *
  * - **uma malha só por árvore, um material só** (`toon` branco com a cor
- *   pintada nos VÉRTICES): o degradê da copa (fundo escuro embaixo, claro em
- *   cima), a barriga de cada tufo mais escura, o salpicado de folha e os
- *   anéis do tronco da palmeira saem sem um triângulo a mais — e o desenho
- *   por quadro cai de 4-8 para 1;
- * - **redonda e florida**: tronco torneado com o pé alargado e dois galhos
- *   entrando na copa, e a copa de tufos AMASSADOS (o ruído pela posição, como
- *   a `rock()`), achatados embaixo; a florida tem flor clara salpicada e
- *   pétala caída em volta do pé;
- * - **pinheiro**: quatro saias de agulha com a borda em estrela caída, a
- *   barriga escura de cada andar e o tronco aparecendo embaixo;
- * - **palmeira**: o tronco curvo e afinando com os anéis pintados, o pé
- *   alargado, oito folhas em arco dobradas em V (a dobra pega a luz do toon)
- *   com a borda serrilhada, os cocos e o miolo da coroa.
+ *   pintada nos VÉRTICES): o degradê da copa, o tom de cada folha e os anéis
+ *   do tronco da palmeira saem sem um triângulo a mais — e o desenho por
+ *   quadro cai de 4-8 para 1;
+ * - **redonda e florida**: tronco torneado com o pé largo e três raízes,
+ *   três galhos e dois raminhos entrando nos tufos, e a copa de sete tufos
+ *   AMASSADOS cobertos de FOLHINHAS (losangos dobrados na nervura, espalhados
+ *   pela espiral de Fibonacci, com a ponta levantando: elas recortam a borda
+ *   da copa); na florida, metade delas é florzinha de cinco pétalas, e caem
+ *   pétalas em volta do pé;
+ * - **pinheiro**: cinco saias de agulha de nove pontas, com a borda em
+ *   estrela caída e a barriga escura;
+ * - **palmeira**: o tronco curvo em degraus (anel gordo, anel magro) com os
+ *   anéis pintados, dez folhas de FOLÍOLOS pendendo dos dois lados da
+ *   nervura, duas folhas secas penduradas, os cocos e o miolo da coroa.
  *
  * O tamanho por fora é o das antigas (a altura da copa, o raio, a altura do
  * tronco): o ponto cego da câmera, a janela da clareira e o sol nascendo da
  * barraca (`scripts/noite.mjs`) foram medidos com elas.
- *
- * Triângulos por árvore (escala 1): redonda ~440, florida ~460, pinheiro
- * ~230, palmeira ~420 — as antigas tinham 352, 352, 86 e 592.
  */
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -131,93 +129,194 @@ function juntar(partes: THREE.BufferGeometry[]): THREE.BufferGeometry {
 
 // ============================================================ REDONDA E FLORIDA
 
+type Tri = (a: THREE.Vector3, b: THREE.Vector3, c: THREE.Vector3) => void;
+
+/** um triângulo virado para o lado de `fora` (troca a ordem se precisar) */
+function trianguloPara(pos: number[], fora: THREE.Vector3): Tri {
+  const e1 = new THREE.Vector3();
+  const e2 = new THREE.Vector3();
+  return (a, b, c) => {
+    e1.subVectors(b, a);
+    e2.subVectors(c, a);
+    const [p, q] = e1.cross(e2).dot(fora) < 0 ? [c, b] : [b, c];
+    pos.push(a.x, a.y, a.z, p.x, p.y, p.z, q.x, q.y, q.z);
+  };
+}
+
+/** os dois eixos deitados na superfície de normal `n`, girados `giro` em volta dela */
+function eixosNaSuperficie(n: THREE.Vector3, giro: number): [THREE.Vector3, THREE.Vector3] {
+  const t = new THREE.Vector3(0, 1, 0).cross(n);
+  if (t.lengthSq() < 1e-4) t.set(1, 0, 0);
+  t.normalize().applyAxisAngle(n, giro);
+  return [t, new THREE.Vector3().crossVectors(n, t)];
+}
+
+/**
+ * Uma FOLHINHA da copa: losango dobrado na nervura (a crista levanta e a luz
+ * do toon separa os dois lados), deitado na superfície do tufo e com a ponta
+ * levantando para fora — é ela que recorta a silhueta da copa.
+ */
+function folhinha(pos: number[], c: THREE.Vector3, n: THREE.Vector3, comp: number, larg: number, giro: number, levanta: number): void {
+  const [t, b] = eixosNaSuperficie(n, giro);
+  const eixo = t.clone().multiplyScalar(Math.cos(levanta)).addScaledVector(n, Math.sin(levanta));
+  const base = c.clone().addScaledVector(eixo, -comp * 0.4);
+  const ponta = c.clone().addScaledVector(eixo, comp * 0.6);
+  const meio = c.clone().addScaledVector(eixo, comp * 0.08);
+  const esq = meio.clone().addScaledVector(b, larg);
+  const dir = meio.clone().addScaledVector(b, -larg);
+  const crista = meio.clone().addScaledVector(n, larg * 0.4);
+  const tri = trianguloPara(pos, n);
+  tri(base, esq, crista);
+  tri(esq, ponta, crista);
+  tri(base, crista, dir);
+  tri(crista, ponta, dir);
+}
+
+/** uma FLORZINHA de cinco pétalas em concha, e o miolo (o sexto triângulo) */
+function florzinha(pos: number[], c: THREE.Vector3, n: THREE.Vector3, r: number, giro: number): void {
+  const [t, b] = eixosNaSuperficie(n, giro);
+  const centro = c.clone().addScaledVector(n, r * 0.15);
+  const tri = trianguloPara(pos, n);
+  const naRoda = (a: number, rr: number, sobe: number): THREE.Vector3 =>
+    c.clone().addScaledVector(t, Math.cos(a) * rr).addScaledVector(b, Math.sin(a) * rr).addScaledVector(n, sobe);
+  for (let k = 0; k < 5; k++) {
+    const a = (k / 5) * Math.PI * 2;
+    tri(centro, naRoda(a - 0.5, r, r * 0.3), naRoda(a + 0.5, r, r * 0.3));
+  }
+  tri(naRoda(0, r * 0.3, r * 0.22), naRoda(2.1, r * 0.3, r * 0.22), naRoda(4.2, r * 0.3, r * 0.22));
+}
+
+/** pontos espalhados por igual numa esfera (a espiral de Fibonacci) */
+function espiral(n: number, giro: number): THREE.Vector3[] {
+  const pts: THREE.Vector3[] = [];
+  for (let k = 0; k < n; k++) {
+    const y = 1 - (2 * (k + 0.5)) / n;
+    const r = Math.sqrt(1 - y * y);
+    const a = k * 2.39996323 + giro;
+    pts.push(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r));
+  }
+  return pts;
+}
+
 function copaDeTufos(s: number, semente: number, florida: boolean): THREE.BufferGeometry {
   const tronco = 2.1 * s;
   const partes: THREE.BufferGeometry[] = [];
+  const casca = tintaDeTronco(semente);
 
-  // o tronco com o pé alargado, entrando na copa
+  // o tronco torneado: o pé largo, a cintura e o pescoço entrando na copa
   partes.push(pintar(torneado([
-    [0.0001, 0], [0.27 * s, 0], [0.2 * s, 0.1 * s], [0.155 * s, 0.45 * s],
-    [0.135 * s, tronco * 0.8], [0.1 * s, tronco + 0.35 * s], [0.0001, tronco + 0.4 * s],
-  ], 7), tintaDeTronco(semente)));
-  // dois galhos abrindo para os tufos de lado
-  const lado = semente * Math.PI * 2;
-  for (const [ang, alto, comp] of [[lado, 0.78, 0.85], [lado + 2.6, 0.86, 0.75]] as const) {
-    const a = new THREE.Vector3(0, tronco * alto, 0);
-    const b = new THREE.Vector3(Math.cos(ang) * comp * s, tronco * alto + 0.55 * s, Math.sin(ang) * comp * s);
-    partes.push(pintar(galho(a, b, 0.075 * s, 0.035 * s), tintaDeTronco(semente)));
+    [0.0001, 0], [0.3 * s, 0], [0.22 * s, 0.08 * s], [0.17 * s, 0.3 * s], [0.152 * s, 0.9 * s],
+    [0.14 * s, tronco * 0.72], [0.12 * s, tronco + 0.2 * s], [0.0001, tronco + 0.3 * s],
+  ], 9), casca));
+  // três raízes saindo do pé: curtas, grossas e afundando na terra (finas e
+  // compridas, por cima do chão, liam como espinho)
+  for (let k = 0; k < 3; k++) {
+    const a = semente * 6.28 + k * 2.09;
+    partes.push(pintar(galho(
+      new THREE.Vector3(0, 0.2 * s, 0),
+      new THREE.Vector3(Math.cos(a) * 0.46 * s, -0.06 * s, Math.sin(a) * 0.46 * s), 0.13 * s, 0.06 * s,
+    ), casca));
   }
 
-  // os tufos (os quatro grandes da antiga, no mesmo lugar, e dois pequenos)
-  const tufos: Array<[number, number, number, number, number]> = [
-    [0, tronco + 0.55 * s, 0, 1.15, 1],
-    [0.62 * s, tronco + 0.15 * s, 0.2 * s, 0.78, 1],
-    [-0.5 * s, tronco + 0.3 * s, -0.35 * s, 0.88, 1],
-    [0.1 * s, tronco + 1.05 * s, -0.3 * s, 0.66, 1],
-    [-0.28 * s, tronco + 0.05 * s, 0.55 * s, 0.5, 0],
-    [0.45 * s, tronco + 0.85 * s, 0.42 * s, 0.46, 0],
+  // os tufos: os quatro grandes de sempre, no mesmo lugar, e três menores
+  const tufos: Array<[number, number, number, number]> = [
+    [0, tronco + 0.55 * s, 0, 1.12],
+    [0.66 * s, tronco + 0.18 * s, 0.22 * s, 0.8],
+    [-0.55 * s, tronco + 0.3 * s, -0.35 * s, 0.86],
+    [0.08 * s, tronco + 1.08 * s, -0.28 * s, 0.66],
+    [-0.3 * s, tronco + 0.05 * s, 0.62 * s, 0.6],
+    [0.48 * s, tronco + 0.86 * s, 0.45 * s, 0.52],
+    [-0.62 * s, tronco + 0.9 * s, 0.2 * s, 0.5],
   ];
   // o lado de cada tufo gira com a semente (duas árvores não saem gêmeas)
   const giro = new THREE.Matrix4().makeRotationY(semente * 6.28);
+  const centros = tufos.map(([x, y, z]) => new THREE.Vector3(x, 0, z).applyMatrix4(giro).setY(y));
+
+  // os galhos: do alto do tronco até os três tufos de baixo, e dois raminhos
+  const forquilha = new THREE.Vector3(0, tronco * 0.7, 0);
+  for (const i of [1, 2, 4]) {
+    const alvo = centros[i].clone().multiplyScalar(0.75).setY(centros[i].y - 0.1 * s);
+    partes.push(pintar(galho(forquilha, alvo, 0.09 * s, 0.04 * s), casca));
+  }
+  for (const [de, ate] of [[1, 5], [2, 6]] as const) {
+    const a = centros[de].clone().multiplyScalar(0.75).setY(centros[de].y - 0.1 * s);
+    partes.push(pintar(galho(a, centros[ate].clone().multiplyScalar(0.85), 0.04 * s, 0.02 * s), casca));
+  }
+
   const fundo = cor(florida ? P.floridaFunda : P.copaFundo);
   const meio = cor(florida ? P.flowerPink : P.leafMid);
   const claro = cor(florida ? P.floridaClara : P.copaClara);
-  const flor = cor(florida ? P.petala : P.leafLight);
+  const nova = cor(florida ? P.petala : P.leafLight);
   // um tico de tom por árvore: umas mais amareladas, outras mais frias
   const tom = (semente - 0.5) * 0.12;
   const yBaixo = tronco - 0.6 * s;
   const alturaDaCopa = 2.4 * s;
-  tufos.forEach(([x, y, z, r, detalhe], i) => {
-    const v = new THREE.Vector3(x, 0, z).applyMatrix4(giro);
-    const geo = tufo(r * s, detalhe, v.x, y, v.z, semente * 10 + i);
-    partes.push(pintar(geo, (p, n, c, face) => {
-      // de baixo para cima na copa, e a barriga de cada tufo mais escura
-      const t = (p.y - yBaixo) / alturaDaCopa + n.y * 0.22 + tom;
-      degrade(c, t, fundo, meio, claro);
-      /*
-       * O MOSAICO: cada triângulo um tom um pouco diferente (os três cantos
-       * sorteiam pelo número da face, e não pela posição), e uns inteiros
-       * claros — a flor da florida, a folha nova da redonda. É o que tira a
-       * cara de bola lisa sem um triângulo a mais.
-       */
-      const sorte = ruido(face, i, semente, 7);
-      if (sorte > (florida ? 0.7 : 0.86) && n.y > -0.25) c.lerp(flor, florida ? 0.7 : 0.45);
-      else c.multiplyScalar(0.9 + sorte * 0.16);
+  const naCopa = (p: THREE.Vector3, n: THREE.Vector3): number => (p.y - yBaixo) / alturaDaCopa + n.y * 0.22 + tom;
+
+  // a massa dos tufos (lisa: a folhagem que cobre ela é que dá o desenho)
+  centros.forEach((c, i) => {
+    const r = tufos[i][3] * s;
+    partes.push(pintar(tufo(r, 1, c.x, c.y, c.z, semente * 10 + i), (p, n, k, face) => {
+      degrade(k, naCopa(p, n) - 0.06, fundo, meio, claro);
+      k.multiplyScalar(0.95 + ruido(face, i, semente, 7) * 0.06);
     }));
   });
 
+  /*
+   * A FOLHAGEM: folhinhas espalhadas por igual em cada tufo (a espiral de
+   * Fibonacci), menos na barriga, que ninguém vê. Elas é que tiram a cara de
+   * bola: recortam a borda da copa e pegam a luz uma a uma.
+   */
+  const folhas: number[] = [];
+  const flores: number[] = [];
+  centros.forEach((c, i) => {
+    const r = tufos[i][3] * s;
+    const pts = espiral(Math.round(26 * tufos[i][3]), semente * 9 + i);
+    pts.forEach((d, k) => {
+      if (d.y < -0.35) return;
+      const sorte = ruido(i, k, semente, 3);
+      const p = c.clone().addScaledVector(d, r * (0.93 + sorte * 0.08));
+      if (florida && k % 2 === 0) florzinha(flores, p, d, 0.11 * s * (0.85 + sorte * 0.4), sorte * 6.28);
+      else folhinha(folhas, p, d, 0.3 * s * (0.8 + sorte * 0.4), 0.09 * s, sorte * 6.28, 0.35 + sorte * 0.3);
+    });
+  });
+  const geoFolhas = new THREE.BufferGeometry();
+  geoFolhas.setAttribute('position', new THREE.Float32BufferAttribute(folhas, 3));
+  geoFolhas.computeVertexNormals();
+  partes.push(pintar(geoFolhas, (p, n, k, face) => {
+    const folha = Math.floor(face / 4);
+    const sorte = ruido(folha, 1, semente, 5);
+    degrade(k, naCopa(p, n) + 0.08, fundo, meio, claro);
+    // folha nova (mais clara) aqui e ali, e cada folha no seu tom
+    if (sorte > 0.84) k.lerp(nova, 0.55);
+    else k.multiplyScalar(0.9 + sorte * 0.18);
+  }));
+  if (flores.length) {
+    const geoFlores = new THREE.BufferGeometry();
+    geoFlores.setAttribute('position', new THREE.Float32BufferAttribute(flores, 3));
+    geoFlores.computeVertexNormals();
+    const branca = cor(P.petala);
+    const rosa = cor(P.floridaClara);
+    const miolo = cor(P.flowerYellow);
+    partes.push(pintar(geoFlores, (_p, _n, k, face) => {
+      if (face % 6 === 5) { k.copy(miolo); return; }
+      k.copy(ruido(Math.floor(face / 6), 2, semente, 1) > 0.5 ? branca : rosa);
+    }));
+  }
+
   if (florida) {
     // as pétalas caídas em volta do pé: losangos rentes ao chão
-    const petalas = 12;
-    for (let k = 0; k < petalas; k++) {
+    const chao: number[] = [];
+    const cima = new THREE.Vector3(0, 1, 0);
+    for (let k = 0; k < 16; k++) {
       const a = k * 2.39996 + semente * 7;
-      const r = (0.55 + ((k * 37) % 11) / 11 * 1.15) * s;
-      const tam = 0.07 * s;
-      const px = Math.cos(a) * r;
-      const pz = Math.sin(a) * r;
-      const g = new THREE.BufferGeometry();
-      const rot = a * 1.7;
-      const ca = Math.cos(rot) * tam;
-      const sa = Math.sin(rot) * tam;
-      const y = 0.012;
-      g.setAttribute('position', new THREE.Float32BufferAttribute([
-        px - ca, y, pz - sa, px - sa * 0.5, y, pz + ca * 0.5, px + ca, y, pz + sa,
-        px - ca, y, pz - sa, px + ca, y, pz + sa, px + sa * 0.5, y, pz - ca * 0.5,
-      ], 3));
-      g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
-      // o losango tem que olhar para cima nos dois triângulos
-      const pos = g.getAttribute('position') as THREE.BufferAttribute;
-      for (const t0 of [0, 3]) {
-        const e1 = new THREE.Vector3().fromBufferAttribute(pos, t0 + 1).sub(new THREE.Vector3().fromBufferAttribute(pos, t0));
-        const e2 = new THREE.Vector3().fromBufferAttribute(pos, t0 + 2).sub(new THREE.Vector3().fromBufferAttribute(pos, t0));
-        if (e1.cross(e2).y < 0) {
-          const x1 = pos.getX(t0 + 1); const z1 = pos.getZ(t0 + 1);
-          pos.setXYZ(t0 + 1, pos.getX(t0 + 2), y, pos.getZ(t0 + 2));
-          pos.setXYZ(t0 + 2, x1, y, z1);
-        }
-      }
-      partes.push(pintar(g, (_p, _n, c) => c.copy(k % 3 === 0 ? flor : claro)));
+      const r = (0.55 + (((k * 37) % 11) / 11) * 1.25) * s;
+      folhinha(chao, new THREE.Vector3(Math.cos(a) * r, 0.012, Math.sin(a) * r), cima, 0.13 * s, 0.05 * s, a * 1.7, 0);
     }
+    const geoChao = new THREE.BufferGeometry();
+    geoChao.setAttribute('position', new THREE.Float32BufferAttribute(chao, 3));
+    geoChao.computeVertexNormals();
+    partes.push(pintar(geoChao, (_p, _n, k, face) => k.copy(Math.floor(face / 4) % 3 === 0 ? nova : claro)));
   }
   return juntar(partes);
 }
@@ -267,12 +366,13 @@ function pinheiro(s: number, semente: number): THREE.BufferGeometry {
   const fundo = cor(P.pinheiroFundo);
   const meio = cor(P.leafDark);
   const claro = cor(P.pinheiroClaro);
-  const andares = 4;
+  // cinco andares de nove pontas: a silhueta de agulha, e não de cone
+  const andares = 5;
   for (let i = 0; i < andares; i++) {
-    const y0 = 1.15 * s + i * 0.55 * s;
-    const alto = (1.2 - i * 0.1) * s;
-    const r = (1.15 - i * 0.24) * s;
-    partes.push(pintar(saia(r, alto, y0, 6, semente * 6 + i), (p, nn, c, face) => {
+    const y0 = 1.1 * s + i * 0.47 * s;
+    const alto = (1.15 - i * 0.09) * s;
+    const r = (1.2 - i * 0.2) * s;
+    partes.push(pintar(saia(r, alto, y0, 9, semente * 6 + i), (p, nn, c, face) => {
       // a barriga escura, a borda média e o alto de cada andar claro
       if (nn.y < -0.2) { c.copy(fundo).multiplyScalar(0.85); return; }
       const t = (p.y - y0) / alto;
@@ -297,8 +397,13 @@ function palmeira(s: number, semente: number): THREE.BufferGeometry {
     new THREE.Vector3(0.3 * s * dx, 2.2 * s, 0.3 * s * dz),
     new THREE.Vector3(0.46 * s * dx, 3.1 * s, 0.46 * s * dz),
   ]);
-  const ANEIS = 10;
-  const RADIAL = 6;
+  /*
+   * O TRONCO EM DEGRAUS: cada anel do tubo um tico mais gordo ou mais magro
+   * que o vizinho (as cicatrizes das folhas velhas), afinando para cima, e a
+   * cor dos anéis pintada claro/escuro na mesma volta.
+   */
+  const ANEIS = 16;
+  const RADIAL = 7;
   const tubo = new THREE.TubeGeometry(curva, ANEIS, 0.13 * s, RADIAL, false);
   {
     const pos = tubo.getAttribute('position') as THREE.BufferAttribute;
@@ -308,7 +413,7 @@ function palmeira(s: number, semente: number): THREE.BufferGeometry {
       const i = Math.floor(k / (RADIAL + 1));
       const t = i / ANEIS;
       curva.getPointAt(t, centro);
-      const f = (1.12 - 0.42 * t) * (t < 0.08 ? 1.45 : 1);
+      const f = (1.12 - 0.42 * t) * (t < 0.07 ? 1.5 : 1) * (i % 2 ? 0.93 : 1.05);
       v.fromBufferAttribute(pos, k).sub(centro).multiplyScalar(f).add(centro);
       pos.setXYZ(k, v.x, v.y, v.z);
     }
@@ -316,69 +421,86 @@ function palmeira(s: number, semente: number): THREE.BufferGeometry {
   }
   const anelClaro = cor(P.palmeiraTronco);
   const anelEscuro = cor(P.palmeiraTroncoEscuro);
-  // o anel: cada volta do tubo alterna claro e escuro (o vértice sabe a volta pela altura)
   partes.push(pintar(tubo, (p, _n, c) => {
     const volta = (p.y / (3.1 * s)) * ANEIS;
-    const k = Math.abs(((volta % 1) + 1) % 1 - 0.5) * 2;
+    const k = Math.abs((((volta % 2) + 2) % 2) - 1);
     c.copy(anelEscuro).lerp(anelClaro, k);
   }));
 
   const topo = curva.getPointAt(1).add(new THREE.Vector3(0, 0.04 * s, 0));
-  // o miolo da coroa e os cocos
-  partes.push(pintar(new THREE.IcosahedronGeometry(0.17 * s, 0).translate(topo.x, topo.y + 0.05 * s, topo.z),
+  // o miolo da coroa e os cocos, redondos
+  partes.push(pintar(new THREE.IcosahedronGeometry(0.18 * s, 1).translate(topo.x, topo.y + 0.05 * s, topo.z),
     (_p, _n, c) => c.set(P.palmeiraTroncoEscuro).lerp(cor(P.palmeiraFolha), 0.4)));
   for (let k = 0; k < 3; k++) {
     const a = lado + k * 2.1;
-    partes.push(pintar(new THREE.IcosahedronGeometry(0.105 * s, 0).translate(
-      topo.x + Math.cos(a) * 0.15 * s, topo.y - 0.12 * s, topo.z + Math.sin(a) * 0.15 * s,
-    ), (p, _n, c) => c.set(P.coco).multiplyScalar(0.9 + ruido(p.x, p.y, p.z, k) * 0.2)));
+    partes.push(pintar(new THREE.IcosahedronGeometry(0.1 * s, 1).translate(
+      topo.x + Math.cos(a) * 0.16 * s, topo.y - 0.13 * s, topo.z + Math.sin(a) * 0.16 * s,
+    ), (p, n, c) => c.set(P.coco).multiplyScalar(0.85 + Math.max(0, n.y) * 0.3 + ruido(p.x, p.y, p.z, k) * 0.06)));
   }
 
-  // as folhas: um arco que sobe e cai, dobrado em V na nervura, com a borda serrilhada
-  const FOLHAS = 8;
-  const GOMOS = 7;
+  /*
+   * AS FOLHAS: a nervura é um arco que sobe e cai, e os FOLÍOLOS pendem dos
+   * dois lados dela, um par por gomo, varridos para a ponta e caindo — é o
+   * pente que faz ler "palmeira" e não "estrela verde". Dez folhas vivas
+   * (uma sim, uma não, mais baixa e mais comprida) e duas secas penduradas
+   * rente ao tronco.
+   */
+  const GOMOS = 10;
   const folhaEscura = cor(P.palmeiraFolha);
   const folhaClara = cor(P.palmeiraFolhaClara);
-  const folhaSeca = cor(P.grassDry);
-  for (let f = 0; f < FOLHAS; f++) {
-    const a = (f / FOLHAS) * Math.PI * 2 + semente * 3;
-    const baixa = f % 2 === 0;
-    const L = (baixa ? 1.75 : 1.55) * s * (0.92 + ruido(f, 0, 0, semente) * 0.16);
-    const sobe = baixa ? 0.3 : 0.55;
+  const seca = cor(P.grassDry);
+  const secaEscura = cor(P.palmeiraTroncoEscuro);
+  const fronde = (a: number, L: number, sobe: number, cai: number, morta: boolean, indice: number): void => {
     const fora = new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
     const deLado = new THREE.Vector3(-Math.sin(a), 0, Math.cos(a));
-    const pos: number[] = [];
-    const nervura: THREE.Vector3[] = [];
-    const esq: THREE.Vector3[] = [];
-    const dir: THREE.Vector3[] = [];
+    const pts: THREE.Vector3[] = [];
     for (let i = 0; i <= GOMOS; i++) {
       const u = i / GOMOS;
-      const p = topo.clone().addScaledVector(fora, L * u).add(new THREE.Vector3(0, L * (sobe * u - 1.05 * u * u), 0));
-      // largura: cresce, e afina na ponta; um gomo sim, um não, mais estreito (a serra)
-      const larg = 0.3 * s * Math.sin(Math.PI * Math.pow(u, 0.75)) * (i % 2 ? 0.72 : 1);
-      const dobra = new THREE.Vector3(0, -larg * 0.45, 0);
-      nervura.push(p.clone().add(new THREE.Vector3(0, 0.02 * s, 0)));
-      esq.push(p.clone().addScaledVector(deLado, larg).add(dobra));
-      dir.push(p.clone().addScaledVector(deLado, -larg).add(dobra));
+      pts.push(topo.clone().addScaledVector(fora, L * u * (morta ? 0.35 : 1)).add(new THREE.Vector3(0, L * (sobe * u - cai * u * u), 0)));
     }
-    const tri = (x: THREE.Vector3, y: THREE.Vector3, z: THREE.Vector3): void => { pos.push(x.x, x.y, x.z, y.x, y.y, y.z, z.x, z.y, z.z); };
+    const pos: number[] = [];
+    const tri = (x: THREE.Vector3, y: THREE.Vector3, z: THREE.Vector3): void => {
+      pos.push(x.x, x.y, x.z, y.x, y.y, y.z, z.x, z.y, z.z);
+    };
+    const baixo = new THREE.Vector3(0, -1, 0);
     for (let i = 0; i < GOMOS; i++) {
-      tri(esq[i], nervura[i], nervura[i + 1]);
-      tri(esq[i], nervura[i + 1], esq[i + 1]);
-      tri(nervura[i], dir[i], dir[i + 1]);
-      tri(nervura[i], dir[i + 1], nervura[i + 1]);
+      // a nervura: uma fita estreita
+      const a0 = pts[i];
+      const a1 = pts[i + 1];
+      const w = 0.028 * s * (1 - i / GOMOS);
+      tri(a0.clone().addScaledVector(deLado, w), a1, a0.clone().addScaledVector(deLado, -w));
+      // o par de folíolos deste gomo
+      if (i === 0) continue;
+      const u = i / GOMOS;
+      const tang = pts[i + 1].clone().sub(pts[i - 1]).normalize();
+      const comp = 0.52 * s * Math.sin(Math.PI * Math.pow(u, 0.7)) * (0.85 + ruido(i, indice, semente, 2) * 0.3);
+      for (const ld of [-1, 1]) {
+        const b0 = a0.clone().addScaledVector(tang, -0.045 * s);
+        const b1 = a0.clone().addScaledVector(tang, 0.045 * s);
+        const ponta = a0.clone().addScaledVector(deLado, ld * comp).addScaledVector(baixo, comp * 0.5).addScaledVector(tang, comp * 0.3);
+        tri(b0, b1, ponta);
+      }
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.computeVertexNormals();
-    const seca = baixa && ruido(f, 1, 0, semente) > 0.6;
-    partes.push(pintar(geo, (p, _n, c) => {
-      // a nervura clara, a borda escura, e a ponta da folha de baixo amarelando
-      const naNervura = Math.abs(p.clone().sub(topo).dot(deLado)) < 0.05 * s;
-      const u = Math.min(1, p.clone().sub(topo).dot(fora) / L);
-      c.copy(folhaEscura).lerp(folhaClara, naNervura ? 0.75 : 0.15 + u * 0.25);
-      if (seca) c.lerp(folhaSeca, Math.max(0, u - 0.55) * 1.4);
+    partes.push(pintar(geo, (p, _n, c, face) => {
+      const u = Math.min(1, p.clone().sub(topo).dot(fora) / (L * (morta ? 0.35 : 1)));
+      const sorte = ruido(face, indice, semente, 4);
+      if (morta) { c.copy(seca).lerp(secaEscura, 0.2 + sorte * 0.4); return; }
+      // a base da folha escura, a ponta clara, e cada folíolo no seu tom
+      c.copy(folhaEscura).lerp(folhaClara, 0.1 + u * 0.55).multiplyScalar(0.9 + sorte * 0.16);
     }));
+  };
+  const FOLHAS = 10;
+  for (let f = 0; f < FOLHAS; f++) {
+    const a = (f / FOLHAS) * Math.PI * 2 + semente * 3;
+    const baixa = f % 2 === 0;
+    const L = (baixa ? 1.8 : 1.55) * s * (0.92 + ruido(f, 0, 0, semente) * 0.16);
+    fronde(a, L, baixa ? 0.3 : 0.6, baixa ? 1.05 : 0.95, false, f);
+  }
+  for (let f = 0; f < 2; f++) {
+    fronde(semente * 3 + 0.6 + f * 3.3, 1.3 * s, -0.4, 0.6, true, 20 + f);
   }
   return juntar(partes);
 }
