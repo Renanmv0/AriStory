@@ -2362,7 +2362,7 @@ export const villaLobos: SceneDef = {
       let estado: 'dia' | 'noite' | 'manha' = 'dia';
       /** desliga o radinho na hora (quem liga é a parte da dança, lá embaixo) */
       let desligarORadinho = (): void => {};
-      /** a noite acabou: quem estava no pote é solto do lado das mochilas, e o pote volta para o lugar */
+      /** a noite acabou: quem estava no pote é solto onde ele mora, atrás da barraca, e o pote volta para o lugar */
       let soltarOsDoPote = (): void => {};
       /** a lanterna apagada para dormir: o céu da noite não acende ela de novo */
       let lanternaApagada = false;
@@ -3243,7 +3243,7 @@ export const villaLobos: SceneDef = {
        *
        * O pedido do Renan: "poder pegá-los e soltar eles onde quisermos, daí
        * eles iluminariam o parque". De noite, o POTE (`world/poteDeVagaLumes.ts`)
-       * mora no chão do lado das mochilas: "Pegar o pote" põe na mão de quem
+       * mora no chão atrás da barraca, longe de qualquer outro prompt: "Pegar o pote" põe na mão de quem
        * joga, e daí o prompt PERSEGUE o vaga-lume mais perto ("Pegar o
        * vaga-lume"): a tampa abre, ele voa para dentro e a tampa fecha —
        * cabem oito. "Soltar os vaga-lumes aqui" anda junto com quem segura o
@@ -3256,7 +3256,7 @@ export const villaLobos: SceneDef = {
        * dançar, a barraca), e quando a noite acaba os que estavam nele são
        * soltos ali mesmo. As falas são PROVISÓRIAS (do Claude).
        */
-      const CASA_DO_POTE = daTenda(-1.25, 1.3);
+      const CASA_DO_POTE = daTenda(2.15, -0.1);
       const pote = new PoteDeVagaLumes();
       pote.group.scale.setScalar(1.5);
       w.add(fundir(w.place(pote.group, CASA_DO_POTE.x, 0, CASA_DO_POTE.z, GIRO + 0.3)));
@@ -3298,7 +3298,7 @@ export const villaLobos: SceneDef = {
       };
       soltarOsDoPote = (): void => guardarOPote(g, true);
 
-      const NO_POTE = daTenda(-1.4, 1.85);
+      const NO_POTE = daTenda(2.15, 0.45);
       const promptDoPote = w.interact({
         id: 'clareira:pote',
         x: NO_POTE.x, z: NO_POTE.z, radius: 0.7,
