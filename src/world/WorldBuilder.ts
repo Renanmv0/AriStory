@@ -3,6 +3,8 @@ import { polido, toon } from '../core/materials';
 import { Interactable } from './Interactable';
 import type { Bounds, Clicavel, ClicavelDef, Collider, GameAPI, InteractableDef } from '../core/types';
 import { bench, picnicTable } from './props';
+import { bancoDePraca } from './bancoDePraca';
+import { fundir } from './fundir';
 
 export type Updater = (dt: number, elapsed: number) => void;
 
@@ -408,8 +410,10 @@ export class WorldBuilder {
    *
    * @param rot para onde o banco olha. 0 = encosto no -Z, assento para +Z.
    */
-  banco(x: number, z: number, rot = 0, cor?: number): THREE.Group {
-    const peca = this.add(this.place(bench(cor), x, 0, z, rot));
+  banco(x: number, z: number, rot = 0, cor?: number, modelo: 'praca' | 'reto' = 'praca'): THREE.Group {
+    // o de praça (ferro fundido e ripa) é o de parque e clube; o reto, o de
+    // vestiário da escola. Os dois têm o assento em 0,53 e 1,9 de comprido
+    const peca = this.add(fundir(this.place(modelo === 'praca' ? bancoDePraca(cor) : bench(cor), x, 0, z, rot)));
     this.blockBox(x, z, 0.95, 0.35, rot);
 
     /**

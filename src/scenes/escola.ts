@@ -266,8 +266,8 @@ export const escola: SceneDef = {
       w.add(w.place(mesaDePatio(P.escolaArmarioAzul), x, 0, z, 0.3));
       w.blockCircle(x, z, 1.35);
     }
-    w.banco(24.6, -1.6, -Math.PI / 2, P.escolaArmarioAzul);
-    w.banco(24.6, 2.6, -Math.PI / 2, P.escolaArmarioAzul);
+    w.banco(24.6, -1.6, -Math.PI / 2, P.escolaArmarioAzul, 'reto');
+    w.banco(24.6, 2.6, -Math.PI / 2, P.escolaArmarioAzul, 'reto');
 
     for (const [x, z] of [[25.2, 7.2], [1.0, 7.2], [25.2, -13.2]] as const) {
       w.add(w.place(pottedPlant(1.25), x, 0, z));
