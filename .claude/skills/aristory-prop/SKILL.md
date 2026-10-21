@@ -588,6 +588,30 @@ loja PEQUENA de um andar só (platibanda, sem telhado à vista):
 - A luz pintada lá dentro é do tamanho da loja: maior, a poça saía pela
   parede e acendia a calçada.
 
+## O banco de praça (`world/bancoDePraca.ts`)
+
+O banco do parque e do clube (`w.banco` usa ele por padrão; o reto antigo,
+`bench()`, fica para o vestiário da escola, com `modelo: 'reto'`):
+
+- **Ferro fundido é CURVA, não grossura**: cada barra da cabeceira é um
+  `TubeGeometry` numa `CatmullRomCurve3` (`'centripetal'`): a perna da frente
+  com a voluta no pé, a de trás que vira o encosto inclinado, o trilho do
+  assento com a barriguinha, o reforço em arco e o braço que enrola na
+  ponta. Seis gomos de volta bastam a esta câmera.
+- **Três cabeceiras**: as duas das pontas com braço e uma no meio, sem.
+- **As medidas do banco antigo ficam** (`BANCO_DE_PRACA`): o assento em
+  0,53 (o `w.banco` desconta a altura do quadril dali), 1,9 de comprido (os
+  dois sentam a ±0,46) e tudo dentro do colisor de 0,95 × 0,35 — o
+  `scripts/banco.mjs` continua valendo sem mudar uma linha.
+- **A ripa do encosto senta no FERRO, não no ar**: a lista do encosto guarda
+  o `z` do miolo do tubo em cada altura, e a ripa vai 4 cm à frente (raio do
+  tubo + meia ripa − o encaixe). Na primeira versão elas boiavam 3 cm à
+  frente do ferro.
+- A ripa da frente do assento é a "cascata" (mais baixa e girada para a
+  frente): é por ali que a perna de quem senta dobra e balança.
+- O `w.banco` passa a peça pela `fundir()`: o ferro, a madeira e o latão
+  viram três malhas por banco.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
