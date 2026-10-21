@@ -765,6 +765,10 @@ export interface GameAPI {
    * abriram, se escreveram e quantas perguntas têm resposta (antes e agora).
    */
   abrirBebitoBook(): Promise<ResultadoDoBebitoBook>;
+  /** os vaga-lumes já soltos pela dupla NESTA cena (do save): onde e quantos */
+  vagaLumesSoltos(): ReadonlyArray<{ x: number; z: number; n: number }>;
+  /** guarda no save mais um ponto de vaga-lumes soltos, nesta cena */
+  soltarVagaLumes(x: number, z: number, n: number): void;
   /** A barra de experiência da rodada do jardim, no alto; `null` esconde. */
   showExperiencia(dados: { nivel: number; noNivel: number; custo: number } | null): void;
   /**
@@ -966,6 +970,17 @@ export interface GameAPI {
    * virada acaba; `virarDeitados(false)` desfaz.
    */
   deitarDeConchinha(quemAbraca: string): Promise<void>;
+  /**
+   * A DANÇA LENTA: montados na MESMA âncora, os dois ficam de frente um para
+   * o outro (no X dela, à distância das cabeças) e dançam agarradinhos —
+   * `naCintura` (o nome da ficha: `RENAN.name`) leva as mãos na cintura do
+   * outro, que abraça pelos ombros —, balançando juntos de olhos fechados.
+   * `null` para (os braços voltam devagar). Girar a âncora é da cena. Ver
+   * `entities/DancaLenta.ts`.
+   */
+  dancaLenta(naCintura: string | null): void;
+  /** a voltinha: quem está pelos ombros gira por baixo do braço do outro; resolve no fim */
+  voltinhaNaDanca(): Promise<void>;
   /**
    * A cortina da tela, sem trocar de cena: escurece (`true`) ou clareia. O
    * estilo `'sono'` é o de dormir — devagar, com a luazinha e o "zzz" — e é

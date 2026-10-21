@@ -1,4 +1,23 @@
 import { normalizarBebitoBook, type BebitoBookNoSave } from '../minigames/bebitoBook';
+
+/** um ponto onde a dupla soltou vaga-lumes: a cena, o lugar no mundo dela e quantos */
+export interface VagaLumesSoltosNoSave {
+  cena: string;
+  x: number;
+  z: number;
+  n: number;
+}
+
+/** quantos pontos o save guarda (o mesmo teto do lote das poças de luz) */
+const TETO_DE_VAGA_LUMES = 24;
+
+function normalizarVagaLumesSoltos(bruto: unknown): VagaLumesSoltosNoSave[] {
+  if (!Array.isArray(bruto)) return [];
+  const ok = bruto.filter((p): p is VagaLumesSoltosNoSave =>
+    !!p && typeof p === 'object' && typeof p.cena === 'string' &&
+    Number.isFinite(p.x) && Number.isFinite(p.z) && Number.isInteger(p.n) && p.n > 0 && p.n <= 99);
+  return ok.slice(-TETO_DE_VAGA_LUMES).map((p) => ({ cena: p.cena, x: +p.x.toFixed(2), z: +p.z.toFixed(2), n: p.n }));
+}
 import { SLOTS_ROUPA, type Coleta, type DecoracaoNoSave, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
 
 import { fichaDoItem } from '../world/itens';
@@ -157,6 +176,13 @@ interface SaveData {
    * `minigames/bebitoBook.ts`.
    */
   bebitoBook: BebitoBookNoSave;
+  /**
+   * OS VAGA-LUMES SOLTOS: cada vez que a dupla abriu o pote, a cena, o ponto
+   * (no mundo dela) e quantos saíram. Hoje só a clareira tem noite, e é lá
+   * que eles brilham; o parque de noite (futuro) lê esta lista para se
+   * iluminar onde eles soltaram. Os mais antigos saem quando passa do teto.
+   */
+  vagaLumesSoltos: VagaLumesSoltosNoSave[];
   /**
    * OS PONTOS DE RETORNO dos minigames, pela chave ('jardim'): o retrato de
    * uma rodada no começo da onda, para a página que recarregou no meio dela
@@ -359,6 +385,7 @@ const EMPTY: SaveData = {
   decoracoes: [],
   apostila: { estrelas: {}, abertas: [] },
   bebitoBook: { comecadoEm: null, quemComecou: null, marcador: null, folhas: {} },
+  vagaLumesSoltos: [],
   retomadas: {},
   inventarios: {},
 };
@@ -407,6 +434,8 @@ export class SaveState {
         apostila: normalizarApostila(parsed.apostila),
         // save de antes do caderninho: em branco
         bebitoBook: normalizarBebitoBook(parsed.bebitoBook),
+        // save de antes do pote: nenhum vaga-lume solto
+        vagaLumesSoltos: normalizarVagaLumesSoltos(parsed.vagaLumesSoltos),
         // save de antes do ponto de retorno: nenhuma rodada para continuar
         retomadas: parsed.retomadas && typeof parsed.retomadas === 'object' && !Array.isArray(parsed.retomadas)
           ? { ...parsed.retomadas }
@@ -551,6 +580,18 @@ export class SaveState {
   /** O caderno inteiro, de uma vez: o livro manda depois de cada letra (com um respiro). */
   salvarBebitoBook(caderno: BebitoBookNoSave): void {
     this.data.bebitoBook = normalizarBebitoBook(caderno);
+    this.persist();
+  }
+
+  // ------------------------------------------------ os vaga-lumes soltos
+
+  get vagaLumesSoltos(): readonly VagaLumesSoltosNoSave[] {
+    return this.data.vagaLumesSoltos;
+  }
+
+  /** mais um ponto de vaga-lumes soltos (os mais antigos saem quando passa do teto) */
+  soltarVagaLumes(ponto: VagaLumesSoltosNoSave): void {
+    this.data.vagaLumesSoltos = normalizarVagaLumesSoltos([...this.data.vagaLumesSoltos, ponto]);
     this.persist();
   }
 

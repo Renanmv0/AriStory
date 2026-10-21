@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { brilhoDeLuz, brilhoEmLote, ceuEmDegrade, flat } from '../core/materials';
+import { brilhoDeLuz, brilhoEmLote, ceuEmDegrade, flat, rastroDeLuz } from '../core/materials';
 import type { SceneAmbient } from '../core/types';
 import { PALETTE as P } from '../palette';
 
@@ -179,6 +179,27 @@ export class CeuDaClareira {
   private readonly baixo = new THREE.Color();
   private readonly clarao = new THREE.Color();
   private readonly dir = new THREE.Vector3();
+  /*
+   * A CONSTELAÇÃO DE CORAÇÃO (a etapa D: deitados na canga, olhando o céu):
+   * doze estrelas mais fortes e um tico rosadas, num coração, e o risco
+   * fininho que as liga — desenhado um traço por vez quando os dois "acham"
+   * o coração. Mora onde a cena mandar (`coracaoEm`).
+   */
+  private readonly estrelasDoCoracao: THREE.InstancedMesh;
+  private readonly linhas: THREE.Mesh;
+  private readonly brilhosDoCoracao = new Float32Array(12);
+  /** o quanto do desenho já foi riscado (0 a 1) e para onde ele vai */
+  private achado = 0;
+  private alvoDoAchado = 0;
+  /** a direção do meio do coração, no quadro da cúpula (a câmera olha para lá) */
+  readonly direcaoDoCoracao = new THREE.Vector3(0, 1, 0);
+  /** A ESTRELA CADENTE: o risco de luz que cruza a cúpula num arco */
+  private readonly cadente: THREE.Mesh;
+  private cai = -1;
+  private caiDur = 1.2;
+  private readonly caiDe = new THREE.Vector3();
+  private readonly caiPara = new THREE.Vector3();
+  private aoCair: (() => void) | null = null;
 
   constructor(private readonly raio = 60, quantasEstrelas = 260) {
     this.group.userData.peca = 'ceu-da-clareira';
@@ -252,11 +273,153 @@ export class CeuDaClareira {
     this.sol.visible = false;
     this.group.add(this.sol);
 
+    // o coração (as estrelas e o risco) e a estrela cadente
+    this.estrelasDoCoracao = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(P.estrelaDoCoracao, 1), 12);
+    this.estrelasDoCoracao.renderOrder = -8;
+    this.estrelasDoCoracao.count = 0;
+    this.group.add(this.estrelasDoCoracao);
+    this.linhas = new THREE.Mesh(new THREE.BufferGeometry(), flat(P.linhaDaConstelacao, 0.45));
+    this.linhas.renderOrder = -8;
+    this.linhas.visible = false;
+    this.group.add(this.linhas);
+    this.cadente = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), rastroDeLuz(P.estrelaCadente));
+    this.cadente.renderOrder = -7;
+    this.cadente.visible = false;
+    this.group.add(this.cadente);
+
     this.group.traverse((o) => {
       o.userData.semSombra = true;
       o.frustumCulled = false;
     });
     this.group.visible = false;
+  }
+
+  /**
+   * PÕE O CORAÇÃO no céu, centrado em `direcao` (no quadro da cúpula, que
+   * não gira: é o do mundo), de pé para quem olha de baixo — a ponta para o
+   * horizonte e as duas bolinhas para o alto.
+   */
+  coracaoEm(direcao: THREE.Vector3, tamanho = 0.17): void {
+    const d = this.direcaoDoCoracao.copy(direcao).normalize();
+    // o "para cima" do céu ali (rumo ao zênite) e o "para o lado"
+    const cima = new THREE.Vector3(0, 1, 0).addScaledVector(d, -d.y).normalize();
+    const lado = new THREE.Vector3().crossVectors(d, cima).normalize();
+    const r = this.raio * 0.93;
+    const pontos: THREE.Vector3[] = [];
+    for (let i = 0; i < 12; i++) {
+      const t = (i / 12) * Math.PI * 2;
+      const x = (16 * Math.sin(t) ** 3) / 16;
+      const y = (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 16;
+      pontos.push(d.clone().addScaledVector(lado, x * tamanho).addScaledVector(cima, (y + 0.15) * tamanho).normalize().multiplyScalar(r));
+    }
+    const m = new THREE.Object3D();
+    for (let i = 0; i < 12; i++) {
+      m.position.copy(pontos[i]);
+      // a ponta de baixo e as duas bolinhas de cima são as mais fortes
+      const forte = i === 0 || i === 6 || i === 3 || i === 9;
+      m.scale.setScalar(forte ? 2.5 : 1.8);
+      m.updateMatrix();
+      this.estrelasDoCoracao.setMatrixAt(i, m.matrix);
+      this.brilhosDoCoracao[i] = forte ? 1 : 0.8;
+    }
+    this.estrelasDoCoracao.count = 12;
+    this.estrelasDoCoracao.instanceMatrix.needsUpdate = true;
+    // o risco: um quadradinho comprido entre cada estrela e a próxima, sem encostar nelas
+    const vs: number[] = [];
+    const largura = 0.13;
+    for (let i = 0; i < 12; i++) {
+      const a = pontos[i];
+      const b = pontos[(i + 1) % 12];
+      const ao = new THREE.Vector3().subVectors(b, a);
+      const folga = Math.min(0.9, ao.length() * 0.2);
+      const u = ao.clone().normalize();
+      const a2 = a.clone().addScaledVector(u, folga);
+      const b2 = b.clone().addScaledVector(u, -folga);
+      const meio = a2.clone().add(b2).multiplyScalar(0.5);
+      const w = new THREE.Vector3().crossVectors(u, meio).normalize().multiplyScalar(largura / 2);
+      const c1 = a2.clone().add(w);
+      const c2 = a2.clone().sub(w);
+      const c3 = b2.clone().add(w);
+      const c4 = b2.clone().sub(w);
+      vs.push(...c1.toArray(), ...c2.toArray(), ...c3.toArray(), ...c3.toArray(), ...c2.toArray(), ...c4.toArray());
+    }
+    this.linhas.geometry.setAttribute('position', new THREE.Float32BufferAttribute(vs, 3));
+    this.linhas.geometry.setDrawRange(0, 0);
+  }
+
+  /**
+   * Uma direção do céu perto do coração, em "larguras de coração": `x` para
+   * a direita de quem olha de baixo, `y` para o alto (rumo ao zênite). É por
+   * aqui que a cena traça o caminho da estrela cadente por cima dele.
+   */
+  pertoDoCoracao(x: number, y: number): THREE.Vector3 {
+    const d = this.direcaoDoCoracao;
+    const cima = new THREE.Vector3(0, 1, 0).addScaledVector(d, -d.y).normalize();
+    const lado = new THREE.Vector3().crossVectors(d, cima).normalize();
+    return d.clone().addScaledVector(lado, x).addScaledVector(cima, y).normalize();
+  }
+
+  /** os dois acharam o coração: o risco vai sendo desenhado (ou some, com `false`) */
+  acharCoracao(achou = true): void {
+    this.alvoDoAchado = achou ? 1 : 0;
+  }
+
+  /** quanto do coração já está riscado (0 a 1) */
+  get coracaoAchado(): number {
+    return this.achado;
+  }
+
+  /**
+   * UMA ESTRELA CADENTE de `de` até `para` (direções no quadro da cúpula), em
+   * `dur` segundos: o risco nasce curtinho, estica, cruza o céu num arco e
+   * apaga encolhendo. Resolve quando ela some.
+   */
+  estrelaCadente(de: THREE.Vector3, para: THREE.Vector3, dur = 1.2): Promise<void> {
+    this.caiDe.copy(de).normalize();
+    this.caiPara.copy(para).normalize();
+    this.caiDur = dur;
+    this.cai = 0;
+    this.cadente.visible = true;
+    this.aoCair?.();
+    return new Promise((fim) => {
+      this.aoCair = fim;
+    });
+  }
+
+  /** a estrela cadente está cruzando o céu agora (0 a 1), ou -1 */
+  get caindo(): number {
+    return this.cai;
+  }
+
+  private moverCadente(dt: number): void {
+    if (this.cai < 0) return;
+    this.cai = Math.min(1, this.cai + dt / this.caiDur);
+    const k = this.cai;
+    const r = this.raio * 0.9;
+    const aqui = new THREE.Vector3().copy(this.caiDe).lerp(this.caiPara, k).normalize();
+    const adiante = new THREE.Vector3().copy(this.caiDe).lerp(this.caiPara, Math.min(1, k + 0.02)).normalize();
+    // um tico caindo no fim do arco, como quem perde força
+    aqui.y -= k * k * 0.04;
+    adiante.y -= Math.min(1, k + 0.02) ** 2 * 0.04;
+    const pos = aqui.clone().normalize().multiplyScalar(r);
+    const frente = adiante.normalize().multiplyScalar(r).sub(pos).normalize();
+    const paraOMeio = pos.clone().negate().normalize();
+    const cima = new THREE.Vector3().crossVectors(paraOMeio, frente).normalize();
+    const base = new THREE.Matrix4().makeBasis(frente, cima, paraOMeio);
+    this.cadente.quaternion.setFromRotationMatrix(base);
+    // o risco nasce curto, estica e no fim encolhe até sumir (puxado pela cabeça)
+    const comprimento = 15 * Math.min(1, k / 0.25) * (k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1);
+    const grossura = 0.6 * (k > 0.85 ? 1 - (k - 0.85) / 0.15 : 1);
+    this.cadente.scale.set(Math.max(0.01, comprimento), Math.max(0.01, grossura), 1);
+    // a cabeça (u = 1) fica em `pos`: o meio do quadrado vai meio comprimento para trás
+    this.cadente.position.copy(pos).addScaledVector(frente, -comprimento / 2);
+    if (k >= 1) {
+      this.cai = -1;
+      this.cadente.visible = false;
+      const fim = this.aoCair;
+      this.aoCair = null;
+      fim?.();
+    }
   }
 
   /** pinta o céu do momento: a cúpula, o sol baixo, a lua e as estrelas */
@@ -290,8 +453,16 @@ export class CeuDaClareira {
     this.pintarEstrelas();
   }
 
-  /** o piscar das estrelas (o relógio do jogo) */
+  /** o piscar das estrelas (o relógio do jogo), o risco do coração e a estrela cadente */
   update(dt: number): void {
+    this.moverCadente(dt);
+    // o risco do coração: um traço por vez, ~4 s o desenho inteiro
+    if (this.achado !== this.alvoDoAchado) {
+      const passo = dt / (this.alvoDoAchado > this.achado ? 4 : 1.2);
+      this.achado = this.alvoDoAchado > this.achado ? Math.min(1, this.achado + passo) : Math.max(0, this.achado - passo);
+      this.linhas.geometry.setDrawRange(0, Math.floor(this.achado * 12 + 0.001) * 6);
+      this.linhas.visible = this.achado > 0.05;
+    }
     if (!this.group.visible || this.forcaDasEstrelas <= 0) return;
     this.relogio += dt;
     this.pintarEstrelas();
@@ -311,6 +482,13 @@ export class CeuDaClareira {
       this.estrelas.setColorAt(i, this.cor.setScalar(aparece * this.brilhos[i] * pisca));
     }
     if (this.estrelas.instanceColor) this.estrelas.instanceColor.needsUpdate = true;
+    // as do coração: fortes desde as primeiras, e mais ainda quando ele é achado
+    for (let i = 0; i < this.estrelasDoCoracao.count; i++) {
+      const aparece = THREE.MathUtils.clamp((k - 0.3) / 0.3, 0, 1);
+      const pisca = 0.85 + 0.15 * Math.sin(this.relogio * 1.7 + i * 1.3);
+      this.estrelasDoCoracao.setColorAt(i, this.cor.setScalar(aparece * this.brilhosDoCoracao[i] * pisca * (1 + 0.35 * this.achado)));
+    }
+    if (this.estrelasDoCoracao.instanceColor) this.estrelasDoCoracao.instanceColor.needsUpdate = true;
   }
 }
 
@@ -336,7 +514,14 @@ interface VagaLume {
   /** o relógio do piscar e quanto dura uma volta dele */
   pisca: number;
   periodo: number;
+  /** onde ele está agora, no mundo (quem caça olha por aqui) */
+  agora: THREE.Vector3;
+  /** pego no pote: some, e volta para o enxame quando o relógio zera */
+  pego: number;
 }
+
+/** quanto tempo um vaga-lume pego leva para outro aparecer no lugar dele */
+const VOLTA_DO_PEGO = 28;
 
 /**
  * OS VAGA-LUMES da borda da clareira: um pontinho verde-limão e um halo,
@@ -380,6 +565,8 @@ export class VagaLumes {
         w: [0.25 + rnd() * 0.3, 0.2 + rnd() * 0.3, 0.5 + rnd() * 0.6],
         pisca: rnd() * 3,
         periodo: 1.8 + rnd() * 2.6,
+        agora: new THREE.Vector3(x, 0, z),
+        pego: 0,
       });
     }
     const n = this.bichos.length;
@@ -408,13 +595,17 @@ export class VagaLumes {
       // o pulso: sobe em 0,25 do período, desce em 0,35, e o resto apagado
       const fase = (b.pisca % b.periodo) / b.periodo;
       const pulso = fase < 0.25 ? Math.sin((fase / 0.25) * Math.PI * 0.5) : fase < 0.6 ? Math.cos(((fase - 0.25) / 0.35) * Math.PI * 0.5) : 0;
-      const luz = (0.06 + 0.94 * pulso) * brilho;
+      // o que foi pego volta devagar: acende de novo no fim do relógio
+      if (b.pego > 0) b.pego = Math.max(0, b.pego - dt);
+      const volta = b.pego > 0 ? 0 : 1;
+      const luz = (0.06 + 0.94 * pulso) * brilho * volta;
       this.m.position.set(
         b.x + Math.sin(t * b.w[0] + b.f[0]) * 0.55,
         b.y + Math.sin(t * b.w[2] + b.f[2]) * 0.18,
         b.z + Math.cos(t * b.w[1] + b.f[1]) * 0.55,
       );
-      this.m.scale.setScalar(0.35 + 0.65 * luz);
+      b.agora.copy(this.m.position);
+      this.m.scale.setScalar((0.35 + 0.65 * luz) * volta);
       this.m.updateMatrix();
       this.pontos.setMatrixAt(i, this.m.matrix);
       this.m.scale.setScalar(0.36);
@@ -425,6 +616,37 @@ export class VagaLumes {
     this.pontos.instanceMatrix.needsUpdate = true;
     this.halos.instanceMatrix.needsUpdate = true;
     if (this.halos.instanceColor) this.halos.instanceColor.needsUpdate = true;
+  }
+
+  /**
+   * O mais perto de `(x, z)` que dá para pegar — solto (não pego), aceso o
+   * bastante para se ver e a menos de `alcance` no chão. `-1` se nenhum.
+   */
+  maisPerto(x: number, z: number, alcance: number): number {
+    if (!this.group.visible) return -1;
+    let melhor = -1;
+    let d0 = alcance;
+    for (let i = 0; i < this.bichos.length; i++) {
+      const b = this.bichos[i];
+      if (b.pego > 0) continue;
+      const d = Math.hypot(b.agora.x - x, b.agora.z - z);
+      if (d < d0) {
+        d0 = d;
+        melhor = i;
+      }
+    }
+    return melhor;
+  }
+
+  /** onde o vaga-lume `i` está agora, no mundo */
+  onde(i: number, alvo = new THREE.Vector3()): THREE.Vector3 {
+    return alvo.copy(this.bichos[i].agora);
+  }
+
+  /** PEGO: some do enxame (e outro aparece no lugar dele daqui a pouco) */
+  pegar(i: number): void {
+    const b = this.bichos[i];
+    if (b) b.pego = VOLTA_DO_PEGO;
   }
 
   /** quantos estão acesos agora (o teste mede por aqui) */

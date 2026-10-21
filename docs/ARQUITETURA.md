@@ -238,6 +238,29 @@ pés, o braço e o queixo tapam o rosto. A CONCHINHA é o mesmo corpo com os doi
 virados para o mesmo lado (`g.deitarDeConchinha(nome)`, quem é nomeado fica
 atrás, abraçando); de um jeito para o outro, passa por barriga para cima.
 
+**A dança lenta é o mesmo molde, de pé** (`entities/DancaLenta.ts`, pela cena
+com `g.dancaLenta(nome)` e `g.voltinhaNaDanca()`): os dois montados na MESMA
+âncora, e o motor põe os dois de frente um para o outro no X dela, à distância
+das cabeças. Cada rig ganha um papel (`CharacterRig.setDanca`: pelos `ombros`
+ou na `cintura`, quem é nomeado) e a MESMA fase do balanço com meia volta de
+diferença — de frente um para o outro, o `+X` de um é o `−X` do outro, e
+assim os dois inclinam para o mesmo lado do mundo. A pose mistura por cima da
+de parado (o peso trocando de pé, o corpo inteiro inclinando para o pé de
+apoio, os braços, a cabeça tombando para o lado esquerdo de cada um — lados
+opostos do mundo, bochecha com bochecha — e os olhos fechando); a voltinha
+gira o corpo de quem está pelos ombros (`body.rotation.y`) com a mão direita lá
+em cima. Girar a âncora (os dois rodando no lugar) é da cena.
+
+**Montado numa âncora, a câmera segue o mundo.** O `Player.chest` (o alvo da
+isométrica) lê a posição de MUNDO de quem está montado; antes lia a local, e a
+isométrica ficava perto da origem do parque enquanto a tomada de cena estava
+no ar — quando ela acabava, a câmera voltava "do lago" até a dupla.
+
+**O save durante o `build`.** O motor guarda o id da cena que está subindo
+(`idDaCena`) ANTES do `def.build()`: o `current` só muda no fim da montagem, e
+o que a cena lê do save enquanto se monta (os vaga-lumes soltos, por cena —
+`g.vagaLumesSoltos()`) tem que ser dela, e não da cena de antes.
+
 ### Zonas de mecânica
 
 Uma mecânica pode valer só num pedaço do cenário. A quadra de frisbee é o

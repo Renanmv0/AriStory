@@ -1110,8 +1110,10 @@ export function interiorDaBarraca(): THREE.Group {
  * O FOGAREIRO DE MONTANHA — o de quem sobe montanha: o CARTUCHO de gás
  * (o azul, com a faixa "GÁS" e o domo de cima), a válvula de latão, o
  * queimador com a coroa de furinhos, os TRÊS BRAÇOS dobráveis que seguram a
- * panela (dentadinhos na ponta) e a manopla de arame da válvula. A chama
- * (`chama`, azul) nasce apagada; o fogareiro acende na etapa D.
+ * panela (dentadinhos na ponta) e a manopla de arame da válvula. Duas partes
+ * com nome, para a cozinha da etapa D animar: a `manopla` (gira em volta da
+ * haste da válvula para abrir o gás) e a `chama` (o lugar dela, em cima da
+ * coroa; a chama de gás de verdade mora em `world/cozinhaDeAcampamento.ts`).
  */
 export function fogareiroDeMontanha(): THREE.Group {
   const g = new THREE.Group();
@@ -1126,9 +1128,15 @@ export function fogareiroDeMontanha(): THREE.Group {
   // a rosca e a válvula
   por(g, new THREE.CylinderGeometry(0.014, 0.016, 0.016, 12), latao, 0, 0.11, 0);
   por(g, new THREE.CylinderGeometry(0.012, 0.012, 0.03, 10), metal, 0, 0.13, 0);
-  // a manopla de arame, saindo de lado
-  por(g, tubo([[0, 0.125, 0], [0.03, 0.124, 0.01], [0.06, 0.12, 0.012], [0.07, 0.116, 0]], 0.0035, 12, 4), metal);
-  por(g, new THREE.SphereGeometry(0.008, 8, 6), toon(P.fogareiroLatao), 0.072, 0.116, 0);
+  // a haste da válvula, saindo de lado, e a MANOPLA de arame na ponta dela:
+  // um grupo com nome, que gira em volta da haste quando abre o gás
+  por(g, new THREE.CylinderGeometry(0.004, 0.004, 0.05, 8).rotateZ(Math.PI / 2), metal, 0.028, 0.124, 0);
+  const manopla = new THREE.Group();
+  manopla.name = 'manopla';
+  manopla.position.set(0.054, 0.124, 0);
+  por(manopla, tubo([[0, 0, 0], [0.004, 0.014, 0.012], [0.006, 0.028, 0], [0.004, 0.014, -0.012], [0, 0, 0]], 0.0028, 16, 4, true), metal);
+  por(manopla, new THREE.SphereGeometry(0.006, 8, 6), latao, 0.006, 0.03, 0);
+  g.add(manopla);
   // o queimador e a coroa de furinhos
   por(g, torneado([[0.012, 0.145], [0.026, 0.15], [0.03, 0.165], [0.024, 0.17], [0.0001, 0.17]], 18), metal);
   por(g, new THREE.TorusGeometry(0.022, 0.003, 4, 18).rotateX(Math.PI / 2), toon(P.barracaZiper), 0, 0.17, 0);
@@ -1142,10 +1150,12 @@ export function fogareiroDeMontanha(): THREE.Group {
       por(g, new THREE.BoxGeometry(0.004, 0.008, 0.004), metal, dx * t, 0.164 + (t - 0.04) * 0.5, dz * t);
     }
   }
-  // a chama azul (apagada até a etapa D)
-  const chama = por(g, new THREE.ConeGeometry(0.026, 0.04, 14, 1, true), toon(0x6fb6ff, { glow: 0.9, opacity: 0.8 }), 0, 0.19, 0);
+  // o lugar da CHAMA, em cima da coroa: quem acende é a cozinha
+  // (`world/cozinhaDeAcampamento.ts`), que põe a chama de gás aqui dentro
+  const chama = new THREE.Group();
   chama.name = 'chama';
-  chama.visible = false;
+  chama.position.set(0, 0.17, 0);
+  g.add(chama);
   return g;
 }
 
@@ -1154,9 +1164,21 @@ export function panelinha(): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'panelinha';
   const metal = toon(P.panelaAluminio);
+  // o corpo, com o lado de DENTRO (de tampa aberta se vê o fundo) e a boca virada
   por(g, torneado([[0.0001, 0], [0.054, 0], [0.06, 0.008], [0.062, 0.03], [0.062, 0.075], [0.065, 0.08]], 24), metal);
-  por(g, torneado([[0.066, 0.08], [0.064, 0.086], [0.04, 0.094], [0.0001, 0.096]], 24), metal);
-  por(g, new THREE.TorusGeometry(0.012, 0.003, 4, 10, Math.PI), toon(P.barracaZiper), 0, 0.096, 0);
+  por(g, torneado([[0.06, 0.078], [0.058, 0.03], [0.052, 0.01], [0.0001, 0.006]], 24), toon(new THREE.Color(P.panelaAluminio).multiplyScalar(0.8).getHex()));
+  /*
+   * A TAMPA é um grupo com nome e o pivô na BEIRA (no `-X`): é por ali que
+   * ela abre, como dobradiça, e é em volta dali que ela treme quando a água
+   * ferve. A cozinha da etapa D (`world/cozinhaDeAcampamento.ts`) anima.
+   */
+  const tampa = new THREE.Group();
+  tampa.name = 'tampa';
+  tampa.position.set(-0.066, 0.08, 0);
+  const naTampa = (geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0, z = 0): THREE.Mesh => por(tampa, geo, mat, x + 0.066, y - 0.08, z);
+  naTampa(torneado([[0.066, 0.08], [0.064, 0.086], [0.04, 0.094], [0.0001, 0.096]], 24), metal);
+  naTampa(new THREE.TorusGeometry(0.012, 0.003, 4, 10, Math.PI), toon(P.barracaZiper), 0, 0.096, 0);
+  g.add(tampa);
   for (const s of [-1, 1] as const) {
     por(g, tubo([[s * 0.062, 0.07, -0.02], [s * 0.09, 0.075, -0.018], [s * 0.095, 0.076, 0], [s * 0.09, 0.075, 0.018], [s * 0.062, 0.07, 0.02]], 0.003, 12, 4), toon(P.barracaZiper));
   }

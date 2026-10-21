@@ -1733,6 +1733,10 @@ export const PALETTE = {
   luzDaManha: 0xf3e2d6,
   solDaManha: 0xffd9a0,
   estrela: 0xfff6dc,
+  /** a constelação de coração: as estrelas um tico rosadas e o risco fininho que as liga */
+  estrelaDoCoracao: 0xffe6ee,
+  linhaDaConstelacao: 0xb9c8ff,
+  estrelaCadente: 0xfff8e6,
   lua: 0xfff3cf,
   solDoCeu: 0xfff0b0,
   // os arbustos floridos da beira da clareira (no lugar das duas árvores que
@@ -1747,6 +1751,84 @@ export const PALETTE = {
   luzDaLanterna: 0xffd59a,
   luzinhaAcesa: 0xffe7a0,
   luzDoVaral: 0xffcf7a,
+  /*
+   * A COZINHA DO FOGAREIRO (etapa D do acampamento): a chama de gás (azul
+   * fundo na base, a ponta quase branca), a faísca do acendedor, a coroa do
+   * queimador em brasa, os líquidos da panelinha, a fumaça de cheiro e o que
+   * mora no caixote de feira — o café, o chocolate, o miojo e as mini arepas
+   * (pedido do Renan para o café da manhã).
+   */
+  chamaBase: 0x1f45e0,
+  chamaMeio: 0x4f8fff,
+  chamaPonta: 0x9cc8ff,
+  faiscaDoFogareiro: 0xe8f4ff,
+  coroaEmBrasa: 0xff7a3a,
+  aguaDaPanela: 0xcfe6ef,
+  leiteQuente: 0xfbf6ec,
+  cafeCoado: 0x4a2a17,
+  chocolateQuente: 0x7a4528,
+  caldoDeMiojo: 0xeeb24a,
+  macarraoInstantaneo: 0xf3d28a,
+  temperoDeMiojo: 0xe8722c,
+  vaporDoFogareiro: 0xfaf8f4,
+  fumacinha: 0xd9d6d0,
+  budareFerro: 0x3b3a3c,
+  caboDeMadeira: 0x9a6a3c,
+  arepaCrua: 0xf1dfaa,
+  arepaDourada: 0xd9a14a,
+  arepaMarca: 0x8a5a28,
+  manteiga: 0xf7d96b,
+  queijoBranco: 0xfdf6e2,
+  caixoteMadeira: 0xd9b07a,
+  caixoteEscuro: 0xa77c4c,
+  pacoteDeCafe: 0xb73a2e,
+  pacoteDeCafeFaixa: 0xf2c14e,
+  lataDeChocolate: 0x6b3b22,
+  lataDeChocolateRotulo: 0xf5e6c8,
+  pacoteDeMiojo: 0xf0a23a,
+  pacoteDeMiojoFaixa: 0xd8452f,
+  potinhoPlastico: 0xe9f1f2,
+  potinhoTampa: 0x7cc4b8,
+  panoDoCoador: 0xf7f0de,
+  coadorArame: 0x9aa0a6,
+  marshmallow: 0xfff6f4,
+  marshmallowRosa: 0xffc9d6,
+  pratoEsmaltado: 0xf4f1ea,
+  talher: 0xc4c9ce,
+  /*
+   * O RADINHO DE PILHA (a música da dança lenta, na clareira de noite): o
+   * corpo verde-menta, o painel creme, o cromado, a grade do alto-falante, a
+   * alça de couro, o mostrador que acende âmbar, a agulha vermelha, o
+   * ledzinho e as notinhas que saem dele.
+   */
+  radinhoCorpo: 0x86cbb8,
+  radinhoCorpoEscuro: 0x5fa894,
+  radinhoPainel: 0xf3e6c8,
+  radinhoCromo: 0xd3d8de,
+  radinhoGrade: 0x5d5a57,
+  radinhoAlca: 0x8a5636,
+  radinhoBotao: 0xf6efe0,
+  radinhoMostrador: 0xf6e7b4,
+  radinhoMostradorAceso: 0xffc96b,
+  radinhoAgulha: 0xd8443a,
+  radinhoLedApagado: 0x6b3434,
+  radinhoLedAceso: 0xff6a5c,
+  radinhoPe: 0x3c3a3e,
+  notaRosa: 0xff9ec4,
+  notaAmarela: 0xffe08a,
+  notaLilas: 0xc9a8ff,
+  notaMenta: 0x9fe8cf,
+  /*
+   * O POTE DE VAGA-LUMES (a clareira de noite): o vidro de conserva meio
+   * esverdeado, a tampa de lata furadinha, a alça de arame, o barbante e a
+   * etiqueta de papel.
+   */
+  vidroDoPote: 0xd9f2ea,
+  tampaDoPote: 0xc8a052,
+  tampaDoPoteEscura: 0x8a6a2c,
+  arameDoPote: 0xa7adb3,
+  barbante: 0xd8bf8a,
+  etiquetaDoPote: 0xfbf1d8,
 
   // ui / afeto
   heart: 0xff6b8b,

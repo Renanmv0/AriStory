@@ -38,6 +38,9 @@ import {
   fogareiroDeMontanha, folhasSecas, interiorDaBarraca, mesinhaDobravel, mochilaCargueira, panelinha,
   samambaias, troncoCaido, varalDeLuzinhas,
 } from '../world/acampamento';
+import { CozinhaDoFogareiro, ESCALA_DA_COZINHA, garfoComMiojo, miniArepa, type PratoDoFogareiro } from '../world/cozinhaDeAcampamento';
+import { Radinho } from '../world/radinho';
+import { PoteDeVagaLumes, VagaLumesSoltos } from '../world/poteDeVagaLumes';
 import {
   AURORA, CREPUSCULO, CeuDaClareira, MANHA_CEDO, NOITE, POR_DO_SOL, TARDE_DOURADA, VagaLumes, luzDoMomento,
   misturarMomentos, momentoDoDia, momentoEmBranco, momentoNaFila, type MomentoDoCeu,
@@ -2155,6 +2158,7 @@ export const villaLobos: SceneDef = {
 
       // a mesinha do fogareiro, com a panelinha em cima dele e as duas canecas
       const MESINHA = daTenda(1.35, 1.95);
+      const GIRO_DA_MESINHA = GIRO - 0.35;
       const mesinha = mesinhaDobravel();
       const fogareiro = fogareiroDeMontanha();
       fogareiro.scale.setScalar(1.6);
@@ -2163,19 +2167,38 @@ export const villaLobos: SceneDef = {
       panela.scale.setScalar(1.6);
       panela.position.set(-0.14, 0.314 + 0.186 * 1.6, 0);
       mesinha.add(fogareiro, panela);
-      for (const [x, z, r] of [[0.13, -0.08, 0.6], [0.19, 0.09, 2.4]] as const) {
+      /** onde cada caneca mora na mesinha (a cozinha devolve para cá depois de beber) */
+      const CASA_DAS_CANECAS = [[0.13, 0.314, -0.08, 0.6], [0.19, 0.314, 0.09, 2.4]] as const;
+      const canecas = CASA_DAS_CANECAS.map(([x, y, z, r]) => {
         const caneca = canecaEsmaltada();
         caneca.scale.setScalar(1.6);
-        caneca.position.set(x, 0.314, z);
+        caneca.position.set(x, y, z);
         caneca.rotation.y = r;
         mesinha.add(caneca);
-      }
-      // o que está em cima da mesinha se junta com ela, material por material
-      // (o alumínio da panela com o da mesa, o esmalte das duas canecas): sem a
-      // etiqueta de peça, a `fundir()` não para em cada uma
+        return caneca;
+      });
+      /*
+       * O QUE SE MEXE TEM NOME (e por isso é fronteira da `fundir()`): o
+       * fogareiro (acende, treme), a panelinha (ferve, despeja, vai para a
+       * canga) e as canecas (enchem, vão para a mão). Dentro de cada um, o que
+       * é do mesmo material se junta — o fogareiro continua um desenho só por
+       * material. A COZINHA (`world/cozinhaDeAcampamento.ts`) põe do lado o
+       * caixote de feira com o resto, e anima tudo no relógio da clareira.
+       */
       for (const filho of mesinha.children) filho.userData.peca = undefined;
-      w.add(fundir(w.place(mesinha, MESINHA.x, 0, MESINHA.z, GIRO - 0.35)));
+      fogareiro.name = 'fogareiro';
+      panela.name = 'panela';
+      canecas.forEach((c, i) => {
+        c.name = `caneca-${i + 1}`;
+      });
+      const cozinha = new CozinhaDoFogareiro({ mesinha, fogareiro, panela, canecas });
+      cozinha.som = (nome) => g.som(nome);
+      w.add(fundir(w.place(mesinha, MESINHA.x, 0, MESINHA.z, GIRO_DA_MESINHA)));
       w.blockCircle(MESINHA.x, MESINHA.z, 0.36);
+      // o caixote de feira, do lado da mesinha
+      mesinha.updateMatrixWorld(true);
+      const noCaixote = cozinha.caixote.getWorldPosition(new THREE.Vector3());
+      w.blockBox(noCaixote.x, noCaixote.z, 0.2, 0.15, -(GIRO_DA_MESINHA + cozinha.caixote.rotation.y));
 
       // as duas mochilas cargueiras, de pé do lado da barraca — juntas numa
       // peça só, para as fitas, o cantil e o isolante das duas virarem um
@@ -2337,12 +2360,18 @@ export const villaLobos: SceneDef = {
       const FILA_DA_MANHA = [AURORA, MANHA_CEDO, DIA];
       const agora = misturarMomentos(DIA, DIA, 0, momentoEmBranco());
       let estado: 'dia' | 'noite' | 'manha' = 'dia';
+      /** desliga o radinho na hora (quem liga é a parte da dança, lá embaixo) */
+      let desligarORadinho = (): void => {};
+      /** a noite acabou: quem estava no pote é solto do lado das mochilas, e o pote volta para o lugar */
+      let soltarOsDoPote = (): void => {};
       /** a lanterna apagada para dormir: o céu da noite não acende ela de novo */
       let lanternaApagada = false;
       /** numa cena (deitados, sentados na canga): a posição do corpo é da âncora */
       let ocupados = false;
       /** o teste acelera o relógio da noite (o navegador do teste anda devagar) */
       const ritmo = { vezes: 1 };
+      /** acordaram na barraca: o fogareiro é de café da manhã até saírem da clareira */
+      let cafeDaManha = false;
 
       const ceu = new CeuDaClareira();
       w.add(w.place(ceu.group, CL.x, 0, CL.z));
@@ -2443,6 +2472,12 @@ export const villaLobos: SceneDef = {
         }
         ceu.update(dt);
         vagaLumes.update(dt, brilhoDosVagaLumes);
+        cozinha.update(dt);
+        // o café da manhã vale até a dupla sair da clareira
+        if (cafeDaManha && !ocupados) {
+          const eu = g.playerPosition();
+          if (Math.hypot(eu.x - CL.x, eu.z - CL.z) > CL.raio + 2.2) cafeDaManha = false;
+        }
         if (estado !== 'noite') return;
         proximoGrilo -= dt;
         if (proximoGrilo <= 0) {
@@ -2460,6 +2495,8 @@ export const villaLobos: SceneDef = {
         if (estado === 'dia') return;
         estado = 'dia';
         lanternaApagada = false;
+        desligarORadinho();
+        soltarOsDoPote();
         g.trocarMusica(null);
         g.toast('Longe da clareira, o dia voltou', '☀️');
         await passarOCeu([misturarMomentos(agora, agora, 0, momentoEmBranco()), DIA], 2.2);
@@ -2557,6 +2594,8 @@ export const villaLobos: SceneDef = {
         await animar(1.4, () => {});
         // DORMEM: a tela escurece devagar e a noite passa lá embaixo
         await api.escurecerTela(true, 'sono');
+        desligarORadinho();
+        soltarOsDoPote();
         api.trocarMusica(null);
         estado = 'manha';
         misturarMomentos(AURORA, AURORA, 0, agora);
@@ -2606,6 +2645,7 @@ export const villaLobos: SceneDef = {
           icon: '🌅',
         });
         estado = 'dia';
+        cafeDaManha = true;
         g.luzDoCeu(null);
         ceu.visivel = false;
         pararCamera();
@@ -2780,12 +2820,21 @@ export const villaLobos: SceneDef = {
       });
 
       const NA_CANGA = daTenda(0.15, 3.45);
-      w.interact({
+      const promptDaCanga = w.interact({
         id: 'clareira:canga',
         x: NA_CANGA.x, z: NA_CANGA.z, radius: 1.0,
         label: 'Sentar na canga', icon: '🧺',
         highlight: pano,
         onInteract: async (api) => {
+          // de noite, a canga é também o lugar de olhar o céu
+          if (estado === 'noite') {
+            const como = await api.ask('Na canga, de noite…', ['Deitar e olhar as estrelas', 'Só sentar', 'Agora não']);
+            if (como === 0) {
+              await olharAsEstrelas(api);
+              return;
+            }
+            if (como !== 1) return;
+          }
           ocupados = true;
           api.lockPlayer(true);
           // sentados NO CHÃO: o quadril do rig fica ~0,45 acima da origem, e a
@@ -2818,33 +2867,665 @@ export const villaLobos: SceneDef = {
         },
       });
 
+      /*
+       * ============================================ COZINHAR NO FOGAREIRO (D)
+       *
+       * De dia (e no café da manhã, depois de dormir na barraca) o fogareiro
+       * faz CAFÉ COADO e MINI AREPAS — as arepas são pedido do Renan para o
+       * café da manhã —, ou os dois juntos; de noite, CHOCOLATE QUENTE e
+       * MIOJO. Os dois sentam no chão do lado da mesinha (quem joga perto do
+       * fogo, o outro na frente), a câmera chega perto e a cozinha
+       * (`world/cozinhaDeAcampamento.ts`) faz o prato inteiro no relógio da
+       * clareira, enquanto eles conversam. Pronto, a tela pisca e os dois
+       * estão na canga com a caneca na mão (ou a arepa, ou o garfo e a
+       * panelinha no meio), comendo devagar.
+       *
+       * As falas são PROVISÓRIAS (do Claude), até o Renan mandar as dele.
+       */
+      const sentarNaMesinha = (lx: number, lz: number, giro: number): THREE.Object3D => {
+        const a = new THREE.Object3D();
+        a.position.set(lx, 0, lz);
+        a.rotation.y = giro;
+        mesinha.add(a);
+        return a;
+      };
+      const cozinheiro = sentarNaMesinha(-0.62, 0.1, Math.PI / 2);
+      const ajudante = sentarNaMesinha(0.1, 0.64, Math.PI);
+      /** um ponto do quadro da mesinha no quadro da barraca (as tomadas de câmera moram nele) */
+      const daMesinha = (x: number, y: number, z: number): THREE.Vector3 => {
+        mesinha.updateWorldMatrix(true, false);
+        barraca.updateWorldMatrix(true, false);
+        return barraca.worldToLocal(mesinha.localToWorld(new THREE.Vector3(x, y, z)));
+      };
+      const tomadaDaMesinha = (de: readonly [number, number, number], para: readonly [number, number, number]): Tomada =>
+        [daMesinha(...de), daMesinha(...para)];
+
+      type Refeicao = 'cafe' | 'arepas' | 'cafe-e-arepas' | 'chocolate' | 'miojo';
+      const CARDAPIO_DO_DIA: ReadonlyArray<readonly [string, Refeicao]> = [
+        ['Café coado', 'cafe'], ['Mini arepas', 'arepas'], ['Café com mini arepas', 'cafe-e-arepas'],
+      ];
+      const CARDAPIO_DA_NOITE: ReadonlyArray<readonly [string, Refeicao]> = [
+        ['Chocolate quente', 'chocolate'], ['Miojo', 'miojo'],
+      ];
+      const ENQUANTO_COZINHA: Record<PratoDoFogareiro, Array<readonly [string, string]>> = {
+        cafe: [
+          [R, 'Água no fogo. Agora é esperar ferver.'],
+          [A, 'Eu adoro o barulhinho da tampa pulando.'],
+          [R, 'Café coado no pano. Do jeito certo.'],
+          [A, 'O cheirinho já tá chegando aqui.'],
+        ],
+        arepas: [
+          [A, 'Mini arepas. Agora sim é café da manhã.'],
+          [R, 'Você me ensina a virar sem quebrar?'],
+          [A, 'Espera dourar embaixo. Aí vira de uma vez.'],
+          [R, 'E queijinho em cima de duas.'],
+        ],
+        chocolate: [
+          [R, 'Leite no fogo e três colheradas de chocolate.'],
+          [A, 'Noite de acampamento tem que ter chocolate quente.'],
+          [R, 'E marshmallow por cima. Um rosinha pra cada.'],
+        ],
+        miojo: [
+          [A, 'Miojo de acampamento é o melhor miojo do mundo.'],
+          [R, 'Três minutinhos. E o tempero todo, né?'],
+          [A, 'Todo. Sem dó.'],
+        ],
+      };
+      const COMENDO: Record<Refeicao, Array<readonly [string, string]>> = {
+        cafe: [[A, 'Hmm… café de fogareiro tem outro gosto.'], [R, 'Gosto de manhã com você.']],
+        arepas: [[R, 'Crocante por fora e macia por dentro.'], [A, 'Viu? Você aprendeu.']],
+        'cafe-e-arepas': [[A, 'Café, arepa e você. Melhor café da manhã.'], [R, 'Dá pra acordar assim todo dia?']],
+        chocolate: [[R, 'Cuidado que tá quente.'], [A, 'O marshmallow derretendo é a melhor parte.']],
+        miojo: [[A, 'Um garfo pra cada um e a panela no meio.'], [R, 'Jantar romântico de acampamento.']],
+      };
+      /*
+       * AS TOMADAS DA COZINHA vêm do lado de TRÁS da mesinha (o `-Z` dela), o
+       * único lado sem ninguém: o cozinheiro senta no `-X` e o ajudante no
+       * `+Z`. Daqui o ajudante fica de frente para a câmera, do outro lado do
+       * fogo, o cozinheiro de perfil à direita e o caixote à esquerda. Pelo
+       * `+Z` (a primeira versão), a cabeça do ajudante tapava o fogareiro.
+       */
+      const CAMERA_DA_COZINHA_LONGE = (): Tomada => tomadaDaMesinha([0.55, 1.7, -1.7], [-0.05, 0.42, 0.15]);
+      const CAMERA_DA_COZINHA = (): Tomada => tomadaDaMesinha([0.26, 1.28, -1.12], [-0.08, 0.5, 0.14]);
+      /** a canga, no quadro da barraca: de frente para os dois sentados, um tico de cima */
+      const CAMERA_DA_CANGA: Tomada = [new THREE.Vector3(0.6, 1.42, 4.2), new THREE.Vector3(0.1, 0.5, 2.7)];
+      const CAMERA_DAS_AREPAS = (): Tomada => tomadaDaMesinha([0.02, 1.02, -0.62], [-0.13, 0.55, 0.05]);
+
+      const cozinhar = async (api: GameAPI, refeicao: Refeicao): Promise<void> => {
+        ocupados = true;
+        api.lockPlayer(true);
+        api.ridePlayer(cozinheiro, new THREE.Vector3(0, -0.42, 0), 1, 0);
+        api.rideCompanion(ajudante, new THREE.Vector3(0, -0.42, 0), 1, 0);
+        api.setSitting(true);
+        pararCamera();
+        const longe = CAMERA_DA_COZINHA_LONGE();
+        camera.de.copy(longe[0]);
+        camera.para.copy(longe[1]);
+        apontarCamera(api);
+        void deslizarCamera(CAMERA_DA_COZINHA(), 1.4);
+        const pratos: PratoDoFogareiro[] = refeicao === 'cafe-e-arepas' ? ['cafe', 'arepas'] : [refeicao];
+        if (cafeDaManha && (refeicao === 'cafe' || refeicao === 'cafe-e-arepas')) {
+          await conversa([[A, 'Bom dia de novo. Cadê o café?'], [R, 'Saindo, bebito.']]);
+        }
+        for (const prato of pratos) {
+          if (prato === 'arepas') void deslizarCamera(CAMERA_DAS_AREPAS(), 1.2);
+          const feito = cozinha.preparar(prato);
+          await conversa(ENQUANTO_COZINHA[prato]);
+          await feito;
+        }
+        // PRONTO: a tela pisca, e os dois estão na canga com a comida
+        await api.escurecerTela(true);
+        api.setSitting(false);
+        api.ridePlayer(naCanga, new THREE.Vector3(-0.32, -0.42, 0), 1, Math.PI);
+        api.rideCompanion(naCanga, new THREE.Vector3(0.32, -0.42, 0), 1, Math.PI);
+        api.setSitting(true);
+        // a tomada da canga: de frente para os dois, a barraca atrás (na
+        // isométrica a caneca na mão some de tão pequena)
+        pararCamera();
+        camera.de.copy(CAMERA_DA_CANGA[0]);
+        camera.para.copy(CAMERA_DA_CANGA[1]);
+        apontarCamera(api);
+        // a arepa e o garfo saem na escala da cozinha (a mesma das canecas e
+        // do fogareiro): na escala de fábrica, na mão, viravam um pontinho
+        const naMao = (quem: string, obj: THREE.Object3D, escala?: number): void => {
+          obj.position.set(0, 0, 0);
+          obj.rotation.set(0, 0, 0);
+          if (escala) obj.scale.setScalar(escala);
+          api.segurarNaCena(quem, obj, 'upright');
+        };
+        const temBebida = refeicao === 'cafe' || refeicao === 'chocolate' || refeicao === 'cafe-e-arepas';
+        if (temBebida) {
+          naMao(api.playerId(), cozinha.caneca(0));
+          naMao(api.companionId(), cozinha.caneca(1));
+        }
+        if (refeicao === 'arepas' || refeicao === 'cafe-e-arepas') {
+          // o prato vai para a canga, entre os dois (as arepas vão junto)
+          const prato = cozinha.pratoDasArepas;
+          pano.attach(prato);
+          prato.position.set(0, 0.022, 0.12);
+          prato.rotation.set(0, 0.3, 0);
+          if (!temBebida) {
+            cozinha.tirarArepaDoPrato();
+            cozinha.tirarArepaDoPrato();
+            naMao(api.playerId(), miniArepa(), ESCALA_DA_COZINHA);
+            naMao(api.companionId(), miniArepa(), ESCALA_DA_COZINHA);
+          }
+        }
+        if (refeicao === 'miojo') {
+          const panelinhaCheia = cozinha.panelinha;
+          pano.attach(panelinhaCheia);
+          panelinhaCheia.position.set(0, 0.02, 0.14);
+          panelinhaCheia.rotation.set(0, 0, 0);
+          naMao(api.playerId(), garfoComMiojo(), ESCALA_DA_COZINHA);
+          naMao(api.companionId(), garfoComMiojo(), ESCALA_DA_COZINHA);
+        }
+        api.setSaboreando(true);
+        await api.escurecerTela(false);
+        await api.wait(0.8);
+        await conversa(COMENDO[refeicao]);
+        api.soltarCoracoes(2);
+        const deNoite = refeicao === 'chocolate' || refeicao === 'miojo';
+        api.unlock(deNoite
+          ? {
+            id: 'jantarzinho-no-fogareiro',
+            title: 'Jantarzinho no fogareiro',
+            place: 'Parque Villa Lobos',
+            note: 'De noite na clareira, o fogareiro de montanha aceso na mesinha: chocolate quente com marshmallow ou miojo comido da panelinha, os dois sentados na canga.',
+            icon: '☕',
+          }
+          : {
+            id: 'cafe-da-manha-na-clareira',
+            title: 'Café da manhã na clareira',
+            place: 'Parque Villa Lobos',
+            note: 'Café coado no pano e mini arepas douradas no budare, feitos no fogareiro de montanha, tomados na canga da frente da barraca.',
+            icon: '🫓',
+          });
+        await api.wait(1.6);
+        // levantam: a louça volta para a mesinha, limpa
+        api.setCameraOmbro(null);
+        api.setSaboreando(false);
+        api.segurarNaCena(api.playerId(), null);
+        api.segurarNaCena(api.companionId(), null);
+        cozinha.arrumar(CASA_DAS_CANECAS);
+        api.setSitting(false);
+        api.focusCamera(null);
+        api.releasePlayer(NA_CANGA.x - 0.4, NA_CANGA.z + 0.3, GIRO);
+        api.releaseCompanion(NA_CANGA.x + 0.3, NA_CANGA.z - 0.4, GIRO);
+        api.lockPlayer(false);
+        ocupados = false;
+      };
+
       const NO_FOGAREIRO = daTenda(1.95, 2.45);
       w.interact({
         id: 'clareira:fogareiro',
         x: NO_FOGAREIRO.x, z: NO_FOGAREIRO.z, radius: 0.95,
-        label: 'Olhar o fogareiro', icon: '🔥',
+        label: 'Cozinhar no fogareiro', icon: '🔥',
         highlight: mesinha,
-        onInteract: async () => {
-          if (estado === 'noite') {
-            await conversa([
-              [A, 'Já escureceu. E o chocolate quente?'],
-              [R, 'Fica pra próxima noite. Prometo.'],
-            ]);
+        onInteract: async (api) => {
+          if (cozinha.ocupada || ocupados) return;
+          const deNoite = estado === 'noite';
+          const cardapio = deNoite ? CARDAPIO_DA_NOITE : CARDAPIO_DO_DIA;
+          const pergunta = deNoite ? 'O que a gente faz pra noite?' : cafeDaManha ? 'Café da manhã de acampamento?' : 'O que a gente faz no fogareiro?';
+          const opcoes = [...cardapio.map(([nome]) => nome), 'Agora não'];
+          const i = await api.ask(pergunta, opcoes);
+          if (i < 0 || i >= cardapio.length) return;
+          await cozinhar(api, cardapio[i][1]);
+        },
+      });
+
+      /*
+       * ===================================== O RADINHO E A DANÇA LENTA (D)
+       *
+       * O pedido do Renan: "um pequeno radinho bonitinho que será onde vamos
+       * interagir para dançar na parte da noite; de manhã não faz nada". Ele
+       * mora no chão, do lado esquerdo da canga (`world/radinho.ts`); DE DIA
+       * fica quietinho e sem prompt. DE NOITE, "Ligar o radinho": a câmera
+       * chega perto, o botão estala, a antena estica, a agulha procura o
+       * coraçãozinho do mostrador e a música vira a balada de baile (o clima
+       * `'danca-lenta'`). Aí o convite, e os dois dançam agarradinhos na frente
+       * da canga — o Renan com as mãos na cintura, o Ari pelos ombros
+       * (provisório: é ele o mais alto) —, a âncora girando devagar e a
+       * câmera passeando em volta, com o céu estrelado atrás. Uma voltinha no
+       * fim de cada música, e "Mais uma?".
+       *
+       * Desligar devolve a música da noite; o dia voltando (ou dormir) desliga
+       * na hora. As falas são PROVISÓRIAS (do Claude).
+       */
+      const NO_CHAO_DO_RADINHO = daTenda(-1.2, 2.3);
+      const radinho = new Radinho();
+      radinho.som = (nome) => g.som(nome);
+      w.add(fundir(w.place(radinho.group, NO_CHAO_DO_RADINHO.x, 0, NO_CHAO_DO_RADINHO.z, GIRO + 0.45)));
+      w.blockCircle(NO_CHAO_DO_RADINHO.x, NO_CHAO_DO_RADINHO.z, 0.24);
+      /** a pista: na frente da canga, de costas para o lago (a barraca e o varal atrás) */
+      const NA_PISTA = daTenda(-0.1, 4.05);
+      const pista = new THREE.Object3D();
+      pista.position.set(-0.1, 0, 4.05);
+      barraca.add(pista);
+      let dancando = false;
+      let giroDaCamera = 0;
+      /** onde a câmera da dança está, no arco da frente (0 é bem de frente, olhando para a barraca) */
+      const CAMERA_DA_DANCA = (a: number): Tomada => [
+        new THREE.Vector3(-0.1 + Math.sin(a) * 2.3, 1.85, 4.05 + Math.cos(a) * 2.3),
+        new THREE.Vector3(-0.1, 1.02, 4.05),
+      ];
+      /** de perto, da frente-direita do rádio (quem liga fica na frente-esquerda, fora do quadro) */
+      const CAMERA_DO_RADINHO: Tomada = [new THREE.Vector3(-0.78, 0.4, 2.78), new THREE.Vector3(-1.2, 0.15, 2.3)];
+      w.onUpdate((dt0) => {
+        const dt = dt0 * ritmo.vezes;
+        radinho.update(dt);
+        if (!dancando) return;
+        /*
+         * OS DOIS GIRAM DEVAGAR NO LUGAR, num vaivém (a âncora vai e volta
+         * ~35°), e a câmera ACOMPANHA o par: nunca na linha dele (com a
+         * âncora girando sem parar, o par se alinhava com a câmera e um sumia
+         * atrás do outro) e nunca de perfil puro — na régua chibi o rosto é
+         * a frente de uma bola e o cabelo dá a volta, e de perfil só se via
+         * cabelo. Ela balança ~30° para cada lado do perfil, e um tico de
+         * cima: olhando para baixo, a cabeça de quem está mais perto desce no
+         * quadro e o rosto do outro aparece por cima do ombro dele.
+         */
+        giroDaCamera += dt;
+        pista.rotation.y = Math.sin(giroDaCamera * 0.11) * 0.6;
+        const tomada = CAMERA_DA_DANCA(pista.rotation.y + Math.sin(giroDaCamera * 0.13) * 0.55);
+        camera.de.lerp(tomada[0], Math.min(1, dt * 1.5));
+        camera.para.lerp(tomada[1], Math.min(1, dt * 1.5));
+        apontarCamera(g);
+      });
+
+      const MUSICAS_DA_DANCA: Array<Array<readonly [string, string]>> = [
+        [
+          [R, 'Pode pisar no meu pé, eu nem ligo.'],
+          [A, 'Eu não vou pisar! …Pisei.'],
+          [R, 'Tá perfeito assim.'],
+        ],
+        [
+          [A, 'A gente devia dançar mais vezes.'],
+          [R, 'Toda noite de acampamento, então.'],
+        ],
+        [
+          [R, 'Só a gente, o radinho e os vaga-lumes.'],
+          [A, 'E as estrelas olhando.'],
+        ],
+      ];
+      const dancar = async (api: GameAPI): Promise<void> => {
+        ocupados = true;
+        api.lockPlayer(true);
+        // os dois na pista, de frente um para o outro (o motor acerta a distância)
+        pista.rotation.y = 0;
+        api.ridePlayer(pista, new THREE.Vector3(-0.3, 0, 0), 1, Math.PI / 2);
+        api.rideCompanion(pista, new THREE.Vector3(0.3, 0, 0), 1, -Math.PI / 2);
+        api.dancaLenta(R);
+        ceu.visivel = true;
+        pararCamera();
+        giroDaCamera = 0;
+        const de = CAMERA_DA_DANCA(0);
+        camera.de.copy(de[0]).add(new THREE.Vector3(0.4, 0.5, 0.9));
+        camera.para.copy(de[1]);
+        apontarCamera(api);
+        dancando = true;
+        let musica = 0;
+        for (;;) {
+          await animar(2.2, () => {});
+          await conversa(MUSICAS_DA_DANCA[musica % MUSICAS_DA_DANCA.length]);
+          await animar(1.2, () => {});
+          await api.voltinhaNaDanca();
+          api.soltarCoracoes(2);
+          await animar(1.6, () => {});
+          musica += 1;
+          const mais = await api.ask('Mais uma música?', ['Mais uma', 'Parar de dançar']);
+          if (mais !== 0) break;
+        }
+        api.dancaLenta(null);
+        await animar(1.0, () => {});
+        dancando = false;
+        api.unlock({
+          id: 'danca-lenta-na-clareira',
+          title: 'Dança lenta na clareira',
+          place: 'Parque Villa Lobos',
+          note: 'De noite, o radinho de pilha tocando baixinho no chão da clareira e os dois dançando agarradinhos na frente da barraca, com o varal aceso e os vaga-lumes em volta.',
+          icon: '📻',
+        });
+        ceu.visivel = false;
+        api.setCameraOmbro(null);
+        const voltaA = daTenda(-0.45, 4.05);
+        const voltaB = daTenda(0.3, 4.05);
+        api.releasePlayer(voltaA.x, voltaA.z, GIRO);
+        api.releaseCompanion(voltaB.x, voltaB.z, GIRO);
+        api.lockPlayer(false);
+        ocupados = false;
+      };
+
+      const NO_RADINHO = daTenda(-1.55, 2.95);
+      const promptDoRadinho = w.interact({
+        id: 'clareira:radinho',
+        x: NO_RADINHO.x, z: NO_RADINHO.z, radius: 0.8,
+        label: 'Ligar o radinho', icon: '📻',
+        highlight: radinho.group,
+        onInteract: async (api) => {
+          if (ocupados || estado !== 'noite') return;
+          if (!radinho.ligado) {
+            ocupados = true;
+            api.lockPlayer(true);
+            pararCamera();
+            camera.de.copy(CAMERA_DO_RADINHO[0]);
+            camera.para.copy(CAMERA_DO_RADINHO[1]);
+            apontarCamera(api);
+            await radinho.ligar();
+            api.trocarMusica('danca-lenta');
+            await animar(1.2, () => {});
+            await conversa([[A, 'Ah, essa música…'], [R, 'Dança comigo?']]);
+            api.setCameraOmbro(null);
+            api.lockPlayer(false);
+            ocupados = false;
+            const sim = await api.ask('Dança comigo?', ['Dançar', 'Agora não']);
+            if (sim === 0) await dancar(api);
             return;
           }
-          await conversa([
-            [R, 'Fogareirinho de montanha. Cabe na palma da mão.'],
-            [A, 'E a gente vai cozinhar o quê aí?'],
-            [R, 'Chocolate quente. Quando escurecer.'],
-          ]);
+          const i = await api.ask('O radinho tá tocando.', ['Dançar', 'Desligar o radinho', 'Agora não']);
+          if (i === 0) await dancar(api);
+          else if (i === 1) {
+            await radinho.desligar();
+            api.trocarMusica('noite-na-clareira');
+          }
         },
+      });
+      // de dia o radinho não faz nada (nem prompt); ligado, o prompt chama para dançar
+      w.onUpdate(() => {
+        promptDoRadinho.enabled = estado === 'noite';
+        promptDoRadinho.label = radinho.ligado ? 'Dançar' : 'Ligar o radinho';
+        promptDoRadinho.icon = radinho.ligado ? '💃' : '📻';
+      });
+      /** o dia voltando (ou a dupla indo dormir) desliga o rádio na hora */
+      desligarORadinho = (): void => radinho.desligarJa();
+
+      /*
+       * ======================================== OS VAGA-LUMES NO POTE (D)
+       *
+       * O pedido do Renan: "poder pegá-los e soltar eles onde quisermos, daí
+       * eles iluminariam o parque". De noite, o POTE (`world/poteDeVagaLumes.ts`)
+       * mora no chão do lado das mochilas: "Pegar o pote" põe na mão de quem
+       * joga, e daí o prompt PERSEGUE o vaga-lume mais perto ("Pegar o
+       * vaga-lume"): a tampa abre, ele voa para dentro e a tampa fecha —
+       * cabem oito. "Soltar os vaga-lumes aqui" anda junto com quem segura o
+       * pote: abre a tampa e eles saem voando e ficam rodando ali, com uma
+       * poça de luz verde no chão. Cada ponto vai para o save
+       * (`vagaLumesSoltos`): hoje só a clareira tem noite e é lá que eles
+       * brilham, mas a lista é o que o parque de noite (futuro) vai ler.
+       *
+       * O pote volta para o lugar dele quando outra coisa começa (cozinhar,
+       * dançar, a barraca), e quando a noite acaba os que estavam nele são
+       * soltos ali mesmo. As falas são PROVISÓRIAS (do Claude).
+       */
+      const CASA_DO_POTE = daTenda(-1.25, 1.3);
+      const pote = new PoteDeVagaLumes();
+      pote.group.scale.setScalar(1.5);
+      w.add(fundir(w.place(pote.group, CASA_DO_POTE.x, 0, CASA_DO_POTE.z, GIRO + 0.3)));
+      const poteEmCasa = (): void => {
+        w.root.add(pote.group);
+        pote.group.position.set(CASA_DO_POTE.x, 0, CASA_DO_POTE.z);
+        pote.group.rotation.set(0, GIRO + 0.3, 0);
+      };
+      const soltos = new VagaLumesSoltos();
+      w.add(soltos.group);
+      soltos.carregar(g.vagaLumesSoltos());
+      /** quem está segurando o pote (o id da ficha), ou ninguém */
+      let poteNaMao: string | null = null;
+      let jaSoltaram = false;
+      /*
+       * NA MÃO, O POTE VAI PELA ALÇA: a mão segura o topo do arame e o vidro
+       * pende embaixo dela. Segurado pelo fundo, como um sorvete, a mão
+       * atravessava o vidro.
+       */
+      const peloArame = new THREE.Group();
+      peloArame.name = 'pote-na-mao';
+      const pegarOPote = (api: GameAPI): void => {
+        peloArame.add(pote.group);
+        pote.group.position.set(0, -0.178 * 1.5 + 0.012, 0);
+        pote.group.rotation.set(0, Math.PI / 2, 0);
+        api.segurarNaCena(api.playerId(), peloArame, 'upright');
+        poteNaMao = api.playerId();
+      };
+      /** o pote volta para o lugar dele (com quem estiver dentro, ou soltando antes) */
+      const guardarOPote = (api: GameAPI, soltarAntes: boolean): void => {
+        if (poteNaMao) api.segurarNaCena(poteNaMao, null);
+        poteNaMao = null;
+        poteEmCasa();
+        if (soltarAntes && pote.quantos > 0) {
+          const saem = pote.soltarTodos();
+          soltos.soltar(CASA_DO_POTE.x, CASA_DO_POTE.z, saem.length, saem);
+          api.soltarVagaLumes(CASA_DO_POTE.x, CASA_DO_POTE.z, saem.length);
+        }
+      };
+      soltarOsDoPote = (): void => guardarOPote(g, true);
+
+      const NO_POTE = daTenda(-1.4, 1.85);
+      const promptDoPote = w.interact({
+        id: 'clareira:pote',
+        x: NO_POTE.x, z: NO_POTE.z, radius: 0.7,
+        label: 'Pegar o pote de vaga-lumes', icon: '🫙',
+        highlight: pote.group,
+        onInteract: async (api) => {
+          if (ocupados) return;
+          if (poteNaMao) {
+            guardarOPote(api, false);
+            api.toast(pote.quantos > 0 ? 'O pote ficou guardado, brilhando' : 'Pote guardado', '🫙');
+            return;
+          }
+          pegarOPote(api);
+          if (!api.flag('pote-de-vaga-lumes')) {
+            api.setFlag('pote-de-vaga-lumes');
+            await conversa([
+              [A, 'Vamos pegar vaga-lume?'],
+              [R, 'Devagarinho, pra não machucar. E depois a gente solta.'],
+            ]);
+          }
+          api.toast('Chegue pertinho de um vaga-lume', '✨');
+        },
+      });
+      let alvoDoPote = -1;
+      const promptDoVagaLume = w.interact({
+        id: 'clareira:vaga-lume',
+        x: CL.x, z: CL.z, radius: 0.75, priority: 2,
+        label: 'Pegar o vaga-lume', icon: '✨',
+        onInteract: async (api) => {
+          if (!poteNaMao || pote.cheio || alvoDoPote < 0) return;
+          const i = alvoDoPote;
+          const onde = vagaLumes.onde(i);
+          vagaLumes.pegar(i);
+          api.som('vagaLume');
+          await pote.pegar(onde);
+          if (pote.cheio) api.toast('O pote encheu! Agora é só soltar onde quiser', '🫙');
+          else api.toast(`${pote.quantos} ${pote.quantos === 1 ? 'vaga-lume' : 'vaga-lumes'} no pote`, '✨');
+        },
+      });
+      const promptDeSoltar = w.interact({
+        id: 'clareira:soltar-vaga-lumes',
+        x: CL.x, z: CL.z, radius: 0.6, priority: -2,
+        label: 'Soltar os vaga-lumes aqui', icon: '🌟',
+        onInteract: async (api) => {
+          if (!poteNaMao || pote.quantos === 0) return;
+          // o ponto: um passo à frente de quem segura
+          const eu = api.playerPosition();
+          const olha = api.playerFacing();
+          const x = eu.x + Math.sin(olha) * 0.55;
+          const z = eu.z + Math.cos(olha) * 0.55;
+          const saem = pote.soltarTodos();
+          soltos.soltar(x, z, saem.length, saem);
+          api.soltarVagaLumes(x, z, saem.length);
+          api.som('soltarVagaLumes');
+          api.soltarCoracoes(1);
+          if (!jaSoltaram && !api.flag('vaga-lumes-soltos')) {
+            jaSoltaram = true;
+            api.lockPlayer(true);
+            await conversa([
+              [A, 'Vai, vaga-luminho!'],
+              [R, 'Agora esse cantinho é deles. Vai ficar iluminado.'],
+            ]);
+            api.lockPlayer(false);
+            api.unlock({
+              id: 'vaga-lumes-soltos',
+              title: 'Os vaga-lumes do pote',
+              place: 'Parque Villa Lobos',
+              note: 'De noite na clareira, um pote de vidro de tampa furadinha: os vaga-lumes pegos um por um, e soltos onde os dois quiseram, para aquele cantinho ficar iluminado.',
+              icon: '🫙',
+            });
+          }
+        },
+      });
+      const naoTemNinguem = new THREE.Vector3();
+      w.onUpdate((dt0) => {
+        const dt = dt0 * ritmo.vezes;
+        pote.update(dt, brilhoDosVagaLumes);
+        soltos.update(dt, brilhoDosVagaLumes);
+        // outra coisa começou (cozinhar, dançar, a barraca): o pote volta para o lugar, com eles dentro
+        if (poteNaMao && ocupados) guardarOPote(g, false);
+        // trocou de quem joga (o T): o pote passa para a mão de quem joga agora
+        if (poteNaMao && poteNaMao !== g.playerId()) {
+          g.segurarNaCena(poteNaMao, null);
+          pegarOPote(g);
+        }
+        const deNoite = estado === 'noite';
+        promptDoPote.enabled = deNoite && !ocupados;
+        promptDoPote.label = poteNaMao ? 'Guardar o pote' : 'Pegar o pote de vaga-lumes';
+        // o prompt de pegar persegue o vaga-lume mais perto de quem segura o pote
+        const eu = g.playerPosition();
+        // PERTINHO (70 cm): longe disso o prompt é o de soltar — os dois não brigam pelo E
+        alvoDoPote = poteNaMao && deNoite && !ocupados && !pote.cheio ? vagaLumes.maisPerto(eu.x, eu.z, 0.7) : -1;
+        promptDoVagaLume.enabled = alvoDoPote >= 0;
+        if (alvoDoPote >= 0) {
+          vagaLumes.onde(alvoDoPote, naoTemNinguem);
+          promptDoVagaLume.moveTo(naoTemNinguem.x, naoTemNinguem.z);
+        }
+        // o de soltar anda junto com quem segura (o mais fraco de todos: perto da barraca, ela ganha)
+        promptDeSoltar.enabled = !!poteNaMao && pote.quantos > 0 && !ocupados;
+        if (promptDeSoltar.enabled) promptDeSoltar.moveTo(eu.x, eu.z);
+      });
+
+      /*
+       * ============================================ OLHAR AS ESTRELAS (D)
+       *
+       * De noite, a canga oferece "Deitar e olhar as estrelas": os dois
+       * deitam de barriga para cima, lado a lado, com a cabeça para o lado do
+       * radinho e os pés para a mesinha. A câmera vê os dois de cima e sobe
+       * devagar até ficar na altura das cabeças, olhando o céu — a cúpula da
+       * clareira, com as estrelas, a lua e as copas das árvores na beirada.
+       * Lá no alto, doze estrelas fazem um CORAÇÃO: os dois acham, e o risco
+       * da constelação vai sendo desenhado traço por traço. Aí passa uma
+       * ESTRELA CADENTE (`CeuDaClareira.estrelaCadente`), e cada um faz um
+       * pedido que não conta. A câmera volta para cima deles, e eles viram de
+       * frente e se beijam (o beijo deitado da barraca, `g.beijarDeitados`).
+       * As falas são PROVISÓRIAS (do Claude).
+       */
+      /** uma direção do céu no quadro da barraca levada para o da cúpula (que é o do mundo) */
+      const doCeuDaTenda = (lx: number, ly: number, lz: number): THREE.Vector3 =>
+        new THREE.Vector3(lx * cos + lz * sen, ly, -lx * sen + lz * cos).normalize();
+      // o coração mora a 70° de altura, para o lado dos pés (o +X da barraca)
+      const NO_CEU = new THREE.Vector3(Math.cos(1.22), Math.sin(1.22), 0.08);
+      ceu.coracaoEm(doCeuDaTenda(NO_CEU.x, NO_CEU.y, NO_CEU.z));
+      /** a âncora de deitar na canga: os pés na beirada do +X do pano, a cabeça para o −X */
+      const deitadosNaCanga = new THREE.Object3D();
+      deitadosNaCanga.position.set(0.86, 0.14, 0.04);
+      deitadosNaCanga.rotation.set(-Math.PI / 2, Math.PI / 2, 0, 'YXZ');
+      pano.add(deitadosNaCanga);
+      /** as tomadas, no quadro da barraca: de cima (pelo lado dos pés), no céu e o beijo (quase em cima das cabeças) */
+      const CAMERA_DA_CANGA_DE_CIMA: Tomada = [new THREE.Vector3(1.55, 2.05, 2.95), new THREE.Vector3(-0.3, 0.1, 2.82)];
+      const NAS_CABECAS = new THREE.Vector3(-0.62, 0.5, 2.86);
+      const CAMERA_DO_CEU: Tomada = [NAS_CABECAS.clone(), NAS_CABECAS.clone().addScaledVector(NO_CEU, 12)];
+      const CAMERA_DO_BEIJO_NA_CANGA: Tomada = [new THREE.Vector3(0.15, 2.35, 2.9), new THREE.Vector3(-0.55, 0.15, 2.84)];
+      let olhandoOCeu = false;
+      const olharAsEstrelas = async (api: GameAPI): Promise<void> => {
+        ocupados = true;
+        olhandoOCeu = true;
+        api.lockPlayer(true);
+        api.ridePlayer(deitadosNaCanga, new THREE.Vector3(-0.3, 0, 0), 1, 0);
+        api.rideCompanion(deitadosNaCanga, new THREE.Vector3(0.3, 0, 0), 1, 0);
+        api.setLying(true);
+        ceu.visivel = true;
+        pararCamera();
+        camera.de.copy(CAMERA_DA_CANGA_DE_CIMA[0]);
+        camera.para.copy(CAMERA_DA_CANGA_DE_CIMA[1]);
+        apontarCamera(api);
+        await animar(1.2, () => {});
+        await conversa([[R, 'Deita aqui do meu lado.'], [A, 'Olha quanta estrela…']]);
+        // a câmera desce até as cabeças e vira para o céu
+        await deslizarCamera(CAMERA_DO_CEU, 3.2);
+        await animar(1.4, () => {});
+        await conversa([[A, 'Ali, ó! Aquelas estrelas ali…'], [R, 'Parece um coração.']]);
+        api.som('constelacao');
+        ceu.acharCoracao(true);
+        await animar(4.6, () => {});
+        await conversa([[A, 'Achamos a nossa constelação.']]);
+        await animar(1.2, () => {});
+        // A ESTRELA CADENTE: cruza o céu por cima do coração
+        api.som('estrelaCadente');
+        await ceu.estrelaCadente(ceu.pertoDoCoracao(-0.42, 0.34), ceu.pertoDoCoracao(0.4, 0.1), 1.4);
+        await conversa([
+          [R, 'Uma estrela cadente! Faz um pedido, rápido!'],
+          [A, 'Fiz. Mas não conto, senão não vale.'],
+          [R, 'Eu também fiz.'],
+          [A, 'Aposto que foi o mesmo.'],
+        ]);
+        // de volta para cima deles: viram de frente e se beijam
+        await deslizarCamera(CAMERA_DO_BEIJO_NA_CANGA, 2.2);
+        await api.beijarDeitados();
+        // o risco do coração vai apagando enquanto eles ainda estão ali
+        ceu.acharCoracao(false);
+        await conversa([[R, 'Melhor céu do mundo.']]);
+        await api.virarDeitados(false);
+        api.unlock({
+          id: 'estrela-cadente',
+          title: 'A estrela cadente',
+          place: 'Parque Villa Lobos',
+          note: 'Deitados na canga de noite, olhando o céu da clareira: a constelação de coração que os dois acharam, uma estrela cadente e um pedido que nenhum dos dois contou.',
+          icon: '🌠',
+        });
+        await animar(1.0, () => {});
+        // levantam
+        api.setLying(false);
+        pararCamera();
+        api.setCameraOmbro(null);
+        ceu.visivel = false;
+        api.releasePlayer(NA_CANGA.x - 0.4, NA_CANGA.z + 0.3, GIRO);
+        api.releaseCompanion(NA_CANGA.x + 0.3, NA_CANGA.z - 0.4, GIRO);
+        api.lockPlayer(false);
+        olhandoOCeu = false;
+        ocupados = false;
+      };
+      /*
+       * AS NUVENS DO PARQUE são brancas chapadas (`flat`, sem luz) e moram lá
+       * no alto, onde só a câmera da roda gigante e as tomadas que olham o céu
+       * chegam: de noite, deitados na canga, elas eram borrões brancos no meio
+       * das estrelas. Enquanto a clareira está de noite, elas saem do céu.
+       */
+      let nuvens: THREE.Object3D[] | null = null;
+      let nuvensDeNoite = false;
+      w.onUpdate(() => {
+        const deNoite = estado === 'noite';
+        promptDaCanga.label = deNoite ? 'Olhar as estrelas na canga' : 'Sentar na canga';
+        promptDaCanga.icon = deNoite ? '🌠' : '🧺';
+        if (deNoite !== nuvensDeNoite) {
+          nuvensDeNoite = deNoite;
+          nuvens ??= w.root.children.filter((o) => o.name === 'nuvem');
+          for (const n of nuvens) n.visible = !deNoite;
+        }
       });
 
       /** gancho de teste: o `scripts/clareira.mjs` mede por aqui */
       barraca.userData.teste = {
-        CLAREIRA: CL, TENDA, PORTA, NA_CANGA, NO_FOGAREIRO, teto, deitados, ceu, vagaLumes, varal, ritmo,
+        CLAREIRA: CL, TENDA, PORTA, NA_CANGA, NO_FOGAREIRO, NO_RADINHO, NA_PISTA, NO_POTE, CASA_DO_POTE, teto, deitados, ceu, vagaLumes, varal, ritmo, cozinha, radinho, pote, soltos,
+        dancando: () => dancando,
+        olhandoOCeu: () => olhandoOCeu,
+        poteNaMao: () => poteNaMao,
+        alvoDoPote: () => alvoDoPote,
         estado: () => estado,
         momento: () => ({ ...agora }),
+        /** a noite na hora, sem a virada do céu (os testes da etapa D começam de noite) */
+        anoitecerJa: () => {
+          estado = 'noite';
+          misturarMomentos(NOITE, NOITE, 0, agora);
+          pintarMomento();
+          g.trocarMusica('noite-na-clareira');
+        },
       };
     }
 
@@ -3228,6 +3909,8 @@ export const villaLobos: SceneDef = {
     // --------------------------------------------------------------- ceu
     for (let i = 0; i < 9; i++) {
       const c = cloud(w.range(1.6, 3.2));
+      // com nome: de noite, na clareira, elas saem do céu (ver "olhar as estrelas")
+      c.name = 'nuvem';
       // a camera do passeio sobe ate ~60u de altura: nuvem baixa demais entra
       // na frente da roda gigante em vez de ficar de enfeite no fundo
       c.position.set(w.range(-70, 70), w.range(56, 70), w.range(-60, 45));

@@ -8,6 +8,7 @@ import { Player } from '../entities/Player';
 import { Companion } from '../entities/Companion';
 import { Beijo } from '../entities/Beijo';
 import { BeijoDeitado } from '../entities/BeijoDeitado';
+import { DancaLenta } from '../entities/DancaLenta';
 import { Coracoes } from '../entities/Coracoes';
 import { MaosDadas } from '../entities/MaosDadas';
 import { Som } from '../audio/Som';
@@ -94,6 +95,9 @@ export class Game implements GameAPI {
   private readonly beijo: Beijo;
   /** o beijo DEITADO (a barraca da clareira): da cena, por `beijarDeitados` */
   private readonly beijoDeitado: BeijoDeitado;
+  private readonly dancaLentaDaDupla = new DancaLenta();
+  /** o id da cena de agora — já vale DURANTE o `build` dela (o `current` só muda no fim) */
+  private idDaCena = '';
   private readonly maos: MaosDadas;
   private readonly audio = new Som();
 
@@ -323,6 +327,8 @@ export class Game implements GameAPI {
 
     const world = new WorldBuilder(this);
     world.setSeed(hashSeed(id));
+    // a cena que está de pé (ou subindo): quem pergunta no meio do `build` quer esta, e não a velha
+    this.idDaCena = id;
     def.build(world);
     this.scene.add(world.root);
     this.current = { def, world };
@@ -370,6 +376,7 @@ export class Game implements GameAPI {
     this.hot = null;
     this.beijo.cancelar(this.player, this.parceiro);
     this.beijoDeitado.cancelar(this.player, this.parceiro);
+    this.dancaLentaDaDupla.cancelar(this.player, this.parceiro);
     this.maos.soltar(this.player, this.parceiro);
     this.coracoes.limpar();
     this.podeBeijar = false;
@@ -617,6 +624,7 @@ export class Game implements GameAPI {
     // os dois rodam antes do movimento: sao eles que mandam nos corpos
     this.beijo.update(dt, this.player, this.parceiro);
     this.beijoDeitado.update(dt, this.player, this.parceiro);
+    this.dancaLentaDaDupla.update(dt, this.player, this.parceiro);
     this.maos.update(dt, this.player, this.parceiro);
 
     // ---------------------------------------------------------- movimento
@@ -1762,6 +1770,14 @@ export class Game implements GameAPI {
    * é gravado inteiro um tiquinho depois de cada letra (`aoSalvar`), então
    * fechar a aba no meio de uma frase não perde a frase.
    */
+  vagaLumesSoltos(): ReadonlyArray<{ x: number; z: number; n: number }> {
+    return this.save.vagaLumesSoltos.filter((p) => p.cena === this.idDaCena);
+  }
+
+  soltarVagaLumes(x: number, z: number, n: number): void {
+    if (this.idDaCena) this.save.soltarVagaLumes({ cena: this.idDaCena, x, z, n });
+  }
+
   abrirBebitoBook(): Promise<ResultadoDoBebitoBook> {
     const caneta: Escritor = this.player.rig.spec.id === RENAN.id ? 'renan' : 'ari';
     return this.ui.abrirBebitoBook({
@@ -2287,6 +2303,15 @@ export class Game implements GameAPI {
     return this.beijoDeitado.conchinha(quemAbraca, this.player, this.parceiro);
   }
 
+  dancaLenta(naCintura: string | null): void {
+    if (naCintura) this.dancaLentaDaDupla.comecar(naCintura, this.player, this.parceiro);
+    else this.dancaLentaDaDupla.parar();
+  }
+
+  voltinhaNaDanca(): Promise<void> {
+    return this.dancaLentaDaDupla.voltinha();
+  }
+
   escurecerTela(escuro: boolean, estilo?: 'sono'): Promise<void> {
     return this.ui.fade(escuro, estilo);
   }
@@ -2299,6 +2324,7 @@ export class Game implements GameAPI {
 
   releaseCompanion(x: number, z: number, facing = 0): void {
     this.beijoDeitado.cancelar(this.player, this.parceiro);
+    this.dancaLentaDaDupla.cancelar(this.player, this.parceiro);
     this.scene.add(this.parceiro.object);
     this.parceiro.object.scale.setScalar(1);
     this.parceiro.riding = false;
@@ -2329,6 +2355,7 @@ export class Game implements GameAPI {
 
   releasePlayer(x: number, z: number, facing = 0): void {
     this.beijoDeitado.cancelar(this.player, this.parceiro);
+    this.dancaLentaDaDupla.cancelar(this.player, this.parceiro);
     this.scene.add(this.player.object);
     this.player.object.scale.setScalar(1);
     this.player.riding = false;

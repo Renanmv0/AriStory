@@ -60,6 +60,13 @@ export interface Clima {
   tique?: boolean;
   /** PALMAS no 2 e no 4 — a batida de torcida (a festa das coelhinhas) */
   palmas?: boolean;
+  /**
+   * O ARPEJO DE BAILE (a dança lenta do radinho, na clareira): as notas do
+   * acorde uma por colcheia, subindo e descendo, num timbre de caixinha de
+   * música — o piano das baladas de antigamente. Com ele, o acorde vira um
+   * fundo comprido no primeiro tempo, em vez do comping no contratempo.
+   */
+  arpejo?: boolean;
 }
 
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19];
@@ -153,6 +160,21 @@ export const CLIMAS: Record<string, Clima> = {
     melodia: 0.42,
     chocalho: false,
     escala: PENTA,
+  },
+  /**
+   * A DANÇA LENTA (o radinho da clareira, de noite): a balada de baile, no
+   * giro I–vi–ii–V das músicas de dançar agarradinho, 66 bpm com o suingue
+   * de sempre (vira um 12/8 preguiçoso), o arpejo de caixinha e a marimba
+   * cantando pouco. Provisória: o Renan pode ter a música do casal.
+   */
+  'danca-lenta': {
+    bpm: 66,
+    tonica: 43, // sol
+    giro: [maj7(0), m7(9), m7(2), dom7(7)],
+    melodia: 0.5,
+    chocalho: false,
+    escala: PENTA,
+    arpejo: true,
   },
   /** usado enquanto nenhuma cena pediu clima */
   padrao: {
@@ -284,9 +306,29 @@ export class Musica {
       });
     }
 
+    // --------------------------------------------- o arpejo de baile (a dança)
+    if (c.arpejo) {
+      // o acorde de fundo: comprido, entrando devagar, uma oitava abaixo do arpejo
+      if (naBarra === 0) {
+        for (const [i, intervalo] of acorde.notas.entries()) {
+          if (i === 0) continue;
+          tom(this.ctx, this.destino, {
+            freq: nota(raiz + 12 + intervalo), quando: t, dur: 3.1, vol: 0.03, tipo: 'triangle',
+            ataque: 0.35, detune: i % 2 ? 4 : -4, abafo: 1600,
+          });
+        }
+      }
+      // sobe e desce pelo acorde, uma nota por colcheia: o "plim" de caixinha
+      const ordem = [0, 1, 2, 3, 2, 1, 2, 3];
+      const alvo = raiz + 24 + acorde.notas[ordem[naBarra]];
+      const forte = naBarra === 0 || naBarra === 4;
+      tom(this.ctx, this.destino, { freq: nota(alvo), quando: t, dur: 0.7, vol: forte ? 0.05 : 0.036, tipo: 'sine' });
+      tom(this.ctx, this.destino, { freq: nota(alvo) * 3, quando: t, dur: 0.07, vol: 0.008, tipo: 'sine' });
+    }
+
     // ------------------------------------------------ acordes (tipo rhodes)
     // comping preguiçoso: entra no contratempo, que é o que dá o balanço
-    if (naBarra === 2 || naBarra === 5 || (naBarra === 7 && this.sorte() < 0.35)) {
+    if (!c.arpejo && (naBarra === 2 || naBarra === 5 || (naBarra === 7 && this.sorte() < 0.35))) {
       const base = raiz + 24; // oitava do meio, longe do baixo e da melodia
       for (const [i, intervalo] of acorde.notas.entries()) {
         if (i === 0 && naBarra !== 2) continue; // nem sempre repete a fundamental

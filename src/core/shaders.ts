@@ -552,3 +552,109 @@ export function portal(corA: number, corB: number): Portal {
   });
   return { material, uniforms };
 }
+
+// ============================================================ chama de gás
+
+/**
+ * A CHAMA DE GÁS do fogareiro de montanha (`world/cozinhaDeAcampamento.ts`):
+ * luz sem matéria, como o holograma — soma por cima do que está atrás e não
+ * grava profundidade. O degradê é o de chama de gás de verdade: AZUL fundo na
+ * base, azul-claro no meio e a ponta quase branca, sumindo.
+ *
+ * O TREMOR é todo no vertex: a geometria tem a base em `y = 0` e a ponta em
+ * `y = 1` (a malha escala para o tamanho certo), então `position.y` é a
+ * altura relativa. A ponta balança para os lados com ruído (a base fica
+ * presa no queimador, por `h²`) e a altura pulsa — e a fase de cada língua
+ * sai da posição dela no MUNDO, então as linguinhas da coroa (um
+ * `InstancedMesh`) tremem cada uma no seu tempo, como o vento da grama.
+ *
+ * `uForca` (0 a 1, um pouco mais no estouro de quando acende) é a válvula: a
+ * chama encolhe, afina e apaga junto. Um material por fogareiro: o relógio e
+ * a válvula são dele.
+ */
+export class ChamaDeGas {
+  readonly uniforms = {
+    uTempo: { value: 0 },
+    uForca: { value: 0 },
+    uBase: { value: new THREE.Color() },
+    uMeio: { value: new THREE.Color() },
+    uPonta: { value: new THREE.Color() },
+  };
+  readonly material: THREE.ShaderMaterial;
+
+  constructor(base: number, meio: number, ponta: number) {
+    this.uniforms.uBase.value.setHex(base);
+    this.uniforms.uMeio.value.setHex(meio);
+    this.uniforms.uPonta.value.setHex(ponta);
+    this.material = new THREE.ShaderMaterial({
+      uniforms: this.uniforms,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      vertexShader: /* glsl */ `
+        uniform float uTempo;
+        uniform float uForca;
+        varying float vAltura;
+        varying float vBorda;
+        ${RUIDO_GLSL}
+        void main() {
+          vec3 p = position;
+          float h = clamp(p.y, 0.0, 1.0);
+          mat4 modelo = modelMatrix;
+          #ifdef USE_INSTANCING
+            modelo = modelMatrix * instanceMatrix;
+          #endif
+          vec3 raiz = (modelo * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+          float semente = dot(raiz, vec3(131.0, 77.0, 53.0));
+          // a altura pulsa (cada língua no seu tempo), e a válvula manda nela
+          float sobe = 0.8 + 0.4 * labRuido(vec3(semente, uTempo * 7.5, 0.3));
+          p.y *= sobe * uForca;
+          // a ponta dança, a base fica presa no queimador
+          float t = uTempo * 5.2 + semente;
+          float solta = h * h;
+          p.x += (labRuido(vec3(t, h * 2.6, 1.7)) - 0.5) * 0.55 * solta;
+          p.z += (labRuido(vec3(t, h * 2.6, 6.1)) - 0.5) * 0.55 * solta;
+          // pouco gás, chama fininha
+          p.xz *= mix(0.55, 1.0, clamp(uForca, 0.0, 1.0));
+          vAltura = h;
+          vec3 n = normalize(normalMatrix * normal);
+          vBorda = abs(n.z);
+          gl_Position = projectionMatrix * viewMatrix * modelo * vec4(p, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform float uForca;
+        uniform vec3 uBase;
+        uniform vec3 uMeio;
+        uniform vec3 uPonta;
+        varying float vAltura;
+        varying float vBorda;
+        void main() {
+          vec3 cor = mix(uBase, uMeio, smoothstep(0.0, 0.5, vAltura));
+          cor = mix(cor, uPonta, smoothstep(0.55, 1.0, vAltura));
+          // a ponta some, e a borda do cone (de perfil) é macia
+          float a = (1.0 - smoothstep(0.3, 1.0, vAltura)) * smoothstep(0.02, 0.5, vBorda);
+          a *= clamp(uForca * 1.2, 0.0, 1.0);
+          // somada (aditiva) e com as línguas se cruzando, cor cheia estourava
+          // em branco: a chama de gás é AZUL, só a pontinha clareia
+          gl_FragColor = vec4(cor * 0.85, a * 0.8);
+          #include <colorspace_fragment>
+        }
+      `,
+    });
+  }
+
+  /** o relógio do tremor (o `dt` da cena: pausa junto com o mundo) */
+  avancar(dt: number): void {
+    this.uniforms.uTempo.value += dt;
+  }
+
+  set forca(v: number) {
+    this.uniforms.uForca.value = v;
+  }
+
+  get forca(): number {
+    return this.uniforms.uForca.value;
+  }
+}

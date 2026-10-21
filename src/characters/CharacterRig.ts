@@ -129,6 +129,9 @@ function estrela(raio: number, espessura: number, material: THREE.Material): THR
   return new THREE.Mesh(geo, material);
 }
 
+/** na dança lenta: abraçando pelos ombros de quem está na frente, ou com as mãos na cintura */
+export type PapelNaDanca = 'ombros' | 'cintura';
+
 export class CharacterRig {
   readonly group = new THREE.Group();
   readonly spec: CharacterSpec;
@@ -184,6 +187,17 @@ export class CharacterRig {
   private abracando = false;
   /** os dois olhos, que fecham no beijo deitado */
   private readonly olhos: THREE.Mesh[] = [];
+  /**
+   * A DANÇA LENTA (a clareira de noite): 0 parado, 1 dançando agarradinho.
+   * O papel diz para onde vão os braços — pelos OMBROS de quem está na
+   * frente, ou na CINTURA —, a fase é o balanço (vem de fora, a mesma para os
+   * dois) e a voltinha (0 a 1) gira quem está pelos ombros por baixo do braço
+   * do outro. Quem anima é o `entities/DancaLenta.ts`.
+   */
+  private danca = 0;
+  private papelNaDanca: PapelNaDanca = 'ombros';
+  private faseDaDanca = 0;
+  private voltinhaDaDanca = 0;
   /**
    * Levando o que segura a boca, de vez em quando: comer o sorvete, beber o
    * suco.
@@ -1688,6 +1702,96 @@ export class CharacterRig {
   }
 
   /**
+   * A dança lenta: o quanto (0 a 1), o papel, a fase do balanço e a voltinha.
+   * Só vale de pé (sentado ou deitado, a pose de lá manda). Zerar devolve os
+   * olhos abertos e o corpo de frente — o resto a caminhada desfaz sozinha.
+   */
+  setDanca(valor: number, papel: PapelNaDanca = 'ombros', fase = 0, voltinha = 0): void {
+    this.danca = Math.max(0, Math.min(1, valor));
+    this.papelNaDanca = papel;
+    this.faseDaDanca = fase;
+    this.voltinhaDaDanca = Math.max(0, Math.min(1, voltinha));
+    if (this.danca <= 0.001) {
+      for (const olho of this.olhos) olho.scale.y = 1.25;
+      this.body.rotation.set(0, 0, 0);
+      this.head.rotation.z = 0;
+    }
+  }
+
+  get dancando(): boolean {
+    return this.danca > 0.001;
+  }
+
+  /**
+   * A POSE DA DANÇA LENTA, por cima de quem está parado de pé (misturada pelo
+   * `danca`, para entrar e sair sem tranco).
+   *
+   * - O BALANÇO: o peso vai de um pé para o outro a cada dois tempos — o
+   *   corpo inteiro inclina para o lado do pé de apoio, e a outra perna
+   *   solta, dobra um tico e abre. Quem chama dá a fase com meia volta de
+   *   diferença para cada um: de frente um para o outro, o "+X" de um é o
+   *   "−X" do outro, e assim os dois balançam para o MESMO lado do mundo.
+   * - OS BRAÇOS: pelos ombros, os dois sobem para a frente e fecham para
+   *   dentro (as mãos se encontram atrás do pescoço do outro); na cintura,
+   *   descem para a frente e fecham menos. A PEGADINHA DE SEMPRE: o braço
+   *   esquerdo nasce em −X, então fechar para dentro nele é `rotation.z`
+   *   POSITIVO, e no direito é negativo.
+   * - A CABEÇA: os dois tombam para o lado do braço esquerdo (−X), que de
+   *   frente um para o outro são lados opostos do mundo — as cabeças passam
+   *   uma do lado da outra, bochecha com bochecha, em vez de bater. Quem
+   *   abraça pelos ombros olha um tico para cima, quem segura na cintura,
+   *   para baixo. E os olhos fecham.
+   * - A VOLTINHA: quem está pelos ombros gira uma volta inteira no lugar,
+   *   com a mão direita lá em cima na do outro, que levanta o braço direito
+   *   por cima da cabeça dela. Os olhos abrem.
+   */
+  private poseDeDanca(): void {
+    const k = this.danca;
+    const f = this.faseDaDanca;
+    const lado = Math.sin(f);
+    const v = this.voltinhaDaDanca;
+    // a voltinha sobe e desce (0 → 1 → 0), e o giro anda com a curva suave
+    const sobe = Math.sin(Math.PI * v);
+    const giro = v * v * (3 - 2 * v);
+    const ombros = this.papelNaDanca === 'ombros';
+    const mistura = (alvo: THREE.Object3D, x: number, z: number): void => {
+      alvo.rotation.x += (x - alvo.rotation.x) * k;
+      alvo.rotation.y *= 1 - k;
+      alvo.rotation.z += (z - alvo.rotation.z) * k;
+    };
+
+    // as pernas: a do lado do peso fica reta, a outra solta (ver acima)
+    const pesoNaDireita = Math.max(0, lado);
+    const pesoNaEsquerda = Math.max(0, -lado);
+    mistura(this.legL, -0.14 * pesoNaDireita, -0.03 - 0.05 * pesoNaDireita);
+    mistura(this.legR, -0.14 * pesoNaEsquerda, 0.03 + 0.05 * pesoNaEsquerda);
+    // o corpo inteiro inclina para o pé de apoio (z negativo leva a cabeça para +X)
+    this.body.rotation.z = -lado * 0.045 * k;
+    this.body.rotation.x = (ombros ? 0.03 : 0.06) * k;
+    this.body.rotation.y = ombros ? giro * Math.PI * 2 : 0;
+    // um tico mais baixo no meio da passada, onde o peso troca de pé
+    this.poeAltura(-0.008 * (1 - Math.abs(lado)) * k);
+
+    if (ombros) {
+      // pelos ombros; na voltinha, a direita sobe até a mão do outro e a esquerda abre
+      mistura(this.armL, -1.78 + 1.3 * sobe, 0.52 - 1.1 * sobe);
+      // (a direita sobe na diagonal, para fora: reta para cima, o cabelo engolia a mão)
+      mistura(this.armR, -1.78 - 0.95 * sobe, -0.52 + 0.95 * sobe);
+    } else {
+      // na cintura; na voltinha, a direita sobe por cima da cabeça de quem gira
+      mistura(this.armL, -1.0 + 0.8 * sobe, 0.3 - 0.45 * sobe);
+      mistura(this.armR, -1.0 - 1.75 * sobe, -0.3 + 0.2 * sobe);
+    }
+
+    // a cabeça tomba para o lado esquerdo (−X), e balança junto com o corpo
+    this.head.rotation.z = (0.15 * (1 - sobe) + lado * 0.03) * k;
+    this.head.rotation.x = (ombros ? -0.07 : 0.11) * k * (1 - sobe);
+    // os olhos: fechadinhos dançando, abertos na voltinha
+    const fecha = 0.86 * k * (1 - sobe);
+    for (const olho of this.olhos) olho.scale.y = 1.25 * (1 - fecha);
+  }
+
+  /**
    * Deitado, o quanto está DE LADO (0 a 1), e se o braço de cima abraça quem
    * está na frente. Só vale com `setLying(true)`; o giro do corpo é o
    * `facing`, que quem chama escreve junto (ver `entities/BeijoDeitado.ts`).
@@ -1748,6 +1852,19 @@ export class CharacterRig {
       this.armR.rotation.set(-k * 0.55, 0, BRACO_SOLTO - k * (0.24 + BRACO_SOLTO));
       this.head.rotation.x = k * 0.18;
       this.head.rotation.z *= 1 - Math.min(1, dt * 8);
+      return;
+    }
+
+    // a dança lenta, de pé (por cima da pose de parado, que é o ponto de partida dela)
+    if (this.danca > 0.001 && !this.deitado && !this.sitting && !this.swimming) {
+      this.phase += dt * 1.4;
+      this.legL.rotation.set(0, 0, 0);
+      this.legR.rotation.set(0, 0, 0);
+      this.armL.rotation.set(0, 0, -BRACO_SOLTO);
+      this.armR.rotation.set(0, 0, BRACO_SOLTO);
+      this.head.rotation.x = 0;
+      this.poseDeDanca();
+      this.maoDir.rotation.set(0, 0, 0);
       return;
     }
 
