@@ -1386,6 +1386,8 @@ export const PALETTE = {
   // "bloco de gelo" numa cena que ja e toda azul-clara
   neveFofa: 0xfbfdff,
   neveSombra: 0xdfe9f2,
+  /** o pé de cada bola do boneco de neve, na sombra dela mesma: azulado, não cinza */
+  neveFunda: 0xbfd3e4,
   // o rosa da sorveteria: a MESMA cor do quiosque e do avental do Mano
   // (0xf6a6c0), agora com nome, porque agora ela veste tambem os guarda-sois e
   // as cadeirinhas da praca. O `aventalDoMano` continua onde esta: aquele e

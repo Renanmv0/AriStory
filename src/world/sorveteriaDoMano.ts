@@ -140,7 +140,7 @@ function escamas(): THREE.CanvasTexture {
  * filete de luz ao lado. `lado` é o tamanho do losango no UV da peça torneada
  * (que vai de 0 a 1 em volta e de 0 a 1 na altura).
  */
-function waffle(lado: number): THREE.CanvasTexture {
+export function waffle(lado: number): THREE.CanvasTexture {
   return novaTextura(`sorveteria:waffle:${lado}`, lado, (ctx, s) => {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, s, s);
@@ -434,8 +434,31 @@ function montinho(larg: number, prof: number, alto: number, fase: number): THREE
   return geo;
 }
 
+/**
+ * A BOLA DE SORVETE: a cúpula de cima com a saia ondulada embaixo — a "boca"
+ * da colher, que é o que faz bola ler como sorvete e não como bexiga. O centro
+ * da esfera em `y = 0`; a saia desce até `−0,37 r`.
+ */
+export function geoBolaDeSorvete(r: number, gomos = 18, aneis = 12): THREE.BufferGeometry {
+  const geo = new THREE.SphereGeometry(r, gomos, aneis, 0, Math.PI * 2, 0, Math.PI * 0.62);
+  const pos = geo.getAttribute('position');
+  for (let i = 0; i < pos.count; i++) {
+    const py = pos.getY(i);
+    // a borda de baixo da bola ondula para fora (a marca da colher)
+    const f = Math.min(1, Math.max(0, (r * 0.1 - py) / (r * 0.47)));
+    if (f > 0) {
+      const a = Math.atan2(pos.getZ(i), pos.getX(i));
+      const k = 1 + (0.1 * Math.sin(a * 9) + 0.05) * f;
+      pos.setX(i, pos.getX(i) * k);
+      pos.setZ(i, pos.getZ(i) * k);
+    }
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
 /** a cobertura das peças torneadas: o perfil em pares (raio, altura), de baixo para cima */
-function torno(perfil: ReadonlyArray<readonly [number, number]>, gomos: number): THREE.LatheGeometry {
+export function torno(perfil: ReadonlyArray<readonly [number, number]>, gomos: number): THREE.LatheGeometry {
   return new THREE.LatheGeometry(perfil.map(([r, y]) => new THREE.Vector2(r, y)), gomos);
 }
 
@@ -453,23 +476,8 @@ export function casquinhaGigante(escala = 1, sabores: readonly number[] = [P.mor
     toon(P.casquinhaWaffle, { mapa: waffle(1 / 7) }),
   );
   g.add(cone);
-  /** a bola: a saia ondulada no pé e a cúpula em cima */
   const bola = (y: number, r: number, cor: number): void => {
-    const geo = new THREE.SphereGeometry(r, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.62);
-    const pos = geo.getAttribute('position');
-    for (let i = 0; i < pos.count; i++) {
-      const py = pos.getY(i);
-      // a borda de baixo da bola ondula para fora (a marca da colher)
-      const f = Math.min(1, Math.max(0, (r * 0.1 - py) / (r * 0.47)));
-      if (f > 0) {
-        const a = Math.atan2(pos.getZ(i), pos.getX(i));
-        const k = 1 + (0.1 * Math.sin(a * 9) + 0.05) * f;
-        pos.setX(i, pos.getX(i) * k);
-        pos.setZ(i, pos.getZ(i) * k);
-      }
-    }
-    geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, toon(cor));
+    const m = new THREE.Mesh(geoBolaDeSorvete(r), toon(cor));
     m.position.y = y;
     g.add(m);
   };

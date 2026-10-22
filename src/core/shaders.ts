@@ -1417,3 +1417,43 @@ export class GeloDoRinque {
     }
   }
 }
+
+// ================================================================== cristalino
+
+const cristalinos = new Map<string, THREE.MeshToonMaterial>();
+
+/**
+ * O GELO DE CRISTAL das peças da praça do Mano (as lascas, o poste, os
+ * pingentes): o toon de cor POR VÉRTICE (a peça pinta o degradê dela — fundo
+ * azul embaixo, quase branco na ponta), translúcido, e com a BORDA ACESA: a
+ * faceta que vira de lado para a câmera clareia (o fresnel de uma pedra
+ * lapidada), e a que olha de frente fica com a cor dela. Com as facetas
+ * chatas (geometria sem índice), cada face acende de um jeito — é isso que
+ * faz ler gelo lapidado, e não plástico azul.
+ *
+ * Cacheado como o `toon()`. A geometria PRECISA do atributo `color` (sem ele
+ * o three lê preto).
+ */
+export function cristalino(opacidade = 0.84, borda = 0.6): THREE.MeshToonMaterial {
+  const chave = `${opacidade}|${borda}`;
+  const pronto = cristalinos.get(chave);
+  if (pronto) return pronto;
+  const mat = toon(0xffffff, { corPorVertice: true, opacity: opacidade, glow: 0.1 }).clone();
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uBorda = { value: borda };
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uBorda;')
+      .replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        {
+          vec3 olhar = isOrthographic ? vec3(0.0, 0.0, 1.0) : normalize(vViewPosition);
+          float lado = 1.0 - abs(dot(normalize(normal), olhar));
+          totalEmissiveRadiance += vec3(0.8, 0.94, 1.0) * pow(lado, 2.2) * uBorda;
+        }`,
+      );
+  };
+  mat.customProgramCacheKey = () => `cristalino:${borda}`;
+  cristalinos.set(chave, mat);
+  return mat;
+}
