@@ -7,11 +7,11 @@ import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { fundir } from '../world/fundir';
 import { mesaDeSorveteria, sorveteriaDoMano, SORVETERIA_DO_MANO } from '../world/sorveteriaDoMano';
-import { bonecoDeNeve, cristalDeGelo, posteDeGelo } from '../world/pracaDeGelo';
+import { bonecoDeNeve, bordaDeGelo, cristalDeGelo, posteDeGelo } from '../world/pracaDeGelo';
 import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/PingPong';
 import {
-  aroDeFrisbee, bin, bleachers, bordaDeGelo, building, bus, busStop, bush,
+  aroDeFrisbee, bin, bleachers, building, bus, busStop, bush,
   cestaDeBiscoitos, cestaDePiquenique, flamula, mesinhaDeXadrez,
   canteiro, capim, cloud, cone, discBag, discGolfBasket, domoDeVidro,
   fence, floodlight, flowers, iceCream, lamp, marcaDeMira, meioFio,
@@ -1874,38 +1874,18 @@ export const villaLobos: SceneDef = {
     laminaDeGelo.userData.geloDoRinque = geloDaPraca;
 
     /*
-     * A BORDA: banco de neve baixo, com as quinas abertas.
+     * A BORDA: um banco de neve baixo e CONTÍNUO, correndo pelo contorno de
+     * quina redonda da lâmina (`bordaDeGelo`, em `world/pracaDeGelo.ts`).
+     * Eram nove barras retas, com fresta em toda quina. Só a FRENTE tem o vão
+     * de 3 m no meio — a porta da praça, virada para quem chega do portão do
+     * parque —, ladeado por dois montes de neve com um tufo de cristal cada.
      *
-     * Ela contorna a praça inteira, quinas incluídas — as quinas são um pedaço
-     * curto na diagonal, apoiado no meio do arco de 2,4 de raio. Sem eles a
-     * borda vira quatro barras soltas no gelo em vez de uma beirada. Só a
-     * FRENTE tem um vão de 3,6 no meio: a porta da praça, virada para quem
-     * chega do portão do parque.
-     *
-     * A peça tem 23 cm e NÃO ganha colisor: é beira, não muro.
+     * A peça tem uns 25 cm e NÃO ganha colisor: é beira, não muro.
      */
     const bx = PRACA.largura / 2;
     const bz = PRACA.profundidade / 2;
     const RAIO_QUINA = 2.4;
-    for (const lado of [-1, 1] as const) {
-      w.add(w.place(bordaDeGelo(6), PRACA.x + lado * bx, 0, PRACA.z));
-      w.add(w.place(bordaDeGelo(4), PRACA.x + lado * 3.5, 0, PRACA.z + bz, Math.PI / 2));
-    }
-    w.add(w.place(bordaDeGelo(8), PRACA.x, 0, PRACA.z - bz, Math.PI / 2));
-    /*
-     * As quinas. O centro do arco fica a `(larg/2 − raio; prof/2 − raio)` do
-     * meio da praça, e o meio do arco, mais `raio × √½` na diagonal. A peça
-     * nasce deitada ao longo do Z, então o giro que a alinha com a tangente é
-     * 45° numa diagonal e 135° na outra — quem decide é o sinal do produto
-     * `sx · sz`.
-     */
-    for (const sx of [-1, 1] as const) {
-      for (const sz of [-1, 1] as const) {
-        const cx = PRACA.x + sx * (bx - RAIO_QUINA + RAIO_QUINA * 0.707);
-        const cz = PRACA.z + sz * (bz - RAIO_QUINA + RAIO_QUINA * 0.707);
-        w.add(w.place(bordaDeGelo(2.6), cx, 0, cz, sx * sz > 0 ? Math.PI * 0.75 : Math.PI * 0.25));
-      }
-    }
+    w.add(fundir(w.place(bordaDeGelo(bx, bz, RAIO_QUINA, 1.5), PRACA.x, 0, PRACA.z)));
 
     // balcão virado para +Z: assim quem compra fica na frente do quiosque na
     // tela, e não escondido atrás dele. O chalezinho (`world/sorveteriaDoMano.ts`)

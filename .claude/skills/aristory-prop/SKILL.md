@@ -734,8 +734,8 @@ clube). O molde de quiosque "com tema":
 
 ## Os enfeites da praça de gelo (`world/pracaDeGelo.ts`)
 
-O tufo de cristal, o poste de gelo e o boneco de neve da praça do Mano, na
-família da sorveteria. O que serve para qualquer peça de gelo ou neve:
+O tufo de cristal, o poste de gelo, o boneco de neve e a borda do rinque da
+praça do Mano, na família da sorveteria. O que serve para qualquer peça de gelo ou neve:
 
 - **Gelo é LAPIDADO, não translúcido liso**: o `cristalino()`
   (`core/shaders.ts`) é o toon com cor POR VÉRTICE (a peça pinta o degradê —
@@ -777,10 +777,25 @@ família da sorveteria. O que serve para qualquer peça de gelo ou neve:
 - **Para onde ele olha**: a cena vira o boneco para a BISSETRIZ entre a
   entrada da praça e a câmera — de frente para a porta, a câmera de sempre
   via a nuca.
+- **A borda do rinque é UM banco de neve** (`bordaDeGelo(meiaX, meiaZ,
+  raio, meiaPorta)`), e não nove tubos brancos: uma varredura em fatias de
+  16 cm pelo contorno de quina redonda (`naVolta(hx, hz, r, s)` devolve o
+  ponto e a normal para fora a uma distância `s` da frente, dando a volta),
+  cada fatia um perfil de corcova ASSIMÉTRICA — o pico puxado para o lado
+  do gelo, a encosta de fora mais comprida — com ruído na largura, na
+  altura e uns caroços, afundada 3 cm no chão, e a cor pelos vértices
+  (`neveFunda` embaixo, `neveFofa` no alto). A entrada é um vão de 3 m na
+  frente, e as duas pontas crescem num montinho de portal (0,44 de alto)
+  com um tufo de lascas em cima. As pedras de gelo encostadas (pares de
+  lascas ou um bloco lapidado, a cada 1,3–2,5 m) e os dois tufos são UMA
+  malha de `cristalino()`. A orientação das faces se acerta sozinha
+  (soma do `normal.y`): fatia montada à mão erra o sentido fácil. Sem
+  colisor — o `noGelo` da cena continua decidindo quem patina.
 - **O peso**: boneco ~5,8 mil triângulos (bolinha de 10 cm com 12 gomos,
-  pedrinha 7×5), poste ~1,7 mil, tufo ~0,4 mil; todos pela `fundir()` na
-  cena. Na vista da praça inteira, 472 → 441 desenhos e 113,9 mil → 122,2
-  mil triângulos.
+  pedrinha 7×5), poste ~1,7 mil, tufo ~0,4 mil, borda ~5,9 mil (duas
+  malhas, no lugar de nove); todos pela `fundir()` na cena. Na vista da
+  praça inteira, 472 → 441 desenhos e 113,9 mil → 122,2 mil triângulos
+  com os enfeites, e 441 → 403 e 122,2 mil → 127,3 mil com a borda.
 
 ## Depois de criar
 

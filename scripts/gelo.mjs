@@ -68,8 +68,8 @@ const ESPERADO = {
   'poste-de-gelo': 3,
   'boneco-de-neve': 1,
   'cristal-de-gelo': 4,
-  // duas laterais, o fundo, os dois pedaços da frente (o vão fica no meio) e as quatro quinas
-  'borda-de-gelo': 9,
+  // um banco de neve só, dando a volta (o vão da porta fica no meio da frente)
+  'borda-de-gelo': 1,
 };
 for (const [peca, quantas] of Object.entries(ESPERADO)) {
   if ((contagem[peca] ?? 0) !== quantas) {
