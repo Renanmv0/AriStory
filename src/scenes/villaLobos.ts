@@ -17,7 +17,7 @@ import {
   fence, floodlight, flowers, iceCream, lamp, marcaDeMira, meioFio,
   comidinhasDePiquenique, mesaPingPong, picnicTable, portaRetrato,
   raquete, toalhaDePiquenique,
-  rock, sacoDeGraos, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
+  rock, sacoDeGraos, scoreboard, signBoard, ticketBooth, tree, waterFountain, windsock,
   bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong,
   quadroDeInscricoes, suporteDeRaquetes,
   vasoDePlanta,
@@ -1343,9 +1343,10 @@ export const villaLobos: SceneDef = {
       w.add(w.place(cone(), cx, 0, cz));
     }
 
-    // placa da quadra, na entrada
-    const placaCampinho = w.add(w.place(textSign('Frisbee!', P.frisbee), qx0 - 1.8, 0, QUADRA.z + 3.4, Math.PI * 0.25));
-    w.blockCircle(qx0 - 1.8, QUADRA.z + 3.4, 0.3);
+    // A PLACA "FRISBEE!" SAIU da entrada da quadra (o Renan achou as placas
+    // de poste redundantes: os aros, a cesta e as linhas já dizem o que é). A
+    // conversa dela era a única que ensinava a mirar, e foi para as dicas da
+    // primeira entrada na quadra (`DICAS_DO_FRISBEE`).
 
     // -------------------------------------------------------- mobiliario
     const bancos: Array<[number, number, number]> = [
@@ -4837,8 +4838,8 @@ export const villaLobos: SceneDef = {
     w.blockBox(34.3, 19, 0.4, 2.4);
     w.blockCircle(35.5, 21.65, 0.25); // o totem da parada
 
-    const placaClube = w.add(w.place(textSign('Clube!', 0x4ec1a8), 34.4, 0, 8.2, Math.PI * 0.25));
-    w.blockCircle(34.4, 8.2, 0.3);
+    // A PLACA "CLUBE!" SAIU: o ônibus parado já diz para onde vai, e depois
+    // da Luna ele vai também para a escola — a placa tinha ficado errada.
 
     // os canteiros que emolduram o vão, um de cada lado e fora do corredor
     for (const z of [8.4, 17.6]) {
@@ -5188,6 +5189,41 @@ export const villaLobos: SceneDef = {
     let avisouCheio = false;
 
     /**
+     * As dicas da PRIMEIRA vez na quadra. Eram a conversa da placa "Frisbee!",
+     * que saiu — e era o único lugar que ensinava a mirar. Fala quem acompanha
+     * (é quem recebe: o traço da barra é ele), em avisos que NÃO travam a
+     * dupla, como o grito do Mano: dá para ir tentando enquanto lê, e nenhum
+     * teste que nasce dentro da quadra esbarra num diálogo aberto.
+     *
+     * O espaço entre uma e outra é o tempo de um aviso na tela. Sair da quadra
+     * no meio corta o resto; só a última marca `frisbee-explicado`, então a
+     * próxima entrada recomeça do começo.
+     */
+    const DICAS_DO_FRISBEE: ReadonlyArray<(ele: string, eu: string) => string> = [
+      (ele) => `${ele}: Segura o F. O traço na barra é onde eu estou.`,
+      (ele) => `${ele}: E a marca no chão mostra onde o disco vai cair.`,
+      (_ele, eu) => `${eu}: E se eu quiser mostrar serviço?`,
+      (ele) => `${ele}: Acerta um dos aros. Ou uma cesta, se estiver se achando.`,
+    ];
+    const ESPACO_DAS_DICAS = 3.2;
+    /** a próxima dica a mostrar e quanto falta para ela; -1 é sem dica na fila */
+    let proximaDica = -1;
+    let esperaDaDica = 0;
+
+    const andarDicas = (dt: number): void => {
+      if (proximaDica < 0) return;
+      esperaDaDica -= dt;
+      if (esperaDaDica > 0) return;
+      g.toast(DICAS_DO_FRISBEE[proximaDica](g.companionName(), g.playerName()), '🥏');
+      proximaDica += 1;
+      esperaDaDica = ESPACO_DAS_DICAS;
+      if (proximaDica >= DICAS_DO_FRISBEE.length) {
+        proximaDica = -1;
+        g.setFlag('frisbee-explicado');
+      }
+    };
+
+    /**
      * Entrar na quadra é PEGAR o disco, e pegar passa pelo auto-stash.
      *
      * Mochila cheia não arma a quadra: sem vaga não há disco, e o aviso sai uma
@@ -5210,18 +5246,19 @@ export const villaLobos: SceneDef = {
       // Mão ocupada: o disco vai para a mochila e o F não faz nada até ele ser
       // escolhido. Sem dizer isso, a pessoa fica apertando F na quadra achando
       // que quebrou.
-      g.toast(
-        como === 'mao'
-          ? 'Segure F e solte no traço da barra'
-          : 'Frisbee guardado — escolha ele na mochila (I)',
-        '🥏',
-      );
+      if (como !== 'mao') g.toast('Frisbee guardado — escolha ele na mochila (I)', '🥏');
+      else if (!g.flag('frisbee-explicado')) {
+        // a primeira vez, quem ensina é quem acompanha (a primeira dica sai já)
+        proximaDica = 0;
+        esperaDaDica = 0;
+      } else g.toast('Segure F e solte no traço da barra', '🥏');
       return true;
     };
 
     const sairDaQuadra = (): void => {
       fase = 'fora';
       avisouCheio = false;
+      proximaDica = -1;
       g.removeItem(ITENS.frisbee.id);
       disco.mesh.visible = false;
       soltarCarga();
@@ -5295,6 +5332,7 @@ export const villaLobos: SceneDef = {
 
       if (dentro && fase === 'fora') entrarNaQuadra();
       else if (!dentro && fase !== 'fora') sairDaQuadra();
+      andarDicas(dt);
 
       if (fase === 'fora') {
         jogar.enabled = false;
@@ -5547,21 +5585,6 @@ export const villaLobos: SceneDef = {
 
     // -------------------------------------------- interações da quadra
     w.interact({
-      id: 'parque:placa-quadra',
-      x: qx0 - 1.8, z: QUADRA.z + 4.8, radius: 2.2,
-      label: 'Ler a placa', icon: '🪧',
-      highlight: placaCampinho,
-      onInteract: () =>
-        conversa([
-          [R, 'QUADRA LIVRE — respeite quem chegou primeiro.'],
-          [A, 'Hoje só tem a gente.'],
-          [R, 'Então segura o F. A marca no chão mostra onde o disco vai cair, e o traço na barra é onde eu estou.'],
-          [A, 'E se eu quiser mostrar serviço?'],
-          [R, 'Acerta um dos aros. Ou uma cesta, se estiver se achando.'],
-        ]),
-    });
-
-    w.interact({
       id: 'parque:placar',
       x: QUADRA.x, z: qz0 + 2.6, radius: 2.2,
       label: 'Ver o placar', icon: '🔢',
@@ -5667,18 +5690,6 @@ export const villaLobos: SceneDef = {
             [A, 'Esse é o que passa no clube?'],
             [R, 'É esse. Já tá parado, é só subir.'],
           ]),
-    });
-
-    w.interact({
-      id: 'parque:placa-clube',
-      x: 35.4, z: 7.4, radius: 2.2,
-      label: 'Ler a placa', icon: '🪧',
-      highlight: placaClube,
-      onInteract: () =>
-        conversa([
-          [R, '"Clube!" — com exclamação e tudo.'],
-          [A, 'Quem escreveu isso tava animado.'],
-        ]),
     });
 
     // ----------------------------------------------------- outras interacoes

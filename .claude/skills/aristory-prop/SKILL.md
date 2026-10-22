@@ -63,7 +63,11 @@ export function guardaSol(cor: number = P.fabricRed): THREE.Group {
 6. **Nada de arquivo externo** — o repositório é 100% procedural. A única
    textura permitida é a desenhada em tempo de execução num `<canvas>`, como
    em `textSign()`: continua sendo código, nenhum `.png` entra no repositório.
-   Use `textSign('Clube!')` sempre que uma placa precisar ser legível.
+   **Mas placa de poste com o nome do lugar NÃO entra**: o Renan tirou todas
+   ("Pista de gelo", "Frisbee!", "Clube!", "Piscina", e antes a "Sucos") por
+   redundantes — o lugar bem feito já diz o que é. Texto legível mora na peça
+   (o letreiro do quiosque, o painel do ônibus); placa só quando ela mesma é a
+   graça (a "Proibido nadar" do lago, que tem conversa).
 7. Escala: uma pessoa tem 1,75 unidade. Banco 0,48 de assento, porta 2,1 de altura.
 
 ## Peça com balcão
