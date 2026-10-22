@@ -678,6 +678,60 @@ de dourado). `lamp()` e `bin()` do `props.ts` chamam `poste()` e
 - Tamanho dos antigos (poste com 0,25 de raio de pé, lixeira 0,27): os
   colisores das cenas continuam valendo.
 
+## A sorveteria do Mano e a mobília da praça de gelo (`world/sorveteriaDoMano.ts`)
+
+O quiosque do Mano no Villa Lobos virou um CHALEZINHO DE GELATERIA (era o
+`kiosk()` com cubas em cima; o `kiosk()` ficou só para o bar de sucos do
+clube). O molde de quiosque "com tema":
+
+- **O tema mora no telhado**: duas águas de ESCAMAS DE CHOCOLATE (canvas
+  `escamas()`, a ponta da escama apontando água abaixo) com a NEVE escorrendo
+  por cima feito cobertura — uma casca de geometria própria por água, beira
+  ondulada e dedos largos que descem (fino, o dedo virava dente de serra). A
+  grossura cai em raiz na beira e a casca termina 6 mm DENTRO da telha: a
+  beira é o cruzamento das duas, não uma faixa rente. A água do `−X` é a do
+  `+X` GIRADA meia volta em torno do meio do telhado (espelhar viraria do
+  avesso, e a `fundir()` não junta espelhada).
+- **Empena para a praça**: o lambrequim recortado (meia-lua e furinho; o lado
+  de lá é a forma refeita com `x` negativo — o `ExtrudeGeometry` acerta a
+  volta sozinho), o cordão de luzinhas pendurado nele, a placa em ARCO
+  (`formaDeArco`, a pintura com UV no retângulo) e a casquinha gigante
+  (`casquinhaGigante()`, bola com a saia ondulada da colher).
+- **A conta da empena**: lambrequim e luzinhas descem ~14 cm abaixo do
+  telhado, e a placa tem que caber DENTRO disso (meia largura 0,6, topo 2,43).
+  Mais larga, o lambrequim passava na frente dos ombros do arco.
+- **Balcão de gelateria**: frente CANELADA (planta com a borda em meias-luas
+  extrudada para cima), tampo de madeira avançando 32 cm, e a VITRINE DE
+  GELATO na borda da frente — oito cubas abertas (uma chapa de inox com oito
+  FUROS; o montinho de cada sabor nasce dentro do furo, 1 cm abaixo da chapa),
+  cada sabor com o seu enfeite (fruta, raspa, semente, rodela) e a paletinha.
+  Os sabores e a faixa dos nomes saem de `SABORES_DO_MANO`, a mesma lista da
+  lousa da lateral.
+- **O que a janela deixa ver é o que está a meio metro dela**: a câmera de
+  34° pela janela só alcança o tampo de dentro perto do vidro — a máquina de
+  sorvete expresso e a chapa de casquinha moram ali, e não no fundo.
+- **As medidas de antes ficam** (`SORVETERIA_DO_MANO`): o deque de 2,8 × 1,9
+  é o colisor, o tampo avança até 1,32, e o Mano continua do lado de FORA do
+  balcão, sem nada acima nem à frente dele.
+- **A mesinha** (`mesaDeSorveteria`): tampo de mármore com aro rosa, coluna de
+  balaústre torneada, pé de três patas de tubo com voluta, guarda-sol de gomos
+  que cedem entre as varetas — a beira corre RETA de vareta a vareta (a corda),
+  que é onde a saia em meia-lua pendura, e o alto da saia acompanha a barriga
+  da lona —, a taça de sundae (vidro torneado, chantilly de anéis) e o
+  porta-guardanapo. As medidas da cena ficam: cadeiras a ±0,78, tampo em
+  0,755, borda da lona em 2,25.
+- **A cadeirinha de coração** (`cadeirinhaDeSorveteria`): o encosto é a curva
+  do coração (`16 sen³t`, `13 cos t − 5 cos 2t − …`) num tubo fechado, com um
+  coração menor dentro; quatro pernas de arame, o aro do meio com as
+  voltinhas e a almofada torneada com covinha e botão. Assento em 0,44.
+  Dentro da mesa ela entra SEM etiqueta (a `fundir()` junta o ferro das duas
+  com o da mesa) e com `userData.cadeirinha`, que é o que o `gelo.mjs` conta.
+- **O peso**: arame de 1 cm com cinco lados de volta, furinho de lambrequim
+  sextavado, enfeite miúdo em esfera 6×4. O quiosque tem ~16,7 mil
+  triângulos e a mesinha ~7,6 mil; na vista da praça inteira, 644 → 472
+  desenhos por quadro (as peças agora passam pela `fundir()`) e 81 mil →
+  114 mil triângulos.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

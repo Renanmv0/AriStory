@@ -104,7 +104,7 @@ function pisoXadrez(): THREE.CanvasTexture {
  * Uma placa pintada em canvas (o letreiro, o "ALUGUEL", o "ABERTO", as
  * etiquetas de tamanho): o plano do tamanho pedido, olhando para `+Z`.
  */
-function placaPintada(
+export function placaPintada(
   largura: number, altura: number, pintar: (ctx: CanvasRenderingContext2D, W: number, H: number) => void,
   transparente = false,
 ): THREE.Mesh {
@@ -122,11 +122,11 @@ function placaPintada(
   );
 }
 
-const fonte = (px: number, italico = false): string =>
+export const fonte = (px: number, italico = false): string =>
   `${italico ? 'italic ' : ''}900 ${px}px ui-rounded, "Nunito", system-ui, sans-serif`;
 
 /** encolhe a letra até o texto caber em `ocupa` */
-function caber(ctx: CanvasRenderingContext2D, texto: string, tamanho: number, ocupa: number, italico = false): number {
+export function caber(ctx: CanvasRenderingContext2D, texto: string, tamanho: number, ocupa: number, italico = false): number {
   let t = tamanho;
   ctx.font = fonte(t, italico);
   while (t > 8 && ctx.measureText(texto).width > ocupa) {

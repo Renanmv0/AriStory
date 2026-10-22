@@ -426,6 +426,42 @@ pintarCom(w.patch(0, 0, 1, 1, P.asphalt, 0, 0.012, asfalto()), mancha(caminho, C
 - Calçada em volta de prédio é `retanguloRedondo(meiaX, meiaZ, raio)`, no
   lugar do retângulo do `patch`.
 
+## O gelo da praça do Mano: pista pintada, fundura e os riscos da dupla
+
+O rinque (`scenes/villaLobos.ts`, texturas em `world/texturasDeGelo.ts`,
+material `GeloDoRinque` em `core/shaders.ts`) é o molde para chão que tem que
+parecer MATÉRIA (gelo, vidro, água parada), e não tinta:
+
+- **Um decalque por camada, com a forma de quina redonda**: `w.patch` de
+  1 × 1 para o lugar na fila e `retanguloRedondo` no lugar da geometria (eram
+  doze `patch`/`disc` por camada). A neve pisada da beira usa `neveBatida()`.
+- **A pista é UM canvas do rinque inteiro** (`geloDaPista`), sem azulejo: os
+  riscos de patim dando a VOLTA (uma superelipse, mais densos na faixa onde se
+  patina), as voltinhas de quem girou, as freadas com o pó, a geada encostada
+  na borda e as lagoas de gelo limpo no meio. O fundo é um degrau ABAIXO do
+  branco: o material multiplica, e só assim a geada consegue ser mais clara
+  que o gelo. O `filter: blur` do canvas não existe em todo navegador — o
+  degradê da geada é feito de traços concêntricos cada vez mais finos.
+- **O azulejo miúdo** (`geloDetalhe`, 2 m) entra no shader em coordenada de
+  mundo, por cima da pista: sozinho, o canvas de 1024 px para 13 m borra de
+  perto.
+- **A fundura é paralaxe**: o desenho de DENTRO (`geloPorDentro`: nuvem funda
+  no vermelho, bolha e brilho no verde, a sombra da trinca no azul — é DADO,
+  sem espaço de cor) é lido no ponto onde o raio da câmera chega 12 cm (e 30
+  cm, na segunda camada) abaixo da superfície. A direção da câmera no
+  fragmento é `-vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2])` —
+  vale para a ortográfica. Girando a câmera, as trincas andam por baixo dos
+  riscos. Poucas trincas: com seis por azulejo o rinque lia como vidro
+  quebrado.
+- **O cintilar** é a faísca do lago, mais rara (um azulejo em doze), somada
+  no `RE_Direct`: vem na cor do sol e some na sombra.
+- **Os riscos da dupla**: o shader lê uma tela própria (canvas de dado,
+  ~39 px por metro) e a cena risca nela (`geloDaPraca.riscar`) por onde cada
+  um passa DE PATINS — um arco por passada, de um pé e do outro (o zigue-zague
+  de quem patina), mais branco quanto mais rápido. A tela sobe para a placa no
+  máximo quatro vezes por segundo, e só quando mudou. Descalço ninguém risca:
+  o `gelo.mjs` mede os dois.
+
 ## Andar de cima (o mezanino da boutique)
 
 O motor não tem "andar": a física de caminhada escreve só `x` e `z`, e a

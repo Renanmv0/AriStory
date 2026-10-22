@@ -6,13 +6,14 @@ import { FerrisWheel } from '../world/ferrisWheel';
 import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { fundir } from '../world/fundir';
+import { mesaDeSorveteria, sorveteriaDoMano, SORVETERIA_DO_MANO } from '../world/sorveteriaDoMano';
 import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/PingPong';
 import {
   aroDeFrisbee, bin, bleachers, bonecoDeNeve, bordaDeGelo, building, bus, busStop, bush,
   cestaDeBiscoitos, cestaDePiquenique, flamula, mesinhaDeXadrez,
   canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro,
-  fence, floodlight, flowers, iceCream, kiosk, lamp, marcaDeMira, meioFio, mesaDeSorveteria,
+  fence, floodlight, flowers, iceCream, lamp, marcaDeMira, meioFio,
   comidinhasDePiquenique, mesaPingPong, picnicTable, portaRetrato, posteDeGelo,
   raquete, toalhaDePiquenique,
   rock, sacoDeGraos, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
@@ -23,7 +24,8 @@ import {
 import { ARI, RENAN } from '../characters/cast';
 import { falarDoPremio } from '../world/falasDePremio';
 import { ITENS } from '../world/itens';
-import { asfalto, calcadaDePedrinha, gelo, tapeteDeGrama } from '../world/texturasDeChao';
+import { asfalto, calcadaDePedrinha, tapeteDeGrama } from '../world/texturasDeChao';
+import { geloDaPista, geloDetalhe, geloPorDentro, neveBatida } from '../world/texturasDeGelo';
 import { Mano } from '../entities/bichos/Mano';
 import { JeanLuc } from '../entities/bichos/JeanLuc';
 import type { Bicho } from '../entities/bichos/Bicho';
@@ -51,7 +53,7 @@ import { Garca, type PontoDePesca } from '../entities/bichos/Garca';
 import { TigreDagua, type LugarNoTronco } from '../entities/bichos/TigreDagua';
 import { CARGA_CERTA, FAIXA_CERTA, PedrinhaQuicando } from '../entities/Pedrinha';
 import { ARREMESSO, SOLTA_DO_ARREMESSO } from '../characters/CharacterRig';
-import { Vento } from '../core/shaders';
+import { GeloDoRinque, Vento } from '../core/shaders';
 import { LuzesDosPostes } from '../world/mobiliarioDoParque';
 import { BeiraDoCaminho, beiraTorta, caixaRedonda, capsula, cascalho, disco as largo, mancha, retanguloRedondo, ruidoLiso, uniaoSuave, type Distancia } from '../world/caminhos';
 import { PoteDeVagaLumes, VagaLumesSoltos } from '../world/poteDeVagaLumes';
@@ -1819,27 +1821,22 @@ export const villaLobos: SceneDef = {
     const SORVETERIA = { x: PRACA.x, z: 16.1 };
 
     /**
-     * Retângulo de cantos redondos, montado com dois `patch` cruzados e quatro
-     * `disc` nas quinas.
+     * Retângulo de cantos redondos, UM decalque só: o `patch` de 1 × 1 dá o
+     * lugar na fila de pintura do chão, e a forma de quina redonda
+     * (`retanguloRedondo`, em metros) entra no lugar da geometria dele — eram
+     * dois `patch` cruzados e quatro `disc` por camada, doze desenhos.
      *
-     * Rinque não tem quina viva, e um retângulo seco no meio do gramado lê como
-     * tapete jogado. São seis decalques por camada — e decalque nunca briga com
-     * decalque, então empilhar as camadas não custa piscada nenhuma.
+     * Rinque não tem quina viva, e um retângulo seco no meio do gramado lê
+     * como tapete jogado.
      */
     const lamina = (
       larg: number, prof: number, cor: number, altura: number, raio: number,
       textura?: THREE.Texture,
-    ): void => {
-      w.patch(PRACA.x, PRACA.z, larg, prof - raio * 2, cor, 0, altura, textura);
-      w.patch(PRACA.x, PRACA.z, larg - raio * 2, prof, cor, 0, altura, textura);
-      for (const sx of [-1, 1]) {
-        for (const sz of [-1, 1]) {
-          w.disc(
-            PRACA.x + sx * (larg / 2 - raio), PRACA.z + sz * (prof / 2 - raio),
-            raio, cor, altura, textura,
-          );
-        }
-      }
+    ): THREE.Mesh => {
+      const m = w.patch(PRACA.x, PRACA.z, 1, 1, cor, 0, altura, textura);
+      m.geometry.dispose();
+      m.geometry = retanguloRedondo(larg / 2, prof / 2, raio);
+      return m;
     };
 
     /*
@@ -1849,18 +1846,31 @@ export const villaLobos: SceneDef = {
      * matam a ideia: uma caixa com topo acima de zero enterra o pé de todo
      * mundo que pisa nela (o kit inteiro nasce com a base em `y = 0`), e um
      * chão translúcido deixa a GRAMA aparecer por baixo do rinque — verde por
-     * dentro do gelo. O brilho vem da textura (`gelo()`, riscos de patim e véu
-     * leitoso pintados em canvas), e o gelo com transparência de verdade mora
-     * nas peças que têm volume: o cristal, o caco da borda, a haste do poste.
+     * dentro do gelo. A transparência é de mentira e mora no shader
+     * (`GeloDoRinque`, em `core/shaders.ts`): as trincas e as bolhas "de
+     * dentro" são lidas deslocadas pela direção da câmera, e quando ela gira
+     * elas andam por baixo dos riscos — a fundura de uma lâmina de verdade.
+     * O desenho é o de `world/texturasDeGelo.ts`: a pista inteira num canvas
+     * só (os riscos dando a volta, a geada na beira, as lagoas de gelo limpo).
      *
      * Duas camadas: a neve pisada da beirada, e a lâmina por cima dela.
      */
-    lamina(PRACA.largura + 1.5, PRACA.profundidade + 1.5, P.geloSombra, 0.006, 2.9, gelo());
-    lamina(PRACA.largura, PRACA.profundidade, P.geloPiso, 0.01, 2.4, gelo());
-    // os riscos de quem já patinou aqui: dois arcos que se cruzam, no meio da
-    // arena. Anel pintado, e não dois discos — dois discos brigariam na borda
-    w.ring(PRACA.x - 0.9, PRACA.z + 1.3, 2.4, 0.11, 0xf4fdff, 0.014);
-    w.ring(PRACA.x + 1.4, PRACA.z + 0.3, 1.6, 0.09, 0xf4fdff, 0.016);
+    lamina(PRACA.largura + 1.5, PRACA.profundidade + 1.5, P.neveSombra, 0.006, 2.9, neveBatida());
+    const geloDaPraca = new GeloDoRinque({
+      cor: P.geloPiso,
+      pista: geloDaPista(PRACA.largura, PRACA.profundidade, 2.4),
+      detalhe: geloDetalhe(2),
+      ladoDoDetalhe: 2,
+      porDentro: geloPorDentro(3.2),
+      ladoPorDentro: 3.2,
+      corDoFundo: P.geloFundo,
+      centro: [PRACA.x, PRACA.z],
+      tamanho: [PRACA.largura, PRACA.profundidade],
+    });
+    const laminaDeGelo = lamina(PRACA.largura, PRACA.profundidade, P.geloPiso, 0.01, 2.4);
+    laminaDeGelo.material = geloDaPraca.material;
+    // o teste acha o gelo por aqui
+    laminaDeGelo.userData.geloDoRinque = geloDaPraca;
 
     /*
      * A BORDA: banco de neve baixo, com as quinas abertas.
@@ -1897,9 +1907,10 @@ export const villaLobos: SceneDef = {
     }
 
     // balcão virado para +Z: assim quem compra fica na frente do quiosque na
-    // tela, e não escondido atrás dele
-    w.add(w.place(kiosk(P.sorveteriaRosa, { tipo: 'sorvete' }), SORVETERIA.x, 0, SORVETERIA.z));
-    w.blockBox(SORVETERIA.x, SORVETERIA.z, 1.4, 0.95);
+    // tela, e não escondido atrás dele. O chalezinho (`world/sorveteriaDoMano.ts`)
+    // tem o deque do quiosque antigo, e o deque é o colisor
+    w.add(fundir(w.place(sorveteriaDoMano(), SORVETERIA.x, 0, SORVETERIA.z)));
+    w.blockBox(SORVETERIA.x, SORVETERIA.z, SORVETERIA_DO_MANO.meiaX, SORVETERIA_DO_MANO.meiaZ);
 
     /*
      * AS QUATRO MESINHAS, uma por quadrante da arena, todas olhando para o
@@ -1927,7 +1938,9 @@ export const villaLobos: SceneDef = {
     const MESINHAS: THREE.Group[] = [];
     for (const [mx, mz, sabor] of MESAS) {
       const mesinha = mesaDeSorveteria(P.sorveteriaRosa, sabor);
-      w.add(w.place(mesinha, mx, 0, mz, Math.atan2(SORVETERIA.x - mx, SORVETERIA.z - mz)));
+      // fundida: o grupo continua sendo a mesa (a âncora de sentar), só com
+      // menos malhas dentro
+      w.add(fundir(w.place(mesinha, mx, 0, mz, Math.atan2(SORVETERIA.x - mx, SORVETERIA.z - mz))));
       w.blockCircle(mx, mz, 1);
       MESINHAS.push(mesinha);
     }
@@ -2056,6 +2069,72 @@ export const villaLobos: SceneDef = {
         });
         cenaDoGelo = false;
       })();
+    });
+
+    /* ------------------------------------------- OS RISCOS QUE A DUPLA DEIXA
+     *
+     * De patins, cada um risca o gelo por onde passa — e o risco fica. A
+     * lâmina não risca em linha reta no meio do corpo: cada passada é um arco
+     * comprido de um pé, abrindo para o lado e voltando, e a do outro pé
+     * começa antes de essa acabar (o desenho de quem patina; com passada
+     * curta e sem cruzar, saía um tracejado de faixa de rua). Quem corre
+     * risca mais branco. A pé ninguém risca: escorrega.
+     *
+     * O relógio do gelo (o cintilar) anda aqui também.
+     */
+    const PASSADA = 1.1;
+    const patinadores = [0, 1].map(() => ({ ultimo: null as THREE.Vector3 | null, andado: 0 }));
+    /**
+     * Onde cada pé está para o lado do meio do corpo, `andado` metros depois:
+     * o pé de cada lado risca durante 1,3 passada (a ponta de uma passada
+     * cruza o começo da outra) e descansa no resto.
+     */
+    const pes = (andado: number): Array<number | null> => [0, 1].map((pe) => {
+      const fase = ((andado / PASSADA + pe) % 2) / 1.3;
+      if (fase > 1) return null;
+      const lado = pe ? 1 : -1;
+      return lado * (0.02 + 0.09 * Math.sin(fase * Math.PI));
+    });
+    w.onUpdate((dt) => {
+      geloDaPraca.tique(dt);
+      const calcado = dePatins();
+      [g.playerPosition(), g.companionPosition()].forEach((onde, i) => {
+        const p = patinadores[i];
+        if (!calcado || !noGelo(onde.x, onde.z)) {
+          p.ultimo = null;
+          return;
+        }
+        if (!p.ultimo) {
+          p.ultimo = onde.clone();
+          return;
+        }
+        const dx = onde.x - p.ultimo.x;
+        const dz = onde.z - p.ultimo.z;
+        const d = Math.hypot(dx, dz);
+        // parado (ou quase): espera juntar 4 cm antes de riscar
+        if (d < 0.04) return;
+        // salto de posição (cutscene, teleporte): recomeça dali
+        if (d > 1.2) {
+          p.ultimo = onde.clone();
+          return;
+        }
+        const a = p.andado;
+        const b = a + d;
+        const nx = -dz / d;
+        const nz = dx / d;
+        const forca = Math.min(0.55, 0.2 + (d / Math.max(dt, 1e-3)) * 0.05);
+        const antes = pes(a);
+        const agora = pes(b);
+        for (let pe = 0; pe < 2; pe++) {
+          const oa = antes[pe];
+          const ob = agora[pe];
+          // o pé que acabou de pousar (ou de levantar) não liga com o de antes
+          if (oa === null || ob === null) continue;
+          geloDaPraca.riscar(p.ultimo.x + nx * oa, p.ultimo.z + nz * oa, onde.x + nx * ob, onde.z + nz * ob, forca);
+        }
+        p.andado = b;
+        p.ultimo = onde.clone();
+      });
     });
 
     /**

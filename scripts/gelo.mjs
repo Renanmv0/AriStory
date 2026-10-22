@@ -53,15 +53,18 @@ const contagem = await page.evaluate(() => {
   window.jogo.scene.traverse((o) => {
     const p = o.userData?.peca;
     if (p) conta[p] = (conta[p] ?? 0) + 1;
+    // as cadeirinhas entram na mesa sem etiqueta (a fundir() junta o ferro
+    // delas com o da mesa): quem as marca é o `userData.cadeirinha`
+    if (o.userData?.cadeirinha) conta.cadeirinha = (conta.cadeirinha ?? 0) + 1;
   });
   return conta;
 });
 
 const ESPERADO = {
-  quiosque: 1,
+  sorveteria: 1,
   'mesa-de-sorveteria': 4,
   // duas por mesinha
-  'cadeirinha-de-sorveteria': 8,
+  cadeirinha: 8,
   'poste-de-gelo': 3,
   'boneco-de-neve': 1,
   'cristal-de-gelo': 4,
@@ -221,6 +224,21 @@ console.log('  nas mãos:', fim.maoDoAri, '+', fim.maoDoRenan, '· memórias:', 
  * um quarto de segundo.
  * ==================================================================== */
 
+/**
+ * ESPERA EM TEMPO DE JOGO. O navegador do teste chegou a rodar o jogo a 5% do
+ * relógio de parede (o parque ficou mais pesado e a máquina mais lenta): um
+ * empurrão de 2,4 s de parede virava um décimo de segundo de jogo, a dupla
+ * mal saía do lugar no gelo e o teste acusava "o gelo não escorrega" — na
+ * versão antiga e na nova, com o mesmo número. Esperando pelo relógio do
+ * jogo, a medida é da física, seja qual for a velocidade da máquina.
+ */
+const esperarJogo = async (segundos) => {
+  const t0 = await page.evaluate(() => window.jogo.elapsed);
+  for (let i = 0; i < 1500 && (await page.evaluate(() => window.jogo.elapsed)) - t0 < segundos; i++) {
+    await page.waitForTimeout(200);
+  }
+};
+
 const onde = () => page.evaluate(() => {
   const p = window.jogo.playerPosition();
   return [p.x, p.z, window.jogo.player.derrapagem];
@@ -242,12 +260,20 @@ const medirDeslize = async (x, z) => {
   await page.evaluate(([px, pz]) => window.jogo.debugPlace(px, pz, Math.PI), [x, z]);
   await page.waitForTimeout(2200);
   await page.keyboard.down('KeyS');
-  await page.waitForTimeout(2400);
-  // a velocidade de cruzeiro, medida com a tecla AINDA apertada
+  /*
+   * 0,8 s DE JOGO DE EMPURRÃO, e 0,2 de medida: a conta com que o teste foi
+   * calibrado (2,4 s de parede quando o jogo rodava a um terço). Mais que
+   * isso, a dupla de patins chega na mesinha de (16,6; 23,8), que fica bem na
+   * diagonal da corrida, e a medida pega a batida em vez da velocidade.
+   */
+  await esperarJogo(0.8);
+  // a velocidade de cruzeiro, medida com a tecla AINDA apertada (metros por
+  // segundo de jogo)
   const [vx, vz] = await onde();
-  await page.waitForTimeout(600);
+  const tv = await page.evaluate(() => window.jogo.elapsed);
+  await esperarJogo(0.2);
   const [wx, wz] = await onde();
-  const velocidade = Math.hypot(wx - vx, wz - vz);
+  const velocidade = Math.hypot(wx - vx, wz - vz) / ((await page.evaluate(() => window.jogo.elapsed)) - tv);
   /**
    * O PRIMEIRO PONTO É LIDO DEPOIS DE SOLTAR, e não antes: entre a leitura e o
    * `keyboard.up` passa uma ida e volta de `page.evaluate`, e nessa fresta a
@@ -276,7 +302,21 @@ const medirDeslize = async (x, z) => {
   return { deslize: Math.hypot(bx - ax, bz - az), velocidade, derrapagem };
 };
 
+/** quantos pixels a dupla já riscou no gelo (a tela dos riscos do shader) */
+const riscado = () => page.evaluate(() => {
+  let gelo = null;
+  window.jogo.scene.traverse((o) => { if (o.userData?.geloDoRinque) gelo = o.userData.geloDoRinque; });
+  if (!gelo) return -1;
+  const { width, height } = gelo.tela;
+  const px = gelo.tela.getContext('2d').getImageData(0, 0, width, height).data;
+  let n = 0;
+  for (let i = 0; i < px.length; i += 4) if (px[i] > 20) n++;
+  return n;
+});
+
 const noGelo = await medirDeslize(10.5, 17.5);
+// descalço ninguém risca: o pé escorrega, não crava
+const riscosDescalco = await riscado();
 const naGrama = await medirDeslize(18, -4.5);
 await page.screenshot({ path: `${OUT}-deslize.png` });
 
@@ -360,7 +400,7 @@ const viuPatinar = await page.evaluate(
  * oito de relógio. Sem a espera, a segunda passada cai dentro do intervalo do
  * primeiro grito e o teste conclui que a reação não existe.
  */
-await page.waitForTimeout(60000);
+await esperarJogo(7);
 await page.evaluate(([x, z]) => window.jogo.debugPlace(x, z, Math.PI), [10.5, 17.5]);
 await page.waitForTimeout(1500);
 /**
@@ -370,7 +410,8 @@ await page.waitForTimeout(1500);
 const avisos = new Set();
 let travou = false;
 await page.keyboard.down('KeyS');
-for (let i = 0; i < 14; i++) {
+const tPassada = await page.evaluate(() => window.jogo.elapsed);
+for (let i = 0; i < 400 && (i < 14 || (await page.evaluate(() => window.jogo.elapsed)) - tPassada < 1.4); i++) {
   await page.waitForTimeout(450);
   for (const t of await page.locator('.toast').allTextContents()) avisos.add(t);
   travou = travou || (await page.evaluate(() => window.jogo.player.locked));
@@ -388,6 +429,18 @@ console.log('o Mano vendo patinar — primeira conversa:', viuPatinar,
   '· giro máximo:', maiorGiro.toFixed(2), '· grito:', JSON.stringify(grito));
 
 const dePatins = await medirDeslize(10.5, 17.5);
+/*
+ * DE PATINS A LÂMINA RISCA: a tela dos riscos tem que ter ganhado traço (as
+ * passadas acima, de um lado e do outro). E a foto de perto, para ver o
+ * zigue-zague no gelo.
+ */
+const riscosDePatins = await riscado();
+await page.evaluate(() => window.jogo.setZoom(5));
+await page.waitForTimeout(4000);
+await page.screenshot({ path: `${OUT}-riscos.png` });
+if (riscosDescalco !== 0) erros.push(`descalço riscou o gelo (${riscosDescalco} pixels)`);
+if (riscosDePatins < 200) erros.push(`de patins o gelo não ganhou risco (${riscosDePatins} pixels)`);
+console.log('riscos no gelo — descalço:', riscosDescalco, '· de patins:', riscosDePatins);
 
 if (!noCorpo.patinando) erros.push('os patins não entraram no corpo');
 if (!noCorpo.parceiroDePatins) erros.push('o parceiro ficou sem patins — ele não acompanha');

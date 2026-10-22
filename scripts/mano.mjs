@@ -147,12 +147,22 @@ await page.waitForTimeout(900);
  * passaria com a dança da compra desligada. O `tombo` zerado aqui é o que faz
  * o pico medido lá embaixo valer alguma coisa.
  */
+/*
+ * A ESPERA É EM TEMPO DE JOGO (até 6 s dele): o navegador do teste chegou a
+ * rodar o jogo a 5% do relógio, e 15 s de parede eram três quartos de segundo
+ * de jogo — a dança de apresentação (1,8 s) ainda não tinha acabado, na
+ * versão antiga e na nova.
+ */
 let tomboAntesDaCompra = 1;
-for (let i = 0; i < 25; i++) {
-  const m = await oMano();
-  tomboAntesDaCompra = Math.abs(m?.tombo ?? 0);
-  if (tomboAntesDaCompra < 0.01) break;
-  await page.waitForTimeout(600);
+{
+  const t0 = await page.evaluate(() => window.jogo.elapsed);
+  for (let i = 0; i < 600; i++) {
+    const m = await oMano();
+    tomboAntesDaCompra = Math.abs(m?.tombo ?? 0);
+    if (tomboAntesDaCompra < 0.01) break;
+    if ((await page.evaluate(() => window.jogo.elapsed)) - t0 > 6) break;
+    await page.waitForTimeout(400);
+  }
 }
 
 /**
@@ -244,7 +254,13 @@ const antesDeAndar = await page.evaluate(() => {
  * `lockPlayer` saiu, e para isso basta a dupla SAIR DO LUGAR.
  */
 await page.keyboard.down('KeyW');
-await page.waitForTimeout(3000);
+{
+  // 1,2 s DE JOGO andando (3 s de parede chegaram a ser 0,15 s de jogo aqui)
+  const t0 = await page.evaluate(() => window.jogo.elapsed);
+  for (let i = 0; i < 600 && (await page.evaluate(() => window.jogo.elapsed)) - t0 < 1.2; i++) {
+    await page.waitForTimeout(200);
+  }
+}
 await page.keyboard.up('KeyW');
 const depoisDeAndar = await page.evaluate(() => {
   const p = window.jogo.playerPosition();
