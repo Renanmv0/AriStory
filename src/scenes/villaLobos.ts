@@ -7,14 +7,15 @@ import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { fundir } from '../world/fundir';
 import { mesaDeSorveteria, sorveteriaDoMano, SORVETERIA_DO_MANO } from '../world/sorveteriaDoMano';
+import { bonecoDeNeve, cristalDeGelo, posteDeGelo } from '../world/pracaDeGelo';
 import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/PingPong';
 import {
-  aroDeFrisbee, bin, bleachers, bonecoDeNeve, bordaDeGelo, building, bus, busStop, bush,
+  aroDeFrisbee, bin, bleachers, bordaDeGelo, building, bus, busStop, bush,
   cestaDeBiscoitos, cestaDePiquenique, flamula, mesinhaDeXadrez,
-  canteiro, capim, cloud, cone, cristalDeGelo, discBag, discGolfBasket, domoDeVidro,
+  canteiro, capim, cloud, cone, discBag, discGolfBasket, domoDeVidro,
   fence, floodlight, flowers, iceCream, lamp, marcaDeMira, meioFio,
-  comidinhasDePiquenique, mesaPingPong, picnicTable, portaRetrato, posteDeGelo,
+  comidinhasDePiquenique, mesaPingPong, picnicTable, portaRetrato,
   raquete, toalhaDePiquenique,
   rock, sacoDeGraos, scoreboard, signBoard, textSign, ticketBooth, tree, waterFountain, windsock,
   bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong,
@@ -1948,24 +1949,30 @@ export const villaLobos: SceneDef = {
     // os postes das quinas. Baixos (2,3) para não apagarem as mesinhas: cada
     // metro de poste esconde 1,5 de chão atrás dele nesta câmera
     for (const [px, pz] of [[8.4, 16.4], [19.2, 16.4], [8.6, 24.6]] as const) {
-      w.add(w.place(posteDeGelo(), px, 0, pz));
+      w.add(fundir(w.place(posteDeGelo(), px, 0, pz)));
       w.blockCircle(px, pz, 0.3);
     }
 
     /*
-     * A quarta quina é do boneco de neve, e ele OLHA PARA O VÃO DA ENTRADA.
+     * A quarta quina é do boneco de neve, e ele olha para o MEIO-TERMO entre o
+     * vão da entrada e a câmera.
      *
      * Virado para o meio da praça ele ficava de costas para a câmera padrão
      * (que vem de +X/+Z) e ninguém via o rosto — sobrava um monte de neve com
-     * cachecol. Olhando para a porta ele recebe quem chega, e o nariz de
-     * cenoura e o chapéu de casquinha aparecem.
+     * cachecol. Olhando direto para a porta ele recebia quem chega, mas da
+     * câmera de sempre (`(+0,7; +0,7)`) ainda se via a nuca e o nariz de
+     * perfil: a porta fica quase toda em `−X` dele. A bissetriz das duas
+     * direções deixa o rosto de três quartos para as duas — quem chega e quem
+     * olha a praça de cima vê o sorriso, as bochechas e a casquinha na mão.
      */
     const BONECO = { x: 19.1, z: 24.4 };
     const ENTRADA = { x: PRACA.x, z: PRACA.z + PRACA.profundidade / 2 };
-    w.add(w.place(
-      bonecoDeNeve(1), BONECO.x, 0, BONECO.z,
-      Math.atan2(ENTRADA.x - BONECO.x, ENTRADA.z - BONECO.z),
-    ));
+    {
+      const paraAPorta = new THREE.Vector2(ENTRADA.x - BONECO.x, ENTRADA.z - BONECO.z).normalize();
+      const paraACamera = new THREE.Vector2(Math.SQRT1_2, Math.SQRT1_2);
+      const olhar = paraAPorta.add(paraACamera);
+      w.add(fundir(w.place(bonecoDeNeve(1), BONECO.x, 0, BONECO.z, Math.atan2(olhar.x, olhar.y))));
+    }
     w.blockCircle(BONECO.x, BONECO.z, 0.55);
 
     // Tufos de cristal: dois ladeando o quiosque, dentro do rinque, e dois na
@@ -1975,7 +1982,7 @@ export const villaLobos: SceneDef = {
       [11.4, 15.4, 1.15, 0.2], [16.3, 15.5, 0.95, 0.62],
       [6.8, 20.8, 1.05, 0.41], [21.0, 21.2, 1.2, 0.88],
     ] as const) {
-      w.add(w.place(cristalDeGelo(esc, sem), cx, 0, cz, sem * 6.28));
+      w.add(fundir(w.place(cristalDeGelo(esc, sem), cx, 0, cz, sem * 6.28)));
       w.blockCircle(cx, cz, 0.45 * esc);
     }
 

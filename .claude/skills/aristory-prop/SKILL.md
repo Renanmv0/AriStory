@@ -732,6 +732,56 @@ clube). O molde de quiosque "com tema":
   desenhos por quadro (as peças agora passam pela `fundir()`) e 81 mil →
   114 mil triângulos.
 
+## Os enfeites da praça de gelo (`world/pracaDeGelo.ts`)
+
+O tufo de cristal, o poste de gelo e o boneco de neve da praça do Mano, na
+família da sorveteria. O que serve para qualquer peça de gelo ou neve:
+
+- **Gelo é LAPIDADO, não translúcido liso**: o `cristalino()`
+  (`core/shaders.ts`) é o toon com cor POR VÉRTICE (a peça pinta o degradê —
+  `degrade(geo, y0, y1)`: fundo azul embaixo, quase branco na ponta), um tico
+  translúcido e com a BORDA ACESA (fresnel: a faceta que vira de lado para a
+  câmera clareia). Com as faces chatas (`lapidar()`: sem índice, normal de
+  face), cada faceta acende de um jeito — é isso que lê cristal. A geometria
+  precisa do atributo `color` (sem ele o three lê preto).
+- **Lasca de cristal** (`lasca()`): prisma de seis faces afinando, com a ponta
+  de pirâmide fora do eixo e o anel de cima ondulado. O tufo junta a lasca
+  alta do meio, quatro a seis abrindo para fora (`inclinar(a, ângulo)`) e as
+  lasquinhas caídas numa malha só (transparente não entra na `fundir()`), em
+  cima de um `montinho()` de neve amassada, com um brilho frio pintado
+  (`pocaDeLuz`) em volta.
+- **Poste de gelo**: coluna de ESTRELA TORCIDA (12 pontos por anel, girando
+  1,3 volta de baixo a cima, sem índice — as facetas viram faixas em espiral),
+  bloco de gelo no pé, lanterna sextavada (bandeja e telhadinho torneados de
+  seis gomos, seis varetas, o miolo aceso, os pingentes e a lasca na ponta),
+  colarinhos de neve, halo e poça pintados. Continua baixo (2,4) e com o pé
+  dentro do colisor de 0,3.
+- **Neve amassada**: o ruído vai pela POSIÇÃO e a cor pelos vértices — o pé
+  de cada bola do boneco azulado (`P.neveFunda`), na sombra dela mesma —, e
+  as bolas, o montinho e as bolinhas de reserva são UMA malha
+  (`toon(0xffffff, { corPorVertice: true })`, o material das árvores).
+- **Rosto em cima da bola**: `naBola(i, dx, dy)` devolve o ponto da
+  superfície e a normal; pedrinha de carvão achatada deitada na normal, o
+  brilho do olho, a bochecha (disco 4 mm para fora) e a cenoura torneada com
+  os aneizinhos, apontada pela normal.
+- **Braço de galho é TUBO EM CURVA**, com os dedinhos. Um braço que acena tem
+  que subir QUASE EM PÉ: aberto para o lado ele apontava para a câmera (que
+  fica do lado `+x` do boneco virado), e a subida sumia no escorço — lia como
+  braço caído. A outra mão segura uma casquinha (`geoBolaDeSorvete` e
+  `waffle` vêm da sorveteria).
+- **O cachecol de tricô** (`trico()`, canvas: listras e ponto em V): a volta
+  é um toro, e as pontas são tiras dobradas sobre a barriga (cada vértice
+  posto na superfície da bola do meio) com o UV correndo no comprimento, e a
+  franjinha. Tira já dobrada na geometria vira `BufferGeometry` (caixa
+  deformada, o `zfighting.mjs` mede as duas pontas como a mesma caixa).
+- **Para onde ele olha**: a cena vira o boneco para a BISSETRIZ entre a
+  entrada da praça e a câmera — de frente para a porta, a câmera de sempre
+  via a nuca.
+- **O peso**: boneco ~5,8 mil triângulos (bolinha de 10 cm com 12 gomos,
+  pedrinha 7×5), poste ~1,7 mil, tufo ~0,4 mil; todos pela `fundir()` na
+  cena. Na vista da praça inteira, 472 → 441 desenhos e 113,9 mil → 122,2
+  mil triângulos.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

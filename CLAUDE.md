@@ -177,7 +177,9 @@ a toalha xadrez caindo nas pontas e o pendente de esmalte — ver "O Mania de
 Churrasco por dentro" na skill de peça. Para QUIOSQUE com tema, a sorveteria
 do Mano (`world/sorveteriaDoMano.ts`): telhado de escama de chocolate com a
 neve escorrendo em casca própria, lambrequim recortado com luzinhas, vitrine
-de gelato em cubas abertas e a cadeirinha de coração — e o gelo do rinque é o
+de gelato em cubas abertas e a cadeirinha de coração, e os enfeites da
+praça (`world/pracaDeGelo.ts`: cristal lapidado com a borda acesa, poste de
+estrela torcida, boneco de neve amassado) — e o gelo do rinque é o
 exemplo de CHÃO que parece matéria (`GeloDoRinque`: fundura por paralaxe,
 cintilar e os riscos que os patins deixam) — ver as seções na skill de peça
 e na de cenário.
