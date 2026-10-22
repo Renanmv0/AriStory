@@ -2124,12 +2124,12 @@ export const villaLobos: SceneDef = {
       });
     });
 
-    /**
-     * A placa da pista, ao lado do vão da borda — do lado de FORA da praça, na
-     * neve pisada, para não virar obstáculo no meio da porta.
+    /*
+     * A PLACA "PISTA DE GELO" SAIU (ficava em `11,4 / 26,7`, do lado de fora
+     * do vão da borda): o rinque, o banco de neve e a sorveteria já dizem o
+     * que o lugar é, e a placa de poste repetia isso na porta. O Renan pediu
+     * para tirar.
      */
-    w.add(w.place(textSign('Pista de gelo', P.geloFundo), 11.4, 0, 26.7, 0.2));
-    w.blockCircle(11.4, 26.7, 0.3);
 
     /**
      * O MANO, o pinguim sorveteiro — o primeiro bicho do parque.
