@@ -9,7 +9,7 @@ import {
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
   guarita, meioFio, muroDoClube, poolShell, poolWater, portaoDoClube, sebe,
-  showerPost, sunLounger, textSign,
+  showerPost, sunLounger,
   tree, vestiario as predioDoVestiario, waterFountain,
   dogWaiter, pratoServido,
 } from '../world/props';
@@ -1124,23 +1124,12 @@ export const clube: SceneDef = {
     w.blockBox(RUA.calcada + 0.7, ABRIGO, 0.4, 2.4);
     w.blockCircle(RUA.calcada - 0.5, ABRIGO - 2.65, 0.25); // o totem da parada
 
-    /**
-     * PLACAS. É o que mais faz um lugar parecer clube de verdade: o texto sai
-     * de um canvas em tempo de execução, que é a única "textura" que o projeto
-     * permite.
-     *
-     * A PLACA "SUCOS" SAIU, e ela ficava em `(-15,5 / 10,2)` — bem no meio da
-     * faixa em que o Noel passeia. O poste atravessava o peru, e o Renan viu na
-     * primeira foto que tirou dele. Também não fazia falta: o próprio quiosque
-     * já tem "Sucos" escrito no letreiro dele, então a placa de poste repetia a
-     * mesma informação a dois metros de distância.
+    /*
+     * AS PLACAS DE POSTE SAÍRAM. A "Sucos" ficava em `(-15,5 / 10,2)`, no meio
+     * da faixa em que o Noel passeia (o poste atravessava o peru), e repetia o
+     * letreiro do próprio quiosque. A "Piscina" (`3 / 9,6`) saiu junto com as
+     * do parque: o Renan achou redundante dar nome ao que já está na frente.
      */
-    for (const [texto, cor, x, z] of [
-      ['Piscina', P.fabricBlue, 3, 9.6],
-    ] as const) {
-      w.add(w.place(textSign(texto, cor), x, 0, z));
-      w.blockCircle(x, z, 0.25);
-    }
 
     /**
      * ======================= O JARDIM DA JOSEFINA, no gramado do fundo leste
