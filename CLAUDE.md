@@ -174,7 +174,13 @@ lenha em arco e a brasa acesa em lote, o inox escovado em canvas, a pia de
 duas cubas abertas com a ducha de mola, o balcão de moldura e almofada com
 tampo de granito, a estante do bar de garrafas torneadas em lote, a mesa com
 a toalha xadrez caindo nas pontas e o pendente de esmalte — ver "O Mania de
-Churrasco por dentro" na skill de peça.
+Churrasco por dentro" na skill de peça. Para QUIOSQUE com tema, a sorveteria
+do Mano (`world/sorveteriaDoMano.ts`): telhado de escama de chocolate com a
+neve escorrendo em casca própria, lambrequim recortado com luzinhas, vitrine
+de gelato em cubas abertas e a cadeirinha de coração — e o gelo do rinque é o
+exemplo de CHÃO que parece matéria (`GeloDoRinque`: fundura por paralaxe,
+cintilar e os riscos que os patins deixam) — ver as seções na skill de peça
+e na de cenário.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em
@@ -326,7 +332,7 @@ node scripts/adubo.mjs   /tmp/ad    # a quest que abre a estufa: sementes no ban
 node scripts/regador.mjs /tmp/rg    # o regador: os 3 estagios, cada melhoria mudando a peca, e pegar-regar-a Josefina chegar
 node scripts/pragas.mjs  /tmp/pg    # as treze pragas do jardim: retrato de cada uma, a silhueta dizendo o tier e a dupla do lado para o tamanho
 node scripts/jeitos.mjs  /tmp/jt    # o jeito de cada praga na rodada: o pulo, o voo, o portão trocado, a bolinha, a fila, as gotas aspiradas, o tonel bebido, a concha, a esponja, o filhote e o camelo bravo
-node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena, a mesinha servida pelo Mano, o deslize e a patinacao
+node scripts/gelo.mjs    /tmp/ge    # a praca de gelo: a arena (a sorveteria do Mano, as mesinhas e as cadeirinhas de coracao), a mesinha servida pelo Mano, o deslize, a patinacao e os riscos que os patins deixam no gelo (descalco nao risca)
 node scripts/cartas.mjs            # as cartas do jardim: nenhuma repete em mil rodadas, a curva de nivel e as ondas (sem navegador)
 node scripts/gotas.mjs   /tmp/gt    # as gotas no chao e a tela das tres cartas: pisar pega, sobe de nivel, escolhe em dois tempos, e uma mesa de cada raridade no computador e no celular
 node scripts/premioDeNivel.mjs /tmp/pn # as telas de prêmio do nível 5 e do 10 com o dedo nervoso (dois "pegar" em cada tela): nenhuma some, e a rodada volta a andar

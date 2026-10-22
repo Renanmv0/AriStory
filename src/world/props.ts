@@ -928,7 +928,7 @@ export function cloud(scale = 1): THREE.Group {
 }
 
 /** O que o quiosque vende: muda a vitrine do balcão e o enfeite do letreiro. */
-export type KioskTipo = 'simples' | 'sorvete' | 'suco';
+export type KioskTipo = 'simples' | 'suco';
 
 export interface KioskOpts {
   tipo?: KioskTipo;
@@ -1058,7 +1058,7 @@ export function kiosk(color: number = P.fabricRed, opts: KioskOpts = {}): THREE.
   g.add(lona);
 
   // ------------------------------------------------------------- letreiro
-  const texto = opts.texto ?? (tipo === 'sorvete' ? 'Sorvete' : tipo === 'suco' ? 'Sucos' : '');
+  const texto = opts.texto ?? (tipo === 'suco' ? 'Sucos' : '');
   const placa = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.5, 0.12), toon(color));
   placa.position.set(0, 2.3, -0.05);
   g.add(placa);
@@ -1072,37 +1072,7 @@ export function kiosk(color: number = P.fabricRed, opts: KioskOpts = {}): THREE.
   }
 
   // ------------------------------------------------- vitrine e enfeite alto
-  if (tipo === 'sorvete') {
-    // casquinha gigante em cima do letreiro: é o que se vê de longe
-    const gigante = iceCream(P.morango);
-    gigante.scale.setScalar(2.6);
-    gigante.position.set(0, 2.78, -0.05);
-    g.add(gigante);
-
-    // cuba aberta, como gelateria de verdade: vidro por cima ficaria tapando
-    // as bolas justo de onde a câmera olha
-    const bandeja = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.16, 0.56), toon(P.metalWhite));
-    bandeja.position.set(-0.58, 1.26, 1.06);
-    g.add(bandeja);
-    const sabores = [P.morango, P.maracuja, P.chocolate];
-    sabores.forEach((sabor, i) => {
-      const cuba = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.13, 0.22, 10), toon(P.metalWhite));
-      cuba.position.set(-1.0 + i * 0.36, 1.29, 1.06);
-      g.add(cuba);
-      const bola = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), toon(sabor));
-      bola.position.set(-1.0 + i * 0.36, 1.42, 1.06);
-      bola.scale.y = 0.8;
-      g.add(bola);
-    });
-
-    // pilha de casquinhas do outro lado do balcão
-    for (let i = 0; i < 3; i++) {
-      const casq = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 10), toon(0xd8a45c));
-      casq.position.set(0.72, 1.34 + i * 0.07, 1.04 + i * 0.02);
-      casq.rotation.x = Math.PI;
-      g.add(casq);
-    }
-  } else if (tipo === 'suco') {
+  if (tipo === 'suco') {
     // laranja gigante em cima do letreiro, com folhinha
     const fruta = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 10), toon(P.laranja));
     fruta.position.set(0, 2.85, -0.05);
@@ -4755,13 +4725,15 @@ export function ticketBooth(
  *
  * O quiosque de sorvete do parque estava sozinho num gramado vazio. Estas
  * peças montam a praça em volta dele: a borda de neve que fecha o rinque, o
- * cristal que enfeita as quinas, o poste baixo que ilumina, o boneco de neve
- * do canto e a mesinha de guarda-sol onde se senta para comer.
+ * cristal que enfeita as quinas, o poste baixo que ilumina e o boneco de neve
+ * do canto. O quiosque e a mesinha de guarda-sol moram em
+ * `world/sorveteriaDoMano.ts`.
  *
  * O GELO SÓLIDO É UM MATERIAL SÓ, e é `geloSolido()` logo abaixo: quase
  * branco, translúcido e com um fio de luz própria. Ele NÃO serve para o chão —
  * chão translúcido deixaria a grama aparecer por baixo do rinque. Lá o gelo é
- * decalque opaco com textura (`gelo()` em `world/texturasDeChao.ts`).
+ * decalque opaco com o shader `GeloDoRinque` (`core/shaders.ts`), que finge a
+ * fundura (as trincas de dentro andam com a câmera) sem deixar ver o chão.
  * ------------------------------------------------------------------------ */
 
 /**
@@ -5054,166 +5026,6 @@ export function bonecoDeNeve(escala = 1): THREE.Group {
   const cereja = new THREE.Mesh(new THREE.SphereGeometry(0.05, 7, 6), toon(P.cerejaDoMano));
   cereja.position.set(-0.03, 2.24, 0.02);
   corpo.add(cereja);
-
-  return g;
-}
-
-/**
- * Cadeirinha da praça de gelo: assento redondo, encosto de arco e três pés.
- *
- * Três pés e não quatro — é o que faz uma cadeira de sorveteria parecer leve
- * em vez de móvel de sala —, e o encosto é meio toro, que é a cadeira de ferro
- * torcido de padaria em uma malha só.
- */
-export function cadeirinhaDeSorveteria(cor: number = P.sorveteriaRosa): THREE.Group {
-  const g = new THREE.Group();
-  g.userData.peca = 'cadeirinha-de-sorveteria';
-  const ferro = toon(cor);
-
-  const assento = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.19, 0.06, 12), toon(P.sorveteriaCreme));
-  assento.position.y = 0.44;
-  g.add(assento);
-  // o aro do assento entra 1 cm abaixo do tampo: no mesmo topo os dois
-  // serrilhariam
-  const aro = new THREE.Mesh(new THREE.TorusGeometry(0.195, 0.025, 6, 16), ferro);
-  aro.rotation.x = Math.PI / 2;
-  aro.position.y = 0.42;
-  g.add(aro);
-
-  const encosto = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.025, 6, 14, Math.PI * 1.1), ferro);
-  encosto.position.set(0, 0.63, -0.14);
-  encosto.rotation.set(-0.22, 0, 0);
-  g.add(encosto);
-  for (const lado of [-1, 1]) {
-    const montante = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.24, 6), ferro);
-    montante.position.set(lado * 0.15, 0.54, -0.15);
-    g.add(montante);
-  }
-
-  for (let i = 0; i < 3; i++) {
-    const a = (i / 3) * Math.PI * 2 + Math.PI / 3;
-    const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.018, 0.44, 6), ferro);
-    pe.position.set(Math.cos(a) * 0.13, 0.22, Math.sin(a) * 0.13);
-    pe.rotation.set(-Math.sin(a) * 0.18, 0, Math.cos(a) * 0.18);
-    g.add(pe);
-  }
-  // o pezinho de borracha, para a cadeira não terminar em corte seco no chão
-  for (let i = 0; i < 3; i++) {
-    const a = (i / 3) * Math.PI * 2 + Math.PI / 3;
-    const sapata = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 5), toon(P.geloFundo));
-    sapata.position.set(Math.cos(a) * 0.17, 0.03, Math.sin(a) * 0.17);
-    g.add(sapata);
-  }
-  return g;
-}
-
-/**
- * A mesinha de sorveteria: tampo redondo, guarda-sol de babado e duas
- * cadeirinhas, uma de frente para a outra.
- *
- * DUAS CADEIRAS, e nos lados ±X: a peça entra na cena girada de frente para o
- * quiosque, então as duas cadeiras ficam de perfil para a câmera e nenhuma
- * delas tapa a outra nem o tampo.
- *
- * A ALTURA DO GUARDA-SOL É A CONTA DA PEÇA, e a primeira versão errou para
- * baixo. A lona começava em 1,71 — mais baixa que uma pessoa em pé (1,75) —, e
- * com a dupla SENTADA na mesa ela passava na frente dos dois: a câmera olha em
- * 34°, o raio que sai da cabeça de quem senta (1,3) sobe 0,67 por unidade
- * andada, e nesse ângulo ele batia na lona antes de sair de baixo dela.
- *
- * Agora a borda fica em 2,25, que é a altura de um guarda-sol de verdade
- * (2,3 para gente de 1,75), e o raio da cabeça de quem senta escapa por baixo
- * dela. Mais alto que isso a lona vira toldo de posto de gasolina; mais baixo,
- * ela come a cabeça de quem está do lado de lá da mesa.
- *
- * O babado da ponta são bolinhas alternadas, a mesma receita do toldo do
- * `kiosk()` — é o detalhe que faz a lona ler como doce em vez de barraca.
- *
- * @param cor a cor da loja (o rosa do quiosque, por padrão)
- * @param sabor a bola da taça em cima da mesa; `null` deixa a mesa vazia
- */
-export function mesaDeSorveteria(cor: number = P.sorveteriaRosa, sabor: number | null = P.morango): THREE.Group {
-  const g = new THREE.Group();
-  g.userData.peca = 'mesa-de-sorveteria';
-
-  // ----------------------------------------------------------------- mesa
-  const pe = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.3, 0.07, 14), toon(P.geloFundo));
-  pe.position.y = 0.035;
-  g.add(pe);
-  const coluna = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.68, 10), toon(cor));
-  coluna.position.y = 0.36;
-  g.add(coluna);
-  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.07, 18), toon(P.sorveteriaCreme));
-  tampo.position.y = 0.72;
-  g.add(tampo);
-  const beira = new THREE.Mesh(new THREE.TorusGeometry(0.455, 0.03, 6, 20), toon(cor));
-  beira.rotation.x = Math.PI / 2;
-  beira.position.y = 0.70;
-  g.add(beira);
-
-  // ---------------------------------------------------------- guarda-sol
-  const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.78, 8), toon(P.sorveteriaCreme));
-  haste.position.y = 1.5;
-  g.add(haste);
-
-  const FATIAS = 10;
-  const RAIO = 0.86;
-  const ALTURA = 0.34;
-  // A lona é feita em GOMOS abertos, um a um: um cone listrado precisaria de
-  // textura, e um cone chapado perde o ar de guarda-sol. Cada gomo é uma fatia
-  // de cone sem tampa, e as fatias alternam rosa e creme.
-  for (let i = 0; i < FATIAS; i++) {
-    const gomo = new THREE.Mesh(
-      new THREE.ConeGeometry(RAIO, ALTURA, 3, 1, true, (i / FATIAS) * Math.PI * 2, (Math.PI * 2) / FATIAS),
-      toon(i % 2 === 0 ? cor : P.sorveteriaCreme, { doubleSide: true }),
-    );
-    gomo.position.y = 2.42;
-    g.add(gomo);
-  }
-  // babado: uma bolinha por gomo, na ponta da lona
-  for (let i = 0; i < FATIAS; i++) {
-    const a = ((i + 0.5) / FATIAS) * Math.PI * 2;
-    const bolinha = new THREE.Mesh(
-      new THREE.SphereGeometry(0.075, 8, 6),
-      toon(i % 2 === 0 ? cor : P.sorveteriaCreme),
-    );
-    bolinha.position.set(Math.cos(a) * (RAIO - 0.05), 2.25, Math.sin(a) * (RAIO - 0.05));
-    bolinha.scale.set(1, 1.1, 1);
-    g.add(bolinha);
-  }
-  const ponteira = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), toon(P.gold));
-  ponteira.position.y = 2.63;
-  g.add(ponteira);
-
-  // -------------------------------------------------------------- a taça
-  if (sabor !== null) {
-    const taca = new THREE.Group();
-    taca.position.set(0.13, 0.755, -0.06);
-    const cuba = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.055, 0.09, 12), geloSolido(P.geloCristal, 0.8));
-    cuba.position.y = 0.045;
-    taca.add(cuba);
-    const bola = new THREE.Mesh(new THREE.SphereGeometry(0.075, 9, 7), toon(sabor));
-    bola.position.y = 0.115;
-    taca.add(bola);
-    const bolinha = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 6), toon(P.maracuja));
-    bolinha.position.set(0.05, 0.17, -0.03);
-    taca.add(bolinha);
-    const colher = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.16, 0.02), toon(P.metalGrey));
-    colher.position.set(-0.06, 0.13, 0.04);
-    colher.rotation.z = 0.4;
-    taca.add(colher);
-    g.add(taca);
-  }
-
-  // ---------------------------------------------------------- cadeirinhas
-  for (const lado of [-1, 1] as const) {
-    const cadeira = cadeirinhaDeSorveteria(cor);
-    cadeira.position.set(lado * 0.78, 0, 0);
-    // olhando para o centro da mesa: a cadeira nasce de frente para +Z, e o
-    // caminho dela até o centro é -X vezes o lado
-    cadeira.rotation.y = -lado * Math.PI * 0.5;
-    g.add(cadeira);
-  }
 
   return g;
 }

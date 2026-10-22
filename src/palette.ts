@@ -1392,6 +1392,20 @@ export const PALETTE = {
   // identidade de personagem, este e a cor da loja.
   sorveteriaRosa: 0xf6a6c0,
   sorveteriaCreme: 0xfdf3e7,
+  // o chalezinho do Mano (`world/sorveteriaDoMano.ts`): o telhado de escama
+  // é CHOCOLATE, com a neve escorrendo por cima feito cobertura de sorvete; a
+  // moldura, o rodapé do balcão e metade das luzinhas são verde-menta; e os
+  // quatro sabores novos da vitrine (os outros quatro já existiam)
+  sorveteriaTelhado: 0x6b4230,
+  sorveteriaMenta: 0x9fd9c6,
+  sorveteriaPistache: 0xbcd98a,
+  sorveteriaAcai: 0x7b4a86,
+  sorveteriaDoceDeLeite: 0xd9a066,
+  sorveteriaBaunilha: 0xfbe6b4,
+  /** o morango de verdade (a fruta em cima da cuba), mais fundo que o sorvete */
+  sorveteriaFruta: 0xe0394f,
+  /** a raspa de chocolate amargo e o miolo do confeito */
+  sorveteriaAmargo: 0x4a2c1d,
 
   // A arena de ping pong do Villa Lobos. O tablado reaproveita a madeira do
   // deque do clube (`dequeTabua`/`dequeRipa`/`dequeViga`) de proposito — os

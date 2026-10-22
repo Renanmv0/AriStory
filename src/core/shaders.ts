@@ -1204,3 +1204,216 @@ export class ChamaDeGas {
     return this.uniforms.uForca.value;
   }
 }
+
+// ============================================================ gelo do rinque
+
+export interface OpcoesDoGelo {
+  /** a cor do gelo (multiplica a pista) */
+  cor: number;
+  /** o desenho do rinque inteiro (`geloDaPista`): é o `map` do material */
+  pista: THREE.Texture;
+  /** o azulejo miúdo dos arranhões e da geada, e o tamanho dele em metros */
+  detalhe: THREE.Texture;
+  ladoDoDetalhe: number;
+  /** o POR DENTRO (dado: vermelho escurece para o fundo, verde clareia) */
+  porDentro: THREE.Texture;
+  ladoPorDentro: number;
+  /** o azul do gelo fundo, o que a trinca e a nuvem de baixo puxam */
+  corDoFundo: number;
+  /** onde fica o rinque e o tamanho dele (para os riscos da dupla) */
+  centro: readonly [number, number];
+  tamanho: readonly [number, number];
+}
+
+/** quantos pixels de risco por metro de rinque (a tela dos riscos) */
+const RISCOS_POR_METRO = 512 / 13.2;
+
+/**
+ * O GELO DO RINQUE: toon estendido (o degrau de luz, a sombra e a névoa
+ * continuam do three) em cima da pista pintada (`world/texturasDeGelo.ts`),
+ * com quatro coisas que só o shader faz:
+ *
+ *  - o DETALHE em coordenada de mundo, azulejo de 2 m multiplicado por cima
+ *    do desenho do rinque (que é um canvas só, de 1024 px para 13 m: sozinho
+ *    ele borra de perto);
+ *  - a FUNDURA: o desenho de dentro (trinca, estrela de batida, bolha presa,
+ *    a nuvem azul do gelo grosso) é lido DESLOCADO pela direção da câmera —
+ *    o ponto que está 12 cm debaixo da superfície, no raio que sai do olho.
+ *    Com a câmera parada isso é só um desenho; quando ela gira (Q/R), as
+ *    trincas andam por baixo dos riscos de patim, e é isso que faz o olho
+ *    ler gelo transparente e não piso pintado. Duas camadas, em escala e
+ *    fundura diferentes, para não repetir;
+ *  - o CINTILAR: faíscas que acendem e apagam cada uma no seu tempo, na cor
+ *    do sol e só onde o sol bate (a sombra recebida apaga) — a mesma faísca
+ *    da água do lago, mais miúda e mais rara;
+ *  - os RISCOS DA DUPLA: uma tela própria (canvas de dado) do tamanho do
+ *    rinque, onde a cena risca por onde a dupla passa de patins
+ *    (`riscar`). Ela sobe para a placa de vídeo no máximo quatro vezes por
+ *    segundo, e só quando mudou.
+ *
+ * O relógio é o `tique(dt)` da cena (pausa com o mundo).
+ */
+export class GeloDoRinque {
+  readonly material: THREE.MeshToonMaterial;
+  readonly uniforms: { uTempo: { value: number } };
+  private readonly tela: HTMLCanvasElement;
+  private readonly pincel: CanvasRenderingContext2D | null;
+  private readonly riscos: THREE.CanvasTexture;
+  private readonly centro: readonly [number, number];
+  private readonly tamanho: readonly [number, number];
+  private sujo = false;
+  private desdeAUltima = 0;
+
+  constructor(o: OpcoesDoGelo) {
+    this.centro = o.centro;
+    this.tamanho = o.tamanho;
+    this.tela = document.createElement('canvas');
+    this.tela.width = Math.round(o.tamanho[0] * RISCOS_POR_METRO);
+    this.tela.height = Math.round(o.tamanho[1] * RISCOS_POR_METRO);
+    this.pincel = this.tela.getContext('2d');
+    if (this.pincel) {
+      this.pincel.fillStyle = '#000000';
+      this.pincel.fillRect(0, 0, this.tela.width, this.tela.height);
+      this.pincel.lineCap = 'round';
+    }
+    this.riscos = new THREE.CanvasTexture(this.tela);
+    this.uniforms = { uTempo: { value: 0 } };
+    const u = this.uniforms;
+    const fixos = {
+      uDetalhe: { value: o.detalhe },
+      uLadoDoDetalhe: { value: o.ladoDoDetalhe },
+      uPorDentro: { value: o.porDentro },
+      uLadoPorDentro: { value: o.ladoPorDentro },
+      uCorDoFundo: { value: new THREE.Color(o.corDoFundo) },
+      uRiscos: { value: this.riscos },
+      uCentro: { value: new THREE.Vector2(o.centro[0], o.centro[1]) },
+      uTamanho: { value: new THREE.Vector2(o.tamanho[0], o.tamanho[1]) },
+    };
+
+    const mat = toon(o.cor, { decal: true, mapa: o.pista }).clone();
+    mat.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, u, fixos);
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vChaoDoGelo;')
+        .replace(
+          '#include <begin_vertex>',
+          `#include <begin_vertex>
+          vChaoDoGelo = (modelMatrix * vec4(transformed, 1.0)).xz;`,
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace(
+          '#include <common>',
+          `#include <common>
+          varying vec2 vChaoDoGelo;
+          uniform float uTempo;
+          uniform sampler2D uDetalhe;
+          uniform float uLadoDoDetalhe;
+          uniform sampler2D uPorDentro;
+          uniform float uLadoPorDentro;
+          uniform vec3 uCorDoFundo;
+          uniform sampler2D uRiscos;
+          uniform vec2 uCentro;
+          uniform vec2 uTamanho;
+          float geloSorte(vec2 c) { return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453); }
+          /* a faísca de um azulejo: um ponto com cruzinha, que acende e apaga no seu tempo */
+          float geloFaisca(vec2 p, float escala, float tempo, float semente, float pxNoMundo) {
+            vec2 c = p * escala;
+            vec2 id = floor(c);
+            vec2 f = fract(c) - 0.5;
+            float h = geloSorte(id + semente);
+            // um azulejo em doze: gelo cintila, não chuvisca
+            if (geloSorte(id + semente + 7.7) < 0.92) return 0.0;
+            vec2 onde = (vec2(geloSorte(id + semente + 1.7), geloSorte(id + semente + 3.1)) - 0.5) * 0.6;
+            float vida = pow(max(0.0, sin(tempo * (0.7 + h * 1.4) + h * 6.2831)), 16.0);
+            vec2 q = (f - onde) / max(vida, 0.001);
+            float px = pxNoMundo * escala / max(vida, 0.001);
+            float miolo = 1.0 - smoothstep(0.06, 0.06 + px * 1.5, length(q));
+            float cruz = (1.0 - smoothstep(0.01, 0.01 + px, min(abs(q.x), abs(q.y)))) * (1.0 - smoothstep(0.07, 0.24, length(q)));
+            return max(miolo, cruz * 0.8) * step(0.0001, vida);
+          }`,
+        )
+        .replace(
+          '#include <lights_toon_pars_fragment>',
+          `#include <lights_toon_pars_fragment>
+          vec3 geloBrilho = vec3(0.0);
+          float geloFaiscas = 0.0;
+          void RE_Direct_Gelo( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in ToonMaterial material, inout ReflectedLight reflectedLight ) {
+            RE_Direct_Toon( directLight, geometryPosition, geometryNormal, geometryViewDir, geometryClearcoatNormal, material, reflectedLight );
+            // na cor da luz, e só onde ela chega: a sombra recebida já vem descontada
+            geloBrilho += directLight.color * geloFaiscas * 0.75;
+          }
+          #undef RE_Direct
+          #define RE_Direct RE_Direct_Gelo`,
+        )
+        .replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+          {
+            vec2 mundo = vChaoDoGelo;
+            // o tamanho do pixel, em metros (fora de desvio: derivada)
+            float px = max(length(fwidth(mundo)) * 0.7071, 1e-4);
+
+            // o detalhe miúdo, por cima do desenho do rinque
+            diffuseColor.rgb *= texture2D(uDetalhe, mundo / uLadoDoDetalhe).rgb;
+
+            // A FUNDURA: o raio da câmera continua por baixo da superfície
+            vec3 frente = -vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2]);
+            vec2 porMetro = frente.xz / max(0.25, -frente.y);
+            // vermelho: a nuvem funda; verde: bolha e brilho de trinca; azul: a trinca
+            vec3 raso = texture2D(uPorDentro, (mundo + porMetro * 0.12) / uLadoPorDentro).rgb;
+            // a camada de baixo só traz a nuvem e as bolhas, noutra escala (sem repetir trinca)
+            vec3 fundo = texture2D(uPorDentro, (vec2(mundo.y, -mundo.x) + porMetro * 0.3) / (uLadoPorDentro * 1.7) + 0.37).rgb;
+            float escuro = max(raso.r, fundo.r * 0.7) * 0.7 + raso.b * 0.45;
+            float claro = raso.g * 0.55 + fundo.g * fundo.g * 0.18;
+            diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * uCorDoFundo, min(1.0, escuro));
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), claro);
+
+            // os riscos que a dupla deixou patinando
+            vec2 naPista = vec2((mundo.x - uCentro.x) / uTamanho.x + 0.5, 0.5 - (mundo.y - uCentro.y) / uTamanho.y);
+            float risco = texture2D(uRiscos, naPista).r;
+            diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), risco * 0.85);
+
+            geloFaiscas = geloFaisca(mundo, 2.6, uTempo, 0.0, px) + 0.6 * geloFaisca(mundo, 4.3, uTempo * 1.2, 4.2, px);
+          }`,
+        )
+        .replace(
+          '#include <lights_fragment_end>',
+          `#include <lights_fragment_end>
+          totalEmissiveRadiance += geloBrilho;`,
+        );
+    };
+    mat.customProgramCacheKey = () => 'gelo-do-rinque';
+    this.material = mat;
+  }
+
+  /**
+   * Um risco de patim de (x0, z0) até (x1, z1), em metros do mundo. `forca`
+   * de 0 a 1 é o quanto ele fica branco (quem corre risca mais fundo).
+   */
+  riscar(x0: number, z0: number, x1: number, z1: number, forca: number): void {
+    const p = this.pincel;
+    if (!p) return;
+    const W = this.tela.width;
+    const H = this.tela.height;
+    const sx = W / this.tamanho[0];
+    const sz = H / this.tamanho[1];
+    p.strokeStyle = `rgba(255,255,255,${Math.min(1, Math.max(0, forca))})`;
+    p.lineWidth = 1.2;
+    p.beginPath();
+    p.moveTo((x0 - this.centro[0]) * sx + W / 2, (z0 - this.centro[1]) * sz + H / 2);
+    p.lineTo((x1 - this.centro[0]) * sx + W / 2, (z1 - this.centro[1]) * sz + H / 2);
+    p.stroke();
+    this.sujo = true;
+  }
+
+  /** o relógio (o `dt` da cena) e a subida dos riscos novos, no máximo 4 por segundo */
+  tique(dt: number): void {
+    this.uniforms.uTempo.value += dt;
+    this.desdeAUltima += dt;
+    if (this.sujo && this.desdeAUltima > 0.25) {
+      this.riscos.needsUpdate = true;
+      this.sujo = false;
+      this.desdeAUltima = 0;
+    }
+  }
+}
