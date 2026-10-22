@@ -571,3 +571,179 @@ export function bonecoDeNeve(escala = 1): THREE.Group {
   }
   return g;
 }
+
+// ============================================================ A BORDA DO RINQUE
+
+/** um ponto do contorno de quina redonda, `s` metros depois do meio da frente: [x, z, nx, nz] (normal para fora) */
+function naVolta(hx: number, hz: number, r: number, s: number): [number, number, number, number] {
+  const reto = (comp: number): number => Math.max(0, comp);
+  const trechos: Array<{ comp: number; ponto: (u: number) => [number, number, number, number] }> = [];
+  const arco = (cx: number, cz: number, a0: number, a1: number): void => {
+    trechos.push({
+      comp: Math.abs(a1 - a0) * r,
+      ponto: (u) => {
+        const a = a0 + (a1 - a0) * u;
+        return [cx + Math.cos(a) * r, cz + Math.sin(a) * r, Math.cos(a), Math.sin(a)];
+      },
+    });
+  };
+  const linha = (x0: number, z0: number, x1: number, z1: number, nx: number, nz: number): void => {
+    trechos.push({ comp: reto(Math.hypot(x1 - x0, z1 - z0)), ponto: (u) => [x0 + (x1 - x0) * u, z0 + (z1 - z0) * u, nx, nz] });
+  };
+  // do meio da frente (+Z) para a direita, dando a volta
+  linha(0, hz, hx - r, hz, 0, 1);
+  arco(hx - r, hz - r, Math.PI / 2, 0);
+  linha(hx, hz - r, hx, -hz + r, 1, 0);
+  arco(hx - r, -hz + r, 0, -Math.PI / 2);
+  linha(hx - r, -hz, -hx + r, -hz, 0, -1);
+  arco(-hx + r, -hz + r, -Math.PI / 2, -Math.PI);
+  linha(-hx, -hz + r, -hx, hz - r, -1, 0);
+  arco(-hx + r, hz - r, Math.PI, Math.PI / 2);
+  linha(-hx + r, hz, 0, hz, 0, 1);
+  let resto = s;
+  for (const t of trechos) {
+    if (resto <= t.comp || t === trechos[trechos.length - 1]) return t.ponto(t.comp > 0 ? Math.min(1, resto / t.comp) : 0);
+    resto -= t.comp;
+  }
+  return trechos[0].ponto(0);
+}
+
+/**
+ * A BORDA DO RINQUE: um banco de neve CONTÍNUO correndo pelo contorno de
+ * quina redonda da lâmina (eram nove barras retas, com fresta em toda quina),
+ * aberto só no vão da frente — a porta da praça.
+ *
+ * - O corte é uma corcova de neve um tico mais íngreme do lado do gelo (a
+ *   neve que a máquina empurrou para a beira) e mais deitada para fora, com a
+ *   largura e a altura respirando pelo caminho e caroço pela posição; a cor
+ *   vai nos vértices — o pé azulado, o alto branco —, numa malha só.
+ * - No vão, as duas pontas sobem num MONTE DE PORTAL arredondado, cada um com
+ *   um tufo de cristal: é a porteira da praça, e quem chega do portão do
+ *   parque entra entre os dois.
+ * - Pelo caminho, pedaços de gelo lapidado (`cristalino()`) presos na neve:
+ *   um par de lascas aqui, um bloco meio enterrado ali — tudo uma malha.
+ *
+ * Continua BAIXA (uns 25 cm, 45 nos montes do portal) e sem colisor: é beira
+ * para tropeçar, não muro. A origem é o meio do rinque, e as medidas são as
+ * da lâmina de gelo (`meiaX`, `meiaZ`, `raio` da quina) — o banco nasce em
+ * cima da linha onde o gelo acaba.
+ *
+ * @param meiaPorta metade da largura do vão da frente
+ */
+export function bordaDeGelo(meiaX: number, meiaZ: number, raio: number, meiaPorta = 1.5): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'borda-de-gelo';
+  const rnd = sorteio(4040);
+  const total = 4 * (meiaX - raio) + 4 * (meiaZ - raio) + 2 * Math.PI * raio;
+  const s0 = meiaPorta;
+  const s1 = total - meiaPorta;
+  const PASSO = 0.16;
+  const fatias = Math.ceil((s1 - s0) / PASSO);
+  const CORTE = 9; // pontos no corte, de dentro (gelo) para fora (neve)
+  const PORTAL = 0.7; // quanto do caminho, em cada ponta, é o monte do portal
+  const clara = new THREE.Color(P.neveFofa);
+  const funda = new THREE.Color(P.neveFunda);
+  const tom = new THREE.Color();
+  const ruido = (s: number, k: number): number =>
+    Math.sin(s * 0.9 + k) * 0.5 + Math.sin(s * 2.3 + k * 1.7) * 0.3 + Math.sin(s * 5.1 + k * 2.9) * 0.2;
+
+  const pos: number[] = [];
+  const cor: number[] = [];
+  const idx: number[] = [];
+  for (let i = 0; i <= fatias; i++) {
+    const s = s0 + ((s1 - s0) * i) / fatias;
+    const [x, z, nx, nz] = naVolta(meiaX, meiaZ, raio, s);
+    let larg = 0.56 + 0.1 * ruido(s, 1.3);
+    let alto = 0.21 + 0.05 * ruido(s, 4.1) + 0.03 * Math.max(0, Math.sin(s * 3.7)) ** 6;
+    // o monte do portal nas duas pontas: sobe numa cúpula e baixa até sumir no chão
+    const ponta = Math.min(s - s0, s1 - s);
+    if (ponta < PORTAL) {
+      const d = ponta / PORTAL; // 0 na ponta, 1 onde o banco volta ao normal
+      const cupula = d < 0.5 ? Math.sqrt(Math.max(0, 1 - ((0.5 - d) / 0.5) ** 2)) : 1;
+      const monte = 0.44 * cupula;
+      const mistura = d < 0.5 ? 1 : 1 - (d - 0.5) / 0.5;
+      alto = alto + (monte - alto) * mistura;
+      larg *= 1 + 0.45 * mistura * cupula;
+    }
+    const desvio = 0.04 * ruido(s, 7.7);
+    for (let k = 0; k < CORTE; k++) {
+      const t = -1 + (2 * k) / (CORTE - 1);
+      // a corcova: o pico puxado para o lado do gelo (t negativo)
+      const c = -0.22;
+      const u = t < c ? (t - c) / (1 + c) : (t - c) / (1 - c);
+      const perfil = Math.pow(Math.max(0, 1 - u * u), t < c ? 0.55 : 0.85);
+      const caroco = 0.018 * Math.sin(s * 11 + t * 5) * Math.sin(s * 7 - t * 3) * perfil;
+      const y = alto * perfil + caroco - 0.03;
+      const lateral = t * larg * 0.5 + desvio;
+      pos.push(x + nx * lateral, y, z + nz * lateral);
+      const sobe = Math.min(1, Math.max(0, (y + 0.03) / Math.max(0.05, alto)));
+      tom.copy(funda).lerp(clara, sobe * sobe * (3 - 2 * sobe));
+      cor.push(tom.r, tom.g, tom.b);
+    }
+  }
+  for (let i = 0; i < fatias; i++) {
+    for (let k = 0; k < CORTE - 1; k++) {
+      const a = i * CORTE + k;
+      const b = a + CORTE;
+      idx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(cor, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  // a normal sai para o lado certo? (a volta corre no sentido horário visto de cima)
+  {
+    const n = geo.getAttribute('normal');
+    let somaY = 0;
+    for (let i = 0; i < n.count; i++) somaY += n.getY(i);
+    if (somaY < 0) {
+      for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2], idx[i + 1]];
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+    }
+  }
+  g.add(new THREE.Mesh(geo, toon(0xffffff, { corPorVertice: true })));
+
+  // ---------------------------------------- o gelo preso na neve, e o portal
+  const gelos: THREE.BufferGeometry[] = [];
+  /** onde fica o alto do banco em `s` (o pico da corcova, puxado para o gelo) */
+  const noAlto = (s: number, altura: number): THREE.Vector3 => {
+    const [x, z, nx, nz] = naVolta(meiaX, meiaZ, raio, s);
+    return v3(x - nx * 0.06, altura, z - nz * 0.06);
+  };
+  for (let s = s0 + PORTAL + 0.6; s < s1 - PORTAL - 0.6; s += 1.3 + rnd() * 1.2) {
+    const [, , nx, nz] = naVolta(meiaX, meiaZ, raio, s);
+    const fora = Math.atan2(nz, nx);
+    if (rnd() < 0.55) {
+      // um par de lascas abrindo para o gelo e para o lado
+      for (let k = 0; k < 2; k++) {
+        const r = 0.03 + rnd() * 0.025;
+        const alto = 0.1 + rnd() * 0.14;
+        const a = fora + Math.PI + (rnd() - 0.5) * 1.6;
+        gelos.push(posta(lasca(r, alto, r * 1.4, rnd()), noAlto(s + (k - 0.5) * 0.12, 0.1), inclinar(a, 0.4 + rnd() * 0.4)));
+      }
+    } else {
+      // um bloco de gelo meio enterrado, torto
+      const t = 0.1 + rnd() * 0.08;
+      const bloco = degrade(lapidar(new RoundedBoxGeometry(t, t * 0.8, t * 1.2, 1, 0.012)), -t * 0.4, t * 0.4);
+      gelos.push(posta(bloco, noAlto(s, 0.15), new THREE.Quaternion().setFromEuler(new THREE.Euler(rnd() * 0.8, rnd() * 3, rnd() * 0.8))));
+    }
+  }
+  // os dois tufos do portal, em cima dos montes
+  for (const s of [s0 + PORTAL * 0.45, s1 - PORTAL * 0.45]) {
+    const centro = noAlto(s, 0.3);
+    gelos.push(posta(lasca(0.06, 0.32, 0.1, rnd()), centro, inclinar(rnd() * 6.28, 0.1)));
+    for (let k = 0; k < 3; k++) {
+      const a = (k / 3) * Math.PI * 2 + rnd();
+      gelos.push(posta(
+        lasca(0.035 + rnd() * 0.02, 0.14 + rnd() * 0.12, 0.06, rnd()),
+        centro.clone().add(v3(Math.cos(a) * 0.07, -0.02, Math.sin(a) * 0.07)),
+        inclinar(a, 0.45 + rnd() * 0.3),
+      ));
+    }
+  }
+  g.add(new THREE.Mesh(mergeGeometries(gelos, false), cristalino()));
+  return g;
+}

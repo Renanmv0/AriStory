@@ -4723,81 +4723,11 @@ export function ticketBooth(
 /* ------------------------------------------------------------------------ *
  *                       A PRAÇA DE GELO DO MANO
  *
- * O quiosque de sorvete do parque estava sozinho num gramado vazio. Estas
- * peças montam a praça em volta dele: a borda de neve que fecha o rinque, o
- * cristal que enfeita as quinas, o poste baixo que ilumina e o boneco de neve
- * do canto. O quiosque e a mesinha de guarda-sol moram em
- * `world/sorveteriaDoMano.ts`.
- *
- * O GELO SÓLIDO É UM MATERIAL SÓ, e é `geloSolido()` logo abaixo: quase
- * branco, translúcido e com um fio de luz própria. Ele NÃO serve para o chão —
- * chão translúcido deixaria a grama aparecer por baixo do rinque. Lá o gelo é
- * decalque opaco com o shader `GeloDoRinque` (`core/shaders.ts`), que finge a
- * fundura (as trincas de dentro andam com a câmera) sem deixar ver o chão.
+ * As peças da praça de gelo moram fora daqui: o quiosque e a mesinha de
+ * guarda-sol em `world/sorveteriaDoMano.ts`, e a borda de neve, o cristal, o
+ * poste e o boneco de neve em `world/pracaDeGelo.ts`. O chão de gelo é o
+ * decalque com o shader `GeloDoRinque` (`core/shaders.ts`).
  * ------------------------------------------------------------------------ */
-
-/**
- * O gelo de verdade: translúcido e com brilho próprio.
- *
- * Duas coisas juntas, e as duas são necessárias. A OPACIDADE dá a leitura de
- * "dá para ver através" — sem ela um cristal branco fica igual a uma pedra
- * pintada de branco. O `glow` baixo devolve o que a transparência tira: um
- * corpo transparente recebe menos sombra visível e murcha no toon shading, e
- * um fio de emissivo faz ele voltar a acender na sombra do quiosque.
- *
- * Mais opaco que 0,7 e o efeito some; mais transparente e a peça vira um
- * fantasma que ninguém vê de longe.
- */
-function geloSolido(cor: number = P.geloCristal, opacidade = 0.68): THREE.MeshToonMaterial {
-  return toon(cor, { opacity: opacidade, glow: 0.16 });
-}
-
-/**
- * A borda do rinque: um banco de neve pisada, baixo e de topo redondo.
- *
- * Nasce deitada ao longo do Z, como o `meioFio()`, e tem 23 cm no ponto mais
- * alto — é degrau de tropeçar, não muro: a praça precisa ter beira sem ficar
- * cercada, e ninguém colide com ela. A primeira versão era mais alta e mais
- * estreita, e na foto de perto lia como um cano branco caído no chão; baixa e
- * larga, ela lê como neve empurrada para a beirada.
- *
- * O topo redondo é um cilindro deitado MAIS ESTREITO que a base (0,24 contra
- * 0,46 de largura), e ele desce um pouco abaixo do chão, então nenhuma face
- * dos dois cai no mesmo plano — é a regra de nunca encostar face com face,
- * resolvida por construção.
- *
- * @param comprimento quanto ela corre pelo Z
- */
-export function bordaDeGelo(comprimento = 6): THREE.Group {
-  const g = new THREE.Group();
-  g.userData.peca = 'borda-de-gelo';
-
-  const base = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.1, comprimento), toon(P.geloFundo));
-  base.position.y = 0.05;
-  g.add(base);
-
-  const lombo = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, comprimento - 0.06, 8),
-    toon(P.neveFofa),
-  );
-  lombo.rotation.x = Math.PI / 2;
-  lombo.position.y = 0.11;
-  g.add(lombo);
-
-  // pedaços de gelo encostados na neve, espaçados pelo comprimento: é o que
-  // tira a cara de tubo extrudado e diz que aquilo ali é gelo raspado
-  const pedras = Math.max(2, Math.round(comprimento / 2.2));
-  for (let i = 0; i < pedras; i++) {
-    const t = -comprimento / 2 + (comprimento * (i + 0.5)) / pedras;
-    const chanfro = 0.08 + ((i * 37) % 7) / 60;
-    const caco = new THREE.Mesh(new THREE.IcosahedronGeometry(chanfro, 0), geloSolido());
-    caco.position.set(((i % 2) - 0.5) * 0.2, 0.18, t);
-    caco.rotation.set(i * 1.1, i * 0.7, i * 0.4);
-    g.add(caco);
-  }
-  return g;
-}
-
 
 /* ======================================================================
  *        A MESA POSTA DA FESTA DO CAMPEÃO — toalha, comida e retrato
