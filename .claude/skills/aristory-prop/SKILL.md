@@ -805,7 +805,9 @@ praça do Mano, na família da sorveteria. O que serve para qualquer peça de ge
 
 A reforma de outubro da área da roda do Villa Lobos ("mais detalhado e mais
 bonito"), na família de parque de diversão: branco de treliça, vermelho de
-circo (`P.rodaVermelho`), dourado e cinco tons de algodão-doce.
+circo (`P.rodaVermelho`) e dourado. As gôndolas são BRANCAS: o Renan pediu,
+porque no parque de verdade elas são — uma primeira versão em cinco tons de
+algodão-doce saiu.
 
 - **O aro é treliça fundida à mão** (`juntar()` no arquivo: extrusão sem
   índice e cilindro com índice numa malha só): dois anéis por lado com o
@@ -820,8 +822,7 @@ circo (`P.rodaVermelho`), dourado e cinco tons de algodão-doce.
   cubo subiu 30 cm para a de baixo passar acima da laje. O interior desce
   junto (`PISO` = piso da casca − `CAIDA`; a cena lê `FerrisWheel.PISO`).
 - **32 gôndolas em QUATRO lotes** (corpo, acabamento, vidro e forquilha),
-  com a matriz refeita no `layout()`: o corpo é branco e a cor sai da cópia
-  (`setColorAt`, cinco cores em rodízio); o acabamento (aros da janela,
+  com a matriz refeita no `layout()`: o corpo é branco; o acabamento (aros da janela,
   caixilho, coração na barriga, bolinhas douradas) tem a cor nos vértices. A
   cabine com gente perde a forquilha e o caixilho (matriz de escala zero): de
   dentro eles tapavam a vista. `frustumCulled = false`, porque elas andam.

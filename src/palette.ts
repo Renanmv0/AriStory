@@ -1371,15 +1371,10 @@ export const PALETTE = {
   cabineEsquadria: 0xeef3f6,
   cabineLuz: 0xffe9b8,
 
-  // A RODA GIGANTE por fora (a reforma de outubro): as gôndolas em cinco tons
-  // de algodão-doce, que é o que a faz ler como parque de diversão de longe; o
-  // vermelho de circo da coroa, do miolo e da bilheteria, e o piso de mosaico
-  // em raios da laje (creme e terracota clarinho).
-  rodaRosa: 0xf4a3b8,
-  rodaMenta: 0x96d9c3,
-  rodaAmarelo: 0xffd56b,
-  rodaAzul: 0x8cc2ef,
-  rodaLilas: 0xc2a6e6,
+  // A RODA GIGANTE por fora (a reforma de outubro). As gôndolas ficam no
+  // `metalWhite`: no parque de verdade elas são brancas. Aqui moram o vermelho
+  // de circo da coroa, do miolo e da bilheteria, o piso de mosaico em raios da
+  // laje (creme e terracota clarinho) e o veludo da fila.
   rodaVermelho: 0xd9473f,
   rodaMosaicoClaro: 0xf3ead9,
   rodaMosaicoEscuro: 0xe2a184,

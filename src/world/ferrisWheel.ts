@@ -171,8 +171,6 @@ function pisoDeMosaico(): THREE.CanvasTexture {
 const CAIDA = 1.35;
 /** o piso da cabine, medido do centro da casca (o interior foi feito nesta régua) */
 const PISO_DA_CASCA = -0.34;
-/** as cinco cores de algodão-doce das gôndolas, uma depois da outra */
-const CORES_DAS_CABINES = [P.rodaRosa, P.rodaMenta, P.rodaAmarelo, P.rodaAzul, P.rodaLilas];
 
 /**
  * A roda gigante do Villa Lobos, em versao fofa.
@@ -187,9 +185,9 @@ const CORES_DAS_CABINES = [P.rodaRosa, P.rodaMenta, P.rodaAmarelo, P.rodaAzul, P
  *   bicicleta) e a roseta de pétalas com o miolo dourado no centro;
  * - as LUZINHAS dão a volta no aro e na coroa: um lote só, acesas pelo
  *   material, girando junto;
- * - as CABINES são gôndolas penduradas (a `CAIDA`), em cinco cores de
- *   algodão-doce, com o coração na barriga, o caixilho da janela e a
- *   forquilha até o eixo. São QUATRO LOTES para as 32 (corpo, acabamento,
+ * - as CABINES são gôndolas penduradas (a `CAIDA`), BRANCAS como as do
+ *   parque de verdade (o Renan conferiu), com o coração na barriga, o
+ *   caixilho da janela e a forquilha até o eixo. São QUATRO LOTES para as 32 (corpo, acabamento,
  *   vidro e forquilha): a matriz de cada uma é refeita por quadro, e a âncora
  *   de cada cabine continua sendo um `Group` — é nele que a dupla monta;
  * - as PERNAS viraram dois cavaletes de treliça (as pernas afinando, as
@@ -317,7 +315,7 @@ export class FerrisWheel {
     // ------------------------------------------------------------ cabines
     /*
      * A GÔNDOLA, em quatro lotes. O corpo (a bacia de baixo e o domo de cima)
-     * é branco e ganha a cor da cabine pela cor da cópia; o acabamento (os
+     * é branco, como no parque de verdade; o acabamento (os
      * aros da janela, o caixilho, o coração, a bolinha do domo) tem a cor
      * pintada nos vértices; o vidro é a faixa da janela; e a forquilha vai do
      * domo até o eixo. Tudo em volta da âncora: o corpo mora `CAIDA` abaixo.
@@ -368,19 +366,16 @@ export class FerrisWheel {
       this.group.add(m);
       return m;
     };
-    this.corpos = lote(geoCorpo, toon(0xffffff));
+    this.corpos = lote(geoCorpo, toon(opts.cabinColor ?? P.metalWhite));
     this.acabamentos = lote(geoAcabamento, toon(0xffffff, { corPorVertice: true }));
     this.vidros = lote(geoVidro, toon(P.glass, { opacity: 0.45 }));
     this.vidros.userData.semSombra = true;
-    this.forquilhas = lote(geoForquilha, toon(opts.cabinColor ?? P.metalGrey));
-    const cor = new THREE.Color();
+    this.forquilhas = lote(geoForquilha, toon(P.metalGrey));
     for (let i = 0; i < count; i++) {
-      this.corpos.setColorAt(i, cor.set(CORES_DAS_CABINES[i % CORES_DAS_CABINES.length]));
       const ancora = new THREE.Group();
       this.cabins.push(ancora);
       this.group.add(ancora);
     }
-    if (this.corpos.instanceColor) this.corpos.instanceColor.needsUpdate = true;
     this.interior = this.montarOInterior();
     this.interior.position.y = -CAIDA;
     this.group.add(this.interior);
