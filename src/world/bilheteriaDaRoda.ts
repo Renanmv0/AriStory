@@ -162,9 +162,12 @@ export function bilheteriaDaRoda(texto = 'BILHETES'): THREE.Group {
     travessa.position.set(0, y, zj - 0.06);
     g.add(travessa);
   }
+  // os montantes moram ENTRE as travessas (a ponta dentro delas), saem 2 cm
+  // para o lado e 2 cm para a frente e para trás: casando as medidas, as
+  // faces das quinas dividiam o mesmo plano e serrilhavam
   for (const lado of [-1, 1] as const) {
-    const montante = new THREE.Mesh(new THREE.BoxGeometry(0.09, JY1 - JY0 + 0.16, 0.3), branco);
-    montante.position.set(lado * (JX + 0.055), (JY0 + JY1) / 2, zj - 0.06);
+    const montante = new THREE.Mesh(new THREE.BoxGeometry(0.09, JY1 - JY0 + 0.08, 0.34), branco);
+    montante.position.set(lado * (JX + 0.075), (JY0 + JY1) / 2, zj - 0.06);
     g.add(montante);
   }
   const meio = new THREE.Mesh(new THREE.BoxGeometry(0.035, JY1 - JY0 - 0.14, 0.04), branco);
