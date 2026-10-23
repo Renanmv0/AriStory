@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, ItemDef, SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
+import { bilheteriaDaRoda } from '../world/bilheteriaDaRoda';
 import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { fundir } from '../world/fundir';
@@ -17,7 +18,7 @@ import {
   fence, floodlight, flowers, iceCream, lamp, marcaDeMira, meioFio,
   comidinhasDePiquenique, mesaPingPong, picnicTable, portaRetrato,
   raquete, toalhaDePiquenique,
-  rock, sacoDeGraos, scoreboard, signBoard, ticketBooth, tree, waterFountain, windsock,
+  rock, sacoDeGraos, scoreboard, signBoard, tree, waterFountain, windsock,
   bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong,
   quadroDeInscricoes, suporteDeRaquetes,
   vasoDePlanta,
@@ -345,7 +346,7 @@ export const villaLobos: SceneDef = {
      */
     const BILHETERIA = { x: 10.6, z: -20.4 };
     pintarCom(w.patch(BILHETERIA.x, -16.9, 1, 1, P.concrete, 0, 0.018, calcadaDePedrinha()), retanguloRedondo(3.2, 3.3, 1.0));
-    const bilheteria = w.add(w.place(ticketBooth(), BILHETERIA.x, 0, BILHETERIA.z));
+    const bilheteria = w.add(fundir(w.place(bilheteriaDaRoda(), BILHETERIA.x, 0, BILHETERIA.z)));
     w.blockBox(BILHETERIA.x, BILHETERIA.z, 1.53, 1.08);
 
     /**

@@ -71,6 +71,16 @@ const alturaDaCamera = () =>
  * conta quantas pecas da roda estao translucidas — tem que ser muitas durante
  * o passeio e NENHUMA depois, senao a roda fica de vidro para sempre.
  */
+/*
+ * O aro agora é FUNDIDO (a treliça branca, o vermelho, o dourado e o lote das
+ * luzinhas): conta-se quantas malhas o grupo `aro` tem, e todas viram vidro.
+ */
+const pecasDoAro = () =>
+  page.evaluate(() => {
+    let n = 0;
+    window.jogo.scene.getObjectByName('aro')?.traverse((f) => { if (f.material) n++; });
+    return n;
+  });
 const pecasDeVidro = () =>
   page.evaluate(() => {
     let n = 0;
@@ -155,7 +165,7 @@ process.exit(
     !primeiraPessoa ||
     !olhouEmVolta ||
     !voltouAIsometrica ||
-    vidroNoPasseio < 10 ||
+    vidroNoPasseio < Math.max(3, await pecasDoAro()) ||
     vidroDepois !== 0
     ? 1
     : 0,
