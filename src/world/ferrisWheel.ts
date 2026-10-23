@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { toon, flat, line } from '../core/materials';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { toon, flat } from '../core/materials';
 import { letreiro } from './props';
 import { PALETTE as P } from '../palette';
 
@@ -14,29 +15,187 @@ export interface FerrisWheelOptions {
   frameColor?: number;
 }
 
-/** Liga dois pontos com um cilindro: usado nas pernas e nos montantes. */
-function strut(
-  from: THREE.Vector3,
-  to: THREE.Vector3,
-  radius: number,
-  material: THREE.Material,
-): THREE.Mesh {
-  const dir = new THREE.Vector3().subVectors(to, from);
-  const len = dir.length();
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius * 1.15, len, 8), material);
-  mesh.position.copy(from).addScaledVector(dir, 0.5);
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
-  return mesh;
+const TAU = Math.PI * 2;
+const V = (x: number, y: number, z: number): THREE.Vector3 => new THREE.Vector3(x, y, z);
+const EIXO_Y = V(0, 1, 0);
+const V2 = (x: number, y: number): THREE.Vector2 => new THREE.Vector2(x, y);
+
+/** Cilindro de `a` até `b` (raio `r` em `a`, `r2` em `b`), sem tampa: a ponta mora dentro de outra peça. */
+function tubo(a: THREE.Vector3, b: THREE.Vector3, r: number, gomos = 6, r2 = r, tampa = false): THREE.BufferGeometry {
+  const d = new THREE.Vector3().subVectors(b, a);
+  const geo = new THREE.CylinderGeometry(r2, r, d.length(), gomos, 1, !tampa);
+  geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(EIXO_Y, d.normalize()));
+  geo.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+  return geo;
 }
+
+/**
+ * Junta geometrias de origens diferentes numa só: extrusão (sem índice) com
+ * cilindro e toro (com índice), guardando só o que o material lê.
+ */
+function juntar(geos: THREE.BufferGeometry[], comUv = false, comCor = false): THREE.BufferGeometry {
+  const prontas = geos.map((g) => {
+    const n = g.index ? g.toNonIndexed() : g;
+    for (const nome of Object.keys(n.attributes)) {
+      if (nome === 'position' || nome === 'normal') continue;
+      if ((nome === 'uv' && comUv) || (nome === 'color' && comCor)) continue;
+      n.deleteAttribute(nome);
+    }
+    return n;
+  });
+  const geo = mergeGeometries(prontas, false);
+  if (!geo) throw new Error('roda gigante: geometrias que não juntam');
+  return geo;
+}
+
+/** Pinta a geometria inteira de uma cor (para a malha de cor por vértice). */
+function pintar(geo: THREE.BufferGeometry, cor: number): THREE.BufferGeometry {
+  const c = new THREE.Color(cor);
+  const n = geo.attributes.position.count;
+  const arr = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) arr.set([c.r, c.g, c.b], i * 3);
+  geo.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+  return geo;
+}
+
+/** Coração extrudado, de pé no plano XY, com a frente em +Z. */
+function geoCoracao(t: number, prof: number): THREE.BufferGeometry {
+  const s = new THREE.Shape();
+  s.moveTo(0, -0.5 * t);
+  s.bezierCurveTo(-0.15 * t, -0.3 * t, -0.5 * t, -0.05 * t, -0.5 * t, 0.18 * t);
+  s.bezierCurveTo(-0.5 * t, 0.42 * t, -0.22 * t, 0.52 * t, 0, 0.3 * t);
+  s.bezierCurveTo(0.22 * t, 0.52 * t, 0.5 * t, 0.42 * t, 0.5 * t, 0.18 * t);
+  s.bezierCurveTo(0.5 * t, -0.05 * t, 0.15 * t, -0.3 * t, 0, -0.5 * t);
+  return new THREE.ExtrudeGeometry(s, { depth: prof, bevelEnabled: false, curveSegments: 6 });
+}
+
+/** Lâmpadas de parque: UM lote, acesas pelo material. */
+function lampadas(pontos: THREE.Vector3[], raio: number): THREE.InstancedMesh {
+  const lote = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(raio, 8, 6), toon(P.luzDoPortao, { glow: 0.9 }), pontos.length,
+  );
+  const m = new THREE.Matrix4();
+  pontos.forEach((p, i) => lote.setMatrixAt(i, m.makeTranslation(p.x, p.y, p.z)));
+  lote.instanceMatrix.needsUpdate = true;
+  lote.userData.semSombra = true;
+  lote.castShadow = false;
+  return lote;
+}
+
+/** Corda de veludo (ou corrente) que cede entre dois postes. */
+function corda(a: THREE.Vector3, b: THREE.Vector3, cede: number, r: number): THREE.BufferGeometry {
+  const meio = a.clone().lerp(b, 0.5);
+  meio.y -= cede * 2;
+  const curva = new THREE.QuadraticBezierCurve3(a, meio, b);
+  return new THREE.TubeGeometry(curva, 10, r, 5, false);
+}
+
+/**
+ * O PISO DE MOSAICO da laje, em raios: o chão de carrossel antigo. Desenhado
+ * uma vez num canvas e mapeado no disco do topo (o UV do `CircleGeometry` é o
+ * quadrado inteiro, então o desenho é redondo e cabe certinho).
+ */
+let mosaico: THREE.CanvasTexture | null = null;
+function pisoDeMosaico(): THREE.CanvasTexture {
+  if (mosaico) return mosaico;
+  const L = 1024;
+  const m = L / 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = L;
+  const ctx = canvas.getContext('2d')!;
+  const css = (n: number): string => `#${n.toString(16).padStart(6, '0')}`;
+  ctx.fillStyle = css(P.rodaMosaicoClaro);
+  ctx.fillRect(0, 0, L, L);
+  // os raios, do miolo até a borda
+  const GOMOS = 32;
+  ctx.fillStyle = css(P.rodaMosaicoEscuro);
+  for (let i = 0; i < GOMOS; i += 2) {
+    ctx.beginPath();
+    ctx.moveTo(m, m);
+    ctx.arc(m, m, m * 0.985, (i / GOMOS) * TAU, ((i + 1) / GOMOS) * TAU);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // o miolo e as duas faixas de ladrilho, uma no meio e uma na borda
+  const anel = (r0: number, r1: number, cor: string): void => {
+    ctx.beginPath();
+    ctx.arc(m, m, m * r1, 0, TAU);
+    ctx.arc(m, m, m * r0, 0, TAU, true);
+    ctx.fillStyle = cor;
+    ctx.fill();
+  };
+  anel(0, 0.2, css(P.rodaMosaicoClaro));
+  anel(0.2, 0.235, css(P.rodaVermelho));
+  anel(0.55, 0.6, css(P.rodaMosaicoEscuro));
+  anel(0.9, 0.985, css(P.rodaVermelho));
+  // o rejunte: anéis e raios finos e claros, que dizem "ladrilho" de perto
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.lineWidth = 2;
+  for (let r = 0.235; r < 0.9; r += 0.046) {
+    ctx.beginPath();
+    ctx.arc(m, m, m * r, 0, TAU);
+    ctx.stroke();
+  }
+  for (let i = 0; i < GOMOS * 3; i++) {
+    const a = (i / (GOMOS * 3)) * TAU;
+    ctx.beginPath();
+    ctx.moveTo(m + Math.cos(a) * m * 0.235, m + Math.sin(a) * m * 0.235);
+    ctx.lineTo(m + Math.cos(a) * m * 0.9, m + Math.sin(a) * m * 0.9);
+    ctx.stroke();
+  }
+  // a estrela do miolo
+  ctx.beginPath();
+  for (let i = 0; i <= 16; i++) {
+    const a = (i / 16) * TAU - Math.PI / 2;
+    const r = (i % 2 === 0 ? 0.18 : 0.08) * m;
+    const x = m + Math.cos(a) * r;
+    const y = m + Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.fillStyle = css(P.gold);
+  ctx.fill();
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  mosaico = tex;
+  return tex;
+}
+
+/**
+ * QUANTO A GÔNDOLA PENDE ABAIXO DO EIXO. A cabine de roda gigante não é uma
+ * conta no aro: ela PENDURA num eixo entre os dois aros e fica sempre em pé.
+ * A âncora da cabine (`cabins[i]`) continua sendo o ponto do aro — é o eixo —,
+ * e o corpo dela mora `CAIDA` abaixo.
+ */
+const CAIDA = 1.35;
+/** o piso da cabine, medido do centro da casca (o interior foi feito nesta régua) */
+const PISO_DA_CASCA = -0.34;
 
 /**
  * A roda gigante do Villa Lobos, em versao fofa.
  * O aro gira em torno do eixo Z; as cabines ficam FORA do grupo que gira e sao
  * reposicionadas a cada frame, entao elas nunca viram de cabeca para baixo.
  * A roda inteira olha para +Z quando group.rotation.y === 0.
+ *
+ * A REFORMA DE OUTUBRO (o Renan pediu a área inteira mais bonita):
+ * - o ARO é uma treliça de verdade — dois anéis por lado com o zigue-zague
+ *   entre eles, a coroa vermelha no meio dos raios, os raios CRUZADOS (cada um
+ *   sai do miolo um tico adiantado ou atrasado, o desenho de roda de
+ *   bicicleta) e a roseta de pétalas com o miolo dourado no centro;
+ * - as LUZINHAS dão a volta no aro e na coroa: um lote só, acesas pelo
+ *   material, girando junto;
+ * - as CABINES são gôndolas penduradas (a `CAIDA`), BRANCAS como as do
+ *   parque de verdade (o Renan conferiu), com o coração na barriga, o
+ *   caixilho da janela e a forquilha até o eixo. São QUATRO LOTES para as 32 (corpo, acabamento,
+ *   vidro e forquilha): a matriz de cada uma é refeita por quadro, e a âncora
+ *   de cada cabine continua sendo um `Group` — é nele que a dupla monta;
+ * - as PERNAS viraram dois cavaletes de treliça (as pernas afinando, as
+ *   travessas e os X), com sapata vermelha no pé e o mancal dourado no alto.
  */
 export class FerrisWheel {
   readonly group = new THREE.Group();
+  /** as âncoras das cabines (o ponto do eixo de cada uma): é nelas que a dupla monta */
   readonly cabins: THREE.Group[] = [];
 
   readonly radius: number;
@@ -53,6 +212,13 @@ export class FerrisWheel {
   private catraca: THREE.Group | null = null;
   /** o interior da cabine: um só, que muda de cabine na hora do passeio */
   private readonly interior: THREE.Group;
+  /** os quatro lotes das gôndolas, refeitos a cada quadro */
+  private readonly corpos: THREE.InstancedMesh;
+  private readonly acabamentos: THREE.InstancedMesh;
+  private readonly vidros: THREE.InstancedMesh;
+  private readonly forquilhas: THREE.InstancedMesh;
+  /** a cabine que tem gente dentro: perde a forquilha e o caixilho (de dentro eles tapavam a vista) */
+  private ocupada = -1;
 
   constructor(opts: FerrisWheelOptions = {}) {
     // etiqueta para o caçador de z-fighting e para os testes acharem a peça
@@ -61,112 +227,198 @@ export class FerrisWheel {
     const count = (this.cabinCount = opts.cabins ?? 32);
     this.speed = ((opts.rpm ?? 0.9) * Math.PI * 2) / 60;
     const frameMat = toon(opts.frameColor ?? P.metalWhite);
-    const hubY = (this.hubHeight = R + 2.6);
+    // 30 cm mais alto que a roda antiga: a gôndola agora pende abaixo do eixo,
+    // e a de baixo tem que passar acima da laje
+    const hubY = (this.hubHeight = R + 2.9);
     const spread = R * 0.075; // distancia entre os dois aros
 
-    // ------------------------------------------------------------- aros
-    for (const z of [-spread, spread]) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(R, R * 0.019, 8, 72), frameMat);
-      ring.position.z = z;
-      this.rim.add(ring);
+    // ------------------------------------------------------------- o aro
+    const branco: THREE.BufferGeometry[] = [];
+    const vermelho: THREE.BufferGeometry[] = [];
+    const dourado: THREE.BufferGeometry[] = [];
+    const DENTRO = R - 0.85; // o anel de dentro da treliça
+    const luzes: THREE.Vector3[] = [];
+    for (const s of [-1, 1] as const) {
+      const z = s * spread;
+      branco.push(new THREE.TorusGeometry(R, 0.17, 6, 128).translate(0, 0, z));
+      branco.push(new THREE.TorusGeometry(DENTRO, 0.11, 5, 128).translate(0, 0, z));
+      // o zigue-zague entre os dois anéis: é ele que faz o aro ler treliça
+      const N = 64;
+      for (let i = 0; i < N; i++) {
+        const a0 = (i / N) * TAU;
+        const a1 = ((i + 0.5) / N) * TAU;
+        const a2 = ((i + 1) / N) * TAU;
+        const fora0 = V(Math.cos(a0) * R, Math.sin(a0) * R, z);
+        const meio = V(Math.cos(a1) * DENTRO, Math.sin(a1) * DENTRO, z);
+        const fora1 = V(Math.cos(a2) * R, Math.sin(a2) * R, z);
+        branco.push(tubo(fora0, meio, 0.05, 4), tubo(meio, fora1, 0.05, 4));
+      }
+      // os raios CRUZADOS: cada um sai do miolo adiantado ou atrasado
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * TAU;
+        const desvio = (i % 2 === 0 ? 1 : -1) * 0.42;
+        branco.push(tubo(
+          V(Math.cos(a + desvio) * 0.9, Math.sin(a + desvio) * 0.9, s * 0.62),
+          V(Math.cos(a) * DENTRO, Math.sin(a) * DENTRO, z),
+          0.045, 5,
+        ));
+      }
+      // a coroa vermelha no meio dos raios
+      vermelho.push(new THREE.TorusGeometry(R * 0.5, 0.1, 6, 96).translate(0, 0, z));
+      // as luzinhas: na cara de fora do anel grande e da coroa
+      for (let i = 0; i < 48; i++) {
+        const a = ((i + 0.5) / 48) * TAU;
+        luzes.push(V(Math.cos(a) * R, Math.sin(a) * R, s * (spread + 0.2)));
+      }
+      for (let i = 0; i < 24; i++) {
+        const a = ((i + 0.5) / 24) * TAU;
+        luzes.push(V(Math.cos(a) * R * 0.5, Math.sin(a) * R * 0.5, s * (spread + 0.15)));
+      }
     }
-
-    // montantes entre os dois aros (a trelica que aparece na foto)
-    const lattice = Math.min(48, count * 2);
-    for (let i = 0; i < lattice; i++) {
-      const a = (i / lattice) * Math.PI * 2;
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(R * 0.012, R * 0.012, spread * 2), frameMat);
-      bar.position.set(Math.cos(a) * R, Math.sin(a) * R, 0);
-      this.rim.add(bar);
-    }
-
-    // zigue-zague da trelica, desenhado como linha (barato e legivel)
-    const zig: number[] = [];
-    for (let i = 0; i < lattice; i++) {
-      const a1 = (i / lattice) * Math.PI * 2;
-      const a2 = ((i + 1) / lattice) * Math.PI * 2;
-      const z1 = i % 2 === 0 ? -spread : spread;
-      const z2 = i % 2 === 0 ? spread : -spread;
-      zig.push(Math.cos(a1) * R, Math.sin(a1) * R, z1, Math.cos(a2) * R, Math.sin(a2) * R, z2);
-    }
-    this.rim.add(new THREE.LineSegments(buildLines(zig), line(0xdfe6ea)));
-
-    // --------------------------------------------------------- cabos/raios
-    const spokes: number[] = [];
+    // os eixos das gôndolas, de um aro ao outro (cada cabine pendura num)
     for (let i = 0; i < count; i++) {
-      const a = (i / count) * Math.PI * 2;
+      const a = (i / count) * TAU;
       const x = Math.cos(a) * R;
       const y = Math.sin(a) * R;
-      spokes.push(0, 0, -spread * 0.5, x, y, -spread);
-      spokes.push(0, 0, spread * 0.5, x, y, spread);
-    }
-    this.rim.add(new THREE.LineSegments(buildLines(spokes), line(0xeef3f6)));
-
-    // ------------------------------------------------------------- cubo
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.085, R * 0.085, R * 0.3, 14), frameMat);
-    hub.rotation.x = Math.PI / 2;
-    this.rim.add(hub);
-    for (const z of [-R * 0.17, R * 0.17]) {
-      const cap = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.11, R * 0.07, R * 0.06, 14), toon(P.metalGrey));
-      cap.rotation.x = Math.PI / 2;
-      cap.position.z = z;
-      this.rim.add(cap);
+      branco.push(tubo(V(x, y, -spread - 0.12), V(x, y, spread + 0.12), 0.075, 8, 0.075, true));
     }
 
+    // o miolo: o tambor, as duas rosetas de pétalas e a cúpula dourada
+    branco.push(new THREE.CylinderGeometry(0.95, 0.95, 1.5, 24).rotateX(Math.PI / 2));
+    const flor = new THREE.Shape();
+    for (let k = 0; k <= 120; k++) {
+      const t = (k / 120) * TAU;
+      const r = 1.18 + 0.32 * Math.abs(Math.cos(5 * t));
+      if (k === 0) flor.moveTo(Math.cos(t) * r, Math.sin(t) * r);
+      else flor.lineTo(Math.cos(t) * r, Math.sin(t) * r);
+    }
+    const roseta = new THREE.ExtrudeGeometry(flor, { depth: 0.1, bevelEnabled: false, curveSegments: 4 });
+    vermelho.push(roseta.clone().translate(0, 0, 0.74), roseta.clone().translate(0, 0, -0.84));
+    for (const s of [-1, 1] as const) {
+      dourado.push(new THREE.SphereGeometry(0.4, 16, 6, 0, TAU, 0, Math.PI / 2)
+        .rotateX((s * Math.PI) / 2).translate(0, 0, s * 0.84));
+      // uma bolinha dourada na ponta de cada pétala
+      for (let k = 0; k < 10; k++) {
+        const t = (k / 10) * TAU;
+        dourado.push(new THREE.SphereGeometry(0.085, 8, 5).translate(Math.cos(t) * 1.38, Math.sin(t) * 1.38, s * 0.86));
+      }
+    }
+
+    const aroBranco = new THREE.Mesh(juntar(branco), frameMat);
+    const aroVermelho = new THREE.Mesh(juntar(vermelho), toon(P.rodaVermelho));
+    const aroDourado = new THREE.Mesh(juntar(dourado), toon(P.gold));
+    this.rim.add(aroBranco, aroVermelho, aroDourado, lampadas(luzes, 0.12));
+    this.rim.name = 'aro';
     this.rim.position.y = hubY;
     this.group.add(this.rim);
 
     // ------------------------------------------------------------ cabines
-    const cabinMat = toon(opts.cabinColor ?? P.metalWhite);
-    const glassMat = toon(0x6fb6d8, { opacity: 0.5 });
-    const pod = R * 0.068; // raio da capsula: cabe uma pessoa em escala de jogo
+    /*
+     * A GÔNDOLA, em quatro lotes. O corpo (a bacia de baixo e o domo de cima)
+     * é branco, como no parque de verdade; o acabamento (os
+     * aros da janela, o caixilho, o coração, a bolinha do domo) tem a cor
+     * pintada nos vértices; o vidro é a faixa da janela; e a forquilha vai do
+     * domo até o eixo. Tudo em volta da âncora: o corpo mora `CAIDA` abaixo.
+     */
+    const Z = 0.92; // a cápsula é um tico espremida em z, como a antiga
+    const bacia = new THREE.LatheGeometry([
+      new THREE.Vector2(0, -1.02), new THREE.Vector2(0.3, -1.0), new THREE.Vector2(0.56, -0.92),
+      new THREE.Vector2(0.72, -0.78), new THREE.Vector2(0.8, -0.6), new THREE.Vector2(0.83, -0.42),
+      new THREE.Vector2(0.835, -0.28),
+    ], 24);
+    const domo = new THREE.LatheGeometry([
+      new THREE.Vector2(0.86, 0.5), new THREE.Vector2(0.84, 0.62), new THREE.Vector2(0.74, 0.78),
+      new THREE.Vector2(0.55, 0.92), new THREE.Vector2(0.3, 1.0), new THREE.Vector2(0, 1.03),
+    ], 24);
+    const geoCorpo = juntar([bacia, domo]).scale(1, 1, Z).translate(0, -CAIDA, 0);
+
+    const branca = (g: THREE.BufferGeometry): THREE.BufferGeometry => pintar(g, P.metalWhite);
+    const acab: THREE.BufferGeometry[] = [
+      branca(new THREE.TorusGeometry(0.845, 0.045, 5, 28).rotateX(Math.PI / 2).translate(0, -0.29, 0)),
+      branca(new THREE.TorusGeometry(0.875, 0.05, 5, 28).rotateX(Math.PI / 2).translate(0, 0.5, 0)),
+      pintar(new THREE.SphereGeometry(0.09, 10, 6).translate(0, 1.06, 0), P.gold),
+      pintar(new THREE.SphereGeometry(0.07, 8, 5).translate(0, -1.03, 0), P.gold),
+    ];
+    for (let k = 0; k < 8; k++) {
+      const a = ((k + 0.5) / 8) * TAU;
+      acab.push(branca(new THREE.BoxGeometry(0.045, 0.8, 0.045).translate(Math.cos(a) * 0.84, 0.11, Math.sin(a) * 0.84)));
+    }
+    const coracao = geoCoracao(0.34, 0.03);
+    acab.push(pintar(coracao.clone().translate(0, -0.62, 0.79), P.rodaVermelho));
+    acab.push(pintar(coracao.clone().rotateY(Math.PI).translate(0, -0.62, -0.79), P.rodaVermelho));
+    const geoAcabamento = juntar(acab, false, true).scale(1, 1, Z).translate(0, -CAIDA, 0);
+
+    const geoVidro = new THREE.CylinderGeometry(0.835, 0.835, 0.8, 24, 1, true)
+      .scale(1, 1, Z).translate(0, 0.11 - CAIDA, 0);
+
+    // a forquilha: a luva no eixo e os dois braços até o domo
+    const topoDoDomo = 0.8 - CAIDA;
+    const geoForquilha = juntar([
+      new THREE.CylinderGeometry(0.11, 0.11, 1.36, 10).rotateX(Math.PI / 2),
+      tubo(V(0, 0, 0.6), V(0, topoDoDomo, 0.6), 0.045, 6),
+      tubo(V(0, 0, -0.6), V(0, topoDoDomo, -0.6), 0.045, 6),
+      tubo(V(0, topoDoDomo, -0.6), V(0, topoDoDomo, 0.6), 0.04, 6),
+    ]);
+
+    const lote = (geo: THREE.BufferGeometry, mat: THREE.Material): THREE.InstancedMesh => {
+      const m = new THREE.InstancedMesh(geo, mat, count);
+      m.frustumCulled = false; // elas andam: a esfera envolvente de nascença não vale
+      this.group.add(m);
+      return m;
+    };
+    this.corpos = lote(geoCorpo, toon(opts.cabinColor ?? P.metalWhite));
+    this.acabamentos = lote(geoAcabamento, toon(0xffffff, { corPorVertice: true }));
+    this.vidros = lote(geoVidro, toon(P.glass, { opacity: 0.45 }));
+    this.vidros.userData.semSombra = true;
+    this.forquilhas = lote(geoForquilha, toon(P.metalGrey));
     for (let i = 0; i < count; i++) {
-      const cabin = new THREE.Group();
-
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.09, pod * 1.1, 0.09), toon(P.metalGrey));
-      arm.position.y = pod * 1.25;
-      cabin.add(arm);
-
-      const shell = new THREE.Mesh(new THREE.CapsuleGeometry(pod, pod * 0.5, 5, 16), cabinMat);
-      shell.scale.set(1, 1, 0.92);
-      cabin.add(shell);
-
-      const band = new THREE.Mesh(new THREE.CylinderGeometry(pod * 1.02, pod * 1.02, pod * 0.95, 18, 1, true), glassMat);
-      band.position.y = pod * 0.12;
-      band.scale.z = 0.92;
-      cabin.add(band);
-
-      cabin.traverse((n) => {
-        if ((n as THREE.Mesh).isMesh) n.castShadow = true;
-      });
-      this.cabins.push(cabin);
-      this.group.add(cabin);
+      const ancora = new THREE.Group();
+      this.cabins.push(ancora);
+      this.group.add(ancora);
     }
     this.interior = this.montarOInterior();
+    this.interior.position.y = -CAIDA;
     this.group.add(this.interior);
 
-    // ------------------------------------------------------------- pernas
+    // ------------------------------------------------------- os cavaletes
+    /*
+     * Dois cavaletes de treliça, um de cada lado do aro: as pernas afinam até
+     * o mancal, com travessas e X entre elas. Os pés são os de antes (os
+     * blocos de fundação, a laje e o colisor da cena contam com eles).
+     */
     const legSpan = R * 0.42;
-    const hubFront = new THREE.Vector3(0, hubY, -R * 0.04);
-    const hubBack = new THREE.Vector3(0, hubY, R * 0.04);
-    const feet: Array<[THREE.Vector3, THREE.Vector3]> = [
-      [hubFront, new THREE.Vector3(-R * 0.2, 0, -legSpan)],
-      [hubFront, new THREE.Vector3(R * 0.2, 0, -legSpan)],
-      [hubBack, new THREE.Vector3(-R * 0.2, 0, legSpan)],
-      [hubBack, new THREE.Vector3(R * 0.2, 0, legSpan)],
-    ];
-    for (const [a, b] of feet) {
-      const leg = strut(a.clone(), b.clone(), R * 0.03, frameMat);
-      leg.castShadow = true;
-      this.group.add(leg);
+    const estrutura: THREE.BufferGeometry[] = [];
+    const sapatas: THREE.BufferGeometry[] = [];
+    const mancais: THREE.BufferGeometry[] = [];
+    for (const s of [-1, 1] as const) {
+      const topo = V(0, hubY, s * 1.45);
+      const pes = [V(-R * 0.2, 0.72, s * legSpan), V(R * 0.2, 0.72, s * legSpan)];
+      for (const pe of pes) {
+        estrutura.push(tubo(pe, topo, 0.3, 10, 0.18));
+        sapatas.push(new THREE.CylinderGeometry(0.44, 0.5, 0.14, 14).translate(pe.x, 0.79, pe.z));
+      }
+      const fracoes = [0.12, 0.34, 0.56, 0.76];
+      const degraus = fracoes.map((k) => [pes[0].clone().lerp(topo, k), pes[1].clone().lerp(topo, k)]);
+      for (const [a, b] of degraus) estrutura.push(tubo(a, b, 0.1, 6));
+      for (let i = 0; i < degraus.length - 1; i++) {
+        estrutura.push(
+          tubo(degraus[i][0], degraus[i + 1][1], 0.065, 5),
+          tubo(degraus[i][1], degraus[i + 1][0], 0.065, 5),
+        );
+      }
+      mancais.push(new THREE.CylinderGeometry(0.42, 0.42, 0.4, 18).rotateX(Math.PI / 2).translate(0, hubY, s * 1.45));
+      sapatas.push(new THREE.SphereGeometry(0.3, 14, 6, 0, TAU, 0, Math.PI / 2)
+        .rotateX((s * Math.PI) / 2).translate(0, hubY, s * 1.65));
     }
-
-    // travessa entre as pernas
-    for (const z of [-legSpan, legSpan]) {
-      const cross = new THREE.Mesh(new THREE.BoxGeometry(R * 0.42, R * 0.022, R * 0.022), frameMat);
-      cross.position.set(0, R * 0.16, z);
-      this.group.add(cross);
-    }
+    const cavaletes = new THREE.Mesh(juntar(estrutura), frameMat);
+    cavaletes.castShadow = true;
+    this.group.add(cavaletes);
+    this.group.add(new THREE.Mesh(juntar(sapatas), toon(P.rodaVermelho)));
+    this.group.add(new THREE.Mesh(juntar(mancais), toon(P.gold)));
+    // o eixo fixo que atravessa o miolo
+    const eixo = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 3.2, 14).rotateX(Math.PI / 2), toon(P.metalGrey));
+    eixo.position.y = hubY;
+    this.group.add(eixo);
 
     this.montarABase(R, legSpan);
 
@@ -211,16 +463,19 @@ export class FerrisWheel {
     const metalEscuro = toon(P.metalGrey);
 
     // ---------------------------------------------------------- a laje
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.62, R * 0.67, 0.35, 26), concreto);
+    // a lateral de concreto, sem tampa: o topo é o PISO DE MOSAICO em raios,
+    // o chão de carrossel antigo (a faixa vermelha da borda é a do desenho)
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.62, R * 0.67, 0.35, 48, 1, true), concreto);
     base.position.y = 0.16;
     base.receiveShadow = true;
     this.group.add(base);
-    // a faixa amarela pintada na borda: decalque ACIMA do topo da laje
-    // (0,335 contra 0,335 — sobe 1 cm) para não brigar por profundidade
-    const faixa = new THREE.Mesh(new THREE.TorusGeometry(R * 0.56, 0.055, 5, 30), toon(P.roupaBota));
-    faixa.rotation.x = Math.PI / 2;
-    faixa.position.y = 0.345;
-    this.group.add(faixa);
+    const piso = new THREE.Mesh(
+      new THREE.CircleGeometry(R * 0.62, 64).rotateX(-Math.PI / 2),
+      toon(0xffffff, { mapa: pisoDeMosaico() }),
+    );
+    piso.position.y = 0.335;
+    piso.receiveShadow = true;
+    this.group.add(piso);
 
     // -------------------------------------------- fundação de cada pé
     for (const [x, z] of [
@@ -316,9 +571,29 @@ export class FerrisWheel {
     casa.add(corpo);
     // o telhado é mais LARGO que o corpo, senão as faces laterais dos dois
     // caem no mesmo plano e serrilham na quina
-    const telhado = new THREE.Mesh(new THREE.BoxGeometry(2.34, 0.16, 1.74), madeiraEscura);
-    telhado.position.y = 1.58;
-    casa.add(telhado);
+    // o telhado de duas águas, no vermelho de circo, com o oitão creme e a
+    // cumeeira dourada (o oitão para 2 cm antes da parede de cada lado)
+    const oitao = new THREE.Shape([V2(-0.75, 0), V2(0.75, 0), V2(0, 0.52)]);
+    casa.add(new THREE.Mesh(
+      new THREE.ExtrudeGeometry(oitao, { depth: 2.06, bevelEnabled: false }).rotateY(Math.PI / 2).translate(-1.03, 1.49, 0),
+      toon(P.wallCream),
+    ));
+    for (const s of [-1, 1] as const) {
+      const agua = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.07, 1.06), toon(P.rodaVermelho));
+      agua.rotation.x = s * 0.6;
+      agua.position.set(0, 1.78, s * 0.43);
+      casa.add(agua);
+    }
+    const cumeeira = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.5, 10).rotateZ(Math.PI / 2), toon(P.gold));
+    cumeeira.position.y = 2.06;
+    casa.add(cumeeira);
+    // a escotilha redonda, que diz "máquina" melhor que uma janela
+    const escotilha = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.045, 6, 18), toon(P.gold));
+    escotilha.position.set(-0.45, 0.45, 0.78);
+    casa.add(escotilha);
+    const vidroDaEscotilha = new THREE.Mesh(new THREE.CircleGeometry(0.19, 18), toon(P.churrascoCarvao));
+    vidroDaEscotilha.position.set(-0.45, 0.45, 0.765);
+    casa.add(vidroDaEscotilha);
     const porta = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1.1, 0.06), madeira);
     porta.position.set(0.45, 0.55, 0.78);
     casa.add(porta);
@@ -362,17 +637,22 @@ export class FerrisWheel {
       plataforma.add(degrau);
     }
 
-    // o corrimão da fila: dois trilhos paralelos formando o corredor
+    // a fila: pedestais de latão com a corda de veludo cedendo entre eles
+    const latao: THREE.BufferGeometry[] = [];
+    const veludo: THREE.BufferGeometry[] = [];
     for (const lado of [-1, 1] as const) {
-      for (const z of [-0.7, 0.1, 0.9] as const) {
-        const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.95, 8), metal);
-        poste.position.set(lado * 1.5, 0.9, z);
-        plataforma.add(poste);
+      const zs = [-0.7, 0.1, 0.9];
+      for (const z of zs) {
+        latao.push(new THREE.CylinderGeometry(0.04, 0.05, 0.9, 10).translate(lado * 1.5, 0.87, z));
+        latao.push(new THREE.CylinderGeometry(0.14, 0.17, 0.05, 14).translate(lado * 1.5, 0.455, z));
+        latao.push(new THREE.SphereGeometry(0.075, 10, 6).translate(lado * 1.5, 1.35, z));
       }
-      const trilho = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 1.75), metal);
-      trilho.position.set(lado * 1.5, 1.3, 0.1);
-      plataforma.add(trilho);
+      for (let i = 0; i < zs.length - 1; i++) {
+        veludo.push(corda(V(lado * 1.5, 1.25, zs[i]), V(lado * 1.5, 1.25, zs[i + 1]), 0.09, 0.035));
+      }
     }
+    plataforma.add(new THREE.Mesh(juntar(latao), toon(P.gold)));
+    plataforma.add(new THREE.Mesh(juntar(veludo), toon(P.rodaVeludo)));
 
     /**
      * A CATRACA, no meio do corredor. Três braços a 120°, e é ela que faz o
@@ -449,6 +729,18 @@ export class FerrisWheel {
       bulbo.position.set(-1.35 + i * 0.45, 2.85, 0.12);
       portico.add(bulbo);
     }
+    // o ARCO de luzinhas por cima da viga, com o coração dourado no alto
+    const arco: THREE.Vector3[] = [];
+    for (let k = 0; k <= 24; k++) {
+      const t = k / 24;
+      arco.push(V(-2.3 + 4.6 * t, 3.0 + Math.sin(Math.PI * t) * 0.85, 0));
+    }
+    const curvaDoArco = new THREE.CatmullRomCurve3(arco);
+    portico.add(new THREE.Mesh(new THREE.TubeGeometry(curvaDoArco, 40, 0.085, 6, false), toon(P.rodaVermelho)));
+    portico.add(lampadas(curvaDoArco.getSpacedPoints(14).slice(1, -1).map((p) => p.add(V(0, 0, 0.1))), 0.075));
+    const coracaoDoArco = new THREE.Mesh(geoCoracao(0.55, 0.1).translate(0, 0, -0.05), toon(P.gold));
+    coracaoDoArco.position.set(0, 3.95, 0);
+    portico.add(coracaoDoArco);
     plataforma.add(portico);
 
     // a coberturinha do púlpito do bilheteiro: pequena, e SÓ sobre ele
@@ -469,7 +761,9 @@ export class FerrisWheel {
      */
     const raioDaCerca = R * 0.72;
     const POSTES = 18;
-    const pontos: number[] = [];
+    const postes: THREE.BufferGeometry[] = [];
+    const bolas: THREE.BufferGeometry[] = [];
+    const correntes: THREE.BufferGeometry[] = [];
     for (let i = 0; i < POSTES; i++) {
       const a = (i / POSTES) * Math.PI * 2;
       // o vão da frente: pula os postes que caem na boca da plataforma
@@ -477,15 +771,16 @@ export class FerrisWheel {
       if (naFrente) continue;
       const x = Math.cos(a) * raioDaCerca;
       const z = Math.sin(a) * raioDaCerca;
-      const poste = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.85, 8), metalEscuro);
-      poste.position.set(x, 0.42, z);
-      this.group.add(poste);
-      // a corrente pendurada até o próximo poste, desenhada como linha
+      postes.push(new THREE.CylinderGeometry(0.06, 0.08, 0.85, 8).translate(x, 0.42, z));
+      bolas.push(new THREE.SphereGeometry(0.09, 10, 6).translate(x, 0.9, z));
+      // a corrente cedendo até o próximo poste
       const b = ((i + 1) / POSTES) * Math.PI * 2;
       if (Math.sin(b) > 0.72) continue;
-      pontos.push(x, 0.72, z, Math.cos(b) * raioDaCerca, 0.72, Math.sin(b) * raioDaCerca);
+      correntes.push(corda(V(x, 0.74, z), V(Math.cos(b) * raioDaCerca, 0.74, Math.sin(b) * raioDaCerca), 0.08, 0.028));
     }
-    this.group.add(new THREE.LineSegments(buildLines(pontos), line(P.metalGrey)));
+    this.group.add(new THREE.Mesh(juntar(postes), metalEscuro));
+    this.group.add(new THREE.Mesh(juntar(bolas), toon(P.gold)));
+    this.group.add(new THREE.Mesh(juntar(correntes), toon(P.rodaVermelho)));
   }
 
   /**
@@ -507,11 +802,11 @@ export class FerrisWheel {
    * baixo e largo, não como uma cabine. Este aqui é da largura deles, e a
    * casca por fora não denuncia nada: ela é invisível de dentro.
    */
-  static readonly PISO = -0.34;
+  static readonly PISO = PISO_DA_CASCA - CAIDA;
 
   private montarOInterior(): THREE.Group {
     const g = new THREE.Group();
-    const piso = FerrisWheel.PISO;
+    const piso = PISO_DA_CASCA;
     const raio = 0.54;
     const achatado = 0.92; // a cápsula é espremida em z; a moldura acompanha
 
@@ -650,19 +945,18 @@ export class FerrisWheel {
     this.interior.visible = true;
     this.atravessarAEstrutura(true);
     /*
-     * E A CASCA PARA DE FAZER SOMBRA. Ela envolve os dois por todos os lados,
-     * então enquanto ela projetava sombra os dois viajavam dentro do próprio
-     * escuro: o parceiro saía preto, sem rosto. De fora ninguém sente falta —
-     * a essa altura a sombra dela no chão é um borrão a trinta metros.
+     * E AS GÔNDOLAS PARAM DE FAZER SOMBRA. A casca envolve os dois por todos
+     * os lados, então enquanto ela projetava sombra os dois viajavam dentro do
+     * próprio escuro: o parceiro saía preto, sem rosto. São lotes, então param
+     * todas — de fora ninguém sente falta: a essa altura a câmera está lá
+     * dentro.
      */
-    cabine.traverse((n) => {
-      if ((n as THREE.Mesh).isMesh) n.castShadow = false;
-    });
-    // e o braço some: ele nasce ACIMA da calota do teto e aparecia como uma
-    // caixinha cinza pendurada no céu, no alto da tela. De dentro ninguém
-    // precisa dele; de fora, nesses quarenta segundos, ninguém está olhando.
-    const braco = cabine.children[0];
-    if (braco) braco.visible = false;
+    for (const lote of [this.corpos, this.acabamentos, this.forquilhas]) lote.castShadow = false;
+    // e a forquilha e o caixilho DESTA somem: de dentro, a forquilha aparecia
+    // pendurada no céu no alto da tela, e o caixilho cortava a vista em fatias
+    // (o interior tem o seu, translúcido)
+    this.ocupada = this.cabins.indexOf(cabine);
+    this.layout();
   }
 
   /**
@@ -725,17 +1019,12 @@ export class FerrisWheel {
 
   /** Recolhe o interior; a cabine volta a ser uma cápsula fechada como as outras. */
   fecharCabine(): void {
-    const cabine = this.interior.parent;
     this.interior.visible = false;
     this.group.add(this.interior);
     this.atravessarAEstrutura(false);
-    if (cabine && cabine !== this.group) {
-      cabine.traverse((n) => {
-        if ((n as THREE.Mesh).isMesh) n.castShadow = true;
-      });
-      const braco = cabine.children[0];
-      if (braco) braco.visible = true;
-    }
+    for (const lote of [this.corpos, this.acabamentos, this.forquilhas]) lote.castShadow = true;
+    this.ocupada = -1;
+    this.layout();
   }
 
   /** angulo (rad) da cabine i no plano da roda */
@@ -743,14 +1032,25 @@ export class FerrisWheel {
     return this.angle + (i / this.cabinCount) * Math.PI * 2;
   }
 
+  private readonly matriz = new THREE.Matrix4();
+  private readonly sumida = new THREE.Matrix4().makeScale(0, 0, 0);
+
   private layout(): void {
+    const m = this.matriz;
     for (let i = 0; i < this.cabins.length; i++) {
       const a = this.cabinAngle(i);
-      this.cabins[i].position.set(
-        Math.cos(a) * this.radius,
-        this.hubHeight + Math.sin(a) * this.radius,
-        0,
-      );
+      const x = Math.cos(a) * this.radius;
+      const y = this.hubHeight + Math.sin(a) * this.radius;
+      this.cabins[i].position.set(x, y, 0);
+      m.makeTranslation(x, y, 0);
+      this.corpos.setMatrixAt(i, m);
+      this.vidros.setMatrixAt(i, m);
+      const dela = i === this.ocupada ? this.sumida : m;
+      this.acabamentos.setMatrixAt(i, dela);
+      this.forquilhas.setMatrixAt(i, dela);
+    }
+    for (const lote of [this.corpos, this.vidros, this.acabamentos, this.forquilhas]) {
+      lote.instanceMatrix.needsUpdate = true;
     }
   }
 
@@ -790,10 +1090,4 @@ export class FerrisWheel {
   turnsSince(fromAngle: number): number {
     return (this.angle - fromAngle) / (Math.PI * 2);
   }
-}
-
-function buildLines(points: number[]): THREE.BufferGeometry {
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-  return geo;
 }

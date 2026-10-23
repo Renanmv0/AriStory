@@ -801,6 +801,54 @@ praça do Mano, na família da sorveteria. O que serve para qualquer peça de ge
   praça inteira, 472 → 441 desenhos e 113,9 mil → 122,2 mil triângulos
   com os enfeites, e 441 → 403 e 122,2 mil → 127,3 mil com a borda.
 
+## A roda gigante e a bilheteria (`world/ferrisWheel.ts`, `world/bilheteriaDaRoda.ts`)
+
+A reforma de outubro da área da roda do Villa Lobos ("mais detalhado e mais
+bonito"), na família de parque de diversão: branco de treliça, vermelho de
+circo (`P.rodaVermelho`) e dourado. As gôndolas são BRANCAS: o Renan pediu,
+porque no parque de verdade elas são — uma primeira versão em cinco tons de
+algodão-doce saiu.
+
+- **O aro é treliça fundida à mão** (`juntar()` no arquivo: extrusão sem
+  índice e cilindro com índice numa malha só): dois anéis por lado com o
+  zigue-zague entre eles, os raios CRUZADOS (cada um sai do miolo adiantado ou
+  atrasado — o desenho de roda de bicicleta), a coroa vermelha no meio dos
+  raios e a roseta de pétalas com a cúpula dourada. São três malhas e um lote
+  de luzinhas (`lampadas()`), todos no grupo `aro` — o nome que o
+  `scripts/ride.mjs` procura para conferir que a estrutura INTEIRA vira vidro
+  no passeio.
+- **A gôndola PENDE do eixo** (`CAIDA`, 1,35): a âncora de cada cabine
+  (`cabins[i]`) continua sendo o ponto do aro, e o corpo mora abaixo dele; o
+  cubo subiu 30 cm para a de baixo passar acima da laje. O interior desce
+  junto (`PISO` = piso da casca − `CAIDA`; a cena lê `FerrisWheel.PISO`).
+- **32 gôndolas em QUATRO lotes** (corpo, acabamento, vidro e forquilha),
+  com a matriz refeita no `layout()`: o corpo é branco; o acabamento (aros da janela,
+  caixilho, coração na barriga, bolinhas douradas) tem a cor nos vértices. A
+  cabine com gente perde a forquilha e o caixilho (matriz de escala zero): de
+  dentro eles tapavam a vista. `frustumCulled = false`, porque elas andam.
+- **Os cavaletes**: pernas que afinam até o mancal dourado, travessas e X
+  entre elas, sapata vermelha no pé — os pés são os de antes (blocos de
+  fundação, colisor de 7,2).
+- **A base**: a laje é lateral aberta + disco com o PISO DE MOSAICO em raios
+  (`pisoDeMosaico()`, canvas mapeado no `CircleGeometry`: o UV dele é o
+  quadrado inteiro, então o desenho redondo cabe certinho); a casa de
+  máquinas ganhou duas águas vermelhas, oitão e escotilha; a fila virou
+  pedestais de latão com corda de veludo (`corda()`, uma curva que cede); o
+  pórtico ganhou o arco de luzinhas com o coração dourado; a cerca, corrente
+  de verdade (tubo) e bolinha dourada nos postes.
+- **A bilheteria é uma casinha de circo oval**: saia de listras (canvas no
+  `u` do cilindro), parede creme com frisos dourados, telhado cônico de lona
+  em gomos (o mesmo canvas, no cone), lambrequim de meias-luas com cor por
+  vértice, luzinhas na beira, bandeirinha, e a placa "BILHETES" de marquise
+  EM PÉ NA BEIRA do telhado (na parede, debaixo do beiral, a câmera não via).
+  O guichê é janela SALTADA: a moldura funda cobre a curva da parede, e o
+  interior é PINTADO (lampião, rolo de bilhetes, cartaz de coração) sob o
+  vidro. O tamanho por fora é o da cabine antiga (colisor 1,53 × 1,08) e o
+  beiral da frente avança só 24 cm.
+- **O peso** (vista da praça inteira): 1653 → 1538 desenhos; os triângulos
+  subiram de 315 mil para 396 mil (a treliça e as gôndolas). A bilheteria de
+  perto: 530 → 311 desenhos (ela passa pela `fundir()`).
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, ItemDef, SceneDef } from '../core/types';
 import { FerrisWheel } from '../world/ferrisWheel';
+import { bilheteriaDaRoda } from '../world/bilheteriaDaRoda';
 import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { fundir } from '../world/fundir';
@@ -13,11 +14,11 @@ import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/Ping
 import {
   aroDeFrisbee, bin, bleachers, building, bus, busStop, bush,
   cestaDeBiscoitos, cestaDePiquenique, flamula, mesinhaDeXadrez,
-  canteiro, capim, cloud, cone, discBag, discGolfBasket, domoDeVidro,
+  canteiro, capim, cloud, cone, discBag, discGolfBasket,
   fence, floodlight, flowers, iceCream, lamp, marcaDeMira, meioFio,
   comidinhasDePiquenique, mesaPingPong, picnicTable, portaRetrato,
   raquete, toalhaDePiquenique,
-  rock, sacoDeGraos, scoreboard, signBoard, ticketBooth, tree, waterFountain, windsock,
+  rock, sacoDeGraos, scoreboard, signBoard, tree, waterFountain, windsock,
   bolinhaPingPong, bordaDeTablado, caixote, cestoDeBolinhas, placarDePingPong,
   quadroDeInscricoes, suporteDeRaquetes,
   vasoDePlanta,
@@ -312,7 +313,10 @@ export const villaLobos: SceneDef = {
     w.blockCircle(0, -26, 7.2);
 
     /*
-     * Tapume e domo geodésico da praça da roda, como na foto.
+     * O tapume da praça da roda.
+     *
+     * A CÚPULA DE VIDRO SAIU (ficava em `-9,5 / -21`, colada no tapume): o
+     * Renan não via o que ela fazia tão perto da roda gigante.
      *
      * SÓ O DA ESQUERDA. O de `x = 11` passava rente ao fundo da bilheteria e
      * cortava a cabine ao meio na câmera de 34° — e é justamente por ali que
@@ -321,10 +325,6 @@ export const villaLobos: SceneDef = {
      */
     w.add(w.place(fence(9, 1.2, P.metalWhite), -11, 0, -20, Math.PI / 2));
     w.blockBox(-11, -20, 0.2, 4.5);
-    // a cúpula virou peça do kit: estrutura completa (meridianos, paralelos,
-    // pilares por dentro) mora em props.ts, a cena só posiciona
-    w.add(w.place(domoDeVidro(2.6), -9.5, 0, -21, 0.4));
-    w.blockCircle(-9.5, -21, 2.7);
 
     /*
      * ===================================== A BILHETERIA, E O CORREDOR ATÉ ELA
@@ -345,7 +345,7 @@ export const villaLobos: SceneDef = {
      */
     const BILHETERIA = { x: 10.6, z: -20.4 };
     pintarCom(w.patch(BILHETERIA.x, -16.9, 1, 1, P.concrete, 0, 0.018, calcadaDePedrinha()), retanguloRedondo(3.2, 3.3, 1.0));
-    const bilheteria = w.add(w.place(ticketBooth(), BILHETERIA.x, 0, BILHETERIA.z));
+    const bilheteria = w.add(fundir(w.place(bilheteriaDaRoda(), BILHETERIA.x, 0, BILHETERIA.z)));
     w.blockBox(BILHETERIA.x, BILHETERIA.z, 1.53, 1.08);
 
     /**

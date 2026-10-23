@@ -71,6 +71,16 @@ const alturaDaCamera = () =>
  * conta quantas pecas da roda estao translucidas — tem que ser muitas durante
  * o passeio e NENHUMA depois, senao a roda fica de vidro para sempre.
  */
+/*
+ * O aro agora é FUNDIDO (a treliça branca, o vermelho, o dourado e o lote das
+ * luzinhas): conta-se quantas malhas o grupo `aro` tem, e todas viram vidro.
+ */
+const pecasDoAro = () =>
+  page.evaluate(() => {
+    let n = 0;
+    window.jogo.scene.getObjectByName('aro')?.traverse((f) => { if (f.material) n++; });
+    return n;
+  });
 const pecasDeVidro = () =>
   page.evaluate(() => {
     let n = 0;
@@ -124,6 +134,7 @@ await page.screenshot({ path: `${OUT}-fim.png` });
 const voltouAIsometrica = (await alturaDaCamera()) === null;
 // e a roda tem que ter voltado a ser solida
 const vidroDepois = await pecasDeVidro();
+const malhasDoAro = await pecasDoAro();
 
 // o passeio terminou? o prompt tem que voltar e o jogador andar de novo
 const promptVisivel = (await page.locator('.prompt.show').count()) > 0;
@@ -139,7 +150,7 @@ console.log('recusou sem bilhete:', recusouSemBilhete);
 console.log('bilhete picotado:', bilheteGasto);
 console.log('primeira pessoa na cabine:', primeiraPessoa, '· altura maxima vista:', subindo);
 console.log('olhou em volta com as setas:', olhouEmVolta);
-console.log('estrutura de vidro durante:', vidroNoPasseio, '· depois:', vidroDepois, '(tem que ser 0)');
+console.log('estrutura de vidro durante:', vidroNoPasseio, 'de', malhasDoAro, 'malhas do aro · depois:', vidroDepois, '(tem que ser 0)');
 console.log('camera devolvida no chao:', voltouAIsometrica);
 console.log('passeio concluido:', subiu);
 console.log('prompt de volta:', promptVisivel);
@@ -155,7 +166,7 @@ process.exit(
     !primeiraPessoa ||
     !olhouEmVolta ||
     !voltouAIsometrica ||
-    vidroNoPasseio < 10 ||
+    vidroNoPasseio < Math.max(3, malhasDoAro) ||
     vidroDepois !== 0
     ? 1
     : 0,

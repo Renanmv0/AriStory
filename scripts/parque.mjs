@@ -1,6 +1,6 @@
 /**
- * Fotos de perto do Villa Lobos: a praça da roda gigante, a cúpula de vidro
- * (também girando, que é onde a estrutura aparece) e a margem do lago.
+ * Fotos de perto do Villa Lobos: a praça da roda gigante, o canto do tapume
+ * (também girando; ali ficava a cúpula de vidro, que saiu) e a margem do lago.
  *
  * Uso: node scripts/parque.mjs /caminho/prefixo
  */
@@ -20,7 +20,7 @@ page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
 
 const poses = [
   ['praca', 'em=-2,-14&olhar=3.14', 1],
-  ['domo', 'em=-9.5,-16&olhar=3.14&zoom=9', 2],
+  ['canto', 'em=-9.5,-16&olhar=3.14&zoom=9', 2],
   ['lago', 'em=-15,14&olhar=4.0&zoom=13', 1],
   ['lago-beira', 'em=-21,20&olhar=3.14&zoom=9', 1],
 ];

@@ -1371,6 +1371,15 @@ export const PALETTE = {
   cabineEsquadria: 0xeef3f6,
   cabineLuz: 0xffe9b8,
 
+  // A RODA GIGANTE por fora (a reforma de outubro). As gôndolas ficam no
+  // `metalWhite`: no parque de verdade elas são brancas. Aqui moram o vermelho
+  // de circo da coroa, do miolo e da bilheteria, o piso de mosaico em raios da
+  // laje (creme e terracota clarinho) e o veludo da fila.
+  rodaVermelho: 0xd9473f,
+  rodaMosaicoClaro: 0xf3ead9,
+  rodaMosaicoEscuro: 0xe2a184,
+  rodaVeludo: 0xb3263a,
+
   // A PRAÇA DE GELO, o piso do quiosque do Mano no Villa Lobos. O gelo aqui e
   // CIANO LAVADO, e nao azul cheio: azul cheio no chao vira piscina, e o que se
   // quer e uma lamina lisa e clara que ainda deixe a grama em volta ser o verde
