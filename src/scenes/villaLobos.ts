@@ -14,7 +14,7 @@ import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/Ping
 import {
   aroDeFrisbee, bin, bleachers, building, bus, busStop, bush,
   cestaDeBiscoitos, cestaDePiquenique, flamula, mesinhaDeXadrez,
-  canteiro, capim, cloud, cone, discBag, discGolfBasket, domoDeVidro,
+  canteiro, capim, cloud, cone, discBag, discGolfBasket,
   fence, floodlight, flowers, iceCream, lamp, marcaDeMira, meioFio,
   comidinhasDePiquenique, mesaPingPong, picnicTable, portaRetrato,
   raquete, toalhaDePiquenique,
@@ -313,7 +313,10 @@ export const villaLobos: SceneDef = {
     w.blockCircle(0, -26, 7.2);
 
     /*
-     * Tapume e domo geodésico da praça da roda, como na foto.
+     * O tapume da praça da roda.
+     *
+     * A CÚPULA DE VIDRO SAIU (ficava em `-9,5 / -21`, colada no tapume): o
+     * Renan não via o que ela fazia tão perto da roda gigante.
      *
      * SÓ O DA ESQUERDA. O de `x = 11` passava rente ao fundo da bilheteria e
      * cortava a cabine ao meio na câmera de 34° — e é justamente por ali que
@@ -322,10 +325,6 @@ export const villaLobos: SceneDef = {
      */
     w.add(w.place(fence(9, 1.2, P.metalWhite), -11, 0, -20, Math.PI / 2));
     w.blockBox(-11, -20, 0.2, 4.5);
-    // a cúpula virou peça do kit: estrutura completa (meridianos, paralelos,
-    // pilares por dentro) mora em props.ts, a cena só posiciona
-    w.add(w.place(domoDeVidro(2.6), -9.5, 0, -21, 0.4));
-    w.blockCircle(-9.5, -21, 2.7);
 
     /*
      * ===================================== A BILHETERIA, E O CORREDOR ATÉ ELA
