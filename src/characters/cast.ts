@@ -1,4 +1,5 @@
 import type { CharacterSpec } from './spec';
+import { PALETTE as P } from '../palette';
 
 /**
  * O elenco do AriStory.
@@ -13,6 +14,7 @@ import type { CharacterSpec } from './spec';
 export const ARI: CharacterSpec = {
   id: 'ari',
   name: 'Ari',
+  corDaFala: P.falaAri,
   height: 1.72,
   build: 'magro',
   skin: 0xf2cfb2,
@@ -41,6 +43,7 @@ export const ARI: CharacterSpec = {
 export const RENAN: CharacterSpec = {
   id: 'renan',
   name: 'Renan',
+  corDaFala: P.falaRenan,
   height: 1.78,
   build: 'magro',
   skin: 0xefc8a4,

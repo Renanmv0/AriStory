@@ -3,6 +3,7 @@ import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { letreiro } from '../../world/props';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * AS COELHAS DA TORCIDA: a LUNA e as irmãs dela, a SOL e a ESTRELLA — as três
@@ -81,15 +82,19 @@ export interface FichaDeCoelha {
   /** o tamanho no fim (a Luna é 1,15) */
   escala: number;
   semente: number;
+  /** a voz dela na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  voz: VozDaFala;
 }
 
 export const FICHA_DA_LUNA: FichaDeCoelha = {
+  voz: { nome: 'Luna', cor: P.falaLuna },
   id: 'luna', pelo: P.lunaPelo, peloClaro: P.lunaPeloClaro, orelhaDentro: P.lunaOrelhaDentro,
   bochecha: P.lunaBochecha, orelhas: 'dobrada', enfeite: 'lua', laco: true, boca: 'linha', olhoSereno: false,
   escala: 1.15, semente: 20260928,
 };
 
 export const FICHA_DA_SOL: FichaDeCoelha = {
+  voz: { nome: 'Sol', cor: P.falaSol },
   id: 'sol', pelo: P.solPelo, peloClaro: P.solPeloClaro, orelhaDentro: P.solOrelhaDentro,
   bochecha: P.solBochecha, orelhas: 'em-pe', enfeite: 'sol', laco: false, boca: 'sorrisao', olhoSereno: false,
   // a menor das três, e a mais barulhenta
@@ -97,6 +102,7 @@ export const FICHA_DA_SOL: FichaDeCoelha = {
 };
 
 export const FICHA_DA_ESTRELLA: FichaDeCoelha = {
+  voz: { nome: 'Estrella', cor: P.falaEstrella },
   id: 'estrella', pelo: P.estrellaPelo, peloClaro: P.estrellaPeloClaro, orelhaDentro: P.estrellaOrelhaDentro,
   bochecha: P.estrellaBochecha, orelhas: 'caidas', enfeite: 'estrela', laco: false, boca: 'sorrisinho', olhoSereno: true,
   // a mais alta: a que cuida das outras duas

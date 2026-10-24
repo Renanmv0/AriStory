@@ -87,6 +87,14 @@ e girando; uma falha no topo ou na nuca só aparece girando a câmera.
 Toda mudança de cabelo **precisa** de uma foto de retrato antes de ser dada
 como pronta: `node scripts/retrato.mjs /tmp/ari` e olhe `/tmp/ari-frente.png`.
 
+## A cor da fala
+
+A ficha tem `corDaFala` (`P.falaAri`, `P.falaRenan`): a cor da etiqueta do
+nome e do pontilhado da caixa quando aquela pessoa fala (sugestão do Ari).
+NPC feito de `CharacterSpec` leva a sua também, e entra em
+`characters/vozes.ts`. Os bichos declaram a deles na classe — ver a skill
+de bicho, "A cor da fala".
+
 ## Como iterar de verdade
 
 Ajustar aparência é ida e volta com foto. O ciclo curto:

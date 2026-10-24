@@ -4,6 +4,7 @@ import { PALETTE as P } from '../../palette';
 import { colar } from '../../world/roupasDoJardim';
 import { emblemaDosGatitos, estrela, letra, textoEmArco } from '../../world/uniformeDosGatitos';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * O FLYNN — a raposa presidente da atlética dos Gatitos, o primeiro atleta da
@@ -84,6 +85,9 @@ function naRegata(x: number, y: number, folga = 0.004, costas = false): THREE.Ve
 }
 
 export class Flynn extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Flynn', cor: P.falaFlynn };
+
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly pernas: THREE.Group[] = [];

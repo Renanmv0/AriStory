@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * O NOEL, o peru que trabalha no bar de sucos do clube. O nome e do Renan.
@@ -30,6 +31,9 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * aparece de perfil nao aparece nunca, e foi o erro que a regata do Capy pagou.
  */
 export class Noel extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Noel', cor: P.falaNoel };
+
   private readonly corpo = new THREE.Group();
   private readonly pescoco = new THREE.Group();
   private readonly cabeca = new THREE.Group();

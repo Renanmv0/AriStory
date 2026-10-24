@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * A ESTELLA, a ovelha costureira da lojinha de roupas do Villa Lobos. O nome e
@@ -49,6 +50,9 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * ela — o equivalente da orelha do Cookie abanando.
  */
 export class Estella extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Estella', cor: P.falaEstella };
+
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly focinho = new THREE.Group();

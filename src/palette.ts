@@ -1972,6 +1972,31 @@ export const PALETTE = {
   lojaPatinsPisoClaro: 0xf7efe2,
   lojaPatinsPisoEscuro: 0x3d4f5c,
   lojaPatinsBorracha: 0x4a4a52,
+
+  /*
+   * A COR DA FALA DE CADA PERSONAGEM (sugestão do Ari): a etiqueta do nome e o
+   * pontilhado da caixa de fala ganham a cor de quem está falando. É SÓ a fala
+   * — o resto da interface continua no rosa de sempre, para não virar circo.
+   * Cada cor lembra o personagem; duas que aparecem juntas não podem ser
+   * parecidas (as três coelhinhas, o Walter e o Gatito no Mania).
+   */
+  falaAri: 0xff7a9c, // o rosa do jogo, que é dele
+  falaRenan: 0x474b63, // o grafite do moletom
+  falaMano: 0x7cc8ef, // azul claro de sorveteria (pedido do Ari)
+  falaCookie: 0x9a94a3, // o cinza do elefante (pedido do Ari)
+  falaGina: 0xe9b53b, // o amarelo da girafa
+  falaCapy: 0xd9443a, // o vermelho de salva-vidas
+  falaNoel: 0x9cc23a, // o verde-limão do bar de sucos
+  falaWalter: 0xb9773f, // o caramelo do pelo
+  falaJosefina: 0x4f9a4a, // o verde da horta e do casco
+  falaEstella: 0xa8416a, // o vinho da boutique
+  falaJeanLuc: 0x2f4f8f, // o azul-marinho francês
+  falaGatito: 0x6e5040, // o chocolate da pelúcia
+  falaLuna: 0x8f86d4, // a lavanda da lua
+  falaSol: 0xff9a2c, // o laranja da presilha de sol
+  falaEstrella: 0x2fb3a6, // o turquesa (a estrela já é amarela como a Gina)
+  falaFlynn: 0xc4562a, // a ferrugem da raposa
+  falaPelusa: 0xc9b8a6, // o bege-acinzentado do pelo
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

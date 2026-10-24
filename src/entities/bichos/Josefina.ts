@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * A JOSEFINA, a tartaruga jardineira do clube. O nome e o jeito sao do Renan:
@@ -32,6 +33,9 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * casco, na unica faixa de cabeca que sobra visivel de cima.
  */
 export class Josefina extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Josefina', cor: P.falaJosefina };
+
   private readonly corpo = new THREE.Group();
   private readonly pescoco = new THREE.Group();
   private readonly cabeca = new THREE.Group();

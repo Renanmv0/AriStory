@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * O MANO, o pinguim que cuida do quiosque de sorvete do Villa Lobos. O nome é
@@ -41,6 +42,9 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * ombro, que é a parte que mais aparece nesse ângulo.
  */
 export class Mano extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Mano', cor: P.falaMano };
+
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly chapeu = new THREE.Group();

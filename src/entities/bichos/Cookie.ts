@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * O COOKIE, o elefante da bilheteria da roda gigante. O nome e a historia sao
@@ -33,6 +34,9 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * azulado, no toon shading, sai como pedra.
  */
 export class Cookie extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Cookie', cor: P.falaCookie };
+
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly tromba: THREE.Group[] = [];
