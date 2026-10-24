@@ -153,6 +153,17 @@ export class Previa {
     const pr = this.renderer.getPixelRatio();
     if (canvas.width !== Math.floor(w * pr) || canvas.height !== Math.floor(h * pr)) this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
+    /*
+     * MOLDURA ESTREITA: a câmera recua até caber a LARGURA. O guarda-roupa
+     * grande põe o boneco numa coluna alta e fina entre as vagas do corpo, e
+     * enquadrando só pela altura o cabelo do Ari e as mãos (a pose de provador
+     * abre os braços) saíam cortados dos lados. Com a moldura larga a conta da
+     * altura (`mostrar`) continua mandando.
+     */
+    const alto = this.spec?.height ?? 1.7;
+    const largura = alto * 0.58;
+    const pelaLargura = largura / (2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect);
+    this.camera.position.z = Math.max(alto * 2.28, pelaLargura);
     this.camera.updateProjectionMatrix();
     this.renderer.render(this.cena, this.camera);
   }

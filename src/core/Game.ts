@@ -183,6 +183,8 @@ export class Game implements GameAPI {
     this.ui.onAbrirMochila = () => this.pintarMochila();
     this.ui.onAbrirArmario = () => this.pintarArmario();
     this.ui.onGirarBoneco = (d) => this.previa.girar(d);
+    // o nome do outro, no alto do guarda-roupa: o T de quem joga no celular
+    this.ui.onTrocarPessoaNoArmario = () => this.input.tapSwap();
     this.ui.onProvarPeca = (id) => this.provarPeca(id);
     this.ui.onComprarPeca = () => this.comprarProvada();
     this.ui.onTirarParte = (i) => {
@@ -1334,6 +1336,7 @@ export class Game implements GameAPI {
   /** Redesenha o painel e o boneco a partir do save. */
   private pintarArmario(): void {
     this.ui.mostrarAbaDoArmario(this.abaDoArmario, this.trajeDoBoneco);
+    this.ui.pessoasDoArmario(this.player.name, this.parceiro.name);
     if (this.abaDoArmario === 'piscina' && this.ui.armarioEhVestiario) {
       if (this.ui.armarioEhDaEscola) this.pintarUniformes();
       else this.pintarPiscina();

@@ -1161,7 +1161,21 @@ body.touch-device .dialogue .next { right: 84px; }
   box-shadow: var(--shadow), 0 0 0 3px var(--gold);
 }
 
-/* ------------------------------------------------------- guarda-roupa */
+/* ------------------------------------------------------- guarda-roupa
+ *
+ * O PAINEL GRANDE, com o boneco SEMPRE À VISTA (pedido do Ari, que joga pelo
+ * celular). O painel antigo era uma folha só que rolava inteira: no celular,
+ * descer até a peça levava o boneco embora, e não dava para ver a roupa mudar
+ * no corpo. Agora a folha tem altura fixa e se divide em duas metades:
+ *
+ *   - a PROVA (o boneco no palco, com as 6 vagas do corpo dos dois lados,
+ *     cada uma na altura da parte dela), que NÃO rola;
+ *   - a LISTA (o filtro por parte do corpo e as peças), que rola sozinha.
+ *
+ * No computador e no celular deitado as duas ficam lado a lado; no celular em
+ * pé, a prova em cima e a lista embaixo. Em nenhum dos três o boneco sai da
+ * tela.
+ */
 .armario {
   position: absolute;
   inset: 0;
@@ -1176,32 +1190,137 @@ body.touch-device .dialogue .next { right: 84px; }
 }
 .armario.show { opacity: 1; pointer-events: auto; }
 .armario .sheet {
-  width: min(620px, calc(100% - 32px));
-  max-height: 86vh;
-  overflow: auto;
-  padding: 22px;
-  border-radius: 22px;
-  background: rgba(255, 250, 242, 0.88);
-  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  width: min(1120px, calc(100% - 32px));
+  height: min(860px, calc(100% - 32px));
+  padding: 18px 22px 12px;
+  border-radius: 26px;
+  /* opaco o bastante para a lista rolar sem fantasma do quarto por trás */
+  background: linear-gradient(180deg, rgba(255, 250, 242, 0.96), rgba(255, 243, 233, 0.94));
+  box-shadow: var(--shadow), inset 0 0 0 2px rgba(255, 255, 255, 0.75);
+  overflow: hidden;
+  transform: translateY(10px) scale(0.985);
+  transition: transform 0.25s ease;
 }
-.armario h2 { margin: 0 0 2px; font-size: 24px; }
-.armario h2 .dono { font-size: 15px; color: var(--ink-soft); }
-.armario .sub { margin: 0 0 16px; color: var(--ink-soft); font-weight: 700; }
-.armario h3 {
-  margin: 18px 0 8px;
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.armario.show .sheet { transform: none; }
+
+/* o alto: o nome do painel, quem está se vestindo e o fechar */
+.armario .topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+.armario h2 { margin: 0; font-size: 24px; white-space: nowrap; }
+/* quem veste já está nos botões ao lado; o "de Ari" fica só para leitura */
+.armario h2 .dono {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.armario .quem {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(120, 105, 150, 0.12);
+}
+.armario .quem button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.armario .quem button.ativo {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(226, 85, 124, 0.35);
+  cursor: default;
+}
+@media (hover: hover) {
+  .armario .quem button:not(.ativo):hover { background: rgba(255, 255, 255, 0.8); color: var(--ink); }
+}
+.armario .close {
+  margin-left: auto;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(120, 105, 150, 0.12);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+@media (hover: hover) {
+  .armario .close:hover { background: var(--accent); color: #fff; }
+}
+
+.armario .sub {
+  flex: 0 0 auto;
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
   color: var(--ink-soft);
 }
 
-/* a prova: o boneco 3D à esquerda, as 4 partes do corpo à direita */
-.armario .prova {
+/* as duas metades */
+.armario .mesa {
+  flex: 1;
+  min-height: 0;
   display: grid;
-  grid-template-columns: minmax(140px, 1fr) 1.25fr;
-  gap: 14px;
-  align-items: stretch;
+  grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1.25fr);
+  gap: 18px;
+  margin-top: 12px;
 }
+
+/*
+ * A PROVA: o palco no meio e as 6 vagas em volta, cada uma na altura da parte
+ * do corpo dela — cabeça e acessório no alto, tronco e mãos no meio, pernas e
+ * pés embaixo. As vagas são filhas do `.corpo` (a ordem do DOM é a de
+ * `SLOTS_ROUPA`, que os testes leem); `display: contents` põe cada uma direto
+ * na grade da prova.
+ */
+.armario .prova {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 90px;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    'p0 palco p5'
+    'p1 palco p4'
+    'p2 palco p3';
+  gap: 10px;
+}
+.armario .corpo { display: contents; }
+.armario .parte[data-parte='0'] { grid-area: p0; }
+.armario .parte[data-parte='1'] { grid-area: p1; }
+.armario .parte[data-parte='2'] { grid-area: p2; }
+.armario .parte[data-parte='3'] { grid-area: p3; }
+.armario .parte[data-parte='4'] { grid-area: p4; }
+.armario .parte[data-parte='5'] { grid-area: p5; }
+
+/* o palco do boneco: o canvas e, EMBAIXO dele, o botão do traje e a legenda.
+ * Por cima do canvas o botão tapava os pés — justamente onde se vê o chinelo */
+.armario .palco {
+  grid-area: palco;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
 /*
  * O boneco é um <canvas> DE VERDADE dentro do painel, com renderer próprio.
  * A primeira versão recortava um pedaço do canvas do jogo com tesoura e o
@@ -1229,8 +1348,19 @@ body.touch-device .dialogue .next { right: 84px; }
   overflow: hidden;
   border-radius: 18px;
 }
+/* no guarda-roupa quem dá a altura é a PROVA (a folha tem altura fixa): a
+ * moldura só ocupa o palco, e o canvas continua preso dentro dela */
 .armario .moldura {
-  background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(226,214,240,0.4));
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  border-radius: 20px;
+  /* o palco: um foco de luz rosado no chão e o fundo de papel lilás */
+  background:
+    radial-gradient(ellipse 46% 9% at 50% 91%, rgba(226, 85, 124, 0.16), transparent 100%),
+    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(255, 255, 255, 0.95), transparent 100%),
+    linear-gradient(180deg, #fbf6ff 0%, #efe4f7 100%);
+  box-shadow: inset 0 0 0 2px rgba(120, 105, 150, 0.12);
 }
 .armario .boneco,
 .loja .boneco {
@@ -1243,58 +1373,173 @@ body.touch-device .dialogue .next { right: 84px; }
   touch-action: none;
 }
 .armario .boneco:active { cursor: grabbing; }
+.armario .girar {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-soft);
+  opacity: 0.7;
+  pointer-events: none;
+}
 
-.armario .corpo { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.armario .parte,
-.armario .peca {
+/* o que acabou de entrar no corpo (ou a dica de como se usa), embaixo do boneco */
+.armario .legenda {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 2.5em;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--ink);
+}
+.armario .legenda small { color: var(--ink-soft); font-weight: 700; font-size: 12px; }
+.armario .legenda.dica { color: var(--ink-soft); font-weight: 700; }
+/* no computador a dica já está no rodapé: a legenda guarda o lugar, vazia,
+ * para o boneco não pular quando a primeira peça entrar no corpo */
+@media (hover: hover) and (min-width: 721px) {
+  .armario .legenda.dica { visibility: hidden; }
+}
+
+/* as 6 vagas do corpo */
+.armario .parte {
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 10px 8px;
+  gap: 3px;
+  padding: 6px 4px;
   border-radius: 16px;
-  border: 2px solid rgba(120, 105, 150, 0.22);
-  background: rgba(255, 255, 255, 0.5);
+  border: 2px dashed rgba(120, 105, 150, 0.28);
+  background: rgba(255, 255, 255, 0.35);
   font: inherit;
   color: inherit;
   cursor: pointer;
+  overflow: hidden;
   transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
 }
-.armario .parte small,
-.armario .peca small {
-  font-size: 11px;
+.armario .parte small {
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-soft);
 }
-.armario .parte .icone,
-.armario .peca .icone { font-size: 24px; line-height: 1.1; }
-.armario .parte .icone.vazio { opacity: 0.35; }
-.armario .parte b,
-.armario .peca b { font-size: 12px; font-weight: 800; text-align: center; }
-.armario .parte em {
+.armario .parte .icone {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--cor, transparent);
+  font-size: 22px;
+  line-height: 1;
+  box-shadow: inset 0 -5px 8px rgba(0, 0, 0, 0.12), 0 0 0 2px #fff;
+}
+.armario .parte .icone.vazio { opacity: 0.35; box-shadow: none; filter: grayscale(0.6); }
+.armario .parte b {
+  max-width: 100%;
   font-size: 11px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.armario .parte:not(.cheio) b { color: var(--ink-soft); font-weight: 700; }
+.armario .parte em {
+  font-size: 10px;
   font-style: normal;
   font-weight: 800;
   color: var(--accent-deep);
 }
 .armario .parte.cheio {
+  border-style: solid;
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.9);
 }
-.armario .parte:not(.cheio) { cursor: default; }
-.armario .parte.cheio:hover,
-.armario .peca:hover { transform: translateY(-2px); border-color: var(--accent-deep); }
+/* `hover` só onde existe mouse: no celular o toque deixava a vaga "presa" em destaque */
+@media (hover: hover) {
+  .armario .parte:hover { transform: translateY(-2px); border-color: var(--accent-deep); }
+}
 
 /*
- * O acervo vem SEPARADO POR PARTE DO CORPO: uma seção por parte, cada uma com
- * a sua grade. Antes era uma grade só com tudo dentro, e achar a calça no meio
- * de seis vestidos virava caçada.
+ * A LISTA: a única parte que rola. O filtro gruda no alto dela, e o acervo
+ * vem SEPARADO POR PARTE DO CORPO (uma seção por parte, cada uma com a sua
+ * grade) — antes era uma grade só com tudo dentro, e achar a calça no meio de
+ * seis vestidos virava caçada.
  */
-.armario .acervo .grupo + .grupo { margin-top: 14px; }
-.armario .acervo h4 {
+.armario .lista {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 6px 12px 2px;
+  border-radius: 16px;
+}
+.armario .filtro {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 2px 0 10px;
+  /* no computador os botões quebram linha; no celular a fileira rola de lado */
+  flex-wrap: wrap;
+  scrollbar-width: none;
+  background: linear-gradient(180deg, #fff7f0 82%, rgba(255, 247, 240, 0));
+}
+.armario .filtro::-webkit-scrollbar { display: none; }
+.armario .filtro button {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 2px solid rgba(120, 105, 150, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.armario .filtro button span {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(120, 105, 150, 0.14);
+  font-size: 11px;
+}
+.armario .filtro button.ativo {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+.armario .filtro button.ativo span { background: rgba(255, 255, 255, 0.3); }
+.armario .filtro button:disabled { opacity: 0.4; cursor: default; }
+@media (hover: hover) {
+  .armario .filtro button:not(.ativo):not(:disabled):hover { border-color: var(--accent-deep); }
+}
+/* o filtro esconde as outras partes (as seções continuam no DOM) */
+.armario .lista[data-filtro='cabeca'] .grupo:not([data-slot='cabeca']),
+.armario .lista[data-filtro='tronco'] .grupo:not([data-slot='tronco']),
+.armario .lista[data-filtro='pernas'] .grupo:not([data-slot='pernas']),
+.armario .lista[data-filtro='pes'] .grupo:not([data-slot='pes']),
+.armario .lista[data-filtro='maos'] .grupo:not([data-slot='maos']),
+.armario .lista[data-filtro='acessorio'] .grupo:not([data-slot='acessorio']) { display: none; }
+/* quem já diz a parte é o filtro */
+.armario .rotulo-acervo { display: none; }
+
+.armario .grupo + .grupo { margin-top: 16px; }
+.armario .grupo h4 {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1305,33 +1550,185 @@ body.touch-device .dialogue .next { right: 84px; }
   color: var(--ink-soft);
 }
 /* o traço que separa uma parte da outra sem gastar altura */
-.armario .acervo h4::after {
+.armario .grupo h4::after {
   content: '';
   flex: 1;
   height: 2px;
   border-radius: 2px;
   background: rgba(120, 105, 150, 0.18);
 }
-.armario .acervo h4 span {
+.armario .grupo h4 span {
   padding: 1px 8px;
   border-radius: 999px;
   background: rgba(120, 105, 150, 0.14);
   font-size: 11px;
   letter-spacing: 0;
 }
-.armario .acervo .pecas {
+.armario .pecas,
+.armario .vitrine-piscina .produtos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   gap: 10px;
 }
-.armario .acervo .nada {
-  margin: 0;
+.armario .nada {
+  margin: 6px 2px 12px;
   color: var(--ink-soft);
   font-weight: 700;
 }
-.armario .close {
-  margin-top: 18px;
-  padding: 10px 18px;
+
+/*
+ * O CARTÃO DE UMA PEÇA: a amostra na COR DA PEÇA com o ícone por cima, e o
+ * nome. A nota saiu do cartão (eram três linhas de letra miúda em cada um, e
+ * com sessenta peças a grade virou parede de texto): ela aparece na legenda
+ * embaixo do boneco quando a peça entra no corpo, e no `title` do cartão.
+ */
+.armario .peca,
+.armario .produto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 7px 9px;
+  border: 2px solid rgba(120, 105, 150, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.armario .peca .icone,
+.armario .produto i {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 50px;
+  border-radius: 11px;
+  background: var(--cor, #efe8f6);
+  font-style: normal;
+  font-size: 25px;
+  line-height: 1;
+  box-shadow: inset 0 -7px 12px rgba(0, 0, 0, 0.11), inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+.armario .peca b,
+.armario .produto b { font-size: 12px; font-weight: 800; text-align: center; line-height: 1.15; }
+@media (hover: hover) {
+  .armario .peca:hover,
+  .armario .produto:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-deep);
+    box-shadow: 0 6px 14px rgba(53, 48, 74, 0.12);
+  }
+}
+.armario .peca:active,
+.armario .produto:active { transform: scale(0.97); }
+
+/* --------------------------------------------------- o vestiário do clube
+ *
+ * O vestiário É o guarda-roupa (pedido do Renan): o mesmo painel, com o nome
+ * "Vestiário", duas abas e o botão que troca o boneco entre o traje de banho
+ * e a roupa de rua. A aba de roupas de piscina é a arara da Estella dentro
+ * dele: a vitrine por parte do corpo e a ficha da peça provada ao lado do
+ * boneco, com o botão de desbloquear longe da grade.
+ *
+ * Fora do modo vestiário (o armário de casa, o espelho da Estella) as abas e
+ * o botão do traje não aparecem, e o painel é o guarda-roupa de sempre.
+ */
+.armario:not(.modo-vestiario) .abas,
+.armario:not(.modo-vestiario) .traje { display: none; }
+/* o vestiário da ESCOLA: sem traje de banho e sem carteira (uniforme se ganha) */
+.armario.modo-escola .traje,
+.armario.modo-escola .saldo { display: none; }
+.armario .produto.uniforme.trancada { opacity: 0.55; }
+.armario .produto.uniforme.trancada i { filter: grayscale(0.7); }
+.armario.aba-vestir .ficha,
+.armario.aba-vestir .vitrine-piscina,
+.armario.aba-vestir .saldo { display: none; }
+.armario.aba-piscina .corpo,
+.armario.aba-piscina .acervo,
+.armario.aba-piscina .legenda { display: none; }
+
+.armario .abas {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(120, 105, 150, 0.12);
+}
+.armario .abas button {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.armario .abas button.ativa {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(53, 48, 74, 0.14);
+}
+
+.armario .traje {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 2px 8px rgba(53, 48, 74, 0.16);
+  white-space: nowrap;
+}
+.armario .traje button {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.armario .traje button.ativo { background: var(--accent); color: #fff; }
+
+/* na aba de piscina a prova é o palco e, embaixo dele, a ficha da peça provada */
+.armario.aba-piscina .prova {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: 'palco' 'ficha';
+}
+
+/* a ficha da peça provada, no lugar das 6 partes do corpo */
+.armario .ficha {
+  grid-area: ficha;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(120, 105, 150, 0.16);
+}
+.armario .ficha.vazia > :not(.saldo) { opacity: 0.72; }
+.armario .ficha .nome { font-size: 17px; line-height: 1.2; }
+.armario .ficha .nota { color: var(--ink-soft); font-weight: 700; font-size: 12px; }
+.armario .ficha .preco {
+  margin-top: 2px;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--accent-deep);
+}
+.armario .ficha .agir {
+  margin-top: 4px;
+  padding: 11px 16px;
   border: none;
   border-radius: 999px;
   background: var(--accent);
@@ -1340,14 +1737,101 @@ body.touch-device .dialogue .next { right: 84px; }
   font-weight: 800;
   cursor: pointer;
 }
+/* a peça já é de vocês: o botão vira "vestir", e muda de cor para dizer isso */
+.armario .ficha .agir.vestir { background: #3f9f8f; }
+.armario .ficha .agir:disabled { background: rgba(120, 105, 150, 0.3); cursor: default; }
+.armario .ficha .agir:not(:disabled):hover { filter: brightness(1.08); }
+.armario .ficha .aviso {
+  margin: 0;
+  min-height: 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #a8474f;
+}
 
-@media (max-width: 560px) {
-  .armario .prova { grid-template-columns: 1fr; }
-  .armario .moldura { min-height: 220px; }
-  /* na aba de piscina a faixa grudada é boneco e ficha LADO A LADO, menores:
-   * empilhados eles comiam metade da tela e a vitrine não aparecia */
-  .armario.aba-piscina .prova { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 10px; }
-  .armario.aba-piscina .moldura { min-height: 180px; }
+.armario .produto em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--accent-deep);
+}
+.armario .produto.provando {
+  border-color: var(--accent-deep);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px rgba(150, 120, 190, 0.25);
+}
+.armario .produto.ja-tem em { color: #3f8f80; }
+.armario .produto.vestida { border-color: #3f9f8f; }
+.armario .produto.caro em { color: #a8474f; }
+/* a carteira do casal, no alto da ficha: sempre à vista enquanto se escolhe */
+.armario .saldo {
+  align-self: flex-start;
+  margin: 0 0 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #fff4d6;
+  border: 2px solid #f0d58a;
+  font-weight: 800;
+  color: #6b4a08;
+  white-space: nowrap;
+}
+.armario .saldo b { font-size: 16px; }
+.armario .saldo small { font-size: 12px; }
+
+/* ------------------------------------------- o guarda-roupa no celular EM PÉ
+ *
+ * A folha ocupa a tela; a prova fica em cima (o boneco no meio, três vagas de
+ * cada lado) e a lista embaixo, rolando sozinha. Tocar numa peça lá embaixo
+ * mostra ela no corpo sem ninguém rolar de volta.
+ */
+@media (max-width: 720px) and (orientation: portrait), (max-width: 520px) {
+  .armario .sheet {
+    width: calc(100% - 12px);
+    height: calc(100% - 12px);
+    padding: 12px 10px 8px;
+    border-radius: 22px;
+  }
+  .armario .topo { gap: 8px; }
+  .armario h2 { font-size: 20px; }
+  .armario .quem button { padding: 5px 12px; font-size: 13px; }
+  .armario .close { padding: 7px 12px; }
+  .armario .close span { display: none; }
+  .armario .abas { margin-top: 8px; }
+  .armario .abas button { padding: 7px 8px; font-size: 13px; }
+  .armario .mesa {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(250px, 47%) minmax(0, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .armario .prova { grid-template-columns: 76px minmax(0, 1fr) 76px; gap: 6px; }
+  .armario .parte { padding: 4px 3px; border-radius: 14px; gap: 2px; }
+  .armario .parte small { font-size: 9px; letter-spacing: 0.03em; }
+  .armario .parte .icone { width: 34px; height: 34px; font-size: 18px; }
+  .armario .parte b { font-size: 10px; }
+  .armario .parte em { display: none; }
+  .armario .girar { display: none; }
+  .armario .legenda { font-size: 11px; min-height: 2.4em; }
+  .armario .legenda small { font-size: 11px; }
+  .armario .filtro { flex-wrap: nowrap; overflow-x: auto; }
+  .armario .filtro button { padding: 5px 10px; font-size: 12px; }
+  .armario .pecas,
+  .armario .vitrine-piscina .produtos {
+    grid-template-columns: repeat(auto-fill, minmax(98px, 1fr));
+    gap: 8px;
+  }
+  .armario .peca .icone,
+  .armario .produto i { height: 44px; font-size: 22px; }
+  .armario .sub { display: none; }
+
+  /* na aba de piscina, boneco e ficha LADO A LADO: empilhados eles comiam a
+   * metade de cima inteira e a ficha ficava minúscula */
+  .armario.aba-piscina .prova {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: 'palco ficha';
+    gap: 8px;
+  }
   .armario.aba-piscina .ficha { padding: 10px; gap: 4px; }
   .armario.aba-piscina .ficha .nome { font-size: 15px; }
   .armario.aba-piscina .ficha .preco { font-size: 19px; }
@@ -1358,6 +1842,60 @@ body.touch-device .dialogue .next { right: 84px; }
   /* na coluna estreita do boneco o botão do traje fica só com os ícones */
   .armario.aba-piscina .traje button span { display: none; }
   .armario .traje button { padding: 4px 9px; font-size: 13px; }
+}
+
+/* ------------------------------------------- o guarda-roupa no celular DEITADO
+ *
+ * Pouca altura: as duas metades continuam lado a lado, o alto encolhe e a
+ * dica do rodapé sai (no celular não existe T nem mouse).
+ */
+@media (max-height: 520px) and (orientation: landscape) {
+  .armario .sheet {
+    width: calc(100% - 16px);
+    height: calc(100% - 12px);
+    padding: 8px 14px 8px;
+    border-radius: 20px;
+  }
+  .armario h2 { font-size: 18px; }
+  .armario .quem button { padding: 4px 12px; font-size: 13px; }
+  .armario .close { padding: 5px 12px; }
+  .armario .abas { margin-top: 6px; padding: 3px; }
+  .armario .abas button { padding: 4px 8px; font-size: 13px; }
+  .armario .mesa {
+    grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.2fr);
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .armario .prova { grid-template-columns: 72px minmax(0, 1fr) 72px; gap: 6px; }
+  .armario .parte { padding: 3px; border-radius: 12px; gap: 1px; }
+  .armario .parte small { font-size: 9px; }
+  .armario .parte .icone { width: 30px; height: 30px; font-size: 16px; }
+  .armario .parte b { font-size: 10px; }
+  .armario .parte em { display: none; }
+  .armario .girar { display: none; }
+  .armario .legenda { font-size: 11px; min-height: 0; }
+  .armario .legenda small { display: none; }
+  .armario .filtro { flex-wrap: nowrap; overflow-x: auto; }
+  .armario .filtro button { padding: 4px 10px; font-size: 12px; }
+  .armario .peca .icone,
+  .armario .produto i { height: 40px; font-size: 20px; }
+  .armario .sub { display: none; }
+  .armario.aba-piscina .prova {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: 'palco ficha';
+  }
+  .armario.aba-piscina .ficha { padding: 8px 10px; gap: 3px; }
+  .armario.aba-piscina .ficha .nome { font-size: 14px; }
+  .armario.aba-piscina .ficha .preco { font-size: 17px; }
+  .armario.aba-piscina .ficha .agir { padding: 7px 10px; font-size: 13px; }
+  .armario.aba-piscina .saldo small { display: none; }
+  .armario.aba-piscina .traje button span { display: none; }
+}
+
+/* toque sem teclado: a dica do rodapé fala de T e de mouse */
+@media (hover: none) {
+  .armario .sub { display: none; }
 }
 
 /* --------------------------------------------- a arara da Estella (a loja)
@@ -1518,236 +2056,6 @@ body.touch-device .dialogue .next { right: 84px; }
   .loja .prova { grid-template-columns: 1fr; }
   .loja .moldura { min-height: 210px; }
 }
-
-/* --------------------------------------------------- o vestiário do clube
- *
- * O vestiário É o guarda-roupa (pedido do Renan): o mesmo painel, com o nome
- * "Vestiário", duas abas e o botão que troca o boneco entre o traje de banho
- * e a roupa de rua. A aba de roupas de piscina é a arara da Estella dentro
- * dele: a vitrine por parte do corpo e a ficha da peça provada ao lado do
- * boneco, com o botão de desbloquear longe da grade.
- *
- * Fora do modo vestiário (o armário de casa, o espelho da Estella) as abas e
- * o botão do traje não aparecem, e o painel é o guarda-roupa de sempre.
- */
-.armario:not(.modo-vestiario) .abas,
-.armario:not(.modo-vestiario) .traje { display: none; }
-/* o vestiário da ESCOLA: sem traje de banho e sem carteira (uniforme se ganha) */
-.armario.modo-escola .traje,
-.armario.modo-escola .saldo { display: none; }
-.armario .produto.uniforme.trancada { opacity: 0.55; }
-.armario .produto.uniforme.trancada i { filter: grayscale(0.7); }
-.armario .vitrine-piscina > .nada { margin: 6px 2px 12px; color: #6b6178; font-weight: 700; }
-.armario.aba-vestir .ficha,
-.armario.aba-vestir .vitrine-piscina,
-.armario.aba-vestir .saldo { display: none; }
-.armario.aba-piscina .corpo,
-.armario.aba-piscina .acervo { display: none; }
-
-.armario .abas {
-  display: flex;
-  gap: 6px;
-  margin: 10px 0 8px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(120, 105, 150, 0.12);
-}
-.armario .abas button {
-  flex: 1;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink-soft);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.armario .abas button.ativa {
-  background: #fff;
-  color: var(--ink);
-  box-shadow: 0 2px 8px rgba(53, 48, 74, 0.14);
-}
-
-/* o palco do boneco: o canvas e, EMBAIXO dele, o botão do traje. Por cima do
- * canvas o botão tapava os pés — justamente onde se vê o chinelo */
-.armario .palco {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-.armario .palco .moldura { flex: 1; }
-.armario .traje {
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 2px 8px rgba(53, 48, 74, 0.16);
-  white-space: nowrap;
-}
-.armario .traje button {
-  padding: 4px 10px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink-soft);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-.armario .traje button.ativo { background: var(--accent); color: #fff; }
-
-/*
- * Na aba de piscina o boneco e a ficha GRUDAM no alto da folha: a vitrine é
- * comprida, e tocar numa bermuda lá embaixo tinha que mostrar ela no corpo e
- * o botão de desbloquear sem ninguém rolar de volta para cima. A faixa vai de
- * borda a borda da folha e tapa o que rola por baixo dela.
- */
-.armario.aba-piscina .prova {
-  position: sticky;
-  top: -22px;
-  z-index: 2;
-  margin: 0 -22px;
-  padding: 10px 22px 12px;
-  /* opaco de verdade: com 98% a vitrine rolando por baixo aparecia em fantasma */
-  background: #f8f3ec;
-  box-shadow: 0 10px 12px -12px rgba(53, 48, 74, 0.45);
-}
-
-/* a ficha da peça provada, no lugar das 6 partes do corpo */
-.armario .ficha {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 2px solid rgba(120, 105, 150, 0.16);
-}
-.armario .ficha.vazia > :not(.saldo) { opacity: 0.72; }
-.armario .ficha .nome { font-size: 17px; line-height: 1.2; }
-.armario .ficha .nota { color: var(--ink-soft); font-weight: 700; font-size: 12px; }
-.armario .ficha .preco {
-  margin-top: 2px;
-  font-size: 24px;
-  font-weight: 900;
-  color: var(--accent-deep);
-}
-.armario .ficha .agir {
-  margin-top: 6px;
-  padding: 11px 16px;
-  border: none;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
-  font: inherit;
-  font-weight: 800;
-  cursor: pointer;
-}
-/* a peça já é de vocês: o botão vira "vestir", e muda de cor para dizer isso */
-.armario .ficha .agir.vestir { background: #3f9f8f; }
-.armario .ficha .agir:disabled { background: rgba(120, 105, 150, 0.3); cursor: default; }
-.armario .ficha .agir:not(:disabled):hover { filter: brightness(1.08); }
-.armario .ficha .aviso {
-  margin: 0;
-  min-height: 14px;
-  font-size: 12px;
-  font-weight: 800;
-  color: #a8474f;
-}
-
-/* a vitrine das roupas de piscina: por parte do corpo, como o acervo */
-.armario .vitrine-piscina .grupo + .grupo { margin-top: 14px; }
-.armario .vitrine-piscina h4 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 8px;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-.armario .vitrine-piscina h4::after {
-  content: '';
-  flex: 1;
-  height: 2px;
-  border-radius: 2px;
-  background: rgba(120, 105, 150, 0.18);
-}
-.armario .vitrine-piscina h4 span {
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: rgba(120, 105, 150, 0.14);
-  font-size: 11px;
-  letter-spacing: 0;
-}
-.armario .vitrine-piscina .produtos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
-  gap: 10px;
-}
-.armario .produto {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  padding: 10px 8px;
-  border: 2px solid rgba(120, 105, 150, 0.18);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.5);
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.12s ease;
-}
-/* a amostra é a COR DA PEÇA, com o ícone dela por cima */
-.armario .produto i {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 34px;
-  border-radius: 10px;
-  font-style: normal;
-  font-size: 18px;
-  box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.12);
-}
-.armario .produto b { font-size: 12px; font-weight: 800; text-align: center; line-height: 1.15; }
-.armario .produto em {
-  font-style: normal;
-  font-size: 12px;
-  font-weight: 900;
-  color: var(--accent-deep);
-}
-.armario .produto:hover { transform: translateY(-2px); border-color: var(--accent-deep); }
-.armario .produto.provando {
-  border-color: var(--accent-deep);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 0 3px rgba(150, 120, 190, 0.25);
-}
-.armario .produto.ja-tem em { color: #3f8f80; }
-.armario .produto.vestida { border-color: #3f9f8f; }
-.armario .produto.caro em { color: #a8474f; }
-/* a carteira do casal, no alto da ficha: sempre à vista enquanto se escolhe */
-.armario .saldo {
-  align-self: flex-start;
-  margin: 0 0 4px;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: #fff4d6;
-  border: 2px solid #f0d58a;
-  font-weight: 800;
-  color: #6b4a08;
-  white-space: nowrap;
-}
-.armario .saldo b { font-size: 16px; }
-.armario .saldo small { font-size: 12px; }
 
 /* rótulo da parte do corpo nas vagas de vestimenta da mochila */
 .mochila .slot .parte {
