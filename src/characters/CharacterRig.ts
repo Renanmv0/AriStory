@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon, flat } from '../core/materials';
 import { BUILD_WIDTH, type CharacterSpec } from './spec';
 import { patins as patinsMesh } from '../world/props';
+import { fundir } from '../world/fundir';
 import {
   SLOTS_ROUPA,
   type HoldPose,
@@ -428,36 +429,174 @@ export class CharacterRig {
       this.sobreTronco.push(stripe);
     }
 
-    // jaqueta aberta por cima da camiseta
+    // O MOLETOM ABERTO por cima da camiseta (o do Renan). Já foi um cilindro
+    // com a fresta virada para o LADO — no `CylinderGeometry` o ângulo 0 é a
+    // frente (+Z) e PI/2 é o +X —, e o Renan reparou: fechado de um lado e
+    // aberto do outro, com os ombros da camiseta aparecendo por cima. Agora:
+    // - o corpo é aberto NA FRENTE, com a fresta do zíper mostrando a camiseta;
+    // - os ombros são uma cúpula com a gola em volta do pescoço;
+    // - a barra e o punho da manga curta são canelados (um tom acima), com o
+    //   vivo do zíper nas duas bordas, os bolsos e o cordão do capuz;
+    // - o capuz cai dobrado nas costas, com a borda virada.
+    // Justo, sem sobrar pano: 1,08 do raio do tronco (a camiseta tem 1).
     if (spec.jacket !== undefined) {
       const jaquetaMat = toon(spec.jacket, { doubleSide: true });
+      const pano = toon(spec.jacket);
+      // dos dois lados: a mesma cor da barra (que é casca aberta), então o
+      // canelado inteiro — barra, ponteiras, boca dos bolsos — vira uma malha
+      const canelado = toon(new THREE.Color(spec.jacket).offsetHSL(0, 0, 0.045).getHex(), { doubleSide: true });
+      const vivo = toon(new THREE.Color(spec.jacket).offsetHSL(0, 0, 0.13).getHex());
       const raio = h * 0.105 * w;
+      const RJ = raio * 1.08;
+      const ACH = 0.84;
+      /** metade da fresta da frente, em radianos (o zíper aberto) */
+      const FRESTA = 0.36;
+      // tudo num grupo só, que no fim passa pelo `fundir()`: os ~20 pedaços
+      // viram uma malha por material (o capuz, que some com a mochila, é
+      // um grupo com nome e fica à parte)
+      const moletom = new THREE.Group();
+      const poe = (o: THREE.Object3D) => moletom.add(o);
 
-      // cilindro vazado com uma fresta na frente: e por ela que a camiseta aparece
-      const casco = new THREE.Mesh(
-        new THREE.CylinderGeometry(
-          raio * 1.14, raio * 1.1, torsoH * 0.66, 16, 1, true,
-          Math.PI / 2 + 0.72, Math.PI * 2 - 1.44,
-        ),
+      // o CORPO: da barra até o meio do peito, onde a cúpula dos ombros começa
+      const yBarra = hipY + torsoH * 0.2;
+      const yOmbro = hipY + torsoH * 0.77;
+      // o corpo começa em cima da barra (a barra é a peça de baixo, sem
+      // sobrepor: duas cascas no mesmo raio brigam pelo pixel)
+      const yCorpo = yBarra + torsoH * 0.065;
+      const corpoDoMoletom = new THREE.Mesh(
+        new THREE.CylinderGeometry(RJ, RJ * 1.01, yOmbro - yCorpo, 28, 1, true, FRESTA, Math.PI * 2 - FRESTA * 2),
         jaquetaMat,
       );
-      casco.position.y = hipY + torsoH * 0.56;
-      casco.scale.z = 0.84;
-      this.body.add(casco);
-      this.soVestido.push(casco);
-      this.sobreTronco.push(casco);
+      corpoDoMoletom.position.y = (yOmbro + yCorpo) / 2;
+      corpoDoMoletom.scale.z = ACH;
+      poe(corpoDoMoletom);
 
-      const capuz = new THREE.Mesh(
-        new THREE.SphereGeometry(h * 0.088 * w, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.62),
-        toon(spec.jacket),
+      // os OMBROS: a cúpula por cima da cápsula do tronco, aberta na frente e
+      // com o furo do pescoço. Na esfera do three a frente é phi = PI/2
+      const ombros = new THREE.Mesh(
+        new THREE.SphereGeometry(RJ, 28, 10, Math.PI / 2 + FRESTA, Math.PI * 2 - FRESTA * 2, 0.5, Math.PI / 2 - 0.5),
+        jaquetaMat,
       );
-      capuz.position.set(0, shoulderY + torsoH * 0.04, -raio * 0.75);
-      capuz.rotation.x = -0.7;
-      capuz.scale.set(1.15, 1, 0.8);
-      this.body.add(capuz);
-      this.soVestido.push(capuz);
-      this.sobreTronco.push(capuz);
+      ombros.position.y = yOmbro;
+      ombros.scale.set(1, 0.92, ACH);
+      poe(ombros);
+
+      // a GOLA: o anel em volta do pescoço, onde o capuz nasce (aberto na frente)
+      const raioGola = RJ * Math.sin(0.5);
+      const gola = new THREE.Mesh(
+        new THREE.TorusGeometry(raioGola, h * 0.009, 6, 22, Math.PI * 2 - FRESTA * 2.4),
+        jaquetaMat,
+      );
+      gola.rotation.set(Math.PI / 2, 0, Math.PI / 2 + FRESTA * 1.2);
+      // o achatado do tronco vai num pai: na própria gola ele entraria antes
+      // do giro e achataria o lado errado
+      const golaAchatada = new THREE.Group();
+      golaAchatada.scale.z = ACH;
+      golaAchatada.position.y = yOmbro + RJ * 0.92 * Math.cos(0.5) - h * 0.004;
+      golaAchatada.add(gola);
+      poe(golaAchatada);
+      const yGola = golaAchatada.position.y;
+
+      // a BARRA canelada, um tico mais justa que o corpo
+      const barra = new THREE.Mesh(
+        new THREE.CylinderGeometry(RJ * 1.0, RJ * 0.985, torsoH * 0.07, 28, 1, true, FRESTA, Math.PI * 2 - FRESTA * 2),
+        canelado,
+      );
+      barra.position.y = yBarra + torsoH * 0.035;
+      barra.scale.z = ACH;
+      poe(barra);
+      // os frisos do canelado: riscos verticais na barra (em lote)
+      const FRISOS = 22;
+      // um tom só acima da barra: mais claro que isso, os frisos liam franja
+      const corDoFriso = toon(new THREE.Color(spec.jacket).offsetHSL(0, 0, 0.075).getHex());
+      const friso = new THREE.InstancedMesh(new THREE.BoxGeometry(h * 0.0014, torsoH * 0.05, h * 0.0015), corDoFriso, FRISOS);
+      const m4 = new THREE.Object3D();
+      for (let k = 0; k < FRISOS; k++) {
+        const a = FRESTA + 0.08 + (k / (FRISOS - 1)) * (Math.PI * 2 - FRESTA * 2 - 0.16);
+        m4.position.set(Math.sin(a) * RJ * 0.997, barra.position.y, Math.cos(a) * RJ * 0.997 * ACH);
+        m4.rotation.set(0, a, 0);
+        m4.updateMatrix();
+        friso.setMatrixAt(k, m4.matrix);
+      }
+      poe(friso);
+
+      // o VIVO DO ZÍPER nas duas bordas da fresta, da barra até a gola, e o
+      // CORDÃO do capuz saindo da gola, com a ponteira
+      for (const lado of [-1, 1] as const) {
+        const a = lado * FRESTA;
+        const pontos: THREE.Vector3[] = [];
+        for (let k = 0; k <= 8; k++) {
+          const yy = yBarra + (k / 8) * (yOmbro - yBarra);
+          pontos.push(new THREE.Vector3(Math.sin(a) * RJ * 1.012, yy, Math.cos(a) * RJ * ACH * 1.012));
+        }
+        // e sobe pela cúpula até a gola
+        for (let k = 1; k <= 4; k++) {
+          const th = Math.PI / 2 - (k / 4) * (Math.PI / 2 - 0.5);
+          const r = RJ * Math.sin(th) * 1.005;
+          pontos.push(new THREE.Vector3(Math.sin(a) * r, yOmbro + RJ * 0.92 * Math.cos(th), Math.cos(a) * r * ACH));
+        }
+        poe(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pontos), 24, h * 0.0028, 5, false), vivo));
+
+        const xc = Math.sin(lado * FRESTA * 1.1) * raioGola;
+        const zc = Math.cos(FRESTA * 1.1) * raioGola * ACH + h * 0.004;
+        const yc = yGola - h * 0.004;
+        const cordao = new THREE.Mesh(new THREE.CylinderGeometry(h * 0.0022, h * 0.0022, torsoH * 0.26, 5), vivo);
+        cordao.position.set(xc + lado * h * 0.002, yc - torsoH * 0.13, zc + h * 0.006);
+        cordao.rotation.z = lado * 0.05;
+        poe(cordao);
+        const ponteira = new THREE.Mesh(new THREE.CylinderGeometry(h * 0.0032, h * 0.0032, h * 0.012, 6), canelado);
+        ponteira.position.set(xc + lado * h * 0.0035, yc - torsoH * 0.27, zc + h * 0.006);
+        poe(ponteira);
+
+        // o BOLSO de cada metade: a aba do canguru, com a boca enviesada
+        const aPonta = lado * (FRESTA + 0.12);
+        const aFim = lado * (FRESTA + 0.95);
+        const bolso = new THREE.Mesh(
+          // um fio por fora do corpo (que vai de 1 a 1,01 do raio): mais
+          // rente, as duas cascas brigavam e o bolso saía listrado
+          new THREE.CylinderGeometry(RJ * 1.03, RJ * 1.032, torsoH * 0.2, 8, 1, true, Math.min(aPonta, aFim), Math.abs(aFim - aPonta)),
+          toon(new THREE.Color(spec.jacket).offsetHSL(0, 0, 0.02).getHex(), { doubleSide: true }),
+        );
+        bolso.position.y = yBarra + torsoH * 0.19;
+        bolso.scale.z = ACH;
+        poe(bolso);
+        const boca: THREE.Vector3[] = [];
+        for (let k = 0; k <= 6; k++) {
+          const t = k / 6;
+          const a2 = aPonta + (aFim - aPonta) * t * 0.55;
+          const yy = bolso.position.y + torsoH * 0.1 - t * torsoH * 0.2;
+          boca.push(new THREE.Vector3(Math.sin(a2) * RJ * 1.038, yy, Math.cos(a2) * RJ * 1.038 * ACH));
+        }
+        // a boca do bolso no tom do canelado: no do vivo ela lia risco
+        poe(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(boca), 12, h * 0.0022, 5, false), canelado));
+      }
+
+      // o CAPUZ caído nas costas: a concha do capuz dobrada sobre os ombros
+      // e a borda virada (um tubo grosso) em volta da boca dele
+      const capuz = new THREE.Group();
+      capuz.name = 'capuz';
+      const concha = new THREE.Mesh(
+        new THREE.SphereGeometry(h * 0.075 * w, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
+        pano,
+      );
+      concha.rotation.x = -1.15;
+      concha.scale.set(1.25, 0.9, 0.62);
+      capuz.add(concha);
+      const borda = new THREE.Mesh(new THREE.TorusGeometry(h * 0.062 * w, h * 0.011, 8, 22), canelado);
+      borda.rotation.x = -1.15 + Math.PI / 2;
+      borda.scale.set(1.25, 0.85, 1);
+      borda.position.set(0, h * 0.012, h * 0.01);
+      capuz.add(borda);
+      capuz.position.set(0, yOmbro + RJ * 0.55, -RJ * ACH * 0.95);
+      poe(capuz);
       this.nasCostasDaFicha.push(capuz);
+      // o capuz volta a aparecer quando a mochila sai: ele entra na lista que
+      // o `aplicarVisual` reacende
+      this.soVestido.push(capuz);
+
+      this.body.add(fundir(moletom));
+      this.soVestido.push(moletom);
+      this.sobreTronco.push(moletom);
     }
 
     // calção de banho: fica escondido até alguém entrar na água.
@@ -513,6 +652,18 @@ export class CharacterRig {
       this.trocaMaterial.push({
         mesh: sleeve, normal: manga, banho: skin, slot: 'tronco', parte: 'detalhe',
       });
+      // o PUNHO canelado da manga curta do moletom: some junto com ele
+      // (roupa de tronco vestida, ou o banho)
+      if (spec.jacket !== undefined) {
+        const punho = new THREE.Mesh(
+          new THREE.CylinderGeometry(h * 0.041 * w, h * 0.04 * w, armLen * 0.07, 14, 1, true),
+          toon(new THREE.Color(spec.jacket).offsetHSL(0, 0, 0.045).getHex(), { doubleSide: true }),
+        );
+        punho.position.y = -armLen * 0.43;
+        pivot.add(punho);
+        this.soVestido.push(punho);
+        this.sobreTronco.push(punho);
+      }
 
       const forearm = new THREE.Mesh(
         new THREE.CapsuleGeometry(h * 0.032 * w, armLen * 0.28, 4, 10),
@@ -1490,6 +1641,11 @@ export class CharacterRig {
         if (!malha.isMesh) return;
         const pos = malha.geometry.getAttribute('position');
         if (!pos) return;
+        // o que some com a mochila (o capuz, que mora DENTRO do grupo do
+        // moletom) não conta: medido, ele empurrava a mochila 6 cm para trás
+        for (let o: THREE.Object3D | null = malha; o && o !== this.body; o = o.parent) {
+          if (this.nasCostasDaFicha.includes(o)) return;
+        }
         // a matriz da malha no referencial do corpo: as locais, até o corpo
         noCorpo.identity();
         for (let o: THREE.Object3D | null = malha; o && o !== this.body; o = o.parent) {

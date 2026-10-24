@@ -123,10 +123,12 @@ const comVestido = await j(() => {
   const I = window.aristoryItens;
   const rig = [g.player, g.parceiro].find((q) => q.rig.spec.jacket !== undefined).rig;
   // o capuz do moletom do Renan: com uma mochila nas costas ele some
+  // (o grupo `capuz` do moletom, visível de verdade: ele e todos os pais)
   const capuz = () => {
-    let n = 0;
-    rig.group.traverse((o) => { if (o.isMesh && o.visible && o.geometry.type === 'SphereGeometry' && o.material.color.getHex() === rig.spec.jacket) n++; });
-    return n;
+    const c = rig.group.getObjectByName('capuz');
+    if (!c) return 0;
+    for (let o = c; o; o = o.parent) if (!o.visible) return 0;
+    return 1;
   };
   // o ponto da mochila mais perto das costas (z do corpo): o corpo, as alças
   // subindo e o fundo, tudo o que fica atrás na largura do tronco
@@ -143,8 +145,8 @@ const comVestido = await j(() => {
         for (let k = 0; k < pos.count; k++) {
           rig.body.worldToLocal(o.localToWorld(v.fromBufferAttribute(pos, k)));
           // a folga até as costas do moletom NAQUELE x (o cilindro de raio
-          // 1,1·R achatado em 0,84): negativa = por dentro do moletom
-          const RJ = R * 1.1;
+          // 1,08·R achatado em 0,84): negativa = por dentro do moletom
+          const RJ = R * 1.08;
           if (Math.abs(v.x) < RJ && v.z < 0 && v.y > rig.medidas.legH + rig.medidas.torsoH * 0.25 && v.y < rig.medidas.legH + rig.medidas.torsoH * 0.88) {
             const costas = -0.84 * Math.sqrt(RJ * RJ - v.x * v.x);
             maisPerto = Math.max(maisPerto, v.z - costas);
@@ -173,6 +175,8 @@ for (const id of ['mochila-casco', 'mochila-do-renan']) {
   const m = comVestido[id];
   ok(m.capuz === 0, `com a ${id} o capuz some (${m.capuz})`);
   ok(m.encosto <= 1e-3, `a ${id} fica por fora do moletom (o ponto mais para dentro está ${(-m.encosto * 100).toFixed(1)} cm fora das costas dele)`);
+  // e encostada: o capuz (que some) já empurrou a mochila 6 cm para trás
+  ok(m.encosto > -0.03, `a ${id} encosta no moletom, sem vão (${(-m.encosto * 100).toFixed(1)} cm)`);
 }
 ok(comVestido.vestidos.includes('mochila-casco') && comVestido.vestidos.includes('vestido-rosa'), `a mochila veste junto com o vestido (${comVestido.vestidos.join(', ')})`);
 
