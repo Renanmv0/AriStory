@@ -164,10 +164,21 @@ w.onUpdate((dt) => renan.update(dt, 0));   // 0 = parado; > 0 anima a caminhada
 
 ## Jaqueta
 
-`jacket: 0x191a1f` põe um moletom aberto por cima da camiseta: as mangas ganham
-a cor da jaqueta, um cilindro vazado com fresta na frente envolve o torso (é
-pela fresta que a camiseta aparece — se a camiseta for escura demais, some) e um
-capuz cai nas costas. É o que o Renan usa.
+`jacket: 0x191a1f` põe o MOLETOM ABERTO de manga curta por cima da camiseta
+(é o que o Renan usa): o corpo é aberto NA FRENTE (a fresta do zíper mostra
+a camiseta), os ombros são uma cúpula com a gola em volta do pescoço, a barra
+é canelada com os frisos em lote, tem o vivo do zíper nas duas bordas, os
+dois bolsos, o cordão do capuz com a ponteira, o punho canelado na manga e o
+capuz caído nas costas. As mangas ganham a cor da jaqueta. Justo: 1,08 do
+raio do tronco. Tudo passa por `fundir()` (uns 20 pedaços viram ~7 malhas);
+o capuz é o grupo `capuz`, que some quando há mochila nas costas.
+
+**Cuidado com o ângulo do cilindro**: no `CylinderGeometry` o ângulo 0 é a
+FRENTE (+Z) e `PI/2` é o +X. A primeira versão abria a fresta em `PI/2` — o
+moletom ficava fechado de um lado e aberto do outro, e o Renan reparou. Na
+`SphereGeometry` é diferente: a frente é `phi = PI/2`. E casca por cima de
+casca precisa de um fio de folga real (o bolso a 1,03 do raio, não 1,01):
+rente, as duas brigam pelo pixel e saem listradas.
 
 ## Traje de banho
 
