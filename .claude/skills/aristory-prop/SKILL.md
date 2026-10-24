@@ -801,6 +801,57 @@ praça do Mano, na família da sorveteria. O que serve para qualquer peça de ge
   praça inteira, 472 → 441 desenhos e 113,9 mil → 122,2 mil triângulos
   com os enfeites, e 441 → 403 e 122,2 mil → 127,3 mil com a borda.
 
+## O balcão de tingimento (`world/balcaoDeTingimento.ts`)
+
+O cantinho do mezanino da boutique (no lugar da namoradeira e da mesinha)
+virou o ATELIÊ DE TINTA da Estella — é ele que abre o ateliê de tingimento
+(ver a skill de roupa). O molde de BANCADA DE OFÍCIO, que diz o que se faz
+ali só de olhar:
+
+- **a estante de pigmentos na parede**: duas prateleiras de potes em
+  arco-íris com as cores da CARTELA de verdade (`TODAS_AS_TINTAS`, um a cada
+  três), em quatro lotes (a tinta com cor por cópia, o pescoço de vidro, a
+  tampa de latão, a etiqueta); o fundo é um painel perfurado em canvas com o
+  UV repetido a cada 25 cm; em cima, carretéis (lote) e rolos de tecido;
+- **o tampo conta a história**: carvalho em tábuas com o veio e os
+  respingos, pingos e marcas de fundo de pote nas cores da cartela, tudo
+  num canvas na proporção do tampo (caixa com o UV de 0 a 1 em cima);
+- **o que se mexe tem nome e fica fora da `fundir()`**: a tinta da tina de
+  cobre (`tinta-da-tina`, um disco com o redemoinho em canvas, gira) e as
+  BANDEIROLAS de tecido tingido num cordão em catenária (um lote de 11, com a
+  matriz refeita no `update` — uma brisa que passa de ponta a ponta);
+- a cartela EM LEQUE na bancada são sete tiras (uma por família, pintadas
+  com as cores dela) em pivôs no mesmo rebite, cada uma 4,5 mm acima da
+  outra; o caderno de receitas aberto, a caneca de pincéis, os potinhos de
+  amostra, a pilha de tecidos dobrados e o balde de zinco com a tinta
+  escorrida no chão completam;
+- gavetas de pigmento na frente (almofada com friso de latão, puxador em
+  concha e a etiqueta da cor, em lote). As TRAVESSAS de dentro entram no
+  fundo e param em profundidades diferentes — com a mesma medida, as pontas
+  caíam no plano do fundo (`zfighting.mjs`, 14 pares);
+- luz pintada: o filete aceso embaixo da estante e duas poças na bancada.
+
+As medidas que a cena usa ficam em `BALCAO_DE_TINGIMENTO` (o colisor e o
+balde). A cena chama `update` só com o mezanino à vista.
+
+**O peso, e as duas juntas que o devolveram sem mudar a imagem:**
+
+- a cartela em leque nasceu com uma textura por tira e um material por
+  FACE (~40 desenhos por quadro só ela). Virou UMA textura com as sete
+  colunas e o UV de cada tira apontando para a sua (`uvSoNaTampa`: a tampa
+  mostra a coluna, as outras faces um pixel liso do papel) — um material,
+  uma malha na `fundir()`. O caderno, igual;
+- as dezenas de miudezas de cor lisa (tecidos, potinhos, pincéis, tina,
+  balde, latão) eram um desenho por cor: `juntarPorCor` as junta numa malha
+  de `toon(branco, corPorVertice)` (o material das árvores — o toon
+  multiplica a cor do material pela do vértice). Fica de fora o que tem
+  textura, brilho, transparência, dois lados, lote ou nome. `?semFundir`
+  desliga as duas (é assim que o `zfighting.mjs` mede);
+- medido no canto do mezanino, de perto: 235 → 238 desenhos por quadro e
+  56,8 → 73,0 mil triângulos (sem as juntas, eram 316 desenhos); com o
+  mezanino inteiro, 288 → 286. A foto antes e depois da `juntarPorCor`
+  difere só no que se mexe sozinho (bandeirolas, tinta da tina, respiração).
+
 ## A roda gigante e a bilheteria (`world/ferrisWheel.ts`, `world/bilheteriaDaRoda.ts`)
 
 A reforma de outubro da área da roda do Villa Lobos ("mais detalhado e mais

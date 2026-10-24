@@ -16,6 +16,9 @@ import type { SomNome } from '../audio/efeitos';
 import { CharacterRig } from '../characters/CharacterRig';
 import { Previa } from '../characters/Previa';
 import { VOZES } from '../characters/vozes';
+import {
+  FLAG_DO_ATELIE, PRECO_DO_ATELIE, chaveDaTinta, corAtual, podeTingir, temDetalhe, type ParteDaTinta,
+} from '../world/tintas';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
 import {
@@ -219,6 +222,26 @@ export class Game implements GameAPI {
       this.pintarArmario();
     };
     this.ui.onProvarNaPiscina = (id) => this.provarNaPiscina(id);
+    // O ATELIÊ DE TINGIMENTO: o mesmo painel, em outro modo (`abrirAtelie`)
+    this.ui.atelie.onEscolher = (id) => {
+      this.atelieEscolhida = id;
+      this.atelieParte = 'cor';
+      this.audio.play(id ? 'escolha' : 'menu');
+      this.pintarArmario();
+    };
+    this.ui.atelie.onParte = (parte) => {
+      if (this.atelieParte === parte) return;
+      this.atelieParte = parte;
+      this.audio.play('escolha');
+      this.pintarArmario();
+    };
+    this.ui.atelie.onPintar = (cor) => this.pintarNoAtelie(cor);
+    this.ui.atelie.onDesbloquear = () => this.desbloquearAtelie();
+    this.ui.atelie.onVestir = () => {
+      if (!this.atelieEscolhida || !this.vestirPeca(this.playerId(), this.atelieEscolhida)) return;
+      this.audio.play('escolha');
+      this.pintarArmario();
+    };
     this.ui.onAgirNaPiscina = () => this.agirNaPiscina();
     // SEGURAR o ✨ é segurar uma tecla, e qual depende de onde se está: fora
     // da rodada é o F (a carga do frisbee); na rodada do jardim é o E, que é o
@@ -1149,10 +1172,12 @@ export class Game implements GameAPI {
       // a roupa DA CENA (o tênis de garçom no turno) vai por cima da do save,
       // sem gravar nada: acabou a cena, volta o que a pessoa estava vestindo
       const loadout = { ...this.save.loadout(id), ...this.roupaDaCena.get(id) };
-      const chave = SLOTS_ROUPA.map((s) => loadout[s] ?? '').join('|');
+      // a tinta do ateliê entra na chave: pintar a peça vestida refaz só ela
+      const tintas = this.save.tintasDe(id);
+      const chave = SLOTS_ROUPA.map((s) => `${loadout[s] ?? ''}${chaveDaTinta(tintas[loadout[s] ?? ''])}`).join('|');
       if (this.roupaAplicada.get(id) === chave) continue;
       this.roupaAplicada.set(id, chave);
-      quem.rig.vestirRoupa(loadout);
+      quem.rig.vestirRoupa(loadout, tintas);
     }
   }
 
@@ -1267,6 +1292,114 @@ export class Game implements GameAPI {
     this.pintarArmario();
   }
 
+  /**
+   * Abre o ATELIÊ DE TINGIMENTO (o balcão de tinta do mezanino da boutique):
+   * o painel do guarda-roupa em outro modo, com a lista das roupas que se
+   * pintam, a cartela e o boneco sempre à vista. As regras moram em
+   * `world/tintas.ts`; o menu, em `ui/atelie.ts`.
+   */
+  abrirAtelie(): void {
+    this.herdarModaPraia();
+    this.reporCompras();
+    this.reporPremios();
+    this.reporChapeuDeCampeao();
+    this.abaDoArmario = 'vestir';
+    this.trajeDoBoneco = 'normal';
+    this.provandoNaPiscina = null;
+    this.atelieEscolhida = null;
+    this.atelieParte = 'cor';
+    this.previa.vestirTraje('normal');
+    this.previa.mostrar(this.player.rig.spec);
+    this.ui.abrirArmario('atelie');
+    this.pintarArmario();
+  }
+
+  /** a peça escolhida no ateliê (só no boneco; vestir é o botão da ficha) */
+  private atelieEscolhida: string | null = null;
+  /** o que a cartela pinta: a cor principal ou os detalhes */
+  private atelieParte: ParteDaTinta = 'cor';
+
+  /** As roupas desta pessoa que se pintam: no corpo, no armário e na mochila. */
+  private roupasTingiveis(quem: string): ItemDef[] {
+    const todas = new Map<string, ItemDef>();
+    const onde = [...this.save.vestiveis(quem), ...this.save.acervo(quem), ...this.save.maos(quem)];
+    for (const i of onde) {
+      // a ficha do CATÁLOGO, e não a cópia do save (a cópia envelhece)
+      const ficha = i ? fichaDoItem(i.id) : null;
+      if (ficha && podeTingir(ficha)) todas.set(ficha.id, ficha);
+    }
+    return [...todas.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }
+
+  private pintarAtelie(): void {
+    const quem = this.playerId();
+    const tintas = this.save.tintasDe(quem);
+    const vestindo = this.save.vestiveis(quem);
+    const pecas = this.roupasTingiveis(quem);
+    // trocou de pessoa (T) e a outra não tem a peça: volta para a lista
+    if (this.atelieEscolhida && !pecas.some((p) => p.id === this.atelieEscolhida)) this.atelieEscolhida = null;
+    const escolhida = pecas.find((p) => p.id === this.atelieEscolhida) ?? null;
+    if (escolhida && !temDetalhe(escolhida)) this.atelieParte = 'cor';
+    const css = (cor: number | null): string => `#${(cor ?? 0xcccccc).toString(16).padStart(6, '0')}`;
+    const vestida = (id: string): boolean => vestindo.some((v) => v?.id === id);
+    const desbloqueado = this.save.flag(FLAG_DO_ATELIE);
+    this.ui.renderAtelie({
+      dono: this.player.name,
+      saldo: this.save.carteira,
+      preco: PRECO_DO_ATELIE,
+      desbloqueado,
+      pecas: pecas.map((p) => ({
+        id: p.id, nome: p.nome, icone: p.icone, slot: p.slot ?? 'tronco',
+        cor: css(corAtual(p, 'cor', tintas[p.id])),
+        detalhe: temDetalhe(p) ? css(corAtual(p, 'detalhe', tintas[p.id])) : null,
+        pintada: tintas[p.id] !== undefined,
+        vestida: vestida(p.id),
+      })),
+      escolhida: escolhida && desbloqueado ? {
+        id: escolhida.id, nome: escolhida.nome, icone: escolhida.icone, nota: escolhida.nota,
+        temDetalhe: temDetalhe(escolhida),
+        parte: this.atelieParte,
+        cor: corAtual(escolhida, 'cor', tintas[escolhida.id]) ?? 0,
+        corOriginal: corAtual(escolhida, 'cor') ?? 0,
+        detalhe: temDetalhe(escolhida) ? corAtual(escolhida, 'detalhe', tintas[escolhida.id]) : null,
+        detalheOriginal: temDetalhe(escolhida) ? corAtual(escolhida, 'detalhe') : null,
+        vestida: vestida(escolhida.id),
+      } : null,
+    });
+    // o boneco veste o que a pessoa está usando, com a peça escolhida POR
+    // CIMA na vaga dela — e com as tintas dela, que é o que se está vendo mudar
+    const loadout = { ...this.save.loadout(quem) };
+    if (escolhida?.slot && desbloqueado) loadout[escolhida.slot] = escolhida.id;
+    this.previa.vestir(loadout, tintas);
+  }
+
+  /** Um toque numa tinta: pinta a parte escolhida da peça escolhida. */
+  private pintarNoAtelie(cor: number | null): void {
+    const id = this.atelieEscolhida;
+    const peca = id ? fichaDoItem(id) : null;
+    if (!peca || !podeTingir(peca) || !this.save.flag(FLAG_DO_ATELIE)) return;
+    const parte: ParteDaTinta = this.atelieParte === 'detalhe' && temDetalhe(peca) ? 'detalhe' : 'cor';
+    // pintar com a própria cor original é o mesmo que voltar a ela
+    const original = corAtual(peca, parte);
+    this.save.pintar(this.playerId(), peca.id, parte, cor === original ? null : cor);
+    this.audio.play('agua');
+    this.pintarArmario();
+  }
+
+  /** Paga o ateliê (uma vez só, decisão do Renan). */
+  private desbloquearAtelie(): void {
+    if (this.save.flag(FLAG_DO_ATELIE)) return;
+    if (!this.gastar(PRECO_DO_ATELIE)) {
+      this.audio.play('errou');
+      this.pintarArmario();
+      return;
+    }
+    this.save.setFlag(FLAG_DO_ATELIE);
+    this.audio.play('caixa');
+    this.ui.toast('Ateliê aberto! Agora é só escolher a cor', '🎨');
+    this.pintarArmario();
+  }
+
   /*
    * O GUARDA-ROUPA EM MODO VESTIÁRIO: a aba aberta, o traje do boneco e a
    * peça de piscina provada. Provar, como na Estella, NÃO mexe no save — só
@@ -1338,8 +1471,12 @@ export class Game implements GameAPI {
 
   /** Redesenha o painel e o boneco a partir do save. */
   private pintarArmario(): void {
-    this.ui.mostrarAbaDoArmario(this.abaDoArmario, this.trajeDoBoneco);
     this.ui.pessoasDoArmario(this.player.name, this.parceiro.name);
+    if (this.ui.armarioEhAtelie) {
+      this.pintarAtelie();
+      return;
+    }
+    this.ui.mostrarAbaDoArmario(this.abaDoArmario, this.trajeDoBoneco);
     if (this.abaDoArmario === 'piscina' && this.ui.armarioEhVestiario) {
       if (this.ui.armarioEhDaEscola) this.pintarUniformes();
       else this.pintarPiscina();
@@ -1355,7 +1492,7 @@ export class Game implements GameAPI {
       ...this.save.maos(quem).filter((i): i is ItemDef => i !== null && i.tipo === 'vestivel'),
     ];
     this.ui.renderArmario(vestindo, guardados, this.player.name);
-    this.previa.vestir(this.save.loadout(quem));
+    this.previa.vestir(this.save.loadout(quem), this.save.tintasDe(quem));
   }
 
   /**
@@ -1436,7 +1573,7 @@ export class Game implements GameAPI {
         comoGanhar,
       })),
     });
-    this.previa.vestir(this.save.loadout(quem));
+    this.previa.vestir(this.save.loadout(quem), this.save.tintasDe(quem));
   }
 
   /**
@@ -1503,7 +1640,7 @@ export class Game implements GameAPI {
     // na vaga dela — provar um chinelo não tira a bermuda
     const loadout = { ...this.save.loadout(quem) };
     if (this.provandoNaPiscina?.slot) loadout[this.provandoNaPiscina.slot] = this.provandoNaPiscina.id;
-    this.previa.vestir(loadout);
+    this.previa.vestir(loadout, this.save.tintasDe(quem));
   }
 
   private provarNaPiscina(id: string): void {
@@ -1609,7 +1746,7 @@ export class Game implements GameAPI {
      */
     const loadout = { ...this.save.loadout(quem) };
     if (this.provando?.slot) loadout[this.provando.slot] = this.provando.id;
-    this.previaDaLoja.vestir(loadout);
+    this.previaDaLoja.vestir(loadout, this.save.tintasDe(quem));
   }
 
   private provarPeca(id: string): void {

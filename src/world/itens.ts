@@ -297,6 +297,7 @@ export const ITENS = {
     tipo: 'vestivel',
     slot: 'cabeca',
     cor: P.vestidoFita,
+    corDetalhe: P.vestidoRenda,
     nota: 'combina com o vestido',
     extra: gargantilhaDeLaco,
   },

@@ -46,12 +46,12 @@ import { sorteio } from './texturasDeChao';
 // ================================================================ base
 
 /** caixa de quina arredondada: o tijolo de tudo que a mão encosta */
-function macia(l: number, a: number, p: number, raio = 0.02): THREE.BufferGeometry {
+export function macia(l: number, a: number, p: number, raio = 0.02): THREE.BufferGeometry {
   return new RoundedBoxGeometry(l, a, p, 2, Math.min(raio, l / 2 - 0.001, a / 2 - 0.001, p / 2 - 0.001));
 }
 
 /** uma malha posta no pai, na posição dada */
-function por(
+export function por(
   pai: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material | number,
   x = 0, y = 0, z = 0,
 ): THREE.Mesh {
@@ -62,12 +62,12 @@ function por(
 }
 
 /** perfil torneado (`[raio, altura]`) */
-function torneado(perfil: ReadonlyArray<readonly [number, number]>, gomos = 24): THREE.LatheGeometry {
+export function torneado(perfil: ReadonlyArray<readonly [number, number]>, gomos = 24): THREE.LatheGeometry {
   return new THREE.LatheGeometry(perfil.map(([r, y]) => new THREE.Vector2(r, y)), gomos);
 }
 
 /** um tubo pelos pontos (curva suave) */
-function tubo(pontos: ReadonlyArray<readonly [number, number, number]>, raio: number, segs = 24, radial = 8): THREE.TubeGeometry {
+export function tubo(pontos: ReadonlyArray<readonly [number, number, number]>, raio: number, segs = 24, radial = 8): THREE.TubeGeometry {
   return new THREE.TubeGeometry(
     new THREE.CatmullRomCurve3(pontos.map(([x, y, z]) => new THREE.Vector3(x, y, z))),
     segs, raio, radial, false,
@@ -101,7 +101,7 @@ function dobrado(pontos: ReadonlyArray<readonly [number, number]>, r: number, z 
 
 /** escreve num canvas e devolve a textura (plaquinha, número, cartaz) */
 const placas = new Map<string, THREE.CanvasTexture>();
-function texturaDePlaca(
+export function texturaDePlaca(
   chave: string, w: number, h: number, pintar: (ctx: CanvasRenderingContext2D, w: number, h: number) => void,
 ): THREE.CanvasTexture {
   const pronta = placas.get(chave);
@@ -118,9 +118,9 @@ function texturaDePlaca(
   return tex;
 }
 
-const hex = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
+export const hex = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
 /** a letra das plaquinhas: serifada, elegante, sem depender de fonte baixada */
-const serifa = (px: number, italico = false): string =>
+export const serifa = (px: number, italico = false): string =>
   `${italico ? 'italic ' : ''}600 ${Math.round(px)}px "Didot", "Bodoni MT", Georgia, "Times New Roman", serif`;
 
 /**

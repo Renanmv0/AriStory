@@ -18,7 +18,7 @@ acento — é o padrão do repositório, siga o que já está lá.
 | criar/ajustar uma praga do minigame do jardim | `.claude/skills/aristory-praga/SKILL.md` |
 | criar/ajustar uma carta (habilidade) do minigame do jardim | `.claude/skills/aristory-habilidade/SKILL.md` |
 | pintar uma memória para o quadro (a partir de uma foto) | `.claude/skills/aristory-memoria/SKILL.md` |
-| adicionar/ajustar roupa do guarda-roupa | `.claude/skills/aristory-roupa/SKILL.md` |
+| adicionar/ajustar roupa do guarda-roupa (e o ateliê de tingimento) | `.claude/skills/aristory-roupa/SKILL.md` |
 | criar/ajustar um enfeite (decoração) da lojinha da estufa | `.claude/skills/aristory-enfeite/SKILL.md` |
 | pôr um prato novo no cardápio do restaurante | `.claude/skills/aristory-prato/SKILL.md` |
 | escrever/ajustar uma lição da apostila de português do Gatito | `.claude/skills/aristory-apostila/SKILL.md` |
@@ -295,6 +295,7 @@ node scripts/roupas.mjs  /tmp/rp    # guarda-roupa: as vagas sem mexer na animac
 node scripts/vagas.mjs   /tmp/vg    # as 6 vagas (maos e acessorio no pai certo), a bermuda vestida no parque, o banho no clube, a mochila e o armario com 6, e save antigo de 4 vagas
 node scripts/vestimenta.mjs /tmp/vt # onde cada roupa pode morar, e o armario por parte
 node scripts/rolagemDoArmario.mjs   # vestir, tirar e provar uma peca no meio da lista nao manda a lista pro topo (guarda-roupa, vestiario e arara da Estella, no celular)
+node scripts/tinta.mjs   /tmp/ti    # o ateliê de tingimento: toda peça oferecida muda de cor (principal e detalhe), prêmio e uniforme fora, o principal sem mexer no detalhe, por pessoa, os R$ 50 uma vez só, o menu (pintar, detalhes, cor original, vestir, sem pular a rolagem), o F5, o balcão no mezanino com a Estella, e o celular
 node scripts/roupasDoJardim.mjs /tmp/rj # a segunda leva da lojinha da Josefina: luvas, pins, pulseiras, vestidos, camisetas e calças largas nos dois (de frente, costas, andando e sentados) e o chapeu joaninha no cabelo do Renan
 node scripts/falas.mjs   /tmp/fl    # as falas de premio: cada dono reparando na roupa que ele deu
 node scripts/campeao.mjs /tmp/cp    # o premio do campeao: a meta em duas etapas, a festa na mesa de piquenique, a vaquinha e a raquete dourada
