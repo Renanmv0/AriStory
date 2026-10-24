@@ -1279,7 +1279,7 @@ body.touch-device .dialogue .next { right: 84px; }
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1.25fr);
+  grid-template-columns: minmax(380px, 1fr) minmax(0, 1.15fr);
   gap: 18px;
   margin-top: 12px;
 }
@@ -1294,7 +1294,7 @@ body.touch-device .dialogue .next { right: 84px; }
 .armario .prova {
   min-height: 0;
   display: grid;
-  grid-template-columns: 90px minmax(0, 1fr) 90px;
+  grid-template-columns: 86px minmax(0, 1fr) 86px;
   grid-template-rows: repeat(3, minmax(0, 1fr));
   grid-template-areas:
     'p0 palco p5'
@@ -1355,10 +1355,11 @@ body.touch-device .dialogue .next { right: 84px; }
   min-height: 0;
   max-height: none;
   border-radius: 20px;
-  /* o palco: um foco de luz rosado no chão e o fundo de papel lilás */
+  /* o palco: uma luz branca por trás do boneco e o fundo de papel lilás (a
+   * sombra no chão é a do próprio rig: um brilho de chão pintado aqui ficava
+   * solto quando a câmera recua na moldura estreita) */
   background:
-    radial-gradient(ellipse 46% 9% at 50% 91%, rgba(226, 85, 124, 0.16), transparent 100%),
-    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(255, 255, 255, 0.95), transparent 100%),
+    radial-gradient(ellipse 70% 55% at 50% 48%, rgba(255, 255, 255, 0.95), transparent 100%),
     linear-gradient(180deg, #fbf6ff 0%, #efe4f7 100%);
   box-shadow: inset 0 0 0 2px rgba(120, 105, 150, 0.12);
 }
