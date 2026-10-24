@@ -9,7 +9,8 @@ Os personagens são **fichas**, não modelos. Para mudar alguém, edite
 >
 > O **Renan** também veio de foto: cachos escuros e volumosos no topo, pele
 > clara, camiseta cinza por baixo de um moletom preto aberto, calça e tênis
-> pretos, mochila.
+> pretos. A mochila preta, que era parte da ficha, virou acessório do
+> guarda-roupa (`mochila-do-renan`, no armário do quarto), a pedido dele.
 
 ## Campos
 

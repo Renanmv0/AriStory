@@ -369,11 +369,20 @@ ela volta `null` e a peça desenha as cores da paleta; pintada, devolve a tinta
 em dois tons alternados.
 
 **Mochila é acessório preso no corpo, com `nasCostas: true`** (pedido do Ari:
-a de casco da Josefina era tronco e só ia com a camiseta padrão). A marca faz
-o rig esconder o que a ficha pendura nas costas (`nasCostasDaFicha`: a
-mochila preta e o capuz do Renan — o laço do casco sumia dentro do capuz),
-e a geometria usa `m.porBaixo` para o casco recuar até as costas do moletom e
-as alças passarem por fora no peito.
+a de casco da Josefina era tronco e só ia com a camiseta padrão). As duas
+moram em `world/mochilas.ts`: a **do Renan** (`mochila-do-renan`, no armário
+do quarto — ela era parte da ficha dele, e o Renan pediu o padrão só com a
+camiseta e o moletom) e a **casco da Josefina**. A marca faz o rig esconder
+o que a ficha pendura nas costas (`nasCostasDaFicha`: o capuz do moletom, e
+a mochila da ficha se alguém ainda tiver uma), e o `m.porBaixo` da mochila
+mede também a roupa FIXA da ficha (`roupaDaFichaNoTronco`: o moletom aberto)
+— o corpo da mochila encosta nas costas do moletom, e o rig refaz a mochila
+quando o traje troca (no banho o moletom some). O kit de lá serve para mochila
+nova: `alcaAcolchoada` (a fita de espuma que passa por cima do ombro, uma
+`BufferGeometry` própria), `caminhoDaAlca` (das costas, pelo ombro, até o
+peito, rente à roupa), `almofada` (forma de quina redonda extrudada com
+chanfro e estufada) e o `medirTronco`. Mochila nova = uma função ali + a
+ficha com `nasCostas`.
 
 ## A MESMA peça em outra cor: o jeito mais barato de ter roupa nova
 
