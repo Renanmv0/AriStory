@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import { toon } from '../core/materials';
 import type { ItemDef, MedidasCorpo } from '../core/types';
-import { corpo, florzinha, folhinha, noTronco } from './roupasDoJardim';
+import { corpo, florzinha, folhinha, noTronco, tintaDeMuitasCores } from './roupasDoJardim';
 import { tiara } from './roupas';
 
 /**
@@ -513,7 +513,11 @@ type ModeloDeOculos = 'redondo' | 'gatinho' | 'coracao' | 'espelhado' | 'natacao
  * chapéu). Aparecem no clube como aparecem na rua: acessório vai para a água.
  */
 function oculosDoVestiario(modelo: ModeloDeOculos) {
-  return (m: MedidasCorpo): THREE.Object3D => {
+  // as duas cores da ficha (pedido do Ari: pintar os acessórios no ateliê da
+  // Estella): a `cor` é o que dá a cara do óculos — a armação, ou a lente no
+  // espelhado e no de natação —, e a `corDetalhe` a outra; o padrão é o de
+  // sempre. O brilho e o strass ficam: são luz, não tinta.
+  return (m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D => {
     const g = new THREE.Group();
     const r = m.headR;
     const Y = r * OLHO_Y;
@@ -522,8 +526,8 @@ function oculosDoVestiario(modelo: ModeloDeOculos) {
     if (modelo === 'redondo') {
       // redondinho de aro dourado fino, a lente âmbar, a ponte em arco e as
       // plaquetas do nariz
-      const ouro = toon(P.oculosDourado);
-      const ambar = toon(P.oculosAmbar, { glow: 0.12 });
+      const ouro = toon(peca?.cor ?? P.oculosDourado);
+      const ambar = toon(peca?.corDetalhe ?? P.oculosAmbar, { glow: 0.12 });
       for (const lado of [-1, 1] as const) {
         const vidro = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.22, r * 0.22, r * 0.04, 22), ambar);
         vidro.rotation.x = Math.PI / 2;
@@ -544,8 +548,8 @@ function oculosDoVestiario(modelo: ModeloDeOculos) {
     }
 
     if (modelo === 'gatinho') {
-      const rosa = toon(P.oculosGatinhoRosa);
-      const lente = toon(P.oculosGatinhoLente, { doubleSide: true });
+      const rosa = toon(peca?.cor ?? P.oculosGatinhoRosa);
+      const lente = toon(peca?.corDetalhe ?? P.oculosGatinhoLente, { doubleSide: true });
       for (const lado of [-1, 1] as const) {
         const l = lenteDeForma(formaDeGatinho(r, lado), 0.78, r * 0.07, rosa, lente);
         l.position.set(lado * r * OLHO_X, Y, Z);
@@ -566,8 +570,8 @@ function oculosDoVestiario(modelo: ModeloDeOculos) {
     }
 
     if (modelo === 'coracao') {
-      const aro = toon(P.oculosCoracaoAro);
-      const lente = toon(P.oculosCoracaoLente, { doubleSide: true, glow: 0.12 });
+      const aro = toon(peca?.cor ?? P.oculosCoracaoAro);
+      const lente = toon(peca?.corDetalhe ?? P.oculosCoracaoLente, { doubleSide: true, glow: 0.12 });
       for (const lado of [-1, 1] as const) {
         const l = lenteDeForma(formaDeCoracao(r * 0.27), 0.8, r * 0.07, aro, lente);
         l.position.set(lado * r * OLHO_X, Y + r * 0.02, Z);
@@ -596,15 +600,16 @@ function oculosDoVestiario(modelo: ModeloDeOculos) {
       const abre = 0.92;
       const lente = new THREE.Mesh(
         new THREE.CylinderGeometry(R, R, r * 0.26, 28, 1, true, -abre, abre * 2),
-        toon(P.oculosEspelhado, { doubleSide: true, glow: 0.18 }),
+        toon(peca?.cor ?? P.oculosEspelhado, { doubleSide: true, glow: 0.18 }),
       );
       lente.position.y = Y - r * 0.01;
       g.add(lente);
       // a barra branca em cima da lente, e o encosto do nariz embaixo
-      const branco = toon(P.oculosEspelhadoAro);
+      const corDoAro = peca?.corDetalhe ?? P.oculosEspelhadoAro;
+      const branco = toon(corDoAro);
       const barra = new THREE.Mesh(
         new THREE.CylinderGeometry(R * 1.012, R * 1.012, r * 0.055, 28, 1, true, -abre - 0.04, abre * 2 + 0.08),
-        toon(P.oculosEspelhadoAro, { doubleSide: true }),
+        toon(corDoAro, { doubleSide: true }),
       );
       barra.position.y = Y + r * 0.125;
       g.add(barra);
@@ -642,8 +647,8 @@ function oculosDoVestiario(modelo: ModeloDeOculos) {
     // cabelo) virava um anel boiando em volta da cabeça. Rente, ela some por
     // dentro dos cachos quando há cabelo — como tira de verdade, por baixo — e
     // abraça a borracha quando há touca.
-    const aro = toon(P.oculosNatacaoAro);
-    const lente = toon(P.oculosNatacaoLente, { glow: 0.22 });
+    const aro = toon(peca?.corDetalhe ?? P.oculosNatacaoAro);
+    const lente = toon(peca?.cor ?? P.oculosNatacaoLente, { glow: 0.22 });
     for (const lado of [-1, 1] as const) {
       const concha = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.19, r * 0.21, r * 0.12, 18), aro);
       concha.rotation.x = Math.PI / 2;
@@ -985,9 +990,11 @@ function toucaDeNatacao(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THR
  * tiara das orelhinhas do Walter, que segue o contorno medido do cabelo), com
  * a estrela-do-mar, a concha-leque e as pérolas.
  */
-function tiaraDeConchinhas(m: MedidasCorpo): THREE.Object3D {
+function tiaraDeConchinhas(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const r = m.headR;
-  const { g, naFaixa } = tiara(m, P.tiaraAreia);
+  // a `cor` da ficha é a estrela-do-mar e a `corDetalhe` a faixa (o ateliê
+  // pinta as duas); a concha e as pérolas ficam
+  const { g, naFaixa } = tiara(m, peca?.corDetalhe ?? P.tiaraAreia);
   // o enfeite olha para FORA da faixa e para a frente: deitado no cabelo ele
   // apareceria de lado, e é de frente que se vê uma tiara
   const pregar = (obj: THREE.Object3D, a: number, afasta = 0.04) => {
@@ -1000,7 +1007,7 @@ function tiaraDeConchinhas(m: MedidasCorpo): THREE.Object3D {
 
   // a estrela-do-mar: cinco braços gordinhos com os pontinhos claros
   const estrela = new THREE.Group();
-  const laranja = toon(P.estrelaDoMar);
+  const laranja = toon(peca?.cor ?? P.estrelaDoMar);
   const pontinho = toon(P.estrelaDoMarPonto);
   const L = r * 0.2;
   for (let i = 0; i < 5; i++) {
@@ -1131,7 +1138,7 @@ function boiaDePatinho(m: MedidasCorpo, lado: -1 | 1 = 1, peca?: ItemDef): THREE
  * `u^1,6` (u = 1 na frente), então o colar fica quase reto nos ombros e só
  * cai de fato no peito — o jeito que um colar de verdade pendura.
  */
-function colarHavaiano(m: MedidasCorpo): THREE.Object3D {
+function colarHavaiano(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
   const c = corpo(m);
   const R = c.raioTorso;
@@ -1156,18 +1163,22 @@ function colarHavaiano(m: MedidasCorpo): THREE.Object3D {
       n,
     };
   };
-  const cores = [P.colarRosa, P.colarAmarelo, P.colarBranco, P.colarLaranja, P.colarLilas];
+  // tingido no ateliê, as flores ficam da tinta (em dois tons) e as folhinhas
+  // da cor de detalhe
+  const tinta = tintaDeMuitasCores(peca, P.colarRosa);
+  const cores = tinta ?? [P.colarRosa, P.colarAmarelo, P.colarBranco, P.colarLaranja, P.colarLilas];
+  const corFolha = peca?.corDetalhe ?? P.colarFolha;
   const N = 22;
   for (let i = 0; i < N; i++) {
     const theta = (i / N) * Math.PI * 2;
     const { p, n } = noCaminho(theta);
     const cor = cores[i % cores.length];
-    const f = florzinha(flor, cor, cor === P.colarAmarelo ? P.colarLaranja : P.colarAmarelo, 5);
+    const f = florzinha(flor, cor, !tinta && cor === P.colarAmarelo ? P.colarLaranja : P.colarAmarelo, 5);
     colar(f, g, p.x, p.y, p.z, n.x, n.y, n.z);
     f.rotateZ(i * 0.9);
     // a folhinha entre esta flor e a próxima, deitada no sentido do colar
     const meio = noCaminho(theta + Math.PI / N);
-    const folha = folhinha(flor * 1.25, P.colarFolha, P.colarFolha);
+    const folha = folhinha(flor * 1.25, corFolha, corFolha);
     colar(folha, g, meio.p.x, meio.p.y, meio.p.z, meio.n.x, meio.n.y, meio.n.z);
     folha.rotateZ(Math.PI / 2 + (i % 2 ? 0.35 : -0.35));
   }

@@ -161,6 +161,10 @@ export const TODAS_AS_TINTAS: readonly Tinta[] = CARTELA_DE_TINTAS.flatMap((f) =
  * - as peças TEMÁTICAS cuja cor é o personagem (a tiara do Walter, a do
  *   Pelusa, o boné da Gina, o chapéu joaninha): o modelo tem a cor cravada,
  *   e uma joaninha azul deixaria de ser joaninha.
+ *
+ * Os ACESSÓRIOS miúdos (pins, óculos, pulseiras, colar, a tiara de
+ * conchinhas e a mochila de casco) se pintam: pedido do Ari. Até o pin de
+ * joaninha — ali é enfeite de cabelo, e quem pede a joaninha azul é ele.
  */
 export const PECAS_SEM_TINTA: ReadonlySet<string> = new Set<string>([
   ...Object.values(PREMIOS_DA_ARENA).flat().map((p) => p.id),

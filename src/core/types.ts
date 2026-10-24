@@ -225,6 +225,12 @@ export interface ItemDef {
    * - `corpo` (o padrao): no corpo, y = 0 no CHAO (como o `tronco`).
    */
   presoEm?: 'cabeca' | 'corpo';
+  /**
+   * A peça é uma MOCHILA nas costas (a de casco da Josefina): enquanto ela
+   * estiver vestida, o que a ficha do personagem pendura nas costas (a
+   * mochila preta e o capuz do Renan) some — não cabem nas mesmas costas.
+   */
+  nasCostas?: boolean;
   /** cor da parte principal (torso, perna, pe, calota do gorro) */
   cor?: number;
   /** cor da parte secundaria (manga, barra, cano); sem isto usa `cor` */

@@ -357,6 +357,24 @@ responde (a gargantilha e o chinelo slide eram assim, e foram corrigidos).
 Prêmio novo entra numa lista de prêmio; peça de cor-identidade, em
 `PECAS_SEM_TINTA`.
 
+**Acessório e peça de mão também levam `cor`** (pedido do Ari: pintar pins,
+óculos e pulseiras). Na vaga `acessorio` e `maos` a `cor` não pinta o corpo —
+só existe malha de troca no tronco, nas pernas e nos pés —, então ela é
+simplesmente a cor principal da peça, e a `amostra` sai (a das lojas é
+`cor ?? corBanho ?? amostra`). Escolha como `cor` a que dá a cara da peça
+(a da amostra antiga, para a loja não mudar). Peça de MUITAS cores (a
+pulseira de flores, a de pedrinhas, o colar havaiano) passa pelo
+`tintaDeMuitasCores(peca, padrao)` (`roupasDoJardim.ts`): na cor de sempre
+ela volta `null` e a peça desenha as cores da paleta; pintada, devolve a tinta
+em dois tons alternados.
+
+**Mochila é acessório preso no corpo, com `nasCostas: true`** (pedido do Ari:
+a de casco da Josefina era tronco e só ia com a camiseta padrão). A marca faz
+o rig esconder o que a ficha pendura nas costas (`nasCostasDaFicha`: a
+mochila preta e o capuz do Renan — o laço do casco sumia dentro do capuz),
+e a geometria usa `m.porBaixo` para o casco recuar até as costas do moletom e
+as alças passarem por fora no peito.
+
 ## A MESMA peça em outra cor: o jeito mais barato de ter roupa nova
 
 A `extra` recebe a FICHA como terceiro argumento (`extra(m, lado, peca)`), e é

@@ -1493,11 +1493,13 @@ function gravataDoWalter(m: MedidasCorpo): THREE.Object3D {
  * da haste negado junto — sem negar o angulo, a haste da esquerda apontaria
  * para dentro da cabeca, que e a mesma pegadinha de sinal de sempre.
  */
-function oculosDeSol(m: MedidasCorpo): THREE.Object3D {
+function oculosDeSol(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
   const r = m.headR;
-  const lente = toon(P.oculosLente);
-  const armacao = toon(P.oculosArmacao);
+  // a `cor` da ficha é a lente e a `corDetalhe` a armação (o ateliê pinta as
+  // duas); o padrão é o preto de sempre
+  const lente = toon(peca?.cor ?? P.oculosLente);
+  const armacao = toon(peca?.corDetalhe ?? P.oculosArmacao);
 
   // altura dos olhos, um fio acima: oculos escorregado no nariz e outro visual
   const Y = r * 0.04;
@@ -2355,15 +2357,39 @@ function boneDaGina(m: MedidasCorpo): THREE.Object3D {
  * REFERENCIAL: o tronco, y = 0 no CHÃO; as costas da cápsula do rig ficam em
  * `z = -0,82 · 0,105·h·w` (a mesma conta do girassol, do outro lado).
  */
-function mochilaCascoDaJosefina(m: MedidasCorpo): THREE.Object3D {
+function mochilaCascoDaJosefina(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
   const { h, w } = m;
   const raioTorso = h * 0.105 * w;
-  const costas = -raioTorso * 0.82;
   // na altura das OMOPLATAS, e não no meio do tronco: mochila baixa, vista de
   // trás, ficava escondida atrás das mãos balançando
   const y = m.legH + m.torsoH * 0.64;
-  const casco = new THREE.Mesh(new THREE.SphereGeometry(raioTorso * 1.05, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon(P.tartarugaCasco));
+  const topo = m.legH + m.torsoH * 0.98;
+  const peito = m.legH + m.torsoH * 0.6;
+  /*
+   * POR CIMA DO QUE ESTIVER POR BAIXO. A mochila é acessório (veste com
+   * qualquer roupa de tronco), e um moletom ou um casaco engoliam o casco
+   * encostado na camiseta. `m.porBaixo` mede a roupa de baixo: o casco
+   * recua até as costas dela, e as alças passam por fora no peito. Com a
+   * camiseta do rig (nada medido), a conta dá o lugar de sempre.
+   */
+  const debaixo = m.porBaixo;
+  const maisLonge = (angulos: number[], alturas: number[]): number => {
+    let r = 0;
+    if (!debaixo) return r;
+    for (const a of angulos) for (const yy of alturas) r = Math.max(r, debaixo(a, yy));
+    return r;
+  };
+  const alturasDoCasco = [-1, -0.5, 0, 0.5, 1].map((k) => y + k * raioTorso * 1.2);
+  const costas = -Math.max(raioTorso * 0.82, maisLonge([Math.PI - 0.5, Math.PI, Math.PI + 0.5], alturasDoCasco) * 1.02);
+  const frente = Math.max(raioTorso * 0.8, maisLonge([-0.5, 0, 0.5], [peito, (peito + topo) / 2, topo]) * 1.03);
+  // as cores vêm da ficha (o ateliê pinta o casco e o laço); os escudos e as
+  // alças são o casco um tom abaixo — na cor de sempre, os da paleta
+  const corCasco = peca?.cor ?? P.tartarugaCasco;
+  const corEscudo = corCasco === P.tartarugaCasco
+    ? P.tartarugaEscudo
+    : new THREE.Color(corCasco).multiplyScalar(0.77).getHex();
+  const casco = new THREE.Mesh(new THREE.SphereGeometry(raioTorso * 1.05, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon(corCasco));
   casco.rotation.x = -Math.PI / 2;
   casco.scale.set(1.15, 1.3, 0.62);
   casco.position.set(0, y, costas - h * 0.004);
@@ -2373,7 +2399,7 @@ function mochilaCascoDaJosefina(m: MedidasCorpo): THREE.Object3D {
   borda.position.set(0, y, costas - h * 0.004);
   g.add(borda);
   // os escudos: hexágonos achatados colados no casco
-  const escudo = toon(P.tartarugaEscudo);
+  const escudo = toon(corEscudo);
   for (const [dx, dy] of [[0, 0], [-0.5, 0.45], [0.5, 0.45], [-0.5, -0.45], [0.5, -0.45], [0, 0.85], [0, -0.85]] as const) {
     const e = new THREE.Mesh(new THREE.CylinderGeometry(raioTorso * 0.24, raioTorso * 0.24, h * 0.006, 6), escudo);
     const ex = dx * raioTorso * 1.15;
@@ -2387,8 +2413,9 @@ function mochilaCascoDaJosefina(m: MedidasCorpo): THREE.Object3D {
   }
   // o laço rosa dela, no alto do casco
   const laco = new THREE.Group();
+  const corLaco = toon(peca?.corDetalhe ?? P.lacoDaJosefina);
   for (const lado of [-1, 1] as const) {
-    const aba = new THREE.Mesh(new THREE.ConeGeometry(h * 0.02, h * 0.035, 8), toon(P.lacoDaJosefina));
+    const aba = new THREE.Mesh(new THREE.ConeGeometry(h * 0.02, h * 0.035, 8), corLaco);
     aba.rotation.z = lado * Math.PI / 2;
     aba.position.x = lado * h * 0.018;
     laco.add(aba);
@@ -2396,12 +2423,9 @@ function mochilaCascoDaJosefina(m: MedidasCorpo): THREE.Object3D {
   laco.position.set(0, y + raioTorso * 1.3, costas - raioTorso * 0.25);
   g.add(laco);
   // as alças: de cima do ombro até o peito, na frente
-  const alca = toon(P.tartarugaEscudo);
-  const topo = m.legH + m.torsoH * 0.98;
-  const peito = m.legH + m.torsoH * 0.6;
   for (const lado of [-1, 1] as const) {
-    const tira = new THREE.Mesh(new THREE.BoxGeometry(h * 0.016, topo - peito, h * 0.006), alca);
-    tira.position.set(lado * raioTorso * 0.48, (topo + peito) / 2, raioTorso * 0.8);
+    const tira = new THREE.Mesh(new THREE.BoxGeometry(h * 0.016, topo - peito, h * 0.006), escudo);
+    tira.position.set(lado * raioTorso * 0.48, (topo + peito) / 2, frente);
     tira.rotation.x = -0.22;
     g.add(tira);
   }
