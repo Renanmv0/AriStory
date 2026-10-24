@@ -2230,6 +2230,38 @@ export class Ui {
     guardados: ReadonlyArray<ItemDef>,
     dono: string,
   ): void {
+    this.semPerderARolagem(() => this.desenharArmario(vestindo, guardados, dono));
+  }
+
+  /**
+   * REDESENHAR NÃO PODE MANDAR A LISTA PARA O TOPO (o Ari reparou, e já
+   * tinha pedido antes): vestir, tirar ou provar uma peça redesenha o painel
+   * inteiro, e a lista voltava para cima — para provar a peça do lado era
+   * preciso rolar tudo de novo.
+   *
+   * O porquê: o redesenho esvazia a lista (`innerHTML = ''`) e, antes de
+   * enchê-la de novo, o filtro MEDE a tela (`offsetLeft`, para mostrar o
+   * botão escolhido). Medir obriga o navegador a montar a página naquele
+   * instante, com a lista vazia — e lista vazia não tem para onde rolar: a
+   * rolagem vira 0, e fica 0 quando as peças voltam.
+   *
+   * A saída é guardar a rolagem antes e devolver depois. A exceção é quando o
+   * FILTRO mudou durante o redesenho (a parte filtrada ficou vazia e ele
+   * voltou ao "Tudo"): aí a lista é outra, e começar do alto é o certo.
+   */
+  private semPerderARolagem(desenhar: () => void): void {
+    const lista = this.listaDoArmario;
+    const rolagem = lista.scrollTop;
+    const filtro = this.filtroArmario;
+    desenhar();
+    if (this.filtroArmario === filtro) lista.scrollTop = rolagem;
+  }
+
+  private desenharArmario(
+    vestindo: ReadonlyArray<ItemDef | null>,
+    guardados: ReadonlyArray<ItemDef>,
+    dono: string,
+  ): void {
     this.donoArmario.textContent = `de ${dono}`;
 
     this.corpo.innerHTML = '';
@@ -2321,10 +2353,14 @@ export class Ui {
       comoGanhar?: string;
     }>;
   }): void {
-    if (dados.uniforme) {
-      this.renderUniformes(dados);
-      return;
-    }
+    // vale aqui o mesmo que no guarda-roupa (`semPerderARolagem`)
+    this.semPerderARolagem(() => {
+      if (dados.uniforme) this.renderUniformes(dados);
+      else this.desenharPiscina(dados);
+    });
+  }
+
+  private desenharPiscina(dados: Parameters<Ui['renderPiscina']>[0]): void {
     this.donoArmario.textContent = `de ${dados.dono}`;
     // o saldo mora no ALTO DA FICHA, que fica grudada ao lado do boneco: no pé
     // da vitrine (depois das 30 peças) ninguém chegava a ver quanto tinha
@@ -2569,6 +2605,16 @@ export class Ui {
       preco: number; cor: string; jaTem: boolean;
     }>;
   }): void {
+    // provar redesenha a vitrine inteira: a folha guarda onde estava, como o
+    // guarda-roupa (`semPerderARolagem`) — senão provar a peça de baixo
+    // levava a arara de volta para o alto
+    const folha = this.loja.querySelector<HTMLElement>('.sheet')!;
+    const rolagem = folha.scrollTop;
+    this.desenharLoja(dados);
+    folha.scrollTop = rolagem;
+  }
+
+  private desenharLoja(dados: Parameters<Ui['renderLoja']>[0]): void {
     this.loja.querySelector('.arara')!.textContent = dados.arara;
     this.loja.querySelector('.dono')!.textContent = `— provando em ${dados.dono}`;
     this.loja.querySelector('.saldo')!.innerHTML =
