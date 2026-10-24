@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * O WALTER, o garcom canino do Mania de Churrasco. O nome e do Renan.
@@ -24,6 +25,9 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * cachorro que entrou da rua.
  */
 export class Walter extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Walter', cor: P.falaWalter };
+
   private readonly corpo = new THREE.Group();
   private readonly cabeca = new THREE.Group();
   private readonly rabo = new THREE.Group();

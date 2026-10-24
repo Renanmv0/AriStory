@@ -391,6 +391,24 @@ pontos de pesca ficam nos vãos da beira (longe de ninféia, pedra e tronco).
 estados própria (sol, pulando, nadando só com a cabeça de fora, subindo). O
 casco é canvas visto de cima, com o UV projetado de cima também.
 
+## A cor da fala (todo bicho que fala tem a sua)
+
+Sugestão do Ari: quando um personagem fala, a etiqueta do nome e o pontilhado
+em volta do texto ganham a COR DELE. A cor mora no próprio bicho:
+
+```ts
+export class Mano extends Bicho {
+  static readonly voz: VozDaFala = { nome: 'Mano', cor: P.falaMano };
+```
+
+(irmãs numa ficha só, como as coelhinhas, levam `voz` na ficha). A cor vem
+da paleta (`P.fala…`, no bloco "A COR DA FALA") e precisa lembrar o bicho sem
+repetir a de quem aparece junto. Depois, uma linha em `characters/vozes.ts`.
+O `nome` é o mesmo que a cena passa para `g.say(falas, nome)`; quem não está
+na lista fala no rosa de sempre. A letra da etiqueta escurece sozinha nas
+cores claras (`Ui.pintarVoz`). É SÓ a fala: o resto da interface não muda de
+cor, para não virar circo.
+
 ## A pose
 
 Tudo por seno, como o resto do jogo. A base entrega `andando`, `sentado`,

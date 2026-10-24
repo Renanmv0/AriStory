@@ -404,6 +404,18 @@ export type HoldPose = 'upright' | 'relaxed' | 'regando' | 'borrifando' | 'none'
 // presilha, adesivo, broche. A ordem so CRESCE no fim: a vaga 0 continua sendo
 // a cabeca, entao save antigo de 4 vagas le certo.
 
+/**
+ * A VOZ de um personagem na caixa de fala: o nome que aparece na etiqueta e a
+ * cor dela (e do pontilhado em volta do texto). Cada personagem declara a sua
+ * no próprio código — o Ari e o Renan na ficha (`cast.ts`), os bichos na
+ * classe (`static readonly voz`) — e `characters/vozes.ts` junta todas.
+ */
+export interface VozDaFala {
+  nome: string;
+  /** cor da paleta (`P.fala…`) */
+  cor: number;
+}
+
 export type SlotRoupa = 'cabeca' | 'tronco' | 'pernas' | 'pes' | 'maos' | 'acessorio';
 
 /** ordem canonica dos slots; usada no diff por slot e, depois, na tela */

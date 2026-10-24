@@ -3,6 +3,7 @@ import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { raquete } from '../../world/props';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * O JEAN-LUC, o pato francês do lago do Villa Lobos — e o maior entusiasta de
@@ -42,6 +43,9 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * uma raquete já conta a história inteira sem abrir a boca.
  */
 export class JeanLuc extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Jean-Luc', cor: P.falaJeanLuc };
+
   private readonly corpo = new THREE.Group();
   private readonly pescoco = new THREE.Group();
   private readonly cabeca = new THREE.Group();

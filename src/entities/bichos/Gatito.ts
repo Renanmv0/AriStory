@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * O GATITO, o professor da Escola do Gatito.
@@ -48,6 +49,9 @@ const OMBRO = 0.19;
 const DURA_SIX_SEVEN = 2.8;
 
 export class Gatito extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Gatito', cor: P.falaGatito };
+
   /** o quadril: girar ele levanta a frente do corpo em volta das patas de trás */
   private readonly postura = new THREE.Group();
   private readonly corpo = new THREE.Group();

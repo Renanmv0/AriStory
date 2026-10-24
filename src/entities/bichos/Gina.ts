@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
+import type { VozDaFala } from '../../core/types';
 
 /**
  * A GINA, a girafa porteira da guarita do clube. O nome e do Ari.
@@ -29,6 +30,9 @@ import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
  * câmera come tudo que fica para dentro.
  */
 export class Gina extends Bicho {
+  /** a voz dele na caixa de fala: o nome e a cor da etiqueta (`vozes.ts`) */
+  static readonly voz: VozDaFala = { nome: 'Gina', cor: P.falaGina };
+
   private readonly corpo = new THREE.Group();
   private readonly pescoco = new THREE.Group();
   private readonly cabeca = new THREE.Group();

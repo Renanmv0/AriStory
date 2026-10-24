@@ -1,5 +1,5 @@
 import type { SavedMemory } from '../core/SaveState';
-import { SLOTS_ROUPA, type ItemDef, type SlotRoupa, type Vaga } from '../core/types';
+import { SLOTS_ROUPA, type ItemDef, type SlotRoupa, type Vaga, type VozDaFala } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import { TelaDeCartas, escapar } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
@@ -934,12 +934,66 @@ export class Ui {
     return this.dialogue.classList.contains('show');
   }
 
+  /**
+   * As vozes do jogo (`characters/vozes.ts`): o Game entrega no começo. A Ui
+   * não importa os personagens — só recebe nome e cor.
+   */
+  vozes: ReadonlyArray<VozDaFala> = [];
+
+  /**
+   * PINTA A CAIXA DE FALA COM A COR DE QUEM FALA (sugestão do Ari): a etiqueta
+   * do nome e o pontilhado em volta do texto. Só isso muda — o vidro, a letra
+   * e o resto da interface continuam iguais, para não virar circo.
+   *
+   * O nome tem que bater com o de uma voz; "Mano (de longe)" também acha o
+   * Mano. Quem não está na lista (narrador, o "A dupla") fala no rosa de
+   * sempre, que é o que o CSS tem por padrão.
+   *
+   * A letra da etiqueta é branca, como sempre foi, e só vira a tinta escura
+   * nas cores claras demais para o branco (o azul claro do Mano, o amarelo da
+   * Gina): contraste com o branco abaixo de 2,3.
+   */
+  private pintarVoz(quem: string): void {
+    const d = this.dialogue;
+    const voz = this.vozes.find((v) => v.nome === quem) ??
+      this.vozes.find((v) => quem.startsWith(`${v.nome} `));
+    const props = ['--voz', '--voz-clara', '--voz-escura', '--voz-texto', '--voz-costura', '--voz-sombra', '--voz-tinta', '--voz-relevo'];
+    if (!voz) {
+      for (const p of props) d.style.removeProperty(p);
+      delete d.dataset.voz;
+      return;
+    }
+    const r = (voz.cor >> 16) & 255;
+    const g = (voz.cor >> 8) & 255;
+    const b = voz.cor & 255;
+    const mistura = (alvo: number, t: number): string =>
+      `rgb(${[r, g, b].map((c) => Math.round(c + (alvo - c) * t)).join(', ')})`;
+    // luminância relativa (WCAG), para escolher a letra de maior contraste
+    const lin = (c: number): number => {
+      const v = c / 255;
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+    };
+    const lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    const tintaEscura = 1.05 / (lum + 0.05) < 2.3;
+    d.dataset.voz = voz.nome;
+    d.style.setProperty('--voz', `rgb(${r}, ${g}, ${b})`);
+    d.style.setProperty('--voz-clara', mistura(255, 0.28));
+    d.style.setProperty('--voz-escura', mistura(0, 0.16));
+    // nas cores claras o pontilhado e o "clique / E" escurecem um tanto, senão somem no vidro
+    d.style.setProperty('--voz-costura', `rgba(${r}, ${g}, ${b}, ${tintaEscura ? 0.8 : 0.5})`);
+    d.style.setProperty('--voz-texto', mistura(0, tintaEscura ? 0.45 : 0.3));
+    d.style.setProperty('--voz-sombra', `rgba(${r}, ${g}, ${b}, 0.38)`);
+    d.style.setProperty('--voz-tinta', tintaEscura ? 'var(--ink)' : '#fff');
+    d.style.setProperty('--voz-relevo', tintaEscura ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.25)');
+  }
+
   /** Mostra as falas em sequencia. Resolve quando a ultima e fechada. */
   say(lines: string[], speaker = ''): Promise<void> {
     return new Promise((resolve) => {
       let i = 0;
       this.dialogueWho.textContent = speaker;
       this.dialogueWho.style.display = speaker ? '' : 'none';
+      this.pintarVoz(speaker);
       this.dialogue.classList.add('show');
 
       const show = (): void => {
@@ -992,6 +1046,7 @@ export class Ui {
     return new Promise((resolve) => {
       this.dialogueWho.textContent = speaker;
       this.dialogueWho.style.display = speaker ? '' : 'none';
+      this.pintarVoz(speaker);
       this.dialogue.classList.add('show');
       this.next.style.display = 'none';
       this.type(pergunta);

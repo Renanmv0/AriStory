@@ -15,6 +15,7 @@ import { Som } from '../audio/Som';
 import type { SomNome } from '../audio/efeitos';
 import { CharacterRig } from '../characters/CharacterRig';
 import { Previa } from '../characters/Previa';
+import { VOZES } from '../characters/vozes';
 import { WorldBuilder } from '../world/WorldBuilder';
 import type { Interactable } from '../world/Interactable';
 import {
@@ -169,6 +170,8 @@ export class Game implements GameAPI {
     root.appendChild(this.renderer.domElement);
 
     this.ui = new Ui(root);
+    // a cor da fala de cada personagem (a etiqueta do nome e o pontilhado)
+    this.ui.vozes = VOZES;
     this.previa = new Previa(this.ui.canvasDoBoneco());
     this.previaDaLoja = new Previa(this.ui.canvasDaLojaBoneco());
     this.ui.setMemories(this.save.memories);

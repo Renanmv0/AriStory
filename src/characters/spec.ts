@@ -35,6 +35,8 @@ export interface CharacterSpec {
   id: string;
   /** nome mostrado nos dialogos */
   name: string;
+  /** a cor da etiqueta do nome e do pontilhado quando ele fala (`P.fala…`) */
+  corDaFala: number;
   /** altura total em unidades de mundo. 1.75 = adulto no estilo do jogo */
   height: number;
   build: BodyBuild;
