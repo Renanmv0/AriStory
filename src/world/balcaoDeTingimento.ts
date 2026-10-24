@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { toon } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { acabar } from './acabamento';
@@ -185,22 +186,47 @@ function redemoinho(): THREE.CanvasTexture {
   });
 }
 
-/** Uma tira da cartela em leque: as cores de uma família e a etiqueta branca. */
-function tiraDaCartela(i: number): THREE.CanvasTexture {
-  const familia = CARTELA_DE_TINTAS[i];
-  return texturaDePlaca(`atelie:tira-${i}`, 64, 256, (ctx, w, h) => {
+/**
+ * AS SETE TIRAS DA CARTELA EM LEQUE NUMA TEXTURA SÓ, lado a lado (uma coluna
+ * de 64 px por família: as cores dela e a etiqueta branca). Com uma textura
+ * por tira e um material por face, o leque custava ~40 desenhos por quadro;
+ * com a textura única e o UV de cada tira apontando para a sua coluna, as
+ * sete viram uma malha na `fundir()` — e a imagem é a mesma.
+ */
+const COLUNA_DA_TIRA = 64;
+function cartelaDoLeque(): THREE.CanvasTexture {
+  const n = CARTELA_DE_TINTAS.length;
+  return texturaDePlaca('atelie:leque', COLUNA_DA_TIRA * n, 256, (ctx, _w, h) => {
     ctx.fillStyle = '#fbf8f2';
-    ctx.fillRect(0, 0, w, h);
-    const cores = familia.tintas.slice(0, 6);
-    const alto = (h * 0.78) / cores.length;
-    cores.forEach((t, k) => {
-      ctx.fillStyle = hex(t.cor);
-      ctx.fillRect(4, 4 + k * alto, w - 8, alto - 4);
+    ctx.fillRect(0, 0, COLUNA_DA_TIRA * n, h);
+    CARTELA_DE_TINTAS.forEach((familia, i) => {
+      const x0 = i * COLUNA_DA_TIRA;
+      const w = COLUNA_DA_TIRA;
+      const cores = familia.tintas.slice(0, 6);
+      const alto = (h * 0.78) / cores.length;
+      cores.forEach((t, k) => {
+        ctx.fillStyle = hex(t.cor);
+        ctx.fillRect(x0 + 4, 4 + k * alto, w - 8, alto - 4);
+      });
+      ctx.fillStyle = 'rgba(80, 60, 70, 0.55)';
+      ctx.fillRect(x0 + 10, h * 0.86, w - 20, 4);
+      ctx.fillRect(x0 + 10, h * 0.91, (w - 20) * 0.6, 4);
     });
-    ctx.fillStyle = 'rgba(80, 60, 70, 0.55)';
-    ctx.fillRect(10, h * 0.86, w - 20, 4);
-    ctx.fillRect(10, h * 0.91, (w - 20) * 0.6, 4);
   });
+}
+
+/**
+ * O UV de uma caixa com a TAMPA DE CIMA mostrando um retângulo da textura e
+ * as outras faces num ponto liso dela (o papel), para a caixa inteira caber
+ * num material só. `BoxGeometry`: a face de cima são os vértices 8 a 11.
+ */
+function uvSoNaTampa(geo: THREE.BufferGeometry, u0: number, u1: number, liso: readonly [number, number]): void {
+  const uv = geo.attributes.uv;
+  for (let i = 0; i < uv.count; i++) {
+    if (i >= 8 && i < 12) uv.setX(i, u0 + uv.getX(i) * (u1 - u0));
+    else uv.setXY(i, liso[0], liso[1]);
+  }
+  uv.needsUpdate = true;
 }
 
 /** As duas páginas do caderno de receitas: amostras redondas e a letra. */
@@ -286,6 +312,59 @@ function geoBandeirola(): THREE.BufferGeometry {
   }
   geo.computeVertexNormals();
   return geo;
+}
+
+// ============================================================ a junção
+
+/**
+ * AS PEÇAS DE COR LISA VIRAM UMA MALHA SÓ, com a cor nos vértices.
+ *
+ * O balcão tem dezenas de miudezas de uma cor cada (os tecidos dobrados, os
+ * potinhos, os pincéis, a tina, o balde, o latão), e a `fundir()` só junta o
+ * que divide MATERIAL — cada cor era um desenho a mais por quadro. Aqui elas
+ * viram uma malha de `toon(branco, corPorVertice)`, o material das árvores: o
+ * toon multiplica a cor do material (branca) pela do vértice (a da peça), e a
+ * imagem é a mesma (comparada pixel a pixel com a de antes).
+ *
+ * Fica de fora o que não pode: o que tem textura (o carvalho, o tampo, a
+ * plaquinha), o que brilha, o transparente, o de dois lados, o lote, e o que
+ * mora num grupo com nome (a tinta da tina, que gira).
+ */
+const SEM_JUNCAO = typeof location !== 'undefined' && new URLSearchParams(location.search).has('semFundir');
+function juntarPorCor(raiz: THREE.Group): void {
+  // `?semFundir` desliga esta junção também: é como o `zfighting.mjs` mede
+  // caixa por caixa, e como se compara a foto de antes
+  if (SEM_JUNCAO) return;
+  raiz.updateMatrixWorld(true);
+  const inversa = new THREE.Matrix4().copy(raiz.matrixWorld).invert();
+  const pedacos: THREE.BufferGeometry[] = [];
+  const sair: THREE.Mesh[] = [];
+  const temNome = (o: THREE.Object3D | null): boolean => {
+    for (let p = o; p && p !== raiz; p = p.parent) if (p.name) return true;
+    return false;
+  };
+  raiz.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh || (m as THREE.InstancedMesh).isInstancedMesh || Array.isArray(m.material)) return;
+    const mat = m.material as THREE.MeshToonMaterial;
+    if (!mat.isMeshToonMaterial || mat.map || mat.transparent || mat.side !== THREE.FrontSide || mat.vertexColors) return;
+    if (mat.emissiveIntensity > 0 && mat.emissive.getHex() !== 0) return;
+    if (temNome(m) || Object.keys(m.userData).length > 0) return;
+    const geo = (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone());
+    for (const nome of Object.keys(geo.attributes)) if (nome !== 'position' && nome !== 'normal') geo.deleteAttribute(nome);
+    geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inversa, m.matrixWorld));
+    const n = geo.attributes.position.count;
+    const cor = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) cor.set([mat.color.r, mat.color.g, mat.color.b], i * 3);
+    geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+    pedacos.push(geo);
+    sair.push(m);
+  });
+  if (pedacos.length < 2) return;
+  const junta = mergeGeometries(pedacos);
+  if (!junta) return;
+  for (const m of sair) m.removeFromParent();
+  raiz.add(new THREE.Mesh(junta, toon(0xffffff, { corPorVertice: true })));
 }
 
 // ============================================================ a peça
@@ -534,10 +613,13 @@ export class BalcaoDeTingimento {
     // A CARTELA EM LEQUE: sete tiras (uma por família), presas no rebite
     const xL = 0.08;
     const zL = 0.0;
+    const leque = toon(0xffffff, { mapa: cartelaDoLeque() });
+    const nTiras = CARTELA_DE_TINTAS.length;
     CARTELA_DE_TINTAS.forEach((_, i) => {
-      const tira = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.004, 0.22), [
-        toon(0xfbf8f2), toon(0xfbf8f2), toon(0xffffff, { mapa: tiraDaCartela(i) }), toon(0xfbf8f2), toon(0xfbf8f2), toon(0xfbf8f2),
-      ]);
+      const geo = new THREE.BoxGeometry(0.05, 0.004, 0.22);
+      // a borda da tira é o papel: o pixel branco do alto da coluna dela
+      uvSoNaTampa(geo, i / nTiras, (i + 1) / nTiras, [(i + 0.02) / nTiras, 0.995]);
+      const tira = new THREE.Mesh(geo, leque);
       // a tira gira em volta do rebite, que fica na ponta de baixo dela
       const pivo = new THREE.Group();
       pivo.position.set(xL, T + 0.003 + i * 0.0045, zL + 0.08);
@@ -553,9 +635,10 @@ export class BalcaoDeTingimento {
     const capa = macia(0.36, 0.012, 0.23, 0.004);
     const caderno = new THREE.Group();
     por(caderno, capa, P.boutiqueVinho, 0, 0.006, 0);
-    const paginas = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.008, 0.21), [
-      toon(0xfdfaf3), toon(0xfdfaf3), toon(0xffffff, { mapa: paginasDoCaderno() }), toon(0xfdfaf3), toon(0xfdfaf3), toon(0xfdfaf3),
-    ]);
+    // um material só: a borda das folhas é o papel do canto da textura
+    const geoPaginas = new THREE.BoxGeometry(0.34, 0.008, 0.21);
+    uvSoNaTampa(geoPaginas, 0, 1, [0.004, 0.996]);
+    const paginas = new THREE.Mesh(geoPaginas, toon(0xffffff, { mapa: paginasDoCaderno() }));
     paginas.position.y = 0.016;
     caderno.add(paginas);
     // a fitinha de marcar página, saindo por baixo
@@ -615,6 +698,7 @@ export class BalcaoDeTingimento {
     por(g, pinguinho, P.tintaCeleste, balde.x + 0.09, 0.004, balde.z + 0.2);
 
     acabar(g, [[carvalho, veioDeMadeira()]]);
+    juntarPorCor(g);
   }
 
   /** As bandeirolas penduradas no cordão, balançando com o tempo `t`. */

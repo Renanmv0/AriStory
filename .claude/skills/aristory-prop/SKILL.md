@@ -834,6 +834,24 @@ ali só de olhar:
 As medidas que a cena usa ficam em `BALCAO_DE_TINGIMENTO` (o colisor e o
 balde). A cena chama `update` só com o mezanino à vista.
 
+**O peso, e as duas juntas que o devolveram sem mudar a imagem:**
+
+- a cartela em leque nasceu com uma textura por tira e um material por
+  FACE (~40 desenhos por quadro só ela). Virou UMA textura com as sete
+  colunas e o UV de cada tira apontando para a sua (`uvSoNaTampa`: a tampa
+  mostra a coluna, as outras faces um pixel liso do papel) — um material,
+  uma malha na `fundir()`. O caderno, igual;
+- as dezenas de miudezas de cor lisa (tecidos, potinhos, pincéis, tina,
+  balde, latão) eram um desenho por cor: `juntarPorCor` as junta numa malha
+  de `toon(branco, corPorVertice)` (o material das árvores — o toon
+  multiplica a cor do material pela do vértice). Fica de fora o que tem
+  textura, brilho, transparência, dois lados, lote ou nome. `?semFundir`
+  desliga as duas (é assim que o `zfighting.mjs` mede);
+- medido no canto do mezanino, de perto: 235 → 238 desenhos por quadro e
+  56,8 → 73,0 mil triângulos (sem as juntas, eram 316 desenhos); com o
+  mezanino inteiro, 288 → 286. A foto antes e depois da `juntarPorCor`
+  difere só no que se mexe sozinho (bandeirolas, tinta da tina, respiração).
+
 ## A roda gigante e a bilheteria (`world/ferrisWheel.ts`, `world/bilheteriaDaRoda.ts`)
 
 A reforma de outubro da área da roda do Villa Lobos ("mais detalhado e mais
