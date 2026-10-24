@@ -288,6 +288,14 @@ export class CharacterRig {
    * PEITO, e por cima de um vestido elas atravessam o pano em vez de pousar.
    */
   private readonly sobreTronco: THREE.Object3D[] = [];
+  /**
+   * O que a ficha pendura nas COSTAS (a mochila preta e o capuz do Renan):
+   * some quando a pessoa veste uma mochila do guarda-roupa
+   * (`ItemDef.nasCostas`), que é acessório e não esconde o `sobreTronco`.
+   * O capuz entra porque o casco da Josefina ocupa o lugar dele, e o laço do
+   * casco sumia dentro do capuz.
+   */
+  private readonly nasCostasDaFicha: THREE.Object3D[] = [];
   /** o cabelo inteiro, para um gorro poder achatá-lo */
   private readonly cabelo: THREE.Object3D[];
   /** o contorno do cabelo no plano da tiara (ver `medirCabelo`) */
@@ -449,6 +457,7 @@ export class CharacterRig {
       this.body.add(capuz);
       this.soVestido.push(capuz);
       this.sobreTronco.push(capuz);
+      this.nasCostasDaFicha.push(capuz);
     }
 
     // calção de banho: fica escondido até alguém entrar na água.
@@ -1108,6 +1117,7 @@ export class CharacterRig {
       this.body.add(bag);
       this.soVestido.push(bag);
       this.sobreTronco.push(bag);
+      this.nasCostasDaFicha.push(bag);
       const strapY = shoulderY;
       for (const side of [-1, 1]) {
         const strap = new THREE.Mesh(
@@ -1118,6 +1128,7 @@ export class CharacterRig {
         this.body.add(strap);
         this.soVestido.push(strap);
         this.sobreTronco.push(strap);
+        this.nasCostasDaFicha.push(strap);
       }
     }
   }
@@ -1253,6 +1264,9 @@ export class CharacterRig {
     // camisa do acervo cobre a roupa de tronco da ficha
     if (!banho && this.roupa.tronco) {
       for (const peca of this.sobreTronco) peca.visible = false;
+    }
+    if (this.roupa.acessorio?.nasCostas) {
+      for (const peca of this.nasCostasDaFicha) peca.visible = false;
     }
 
     for (const [slot, objs] of this.extras) {

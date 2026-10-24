@@ -93,10 +93,10 @@ function folhinha(comprimento: number, cor: number, nervura: number = P.luvaFolh
  * asas, as bolinhas pretas e a cabecinha com as antenas. Olha para `+Z`
  * (o casco sobe em `+Z`), a cabeça para `+Y`.
  */
-function joaninha(raio: number): THREE.Group {
+function joaninha(raio: number, corCasco: number = P.joaninhaVermelho, corPinta: number = P.joaninhaPreto): THREE.Group {
   const g = new THREE.Group();
-  const vermelho = toon(P.joaninhaVermelho);
-  const preto = toon(P.joaninhaPreto);
+  const vermelho = toon(corCasco);
+  const preto = toon(corPinta);
   const casco = new THREE.Mesh(new THREE.SphereGeometry(raio, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), vermelho);
   casco.rotation.x = Math.PI / 2;
   casco.scale.set(1, 0.55, 1.05);
@@ -131,9 +131,9 @@ function joaninha(raio: number): THREE.Group {
  * ferrãozinho, as duas asas translúcidas em cima e o olhinho. Olha para `+Z`,
  * voando para `+X`.
  */
-function abelhinha(raio: number): THREE.Group {
+function abelhinha(raio: number, corCorpo: number = P.abelhaAmarela): THREE.Group {
   const g = new THREE.Group();
-  const corpoAbelha = new THREE.Mesh(new THREE.SphereGeometry(raio, 14, 10), toon(P.abelhaAmarela));
+  const corpoAbelha = new THREE.Mesh(new THREE.SphereGeometry(raio, 14, 10), toon(corCorpo));
   corpoAbelha.scale.set(1.35, 1, 0.9);
   g.add(corpoAbelha);
   const listra = toon(P.abelhaListra);
@@ -324,21 +324,39 @@ const luvasDeGotinha = luvasCom('gota');
 // ================================================================= AS PULSEIRAS
 
 /**
+ * A PEÇA DE MUITAS CORES TINGIDA. A pulseira de flores, a de pedrinhas e o
+ * colar havaiano alternam cores da paleta; a `cor` da ficha é uma delas (a da
+ * amostra) e só marca a peça como tingível. Tingida no ateliê (`cor` diferente
+ * da `padrao`), ela fica da tinta em dois tons — a tinta e um tom mais claro,
+ * alternados —, para as contas não virarem uma mancha só. Sem tinta: `null`,
+ * e a peça usa as cores de sempre.
+ */
+export function tintaDeMuitasCores(peca: ItemDef | undefined, padrao: number): number[] | null {
+  const cor = peca?.cor;
+  if (cor === undefined || cor === padrao) return null;
+  return [cor, new THREE.Color(cor).offsetHSL(0, -0.04, 0.12).getHex()];
+}
+
+/**
  * A PULSEIRA DE FLORZINHAS: um cordão verde no pulso esquerdo com oito
  * florzinhas em volta, alternando rosa, amarela e branca, e duas folhinhas.
  * Só monta no braço de `-X` (a mão direita segura as coisas do jogo).
  */
-function pulseiraDeFlores(m: MedidasCorpo, lado: -1 | 1 = 1): THREE.Object3D {
+function pulseiraDeFlores(m: MedidasCorpo, lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
   if (lado !== -1) return g;
   const c = corpo(m);
   const raio = c.raioPulso * 1.2;
   const y = c.yPulso + m.h * 0.005;
-  const cordao = new THREE.Mesh(new THREE.TorusGeometry(raio, m.h * 0.004, 5, 20), toon(P.cordaDeFlor));
+  const cordao = new THREE.Mesh(new THREE.TorusGeometry(raio, m.h * 0.004, 5, 20), toon(peca?.corDetalhe ?? P.cordaDeFlor));
   cordao.rotation.x = Math.PI / 2;
   cordao.position.y = y;
   g.add(cordao);
-  const cores: Array<[number, number]> = [[P.florRosa, P.flowerYellow], [P.flowerYellow, P.girassolMiolo], [P.florBranca, P.flowerYellow], [P.florLilas, P.flowerYellow]];
+  // tingida no ateliê, as oito florzinhas ficam da tinta (em dois tons)
+  const tinta = tintaDeMuitasCores(peca, P.florRosa);
+  const cores: Array<[number, number]> = tinta
+    ? tinta.map((c) => [c, P.flowerYellow] as [number, number])
+    : [[P.florRosa, P.flowerYellow], [P.flowerYellow, P.girassolMiolo], [P.florBranca, P.flowerYellow], [P.florLilas, P.flowerYellow]];
   const quantas = 8;
   for (let i = 0; i < quantas; i++) {
     const a = (i / quantas) * Math.PI * 2;
@@ -358,13 +376,15 @@ function pulseiraDeFlores(m: MedidasCorpo, lado: -1 | 1 = 1): THREE.Object3D {
  * facetas grandes, que no toon leem como pedra) em cinco cores — quartzo
  * rosa, ametista, água-marinha, citrino e jade —, com um fecho dourado.
  */
-function pulseiraDePedrinhas(m: MedidasCorpo, lado: -1 | 1 = 1): THREE.Object3D {
+function pulseiraDePedrinhas(m: MedidasCorpo, lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
   if (lado !== -1) return g;
   const c = corpo(m);
   const raio = c.raioPulso * 1.22;
   const y = c.yPulso + m.h * 0.004;
-  const cores = [P.pedraQuartzo, P.pedraAmetista, P.pedraAguaMarinha, P.pedraCitrino, P.pedraJade];
+  // tingida no ateliê, as doze pedrinhas ficam da tinta (em dois tons)
+  const cores = tintaDeMuitasCores(peca, P.pedraAmetista)
+    ?? [P.pedraQuartzo, P.pedraAmetista, P.pedraAguaMarinha, P.pedraCitrino, P.pedraJade];
   const quantas = 12;
   for (let i = 0; i < quantas; i++) {
     const a = (i / quantas) * Math.PI * 2;
@@ -374,7 +394,7 @@ function pulseiraDePedrinhas(m: MedidasCorpo, lado: -1 | 1 = 1): THREE.Object3D 
     pedra.rotation.set(i * 0.7, i * 1.3, 0);
     g.add(pedra);
   }
-  const fecho = new THREE.Mesh(new THREE.TorusGeometry(m.h * 0.006, m.h * 0.0022, 5, 10), toon(P.fechoDourado, { glow: 0.2 }));
+  const fecho = new THREE.Mesh(new THREE.TorusGeometry(m.h * 0.006, m.h * 0.0022, 5, 10), toon(peca?.corDetalhe ?? P.fechoDourado, { glow: 0.2 }));
   fecho.position.set(0, y - m.h * 0.01, raio + m.h * 0.003);
   g.add(fecho);
   return g;
@@ -411,31 +431,39 @@ function comGrampo(m: MedidasCorpo, enfeite: THREE.Object3D): THREE.Group {
   return g;
 }
 
+/*
+ * As cores de cada pin vêm da FICHA (pedido do Ari: pintar os pins no
+ * ateliê da Estella): `cor` é o bicho ou a flor, `corDetalhe` o miolo, a
+ * pintinha, a florzinha ou a asa de baixo. O padrão é a cor de sempre.
+ */
+
 /** PIN DE MARGARIDA: oito pétalas brancas e o miolo amarelo. */
-function pinDeMargarida(m: MedidasCorpo): THREE.Object3D {
-  return noCabelo(m, 0.9, comGrampo(m, florzinha(m.headR * 0.26, P.florBranca, P.flowerYellow, 8)));
+function pinDeMargarida(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const flor = florzinha(m.headR * 0.26, peca?.cor ?? P.florBranca, peca?.corDetalhe ?? P.flowerYellow, 8);
+  return noCabelo(m, 0.9, comGrampo(m, flor));
 }
 
 /** PIN DE JOANINHA: a joaninha inteira, pousada no cabelo, andando para cima. */
-function pinDeJoaninha(m: MedidasCorpo): THREE.Object3D {
-  return noCabelo(m, 0.85, comGrampo(m, joaninha(m.headR * 0.16)));
+function pinDeJoaninha(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const bicho = joaninha(m.headR * 0.16, peca?.cor ?? P.joaninhaVermelho, peca?.corDetalhe ?? P.joaninhaPreto);
+  return noCabelo(m, 0.85, comGrampo(m, bicho));
 }
 
 /** PIN DE ABELHINHA: a abelha de perfil, voando para a frente, com uma florzinha. */
-function pinDeAbelhinha(m: MedidasCorpo): THREE.Object3D {
+function pinDeAbelhinha(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
-  const abelha = abelhinha(m.headR * 0.12);
+  const abelha = abelhinha(m.headR * 0.12, peca?.cor ?? P.abelhaAmarela);
   abelha.position.set(m.headR * 0.05, m.headR * 0.08, m.headR * 0.03);
   g.add(abelha);
-  const flor = florzinha(m.headR * 0.14, P.florRosa, P.flowerYellow);
+  const flor = florzinha(m.headR * 0.14, peca?.corDetalhe ?? P.florRosa, P.flowerYellow);
   flor.position.set(-m.headR * 0.14, -m.headR * 0.1, 0);
   g.add(flor);
   return noCabelo(m, 0.9, comGrampo(m, g));
 }
 
 /** PIN DE BORBOLETA: a borboleta lilás e rosa, de asas abertas. */
-function pinDeBorboleta(m: MedidasCorpo): THREE.Object3D {
-  const b = borboleta(m.headR * 0.22);
+function pinDeBorboleta(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
+  const b = borboleta(m.headR * 0.22, peca?.cor ?? P.borboletaAsa, peca?.corDetalhe ?? P.borboletaAsaBaixa);
   b.rotation.z = -0.35;
   return noCabelo(m, 0.9, comGrampo(m, b));
 }

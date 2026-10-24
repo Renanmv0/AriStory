@@ -101,6 +101,47 @@ const fixos = await j(() => {
 });
 ok(fixos.length >= 8 && fixos.every(([, pode]) => !pode), `nenhum fica no ateliê (${fixos.filter(([, p]) => p).map(([id]) => id).join(', ') || 'ok'})`);
 
+// ================================================ 2b. os acessórios também se pintam
+console.log('\n2b. acessórios miúdos se pintam (pedido do Ari), e a mochila de casco é acessório');
+const acessorios = await j(() => {
+  const T = window.aristoryTintas;
+  const I = window.aristoryItens;
+  const ids = ['pin-de-margarida', 'pin-de-joaninha', 'pin-de-abelhinha', 'pin-de-borboleta',
+    'oculos-escuros', 'oculos-redondo', 'oculos-gatinho', 'oculos-de-coracao', 'oculos-espelhado', 'oculos-de-natacao',
+    'pulseira-de-flores', 'pulseira-de-pedrinhas', 'colar-havaiano', 'tiara-de-conchinhas', 'mochila-casco'];
+  const mochila = I['mochila-casco'];
+  return {
+    fora: ids.filter((id) => !I[id] || !T.podeTingir(I[id]) || !T.temDetalhe(I[id])),
+    mochila: { slot: mochila.slot, presoEm: mochila.presoEm, nasCostas: mochila.nasCostas },
+  };
+});
+ok(acessorios.fora.length === 0, `pins, óculos, pulseiras, colar, tiara e mochila têm cor e detalhe no ateliê (${acessorios.fora.join(', ') || 'todos'})`);
+ok(acessorios.mochila.slot === 'acessorio' && acessorios.mochila.presoEm === 'corpo' && acessorios.mochila.nasCostas,
+  `a mochila de casco é acessório nas costas (${JSON.stringify(acessorios.mochila)})`);
+const comVestido = await j(() => {
+  const g = window.jogo;
+  const I = window.aristoryItens;
+  const rig = [g.player, g.parceiro].find((q) => q.rig.spec.accessories?.includes('mochila')).rig;
+  // o Renan tem a mochila preta da ficha: com a de casco ela some
+  const mochilaFixa = () => {
+    let n = 0;
+    rig.group.traverse((o) => { if (o.isMesh && o.visible && o.geometry.type === 'BoxGeometry' && o.material.color.getHex() === rig.spec.accessoryColor) n++; });
+    return n;
+  };
+  rig.vestirRoupa({});
+  const antes = mochilaFixa();
+  rig.vestirRoupa({ acessorio: 'mochila-casco' }, {});
+  const comCasco = mochilaFixa();
+  // e vai com qualquer roupa de tronco: o vestido continua, o casco também
+  rig.vestirRoupa({ acessorio: 'mochila-casco', tronco: 'vestido-rosa' }, {});
+  const vestidos = new Set();
+  rig.group.traverse((o) => { if (o.userData.roupa) vestidos.add(o.userData.roupa); });
+  rig.vestirRoupa({});
+  return { antes, comCasco, vestidos: [...vestidos], existe: !!I['vestido-rosa'] };
+});
+ok(comVestido.antes > 0 && comVestido.comCasco === 0, `a mochila preta (e o capuz) do Renan some com a de casco (${comVestido.antes} → ${comVestido.comCasco})`);
+ok(comVestido.vestidos.includes('mochila-casco') && comVestido.vestidos.includes('vestido-rosa'), `a mochila veste junto com o vestido (${comVestido.vestidos.join(', ')})`);
+
 // ================================================ 3. o principal não mexe no detalhe
 console.log('\n3. pintar a cor principal deixa o detalhe como era');
 const detalheFica = await j(() => {

@@ -520,9 +520,14 @@ export const ITENS = {
   },
   mochilaCasco: {
     id: 'mochila-casco', nome: 'Mochila casco da Josefina', icone: '🐢',
-    tipo: 'vestivel', slot: 'tronco',
-    // SEM `cor`: a camiseta de baixo continua a da pessoa; a mochila vai por cima
-    amostra: P.tartarugaCasco,
+    // ACESSÓRIO preso no corpo, e não tronco (pedido do Ari: "it's on the
+    // upper section, so u can only wear it with the default shirt"). Vai por
+    // cima da roupa, como o avental do Mania: o referencial é o mesmo do
+    // tronco, e o save antigo muda a peça de vaga sozinho.
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', nasCostas: true,
+    // acessório não pinta o corpo: `cor` é o casco e `corDetalhe` o laço, e
+    // os dois se pintam no ateliê da Estella
+    cor: P.tartarugaCasco, corDetalhe: P.lacoDaJosefina,
     nota: 'com o laço rosa dela', preco: 58,
     extra: mochilaCascoDaJosefina,
   },
@@ -576,39 +581,45 @@ export const ITENS = {
     id: 'pulseira-de-flores', nome: 'Pulseira de florzinhas', icone: '🌼',
     tipo: 'vestivel', slot: 'maos',
     nota: 'um cordão verde cheio de flor', preco: 28,
-    amostra: P.florRosa,
+    // `cor` é a flor da amostra: pintada, as oito florzinhas ficam da tinta
+    cor: P.florRosa, corDetalhe: P.cordaDeFlor,
     extra: pulseiraDeFlores,
   },
   pulseiraDePedrinhas: {
     id: 'pulseira-de-pedrinhas', nome: 'Pulseira de pedrinhas', icone: '💎',
     tipo: 'vestivel', slot: 'maos',
     nota: 'quartzo, ametista, água-marinha, citrino e jade', preco: 34,
-    amostra: P.pedraAmetista,
+    // `cor` é a pedra da amostra: pintada, as doze pedrinhas ficam da tinta
+    cor: P.pedraAmetista, corDetalhe: P.fechoDourado,
     extra: pulseiraDePedrinhas,
   },
   // ---- pins de cabelo (vaga do acessório, presos na cabeça)
   pinDeMargarida: {
     id: 'pin-de-margarida', nome: 'Pin de margarida', icone: '🌼',
     tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
-    nota: 'preso no cabelo', preco: 22, amostra: P.florBranca,
+    nota: 'preso no cabelo', preco: 22,
+    cor: P.florBranca, corDetalhe: P.flowerYellow,
     extra: pinDeMargarida,
   },
   pinDeJoaninha: {
     id: 'pin-de-joaninha', nome: 'Pin de joaninha', icone: '🐞',
     tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
-    nota: 'uma joaninha subindo pelo cabelo', preco: 24, amostra: P.joaninhaVermelho,
+    nota: 'uma joaninha subindo pelo cabelo', preco: 24,
+    cor: P.joaninhaVermelho, corDetalhe: P.joaninhaPreto,
     extra: pinDeJoaninha,
   },
   pinDeAbelhinha: {
     id: 'pin-de-abelhinha', nome: 'Pin de abelhinha', icone: '🐝',
     tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
-    nota: 'a abelha e a florzinha dela', preco: 24, amostra: P.abelhaAmarela,
+    nota: 'a abelha e a florzinha dela', preco: 24,
+    cor: P.abelhaAmarela, corDetalhe: P.florRosa,
     extra: pinDeAbelhinha,
   },
   pinDeBorboleta: {
     id: 'pin-de-borboleta', nome: 'Pin de borboleta', icone: '🦋',
     tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca',
-    nota: 'lilás e rosa, de asa aberta', preco: 26, amostra: P.borboletaAsa,
+    nota: 'lilás e rosa, de asa aberta', preco: 26,
+    cor: P.borboletaAsa, corDetalhe: P.borboletaAsaBaixa,
     extra: pinDeBorboleta,
   },
   // ---- camisetas de natureza (justas, com estampa)
@@ -765,42 +776,43 @@ export const ITENS = {
     presoEm: 'cabeca',
     praia: true,
     preco: 10,
-    amostra: P.oculosLente,
+    cor: P.oculosLente,
+    corDetalhe: P.oculosArmacao,
     nota: 'o de sempre do vestiário',
     extra: oculosDeSol,
   },
   oculosRedondo: {
     id: 'oculos-redondo', nome: 'Óculos redondinho', icone: '👓',
     tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
-    preco: 14, amostra: P.oculosDourado,
+    preco: 14, cor: P.oculosDourado, corDetalhe: P.oculosAmbar,
     nota: 'aro dourado fino e lente âmbar',
     extra: oculosRedondo,
   },
   oculosGatinho: {
     id: 'oculos-gatinho', nome: 'Óculos gatinho', icone: '😼',
     tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
-    preco: 15, amostra: P.oculosGatinhoRosa,
+    preco: 15, cor: P.oculosGatinhoRosa, corDetalhe: P.oculosGatinhoLente,
     nota: 'rosa, de pontinha, com strass',
     extra: oculosGatinho,
   },
   oculosDeCoracao: {
     id: 'oculos-de-coracao', nome: 'Óculos de coração', icone: '😍',
     tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
-    preco: 15, amostra: P.oculosCoracaoAro,
+    preco: 15, cor: P.oculosCoracaoAro, corDetalhe: P.oculosCoracaoLente,
     nota: 'para ver a piscina toda cor-de-rosa',
     extra: oculosDeCoracao,
   },
   oculosEspelhado: {
     id: 'oculos-espelhado', nome: 'Óculos espelhado', icone: '😎',
     tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
-    preco: 18, amostra: P.oculosEspelhado,
+    preco: 18, cor: P.oculosEspelhado, corDetalhe: P.oculosEspelhadoAro,
     nota: 'esportivo, a lente azul dando a volta',
     extra: oculosEspelhado,
   },
   oculosDeNatacao: {
     id: 'oculos-de-natacao', nome: 'Óculos de natação', icone: '🥽',
     tipo: 'vestivel', slot: 'acessorio', presoEm: 'cabeca', praia: true,
-    preco: 12, amostra: P.oculosNatacaoLente,
+    preco: 12, cor: P.oculosNatacaoLente, corDetalhe: P.oculosNatacaoAro,
     nota: 'com a tira em volta da cabeça',
     extra: oculosDeNatacao,
   },
@@ -942,7 +954,8 @@ export const ITENS = {
   },
   tiaraDeConchinhas: {
     id: 'tiara-de-conchinhas', nome: 'Tiara de conchinhas', icone: '🐚',
-    tipo: 'vestivel', slot: 'cabeca', preco: 16, amostra: P.estrelaDoMar,
+    tipo: 'vestivel', slot: 'cabeca', preco: 16,
+    cor: P.estrelaDoMar, corDetalhe: P.tiaraAreia,
     nota: 'estrela-do-mar, concha e pérola',
     extra: tiaraDeConchinhas,
   },
@@ -955,7 +968,9 @@ export const ITENS = {
   },
   colarHavaiano: {
     id: 'colar-havaiano', nome: 'Colar havaiano', icone: '🌼',
-    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', praia: true, preco: 12, amostra: P.colarRosa,
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', praia: true, preco: 12,
+    // `cor` é a flor da amostra: pintado, o colar fica da tinta
+    cor: P.colarRosa, corDetalhe: P.colarFolha,
     nota: 'de flor, fica até dentro do clube',
     extra: colarHavaiano,
   },
