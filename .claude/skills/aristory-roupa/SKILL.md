@@ -286,7 +286,8 @@ No computador e no celular deitado as metades ficam lado a lado; no celular
 em pé, a prova em cima e a lista embaixo. O cartão da peça é a amostra na COR
 dela (`corDaPeca`: `cor ?? corBanho ?? amostra`) com o ícone e o nome — a
 `nota` saiu do cartão e aparece na legenda embaixo do boneco quando a peça
-entra no corpo. Os dois nomes no alto (`.quem`) trocam de pessoa: é o T de
+entra no corpo. Dentro de cada parte, as peças vêm em ordem alfabética
+(`porNome`, comparação em pt-BR). Os dois nomes no alto (`.quem`) trocam de pessoa: é o T de
 quem não tem teclado. A vaga vazia abre o filtro daquela parte; a cheia tira.
 Peça nova não pede nada disso: o painel se desenha pela ficha.
 

@@ -62,6 +62,17 @@ export const CAMPEAO_DO_QUADRO = '__campeao';
  */
 const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés', 'Mãos', 'Acessório'];
 
+/**
+ * Dentro de cada parte do corpo, as peças em ORDEM ALFABÉTICA (pedido do
+ * Renan): com sessenta peças, a ordem de chegada no save não dizia onde
+ * procurar. Comparação em pt-BR, para o "Óculos escuros" cair junto do "O",
+ * e não depois do "Z".
+ */
+const ALFABETO = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
+function porNome(a: { nome: string }, b: { nome: string }): number {
+  return ALFABETO.compare(a.nome, b.nome);
+}
+
 /** O desenho de cada parte do corpo (o filtro e a vaga vazia), na mesma ordem. */
 const ICONE_DA_PARTE = ['🧢', '👕', '👖', '👟', '🧤', '💍'];
 
@@ -2204,7 +2215,7 @@ export class Ui {
       return;
     }
     SLOTS_ROUPA.forEach((slot, i) => {
-      const doSlot = guardados.filter((item) => item.slot === slot);
+      const doSlot = guardados.filter((item) => item.slot === slot).sort(porNome);
       if (doSlot.length === 0) return;
       const secao = document.createElement('section');
       secao.className = 'grupo';
@@ -2268,7 +2279,7 @@ export class Ui {
     this.vitrineDaPiscina.innerHTML = '';
     this.pintarFiltro(SLOTS_ROUPA.map((slot) => dados.pecas.filter((p) => p.slot === slot).length));
     SLOTS_ROUPA.forEach((slot, i) => {
-      const doSlot = dados.pecas.filter((p) => p.slot === slot);
+      const doSlot = dados.pecas.filter((p) => p.slot === slot).sort(porNome);
       if (doSlot.length === 0) return;
       const secao = document.createElement('section');
       secao.className = 'grupo';
@@ -2347,7 +2358,7 @@ export class Ui {
       this.vitrineDaPiscina.appendChild(nada);
     }
     SLOTS_ROUPA.forEach((slot, i) => {
-      const doSlot = dados.pecas.filter((p) => p.slot === slot);
+      const doSlot = dados.pecas.filter((p) => p.slot === slot).sort(porNome);
       if (doSlot.length === 0) return;
       const secao = document.createElement('section');
       secao.className = 'grupo';
