@@ -268,6 +268,31 @@ Forçando o canvas a medir pelo tamanho interno, ele ia de 2 mil a 33 milhões
 de pixels em dois toques; com a moldura, fica parado. Canvas novo dentro de
 painel segue o mesmo molde.
 
+## O painel do guarda-roupa: o boneco nunca sai da tela
+
+Pedido do Ari, que joga pelo celular: rolando a lista, o boneco sumia e não
+dava para ver a roupa mudar. O painel (`.armario` em `Ui.ts` e no
+`style.css`) tem altura FIXA e duas metades:
+
+- a **prova**, parada: o palco do boneco no meio e as 6 vagas em volta, cada
+  uma na altura da parte do corpo (cabeça/acessório no alto, tronco/mãos no
+  meio, pernas/pés embaixo). As vagas continuam filhas do `.corpo`, na ordem
+  de `SLOTS_ROUPA` (os testes leem assim); `display: contents` as põe na grade;
+- a **lista**, a única coisa que rola: o filtro por parte do corpo
+  (`.filtro`, "Tudo" + as 6 partes com a contagem) grudado no alto, e as
+  seções por parte. O filtro é só CSS (`data-filtro` na `.lista`).
+
+No computador e no celular deitado as metades ficam lado a lado; no celular
+em pé, a prova em cima e a lista embaixo. O cartão da peça é a amostra na COR
+dela (`corDaPeca`: `cor ?? corBanho ?? amostra`) com o ícone e o nome — a
+`nota` saiu do cartão e aparece na legenda embaixo do boneco quando a peça
+entra no corpo. Os dois nomes no alto (`.quem`) trocam de pessoa: é o T de
+quem não tem teclado. A vaga vazia abre o filtro daquela parte; a cheia tira.
+Peça nova não pede nada disso: o painel se desenha pela ficha.
+
+Com a moldura alta e fina, o `Previa` recua a câmera até caber a LARGURA do
+boneco (o cabelo do Ari e os braços abertos), não só a altura.
+
 ## Pele à mostra: `bracosNus` e `pernasNuas`
 
 A peça não pode dizer "cor de pele" — a pele é do personagem

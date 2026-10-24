@@ -62,6 +62,19 @@ export const CAMPEAO_DO_QUADRO = '__campeao';
  */
 const PARTES = ['Cabeça', 'Tronco', 'Pernas', 'Pés', 'Mãos', 'Acessório'];
 
+/** O desenho de cada parte do corpo (o filtro e a vaga vazia), na mesma ordem. */
+const ICONE_DA_PARTE = ['🧢', '👕', '👖', '👟', '🧤', '💍'];
+
+/**
+ * A cor do quadradinho de uma peça no guarda-roupa: a mesma conta da amostra
+ * das lojas (`cor ?? corBanho ?? amostra`), e um lilás claro de papel para a
+ * peça que não pinta nada.
+ */
+function corDaPeca(item: ItemDef): string {
+  const cor = item.cor ?? item.corBanho ?? item.amostra;
+  return cor === undefined ? '#efe8f6' : `#${cor.toString(16).padStart(6, '0')}`;
+}
+
 /**
  * Toda a interface em DOM sobre o canvas. O jogo fala com a UI so por estes
  * metodos; nenhum outro arquivo cria elemento de tela.
@@ -97,6 +110,9 @@ export class Ui {
   private readonly vitrine: HTMLDivElement;
   /** a vitrine da aba de roupas de piscina, no guarda-roupa em modo vestiário */
   private readonly vitrineDaPiscina: HTMLDivElement;
+  /** a coluna que ROLA no guarda-roupa: o filtro e as peças (o boneco fica parado) */
+  private readonly listaDoArmario: HTMLDivElement;
+  private readonly filtroDoArmario: HTMLDivElement;
   private readonly slotsMao: HTMLDivElement;
   private readonly slotsVestivel: HTMLDivElement;
   private readonly dono: HTMLElement;
@@ -282,34 +298,43 @@ export class Ui {
         <button class="close">voltar pro jogo</button>
       </div></div>
       <div class="armario"><div class="sheet">
-        <h2><span class="titulo">Guarda-roupa</span> <span class="dono"></span></h2>
+        <header class="topo">
+          <h2><span class="titulo">Guarda-roupa</span> <span class="dono"></span></h2>
+          <div class="quem" role="group" aria-label="quem está se vestindo"></div>
+          <button class="close" aria-label="fechar"><span>fechar </span>✕</button>
+        </header>
         <div class="abas" role="tablist">
           <button data-aba="vestir" role="tab">👕 Guarda-roupa</button>
           <button data-aba="piscina" role="tab"><span class="aba-segunda">🩳 Roupas de piscina</span></button>
         </div>
-        <p class="sub"></p>
-        <div class="prova">
-          <div class="palco">
-            <div class="moldura"><canvas class="boneco"></canvas></div>
-            <div class="traje" role="group" aria-label="como o boneco aparece">
-              <button data-traje="banho" title="como fica na piscina">🏊<span> na piscina</span></button>
-              <button data-traje="normal" title="como fica na rua">👕<span> na rua</span></button>
+        <div class="mesa">
+          <div class="prova">
+            <div class="palco">
+              <div class="moldura"><canvas class="boneco"></canvas><span class="girar" aria-hidden="true">⟲ arraste para girar</span></div>
+              <div class="traje" role="group" aria-label="como o boneco aparece">
+                <button data-traje="banho" title="como fica na piscina">🏊<span> na piscina</span></button>
+                <button data-traje="normal" title="como fica na rua">👕<span> na rua</span></button>
+              </div>
+              <p class="legenda"></p>
+            </div>
+            <div class="corpo"></div>
+            <div class="ficha">
+              <p class="saldo"></p>
+              <b class="nome"></b>
+              <small class="nota"></small>
+              <span class="preco"></span>
+              <button class="agir"></button>
+              <p class="aviso"></p>
             </div>
           </div>
-          <div class="corpo"></div>
-          <div class="ficha">
-            <p class="saldo"></p>
-            <b class="nome"></b>
-            <small class="nota"></small>
-            <span class="preco"></span>
-            <button class="agir"></button>
-            <p class="aviso"></p>
+          <div class="lista">
+            <div class="filtro" role="tablist" aria-label="parte do corpo"></div>
+            <h3 class="rotulo-acervo">O que você tem</h3>
+            <div class="acervo"></div>
+            <div class="vitrine-piscina"></div>
           </div>
         </div>
-        <h3 class="rotulo-acervo">O que você tem</h3>
-        <div class="acervo"></div>
-        <div class="vitrine-piscina"></div>
-        <button class="close">fechar</button>
+        <p class="sub"></p>
       </div></div>
       <div class="loja"><div class="sheet">
         <h2><span class="arara"></span> <span class="dono"></span></h2>
@@ -424,6 +449,8 @@ export class Ui {
     this.bonecoDaLoja = ui.querySelector('.loja .boneco')!;
     this.vitrine = ui.querySelector('.loja .vitrine')!;
     this.vitrineDaPiscina = ui.querySelector('.armario .vitrine-piscina')!;
+    this.listaDoArmario = ui.querySelector('.armario .lista')!;
+    this.filtroDoArmario = ui.querySelector('.armario .filtro')!;
     this.cardapio = ui.querySelector('.cardapio')!;
     this.inscricoes = ui.querySelector('.quadro-de-inscricoes')!;
     this.fichasDoQuadro = ui.querySelector('.quadro-de-inscricoes .fichas')!;
@@ -581,6 +608,14 @@ export class Ui {
       if (peca?.dataset.id) this.onProvarNaPiscina?.(peca.dataset.id);
     });
     this.armario.querySelector('.ficha .agir')!.addEventListener('click', () => this.onAgirNaPiscina?.());
+    this.filtroDoArmario.addEventListener('click', (e) => {
+      const parte = (e.target as HTMLElement).closest<HTMLElement>('[data-filtro]')?.dataset.filtro;
+      if (parte) this.filtrarArmario(parte as SlotRoupa | 'tudo');
+    });
+    this.armario.querySelector('.quem')!.addEventListener('click', (e) => {
+      const botao = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+      if (botao && !botao.classList.contains('ativo')) this.onTrocarPessoaNoArmario?.();
+    });
     ui.querySelector('.cardapio .pedir')!.addEventListener('click', () => {
       if (this.pratoMarcado) this.fecharCardapio(this.pratoMarcado);
     });
@@ -1981,6 +2016,9 @@ export class Ui {
     this.armario.classList.toggle('modo-escola', modo === 'escola');
     this.armario.querySelector('.titulo')!.textContent = modo === 'casa' ? 'Guarda-roupa' : 'Vestiário';
     this.armario.querySelector('.aba-segunda')!.textContent = modo === 'escola' ? '🐱 Uniformes' : '🩳 Roupas de piscina';
+    this.filtroArmario = 'tudo';
+    this.recemVestida = null;
+    this.listaDoArmario.scrollTop = 0;
     this.onAbrirArmario?.();
     this.armario.classList.add('show');
     this.marcarTelaAberta();
@@ -2017,7 +2055,7 @@ export class Ui {
       ? 'clique numa peça do uniforme para <b>vestir ou tirar</b> · arraste o boneco para girar · <b>T</b> veste o outro'
       : piscina
         ? 'clique numa peça para <b>provar no boneco</b> · desbloqueada, ela vai para o guarda-roupa dos dois · <b>T</b> troca de pessoa'
-        : 'clique numa peça para vestir ou tirar · arraste o boneco para girar · <b>T</b> veste o outro';
+        : 'clique numa peça para <b>vestir</b> · numa vaga do corpo para <b>tirar</b> · arraste o boneco para girar · <b>T</b> veste o outro';
     this.armario.querySelector('.rotulo-acervo')!.textContent = piscina ? (escola ? 'Uniformes' : 'Roupas de piscina') : 'O que você tem';
   }
 
@@ -2041,10 +2079,85 @@ export class Ui {
   }
 
   /**
-   * Desenha o painel: as 4 partes do corpo e o que a pessoa tem para vestir.
+   * Quem está se vestindo, e quem é o outro: os dois nomes no alto do painel.
    *
-   * As 4 vagas aparecem SEMPRE, cheias ou vazias, pela mesma razao da mochila:
-   * grade parada se le de relance, e a vaga vazia diz o que falta.
+   * No celular não existe a tecla T, e o Ari joga pelo celular — os dois
+   * botões são o jeito de vestir o outro sem fechar o guarda-roupa. O botão
+   * injeta a MESMA troca do T (`onTrocarPessoaNoArmario` → `tapSwap`), então
+   * as travas dela valem igual.
+   */
+  pessoasDoArmario(atual: string, outro: string): void {
+    const quem = this.armario.querySelector<HTMLElement>('.quem')!;
+    quem.innerHTML = '';
+    for (const [nome, ativo] of [[atual, true], [outro, false]] as const) {
+      const b = document.createElement('button');
+      b.classList.toggle('ativo', ativo);
+      b.setAttribute('aria-pressed', String(ativo));
+      b.textContent = nome;
+      quem.appendChild(b);
+    }
+  }
+
+  /** Tocou no nome do outro, no alto do painel: veste o outro (o T do celular). */
+  onTrocarPessoaNoArmario: (() => void) | null = null;
+
+  /**
+   * O FILTRO POR PARTE DO CORPO, em cima da lista.
+   *
+   * Pedido do Ari, que joga pelo celular: com tanta roupa, a lista virou uma
+   * parede, e achar o sapato era rolar por vinte chapéus. O filtro é só CSS
+   * (`data-filtro` na lista esconde as outras seções) — a grade é a mesma, e
+   * quem procura pelo nome continua achando a peça no "Tudo".
+   */
+  private filtroArmario: SlotRoupa | 'tudo' = 'tudo';
+
+  private filtrarArmario(parte: SlotRoupa | 'tudo'): void {
+    if (this.filtroArmario !== parte) this.listaDoArmario.scrollTop = 0;
+    this.filtroArmario = parte;
+    this.listaDoArmario.dataset.filtro = parte;
+    for (const b of this.filtroDoArmario.querySelectorAll<HTMLElement>('[data-filtro]')) {
+      const ativo = b.dataset.filtro === parte;
+      b.classList.toggle('ativo', ativo);
+      b.setAttribute('aria-selected', String(ativo));
+      // no celular a fileira rola de lado: o botão escolhido não pode ficar
+      // escondido fora dela (redesenhar o painel, ou trocar de pessoa, deixava
+      // a fileira parada onde estava)
+      const f = this.filtroDoArmario;
+      if (ativo && (b.offsetLeft < f.scrollLeft || b.offsetLeft + b.offsetWidth > f.scrollLeft + f.clientWidth)) {
+        f.scrollLeft = Math.max(0, b.offsetLeft - 12);
+      }
+    }
+  }
+
+  /** Desenha os botões do filtro com quantas peças há em cada parte. */
+  private pintarFiltro(quantas: ReadonlyArray<number>): void {
+    // a parte filtrada ficou vazia (vestiu a última, trocou de aba): volta ao "Tudo"
+    const i = SLOTS_ROUPA.indexOf(this.filtroArmario as SlotRoupa);
+    if (i >= 0 && quantas[i] === 0) this.filtroArmario = 'tudo';
+    const total = quantas.reduce((a, b) => a + b, 0);
+    this.filtroDoArmario.innerHTML =
+      `<button data-filtro="tudo" role="tab">Tudo <span>${total}</span></button>` +
+      SLOTS_ROUPA.map((slot, k) =>
+        `<button data-filtro="${slot}" role="tab"${quantas[k] === 0 ? ' disabled' : ''}>` +
+        `${ICONE_DA_PARTE[k]} ${PARTES[k]} <span>${quantas[k]}</span></button>`).join('');
+    this.filtrarArmario(this.filtroArmario);
+  }
+
+  /**
+   * A peça que acabou de ser vestida por um clique na lista. A legenda embaixo
+   * do boneco diz o nome e a nota dela — a nota saiu dos cartões (eram eles
+   * que poluíam a grade) e aparece aqui, no momento em que a peça entra no corpo.
+   */
+  private recemVestida: string | null = null;
+
+  /**
+   * Desenha o painel: as 6 partes do corpo em volta do boneco e o que a pessoa
+   * tem para vestir.
+   *
+   * As 6 vagas aparecem SEMPRE, cheias ou vazias, pela mesma razao da mochila:
+   * grade parada se le de relance, e a vaga vazia diz o que falta. Elas ficam
+   * dos dois lados do boneco, cada uma na altura da parte do corpo dela
+   * (cabeça e acessório no alto, tronco e mãos no meio, pernas e pés embaixo).
    */
   renderArmario(
     vestindo: ReadonlyArray<ItemDef | null>,
@@ -2059,19 +2172,30 @@ export class Ui {
       vaga.className = 'parte';
       vaga.classList.toggle('cheio', item !== null);
       vaga.dataset.parte = String(i);
+      vaga.title = item ? `${item.nome} — toque para tirar` : `${PARTES[i]}: ver o que tem`;
       vaga.innerHTML =
         `<small>${PARTES[i]}</small>` +
         (item
-          ? `<span class="icone">${item.icone}</span><b>${item.nome}</b><em>tirar</em>`
-          : `<span class="icone vazio">·</span><b>vazio</b>`);
+          ? `<span class="icone" style="--cor:${corDaPeca(item)}">${item.icone}</span><b>${item.nome}</b><em>tirar</em>`
+          : `<span class="icone vazio">${ICONE_DA_PARTE[i]}</span><b>vazio</b>`);
       this.corpo.appendChild(vaga);
     });
 
-    // O acervo sai SEPARADO POR PARTE DO CORPO, na mesma ordem das 4 vagas
+    // a legenda: o que acabou de entrar no corpo, ou a dica de como se usa
+    const nova = vestindo.find((v) => v !== null && v.id === this.recemVestida) ?? null;
+    const legenda = this.armario.querySelector<HTMLElement>('.legenda')!;
+    legenda.classList.toggle('dica', nova === null);
+    legenda.innerHTML = nova
+      ? `<b>${nova.icone} ${nova.nome}</b>${nova.nota ? ` <small>· ${nova.nota}</small>` : ''}`
+      : 'toque numa peça para vestir · na vaga, para tirar';
+
+    // O acervo sai SEPARADO POR PARTE DO CORPO, na mesma ordem das vagas
     // acima. Tudo misturado numa grade só, achar a calça no meio de seis
     // vestidos era caçada; em divisões, a pessoa olha direto para a parte que
     // quer trocar. Parte sem nenhuma peça nem aparece — seção vazia é ruído.
     this.acervo.innerHTML = '';
+    const quantas = SLOTS_ROUPA.map((slot) => guardados.filter((item) => item.slot === slot).length);
+    this.pintarFiltro(quantas);
     if (guardados.length === 0) {
       const vazio = document.createElement('p');
       vazio.className = 'nada';
@@ -2094,9 +2218,10 @@ export class Ui {
         const peca = document.createElement('button');
         peca.className = 'peca';
         peca.dataset.id = item.id;
+        // a nota inteira continua no cartão, para quem passa o mouse
+        if (item.nota) peca.title = `${item.nome} — ${item.nota}`;
         peca.innerHTML =
-          `<span class="icone">${item.icone}</span><b>${item.nome}</b>` +
-          (item.nota ? `<small>${item.nota}</small>` : '');
+          `<span class="icone" style="--cor:${corDaPeca(item)}">${item.icone}</span><b>${item.nome}</b>`;
         grade.appendChild(peca);
       }
       secao.appendChild(grade);
@@ -2141,6 +2266,7 @@ export class Ui {
 
     // a vitrine por parte do corpo, na mesma ordem das vagas (como o acervo)
     this.vitrineDaPiscina.innerHTML = '';
+    this.pintarFiltro(SLOTS_ROUPA.map((slot) => dados.pecas.filter((p) => p.slot === slot).length));
     SLOTS_ROUPA.forEach((slot, i) => {
       const doSlot = dados.pecas.filter((p) => p.slot === slot);
       if (doSlot.length === 0) return;
@@ -2213,6 +2339,7 @@ export class Ui {
   private renderUniformes(dados: Parameters<Ui['renderPiscina']>[0]): void {
     this.donoArmario.textContent = `de ${dados.dono}`;
     this.vitrineDaPiscina.innerHTML = '';
+    this.pintarFiltro(SLOTS_ROUPA.map((slot) => dados.pecas.filter((p) => p.slot === slot).length));
     if (!dados.pecas.some((p) => p.jaTem)) {
       const nada = document.createElement('p');
       nada.className = 'nada';
@@ -2312,12 +2439,20 @@ export class Ui {
 
     this.corpo.addEventListener('click', (e) => {
       const vaga = (e.target as HTMLElement).closest('.parte') as HTMLElement | null;
-      if (!vaga?.dataset.parte || !vaga.classList.contains('cheio')) return;
+      if (!vaga?.dataset.parte) return;
+      // a vaga VAZIA mostra o que tem para ela (o filtro daquela parte); a
+      // cheia tira a peça, como sempre
+      if (!vaga.classList.contains('cheio')) {
+        const parte = SLOTS_ROUPA[Number(vaga.dataset.parte)];
+        if (this.filtroDoArmario.querySelector(`[data-filtro="${parte}"]:not(:disabled)`)) this.filtrarArmario(parte);
+        return;
+      }
       this.onTirarParte?.(Number(vaga.dataset.parte));
     });
     this.acervo.addEventListener('click', (e) => {
       const peca = (e.target as HTMLElement).closest('.peca') as HTMLElement | null;
       if (!peca?.dataset.id) return;
+      this.recemVestida = peca.dataset.id;
       this.onVestirPeca?.(peca.dataset.id);
     });
   }
