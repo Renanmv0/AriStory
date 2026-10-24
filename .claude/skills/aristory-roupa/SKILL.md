@@ -370,8 +370,9 @@ em dois tons alternados.
 
 **Mochila é acessório preso no corpo, com `nasCostas: true`** (pedido do Ari:
 a de casco da Josefina era tronco e só ia com a camiseta padrão). As duas
-moram em `world/mochilas.ts`: a **do Renan** (`mochila-do-renan`, no armário
-do quarto — ela era parte da ficha dele, e o Renan pediu o padrão só com a
+moram em `world/mochilas.ts`: a **do Renan** (`mochila-do-renan`, em
+`PECAS_DE_SEMPRE`, que o `reporPremios` repõe em TODO guarda-roupa — só no
+armário do quarto, quem abria pelo espelho da Estella não a achava — ela era parte da ficha dele, e o Renan pediu o padrão só com a
 camiseta e o moletom) e a **casco da Josefina**. A marca faz o rig esconder
 o que a ficha pendura nas costas (`nasCostasDaFicha`: o capuz do moletom, e
 a mochila da ficha se alguém ainda tiver uma), e o `m.porBaixo` da mochila

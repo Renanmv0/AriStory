@@ -1809,6 +1809,15 @@ export const PREMIOS_DA_APOSTILA: Record<string, readonly ItemDef[]> = {
 };
 
 /**
+ * AS PEÇAS DE SEMPRE: o que já era da dupla antes de virar peça do
+ * guarda-roupa. A mochila do Renan era parte da FICHA dele (as costas nunca
+ * ficavam sem ela); virou acessório, e só o armário do quarto a repunha —
+ * quem abria o guarda-roupa pelo espelho da Estella ou pelo vestiário não a
+ * achava. O `reporPremios` repõe estas em TODO guarda-roupa, nos dois.
+ */
+export const PECAS_DE_SEMPRE: readonly ItemDef[] = [ITENS.mochilaDoRenan];
+
+/**
  * O PRÊMIO DA FESTA DA TORCIDA: a roupa de cheerleader, que as três
  * coelhinhas dão depois da dança no ginásio, no fim do Módulo 1
  * (`scenes/escolaGinasio.ts`). Quem repõe é o `reporPremios`, pelo `save.premios`.

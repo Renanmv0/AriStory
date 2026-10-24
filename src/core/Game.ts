@@ -36,7 +36,7 @@ import {
   type Vaga,
 } from './types';
 import {
-  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PREMIOS_DA_APOSTILA, PREMIOS_DA_ARENA, UNIFORMES_DA_ESCOLA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
+  ITENS, MODA_PRAIA, MODA_PRAIA_ANTIGA, PECAS_DE_SEMPRE, PREMIOS_DA_APOSTILA, PREMIOS_DA_ARENA, UNIFORMES_DA_ESCOLA, definirEstiloDoRegador, fichaDoItem, modeloDoItem, poseNaMao,
 } from '../world/itens';
 import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
@@ -1465,6 +1465,10 @@ export class Game implements GameAPI {
     for (const id of this.save.premios) {
       const peca = fichaDoItem(id);
       if (!peca) continue;
+      for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
+    }
+    // e o que sempre foi da dupla (a mochila do Renan), em qualquer guarda-roupa
+    for (const peca of PECAS_DE_SEMPRE) {
       for (const quem of [this.playerId(), this.companionId()]) this.storeItem(peca, quem);
     }
   }

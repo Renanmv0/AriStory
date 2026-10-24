@@ -180,6 +180,22 @@ for (const id of ['mochila-casco', 'mochila-do-renan']) {
 }
 ok(comVestido.vestidos.includes('mochila-casco') && comVestido.vestidos.includes('vestido-rosa'), `a mochila veste junto com o vestido (${comVestido.vestidos.join(', ')})`);
 
+// a mochila do Renan era da ficha dele: ela tem que estar em QUALQUER
+// guarda-roupa (o espelho da Estella, o vestiário), não só no armário do quarto
+const mochilaEmTodo = await j(() => {
+  const g = window.jogo;
+  const tem = (quem) => g.wardrobeItems(quem).some((p) => p?.id === 'mochila-do-renan');
+  const antes = { ari: tem('ari'), renan: tem('renan') };
+  g.abrirGuardaRoupa();
+  const depois = { ari: tem('ari'), renan: tem('renan') };
+  g.ui.fecharArmario();
+  return { antes, depois };
+});
+ok(mochilaEmTodo.depois.ari && mochilaEmTodo.depois.renan,
+  `abrir o guarda-roupa de qualquer lugar repõe a mochila do Renan nos dois (${JSON.stringify(mochilaEmTodo)})`);
+await page.keyboard.press('Escape');
+await page.waitForTimeout(300);
+
 // ================================================ 3. o principal não mexe no detalhe
 console.log('\n3. pintar a cor principal deixa o detalhe como era');
 const detalheFica = await j(() => {
