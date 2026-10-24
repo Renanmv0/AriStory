@@ -126,36 +126,92 @@ html, body {
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
+/*
+ * AS CAIXAS DE TEXTO DO JOGO: o prompt de interação, a fala e o aviso.
+ *
+ * Pedido do Renan: translúcidas, mas não transparentes. São VIDRO DE PAPEL —
+ * o creme do jogo a ~80%, com o cenário desfocado por trás (`backdrop-filter`)
+ * para a letra não brigar com a grama e o calçamento. Um fio branco por
+ * dentro dá a borda de vidro, e um pontilhado rosa de costura dá o
+ * acabamento de caderninho, que é a cara do resto da interface.
+ *
+ * A largura é sempre presa à tela (`100% - margem`, e nunca `vw`): no
+ * Safari do iPhone o `vw` conta a barra de rolagem que não existe e a caixa
+ * saía cortada do lado.
+ */
+.prompt,
+.dialogue,
+.toast {
+  --vidro: rgba(255, 250, 242, 0.8);
+  --vidro-fundo: rgba(255, 238, 226, 0.74);
+  background: linear-gradient(180deg, var(--vidro), var(--vidro-fundo));
+  backdrop-filter: blur(10px) saturate(1.25);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25);
+  box-shadow:
+    0 10px 28px rgba(53, 48, 74, 0.2),
+    0 2px 6px rgba(53, 48, 74, 0.12),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.75),
+    inset 0 2px 0 rgba(255, 255, 255, 0.9);
+}
+/* sem desfoque (navegador antigo) o vidro fica um pouco mais opaco, para ler */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .prompt,
+  .dialogue,
+  .toast {
+    --vidro: rgba(255, 250, 242, 0.93);
+    --vidro-fundo: rgba(255, 240, 228, 0.9);
+  }
+}
+
 /* ---------------------------------------------------------------- prompt */
 .prompt {
   position: absolute;
   left: 50%;
   bottom: 96px;
+  /* `max-content`: com `left: 50%` a caixa só enxergava a metade da tela até
+     a borda, e "Lançar o frisbee (segure F)" quebrava em três linhas */
+  width: max-content;
+  max-width: calc(100% - 32px);
   transform: translate(-50%, 12px) scale(0.94);
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 16px;
-  background: var(--paper);
+  padding: 7px 8px 7px 7px;
   border-radius: 999px;
-  box-shadow: var(--shadow);
   opacity: 0;
   transition: opacity 0.18s ease, transform 0.18s ease;
   font-weight: 800;
+  line-height: 1.2;
 }
 .prompt.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+/* o ícone num medalhão redondo, com o pontilhado de costura em volta */
+.prompt .icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0%, #ffe9ef 70%, #ffd6e2 100%);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(226, 85, 124, 0.35);
+  font-size: 20px;
+}
+.prompt .label { padding: 0 2px; }
+/* a tecla é uma TECLA: tampa clara em cima, o degrau escuro embaixo */
 .prompt .key {
   display: inline-grid;
   place-content: center;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 6px;
-  border-radius: 8px;
-  background: var(--ink);
+  flex: 0 0 auto;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #4a4363 0%, var(--ink) 100%);
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
+  box-shadow: 0 3px 0 #211d30, 0 4px 8px rgba(33, 29, 48, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transform: translateY(-1.5px);
 }
-.prompt .icon { font-size: 20px; }
 
 /* --------------------------------------------------------------- dialogo */
 .dialogue {
@@ -164,27 +220,41 @@ html, body {
   bottom: 24px;
   width: min(760px, calc(100% - 32px));
   transform: translate(-50%, 20px);
-  background: var(--paper);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 18px 22px 20px;
+  border-radius: 22px;
+  padding: 18px 24px 22px;
   opacity: 0;
   transition: opacity 0.2s ease, transform 0.2s ease;
   pointer-events: none;
 }
+/* a costura: um pontilhado rosa por dentro da borda */
+.dialogue::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 2px dashed rgba(226, 85, 124, 0.22);
+  border-radius: 17px;
+  pointer-events: none;
+}
 .dialogue.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; cursor: pointer; }
+/* o nome de quem fala é uma etiqueta presa no alto da caixa, meio para fora */
 .dialogue .who {
-  display: inline-block;
-  margin-bottom: 6px;
-  padding: 3px 12px;
+  position: relative;
+  display: block;
+  width: fit-content;
+  margin: -32px 0 8px -6px;
+  padding: 5px 14px 5px 12px;
   border-radius: 999px;
-  background: var(--accent);
+  background: linear-gradient(180deg, #ff8fab 0%, var(--accent) 55%, var(--accent-deep) 100%);
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgba(150, 40, 75, 0.35);
+  box-shadow: 0 0 0 2.5px #fff, 0 6px 14px rgba(226, 85, 124, 0.35);
 }
+.dialogue .who::before { content: '♥ '; font-size: 11px; opacity: 0.85; }
 .dialogue .text {
+  position: relative;
   margin: 0;
   font-size: clamp(16px, 2.4vw, 19px);
   line-height: 1.5;
@@ -192,12 +262,17 @@ html, body {
   min-height: 2.9em;
   white-space: pre-wrap;
 }
+/* sem nome (fala de narrador) a caixa não precisa do espaço da etiqueta */
+.dialogue .who[style*='none'] + .text { margin-top: 2px; }
 .dialogue .next {
   position: absolute;
-  right: 16px;
-  bottom: 10px;
-  font-size: 13px;
-  color: var(--ink-soft);
+  right: 18px;
+  bottom: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  color: var(--accent-deep);
   font-weight: 800;
   animation: nudge 1.1s ease-in-out infinite;
 }
@@ -218,21 +293,35 @@ html, body {
   align-items: center;
   /* SEM ISTO A CAIXA SÓ ENXERGA METADE DA TELA: com `left: 50%`, a largura
      que sobra para ela é a do meio até a borda, e no celular um aviso de
-     quatro palavras quebrava em três linhas */
+     quatro palavras quebrava em três linhas. Em `%` do HUD, e não em `vw`
+     (ver o alto desta seção) */
   width: max-content;
-  max-width: calc(100vw - 32px);
+  max-width: calc(100% - 32px);
 }
 .toast {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
+  gap: 10px;
+  max-width: 100%;
+  padding: 6px 16px 6px 6px;
   border-radius: 999px;
-  background: var(--paper-warm);
-  box-shadow: var(--shadow);
   font-weight: 800;
+  line-height: 1.25;
   animation: pop 0.28s ease backwards;
 }
+/* o ícone do aviso, no mesmo medalhão do prompt */
+.toast > span:first-child {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0%, #fff1d9 70%, #ffe2b0 100%);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px rgba(240, 180, 70, 0.4);
+  font-size: 17px;
+}
+.toast > span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .toast.fade { opacity: 0; transition: opacity 0.4s ease; }
 @keyframes pop { from { transform: translateY(-10px) scale(0.9); opacity: 0; } }
 
