@@ -1112,6 +1112,13 @@ export const PALETTE = {
   tartarugaPele: 0x92ab5c,
   lacoDaJosefina: 0xf58bb0,
 
+  // a mochila do Renan, a preta de sempre (era o `accessoryColor` da ficha
+  // dele): o pano um tico acima do preto, para o estofado ler no toon, o vivo
+  // cinza dos zíperes e das fitas, e o metal dos puxadores e das fivelas
+  mochilaDoRenan: 0x202128,
+  mochilaDoRenanVivo: 0x4c4f5a,
+  mochilaDoRenanMetal: 0xb9bec7,
+
   guaritaParede: 0xf5ead6,
   guaritaFaixa: 0x2f7d6b,
   guaritaBalcao: 0xb07c46,

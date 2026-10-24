@@ -1182,7 +1182,14 @@ export class CharacterRig {
    * so o `aplicarVisual`; ver o comentario la embaixo para o porque.
    */
   setOutfit(traje: 'normal' | 'banho'): void {
+    const mudou = this.traje !== traje;
     this.traje = traje;
+    // a mochila mede a roupa da FICHA (o moletom some no banho): refeita
+    const mochila = this.roupa.acessorio;
+    if (mudou && mochila?.nasCostas && mochila.extra) {
+      this.tirarExtras('acessorio');
+      this.porExtras('acessorio', mochila);
+    }
     this.aplicarVisual();
   }
 
@@ -1418,7 +1425,7 @@ export class CharacterRig {
     // o acessório do CORPO vai por cima da roupa de tronco: ele ganha a
     // medida do que está por baixo (`MedidasCorpo.porBaixo`)
     const medidas = slot === 'acessorio' && peca.presoEm !== 'cabeca'
-      ? { ...this.medidas, porBaixo: this.medirPorBaixo() }
+      ? { ...this.medidas, porBaixo: this.medirPorBaixo(peca.nasCostas ? this.roupaDaFichaNoTronco() : []) }
       : this.medidas;
     const postos: THREE.Object3D[] = [];
     for (const [pai, tipo, lado] of pais) {
@@ -1455,7 +1462,18 @@ export class CharacterRig {
    * Roda só quando o acessório é montado (trocar de roupa), nunca por quadro:
    * um vestido rodado dá umas dezenas de milhares de amostras.
    */
-  private medirPorBaixo(): (angulo: number, y: number) => number {
+  /**
+   * A roupa de tronco da FICHA que a mochila tem de contornar (o moletom
+   * aberto do Renan): só quando não há peça de tronco vestida (aí ela some) e
+   * fora do banho. O que a própria mochila esconde (`nasCostasDaFicha`) não
+   * conta.
+   */
+  private roupaDaFichaNoTronco(): THREE.Object3D[] {
+    if (this.traje === 'banho' || this.roupa.tronco) return [];
+    return this.sobreTronco.filter((o) => !this.nasCostasDaFicha.includes(o));
+  }
+
+  private medirPorBaixo(extras: readonly THREE.Object3D[] = []): (angulo: number, y: number) => number {
     const ANGULOS = 32;
     const PASSO = 0.02;
     const grade = new Map<number, number>();
@@ -1466,7 +1484,7 @@ export class CharacterRig {
     const cc = new THREE.Vector3();
     const noCorpo = new THREE.Matrix4();
     const daCopia = new THREE.Matrix4();
-    for (const obj of this.extras.get('tronco') ?? []) {
+    for (const obj of [...(this.extras.get('tronco') ?? []), ...extras]) {
       obj.traverse((n: THREE.Object3D) => {
         const malha = n as THREE.Mesh;
         if (!malha.isMesh) return;

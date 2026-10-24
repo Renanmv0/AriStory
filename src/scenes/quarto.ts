@@ -72,6 +72,8 @@ const ROUPAS_DO_ARMARIO = [
   ITENS.maidMarinheiro, ITENS.maidGatinho,
   ITENS.maidJapones, ITENS.meiaDeCoxa,
   ITENS.moletomPreto,
+  // a mochila do Renan: era da ficha dele, virou peça do armário (dos dois)
+  ITENS.mochilaDoRenan,
 ];
 
 export const quarto: SceneDef = {

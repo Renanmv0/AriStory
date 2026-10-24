@@ -60,7 +60,10 @@ export const RENAN: CharacterSpec = {
   shoes: 0x1b1c20,
   swim: 0x22232a,
   jacket: 0x191a1f,
-  accessories: ['mochila'],
+  // sem a mochila: pedido do Renan, o padrão é só a camiseta cinza com o
+  // moletom preto por cima. A mochila virou acessório do guarda-roupa
+  // (`mochila-do-renan`, no armário do quarto)
+  accessories: [],
   accessoryColor: 0x191a1f,
 };
 

@@ -2350,89 +2350,6 @@ function boneDaGina(m: MedidasCorpo): THREE.Object3D {
 }
 
 /**
- * A MOCHILA CASCO DA JOSEFINA: o casco verde-oliva nas costas, com os
- * escudos e o laço rosa dela em cima, e as duas alças passando pelos ombros.
- * Sem `cor` na ficha: a camiseta de baixo continua a da pessoa.
- *
- * REFERENCIAL: o tronco, y = 0 no CHÃO; as costas da cápsula do rig ficam em
- * `z = -0,82 · 0,105·h·w` (a mesma conta do girassol, do outro lado).
- */
-function mochilaCascoDaJosefina(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
-  const g = new THREE.Group();
-  const { h, w } = m;
-  const raioTorso = h * 0.105 * w;
-  // na altura das OMOPLATAS, e não no meio do tronco: mochila baixa, vista de
-  // trás, ficava escondida atrás das mãos balançando
-  const y = m.legH + m.torsoH * 0.64;
-  const topo = m.legH + m.torsoH * 0.98;
-  const peito = m.legH + m.torsoH * 0.6;
-  /*
-   * POR CIMA DO QUE ESTIVER POR BAIXO. A mochila é acessório (veste com
-   * qualquer roupa de tronco), e um moletom ou um casaco engoliam o casco
-   * encostado na camiseta. `m.porBaixo` mede a roupa de baixo: o casco
-   * recua até as costas dela, e as alças passam por fora no peito. Com a
-   * camiseta do rig (nada medido), a conta dá o lugar de sempre.
-   */
-  const debaixo = m.porBaixo;
-  const maisLonge = (angulos: number[], alturas: number[]): number => {
-    let r = 0;
-    if (!debaixo) return r;
-    for (const a of angulos) for (const yy of alturas) r = Math.max(r, debaixo(a, yy));
-    return r;
-  };
-  const alturasDoCasco = [-1, -0.5, 0, 0.5, 1].map((k) => y + k * raioTorso * 1.2);
-  const costas = -Math.max(raioTorso * 0.82, maisLonge([Math.PI - 0.5, Math.PI, Math.PI + 0.5], alturasDoCasco) * 1.02);
-  const frente = Math.max(raioTorso * 0.8, maisLonge([-0.5, 0, 0.5], [peito, (peito + topo) / 2, topo]) * 1.03);
-  // as cores vêm da ficha (o ateliê pinta o casco e o laço); os escudos e as
-  // alças são o casco um tom abaixo — na cor de sempre, os da paleta
-  const corCasco = peca?.cor ?? P.tartarugaCasco;
-  const corEscudo = corCasco === P.tartarugaCasco
-    ? P.tartarugaEscudo
-    : new THREE.Color(corCasco).multiplyScalar(0.77).getHex();
-  const casco = new THREE.Mesh(new THREE.SphereGeometry(raioTorso * 1.05, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon(corCasco));
-  casco.rotation.x = -Math.PI / 2;
-  casco.scale.set(1.15, 1.3, 0.62);
-  casco.position.set(0, y, costas - h * 0.004);
-  g.add(casco);
-  const borda = new THREE.Mesh(new THREE.TorusGeometry(raioTorso * 1.03, h * 0.008, 6, 20), toon(P.tartarugaBarriga));
-  borda.scale.set(1.15, 1.3, 1);
-  borda.position.set(0, y, costas - h * 0.004);
-  g.add(borda);
-  // os escudos: hexágonos achatados colados no casco
-  const escudo = toon(corEscudo);
-  for (const [dx, dy] of [[0, 0], [-0.5, 0.45], [0.5, 0.45], [-0.5, -0.45], [0.5, -0.45], [0, 0.85], [0, -0.85]] as const) {
-    const e = new THREE.Mesh(new THREE.CylinderGeometry(raioTorso * 0.24, raioTorso * 0.24, h * 0.006, 6), escudo);
-    const ex = dx * raioTorso * 1.15;
-    const ey = dy * raioTorso * 1.2;
-    // a altura do casco naquele ponto (a calota achatada em z)
-    const q = Math.max(0, 1 - (ex * ex) / (raioTorso * 1.21) ** 2 - (ey * ey) / (raioTorso * 1.365) ** 2);
-    const fora = Math.sqrt(q) * raioTorso * 1.05 * 0.62;
-    e.rotation.x = Math.PI / 2;
-    e.position.set(ex, y + ey, costas - h * 0.004 - fora - h * 0.002);
-    g.add(e);
-  }
-  // o laço rosa dela, no alto do casco
-  const laco = new THREE.Group();
-  const corLaco = toon(peca?.corDetalhe ?? P.lacoDaJosefina);
-  for (const lado of [-1, 1] as const) {
-    const aba = new THREE.Mesh(new THREE.ConeGeometry(h * 0.02, h * 0.035, 8), corLaco);
-    aba.rotation.z = lado * Math.PI / 2;
-    aba.position.x = lado * h * 0.018;
-    laco.add(aba);
-  }
-  laco.position.set(0, y + raioTorso * 1.3, costas - raioTorso * 0.25);
-  g.add(laco);
-  // as alças: de cima do ombro até o peito, na frente
-  for (const lado of [-1, 1] as const) {
-    const tira = new THREE.Mesh(new THREE.BoxGeometry(h * 0.016, topo - peito, h * 0.006), escudo);
-    tira.position.set(lado * raioTorso * 0.48, (topo + peito) / 2, frente);
-    tira.rotation.x = -0.22;
-    g.add(tira);
-  }
-  return g;
-}
-
-/**
  * UMA ESTAMPA NO PEITO de camiseta: o desenho (montado no plano XY, olhando
  * para `+Z`, com `e` como unidade de tamanho) pregado na frente do tronco. É
  * a mesma conta do girassol: a cápsula do rig, achatada em 0,82.
@@ -2989,7 +2906,7 @@ function adesivoDeCoracao(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): T
 export {
   gorroDeLa, canoDaBota, vestidoRosa, vestidoDaLoja, gargantilhaDeLaco, gravataDoWalter,
   chapeuDeJardineira, aventalDaJosefina, girassolNoPeito,
-  chapeuJoaninha, tiaraDoWalter, tiaraDoPelusa, boneDaGina, mochilaCascoDaJosefina,
+  chapeuJoaninha, tiaraDoWalter, tiaraDoPelusa, boneDaGina,
   estampaSalvaVidas, estampaRodaGigante, estampaLaranja,
   vestidoMarinheiro, vestidoGatinho, maidJapones, mangaDeQuimono, meiaDeCoxa,
   moletomComCapuz, mangaDeMoletom, oculosDeSol,

@@ -108,7 +108,7 @@ const acessorios = await j(() => {
   const I = window.aristoryItens;
   const ids = ['pin-de-margarida', 'pin-de-joaninha', 'pin-de-abelhinha', 'pin-de-borboleta',
     'oculos-escuros', 'oculos-redondo', 'oculos-gatinho', 'oculos-de-coracao', 'oculos-espelhado', 'oculos-de-natacao',
-    'pulseira-de-flores', 'pulseira-de-pedrinhas', 'colar-havaiano', 'tiara-de-conchinhas', 'mochila-casco'];
+    'pulseira-de-flores', 'pulseira-de-pedrinhas', 'colar-havaiano', 'tiara-de-conchinhas', 'mochila-casco', 'mochila-do-renan'];
   const mochila = I['mochila-casco'];
   return {
     fora: ids.filter((id) => !I[id] || !T.podeTingir(I[id]) || !T.temDetalhe(I[id])),
@@ -121,25 +121,59 @@ ok(acessorios.mochila.slot === 'acessorio' && acessorios.mochila.presoEm === 'co
 const comVestido = await j(() => {
   const g = window.jogo;
   const I = window.aristoryItens;
-  const rig = [g.player, g.parceiro].find((q) => q.rig.spec.accessories?.includes('mochila')).rig;
-  // o Renan tem a mochila preta da ficha: com a de casco ela some
-  const mochilaFixa = () => {
+  const rig = [g.player, g.parceiro].find((q) => q.rig.spec.jacket !== undefined).rig;
+  // o capuz do moletom do Renan: com uma mochila nas costas ele some
+  const capuz = () => {
     let n = 0;
-    rig.group.traverse((o) => { if (o.isMesh && o.visible && o.geometry.type === 'BoxGeometry' && o.material.color.getHex() === rig.spec.accessoryColor) n++; });
+    rig.group.traverse((o) => { if (o.isMesh && o.visible && o.geometry.type === 'SphereGeometry' && o.material.color.getHex() === rig.spec.jacket) n++; });
     return n;
   };
+  // o ponto da mochila mais perto das costas (z do corpo): o corpo, as alças
+  // subindo e o fundo, tudo o que fica atrás na largura do tronco
+  const R = rig.spec.height * 0.105 * rig.medidas.w;
+  const encosto = (id) => {
+    // sem `THREE` na página: um Vector3 de empréstimo
+    const v = rig.body.position.clone();
+    let maisPerto = -Infinity;
+    rig.group.updateMatrixWorld(true);
+    for (const obj of rig.body.children.filter((c) => c.userData.roupa === id)) {
+      obj.traverse((o) => {
+        if (!o.isMesh) return;
+        const pos = o.geometry.getAttribute('position');
+        for (let k = 0; k < pos.count; k++) {
+          rig.body.worldToLocal(o.localToWorld(v.fromBufferAttribute(pos, k)));
+          // a folga até as costas do moletom NAQUELE x (o cilindro de raio
+          // 1,1·R achatado em 0,84): negativa = por dentro do moletom
+          const RJ = R * 1.1;
+          if (Math.abs(v.x) < RJ && v.z < 0 && v.y > rig.medidas.legH + rig.medidas.torsoH * 0.25 && v.y < rig.medidas.legH + rig.medidas.torsoH * 0.88) {
+            const costas = -0.84 * Math.sqrt(RJ * RJ - v.x * v.x);
+            maisPerto = Math.max(maisPerto, v.z - costas);
+          }
+        }
+      });
+    }
+    return maisPerto;
+  };
   rig.vestirRoupa({});
-  const antes = mochilaFixa();
-  rig.vestirRoupa({ acessorio: 'mochila-casco' }, {});
-  const comCasco = mochilaFixa();
+  const semNada = { capuz: capuz(), mochilaDaFicha: rig.spec.accessories?.includes('mochila') ?? false };
+  const r = { semNada };
+  for (const id of ['mochila-casco', 'mochila-do-renan']) {
+    rig.vestirRoupa({ acessorio: id }, {});
+    r[id] = { capuz: capuz(), encosto: encosto(id) };
+  }
   // e vai com qualquer roupa de tronco: o vestido continua, o casco também
   rig.vestirRoupa({ acessorio: 'mochila-casco', tronco: 'vestido-rosa' }, {});
   const vestidos = new Set();
   rig.group.traverse((o) => { if (o.userData.roupa) vestidos.add(o.userData.roupa); });
   rig.vestirRoupa({});
-  return { antes, comCasco, vestidos: [...vestidos], existe: !!I['vestido-rosa'] };
+  return { ...r, vestidos: [...vestidos], existe: !!I['vestido-rosa'] };
 });
-ok(comVestido.antes > 0 && comVestido.comCasco === 0, `a mochila preta (e o capuz) do Renan some com a de casco (${comVestido.antes} → ${comVestido.comCasco})`);
+ok(!comVestido.semNada.mochilaDaFicha && comVestido.semNada.capuz > 0, `o Renan padrão: moletom com capuz e sem mochila na ficha (${JSON.stringify(comVestido.semNada)})`);
+for (const id of ['mochila-casco', 'mochila-do-renan']) {
+  const m = comVestido[id];
+  ok(m.capuz === 0, `com a ${id} o capuz some (${m.capuz})`);
+  ok(m.encosto <= 1e-3, `a ${id} fica por fora do moletom (o ponto mais para dentro está ${(-m.encosto * 100).toFixed(1)} cm fora das costas dele)`);
+}
 ok(comVestido.vestidos.includes('mochila-casco') && comVestido.vestidos.includes('vestido-rosa'), `a mochila veste junto com o vestido (${comVestido.vestidos.join(', ')})`);
 
 // ================================================ 3. o principal não mexe no detalhe

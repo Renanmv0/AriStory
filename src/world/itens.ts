@@ -14,7 +14,7 @@ import {
 import {
   aventalDaJosefina, blazerXadrez, canoDaBota, chapeuDeJardineira, coroaDeDama, gargantilhaDeLaco,
   boneDaGina, chapeuJoaninha, estampaLaranja, estampaRodaGigante, estampaSalvaVidas, girassolNoPeito,
-  gorroDeLa, gravataDoWalter, mochilaCascoDaJosefina, tiaraDoPelusa, tiaraDoWalter,
+  gorroDeLa, gravataDoWalter, tiaraDoPelusa, tiaraDoWalter,
   jaquetaFrancesa, maidJapones, mangaDaJaquetaFrancesa, mangaDeMoletom, mangaDeQuimono,
   mangaDoBlazer, meiaDeCoxa, moletomComCapuz, oculosDeSol, perneiraXadrez, quepeDoCookie,
   vestidoDaLoja, vestidoGatinho, vestidoMarinheiro, vestidoRosa,
@@ -35,6 +35,7 @@ import {
   pernaDoShortDosGatitos, tenisDosGatitos,
 } from './uniformeDosGatitos';
 import { lacoDeTorcida, meiaoDeTorcida, pomponsDeTorcida, uniformeDeTorcida } from './torcidaDosGatitos';
+import { mochilaCascoDaJosefina, mochilaDoRenan } from './mochilas';
 import {
   aventalDeGarcom, bandanaDeChurrasqueiro, bloquinhoNaMao, chapeuDeCozinheiro, coleteDeGarcom, dolmaDeCozinheiro,
   lapisNaOrelha, tenisDeGarcom,
@@ -530,6 +531,17 @@ export const ITENS = {
     cor: P.tartarugaCasco, corDetalhe: P.lacoDaJosefina,
     nota: 'com o laço rosa dela', preco: 58,
     extra: mochilaCascoDaJosefina,
+  },
+  mochilaDoRenan: {
+    id: 'mochila-do-renan', nome: 'Mochila do Renan', icone: '🎒',
+    // era parte da FICHA do Renan (as costas dele nunca ficavam sem ela); a
+    // pedido dele virou acessório do guarda-roupa, e o modelo padrão ficou só
+    // com a camiseta cinza e o moletom preto. Mora no armário do quarto
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', nasCostas: true,
+    // `cor` é o pano e `corDetalhe` os zíperes, a plaquinha e as fitas
+    cor: P.mochilaDoRenan, corDetalhe: P.mochilaDoRenanVivo,
+    nota: 'a preta de sempre, de alça acolchoada',
+    extra: mochilaDoRenan,
   },
   camisetaSalvaVidas: {
     id: 'camiseta-salva-vidas', nome: 'Camiseta salva-vidas do Capy', icone: '🛟',
