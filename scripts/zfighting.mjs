@@ -136,6 +136,8 @@ const PECAS = [
   ['arara-premium', 'lojinha'],
   ['provadores', 'lojinha'],
   ['balcao-da-loja', 'lojinha'],
+  // o balcão de tingimento do mezanino (o ateliê de tinta)
+  ['balcao-de-tingimento', 'lojinha'],
   ['mesa-de-dobrar', 'lojinha'],
   ['prateleira-da-loja', 'lojinha'],
   ['escada-rolante', 'lojinha'],

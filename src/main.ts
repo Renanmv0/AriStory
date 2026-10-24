@@ -15,6 +15,7 @@ import {
 import { CARTAS, CONSOLOS } from './minigames/jardim/cartas';
 import { cartaNaTela } from './minigames/jardim/tela';
 import { ordemDoLivro } from './ui/livroDeCartas';
+import { CARTELA_DE_TINTAS, FLAG_DO_ATELIE, PRECO_DO_ATELIE, podeTingir, temDetalhe } from './world/tintas';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
@@ -80,6 +81,10 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 (window as unknown as { aristoryItens: unknown }).aristoryItens = Object.fromEntries(
   Object.values(ITENS).map((i) => [i.id, i]),
 );
+// as regras e a cartela do ateliê de tinta, para os testes
+(window as unknown as { aristoryTintas: unknown }).aristoryTintas = {
+  CARTELA_DE_TINTAS, podeTingir, temDetalhe, PRECO_DO_ATELIE, FLAG_DO_ATELIE,
+};
 // o que o vestiario do clube vende, na ordem da vitrine
 (window as unknown as { aristoryModaPraia: unknown }).aristoryModaPraia = MODA_PRAIA;
 // o que a boutique da Estella vende, fila por fila (as araras do térreo, as

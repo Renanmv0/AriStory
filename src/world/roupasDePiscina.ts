@@ -771,7 +771,7 @@ function chinelo(modelo: ModeloDeChinelo) {
     // A SOLA EM DUAS CAMADAS: a de baixo (um tom mais escura, ou a casca da
     // melancia) um fio maior que a de cima — é a borda de duas cores que diz
     // "chinelo de borracha" de longe. O pé afunda um tiquinho na de cima.
-    const baixo = modelo === 'melancia' ? P.melanciaCasca : modelo === 'slide' ? P.chineloSlide : escuro(solaCor, 0.8);
+    const baixo = modelo === 'melancia' ? P.melanciaCasca : modelo === 'slide' ? tiraCor : escuro(solaCor, 0.8);
     const cima = modelo === 'melancia' ? P.bermudaMelancia : solaCor;
     const espessura = modelo === 'slide' ? h * 0.009 : h * 0.006;
     g.add(camadaDeSola(m, p.chao - h * 0.001, espessura, baixo));
@@ -790,7 +790,7 @@ function chinelo(modelo: ModeloDeChinelo) {
       // por cima do pé, na metade da frente dele
       const faixa = new THREE.Mesh(
         new THREE.CylinderGeometry(1, 1, h * 0.05, 18, 1, true, -Math.PI / 2, Math.PI),
-        toon(P.chineloSlide, { doubleSide: true }),
+        toon(tiraCor, { doubleSide: true }),
       );
       faixa.rotation.x = -Math.PI / 2;
       faixa.scale.set(p.meiaLargura * 1.2, 1, topoDoPe - topoDaSola + h * 0.004);

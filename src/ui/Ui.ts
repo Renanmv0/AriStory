@@ -19,6 +19,7 @@ import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXa
 import type { SecaoDoCardapio } from '../world/cardapioData';
 import { retratoDoGrupo, type DesafianteDoQuadro } from '../world/adversariosData';
 import { PREMIOS_DA_ARENA } from '../world/itens';
+import { PainelDoAtelie, type ConteudoDoAtelie } from './atelie';
 
 /**
  * O QUE O QUADRO SABE SOBRE OS PREMIOS, na hora em que ele abre.
@@ -124,6 +125,8 @@ export class Ui {
   /** a coluna que ROLA no guarda-roupa: o filtro e as peças (o boneco fica parado) */
   private readonly listaDoArmario: HTMLDivElement;
   private readonly filtroDoArmario: HTMLDivElement;
+  /** o ateliê de tingimento: um modo deste mesmo painel (`ui/atelie.ts`) */
+  readonly atelie: PainelDoAtelie;
   private readonly slotsMao: HTMLDivElement;
   private readonly slotsVestivel: HTMLDivElement;
   private readonly dono: HTMLElement;
@@ -337,12 +340,16 @@ export class Ui {
               <button class="agir"></button>
               <p class="aviso"></p>
             </div>
+            <div class="atelie-ficha"></div>
           </div>
           <div class="lista">
             <div class="filtro" role="tablist" aria-label="parte do corpo"></div>
             <h3 class="rotulo-acervo">O que você tem</h3>
             <div class="acervo"></div>
             <div class="vitrine-piscina"></div>
+            <div class="atelie-cartaz" hidden></div>
+            <div class="atelie-pecas" hidden></div>
+            <div class="atelie-cartela" hidden></div>
           </div>
         </div>
         <p class="sub"></p>
@@ -462,6 +469,7 @@ export class Ui {
     this.vitrineDaPiscina = ui.querySelector('.armario .vitrine-piscina')!;
     this.listaDoArmario = ui.querySelector('.armario .lista')!;
     this.filtroDoArmario = ui.querySelector('.armario .filtro')!;
+    this.atelie = new PainelDoAtelie(this.armario);
     this.cardapio = ui.querySelector('.cardapio')!;
     this.inscricoes = ui.querySelector('.quadro-de-inscricoes')!;
     this.fichasDoQuadro = ui.querySelector('.quadro-de-inscricoes .fichas')!;
@@ -2075,19 +2083,59 @@ export class Ui {
    * UNIFORMES: só as peças de uniforme, para vestir e tirar com um clique —
    * sem preço, sem traje de banho.
    */
-  abrirArmario(modo: 'casa' | 'vestiario' | 'escola' = 'casa'): void {
+  abrirArmario(modo: 'casa' | 'vestiario' | 'escola' | 'atelie' = 'casa'): void {
     if (this.armarioOpen) return;
     this.som?.('escolha');
-    this.armario.classList.toggle('modo-vestiario', modo !== 'casa');
+    this.armario.classList.toggle('modo-vestiario', modo === 'vestiario' || modo === 'escola');
     this.armario.classList.toggle('modo-escola', modo === 'escola');
-    this.armario.querySelector('.titulo')!.textContent = modo === 'casa' ? 'Guarda-roupa' : 'Vestiário';
+    // o ATELIÊ DE TINGIMENTO é este mesmo painel: o boneco no palco, a lista
+    // que rola, o filtro e os dois nomes (ver `ui/atelie.ts`)
+    this.armario.classList.toggle('modo-atelie', modo === 'atelie');
+    this.armario.classList.toggle('aba-vestir', modo !== 'atelie');
+    if (modo === 'atelie') {
+      this.armario.classList.remove('aba-piscina');
+      this.armario.querySelector('.sub')!.innerHTML =
+        'escolha uma roupa e toque numa tinta · arraste o boneco para girar · <b>T</b> pinta as do outro';
+    }
+    this.armario.querySelector('.titulo')!.textContent =
+      modo === 'casa' ? 'Guarda-roupa' : modo === 'atelie' ? 'Ateliê de tingimento' : 'Vestiário';
     this.armario.querySelector('.aba-segunda')!.textContent = modo === 'escola' ? '🐱 Uniformes' : '🩳 Roupas de piscina';
     this.filtroArmario = 'tudo';
     this.recemVestida = null;
     this.listaDoArmario.scrollTop = 0;
+    this.rolagemDasPecasDoAtelie = 0;
     this.onAbrirArmario?.();
     this.armario.classList.add('show');
     this.marcarTelaAberta();
+  }
+
+  /** O painel está no modo ateliê de tingimento? */
+  get armarioEhAtelie(): boolean {
+    return this.armario.classList.contains('modo-atelie');
+  }
+
+  /** a rolagem da lista de peças do ateliê, para voltar a ela depois da cartela */
+  private rolagemDasPecasDoAtelie = 0;
+
+  /**
+   * Desenha o ateliê de tingimento (`ui/atelie.ts`). A lista tem três telas
+   * — o cartaz (antes de pagar), as peças e a cartela —, e a rolagem segue a
+   * regra do guarda-roupa: pintar não mexe nela (`semPerderARolagem`); trocar
+   * de tela vai ao alto, e voltar da cartela para as peças volta para onde a
+   * pessoa estava na lista.
+   */
+  renderAtelie(d: ConteudoDoAtelie): void {
+    this.donoArmario.textContent = `de ${d.dono}`;
+    const lista = this.listaDoArmario;
+    const antes = this.atelie.vista;
+    if (antes === 'pecas') this.rolagemDasPecasDoAtelie = lista.scrollTop;
+    this.semPerderARolagem(() => {
+      const vista = this.atelie.render(d);
+      lista.dataset.vista = vista;
+      if (vista === 'pecas') this.pintarFiltro(PainelDoAtelie.contar(d.pecas));
+    });
+    const depois = this.atelie.vista;
+    if (depois !== antes) lista.scrollTop = depois === 'pecas' ? this.rolagemDasPecasDoAtelie : 0;
   }
 
   /** O painel está no modo vestiário (o do clube ou o da escola)? */

@@ -21,6 +21,7 @@ function normalizarVagaLumesSoltos(bruto: unknown): VagaLumesSoltosNoSave[] {
 import { SLOTS_ROUPA, type Coleta, type DecoracaoNoSave, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
 
 import { fichaDoItem } from '../world/itens';
+import type { ParteDaTinta, TintaDaPeca } from '../world/tintas';
 
 /**
  * Vagas da mochila (o que se carrega na mao).
@@ -190,8 +191,36 @@ interface SaveData {
    * tem dentro — quem grava e quem lê é o minigame, que confere tudo ao ler.
    */
   retomadas: Record<string, unknown>;
+  /**
+   * AS ROUPAS TINGIDAS NO ATELIÊ DA ESTELLA, POR PESSOA (decisão do Renan: a
+   * calça que o Ari pintou não pinta a do Renan). Pessoa → id da peça → o que
+   * foi trocado (a cor principal e/ou o detalhe). A peça continua a mesma:
+   * só a cor muda, e só no corpo de quem pintou. Ver `world/tintas.ts`.
+   */
+  tintas: Record<string, Record<string, TintaDaPeca>>;
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
+}
+
+/** Save de antes do ateliê (ou mexido à mão): só cor que é número inteiro. */
+function normalizarTintas(cru: unknown): Record<string, Record<string, TintaDaPeca>> {
+  const fora: Record<string, Record<string, TintaDaPeca>> = {};
+  if (!cru || typeof cru !== 'object' || Array.isArray(cru)) return fora;
+  const cor = (v: unknown): number | undefined =>
+    typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 0xffffff ? v : undefined;
+  for (const [quem, pecas] of Object.entries(cru as Record<string, unknown>)) {
+    if (!pecas || typeof pecas !== 'object') continue;
+    for (const [id, t] of Object.entries(pecas as Record<string, unknown>)) {
+      if (!t || typeof t !== 'object') continue;
+      const tinta: TintaDaPeca = {};
+      const c = cor((t as TintaDaPeca).cor);
+      const d = cor((t as TintaDaPeca).detalhe);
+      if (c !== undefined) tinta.cor = c;
+      if (d !== undefined) tinta.detalhe = d;
+      if (c !== undefined || d !== undefined) (fora[quem] ??= {})[id] = tinta;
+    }
+  }
+  return fora;
 }
 
 function vagasVazias(quantas: number): (ItemDef | null)[] {
@@ -387,6 +416,7 @@ const EMPTY: SaveData = {
   bebitoBook: { comecadoEm: null, quemComecou: null, marcador: null, folhas: {} },
   vagaLumesSoltos: [],
   retomadas: {},
+  tintas: {},
   inventarios: {},
 };
 
@@ -440,6 +470,8 @@ export class SaveState {
         retomadas: parsed.retomadas && typeof parsed.retomadas === 'object' && !Array.isArray(parsed.retomadas)
           ? { ...parsed.retomadas }
           : {},
+        // save de antes do ateliê de tinta: nada pintado
+        tintas: normalizarTintas(parsed.tintas),
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
     } catch {
@@ -470,6 +502,28 @@ export class SaveState {
 
   setFlag(key: string, value = true): void {
     this.data.flags[key] = value;
+    this.persist();
+  }
+
+  // ------------------------------------------------------------- tintas
+
+  /** As peças que esta pessoa pintou no ateliê (id → tinta). */
+  tintasDe(quem: string): Readonly<Record<string, TintaDaPeca>> {
+    return this.data.tintas[quem] ?? {};
+  }
+
+  /**
+   * Pinta uma parte de uma peça de uma pessoa. `null` devolve aquela parte à
+   * cor original; a peça que volta inteira ao original sai da lista.
+   */
+  pintar(quem: string, id: string, parte: ParteDaTinta, cor: number | null): void {
+    const dela = (this.data.tintas[quem] ??= {});
+    const tinta: TintaDaPeca = { ...dela[id] };
+    if (cor === null) delete tinta[parte];
+    else tinta[parte] = cor;
+    if (tinta.cor === undefined && tinta.detalhe === undefined) delete dela[id];
+    else dela[id] = tinta;
+    if (Object.keys(dela).length === 0) delete this.data.tintas[quem];
     this.persist();
   }
 

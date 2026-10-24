@@ -11,6 +11,7 @@ import {
   type SlotRoupa,
 } from '../core/types';
 import { fichaDoItem } from '../world/itens';
+import { chaveDaTinta, fichaTingida, type TintaDaPeca } from '../world/tintas';
 import { PALETTE as P } from '../palette';
 
 /**
@@ -266,6 +267,11 @@ export class CharacterRig {
   private traje: 'normal' | 'banho' = 'normal';
   /** o loadout já resolvido pelo catálogo */
   private roupa: Partial<Record<SlotRoupa, ItemDef>> = {};
+  /**
+   * A tinta do ateliê que está em cada vaga (`chaveDaTinta`): trocar só a cor
+   * de uma peça já vestida também refaz a vaga, e nada mais.
+   */
+  private tintaNaVaga: Partial<Record<SlotRoupa, string>> = {};
   /** a geometria extra de cada slot que tem uma (só cabeça e pés) */
   private readonly extras = new Map<SlotRoupa, THREE.Object3D[]>();
   private readonly medidas: MedidasCorpo;
@@ -1310,18 +1316,23 @@ export class CharacterRig {
    * O diff e POR SLOT: um slot que nao mudou nao derruba nem reconstroi nada.
    * Sem isso o `Game`, que chama isto todo quadro, recriaria geometria a 60 fps.
    */
-  vestirRoupa(novo: Loadout): void {
+  vestirRoupa(novo: Loadout, tintas: Readonly<Record<string, TintaDaPeca>> = {}): void {
     let troncoMudou = false;
     for (const slot of SLOTS_ROUPA) {
       const id = novo[slot] ?? null;
       const atual = this.roupa[slot];
+      // a tinta do ateliê (por pessoa): a peça veste a cópia com a cor trocada
+      const tinta = id ? tintas[id] : undefined;
+      const chave = chaveDaTinta(tinta);
       // o acessório que vai POR CIMA da roupa (o avental do Mania) é medido
       // contra a peça de tronco: trocou a de baixo, ele é refeito também
       const porCima = slot === 'acessorio' && troncoMudou && !!atual?.extra && atual.presoEm !== 'cabeca';
-      if ((atual?.id ?? null) === id && !porCima) continue;
+      if ((atual?.id ?? null) === id && (this.tintaNaVaga[slot] ?? '') === chave && !porCima) continue;
       if (slot === 'tronco') troncoMudou = true;
       this.tirarExtras(slot);
-      const peca = id ? fichaDoItem(id) : null;
+      this.tintaNaVaga[slot] = chave;
+      const base = id ? fichaDoItem(id) : null;
+      const peca = base ? fichaTingida(base, tinta) : null;
       this.roupa[slot] = peca ?? undefined;
       if (peca?.extra) this.porExtras(slot, peca);
     }

@@ -1997,6 +1997,87 @@ export const PALETTE = {
   falaEstrella: 0x2fb3a6, // o turquesa (a estrela já é amarela como a Gina)
   falaFlynn: 0xc4562a, // a ferrugem da raposa
   falaPelusa: 0xc9b8a6, // o bege-acinzentado do pelo
+
+  /*
+   * AS TINTAS DO ATELIÊ DE TINGIMENTO (mezanino da boutique da Estella): a
+   * cartela que pinta a cor principal ou o detalhe de uma roupa. Família por
+   * família, do claro para o escuro. Nada de preto nem de branco puros: preto
+   * chapado come o degradê do toon (a peça vira um buraco), e branco puro
+   * estoura no sol. A lista com os nomes da tela mora em `world/tintas.ts`.
+   */
+  // Vermelhos e corais
+  tintaVermelhoCereja: 0xd93a4a,
+  tintaTomate: 0xe8533c,
+  tintaCoral: 0xff7f6a,
+  tintaSalmao: 0xf6a08c,
+  tintaTerracota: 0xc0603f,
+  tintaFramboesa: 0xc23468,
+  tintaVinho: 0x8e2a45,
+  tintaBordo: 0x6e2238,
+  // Rosas
+  tintaRosaChiclete: 0xff6fa5,
+  tintaRosaBebe: 0xf7c1d1,
+  tintaRose: 0xeab0a6,
+  tintaRosaAntigo: 0xd48f9c,
+  tintaPessego: 0xffc4a3,
+  tintaPink: 0xf0458e,
+  tintaFucsia: 0xc72a8a,
+  tintaMagenta: 0xa62a72,
+  // Laranjas e amarelos
+  tintaLaranja: 0xf28a2e,
+  tintaTangerina: 0xffa15a,
+  tintaDamasco: 0xf8bc72,
+  tintaAmareloSol: 0xf7cf3c,
+  tintaManteiga: 0xf8e3a0,
+  tintaLimao: 0xe6e35e,
+  tintaMostarda: 0xd5a12a,
+  tintaOcre: 0xb5822f,
+  // Verdes
+  tintaMenta: 0xa9e0c2,
+  tintaPistache: 0xbad68a,
+  tintaVerdeFolha: 0x5ea84a,
+  tintaVerdeBandeira: 0x2f8a52,
+  tintaVerdeAgua: 0x7fd3c3,
+  tintaOliva: 0x828c3c,
+  tintaMusgo: 0x5b6e3a,
+  tintaVerdeGarrafa: 0x24533f,
+  // Azuis
+  tintaAzulBebe: 0xbcdcf5,
+  tintaAzulCeu: 0x8cc8f0,
+  tintaCeleste: 0x5fa8e0,
+  tintaTurquesa: 0x2fb8b0,
+  tintaJeans: 0x4a6d96,
+  tintaAzulRoyal: 0x3260c4,
+  tintaPetroleo: 0x2a6670,
+  tintaAzulMarinho: 0x24345e,
+  // Roxos
+  tintaLavanda: 0xc6b4ea,
+  tintaOrquidea: 0xd59ad6,
+  tintaLilas: 0xb48fd6,
+  tintaMalva: 0xa8869e,
+  tintaVioleta: 0x7e55c2,
+  tintaAmeixa: 0x7a3e62,
+  tintaUva: 0x5b2f7a,
+  tintaIndigo: 0x3e3a8c,
+  // Neutros e terrosos
+  tintaBrancoGelo: 0xf3f0ea,
+  tintaCreme: 0xf1e6cf,
+  tintaAreia: 0xd9c6a3,
+  tintaBege: 0xc8ad8a,
+  tintaCaramelo: 0xb07a46,
+  tintaChocolate: 0x6b4632,
+  tintaCinzaClaro: 0xc3c4c8,
+  tintaGrafite: 0x4a4c55,
+  tintaQuasePreto: 0x2b2a33,
+  // o balcão de tingimento (o mobiliário do ateliê, no mezanino da boutique)
+  atelieCobre: 0xc8804f, // a tina de cobre
+  atelieCobreEscuro: 0x9a5a34,
+  atelieCeramica: 0xf4ede2, // a caneca dos pincéis, a etiqueta dos potes
+  atelieGaveta: 0xf6efe4, // a frente das gavetas de pigmento
+  atelieCerda: 0x3b2d25, // as cerdas e a tinta escura do caderno
+  atelieZinco: 0xb6bec6, // o balde
+  atelieTampo: 0xdcb98c, // o tampo de carvalho, antes das manchas de tinta
+  atelieCordao: 0xe9ddc6, // o cordão das bandeirolas
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

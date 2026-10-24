@@ -678,6 +678,11 @@ export interface GameAPI {
    */
   abrirVestiarioDaEscola(): void;
   /**
+   * O ATELIÊ DE TINGIMENTO (o balcão de tinta do mezanino da boutique): o
+   * mesmo painel do guarda-roupa, com as roupas que se pintam e a cartela.
+   */
+  abrirAtelie(): void;
+  /**
    * Abre uma ARARA da boutique da Estella: a vitrine daquela fila, com o
    * boneco de prova ao lado. Trava o movimento igual ao armario.
    *

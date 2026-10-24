@@ -1889,6 +1889,11 @@ body.touch-device .dialogue .next { right: 84px; }
   }
   .armario .topo { gap: 8px; }
   .armario h2 { font-size: 20px; }
+  /* título comprido ("Ateliê de tingimento") quebra em duas linhas, em vez de
+     empurrar o ✕ para fora da tela */
+  .armario h2 { flex: 1 1 auto; min-width: 0; white-space: normal; line-height: 1.05; }
+  .armario .quem,
+  .armario .close { flex: 0 0 auto; }
   .armario .quem button { padding: 5px 12px; font-size: 13px; }
   .armario .close { padding: 7px 12px; }
   .armario .close span { display: none; }
@@ -2151,6 +2156,338 @@ body.touch-device .dialogue .next { right: 84px; }
 @media (max-width: 560px) {
   .loja .prova { grid-template-columns: 1fr; }
   .loja .moldura { min-height: 210px; }
+}
+
+/* ------------------------------------------------ o ateliê de tingimento
+ *
+ * O balcão de tinta do mezanino da boutique abre o MESMO painel do
+ * guarda-roupa, no modo `modo-atelie` (`ui/atelie.ts`): o boneco no palco e,
+ * embaixo (no celular) ou ao lado (no computador), a ficha da peça escolhida
+ * com os botões "Cor principal" e "Detalhes"; a lista vira a cartela de
+ * tintas quando uma peça é escolhida.
+ */
+.armario [hidden] { display: none !important; }
+.armario:not(.modo-atelie) .atelie-ficha,
+.armario:not(.modo-atelie) .atelie-cartaz,
+.armario:not(.modo-atelie) .atelie-pecas,
+.armario:not(.modo-atelie) .atelie-cartela { display: none !important; }
+.armario.modo-atelie .abas,
+.armario.modo-atelie .traje,
+.armario.modo-atelie .corpo,
+.armario.modo-atelie .acervo,
+.armario.modo-atelie .vitrine-piscina,
+.armario.modo-atelie .ficha,
+.armario.modo-atelie .legenda,
+.armario.modo-atelie .rotulo-acervo { display: none !important; }
+.armario.modo-atelie .lista:not([data-vista='pecas']) .filtro { display: none; }
+.armario.modo-atelie .prova {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: 'palco' 'ficha';
+}
+/* o palco do ateliê: um tom quente de ateliê no fundo do boneco */
+.armario.modo-atelie .moldura {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 48%, rgba(255, 255, 255, 0.95), transparent 100%),
+    radial-gradient(circle at 12% 88%, rgba(255, 170, 120, 0.22), transparent 40%),
+    radial-gradient(circle at 88% 14%, rgba(150, 200, 255, 0.22), transparent 40%),
+    linear-gradient(180deg, #fff8f1 0%, #f6e6f2 100%);
+}
+
+/* a ficha ao lado do boneco */
+.armario .atelie-ficha {
+  grid-area: ficha;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 2px solid rgba(120, 105, 150, 0.16);
+  min-width: 0;
+}
+.armario .atelie-ficha .nome { font-size: 17px; line-height: 1.2; }
+.armario .atelie-ficha .nota { display: block; color: var(--ink-soft); font-weight: 700; font-size: 12px; line-height: 1.3; }
+.armario .atelie-ficha .preco { font-size: 24px; font-weight: 900; color: var(--accent-deep); }
+.armario .atelie-ficha .dica-atelie { margin: 0; font-size: 12px; font-weight: 700; color: var(--ink-soft); }
+.armario .atelie-ficha .aviso { margin: 0; min-height: 14px; font-size: 12px; font-weight: 800; color: #a8474f; }
+.armario .atelie-ficha .saldo { align-self: flex-start; }
+.armario .atelie-ficha .desbloquear {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff7a9c, #f2a14a 35%, #5fbf8f 68%, #6a8de0);
+  color: #fff;
+  font: inherit;
+  font-weight: 900;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+  box-shadow: 0 6px 16px rgba(226, 85, 124, 0.3);
+  cursor: pointer;
+}
+.armario .atelie-ficha .desbloquear:disabled { background: rgba(120, 105, 150, 0.3); box-shadow: none; cursor: default; }
+.armario .peca-escolhida { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.armario .peca-escolhida > span:last-child { min-width: 0; }
+.armario .peca-escolhida .icone {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--cor);
+  font-size: 24px;
+  box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.12), 0 0 0 2px #fff, 0 0 0 3.5px rgba(120, 105, 150, 0.2);
+  transition: background 0.25s ease;
+}
+
+/* os dois botões grandes: o que a cartela pinta, com a cor que está lá agora */
+.armario .partes { display: flex; flex-direction: column; gap: 6px; }
+.armario .parte-da-tinta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px 7px 8px;
+  border: 2px solid rgba(120, 105, 150, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.8);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.armario .parte-da-tinta i {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--cor);
+  box-shadow: inset 0 -4px 7px rgba(0, 0, 0, 0.14), 0 0 0 2px #fff, 0 0 0 3px rgba(120, 105, 150, 0.22);
+  transition: background 0.25s ease;
+}
+.armario .parte-da-tinta span { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.armario .parte-da-tinta b { font-size: 13px; font-weight: 900; }
+.armario .parte-da-tinta small { font-size: 12px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.armario .parte-da-tinta.ativa {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 122, 156, 0.18);
+}
+.armario .so-principal { margin: -2px 0 0; font-size: 11px; font-weight: 700; color: var(--ink-soft); }
+.armario .atelie-ficha .acoes { display: flex; gap: 6px; flex-wrap: wrap; }
+.armario .atelie-ficha .acoes button,
+.armario .atelie-ficha .outra-peca {
+  flex: 1 1 auto;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(120, 105, 150, 0.12);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.armario .atelie-ficha .vestir-agora { background: #3f9f8f; color: #fff; }
+.armario .atelie-ficha .acoes button:disabled { opacity: 0.55; cursor: default; }
+.armario .atelie-ficha .vestir-agora:disabled { background: rgba(63, 159, 143, 0.18); color: #2f7d70; opacity: 1; }
+.armario .atelie-ficha .outra-peca { flex: 0 0 auto; align-self: flex-start; background: transparent; padding: 2px 4px; color: var(--accent-deep); }
+
+/* a lista de peças do ateliê: o cartão pinta a cor de hoje, e o canto o detalhe */
+.armario .peca-tingivel .icone[data-com-detalhe] {
+  background: linear-gradient(135deg, var(--cor) 0 66%, rgba(255, 255, 255, 0.85) 66% 69%, var(--detalhe) 69%);
+}
+.armario .peca-tingivel em {
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  color: var(--accent-deep);
+}
+.armario .peca-tingivel.pintada { border-color: rgba(255, 122, 156, 0.55); }
+
+/* a cartela */
+.armario .atelie-cartela { display: flex; flex-direction: column; gap: 10px; }
+.armario .cartela-topo {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0 8px;
+  background: linear-gradient(180deg, #fff7f0 86%, rgba(255, 247, 240, 0));
+}
+.armario .cartela-topo .voltar {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 2px solid rgba(120, 105, 150, 0.18);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.armario .cartela-topo .partes { flex: 1; flex-direction: row; min-width: 0; }
+.armario .cartela-topo .parte-da-tinta { flex: 1 1 0; min-width: 0; padding: 4px 8px 4px 5px; }
+.armario .cartela-topo .parte-da-tinta i { width: 24px; height: 24px; }
+.armario .pintando { margin: -4px 0 0; font-size: 13px; font-weight: 700; color: var(--ink-soft); }
+.armario .familia h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.armario .familia h4::after { content: ''; flex: 1; height: 2px; border-radius: 2px; background: rgba(120, 105, 150, 0.18); }
+.armario .familia h4 span { padding: 1px 8px; border-radius: 999px; background: rgba(120, 105, 150, 0.14); font-size: 11px; letter-spacing: 0; }
+.armario .tintas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 8px;
+}
+.armario .tinta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 2px 5px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+/* a gota de tinta: um potinho redondo com o brilho em cima */
+.armario .tinta i {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.55) 0 14%, transparent 15%),
+    var(--cor);
+  box-shadow: inset 0 -6px 9px rgba(0, 0, 0, 0.16), 0 2px 5px rgba(53, 48, 74, 0.18);
+}
+.armario .tinta span {
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  color: var(--ink-soft);
+  /* quebra só no hífen ("Verde-/água"); a palavra inteira nunca se parte */
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.armario .tinta.atual { border-color: var(--accent); background: #fff; }
+.armario .tinta.atual::after {
+  content: '✓';
+  position: absolute;
+  top: 3px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+.armario .tinta:active { transform: scale(0.94); }
+@media (hover: hover) {
+  .armario .tinta:hover { transform: translateY(-2px); background: #fff; }
+  .armario .parte-da-tinta:not(.ativa):hover { border-color: var(--accent-deep); }
+}
+/* a cor original: um botão comprido, antes das famílias */
+.armario .tinta.original {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border: 2px dashed rgba(120, 105, 150, 0.3);
+}
+.armario .tinta.original i { width: 30px; height: 30px; }
+.armario .tinta.original span { font-size: 13px; color: var(--ink); }
+.armario .tinta.original.atual { border-style: solid; }
+
+/* o cartaz de antes de pagar */
+.armario .atelie-cartaz { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+.armario .convite {
+  position: relative;
+  padding: 18px 18px 16px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #fffaf4, #fbeef6);
+  border: 2px solid rgba(120, 105, 150, 0.14);
+  box-shadow: 0 8px 20px rgba(53, 48, 74, 0.08);
+}
+.armario .convite .pote { position: absolute; top: -14px; right: 14px; font-size: 34px; transform: rotate(12deg); }
+.armario .convite h4 { margin: 0 0 8px; font-size: 18px; }
+.armario .convite p { margin: 0 0 8px; font-size: 14px; font-weight: 600; line-height: 1.45; }
+.armario .convite ul { margin: 0 0 10px; padding-left: 20px; font-size: 13px; line-height: 1.6; }
+.armario .convite .uma-vez { margin: 0; color: var(--accent-deep); font-weight: 800; }
+.armario .fita-de-cores {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 4px;
+}
+.armario .fita-de-cores i {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--cor);
+  box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.14);
+}
+
+@media (max-width: 720px) and (orientation: portrait), (max-width: 520px) {
+  .armario.modo-atelie .prova {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: 'palco ficha';
+    gap: 8px;
+  }
+  .armario .atelie-ficha { padding: 10px; gap: 6px; overflow-y: auto; }
+  .armario .atelie-ficha .nome { font-size: 14px; }
+  .armario .atelie-ficha .nota { font-size: 11px; }
+  .armario .atelie-ficha .preco { font-size: 20px; }
+  .armario .atelie-ficha .desbloquear { padding: 10px 10px; font-size: 13px; }
+  .armario .atelie-ficha .saldo { padding: 3px 10px; }
+  .armario .atelie-ficha .saldo small { display: none; }
+  .armario .peca-escolhida .icone { width: 36px; height: 36px; font-size: 19px; border-radius: 11px; }
+  .armario .parte-da-tinta { padding: 5px 7px 5px 5px; gap: 7px; }
+  .armario .parte-da-tinta i { width: 24px; height: 24px; }
+  .armario .parte-da-tinta b { font-size: 12px; }
+  .armario .parte-da-tinta small { font-size: 11px; }
+  .armario .atelie-ficha .acoes button { padding: 7px 8px; font-size: 12px; }
+  .armario .atelie-ficha .peca-escolhida .nota { display: none; }
+  .armario .tintas { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 6px; }
+  .armario .tinta i { width: 34px; height: 34px; }
+  .armario .tinta span { font-size: 9px; }
+  /* no celular a cartela já tem as partes na ficha, ao lado do boneco */
+  .armario .cartela-topo .partes { display: none; }
+  .armario .cartela-topo { padding: 0 0 4px; }
+  .armario .cartela-topo .voltar { padding: 6px 12px; }
+  .armario .convite { padding: 14px; }
+  .armario .convite p, .armario .convite ul { font-size: 13px; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .armario.modo-atelie .prova {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: 'palco ficha';
+  }
+  .armario .atelie-ficha { padding: 8px; gap: 5px; overflow-y: auto; }
+  .armario .atelie-ficha .nota, .armario .so-principal, .armario .dica-atelie { display: none; }
+  .armario .atelie-ficha .outra-peca { display: none; }
+  .armario .cartela-topo .partes { display: none; }
+  .armario .tinta i { width: 30px; height: 30px; }
 }
 
 /* rótulo da parte do corpo nas vagas de vestimenta da mochila */

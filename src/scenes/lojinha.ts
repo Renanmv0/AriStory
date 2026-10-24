@@ -11,6 +11,7 @@ import {
   provadoresDaBoutique, pufeCapitone, quadroDeArte, tapeteRedondo, vitrineDeJoias,
 } from '../world/moveisDaBoutique';
 import { EscadaRolante } from '../world/escadaRolante';
+import { BALCAO_DE_TINGIMENTO, BalcaoDeTingimento } from '../world/balcaoDeTingimento';
 import { ARARAS_DA_ESTELLA, CHAPEUS_DA_ESTELLA, ITENS, JOIAS_DA_ESTELLA, PREMIUM_DA_ESTELLA, type AraraDaLoja } from '../world/itens';
 import { espelhoMagico } from '../world/espelhoMagico';
 import { acabar, uvDeParede } from '../world/acabamento';
@@ -525,7 +526,8 @@ export const lojinha: SceneDef = {
       por(superior, rebocar(parede));
     }
     peca(superior, boiserie(W - INTERNA, H2, { mitraEsq: true, semQuadro: [[1.45, 5.35]] }), INTERNA / 2, ALTURA, z0 + INTERNA);
-    peca(superior, boiserie(D - 2 * INTERNA, H2, { mitraDir: true, semQuadro: [[-1.9, -0.2]] }), x0 + INTERNA, ALTURA, 0, Math.PI / 2);
+    // (sem quadro atrás da estante de pigmentos do balcão de tingimento)
+    peca(superior, boiserie(D - 2 * INTERNA, H2, { mitraDir: true, semQuadro: [[-2.35, 0.25]] }), x0 + INTERNA, ALTURA, 0, Math.PI / 2);
 
     /**
      * O GUARDA-CORPO: vidro baixo entre um trilho de latão no pé e o corrimão
@@ -662,16 +664,29 @@ export const lojinha: SceneDef = {
     peca(superior, figueiraLira(0.95), 5.85, ALTURA, z0 + 0.5);
     w.blockCircle(5.85, z0 + 0.5, 0.24);
 
-    // o cantinho de cima: namoradeira de veludo vinho, mesinha, pufe e quadro
-    peca(superior, tapete(1.7, 2.4, P.boutiqueRosaClaro), -5.0, ALTURA, 1.05);
-    peca(superior, namoradeira(P.boutiqueVinho, 1.6), x0 + INTERNA + 0.4, ALTURA, 1.05, Math.PI / 2);
-    w.blockBox(x0 + INTERNA + 0.4, 1.05, 0.8, 0.4, Math.PI / 2);
-    peca(superior, mesinhaLateral(), -5.95, ALTURA, 2.25);
-    w.blockCircle(-5.95, 2.25, 0.27);
-    peca(superior, pufeCapitone(P.boutiqueRosaAntigo, 0.34), -4.72, ALTURA, 1.05);
-    w.blockCircle(-4.72, 1.05, 0.36);
-    for (const z of [0.25, 1.85]) peca(superior, arandelaDeBoutique(), x0 + INTERNA, ALTURA + 1.6, z, Math.PI / 2);
-    peca(superior, quadroDeArte(0.62, 0.72, 4), x0 + INTERNA, ALTURA + 1.45, 1.05, Math.PI / 2);
+    /*
+     * O BALCÃO DE TINGIMENTO, no cantinho de cima (pedido do Renan: no lugar
+     * da namoradeira e da mesinha). Encostado na parede de −X, de frente para
+     * o salão; a estante de pigmentos sobe pela parede (a boiserie, ali, fica
+     * sem quadro). É ele que abre o ateliê de tingimento. A peça se mexe (a
+     * tinta da tina gira, as bandeirolas balançam): `update` todo quadro, e a
+     * `fundir()` deixa as duas partes com nome de fora.
+     */
+    const TINGIMENTO = { x: x0 + INTERNA + BALCAO_DE_TINGIMENTO.fundo, z: 1.05 };
+    peca(superior, tapete(1.7, 2.4, P.boutiqueRosaClaro), -4.85, ALTURA, TINGIMENTO.z);
+    const tingimento = new BalcaoDeTingimento();
+    peca(superior, tingimento.group, TINGIMENTO.x, ALTURA, TINGIMENTO.z, Math.PI / 2);
+    w.onUpdate((dt) => {
+      if (superior.visible) tingimento.update(dt);
+    });
+    // o colisor: do tampo (2 cm além da frente) até a parede, e o balde ao lado
+    {
+      const { largura, frente, fundo, balde } = BALCAO_DE_TINGIMENTO;
+      const hx = (frente + 0.02 + fundo) / 2;
+      w.blockBox(TINGIMENTO.x - fundo + hx, TINGIMENTO.z, hx, largura / 2 + 0.03);
+      // girado meia volta para +X: o x da peça vira −z do mundo, e o z vira x
+      w.blockCircle(TINGIMENTO.x + balde.z, TINGIMENTO.z - balde.x, balde.raio);
+    }
     peca(superior, figueiraLira(0.9), -5.9, ALTURA, 4.35);
     w.blockCircle(-5.9, 4.35, 0.24);
     peca(superior, figueiraLira(0.9), 5.75, ALTURA, 4.3);
@@ -897,6 +912,27 @@ export const lojinha: SceneDef = {
     /* ==================================================================
      *                    O QUE SE OLHA EM CADA ANDAR
      * ================================================================== */
+    /*
+     * O ATELIÊ DE TINGIMENTO, no balcão de tinta do cantinho: a primeira vez a
+     * Estella apresenta (e diz o preço), e daí em diante abre direto. Pagar é
+     * dentro do menu, uma vez só (`world/tintas.ts`).
+     */
+    doSuperior.push(w.interact({
+      id: 'lojinha:tingimento',
+      x: TINGIMENTO.x + BALCAO_DE_TINGIMENTO.frente + 0.5, z: TINGIMENTO.z, radius: 1.55,
+      label: 'Tingir roupas', icon: '🎨',
+      onInteract: async () => {
+        if (!g.flag('tingimento-apresentado')) {
+          g.setFlag('tingimento-apresentado');
+          await conversa([
+            [E, 'Esse cantinho é o meu ateliê de tinta. Vocês escolhem a peça e a cor, e ela sai daqui como se tivesse nascido assim.'],
+            [E, 'Dá para pintar só o tecido ou os detalhes também. Cinquenta reais, uma vez só, e o ateliê é de vocês para sempre.'],
+          ]);
+        }
+        g.abrirAtelie();
+      },
+    }));
+
     doSuperior.push(w.interact({
       id: 'lojinha:espelho',
       x: ESPELHO.x, z: ESPELHO.z + 1.5, radius: 1.6,

@@ -1368,19 +1368,22 @@ function peitoNaAlturaDoPescoco(m: MedidasCorpo): number {
  * pelo mesmo motivo que a gravatinha do Walter: medida pelo pescoco ela nascia
  * enterrada no peito e so o laco aparecia, solto no ar.
  */
-function gargantilhaDeLaco(m: MedidasCorpo): THREE.Object3D {
+function gargantilhaDeLaco(m: MedidasCorpo, _lado: -1 | 1 = 1, peca?: ItemDef): THREE.Object3D {
   const g = new THREE.Group();
   const y = m.headR * Y_PESCOCO;
   const peito = peitoNaAlturaDoPescoco(m);
+  // o laço é a cor da peça e a fita, o detalhe: é o que o ateliê de tinta pinta
+  const corDoLaco = peca?.cor ?? P.vestidoFita;
+  const corDaFita = peca?.corDetalhe ?? P.vestidoRenda;
 
   const fita = new THREE.Mesh(
     new THREE.CylinderGeometry(peito * 1.03, peito * 1.06, m.h * 0.02, 16, 1, true),
-    toon(P.vestidoRenda, { doubleSide: true }),
+    toon(corDaFita, { doubleSide: true }),
   );
   fita.position.y = y;
   g.add(fita);
 
-  const l = laco(m.h * 0.026, P.vestidoFita, P.vestidoRenda);
+  const l = laco(m.h * 0.026, corDoLaco, corDaFita);
   l.position.set(0, y, peito + m.h * 0.012);
   g.add(l);
 

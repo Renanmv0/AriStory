@@ -3,6 +3,7 @@ import { CharacterRig } from './CharacterRig';
 import type { CharacterSpec } from './spec';
 import type { Loadout } from '../core/types';
 import { ITENS } from '../world/itens';
+import type { TintaDaPeca } from '../world/tintas';
 
 /**
  * O boneco do painel do guarda-roupa.
@@ -93,8 +94,9 @@ export class Previa {
     this.camera.lookAt(0, 0, 0);
   }
 
-  vestir(loadout: Loadout): void {
-    this.rig?.vestirRoupa(loadout);
+  /** `tintas`: as peças que a pessoa pintou no ateliê (ver `world/tintas.ts`) */
+  vestir(loadout: Loadout, tintas: Readonly<Record<string, TintaDaPeca>> = {}): void {
+    this.rig?.vestirRoupa(loadout, tintas);
     // o chapeu de campeao nao e roupa, e peca do RIG (`setCampeao`): sem isto
     // o boneco vestia o chapeu na vaga e aparecia de cabeca vazia
     this.rig?.setCampeao(loadout.cabeca === ITENS.chapeuPingPong.id);

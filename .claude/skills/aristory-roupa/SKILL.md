@@ -330,6 +330,33 @@ ganha isso de graça; se descobrir uma peça fixa que ainda vaza por cima
 (aconteceu com a mochila do Renan, que cruza o peito por cima de vestido),
 adicione o objeto em `sobreTronco` no construtor.
 
+## O ateliê de tingimento: TODA peça nova tem que aceitar tinta
+
+Pedido do Ari (pelo Renan): mais cores sem mais modelos. O balcão de tinta do
+mezanino da boutique (`world/balcaoDeTingimento.ts`) abre o ATELIÊ: o painel
+do guarda-roupa em modo `atelie` (`ui/atelie.ts`), com as roupas da pessoa,
+a cartela de 57 tintas (`CARTELA_DE_TINTAS`, cores `P.tinta…`) e os botões
+"Cor principal" e "Detalhes". As regras (`world/tintas.ts`):
+
+- tingir é vestir uma CÓPIA da ficha com `cor` (ou o `corBanho` da
+  bermuda) e/ou `corDetalhe` trocados (`fichaTingida`). O id não muda;
+- a tinta é POR PESSOA (`save.tintas[quem][id]`), e o rig refaz só a vaga
+  que mudou (`tintaNaVaga`, `chaveDaTinta`);
+- desbloqueia uma vez, por R$ 50 (`FLAG_DO_ATELIE`);
+- prêmio de personagem e uniforme não se pintam (`PECAS_SEM_TINTA`, que lê
+  as listas de prêmio — prêmio novo numa delas já fica de fora sozinho), e
+  nem as temáticas de cor cravada (tiara do Walter, boné da Gina);
+- o botão "Detalhes" só aparece se a peça tem `corDetalhe` E o modelo pinta
+  com ela (`DETALHE_FIXO` lista as que desenham o detalhe fixo).
+
+**O que isso pede de peça nova**: a geometria LÊ a cor principal da ficha
+(`peca?.cor`), e o detalhe de `peca?.corDetalhe` — exatamente a regra da
+seção de baixo. Peça que crava `P.algumaCor` por dentro aparece no ateliê e
+não muda: o `scripts/tinta.mjs` veste cada peça, pinta e reprova a que não
+responde (a gargantilha e o chinelo slide eram assim, e foram corrigidos).
+Prêmio novo entra numa lista de prêmio; peça de cor-identidade, em
+`PECAS_SEM_TINTA`.
+
 ## A MESMA peça em outra cor: o jeito mais barato de ter roupa nova
 
 A `extra` recebe a FICHA como terceiro argumento (`extra(m, lado, peca)`), e é
