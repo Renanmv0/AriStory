@@ -2169,6 +2169,36 @@ export const PALETTE = {
   nessieBarriga: 0xd9ec8c,
   nessiePinta: 0x3e9a57,
   nessieValvula: 0xf2cf48,
+  /**
+   * AS CORES DO HALLOWEEN nos lugares do parque (a camada de repintura,
+   * `world/halloween/repintar.ts`): o roxo e o laranja que entram no lugar do
+   * rosa da sorveteria, do coral da loja de patins e do vermelho da roda
+   */
+  halloweenRoxo: 0x8a55c4,
+  halloweenRoxoEscuro: 0x5e3590,
+  halloweenLilas: 0xb48ee0,
+  halloweenLaranja: 0xf2913a,
+  halloweenLaranjaClaro: 0xffb867,
+  /** o verde de poção (o amarelo da loja de patins vira ele) */
+  verdePocao: 0x9bd04e,
+  /** a cobertura do telhado da sorveteria: calda de abóbora no lugar da neve */
+  caldaDeAbobora: 0xffa94d,
+  caldaDeAboboraSombra: 0xe0832a,
+  /** a luz dos postes no Halloween: laranja de vela */
+  luzDeAbobora: 0xffa64d,
+  /** o lago de gelatina de uva */
+  uvaRasa: 0xb98ae0,
+  uvaMeio: 0x8f55c8,
+  uvaFunda: 0x6c35a8,
+  uvaMaisFunda: 0x522286,
+  uvaCrista: 0xe8d2ff,
+  uvaEspuma: 0xf5ebff,
+  uvaPeixe: 0x3c1a63,
+  /** os infláveis gigantes: o olho de gato, a língua, a lona do ventilador e a corda */
+  olhoDeGato: 0xc8e04a,
+  linguaInflavel: 0xf07a8e,
+  ventiladorDeInflavel: 0x2b2b33,
+  cordaDeInflavel: 0xe8e2d0,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

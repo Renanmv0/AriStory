@@ -195,6 +195,19 @@ if (roda('parque')) {
   });
   ok(naClareira === 0, `a clareira fica sem enfeite (${naClareira})`);
 
+  // as cores do Halloween nos lugares, os infláveis e o lago de gelatina
+  const pintados = await j(() => window.jogo.scene.getObjectByName('halloween-no-parque')?.userData.pintados ?? {});
+  const semCor = ['sorveteria', 'mesa-de-sorveteria', 'loja-de-patins', 'roda-gigante', 'loja-de-roupas', 'gelo', 'poste'].filter((p) => !(pintados[p] > 0));
+  ok(semCor.length === 0, `os lugares repintados de roxo e laranja (${JSON.stringify(pintados)})`);
+  const inflaveis = await j(() => {
+    const achados = [];
+    window.jogo.scene.traverse((o) => { if (/-inflavel$/.test(o.userData?.peca ?? '')) achados.push(o.userData.peca); });
+    return achados;
+  });
+  ok(inflaveis.length === 3, `os três infláveis gigantes (${inflaveis.join(', ')})`);
+  const itLago = await interacoes();
+  ok(itLago['halloween:lago-de-gelatina'] === true && itLago['parque:lago'] === false, 'o lago roxo tem a conversa da gelatina no lugar do "Olhar o lago"');
+
   // o Nessie: na água, e passeando
   const nessie = async () => j(() => {
     let n = null;
@@ -244,6 +257,18 @@ if (roda('parque')) {
   await j(() => window.jogo.debugPlace(0, 25, Math.PI));
   await espera(1200);
   ok(!(await textoDoBalao()), 'e não se repete');
+
+  // a gelatina: a conversa inteira, e a memória
+  await j(() => { window.jogo.debugPlace(-12.6, 11.4, -Math.PI / 2); window.jogo.setZoom(10); });
+  await espera(2500);
+  await passarFalas();
+  await page.keyboard.press('KeyE');
+  await espera(2500);
+  await page.screenshot({ path: `${OUT}/parque-gelatina.png` });
+  await passarFalas(40);
+  await espera(800);
+  const gelatina = await j(() => window.jogo.save.memories.some((m) => m.id === 'halloween-lago-de-gelatina'));
+  ok(gelatina, 'a conversa da gelatina vira memória');
 
   // ler o recado do Mano
   await j(() => { window.jogo.debugPlace(15.39, 18.58, Math.PI + 0.6); window.jogo.setZoom(8); });

@@ -620,6 +620,9 @@ export class AguaDoLago {
     uMoedaNova: { value: THREE.Vector3 };
   };
 
+  /** as cores da água no shader (uniformes): `trocarCores` mexe nelas */
+  private readonly coresDoShader: Record<string, { value: THREE.Color | THREE.Vector2 }>;
+
   constructor(forma: FormaDoLago, cores: CoresDoLago) {
     this.forma = forma;
     const picoDaMargem = forma.raio + forma.margem.reduce((s, [, amp]) => s + Math.abs(amp), 0);
@@ -650,6 +653,7 @@ export class AguaDoLago {
       uPeixe: { value: cor(cores.peixe) },
       uMoeda: { value: cor(cores.moeda) },
     };
+    this.coresDoShader = fixos;
 
     const mat = toon(cores.meio, { decal: true }).clone();
     mat.alphaTest = 0.5;
@@ -990,6 +994,23 @@ export class AguaDoLago {
   }
 
   // ---------------------------------------------------------- o que mexe
+
+  /**
+   * Repinta a água (um evento: o lago de gelatina de uva do Halloween). As
+   * cores são uniformes do shader: trocar não recompila nada, e a cena
+   * seguinte nasce com as cores de sempre.
+   */
+  trocarCores(cores: Partial<CoresDoLago>): void {
+    const u = this.coresDoShader as Record<string, { value: unknown }>;
+    const nomes: Record<keyof CoresDoLago, string> = {
+      raso: 'uRaso', meio: 'uMeio', fundo: 'uFundo', maisFundo: 'uMaisFundo', crista: 'uCrista', espuma: 'uEspuma',
+      areia: 'uAreia', areiaMolhada: 'uAreiaMolhada', peixe: 'uPeixe', moeda: 'uMoeda',
+    };
+    for (const [chave, hex] of Object.entries(cores) as Array<[keyof CoresDoLago, number]>) {
+      const alvo = u[nomes[chave]]?.value;
+      if (alvo instanceof THREE.Color) alvo.set(hex);
+    }
+  }
 
   /** algo tocou a água em (x, z): um anel que abre */
   marola(x: number, z: number, forca = 1): void {
