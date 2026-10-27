@@ -1,3 +1,5 @@
+import { ausentarNaCena, quemFoiSeArrumar } from '../eventos/halloween/ausentes';
+import { RECADOS_DA_ESCOLA } from '../eventos/halloween/recados';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
@@ -495,7 +497,8 @@ export const escola: SceneDef = {
 
     // ============================================== O FLYNN, NO REFEITÓRIO
     // o presidente da atlética dos Gatitos (`escolaAtletica.ts`)
-    montarOFlynn(w, REFEITORIO);
+    // no dia do Halloween ele foi se arrumar para a festa do parque
+    if (!quemFoiSeArrumar(w.game)) montarOFlynn(w, REFEITORIO);
 
     // =============================================================== GATITO
     // Ele nasce na ÚLTIMA parada da fila (a lição da Estella: nascendo fora
@@ -606,7 +609,8 @@ export const escola: SceneDef = {
     const LUNA_NA_ENTRADA = { x: 11.45, z: 6.05 };
     const PELO_CANTO = { x: 7, z: 6.9 };
     const NA_PORTA_DO_GINASIO = { x: PORTA.ginasio.x + 0.9, z: PORTA.ginasio.z };
-    const vaiMostrar = g0.flag('escola-aberta') && !g0.flag('luna-na-escola');
+    // no dia do Halloween ela foi se arrumar: o tour fica para outro dia
+    const vaiMostrar = g0.flag('escola-aberta') && !g0.flag('luna-na-escola') && !quemFoiSeArrumar(g0);
     const luna = new Luna({
       minX: LUNA_NA_ENTRADA.x - 0.2, maxX: LUNA_NA_ENTRADA.x + 0.2,
       minZ: LUNA_NA_ENTRADA.z - 0.2, maxZ: LUNA_NA_ENTRADA.z + 0.2,
@@ -714,6 +718,17 @@ export const escola: SceneDef = {
         // de vez em quando, parado, ele faz o six seven — se tiver plateia
         if (pertoDaDupla(10) && w.rng() < 0.3) gatito.sixSeven();
       });
+    });
+
+    /*
+     * O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`, §4.1): na fase `convite`
+     * o Gatito foi se arrumar para a festa do parque — sem aula, com o recado
+     * dele no saguão.
+     */
+    ausentarNaCena(w, {
+      etiquetas: ['gatito'],
+      interacoes: ['escola:gatito'],
+      recados: [{ recados: [RECADOS_DA_ESCOLA.gatito], autor: 'Gatito', x: INICIO.x - 1.2, z: INICIO.z + 1.4, giro: Math.PI / 4 }],
     });
   },
 };

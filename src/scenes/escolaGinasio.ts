@@ -1,3 +1,5 @@
+import { ausentarNaCena, quemFoiSeArrumar } from '../eventos/halloween/ausentes';
+import { RECADOS_DA_ESCOLA, RECADOS_DO_PARQUE } from '../eventos/halloween/recados';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, SceneDef } from '../core/types';
@@ -203,7 +205,7 @@ export const escolaGinasio: SceneDef = {
     // linha, são da dupla; e atrás dela a tabela da direita o engolia na
     // ponta (ela tapa o que fica acima e à esquerda dela na tela). Ele para a
     // 3,3 da linha de fundo, na beira do garrafão.
-    montarOTreinoDoFlynn(w, { aros, aroY: ARO_Y, raiaZ: QUADRA.z + 1.6, pontaX: meiaL - 3.3 });
+    if (!quemFoiSeArrumar(w.game)) montarOTreinoDoFlynn(w, { aros, aroY: ARO_Y, raiaZ: QUADRA.z + 1.6, pontaX: meiaL - 3.3 });
 
     // ======================================================== O ARREMESSO
     const bola = bolaDeBasquete(0.12);
@@ -343,6 +345,18 @@ export const escolaGinasio: SceneDef = {
       g0.setFlag('escola-ginasio');
       g0.toast('A casa dos Gatitos', '🏀');
     }
+
+    /*
+     * O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`, §4.1): na fase `convite` o
+     * Flynn (e as coelhinhas, se já treinam aqui) foram se arrumar para a
+     * festa do parque: o recado fica na beira da quadra.
+     */
+    ausentarNaCena(w, {
+      recados: [
+        ...(flynnNoGinasio(w.game) ? [{ recados: [RECADOS_DA_ESCOLA.flynn], autor: 'Flynn', x: QUADRA.x + 3.2, z: QUADRA.z + QUADRA.fundo / 2 + 1.2, giro: Math.PI / 4 }] : []),
+        ...(w.game.flag('luna-na-escola') ? [{ recados: RECADOS_DO_PARQUE.coelhinhas, autor: 'Luna', x: QUADRA.x - 3.2, z: QUADRA.z + QUADRA.fundo / 2 + 1.2, giro: Math.PI / 4 }] : []),
+      ],
+    });
   },
 };
 
@@ -381,7 +395,8 @@ export const escolaGinasio: SceneDef = {
  */
 function montarAsIrmas(w: WorldBuilder): void {
   const g0 = w.game;
-  if (!g0.flag('luna-na-escola') || emAula(g0)) return;
+  // no dia do Halloween as três foram se arrumar para a festa do parque
+  if (!g0.flag('luna-na-escola') || emAula(g0) || quemFoiSeArrumar(g0)) return;
 
   const TREINO = { x: QUADRA.x, z: QUADRA.z + 2.9 };
   /** a horizontal da tela (a câmera olha de `+X/+Z`) */

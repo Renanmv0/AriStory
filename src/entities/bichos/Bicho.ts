@@ -159,6 +159,8 @@ export abstract class Bicho {
    */
   protected prontoParaAparecer(etiqueta: string): void {
     this.group.userData.peca = etiqueta;
+    // quem acha o corpo pela etiqueta (a camada de um evento) acha o bicho também
+    this.group.userData.bicho = this;
     this.group.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) o.castShadow = true;
     });

@@ -26,7 +26,7 @@ jeito que os amigos acharam de levar os dois até a **surpresa** do final.
 
 **O caminho, em uma linha:**
 **"Assistir um filme de terror"** no sofá de casa → a carta da Estella
-desliza por baixo da porta → o parque **de manhã, já enfeitado e vazio**
+desliza por baixo da porta → o parque **no pôr do sol, já enfeitado e vazio**
 (todo mundo "se arrumando"), com os comentários da dupla no caminho → o
 presente da Estella na boutique (**o vampiro e o morceguinho**) → a dupla
 sai da boutique e **já é noite**: o **ônibus do clube** chega com todo mundo
@@ -35,12 +35,19 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapa 1 construída, escondida.** O filme no sofá e a carta da
-Estella (§2.1) estão no jogo, mas só aparecem com `?halloween` na URL
-(`src/eventos/halloween/`, `src/world/halloween/`, `scripts/halloween.mjs`).
-A **parte 1** inteira (§2.1 a §2.4) está fechada com o Renan. A **etapa 2**
-(o parque de manhã) está **planejada no §4.1** e espera os ajustes do Renan
-(§10, "Para fechar a etapa 2") antes de ser construída.
+**Estado: etapas 1 e 2 construídas, escondidas.** O filme no sofá e a carta
+da Estella (§2.1) e o parque no pôr do sol, enfeitado e vazio (§4.1) estão
+no jogo, mas só aparecem com `?halloween` na URL (`src/eventos/halloween/`,
+`src/world/halloween/`, `scripts/halloween.mjs`). A **parte 1** inteira
+(§2.1 a §2.4) está fechada com o Renan; a próxima a construir é a **etapa
+3** (o presente da Estella na boutique).
+
+**Onde mora a etapa 2 no código:** o kit em `world/halloween/` (`abobora.ts`,
+`pendurados.ts`, `pecas.ts`, `nessie.ts`; `kit.ts` é a vitrine dos testes);
+a camada do parque em `eventos/halloween/noParque.ts` (uma chamada no fim
+do `villaLobos.ts`); quem foi se arrumar em `eventos/halloween/ausentes.ts`
+(uma chamada no fim do clube, do Mania, da estufa, da escola e do ginásio);
+os recados em `eventos/halloween/recados.ts`.
 
 **Decisões do Renan** (as que já valem):
 
@@ -55,7 +62,8 @@ A **parte 1** inteira (§2.1 a §2.4) está fechada com o Renan. A **etapa 2**
   terror"), e não um convite que aparece sozinho (§2.1);
 - **o convite é uma carta de Halloween que desliza por baixo da porta** no
   meio do filme (§2.1);
-- **o parque é visto primeiro DE MANHÃ**, já todo enfeitado, e **sem os
+- **o parque é visto primeiro NO PÔR DO SOL** (era "de manhã"; o Renan
+  trocou, para casar com o tempo do evento), já todo enfeitado, e **sem os
   personagens**: estão todos "se arrumando" para a festa. No caminho até a
   Estella, a dupla vai comentando as decorações (§2.2);
 - **as fantasias vão sendo GANHAS**: a Estella dá **só duas** no começo —
@@ -150,7 +158,7 @@ relógio, que diz como o parque está:
 | fase | começa quando | o parque |
 |---|---|---|
 | `antes` | — | o de sempre |
-| `convite` | a carta é lida (§2.1) | **de manhã**, enfeitado, **sem os personagens** (estão se arrumando) |
+| `convite` | a carta é lida (§2.1) | **no pôr do sol**, enfeitado, **sem os personagens** (estão se arrumando) |
 | `festa` | a dupla sai da boutique fantasiada (§2.4) | **de noite**, as luzes acesas, o ônibus do clube chegando, todo mundo fantasiado |
 | `depois` | a festa na Casinha acaba (§7) | ainda de noite e enfeitado; a dupla volta para casa |
 | `fim` | a dupla **deita e dorme na cama do quarto do Ari** — só existe depois da festa | **o de sempre**: sem enfeite, de dia, cada personagem de volta ao clube, à escola e ao parque, o Pelusa de volta em casa. Ficam as fantasias no guarda-roupa e as memórias |
@@ -220,44 +228,20 @@ filme de terror**. (`scenes/casa.ts`, a interação `casa:sofa`.)
 > ninguém entra sem fantasia. Passem na minha boutique antes: tenho uma
 > surpresa costurada só para vocês. — Estella 🐑🕷️"
 
-### 2.2 O parque de manhã: enfeitado, e vazio
+### 2.2 O parque no pôr do sol: enfeitado, e vazio
 
-Lida a carta, a fase vira `convite`. O parque continua **de manhã**, mas já
-está **todo decorado** (§4) — de dia, com as velas das abóboras apagadas e
+Lida a carta, a fase vira `convite`. O parque está **no pôr do sol**, e já
+está **todo decorado** (§4) — ainda claro, com as velas das abóboras apagadas e
 as lanternas paradas; elas só acendem na festa.
 
 O detalhe da etapa 2 — o kit de enfeites, onde vai cada um, o que fecha e
-o que continua, as plaquinhas do clube e da escola e a luz da manhã — está
+o que continua, as plaquinhas do clube e da escola e o céu do pôr do sol — está
 no **§4.1**.
 
 **Os personagens não estão lá: estão se arrumando.** No lugar de cada um,
-uma **plaquinha** no posto dele, na letra de cada um (proposta):
-
-| onde | a plaquinha |
-|---|---|
-| sorveteria do Mano | "Volto à noite — me arrumando! 🐧" |
-| bilheteria do Cookie | "Fechado pra fantasia. Cookie 🐘" |
-| a mesinha do xadrez da Estella | "Estou na boutique! 🐑" |
-| o piquenique das coelhinhas | "Fomos nos arrumar! 🐰🐰🐰" |
-| o lago | o Jean-Luc não aparece (os patos e a garça ficam: são bichos do lago) |
-
-**Os comentários no caminho.** A dupla vai comentando as decorações. Cada
-comentário dispara **uma vez**, quando os dois passam perto daquele ponto
-(como o "Olhar o lago" do ponto de ônibus), e é falado por **uma pessoa
-certa** (rascunho; o Renan reescreve):
-
-| onde | quem | o comentário |
-|---|---|---|
-| a entrada do parque | Renan | "Olha isso! Tem abóbora no portão inteiro." |
-| a entrada do parque | Ari | "Alguém passou a madrugada enfeitando." |
-| as árvores do caminho | Ari | "Tem fantasminha pendurado nas árvores!" |
-| a sorveteria (fechada) | Ari | "O Mano fechou a sorveteria? Isso nunca acontece." |
-| a sorveteria (fechada) | Renan | "Diz que tá se arrumando. Imagina a fantasia dele." |
-| a roda gigante | Renan | "As cabines viraram abóbora." |
-| a bilheteria (fechada) | Ari | "Até o Cookie sumiu… e ele nem cabe em lugar nenhum pra se esconder." |
-| o lago | Renan | "Nem o Jean-Luc tá aqui. O parque tá vazio só pra gente." |
-| a frente da boutique | Ari | "A lojinha da Estella tá toda de teia!" |
-| a frente da boutique | Renan | "Então é aqui. Vamos?" |
+uma **plaquinha** no posto dele, com um recado bem do jeito dele, e a dupla
+vai **comentando as decorações** no caminho até a Estella. Os recados e os
+comentários estão no §4.1.
 
 ### 2.3 O presente da Estella (a boutique)
 
@@ -412,22 +396,35 @@ que é fixo passa por `fundir()`.
 | roda gigante | as cabines com lanternas de abóbora, luzinhas laranja nos raios |
 | ponto de ônibus | placa "Ponto Assombrado", chapéu de bruxa no topo do poste |
 
-### 4.1 A etapa 2 em detalhe: o parque de manhã (proposta)
+### 4.1 A etapa 2 em detalhe: o parque no pôr do sol (fechada com o Renan)
 
-> Proposta para o Renan ajustar (as perguntas estão no §10, "Para fechar a
-> etapa 2"). Nada disto está construído.
+> As respostas do Renan já estão aqui dentro. Falta construir (§9).
 
 **O que a etapa 2 entrega.** Lida a carta (fase `convite`), a dupla sai de
-casa pelo portão de sempre e encontra o parque **de manhã, enfeitado e
-vazio**. Ela anda até a boutique comentando o que vê. A etapa termina na
-porta da Estella — o que tem lá dentro é a etapa 3. Até lá, a porta abre a
-boutique de sempre (só quem testa com `?halloween` vê).
+casa pelo portão de sempre e encontra o parque **no pôr do sol, enfeitado e
+vazio** (decisão do Renan: o pôr do sol faz mais sentido com o tempo do
+evento — a carta chega à tarde, e quando eles saem da boutique já é noite).
+Ela anda até a boutique comentando o que vê. A etapa termina na porta da
+Estella — o que tem lá dentro é a etapa 3. Até lá, a porta abre a boutique
+de sempre (só quem testa com `?halloween` vê).
 
-O que entra **agora** é o enfeite **de dia**: as abóboras com a vela
-apagada, as lanternas de papel paradas e sem luz. As mesmas peças acendem na
-etapa 4 (a noite) — então elas já nascem com a parte que acende numa malha
-própria (a cara da abóbora, o papel da lanterna), para a noite só trocar o
-material dela, sem refazer nada.
+O que entra **agora** é o enfeite **ainda apagado**: as abóboras com a vela
+sem acender, as lanternas paradas. As mesmas peças acendem na etapa 4 (a
+noite) e **as lanternas de abóbora iluminam o parque** (pedido do Renan) —
+com luz PINTADA (a poça no chão e o brilho nos furos), nunca luz de verdade.
+Então elas já nascem com a parte que acende numa malha própria (a cara da
+abóbora, o papel da lanterna), para a noite só trocar o material dela.
+
+> **Construída** (escondida atrás do `?halloween`). O que mudou na
+> construção, em relação ao plano abaixo: o arco de balões fica À FRENTE de
+> quem chega (`z ≈ 22,6`), e não no vão da cerca — atrás, o alto do arco
+> caía na frente da cabeça dos dois; a abóbora da roda vai pendurada na
+> FRENTE de cada gôndola (embaixo, a de baixo não cabia); o sol do pôr do
+> sol vem do lado da câmera (o de verdade, do oeste, deixava o parque
+> inteiro de frente na sombra); e o recado do quadro de inscrições fica
+> pregado na frente dos papéis. Medido (desenhos por quadro, sem -> com
+> enfeite): portão 477 -> 542, alameda 405 -> 452, praça da roda
+> 832 -> 884, sorveteria 570 -> 624, boutique 548 -> 592, lago 752 -> 805.
 
 #### O kit do Halloween (`world/halloween/*.ts`)
 
@@ -436,43 +433,47 @@ lisa. Tudo que se repete vai em lote; o que é fixo passa por `fundir()`.
 
 | peça | como ela é | a técnica |
 |---|---|---|
-| **abóbora esculpida** | três tamanhos e quatro caras (sorriso, susto, piscando, dentinho); gomos torneados, o cabinho torcido, a gavinha em espiral e a folhinha; a cara é um recorte fundo, escuro de dia | torneado com os gomos na conta do raio, gavinha em tubo; um lote por tamanho, e a cara num lote à parte (é ela que acende na etapa 4) |
+| **abóbora esculpida** | três tamanhos e quatro caras (sorriso, susto, piscando, dentinho); gomos torneados, o cabinho torcido, a gavinha em espiral e a folhinha; a cara é um recorte fundo, escuro antes da noite. **De noite ela ilumina o chão em volta** (etapa 4) | torneado com os gomos na conta do raio, gavinha em tubo; um lote por tamanho, e a cara num lote à parte (é ela que acende) |
 | **fardo de feno** | o fardo de quina arredondada, os dois barbantes e fiapos soltos, com as abóboras empilhadas em cima | palha em textura de canvas, fiapos em lote |
 | **espantalho de boas-vindas** | de saco, a cara costurada sorrindo, chapéu de palha, camisa xadrez com remendo, segurando a placa "Feliz Halloween!" | canvas no xadrez e na placa; fundido |
 | **arco de balões** | balões laranja, roxos e creme em arco por cima da boca do caminho, cada um com o nózinho e o brilho, e um balão de fantasminha no topo | um lote, cor por cópia |
 | **varal de bandeirolas** | morceguinho, abóbora e fantasma recortados, num cordão que faz a curva da corda e balança no vento | recorte em `Shape`, o vento do `core/shaders.ts` (o mesmo do capim); um lote por desenho |
-| **lanterna de papel** | sanfonada, laranja e roxa, com o aro e a alça; pendurada nos postes, apagada de dia | torneado com as pregas; um lote |
+| **lanterna de papel** | sanfonada, laranja e roxa, com o aro e a alça; pendurada nos postes | torneado com as pregas; um lote |
 | **fantasminha de pano** | o pano caindo com a bainha ondulada e dois olhinhos, pendurado nos galhos, balançando | malha própria do pano + o vento; um lote |
-| **teia de lã + aranhinha** | os raios e a espiral de lã nos cantos das lojas e entre os bancos, com uma aranhinha de pompom de olhinhos | tubo fino fundido por teia; as aranhinhas em lote |
-| **morceguinho de papel** | recortado, pendurado no fio (nos raios da roda e no lambrequim da sorveteria); de noite eles voam (etapa 4) | `Shape` extrudado fino; um lote |
-| **lápide fofa** (proposta) | de isopor, arredondada, com musgo de feltro e uma frase de brincadeira ("Aqui jaz o medo", "R.I.P. dieta") | canvas compartilhado; um lote |
-| **caldeirão** | torneado, os pezinhos e a alça; de manhã vazio, na festa cheio de doces | fundido |
+| **teia de lã + aranhinha** | os raios e a espiral de lã nos cantos das lojas, entre os bancos e **nas árvores** (pedido do Renan), com uma aranhinha de pompom de olhinhos | tubo fino fundido por teia; as aranhinhas em lote |
+| **morceguinho de papel** | recortado, pendurado no fio — nos raios da roda, no lambrequim da sorveteria e **nos galhos das árvores** (pedido do Renan); de noite os da roda voam (etapa 4) | `Shape` extrudado fino; um lote |
+| **lápide fofa** | simples e bonitinha (pedido do Renan): de isopor, de topo redondo, com musgo de feltro, uma florzinha e uma frase de brincadeira ("Aqui jaz o medo", "R.I.P. dieta") — **espalhadas pelo parque inteiro**, de duas em duas ou de três em três | canvas compartilhado; um lote |
+| **o monstrinho do lago** | **um Nessie de plástico** (pedido do Renan), de boia inflável: o pescoço comprido em gomos, as corcovas saindo da água, a carinha sorridente, as costuras do plástico e o brilho do vinil; **passeia pelo lago devagar** e, de noite, **ilumina o lago** (a barriga acesa e uma poça de luz na água em volta dele) | torneado e tubo, canvas nas costuras; anda pela conta da margem do lago (`agua.naBeira`), sem atravessar o trapiche nem a ilha do tronco; a luz é pintada |
+| **caldeirão** | torneado, os pezinhos e a alça; antes da festa vazio, na festa cheio de doces | fundido |
 | **guirlanda de porta** | o anel de folhas secas, as mini abóboras e o laço | folhas em lote; fundida |
 | **chapéu de bruxa** | o cone torto com a dobra, a aba, a fita e a fivela — no poste do ponto de ônibus e no boneco de neve da praça de gelo | fundido |
 | **lençol de fantasma** | o pano por cima do toldo da bilheteria, com os dois furinhos | malha própria do pano |
 | **plaquinha de recado** | a tabuinha de moldura pendurada no barbante (ou num cavalete), com o recado na letra de cada um e o desenho do bicho do lado da assinatura | o texto em canvas (as letras do Bebito book, Caveat e Kalam, já são carregadas) |
-| **folhas secas** (proposta) | folhas laranja e marrons espalhadas na beira dos caminhos | o `folhasSecas` da clareira, em lote |
+| **folhas secas** | folhas laranja e marrons espalhadas na beira dos caminhos | o `folhasSecas` da clareira, em lote |
 
 As cores entram na seção "Halloween" da paleta (laranja-abóbora,
-roxo-noite, creme-fantasma, palha, verde-poção).
+roxo-noite, creme-fantasma, palha, verde-poção, o verde do Nessie).
 
-#### Onde vai cada coisa — o caminho da dupla
+#### Onde vai cada coisa — o parque inteiro
 
-A dupla chega pelo **portão** (`0; 26`), desce a **alameda** até a **praça
-da roda** (`0; −16,5`) e vira à direita até a **boutique** (`−34; −16,5`). O
-enfeite se concentra nesse caminho, que é o que se vê de manhã; o resto do
-parque ganha só toques (o parque inteiro de enfeite é muita coisa a mais por
-quadro, e longe do caminho ninguém repara).
+**Capricho no parque inteiro** (decisão do Renan), e não só no caminho. A
+dupla chega pelo **portão** (`0; 26`), desce a **alameda** até a **praça da
+roda** (`0; −16,5`) e vira à direita até a **boutique** (`−34; −16,5`) — esse
+é o caminho dos comentários, mas o enfeite vai a todo canto do parque:
 
 | lugar | o enfeite |
 |---|---|
 | **o portão** | o arco de balões na boca do caminho, dois fardos de feno com abóboras empilhadas, um de cada lado, e o espantalho de boas-vindas com a placa |
-| **a alameda** | o varal de bandeirolas de poste a poste, uma lanterna de papel em cada poste, uma abóbora no pé de cada um (as caras alternando), fantasminhas nos galhos das árvores da beira |
+| **a alameda** | o varal de bandeirolas de poste a poste, uma lanterna de papel em cada poste, uma abóbora no pé de cada um (as caras alternando), fantasminhas nos galhos |
+| **as árvores do parque todo** | teias de lã e morceguinhos pendurados nos galhos, alternando com os fantasminhas, para nenhuma árvore ficar igual à vizinha |
+| **o caminho transversal e a beira do lago** | lanternas de papel nos postes, abóboras nos pés, folhas secas na beira |
 | **a sorveteria e a praça de gelo** | o pano de "fechado" por cima da vitrine e a plaquinha do Mano; morceguinhos de papel no lambrequim; gotas de calda laranja escorrendo no telhado de chocolate; uma abóbora em cada mesinha; o **chapéu de bruxa no boneco de neve** |
-| **a loja de patins** | os patins pendurados com fitas laranja e roxas, a abóbora no balcão, a placa "Patins assombrados" — e o aluguel continua |
+| **a loja de patins e a pista** | os patins pendurados com fitas laranja e roxas, a abóbora no balcão, a placa "Patins assombrados"; abóboras e um fardo na volta da pista |
 | **a arena e o piquenique** | uma teia no suporte de raquetes, abóbora no placar e na mesa de piquenique; a plaquinha no quadro de inscrições |
-| **o lago** | duas abóboras na ponta do trapiche e uma teia no taboal; os bichos do lago ficam como sempre |
-| **a praça da roda** | uma lanterna de abóbora embaixo de cada cabine e morceguinhos nos raios (girando junto com a roda); o lençol de fantasma e a abóbora gigante na bilheteria, com a plaquinha do Cookie; o caldeirão vazio no meio da praça; e (proposta) um **cemitério fofo** de lápides no gramado ao lado |
+| **o campinho de frisbee** | um fantasminha em cada cesta de disco, abóboras na arquibancada |
+| **o lago** | **o Nessie de plástico passeando**, duas abóboras na ponta do trapiche e uma teia no taboal; os bichos do lago ficam como sempre |
+| **a praça da roda** | uma lanterna de abóbora embaixo de cada cabine e morceguinhos nos raios (girando junto com a roda); o lençol de fantasma e a abóbora gigante na bilheteria, com a plaquinha do Cookie; o caldeirão vazio no meio da praça |
+| **o gramado** | **lápides fofas** espalhadas pelo parque, de duas e três, em cantos de grama sem caminho |
 | **a calçada da boutique** | a guirlanda na porta, a teia de lã na vitrine, bandeirolas de morcego no toldo, abóboras nos vasos da calçada; na mesinha de xadrez, a plaquinha da Estella e uma aranhinha de feltro em cima do tabuleiro |
 | **o piquenique das coelhinhas** | a plaquinha delas e os pompons laranja e pretos esquecidos na toalha |
 | **o ponto de ônibus** | a placa "Ponto Assombrado" e o chapéu de bruxa no topo do poste |
@@ -487,50 +488,56 @@ de sempre antes de ser dado como pronto.
 
 **Personagem ausente é personagem não montado** (§8.3): na fase `convite`,
 cada um ganha uma linha de guarda na cena dele, e no posto aparece a
-plaquinha. O que **não** depende de ninguém continua funcionando.
+plaquinha. **Na caminhada até a boutique nada do que depende de alguém
+funciona** (decisão do Renan) — e o que é da dupla continua.
 
-| no parque | a plaquinha (rascunho) | o que fecha | o que continua |
-|---|---|---|---|
-| Mano, na sorveteria | "Volto à noite — me arrumando! 🐧" | a sorveteria e a mesinha servida | as mesinhas, o deslize e a patinação no gelo |
-| Cookie, na bilheteria | "Fechado pra fantasia. Cookie 🐘" | o bilhete e o passeio na roda | a roda girando, vazia |
-| Estella, no posto de fora | "Estou na boutique! 🐑" (na mesinha de xadrez) | o xadrez | a boutique (é para onde a dupla vai) |
-| Luna, Sol e Estrella | "Fomos nos arrumar! 🐰🐰🐰" | a conversa e o treino delas | — |
-| Jean-Luc, no lago | — (ele simplesmente não aparece) | o duelo | o lago inteiro: patos, garça, tigres-d'água, pedrinha, trapiche, moedinha |
-| os desafiantes da arena | "Os desafios voltam depois da festa!" (no quadro) | as partidas contra eles | a partida da dupla |
+Os recados são **bem dentro da personalidade de cada um** (pedido do Renan),
+cada um na própria letra:
 
-| no clube e na escola | a plaquinha (rascunho) | o que fecha |
+| no parque | o recado | o que fecha |
 |---|---|---|
-| Gina, na portaria | "Portão aberto! Fui me arrumar. — Gina 🦒" | a conversa dela (o portão abre) |
-| Capy, na cadeira do salva-vidas | "Salva-vidas de folga hoje! — Capy" | a conversa dele (a piscina funciona) |
-| Noel, no bar de sucos | "Fechado pra fantasia! — Noel 🦃" | os sucos e a troca do adubo |
-| Walter, no Mania | "O garçom foi pra festa! — Walter 🐶" | pedir na mesa e o turno |
-| Josefina, na estufa | "Fui me arrumar devagarinho! — Josefina 🐢" | a rodada do jardim e a lojinha da estufa |
-| Gatito, na Sala 1 | "Hoje não tem aula! — Gatito 🐱" | a aula e a apostila |
-| Flynn, no ginásio | "Treino cancelado: dia de festa! — Flynn 🦊" | o treino e a conversa |
+| Mano, na sorveteria | "FECHADO. Fui fazer minha fantasia. Ela é SURPRESA. Volto à noite com sorvete! — Mano 🐧 / P.S.: o de abóbora não derreteu. Eu acho." | a sorveteria e a mesinha servida |
+| Cookie, na bilheteria | "Bilheteria fechada. Desculpa. Fui me arrumar devagarinho, pra não fazer barulho. A roda tá girando sozinha. — Cookie 🐘" | o bilhete e o passeio na roda |
+| Estella, na mesinha de xadrez | "Estou na boutique, terminando a última bainha. Ninguém mexe no tabuleiro: a aranhinha está de guarda. — Estella 🐑" | o xadrez |
+| Luna, Sol e Estrella, no piquenique | uma plaquinha só, com três letras: "Fomos nos arrumar!!! É surpresa (mas é LINDA). — Luna" / "¡Volvemos de noche, panas! — Sol" / "Deixamos a toalha. Não fiquem no sol forte. — Estrella" | a conversa e o treino delas |
+| os desafiantes, no quadro da arena | "Desafios suspensos: os desafiantes foram se fantasiar!" | as partidas contra eles |
+| Jean-Luc, no lago | — (ele simplesmente não aparece) | o duelo |
+
+| no clube e na escola | o recado | o que fecha |
+|---|---|---|
+| Gina, na portaria | "Portão aberto hoje, viu? SÓ hoje. Fui me arrumar: minha fantasia vai ser a mais alta da festa. — Gina 🦒" | a conversa dela (o portão abre) |
+| Capy, na cadeira do salva-vidas | "Salva-vidas de folga. Água é comigo, mas hoje não: nada de pular sem mim! — Capy" | a conversa dele (a piscina funciona) |
+| Noel, no bar de sucos | "FECHADO! Fui correndo me arrumar. CORRENDO! Amanhã tem suco. — Noel 🦃" | os sucos e a troca do adubo |
+| Walter, no Mania | "Au! Au! 🐾" e, embaixo, noutra letra: "(o garçom foi pra festa — cozinha fechada)" | pedir na mesa e o turno |
+| Josefina, na estufa | "Fui me arrumar com calma, que fantasia boa leva tempo. Reguei tudo antes de sair. — Josefina 🐢" | a rodada do jardim e a lojinha da estufa |
+| Gatito, na Sala 1 | "Turma: hoje não tem aula! Lição de casa: se divertir na festa. — Prof. Gatito 🐱" | a aula e a apostila |
+| Flynn, no ginásio | "Treino cancelado: hoje o time inteiro vai pra festa! Bebam água e caprichem na fantasia. Vão, Gatitos! — Flynn 🦊" | o treino e a conversa |
 
 Continua tudo o que é da dupla: andar, sentar, os bancos, de mãos dadas, o
-frisbee, a mochila, o guarda-roupa e o vestiário, a piscina, a máquina de
-lanches, o ônibus. As plaquinhas somem na fase `festa` (os personagens
-chegam) e o fechamento inteiro acaba na fase `fim`.
+frisbee, o lago (patos, garça, tigres-d'água, pedrinha, trapiche, moedinha),
+a loja de patins e a patinação no gelo, a mochila, o guarda-roupa e o
+vestiário, a piscina, a máquina de lanches, o ônibus. As plaquinhas somem na
+fase `festa` (os personagens chegam) e o fechamento inteiro acaba na fase
+`fim`.
 
-**O Pelusa** (proposta): some da casa quando a carta é lida — na etapa 3 a
-Estella conta que ele foi provar a fantasia de morceguinho e dormiu no pufe.
+**O Pelusa** (decisão do Renan): some da casa quando a carta é lida e
+aparece na boutique (etapa 3) dormindo no pufe, **sem interação nenhuma**.
 
-**A clareira** (proposta): continua aberta, mas sem o "Passar a noite aqui"
-durante o evento — a noite do evento é a que cai enquanto eles se arrumam na
-boutique, e uma noite na barraca no meio da história embaralharia as duas.
+**A clareira** (decisão do Renan): continua aberta, mas sem o "Passar a
+noite aqui" durante o evento — a noite do evento é a que cai enquanto eles
+se arrumam na boutique.
 
 #### Os comentários no caminho
 
-Os do §2.2, cada um **uma vez por save** (`halloween:viu:<lugar>`), quando o
-jogador passa a menos de ~4 m do ponto e não há outra conversa aberta. São
-uma ou duas falas curtas, e quem fala é sempre a mesma pessoa (o Ari ou o
+Valem os rascunhos (decisão do Renan). Cada um **uma vez por save**
+(`halloween:viu:<lugar>`), quando o jogador passa a menos de ~4 m do ponto e
+não há outra conversa aberta. Quem fala é sempre a mesma pessoa (o Ari ou o
 Renan, não o "jogador"). O primeiro, no portão, também diz para onde ir:
 
-| onde | quem | a fala (rascunho) |
+| onde | quem | a fala |
 |---|---|---|
 | o portão | Renan | "Olha isso! Tem abóbora no portão inteiro." |
-| o portão | Ari | "Alguém passou a madrugada enfeitando. A Estella disse pra gente ir na boutique." |
+| o portão | Ari | "Alguém passou o dia enfeitando. A Estella disse pra gente ir na boutique." |
 | a alameda | Ari | "Tem fantasminha pendurado nas árvores!" |
 | a sorveteria | Ari | "O Mano fechou a sorveteria? Isso nunca acontece." |
 | a sorveteria | Renan | "Diz que tá se arrumando. Imagina a fantasia dele." |
@@ -538,16 +545,19 @@ Renan, não o "jogador"). O primeiro, no portão, também diz para onde ir:
 | a roda gigante | Renan | "As cabines viraram abóbora." |
 | a bilheteria | Ari | "Até o Cookie sumiu… e ele nem cabe em lugar nenhum pra se esconder." |
 | o lago | Renan | "Nem o Jean-Luc tá aqui. O parque tá vazio só pra gente." |
-| o cemitério fofo | Ari | "'Aqui jaz o medo.' Que cemitério mais fofo." |
+| o lago (vendo o Nessie) | Ari | "Bebito… tem um monstro do lago Ness ali. De plástico. Mas tem." |
+| uma lápide | Ari | "'Aqui jaz o medo.' Que cemitério mais fofo." |
 | a calçada da boutique | Ari | "A lojinha da Estella tá toda de teia!" |
 | a calçada da boutique | Renan | "Então é aqui. Vamos?" |
 
-#### A luz da manhã (proposta)
+#### A luz do pôr do sol
 
-O parque já é "sábado de manhã". Para a manhã do evento ter cara de outono,
-uma **manhã dourada** (o `MANHA_CEDO` da clareira, por `g.luzDoCeu`) e um
-pouco de **névoa baixa** sobre o lago, que se desfaz devagar. A névoa é
-efeito (§8.4): só entra se ficar bonita **e** leve no celular.
+Decisão do Renan: a caminhada é **no pôr do sol**. Ao entrar no parque na
+fase `convite`, o céu é o `POR_DO_SOL` (ou o `TARDE_DOURADA`, o que ficar
+mais bonito na foto) da fila de momentos da clareira (`world/noite.ts`),
+por `g.luzDoCeu` — o mesmo céu laranja que a clareira já usa, sem luz nova.
+Folhas secas na beira dos caminhos completam a cara de outono. Na etapa 3, a
+dupla sai da boutique e a fila anda até a `NOITE`.
 
 #### A camada e o desempenho
 
@@ -555,22 +565,25 @@ efeito (§8.4): só entra se ficar bonita **e** leve no celular.
   como a da casa), e uma linha de guarda em cada personagem ausente (parque,
   clube e escola). Sem `?halloween`, nada disso monta;
 - **medir antes e depois** (`renderer.info.render`) na vista do portão, da
-  praça da roda e da boutique, no computador e no celular, e anotar no
-  commit. O que se espera: um lote por tipo de peça, então algumas dezenas
-  de desenhos a mais, e não centenas;
+  praça da roda, do lago e da boutique, no computador e no celular, e anotar
+  no commit. Um lote por tipo de peça: com o parque inteiro enfeitado, o
+  esperado é algumas dezenas de desenhos a mais, e não centenas;
 - os testes: `scripts/halloween.mjs SO=parque` (cada enfeite no lugar, as
-  plaquinhas, quem não está, o que fecha e o que continua, os comentários
-  uma vez só, fotos de cada lugar) e o `SO=volta` (sem `?halloween`, o parque,
-  o clube e a escola com os mesmos objetos e desenhos de antes); o
-  `zfighting.mjs` com `SO=` em cada peça nova.
+  plaquinhas, quem não está, o que fecha e o que continua, o Nessie
+  passeando sem sair da água, os comentários uma vez só, o céu do pôr do sol,
+  fotos de cada lugar) e o `SO=volta` (sem `?halloween`, o parque, o clube e
+  a escola com os mesmos objetos e desenhos de antes); o `zfighting.mjs` com
+  `SO=` em cada peça nova.
 
 #### A ordem de construir (dentro da etapa 2)
 
 1. o kit de peças, uma a uma, com foto de perto de cada;
-2. o parque enfeitado e as medidas;
-3. quem não está e as plaquinhas (parque, clube, escola);
-4. os comentários e a luz da manhã;
-5. os testes, as fotos no computador e no celular, e o Renan olha.
+2. o parque enfeitado (inteiro) e as medidas;
+3. o Nessie passeando no lago;
+4. quem não está e as plaquinhas (parque, clube, escola), e o Pelusa saindo
+   de casa;
+5. os comentários e o céu do pôr do sol;
+6. os testes, as fotos no computador e no celular, e o Renan olha.
 
 ---
 
@@ -810,7 +823,7 @@ por cima**, e para de fazer isso quando a fase vira `fim`:
   corpo novo: sem a fase, ela simplesmente não é pendurada, e o bicho é o de
   hoje;
 - **personagem ausente é personagem não montado** naquela cena durante a
-  fase (o Mano fora da sorveteria de manhã, a Gina fora do clube) — o
+  fase (o Mano fora da sorveteria antes da festa, a Gina fora do clube) — o
   código dele não muda;
 - **as cenas ganham um gancho só**: uma linha que pergunta a fase
   (`faseDoHalloween(g)`) e chama o módulo do evento
@@ -854,7 +867,7 @@ aprovar antes da próxima.
 |---|---|---|---|
 | **0** | **decisões** | as respostas do §10 | — |
 | **1** ✅ | **o filme e a carta** *(construída, escondida)* | a fase do evento no save e o `?halloween`; no sofá, "Assistir um filme de terror", o filme na TV, as falas, a carta deslizando por baixo da porta, "Pegar a carta" e o painel da carta (§2.1) | `cenario`, `prop` + `geometry`, `textures`, `animation` |
-| **2** | **o parque enfeitado, de manhã e vazio** *(planejada no §4.1, esperando o Renan)* | as decorações do parque e das lojas, de dia (§4), os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
+| **2** ✅ | **o parque enfeitado, no pôr do sol e vazio** *(construída, escondida)* | as decorações do parque inteiro e das lojas, ainda apagadas (§4.1), o Nessie de plástico no lago, os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
 | **3** | **o presente da Estella** | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** | **a noite e o ônibus** | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** | **doces ou travessuras** | as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3), e **as outras cinco fantasias** (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
@@ -874,25 +887,14 @@ sobre os ajustes dela (registrados aqui), depois é construída e testada com
 
 Todas respondidas (ver abaixo). Próximo passo: construir a etapa 1.
 
-### Para fechar a etapa 2 (o parque de manhã, §4.1)
+### A etapa 2 está fechada
 
-1. **Os enfeites**: o kit está bom? Falta alguma coisa que vocês imaginam
-   (ou que existe no Villa Lobos de verdade)? Entra o **cemitério fofo** de
-   lápides de isopor na praça da roda?
-2. **Onde vai**: enfeitar com capricho o caminho até a boutique e só dar
-   toques no resto do parque — ou o parque inteiro igual?
-3. **As plaquinhas**: os recados (do parque, do clube e da escola) estão
-   bons? Quer escrever algum do seu jeito?
-4. **O que fecha de manhã**: a roda gira vazia sem o Cookie (sem passeio), a
-   sorveteria fecha, o xadrez e os desafios da arena esperam a festa — ou
-   alguma dessas deveria continuar?
-5. **A clareira**: fica aberta, mas sem o "Passar a noite aqui" durante o
-   evento?
-6. **O Pelusa**: some de casa quando a carta é lida (foi provar a fantasia
-   na Estella)?
-7. **Os comentários**: os rascunhos valem? Quer mais algum lugar comentado?
-8. **A manhã**: a manhã dourada de outono, com névoa baixa no lago e folhas
-   secas no caminho — ou a manhã de sempre?
+Respondidas (§4.1): o kit (gostou, mais teias e morcegos nas árvores,
+lápides simples pelo parque, o Nessie de plástico no lago e as lanternas de
+abóbora iluminando a noite); capricho no parque inteiro; os recados dentro
+da personalidade de cada um; na caminhada nada do que depende de alguém
+funciona; a clareira sem o "Passar a noite aqui"; o Pelusa dormindo na
+boutique, sem interação; os comentários valem; e a caminhada no pôr do sol.
 
 ### Para as próximas partes
 
@@ -906,7 +908,7 @@ Todas respondidas (ver abaixo). Próximo passo: construir a etapa 1.
 
 **Respondidas:** o prazo (sem pressa, nada aparece até tudo estar pronto);
 quem começa o evento (a dupla, no sofá); o convite (a carta por baixo da
-porta); o parque antes da festa (de manhã, enfeitado, sem os personagens); as
+porta); o parque antes da festa (no pôr do sol, enfeitado, sem os personagens); as
 fantasias da dupla (o vampiro e o morceguinho da Estella, mais cinco ganhas
 na caça, uma inteira a cada duas paradas, e a de pirata nova); o capricho
 (muito bem feitas, fofas e detalhadas); a Estella (aranha fofa, fazendo o

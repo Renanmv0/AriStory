@@ -2105,6 +2105,70 @@ export const PALETTE = {
   pipocaManteiga: 0xf6d26a,
   /** a luz azulada da TV no chão da sala, com o filme passando */
   luzDaTv: 0x8fa6ff,
+
+  // --------------------------------------------- Halloween: o parque enfeitado
+  /** a abóbora de Halloween: o laranja de sempre, um mais fundo e um mais claro */
+  abobora: 0xf08a24,
+  aboboraFunda: 0xd96a12,
+  aboboraClara: 0xf7a948,
+  /** a abóbora branca (fantasma), para variar a pilha */
+  aboboraCreme: 0xf3e6c8,
+  /** o cabinho, verde-musgo puxando pro marrom */
+  aboboraCabinho: 0x6d7a3a,
+  aboboraFolha: 0x5f8f3c,
+  /** a polpa que aparece na beira do corte (a parede da abóbora) */
+  aboboraPolpa: 0xffd27a,
+  /** o fundo do corte, apagado: o escuro de dentro da abóbora */
+  aboboraOco: 0x4a2414,
+  /** o papel dos recortes (a beira clara do morceguinho, da abóbora e do fantasma) */
+  papelDeRecorte: 0xfff4de,
+  /** o morceguinho de papel: um roxo quase preto, que ainda mostra volume */
+  morcegoDePapel: 0x3d2b4f,
+  /** o fantasminha de pano e o de papel */
+  fantasmaDePano: 0xf7f2e8,
+  /** o olho do fantasminha e da aranhinha */
+  olhoDeBoneco: 0x231b26,
+  /** a bochecha rosada dos bonecos do Halloween */
+  bochechaDeBoneco: 0xf2a3ad,
+  /** as lanternas de papel sanfonadas */
+  lanternaLaranja: 0xf39a3c,
+  lanternaRoxa: 0x9461bf,
+  /** o aro e a alça de arame das lanternas */
+  aramePreto: 0x2f2a33,
+  /** a lã das teias */
+  laDaTeia: 0xf4efe6,
+  /** o pompom da aranhinha de feltro */
+  aranhaDeFeltro: 0x33283d,
+  /** o fardo de feno: a palha e a sombra dela */
+  feno: 0xe4c264,
+  fenoEscuro: 0xb98f3a,
+  /** o espantalho de boas-vindas: o saco de juta, o xadrez da camisa, o remendo e a palha do chapéu */
+  sacoDeJuta: 0xd9bb8c,
+  xadrezDoEspantalho: 0xd0583e,
+  remendoDoEspantalho: 0x6f8fc4,
+  chapeuDePalha: 0xe8c86e,
+  /** o balão preto do arco (um roxo bem escuro, para mostrar volume) */
+  balaoEscuro: 0x3e2f52,
+  /** a lápide de isopor, o musgo de feltro e o montinho de terra */
+  lapideDeIsopor: 0xbcb7c9,
+  musgoDeFeltro: 0x7fae5a,
+  terraDaCova: 0x7a5a3c,
+  /** o caldeirão de ferro (um roxo-carvão) */
+  caldeirao: 0x2e2a36,
+  /** o chapéu de bruxa, a fita e a fivela */
+  chapeuDeBruxa: 0x3d2c58,
+  fitaDoChapeu: 0xf08a24,
+  fivelaDourada: 0xe8c25a,
+  /** a plaquinha de recado: o papel e a tinta de caneta */
+  papelDoRecado: 0xfff8e6,
+  tintaDoRecado: 0x2b3550,
+  /** o laço roxo da guirlanda */
+  lacoDaGuirlanda: 0x7d4fa8,
+  /** o Nessie de boia: o vinil verde, a barriga clara, as pintas e a válvula amarela */
+  nessieVinil: 0x63c26c,
+  nessieBarriga: 0xd9ec8c,
+  nessiePinta: 0x3e9a57,
+  nessieValvula: 0xf2cf48,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

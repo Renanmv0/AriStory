@@ -57,6 +57,8 @@ import { CARGA_CERTA, FAIXA_CERTA, PedrinhaQuicando } from '../entities/Pedrinha
 import { ARREMESSO, SOLTA_DO_ARREMESSO } from '../characters/CharacterRig';
 import { GeloDoRinque, Vento } from '../core/shaders';
 import { LuzesDosPostes } from '../world/mobiliarioDoParque';
+import { montarHalloweenNoParque } from '../eventos/halloween/noParque';
+import { noMeioDoEvento } from '../eventos/halloween/fase';
 import { BeiraDoCaminho, beiraTorta, caixaRedonda, capsula, cascalho, disco as largo, mancha, retanguloRedondo, ruidoLiso, uniaoSuave, type Distancia } from '../world/caminhos';
 import { PoteDeVagaLumes, VagaLumesSoltos } from '../world/poteDeVagaLumes';
 import {
@@ -3596,7 +3598,9 @@ export const villaLobos: SceneDef = {
           for (;;) {
             // de dia, a terceira escolha é a noite chegar; de noite, é dormir
             const terceira = estado === 'noite' ? 'Dormir' : 'Passar a noite aqui';
-            const opcoes = ['Ficar abraçadinhos', 'Dar um beijinho', 'Escrever no Bebito book', terceira, 'Sair da barraca'];
+            // no meio do especial de Halloween a noite é a da festa: a barraca não a adianta
+            const semNoite = noMeioDoEvento(api) && estado !== 'noite';
+            const opcoes = ['Ficar abraçadinhos', 'Dar um beijinho', 'Escrever no Bebito book', ...(semNoite ? [] : [terceira]), 'Sair da barraca'];
             const escolha = opcoes[await api.ask('E agora?', opcoes)];
             if (escolha === 'Ficar abraçadinhos') {
               // mais perto: os dois escorregam para o meio dos colchões
@@ -7748,6 +7752,31 @@ export const villaLobos: SceneDef = {
           icon: '🎡',
         });
       },
+    });
+
+    /*
+     * O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`): o parque enfeitado é uma
+     * CAMADA por cima do parque pronto. Sem o `?halloween` (ou fora das fases
+     * do evento) a chamada não monta nada.
+     */
+    montarHalloweenNoParque(w, {
+      agua,
+      vagaDoNessie: 12,
+      caminho,
+      roda: wheel,
+      doTrapiche,
+      trapiche: { comprimento: TRAPICHE.comprimento, altura: TRAPICHE.altura },
+      piquenique: PIQUENIQUE,
+      cestasDeDisco: [{ x: qx0 + 3, z: QUADRA.z }, { x: qx1 - 3, z: QUADRA.z }],
+      lojaDePatins: { ...LOJA, balcao: BALCAO },
+      boutique: { x: -34.8, z: LOJINHA.z },
+      xadrez: XADREZ,
+      pontoDeOnibus: { x: 35, z: 19 },
+      sorveteria: SORVETERIA,
+      postos: { mano: MANO, cookie: COOKIE, estella: ESTELLA },
+      piqueniqueDasCoelhinhas: g.flag('jean-luc-batido') && !g.flag('escola-aberta') ? PIQUENIQUE_DA_LUNA : null,
+      clareira: CLAREIRA,
+      ausentes: [mano, cookie, estella, jeanLuc, luna, sol, estrella],
     });
   },
 };

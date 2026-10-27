@@ -130,12 +130,20 @@ export class Vento {
     if (opts.direcao) this.uniforms.uDirecao.value.set(...opts.direcao).normalize();
   }
 
-  /** O material de vento desta cor (um por cor, guardado). */
-  material(cor: number): THREE.MeshToonMaterial {
-    const chave = `${cor}`;
+  /**
+   * O material de vento desta cor (um por cor, guardado). `mapa` e
+   * `corPorVertice` são os do `toon()`; `recorte` liga o `alphaTest` (papel
+   * recortado num quadradinho com o desenho em canvas).
+   *
+   * Peça PENDURADA (bandeirola, fantasminha) usa um `Vento` de `altura`
+   * NEGATIVA: o peso cresce para baixo da raiz, e a ponta de baixo é que voa.
+   */
+  material(cor: number, opts: { mapa?: THREE.Texture; corPorVertice?: boolean; recorte?: boolean } = {}): THREE.MeshToonMaterial {
+    const chave = `${cor}|${opts.mapa?.uuid ?? ''}|${opts.corPorVertice ? 1 : 0}|${opts.recorte ? 1 : 0}`;
     const hit = this.materiais.get(chave);
     if (hit) return hit;
-    const mat = toon(cor, { doubleSide: true }).clone();
+    const mat = toon(cor, { doubleSide: true, mapa: opts.mapa, corPorVertice: opts.corPorVertice }).clone();
+    if (opts.recorte) mat.alphaTest = 0.5;
     const u = this.uniforms;
     mat.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, u);
@@ -529,8 +537,12 @@ export interface CoresDoLago {
 
 /** quantas marolas o shader desenha de uma vez (a mais velha dá lugar) */
 const MAROLAS = 12;
-/** quantos bichos deixam rastro na água de uma vez (patos, garça, pedrinha) */
-const RASTROS = 12;
+/**
+ * quantos bichos deixam rastro na água de uma vez (patos, garça, pedrinha —
+ * e as duas vagas de cima são de quem só aparece num evento: o Nessie de
+ * plástico do Halloween)
+ */
+const RASTROS = 14;
 /** quantas sombras de peixe nadam debaixo d'água */
 const PEIXES = 6;
 /** quantas coisas paradas furam a água (pilar, pedra, junco, tronco) */

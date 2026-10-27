@@ -58,3 +58,26 @@ export function noMeioDoEvento(g: Pick<GameAPI, 'flag'>): boolean {
 export function avancarFase(g: Pick<GameAPI, 'setFlag'>, fase: Exclude<FaseDoHalloween, 'antes'>): void {
   g.setFlag(flagDaFase(fase));
 }
+
+/** O enfeite está no parque nesta fase? (do convite até a noite de sono) */
+export function parqueEnfeitado(g: Pick<GameAPI, 'flag'>): boolean {
+  const fase = faseDoHalloween(g);
+  return fase === 'convite' || fase === 'festa' || fase === 'depois';
+}
+
+/**
+ * Os personagens foram SE ARRUMAR (fase `convite`): o parque, o clube e a
+ * escola ficam sem eles até a festa.
+ */
+export function quemFoiSeArrumar(g: Pick<GameAPI, 'flag'>): boolean {
+  return eventoLiberado() && faseDoHalloween(g) === 'convite';
+}
+
+/**
+ * O Pelusa foi passar o evento na boutique da Estella (decisão do Renan: ele
+ * dorme num pufe de lá, de morceguinho): do convite até a noite de sono, o
+ * quarto do Ari fica sem ele.
+ */
+export function pelusaNaBoutique(g: Pick<GameAPI, 'flag'>): boolean {
+  return eventoLiberado() && noMeioDoEvento(g);
+}

@@ -1,3 +1,5 @@
+import { ausentarNaCena } from '../eventos/halloween/ausentes';
+import { RECADOS_DO_CLUBE } from '../eventos/halloween/recados';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import { SLOTS_ROUPA, type ItemDef, type SceneDef } from '../core/types';
@@ -2428,5 +2430,16 @@ export const estufa: SceneDef = {
       },
       portoes: PORTOES.xs.map((x) => ({ x, z: -hz, vao: PORTOES.vao })),
     };
+
+    /*
+     * O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`, §4.1): na fase `convite` a
+     * Josefina foi se arrumar (devagarinho) para a festa do parque. A estufa
+     * fica aberta, sem rodada e sem lojinha, com o recado dela.
+     */
+    ausentarNaCena(w, {
+      bichos: [josefina],
+      interacoes: ['estufa:josefina', 'estufa:lojinha', 'estufa:pegar-regador'],
+      recados: [{ recados: [RECADOS_DO_CLUBE.josefina], autor: 'Josefina', x: BALCAO.x - 0.9, z: BALCAO.z - 1.2, giro: Math.PI / 4 }],
+    });
   },
 };

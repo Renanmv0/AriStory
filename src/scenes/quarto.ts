@@ -1,3 +1,4 @@
+import { pelusaNaBoutique } from '../eventos/halloween/fase';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
@@ -611,5 +612,13 @@ export const quarto: SceneDef = {
         }
       },
     });
+
+    // O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`): do convite até a noite
+    // de sono, o Pelusa está na boutique da Estella. Sem o `?halloween`, nada muda.
+    if (pelusaNaBoutique(g0)) {
+      pelusa.group.visible = false;
+      pelusa.aoSoar = null;
+      carinho.enabled = false;
+    }
   },
 };

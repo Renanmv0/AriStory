@@ -724,6 +724,38 @@ isso o evento nunca edita uma cena nem uma peça: ele é uma camada.
   Ela entra numa tomada de câmera de dentro da sala (`g.setCameraOmbro`) e
   para a ~3 m, fora da sombra da parede.
 
+O parque enfeitado (a etapa 2, `eventos/halloween/noParque.ts`) é o molde
+de camada GRANDE, que enfeita uma cena inteira:
+
+- **A chamada vai no FIM do `build`**, com o parque pronto: a camada acha
+  as peças pela etiqueta (`userData.peca`: `arvore`, `poste`,
+  `mesa-de-sorveteria`, `boneco-de-neve`, `bilheteria`…) e lê a posição e a
+  caixa delas — uma abóbora no pé de cada poste, um fantasminha no galho de
+  cada árvore. O que não tem etiqueta (o lago, a roda, os postos) a cena
+  empresta na chamada.
+- **Tudo em lote para a cena inteira**: as abóboras do parque são UM
+  `LoteDeAboboras`, o que se pendura é UM `EnfeitesDePendurar`, as lápides
+  UM `LapidesFofas` — umas vinte malhas para mais de trezentas peças.
+- **O céu de um evento vai no primeiro quadro** (`w.onUpdate` uma vez), e
+  não no `build`: o motor põe o céu da cena DEPOIS de montá-la, e o
+  `g.luzDoCeu` do `build` some.
+- **Quem não está** (`eventos/halloween/ausentes.ts`, `ausentarNaCena(w, {
+  bichos, etiquetas, interacoes, recados })`): o personagem continua sendo
+  montado do jeito de sempre; a camada o esconde, o cala (`aoSoar = null`) e
+  desliga as conversas dele A CADA QUADRO, num `onUpdate` registrado por
+  último (a cena liga e desliga as dela sozinha). `prefixo*` pega as
+  interações de nome repetido (`mania:mesa-*`). Quem a cena monta dentro de
+  uma função é achado pela etiqueta: todo bicho guarda a referência dele em
+  `group.userData.bicho`. O que a cena faria SOZINHA com quem não está (o
+  tour da Luna, o treino das irmãs) ganha uma linha de guarda
+  (`quemFoiSeArrumar(g)`) — esconder não basta, a cutscene rodaria.
+- **Fala que dispara ao passar perto** (os comentários da dupla): uma vez
+  por save (`flag`), e só com quem joga ANDANDO — parado, ele pode estar
+  numa conversa, e um balão não pode cair por cima de outro.
+- **O teste da volta mede cena por cena** contra o ponto de volta: com o
+  commit de antes do evento num `git worktree`, as mesmas cenas com o save
+  zerado dão as mesmas malhas (`MALHAS_ANTES` no `halloween.mjs`).
+
 ## Regras da casa
 
 1. **Cor sempre da paleta** (`src/palette.ts`). Se falta uma cor, adicione lá.
