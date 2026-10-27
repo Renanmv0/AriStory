@@ -1,3 +1,5 @@
+import { ausentarNaCena } from '../eventos/halloween/ausentes';
+import { RECADOS_DO_CLUBE } from '../eventos/halloween/recados';
 import * as THREE from 'three';
 import { LuzesDosPostes } from '../world/mobiliarioDoParque';
 import { PALETTE as P } from '../palette';
@@ -2058,6 +2060,27 @@ export const clube: SceneDef = {
         }
         api.abrirVestiario();
       },
+    });
+
+    /*
+     * O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`, §4.1): na fase `convite`
+     * todo mundo foi se arrumar para a festa do parque. O clube continua
+     * aberto, sem eles: no posto de cada um fica um recado. Sem o
+     * `?halloween`, a chamada não faz nada.
+     */
+    ausentarNaCena(w, {
+      bichos: [gina, capy, josefina, noel],
+      interacoes: [
+        'clube:portaria', 'clube:salva-vidas', 'clube:josefina', 'clube:dar-o-adubo',
+        'clube:noel', 'clube:dar-as-sementes', 'clube:bar', 'clube:mesa-do-restaurante',
+      ],
+      recados: [
+        { recados: [RECADOS_DO_CLUBE.gina], autor: 'Gina', x: GUARITA.x + 2.0, z: GUARITA.z + 2.1, giro: Math.PI / 4 },
+        { recados: [RECADOS_DO_CLUBE.capy], autor: 'Capy', x: GUARDA.x + 1.7, z: GUARDA.z - 0.9, giro: Math.PI / 4 },
+        { recados: [RECADOS_DO_CLUBE.noel], autor: 'Noel', x: -13.9, z: 10.9, giro: Math.PI / 4 },
+        { recados: [RECADOS_DO_CLUBE.josefina], autor: 'Josefina', x: JARDIM.caminho - 1.4, z: -13.75, giro: Math.PI / 4 },
+        { recados: [RECADOS_DO_CLUBE.walter], autor: 'Walter', x: RESTAURANTE.x + 2.1, z: fachadaZ + 1.0, giro: Math.PI / 4 },
+      ],
     });
   },
 };

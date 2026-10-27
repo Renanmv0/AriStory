@@ -41,6 +41,11 @@ export interface RecadoNoPosto {
 
 export interface QuemSaiu {
   bichos?: ReadonlyArray<Ausente | null | undefined>;
+  /**
+   * os bichos pela etiqueta (`userData.peca`: `gatito`, `flynn`, `luna`…),
+   * para quem a cena monta dentro de uma função e não guarda
+   */
+  etiquetas?: readonly string[];
   /** os `id` das interações que dependem de quem saiu; `prefixo*` pega todas que começam assim */
   interacoes?: readonly string[];
   recados?: readonly RecadoNoPosto[];
@@ -55,7 +60,17 @@ export function ausentarNaCena(w: WorldBuilder, quem: QuemSaiu): boolean {
   const ids = quem.interacoes ?? [];
   const desliga = (id: string | undefined): boolean =>
     !!id && ids.some((i) => (i.endsWith('*') ? id.startsWith(i.slice(0, -1)) : id === i));
+  const etiquetas = quem.etiquetas ?? [];
   const esconder = (): void => {
+    if (etiquetas.length) {
+      for (const o of w.root.children) {
+        const b = o.userData?.bicho as Ausente | undefined;
+        if (b && etiquetas.includes(o.userData.peca)) {
+          o.visible = false;
+          b.aoSoar = null;
+        }
+      }
+    }
     for (const b of bichos) {
       b.group.visible = false;
       if ('aoSoar' in b) b.aoSoar = null;

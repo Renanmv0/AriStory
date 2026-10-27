@@ -58,6 +58,7 @@ import { ARREMESSO, SOLTA_DO_ARREMESSO } from '../characters/CharacterRig';
 import { GeloDoRinque, Vento } from '../core/shaders';
 import { LuzesDosPostes } from '../world/mobiliarioDoParque';
 import { montarHalloweenNoParque } from '../eventos/halloween/noParque';
+import { noMeioDoEvento } from '../eventos/halloween/fase';
 import { BeiraDoCaminho, beiraTorta, caixaRedonda, capsula, cascalho, disco as largo, mancha, retanguloRedondo, ruidoLiso, uniaoSuave, type Distancia } from '../world/caminhos';
 import { PoteDeVagaLumes, VagaLumesSoltos } from '../world/poteDeVagaLumes';
 import {
@@ -3597,7 +3598,9 @@ export const villaLobos: SceneDef = {
           for (;;) {
             // de dia, a terceira escolha é a noite chegar; de noite, é dormir
             const terceira = estado === 'noite' ? 'Dormir' : 'Passar a noite aqui';
-            const opcoes = ['Ficar abraçadinhos', 'Dar um beijinho', 'Escrever no Bebito book', terceira, 'Sair da barraca'];
+            // no meio do especial de Halloween a noite é a da festa: a barraca não a adianta
+            const semNoite = noMeioDoEvento(api) && estado !== 'noite';
+            const opcoes = ['Ficar abraçadinhos', 'Dar um beijinho', 'Escrever no Bebito book', ...(semNoite ? [] : [terceira]), 'Sair da barraca'];
             const escolha = opcoes[await api.ask('E agora?', opcoes)];
             if (escolha === 'Ficar abraçadinhos') {
               // mais perto: os dois escorregam para o meio dos colchões

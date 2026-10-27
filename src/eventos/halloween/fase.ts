@@ -72,3 +72,12 @@ export function parqueEnfeitado(g: Pick<GameAPI, 'flag'>): boolean {
 export function quemFoiSeArrumar(g: Pick<GameAPI, 'flag'>): boolean {
   return eventoLiberado() && faseDoHalloween(g) === 'convite';
 }
+
+/**
+ * O Pelusa foi passar o evento na boutique da Estella (decisão do Renan: ele
+ * dorme num pufe de lá, de morceguinho): do convite até a noite de sono, o
+ * quarto do Ari fica sem ele.
+ */
+export function pelusaNaBoutique(g: Pick<GameAPI, 'flag'>): boolean {
+  return eventoLiberado() && noMeioDoEvento(g);
+}

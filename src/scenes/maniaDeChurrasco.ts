@@ -1,3 +1,5 @@
+import { ausentarNaCena } from '../eventos/halloween/ausentes';
+import { RECADOS_DO_CLUBE } from '../eventos/halloween/recados';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, SceneDef } from '../core/types';
@@ -1454,6 +1456,17 @@ export const maniaDeChurrasco: SceneDef = {
           [R, 'Alguém saiu daqui com a consciência tranquila.'],
         ]);
       },
+    });
+
+    /*
+     * O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`, §4.1): na fase `convite` o
+     * Walter foi se arrumar para a festa do parque — a cozinha fica fechada,
+     * com o recado dele no balcão de passagem.
+     */
+    ausentarNaCena(w, {
+      bichos: [cachorro],
+      interacoes: ['mania:walter', 'mania:mesa-*', 'mania:escala', 'mania:dar-o-osso'],
+      recados: [{ recados: [RECADOS_DO_CLUBE.walter], autor: 'Walter', x: -6.6, z: PASSAGEM.z + 1.25, giro: 0.35 }],
     });
   },
 };
