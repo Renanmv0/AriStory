@@ -1,5 +1,6 @@
 import { LoteDeAboboras, aboboraEsculpida } from './abobora';
 import { EnfeitesDePendurar } from './pendurados';
+import { nessieDePlastico } from './nessie';
 import {
   LapidesFofas, arcoDeBaloes, caldeirao, chapeuDeBruxa, espantalhoDeBoasVindas, fardoDeFeno, guirlanda, lencolDaBilheteria,
   plaquinhaDeRecado, pompom,
@@ -25,4 +26,5 @@ export const KIT_DO_HALLOWEEN = {
   lencolDaBilheteria,
   plaquinhaDeRecado,
   pompom,
+  nessieDePlastico,
 };

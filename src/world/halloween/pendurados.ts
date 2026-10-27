@@ -313,8 +313,8 @@ function geoRecorte(largura: number, altura: number): THREE.BufferGeometry {
  * MESMA malha, com a cor nos vértices. Origem no alto do barbante.
  */
 function geoFantasminha(): THREE.BufferGeometry {
-  const VOLTA = 22;
-  const LINHAS = 16;
+  const VOLTA = 18;
+  const LINHAS = 14;
   const pos: number[] = [];
   const idx: number[] = [];
   for (let j = 0; j <= LINHAS; j++) {
@@ -402,7 +402,7 @@ function geoFantasminha(): THREE.BufferGeometry {
  */
 function geoLanterna(): THREE.BufferGeometry {
   const perfil: THREE.Vector2[] = [];
-  const N = 44;
+  const N = 33;
   const BAIXO = -0.43;
   const CIMA = -0.09;
   for (let i = 0; i <= N; i++) {
@@ -412,7 +412,7 @@ function geoLanterna(): THREE.BufferGeometry {
     r *= 1 - 0.075 * Math.abs(Math.sin(11 * Math.PI * k)) * Math.sin(Math.PI * k);
     perfil.push(new THREE.Vector2(r, BAIXO + (CIMA - BAIXO) * k));
   }
-  const papel = new THREE.LatheGeometry(perfil, 16);
+  const papel = new THREE.LatheGeometry(perfil, 14);
   const pintada = (geo: THREE.BufferGeometry, k: number): THREE.BufferGeometry => {
     const g = geo.index ? geo.toNonIndexed() : geo;
     for (const n of Object.keys(g.attributes)) if (n !== 'position' && n !== 'normal') g.deleteAttribute(n);
@@ -457,7 +457,7 @@ function geoTeia(raio: number, semente: number): THREE.BufferGeometry {
   for (let i = 0; i < RAIOS; i++) {
     const a = angulos[i];
     const fim = new THREE.Vector3(Math.cos(a) * comprimento[i], Math.sin(a) * comprimento[i], 0);
-    pedacos.push(new THREE.TubeGeometry(new THREE.LineCurve3(new THREE.Vector3(), fim), 1, FIO, 4, false));
+    pedacos.push(new THREE.TubeGeometry(new THREE.LineCurve3(new THREE.Vector3(), fim), 1, FIO, 3, false));
   }
   // a espiral: de raio em raio, cada trecho cedendo para o centro
   const pontos: THREE.Vector3[] = [];
@@ -481,7 +481,7 @@ function geoTeia(raio: number, semente: number): THREE.BufferGeometry {
       pontos.push(new THREE.Vector3(Math.cos(am) * rm, Math.sin(am) * rm, 0));
     }
   }
-  pedacos.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pontos, false, 'centripetal'), pontos.length * 3, FIO, 4, false));
+  pedacos.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pontos, false, 'centripetal'), pontos.length * 2, FIO, 3, false));
   // o miolo: um nózinho de lã
   pedacos.push(new THREE.SphereGeometry(0.02, 6, 4));
   for (const p of pedacos) {
@@ -528,7 +528,7 @@ function geoAranhinha(): THREE.BufferGeometry {
         new THREE.Vector3(dx * 0.075, 0.04, dz * 0.075 + 0.01),
         new THREE.Vector3(dx * 0.115, -0.03, dz * 0.11 + 0.01),
       ]);
-      pernas.push(pintada(new THREE.TubeGeometry(curva, 6, 0.006, 4, false), P.aranhaDeFeltro));
+      pernas.push(pintada(new THREE.TubeGeometry(curva, 5, 0.006, 3, false), P.aranhaDeFeltro));
     }
   }
   const olho = (x: number) => new THREE.SphereGeometry(0.014, 8, 6).translate(x, 0.016, 0.074);
@@ -614,6 +614,22 @@ export class EnfeitesDePendurar {
   /** um morceguinho de papel no fio, pendurado em `(x, y, z)` */
   morcego(x: number, y: number, z: number, giro = 0, escala = 1): this {
     this.morcegos.push({ p: new THREE.Vector3(x, y, z), giro, escala });
+    return this;
+  }
+
+  /**
+   * Um recorte de papel sozinho, colado (e não num varal): o morceguinho nos
+   * raios da roda gigante, a abóbora na vitrine. `(x, y, z)` é o meio da
+   * borda de cima; `giro` vira o papel (0 = de frente para `+Z`).
+   */
+  recorte(tipo: Recorte, x: number, y: number, z: number, giro = 0, escala = 1): this {
+    this.recortes[tipo].push({ p: new THREE.Vector3(x, y, z), giro, escala });
+    return this;
+  }
+
+  /** uma aranhinha de feltro sozinha, sentada num tampo (as costas para cima) */
+  aranhinha(x: number, y: number, z: number, giro = 0, escala = 1): this {
+    this.aranhas.push({ p: new THREE.Vector3(x, y + 0.03 * escala, z), giro, escala });
     return this;
   }
 

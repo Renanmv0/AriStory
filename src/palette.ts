@@ -2164,6 +2164,11 @@ export const PALETTE = {
   tintaDoRecado: 0x2b3550,
   /** o laço roxo da guirlanda */
   lacoDaGuirlanda: 0x7d4fa8,
+  /** o Nessie de boia: o vinil verde, a barriga clara, as pintas e a válvula amarela */
+  nessieVinil: 0x63c26c,
+  nessieBarriga: 0xd9ec8c,
+  nessiePinta: 0x3e9a57,
+  nessieValvula: 0xf2cf48,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

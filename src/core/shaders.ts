@@ -537,8 +537,12 @@ export interface CoresDoLago {
 
 /** quantas marolas o shader desenha de uma vez (a mais velha dá lugar) */
 const MAROLAS = 12;
-/** quantos bichos deixam rastro na água de uma vez (patos, garça, pedrinha) */
-const RASTROS = 12;
+/**
+ * quantos bichos deixam rastro na água de uma vez (patos, garça, pedrinha —
+ * e as duas vagas de cima são de quem só aparece num evento: o Nessie de
+ * plástico do Halloween)
+ */
+const RASTROS = 14;
 /** quantas sombras de peixe nadam debaixo d'água */
 const PEIXES = 6;
 /** quantas coisas paradas furam a água (pilar, pedra, junco, tronco) */

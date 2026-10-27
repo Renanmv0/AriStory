@@ -373,7 +373,7 @@ export function arcoDeBaloes(vao = 5.2, alto = 3.0): THREE.Group {
   g.userData.peca = 'arco-de-baloes';
   // o balão: um ovo com o nózinho embaixo
   const balao = mergeGeometries([
-    new THREE.SphereGeometry(0.17, 14, 10).scale(1, 1.13, 1),
+    new THREE.SphereGeometry(0.17, 11, 8).scale(1, 1.13, 1),
     new THREE.ConeGeometry(0.03, 0.05, 6).rotateX(Math.PI).translate(0, -0.2, 0),
   ].map((x) => x.toNonIndexed()));
   const brilho = new THREE.SphereGeometry(0.035, 6, 4).scale(1, 1.5, 0.4);
@@ -774,6 +774,8 @@ export interface Recado {
   letra?: 'caveat' | 'kalam';
   /** a cor da caneta */
   tinta?: number;
+  /** quem "fala" o recado quando a dupla lê (numa plaquinha de várias letras) */
+  quem?: string;
 }
 
 const FONTE = { caveat: '"Caveat", "Segoe Print", "Bradley Hand", cursive', kalam: '"Kalam", "Segoe Print", "Comic Sans MS", cursive' };
@@ -951,5 +953,92 @@ export function pompom(cor: number = P.abobora, cor2: number = P.balaoEscuro): T
   if (lote.instanceColor) lote.instanceColor.needsUpdate = true;
   g.add(lote);
   por(g, new THREE.SphereGeometry(0.03, 8, 6), toon(cor));
+  return g;
+}
+
+// ====================================================== o pano de fechado
+
+/**
+ * O PANO DE "FECHADO" jogado por cima da vitrine de um balcão (a sorveteria
+ * do Mano, de manhã): deitado em cima do tampo (`fundo` para trás), dobrando
+ * na quina e caindo `queda` pela frente, em ondinhas — com o "FECHADO" bordado
+ * na parte que cai. Origem na quina da frente do tampo; olhando para `+Z`.
+ */
+export function panoDeFechado(largura = 2.2, fundo = 0.5, queda = 0.42, texto = 'FECHADO'): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'pano-de-fechado';
+  const NX = 28;
+  const NS = 12;
+  const R = 0.05;
+  const curva = (Math.PI / 2) * R;
+  const total = fundo + curva + queda;
+  const pos: number[] = [];
+  const uv: number[] = [];
+  const idx: number[] = [];
+  for (let j = 0; j <= NS; j++) {
+    const s = (j / NS) * total;
+    for (let i = 0; i <= NX; i++) {
+      const u = i / NX;
+      const x = (u - 0.5) * largura;
+      let y: number;
+      let z: number;
+      if (s < fundo) {
+        y = R;
+        z = -fundo + s - R;
+      } else if (s < fundo + curva) {
+        const a = (s - fundo) / R;
+        y = Math.cos(a) * R;
+        z = -R + Math.sin(a) * R;
+      } else {
+        const d = s - fundo - curva;
+        // a parte que cai ondula, mais na barra
+        y = -d;
+        z = 0.012 * Math.sin(x * 13 + 0.6) * (d / queda) + 0.004;
+      }
+      pos.push(x, y + 0.006, z + 0.006);
+      uv.push(u, 1 - s / total);
+    }
+  }
+  for (let j = 0; j < NS; j++) {
+    for (let i = 0; i < NX; i++) {
+      const a = j * (NX + 1) + i;
+      const b = a + NX + 1;
+      idx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  const parteDaQueda = queda / total;
+  const tex = canvasTex(512, Math.round((512 * total) / largura), (c) => {
+    const W = c.canvas.width;
+    const H = c.canvas.height;
+    c.fillStyle = css(P.fantasmaDePano);
+    c.fillRect(0, 0, W, H);
+    // a barra listrada laranja e roxa, na beira de baixo e nos lados
+    const faixa = 14;
+    for (let x = 0; x < W; x += 28) {
+      c.fillStyle = css(P.abobora);
+      c.fillRect(x, H - faixa, 14, faixa);
+      c.fillStyle = css(P.lanternaRoxa);
+      c.fillRect(x + 14, H - faixa, 14, faixa);
+    }
+    // o bordado, no meio da parte que cai
+    const yMeio = H - (parteDaQueda * H) / 2 - 4;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    const tam = Math.min(parteDaQueda * H * 0.5, 80);
+    c.font = `800 ${tam}px "Baloo 2", "Nunito", "Arial Rounded MT Bold", sans-serif`;
+    c.fillStyle = css(P.aboboraFunda);
+    c.fillText(texto, W / 2, yMeio);
+    // os pontinhos da costura em volta
+    c.strokeStyle = css(P.lanternaRoxa);
+    c.setLineDash([6, 6]);
+    c.lineWidth = 3;
+    c.strokeRect(14, H - parteDaQueda * H + 10, W - 28, parteDaQueda * H - faixa - 18);
+  });
+  por(g, geo, toon(0xffffff, { mapa: tex, doubleSide: true }));
   return g;
 }

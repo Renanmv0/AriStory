@@ -182,7 +182,7 @@ function geoGavinha(): THREE.BufferGeometry {
     // sai do cabinho para o lado e vai subindo em mola
     pontos.push(new THREE.Vector3(0.1 + 0.32 * t + Math.cos(a) * r, TOPO - FUNDO + 0.04 + 0.22 * t + Math.sin(a) * r * 0.6, 0.12 + Math.sin(a) * r * 0.5));
   }
-  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pontos), 60, 0.012, 5, false);
+  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pontos), 36, 0.012, 4, false);
 }
 
 // =================================================================== as caras
@@ -348,7 +348,7 @@ function geoCara(cara: CaraDeAbobora, tamanho: TamanhoDeAbobora): THREE.BufferGe
   const corTmp = new THREE.Color();
   const d = new THREE.Vector3();
   const p = new THREE.Vector3();
-  const tess = new TessellateModifier(0.05, 6);
+  const tess = new TessellateModifier(0.07, 6);
   for (const camada of camadas) {
     corTmp.set(camada.cor);
     for (const c of camada.contornos) {
