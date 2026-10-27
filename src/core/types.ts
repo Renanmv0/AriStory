@@ -466,6 +466,13 @@ export interface MedidasCorpo {
    */
   pernas?: readonly [THREE.Object3D, THREE.Object3D];
   /**
+   * Os dois PIVÔS DOS BRAÇOS (esquerdo, direito), pelo mesmo motivo e com a
+   * mesma regra das `pernas`: só para LER a pose. A capa do vampiro
+   * (`world/fantasias.ts`) cai por cima dos ombros e o braço que balança para
+   * trás empurra o pano em vez de atravessar ele.
+   */
+  bracos?: readonly [THREE.Object3D, THREE.Object3D];
+  /**
    * A COR DA PELE de quem veste. A peça não inventa pele (a pele é do
    * personagem), mas a que tem uma abertura por onde a pele aparece e que
    * substitui o pé do rig — a sapatilha, com o peito do pé à mostra — precisa

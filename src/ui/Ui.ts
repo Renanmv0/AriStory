@@ -18,8 +18,11 @@ import type { ChessEngine } from '../entities/ChessEngine';
 import { MesaDeXadrez, type ConviteDeXadrez, type FimDeXadrez } from './mesaDeXadrez';
 import type { SecaoDoCardapio } from '../world/cardapioData';
 import { retratoDoGrupo, type DesafianteDoQuadro } from '../world/adversariosData';
-import { PREMIOS_DA_ARENA } from '../world/itens';
+import { PREMIOS_DA_ARENA, ehFantasia } from '../world/itens';
 import { PainelDoAtelie, type ConteudoDoAtelie } from './atelie';
+
+/** o que o filtro de cima da lista do guarda-roupa mostra: tudo, uma parte do corpo ou as fantasias */
+type FiltroDoArmario = SlotRoupa | 'tudo' | 'fantasias';
 
 /**
  * O QUE O QUADRO SABE SOBRE OS PREMIOS, na hora em que ele abre.
@@ -629,7 +632,7 @@ export class Ui {
     this.armario.querySelector('.ficha .agir')!.addEventListener('click', () => this.onAgirNaPiscina?.());
     this.filtroDoArmario.addEventListener('click', (e) => {
       const parte = (e.target as HTMLElement).closest<HTMLElement>('[data-filtro]')?.dataset.filtro;
-      if (parte) this.filtrarArmario(parte as SlotRoupa | 'tudo');
+      if (parte) this.filtrarArmario(parte as FiltroDoArmario);
     });
     this.armario.querySelector('.quem')!.addEventListener('click', (e) => {
       const botao = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
@@ -2234,9 +2237,9 @@ export class Ui {
    * (`data-filtro` na lista esconde as outras seções) — a grade é a mesma, e
    * quem procura pelo nome continua achando a peça no "Tudo".
    */
-  private filtroArmario: SlotRoupa | 'tudo' = 'tudo';
+  private filtroArmario: FiltroDoArmario = 'tudo';
 
-  private filtrarArmario(parte: SlotRoupa | 'tudo'): void {
+  private filtrarArmario(parte: FiltroDoArmario): void {
     if (this.filtroArmario !== parte) this.listaDoArmario.scrollTop = 0;
     this.filtroArmario = parte;
     this.listaDoArmario.dataset.filtro = parte;
@@ -2254,14 +2257,22 @@ export class Ui {
     }
   }
 
-  /** Desenha os botões do filtro com quantas peças há em cada parte. */
-  private pintarFiltro(quantas: ReadonlyArray<number>): void {
+  /**
+   * Desenha os botões do filtro com quantas peças há em cada parte.
+   *
+   * `fantasias` é quantas peças de FANTASIA (o Halloween) a lista tem: com
+   * alguma, entra o botão 🎃 Fantasias logo depois do "Tudo", que mostra só
+   * elas, de todas as partes (pedido do Renan: achar as fantasias rápido).
+   */
+  private pintarFiltro(quantas: ReadonlyArray<number>, fantasias = 0): void {
     // a parte filtrada ficou vazia (vestiu a última, trocou de aba): volta ao "Tudo"
     const i = SLOTS_ROUPA.indexOf(this.filtroArmario as SlotRoupa);
     if (i >= 0 && quantas[i] === 0) this.filtroArmario = 'tudo';
+    if (this.filtroArmario === 'fantasias' && fantasias === 0) this.filtroArmario = 'tudo';
     const total = quantas.reduce((a, b) => a + b, 0);
     this.filtroDoArmario.innerHTML =
       `<button data-filtro="tudo" role="tab">Tudo <span>${total}</span></button>` +
+      (fantasias > 0 ? `<button data-filtro="fantasias" role="tab">🎃 Fantasias <span>${fantasias}</span></button>` : '') +
       SLOTS_ROUPA.map((slot, k) =>
         `<button data-filtro="${slot}" role="tab"${quantas[k] === 0 ? ' disabled' : ''}>` +
         `${ICONE_DA_PARTE[k]} ${PARTES[k]} <span>${quantas[k]}</span></button>`).join('');
@@ -2352,7 +2363,7 @@ export class Ui {
     // quer trocar. Parte sem nenhuma peça nem aparece — seção vazia é ruído.
     this.acervo.innerHTML = '';
     const quantas = SLOTS_ROUPA.map((slot) => guardados.filter((item) => item.slot === slot).length);
-    this.pintarFiltro(quantas);
+    this.pintarFiltro(quantas, guardados.filter((item) => ehFantasia(item.id)).length);
     if (guardados.length === 0) {
       const vazio = document.createElement('p');
       vazio.className = 'nada';
@@ -2366,6 +2377,8 @@ export class Ui {
       const secao = document.createElement('section');
       secao.className = 'grupo';
       secao.dataset.slot = slot;
+      // a seção que tem fantasia continua de pé no filtro 🎃
+      secao.classList.toggle('tem-fantasia', doSlot.some((item) => ehFantasia(item.id)));
       const titulo = document.createElement('h4');
       titulo.innerHTML = `${PARTES[i]} <span>${doSlot.length}</span>`;
       secao.appendChild(titulo);
@@ -2374,6 +2387,7 @@ export class Ui {
       for (const item of doSlot) {
         const peca = document.createElement('button');
         peca.className = 'peca';
+        peca.classList.toggle('fantasia', ehFantasia(item.id));
         peca.dataset.id = item.id;
         // a nota inteira continua no cartão, para quem passa o mouse
         if (item.nota) peca.title = `${item.nome} — ${item.nota}`;

@@ -1631,6 +1631,9 @@ body.touch-device .dialogue .next { right: 84px; }
 .armario .lista[data-filtro='pes'] .grupo:not([data-slot='pes']),
 .armario .lista[data-filtro='maos'] .grupo:not([data-slot='maos']),
 .armario .lista[data-filtro='acessorio'] .grupo:not([data-slot='acessorio']) { display: none; }
+/* o filtro 🎃: só as peças de fantasia, de todas as partes */
+.armario .lista[data-filtro='fantasias'] .grupo:not(.tem-fantasia),
+.armario .lista[data-filtro='fantasias'] .peca:not(.fantasia) { display: none; }
 /* quem já diz a parte é o filtro */
 .armario .rotulo-acervo { display: none; }
 

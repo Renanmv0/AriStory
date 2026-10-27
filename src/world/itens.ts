@@ -48,6 +48,10 @@ import {
   sapatilha, botaDeMontaria, chapeuDePalha, chapeuFedora, tiaraDePerolas,
   relogioDourado, luvasLongas, bolsaDeMao, colarDePerolas, lencoDeSeda, bolsaTransversal,
 } from './roupasDaBoutique';
+import {
+  presinhasDeVampiro, coleteDeVampiro, mangaDeVampiro, calcaDeVampiro, sapatoDeVerniz, luvasDeVampiro, capaDeVampiro,
+  tiaraDeMorcego, moletomDeMorcego, mangaDeMorcego, calcaListrada, pantufasDeMorcego, luvinhasDeMorcego, asinhasDeMorcego,
+} from './fantasias';
 
 /**
  * O catalogo de itens do jogo.
@@ -1746,6 +1750,103 @@ export const ITENS = {
     nota: 'das coelhinhas · um em cada mão, amarelo e azul',
     extra: pomponsDeTorcida,
   },
+
+  /* ====================================================================
+   *      AS FANTASIAS DA ESTELLA (`world/fantasias.ts`)
+   * ====================================================================
+   * O presente do Halloween (`docs/HALLOWEEN.md`, §2.3.1): as duas caixas que
+   * a Estella costurou, uma para cada um — o vampiro na do Ari e o
+   * morceguinho na do Renan —, seis peças cada, uma por vaga do corpo. Ficam
+   * para sempre no guarda-roupa dos dois (`FANTASIAS_DA_ESTELLA`, pelo
+   * `g.ganharPeca`), e são presente: não se pintam no ateliê.
+   */
+  presinhasDeVampiro: {
+    id: 'presinhas-de-vampiro', nome: 'Presinhas de vampiro', icone: '🧛',
+    tipo: 'vestivel', slot: 'cabeca',
+    amostra: P.vampiroPresa,
+    nota: 'da Estella · duas presinhas no sorriso',
+    extra: presinhasDeVampiro,
+  },
+  coleteDeVampiro: {
+    id: 'colete-de-vampiro', nome: 'Colete de vampiro', icone: '🦇',
+    tipo: 'vestivel', slot: 'tronco',
+    // `cor` e `corDetalhe` pintam a CAMISA (o tronco e a manga do rig)
+    cor: P.vampiroCamisa, corDetalhe: P.vampiroCamisa,
+    nota: 'da Estella · colete de cetim vinho, babado de renda e broche de rubi',
+    extra: coleteDeVampiro, extraBraco: mangaDeVampiro,
+  },
+  calcaDeVampiro: {
+    id: 'calca-de-vampiro', nome: 'Calça de vampiro', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.vampiroCalca, corDetalhe: P.vampiroCetim,
+    nota: 'da Estella · social, com a faixa de cetim do lado',
+    extra: calcaDeVampiro,
+  },
+  sapatoDeVerniz: {
+    id: 'sapato-de-verniz', nome: 'Sapato de verniz', icone: '👞',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.vampiroVerniz, corDetalhe: P.fivelaDourada,
+    substituiPe: true,
+    nota: 'da Estella · bico fino e fivela dourada',
+    extra: sapatoDeVerniz,
+  },
+  luvasDeVampiro: {
+    id: 'luvas-de-vampiro', nome: 'Luvas de vampiro', icone: '🧤',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.vampiroLuva,
+    nota: 'da Estella · brancas, de punho largo',
+    extra: luvasDeVampiro,
+  },
+  capaDeVampiro: {
+    id: 'capa-de-vampiro', nome: 'Capa de vampiro', icone: '🧛',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', nasCostas: true,
+    cor: P.vampiroCapa, corDetalhe: P.vampiroForro,
+    nota: 'da Estella · forro vermelho, gola em pé e fecho de rubi',
+    extra: capaDeVampiro,
+  },
+  tiaraDeMorcego: {
+    id: 'tiara-de-morcego', nome: 'Orelhinhas de morcego', icone: '🦇',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.morceguinhoFeltro, corDetalhe: P.morceguinhoOrelha,
+    nota: 'da Estella · tiara de orelhas pontudas de feltro',
+    extra: tiaraDeMorcego,
+  },
+  moletomDeMorcego: {
+    id: 'moletom-de-morcego', nome: 'Moletom de morceguinho', icone: '🦇',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.morceguinhoFeltro, corDetalhe: P.morceguinhoBarriga,
+    nota: 'da Estella · barriguinha lilás e a barra recortada de asa',
+    extra: moletomDeMorcego, extraBraco: mangaDeMorcego,
+  },
+  calcaListrada: {
+    id: 'calca-listrada-de-morcego', nome: 'Calça listrada', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.morceguinhoListraEscura, corDetalhe: P.morceguinhoListra,
+    nota: 'da Estella · listrada de roxo e preto',
+    extra: calcaListrada,
+  },
+  pantufasDeMorcego: {
+    id: 'pantufas-de-morcego', nome: 'Pantufas de morceguinho', icone: '🥿',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.morceguinhoFeltro,
+    substituiPe: true,
+    nota: 'da Estella · com orelhinhas, olhos de botão e dentinhos',
+    extra: pantufasDeMorcego,
+  },
+  luvinhasDeMorcego: {
+    id: 'luvinhas-de-morcego', nome: 'Luvinhas com unhinha', icone: '🧤',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.morceguinhoFeltro, corDetalhe: P.morceguinhoUnha,
+    nota: 'da Estella · de feltro, com quatro unhinhas',
+    extra: luvinhasDeMorcego,
+  },
+  asinhasDeMorcego: {
+    id: 'asinhas-de-morcego', nome: 'Asinhas de morcego', icone: '🦇',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', nasCostas: true,
+    cor: P.morceguinhoFeltro, corDetalhe: P.morceguinhoMembrana,
+    nota: 'da Estella · batem devagar parado e depressa andando',
+    extra: asinhasDeMorcego,
+  },
 } as const satisfies Record<string, ItemDef>;
 
 /**
@@ -1825,6 +1926,29 @@ export const PECAS_DE_SEMPRE: readonly ItemDef[] = [ITENS.mochilaDoRenan];
 export const PREMIOS_DA_FESTA: readonly ItemDef[] = [
   ITENS.uniformeDeTorcida, ITENS.meiaoDeTorcida, ITENS.lacoDeTorcida, ITENS.pomponsDeTorcida,
 ];
+
+/**
+ * AS FANTASIAS DA ESTELLA, o presente do Halloween (`docs/HALLOWEEN.md`,
+ * §2.3.1): a caixa do Ari (o vampiro) e a do Renan (o morceguinho), cada uma
+ * a fantasia inteira, uma peça por vaga. Quem entrega é a Estella, na
+ * boutique (`eventos/halloween/naBoutique.ts`), com `g.ganharPeca`; quem repõe
+ * é o `reporPremios`, pelo `save.premios`. As cinco da caça entram aqui na
+ * etapa 5.
+ */
+export const FANTASIA_DE_VAMPIRO: readonly ItemDef[] = [
+  ITENS.presinhasDeVampiro, ITENS.coleteDeVampiro, ITENS.calcaDeVampiro,
+  ITENS.sapatoDeVerniz, ITENS.luvasDeVampiro, ITENS.capaDeVampiro,
+];
+export const FANTASIA_DE_MORCEGUINHO: readonly ItemDef[] = [
+  ITENS.tiaraDeMorcego, ITENS.moletomDeMorcego, ITENS.calcaListrada,
+  ITENS.pantufasDeMorcego, ITENS.luvinhasDeMorcego, ITENS.asinhasDeMorcego,
+];
+export const FANTASIAS_DA_ESTELLA: readonly ItemDef[] = [...FANTASIA_DE_VAMPIRO, ...FANTASIA_DE_MORCEGUINHO];
+
+/** a peça é de FANTASIA de Halloween (o filtro 🎃 do guarda-roupa) */
+export function ehFantasia(id: string): boolean {
+  return FANTASIAS_DA_ESTELLA.some((p) => p.id === id);
+}
 
 /** o número da lição de cada prêmio, para dizer onde a peça se ganha */
 const NUMERO_DA_LICAO: Record<string, number> = { 'cade-o-novelo': 3 };
