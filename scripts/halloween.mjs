@@ -6,6 +6,8 @@
  *             pipoca, as falas, a carta deslizando por baixo da porta, o
  *             "Pegar a carta", a carta aberta na tela, a fase `convite` e a
  *             memória — e, recarregando, o filme não volta e a carta sumiu
+ *             e o SAVE DE TESTE: o que se faz com `?halloween` fica num save
+ *             à parte, e o save de verdade não ganha nada do evento
  *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre e nenhuma peça do evento na
  *             cena, com o mesmo número de malhas de antes dele
@@ -53,7 +55,8 @@ const espera = (ms) => page.waitForTimeout(ms);
 const limpo = async (query) => {
   await page.goto(`${BASE}/?${query}`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
-  await j(() => localStorage.removeItem('aristory.save.v1'));
+  // os DOIS saves: o de verdade e o de teste do `?halloween`
+  await j(() => { localStorage.removeItem('aristory.save.v1'); localStorage.removeItem('aristory.save.v1.halloween'); });
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
   await espera(1500);
@@ -241,6 +244,32 @@ if (roda('filme')) {
   const opcoesDepois = await abrirOSofa();
   ok(opcoesDepois.length === 2, `e o sofá não oferece o filme de novo (${opcoesDepois.join(' | ')})`);
   await page.keyboard.press('Escape');
+
+  // O SAVE DE TESTE: o link de sempre não vê nada do que foi feito aqui
+  await page.goto(`${BASE}/?cena=casa`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(1200);
+  const deVerdade = await j(() => ({
+    flags: Object.keys(window.jogo.save.data.flags).filter((f) => f.startsWith('halloween')),
+    memoria: window.jogo.save.memories.some((m) => m.id.startsWith('halloween-')),
+    noNavegador: (localStorage.getItem('aristory.save.v1') ?? '').includes('halloween'),
+    teste: (localStorage.getItem('aristory.save.v1.halloween') ?? '').includes('halloween:convite'),
+  }));
+  ok(deVerdade.flags.length === 0 && !deVerdade.memoria && !deVerdade.noNavegador,
+    `o save de verdade não tem nada do evento (${JSON.stringify(deVerdade)})`);
+  ok(deVerdade.teste, 'o save de teste guardou a fase do evento');
+  // e o rastro antigo (de antes do save de teste) é limpo do save de verdade
+  await j(() => {
+    const s = JSON.parse(localStorage.getItem('aristory.save.v1'));
+    s.flags['halloween:convite'] = true;
+    s.memories.push({ id: 'halloween-convite', title: 'x', place: 'x', note: 'x', icon: 'x', at: 1 });
+    localStorage.setItem('aristory.save.v1', JSON.stringify(s));
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(1200);
+  const limpo2 = await j(() => !window.jogo.flag('halloween:convite') && !window.jogo.save.memories.some((m) => m.id === 'halloween-convite'));
+  ok(limpo2, 'o rastro antigo do teste some do save de verdade');
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');
