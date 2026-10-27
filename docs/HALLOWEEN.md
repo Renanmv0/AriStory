@@ -32,6 +32,16 @@ pista abre o **portão escondido** atrás da praça da roda → o **final** (§6
 
 **Estado: só o plano.** Nada construído.
 
+**Decisões do Renan** (as que já valem):
+
+- **nada aparece no jogo até TUDO estar pronto.** Cada etapa é construída,
+  testada e publicada na `main`, mas fica ESCONDIDA atrás do `?halloween` na
+  URL (só quem testa vê). O evento só abre para quem joga na última etapa
+  (§9, etapa 7), quando todas as outras estiverem aprovadas;
+- **parte por parte**: cada etapa é planejada com o Renan (os ajustes dele
+  entram neste documento) antes de ser construída, e só se passa para a
+  próxima depois de ela estar bem feita.
+
 **O que este plano propõe** (tudo provisório até o Renan aprovar):
 
 - **o parque à noite só durante a festa**, com luz PINTADA (abóboras com
@@ -52,7 +62,8 @@ pista abre o **portão escondido** atrás da praça da roda → o **final** (§6
 - **o final recomendado: a Casinha da Abóbora**, um cenário pequeno novo
   atrás do portão da praça da roda, com a festa surpresa de todos os
   personagens lá dentro (§7, com as outras três opções);
-- **7 etapas**, a primeira jogável sozinha (§9).
+- **8 etapas** (da 0 à 7), uma por vez, todas escondidas atrás do
+  `?halloween` até a última abrir o evento (§9).
 
 **A decisão que mais falta** é o **final** (§7). As outras perguntas estão
 no §10.
@@ -71,6 +82,11 @@ no §10.
   de novo — assim o Ari pode voltar quando quiser, e o evento não some.
 - Para testar a qualquer hora: `?halloween` na URL liga a época, como o
   `?cena=` já faz para as cenas.
+
+**Enquanto o evento não está pronto, SÓ o `?halloween` liga a festa.** O
+calendário (e o convite em casa) só passa a valer na etapa 7, quando o Renan
+aprovar tudo. Até lá, sem o `?halloween`, o jogo é exatamente o de hoje — e
+os testes do evento rodam sempre com ele.
 
 Tudo isso mora numa função só, `epocaDeHalloween(g)` (em
 `src/eventos/halloween/`), que as cenas consultam. Nenhuma cena lê a data.
@@ -394,10 +410,11 @@ aprovar antes da próxima.
 | **4** | **doces ou travessuras** | as nove paradas (§6): escolha, doce, travessura, pista, o mapinha de pistas, as peças ganhas (5.2) | `cenario`, `roupa` + `interaction`, `animation` |
 | **5** | **o final** | o final escolhido (§7) | conforme a escolha |
 | **6** | **o fechamento** | a memória no quadro, o prêmio do final, "Reviver a festa" com a Estella, e o teste completo no celular | `memoria`, `testar` |
+| **7** | **abrir o evento** | ligar o calendário e o convite para quem joga (até aqui, só o `?halloween` mostra a festa) | `testar` |
 
-**Para ter algo no dia 31 de outubro:** a etapa 1 sozinha já é um presente —
-a Estella entregando as fantasias e a dupla saindo fantasiada pelo parque.
-As etapas 2 e 3 deixam o parque em festa; a caça e o final vêm depois.
+**Uma por vez, e escondida.** Cada etapa começa com uma conversa com o Renan
+sobre os ajustes dela (registrados aqui), depois é construída e testada com
+`?halloween`, e só então vem a próxima. Ninguém vê nada no jogo até a etapa 7.
 
 ---
 
@@ -418,4 +435,5 @@ As etapas 2 e 3 deixam o parque em festa; a caça e o final vêm depois.
    personagem que precisa de uma parada própria (o Walter, o Flynn)?
 8. **Falas**: quer escrever alguma fala (a da Estella no começo, os
    versinhos das pistas, o "SURPRESA!")? Fala sua vai literal.
-9. **Prazo**: quer a etapa 1 pronta para o dia 31?
+9. ~~**Prazo**~~ — respondido: sem pressa, nada aparece até tudo estar
+   pronto.
