@@ -127,6 +127,14 @@ As perguntas que faltam estão no §10.
 - Para testar a qualquer hora: `?halloween` na URL liga a época, como o
   `?cena=` já faz para as cenas.
 
+**O save de teste.** Com `?halloween` o jogo usa um save à parte
+(`aristory.save.v1.halloween`), que nasce como cópia do save de verdade na
+primeira vez: dá para testar o evento com o progresso de sempre, e nada do
+que acontece ali (fases, memórias, fantasias) vai para o jogo do link de
+sempre. Quando o evento abrir (etapa 8), ele é jogado no save de verdade, e
+a limpeza que tira do save de verdade o rastro do teste (`SaveState`,
+`limparRastroDoTeste`) sai.
+
 **Enquanto o evento não está pronto, SÓ o `?halloween` liga a festa.** O
 calendário (e o filme no sofá) só passa a valer na etapa 8, quando o Renan
 aprovar tudo. Até lá, sem o `?halloween`, o jogo é exatamente o de hoje — e
@@ -686,7 +694,7 @@ aprovar antes da próxima.
 | **5** | **doces ou travessuras** | as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3), e **as outras cinco fantasias** (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
 | **6** | **a Casinha da Abóbora** | o portão das 25 balas, o cenário novo e a festa surpresa (§7) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** | **o fechamento** | a memória no quadro, o prêmio do final, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
-| **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento) | `testar` |
+| **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |
 
 **Uma por vez, e escondida.** Cada etapa começa com uma conversa com o Renan
 sobre os ajustes dela (registrados aqui), depois é construída e testada com

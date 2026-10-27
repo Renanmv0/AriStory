@@ -359,7 +359,32 @@ function normalizar(
   };
 }
 
-const KEY = 'aristory.save.v1';
+/** o save de verdade, o de quem joga pelo link de sempre */
+const KEY_DO_JOGO = 'aristory.save.v1';
+/**
+ * O SAVE DE TESTE DO HALLOWEEN (`docs/HALLOWEEN.md`). Enquanto o evento é
+ * construído escondido, quem abre o jogo com `?halloween` joga num save à
+ * parte: ele NASCE como cópia do save de verdade (para testar com o
+ * progresso de sempre), e tudo o que acontece ali fica só ali — nada do
+ * evento vaza para o jogo de verdade. Quando o evento abrir (etapa 8), o
+ * Renan joga ele no save de verdade, pelo link de sempre.
+ */
+const KEY_DO_TESTE = 'aristory.save.v1.halloween';
+const NO_TESTE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('halloween');
+const KEY = NO_TESTE ? KEY_DO_TESTE : KEY_DO_JOGO;
+
+/**
+ * Tira do save de verdade o que só o teste do Halloween pode ter gravado:
+ * antes do save de teste existir, a etapa 1 jogada com `?halloween` gravava
+ * no save de sempre (as flags `halloween:*` e a memória do convite). Vale até
+ * o evento abrir para quem joga — a etapa 8 tira esta limpeza.
+ */
+function limparRastroDoTeste(dados: SaveData): void {
+  for (const flag of Object.keys(dados.flags)) {
+    if (flag.startsWith('halloween:')) delete dados.flags[flag];
+  }
+  dados.memories = dados.memories.filter((m) => !m.id.startsWith('halloween-'));
+}
 
 /**
  * Lê a lista de enfeites de um save desconhecido: o que não tiver `uid`
@@ -430,13 +455,14 @@ export class SaveState {
 
   private static read(): SaveData {
     try {
-      const raw = localStorage.getItem(KEY);
+      // o save de teste começa do progresso de verdade, na primeira vez
+      const raw = localStorage.getItem(KEY) ?? (NO_TESTE ? localStorage.getItem(KEY_DO_JOGO) : null);
       if (!raw) return structuredClone(EMPTY);
       const parsed = JSON.parse(raw) as Partial<SaveData>;
       // `loadouts` era o guarda-roupa paralelo; hoje ele so serve de entrada
       // para a migracao, e some do save na primeira gravacao
       const antigos = (parsed as { loadouts?: Record<string, unknown> }).loadouts;
-      return {
+      const dados: SaveData = {
         version: 1,
         scene: parsed.scene ?? '',
         flags: parsed.flags ?? {},
@@ -474,6 +500,8 @@ export class SaveState {
         tintas: normalizarTintas(parsed.tintas),
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
+      if (!NO_TESTE) limparRastroDoTeste(dados);
+      return dados;
     } catch {
       return structuredClone(EMPTY);
     }
