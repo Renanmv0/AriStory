@@ -130,12 +130,20 @@ export class Vento {
     if (opts.direcao) this.uniforms.uDirecao.value.set(...opts.direcao).normalize();
   }
 
-  /** O material de vento desta cor (um por cor, guardado). */
-  material(cor: number): THREE.MeshToonMaterial {
-    const chave = `${cor}`;
+  /**
+   * O material de vento desta cor (um por cor, guardado). `mapa` e
+   * `corPorVertice` são os do `toon()`; `recorte` liga o `alphaTest` (papel
+   * recortado num quadradinho com o desenho em canvas).
+   *
+   * Peça PENDURADA (bandeirola, fantasminha) usa um `Vento` de `altura`
+   * NEGATIVA: o peso cresce para baixo da raiz, e a ponta de baixo é que voa.
+   */
+  material(cor: number, opts: { mapa?: THREE.Texture; corPorVertice?: boolean; recorte?: boolean } = {}): THREE.MeshToonMaterial {
+    const chave = `${cor}|${opts.mapa?.uuid ?? ''}|${opts.corPorVertice ? 1 : 0}|${opts.recorte ? 1 : 0}`;
     const hit = this.materiais.get(chave);
     if (hit) return hit;
-    const mat = toon(cor, { doubleSide: true }).clone();
+    const mat = toon(cor, { doubleSide: true, mapa: opts.mapa, corPorVertice: opts.corPorVertice }).clone();
+    if (opts.recorte) mat.alphaTest = 0.5;
     const u = this.uniforms;
     mat.onBeforeCompile = (shader) => {
       Object.assign(shader.uniforms, u);

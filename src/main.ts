@@ -15,6 +15,7 @@ import {
 import { CARTAS, CONSOLOS } from './minigames/jardim/cartas';
 import { cartaNaTela } from './minigames/jardim/tela';
 import { ordemDoLivro } from './ui/livroDeCartas';
+import { KIT_DO_HALLOWEEN } from './world/halloween/kit';
 import { CARTELA_DE_TINTAS, FLAG_DO_ATELIE, PRECO_DO_ATELIE, podeTingir, temDetalhe } from './world/tintas';
 
 const root = document.getElementById('app');
@@ -108,6 +109,9 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 // de cara com as melhorias, e a unica forma de conferir que uma carta mexeu
 // mesmo no modelo e montar as duas versoes lado a lado e medir
 (window as unknown as { aristoryRegador: unknown }).aristoryRegador = regadorDeJardim;
+// o kit do Halloween, pelo mesmo motivo: as peças do parque enfeitado montadas
+// uma a uma, de perto, longe do resto do parque
+(window as unknown as { aristoryHalloween: unknown }).aristoryHalloween = KIT_DO_HALLOWEEN;
 // o baralho do jardim JÁ NO FORMATO DA TELA, para o `scripts/gotas.mjs` montar
 // uma mesa de cada raridade: o sorteio de verdade não garante uma lendária na
 // tela, e uma moldura que ninguém vê é uma moldura que ninguém conferiu
