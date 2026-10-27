@@ -229,7 +229,7 @@ if (roda('parque')) {
   const it = await interacoes();
   const fechadas = ['parque:sorveteria', 'parque:cookie', 'parque:bilheteria', 'parque:roda-gigante', 'parque:xadrez', 'parque:estella', 'parque:mano'];
   ok(fechadas.every((i) => it[i] === false), `o que depende deles fecha (${fechadas.map((i) => `${i}=${it[i]}`).join(' ')})`);
-  const abertas = ['parque:patins', 'parque:lago', 'parque:pingpong'];
+  const abertas = ['parque:patins', 'halloween:lago-de-gelatina', 'parque:pingpong'];
   ok(abertas.every((i) => it[i] !== false), `o que é da dupla continua (${abertas.map((i) => `${i}=${it[i]}`).join(' ')})`);
   ok(['halloween:recado-Mano', 'halloween:recado-Cookie', 'halloween:recado-Estella'].every((i) => it[i] === true), 'as plaquinhas de recado dão para ler');
 
@@ -265,9 +265,14 @@ if (roda('parque')) {
   await page.keyboard.press('KeyE');
   await espera(2500);
   await page.screenshot({ path: `${OUT}/parque-gelatina.png` });
-  await passarFalas(40);
-  await espera(800);
-  const gelatina = await j(() => window.jogo.save.memories.some((m) => m.id === 'halloween-lago-de-gelatina'));
+  // as falas vão uma a uma (o balão escreve devagar no navegador do teste)
+  let gelatina = false;
+  for (let i = 0; i < 90 && !gelatina; i++) {
+    await page.keyboard.press('KeyE');
+    await espera(500);
+    gelatina = await j(() => window.jogo.save.memories.some((m) => m.id === 'halloween-lago-de-gelatina'));
+  }
+  await passarFalas();
   ok(gelatina, 'a conversa da gelatina vira memória');
 
   // ler o recado do Mano
