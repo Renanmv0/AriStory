@@ -395,6 +395,26 @@ export interface ItemDef {
    * no prompt e no aviso. Hoje só os lanches da máquina da escola.
    */
   comivel?: 'comer' | 'beber';
+  /**
+   * DÁ PARA LER: segurando na mão (e sem nada do cenário por perto), o E vira
+   * "Ler o …" e abre a página no painel do quadro de memórias. É uma função
+   * porque o papel pode mudar com o jogo (o mapinha da Estella ganha pista a
+   * cada parada da caça de Halloween).
+   */
+  leitura?(): PaginaParaLer;
+}
+
+/**
+ * Uma PÁGINA que o painel do quadro de memórias sabe mostrar (a carta, o
+ * mapinha): o desenho é pintado ao vivo num canvas, como uma memória.
+ */
+export interface PaginaParaLer {
+  readonly id: string;
+  readonly titulo: string;
+  readonly lugar: string;
+  readonly legenda: string;
+  readonly proporcao: number;
+  pintar(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void;
 }
 
 export type HoldPose = 'upright' | 'relaxed' | 'regando' | 'borrifando' | 'none';

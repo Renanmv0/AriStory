@@ -52,6 +52,8 @@ import {
   presinhasDeVampiro, coleteDeVampiro, mangaDeVampiro, calcaDeVampiro, sapatoDeVerniz, luvasDeVampiro, capaDeVampiro,
   tiaraDeMorcego, moletomDeMorcego, mangaDeMorcego, calcaListrada, pantufasDeMorcego, luvinhasDeMorcego, asinhasDeMorcego,
 } from './fantasias';
+import { cestaDeAbobora, mapinhaEnrolado } from './halloween/boutique';
+import { MAPINHA_DA_ESTELLA } from './halloween/mapinha';
 
 /**
  * O catalogo de itens do jogo.
@@ -1760,6 +1762,24 @@ export const ITENS = {
    * para sempre no guarda-roupa dos dois (`FANTASIAS_DA_ESTELLA`, pelo
    * `g.ganharPeca`), e são presente: não se pintam no ateliê.
    */
+  /**
+   * A CESTINHA DE ABÓBORA e o MAPINHA, que a Estella dá junto com as
+   * fantasias: o balde de doces (as balas enchendo são da etapa 5) e o papel
+   * das pistas da caça, que se lê com o E (`leitura`).
+   */
+  cestaDeAbobora: {
+    id: 'cesta-de-abobora', nome: 'Cestinha de abóbora', icone: '🎃',
+    tipo: 'mao',
+    nota: 'da Estella · para encher de balas na caça',
+    holdPose: 'relaxed',
+  },
+  mapinhaDaEstella: {
+    id: 'mapinha-da-estella', nome: 'Mapinha da Estella', icone: '🗺️',
+    tipo: 'mao',
+    nota: 'da Estella · o parque e as pistas da caça',
+    holdPose: 'upright',
+    leitura: () => MAPINHA_DA_ESTELLA,
+  },
   presinhasDeVampiro: {
     id: 'presinhas-de-vampiro', nome: 'Presinhas de vampiro', icone: '🧛',
     tipo: 'vestivel', slot: 'cabeca',
@@ -2133,6 +2153,8 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'suco-morango': () => copoDeSuco(P.morango),
   'frisbee': () => frisbee(P.frisbee),
   'osso': () => osso(P.osso),
+  'cesta-de-abobora': () => cestaDeAbobora(),
+  'mapinha-da-estella': () => mapinhaEnrolado(),
   'biscoito-estella': () => biscoitoDaEstella(),
   'lanche-biscoito': () => lancheDaMaquina('biscoito'),
   'lanche-chocolate': () => lancheDaMaquina('chocolate'),

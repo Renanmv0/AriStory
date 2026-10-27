@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { falarDoPremio } from '../world/falasDePremio';
 import { PALETTE as P } from '../palette';
-import type { Collider, SceneDef } from '../core/types';
+import type { Collider, GameAPI, SceneDef } from '../core/types';
 import type { Interactable } from '../world/Interactable';
 import { pocaDeLuz, tapete } from '../world/furniture';
 import {
@@ -21,6 +21,7 @@ import { reboco } from '../world/texturasDeFachada';
 import { polido, toon } from '../core/materials';
 import { ARI, RENAN } from '../characters/cast';
 import { Estella } from '../entities/bichos/Estella';
+import { montarHalloweenNaBoutique } from '../eventos/halloween/naBoutique';
 
 /**
  * ==================== A BOUTIQUE DA ESTELLA — DOIS ANDARES
@@ -1026,6 +1027,10 @@ export const lojinha: SceneDef = {
     let comCarinho = false;
     let ultimaFala = '';
     let conversando = false;
+    /** a cena marcada do Halloween segura a ronda e as falas soltas dela */
+    let pausada = false;
+    /** a conversa do evento, quando há (ela fala no lugar das de sempre) */
+    let conversaDoEvento: ((api: GameAPI) => Promise<boolean>) | null = null;
 
     const DENTRO_DA_LOJA = [
       'Meus queridos! Essa arara chegou hoje. Hoje mesmo, ainda tá quentinha.',
@@ -1049,7 +1054,9 @@ export const lojinha: SceneDef = {
         estella.receberCarinho();
         api.som('balido');
         try {
-          if (!api.flag('lojinha-visitada')) {
+          if (conversaDoEvento && (await conversaDoEvento(api))) {
+            // o Halloween falou por ela (a Estella de aranha)
+          } else if (!api.flag('lojinha-visitada')) {
             api.setFlag('lojinha-visitada');
             await conversa([
               [E, 'Entraram! Entraram mesmo!'],
@@ -1094,10 +1101,10 @@ export const lojinha: SceneDef = {
           fala = w.pick(lista);
         }
         ultimaFala = fala;
-        if (!conversando) g.toast(`Estella: ${fala}`, '🐑');
+        if (!conversando && !pausada) g.toast(`Estella: ${fala}`, '🐑');
       }
 
-      if (andando || conversando || viagem) return;
+      if (andando || conversando || viagem || pausada) return;
       espera -= dt;
       if (espera > 0) return;
 
@@ -1109,6 +1116,33 @@ export const lojinha: SceneDef = {
         andando = false;
         espera = 3.5 + w.rng() * 4;
       });
+    });
+
+    // o especial de Halloween (`docs/HALLOWEEN.md`, §2.3.1): é CAMADA, e só
+    // existe com `?halloween` — a loja enfeitada, a Estella de aranha, o Pelusa
+    // dormindo no pufe e o presente das fantasias
+    montarHalloweenNaBoutique(w, {
+      terreo, superior, estella,
+      interacoes: [...doTerreo, ...doSuperior].filter((it) => it !== portaDaLoja),
+      pausarEstella: (sim) => {
+        pausada = sim;
+        // a cena marcada leva a Estella por conta própria, e a promessa do
+        // passo da ronda que ela interrompeu nunca resolve: a ronda recomeça
+        if (!sim) {
+          andando = false;
+          espera = 1.5;
+        }
+      },
+      conversar: (fn) => { conversaDoEvento = fn; },
+      andar: () => andar,
+      planta: {
+        W, D, x0, z0, H, ALTURA, INTERNA,
+        porta: { x: PORTA.x, z: D / 2 - 0.85 },
+        centro: C, araras: ARARAS, premium: PREMIUM,
+        caixa: CAIXA, provadores: PROVADORES, cabineAberta: CABINE_ABERTA, podio: PODIO,
+        espelho: ESPELHO, joias: JOIAS, chapeus: CHAPEUS, tingimento: TINGIMENTO,
+        escada: ESCADA, pufe: { x: -4.72, z: 3.45 }, namoradeira: { x: x0 + INTERNA + 0.4, z: 3.45 },
+      },
     });
 
     // o mezanino começa escondido: a dupla entra pelo térreo
