@@ -698,6 +698,32 @@ não `w.interact`: o criado-mudo é colado no quadro de memórias, e um segundo
 balão disputaria o E). A cúpula de `nightstand()`/`floorLamp()` tem o nome
 `cupula` para a cena achar e trocar o material.
 
+## Evento por cima de um cenário: a CAMADA (o Halloween)
+
+Um evento (o especial de Halloween, `docs/HALLOWEEN.md`) muda o jogo por um
+tempo e depois TUDO volta ao normal — e o original não pode se perder. Por
+isso o evento nunca edita uma cena nem uma peça: ele é uma camada.
+
+- **Mora fora das cenas**: as regras e as fases em `src/eventos/<evento>/`
+  (`fase.ts`: as fases são flags do save; `faseDoHalloween(g)`), as peças em
+  `src/world/<evento>/`. A cena ganha UMA chamada (`montarHalloweenNaCasa(w,
+  { … })`), que devolve o que ela precisa perguntar (`temFilme()`) — e a
+  cena empresta as âncoras dela (o assento do sofá, a TV) em vez de o evento
+  procurar.
+- **Escondido até ficar pronto**: `eventoLiberado()` só é verdade com
+  `?halloween` na URL. Sem ele o módulo não monta NADA, e
+  `scripts/halloween.mjs` (`SO=volta`) confere que a cena tem as mesmas
+  malhas do commit de antes do evento.
+- **O ponto de volta** é um commit da `main` anotado no plano (o proxy do
+  git daqui não aceita tag).
+- **Carta, bilhete, convite**: `g.lerCarta(pintura)` abre uma pintura em
+  canvas no painel do quadro de memórias (sem entrar no quadro) e resolve
+  quando ele fecha.
+- **Coisa do caminho principal tem que estar à vista**: a carta parou primeiro
+  a 1,6 m da porta e a parede alta (2,6 m) escondia ela na câmera de sempre.
+  Ela entra numa tomada de câmera de dentro da sala (`g.setCameraOmbro`) e
+  para a ~3 m, fora da sombra da parede.
+
 ## Regras da casa
 
 1. **Cor sempre da paleta** (`src/palette.ts`). Se falta uma cor, adicione lá.

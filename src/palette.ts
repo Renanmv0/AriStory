@@ -2085,6 +2085,26 @@ export const PALETTE = {
   atelieZinco: 0xb6bec6, // o balde
   atelieTampo: 0xdcb98c, // o tampo de carvalho, antes das manchas de tinta
   atelieCordao: 0xe9ddc6, // o cordão das bandeirolas
+
+  // ======================================== O ESPECIAL DE HALLOWEEN
+  // (`docs/HALLOWEEN.md`) — laranja de abóbora, roxo de noite, o creme do
+  // papel. Só o evento usa; fora dele, nada disto aparece.
+  /** o envelope da carta da Estella: papel laranja-abóbora */
+  cartaDeHalloween: 0xf0913f,
+  /** a borda e o forro do envelope, creme */
+  cartaDeHalloweenForro: 0xfbe2bc,
+  /** o lacre de cera roxo, com o morceguinho */
+  lacreDeMorcego: 0x6a2f8c,
+  /** o morceguinho em relevo no lacre, um tom mais fundo */
+  lacreDeMorcegoRelevo: 0x4a1d66,
+  /** o balde de pipoca do filme: as listras vermelhas e as brancas */
+  baldeDePipocaVermelho: 0xd9433f,
+  baldeDePipocaBranco: 0xfff6e6,
+  /** a pipoca: estourada clarinha, e a com manteiga */
+  pipocaClara: 0xfff1cf,
+  pipocaManteiga: 0xf6d26a,
+  /** a luz azulada da TV no chão da sala, com o filme passando */
+  luzDaTv: 0x8fa6ff,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

@@ -1877,8 +1877,12 @@ export class Ui {
    * bandeirinhas balancam. Custa uma volta de `requestAnimationFrame` enquanto
    * o painel esta aberto, e nenhuma depois — ela se desliga sozinha ao fechar.
    */
-  abrirMemorias(acervo: readonly MemoriaPintada[], indice = 0): void {
-    if (this.memoriasOpen || acervo.length === 0) return;
+  abrirMemorias(acervo: readonly MemoriaPintada[], indice = 0, aoFechar?: () => void): void {
+    if (this.memoriasOpen || acervo.length === 0) {
+      aoFechar?.();
+      return;
+    }
+    this.aoFecharMemorias = aoFechar ?? null;
     this.som?.('diario');
     this.closeJournal();
     this.closeMochila();
@@ -1898,7 +1902,14 @@ export class Ui {
     if (this.pintura !== null) cancelAnimationFrame(this.pintura);
     this.pintura = null;
     this.marcarTelaAberta();
+    // quem abriu esperando o fechamento (a carta da Estella) segue daqui
+    const aoFechar = this.aoFecharMemorias;
+    this.aoFecharMemorias = null;
+    aoFechar?.();
   }
+
+  /** quem está esperando o quadro fechar (`g.lerCarta`) */
+  private aoFecharMemorias: (() => void) | null = null;
 
   /**
    * Passa para a memoria seguinte (1) ou anterior (-1), dando a volta.

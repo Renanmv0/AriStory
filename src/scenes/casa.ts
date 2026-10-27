@@ -17,6 +17,7 @@ import { fundir } from '../world/fundir';
 import { assoalhoDeMadeira } from '../world/texturasDeChao';
 import { granito, tramaDeTecido, veioDeMadeira } from '../world/texturasDeCasa';
 import { ARI, RENAN } from '../characters/cast';
+import { montarHalloweenNaCasa } from '../eventos/halloween/naCasa';
 
 /**
  * Casa do Ari — apartamento pequeno, montado a partir do esboço do Renan.
@@ -266,6 +267,14 @@ export const casa: SceneDef = {
       tela.material = ligada ? telaDeTvLigada() : toon(P.tvTelaApagada);
     };
 
+    // O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`): uma camada por cima da
+    // casa. Sem o `?halloween` na URL, ele não monta nada e o sofá é o de sempre.
+    const halloween = montarHalloweenNaCasa(w, {
+      assento, focoSofa, tela, ligarTv,
+      tv: { x: x0 + 0.4, z: 0.6 },
+      porta: { x: PORTA_DA_RUA.x, z: D / 2 },
+    });
+
     // ------------------------------------------------------------ interações
     w.interact({
       id: 'casa:sofa',
@@ -274,7 +283,12 @@ export const casa: SceneDef = {
       label: 'Sentar no sofá', icon: '🛋️',
       highlight: sofaObj,
       onInteract: async (g) => {
-        const sentar = await g.ask('Parece muito confortável, sentar?', ['Sim', 'Não']);
+        const opcoes = halloween.temFilme() ? ['Sim', 'Não', '🎃 Assistir um filme de terror'] : ['Sim', 'Não'];
+        const sentar = await g.ask('Parece muito confortável, sentar?', opcoes);
+        if (sentar === 2) {
+          await halloween.assistirFilme(g);
+          return;
+        }
         if (sentar !== 0) {
           await g.say(['Depois. Se sentar agora, não levanta mais.']);
           return;

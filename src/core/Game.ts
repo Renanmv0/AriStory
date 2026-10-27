@@ -47,7 +47,7 @@ import { PosProcessamento, type EfeitosDeTela } from './posProcessamento';
 import { Apontador } from './Apontador';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { EstiloDeRegador } from '../world/regador';
-import { MEMORIAS } from '../world/memoriasData';
+import { MEMORIAS, type MemoriaPintada } from '../world/memoriasData';
 import { retratoDePraga } from '../world/retratoDePraga';
 import { retratoDoFalante } from '../world/retratoDoElenco';
 import type { BebitoBookNoSave, Escritor } from '../minigames/bebitoBook';
@@ -1853,6 +1853,10 @@ export class Game implements GameAPI {
    * entrega para a UI, que e quem tem o canvas. A pintura em si mora inteira em
    * `world/memoriasData.ts`.
    */
+  lerCarta(carta: MemoriaPintada): Promise<void> {
+    return new Promise((fechou) => this.ui.abrirMemorias([carta], 0, fechou));
+  }
+
   abrirMemoria(id: string): void {
     // a memória ganha jogando só entra no quadro depois de ganha (`trava`)
     const acervo = MEMORIAS.filter((m) => !m.trava || this.save.flag(m.trava));

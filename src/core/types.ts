@@ -11,6 +11,7 @@ import type {
   EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
+import type { MemoriaPintada } from '../world/memoriasData';
 import type { ProgressoDaApostila, ResultadoDaApostila } from '../minigames/aula/tipos';
 
 export interface CircleCollider {
@@ -704,6 +705,12 @@ export interface GameAPI {
    * aberto. Nao faz nada se o id nao existir.
    */
   abrirMemoria(id: string): void;
+  /**
+   * Abre UMA pintura no painel do quadro de memórias — uma carta, um
+   * bilhete — e resolve quando ele FECHA. Ela não entra no quadro do quarto:
+   * é só para ler. A carta da Estella do Halloween é a primeira.
+   */
+  lerCarta(carta: MemoriaPintada): Promise<void>;
   /**
    * Abre o cardapio do restaurante em primeira pessoa (o acervo mora em
    * `world/cardapioData.ts`). Trava o movimento enquanto estiver aberto, e a

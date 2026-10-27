@@ -35,9 +35,11 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: só o plano.** Nada construído. A **parte 1** (o filme, o parque
-de manhã, o presente da Estella e a noite chegando com o ônibus — §2.1 a
-§2.4) está **fechada** com o Renan; a etapa 1 é a próxima a construir.
+**Estado: etapa 1 construída, escondida.** O filme no sofá e a carta da
+Estella (§2.1) estão no jogo, mas só aparecem com `?halloween` na URL
+(`src/eventos/halloween/`, `src/world/halloween/`, `scripts/halloween.mjs`).
+A **parte 1** inteira (§2.1 a §2.4) está fechada com o Renan; a próxima a
+construir é a etapa 2 (o parque de manhã).
 
 **Decisões do Renan** (as que já valem):
 
@@ -183,7 +185,10 @@ filme de terror**. (`scenes/casa.ts`, a interação `casa:sofa`.)
    vendo filme (rascunho abaixo);
 3. **alguns segundos de filme** sem fala nenhuma — só a TV e a música;
 4. **o som de papel arrastando** e uma **carta de Halloween desliza por
-   baixo da porta da rua** (a peça anda pelo chão até parar dentro da sala);
+   baixo da porta da rua** — numa tomada de câmera de DENTRO da sala,
+   olhando a porta: a carta entra girando e escorrega até uns 3 m da porta.
+   Longe assim de propósito: a parede alta da porta esconde o chão logo
+   atrás dela na câmera de sempre, e a carta é o caminho principal;
 5. os dois se olham; levantam; a carta fica no chão com o prompt
    **"Pegar a carta"** (✉️);
 6. ao pegar, a carta **abre na tela** (um painel em canvas: o papel laranja,
@@ -674,7 +679,7 @@ aprovar antes da próxima.
 | # | etapa | o que entra | skills |
 |---|---|---|---|
 | **0** | **decisões** | as respostas do §10 | — |
-| **1** | **o filme e a carta** | a fase do evento no save e o `?halloween`; no sofá, "Assistir um filme de terror", o filme na TV, as falas, a carta deslizando por baixo da porta, "Pegar a carta" e o painel da carta (§2.1) | `cenario`, `prop` + `geometry`, `textures`, `animation` |
+| **1** ✅ | **o filme e a carta** *(construída, escondida)* | a fase do evento no save e o `?halloween`; no sofá, "Assistir um filme de terror", o filme na TV, as falas, a carta deslizando por baixo da porta, "Pegar a carta" e o painel da carta (§2.1) | `cenario`, `prop` + `geometry`, `textures`, `animation` |
 | **2** | **o parque enfeitado, de manhã e vazio** | as decorações do parque e das lojas, de dia (§4), os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
 | **3** | **o presente da Estella** | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** | **a noite e o ônibus** | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
