@@ -37,7 +37,7 @@ Abóbora** (§7).
 
 **Estado: só o plano.** Nada construído. A **parte 1** (o filme, o parque
 de manhã, o presente da Estella e a noite chegando com o ônibus — §2.1 a
-§2.4) já tem os ajustes do Renan; faltam as perguntas dela (§10).
+§2.4) está **fechada** com o Renan; a etapa 1 é a próxima a construir.
 
 **Decisões do Renan** (as que já valem):
 
@@ -67,6 +67,17 @@ de manhã, o presente da Estella e a noite chegando com o ônibus — §2.1 a
   personagem da aranha** com frases de Halloween (§2.3);
 - **o Pelusa vai de morceguinho e fica dormindo num pufe da boutique** — sem
   interação, só lá, deitado (§2.3);
+- **o Ari é o vampiro e o Renan é o morceguinho** (as caixas da Estella).
+  Depois do evento as fantasias **continuam no jogo**, e qualquer um pode
+  vestir qualquer uma (§5.1);
+- **as falas são simples e fofas**, que façam sentido com a cena — os
+  rascunhos daqui valem;
+- **é um EVENTO: depois, tudo volta ao normal.** O fim é a dupla **deitar e
+  dormir na cama do quarto do Ari**, o que só se pode fazer **depois da
+  festa**. Aí o parque, o clube e a escola voltam a ser os de sempre (§1);
+- **os modelos originais dos personagens e do parque ficam guardados** para
+  voltar depois: o evento é uma CAMADA por cima, que nunca mexe no original
+  (§8.3);
 - **a dupla se arruma tanto na boutique que, quando sai, já é NOITE**, e o
   **ônibus do clube chega** trazendo todos os personagens de lá **e os da
   escola do Gatito** (§2.4);
@@ -130,7 +141,15 @@ relógio, que diz como o parque está:
 | `antes` | — | o de sempre |
 | `convite` | a carta é lida (§2.1) | **de manhã**, enfeitado, **sem os personagens** (estão se arrumando) |
 | `festa` | a dupla sai da boutique fantasiada (§2.4) | **de noite**, as luzes acesas, o ônibus do clube chegando, todo mundo fantasiado |
-| `fim` | o final (§7) | — |
+| `depois` | a festa na Casinha acaba (§7) | ainda de noite e enfeitado; a dupla volta para casa |
+| `fim` | a dupla **deita e dorme na cama do quarto do Ari** — só existe depois da festa | **o de sempre**: sem enfeite, de dia, cada personagem de volta ao clube, à escola e ao parque, o Pelusa de volta em casa. Ficam as fantasias no guarda-roupa e as memórias |
+
+**O fim do evento é dormir.** Depois da festa (fase `depois`), a cama do
+quarto do Ari ganha a opção **"Dormir depois da festa"** — a cena de deitar
+junto que já existe (`scripts/cama.mjs`), com a tela escurecendo no estilo
+`'sono'` e uma fala de boa noite. Eles acordam de manhã, e o evento acabou:
+a fase vira `fim`, e tudo volta ao normal. Antes da festa acabar, a cama é a
+de sempre.
 
 **O clube e a escola durante o evento** (da fase `convite` até o fim):
 ficam **normais**, mas **sem os personagens** — a Gina, o Capy, o Noel, a
@@ -239,7 +258,8 @@ e depois ri dela mesma. Cutscene:
 1. ela conta que passou a semana costurando e tira de trás do balcão
    **duas caixas** com laço, uma com o nome de cada um;
 2. as caixas abrem, e cada fantasia aparece completa no manequim ao lado
-   do balcão — o **vampiro** e o **morceguinho**;
+   do balcão — o **vampiro** na caixa do **Ari**, e o **morceguinho** na do
+   **Renan**;
 3. as duas vão para o **guarda-roupa dos dois** (`g.ganharPeca`): cada um
    veste a sua, e depois podem trocar se quiserem;
 4. os dois vão para o provador e **saem fantasiados**; a Estella aprova, e
@@ -595,7 +615,38 @@ chamada só** (`montarFestaDeHalloween(w, g)`), que monta e desmonta tudo.
 - fantasia de bicho é peça pendurada no corpo que a classe já monta; o
   cérebro do `Bicho` não muda.
 
-### 8.3 Desempenho (a parte delicada)
+### 8.3 O evento é uma CAMADA: o original fica guardado
+
+Pedido do Renan: depois do evento o parque volta ao normal, e os modelos
+originais dos personagens e dos objetos do parque **não podem se perder**.
+Por isso o evento nunca edita o original — ele só **acrescenta e esconde
+por cima**, e para de fazer isso quando a fase vira `fim`:
+
+- **nenhuma fábrica do jogo de sempre muda**: a sorveteria do Mano, a
+  bilheteria, a boutique, a roda gigante e os bichos continuam montados pelas
+  mesmas funções de hoje, com o mesmo código. A decoração é **outra peça**,
+  posta ao lado ou em cima (`world/halloween/*.ts`), num grupo próprio que a
+  cena só monta na fase certa;
+- **a fantasia de um bicho é uma peça pendurada** no corpo dele, nunca um
+  corpo novo: sem a fase, ela simplesmente não é pendurada, e o bicho é o de
+  hoje;
+- **personagem ausente é personagem não montado** naquela cena durante a
+  fase (o Mano fora da sorveteria de manhã, a Gina fora do clube) — o
+  código dele não muda;
+- **as cenas ganham um gancho só**: uma linha que pergunta a fase
+  (`faseDoHalloween(g)`) e chama o módulo do evento
+  (`src/eventos/halloween/`). Tirar o evento inteiro do jogo é apagar essa
+  pasta e essas linhas;
+- **o ponto de volta no git**: a tag **`antes-do-halloween`** marca o jogo
+  exatamente como estava antes de qualquer código do evento — qualquer
+  modelo original pode ser recuperado dali;
+- **o teste da volta** (`scripts/halloween.mjs`, `SO=volta`): sem o
+  `?halloween`, e depois na fase `fim`, o parque, o clube e a escola têm
+  que ter **os mesmos objetos, os mesmos desenhos por quadro e a mesma foto**
+  que tinham antes do evento (a medida de antes fica anotada no próprio
+  teste).
+
+### 8.4 Desempenho (a parte delicada)
 
 O parque é a cena mais pesada do jogo e a festa põe mais de uma dúzia de
 personagens nele, mais as decorações, à noite. O plano para não travar o
@@ -628,7 +679,7 @@ aprovar antes da próxima.
 | **4** | **a noite e o ônibus** | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** | **doces ou travessuras** | as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3), e **as outras cinco fantasias** (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
 | **6** | **a Casinha da Abóbora** | o portão das 25 balas, o cenário novo e a festa surpresa (§7) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
-| **7** | **o fechamento** | a memória no quadro, o prêmio do final, "Reviver a festa", o teste completo no celular | `memoria`, `testar` |
+| **7** | **o fechamento** | a memória no quadro, o prêmio do final, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento) | `testar` |
 
 **Uma por vez, e escondida.** Cada etapa começa com uma conversa com o Renan
@@ -639,25 +690,19 @@ sobre os ajustes dela (registrados aqui), depois é construída e testada com
 
 ## 10. Perguntas para o Renan
 
-### Para fechar a parte 1 (o filme, o parque de manhã, o presente e a noite)
+### A parte 1 está fechada
 
-1. **Quem fica com qual** das duas primeiras: quem é o vampiro e quem é o
-   morceguinho (na caixa com o nome de cada um)?
-2. **As falas** do filme (§2.1), da carta, dos comentários no caminho
-   (§2.2), da Estella-aranha (§2.3) e da saída da boutique (§2.4): estão
-   boas, ou você quer escrever? Fala sua vai literal.
-3. **As peças das sete fantasias** (§5.1): alguma que você imagina
-   diferente?
+Todas respondidas (ver abaixo). Próximo passo: construir a etapa 1.
 
 ### Para as próximas partes
 
-4. **As balas** (§5.3): 3 no doce, 1 a 5 na travessura, 10 abóboras
+1. **As balas** (§5.3): 3 no doce, 1 a 5 na travessura, 10 abóboras
    escondidas, e a porta abrindo com 25 — estão bons?
-5. **Quem dá qual fantasia** na caça (§5.2): a divisão proposta está boa?
-6. **As fantasias dos personagens** (§3): alguma que você imagina diferente?
-7. **Quando aparece**: só de 15/10 a 2/11 pelo calendário, depois "Reviver a
+2. **Quem dá qual fantasia** na caça (§5.2): a divisão proposta está boa?
+3. **As fantasias dos personagens** (§3): alguma que você imagina diferente?
+4. **Quando aparece**: só de 15/10 a 2/11 pelo calendário, depois "Reviver a
    festa" — ou o ano todo?
-8. **As dez paradas** (§6): as travessuras e as pistas estão boas?
+5. **As dez paradas** (§6): as travessuras e as pistas estão boas?
 
 **Respondidas:** o prazo (sem pressa, nada aparece até tudo estar pronto);
 quem começa o evento (a dupla, no sofá); o convite (a carta por baixo da
@@ -669,4 +714,8 @@ personagem); o Pelusa (de morceguinho, dormindo num pufe da boutique, sem
 interação); a noite (cai enquanto eles se arrumam na boutique); os
 convidados (o clube e a escola chegam de ônibus); o clube e a escola durante
 o evento (normais, sem os personagens); o final (a Casinha da Abóbora,
-destrancada pelas balas).
+destrancada pelas balas); quem veste qual (o Ari de vampiro, o Renan de
+morceguinho); as falas (simples, fofas, os rascunhos valem); as peças das
+sete fantasias (as do §5.1); o fim do evento (dormir na cama do quarto do
+Ari, depois da festa); a volta ao normal (o evento é uma camada, e o
+original fica guardado).
