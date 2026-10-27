@@ -28,11 +28,12 @@ jeito que os amigos acharam de levar os dois até a **surpresa** do final.
 **"Assistir um filme de terror"** no sofá de casa → a carta da Estella
 desliza por baixo da porta → o parque **de manhã, já enfeitado e vazio**
 (todo mundo "se arrumando"), com os comentários da dupla no caminho → o
-presente da Estella na boutique (**duas fantasias**) → a dupla sai da
-boutique e **já é noite**: o **ônibus do clube** chega com todo mundo →
-**doces ou travessuras** em 9 paradas, ganhando as **outras quatro
-fantasias** → a última pista abre o **portão escondido** atrás da praça da
-roda → o **final** (§7).
+presente da Estella na boutique (**o vampiro e o morceguinho**) → a dupla
+sai da boutique e **já é noite**: o **ônibus do clube** chega com todo mundo
+→ **doces ou travessuras** em 10 paradas, juntando **balas** na cesta e
+ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
+escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
+Abóbora** (§7).
 
 **Estado: só o plano.** Nada construído. A **parte 1** (o filme, o parque
 de manhã, o presente da Estella e a noite chegando com o ônibus — §2.1 a
@@ -55,10 +56,17 @@ de manhã, o presente da Estella e a noite chegando com o ônibus — §2.1 a
   personagens**: estão todos "se arrumando" para a festa. No caminho até a
   Estella, a dupla vai comentando as decorações (§2.2);
 - **as fantasias vão sendo GANHAS**: a Estella dá **só duas** no começo —
-  uma para cada um, diferentes —, e as outras quatro (dos seis do §5.1,
-  todas completas, com os acessórios) se ganham pedindo doces ou travessuras
-  (§5.2);
-- **a Estella está de aranha fofa** (§2.3);
+  o **vampiro** e o **morceguinho**, uma para cada um —, e as outras **cinco**
+  (bruxinho, gato preto, abóbora, espantalho e **pirata**) se ganham pedindo
+  doces ou travessuras: **uma fantasia inteira a cada duas paradas** (§5.2);
+- **as fantasias têm que sair MUITO bem feitas, fofas e detalhadas** (§5.4);
+- **a cesta de abóbora junta BALAS** a cada parada, e a festa na **Casinha da
+  Abóbora** só destranca com uma certa quantidade (§5.3) — **o final é a
+  Casinha da Abóbora** (§7, opção A);
+- **a Estella está de aranha fofa**, do jeito bonitinho dela, e **faz o
+  personagem da aranha** com frases de Halloween (§2.3);
+- **o Pelusa vai de morceguinho e fica dormindo num pufe da boutique** — sem
+  interação, só lá, deitado (§2.3);
 - **a dupla se arruma tanto na boutique que, quando sai, já é NOITE**, e o
   **ônibus do clube chega** trazendo todos os personagens de lá **e os da
   escola do Gatito** (§2.4);
@@ -71,25 +79,25 @@ de manhã, o presente da Estella e a noite chegando com o ônibus — §2.1 a
   vela, lanternas de papel, varais de luzinha). Nenhuma luz de verdade a
   mais: luz nova recompila o shader da cena inteira, e o parque já é a cena
   mais pesada no celular (§8);
-- **15 personagens fantasiados**: os 5 do clube (Gina, Capy, Noel, Josefina,
+- **15 personagens fantasiados** (o Pelusa, de morceguinho, só dormindo num
+  pufe da boutique): os 5 do clube (Gina, Capy, Noel, Josefina,
   Walter), os 4 do parque (Estella, Mano, Cookie, Jean-Luc), os 5 da escola
   (Gatito, Flynn, Luna, Sol, Estrella), o Pelusa e os patinhos do lago (§3);
 - **6 lojas e quiosques decorados**: a lojinha da Estella, a loja de
   patins, a sorveteria do Mano, a bilheteria do Cookie, a roda gigante e o
   ponto de ônibus (§4);
-- **seis fantasias completas para a dupla**: duas de presente da Estella no
-  começo, e as outras quatro ganhas na caça (§5);
-- **9 paradas de doces ou travessuras**, cada uma com uma escolha: pedir
-  **doce** (o personagem dá um doce temático) ou **travessura** (ele apronta
-  uma brincadeira fofa) — a pista vem nos dois casos (§6);
-- **o final recomendado: a Casinha da Abóbora**, um cenário pequeno novo
-  atrás do portão da praça da roda, com a festa surpresa de todos os
-  personagens lá dentro (§7, com as outras três opções);
+- **sete fantasias completas para a dupla**: o vampiro e o morceguinho de
+  presente da Estella no começo, e as outras cinco ganhas na caça (§5);
+- **10 paradas de doces ou travessuras**, cada uma com uma escolha: pedir
+  **doce** (balas certas) ou **travessura** (uma brincadeira, e as balas
+  dependem dela) — a pista vem nos dois casos (§6);
+- **o final: a Casinha da Abóbora**, um cenário pequeno novo atrás do
+  portão da praça da roda, com a festa surpresa de todos os personagens lá
+  dentro, destrancado pelas balas da cesta (§7);
 - **9 etapas** (da 0 à 8), uma por vez, todas escondidas atrás do
   `?halloween` até a última abrir o evento (§9).
 
-**A decisão que mais falta** é o **final** (§7). As outras perguntas estão
-no §10.
+As perguntas que faltam estão no §10.
 
 ---
 
@@ -217,12 +225,21 @@ certa** (rascunho; o Renan reescreve):
 
 A boutique decorada por dentro (§4). A Estella está de **aranha fofa** (as
 oito patinhas de feltro, a tiara de olhinhos e o novelo de lã virando teia —
-ela tece, ela costura) e recebe os dois. Cutscene:
+ela tece, ela costura) e recebe os dois.
+
+**O Pelusa está lá**, de **morceguinho** (as asinhas e as orelhinhas de
+morcego), **dormindo enroladinho num dos pufes capitonê** da boutique
+(`world/moveisDaBoutique.ts`). Não tem interação nenhuma: ele só fica ali,
+respirando devagar. Durante o evento ele não está em casa.
+
+**A Estella faz o PERSONAGEM da aranha** — sem deixar de ser ela: orgulhosa
+das roupinhas, carinhosa, dando docinho. Ela exagera o "vilã de mentirinha"
+e depois ri dela mesma. Cutscene:
 
 1. ela conta que passou a semana costurando e tira de trás do balcão
    **duas caixas** com laço, uma com o nome de cada um;
 2. as caixas abrem, e cada fantasia aparece completa no manequim ao lado
-   do balcão — **duas fantasias diferentes** (quais, é pergunta do §10);
+   do balcão — o **vampiro** e o **morceguinho**;
 3. as duas vão para o **guarda-roupa dos dois** (`g.ganharPeca`): cada um
    veste a sua, e depois podem trocar se quiserem;
 4. os dois vão para o provador e **saem fantasiados**; a Estella aprova, e
@@ -231,12 +248,30 @@ ela tece, ela costura) e recebe os dois. Cutscene:
 5. ela dá a **cestinha de abóbora** (o balde dos doces) e o **mapinha** com a
    primeira pista.
 
-> **Rascunho de falas da Estella** (o Renan reescreve):
+> **Rascunho de falas da Estella, no personagem da aranha** (o Renan
+> reescreve; o que ele escrever vai literal):
+>
+> *(a dupla entra)*
+> "Ora, ora… quem caiu na minha teia?" *(pausa)* "Brincadeira! Entrem,
+> entrem, que a aranha aqui só morde biscoitinho."
+> "Bem-vindos à minha teia… quer dizer, à minha boutique!"
+>
+> *(as caixas)*
+> "Oito patinhas, e todas costurando a semana inteira só pra vocês."
+> "Eu teço as minhas teias com fio de lã… e as minhas fantasias com fio de
+> amor. Hihi."
 > "Nenhuma fantasia sai daqui sem a minha aprovação… e estas eu APROVO!"
-> "Uma semana inteira costurando. Valeu cada ponto."
-> "Agora vão se trocar — e não me apareçam na festa sem fantasia!"
-> "Ah, e essas não são as únicas… os amigos estão guardando as outras. É só
-> pedir doces ou travessuras!"
+>
+> *(saindo do provador)*
+> "Muahaha! Ficaram perfeitos! Tão perfeitos que dá vontade de enrolar
+> vocês num casulo e guardar na vitrine." *(pausa)* "…de mentirinha, tá?"
+>
+> *(a cesta e o mapinha)*
+> "Tomem: uma cestinha de abóbora pra encher de balas. Quanto mais cheia,
+> mais perto da surpresa…"
+> "E essas fantasias não são as únicas: os meus amigos estão guardando as
+> outras. É só pedir doces ou travessuras!"
+> "Agora vão, que a noite é das aranhas… e dos amigos delas!"
 
 ### 2.4 Já é noite: o ônibus do clube chega
 
@@ -290,7 +325,7 @@ assustadora de verdade: o "susto" do Halloween daqui é sempre de mentirinha.
 | **Gatito** (gato) | o piquenique | **mago**: chapéu de estrelas e varinha — o professor | — |
 | **Flynn** (raposa) | o campinho de frisbee | **lobisomem** com a bandana dos Gatitos | o atleta, uivando de animação |
 | **Luna, Sol, Estrella** | o piquenique | **trio**: gatinha preta, abóbora e fantasminha (uma cada, mesmo time) | — |
-| **Pelusa** (gato) | a lojinha, no pufe | **asinhas de morcego** | — |
+| **Pelusa** (gato) | a boutique, **dormindo num pufe** (sem interação) | **morceguinho**: asinhas e orelhinhas de morcego | decisão do Renan |
 | **patinhos do lago** | o lago | **chapeuzinho de bruxa** na mãe e nos filhotes | — |
 
 Técnica (§8.2): cada fantasia de bicho é uma peça pendurada nos pontos do
@@ -342,13 +377,13 @@ que é fixo passa por `fundir()`.
 
 ## 5. As fantasias da dupla
 
-### 5.1 O presente da Estella: as seis fantasias
+### 5.1 As sete fantasias
 
-**Decisão do Renan: as seis fantasias existem, completas** — todas as
-partes e os acessórios —, mas **vão sendo ganhas**: a Estella dá **duas** no
-começo (uma para cada um, diferentes, §2.3) e as **outras quatro** vêm da
-caça (§5.2). Toda fantasia ganha vai para o guarda-roupa **dos dois**:
-qualquer um pode vestir qualquer uma, e dá para combinar como quiser.
+**Decisão do Renan: são sete fantasias, completas** — todas as partes e os
+acessórios —, e **vão sendo ganhas**: a Estella dá o **vampiro** e o
+**morceguinho** no começo (§2.3), e as **outras cinco** vêm da caça (§5.2).
+Toda fantasia ganha vai para o guarda-roupa **dos dois**: qualquer um pode
+vestir qualquer uma, e dá para combinar como quiser.
 
 **As peças de cada fantasia** (proposta; uma por vaga do corpo — a vaga de
 acessório é uma só, então cada fantasia tem um acessório):
@@ -361,6 +396,7 @@ acessório é uma só, então cada fantasia tem um acessório):
 | 🐈‍⬛ **gato preto** | as orelhinhas de gato | o moletom preto com o babador branco | a legging preta | as patinhas (pantufas) | as luvas de patinha com almofadinha rosa | o **rabo** de gato com laço |
 | 🎃 **abóbora** | o chapeuzinho de cabinho com folha e gavinha | o macacão redondo de gomos com a cara de abóbora | a meia-calça verde | a botinha verde | as luvinhas verdes | a **gola de folhas** |
 | 🌾 **espantalho** | o chapéu de palha amassado com o corvinho | a camisa xadrez de remendos com palha saindo das mangas | a calça de remendo com a corda de cinto | as botas gastas | as luvas com palha | a **bandana** no pescoço |
+| 🏴‍☠️ **pirata** *(pedido do Renan)* | o chapéu tricórnio com a caveirinha sorridente bordada e a pena | a camisa listrada branca e vermelha, o colete curto azul-marinho e a faixa na cintura | a calça bufante até o joelho | as botas de cano dobrado com fivela | a **espadinha de madeira** na mão esquerda, com a luva de punho largo | o **papagaio** no ombro |
 
 Cada peça segue a skill de roupa (geometria em `world/fantasias.ts`, ficha
 em `ITENS`). São **presente da Estella**: pela regra do Renan, presente de
@@ -368,66 +404,100 @@ personagem **não se pinta no ateliê** (`PECAS_SEM_TINTA`). Entram no
 guarda-roupa normal, por parte do corpo — proposta: com um filtro novo
 **🎃 Fantasias** nas abas de cima, para achar as fantasias rápido.
 
-### 5.2 O que se ganha na caça
+### 5.2 As fantasias ganhas na caça
 
-**Decisão do Renan: as outras quatro fantasias se ganham pedindo doces ou
-travessuras.** Proposta de como (o Renan escolhe — §10):
+**Decisão do Renan: uma fantasia INTEIRA a cada duas paradas.** São cinco
+para ganhar, então a caça tem **dez paradas** (§6) — o Flynn virou parada —,
+e as paradas 2, 4, 6, 8 e 10 dão uma fantasia completa cada. Proposta de
+quem dá qual, casando com a fantasia de quem entrega (§3):
 
-- **(a) em duas metades** *(recomendada)*: cada fantasia vem em duas
-  paradas seguidas — na primeira, a cabeça, o tronco e o acessório; na
-  segunda, as pernas, os pés e as mãos. As paradas 1 a 8 completam as quatro
-  fantasias, e a 9 (a Gina) dá a pista do final. Dá para vestir a metade de
-  cima já na hora — e a fantasia vai se montando no corpo pelo caminho;
-- **(b) uma inteira a cada duas paradas**: as paradas 2, 4, 6 e 8 dão uma
-  fantasia completa cada, e as outras dão só doce e pista.
+| parada | quem entrega | a fantasia | por quê |
+|---|---|---|---|
+| 2 | o Cookie | 🎃 **abóbora** | ele fica ao lado da maior abóbora do parque |
+| 4 | o Jean-Luc | 🏴‍☠️ **pirata** | um pirata de lago, para quem mora na água |
+| 6 | as coelhinhas | 🐈‍⬛ **gato preto** | uma delas está de gatinha preta |
+| 8 | o Noel | 🌾 **espantalho** | ele também está de espantalho |
+| 10 | a Gina | 🧙 **bruxinho** | ela está de bruxa |
 
-Doce ou travessura, a peça vem do mesmo jeito: as duas escolhas são boas.
+Doce ou travessura, a fantasia vem do mesmo jeito: as duas escolhas são
+boas. O que muda entre elas são as **balas** (§5.3).
 
 E o **prêmio do final** (§7): uma peça especial (proposta: a **coroa de
 abóbora** do "rei e rainha da festa", ou o que combinar com o final escolhido).
 
-### 5.3 Os doces
+### 5.3 As balas na cesta de abóbora
 
-A cestinha de abóbora guarda os doces das paradas — nove doces diferentes,
-cada um com o seu desenho (o pirulito de olho do Jean-Luc, o sorvete de
-abóbora do Mano, o biscoitinho de fantasma da Estella, o docinho minúsculo do
-Cookie…). Eles aparecem num painelzinho da cesta e dá para **comer**
-(sentados num banco, como o lanche da máquina da escola). Juntar os nove
-desbloqueia uma fala especial no final.
+**Decisão do Renan: a cesta junta balas, e a Casinha da Abóbora só abre com
+uma certa quantidade.** Proposta dos números (o Renan ajusta):
+
+- **🍬 Doces!** — o personagem dá **3 balas**, sempre;
+- **🎃 Travessura!** — ele apronta a brincadeira dele, e as balas dependem
+  de como foi: **de 1 a 5** (ganhou o ponto de ping pong do Jean-Luc,
+  pescou a maçã do Capy de primeira, acertou a palavra do Gatito…). Arriscar
+  pode render mais que o doce — ou menos;
+- **🎃 abóboras escondidas**: dez abóborinhas brilhando pelo parque, fora do
+  caminho da caça, com **1 bala** cada — é o que garante que ninguém fica
+  preso na porta;
+- **a porta da Casinha abre com 25 balas.** Com as dez paradas no doce dá
+  30; chegando lá com menos, a porta conta quantas faltam e a Gina lembra
+  das abóboras escondidas.
+
+A cesta aparece na mão de quem joga, **enchendo de verdade** — as balas
+coloridas subindo dentro dela —, e o número fica num canto da tela durante a
+festa (🍬 18/25). Cada personagem dá a **sua** bala (o pirulito de olho do
+Jean-Luc, a bala de abóbora do Mano, o docinho minúsculo do Cookie…), e elas
+aparecem desenhadas num painelzinho da cesta.
+
+### 5.4 O capricho das fantasias (pedido do Renan)
+
+As fantasias são o centro do evento e têm que sair **muito bem feitas, fofas
+e detalhadas** — o padrão das melhores peças do jogo (a coleção da boutique,
+o uniforme dos Gatitos, a roupa de torcida), e não peça de caixa lisa:
+
+- **tecido que parece tecido**: textura de canvas para o veludo da capa, as
+  listras da meia, o xadrez do espantalho, o tricô, os gomos da abóbora
+  (`threejs-textures`);
+- **as costuras e os miúdos**: botões, fivelas, pesponto, remendos com o
+  ponto aparente, a palha saindo em fios, a pena do chapéu, a caveirinha
+  bordada — os miúdos em lote (`InstancedMesh`) e tudo junto por `fundir()`;
+- **pano que cai como pano**: a capa e as asinhas balançando com a
+  caminhada (o `saiaViva` e o molde do avental), nunca uma placa rígida;
+- **fofo antes de assustador**: proporções gordinhas, cantos redondos, as
+  carinhas sorrindo (a caveirinha do pirata, a abóbora, o corvinho);
+- **o teste de cada uma**: nos dois, de frente, costas, lado, andando,
+  sentados e de perto, e no boneco do guarda-roupa, no computador e no
+  celular (`scripts/fantasias.mjs`).
 
 ---
 
-## 6. Doces ou travessuras — as nove paradas
+## 6. Doces ou travessuras — as dez paradas
 
 Em cada parada, o personagem pergunta e a dupla escolhe:
 
-- **🍬 Doces!** — ele dá o doce temático (vai para a cestinha) e a pista;
-- **🎃 Travessura!** — ele apronta uma brincadeira fofa (uma cutscene de
-  poucos segundos) e dá a pista do mesmo jeito.
+- **🍬 Doces!** — ele dá a bala dele (**3 balas** na cesta) e a pista;
+- **🎃 Travessura!** — ele apronta uma brincadeira fofa, e as balas
+  dependem de como foi (**1 a 5**, §5.3); a pista vem do mesmo jeito.
 
-As duas escolhas são boas, e cada parada lembra o que foi escolhido (o
-diário mostra "doces: 6 · travessuras: 3"). A **pista** é um versinho que
-aponta o próximo personagem sem dizer o nome.
+Cada parada lembra o que foi escolhido (o diário mostra "doces: 6 ·
+travessuras: 4"). A **pista** é um versinho que aponta o próximo personagem
+sem dizer o nome. As paradas **pares** entregam também uma **fantasia
+inteira** (§5.2).
 
-| # | quem | onde | doce | travessura | pista para a próxima (rascunho) |
-|---|---|---|---|---|---|
-| 1 | Mano | sorveteria | sorvete de abóbora | espirra granulado de morcego nos dois | "Quem vende o bilhete para o céu e nunca coube lá em cima?" (Cookie) |
-| 2 | Cookie | bilheteria | um docinho minúsculo (o favorito dele) | levanta o lençol e diz "BU!" — e quem se assusta é ele | "Na água vive um francês que joga como ninguém." (Jean-Luc) |
-| 3 | Jean-Luc | lago | pirulito de olho | um ponto de ping pong: se ele ganhar, "travessura"; se a dupla ganhar, dois doces | "Do lado do lago, alguém de laranja não sai do posto." (Capy) |
-| 4 | Capy | beira do lago | maçã do amor | **pescar maçã com a boca** na bacia (minijogo de tempo, curtinho) | "Três irmãs fazem festa no piquenique." (coelhinhas) |
-| 5 | Luna, Sol, Estrella | piquenique | pipoca de caramelo | a dupla dança com elas (a dança da festa da torcida) | "Quem ensina português de chapéu de estrela?" (Gatito) |
-| 6 | Gatito | piquenique | biscoito de gato preto | uma pergunta de português de Halloween ("como se diz *bruja*?") | "Um bicho de palha mexe um caldeirão." (Noel) |
-| 7 | Noel | carrinho de poções | suco-poção que muda de cor | a poção borbulha e solta uma fumacinha colorida | "A mais devagar de todas conta histórias no canteiro." (Josefina) |
-| 8 | Josefina | canteiro de abóboras | bolo de abóbora | conta uma "história de fantasma" que termina numa piada | "A mais alta vê tudo lá de cima." (Gina) |
-| 9 | Gina | ponto de ônibus | bala de goma de aranha | apita como no clube | a pista do final: "Atrás da roda, onde a cerca fecha o mato, uma porta laranja só abre para quem trouxe a cesta cheia." |
+| # | quem | onde | a bala | a travessura (e as balas) | 🎁 | pista para a próxima (rascunho) |
+|---|---|---|---|---|---|---|
+| 1 | Mano | sorveteria | bala de abóbora | espirra granulado de morcego nos dois | — | "Quem vende o bilhete para o céu e nunca coube lá em cima?" (Cookie) |
+| 2 | Cookie | bilheteria | o docinho minúsculo (o favorito dele) | levanta o lençol e diz "BU!" — e quem se assusta é ele | 🎃 abóbora | "Logo ali, no campinho, alguém uiva de animação." (Flynn) |
+| 3 | Flynn | campinho de frisbee | bala de goma de lua | um passe de frisbee: quanto mais perto pegar, mais balas | — | "Na água vive um francês que joga como ninguém." (Jean-Luc) |
+| 4 | Jean-Luc | lago | pirulito de olho | um ponto de ping pong: ganhou, 5 balas; perdeu, 1 | 🏴‍☠️ pirata | "Do lado do lago, alguém de laranja não sai do posto." (Capy) |
+| 5 | Capy | beira do lago | maçã do amor | **pescar maçã com a boca** na bacia (minijogo de tempo, curtinho) | — | "Três irmãs fazem festa no piquenique." (coelhinhas) |
+| 6 | Luna, Sol, Estrella | piquenique | pipoca de caramelo | a dupla dança com elas (a dança da festa da torcida) | 🐈‍⬛ gato preto | "Quem ensina português de chapéu de estrela?" (Gatito) |
+| 7 | Gatito | piquenique | biscoito de gato preto | uma pergunta de português de Halloween ("como se diz *bruja*?") | — | "Um bicho de palha mexe um caldeirão." (Noel) |
+| 8 | Noel | carrinho de poções | bala-poção que muda de cor | a poção borbulha e solta uma fumacinha colorida | 🌾 espantalho | "A mais devagar de todas conta histórias no canteiro." (Josefina) |
+| 9 | Josefina | canteiro de abóboras | bombom de bolo de abóbora | conta uma "história de fantasma" que termina numa piada | — | "A mais alta vê tudo lá de cima." (Gina) |
+| 10 | Gina | ponto de ônibus | bala de goma de aranha | apita como no clube | 🧙 bruxinho | a pista do final: "Atrás da roda, onde a cerca fecha o mato, uma porta laranja só abre para quem trouxe a cesta cheia." |
 
-O **Walter**, o **Flynn** e o **Pelusa** não são paradas: o Walter está no
-final, o Flynn uiva no campinho de frisbee e o Pelusa dorme no pufe da
-lojinha — dá para falar com eles, mas eles não têm pista.
-
-**As fantasias pelo caminho.** Cada parada também entrega peças das quatro
-fantasias que faltam (§5.2). Qual fantasia sai de qual parada fica para
-quando as duas primeiras (as da Estella) estiverem escolhidas.
+O **Walter** e o **Pelusa** não são paradas: o Walter está no final (é ele
+quem serve as balas na festa), e o Pelusa dorme no pufe da boutique.
 
 **Mapa e diário.** O mapinha da Estella vira um item de mão: abrir mostra as
 pistas já recebidas (um pergaminho com os versinhos), e a próxima parada
@@ -435,12 +505,17 @@ fica marcada com uma abóbora acesa no caminho. Ninguém fica perdido.
 
 ---
 
-## 7. O final — quatro opções, uma recomendação
+## 7. O final — a Casinha da Abóbora
 
-### ⭐ A. A Casinha da Abóbora (recomendada)
+**Decisão do Renan: o final é a A**, e a festa na Casinha **só destranca com
+balas suficientes na cesta** (§5.3). As outras três opções ficam abaixo só
+como registro.
+
+### ⭐ A. A Casinha da Abóbora (a escolhida)
 
 Atrás da cerca que fecha a praça da roda contra o mato (`villaLobos.ts`, a
-cerca de `x = −11`) aparece, só na festa, um **portão laranja**. Ele leva a
+cerca de `x = −11`) aparece, só na festa, um **portão laranja** com uma
+fechadura em forma de abóbora: ele **só abre com 25 balas** na cesta. Ele leva a
 um **cenário novo e pequeno**: uma casinha torta em forma de abóbora, no
 meio de uma clareira de abóboras gigantes, com luzinhas.
 
@@ -464,7 +539,7 @@ enquanto arrumavam a surpresa), e o final junta **todos** os personagens no
 mesmo lugar. **Custo:** é a etapa mais cara — um cenário novo, pequeno
 (do tamanho da lojinha).
 
-### B. A roda gigante à meia-noite
+### B. A roda gigante à meia-noite (não escolhida)
 
 A última pista leva à roda gigante: as cabines viram abóboras, o Cookie
 consegue — enfim — andar nela (numa cabine especial grande, a história dele),
@@ -473,14 +548,14 @@ artifício. Os personagens acenam lá embaixo. **Mais barata** (a roda, a
 cabine e a primeira pessoa já existem — `scripts/ride.mjs`) e muito
 romântica, mas não é um lugar novo.
 
-### C. A fogueira de histórias
+### C. A fogueira de histórias (não escolhida)
 
 A pista leva a uma roda de troncos com uma fogueira no campinho de frisbee:
 todos sentados em volta, a Josefina conta uma história de fantasma fofa,
 marshmallows no espeto. Aconchegante e barata. (Não usa a clareira de
 propósito: a clareira é o lugar só dos dois.)
 
-### D. O baile à fantasia na praça de gelo
+### D. O baile à fantasia na praça de gelo (não escolhida)
 
 O rinque vira pista de dança: patinação à fantasia, a dança lenta
 (`entities/DancaLenta.ts`) no meio do gelo e o concurso de fantasias.
@@ -549,10 +624,10 @@ aprovar antes da próxima.
 | **0** | **decisões** | as respostas do §10 | — |
 | **1** | **o filme e a carta** | a fase do evento no save e o `?halloween`; no sofá, "Assistir um filme de terror", o filme na TV, as falas, a carta deslizando por baixo da porta, "Pegar a carta" e o painel da carta (§2.1) | `cenario`, `prop` + `geometry`, `textures`, `animation` |
 | **2** | **o parque enfeitado, de manhã e vazio** | as decorações do parque e das lojas, de dia (§4), os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
-| **3** | **o presente da Estella** | a boutique decorada, a Estella de aranha, **as seis fantasias** modeladas (§5.1), as duas caixas, o provador, a cestinha e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
+| **3** | **o presente da Estella** | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** | **a noite e o ônibus** | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
-| **5** | **doces ou travessuras** | as nove paradas (§6) | `cenario` + `interaction`, `animation` |
-| **6** | **o final** | o final escolhido (§7) | conforme a escolha |
+| **5** | **doces ou travessuras** | as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3), e **as outras cinco fantasias** (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
+| **6** | **a Casinha da Abóbora** | o portão das 25 balas, o cenário novo e a festa surpresa (§7) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** | **o fechamento** | a memória no quadro, o prêmio do final, "Reviver a festa", o teste completo no celular | `memoria`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento) | `testar` |
 
@@ -566,34 +641,32 @@ sobre os ajustes dela (registrados aqui), depois é construída e testada com
 
 ### Para fechar a parte 1 (o filme, o parque de manhã, o presente e a noite)
 
-1. **As duas primeiras fantasias**: quais a Estella dá — um par que combina
-   (vampiro + morceguinho, bruxinho + gato preto, abóbora + espantalho) ou
-   duas de pares diferentes? E **quem fica com qual**?
-2. **As outras quatro** (§5.2): em duas metades (a) ou uma inteira a cada
-   duas paradas (b)?
-3. **As falas** do filme (§2.1), da carta, dos comentários no caminho
-   (§2.2), da Estella (§2.3) e da saída da boutique (§2.4): estão boas, ou
-   você quer escrever? Fala sua vai literal.
-4. **As peças das seis fantasias** (§5.1): alguma que você imagina
+1. **Quem fica com qual** das duas primeiras: quem é o vampiro e quem é o
+   morceguinho (na caixa com o nome de cada um)?
+2. **As falas** do filme (§2.1), da carta, dos comentários no caminho
+   (§2.2), da Estella-aranha (§2.3) e da saída da boutique (§2.4): estão
+   boas, ou você quer escrever? Fala sua vai literal.
+3. **As peças das sete fantasias** (§5.1): alguma que você imagina
    diferente?
-5. **O Pelusa**: ele é o gato do Ari e mora em casa. Fica em casa durante o
-   evento, ou vai para a festa (o plano tinha ele de morceguinho, dormindo
-   no pufe da boutique)?
 
 ### Para as próximas partes
 
-6. **O final**: A (Casinha da Abóbora), B (roda gigante à meia-noite), C
-   (fogueira de histórias), D (baile no gelo) ou A + B?
-7. **As fantasias dos personagens** (§3): alguma que você imagina diferente?
-8. **Quando aparece**: só de 15/10 a 2/11 pelo calendário, depois "Reviver a
+4. **As balas** (§5.3): 3 no doce, 1 a 5 na travessura, 10 abóboras
+   escondidas, e a porta abrindo com 25 — estão bons?
+5. **Quem dá qual fantasia** na caça (§5.2): a divisão proposta está boa?
+6. **As fantasias dos personagens** (§3): alguma que você imagina diferente?
+7. **Quando aparece**: só de 15/10 a 2/11 pelo calendário, depois "Reviver a
    festa" — ou o ano todo?
-9. **Doces ou travessuras**: as nove paradas (§6) estão boas, ou tem algum
-   personagem que precisa de uma parada própria (o Walter, o Flynn)?
+8. **As dez paradas** (§6): as travessuras e as pistas estão boas?
 
 **Respondidas:** o prazo (sem pressa, nada aparece até tudo estar pronto);
 quem começa o evento (a dupla, no sofá); o convite (a carta por baixo da
 porta); o parque antes da festa (de manhã, enfeitado, sem os personagens); as
-fantasias da dupla (duas da Estella, quatro ganhas na caça); a Estella
-(aranha fofa); a noite (cai enquanto eles se arrumam na boutique); os
+fantasias da dupla (o vampiro e o morceguinho da Estella, mais cinco ganhas
+na caça, uma inteira a cada duas paradas, e a de pirata nova); o capricho
+(muito bem feitas, fofas e detalhadas); a Estella (aranha fofa, fazendo o
+personagem); o Pelusa (de morceguinho, dormindo num pufe da boutique, sem
+interação); a noite (cai enquanto eles se arrumam na boutique); os
 convidados (o clube e a escola chegam de ônibus); o clube e a escola durante
-o evento (normais, sem os personagens).
+o evento (normais, sem os personagens); o final (a Casinha da Abóbora,
+destrancada pelas balas).
