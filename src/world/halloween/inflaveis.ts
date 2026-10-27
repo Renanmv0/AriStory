@@ -322,6 +322,168 @@ export function aboboraInflavel(): THREE.Group {
   return fundir(g);
 }
 
+// ============================================================== a aranha
+
+/** um olho de boneco: o branco saltado, a pupila e o brilho, de frente para `n` */
+function olhoDeBoneco(partes: THREE.BufferGeometry[], p: THREE.Vector3, n: THREE.Vector3, r: number): void {
+  partes.push(pintada(naNormal(new THREE.SphereGeometry(r, 12, 10).scale(1, 1.1, 0.45), p, n), 0xffffff));
+  partes.push(pintada(naNormal(new THREE.SphereGeometry(r * 0.55, 10, 8).scale(1, 1.1, 0.4), p.clone().addScaledVector(n, r * 0.25), n), P.olhoDeBoneco));
+  partes.push(pintada(naNormal(new THREE.SphereGeometry(r * 0.2, 6, 4).scale(1, 1, 0.4), p.clone().addScaledVector(n, r * 0.42).add(new THREE.Vector3(-r * 0.2, r * 0.25, 0)), n), 0xffffff));
+}
+
+/**
+ * A ARANHA INFLÁVEL (~2,4 m): o abdômen gordo de listras laranja, a cabeça
+ * com dois olhões e dois olhinhos, o sorriso de presinhas, e as oito pernas
+ * em arco, gordas, com o pé redondo no chão. Roxa, com um lacinho laranja.
+ */
+export function aranhaInflavel(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'aranha-inflavel';
+  const corpo = new THREE.Group();
+  corpo.name = 'corpo';
+  g.add(corpo);
+  const partes: THREE.BufferGeometry[] = [];
+  const reflexos: THREE.BufferGeometry[] = [];
+  // o abdômen e as listras
+  const ABD = new THREE.Vector3(0, 1.4, -0.45);
+  partes.push(pintada(new THREE.SphereGeometry(1.0, 24, 18).scale(1, 0.9, 1.1).translate(ABD.x, ABD.y, ABD.z), P.halloweenRoxo));
+  for (const [dz, r] of [[-0.25, 0.93], [0.2, 0.9]] as const) {
+    const faixa = new THREE.TorusGeometry(r, 0.06, 6, 30);
+    faixa.scale(1, 0.92, 1);
+    partes.push(pintada(faixa.translate(ABD.x, ABD.y, ABD.z + dz), P.abobora));
+  }
+  // a cabeça, à frente
+  const C = new THREE.Vector3(0, 1.3, 0.62);
+  partes.push(pintada(new THREE.SphereGeometry(0.66, 22, 16).translate(C.x, C.y, C.z), P.halloweenRoxo));
+  // os olhos: dois grandes e dois pequenos em cima
+  for (const s of [-1, 1]) {
+    const n = new THREE.Vector3(s * 0.38, 0.12, 1).normalize();
+    olhoDeBoneco(partes, C.clone().addScaledVector(n, 0.64), n, 0.17);
+    const n2 = new THREE.Vector3(s * 0.25, 0.55, 0.8).normalize();
+    olhoDeBoneco(partes, C.clone().addScaledVector(n2, 0.64), n2, 0.09);
+    partes.push(pintada(naNormal(new THREE.CircleGeometry(0.08, 12).scale(1.4, 0.8, 1), C.clone().addScaledVector(new THREE.Vector3(s * 0.62, -0.22, 0.75).normalize(), 0.665), new THREE.Vector3(s * 0.62, -0.22, 0.75).normalize()), P.bochechaDeBoneco));
+    // a presinha
+    const presa = new THREE.ConeGeometry(0.04, 0.12, 8).rotateX(Math.PI);
+    partes.push(pintada(presa.translate(C.x + s * 0.09, C.y - 0.38, C.z + 0.56), 0xffffff));
+  }
+  // o sorriso
+  const sorriso = new THREE.TorusGeometry(0.16, 0.022, 5, 14, Math.PI);
+  sorriso.rotateZ(Math.PI);
+  partes.push(pintada(sorriso.translate(C.x, C.y - 0.2, C.z + 0.6), P.olhoDeBoneco));
+  // o lacinho laranja em cima da cabeça
+  for (const s of [-1, 1]) {
+    partes.push(pintada(naNormal(new THREE.SphereGeometry(0.13, 10, 8).scale(1.25, 0.8, 0.45), new THREE.Vector3(s * 0.14, C.y + 0.63, C.z - 0.05), new THREE.Vector3(0, 0.6, 1).normalize()), P.abobora));
+  }
+  // as oito pernas: do flanco sobe um joelho e desce até o pé no chão
+  for (const s of [-1, 1]) {
+    for (let k = 0; k < 4; k++) {
+      const a = -0.75 + k * 0.5;
+      const lado = new THREE.Vector3(s * Math.cos(a), 0, Math.sin(a));
+      const raiz = new THREE.Vector3(0, 1.25, 0.1).addScaledVector(lado, 0.75);
+      const joelho = new THREE.Vector3(0, 2.05 - Math.abs(k - 1.5) * 0.12, 0.1).addScaledVector(lado, 1.55);
+      const pe = new THREE.Vector3(0, 0.12, 0.1).addScaledVector(lado, 2.25);
+      partes.push(...salsicha([raiz, joelho, pe], 0.11).map((x) => pintada(x, P.halloweenRoxoEscuro)));
+      partes.push(pintada(new THREE.SphereGeometry(0.15, 10, 8).scale(1, 0.7, 1).translate(pe.x, 0.1, pe.z), P.abobora));
+    }
+  }
+  reflexos.push(reflexo(new THREE.Vector3(0.35, ABD.y + 0.7, ABD.z + 0.2), new THREE.Vector3(0.4, 0.8, 0.4), 0.14));
+  reflexos.push(reflexo(new THREE.Vector3(0.25, C.y + 0.45, C.z + 0.3), new THREE.Vector3(0.35, 0.75, 0.5), 0.09));
+  montarCorpo(corpo, partes, reflexos);
+  peDeInflavel(g, 0.9, 0.9, 0.7);
+  return fundir(g);
+}
+
+// ============================================================= o morcego
+
+/**
+ * O MORCEGO INFLÁVEL (~3,2 m): o corpo em gota com a barriga clara, a cabeça
+ * de orelhonas, os olhões, as duas presinhas e o sorriso, e as ASAS ABERTAS
+ * de lona estufada (a silhueta de asa com a barra em meias-luas, extrudada
+ * com bisel gordo — é o bisel que faz a asa ler como ar dentro).
+ */
+export function morcegoInflavel(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'morcego-inflavel';
+  const corpo = new THREE.Group();
+  corpo.name = 'corpo';
+  g.add(corpo);
+  const partes: THREE.BufferGeometry[] = [];
+  const reflexos: THREE.BufferGeometry[] = [];
+  const PELO = P.balaoEscuro;
+  // o corpo em gota e a barriga clara
+  const barriga = new THREE.LatheGeometry([
+    [0.02, 0.0], [0.6, 0.05], [0.8, 0.5], [0.78, 1.1], [0.62, 1.6], [0.35, 1.9], [0.02, 1.98],
+  ].map(([r, y]) => new THREE.Vector2(r, y)), 26);
+  partes.push(pintada(barriga.scale(1, 1, 0.85), PELO));
+  partes.push(pintada(naNormal(new THREE.SphereGeometry(0.42, 14, 10).scale(0.95, 1.35, 0.25), new THREE.Vector3(0, 0.95, 0.6), new THREE.Vector3(0, 0.05, 1)), 0x6b5585));
+  // a cabeça e as orelhonas
+  const C = new THREE.Vector3(0, 2.4, 0.05);
+  partes.push(pintada(new THREE.SphereGeometry(0.66, 22, 16).scale(1.08, 0.95, 0.95).translate(C.x, C.y, C.z), PELO));
+  for (const s of [-1, 1]) {
+    const orelha = new THREE.ConeGeometry(0.28, 0.7, 12).translate(0, 0.35, 0);
+    orelha.rotateZ(-s * 0.3);
+    partes.push(pintada(orelha.clone().translate(C.x + s * 0.42, C.y + 0.45, C.z - 0.02), PELO));
+    const miolo = new THREE.ConeGeometry(0.15, 0.45, 10).translate(0, 0.25, 0);
+    miolo.rotateZ(-s * 0.3);
+    partes.push(pintada(miolo.translate(C.x + s * 0.42, C.y + 0.5, C.z + 0.1), P.bochechaDeBoneco));
+    const n = new THREE.Vector3(s * 0.35, 0.1, 1).normalize();
+    olhoDeBoneco(partes, C.clone().addScaledVector(n, 0.62), n, 0.17);
+    partes.push(pintada(naNormal(new THREE.CircleGeometry(0.08, 12).scale(1.4, 0.8, 1), C.clone().addScaledVector(new THREE.Vector3(s * 0.62, -0.25, 0.75).normalize(), 0.65), new THREE.Vector3(s * 0.62, -0.25, 0.75).normalize()), P.bochechaDeBoneco));
+    const presa = new THREE.ConeGeometry(0.045, 0.13, 8).rotateX(Math.PI);
+    partes.push(pintada(presa.translate(C.x + s * 0.1, C.y - 0.36, C.z + 0.56), 0xffffff));
+  }
+  const sorriso = new THREE.TorusGeometry(0.17, 0.022, 5, 14, Math.PI);
+  sorriso.rotateZ(Math.PI);
+  partes.push(pintada(sorriso.translate(C.x, C.y - 0.19, C.z + 0.6), 0xf3eefc));
+  // as asas: a silhueta extrudada com bisel gordo
+  const asa = new THREE.Shape();
+  asa.moveTo(0, 0.35);
+  asa.quadraticCurveTo(0.9, 1.05, 2.05, 0.75);
+  asa.quadraticCurveTo(1.95, 0.25, 2.0, -0.05);
+  asa.quadraticCurveTo(1.7, 0.1, 1.5, -0.2);
+  asa.quadraticCurveTo(1.15, 0.0, 0.95, -0.35);
+  asa.quadraticCurveTo(0.6, -0.15, 0.35, -0.5);
+  asa.quadraticCurveTo(0.15, -0.2, 0, -0.35);
+  asa.closePath();
+  for (const s of [-1, 1]) {
+    const geo = new THREE.ExtrudeGeometry(asa, { depth: 0.08, bevelEnabled: true, bevelThickness: 0.09, bevelSize: 0.08, bevelSegments: 3, curveSegments: 10 });
+    geo.deleteAttribute('uv');
+    if (s < 0) {
+      geo.scale(-1, 1, 1);
+      // espelhada, a face vira do avesso: refaz a ordem dos triângulos
+      const idx = geo.index;
+      if (idx) for (let i = 0; i < idx.count; i += 3) { const a = idx.getX(i + 1); idx.setX(i + 1, idx.getX(i + 2)); idx.setX(i + 2, a); }
+      else {
+        const pos = geo.getAttribute('position') as THREE.BufferAttribute;
+        for (let i = 0; i < pos.count; i += 3) {
+          for (let c = 0; c < 3; c++) {
+            const t = pos.getComponent(i + 1, c);
+            pos.setComponent(i + 1, c, pos.getComponent(i + 2, c));
+            pos.setComponent(i + 2, c, t);
+          }
+        }
+      }
+      geo.computeVertexNormals();
+    }
+    // inclinada para a frente e para cima, saindo do ombro
+    geo.rotateY(s * 0.35);
+    geo.rotateZ(s * 0.12);
+    geo.translate(s * 0.45, 1.55, -0.1);
+    partes.push(pintada(geo, P.halloweenRoxoEscuro));
+  }
+  // os pezinhos e o lacinho laranja
+  for (const s of [-1, 1]) partes.push(pintada(new THREE.SphereGeometry(0.2, 12, 8).scale(1, 0.6, 1.3).translate(s * 0.3, 0.1, 0.55), PELO));
+  for (const s of [-1, 1]) {
+    partes.push(pintada(naNormal(new THREE.SphereGeometry(0.15, 10, 8).scale(1.25, 0.8, 0.45), new THREE.Vector3(s * 0.17, 1.8, 0.5), new THREE.Vector3(0, 0.15, 1)), P.abobora));
+  }
+  partes.push(pintada(new THREE.SphereGeometry(0.07, 8, 6).translate(0, 1.8, 0.58), P.aboboraFunda));
+  reflexos.push(reflexo(new THREE.Vector3(0.28, C.y + 0.5, C.z + 0.35), new THREE.Vector3(0.35, 0.75, 0.5), 0.11));
+  reflexos.push(reflexo(new THREE.Vector3(0.5, 1.1, 0.55), new THREE.Vector3(0.7, 0.2, 0.7), 0.09, 2.2));
+  montarCorpo(corpo, partes, reflexos);
+  peDeInflavel(g, 0.85, 1.0, 0.7);
+  return fundir(g);
+}
+
 /**
  * O BALANÇO NO VENTO: o corpo pende a partir do pé, de leve e devagar, cada
  * inflável no seu tempo (a fase vem da posição dele no mundo).

@@ -204,7 +204,7 @@ if (roda('parque')) {
     window.jogo.scene.traverse((o) => { if (/-inflavel$/.test(o.userData?.peca ?? '')) achados.push(o.userData.peca); });
     return achados;
   });
-  ok(inflaveis.length === 3, `os três infláveis gigantes (${inflaveis.join(', ')})`);
+  ok(inflaveis.length === 11 && ['aranha-inflavel', 'morcego-inflavel'].every((p) => inflaveis.includes(p)), `os onze infláveis gigantes, um ou dois por área (${inflaveis.join(', ')})`);
   const itLago = await interacoes();
   ok(itLago['halloween:lago-de-gelatina'] === true && itLago['parque:lago'] === false, 'o lago roxo tem a conversa da gelatina no lugar do "Olhar o lago"');
 
@@ -267,13 +267,17 @@ if (roda('parque')) {
   await page.screenshot({ path: `${OUT}/parque-gelatina.png` });
   // as falas vão uma a uma (o balão escreve devagar no navegador do teste)
   let gelatina = false;
+  let suco = false;
   for (let i = 0; i < 90 && !gelatina; i++) {
     await page.keyboard.press('KeyE');
     await espera(500);
+    if (/suco/i.test((await textoDoBalao()) ?? '')) suco = true;
     gelatina = await j(() => window.jogo.save.memories.some((m) => m.id === 'halloween-lago-de-gelatina'));
   }
   await passarFalas();
   ok(gelatina, 'a conversa da gelatina vira memória');
+  const nota = await j(() => window.jogo.save.memories.find((m) => m.id === 'halloween-lago-de-gelatina')?.note ?? '');
+  ok(suco && /suco de uva/.test(nota), `depois de provar, o Renan acha que é suco de uva (${suco ? 'falou' : 'não falou'}; "${nota}")`);
 
   // ler o recado do Mano
   await j(() => { window.jogo.debugPlace(15.39, 18.58, Math.PI + 0.6); window.jogo.setZoom(8); });

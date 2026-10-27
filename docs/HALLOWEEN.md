@@ -439,16 +439,23 @@ abóbora, o papel da lanterna), para a noite só trocar o material dela.
 >   borda de neve em lilás ("gelo de uva"), e a luz dos postes laranja de
 >   vela. É uma REPINTURA por cima da peça pronta (`world/halloween/repintar.ts`):
 >   a fábrica de cada lugar não muda;
-> - **três infláveis gigantes** (`world/halloween/inflaveis.ts`): o fantasma
->   de braços para cima no meio da pista de patins, o gato preto sentado ao
->   lado da praça de gelo e a abóbora de chapéu de bruxa atrás da sorveteria —
->   balançando devagar no vento, com o ventilador e as cordas;
+> - **onze infláveis gigantes** (`world/halloween/inflaveis.ts`), cinco
+>   bonecos — o fantasma de braços para cima, o gato preto sentado, a abóbora
+>   de chapéu de bruxa, a aranha roxa de pernas de salsicha e o morcego de
+>   asas abertas — balançando devagar no vento, com o ventilador e as cordas.
+>   Primeiro vieram três (a pista de patins e a praça de gelo); no segundo
+>   ajuste o Renan pediu "pelo menos 1 ou 2 por área", e ficou um ou dois em
+>   cada canto: a chegada (morcego e aranha ladeando o portão), a roda
+>   (fantasma e abóbora), o campinho de frisbee (morcego), a boutique (gato),
+>   atrás da arena (aranha) e o caminho do ponto (fantasma). Sempre em
+>   gramado livre, fora das árvores e longe da diagonal da câmera do vizinho;
 > - **abóboras grandes** (de 0,4 a 0,7 de raio) nos cantos da praça de gelo
 >   e em volta da pista;
 > - **o lago roxo** — gelatina de uva — e, no lugar do "Olhar o lago", a
 >   conversa da gelatina ("Olhar o lago roxo"): os dois acham que o lago
->   virou gelatina, o Renan prova com o dedo e é só água roxa. Vira a
->   memória "O lago de gelatina".
+>   virou gelatina, o Renan prova com o dedo e — pedido dele — diz que acha
+>   que é **suco de uva** ("Acho que é suco de uva!"); o Ari promete trazer
+>   o canudo. Vira a memória "O lago de gelatina".
 
 #### O kit do Halloween (`world/halloween/*.ts`)
 

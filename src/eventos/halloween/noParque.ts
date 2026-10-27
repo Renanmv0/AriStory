@@ -11,7 +11,9 @@ import {
 } from '../../world/halloween/pecas';
 import { NessieNoLago, type LagoDoNessie } from '../../world/halloween/nessie';
 import type { CoresDoLago } from '../../core/shaders';
-import { InflaveisNoVento, aboboraInflavel, fantasmaInflavel, gatoInflavel } from '../../world/halloween/inflaveis';
+import {
+  InflaveisNoVento, aboboraInflavel, aranhaInflavel, fantasmaInflavel, gatoInflavel, morcegoInflavel,
+} from '../../world/halloween/inflaveis';
 import { giroDeMatiz, juntas, repintar, trocaDeCores } from '../../world/halloween/repintar';
 import { POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco } from '../../world/noite';
 import { ARI, RENAN } from '../../characters/cast';
@@ -308,13 +310,31 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   // cara de Halloween — "bonecos infláveis gigantes, ou abóboras um pouco
   // maiores". O fantasma fica no gramado do meio da pista de patins, o gato
   // preto no gramado à direita da praça de gelo, e a abóbora de chapéu atrás
-  // da sorveteria, fora da sombra dela na câmera.
+  // da sorveteria, fora da sombra dela na câmera. Depois (pedido do Renan:
+  // "pelo menos 1 ou 2 por área") vieram mais: a aranha e o morcego, e um ou
+  // dois em cada canto do parque — sempre em gramado livre, fora dos
+  // caminhos, e longe da diagonal da câmera (x − z) do vizinho.
   const vento = new InflaveisNoVento();
   for (const [criar, x, z, giro, raio] of [
+    // a pista de patins e a praça de gelo
     [fantasmaInflavel, -21, -5, PARA_A_CAMERA - 0.2, 1.3],
     [gatoInflavel, 22.9, 15.4, PARA_A_CAMERA - 0.5, 1.15],
     // na diagonal da câmera (x − z) longe da do gato: senão um fica atrás do outro
     [aboboraInflavel, 16.9, 12.6, PARA_A_CAMERA + 0.1, 1.2],
+    // a chegada: os dois do lado de fora da cerca, ladeando o largo do portão
+    [morcegoInflavel, -7.4, 31.0, PARA_A_CAMERA + 0.3, 1.0],
+    [aranhaInflavel, 7.6, 31.2, PARA_A_CAMERA - 0.4, 1.6],
+    // em volta da roda gigante
+    [fantasmaInflavel, 17.6, -23.0, PARA_A_CAMERA - 0.6, 1.3],
+    [aboboraInflavel, -14.2, -24.6, PARA_A_CAMERA + 0.3, 1.2],
+    // o gramado do campinho de frisbee, do lado de fora da grade
+    [morcegoInflavel, 27.4, -18.6, PARA_A_CAMERA - 0.5, 1.0],
+    // o gramado da boutique
+    [gatoInflavel, -27.4, -21.0, PARA_A_CAMERA + 0.4, 1.15],
+    // atrás da arena, longe das árvores da beira do lago
+    [aranhaInflavel, -21.0, 28.4, PARA_A_CAMERA + 0.2, 1.6],
+    // o caminho do ponto de ônibus
+    [fantasmaInflavel, 24.6, 27.6, PARA_A_CAMERA - 0.3, 1.3],
   ] as const) {
     const inflavel = unica(criar(), x, 0, z, giro);
     vento.adicionar(inflavel);
@@ -408,16 +428,18 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
         g.som('agua');
         pecas.agua.marola(beira.x, beira.z, 0.8);
         await g.wait(0.9);
+        // pedido do Renan: provado o lago, ele acha que é SUCO de uva
         await conversa([
-          [R, '…É água. Água roxa. E gelada.'],
-          [A, 'Que decepção. Eu já tava com fome.'],
-          [R, 'Na festa a gente acha gelatina de verdade. Prometo.'],
+          [R, 'Hmm… não é gelatina, não.'],
+          [R, 'Acho que é suco de uva!'],
+          [A, 'Suco de uva? Um lago inteiro?! Então eu trago o canudo.'],
+          [R, 'Só não conta pros patos, senão eles bebem tudo antes.'],
         ]);
         g.unlock({
           id: 'halloween-lago-de-gelatina',
           title: 'O lago de gelatina',
           place: 'Parque Villa Lobos',
-          note: 'O lago ficou roxo pro Halloween, e por um segundo os dois acharam que era gelatina de uva.',
+          note: 'O lago ficou roxo pro Halloween. O Ari jurou que era gelatina de uva; o Renan provou e garantiu que era suco de uva.',
           icon: '🍇',
         });
       },
