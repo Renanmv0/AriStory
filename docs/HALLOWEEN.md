@@ -28,13 +28,15 @@ jeito que os amigos acharam de levar os dois até a **surpresa** do final.
 **"Assistir um filme de terror"** no sofá de casa → a carta da Estella
 desliza por baixo da porta → o parque **de manhã, já enfeitado e vazio**
 (todo mundo "se arrumando"), com os comentários da dupla no caminho → o
-presente da Estella na boutique (**as seis fantasias**) → a festa à noite →
-**doces ou travessuras** em 9 paradas → a última pista abre o **portão
-escondido** atrás da praça da roda → o **final** (§7).
+presente da Estella na boutique (**duas fantasias**) → a dupla sai da
+boutique e **já é noite**: o **ônibus do clube** chega com todo mundo →
+**doces ou travessuras** em 9 paradas, ganhando as **outras quatro
+fantasias** → a última pista abre o **portão escondido** atrás da praça da
+roda → o **final** (§7).
 
 **Estado: só o plano.** Nada construído. A **parte 1** (o filme, o parque
-de manhã e o presente da Estella — §2.1 a §2.3) já tem os ajustes do Renan;
-faltam as quatro perguntas dela (§10).
+de manhã, o presente da Estella e a noite chegando com o ônibus — §2.1 a
+§2.4) já tem os ajustes do Renan; faltam as perguntas dela (§10).
 
 **Decisões do Renan** (as que já valem):
 
@@ -52,10 +54,16 @@ faltam as quatro perguntas dela (§10).
 - **o parque é visto primeiro DE MANHÃ**, já todo enfeitado, e **sem os
   personagens**: estão todos "se arrumando" para a festa. No caminho até a
   Estella, a dupla vai comentando as decorações (§2.2);
-- **a Estella dá TODAS as fantasias** — os três pares (vampiro, morceguinho,
-  bruxinho, gato preto, abóbora e espantalho), cada uma completa, com os
-  acessórios (§5.1);
-- **a Estella está de aranha fofa** (§2.3).
+- **as fantasias vão sendo GANHAS**: a Estella dá **só duas** no começo —
+  uma para cada um, diferentes —, e as outras quatro (dos seis do §5.1,
+  todas completas, com os acessórios) se ganham pedindo doces ou travessuras
+  (§5.2);
+- **a Estella está de aranha fofa** (§2.3);
+- **a dupla se arruma tanto na boutique que, quando sai, já é NOITE**, e o
+  **ônibus do clube chega** trazendo todos os personagens de lá **e os da
+  escola do Gatito** (§2.4);
+- **o clube e a escola ficam normais durante o evento, mas sem os
+  personagens** — estão todos no parque (§1).
 
 **O que este plano propõe** (tudo provisório até o Renan aprovar):
 
@@ -69,8 +77,8 @@ faltam as quatro perguntas dela (§10).
 - **6 lojas e quiosques decorados**: a lojinha da Estella, a loja de
   patins, a sorveteria do Mano, a bilheteria do Cookie, a roda gigante e o
   ponto de ônibus (§4);
-- **as seis fantasias da dupla**, completas e para os dois, presente da
-  Estella no começo (§5);
+- **seis fantasias completas para a dupla**: duas de presente da Estella no
+  começo, e as outras quatro ganhas na caça (§5);
 - **9 paradas de doces ou travessuras**, cada uma com uma escolha: pedir
   **doce** (o personagem dá um doce temático) ou **travessura** (ele apronta
   uma brincadeira fofa) — a pista vem nos dois casos (§6);
@@ -113,9 +121,16 @@ relógio, que diz como o parque está:
 |---|---|---|
 | `antes` | — | o de sempre |
 | `convite` | a carta é lida (§2.1) | **de manhã**, enfeitado, **sem os personagens** (estão se arrumando) |
-| `fantasiados` | a Estella entrega as fantasias (§2.3) | ainda de manhã; a dupla já fantasiada — o que vem daqui até a noite é a próxima parte a planejar |
-| `festa` | a festa começa (a planejar) | **de noite**, todo mundo fantasiado |
+| `festa` | a dupla sai da boutique fantasiada (§2.4) | **de noite**, as luzes acesas, o ônibus do clube chegando, todo mundo fantasiado |
 | `fim` | o final (§7) | — |
+
+**O clube e a escola durante o evento** (da fase `convite` até o fim):
+ficam **normais**, mas **sem os personagens** — a Gina, o Capy, o Noel, a
+Josefina e o Walter não estão no clube, e o Gatito, o Flynn e as coelhinhas
+não estão na escola, porque foram todos para o parque. Os lugares funcionam
+(dá para andar, sentar, usar o que não depende de ninguém); o que depende de
+um personagem (pedir suco ao Noel, a aula do Gatito, o turno do Walter)
+simplesmente não aparece até o evento acabar.
 
 **A festa é de NOITE.** Ao entrar no parque durante a festa, o céu vai para o
 crepúsculo e depois para a noite com a fila de momentos que a clareira já usa
@@ -205,26 +220,44 @@ oito patinhas de feltro, a tiara de olhinhos e o novelo de lã virando teia —
 ela tece, ela costura) e recebe os dois. Cutscene:
 
 1. ela conta que passou a semana costurando e tira de trás do balcão
-   **seis caixas** com laço, uma por fantasia;
-2. as caixas abrem uma a uma, e cada fantasia aparece completa no manequim
-   ao lado do balcão (as seis do §5.1);
-3. tudo vai para o **guarda-roupa dos dois** (`g.ganharPeca`) — as seis
-   fantasias inteiras para o Ari e as seis para o Renan;
-4. **proposta:** ela manda os dois ao provador para escolher qual vestir —
-   abre o guarda-roupa já na parte das fantasias, e a cena continua quando
-   ele fecha. Saem do provador fantasiados, e a Estella aprova;
-5. a fase vira `fantasiados`.
+   **duas caixas** com laço, uma com o nome de cada um;
+2. as caixas abrem, e cada fantasia aparece completa no manequim ao lado
+   do balcão — **duas fantasias diferentes** (quais, é pergunta do §10);
+3. as duas vão para o **guarda-roupa dos dois** (`g.ganharPeca`): cada um
+   veste a sua, e depois podem trocar se quiserem;
+4. os dois vão para o provador e **saem fantasiados**; a Estella aprova, e
+   conta que tem **mais fantasias** espalhadas com os amigos — é só pedir
+   doces ou travessuras (§5.2);
+5. ela dá a **cestinha de abóbora** (o balde dos doces) e o **mapinha** com a
+   primeira pista.
 
 > **Rascunho de falas da Estella** (o Renan reescreve):
 > "Nenhuma fantasia sai daqui sem a minha aprovação… e estas eu APROVO!"
-> "Seis fantasias. Uma semana inteira. Valeu cada ponto."
+> "Uma semana inteira costurando. Valeu cada ponto."
 > "Agora vão se trocar — e não me apareçam na festa sem fantasia!"
+> "Ah, e essas não são as únicas… os amigos estão guardando as outras. É só
+> pedir doces ou travessuras!"
 
-### 2.4 Da manhã até a festa (a planejar)
+### 2.4 Já é noite: o ônibus do clube chega
 
-O que acontece depois do presente — como a manhã vira noite, onde os
-personagens reaparecem, quando a cestinha de doces e o mapinha da primeira
-pista entram — é a **próxima parte a planejar** com o Renan.
+**A dupla demorou tanto se arrumando que, quando sai da boutique, já é
+noite.** A fase vira `festa`:
+
+1. a porta da boutique abre para o parque **à noite** — o céu escuro, as
+   abóboras acesas, as lanternas e os varais de luzinha ligados (§4);
+2. uma fala dos dois sobre o tempo que passou (rascunho):
+   — **Renan:** "Já anoiteceu?! A gente ficou quanto tempo lá dentro?"
+   — **Ari:** "O suficiente pra ficar lindo."
+3. a buzina do **ônibus do clube**, que para no ponto do parque e desce a
+   turma toda **fantasiada** (§3): a Gina (abaixando a cabeça para caber na
+   porta), o Capy, o Noel, a Josefina e o Walter — e, do mesmo ônibus, o
+   Gatito, o Flynn e as três coelhinhas da escola. Cada um acena e vai para
+   o seu lugar da festa;
+4. o Mano, o Cookie e o Jean-Luc já estão nos postos deles, fantasiados;
+5. a câmera volta para a dupla, e a caça começa (§6).
+
+O ônibus é o mesmo do ponto de hoje (`scripts/onibus.mjs`): a cena dele
+chegando já existe.
 
 ### 2.5 Doces ou travessuras (§6)
 
@@ -264,9 +297,8 @@ Técnica (§8.2): cada fantasia de bicho é uma peça pendurada nos pontos do
 corpo que a classe já tem (a cabeça, o tronco, as patas), ligada por
 `fantasia: 'halloween'` — a classe não muda de cérebro.
 
-**Quem vem do clube chega de ônibus** numa cutscene curta ao entrar no
-parque pela primeira vez na festa: o ônibus para no ponto e desce a turma
-fantasiada (a Gina abaixando a cabeça para caber na porta).
+**Quem vem do clube chega de ônibus** — e a turma da escola vem junto, no
+mesmo ônibus — na cutscene de quando a dupla sai da boutique (§2.4).
 
 ---
 
@@ -312,11 +344,11 @@ que é fixo passa por `fundir()`.
 
 ### 5.1 O presente da Estella: as seis fantasias
 
-**Decisão do Renan: a Estella dá TODAS.** São as seis dos três pares,
-**cada uma completa** — todas as partes e os acessórios —, e **os dois
-ganham as seis** (o guarda-roupa é de cada um): qualquer um pode ser o
-vampiro, o morceguinho, o bruxinho, o gato preto, a abóbora ou o
-espantalho, e dá para combinar como quiser.
+**Decisão do Renan: as seis fantasias existem, completas** — todas as
+partes e os acessórios —, mas **vão sendo ganhas**: a Estella dá **duas** no
+começo (uma para cada um, diferentes, §2.3) e as **outras quatro** vêm da
+caça (§5.2). Toda fantasia ganha vai para o guarda-roupa **dos dois**:
+qualquer um pode vestir qualquer uma, e dá para combinar como quiser.
 
 **As peças de cada fantasia** (proposta; uma por vaga do corpo — a vaga de
 acessório é uma só, então cada fantasia tem um acessório):
@@ -334,14 +366,22 @@ Cada peça segue a skill de roupa (geometria em `world/fantasias.ts`, ficha
 em `ITENS`). São **presente da Estella**: pela regra do Renan, presente de
 personagem **não se pinta no ateliê** (`PECAS_SEM_TINTA`). Entram no
 guarda-roupa normal, por parte do corpo — proposta: com um filtro novo
-**🎃 Fantasias** nas abas de cima, para achar as seis rápido.
+**🎃 Fantasias** nas abas de cima, para achar as fantasias rápido.
 
 ### 5.2 O que se ganha na caça
 
-**A rever quando a caça for planejada:** a ideia antiga era cada parada dar
-uma peça do "outro par" — mas agora a Estella já dá os três pares. As
-paradas podem dar outra coisa (peças de fantasia novas, enfeites de
-Halloween para a estufa, ou só doces).
+**Decisão do Renan: as outras quatro fantasias se ganham pedindo doces ou
+travessuras.** Proposta de como (o Renan escolhe — §10):
+
+- **(a) em duas metades** *(recomendada)*: cada fantasia vem em duas
+  paradas seguidas — na primeira, a cabeça, o tronco e o acessório; na
+  segunda, as pernas, os pés e as mãos. As paradas 1 a 8 completam as quatro
+  fantasias, e a 9 (a Gina) dá a pista do final. Dá para vestir a metade de
+  cima já na hora — e a fantasia vai se montando no corpo pelo caminho;
+- **(b) uma inteira a cada duas paradas**: as paradas 2, 4, 6 e 8 dão uma
+  fantasia completa cada, e as outras dão só doce e pista.
+
+Doce ou travessura, a peça vem do mesmo jeito: as duas escolhas são boas.
 
 E o **prêmio do final** (§7): uma peça especial (proposta: a **coroa de
 abóbora** do "rei e rainha da festa", ou o que combinar com o final escolhido).
@@ -384,6 +424,10 @@ aponta o próximo personagem sem dizer o nome.
 O **Walter**, o **Flynn** e o **Pelusa** não são paradas: o Walter está no
 final, o Flynn uiva no campinho de frisbee e o Pelusa dorme no pufe da
 lojinha — dá para falar com eles, mas eles não têm pista.
+
+**As fantasias pelo caminho.** Cada parada também entrega peças das quatro
+fantasias que faltam (§5.2). Qual fantasia sai de qual parada fica para
+quando as duas primeiras (as da Estella) estiverem escolhidas.
 
 **Mapa e diário.** O mapinha da Estella vira um item de mão: abrir mostra as
 pistas já recebidas (um pergaminho com os versinhos), e a próxima parada
@@ -487,8 +531,9 @@ celular **sem perder beleza**:
 - tudo o que é fixo em **`fundir()`**;
 - **luz pintada**, nunca luz nova: poça de luz no chão, halo nas lanternas,
   brilho nos furos da abóbora;
-- os personagens do clube **só no parque durante a festa** (no clube, eles
-  continuam lá; no parque, entram só com a época);
+- os personagens do clube e da escola **saem** das cenas deles durante o
+  evento e **entram** no parque só na fase `festa`: em cada cena, só quem
+  está lá é montado;
 - medir `window.jogo.renderer.info.render` antes e depois de cada etapa, no
   computador e no celular, e anotar no commit.
 
@@ -503,9 +548,9 @@ aprovar antes da próxima.
 |---|---|---|---|
 | **0** | **decisões** | as respostas do §10 | — |
 | **1** | **o filme e a carta** | a fase do evento no save e o `?halloween`; no sofá, "Assistir um filme de terror", o filme na TV, as falas, a carta deslizando por baixo da porta, "Pegar a carta" e o painel da carta (§2.1) | `cenario`, `prop` + `geometry`, `textures`, `animation` |
-| **2** | **o parque enfeitado, de manhã e vazio** | as decorações do parque e das lojas, de dia (§4), os personagens fora, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
-| **3** | **o presente da Estella** | a boutique decorada, a Estella de aranha, as seis caixas, **as seis fantasias** completas para os dois (§5.1), o provador (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
-| **4** | **da manhã à festa** | a planejar (§2.4): a noite chegando, as luzes acesas, os convidados fantasiados (§3) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
+| **2** | **o parque enfeitado, de manhã e vazio** | as decorações do parque e das lojas, de dia (§4), os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
+| **3** | **o presente da Estella** | a boutique decorada, a Estella de aranha, **as seis fantasias** modeladas (§5.1), as duas caixas, o provador, a cestinha e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
+| **4** | **a noite e o ônibus** | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** | **doces ou travessuras** | as nove paradas (§6) | `cenario` + `interaction`, `animation` |
 | **6** | **o final** | o final escolhido (§7) | conforme a escolha |
 | **7** | **o fechamento** | a memória no quadro, o prêmio do final, "Reviver a festa", o teste completo no celular | `memoria`, `testar` |
@@ -519,25 +564,26 @@ sobre os ajustes dela (registrados aqui), depois é construída e testada com
 
 ## 10. Perguntas para o Renan
 
-### Para fechar a parte 1 (o filme, o parque de manhã e o presente)
+### Para fechar a parte 1 (o filme, o parque de manhã, o presente e a noite)
 
-1. **As falas** do filme (§2.1), da carta, dos comentários no caminho (§2.2)
-   e da Estella (§2.3): estão boas, ou você quer escrever? Fala sua vai
-   literal.
-2. **O clube e a escola na fase da manhã**: se a dupla pegar o ônibus antes
-   da festa, os personagens de lá também estão "se arrumando" (com
-   plaquinha), ou o clube e a escola ficam normais?
-3. **O provador**: vocês escolhem qual fantasia vestir (abre o
-   guarda-roupa), ou a Estella escolhe uma para cada um?
+1. **As duas primeiras fantasias**: quais a Estella dá — um par que combina
+   (vampiro + morceguinho, bruxinho + gato preto, abóbora + espantalho) ou
+   duas de pares diferentes? E **quem fica com qual**?
+2. **As outras quatro** (§5.2): em duas metades (a) ou uma inteira a cada
+   duas paradas (b)?
+3. **As falas** do filme (§2.1), da carta, dos comentários no caminho
+   (§2.2), da Estella (§2.3) e da saída da boutique (§2.4): estão boas, ou
+   você quer escrever? Fala sua vai literal.
 4. **As peças das seis fantasias** (§5.1): alguma que você imagina
    diferente?
+5. **O Pelusa**: ele é o gato do Ari e mora em casa. Fica em casa durante o
+   evento, ou vai para a festa (o plano tinha ele de morceguinho, dormindo
+   no pufe da boutique)?
 
 ### Para as próximas partes
 
-5. **O final**: A (Casinha da Abóbora), B (roda gigante à meia-noite), C
+6. **O final**: A (Casinha da Abóbora), B (roda gigante à meia-noite), C
    (fogueira de histórias), D (baile no gelo) ou A + B?
-6. **Os convidados**: "todos os personagens do clube" inclui também os da
-   escola (Gatito, Flynn, as coelhinhas) e o Pelusa? O plano inclui todos.
 7. **As fantasias dos personagens** (§3): alguma que você imagina diferente?
 8. **Quando aparece**: só de 15/10 a 2/11 pelo calendário, depois "Reviver a
    festa" — ou o ano todo?
@@ -547,4 +593,7 @@ sobre os ajustes dela (registrados aqui), depois é construída e testada com
 **Respondidas:** o prazo (sem pressa, nada aparece até tudo estar pronto);
 quem começa o evento (a dupla, no sofá); o convite (a carta por baixo da
 porta); o parque antes da festa (de manhã, enfeitado, sem os personagens); as
-fantasias da dupla (a Estella dá as seis, completas); a Estella (aranha fofa).
+fantasias da dupla (duas da Estella, quatro ganhas na caça); a Estella
+(aranha fofa); a noite (cai enquanto eles se arrumam na boutique); os
+convidados (o clube e a escola chegam de ônibus); o clube e a escola durante
+o evento (normais, sem os personagens).
