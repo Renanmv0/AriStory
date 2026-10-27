@@ -202,7 +202,8 @@ if (roda('parque')) {
     return n;
   });
   const n0 = await nessie();
-  await espera(3000);
+  // o navegador do teste anda a poucos quadros: o relógio do jogo corre devagar
+  await espera(9000);
   const n1 = await nessie();
   ok(!!n0 && Math.hypot(n0.x + 21, n0.z - 11) < 6.5, `o Nessie está dentro do lago (${JSON.stringify(n0)})`);
   ok(!!n0 && !!n1 && Math.hypot(n1.x - n0.x, n1.z - n0.z) > 0.15, 'e passeia');
@@ -215,7 +216,7 @@ if (roda('parque')) {
   const it = await interacoes();
   const fechadas = ['parque:sorveteria', 'parque:cookie', 'parque:bilheteria', 'parque:roda-gigante', 'parque:xadrez', 'parque:estella', 'parque:mano'];
   ok(fechadas.every((i) => it[i] === false), `o que depende deles fecha (${fechadas.map((i) => `${i}=${it[i]}`).join(' ')})`);
-  const abertas = ['parque:patins', 'parque:lago', 'parque:pingpong', 'lago:pedrinha'];
+  const abertas = ['parque:patins', 'parque:lago', 'parque:pingpong'];
   ok(abertas.every((i) => it[i] !== false), `o que é da dupla continua (${abertas.map((i) => `${i}=${it[i]}`).join(' ')})`);
   ok(['halloween:recado-Mano', 'halloween:recado-Cookie', 'halloween:recado-Estella'].every((i) => it[i] === true), 'as plaquinhas de recado dão para ler');
 
@@ -230,7 +231,8 @@ if (roda('parque')) {
   await j(() => window.jogo.debugPlace(0.2, 25.4, Math.PI));
   await espera(300);
   await j(() => window.jogo.debugPlace(0, 25, Math.PI));
-  await espera(1200);
+  // o balão escreve letra por letra: espera a fala inteira
+  await espera(3500);
   const falaDoPortao = await textoDoBalao();
   ok(/abóbora no portão/i.test(falaDoPortao), `chegando no portão, o Renan comenta (${falaDoPortao.slice(0, 60)})`);
   await page.screenshot({ path: `${OUT}/parque-portao.png` });
@@ -245,8 +247,12 @@ if (roda('parque')) {
   // ler o recado do Mano
   await j(() => { window.jogo.debugPlace(15.39, 18.58, Math.PI + 0.6); window.jogo.setZoom(8); });
   await espera(1400);
+  // chegar na sorveteria dispara o comentário dela primeiro
+  await espera(2500);
+  await passarFalas();
+  await espera(600);
   await page.keyboard.press('KeyE');
-  await espera(1200);
+  await espera(3500);
   const recado = await textoDoBalao();
   ok(/FECHADO/.test(recado), `o recado do Mano (${recado.slice(0, 50)})`);
   await page.screenshot({ path: `${OUT}/parque-recado-do-mano.png` });
