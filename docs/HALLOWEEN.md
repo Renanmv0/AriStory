@@ -637,9 +637,10 @@ por cima**, e para de fazer isso quando a fase vira `fim`:
   (`faseDoHalloween(g)`) e chama o módulo do evento
   (`src/eventos/halloween/`). Tirar o evento inteiro do jogo é apagar essa
   pasta e essas linhas;
-- **o ponto de volta no git**: a tag **`antes-do-halloween`** marca o jogo
-  exatamente como estava antes de qualquer código do evento — qualquer
-  modelo original pode ser recuperado dali;
+- **o ponto de volta no git**: o commit **`9760601974`** da `main`
+  (`976060197456697b094805ba9286ebb75056dcac`) é o jogo exatamente como estava antes de qualquer código do
+  evento — qualquer modelo original sai dali com
+  `git show 9760601974:caminho/do/arquivo.ts`;
 - **o teste da volta** (`scripts/halloween.mjs`, `SO=volta`): sem o
   `?halloween`, e depois na fase `fim`, o parque, o clube e a escola têm
   que ter **os mesmos objetos, os mesmos desenhos por quadro e a mesma foto**
