@@ -749,6 +749,11 @@ de camada GRANDE, que enfeita uma cena inteira:
   `group.userData.bicho`. O que a cena faria SOZINHA com quem não está (o
   tour da Luna, o treino das irmãs) ganha uma linha de guarda
   (`quemFoiSeArrumar(g)`) — esconder não basta, a cutscene rodaria.
+- **Mudar a COR de um lugar durante o evento** é repintar a peça pronta
+  (`world/halloween/repintar.ts`), e não mexer na fábrica dela; a água do lago
+  troca de cor pelos uniformes (`agua.trocarCores`, sem recompilar nada).
+  Interação do evento que substitui uma de sempre (a gelatina no lugar do
+  "Olhar o lago") desliga a de sempre pelo `id` no fim do `build`.
 - **Fala que dispara ao passar perto** (os comentários da dupla): uma vez
   por save (`flag`), e só com quem joga ANDANDO — parado, ele pode estar
   numa conversa, e um balão não pode cair por cima de outro.

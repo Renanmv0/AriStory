@@ -426,6 +426,30 @@ abóbora, o papel da lanterna), para a noite só trocar o material dela.
 > enfeite): portão 477 -> 542, alameda 405 -> 452, praça da roda
 > 832 -> 884, sorveteria 570 -> 624, boutique 548 -> 592, lago 752 -> 805.
 
+> **O segundo ajuste do Renan** (depois de ver o parque): "alguns lugares
+> ainda não passam a vibe Halloween, como a pista de gelo e a barraca de
+> sorvete do Mano". Entrou:
+>
+> - **as cores do Halloween nos lugares** — roxo e laranja no lugar do rosa,
+>   do coral e do vermelho: a sorveteria laranja e roxa com a neve do
+>   telhado virando calda de abóbora, os guarda-sóis listrados de roxo e
+>   laranja e as cadeirinhas roxas, a loja de patins roxa com o toldo laranja
+>   (e o amarelo virando verde de poção), o vermelho da roda e da bilheteria
+>   virando roxo, o toldo da boutique roxo, o gelo da praça, os cristais e a
+>   borda de neve em lilás ("gelo de uva"), e a luz dos postes laranja de
+>   vela. É uma REPINTURA por cima da peça pronta (`world/halloween/repintar.ts`):
+>   a fábrica de cada lugar não muda;
+> - **três infláveis gigantes** (`world/halloween/inflaveis.ts`): o fantasma
+>   de braços para cima no meio da pista de patins, o gato preto sentado ao
+>   lado da praça de gelo e a abóbora de chapéu de bruxa atrás da sorveteria —
+>   balançando devagar no vento, com o ventilador e as cordas;
+> - **abóboras grandes** (de 0,4 a 0,7 de raio) nos cantos da praça de gelo
+>   e em volta da pista;
+> - **o lago roxo** — gelatina de uva — e, no lugar do "Olhar o lago", a
+>   conversa da gelatina ("Olhar o lago roxo"): os dois acham que o lago
+>   virou gelatina, o Renan prova com o dedo e é só água roxa. Vira a
+>   memória "O lago de gelatina".
+
 #### O kit do Halloween (`world/halloween/*.ts`)
 
 Peça nova, com o capricho da sorveteria do Mano e da boutique: nada de caixa

@@ -937,6 +937,20 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   reflexo do vinil — numa malha `vinil` (é ela que acende de noite).
   `NessieNoLago` anda num ARCO do lago pela `naBeira` da água (pula o lado
   do trapiche) e deixa o rastro dos patos numa vaga própria.
+- **Os infláveis gigantes** (`inflaveis.ts`): o que lê "inflável" é o
+  GORDO sem quina, o reflexo do vinil (manchas acesas), a costura em anel e
+  o pé (a saia no chão, o ventilador atrás e as quatro cordas até as
+  estacas). Cada um junta as partes numa malha de cor por vértice dentro do
+  grupo `corpo`, que balança a partir do pé (`InflaveisNoVento`). Cara colada
+  em corpo torneado vai na superfície DELE (o raio do lençol na altura), e
+  não numa esfera: abaixo do meio da cabeça o lençol é mais largo, e a boca e
+  a gravata do fantasma sumiam dentro dele.
+- **Repintar um lugar pronto** (`repintar.ts`): troca, por cópias, o material
+  (com o `onBeforeCompile` junto — o `clone` não leva), a textura de canvas
+  (pixel a pixel, mantendo a claridade relativa: a trama da lona continua), a
+  cor por vértice e a cor por cópia dos lotes. Duas receitas: `trocaDeCores`
+  (cor da paleta por cor da paleta) e `giroDeMatiz` (o gelo azul vira lilás).
+  O original não é tocado — o material do cache do `toon()` é de todo mundo.
 - **Cuidado com o `Math.pow` de número negativo**: `y / ALTO` de um vértice
   em `y = 0` sai `-1e-17`, e `pow(-1e-17, 2.4)` é `NaN` — a copa do chapéu
   de bruxa nasceu com a caixa envolvente quebrada. Prenda com `clamp`.

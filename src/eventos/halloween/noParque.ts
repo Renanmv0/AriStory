@@ -10,6 +10,9 @@ import {
   lencolDaBilheteria, panoDeFechado, plaquinhaDeRecado, pompom,
 } from '../../world/halloween/pecas';
 import { NessieNoLago, type LagoDoNessie } from '../../world/halloween/nessie';
+import type { CoresDoLago } from '../../core/shaders';
+import { InflaveisNoVento, aboboraInflavel, fantasmaInflavel, gatoInflavel } from '../../world/halloween/inflaveis';
+import { giroDeMatiz, juntas, repintar, trocaDeCores } from '../../world/halloween/repintar';
 import { POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco } from '../../world/noite';
 import { ARI, RENAN } from '../../characters/cast';
 import { eventoLiberado, faseDoHalloween, parqueEnfeitado } from './fase';
@@ -39,7 +42,12 @@ import { ausentarNaCena, type Ausente, type RecadoNoPosto } from './ausentes';
 /** o que o parque empresta ao evento: o que não tem etiqueta, e o lago */
 export interface PecasDoParque {
   /** o lago (a `AguaDoLago`): o Nessie anda pela margem e deixa rastro */
-  agua: LagoDoNessie;
+  agua: LagoDoNessie & {
+    /** as cores da água (o lago vira gelatina de uva no evento) */
+    trocarCores(cores: Partial<CoresDoLago>): void;
+    marola(x: number, z: number, forca?: number): void;
+    naBeira(a: number, recuo?: number): { x: number; z: number };
+  };
   /** a vaga de rastro do Nessie (uma acima das dos bichos de sempre) */
   vagaDoNessie: number;
   /** a conta de distância dos caminhos (`world/caminhos.ts`): negativo é no asfalto */
@@ -295,7 +303,126 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   }
   abobora(pecas.piquenique.x + 0.1, pecas.piquenique.z, 'media', { y: 0.76, cara: 'sorriso', giro: PARA_A_CAMERA });
 
+  // ===================================== os infláveis gigantes e as abóboras grandes
+  // Pedido do Renan: a praça de gelo e a sorveteria do Mano ainda não tinham a
+  // cara de Halloween — "bonecos infláveis gigantes, ou abóboras um pouco
+  // maiores". O fantasma fica no gramado do meio da pista de patins, o gato
+  // preto no gramado à direita da praça de gelo, e a abóbora de chapéu atrás
+  // da sorveteria, fora da sombra dela na câmera.
+  const vento = new InflaveisNoVento();
+  for (const [criar, x, z, giro, raio] of [
+    [fantasmaInflavel, -21, -5, PARA_A_CAMERA - 0.2, 1.3],
+    [gatoInflavel, 22.9, 15.4, PARA_A_CAMERA - 0.5, 1.15],
+    // na diagonal da câmera (x − z) longe da do gato: senão um fica atrás do outro
+    [aboboraInflavel, 16.9, 12.6, PARA_A_CAMERA + 0.1, 1.2],
+  ] as const) {
+    const inflavel = unica(criar(), x, 0, z, giro);
+    vento.adicionar(inflavel);
+    w.blockCircle(x, z, raio);
+  }
+  // abóboras grandes nos cantos da praça de gelo e em volta da pista de patins
+  for (const [x, z, r, cara, cor] of [
+    [6.3, 25.9, 0.62, 'sorriso', P.abobora],
+    [5.9, 24.6, 0.42, null, P.aboboraClara],
+    [21.4, 26.0, 0.7, 'dentinho', P.aboboraFunda],
+    [21.6, 18.5, 0.55, 'piscando', P.abobora],
+    [-14.6, -9.6, 0.6, 'susto', P.abobora],
+    [-27.6, -0.8, 0.55, 'sorriso', P.aboboraFunda],
+    [-21.5, -3.4, 0.45, null, P.aboboraCreme],
+  ] as const) {
+    abobora(x, z, 'grande', { raio: r, cara: cara ?? null, cor, giro: PARA_A_CAMERA + (x % 3) * 0.15 });
+  }
+
+  // ======================================== as cores do Halloween nos lugares
+  // Pedido do Renan: os lugares com cara de Halloween — roxo e laranja no
+  // lugar do rosa, do coral e do vermelho. A peça de sempre é REPINTADA por
+  // cima (`repintar`: o material, a textura e as cores numa cópia); a fábrica
+  // dela não muda.
+  const pintados: Record<string, number> = {};
+  const pintar = (peca: string, f: Parameters<typeof repintar>[1]): void => {
+    for (const o of etiquetadas(peca)) pintados[peca] = (pintados[peca] ?? 0) + repintar(o, f);
+  };
+  // a sorveteria: o rosa vira laranja, a menta vira roxo, e a neve do
+  // telhado vira calda de abóbora escorrendo
+  pintar('sorveteria', trocaDeCores([
+    [P.sorveteriaRosa, P.halloweenLaranja],
+    [P.sorveteriaMenta, P.halloweenRoxo],
+    [P.neveFofa, P.caldaDeAbobora],
+    [P.neveSombra, P.caldaDeAboboraSombra],
+  ], 0.16));
+  // os guarda-sóis e as cadeirinhas: listras roxas e laranja
+  pintar('mesa-de-sorveteria', trocaDeCores([
+    [P.sorveteriaRosa, P.halloweenRoxo],
+    [P.sorveteriaCreme, P.halloweenLaranjaClaro],
+  ], 0.12));
+  // a loja de patins: a parede roxa, o toldo laranja e o amarelo de poção
+  pintar('loja-de-patins', trocaDeCores([
+    [P.lojaPatinsParede, P.halloweenRoxo],
+    [P.lojaPatinsCoral, P.halloweenLaranja],
+    [P.lojaPatinsAmarelo, P.verdePocao],
+  ], 0.16));
+  // a roda gigante e a bilheteria: o vermelho de circo vira roxo
+  pintar('roda-gigante', trocaDeCores([[P.rodaVermelho, P.halloweenRoxo]], 0.18));
+  pintar('bilheteria', trocaDeCores([[P.rodaVermelho, P.halloweenRoxo]], 0.18));
+  // o toldo da boutique: o rosa da Estella vira roxo (ela também se fantasiou)
+  pintar('loja-de-roupas', trocaDeCores([[P.lojaToldo, P.halloweenRoxo]], 0.14));
+  // a praça de gelo: o gelo, os cristais, a borda de neve e os postes de gelo
+  // giram do azul para o lilás — gelo de uva
+  const lilas = giroDeMatiz(165, 235, 272, 0.05);
+  for (const p of ['cristal-de-gelo', 'poste-de-gelo', 'borda-de-gelo']) pintar(p, lilas);
+  w.root.traverse((o) => {
+    if (o.userData?.geloDoRinque) pintados.gelo = repintar(o, lilas);
+  });
+  // a luz dos postes do parque: laranja de vela
+  pintar('poste', juntas(trocaDeCores([[P.luzDoPoste, P.luzDeAbobora]], 0.12)));
+
   // ============================================================== o lago
+  // o lago de gelatina de uva (pedido do Renan: a água roxa)
+  pecas.agua.trocarCores({
+    raso: P.uvaRasa, meio: P.uvaMeio, fundo: P.uvaFunda, maisFundo: P.uvaMaisFunda,
+    crista: P.uvaCrista, espuma: P.uvaEspuma, peixe: P.uvaPeixe,
+  });
+  // e a conversa da gelatina, no lugar do "Olhar o lago" de sempre (pedido
+  // do Renan: os dois achando que o lago virou gelatina)
+  for (const it of w.interactables) if (it.id === 'parque:lago') it.enabled = false;
+  {
+    const A = ARI.name;
+    const R = RENAN.name;
+    const beira = pecas.agua.naBeira(0, 0.35);
+    w.interact({
+      id: 'halloween:lago-de-gelatina',
+      x: -13, z: 11, radius: 2.6,
+      label: 'Olhar o lago roxo', icon: '🍇',
+      onInteract: async (g) => {
+        const conversa = async (falas: Array<readonly [string, string]>): Promise<void> => {
+          for (const [quem, texto] of falas) await g.say([texto], quem);
+        };
+        await conversa([
+          [R, 'Bebito… o lago tá roxo.'],
+          [A, 'Roxo uva. Isso é gelatina, certeza.'],
+          [R, 'Um lago inteiro de gelatina de uva?'],
+          [A, 'Eu trago a colher, você traz o chantilly.'],
+          [R, 'Deixa eu provar com o dedo primeiro.'],
+        ]);
+        // o dedo na água: a marolinha e o barulhinho
+        g.som('agua');
+        pecas.agua.marola(beira.x, beira.z, 0.8);
+        await g.wait(0.9);
+        await conversa([
+          [R, '…É água. Água roxa. E gelada.'],
+          [A, 'Que decepção. Eu já tava com fome.'],
+          [R, 'Na festa a gente acha gelatina de verdade. Prometo.'],
+        ]);
+        g.unlock({
+          id: 'halloween-lago-de-gelatina',
+          title: 'O lago de gelatina',
+          place: 'Parque Villa Lobos',
+          note: 'O lago ficou roxo pro Halloween, e por um segundo os dois acharam que era gelatina de uva.',
+          icon: '🍇',
+        });
+      },
+    });
+  }
   for (const lx of [-0.55, 0.55]) {
     const p = pecas.doTrapiche(lx, pecas.trapiche.comprimento - 0.35);
     abobora(p.x, p.z, lx < 0 ? 'media' : 'pequena', { y: pecas.trapiche.altura, giro: PARA_A_CAMERA });
@@ -472,9 +599,11 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     pendurados.update(dt);
     naRoda.update(dt);
     nessie.update(dt);
+    vento.update(dt);
     moverAboborasDaRoda();
   });
 
+  enfeite.userData.pintados = pintados;
   enfeite.userData.contagem = {
     aboboras: aboboras.quantas,
     lapides: lapides.quantas,
