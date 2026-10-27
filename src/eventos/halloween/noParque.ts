@@ -10,6 +10,8 @@ import {
   lencolDaBilheteria, panoDeFechado, plaquinhaDeRecado, pompom,
 } from '../../world/halloween/pecas';
 import { NessieNoLago, type LagoDoNessie } from '../../world/halloween/nessie';
+import { POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco } from '../../world/noite';
+import { ARI, RENAN } from '../../characters/cast';
 import { eventoLiberado, faseDoHalloween, parqueEnfeitado } from './fase';
 import { RECADOS_DO_PARQUE } from './recados';
 import { ausentarNaCena, type Ausente, type RecadoNoPosto } from './ausentes';
@@ -389,6 +391,67 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
         'parque:sol', 'parque:estrella', 'parque:inscricoes',
       ],
       recados,
+    });
+  }
+
+  // ================================================ o céu do pôr do sol
+  // Decisão do Renan: a caminhada até a boutique é no PÔR DO SOL (a carta
+  // chega de tarde, e quando eles saem da boutique já é noite). É o céu
+  // laranja da clareira (`world/noite.ts`), pelo `g.luzDoCeu` — sem luz nova.
+  // O sol, só ele, vem do lado da câmera: o pôr do sol de verdade (do oeste)
+  // acenderia as costas de tudo, e o parque inteiro ficaria de frente na
+  // sombra.
+  if (convite) {
+    const fimDeTarde = misturarMomentos(TARDE_DOURADA, POR_DO_SOL, 0.55, momentoEmBranco());
+    fimDeTarde.dirSol = [17, 9, 13];
+    fimDeTarde.forcaSol = 1.65;
+    fimDeTarde.forcaAmbiente = 1.08;
+    // no primeiro quadro, e não no `build`: o motor põe o céu da cena DEPOIS de montá-la
+    let pintado = false;
+    w.onUpdate(() => {
+      if (pintado) return;
+      pintado = true;
+      g0.luzDoCeu(luzDoMomento(fimDeTarde));
+    });
+  }
+
+  // ============================================ os comentários da dupla
+  // Cada um uma vez por save, quando quem joga passa perto (e está ANDANDO:
+  // parado, ele pode estar numa conversa, e um balão não pode cair no meio
+  // de outro). Quem fala é sempre a mesma pessoa.
+  if (convite) {
+    const A = ARI.name;
+    const R = RENAN.name;
+    const lapidesEm = CEMITERIOS.flat();
+    const boneco = etiquetadas('boneco-de-neve')[0];
+    const COMENTARIOS: Array<{ id: string; perto: (x: number, z: number) => boolean; falas: Array<[string, string]> }> = [
+      { id: 'portao', perto: (x, z) => Math.hypot(x, z - 24.5) < 3.5, falas: [[R, 'Olha isso! Tem abóbora no portão inteiro.'], [A, 'Alguém passou o dia enfeitando. A Estella disse pra gente ir na boutique.']] },
+      { id: 'alameda', perto: (x, z) => Math.abs(x) < 4 && z > 4 && z < 17, falas: [[A, 'Tem fantasminha pendurado nas árvores!']] },
+      { id: 'sorveteria', perto: (x, z) => Math.hypot(x - pecas.sorveteria.x, z - pecas.sorveteria.z - 2.4) < 3.4, falas: [[A, 'O Mano fechou a sorveteria? Isso nunca acontece.'], [R, 'Diz que tá se arrumando. Imagina a fantasia dele.']] },
+      ...(boneco ? [{ id: 'boneco', perto: (x: number, z: number) => Math.hypot(x - boneco.position.x, z - boneco.position.z) < 2.6, falas: [[R, 'Até o boneco de neve tá de bruxa.']] as Array<[string, string]> }] : []),
+      { id: 'roda', perto: (x, z) => Math.hypot(x, z + 13.5) < 4, falas: [[R, 'As cabines viraram abóbora.']] },
+      { id: 'bilheteria', perto: (x, z) => Math.hypot(x - pecas.postos.cookie.x, z - pecas.postos.cookie.z - 1.6) < 3.2, falas: [[A, 'Até o Cookie sumiu… e ele nem cabe em lugar nenhum pra se esconder.']] },
+      { id: 'lago', perto: (x, z) => Math.hypot(x + 13, z - 11) < 4, falas: [[R, 'Nem o Jean-Luc tá aqui. O parque tá vazio só pra gente.']] },
+      { id: 'nessie', perto: (x, z) => Math.hypot(x - nessie.x, z - nessie.z) < 6.5, falas: [[A, 'Bebito… tem um monstro do lago Ness ali. De plástico. Mas tem.']] },
+      { id: 'lapide', perto: (x, z) => lapidesEm.some(([lx, lz]) => Math.hypot(x - lx, z - lz) < 2.2), falas: [[A, "'Aqui jaz o medo.' Que cemitério mais fofo."]] },
+      { id: 'boutique', perto: (x, z) => Math.hypot(x - pecas.boutique.x - 2, z - pecas.boutique.z) < 3.4, falas: [[A, 'A lojinha da Estella tá toda de teia!'], [R, 'Então é aqui. Vamos?']] },
+    ];
+    let falando = false;
+    const antes = { x: NaN, z: NaN };
+    w.onUpdate(() => {
+      const p = g0.playerPosition();
+      const andou = Math.hypot(p.x - antes.x, p.z - antes.z) > 0.004;
+      antes.x = p.x;
+      antes.z = p.z;
+      if (falando || !andou) return;
+      const c = COMENTARIOS.find((k) => !g0.flag(`halloween:viu:${k.id}`) && k.perto(p.x, p.z));
+      if (!c) return;
+      falando = true;
+      g0.setFlag(`halloween:viu:${c.id}`);
+      void (async () => {
+        for (const [quem, texto] of c.falas) await g0.say([texto], quem);
+        falando = false;
+      })();
     });
   }
 

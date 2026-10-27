@@ -35,12 +35,19 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapa 1 construída, escondida.** O filme no sofá e a carta da
-Estella (§2.1) estão no jogo, mas só aparecem com `?halloween` na URL
-(`src/eventos/halloween/`, `src/world/halloween/`, `scripts/halloween.mjs`).
-A **parte 1** inteira (§2.1 a §2.4) está fechada com o Renan. A **etapa 2**
-(o parque no pôr do sol) está **fechada com o Renan no §4.1** e é a próxima
-a construir.
+**Estado: etapas 1 e 2 construídas, escondidas.** O filme no sofá e a carta
+da Estella (§2.1) e o parque no pôr do sol, enfeitado e vazio (§4.1) estão
+no jogo, mas só aparecem com `?halloween` na URL (`src/eventos/halloween/`,
+`src/world/halloween/`, `scripts/halloween.mjs`). A **parte 1** inteira
+(§2.1 a §2.4) está fechada com o Renan; a próxima a construir é a **etapa
+3** (o presente da Estella na boutique).
+
+**Onde mora a etapa 2 no código:** o kit em `world/halloween/` (`abobora.ts`,
+`pendurados.ts`, `pecas.ts`, `nessie.ts`; `kit.ts` é a vitrine dos testes);
+a camada do parque em `eventos/halloween/noParque.ts` (uma chamada no fim
+do `villaLobos.ts`); quem foi se arrumar em `eventos/halloween/ausentes.ts`
+(uma chamada no fim do clube, do Mania, da estufa, da escola e do ginásio);
+os recados em `eventos/halloween/recados.ts`.
 
 **Decisões do Renan** (as que já valem):
 
@@ -407,6 +414,17 @@ noite) e **as lanternas de abóbora iluminam o parque** (pedido do Renan) —
 com luz PINTADA (a poça no chão e o brilho nos furos), nunca luz de verdade.
 Então elas já nascem com a parte que acende numa malha própria (a cara da
 abóbora, o papel da lanterna), para a noite só trocar o material dela.
+
+> **Construída** (escondida atrás do `?halloween`). O que mudou na
+> construção, em relação ao plano abaixo: o arco de balões fica À FRENTE de
+> quem chega (`z ≈ 22,6`), e não no vão da cerca — atrás, o alto do arco
+> caía na frente da cabeça dos dois; a abóbora da roda vai pendurada na
+> FRENTE de cada gôndola (embaixo, a de baixo não cabia); o sol do pôr do
+> sol vem do lado da câmera (o de verdade, do oeste, deixava o parque
+> inteiro de frente na sombra); e o recado do quadro de inscrições fica
+> pregado na frente dos papéis. Medido (desenhos por quadro, sem -> com
+> enfeite): portão 477 -> 542, alameda 405 -> 452, praça da roda
+> 832 -> 884, sorveteria 570 -> 624, boutique 548 -> 592, lago 752 -> 805.
 
 #### O kit do Halloween (`world/halloween/*.ts`)
 
@@ -849,7 +867,7 @@ aprovar antes da próxima.
 |---|---|---|---|
 | **0** | **decisões** | as respostas do §10 | — |
 | **1** ✅ | **o filme e a carta** *(construída, escondida)* | a fase do evento no save e o `?halloween`; no sofá, "Assistir um filme de terror", o filme na TV, as falas, a carta deslizando por baixo da porta, "Pegar a carta" e o painel da carta (§2.1) | `cenario`, `prop` + `geometry`, `textures`, `animation` |
-| **2** | **o parque enfeitado, no pôr do sol e vazio** *(fechada no §4.1; a próxima a construir)* | as decorações do parque inteiro e das lojas, ainda apagadas (§4.1), o Nessie de plástico no lago, os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
+| **2** ✅ | **o parque enfeitado, no pôr do sol e vazio** *(construída, escondida)* | as decorações do parque inteiro e das lojas, ainda apagadas (§4.1), o Nessie de plástico no lago, os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
 | **3** | **o presente da Estella** | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** | **a noite e o ônibus** | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** | **doces ou travessuras** | as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3), e **as outras cinco fantasias** (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |

@@ -900,6 +900,47 @@ algodão-doce saiu.
   subiram de 315 mil para 396 mil (a treliça e as gôndolas). A bilheteria de
   perto: 530 → 311 desenhos (ela passa pela `fundir()`).
 
+## O kit do Halloween (`world/halloween/`)
+
+As peças do parque enfeitado (`docs/HALLOWEEN.md`, §4.1). Moram fora do
+kit de sempre porque são de um evento, e o evento é uma camada; a vitrine
+dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
+
+- **A abóbora esculpida** (`abobora.ts`, `LoteDeAboboras`): a esfera levada
+  à superfície dos gomos (o vinco é uma POTÊNCIA do cosseno: costela gorda,
+  sulco estreito), a cova em volta do cabinho, o vinco escurecido nos
+  vértices, e a cor por cópia. A volta da casca é sempre múltipla de 16 (o
+  dobro dos gomos): cai vértice no fundo de cada vinco. **A cara é colada
+  na casca FACETADA**, e não na curva de verdade: dentro do vinco o
+  triângulo passa por FORA da curva (é côncavo), e o olho que caía num
+  vinco sumia debaixo dele. O ponto vem da grade da `SphereGeometry` (os
+  quatro cantos do quadradinho), por isso há uma cara por tamanho. A beira
+  clara da polpa e o furo escuro são a mesma malha, com a cor nos vértices
+  (é ela que acende de noite).
+- **O que se pendura** (`pendurados.ts`, `EnfeitesDePendurar`): balança no
+  `Vento` do `core/shaders.ts` com a ALTURA NEGATIVA (o peso cresce para
+  baixo da raiz, e a ponta de baixo é que voa). O papel recortado é um
+  quadradinho com o desenho em canvas e `alphaTest`
+  (`vento.material(cor, { mapa, recorte })`): a beirinha do papel, os
+  olhinhos e o sorriso saem no desenho. O fantasminha, a lanterna e a
+  aranhinha juntam as partes numa malha com a cor nos vértices.
+- **As peças únicas** (`pecas.ts`): o fardo (palha em canvas com o UV por
+  triângulo, fiapos em lote), o espantalho (a cara no `u = 0,25` da
+  `SphereGeometry`, que é a frente), o arco de balões (lote com cor por
+  cópia e um lote de brilho), as lápides em lote (a frente com a frase é um
+  plano cuja textura tem a COR DO ISOPOR de fundo: o branco do material
+  multiplica e a frente some na pedra), o lençol que cobre o telhado cônico
+  da bilheteria, a plaquinha de recado (o texto é redesenhado quando as
+  letras de mão do Bebito book terminam de carregar) e o pano de "FECHADO".
+- **O Nessie de plástico** (`nessie.ts`): boia inflável — tubo de raio
+  constante com costura em anel, corcovas de meio toro, válvula amarela,
+  reflexo do vinil — numa malha `vinil` (é ela que acende de noite).
+  `NessieNoLago` anda num ARCO do lago pela `naBeira` da água (pula o lado
+  do trapiche) e deixa o rastro dos patos numa vaga própria.
+- **Cuidado com o `Math.pow` de número negativo**: `y / ALTO` de um vértice
+  em `y = 0` sai `-1e-17`, e `pow(-1e-17, 2.4)` é `NaN` — a copa do chapéu
+  de bruxa nasceu com a caixa envolvente quebrada. Prenda com `clamp`.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
