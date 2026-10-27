@@ -190,7 +190,8 @@ export class NessieNoLago {
   private a: number;
   private sentido = 1;
   private parado = 0;
-  private velocidade = 0;
+  /** quem chega no parque já o encontra nadando */
+  private velocidade = 0.32;
   private tempo = 0;
   private rumo = 0;
   private proximaParada = 14;
