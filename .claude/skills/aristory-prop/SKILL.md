@@ -945,6 +945,12 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   em corpo torneado vai na superfície DELE (o raio do lençol na altura), e
   não numa esfera: abaixo do meio da cabeça o lençol é mais largo, e a boca e
   a gravata do fantasma sumiam dentro dele.
+  São cinco: fantasma, gato, abóbora, aranha (pernas de `salsicha` dobradas
+  no joelho) e morcego (a asa é um `Shape` de morcego extrudado com bisel
+  gordo; a asa espelhada precisa da ordem dos triângulos invertida, senão
+  sai do avesso). Para pôr no mundo, ache um gramado livre de verdade: as
+  árvores do parque são sorteadas e têm `userData.peca = 'arvore'`, e um
+  inflável a menos de ~3 m de uma delas sai com o tronco atravessado.
 - **Repintar um lugar pronto** (`repintar.ts`): troca, por cópias, o material
   (com o `onBeforeCompile` junto — o `clone` não leva), a textura de canvas
   (pixel a pixel, mantendo a claridade relativa: a trama da lona continua), a
