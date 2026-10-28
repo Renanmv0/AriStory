@@ -94,7 +94,10 @@ function capaDeBicho(
 function balancarComOPasso(capa: THREE.Object3D, quem: THREE.Object3D, quanto = 0.35): void {
   const passo = medidorDePasso();
   let antes = performance.now();
-  const malha = capa.children[0] as THREE.Mesh;
+  // o gatilho do quadro mora numa MALHA (grupo não é desenhado)
+  let malha: THREE.Mesh | undefined;
+  capa.traverse((o) => { if (!malha && (o as THREE.Mesh).isMesh) malha = o as THREE.Mesh; });
+  if (!malha) return;
   malha.onBeforeRender = () => {
     const agora = performance.now();
     const dt = Math.min(0.1, (agora - antes) / 1000);

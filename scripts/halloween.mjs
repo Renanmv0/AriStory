@@ -137,7 +137,8 @@ if (roda('volta')) {
     const camada = await j(() => {
       let achou = false;
       window.jogo.scene.traverse((o) => {
-        if (['halloween-no-parque', 'halloween-na-boutique', 'fantasia-de-aranha', 'fantasia-de-vampiro', 'fantasia-de-fantasma', 'fantasia-da-opera', 'fantasia-de-diabinho'].includes(o.name) || o.userData?.peca === 'plaquinha-de-recado') achou = true;
+        if (['halloween-no-parque', 'halloween-na-boutique', 'fantasia-de-aranha', 'fantasia-de-vampiro', 'fantasia-de-fantasma', 'fantasia-da-opera', 'fantasia-de-diabinho',
+          'fantasia-de-noiva', 'fantasia-de-tubarao', 'fantasia-de-cientista', 'fantasia-de-dragao', 'fantasia-de-mumia'].includes(o.name) || o.userData?.peca === 'plaquinha-de-recado') achou = true;
       });
       return achou;
     });
@@ -681,6 +682,41 @@ if (roda('noite')) {
     await espera(1500);
     await page.screenshot({ path: `${OUT}-noite-${nome}.png` });
   }
+}
+
+// ================================================================= fantasias
+if (roda('fantasias')) {
+  console.log('\nfantasias: na festa, cada personagem do clube com a sua (§3)');
+  const fantasiasNaCena = () => j(() => {
+    const n = {};
+    window.jogo.scene.traverse((o) => { if (/^fantasia-/.test(o.name)) n[o.name] = (n[o.name] ?? 0) + 1; });
+    return n;
+  });
+  // no convite, ninguém fantasiado (eles nem estão)
+  await naFaseConvite('clube');
+  const deTarde = await fantasiasNaCena();
+  ok(Object.keys(deTarde).length === 0, `no convite ninguém está fantasiado no clube (${JSON.stringify(deTarde)})`);
+  await naFaseConvite('clube', ['halloween:festa']);
+  const noClube = await fantasiasNaCena();
+  for (const [nome, quem] of [['fantasia-de-noiva', 'a Gina de noiva do Frankenstein'], ['fantasia-de-tubarao', 'o Capy de tubarão'], ['fantasia-de-cientista', 'o Noel de cientista maluco'], ['fantasia-de-dragao', 'a Josefina de dragãozinho']]) {
+    ok(noClube[nome] === 1, `${quem} (${noClube[nome] ?? 0})`);
+  }
+  const escondidos = await j(() => {
+    const g = window.jogo;
+    let quepe = null;
+    let viseira = null;
+    g.scene.traverse((o) => {
+      if (o.name === 'cabeca-da-girafa') quepe = o.children.find((c) => Math.abs(c.position.y - 0.135) < 1e-3 && Math.abs(c.position.z - 0.012) < 1e-3)?.visible ?? null;
+      if (o.name === 'cabeca-do-noel') viseira = o.children.find((c) => Math.abs(c.position.y - 0.048) < 1e-3)?.visible ?? null;
+    });
+    return { quepe, viseira };
+  });
+  ok(escondidos.quepe === false && escondidos.viseira === false, `o quepe da Gina e a viseira do Noel ficam guardados (${JSON.stringify(escondidos)})`);
+  await page.screenshot({ path: `${OUT}-fantasias-clube.png` });
+  await naFaseConvite('mania-de-churrasco', ['halloween:festa']);
+  const noMania = await fantasiasNaCena();
+  const doces = await j(() => !!window.jogo.scene.getObjectByName('doces-da-bandeja'));
+  ok(noMania['fantasia-de-mumia'] === 1 && doces, `o Walter de múmia garçom, com os doces na bandeja (${JSON.stringify(noMania)})`);
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');

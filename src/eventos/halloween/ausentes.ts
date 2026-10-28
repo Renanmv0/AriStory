@@ -3,6 +3,7 @@ import type { WorldBuilder } from '../../world/WorldBuilder';
 import { fundir } from '../../world/fundir';
 import { plaquinhaDeRecado, type Recado } from '../../world/halloween/pecas';
 import { quemFoiSeArrumar } from './fase';
+import { fantasiarQuemEstaAqui } from './fantasiados';
 
 /*
  * QUEM FOI SE ARRUMAR (`docs/HALLOWEEN.md`, §4.1): na fase `convite` os
@@ -55,6 +56,8 @@ export interface QuemSaiu {
 export { quemFoiSeArrumar };
 
 export function ausentarNaCena(w: WorldBuilder, quem: QuemSaiu): boolean {
+  // na festa, quem está aqui está fantasiado (a mesma chamada do fim da cena)
+  fantasiarQuemEstaAqui(w);
   if (!quemFoiSeArrumar(w.game)) return false;
   const bichos = (quem.bichos ?? []).filter((b): b is Ausente => !!b);
   const ids = quem.interacoes ?? [];

@@ -2215,6 +2215,41 @@ export const PALETTE = {
   capinhaDeDiabinho: 0xd8343f,
   lacoDoCookie: 0xf2913a,
   lacoDoCookieFundo: 0xcf6f1c,
+  /**
+   * AS FANTASIAS DO CLUBE na festa (§3): a Gina noiva do Frankenstein (o
+   * cabelo alto com as mechas de raio, os parafusos, a cicatriz, o véu e o
+   * babado), o Capy tubarão (o capuz de pelúcia, a barriga clara, os
+   * dentinhos de feltro e a barbatana), o Noel cientista (o jaleco, os óculos
+   * de proteção, o algodão da crista e os tubos de ensaio), a Josefina
+   * dragãozinho (o feltro verde, os espinhos dourados, os chifrinhos e a
+   * fumaça de chá) e o Walter múmia (as ataduras e os doces na bandeja)
+   */
+  noivaCabelo: 0x2b2431,
+  noivaMecha: 0xf4f1f6,
+  noivaParafuso: 0x9a97a6,
+  noivaParafusoEscuro: 0x6d6a7a,
+  noivaCicatriz: 0x5b3b46,
+  noivaVeu: 0xfdfbff,
+  noivaRenda: 0xfbf7f1,
+  tubaraoPelucia: 0x7f97b4,
+  tubaraoPeluciaFunda: 0x5f7896,
+  tubaraoBarriga: 0xf1f4f7,
+  tubaraoDente: 0xfffdf8,
+  jalecoBranco: 0xf6f7f4,
+  jalecoForro: 0xd8dcd6,
+  oculosDeProtecao: 0x5c7d6e,
+  lenteDeProtecao: 0xbfe6dc,
+  algodaoDaCrista: 0xfbfaf6,
+  vidroDeEnsaio: 0xe5f3f2,
+  dragaoFeltro: 0x6cbf8b,
+  dragaoFeltroFundo: 0x4f9c6d,
+  dragaoEspinho: 0xf2b84b,
+  dragaoChifre: 0xfbe9c6,
+  dragaoAsa: 0x8fd3a5,
+  fumacaDeCha: 0xf4f1ee,
+  atadura: 0xf2ead6,
+  ataduraSombra: 0xd9cdb2,
+  docePirulito: 0xff7aa8,
   /** a noite da festa: o luar do lado da câmera, um tico lilás */
   luarDaFesta: 0xc4c8ff,
   /**

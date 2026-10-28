@@ -17,13 +17,8 @@ import {
 import { giroDeMatiz, juntas, repintar, trocaDeCores } from '../../world/halloween/repintar';
 import { NOITE, POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco, type MomentoDoCeu } from '../../world/noite';
 import { BandoDeMorcegos } from '../../world/halloween/morcegos';
-import {
-  fantasiarCookieDeFantasma, fantasiarJeanLucDaOpera, fantasiarManoDeVampiro, fantasiarPatoDeDiabinho,
-} from '../../world/halloween/fantasiasDoParque';
 import type { Mano } from '../../entities/bichos/Mano';
-import type { Cookie } from '../../entities/bichos/Cookie';
-import type { JeanLuc } from '../../entities/bichos/JeanLuc';
-import type { PatoDoLago } from '../../entities/bichos/PatoDoLago';
+import { fantasiarQuemEstaAqui } from './fantasiados';
 import { pocaDeLuz } from '../../world/furniture';
 import { ARI, RENAN } from '../../characters/cast';
 import { eventoLiberado, faseDoHalloween, parqueEnfeitado } from './fase';
@@ -642,8 +637,8 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
       w.root.traverse((o) => { if (o.userData?.peca === peca && o.userData.bicho) lista.push(o.userData.bicho as T); });
       return lista;
     };
+    fantasiarQuemEstaAqui(w);
     for (const mano of bichoDa<Mano>('mano')) {
-      fantasiarManoDeVampiro(mano);
       /*
        * A FALA DO MANO (pedido do Renan): ele repara que não é o único vampiro
        * da festa. Quem ele cita é quem estiver de capa de vampiro agora — de
@@ -679,10 +674,6 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
       });
       w.onUpdate(() => falaDoMano.moveTo(mano.x, mano.z));
     }
-    for (const cookie of bichoDa<Cookie>('cookie')) fantasiarCookieDeFantasma(cookie);
-    for (const jeanLuc of bichoDa<JeanLuc>('jean-luc')) fantasiarJeanLucDaOpera(jeanLuc);
-    for (const pato of bichoDa<PatoDoLago>('pato-do-lago')) fantasiarPatoDeDiabinho(pato, false);
-    for (const pato of bichoDa<PatoDoLago>('patinho')) fantasiarPatoDeDiabinho(pato, true);
   }
 
   // ============================================ os comentários da dupla

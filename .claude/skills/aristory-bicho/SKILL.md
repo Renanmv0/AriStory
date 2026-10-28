@@ -415,6 +415,17 @@ o mesmo molde, e deixaram três truques:
   que mexe separado leva pano separado: o capuz do Cookie é da CABEÇA (ela
   sobe quando ele sonha), o lençol é do corpo, e a barra do capuz desce por
   cima da emenda;
+- **capuz de bicho** (`capuz` em `fantasiasDoClube.ts`): a esfera da
+  cabeça um tico maior, com o FURO da cara (um cone de triângulos tirado
+  em volta da direção do rosto) e cortada embaixo; a cor de baixo pintada
+  nos vértices (a barriga do tubarão). A borda do furo (`bordaDoFuro`) é
+  onde vão os dentinhos. Serve ao tubarão, ao dragão e ao que vier;
+- **o que se mexe da fantasia usa o pivô que JÁ se mexe**: a manga do Noel
+  mora dentro do grupo da asa, a atadura da perna dentro da perna do
+  Walter, a flecha dentro do rabo da Josefina. E o gatilho de animação
+  (`onBeforeRender`) só roda em MALHA — num grupo ele nunca é chamado;
+- **quem veste é a etiqueta**: `fantasiarQuemEstaAqui(w)` acha o bicho pela
+  `userData.peca` em qualquer cena, e a cena não sabe de fantasia nenhuma;
 - **acessório branco em bicho branco some**: a máscara do Jean-Luc só se lê
   pelo contorno escuro (um tubo na borda do pedaço de esfera) e pelo aro do
   olho.
