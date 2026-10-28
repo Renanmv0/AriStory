@@ -642,6 +642,26 @@ balança, costura aparente, feltro, textura de canvas onde for tecido.
 > e a gola em pé com o forro vinho para a frente, a gravata-borboleta); e os **patos de diabinho** (a tiara de chifrinhos nos
 > sete, a capinha vermelha nos três grandes). Teste: `SO=noite`.
 
+> **Construída a leva do CLUBE** (`world/halloween/fantasiasDoClube.ts`):
+> a **Gina noiva do Frankenstein** (o cabelo altíssimo com as mechas de
+> raio, os parafusos em dois gomos do pescoço, a cicatriz costurada, o véu
+> de gaze e o babado de renda; o quepe fica na guarita), o **Capy tubarão**
+> (o capuz de pelúcia com a cara saindo pela boca, os dentinhos de feltro,
+> os olhinhos, a barriga clara, a barbatana no lombo, as nadadeiras e o
+> rabo; os óculos escuros ficam guardados, o apito continua), o **Noel
+> cientista** (o jaleco com as mangas por cima das asas, as lapelas, o bolso
+> com três tubos de ensaio acesos, os óculos de proteção e a crista de
+> algodão; o avental e a viseira ficam guardados), a **Josefina
+> dragãozinho** (os espinhos dourados pelo casco em volta do vasinho, as
+> asinhas, o capuz com os chifrinhos, a flecha no rabo e a fumacinha de chá
+> a cada 7 s) e o **Walter múmia garçom** (as ataduras encostadas pelo
+> corpo, pela cabeça e pelas pernas, as pontas soltas balançando, a
+> gravatinha e a bandeja de doces). Quem veste é uma chamada só,
+> `fantasiarQuemEstaAqui(w)` (`eventos/halloween/fantasiados.ts`), pela
+> etiqueta do bicho, em qualquer cena: até a parte C (os postos), eles
+> aparecem fantasiados onde moram — o clube e o Mania. Teste:
+> `SO=fantasias`.
+
 #### E. O que funciona na festa
 
 Decidido pelo Renan: o que é da dupla e não precisa de ninguém continua, e o que
