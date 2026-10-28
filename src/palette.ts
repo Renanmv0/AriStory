@@ -2225,6 +2225,12 @@ export const PALETTE = {
    * fumaça de chá) e o Walter múmia (as ataduras e os doces na bandeja)
    */
   noivaCabelo: 0x2b2431,
+  /** a pele de Frankenstein da Gina: o pelo, as manchas e o claro de girafa em verde */
+  frankPele: 0x9ccc7c,
+  frankMancha: 0x4e7d4c,
+  frankClaro: 0xd3e9b8,
+  frankOlheira: 0x5c4a70,
+  frankParafuso: 0xd2d6e0,
   noivaMecha: 0xf4f1f6,
   noivaParafuso: 0x9a97a6,
   noivaParafusoEscuro: 0x6d6a7a,
