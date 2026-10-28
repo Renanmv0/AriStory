@@ -626,6 +626,21 @@ corpo que a classe já tem, por fora dela (o molde da aranha da Estella e do
 Pelusa: `fantasiasDosBichos`), e com o capricho das da dupla: pano que
 balança, costura aparente, feltro, textura de canvas onde for tecido.
 
+> **Construída a leva do PARQUE** (escondida atrás do `?halloween`, na fase
+> `festa`): `world/halloween/fantasiasDoParque.ts`, por fora das classes.
+> O **Mano de vampiro** (a capa de forro vermelho com a gola em pé, que
+> balança com o passo, o babado, a fita e o medalhão, as presinhas, o bico
+> de viúva e os fios de gel; o chapéu de casquinha e o avental ficam
+> escondidos) e a fala dele num ponto próprio, "Falar com o Mano", que cita
+> quem estiver de capa de vampiro; o **Cookie de lençol** (o pano deitado
+> sobre a casca do corpo e um capuz sobre a da cabeça — ela sobe quando ele
+> sonha com a roda —, os furinhos dos olhos, a boquinha, as bochechas e o
+> laço laranja na ponta da tromba, que sai pelo pano); o **Jean-Luc de
+> Fantasma da Ópera** (a meia-máscara com contorno e o aro do olho — ele é
+> branco, e máscara branca sem contorno sumia —, a cartolinha, a rosa no
+> bico e a capa curta); e os **patos de diabinho** (a tiara de chifrinhos nos
+> sete, a capinha vermelha nos três grandes). Teste: `SO=noite`.
+
 #### E. O que funciona na festa
 
 Decidido pelo Renan: o que é da dupla e não precisa de ninguém continua, e o que

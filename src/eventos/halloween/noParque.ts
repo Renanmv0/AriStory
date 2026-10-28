@@ -17,6 +17,13 @@ import {
 import { giroDeMatiz, juntas, repintar, trocaDeCores } from '../../world/halloween/repintar';
 import { NOITE, POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco, type MomentoDoCeu } from '../../world/noite';
 import { BandoDeMorcegos } from '../../world/halloween/morcegos';
+import {
+  fantasiarCookieDeFantasma, fantasiarJeanLucDaOpera, fantasiarManoDeVampiro, fantasiarPatoDeDiabinho,
+} from '../../world/halloween/fantasiasDoParque';
+import type { Mano } from '../../entities/bichos/Mano';
+import type { Cookie } from '../../entities/bichos/Cookie';
+import type { JeanLuc } from '../../entities/bichos/JeanLuc';
+import type { PatoDoLago } from '../../entities/bichos/PatoDoLago';
 import { pocaDeLuz } from '../../world/furniture';
 import { ARI, RENAN } from '../../characters/cast';
 import { eventoLiberado, faseDoHalloween, parqueEnfeitado } from './fase';
@@ -623,6 +630,59 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
       pintado = true;
       g0.luzDoCeu(luzDoMomento(noiteDaFesta));
     });
+  }
+
+  // ================================================ AS FANTASIAS DO PARQUE
+  // Na festa, cada um com uma fantasia só dele (§3): o Mano de vampiro (igual
+  // ao Ari, de propósito), o Cookie de lençol, o Jean-Luc de Fantasma da
+  // Ópera e os patos de diabinho. Por fora das classes, achados pela etiqueta.
+  if (deNoite) {
+    const bichoDa = <T>(peca: string): T[] => {
+      const lista: T[] = [];
+      w.root.traverse((o) => { if (o.userData?.peca === peca && o.userData.bicho) lista.push(o.userData.bicho as T); });
+      return lista;
+    };
+    for (const mano of bichoDa<Mano>('mano')) {
+      fantasiarManoDeVampiro(mano);
+      /*
+       * A FALA DO MANO (pedido do Renan): ele repara que não é o único vampiro
+       * da festa. Quem ele cita é quem estiver de capa de vampiro agora — de
+       * costume o Ari, mas o guarda-roupa troca. Um ponto por cima do carinho
+       * de sempre (prioridade maior), andando com ele.
+       */
+      const FALAS_DO_VAMPIRO = [
+        'Muahaha… boa noite, meus queridos. Hoje o sorvete é de sangue… de morango! Brincadeira.',
+        'Gostaram da capa? Eu ensaiei a risada a semana inteira. Muahaha. Ficou boa, né?',
+      ];
+      const falaDoMano = w.interact({
+        id: 'halloween:mano',
+        x: mano.x, z: mano.z, radius: 0.8,
+        label: 'Falar com o Mano', icon: '🧛',
+        highlight: mano.group,
+        priority: 2,
+        onInteract: async (api) => {
+          mano.receberCarinho();
+          api.som('pinguim');
+          const deCapa = [ARI, RENAN].find((c) => api.wearables(c.id).some((p) => p?.id === 'capa-de-vampiro'))?.name;
+          if (deCapa && !api.flag('halloween:mano-viu-a-capa')) {
+            api.setFlag('halloween:mano-viu-a-capa');
+            await api.say([`Ei, ei! ${deCapa}! Outro vampiro na minha festa?!`, '… A gente nem combinou. Ficou lindo.', 'Agora somos o clube da capa.'], 'Mano');
+            mano.dancar(1.8);
+            return;
+          }
+          if (deCapa) {
+            await api.say([w.pick([`O clube da capa está reunido, ${deCapa}. Muahaha.`, ...FALAS_DO_VAMPIRO])], 'Mano');
+            return;
+          }
+          await api.say([w.pick(FALAS_DO_VAMPIRO)], 'Mano');
+        },
+      });
+      w.onUpdate(() => falaDoMano.moveTo(mano.x, mano.z));
+    }
+    for (const cookie of bichoDa<Cookie>('cookie')) fantasiarCookieDeFantasma(cookie);
+    for (const jeanLuc of bichoDa<JeanLuc>('jean-luc')) fantasiarJeanLucDaOpera(jeanLuc);
+    for (const pato of bichoDa<PatoDoLago>('pato-do-lago')) fantasiarPatoDeDiabinho(pato, false);
+    for (const pato of bichoDa<PatoDoLago>('patinho')) fantasiarPatoDeDiabinho(pato, true);
   }
 
   // ============================================ os comentários da dupla
