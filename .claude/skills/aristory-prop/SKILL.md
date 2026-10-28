@@ -842,7 +842,7 @@ balde). A cena chama `update` só com o mezanino à vista.
   mostra a coluna, as outras faces um pixel liso do papel) — um material,
   uma malha na `fundir()`. O caderno, igual;
 - as dezenas de miudezas de cor lisa (tecidos, potinhos, pincéis, tina,
-  balde, latão) eram um desenho por cor: `juntarPorCor` as junta numa malha
+  balde, latão) eram um desenho por cor: `juntarPorCor` (hoje em `world/fundir.ts`, para qualquer peça) as junta numa malha
   de `toon(branco, corPorVertice)` (o material das árvores — o toon
   multiplica a cor do material pela do vértice). Fica de fora o que tem
   textura, brilho, transparência, dois lados, lote ou nome. `?semFundir`
@@ -1040,7 +1040,14 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   atravessava a chapa. As tábuas pintadas trazem a cor no canvas
   (`tabuasVermelhas`), como as do carrinho do Noel. O halo da lâmpada
   embaixo do toldo fica pequeno (0,75): somado com as luzinhas da beira,
-  o maior estourava o toldo em branco.
+  o maior estourava o toldo em branco. As miudezas de cor lisa passam pela
+  `juntarPorCor` (`world/fundir.ts`, a mesma do balcão de tingimento): 56 →
+  25 malhas, a mesma imagem. Para o gigante do telhado entrar nela, ele NÃO
+  tem nome (nome é fronteira): o teste o acha por `userData.gigante`. E o
+  lugar dela na praça foi escolhido de cima (`setCameraOmbro` a 20–30 m,
+  olhando para baixo): no meio do calçamento ela tapava a bilheteria do
+  Cookie, e no primeiro canto o cordão de luzinhas entre dois postes
+  passava por cima dela.
 - **O canteiro de abóboras e a bacia de maçãs** (`pecasDaFesta.ts`): o
   canteiro diz ONDE as abóboras crescem (`aboboras`, no referencial dele) e
   a cena as põe no lote do parque — acesas e tremendo com as outras, sem
