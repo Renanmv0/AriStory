@@ -780,7 +780,7 @@ if (roda('festa')) {
   ok(it['halloween:recado-Recado'] === true, 'o recado dos desafios suspensos no quadro da arena');
 
   /** conversa com um convidado e mede a tomada de cena; devolve o primeiro balão */
-  const conversar = async (peca, foto) => {
+  const conversar = async (peca, foto, fala = null) => {
     await j((peca) => {
       const g = window.jogo;
       let b = null;
@@ -794,7 +794,10 @@ if (roda('festa')) {
     await page.keyboard.press('KeyE');
     // as falas só começam com a câmera no lugar (e o navegador do teste anda devagar)
     await page.waitForFunction(() => !!document.querySelector('.dialogue.show'), null, { timeout: 120000 }).catch(() => {});
-    await espera(1500);
+    // o balão digita letra por letra: espera a fala inteira (ou ao menos parar de crescer)
+    if (fala) await page.waitForFunction((f) => new RegExp(f).test(document.querySelector('.dialogue.show')?.textContent ?? ''), fala.source, { timeout: 30000 }).catch(() => {});
+    else await espera(4000);
+    await espera(500);
     const tomada = await j((peca) => {
       const g = window.jogo;
       let b = null;
@@ -839,7 +842,7 @@ if (roda('festa')) {
     ['luna', 'Falar com a Luna', /coruja/, 'luna'],
   ];
   for (const [peca, rotulo, fala, foto] of QUEM) {
-    const r = await conversar(peca, foto);
+    const r = await conversar(peca, foto, fala);
     const t = r.tomada;
     ok(r.prompt === rotulo, `${peca}: o ponto "${rotulo}" (${r.prompt})`);
     ok(!!t && t.travado && t.dist < 6 && Math.abs(t.ndc[0]) < 0.6 && Math.abs(t.ndc[1]) < 0.7,
@@ -851,10 +854,10 @@ if (roda('festa')) {
   }
   // o Mano repara no vampiro (o Ari de capa) e o Gatito conta que veio de Walter
   await j(() => window.jogo.equipWearable(window.aristoryItens['capa-de-vampiro'], 'ari'));
-  const mano = await conversar('mano', 'mano');
+  const mano = await conversar('mano', 'mano', /Outro vampiro/);
   ok(/Outro vampiro/.test(mano.balao) && /Ari/.test(mano.balao), `o Mano repara no outro vampiro (${mano.balao.slice(0, 60)})`);
   // o Cookie: a fantasia e, ainda de perto, o bilhete de sempre
-  const cookie = await conversar('cookie', 'cookie');
+  const cookie = await conversar('cookie', 'cookie', /Buu/);
   ok(/Buu/.test(cookie.balao) && !cookie.depois.cam && !cookie.depois.travado, `o Cookie de lençol, e a conversa do bilhete emenda (${cookie.balao.slice(0, 40)})`);
   // a segunda conversa é curta
   const deNovo = await conversar('noel');
