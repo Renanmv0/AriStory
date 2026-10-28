@@ -5,6 +5,7 @@ import { fundir } from '../fundir';
 import type { Bicho } from '../../entities/bichos/Bicho';
 import { capuz, naCasca, pousar } from './fantasiasDoClube';
 import { capaDeBicho, balancarComOPasso } from './fantasiasDoParque';
+import { repintar, trocaDeCores } from './repintar';
 
 /*
  * AS FANTASIAS DA ESCOLA na festa de Halloween (`docs/HALLOWEEN.md`, §3, a
@@ -75,11 +76,14 @@ function florzinha(raio: number, petala: number, miolo: number = P.catrinaAmarel
 
 /**
  * UMA SAIA RODADA em volta da cintura: um torneado da cintura (`rCima`, `yCima`)
- * até a barra (`rBaixo`, `yBaixo`), a barra ondulando em `ondas` dobras. Com
- * `faixas`, cada faixa de altura de uma cor (os babados), pintada nos vértices.
+ * até a barra (`rBaixo`, `yBaixo`), a barra ondulando em `ondas` dobras (com
+ * `barra` de fundura: pena e pétala recortam fundo). Com `faixas`, cada faixa
+ * de altura de uma cor (os babados), pintada nos vértices; com `mapa`, o
+ * tecido desenhado (o `u` dá a volta, o `v` desce).
  */
 function saiaRodada(
-  rCima: number, yCima: number, rBaixo: number, yBaixo: number, ondas: number, faixas: readonly number[] | null, cor: number, opacidade = 1,
+  rCima: number, yCima: number, rBaixo: number, yBaixo: number,
+  o: { ondas: number; faixas?: readonly number[]; cor?: number; opacidade?: number; mapa?: THREE.Texture; barra?: number },
 ): THREE.Mesh {
   const N = 6;
   const perfil: THREE.Vector2[] = [];
@@ -89,10 +93,11 @@ function saiaRodada(
     perfil.push(new THREE.Vector2(rCima + (rBaixo - rCima) * Math.sqrt(f), yBaixo + (yCima - yBaixo) * (1 - f)));
   }
   // de baixo para cima: é assim que o torneado vira a face para fora
-  const geo = new THREE.LatheGeometry(perfil.reverse(), 48);
+  const geo = new THREE.LatheGeometry(perfil.reverse(), 64);
   const pos = geo.getAttribute('position');
-  const cores = faixas ? new Float32Array(pos.count * 3) : null;
+  const cores = o.faixas ? new Float32Array(pos.count * 3) : null;
   const c = new THREE.Color();
+  const barra = o.barra ?? 0.012;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     const z = pos.getZ(i);
@@ -100,10 +105,11 @@ function saiaRodada(
     const a = Math.atan2(x, z);
     const f = (yCima - y) / (yCima - yBaixo);
     // as dobras crescem descendo, e a barra sobe e desce junto
-    const dobra = 1 + f * f * 0.07 * Math.sin(a * ondas);
-    pos.setXYZ(i, x * dobra, y + (f > 0.95 ? 0.012 * Math.sin(a * ondas) : 0), z * dobra);
-    if (cores && faixas) {
-      c.set(faixas[Math.min(faixas.length - 1, Math.floor(f * faixas.length * 0.999))]);
+    const dobra = 1 + f * f * 0.07 * Math.sin(a * o.ondas);
+    const recorte = f > 0.95 ? barra * Math.abs(Math.sin(a * o.ondas * 0.5)) : 0;
+    pos.setXYZ(i, x * dobra, y + recorte, z * dobra);
+    if (cores && o.faixas) {
+      c.set(o.faixas[Math.min(o.faixas.length - 1, Math.floor(f * o.faixas.length * 0.999))]);
       cores.set([c.r, c.g, c.b], i * 3);
     }
   }
@@ -111,9 +117,191 @@ function saiaRodada(
   geo.computeVertexNormals();
   const mat = cores
     ? toon(0xffffff, { corPorVertice: true, doubleSide: true })
-    : toon(cor, { doubleSide: true, opacity: opacidade });
+    : o.mapa
+      ? toon(0xffffff, { mapa: o.mapa, doubleSide: true })
+      : toon(o.cor ?? 0xffffff, { doubleSide: true, opacity: o.opacidade ?? 1 });
   return new THREE.Mesh(geo, mat);
 }
+
+// ============================================== os tecidos das coelhinhas
+
+const css = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
+const texturas = new Map<string, THREE.CanvasTexture>();
+
+/** um tecido desenhado em canvas, uma vez só para o jogo inteiro */
+function tecido(chave: string, w: number, h: number, desenhar: (ctx: CanvasRenderingContext2D) => void, repeteU = 1): THREE.CanvasTexture {
+  const pronta = texturas.get(chave);
+  if (pronta) return pronta;
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext('2d');
+  if (ctx) desenhar(ctx);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = THREE.RepeatWrapping;
+  t.repeat.x = repeteU;
+  t.anisotropy = 4;
+  texturas.set(chave, t);
+  return t;
+}
+
+/**
+ * AS PENAS da coruja: fileiras de escamas (meia-lua com a beirada escura e o
+ * miolo claro), desencontradas uma fileira da outra. Com `peito`, a frente
+ * (o `u` 0,25 da esfera) é o peito claro de coruja, com os risquinhos em V.
+ */
+function desenharPenas(ctx: CanvasRenderingContext2D, w: number, h: number, peito: boolean): void {
+  ctx.fillStyle = css(P.corujaPena);
+  ctx.fillRect(0, 0, w, h);
+  const passo = 18;
+  for (let fileira = 0, y = 4; y < h + passo; fileira++, y += passo * 0.62) {
+    for (let x = (fileira % 2) * passo * 0.5 - passo; x < w + passo; x += passo) {
+      const u = x / w;
+      const noPeito = peito && Math.abs(u - 0.25) < 0.12 && y > h * 0.18;
+      ctx.beginPath();
+      ctx.arc(x, y, passo * 0.55, 0, Math.PI);
+      ctx.fillStyle = css(noPeito ? P.corujaPenaClara : fileira % 3 === 0 ? P.corujaPenaFunda : P.corujaPena);
+      ctx.fill();
+      ctx.strokeStyle = css(P.corujaPenaFunda);
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // o miolo claro da pena (a raque)
+      ctx.strokeStyle = css(noPeito ? P.corujaPena : P.corujaPenaClara);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      if (noPeito) {
+        // no peito, o risquinho em V
+        ctx.moveTo(x - 3, y + 4);
+        ctx.lineTo(x, y + 8);
+        ctx.lineTo(x + 3, y + 4);
+      } else {
+        ctx.moveTo(x, y + 2);
+        ctx.lineTo(x, y + passo * 0.42);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+/** uma florzinha bordada (as pétalas em volta do miolo) */
+function bordarFlor(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, cor: number, miolo: number): void {
+  ctx.fillStyle = css(cor);
+  for (let k = 0; k < 5; k++) {
+    const a = (k / 5) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(x + Math.cos(a) * r * 0.62, y + Math.sin(a) * r * 0.62, r * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = css(miolo);
+  ctx.beginPath();
+  ctx.arc(x, y, r * 0.38, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** O BORDADO DA CATRINA: o veludo preto com flores coloridas e folhinhas; com `cadarco`, a frente amarrada */
+function desenharBordado(ctx: CanvasRenderingContext2D, w: number, h: number, cadarco: boolean): void {
+  ctx.fillStyle = css(P.catrinaTraco);
+  ctx.fillRect(0, 0, w, h);
+  const cores = [P.catrinaRosa, P.catrinaLaranja, P.catrinaAmarelo, P.catrinaRoxo, P.catrinaVerde];
+  let k = 0;
+  for (let y = 14; y < h; y += 30) {
+    for (let x = (y / 30) % 2 ? 10 : 26; x < w; x += 32) {
+      if (cadarco && Math.abs(x / w - 0.25) < 0.05) continue;
+      // as folhinhas, dos dois lados da flor
+      ctx.fillStyle = css(P.catrinaFolha);
+      for (const s of [-1, 1]) {
+        ctx.beginPath();
+        ctx.ellipse(x + s * 9, y + 3, 5, 2.4, s * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      bordarFlor(ctx, x, y, 7 + (k % 3), cores[k % cores.length], k % 2 ? P.catrinaAmarelo : P.catrinaRosa);
+      k++;
+    }
+  }
+  if (cadarco) {
+    // a frente amarrada: as duas fileiras de ilhoses e o cadarço rosa em X
+    const cx = w * 0.25;
+    ctx.strokeStyle = css(P.catrinaRosa);
+    ctx.lineWidth = 2.5;
+    for (let y = 18; y < h - 6; y += 12) {
+      ctx.beginPath();
+      ctx.moveTo(cx - 6, y);
+      ctx.lineTo(cx + 6, y + 12);
+      ctx.moveTo(cx + 6, y);
+      ctx.lineTo(cx - 6, y + 12);
+      ctx.stroke();
+    }
+  }
+}
+
+/** O VELUDO DA FADA: o azul-noite com estrelas douradas e o pó de brilho */
+function desenharCeuDeFada(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, css(P.fadaTule));
+  g.addColorStop(1, '#1d2557');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  let s = 77;
+  const rnd = (): number => ((s = (s * 16807) % 2147483647) / 2147483647);
+  // o pó de brilho
+  for (let k = 0; k < 220; k++) {
+    ctx.fillStyle = `rgba(220,235,255,${0.3 + rnd() * 0.5})`;
+    ctx.fillRect(rnd() * w, rnd() * h, 1.5, 1.5);
+  }
+  // as estrelas de cinco pontas
+  ctx.fillStyle = css(P.fadaEstrela);
+  for (let k = 0; k < 16; k++) {
+    const x = rnd() * w;
+    const y = rnd() * h;
+    const r = 4 + rnd() * 4;
+    ctx.beginPath();
+    for (let p = 0; p < 10; p++) {
+      const a = -Math.PI / 2 + (p / 10) * Math.PI * 2;
+      const rr = p % 2 ? r * 0.45 : r;
+      ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+/**
+ * O VESTIDO DA COELHINHA: o uniforme de torcida (o top, o emblema, a letra,
+ * a saia e a barra) fica guardado, e no lugar dele entra um corpete com o
+ * tecido da fantasia (uma casca por fora do tronco). Os pompons ganham as
+ * cores da fantasia (a troca é por cópia: os das outras irmãs não mudam).
+ */
+function vestirCoelha(corpo: THREE.Object3D, mapa: THREE.Texture, pompons: readonly [number, number]): THREE.Mesh {
+  for (const [x, y, z] of [[0, 0.37, 0], [0, 0.375, 0.118], [0, 0.377, 0.1335], [0, 0.22, 0], [0, 0.176, 0]] as const) {
+    const peca = corpo.children.find((o) => Math.abs(o.position.x - x) < 1e-3 && Math.abs(o.position.y - y) < 1e-3 && Math.abs(o.position.z - z) < 1e-3);
+    if (peca) peca.visible = false;
+  }
+  for (const braco of bracosEm(corpo, 0.125, 0.46)) {
+    const pompom = braco.getObjectByName('pompom');
+    if (pompom) repintar(pompom, trocaDeCores([[P.lunaPomponAmarelo, pompons[0]], [P.lunaPomponAzul, pompons[1]]], 0.08));
+  }
+  const corpete = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 18, 0, Math.PI * 2, 0.32, Math.PI * 0.78), toon(0xffffff, { mapa }));
+  corpete.name = 'corpete';
+  corpete.scale.set(0.143, 0.126, 0.128);
+  corpete.position.y = 0.37;
+  return corpete;
+}
+
+/** a manga bufante no ombro (dentro do grupo do braço: ela balança com ele) */
+function mangaBufante(braco: THREE.Object3D, mat: THREE.Material, punho?: THREE.Material): void {
+  const manga = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), mat);
+  manga.scale.set(0.052, 0.05, 0.052);
+  manga.position.y = -0.02;
+  braco.add(manga);
+  if (punho) {
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.007, 5, 16), punho);
+    aro.rotation.x = Math.PI / 2;
+    aro.position.y = -0.055;
+    braco.add(aro);
+  }
+}
+
 
 // ===================================================== o Gatito de Walter
 
@@ -428,6 +616,30 @@ export function fantasiarLunaDeCoruja(luna: Bicho): THREE.Group {
   lua.position.set(0, 0.405, 0.13);
   colar.add(lua);
   fantasia.add(fundir(colar));
+
+  // ------------------------------------------- o vestido de penas
+  // o corpete de penas com o peito claro de coruja na frente, a saia de
+  // penas recortada na barra, e as ASAS nos braços (as penas descendo do
+  // ombro até a mão, a de baixo maior); os pompons em creme e castanho
+  const penas = tecido('penas-do-corpete', 256, 128, (ctx) => desenharPenas(ctx, 256, 128, true));
+  fantasia.add(vestirCoelha(corpo, penas, [P.corujaPenaClara, P.corujaPena]));
+  const penasDaSaia = tecido('penas-da-saia', 256, 64, (ctx) => desenharPenas(ctx, 256, 64, false), 3);
+  const saia = saiaRodada(0.125, 0.29, 0.235, 0.14, { ondas: 22, mapa: penasDaSaia, barra: 0.028 });
+  saia.name = 'saia-de-penas';
+  fantasia.add(saia);
+  for (const braco of partes.bracos) {
+    const lado = Math.sign(braco.position.x);
+    const asa = new THREE.Group();
+    asa.name = 'asa-de-coruja';
+    ([[-0.03, 0.045, P.corujaPenaFunda], [-0.075, 0.05, P.corujaPena], [-0.12, 0.056, P.corujaPenaClara], [-0.165, 0.06, P.corujaPena]] as const).forEach(([y, comp, cor]) => {
+      const pena = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), toon(cor));
+      pena.scale.set(0.012, comp, 0.038);
+      pena.position.set(lado * 0.036, y - comp * 0.3, -0.005);
+      pena.rotation.z = lado * 0.12;
+      asa.add(pena);
+    });
+    braco.add(fundir(asa));
+  }
   return fantasia;
 }
 
@@ -512,20 +724,27 @@ export function fantasiarSolDeCatrina(sol: Bicho): THREE.Group {
   }
   cabeca.add(fundir(pintura));
 
-  // ------------------------------------------- a saia de babados
-  // por cima da saia de torcida (que termina em 0,17), em faixas de cor
-  const saia = saiaRodada(0.13, 0.28, 0.25, 0.13, 14, [P.catrinaRosa, P.catrinaLaranja, P.catrinaAmarelo, P.catrinaVerde, P.catrinaRoxo], P.catrinaRosa);
-  saia.name = 'saia-de-babados';
+  // ------------------------------------------- o vestido de catrina
+  // o corpete de veludo preto bordado de flores, amarrado na frente com o
+  // cadarço rosa; a saia longa bordada, o babado colorido na barra; as mangas
+  // bufantes pretas com o punho de renda; os pompons em rosa e laranja
+  const bordado = tecido('bordado-catrina', 256, 128, (ctx) => desenharBordado(ctx, 256, 128, true));
+  fantasia.add(vestirCoelha(corpo, bordado, [P.catrinaRosa, P.catrinaLaranja]));
+  const saiaBordada = tecido('saia-catrina', 256, 64, (ctx) => desenharBordado(ctx, 256, 64, false), 3);
+  const saia = saiaRodada(0.125, 0.29, 0.24, 0.155, { ondas: 16, mapa: saiaBordada });
+  saia.name = 'saia-de-catrina';
   fantasia.add(saia);
-  // o debrum de cada babado: um fio escuro marcando as faixas
-  for (const y of [0.24, 0.205, 0.17]) {
-    const f = (0.28 - y) / 0.15;
-    const r = 0.13 + 0.12 * Math.sqrt(f) + 0.004;
-    const fio = new THREE.Mesh(new THREE.TorusGeometry(r, 0.004, 4, 32), toon(P.catrinaTraco));
-    fio.rotation.x = Math.PI / 2;
-    fio.position.y = y;
-    fantasia.add(fio);
-  }
+  const babado = saiaRodada(0.238, 0.165, 0.272, 0.118, { ondas: 28, faixas: [P.catrinaRosa, P.catrinaLaranja, P.catrinaAmarelo], barra: 0.014 });
+  babado.name = 'babado-de-catrina';
+  fantasia.add(babado);
+  const renda = toon(P.noivaRenda);
+  const veludo = toon(P.catrinaTraco);
+  for (const braco of partes.bracos) mangaBufante(braco, veludo, renda);
+  // a rosa vermelha grande na cintura, do lado da câmera
+  const rosa = florzinha(0.03, P.catrinaRosa, P.catrinaRoxo);
+  rosa.position.set(0.1, 0.29, 0.08);
+  rosa.lookAt(new THREE.Vector3(0.6, 0.29, 0.6));
+  fantasia.add(fundir(rosa));
   return fantasia;
 }
 
@@ -575,8 +794,27 @@ export function fantasiarEstrellaDeFada(estrella: Bicho): THREE.Group {
     });
   };
 
+  // ------------------------------------------- o vestido de fada
+  // o corpete de veludo azul-noite com estrelas douradas e pó de brilho, o
+  // cinto dourado com a estrela de broche, a saia de pétalas clarinhas por
+  // baixo do tule, as mangas de tule com o punho aceso; os pompons em prata e ouro
+  const ceu = tecido('veludo-de-fada', 256, 128, (ctx) => desenharCeuDeFada(ctx, 256, 128));
+  fantasia.add(vestirCoelha(corpo, ceu, [P.fadaAsa, P.fadaEstrela]));
+  const petalas = saiaRodada(0.125, 0.29, 0.235, 0.15, { ondas: 16, cor: P.fadaAsa, barra: 0.035 });
+  petalas.name = 'saia-de-petalas';
+  fantasia.add(petalas);
+  const cinto = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.009, 5, 28), toon(P.fadaEstrela));
+  cinto.rotation.x = Math.PI / 2;
+  cinto.position.y = 0.288;
+  fantasia.add(cinto);
+  const broche = new THREE.Mesh(geoEstrela(0.026, 0.008), toon(P.fadaEstrela, { glow: 0.55 }));
+  broche.position.set(0, 0.29, 0.135);
+  fantasia.add(broche);
+  const tuleDaManga = toon(P.fadaAsa, { opacity: 0.6 });
+  for (const braco of partes.bracos) mangaBufante(braco, tuleDaManga, toon(P.fadaBrilho, { glow: 0.6 }));
+
   // ------------------------------------------- a saia de tule com estrelas
-  const saia = saiaRodada(0.13, 0.285, 0.27, 0.12, 10, null, P.fadaTule, 0.72);
+  const saia = saiaRodada(0.13, 0.285, 0.27, 0.12, { ondas: 10, cor: P.fadaTule, opacidade: 0.72 });
   saia.name = 'saia-de-tule';
   saia.renderOrder = 2;
   fantasia.add(saia);
