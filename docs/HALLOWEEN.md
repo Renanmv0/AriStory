@@ -681,7 +681,17 @@ balança, costura aparente, feltro, textura de canvas onde for tecido.
 > bochechas e a saia de babados em faixas de cor); e a **Estrella fadinha**
 > (as asas de tule com a borda acesa, batendo de leve, a varinha de estrela
 > no lugar do pompom da direita e a saia de tule azul-noite com
-> estrelinhas). As falas de fantasia moram em `fantasiados.ts`
+> estrelinhas). **As roupas das irmãs** (pedido do Renan: mais detalhadas
+> e mais a ver com cada fantasia): o uniforme de torcida fica guardado, e
+> cada uma veste um corpete de tecido desenhado em canvas e uma saia do
+> tema, com os pompons nas cores dela — a Luna de PENAS (o corpete de
+> escamas de pena com o peito claro, a saia de penas recortada e as penas
+> descendo pelos braços), a Sol de VELUDO PRETO BORDADO (flores coloridas,
+> o cadarço rosa na frente, a saia longa bordada com o babado colorido na
+> barra, as mangas bufantes com renda e uma rosa na cintura) e a Estrella
+> de VELUDO AZUL-NOITE (estrelas douradas e pó de brilho, o cinto dourado
+> com a estrela de broche, a saia de pétalas clarinhas por baixo do tule e
+> as mangas de tule com o punho aceso). As falas de fantasia moram em `fantasiados.ts`
 > (`FALAS_DE_FANTASIA`). Medido na alameda: 399 -> 419 desenhos por quadro
 > com tudo aceso e fantasiado.
 
