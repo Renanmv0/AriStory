@@ -930,6 +930,10 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   cópia), em dois lotes (soquete e lâmpada), e o halo de cada uma vem de
   `luzDasLuzinhas()`. De noite elas vão POR CIMA dos varais de bandeirola,
   ao lado do caminho (nunca atravessadas por cima dele).
+  As duas luzes (`luzDasLanternas(forca, chao)` e `luzDasLuzinhas`) devolvem
+  um grupo com o lote de halos e, com `chao`, o lote de POÇAS no chão
+  embaixo (cor por cópia). Poça embaixo de TODA lampadinha somava num
+  lençol de luz: a das luzinhas é uma a cada três.
 - **Os morcegos voando** (`morcegos.ts`, `BandoDeMorcegos`): corpinho com
   orelhas num lote e as asas noutro, DUAS cópias por morcego (a esquerda é
   a direita espelhada na matriz, com material de dois lados); cada um num

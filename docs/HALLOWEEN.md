@@ -560,7 +560,13 @@ freando, a porta abrindo) é peça nova desta etapa.
 > lotes, a asa batendo na matriz); o **Nessie aceso** com a poça verde
 > andando com ele; e a vitrine da boutique acesa na calçada. A névoa baixa
 > ficou de fora por enquanto (a mais cara da lista). Medido na alameda:
-> 391 -> 408 desenhos por quadro. Teste: `scripts/halloween.mjs SO=noite`.
+> 391 -> 408 desenhos por quadro. **O alcance** (pedido do Renan: as luzes
+> estavam fracas): a poça da abóbora no chão vai a `5r + 0,7` (a de cima
+> de móvel fica no tampo), o halo a `5r + 0,3`; as lanternas e as luzinhas
+> ganharam a POÇA no chão embaixo (`luzDasLanternas(forca, chao)`; nas
+> luzinhas, uma a cada três lâmpadas, para o varal não virar um lençol); o
+> Nessie joga 7 m de luz na água; a luz dos postes vai a 15 m de noite. A
+> alameda ficou em 384 desenhos (as poças entram em lote). Teste: `scripts/halloween.mjs SO=noite`.
 > Até a cutscene do ônibus (parte B) existir, a fase `festa` só se liga
 > pelo teste.
 

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE as P } from '../../palette';
-import { acesoPorVertice, brilhoEmLote, toon } from '../../core/materials';
+import { acesoPorVertice, brilhoEmLote, luzNoChao, toon } from '../../core/materials';
 import { Vento } from '../../core/shaders';
 
 /*
@@ -762,52 +762,64 @@ export class EnfeitesDePendurar {
   }
 
   /**
-   * As LANTERNAS ACESAS: um halo da cor do papel no miolo de cada lanterna
-   * (um lote só, `brilhoEmLote`). Luz pintada: a lanterna balança de leve no
-   * vento e o halo, macio e largo, nem mostra a diferença.
+   * O que uma luz pendurada joga em volta: o HALO da cor dela (um lote só,
+   * `brilhoEmLote`) e, se `chao` for dado, a POÇA no chão embaixo dela
+   * (`luzNoChao`, outro lote, com a cor por cópia) — `poçaACada` pula as
+   * vizinhas, para as poças de um varal comprido não somarem num lençol.
+   * Luz pintada: a lanterna balança de leve no vento e o halo, macio e
+   * largo, nem mostra a diferença.
    */
-  luzDasLanternas(forca = 0.5): THREE.InstancedMesh | null {
-    if (!this.lanternas.length) return null;
-    const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(0xffffff, forca), this.lanternas.length);
-    im.name = 'luz-das-lanternas';
+  private luzDe(
+    copias: readonly Copia[], nome: string, desce: number, tamanho: number, forca: number,
+    chao: number | null, raioDaPoca: number, forcaDaPoca: number, pocaACada: number, corPadrao: number,
+  ): THREE.Group | null {
+    if (!copias.length) return null;
+    const g = new THREE.Group();
+    g.name = nome;
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const s = new THREE.Vector3();
     const p = new THREE.Vector3();
     const cor = new THREE.Color();
-    this.lanternas.forEach((c, i) => {
-      // o miolo da lanterna fica 26 cm abaixo do gancho
-      p.copy(c.p).y -= 0.26 * c.escala;
-      im.setMatrixAt(i, m.compose(p, q, s.setScalar(0.85 * c.escala)));
-      im.setColorAt(i, cor.set(c.cor ?? P.lanternaLaranja));
+    const halos = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(0xffffff, forca), copias.length);
+    halos.name = `halos-${nome}`;
+    copias.forEach((c, i) => {
+      p.copy(c.p).y -= desce * c.escala;
+      halos.setMatrixAt(i, m.compose(p, q, s.setScalar(tamanho * c.escala)));
+      halos.setColorAt(i, cor.set(c.cor ?? corPadrao));
     });
-    im.instanceMatrix.needsUpdate = true;
-    im.computeBoundingSphere();
-    im.renderOrder = 3;
-    im.userData.semSombra = true;
-    return im;
+    halos.renderOrder = 3;
+    const lotes = [halos];
+    if (chao !== null) {
+      const comPoca = copias.filter((_, i) => i % pocaACada === 0);
+      const pocas = new THREE.InstancedMesh(new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2), luzNoChao(0xffffff, forcaDaPoca), comPoca.length);
+      pocas.name = `pocas-${nome}`;
+      comPoca.forEach((c, i) => {
+        p.set(c.p.x, chao, c.p.z);
+        pocas.setMatrixAt(i, m.compose(p, q, s.setScalar(raioDaPoca)));
+        pocas.setColorAt(i, cor.set(c.cor ?? corPadrao));
+      });
+      pocas.renderOrder = 2;
+      lotes.push(pocas);
+    }
+    for (const im of lotes) {
+      im.instanceMatrix.needsUpdate = true;
+      im.computeBoundingSphere();
+      im.userData.semSombra = true;
+      g.add(im);
+    }
+    return g;
   }
 
-  /** o halo de cada lampadinha das `luzinhas()`, da cor dela (um lote só) */
-  luzDasLuzinhas(forca = 0.6): THREE.InstancedMesh | null {
-    if (!this.lampadinhas.length) return null;
-    const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(0xffffff, forca), this.lampadinhas.length);
-    im.name = 'luz-das-luzinhas';
-    const m = new THREE.Matrix4();
-    const q = new THREE.Quaternion();
-    const s = new THREE.Vector3();
-    const p = new THREE.Vector3();
-    const cor = new THREE.Color();
-    this.lampadinhas.forEach((c, i) => {
-      p.copy(c.p).y -= 0.07;
-      im.setMatrixAt(i, m.compose(p, q, s.setScalar(0.42)));
-      im.setColorAt(i, cor.set(c.cor ?? P.luzinhaLaranja));
-    });
-    im.instanceMatrix.needsUpdate = true;
-    im.computeBoundingSphere();
-    im.renderOrder = 3;
-    im.userData.semSombra = true;
-    return im;
+  /** As LANTERNAS ACESAS: o halo no miolo de cada uma e a poça no `chao` embaixo dela. */
+  luzDasLanternas(forca = 0.7, chao: number | null = null): THREE.Group | null {
+    // o miolo da lanterna fica 26 cm abaixo do gancho
+    return this.luzDe(this.lanternas, 'luz-das-lanternas', 0.26, 1.5, forca, chao, 1.9, 0.32, 1, P.lanternaLaranja);
+  }
+
+  /** As LUZINHAS ACESAS: o halo de cada lampadinha e uma poça no `chao` a cada três. */
+  luzDasLuzinhas(forca = 0.7, chao: number | null = null): THREE.Group | null {
+    return this.luzDe(this.lampadinhas, 'luz-das-luzinhas', 0.07, 0.75, forca, chao, 1.5, 0.16, 3, P.luzinhaLaranja);
   }
 
   update(dt: number): void {
