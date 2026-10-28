@@ -93,8 +93,13 @@ const SEM_EVENTO: HalloweenNoParque = { enfeitado: false };
 /** a câmera de sempre vem de `+X/+Z`: virada para ela, a frente aparece */
 const PARA_A_CAMERA = Math.PI / 4;
 
-/** a barraquinha do Walter: o lado direito da praça da roda, entre o banco e a bilheteria */
-const BARRACA_DO_WALTER = { x: 8.6, z: -16.7, giro: -0.3 };
+/**
+ * a barraquinha do Walter: no canto de baixo da praça da roda, no gramado
+ * entre o canteiro de flores e a entrada do caminho — colada no calçamento,
+ * perto do carrinho do Noel e do caldeirão, e fora de toda passagem (pedido
+ * do Renan: no lado direito ela ficava na frente da bilheteria do Cookie)
+ */
+const BARRACA_DO_WALTER = { x: -9.7, z: -9.3, giro: 0.55 };
 
 export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): HalloweenNoParque {
   const g0 = w.game;
@@ -268,8 +273,8 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     abobora(b.position.x - 1.9, b.position.z + 2.25, 'pequena', { cara: null, cor: P.aboboraCreme, simples: true });
   }
   // ================================== a barraquinha de cachorro-quente do Walter
-  // Pedido do Renan: ela já está na praça da roda durante o evento, do lado
-  // oposto ao carrinho de poções do Noel. O Walter só chega com o ônibus da
+  // Pedido do Renan: ela já está na praça da roda durante o evento, num canto
+  // fora do caminho, perto do carrinho de poções do Noel. O Walter só chega com o ônibus da
   // festa: no convite ela espera de pano de "FECHADO" no balcão, e na festa
   // ela está aberta, acesa e com a chapa ligada.
   const barraca = new BarracaDoWalter(deNoite);

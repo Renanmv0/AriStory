@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { toon } from '../core/materials';
 
 /**
  * =============================================== FUNDIR: menos desenho, mesma imagem
@@ -131,4 +132,58 @@ function podarVazios(o: THREE.Object3D): void {
       Object.keys(filho.userData).length === 0;
     if (vazio) filho.removeFromParent();
   }
+}
+
+/**
+ * AS PEÇAS DE COR LISA VIRAM UMA MALHA SÓ, com a cor nos vértices.
+ *
+ * Nasceu no balcão de tingimento da boutique, que tem dezenas de miudezas de uma cor cada (os tecidos dobrados, os
+ * potinhos, os pincéis, a tina, o balde, o latão), e a `fundir()` só junta o
+ * que divide MATERIAL — cada cor era um desenho a mais por quadro. Aqui elas
+ * viram uma malha de `toon(branco, corPorVertice)`, o material das árvores: o
+ * toon multiplica a cor do material (branca) pela do vértice (a da peça), e a
+ * imagem é a mesma (comparada pixel a pixel com a de antes).
+ *
+ * Fica de fora o que não pode: o que tem textura (o carvalho, o tampo, a
+ * plaquinha), o que brilha, o transparente, o de dois lados, o lote, e o que
+ * mora num grupo com nome (a tinta da tina, que gira).
+ *
+ * Chame ANTES da `fundir()` (na peça pronta), e só em peça cujo material
+ * de cor lisa ninguém troca em tempo de jogo. Usam: o balcão de tingimento
+ * e a barraquinha do Walter do Halloween.
+ */
+export function juntarPorCor(raiz: THREE.Group): void {
+  // `?semFundir` desliga esta junção também: é como o `zfighting.mjs` mede
+  // caixa por caixa, e como se compara a foto de antes
+  if (DESLIGADO) return;
+  raiz.updateMatrixWorld(true);
+  const inversa = new THREE.Matrix4().copy(raiz.matrixWorld).invert();
+  const pedacos: THREE.BufferGeometry[] = [];
+  const sair: THREE.Mesh[] = [];
+  const temNome = (o: THREE.Object3D | null): boolean => {
+    for (let p = o; p && p !== raiz; p = p.parent) if (p.name) return true;
+    return false;
+  };
+  raiz.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh || (m as THREE.InstancedMesh).isInstancedMesh || Array.isArray(m.material)) return;
+    const mat = m.material as THREE.MeshToonMaterial;
+    if (!mat.isMeshToonMaterial || mat.map || mat.transparent || mat.side !== THREE.FrontSide || mat.vertexColors) return;
+    if (mat.emissiveIntensity > 0 && mat.emissive.getHex() !== 0) return;
+    if (temNome(m) || Object.keys(m.userData).length > 0) return;
+    const geo = (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone());
+    for (const nome of Object.keys(geo.attributes)) if (nome !== 'position' && nome !== 'normal') geo.deleteAttribute(nome);
+    geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inversa, m.matrixWorld));
+    const n = geo.attributes.position.count;
+    const cor = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) cor.set([mat.color.r, mat.color.g, mat.color.b], i * 3);
+    geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+    pedacos.push(geo);
+    sair.push(m);
+  });
+  if (pedacos.length < 2) return;
+  const junta = mergeGeometries(pedacos);
+  if (!junta) return;
+  for (const m of sair) m.removeFromParent();
+  raiz.add(new THREE.Mesh(junta, toon(0xffffff, { corPorVertice: true })));
 }

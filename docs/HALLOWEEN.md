@@ -669,9 +669,13 @@ de recado somem. O clube e a escola continuam vazios (decisão do Renan).
 > o Renan troca o que quiser. Teste: `scripts/halloween.mjs SO=festa`.
 > **A barraquinha de cachorro-quente do Walter** (pedido do Renan: ela
 > já está no parque durante o evento, bem detalhada e bonita, e o Walter só
-> chega com o ônibus; `world/halloween/barracaDoWalter.ts`): no lado
-> direito da praça da roda, de frente para o carrinho do Noel, com o
-> caldeirão no meio — a praça vira o largo das comidas da festa. Uma
+> chega com o ônibus; `world/halloween/barracaDoWalter.ts`): no canto de
+> baixo da praça da roda, no gramado entre o canteiro de flores, a entrada
+> do caminho e a pista — colada no calçamento, a poucos passos do carrinho
+> do Noel e do caldeirão, e fora de toda passagem (no lado direito, a
+> primeira versão ficava na frente da bilheteria do Cookie, e o Renan pediu
+> um canto; no meio do gramado, o cordão de luzinhas entre dois postes
+> passava por cima dela). Uma
 > barraca de madeira vermelha com o friso creme num estradinho, o painel
 > pintado à mão ("Cachorro-quente do Walter", as patinhas e o "au!"), o
 > toldo de duas águas listrado de vermelho e creme com o lambrequim e os
@@ -689,6 +693,9 @@ de recado somem. O clube e a escola continuam vazios (decisão do Renan).
 > ônibus — a chapa já tá quente, volto já!)". Quando a cena do ônibus
 > existir, ele chega e o recado sai. O lugar dele fica atrás do balcão
 > (`posto`), com o toldo alto e o beiral curto para a cabeça aparecer.
+> As miudezas de cor lisa viram uma malha só com a cor nos vértices
+> (`juntarPorCor`, agora no `world/fundir.ts`): 56 -> 25 malhas, a mesma
+> imagem.
 >
 > Medido na alameda, de noite: 419 -> 452 desenhos por quadro com os
 > postos (os bichos novos entram pelas beiradas do quadro; as peças vão

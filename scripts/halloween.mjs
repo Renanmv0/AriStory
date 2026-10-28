@@ -773,7 +773,7 @@ if (roda('festa')) {
     s.traverse((o) => { if (!b && o.userData?.peca === 'barraca-do-walter') b = o; });
     if (!b) return null;
     const nomes = new Set();
-    b.traverse((o) => { if (o.name) nomes.add(o.name); });
+    b.traverse((o) => { if (o.name) nomes.add(o.name); if (o.userData?.gigante) nomes.add('cachorro-quente-gigante'); });
     return {
       x: +b.position.x.toFixed(1), z: +b.position.z.toFixed(1),
       chapa: nomes.has('salsichas-na-chapa'), vapor: nomes.has('vapor-da-chapa'), lampada: nomes.has('lampada-da-barraca'),
@@ -783,7 +783,7 @@ if (roda('festa')) {
   });
   ok(!!barraca && barraca.chapa && barraca.vapor && barraca.lampada && barraca.gigante && barraca.painel && barraca.cardapio && barraca.recado,
     `a barraquinha do Walter aberta na praça da roda: a chapa, o vapor, a lâmpada, o cachorro-quente gigante, o painel, o cardápio e o recado (${JSON.stringify(barraca)})`);
-  const rolou = async () => j(() => { const im = window.jogo.scene.getObjectByName('salsichas-na-chapa'); const m = new im.matrix.constructor(); im.getMatrixAt(0, m); return [...m.elements].slice(0, 3).map((v) => +v.toFixed(3)).join(','); });
+  const rolou = async () => j(() => { const im = window.jogo.scene.getObjectByName('salsichas-na-chapa'); const m = new im.matrix.constructor(); im.getMatrixAt(0, m); return [...m.elements].slice(4, 7).map((v) => +v.toFixed(3)).join(','); });
   const r1 = await rolou();
   await espera(2500);
   const r2 = await rolou();
@@ -796,7 +796,7 @@ if (roda('festa')) {
   });
   await espera(1200);
   await page.keyboard.press('KeyE');
-  await page.waitForFunction(() => /ônibus/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.waitForFunction(() => /volto já/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
   const doWalter = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
   ok(/buscar a turma no ônibus/.test(doWalter), `o recado do Walter na barraca (${doWalter.slice(0, 70)})`);
   await passarFalas();

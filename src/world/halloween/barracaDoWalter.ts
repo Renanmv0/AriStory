@@ -6,6 +6,7 @@ import { acabar, uvDeParede } from '../acabamento';
 import { inoxEscovado, toalhaXadrez, veioDeMadeira } from '../texturasDeCasa';
 import { novaTextura, sorteio } from '../texturasDeChao';
 import { pocaDeLuz } from '../furniture';
+import { juntarPorCor } from '../fundir';
 import { canvasComLetra, haste, Juntar } from './carrinhoDePocoes';
 import type { AboboraNoLote } from './abobora';
 
@@ -384,6 +385,9 @@ export class BarracaDoWalter {
       this.vapor = r.vapor;
       this.brilho = this.montarLampada();
     }
+    // as miudezas de cor lisa (bisnagas, botões, pães, molhos, o gigante do
+    // telhado) viram uma malha só com a cor nos vértices — a mesma imagem
+    juntarPorCor(this.group);
     this.update(0);
   }
 
@@ -529,7 +533,8 @@ export class BarracaDoWalter {
   // ------------------------------------------ o cachorro-quente gigante do telhado
   private montarCachorroGigante(): void {
     const g = new THREE.Group();
-    g.name = 'cachorro-quente-gigante';
+    // sem nome (nome é fronteira da junção): ele não mexe, e entra na malha de cor lisa
+    g.userData.gigante = true;
     g.position.set(0, T.cumeeira + 0.3, T.zCumeeira + 0.04);
     const pao = toon(P.paoDeCachorro);
     const paoDourado = toon(P.paoDourado);
