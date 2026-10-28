@@ -452,8 +452,8 @@ export function fantasiarJeanLucDaOpera(jeanLuc: JeanLuc): THREE.Group {
   // ----------------------------------------------- a meia-máscara
   // no lado do rosto que a câmera vê (o `+X`): da testa até a bochecha, em
   // volta do olho — o olho passa por ela, que é o furo da máscara. O Jean-Luc
-  // é BRANCO: a máscara de porcelana só se lê pelo CONTORNO escuro e pela
-  // sombra do furo do olho, então os dois são parte dela.
+  // é BRANCO: máscara branca nele sumia de longe (o Renan reparou). Ela é
+  // de prata, com a borda e o aro do olho DOURADOS — é o contraste que lê.
   const R = 0.121;
   const PHI0 = Math.PI / 2 - 0.2;
   const PHI1 = Math.PI + 0.15;
@@ -472,8 +472,8 @@ export function fantasiarJeanLucDaOpera(jeanLuc: JeanLuc): THREE.Group {
   for (let k = 1; k <= N; k++) borda.push(naEsfera(PHI1 - (PHI1 - PHI0) * (k / N), TH1));
   for (let k = 1; k <= N; k++) borda.push(naEsfera(PHI0, TH1 - (TH1 - TH0) * (k / N)));
   const contorno = new THREE.Mesh(
-    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(borda, true, 'centripetal'), 80, 0.0045, 4, true),
-    toon(P.mascaraDaOperaSombra),
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(borda, true, 'centripetal'), 80, 0.0065, 5, true),
+    toon(P.fivelaDourada),
   );
   mascara.add(contorno);
   // o furo do olho: um aro escuro em volta do olho de verdade, pousado na máscara
@@ -499,7 +499,8 @@ export function fantasiarJeanLucDaOpera(jeanLuc: JeanLuc): THREE.Group {
   const faixa = new THREE.Mesh(new THREE.CylinderGeometry(0.0515, 0.0512, 0.02, 18, 1, true), toon(P.forroDaOpera));
   faixa.position.y = 0.025;
   cartola.add(faixa);
-  cartola.position.set(-0.015, 0.098, -0.012);
+  cartola.scale.setScalar(1.3);
+  cartola.position.set(-0.015, 0.096, -0.012);
   cartola.rotation.set(-0.12, 0, 0.22);
   cabeca.add(fundir(cartola));
 
@@ -541,9 +542,29 @@ export function fantasiarJeanLucDaOpera(jeanLuc: JeanLuc): THREE.Group {
   const pivo = new THREE.Group();
   pivo.name = 'capa-da-opera';
   pivo.position.set(0, 0.43, 0.0);
-  // curta: ela acaba antes do rabinho (em 0,235), que fica à mostra embaixo
-  pivo.add(capaDeBicho([[0.075, 0.0], [0.15, -0.045], [0.195, -0.1], [0.22, -0.16], [0.235, -0.2]], Math.PI * 0.95, P.capaDaOpera, P.forroDaOpera, 1.12));
+  // curta e LARGA, de ópera: ela acaba antes do rabinho (em 0,235), que fica
+  // à mostra embaixo, e abre bem para os lados, onde a câmera vê
+  pivo.add(capaDeBicho([[0.075, 0.0], [0.16, -0.045], [0.215, -0.1], [0.245, -0.16], [0.265, -0.2]], Math.PI * 1.2, P.capaDaOpera, P.forroDaOpera, 1.12));
   fantasia.add(pivo);
+  // a GOLA de ópera em pé atrás da cabeça, com o forro vinho virado para a
+  // frente: é a mancha de cor que diz "capa" de longe
+  const golaDeOpera = capaDeBicho([[0.165, 0.15], [0.13, 0.07], [0.09, 0.0]], Math.PI * 1.1, P.capaDaOpera, P.forroDaOpera, 1.05);
+  golaDeOpera.position.y = 0.42;
+  fantasia.add(golaDeOpera);
+  // a gravata-borboleta preta por cima da gola da camisa
+  const gravata = new THREE.Group();
+  for (const lado of [-1, 1] as const) {
+    const asa = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.05, 4), toon(P.capaDaOpera));
+    asa.rotation.z = lado * Math.PI / 2;
+    asa.position.x = lado * 0.024;
+    asa.scale.set(1, 1, 0.5);
+    gravata.add(asa);
+  }
+  const no = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 6), toon(P.forroDaOpera));
+  gravata.add(no);
+  gravata.position.set(0, 0.405, 0.1);
+  gravata.rotation.x = -0.3;
+  fantasia.add(fundir(gravata));
   balancarComOPasso(pivo, jeanLuc.group, 0.3);
   // o fecho dourado no pescoço
   const fecho = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 6), toon(P.fivelaDourada));

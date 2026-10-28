@@ -2202,7 +2202,7 @@ export const PALETTE = {
    * e a rosa no bico), os patos de diabinho (os chifrinhos, a tiara e a
    * capinha) e o laço na tromba do Cookie
    */
-  mascaraDaOpera: 0xefe8f7,
+  mascaraDaOpera: 0xb8b3c9,
   mascaraDaOperaSombra: 0x6e6680,
   capaDaOpera: 0x221d29,
   forroDaOpera: 0x7d1f3a,
