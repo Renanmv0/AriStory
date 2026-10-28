@@ -516,10 +516,10 @@ export class LoteDeAboboras {
     const comCara = this.lista.filter((a) => a.cara);
     if (!comCara.length) return;
     const quem = comCara.map((a) => this.lista.indexOf(a));
-    const halos = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(P.luzDeAbobora, 0.5), comCara.length);
+    const halos = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(P.luzDeAbobora, 0.6), comCara.length);
     halos.name = 'halos-das-aboboras';
     const chao = new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2);
-    const pocas = new THREE.InstancedMesh(chao, luzNoChao(P.luzDeAbobora, 0.42), comCara.length);
+    const pocas = new THREE.InstancedMesh(chao, luzNoChao(P.luzDeAbobora, 0.5), comCara.length);
     pocas.name = 'luz-das-aboboras';
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
@@ -532,11 +532,12 @@ export class LoteDeAboboras {
       const fz = Math.cos(a.giro ?? 0);
       // o halo na frente da cara, na altura dos olhos
       p.set(a.x + fx * r * 0.9, (a.y ?? 0) + (TOPO - FUNDO) * r * 0.5, a.z + fz * r * 0.9);
-      halos.setMatrixAt(i, m.compose(p, q.identity(), s.setScalar(r * 3.4)));
+      halos.setMatrixAt(i, m.compose(p, q.identity(), s.setScalar(r * 5 + 0.3)));
       halos.setColorAt(i, branco);
       // a poça: a luz sai pela cara, então ela se espalha mais para a frente
       p.set(a.x + fx * r * 1.1, (a.y ?? 0) + 0.006, a.z + fz * r * 1.1);
-      pocas.setMatrixAt(i, m.compose(p, q.identity(), s.setScalar(r * 3.2)));
+      // no chão a luz se espalha longe; em cima de um móvel, ela fica no tampo
+      pocas.setMatrixAt(i, m.compose(p, q.identity(), s.setScalar((a.y ?? 0) > 0.05 ? r * 3.2 : r * 5 + 0.7)));
       pocas.setColorAt(i, branco);
     });
     for (const im of comPoca ? [halos, pocas] : [halos]) {

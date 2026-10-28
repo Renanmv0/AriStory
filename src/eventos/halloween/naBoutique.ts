@@ -225,7 +225,7 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
   bexiga(deCima, W / 2 - 0.65, ALTURA, 1.9, 5, 1.9, 4);
   bexiga(deCima, x0 + 0.6, ALTURA, 3.05, 4, 1.8, 5);
   deCima.add(aboborasDeCima.montar({ acesas: true }), penduradosDeCima.montar());
-  const lanternasAcesas = penduradosDeCima.luzDasLanternas(0.55);
+  const lanternasAcesas = penduradosDeCima.luzDasLanternas(0.6, ALTURA + 0.03);
   if (lanternasAcesas) deCima.add(lanternasAcesas);
 
   // ================================================ a ESTELLA e o PELUSA

@@ -224,7 +224,7 @@ export class NessieNoLago {
   acender(): void {
     const vinil = this.group.getObjectByName('vinil') as THREE.Mesh | undefined;
     if (vinil) vinil.material = toon(0xffffff, { corPorVertice: true, glow: 0.16 });
-    const poca = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2).rotateX(-Math.PI / 2), luzNoChao(P.nessieBarriga, 0.5));
+    const poca = new THREE.Mesh(new THREE.PlaneGeometry(7, 7).rotateX(-Math.PI / 2), luzNoChao(P.nessieBarriga, 0.55));
     poca.name = 'luz-do-nessie';
     poca.position.y = 0.04;
     // por cima da água (que é decalque do chão, pintada depois dele)
