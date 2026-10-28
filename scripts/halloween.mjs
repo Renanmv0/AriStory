@@ -642,6 +642,9 @@ if (roda('noite')) {
   ok(deNoite.lanternas === 1 && deNoite.luzinhas === 1 && deNoite.lampadinhas === 1, `as lanternas e os varais de luzinha acesos (${JSON.stringify({ l: deNoite.lanternas, z: deNoite.luzinhas, b: deNoite.lampadinhas })})`);
   ok(deNoite.nessie === 1, 'o Nessie aceso, com a poça na água');
   ok(deNoite.noiteDosPostes === 1 && deNoite.corDosPostes === 0xffa64d, `as luzes dos postes de noite e cor de vela (${deNoite.noiteDosPostes}, #${deNoite.corDosPostes.toString(16)})`);
+  // a medida de desenhos da noite vem ANTES das conversas: com a câmera de
+  // perto ligada, ela contaria o parque inteiro
+  const desenhosDeNoite = await medir();
   // as fantasias do parque (§3): cada um a sua, e só na festa
   const fantasias = await j(() => {
     const g = window.jogo;
@@ -668,7 +671,7 @@ if (roda('noite')) {
   ok(/Falar com o Mano/.test(promptDoMano), `o ponto da fala do Mano vampiro (${promptDoMano})`);
   await page.keyboard.press('KeyE');
   // a câmera chega perto antes da fala, e o balão digita letra por letra (o navegador do teste anda devagar)
-  await page.waitForFunction(() => /Outro vampiro/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
+  await page.waitForFunction(() => /Outro vampiro/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 300000 }).catch(() => {});
   const falaDoMano = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
   ok(/Outro vampiro/.test(falaDoMano) && /Ari/.test(falaDoMano), `o Mano repara no outro vampiro (${falaDoMano.slice(0, 80)})`);
   // até a câmera de perto devolver a isométrica (a medida de desenhos é da isométrica)
@@ -690,7 +693,6 @@ if (roda('noite')) {
   const q2 = await quadro();
   ok(Math.abs(q1.chama - q2.chama) > 1e-4, `a chama das abóboras treme (${q1.chama.toFixed(3)} → ${q2.chama.toFixed(3)})`);
   ok(Math.hypot(q1.asa[0] - q2.asa[0], q1.asa[2] - q2.asa[2]) > 0.05, 'os morcegos voam em volta da roda');
-  const desenhosDeNoite = await medir();
   console.log(`  desenhos por quadro na alameda: pôr do sol ${desenhosDeTarde} -> noite ${desenhosDeNoite}`);
   await page.screenshot({ path: `${OUT}-noite-alameda.png` });
   for (const [nome, x, z, zoom] of [['praca', 2, -14, 24], ['lago', -13, 11, 13], ['boutique', -31, -16.5, 13]]) {
@@ -783,9 +785,16 @@ if (roda('festa')) {
   });
   ok(!!barraca && barraca.chapa && barraca.vapor && barraca.lampada && barraca.gigante && barraca.painel && barraca.cardapio && barraca.recado,
     `a barraquinha do Walter aberta na praça da roda: a chapa, o vapor, a lâmpada, o cachorro-quente gigante, o painel, o cardápio e o recado (${JSON.stringify(barraca)})`);
-  const rolou = async () => j(() => { const im = window.jogo.scene.getObjectByName('salsichas-na-chapa'); const m = new im.matrix.constructor(); im.getMatrixAt(0, m); return [...m.elements].slice(4, 7).map((v) => +v.toFixed(3)).join(','); });
+  // (cada uma rola um quarto de volta a cada ~3 s de jogo, e o navegador do teste anda a ~1/5)
+  const rolou = async () => j(() => {
+    const im = window.jogo.scene.getObjectByName('salsichas-na-chapa');
+    const m = new im.matrix.constructor();
+    const giros = [];
+    for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, m); giros.push(m.elements.slice(4, 7).map((v) => v.toFixed(2)).join(' ')); }
+    return giros.join(' | ');
+  });
   const r1 = await rolou();
-  await espera(2500);
+  await espera(9000);
   const r2 = await rolou();
   ok(r1 !== r2, `as salsichas rolam na chapa (${r1} → ${r2})`);
   // o recado: o Walter foi buscar a turma de ônibus
@@ -842,7 +851,7 @@ if (roda('festa')) {
     // as falas só começam com a câmera no lugar (e o navegador do teste anda devagar)
     await page.waitForFunction(() => !!document.querySelector('.dialogue.show'), null, { timeout: 120000 }).catch(() => {});
     // o balão digita letra por letra: espera a fala inteira (ou ao menos parar de crescer)
-    if (fala) await page.waitForFunction((f) => new RegExp(f).test(document.querySelector('.dialogue.show')?.textContent ?? ''), fala.source, { timeout: 120000 }).catch(() => {});
+    if (fala) await page.waitForFunction((f) => new RegExp(f).test(document.querySelector('.dialogue.show')?.textContent ?? ''), fala.source, { timeout: 300000 }).catch(() => {});
     else await espera(4000);
     await espera(500);
     const tomada = await j((peca) => {
