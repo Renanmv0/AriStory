@@ -368,7 +368,7 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     const andou = Math.hypot(p.x - antesDeQuemJoga.x, p.z - antesDeQuemJoga.z) > 0.004;
     antesDeQuemJoga.x = p.x;
     antesDeQuemJoga.z = p.z;
-    if (rumo === 'indo' && andou && !falando && !comentando && !g0.flag(VIU_O_WALTER) && Math.hypot(p.x - walter.x, p.z - walter.z) < 12) {
+    if (rumo === 'indo' && andou && !falando && !comentando && !g0.emDialogo() && !g0.flag(VIU_O_WALTER) && Math.hypot(p.x - walter.x, p.z - walter.z) < 12) {
       comentando = true;
       g0.setFlag(VIU_O_WALTER);
       void (async () => {

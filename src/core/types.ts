@@ -541,6 +541,8 @@ export interface Memory {
 export interface GameAPI {
   /** mostra uma ou varias falas e resolve quando o jogador fecha a ultima */
   say(lines: string | string[], speaker?: string): Promise<void>;
+  /** tem balão aberto agora (uma fala ou uma pergunta)? — quem fala sozinho espera ele fechar */
+  emDialogo(): boolean;
   /** pergunta com botoes; resolve com o indice escolhido */
   ask(pergunta: string, opcoes: string[], speaker?: string): Promise<number>;
   /** aviso curto no canto da tela */

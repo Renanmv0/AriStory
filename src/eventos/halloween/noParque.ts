@@ -750,7 +750,7 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
       const andou = Math.hypot(p.x - antes.x, p.z - antes.z) > 0.004;
       antes.x = p.x;
       antes.z = p.z;
-      if (falando || !andou) return;
+      if (falando || !andou || g0.emDialogo()) return;
       const c = COMENTARIOS.find((k) => !g0.flag(`halloween:viu:${k.id}`) && k.perto(p.x, p.z));
       if (!c) return;
       falando = true;

@@ -819,8 +819,12 @@ if (roda('festa')) {
   ok(!!noCaixote && noCaixote.rumo === 'posto' && noCaixote.visivel && Math.abs(noCaixote.y - 0.8) < 0.02 && noCaixote.topo > 1.3 && noCaixote.recados.every((v) => v === false),
     `o Walter no caixote da barraca, aparecendo por cima do balcão, e nenhum recado pendurado (${JSON.stringify(noCaixote)})`);
   // de vez em quando ele sai (a primeira dica do final): o "volto já" aparece, e o recado diz isso
+  // (o comentário da dupla, "Pra onde o Walter tá indo?", é conferido no fim desta parte, sozinho:
+  // aqui ele abriria no meio das conversas que vêm depois)
+  await j(() => window.jogo.setFlag('halloween:viu:walter-indo'));
   await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(6); o.userData.naFesta.sairAgora(); });
   await page.waitForFunction(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); return o.userData.naFesta.rumo() !== 'posto'; }, null, { timeout: 60000 }).catch(() => {});
+  await espera(800);
   const saiu = await walter();
   ok(saiu.rumo !== 'posto' && saiu.recados[0] === false && saiu.recados[1] === true, `o Walter sai da barraca e pendura o "volto já" (${JSON.stringify(saiu)})`);
   await j(() => {
@@ -946,6 +950,19 @@ if (roda('festa')) {
   // a segunda conversa é curta
   const deNovo = await conversar('noel');
   ok(!/BOA NOITE/.test(deNovo.balao) && deNovo.balao.length > 5, `na segunda vez, uma fala curta (${deNovo.balao.slice(0, 60)})`);
+  // a primeira vez que a dupla vê o Walter indo para trás da roda, comenta (e só depois que o balão fecha)
+  await j(() => { window.jogo.setFlag('halloween:viu:walter-indo', false); window.jogo.debugPlace(-8.2, -7.6, Math.PI / 4); });
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(6); o.userData.naFesta.sairAgora(); });
+  let comentario = '';
+  for (let i = 0; i < 120 && !/Pra onde o Walter/.test(comentario); i++) {
+    await j((k) => window.jogo.debugPlace(-8.2 + (k % 2) * 0.05, -7.6, Math.PI / 4), i);
+    await espera(400);
+    comentario = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
+  }
+  ok(/Pra onde o Walter tá indo/.test(comentario), `a dupla repara no Walter indo para trás da roda (${comentario.slice(0, 50)})`);
+  await page.waitForFunction(() => /Pra onde o Walter tá indo\?/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
+  await passarFalas();
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.chegar(); o.userData.naFesta.ritmo(1); });
   // as fotos de longe dos postos
   for (const [nome, x, z, zoom] of [['carrinho', -2.6, -14.4, 8], ['canteiro', -16.4, -16.2, 8], ['lago', -11.4, 17.8, 9], ['ponto', 35.2, 25.2, 9], ['piquenique', -22.6, -25.6, 8], ['campinho', 11.4, 3.6, 9]]) {
     await j(([x, z, zoom]) => { window.jogo.debugPlace(x, z, Math.PI / 4); window.jogo.setZoom(zoom); }, [x, z, zoom]);

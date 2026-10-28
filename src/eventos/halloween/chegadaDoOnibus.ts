@@ -327,6 +327,8 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
         api.releasePlayer(BOUTIQUE.x + 0.35, BOUTIQUE.z + 0.9, Math.PI / 2);
         api.releaseCompanion(BOUTIQUE.x + 0.3, BOUTIQUE.z + 1.7, Math.PI / 2);
         api.holdCompanion(BOUTIQUE.x + 4, BOUTIQUE.z + 1.3);
+        // (o `releasePlayer` destrava quem joga: sem isto, dava para sair andando no meio da cena)
+        api.lockPlayer(true);
       }
       const daDupla: Tomada = naBoutique
         ? { de: new THREE.Vector3(BOUTIQUE.x + 2.9, 1.3, BOUTIQUE.z - 1.9), para: new THREE.Vector3(BOUTIQUE.x + 0.3, 1.25, BOUTIQUE.z + 1.3) }
