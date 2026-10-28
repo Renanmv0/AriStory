@@ -916,7 +916,14 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   vinco sumia debaixo dele. O ponto vem da grade da `SphereGeometry` (os
   quatro cantos do quadradinho), por isso há uma cara por tamanho. A beira
   clara da polpa e o furo escuro são a mesma malha, com a cor nos vértices
-  (é ela que acende de noite).
+  (é ela que acende de noite). **Acesa** é `montar({ acesas: true })`: a cara
+  troca para a geometria com o furo da cor da chama e o material
+  `acesoPorVertice()` (chapado, sem luz), e o lote ganha o halo
+  (`brilhoEmLote`) e a poça no chão à frente de cada cara — três lotes, a
+  chama tremendo pela cor de cada cópia em `tremer(tempo)`. A boutique de
+  Halloween já usa; o parque da noite (etapa 4) é o mesmo chamado. As
+  lanternas de papel acendem com `luzDasLanternas()` (um halo da cor do
+  papel em cada uma).
 - **O que se pendura** (`pendurados.ts`, `EnfeitesDePendurar`): balança no
   `Vento` do `core/shaders.ts` com a ALTURA NEGATIVA (o peso cresce para
   baixo da raiz, e a ponta de baixo é que voa). O papel recortado é um

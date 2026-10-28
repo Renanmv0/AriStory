@@ -172,6 +172,18 @@ export function flat(color: number, opacity = 1, decal = false): THREE.MeshBasic
   return mat;
 }
 
+/**
+ * ACESO POR VÉRTICE: cor chapada, sem luz, vinda dos VÉRTICES (e da cópia, num
+ * lote). É o que se acende no escuro sem luz de verdade: a cara da abóbora com
+ * a vela dentro. A cor por cópia multiplica, então o lote "treme" a chama
+ * mexendo só nela.
+ */
+let acesoPorVerticeMat: THREE.MeshBasicMaterial | null = null;
+export function acesoPorVertice(): THREE.MeshBasicMaterial {
+  acesoPorVerticeMat ??= new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true });
+  return acesoPorVerticeMat;
+}
+
 /** Linha fina para cabos, grades e aros. */
 const lineCache = new Map<number, THREE.LineBasicMaterial>();
 export function line(color: number): THREE.LineBasicMaterial {

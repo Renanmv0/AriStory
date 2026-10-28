@@ -2120,6 +2120,9 @@ export const PALETTE = {
   aboboraPolpa: 0xffd27a,
   /** o fundo do corte, apagado: o escuro de dentro da abóbora */
   aboboraOco: 0x4a2414,
+  /** a cara ACESA: o miolo da vela (o furo) e a beira da polpa iluminada por dentro */
+  aboboraVela: 0xffc25a,
+  aboboraPolpaAcesa: 0xffe6a8,
   /** o papel dos recortes (a beira clara do morceguinho, da abóbora e do fantasma) */
   papelDeRecorte: 0xfff4de,
   /** o morceguinho de papel: um roxo quase preto, que ainda mostra volume */
@@ -2186,6 +2189,14 @@ export const PALETTE = {
   caldaDeAboboraSombra: 0xe0832a,
   /** a luz dos postes no Halloween: laranja de vela */
   luzDeAbobora: 0xffa64d,
+  /**
+   * A BOUTIQUE NO HALLOWEEN (a luz de dentro, pelo `g.luzDoCeu`): o fundo de
+   * ameixa, o ambiente lilás meio apagado e a luz principal de vela — a loja
+   * de sempre é clara de propósito, a de Halloween é de abóbora acesa
+   */
+  boutiqueNoEscuroFundo: 0x2a1f38,
+  boutiqueNoEscuroAmbiente: 0xa58fd0,
+  boutiqueNoEscuroLuz: 0xffb47a,
   /** o lago de gelatina de uva */
   uvaRasa: 0xb98ae0,
   uvaMeio: 0x8f55c8,

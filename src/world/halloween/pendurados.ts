@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE as P } from '../../palette';
-import { toon } from '../../core/materials';
+import { brilhoEmLote, toon } from '../../core/materials';
 import { Vento } from '../../core/shaders';
 
 /*
@@ -715,6 +715,33 @@ export class EnfeitesDePendurar {
       g.add(teias);
     }
     return g;
+  }
+
+  /**
+   * As LANTERNAS ACESAS: um halo da cor do papel no miolo de cada lanterna
+   * (um lote só, `brilhoEmLote`). Luz pintada: a lanterna balança de leve no
+   * vento e o halo, macio e largo, nem mostra a diferença.
+   */
+  luzDasLanternas(forca = 0.5): THREE.InstancedMesh | null {
+    if (!this.lanternas.length) return null;
+    const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(0xffffff, forca), this.lanternas.length);
+    im.name = 'luz-das-lanternas';
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const s = new THREE.Vector3();
+    const p = new THREE.Vector3();
+    const cor = new THREE.Color();
+    this.lanternas.forEach((c, i) => {
+      // o miolo da lanterna fica 26 cm abaixo do gancho
+      p.copy(c.p).y -= 0.26 * c.escala;
+      im.setMatrixAt(i, m.compose(p, q, s.setScalar(0.85 * c.escala)));
+      im.setColorAt(i, cor.set(c.cor ?? P.lanternaLaranja));
+    });
+    im.instanceMatrix.needsUpdate = true;
+    im.computeBoundingSphere();
+    im.renderOrder = 3;
+    im.userData.semSombra = true;
+    return im;
   }
 
   update(dt: number): void {

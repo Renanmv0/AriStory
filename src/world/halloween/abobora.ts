@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TessellateModifier } from 'three/addons/modifiers/TessellateModifier.js';
 import { PALETTE as P } from '../../palette';
-import { toon } from '../../core/materials';
+import { acesoPorVertice, brilhoEmLote, luzNoChao, toon } from '../../core/materials';
 
 /*
  * A ABÓBORA ESCULPIDA do Halloween (`docs/HALLOWEEN.md`, §4.1): a peça que
@@ -337,11 +337,11 @@ function naCascaFacetada(d: THREE.Vector3, volta: number, altura: number, alvo: 
  * dentro dela) e cada vértice vai para a casca deste tamanho, um tico para
  * fora.
  */
-function geoCara(cara: CaraDeAbobora, tamanho: TamanhoDeAbobora): THREE.BufferGeometry {
+function geoCara(cara: CaraDeAbobora, tamanho: TamanhoDeAbobora, acesa = false): THREE.BufferGeometry {
   const { volta, altura } = ABOBORA[tamanho];
   const camadas: Array<{ contornos: Contorno[]; fora: number; cor: number }> = [
-    { contornos: DESENHOS[cara]().map((c) => paraFora(c, 0.03)), fora: 1.004, cor: P.aboboraPolpa },
-    { contornos: DESENHOS[cara](), fora: 1.012, cor: P.aboboraOco },
+    { contornos: DESENHOS[cara]().map((c) => paraFora(c, 0.03)), fora: 1.004, cor: acesa ? P.aboboraPolpaAcesa : P.aboboraPolpa },
+    { contornos: DESENHOS[cara](), fora: 1.012, cor: acesa ? P.aboboraVela : P.aboboraOco },
   ];
   const posicoes: number[] = [];
   const cores: number[] = [];
@@ -427,9 +427,17 @@ export interface AboboraNoLote {
 /**
  * Todas as abóboras de um lugar (ou do parque inteiro) num lote só: a cena
  * chama `por()` para cada uma e `montar()` no fim.
+ *
+ * ACESAS (`montar({ acesas: true })`): a vela dentro de cada abóbora de cara.
+ * Luz PINTADA, nenhuma luz de verdade: a cara vira chapada e clara (o furo da
+ * cor da chama), um halo em volta da cara e a poça de luz no chão à frente
+ * dela — cada um UM lote para todas. A chama treme pela cor de cada cópia
+ * (`tremer(tempo)`, cada abóbora no seu ritmo), sem mexer em material.
  */
 export class LoteDeAboboras {
   private readonly lista: AboboraNoLote[] = [];
+  /** o que treme quando acesas: cada lote e, por cópia, o índice da abóbora na lista */
+  private readonly chamas: Array<{ im: THREE.InstancedMesh; quem: number[]; forca: number }> = [];
 
   por(a: AboboraNoLote): this {
     this.lista.push(a);
@@ -440,7 +448,8 @@ export class LoteDeAboboras {
     return this.lista.length;
   }
 
-  montar(): THREE.Group {
+  montar(opts: { acesas?: boolean } = {}): THREE.Group {
+    const acesas = opts.acesas ?? false;
     const g = new THREE.Group();
     g.name = 'aboboras';
     g.userData.peca = 'aboboras-de-halloween';
@@ -479,18 +488,76 @@ export class LoteDeAboboras {
     lote(G.folha, toon(P.aboboraFolha, { doubleSide: true }), comFolha, 'folhas');
     lote(G.gavinha, toon(P.aboboraFolha), comFolha, 'gavinhas');
     // as caras: cada uma é uma malha com NOME (é ela que acende de noite)
-    const mascara = toon(0xffffff, { corPorVertice: true });
+    const mascara = acesas ? acesoPorVertice() : toon(0xffffff, { corPorVertice: true });
     for (const t of ['grande', 'media', 'pequena'] as const) {
       for (const c of CARAS) {
         const quais = this.lista.filter((a) => a.cara === c && (a.tamanho ?? 'media') === t);
         if (!quais.length) continue;
-        const chave = `${c}-${t}`;
+        const chave = `${c}-${t}${acesas ? '-acesa' : ''}`;
         let geo = G.caras.get(chave);
-        if (!geo) G.caras.set(chave, (geo = geoCara(c, t)));
+        if (!geo) G.caras.set(chave, (geo = geoCara(c, t, acesas)));
         lote(geo, mascara, quais, `cara-${chave}`);
+        if (acesas) {
+          const im = g.children[g.children.length - 1] as THREE.InstancedMesh;
+          for (let i = 0; i < quais.length; i++) im.setColorAt(i, cor.setScalar(1));
+          this.chamas.push({ im, quem: quais.map((a) => this.lista.indexOf(a)), forca: 1 });
+        }
       }
     }
+    if (acesas) this.acender(g);
     return g;
+  }
+
+  /** o halo em volta de cada cara e a poça de luz no chão à frente dela */
+  private acender(g: THREE.Group): void {
+    const comCara = this.lista.filter((a) => a.cara);
+    if (!comCara.length) return;
+    const quem = comCara.map((a) => this.lista.indexOf(a));
+    const halos = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(P.luzDeAbobora, 0.5), comCara.length);
+    halos.name = 'halos-das-aboboras';
+    const chao = new THREE.PlaneGeometry(2, 2).rotateX(-Math.PI / 2);
+    const pocas = new THREE.InstancedMesh(chao, luzNoChao(P.luzDeAbobora, 0.42), comCara.length);
+    pocas.name = 'luz-das-aboboras';
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const s = new THREE.Vector3();
+    const p = new THREE.Vector3();
+    const branco = new THREE.Color(1, 1, 1);
+    comCara.forEach((a, i) => {
+      const r = a.raio ?? ABOBORA[a.tamanho ?? 'media'].raio;
+      const fx = Math.sin(a.giro ?? 0);
+      const fz = Math.cos(a.giro ?? 0);
+      // o halo na frente da cara, na altura dos olhos
+      p.set(a.x + fx * r * 0.9, (a.y ?? 0) + (TOPO - FUNDO) * r * 0.5, a.z + fz * r * 0.9);
+      halos.setMatrixAt(i, m.compose(p, q.identity(), s.setScalar(r * 3.4)));
+      halos.setColorAt(i, branco);
+      // a poça: a luz sai pela cara, então ela se espalha mais para a frente
+      p.set(a.x + fx * r * 1.1, (a.y ?? 0) + 0.006, a.z + fz * r * 1.1);
+      pocas.setMatrixAt(i, m.compose(p, q.identity(), s.setScalar(r * 3.2)));
+      pocas.setColorAt(i, branco);
+    });
+    for (const im of [halos, pocas]) {
+      im.instanceMatrix.needsUpdate = true;
+      im.computeBoundingSphere();
+      im.userData.semSombra = true;
+      g.add(im);
+    }
+    halos.renderOrder = 3;
+    pocas.renderOrder = 2;
+    this.chamas.push({ im: halos, quem, forca: 1 }, { im: pocas, quem, forca: 1 });
+  }
+
+  /** a chama tremendo: cada abóbora no seu ritmo (só faz algo se acesas) */
+  tremer(tempo: number): void {
+    const cor = new THREE.Color();
+    for (const { im, quem, forca } of this.chamas) {
+      for (let i = 0; i < quem.length; i++) {
+        const k = quem[i] * 1.7;
+        const chama = 0.86 + 0.08 * Math.sin(tempo * 7.3 + k) + 0.06 * Math.sin(tempo * 12.9 + k * 2.3);
+        im.setColorAt(i, cor.setScalar(chama * forca));
+      }
+      if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    }
   }
 }
 

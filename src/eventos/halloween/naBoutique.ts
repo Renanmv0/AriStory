@@ -7,6 +7,7 @@ import { Pelusa } from '../../entities/bichos/Pelusa';
 import { PALETTE as P } from '../../palette';
 import { ARI, RENAN } from '../../characters/cast';
 import { fundir } from '../../world/fundir';
+import { haloDeLampada, pocaDeLuz } from '../../world/furniture';
 import { ITENS, FANTASIA_DE_MORCEGUINHO, FANTASIA_DE_VAMPIRO } from '../../world/itens';
 import { LoteDeAboboras } from '../../world/halloween/abobora';
 import { EnfeitesDePendurar } from '../../world/halloween/pendurados';
@@ -100,6 +101,12 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
   pendurados.varal(lustre, new THREE.Vector3(planta.centro.x, H - 0.25, z0 + 0.17), { barriga: 0.28, passo: 0.4 });
   pendurados.varal(lustre, new THREE.Vector3(x0 + 0.17, H - 0.25, planta.centro.z), { barriga: 0.25, passo: 0.4 });
   pendurados.varal(lustre, new THREE.Vector3(3.2, H - 0.25, z0 + 0.17), { barriga: 0.3, passo: 0.4 });
+  // o LUSTRE vira o lampião da loja: um halo de vela em volta dos globos e a
+  // poça larga no tapete (luz pintada, por cima da que ele já tem)
+  const haloDoLustre = haloDeLampada(2.6, P.luzDeAbobora, 0.3);
+  haloDoLustre.position.copy(lustre);
+  enfeite.add(haloDoLustre);
+  enfeite.add(w.place(pocaDeLuz(2.3, P.luzDeAbobora, 0.22), lustre.x, 0.03, lustre.z));
   // morceguinhos de papel pendurados do aro do lustre
   for (let k = 0; k < 5; k++) {
     const a = (k / 5) * Math.PI * 2 + 0.3;
@@ -171,7 +178,7 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
   bexiga(enfeite, W / 2 - 0.5, 0, -2.75, 5, 1.95, 1);
   bexiga(enfeite, x0 + 0.55, 0, -3.3, 4, 1.8, 2);
 
-  enfeite.add(aboboras.montar(), pendurados.montar());
+  enfeite.add(aboboras.montar({ acesas: true }), pendurados.montar());
 
   // ========================================================= o MEZANINO
   const deCima = new THREE.Group();
@@ -217,7 +224,9 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
   bexiga(deCima, planta.espelho.x - 1.75, ALTURA, z0 + 0.5, 5, 2.0, 3);
   bexiga(deCima, W / 2 - 0.65, ALTURA, 1.9, 5, 1.9, 4);
   bexiga(deCima, x0 + 0.6, ALTURA, 3.05, 4, 1.8, 5);
-  deCima.add(aboborasDeCima.montar(), penduradosDeCima.montar());
+  deCima.add(aboborasDeCima.montar({ acesas: true }), penduradosDeCima.montar());
+  const lanternasAcesas = penduradosDeCima.luzDasLanternas(0.55);
+  if (lanternasAcesas) deCima.add(lanternasAcesas);
 
   // ================================================ a ESTELLA e o PELUSA
   fantasiarEstellaDeAranha(estella);
@@ -232,15 +241,33 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
 
   // ================================================ o relógio
   let relogio = 0;
+  let luzPosta = false;
   w.onUpdate((dt) => {
+    // A LUZ DE HALLOWEEN (pedido do Renan: "está muito claro"): a loja de
+    // sempre é clara de propósito; no evento, ela fica no lusco-fusco, com o
+    // ambiente lilás meio apagado e a luz principal de vela — quem ilumina são
+    // as abóboras, o lustre e as arandelas. No primeiro quadro: o céu que a
+    // cena pede no `build` é o motor que põe, depois dele.
+    if (!luzPosta) {
+      luzPosta = true;
+      g0.luzDoCeu({
+        sky: P.boutiqueNoEscuroFundo,
+        ambientColor: P.boutiqueNoEscuroAmbiente,
+        ambientIntensity: 0.8,
+        sunColor: P.boutiqueNoEscuroLuz,
+        sunIntensity: 0.5,
+      });
+    }
     relogio += dt;
     if (pecas.andar() === 0) {
       pelusa.update(dt);
       pelusa.group.position.y = 0.47;
       dormir(dt);
       pendurados.update(dt);
+      aboboras.tremer(relogio);
     } else {
       penduradosDeCima.update(dt);
+      aboborasDeCima.tremer(relogio);
     }
     for (const b of bexigas) balancarBexigas(b, relogio);
   });
