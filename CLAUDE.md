@@ -248,6 +248,10 @@ arquivo dele, não no código.
 - Parâmetro com cor da paleta precisa de anotação: `cor: number = P.wood`.
 - **São sempre dois em cena.** Cutscene que carrega um tem que carregar o outro,
   e diálogo que cita nome usa `g.companionName()` — o jogador troca com `T`.
+- **Nada de rato no jogo.** O Ari tem fobia de rato de verdade: nenhum
+  rato, camundongo ou ratazana — nem bicho, nem praga, nem fantasia, nem
+  enfeite, nem desenho. (Golfinho e barata também não entram, decisão do
+  Renan; ver a skill de praga.)
 - **Fala escrita pelo Renan vai literal.** Se ele deu o texto de uma interação,
   use exatamente aquele texto.
 - **Perna e braço esquerdos nascem em `x` negativo**: `rotation.z` positivo

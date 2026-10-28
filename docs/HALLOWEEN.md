@@ -636,7 +636,8 @@ antes da Luna): é a festa da Estella, e ela convidou todo mundo.
    fantasma; e todas **muito bem feitas, detalhadas e fofas** — o plano novo
    está no §3;
 4. **o que volta a funcionar de noite**: sim — a roda gigante, o sorvete e a
-   patinação. E **o Gatito vem**, com uma fantasia engraçada (§3: de rato);
+   patinação. E **o Gatito vem**, com uma fantasia engraçada (§3: de cachorro — de rato
+   não, o Ari tem fobia de rato);
 5. **todos vêm, independente da situação** (o Jean-Luc antes das cinco
    vitórias, a escola antes da Luna);
 6. **o Walter some atrás da roda**, deixando a dica do final;
@@ -677,7 +678,7 @@ feitas, detalhadas e fofas**, com o capricho das da dupla (§5.4).
 | **Noel** (peru) | o carrinho de poções | **cientista maluco** | o jaleco branco no lugar do avental, os óculos de proteção na testa, a crista arrepiada de algodão, os tubos de ensaio coloridos no bolso | ele vive misturando suco; hoje são poções — e ele não para quieto |
 | **Josefina** (tartaruga) | o canteiro de abóboras | **dragãozinho** | a fileira de espinhos de feltro descendo pelo casco, as asinhas, o capuz com dois chifrinhos, o rabinho com a ponta de flecha, e uma fumacinha de chá saindo de vez em quando | "o dragão mais devagar do mundo" — e ela adora contar história de dragão |
 | **Walter** (cão garçom) | some atrás da roda (o final) | **múmia garçom** | as ataduras com as pontas soltas balançando, a gravatinha por cima, a bandeja de doces | ele serve a festa do final |
-| **Gatito** (gato) | o piquenique | **rato** — a fantasia engraçada (pedido do Renan) | a tiara de orelhas redondas de rato por cima das orelhas de gato, o focinho rosa postiço com bigodinho de arame, o rabinho fino de rato amarrado no rabo dele e uma plaquinha no peito: "NÃO SOU GATO" | um gato de rato: "o disfarce perfeito, ninguém vai desconfiar" |
+| **Gatito** (gato) | o piquenique | **cachorro** — a fantasia engraçada (pedido do Renan) | a tiara de orelhas caídas de cachorro por cima das orelhas de gato, o focinho postiço de bolinha preta preso com elástico, a coleira com a plaquinha de osso escrita "AU" e um rabinho de cachorro amarrado no rabo dele, que balança quando ele anda; de vez em quando ele solta um "au" sem a menor convicção | um gato de cachorro: "o disfarce perfeito, ninguém vai desconfiar" (era de rato; o Renan trocou — o Ari tem fobia de rato de verdade, e rato não entra no jogo) |
 | **Flynn** (raposa) | o campinho de frisbee | **lobisomem** | as luvas peludas de garra, o peitoral de pelo cinza, as orelhas postiças de lobo e a bandana dos Gatitos por cima | o atleta, uivando de animação |
 | **Luna** (coelha) | o piquenique | **coruja da meia-noite** | o capuz com os tufos de orelha de coruja e os olhões de feltro, a capinha de penas em camadas, a lua crescente pendurada no pescoço | Luna é lua |
 | **Sol** (coelha) | o piquenique | **caveirinha catrina** | a coroa de flores coloridas, a carinha pintada de caveirinha fofa (as bochechas de flor), a saia de babado colorida | a animada, e as expressões dela são do espanhol |
