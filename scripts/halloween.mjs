@@ -14,6 +14,12 @@
  *             desligadas) e a plaquinha de recado no posto, o que continua
  *             funcionando, os comentários da dupla (uma vez só) — e o clube,
  *             o Mania, a estufa, a escola e o quarto sem os personagens
+ *   SO=boutique a etapa 3: a boutique enfeitada nos dois andares (as bexigas
+ *             de caveira), a Estella de aranha, o Pelusa morceguinho dormindo
+ *             no pufe, e a cena do presente — as duas caixas, o provador, a
+ *             dupla saindo inteira fantasiada (o Ari de vampiro, o Renan de
+ *             morceguinho), a cestinha e o mapinha, a memória, a loja
+ *             voltando a funcionar — e o mapinha lido pela mão
  *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre, nenhuma peça do evento, e a
  *             casa, o parque, o clube, a escola, a estufa, o Mania e o quarto
@@ -41,6 +47,8 @@ const MALHAS_DA_CASA_ANTES = 346;
 /** as outras cenas que o evento toca, medidas no mesmo commit (save zerado) */
 const MALHAS_ANTES = {
   'villa-lobos': 5827, clube: 2808, escola: 1360, 'escola-ginasio': 353, estufa: 3360, 'mania-de-churrasco': 642, quarto: 367,
+  // a boutique da Estella (a etapa 3)
+  lojinha: 629,
 };
 
 const browser = await chromium.launch({
@@ -128,7 +136,9 @@ if (roda('volta')) {
     const n = await malhasNaCena();
     const camada = await j(() => {
       let achou = false;
-      window.jogo.scene.traverse((o) => { if (o.name === 'halloween-no-parque' || o.userData?.peca === 'plaquinha-de-recado') achou = true; });
+      window.jogo.scene.traverse((o) => {
+        if (['halloween-no-parque', 'halloween-na-boutique', 'fantasia-de-aranha'].includes(o.name) || o.userData?.peca === 'plaquinha-de-recado') achou = true;
+      });
       return achou;
     });
     ok(n === antes && !camada, `${cena}: as mesmas malhas de antes do evento (${n} = ${antes}), sem nada do evento`);
@@ -479,6 +489,96 @@ if (roda('filme')) {
   await espera(1200);
   const limpo2 = await j(() => !window.jogo.flag('halloween:convite') && !window.jogo.save.memories.some((m) => m.id === 'halloween-convite'));
   ok(limpo2, 'o rastro antigo do teste some do save de verdade');
+}
+
+// ==================================================================== boutique
+if (roda('boutique')) {
+  console.log('\nboutique: o presente da Estella');
+  await naFaseConvite('lojinha');
+  // a loja enfeitada, a Estella de aranha e o Pelusa
+  const enfeite = await j(() => {
+    const cena = window.jogo.scene;
+    let bexigas = 0;
+    let pelusa = null;
+    cena.traverse((o) => {
+      if (o.userData?.peca === 'bexigas-de-caveira') bexigas++;
+      if (o.userData?.peca === 'pelusa' && o.userData.bicho) pelusa = { deitado: o.userData.bicho.estaDeitado, y: o.position.y };
+    });
+    return {
+      terreo: !!cena.getObjectByName('halloween-na-boutique'),
+      mezanino: !!cena.getObjectByName('halloween-no-mezanino'),
+      aranha: !!cena.getObjectByName('fantasia-de-aranha'),
+      bexigas,
+      pelusa,
+    };
+  });
+  ok(enfeite.terreo && enfeite.mezanino, 'os dois andares enfeitados');
+  ok(enfeite.bexigas >= 5, `as bexigas de caveira (${enfeite.bexigas} cachos)`);
+  ok(enfeite.aranha, 'a Estella está de aranha');
+  ok(!!enfeite.pelusa && enfeite.pelusa.y > 0.4, `o Pelusa no pufe (${JSON.stringify(enfeite.pelusa)})`);
+  // a cena do presente começa sozinha, e a loja fica quieta até o fim
+  const quieta = await interacoes();
+  ok(quieta['lojinha:subir'] === false && quieta['lojinha:estella'] === false, 'durante a cena, a loja não funciona');
+  let revelou = false;
+  for (let i = 0; i < 160 && !(await flag('halloween:presente')); i++) {
+    const fala = await textoDoBalao();
+    if (!revelou && /Muahaha/.test(fala)) {
+      revelou = true;
+      await espera(800);
+      await page.screenshot({ path: `${OUT}-boutique-fantasiados.png` });
+    }
+    await page.keyboard.press('KeyE');
+    await espera(500);
+  }
+  await passarFalas();
+  ok(await flag('halloween:presente'), 'a cena do presente chega ao fim');
+  const depois = await j(() => {
+    const g = window.jogo;
+    return {
+      ari: g.wearables('ari').map((i) => i?.id ?? null),
+      renan: g.wearables('renan').map((i) => i?.id ?? null),
+      maos: g.handItems().map((i) => i?.id).filter(Boolean),
+      armario: g.wardrobeItems('ari').map((i) => i.id),
+      memoria: g.save.memories.some((m) => m.id === 'halloween-presente-da-estella'),
+    };
+  });
+  ok(depois.ari.every((id) => /vampiro|verniz/.test(id ?? '')), `o Ari sai inteiro de vampiro (${depois.ari.join(', ')})`);
+  ok(depois.renan.every((id) => /morcego/.test(id ?? '')), `o Renan sai inteiro de morceguinho (${depois.renan.join(', ')})`);
+  ok(depois.maos.includes('cesta-de-abobora') && depois.maos.includes('mapinha-da-estella'), `a cestinha e o mapinha na mochila (${depois.maos.join(', ')})`);
+  ok(depois.armario.includes('tiara-de-morcego'), 'as fantasias ficam no guarda-roupa dos dois (a do Renan no armário do Ari)');
+  ok(depois.memoria, 'vira a memória "O presente da Estella"');
+  await espera(800);
+  const voltou = await interacoes();
+  ok(voltou['lojinha:subir'] === true && voltou['lojinha:estella'] === true, 'depois da cena, a loja volta a funcionar');
+  // a ronda da Estella volta a andar
+  const antesDaRonda = await j(() => { let p = null; window.jogo.scene.traverse((o) => { if (o.userData?.peca === 'estella' && o.userData.bicho) p = [o.position.x, o.position.z]; }); return p; });
+  // (o navegador do teste anda a ~1/5 da velocidade: espera até ela sair do lugar)
+  let andou = 0;
+  for (let i = 0; i < 25 && andou < 0.3; i++) {
+    await espera(2000);
+    const p = await j(() => { let p = null; window.jogo.scene.traverse((o) => { if (o.userData?.peca === 'estella' && o.userData.bicho) p = [o.position.x, o.position.z]; }); return p; });
+    andou = Math.hypot(p[0] - antesDaRonda[0], p[1] - antesDaRonda[1]);
+  }
+  ok(andou >= 0.3, `a Estella volta para a ronda (andou ${andou.toFixed(2)} m)`);
+  // o mapinha na mão: o E lê
+  await j(() => window.jogo.setActiveHandSlot(window.jogo.handItems().findIndex((i) => i?.id === 'mapinha-da-estella')));
+  await j(() => window.jogo.debugPlace(1.5, 2.8, Math.PI / 4));
+  await espera(1200);
+  const prompt = await j(() => document.querySelector('.prompt .label')?.textContent ?? '');
+  ok(/Ler o mapinha/.test(prompt), `segurando o mapinha, o E lê (${prompt})`);
+  await page.keyboard.press('KeyE');
+  await espera(1500);
+  const aberto = await j(() => ({ show: document.querySelector('.memorias')?.classList.contains('show'), titulo: document.querySelector('.memorias h2')?.textContent }));
+  ok(aberto.show && /mapinha/i.test(aberto.titulo ?? ''), `o mapinha abre na tela (${JSON.stringify(aberto)})`);
+  await page.screenshot({ path: `${OUT}-boutique-mapinha.png` });
+  await page.keyboard.press('Escape');
+  await espera(500);
+  // recarregando, a cena não volta
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(2000);
+  ok(!(await j(() => window.jogo.player.locked)) && (await interacoes())['lojinha:estella'] === true, 'recarregando, a cena não se repete');
+  await page.keyboard.press('Escape');
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');

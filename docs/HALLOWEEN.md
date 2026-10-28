@@ -35,13 +35,13 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapas 1 e 2 construídas, escondidas.** O filme no sofá e a carta
-da Estella (§2.1) e o parque no pôr do sol, enfeitado e vazio (§4.1) estão
-no jogo, mas só aparecem com `?halloween` na URL (`src/eventos/halloween/`,
-`src/world/halloween/`, `scripts/halloween.mjs`). A **parte 1** inteira
-(§2.1 a §2.4) está fechada com o Renan; a próxima é a **etapa 3** (o
-presente da Estella na boutique), com o plano detalhado no §2.3.1 esperando
-as respostas do Renan (§10).
+**Estado: etapas 1, 2 e 3 construídas, escondidas.** O filme no sofá e a
+carta da Estella (§2.1), o parque no pôr do sol, enfeitado e vazio (§4.1),
+e o presente da Estella na boutique (§2.3.1) estão no jogo, mas só aparecem
+com `?halloween` na URL (`src/eventos/halloween/`, `src/world/halloween/`,
+`src/world/fantasias.ts`, `scripts/halloween.mjs`). A **parte 1** inteira
+(§2.1 a §2.4) está fechada com o Renan; a próxima é a **etapa 4** (a noite
+e o ônibus, §2.4), que ainda precisa ser planejada com ele.
 
 **Onde mora a etapa 2 no código:** o kit em `world/halloween/` (`abobora.ts`,
 `pendurados.ts`, `pecas.ts`, `nessie.ts`; `kit.ts` é a vitrine dos testes);
@@ -49,6 +49,15 @@ a camada do parque em `eventos/halloween/noParque.ts` (uma chamada no fim
 do `villaLobos.ts`); quem foi se arrumar em `eventos/halloween/ausentes.ts`
 (uma chamada no fim do clube, do Mania, da estufa, da escola e do ginásio);
 os recados em `eventos/halloween/recados.ts`.
+
+**Onde mora a etapa 3 no código:** as doze peças das fantasias em
+`world/fantasias.ts` (a capa viva e as asinhas que batem; as fichas em
+`world/itens.ts`, `FANTASIAS_DA_ESTELLA`); a Estella de aranha e o Pelusa
+morceguinho em `world/halloween/fantasiasDosBichos.ts` (por fora das
+classes); as bexigas de caveira, o caldeirão de balas, as caixas, a cestinha,
+a meia e o resto da loja em `world/halloween/boutique.ts`; o mapinha em
+`world/halloween/mapinha.ts`; e a camada da boutique, com a cena do presente,
+em `eventos/halloween/naBoutique.ts` (uma chamada no fim da `lojinha.ts`).
 
 **Decisões do Renan** (as que já valem):
 
@@ -297,9 +306,37 @@ e depois ri dela mesma. Cutscene:
 > outras. É só pedir doces ou travessuras!"
 > "Agora vão, que a noite é das aranhas… e dos amigos delas!"
 
-### 2.3.1 A etapa 3 em detalhe: o presente da Estella (PROPOSTA, esperando o Renan)
+### 2.3.1 A etapa 3 em detalhe: o presente da Estella (fechada com o Renan)
 
-> Plano para o Renan aprovar (§10, "A etapa 3"). Nada disto está construído.
+> **Construída** (escondida atrás do `?halloween`). O que mudou na
+> construção, em relação ao plano abaixo:
+>
+> - a Estella espera no salão (e não na porta: a dupla nasce a 80 cm dela),
+>   e entre uma parte e outra da cena a tela escurece um instante (as caixas
+>   aparecem no balcão; os dois entram nas cabines fechadas, numa âncora, e
+>   a cortina esconde; saem fantasiados no vão do cantinho, onde a arara de
+>   frio não tapa ninguém);
+> - a dupla ganhou duas falas de reação ("Estella! Você tá de aranha!" / "A
+>   aranha mais fofa do parque inteiro.", e na saída "Eu sou um vampiro!" /
+>   "E eu sou um morceguinho!") e a meia rendeu três ("Ops… a meia!" /
+>   "Quem jogou meia por cima da minha cortina?!" / "Foi sem querer! Tá
+>   quase!") — rascunhos, o Renan reescreve;
+> - o mapinha é um item de mão que se LÊ: segurando, o E vira "Ler o mapinha
+>   da Estella" (`ItemDef.leitura`, no motor) e abre no painel do quadro;
+> - os bustos da vitrine ganharam o chapéu de bruxa e a cabeça de abóbora
+>   (as fantasias da caça ainda não existem);
+> - a capa do vampiro é uma grade de pano VIVA (`capaViva`): se acomoda nos
+>   braços e nas pernas, abre para trás andando, e sentado assenta no banco.
+>   Para ela o rig passou a mostrar os pivôs dos braços (`MedidasCorpo.bracos`,
+>   só leitura, como as pernas);
+> - na volta da cena a Estella vai até a ronda por um caminho livre (em
+>   linha reta ela atravessaria a arara das calças).
+>
+> Medido (desenhos por quadro, sem -> com o enfeite): térreo 467 -> 580,
+> mezanino 297 -> 347. Sem o `?halloween`, ou antes da carta, a boutique
+> tem as mesmas 629 malhas de antes do evento.
+
+> As respostas do Renan já estão aqui dentro. Falta construir (§9).
 
 **O que a etapa 3 entrega.** Com a fase `convite`, a porta da boutique deixa
 de abrir a loja de sempre: lá dentro está a **boutique de Halloween**, a
@@ -309,6 +346,22 @@ pufe**, e a cutscene do presente. A etapa termina com a dupla **fantasiada**
 **mapinha** — e a porta de saída. O que tem do lado de fora (a noite e o
 ônibus) é a etapa 4; até ela existir, sair da boutique volta para o parque no
 pôr do sol.
+
+**As respostas do Renan:**
+
+- **o mezanino também enfeitado**, "bem com cara de Halloween", e com
+  **bexigas de caveira**;
+- **a aranha do jeito dela** — nas cores da loja, e não preto de aranha de
+  verdade;
+- **sem topete**: cada um continua com o próprio cabelo, e as fantasias têm
+  que sair **bem detalhadas e bem feitas**;
+- **a caixa só abre** (sem manequim), e **a Estella não diz o que tem
+  dentro**: a surpresa é quando eles saem do provador;
+- **cada um leva a sua caixinha para o provador e sai inteiro vestido**; as
+  fantasias viram **roupas permanentes** do guarda-roupa;
+- **o mapinha** entra;
+- **a loja volta a funcionar normal, mas só DEPOIS da cutscene**;
+- **o Pelusa no pufe vinho**, e **nenhuma fala sobre ele**.
 
 **A boutique enfeitada** (camada por cima da `lojinha.ts`, igual ao parque:
 a fábrica dos móveis não muda; o que tem cor de loja ganha roxo e laranja
@@ -320,54 +373,66 @@ pela mesma repintura do parque, e o resto é peça do kit `world/halloween/`):
 | o teto do térreo | bandeirolas de morceguinho de feltro entre o lustre e as paredes, e **teias de lã** nos cantos (a Estella tece: as teias da loja são de LÃ, roxa e laranja, com uma aranhinha de feltro) |
 | o pátio das araras | abóboras pequenas aos pés das araras, um **caldeirão de balas** na mesa de mármore do meio |
 | o pódio da vitrine | os dois bustos trocam a roupa da loja por **fantasia**: um de bruxinha, outro de abóbora (são o "trailer" das fantasias da caça) |
-| o caixa | abóboras esculpidas em cima do balcão, um pote de biscoito de fantasminha, e é de trás dele que saem **as duas caixas** |
+| o caixa | abóboras esculpidas em cima do balcão, um pote de biscoito de fantasminha |
 | os provadores | cortina repintada de roxo, uma placa "Provador assombrado" pendurada |
-| o cantinho de esperar | o **Pelusa no pufe** (abaixo), uma mantinha laranja dobrada na namoradeira |
-| o mezanino | mais leve: teia de lã no espelho, abóboras nos pedestais das araras premium, bandeirola no guarda-corpo |
+| o cantinho de esperar | o **Pelusa no pufe vinho** (abaixo), uma mantinha laranja dobrada na namoradeira |
+| o mezanino (pedido do Renan: tão enfeitado quanto o térreo) | **cachos de bexigas de caveira** (bexiga branca com a caveirinha sorrindo, amarradas em fita) nos cantos e no topo da escada rolante, bandeirolas e morceguinhos no guarda-corpo, teia de lã no espelho, abóboras nos pedestais das araras premium e na mesa de chapéus, um chapéu de bruxa na mesa, e lanterninhas de abóbora no ateliê de tingimento |
 
-A boutique é de **dia/pôr do sol** por dentro, como hoje (a luz do lustre e
-das arandelas, pintada); a noite só começa quando eles saem.
+As bexigas de caveira entram no kit (`world/halloween/`) para o parque e a
+Casinha usarem depois. A boutique é de **pôr do sol** por dentro (a luz do
+lustre e das arandelas, pintada); a noite só começa quando eles saem.
 
-**A Estella de aranha** (`fantasia: 'halloween'` na classe — o cérebro não
-muda; ela continua com a fita métrica e os óculos de meia-lua, porque
-continua sendo ela):
+**A Estella de aranha, do jeito dela** (`fantasia: 'halloween'` na classe —
+o cérebro não muda; ela continua com a fita métrica e os óculos de
+meia-lua, porque continua sendo ela). As cores são as da loja dela — o rosa,
+o vinho e o creme da boutique, com uma pitada de roxo do Halloween —, e não
+o preto de aranha de verdade:
 
-- **mais quatro patinhas de feltro** saindo dos lados do corpo, com costura
-  aparente e as pontinhas de outra cor, que balançam quando ela anda (com as
-  quatro patas de verdade, dá as **oito**);
+- **mais quatro patinhas de feltro** saindo dos lados do corpo, listradas
+  de rosa e vinho, com costura aparente e a pontinha de pompom, que
+  balançam quando ela anda (com as quatro patas de verdade, dá as **oito**);
 - **a tiara de olhinhos** na cabeça: seis olhinhos redondos de feltro com
-  brilho, em duas fileiras;
-- **o novelo de lã** no lombo (no lugar da alfineteira), com o fio saindo e
-  virando uma teia pequena entre as patinhas;
-- **o laço** do topete vira um laço de aranha (roxo com bolinha laranja).
+  brilho e cílios, em duas fileiras;
+- **o novelo de lã rosa** no lombo (no lugar da alfineteira), com o fio
+  saindo e virando uma teia pequena;
+- **o laço** do topete vira um laço de aranha (vinho com bolinha rosa).
 
 **O Pelusa morceguinho**: no pufe vinho do cantinho de esperar, **deitado
 em pãozinho** (a pose que ele já tem do turno 6), olhos fechados, a barriga
 subindo e descendo devagar, o rabinho batendo de vez em quando — com as
 **asinhas de morcego** (feltro, nas costas) e as **orelhinhas de morcego**
-numa tiara. Sem interação nenhuma (decisão do Renan): nem prompt aparece.
+numa tiara. Sem interação e sem fala nenhuma sobre ele (decisão do Renan):
+nem prompt aparece, e ninguém comenta.
 
-**A cutscene** (as falas são os rascunhos do §2.3, que o Renan aprovou):
+**A cutscene** (as falas são os rascunhos do §2.3, sem nenhuma que conte o
+que tem nas caixas):
 
 1. a dupla entra; a Estella está na porta, de costas, e vira devagar:
    "Ora, ora… quem caiu na minha teia?" — pausa — "Brincadeira! Entrem,
    entrem, que a aranha aqui só morde biscoitinho.";
 2. ela anda até o caixa e tira **duas caixas** de trás do balcão (caixa de
-   presente listrada, laço de fita, uma etiqueta com o nome de cada um);
-3. as caixas **abrem** (a tampa pula, o laço desfaz) e de cada uma sai a
-   fantasia, montada num **manequim de corpo inteiro** que sobe de dentro
-   dela — o vampiro na do Ari, o morceguinho na do Renan;
-4. "Nenhuma fantasia sai daqui sem a minha aprovação… e estas eu APROVO!" —
-   as duas fantasias vão para o guarda-roupa dos dois (`g.ganharPeca`, as
-   seis peças de cada);
-5. os dois vão para os **provadores**: a cortina fecha, a câmera fica na
-   frente das cabines, o barulhinho de roupa, e **uma meia voa por cima da
-   cortina** (a graça da cena); a cortina abre e os dois **saem
-   fantasiados**;
-6. "Muahaha! Ficaram perfeitos!…"; ela dá a **cestinha de abóbora** e o
-   **mapinha**, conta das outras fantasias com os amigos, e "Agora vão, que
-   a noite é das aranhas… e dos amigos delas!";
-7. vira memória ("O presente da Estella") e a fase anda.
+   presente listrada, laço de fita, uma etiqueta com o nome de cada um):
+   "Oito patinhas, e todas costurando a semana inteira só pra vocês." — e
+   NÃO diz o que tem dentro: "Nada de espiar! Abram só lá no provador.";
+3. **cada um pega a sua caixinha** (ela vai para a mão) e entra num
+   provador; a cortina fecha, a câmera fica na frente das cabines, a tampa
+   pula lá dentro, o barulhinho de roupa, e uma meia voa por cima da
+   cortina (a graça da cena);
+4. a cortina abre e os dois **saem inteiros fantasiados** — a surpresa é
+   agora: o Ari de **vampiro**, o Renan de **morceguinho**. A Estella:
+   "Muahaha! Ficaram perfeitos! Tão perfeitos que dá vontade de enrolar
+   vocês num casulo e guardar na vitrine." — pausa — "…de mentirinha, tá?"
+   e "Nenhuma fantasia sai daqui sem a minha aprovação… e estas eu APROVO!";
+5. ela dá a **cestinha de abóbora** e o **mapinha**, conta das outras
+   fantasias com os amigos, e "Agora vão, que a noite é das aranhas… e dos
+   amigos delas!";
+6. vira memória ("O presente da Estella"), as fantasias ficam para sempre
+   no guarda-roupa dos dois (`g.ganharPeca`, as seis peças de cada), e a
+   loja volta a funcionar.
+
+**Antes e durante a cutscene a loja não funciona** (as araras, o espelho, o
+ateliê e a escada ficam quietos); depois dela, tudo volta ao normal, com a
+Estella de aranha fazendo a ronda dela.
 
 **O que eles vestem.** No provador, cada um veste a fantasia INTEIRA (as
 seis vagas); a roupa de antes vai para o guarda-roupa, nada se perde. Depois
@@ -379,15 +444,19 @@ ela vem **vazia**; as balas enchendo são da etapa 5.
 
 **O mapinha**: um painel desenhado em canvas, no estilo da carta da Estella
 (papel, letra dela, carimbinho de aranha): o parque visto de cima com as
-lojas desenhadas, e a **primeira pista** escrita no canto. Fica na mochila
-para abrir de novo.
+lojas desenhadas, e as pistas já recebidas escritas em pergaminho (§6).
+Nesta etapa ele traz só **a primeira pista**, que leva à parada 1 (o Mano,
+na sorveteria) — rascunho: *"Comecem por quem serve gelado de casaca e
+não tem medo de frio."* Fica na mochila para abrir de novo.
 
-**As duas fantasias** (as peças do §5.1, com o capricho do §5.4):
+**As duas fantasias** (as peças do §5.1, sem o topete, com o capricho do
+§5.4):
 
-- 🧛 **vampiro**: as presinhas (cabeça), o colete vinho com camisa de babado e
-  gola alta (tronco), a calça social preta, o sapato de verniz com fivela, as
-  luvas brancas e a **capa** preta de forro vermelho com gola em pé
-  (acessório, pano que balança andando — o molde do avental);
+- 🧛 **vampiro**: as presinhas (cabeça, com o cabelo de cada um), o colete
+  vinho com camisa de babado e gola alta (tronco), a calça social preta, o
+  sapato de verniz com fivela, as luvas brancas e a **capa** preta de forro
+  vermelho com gola em pé (acessório, pano que balança andando — o molde do
+  avental);
 - 🦇 **morceguinho**: a tiara de orelhas de morcego, o moletom de morcego com
   a barriguinha clara, a calça listrada preta e roxa, as pantufas de morcego,
   as luvinhas com unhinha e as **asinhas** nas costas (acessório, batendo de
@@ -396,16 +465,11 @@ para abrir de novo.
 Elas entram no guarda-roupa com um filtro novo **🎃 Fantasias** nas abas, e
 não se pintam no ateliê (presente de personagem, `PECAS_SEM_TINTA`).
 
-**O que continua funcionando na boutique** durante o evento: depois da
-cutscene, as araras, o espelho e o ateliê de tingimento funcionam como
-sempre, com a Estella fazendo a ronda dela (de aranha). O xadrez da Estella
-é lá fora, e lá fora ela não está.
-
 **A ordem de construir** (cada uma com foto e teste):
 1. as duas fantasias (a peça mais cara da etapa) e o filtro 🎃;
 2. a Estella de aranha e o Pelusa morceguinho no pufe;
-3. a boutique enfeitada;
-4. as caixas, o manequim, o provador, a cesta e o mapinha, e a cutscene;
+3. a boutique enfeitada, com as bexigas de caveira;
+4. as caixas, o provador, a cesta e o mapinha, e a cutscene;
 5. o teste (`scripts/halloween.mjs`, `SO=boutique`) e a volta medida.
 
 ### 2.4 Já é noite: o ônibus do clube chega
@@ -1011,7 +1075,7 @@ aprovar antes da próxima.
 | **0** | **decisões** | as respostas do §10 | — |
 | **1** ✅ | **o filme e a carta** *(construída, escondida)* | a fase do evento no save e o `?halloween`; no sofá, "Assistir um filme de terror", o filme na TV, as falas, a carta deslizando por baixo da porta, "Pegar a carta" e o painel da carta (§2.1) | `cenario`, `prop` + `geometry`, `textures`, `animation` |
 | **2** ✅ | **o parque enfeitado, no pôr do sol e vazio** *(construída, escondida)* | as decorações do parque inteiro e das lojas, ainda apagadas (§4.1), o Nessie de plástico no lago, os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
-| **3** | **o presente da Estella** | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
+| **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** | **a noite e o ônibus** | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** | **doces ou travessuras** | as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3), e **as outras cinco fantasias** (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
 | **6** | **a Casinha da Abóbora** | o portão das 25 balas, o cenário novo e a festa surpresa (§7) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
@@ -1039,27 +1103,14 @@ da personalidade de cada um; na caminhada nada do que depende de alguém
 funciona; a clareira sem o "Passar a noite aqui"; o Pelusa dormindo na
 boutique, sem interação; os comentários valem; e a caminhada no pôr do sol.
 
-### A etapa 3 (perguntas abertas, §2.3.1)
+### A etapa 3 está fechada (e construída)
 
-1. **A boutique enfeitada**: a lista do §2.3.1 está boa? O mezanino também
-   (mais leve), ou só o térreo?
-2. **A Estella de aranha**: as cores — **preto e roxo** (aranha de
-   verdade, com as pontinhas laranja) ou **no rosa da loja** (aranha do
-   jeito dela)?
-3. **O vampiro tem "o topete penteado para trás"** — mas o cabelo é de quem
-   veste (o cacheado do Ari, o do Renan). Fica o cabelo de cada um, com as
-   presinhas (proposta), ou o vampiro troca o cabelo por um topete de
-   verdade?
-4. **As caixas e os manequins**: as fantasias saindo da caixa num manequim
-   de corpo inteiro (proposta), ou a caixa só abre e já vai pro provador?
-5. **O provador**: os dois vestem a fantasia inteira lá dentro (a roupa de
-   antes vai pro guarda-roupa) — e a meia voando por cima da cortina, pode?
-6. **O mapinha**: um painel desenhado com o parque e a primeira pista
-   (proposta), ou só a fala da Estella?
-7. **Depois da cutscene**: a loja continua vendendo e o espelho e o ateliê
-   continuam funcionando, com ela de aranha fazendo a ronda?
-8. **O Pelusa**: no pufe vinho do cantinho de esperar (térreo), deitado em
-   pãozinho — ou no pufe rosa do espelho, lá em cima?
+Respondidas (§2.3.1): o mezanino enfeitado também, com bexigas de caveira;
+a aranha do jeito dela; sem topete, cada um com o próprio cabelo; a caixa só
+abre, e o que tem dentro é surpresa até sair do provador; cada um leva a
+sua caixinha e sai inteiro vestido, e as fantasias ficam para sempre; o
+mapinha entra; a loja só funciona depois da cutscene; o Pelusa no pufe
+vinho, sem fala sobre ele.
 
 ### Para as próximas partes
 

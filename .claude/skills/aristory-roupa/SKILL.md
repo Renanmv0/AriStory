@@ -763,6 +763,39 @@ mundo do jogo) de frente e girado; a dupla **andando** com a peça vestida
 **sentado no banco** — a perna vai a ~90° e é o caso que mais escapa de
 uma olhada rápida de frente.
 
+## `fantasias.ts` — as fantasias do Halloween (a capa viva e as asinhas)
+
+O presente da Estella (`docs/HALLOWEEN.md`, §2.3.1): o vampiro e o
+morceguinho, seis peças cada, em `FANTASIAS_DA_ESTELLA` (`world/itens.ts`) —
+presente, então fora do ateliê (`PECAS_SEM_TINTA`). O guarda-roupa ganhou o
+filtro **🎃 Fantasias** (`ehFantasia`, no `Ui`): ele aparece quando a lista
+tem alguma. O que ficou de kit:
+
+- **`capaViva`**: a saia viva pendurada no PESCOÇO e aberta na frente. A
+  largura que ela cobre muda com a altura (`cobre(t)`: abraça o pescoço e
+  abre abaixo do ombro), e ela se acomoda nos BRAÇOS além das pernas — o rig
+  passou a dar os pivôs em `MedidasCorpo.bracos`, só para leitura. Andando,
+  a barra de trás abre com o vento (`medidorDePasso`, que mede a velocidade
+  do corpo no mundo); sentado (coxa na horizontal), as linhas abaixo do
+  quadril sobem e o pano assenta no banco. O forro é a MESMA geometria com
+  o material de verso (`forroDe`): uma malha desenha a frente dos
+  triângulos, a outra o verso, e nunca brigam;
+- **a ordem dos cantos da grade**: colunas crescendo no ângulo e linhas
+  DESCENDO pedem `(a, a+1, b)`, como a saia viva; a primeira capa saiu com a
+  face do avesso (vermelha por fora) — confira de costas;
+- **peça espelhada**: `espelhada(geo)` vira a geometria em X e desvira os
+  triângulos (escala negativa no objeto viraria a face). A asa e a orelha
+  da esquerda são a da direita espelhada;
+- **as asinhas** batem num `onBeforeRender` (devagar parado, depressa
+  andando), e abrem para trás: `rotation.y` POSITIVO leva o `+X` para o
+  `−Z`;
+- **remendo no tronco**: `remendoNoTronco` é uma grade polar posta na pele
+  vértice por vértice (a barriguinha). Dobrar um `ShapeGeometry` por cima
+  do corpo saiu com a normal zerada e o remendo sumia.
+
+Teste: `SO=boutique node scripts/halloween.mjs` (a cena do presente veste as
+doze peças), e as fotos de perto como no `uniforme.mjs`.
+
 ## Regressão
 
 `sobreTronco`, `porExtras` e `aplicarVisual` (`CharacterRig.ts`) são

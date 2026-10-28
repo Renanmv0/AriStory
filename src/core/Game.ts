@@ -640,6 +640,13 @@ export class Game implements GameAPI {
     } else if (acted && !busy && !this.player.locked && !this.comendo && this.comivelNaMao()) {
       // com um lanche na mão e nada por perto, o E (o ✨ no celular) come
       this.comecarAComer();
+    } else if (acted && !busy && !this.player.locked && this.leituraNaMao()) {
+      // com um papel na mão (o mapinha da Estella) e nada por perto, o E lê
+      const papel = this.leituraNaMao();
+      if (papel?.leitura) {
+        this.audio.play('interagir');
+        void this.lerCarta(papel.leitura());
+      }
     } else if (acted && !busy && !this.player.locked) {
       // sem interativo por perto e sem estar de frente um para o outro, o E
       // vira o carinho de contexto: de lado a lado, da a mao. E o que permite
@@ -820,6 +827,10 @@ export class Game implements GameAPI {
       if (lanche) {
         this.ui.showPrompt(lanche.icone, `${lanche.comivel === 'beber' ? 'Beber' : 'Comer'} o ${this.nomeMiudo(lanche)}`);
         this.promptDeComer = true;
+      } else if (this.leituraNaMao()) {
+        const papel = this.leituraNaMao()!;
+        this.ui.showPrompt(papel.icone, `Ler o ${this.nomeMiudo(papel)}`);
+        this.promptDeComer = true;
       } else if (this.promptDeComer) {
         this.ui.hidePrompt();
         this.promptDeComer = false;
@@ -833,6 +844,12 @@ export class Game implements GameAPI {
   private comivelNaMao(): ItemDef | null {
     const item = this.getActiveHandItem();
     return item?.comivel ? item : null;
+  }
+
+  /** O item da mão de quem joga, se for um papel de ler (o mapinha). */
+  private leituraNaMao(): ItemDef | null {
+    const item = this.getActiveHandItem();
+    return item?.leitura ? item : null;
   }
 
   /** "Chocolatinho" vira "chocolatinho" no meio da frase. */

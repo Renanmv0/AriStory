@@ -328,6 +328,8 @@ export class CharacterRig {
       cabelo: (a) => this.cabeloNoAngulo(a, headR),
       // só para a saia comprida LER a pose (ver `MedidasCorpo.pernas`)
       pernas: [this.legL, this.legR],
+      // e os braços, só para a capa LER a pose (ver `MedidasCorpo.bracos`)
+      bracos: [this.armL, this.armR],
       pele: spec.skin,
     };
 

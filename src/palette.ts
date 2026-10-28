@@ -2199,6 +2199,39 @@ export const PALETTE = {
   linguaInflavel: 0xf07a8e,
   ventiladorDeInflavel: 0x2b2b33,
   cordaDeInflavel: 0xe8e2d0,
+  /**
+   * AS FANTASIAS DA ESTELLA (`world/fantasias.ts`), o presente da etapa 3:
+   * o VAMPIRO — a capa quase preta (um roxo de noite, que no toon não vira
+   * buraco), o forro e a gema vermelho-vinho, o colete de cetim vinho, a
+   * camisa marfim de babado, a calça e o verniz pretos e a luva branca —
+   */
+  vampiroCapa: 0x2a2233,
+  vampiroCapaBorda: 0x3b3046,
+  vampiroForro: 0xb8233f,
+  vampiroForroSombra: 0x8e1830,
+  vampiroColete: 0x7a1f35,
+  vampiroCamisa: 0xf6efe2,
+  vampiroCalca: 0x26232c,
+  vampiroCetim: 0x3d3846,
+  vampiroVerniz: 0x1f1c24,
+  vampiroBrilho: 0x8d8798,
+  vampiroLuva: 0xfbfaf6,
+  vampiroPresa: 0xfffdf6,
+  vampiroGema: 0xd0283f,
+  /**
+   * — e o MORCEGUINHO: o feltro roxo-escuro do moletom e das asinhas, a
+   * barriguinha lilás, a membrana da asa um tom acima, a listra roxa da
+   * calça e o creme das unhinhas e dos dentinhos
+   */
+  morceguinhoFeltro: 0x3f3150,
+  morceguinhoFeltroClaro: 0x54436a,
+  morceguinhoBarriga: 0xc9b2e6,
+  morceguinhoMembrana: 0x6b5585,
+  morceguinhoOrelha: 0xd9a8d6,
+  morceguinhoListra: 0x8a55c4,
+  morceguinhoListraEscura: 0x2c2436,
+  morceguinhoUnha: 0xfff4e4,
+  morceguinhoBotao: 0x18141d,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

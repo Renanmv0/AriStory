@@ -961,6 +961,16 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   em `y = 0` sai `-1e-17`, e `pow(-1e-17, 2.4)` é `NaN` — a copa do chapéu
   de bruxa nasceu com a caixa envolvente quebrada. Prenda com `clamp`.
 
+- **A boutique do Halloween** (`boutique.ts`): o cacho de BEXIGAS DE
+  CAVEIRA (a cara pintada em canvas no UV da esfera — a frente `+Z` é
+  `u = 0,25` —, o grupo `bexigas` balança com `balancarBexigas`), o caldeirão
+  de balas (as balas em lote, cor por cópia), a caixa de presente (a tampa
+  num grupo `tampa`, a etiqueta com o nome em canvas), a cestinha de abóbora
+  e o mapinha enrolado (os modelos de mão), a meia, o pote de biscoitos, a
+  placa do provador e a mantinha. Alturas de móvel (o balcão, a mesa, o
+  busto) a camada MEDE pela caixa da peça (`userData.peca`), em vez de
+  cravar número.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
