@@ -80,6 +80,12 @@ Os dois estão sempre em cena. `DUPLA` em `cast.ts` define
 `[quem você controla, quem acompanha]`; a tecla `T` troca. O acompanhante segue
 a uns 2 metros e para de frente para você.
 
+## O que o Ari não gosta
+
+- **rato**: o Ari tem fobia de rato. Nenhum rato no jogo, de nenhum jeito
+  (bicho, praga, fantasia, enfeite ou desenho) — está nas invariantes do
+  `CLAUDE.md`.
+
 ## Ideias que ainda não existem
 
 - expressões (surpreso, rindo, dormindo)
