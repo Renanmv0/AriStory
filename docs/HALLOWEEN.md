@@ -41,7 +41,8 @@ e o presente da Estella na boutique (§2.3.1) estão no jogo, mas só aparecem
 com `?halloween` na URL (`src/eventos/halloween/`, `src/world/halloween/`,
 `src/world/fantasias.ts`, `scripts/halloween.mjs`). A **parte 1** inteira
 (§2.1 a §2.4) está fechada com o Renan; a próxima é a **etapa 4** (a noite
-e o ônibus): a proposta está no §2.4.1, esperando as respostas dele.
+e o ônibus), planejada e fechada com ele no §2.4.1 (as fantasias de cada
+personagem, uma só de cada, no §3).
 
 **Onde mora a etapa 2 no código:** o kit em `world/halloween/` (`abobora.ts`,
 `pendurados.ts`, `pecas.ts`, `nessie.ts`; `kit.ts` é a vitrine dos testes);
@@ -505,10 +506,10 @@ noite.** A fase vira `festa`:
 O ônibus é o mesmo do ponto de hoje (`scripts/onibus.mjs`): a cena dele
 chegando já existe.
 
-### 2.4.1 A etapa 4 em detalhe: a noite e o ônibus (proposta, falta o Renan)
+### 2.4.1 A etapa 4 em detalhe: a noite e o ônibus (fechada com o Renan)
 
-> Proposta. As perguntas estão no fim desta seção e no §10; as respostas do
-> Renan entram aqui antes de construir.
+> As respostas do Renan já estão aqui dentro (ver "As respostas do Renan",
+> no fim desta seção). Falta construir (§9).
 
 **O que a etapa 4 entrega.** A dupla sai da boutique fantasiada e a fase vira
 `festa`: o parque está **de noite**, todo aceso; o **ônibus do clube**
@@ -562,8 +563,10 @@ freando, a porta abrindo) é peça nova desta etapa.
    cabeça para caber na porta (e o chapéu de bruxa enroscando); o **Capy**
    apitando; o **Noel** correndo; o **Walter** de bandeja; o **Gatito**; o
    **Flynn** pulando o degrau; as **três coelhinhas** juntas; e por último a
-   **Josefina**, devagarinho — o motorista espera. Cada um acena para a
-   câmera e sai andando para o lado do posto dele;
+   **Josefina**, devagarinho — o motorista espera. **Cada um, ao descer,
+   para na calçada e fala alguma coisa** no jeito dele (decisão do Renan; a
+   câmera chega perto de quem fala), acena e sai andando para o lado do
+   posto dele;
 5. a tela escurece um instante e a câmera volta para a dupla na calçada da
    boutique. Ari (ou quem joga): "Vamos atrás da primeira pista?";
 6. vira memória ("A noite da festa").
@@ -584,7 +587,7 @@ câmera de volta, já estão nos postos (o jogo põe cada um lá).
 | Josefina | um **canteiro de abóboras** (peça nova) no gramado | idem |
 | Gatito e as três coelhinhas | o piquenique | idem |
 | Flynn | o campinho de frisbee | idem |
-| Walter | **não fica**: desce com a bandeja e some atrás da praça da roda, onde fica o portão escondido da Casinha (*proposta*: a dupla pode comentar "Pra onde o Walter tá indo?" — a primeira dica do final) | — |
+| Walter | **não fica**: desce com a bandeja e some atrás da praça da roda, onde fica o portão escondido da Casinha (decisão do Renan: a dupla comenta "Pra onde o Walter tá indo?" — a primeira dica do final) | — |
 | os patinhos | o lago, de chapeuzinho de bruxa | como sempre |
 | Estella | continua na boutique, de aranha | a ronda dela |
 
@@ -594,21 +597,16 @@ de recado somem. O clube e a escola continuam vazios (decisão do Renan).
 
 #### D. As fantasias dos personagens
 
-As do §3, cada uma pendurada nos pontos do corpo que a classe já tem, por
-fora dela (o molde da aranha da Estella e do Pelusa: `fantasiasDosBichos`).
-Bem feitas e detalhadas, como as da dupla. **Três coincidências** para o
-Renan decidir:
-
-- o **Mano de vampiro** repete o **Ari de vampiro**: trocar (proposta: o
-  Mano de **esqueleto** — os ossinhos de feltro por cima do "smoking" de
-  pinguim, um pinguim de raio-x) ou manter os dois de capa, de propósito?
-- **três fantasmas de lençol**: o Cookie, a Josefina e a Estrella;
-- as fantasias da caça (**abóbora** e **gato preto**) já aparecem no Capy, na
-  Sol e na Luna.
+O plano novo está no §3 (decisão do Renan): **uma fantasia só de cada
+um**, sem repetir ninguém nem as sete da dupla — o Mano de vampiro com o Ari
+é a exceção de propósito, com fala própria. Cada uma pendurada nos pontos do
+corpo que a classe já tem, por fora dela (o molde da aranha da Estella e do
+Pelusa: `fantasiasDosBichos`), e com o capricho das da dupla: pano que
+balança, costura aparente, feltro, textura de canvas onde for tecido.
 
 #### E. O que funciona na festa
 
-*Proposta*: o que é da dupla e não precisa de ninguém continua, e o que
+Decidido pelo Renan: o que é da dupla e não precisa de ninguém continua, e o que
 volta com os personagens **volta a funcionar de noite** — a roda gigante à
 noite (com o Cookie vendendo o bilhete), o sorvete do Mano e a patinação no
 gelo. O que é aula, turno, treino e desafio continua fechado até o evento
@@ -627,22 +625,23 @@ antes da Luna): é a festa da Estella, e ela convidou todo mundo.
 4. o ônibus chegando e a cutscene;
 5. o teste (`scripts/halloween.mjs SO=festa`), a volta medida, e o celular.
 
-#### Perguntas da etapa 4
+#### As respostas do Renan
 
-1. **O ônibus**: a câmera vai até o ponto e mostra a chegada (proposta), ou
-   a dupla anda até lá e o ônibus chega quando eles se aproximam?
-2. **O Mano de vampiro** repete o Ari: esqueleto (proposta), outra fantasia,
-   ou os dois de vampiro de propósito?
-3. **As coincidências** (três fantasmas; abóbora e gato preto que também são
-   prêmio da caça): tudo bem, ou quer trocar alguma?
-4. **O que funciona na festa**: a roda gigante à noite, o sorvete e a
-   patinação voltam (proposta)?
-5. **Quem não foi destravado** (o Jean-Luc, a escola) vem para a festa mesmo
-   assim (proposta)?
-6. **O Walter**: some atrás da roda deixando a dica do final (proposta), ou
-   nem desce do ônibus?
-7. **As luzes**: varais de luzinha, morcegos voando na roda, o Nessie aceso
-   e a névoa baixa (essa só se não pesar) — entra tudo?
+1. **o ônibus**: a câmera vai até o ponto e mostra a cutscene de **cada
+   personagem descendo e falando alguma coisa** (uma fala curta de cada um,
+   no jeito dele, ao pisar na calçada);
+2. **o Mano fica de vampiro**, igual ao Ari, com uma fala específica dele
+   sobre isso (§3);
+3. **cada personagem com uma fantasia única**; o Cookie fica com o lençol de
+   fantasma; e todas **muito bem feitas, detalhadas e fofas** — o plano novo
+   está no §3;
+4. **o que volta a funcionar de noite**: sim — a roda gigante, o sorvete e a
+   patinação. E **o Gatito vem**, com uma fantasia engraçada (§3: de rato);
+5. **todos vêm, independente da situação** (o Jean-Luc antes das cinco
+   vitórias, a escola antes da Luna);
+6. **o Walter some atrás da roda**, deixando a dica do final;
+7. **as luzes**: o plano inteiro (os varais de luzinha, os morcegos da roda,
+   o Nessie aceso, as janelas; a névoa baixa medida no celular).
 
 ### 2.5 Doces ou travessuras (§6)
 
@@ -661,22 +660,35 @@ A regra: **fantasia que conversa com quem o personagem é** — o nome, o
 bicho, o trabalho, a história que o Renan já contou. E fofa, nunca
 assustadora de verdade: o "susto" do Halloween daqui é sempre de mentirinha.
 
-| quem | onde fica na festa | fantasia (proposta) | por quê |
-|---|---|---|---|
-| **Estella** (ovelha) | a lojinha | **aranha tecelã**: 8 patinhas de feltro com costura aparente, tiara de olhinhos, o novelo virando teia | ela tece e costura; fez a fantasia de todo mundo |
-| **Mano** (pinguim) | a sorveteria | **vampirinho**: capa de gola alta, presinhas, gel no topete | o pinguim já é de "smoking" — o Drácula mais natural do parque |
-| **Cookie** (elefante) | a bilheteria | **fantasma de lençol gigante**, com dois furinhos e um laço na tromba | "assusta as pessoas só pelo tamanho" — agora de propósito |
-| **Jean-Luc** (pato) | o lago | **o Fantasma da Ópera**: meia-máscara branca e capa — ele é francês, e a ópera é de Paris | — |
-| **Capy** (capivara) | a beira do lago | **abóbora**: macacão redondo laranja, cabinho na cabeça, o apito de sempre | a capivara já é redonda; ele continua salva-vidas |
-| **Gina** (girafa) | o ponto de ônibus | **bruxa**: chapéu pontudo (a bruxa mais alta do mundo) e vassoura | ela vê tudo de cima — é ela quem dá a pista do final |
-| **Noel** (peru) | um carrinho de "poções" | **espantalho**: chapéu de palha, remendos, palha saindo das mangas | um peru vestido do que espanta passarinho — ele acha hilário |
-| **Josefina** (tartaruga) | um canteiro de abóboras | **fantasminha de lençol** por cima do casco | "o fantasma mais devagar do mundo" — e ela adora contar história |
-| **Walter** (cão garçom) | o final | **múmia garçom**: ataduras, a gravatinha por cima, a bandeja de doces | — |
-| **Gatito** (gato) | o piquenique | **mago**: chapéu de estrelas e varinha — o professor | — |
-| **Flynn** (raposa) | o campinho de frisbee | **lobisomem** com a bandana dos Gatitos | o atleta, uivando de animação |
-| **Luna, Sol, Estrella** | o piquenique | **trio**: gatinha preta, abóbora e fantasminha (uma cada, mesmo time) | — |
-| **Pelusa** (gato) | a boutique, **dormindo num pufe** (sem interação) | **morceguinho**: asinhas e orelhinhas de morcego | decisão do Renan |
-| **patinhos do lago** | o lago | **chapeuzinho de bruxa** na mãe e nos filhotes | — |
+**Cada um com uma fantasia SÓ DELE** (decisão do Renan, na etapa 4): nenhum
+personagem repete o outro, nem as sete da dupla — a exceção de propósito é o
+Mano, de vampiro igual ao Ari, com uma fala só para isso. E todas **muito bem
+feitas, detalhadas e fofas**, com o capricho das da dupla (§5.4).
+
+| quem | onde fica na festa | fantasia | os detalhes | por quê |
+|---|---|---|---|---|
+| **Estella** (ovelha) | a boutique | **aranha tecelã** *(construída)* | as quatro patinhas de feltro listradas, a tiara de olhinhos, o novelo virando teia | ela tece e costura; fez a fantasia de todo mundo |
+| **Pelusa** (gato) | a boutique, dormindo no pufe | **morceguinho** *(construída)* | as asinhas e as orelhinhas | decisão do Renan |
+| **Mano** (pinguim) | a sorveteria | **vampiro**, igual ao Ari, de propósito | a capa de gola alta com forro vermelho, as presinhas, o medalhão, o topete de gel | decisão do Renan: os dois de vampiro, e o Mano repara (a fala abaixo) |
+| **Cookie** (elefante) | a bilheteria | **fantasma de lençol gigante** | o lençol caindo até o chão em dobras, dois furinhos para os olhos, a tromba saindo por um furo com um laço na ponta, as orelhas marcando o pano | "assusta as pessoas só pelo tamanho" — agora de propósito (decisão do Renan: ele fica com o lençol) |
+| **Jean-Luc** (pato) | o lago | **o Fantasma da Ópera** | a meia-máscara branca, a capa curta de ópera preta e vinho, a cartolinha e uma rosa vermelha no bico | ele é francês, e a ópera é de Paris |
+| **Capy** (capivara) | a beira do lago | **tubarão** | o capuz de tubarão de pelúcia (os olhinhos, a fileira de dentinhos de feltro na testa), a barbatana nas costas, o rabinho de tubarão; o apito de sempre no pescoço | o salva-vidas fantasiado justamente do que ele vigia |
+| **Gina** (girafa) | o ponto de ônibus | **noiva do Frankenstein** | o cabelo altíssimo com as duas mechas de raio brancas (entre os ossicones), parafusinhos de feltro ao longo do pescoção, uma cicatriz costurada fofa, o véu de gaze | a noiva mais alta do mundo — e é ela quem dá a pista do final |
+| **Noel** (peru) | o carrinho de poções | **cientista maluco** | o jaleco branco no lugar do avental, os óculos de proteção na testa, a crista arrepiada de algodão, os tubos de ensaio coloridos no bolso | ele vive misturando suco; hoje são poções — e ele não para quieto |
+| **Josefina** (tartaruga) | o canteiro de abóboras | **dragãozinho** | a fileira de espinhos de feltro descendo pelo casco, as asinhas, o capuz com dois chifrinhos, o rabinho com a ponta de flecha, e uma fumacinha de chá saindo de vez em quando | "o dragão mais devagar do mundo" — e ela adora contar história de dragão |
+| **Walter** (cão garçom) | some atrás da roda (o final) | **múmia garçom** | as ataduras com as pontas soltas balançando, a gravatinha por cima, a bandeja de doces | ele serve a festa do final |
+| **Gatito** (gato) | o piquenique | **rato** — a fantasia engraçada (pedido do Renan) | a tiara de orelhas redondas de rato por cima das orelhas de gato, o focinho rosa postiço com bigodinho de arame, o rabinho fino de rato amarrado no rabo dele e uma plaquinha no peito: "NÃO SOU GATO" | um gato de rato: "o disfarce perfeito, ninguém vai desconfiar" |
+| **Flynn** (raposa) | o campinho de frisbee | **lobisomem** | as luvas peludas de garra, o peitoral de pelo cinza, as orelhas postiças de lobo e a bandana dos Gatitos por cima | o atleta, uivando de animação |
+| **Luna** (coelha) | o piquenique | **coruja da meia-noite** | o capuz com os tufos de orelha de coruja e os olhões de feltro, a capinha de penas em camadas, a lua crescente pendurada no pescoço | Luna é lua |
+| **Sol** (coelha) | o piquenique | **caveirinha catrina** | a coroa de flores coloridas, a carinha pintada de caveirinha fofa (as bochechas de flor), a saia de babado colorida | a animada, e as expressões dela são do espanhol |
+| **Estrella** (coelha) | o piquenique | **fadinha das estrelas** | as asas de tule com brilho, a varinha de estrela, a saia de tule azul-noite com estrelinhas | Estrella é estrela |
+| **patinhos do lago** | o lago | **diabinhos** | a mãe com a tiara de chifrinhos vermelhos e uma capinha, os filhotes só com os chifrinhos | uma família inteira de diabinhos fofos |
+
+**A fala do Mano** (rascunho; quem estiver vestindo a capa de vampiro —
+normalmente o Ari, mas o jogador pode trocar — é quem ele cita):
+"Ei, ei! Outro vampiro na minha festa?! … A gente nem combinou. Ficou lindo.
+Agora somos o clube da capa." Se nenhum dos dois estiver de vampiro, ele diz
+uma fala de Halloween comum.
 
 Técnica (§8.2): cada fantasia de bicho é uma peça pendurada nos pontos do
 corpo que a classe já tem (a cabeça, o tronco, as patas), ligada por
@@ -1263,21 +1275,22 @@ sua caixinha e sai inteiro vestido, e as fantasias ficam para sempre; o
 mapinha entra; a loja só funciona depois da cutscene; o Pelusa no pufe
 vinho, sem fala sobre ele.
 
-### A etapa 4 está em planejamento
+### A etapa 4 está fechada
 
-As sete perguntas estão no fim do §2.4.1 (o ônibus, o Mano de vampiro, as
-fantasias repetidas, o que funciona de noite, quem não foi destravado, o
-Walter e as luzes).
+Respondidas (§2.4.1): a câmera vai ao ônibus e cada um desce falando; o
+Mano de vampiro com o Ari, com fala própria; uma fantasia única para cada
+personagem (o plano novo no §3, o Cookie de lençol); a roda, o sorvete e a
+patinação voltam de noite, e o Gatito vem de fantasia engraçada; todos vêm,
+destravados ou não; o Walter some atrás da roda; e as luzes inteiras.
 
 ### Para as próximas partes
 
 1. **As balas** (§5.3): 3 no doce, 1 a 5 na travessura, 10 abóboras
    escondidas, e a porta abrindo com 25 — estão bons?
 2. **Quem dá qual fantasia** na caça (§5.2): a divisão proposta está boa?
-3. **As fantasias dos personagens** (§3): alguma que você imagina diferente?
-4. **Quando aparece**: só de 15/10 a 2/11 pelo calendário, depois "Reviver a
+3. **Quando aparece**: só de 15/10 a 2/11 pelo calendário, depois "Reviver a
    festa" — ou o ano todo?
-5. **As dez paradas** (§6): as travessuras e as pistas estão boas?
+4. **As dez paradas** (§6): as travessuras e as pistas estão boas?
 
 **Respondidas:** o prazo (sem pressa, nada aparece até tudo estar pronto);
 quem começa o evento (a dupla, no sofá); o convite (a carta por baixo da
