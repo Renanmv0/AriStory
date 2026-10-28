@@ -20,7 +20,8 @@ import { eventoLiberado, faseDoHalloween } from './fase';
  * dela), cada personagem veste a fantasia dele ONDE ESTIVER — achado pela
  * etiqueta do bicho (`userData.peca`), em qualquer cena. É uma chamada só,
  * no fim da cena (o parque, o clube, o Mania, a estufa, a escola), e ela
- * não sabe nem precisa saber de onde cada um é.
+ * não sabe nem precisa saber de onde cada um é. As falas de fantasia e a
+ * conversa com zoom moram nos postos da festa (`naFesta.ts`).
  */
 
 /** cada etiqueta de bicho e a fantasia dele */
@@ -38,16 +39,6 @@ const FANTASIAS: Record<string, (b: Bicho) => unknown> = {
   gatito: fantasiarGatitoDeWalter,
   flynn: fantasiarFlynnDeLobisomem,
   ...FANTASIAS_DAS_COELHINHAS,
-};
-
-/**
- * AS FALAS DE FANTASIA (rascunhos; as do Renan entram literais): um ponto
- * "Falar com…" por cima do de sempre (prioridade maior), andando com o bicho.
- * O Mano tem a dele no parque (ele repara em quem está de capa).
- */
-const FALAS_DE_FANTASIA: Record<string, { nome: string; icone: string; falas: readonly string[] }> = {
-  // pedido do Renan: ele conta que veio de Walter, porque gosta muito do restaurante
-  gatito: { nome: 'Gatito', icone: '🐶', falas: ['Au. …', 'Eu vim de Walter! O Mania de Churrasco é o meu restaurante favorito.', 'A gravatinha é de verdade, viu?'] },
 };
 
 /** a festa está acontecendo (é de noite e todo mundo está fantasiado) */
@@ -68,20 +59,6 @@ export function fantasiarQuemEstaAqui(w: WorldBuilder): number {
   for (const [bicho, vestir] of achados) {
     vestir(bicho);
     bicho.group.userData.fantasiado = true;
-    const fala = FALAS_DE_FANTASIA[bicho.group.userData.peca as string];
-    if (!fala) continue;
-    const ponto = w.interact({
-      id: `halloween:${bicho.group.userData.peca}`,
-      x: bicho.x, z: bicho.z, radius: 1.0,
-      label: `Falar com o ${fala.nome}`, icon: fala.icone,
-      highlight: bicho.group,
-      priority: 3,
-      onInteract: async (api) => {
-        bicho.receberCarinho();
-        await api.say([...fala.falas], fala.nome);
-      },
-    });
-    w.onUpdate(() => ponto.moveTo(bicho.x, bicho.z));
   }
   return achados.length;
 }

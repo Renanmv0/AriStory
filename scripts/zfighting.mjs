@@ -17,14 +17,29 @@
  *
  * Uso: node scripts/zfighting.mjs
  *      SO=armario,estante node scripts/zfighting.mjs   (só essas peças)
+ *      SO=carrinho-de-pocoes …   (peça de evento: a cena abre na fase dela)
  */
 import { chromium } from 'playwright';
 
 const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-/** cada peça, e em que cena ela aparece */
+/** a noite da festa de Halloween (`docs/HALLOWEEN.md`): as peças dela só existem nessa fase */
+const FESTA = ['halloween:convite', 'halloween:festa'];
+
+/** cada peça, e em que cena ela aparece (e, se for de evento, as flags da fase) */
 const PECAS = [
+  // os postos da festa de Halloween: o carrinho de poções do Noel, a lousa, o
+  // canteiro de abóboras da Josefina e a bacia de maçãs do Capy. Elas são de
+  // quina arredondada (`quina`), que este caçador NÃO mede (só caixa reta):
+  // hoje saem "0 caixas", e as junções delas foram afastadas à mão (a quina
+  // do friso 4 mm à frente das réguas, o filete do degrau 3 mm acima do
+  // tampo, a ripa do lado do caixote mais baixa). Ficam na lista para medir a
+  // caixa reta que entrar nelas um dia.
+  ['carrinho-de-pocoes', 'villa-lobos', FESTA],
+  ['cavalete-de-pocoes', 'villa-lobos', FESTA],
+  ['canteiro-de-aboboras', 'villa-lobos', FESTA],
+  ['bacia-de-macas', 'villa-lobos', FESTA],
   ['quiosque', 'clube'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],
@@ -296,8 +311,16 @@ const caçar = (etiqueta) =>
   }, etiqueta);
 
 const relatorio = [];
-for (const [etiqueta, cena] of PECAS) {
-  await page.goto(`${BASE}/?cena=${cena}${SEM_FUNDIR}`, { waitUntil: 'networkidle' });
+for (const [etiqueta, cena, flags] of PECAS) {
+  if (flags) {
+    // peça de evento: a cena com o `?halloween` e o save de teste já na fase pedida
+    await page.goto(`${BASE}/?cena=${cena}&halloween${SEM_FUNDIR}`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+    await page.evaluate((f) => { for (const x of f) window.jogo.setFlag(x); }, flags);
+    await page.reload({ waitUntil: 'networkidle' });
+  } else {
+    await page.goto(`${BASE}/?cena=${cena}${SEM_FUNDIR}`, { waitUntil: 'networkidle' });
+  }
   await page.waitForTimeout(3200);
   const r = await caçar(etiqueta);
   relatorio.push([etiqueta, r]);

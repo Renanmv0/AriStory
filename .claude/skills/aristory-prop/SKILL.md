@@ -996,6 +996,43 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   busto) a camada MEDE pela caixa da peça (`userData.peca`), em vez de
   cravar número.
 
+- **O carrinho de poções do Noel** (`carrinhoDePocoes.ts`, a peça mais
+  detalhada do kit — o Renan pediu, e ela é vista de perto na conversa com
+  zoom): o molde de **carrinho de feira**. A caixa de tábua PINTADA traz a
+  cor no canvas (as estrelinhas são mais claras que o roxo; textura
+  multiplicada só escureceria), o painel da frente e a placa são canvas com
+  a letra de mão redesenhada quando a fonte carrega (`canvasComLetra`). As
+  RODAS ficam nas pontas (o eixo em `X`), e não na frente: assim o balcão e o
+  painel ficam inteiros para a câmera. O toldo é um plano em ARCO (a altura
+  sai de `alturaDoToldo(x)`) com o lambrequim de ondas seguindo o arco e um
+  pompom no fundo de cada onda. **Quem trabalha nele fica DO LADO, fora do
+  toldo** (`ladoDoNoel`): a regra do posto, "nada acima e à frente". A
+  altura do toldo foi conferida contra a câmera de 34°: com a beira a 2,3 m,
+  as garrafas do fundo aparecem por baixo do lambrequim.
+- **Vidro em lote, à mão**: a `fundir()` não junta transparente (a ordem de
+  pintura importa), então 30 garrafas seriam 30 desenhos. Dentro de um lote
+  de vidros iguais a ordem não aparece: a classe `Juntar` junta o vidro de
+  todas numa malha, e a bebida noutra — acesa por dentro com
+  `acesoPorVertice()` e a cor por vértice (mais escura no fundo), cinco
+  cores num desenho só. Cada feitio é um perfil torneado (`FEITIOS`); a
+  bebida é o mesmo perfil um tico menor, cortado na altura de "cheio".
+- **O que mexe é lote ou malha com nome**: as bolhas subindo no balão, o
+  vapor (halos do `brilhoEmLote`, a força na cor por cópia — a soma é
+  aditiva, então "apagar" é pintar de preto), a chama da lamparina
+  (`chama-da-lamparina`, escala tremendo) e a gota que pinga da serpentina.
+  `PocaoBorbulhando` é a mesma ideia para encher um caldeirão qualquer: o
+  disco aceso (miolo claro, beira escura), as bolhas que estufam e estouram
+  e a luz verde no chão.
+- **O canteiro de abóboras e a bacia de maçãs** (`pecasDaFesta.ts`): o
+  canteiro diz ONDE as abóboras crescem (`aboboras`, no referencial dele) e
+  a cena as põe no lote do parque — acesas e tremendo com as outras, sem
+  desenho a mais. A folha de abóbora é uma forma de cinco lobos em concha; a
+  rama é um tubo pelo caminho de uma abóbora a outra, com as folhas e as
+  gavinhas (tubo em mola) ao longo dela. A tina tem as frestas das aduelas
+  como fios que SEGUEM a barriga (uma caixa reta afundava no meio e boiava
+  nas pontas); as maçãs boiam num lote (cor por cópia), com o caixote ao
+  lado no mesmo lote e a marolinha em volta de cada uma.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
