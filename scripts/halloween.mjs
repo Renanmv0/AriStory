@@ -983,20 +983,29 @@ if (roda('onibus')) {
   const quadro = () => j(() => {
     const g = window.jogo;
     let bus = null;
+    let antigo = null;
     const bichos = {};
     g.current.world.root.traverse((o) => {
-      if (!bus && o.userData?.peca === 'onibus' && Math.abs(o.position.x - 39.5) < 0.5) bus = o;
+      if (!bus && o.userData?.peca === 'onibus-da-cidade') bus = o;
+      if (o.userData?.peca === 'onibus' && Math.abs(o.position.x - 39.5) < 0.5) antigo = o;
       if (o.userData?.bicho && o.userData.bicho.group === o) bichos[o.userData.peca] = { x: +o.position.x.toFixed(2), y: +o.position.y.toFixed(2), z: +o.position.z.toFixed(2), v: o.visible };
     });
-    const folhas = bus.children.filter((m) => m.isMesh && Math.abs(m.position.y - 1.72) < 0.01 && Math.abs(Math.abs(m.position.x - 2.6) - 0.32) < 0.4).map((m) => +m.position.x.toFixed(2));
+    const o = bus.userData.onibus;
+    const rodas = bus.getObjectByName('rodas');
+    const m = new rodas.matrix.constructor();
+    rodas.getMatrixAt(0, m);
     return {
-      bus: { z: +bus.position.z.toFixed(2), pitch: +bus.rotation.z.toFixed(4), pendurado: !!bus.getObjectByName('chegada-do-onibus'), folhas },
+      bus: {
+        z: +bus.position.z.toFixed(2), pitch: +bus.rotation.z.toFixed(4), porta: +o.aberta.toFixed(2),
+        farol: bus.getObjectByName('farois-acesos').visible, antigoEscondido: antigo?.visible === false, giroDaRoda: +m.elements[0].toFixed(3),
+      },
       bichos, cam: !!g.cameraDeCena(), travado: g.player.locked, fala: document.querySelector('.dialogue.show')?.textContent ?? '',
       chegou: g.flag('halloween:onibus-chegou'), sons: Object.fromEntries(g.audio.contagem),
     };
   });
   const PASSAGEIROS = ['girafa', 'capy', 'noel', 'garcom-canino', 'gatito', 'flynn', 'luna', 'sol', 'estrella', 'josefina'];
   const antes = await quadro();
+  ok(antes.bus.antigoEscondido, 'na festa, o ônibus do ponto é o detalhado (o de sempre escondido)');
   ok(antes.bus.z < -20 && antes.travado && PASSAGEIROS.every((p) => antes.bichos[p]?.v === false),
     `a cena começa sozinha: a dupla presa, o ônibus lá longe na rua e a turma ainda dentro dele (${antes.bus.z})`);
   // as falas, uma a uma: o que cada uma pede para medir
@@ -1035,8 +1044,9 @@ if (roda('onibus')) {
   for (const [re, quem] of [[/anoiteceu/, 'a dupla na boutique'], [/abaixa, Gina/, 'a Gina'], [/Tum-tum/, 'o Capy'], [/CHEGUEI/, 'o Noel'], [/Au! Au!/, 'o Walter'], [/Eu vim de Walter/, 'o Gatito'], [/AUUU/, 'o Flynn'], [/Llegamos/, 'a Luna'], [/Épale/, 'a Sol'], [/estrelinha de fada/, 'a Estrella'], [/motorista/, 'a Josefina'], [/primeira pista/, 'o fim']]) {
     ok(vistas.some((f) => re.test(f)), `${quem} fala (${re})`);
   }
-  ok(!!medidas.gina && medidas.gina.bus.z === 10.4 && medidas.gina.bus.folhas.some((x) => Math.abs(x - 2.6) > 0.5),
-    `o ônibus parou no ponto e a porta abriu (${JSON.stringify(medidas.gina?.bus)})`);
+  ok(!!medidas.gina && medidas.gina.bus.z === 10.4 && medidas.gina.bus.porta === 1 && medidas.gina.bus.farol,
+    `o ônibus parou no ponto, de farol aceso, e a porta abriu (${JSON.stringify(medidas.gina?.bus)})`);
+  ok(!!medidas.gina && medidas.gina.bus.giroDaRoda !== antes.bus.giroDaRoda, `as rodas giraram no caminho (${antes.bus.giroDaRoda} → ${medidas.gina?.bus.giroDaRoda})`);
   ok(!!medidas.gina && medidas.gina.bichos.girafa.v && medidas.gina.bichos.girafa.x > 37.5 && medidas.gina.bichos.girafa.y > 0.5,
     `a Gina aparece na porta, em cima do degrau (${JSON.stringify(medidas.gina?.bichos.girafa)})`);
   ok(!!medidas.ginaFala && Math.abs(medidas.ginaFala.bichos.girafa.x - 35.55) < 0.4 && medidas.ginaFala.bichos.girafa.y === 0,
@@ -1044,8 +1054,8 @@ if (roda('onibus')) {
   ok(['buzina', 'motorDoOnibus', 'freioDoOnibus', 'portaDoOnibus'].every((s) => (fim.sons[s] ?? 0) >= 1) && (fim.sons.portaDoOnibus ?? 0) >= 2,
     `a buzina, o motor, o freio e a porta (abrindo e fechando) (${['buzina', 'motorDoOnibus', 'freioDoOnibus', 'portaDoOnibus'].map((s) => `${s}×${fim.sons[s] ?? 0}`).join(' ')})`);
   ok(fim.chegou && !fim.cam && !fim.travado, 'no fim a isométrica volta, a dupla anda, e a chegada fica no save');
-  ok(fim.bus.z === 10.4 && fim.bus.pitch === 0 && !fim.bus.pendurado && fim.bus.folhas.every((x) => Math.abs(Math.abs(x - 2.6) - 0.32) < 0.01),
-    `o ônibus fica no ponto como sempre: porta fechada, nada pendurado (${JSON.stringify(fim.bus)})`);
+  ok(fim.bus.z === 10.4 && fim.bus.pitch === 0 && fim.bus.porta === 0 && !fim.bus.farol,
+    `o ônibus fica no ponto: porta fechada e o farol apagado (${JSON.stringify(fim.bus)})`);
   const POSTOS = { girafa: [34.5, 23.6], gatito: [-22.35, -26.35], flynn: [10.5, 2.0], josefina: [-16.6, -17.5], 'garcom-canino': [-9.89, -9.61] };
   for (const [peca, [x, z]] of Object.entries(POSTOS)) {
     const b = fim.bichos[peca];

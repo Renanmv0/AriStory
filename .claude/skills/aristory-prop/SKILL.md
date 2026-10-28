@@ -900,6 +900,53 @@ algodão-doce saiu.
   subiram de 315 mil para 396 mil (a treliça e as gôndolas). A bilheteria de
   perto: 530 → 311 desenhos (ela passa pela `fundir()`).
 
+## O ônibus da cidade (`world/onibusDaCidade.ts`)
+
+O ônibus urbano detalhado (pedido do Renan: as mesmas cores do `bus()`, mais
+caprichado). Hoje ele é o ônibus do ponto na noite da festa de Halloween e o
+da cena da chegada; o `bus()` continua sendo o de sempre (parque e clube).
+O molde de VEÍCULO:
+
+- **A carroceria é o perfil de lado extrudado na largura, com bisel**: o
+  teto com a quina redonda na frente e atrás, o para-brisa deitado e as
+  CAIXAS DE RODA recortadas embaixo (`absarc` no contorno). A forma é
+  desenhada recolhida do tamanho do bisel, e o bisel a engorda de volta —
+  todas as quinas saem arredondadas com uma malha só. Por dentro de cada
+  caixa, um meio cilindro escuro de dois lados (sem ele via-se a lataria
+  azul por dentro da boca).
+- **Faixa que dá a volta** (`faixaEmVolta`): a cintura branca, o friso e a
+  saia são a planta do contorno (o retângulo de quina redonda do bisel)
+  engrossada para fora e para dentro, em pé — elas contornam a frente e a
+  traseira, e PARAM nas portas e nas caixas de roda (`pular(x, z)`).
+- **Placa pregada no lado ou na frente** (`noLado`, `deFrente`): a forma de
+  quina redonda extrudada, girada para a face; a borracha da janela é a
+  mesma forma maior e mais funda. A frente de cima deita para trás num grupo
+  girado, e o para-brisa, o letreiro e os limpadores moram nele.
+- **Letreiro de LED**: o texto num canvas de rascunho, e cada "LED" do
+  painel acende se o pixel dele tiver letra — os pontinhos âmbar em fundo
+  escuro. Material chapado (`MeshBasicMaterial` com o mapa, guardado por
+  texto, como a TV da casa): é luz própria.
+- **As rodas são UM lote**: pneu torneado (banda arredondada), aro, calota,
+  rasgos e porcas pintados nos vértices numa geometria só, oito cópias (a
+  dupla de trás tem a de dentro). O lado da rua é a mesma roda girada meia
+  volta; `rodar(distancia)` gira todas — é o rasgo e a porca que mostram o
+  giro.
+- **O que a cena mexe tem comando**: `porta(k)` (as folhas, grupos com
+  nome, saem um dedo e correm para os lados; a luzinha de dentro acende),
+  `acenderFarois` (o halo e a poça na rua), `piscaAlerta` (o `update`
+  pisca) e `rodar`. O resto passa pela `juntarPorCor` e pela `fundir()`.
+- **O contrato do `bus()`** (9 × 2,55, nariz no `+X`, portas no `+Z`, a
+  porta da frente em `x = 2,6`, o degrau em 0,56) — por isso a troca não
+  mexe em colisor nem no ponto de "Pegar o ônibus". Os eixos mudaram: a
+  roda da frente fica ATRÁS da porta da frente, como em ônibus urbano (no
+  `bus()` a porta caía em cima da roda).
+- **Coplanar em peça arredondada**: a caixa envolvente de cada malha no
+  quadro da peça, com `?semFundir`, achou três (a saia no plano do fundo da
+  lataria, o para-choque de trás no plano da saia, a borracha da folha no
+  plano da beirada da moldura).
+- **O peso**: no ponto, 711 → 689 desenhos por quadro com o novo no lugar do
+  velho, e 469 mil → 502 mil triângulos (~34 mil o ônibus).
+
 ## O kit do Halloween (`world/halloween/`)
 
 As peças do parque enfeitado (`docs/HALLOWEEN.md`, §4.1). Moram fora do

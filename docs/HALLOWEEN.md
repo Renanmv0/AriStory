@@ -619,7 +619,13 @@ câmera de volta, já estão nos postos (o jogo põe cada um lá).
 > coruja, o salto da catrina e a estrelinha da fadinha); e por último a
 > **Josefina**, devagar, agradecendo o motorista. A porta fecha, o pisca
 > apaga, a tela escurece, e a câmera volta para a dupla com todo mundo
-> nos postos (o Walter no caixote da barraca). A buzina, o motor, o freio
+> nos postos (o Walter no caixote da barraca). **O ônibus é novo** (pedido
+> do Renan: as mesmas cores, mais detalhado; `world/onibusDaCidade.ts`):
+> na noite da festa ele fica no lugar do de sempre do ponto, com o letreiro
+> de LED "Festa no Parque", e a cena usa os comandos dele — a porta de
+> folhas que correm (o vão de dentro com o corrimão amarelo e a luzinha),
+> as rodas girando o que ele anda, o farol com a poça de luz e o
+> pisca-alerta. A buzina, o motor, o freio
 > de ar e a porta pneumática são sons novos (`audio/efeitos.ts`). **As
 > falas são rascunhos.** Teste: `scripts/halloween.mjs SO=onibus`.
 

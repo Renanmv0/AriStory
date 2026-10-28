@@ -6,9 +6,7 @@ import type { Gina } from '../../entities/bichos/Gina';
 import type { Walter } from '../../entities/bichos/Walter';
 import type { Flynn } from '../../entities/bichos/Flynn';
 import type { CoelhaDaTorcida } from '../../entities/bichos/CoelhaDaTorcida';
-import { haloDeLampada, pocaDeLuz } from '../../world/furniture';
-import { toon } from '../../core/materials';
-import { PALETTE as P } from '../../palette';
+import type { OnibusDaCidade } from '../../world/onibusDaCidade';
 import { ARI, RENAN } from '../../characters/cast';
 import { FLAG_DO_ONIBUS } from './fase';
 
@@ -39,9 +37,10 @@ import { FLAG_DO_ONIBUS } from './fase';
  *     dupla — com todo mundo já nos postos da festa;
  *  6. vira memória ("A noite da festa").
  *
- * É CAMADA: o ônibus é o de sempre do ponto (achado pela etiqueta), e o que
- * a cena pendura nele (o farol aceso, o pisca, o vão escuro da porta) sai no
- * fim. As falas são RASCUNHOS (o Renan troca).
+ * O ÔNIBUS é o detalhado (`world/onibusDaCidade.ts`), que os postos da
+ * festa põem no lugar do de sempre do ponto: a cena só usa os comandos dele
+ * (a porta, as rodas, o farol e o pisca-alerta). As falas são RASCUNHOS (o
+ * Renan troca).
  */
 
 /** quem desce do ônibus (os postos da festa montam, a chegada só empresta) */
@@ -57,6 +56,8 @@ export interface ElencoDoOnibus {
   coelhinhas: CoelhaDaTorcida[];
   /** põe o Walter no caixote da barraca (o posto dele) */
   walterNaBarraca: () => void;
+  /** o ônibus do ponto na noite da festa (o detalhado, `world/onibusDaCidade.ts`) */
+  onibus: OnibusDaCidade;
 }
 
 /** onde o ônibus para (o de sempre do ponto: `scenes/villaLobos.ts`) e de onde ele vem */
@@ -105,17 +106,8 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
   const R = RENAN.name;
 
   // ---------------------------------------------------------------- o ônibus
-  let onibus: THREE.Object3D | null = null;
-  w.root.traverse((o) => {
-    if (!onibus && o.userData?.peca === 'onibus' && Math.abs(o.position.x - ONIBUS.x) < 0.5) onibus = o;
-  });
-  const bus = onibus as THREE.Object3D | null;
-  if (!bus) {
-    // sem o ônibus (não deveria acontecer), a turma já está nos postos
-    elenco.walterNaBarraca();
-    g0.setFlag(FLAG_DO_ONIBUS);
-    return;
-  }
+  const onibus = elenco.onibus;
+  const bus = onibus.group;
 
   // ------------------------------------------- quem desce, guardado e escondido
   interface Guardado { b: Bicho; pos: THREE.Vector3; giro: number; sentado: boolean }
@@ -196,70 +188,16 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
     return { para, de: new THREE.Vector3(meio.x + dir.x * d, altura, meio.z + dir.y * d) };
   };
 
-  // ------------------------------------------- o que a cena pendura no ônibus
-  /*
-   * O FAROL ACESO, O PISCA E O VÃO DA PORTA. No referencial do ônibus (o
-   * nariz no `+X` dele, a porta no `+Z`): os halos dos faróis e a poça de luz
-   * que anda na frente dele pela rua; os quatro halos laranja do
-   * pisca-alerta (os dois da frente e os dois de trás); e o vão escuro da
-   * porta, com a luzinha de dentro, que só aparece com as folhas abertas.
-   */
-  const comp = 9;
-  const meio = 2.55 / 2;
-  const pendurados = new THREE.Group();
-  pendurados.name = 'chegada-do-onibus';
-  for (const lado of [-1, 1]) {
-    const farol = haloDeLampada(1.15, P.onibusFarol, 0.75);
-    farol.position.set(comp / 2 + 0.34, 1.0, lado * (meio - 0.45));
-    pendurados.add(farol);
-  }
-  const pocaDoFarol = pocaDeLuz(2.1, P.onibusFarol, 0.32);
-  pocaDoFarol.scale.set(1.7, 1, 1);
-  pocaDoFarol.position.set(comp / 2 + 2.6, 0.035, 0);
-  pendurados.add(pocaDoFarol);
-  const piscas = new THREE.Group();
-  for (const [x, y, z] of [[comp / 2 + 0.34, 1.0, meio - 0.1], [comp / 2 + 0.34, 1.0, -(meio - 0.1)], [-comp / 2 - 0.16, 1.08, meio - 0.32], [-comp / 2 - 0.16, 1.08, -(meio - 0.32)]]) {
-    const pisca = haloDeLampada(0.75, P.onibusPisca, 0.85);
-    pisca.position.set(x, y, z);
-    piscas.add(pisca);
-  }
-  piscas.visible = false;
-  pendurados.add(piscas);
-  const vao = new THREE.Group();
-  const escuro = new THREE.Mesh(new THREE.PlaneGeometry(0.98, 1.5), toon(P.onibusPainel));
-  escuro.position.set(comp / 2 - 1.9, 1.72, meio + 0.068);
-  vao.add(escuro);
-  const luzDeDentro = haloDeLampada(1.0, P.luzDeAbajur, 0.4);
-  luzDeDentro.position.set(comp / 2 - 1.9, 2.15, meio + 0.1);
-  vao.add(luzDeDentro);
-  vao.visible = false;
-  pendurados.add(vao);
-  bus.add(pendurados);
-  // as duas folhas de vidro da porta da frente (as do `bus()`, achadas pelo lugar)
-  const folhas: Array<{ m: THREE.Object3D; x0: number; z0: number; lado: number }> = [];
-  for (const o of bus.children) {
-    if ((o as THREE.Mesh).isMesh && Math.abs(o.position.y - 1.72) < 0.01 && Math.abs(Math.abs(o.position.x - (comp / 2 - 1.9)) - 0.32) < 0.02) {
-      folhas.push({ m: o, x0: o.position.x, z0: o.position.z, lado: Math.sign(o.position.x - (comp / 2 - 1.9)) });
-    }
-  }
-  /** a porta abrindo (1) ou fechando (0), com o sopro de ar */
+  // --------------------------------------------------------------- a porta
+  /** a porta da frente abrindo (1) ou fechando (0), com o sopro de ar */
   let aberta = 0;
   const porta = (abrir: boolean): Promise<void> => {
     g0.som('portaDoOnibus');
-    if (abrir) vao.visible = true;
     return new Promise((pronto) => aCadaQuadro((dt) => {
       aberta = THREE.MathUtils.clamp(aberta + (abrir ? dt : -dt) / 0.55, 0, 1);
-      const k = suave(aberta);
-      for (const f of folhas) {
-        // a folha sai um dedo para fora e corre para o lado, por cima da lataria
-        f.m.position.x = f.x0 + f.lado * 0.36 * k;
-        f.m.position.z = f.z0 + 0.06 * Math.min(1, k * 3);
-      }
+      onibus.porta(suave(aberta));
       const fim = abrir ? aberta >= 1 : aberta <= 0;
-      if (fim) {
-        if (!abrir) vao.visible = false;
-        pronto();
-      }
+      if (fim) pronto();
       return fim;
     }));
   };
@@ -283,7 +221,10 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
       const k = Math.min(1, t / CHEGADA);
       // o freio entra mais forte no fim: quadrática pela metade, cúbica no resto
       const anda = 1 - Math.pow(1 - k, 2.4);
+      const antes = bus.position.z;
       bus.position.z = ONIBUS.deLonge + (ONIBUS.z - ONIBUS.deLonge) * anda;
+      // as rodas giram o que ele andou (o nariz dele, o `+X`, é o `+Z` do mundo)
+      onibus.rodar(bus.position.z - antes);
       if (k < 1) {
         ateRoncar -= dt;
         if (ateRoncar <= 0) {
@@ -312,9 +253,6 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
       return false;
     });
   });
-  /** o pisca-alerta: liga e desliga num ritmo de pisca de verdade (~1,5 por segundo) */
-  let piscando = false;
-  let relogioDoPisca = 0;
 
   // ---------------------------------------------------------- os passageiros
   /** um pulo com o corpo num arco (o Walter faz a pose; os outros vão no pulo) */
@@ -438,6 +376,7 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
       const VOO = 8.5;
       void esperar(VOO - 4.5).then(() => {
         rodando = true;
+        onibus.acenderFarois(true);
         void chegar();
       });
       await voar((k) => caminho.getPointAt(k), (k) => olhar.getPointAt(k), VOO, suaveDeVoo);
@@ -450,7 +389,7 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
         return fimDoVoo.clone().lerp(alvo, suave(segue));
       };
       while (!rodando || bus.position.z < ONIBUS.z - 0.01) await esperar(0.1);
-      piscando = true;
+      onibus.piscaAlerta(true);
       await esperar(1.2);
       // a porta abre (a câmera vai para a calçada, de frente para ela)
       await deslizar(TOMADA_DA_PORTA, 1.6);
@@ -630,8 +569,8 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
       await deslizar(TOMADA_DA_PORTA, 1.0);
       await porta(false);
       await esperar(0.6);
-      piscando = false;
-      piscas.visible = false;
+      onibus.piscaAlerta(false);
+      onibus.acenderFarois(false);
       await esperar(0.5);
 
       // a tela escurece, todo mundo já está nos postos, e a câmera volta para a dupla
@@ -649,7 +588,6 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
       gina.abaixar = 0;
       flynn.correr(false);
       elenco.walterNaBarraca();
-      pendurados.removeFromParent();
       camera.de.copy(daDupla.de);
       camera.para.copy(daDupla.para);
       voo = null;
@@ -683,13 +621,14 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
           else if (gd.b !== elenco.walter) gd.b.voltarAPassear();
         }
         elenco.walterNaBarraca();
-        pendurados.removeFromParent();
+        onibus.piscaAlerta(false);
+        onibus.acenderFarois(false);
         api.setFlag(FLAG_DO_ONIBUS);
         void api.escurecerTela(false);
       }
       bus.position.z = ONIBUS.z;
       bus.rotation.z = 0;
-      for (const f of folhas) f.m.position.set(f.x0, f.m.position.y, f.z0);
+      onibus.porta(0);
       voo = null;
       api.setCameraOmbro(null);
       api.freeCompanion();
@@ -714,10 +653,6 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
     }
     for (let i = tiques.length - 1; i >= 0; i--) if (tiques[i](dt)) tiques.splice(i, 1);
     for (const b of noOnibus) b.group.visible = false;
-    if (piscando) {
-      relogioDoPisca += dt;
-      piscas.visible = relogioDoPisca % 0.7 < 0.38;
-    }
     const v = voo;
     if (v) {
       v.t = Math.min(1, v.t + dt / v.dura);

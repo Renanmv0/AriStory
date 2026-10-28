@@ -20,6 +20,7 @@ import type { EnfeitesDePendurar } from '../../world/halloween/pendurados';
 import { CarrinhoDePocoes, PocaoBorbulhando, cavaleteDePocoes } from '../../world/halloween/carrinhoDePocoes';
 import { BaciaDeMacas, canteiroDeAboboras } from '../../world/halloween/pecasDaFesta';
 import type { BarracaDoWalter } from '../../world/halloween/barracaDoWalter';
+import { OnibusDaCidade } from '../../world/onibusDaCidade';
 import { PALETTE as P } from '../../palette';
 import { ARI, RENAN } from '../../characters/cast';
 import { fantasiarQuemEstaAqui } from './fantasiados';
@@ -827,6 +828,31 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     });
   }
 
+  // ------------------------------------------------- o ônibus da festa
+  /*
+   * O ÔNIBUS DETALHADO (pedido do Renan): na noite da festa, o ônibus do
+   * ponto é o novo (`world/onibusDaCidade.ts`), no mesmo lugar e do mesmo
+   * tamanho — o de sempre fica escondido, e o colisor e o "Pegar o ônibus"
+   * dele continuam valendo. O letreiro de LED diz para onde ele veio hoje.
+   */
+  const onibus = new OnibusDaCidade({ destino: 'Festa no Parque' });
+  {
+    let antigo: THREE.Object3D | null = null;
+    w.root.traverse((o) => {
+      if (!antigo && o.userData?.peca === 'onibus' && Math.abs(o.position.x - 39.5) < 0.5) antigo = o;
+    });
+    const o = antigo as THREE.Object3D | null;
+    if (o) {
+      onibus.group.position.copy(o.position);
+      onibus.group.rotation.copy(o.rotation);
+      o.visible = false;
+    } else {
+      onibus.group.position.set(39.5, 0, 10.4);
+      onibus.group.rotation.y = -Math.PI / 2;
+    }
+    w.add(fundir(onibus.group));
+  }
+
   // ------------------------------------------------- a chegada do ônibus
   // a primeira vez na noite da festa: a turma desce do ônibus (uma vez por save)
   if (!g0.flag(FLAG_DO_ONIBUS) && faseDoHalloween(g0) === 'festa') {
@@ -834,6 +860,7 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
       gina, capy, noel, walter, gatito, flynn, josefina,
       coelhinhas: [luna, sol, estrella].filter((c): c is CoelhaDaTorcida => !!c),
       walterNaBarraca: naBarraca,
+      onibus,
     });
   }
 
@@ -841,6 +868,7 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
   w.onUpdate((dt) => {
     for (const b of novos) b.update(dt);
     carrinho.update(dt);
+    onibus.update(dt);
     pocao.update(dt);
     bacia.update(dt);
   });
