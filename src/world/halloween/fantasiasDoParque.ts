@@ -56,7 +56,7 @@ function avesso(geo: THREE.BufferGeometry): THREE.BufferGeometry {
  * ela cobre (centrada nas costas, `-Z`); `achata` encolhe o `z` (bicho de
  * corpo oval). A barra ondula de leve: pano de verdade não corta reto.
  */
-function capaDeBicho(
+export function capaDeBicho(
   perfil: ReadonlyArray<readonly [number, number]>, abertura: number, cor: number, forro: number, achata = 1,
 ): THREE.Group {
   const g = new THREE.Group();
@@ -91,7 +91,7 @@ function capaDeBicho(
  * A capa balança com o passo de quem a veste: andando para a frente, ela
  * abre para trás (`rotation.x` negativo, a partir do pescoço).
  */
-function balancarComOPasso(capa: THREE.Object3D, quem: THREE.Object3D, quanto = 0.35): void {
+export function balancarComOPasso(capa: THREE.Object3D, quem: THREE.Object3D, quanto = 0.35): void {
   const passo = medidorDePasso();
   let antes = performance.now();
   // o gatilho do quadro mora numa MALHA (grupo não é desenhado)

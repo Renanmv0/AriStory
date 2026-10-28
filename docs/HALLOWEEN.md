@@ -665,6 +665,26 @@ balança, costura aparente, feltro, textura de canvas onde for tecido.
 > aparecem fantasiados onde moram — o clube e o Mania. Teste:
 > `SO=fantasias`.
 
+> **Construída a leva da ESCOLA** (`world/halloween/fantasiasDaEscola.ts`):
+> o **Gatito de Walter** (a tiara de orelhas caídas de cachorro, o focinho
+> de bolinha preso com elástico, a gravatinha borboleta, a bandejinha nas
+> costas com um copinho de suco e um docinho, e o rabinho de cachorro
+> amarrado com fita no rabo dele, abanando) e a fala dele, "Falar com o
+> Gatito" ("Au. …" / "Eu vim de Walter! O Mania de Churrasco é o meu
+> restaurante favorito." / "A gravatinha é de verdade, viu?"); o **Flynn
+> lobisomem** (as luvas peludas com garras, o peitoral de pelo cinza e as
+> orelhas de lobo abrindo do lado das de raposa; a bandana continua); a
+> **Luna coruja** (o capuz de penas com os olhões de feltro, o biquinho e
+> os tufos, a capinha de penas em três camadas e a lua dourada no colar);
+> a **Sol catrina** (a coroa de flores, os pontinhos coloridos em volta
+> dos olhos, o nariz de coração, o sorriso costurado, as florzinhas nas
+> bochechas e a saia de babados em faixas de cor); e a **Estrella fadinha**
+> (as asas de tule com a borda acesa, batendo de leve, a varinha de estrela
+> no lugar do pompom da direita e a saia de tule azul-noite com
+> estrelinhas). As falas de fantasia moram em `fantasiados.ts`
+> (`FALAS_DE_FANTASIA`). Medido na alameda: 399 -> 419 desenhos por quadro
+> com tudo aceso e fantasiado.
+
 #### E. O que funciona na festa
 
 Decidido pelo Renan: o que é da dupla e não precisa de ninguém continua, e o que
