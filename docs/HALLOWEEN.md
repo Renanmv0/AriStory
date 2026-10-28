@@ -667,6 +667,9 @@ de recado somem. O clube e a escola continuam vazios (decisão do Renan).
 > quem está de capa de vampiro. **As falas são rascunhos** (em `naFesta.ts`,
 > a apresentação da fantasia na primeira vez e uma fala curta depois) —
 > o Renan troca o que quiser. Teste: `scripts/halloween.mjs SO=festa`.
+> Medido na alameda, de noite: 419 -> 452 desenhos por quadro com os
+> postos (os bichos novos entram pelas beiradas do quadro; as peças vão
+> pela `fundir()` e o vidro e a bebida das poções em lote).
 
 #### D. As fantasias dos personagens
 
