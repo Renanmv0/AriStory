@@ -448,8 +448,15 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
       g.bloquearTroca(false);
       g.lockPlayer(false);
       estella.pararDeEncarar();
-      pecas.pausarEstella(false);
       pecas.interacoes.forEach((it, i) => { it.enabled = ligadas[i]; });
+      // ela volta para a RONDA por um caminho livre: do lado do pátio, pela
+      // ponta da arara das calças, até a parada "na frente da arara das
+      // calças" (0; 4,3) — em linha reta ela atravessaria a arara
+      void (async () => {
+        await estella.irPara(-2.85, 4.3);
+        await estella.irPara(0, 4.3);
+        pecas.pausarEstella(false);
+      })();
     }
   };
 

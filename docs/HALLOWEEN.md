@@ -35,12 +35,13 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapas 1 e 2 construídas, escondidas.** O filme no sofá e a carta
-da Estella (§2.1) e o parque no pôr do sol, enfeitado e vazio (§4.1) estão
-no jogo, mas só aparecem com `?halloween` na URL (`src/eventos/halloween/`,
-`src/world/halloween/`, `scripts/halloween.mjs`). A **parte 1** inteira
-(§2.1 a §2.4) está fechada com o Renan; a próxima é a **etapa 3** (o
-presente da Estella na boutique), com o plano fechado no §2.3.1.
+**Estado: etapas 1, 2 e 3 construídas, escondidas.** O filme no sofá e a
+carta da Estella (§2.1), o parque no pôr do sol, enfeitado e vazio (§4.1),
+e o presente da Estella na boutique (§2.3.1) estão no jogo, mas só aparecem
+com `?halloween` na URL (`src/eventos/halloween/`, `src/world/halloween/`,
+`src/world/fantasias.ts`, `scripts/halloween.mjs`). A **parte 1** inteira
+(§2.1 a §2.4) está fechada com o Renan; a próxima é a **etapa 4** (a noite
+e o ônibus, §2.4), que ainda precisa ser planejada com ele.
 
 **Onde mora a etapa 2 no código:** o kit em `world/halloween/` (`abobora.ts`,
 `pendurados.ts`, `pecas.ts`, `nessie.ts`; `kit.ts` é a vitrine dos testes);
@@ -48,6 +49,15 @@ a camada do parque em `eventos/halloween/noParque.ts` (uma chamada no fim
 do `villaLobos.ts`); quem foi se arrumar em `eventos/halloween/ausentes.ts`
 (uma chamada no fim do clube, do Mania, da estufa, da escola e do ginásio);
 os recados em `eventos/halloween/recados.ts`.
+
+**Onde mora a etapa 3 no código:** as doze peças das fantasias em
+`world/fantasias.ts` (a capa viva e as asinhas que batem; as fichas em
+`world/itens.ts`, `FANTASIAS_DA_ESTELLA`); a Estella de aranha e o Pelusa
+morceguinho em `world/halloween/fantasiasDosBichos.ts` (por fora das
+classes); as bexigas de caveira, o caldeirão de balas, as caixas, a cestinha,
+a meia e o resto da loja em `world/halloween/boutique.ts`; o mapinha em
+`world/halloween/mapinha.ts`; e a camada da boutique, com a cena do presente,
+em `eventos/halloween/naBoutique.ts` (uma chamada no fim da `lojinha.ts`).
 
 **Decisões do Renan** (as que já valem):
 
@@ -297,6 +307,34 @@ e depois ri dela mesma. Cutscene:
 > "Agora vão, que a noite é das aranhas… e dos amigos delas!"
 
 ### 2.3.1 A etapa 3 em detalhe: o presente da Estella (fechada com o Renan)
+
+> **Construída** (escondida atrás do `?halloween`). O que mudou na
+> construção, em relação ao plano abaixo:
+>
+> - a Estella espera no salão (e não na porta: a dupla nasce a 80 cm dela),
+>   e entre uma parte e outra da cena a tela escurece um instante (as caixas
+>   aparecem no balcão; os dois entram nas cabines fechadas, numa âncora, e
+>   a cortina esconde; saem fantasiados no vão do cantinho, onde a arara de
+>   frio não tapa ninguém);
+> - a dupla ganhou duas falas de reação ("Estella! Você tá de aranha!" / "A
+>   aranha mais fofa do parque inteiro.", e na saída "Eu sou um vampiro!" /
+>   "E eu sou um morceguinho!") e a meia rendeu três ("Ops… a meia!" /
+>   "Quem jogou meia por cima da minha cortina?!" / "Foi sem querer! Tá
+>   quase!") — rascunhos, o Renan reescreve;
+> - o mapinha é um item de mão que se LÊ: segurando, o E vira "Ler o mapinha
+>   da Estella" (`ItemDef.leitura`, no motor) e abre no painel do quadro;
+> - os bustos da vitrine ganharam o chapéu de bruxa e a cabeça de abóbora
+>   (as fantasias da caça ainda não existem);
+> - a capa do vampiro é uma grade de pano VIVA (`capaViva`): se acomoda nos
+>   braços e nas pernas, abre para trás andando, e sentado assenta no banco.
+>   Para ela o rig passou a mostrar os pivôs dos braços (`MedidasCorpo.bracos`,
+>   só leitura, como as pernas);
+> - na volta da cena a Estella vai até a ronda por um caminho livre (em
+>   linha reta ela atravessaria a arara das calças).
+>
+> Medido (desenhos por quadro, sem -> com o enfeite): térreo 467 -> 580,
+> mezanino 297 -> 347. Sem o `?halloween`, ou antes da carta, a boutique
+> tem as mesmas 629 malhas de antes do evento.
 
 > As respostas do Renan já estão aqui dentro. Falta construir (§9).
 
@@ -1037,7 +1075,7 @@ aprovar antes da próxima.
 | **0** | **decisões** | as respostas do §10 | — |
 | **1** ✅ | **o filme e a carta** *(construída, escondida)* | a fase do evento no save e o `?halloween`; no sofá, "Assistir um filme de terror", o filme na TV, as falas, a carta deslizando por baixo da porta, "Pegar a carta" e o painel da carta (§2.1) | `cenario`, `prop` + `geometry`, `textures`, `animation` |
 | **2** ✅ | **o parque enfeitado, no pôr do sol e vazio** *(construída, escondida)* | as decorações do parque inteiro e das lojas, ainda apagadas (§4.1), o Nessie de plástico no lago, os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
-| **3** | **o presente da Estella** | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
+| **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** | **a noite e o ônibus** | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** | **doces ou travessuras** | as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3), e **as outras cinco fantasias** (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
 | **6** | **a Casinha da Abóbora** | o portão das 25 balas, o cenário novo e a festa surpresa (§7) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
@@ -1065,7 +1103,7 @@ da personalidade de cada um; na caminhada nada do que depende de alguém
 funciona; a clareira sem o "Passar a noite aqui"; o Pelusa dormindo na
 boutique, sem interação; os comentários valem; e a caminhada no pôr do sol.
 
-### A etapa 3 está fechada
+### A etapa 3 está fechada (e construída)
 
 Respondidas (§2.3.1): o mezanino enfeitado também, com bexigas de caveira;
 a aranha do jeito dela; sem topete, cada um com o próprio cabelo; a caixa só

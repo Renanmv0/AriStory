@@ -391,6 +391,18 @@ pontos de pesca ficam nos vãos da beira (longe de ninféia, pedra e tronco).
 estados própria (sol, pulando, nadando só com a cabeça de fora, subindo). O
 casco é canvas visto de cima, com o UV projetado de cima também.
 
+## Fantasia de EVENTO, por fora da classe (a Estella de aranha)
+
+Evento é camada: a classe do bicho não muda. A fantasia é uma função que
+recebe o bicho MONTADO e pendura as peças nos grupos dele, achados pelo nome
+(`cabeca-da-estella`) ou pela posição que a classe dá a eles
+(`world/halloween/fantasiasDosBichos.ts`). O que se mexe (as patinhas de
+feltro) balança sozinho num `onBeforeRender`, medindo a velocidade do
+grupo no mundo — a pose do bicho continua a dele. O Pelusa dormindo usa o
+`deitar(true)` que já existia, e a cena fecha os olhos DEPOIS do
+`pelusa.update(dt)` (a pose do gato os deixa meio abertos). Cuidado de
+câmera: o rabo deitado para trás aparece "para cima" na tela isométrica.
+
 ## A cor da fala (todo bicho que fala tem a sua)
 
 Sugestão do Ari: quando um personagem fala, a etiqueta do nome e o pontilhado

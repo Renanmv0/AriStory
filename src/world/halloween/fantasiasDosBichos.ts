@@ -196,7 +196,7 @@ export function fantasiarEstellaDeAranha(estella: Estella): THREE.Group {
     volta.rotation.set(k * 0.9, k * 1.7, k * 0.4);
     novelo.add(volta);
   }
-  fantasia.add(novelo);
+  fantasia.add(fundir(novelo));
   // A TEIA no flanco de −X (o que a câmera vê quando ela está na porta): os
   // raios e três voltas de fio, e o fio que sai do novelo e desce até ela
   const teia = new THREE.Group();
@@ -223,7 +223,7 @@ export function fantasiarEstellaDeAranha(estella: Estella): THREE.Group {
     }
     teia.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 60, 0.0035, 4, true), fioClaro));
   }
-  fantasia.add(teia);
+  fantasia.add(fundir(teia));
   {
     const de = novelo.position.clone().add(new THREE.Vector3(-0.07, -0.03, 0.02));
     const ate = teia.position.clone().add(new THREE.Vector3(0, 0.15, 0));
