@@ -795,7 +795,7 @@ if (roda('festa')) {
     // as falas só começam com a câmera no lugar (e o navegador do teste anda devagar)
     await page.waitForFunction(() => !!document.querySelector('.dialogue.show'), null, { timeout: 120000 }).catch(() => {});
     // o balão digita letra por letra: espera a fala inteira (ou ao menos parar de crescer)
-    if (fala) await page.waitForFunction((f) => new RegExp(f).test(document.querySelector('.dialogue.show')?.textContent ?? ''), fala.source, { timeout: 30000 }).catch(() => {});
+    if (fala) await page.waitForFunction((f) => new RegExp(f).test(document.querySelector('.dialogue.show')?.textContent ?? ''), fala.source, { timeout: 120000 }).catch(() => {});
     else await espera(4000);
     await espera(500);
     const tomada = await j((peca) => {
