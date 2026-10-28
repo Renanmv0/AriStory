@@ -41,7 +41,7 @@ e o presente da Estella na boutique (§2.3.1) estão no jogo, mas só aparecem
 com `?halloween` na URL (`src/eventos/halloween/`, `src/world/halloween/`,
 `src/world/fantasias.ts`, `scripts/halloween.mjs`). A **parte 1** inteira
 (§2.1 a §2.4) está fechada com o Renan; a próxima é a **etapa 4** (a noite
-e o ônibus, §2.4), que ainda precisa ser planejada com ele.
+e o ônibus): a proposta está no §2.4.1, esperando as respostas dele.
 
 **Onde mora a etapa 2 no código:** o kit em `world/halloween/` (`abobora.ts`,
 `pendurados.ts`, `pecas.ts`, `nessie.ts`; `kit.ts` é a vitrine dos testes);
@@ -504,6 +504,145 @@ noite.** A fase vira `festa`:
 
 O ônibus é o mesmo do ponto de hoje (`scripts/onibus.mjs`): a cena dele
 chegando já existe.
+
+### 2.4.1 A etapa 4 em detalhe: a noite e o ônibus (proposta, falta o Renan)
+
+> Proposta. As perguntas estão no fim desta seção e no §10; as respostas do
+> Renan entram aqui antes de construir.
+
+**O que a etapa 4 entrega.** A dupla sai da boutique fantasiada e a fase vira
+`festa`: o parque está **de noite**, todo aceso; o **ônibus do clube**
+chega no ponto e desce a turma inteira **fantasiada** (o clube e a escola);
+cada um vai para o seu posto da festa, onde o Mano, o Cookie e o Jean-Luc já
+estão. A etapa termina com o parque cheio, cada um com uma fala de Halloween,
+e o mapinha apontando para o Mano. A caça (as paradas, as balas, as outras
+fantasias) é a etapa 5: aqui as paradas ainda não perguntam "doces ou
+travessuras".
+
+**Ressalva do plano antigo:** o §2.4 dizia que "a cena do ônibus chegando já
+existe". Não existe: o ônibus do parque fica parado na rua (`39,5; 10,4`), e
+o `scripts/onibus.mjs` só fotografa ele parado. A chegada (andando pela rua,
+freando, a porta abrindo) é peça nova desta etapa.
+
+#### A. A noite no parque (luz pintada, nenhuma luz nova)
+
+- **o céu**: a fila de momentos da clareira (`world/noite.ts`) anda do
+  `POR_DO_SOL` até a `NOITE` no `g.luzDoCeu` — o parque inteiro anoitece
+  (hoje só a clareira anoitece), e continua de noite enquanto a fase for
+  `festa`/`depois`, mesmo saindo e voltando;
+- **as abóboras acesas**: o kit já está pronto e testado na boutique
+  (`LoteDeAboboras.montar({ acesas: true })`: a cara da cor da chama, o halo
+  e a poça no chão, tremendo) — o parque inteiro só troca a chamada;
+- **as lanternas de papel acesas** (`luzDasLanternas()`, também pronto) e
+  uma poça laranja embaixo de cada poste (os postes já estão repintados de
+  luz de abóbora);
+- **varais de luzinha** (novo): fios de lampadinhas laranja e roxas na
+  praça da roda e na calçada da boutique, cada lâmpada um halo do
+  `brilhoEmLote` — um desenho para todas;
+- **os morceguinhos voando em bando** em volta da roda gigante (o plano do
+  §4: lote, as asas batendo no shader);
+- **o Nessie de barriga acesa**, com a poça de luz na água em volta dele;
+- **as janelas das lojas acesas** (a claridade da janela ao contrário: de
+  dentro para a calçada);
+- **névoa baixa** rolando no lago e na grama: só se a medida no celular
+  deixar (é a peça mais cara da lista).
+
+#### B. A saída da boutique e o ônibus (a cutscene)
+
+1. a porta da boutique abre para o parque de noite; a dupla para na
+   calçada. Renan: "Já anoiteceu?! A gente ficou quanto tempo lá dentro?" —
+   Ari: "O suficiente pra ficar lindo." (os rascunhos do §2.4);
+2. **a buzina** ao longe. A câmera **desliza da boutique até o ponto de
+   ônibus** (são uns 75 m: a dupla fica parada esperando, como na tomada de
+   cena da clareira) — *proposta*; a outra opção é a dupla andar até lá e o
+   ônibus chegar quando eles se aproximam;
+3. o ônibus **chega pela rua**, freia (balança um pouco), o pisca-alerta
+   pisca, a porta abre;
+4. **descem um por um, cada um com o seu jeito**: a **Gina** abaixando a
+   cabeça para caber na porta (e o chapéu de bruxa enroscando); o **Capy**
+   apitando; o **Noel** correndo; o **Walter** de bandeja; o **Gatito**; o
+   **Flynn** pulando o degrau; as **três coelhinhas** juntas; e por último a
+   **Josefina**, devagarinho — o motorista espera. Cada um acena para a
+   câmera e sai andando para o lado do posto dele;
+5. a tela escurece um instante e a câmera volta para a dupla na calçada da
+   boutique. Ari (ou quem joga): "Vamos atrás da primeira pista?";
+6. vira memória ("A noite da festa").
+
+Os que descem não andam o parque inteiro na tela: saem do quadro e, com a
+câmera de volta, já estão nos postos (o jogo põe cada um lá).
+
+#### C. Onde cada um fica na festa
+
+| quem | posto | o que faz ali (nesta etapa) |
+|---|---|---|
+| Mano | a sorveteria (reabre, sem o pano de "fechado") | fica no posto, fala de Halloween |
+| Cookie | a bilheteria | idem; a roda gigante funciona |
+| Jean-Luc | o lago | nada perto do trapiche |
+| Capy | a beira do lago, com uma bacia de maçãs (a travessura da etapa 5) | fica no posto |
+| Gina | o ponto de ônibus (sobra lá depois que o ônibus sai) | idem |
+| Noel | um **carrinho de poções** (peça nova) na praça da roda, com o caldeirão que já está lá borbulhando de verde | idem |
+| Josefina | um **canteiro de abóboras** (peça nova) no gramado | idem |
+| Gatito e as três coelhinhas | o piquenique | idem |
+| Flynn | o campinho de frisbee | idem |
+| Walter | **não fica**: desce com a bandeja e some atrás da praça da roda, onde fica o portão escondido da Casinha (*proposta*: a dupla pode comentar "Pra onde o Walter tá indo?" — a primeira dica do final) | — |
+| os patinhos | o lago, de chapeuzinho de bruxa | como sempre |
+| Estella | continua na boutique, de aranha | a ronda dela |
+
+Cada personagem tem **uma fala de Halloween** nesta etapa (rascunhos
+fofos); a pergunta "doces ou travessuras?" entra na etapa 5. As plaquinhas
+de recado somem. O clube e a escola continuam vazios (decisão do Renan).
+
+#### D. As fantasias dos personagens
+
+As do §3, cada uma pendurada nos pontos do corpo que a classe já tem, por
+fora dela (o molde da aranha da Estella e do Pelusa: `fantasiasDosBichos`).
+Bem feitas e detalhadas, como as da dupla. **Três coincidências** para o
+Renan decidir:
+
+- o **Mano de vampiro** repete o **Ari de vampiro**: trocar (proposta: o
+  Mano de **esqueleto** — os ossinhos de feltro por cima do "smoking" de
+  pinguim, um pinguim de raio-x) ou manter os dois de capa, de propósito?
+- **três fantasmas de lençol**: o Cookie, a Josefina e a Estrella;
+- as fantasias da caça (**abóbora** e **gato preto**) já aparecem no Capy, na
+  Sol e na Luna.
+
+#### E. O que funciona na festa
+
+*Proposta*: o que é da dupla e não precisa de ninguém continua, e o que
+volta com os personagens **volta a funcionar de noite** — a roda gigante à
+noite (com o Cookie vendendo o bilhete), o sorvete do Mano e a patinação no
+gelo. O que é aula, turno, treino e desafio continua fechado até o evento
+acabar (estão todos na festa). Na fase `festa` **todos vêm**, mesmo quem o
+jogador ainda não destravou (o Jean-Luc antes das cinco vitórias, a escola
+antes da Luna): é a festa da Estella, e ela convidou todo mundo.
+
+#### F. A ordem de construir (dentro da etapa 4)
+
+1. a noite e as luzes (o céu, as abóboras, as lanternas, os postes, as
+   luzinhas, os morcegos da roda, o Nessie, as janelas) e as medidas;
+2. as fantasias, em três levas com foto de cada uma: o parque (Mano, Cookie,
+   Jean-Luc, os patinhos), o clube (Gina, Capy, Noel, Josefina, Walter) e a
+   escola (Gatito, Flynn, Luna, Sol, Estrella);
+3. o carrinho de poções e o canteiro de abóboras; os postos e as falas;
+4. o ônibus chegando e a cutscene;
+5. o teste (`scripts/halloween.mjs SO=festa`), a volta medida, e o celular.
+
+#### Perguntas da etapa 4
+
+1. **O ônibus**: a câmera vai até o ponto e mostra a chegada (proposta), ou
+   a dupla anda até lá e o ônibus chega quando eles se aproximam?
+2. **O Mano de vampiro** repete o Ari: esqueleto (proposta), outra fantasia,
+   ou os dois de vampiro de propósito?
+3. **As coincidências** (três fantasmas; abóbora e gato preto que também são
+   prêmio da caça): tudo bem, ou quer trocar alguma?
+4. **O que funciona na festa**: a roda gigante à noite, o sorvete e a
+   patinação voltam (proposta)?
+5. **Quem não foi destravado** (o Jean-Luc, a escola) vem para a festa mesmo
+   assim (proposta)?
+6. **O Walter**: some atrás da roda deixando a dica do final (proposta), ou
+   nem desce do ônibus?
+7. **As luzes**: varais de luzinha, morcegos voando na roda, o Nessie aceso
+   e a névoa baixa (essa só se não pesar) — entra tudo?
 
 ### 2.5 Doces ou travessuras (§6)
 
@@ -1123,6 +1262,12 @@ abre, e o que tem dentro é surpresa até sair do provador; cada um leva a
 sua caixinha e sai inteiro vestido, e as fantasias ficam para sempre; o
 mapinha entra; a loja só funciona depois da cutscene; o Pelusa no pufe
 vinho, sem fala sobre ele.
+
+### A etapa 4 está em planejamento
+
+As sete perguntas estão no fim do §2.4.1 (o ônibus, o Mano de vampiro, as
+fantasias repetidas, o que funciona de noite, quem não foi destravado, o
+Walter e as luzes).
 
 ### Para as próximas partes
 
