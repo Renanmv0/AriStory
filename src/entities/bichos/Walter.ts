@@ -40,6 +40,15 @@ export class Walter extends Bicho {
   /** onde o prato vai pousar quando o minijogo existir */
   readonly bandeja = new THREE.Object3D();
 
+  /**
+   * O PULO, de 0 (saindo do chão) a 1 (pousando); 0 fora dele. Quem pula é a
+   * cena (a barraquinha da festa: o caixote, o estrado): ela leva o corpo
+   * pelo ar e diz aqui em que ponto do pulo ele está, e a pose é dele — as
+   * patas da frente esticam para a frente e as de trás para trás na saída, e
+   * trocam para receber o chão na chegada, com o focinho subindo e descendo.
+   */
+  salto = 0;
+
   constructor(area: AreaDoBicho) {
     super(area, {
       // mais rapido que o gato: cachorro em servico anda decidido
@@ -227,7 +236,21 @@ export class Walter extends Bicho {
    * viram um cavalinho de balanco.
    */
   protected animar(dt: number, { andando, sentado, carinho, fase }: PoseDoBicho): void {
-    if (andando) {
+    if (this.salto > 0) {
+      // `rotation.x` positivo leva a pata (o `-Y`) para TRÁS: a da frente
+      // estica com o sinal negativo, a de trás com o positivo
+      const k = this.salto;
+      const frente = -0.95 + 0.6 * k;
+      const tras = 0.85 - 0.55 * k;
+      this.pernas[0].rotation.x = frente;
+      this.pernas[1].rotation.x = frente;
+      this.pernas[2].rotation.x = tras;
+      this.pernas[3].rotation.x = tras;
+      // o focinho sobe na saída e desce na chegada (negativo é para cima)
+      this.corpo.rotation.x = -0.32 * Math.cos(k * Math.PI);
+      this.corpo.rotation.z = 0;
+      this.corpo.position.y = 0;
+    } else if (andando) {
       const t = fase * 10;
       const passo = Math.sin(t) * 0.5;
       this.pernas[0].rotation.x = passo;

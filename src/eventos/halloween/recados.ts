@@ -57,6 +57,17 @@ export const RECADOS_DO_PARQUE = {
     letra: 'kalam',
     tinta: tinta.azul,
   } satisfies Recado,
+  /**
+   * o mesmo recado, depois que ele chegou: de vez em quando ele larga a
+   * barraca e some atrás da roda (a primeira dica do final), e deixa isto
+   * pendurado no lugar dele
+   */
+  walterVoltaJa: {
+    texto: 'Au! Au! 🐾\n(volto já — não mexam nas salsichas!)',
+    assinatura: '— Walter 🐶',
+    letra: 'kalam',
+    tinta: tinta.azul,
+  } satisfies Recado,
   /** o quadro de inscrições da arena */
   desafios: {
     texto: 'Desafios suspensos: os desafiantes foram se fantasiar!',

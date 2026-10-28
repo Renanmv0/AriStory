@@ -32,6 +32,18 @@ export const flagDaFase = (fase: Exclude<FaseDoHalloween, 'antes'>): string => `
 
 /** a carta já deslizou por baixo da porta, mas ainda não foi lida */
 export const FLAG_CARTA_NO_CHAO = 'halloween:carta-no-chao';
+/**
+ * o ônibus da festa já chegou (a cena da chegada, §2.4.1 B, roda uma vez):
+ * antes dele o Walter não está na barraquinha, e a turma do clube e da escola
+ * não está nos postos
+ */
+export const FLAG_DO_ONIBUS = 'halloween:onibus-chegou';
+/**
+ * a cena do presente na boutique já aconteceu: é ela que leva à noite da
+ * festa (a noite cai enquanto eles se arrumam). Save de antes disso, que
+ * ganhou o presente e continuou no `convite`, é lido como `festa`
+ */
+export const FLAG_DO_PRESENTE = 'halloween:presente';
 
 /**
  * O evento existe neste jogo? Hoje, só com `?halloween` na URL — é o que
@@ -44,7 +56,9 @@ export function eventoLiberado(): boolean {
 /** A fase em que o evento está (`antes` também quando ele não está liberado). */
 export function faseDoHalloween(g: Pick<GameAPI, 'flag'>): FaseDoHalloween {
   if (!eventoLiberado()) return 'antes';
-  for (const fase of DEPOIS_DE_ANTES) if (g.flag(flagDaFase(fase))) return fase;
+  for (const fase of DEPOIS_DE_ANTES) {
+    if (g.flag(flagDaFase(fase))) return fase === 'convite' && g.flag(FLAG_DO_PRESENTE) ? 'festa' : fase;
+  }
   return 'antes';
 }
 
