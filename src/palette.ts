@@ -2310,6 +2310,33 @@ export const PALETTE = {
   aguaDaBacia: 0x8fd0e8,
   macaVermelha: 0xd8323d,
   toalhaDoCapy: 0xf2f0e8,
+  /**
+   * A BARRAQUINHA DE CACHORRO-QUENTE do Walter na festa: o vermelho de
+   * barraca de rua (o mesmo vermelho de toalha do Mania, um tico mais vivo) e
+   * o creme do friso, a lona listrada, o pão, a salsicha, os molhos e os
+   * complementos de cachorro-quente completo, a massa da salsicha-múmia e o
+   * ossinho do pote
+   */
+  barracaVermelho: 0xd23a3f,
+  barracaVermelhoFundo: 0x8f2229,
+  barracaCreme: 0xfbecd0,
+  barracaMostarda: 0xf1b43a,
+  paoDeCachorro: 0xe7aa62,
+  paoDourado: 0xc47a3a,
+  salsicha: 0xbd4f37,
+  salsichaTostada: 0x86331f,
+  molhoMostarda: 0xf6c62e,
+  molhoKetchup: 0xd8232c,
+  molhoMaionese: 0xfaf4e2,
+  batataPalha: 0xf2cd5e,
+  milhoVerde: 0xf7d84c,
+  ervilha: 0x86ba4c,
+  vinagrete: 0xd6493d,
+  pureDeBatata: 0xf6e6b8,
+  massaDeMumia: 0xf3e0b8,
+  ossinho: 0xf2e5c6,
+  chapaQuente: 0x3a3634,
+  vimeDaCesta: 0xc89355,
   /** a noite da festa: o luar do lado da câmera, um tico lilás */
   luarDaFesta: 0xc4c8ff,
   /**

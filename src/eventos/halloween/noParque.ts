@@ -17,6 +17,7 @@ import {
 import { giroDeMatiz, juntas, repintar, trocaDeCores } from '../../world/halloween/repintar';
 import { NOITE, POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco, type MomentoDoCeu } from '../../world/noite';
 import { BandoDeMorcegos } from '../../world/halloween/morcegos';
+import { BALCAO_DO_WALTER, BarracaDoWalter } from '../../world/halloween/barracaDoWalter';
 import { fantasiarQuemEstaAqui } from './fantasiados';
 import { pocaDeLuz } from '../../world/furniture';
 import { ARI, RENAN } from '../../characters/cast';
@@ -91,6 +92,9 @@ const SEM_EVENTO: HalloweenNoParque = { enfeitado: false };
 
 /** a câmera de sempre vem de `+X/+Z`: virada para ela, a frente aparece */
 const PARA_A_CAMERA = Math.PI / 4;
+
+/** a barraquinha do Walter: o lado direito da praça da roda, entre o banco e a bilheteria */
+const BARRACA_DO_WALTER = { x: 8.6, z: -16.7, giro: -0.3 };
 
 export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): HalloweenNoParque {
   const g0 = w.game;
@@ -263,6 +267,63 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     abobora(b.position.x - 2.55, b.position.z + 1.5, 'grande', { raio: 0.62, giro: PARA_A_CAMERA + 0.2, cara: 'sorriso' });
     abobora(b.position.x - 1.9, b.position.z + 2.25, 'pequena', { cara: null, cor: P.aboboraCreme, simples: true });
   }
+  // ================================== a barraquinha de cachorro-quente do Walter
+  // Pedido do Renan: ela já está na praça da roda durante o evento, do lado
+  // oposto ao carrinho de poções do Noel. O Walter só chega com o ônibus da
+  // festa: no convite ela espera de pano de "FECHADO" no balcão, e na festa
+  // ela está aberta, acesa e com a chapa ligada.
+  const barraca = new BarracaDoWalter(deNoite);
+  {
+    const BW = BARRACA_DO_WALTER;
+    const noMundo = (lx: number, lz: number): { x: number; z: number } => ({
+      x: BW.x + Math.cos(BW.giro) * lx + Math.sin(BW.giro) * lz,
+      z: BW.z - Math.sin(BW.giro) * lx + Math.cos(BW.giro) * lz,
+    });
+    barraca.group.position.set(BW.x, 0, BW.z);
+    barraca.group.rotation.y = BW.giro;
+    w.add(fundir(barraca.group));
+    const c = noMundo(0, barraca.meio.z0);
+    w.blockBox(c.x, c.z, barraca.meio.x, barraca.meio.z, -BW.giro);
+    for (const ab of barraca.aboboras) {
+      const m = noMundo(ab.x, ab.z);
+      abobora(m.x, m.z, ab.tamanho ?? 'pequena', { y: ab.y, giro: (ab.giro ?? 0) + BW.giro, cara: ab.cara ?? null, cor: ab.cor, simples: ab.simples });
+    }
+    // os morceguinhos de papel embaixo do beiral e a teia no canto
+    for (const lx of [-0.75, 0, 0.75]) {
+      const m = noMundo(lx, 0.66);
+      pendurados.morcego(m.x, 2.12, m.z, BW.giro, 0.75);
+    }
+    {
+      const m = noMundo(-1.08, 0.5);
+      pendurados.teia(m.x, 1.9, m.z, BW.giro, 0.32, { aranha: true });
+    }
+    if (convite) {
+      const m = noMundo(0, BALCAO_DO_WALTER.frente);
+      // o pano só cobre a beira do balcão: atrás dela, a chapa e as cubas ficam vazias
+      unica(panoDeFechado(2.3, 0.1, 0.42), m.x, BALCAO_DO_WALTER.altura, m.z, BW.giro);
+    } else {
+      // o cordão de luzinhas na beira do toldo
+      const [a, b] = barraca.luzinhas.map((p) => { const m = noMundo(p.x, p.z); return new THREE.Vector3(m.x, p.y, m.z); });
+      pendurados.luzinhas(a, b, { barriga: 0.12 });
+      // e o recado do Walter pendurado na beira do toldo: ele foi buscar a
+      // turma de ônibus (a chegada é a cena do ônibus, §2.4.1 B)
+      const prego = noMundo(0.62, barraca.luzinhas[0].z - 0.01);
+      const recado = unica(plaquinhaDeRecado([RECADOS_DO_PARQUE.walterNaFesta], { modo: 'pendurada', largura: 0.5, altura: 0.36 }), prego.x, 2.12, prego.z, BW.giro);
+      recado.name = 'recado-do-walter';
+      const ler = noMundo(0.5, 1.45);
+      w.interact({
+        id: 'halloween:recado-Walter',
+        x: ler.x, z: ler.z, radius: 1.3,
+        label: 'Ler o recado', icon: '📝',
+        highlight: recado,
+        priority: 3,
+        onInteract: async (g) => {
+          await g.say([RECADOS_DO_PARQUE.walterNaFesta.texto.replace(/\n/g, ' ')], 'Walter');
+        },
+      });
+    }
+  }
+
   // o caldeirão no meio da praça (vazio de manhã; na festa ele enche)
   unica(caldeirao(), -3.6, 0, -13.9, 0.4);
   w.blockCircle(-3.6, -13.9, 0.42);
@@ -698,6 +759,7 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     pendurados.update(dt);
     naRoda.update(dt);
     nessie.update(dt);
+    barraca.update(dt);
     vento.update(dt);
     moverAboborasDaRoda();
     if (deNoite) {

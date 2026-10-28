@@ -1023,6 +1023,24 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   `PocaoBorbulhando` é a mesma ideia para encher um caldeirão qualquer: o
   disco aceso (miolo claro, beira escura), as bolhas que estufam e estouram
   e a luz verde no chão.
+- **A barraquinha de cachorro-quente do Walter** (`barracaDoWalter.ts`):
+  o molde de **barraca com balcão onde alguém trabalha ATRÁS** (o carrinho
+  do Noel é o de quem fica do lado). O toldo de duas águas é alto (beira
+  em 2,35) e o beiral da frente é curto (15 cm além do tampo): a regra do
+  posto pela conta da câmera. O que se lê de longe é o CACHORRO-QUENTE
+  GIGANTE na cumeeira (pão, salsicha, molhos em zigue-zague como tubos em
+  `CatmullRom`, carinha e faixa de múmia) e o painel pintado; o que se lê
+  de perto é o balcão inteiro — e de cima ele tem que caber por baixo do
+  toldo: chapa e cubas no fundo do tampo, bisnagas e prontos na beira. As
+  salsichas da chapa são um lote que ROLA (um quarto de volta de cada vez,
+  como alguém virando com a espátula); os grãos das cubas e a batata palha
+  são lotes com cor por cópia; o vidro do pote fica numa malha com nome.
+  `aberta = false` monta o balcão vazio (o convite), e a cena põe o pano de
+  "FECHADO" (`panoDeFechado`) só na BEIRA do tampo — puxado para trás, ele
+  atravessava a chapa. As tábuas pintadas trazem a cor no canvas
+  (`tabuasVermelhas`), como as do carrinho do Noel. O halo da lâmpada
+  embaixo do toldo fica pequeno (0,75): somado com as luzinhas da beira,
+  o maior estourava o toldo em branco.
 - **O canteiro de abóboras e a bacia de maçãs** (`pecasDaFesta.ts`): o
   canteiro diz ONDE as abóboras crescem (`aboboras`, no referencial dele) e
   a cena as põe no lote do parque — acesas e tremendo com as outras, sem

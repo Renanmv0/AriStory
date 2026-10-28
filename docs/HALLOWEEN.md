@@ -667,6 +667,29 @@ de recado somem. O clube e a escola continuam vazios (decisão do Renan).
 > quem está de capa de vampiro. **As falas são rascunhos** (em `naFesta.ts`,
 > a apresentação da fantasia na primeira vez e uma fala curta depois) —
 > o Renan troca o que quiser. Teste: `scripts/halloween.mjs SO=festa`.
+> **A barraquinha de cachorro-quente do Walter** (pedido do Renan: ela
+> já está no parque durante o evento, bem detalhada e bonita, e o Walter só
+> chega com o ônibus; `world/halloween/barracaDoWalter.ts`): no lado
+> direito da praça da roda, de frente para o carrinho do Noel, com o
+> caldeirão no meio — a praça vira o largo das comidas da festa. Uma
+> barraca de madeira vermelha com o friso creme num estradinho, o painel
+> pintado à mão ("Cachorro-quente do Walter", as patinhas e o "au!"), o
+> toldo de duas águas listrado de vermelho e creme com o lambrequim e os
+> pompons mostarda, e o **cachorro-quente gigante** na cumeeira, de
+> carinha e com as faixas de múmia (o Walter vem de múmia). No balcão: a
+> chapa de inox com as salsichas rolando e as **salsichas-múmia** de
+> olhinhos, o vapor, a espátula; as cubas de batata palha, milho, ervilha,
+> vinagrete e purê; as bisnagas; o porta-guardanapo; dois prontos na
+> barquinha xadrez; o pote de ossinhos; o sininho. Atrás, a lousa do
+> cardápio ("Simples, Completo, Duplo do Walter, Salsicha-múmia — só
+> hoje!"), e do lado a prateleirinha com a cesta de pães. No **convite**
+> ela espera fechada (o pano de "FECHADO" no balcão, a chapa vazia); na
+> **festa** está aberta e acesa (a lâmpada, as luzinhas, os morceguinhos e
+> a teia), com o recado dele pendurado: "Au! Au! (fui buscar a turma no
+> ônibus — a chapa já tá quente, volto já!)". Quando a cena do ônibus
+> existir, ele chega e o recado sai. O lugar dele fica atrás do balcão
+> (`posto`), com o toldo alto e o beiral curto para a cabeça aparecer.
+>
 > Medido na alameda, de noite: 419 -> 452 desenhos por quadro com os
 > postos (os bichos novos entram pelas beiradas do quadro; as peças vão
 > pela `fundir()` e o vidro e a bebida das poções em lote).
@@ -1435,6 +1458,12 @@ patinação voltam de noite, e o Gatito vem de fantasia engraçada; todos vêm,
 destravados ou não; o Walter some atrás da roda; e as luzes inteiras.
 
 ### Para as próximas partes
+
+0. **O Walter na festa**: ele ganhou a barraquinha de cachorro-quente
+   (pedido do Renan). Na decisão de antes, ele descia do ônibus e sumia
+   atrás da roda (a primeira dica do final). Com a barraca, ele fica nela
+   depois de chegar — e a dica do final continua (ele some de vez em
+   quando atrás da roda, a barraca com o "volto já"), ou sai?
 
 1. **As balas** (§5.3): 3 no doce, 1 a 5 na travessura, 10 abóboras
    escondidas, e a porta abrindo com 25 — estão bons?
