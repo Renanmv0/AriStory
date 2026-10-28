@@ -307,7 +307,16 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     const d = THREE.MathUtils.clamp(alto * 1.1 + 0.9, 1.9, 5.2);
     const para = new THREE.Vector3(b.x, Math.max(0, caixa.min.y) + alto * 0.58, b.z);
     const deOnde = girar(frente, -lado * 0.42).multiplyScalar(d);
-    return { para, de: new THREE.Vector3(b.x + deOnde.x, para.y + d * 0.36 + 0.12, b.z + deOnde.y) };
+    /*
+     * DE CIMA, O ALTO SE ACHATA: com a câmera a 2,6 m olhando para baixo, o
+     * Cookie (2,2 m de lençol) saiu da altura da dupla (1,7) na foto, e o
+     * Renan reparou. Quem é mais alto que a dupla é filmado quase na altura do
+     * olho, levemente de baixo — a diferença de tamanho aparece como é. Os
+     * pequenos continuam vistos um pouco de cima (senão as flores do
+     * gramado tapam).
+     */
+    const altura = alto > 1.9 ? Math.min(1.55, para.y + d * 0.1) : para.y + d * 0.36 + 0.12;
+    return { para, de: new THREE.Vector3(b.x + deOnde.x, altura, b.z + deOnde.y) };
   };
 
   /** quem está conversando agora (e onde ele parou, para o patrulheiro) */
