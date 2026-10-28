@@ -58,7 +58,7 @@ import { ARREMESSO, SOLTA_DO_ARREMESSO } from '../characters/CharacterRig';
 import { GeloDoRinque, Vento } from '../core/shaders';
 import { LuzesDosPostes } from '../world/mobiliarioDoParque';
 import { montarHalloweenNoParque } from '../eventos/halloween/noParque';
-import { noMeioDoEvento } from '../eventos/halloween/fase';
+import { festaNoParque, noMeioDoEvento } from '../eventos/halloween/fase';
 import { BeiraDoCaminho, beiraTorta, caixaRedonda, capsula, cascalho, disco as largo, mancha, retanguloRedondo, ruidoLiso, uniaoSuave, type Distancia } from '../world/caminhos';
 import { PoteDeVagaLumes, VagaLumesSoltos } from '../world/poteDeVagaLumes';
 import {
@@ -1698,7 +1698,8 @@ export const villaLobos: SceneDef = {
      * já esconderia o corpo a essa altura, mas a cabeça dele passa de 60 cm e
      * apareceria boiando no meio do lago como um brinquedo esquecido.
      */
-    const patoJaConhecido = g.flag('jean-luc-conhecido');
+    // na festa de Halloween ele vem de qualquer jeito (todos foram convidados)
+    const patoJaConhecido = g.flag('jean-luc-conhecido') || festaNoParque(g);
     if (patoJaConhecido) {
       jeanLuc.group.position.set(JEANLUC_POSTO.x, 0, JEANLUC_POSTO.z);
     } else {
@@ -4707,8 +4708,10 @@ export const villaLobos: SceneDef = {
      * dupla vier ao parque, a toalha já foi recolhida e as florzinhas voltam.
      */
     const lunaFoiPraEscola = g.flag('escola-aberta');
+    const naFestaDeHalloween = festaNoParque(g);
     w.onUpdate((dt) => {
-      const aqui = g.flag('jean-luc-batido') && !lunaFoiPraEscola;
+      // na festa de Halloween as três estão no piquenique, fantasiadas
+      const aqui = (g.flag('jean-luc-batido') && !lunaFoiPraEscola) || naFestaDeHalloween;
       if (aqui !== lunaNoParque) mostrarALuna(aqui);
       if (aqui) {
         luna.update(dt);
@@ -7774,7 +7777,7 @@ export const villaLobos: SceneDef = {
       pontoDeOnibus: { x: 35, z: 19 },
       sorveteria: SORVETERIA,
       postos: { mano: MANO, cookie: COOKIE, estella: ESTELLA },
-      piqueniqueDasCoelhinhas: g.flag('jean-luc-batido') && !g.flag('escola-aberta') ? PIQUENIQUE_DA_LUNA : null,
+      piqueniqueDasCoelhinhas: (g.flag('jean-luc-batido') && !g.flag('escola-aberta')) || festaNoParque(g) ? PIQUENIQUE_DA_LUNA : null,
       clareira: CLAREIRA,
       ausentes: [mano, cookie, estella, jeanLuc, luna, sol, estrella],
     });

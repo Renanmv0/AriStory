@@ -66,11 +66,24 @@ export function parqueEnfeitado(g: Pick<GameAPI, 'flag'>): boolean {
 }
 
 /**
- * Os personagens foram SE ARRUMAR (fase `convite`): o parque, o clube e a
- * escola ficam sem eles até a festa.
+ * Os personagens SAÍRAM DO POSTO de sempre: no `convite` foram se arrumar,
+ * e na festa (e no depois dela) estão todos no parque, fantasiados. O clube,
+ * o Mania, a estufa e a escola ficam sem eles do convite até a noite de sono
+ * (decisão do Renan: "o clube e a escola continuam vazios"). No parque, quem
+ * some é só no convite — na festa eles estão lá (`festaNoParque`).
  */
 export function quemFoiSeArrumar(g: Pick<GameAPI, 'flag'>): boolean {
-  return eventoLiberado() && faseDoHalloween(g) === 'convite';
+  return eventoLiberado() && noMeioDoEvento(g);
+}
+
+/**
+ * A noite da festa (e o depois dela): o parque de noite, aceso, com todo
+ * mundo nos postos da festa — inclusive quem o jogador ainda não destravou
+ * (decisão do Renan: "todos vêm, independente da situação").
+ */
+export function festaNoParque(g: Pick<GameAPI, 'flag'>): boolean {
+  const fase = faseDoHalloween(g);
+  return fase === 'festa' || fase === 'depois';
 }
 
 /**

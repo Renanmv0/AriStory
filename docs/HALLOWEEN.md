@@ -617,6 +617,57 @@ Cada personagem tem **uma fala de Halloween** nesta etapa (rascunhos
 fofos); a pergunta "doces ou travessuras?" entra na etapa 5. As plaquinhas
 de recado somem. O clube e a escola continuam vazios (decisão do Renan).
 
+> **Construída (a parte C, escondida atrás do `?halloween`).** Na fase
+> `festa` (e no `depois`) os postos são montados por cima do parque pronto
+> (`eventos/halloween/naFesta.ts`, chamado pelo `noParque.ts`): a **Gina** na
+> calçada do ponto de ônibus, na frente do abrigo; o **Capy** na beira do
+> lago, do lado do trapiche, com a **bacia de maçãs** (a tina de aduelas
+> com os dois arcos de ferro, as maçãs boiando e girando com a marolinha, a
+> toalha listrada na beira e o caixote de maçãs); o **Noel** andando do lado
+> do **carrinho de poções** na praça da roda, atrás do caldeirão grande, que
+> agora **borbulha verde** (a bebida acesa, as bolhas estufando e estourando,
+> o vapor e a luz verde no chão); a **Josefina** no **canteiro de abóboras**
+> do gramado (as tábuas com veio, a terra fofa, as ramas, as folhas em
+> concha, as gavinhas e a plaquinha "Abóboras da Josefina"; as abóboras dele
+> entram no lote do parque, acesas e tremendo junto com as outras); o
+> **Gatito** do lado do piquenique, as **três coelhinhas** no piquenique e o
+> **Jean-Luc** no posto dele, mesmo sem destravar; o **Flynn** dentro do
+> campinho de frisbee. A **Estella** fica na boutique (o xadrez fecha), os
+> **desafios** da arena estão suspensos (o recado volta ao quadro), e a roda,
+> o bilhete do Cookie e o sorvete funcionam de noite. O clube, o Mania, a
+> estufa e a escola ficam vazios do convite até a noite de sono (com os
+> recados de quem foi se arrumar). O Walter só aparece com o ônibus (parte B).
+>
+> **O carrinho de poções** (pedido do Renan: bem detalhado,
+> `world/halloween/carrinhoDePocoes.ts`): a caixa de tábua pintada de roxo
+> com estrelinhas e luas, o friso laranja, o painel da frente pintado à mão
+> (as poções do amor, da risada e da coragem, "feitas na hora!"), o
+> lambrequim recortado embaixo, as duas rodas de raio com o aro de ferro, os
+> pés e o puxador atrás; em cima, a escadinha de três degraus com 21 poções
+> em quatro feitios de vidro (a bebida acesa por dentro, a rolha ou a tampa
+> de vidro, a etiqueta, um halo pequeno na cor de cada uma) e três "da casa"
+> maiores no balcão, o suporte de tubos de ensaio, o livro de receitas aberto
+> ("Poção do riso: 1 pena de peru, 2 risadas…"), o pilão, e o **alambique**:
+> o balão borbulhando verde em cima do tripé, a lamparina de chama azul
+> tremendo, a serpentina de vidro descendo até o erlenmeyer que pinga roxo e
+> o vapor saindo do gargalo; por cima, o toldo listrado roxo e verde em arco,
+> o lambrequim de ondas com os pompons, os postes enrolados de fita, a placa
+> "Poções do Noel", os maços de erva seca e as duas lanternas de papel do
+> parque penduradas nas pontas; na frente, a lousa de cavalete em giz.
+>
+> **A conversa com zoom** (pedido do Renan: "ao falar com cada um, a câmera
+> dá um zoom, tipo uma cutscene, para ver as fantasias"): cada um tem um
+> "Falar com…" que anda com ele. A isométrica dá lugar a uma câmera de cena
+> que nasce no mesmo enquadramento e desliza até um três-quartos de frente
+> de quem fala, na altura do peito e na distância que a altura dele pede (a
+> Gina de longe, a Josefina de perto); quem fala vira para a câmera, a dupla
+> fica de lado (nunca entre ele e a câmera: a primeira versão deixava o
+> parceiro tapando o Noel), e no fim a câmera desliza de volta. O Cookie
+> emenda, ainda de perto, a conversa do bilhete de sempre; o Mano repara em
+> quem está de capa de vampiro. **As falas são rascunhos** (em `naFesta.ts`,
+> a apresentação da fantasia na primeira vez e uma fala curta depois) —
+> o Renan troca o que quiser. Teste: `scripts/halloween.mjs SO=festa`.
+
 #### D. As fantasias dos personagens
 
 O plano novo está no §3 (decisão do Renan): **uma fantasia só de cada
@@ -661,8 +712,8 @@ balança, costura aparente, feltro, textura de canvas onde for tecido.
 > corpo, pela cabeça e pelas pernas, as pontas soltas balançando, a
 > gravatinha e a bandeja de doces). Quem veste é uma chamada só,
 > `fantasiarQuemEstaAqui(w)` (`eventos/halloween/fantasiados.ts`), pela
-> etiqueta do bicho, em qualquer cena: até a parte C (os postos), eles
-> aparecem fantasiados onde moram — o clube e o Mania. Teste:
+> etiqueta do bicho, em qualquer cena; com a parte C, eles estão nos
+> postos da festa, no parque (o Walter, só com o ônibus). Teste:
 > `SO=fantasias`.
 
 > **Construída a leva da ESCOLA** (`world/halloween/fantasiasDaEscola.ts`):
@@ -691,8 +742,8 @@ balança, costura aparente, feltro, textura de canvas onde for tecido.
 > barra, as mangas bufantes com renda e uma rosa na cintura) e a Estrella
 > de VELUDO AZUL-NOITE (estrelas douradas e pó de brilho, o cinto dourado
 > com a estrela de broche, a saia de pétalas clarinhas por baixo do tule e
-> as mangas de tule com o punho aceso). As falas de fantasia moram em `fantasiados.ts`
-> (`FALAS_DE_FANTASIA`). Medido na alameda: 399 -> 419 desenhos por quadro
+> as mangas de tule com o punho aceso). As falas de fantasia moram nos
+> postos da festa (`eventos/halloween/naFesta.ts`). Medido na alameda: 399 -> 419 desenhos por quadro
 > com tudo aceso e fantasiado.
 
 #### E. O que funciona na festa
@@ -1372,7 +1423,7 @@ sua caixinha e sai inteiro vestido, e as fantasias ficam para sempre; o
 mapinha entra; a loja só funciona depois da cutscene; o Pelusa no pufe
 vinho, sem fala sobre ele.
 
-### A etapa 4 está fechada
+### A etapa 4 está fechada (as partes A, C e D construídas)
 
 Respondidas (§2.4.1): a câmera vai ao ônibus e cada um desce falando; o
 Mano de vampiro com o Ari, com fala própria; uma fantasia única para cada

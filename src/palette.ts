@@ -2284,6 +2284,32 @@ export const PALETTE = {
   fadaEstrela: 0xffe27a,
   fadaAsa: 0xd8edff,
   fadaBrilho: 0xbfe3ff,
+  /**
+   * O CARRINHO DE POÇÕES do Noel na festa: a madeira pintada de roxo (a
+   * tábua e a fresta), o friso laranja, a roda de madeira com o aro de ferro,
+   * o toldo listrado, a placa de lousa, o papel das etiquetas e as cores das
+   * poções; e o canteiro de abóboras da Josefina e a bacia de maçãs do Capy
+   */
+  carrinhoMadeira: 0x6a4685,
+  carrinhoMadeiraFunda: 0x45295a,
+  carrinhoFriso: 0xf2913a,
+  carrinhoRoda: 0x8a6440,
+  carrinhoFerro: 0x2f2a33,
+  placaDeLousa: 0x2b2f2c,
+  giz: 0xf6f1e4,
+  etiquetaDePocao: 0xf7eccd,
+  pocaoVerde: 0x8be04e,
+  pocaoRoxa: 0xb47cff,
+  pocaoRosa: 0xff6fb1,
+  pocaoAzul: 0x62d0ff,
+  pocaoLaranja: 0xffa94a,
+  ervaSeca: 0x9a8a4f,
+  terraDoCanteiro: 0x5a3e2b,
+  madeiraDoCanteiro: 0x9b7046,
+  folhaDeAbobora: 0x4f8f3e,
+  aguaDaBacia: 0x8fd0e8,
+  macaVermelha: 0xd8323d,
+  toalhaDoCapy: 0xf2f0e8,
   /** a noite da festa: o luar do lado da câmera, um tico lilás */
   luarDaFesta: 0xc4c8ff,
   /**

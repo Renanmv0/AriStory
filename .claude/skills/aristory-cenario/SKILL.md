@@ -757,6 +757,30 @@ de camada GRANDE, que enfeita uma cena inteira:
 - **Fala que dispara ao passar perto** (os comentários da dupla): uma vez
   por save (`flag`), e só com quem joga ANDANDO — parado, ele pode estar
   numa conversa, e um balão não pode cair por cima de outro.
+- **Quem vem de outro cenário para o evento** (a festa: a Gina, o Capy, o
+  Noel, a Josefina, o Gatito e o Flynn no parque) é montado pela camada com
+  a classe de sempre, numa área de posto (`eventos/halloween/naFesta.ts`), e
+  o cenário de origem fica vazio pela MESMA chamada do convite
+  (`quemFoiSeArrumar` vale do convite até a noite de sono). Quem já mora no
+  cenário e só aparece destravado (o Jean-Luc, as coelhinhas) ganha uma
+  linha na cena (`|| festaNoParque(g)`) — esconder dá para fazer de fora,
+  fazer aparecer não.
+- **A conversa com zoom** (a festa, pedido do Renan: ver as fantasias de
+  perto enquanto conversa): a isométrica dá lugar ao `setCameraOmbro`, que
+  NASCE no enquadramento dela (a perspectiva de 58° a ~11,7 m na direção da
+  isométrica enquadra o mesmo que o `setZoom(13)`) e desliza até um
+  três-quartos de frente de quem fala, pelo relógio do jogo
+  (`w.onUpdate`). Três regras que a foto ensinou: **quem fala vira para a
+  câmera**, e não para a dupla (virado para a dupla, a câmera via o leque do
+  Noel por trás); **a dupla é posta DE LADO** (`releasePlayer`/
+  `releaseCompanion`, cada um olhando para ele) — onde ela estava, o
+  parceiro tapava o Noel; e a **distância sai da altura medida** (a caixa do
+  bicho com a fantasia: a Gina de longe, a Josefina de perto, a câmera um
+  pouco mais alta para os pequenos não ficarem atrás das flores). Quem a
+  cena leva de um lado para o outro (o Cookie) não sai do serviço: a
+  conversa só o segura parado (`seguir` para onde ele parou, num `onUpdate`
+  registrado depois do da cena). E a conversa de sempre pode EMENDAR ainda de
+  perto (`interactable.trigger(g)`: o bilhete do Cookie).
 - **O teste da volta mede cena por cena** contra o ponto de volta: com o
   commit de antes do evento num `git worktree`, as mesmas cenas com o save
   zerado dão as mesmas malhas (`MALHAS_ANTES` no `halloween.mjs`).

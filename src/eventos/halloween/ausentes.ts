@@ -8,12 +8,14 @@ import { fantasiarQuemEstaAqui } from './fantasiados';
 /*
  * QUEM FOI SE ARRUMAR (`docs/HALLOWEEN.md`, §4.1): na fase `convite` os
  * personagens não estão no parque, no clube nem na escola — e no posto de
- * cada um fica uma plaquinha de recado, que dá para ler.
+ * cada um fica uma plaquinha de recado, que dá para ler. Na festa (§2.4.1,
+ * C) o clube, o Mania, a estufa e a escola continuam assim: estão todos no
+ * parque (o parque chama esta função só no convite).
  *
  * É CAMADA (§8.3): o personagem continua sendo montado pela cena do jeito de
  * sempre, com o mesmo código. Esta chamada, no fim da cena, só o ESCONDE
  * (e cala) e desliga as conversas dele, a cada quadro — depois de tudo o que
- * a cena liga e desliga sozinha. Sem o `?halloween`, ou fora do `convite`,
+ * a cena liga e desliga sozinha. Sem o `?halloween`, ou fora do evento,
  * ela não faz nada.
  */
 
@@ -56,9 +58,11 @@ export interface QuemSaiu {
 export { quemFoiSeArrumar };
 
 export function ausentarNaCena(w: WorldBuilder, quem: QuemSaiu): boolean {
-  // na festa, quem está aqui está fantasiado (a mesma chamada do fim da cena)
-  fantasiarQuemEstaAqui(w);
-  if (!quemFoiSeArrumar(w.game)) return false;
+  if (!quemFoiSeArrumar(w.game)) {
+    // quem está aqui na festa está fantasiado (a mesma chamada do fim da cena)
+    fantasiarQuemEstaAqui(w);
+    return false;
+  }
   const bichos = (quem.bichos ?? []).filter((b): b is Ausente => !!b);
   const ids = quem.interacoes ?? [];
   const desliga = (id: string | undefined): boolean =>

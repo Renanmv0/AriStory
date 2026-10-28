@@ -20,6 +20,15 @@
  *             dupla saindo inteira fantasiada (o Ari de vampiro, o Renan de
  *             morceguinho), a cestinha e o mapinha, a memória, a loja
  *             voltando a funcionar — e o mapinha lido pela mão
+ *   SO=fantasias as fantasias de quem veio do clube e da escola, no parque
+ *   SO=festa  a etapa 4.3: os postos da festa (a Gina no ponto, o Capy e a
+ *             bacia de maçãs, o Noel e o carrinho de poções, a Josefina e o
+ *             canteiro, o Gatito no piquenique, o Flynn no campinho), o que
+ *             mexe (as bolhas, o vapor, a gota, as maçãs), o que fecha e o que
+ *             funciona de noite, e a CONVERSA COM ZOOM de cada um (a câmera
+ *             perto, ele no meio do quadro e virado para ela, a dupla de lado,
+ *             a fala da fantasia, e a isométrica de volta) — e o clube, o
+ *             Mania, a estufa e a escola vazios
  *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre, nenhuma peça do evento, e a
  *             casa, o parque, o clube, a escola, a estufa, o Mania e o quarto
@@ -687,7 +696,7 @@ if (roda('noite')) {
 
 // ================================================================= fantasias
 if (roda('fantasias')) {
-  console.log('\nfantasias: na festa, cada personagem do clube com a sua (§3)');
+  console.log('\nfantasias: na festa, quem veio do clube e da escola, fantasiado no parque (§3)');
   const fantasiasNaCena = () => j(() => {
     const n = {};
     window.jogo.scene.traverse((o) => { if (/^fantasia-/.test(o.name)) n[o.name] = (n[o.name] ?? 0) + 1; });
@@ -697,10 +706,17 @@ if (roda('fantasias')) {
   await naFaseConvite('clube');
   const deTarde = await fantasiasNaCena();
   ok(Object.keys(deTarde).length === 0, `no convite ninguém está fantasiado no clube (${JSON.stringify(deTarde)})`);
-  await naFaseConvite('clube', ['halloween:festa']);
-  const noClube = await fantasiasNaCena();
-  for (const [nome, quem] of [['fantasia-de-noiva', 'a Gina de noiva do Frankenstein'], ['fantasia-de-tubarao', 'o Capy de tubarão'], ['fantasia-de-cientista', 'o Noel de cientista maluco'], ['fantasia-de-dragao', 'a Josefina de dragãozinho']]) {
-    ok(noClube[nome] === 1, `${quem} (${noClube[nome] ?? 0})`);
+  // na festa, todos no parque (sem precisar destravar nada: todos foram convidados)
+  await naFaseConvite('villa-lobos', ['halloween:festa']);
+  const noParque = await fantasiasNaCena();
+  for (const [nome, quem] of [
+    ['fantasia-de-noiva', 'a Gina de noiva do Frankenstein'], ['fantasia-de-tubarao', 'o Capy de tubarão'],
+    ['fantasia-de-cientista', 'o Noel de cientista maluco'], ['fantasia-de-dragao', 'a Josefina de dragãozinho'],
+    ['fantasia-de-walter', 'o Gatito de Walter'], ['fantasia-de-lobisomem', 'o Flynn de lobisomem'],
+    ['fantasia-de-coruja', 'a Luna de coruja'], ['fantasia-de-catrina', 'a Sol de catrina'], ['fantasia-de-fada', 'a Estrella de fadinha'],
+    ['fantasia-da-opera', 'o Jean-Luc da ópera (antes das cinco vitórias)'],
+  ]) {
+    ok(noParque[nome] === 1, `${quem} (${noParque[nome] ?? 0})`);
   }
   const escondidos = await j(() => {
     const g = window.jogo;
@@ -713,38 +729,147 @@ if (roda('fantasias')) {
     return { quepe, viseira };
   });
   ok(escondidos.quepe === false && escondidos.viseira === false, `o quepe da Gina e a viseira do Noel ficam guardados (${JSON.stringify(escondidos)})`);
-  await page.screenshot({ path: `${OUT}-fantasias-clube.png` });
-  await naFaseConvite('mania-de-churrasco', ['halloween:festa']);
-  const noMania = await fantasiasNaCena();
-  const doces = await j(() => !!window.jogo.scene.getObjectByName('doces-da-bandeja'));
-  ok(noMania['fantasia-de-mumia'] === 1 && doces, `o Walter de múmia garçom, com os doces na bandeja (${JSON.stringify(noMania)})`);
-  // a escola: o Gatito de Walter, o Flynn lobisomem e a Luna coruja
-  await naFaseConvite('escola', ['halloween:festa']);
-  const naEscola = await fantasiasNaCena();
-  ok(naEscola['fantasia-de-walter'] === 1, `o Gatito de Walter (${naEscola['fantasia-de-walter'] ?? 0})`);
-  ok(naEscola['fantasia-de-lobisomem'] === 1, `o Flynn de lobisomem (${naEscola['fantasia-de-lobisomem'] ?? 0})`);
-  // a fala do Gatito: ele conta que veio de Walter
-  await j(() => {
-    const g = window.jogo;
-    let gatito = null;
-    g.current.world.root.traverse((o) => { if (o.userData?.peca === 'gatito' && o.userData.bicho) gatito = o.userData.bicho; });
-    g.debugPlace(gatito.x + 0.3, gatito.z + 0.8, Math.PI);
+}
+
+// ===================================================================== festa
+if (roda('festa')) {
+  console.log('\nfesta: os postos da festa e a conversa com a câmera de perto (§2.4.1, C)');
+  await naFaseConvite('villa-lobos', ['halloween:festa']);
+  /** cada bicho: onde está, se está à vista */
+  const ondeEsta = () => j(() => {
+    const lista = {};
+    window.jogo.current.world.root.traverse((o) => {
+      if (o.userData?.bicho && o.userData.bicho.group === o) lista[o.userData.peca] = { x: +o.position.x.toFixed(2), z: +o.position.z.toFixed(2), v: o.visible };
+    });
+    return lista;
   });
-  await espera(1500);
-  const promptDoGatito = await j(() => document.querySelector('.prompt .label')?.textContent ?? '');
-  ok(/Falar com o Gatito/.test(promptDoGatito), `o ponto da fala do Gatito (${promptDoGatito})`);
-  await page.keyboard.press('KeyE');
-  await espera(800);
-  await passarFalas(2);
-  await page.waitForFunction(() => /Walter/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 20000 }).catch(() => {});
-  const falaDoGatito = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
-  ok(/vim de Walter/.test(falaDoGatito), `o Gatito conta que veio de Walter (${falaDoGatito.slice(0, 70)})`);
-  await passarFalas();
-  // o piquenique das coelhinhas no parque: a Luna coruja, a Sol catrina e a Estrella fadinha
-  await naFaseConvite('villa-lobos', ['halloween:festa', 'jean-luc-batido']);
-  const noPiquenique = await fantasiasNaCena();
-  for (const [nome, quem] of [['fantasia-de-coruja', 'a Luna de coruja'], ['fantasia-de-catrina', 'a Sol de catrina'], ['fantasia-de-fada', 'a Estrella de fadinha']]) {
-    ok(noPiquenique[nome] === 1, `${quem} (${noPiquenique[nome] ?? 0})`);
+  const bichos = await ondeEsta();
+  const POSTOS = { girafa: [34.5, 23.6], gatito: [-22.35, -26.35], flynn: [10.5, 2.0], josefina: [-16.6, -17.5] };
+  for (const [peca, [x, z]] of Object.entries(POSTOS)) {
+    const b = bichos[peca];
+    ok(!!b && b.v && Math.hypot(b.x - x, b.z - z) < 0.6, `${peca} no posto da festa (${JSON.stringify(b)})`);
+  }
+  ok(bichos.noel?.v && Math.hypot(bichos.noel.x + 3.2, bichos.noel.z + 16.7) < 1.2, `o Noel do lado do carrinho (${JSON.stringify(bichos.noel)})`);
+  ok(bichos.capy?.v === true, 'o Capy na beira do lago');
+  ok(bichos['jean-luc']?.v === true && bichos.luna?.v && bichos.sol?.v && bichos.estrella?.v, 'o Jean-Luc e as três coelhinhas vieram (sem destravar nada)');
+  ok(bichos.estella?.v === false, 'a Estella não está no xadrez (ficou na boutique)');
+  const pecas = await j(() => {
+    const n = {};
+    window.jogo.scene.traverse((o) => { if (o.userData?.peca) n[o.userData.peca] = (n[o.userData.peca] ?? 0) + 1; });
+    return { carrinho: n['carrinho-de-pocoes'] ?? 0, lousa: n['cavalete-de-pocoes'] ?? 0, canteiro: n['canteiro-de-aboboras'] ?? 0, bacia: n['bacia-de-macas'] ?? 0, pocao: !!window.jogo.scene.getObjectByName('pocao-borbulhando') };
+  });
+  ok(pecas.carrinho === 1 && pecas.lousa === 1 && pecas.canteiro === 1 && pecas.bacia === 1 && pecas.pocao,
+    `o carrinho de poções, a lousa, o canteiro, a bacia e o caldeirão borbulhando (${JSON.stringify(pecas)})`);
+  // o que mexe: as bolhas do balão, a gota, o vapor do caldeirão e as maçãs boiando
+  const vivo = () => j(() => {
+    const s = window.jogo.scene;
+    const m = new s.matrix.constructor();
+    const ler = (nome, i = 0) => { const im = s.getObjectByName(nome); im.getMatrixAt(i, m); return m.elements[13]; };
+    return { bolha: ler('bolhas-do-balao'), vapor: ler('vapor-da-pocao'), maca: ler('macas'), gota: s.getObjectByName('gota-do-alambique').position.y };
+  });
+  const v1 = await vivo();
+  await espera(900);
+  const v2 = await vivo();
+  ok(['bolha', 'vapor', 'maca', 'gota'].every((k) => Math.abs(v1[k] - v2[k]) > 1e-4), `as bolhas sobem, o vapor sai, a gota pinga e as maçãs boiam (${JSON.stringify({ v1, v2 })})`);
+  const it = await interacoes();
+  const fechadas = ['parque:estella', 'parque:xadrez', 'parque:inscricoes', 'parque:jean-luc', 'parque:luna', 'parque:sol', 'parque:estrella'];
+  ok(fechadas.every((x) => it[x] === false), `a Estella, o xadrez, os desafios e as conversas de sempre fechados (${fechadas.map((x) => `${x}=${it[x]}`).join(' ')})`);
+  ok(it['parque:cookie'] !== false && it['parque:roda-gigante'] !== false && it['parque:sorveteria'] !== false, 'a roda, o bilhete e o sorvete funcionam de noite');
+  const festa = Object.keys(it).filter((x) => x.startsWith('halloween:festa-'));
+  ok(festa.length === 12, `cada convidado com o seu "Falar com…" (${festa.length}: ${festa.map((x) => x.slice(16)).join(', ')})`);
+  ok(it['halloween:recado-Recado'] === true, 'o recado dos desafios suspensos no quadro da arena');
+
+  /** conversa com um convidado e mede a tomada de cena; devolve o primeiro balão */
+  const conversar = async (peca, foto) => {
+    await j((peca) => {
+      const g = window.jogo;
+      let b = null;
+      g.current.world.root.traverse((o) => { if (!b && o.userData?.peca === peca && o.userData.bicho) b = o.userData.bicho; });
+      const ponto = g.current.world.interactables.find((i) => i.id === `halloween:festa-${peca}`);
+      const r = Math.min(0.9, ponto.radius * 0.7);
+      g.debugPlace(b.x + r * 0.7, b.z + r * 0.7, Math.PI * 1.25);
+    }, peca);
+    await espera(1200);
+    const prompt = await j(() => document.querySelector('.prompt .label')?.textContent ?? '');
+    await page.keyboard.press('KeyE');
+    // as falas só começam com a câmera no lugar (e o navegador do teste anda devagar)
+    await page.waitForFunction(() => !!document.querySelector('.dialogue.show'), null, { timeout: 120000 }).catch(() => {});
+    await espera(1500);
+    const tomada = await j((peca) => {
+      const g = window.jogo;
+      let b = null;
+      g.current.world.root.traverse((o) => { if (!b && o.userData?.peca === peca && o.userData.bicho) b = o.userData.bicho; });
+      const cam = g.cameraDeCena();
+      if (!cam) return null;
+      // quem fala no quadro (perto do meio) e a câmera perto dele
+      const p = b.group.position.clone();
+      p.y += 0.5;
+      const ndc = p.clone().project(cam);
+      const eu = g.playerPosition();
+      const ate = Math.atan2(cam.position.x - b.x, cam.position.z - b.z);
+      let d = ate - b.group.rotation.y;
+      while (d > Math.PI) d -= 2 * Math.PI;
+      while (d < -Math.PI) d += 2 * Math.PI;
+      // a dupla não fica entre a câmera e ele
+      const cx = cam.position.x - b.x;
+      const cz = cam.position.z - b.z;
+      const t = ((eu.x - b.x) * cx + (eu.z - b.z) * cz) / (cx * cx + cz * cz);
+      const longeDaLinha = Math.hypot(eu.x - b.x - t * cx, eu.z - b.z - t * cz);
+      return { dist: +Math.hypot(cx, cz).toFixed(2), ndc: [+ndc.x.toFixed(2), +ndc.y.toFixed(2)], viraPraCamera: +Math.abs(d).toFixed(2), longeDaLinha: +longeDaLinha.toFixed(2), travado: g.player.locked };
+    }, peca);
+    const balao = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
+    if (foto) await page.screenshot({ path: `${OUT}-festa-${foto}.png` });
+    // até a câmera voltar: passa os balões, recusa as perguntas, e espera as pausas entre um e outro
+    for (let i = 0; i < 400 && (await j(() => !!window.jogo.cameraDeCena())); i++) {
+      if (await j(() => !!document.querySelector('.escolhas.show'))) await page.keyboard.press('Escape');
+      else if (await j(() => !!document.querySelector('.dialogue.show'))) await page.keyboard.press('KeyE');
+      await espera(400);
+    }
+    const depois = await j(() => ({ cam: !!window.jogo.cameraDeCena(), travado: window.jogo.player.locked }));
+    return { prompt, tomada, balao, depois };
+  };
+  const QUEM = [
+    ['noel', 'Falar com o Noel', /BOA NOITE/, 'noel'],
+    ['girafa', 'Falar com a Gina', /mais alta da festa/, 'gina'],
+    ['capy', 'Falar com o Capy', /Tum-tum/, 'capy'],
+    ['josefina', 'Falar com a Josefina', /dragão/, 'josefina'],
+    ['gatito', 'Falar com o Gatito', /Au/, 'gatito'],
+    ['flynn', 'Falar com o Flynn', /Lobisomem/, 'flynn'],
+    ['jean-luc', 'Falar com o Jean-Luc', /Fantôme/, 'jeanluc'],
+    ['luna', 'Falar com a Luna', /coruja/, 'luna'],
+  ];
+  for (const [peca, rotulo, fala, foto] of QUEM) {
+    const r = await conversar(peca, foto);
+    const t = r.tomada;
+    ok(r.prompt === rotulo, `${peca}: o ponto "${rotulo}" (${r.prompt})`);
+    ok(!!t && t.travado && t.dist < 6 && Math.abs(t.ndc[0]) < 0.6 && Math.abs(t.ndc[1]) < 0.7,
+      `${peca}: a câmera chega perto e ele fica no meio do quadro (${JSON.stringify(t)})`);
+    ok(!!t && t.longeDaLinha > 0.35, `${peca}: a dupla não tapa quem fala (${t?.longeDaLinha})`);
+    if (!/luna/.test(peca)) ok(!!t && t.viraPraCamera < 0.9, `${peca}: virado para a câmera (${t?.viraPraCamera})`);
+    ok(fala.test(r.balao), `${peca}: a fala da fantasia (${r.balao.slice(0, 60)})`);
+    ok(!r.depois.cam && !r.depois.travado, `${peca}: no fim a isométrica volta e a dupla anda`);
+  }
+  // o Mano repara no vampiro (o Ari de capa) e o Gatito conta que veio de Walter
+  await j(() => window.jogo.equipWearable(window.aristoryItens['capa-de-vampiro'], 'ari'));
+  const mano = await conversar('mano', 'mano');
+  ok(/Outro vampiro/.test(mano.balao) && /Ari/.test(mano.balao), `o Mano repara no outro vampiro (${mano.balao.slice(0, 60)})`);
+  // o Cookie: a fantasia e, ainda de perto, o bilhete de sempre
+  const cookie = await conversar('cookie', 'cookie');
+  ok(/Buu/.test(cookie.balao) && !cookie.depois.cam && !cookie.depois.travado, `o Cookie de lençol, e a conversa do bilhete emenda (${cookie.balao.slice(0, 40)})`);
+  // a segunda conversa é curta
+  const deNovo = await conversar('noel');
+  ok(!/BOA NOITE/.test(deNovo.balao) && deNovo.balao.length > 5, `na segunda vez, uma fala curta (${deNovo.balao.slice(0, 60)})`);
+  // as fotos de longe dos postos
+  for (const [nome, x, z, zoom] of [['carrinho', -2.6, -14.4, 8], ['canteiro', -16.4, -16.2, 8], ['lago', -11.4, 17.8, 9], ['ponto', 35.2, 25.2, 9], ['piquenique', -22.6, -25.6, 8], ['campinho', 11.4, 3.6, 9]]) {
+    await j(([x, z, zoom]) => { window.jogo.debugPlace(x, z, Math.PI / 4); window.jogo.setZoom(zoom); }, [x, z, zoom]);
+    await espera(1600);
+    await page.screenshot({ path: `${OUT}-festa-longe-${nome}.png` });
+  }
+  // o clube, o Mania, a estufa e a escola ficam vazios na festa (estão todos no parque)
+  for (const [cena, sumidos] of [['clube', ['girafa', 'capy', 'josefina', 'noel']], ['mania-de-churrasco', ['garcom-canino']], ['estufa', ['josefina']], ['escola', ['gatito']]]) {
+    await naFaseConvite(cena, ['halloween:festa', 'estufa-aberta']);
+    const b = await bichosNaCena();
+    ok(sumidos.every((x) => b[x] === false), `${cena}: vazio na festa (${JSON.stringify(b)})`);
   }
 }
 
