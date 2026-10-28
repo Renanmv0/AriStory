@@ -695,7 +695,8 @@ de recado somem. O clube e a escola continuam vazios (decisão do Renan).
 > (`posto`), com o toldo alto e o beiral curto para a cabeça aparecer.
 > As miudezas de cor lisa viram uma malha só com a cor nos vértices
 > (`juntarPorCor`, agora no `world/fundir.ts`): 56 -> 25 malhas, a mesma
-> imagem.
+> imagem. Medido mostrando e escondendo a barraca na mesma página: na
+> alameda 398 -> 402 desenhos por quadro, e de perto dela +24 a +51.
 >
 > Medido na alameda, de noite: 419 -> 452 desenhos por quadro com os
 > postos (os bichos novos entram pelas beiradas do quadro; as peças vão
