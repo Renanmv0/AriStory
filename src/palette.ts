@@ -2196,6 +2196,25 @@ export const PALETTE = {
   /** os morcegos que voam em volta da roda: o corpo e a asa (roxo quase preto) */
   morcegoVoando: 0x2f2440,
   morcegoAsa: 0x3f3058,
+  /**
+   * AS FANTASIAS DO PARQUE na festa (§3): o Jean-Luc de Fantasma da Ópera (a
+   * máscara de porcelana, a capa de ópera preta com forro vinho, a cartolinha
+   * e a rosa no bico), os patos de diabinho (os chifrinhos, a tiara e a
+   * capinha) e o laço na tromba do Cookie
+   */
+  mascaraDaOpera: 0xefe8f7,
+  mascaraDaOperaSombra: 0x6e6680,
+  capaDaOpera: 0x221d29,
+  forroDaOpera: 0x7d1f3a,
+  cartolaDaOpera: 0x1e1a23,
+  rosaDaOpera: 0xd42a45,
+  rosaDaOperaFunda: 0x9e1830,
+  folhaDaRosa: 0x3f7d43,
+  chifreDeDiabinho: 0xe23a44,
+  tiaraDeDiabinho: 0x2c2433,
+  capinhaDeDiabinho: 0xd8343f,
+  lacoDoCookie: 0xf2913a,
+  lacoDoCookieFundo: 0xcf6f1c,
   /** a noite da festa: o luar do lado da câmera, um tico lilás */
   luarDaFesta: 0xc4c8ff,
   /**

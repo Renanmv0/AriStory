@@ -403,6 +403,22 @@ grupo no mundo — a pose do bicho continua a dele. O Pelusa dormindo usa o
 `pelusa.update(dt)` (a pose do gato os deixa meio abertos). Cuidado de
 câmera: o rabo deitado para trás aparece "para cima" na tela isométrica.
 
+**As fantasias da festa** (`world/halloween/fantasiasDoParque.ts`) seguem
+o mesmo molde, e deixaram três truques:
+
+- **o que fica por baixo só fica invisível** (o chapéu do Mano, o corpo do
+  Cookie debaixo do lençol, a boina do Jean-Luc): achado pelo nome ou pela
+  posição (`filhoEm`), nada apagado;
+- **lençol sobre bicho** (`lencolSobre`): a cúpula segue a casca da UNIÃO de
+  elipsoides (um raio saindo do centro até a casca mais longe, mais a folga
+  do pano) e da borda o pano cai reto até a barra, mais curta na frente. O
+  que mexe separado leva pano separado: o capuz do Cookie é da CABEÇA (ela
+  sobe quando ele sonha), o lençol é do corpo, e a barra do capuz desce por
+  cima da emenda;
+- **acessório branco em bicho branco some**: a máscara do Jean-Luc só se lê
+  pelo contorno escuro (um tubo na borda do pedaço de esfera) e pelo aro do
+  olho.
+
 ## A cor da fala (todo bicho que fala tem a sua)
 
 Sugestão do Ari: quando um personagem fala, a etiqueta do nome e o pontilhado

@@ -137,7 +137,7 @@ if (roda('volta')) {
     const camada = await j(() => {
       let achou = false;
       window.jogo.scene.traverse((o) => {
-        if (['halloween-no-parque', 'halloween-na-boutique', 'fantasia-de-aranha'].includes(o.name) || o.userData?.peca === 'plaquinha-de-recado') achou = true;
+        if (['halloween-no-parque', 'halloween-na-boutique', 'fantasia-de-aranha', 'fantasia-de-vampiro', 'fantasia-de-fantasma', 'fantasia-da-opera', 'fantasia-de-diabinho'].includes(o.name) || o.userData?.peca === 'plaquinha-de-recado') achou = true;
       });
       return achou;
     });
@@ -611,6 +611,8 @@ if (roda('noite')) {
   // a fase `convite`: o pôr do sol, e nada aceso
   await naFaseConvite('villa-lobos');
   const deTarde = await acesos();
+  const fantasiasDeTarde = await j(() => { let n = 0; window.jogo.scene.traverse((o) => { if (/^fantasia-(de-vampiro|de-fantasma|da-opera|de-diabinho)$/.test(o.name)) n++; }); return n; });
+  ok(fantasiasDeTarde === 0, `no convite ninguém está fantasiado ainda (${fantasiasDeTarde})`);
   ok(deTarde.caras === 0 && deTarde.halos === 0 && deTarde.luzinhas === 0 && deTarde.morcegos === 0 && deTarde.nessie === 0,
     `no convite (pôr do sol) nada acende (${JSON.stringify(deTarde)})`);
   const medir = async () => {
@@ -627,6 +629,36 @@ if (roda('noite')) {
   ok(deNoite.lanternas === 1 && deNoite.luzinhas === 1 && deNoite.lampadinhas === 1, `as lanternas e os varais de luzinha acesos (${JSON.stringify({ l: deNoite.lanternas, z: deNoite.luzinhas, b: deNoite.lampadinhas })})`);
   ok(deNoite.nessie === 1, 'o Nessie aceso, com a poça na água');
   ok(deNoite.noiteDosPostes === 1 && deNoite.corDosPostes === 0xffa64d, `as luzes dos postes de noite e cor de vela (${deNoite.noiteDosPostes}, #${deNoite.corDosPostes.toString(16)})`);
+  // as fantasias do parque (§3): cada um a sua, e só na festa
+  const fantasias = await j(() => {
+    const g = window.jogo;
+    const n = {};
+    g.scene.traverse((o) => { if (/^fantasia-/.test(o.name)) n[o.name] = (n[o.name] ?? 0) + 1; });
+    const chapeu = g.scene.getObjectByName('chapeu-do-mano');
+    const lencol = g.scene.getObjectByName('lencol-do-cookie');
+    return { n, chapeuEscondido: chapeu ? !chapeu.visible : null, lencol: !!lencol };
+  });
+  ok(fantasias.n['fantasia-de-vampiro'] === 1 && fantasias.chapeuEscondido === true, `o Mano de vampiro, sem o chapéu de casquinha (${JSON.stringify(fantasias)})`);
+  ok(fantasias.n['fantasia-de-fantasma'] === 1 && fantasias.lencol, 'o Cookie de fantasma de lençol');
+  ok(fantasias.n['fantasia-da-opera'] === 1, 'o Jean-Luc de Fantasma da Ópera');
+  ok((fantasias.n['fantasia-de-diabinho'] ?? 0) >= 4, `os patos de diabinho (${fantasias.n['fantasia-de-diabinho'] ?? 0})`);
+  // a fala do Mano: com o Ari de capa de vampiro, ele repara
+  await j(() => {
+    const g = window.jogo;
+    g.equipWearable(window.aristoryItens['capa-de-vampiro'], 'ari');
+    let mano = null;
+    g.current.world.root.traverse((o) => { if (o.userData?.peca === 'mano' && o.userData.bicho) mano = o.userData.bicho; });
+    g.debugPlace(mano.x + 0.2, mano.z + 0.75, Math.PI);
+  });
+  await espera(1500);
+  const promptDoMano = await j(() => document.querySelector('.prompt .label')?.textContent ?? '');
+  ok(/Falar com o Mano/.test(promptDoMano), `o ponto da fala do Mano vampiro (${promptDoMano})`);
+  await page.keyboard.press('KeyE');
+  // o balão digita letra por letra (e o navegador do teste anda devagar)
+  await page.waitForFunction(() => /Outro vampiro/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 20000 }).catch(() => {});
+  const falaDoMano = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
+  ok(/Outro vampiro/.test(falaDoMano) && /Ari/.test(falaDoMano), `o Mano repara no outro vampiro (${falaDoMano.slice(0, 80)})`);
+  await passarFalas();
   // a chama treme e os morcegos voam
   const quadro = () => j(() => {
     const g = window.jogo;
