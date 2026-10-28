@@ -581,6 +581,76 @@ if (roda('boutique')) {
   await page.keyboard.press('Escape');
 }
 
+// ===================================================================== noite
+if (roda('noite')) {
+  console.log('\nnoite: a festa é de noite, e o parque inteiro acende (§2.4.1, A)');
+  /** o que acende, achado pelo nome */
+  const acesos = () => j(() => {
+    const g = window.jogo;
+    const nomes = {};
+    g.scene.traverse((o) => { if (o.name) nomes[o.name] = (nomes[o.name] ?? 0) + 1; });
+    const caras = Object.keys(nomes).filter((n) => /^cara-.*-acesa$/.test(n)).length;
+    const fundo = g.scene.background;
+    const luzes = g.scene.getObjectByName('luzes-dos-postes');
+    const pontos = [];
+    luzes?.traverse((o) => { if (o.isPointLight) pontos.push(o.color.getHex()); });
+    return {
+      caras,
+      halos: nomes['halos-das-aboboras'] ?? 0,
+      pocas: nomes['luz-das-aboboras'] ?? 0,
+      lanternas: nomes['luz-das-lanternas'] ?? 0,
+      luzinhas: nomes['luz-das-luzinhas'] ?? 0,
+      lampadinhas: nomes.lampadinhas ?? 0,
+      morcegos: nomes['morcegos-voando'] ?? 0,
+      nessie: nomes['luz-do-nessie'] ?? 0,
+      fundo: fundo?.isColor ? (fundo.r + fundo.g + fundo.b) / 3 : 1,
+      noiteDosPostes: luzes?.userData?.luzes?.noite ?? -1,
+      corDosPostes: pontos[0] ?? 0,
+    };
+  });
+  // a fase `convite`: o pôr do sol, e nada aceso
+  await naFaseConvite('villa-lobos');
+  const deTarde = await acesos();
+  ok(deTarde.caras === 0 && deTarde.halos === 0 && deTarde.luzinhas === 0 && deTarde.morcegos === 0 && deTarde.nessie === 0,
+    `no convite (pôr do sol) nada acende (${JSON.stringify(deTarde)})`);
+  const medir = async () => {
+    await j(() => { window.jogo.debugPlace(0, 6, Math.PI / 4); window.jogo.setZoom(13); });
+    await espera(1500);
+    return j(() => window.jogo.renderer.info.render.calls);
+  };
+  const desenhosDeTarde = await medir();
+  // a fase `festa`
+  await naFaseConvite('villa-lobos', ['halloween:festa']);
+  const deNoite = await acesos();
+  ok(deNoite.fundo < 0.2, `o céu é de noite (claridade do fundo ${deNoite.fundo.toFixed(2)})`);
+  ok(deNoite.caras > 0 && deNoite.halos >= 2 && deNoite.pocas >= 1, `as abóboras acesas: a cara, o halo e a poça (${deNoite.caras} caras, ${deNoite.halos} lotes de halo, ${deNoite.pocas} de poça)`);
+  ok(deNoite.lanternas === 1 && deNoite.luzinhas === 1 && deNoite.lampadinhas === 1, `as lanternas e os varais de luzinha acesos (${JSON.stringify({ l: deNoite.lanternas, z: deNoite.luzinhas, b: deNoite.lampadinhas })})`);
+  ok(deNoite.nessie === 1, 'o Nessie aceso, com a poça na água');
+  ok(deNoite.noiteDosPostes === 1 && deNoite.corDosPostes === 0xffa64d, `as luzes dos postes de noite e cor de vela (${deNoite.noiteDosPostes}, #${deNoite.corDosPostes.toString(16)})`);
+  // a chama treme e os morcegos voam
+  const quadro = () => j(() => {
+    const g = window.jogo;
+    const halo = g.scene.getObjectByName('halos-das-aboboras');
+    const asas = g.scene.getObjectByName('asas-dos-morcegos');
+    const m = new halo.matrix.constructor();
+    asas.getMatrixAt(0, m);
+    return { chama: halo.instanceColor.getX(0), asa: [...m.elements].slice(12, 15) };
+  });
+  const q1 = await quadro();
+  await espera(700);
+  const q2 = await quadro();
+  ok(Math.abs(q1.chama - q2.chama) > 1e-4, `a chama das abóboras treme (${q1.chama.toFixed(3)} → ${q2.chama.toFixed(3)})`);
+  ok(Math.hypot(q1.asa[0] - q2.asa[0], q1.asa[2] - q2.asa[2]) > 0.05, 'os morcegos voam em volta da roda');
+  const desenhosDeNoite = await medir();
+  console.log(`  desenhos por quadro na alameda: pôr do sol ${desenhosDeTarde} -> noite ${desenhosDeNoite}`);
+  await page.screenshot({ path: `${OUT}-noite-alameda.png` });
+  for (const [nome, x, z, zoom] of [['praca', 2, -14, 24], ['lago', -13, 11, 13], ['boutique', -31, -16.5, 13]]) {
+    await j(([x, z, zoom]) => { window.jogo.debugPlace(x, z, Math.PI / 4); window.jogo.setZoom(zoom); }, [x, z, zoom]);
+    await espera(1500);
+    await page.screenshot({ path: `${OUT}-noite-${nome}.png` });
+  }
+}
+
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');
 await browser.close();
 if (problemas.length || erros.length) {

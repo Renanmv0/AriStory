@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE as P } from '../../palette';
-import { brilhoEmLote, toon } from '../../core/materials';
+import { acesoPorVertice, brilhoEmLote, toon } from '../../core/materials';
 import { Vento } from '../../core/shaders';
 
 /*
@@ -400,6 +400,25 @@ function geoFantasminha(): THREE.BufferGeometry {
  * gancho, em cima; a cor do papel vem da cópia (a de arame fica escura de
  * qualquer jeito: a cor nos vértices multiplica a da cópia).
  */
+/** o soquete da lampadinha, preso no fio (o fio passa no alto dele) */
+function geoSoquete(): THREE.BufferGeometry {
+  return new THREE.CylinderGeometry(0.014, 0.016, 0.04, 6).translate(0, -0.02, 0);
+}
+
+/** a lampadinha em gota, pendurada embaixo do soquete; branca nos vértices (a cor é da cópia) */
+function geoLampadinha(): THREE.BufferGeometry {
+  const perfil: THREE.Vector2[] = [];
+  for (let i = 0; i <= 8; i++) {
+    const k = i / 8;
+    // a gota: larga embaixo, afinando até o soquete
+    const r = 0.03 * Math.sin(Math.PI * (0.08 + 0.92 * k)) * (0.55 + 0.45 * (1 - k));
+    perfil.push(new THREE.Vector2(Math.max(0.001, r), -0.04 - 0.075 * (1 - k)));
+  }
+  const geo = new THREE.LatheGeometry(perfil, 10);
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geo.getAttribute('position').count * 3).fill(1), 3));
+  return geo;
+}
+
 function geoLanterna(): THREE.BufferGeometry {
   const perfil: THREE.Vector2[] = [];
   const N = 33;
@@ -569,6 +588,7 @@ export class EnfeitesDePendurar {
   private readonly fantasmas: Copia[] = [];
   private readonly lanternas: Copia[] = [];
   private readonly aranhas: Copia[] = [];
+  private readonly lampadinhas: Copia[] = [];
   private readonly cordas: THREE.BufferGeometry[] = [];
   private readonly teias: THREE.BufferGeometry[] = [];
   private proximoRecorte = 0;
@@ -601,6 +621,26 @@ export class EnfeitesDePendurar {
       }
       const tipo = RECORTES[this.proximoRecorte++ % RECORTES.length];
       this.recortes[tipo].push({ p: p.add(new THREE.Vector3(0, 0.005, 0)), giro, escala: 1 });
+    }
+    return this;
+  }
+
+  /**
+   * Um VARAL DE LUZINHAS (a festa, de noite): o fio de `a` até `b`, cedendo
+   * `barriga` no meio, com uma lampadinha a cada `passo`, alternando as
+   * `cores`. A lâmpada é chapada e clara (sem luz: ela é a luz), e o halo de
+   * cada uma vem do `luzDasLuzinhas()`.
+   */
+  luzinhas(a: THREE.Vector3, b: THREE.Vector3, opts: { barriga?: number; passo?: number; cores?: number[] } = {}): this {
+    const barriga = opts.barriga ?? 0.35;
+    const ponto = (t: number): THREE.Vector3 => a.clone().lerp(b, t).add(new THREE.Vector3(0, -barriga * 4 * t * (1 - t), 0));
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= 16; i++) pts.push(ponto(i / 16));
+    this.cordas.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 32, 0.007, 4, false));
+    const n = Math.max(1, Math.floor(a.distanceTo(b) / (opts.passo ?? 0.38)) - 1);
+    const cores = opts.cores ?? [P.luzinhaLaranja, P.luzinhaRoxa, P.luzinhaCreme];
+    for (let i = 1; i <= n; i++) {
+      this.lampadinhas.push({ p: ponto(i / (n + 1)), giro: i * 0.7, escala: 1, cor: cores[i % cores.length] });
     }
     return this;
   }
@@ -702,6 +742,10 @@ export class EnfeitesDePendurar {
     lote(geoFantasminha(), this.ventoDePano.material(0xffffff, { corPorVertice: true }), this.fantasmas, 'fantasminhas');
     lote(geoLanterna(), this.ventoDePano.material(0xffffff, { corPorVertice: true }), this.lanternas, 'lanternas-de-papel');
     lote(geoAranhinha(), toon(0xffffff, { corPorVertice: true }), this.aranhas, 'aranhinhas', false);
+    if (this.lampadinhas.length) {
+      lote(geoSoquete(), toon(P.aramePreto), this.lampadinhas.map((c) => ({ ...c, cor: undefined })), 'soquetes');
+      lote(geoLampadinha(), acesoPorVertice(), this.lampadinhas, 'lampadinhas');
+    }
     if (this.cordas.length) {
       const cordas = new THREE.Mesh(mergeGeometries(this.cordas.map((c) => c.toNonIndexed())), toon(P.barbante));
       cordas.name = 'barbantes';
@@ -736,6 +780,28 @@ export class EnfeitesDePendurar {
       p.copy(c.p).y -= 0.26 * c.escala;
       im.setMatrixAt(i, m.compose(p, q, s.setScalar(0.85 * c.escala)));
       im.setColorAt(i, cor.set(c.cor ?? P.lanternaLaranja));
+    });
+    im.instanceMatrix.needsUpdate = true;
+    im.computeBoundingSphere();
+    im.renderOrder = 3;
+    im.userData.semSombra = true;
+    return im;
+  }
+
+  /** o halo de cada lampadinha das `luzinhas()`, da cor dela (um lote só) */
+  luzDasLuzinhas(forca = 0.6): THREE.InstancedMesh | null {
+    if (!this.lampadinhas.length) return null;
+    const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), brilhoEmLote(0xffffff, forca), this.lampadinhas.length);
+    im.name = 'luz-das-luzinhas';
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const s = new THREE.Vector3();
+    const p = new THREE.Vector3();
+    const cor = new THREE.Color();
+    this.lampadinhas.forEach((c, i) => {
+      p.copy(c.p).y -= 0.07;
+      im.setMatrixAt(i, m.compose(p, q, s.setScalar(0.42)));
+      im.setColorAt(i, cor.set(c.cor ?? P.luzinhaLaranja));
     });
     im.instanceMatrix.needsUpdate = true;
     im.computeBoundingSphere();

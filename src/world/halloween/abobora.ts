@@ -448,7 +448,7 @@ export class LoteDeAboboras {
     return this.lista.length;
   }
 
-  montar(opts: { acesas?: boolean } = {}): THREE.Group {
+  montar(opts: { acesas?: boolean; semPoca?: boolean } = {}): THREE.Group {
     const acesas = opts.acesas ?? false;
     const g = new THREE.Group();
     g.name = 'aboboras';
@@ -504,12 +504,15 @@ export class LoteDeAboboras {
         }
       }
     }
-    if (acesas) this.acender(g);
+    if (acesas) this.acender(g, !opts.semPoca);
     return g;
   }
 
-  /** o halo em volta de cada cara e a poça de luz no chão à frente dela */
-  private acender(g: THREE.Group): void {
+  /**
+   * O halo em volta de cada cara e a poça de luz no chão à frente dela (a
+   * abóbora pendurada no ar — a da roda — vai sem a poça).
+   */
+  private acender(g: THREE.Group, comPoca: boolean): void {
     const comCara = this.lista.filter((a) => a.cara);
     if (!comCara.length) return;
     const quem = comCara.map((a) => this.lista.indexOf(a));
@@ -536,7 +539,7 @@ export class LoteDeAboboras {
       pocas.setMatrixAt(i, m.compose(p, q.identity(), s.setScalar(r * 3.2)));
       pocas.setColorAt(i, branco);
     });
-    for (const im of [halos, pocas]) {
+    for (const im of comPoca ? [halos, pocas] : [halos]) {
       im.instanceMatrix.needsUpdate = true;
       im.computeBoundingSphere();
       im.userData.semSombra = true;
@@ -544,7 +547,8 @@ export class LoteDeAboboras {
     }
     halos.renderOrder = 3;
     pocas.renderOrder = 2;
-    this.chamas.push({ im: halos, quem, forca: 1 }, { im: pocas, quem, forca: 1 });
+    this.chamas.push({ im: halos, quem, forca: 1 });
+    if (comPoca) this.chamas.push({ im: pocas, quem, forca: 1 });
   }
 
   /** a chama tremendo: cada abóbora no seu ritmo (só faz algo se acesas) */
