@@ -643,9 +643,12 @@ balança, costura aparente, feltro, textura de canvas onde for tecido.
 > sete, a capinha vermelha nos três grandes). Teste: `SO=noite`.
 
 > **Construída a leva do CLUBE** (`world/halloween/fantasiasDoClube.ts`):
-> a **Gina noiva do Frankenstein** (o cabelo altíssimo com as mechas de
-> raio, os parafusos em dois gomos do pescoço, a cicatriz costurada, o véu
-> de gaze e o babado de renda; o quepe fica na guarita), o **Capy tubarão**
+> a **Gina noiva do Frankenstein**, com cara de Frankenstein (pedido do
+> Renan): a pele VERDE (o pelo de girafa repintado só nela), os parafusos
+> grandes e prateados logo abaixo da cabeça e um par menor no meio do
+> pescoço, as costuras da testa e da bochecha, o anel de pontos em volta do
+> pescoço, as olheiras, o cabelo altíssimo com as mechas de raio, o véu de
+> gaze e o babado de renda; o quepe fica na guarita, o **Capy tubarão**
 > (o capuz de pelúcia com a cara saindo pela boca, os dentinhos de feltro,
 > os olhinhos, a barriga clara, a barbatana no lombo, as nadadeiras e o
 > rabo; os óculos escuros ficam guardados, o apito continua), o **Noel

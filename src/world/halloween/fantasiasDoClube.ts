@@ -3,6 +3,7 @@ import { PALETTE as P } from '../../palette';
 import { toon } from '../../core/materials';
 import { fundir } from '../fundir';
 import type { Bicho } from '../../entities/bichos/Bicho';
+import { repintar, trocaDeCores } from './repintar';
 
 /*
  * AS FANTASIAS DO CLUBE na festa de Halloween (`docs/HALLOWEEN.md`, §3, a
@@ -119,12 +120,49 @@ function plaquinha(forma: THREE.Shape, grossura: number): THREE.BufferGeometry {
 
 // ====================================================== a Gina, noiva
 
-/** Veste a Gina de NOIVA DO FRANKENSTEIN. */
+/**
+ * UMA COSTURA na casca de um elipsoide: o risco passando pelas direções
+ * `dirs` (em cima da casca) e um ponto atravessado a cada amostra. É a
+ * cicatriz da testa e da bochecha da Gina.
+ */
+function costura(c: THREE.Vector3, r: THREE.Vector3, dirs: readonly THREE.Vector3[], linha: THREE.Material, grossura = 0.006, ponto = 0.034): THREE.Group {
+  const g = new THREE.Group();
+  const pontos = dirs.map((d) => naCasca(c, r, d, 0.003));
+  const curva = new THREE.CatmullRomCurve3(pontos.map(({ p }) => p));
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(curva, 24, grossura, 5, false), linha));
+  const N = Math.max(3, Math.round(curva.getLength() / 0.028));
+  for (let k = 0; k <= N; k++) {
+    const t = k / N;
+    const p = curva.getPointAt(t);
+    const tangente = curva.getTangentAt(t);
+    const normal = naCasca(c, r, p.clone().sub(c)).n;
+    const atravessa = new THREE.Vector3().crossVectors(tangente, normal).normalize();
+    const pt = new THREE.Mesh(new THREE.CapsuleGeometry(grossura * 0.8, ponto, 2, 4), linha);
+    pt.position.copy(p).addScaledVector(normal, 0.002);
+    pt.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), atravessa);
+    g.add(pt);
+  }
+  return g;
+}
+
+/**
+ * Veste a Gina de NOIVA DO FRANKENSTEIN — com cara de Frankenstein
+ * (pedido do Renan): a PELE VERDE (o pelo de girafa repintado: o amarelo, as
+ * manchas, o claro e a crina), os PARAFUSOS grandes e prateados no alto do
+ * pescoço, as COSTURAS (a testa, a bochecha e um anel de pontos em volta do
+ * pescoço), as olheiras, e o cabelo de noiva com as mechas de raio.
+ */
 export function fantasiarGinaDeNoiva(gina: Bicho): THREE.Group {
   const cabeca = gina.group.getObjectByName('cabeca-da-girafa');
   const fantasia = new THREE.Group();
   fantasia.name = 'fantasia-de-noiva';
   if (!cabeca) return fantasia;
+  // a pele de Frankenstein: só a girafa, ANTES de a fantasia entrar (as cores
+  // de lá não são repintadas). Repintar troca por cópias: o pelo das outras
+  // girafas do jogo (se um dia houver) não muda
+  repintar(gina.group, trocaDeCores([
+    [P.girafaPelo, P.frankPele], [P.girafaMancha, P.frankMancha], [P.girafaClaro, P.frankClaro], [P.girafaCrina, P.noivaCabelo],
+  ], 0.06));
   cabeca.add(fantasia);
   // o quepe de porteira fica na guarita: a copa, a tarja, a aba e o brasão
   for (const [x, y, z] of [[0, 0.135, 0.012], [0, 0.096, 0.012], [0, 0.09, 0.05], [0, 0.14, 0.118]] as const) {
@@ -156,24 +194,27 @@ export function fantasiarGinaDeNoiva(gina: Bicho): THREE.Group {
   }
   fantasia.add(fundir(cabelo));
 
-  // ------------------------------------------------- a cicatriz costurada
-  // na bochecha do lado da câmera (`+X`): o risco e três pontos atravessados
+  // ------------------------------------------------- as costuras da cara
   const cranio = { c: new THREE.Vector3(0, 0, 0), r: new THREE.Vector3(0.13 * 0.95, 0.13, 0.13 * 1.05) };
-  const cicatriz = new THREE.Group();
   const linha = toon(P.noivaCicatriz);
-  const risco = new THREE.Mesh(new THREE.CapsuleGeometry(0.0045, 0.075, 2, 4), linha);
-  cicatriz.add(risco);
-  for (const y of [-0.026, 0, 0.026]) {
-    const ponto = new THREE.Mesh(new THREE.CapsuleGeometry(0.0035, 0.024, 2, 4), linha);
-    ponto.rotation.z = Math.PI / 2;
-    ponto.position.y = y;
-    cicatriz.add(ponto);
+  // a da TESTA: de uma têmpora à outra, por cima dos olhos
+  const testa = costura(cranio.c, cranio.r, [
+    new THREE.Vector3(-0.75, 0.55, 0.45), new THREE.Vector3(-0.35, 0.68, 0.65), new THREE.Vector3(0.05, 0.62, 0.78), new THREE.Vector3(0.4, 0.7, 0.6), new THREE.Vector3(0.78, 0.55, 0.4),
+  ], linha);
+  testa.name = 'costura-da-testa';
+  fantasia.add(fundir(testa));
+  // a da BOCHECHA, do lado da câmera (`+X`), descendo para o focinho
+  fantasia.add(fundir(costura(cranio.c, cranio.r, [
+    new THREE.Vector3(0.95, 0.1, 0.2), new THREE.Vector3(0.85, -0.15, 0.45), new THREE.Vector3(0.65, -0.35, 0.65),
+  ], linha)));
+  // as OLHEIRAS: um arco escuro embaixo de cada olho (o olho fica em
+  // ±0,088; 0,038; 0,078, raio 0,036)
+  for (const lado of [-1, 1] as const) {
+    const olheira = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), toon(P.frankOlheira));
+    olheira.scale.set(0.042, 0.022, 0.03);
+    olheira.position.set(lado * 0.09, 0.016, 0.07);
+    fantasia.add(olheira);
   }
-  const { p: naBochecha, n: normalDaBochecha } = naCasca(cranio.c, cranio.r, new THREE.Vector3(0.85, -0.05, 0.5), 0.002);
-  cicatriz.position.copy(naBochecha);
-  cicatriz.lookAt(naBochecha.clone().add(normalDaBochecha));
-  cicatriz.rotateZ(0.35);
-  fantasia.add(fundir(cicatriz));
 
   // ------------------------------------------------- o véu de gaze
   // preso atrás do coque, caindo pelas costas da cabeça: transparente, e de
@@ -185,33 +226,61 @@ export function fantasiarGinaDeNoiva(gina: Bicho): THREE.Group {
   veu.rotation.x = -0.35;
   fantasia.add(veu);
 
-  // ------------------------------------------------- os parafusos e o babado
-  // os parafusinhos de feltro dos dois lados de dois gomos do pescoço, e o
-  // babado de renda na base dele
+  // ------------------------------------------- os parafusos, os pontos e o babado
   const gomos: Array<{ g: THREE.Object3D; raio: number }> = [];
   let pai = cabeca.parent;
-  while (pai && pai.name !== 'corpo-da-girafa') {
+  while (pai) {
     const cano = pai.children.find((o) => (o as THREE.Mesh).isMesh && ((o as THREE.Mesh).geometry as THREE.CylinderGeometry).parameters?.radiusBottom !== undefined) as THREE.Mesh | undefined;
     if (cano) gomos.unshift({ g: pai, raio: (cano.geometry as THREE.CylinderGeometry).parameters.radiusBottom });
     pai = pai.parent;
     if (gomos.length >= 4) break;
   }
-  const parafuso = toon(P.noivaParafuso);
-  const porca = toon(P.noivaParafusoEscuro);
-  for (const [i, { g, raio }] of gomos.entries()) {
-    if (i % 2 === 0) continue;
+  // os PARAFUSOS de Frankenstein: grandes, prateados e um tico acesos (de
+  // noite eles brilham), um de cada lado do gomo de cima do pescoço — logo
+  // abaixo da cabeça, onde o Frankenstein tem os dele — e um par menor no
+  // gomo do meio
+  const aco = toon(P.frankParafuso, { glow: 0.18 });
+  const acoFundo = toon(P.noivaParafusoEscuro);
+  const parafusos = (g: THREE.Object3D, raio: number, y: number, k: number): void => {
     for (const lado of [-1, 1] as const) {
       const pino = new THREE.Group();
-      const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.05, 8), parafuso);
-      haste.position.y = 0.025;
+      const haste = new THREE.Mesh(new THREE.CylinderGeometry(0.026 * k, 0.026 * k, 0.1 * k, 10), aco);
+      haste.position.y = 0.05 * k;
       pino.add(haste);
-      const cabecaDoPino = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.018, 6), porca);
-      cabecaDoPino.position.y = 0.052;
-      pino.add(cabecaDoPino);
+      const arruela = new THREE.Mesh(new THREE.CylinderGeometry(0.042 * k, 0.042 * k, 0.012 * k, 14), acoFundo);
+      arruela.position.y = 0.006 * k;
+      pino.add(arruela);
+      const sextavado = new THREE.Mesh(new THREE.CylinderGeometry(0.05 * k, 0.05 * k, 0.034 * k, 6), aco);
+      sextavado.position.y = 0.1 * k;
+      pino.add(sextavado);
+      const ponta = new THREE.Mesh(new THREE.SphereGeometry(0.026 * k, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), aco);
+      ponta.position.y = 0.117 * k;
+      pino.add(ponta);
       pino.rotation.z = -lado * Math.PI / 2;
-      pino.position.set(lado * (raio - 0.02), 0.15, 0);
-      g.add(fundir(pino));
+      pino.position.set(lado * (raio - 0.025), y, 0);
+      const f = fundir(pino);
+      f.name = 'parafuso-de-frankenstein';
+      g.add(f);
     }
+  };
+  const topo = gomos[gomos.length - 1];
+  if (topo) parafusos(topo.g, topo.raio, 0.2, 1);
+  if (gomos[1]) parafusos(gomos[1].g, gomos[1].raio, 0.15, 0.75);
+  // o ANEL DE PONTOS em volta do pescoço, no gomo de baixo do de cima
+  const meio = gomos[gomos.length - 2];
+  if (meio) {
+    const anel = new THREE.Group();
+    const r = meio.raio + 0.004;
+    anel.add(new THREE.Mesh(new THREE.TorusGeometry(r, 0.006, 5, 32), linha).rotateX(Math.PI / 2));
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      const pt = new THREE.Mesh(new THREE.CapsuleGeometry(0.005, 0.034, 2, 4), linha);
+      pt.position.set(Math.sin(a) * (r + 0.003), 0, Math.cos(a) * (r + 0.003));
+      anel.add(pt);
+    }
+    anel.position.y = 0.12;
+    anel.name = 'pontos-do-pescoco';
+    meio.g.add(fundir(anel));
   }
   if (gomos[0]) {
     // o babado: um anel que abre para baixo, com a barra ondulada
