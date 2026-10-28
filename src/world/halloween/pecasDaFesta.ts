@@ -337,7 +337,8 @@ export class BaciaDeMacas {
     for (const y of [0.04, 0.13, 0.22]) {
       for (const s of [-1, 1]) {
         por(caixote, quina(0.42, 0.06, 0.02, 0.005), ripa, 0, y, s * 0.15);
-        por(caixote, quina(0.02, 0.06, 0.3, 0.005), ripa, s * 0.2, y, 0);
+        // a ripa do lado um tico mais baixa: o topo dela não divide plano com o da ripa da frente
+        por(caixote, quina(0.02, 0.054, 0.3, 0.005), ripa, s * 0.2, y, 0);
       }
     }
     por(caixote, quina(0.4, 0.02, 0.28, 0.004), ripa, 0, 0.02, 0);

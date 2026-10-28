@@ -665,11 +665,15 @@ if (roda('noite')) {
   const promptDoMano = await j(() => document.querySelector('.prompt .label')?.textContent ?? '');
   ok(/Falar com o Mano/.test(promptDoMano), `o ponto da fala do Mano vampiro (${promptDoMano})`);
   await page.keyboard.press('KeyE');
-  // o balão digita letra por letra (e o navegador do teste anda devagar)
-  await page.waitForFunction(() => /Outro vampiro/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 20000 }).catch(() => {});
+  // a câmera chega perto antes da fala, e o balão digita letra por letra (o navegador do teste anda devagar)
+  await page.waitForFunction(() => /Outro vampiro/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
   const falaDoMano = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
   ok(/Outro vampiro/.test(falaDoMano) && /Ari/.test(falaDoMano), `o Mano repara no outro vampiro (${falaDoMano.slice(0, 80)})`);
-  await passarFalas();
+  // até a câmera de perto devolver a isométrica (a medida de desenhos é da isométrica)
+  for (let i = 0; i < 400 && (await j(() => !!window.jogo.cameraDeCena())); i++) {
+    if (await j(() => !!document.querySelector('.dialogue.show'))) await page.keyboard.press('KeyE');
+    await espera(400);
+  }
   // a chama treme e os morcegos voam
   const quadro = () => j(() => {
     const g = window.jogo;

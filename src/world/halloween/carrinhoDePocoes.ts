@@ -556,7 +556,8 @@ export class CarrinhoDePocoes {
     for (const x of [L / 2 + 0.006, -L / 2 - 0.006]) {
       por(g, quina(0.025, 0.04, F + 0.02, 0.008), friso, x, topo - 0.03, 0);
       por(g, quina(0.025, 0.04, F + 0.02, 0.008), friso, x, base + 0.025, 0);
-      for (const z of [F / 2, -F / 2]) por(g, quina(0.035, alto, 0.035, 0.01), friso, x, base + alto / 2, z);
+      // (mais grossa que as réguas: a face dela fica 4 mm à frente, e não no mesmo plano)
+      for (const z of [F / 2, -F / 2]) por(g, quina(0.045, alto, 0.045, 0.01), friso, x, base + alto / 2, z);
     }
     acabar(tampo, [[P.carrinhoRoda, veioDeMadeira(0.7)]]);
     g.add(tampo);
@@ -765,7 +766,7 @@ export class CarrinhoDePocoes {
     for (const d of DEGRAUS) {
       por(g, quina(largura, d.alto, d.fundo, 0.008), madeira, cx, BALCAO + d.alto / 2, d.z);
       // o filete laranja na beira de cada degrau
-      por(g, quina(largura + 0.01, 0.014, 0.014, 0.004), friso, cx, BALCAO + d.alto - 0.006, d.z + d.fundo / 2 + 0.002);
+      por(g, quina(largura + 0.01, 0.014, 0.014, 0.004), friso, cx, BALCAO + d.alto - 0.004, d.z + d.fundo / 2 + 0.004);
     }
     // as laterais recortadas em escada, mais claras
     for (const lado of [-1, 1]) {

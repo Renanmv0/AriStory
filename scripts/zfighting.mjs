@@ -30,7 +30,12 @@ const FESTA = ['halloween:convite', 'halloween:festa'];
 /** cada peça, e em que cena ela aparece (e, se for de evento, as flags da fase) */
 const PECAS = [
   // os postos da festa de Halloween: o carrinho de poções do Noel, a lousa, o
-  // canteiro de abóboras da Josefina e a bacia de maçãs do Capy
+  // canteiro de abóboras da Josefina e a bacia de maçãs do Capy. Elas são de
+  // quina arredondada (`quina`), que este caçador NÃO mede (só caixa reta):
+  // hoje saem "0 caixas", e as junções delas foram afastadas à mão (a quina
+  // do friso 4 mm à frente das réguas, o filete do degrau 3 mm acima do
+  // tampo, a ripa do lado do caixote mais baixa). Ficam na lista para medir a
+  // caixa reta que entrar nelas um dia.
   ['carrinho-de-pocoes', 'villa-lobos', FESTA],
   ['cavalete-de-pocoes', 'villa-lobos', FESTA],
   ['canteiro-de-aboboras', 'villa-lobos', FESTA],
