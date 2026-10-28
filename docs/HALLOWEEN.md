@@ -636,9 +636,10 @@ balança, costura aparente, feltro, textura de canvas onde for tecido.
 > sobre a casca do corpo e um capuz sobre a da cabeça — ela sobe quando ele
 > sonha com a roda —, os furinhos dos olhos, a boquinha, as bochechas e o
 > laço laranja na ponta da tromba, que sai pelo pano); o **Jean-Luc de
-> Fantasma da Ópera** (a meia-máscara com contorno e o aro do olho — ele é
-> branco, e máscara branca sem contorno sumia —, a cartolinha, a rosa no
-> bico e a capa curta); e os **patos de diabinho** (a tiara de chifrinhos nos
+> Fantasma da Ópera** (a meia-máscara de PRATA com a borda e o aro do olho
+> dourados — branca, num pato branco, ela sumia de longe, e o Renan pediu
+> para ver melhor —, a cartola maior, a rosa no bico, a capa de ópera larga
+> e a gola em pé com o forro vinho para a frente, a gravata-borboleta); e os **patos de diabinho** (a tiara de chifrinhos nos
 > sete, a capinha vermelha nos três grandes). Teste: `SO=noite`.
 
 #### E. O que funciona na festa
