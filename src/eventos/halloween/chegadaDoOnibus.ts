@@ -123,6 +123,11 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
   const guardados: Guardado[] = passageiros.map((b) => ({
     b, pos: b.group.position.clone(), giro: b.group.rotation.y, sentado: elenco.coelhinhas.includes(b as CoelhaDaTorcida),
   }));
+  /**
+   * quem ainda está dentro do ônibus: escondido A CADA QUADRO, e não uma vez
+   * — o piquenique do parque acende as coelhinhas no primeiro quadro dele
+   */
+  const noOnibus = new Set<Bicho>(passageiros);
   for (const b of passageiros) {
     b.entrarEmServico();
     b.group.visible = false;
@@ -332,6 +337,7 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
   });
   /** ele aparece no vão da porta, no degrau, olhando para a calçada */
   const naPorta = (b: Bicho, z = PORTA.z): void => {
+    noOnibus.delete(b);
     b.entrarEmServico();
     b.group.visible = true;
     b.group.position.set(PORTA.x, PORTA.degrau, z);
@@ -376,15 +382,16 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
     api.setCameraOmbro(camera.de, camera.para);
     try {
       // 1. a dupla na calçada da boutique, de noite
-      // na boutique, os dois um passo para o lado da porta: bem na frente dela, a
-      // guirlanda pendurada nela ficava em cima da cabeça de quem joga
+      // na boutique, os dois um passo para o lado da porta, e a câmera vem do
+      // outro lado, rente à fachada: de frente para a porta, a guirlanda
+      // pendurada nela ficava em cima da cabeça de quem estivesse na frente
       if (naBoutique) {
-        api.releasePlayer(BOUTIQUE.x + 0.35, BOUTIQUE.z + 0.75, Math.PI / 2);
-        api.releaseCompanion(BOUTIQUE.x + 0.25, BOUTIQUE.z + 1.55, Math.PI / 2);
-        api.holdCompanion(BOUTIQUE.x + 4, BOUTIQUE.z + 1.1);
+        api.releasePlayer(BOUTIQUE.x + 0.35, BOUTIQUE.z + 0.9, Math.PI / 2);
+        api.releaseCompanion(BOUTIQUE.x + 0.3, BOUTIQUE.z + 1.7, Math.PI / 2);
+        api.holdCompanion(BOUTIQUE.x + 4, BOUTIQUE.z + 1.3);
       }
       const daDupla: Tomada = naBoutique
-        ? { de: new THREE.Vector3(BOUTIQUE.x + 3.4, 1.3, BOUTIQUE.z + 3.4), para: new THREE.Vector3(BOUTIQUE.x + 0.3, 1.25, BOUTIQUE.z + 1.15) }
+        ? { de: new THREE.Vector3(BOUTIQUE.x + 2.9, 1.3, BOUTIQUE.z - 1.9), para: new THREE.Vector3(BOUTIQUE.x + 0.3, 1.25, BOUTIQUE.z + 1.3) }
         : (() => {
           const giro = api.anguloDaCamera();
           return {
@@ -630,6 +637,7 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
       // a tela escurece, todo mundo já está nos postos, e a câmera volta para a dupla
       await api.escurecerTela(true);
       acabou = true;
+      noOnibus.clear();
       for (const gd of guardados) {
         const b = gd.b;
         b.group.visible = true;
@@ -666,6 +674,7 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
       // se algo der errado no meio, ninguém fica preso: tudo no lugar da festa
       if (!api.flag(FLAG_DO_ONIBUS)) {
         acabou = true;
+        noOnibus.clear();
         for (const gd of guardados) {
           gd.b.group.visible = true;
           gd.b.group.position.copy(gd.pos);
@@ -704,6 +713,7 @@ export function chegadaDoOnibus(w: WorldBuilder, elenco: ElencoDoOnibus): void {
       }
     }
     for (let i = tiques.length - 1; i >= 0; i--) if (tiques[i](dt)) tiques.splice(i, 1);
+    for (const b of noOnibus) b.group.visible = false;
     if (piscando) {
       relogioDoPisca += dt;
       piscas.visible = relogioDoPisca % 0.7 < 0.38;

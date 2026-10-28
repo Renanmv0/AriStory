@@ -619,14 +619,17 @@ export class BarracaDoWalter {
     const { largura: L, alto: A, fundo: F, z } = CAIXOTE;
     const madeira = toon(P.madeiraDoCanteiro);
     const caixote = new THREE.Group();
+    // os montantes param embaixo das tábuas do tampo (no mesmo topo, as duas faces serrilhavam)
+    const alto = A - 0.025;
     for (const sx of [-1, 1]) {
-      for (const sz of [-1, 1]) por(caixote, quina(0.05, A, 0.05, 0.008), toon(P.carrinhoRoda), sx * (L / 2 - 0.025), B.estrado + A / 2, z + sz * (F / 2 - 0.025));
+      for (const sz of [-1, 1]) por(caixote, quina(0.05, alto, 0.05, 0.008), toon(P.carrinhoRoda), sx * (L / 2 - 0.025), B.estrado + alto / 2, z + sz * (F / 2 - 0.025));
     }
-    // as ripas da frente e dos lados, com a fresta entre elas
+    // as ripas da frente e dos lados, com a fresta entre elas: ENTRE os
+    // montantes (por cima deles, a face da ripa ficava a 1 mm da do montante)
     for (let i = 0; i < 4; i++) {
       const y = B.estrado + 0.08 + i * ((A - 0.12) / 3.4);
-      for (const sz of [-1, 1]) por(caixote, quina(L - 0.06, 0.1, 0.022, 0.006), madeira, 0, y, z + sz * (F / 2 - 0.012));
-      for (const sx of [-1, 1]) por(caixote, quina(0.022, 0.1, F - 0.06, 0.006), madeira, sx * (L / 2 - 0.012), y, z);
+      for (const sz of [-1, 1]) por(caixote, quina(L - 0.1, 0.1, 0.022, 0.006), madeira, 0, y, z + sz * (F / 2 - 0.012));
+      for (const sx of [-1, 1]) por(caixote, quina(0.022, 0.1, F - 0.1, 0.006), madeira, sx * (L / 2 - 0.012), y, z);
     }
     // o tampo de tábuas, onde ele pisa
     for (let i = 0; i < 4; i++) {
