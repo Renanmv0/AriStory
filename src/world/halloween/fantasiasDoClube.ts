@@ -31,12 +31,12 @@ import { repintar, trocaDeCores } from './repintar';
  */
 
 /** o filho de `pai` que está nesta posição (os grupos da classe não têm nome) */
-function filhoEm(pai: THREE.Object3D, x: number, y: number, z: number): THREE.Object3D | null {
+export function filhoEm(pai: THREE.Object3D, x: number, y: number, z: number): THREE.Object3D | null {
   return pai.children.find((o) => Math.abs(o.position.x - x) < 1e-3 && Math.abs(o.position.y - y) < 1e-3 && Math.abs(o.position.z - z) < 1e-3) ?? null;
 }
 
 /** o ponto da casca de um elipsoide (centro `c`, raios `r`) na direção `d`, e a normal ali */
-function naCasca(c: THREE.Vector3, r: THREE.Vector3, d: THREE.Vector3, folga = 0): { p: THREE.Vector3; n: THREE.Vector3 } {
+export function naCasca(c: THREE.Vector3, r: THREE.Vector3, d: THREE.Vector3, folga = 0): { p: THREE.Vector3; n: THREE.Vector3 } {
   const u = d.clone().normalize();
   const k = 1 / Math.sqrt((u.x / r.x) ** 2 + (u.y / r.y) ** 2 + (u.z / r.z) ** 2);
   const p = c.clone().addScaledVector(u, k);
@@ -46,7 +46,7 @@ function naCasca(c: THREE.Vector3, r: THREE.Vector3, d: THREE.Vector3, folga = 0
 }
 
 /** põe `obj` na casca, com o `+Y` dele apontando para fora (a normal) */
-function pousar(obj: THREE.Object3D, p: THREE.Vector3, n: THREE.Vector3): THREE.Object3D {
+export function pousar(obj: THREE.Object3D, p: THREE.Vector3, n: THREE.Vector3): THREE.Object3D {
   obj.position.copy(p);
   obj.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n);
   return obj;
@@ -59,7 +59,7 @@ function pousar(obj: THREE.Object3D, p: THREE.Vector3, n: THREE.Vector3): THREE.
  * parte de baixo da casca é de outra cor, pintada nos vértices (a barriga
  * clara do tubarão).
  */
-function capuz(
+export function capuz(
   r: THREE.Vector3, furoDir: THREE.Vector3, furoAng: number, corteBaixo: number, cor: number, corDeBaixo?: number,
 ): THREE.Mesh {
   const geo = new THREE.SphereGeometry(1, 28, 18);
@@ -110,7 +110,7 @@ function bordaDoFuro(r: THREE.Vector3, furoDir: THREE.Vector3, furoAng: number, 
 }
 
 /** uma forma plana extrudada fina (asa, barbatana), deitada no plano YZ (a grossura no X) */
-function plaquinha(forma: THREE.Shape, grossura: number): THREE.BufferGeometry {
+export function plaquinha(forma: THREE.Shape, grossura: number): THREE.BufferGeometry {
   const geo = new THREE.ExtrudeGeometry(forma, { depth: grossura, bevelEnabled: true, bevelThickness: grossura * 0.4, bevelSize: grossura * 0.4, bevelSegments: 1, curveSegments: 8 });
   geo.translate(0, 0, -grossura / 2);
   // XY -> ZY: o "x" da forma vira a profundidade, para TRÁS (-Z)
@@ -125,7 +125,7 @@ function plaquinha(forma: THREE.Shape, grossura: number): THREE.BufferGeometry {
  * `dirs` (em cima da casca) e um ponto atravessado a cada amostra. É a
  * cicatriz da testa e da bochecha da Gina.
  */
-function costura(c: THREE.Vector3, r: THREE.Vector3, dirs: readonly THREE.Vector3[], linha: THREE.Material, grossura = 0.006, ponto = 0.034): THREE.Group {
+export function costura(c: THREE.Vector3, r: THREE.Vector3, dirs: readonly THREE.Vector3[], linha: THREE.Material, grossura = 0.006, ponto = 0.034): THREE.Group {
   const g = new THREE.Group();
   const pontos = dirs.map((d) => naCasca(c, r, d, 0.003));
   const curva = new THREE.CatmullRomCurve3(pontos.map(({ p }) => p));

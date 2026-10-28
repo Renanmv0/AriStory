@@ -2256,6 +2256,34 @@ export const PALETTE = {
   atadura: 0xf2ead6,
   ataduraSombra: 0xd9cdb2,
   docePirulito: 0xff7aa8,
+  /**
+   * AS FANTASIAS DA ESCOLA na festa (§3): o Flynn lobisomem (o pelo cinza, as
+   * garras e a orelha de lobo), a Luna coruja (as penas, os olhões de feltro,
+   * o bico e a lua dourada), a Sol catrina (as cores das flores e o traço da
+   * pintura) e a Estrella fadinha (o tule azul-noite, as asas e as estrelas)
+   */
+  lobisomemPelo: 0x8d8a96,
+  lobisomemPeloClaro: 0xbab6c4,
+  lobisomemGarra: 0xf3ead6,
+  lobisomemOrelhaDentro: 0xdba6b6,
+  corujaPena: 0x8a6a52,
+  corujaPenaClara: 0xc9a27e,
+  corujaPenaFunda: 0x5f4636,
+  corujaOlhoAro: 0xf6edd9,
+  corujaIris: 0xf2b23a,
+  corujaBico: 0xe8962f,
+  luaDourada: 0xf4d66b,
+  catrinaRosa: 0xf2679a,
+  catrinaLaranja: 0xf59a3c,
+  catrinaAmarelo: 0xf6d24a,
+  catrinaVerde: 0x58b87a,
+  catrinaRoxo: 0x8b5cc8,
+  catrinaTraco: 0x2e2433,
+  catrinaFolha: 0x4e9a5a,
+  fadaTule: 0x2f3f86,
+  fadaEstrela: 0xffe27a,
+  fadaAsa: 0xd8edff,
+  fadaBrilho: 0xbfe3ff,
   /** a noite da festa: o luar do lado da câmera, um tico lilás */
   luarDaFesta: 0xc4c8ff,
   /**

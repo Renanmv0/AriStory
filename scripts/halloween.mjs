@@ -138,7 +138,8 @@ if (roda('volta')) {
       let achou = false;
       window.jogo.scene.traverse((o) => {
         if (['halloween-no-parque', 'halloween-na-boutique', 'fantasia-de-aranha', 'fantasia-de-vampiro', 'fantasia-de-fantasma', 'fantasia-da-opera', 'fantasia-de-diabinho',
-          'fantasia-de-noiva', 'fantasia-de-tubarao', 'fantasia-de-cientista', 'fantasia-de-dragao', 'fantasia-de-mumia'].includes(o.name) || o.userData?.peca === 'plaquinha-de-recado') achou = true;
+          'fantasia-de-noiva', 'fantasia-de-tubarao', 'fantasia-de-cientista', 'fantasia-de-dragao', 'fantasia-de-mumia',
+          'fantasia-de-walter', 'fantasia-de-lobisomem', 'fantasia-de-coruja', 'fantasia-de-catrina', 'fantasia-de-fada'].includes(o.name) || o.userData?.peca === 'plaquinha-de-recado') achou = true;
       });
       return achou;
     });
@@ -717,6 +718,34 @@ if (roda('fantasias')) {
   const noMania = await fantasiasNaCena();
   const doces = await j(() => !!window.jogo.scene.getObjectByName('doces-da-bandeja'));
   ok(noMania['fantasia-de-mumia'] === 1 && doces, `o Walter de múmia garçom, com os doces na bandeja (${JSON.stringify(noMania)})`);
+  // a escola: o Gatito de Walter, o Flynn lobisomem e a Luna coruja
+  await naFaseConvite('escola', ['halloween:festa']);
+  const naEscola = await fantasiasNaCena();
+  ok(naEscola['fantasia-de-walter'] === 1, `o Gatito de Walter (${naEscola['fantasia-de-walter'] ?? 0})`);
+  ok(naEscola['fantasia-de-lobisomem'] === 1, `o Flynn de lobisomem (${naEscola['fantasia-de-lobisomem'] ?? 0})`);
+  // a fala do Gatito: ele conta que veio de Walter
+  await j(() => {
+    const g = window.jogo;
+    let gatito = null;
+    g.current.world.root.traverse((o) => { if (o.userData?.peca === 'gatito' && o.userData.bicho) gatito = o.userData.bicho; });
+    g.debugPlace(gatito.x + 0.3, gatito.z + 0.8, Math.PI);
+  });
+  await espera(1500);
+  const promptDoGatito = await j(() => document.querySelector('.prompt .label')?.textContent ?? '');
+  ok(/Falar com o Gatito/.test(promptDoGatito), `o ponto da fala do Gatito (${promptDoGatito})`);
+  await page.keyboard.press('KeyE');
+  await espera(800);
+  await passarFalas(2);
+  await page.waitForFunction(() => /Walter/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 20000 }).catch(() => {});
+  const falaDoGatito = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
+  ok(/vim de Walter/.test(falaDoGatito), `o Gatito conta que veio de Walter (${falaDoGatito.slice(0, 70)})`);
+  await passarFalas();
+  // o piquenique das coelhinhas no parque: a Luna coruja, a Sol catrina e a Estrella fadinha
+  await naFaseConvite('villa-lobos', ['halloween:festa', 'jean-luc-batido']);
+  const noPiquenique = await fantasiasNaCena();
+  for (const [nome, quem] of [['fantasia-de-coruja', 'a Luna de coruja'], ['fantasia-de-catrina', 'a Sol de catrina'], ['fantasia-de-fada', 'a Estrella de fadinha']]) {
+    ok(noPiquenique[nome] === 1, `${quem} (${noPiquenique[nome] ?? 0})`);
+  }
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');
