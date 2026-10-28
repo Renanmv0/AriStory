@@ -48,6 +48,12 @@ const css = (c: number): string => `#${c.toString(16).padStart(6, '0')}`;
 
 /** a barraca: a largura, a frente do balcão, o fundo, a altura do tampo, o estrado */
 const B = { largura: 2.2, frente: 0.42, fundo: -0.62, balcao: 1.02, estrado: 0.08 };
+/** onde a lateral da direita começa: entre ela e o fundo fica a passagem do Walter */
+const PASSAGEM = -0.16;
+/** as costas do balcão: atrás delas fica o caixote, sem tampo por cima */
+const COSTAS = -0.14;
+/** o caixote atrás do balcão: o Walter é baixinho (61 cm), e sobe nele para aparecer por cima do tampo */
+const CAIXOTE = { largura: 0.5, alto: 0.72, fundo: 0.4, z: -0.36 };
 /** o toldo: a beira (frente e fundo), a cumeeira e a largura com o beiral dos lados */
 const T = { beira: 2.35, frente: 0.6, fundo: -0.8, cumeeira: 2.78, zCumeeira: -0.1, largura: 2.5 };
 /** a altura do toldo num ponto `z` (duas águas) */
@@ -343,8 +349,17 @@ interface Rolante {
 
 export class BarracaDoWalter {
   readonly group = new THREE.Group();
-  /** onde o Walter fica, atrás do balcão (no referencial da barraca) */
-  readonly posto = new THREE.Vector3(0, B.estrado, -0.32);
+  /** onde o Walter fica: em cima do caixote, atrás do balcão (no referencial da barraca) */
+  readonly posto = new THREE.Vector3(0, B.estrado + CAIXOTE.alto, CAIXOTE.z);
+  /**
+   * o caminho dele para sair: o pulo do caixote para o estrado, a passagem do
+   * fundo da lateral, e o pulinho do estrado para o chão (os `y` são o piso)
+   */
+  readonly saida: readonly THREE.Vector3[] = [
+    new THREE.Vector3(0.55, B.estrado, -0.38),
+    new THREE.Vector3(B.largura / 2 + 0.05, B.estrado, -0.4),
+    new THREE.Vector3(1.6, 0, -0.42),
+  ];
   /** os ganchos do cordão de luzinhas: de uma ponta à outra do beiral da frente */
   readonly luzinhas: readonly [THREE.Vector3, THREE.Vector3] = [new THREE.Vector3(-T.largura / 2 + 0.05, T.beira - 0.2, T.frente + 0.02), new THREE.Vector3(T.largura / 2 - 0.05, T.beira - 0.2, T.frente + 0.02)];
   /** as abóboras dos cantos do estrado (a cena põe no lote do parque) */
@@ -376,6 +391,7 @@ export class BarracaDoWalter {
     this.montarToldo();
     this.montarCachorroGigante();
     this.montarCardapio();
+    this.montarCaixote();
     this.montarPrateleira();
     this.montarChapa();
     this.montarCubas();
@@ -415,11 +431,14 @@ export class BarracaDoWalter {
     const alto = B.balcao - 0.05 - B.estrado;
     const yMeio = B.estrado + alto / 2;
     // a frente do balcão e as duas laterais (até o fundo), de tábua vermelha
-    const fz = (B.frente + 0.0) / 2;
-    por(g, uvDeParede(quina(B.largura, alto, B.frente, 0.02), 0, yMeio, fz), vermelho, 0, yMeio, fz);
+    // o corpo do balcão vai da frente até 14 cm atrás do meio; dali para o fundo é o lugar do Walter
+    const fz = (B.frente + COSTAS) / 2;
+    por(g, uvDeParede(quina(B.largura, alto, B.frente - COSTAS, 0.02), 0, yMeio, fz), vermelho, 0, yMeio, fz);
+    // (a lateral da direita para antes do fundo: é a passagem por onde o Walter entra e sai)
     for (const s of [-1, 1]) {
-      const prof = B.frente - B.fundo;
-      por(g, uvDeParede(quina(0.06, alto, prof, 0.015), s * (B.largura / 2 - 0.03), yMeio, (B.frente + B.fundo) / 2), vermelho, s * (B.largura / 2 - 0.03), yMeio, (B.frente + B.fundo) / 2);
+      const de = s > 0 ? PASSAGEM : B.fundo;
+      const prof = B.frente - de;
+      por(g, uvDeParede(quina(0.06, alto, prof, 0.015), s * (B.largura / 2 - 0.03), yMeio, (B.frente + de) / 2), vermelho, s * (B.largura / 2 - 0.03), yMeio, (B.frente + de) / 2);
     }
     // o fundo: a parede alta de trás, onde pendura o cardápio
     const altoFundo = T.beira - B.estrado - 0.02;
@@ -428,7 +447,10 @@ export class BarracaDoWalter {
     const creme = toon(P.barracaCreme);
     for (const y of [B.estrado + 0.04, B.balcao - 0.09]) {
       por(g, quina(B.largura + 0.03, 0.05, 0.03, 0.008), creme, 0, y, B.frente + 0.008);
-      for (const s of [-1, 1]) por(g, quina(0.03, 0.05, B.frente - B.fundo, 0.008), creme, s * (B.largura / 2 + 0.008), y, (B.frente + B.fundo) / 2);
+      for (const s of [-1, 1]) {
+        const de = s > 0 ? PASSAGEM : B.fundo;
+        por(g, quina(0.03, 0.05, B.frente - de, 0.008), creme, s * (B.largura / 2 + 0.008), y, (B.frente + de) / 2);
+      }
     }
     for (const s of [-1, 1]) por(g, quina(0.055, alto, 0.055, 0.012), creme, s * (B.largura / 2 - 0.01), yMeio, B.frente - 0.01);
     // o painel pintado da frente
@@ -438,7 +460,7 @@ export class BarracaDoWalter {
     painel.name = 'painel-do-walter';
     // o tampo de madeira de verdade, avançando para a frente e para os lados
     const tampo = new THREE.Group();
-    por(tampo, quina(B.largura + 0.16, 0.05, B.frente - B.fundo + 0.12, 0.012), toon(P.carrinhoRoda), 0, B.balcao - 0.025, (B.frente + B.fundo) / 2 + 0.07);
+    por(tampo, quina(B.largura + 0.16, 0.05, B.frente + 0.13 - COSTAS + 0.02, 0.012), toon(P.carrinhoRoda), 0, B.balcao - 0.025, (B.frente + 0.13 + COSTAS - 0.02) / 2);
     acabar(tampo, [[P.carrinhoRoda, veioDeMadeira(0.7)]]);
     g.add(tampo);
     // as mãos-francesas embaixo do tampo, na frente
@@ -584,6 +606,37 @@ export class BarracaDoWalter {
     lousa.name = 'cardapio-do-walter';
     // o barbante e os dois preguinhos
     for (const s of [-1, 1]) por(g, new THREE.SphereGeometry(0.012, 6, 4), toon(P.carrinhoFerro), s * (L / 2 - 0.02), y + A / 2 + 0.06, z + 0.02);
+  }
+
+  // ------------------------------------------------- o caixote do Walter
+  /**
+   * O CAIXOTE de feira atrás do balcão, onde o Walter sobe (o mesmo truque
+   * do caixote do Jean-Luc na arena): os quatro montantes, as ripas com
+   * fresta, o tampo de tábuas e um paninho xadrez dobrado em cima.
+   */
+  private montarCaixote(): void {
+    const g = this.group;
+    const { largura: L, alto: A, fundo: F, z } = CAIXOTE;
+    const madeira = toon(P.madeiraDoCanteiro);
+    const caixote = new THREE.Group();
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) por(caixote, quina(0.05, A, 0.05, 0.008), toon(P.carrinhoRoda), sx * (L / 2 - 0.025), B.estrado + A / 2, z + sz * (F / 2 - 0.025));
+    }
+    // as ripas da frente e dos lados, com a fresta entre elas
+    for (let i = 0; i < 4; i++) {
+      const y = B.estrado + 0.08 + i * ((A - 0.12) / 3.4);
+      for (const sz of [-1, 1]) por(caixote, quina(L - 0.06, 0.1, 0.022, 0.006), madeira, 0, y, z + sz * (F / 2 - 0.012));
+      for (const sx of [-1, 1]) por(caixote, quina(0.022, 0.1, F - 0.06, 0.006), madeira, sx * (L / 2 - 0.012), y, z);
+    }
+    // o tampo de tábuas, onde ele pisa
+    for (let i = 0; i < 4; i++) {
+      por(caixote, quina(L, 0.025, F / 4 - 0.008, 0.006), madeira, 0, B.estrado + A - 0.0125, z - F / 2 + (i + 0.5) * (F / 4));
+    }
+    acabar(caixote, [[P.madeiraDoCanteiro, veioDeMadeira(0.5)], [P.carrinhoRoda, veioDeMadeira(0.5)]]);
+    g.add(caixote);
+    // o paninho xadrez dobrado no canto do tampo
+    const pano = por(g, quina(0.16, 0.02, 0.12, 0.008), toon(0xffffff, { mapa: toalhaXadrez(0.05, P.barracaVermelho) }), L / 2 - 0.11, B.estrado + A + 0.01, z + F / 2 - 0.09);
+    pano.rotation.y = 0.2;
   }
 
   // ------------------------------------- a prateleirinha do lado, com a cesta de pães
