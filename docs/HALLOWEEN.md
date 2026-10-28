@@ -335,6 +335,18 @@ e depois ri dela mesma. Cutscene:
 > Medido (desenhos por quadro, sem -> com o enfeite): térreo 467 -> 580,
 > mezanino 297 -> 347. Sem o `?halloween`, ou antes da carta, a boutique
 > tem as mesmas 629 malhas de antes do evento.
+>
+> **A luz de Halloween** (pedido do Renan: "está muito claro"): no evento a
+> boutique fica no lusco-fusco — o `g.luzDoCeu` no primeiro quadro com o
+> fundo de ameixa, o ambiente lilás a 0,8 e a luz principal de vela a 0,5
+> (`P.boutiqueNoEscuro*`) — e quem ilumina são as abóboras ACESAS
+> (`LoteDeAboboras.montar({ acesas: true })`: a cara chapada da cor da
+> chama, o halo e a poça no chão, cada um um lote, tremendo pela cor da
+> cópia), o lustre com um halo e uma poça de vela por cima dos dele, e as
+> lanternas de papel do mezanino com o halo da cor delas
+> (`EnfeitesDePendurar.luzDasLanternas`). Nenhuma luz de verdade: custou 4
+> desenhos no térreo e 3 no mezanino. É o mesmo kit que acende o parque na
+> etapa 4.
 
 > As respostas do Renan já estão aqui dentro. Falta construir (§9).
 
