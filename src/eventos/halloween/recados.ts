@@ -46,6 +46,17 @@ export const RECADOS_DO_PARQUE = {
     { texto: '¡Volvemos de noche, panas!', assinatura: '— Sol', letra: 'kalam', tinta: tinta.laranja, quem: 'Sol' },
     { texto: 'Deixamos a toalha. Não fiquem no sol forte.', assinatura: '— Estrella', letra: 'caveat', tinta: tinta.verde, quem: 'Estrella' },
   ] satisfies Recado[],
+  /**
+   * o Walter na barraquinha de cachorro-quente, na festa: ele só late, e
+   * alguém traduziu embaixo (como no recado do Mania). Ele foi buscar a turma
+   * de ônibus; a barraca ficou pronta esperando
+   */
+  walterNaFesta: {
+    texto: 'Au! Au! 🐾\n(fui buscar a turma no ônibus — a chapa já tá quente, volto já!)',
+    assinatura: '— Walter 🐶',
+    letra: 'kalam',
+    tinta: tinta.azul,
+  } satisfies Recado,
   /** o quadro de inscrições da arena */
   desafios: {
     texto: 'Desafios suspensos: os desafiantes foram se fantasiar!',

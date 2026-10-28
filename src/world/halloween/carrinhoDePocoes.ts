@@ -144,7 +144,7 @@ const FONTE_FORMA = '"Kalam", "Segoe Print", "Comic Sans MS", cursive';
 const FONTE_REDONDA = '"Caveat", "Segoe Print", "Bradley Hand", cursive';
 
 /** um canvas que se redesenha quando as letras de mão terminam de carregar */
-function canvasComLetra(l: number, a: number, desenhar: (c: CanvasRenderingContext2D) => void): THREE.CanvasTexture {
+export function canvasComLetra(l: number, a: number, desenhar: (c: CanvasRenderingContext2D) => void): THREE.CanvasTexture {
   const cv = document.createElement('canvas');
   cv.width = l;
   cv.height = a;
@@ -380,7 +380,7 @@ function geoBebida(feitio: number, cheio: number): THREE.BufferGeometry {
 }
 
 /** pinta a geometria inteira de uma cor, mais escura embaixo (a bebida acesa por dentro) */
-function pintarVertices(geo: THREE.BufferGeometry, cor: number, escuroEmbaixo = 0.62, altura = 0.12): THREE.BufferGeometry {
+export function pintarVertices(geo: THREE.BufferGeometry, cor: number, escuroEmbaixo = 0.62, altura = 0.12): THREE.BufferGeometry {
   const g = geo.index ? geo.toNonIndexed() : geo;
   const pos = g.getAttribute('position');
   const cores = new Float32Array(pos.count * 3);
@@ -409,7 +409,7 @@ function limpo(geo: THREE.BufferGeometry, manter: readonly string[] = ['position
  * `fundir()` deixa de fora de propósito (o vidro transparente e a bebida de
  * cor por vértice) e que aqui pode ir junto sem mudar nada do que se vê.
  */
-class Juntar {
+export class Juntar {
   private readonly pedacos: THREE.BufferGeometry[] = [];
   constructor(private readonly manter: readonly string[] = ['position', 'normal']) {}
   por(geo: THREE.BufferGeometry, x: number, y: number, z: number, giro = 0, escala = 1): void {
@@ -433,7 +433,7 @@ function por(pai: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material
 }
 
 /** um cilindro de `a` até `b` */
-function haste(a: THREE.Vector3, b: THREE.Vector3, r: number, lados = 6): THREE.BufferGeometry {
+export function haste(a: THREE.Vector3, b: THREE.Vector3, r: number, lados = 6): THREE.BufferGeometry {
   const d = b.clone().sub(a);
   const geo = new THREE.CylinderGeometry(r, r, d.length(), lados);
   geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize()));

@@ -27,7 +27,9 @@
  *             mexe (as bolhas, o vapor, a gota, as maçãs), o que fecha e o que
  *             funciona de noite, e a CONVERSA COM ZOOM de cada um (a câmera
  *             perto, ele no meio do quadro e virado para ela, a dupla de lado,
- *             a fala da fantasia, e a isométrica de volta) — e o clube, o
+ *             a fala da fantasia, e a isométrica de volta), a barraquinha de
+ *             cachorro-quente do Walter (aberta na festa, com as salsichas
+ *             rolando e o recado dele; fechada no convite) — e o clube, o
  *             Mania, a estufa e a escola vazios
  *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre, nenhuma peça do evento, e a
@@ -640,6 +642,9 @@ if (roda('noite')) {
   ok(deNoite.lanternas === 1 && deNoite.luzinhas === 1 && deNoite.lampadinhas === 1, `as lanternas e os varais de luzinha acesos (${JSON.stringify({ l: deNoite.lanternas, z: deNoite.luzinhas, b: deNoite.lampadinhas })})`);
   ok(deNoite.nessie === 1, 'o Nessie aceso, com a poça na água');
   ok(deNoite.noiteDosPostes === 1 && deNoite.corDosPostes === 0xffa64d, `as luzes dos postes de noite e cor de vela (${deNoite.noiteDosPostes}, #${deNoite.corDosPostes.toString(16)})`);
+  // a medida de desenhos da noite vem ANTES das conversas: com a câmera de
+  // perto ligada, ela contaria o parque inteiro
+  const desenhosDeNoite = await medir();
   // as fantasias do parque (§3): cada um a sua, e só na festa
   const fantasias = await j(() => {
     const g = window.jogo;
@@ -666,7 +671,7 @@ if (roda('noite')) {
   ok(/Falar com o Mano/.test(promptDoMano), `o ponto da fala do Mano vampiro (${promptDoMano})`);
   await page.keyboard.press('KeyE');
   // a câmera chega perto antes da fala, e o balão digita letra por letra (o navegador do teste anda devagar)
-  await page.waitForFunction(() => /Outro vampiro/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
+  await page.waitForFunction(() => /Outro vampiro/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 300000 }).catch(() => {});
   const falaDoMano = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
   ok(/Outro vampiro/.test(falaDoMano) && /Ari/.test(falaDoMano), `o Mano repara no outro vampiro (${falaDoMano.slice(0, 80)})`);
   // até a câmera de perto devolver a isométrica (a medida de desenhos é da isométrica)
@@ -688,7 +693,6 @@ if (roda('noite')) {
   const q2 = await quadro();
   ok(Math.abs(q1.chama - q2.chama) > 1e-4, `a chama das abóboras treme (${q1.chama.toFixed(3)} → ${q2.chama.toFixed(3)})`);
   ok(Math.hypot(q1.asa[0] - q2.asa[0], q1.asa[2] - q2.asa[2]) > 0.05, 'os morcegos voam em volta da roda');
-  const desenhosDeNoite = await medir();
   console.log(`  desenhos por quadro na alameda: pôr do sol ${desenhosDeTarde} -> noite ${desenhosDeNoite}`);
   await page.screenshot({ path: `${OUT}-noite-alameda.png` });
   for (const [nome, x, z, zoom] of [['praca', 2, -14, 24], ['lago', -13, 11, 13], ['boutique', -31, -16.5, 13]]) {
@@ -764,6 +768,54 @@ if (roda('festa')) {
   });
   ok(pecas.carrinho === 1 && pecas.lousa === 1 && pecas.canteiro === 1 && pecas.bacia === 1 && pecas.pocao,
     `o carrinho de poções, a lousa, o canteiro, a bacia e o caldeirão borbulhando (${JSON.stringify(pecas)})`);
+  // a barraquinha de cachorro-quente do Walter: aberta, com a chapa ligada, a lâmpada e o recado dele
+  const barraca = await j(() => {
+    const s = window.jogo.scene;
+    let b = null;
+    s.traverse((o) => { if (!b && o.userData?.peca === 'barraca-do-walter') b = o; });
+    if (!b) return null;
+    const nomes = new Set();
+    b.traverse((o) => { if (o.name) nomes.add(o.name); if (o.userData?.gigante) nomes.add('cachorro-quente-gigante'); });
+    return {
+      x: +b.position.x.toFixed(1), z: +b.position.z.toFixed(1),
+      chapa: nomes.has('salsichas-na-chapa'), vapor: nomes.has('vapor-da-chapa'), lampada: nomes.has('lampada-da-barraca'),
+      gigante: nomes.has('cachorro-quente-gigante'), painel: nomes.has('painel-do-walter'), cardapio: nomes.has('cardapio-do-walter'),
+      recado: !!s.getObjectByName('recado-do-walter'),
+    };
+  });
+  ok(!!barraca && barraca.chapa && barraca.vapor && barraca.lampada && barraca.gigante && barraca.painel && barraca.cardapio && barraca.recado,
+    `a barraquinha do Walter aberta na praça da roda: a chapa, o vapor, a lâmpada, o cachorro-quente gigante, o painel, o cardápio e o recado (${JSON.stringify(barraca)})`);
+  // (cada uma rola um quarto de volta a cada ~3 s de jogo, e o navegador do teste anda a ~1/5)
+  const rolou = async () => j(() => {
+    const im = window.jogo.scene.getObjectByName('salsichas-na-chapa');
+    const m = new im.matrix.constructor();
+    const giros = [];
+    for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, m); giros.push(m.elements.slice(4, 7).map((v) => v.toFixed(2)).join(' ')); }
+    return giros.join(' | ');
+  });
+  const r1 = await rolou();
+  await espera(9000);
+  const r2 = await rolou();
+  ok(r1 !== r2, `as salsichas rolam na chapa (${r1} → ${r2})`);
+  // o recado: o Walter foi buscar a turma de ônibus
+  await j(() => {
+    const g = window.jogo;
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:recado-Walter');
+    g.debugPlace(it.x, it.z, Math.PI);
+  });
+  await espera(1200);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => /volto já/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
+  const doWalter = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
+  ok(/buscar a turma no ônibus/.test(doWalter), `o recado do Walter na barraca (${doWalter.slice(0, 70)})`);
+  await passarFalas();
+  for (const [nome, de, para] of [['barraca', [10.6, 2.0, -13.6], [8.55, 1.2, -16.6]], ['balcao', [8.75, 1.85, -15.25], [8.5, 1.05, -16.55]]]) {
+    await j(([de, para]) => { const T = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new T(...de), new T(...para)); }, [de, para]);
+    await espera(1500);
+    await page.screenshot({ path: `${OUT}-festa-walter-${nome}.png` });
+  }
+  await j(() => window.jogo.setCameraOmbro(null));
+
   // o que mexe: as bolhas do balão, a gota, o vapor do caldeirão e as maçãs boiando
   const vivo = () => j(() => {
     const s = window.jogo.scene;
@@ -799,7 +851,7 @@ if (roda('festa')) {
     // as falas só começam com a câmera no lugar (e o navegador do teste anda devagar)
     await page.waitForFunction(() => !!document.querySelector('.dialogue.show'), null, { timeout: 120000 }).catch(() => {});
     // o balão digita letra por letra: espera a fala inteira (ou ao menos parar de crescer)
-    if (fala) await page.waitForFunction((f) => new RegExp(f).test(document.querySelector('.dialogue.show')?.textContent ?? ''), fala.source, { timeout: 120000 }).catch(() => {});
+    if (fala) await page.waitForFunction((f) => new RegExp(f).test(document.querySelector('.dialogue.show')?.textContent ?? ''), fala.source, { timeout: 300000 }).catch(() => {});
     else await espera(4000);
     await espera(500);
     const tomada = await j((peca) => {
@@ -872,6 +924,21 @@ if (roda('festa')) {
     await espera(1600);
     await page.screenshot({ path: `${OUT}-festa-longe-${nome}.png` });
   }
+  // no convite (o pôr do sol), a barraquinha já está lá, fechada: o pano no balcão e nada na chapa
+  await naFaseConvite('villa-lobos');
+  const fechada = await j(() => {
+    const s = window.jogo.scene;
+    let b = null;
+    let pano = 0;
+    s.traverse((o) => {
+      if (!b && o.userData?.peca === 'barraca-do-walter') b = o;
+    });
+    if (!b) return null;
+    s.traverse((o) => { if (o.userData?.peca === 'pano-de-fechado' && Math.hypot(o.position.x - b.position.x, o.position.z - b.position.z) < 1.5) pano++; });
+    return { chapa: !!b.getObjectByName('salsichas-na-chapa'), lampada: !!b.getObjectByName('lampada-da-barraca'), pano, recado: !!s.getObjectByName('recado-do-walter') };
+  });
+  ok(!!fechada && !fechada.chapa && !fechada.lampada && fechada.pano === 1 && !fechada.recado, `no convite a barraquinha espera fechada, com o pano de FECHADO (${JSON.stringify(fechada)})`);
+
   // o clube, o Mania, a estufa e a escola ficam vazios na festa (estão todos no parque)
   for (const [cena, sumidos] of [['clube', ['girafa', 'capy', 'josefina', 'noel']], ['mania-de-churrasco', ['garcom-canino']], ['estufa', ['josefina']], ['escola', ['gatito']]]) {
     await naFaseConvite(cena, ['halloween:festa', 'estufa-aberta']);
