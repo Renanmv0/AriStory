@@ -548,6 +548,22 @@ freando, a porta abrindo) é peça nova desta etapa.
 - **névoa baixa** rolando no lago e na grama: só se a medida no celular
   deixar (é a peça mais cara da lista).
 
+> **Construída (a parte A, escondida atrás do `?halloween`).** Na fase
+> `festa` (e no `depois`) o parque é de noite: a NOITE da clareira com o
+> luar do lado da câmera (`P.luarDaFesta`, ambiente 0,72, luar 0,52); as
+> quatro luzes dos postes que o parque já tinha em modo noite e cor de vela;
+> as abóboras acesas (as da roda também, com o halo andando junto e sem
+> poça); as lanternas de papel e os **varais de luzinha** (novos no
+> `EnfeitesDePendurar.luzinhas`: em cima de cada varal de bandeirolas, na
+> praça da roda e na fachada da boutique, laranja, roxo e creme); os
+> **morcegos voando** em volta da roda (`world/halloween/morcegos.ts`, dois
+> lotes, a asa batendo na matriz); o **Nessie aceso** com a poça verde
+> andando com ele; e a vitrine da boutique acesa na calçada. A névoa baixa
+> ficou de fora por enquanto (a mais cara da lista). Medido na alameda:
+> 391 -> 408 desenhos por quadro. Teste: `scripts/halloween.mjs SO=noite`.
+> Até a cutscene do ônibus (parte B) existir, a fase `festa` só se liga
+> pelo teste.
+
 #### B. A saída da boutique e o ônibus (a cutscene)
 
 1. a porta da boutique abre para o parque de noite; a dupla para na
@@ -636,8 +652,9 @@ antes da Luna): é a festa da Estella, e ela convidou todo mundo.
    fantasma; e todas **muito bem feitas, detalhadas e fofas** — o plano novo
    está no §3;
 4. **o que volta a funcionar de noite**: sim — a roda gigante, o sorvete e a
-   patinação. E **o Gatito vem**, com uma fantasia engraçada (§3: de cachorro — de rato
-   não, o Ari tem fobia de rato);
+   patinação. E **o Gatito vem**, com uma fantasia engraçada (§3: **de Walter**, de
+   gravatinha, porque ele gosta muito do restaurante — de rato não, o Ari
+   tem fobia de rato);
 5. **todos vêm, independente da situação** (o Jean-Luc antes das cinco
    vitórias, a escola antes da Luna);
 6. **o Walter some atrás da roda**, deixando a dica do final;
@@ -678,12 +695,16 @@ feitas, detalhadas e fofas**, com o capricho das da dupla (§5.4).
 | **Noel** (peru) | o carrinho de poções | **cientista maluco** | o jaleco branco no lugar do avental, os óculos de proteção na testa, a crista arrepiada de algodão, os tubos de ensaio coloridos no bolso | ele vive misturando suco; hoje são poções — e ele não para quieto |
 | **Josefina** (tartaruga) | o canteiro de abóboras | **dragãozinho** | a fileira de espinhos de feltro descendo pelo casco, as asinhas, o capuz com dois chifrinhos, o rabinho com a ponta de flecha, e uma fumacinha de chá saindo de vez em quando | "o dragão mais devagar do mundo" — e ela adora contar história de dragão |
 | **Walter** (cão garçom) | some atrás da roda (o final) | **múmia garçom** | as ataduras com as pontas soltas balançando, a gravatinha por cima, a bandeja de doces | ele serve a festa do final |
-| **Gatito** (gato) | o piquenique | **cachorro** — a fantasia engraçada (pedido do Renan) | a tiara de orelhas caídas de cachorro por cima das orelhas de gato, o focinho postiço de bolinha preta preso com elástico, a coleira com a plaquinha de osso escrita "AU" e um rabinho de cachorro amarrado no rabo dele, que balança quando ele anda; de vez em quando ele solta um "au" sem a menor convicção | um gato de cachorro: "o disfarce perfeito, ninguém vai desconfiar" (era de rato; o Renan trocou — o Ari tem fobia de rato de verdade, e rato não entra no jogo) |
+| **Gatito** (gato) | o piquenique | **de Walter** — cachorro garçom, a fantasia engraçada (pedido do Renan) | a tiara de orelhas caídas de cachorro por cima das orelhas de gato, o focinho postiço de bolinha preta preso com elástico, a **gravatinha borboleta** do Walter (pedido do Renan), a bandejinha de garçom e um rabinho de cachorro amarrado no rabo dele, que balança quando ele anda; de vez em quando ele solta um "au" sem a menor convicção | ele gosta MUITO do Mania de Churrasco, então veio de Walter (era de rato; o Renan trocou — o Ari tem fobia de rato de verdade, e rato não entra no jogo) |
 | **Flynn** (raposa) | o campinho de frisbee | **lobisomem** | as luvas peludas de garra, o peitoral de pelo cinza, as orelhas postiças de lobo e a bandana dos Gatitos por cima | o atleta, uivando de animação |
 | **Luna** (coelha) | o piquenique | **coruja da meia-noite** | o capuz com os tufos de orelha de coruja e os olhões de feltro, a capinha de penas em camadas, a lua crescente pendurada no pescoço | Luna é lua |
 | **Sol** (coelha) | o piquenique | **caveirinha catrina** | a coroa de flores coloridas, a carinha pintada de caveirinha fofa (as bochechas de flor), a saia de babado colorida | a animada, e as expressões dela são do espanhol |
 | **Estrella** (coelha) | o piquenique | **fadinha das estrelas** | as asas de tule com brilho, a varinha de estrela, a saia de tule azul-noite com estrelinhas | Estrella é estrela |
 | **patinhos do lago** | o lago | **diabinhos** | a mãe com a tiara de chifrinhos vermelhos e uma capinha, os filhotes só com os chifrinhos | uma família inteira de diabinhos fofos |
+
+**A fala do Gatito** (pedido do Renan: ele conta que está de Walter, porque
+gosta muito do restaurante; rascunho): "Au. … Eu vim de Walter! O Mania de
+Churrasco é o meu restaurante favorito. A gravatinha é de verdade, viu?"
 
 **A fala do Mano** (rascunho; quem estiver vestindo a capa de vampiro —
 normalmente o Ari, mas o jogador pode trocar — é quem ele cita):

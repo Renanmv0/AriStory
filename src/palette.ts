@@ -2189,6 +2189,15 @@ export const PALETTE = {
   caldaDeAboboraSombra: 0xe0832a,
   /** a luz dos postes no Halloween: laranja de vela */
   luzDeAbobora: 0xffa64d,
+  /** as luzinhas da festa (o varal de lampadinhas da praça e da boutique) */
+  luzinhaLaranja: 0xffa94a,
+  luzinhaRoxa: 0xc08cff,
+  luzinhaCreme: 0xfff0c2,
+  /** os morcegos que voam em volta da roda: o corpo e a asa (roxo quase preto) */
+  morcegoVoando: 0x2f2440,
+  morcegoAsa: 0x3f3058,
+  /** a noite da festa: o luar do lado da câmera, um tico lilás */
+  luarDaFesta: 0xc4c8ff,
   /**
    * A BOUTIQUE NO HALLOWEEN (a luz de dentro, pelo `g.luzDoCeu`): o fundo de
    * ameixa, o ambiente lilás meio apagado e a luz principal de vela — a loja

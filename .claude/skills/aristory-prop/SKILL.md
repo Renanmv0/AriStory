@@ -924,6 +924,20 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   Halloween já usa; o parque da noite (etapa 4) é o mesmo chamado. As
   lanternas de papel acendem com `luzDasLanternas()` (um halo da cor do
   papel em cada uma).
+- **As luzinhas da festa** (`EnfeitesDePendurar.luzinhas(a, b)`): o fio e
+  uma lampadinha em gota a cada 38 cm, alternando laranja, roxo e creme —
+  a lâmpada é chapada (`acesoPorVertice()`, branca nos vértices e a cor da
+  cópia), em dois lotes (soquete e lâmpada), e o halo de cada uma vem de
+  `luzDasLuzinhas()`. De noite elas vão POR CIMA dos varais de bandeirola,
+  ao lado do caminho (nunca atravessadas por cima dele).
+- **Os morcegos voando** (`morcegos.ts`, `BandoDeMorcegos`): corpinho com
+  orelhas num lote e as asas noutro, DUAS cópias por morcego (a esquerda é
+  a direita espelhada na matriz, com material de dois lados); cada um num
+  anel em volta do eixo, subindo e descendo, a asa batendo na raiz. Menor
+  que 2,6× não se vê voando em volta da roda.
+- **O Nessie aceso** (`NessieNoLago.acender()`): o vinil com um brilho
+  fraco (0,16 — mais que isso ele desbota e perde o verde) e a poça verde
+  na água, filha dele, com `renderOrder` acima da água.
 - **O que se pendura** (`pendurados.ts`, `EnfeitesDePendurar`): balança no
   `Vento` do `core/shaders.ts` com a ALTURA NEGATIVA (o peso cresce para
   baixo da raiz, e a ponta de baixo é que voa). O papel recortado é um

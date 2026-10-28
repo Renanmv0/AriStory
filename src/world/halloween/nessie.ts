@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE as P } from '../../palette';
-import { toon } from '../../core/materials';
+import { luzNoChao, toon } from '../../core/materials';
 import { fundir } from '../fundir';
 import { chapeuDeBruxa } from './pecas';
 
@@ -214,6 +214,23 @@ export class NessieNoLago {
 
   private ponto(a: number): { x: number; z: number } {
     return this.lago.naBeira(a, 3.1 + 0.55 * Math.sin(3 * a + 0.7));
+  }
+
+  /**
+   * ACESO (a noite da festa): o vinil acende por dentro (o mesmo pano com
+   * brilho — a cor por vértice continua, a barriga clara fica clara) e uma
+   * poça de luz verde na água em volta dele, que anda junto. Luz pintada.
+   */
+  acender(): void {
+    const vinil = this.group.getObjectByName('vinil') as THREE.Mesh | undefined;
+    if (vinil) vinil.material = toon(0xffffff, { corPorVertice: true, glow: 0.16 });
+    const poca = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2).rotateX(-Math.PI / 2), luzNoChao(P.nessieBarriga, 0.5));
+    poca.name = 'luz-do-nessie';
+    poca.position.y = 0.04;
+    // por cima da água (que é decalque do chão, pintada depois dele)
+    poca.renderOrder = 30;
+    poca.userData.semSombra = true;
+    this.group.add(poca);
   }
 
   get x(): number {

@@ -15,7 +15,9 @@ import {
   InflaveisNoVento, aboboraInflavel, aranhaInflavel, fantasmaInflavel, gatoInflavel, morcegoInflavel,
 } from '../../world/halloween/inflaveis';
 import { giroDeMatiz, juntas, repintar, trocaDeCores } from '../../world/halloween/repintar';
-import { POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco } from '../../world/noite';
+import { NOITE, POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco, type MomentoDoCeu } from '../../world/noite';
+import { BandoDeMorcegos } from '../../world/halloween/morcegos';
+import { pocaDeLuz } from '../../world/furniture';
 import { ARI, RENAN } from '../../characters/cast';
 import { eventoLiberado, faseDoHalloween, parqueEnfeitado } from './fase';
 import { RECADOS_DO_PARQUE } from './recados';
@@ -92,6 +94,8 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   const g0 = w.game;
   if (!eventoLiberado() || !parqueEnfeitado(g0)) return SEM_EVENTO;
   const convite = faseDoHalloween(g0) === 'convite';
+  /** a festa (e o depois dela) é de NOITE: o parque inteiro aceso (§2.4.1, A) */
+  const deNoite = !convite;
 
   const enfeite = new THREE.Group();
   enfeite.name = 'halloween-no-parque';
@@ -174,6 +178,17 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     const h = Math.min(a.alto, b.alto) * 0.72;
     pendurados.varal(new THREE.Vector3(a.x, h, a.z), new THREE.Vector3(b.x, h, b.z), { barriga: 0.5 + Math.hypot(a.x - b.x, a.z - b.z) * 0.02, lanternaACada: 6 });
   }
+  // de noite, um varal de LUZINHAS por cima de cada um, e mais um na praça
+  // da roda (do poste da frente ao da bilheteria) — também ao lado do caminho
+  if (deNoite) {
+    for (const [[ax, az], [bx, bz]] of [...VARAIS, [[7.6, -11.4], [7.0, -14.5]] as [[number, number], [number, number]]]) {
+      const a = posteEm(ax, az);
+      const b = posteEm(bx, bz);
+      if (!a || !b) continue;
+      const h = Math.min(a.alto, b.alto) * 0.84;
+      pendurados.luzinhas(new THREE.Vector3(a.x, h, a.z), new THREE.Vector3(b.x, h, b.z), { barriga: 0.35 + Math.hypot(a.x - b.x, a.z - b.z) * 0.015 });
+    }
+  }
   // uma abóbora no pé de cada poste, do lado de fora do caminho
   postes.forEach((p, i) => {
     let melhor = { dx: 0.55, dz: 0.55, d: -Infinity };
@@ -252,7 +267,7 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   // na roda: uma abóbora pendurada na frente de cada gôndola, e morceguinhos de papel colados nos raios
   const daRoda = new LoteDeAboboras();
   pecas.roda.cabins.forEach(() => daRoda.por({ x: 0, z: 0, tamanho: 'pequena', cara: 'sorriso', simples: true }));
-  const aboborasDaRoda = daRoda.montar();
+  const aboborasDaRoda = daRoda.montar({ acesas: deNoite, semPoca: true });
   pecas.roda.group.add(aboborasDaRoda);
   const naRoda = new EnfeitesDePendurar();
   for (let i = 0; i < 12; i++) {
@@ -264,17 +279,26 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   const aro = pecas.roda.group.getObjectByName('aro');
   const naRodaMontado = naRoda.montar();
   (aro ?? pecas.roda.group).add(naRodaMontado);
-  const malhasDaRoda = aboborasDaRoda.children.filter((c): c is THREE.InstancedMesh => (c as THREE.InstancedMesh).isInstancedMesh);
-  malhasDaRoda.forEach((m) => { m.frustumCulled = false; });
+  const lotesDaRoda = aboborasDaRoda.children.filter((c): c is THREE.InstancedMesh => (c as THREE.InstancedMesh).isInstancedMesh);
+  lotesDaRoda.forEach((m) => { m.frustumCulled = false; });
+  // acesas, o halo de cada uma anda junto, na frente da cara
+  const haloDaRoda = lotesDaRoda.find((m) => m.name === 'halos-das-aboboras');
+  const malhasDaRoda = lotesDaRoda.filter((m) => m !== haloDaRoda);
   const matriz = new THREE.Matrix4();
+  const semGiro = new THREE.Quaternion();
   const moverAboborasDaRoda = (): void => {
     const r = ABOBORA.pequena.raio * 1.15;
     pecas.roda.cabins.forEach((c, i) => {
       // pendurada na frente da gôndola, embaixo da janela, virada para fora
-      matriz.compose(new THREE.Vector3(c.position.x, c.position.y - 1.35 - 0.62, 0.88), new THREE.Quaternion(), new THREE.Vector3(r, r, r));
+      const y = c.position.y - 1.35 - 0.62;
+      matriz.compose(new THREE.Vector3(c.position.x, y, 0.88), semGiro, new THREE.Vector3(r, r, r));
       malhasDaRoda.forEach((m) => m.setMatrixAt(i, matriz));
+      if (haloDaRoda) {
+        matriz.compose(new THREE.Vector3(c.position.x, y + r * 0.4, 0.88 + r * 0.9), semGiro, new THREE.Vector3(1, 1, 1).setScalar(r * 3.4));
+        haloDaRoda.setMatrixAt(i, matriz);
+      }
     });
-    malhasDaRoda.forEach((m) => { m.instanceMatrix.needsUpdate = true; });
+    lotesDaRoda.forEach((m) => { m.instanceMatrix.needsUpdate = true; });
   };
   moverAboborasDaRoda();
 
@@ -454,6 +478,7 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     pendurados.teia(placa.position.x + 0.25, caixa.max.y * 0.55, placa.position.z + 0.12, placa.rotation.y, 0.3, { aranha: true });
   }
   const nessie = new NessieNoLago(pecas.agua, pecas.vagaDoNessie);
+  if (deNoite) nessie.acender();
   w.add(nessie.group);
 
   // ===================================================== a boutique
@@ -464,6 +489,11 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     pendurados.teia(B.x + 0.06, 2.55, B.z - 4.3, Math.PI / 2, 0.5, { aranha: true });
     pendurados.teia(B.x + 0.06, 2.6, B.z + 4.35, Math.PI / 2, 0.42, { aranha: false });
     pendurados.varal(new THREE.Vector3(B.x + 0.95, 2.95, B.z - 5.4), new THREE.Vector3(B.x + 0.95, 2.95, B.z + 5.4), { barriga: 0.35, passo: 0.45 });
+    if (deNoite) {
+      // as luzinhas por cima das bandeirolas do toldo, e a vitrine acesa na calçada
+      pendurados.luzinhas(new THREE.Vector3(B.x + 0.7, 3.45, B.z - 5.6), new THREE.Vector3(B.x + 0.7, 3.45, B.z + 5.6), { barriga: 0.3 });
+      for (const dz of [-3.0, 3.0]) w.add(w.place(pocaDeLuz(1.5, P.luzDeAbajur, 0.3), B.x + 1.25, 0.02, B.z + dz));
+    }
     abobora(B.x + 0.75, B.z - 1.75, 'media', { giro: Math.PI / 2 - 0.3 });
     abobora(B.x + 0.6, B.z - 2.25, 'pequena', { cara: null, cor: P.aboboraCreme, simples: true });
     abobora(B.x + 0.75, B.z + 1.8, 'media', { giro: Math.PI / 2 + 0.2, cara: 'dentinho' });
@@ -564,6 +594,34 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     });
   }
 
+  // ===================================================== A NOITE DA FESTA
+  // A dupla demorou tanto se arrumando que, quando sai da boutique, já é
+  // noite (§2.4.1, A). É a NOITE da clareira (`world/noite.ts`) com o luar
+  // vindo do lado da câmera (pela mesma razão do pôr do sol: de trás, o
+  // parque inteiro ficaria de frente na sombra), e quem ilumina é luz
+  // PINTADA — as abóboras, as lanternas, as luzinhas, o Nessie, a vitrine —
+  // mais as quatro luzes dos postes que o parque já tem, agora de noite e
+  // na cor de vela. Nenhuma luz nova.
+  const bando = deNoite ? new BandoDeMorcegos(18, { raio: [5, 11], altura: [7, 15] }) : null;
+  if (deNoite && bando) {
+    const noiteDaFesta: MomentoDoCeu = { ...NOITE, dirSol: [13, 20, 11], sol: P.luarDaFesta, forcaSol: 0.52, forcaAmbiente: 0.72 };
+    const luzes = w.root.getObjectByName('luzes-dos-postes');
+    const dosPostes = luzes?.userData.luzes as { noite: number } | undefined;
+    luzes?.traverse((o) => {
+      if ((o as THREE.PointLight).isPointLight) (o as THREE.PointLight).color.setHex(P.luzDeAbobora);
+    });
+    // os morcegos voando em bando em volta da roda, por cima das gôndolas
+    bando.group.position.set(pecas.roda.group.position.x, 0, pecas.roda.group.position.z);
+    w.add(bando.group);
+    let pintado = false;
+    w.onUpdate(() => {
+      if (dosPostes) dosPostes.noite = 1;
+      if (pintado) return;
+      pintado = true;
+      g0.luzDoCeu(luzDoMomento(noiteDaFesta));
+    });
+  }
+
   // ============================================ os comentários da dupla
   // Cada um uma vez por save, quando quem joga passa perto (e está ANDANDO:
   // parado, ele pode estar numa conversa, e um balão não pode cair no meio
@@ -605,7 +663,10 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   }
 
   // ====================================================== montar os lotes
-  enfeite.add(aboboras.montar(), pendurados.montar(), lapides.montar());
+  enfeite.add(aboboras.montar({ acesas: deNoite }), pendurados.montar(), lapides.montar());
+  if (deNoite) {
+    for (const luz of [pendurados.luzDasLanternas(0.6), pendurados.luzDasLuzinhas(0.6)]) if (luz) enfeite.add(luz);
+  }
   // a sombra só de quem tem corpo no chão: a casca das abóboras e a pedra das
   // lápides (a cara, o cabinho e o que balança no vento ficam sem: miúdos
   // demais para a sombra aparecer, e cada malha com sombra é um desenho a mais)
@@ -617,12 +678,19 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   });
 
   // ============================================== o relógio do enfeite
+  let relogio = 0;
   w.onUpdate((dt) => {
     pendurados.update(dt);
     naRoda.update(dt);
     nessie.update(dt);
     vento.update(dt);
     moverAboborasDaRoda();
+    if (deNoite) {
+      relogio += dt;
+      aboboras.tremer(relogio);
+      daRoda.tremer(relogio);
+      bando?.update(dt);
+    }
   });
 
   enfeite.userData.pintados = pintados;
