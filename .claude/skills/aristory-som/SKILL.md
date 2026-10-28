@@ -135,6 +135,22 @@ Picos medidos no `.wav`: `tibum` 0,20 (o mais alto, de propósito), `garca`
 0,06, `moeda` 0,05, `piado` 0,03 e `asas` 0,02 (é fundo: toca junto do
 grasnado, quando a garça levanta voo).
 
+**O ônibus da festa de Halloween** (`eventos/halloween/chegadaDoOnibus.ts`):
+
+- `buzina`: o "fon-fon" simpático de ônibus de bairro, não sirene — duas
+  notas de terça graves (mi e sol da pentatônica) juntas, em dente-de-serra
+  abafado (a corneta) com um quadrado baixinho uma oitava acima (o metal),
+  em duas buzinadas (a segunda mais comprida);
+- `motorDoOnibus`: um "brum" grave descendo com o ronco do escapamento
+  (chiado passa-baixa); a cena toca em fila enquanto ele anda, mais
+  espaçado quando ele freia;
+- `freioDoOnibus`: o tranco grave e o "pssshh" do freio de ar;
+- `portaDoOnibus`: o sopro da porta pneumática e o "clac" das folhas no
+  fim (`n` par abre, ímpar fecha).
+
+Picos no `.wav`: `buzina` 0,11, `motorDoOnibus` 0,08, `freioDoOnibus`
+0,08 e `portaDoOnibus` 0,08.
+
 Medidos no `.wav`: o clique do radinho e o "puf" da chama saíam baixos
 demais (~0,03) — o filtro estreito do `chiado` come quase todo o ruído, e o
 volume dele precisa compensar.

@@ -25,7 +25,7 @@ const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /** a noite da festa de Halloween (`docs/HALLOWEEN.md`): as peças dela só existem nessa fase */
-const FESTA = ['halloween:convite', 'halloween:festa'];
+const FESTA = ['halloween:convite', 'halloween:festa', 'halloween:onibus-chegou'];
 
 /** cada peça, e em que cena ela aparece (e, se for de evento, as flags da fase) */
 const PECAS = [

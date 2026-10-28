@@ -118,6 +118,19 @@ o bicho está: numa faixa curta demais, quase todo sorteio cai perto, as doze
 tentativas falham e ele fica parado. É o mesmo mecanismo que segura um bicho de
 posto — só que aí é de propósito.
 
+## Bicho que PULA (o Walter no caixote da barraca)
+
+O pulo é de quem monta a cena, e a POSE é do bicho: a cena leva o corpo
+pelo ar (de serviço, sem missão: a posição num arco, `y` somando
+`arco·4k(1−k)`, e o `rotation.y` para onde ele pula), e diz ao bicho em que
+ponto do pulo ele está — o Walter tem `salto` (0 a 1; 0 é fora do pulo), e
+o `animar` estica as patas da frente para a frente e as de trás para trás na
+saída e troca na chegada, com o focinho subindo e descendo. O `update` da
+base não mexe no `y`, então um bicho pode ficar em cima de um caixote
+(`group.position.y`) e andar lá em cima com `seguir`. O arco tem que passar
+da quina do caixote: com o arco baixo, o pé atravessava a beira dele
+(`arco = 0,15 + 0,3 × desnível`).
+
 ## Bicho com POSTO, que não passeia
 
 A girafa da portaria do clube fica parada na guarita, e isso **não pediu uma

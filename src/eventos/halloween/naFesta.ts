@@ -26,7 +26,8 @@ import { fantasiarQuemEstaAqui } from './fantasiados';
 import { ausentarNaCena, type RecadoNoPosto } from './ausentes';
 import { RECADOS_DO_PARQUE } from './recados';
 import type { PecasDoParque } from './noParque';
-import { FLAG_DO_ONIBUS } from './fase';
+import { FLAG_DO_ONIBUS, faseDoHalloween } from './fase';
+import { chegadaDoOnibus } from './chegadaDoOnibus';
 
 /*
  * OS POSTOS DA FESTA (`docs/HALLOWEEN.md`, §2.4.1, C): na noite da festa
@@ -325,7 +326,9 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     rumo = novo;
     pulo = null;
   };
-  if (g0.flag(FLAG_DO_ONIBUS)) naBarraca();
+  // antes do ônibus chegar ele não está aqui (a cena da chegada o traz; no
+  // fim dela, `naBarraca`); depois da festa, sem a cena, ele já está no posto
+  if (g0.flag(FLAG_DO_ONIBUS) || faseDoHalloween(g0) !== 'festa') naBarraca();
   else walter.group.visible = false;
 
   /** o comentário da dupla, uma vez por save: a primeira vez que o vê indo */
@@ -821,6 +824,16 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     w.onUpdate(() => {
       ponto.moveTo(c.bicho.x, c.bicho.z);
       if (c.presente) ponto.enabled = c.presente();
+    });
+  }
+
+  // ------------------------------------------------- a chegada do ônibus
+  // a primeira vez na noite da festa: a turma desce do ônibus (uma vez por save)
+  if (!g0.flag(FLAG_DO_ONIBUS) && faseDoHalloween(g0) === 'festa') {
+    chegadaDoOnibus(w, {
+      gina, capy, noel, walter, gatito, flynn, josefina,
+      coelhinhas: [luna, sol, estrella].filter((c): c is CoelhaDaTorcida => !!c),
+      walterNaBarraca: naBarraca,
     });
   }
 
