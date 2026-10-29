@@ -416,8 +416,11 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
       g.segurarNaCena(quemEhAri, null);
       g.segurarNaCena(quemEhRenan, null);
       for (const peca of [...FANTASIA_DE_VAMPIRO, ...FANTASIA_DE_MORCEGUINHO]) g.ganharPeca(peca);
-      for (const peca of FANTASIA_DE_VAMPIRO) g.equipWearable(peca, 'ari');
-      for (const peca of FANTASIA_DE_MORCEGUINHO) g.equipWearable(peca, 'renan');
+      // a roupa de antes vai para o guarda-roupa, e a fantasia entra INTEIRA
+      // (vestir peça por peça recusava a vaga ocupada: o Ari saía de camiseta
+      // com a capa por cima)
+      g.vestirConjunto(FANTASIA_DE_VAMPIRO, 'ari');
+      g.vestirConjunto(FANTASIA_DE_MORCEGUINHO, 'renan');
       meia.removeFromParent();
       // saem no vão entre a ponta da arara e o cantinho, de frente para a câmera
       // (no corredor dos provadores a arara de frio taparia os dois)

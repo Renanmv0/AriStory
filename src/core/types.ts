@@ -684,6 +684,13 @@ export interface GameAPI {
    * porque as 4 vagas de vestimenta sao as 4 partes do corpo.
    */
   equipWearable(item: ItemDef, quem?: string): boolean;
+  /**
+   * VESTE UM CONJUNTO INTEIRO (a fantasia que a Estella dá): tira tudo o que
+   * está no corpo — para o guarda-roupa, nada se perde — e veste as peças,
+   * cada uma na vaga dela. O `equipWearable` sozinho recusa vaga ocupada, e
+   * por isso só entrava o que caía em vaga vazia.
+   */
+  vestirConjunto(pecas: readonly ItemDef[], quem?: string): void;
   unequipWearable(slot: number, quem?: string): void;
   /** Move (ou troca) um item entre duas vagas. E o que o arrastar usa. */
   moveItem(de: Vaga, para: Vaga, quem?: string): boolean;
