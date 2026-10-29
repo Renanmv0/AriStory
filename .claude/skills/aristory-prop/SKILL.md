@@ -902,10 +902,11 @@ algodão-doce saiu.
 
 ## O ônibus da cidade (`world/onibusDaCidade.ts`)
 
-O ônibus urbano detalhado (pedido do Renan: as mesmas cores do `bus()`, mais
-caprichado). Hoje ele é o ônibus do ponto na noite da festa de Halloween e o
-da cena da chegada; o `bus()` continua sendo o de sempre (parque e clube).
-O molde de VEÍCULO:
+O ônibus urbano detalhado (pedido do Renan: as mesmas cores do `bus()` de
+antes, mais caprichado). Ele nasceu para a chegada da festa de Halloween e
+virou o PADRÃO: é o ônibus do ponto do parque ("Clube") e do clube
+("Parque"), e o `bus()` saiu do kit. Na noite da festa a camada só troca o
+letreiro (`trocarDestino`). O molde de VEÍCULO:
 
 - **A carroceria é o perfil de lado extrudado na largura, com bisel**: o
   teto com a quina redonda na frente e atrás, o para-brisa deitado e as
@@ -935,7 +936,7 @@ O molde de VEÍCULO:
   nome, saem um dedo e correm para os lados; a luzinha de dentro acende),
   `acenderFarois` (o halo e a poça na rua), `piscaAlerta` (o `update`
   pisca) e `rodar`. O resto passa pela `juntarPorCor` e pela `fundir()`.
-- **O contrato do `bus()`** (9 × 2,55, nariz no `+X`, portas no `+Z`, a
+- **O contrato do `bus()` antigo** (9 × 2,55, nariz no `+X`, portas no `+Z`, a
   porta da frente em `x = 2,6`, o degrau em 0,56) — por isso a troca não
   mexe em colisor nem no ponto de "Pegar o ônibus". Os eixos mudaram: a
   roda da frente fica ATRÁS da porta da frente, como em ônibus urbano (no
@@ -945,7 +946,8 @@ O molde de VEÍCULO:
   lataria, o para-choque de trás no plano da saia, a borracha da folha no
   plano da beirada da moldura).
 - **O peso**: no ponto, 711 → 689 desenhos por quadro com o novo no lugar do
-  velho, e 469 mil → 502 mil triângulos (~34 mil o ônibus).
+  velho, e 469 mil → 502 mil triângulos (~34 mil o ônibus); as cenas do
+  parque e do clube têm 33 malhas a menos (66 soltas do velho, 33 do novo).
 
 ## O kit do Halloween (`world/halloween/`)
 

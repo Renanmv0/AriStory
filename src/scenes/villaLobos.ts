@@ -7,12 +7,13 @@ import { bilheteriaDaRoda } from '../world/bilheteriaDaRoda';
 import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { fundir } from '../world/fundir';
+import { OnibusDaCidade } from '../world/onibusDaCidade';
 import { mesaDeSorveteria, sorveteriaDoMano, SORVETERIA_DO_MANO } from '../world/sorveteriaDoMano';
 import { bonecoDeNeve, bordaDeGelo, cristalDeGelo, posteDeGelo } from '../world/pracaDeGelo';
 import { Frisbee } from '../entities/Frisbee';
 import { MESA_PING, PARCEIRO, PingPong, type Adversario } from '../entities/PingPong';
 import {
-  aroDeFrisbee, bin, bleachers, building, bus, busStop, bush,
+  aroDeFrisbee, bin, bleachers, building, busStop, bush,
   cestaDeBiscoitos, cestaDePiquenique, flamula, mesinhaDeXadrez,
   canteiro, capim, cloud, cone, discBag, discGolfBasket,
   fence, floodlight, flowers, iceCream, lamp, marcaDeMira, meioFio,
@@ -4832,7 +4833,11 @@ export const villaLobos: SceneDef = {
      * FRENTE do centro da peça, então é com o centro aqui que ela cai bem no
      * eixo. Quem sai do vão anda reto e entra; quem desce sai olhando o parque.
      */
-    const onibus = w.add(w.place(bus(P.onibusAzul, 'Clube'), 39.5, 0, 10.4, -Math.PI / 2));
+    // o ônibus da cidade (`world/onibusDaCidade.ts`): o detalhado, com a porta,
+    // as rodas e as luzes que a chegada da festa de Halloween usa
+    const onibusDoPonto = new OnibusDaCidade({ destino: 'Clube' });
+    const onibus = w.add(fundir(w.place(onibusDoPonto.group, 39.5, 0, 10.4, -Math.PI / 2)));
+    w.onUpdate((dt) => onibusDoPonto.update(dt));
     w.blockBox(39.5, 10.4, 1.4, 4.5);
 
     // O abrigo abre para o `+Z` da peça; `+PI/2` põe essa boca virada para a

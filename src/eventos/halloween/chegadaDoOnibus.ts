@@ -37,8 +37,8 @@ import { FLAG_DO_ONIBUS } from './fase';
  *     dupla — com todo mundo já nos postos da festa;
  *  6. vira memória ("A noite da festa").
  *
- * O ÔNIBUS é o detalhado (`world/onibusDaCidade.ts`), que os postos da
- * festa põem no lugar do de sempre do ponto: a cena só usa os comandos dele
+ * O ÔNIBUS é o do ponto (`world/onibusDaCidade.ts`, o ônibus da cidade,
+ * com o letreiro "Festa no Parque" na festa): a cena só usa os comandos dele
  * (a porta, as rodas, o farol e o pisca-alerta). As falas são RASCUNHOS (o
  * Renan troca).
  */
@@ -56,7 +56,7 @@ export interface ElencoDoOnibus {
   coelhinhas: CoelhaDaTorcida[];
   /** põe o Walter no caixote da barraca (o posto dele) */
   walterNaBarraca: () => void;
-  /** o ônibus do ponto na noite da festa (o detalhado, `world/onibusDaCidade.ts`) */
+  /** o ônibus do ponto (o ônibus da cidade, `world/onibusDaCidade.ts`) */
   onibus: OnibusDaCidade;
 }
 

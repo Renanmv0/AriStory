@@ -844,8 +844,8 @@ de camada GRANDE, que enfeita uma cena inteira:
    não estar.
 
    Quando o destino tem um ponto de entrada próprio, é o **ponto** que se alinha
-   ao eixo, não o centro da peça. A porta de embarque do `bus()` fica em
-   `comp/2 - 1.9` (2,6 à frente do centro): para ela cair num `z`, o ônibus
+   ao eixo, não o centro da peça. A porta de embarque do ônibus da cidade
+   (`world/onibusDaCidade.ts`) fica 2,6 à frente do centro: para ela cair num `z`, o ônibus
    inteiro anda 2,6 para trás. Mexer na porta dentro do prop move onde a dupla
    desembarca nas duas cenas.
 

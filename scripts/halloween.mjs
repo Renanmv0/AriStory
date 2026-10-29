@@ -61,7 +61,9 @@ const CEL = !!process.env.CEL;
 const MALHAS_DA_CASA_ANTES = 346;
 /** as outras cenas que o evento toca, medidas no mesmo commit (save zerado) */
 const MALHAS_ANTES = {
-  'villa-lobos': 5827, clube: 2808, escola: 1360, 'escola-ginasio': 353, estufa: 3360, 'mania-de-churrasco': 642, quarto: 367,
+  // (o parque e o clube −33: o ônibus do ponto virou o ônibus da cidade em
+  // todo lugar, pedido do Renan — 66 malhas soltas do velho, 33 do novo)
+  'villa-lobos': 5794, clube: 2775, escola: 1360, 'escola-ginasio': 353, estufa: 3360, 'mania-de-churrasco': 642, quarto: 367,
   // a boutique da Estella (a etapa 3)
   lojinha: 629,
 };
@@ -1010,11 +1012,9 @@ if (roda('onibus')) {
   const quadro = () => j(() => {
     const g = window.jogo;
     let bus = null;
-    let antigo = null;
     const bichos = {};
     g.current.world.root.traverse((o) => {
       if (!bus && o.userData?.peca === 'onibus-da-cidade') bus = o;
-      if (o.userData?.peca === 'onibus' && Math.abs(o.position.x - 39.5) < 0.5) antigo = o;
       if (o.userData?.bicho && o.userData.bicho.group === o) bichos[o.userData.peca] = { x: +o.position.x.toFixed(2), y: +o.position.y.toFixed(2), z: +o.position.z.toFixed(2), v: o.visible };
     });
     const o = bus.userData.onibus;
@@ -1024,7 +1024,7 @@ if (roda('onibus')) {
     return {
       bus: {
         z: +bus.position.z.toFixed(2), pitch: +bus.rotation.z.toFixed(4), porta: +o.aberta.toFixed(2),
-        farol: bus.getObjectByName('farois-acesos').visible, antigoEscondido: antigo?.visible === false, giroDaRoda: +m.elements[0].toFixed(3),
+        farol: bus.getObjectByName('farois-acesos').visible, destino: o.destino, giroDaRoda: +m.elements[0].toFixed(3),
       },
       bichos, cam: !!g.cameraDeCena(), travado: g.player.locked, fala: document.querySelector('.dialogue.show')?.textContent ?? '',
       chegou: g.flag('halloween:onibus-chegou'), sons: Object.fromEntries(g.audio.contagem),
@@ -1032,7 +1032,7 @@ if (roda('onibus')) {
   });
   const PASSAGEIROS = ['girafa', 'capy', 'noel', 'garcom-canino', 'gatito', 'flynn', 'luna', 'sol', 'estrella', 'josefina'];
   const antes = await quadro();
-  ok(antes.bus.antigoEscondido, 'na festa, o ônibus do ponto é o detalhado (o de sempre escondido)');
+  ok(antes.bus.destino === 'Festa no Parque', `na festa, o letreiro do ônibus do ponto diz "${antes.bus.destino}"`);
   ok(antes.bus.z < -20 && antes.travado && PASSAGEIROS.every((p) => antes.bichos[p]?.v === false),
     `a cena começa sozinha: a dupla presa, o ônibus lá longe na rua e a turma ainda dentro dele (${antes.bus.z})`);
   // as falas, uma a uma: o que cada uma pede para medir
