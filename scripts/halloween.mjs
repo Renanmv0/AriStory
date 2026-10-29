@@ -35,6 +35,13 @@
  *             boutique de noite, a buzina, a câmera voando por cima do
  *             parque, o ônibus freando, a porta abrindo e cada um descendo
  *             e falando no jeito da fantasia, até todo mundo nos postos)
+ *   SO=caca   a caça de doces ou travessuras (a etapa 5a): a cesta no
+ *             canto (0/25), a abóbora acesa em cima da próxima parada, quem
+ *             chega cedo ouve "sigam o mapinha", o doce (3 balas), a
+ *             travessura de tempo (a agulha embaixo da fala) e a de pergunta,
+ *             a pista indo para o mapinha (a pergunta e o tique), a última
+ *             parada com a pista do final e a conta da porta, e as abóboras
+ *             escondidas (pegar, a bala, sumir e continuar sumida no F5)
  *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre, nenhuma peça do evento, e a
  *             casa, o parque, o clube, a escola, a estufa, o Mania e o quarto
@@ -836,7 +843,8 @@ if (roda('festa')) {
     const it = g.current.world.interactables.find((i) => i.id === 'halloween:recado-Walter');
     g.debugPlace(it.x, it.z, Math.PI);
   });
-  await espera(1200);
+  // (o prompt só troca no quadro seguinte: o E antes dele não lê nada)
+  await page.waitForFunction(() => /recado/i.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
   await page.keyboard.press('KeyE');
   await page.waitForFunction(() => /salsichas/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
   const doWalter = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
@@ -916,7 +924,9 @@ if (roda('festa')) {
     if (foto) await page.screenshot({ path: `${OUT}-festa-${foto}.png` });
     // até a câmera voltar: passa os balões, recusa as perguntas, e espera as pausas entre um e outro
     for (let i = 0; i < 400 && (await j(() => !!window.jogo.cameraDeCena())); i++) {
-      if (await j(() => !!document.querySelector('.escolhas.show'))) await page.keyboard.press('Escape');
+      // (a parada da caça pergunta "doces ou travessuras?": aqui, sempre doces)
+      if (await j(() => !!document.querySelector('.escolhas.show') && /travessuras/i.test(document.querySelector('.dialogue.show')?.textContent ?? ''))) await page.keyboard.press('KeyE');
+      else if (await j(() => !!document.querySelector('.escolhas.show'))) await page.keyboard.press('Escape');
       else if (await j(() => !!document.querySelector('.dialogue.show'))) await page.keyboard.press('KeyE');
       await espera(400);
     }
@@ -1096,6 +1106,207 @@ if (roda('onibus')) {
   await espera(2000);
   const outra = await quadro();
   ok(!outra.travado && !outra.cam && outra.bus.z === 10.4 && outra.bichos['garcom-canino']?.v, 'recarregando, a chegada não se repete (e o Walter está na barraca)');
+}
+
+// ======================================================================= caca
+if (roda('caca')) {
+  console.log('\ncaca: doces ou travessuras — as dez paradas, as balas e as abóboras escondidas (§5.3, §6)');
+  // (o Cookie já apresentado: a apresentação dele de sempre é longa, e não é dela que se trata aqui)
+  await naFaseConvite('villa-lobos', ['halloween:festa', 'cookie-apresentado']);
+  const estado = () => j(() => {
+    const g = window.jogo;
+    const marca = g.scene.getObjectByName('marca-da-proxima-parada');
+    const c = marca?.userData.caca;
+    const cesta = document.querySelector('.cesta-de-balas');
+    const lote = g.scene.getObjectByName('aboboras-escondidas');
+    return {
+      feitas: c?.feitas(), balas: c?.balas(),
+      cesta: cesta?.classList.contains('show') ? cesta.textContent : null,
+      marca: marca ? { v: marca.visible, x: +marca.position.x.toFixed(2), y: +marca.position.y.toFixed(2), z: +marca.position.z.toFixed(2) } : null,
+      escondidas: lote?.visible ?? null,
+    };
+  });
+  /** onde está um bicho (pela etiqueta) */
+  const bichoEm = (peca) => j((peca) => {
+    let b = null;
+    window.jogo.current.world.root.traverse((o) => { if (!b && o.userData?.peca === peca && o.userData.bicho) b = o.userData.bicho; });
+    return b ? { x: b.x, z: b.z } : null;
+  }, peca);
+  /**
+   * conversa com um convidado e responde a caça: `escolha(pergunta)` diz o
+   * índice da opção; a agulha da hora certa para com o E (e a foto dela sai
+   * uma vez); devolve tudo o que foi dito
+   */
+  const naParada = async (peca, escolha = () => 0, foto = null) => {
+    // (`escolha` recebe os rótulos dos botões e devolve o índice)
+    await j((peca) => {
+      const g = window.jogo;
+      let b = null;
+      g.current.world.root.traverse((o) => { if (!b && o.userData?.peca === peca && o.userData.bicho) b = o.userData.bicho; });
+      const ponto = g.current.world.interactables.find((i) => i.id === `halloween:festa-${peca}`);
+      const r = Math.min(0.9, ponto.radius * 0.7);
+      g.debugPlace(b.x + r * 0.7, b.z + r * 0.7, Math.PI * 1.25);
+    }, peca);
+    await espera(1200);
+    await page.keyboard.press('KeyE');
+    await page.waitForFunction(() => !!document.querySelector('.dialogue.show'), null, { timeout: 120000 }).catch(() => {});
+    const ditos = [];
+    let agulha = null;
+    /*
+     * UMA leitura por passo: na tomada de perto o navegador do teste anda a
+     * meio quadro por segundo, e cada `evaluate` espera o quadro. O balão
+     * ainda digitando (`ui.typing`) não é lido nem escolhido — na pergunta,
+     * o E no meio da digitação já escolheria.
+     */
+    const tela = () => j(() => {
+      const d = document.querySelector('.dialogue.show');
+      return {
+        vivo: !!window.jogo.cameraDeCena() || !!d,
+        show: !!d,
+        digitando: window.jogo.ui.typing !== null,
+        quem: d?.querySelector('.who')?.textContent ?? '',
+        texto: d?.querySelector('.text')?.textContent ?? '',
+        escolhas: [...document.querySelectorAll('.escolhas.show button')].map((b) => b.textContent),
+        agulha: !!document.querySelector('.dialogue .hora-certa.show'),
+      };
+    });
+    for (let i = 0; i < 400; i++) {
+      const t = await tela();
+      if (!t.vivo) break;
+      if (!t.show || (t.digitando && t.escolhas.length)) { await espera(500); continue; }
+      if (t.digitando) { await page.keyboard.press('KeyE'); await espera(300); continue; }
+      if (t.escolhas.length) {
+        ditos.push(`${t.quem}: ${t.texto} [${t.escolhas.join(' | ')}]`);
+        const k = escolha(t.escolhas);
+        for (let n = 0; n < k; n++) { await page.keyboard.press('ArrowRight'); await espera(150); }
+      } else if (t.agulha) {
+        ditos.push(`${t.quem}: ${t.texto} [agulha]`);
+        if (!agulha) {
+          if (foto) await page.screenshot({ path: `${OUT}-caca-${foto}-agulha.png` });
+          agulha = await j(() => ({ texto: document.querySelector('.dialogue.show .text')?.textContent, zona: document.querySelector('.hora-certa .zona').style.width }));
+        }
+      } else ditos.push(`${t.quem}: ${t.texto}`);
+      await page.keyboard.press('KeyE');
+      // (espera o balão trocar, ou fechar)
+      for (let k = 0; k < 40; k++) {
+        await espera(400);
+        const d = await j(() => document.querySelector('.dialogue.show .text')?.textContent ?? null);
+        if (d !== t.texto) break;
+      }
+    }
+    return { ditos, agulha, tudo: ditos.join(' ‖ ') };
+  };
+
+  // o começo: a cesta no canto, a abóbora em cima do Mano, as escondidas no parque
+  await espera(1500);
+  let e = await estado();
+  const mano = await bichoEm('mano');
+  ok(e.feitas === 0 && e.balas === 0 && /0\s*\/25/.test(e.cesta ?? ''), `a caça começa: a cesta no canto, vazia (${JSON.stringify(e)})`);
+  ok(!!e.marca && e.marca.v && !!mano && Math.hypot(e.marca.x - mano.x, e.marca.z - mano.z) < 0.05 && e.marca.y > 1.2,
+    `a abóbora acesa flutua em cima do Mano, a primeira parada (${JSON.stringify(e.marca)} · ${JSON.stringify(mano)})`);
+  ok(e.escondidas === true, 'as abóboras escondidas acesas pelo parque');
+  await j((m) => { window.jogo.debugPlace(m.x + 2.6, m.z + 2.6, Math.PI * 1.25); window.jogo.setZoom(9); }, mano);
+  await espera(1800);
+  await page.screenshot({ path: `${OUT}-caca-marca.png` });
+
+  // quem chega cedo: o Cookie ainda não é a vez
+  const cedo = await naParada('cookie');
+  ok(/Ainda não é a minha vez/.test(cedo.tudo) && !/travessuras\?/i.test(cedo.tudo), `o Cookie antes da vez pede para seguir o mapinha (${cedo.tudo.slice(-90)})`);
+  ok((await estado()).feitas === 0, 'e a caça não anda');
+
+  // a parada 1, o Mano: doces (3 balas) e a pista do Cookie
+  const p1 = await naParada('mano', () => 0);
+  e = await estado();
+  ok(/Doces ou travessuras! 🎃/.test(p1.tudo) && /doces… ou travessuras\?/.test(p1.tudo), `o Mano pergunta "doces ou travessuras?" (${p1.ditos.join(' ‖ ').slice(0, 260)})`);
+  ok(/Bala de abóbora/.test(p1.tudo) && e.balas === 3 && e.feitas === 1, `doces: a bala de abóbora, 3 na cesta, e a parada feita (${JSON.stringify(e)})`);
+  ok(/nunca coube na cabine/.test(p1.tudo), 'a pista do Cookie');
+  ok(/3\s*\/25/.test(e.cesta ?? ''), `a cesta conta (${e.cesta})`);
+  const cookie = await bichoEm('cookie');
+  ok(!!e.marca && Math.hypot(e.marca.x - cookie.x, e.marca.z - cookie.z) < 0.4, `a abóbora passa para o Cookie (${JSON.stringify(e.marca)})`);
+
+  // a parada 2, o Cookie: travessura (a agulha) — de 1 a 5 balas
+  const p2 = await naParada('cookie', (ops) => (ops[0].includes('Doces') ? 1 : 0), 'cookie');
+  e = await estado();
+  ok(!!p2.agulha && /BU de volta/.test(p2.agulha.texto ?? ''), `a travessura do Cookie é de tempo: a agulha embaixo da fala (${JSON.stringify(p2.agulha)})`);
+  ok(e.feitas === 2 && e.balas >= 4 && e.balas <= 8, `de 1 a 5 balas na travessura (${e.balas - 3}), e a parada feita`);
+  ok(/campinho/.test(p2.tudo), 'a pista do Flynn');
+  ok(await j(() => window.jogo.stat('halloween:doces') === 1 && window.jogo.stat('halloween:travessuras') === 1), 'um doce e uma travessura no save');
+
+  // o mapinha: o Mano e o Cookie com o tique, a pista do Flynn por extenso
+  await j(() => window.jogo.addItem(window.aristoryItens['mapinha-da-estella']));
+  await j(() => window.jogo.setActiveHandSlot(window.jogo.handItems().findIndex((i) => i?.id === 'mapinha-da-estella')));
+  await j(() => window.jogo.debugPlace(0, 30, 0));
+  await espera(1200);
+  await page.keyboard.press('KeyE');
+  await espera(2500);
+  await page.screenshot({ path: `${OUT}-caca-mapinha.png` });
+  await page.keyboard.press('Escape');
+  await espera(800);
+
+  // a parada 7, o Gatito: a pergunta de português (bruxa = 5 balas)
+  await j(() => window.jogo.bump('halloween:caca', 4));
+  const antes7 = (await estado()).balas;
+  const p7 = await naParada('gatito', (ops) => (ops.includes('Bruxa') ? ops.indexOf('Bruxa') : 1));
+  e = await estado();
+  ok(/bruja/.test(p7.tudo) && /Bruxa, com X/.test(p7.tudo) && e.balas - antes7 === 5 && e.feitas === 7, `o Gatito pergunta "bruja": acertou, 5 balas (${e.balas - antes7})`);
+
+  // as abóboras escondidas: pegar uma dá uma bala e ela some
+  const ponto = await j(() => window.jogo.scene.getObjectByName('marca-da-proxima-parada').userData.caca.escondidas[1]);
+  await j((p) => { window.jogo.debugPlace(p.x + 0.7, p.z + 0.7, Math.PI * 1.25); window.jogo.setZoom(7); }, ponto);
+  await espera(1800);
+  await page.screenshot({ path: `${OUT}-caca-escondida.png` });
+  const antesDaAbobora = (await estado()).balas;
+  const rotulo = await j(() => document.querySelector('.prompt .label')?.textContent ?? '');
+  ok(rotulo === 'Pegar a abóbora escondida', `perto dela, "Pegar a abóbora escondida" (${rotulo})`);
+  await page.keyboard.press('KeyE');
+  await espera(1500);
+  await passarFalas();
+  const abobora = await j(() => {
+    const g = window.jogo;
+    const lote = g.scene.getObjectByName('aboboras-escondidas');
+    const im = lote.getObjectByName('casca-pequena');
+    const m = new g.scene.matrix.constructor();
+    im.getMatrixAt(1, m);
+    return { flag: g.flag('halloween:abobora-escondida:1'), escala: m.elements[0], ponto: g.current.world.interactables.find((i) => i.id === 'halloween:abobora-escondida-1')?.enabled };
+  });
+  e = await estado();
+  ok(abobora.flag && abobora.escala === 0 && abobora.ponto === false && e.balas === antesDaAbobora + 1, `pegou: +1 bala, e ela some (${JSON.stringify(abobora)})`);
+
+  // a última parada, o Noel: a pista do final e a conta da porta
+  await j(() => window.jogo.bump('halloween:caca', 2));
+  const p10 = await naParada('noel', (ops) => (ops[0].includes('Doces') ? 1 : 0));
+  e = await estado();
+  ok(/Pó de estrela/.test(p10.tudo) && /porta laranja/.test(p10.tudo) && e.feitas === 10, `o Noel: a poção e a pista do final (${e.feitas})`);
+  ok(/Faltam \d+|cesta tá cheia/.test(p10.tudo), `e a dupla faz a conta da porta (${p10.ditos.slice(-2).join(' ‖ ')})`);
+  ok(!e.marca?.v, 'com a caça feita, a abóbora da próxima parada some');
+  await j(() => window.jogo.setActiveHandSlot(window.jogo.handItems().findIndex((i) => i?.id === 'mapinha-da-estella')));
+  await j(() => window.jogo.debugPlace(0, 30, 0));
+  await espera(1200);
+  await page.keyboard.press('KeyE');
+  await espera(2500);
+  await page.screenshot({ path: `${OUT}-caca-mapinha-final.png` });
+  await page.keyboard.press('Escape');
+  await espera(800);
+
+  // recarregando: a abóbora pega continua sumida, e a cesta continua com as balas
+  const balasAntes = e.balas;
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(2500);
+  const depois = await j(() => {
+    const g = window.jogo;
+    const im = g.scene.getObjectByName('aboboras-escondidas').getObjectByName('casca-pequena');
+    const m = new g.scene.matrix.constructor();
+    im.getMatrixAt(1, m);
+    const outra = new g.scene.matrix.constructor();
+    im.getMatrixAt(2, outra);
+    return { escala: m.elements[0], outra: outra.elements[0], cesta: document.querySelector('.cesta-de-balas.show')?.textContent ?? null };
+  });
+  ok(depois.escala === 0 && depois.outra > 0 && new RegExp(`${balasAntes}\\s*/25`).test(depois.cesta ?? ''), `no F5 a abóbora pega continua sumida e a cesta cheia como estava (${JSON.stringify(depois)})`);
+  // e fora da festa (o convite) não há cesta nem abóbora escondida
+  await naFaseConvite('villa-lobos');
+  const convite = await j(() => ({ cesta: !!document.querySelector('.cesta-de-balas.show'), lote: window.jogo.scene.getObjectByName('aboboras-escondidas')?.visible ?? null }));
+  ok(!convite.cesta && !convite.lote, `no convite (o pôr do sol), nem cesta nem abóbora escondida (${JSON.stringify(convite)})`);
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');

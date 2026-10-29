@@ -35,14 +35,23 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapas 1, 2 e 3 construídas, escondidas.** O filme no sofá e a
-carta da Estella (§2.1), o parque no pôr do sol, enfeitado e vazio (§4.1),
-e o presente da Estella na boutique (§2.3.1) estão no jogo, mas só aparecem
+**Estado: etapas 1 a 4 e a parte 5a construídas, escondidas.** O filme no
+sofá e a carta da Estella (§2.1), o parque no pôr do sol, enfeitado e vazio
+(§4.1), o presente da Estella na boutique (§2.3.1), a noite da festa com o
+ônibus chegando e todo mundo fantasiado no posto (§2.4.1), e a **caça de
+doces ou travessuras** — as dez paradas, as balas, as pistas no mapinha e
+as abóboras escondidas (§6, a parte 5a) — estão no jogo, mas só aparecem
 com `?halloween` na URL (`src/eventos/halloween/`, `src/world/halloween/`,
-`src/world/fantasias.ts`, `scripts/halloween.mjs`). A **parte 1** inteira
-(§2.1 a §2.4) está fechada com o Renan; a próxima é a **etapa 4** (a noite
-e o ônibus), planejada e fechada com ele no §2.4.1 (as fantasias de cada
-personagem, uma só de cada, no §3).
+`src/world/fantasias.ts`, `scripts/halloween.mjs`). A próxima é a **parte
+5b**: as cinco fantasias ganhas na caça (§5.2), uma a cada duas paradas.
+
+**Onde mora a caça (5a) no código:** `eventos/halloween/caca.ts` (as dez
+paradas, as falas, as travessuras, a abóbora acesa em cima da próxima
+parada e as dez abóboras escondidas), ligada na conversa com zoom de
+`eventos/halloween/naFesta.ts`; as pistas e o pergaminho em
+`world/halloween/mapinha.ts` (`PARADAS_DA_CACA`, lidas do save); a cesta no
+canto (`g.mostrarCesta`) e a agulha da hora certa (`g.horaCerta`) no
+`ui/Ui.ts`; o som `balas` em `audio/efeitos.ts`.
 
 **Onde mora a etapa 2 no código:** o kit em `world/halloween/` (`abobora.ts`,
 `pendurados.ts`, `pecas.ts`, `nessie.ts`; `kit.ts` é a vitrine dos testes);
@@ -1222,16 +1231,20 @@ guarda-roupa normal, por parte do corpo — proposta: com um filtro novo
 
 **Decisão do Renan: uma fantasia INTEIRA a cada duas paradas.** São cinco
 para ganhar, então a caça tem **dez paradas** (§6) — o Flynn virou parada —,
-e as paradas 2, 4, 6, 8 e 10 dão uma fantasia completa cada. Proposta de
-quem dá qual, casando com a fantasia de quem entrega (§3):
+e as paradas 2, 4, 6, 8 e 10 dão uma fantasia completa cada. **Quem dá qual
+(a proposta nova, aprovada pelo Renan)**, casando com o posto de quem
+entrega:
 
 | parada | quem entrega | a fantasia | por quê |
 |---|---|---|---|
-| 2 | o Cookie | 🎃 **abóbora** | ele fica ao lado da maior abóbora do parque |
+| 2 | o Cookie | 🎃 **abóbora** | ele fica ao lado da maior abóbora do parque, na bilheteria |
 | 4 | o Jean-Luc | 🏴‍☠️ **pirata** | um pirata de lago, para quem mora na água |
-| 6 | as coelhinhas | 🐈‍⬛ **gato preto** | uma delas está de gatinha preta |
-| 8 | o Noel | 🌾 **espantalho** | ele também está de espantalho |
-| 10 | a Gina | 🧙 **bruxinho** | ela está de bruxa |
+| 6 | as coelhinhas | 🐈‍⬛ **gato preto** | as três de bicho, no piquenique |
+| 8 | a Josefina | 🌾 **espantalho** | quem cuida da horta e do canteiro de abóboras |
+| 10 | o Noel | 🧙 **bruxinho** | o cientista das poções: a última parada, com a pista do final |
+
+As fantasias são a **parte 5b** — a 5a (a construída) já tem as paradas, as
+balas e as pistas; nas paradas pares a fantasia entra depois.
 
 Doce ou travessura, a fantasia vem do mesmo jeito: as duas escolhas são
 boas. O que muda entre elas são as **balas** (§5.3).
@@ -1242,7 +1255,8 @@ abóbora** do "rei e rainha da festa", ou o que combinar com o final escolhido).
 ### 5.3 As balas na cesta de abóbora
 
 **Decisão do Renan: a cesta junta balas, e a Casinha da Abóbora só abre com
-uma certa quantidade.** Proposta dos números (o Renan ajusta):
+uma certa quantidade.** Os números abaixo foram aprovados **assim mesmo**, e
+estão construídos (a parte 5a, `eventos/halloween/caca.ts`):
 
 - **🍬 Doces!** — o personagem dá **3 balas**, sempre;
 - **🎃 Travessura!** — ele apronta a brincadeira dele, e as balas dependem
@@ -1256,9 +1270,10 @@ uma certa quantidade.** Proposta dos números (o Renan ajusta):
   30; chegando lá com menos, a porta conta quantas faltam e a Gina lembra
   das abóboras escondidas.
 
-A cesta aparece na mão de quem joga, **enchendo de verdade** — as balas
-coloridas subindo dentro dela —, e o número fica num canto da tela durante a
-festa (🍬 18/25). Cada personagem dá a **sua** bala (o pirulito de olho do
+O número fica num canto da tela durante a festa (🎃🍬 18/25, dando um
+pulinho quando sobe, e laranja quando passa de 25), com o som das balas
+caindo na cesta. *(Ainda não construído: a cesta na mão **enchendo de
+verdade**, as balas coloridas subindo dentro dela.)* Cada personagem dá a **sua** bala (o pirulito de olho do
 Jean-Luc, a bala de abóbora do Mano, o docinho minúsculo do Cookie…), e elas
 aparecem desenhadas num painelzinho da cesta.
 
@@ -1286,36 +1301,59 @@ o uniforme dos Gatitos, a roupa de torcida), e não peça de caixa lisa:
 
 ## 6. Doces ou travessuras — as dez paradas
 
-Em cada parada, o personagem pergunta e a dupla escolhe:
+**Construída (a parte 5a)**: `eventos/halloween/caca.ts`. Na conversa com
+zoom de cada convidado (`naFesta.ts`), quando é a vez dele, quem joga diz
+"Doces ou travessuras! 🎃" e ele pergunta de volta:
 
 - **🍬 Doces!** — ele dá a bala dele (**3 balas** na cesta) e a pista;
 - **🎃 Travessura!** — ele apronta uma brincadeira fofa, e as balas
   dependem de como foi (**1 a 5**, §5.3); a pista vem do mesmo jeito.
 
-Cada parada lembra o que foi escolhido (o diário mostra "doces: 6 ·
-travessuras: 4"). A **pista** é um versinho que aponta o próximo personagem
-sem dizer o nome. As paradas **pares** entregam também uma **fantasia
-inteira** (§5.2).
+**As travessuras são de dois tipos.** A **hora certa** (`g.horaCerta`): a
+fala fica na caixa de sempre, e embaixo dela uma barra com uma faixa laranja
+e uma agulha que vai e volta; quem joga aperta E (ou toca) para parar — no
+meio da faixa são 5 balas, longe dela 1 (o Jean-Luc é tudo ou nada: ganhou o
+ponto, 5; perdeu, 1). E a **pergunta**, com uma resposta de cada valor (o
+Gatito, a Josefina e o Noel). Quem pegou a travessura boa comemora do jeito
+dele (a dancinha do Mano, o six seven do Gatito, a torcida das coelhinhas…).
 
-| # | quem | onde | a bala | a travessura (e as balas) | 🎁 | pista para a próxima (rascunho) |
+**A pista** é um versinho que aponta o próximo sem dizer o nome, e vai para
+o **mapinha**: o pergaminho mostra quem já foi achado com um tique, a pista
+da próxima parada por extenso (marcada de laranja) e as que faltam com "? ? ?";
+a última parada dá a **pista do final** num quadrinho embaixo. A próxima
+parada também fica marcada no parque com **uma abóbora acesa flutuando em
+cima da cabeça** de quem é — ninguém fica perdido. Quem chega antes da vez
+ouve uma fala pedindo para seguir o mapinha. O save guarda as paradas
+feitas, as balas, e quantos doces e quantas travessuras.
+
+**A ordem nova (aprovada pelo Renan)** e as pistas reescritas (rascunho, o
+Renan troca):
+
+| # | quem | onde | a bala | a travessura (e as balas) | 🎁 | a pista que ele dá (para a próxima) |
 |---|---|---|---|---|---|---|
-| 1 | Mano | sorveteria | bala de abóbora | espirra granulado de morcego nos dois | — | "Quem vende o bilhete para o céu e nunca coube lá em cima?" (Cookie) |
-| 2 | Cookie | bilheteria | o docinho minúsculo (o favorito dele) | levanta o lençol e diz "BU!" — e quem se assusta é ele | 🎃 abóbora | "Logo ali, no campinho, alguém uiva de animação." (Flynn) |
-| 3 | Flynn | campinho de frisbee | bala de goma de lua | um passe de frisbee: quanto mais perto pegar, mais balas | — | "Na água vive um francês que joga como ninguém." (Jean-Luc) |
-| 4 | Jean-Luc | lago | pirulito de olho | um ponto de ping pong: ganhou, 5 balas; perdeu, 1 | 🏴‍☠️ pirata | "Do lado do lago, alguém de laranja não sai do posto." (Capy) |
-| 5 | Capy | beira do lago | maçã do amor | **pescar maçã com a boca** na bacia (minijogo de tempo, curtinho) | — | "Três irmãs fazem festa no piquenique." (coelhinhas) |
-| 6 | Luna, Sol, Estrella | piquenique | pipoca de caramelo | a dupla dança com elas (a dança da festa da torcida) | 🐈‍⬛ gato preto | "Quem ensina português de chapéu de estrela?" (Gatito) |
-| 7 | Gatito | piquenique | biscoito de gato preto | uma pergunta de português de Halloween ("como se diz *bruja*?") | — | "Um bicho de palha mexe um caldeirão." (Noel) |
-| 8 | Noel | carrinho de poções | bala-poção que muda de cor | a poção borbulha e solta uma fumacinha colorida | 🌾 espantalho | "A mais devagar de todas conta histórias no canteiro." (Josefina) |
-| 9 | Josefina | canteiro de abóboras | bombom de bolo de abóbora | conta uma "história de fantasma" que termina numa piada | — | "A mais alta vê tudo lá de cima." (Gina) |
-| 10 | Gina | ponto de ônibus | bala de goma de aranha | apita como no clube | 🧙 bruxinho | a pista do final: "Atrás da roda, onde a cerca fecha o mato, uma porta laranja só abre para quem trouxe a cesta cheia." |
+| 1 | Mano | sorveteria | bala de abóbora | o granulado de morcego voando: pegar no ar na hora certa | — | "Quem vende o bilhete para ver tudo lá de cima, de lençol na cabeça, e nunca coube na cabine?" |
+| 2 | Cookie | bilheteria | o docinho minúsculo (o favorito dele) | ele dá um BU e a dupla dá um BU de volta na hora — e quem se assusta é ele | 🎃 abóbora | "No campinho, um lobo de pelúcia uiva de alegria. É só seguir o AUUU!" |
+| 3 | Flynn | campinho | bala de goma de lua | um passe de frisbee no escuro: pegar na hora certa | — | "No lago, um fantasma de cartola e máscara canta em francês para os patinhos." |
+| 4 | Jean-Luc | lago | pirulito de olho | um ponto de ping pong: ganhou, 5 balas; perdeu, 1 | 🏴‍☠️ pirata | "Do lado do trapiche, um tubarão de feltro guarda uma bacia de maçãs." |
+| 5 | Capy | beira do lago | maçã do amor pequenininha | pescar maçã com a boca na bacia, mergulhando na hora certa | — | "Uma coruja, uma catrina e uma fadinha fazem piquenique pertinho da roda." |
+| 6 | Luna, Sol e Estrella | piquenique | pipoca de caramelo | "uno, dos, tres… ¡YA!": pular junto com elas na hora | 🐈‍⬛ gato preto | "Bem do lado da toalha, um gato vestido de cachorro diz 'au' sem convicção." |
+| 7 | Gatito | piquenique | biscoito de gato preto | "como se diz *bruja* em português?" (bruxa: 5; bruja ou vassoura: 2) | — | "Um dragãozinho bem calmo cuida de abóboras no gramado." |
+| 8 | Josefina | canteiro de abóboras | bombom de bolo de abóbora | a história do fantasma que só tomava sorvete: o sabor? (BUnilha: 5; suspiro: 4; pé de moleque: 3) | 🌾 espantalho | "A noiva mais alta da festa espera no ponto de ônibus — de véu e tudo." |
+| 9 | Gina | ponto de ônibus | bala de goma de aranha | no apito, todo mundo congela na pose de fantasma | — | "Um cientista que não para quieto mexe poções do lado da roda gigante." |
+| 10 | Noel | carrinho de poções | bala-poção que muda de cor | o ingrediente da poção (pó de estrela: 5; gosma verde: 4; asa de morcego: 3) | 🧙 bruxinho | a pista do final: "Atrás da roda, onde a cerca fecha o mato, uma porta laranja só abre para quem trouxe a cesta cheia." |
+
+A primeira pista é a da Estella, no mapinha desde a boutique: "Comecem por
+quem serve gelado de casaca e não tem medo de frio." Depois da do final, a
+dupla faz a conta da porta: com 25 balas ou mais, "a cesta tá cheia"; com
+menos, quantas faltam — e se não tem mais abóbora escondida pelo parque.
+
+**As dez abóboras escondidas** (1 bala cada, §5.3): pequenas e acesas, nos
+cantos do parque, longe do caminho da caça (os pontos foram medidos contra
+o colisor e as árvores). Só aparecem na noite da festa, depois do ônibus;
+"Pegar a abóbora escondida" dá a bala, e ela some de vez (o save lembra).
 
 O **Walter** e o **Pelusa** não são paradas: o Walter está no final (é ele
 quem serve as balas na festa), e o Pelusa dorme no pufe da boutique.
-
-**Mapa e diário.** O mapinha da Estella vira um item de mão: abrir mostra as
-pistas já recebidas (um pergaminho com os versinhos), e a próxima parada
-fica marcada com uma abóbora acesa no caminho. Ninguém fica perdido.
 
 ---
 
@@ -1471,8 +1509,8 @@ aprovar antes da próxima.
 | **1** ✅ | **o filme e a carta** *(construída, escondida)* | a fase do evento no save e o `?halloween`; no sofá, "Assistir um filme de terror", o filme na TV, as falas, a carta deslizando por baixo da porta, "Pegar a carta" e o painel da carta (§2.1) | `cenario`, `prop` + `geometry`, `textures`, `animation` |
 | **2** ✅ | **o parque enfeitado, no pôr do sol e vazio** *(construída, escondida)* | as decorações do parque inteiro e das lojas, ainda apagadas (§4.1), o Nessie de plástico no lago, os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
 | **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
-| **4** | **a noite e o ônibus** | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
-| **5** | **doces ou travessuras** | as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3), e **as outras cinco fantasias** (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
+| **4** ✅ | **a noite e o ônibus** *(construída, escondida)* | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
+| **5** | **doces ou travessuras** | **5a** ✅ *(construída, escondida)*: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
 | **6** | **a Casinha da Abóbora** | o portão das 25 balas, o cenário novo e a festa surpresa (§7) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** | **o fechamento** | a memória no quadro, o prêmio do final, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |
@@ -1518,12 +1556,17 @@ vez em quando (a dica do final); e as luzes inteiras.
 
 ### Para as próximas partes
 
-1. **As balas** (§5.3): 3 no doce, 1 a 5 na travessura, 10 abóboras
-   escondidas, e a porta abrindo com 25 — estão bons?
-2. **Quem dá qual fantasia** na caça (§5.2): a divisão proposta está boa?
-3. **Quando aparece**: só de 15/10 a 2/11 pelo calendário, depois "Reviver a
+1. **Quando aparece**: só de 15/10 a 2/11 pelo calendário, depois "Reviver a
    festa" — ou o ano todo?
-4. **As dez paradas** (§6): as travessuras e as pistas estão boas?
+2. **As falas e as pistas da caça** (§6) são rascunho: o Renan troca o que
+   quiser.
+
+**Respondidas na etapa 5:** as balas ficam **assim mesmo** (3 no doce, 1 a
+5 na travessura, 10 abóboras escondidas, a porta com 25); quem dá qual
+fantasia é a **proposta nova** (§5.2: o Cookie, o Jean-Luc, as coelhinhas, a
+Josefina e o Noel, com a ordem das paradas refeita no §6); as pistas podem
+ser **reescritas** (as do §6); e a etapa 5 vai em duas partes — **5a, as
+paradas primeiro**, e depois a 5b, as fantasias.
 
 **Respondidas:** o prazo (sem pressa, nada aparece até tudo estar pronto);
 quem começa o evento (a dupla, no sofá); o convite (a carta por baixo da

@@ -438,6 +438,8 @@ export class LoteDeAboboras {
   private readonly lista: AboboraNoLote[] = [];
   /** o que treme quando acesas: cada lote e, por cópia, o índice da abóbora na lista */
   private readonly chamas: Array<{ im: THREE.InstancedMesh; quem: number[]; forca: number }> = [];
+  /** todo lote montado e, por cópia, o índice da abóbora na lista (o `esconder` usa) */
+  private readonly copias: Array<{ im: THREE.InstancedMesh; quem: number[] }> = [];
 
   por(a: AboboraNoLote): this {
     this.lista.push(a);
@@ -478,6 +480,7 @@ export class LoteDeAboboras {
       if (im.instanceColor) im.instanceColor.needsUpdate = true;
       im.computeBoundingSphere();
       g.add(im);
+      this.copias.push({ im, quem: quais.map((a) => this.lista.indexOf(a)) });
     };
 
     for (const t of ['grande', 'media', 'pequena'] as const) {
@@ -548,8 +551,25 @@ export class LoteDeAboboras {
     }
     halos.renderOrder = 3;
     pocas.renderOrder = 2;
+    this.copias.push({ im: halos, quem });
+    if (comPoca) this.copias.push({ im: pocas, quem });
     this.chamas.push({ im: halos, quem, forca: 1 });
     if (comPoca) this.chamas.push({ im: pocas, quem, forca: 1 });
+  }
+
+  /**
+   * TIRA UMA ABÓBORA DO LOTE (a `i`-ésima posta): a casca, o cabinho, a
+   * folha, a cara, o halo e a poça dela viram escala zero. É a abóbora
+   * escondida da caça que a dupla pegou — o lote continua um desenho só.
+   */
+  esconder(i: number): void {
+    const zero = new THREE.Matrix4().makeScale(0, 0, 0);
+    for (const { im, quem } of this.copias) {
+      const k = quem.indexOf(i);
+      if (k < 0) continue;
+      im.setMatrixAt(k, zero);
+      im.instanceMatrix.needsUpdate = true;
+    }
   }
 
   /** a chama tremendo: cada abóbora no seu ritmo (só faz algo se acesas) */

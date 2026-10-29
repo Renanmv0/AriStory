@@ -945,6 +945,69 @@ body.touch-device .hints .toque { display: block; }
 }
 .placar b { font-size: 14px; color: var(--ink-soft); }
 
+/* -------------------------------------------- a cesta de balas (Halloween) */
+.cesta-de-balas {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.cesta-de-balas.show { opacity: 1; transform: translate(-50%, 0); }
+.cesta-de-balas .icone { font-size: 20px; }
+.cesta-de-balas .bala { font-size: 15px; }
+.cesta-de-balas .nums { font-size: 18px; color: #d9741f; min-width: 1.2em; text-align: right; }
+.cesta-de-balas .meta { font-size: 13px; color: var(--ink-soft); }
+.cesta-de-balas.cheia .nums { color: #2f9e4f; }
+.cesta-de-balas.pulo { animation: cesta-pulo 0.45s ease; }
+@keyframes cesta-pulo {
+  0% { transform: translate(-50%, 0) scale(1); }
+  35% { transform: translate(-50%, -6px) scale(1.12); }
+  100% { transform: translate(-50%, 0) scale(1); }
+}
+
+/* -------------------------------------- a hora certa (as travessuras) */
+.dialogue .hora-certa {
+  position: relative;
+  display: none;
+  height: 18px;
+  margin: 12px 4px 4px;
+  border-radius: 999px;
+  background: var(--paper-warm);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+.dialogue .hora-certa.show { display: block; }
+.dialogue .hora-certa .zona {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold), var(--accent));
+  opacity: 0.85;
+}
+.dialogue .hora-certa .agulha {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 6px;
+  margin-left: -3px;
+  border-radius: 3px;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px #fff;
+}
+.dialogue .hora-certa.certa .zona { opacity: 1; box-shadow: 0 0 12px 3px rgba(255, 200, 80, 0.85); }
+.dialogue .hora-certa.errou .agulha { background: #b8443a; }
+
 /* ----------------------------------------------------------------- menu */
 .menu-btn {
   position: absolute;
