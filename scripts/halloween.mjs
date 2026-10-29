@@ -822,7 +822,8 @@ if (roda('festa')) {
   // (o comentário da dupla, "Pra onde o Walter tá indo?", é conferido no fim desta parte, sozinho:
   // aqui ele abriria no meio das conversas que vêm depois)
   await j(() => window.jogo.setFlag('halloween:viu:walter-indo'));
-  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(6); o.userData.naFesta.sairAgora(); });
+  // (no passo de sempre: acelerado, a ida e a volta inteiras cabiam antes de o teste apertar o E, e o "volto já" já tinha saído)
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(1); o.userData.naFesta.sairAgora(); });
   await page.waitForFunction(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); return o.userData.naFesta.rumo() !== 'posto'; }, null, { timeout: 60000 }).catch(() => {});
   // (o recado troca no quadro seguinte ao da saída; o navegador do teste anda a ~1 quadro por segundo)
   await page.waitForFunction(() => window.jogo.scene.getObjectByName('volto-ja-do-walter')?.visible === true, null, { timeout: 60000 }).catch(() => {});
