@@ -424,7 +424,10 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     rumo: () => rumo,
     sairAgora: () => { if (rumo === 'posto') ateSair = 0; },
     voltarAgora: () => { if (rumo === 'sumido') ateVoltar = 0; },
-    chegar: naBarraca,
+    chegar: () => {
+      naBarraca();
+      ateSair = 45 + sortear() * 25;
+    },
     ritmo: (vezes: number) => { ritmo = vezes; },
   };
 

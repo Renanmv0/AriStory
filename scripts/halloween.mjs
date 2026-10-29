@@ -824,7 +824,8 @@ if (roda('festa')) {
   await j(() => window.jogo.setFlag('halloween:viu:walter-indo'));
   await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(6); o.userData.naFesta.sairAgora(); });
   await page.waitForFunction(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); return o.userData.naFesta.rumo() !== 'posto'; }, null, { timeout: 60000 }).catch(() => {});
-  await espera(800);
+  // (o recado troca no quadro seguinte ao da saída; o navegador do teste anda a ~1 quadro por segundo)
+  await page.waitForFunction(() => window.jogo.scene.getObjectByName('volto-ja-do-walter')?.visible === true, null, { timeout: 60000 }).catch(() => {});
   const saiu = await walter();
   ok(saiu.rumo !== 'posto' && saiu.recados[0] === false && saiu.recados[1] === true, `o Walter sai da barraca e pendura o "volto já" (${JSON.stringify(saiu)})`);
   await j(() => {
@@ -930,6 +931,10 @@ if (roda('festa')) {
     ['garcom-canino', 'Falar com o Walter', /Au! Au!/, 'walter'],
   ];
   for (const [peca, rotulo, fala, foto] of QUEM) {
+    // (o Walter sai para trás da roda no relógio dele: a conversa é com ele de volta no caixote)
+    if (peca === 'garcom-canino') {
+      await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.chegar(); });
+    }
     const r = await conversar(peca, foto, fala);
     const t = r.tomada;
     ok(r.prompt === rotulo, `${peca}: o ponto "${rotulo}" (${r.prompt})`);
@@ -952,7 +957,8 @@ if (roda('festa')) {
   ok(!/BOA NOITE/.test(deNovo.balao) && deNovo.balao.length > 5, `na segunda vez, uma fala curta (${deNovo.balao.slice(0, 60)})`);
   // a primeira vez que a dupla vê o Walter indo para trás da roda, comenta (e só depois que o balão fecha)
   await j(() => { window.jogo.setFlag('halloween:viu:walter-indo', false); window.jogo.debugPlace(-8.2, -7.6, Math.PI / 4); });
-  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(6); o.userData.naFesta.sairAgora(); });
+  // (no passo de sempre: acelerado, a ~1 quadro por segundo ele já sumia dos 12 m no quadro seguinte)
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(1); o.userData.naFesta.sairAgora(); });
   let comentario = '';
   for (let i = 0; i < 120 && !/Pra onde o Walter/.test(comentario); i++) {
     await j((k) => window.jogo.debugPlace(-8.2 + (k % 2) * 0.05, -7.6, Math.PI / 4), i);
