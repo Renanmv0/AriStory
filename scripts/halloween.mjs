@@ -856,7 +856,8 @@ if (roda('festa')) {
     return { bolha: ler('bolhas-do-balao'), vapor: ler('vapor-da-pocao'), maca: ler('macas'), gota: s.getObjectByName('gota-do-alambique').position.y };
   });
   const v1 = await vivo();
-  await espera(900);
+  // (o navegador do teste anda a ~1 quadro por segundo: com menos de dois quadros a maçã mal sai do lugar)
+  await espera(3000);
   const v2 = await vivo();
   ok(['bolha', 'vapor', 'maca', 'gota'].every((k) => Math.abs(v1[k] - v2[k]) > 1e-4), `as bolhas sobem, o vapor sai, a gota pinga e as maçãs boiam (${JSON.stringify({ v1, v2 })})`);
   const it = await interacoes();
@@ -965,8 +966,10 @@ if (roda('festa')) {
     await espera(400);
     comentario = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
   }
-  ok(/Pra onde o Walter tá indo/.test(comentario), `a dupla repara no Walter indo para trás da roda (${comentario.slice(0, 50)})`);
+  // (o balão digita letra por letra: espera a fala inteira)
   await page.waitForFunction(() => /Pra onde o Walter tá indo\?/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
+  comentario = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
+  ok(/Pra onde o Walter tá indo/.test(comentario), `a dupla repara no Walter indo para trás da roda (${comentario.slice(0, 50)})`);
   await passarFalas();
   await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.chegar(); o.userData.naFesta.ritmo(1); });
   // as fotos de longe dos postos
