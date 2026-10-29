@@ -155,7 +155,8 @@ Picos no `.wav`: `buzina` 0,11, `motorDoOnibus` 0,08, `freioDoOnibus`
 `eventos/halloween/caca.ts`): seis toquinhos secos de triângulo, cada um
 descendo de tom (o plástico oco da cestinha), mais fracos e mais juntos, e
 um "plim" de duas notas no fim. Toca em todo lugar que dá bala (o doce, a
-travessura, a abóbora escondida).
+travessura, a abóbora escondida). Pico 0,08 no `.wav` — a primeira versão
+saiu com 0,03 e sumia perto do `pegar` (0,095).
 
 Medidos no `.wav`: o clique do radinho e o "puf" da chama saíam baixos
 demais (~0,03) — o filtro estreito do `chiado` come quase todo o ruído, e o

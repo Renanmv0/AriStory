@@ -843,7 +843,8 @@ if (roda('festa')) {
     const it = g.current.world.interactables.find((i) => i.id === 'halloween:recado-Walter');
     g.debugPlace(it.x, it.z, Math.PI);
   });
-  await espera(1200);
+  // (o prompt só troca no quadro seguinte: o E antes dele não lê nada)
+  await page.waitForFunction(() => /recado/i.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
   await page.keyboard.press('KeyE');
   await page.waitForFunction(() => /salsichas/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
   const doWalter = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
