@@ -401,7 +401,7 @@ export interface ItemDef {
    * porque o papel pode mudar com o jogo (o mapinha da Estella ganha pista a
    * cada parada da caça de Halloween).
    */
-  leitura?(): PaginaParaLer;
+  leitura?(g: GameAPI): PaginaParaLer;
 }
 
 /**
@@ -567,6 +567,14 @@ export interface GameAPI {
   pointer(): { x: number; y: number };
   /** placar do minigame; null esconde */
   showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void;
+  /** a cesta de balas da caça de Halloween (🎃 🍬 7/25, no alto); null esconde */
+  mostrarCesta(dados: { balas: number; meta: number } | null): void;
+  /**
+   * A hora certa (as travessuras do Halloween): a fala e uma barra com a
+   * agulha indo e voltando; quem joga aperta E (ou toca) para parar.
+   * Resolve com o acerto, de 1 (no meio da faixa) a 0.
+   */
+  horaCerta(texto: string, speaker?: string, opts?: { periodo?: number; zona?: number }): Promise<number>;
   /**
    * Painel do turno do Mania de Churrasco: relogio, dinheiro, coracoes e a
    * bandeja de quem esta sendo controlado. `null` esconde.

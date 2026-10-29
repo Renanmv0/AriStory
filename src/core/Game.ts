@@ -416,6 +416,7 @@ export class Game implements GameAPI {
     this.camOmbro = null; // nenhum minigame sobrevive a uma troca de cena
     this.ui.showPlacar(null);
     this.ui.showTurno(null);
+    this.ui.mostrarCesta(null);
     this.parceiro.clearOrder();
     this.setSitting(false);
     // nenhuma pose de cutscene atravessa uma troca de cena: sair da praca de
@@ -645,7 +646,7 @@ export class Game implements GameAPI {
       const papel = this.leituraNaMao();
       if (papel?.leitura) {
         this.audio.play('interagir');
-        void this.lerCarta(papel.leitura());
+        void this.lerCarta(papel.leitura(this));
       }
     } else if (acted && !busy && !this.player.locked) {
       // sem interativo por perto e sem estar de frente um para o outro, o E
@@ -982,6 +983,14 @@ export class Game implements GameAPI {
 
   showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void {
     this.ui.showPlacar(dados);
+  }
+
+  mostrarCesta(dados: { balas: number; meta: number } | null): void {
+    this.ui.mostrarCesta(dados);
+  }
+
+  horaCerta(texto: string, speaker?: string, opts?: { periodo?: number; zona?: number }): Promise<number> {
+    return this.ui.horaCerta(texto, speaker ?? this.player.name, opts);
   }
 
   setZoom(viewSize: number): void {

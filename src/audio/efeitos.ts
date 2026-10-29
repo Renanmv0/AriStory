@@ -124,7 +124,9 @@ export type SomNome =
   | 'buzina'
   | 'motorDoOnibus'
   | 'freioDoOnibus'
-  | 'portaDoOnibus';
+  | 'portaDoOnibus'
+  // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
+  | 'balas';
 
 /** graus da pentatônica maior, em semitons */
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
@@ -1176,6 +1178,22 @@ export const EFEITOS: Record<SomNome, Receita> = {
     const f = n % 2 ? 2700 : 2450;
     tom(ctx, destino, { freq: f, glide: f * 1.3, quando: t, dur: 0.08, vol: 0.035, ataque: 0.006, tipo: 'sine' });
     if (n % 3 === 0) tom(ctx, destino, { freq: f * 1.05, glide: f * 1.35, quando: t + 0.12, dur: 0.07, vol: 0.03, ataque: 0.006, tipo: 'sine' });
+  },
+
+  /*
+   * AS BALAS NA CESTA (a caça de doces ou travessuras do Halloween): um
+   * punhado de balinhas de papel caindo na cestinha de plástico — seis
+   * toquinhos secos, cada um descendo de tom (o plástico oco), cada vez mais
+   * fracos e mais juntos, e no fim um "plim" de duas notas, que é a festa.
+   */
+  balas: ({ ctx, destino, t, n }) => {
+    const toques = [0, 0.06, 0.11, 0.17, 0.215, 0.27];
+    toques.forEach((atraso, i) => {
+      const f = 1350 + ((i * 7 + n * 3) % 5) * 170;
+      tom(ctx, destino, { freq: f, glide: f * 0.6, quando: t + atraso, dur: 0.05, vol: 0.085 - i * 0.008, ataque: 0.003, tipo: 'triangle' });
+    });
+    tom(ctx, destino, { freq: nota(DO + 24), quando: t + 0.34, dur: 0.32, vol: 0.05, ataque: 0.008, tipo: 'sine' });
+    tom(ctx, destino, { freq: nota(DO + 28), quando: t + 0.4, dur: 0.34, vol: 0.042, ataque: 0.008, tipo: 'sine' });
   },
 
   /*

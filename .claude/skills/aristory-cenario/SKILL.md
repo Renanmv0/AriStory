@@ -178,6 +178,10 @@ g.swapCharacters()
 if (g.keyPressed('KeyF')) { /* … */ }   // só no frame em que desceu
 if (g.keyDown('KeyF')) { /* … */ }      // enquanto estiver segurada
 g.showCharge(0.7);                      // barra de força no HUD; null esconde
+g.mostrarCesta({ balas: 7, meta: 25 });  // a cesta de balas no canto (o Halloween); null esconde
+const acerto = await g.horaCerta('Pegar o frisbee!', undefined, { periodo: 1.2, zona: 0.08 });
+// ↑ a agulha que vai e volta embaixo da fala: E para parar; 1 no meio da faixa, 0 longe
+g.emDialogo()                           // tem balão aberto? (não abra um `say` em cima de outro)
 
 // água
 g.submergePlayer(0..1) / g.submergeCompanion(0..1)   // 1 = nadando

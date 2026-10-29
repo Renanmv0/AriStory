@@ -113,6 +113,8 @@ export class Ui {
   private readonly carga: HTMLDivElement;
   private readonly menu: HTMLDivElement;
   private readonly placar: HTMLDivElement;
+  private readonly cesta: HTMLDivElement;
+  private readonly horaCertaEl: HTMLDivElement;
   private readonly turno: HTMLDivElement;
   private readonly mochila: HTMLDivElement;
   private readonly armario: HTMLDivElement;
@@ -235,6 +237,7 @@ export class Ui {
       </div>
       <div class="carga"><div class="barra"></div><i class="zona"></i><i class="alvo"></i></div>
       <div class="placar"><b class="eu"></b><span class="nums"></span><b class="ele"></b></div>
+      <div class="cesta-de-balas"><span class="icone">🎃</span><span class="bala">🍬</span><b class="nums">0</b><span class="meta">/25</span></div>
       <div class="turno">
         <div class="linha">
           <span class="relogio">3:00</span>
@@ -244,7 +247,7 @@ export class Ui {
         <div class="bandeja"></div>
       </div>
       <div class="prompt"><span class="icon">✨</span><span class="label"></span><span class="key">E</span></div>
-      <div class="dialogue"><span class="who"></span><p class="text"></p><div class="escolhas"></div><span class="next">clique / E ▸</span></div>
+      <div class="dialogue"><span class="who"></span><p class="text"></p><div class="escolhas"></div><div class="hora-certa"><i class="zona"></i><i class="agulha"></i></div><span class="next">clique / E ▸</span></div>
       <div class="journal"><div class="sheet">
         <h2>Diário de memórias</h2>
         <p class="sub">Os momentos que a gente já viveu — e os que ainda faltam.</p>
@@ -455,6 +458,8 @@ export class Ui {
     this.carga = ui.querySelector('.carga')!;
     this.menu = ui.querySelector('.menu')!;
     this.placar = ui.querySelector('.placar')!;
+    this.cesta = ui.querySelector('.cesta-de-balas')!;
+    this.horaCertaEl = ui.querySelector('.dialogue .hora-certa')!;
     this.turno = ui.querySelector('.turno')!;
     this.mochila = ui.querySelector('.mochila')!;
     this.slotsMao = ui.querySelector('.mochila .maos')!;
@@ -847,6 +852,94 @@ export class Ui {
     this.placar.querySelector('.ele')!.textContent = dados.ele;
     this.placar.querySelector('.nums')!.textContent = `${dados.meus} × ${dados.dele}`;
     this.placar.classList.add('show');
+  }
+
+  /**
+   * A CESTA DE BALAS da caça de doces ou travessuras (o especial de
+   * Halloween): a abóbora, a bala e "7/25", no alto. Quando o número sobe,
+   * ela dá um pulinho. `null` esconde.
+   */
+  mostrarCesta(dados: { balas: number; meta: number } | null): void {
+    if (!dados) {
+      this.cesta.classList.remove('show');
+      return;
+    }
+    const nums = this.cesta.querySelector('.nums') as HTMLElement;
+    const antes = Number(nums.textContent ?? '0');
+    nums.textContent = String(dados.balas);
+    (this.cesta.querySelector('.meta') as HTMLElement).textContent = `/${dados.meta}`;
+    this.cesta.classList.toggle('cheia', dados.balas >= dados.meta);
+    this.cesta.classList.add('show');
+    if (dados.balas > antes) {
+      this.cesta.classList.remove('pulo');
+      void this.cesta.offsetWidth;
+      this.cesta.classList.add('pulo');
+    }
+  }
+
+  /**
+   * A HORA CERTA: o mini-jogo de reflexo das travessuras (o Halloween). A
+   * fala fica na caixa de sempre, e embaixo dela uma barra com a faixa certa
+   * e uma agulha que vai e volta; quem joga aperta E (ou toca a caixa) para
+   * parar a agulha. Resolve com o acerto, de 1 (no meio da faixa) a 0 (longe
+   * dela), depois de mostrar onde parou.
+   *
+   * A agulha anda no relógio da PAREDE (`requestAnimationFrame`): é o tempo
+   * que o dedo de quem joga sente, e não o do jogo.
+   */
+  horaCerta(texto: string, speaker = '', opts: { periodo?: number; zona?: number } = {}): Promise<number> {
+    const periodo = opts.periodo ?? 1.5;
+    const zona = opts.zona ?? 0.08;
+    return new Promise((resolve) => {
+      this.dialogueWho.textContent = speaker;
+      this.dialogueWho.style.display = speaker ? '' : 'none';
+      this.pintarVoz(speaker);
+      this.dialogue.classList.add('show');
+      this.type(texto);
+      this.next.textContent = 'na hora certa: E / toque ▸';
+      const barra = this.horaCertaEl;
+      const faixa = barra.querySelector('.zona') as HTMLElement;
+      const agulha = barra.querySelector('.agulha') as HTMLElement;
+      // a faixa certa cai num lugar diferente a cada vez, longe das pontas
+      const alvo = 0.25 + Math.random() * 0.5;
+      faixa.style.left = `${(alvo - zona) * 100}%`;
+      faixa.style.width = `${zona * 200}%`;
+      barra.classList.remove('certa', 'errou');
+      barra.classList.add('show');
+      const t0 = performance.now();
+      let pos = 0;
+      let rodando = true;
+      const andar = (): void => {
+        if (!rodando) return;
+        const fase = ((performance.now() - t0) / 1000 / periodo) % 2;
+        pos = fase < 1 ? fase : 2 - fase;
+        agulha.style.left = `${pos * 100}%`;
+        requestAnimationFrame(andar);
+      };
+      requestAnimationFrame(andar);
+      this.advance = () => {
+        if (!rodando) return;
+        if (this.typing !== null) {
+          // a fala ainda escrevendo: o toque só completa o texto
+          window.clearInterval(this.typing);
+          this.typing = null;
+          this.dialogueText.textContent = texto;
+          return;
+        }
+        rodando = false;
+        const d = Math.abs(pos - alvo);
+        const acerto = d <= zona ? 1 - (d / zona) * 0.25 : Math.max(0, 0.75 - ((d - zona) / (zona * 3)) * 0.75);
+        barra.classList.add(d <= zona ? 'certa' : 'errou');
+        this.som?.(d <= zona ? 'confirma' : 'escolha');
+        window.setTimeout(() => {
+          barra.classList.remove('show', 'certa', 'errou');
+          this.next.textContent = 'clique / E ▸';
+          this.dialogue.classList.remove('show');
+          this.advance = null;
+          resolve(acerto);
+        }, 750);
+      };
+    });
   }
 
   /**

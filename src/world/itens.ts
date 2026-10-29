@@ -53,7 +53,7 @@ import {
   tiaraDeMorcego, moletomDeMorcego, mangaDeMorcego, calcaListrada, pantufasDeMorcego, luvinhasDeMorcego, asinhasDeMorcego,
 } from './fantasias';
 import { cestaDeAbobora, mapinhaEnrolado } from './halloween/boutique';
-import { MAPINHA_DA_ESTELLA } from './halloween/mapinha';
+import { CHAVE_DA_CACA, mapinhaDaEstella, pistasDaCaca } from './halloween/mapinha';
 
 /**
  * O catalogo de itens do jogo.
@@ -1778,7 +1778,8 @@ export const ITENS = {
     tipo: 'mao',
     nota: 'da Estella · o parque e as pistas da caça',
     holdPose: 'upright',
-    leitura: () => MAPINHA_DA_ESTELLA,
+    // as pistas saem do save: cada parada da caça acrescenta a da próxima
+    leitura: (g) => mapinhaDaEstella(pistasDaCaca(g.stat(CHAVE_DA_CACA))),
   },
   presinhasDeVampiro: {
     id: 'presinhas-de-vampiro', nome: 'Presinhas de vampiro', icone: '🧛',

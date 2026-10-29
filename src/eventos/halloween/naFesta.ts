@@ -29,6 +29,7 @@ import { RECADOS_DO_PARQUE } from './recados';
 import type { PecasDoParque } from './noParque';
 import { FLAG_DO_ONIBUS, faseDoHalloween } from './fase';
 import { chegadaDoOnibus } from './chegadaDoOnibus';
+import { montarACaca, type CacaDaFesta } from './caca';
 
 /*
  * OS POSTOS DA FESTA (`docs/HALLOWEEN.md`, §2.4.1, C): na noite da festa
@@ -514,6 +515,9 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     return { para, de: new THREE.Vector3(b.x + deOnde.x, altura, b.z + deOnde.y) };
   };
 
+  /** a caça de doces ou travessuras: montada depois dos convidados, lá embaixo */
+  let caca: CacaDaFesta | null = null;
+
   /** quem está conversando agora (e onde ele parou, para o patrulheiro) */
   let falando: { c: Convidado; x: number; z: number } | null = null;
   const conversar = async (api: GameAPI, c: Convidado): Promise<void> => {
@@ -532,11 +536,19 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     api.setCameraOmbro(camera.de, camera.para);
     try {
       await deslizar(perto, 1.1);
-      const flag = `halloween:festa-falou:${b.group.userData.peca}`;
+      const peca = b.group.userData.peca as string;
+      const flag = `halloween:festa-falou:${peca}`;
       const primeira = !api.flag(flag);
-      const falas = c.falas(api, primeira, primeira ? 0 : api.bump(`halloween:festa-conversas:${b.group.userData.peca}`));
+      /*
+       * A CAÇA (`caca.ts`): quando é a vez dele, a parada vem depois da
+       * apresentação (a da primeira vez) e no lugar da fala curta; quando
+       * ainda não é, ele pede para seguir o mapinha depois da fala de sempre.
+       */
+      const vez = caca?.vez(api, peca) ?? null;
+      const falas = vez === 'agora' && !primeira ? [] : c.falas(api, primeira, primeira ? 0 : api.bump(`halloween:festa-conversas:${peca}`));
       api.setFlag(flag);
       for (const [quem, texto] of falas) await api.say([texto], quem);
+      if (caca && (vez === 'agora' || vez === 'cedo')) await caca.parar(api, peca);
       c.aoFim?.();
       // o ponto de sempre continua daqui (o Cookie vende o bilhete), ainda de perto
       const emenda = c.emenda ? w.interactables.find((it) => it.id === c.emenda) : null;
@@ -830,6 +842,26 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
       if (c.presente) ponto.enabled = c.presente();
     });
   }
+
+  // ------------------------------------------- a caça de doces ou travessuras
+  /*
+   * As dez paradas são os convidados (`caca.ts`); a alegria de quem deu uma
+   * travessura boa é o gesto que cada um já tem — a dancinha do Mano, a
+   * comemoração do Flynn e do Jean-Luc, a torcida das coelhinhas, o six seven
+   * do Gatito, e o carinho de sempre dos outros.
+   */
+  const porPeca = (peca: string): Convidado | undefined => convidados.find((c) => c.bicho.group.userData.peca === peca);
+  caca = montarACaca(w, {
+    bicho: (peca) => porPeca(peca)?.bicho ?? null,
+    festejar: (peca) => {
+      if (peca === 'mano') mano?.dancar(1.8);
+      else if (peca === 'flynn') flynn.comemorar(1.6);
+      else if (peca === 'jean-luc') jeanLuc?.comemorar(1.6);
+      else if (peca === 'gatito') gatito.sixSeven();
+      else if (peca === 'luna' || peca === 'sol' || peca === 'estrella') (porPeca(peca)?.bicho as CoelhaDaTorcida | undefined)?.torcer(1.6);
+      else porPeca(peca)?.gesto?.();
+    },
+  });
 
   // ------------------------------------------------- o ônibus da festa
   /*
