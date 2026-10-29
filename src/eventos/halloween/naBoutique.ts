@@ -18,7 +18,7 @@ import {
   placaDoProvador, poteDeBiscoitos,
 } from '../../world/halloween/boutique';
 import { fantasiarEstellaDeAranha, pelusaMorceguinho } from '../../world/halloween/fantasiasDosBichos';
-import { faseDoHalloween, parqueEnfeitado } from './fase';
+import { FLAG_DO_PRESENTE, avancarFase, faseDoHalloween, parqueEnfeitado } from './fase';
 
 /*
  * A BOUTIQUE DE HALLOWEEN — a etapa 3 do especial (`docs/HALLOWEEN.md`,
@@ -35,8 +35,8 @@ import { faseDoHalloween, parqueEnfeitado } from './fase';
  * funcionar. As fantasias ficam no guarda-roupa dos dois para sempre.
  */
 
-/** a flag de quando a cena do presente já aconteceu */
-export const FLAG_DO_PRESENTE = 'halloween:presente';
+/** a flag de quando a cena do presente já aconteceu (mora na `fase.ts`: é ela que abre a noite da festa) */
+export { FLAG_DO_PRESENTE };
 
 interface Ponto {
   x: number;
@@ -460,6 +460,8 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
         [E, 'Agora vão, que a noite é das aranhas… e dos amigos delas!'],
       ]);
       g.setFlag(FLAG_DO_PRESENTE);
+      // e lá fora já é a noite da festa: o ônibus chega quando eles saírem
+      avancarFase(g, 'festa');
       g.unlock({
         id: 'halloween-presente-da-estella',
         title: 'O presente da Estella',

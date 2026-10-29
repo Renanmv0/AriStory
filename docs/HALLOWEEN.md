@@ -567,8 +567,8 @@ freando, a porta abrindo) é peça nova desta etapa.
 > luzinhas, uma a cada três lâmpadas, para o varal não virar um lençol); o
 > Nessie joga 7 m de luz na água; a luz dos postes vai a 15 m de noite. A
 > alameda ficou em 384 desenhos (as poças entram em lote). Teste: `scripts/halloween.mjs SO=noite`.
-> Até a cutscene do ônibus (parte B) existir, a fase `festa` só se liga
-> pelo teste.
+> A fase `festa` liga no fim da cena do presente, na boutique (a noite cai
+> enquanto eles se arrumam); save que já tinha o presente é lido como festa.
 
 #### B. A saída da boutique e o ônibus (a cutscene)
 
@@ -595,6 +595,39 @@ freando, a porta abrindo) é peça nova desta etapa.
 
 Os que descem não andam o parque inteiro na tela: saem do quadro e, com a
 câmera de volta, já estão nos postos (o jogo põe cada um lá).
+
+> **Construída** (`eventos/halloween/chegadaDoOnibus.ts`, chamada pelos
+> postos da festa uma vez por save — a flag `halloween:onibus-chegou`). A
+> câmera de cena nasce no enquadramento da isométrica e anda no relógio do
+> jogo: a dupla na calçada da boutique ("Já anoiteceu?!" / "O suficiente pra
+> ficar lindo."); a **buzina**; o **voo** por cima do parque aceso (uma
+> curva Catmull-Rom para onde a câmera está e outra para onde ela olha:
+> sobe da boutique, passa pela barraquinha, a roda e o campinho, e desce
+> pelo corredor do vão da cerca até a calçada, ao sul do abrigo); o ônibus
+> **chega pela rua** com os faróis e a poça de luz andando na frente dele,
+> o motor roncando em fila, freia (o freio de ar no fim, e o nariz
+> mergulha e volta amortecendo), o **pisca-alerta** pisca e a **porta
+> abre** com o sopro (as folhas correm para os lados e o vão escuro, com a
+> luzinha de dentro, aparece). Descem um por um, e cada um para na calçada
+> com a câmera chegando perto: a **Gina** de pescoço abaixado na porta
+> ("abaixa, Gina…") e o véu enganchando; o **Capy** apitando ("Tubarão
+> também respeita a fila"); o **Noel** correndo (a poção no fogo); o
+> **Walter** de bandeja, latindo, e o Noel traduzindo de longe que a
+> barraca abre em cinco minutos; o **Gatito**, que late "Au." — e o Walter
+> para, vira e responde "Au?", e aprova a fantasia abanando; o **Flynn**
+> pulando o degrau inteiro com um uivo; as **três coelhinhas** juntas (a
+> coruja, o salto da catrina e a estrelinha da fadinha); e por último a
+> **Josefina**, devagar, agradecendo o motorista. A porta fecha, o pisca
+> apaga, a tela escurece, e a câmera volta para a dupla com todo mundo
+> nos postos (o Walter no caixote da barraca). **O ônibus é novo** (pedido
+> do Renan: as mesmas cores, mais detalhado; `world/onibusDaCidade.ts`):
+> na noite da festa ele fica no lugar do de sempre do ponto, com o letreiro
+> de LED "Festa no Parque", e a cena usa os comandos dele — a porta de
+> folhas que correm (o vão de dentro com o corrimão amarelo e a luzinha),
+> as rodas girando o que ele anda, o farol com a poça de luz e o
+> pisca-alerta. A buzina, o motor, o freio
+> de ar e a porta pneumática são sons novos (`audio/efeitos.ts`). **As
+> falas são rascunhos.** Teste: `scripts/halloween.mjs SO=onibus`.
 
 #### C. Onde cada um fica na festa
 
@@ -636,7 +669,7 @@ de recado somem. O clube e a escola continuam vazios (decisão do Renan).
 > **desafios** da arena estão suspensos (o recado volta ao quadro), e a roda,
 > o bilhete do Cookie e o sorvete funcionam de noite. O clube, o Mania, a
 > estufa e a escola ficam vazios do convite até a noite de sono (com os
-> recados de quem foi se arrumar). O Walter só aparece com o ônibus (parte B).
+> recados de quem foi se arrumar). O Walter chega com o ônibus (parte B).
 >
 > **O carrinho de poções** (pedido do Renan: bem detalhado,
 > `world/halloween/carrinhoDePocoes.ts`): a caixa de tábua pintada de roxo
@@ -690,9 +723,25 @@ de recado somem. O clube e a escola continuam vazios (decisão do Renan).
 > ela espera fechada (o pano de "FECHADO" no balcão, a chapa vazia); na
 > **festa** está aberta e acesa (a lâmpada, as luzinhas, os morceguinhos e
 > a teia), com o recado dele pendurado: "Au! Au! (fui buscar a turma no
-> ônibus — a chapa já tá quente, volto já!)". Quando a cena do ônibus
-> existir, ele chega e o recado sai. O lugar dele fica atrás do balcão
-> (`posto`), com o toldo alto e o beiral curto para a cabeça aparecer.
+> ônibus — a chapa já tá quente, volto já!)" — até o ônibus chegar.
+>
+> **O Walter na barraca** (decisão do Renan: ele fica nela, e vai lá
+> atrás da roda de vez em quando). Ele tem 61 cm e o tampo, 1,02 m: fica
+> em cima de um **caixote** de feira atrás do balcão (o mesmo truque do
+> Jean-Luc na arena), com a cabeça por cima da chapa. O balcão vai só até
+> 14 cm atrás do meio e a lateral da direita para antes do fundo: é a
+> **passagem** dele. De tempos em tempos (a primeira uns 25 s depois de
+> chegar, depois a cada 45 a 70 s, nunca no meio de uma conversa) ele pula
+> do caixote, sai pela passagem, desce do estrado e vai rente ao tapume
+> da praça até **atrás da roda**, onde some; volta 12 a 20 s depois pelo
+> mesmo caminho e sobe no caixote. Os pulos são da cena (o corpo num
+> arco), e a pose é do Walter (`salto`: as patas da frente esticam na
+> saída e as de trás na chegada). Fora da barraca, o recado pendurado é
+> outro: "Au! Au! (volto já — não mexam nas salsichas!)". Na primeira
+> vez que a dupla o vê indo, comenta: "Pra onde o Walter tá indo?" / "Lá
+> pra trás da roda… e largou a barraca sozinha." É a primeira dica do
+> final. A conversa dele é a de zoom de todo mundo, pela frente do balcão
+> (ele late, a dupla traduz).
 > As miudezas de cor lisa viram uma malha só com a cor nos vértices
 > (`juntarPorCor`, agora no `world/fundir.ts`): 56 -> 25 malhas, a mesma
 > imagem. Medido mostrando e escondendo a barraca na mesma página: na
@@ -1457,21 +1506,16 @@ sua caixinha e sai inteiro vestido, e as fantasias ficam para sempre; o
 mapinha entra; a loja só funciona depois da cutscene; o Pelusa no pufe
 vinho, sem fala sobre ele.
 
-### A etapa 4 está fechada (as partes A, C e D construídas)
+### A etapa 4 está fechada (as partes A, B, C e D construídas)
 
 Respondidas (§2.4.1): a câmera vai ao ônibus e cada um desce falando; o
 Mano de vampiro com o Ari, com fala própria; uma fantasia única para cada
 personagem (o plano novo no §3, o Cookie de lençol); a roda, o sorvete e a
 patinação voltam de noite, e o Gatito vem de fantasia engraçada; todos vêm,
-destravados ou não; o Walter some atrás da roda; e as luzes inteiras.
+destravados ou não; o Walter fica na barraquinha e vai lá atrás da roda de
+vez em quando (a dica do final); e as luzes inteiras.
 
 ### Para as próximas partes
-
-0. **O Walter na festa**: ele ganhou a barraquinha de cachorro-quente
-   (pedido do Renan). Na decisão de antes, ele descia do ônibus e sumia
-   atrás da roda (a primeira dica do final). Com a barraca, ele fica nela
-   depois de chegar — e a dica do final continua (ele some de vez em
-   quando atrás da roda, a barraca com o "volto já"), ou sai?
 
 1. **As balas** (§5.3): 3 no doce, 1 a 5 na travessura, 10 abóboras
    escondidas, e a porta abrindo com 25 — estão bons?

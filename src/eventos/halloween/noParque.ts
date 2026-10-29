@@ -7,7 +7,7 @@ import { LoteDeAboboras, type CaraDeAbobora, type TamanhoDeAbobora, CARAS, ABOBO
 import { EnfeitesDePendurar } from '../../world/halloween/pendurados';
 import {
   LapidesFofas, arcoDeBaloes, caldeirao, chapeuDeBruxa, espantalhoDeBoasVindas, fardoDeFeno, guirlanda,
-  lencolDaBilheteria, panoDeFechado, plaquinhaDeRecado, pompom,
+  lencolDaBilheteria, panoDeFechado, plaquinhaDeRecado, pompom, type Recado,
 } from '../../world/halloween/pecas';
 import { NessieNoLago, type LagoDoNessie } from '../../world/halloween/nessie';
 import type { CoresDoLago } from '../../core/shaders';
@@ -278,6 +278,7 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   // festa: no convite ela espera de pano de "FECHADO" no balcão, e na festa
   // ela está aberta, acesa e com a chapa ligada.
   const barraca = new BarracaDoWalter(deNoite);
+  let recadosDoWalter: { onibus: THREE.Object3D; voltaJa: THREE.Object3D } | null = null;
   {
     const BW = BARRACA_DO_WALTER;
     const noMundo = (lx: number, lz: number): { x: number; z: number } => ({
@@ -310,21 +311,36 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
       // o cordão de luzinhas na beira do toldo
       const [a, b] = barraca.luzinhas.map((p) => { const m = noMundo(p.x, p.z); return new THREE.Vector3(m.x, p.y, m.z); });
       pendurados.luzinhas(a, b, { barriga: 0.12 });
-      // e o recado do Walter pendurado na beira do toldo: ele foi buscar a
-      // turma de ônibus (a chegada é a cena do ônibus, §2.4.1 B)
+      // e o recado do Walter pendurado na beira do toldo. Antes do ônibus
+      // chegar, ele foi buscar a turma; depois, de vez em quando ele larga a
+      // barraca e some atrás da roda, e pendura o "volto já" (quem mostra um
+      // ou outro é o posto dele, em `naFesta.ts`)
       const prego = noMundo(0.62, barraca.luzinhas[0].z - 0.01);
-      const recado = unica(plaquinhaDeRecado([RECADOS_DO_PARQUE.walterNaFesta], { modo: 'pendurada', largura: 0.5, altura: 0.36 }), prego.x, 2.12, prego.z, BW.giro);
-      recado.name = 'recado-do-walter';
+      const pendurar = (recado: Recado, nome: string): THREE.Object3D => {
+        const placa = unica(plaquinhaDeRecado([recado], { modo: 'pendurada', largura: 0.5, altura: 0.36 }), prego.x, 2.12, prego.z, BW.giro);
+        placa.name = nome;
+        placa.visible = false;
+        return placa;
+      };
+      recadosDoWalter = {
+        onibus: pendurar(RECADOS_DO_PARQUE.walterNaFesta, 'recado-do-walter'),
+        voltaJa: pendurar(RECADOS_DO_PARQUE.walterVoltaJa, 'volto-ja-do-walter'),
+      };
+      const placas = recadosDoWalter;
       const ler = noMundo(0.5, 1.45);
-      w.interact({
+      const lerORecado = w.interact({
         id: 'halloween:recado-Walter',
         x: ler.x, z: ler.z, radius: 1.3,
         label: 'Ler o recado', icon: '📝',
-        highlight: recado,
+        highlight: placas.onibus,
         priority: 3,
         onInteract: async (g) => {
-          await g.say([RECADOS_DO_PARQUE.walterNaFesta.texto.replace(/\n/g, ' ')], 'Walter');
+          const recado = placas.voltaJa.visible ? RECADOS_DO_PARQUE.walterVoltaJa : RECADOS_DO_PARQUE.walterNaFesta;
+          await g.say([recado.texto.replace(/\n/g, ' ')], 'Walter');
         },
+      });
+      w.onUpdate(() => {
+        lerORecado.enabled = placas.onibus.visible || placas.voltaJa.visible;
       });
     }
   }
@@ -700,7 +716,10 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   // (o clube e a escola), com a conversa de câmera chegando perto (§2.4.1, C).
   if (deNoite) {
     fantasiarQuemEstaAqui(w);
-    montarPostosDaFesta(w, pecas, { aboboras, pendurados });
+    montarPostosDaFesta(w, pecas, {
+      aboboras, pendurados,
+      barraca: { peca: barraca, ...BARRACA_DO_WALTER, recados: recadosDoWalter },
+    });
   }
 
   // ============================================ os comentários da dupla
@@ -731,7 +750,7 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
       const andou = Math.hypot(p.x - antes.x, p.z - antes.z) > 0.004;
       antes.x = p.x;
       antes.z = p.z;
-      if (falando || !andou) return;
+      if (falando || !andou || g0.emDialogo()) return;
       const c = COMENTARIOS.find((k) => !g0.flag(`halloween:viu:${k.id}`) && k.perto(p.x, p.z));
       if (!c) return;
       falando = true;

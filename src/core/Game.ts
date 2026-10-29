@@ -900,6 +900,10 @@ export class Game implements GameAPI {
     return this.ui.say(Array.isArray(lines) ? lines : [lines], speaker ?? this.player.name);
   }
 
+  emDialogo(): boolean {
+    return this.ui.emFala;
+  }
+
   ask(pergunta: string, opcoes: string[], speaker?: string): Promise<number> {
     return this.ui.ask(pergunta, opcoes, speaker ?? this.player.name);
   }

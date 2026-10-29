@@ -998,6 +998,15 @@ export class Ui {
     d.style.setProperty('--voz-relevo', tintaEscura ? 'rgba(255, 255, 255, 0.45)' : 'rgba(0, 0, 0, 0.25)');
   }
 
+  /**
+   * Tem balao aberto agora (uma fala ou uma pergunta)? Quem fala SOZINHO (um
+   * comentario da dupla no caminho) espera: dois `say` ao mesmo tempo trocam
+   * o `advance` e o primeiro nunca resolve.
+   */
+  get emFala(): boolean {
+    return this.dialogue.classList.contains('show');
+  }
+
   /** Mostra as falas em sequencia. Resolve quando a ultima e fechada. */
   say(lines: string[], speaker = ''): Promise<void> {
     return new Promise((resolve) => {

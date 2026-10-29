@@ -31,6 +31,10 @@
  *             cachorro-quente do Walter (aberta na festa, com as salsichas
  *             rolando e o recado dele; fechada no convite) — e o clube, o
  *             Mania, a estufa e a escola vazios
+ *   SO=onibus a chegada da turma no ônibus da festa (a dupla saindo da
+ *             boutique de noite, a buzina, a câmera voando por cima do
+ *             parque, o ônibus freando, a porta abrindo e cada um descendo
+ *             e falando no jeito da fantasia, até todo mundo nos postos)
  *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre, nenhuma peça do evento, e a
  *             casa, o parque, o clube, a escola, a estufa, o Mania e o quarto
@@ -162,7 +166,9 @@ if (roda('volta')) {
 /** abre a cena na fase `convite` (o save de teste com a carta já lida) */
 const naFaseConvite = async (cena, flagsExtras = []) => {
   await limpo(`cena=${cena}&halloween`);
-  await j((f) => { for (const x of f) window.jogo.setFlag(x); }, ['halloween:convite', ...flagsExtras]);
+  // a noite da festa já com o ônibus chegado (a chegada é a parte `onibus`, que pede `halloween:sem-onibus`)
+  const comOnibus = flagsExtras.includes('halloween:festa') && !flagsExtras.includes('halloween:sem-onibus') ? ['halloween:onibus-chegou'] : [];
+  await j((f) => { for (const x of f) window.jogo.setFlag(x); }, ['halloween:convite', ...flagsExtras.filter((f) => f !== 'halloween:sem-onibus'), ...comOnibus]);
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
   await espera(1800);
@@ -797,7 +803,32 @@ if (roda('festa')) {
   await espera(9000);
   const r2 = await rolou();
   ok(r1 !== r2, `as salsichas rolam na chapa (${r1} → ${r2})`);
-  // o recado: o Walter foi buscar a turma de ônibus
+  // o Walter (o ônibus já chegou): em cima do caixote atrás do balcão, a cabeça por cima do tampo
+  /** o Walter da festa e o pé em que ele está */
+  const walter = () => j(() => {
+    let o = null;
+    window.jogo.scene.traverse((b) => { if (!o && b.userData?.peca === 'garcom-canino' && b.userData.naFesta) o = b; });
+    if (!o) return null;
+    let topo = -9;
+    o.updateMatrixWorld(true);
+    o.traverse((m) => { if (m.isMesh) { m.geometry.computeBoundingBox(); topo = Math.max(topo, m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld).max.y); } });
+    const recados = ['recado-do-walter', 'volto-ja-do-walter'].map((n) => window.jogo.scene.getObjectByName(n)?.visible ?? null);
+    return { rumo: o.userData.naFesta.rumo(), y: +o.position.y.toFixed(2), topo: +topo.toFixed(2), visivel: o.visible, recados };
+  });
+  const noCaixote = await walter();
+  ok(!!noCaixote && noCaixote.rumo === 'posto' && noCaixote.visivel && Math.abs(noCaixote.y - 0.8) < 0.02 && noCaixote.topo > 1.3 && noCaixote.recados.every((v) => v === false),
+    `o Walter no caixote da barraca, aparecendo por cima do balcão, e nenhum recado pendurado (${JSON.stringify(noCaixote)})`);
+  // de vez em quando ele sai (a primeira dica do final): o "volto já" aparece, e o recado diz isso
+  // (o comentário da dupla, "Pra onde o Walter tá indo?", é conferido no fim desta parte, sozinho:
+  // aqui ele abriria no meio das conversas que vêm depois)
+  await j(() => window.jogo.setFlag('halloween:viu:walter-indo'));
+  // (no passo de sempre: acelerado, a ida e a volta inteiras cabiam antes de o teste apertar o E, e o "volto já" já tinha saído)
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(1); o.userData.naFesta.sairAgora(); });
+  await page.waitForFunction(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); return o.userData.naFesta.rumo() !== 'posto'; }, null, { timeout: 60000 }).catch(() => {});
+  // (o recado troca no quadro seguinte ao da saída; o navegador do teste anda a ~1 quadro por segundo)
+  await page.waitForFunction(() => window.jogo.scene.getObjectByName('volto-ja-do-walter')?.visible === true, null, { timeout: 60000 }).catch(() => {});
+  const saiu = await walter();
+  ok(saiu.rumo !== 'posto' && saiu.recados[0] === false && saiu.recados[1] === true, `o Walter sai da barraca e pendura o "volto já" (${JSON.stringify(saiu)})`);
   await j(() => {
     const g = window.jogo;
     const it = g.current.world.interactables.find((i) => i.id === 'halloween:recado-Walter');
@@ -805,11 +836,13 @@ if (roda('festa')) {
   });
   await espera(1200);
   await page.keyboard.press('KeyE');
-  await page.waitForFunction(() => /volto já/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
+  await page.waitForFunction(() => /salsichas/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
   const doWalter = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
-  ok(/buscar a turma no ônibus/.test(doWalter), `o recado do Walter na barraca (${doWalter.slice(0, 70)})`);
+  ok(/volto já/.test(doWalter), `o recado do Walter na barraca (${doWalter.slice(0, 70)})`);
   await passarFalas();
-  for (const [nome, de, para] of [['barraca', [10.6, 2.0, -13.6], [8.55, 1.2, -16.6]], ['balcao', [8.75, 1.85, -15.25], [8.5, 1.05, -16.55]]]) {
+  // (a dupla comenta a primeira saída dele; e ele volta para o caixote)
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.chegar(); o.userData.naFesta.ritmo(1); });
+  for (const [nome, de, para] of [['barraca', [-8.1, 1.7, -6.6], [-9.7, 1.0, -9.3]], ['balcao', [-8.6, 1.85, -7.9], [-9.8, 1.05, -9.5]]]) {
     await j(([de, para]) => { const T = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new T(...de), new T(...para)); }, [de, para]);
     await espera(1500);
     await page.screenshot({ path: `${OUT}-festa-walter-${nome}.png` });
@@ -824,7 +857,8 @@ if (roda('festa')) {
     return { bolha: ler('bolhas-do-balao'), vapor: ler('vapor-da-pocao'), maca: ler('macas'), gota: s.getObjectByName('gota-do-alambique').position.y };
   });
   const v1 = await vivo();
-  await espera(900);
+  // (o navegador do teste anda a ~1 quadro por segundo: com menos de dois quadros a maçã mal sai do lugar)
+  await espera(3000);
   const v2 = await vivo();
   ok(['bolha', 'vapor', 'maca', 'gota'].every((k) => Math.abs(v1[k] - v2[k]) > 1e-4), `as bolhas sobem, o vapor sai, a gota pinga e as maçãs boiam (${JSON.stringify({ v1, v2 })})`);
   const it = await interacoes();
@@ -832,7 +866,7 @@ if (roda('festa')) {
   ok(fechadas.every((x) => it[x] === false), `a Estella, o xadrez, os desafios e as conversas de sempre fechados (${fechadas.map((x) => `${x}=${it[x]}`).join(' ')})`);
   ok(it['parque:cookie'] !== false && it['parque:roda-gigante'] !== false && it['parque:sorveteria'] !== false, 'a roda, o bilhete e o sorvete funcionam de noite');
   const festa = Object.keys(it).filter((x) => x.startsWith('halloween:festa-'));
-  ok(festa.length === 12, `cada convidado com o seu "Falar com…" (${festa.length}: ${festa.map((x) => x.slice(16)).join(', ')})`);
+  ok(festa.length === 13, `cada convidado com o seu "Falar com…" (${festa.length}: ${festa.map((x) => x.slice(16)).join(', ')})`);
   ok(it['halloween:recado-Recado'] === true, 'o recado dos desafios suspensos no quadro da arena');
 
   /** conversa com um convidado e mede a tomada de cena; devolve o primeiro balão */
@@ -896,8 +930,13 @@ if (roda('festa')) {
     ['flynn', 'Falar com o Flynn', /Lobisomem/, 'flynn'],
     ['jean-luc', 'Falar com o Jean-Luc', /Fantôme/, 'jeanluc'],
     ['luna', 'Falar com a Luna', /coruja/, 'luna'],
+    ['garcom-canino', 'Falar com o Walter', /Au! Au!/, 'walter'],
   ];
   for (const [peca, rotulo, fala, foto] of QUEM) {
+    // (o Walter sai para trás da roda no relógio dele: a conversa é com ele de volta no caixote)
+    if (peca === 'garcom-canino') {
+      await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.chegar(); });
+    }
     const r = await conversar(peca, foto, fala);
     const t = r.tomada;
     ok(r.prompt === rotulo, `${peca}: o ponto "${rotulo}" (${r.prompt})`);
@@ -918,6 +957,22 @@ if (roda('festa')) {
   // a segunda conversa é curta
   const deNovo = await conversar('noel');
   ok(!/BOA NOITE/.test(deNovo.balao) && deNovo.balao.length > 5, `na segunda vez, uma fala curta (${deNovo.balao.slice(0, 60)})`);
+  // a primeira vez que a dupla vê o Walter indo para trás da roda, comenta (e só depois que o balão fecha)
+  await j(() => { window.jogo.setFlag('halloween:viu:walter-indo', false); window.jogo.debugPlace(-8.2, -7.6, Math.PI / 4); });
+  // (no passo de sempre: acelerado, a ~1 quadro por segundo ele já sumia dos 12 m no quadro seguinte)
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(1); o.userData.naFesta.sairAgora(); });
+  let comentario = '';
+  for (let i = 0; i < 120 && !/Pra onde o Walter/.test(comentario); i++) {
+    await j((k) => window.jogo.debugPlace(-8.2 + (k % 2) * 0.05, -7.6, Math.PI / 4), i);
+    await espera(400);
+    comentario = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
+  }
+  // (o balão digita letra por letra: espera a fala inteira)
+  await page.waitForFunction(() => /Pra onde o Walter tá indo\?/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 120000 }).catch(() => {});
+  comentario = await j(() => document.querySelector('.dialogue.show')?.textContent ?? '');
+  ok(/Pra onde o Walter tá indo/.test(comentario), `a dupla repara no Walter indo para trás da roda (${comentario.slice(0, 50)})`);
+  await passarFalas();
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.chegar(); o.userData.naFesta.ritmo(1); });
   // as fotos de longe dos postos
   for (const [nome, x, z, zoom] of [['carrinho', -2.6, -14.4, 8], ['canteiro', -16.4, -16.2, 8], ['lago', -11.4, 17.8, 9], ['ponto', 35.2, 25.2, 9], ['piquenique', -22.6, -25.6, 8], ['campinho', 11.4, 3.6, 9]]) {
     await j(([x, z, zoom]) => { window.jogo.debugPlace(x, z, Math.PI / 4); window.jogo.setZoom(zoom); }, [x, z, zoom]);
@@ -945,6 +1000,102 @@ if (roda('festa')) {
     const b = await bichosNaCena();
     ok(sumidos.every((x) => b[x] === false), `${cena}: vazio na festa (${JSON.stringify(b)})`);
   }
+}
+
+// ===================================================================== onibus
+if (roda('onibus')) {
+  console.log('\nonibus: a chegada da turma no ônibus da festa (§2.4.1, B)');
+  // a dupla sai da boutique na noite da festa, e o ônibus ainda não chegou
+  await naFaseConvite('villa-lobos&entrada=da-lojinha', ['halloween:festa', 'halloween:sem-onibus']);
+  const quadro = () => j(() => {
+    const g = window.jogo;
+    let bus = null;
+    let antigo = null;
+    const bichos = {};
+    g.current.world.root.traverse((o) => {
+      if (!bus && o.userData?.peca === 'onibus-da-cidade') bus = o;
+      if (o.userData?.peca === 'onibus' && Math.abs(o.position.x - 39.5) < 0.5) antigo = o;
+      if (o.userData?.bicho && o.userData.bicho.group === o) bichos[o.userData.peca] = { x: +o.position.x.toFixed(2), y: +o.position.y.toFixed(2), z: +o.position.z.toFixed(2), v: o.visible };
+    });
+    const o = bus.userData.onibus;
+    const rodas = bus.getObjectByName('rodas');
+    const m = new rodas.matrix.constructor();
+    rodas.getMatrixAt(0, m);
+    return {
+      bus: {
+        z: +bus.position.z.toFixed(2), pitch: +bus.rotation.z.toFixed(4), porta: +o.aberta.toFixed(2),
+        farol: bus.getObjectByName('farois-acesos').visible, antigoEscondido: antigo?.visible === false, giroDaRoda: +m.elements[0].toFixed(3),
+      },
+      bichos, cam: !!g.cameraDeCena(), travado: g.player.locked, fala: document.querySelector('.dialogue.show')?.textContent ?? '',
+      chegou: g.flag('halloween:onibus-chegou'), sons: Object.fromEntries(g.audio.contagem),
+    };
+  });
+  const PASSAGEIROS = ['girafa', 'capy', 'noel', 'garcom-canino', 'gatito', 'flynn', 'luna', 'sol', 'estrella', 'josefina'];
+  const antes = await quadro();
+  ok(antes.bus.antigoEscondido, 'na festa, o ônibus do ponto é o detalhado (o de sempre escondido)');
+  ok(antes.bus.z < -20 && antes.travado && PASSAGEIROS.every((p) => antes.bichos[p]?.v === false),
+    `a cena começa sozinha: a dupla presa, o ônibus lá longe na rua e a turma ainda dentro dele (${antes.bus.z})`);
+  // as falas, uma a uma: o que cada uma pede para medir
+  const vistas = [];
+  const medidas = {};
+  let ultima = '';
+  for (let i = 0; i < 2400; i++) {
+    const q = await quadro();
+    if (q.chegou && !q.cam && !q.travado) break;
+    if (q.fala && q.fala !== ultima) {
+      await espera(450);
+      const q2 = await quadro();
+      if (q2.fala === q.fala) {
+        ultima = q.fala;
+        vistas.push(q.fala.replace(/clique \/ E.*$/, ''));
+        if (/abaixa, Gina/.test(q.fala)) { medidas.gina = q2; await page.screenshot({ path: `${OUT}-onibus-gina-porta.png` }); }
+        if (/noiva chegou/.test(q.fala)) { medidas.ginaFala = q2; await page.screenshot({ path: `${OUT}-onibus-gina.png` }); }
+        if (/Tubarão também/.test(q.fala)) await page.screenshot({ path: `${OUT}-onibus-capy.png` });
+        if (/CHEGUEI/.test(q.fala)) await page.screenshot({ path: `${OUT}-onibus-noel.png` });
+        if (/abre em cinco minutos/.test(q.fala)) await page.screenshot({ path: `${OUT}-onibus-walter.png` });
+        if (/ele aprovou/.test(q.fala)) await page.screenshot({ path: `${OUT}-onibus-gatito.png` });
+        if (/Pulei o degrau/.test(q.fala)) await page.screenshot({ path: `${OUT}-onibus-flynn.png` });
+        if (/Llegamos/.test(q.fala)) await page.screenshot({ path: `${OUT}-onibus-coelhinhas.png` });
+        if (/motorista/.test(q.fala)) { medidas.josefina = q2; await page.screenshot({ path: `${OUT}-onibus-josefina.png` }); }
+        if (/primeira pista/.test(q.fala)) { medidas.fim = q2; await page.screenshot({ path: `${OUT}-onibus-fim.png` }); }
+        if (/Ouviu isso/.test(q.fala)) await page.screenshot({ path: `${OUT}-onibus-boutique.png` });
+        await page.keyboard.press('KeyE');
+      }
+    } else if (!q.fala && q.cam && i % 25 === 0) {
+      await page.screenshot({ path: `${OUT}-onibus-voo-${String(i).padStart(4, '0')}.png` });
+    }
+    await espera(350);
+  }
+  const fim = await quadro();
+  console.log('  falas:', vistas.length);
+  for (const [re, quem] of [[/anoiteceu/, 'a dupla na boutique'], [/abaixa, Gina/, 'a Gina'], [/Tum-tum/, 'o Capy'], [/CHEGUEI/, 'o Noel'], [/Au! Au!/, 'o Walter'], [/Eu vim de Walter/, 'o Gatito'], [/AUUU/, 'o Flynn'], [/Llegamos/, 'a Luna'], [/Épale/, 'a Sol'], [/estrelinha de fada/, 'a Estrella'], [/motorista/, 'a Josefina'], [/primeira pista/, 'o fim']]) {
+    ok(vistas.some((f) => re.test(f)), `${quem} fala (${re})`);
+  }
+  ok(!!medidas.gina && medidas.gina.bus.z === 10.4 && medidas.gina.bus.porta === 1 && medidas.gina.bus.farol,
+    `o ônibus parou no ponto, de farol aceso, e a porta abriu (${JSON.stringify(medidas.gina?.bus)})`);
+  ok(!!medidas.gina && medidas.gina.bus.giroDaRoda !== antes.bus.giroDaRoda, `as rodas giraram no caminho (${antes.bus.giroDaRoda} → ${medidas.gina?.bus.giroDaRoda})`);
+  ok(!!medidas.gina && medidas.gina.bichos.girafa.v && medidas.gina.bichos.girafa.x > 37.5 && medidas.gina.bichos.girafa.y > 0.5,
+    `a Gina aparece na porta, em cima do degrau (${JSON.stringify(medidas.gina?.bichos.girafa)})`);
+  ok(!!medidas.ginaFala && Math.abs(medidas.ginaFala.bichos.girafa.x - 35.55) < 0.4 && medidas.ginaFala.bichos.girafa.y === 0,
+    `e fala na calçada, no chão (${JSON.stringify(medidas.ginaFala?.bichos.girafa)})`);
+  ok(['buzina', 'motorDoOnibus', 'freioDoOnibus', 'portaDoOnibus'].every((s) => (fim.sons[s] ?? 0) >= 1) && (fim.sons.portaDoOnibus ?? 0) >= 2,
+    `a buzina, o motor, o freio e a porta (abrindo e fechando) (${['buzina', 'motorDoOnibus', 'freioDoOnibus', 'portaDoOnibus'].map((s) => `${s}×${fim.sons[s] ?? 0}`).join(' ')})`);
+  ok(fim.chegou && !fim.cam && !fim.travado, 'no fim a isométrica volta, a dupla anda, e a chegada fica no save');
+  ok(fim.bus.z === 10.4 && fim.bus.pitch === 0 && fim.bus.porta === 0 && !fim.bus.farol,
+    `o ônibus fica no ponto: porta fechada e o farol apagado (${JSON.stringify(fim.bus)})`);
+  const POSTOS = { girafa: [34.5, 23.6], gatito: [-22.35, -26.35], flynn: [10.5, 2.0], josefina: [-16.6, -17.5], 'garcom-canino': [-9.89, -9.61] };
+  for (const [peca, [x, z]] of Object.entries(POSTOS)) {
+    const b = fim.bichos[peca];
+    ok(!!b && b.v && Math.hypot(b.x - x, b.z - z) < 0.7, `${peca} já no posto da festa (${JSON.stringify(b)})`);
+  }
+  ok(['capy', 'noel', 'luna', 'sol', 'estrella'].every((p) => fim.bichos[p]?.v), 'o Capy, o Noel e as coelhinhas à vista nos postos');
+  ok(await j(() => window.jogo.save.memories.some((m) => m.id === 'halloween-a-noite-da-festa')), 'vira a memória "A noite da festa"');
+  // recarregando, a chegada não se repete
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(2000);
+  const outra = await quadro();
+  ok(!outra.travado && !outra.cam && outra.bus.z === 10.4 && outra.bichos['garcom-canino']?.v, 'recarregando, a chegada não se repete (e o Walter está na barraca)');
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');

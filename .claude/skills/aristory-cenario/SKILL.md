@@ -780,7 +780,27 @@ de camada GRANDE, que enfeita uma cena inteira:
   cena leva de um lado para o outro (o Cookie) não sai do serviço: a
   conversa só o segura parado (`seguir` para onde ele parou, num `onUpdate`
   registrado depois do da cena). E a conversa de sempre pode EMENDAR ainda de
-  perto (`interactable.trigger(g)`: o bilhete do Cookie).
+  perto (`interactable.trigger(g)`: o bilhete do Cookie). Quem fala atrás
+  de um BALCÃO (o Walter na barraca) passa a `frente` do balcão, a `dupla`
+  (onde os dois ficam: na frente do tampo) e a `distancia` na ficha do
+  convidado — a frente da câmera de sempre gira com o Q/R e levaria a
+  câmera para trás da barraca.
+- **A cutscene grande: o voo e a chegada** (o ônibus da festa,
+  `eventos/halloween/chegadaDoOnibus.ts`). Tudo num relógio só, o do jogo:
+  `esperar(s)` é uma promessa que um `w.onUpdate` resolve, e o que anima
+  (o ônibus, a porta, os pulos) é um `aCadaQuadro(f)` que roda até `f`
+  devolver `true`. O VOO é duas `CatmullRomCurve3` — onde a câmera está e
+  para onde ela olha — percorridas pela mesma curva de tempo (sai devagar,
+  cruza, chega devagar); depois dele a câmera fica PARADA e só o olhar
+  acompanha o ônibus chegando. Três coisas que a foto ensinou: a câmera
+  que voa baixo entra em árvore (o fim do voo era dentro de uma copa: ele
+  chega agora pelo corredor do vão, longe da fileira de árvores); a tomada
+  de perto não pode vir do lado de uma peça de vidro (a Gina falou atrás
+  do abrigo do ponto — agora vem do parque, com o ônibus no fundo); e quem
+  desce de um veículo aparece DENTRO do vão da porta, em cima do degrau
+  (`y` do degrau), e pula para o chão. Os passageiros são os bichos dos
+  postos: guardados (onde e virados para onde), escondidos durante a
+  cena, e devolvidos aos postos por baixo da tela escura no fim.
 - **O teste da volta mede cena por cena** contra o ponto de volta: com o
   commit de antes do evento num `git worktree`, as mesmas cenas com o save
   zerado dão as mesmas malhas (`MALHAS_ANTES` no `halloween.mjs`).

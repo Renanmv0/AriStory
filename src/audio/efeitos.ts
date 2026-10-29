@@ -119,7 +119,12 @@ export type SomNome =
   | 'ploc'
   | 'gota'
   | 'moeda'
-  | 'piado';
+  | 'piado'
+  // o ônibus da festa de Halloween chegando: a buzina, o motor, o freio de ar e a porta
+  | 'buzina'
+  | 'motorDoOnibus'
+  | 'freioDoOnibus'
+  | 'portaDoOnibus';
 
 /** graus da pentatônica maior, em semitons */
 const PENTA = [0, 2, 4, 7, 9, 12, 14, 16];
@@ -1171,5 +1176,42 @@ export const EFEITOS: Record<SomNome, Receita> = {
     const f = n % 2 ? 2700 : 2450;
     tom(ctx, destino, { freq: f, glide: f * 1.3, quando: t, dur: 0.08, vol: 0.035, ataque: 0.006, tipo: 'sine' });
     if (n % 3 === 0) tom(ctx, destino, { freq: f * 1.05, glide: f * 1.35, quando: t + 0.12, dur: 0.07, vol: 0.03, ataque: 0.006, tipo: 'sine' });
+  },
+
+  /*
+   * O ÔNIBUS DA FESTA (a cena da chegada, `eventos/halloween/chegadaDoOnibus.ts`).
+   *
+   * A BUZINA é o "fon-fon" simpático de ônibus de bairro, e não uma sirene:
+   * duas notas de terça (mi e sol, graves, na pentatônica do jogo) tocadas
+   * juntas, em dente-de-serra abafado (a corneta) com um quadrado baixinho
+   * por cima (o metal), em duas buzinadas — a segunda mais comprida.
+   */
+  buzina: ({ ctx, destino, t }) => {
+    for (const [atraso, dur] of [[0, 0.17], [0.25, 0.36]] as const) {
+      for (const grau of [-20, -17]) {
+        tom(ctx, destino, { freq: nota(DO + grau), quando: t + atraso, dur, vol: 0.055, ataque: 0.012, tipo: 'sawtooth', abafo: 1300, detune: grau === -20 ? -6 : 6 });
+        tom(ctx, destino, { freq: nota(DO + grau) * 2, quando: t + atraso, dur, vol: 0.016, ataque: 0.012, tipo: 'square', abafo: 1800 });
+      }
+    }
+  },
+
+  // o motor: um "brum" grave descendo, com o ronco do escapamento por baixo (a cena toca em fila)
+  motorDoOnibus: ({ ctx, destino, t, n }) => {
+    const f = n % 2 ? 62 : 58;
+    tom(ctx, destino, { freq: f, glide: f * 0.82, quando: t, dur: 0.55, vol: 0.09, ataque: 0.03, tipo: 'sawtooth', abafo: 260 });
+    chiado(ctx, destino, { quando: t, dur: 0.5, vol: 0.05, freq: 180, glide: 120, q: 0.8, tipo: 'lowpass' });
+  },
+
+  // o freio de ar: o "pssshh" de ônibus parando, e o tranco grave antes
+  freioDoOnibus: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 95, glide: 60, quando: t, dur: 0.16, vol: 0.08, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t + 0.08, dur: 0.7, vol: 0.075, freq: 4200, glide: 2400, q: 0.6, sustenta: 0.35 });
+  },
+
+  // a porta pneumática: o sopro de ar ("tsss") e o "clac" das folhas no fim; `n` par abre, ímpar fecha
+  portaDoOnibus: ({ ctx, destino, t, n }) => {
+    const abre = n % 2 === 0;
+    chiado(ctx, destino, { quando: t, dur: 0.34, vol: 0.06, freq: abre ? 2600 : 3200, glide: abre ? 3600 : 2200, q: 0.7, sustenta: 0.3 });
+    tom(ctx, destino, { freq: abre ? 240 : 200, glide: 110, quando: t + 0.3, dur: 0.08, vol: 0.07, ataque: 0.003, tipo: 'square', abafo: 700 });
   },
 };

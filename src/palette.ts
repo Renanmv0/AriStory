@@ -1147,6 +1147,17 @@ export const PALETTE = {
   onibusFarol: 0xfff3cc,
   onibusPisca: 0xf2a63b,
   onibusLanterna: 0xd63b34,
+  // o ônibus detalhado (`world/onibusDaCidade.ts`): o amarelo do corrimão e
+  // do degrau (o de todo ônibus urbano), a borracha das janelas, o cromo dos
+  // faróis e do emblema, a lanterna de ré, o vidro fumê do para-brisa e o
+  // âmbar do letreiro de LED
+  onibusCorrimao: 0xf2c230,
+  onibusBorracha: 0x24272d,
+  onibusCromo: 0xd3dae0,
+  onibusRe: 0xf4f1e6,
+  onibusParaBrisa: 0x8fc4dc,
+  onibusLed: 0xffb43a,
+  onibusInterior: 0x3a4250,
 
   // o abrigo do ponto: estrutura de tubo pintado, teto de telha metálica,
   // vidro fumê nas laterais e o banco de ripa que todo ponto tem

@@ -10,6 +10,7 @@ import { Noel } from '../../entities/bichos/Noel';
 import { Josefina } from '../../entities/bichos/Josefina';
 import { Gatito } from '../../entities/bichos/Gatito';
 import { Flynn } from '../../entities/bichos/Flynn';
+import { Walter } from '../../entities/bichos/Walter';
 import type { Mano } from '../../entities/bichos/Mano';
 import type { Cookie } from '../../entities/bichos/Cookie';
 import type { JeanLuc } from '../../entities/bichos/JeanLuc';
@@ -18,12 +19,16 @@ import type { LoteDeAboboras } from '../../world/halloween/abobora';
 import type { EnfeitesDePendurar } from '../../world/halloween/pendurados';
 import { CarrinhoDePocoes, PocaoBorbulhando, cavaleteDePocoes } from '../../world/halloween/carrinhoDePocoes';
 import { BaciaDeMacas, canteiroDeAboboras } from '../../world/halloween/pecasDaFesta';
+import type { BarracaDoWalter } from '../../world/halloween/barracaDoWalter';
+import { OnibusDaCidade } from '../../world/onibusDaCidade';
 import { PALETTE as P } from '../../palette';
 import { ARI, RENAN } from '../../characters/cast';
 import { fantasiarQuemEstaAqui } from './fantasiados';
 import { ausentarNaCena, type RecadoNoPosto } from './ausentes';
 import { RECADOS_DO_PARQUE } from './recados';
 import type { PecasDoParque } from './noParque';
+import { FLAG_DO_ONIBUS, faseDoHalloween } from './fase';
+import { chegadaDoOnibus } from './chegadaDoOnibus';
 
 /*
  * OS POSTOS DA FESTA (`docs/HALLOWEEN.md`, §2.4.1, C): na noite da festa
@@ -104,6 +109,17 @@ interface Convidado {
   /** um ponto da cena que já existe e continua depois da conversa (o bilhete do Cookie) */
   emenda?: string;
   raio?: number;
+  /**
+   * a tomada de quem trabalha atrás de um balcão (o Walter na barraca): a
+   * frente é a do balcão, e não a da câmera de sempre (girada pelo Q/R, ela
+   * levaria a câmera para trás da barraca); a dupla fica onde a ficha manda
+   * (na frente do balcão, e não colada nele) e a câmera vem desta distância
+   */
+  frente?: number;
+  dupla?: () => readonly [{ x: number; z: number }, { x: number; z: number }];
+  distancia?: number;
+  /** o ponto "Falar com…" só vale enquanto isto disser que sim (o Walter fora da barraca) */
+  presente?: () => boolean;
 }
 
 /** a apresentação da fantasia na primeira vez, e depois uma fala curta de cada vez */
@@ -113,6 +129,14 @@ const fixas = (primeira: readonly Fala[], depois: ReadonlyArray<readonly Fala[]>
 export interface KitDaFesta {
   aboboras: LoteDeAboboras;
   pendurados: EnfeitesDePendurar;
+  /** a barraquinha de cachorro-quente do Walter, onde ela está, e os dois recados pendurados nela */
+  barraca: {
+    peca: BarracaDoWalter;
+    x: number;
+    z: number;
+    giro: number;
+    recados: { onibus: THREE.Object3D; voltaJa: THREE.Object3D } | null;
+  };
 }
 
 export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: KitDaFesta): void {
@@ -236,6 +260,177 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     // o colisor de quem fica no posto (o Noel anda: fica sem, como no clube)
     if (b !== noel) w.blockCircle(b.x, b.z, b === gina ? 0.45 : 0.32);
   }
+  // ------------------------------------------------- o Walter na barraquinha
+  /*
+   * O WALTER NA BARRACA (pedido do Renan): ele chega com o ônibus e fica na
+   * barraquinha de cachorro-quente, em cima do caixote atrás do balcão — ele
+   * tem 61 cm, e o tampo, 1,02 m. E DE VEZ EM QUANDO ele larga a barraca:
+   * pula do caixote, sai pela passagem do fundo da lateral, desce do estrado
+   * e vai rente ao tapume da praça até atrás da roda gigante, onde some; um
+   * tempo depois volta pelo mesmo caminho e sobe no caixote. É a primeira
+   * dica do final (§7: atrás da roda, onde a cerca fecha o mato, fica o
+   * portão da Casinha da Abóbora). Fora da barraca, o "volto já" fica
+   * pendurado no toldo; e na primeira vez que a dupla o vê indo, comenta.
+   *
+   * O caminho é da cena (o `irPara` de bicho anda reto e não conhece a
+   * praça): entre o tapume (`x = −11`) e o canteiro de flores redondo, e
+   * por fora do disco da roda. Os pulos também — o corpo vai pelo ar num
+   * arco, e o Walter só faz a pose (`walter.salto`).
+   */
+  const BW = kit.barraca;
+  const daBarraca = (v: THREE.Vector3): THREE.Vector3 => {
+    const m = pos(BW.x, BW.z, BW.giro, v.x, v.z);
+    return new THREE.Vector3(m.x, v.y, m.z);
+  };
+  const postoDoWalter = daBarraca(BW.peca.posto);
+  const walter = new Walter(posto(postoDoWalter.x, postoDoWalter.z, 0));
+  w.add(walter.group);
+  somDe(walter, 'latido');
+  /** um ponto bem na frente do balcão: é para lá que ele olha da barraca */
+  const frenteDoBalcao = daBarraca(new THREE.Vector3(0, 0, 4));
+
+  interface Etapa { ate: THREE.Vector3; pulo: boolean }
+  const anda = (ate: THREE.Vector3): Etapa => ({ ate, pulo: false });
+  const pula = (ate: THREE.Vector3): Etapa => ({ ate, pulo: true });
+  const [doCaixote, naPassagem, noChao] = BW.peca.saida.map(daBarraca);
+  const ATE_A_RODA = [[-9.35, -12.0], [-10.2, -15.2], [-10.2, -24.0], [-9.2, -30.0], [-7.8, -33.5]]
+    .map(([x, z]) => new THREE.Vector3(x, 0, z));
+  const IDA: Etapa[] = [pula(doCaixote), anda(naPassagem), pula(noChao), ...ATE_A_RODA.map(anda)];
+  const VOLTA: Etapa[] = [
+    ...ATE_A_RODA.slice(0, -1).reverse().map(anda),
+    anda(noChao), pula(naPassagem), anda(doCaixote), pula(postoDoWalter),
+  ];
+
+  type Rumo = 'fora' | 'posto' | 'indo' | 'sumido' | 'voltando';
+  let rumo: Rumo = 'fora';
+  let etapas: Etapa[] = [];
+  let pulo: { de: THREE.Vector3; ate: THREE.Vector3; t: number; dura: number; arco: number } | null = null;
+  // o relógio das idas: a primeira logo, as outras espaçadas (sorteio com semente própria: o do parque não anda)
+  let semente = 20261031;
+  const sortear = (): number => (semente = (semente * 16807) % 2147483647) / 2147483647;
+  let ateSair = 22 + sortear() * 10;
+  let ateVoltar = 0;
+
+  /** ele no caixote, olhando para o balcão (onde o ônibus o deixa, e onde a volta termina) */
+  const naBarraca = (): void => {
+    walter.entrarEmServico();
+    walter.group.position.copy(postoDoWalter);
+    walter.group.rotation.y = BW.giro;
+    walter.encarar(frenteDoBalcao.x, frenteDoBalcao.z);
+    walter.group.visible = true;
+    walter.salto = 0;
+    rumo = 'posto';
+  };
+  const partir = (lista: Etapa[], novo: Rumo): void => {
+    walter.entrarEmServico();
+    etapas = [...lista];
+    rumo = novo;
+    pulo = null;
+  };
+  // antes do ônibus chegar ele não está aqui (a cena da chegada o traz; no
+  // fim dela, `naBarraca`); depois da festa, sem a cena, ele já está no posto
+  if (g0.flag(FLAG_DO_ONIBUS) || faseDoHalloween(g0) !== 'festa') naBarraca();
+  else walter.group.visible = false;
+
+  /** o comentário da dupla, uma vez por save: a primeira vez que o vê indo */
+  const VIU_O_WALTER = 'halloween:viu:walter-indo';
+  let comentando = false;
+  const antesDeQuemJoga = { x: NaN, z: NaN };
+
+  /** o teste acelera o relógio dele (o navegador do teste roda o jogo a ~1/6 da velocidade) */
+  let ritmo = 1;
+  w.onUpdate((dtDoJogo) => {
+    const dt = dtDoJogo * ritmo;
+    walter.update(dt);
+    // o recado do toldo: o do ônibus antes de ele chegar, o "volto já" com ele fora
+    if (BW.recados) {
+      BW.recados.onibus.visible = rumo === 'fora';
+      BW.recados.voltaJa.visible = rumo === 'indo' || rumo === 'sumido' || rumo === 'voltando';
+    }
+    if (rumo === 'posto') {
+      // não sai no meio de uma conversa (nem a dele nem a de ninguém)
+      if (!falando) ateSair -= dt;
+      if (ateSair <= 0) partir(IDA, 'indo');
+      return;
+    }
+    if (rumo === 'sumido') {
+      ateVoltar -= dt;
+      if (ateVoltar <= 0) {
+        walter.group.visible = true;
+        partir(VOLTA, 'voltando');
+      }
+      return;
+    }
+    if (rumo !== 'indo' && rumo !== 'voltando') return;
+
+    // a dupla repara (uma vez): quem joga andando perto enquanto ele vai
+    const p = g0.playerPosition();
+    const andou = Math.hypot(p.x - antesDeQuemJoga.x, p.z - antesDeQuemJoga.z) > 0.004;
+    antesDeQuemJoga.x = p.x;
+    antesDeQuemJoga.z = p.z;
+    if (rumo === 'indo' && andou && !falando && !comentando && !g0.emDialogo() && !g0.flag(VIU_O_WALTER) && Math.hypot(p.x - walter.x, p.z - walter.z) < 12) {
+      comentando = true;
+      g0.setFlag(VIU_O_WALTER);
+      void (async () => {
+        await g0.say(['Pra onde o Walter tá indo?'], g0.companionName());
+        await g0.say(['Lá pra trás da roda… e largou a barraca sozinha.'], g0.playerName());
+        await g0.say(['Ele deixou um bilhete. Deve voltar logo.'], g0.companionName());
+        comentando = false;
+      })();
+    }
+
+    // o pulo: o corpo num arco, e a pose dele
+    if (pulo) {
+      pulo.t = Math.min(1, pulo.t + dt / pulo.dura);
+      const k = pulo.t;
+      walter.group.position.lerpVectors(pulo.de, pulo.ate, k);
+      walter.group.position.y += pulo.arco * 4 * k * (1 - k);
+      walter.salto = Math.max(0.001, k);
+      if (k >= 1) {
+        walter.group.position.copy(pulo.ate);
+        walter.salto = 0;
+        pulo = null;
+      }
+      return;
+    }
+    const etapa = etapas[0];
+    if (!etapa) {
+      if (rumo === 'indo') {
+        // atrás da roda: some (ele volta daqui a pouco, pelo mesmo caminho)
+        walter.group.visible = false;
+        rumo = 'sumido';
+        ateVoltar = 12 + sortear() * 8;
+      } else {
+        naBarraca();
+        ateSair = 45 + sortear() * 25;
+      }
+      return;
+    }
+    if (etapa.pulo) {
+      etapas.shift();
+      const de = walter.group.position.clone();
+      const sobe = Math.abs(etapa.ate.y - de.y);
+      const longe = Math.hypot(etapa.ate.x - de.x, etapa.ate.z - de.z);
+      pulo = { de, ate: etapa.ate.clone(), t: 0, dura: 0.38 + sobe * 0.25 + longe * 0.2, arco: 0.15 + sobe * 0.3 };
+      walter.group.rotation.y = Math.atan2(etapa.ate.x - de.x, etapa.ate.z - de.z);
+      return;
+    }
+    walter.group.position.y = etapa.ate.y;
+    walter.seguir(etapa.ate.x, etapa.ate.z);
+    if (Math.hypot(etapa.ate.x - walter.x, etapa.ate.z - walter.z) < 0.1) etapas.shift();
+  });
+  // para o teste: em que pé ele está, e mandar sair (ou chegar) sem esperar o relógio
+  walter.group.userData.naFesta = {
+    rumo: () => rumo,
+    sairAgora: () => { if (rumo === 'posto') ateSair = 0; },
+    voltarAgora: () => { if (rumo === 'sumido') ateVoltar = 0; },
+    chegar: () => {
+      naBarraca();
+      ateSair = 45 + sortear() * 25;
+    },
+    ritmo: (vezes: number) => { ritmo = vezes; },
+  };
+
   // todo mundo fantasiado (a mesma chamada que veste o Mano, o Cookie e os patos)
   fantasiarQuemEstaAqui(w);
 
@@ -282,9 +477,8 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     const alto = Math.max(0.6, caixa.max.y - Math.max(0, caixa.min.y));
     const largo = Math.max(caixa.max.x - caixa.min.x, caixa.max.z - caixa.min.z) / 2;
     const giro = api.anguloDaCamera();
-    const frente = c.sentado
-      ? new THREE.Vector2(Math.sin(b.group.rotation.y), Math.cos(b.group.rotation.y))
-      : new THREE.Vector2(Math.sin(giro), Math.cos(giro));
+    const giroDaFrente = c.frente ?? (c.sentado ? b.group.rotation.y : giro);
+    const frente = new THREE.Vector2(Math.sin(giroDaFrente), Math.cos(giroDaFrente));
     const eu = api.playerPosition();
     // de que lado a dupla fica: o da ficha, ou (sentado) o lado em que ela já está
     let lado = c.ladoDaDupla ?? -1;
@@ -297,14 +491,15 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
     const perto = Math.min(largo, 0.9) + (c.sentado ? 0.95 : 0.55);
     const pEu = girar(frente, lado * 0.95).multiplyScalar(perto);
     const pEle = girar(frente, lado * 1.45).multiplyScalar(perto + 0.25);
-    api.releasePlayer(b.x + pEu.x, b.z + pEu.y, Math.atan2(-pEu.x, -pEu.y));
-    api.releaseCompanion(b.x + pEle.x, b.z + pEle.y, Math.atan2(-pEle.x, -pEle.y));
+    const [eu1, ele1] = c.dupla?.() ?? [{ x: b.x + pEu.x, z: b.z + pEu.y }, { x: b.x + pEle.x, z: b.z + pEle.y }];
+    api.releasePlayer(eu1.x, eu1.z, Math.atan2(b.x - eu1.x, b.z - eu1.z));
+    api.releaseCompanion(ele1.x, ele1.z, Math.atan2(b.x - ele1.x, b.z - ele1.z));
     if (!c.sentado) {
       // e ele vira para a frente, um tico na direção da câmera
       const olha = girar(frente, -lado * 0.25).multiplyScalar(3);
       b.encarar(b.x + olha.x, b.z + olha.y);
     }
-    const d = THREE.MathUtils.clamp(alto * 1.1 + 0.9, 1.9, 5.2);
+    const d = c.distancia ?? THREE.MathUtils.clamp(alto * 1.1 + 0.9, 1.9, 5.2);
     const para = new THREE.Vector3(b.x, Math.max(0, caixa.min.y) + alto * 0.58, b.z);
     const deOnde = girar(frente, -lado * 0.42).multiplyScalar(d);
     /*
@@ -497,6 +692,44 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
       [[N, 'O caldeirão grande ali é meu também. Eu mexo ele a cada cinco minutos. CORRENDO!']],
     ]),
   });
+  /*
+   * O WALTER SÓ LATE, como no Mania: quem traduz é a dupla. A tomada vem
+   * pela frente do balcão (`frente`), com a dupla do lado esquerdo do
+   * tampo e a câmera do direito, de longe o bastante para a barraca entrar.
+   */
+  const W = 'Walter';
+  convidados.push({
+    bicho: walter, nome: W, artigo: 'o', icone: '🌭', som: 'latido', raio: 2.1, patrulha: true,
+    frente: BW.giro, distancia: 2.6,
+    dupla: () => {
+      const eu = daBarraca(new THREE.Vector3(-0.45, 0, 1.25));
+      const ele = daBarraca(new THREE.Vector3(-1.0, 0, 1.55));
+      return [eu, ele];
+    },
+    presente: () => rumo === 'posto',
+    gesto: () => walter.receberCarinho(),
+    falas: fixas([
+      [W, 'Au! Au!'],
+      [A, 'Walter! Você veio de múmia!'],
+      [W, 'Auuuu…'],
+      [R, 'Ele levantou as patinhas da frente. Acho que é o susto de múmia.'],
+      [A, 'Socorro. Que medo.'],
+      [W, 'Au!'],
+      [R, 'E a gravatinha por fora das ataduras. Garçom é garçom, até de múmia.'],
+      [A, 'Ele tá empurrando uma salsicha-múmia pra gente com o focinho.'],
+      [R, 'Obrigado, Walter. Enrolou igualzinho a você.'],
+    ], [
+      [[W, 'Au!'], [A, 'Ele perguntou se é com mostarda. Eu acho.']],
+      [[W, 'Auuuu…'], [R, 'Ele tá treinando o susto de múmia. Tá melhorando.']],
+      [[W, 'Au, au.'], [A, 'Ele virou as salsichas com a pata. Profissional.']],
+    ]),
+    // e volta a olhar para o balcão, esperando o próximo freguês
+    // (o carinho o senta, e de serviço ninguém o levanta sozinho)
+    aoFim: () => {
+      walter.levantar();
+      walter.encarar(frenteDoBalcao.x, frenteDoBalcao.z);
+    },
+  });
   const JS = 'Josefina';
   convidados.push({
     bicho: josefina, nome: JS, artigo: 'a', icone: '🐉', som: 'cantarolar', raio: 1.6,
@@ -592,13 +825,53 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
       priority: 3,
       onInteract: (api) => conversar(api, c),
     });
-    w.onUpdate(() => ponto.moveTo(c.bicho.x, c.bicho.z));
+    w.onUpdate(() => {
+      ponto.moveTo(c.bicho.x, c.bicho.z);
+      if (c.presente) ponto.enabled = c.presente();
+    });
+  }
+
+  // ------------------------------------------------- o ônibus da festa
+  /*
+   * O ÔNIBUS DETALHADO (pedido do Renan): na noite da festa, o ônibus do
+   * ponto é o novo (`world/onibusDaCidade.ts`), no mesmo lugar e do mesmo
+   * tamanho — o de sempre fica escondido, e o colisor e o "Pegar o ônibus"
+   * dele continuam valendo. O letreiro de LED diz para onde ele veio hoje.
+   */
+  const onibus = new OnibusDaCidade({ destino: 'Festa no Parque' });
+  {
+    let antigo: THREE.Object3D | null = null;
+    w.root.traverse((o) => {
+      if (!antigo && o.userData?.peca === 'onibus' && Math.abs(o.position.x - 39.5) < 0.5) antigo = o;
+    });
+    const o = antigo as THREE.Object3D | null;
+    if (o) {
+      onibus.group.position.copy(o.position);
+      onibus.group.rotation.copy(o.rotation);
+      o.visible = false;
+    } else {
+      onibus.group.position.set(39.5, 0, 10.4);
+      onibus.group.rotation.y = -Math.PI / 2;
+    }
+    w.add(fundir(onibus.group));
+  }
+
+  // ------------------------------------------------- a chegada do ônibus
+  // a primeira vez na noite da festa: a turma desce do ônibus (uma vez por save)
+  if (!g0.flag(FLAG_DO_ONIBUS) && faseDoHalloween(g0) === 'festa') {
+    chegadaDoOnibus(w, {
+      gina, capy, noel, walter, gatito, flynn, josefina,
+      coelhinhas: [luna, sol, estrella].filter((c): c is CoelhaDaTorcida => !!c),
+      walterNaBarraca: naBarraca,
+      onibus,
+    });
   }
 
   // ---------------------------------------------------------------- o relógio
   w.onUpdate((dt) => {
     for (const b of novos) b.update(dt);
     carrinho.update(dt);
+    onibus.update(dt);
     pocao.update(dt);
     bacia.update(dt);
   });
