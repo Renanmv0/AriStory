@@ -1095,6 +1095,21 @@ export class Game implements GameAPI {
     return vestiu;
   }
 
+  vestirConjunto(pecas: readonly ItemDef[], quem = this.playerId()): void {
+    // o corpo inteiro vai para o armário (a funcional, para a mochila)
+    for (let vaga = 0; vaga < SLOTS_ROUPA.length; vaga++) this.tirarPeca(quem, vaga);
+    const corpo = this.save.vestiveis(quem);
+    for (const peca of pecas) {
+      const vaga = peca.slot ? SLOTS_ROUPA.indexOf(peca.slot) : -1;
+      // a vaga que não deu para esvaziar (mochila cheia para os patins) fica
+      // como está: trocar ali sumiria com a peça de antes
+      if (vaga < 0 || corpo[vaga]) continue;
+      this.storeItem(peca, quem);
+      this.vestirPeca(quem, peca.id);
+    }
+    this.repintarMochila();
+  }
+
   unequipWearable(slot: number, quem = this.playerId()): void {
     this.save.despir(quem, slot);
     this.repintarMochila();

@@ -523,6 +523,16 @@ if (roda('filme')) {
 if (roda('boutique')) {
   console.log('\nboutique: o presente da Estella');
   await naFaseConvite('lojinha');
+  // o caso que o Renan achou: jogando com o Renan, e os dois JÁ vestidos —
+  // a fantasia tem que entrar inteira, e a roupa de antes ir para o armário
+  const ROUPA_DE_ANTES = { ari: ['vestido-rosa', 'gorro-la', 'bota-amarela', 'luvas-de-jardim'], renan: ['gorro-azul', 'bota-vermelha'] };
+  await j((roupa) => {
+    const g = window.jogo;
+    if (g.playerId() === 'ari') g.swapCharacters();
+    for (const [quem, ids] of Object.entries(roupa)) for (const id of ids) g.equipWearable(window.aristoryItens[id], quem);
+  }, ROUPA_DE_ANTES);
+  const antes = await j(() => ({ quem: window.jogo.playerId(), ari: window.jogo.wearables('ari').map((i) => i?.id ?? null) }));
+  ok(antes.quem === 'renan' && antes.ari.filter(Boolean).length === 4, `antes da cena: jogando com o Renan, o Ari de vestido, gorro, bota e luva (${JSON.stringify(antes)})`);
   // a loja enfeitada, a Estella de aranha e o Pelusa
   const enfeite = await j(() => {
     const cena = window.jogo.scene;
@@ -567,11 +577,14 @@ if (roda('boutique')) {
       renan: g.wearables('renan').map((i) => i?.id ?? null),
       maos: g.handItems().map((i) => i?.id).filter(Boolean),
       armario: g.wardrobeItems('ari').map((i) => i.id),
+      armarioDoRenan: g.wardrobeItems('renan').map((i) => i.id),
       memoria: g.save.memories.some((m) => m.id === 'halloween-presente-da-estella'),
     };
   });
   ok(depois.ari.every((id) => /vampiro|verniz/.test(id ?? '')), `o Ari sai inteiro de vampiro (${depois.ari.join(', ')})`);
   ok(depois.renan.every((id) => /morcego/.test(id ?? '')), `o Renan sai inteiro de morceguinho (${depois.renan.join(', ')})`);
+  ok(ROUPA_DE_ANTES.ari.every((id) => depois.armario.includes(id)) && ROUPA_DE_ANTES.renan.every((id) => depois.armarioDoRenan.includes(id)),
+    'a roupa de antes dos dois foi para o guarda-roupa (nada se perde)');
   ok(depois.maos.includes('cesta-de-abobora') && depois.maos.includes('mapinha-da-estella'), `a cestinha e o mapinha na mochila (${depois.maos.join(', ')})`);
   ok(depois.armario.includes('tiara-de-morcego'), 'as fantasias ficam no guarda-roupa dos dois (a do Renan no armário do Ari)');
   ok(depois.memoria, 'vira a memória "O presente da Estella"');

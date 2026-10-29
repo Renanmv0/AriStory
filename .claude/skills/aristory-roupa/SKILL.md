@@ -36,6 +36,13 @@ pipeline inteiro:
    da Josefina). Cuidado: numa peça de TRONCO, `cor` pinta a camiseta e
    `corDetalhe` pinta a MANGA — peça que vai POR CIMA (o avental) não leva
    nenhuma das duas, senão a primeira foto sai de manga verde.
+
+   **Vestir um CONJUNTO numa cena (a fantasia da Estella): `g.vestirConjunto(pecas, quem)`**,
+   nunca um `equipWearable` por peça. O `equipWearable` recusa vaga ocupada
+   em silêncio: o Ari entrou no provador de camiseta e saiu de camiseta com
+   a capa de vampiro por cima (só as vagas vazias receberam a fantasia). O
+   `vestirConjunto` tira o corpo inteiro para o guarda-roupa (nada se perde)
+   e veste cada peça na vaga dela.
 5. `scripts/roupas.mjs` e `scripts/vestimenta.mjs` — asserções que provam que a
    roupa não quebrou a animação, não nasceu no lugar errado e não escapou das
    regras de armazenamento.
