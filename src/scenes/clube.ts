@@ -6,7 +6,7 @@ import { PALETTE as P } from '../palette';
 import type { GameAPI, SceneDef } from '../core/types';
 import { flat, toon } from '../core/materials';
 import {
-  bin, bleachers, bus, busStop, bush, cadeiraDeSalvaVidas, canteiro, canteiroComPalmeira,
+  bin, bleachers, busStop, bush, cadeiraDeSalvaVidas, canteiro, canteiroComPalmeira,
   canteiroDeHorta, estufa, planta, regador, terraRemexida, vasoDePlanta,
   cloud, divingBoard,
   floatRing, floodlight, flowers, kiosk, lamp, mesinhaDeDeque, parasol, pergolado, poolLadder,
@@ -21,6 +21,7 @@ import {
   mesaDoRestaurante, ombrelone,
 } from '../world/restauranteDoClube';
 import { fundir } from '../world/fundir';
+import { OnibusDaCidade } from '../world/onibusDaCidade';
 import { Gina } from '../entities/bichos/Gina';
 import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
@@ -1653,7 +1654,7 @@ export const clube: SceneDef = {
     // `rotation.y = PI/2` deita o ônibus ao longo do Z e leva a porta dele (que
     // nasce no `+Z` local) para o `+X` do mundo — virada para dentro do clube,
     // que é de onde a dupla chega.
-    const onibus = w.add(w.place(bus(P.onibusAzul, 'Parque'), PARADA.x, 0, PARADA.z, Math.PI / 2));
+    const onibus = w.add(fundir(w.place(new OnibusDaCidade({ destino: 'Parque' }).group, PARADA.x, 0, PARADA.z, Math.PI / 2)));
     w.blockBox(PARADA.x, PARADA.z, 1.4, 4.5);
 
     // depois da Luna o ônibus também para na Escola do Gatito (ver o do parque)

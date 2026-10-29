@@ -8,8 +8,9 @@ import { juntarPorCor } from './fundir';
 
 /*
  * O ÔNIBUS DA CIDADE: o ônibus urbano detalhado (pedido do Renan: o mesmo
- * azul, a mesma faixa branca e o mesmo friso do `bus()` do kit, num modelo
- * mais caprichado). Nasceu para a chegada do ônibus da festa de Halloween
+ * azul, a mesma faixa branca e o mesmo friso do `bus()` que havia no kit,
+ * num modelo mais caprichado) — e o ônibus do ponto do parque e do clube.
+ * Nasceu para a chegada do ônibus da festa de Halloween
  * (`eventos/halloween/chegadaDoOnibus.ts`), e por isso tem tudo que uma
  * cutscene mexe: a porta da frente que abre (as folhas correm para os
  * lados e o vão de dentro aparece, com o corrimão amarelo e a luzinha), as
@@ -38,7 +39,7 @@ import { juntarPorCor } from './fundir';
  *    pneu torneado de banda arredondada, aro, calota, rasgos e porcas — é o
  *    rasgo e a porca que deixam ver o giro.
  *
- * O CONTRATO é o do `bus()`, para trocar um pelo outro sem mexer na cena:
+ * O CONTRATO é o do `bus()` de antes, que ele substituiu sem mexer na cena:
  * 9 × 2,55, a base em `y = 0`, o NARIZ no `+X` e as portas no `+Z` (o ponto
  * do parque gira −π/2, e as portas olham a calçada), a porta da frente em
  * `x = 2,6` e o degrau em 0,56 — é dali que a cena da festa faz a turma
@@ -63,7 +64,7 @@ const PORTAS = { frente: { x: 2.6, largura: 1.2 }, meio: { x: -0.3, largura: 1.3
 /** a faixa de janelas */
 const JANELA = { y0: 1.58, y1: 2.6 };
 
-/** as medidas que a cena usa (as do `bus()`, mais o que este tem a mais) */
+/** as medidas que a cena usa (as do `bus()` de antes, mais o que este tem a mais) */
 export const ONIBUS_DA_CIDADE = {
   comprimento: C,
   largura: L,
@@ -340,10 +341,13 @@ export class OnibusDaCidade {
   private relogioDoPisca = 0;
   /** quanto a porta da frente está aberta (0 a 1): o teste lê */
   aberta = 0;
+  /** o que está escrito no letreiro de LED agora */
+  destino: string;
 
   constructor(opts: OpcoesDoOnibus = {}) {
     const cor = opts.cor ?? P.onibusAzul;
     const destino = opts.destino ?? 'Clube';
+    this.destino = destino;
     const g = this.group;
     g.name = 'onibus-da-cidade';
     g.userData.peca = 'onibus-da-cidade';
@@ -868,6 +872,21 @@ export class OnibusDaCidade {
       this.aberta = t;
       this.luzDaPorta.visible = t > 0.2;
     }
+  }
+
+  /**
+   * TROCA O LETREIRO (o da frente e os dos lados): é o que a festa de
+   * Halloween faz no ônibus do ponto ("Festa no Parque"). As malhas do LED
+   * têm nome, então ficam fora da `fundir()` e trocam de material sozinhas.
+   */
+  trocarDestino(texto: string): void {
+    this.destino = texto;
+    this.group.traverse((o) => {
+      const m = o as THREE.Mesh;
+      if (!m.isMesh) return;
+      if (m.name === 'letreiro-da-frente') m.material = letreiroDeLed(texto);
+      if (m.name === 'letreiro-do-lado') m.material = letreiroDeLed(texto, 384, 54);
+    });
   }
 
   /** o halo dos faróis e a poça de luz na rua */
