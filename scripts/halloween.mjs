@@ -1243,6 +1243,10 @@ if (roda('caca')) {
   ok(!!p2.agulha && /BU de volta/.test(p2.agulha.texto ?? ''), `a travessura do Cookie é de tempo: a agulha embaixo da fala (${JSON.stringify(p2.agulha)})`);
   ok(e.feitas === 2 && e.balas >= 4 && e.balas <= 8, `de 1 a 5 balas na travessura (${e.balas - 3}), e a parada feita`);
   ok(/campinho/.test(p2.tudo), 'a pista do Flynn');
+  // a parada 2 é par: o Cookie entrega a fantasia de abóbora, direto para o guarda-roupa dos dois
+  const ABOBORA = ['chapeu-de-abobora', 'macacao-de-abobora', 'meia-calca-verde', 'botinha-de-abobora', 'luvinhas-de-abobora', 'gola-de-folhas'];
+  const noArmario = (ids) => j((ids) => ['ari', 'renan'].every((q) => ids.every((id) => window.jogo.wardrobeItems(q).some((i) => i.id === id) || window.jogo.wearables(q).some((i) => i?.id === id))), ids);
+  ok(/fantasia de abóbora/.test(p2.tudo) && await noArmario(ABOBORA), `o Cookie entrega a fantasia de abóbora, e as seis peças vão para o guarda-roupa dos dois`);
   ok(await j(() => window.jogo.stat('halloween:doces') === 1 && window.jogo.stat('halloween:travessuras') === 1), 'um doce e uma travessura no save');
 
   // o mapinha: o Mano e o Cookie com o tique, a pista do Flynn por extenso
@@ -1290,6 +1294,8 @@ if (roda('caca')) {
   const p10 = await naParada('noel', (ops) => (ops[0].includes('Doces') ? 1 : 0));
   e = await estado();
   ok(/Pó de estrela/.test(p10.tudo) && /porta laranja/.test(p10.tudo) && e.feitas === 10, `o Noel: a poção e a pista do final (${e.feitas})`);
+  ok(/BRUXINHO/.test(p10.tudo) && await noArmario(['chapeu-de-bruxo', 'tunica-de-bruxo', 'meia-listrada-de-bruxo', 'botinha-de-bruxo', 'vassoura-de-bruxo', 'capa-de-estrelinhas']),
+    'o Noel entrega a fantasia de bruxinho, a última');
   ok(/Faltam \d+|cesta tá cheia/.test(p10.tudo), `e a dupla faz a conta da porta (${p10.ditos.slice(-2).join(' ‖ ')})`);
   ok(!e.marca?.v, 'com a caça feita, a abóbora da próxima parada some');
   await j(() => window.jogo.setActiveHandSlot(window.jogo.handItems().findIndex((i) => i?.id === 'mapinha-da-estella')));

@@ -52,6 +52,13 @@ import {
   presinhasDeVampiro, coleteDeVampiro, mangaDeVampiro, calcaDeVampiro, sapatoDeVerniz, luvasDeVampiro, capaDeVampiro,
   tiaraDeMorcego, moletomDeMorcego, mangaDeMorcego, calcaListrada, pantufasDeMorcego, luvinhasDeMorcego, asinhasDeMorcego,
 } from './fantasias';
+import {
+  chapeuDeAbobora, macacaoDeAbobora, mangaDeAbobora, meiaCalcaVerde, botinhaVerde, luvinhasVerdes, golaDeFolhas,
+  tricornio, camisaDePirata, mangaDePirata, calcaBufante, botasDePirata, luvasDePirata, papagaio,
+  orelhasDeGato, moletomDeGato, mangaDeGato, leggingPreta, patinhasDeGato, luvasDePatinha, raboDeGato,
+  chapeuDePalhaAmassado, camisaXadrez, mangaXadrez, calcaDeRemendo, cintoDeCorda, botasGastas, luvasComPalha, bandanaDePoa,
+  chapeuDeBruxo, tunicaDeBruxo, mangaDeBruxo, meiaListradaDeBruxo, botinhaDeBicoCurvo, vassoura, capaDeEstrelinhas,
+} from './fantasiasDaCaca';
 import { cestaDeAbobora, mapinhaEnrolado } from './halloween/boutique';
 import { CHAVE_DA_CACA, mapinhaDaEstella, pistasDaCaca } from './halloween/mapinha';
 
@@ -1868,6 +1875,235 @@ export const ITENS = {
     nota: 'da Estella · batem devagar parado e depressa andando',
     extra: asinhasDeMorcego,
   },
+
+  /* ====================================================================
+   *      AS FANTASIAS DA CAÇA (`world/fantasiasDaCaca.ts`)
+   * ====================================================================
+   * A etapa 5b do Halloween (`docs/HALLOWEEN.md`, §5.2): uma fantasia INTEIRA
+   * a cada duas paradas da caça de doces ou travessuras, costurada pela
+   * Estella e entregue por quem está na parada — a ABÓBORA (o Cookie), o
+   * PIRATA (o Jean-Luc), o GATO PRETO (as coelhinhas), o ESPANTALHO (a
+   * Josefina) e o BRUXINHO (o Noel). Vão para o guarda-roupa dos dois pelo
+   * `g.ganharPeca` (`FANTASIAS_DA_CACA`), aparecem no filtro 🎃 e, como todo
+   * presente, não se pintam no ateliê.
+   */
+  chapeuDeAbobora: {
+    id: 'chapeu-de-abobora', nome: 'Chapeuzinho de abóbora', icone: '🎃',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.fantasiaAbobora, corDetalhe: P.fantasiaAboboraFolha,
+    nota: 'do Cookie · oito gomos, o cabinho, a folha e a gavinha',
+    extra: chapeuDeAbobora,
+  },
+  macacaoDeAbobora: {
+    id: 'macacao-de-abobora', nome: 'Macacão de abóbora', icone: '🎃',
+    tipo: 'vestivel', slot: 'tronco',
+    // `cor` e `corDetalhe` pintam a CAMISETA verde por baixo (o tronco e a manga do rig)
+    cor: P.fantasiaAboboraVerdeEscuro, corDetalhe: P.fantasiaAboboraVerdeEscuro,
+    nota: 'do Cookie · a abóbora de gomos com a carinha sorrindo',
+    extra: macacaoDeAbobora, extraBraco: mangaDeAbobora,
+  },
+  meiaCalcaVerde: {
+    id: 'meia-calca-verde', nome: 'Meia-calça verde', icone: '🧦',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.fantasiaAboboraVerde,
+    nota: 'do Cookie · de tricô, com a folhinha no joelho',
+    extra: meiaCalcaVerde,
+  },
+  botinhaVerde: {
+    id: 'botinha-de-abobora', nome: 'Botinha de abóbora', icone: '🥾',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.fantasiaAboboraVerde,
+    substituiPe: true,
+    nota: 'do Cookie · de feltro, com o cálice de folhas',
+    extra: botinhaVerde,
+  },
+  luvinhasVerdes: {
+    id: 'luvinhas-de-abobora', nome: 'Luvinhas verdes', icone: '🧤',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.fantasiaAboboraVerde,
+    nota: 'do Cookie · com uma folhinha no dorso',
+    extra: luvinhasVerdes,
+  },
+  golaDeFolhas: {
+    id: 'gola-de-folhas', nome: 'Gola de folhas', icone: '🍃',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo',
+    cor: P.fantasiaAboboraFolha, corDetalhe: P.fantasiaAboboraFolhaClara,
+    nota: 'do Cookie · nove folhas de abóbora e uma gavinha',
+    extra: golaDeFolhas,
+  },
+  tricornio: {
+    id: 'chapeu-de-pirata', nome: 'Chapéu de pirata', icone: '🏴‍☠️',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.pirataChapeu, corDetalhe: P.fivelaDourada,
+    nota: 'do Jean-Luc · tricórnio, a caveirinha sorridente e a pena',
+    extra: tricornio,
+  },
+  camisaDePirata: {
+    id: 'camisa-de-pirata', nome: 'Camisa de pirata', icone: '🏴‍☠️',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.pirataBranco, corDetalhe: P.pirataBranco,
+    nota: 'do Jean-Luc · listrada, colete azul-marinho e a faixa vermelha',
+    extra: camisaDePirata, extraBraco: mangaDePirata,
+  },
+  calcaBufante: {
+    id: 'calca-bufante', nome: 'Calça bufante', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    // a `cor` pinta a meia creme (a perna do rig); o balão de camurça é a geometria
+    cor: P.pirataMeia, corDetalhe: P.pirataCalca,
+    nota: 'do Jean-Luc · franzida até o joelho, com o botão dourado',
+    extra: calcaBufante,
+  },
+  botasDePirata: {
+    id: 'botas-de-pirata', nome: 'Botas de pirata', icone: '👢',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.pirataCouro, corDetalhe: P.pirataCouroClaro,
+    substituiPe: true,
+    nota: 'do Jean-Luc · cano dobrado e fivela',
+    extra: botasDePirata,
+  },
+  luvasDePirata: {
+    id: 'espadinha-de-pirata', nome: 'Espadinha de madeira', icone: '🗡️',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.pirataCouroClaro,
+    nota: 'do Jean-Luc · luva de punho largo e a espadinha na mão esquerda',
+    extra: luvasDePirata,
+  },
+  papagaio: {
+    id: 'papagaio-de-pirata', nome: 'Papagaio', icone: '🦜',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo',
+    cor: P.papagaioVermelho,
+    nota: 'do Jean-Luc · no ombro, mexendo a cabeça',
+    extra: papagaio,
+  },
+  orelhasDeGato: {
+    id: 'orelhinhas-de-gato', nome: 'Orelhinhas de gato', icone: '🐈‍⬛',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.gatoPreto, corDetalhe: P.gatoRosa,
+    nota: 'das coelhinhas · de pelúcia, com o lacinho',
+    extra: orelhasDeGato,
+  },
+  moletomDeGato: {
+    id: 'moletom-de-gato', nome: 'Moletom de gato preto', icone: '🐈‍⬛',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.gatoPreto, corDetalhe: P.gatoPreto,
+    nota: 'das coelhinhas · babador branco, coleira e sininho',
+    extra: moletomDeGato, extraBraco: mangaDeGato,
+  },
+  leggingPreta: {
+    id: 'legging-de-gato', nome: 'Legging preta', icone: '🧦',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.gatoPreto,
+    nota: 'das coelhinhas · com o punho branco fofinho',
+    extra: leggingPreta,
+  },
+  patinhasDeGato: {
+    id: 'patinhas-de-gato', nome: 'Pantufas de patinha', icone: '🐾',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.gatoPreto, corDetalhe: P.gatoRosa,
+    substituiPe: true,
+    nota: 'das coelhinhas · quatro dedinhos e as almofadinhas',
+    extra: patinhasDeGato,
+  },
+  luvasDePatinha: {
+    id: 'luvas-de-patinha', nome: 'Luvas de patinha', icone: '🐾',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.gatoPreto, corDetalhe: P.gatoRosa,
+    nota: 'das coelhinhas · com a almofadinha rosa',
+    extra: luvasDePatinha,
+  },
+  raboDeGato: {
+    id: 'rabo-de-gato', nome: 'Rabo de gato', icone: '🎀',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo',
+    cor: P.gatoPreto,
+    nota: 'das coelhinhas · com laço e sininho, balança andando',
+    extra: raboDeGato,
+  },
+  chapeuDePalhaAmassado: {
+    id: 'chapeu-de-espantalho', nome: 'Chapéu de espantalho', icone: '👒',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.espantalhoChapeuDePalha,
+    nota: 'da Josefina · palha amassada e o corvinho na aba',
+    extra: chapeuDePalhaAmassado,
+  },
+  camisaXadrez: {
+    id: 'camisa-de-espantalho', nome: 'Camisa xadrez de remendos', icone: '🌾',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.espantalhoXadrez, corDetalhe: P.espantalhoXadrez,
+    nota: 'da Josefina · flanela, remendos e palha saindo das mangas',
+    extra: camisaXadrez, extraBraco: mangaXadrez,
+  },
+  calcaDeRemendo: {
+    id: 'calca-de-espantalho', nome: 'Calça de remendo', icone: '👖',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.espantalhoCalca,
+    nota: 'da Josefina · com o cinto de corda',
+    extra: calcaDeRemendo, extraQuadril: cintoDeCorda,
+  },
+  botasGastas: {
+    id: 'botas-de-espantalho', nome: 'Botas gastas', icone: '🥾',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.espantalhoBota,
+    substituiPe: true,
+    nota: 'da Josefina · arranhadas, de cadarço',
+    extra: botasGastas,
+  },
+  luvasComPalha: {
+    id: 'luvas-de-espantalho', nome: 'Luvas com palha', icone: '🧤',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.espantalhoLuva,
+    nota: 'da Josefina · de couro, com palha escapando',
+    extra: luvasComPalha,
+  },
+  bandanaDePoa: {
+    id: 'bandana-de-espantalho', nome: 'Bandana de poá', icone: '🧣',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo',
+    cor: P.espantalhoBandana,
+    nota: 'da Josefina · vermelha de bolinhas, no pescoço',
+    extra: bandanaDePoa,
+  },
+  chapeuDeBruxo: {
+    id: 'chapeu-de-bruxo', nome: 'Chapéu de bruxo', icone: '🧙',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.bruxoRoxo, corDetalhe: P.bruxoDourado,
+    nota: 'do Noel · pontudo, torto na ponta, com a estrela',
+    extra: chapeuDeBruxo,
+  },
+  tunicaDeBruxo: {
+    id: 'tunica-de-bruxo', nome: 'Túnica de bruxo', icone: '🧙',
+    tipo: 'vestivel', slot: 'tronco',
+    cor: P.bruxoRoxo, corDetalhe: P.bruxoRoxo,
+    nota: 'do Noel · manga larga, a gola de pontas e a lua bordada',
+    extra: tunicaDeBruxo, extraBraco: mangaDeBruxo,
+  },
+  meiaListradaDeBruxo: {
+    id: 'meia-listrada-de-bruxo', nome: 'Meia listrada', icone: '🧦',
+    tipo: 'vestivel', slot: 'pernas',
+    cor: P.bruxoRoxo, corDetalhe: P.bruxoListra,
+    nota: 'do Noel · roxa e verde-limão',
+    extra: meiaListradaDeBruxo,
+  },
+  botinhaDeBicoCurvo: {
+    id: 'botinha-de-bruxo', nome: 'Botinha de bico curvo', icone: '👢',
+    tipo: 'vestivel', slot: 'pes',
+    cor: P.bruxoBota,
+    substituiPe: true,
+    nota: 'do Noel · o bico enrola, com a estrelinha',
+    extra: botinhaDeBicoCurvo,
+  },
+  vassoura: {
+    id: 'vassoura-de-bruxo', nome: 'Vassoura', icone: '🧹',
+    tipo: 'vestivel', slot: 'maos',
+    cor: P.bruxoCabo,
+    nota: 'do Noel · na mão esquerda, amarrada de cordão',
+    extra: vassoura,
+  },
+  capaDeEstrelinhas: {
+    id: 'capa-de-estrelinhas', nome: 'Capa de estrelinhas', icone: '✨',
+    tipo: 'vestivel', slot: 'acessorio', presoEm: 'corpo', nasCostas: true,
+    cor: P.bruxoCapa, corDetalhe: P.bruxoForro,
+    nota: 'do Noel · anil, de estrelinhas, forro lilás',
+    extra: capaDeEstrelinhas,
+  },
 } as const satisfies Record<string, ItemDef>;
 
 /**
@@ -1966,9 +2202,27 @@ export const FANTASIA_DE_MORCEGUINHO: readonly ItemDef[] = [
 ];
 export const FANTASIAS_DA_ESTELLA: readonly ItemDef[] = [...FANTASIA_DE_VAMPIRO, ...FANTASIA_DE_MORCEGUINHO];
 
+/**
+ * AS FANTASIAS DA CAÇA (a etapa 5b, `docs/HALLOWEEN.md`, §5.2): o número da
+ * parada da caça de doces ou travessuras para a fantasia inteira que ela dá
+ * — uma a cada duas paradas. Quem entrega é quem está na parada
+ * (`eventos/halloween/caca.ts`), com `g.ganharPeca`; quem repõe é o
+ * `reporPremios`, pelo `save.premios`.
+ */
+export const FANTASIAS_DA_CACA: Readonly<Record<number, readonly ItemDef[]>> = {
+  2: [ITENS.chapeuDeAbobora, ITENS.macacaoDeAbobora, ITENS.meiaCalcaVerde, ITENS.botinhaVerde, ITENS.luvinhasVerdes, ITENS.golaDeFolhas],
+  4: [ITENS.tricornio, ITENS.camisaDePirata, ITENS.calcaBufante, ITENS.botasDePirata, ITENS.luvasDePirata, ITENS.papagaio],
+  6: [ITENS.orelhasDeGato, ITENS.moletomDeGato, ITENS.leggingPreta, ITENS.patinhasDeGato, ITENS.luvasDePatinha, ITENS.raboDeGato],
+  8: [ITENS.chapeuDePalhaAmassado, ITENS.camisaXadrez, ITENS.calcaDeRemendo, ITENS.botasGastas, ITENS.luvasComPalha, ITENS.bandanaDePoa],
+  10: [ITENS.chapeuDeBruxo, ITENS.tunicaDeBruxo, ITENS.meiaListradaDeBruxo, ITENS.botinhaDeBicoCurvo, ITENS.vassoura, ITENS.capaDeEstrelinhas],
+};
+
+/** todas as fantasias do Halloween: as duas da Estella e as cinco da caça */
+export const TODAS_AS_FANTASIAS: readonly ItemDef[] = [...FANTASIAS_DA_ESTELLA, ...Object.values(FANTASIAS_DA_CACA).flat()];
+
 /** a peça é de FANTASIA de Halloween (o filtro 🎃 do guarda-roupa) */
 export function ehFantasia(id: string): boolean {
-  return FANTASIAS_DA_ESTELLA.some((p) => p.id === id);
+  return TODAS_AS_FANTASIAS.some((p) => p.id === id);
 }
 
 /** o número da lição de cada prêmio, para dizer onde a peça se ganha */

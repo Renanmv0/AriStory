@@ -1,7 +1,7 @@
 import { PALETTE as P } from '../palette';
 import type { ItemDef } from '../core/types';
 import {
-  FANTASIAS_DA_ESTELLA, ITENS, PREMIOS_DA_APOSTILA, PREMIOS_DA_ARENA, PREMIOS_DA_FESTA, PREMIOS_DO_MANIA,
+  TODAS_AS_FANTASIAS, ITENS, PREMIOS_DA_APOSTILA, PREMIOS_DA_ARENA, PREMIOS_DA_FESTA, PREMIOS_DO_MANIA,
 } from './itens';
 
 /*
@@ -171,7 +171,7 @@ export const PECAS_SEM_TINTA: ReadonlySet<string> = new Set<string>([
   ...Object.values(PREMIOS_DO_MANIA).flat().map((p) => p.id),
   ...Object.values(PREMIOS_DA_APOSTILA).flat().map((p) => p.id),
   ...PREMIOS_DA_FESTA.map((p) => p.id),
-  ...FANTASIAS_DA_ESTELLA.map((p) => p.id),
+  ...TODAS_AS_FANTASIAS.map((p) => p.id),
   ITENS.gravataDoWalter.id,
   ITENS.chapeuPingPong.id,
   ITENS.chapeuDeJardineira.id,

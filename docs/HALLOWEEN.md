@@ -35,15 +35,24 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapas 1 a 4 e a parte 5a construídas, escondidas.** O filme no
+**Estado: etapas 1 a 5 construídas, escondidas.** O filme no
 sofá e a carta da Estella (§2.1), o parque no pôr do sol, enfeitado e vazio
 (§4.1), o presente da Estella na boutique (§2.3.1), a noite da festa com o
 ônibus chegando e todo mundo fantasiado no posto (§2.4.1), e a **caça de
 doces ou travessuras** — as dez paradas, as balas, as pistas no mapinha e
-as abóboras escondidas (§6, a parte 5a) — estão no jogo, mas só aparecem
-com `?halloween` na URL (`src/eventos/halloween/`, `src/world/halloween/`,
-`src/world/fantasias.ts`, `scripts/halloween.mjs`). A próxima é a **parte
-5b**: as cinco fantasias ganhas na caça (§5.2), uma a cada duas paradas.
+as abóboras escondidas (§6, a parte 5a) — e as **cinco fantasias da caça**,
+uma inteira a cada duas paradas (§5.2, a parte 5b), estão no jogo, mas só
+aparecem com `?halloween` na URL (`src/eventos/halloween/`,
+`src/world/halloween/`, `src/world/fantasias.ts`,
+`src/world/fantasiasDaCaca.ts`, `scripts/halloween.mjs`,
+`scripts/fantasias.mjs`). A próxima é a **etapa 6**: a Casinha da Abóbora
+(§7).
+
+**Onde moram as fantasias da caça (5b):** as trinta peças em
+`world/fantasiasDaCaca.ts` (o kit vem do `world/fantasias.ts` e da
+boutique), as fichas em `world/itens.ts` (`FANTASIAS_DA_CACA`, pelo número
+da parada), e a entrega nas falas de cada parada par em
+`eventos/halloween/caca.ts` (`fantasia`).
 
 **Onde mora a caça (5a) no código:** `eventos/halloween/caca.ts` (as dez
 paradas, as falas, as travessuras, a abóbora acesa em cima da próxima
@@ -1243,8 +1252,22 @@ entrega:
 | 8 | a Josefina | 🌾 **espantalho** | quem cuida da horta e do canteiro de abóboras |
 | 10 | o Noel | 🧙 **bruxinho** | o cientista das poções: a última parada, com a pista do final |
 
-As fantasias são a **parte 5b** — a 5a (a construída) já tem as paradas, as
-balas e as pistas; nas paradas pares a fantasia entra depois.
+**Construídas (a parte 5b)**: `world/fantasiasDaCaca.ts`, seis peças cada,
+todas com modelo próprio. Na parada par, depois do doce ou da travessura,
+quem está lá entrega a fantasia no jeito dele (o Cookie dobrou "bem devagar,
+pra não amassar a folha"; o Jean-Luc avisa que o papagaio ainda não fala
+francês; o Noel testou a vassoura "duas vezes") e as seis peças vão direto
+para o guarda-roupa dos dois — no filtro 🎃 Fantasias, junto com o vampiro e
+o morceguinho. Como todo presente, não se pintam no ateliê.
+
+| fantasia | cabeça | tronco | pernas | pés | mãos | acessório |
+|---|---|---|---|---|---|---|
+| 🎃 abóbora | chapeuzinho de oito gomos, cabinho, folha e gavinha | macacão-abóbora de gomos com a carinha (e a camiseta verde) | meia-calça de tricô com a folhinha | botinha de feltro com o cálice de folhas | luvinhas verdes | gola de nove folhas |
+| 🏴‍☠️ pirata | tricórnio, caveirinha sorridente e pena | camisa listrada, colete azul-marinho e faixa vermelha | calça bufante até o joelho | bota de cano dobrado com fivela | luva de punho largo e a espadinha de madeira | o papagaio no ombro, mexendo a cabeça |
+| 🐈‍⬛ gato preto | orelhinhas de pelúcia com lacinho | moletom de pelúcia, babador, coleira e sininho, patinha nas costas | legging com punho branco | pantufa de patinha com as almofadinhas | luva de patinha | o rabo com laço, balançando |
+| 🌾 espantalho | chapéu de palha amassado, beira rasgada e o corvinho | camisa xadrez de remendos, palha na gola e nas mangas | calça de remendo com o cinto de corda | bota gasta de cadarço | luva de couro com palha | bandana vermelha de poá |
+| 🧙 bruxinho | chapéu pontudo torto, fivela e estrela | túnica de manga larga com a saia que anda, gola de pontas, lua bordada | meia listrada roxa e verde | botinha de bico que enrola | a vassoura na mão esquerda | a capa de estrelinhas |
+
 
 Doce ou travessura, a fantasia vem do mesmo jeito: as duas escolhas são
 boas. O que muda entre elas são as **balas** (§5.3).
@@ -1510,7 +1533,7 @@ aprovar antes da próxima.
 | **2** ✅ | **o parque enfeitado, no pôr do sol e vazio** *(construída, escondida)* | as decorações do parque inteiro e das lojas, ainda apagadas (§4.1), o Nessie de plástico no lago, os personagens fora do parque, do clube e da escola, as plaquinhas, os comentários da dupla no caminho (§2.2) | `cenario`, `prop` + `geometry`, `textures`, `lighting` |
 | **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** ✅ | **a noite e o ônibus** *(construída, escondida)* | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
-| **5** | **doces ou travessuras** | **5a** ✅ *(construída, escondida)*: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
+| **5** ✅ | **doces ou travessuras** *(construída, escondida)* | **5a**: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
 | **6** | **a Casinha da Abóbora** | o portão das 25 balas, o cenário novo e a festa surpresa (§7) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** | **o fechamento** | a memória no quadro, o prêmio do final, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |

@@ -1557,6 +1557,8 @@ export {
   presinhasDeVampiro, coleteDeVampiro, mangaDeVampiro, calcaDeVampiro, sapatoDeVerniz, luvasDeVampiro, capaDeVampiro,
   // o morceguinho
   tiaraDeMorcego, moletomDeMorcego, mangaDeMorcego, calcaListrada, pantufasDeMorcego, luvinhasDeMorcego, asinhasDeMorcego,
-  // o kit
-  capaViva, medalhao, medidorDePasso, espelhada,
+  // o kit (as fantasias da caça, `fantasiasDaCaca.ts`, usam também)
+  capaViva, medalhao, medidorDePasso, espelhada, corpoDe, feltro, listrasDeMeia, chapa, forroDe,
+  remendoNoTronco, noRemendo,
 };
+export type { OpcoesDeCapa };
