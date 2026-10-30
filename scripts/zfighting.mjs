@@ -56,6 +56,8 @@ const PECAS = [
   ['mesa-de-doces', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
   ['lustre-de-velas', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
   ['casca-do-salao', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
+  // o palquinho do concurso (a 6d)
+  ['palquinho', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
   ['quiosque', 'clube'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],

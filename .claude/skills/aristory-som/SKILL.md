@@ -162,6 +162,8 @@ palmas. `luzesAcendendo` é o "tec" do interruptor e um arpejo de vidro
 subindo (uma nota por fio de luzinha que pega); `surpresa` são três
 línguas de sogra desenrolando (dente-de-serra abafado subindo um tico, cada
 uma fora do tempo da outra, com o chiado de papel) e o estouro do confete.
+`fotoFlash` é a foto de todos (a 6d): o zumbido do flash carregando,
+subindo, e o "clic-clac" duplo do obturador no fim.
 
 **As balas na cesta** (`balas`, a caça de doces ou travessuras,
 `eventos/halloween/caca.ts`): seis toquinhos secos de triângulo, cada um

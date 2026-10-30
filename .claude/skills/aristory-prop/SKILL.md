@@ -1238,6 +1238,20 @@ O peso do salão na festa: ~950 desenhos, quase todos dos catorze bichos
 fantasiados (são articulados: cada parte que se mexe é uma malha); as peças
 do salão somam ~100.
 
+Da 6d, no mesmo arquivo:
+
+- **O palquinho** (`palquinho`, `PALQUINHO`): tablado redondo de tábua
+  (canvas), a saia com as pregas feitas puxando os vértices do cilindro, o
+  babado de meias-luas em lote, os degraus e a placa "Concurso de
+  fantasias" (canvas de 512×242, com a letra de festa). Quem sobe nele é o
+  `g.relevo` da cena (o tampo e a rampa dos degraus), não colisor.
+- **A plaquinha de voto** (`plaquinhaDeVoto`): a abóborinha de papelão num
+  palito, com a carinha e o coração. A cena a põe em cima da cabeça de quem
+  vota (a altura do bicho medida pela caixa dele) e a faz subir e balançar.
+- **O flash da foto** (`flashDaFoto()` em `core/materials.ts`): um quadrado
+  branco colado na frente da câmera de cena, sem profundidade, que apaga em
+  0,7 s; um material só no jogo, e a cena mexe na opacidade.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
