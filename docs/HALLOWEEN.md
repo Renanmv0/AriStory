@@ -35,7 +35,7 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapas 1 a 5 e as partes 6a e 6b construídas, escondidas.** O filme no
+**Estado: etapas 1 a 5 e as partes 6a, 6b e 6c construídas, escondidas.** O filme no
 sofá e a carta da Estella (§2.1), o parque no pôr do sol, enfeitado e vazio
 (§4.1), o presente da Estella na boutique (§2.3.1), a noite da festa com o
 ônibus chegando e todo mundo fantasiado no posto (§2.4.1), e a **caça de
@@ -51,8 +51,12 @@ Casinha: `eventos/halloween/naCasinha.ts`, `scenes/casinhaDaAbobora.ts`,
 `world/halloween/casinhaDaAbobora.ts`) e a **6b** (por dentro: o corredor e a
 cozinha da bruxa com o fantasminha de mola —
 `eventos/halloween/dentroDaCasinha.ts`, `world/halloween/casinhaPorDentro.ts`,
-a cena `casinha-da-abobora-dentro`); o teste é o `SO=casinha`. A próxima é a
-**6c**: o salão-abóbora, a surpresa e a festa.
+a cena `casinha-da-abobora-dentro`) e a **6c** (o salão POR DENTRO da
+abóbora, a surpresa no escuro e a festa livre — `eventos/halloween/noSalao.ts`,
+`world/halloween/salaoDaAbobora.ts`, a conversa com zoom agora comum em
+`eventos/halloween/conversaComZoom.ts`, a cena `casinha-da-abobora-salao`);
+o teste é o `SO=casinha`. A próxima é a **6d**: o concurso, as coroas e a
+foto, e a fase `depois`.
 
 **Onde moram as fantasias da caça (5b):** as trinta peças em
 `world/fantasiasDaCaca.ts` (o kit vem do `world/fantasias.ts` e da
@@ -1532,9 +1536,10 @@ feitiço aberto na mesa ("Ler o livro de feitiço") e o chapéu: chegando perto,
 ele treme, pula e cai de lado, e o fantasminha sai na mola rindo ("AAAH!" /
 "…É de mola! Um fantasminha de mola!" / "Que susto fofo. Olha ele rindo da
 gente."); depois dá para "Cutucar o fantasminha". A PORTA GRANDE DO SALÃO
-(redonda, de tábua cor de abóbora) fica trancada até a 6c: "Tá trancada… e
-do outro lado tá tudo escuro." / "Você ouviu isso? Parecia um 'shhh'…" /
-"Deve ser o vento. …Né?".
+(redonda, de tábua cor de abóbora) ficava trancada até a 6c, com um "shhh"
+do outro lado; agora ela abre ("Destrancou…" / "E do outro lado tá tudo
+escuro. Vamos juntos."), empurrada para dentro do salão. Depois da surpresa
+o ponto dela vira "Voltar pra festa".
 
 Fogão a lenha de tijolinho com o **caldeirão borbulhando** (a bolha e o
 vapor do carrinho do Noel), **prateleiras de potes de poção** coloridos (em
@@ -1546,6 +1551,43 @@ ri ("Ai! … É de mola!" / "Que susto fofo."). Depois ele fica balançando
 devagar, e dá para cutucar de novo.
 
 #### E. O salão: por dentro da abóbora gigante
+
+**Construído (6c)**, como está abaixo, com estas escolhas:
+
+- **a casca é UMA superfície de face única virada para dentro** (um
+  elipsoide achatado de 7,4 × 4,9, o chão cortando embaixo, com os doze
+  gomos — a quina entrando como nervura): a câmera vê só a metade de lá, e a
+  de cá some sozinha, de qualquer giro do Q/R. A borda do que se vê é o
+  plano diametral conjugado da direção da câmera, então nada da casca tapa
+  o salão; de perto (a câmera de cena) ela aparece inteira, e o teto fecha
+  no cabinho (o nozinho de fibra, com o lustre pendurado). Por isso não há
+  parede baixa do lado da câmera: o rodapé de polpa marca a beira do chão;
+- **a cara fica no fundo** (os dois olhos de triângulo e o sorriso de três
+  dentes, a beira de polpa cortada, e lá fora o céu da noite com a lua no
+  olho direito e o mato com as abóboras do caminho pela boca), **a porta da
+  cozinha no fundo à direita** (em cima e à direita na tela), e **a mesa de
+  doces no fundo à esquerda**, com o caldeirão de balas no chão do lado;
+- **no escuro** só o céu pelas janelas se acende (e o luar no chão): todo
+  mundo já está lá, virado para a porta. A dupla entra, "Tem alguém aí?", a
+  porta fecha atrás ("…A porta fechou sozinha."), um segundo de silêncio, a
+  câmera vem para trás da dupla, e as luzes acendem em sequência (o lustre,
+  as luzinhas de uma em uma, as lanternas e as abóboras): "SURPRESA!" com o
+  confete e todo mundo pulando, "…Pra gente?!" / "Todo mundo aqui!
+  Fantasiados! No escuro!", e a Estella vem explicar — a conversa com zoom
+  emendada na tomada da porta (as falas dela são as do rascunho abaixo, mais
+  "Era essa a ideia! Agora vão: dancem, comam doce, falem com todo mundo. A
+  festa é de vocês."). Fica a memória "SURPRESA!";
+- **a festa** (de toda volta depois): a música de festa (`'casinha-da-abobora-salao'`
+  — e a do escuro, `'abobora-no-escuro'`), a pista xadrez no meio, cada um
+  dançando a sua: o Mano a dança dele, o Flynn e o Jean-Luc comemorando, o
+  six seven do Gatito, a coreografia inteira das três coelhinhas em fila, o
+  Cookie rodando o lençol, a Gina balançando o pescoço, o Capy e o Noel
+  pulando, a Josefina devagar e a Estella balançando as patinhas. Cada um
+  tem uma fala de festa na conversa com zoom (a primeira vez, e depois uma
+  curta). O **Walter** faz a ronda com a bandeja (da mesa pela frente da
+  pista, ida e volta); **"Pegar um doce"** na mesa faz ele vir até a dupla, e
+  os dois comem ali (o cupcake de olhinho e o pirulito de espiral, depois a
+  maçã do amor, depois a bala de caramelo). "Voltar pra cozinha" pela porta.
 
 A porta da cozinha dá num salão **redondo**: as **paredes são os gomos da
 abóbora por dentro** (laranja vivo, as nervuras, a polpa mais clara em
@@ -1607,8 +1649,8 @@ São presente (fora do ateliê de tinta) e aparecem no filtro 🎃 Fantasias.
 
 1. **6a**: o portão no parque e a clareira de fora com a Casinha;
 2. **6b**: o corredor e a cozinha (o fantasminha de mola);
-3. **6c**: o salão-abóbora, a surpresa e a festa (todos lá, as dancinhas,
-   o Walter servindo, a música);
+3. **6c** *(construída)*: o salão-abóbora, a surpresa e a festa (todos
+   lá, as dancinhas, o Walter servindo, a música);
 4. **6d**: o concurso, as coroas e a foto; a fase `depois` (o parque vazio,
    a festa continuando no salão); testes (`SO=casinha`, `volta`), fotos,
    medição de desempenho do salão no celular, docs e merge.
@@ -1735,7 +1777,7 @@ aprovar antes da próxima.
 | **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** ✅ | **a noite e o ônibus** *(construída, escondida)* | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** ✅ | **doces ou travessuras** *(construída, escondida)* | **5a**: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
-| **6** | **a Casinha da Abóbora** *(6a e 6b construídas, escondidas; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
+| **6** | **a Casinha da Abóbora** *(6a, 6b e 6c construídas, escondidas; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** | **o fechamento** | a foto da festa virando memória no quadro, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |
 

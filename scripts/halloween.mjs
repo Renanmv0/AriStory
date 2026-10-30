@@ -1572,16 +1572,6 @@ if (roda('casinha')) {
   await espera(2500);
   await page.screenshot({ path: `${OUT}-casinha-fantasminha.png` });
   await j(() => window.jogo.setCameraOmbro(null));
-  // a porta do salão: trancada, e o "shhh"
-  await j(() => {
-    const g = window.jogo;
-    const it = g.current.world.interactables.find((i) => i.id === 'halloween:casinha:salao');
-    g.debugPlace(it.x, it.z, -Math.PI / 2);
-  });
-  await page.waitForFunction(() => /porta grande/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
-  await page.keyboard.press('KeyE');
-  const salao = await lerFalas();
-  ok(/shhh/.test(salao) && (await cenaAtual()) === 'casinha-da-abobora-dentro', `a porta grande do salão: trancada, e um "shhh" (${salao.slice(0, 80)})`);
   // sair: de volta na frente da porta da casinha
   await j(() => {
     const g = window.jogo;
@@ -1605,6 +1595,157 @@ if (roda('casinha')) {
   await espera(2500);
   const deNovo = await j(() => window.jogo.scene.getObjectByName('fantasma-da-mola')?.visible === true);
   ok(deNovo, 'entrando de novo, a porta abre direto e o fantasminha já está fora do chapéu');
+
+  // ================================================== a 6c: o salão da abóbora
+  console.log('\ncasinha: o salão por dentro da abóbora e a festa surpresa (§7.1, E — a 6c)');
+  const salaoDe = () => j(() => {
+    const o = window.jogo.scene.getObjectByName('casca-da-abobora');
+    const s = o?.userData.salao;
+    return s ? { festa: s.festa(), luz: +s.luz().toFixed(2), porta: +s.porta().toFixed(2), lustre: s.lustre(), walter: s.walter(), convidados: s.convidados() } : null;
+  });
+  // a porta grande da cozinha agora abre
+  await j(() => {
+    const g = window.jogo;
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:casinha:salao');
+    g.debugPlace(it.x, it.z, -Math.PI / 2);
+  });
+  await page.waitForFunction(() => /porta grande/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.press('KeyE');
+  const destrancou = await lerFalas();
+  await page.waitForFunction(() => window.jogo.current?.def?.id === 'casinha-da-abobora-salao', null, { timeout: 120000 }).catch(() => {});
+  ok(/Destrancou/.test(destrancou) && (await cenaAtual()) === 'casinha-da-abobora-salao', `a porta grande abre e dá no salão (${destrancou.slice(0, 70)})`);
+  // no escuro: as luzes apagadas, todo mundo lá parado (virado para a porta)
+  await espera(1500);
+  const escuro = await salaoDe();
+  const pecasDaFesta = ['estella', 'mano', 'cookie', 'jean-luc', 'girafa', 'capy', 'noel', 'josefina', 'garcom-canino', 'gatito', 'flynn', 'luna', 'sol', 'estrella'];
+  const presentes = (escuro?.convidados ?? []).map((c) => c.peca);
+  ok(!!escuro && !escuro.festa && escuro.luz < 0.1 && !escuro.lustre && pecasDaFesta.every((p) => presentes.includes(p)),
+    `o salão chega escuro, com os catorze lá dentro (${JSON.stringify({ festa: escuro?.festa, luz: escuro?.luz, lustre: escuro?.lustre, faltam: pecasDaFesta.filter((p) => !presentes.includes(p)) })})`);
+  const fantasiados = await j(() => {
+    const quem = {};
+    window.jogo.scene.traverse((o) => { if (o.userData?.bicho && o.userData.bicho.group === o) quem[o.userData.peca] = !!o.userData.fantasiado; });
+    return quem;
+  });
+  ok(Object.entries(fantasiados).filter(([p]) => p !== 'estella').every(([, v]) => v), `todos fantasiados (${JSON.stringify(fantasiados)})`);
+  await page.screenshot({ path: `${OUT}-casinha-salao-escuro.png` });
+  // a surpresa: as falas até a Estella terminar (o relógio do jogo; o navegador do teste é lento)
+  const surpresa = [];
+  let fotoDaSurpresa = false;
+  for (let i = 0; i < 900 && !(await flag('halloween:salao:surpresa')); i++) {
+    const t = await j(() => ({ show: !!document.querySelector('.dialogue.show'), digitando: window.jogo.ui.typing !== null, texto: document.querySelector('.dialogue.show .text')?.textContent ?? '' }));
+    if (!t.show) { await espera(400); continue; }
+    if (t.digitando) { await page.keyboard.press('KeyE'); await espera(300); continue; }
+    surpresa.push(t.texto);
+    if (/SURPRESA!/.test(t.texto) && !fotoDaSurpresa) {
+      fotoDaSurpresa = true;
+      const luzes = await salaoDe();
+      ok(luzes.luz > 0.95 && luzes.lustre, `no "SURPRESA!", as luzes acesas (${luzes.luz}, lustre ${luzes.lustre})`);
+      await page.screenshot({ path: `${OUT}-casinha-salao-surpresa.png` });
+    }
+    if (/era pra vocês dois/.test(t.texto)) await page.screenshot({ path: `${OUT}-casinha-salao-estella.png` });
+    await page.keyboard.press('KeyE');
+    await espera(450);
+  }
+  const texto = surpresa.join(' ‖ ');
+  ok(/Tem alguém aí/.test(texto) && /fechou sozinha/.test(texto) && /SURPRESA!/.test(texto) && /distrair vocês/.test(texto) && /costurei a fantasia de todo mundo/.test(texto),
+    `a surpresa: "Tem alguém aí?", a porta fechando, o "SURPRESA!" e a Estella explicando (${texto.slice(0, 160)}…)`);
+  await espera(2500);
+  const depois = await salaoDe();
+  const memoria = await j(() => window.jogo.save.memories.some((m) => m.id === 'festa-surpresa-na-abobora'));
+  ok(depois.festa && depois.luz === 1 && depois.porta === 0 && memoria && !(await j(() => window.jogo.camOmbro)),
+    `depois: a festa rolando, a porta fechada, a memória, e a câmera de volta à isométrica (${JSON.stringify({ festa: depois.festa, luz: depois.luz, porta: depois.porta, memoria })})`);
+  // a festa: todo mundo dançando (medido: o Cookie roda, o Capy pula, o Mano e a dança dele)
+  const amostra = () => j(() => {
+    const s = window.jogo.scene.getObjectByName('casca-da-abobora').userData.salao;
+    return Object.fromEntries(s.convidados().map((c) => [c.peca, c]));
+  });
+  let maiorPulo = 0;
+  const giros = [];
+  for (let k = 0; k < 10; k++) {
+    const a = await amostra();
+    maiorPulo = Math.max(maiorPulo, a.capy.y, a.noel.y);
+    giros.push(a.cookie.giro);
+    await espera(500);
+  }
+  const rodou = Math.max(...giros) - Math.min(...giros);
+  const dancando = await j(() => {
+    const quem = {};
+    window.jogo.scene.traverse((o) => { const b = o.userData?.bicho; if (b && b.group === o) quem[o.userData.peca] = b; });
+    return { mano: quem.mano.estaDancando, torcida: ['luna', 'sol', 'estrella'].filter((p) => quem[p].estaNaFesta || quem[p].estaSaltando).length };
+  });
+  ok(maiorPulo > 0.04 && rodou > 0.3, `a festa: o Capy e o Noel pulando (${maiorPulo.toFixed(2)}), o Cookie rodando o lençol (${rodou.toFixed(2)} rad), o Mano dançando (${dancando.mano}), as coelhinhas na coreografia (${dancando.torcida})`);
+  await j(() => window.jogo.debugPlace(2.6, 2.4, -Math.PI * 0.75));
+  await espera(2500);
+  await page.screenshot({ path: `${OUT}-casinha-salao-festa.png` });
+  for (const [nome, de, para] of [['salao-de-cima', [12, 14, 12], [-1, 0.6, -1]], ['salao-cara', [1.6, 1.7, 1.6], [-5, 2.8, -5]], ['salao-teto', [2.2, 1.6, 2.2], [-0.8, 5.2, -0.8]], ['salao-mesa', [-1.7, 1.75, 1.4], [-5.2, 0.9, 2.6]]]) {
+    await j(([de, para]) => { const T = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new T(...de), new T(...para)); }, [de, para]);
+    await espera(2500);
+    await page.screenshot({ path: `${OUT}-casinha-${nome}.png` });
+  }
+  await j(() => window.jogo.setCameraOmbro(null));
+  // a conversa de festa com zoom: a Gina
+  // (perto dela e longe do Noel e do Capy, que também têm o ponto deles)
+  await j(() => window.jogo.debugPlace(-4.0, -1.0, -Math.PI * 0.75));
+  await page.waitForFunction(() => /Falar com a Gina/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.press('KeyE');
+  await espera(4000);
+  await page.screenshot({ path: `${OUT}-casinha-salao-gina.png` });
+  const daGina = await lerFalas();
+  // (a câmera desliza de volta no relógio do jogo)
+  await page.waitForFunction(() => !window.jogo.camOmbro, null, { timeout: 120000 }).catch(() => {});
+  ok(/SURPRESAAA/.test(daGina) && /Ordem da casa/.test(daGina) && !(await j(() => window.jogo.camOmbro)), `a conversa de festa da Gina, com zoom, e a isométrica de volta (${daGina.slice(0, 80)})`);
+  // pegar um doce: o Walter vem servir, e os dois comem ali
+  await j(() => {
+    const g = window.jogo;
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:salao:doce');
+    g.debugPlace(it.x, it.z, Math.PI);
+  });
+  await page.waitForFunction(() => /Pegar um doce/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.press('KeyE');
+  let naMao = null;
+  for (let i = 0; i < 300 && !naMao; i++) {
+    naMao = await j(() => {
+      const a = window.jogo.scene.getObjectByName('doce-cupcake');
+      const b = window.jogo.scene.getObjectByName('doce-pirulito');
+      return a && b ? 'cupcake e pirulito' : null;
+    });
+    if (!naMao) await espera(400);
+  }
+  const perto = await j(() => {
+    const s = window.jogo.scene.getObjectByName('casca-da-abobora').userData.salao;
+    const w = s.walter();
+    const p = window.jogo.playerPosition();
+    return { d: +Math.hypot(w.x - p.x, w.z - p.z).toFixed(2), servindo: w.servindo };
+  });
+  await page.screenshot({ path: `${OUT}-casinha-salao-doce.png` });
+  const doce = await lerFalas();
+  // (comer leva um tempinho do relógio do jogo, e o navegador do teste é lento)
+  await page.waitForFunction(() => !window.jogo.scene.getObjectByName('casca-da-abobora').userData.salao.walter().servindo, null, { timeout: 180000 }).catch(() => {});
+  await espera(1000);
+  const depoisDoDoce = await j(() => ({
+    doces: window.jogo.stat('halloween:salao:doces'),
+    naMao: !!window.jogo.scene.getObjectByName('doce-cupcake'),
+    servindo: window.jogo.scene.getObjectByName('casca-da-abobora').userData.salao.walter().servindo,
+  }));
+  ok(naMao && perto.d < 1.6 && /Cupcake/.test(doce) && depoisDoDoce.doces === 1 && !depoisDoDoce.naMao && !depoisDoDoce.servindo,
+    `pegar um doce: o Walter vem (${perto.d} m), o cupcake e o pirulito na mão, comidos ali, e ele volta para a ronda (${doce.slice(0, 60)} · ${JSON.stringify(depoisDoDoce)})`);
+  // voltar pra cozinha, e de volta para a festa (sem surpresa de novo)
+  await j(() => {
+    const g = window.jogo;
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:salao:sair');
+    g.debugPlace(it.x, it.z, 0.3);
+  });
+  await page.waitForFunction(() => /Voltar pra cozinha/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.jogo.current?.def?.id === 'casinha-da-abobora-dentro', null, { timeout: 120000 }).catch(() => {});
+  await espera(2500);
+  const voltaPraFesta = await j(() => document.querySelector('.prompt .label')?.textContent ?? '');
+  ok((await cenaAtual()) === 'casinha-da-abobora-dentro' && /Voltar pra festa/.test(voltaPraFesta), `de volta na cozinha, na frente da porta grande ("${voltaPraFesta}")`);
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.jogo.current?.def?.id === 'casinha-da-abobora-salao', null, { timeout: 120000 }).catch(() => {});
+  await espera(2500);
+  const outraVez = await salaoDe();
+  ok(outraVez?.festa && outraVez.luz === 1 && !(await j(() => !!document.querySelector('.dialogue.show'))), 'entrando de novo, a festa continua, acesa, sem a surpresa');
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');

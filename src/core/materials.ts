@@ -456,3 +456,19 @@ export function claridade(color: number, forca = 0.3): THREE.MeshBasicMaterial {
   claridades.set(key, mat);
   return mat;
 }
+
+/**
+ * A PINTURA ACESA: um desenho de canvas que se vê igual no claro e no escuro,
+ * sem luz e sem névoa — o céu de noite que aparece pelos olhos e pela boca
+ * recortados da abóbora gigante (o salão da Casinha da Abóbora). É o que faz
+ * o recorte das janelas ser a única coisa clara do salão apagado. Um por
+ * textura (cacheado), como todo material do kit.
+ */
+const pinturas = new Map<string, THREE.MeshBasicMaterial>();
+export function pinturaAcesa(mapa: THREE.Texture): THREE.MeshBasicMaterial {
+  const hit = pinturas.get(mapa.uuid);
+  if (hit) return hit;
+  const mat = new THREE.MeshBasicMaterial({ map: mapa, fog: false });
+  pinturas.set(mapa.uuid, mat);
+  return mat;
+}

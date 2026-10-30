@@ -125,6 +125,8 @@ export type SomNome =
   | 'motorDoOnibus'
   | 'freioDoOnibus'
   | 'portaDoOnibus'
+  | 'luzesAcendendo'
+  | 'surpresa'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -1232,4 +1234,32 @@ export const EFEITOS: Record<SomNome, Receita> = {
     chiado(ctx, destino, { quando: t, dur: 0.34, vol: 0.06, freq: abre ? 2600 : 3200, glide: abre ? 3600 : 2200, q: 0.7, sustenta: 0.3 });
     tom(ctx, destino, { freq: abre ? 240 : 200, glide: 110, quando: t + 0.3, dur: 0.08, vol: 0.07, ataque: 0.003, tipo: 'square', abafo: 700 });
   },
+
+  // ------------------------------------------- a festa surpresa (o salão da abóbora)
+  // as luzes acendendo no escuro: o "tec" do interruptor e um arpejo de vidro subindo,
+  // uma nota por fio de luzinha que pega
+  luzesAcendendo: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.035, vol: 0.14, freq: 2400, q: 2.5 });
+    tom(ctx, destino, { freq: 180, glide: 120, quando: t, dur: 0.05, vol: 0.05, ataque: 0.003, tipo: 'square', abafo: 900 });
+    for (const [i, grau] of [0, 4, 7, 12, 16, 19, 24].entries()) {
+      tom(ctx, destino, { freq: nota(DO + 12 + grau), quando: t + 0.1 + i * 0.09, dur: 0.35, vol: 0.045 - i * 0.003, tipo: 'sine' });
+      tom(ctx, destino, { freq: nota(DO + 24 + grau), quando: t + 0.1 + i * 0.09, dur: 0.08, vol: 0.01, tipo: 'triangle' });
+    }
+  },
+
+  // o "SURPRESA!": três línguas de sogra desenrolando (o "fuuuu" de papel que sobe de
+  // tom, um pouco fora do tempo uma da outra) e o estouro do confete por cima
+  surpresa: ({ ctx, destino, t }) => {
+    for (const [i, grau] of [0, 4, 7].entries()) {
+      const q = t + i * 0.07;
+      const f = nota(DO + grau);
+      tom(ctx, destino, { freq: f * 0.9, glide: f, quando: q, dur: 0.55, vol: 0.04, ataque: 0.03, tipo: 'sawtooth', abafo: 1500, detune: (i - 1) * 9 });
+      tom(ctx, destino, { freq: f * 1.8, glide: f * 2, quando: q, dur: 0.5, vol: 0.012, ataque: 0.03, tipo: 'square', abafo: 2200 });
+      chiado(ctx, destino, { quando: q, dur: 0.5, vol: 0.02, freq: 1600, glide: 2600, q: 1.4, sustenta: 0.6 });
+    }
+    chiado(ctx, destino, { quando: t + 0.05, dur: 0.18, vol: 0.12, freq: 2800, glide: 900, q: 0.9 });
+    tom(ctx, destino, { freq: 700, glide: 240, quando: t + 0.05, dur: 0.1, vol: 0.06, tipo: 'triangle' });
+    chiado(ctx, destino, { quando: t + 0.2, dur: 0.8, vol: 0.03, freq: 6000, glide: 8000, q: 0.8, tipo: 'highpass' });
+  },
 };
+

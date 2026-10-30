@@ -76,6 +76,20 @@ Sem `fogNear` curto no `ambient`: a câmera fica a 60 m do alvo, e névoa a
 30 m deixava tudo lilás. Árvore só nas beiras do FUNDO (`−X`, `−Z`); na
 beira do lado da câmera, mato baixo — árvore ali tapa quem anda na beira.
 
+**Sala que é uma casca** (o salão por dentro da abóbora,
+`eventos/halloween/noSalao.ts`): não tem parede baixa — a casca é de face
+única virada para dentro e some sozinha do lado da câmera (ver a skill de
+peça). O colisor é um ANEL de círculos rente ao pé da casca (o meio nunca é
+alcançado, como o lago). A luz da cena (o `ambient`) é a da festa; o
+escuro de antes da surpresa é o `g.luzDoCeu` misturando as duas a cada
+quadro — e só no quadro, porque no `build` o motor ainda olha a cena
+velha. A surpresa (a porta fechando, as luzes acendendo, o confete, a
+câmera atrás da dupla) anda no relógio do jogo (uma fila de `esperar` no
+`w.onUpdate`), e a conversa da Estella emenda na tomada que já está na tela
+(`zoom.conversar(…, { daTomadaAtual: true })`). A conversa com zoom é uma
+peça comum agora (`eventos/halloween/conversaComZoom.ts`): o parque e o
+salão usam a mesma.
+
 **Peça translúcida está descartada** — chegou a existir aqui um prédio que
 desbotava quando a dupla passava atrás, e o Renan cortou: a câmera gira, e o
 que é para ser descoberto tem que ser descoberto jogando, não entregue por um

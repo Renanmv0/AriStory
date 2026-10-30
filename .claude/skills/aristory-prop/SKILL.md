@@ -1194,6 +1194,50 @@ próxima sala de casa assombrada (ou qualquer sala com acabamento):
 
 O peso do corredor na câmera de sempre: ~370 desenhos e ~75 mil triângulos.
 
+## O salão por dentro da abóbora (`world/halloween/salaoDaAbobora.ts`)
+
+O salão da festa surpresa (a 6c do Halloween). O que serve para qualquer
+sala redonda ou "de dentro de uma coisa" (uma concha, um ovo, uma tenda):
+
+- **Sala de casca, de face única, virada para dentro** (`cascaDoSalao`): um
+  elipsoide achatado com gomos, sem parede baixa. Toda face aponta para o
+  meio, então a câmera vê só a metade de lá e a de cá some sozinha, de
+  qualquer giro do Q/R — e nada da casca tapa o salão, porque a borda do que
+  se vê é o plano diametral conjugado da direção da câmera (vale para
+  elipsoide; com gomos de 5%, quase). De perto (câmera de cena dentro), a
+  casca aparece inteira e o teto fecha. Peça solta perto do teto (o lustre,
+  os raios de luzinha) fica pendurada do nada na isométrica, como os
+  pendentes dos outros cômodos.
+- **Furos de verdade numa superfície curva**: a casca é desenhada no PAPEL
+  (ângulo × paralelo, em metros), em FAIXAS com as mesmas linhas de paralelo
+  nas beiradas (nada racha entre vizinhas), com os furos (os olhos e a boca)
+  como `holes` de um `Shape`, cortada fina pelo `TessellateModifier` e só
+  então dobrada no elipsoide — o furo sai liso, sem degrau de grade. A porta
+  sobe da beira de baixo (um entalhe no contorno, não um furo). A beira de
+  polpa cortada de cada furo é uma fita entre a face e a grossura.
+- **O que se vê por um furo** mora logo atrás dele: o céu da noite é um
+  pedaço da mesma casca, um palmo para fora, com o `pinturaAcesa()` (sem
+  luz: acende igual no escuro). O que se vê pela porta mora NA PORTA (atrás
+  da folha): por fora da casca, perto da beira do que a câmera vê, ele
+  aparecia do lado da porta.
+- **Textura por gomo** (`polpaPorDentro`): o `u` vai de uma quina à outra e
+  o `v` do chão ao cabinho, então a nervura cai sempre na quina e a polpa
+  clara (os fiapos, as sementes) sempre embaixo.
+- **Lustre de velas** (`LustreDeVelas`): o ferro fundido numa malha só, e as
+  chamas e os halos em DOIS lotes (as chamas tremem pela matriz de cada
+  cópia; o halo é o `brilhoEmLote`) — de 30 desenhos para 3. `acender(k)`.
+- **Mesa de doces** (`mesaDeDoces`): a saia da toalha com o babado em
+  `Shape` de ondas, a boleira com os cupcakes de monstrinho (a forminha
+  pregueada puxando os vértices), o bolo de dois andares com a calda
+  escorrendo, as maçãs do amor, o pote de pirulitos de espiral (canvas), e
+  as balas embrulhadas em lote — no tampo, no morro do caldeirão e no chão.
+- **Doce na mão** (`doceDaFesta`): 1,6× o tamanho da mesa, como todo
+  comestível de mão (no tamanho de verdade some entre os dedos chibi).
+
+O peso do salão na festa: ~950 desenhos, quase todos dos catorze bichos
+fantasiados (são articulados: cada parte que se mexe é uma malha); as peças
+do salão somam ~100.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

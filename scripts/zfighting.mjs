@@ -50,6 +50,12 @@ const PECAS = [
   ['relogio-de-pendulo', 'casinha-da-abobora-dentro', FESTA],
   ['fogao-a-lenha', 'casinha-da-abobora-dentro', FESTA],
   ['mesa-da-bruxa', 'casinha-da-abobora-dentro', FESTA],
+  // o salão por dentro da abóbora (a 6c), com a surpresa já feita: a mesa de
+  // doces, o lustre de velas e a casca (os gomos, a beira das janelas, o
+  // rodapé e o cabinho)
+  ['mesa-de-doces', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
+  ['lustre-de-velas', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
+  ['casca-do-salao', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
   ['quiosque', 'clube'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],

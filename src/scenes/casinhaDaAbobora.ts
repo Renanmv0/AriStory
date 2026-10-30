@@ -2,6 +2,7 @@ import type { SceneDef } from '../core/types';
 import { PALETTE as P } from '../palette';
 import { ENTRADAS_DA_CLAREIRA, montarAClareira } from '../eventos/halloween/naCasinha';
 import { ENTRADAS_DE_DENTRO, montarODentro } from '../eventos/halloween/dentroDaCasinha';
+import { CENA_DO_SALAO, ENTRADAS_DO_SALAO, LUZ_DA_FESTA, montarOSalao } from '../eventos/halloween/noSalao';
 
 /**
  * A CASINHA DA ABÓBORA (o final do especial de Halloween, `docs/HALLOWEEN.md`
@@ -44,5 +45,22 @@ export const casinhaDaAboboraDentro: SceneDef = {
   entries: { ...ENTRADAS_DE_DENTRO },
   build(w) {
     montarODentro(w);
+  },
+};
+
+/**
+ * O SALÃO DA ABÓBORA (§7.1, E): por dentro da abóbora gigante, a festa
+ * surpresa. Só se chega pela porta grande da cozinha da bruxa. A luz da cena
+ * é a da festa; antes da surpresa, a cena apaga tudo no primeiro quadro.
+ */
+export const casinhaDaAboboraSalao: SceneDef = {
+  id: CENA_DO_SALAO,
+  name: 'Casinha da Abóbora',
+  subtitle: 'o salão',
+  ambient: LUZ_DA_FESTA,
+  spawn: ENTRADAS_DO_SALAO['da-cozinha'],
+  entries: { ...ENTRADAS_DO_SALAO },
+  build(w) {
+    montarOSalao(w);
   },
 };
