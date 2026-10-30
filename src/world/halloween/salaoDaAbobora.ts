@@ -8,6 +8,7 @@ import { pocaDeLuz } from '../furniture';
 import { fundir } from '../fundir';
 import { caldeirao } from './pecas';
 import { LoteDeAboboras } from './abobora';
+import { canvasComLetra } from './carrinhoDePocoes';
 
 /*
  * O SALÃO DA ABÓBORA — as peças da parte 6c (`docs/HALLOWEEN.md`, §7.1, E):
@@ -1096,4 +1097,198 @@ export function mesaDeDoces(): { group: THREE.Group; largura: number; fundo: num
   lote.computeBoundingSphere();
   g.add(lote);
   return { group: fundir(g), largura: L, fundo: F };
+}
+
+// ============================================================ o palquinho
+
+/** as medidas do palquinho do concurso (a cena põe no fundo, embaixo da cara) */
+export const PALQUINHO = { raio: 1.55, alto: 0.32 } as const;
+
+/** a tábua do tablado, de cima: as réguas com o veio e a junta escura */
+function tabuasDoPalco(): THREE.CanvasTexture {
+  return novaTextura('salao:palco', 1.2, (c, s) => {
+    const rnd = sorteio(4242);
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const luz = 0.88 + rnd() * 0.12;
+      const v = Math.round(255 * luz);
+      c.fillStyle = `rgb(${v},${v},${v})`;
+      c.fillRect(0, (i * s) / n, s, s / n);
+      c.strokeStyle = 'rgba(120,90,70,0.25)';
+      c.lineWidth = 1;
+      for (let k = 0; k < 5; k++) {
+        const y = (i * s) / n + rnd() * (s / n);
+        c.beginPath();
+        c.moveTo(0, y);
+        c.bezierCurveTo(s * 0.3, y + 3, s * 0.6, y - 3, s, y + 1);
+        c.stroke();
+      }
+      c.fillStyle = 'rgba(60,40,30,0.55)';
+      c.fillRect(0, ((i + 1) * s) / n - 2, s, 2);
+    }
+  });
+}
+
+/** a placa "Concurso de Fantasias", em letra de festa, com a moldura de abóbora (desenhada uma vez) */
+let placaPronta: THREE.CanvasTexture | null = null;
+function placaDoConcurso(): THREE.CanvasTexture {
+  placaPronta ??= canvasComLetra(512, 242, (c) => {
+    const L = 512;
+    const A = 242;
+    c.fillStyle = css(P.palquinhoSaia);
+    c.fillRect(0, 0, L, A);
+    c.strokeStyle = css(P.palquinhoBarra);
+    c.lineWidth = 10;
+    c.strokeRect(10, 10, L - 20, A - 20);
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillStyle = css(P.coroaOuro);
+    c.font = '800 78px "Baloo 2", "Nunito", "Arial Rounded MT Bold", sans-serif';
+    c.fillText('CONCURSO', L / 2, A * 0.36);
+    c.fillStyle = css(P.palquinhoBarra);
+    c.font = '700 50px "Baloo 2", "Nunito", "Arial Rounded MT Bold", sans-serif';
+    c.fillText('de fantasias', L / 2, A * 0.66);
+    // as duas coroinhas dos lados
+    c.fillStyle = css(P.coroaOuro);
+    for (const x of [L * 0.1, L * 0.9]) {
+      const y = A * 0.5;
+      c.beginPath();
+      c.moveTo(x - 24, y + 14);
+      c.lineTo(x - 24, y - 8);
+      c.lineTo(x - 12, y + 2);
+      c.lineTo(x, y - 18);
+      c.lineTo(x + 12, y + 2);
+      c.lineTo(x + 24, y - 8);
+      c.lineTo(x + 24, y + 14);
+      c.closePath();
+      c.fill();
+    }
+  });
+  return placaPronta;
+}
+
+/**
+ * O PALQUINHO DO CONCURSO: o tablado redondo de tábua, a saia roxa franzida
+ * com a barra de babado laranja, os dois degraus na frente (`+Z`), a placa
+ * "Concurso de Fantasias" em dois postes atrás, e duas abóboras acesas nos
+ * cantos. Origem no chão, no meio do tablado.
+ */
+export function palquinho(): THREE.Group {
+  const g = new THREE.Group();
+  g.name = 'palquinho';
+  g.userData.peca = 'palquinho';
+  const { raio: R, alto: H } = PALQUINHO;
+  const tabua = toon(P.palquinhoTabua, { mapa: tabuasDoPalco() });
+  // o tampo, com a beira arredondada
+  const tampo = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.06, 48), tabua);
+  tampo.position.y = H - 0.03;
+  g.add(tampo);
+  const beira = new THREE.Mesh(new THREE.TorusGeometry(R, 0.035, 6, 48).rotateX(Math.PI / 2), toon(P.palquinhoTabua));
+  beira.position.y = H - 0.01;
+  g.add(beira);
+  // a saia franzida: o cilindro com as pregas (os vértices puxados para fora e para dentro)
+  const saia = new THREE.CylinderGeometry(R - 0.02, R + 0.03, H - 0.05, 72, 1, true);
+  {
+    const p = saia.getAttribute('position') as THREE.BufferAttribute;
+    for (let i = 0; i < p.count; i++) {
+      const a = Math.atan2(p.getZ(i), p.getX(i));
+      const k = 1 + 0.018 * Math.sin(a * 36);
+      p.setX(i, p.getX(i) * k);
+      p.setZ(i, p.getZ(i) * k);
+    }
+    saia.computeVertexNormals();
+  }
+  const pano = new THREE.Mesh(saia, toon(P.palquinhoSaia, { mapa: veludoDoPalco() }));
+  pano.position.y = (H - 0.05) / 2;
+  g.add(pano);
+  // a barra de babado: meias-luas laranja em volta, em lote
+  const n = 30;
+  const babado = new THREE.InstancedMesh(new THREE.CircleGeometry(0.09, 10, 0, Math.PI), toon(P.palquinhoBarra, { doubleSide: true }), n);
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const um = new THREE.Vector3(1, 1, 1);
+  for (let k = 0; k < n; k++) {
+    const a = (k / n) * Math.PI * 2;
+    q.setFromEuler(new THREE.Euler(Math.PI, Math.atan2(Math.cos(a), Math.sin(a)), 0, 'YXZ'));
+    babado.setMatrixAt(k, m.compose(new THREE.Vector3(Math.cos(a) * (R + 0.045), H - 0.06, Math.sin(a) * (R + 0.045)), q, um));
+  }
+  babado.instanceMatrix.needsUpdate = true;
+  babado.computeBoundingSphere();
+  g.add(babado);
+  // os dois degraus na frente
+  for (const [k, alto] of [[0, H * 0.5], [1, H * 0.25]] as const) {
+    const degrau = new THREE.Mesh(new THREE.BoxGeometry(0.95 - k * 0.1, alto, 0.3), tabua);
+    degrau.position.set(0, alto / 2, R - 0.05 + 0.3 * k + 0.15);
+    g.add(degrau);
+  }
+  // a placa atrás, em dois postes de galho torto
+  const poste = toon(P.palquinhoTabua);
+  for (const lado of [-1, 1]) {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 1.6, 6), poste);
+    p.position.set(lado * 0.7, H + 0.8, -R + 0.25);
+    g.add(p);
+  }
+  const placa = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.75, 0.04), poste);
+  placa.position.set(0, H + 1.35, -R + 0.27);
+  g.add(placa);
+  const letreiro = new THREE.Mesh(new THREE.PlaneGeometry(1.42, 0.67), toon(0xffffff, { mapa: placaDoConcurso() }));
+  letreiro.position.set(0, H + 1.35, -R + 0.27 + 0.021);
+  g.add(letreiro);
+  // as duas abóboras acesas nos cantos de trás
+  const lote = new LoteDeAboboras()
+    .por({ x: -R * 0.72, y: H, z: -R * 0.55, tamanho: 'pequena', cara: 'sorriso', giro: 0.3 })
+    .por({ x: R * 0.72, y: H, z: -R * 0.55, tamanho: 'pequena', cara: 'piscando', giro: -0.3 });
+  g.add(lote.montar({ acesas: true }));
+  return fundir(g);
+}
+
+/** o pano da saia do palco: o franzido em canvas (as pregas claras e escuras) */
+function veludoDoPalco(): THREE.CanvasTexture {
+  return novaTextura('salao:saia-do-palco', 0.4, (c, s) => {
+    for (let x = 0; x < s; x++) {
+      const v = Math.round(225 + 30 * Math.sin((x / s) * Math.PI * 4));
+      c.fillStyle = `rgb(${v},${v},${v})`;
+      c.fillRect(x, 0, 1, s);
+    }
+  });
+}
+
+/**
+ * A PLAQUINHA DE VOTO: a abóborinha de papelão num palito, com a carinha
+ * sorrindo e um coraçãozinho na bochecha. Origem no pé do palito (quem
+ * segura).
+ */
+export function plaquinhaDeVoto(): THREE.Group {
+  const g = new THREE.Group();
+  g.name = 'plaquinha-de-voto';
+  const palito = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.36, 6), toon(P.palitoDeDoce));
+  palito.position.y = 0.18;
+  g.add(palito);
+  const forma = new THREE.Shape();
+  forma.absellipse(0, 0, 0.13, 0.11, 0, Math.PI * 2, false, 0);
+  const corpo = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, { depth: 0.012, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 1, curveSegments: 24 }), toon(P.plaquinhaDeVoto));
+  corpo.position.set(0, 0.44, -0.006);
+  g.add(corpo);
+  const cabinho = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.016), toon(P.coroaAboborinhaCabinho));
+  cabinho.position.set(0, 0.565, 0);
+  g.add(cabinho);
+  // a carinha (os olhos de triângulo e o sorriso) e o coração, pintados por cima
+  const cara = toon(P.aboboraOco);
+  for (const lado of [-1, 1]) {
+    const olho = new THREE.Mesh(new THREE.CircleGeometry(0.022, 3), cara);
+    olho.position.set(lado * 0.045, 0.46, 0.0115);
+    olho.rotation.z = Math.PI / 2;
+    g.add(olho);
+  }
+  const sorriso = new THREE.Mesh(new THREE.RingGeometry(0.035, 0.05, 12, 1, Math.PI * 1.15, Math.PI * 0.7), cara);
+  sorriso.position.set(0, 0.445, 0.0115);
+  g.add(sorriso);
+  const coracao = new THREE.Shape();
+  coracao.moveTo(0, -0.012);
+  coracao.bezierCurveTo(0.02, 0.004, 0.012, 0.02, 0, 0.01);
+  coracao.bezierCurveTo(-0.012, 0.02, -0.02, 0.004, 0, -0.012);
+  const bochecha = new THREE.Mesh(new THREE.ShapeGeometry(coracao, 6), toon(P.docePirulito));
+  bochecha.position.set(0.085, 0.42, 0.012);
+  g.add(bochecha);
+  return fundir(g);
 }

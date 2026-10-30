@@ -472,3 +472,17 @@ export function pinturaAcesa(mapa: THREE.Texture): THREE.MeshBasicMaterial {
   pinturas.set(mapa.uuid, mat);
   return mat;
 }
+
+/**
+ * O FLASH DA FOTO (a foto de todos no salão da abóbora): o quadrado branco
+ * que a cena põe colado na frente da câmera de cena e apaga em meio segundo.
+ * Sem luz, sem névoa, por cima de tudo (não testa profundidade). É UM só no
+ * jogo, e quem tira a foto mexe na opacidade dele.
+ */
+let materialDoFlash: THREE.MeshBasicMaterial | null = null;
+export function flashDaFoto(color: number): THREE.MeshBasicMaterial {
+  materialDoFlash ??= new THREE.MeshBasicMaterial({
+    color, transparent: true, opacity: 0, depthTest: false, depthWrite: false, fog: false,
+  });
+  return materialDoFlash;
+}

@@ -158,7 +158,7 @@ export function montarOPortaoLaranja(w: WorldBuilder): PortaoLaranja {
 
   // a fechadura acende com a cesta cheia; e a folha anda no relógio do jogo
   w.onUpdate((dt) => {
-    portao.acender(g0.stat(CHAVE_DAS_BALAS) >= BALAS_DA_PORTA);
+    portao.acender(faseDoHalloween(g0) === 'depois' || g0.stat(CHAVE_DAS_BALAS) >= BALAS_DA_PORTA);
     portao.update(dt);
   });
   return portao;

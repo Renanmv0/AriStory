@@ -2638,6 +2638,27 @@ export const PALETTE = {
   palitoDeDoce: 0xfbf3e2,
   boloDeAbobora: 0xf0902e,
   boloRecheio: 0xfff1cf,
+  /**
+   * AS COROAS DO CONCURSO (6d): o ouro e a sombra dele, as pedrinhas roxa e
+   * laranja, a pérola das pontas, o arminho de Halloween da coroa de rei (o
+   * roxo e as pintinhas), o veludo de dentro e a abóborinha da coroa de rainha
+   */
+  coroaOuro: 0xf2c14e,
+  coroaOuroSombra: 0xc9952c,
+  coroaPedraRoxa: 0x9a52e0,
+  coroaPedraLaranja: 0xff8a2a,
+  coroaPerola: 0xfff3e2,
+  arminhoRoxo: 0x8a63c4,
+  arminhoPinta: 0x2a1d3a,
+  coroaVeludo: 0x6e2a86,
+  coroaAboborinha: 0xf5861f,
+  coroaAboborinhaCabinho: 0x5b7a2c,
+  /** o palquinho do concurso: a tábua, a saia de pano e a placa */
+  palquinhoTabua: 0x7a4e33,
+  palquinhoSaia: 0x4a2a6e,
+  palquinhoBarra: 0xf39a3c,
+  plaquinhaDeVoto: 0xf5861f,
+  flashDaFoto: 0xffffff,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;
