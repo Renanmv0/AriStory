@@ -1684,7 +1684,8 @@ if (roda('casinha')) {
   }
   await j(() => window.jogo.setCameraOmbro(null));
   // a conversa de festa com zoom: a Gina
-  await j(() => window.jogo.debugPlace(-3.4, -0.3, -Math.PI * 0.75));
+  // (perto dela e longe do Noel e do Capy, que também têm o ponto deles)
+  await j(() => window.jogo.debugPlace(-4.0, -1.0, -Math.PI * 0.75));
   await page.waitForFunction(() => /Falar com a Gina/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
   await page.keyboard.press('KeyE');
   await espera(4000);
@@ -1717,7 +1718,9 @@ if (roda('casinha')) {
   });
   await page.screenshot({ path: `${OUT}-casinha-salao-doce.png` });
   const doce = await lerFalas();
-  await espera(3000);
+  // (comer leva um tempinho do relógio do jogo, e o navegador do teste é lento)
+  await page.waitForFunction(() => !window.jogo.scene.getObjectByName('casca-da-abobora').userData.salao.walter().servindo, null, { timeout: 180000 }).catch(() => {});
+  await espera(1000);
   const depoisDoDoce = await j(() => ({
     doces: window.jogo.stat('halloween:salao:doces'),
     naMao: !!window.jogo.scene.getObjectByName('doce-cupcake'),

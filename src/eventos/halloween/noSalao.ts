@@ -19,6 +19,7 @@ import { fantasiarEstellaDeAranha } from '../../world/halloween/fantasiasDosBich
 import { EnfeitesDePendurar } from '../../world/halloween/pendurados';
 import { LoteDeAboboras, type AboboraNoLote } from '../../world/halloween/abobora';
 import { portaDoSalao } from '../../world/halloween/casinhaPorDentro';
+import { fardoDeFeno } from '../../world/halloween/pecas';
 import {
   ALTO_DO_TETO, LustreDeVelas, SALAO_DA_ABOBORA, cascaDoSalao, doceDaFesta, mesaDeDoces, naParede, noSalao,
   raioDaParede, texturaDaPista, vaoDaPorta, type Doce,
@@ -95,7 +96,8 @@ const FILA = { x: -1.0, z: -1.0, passo: 1.3 };
 const LUGARES: Record<string, { x: number; z: number }> = {
   estella: { x: 2.2, z: -2.2 },
   mano: { x: 1.0, z: 0.8 },
-  cookie: { x: -2.4, z: -4.3 },
+  // (de lado da boca recortada: na frente dela, o lençol tapava o sorriso)
+  cookie: { x: -1.3, z: -4.75 },
   'jean-luc': { x: -1.6, z: 2.4 },
   girafa: { x: -4.6, z: -0.9 },
   capy: { x: -3.4, z: -2.4 },
@@ -231,7 +233,7 @@ export function montarOSalao(w: WorldBuilder): void {
     lampadas.instanceColor.needsUpdate = true;
   };
 
-  // as abóboras acesas no pé da parede e na mesa (e as mesmas apagadas, no escuro)
+  // as abóboras acesas no pé da parede (e as mesmas apagadas, no escuro)
   const aboboras: AboboraNoLote[] = [];
   const caras = ['sorriso', 'susto', 'piscando', 'dentinho'] as const;
   [175, 190, 205, 216, 234, 246, 260, 315, 330].forEach((graus, i) => {
@@ -247,11 +249,28 @@ export function montarOSalao(w: WorldBuilder): void {
     apagadas.por(a);
     acesas.por(a);
   }
+  for (const a of aboboras) w.blockCircle(a.x, a.z, 0.3);
+  // na beira de cá (a metade sem parede, perto da câmera): dois fardos de feno
+  // de sentar, baixos, e abóboras acesas em volta deles — nada alto, nada tapa
+  for (const graus of [62, 104]) {
+    const t = THREE.MathUtils.degToRad(graus);
+    const p = noSalao(t, 5.75);
+    const fardo = fardoDeFeno();
+    w.add(w.place(fardo, p.x, 0, p.z, Math.atan2(-p.x, -p.z)));
+    w.blockCircle(p.x, p.z, 0.6);
+  }
+  for (const [graus, r] of [[45, 6.1], [83, 6.25], [124, 6.0]] as const) {
+    const t = THREE.MathUtils.degToRad(graus);
+    const p = noSalao(t, r);
+    const a: AboboraNoLote = { x: p.x, z: p.z, giro: Math.atan2(-p.x, -p.z), tamanho: 'media', cara: 'sorriso' };
+    apagadas.por(a);
+    acesas.por(a);
+    w.blockCircle(a.x, a.z, 0.3);
+  }
   const grupoApagadas = apagadas.montar();
   const grupoAcesas = acesas.montar({ acesas: true });
   w.add(grupoApagadas);
   w.add(grupoAcesas);
-  for (const a of aboboras) w.blockCircle(a.x, a.z, 0.3);
 
   // ------------------------------------------------------------ a mesa de doces
   const mesa = mesaDeDoces();
