@@ -1359,7 +1359,11 @@ if (roda('casinha')) {
 
   /** chega na frente do portão e aperta E; devolve o que foi dito (passando as falas) */
   const abrir = async () => {
+    // (sai e volta: o E logo depois da conversa anterior fechar não é lido)
+    await j(() => window.jogo.debugPlace(-8.5, -22.5, -Math.PI * 0.75));
+    await espera(1200);
     await j(() => window.jogo.debugPlace(-11.2, -25.5, -Math.PI * 0.75));
+    await espera(1200);
     await page.waitForFunction(() => /porta laranja/i.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
     await page.keyboard.press('KeyE');
     await page.waitForFunction(() => !!document.querySelector('.dialogue.show'), null, { timeout: 60000 }).catch(() => {});
