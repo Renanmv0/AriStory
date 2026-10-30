@@ -40,6 +40,11 @@ const PECAS = [
   ['cavalete-de-pocoes', 'villa-lobos', FESTA],
   ['canteiro-de-aboboras', 'villa-lobos', FESTA],
   ['bacia-de-macas', 'villa-lobos', FESTA],
+  // a Casinha da Abóbora (a 6a): o portão laranja e a cerquinha no parque, e a
+  // casinha torta na clareira (o mesmo save da festa)
+  ['portao-laranja', 'villa-lobos', FESTA],
+  ['cerquinha-torta', 'villa-lobos', FESTA],
+  ['casinha-torta', 'casinha-da-abobora', FESTA],
   ['quiosque', 'clube'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],

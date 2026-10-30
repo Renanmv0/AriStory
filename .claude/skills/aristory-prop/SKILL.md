@@ -1107,6 +1107,59 @@ dos testes é `window.aristoryHalloween` (`world/halloween/kit.ts`).
   nas pontas); as maçãs boiam num lote (cor por cópia), com o caixote ao
   lado no mesmo lote e a marolinha em volta de cada uma.
 
+## A Casinha da Abóbora (`world/halloween/casinhaDaAbobora.ts`)
+
+O final do Halloween (`docs/HALLOWEEN.md` §7.1). As peças da clareira e do
+portão, e o que serve para a próxima:
+
+- **O portão laranja** (`PortaoLaranja`, classe com `update`): a folha é
+  forma de alto em arco extrudada com as tábuas em canvas (o UV da tampa já
+  vem em metros), e mora num grupo com nome (`folha-do-portao`) com a
+  dobradiça no mourão — `abrir(sim)` anda no relógio do jogo, devagar no
+  começo e no fim. A FECHADURA DE ABÓBORA são duas abóborinhas do lote
+  (apagada e acesa) em grupos com nome, trocadas por `acender(sim)` (trocar
+  material em malha juntada não pode). Os mourões de pedra (canvas de
+  pedras arredondadas, `uvDeParede` na `quina`) levam uma abóbora acesa em
+  cima, e o ARCO DE GALHO SECO nasce na face de DENTRO deles, abaixo das
+  abóboras (nascendo no topo, atravessava as duas): três galhos torcidos
+  (`galho()`, tubo que afina, exportado), gravetos com forquilha, as folhas
+  de outono em lote (cor por cópia) e as luzinhas presas na curva
+  (`acesoPorVertice` com branco nos vértices: a cor por cópia pinta;
+  `toon` com `glow` saía tudo branco). `userData.portao` é o atalho do teste.
+- **A cerquinha torta** (`cerquinhaTorta(comprimento)`): ripa de ponta
+  extrudada, cada uma de uma altura e um tico inclinada, em dois roxos, as
+  travessas atrás. A cena a põe de `a` até `b` com
+  `giro = atan2(−(b.z − a.z), b.x − a.x)` (o `+X` da peça vai de `a` para `b`).
+- **O mato** (`matoDenso(largura, fundo, semente, densidade, porte)`):
+  `arbustoFlorido` com florzinhas de outono numa grade torta, o capim em
+  lote (lâmina que enverga, verde e seco) e galhos secos espetados. `porte`
+  é o tamanho: atrás de portão, ALTO (fecha a vista pelo arco); na beira do
+  lado da câmera, BAIXO (não tapa a dupla). Arbusto grande perto demais do
+  portão cresce POR CIMA da folha: o mato fica um metro atrás do plano dela.
+- **A casinha torta** (`CasinhaTorta`, classe com `update`): empena para a
+  frente, a porta em arco é RECORTE no contorno da parede (ela toca a borda
+  de baixo), as janelas redondas são furo com vidro aceso por trás e a cruz
+  do caixilho, a vela (com a chama tremendo) fica no vão entre o vidro e o
+  caixilho (atrás do vidro aceso, sumia). O telhado são duas águas de escama
+  em canvas (a meia-lua apontando água abaixo: o `v` cresce para a beira),
+  cedendo no meio; a chaminé de pedra tomba para o outro lado e solta
+  fumacinha em lote. O TORTO é um cisalhamento (`makeShear`) passado na
+  geometria de cada malha (`entortar`) antes da `fundir()` — a porta, num
+  grupo com nome, tomba junto; os lotes só andam com o ponto, e o que fica
+  fora do corpo (halo, boca da chaminé) leva a conta à mão.
+- **O caminho de pedrinhas** (`caminhoDePedrinhas(pontos)`): icosaedro
+  amassado pela posição, em lote, de dois em dois ao longo da curva.
+- **A névoa rente ao chão** (`NevoaBaixa`): discos deitados com o material
+  `nevoa()` (`core/materials.ts`: o degradê da `luzNoChao`, mas MISTURADO —
+  embaça sem acender), derivando devagar. Forte demais, a câmera de sempre
+  (a 60 m) vê só lilás: 0,13 de força basta.
+
+A abóbora gigante da casa é a do lote do parque (`LoteDeAboboras`, com
+`raio: 4.2`): os gomos, a cara, o cabinho e a folha crescem juntos.
+
+O peso da clareira na câmera de sempre: ~430–480 desenhos e ~355–380 mil
+triângulos, quase tudo dos arbustos (cada `arbustoFlorido` é três lotes).
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

@@ -1,5 +1,6 @@
 import type { SceneDef } from '../core/types';
 import { casa } from './casa';
+import { casinhaDaAbobora } from './casinhaDaAbobora';
 import { lojinha } from './lojinha';
 import { clube } from './clube';
 import { escola } from './escola';
@@ -36,6 +37,9 @@ export const SCENES: Record<string, SceneDef> = {
   // o mundo dentro do computador do Ari: a área de teste das skills de
   // Three.js. Só se chega pela tela da escrivaninha do quarto
   [laboratorio.id]: laboratorio,
+  // o final do especial de Halloween: a clareira atrás do portão laranja do
+  // Villa Lobos. Só se chega pelo portão, na noite da festa (docs/HALLOWEEN.md §7.1)
+  [casinhaDaAbobora.id]: casinhaDaAbobora,
 };
 
 export const CENA_INICIAL = casa.id;

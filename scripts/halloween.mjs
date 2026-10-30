@@ -42,6 +42,13 @@
  *             a pista indo para o mapinha (a pergunta e o tique), a última
  *             parada com a pista do final e a conta da porta, e as abóboras
  *             escondidas (pegar, a bala, sumir e continuar sumida no F5)
+ *   SO=casinha a etapa 6a: o portão laranja na ponta do tapume da praça da
+ *             roda (trancado antes da pista do Noel, a conta da porta com a
+ *             cesta curta, a fechadura acendendo com 25 balas, e o Walter
+ *             sumindo por ele — a folha abre), e a clareira da Casinha da
+ *             Abóbora (a abóbora gigante, a casinha torta, o caminho, a
+ *             névoa, o comentário de quem chega, bater na porta, voltar pro
+ *             parque na frente do portão, e o portão abrindo direto depois)
  *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre, nenhuma peça do evento, e a
  *             casa, o parque, o clube, a escola, a estufa, o Mania e o quarto
@@ -1326,6 +1333,141 @@ if (roda('caca')) {
   await naFaseConvite('villa-lobos');
   const convite = await j(() => ({ cesta: !!document.querySelector('.cesta-de-balas.show'), lote: window.jogo.scene.getObjectByName('aboboras-escondidas')?.visible ?? null }));
   ok(!convite.cesta && !convite.lote, `no convite (o pôr do sol), nem cesta nem abóbora escondida (${JSON.stringify(convite)})`);
+}
+
+// ==================================================================== casinha
+if (roda('casinha')) {
+  console.log('\ncasinha: o portão laranja atrás da roda e a clareira da Casinha da Abóbora (§7.1, a 6a)');
+  await naFaseConvite('villa-lobos', ['halloween:festa', 'cookie-apresentado', 'halloween:viu:walter-indo']);
+  const cenaAtual = () => j(() => window.jogo.current.def.id);
+  const doPortao = () => j(() => {
+    const o = window.jogo.scene.getObjectByName('portao-laranja');
+    const p = o?.userData.portao;
+    return o ? { x: +o.position.x.toFixed(2), z: +o.position.z.toFixed(2), aberto: +p.aberto.toFixed(2), acesa: p.acesa } : null;
+  });
+  const antes = await doPortao();
+  ok(!!antes && Math.abs(antes.x + 12.1) < 0.01 && Math.abs(antes.z + 26.4) < 0.01 && !antes.acesa && antes.aberto === 0,
+    `o portão laranja na ponta do tapume, fechado e com a fechadura apagada (${JSON.stringify(antes)})`);
+  // a foto de longe (a câmera de sempre) e de perto
+  await j(() => window.jogo.debugPlace(-9.6, -23.8, Math.PI * 1.25));
+  await espera(2500);
+  await page.screenshot({ path: `${OUT}-casinha-portao-longe.png` });
+  await j(() => { const T = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new T(-8.6, 2.6, -22.4), new T(-12.1, 1.2, -26.4)); });
+  await espera(2500);
+  await page.screenshot({ path: `${OUT}-casinha-portao-perto.png` });
+  await j(() => window.jogo.setCameraOmbro(null));
+
+  /** chega na frente do portão e aperta E; devolve o que foi dito (passando as falas) */
+  const abrir = async () => {
+    await j(() => window.jogo.debugPlace(-11.2, -25.5, -Math.PI * 0.75));
+    await page.waitForFunction(() => /porta laranja/i.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+    await page.keyboard.press('KeyE');
+    await page.waitForFunction(() => !!document.querySelector('.dialogue.show'), null, { timeout: 60000 }).catch(() => {});
+    const ditos = [];
+    for (let i = 0; i < 30; i++) {
+      const t = await j(() => ({ show: !!document.querySelector('.dialogue.show'), digitando: window.jogo.ui.typing !== null, texto: document.querySelector('.dialogue.show .text')?.textContent ?? '' }));
+      if (!t.show) break;
+      if (t.digitando) { await page.keyboard.press('KeyE'); await espera(300); continue; }
+      ditos.push(t.texto);
+      await page.keyboard.press('KeyE');
+      await espera(400);
+    }
+    return ditos.join(' ‖ ');
+  };
+  // antes da pista do Noel: trancado
+  const trancado = await abrir();
+  ok(/trancado/i.test(trancado) && (await cenaAtual()) === 'villa-lobos', `antes da pista, trancado (${trancado.slice(0, 90)})`);
+  // com a pista e a cesta curta: a conta da porta
+  await j(() => { window.jogo.bump('halloween:caca', 10); window.jogo.bump('halloween:balas', 12); });
+  const curta = await abrir();
+  ok(/Faltam 13/.test(curta) && (await cenaAtual()) === 'villa-lobos', `com a pista e 12 balas, a conta da porta (${curta.slice(0, 110)})`);
+  // a cesta cheia: a fechadura acende
+  await j(() => window.jogo.bump('halloween:balas', 15));
+  await page.waitForFunction(() => window.jogo.scene.getObjectByName('portao-laranja')?.userData.portao.acesa === true, null, { timeout: 30000 }).catch(() => {});
+  ok((await doPortao())?.acesa === true, 'com 27 balas a fechadura de abóbora acende');
+
+  // o Walter some pelo portão (a primeira dica do final): a folha abre quando ele passa
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(5); o.userData.naFesta.sairAgora(); });
+  let abriuParaOWalter = 0;
+  for (let i = 0; i < 120; i++) {
+    const r = await j(() => {
+      let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; });
+      return { rumo: o.userData.naFesta.rumo(), x: o.position.x, z: o.position.z, aberto: window.jogo.scene.getObjectByName('portao-laranja').userData.portao.aberto };
+    });
+    abriuParaOWalter = Math.max(abriuParaOWalter, r.aberto);
+    if (r.rumo === 'sumido') {
+      ok(Math.hypot(r.x + 13.09, r.z + 27.39) < 0.3, `o Walter some atrás do portão, no mato (${r.x.toFixed(2)}, ${r.z.toFixed(2)})`);
+      break;
+    }
+    await espera(500);
+  }
+  ok(abriuParaOWalter > 0.5, `o portão abre quando o Walter passa (abriu ${abriuParaOWalter.toFixed(2)})`);
+  await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.chegar(); o.userData.naFesta.ritmo(1); });
+
+  // abrir de verdade: a dupla atravessa para a clareira
+  const cheia = await abrir();
+  await page.waitForFunction(() => window.jogo.current?.def?.id === 'casinha-da-abobora', null, { timeout: 60000 }).catch(() => {});
+  await espera(2500);
+  ok(/acendeu/.test(cheia) && (await cenaAtual()) === 'casinha-da-abobora' && (await flag('halloween:casinha:passou-do-portao')),
+    `com a cesta cheia o portão abre e a dupla chega na clareira (${cheia.slice(0, 80)})`);
+  const clareira = await j(() => {
+    const g = window.jogo;
+    const etiquetas = new Set();
+    g.scene.traverse((o) => { if (o.userData?.peca) etiquetas.add(o.userData.peca); });
+    const p = g.playerPosition();
+    return { etiquetas: [...etiquetas], x: +p.x.toFixed(2), z: +p.z.toFixed(2) };
+  });
+  const precisa = ['abobora-da-casa', 'casinha-torta', 'caminho-de-pedrinhas', 'nevoa-baixa', 'portao-laranja', 'cerquinha-torta'];
+  ok(precisa.every((e) => clareira.etiquetas.includes(e)) && Math.hypot(clareira.x + 9.9, clareira.z - 2.5) < 0.5,
+    `a clareira: a abóbora gigante, a casinha torta, o caminho, a névoa, o portão e a cerquinha; a dupla chega na frente do portão (${precisa.filter((e) => !clareira.etiquetas.includes(e)).join(',') || 'tudo'} · ${clareira.x}, ${clareira.z})`);
+  await page.screenshot({ path: `${OUT}-casinha-chegada.png` });
+  // o comentário de quem chega, andando para dentro
+  await j(() => window.jogo.debugPlace(-6.5, 3.0, Math.PI / 2));
+  await page.waitForFunction(() => /abóbora/i.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  const chegou = await textoDoBalao();
+  ok(/casinha|abóbora/i.test(chegou), `quem chega comenta a casinha (${chegou.slice(0, 70)})`);
+  await passarFalas();
+  // as fotos: a câmera de sempre no caminho, de cima, e a casinha de perto
+  await j(() => window.jogo.debugPlace(-2, 2, Math.PI / 4));
+  await espera(3000);
+  await page.screenshot({ path: `${OUT}-casinha-caminho.png` });
+  const peso = await j(() => ({ calls: window.jogo.renderer.info.render.calls, triangulos: window.jogo.renderer.info.render.triangles }));
+  console.log(`       (o peso da clareira na câmera de sempre: ${peso.calls} desenhos, ${peso.triangulos} triângulos)`);
+  for (const [nome, de, para] of [['de-cima', [14, 26, 18], [-1, 0, -3]], ['casinha-perto', [5.2, 2.4, 3.0], [1.5, 1.6, -4.6]]]) {
+    await j(([de, para]) => { const T = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new T(...de), new T(...para)); }, [de, para]);
+    await espera(2500);
+    await page.screenshot({ path: `${OUT}-casinha-${nome}.png` });
+  }
+  await j(() => window.jogo.setCameraOmbro(null));
+  // bater na porta (a 6b abre)
+  await j(() => {
+    const g = window.jogo;
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:casinha:porta');
+    g.debugPlace(it.x, it.z, Math.PI);
+  });
+  await page.waitForFunction(() => /Bater na porta/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => /Toc/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  ok(/Toc/.test(await textoDoBalao()), 'bater na porta da casinha: "Toc, toc, toc…"');
+  await passarFalas();
+  await espera(1500);
+  await passarFalas();
+  // voltar pro parque: na frente do portão laranja, de costas para ele
+  await j(() => {
+    const g = window.jogo;
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:clareira:voltar');
+    g.debugPlace(it.x + 0.2, it.z, -Math.PI / 2);
+  });
+  await page.waitForFunction(() => /Voltar pro parque/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.jogo.current?.def?.id === 'villa-lobos', null, { timeout: 60000 }).catch(() => {});
+  await espera(2500);
+  const volta = await j(() => { const p = window.jogo.playerPosition(); return { cena: window.jogo.current.def.id, x: +p.x.toFixed(2), z: +p.z.toFixed(2) }; });
+  ok(volta.cena === 'villa-lobos' && Math.hypot(volta.x + 11.3, volta.z + 25.6) < 0.6, `voltar pro parque: na frente do portão (${JSON.stringify(volta)})`);
+  // e daí em diante o portão abre direto
+  await abrir();
+  await page.waitForFunction(() => window.jogo.current?.def?.id === 'casinha-da-abobora', null, { timeout: 60000 }).catch(() => {});
+  ok((await cenaAtual()) === 'casinha-da-abobora', 'a segunda vez o portão abre direto');
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');

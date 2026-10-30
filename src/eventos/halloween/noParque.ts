@@ -15,12 +15,14 @@ import {
   InflaveisNoVento, aboboraInflavel, aranhaInflavel, fantasmaInflavel, gatoInflavel, morcegoInflavel,
 } from '../../world/halloween/inflaveis';
 import { giroDeMatiz, juntas, repintar, trocaDeCores } from '../../world/halloween/repintar';
-import { NOITE, POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco, type MomentoDoCeu } from '../../world/noite';
+import { POR_DO_SOL, TARDE_DOURADA, luzDoMomento, misturarMomentos, momentoEmBranco } from '../../world/noite';
 import { BandoDeMorcegos } from '../../world/halloween/morcegos';
 import { BALCAO_DO_WALTER, BarracaDoWalter } from '../../world/halloween/barracaDoWalter';
 import { fantasiarQuemEstaAqui } from './fantasiados';
 import { pocaDeLuz } from '../../world/furniture';
 import { ARI, RENAN } from '../../characters/cast';
+import { montarOPortaoLaranja } from './naCasinha';
+import { NOITE_DA_FESTA } from './ceu';
 import { montarPostosDaFesta } from './naFesta';
 import { eventoLiberado, faseDoHalloween, parqueEnfeitado } from './fase';
 import { RECADOS_DO_PARQUE } from './recados';
@@ -688,7 +690,7 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   // na cor de vela. Nenhuma luz nova.
   const bando = deNoite ? new BandoDeMorcegos(18, { raio: [5, 11], altura: [7, 15] }) : null;
   if (deNoite && bando) {
-    const noiteDaFesta: MomentoDoCeu = { ...NOITE, dirSol: [13, 20, 11], sol: P.luarDaFesta, forcaSol: 0.52, forcaAmbiente: 0.72 };
+    const noiteDaFesta = NOITE_DA_FESTA;
     const luzes = w.root.getObjectByName('luzes-dos-postes');
     const dosPostes = luzes?.userData.luzes as { noite: number } | undefined;
     luzes?.traverse((o) => {
@@ -716,8 +718,10 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   // (o clube e a escola), com a conversa de câmera chegando perto (§2.4.1, C).
   if (deNoite) {
     fantasiarQuemEstaAqui(w);
+    // o portão laranja atrás da roda (a Casinha da Abóbora, §7.1): é por ele que o Walter some
+    const portao = montarOPortaoLaranja(w);
     montarPostosDaFesta(w, pecas, {
-      aboboras, pendurados,
+      aboboras, pendurados, portao,
       barraca: { peca: barraca, ...BARRACA_DO_WALTER, recados: recadosDoWalter },
     });
   }

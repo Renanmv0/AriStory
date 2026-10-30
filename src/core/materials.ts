@@ -272,6 +272,25 @@ export function luzNoChao(color: number, forca = 0.55): THREE.MeshBasicMaterial 
   return mat;
 }
 
+/**
+ * A NÉVOA RENTE AO CHÃO (a clareira da Casinha da Abóbora): o mesmo degradê
+ * redondo da `luzNoChao`, mas MISTURADO, e não somado — névoa não acende o
+ * que está embaixo, só embaça. Sem gravar profundidade, para os discos se
+ * sobreporem macios.
+ */
+const nevoas = new Map<string, THREE.MeshBasicMaterial>();
+export function nevoa(color: number, forca = 0.25): THREE.MeshBasicMaterial {
+  const key = `${color}|${forca}`;
+  const hit = nevoas.get(key);
+  if (hit) return hit;
+  const mat = new THREE.MeshBasicMaterial({
+    color, map: degradeDeLuz(), transparent: true, opacity: forca,
+    depthWrite: false, fog: false,
+  });
+  nevoas.set(key, mat);
+  return mat;
+}
+
 const brilhos = new Map<string, THREE.SpriteMaterial>();
 export function brilhoDeLuz(color: number, forca = 0.8): THREE.SpriteMaterial {
   const key = `${color}|${forca}`;

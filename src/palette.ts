@@ -2495,6 +2495,52 @@ export const PALETTE = {
   bruxoCabo: 0x8b5b34,
   bruxoPalha: 0xe2b95c,
   bruxoCordao: 0xb63a4c,
+
+  // ------------------------------- Halloween: a Casinha da Abóbora (etapa 6)
+  /**
+   * O PORTÃO LARANJA atrás da roda (o fim da caça): a tábua pintada de
+   * laranja (e a fresta queimada entre elas), o ferro preto-roxo das
+   * dobradiças, os mourões de pedra lilás, o arco de galho seco por cima e a
+   * cerquinha torta roxa que fecha o mato dos dois lados
+   */
+  portaoLaranja: 0xec8a34,
+  portaoLaranjaFundo: 0xa9521c,
+  portaoLaranjaFerro: 0x2f2638,
+  mouraoPedra: 0x9a90a8,
+  mouraoPedraEscura: 0x6f6680,
+  galhoSeco: 0x5e4636,
+  galhoSecoClaro: 0x86684c,
+  cerquinhaRoxa: 0x5e4876,
+  cerquinhaRoxaClara: 0x7d6598,
+  /** o mato do portão e da clareira: o arbusto fundo, o capim e o capim seco */
+  matoEscuro: 0x2e5233,
+  matoVerde: 0x41703f,
+  capim: 0x6d8c45,
+  capimSeco: 0xb09656,
+  /**
+   * A CLAREIRA DA CASINHA: o chão de grama de noite, as pedrinhas do
+   * caminho, a névoa lilás rente ao chão e a fumacinha da chaminé
+   */
+  chaoDaClareira: 0x5f8f45,
+  pedrinhaDoCaminho: 0xc2b8ad,
+  pedrinhaDoCaminhoEscura: 0x948a80,
+  nevoaDaClareira: 0xd9cff2,
+  fumacaDaChamine: 0xd6d0e0,
+  /**
+   * A CASINHA TORTA grudada na abóbora gigante: a tábua roxa-acinzentada
+   * (e a fresta), a telha de escama roxa-noite, a pedra da chaminé, a porta
+   * de madeira escura com a aldrava de morcego, e o vidro da janela com a
+   * vela acesa
+   */
+  casinhaMadeira: 0x76638a,
+  casinhaMadeiraFresta: 0x4c3d5c,
+  casinhaTelha: 0x40305e,
+  casinhaTelhaClara: 0x5a4580,
+  casinhaPedra: 0xa39789,
+  casinhaPedraEscura: 0x7b7067,
+  casinhaPorta: 0x6b412b,
+  casinhaPortaEscura: 0x4a2b1d,
+  casinhaJanela: 0xffcf6e,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

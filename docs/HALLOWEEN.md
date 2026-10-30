@@ -35,7 +35,7 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapas 1 a 5 construídas, escondidas.** O filme no
+**Estado: etapas 1 a 5 e a parte 6a construídas, escondidas.** O filme no
 sofá e a carta da Estella (§2.1), o parque no pôr do sol, enfeitado e vazio
 (§4.1), o presente da Estella na boutique (§2.3.1), a noite da festa com o
 ônibus chegando e todo mundo fantasiado no posto (§2.4.1), e a **caça de
@@ -45,8 +45,11 @@ uma inteira a cada duas paradas (§5.2, a parte 5b), estão no jogo, mas só
 aparecem com `?halloween` na URL (`src/eventos/halloween/`,
 `src/world/halloween/`, `src/world/fantasias.ts`,
 `src/world/fantasiasDaCaca.ts`, `scripts/halloween.mjs`,
-`scripts/fantasias.mjs`). A próxima é a **etapa 6**: a Casinha da Abóbora,
-já planejada com o Renan (§7.1).
+`scripts/fantasias.mjs`). Da **etapa 6** (a Casinha da Abóbora, §7.1) está
+construída a **6a**: o portão laranja no parque e a clareira de fora com a
+Casinha (`eventos/halloween/naCasinha.ts`, `scenes/casinhaDaAbobora.ts`,
+`world/halloween/casinhaDaAbobora.ts`, `SO=casinha` no teste). A próxima é a
+**6b**: o corredor e a cozinha.
 
 **Onde moram as fantasias da caça (5b):** as trinta peças em
 `world/fantasiasDaCaca.ts` (o kit vem do `world/fantasias.ts` e da
@@ -1450,20 +1453,41 @@ só ganha o portão, por uma chamada na camada da festa (`naFesta.ts`).
 
 #### A. O portão das 25 balas (no parque)
 
-Na cerca branca que fecha a praça da roda contra o mato (`x = −11`, perto
-de `z = −20`, onde o Walter some), só na noite da festa: um **portãozinho
-de madeira laranja**, arredondado em cima, com a **fechadura em forma de
-abóbora** (a carinha acende quando a cesta passa de 25), duas lanterninhas
-de abóbora nos mourões e uma plaquinha torta "🎃 só com a cesta cheia".
+**Construído (6a).** Na ponta norte do tapume que fecha a praça da roda
+(`x = −11`), em `(−12,1; −26,4)`, VIRADO PARA A CÂMERA (a diagonal), só na
+noite da festa e depois dela: um **portãozinho de tábua laranja** de alto em
+arco, com as ferragens pretas, a **fechadura em forma de abóbora** (ela
+ACENDE quando a cesta passa de 25), a argola de puxar, dois **mourões de
+pedra com uma abóbora acesa em cima**, o **arco de galho seco** com folhas
+de outono e luzinhas, e a plaquinha "Só com a cesta cheia!" pregada no
+mourão. Dos dois lados, a **cerquinha torta roxa** (até a ponta do tapume e
+até o mato), e atrás dele o **mato alto** (arbustos com florzinhas de
+outono, capim e galhos secos). **O Walter some por ele**: a folha abre
+quando ele chega, ele entra no mato, e ela fecha (era bem atrás da roda;
+mudou junto).
+
+Por que ali: bem atrás da roda o aro e as gôndolas tapam tudo na câmera de
+sempre, e mais à esquerda os pinheiros do piquenique tapam o resto; rente ao
+tapume e de lado, as gôndolas de baixo cobriam o portão. Na ponta, de frente
+para a câmera, ele se lê inteiro.
 
 - **Antes da pista do Noel**: "Tá trancado… E tem uma fechadura de
   abóbora." / "Deve ter a ver com o mapinha.";
 - **com a pista e menos de 25 balas**: a conta que já existe (faltam N, e
   as abóboras escondidas);
-- **com a pista e 25 ou mais**: "Abrir a porta laranja" → a fechadura gira,
-  a carinha sorri, a porta abre rangendo e a dupla passa (o véu de sempre).
+- **com a pista e 25 ou mais**: "A abóbora da fechadura acendeu!" / "A
+  cesta tá cheia… Vamos ver o que tem do outro lado." → a folha abre e a
+  dupla passa (o véu de sempre). Daí em diante (e depois da festa) ele abre
+  direto. Da clareira, "Voltar pro parque" pelo mesmo portão.
 
 #### B. A clareira de fora
+
+**Construída (6a)**, como está abaixo, com dois ajustes: a cara da abóbora
+gigante fica APAGADA (só a casinha da frente tem luz: a vela na janela
+redonda e a lanterna da porta), e as luzinhas vão de árvore em árvore pelo
+fundo — entre as estacas de lanterna do caminho, o fio passava por cima da
+cabeça de quem anda. A porta da casinha, por enquanto, é "Bater na porta"
+(ninguém atende; a 6b abre).
 
 Uma clareira pequena no mato atrás da roda (o cenário novo, de noite, com o
 céu da festa): um **caminho de pedrinhas** entre **abóboras gigantes** (o
@@ -1686,7 +1710,7 @@ aprovar antes da próxima.
 | **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** ✅ | **a noite e o ônibus** *(construída, escondida)* | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** ✅ | **doces ou travessuras** *(construída, escondida)* | **5a**: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
-| **6** | **a Casinha da Abóbora** *(planejada, §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
+| **6** | **a Casinha da Abóbora** *(6a construída, escondida; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** | **o fechamento** | a foto da festa virando memória no quadro, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |
 
