@@ -21,6 +21,7 @@ import { CarrinhoDePocoes, PocaoBorbulhando, cavaleteDePocoes } from '../../worl
 import { BaciaDeMacas, canteiroDeAboboras } from '../../world/halloween/pecasDaFesta';
 import type { BarracaDoWalter } from '../../world/halloween/barracaDoWalter';
 import type { OnibusDaCidade } from '../../world/onibusDaCidade';
+import type { PortaoLaranja } from '../../world/halloween/casinhaDaAbobora';
 import { PALETTE as P } from '../../palette';
 import { ARI, RENAN } from '../../characters/cast';
 import { fantasiarQuemEstaAqui } from './fantasiados';
@@ -30,6 +31,7 @@ import type { PecasDoParque } from './noParque';
 import { FLAG_DO_ONIBUS, faseDoHalloween } from './fase';
 import { chegadaDoOnibus } from './chegadaDoOnibus';
 import { montarACaca, type CacaDaFesta } from './caca';
+import { ATRAS_DO_PORTAO, FRENTE_DO_PORTAO, PORTAO_NO_PARQUE } from './naCasinha';
 
 /*
  * OS POSTOS DA FESTA (`docs/HALLOWEEN.md`, §2.4.1, C): na noite da festa
@@ -130,6 +132,8 @@ const fixas = (primeira: readonly Fala[], depois: ReadonlyArray<readonly Fala[]>
 export interface KitDaFesta {
   aboboras: LoteDeAboboras;
   pendurados: EnfeitesDePendurar;
+  /** o portão laranja atrás da roda (a Casinha da Abóbora): o Walter some por ele */
+  portao: PortaoLaranja;
   /** a barraquinha de cachorro-quente do Walter, onde ela está, e os dois recados pendurados nela */
   barraca: {
     peca: BarracaDoWalter;
@@ -294,7 +298,8 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
   const anda = (ate: THREE.Vector3): Etapa => ({ ate, pulo: false });
   const pula = (ate: THREE.Vector3): Etapa => ({ ate, pulo: true });
   const [doCaixote, naPassagem, noChao] = BW.peca.saida.map(daBarraca);
-  const ATE_A_RODA = [[-9.35, -12.0], [-10.2, -15.2], [-10.2, -24.0], [-9.2, -30.0], [-7.8, -33.5]]
+  // rente ao tapume até a ponta dele, e pelo PORTÃO LARANJA para dentro do mato (§7.1)
+  const ATE_A_RODA = [[-9.35, -12.0], [-10.2, -15.2], [-10.2, -24.0], [FRENTE_DO_PORTAO.x, FRENTE_DO_PORTAO.z], [ATRAS_DO_PORTAO.x, ATRAS_DO_PORTAO.z]]
     .map(([x, z]) => new THREE.Vector3(x, 0, z));
   const IDA: Etapa[] = [pula(doCaixote), anda(naPassagem), pula(noChao), ...ATE_A_RODA.map(anda)];
   const VOLTA: Etapa[] = [
@@ -348,6 +353,9 @@ export function montarPostosDaFesta(w: WorldBuilder, pecas: PecasDoParque, kit: 
       BW.recados.onibus.visible = rumo === 'fora';
       BW.recados.voltaJa.visible = rumo === 'indo' || rumo === 'sumido' || rumo === 'voltando';
     }
+    // o portão laranja abre quando ele chega perto dele (indo ou voltando), e fecha depois
+    kit.portao.abrir((rumo === 'indo' || rumo === 'voltando') && walter.group.visible
+      && Math.hypot(walter.x - PORTAO_NO_PARQUE.x, walter.z - PORTAO_NO_PARQUE.z) < 1.6);
     if (rumo === 'posto') {
       // não sai no meio de uma conversa (nem a dele nem a de ninguém)
       if (!falando) ateSair -= dt;

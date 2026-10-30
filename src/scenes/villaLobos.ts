@@ -96,6 +96,8 @@ export const villaLobos: SceneDef = {
     clube: { x: 32.4, z: 13, facing: Math.PI * 1.5 },
     // saindo da loja: um passo na calcada, de costas para a vitrine
     'da-lojinha': { x: -33.6, z: -16.5, facing: Math.PI / 2 },
+    // voltando da Casinha da Abóbora (Halloween): na frente do portão laranja, de costas para ele
+    'do-portao-laranja': { x: -11.3, z: -25.6, facing: Math.PI / 4 },
   },
 
   build(w) {

@@ -61,6 +61,21 @@ Duas saídas, e **nenhuma delas é fazer a peça sumir**:
    a volta acha; quem não gira, não acha. Só nunca deixe o caminho principal do
    jogo depender de uma coisa escondida assim.
 
+**Roda gigante também tapa, e o aro "vazado" não salva**: o portão laranja
+do Halloween nasceu bem atrás da roda do Villa Lobos (onde o Walter sumia) e
+sumiu atrás das gôndolas de baixo; mais à esquerda, os pinheiros do
+piquenique tapavam. Ele foi para a ponta do tapume, VIRADO para a diagonal
+da câmera (de lado, era uma risca). Para achar o lugar: foto da câmera de
+sempre com a dupla no ponto (`debugPlace`), e não a planta vista de cima.
+
+**Cena NOVA de evento** (a clareira da Casinha da Abóbora,
+`scenes/casinhaDaAbobora.ts`): a cena só chama `montarAClareira(w)` de
+`eventos/halloween/naCasinha.ts`, e o céu da festa entra no primeiro quadro
+(`g.luzDoCeu(luzDoMomento(NOITE_DA_FESTA))`, `eventos/halloween/ceu.ts`).
+Sem `fogNear` curto no `ambient`: a câmera fica a 60 m do alvo, e névoa a
+30 m deixava tudo lilás. Árvore só nas beiras do FUNDO (`−X`, `−Z`); na
+beira do lado da câmera, mato baixo — árvore ali tapa quem anda na beira.
+
 **Peça translúcida está descartada** — chegou a existir aqui um prédio que
 desbotava quando a dupla passava atrás, e o Renan cortou: a câmera gira, e o
 que é para ser descoberto tem que ser descoberto jogando, não entregue por um
