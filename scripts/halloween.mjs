@@ -1345,6 +1345,26 @@ if (roda('caca')) {
 if (roda('casinha')) {
   console.log('\ncasinha: o portão laranja atrás da roda e a clareira da Casinha da Abóbora (§7.1, a 6a)');
   await naFaseConvite('villa-lobos', ['halloween:festa', 'cookie-apresentado', 'halloween:viu:walter-indo']);
+  /** passa as falas de agora, lendo o que foi dito */
+  const lerFalas = async (limite = 20) => {
+    const ditos = [];
+    // (entre uma fala e outra pode haver uma pausa — a batida na porta, o susto —: só para depois de uns segundos sem balão)
+    let semBalao = 0;
+    for (let i = 0; i < limite * 4; i++) {
+      const t = await j(() => ({ show: !!document.querySelector('.dialogue.show'), digitando: window.jogo.ui.typing !== null, texto: document.querySelector('.dialogue.show .text')?.textContent ?? '' }));
+      if (!t.show) {
+        if (ditos.length && ++semBalao > 7) break;
+        await espera(500);
+        continue;
+      }
+      semBalao = 0;
+      if (t.digitando) { await page.keyboard.press('KeyE'); await espera(300); continue; }
+      ditos.push(t.texto);
+      await page.keyboard.press('KeyE');
+      await espera(450);
+    }
+    return ditos.join(' ‖ ');
+  };
   const cenaAtual = () => j(() => window.jogo.current.def.id);
   const doPortao = () => j(() => {
     const o = window.jogo.scene.getObjectByName('portao-laranja');
@@ -1433,10 +1453,8 @@ if (roda('casinha')) {
   await page.screenshot({ path: `${OUT}-casinha-chegada.png` });
   // o comentário de quem chega, andando para dentro
   await j(() => window.jogo.debugPlace(-6.5, 3.0, Math.PI / 2));
-  await page.waitForFunction(() => /abóbora/i.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
-  const chegou = await textoDoBalao();
+  const chegou = await lerFalas();
   ok(/casinha|abóbora/i.test(chegou), `quem chega comenta a casinha (${chegou.slice(0, 70)})`);
-  await passarFalas();
   // as fotos: a câmera de sempre no caminho, de cima, e a casinha de perto
   await j(() => window.jogo.debugPlace(-2, 2, Math.PI / 4));
   await espera(3000);
@@ -1450,6 +1468,7 @@ if (roda('casinha')) {
   }
   await j(() => window.jogo.setCameraOmbro(null));
   // voltar pro parque: na frente do portão laranja, de costas para ele
+  await lerFalas(4);
   await j(() => {
     const g = window.jogo;
     const it = g.current.world.interactables.find((i) => i.id === 'halloween:clareira:voltar');
@@ -1468,23 +1487,6 @@ if (roda('casinha')) {
   await espera(2000);
 
   // ------------------------------------------------------------ a 6b: por dentro
-  /** passa as falas de agora, lendo o que foi dito */
-  const lerFalas = async (limite = 20) => {
-    const ditos = [];
-    for (let i = 0; i < limite * 3; i++) {
-      const t = await j(() => ({ show: !!document.querySelector('.dialogue.show'), digitando: window.jogo.ui.typing !== null, texto: document.querySelector('.dialogue.show .text')?.textContent ?? '' }));
-      if (!t.show) {
-        if (ditos.length) break;
-        await espera(500);
-        continue;
-      }
-      if (t.digitando) { await page.keyboard.press('KeyE'); await espera(300); continue; }
-      ditos.push(t.texto);
-      await page.keyboard.press('KeyE');
-      await espera(450);
-    }
-    return ditos.join(' ‖ ');
-  };
   // entrar: bater, ninguém atende, a porta abre sozinha
   await j(() => {
     const g = window.jogo;
