@@ -1475,8 +1475,12 @@ if (roda('casinha')) {
     g.debugPlace(it.x + 0.2, it.z, -Math.PI / 2);
   });
   await page.waitForFunction(() => /Voltar pro parque/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
-  await page.keyboard.press('KeyE');
-  await page.waitForFunction(() => window.jogo.current?.def?.id === 'villa-lobos', null, { timeout: 60000 }).catch(() => {});
+  // (logo depois da câmera de perto voltar, o primeiro E pode não ser lido: tenta de novo se a cena não trocou)
+  for (let k = 0; k < 3; k++) {
+    await page.keyboard.press('KeyE');
+    const foi = await page.waitForFunction(() => window.jogo.current?.def?.id === 'villa-lobos', null, { timeout: 20000 }).then(() => true).catch(() => false);
+    if (foi) break;
+  }
   await espera(2500);
   const volta = await j(() => { const p = window.jogo.playerPosition(); return { cena: window.jogo.current.def.id, x: +p.x.toFixed(2), z: +p.z.toFixed(2) }; });
   ok(volta.cena === 'villa-lobos' && Math.hypot(volta.x + 11.3, volta.z + 25.6) < 0.6, `voltar pro parque: na frente do portão (${JSON.stringify(volta)})`);

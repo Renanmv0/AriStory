@@ -257,6 +257,7 @@ export function montarODentro(w: WorldBuilder): void {
   // ------------------------------------------------------------ o relógio do mundo
   let tempo = 0;
   let bongou = false;
+  let assustou = fantasminha.saiu;
   let antes = { x: NaN, z: NaN };
   const peito = new THREE.Vector3();
   w.onUpdate((dt) => {
@@ -304,7 +305,9 @@ export function montarODentro(w: WorldBuilder): void {
       dizer([['@eu', 'Uma cozinha de bruxa!'], ['@par', 'Com caldeirão e tudo. E um chapéu esquecido na mesa…']], FLAG_VIU_A_COZINHA);
     }
     // o chapéu da mesa: chegando perto, o susto do fantasminha
-    if (!fantasminha.saiu && Math.hypot(p.x - xChapeu, p.z - zChapeu) < 1.45) {
+    // (uma vez: enquanto o chapéu treme o fantasminha ainda não "saiu", e o susto se repetia a cada quadro)
+    if (!assustou && !fantasminha.saiu && Math.hypot(p.x - xChapeu, p.z - zChapeu) < 1.45) {
+      assustou = true;
       fantasminha.disparar();
       g0.som('estouro');
       g0.setFlag(FLAG_FANTASMINHA);
