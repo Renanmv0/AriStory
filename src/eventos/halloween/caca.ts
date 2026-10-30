@@ -6,6 +6,7 @@ import { LoteDeAboboras, type CaraDeAbobora } from '../../world/halloween/abobor
 import { CHAVE_DA_CACA, PARADAS_DA_CACA, PISTA_DO_FINAL } from '../../world/halloween/mapinha';
 import { pocaDeLuz } from '../../world/furniture';
 import { PALETTE as P } from '../../palette';
+import { FANTASIAS_DA_CACA } from '../../world/itens';
 import { FLAG_DO_ONIBUS, faseDoHalloween } from './fase';
 
 /*
@@ -28,6 +29,11 @@ import { FLAG_DO_ONIBUS, faseDoHalloween } from './fase';
  * parada que ainda não é a vez dela ouve uma fala pedindo para seguir o
  * mapinha. A última (o Noel) dá a pista do final: a porta da Casinha, que
  * abre com 25 balas.
+ *
+ * AS PARADAS PARES ENTREGAM UMA FANTASIA INTEIRA (a etapa 5b, §5.2): a
+ * abóbora (o Cookie), o pirata (o Jean-Luc), o gato preto (as coelhinhas), o
+ * espantalho (a Josefina) e o bruxinho (o Noel) — costuradas pela Estella,
+ * direto para o guarda-roupa dos dois (`FANTASIAS_DA_CACA`).
  *
  * As DEZ ABÓBORAS ESCONDIDAS pelo parque, fora do caminho da caça, dão uma
  * bala cada: é o que garante que ninguém fica preso na porta.
@@ -77,6 +83,11 @@ interface Parada {
   pista: Falas;
   /** quando a dupla chega antes da vez dela */
   cedo: Falas;
+  /**
+   * a ENTREGA DA FANTASIA (as paradas pares, a etapa 5b): quem está na parada
+   * entrega a fantasia que a Estella costurou, e ela vai para o guarda-roupa
+   */
+  fantasia?: { nome: string; falas: Falas };
 }
 
 /**
@@ -160,6 +171,15 @@ const PARADAS: readonly Parada[] = [
     ),
     pista: [[C, 'A Estella me deu a pista pra entregar. Eu decorei, olha:']],
     cedo: [[C, 'Doces? … Ainda não é a minha vez. O mapinha diz quem vem antes de mim.'], [C, 'Eu espero. Sou bom de esperar.']],
+    fantasia: {
+      nome: 'abóbora',
+      falas: [
+        [C, 'Ah… e tem mais uma coisa. A Estella pediu pra eu guardar até vocês chegarem.'],
+        [C, 'Uma fantasia de abóbora. Eu escolhi essa porque a abóbora grande ali é minha amiga.'],
+        ['@par', 'Tem até carinha! E o chapeuzinho com cabinho!'],
+        [C, 'Já tá no guarda-roupa de vocês. Eu dobrei bem devagar, pra não amassar a folha.'],
+      ],
+    },
   },
   {
     quem: ['flynn'], nome: F,
@@ -198,6 +218,15 @@ const PARADAS: readonly Parada[] = [
     },
     pista: [[J, 'Et voilà la pista. Em voz baixa, com mistério:']],
     cedo: [[J, 'Pas encore. O mistério tem uma ordem, mes amis.'], [J, 'Leiam o mapinha. Je vous attends.']],
+    fantasia: {
+      nome: 'pirata',
+      falas: [
+        [J, 'Et voilà, un cadeau da madame Estella. Para os piratas do meu lago.'],
+        [J, 'Chapéu de três pontas, une épée de bois… et un perroquet.'],
+        ['@eu', 'Um papagaio! Ele vai no ombro?'],
+        [J, 'Naturellement. Ele ainda não fala francês. Já está no guarda-roupa de vocês, mes amis.'],
+      ],
+    },
   },
   {
     quem: ['capy'], nome: CP,
@@ -230,6 +259,15 @@ const PARADAS: readonly Parada[] = [
     ),
     pista: [[E, 'A pista. Eu li duas vezes, pra entregar certinho:']],
     cedo: [[L, '¡Epa! Ainda não é a nossa vez, panas.'], [E, 'O mapinha da Estella sabe a ordem. Sigam ele, tá?']],
+    fantasia: {
+      nome: 'gato preto',
+      falas: [
+        [L, '¡Y AHORA el regalo! A Estella deixou com a gente pra entregar!'],
+        [S, '¡Una fantasia de gatito preto! Com orelhinha, luva de patinha e rabo de laço!'],
+        [E, 'O rabo balança quando vocês andam. A gente testou.'],
+        [L, '¡Ya está no guarda-roupa de vocês! ¡Miau!'],
+      ],
+    },
   },
   {
     quem: ['gatito'], nome: GT,
@@ -266,6 +304,15 @@ const PARADAS: readonly Parada[] = [
     ),
     pista: [[JS, 'E a pista, que a Estella me pediu pra guardar. Com calma:']],
     cedo: [[JS, 'Sem pressa. Sigam as pistas na ordem.'], [JS, 'As abóboras não fogem, e eu também não.']],
+    fantasia: {
+      nome: 'espantalho',
+      falas: [
+        [JS, 'Ah, e antes que eu esqueça… a Estella deixou isto comigo.'],
+        [JS, 'Uma fantasia de espantalho. Combina com a horta, não acham?'],
+        [JS, 'Tem até um corvinho no chapéu. Ele não assusta ninguém. Nem os corvos.'],
+        [JS, 'Já guardei no guarda-roupa de vocês. Sem pressa pra vestir.'],
+      ],
+    },
   },
   {
     quem: ['girafa'], nome: G,
@@ -300,6 +347,15 @@ const PARADAS: readonly Parada[] = [
     ),
     pista: [[N, 'E agora, a última pista! A MAIS IMPORTANTE! Ela leva pro final!']],
     cedo: [[N, 'Ainda NÃO! O experimento tem ordem!'], [N, 'Primeiro as outras pistas, DEPOIS o laboratório!']],
+    fantasia: {
+      nome: 'bruxinho',
+      falas: [
+        [N, 'E AGORA… O PRESENTE FINAL! A Estella me deu pra entregar!'],
+        [N, 'Uma fantasia de BRUXINHO! Com capa de estrelinhas e VASSOURA!'],
+        [N, 'A vassoura não voa. Eu testei. Duas vezes.'],
+        [N, 'Tá no guarda-roupa de vocês! EXPERIMENTO CONCLUÍDO!'],
+      ],
+    },
   },
 ];
 
@@ -386,6 +442,13 @@ export function montarACaca(w: WorldBuilder, elenco: ElencoDaCaca): CacaDaFesta 
         api.bump(CHAVE_TRAVESSURAS);
         dar(api, balas);
       }
+      // a FANTASIA das paradas pares (a 5b): direto para o guarda-roupa dos dois
+      if (p.fantasia) {
+        await falar(p.fantasia.falas);
+        for (const peca of FANTASIAS_DA_CACA[i + 1] ?? []) api.ganharPeca(peca);
+        api.som('caixa');
+        api.toast(`Fantasia de ${p.fantasia.nome} no guarda-roupa`, '🎃');
+      }
       // a pista da próxima (o Noel dá a do final), e ela vai para o mapinha
       const ultima = i === PARADAS.length - 1;
       const pista = ultima ? PISTA_DO_FINAL : PARADAS_DA_CACA[i + 1].pista;
@@ -469,8 +532,14 @@ export function montarACaca(w: WorldBuilder, elenco: ElencoDaCaca): CacaDaFesta 
     if (agora !== ligada) {
       ligada = agora;
       escondidas.visible = agora;
-      if (agora) mostrar(g0);
-      else g0.mostrarCesta(null);
+      if (agora) {
+        mostrar(g0);
+        // quem passou de uma parada par antes de ela dar fantasia (o save do
+        // teste, o da 5a) recebe a fantasia agora, sem cerimônia
+        for (const [parada, pecas] of Object.entries(FANTASIAS_DA_CACA)) {
+          if (feitas(g0) >= Number(parada)) for (const peca of pecas) g0.ganharPeca(peca);
+        }
+      } else g0.mostrarCesta(null);
     }
     if (!agora) {
       marca.visible = luzDaParada.visible = false;

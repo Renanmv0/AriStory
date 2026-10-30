@@ -803,6 +803,57 @@ tem alguma. O que ficou de kit:
 Teste: `SO=boutique node scripts/halloween.mjs` (a cena do presente veste as
 doze peças), e as fotos de perto como no `uniforme.mjs`.
 
+### `fantasiasDaCaca.ts` — as cinco da caça (o kit que sobrou)
+
+A abóbora, o pirata, o gato preto, o espantalho e o bruxinho (a etapa 5b,
+`FANTASIAS_DA_CACA` em `world/itens.ts`, pelo número da parada). O que ficou
+de kit, além do que veio do `fantasias.ts` e da boutique:
+
+- **`tuboAfinado(curva, segs, r0, r1)`**: o tubo que afina (gavinha, rabo,
+  canhão de pena, bico, cabo de vassoura, o bico curvo da botinha);
+- **`calotaNoCabelo(m, ate, folga, …, domo)`**: a calota que pousa no
+  contorno MEDIDO do cabelo (a da bandana do Mania), com `domo` para estufar
+  o meio — o chapeuzinho de abóbora saiu chato como tampa sem ele;
+- **`bota(m, opções)`**: sola, cabedal extrudado da forma da sola e
+  rebaixado no bico, e o cano; devolve a altura do peito do pé em cada `z`
+  (para fivela, cadarço, arranhão, o bico que enrola). Toda bota das cinco
+  sai dela;
+- **`fiosDePalha(n, semente, ponto, grossura, cores)`**: um lote só de fios
+  (a palha do espantalho na gola, no punho, na barra, na aba; o feixe da
+  vassoura);
+- **`decalqueNoTronco` e `pespontoNoTronco`**: forma plana dobrada na pele
+  (babador, remendo, a lua bordada) e os pontinhos de costura em volta;
+- texturas: `trico`, `xadrez`, `estrelinhas`, `corda`, `veio`.
+
+**A abóbora do macacão é gorda para a FRENTE, não para os lados**: o braço
+do rig desce rente ao tronco (o pivô a 0,1·h do meio, a 3 cm da pele), e
+abóbora larga nos lados engolia o braço. Ela vai até ~1,26× o raio nos lados
+(o braço passa por fora) e ~1,4× para a frente.
+
+**Acessório no ombro mora EMBAIXO da cabeça do chibi**: o fundo da cabeça
+fica ~6 cm acima do pivô do braço, a 15 cm do meio, e o cabelo do Ari chega a
+0,46 m do centro dela. O papagaio, de pé no alto do ombro, enfiava a cabeça
+dentro da cabeça de quem veste: ele pousa na quina de FORA do ombro, à
+frente, inclinado para fora — e do tamanho de um punho (`e = 0,05·h`): com
+0,036·h o cabelo do Ari engolia a ave inteira na isométrica. Confira de
+frente e de lado nos dois.
+
+**Coisa de mão que tem que aparecer é GRANDE e fica FORA da manga.** A
+vassoura do bruxinho deitada para a frente virou um pauzinho, e curta sumia
+dentro da manga de sino com a palha atrás da capa. Em pé, como cajado (o cabo
+passando da cabeça, a palha quase varrendo o chão), ela se lê de longe.
+
+**Estampa embaixo da sola = disco virado para BAIXO** (a pegada rosa da
+pantufa de patinha): a face única olha o chão, então de pé ela não existe
+para a câmera (nem briga com o piso, que fica por cima dela); sentados, o pé
+esticado vira a sola para a câmera e a pegada aparece. Mesmo truque serve
+para qualquer desenho de sola.
+
+**O que se mexe tem nome e relógio próprio** (`onBeforeRender` numa malha
+com nome, que a `fundir()` não junta): o rabo do gato (`rabo-0…8`, balança
+mais andando), a cabeça do papagaio e a do corvinho. Teste:
+`scripts/fantasias.mjs`.
+
 ## Regressão
 
 `sobreTronco`, `porExtras` e `aplicarVisual` (`CharacterRig.ts`) são

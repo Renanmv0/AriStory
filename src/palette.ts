@@ -2404,6 +2404,97 @@ export const PALETTE = {
   morceguinhoListraEscura: 0x2c2436,
   morceguinhoUnha: 0xfff4e4,
   morceguinhoBotao: 0x18141d,
+  /**
+   * AS FANTASIAS DA CAÇA (`world/fantasiasDaCaca.ts`), a etapa 5b: uma
+   * fantasia inteira a cada duas paradas. A ABÓBORA, que o Cookie entrega —
+   * o laranja de abóbora madura com o fundo do gomo queimado, a carinha
+   * marrom de bochecha rosada, o verde-musgo da camiseta, da meia-calça e da
+   * botinha, e as folhas da gola em dois verdes —
+   */
+  fantasiaAbobora: 0xf28a26,
+  fantasiaAboboraGomo: 0xc9651c,
+  fantasiaAboboraClara: 0xffb45a,
+  fantasiaAboboraCara: 0x3d2414,
+  fantasiaAboboraBochecha: 0xf59a8c,
+  fantasiaAboboraVerde: 0x4d8a3c,
+  fantasiaAboboraVerdeEscuro: 0x356a2b,
+  fantasiaAboboraFolha: 0x63a345,
+  fantasiaAboboraFolhaClara: 0x9ccc5e,
+  fantasiaAboboraCabinho: 0x6b4a2c,
+  /**
+   * — o PIRATA, do Jean-Luc: a listra vermelha na camisa branca, o colete
+   * azul-marinho de vivo dourado, a faixa vermelha, a calça bufante de
+   * camurça, a meia creme, o couro das botas e da luva, o chapéu preto com a
+   * caveirinha e a pena, a espadinha de madeira e o PAPAGAIO, de arara
+   * vermelha com asa amarela e azul —
+   */
+  pirataListra: 0xd2343d,
+  pirataBranco: 0xfbf6ec,
+  pirataColete: 0x24315c,
+  pirataFaixa: 0xc22a38,
+  pirataCalca: 0x6a4630,
+  pirataMeia: 0xf1e7d2,
+  pirataCouro: 0x3a2619,
+  pirataCouroClaro: 0x8a5a36,
+  pirataChapeu: 0x1f1c26,
+  pirataPena: 0xe04b4f,
+  pirataMadeira: 0xd2a568,
+  pirataMadeiraEscura: 0x8f6237,
+  papagaioVermelho: 0xe23b3c,
+  papagaioAmarelo: 0xf6c63a,
+  papagaioAzul: 0x2f7fd2,
+  papagaioVerde: 0x3fae5a,
+  papagaioBico: 0xf3e8cc,
+  papagaioBicoEscuro: 0x3a3439,
+  /**
+   * — o GATO PRETO, das coelhinhas: o preto de pelúcia (um roxo bem fundo,
+   * como o da capa, para não virar buraco), o babador branco, a almofadinha
+   * rosa da patinha e o laço vermelho com o sininho dourado —
+   */
+  gatoPreto: 0x2a2730,
+  gatoPretoClaro: 0x403b48,
+  gatoBranco: 0xfaf6f0,
+  gatoRosa: 0xf4a6b8,
+  gatoLaco: 0xdf3a55,
+  gatoSino: 0xf3c43a,
+  /**
+   * — o ESPANTALHO, da Josefina: o xadrez vermelho e mostarda da camisa, os
+   * remendos (o azul e o caramelo), a calça de brim desbotado, a corda do
+   * cinto, a palha, o couro gasto das botas e da luva, a bandana vermelha de
+   * poá e o CORVINHO preto de bico laranja no chapéu —
+   */
+  espantalhoXadrez: 0xc4442f,
+  espantalhoXadrezClaro: 0xe5a63c,
+  espantalhoXadrezLinha: 0x3a2a22,
+  espantalhoRemendo: 0x6c8fba,
+  espantalhoRemendoCaramelo: 0xa47c4a,
+  espantalhoCalca: 0x5f7593,
+  espantalhoCorda: 0xcfae72,
+  espantalhoPalha: 0xecca6c,
+  espantalhoPalhaEscura: 0xc59e46,
+  espantalhoChapeuDePalha: 0xd9b46a,
+  espantalhoBota: 0x6c4a31,
+  espantalhoBotaGasta: 0x977353,
+  espantalhoLuva: 0xa98052,
+  espantalhoBandana: 0xc8323a,
+  corvo: 0x26232d,
+  corvoBico: 0xf09a2e,
+  /**
+   * — e o BRUXINHO, do Noel, a última parada: o roxo da túnica e do chapéu,
+   * o vivo dourado, a meia listrada de roxo e verde-limão, a botinha de bico
+   * curvo, a capa anil de estrelinhas com o forro lilás, e a vassoura
+   */
+  bruxoRoxo: 0x5b3b8e,
+  bruxoRoxoEscuro: 0x3d2865,
+  bruxoDourado: 0xf2c443,
+  bruxoListra: 0x9bd35c,
+  bruxoBota: 0x2b2238,
+  bruxoCapa: 0x2b2c5e,
+  bruxoForro: 0xb79be2,
+  bruxoEstrela: 0xffd650,
+  bruxoCabo: 0x8b5b34,
+  bruxoPalha: 0xe2b95c,
+  bruxoCordao: 0xb63a4c,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;
