@@ -1691,7 +1691,8 @@ if (roda('casinha')) {
   await espera(4000);
   await page.screenshot({ path: `${OUT}-casinha-salao-gina.png` });
   const daGina = await lerFalas();
-  await espera(3000);
+  // (a câmera desliza de volta no relógio do jogo)
+  await page.waitForFunction(() => !window.jogo.camOmbro, null, { timeout: 120000 }).catch(() => {});
   ok(/SURPRESAAA/.test(daGina) && /Ordem da casa/.test(daGina) && !(await j(() => window.jogo.camOmbro)), `a conversa de festa da Gina, com zoom, e a isométrica de volta (${daGina.slice(0, 80)})`);
   // pegar um doce: o Walter vem servir, e os dois comem ali
   await j(() => {
