@@ -1,6 +1,6 @@
 import type { SceneDef } from '../core/types';
 import { casa } from './casa';
-import { casinhaDaAbobora } from './casinhaDaAbobora';
+import { casinhaDaAbobora, casinhaDaAboboraDentro } from './casinhaDaAbobora';
 import { lojinha } from './lojinha';
 import { clube } from './clube';
 import { escola } from './escola';
@@ -40,6 +40,7 @@ export const SCENES: Record<string, SceneDef> = {
   // o final do especial de Halloween: a clareira atrás do portão laranja do
   // Villa Lobos. Só se chega pelo portão, na noite da festa (docs/HALLOWEEN.md §7.1)
   [casinhaDaAbobora.id]: casinhaDaAbobora,
+  [casinhaDaAboboraDentro.id]: casinhaDaAboboraDentro,
 };
 
 export const CENA_INICIAL = casa.id;

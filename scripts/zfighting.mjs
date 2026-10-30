@@ -45,6 +45,11 @@ const PECAS = [
   ['portao-laranja', 'villa-lobos', FESTA],
   ['cerquinha-torta', 'villa-lobos', FESTA],
   ['casinha-torta', 'casinha-da-abobora', FESTA],
+  // por dentro (a 6b): a parede de acabamento, o relógio, o fogão e a mesa
+  ['parede-da-casinha', 'casinha-da-abobora-dentro', FESTA],
+  ['relogio-de-pendulo', 'casinha-da-abobora-dentro', FESTA],
+  ['fogao-a-lenha', 'casinha-da-abobora-dentro', FESTA],
+  ['mesa-da-bruxa', 'casinha-da-abobora-dentro', FESTA],
   ['quiosque', 'clube'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],

@@ -17,6 +17,7 @@ import { CHAVE_DA_CACA, PARADAS_DA_CACA } from '../../world/halloween/mapinha';
 import { BALAS_DA_PORTA, CHAVE_DAS_BALAS } from './caca';
 import { faseDoHalloween } from './fase';
 import { NOITE_DA_FESTA } from './ceu';
+import { CENA_DE_DENTRO } from './dentroDaCasinha';
 
 /*
  * A CASINHA DA ABÓBORA, por fora (`docs/HALLOWEEN.md`, §7.1, A e B — a
@@ -53,6 +54,8 @@ export const ATRAS_DO_PORTAO = { x: -13.09, z: -27.39 } as const;
 
 /** a dupla já passou pelo portão (daí em diante, ele abre direto) */
 export const FLAG_PASSOU_DO_PORTAO = 'halloween:casinha:passou-do-portao';
+/** a dupla já entrou na casinha uma vez (daí em diante a porta abre direto) */
+export const FLAG_ENTROU = 'halloween:casinha:entrou';
 /** o comentário de quem chega na clareira, uma vez */
 const FLAG_VIU_A_CASINHA = 'halloween:viu:casinha';
 
@@ -171,8 +174,17 @@ const CASINHA_NA_ABOBORA = { x: 3.7, z: 2.4 } as const;
 const PORTAO_DA_CLAREIRA = { x: -11.0, z: 2.5, giro: Math.PI / 2 } as const;
 
 /** as entradas da clareira (a cena registra) */
+/** a frente da porta da casinha torta, no mundo da clareira (quem sai de dentro aparece aqui) */
+const FRENTE_DA_CASINHA = (() => {
+  const c = noMundo(ABOBORA_DA_CASA.x, ABOBORA_DA_CASA.z, ABOBORA_DA_CASA.giro, CASINHA_NA_ABOBORA.x, CASINHA_NA_ABOBORA.z);
+  const fp = CasinhaTorta.frenteDaPorta();
+  return noMundo(c.x, c.z, ABOBORA_DA_CASA.giro, fp.x, fp.z + 0.2);
+})();
+
 export const ENTRADAS_DA_CLAREIRA = {
   'do-parque': { x: -9.9, z: 2.5, facing: Math.PI / 2 },
+  // saindo da casinha: um passo na frente da porta, de costas para ela
+  'da-casinha': { x: FRENTE_DA_CASINHA.x, z: FRENTE_DA_CASINHA.z, facing: ABOBORA_DA_CASA.giro },
 } as const;
 
 /**
@@ -321,21 +333,40 @@ export function montarAClareira(w: WorldBuilder): void {
   const nevoa = new NevoaBaixa({ minX: -11, maxX: 9, minZ: -11, maxZ: 8 }, 12, 3);
   w.add(nevoa.group);
 
-  // ---------------------------------------------- a porta da casinha (a 6b abre)
+  // ---------------------------------------------- a porta da casinha: bater, e ela abre sozinha
+  let abrindo = 0;
+  let abrir = false;
   w.interact({
     id: 'halloween:casinha:porta',
     x: portaDaCasinha.x, z: portaDaCasinha.z, radius: 1.3,
-    label: 'Bater na porta', icon: '🚪',
+    label: 'Entrar na casinha', icon: '🚪',
     highlight: casinha.porta,
     onInteract: async (api) => {
-      api.som('martelo');
-      await conversa(api, [['@eu', 'Toc, toc, toc…']]);
-      await api.wait(0.8);
-      await conversa(api, [
-        ['@par', 'Ninguém atende.'],
-        ['@eu', 'Mas tem uma vela acesa na janela… e a porta tá só encostada.'],
-      ]);
+      api.lockPlayer(true);
+      if (!api.flag(FLAG_ENTROU)) {
+        api.som('martelo');
+        await conversa(api, [['@eu', 'Toc, toc, toc…']]);
+        await api.wait(0.8);
+        await conversa(api, [['@par', 'Ninguém atende.']]);
+        abrir = true;
+        api.som('porta');
+        await api.wait(1.0);
+        await conversa(api, [['@eu', 'A porta abriu sozinha…'], ['@par', 'Vamos juntos. De mãos dadas.']]);
+        api.setFlag(FLAG_ENTROU);
+      } else {
+        abrir = true;
+        api.som('porta');
+        await api.wait(0.7);
+      }
+      api.lockPlayer(false);
+      api.goTo(CENA_DE_DENTRO, 'da-clareira');
     },
+  });
+  w.onUpdate((dt) => {
+    if (abrir) abrindo = Math.min(1, abrindo + dt * 1.2);
+    const k = abrindo * abrindo * (3 - 2 * abrindo);
+    // a folha gira para dentro da casinha (o −Z dela)
+    casinha.porta.rotation.y = 1.4 * k;
   });
 
   // ---------------------------------------------- o comentário de quem chega

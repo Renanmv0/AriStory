@@ -1160,6 +1160,40 @@ A abóbora gigante da casa é a do lote do parque (`LoteDeAboboras`, com
 O peso da clareira na câmera de sempre: ~430–480 desenhos e ~355–380 mil
 triângulos, quase tudo dos arbustos (cada `arbustoFlorido` é três lotes).
 
+## A Casinha da Abóbora por dentro (`world/halloween/casinhaPorDentro.ts`)
+
+O corredor e a cozinha da bruxa (a 6b do Halloween). O que serve para a
+próxima sala de casa assombrada (ou qualquer sala com acabamento):
+
+- **Parede com acabamento** (`parede(comprimento, alto, estilo)`): o corpo
+  (papel listrado em canvas, ou a tábua roxa), o lambri um tico para fora
+  da face, o friso, o rodapé e a cornija; a BAIXA (do lado da câmera) leva
+  lambri e capeamento. A cena a põe entre dois pontos (`paredeEntre` em
+  `eventos/halloween/dentroDaCasinha.ts`): a face de dentro na linha.
+- **Quadro de olhos que seguem** (`QuadroComOlhos`): o branco do olho é
+  PINTADO no canvas, e a pupila é uma malha (com o brilhinho) que anda dentro
+  dele para o lado de quem passa — `olhar(ponto)`, a cada quadro, com o
+  ponto levado para o referencial do quadro (`worldToLocal`). Barato e vivo.
+- **Pêndulo amortecido em lote** (`MorceguinhosNoFio`): cada morceguinho tem
+  ângulo e velocidade, e quem passa embaixo dá um empurrão (`passou(x, z)`);
+  corpo, olhos e barbante são três lotes refeitos no `update`. O fio rente à
+  cornija: mais baixo, eles ficavam na frente dos quadros.
+- **Relógio de pêndulo** (`RelogioDePendulo`): o pêndulo e os ponteiros em
+  grupos com nome; `bater()` treme a cabeça e pula os ponteiros.
+- **Fogão a lenha** (`FogaoALenha`): tijolinho em canvas, a fornalha com as
+  chamas (cones acesos que tremem) e a poça de luz, a coifa, e o caldeirão
+  do kit com a `PocaoBorbulhando` dentro.
+- **Vidro aceso em lote** (`prateleiraDePocoes`): o vidro torneado com o
+  branco nos vértices (mais escuro no fundo) e o `acesoPorVertice()`: a cor
+  por cópia pinta, e a poção brilha de dentro sem luz nova.
+- **Brinquedo de mola** (`FantasminhaDeMola`): o chapéu de bruxa do kit
+  treme, pula num arco e cai de lado; a mola é uma hélice de altura 1 (o
+  `scale.y` estica) e o fantasminha sobe num oscilador amortecido de
+  verdade (passa do ponto e volta). O pano leva um tico de `glow`: perto do
+  caldeirão, o verde dele deixava o branco cinza.
+
+O peso do corredor na câmera de sempre: ~370 desenhos e ~75 mil triângulos.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
