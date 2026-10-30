@@ -45,8 +45,8 @@ uma inteira a cada duas paradas (§5.2, a parte 5b), estão no jogo, mas só
 aparecem com `?halloween` na URL (`src/eventos/halloween/`,
 `src/world/halloween/`, `src/world/fantasias.ts`,
 `src/world/fantasiasDaCaca.ts`, `scripts/halloween.mjs`,
-`scripts/fantasias.mjs`). A próxima é a **etapa 6**: a Casinha da Abóbora
-(§7).
+`scripts/fantasias.mjs`). A próxima é a **etapa 6**: a Casinha da Abóbora,
+já planejada com o Renan (§7.1).
 
 **Onde moram as fantasias da caça (5b):** as trinta peças em
 `world/fantasiasDaCaca.ts` (o kit vem do `world/fantasias.ts` e da
@@ -122,7 +122,13 @@ em `eventos/halloween/naBoutique.ts` (uma chamada no fim da `lojinha.ts`).
   **ônibus do clube chega** trazendo todos os personagens de lá **e os da
   escola do Gatito** (§2.4);
 - **o clube e a escola ficam normais durante o evento, mas sem os
-  personagens** — estão todos no parque (§1).
+  personagens** — estão todos no parque (§1);
+- **a Casinha da Abóbora (etapa 6, §7.1)**: três salas — o corredor com
+  detalhes de Halloween, a cozinha da bruxa com o fantasminha de mola e o
+  salão por dentro de uma abóbora gigante, com todo mundo numa festa
+  surpresa; o Walter serve, todos dançam, o concurso coroa o **Ari de
+  rainha e o Renan de rei**, e a foto de todos fecha; depois a festa
+  continua lá dentro.
 
 **O que este plano propõe** (tudo provisório até o Renan aprovar):
 
@@ -1414,6 +1420,152 @@ enquanto arrumavam a surpresa), e o final junta **todos** os personagens no
 mesmo lugar. **Custo:** é a etapa mais cara — um cenário novo, pequeno
 (do tamanho da lojinha).
 
+### 7.1 A etapa 6 em detalhe (fechada com o Renan)
+
+**As respostas do Renan** (valem por cima do texto da opção A acima):
+
+- **as três salas ficam**, mas **o corredor NÃO tem as memórias**: é só um
+  corredor com detalhes de Halloween;
+- **o salão é por dentro de uma abóbora gigante**, com **todos os
+  personagens lá**, numa festa;
+- **o susto da cozinha é um fantasminha de mola** que sai do chapéu de
+  bruxa. **O Pelusa continua dormindo no pufe da boutique** (não pula de
+  chapéu nenhum);
+- **a etapa 6 é a festa inteira**: o portão, a Casinha, o SURPRESA, a
+  festa, o concurso com o prêmio e a foto. A etapa 7 fica com a foto virando
+  memória no quadro, a volta para casa, dormir e a volta ao normal;
+- **na festa**: o **Walter serve os doces**, **todos dançam** (cada um com
+  a dancinha dele) e **a foto de todos no fim**. Sem dança lenta;
+- **o prêmio do concurso: a coroa de rainha para o Ari e a de rei para o
+  Renan** (as duas vão para o guarda-roupa dos dois, como toda roupa);
+- **depois da festa, a festa continua lá**: os convidados ficam festejando
+  dentro da abóbora (dá para voltar), e o parque fica de noite, enfeitado e
+  vazio, até a dupla ir dormir (etapa 7).
+
+**Onde mora** (proposta): as cenas em `scenes/casinhaDaAbobora.ts` (a
+clareira de fora e o lado de dentro, duas `SceneDef` no mesmo arquivo), as
+peças em `world/halloween/casinhaDaAbobora.ts`, e as regras (a porta, a
+surpresa, o concurso, a foto) em `eventos/halloween/naCasinha.ts`. O parque
+só ganha o portão, por uma chamada na camada da festa (`naFesta.ts`).
+
+#### A. O portão das 25 balas (no parque)
+
+Na cerca branca que fecha a praça da roda contra o mato (`x = −11`, perto
+de `z = −20`, onde o Walter some), só na noite da festa: um **portãozinho
+de madeira laranja**, arredondado em cima, com a **fechadura em forma de
+abóbora** (a carinha acende quando a cesta passa de 25), duas lanterninhas
+de abóbora nos mourões e uma plaquinha torta "🎃 só com a cesta cheia".
+
+- **Antes da pista do Noel**: "Tá trancado… E tem uma fechadura de
+  abóbora." / "Deve ter a ver com o mapinha.";
+- **com a pista e menos de 25 balas**: a conta que já existe (faltam N, e
+  as abóboras escondidas);
+- **com a pista e 25 ou mais**: "Abrir a porta laranja" → a fechadura gira,
+  a carinha sorri, a porta abre rangendo e a dupla passa (o véu de sempre).
+
+#### B. A clareira de fora
+
+Uma clareira pequena no mato atrás da roda (o cenário novo, de noite, com o
+céu da festa): um **caminho de pedrinhas** entre **abóboras gigantes** (o
+lote do kit, maiores), varais de luzinhas de árvore em árvore, morceguinhos
+pendurados, a névoa baixa — e no fundo **a Casinha**: uma **abóbora
+gigante** (o salão) com uma **casinha torta de madeira** grudada na frente
+(o corredor e a cozinha), chaminé torta soltando fumacinha, janelas acesas
+recortadas como olhos, a porta com uma aldrava de morcego. Tudo quieto: ao
+chegar, a dupla comenta ("Que casinha é essa?" / "Tá tudo apagado lá
+dentro…").
+
+#### C. O corredor (detalhes de Halloween)
+
+Estreito, um tico torto, **papel de parede listrado roxo e preto** (canvas),
+rodapé de madeira, **tapete comprido** vinho, **quadros de Halloween** (um
+fantasminha, uma abóbora, um gato preto na lua, uma casa assombrada) com
+**os olhos dos retratos acompanhando a dupla**, **candelabros de vela**
+(luz pintada, a chama tremendo), teias nos cantos, **morceguinhos de papel**
+pendurados que balançam quando a dupla passa, e um relógio de pêndulo que
+bate no meio do caminho (o susto pequeno: "BONG"). A porta do fim range.
+
+#### D. A cozinha da bruxa (o fantasminha de mola)
+
+Fogão a lenha de tijolinho com o **caldeirão borbulhando** (a bolha e o
+vapor do carrinho do Noel), **prateleiras de potes de poção** coloridos (em
+lote), **vassouras** penduradas, réstia de abóborinhas, um livro de feitiço
+aberto na mesa, e **o chapéu de bruxa em cima da mesa**. Quando a dupla
+chega perto, o chapéu treme… pula, e de dentro sai um **fantasminha de
+pano numa mola**, balançando e rindo ("BU! hihi"). A dupla se assusta e
+ri ("Ai! … É de mola!" / "Que susto fofo."). Depois ele fica balançando
+devagar, e dá para cutucar de novo.
+
+#### E. O salão: por dentro da abóbora gigante
+
+A porta da cozinha dá num salão **redondo**: as **paredes são os gomos da
+abóbora por dentro** (laranja vivo, as nervuras, a polpa mais clara em
+baixo), o **teto sobe até o cabinho**, e as janelas são **os olhos e a boca
+recortados**, vistos de dentro. **Está escuro** (só o recorte das janelas).
+
+**A surpresa:** a dupla entra ("Tem alguém aí?"), a porta fecha atrás, um
+segundo de silêncio… **as luzes acendem** (varais de luzinha, lanternas de
+abóbora, um lustre de velas) e **todos gritam "SURPRESA!"**, com confete. A
+Estella explica (rascunho): "A festa era pra vocês dois! A caça toda era
+pra distrair vocês enquanto a gente arrumava aqui." / "Eu costurei a
+fantasia de todo mundo… mas as mais bonitas são as de vocês."
+
+**Quem está lá** (cada um com a fantasia da festa): a Estella, o Mano, o
+Cookie, o Jean-Luc, a Gina, o Capy, o Noel, a Josefina, o Walter, o Gatito,
+o Flynn, a Luna, a Sol e a Estrella. (O Pelusa dorme na boutique; os
+patinhos ficam no lago.)
+
+**A festa** (livre, depois da surpresa): a **música de festa** sintetizada,
+**todos dançando**, cada um com a dancinha dele (a do Mano, a torcida das
+coelhinhas, o six seven do Gatito, o uivo do Flynn, o Cookie com o lençol
+rodando, o Jean-Luc cantando ópera…), a **mesa de doces** com o caldeirão de
+balas, e o **Walter múmia garçom** passando com a bandeja: "Pegar um doce"
+faz ele vir servir, e o doce é comido ali. Cada convidado tem uma fala de
+festa na conversa com zoom.
+
+#### F. O concurso e a foto
+
+Depois de falar com a Estella, ela sobe num **palquinho** e chama todo
+mundo: o **concurso de fantasias**. Os convidados levantam **plaquinhas de
+voto** (abóborinhas), a contagem é obviamente da dupla, e a Estella
+**coroa os dois**: **a coroa de rainha no Ari e a de rei no Renan** (as
+duas vão para o guarda-roupa dos dois e já entram na cabeça na hora). A fala
+reconhece a fantasia que cada um está usando (o vampiro, o morceguinho, ou
+a que tiver vestido).
+
+Depois, **a foto de todos**: os convidados se juntam em volta da dupla no
+palco, a câmera enquadra, "Xiiis!", o flash, e a festa continua. A foto fica
+guardada no save para a etapa 7 virar memória no quadro. A fase vira
+`depois`.
+
+**Depois da foto:** a festa continua no salão (dá para voltar e falar com
+todo mundo de novo), o parque fica de noite, enfeitado e **vazio** (a
+barraquinha do Walter fechada, os postos sem ninguém), e o portão laranja
+fica aberto.
+
+#### G. As coroas (as peças do prêmio)
+
+Duas peças novas da vaga **cabeça**, com o capricho das fantasias (§5.4):
+- **a coroa de rainha** (Ari): mais alta e delicada, com pontas de arco,
+  pedrinhas roxas e laranja, e uma abóborinha no meio;
+- **a coroa de rei** (Renan): mais larga, com a borda de pelúcia (arminho
+  de Halloween, roxo com pintinhas), as pontas retas e um morceguinho no
+  meio.
+
+São presente (fora do ateliê de tinta) e aparecem no filtro 🎃 Fantasias.
+
+#### H. A ordem de construir (dentro da etapa 6)
+
+1. **6a**: o portão no parque e a clareira de fora com a Casinha;
+2. **6b**: o corredor e a cozinha (o fantasminha de mola);
+3. **6c**: o salão-abóbora, a surpresa e a festa (todos lá, as dancinhas,
+   o Walter servindo, a música);
+4. **6d**: o concurso, as coroas e a foto; a fase `depois` (o parque vazio,
+   a festa continuando no salão); testes (`SO=casinha`, `volta`), fotos,
+   medição de desempenho do salão no celular, docs e merge.
+
+Cada parte é mostrada ao Renan antes da próxima.
+
 ### B. A roda gigante à meia-noite (não escolhida)
 
 A última pista leva à roda gigante: as cabines viram abóboras, o Cookie
@@ -1534,8 +1686,8 @@ aprovar antes da próxima.
 | **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** ✅ | **a noite e o ônibus** *(construída, escondida)* | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** ✅ | **doces ou travessuras** *(construída, escondida)* | **5a**: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
-| **6** | **a Casinha da Abóbora** | o portão das 25 balas, o cenário novo e a festa surpresa (§7) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
-| **7** | **o fechamento** | a memória no quadro, o prêmio do final, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
+| **6** | **a Casinha da Abóbora** *(planejada, §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
+| **7** | **o fechamento** | a foto da festa virando memória no quadro, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |
 
 **Uma por vez, e escondida.** Cada etapa começa com uma conversa com o Renan
@@ -1576,6 +1728,16 @@ personagem (o plano novo no §3, o Cookie de lençol); a roda, o sorvete e a
 patinação voltam de noite, e o Gatito vem de fantasia engraçada; todos vêm,
 destravados ou não; o Walter fica na barraquinha e vai lá atrás da roda de
 vez em quando (a dica do final); e as luzes inteiras.
+
+### A etapa 6 está fechada (o plano no §7.1)
+
+Respondidas: as três salas, mas o corredor só com detalhes de Halloween (sem
+as memórias); o salão por dentro de uma abóbora gigante, com todos lá; o
+susto da cozinha é o fantasminha de mola (o Pelusa segue dormindo na
+boutique); a etapa 6 vai até a foto; na festa, o Walter servindo, todos
+dançando e a foto (sem dança lenta); a coroa de rainha para o Ari e a de
+rei para o Renan; e depois da foto a festa continua no salão, com o parque
+vazio.
 
 ### Para as próximas partes
 
