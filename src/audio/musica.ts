@@ -176,6 +176,38 @@ export const CLIMAS: Record<string, Clima> = {
     escala: PENTA,
     arpejo: true,
   },
+  /**
+   * O SALÃO DA ABÓBORA NO ESCURO (antes da surpresa): quase nada — um acorde
+   * menor comprido, a marimba raríssima e o tique-taque de relógio de cozinha
+   * contando os segundos de silêncio. É suspense de desenho, não de filme.
+   */
+  'abobora-no-escuro': {
+    bpm: 58,
+    tonica: 40, // mi
+    giro: [m7(0), m7(5)],
+    melodia: 0.16,
+    chocalho: false,
+    escala: PENTA_MENOR_DOCE,
+    tique: true,
+  },
+  /**
+   * A FESTA DENTRO DA ABÓBORA (o salão, depois do "SURPRESA!"): a festa de
+   * Halloween fofa — em menor, mas de giro que anda e resolve (sem o dominante
+   * pendurado da estufa), com o suingue de sempre (um boogie de monstrinho),
+   * o pizzicato correndo feito baixo andante, bumbo macio, chocalho e as
+   * palmas no 2 e no 4 da festa da torcida. A cena é o clima dela.
+   */
+  'casinha-da-abobora-salao': {
+    bpm: 112,
+    tonica: 38, // ré
+    giro: [m7(0), maj7(3), m7(5), dom7(7)],
+    melodia: 0.85,
+    chocalho: true,
+    escala: PENTA_MENOR_DOCE,
+    ostinato: true,
+    bumbo: true,
+    palmas: true,
+  },
   /** usado enquanto nenhuma cena pediu clima */
   padrao: {
     bpm: 88,

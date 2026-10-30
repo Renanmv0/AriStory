@@ -639,6 +639,15 @@ export class CoelhaDaTorcida extends Bicho {
     this.timida = 0;
   }
 
+  /**
+   * PARA A DANÇA DA FESTA NO MEIO (a conversa com zoom do salão da abóbora):
+   * o relógio dela volta a -1 e a pose de dança se desmancha sozinha na
+   * mistura do treino. Uma acrobacia já começada termina no tempo dela.
+   */
+  pararAFesta(): void {
+    this.relogioDaFesta = -1;
+  }
+
   get estaNaFesta(): boolean {
     return this.relogioDaFesta >= 0;
   }

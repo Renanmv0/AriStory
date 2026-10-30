@@ -151,6 +151,18 @@ grasnado, quando a garça levanta voo).
 Picos no `.wav`: `buzina` 0,11, `motorDoOnibus` 0,08, `freioDoOnibus`
 0,08 e `portaDoOnibus` 0,08.
 
+**O salão da abóbora** (a festa surpresa, `eventos/halloween/noSalao.ts`):
+dois climas e dois sons. `'abobora-no-escuro'` é o suspense de desenho de
+antes da surpresa (58 bpm em mi menor, o acorde comprido, a marimba
+raríssima e o tique-taque); a cena liga no primeiro quadro e devolve a da
+cena (`g.trocarMusica(null)`) no "SURPRESA!". O clima da cena,
+`'casinha-da-abobora-salao'`, é a festa de Halloween fofa: 112 bpm em ré
+menor com o suingue de sempre, o pizzicato correndo, bumbo, chocalho e as
+palmas. `luzesAcendendo` é o "tec" do interruptor e um arpejo de vidro
+subindo (uma nota por fio de luzinha que pega); `surpresa` são três
+línguas de sogra desenrolando (dente-de-serra abafado subindo um tico, cada
+uma fora do tempo da outra, com o chiado de papel) e o estouro do confete.
+
 **As balas na cesta** (`balas`, a caça de doces ou travessuras,
 `eventos/halloween/caca.ts`): seis toquinhos secos de triângulo, cada um
 descendo de tom (o plástico oco da cestinha), mais fracos e mais juntos, e

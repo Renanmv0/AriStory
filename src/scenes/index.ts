@@ -1,6 +1,6 @@
 import type { SceneDef } from '../core/types';
 import { casa } from './casa';
-import { casinhaDaAbobora, casinhaDaAboboraDentro } from './casinhaDaAbobora';
+import { casinhaDaAbobora, casinhaDaAboboraDentro, casinhaDaAboboraSalao } from './casinhaDaAbobora';
 import { lojinha } from './lojinha';
 import { clube } from './clube';
 import { escola } from './escola';
@@ -41,6 +41,7 @@ export const SCENES: Record<string, SceneDef> = {
   // Villa Lobos. Só se chega pelo portão, na noite da festa (docs/HALLOWEEN.md §7.1)
   [casinhaDaAbobora.id]: casinhaDaAbobora,
   [casinhaDaAboboraDentro.id]: casinhaDaAboboraDentro,
+  [casinhaDaAboboraSalao.id]: casinhaDaAboboraSalao,
 };
 
 export const CENA_INICIAL = casa.id;

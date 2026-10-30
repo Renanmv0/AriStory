@@ -9,6 +9,7 @@ import { assoalhoDeMadeira } from '../../world/texturasDeChao';
 import { uvDeParede } from '../../world/acabamento';
 import { EnfeitesDePendurar } from '../../world/halloween/pendurados';
 import { tabuasRoxas } from '../../world/halloween/casinhaDaAbobora';
+import { CENA_DO_SALAO, FLAG_DA_SURPRESA } from './noSalao';
 import {
   FantasminhaDeMola, FogaoALenha, MESA_DA_BRUXA, MorceguinhosNoFio, QuadroComOlhos, RelogioDePendulo,
   arandela, janelaComLua, mesaDaBruxa, papelListrado, parede, portaDoSalao, prateleiraDePocoes,
@@ -41,6 +42,8 @@ export const CENA_DE_DENTRO = 'casinha-da-abobora-dentro';
 /** as entradas de dentro (a cena registra) */
 export const ENTRADAS_DE_DENTRO = {
   'da-clareira': { x: 8.25, z: 0, facing: -Math.PI / 2 },
+  // de volta do salão: na frente da porta grande, olhando para a cozinha
+  'do-salao': { x: -3.85, z: -0.6, facing: Math.PI / 2 },
 } as const;
 
 /** o susto do fantasminha já aconteceu (quem volta encontra ele fora do chapéu) */
@@ -238,19 +241,36 @@ export function montarODentro(w: WorldBuilder): void {
     },
   });
   cutucar.enabled = fantasminha.saiu;
-  // a porta do salão: trancada, e do outro lado um "shhh"
+  /*
+   * A PORTA DO SALÃO (a 6c): ela abre para dentro do salão (a abóbora). A
+   * primeira vez, a dupla comenta o escuro do outro lado e a folha abre
+   * devagar; depois da surpresa, é só a porta da festa.
+   */
+  const folhaDoSalao = salao.getObjectByName('dobradica');
+  let abrindoOSalao = -1;
   w.interact({
     id: 'halloween:casinha:salao',
     x: K.x0 + 0.95, z: SALAO.z, radius: 1.1,
-    label: 'Abrir a porta grande', icon: '🎃',
+    label: g0.flag(FLAG_DA_SURPRESA) ? 'Voltar pra festa' : 'Abrir a porta grande', icon: '🎃',
     highlight: salao,
     onInteract: async (api) => {
-      api.som('clique');
-      await conversa(api, [
-        ['@eu', 'Tá trancada… e do outro lado tá tudo escuro.'],
-        ['@par', 'Você ouviu isso? Parecia um "shhh"…'],
-        ['@eu', 'Deve ser o vento. …Né?'],
-      ]);
+      if (abrindoOSalao >= 0) return;
+      api.lockPlayer(true);
+      try {
+        if (!api.flag(FLAG_DA_SURPRESA)) {
+          api.som('clique');
+          await conversa(api, [
+            ['@eu', 'Destrancou…'],
+            ['@par', 'E do outro lado tá tudo escuro. Vamos juntos.'],
+          ]);
+        }
+        api.som('porta');
+        abrindoOSalao = 0;
+        while (abrindoOSalao >= 0 && abrindoOSalao < 1) await api.wait(0.1);
+      } finally {
+        api.lockPlayer(false);
+      }
+      api.goTo(CENA_DO_SALAO, 'da-cozinha');
     },
   });
 
@@ -321,5 +341,11 @@ export function montarODentro(w: WorldBuilder): void {
       })();
     }
     cutucar.enabled = fantasminha.saiu;
+    // a porta do salão abrindo (empurrada para lá)
+    if (abrindoOSalao >= 0 && folhaDoSalao) {
+      abrindoOSalao = Math.min(1, abrindoOSalao + dt * 1.2);
+      const k = abrindoOSalao * abrindoOSalao * (3 - 2 * abrindoOSalao);
+      folhaDoSalao.rotation.y = 1.3 * k;
+    }
   });
 }

@@ -2585,6 +2585,59 @@ export const PALETTE = {
   rolhaDePocao: 0xb48a5a,
   portaDoSalao: 0xdf7d2c,
   portaDoSalaoFundo: 0x8c4718,
+  /**
+   * O SALÃO DA ABÓBORA (6c): a polpa por dentro (o laranja vivo dos gomos, o
+   * fundo do gomo, a polpa clara de baixo, a nervura da quina, os fiapos e as
+   * sementes, e o cabinho visto de dentro), o céu de fora que se vê pelos
+   * olhos e pela boca, o lustre de velas, a pista de dança, a mesa de doces
+   * (a toalha, a barra, os doces) e as duas luzes do salão: o azul do escuro
+   * de antes da surpresa e o quente da festa
+   */
+  salaoPolpa: 0xf5953a,
+  salaoPolpaFunda: 0xdc7322,
+  salaoPolpaClara: 0xffc879,
+  salaoNervura: 0xb9581a,
+  salaoFiapo: 0xffe1a3,
+  salaoSemente: 0xfff4da,
+  salaoCabinho: 0x7a6131,
+  salaoCeuAlto: 0x151a44,
+  salaoCeuBaixo: 0x3b3478,
+  salaoLua: 0xfff2c4,
+  salaoEstrela: 0xfff5cf,
+  salaoMatoLonge: 0x0f1428,
+  salaoCozinhaLonge: 0x4a2a2a,
+  salaoEscuroFundo: 0x07080f,
+  salaoEscuroAmbiente: 0x34407a,
+  salaoEscuroLuz: 0x8090d0,
+  salaoFestaFundo: 0x1a0e14,
+  salaoFestaAmbiente: 0xffd2a0,
+  salaoFestaLuz: 0xffb978,
+  salaoLuar: 0x9fb4ff,
+  lustreFerro: 0x2b2632,
+  velaCera: 0xfff0d6,
+  velaPingo: 0xf6e2bd,
+  pistaLaranja: 0xf08a24,
+  pistaRoxa: 0x3b2552,
+  pistaBeira: 0xffd27a,
+  toalhaDeDoces: 0x5f3a8f,
+  toalhaDeDocesBarra: 0xf39a3c,
+  balaRosa: 0xff8fbf,
+  balaVerde: 0x7fd36a,
+  balaAmarela: 0xffd451,
+  balaRoxa: 0xa86bdc,
+  balaLaranja: 0xff9a3c,
+  balaBranca: 0xfff6ec,
+  forminhaDeCupcake: 0x2f2a3a,
+  forminhaDeCupcakeClara: 0xf2a24a,
+  massaDeBolo: 0xe8b977,
+  coberturaLaranja: 0xffa64a,
+  coberturaRoxa: 0xb784e8,
+  coberturaVerde: 0x9ee07a,
+  macaDoAmor: 0xc81f33,
+  macaDoAmorBrilho: 0xff6f7d,
+  palitoDeDoce: 0xfbf3e2,
+  boloDeAbobora: 0xf0902e,
+  boloRecheio: 0xfff1cf,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;
