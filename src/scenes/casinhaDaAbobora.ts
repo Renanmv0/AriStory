@@ -1,6 +1,7 @@
 import type { SceneDef } from '../core/types';
 import { PALETTE as P } from '../palette';
 import { ENTRADAS_DA_CLAREIRA, montarAClareira } from '../eventos/halloween/naCasinha';
+import { ENTRADAS_DE_DENTRO, montarODentro } from '../eventos/halloween/dentroDaCasinha';
 
 /**
  * A CASINHA DA ABÓBORA (o final do especial de Halloween, `docs/HALLOWEEN.md`
@@ -19,5 +20,29 @@ export const casinhaDaAbobora: SceneDef = {
   entries: { ...ENTRADAS_DA_CLAREIRA },
   build(w) {
     montarAClareira(w);
+  },
+};
+
+/**
+ * A CASINHA POR DENTRO (§7.1, C e D): o corredor e a cozinha da bruxa. Só se
+ * chega pela porta da casinha torta, na clareira.
+ */
+export const casinhaDaAboboraDentro: SceneDef = {
+  id: 'casinha-da-abobora-dentro',
+  name: 'Casinha da Abóbora',
+  subtitle: 'o corredor e a cozinha',
+  ambient: {
+    sky: P.dentroFundo,
+    indoor: true,
+    ambientColor: P.dentroAmbiente,
+    ambientIntensity: 0.95,
+    sunColor: P.dentroLuz,
+    sunIntensity: 0.55,
+    sunDir: [6, 12, 8],
+  },
+  spawn: ENTRADAS_DE_DENTRO['da-clareira'],
+  entries: { ...ENTRADAS_DE_DENTRO },
+  build(w) {
+    montarODentro(w);
   },
 };

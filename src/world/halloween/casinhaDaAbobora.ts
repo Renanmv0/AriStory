@@ -50,7 +50,7 @@ function por(pai: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material
 // ================================================================ as texturas
 
 /** tábuas em pé pintadas: a cor, a fresta queimada, o veio e o prego */
-function tabuas(chave: string, lado: number, n: number, cor: number, fresta: number, semente: number): THREE.CanvasTexture {
+export function tabuas(chave: string, lado: number, n: number, cor: number, fresta: number, semente: number): THREE.CanvasTexture {
   return novaTextura(chave, lado, (c, s) => {
     const rnd = sorteio(semente);
     c.fillStyle = css(cor);
@@ -97,12 +97,12 @@ function tabuas(chave: string, lado: number, n: number, cor: number, fresta: num
   });
 }
 
-const tabuasLaranja = (): THREE.CanvasTexture => tabuas('casinha:tabuas-laranja', 0.62, 5, P.portaoLaranja, P.portaoLaranjaFundo, 611);
-const tabuasRoxas = (): THREE.CanvasTexture => tabuas('casinha:tabuas-roxas', 0.8, 5, P.casinhaMadeira, P.casinhaMadeiraFresta, 733);
-const tabuasDaPorta = (): THREE.CanvasTexture => tabuas('casinha:tabuas-da-porta', 0.5, 4, P.casinhaPorta, P.casinhaPortaEscura, 857);
+export const tabuasLaranja = (): THREE.CanvasTexture => tabuas('casinha:tabuas-laranja', 0.62, 5, P.portaoLaranja, P.portaoLaranjaFundo, 611);
+export const tabuasRoxas = (): THREE.CanvasTexture => tabuas('casinha:tabuas-roxas', 0.8, 5, P.casinhaMadeira, P.casinhaMadeiraFresta, 733);
+export const tabuasDaPorta = (): THREE.CanvasTexture => tabuas('casinha:tabuas-da-porta', 0.5, 4, P.casinhaPorta, P.casinhaPortaEscura, 857);
 
 /** pedra de mourão e de chaminé: pedras arredondadas de tamanhos diferentes, com o rejunte */
-function pedras(chave: string, cor: number, escura: number, semente: number): THREE.CanvasTexture {
+export function pedras(chave: string, cor: number, escura: number, semente: number): THREE.CanvasTexture {
   return novaTextura(chave, 0.55, (c, s) => {
     const rnd = sorteio(semente);
     c.fillStyle = css(escura);

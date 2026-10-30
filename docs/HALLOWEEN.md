@@ -35,7 +35,7 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapas 1 a 5 e a parte 6a construídas, escondidas.** O filme no
+**Estado: etapas 1 a 5 e as partes 6a e 6b construídas, escondidas.** O filme no
 sofá e a carta da Estella (§2.1), o parque no pôr do sol, enfeitado e vazio
 (§4.1), o presente da Estella na boutique (§2.3.1), a noite da festa com o
 ônibus chegando e todo mundo fantasiado no posto (§2.4.1), e a **caça de
@@ -46,10 +46,13 @@ aparecem com `?halloween` na URL (`src/eventos/halloween/`,
 `src/world/halloween/`, `src/world/fantasias.ts`,
 `src/world/fantasiasDaCaca.ts`, `scripts/halloween.mjs`,
 `scripts/fantasias.mjs`). Da **etapa 6** (a Casinha da Abóbora, §7.1) está
-construída a **6a**: o portão laranja no parque e a clareira de fora com a
-Casinha (`eventos/halloween/naCasinha.ts`, `scenes/casinhaDaAbobora.ts`,
-`world/halloween/casinhaDaAbobora.ts`, `SO=casinha` no teste). A próxima é a
-**6b**: o corredor e a cozinha.
+construída a **6a** (o portão laranja no parque e a clareira de fora com a
+Casinha: `eventos/halloween/naCasinha.ts`, `scenes/casinhaDaAbobora.ts`,
+`world/halloween/casinhaDaAbobora.ts`) e a **6b** (por dentro: o corredor e a
+cozinha da bruxa com o fantasminha de mola —
+`eventos/halloween/dentroDaCasinha.ts`, `world/halloween/casinhaPorDentro.ts`,
+a cena `casinha-da-abobora-dentro`); o teste é o `SO=casinha`. A próxima é a
+**6c**: o salão-abóbora, a surpresa e a festa.
 
 **Onde moram as fantasias da caça (5b):** as trinta peças em
 `world/fantasiasDaCaca.ts` (o kit vem do `world/fantasias.ts` e da
@@ -1486,8 +1489,9 @@ para a câmera, ele se lê inteiro.
 gigante fica APAGADA (só a casinha da frente tem luz: a vela na janela
 redonda e a lanterna da porta), e as luzinhas vão de árvore em árvore pelo
 fundo — entre as estacas de lanterna do caminho, o fio passava por cima da
-cabeça de quem anda. A porta da casinha, por enquanto, é "Bater na porta"
-(ninguém atende; a 6b abre).
+cabeça de quem anda. A porta da casinha é "Entrar na casinha": a primeira
+vez a dupla bate, ninguém atende, e a porta abre sozinha ("A porta abriu
+sozinha…" / "Vamos juntos. De mãos dadas."); depois abre direto.
 
 Uma clareira pequena no mato atrás da roda (o cenário novo, de noite, com o
 céu da festa): um **caminho de pedrinhas** entre **abóboras gigantes** (o
@@ -1501,6 +1505,14 @@ dentro…").
 
 #### C. O corredor (detalhes de Halloween)
 
+**Construído (6b)**, como está abaixo: os quatro quadros (o fantasminha, a
+senhora abóbora de laço, o gato na lua e a casa assombrada) com as pupilas
+andando para o lado da dupla, quatro arandelas de vela, o relógio de pêndulo
+dando o BONG uma vez por visita ("AI! …" / "É só o relógio. Meia-noite em
+ponto." / "Meu coração tá no pé."), os morceguinhos de feltro no fio rente à
+cornija, e a porta do fim rangendo e abrindo sozinha. As paredes do lado da
+câmera são baixas, como em toda sala do jogo.
+
 Estreito, um tico torto, **papel de parede listrado roxo e preto** (canvas),
 rodapé de madeira, **tapete comprido** vinho, **quadros de Halloween** (um
 fantasminha, uma abóbora, um gato preto na lua, uma casa assombrada) com
@@ -1510,6 +1522,19 @@ pendurados que balançam quando a dupla passa, e um relógio de pêndulo que
 bate no meio do caminho (o susto pequeno: "BONG"). A porta do fim range.
 
 #### D. A cozinha da bruxa (o fantasminha de mola)
+
+**Construída (6b)**: o fogão a lenha de tijolinho com a fornalha acesa, a
+lenha empilhada e o caldeirão verde borbulhando ("Olhar o caldeirão": "Tá
+borbulhando… e é verde." / "Cheira a chocolate quente. Que bruxa mais
+boazinha."), a janela redonda com a lua e um morcego passando, a prateleira
+de poções acesas, as três vassouras, a réstia de abóboras, o livro de
+feitiço aberto na mesa ("Ler o livro de feitiço") e o chapéu: chegando perto,
+ele treme, pula e cai de lado, e o fantasminha sai na mola rindo ("AAAH!" /
+"…É de mola! Um fantasminha de mola!" / "Que susto fofo. Olha ele rindo da
+gente."); depois dá para "Cutucar o fantasminha". A PORTA GRANDE DO SALÃO
+(redonda, de tábua cor de abóbora) fica trancada até a 6c: "Tá trancada… e
+do outro lado tá tudo escuro." / "Você ouviu isso? Parecia um 'shhh'…" /
+"Deve ser o vento. …Né?".
 
 Fogão a lenha de tijolinho com o **caldeirão borbulhando** (a bolha e o
 vapor do carrinho do Noel), **prateleiras de potes de poção** coloridos (em
@@ -1710,7 +1735,7 @@ aprovar antes da próxima.
 | **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** ✅ | **a noite e o ônibus** *(construída, escondida)* | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** ✅ | **doces ou travessuras** *(construída, escondida)* | **5a**: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
-| **6** | **a Casinha da Abóbora** *(6a construída, escondida; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
+| **6** | **a Casinha da Abóbora** *(6a e 6b construídas, escondidas; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** | **o fechamento** | a foto da festa virando memória no quadro, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |
 

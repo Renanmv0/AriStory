@@ -47,8 +47,14 @@
  *             cesta curta, a fechadura acendendo com 25 balas, e o Walter
  *             sumindo por ele — a folha abre), e a clareira da Casinha da
  *             Abóbora (a abóbora gigante, a casinha torta, o caminho, a
- *             névoa, o comentário de quem chega, bater na porta, voltar pro
- *             parque na frente do portão, e o portão abrindo direto depois)
+ *             névoa, o comentário de quem chega, voltar pro parque na
+ *             frente do portão, e o portão abrindo direto depois); e a 6b,
+ *             POR DENTRO: bater e a porta abrir sozinha, o corredor (os
+ *             olhos dos quadros seguindo, o BONG do relógio, os
+ *             morceguinhos balançando, a porta do fim abrindo sozinha), a
+ *             cozinha (o comentário, o susto do fantasminha de mola, a
+ *             porta grande do salão trancada com o "shhh"), sair e entrar
+ *             de novo
  *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre, nenhuma peça do evento, e a
  *             casa, o parque, o clube, a escola, a estufa, o Mania e o quarto
@@ -1339,6 +1345,26 @@ if (roda('caca')) {
 if (roda('casinha')) {
   console.log('\ncasinha: o portão laranja atrás da roda e a clareira da Casinha da Abóbora (§7.1, a 6a)');
   await naFaseConvite('villa-lobos', ['halloween:festa', 'cookie-apresentado', 'halloween:viu:walter-indo']);
+  /** passa as falas de agora, lendo o que foi dito */
+  const lerFalas = async (limite = 20) => {
+    const ditos = [];
+    // (entre uma fala e outra pode haver uma pausa — a batida na porta, o susto —: só para depois de uns segundos sem balão)
+    let semBalao = 0;
+    for (let i = 0; i < limite * 4; i++) {
+      const t = await j(() => ({ show: !!document.querySelector('.dialogue.show'), digitando: window.jogo.ui.typing !== null, texto: document.querySelector('.dialogue.show .text')?.textContent ?? '' }));
+      if (!t.show) {
+        if (ditos.length && ++semBalao > 7) break;
+        await espera(500);
+        continue;
+      }
+      semBalao = 0;
+      if (t.digitando) { await page.keyboard.press('KeyE'); await espera(300); continue; }
+      ditos.push(t.texto);
+      await page.keyboard.press('KeyE');
+      await espera(450);
+    }
+    return ditos.join(' ‖ ');
+  };
   const cenaAtual = () => j(() => window.jogo.current.def.id);
   const doPortao = () => j(() => {
     const o = window.jogo.scene.getObjectByName('portao-laranja');
@@ -1427,10 +1453,8 @@ if (roda('casinha')) {
   await page.screenshot({ path: `${OUT}-casinha-chegada.png` });
   // o comentário de quem chega, andando para dentro
   await j(() => window.jogo.debugPlace(-6.5, 3.0, Math.PI / 2));
-  await page.waitForFunction(() => /abóbora/i.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
-  const chegou = await textoDoBalao();
+  const chegou = await lerFalas();
   ok(/casinha|abóbora/i.test(chegou), `quem chega comenta a casinha (${chegou.slice(0, 70)})`);
-  await passarFalas();
   // as fotos: a câmera de sempre no caminho, de cima, e a casinha de perto
   await j(() => window.jogo.debugPlace(-2, 2, Math.PI / 4));
   await espera(3000);
@@ -1443,28 +1467,20 @@ if (roda('casinha')) {
     await page.screenshot({ path: `${OUT}-casinha-${nome}.png` });
   }
   await j(() => window.jogo.setCameraOmbro(null));
-  // bater na porta (a 6b abre)
-  await j(() => {
-    const g = window.jogo;
-    const it = g.current.world.interactables.find((i) => i.id === 'halloween:casinha:porta');
-    g.debugPlace(it.x, it.z, Math.PI);
-  });
-  await page.waitForFunction(() => /Bater na porta/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
-  await page.keyboard.press('KeyE');
-  await page.waitForFunction(() => /Toc/.test(document.querySelector('.dialogue.show')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
-  ok(/Toc/.test(await textoDoBalao()), 'bater na porta da casinha: "Toc, toc, toc…"');
-  await passarFalas();
-  await espera(1500);
-  await passarFalas();
   // voltar pro parque: na frente do portão laranja, de costas para ele
+  await lerFalas(4);
   await j(() => {
     const g = window.jogo;
     const it = g.current.world.interactables.find((i) => i.id === 'halloween:clareira:voltar');
     g.debugPlace(it.x + 0.2, it.z, -Math.PI / 2);
   });
   await page.waitForFunction(() => /Voltar pro parque/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
-  await page.keyboard.press('KeyE');
-  await page.waitForFunction(() => window.jogo.current?.def?.id === 'villa-lobos', null, { timeout: 60000 }).catch(() => {});
+  // (logo depois da câmera de perto voltar, o primeiro E pode não ser lido: tenta de novo se a cena não trocou)
+  for (let k = 0; k < 3; k++) {
+    await page.keyboard.press('KeyE');
+    const foi = await page.waitForFunction(() => window.jogo.current?.def?.id === 'villa-lobos', null, { timeout: 20000 }).then(() => true).catch(() => false);
+    if (foi) break;
+  }
   await espera(2500);
   const volta = await j(() => { const p = window.jogo.playerPosition(); return { cena: window.jogo.current.def.id, x: +p.x.toFixed(2), z: +p.z.toFixed(2) }; });
   ok(volta.cena === 'villa-lobos' && Math.hypot(volta.x + 11.3, volta.z + 25.6) < 0.6, `voltar pro parque: na frente do portão (${JSON.stringify(volta)})`);
@@ -1472,6 +1488,123 @@ if (roda('casinha')) {
   await abrir();
   await page.waitForFunction(() => window.jogo.current?.def?.id === 'casinha-da-abobora', null, { timeout: 60000 }).catch(() => {});
   ok((await cenaAtual()) === 'casinha-da-abobora', 'a segunda vez o portão abre direto');
+  await espera(2000);
+
+  // ------------------------------------------------------------ a 6b: por dentro
+  // entrar: bater, ninguém atende, a porta abre sozinha
+  await j(() => {
+    const g = window.jogo;
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:casinha:porta');
+    g.debugPlace(it.x, it.z + 0.3, Math.PI);
+  });
+  await page.waitForFunction(() => /Entrar na casinha/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.press('KeyE');
+  const entrando = await lerFalas();
+  await page.waitForFunction(() => window.jogo.current?.def?.id === 'casinha-da-abobora-dentro', null, { timeout: 60000 }).catch(() => {});
+  await espera(2500);
+  ok(/Toc/.test(entrando) && /abriu sozinha/.test(entrando) && (await cenaAtual()) === 'casinha-da-abobora-dentro',
+    `bater na porta, ela abre sozinha e a dupla entra (${entrando.slice(0, 90)})`);
+  const dentro = await j(() => {
+    const etiquetas = new Set();
+    window.jogo.scene.traverse((o) => { if (o.userData?.peca) etiquetas.add(o.userData.peca); });
+    const p = window.jogo.playerPosition();
+    return { etiquetas: [...etiquetas], x: +p.x.toFixed(2), z: +p.z.toFixed(2) };
+  });
+  const pecasDeDentro = ['quadro-com-olhos', 'relogio-de-pendulo', 'morceguinhos-no-fio', 'arandela', 'fogao-a-lenha', 'prateleira-de-pocoes', 'janela-com-lua', 'mesa-da-bruxa', 'fantasminha-de-mola', 'porta-do-salao', 'vassouras', 'restia-de-aboboras'];
+  ok(pecasDeDentro.every((e) => dentro.etiquetas.includes(e)) && Math.hypot(dentro.x - 8.25, dentro.z) < 0.5,
+    `por dentro: o corredor e a cozinha inteiros, e a dupla na porta da rua (${pecasDeDentro.filter((e) => !dentro.etiquetas.includes(e)).join(',') || 'tudo'} · ${dentro.x}, ${dentro.z})`);
+  await espera(1500);
+  await page.screenshot({ path: `${OUT}-casinha-corredor.png` });
+  const pesoDentro = await j(() => ({ calls: window.jogo.renderer.info.render.calls, triangulos: window.jogo.renderer.info.render.triangles }));
+  console.log(`       (o peso do corredor na câmera de sempre: ${pesoDentro.calls} desenhos, ${pesoDentro.triangulos} triângulos)`);
+  // os olhos dos quadros seguem quem passa: a pupila do primeiro quadro anda de um lado para o outro
+  const pupila = () => j(() => {
+    const q = window.jogo.scene.getObjectByName('quadro-fantasma');
+    let p = null;
+    q.traverse((o) => { if (!p && o.name === 'pupila') p = o; });
+    return p.position.x;
+  });
+  await j(() => window.jogo.debugPlace(2.8, 0.6, Math.PI / 2));
+  await espera(3000);
+  const aEsquerda = await pupila();
+  await j(() => window.jogo.debugPlace(4.4, 0.6, -Math.PI / 2));
+  await espera(3000);
+  const aDireita = await pupila();
+  ok(aDireita - aEsquerda > 0.006, `os olhos do quadro seguem a dupla (a pupila foi de ${aEsquerda.toFixed(3)} a ${aDireita.toFixed(3)})`);
+  // o BONG do relógio, passando na frente dele (e o comentário)
+  await j(() => window.jogo.debugPlace(5.85, 0.4, -Math.PI / 2));
+  const bong = await lerFalas();
+  ok(/relógio/.test(bong) && (await flag('halloween:viu:relogio')), `o relógio dá o BONG quando a dupla passa (${bong.slice(0, 70)})`);
+  // os morceguinhos balançam quando a dupla passa embaixo
+  const balanco = () => j(() => {
+    const im = window.jogo.scene.getObjectByName('corpos-dos-morceguinhos');
+    const m = new window.jogo.scene.matrix.constructor();
+    let soma = 0;
+    for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, m); soma += Math.abs(m.elements[9]); }
+    return soma;
+  });
+  const parados = await balanco();
+  for (let k = 0; k < 6; k++) { await j((x) => window.jogo.debugPlace(x, -0.5, -Math.PI / 2), 7.6 - k * 0.5); await espera(900); }
+  const mexendo = await balanco();
+  ok(mexendo > parados * 1.5 + 0.02, `os morceguinhos balançam quando a dupla passa embaixo (${parados.toFixed(3)} → ${mexendo.toFixed(3)})`);
+  // a porta do fim range e abre sozinha
+  await j(() => window.jogo.debugPlace(3.2, 0, -Math.PI / 2));
+  await page.waitForFunction(() => (window.jogo.scene.getObjectByName('dobradica')?.rotation.y ?? 0) > 1.2, null, { timeout: 60000 }).catch(() => {});
+  const porta = await j(() => { let d = 0; window.jogo.scene.traverse((o) => { if (o.name === 'dobradica' && o.rotation.y > d) d = o.rotation.y; }); return d; });
+  ok(porta > 1.2, `a porta do fim do corredor abre sozinha (${porta.toFixed(2)})`);
+  // a cozinha: o comentário de quem entra
+  await j(() => window.jogo.debugPlace(1.0, 1.9, -Math.PI * 0.75));
+  const cozinha = await lerFalas();
+  ok(/cozinha de bruxa/i.test(cozinha), `quem entra na cozinha comenta (${cozinha.slice(0, 70)})`);
+  await page.screenshot({ path: `${OUT}-casinha-cozinha.png` });
+  // o chapéu da mesa: o susto do fantasminha de mola
+  await j(() => window.jogo.debugPlace(-0.4, 1.4, -Math.PI * 0.75));
+  const susto = await lerFalas();
+  const mola = await j(() => {
+    const f = window.jogo.scene.getObjectByName('fantasma-da-mola');
+    const v = new window.jogo.scene.position.constructor();
+    f.getWorldPosition(v);
+    return { visivel: f.visible, y: +v.y.toFixed(2) };
+  });
+  ok(/mola/.test(susto) && mola.visivel && mola.y > 1.0 && (await flag('halloween:casinha:fantasminha')),
+    `chegando no chapéu, o fantasminha sai na mola (${susto.slice(0, 60)} · ${JSON.stringify(mola)})`);
+  await j(() => { const T = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new T(0.9, 1.75, 2.4), new T(-0.75, 1.0, 0.2)); });
+  await espera(2500);
+  await page.screenshot({ path: `${OUT}-casinha-fantasminha.png` });
+  await j(() => window.jogo.setCameraOmbro(null));
+  // a porta do salão: trancada, e o "shhh"
+  await j(() => {
+    const g = window.jogo;
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:casinha:salao');
+    g.debugPlace(it.x, it.z, -Math.PI / 2);
+  });
+  await page.waitForFunction(() => /porta grande/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.press('KeyE');
+  const salao = await lerFalas();
+  ok(/shhh/.test(salao) && (await cenaAtual()) === 'casinha-da-abobora-dentro', `a porta grande do salão: trancada, e um "shhh" (${salao.slice(0, 80)})`);
+  // sair: de volta na frente da porta da casinha
+  await j(() => {
+    const g = window.jogo;
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:casinha:sair');
+    g.debugPlace(it.x, it.z, Math.PI / 2);
+  });
+  await page.waitForFunction(() => /Sair da casinha/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.jogo.current?.def?.id === 'casinha-da-abobora', null, { timeout: 60000 }).catch(() => {});
+  await espera(2500);
+  const fora = await j(() => {
+    const g = window.jogo;
+    const p = g.playerPosition();
+    const it = g.current.world.interactables.find((i) => i.id === 'halloween:casinha:porta');
+    return { cena: g.current.def.id, d: +Math.hypot(p.x - it.x, p.z - it.z).toFixed(2) };
+  });
+  ok(fora.cena === 'casinha-da-abobora' && fora.d < 0.6, `sair da casinha: na clareira, na frente da porta (${JSON.stringify(fora)})`);
+  // e de novo dentro: o fantasminha já está fora do chapéu
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => window.jogo.current?.def?.id === 'casinha-da-abobora-dentro', null, { timeout: 60000 }).catch(() => {});
+  await espera(2500);
+  const deNovo = await j(() => window.jogo.scene.getObjectByName('fantasma-da-mola')?.visible === true);
+  ok(deNovo, 'entrando de novo, a porta abre direto e o fantasminha já está fora do chapéu');
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');

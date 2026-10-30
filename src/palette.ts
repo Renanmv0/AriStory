@@ -2541,6 +2541,50 @@ export const PALETTE = {
   casinhaPorta: 0x6b412b,
   casinhaPortaEscura: 0x4a2b1d,
   casinhaJanela: 0xffcf6e,
+  /**
+   * A CASINHA POR DENTRO (a 6b): o fundo escuro de fora das salas, a luz de
+   * vela do lado de dentro (o ambiente lilás e a luz quente), o papel de
+   * parede listrado roxo e preto com as estrelinhas douradas, o lambri de
+   * madeira, a moldura dourada dos quadros e o céu pintado neles
+   */
+  dentroFundo: 0x110d1a,
+  dentroAmbiente: 0x5d4c80,
+  dentroLuz: 0xffc68a,
+  papelRoxo: 0x553478,
+  papelRoxoEscuro: 0x2c1f42,
+  papelEstrela: 0xd7ad4f,
+  lambriMadeira: 0x5c3a2b,
+  lambriFriso: 0x7d5240,
+  molduraDourada: 0xcc9c40,
+  molduraDouradaEscura: 0x8e6828,
+  ceuDoQuadro: 0x2e2a58,
+  luaDoQuadro: 0xf6e9b0,
+  assoalhoDaCasinha: 0x8a6650,
+  /** o relógio de pêndulo: a caixa de madeira escura, o mostrador creme e o latão */
+  relogioMadeira: 0x5e3828,
+  relogioDePenduloMostrador: 0xf3e6c8,
+  relogioLatao: 0xd8aa4c,
+  /**
+   * A COZINHA DA BRUXA: o tijolo do fogão a lenha, o ferro da chapa, o fogo e
+   * a brasa, a mesa, o livro de feitiço (a capa e o papel), o pano do
+   * fantasminha de mola e a mola, o céu da janela redonda e a porta grande
+   * do salão (madeira de abóbora)
+   */
+  fogaoTijolo: 0x934d3b,
+  fogaoFerro: 0x2d2731,
+  fogo: 0xff9a35,
+  brasa: 0xff5e22,
+  lenha: 0x7a5236,
+  mesaDaBruxa: 0x6e4c37,
+  livroDeFeiticoCapa: 0x5c2f4c,
+  livroPapel: 0xf2e5c4,
+  fantasminhaPano: 0xf7f3ff,
+  fantasminhaSombra: 0xd9d2ee,
+  molaDeMetal: 0xb9b5c7,
+  ceuDaJanela: 0x252552,
+  rolhaDePocao: 0xb48a5a,
+  portaDoSalao: 0xdf7d2c,
+  portaDoSalaoFundo: 0x8c4718,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;
