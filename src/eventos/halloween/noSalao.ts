@@ -32,7 +32,7 @@ import { pocaDeLuz } from '../../world/furniture';
 import { assoalhoDeMadeira } from '../../world/texturasDeChao';
 import { fantasiarQuemEstaAqui } from './fantasiados';
 import { fixas, zoomDaConversa, type Convidado, type Fala, type Tomada } from './conversaComZoom';
-import { avancarFase } from './fase';
+import { avancarFase, faseDoHalloween } from './fase';
 
 /*
  * O SALÃO DA ABÓBORA (`docs/HALLOWEEN.md`, §7.1, E — a parte 6c): a porta
@@ -582,6 +582,9 @@ export function montarOSalao(w: WorldBuilder): void {
     if (c.bicho === estella && !api.flag(FLAG_DO_CONCURSO)) {
       await api.say(['Quando quiserem, a gente começa o concurso de fantasias. Eu tô doida pra subir naquele palquinho.'], E);
       pediuOConcurso = (await api.ask('Começar o concurso de fantasias?', ['Pode começar!', 'Daqui a pouco'])) === 0;
+    } else if (c.bicho === estella && faseDoHalloween(api) === 'depois') {
+      // depois da foto, ela lembra a dupla de ir dormir (a festa acaba na cama)
+      await api.say(['Ainda aqui, majestades? Vão pra casa descansar. Amanhã vocês me contam tudo… eu já sei tudo, mas contam mesmo assim.'], E);
     }
   });
 
@@ -1212,6 +1215,9 @@ export function montarOSalao(w: WorldBuilder): void {
       api.setFlag(FLAG_DA_FOTO);
       await esperar(1.0);
       await api.say(['Ficou perfeita. Essa vai pro álbum da festa… e pra sempre.'], E);
+      // a dica do fim (etapa 7, decisão do Renan: quem avisa é a Estella): a
+      // festa continua, mas a noite da dupla acaba na cama do quarto do Ari
+      await api.say(['E agora, rainha e rei: já passou da meia-noite. A festa continua aqui, mas vocês dois vão descansar, viu? A cama de vocês tá chamando.'], E);
       todoMundoComemora();
       avancarFase(api, 'depois');
       api.unlock({

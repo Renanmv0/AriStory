@@ -2659,6 +2659,16 @@ export const PALETTE = {
   palquinhoBarra: 0xf39a3c,
   plaquinhaDeVoto: 0xf5861f,
   flashDaFoto: 0xffffff,
+  /**
+   * a casa do Ari de madrugada, depois da festa (etapa 7): o céu e a luz azul
+   * de dentro, o sol virando luar, o vidro escuro da janela com o reflexo, e
+   * o luar que entra por ela no chão no lugar da claridade morna do dia
+   */
+  noiteEmCasaCeu: 0x1c2140,
+  noiteEmCasaAmbiente: 0x8d97d6,
+  noiteEmCasaLuar: 0xa9bcff,
+  vidroDeNoite: 0x27305e,
+  luarNaJanela: 0x9fb4ff,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

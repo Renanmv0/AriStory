@@ -209,9 +209,9 @@ export const casa: SceneDef = {
     w.blockBox(MAQUINA.x, MAQUINA.z, 0.36, 0.34);
 
     // ------------------------------------------------ janela (rosa) e enfeites
-    w.add(fundir(w.place(windowFrame(1.8, 1.3), x0 + 0.16, 1.75, 2.4, Math.PI / 2)));
+    const janela = w.add(fundir(w.place(windowFrame(1.8, 1.3), x0 + 0.16, 1.75, 2.4, Math.PI / 2)));
     // a claridade que essa janela joga no chão da sala
-    w.add(w.place(claridadeDaJanela(1.8, 1.3, 1.75), x0 + 0.15, 0, 2.4, Math.PI / 2));
+    const claridadeDoDia = w.add(w.place(claridadeDaJanela(1.8, 1.3, 1.75), x0 + 0.15, 0, 2.4, Math.PI / 2));
     w.add(envernizar(w.place(pictureFrame(0.8, 0.6, P.skyDusk), -3.4, 1.95, z0 + 0.17)));
     w.add(envernizar(w.place(prateleiraDeParede(1.1), -1.6, 1.8, z0 + 0.27)));
     w.add(fundir(w.place(jiboiaEmVaso(1.15), x0 + 0.8, 0, D / 2 - 1.0)));
@@ -273,6 +273,8 @@ export const casa: SceneDef = {
       assento, focoSofa, tela, ligarTv,
       tv: { x: x0 + 0.4, z: 0.6 },
       porta: { x: PORTA_DA_RUA.x, z: D / 2 },
+      janelas: [janela], claridades: [claridadeDoDia],
+      olharPelaJanela: { x: x0 + 1.3, z: 2.4 },
     });
 
     // ------------------------------------------------------------ interações
