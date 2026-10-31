@@ -28,7 +28,7 @@ import { FLAG_DO_ONIBUS, faseDoHalloween } from './fase';
  * flutuando em cima da cabeça (ninguém fica perdido), e quem chega cedo a uma
  * parada que ainda não é a vez dela ouve uma fala pedindo para seguir o
  * mapinha. A última (o Noel) dá a pista do final: a porta da Casinha, que
- * abre com 25 balas.
+ * abre com 35 balas.
  *
  * AS PARADAS PARES ENTREGAM UMA FANTASIA INTEIRA (a etapa 5b, §5.2): a
  * abóbora (o Cookie), o pirata (o Jean-Luc), o gato preto (as coelhinhas), o
@@ -47,7 +47,8 @@ import { FLAG_DO_ONIBUS, faseDoHalloween } from './fase';
 
 /** as balas na cesta, e quantas a porta da Casinha pede (§5.3) */
 export const CHAVE_DAS_BALAS = 'halloween:balas';
-export const BALAS_DA_PORTA = 25;
+/** quantas balas a porta da Casinha pede (decisão do Renan: 35, e não mais 25 — só no doce dá 30, então é preciso achar abóbora escondida ou caprichar na travessura) */
+export const BALAS_DA_PORTA = 35;
 const CHAVE_DOCES = 'halloween:doces';
 const CHAVE_TRAVESSURAS = 'halloween:travessuras';
 const BALAS_DO_DOCE = 3;

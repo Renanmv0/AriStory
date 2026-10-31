@@ -27,7 +27,7 @@ import { CENA_DE_DENTRO } from './dentroDaCasinha';
  *   (`x = −11`), virado para a praça, com a cerquinha torta dos dois lados e
  *   o MATO fechando atrás. É por ele que o Walter some quando larga a
  *   barraca (a primeira dica do final): a folha abre, ele entra no mato, e
- *   ela fecha. A fechadura de abóbora acende quando a cesta passa das 25
+ *   ela fecha. A fechadura de abóbora acende quando a cesta passa das 35
  *   balas. Abrir pede a pista do Noel (a última parada) e a cesta cheia.
  *
  *   ONDE, E POR QUÊ AQUI: bem atrás da roda (onde o Walter sumia antes) o aro
