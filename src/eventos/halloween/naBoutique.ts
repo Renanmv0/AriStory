@@ -469,8 +469,14 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
       // 5. A CESTINHA e o MAPINHA
       estella.oferecerBiscoito(1.8);
       await g.wait(0.8);
-      g.addItem(ITENS.cestaDeAbobora);
-      g.addItem(ITENS.mapinhaDaEstella);
+      // UMA DE CADA PARA CADA UM (pedido do Renan): a cestinha e o mapinha
+      // vão para a mochila dos dois, e não só de quem está jogando
+      for (const quem of [ARI.id, RENAN.id]) {
+        g.addItem(ITENS.cestaDeAbobora, quem);
+        g.addItem(ITENS.mapinhaDaEstella, quem);
+      }
+      // (já entregues aos dois: o parque não precisa completar)
+      g.setFlag('halloween:cesta-dos-dois');
       g.som('pegar');
       await conversa([
         [E, 'Tomem: uma cestinha de abóbora pra encher de balas. Quanto mais cheia, mais perto da surpresa…'],

@@ -628,6 +628,8 @@ if (roda('boutique')) {
       ari: g.wearables('ari').map((i) => i?.id ?? null),
       renan: g.wearables('renan').map((i) => i?.id ?? null),
       maos: g.handItems().map((i) => i?.id).filter(Boolean),
+      // a do parceiro também: a Estella dá uma cestinha e um mapinha para CADA um
+      maosDoOutro: g.handItems(g.playerId() === 'ari' ? 'renan' : 'ari').map((i) => i?.id).filter(Boolean),
       armario: g.wardrobeItems('ari').map((i) => i.id),
       armarioDoRenan: g.wardrobeItems('renan').map((i) => i.id),
       memoria: g.save.memories.some((m) => m.id === 'halloween-presente-da-estella'),
@@ -638,6 +640,7 @@ if (roda('boutique')) {
   ok(ROUPA_DE_ANTES.ari.every((id) => depois.armario.includes(id)) && ROUPA_DE_ANTES.renan.every((id) => depois.armarioDoRenan.includes(id)),
     'a roupa de antes dos dois foi para o guarda-roupa (nada se perde)');
   ok(depois.maos.includes('cesta-de-abobora') && depois.maos.includes('mapinha-da-estella'), `a cestinha e o mapinha na mochila (${depois.maos.join(', ')})`);
+  ok(depois.maosDoOutro.includes('cesta-de-abobora') && depois.maosDoOutro.includes('mapinha-da-estella'), `e na mochila do outro também, uma de cada pra cada um (${depois.maosDoOutro.join(', ')})`);
   ok(depois.armario.includes('tiara-de-morcego'), 'as fantasias ficam no guarda-roupa dos dois (a do Renan no armário do Ari)');
   ok(depois.memoria, 'vira a memória "O presente da Estella"');
   await espera(800);
@@ -672,6 +675,28 @@ if (roda('boutique')) {
   await espera(2000);
   ok(!(await j(() => window.jogo.player.locked)) && (await interacoes())['lojinha:estella'] === true, 'recarregando, a cena não se repete');
   await page.keyboard.press('Escape');
+}
+
+// o save de antes da cestinha dos dois: o presente deu a cesta e o mapinha só
+// a quem jogava — na primeira festa depois, o outro ganha os dele (uma vez)
+if (roda('boutique')) {
+  // (o save é montado na boutique: no parque a festa já completaria antes)
+  await naFaseConvite('lojinha', ['halloween:presente', 'halloween:festa']);
+  await j(() => {
+    const g = window.jogo;
+    for (const q of ['ari', 'renan']) for (const id of ['cesta-de-abobora', 'mapinha-da-estella']) g.removeItem(id, q);
+    g.addItem(window.aristoryItens['cesta-de-abobora'], 'ari');
+    g.addItem(window.aristoryItens['mapinha-da-estella'], 'ari');
+  });
+  await page.goto(`${BASE}/?cena=villa-lobos&halloween`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current?.world, null, { timeout: 30000 });
+  await espera(1500);
+  const doisSaves = await j(() => ({
+    renan: ['cesta-de-abobora', 'mapinha-da-estella'].every((id) => window.jogo.hasItem(id, 'renan')),
+    ari: ['cesta-de-abobora', 'mapinha-da-estella'].every((id) => window.jogo.hasItem(id, 'ari')),
+    flag: window.jogo.flag('halloween:cesta-dos-dois'),
+  }));
+  ok(doisSaves.renan && doisSaves.ari && doisSaves.flag, `save de antes: na festa, quem não tinha ganha a cestinha e o mapinha (${JSON.stringify(doisSaves)})`);
 }
 
 // ===================================================================== noite
