@@ -1323,6 +1323,10 @@ estão construídos (a parte 5a, `eventos/halloween/caca.ts`):
   35). Com as dez paradas no doce dá 30 — é preciso achar pelo menos cinco
   abóboras escondidas, ou caprichar nas travessuras; chegando lá com menos,
   a porta conta quantas faltam e a dupla lembra das abóboras escondidas.
+  **A rede de segurança** (pedido do Renan): com a caça inteira feita, as
+  dez abóboras achadas e a cesta ainda curta, o Walter late do outro lado
+  do portão e passa por baixo as balas que faltam — a porta nunca fica
+  trancada para sempre.
 
 O número fica num canto da tela durante a festa (🎃🍬 18/35, dando um
 pulinho quando sobe, e laranja quando passa de 25), com o som das balas

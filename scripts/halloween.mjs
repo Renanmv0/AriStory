@@ -1475,6 +1475,19 @@ if (roda('casinha')) {
   await j(() => { window.jogo.bump('halloween:caca', 10); window.jogo.bump('halloween:balas', 12); });
   const curta = await abrir();
   ok(/Faltam 23/.test(curta) && (await cenaAtual()) === 'villa-lobos', `com a pista e 12 balas, a conta da porta (${curta.slice(0, 110)})`);
+  // A REDE DE SEGURANÇA: caça feita, as dez abóboras achadas e a cesta curta
+  // — o Walter late do outro lado e passa as balas que faltam. (Ele leva a
+  // dupla para dentro; o teste volta pro parque e segue com a cesta cheia.)
+  await j(() => { for (let i = 0; i < 10; i++) window.jogo.setFlag(`halloween:abobora-escondida:${i}`); });
+  const rede = await abrir();
+  const depoisDaRede = await j(() => ({ balas: window.jogo.stat('halloween:balas'), cena: window.jogo.current?.def?.id ?? window.jogo.current?.id }));
+  ok(/Walter/.test(rede) && /passando balas/.test(rede) && depoisDaRede.balas === 35,
+    `sem abóbora sobrando e a cesta curta, o Walter completa as balas por baixo do portão (${rede.slice(0, 120)} · ${JSON.stringify(depoisDaRede)})`);
+  await page.goto(`${BASE}/?cena=villa-lobos&halloween`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current?.world, null, { timeout: 60000 });
+  await espera(1800);
+  // (de volta ao parque antes de passar pelo portão: a parte de baixo segue de onde estava)
+  await j(() => { const s = window.jogo.save.data; delete s.flags['halloween:casinha:passou-do-portao']; for (const k of Object.keys(s.flags)) if (k.startsWith('halloween:abobora-escondida:')) delete s.flags[k]; window.jogo.bump('halloween:balas', 12 - window.jogo.stat('halloween:balas')); });
   // a cesta cheia: a fechadura acende
   await j(() => window.jogo.bump('halloween:balas', 25));
   await page.waitForFunction(() => window.jogo.scene.getObjectByName('portao-laranja')?.userData.portao.acesa === true, null, { timeout: 30000 }).catch(() => {});
