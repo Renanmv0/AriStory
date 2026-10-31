@@ -1319,11 +1319,12 @@ estão construídos (a parte 5a, `eventos/halloween/caca.ts`):
 - **🎃 abóboras escondidas**: dez abóborinhas brilhando pelo parque, fora do
   caminho da caça, com **1 bala** cada — é o que garante que ninguém fica
   preso na porta;
-- **a porta da Casinha abre com 25 balas.** Com as dez paradas no doce dá
-  30; chegando lá com menos, a porta conta quantas faltam e a Gina lembra
-  das abóboras escondidas.
+- **a porta da Casinha abre com 35 balas** (eram 25; o Renan subiu para
+  35). Com as dez paradas no doce dá 30 — é preciso achar pelo menos cinco
+  abóboras escondidas, ou caprichar nas travessuras; chegando lá com menos,
+  a porta conta quantas faltam e a dupla lembra das abóboras escondidas.
 
-O número fica num canto da tela durante a festa (🎃🍬 18/25, dando um
+O número fica num canto da tela durante a festa (🎃🍬 18/35, dando um
 pulinho quando sobe, e laranja quando passa de 25), com o som das balas
 caindo na cesta. *(Ainda não construído: a cesta na mão **enchendo de
 verdade**, as balas coloridas subindo dentro dela.)* Cada personagem dá a **sua** bala (o pirulito de olho do
@@ -1402,7 +1403,7 @@ Renan troca):
 
 A primeira pista é a da Estella, no mapinha desde a boutique: "Comecem por
 quem serve gelado de casaca e não tem medo de frio." Depois da do final, a
-dupla faz a conta da porta: com 25 balas ou mais, "a cesta tá cheia"; com
+dupla faz a conta da porta: com 35 balas ou mais, "a cesta tá cheia"; com
 menos, quantas faltam — e se não tem mais abóbora escondida pelo parque.
 
 **As dez abóboras escondidas** (1 bala cada, §5.3): pequenas e acesas, nos
@@ -1425,7 +1426,7 @@ como registro.
 
 Atrás da cerca que fecha a praça da roda contra o mato (`villaLobos.ts`, a
 cerca de `x = −11`) aparece, só na festa, um **portão laranja** com uma
-fechadura em forma de abóbora: ele **só abre com 25 balas** na cesta. Ele leva a
+fechadura em forma de abóbora: ele **só abre com 35 balas** na cesta. Ele leva a
 um **cenário novo e pequeno**: uma casinha torta em forma de abóbora, no
 meio de uma clareira de abóboras gigantes, com luzinhas.
 
@@ -1477,7 +1478,7 @@ peças em `world/halloween/casinhaDaAbobora.ts`, e as regras (a porta, a
 surpresa, o concurso, a foto) em `eventos/halloween/naCasinha.ts`. O parque
 só ganha o portão, por uma chamada na camada da festa (`naFesta.ts`).
 
-#### A. O portão das 25 balas (no parque)
+#### A. O portão das 35 balas (no parque)
 
 **Construído (6a).** Na ponta norte do tapume que fecha a praça da roda
 (`x = −11`), em `(−12,1; −26,4)`, VIRADO PARA A CÂMERA (a diagonal), só na
@@ -1499,7 +1500,7 @@ para a câmera, ele se lê inteiro.
 
 - **Antes da pista do Noel**: "Tá trancado… E tem uma fechadura de
   abóbora." / "Deve ter a ver com o mapinha.";
-- **com a pista e menos de 25 balas**: a conta que já existe (faltam N, e
+- **com a pista e menos de 35 balas**: a conta que já existe (faltam N, e
   as abóboras escondidas);
 - **com a pista e 25 ou mais**: "A abóbora da fechadura acendeu!" / "A
   cesta tá cheia… Vamos ver o que tem do outro lado." → a folha abre e a
@@ -1839,7 +1840,7 @@ aprovar antes da próxima.
 | **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** ✅ | **a noite e o ônibus** *(construída, escondida)* | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** ✅ | **doces ou travessuras** *(construída, escondida)* | **5a**: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
-| **6** | **a Casinha da Abóbora** *(construída, escondida; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
+| **6** | **a Casinha da Abóbora** *(construída, escondida; §7.1)* | o portão das 35 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** ✅ | **o fechamento** *(construída, escondida; §9.1)* | a foto da festa virando memória no quadro, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** ✅ | **abrir o evento** *(construída: aberto)* | o evento ligado para quem joga, sem calendário (§9.2), a chave em `eventos/Halloween.ts`, o aviso do sofá, e a edição do save no lugar da limpeza do rastro de teste | `testar` |
 

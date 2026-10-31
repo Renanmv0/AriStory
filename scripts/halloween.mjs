@@ -36,7 +36,7 @@
  *             parque, o ônibus freando, a porta abrindo e cada um descendo
  *             e falando no jeito da fantasia, até todo mundo nos postos)
  *   SO=caca   a caça de doces ou travessuras (a etapa 5a): a cesta no
- *             canto (0/25), a abóbora acesa em cima da próxima parada, quem
+ *             canto (0/35), a abóbora acesa em cima da próxima parada, quem
  *             chega cedo ouve "sigam o mapinha", o doce (3 balas), a
  *             travessura de tempo (a agulha embaixo da fala) e a de pergunta,
  *             a pista indo para o mapinha (a pergunta e o tique), a última
@@ -44,7 +44,7 @@
  *             escondidas (pegar, a bala, sumir e continuar sumida no F5)
  *   SO=casinha a etapa 6a: o portão laranja na ponta do tapume da praça da
  *             roda (trancado antes da pista do Noel, a conta da porta com a
- *             cesta curta, a fechadura acendendo com 25 balas, e o Walter
+ *             cesta curta, a fechadura acendendo com 35 balas, e o Walter
  *             sumindo por ele — a folha abre), e a clareira da Casinha da
  *             Abóbora (a abóbora gigante, a casinha torta, o caminho, a
  *             névoa, o comentário de quem chega, voltar pro parque na
@@ -1291,7 +1291,7 @@ if (roda('caca')) {
   await espera(1500);
   let e = await estado();
   const mano = await bichoEm('mano');
-  ok(e.feitas === 0 && e.balas === 0 && /0\s*\/25/.test(e.cesta ?? ''), `a caça começa: a cesta no canto, vazia (${JSON.stringify(e)})`);
+  ok(e.feitas === 0 && e.balas === 0 && /0\s*\/35/.test(e.cesta ?? ''), `a caça começa: a cesta no canto, vazia (${JSON.stringify(e)})`);
   ok(!!e.marca && e.marca.v && !!mano && Math.hypot(e.marca.x - mano.x, e.marca.z - mano.z) < 0.05 && e.marca.y > 1.2,
     `a abóbora acesa flutua em cima do Mano, a primeira parada (${JSON.stringify(e.marca)} · ${JSON.stringify(mano)})`);
   ok(e.escondidas === true, 'as abóboras escondidas acesas pelo parque');
@@ -1310,7 +1310,7 @@ if (roda('caca')) {
   ok(/Doces ou travessuras! 🎃/.test(p1.tudo) && /doces… ou travessuras\?/.test(p1.tudo), `o Mano pergunta "doces ou travessuras?" (${p1.ditos.join(' ‖ ').slice(0, 260)})`);
   ok(/Bala de abóbora/.test(p1.tudo) && e.balas === 3 && e.feitas === 1, `doces: a bala de abóbora, 3 na cesta, e a parada feita (${JSON.stringify(e)})`);
   ok(/nunca coube na cabine/.test(p1.tudo), 'a pista do Cookie');
-  ok(/3\s*\/25/.test(e.cesta ?? ''), `a cesta conta (${e.cesta})`);
+  ok(/3\s*\/35/.test(e.cesta ?? ''), `a cesta conta (${e.cesta})`);
   const cookie = await bichoEm('cookie');
   ok(!!e.marca && Math.hypot(e.marca.x - cookie.x, e.marca.z - cookie.z) < 0.4, `a abóbora passa para o Cookie (${JSON.stringify(e.marca)})`);
 
@@ -1398,7 +1398,7 @@ if (roda('caca')) {
     im.getMatrixAt(2, outra);
     return { escala: m.elements[0], outra: outra.elements[0], cesta: document.querySelector('.cesta-de-balas.show')?.textContent ?? null };
   });
-  ok(depois.escala === 0 && depois.outra > 0 && new RegExp(`${balasAntes}\\s*/25`).test(depois.cesta ?? ''), `no F5 a abóbora pega continua sumida e a cesta cheia como estava (${JSON.stringify(depois)})`);
+  ok(depois.escala === 0 && depois.outra > 0 && new RegExp(`${balasAntes}\\s*/35`).test(depois.cesta ?? ''), `no F5 a abóbora pega continua sumida e a cesta cheia como estava (${JSON.stringify(depois)})`);
   // e fora da festa (o convite) não há cesta nem abóbora escondida
   await naFaseConvite('villa-lobos');
   const convite = await j(() => ({ cesta: !!document.querySelector('.cesta-de-balas.show'), lote: window.jogo.scene.getObjectByName('aboboras-escondidas')?.visible ?? null }));
@@ -1474,11 +1474,11 @@ if (roda('casinha')) {
   // com a pista e a cesta curta: a conta da porta
   await j(() => { window.jogo.bump('halloween:caca', 10); window.jogo.bump('halloween:balas', 12); });
   const curta = await abrir();
-  ok(/Faltam 13/.test(curta) && (await cenaAtual()) === 'villa-lobos', `com a pista e 12 balas, a conta da porta (${curta.slice(0, 110)})`);
+  ok(/Faltam 23/.test(curta) && (await cenaAtual()) === 'villa-lobos', `com a pista e 12 balas, a conta da porta (${curta.slice(0, 110)})`);
   // a cesta cheia: a fechadura acende
-  await j(() => window.jogo.bump('halloween:balas', 15));
+  await j(() => window.jogo.bump('halloween:balas', 25));
   await page.waitForFunction(() => window.jogo.scene.getObjectByName('portao-laranja')?.userData.portao.acesa === true, null, { timeout: 30000 }).catch(() => {});
-  ok((await doPortao())?.acesa === true, 'com 27 balas a fechadura de abóbora acende');
+  ok((await doPortao())?.acesa === true, 'com 37 balas a fechadura de abóbora acende');
 
   // o Walter some pelo portão (a primeira dica do final): a folha abre quando ele passa
   await j(() => { let o = null; window.jogo.scene.traverse((b) => { if (!o && b.userData?.naFesta) o = b; }); o.userData.naFesta.ritmo(5); o.userData.naFesta.sairAgora(); });

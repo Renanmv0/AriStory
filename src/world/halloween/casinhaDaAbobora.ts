@@ -16,7 +16,7 @@ import { LoteDeAboboras } from './abobora';
  *
  * - o PORTÃO LARANJA (`PortaoLaranja`): a porta de tábua laranja de alto
  *   em arco, as ferragens pretas, a FECHADURA DE ABÓBORA (que acende quando
- *   a cesta passa de 25 balas), os mourões de pedra com uma abóbora acesa
+ *   a cesta passa de 35 balas), os mourões de pedra com uma abóbora acesa
  *   em cima, o arco de galho seco com folhas de outono e luzinhas, e a
  *   plaquinha "só com a cesta cheia". A folha abre num grupo com nome
  *   (`folha-do-portao`). É o mesmo portão nas duas pontas: no parque (atrás
