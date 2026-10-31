@@ -1560,6 +1560,13 @@ if (roda('casinha')) {
   // o chapéu da mesa: o susto do fantasminha de mola
   await j(() => window.jogo.debugPlace(-0.4, 1.4, -Math.PI * 0.75));
   const susto = await lerFalas();
+  // (a mola sobe num oscilador no relógio do jogo: espera ela chegar lá em cima)
+  await page.waitForFunction(() => {
+    const f = window.jogo.scene.getObjectByName('fantasma-da-mola');
+    const v = new window.jogo.scene.position.constructor();
+    f.getWorldPosition(v);
+    return v.y > 1.05;
+  }, null, { timeout: 60000 }).catch(() => {});
   const mola = await j(() => {
     const f = window.jogo.scene.getObjectByName('fantasma-da-mola');
     const v = new window.jogo.scene.position.constructor();
