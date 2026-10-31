@@ -55,6 +55,9 @@
  *             cozinha (o comentário, o susto do fantasminha de mola, a
  *             porta grande do salão trancada com o "shhh"), sair e entrar
  *             de novo
+ *   SO=dormir a noite de sono (a etapa 7): a casa e o quarto de madrugada, o
+ *             "Dormir depois da festa", a manhã do fim com a roupa de antes, e
+ *             cada cena com as malhas de antes do evento
  *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre, nenhuma peça do evento, e a
  *             casa, o parque, o clube, a escola, a estufa, o Mania e o quarto
@@ -500,7 +503,7 @@ if (roda('filme')) {
   await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
   await espera(1500);
   const depois = await pecasDoEvento();
-  ok(depois.find((p) => p.peca === 'envelope-de-halloween')?.visivel === false, 'recarregando, a carta não volta ao chão');
+  ok(depois.find((p) => p.peca === 'envelope-de-halloween')?.visivel !== true, 'recarregando, a carta não volta ao chão');
   const opcoesDepois = await abrirOSofa();
   ok(opcoesDepois.length === 2, `e o sofá não oferece o filme de novo (${opcoesDepois.join(' | ')})`);
   await page.keyboard.press('Escape');
@@ -1861,6 +1864,160 @@ if (roda('casinha')) {
   const aberto = await j(() => window.jogo.scene.getObjectByName('portao-laranja')?.userData.portao.aberto ?? 0);
   ok(parqueDepois.vazios && parqueDepois.walter === undefined && parqueDepois.gina === undefined && parqueDepois.fechado && parqueDepois.portao?.acesa && aberto > 0.5,
     `o parque depois da foto: de noite, enfeitado e vazio (os recados no lugar), sem os postos da festa, e o portão laranja aberto (${JSON.stringify(parqueDepois)} · ${aberto.toFixed(2)})`);
+}
+
+// ===================================================================== dormir
+if (roda('dormir')) {
+  console.log('\ndormir: a volta para casa de madrugada, a noite de sono e a manhã do fim (a etapa 7)');
+  const DEPOIS = ['halloween:presente', 'halloween:festa', 'halloween:depois', 'halloween:salao:concurso', 'halloween:foto-da-festa'];
+  // a roupa de antes do presente (o que a boutique anota) e a fantasia com a coroa no corpo
+  const ANTES = { ari: ['camisa-listrada', 'calca-jeans'], renan: ['moletom-preto'] };
+  await naFaseConvite('quarto', DEPOIS);
+  // a roupa de um save zerado: é com ela que as malhas de antes do evento foram contadas
+  const roupaDeSempre = await j(() => Object.fromEntries(['ari', 'renan'].map((q) => [q, window.jogo.wearables(q).filter(Boolean).map((p) => p.id)])));
+  await j((antes) => {
+    const g = window.jogo;
+    const I = window.aristoryItens;
+    g.guardarRetomada('halloween:roupa-de-antes', antes);
+    const ari = ['capa-de-vampiro', 'colete-de-vampiro', 'coroa-de-rainha'].map((id) => I[id]).filter(Boolean);
+    const renan = ['moletom-de-morcego', 'asinhas-de-morcego', 'coroa-de-rei'].map((id) => I[id]).filter(Boolean);
+    for (const p of [...ari, ...renan]) g.ganharPeca(p);
+    g.vestirConjunto(ari, 'ari');
+    g.vestirConjunto(renan, 'renan');
+  }, ANTES);
+  await espera(1200);
+  // a casa de madrugada: a sala na penumbra azul, a janela escura e o abajur aceso
+  const noite = () => j(() => {
+    const g = window.jogo;
+    let vidroDeNoite = 0;
+    let vidroDoDia = 0;
+    g.scene.traverse((o) => {
+      if (!o.isMesh || !o.material?.color) return;
+      const hex = o.material.color.getHex();
+      if (hex === 0x27305e) vidroDeNoite++;
+      if (hex === 0xb9e6f5) vidroDoDia++;
+    });
+    return { vidroDeNoite, vidroDoDia, ceu: g.scene.background?.getHexString?.() ?? null };
+  });
+  await page.goto(`${BASE}/?cena=casa&halloween`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(2000);
+  const sala = await noite();
+  const pecasDaSala = await pecasDoEvento();
+  await page.screenshot({ path: `${OUT}-dormir-sala.png` });
+  ok(sala.vidroDeNoite >= 1 && pecasDaSala.length === 0,
+    `de madrugada, a sala de noite: a janela escura, e nada do filme nem da carta (${JSON.stringify(sala)} · ${pecasDaSala.length} peças)`);
+  await page.goto(`${BASE}/?cena=quarto&halloween`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(2000);
+  const quarto = await noite();
+  const antesDeDormir = await interacoes();
+  const bichosAntes = await bichosNaCena();
+  await j(() => window.jogo.debugPlace(-1.4, 0.4, Math.PI));
+  await espera(1500);
+  await page.screenshot({ path: `${OUT}-dormir-quarto.png` });
+  ok(quarto.vidroDeNoite >= 1, `o quarto de noite (${JSON.stringify(quarto)})`);
+  ok(antesDeDormir['halloween:dormir'] === true && antesDeDormir['quarto:cama'] === false && bichosAntes.pelusa === false,
+    `a cama oferece "Dormir depois da festa" no lugar do "Deitar", e o Pelusa ainda está na boutique (${JSON.stringify({ dormir: antesDeDormir['halloween:dormir'], cama: antesDeDormir['quarto:cama'], pelusa: bichosAntes.pelusa })})`);
+  // "Ainda não": nada muda
+  await j(() => window.jogo.debugPlace(-2.2, -0.2, Math.PI));
+  await espera(800);
+  const rotulo = await page.locator('.prompt .label').textContent().catch(() => '');
+  await page.keyboard.press('KeyE');
+  await espera(900);
+  await page.locator('.escolhas.show button').nth(1).click();
+  await espera(600);
+  await passarFalas();
+  ok(/Dormir depois da festa/.test(rotulo ?? '') && !(await flag('halloween:fim')), `o prompt "${rotulo}", e o "Ainda não" não acaba o evento`);
+  // "Dormir": deitam fantasiados, conversam, o abajur apaga, o sono, e a manhã
+  for (let i = 0; i < 8 && !(await page.locator('.escolhas.show').count()); i++) {
+    await page.keyboard.press('KeyE');
+    await espera(900);
+  }
+  await page.locator('.escolhas.show button').nth(0).click();
+  const falas = [];
+  let deitadosFantasiados = null;
+  let fotoDaManha = false;
+  for (let i = 0; i < 400; i++) {
+    const t = await j(() => ({
+      show: !!document.querySelector('.dialogue.show'), digitando: window.jogo.ui.typing !== null,
+      texto: document.querySelector('.dialogue.show .text')?.textContent ?? '', livre: !window.jogo.player.locked,
+      fim: window.jogo.flag('halloween:fim'),
+    }));
+    if (t.fim && t.livre && !t.show) break;
+    if (!t.show) { await espera(400); continue; }
+    if (t.digitando) { await page.keyboard.press('KeyE'); await espera(300); continue; }
+    if (falas[falas.length - 1] !== t.texto) falas.push(t.texto);
+    if (/Que noite/.test(t.texto) && !deitadosFantasiados) {
+      deitadosFantasiados = await j(() => ({ ari: window.jogo.wearables('ari')[0]?.id, renan: window.jogo.wearables('renan')[0]?.id, lying: !!window.jogo.camOmbro }));
+      await page.screenshot({ path: `${OUT}-dormir-deitados.png` });
+    }
+    if (/Bom dia/.test(t.texto) && !fotoDaManha) {
+      fotoDaManha = true;
+      await espera(600);
+      await page.screenshot({ path: `${OUT}-dormir-manha.png` });
+    }
+    await page.keyboard.press('KeyE');
+    await espera(350);
+  }
+  const conversa = falas.join(' ‖ ');
+  ok(!!deitadosFantasiados && deitadosFantasiados.ari === 'coroa-de-rainha' && deitadosFantasiados.renan === 'coroa-de-rei',
+    `deitam fantasiados e coroados (${JSON.stringify(deitadosFantasiados)})`);
+  ok(/Boa noite, minha rainha/.test(conversa) && /Bom dia/.test(conversa) && /Tá no quadro/.test(conversa), `a conversa de boa noite e a da manhã (${conversa.slice(0, 160)}…)`);
+  await espera(1500);
+  const manha = await j(() => {
+    const g = window.jogo;
+    const ids = (q) => g.wearables(q).filter(Boolean).map((p) => p.id);
+    const guardadas = (q) => g.wardrobeItems(q).map((p) => p.id);
+    return {
+      fim: g.flag('halloween:fim'),
+      ari: ids('ari'), renan: ids('renan'),
+      noArmario: ['ari', 'renan'].every((q) => ['coroa-de-rainha', 'coroa-de-rei', 'capa-de-vampiro', 'moletom-de-morcego'].every((id) => guardadas(q).includes(id))),
+      memoria: g.save.memories.some((m) => m.id === 'o-dia-seguinte'),
+    };
+  });
+  const depoisDeDormir = await interacoes();
+  const bichosDepois = await bichosNaCena();
+  const quartoDeDia = await noite();
+  await page.screenshot({ path: `${OUT}-dormir-levantaram.png` });
+  ok(manha.fim, 'a fase vira `fim`');
+  ok(JSON.stringify(manha.ari) === JSON.stringify(ANTES.ari) && JSON.stringify(manha.renan) === JSON.stringify(ANTES.renan) && manha.noArmario,
+    `acordam com a roupa de antes, e as fantasias e as coroas ficam no guarda-roupa dos dois (${JSON.stringify(manha)})`);
+  ok(quartoDeDia.vidroDeNoite === 0 && quartoDeDia.vidroDoDia === quarto.vidroDoDia + 1, `o quarto amanhece (${JSON.stringify(quartoDeDia)})`);
+  ok(bichosDepois.pelusa === true && depoisDeDormir['quarto:pelusa'] === true && depoisDeDormir['quarto:cama'] === true && depoisDeDormir['halloween:dormir'] === false,
+    'o Pelusa de volta em casa, e a cama de sempre');
+  ok(manha.memoria, 'a memória "O dia seguinte"');
+  // recarregando, o quarto é o de sempre (de dia, com o Pelusa) e a cama não oferece mais o sono
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(1800);
+  const recarregado = await interacoes();
+  const malhas = await malhasNaCena();
+  ok(recarregado['halloween:dormir'] === undefined && recarregado['quarto:cama'] === true,
+    'recarregando no fim, a cama de sempre e nada do sono');
+  // e, no fim, cada cena que o evento tocou é a de antes dele (com a roupa
+  // de um save zerado, que é como as malhas de antes foram contadas)
+  await j((r) => { for (const q of ['ari', 'renan']) window.jogo.vestirConjunto(r[q].map((id) => window.aristoryItens[id]).filter(Boolean), q); }, roupaDeSempre);
+  const doEvento = () => j(() => {
+    const achados = new Set();
+    window.jogo.scene.traverse((o) => {
+      if (/^halloween|^fantasia-/.test(o.name) || o.userData?.peca === 'plaquinha-de-recado') achados.add(o.name || o.userData.peca);
+    });
+    return [...achados];
+  });
+  for (const [cena, antes] of Object.entries(MALHAS_ANTES)) {
+    await page.goto(`${BASE}/?cena=${cena}&halloween`, { waitUntil: 'networkidle' });
+    await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+    await espera(1500);
+    const n = await malhasNaCena();
+    const achados = await doEvento();
+    ok(n === antes && achados.length === 0, `no fim, ${cena}: as mesmas malhas de antes do evento (${n} = ${antes}), nada do evento (${achados.join(', ') || '—'})`);
+  }
+  await page.goto(`${BASE}/?cena=casa&halloween`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(1500);
+  const casaNoFim = await malhasNaCena();
+  ok(casaNoFim === MALHAS_DA_CASA_ANTES, `no fim, a casa: as mesmas malhas de antes do evento (${casaNoFim} = ${MALHAS_DA_CASA_ANTES})`);
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');

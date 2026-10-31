@@ -9,6 +9,7 @@ import { CARTA_DA_ESTELLA, envelopeDeHalloween } from '../../world/halloween/car
 import { baldeDePipoca } from '../../world/halloween/baldeDePipoca';
 import { ARI, RENAN } from '../../characters/cast';
 import { FLAG_CARTA_NO_CHAO, avancarFase, eventoLiberado, faseDoHalloween } from './fase';
+import { anoitecerEmCasa } from './casaDeNoite';
 
 /*
  * O COMEÇO DO ESPECIAL DE HALLOWEEN, na casa do Ari (`docs/HALLOWEEN.md`,
@@ -40,6 +41,11 @@ export interface PecasDaCasa {
   tv: { x: number; z: number };
   /** a porta da rua: o `x` do vão e o `z` da linha da parede */
   porta: { x: number; z: number };
+  /** a janela da sala (com o vidro) e a claridade dela no chão: de madrugada, depois da festa, viram noite */
+  janelas: readonly THREE.Object3D[];
+  claridades: readonly THREE.Object3D[];
+  /** onde se para para "Olhar pela janela" (de madrugada, a fala é outra) */
+  olharPelaJanela: { x: number; z: number };
 }
 
 export interface HalloweenNaCasa {
@@ -50,6 +56,32 @@ export interface HalloweenNaCasa {
 }
 
 const SEM_EVENTO: HalloweenNaCasa = { temFilme: () => false, assistirFilme: async () => {} };
+
+/**
+ * A sala de madrugada, voltando da festa (a etapa 7): a penumbra azul, a
+ * janela escura com o luar no chão, o abajur aceso (ele já nasce aceso) — e o
+ * "Olhar pela janela", que de dia fala do sol, troca de fala: a de sempre
+ * desliga (no primeiro quadro, quando a cena já a criou) e uma de noite entra
+ * no mesmo lugar, empurrando os dois para a cama.
+ */
+function madrugadaNaSala(w: WorldBuilder, pecas: PecasDaCasa): void {
+  anoitecerEmCasa(w, pecas);
+  let trocou = false;
+  w.onUpdate(() => {
+    if (trocou) return;
+    trocou = true;
+    const deDia = w.interactables.find((i) => i.id === 'casa:janela');
+    if (deDia) deDia.enabled = false;
+  });
+  w.interact({
+    id: 'halloween:janela-de-noite',
+    x: pecas.olharPelaJanela.x, z: pecas.olharPelaJanela.z, radius: 1.5,
+    label: 'Olhar pela janela', icon: '🌙',
+    onInteract: async (g) => {
+      await g.say(['A rua inteira já tá dormindo.', 'E a cama lá do quarto tá chamando a gente também.']);
+    },
+  });
+}
 
 /**
  * Onde a carta para, dentro da sala. LONGE da porta de propósito: a parede
@@ -64,6 +96,12 @@ const TOMADA = { de: new THREE.Vector3(1.55, 1.3, 0.85), para: new THREE.Vector3
 export function montarHalloweenNaCasa(w: WorldBuilder, pecas: PecasDaCasa): HalloweenNaCasa {
   if (!eventoLiberado()) return SEM_EVENTO;
   const g0 = w.game;
+  // de madrugada, voltando da festa (etapa 7): a sala na penumbra, a janela
+  // escura com o luar no chão, e o abajur aceso (ele já nasce aceso)
+  if (faseDoHalloween(g0) === 'depois') madrugadaNaSala(w, pecas);
+  // o filme, o balde e a carta só existem ANTES da carta lida: depois dela a
+  // casa não monta nada do começo do evento (e, no fim, é a casa de sempre)
+  if (faseDoHalloween(g0) !== 'antes') return SEM_EVENTO;
   const A = ARI.name;
   const R = RENAN.name;
   const conversa = async (falas: Array<readonly [string, string]>): Promise<void> => {

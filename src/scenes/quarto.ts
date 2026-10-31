@@ -1,7 +1,7 @@
-import { pelusaNaBoutique } from '../eventos/halloween/fase';
+import { montarHalloweenNoQuarto } from '../eventos/halloween/noQuarto';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
-import type { SceneDef } from '../core/types';
+import type { GameAPI, SceneDef } from '../core/types';
 import {
   armario, bed, chair, claridadeDaJanela, desk, espelho, estanteDeLivros, haloDeLampada,
   muralDeMemorias, nightstand, pictureFrame, plantaDeEspada, pocaDeLuz, tapete, wallShelf,
@@ -200,7 +200,7 @@ export const quarto: SceneDef = {
     // -X ele aparece de frente para a câmera em vez de de perfil.
     const espelhoObj = w.add(envernizar(w.place(espelho(P.woodDark), x0 + 0.12, 0, -0.6, Math.PI / 2)));
 
-    w.add(fundir(w.place(windowFrame(1.6, 1.2), x0 + 0.16, 1.7, 1.0, Math.PI / 2)));
+    const janela = w.add(fundir(w.place(windowFrame(1.6, 1.2), x0 + 0.16, 1.7, 1.0, Math.PI / 2)));
 
     // A escrivaninha encostada na parede de -X, com o monitor olhando para
     // DENTRO do quarto (`+PI/2`): a frente da peça vira para `+X`, que é onde
@@ -249,7 +249,7 @@ export const quarto: SceneDef = {
     // chão. Ver `pocaDeLuz` e `claridadeDaJanela` no kit.
     const halo = w.add(w.place(haloDeLampada(0.75), -1.05, 0.76, -2.72));
     const leque = w.add(w.place(pocaDeLuz(0.75, P.luzDeAbajur, 0.4, true), -1.05, 0.95, z0 + 0.16));
-    w.add(w.place(claridadeDaJanela(1.6, 1.2, 1.7), x0 + 0.15, 0, 1.0, Math.PI / 2));
+    const claridadeDoDia = w.add(w.place(claridadeDaJanela(1.6, 1.2, 1.7), x0 + 0.15, 0, 1.0, Math.PI / 2));
 
     /*
      * O ABAJUR ACENDE E APAGA com um clique (ou um toque) nele — o jeito
@@ -259,14 +259,17 @@ export const quarto: SceneDef = {
      */
     const cupula = criado.getObjectByName('cupula') as THREE.Mesh;
     let abajurAceso = true;
+    const ligarAbajur = (aceso: boolean): void => {
+      abajurAceso = aceso;
+      cupula.material = toon(aceso ? P.cupula : P.cupulaApagada, { glow: aceso ? 0.45 : 0, doubleSide: true });
+      halo.visible = aceso;
+      leque.visible = aceso;
+    };
     w.clicavel(criado, {
       dica: 'Abajur',
       alturaDaDica: 1.05,
       aoClicar: (g) => {
-        abajurAceso = !abajurAceso;
-        cupula.material = toon(abajurAceso ? P.cupula : P.cupulaApagada, { glow: abajurAceso ? 0.45 : 0, doubleSide: true });
-        halo.visible = abajurAceso;
-        leque.visible = abajurAceso;
+        ligarAbajur(!abajurAceso);
         g.som('clique');
       },
     });
@@ -438,7 +441,33 @@ export const quarto: SceneDef = {
       },
     });
 
-    w.interact({
+    /** os dois deitam na cama, lado a lado, e a câmera vai para cima deles */
+    const deitarOsDois = async (g: GameAPI): Promise<void> => {
+      g.lockPlayer(true);
+      // lado a lado, cada um numa metade da largura da cama
+      g.ridePlayer(deitados, new THREE.Vector3(-0.36, 0, 0), 1, 0);
+      g.rideCompanion(deitados, new THREE.Vector3(0.36, 0, 0), 1, 0);
+      g.setLying(true);
+      // Câmera de cima, e não a isométrica de sempre: deitados, os dois
+      // apontam para o fundo da cena, e a isométrica encurta justamente essa
+      // direção — os corpos viravam dois tocos ao lado das cabeças. De cima
+      // eles aparecem inteiros, lado a lado, que é o que a pose tem de bonito.
+      g.setCameraOmbro(
+        new THREE.Vector3(-0.95, 3.75, 0.35),
+        new THREE.Vector3(-2.2, 0.72, -1.75),
+      );
+      await g.wait(1.1);
+    };
+    /** levantam, ao lado da cama, e a câmera volta à isométrica */
+    const levantarOsDois = (g: GameAPI): void => {
+      g.setLying(false);
+      g.setCameraOmbro(null);
+      g.releasePlayer(-1.3, -0.4, 0);
+      g.releaseCompanion(-1.3, 0.25, 0);
+      g.lockPlayer(false);
+    };
+
+    const deitarNaCama = w.interact({
       id: 'quarto:cama',
       x: -2.2, z: -0.5, radius: 1.6,
       label: 'Deitar na cama', icon: '🛏️',
@@ -454,20 +483,7 @@ export const quarto: SceneDef = {
           return;
         }
 
-        g.lockPlayer(true);
-        // lado a lado, cada um numa metade da largura da cama
-        g.ridePlayer(deitados, new THREE.Vector3(-0.36, 0, 0), 1, 0);
-        g.rideCompanion(deitados, new THREE.Vector3(0.36, 0, 0), 1, 0);
-        g.setLying(true);
-        // Câmera de cima, e não a isométrica de sempre: deitados, os dois
-        // apontam para o fundo da cena, e a isométrica encurta justamente essa
-        // direção — os corpos viravam dois tocos ao lado das cabeças. De cima
-        // eles aparecem inteiros, lado a lado, que é o que a pose tem de bonito.
-        g.setCameraOmbro(
-          new THREE.Vector3(-0.95, 3.75, 0.35),
-          new THREE.Vector3(-2.2, 0.72, -1.75),
-        );
-        await g.wait(1.1);
+        await deitarOsDois(g);
 
         await conversa([
           [R, 'Essa cama é bem melhor que a minha.'],
@@ -485,11 +501,7 @@ export const quarto: SceneDef = {
           await g.wait(2.4);
         }
 
-        g.setLying(false);
-        g.setCameraOmbro(null);
-        g.releasePlayer(-1.3, -0.4, 0);
-        g.releaseCompanion(-1.3, 0.25, 0);
-        g.lockPlayer(false);
+        levantarOsDois(g);
 
         g.unlock({
           id: 'deitar-junto',
@@ -614,11 +626,11 @@ export const quarto: SceneDef = {
     });
 
     // O ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`): do convite até a noite
-    // de sono, o Pelusa está na boutique da Estella. Sem o `?halloween`, nada muda.
-    if (pelusaNaBoutique(g0)) {
-      pelusa.group.visible = false;
-      pelusa.aoSoar = null;
-      carinho.enabled = false;
-    }
+    // de sono, o Pelusa está na boutique da Estella; depois da festa, o quarto
+    // fica de noite e a cama é onde o evento acaba. Sem o `?halloween`, nada muda.
+    montarHalloweenNoQuarto(w, {
+      pelusa, carinho, cama, deitarNaCama, deitarOsDois, levantarOsDois, ligarAbajur,
+      janelas: [janela], claridades: [claridadeDoDia],
+    });
   },
 };

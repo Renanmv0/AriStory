@@ -59,11 +59,15 @@ e a **6d** (o palquinho, o concurso de fantasias com as plaquinhas de voto,
 a coroa de rainha no Ari e a de rei no Renan — `world/coroasDoConcurso.ts`,
 no guarda-roupa dos dois e no filtro 🎃 —, a foto de todos com o flash, e a
 fase `depois`: o parque de noite, enfeitado e vazio, e a festa continuando
-no salão); o teste é o `SO=casinha`. Da **etapa 7** já está pronta a foto
-virando memória no quadro do quarto do Ari ("A rainha e o rei da festa",
-pintada em `world/memoriasData.ts`, destravada pela flag da foto, junto com
-o pedido e o arraiá — pedido do Renan). Falta o resto dela (§9): a volta
-para casa, dormir e a volta ao normal.
+no salão); o teste é o `SO=casinha`. E a **etapa 7**, o fechamento
+(§9.1): a foto virando memória no quadro do quarto do Ari ("A rainha e o
+rei da festa", pintada em `world/memoriasData.ts`), a Estella mandando os
+dois descansarem, a casa e o quarto de madrugada (`casaDeNoite.ts`), o
+"Dormir depois da festa" na cama (`noQuarto.ts`) e a manhã do fim — a roupa
+de antes de volta (`roupaDeAntes.ts`), as fantasias e as coroas no
+guarda-roupa, o Pelusa em casa, e cada cena com as mesmas malhas de antes do
+evento; o teste é o `SO=dormir`. Falta a **etapa 8**: abrir o evento para
+quem joga.
 
 **Onde moram as fantasias da caça (5b):** as trinta peças em
 `world/fantasiasDaCaca.ts` (o kit vem do `world/fantasias.ts` e da
@@ -1828,8 +1832,42 @@ aprovar antes da próxima.
 | **4** ✅ | **a noite e o ônibus** *(construída, escondida)* | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** ✅ | **doces ou travessuras** *(construída, escondida)* | **5a**: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
 | **6** | **a Casinha da Abóbora** *(construída, escondida; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
-| **7** | **o fechamento** | a foto da festa virando memória no quadro *(construída)*, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
+| **7** ✅ | **o fechamento** *(construída, escondida; §9.1)* | a foto da festa virando memória no quadro, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |
+
+### 9.1 A etapa 7 em detalhe (fechada com o Renan, e construída)
+
+As respostas do Renan: **a Estella avisa** que é hora de ir; a casa e o
+quarto ficam **de noite**; os dois **acordam de roupa normal**, com as
+fantasias e as coroas guardadas; e a manhã é **só os dois acordando** (sem o
+Pelusa acordando eles).
+
+- **A dica** (`noSalao.ts`): logo depois do "Ficou perfeita…" da foto, a
+  Estella manda os dois descansarem ("A cama de vocês tá chamando"); e na
+  conversa de festa dela, na fase `depois`, ela lembra de novo.
+- **A casa de madrugada** (`eventos/halloween/casaDeNoite.ts`): o mesmo sol
+  e o mesmo céu da cena com as cores da noite (`g.luzDoCeu`, no primeiro
+  quadro), o vidro da janela escuro (`P.vidroDeNoite`) e a claridade do chão
+  virando luar (`P.luarNaJanela`) — trocando o material da malha que já é
+  só deles, nenhuma luz nova. O abajur já nasce aceso. Na sala, o "Olhar
+  pela janela" troca a fala do sol por uma de noite. Fora da fase `antes`, a
+  casa não monta mais nada do começo do evento (o balde, a carta).
+- **O sono** (`eventos/halloween/noQuarto.ts`): na fase `depois` a cama
+  troca o "Deitar na cama" pelo **"Dormir depois da festa"** (🌙), que
+  pergunta antes ("A noite da festa acaba aqui"). Os dois deitam
+  fantasiados e coroados (a mesma âncora e a mesma câmera do deitar de
+  sempre, que o quarto empresta), conversam, o abajur apaga, e a tela vai
+  para o `'sono'`. Por baixo da cortina: a fase vira `fim`, o quarto
+  amanhece, os dois vestem **a roupa de antes do presente** (a boutique a
+  anota logo antes de vestir a fantasia — `roupaDeAntes.ts`; save de antes
+  disso acorda com o que não é fantasia), e o Pelusa volta (sem cena: ele só
+  está em casa). Acordam com o passarinho, conversam ("Não foi sonho. Tá no
+  quadro."), levantam, e vem a memória **"O dia seguinte"** 🌅 e o aviso de
+  fim do especial.
+- **A volta ao normal** (§8.3): no fim, o parque, o clube, a escola, o
+  ginásio, a estufa, o Mania, o quarto, a boutique e a casa têm **as mesmas
+  malhas de antes do evento** e nenhuma peça dele — medido no `SO=dormir`.
+- As falas da noite e da manhã são **rascunho** (o Renan troca o que quiser).
 
 **Uma por vez, e escondida.** Cada etapa começa com uma conversa com o Renan
 sobre os ajustes dela (registrados aqui), depois é construída e testada com

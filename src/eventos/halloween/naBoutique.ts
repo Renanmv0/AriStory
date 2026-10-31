@@ -21,6 +21,7 @@ import { fantasiarEstellaDeAranha, pelusaMorceguinho } from '../../world/hallowe
 import { FLAG_DO_PRESENTE, avancarFase, faseDoHalloween, parqueEnfeitado } from './fase';
 import { ausentarNaCena } from './ausentes';
 import { RECADOS_DO_DEPOIS } from './recados';
+import { anotarRoupaDeAntes } from './roupaDeAntes';
 
 /*
  * A BOUTIQUE DE HALLOWEEN — a etapa 3 do especial (`docs/HALLOWEEN.md`,
@@ -432,6 +433,8 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
       // a roupa de antes vai para o guarda-roupa, e a fantasia entra INTEIRA
       // (vestir peça por peça recusava a vaga ocupada: o Ari saía de camiseta
       // com a capa por cima)
+      // (e a de antes fica anotada: é com ela que os dois acordam no fim do evento)
+      anotarRoupaDeAntes(g);
       g.vestirConjunto(FANTASIA_DE_VAMPIRO, 'ari');
       g.vestirConjunto(FANTASIA_DE_MORCEGUINHO, 'renan');
       meia.removeFromParent();
