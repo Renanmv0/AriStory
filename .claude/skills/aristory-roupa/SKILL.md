@@ -787,6 +787,13 @@ tem alguma. O que ficou de kit:
   quadril sobem e o pano assenta no banco. O forro é a MESMA geometria com
   o material de verso (`forroDe`): uma malha desenha a frente dos
   triângulos, a outra o verso, e nunca brigam;
+- **o braço só empurra a capa para TRÁS**: quando a mão vai para a frente
+  (segurando a cestinha, o mapinha, a vassoura), o braço sai pela abertura
+  da frente e, para o pano, conta como parado (o giro de repouso guardado
+  quando a capa é montada, `soAtras`). Antes a borda daquele lado ia junto
+  com a mão — 6 cm mais à frente que a outra, a capa torta que o Renan viu
+  no celular. Meça as duas bordas (o `z` mais à frente de cada lado) com e
+  sem item na mão; andando, o balanço para trás ainda abre o pano;
 - **a ordem dos cantos da grade**: colunas crescendo no ângulo e linhas
   DESCENDO pedem `(a, a+1, b)`, como a saia viva; a primeira capa saiu com a
   face do avesso (vermelha por fora) — confira de costas;
