@@ -153,7 +153,8 @@ await page.screenshot({ path: `${OUT}-depois.png` });
 // As trinta levas da estufa só entram no quadro depois da flag do marco 30.
 const travadas = await page.evaluate(() => (window.aristoryMemorias ?? []).filter((m) => m.trava));
 let destravadaOk = true;
-for (const m of travadas) {
+// cada flag destrava mais uma: a k-ésima travada abre com o acervo + k + 1 pontinhos
+for (const [k, m] of travadas.entries()) {
   const antesDaFlag = await page.evaluate((id) => {
     window.jogo.abrirMemoria(id);
     return document.querySelectorAll('.memorias.show').length;
@@ -167,7 +168,7 @@ for (const m of travadas) {
   const p = await page.locator('.memorias .ponto').count();
   await page.screenshot({ path: `${OUT}-${m.id}.png` });
   console.log(`6. ${m.id}: antes da flag abriu ${antesDaFlag} · depois ${JSON.stringify(t)} com ${p} pontinhos`);
-  if (antesDaFlag !== 0 || t !== m.titulo || p !== acervo + 1) destravadaOk = false;
+  if (antesDaFlag !== 0 || t !== m.titulo || p !== acervo + k + 1) destravadaOk = false;
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
 }

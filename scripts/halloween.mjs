@@ -1825,13 +1825,15 @@ if (roda('casinha')) {
       armario: ['ari', 'renan'].map((q) => ['coroa-de-rainha', 'coroa-de-rei'].every((id) => guardadas(q).includes(id) || g.wearables(q).some((p) => p?.id === id))),
       foto: g.flag('halloween:foto-da-festa'), depois: g.flag('halloween:depois'),
       memoria: g.save.memories.some((m) => m.id === 'rainha-e-rei-da-festa'),
+      // e a foto pintada destravada no quadro do quarto do Ari (a trava é a flag da foto)
+      noQuadro: (window.aristoryMemorias ?? []).some((m) => m.id === 'rainha-e-rei-da-festa' && !!m.trava && g.flag(m.trava)),
       festa: g.scene.getObjectByName('casca-da-abobora').userData.salao.festa(),
     };
   });
   ok(depoisDaFoto.cabecas[0] === 'coroa-de-rainha' && depoisDaFoto.cabecas[1] === 'coroa-de-rei' && depoisDaFoto.armario.every(Boolean),
     `a coroa de rainha no Ari e a de rei no Renan, e as duas no guarda-roupa dos dois (${JSON.stringify(depoisDaFoto.cabecas)} · ${depoisDaFoto.armario})`);
-  ok(/Xiiis/.test(falasDoConcurso) && depoisDaFoto.foto && depoisDaFoto.depois && depoisDaFoto.memoria && depoisDaFoto.festa,
-    `a foto de todos ("Xiiis!"), guardada no save, a memória, a fase depois, e a festa continuando (${JSON.stringify(depoisDaFoto)})`);
+  ok(/Xiiis/.test(falasDoConcurso) && depoisDaFoto.foto && depoisDaFoto.depois && depoisDaFoto.memoria && depoisDaFoto.noQuadro && depoisDaFoto.festa,
+    `a foto de todos ("Xiiis!"), guardada no save, a memória (e pintada no quadro do quarto), a fase depois, e a festa continuando (${JSON.stringify(depoisDaFoto)})`);
   await j(() => window.jogo.debugPlace(1.5, -1.5, Math.PI * 1.25));
   await espera(2500);
   await page.screenshot({ path: `${OUT}-casinha-salao-depois.png` });

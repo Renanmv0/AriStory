@@ -22,7 +22,11 @@ O pipeline inteiro cabe em dois arquivos, e só o primeiro muda quando a memóri
 **Memória ganha jogando** (e não de foto) leva `trava: 'uma-flag'` na ficha:
 ela só entra no quadro depois que a flag existe (`Game.abrirMemoria` filtra).
 A primeira é "As trinta levas" (`trava: 'jardim.resgate-30'`, marcada quando a dupla resgata o prêmio no livro), da estufa.
-`scripts/memorias.mjs` confere que ela some antes da flag e aparece depois.
+A segunda é "A rainha e o rei da festa" (`trava: 'halloween:foto-da-festa'`,
+a foto de todos no fim do concurso de fantasias do Halloween — pedido do
+Renan: ela vai para o quadro junto do pedido e do arraiá).
+`scripts/memorias.mjs` confere, uma por uma, que cada travada some antes da
+flag e aparece depois (cada flag soma um pontinho).
 
 O quadro na parede (`muralDeMemorias` em `world/furniture.ts`), a interação
 (`quarto:memorias` em `scenes/quarto.ts`) e o painel (`Ui.ts` + `style.css`) já
@@ -86,6 +90,33 @@ Forçar um ponto de fuga numa cena que na foto é reta só a torce. É o caso do
 arraiá: céu, mata, brinquedos, grama — com os varais de bandeirinha cruzando
 por cima de tudo.
 
+### B', a foto de GRUPO (a rainha e o rei da festa)
+
+Uma foto posada de turma é a estrutura B com FILEIRAS em vez de faixas de
+paisagem: o fundo (a polpa da abóbora com os gomos subindo para o cabinho, o
+lustre, o varal de morceguinhos e a placa), quem ficou atrás no tablado, a
+fileira do tablado com a dupla no meio, a saia do tablado e a fileira da
+frente no chão. Quem é desenhado depois tapa quem está atrás, e é isso que
+dá o "todo mundo apertadinho". O que aprendemos nela:
+
+- **De frente, com cara.** É a única memória em que os dois olham para a
+  gente — é foto posada. A cara é a mesma para todos (`carinhaDeFoto`: os
+  dois "^" de olho fechado de sorriso, a boca e as bochechas): no "Xiiis!"
+  ninguém está de olho aberto, e é o que faz parecer festa.
+- **Cada bicho é o `corpinho` + o que diz quem ele é**, lido de longe: a
+  orelha, o casco, o pescoço, o lençol. A fantasia entra por cima numa ou
+  duas formas fortes (o capuz de tubarão com os dentinhos, a cartolinha, a
+  torre de cabelo com os raios). O que estava na mesma altura do rosto e
+  escuro em volta da cabeça (a tiara das orelhas de cachorro do Gatito)
+  lia como fone de ouvido.
+- **Asa que abre para o lado vai ANTES do vizinho**: as asinhas do Renan
+  saíram para `asinhasDoRenan` e são desenhadas antes do Ari — junto com o
+  Renan, a da esquerda tapava a capa do vampiro.
+- **Bicho de pescoço comprido não usa a cabeça do `corpinho`**: a da Gina
+  ficava como um calombo no meio do pescoço.
+- **O flash** é um branco que estoura em `t = 0` e some em 0,9 s: quem abre
+  o quadro vê a foto "sendo tirada". O teste mede o quadro depois disso.
+
 ## Ordem: sempre de trás para a frente
 
 As duas estruturas compartilham isto. Pinte como quem monta um cenário — céu,
@@ -121,6 +152,11 @@ braço cor de pele ali seria uma mancha clara sem explicação.
 | `varalDeBandeiras` | bandeirinha de festa junina, com o balanço |
 | `gatinha` | rosto de gato fofo (cabeça, orelhas, laço, bigodes) |
 | `inflavel` | brinquedo inflável: bloco arredondado com gomos |
+| `corpinho` | um bicho de frente no corpinho chibi (pés, tronco, cabeça grande); devolve onde a cabeça ficou |
+| `carinhaDeFoto` | a cara de foto: olhinhos fechados de sorriso, boca e bochechas |
+| `coroaDaRainha` / `coroaDoRei` | as coroas do concurso, em 2D (as faíscas piscam) |
+| `morceguinho`, `estrelinha`, `faisca` | o morceguinho de papel, a estrela de cinco pontas e o brilho de quatro |
+| `plaquinhaDeVoto` | a abóbora de chapa na vareta, com o coração |
 
 ## As cores
 
