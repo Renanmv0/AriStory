@@ -6,7 +6,7 @@ import { LoteDeAboboras, type CaraDeAbobora } from '../../world/halloween/abobor
 import { CHAVE_DA_CACA, PARADAS_DA_CACA, PISTA_DO_FINAL } from '../../world/halloween/mapinha';
 import { pocaDeLuz } from '../../world/furniture';
 import { PALETTE as P } from '../../palette';
-import { FANTASIAS_DA_CACA } from '../../world/itens';
+import { FANTASIAS_DA_CACA, ITENS } from '../../world/itens';
 import { FLAG_DO_ONIBUS, faseDoHalloween } from './fase';
 
 /*
@@ -391,8 +391,26 @@ export interface CacaDaFesta {
   parar(api: GameAPI, peca: string): Promise<void>;
 }
 
+/**
+ * A cestinha e o mapinha são UMA DE CADA PARA CADA UM (pedido do Renan). A
+ * boutique já entrega aos dois; quem ganhou o presente antes disso ficou só
+ * com as de quem jogava — na primeira festa depois, a outra metade chega na
+ * mochila de quem não tinha (uma vez só: descartada depois, não volta).
+ */
+const FLAG_DA_CESTA_DOS_DOIS = 'halloween:cesta-dos-dois';
+function completarCestaDosDois(api: GameAPI): void {
+  if (api.flag(FLAG_DA_CESTA_DOS_DOIS)) return;
+  api.setFlag(FLAG_DA_CESTA_DOS_DOIS);
+  for (const quem of ['ari', 'renan']) {
+    for (const item of [ITENS.cestaDeAbobora, ITENS.mapinhaDaEstella]) {
+      if (!api.hasItem(item.id, quem)) api.addItem(item, quem);
+    }
+  }
+}
+
 export function montarACaca(w: WorldBuilder, elenco: ElencoDaCaca): CacaDaFesta {
   const g0 = w.game;
+  if (faseDoHalloween(g0) === 'festa') completarCestaDosDois(g0);
   const ativa = (api: GameAPI): boolean => faseDoHalloween(api) === 'festa' && api.flag(FLAG_DO_ONIBUS);
   const feitas = (api: GameAPI): number => api.stat(CHAVE_DA_CACA);
   const indice = (peca: string): number => PARADAS.findIndex((p) => p.quem.includes(peca));
