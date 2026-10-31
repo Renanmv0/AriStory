@@ -669,11 +669,24 @@ function capaViva(m: MedidasCorpo, o: OpcoesDeCapa, fora: THREE.Material | THREE
   capa.add(de, forro);
 
   // ----------------------------------------- o que está dentro do pano
-  const obstaculos: Array<{ pivo: THREE.Object3D; pontos: Array<[number, number, number, number]> }> = [];
+  /**
+   * `soAtras`: o BRAÇO só empurra o pano para trás e para o lado, nunca para
+   * a frente. Numa capa de verdade o braço que vai para a frente (segurando a
+   * cestinha, o mapinha, o sorvete) sai pela abertura da frente e o pano fica
+   * atrás dele; sem isto a borda daquele lado ia junto com a mão — 6 cm mais
+   * à frente que a do outro, e a capa ficava torta (o Renan reparou).
+   */
+  const obstaculos: Array<{
+    pivo: THREE.Object3D;
+    /** o giro do braço parado (o de quando a capa foi montada): é ele que conta quando a mão vai para a frente */
+    soAtras?: THREE.Quaternion;
+    pontos: Array<[number, number, number, number]>;
+  }> = [];
   const rBraco = h * 0.058 * w;
   for (const pivo of m.bracos ?? []) {
     obstaculos.push({
       pivo,
+      soAtras: pivo.quaternion.clone(),
       pontos: [
         [0, -m.armLen * 0.05, 0, rBraco],
         [0, -m.armLen * 0.35, 0, rBraco],
@@ -703,6 +716,7 @@ function capaViva(m: MedidasCorpo, o: OpcoesDeCapa, fora: THREE.Material | THREE
   const dz = new Float32Array(NP * 2);
   const dr = new Float32Array(NP * 2);
   const v = new THREE.Vector3();
+  const parado = new THREE.Vector3();
   const passo = medidorDePasso();
   let relogio = 0;
   /**
@@ -738,6 +752,16 @@ function capaViva(m: MedidasCorpo, o: OpcoesDeCapa, fora: THREE.Material | THREE
       comeco.push(q);
       for (const [x, y, z, r] of ob.pontos) {
         v.set(x, y, z).applyQuaternion(ob.pivo.quaternion).add(ob.pivo.position);
+        if (ob.soAtras) {
+          // o braço que foi para a frente sai pela abertura: para o pano ele
+          // conta como pendurado no lugar de sempre (a transição é suave, para
+          // a borda não pular quando a mão passa pela linha do ombro)
+          const frente = THREE.MathUtils.smoothstep(v.z - ob.pivo.position.z, 0, r * 0.6);
+          if (frente > 0) {
+            parado.set(x, y, z).applyQuaternion(ob.soAtras).add(ob.pivo.position);
+            v.lerp(parado, frente);
+          }
+        }
         px[q] = v.x;
         py[q] = v.y;
         pz[q] = v.z;
