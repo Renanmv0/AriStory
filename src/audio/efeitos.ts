@@ -127,6 +127,7 @@ export type SomNome =
   | 'portaDoOnibus'
   | 'luzesAcendendo'
   | 'surpresa'
+  | 'fotoFlash'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -1261,5 +1262,15 @@ export const EFEITOS: Record<SomNome, Receita> = {
     tom(ctx, destino, { freq: 700, glide: 240, quando: t + 0.05, dur: 0.1, vol: 0.06, tipo: 'triangle' });
     chiado(ctx, destino, { quando: t + 0.2, dur: 0.8, vol: 0.03, freq: 6000, glide: 8000, q: 0.8, tipo: 'highpass' });
   },
+
+  // a foto de todos: o "clic-clac" do obturador e o zumbido do flash carregando, subindo
+  fotoFlash: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 2400, glide: 5200, quando: t, dur: 0.35, vol: 0.018, ataque: 0.02, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t + 0.36, dur: 0.03, vol: 0.14, freq: 3200, q: 2.5 });
+    tom(ctx, destino, { freq: 520, glide: 300, quando: t + 0.36, dur: 0.04, vol: 0.05, ataque: 0.002, tipo: 'square', abafo: 1800 });
+    chiado(ctx, destino, { quando: t + 0.44, dur: 0.03, vol: 0.1, freq: 2600, q: 2.5 });
+    tom(ctx, destino, { freq: 440, glide: 260, quando: t + 0.44, dur: 0.04, vol: 0.04, ataque: 0.002, tipo: 'square', abafo: 1600 });
+  },
 };
+
 

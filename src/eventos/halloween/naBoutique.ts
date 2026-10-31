@@ -19,6 +19,8 @@ import {
 } from '../../world/halloween/boutique';
 import { fantasiarEstellaDeAranha, pelusaMorceguinho } from '../../world/halloween/fantasiasDosBichos';
 import { FLAG_DO_PRESENTE, avancarFase, faseDoHalloween, parqueEnfeitado } from './fase';
+import { ausentarNaCena } from './ausentes';
+import { RECADOS_DO_DEPOIS } from './recados';
 
 /*
  * A BOUTIQUE DE HALLOWEEN — a etapa 3 do especial (`docs/HALLOWEEN.md`,
@@ -230,6 +232,17 @@ export function montarHalloweenNaBoutique(w: WorldBuilder, pecas: PecasDaBoutiqu
 
   // ================================================ a ESTELLA e o PELUSA
   fantasiarEstellaDeAranha(estella);
+  // depois da foto ela ficou na festa da abóbora: a loja aberta, e o recado no caixa
+  if (faseDoHalloween(g0) === 'depois') {
+    ausentarNaCena(w, {
+      bichos: [estella],
+      interacoes: ['lojinha:estella'],
+      recados: [{
+        recados: [RECADOS_DO_DEPOIS.boutique], autor: E,
+        x: planta.caixa.x + 0.95, z: planta.caixa.z + 1.05, giro: Math.PI / 4,
+      }],
+    });
+  }
   const pelusa = new Pelusa({ minX: planta.pufe.x, maxX: planta.pufe.x, minZ: planta.pufe.z, maxZ: planta.pufe.z });
   pelusa.group.position.set(planta.pufe.x, 0.47, planta.pufe.z);
   // de lado para a câmera: as asinhas (no lombo) e as orelhinhas aparecem juntas

@@ -35,7 +35,7 @@ ganhando as **outras cinco fantasias** → com balas suficientes, o **portão
 escondido** atrás da praça da roda abre → a festa surpresa na **Casinha da
 Abóbora** (§7).
 
-**Estado: etapas 1 a 5 e as partes 6a, 6b e 6c construídas, escondidas.** O filme no
+**Estado: etapas 1 a 6 construídas (6a a 6d), escondidas.** O filme no
 sofá e a carta da Estella (§2.1), o parque no pôr do sol, enfeitado e vazio
 (§4.1), o presente da Estella na boutique (§2.3.1), a noite da festa com o
 ônibus chegando e todo mundo fantasiado no posto (§2.4.1), e a **caça de
@@ -55,8 +55,12 @@ a cena `casinha-da-abobora-dentro`) e a **6c** (o salão POR DENTRO da
 abóbora, a surpresa no escuro e a festa livre — `eventos/halloween/noSalao.ts`,
 `world/halloween/salaoDaAbobora.ts`, a conversa com zoom agora comum em
 `eventos/halloween/conversaComZoom.ts`, a cena `casinha-da-abobora-salao`);
-o teste é o `SO=casinha`. A próxima é a **6d**: o concurso, as coroas e a
-foto, e a fase `depois`.
+e a **6d** (o palquinho, o concurso de fantasias com as plaquinhas de voto,
+a coroa de rainha no Ari e a de rei no Renan — `world/coroasDoConcurso.ts`,
+no guarda-roupa dos dois e no filtro 🎃 —, a foto de todos com o flash, e a
+fase `depois`: o parque de noite, enfeitado e vazio, e a festa continuando
+no salão); o teste é o `SO=casinha`. A próxima é a **etapa 7** (§9): a foto
+virando memória no quadro, a volta para casa, dormir e a volta ao normal.
 
 **Onde moram as fantasias da caça (5b):** as trinta peças em
 `world/fantasiasDaCaca.ts` (o kit vem do `world/fantasias.ts` e da
@@ -1616,6 +1620,39 @@ festa na conversa com zoom.
 
 #### F. O concurso e a foto
 
+**Construído (6d)**, como está abaixo, com estas escolhas:
+
+- **quem escolhe a hora é a dupla**: a festa é livre, e a Estella pergunta
+  na conversa dela ("Quando quiserem, a gente começa o concurso de
+  fantasias. Eu tô doida pra subir naquele palquinho." / "Começar o
+  concurso de fantasias?" — "Pode começar!" ou "Daqui a pouco");
+- **o palquinho fica no fundo, embaixo da cara recortada** (o sorriso da
+  abóbora é o pano de fundo): o tablado redondo de tábua, a saia roxa
+  franzida com o babado laranja, os degraus, a placa "Concurso de
+  fantasias" e duas abóboras acesas. Sobe-se nele de verdade (o relevo);
+- **a plateia**: a turma vem para a frente do palco, cada um no seu lugar
+  (os pequenos na frente), e as **treze plaquinhas** (abóborinhas de
+  papelão num palito, com a carinha e um coração) sobem uma de cada vez em
+  cima da cabeça de cada um. A Estella conta ("Uma, duas, três… treze!") e
+  chama os dois lá em cima;
+- **a coroação**: a Estella do lado do Ari, a câmera de frente para os
+  dois no palco. "E a coroa de rainha vai para…" / "…o vampiro mais
+  elegante da noite: o Ari!" — a fala lê o que cada um está vestindo (o
+  vampiro, o morceguinho, ou qualquer uma das cinco da caça; sem fantasia,
+  "quem mais brilhou na festa"). A coroa entra na cabeça na hora, e as duas
+  vão para o guarda-roupa dos dois;
+- **a foto de todos**: cada um num lugar em volta do palco (a Gina e o
+  Cookie nos lados, os pequenos na frente, o Walter no meio), a câmera de
+  frente, "Todo mundo pertinho… Um, dois, três…", "Xiiis!", o clique do
+  obturador e o flash. Fica marcada no save (`halloween:foto-da-festa`) para
+  a etapa 7 pintar, e o evento vai para a fase `depois` (a memória "A rainha
+  e o rei da festa");
+- **depois**: o parque de noite, enfeitado e vazio — a barraquinha do
+  Walter com o pano de "FECHADO" (e as luzinhas acesas), os postos sem
+  ninguém com um recado novo de cada um (`RECADOS_DO_DEPOIS`, rascunhos), o
+  portão laranja aberto e com a fechadura acesa; na boutique, a Estella
+  deixou o recado no caixa; e no salão a festa continua, com o palquinho lá.
+
 Depois de falar com a Estella, ela sobe num **palquinho** e chama todo
 mundo: o **concurso de fantasias**. Os convidados levantam **plaquinhas de
 voto** (abóborinhas), a contagem é obviamente da dupla, e a Estella
@@ -1636,6 +1673,13 @@ fica aberto.
 
 #### G. As coroas (as peças do prêmio)
 
+**Construídas (6d)** em `world/coroasDoConcurso.ts`: painéis de ouro em
+volta de um polígono, inclinados para fora — a de rainha com oito pontas em
+arco (a ogiva de flanco côncavo, com a pérola na ponta), pequena e pousada
+no alto dos cachos, um tico de lado; a de rei com seis pontas retas e a
+bolinha, a borda gordinha de arminho roxo com as pintinhas (canvas), o
+veludo estufado por dentro e o morceguinho de feltro na frente.
+
 Duas peças novas da vaga **cabeça**, com o capricho das fantasias (§5.4):
 - **a coroa de rainha** (Ari): mais alta e delicada, com pontas de arco,
   pedrinhas roxas e laranja, e uma abóborinha no meio;
@@ -1651,9 +1695,9 @@ São presente (fora do ateliê de tinta) e aparecem no filtro 🎃 Fantasias.
 2. **6b**: o corredor e a cozinha (o fantasminha de mola);
 3. **6c** *(construída)*: o salão-abóbora, a surpresa e a festa (todos
    lá, as dancinhas, o Walter servindo, a música);
-4. **6d**: o concurso, as coroas e a foto; a fase `depois` (o parque vazio,
-   a festa continuando no salão); testes (`SO=casinha`, `volta`), fotos,
-   medição de desempenho do salão no celular, docs e merge.
+4. **6d** *(construída)*: o concurso, as coroas e a foto; a fase `depois`
+   (o parque vazio, a festa continuando no salão); testes (`SO=casinha`),
+   fotos, docs e merge. Falta medir o salão no celular.
 
 Cada parte é mostrada ao Renan antes da próxima.
 
@@ -1777,7 +1821,7 @@ aprovar antes da próxima.
 | **3** ✅ | **o presente da Estella** *(construída, escondida)* | a boutique decorada, a Estella de aranha e as falas dela, o Pelusa morceguinho dormindo no pufe, **o vampiro e o morceguinho** (§5.1, com o capricho do §5.4), as duas caixas, o provador, a cesta de abóbora e o mapinha (§2.3) | `roupa`, `bicho`, `prop` + `geometry`, `textures`, `animation` |
 | **4** ✅ | **a noite e o ônibus** *(construída, escondida)* | o parque à noite com as luzes acesas (§4), as fantasias dos personagens (§3), o ônibus do clube chegando com o clube e a escola (§2.4) | `cenario`, `bicho` + `lighting`, `shaders`, `animation` |
 | **5** ✅ | **doces ou travessuras** *(construída, escondida)* | **5a**: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
-| **6** | **a Casinha da Abóbora** *(6a, 6b e 6c construídas, escondidas; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
+| **6** | **a Casinha da Abóbora** *(construída, escondida; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** | **o fechamento** | a foto da festa virando memória no quadro, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
 | **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |
 

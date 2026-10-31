@@ -25,7 +25,7 @@ import { montarOPortaoLaranja } from './naCasinha';
 import { NOITE_DA_FESTA } from './ceu';
 import { montarPostosDaFesta } from './naFesta';
 import { eventoLiberado, faseDoHalloween, parqueEnfeitado } from './fase';
-import { RECADOS_DO_PARQUE } from './recados';
+import { RECADOS_DO_DEPOIS, RECADOS_DO_PARQUE } from './recados';
 import { ausentarNaCena, type Ausente, type RecadoNoPosto } from './ausentes';
 
 /*
@@ -107,6 +107,13 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
   const g0 = w.game;
   if (!eventoLiberado() || !parqueEnfeitado(g0)) return SEM_EVENTO;
   const convite = faseDoHalloween(g0) === 'convite';
+  /**
+   * DEPOIS DA FOTO (§7.1 F): o parque continua de noite e enfeitado, mas
+   * VAZIO — todo mundo ficou festejando dentro da abóbora: a barraquinha do
+   * Walter fechada, os postos sem ninguém (cada um com um recado novo) e o
+   * portão laranja aberto
+   */
+  const depois = faseDoHalloween(g0) === 'depois';
   /** a festa (e o depois dela) é de NOITE: o parque inteiro aceso (§2.4.1, A) */
   const deNoite = !convite;
 
@@ -305,11 +312,16 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
       const m = noMundo(-1.08, 0.5);
       pendurados.teia(m.x, 1.9, m.z, BW.giro, 0.32, { aranha: true });
     }
-    if (convite) {
+    if (convite || depois) {
       const m = noMundo(0, BALCAO_DO_WALTER.frente);
       // o pano só cobre a beira do balcão: atrás dela, a chapa e as cubas ficam vazias
       unica(panoDeFechado(2.3, 0.1, 0.42), m.x, BALCAO_DO_WALTER.altura, m.z, BW.giro);
-    } else {
+    }
+    if (depois) {
+      // fechada de noite: o pano no balcão e o cordão de luzinhas aceso na beira do toldo
+      const [a, b] = barraca.luzinhas.map((p) => { const m = noMundo(p.x, p.z); return new THREE.Vector3(m.x, p.y, m.z); });
+      pendurados.luzinhas(a, b, { barriga: 0.12 });
+    } else if (!convite) {
       // o cordão de luzinhas na beira do toldo
       const [a, b] = barraca.luzinhas.map((p) => { const m = noMundo(p.x, p.z); return new THREE.Vector3(m.x, p.y, m.z); });
       pendurados.luzinhas(a, b, { barriga: 0.12 });
@@ -622,9 +634,9 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     return d > -0.5 && d < 1.2 && Math.hypot(x, z + 26) > 9 ? [x, z] : null;
   }, 31));
 
-  // ============================================== quem foi se arrumar
-  if (convite) {
-    const R = RECADOS_DO_PARQUE;
+  // ============================================== quem foi se arrumar (e, depois, quem ficou na festa)
+  if (convite || depois) {
+    const R = depois ? { ...RECADOS_DO_PARQUE, ...RECADOS_DO_DEPOIS } : RECADOS_DO_PARQUE;
     const recados: RecadoNoPosto[] = [
       { recados: [R.mano], autor: 'Mano', x: pecas.postos.mano.x + 0.3, z: pecas.postos.mano.z + 0.2, giro: PARA_A_CAMERA - 0.2 },
       { recados: [R.cookie], autor: 'Cookie', x: pecas.postos.cookie.x, z: pecas.postos.cookie.z + 1.0, giro: PARA_A_CAMERA - 0.5 },
@@ -720,10 +732,13 @@ export function montarHalloweenNoParque(w: WorldBuilder, pecas: PecasDoParque): 
     fantasiarQuemEstaAqui(w);
     // o portão laranja atrás da roda (a Casinha da Abóbora, §7.1): é por ele que o Walter some
     const portao = montarOPortaoLaranja(w);
-    montarPostosDaFesta(w, pecas, {
-      aboboras, pendurados, portao,
-      barraca: { peca: barraca, ...BARRACA_DO_WALTER, recados: recadosDoWalter },
-    });
+    if (depois) portao.abrir(true);
+    else {
+      montarPostosDaFesta(w, pecas, {
+        aboboras, pendurados, portao,
+        barraca: { peca: barraca, ...BARRACA_DO_WALTER, recados: recadosDoWalter },
+      });
+    }
   }
 
   // ============================================ os comentários da dupla

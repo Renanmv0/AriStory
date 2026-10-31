@@ -803,6 +803,26 @@ tem alguma. O que ficou de kit:
 Teste: `SO=boutique node scripts/halloween.mjs` (a cena do presente veste as
 doze peças), e as fotos de perto como no `uniforme.mjs`.
 
+### `coroasDoConcurso.ts` — as coroas do concurso (a 6d)
+
+A coroa de rainha (o Ari) e a de rei (o Renan), o prêmio do concurso de
+fantasias no salão da abóbora (`COROAS_DO_CONCURSO`, dentro de
+`TODAS_AS_FANTASIAS`: filtro 🎃 e fora do ateliê). Coroa é **painéis em
+volta de um polígono** (`anelDePaineis`): cada painel é uma `chapa` com
+bisel, girada para a sua face e inclinada para FORA (`rotation.x`
+positivo, ordem `YXZ`), e o aro de baixo e o de cima fecham a quina. O
+ponto do meio de cada painel e a ponta saem prontos (para a pedrinha, a
+pérola, a abóborinha e o morceguinho). A base é a `alturaDaAba` com um
+raio PEQUENO: ela pousa no alto do cabelo, como coroa, e não na testa como
+chapéu.
+
+**A ponta em arco precisa de flanco côncavo**: com o ponto de controle da
+curva perto do ombro, cada ponta virava uma corcova e a coroa parecia baixa;
+com ele perto do eixo, a ogiva sobe fina até a pérola.
+
+Quem coroa é a cena (`eventos/halloween/noSalao.ts`): `g.ganharPeca` (os dois
+guarda-roupas) e, na cabeça certa, `unequipWearable(0)` + `equipWearable`.
+
 ### `fantasiasDaCaca.ts` — as cinco da caça (o kit que sobrou)
 
 A abóbora, o pirata, o gato preto, o espantalho e o bruxinho (a etapa 5b,

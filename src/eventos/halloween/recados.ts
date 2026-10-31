@@ -77,6 +77,50 @@ export const RECADOS_DO_PARQUE = {
   } satisfies Recado,
 };
 
+/**
+ * DEPOIS DA FOTO (a fase `depois`, §7.1 F): o parque de noite, enfeitado e
+ * vazio — todo mundo continua na festa dentro da abóbora, e cada um deixou
+ * outro recado no posto (rascunhos: o Renan troca)
+ */
+export const RECADOS_DO_DEPOIS = {
+  mano: {
+    texto: 'TÔ NA ABÓBORA! A festa não acabou. Volto amanhã com sorvete. Muahaha.\nP.S.: o clube da capa continua reunido.',
+    assinatura: '— Mano 🐧🧛',
+    letra: 'kalam',
+    tinta: tinta.azul,
+  } satisfies Recado,
+  cookie: {
+    texto: 'A roda tá descansando. Eu tô na abóbora, dançando devagarinho pra não pisar em ninguém.',
+    assinatura: '— Cookie 🐘👻',
+    letra: 'caveat',
+    tinta: tinta.roxa,
+  } satisfies Recado,
+  estella: {
+    texto: 'Ninguém mexe no tabuleiro: a aranhinha ainda está de guarda. Eu? Na festa, de coroa na lembrança.',
+    assinatura: '— Estella 🐑🕷️',
+    letra: 'caveat',
+    tinta: tinta.rosa,
+  } satisfies Recado,
+  /** a boutique: a Estella fechou cedo para a festa */
+  boutique: {
+    texto: 'Fechei mais cedo: estou na festa da abóbora! Podem olhar as araras à vontade. A roupa nova fica pra amanhã.',
+    assinatura: '— Estella 🐑🕷️',
+    letra: 'caveat',
+    tinta: tinta.rosa,
+  } satisfies Recado,
+  coelhinhas: [
+    { texto: '¡Seguimos na festa! A toalha fica.', assinatura: '— Luna', letra: 'caveat', tinta: tinta.azul, quem: 'Luna' },
+    { texto: '¡La rumba continúa en la calabaza!', assinatura: '— Sol', letra: 'kalam', tinta: tinta.laranja, quem: 'Sol' },
+    { texto: 'Não esqueçam o casaquinho: de noite esfria.', assinatura: '— Estrella', letra: 'caveat', tinta: tinta.verde, quem: 'Estrella' },
+  ] satisfies Recado[],
+  desafios: {
+    texto: 'Desafios suspensos: os desafiantes ainda estão na festa da abóbora!',
+    assinatura: '🏓🎃',
+    letra: 'kalam',
+    tinta: tinta.laranja,
+  } satisfies Recado,
+};
+
 export const RECADOS_DO_CLUBE = {
   /** a Gina: mandona e o "viu?" */
   gina: { texto: 'Portão aberto hoje, viu? SÓ hoje. Fui me arrumar: minha fantasia vai ser a mais alta da festa.', assinatura: '— Gina 🦒', letra: 'kalam', tinta: tinta.laranja } satisfies Recado,

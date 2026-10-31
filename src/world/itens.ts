@@ -52,6 +52,7 @@ import {
   presinhasDeVampiro, coleteDeVampiro, mangaDeVampiro, calcaDeVampiro, sapatoDeVerniz, luvasDeVampiro, capaDeVampiro,
   tiaraDeMorcego, moletomDeMorcego, mangaDeMorcego, calcaListrada, pantufasDeMorcego, luvinhasDeMorcego, asinhasDeMorcego,
 } from './fantasias';
+import { coroaDeRainha, coroaDeRei } from './coroasDoConcurso';
 import {
   chapeuDeAbobora, macacaoDeAbobora, mangaDeAbobora, meiaCalcaVerde, botinhaVerde, luvinhasVerdes, golaDeFolhas,
   tricornio, camisaDePirata, mangaDePirata, calcaBufante, botasDePirata, luvasDePirata, papagaio,
@@ -1877,6 +1878,29 @@ export const ITENS = {
   },
 
   /* ====================================================================
+   *      AS COROAS DO CONCURSO (`world/coroasDoConcurso.ts`)
+   * ====================================================================
+   * A 6d do Halloween (`docs/HALLOWEEN.md`, §7.1, F e G): o prêmio do
+   * concurso de fantasias no salão da abóbora. A Estella põe a de rainha no
+   * Ari e a de rei no Renan, e as duas vão para o guarda-roupa dos dois
+   * (`g.ganharPeca`), no filtro 🎃 e fora do ateliê de tinta.
+   */
+  coroaDeRainha: {
+    id: 'coroa-de-rainha', nome: 'Coroa de rainha', icone: '👑',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.coroaOuro, corDetalhe: P.coroaPedraRoxa,
+    nota: 'do concurso de fantasias · pontas em arco, pérolas e a abóborinha',
+    extra: coroaDeRainha,
+  },
+  coroaDeRei: {
+    id: 'coroa-de-rei', nome: 'Coroa de rei', icone: '👑',
+    tipo: 'vestivel', slot: 'cabeca',
+    cor: P.coroaOuro, corDetalhe: P.coroaVeludo,
+    nota: 'do concurso de fantasias · borda de arminho roxo e o morceguinho',
+    extra: coroaDeRei,
+  },
+
+  /* ====================================================================
    *      AS FANTASIAS DA CAÇA (`world/fantasiasDaCaca.ts`)
    * ====================================================================
    * A etapa 5b do Halloween (`docs/HALLOWEEN.md`, §5.2): uma fantasia INTEIRA
@@ -2217,8 +2241,11 @@ export const FANTASIAS_DA_CACA: Readonly<Record<number, readonly ItemDef[]>> = {
   10: [ITENS.chapeuDeBruxo, ITENS.tunicaDeBruxo, ITENS.meiaListradaDeBruxo, ITENS.botinhaDeBicoCurvo, ITENS.vassoura, ITENS.capaDeEstrelinhas],
 };
 
-/** todas as fantasias do Halloween: as duas da Estella e as cinco da caça */
-export const TODAS_AS_FANTASIAS: readonly ItemDef[] = [...FANTASIAS_DA_ESTELLA, ...Object.values(FANTASIAS_DA_CACA).flat()];
+/** as coroas do concurso de fantasias (a 6d): a de rainha é do Ari, a de rei, do Renan */
+export const COROAS_DO_CONCURSO: readonly ItemDef[] = [ITENS.coroaDeRainha, ITENS.coroaDeRei];
+
+/** todas as fantasias do Halloween: as duas da Estella, as cinco da caça e as coroas do concurso */
+export const TODAS_AS_FANTASIAS: readonly ItemDef[] = [...FANTASIAS_DA_ESTELLA, ...Object.values(FANTASIAS_DA_CACA).flat(), ...COROAS_DO_CONCURSO];
 
 /** a peça é de FANTASIA de Halloween (o filtro 🎃 do guarda-roupa) */
 export function ehFantasia(id: string): boolean {

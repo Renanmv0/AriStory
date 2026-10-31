@@ -1560,6 +1560,13 @@ if (roda('casinha')) {
   // o chapéu da mesa: o susto do fantasminha de mola
   await j(() => window.jogo.debugPlace(-0.4, 1.4, -Math.PI * 0.75));
   const susto = await lerFalas();
+  // (a mola sobe num oscilador no relógio do jogo: espera ela chegar lá em cima)
+  await page.waitForFunction(() => {
+    const f = window.jogo.scene.getObjectByName('fantasma-da-mola');
+    const v = new window.jogo.scene.position.constructor();
+    f.getWorldPosition(v);
+    return v.y > 1.05;
+  }, null, { timeout: 60000 }).catch(() => {});
   const mola = await j(() => {
     const f = window.jogo.scene.getObjectByName('fantasma-da-mola');
     const v = new window.jogo.scene.position.constructor();
@@ -1746,6 +1753,112 @@ if (roda('casinha')) {
   await espera(2500);
   const outraVez = await salaoDe();
   ok(outraVez?.festa && outraVez.luz === 1 && !(await j(() => !!document.querySelector('.dialogue.show'))), 'entrando de novo, a festa continua, acesa, sem a surpresa');
+
+  // ================================================== a 6d: o concurso, as coroas e a foto
+  console.log('\ncasinha: o concurso de fantasias, as coroas e a foto de todos (§7.1, F e G — a 6d)');
+  // a dupla de vampiro e de morceguinho (as fantasias da Estella), para a fala reparar
+  await j(() => {
+    const g = window.jogo; const I = window.aristoryItens;
+    g.vestirConjunto(['colete-de-vampiro', 'calca-de-vampiro', 'sapato-de-verniz', 'luvas-de-vampiro', 'capa-de-vampiro'].map((id) => I[id]), 'ari');
+    g.vestirConjunto(['tiara-de-morcego', 'moletom-de-morcego', 'calca-listrada-de-morcego', 'pantufas-de-morcego', 'luvinhas-de-morcego', 'asinhas-de-morcego'].map((id) => I[id]), 'renan');
+  });
+  const palco = await j(() => window.jogo.scene.getObjectByName('casca-da-abobora').userData.salao.palco());
+  ok(!!palco && !!(await j(() => window.jogo.scene.getObjectByName('palquinho'))), `o palquinho no fundo, embaixo da cara (${JSON.stringify(palco)})`);
+  // a Estella pergunta: "Daqui a pouco" não começa
+  const naEstella = async () => {
+    const e = await j(() => window.jogo.scene.getObjectByName('casca-da-abobora').userData.salao.convidados().find((c) => c.peca === 'estella'));
+    await j(([x, z]) => window.jogo.debugPlace(x + 0.9, z + 0.9, Math.PI * 1.25), [e.x, e.z]);
+    await page.waitForFunction(() => /Falar com a Estella/.test(document.querySelector('.prompt .label')?.textContent ?? ''), null, { timeout: 60000 }).catch(() => {});
+    await espera(400);
+    await page.keyboard.press('KeyE');
+    // passa as falas até a pergunta
+    for (let i = 0; i < 200 && !(await j(() => !!document.querySelector('.escolhas.show'))); i++) {
+      const t = await j(() => ({ show: !!document.querySelector('.dialogue.show'), digitando: window.jogo.ui.typing !== null }));
+      if (t.show) await page.keyboard.press('KeyE');
+      await espera(t.show ? 450 : 500);
+    }
+    return j(() => !!document.querySelector('.escolhas.show'));
+  };
+  ok(await naEstella(), 'falando com a Estella, ela pergunta se pode começar o concurso');
+  await page.locator('.escolhas.show button').nth(1).click();
+  await page.waitForFunction(() => !window.jogo.camOmbro, null, { timeout: 120000 }).catch(() => {});
+  await espera(1500);
+  ok(!(await flag('halloween:salao:concurso')) && !(await j(() => window.jogo.scene.getObjectByName('casca-da-abobora').userData.salao.concurso().rolando)), '"Daqui a pouco": a festa continua, sem concurso');
+  // "Pode começar!": o concurso inteiro
+  ok(await naEstella(), 'a pergunta volta na conversa seguinte');
+  await page.locator('.escolhas.show button').nth(0).click();
+  const doConcurso = [];
+  let plaquinhasNoAr = 0;
+  let naCoroacao = null;
+  for (let i = 0; i < 1200 && !(await flag('halloween:depois')); i++) {
+    const t = await j(() => ({ show: !!document.querySelector('.dialogue.show'), digitando: window.jogo.ui.typing !== null, texto: document.querySelector('.dialogue.show .text')?.textContent ?? '' }));
+    if (!t.show) { await espera(400); continue; }
+    if (t.digitando) { await page.keyboard.press('KeyE'); await espera(300); continue; }
+    if (doConcurso[doConcurso.length - 1] !== t.texto) doConcurso.push(t.texto);
+    if (/treze/.test(t.texto)) {
+      plaquinhasNoAr = await j(() => window.jogo.scene.getObjectByName('casca-da-abobora').userData.salao.concurso().plaquinhas);
+      await page.screenshot({ path: `${OUT}-casinha-concurso-plaquinhas.png` });
+    }
+    if (/o Renan!/.test(t.texto)) {
+      naCoroacao = await j(() => {
+        const g = window.jogo; const s = g.scene.getObjectByName('casca-da-abobora').userData.salao.palco();
+        const p = g.playerPosition(); const q = g.companionPosition();
+        return { ari: g.wearables('ari')[0]?.id, y: +Math.max(p.y, q.y).toFixed(2), noPalco: [p, q].every((v) => Math.hypot(v.x - s.x, v.z - s.z) < 1.5) };
+      });
+    }
+    if (/Renan!/.test(t.texto) || /Xiiis/.test(t.texto)) await page.screenshot({ path: `${OUT}-casinha-${/Xiiis/.test(t.texto) ? 'foto-de-todos' : 'coroacao'}.png` });
+    await page.keyboard.press('KeyE');
+    await espera(450);
+  }
+  const falasDoConcurso = doConcurso.join(' ‖ ');
+  ok(/CONCURSO DE FANTASIAS/.test(falasDoConcurso) && plaquinhasNoAr === 13, `a Estella chama o concurso e as treze plaquinhas sobem (${plaquinhasNoAr})`);
+  ok(/vampiro mais elegante da noite: o Ari/.test(falasDoConcurso) && /morceguinho mais fofo da noite: o Renan/.test(falasDoConcurso),
+    'a fala da coroação repara na fantasia de cada um (o vampiro, o morceguinho)');
+  ok(!!naCoroacao && naCoroacao.ari === 'coroa-de-rainha' && naCoroacao.noPalco && naCoroacao.y > 0.25, `a dupla no palquinho (em cima do tablado) e a coroa de rainha no Ari (${JSON.stringify(naCoroacao)})`);
+  await page.waitForFunction(() => !window.jogo.camOmbro, null, { timeout: 180000 }).catch(() => {});
+  await espera(1500);
+  const depoisDaFoto = await j(() => {
+    const g = window.jogo;
+    const guardadas = (q) => g.wardrobeItems(q).map((p) => p.id);
+    return {
+      cabecas: [g.wearables('ari')[0]?.id, g.wearables('renan')[0]?.id],
+      armario: ['ari', 'renan'].map((q) => ['coroa-de-rainha', 'coroa-de-rei'].every((id) => guardadas(q).includes(id) || g.wearables(q).some((p) => p?.id === id))),
+      foto: g.flag('halloween:foto-da-festa'), depois: g.flag('halloween:depois'),
+      memoria: g.save.memories.some((m) => m.id === 'rainha-e-rei-da-festa'),
+      festa: g.scene.getObjectByName('casca-da-abobora').userData.salao.festa(),
+    };
+  });
+  ok(depoisDaFoto.cabecas[0] === 'coroa-de-rainha' && depoisDaFoto.cabecas[1] === 'coroa-de-rei' && depoisDaFoto.armario.every(Boolean),
+    `a coroa de rainha no Ari e a de rei no Renan, e as duas no guarda-roupa dos dois (${JSON.stringify(depoisDaFoto.cabecas)} · ${depoisDaFoto.armario})`);
+  ok(/Xiiis/.test(falasDoConcurso) && depoisDaFoto.foto && depoisDaFoto.depois && depoisDaFoto.memoria && depoisDaFoto.festa,
+    `a foto de todos ("Xiiis!"), guardada no save, a memória, a fase depois, e a festa continuando (${JSON.stringify(depoisDaFoto)})`);
+  await j(() => window.jogo.debugPlace(1.5, -1.5, Math.PI * 1.25));
+  await espera(2500);
+  await page.screenshot({ path: `${OUT}-casinha-salao-depois.png` });
+  // o filtro 🎃: as coroas são fantasia (e não se pintam)
+  const ehFantasia = await j(() => !!window.aristoryItens['coroa-de-rainha'] && !!window.aristoryItens['coroa-de-rei']);
+  ok(ehFantasia, 'as duas coroas no catálogo');
+  // a fase depois no parque: de noite, enfeitado e vazio; a barraquinha fechada e o portão aberto
+  await page.goto(`${BASE}/?cena=villa-lobos&halloween`, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current?.world);
+  await espera(3000);
+  const parqueDepois = await j(() => {
+    const g = window.jogo;
+    const vis = {}; g.scene.traverse((o) => { const b = o.userData?.bicho; if (b && b.group === o) vis[o.userData.peca] = o.visible; });
+    const portao = g.scene.getObjectByName('portao-laranja')?.userData.portao;
+    return {
+      vazios: ['mano', 'cookie', 'jean-luc', 'luna', 'sol', 'estrella'].every((p) => vis[p] === false),
+      walter: vis['garcom-canino'], gina: vis.girafa,
+      portao: portao ? { alvoAberto: portao.aberto, acesa: portao.acesa } : null,
+      fechado: !!g.current.world.interactables.find((i) => i.id === 'halloween:recado-Mano'),
+    };
+  });
+  await j(() => window.jogo.debugPlace(-9.6, -7.4, Math.PI * 1.25));
+  await espera(2500);
+  await page.screenshot({ path: `${OUT}-casinha-parque-depois.png` });
+  const aberto = await j(() => window.jogo.scene.getObjectByName('portao-laranja')?.userData.portao.aberto ?? 0);
+  ok(parqueDepois.vazios && parqueDepois.walter === undefined && parqueDepois.gina === undefined && parqueDepois.fechado && parqueDepois.portao?.acesa && aberto > 0.5,
+    `o parque depois da foto: de noite, enfeitado e vazio (os recados no lugar), sem os postos da festa, e o portão laranja aberto (${JSON.stringify(parqueDepois)} · ${aberto.toFixed(2)})`);
 }
 
 console.log(erros.length ? '\nERROS:\n' + erros.join('\n') : '\nsem erros');

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { GameAPI, SceneAmbient } from '../../core/types';
+import type { GameAPI, ItemDef, SceneAmbient } from '../../core/types';
 import type { WorldBuilder } from '../../world/WorldBuilder';
 import { PALETTE as P } from '../../palette';
 import type { Bicho } from '../../entities/bichos/Bicho';
@@ -20,15 +20,19 @@ import { EnfeitesDePendurar } from '../../world/halloween/pendurados';
 import { LoteDeAboboras, type AboboraNoLote } from '../../world/halloween/abobora';
 import { portaDoSalao } from '../../world/halloween/casinhaPorDentro';
 import { fardoDeFeno } from '../../world/halloween/pecas';
+import { ITENS } from '../../world/itens';
+import { ARI, RENAN } from '../../characters/cast';
+import { flashDaFoto } from '../../core/materials';
 import {
-  ALTO_DO_TETO, LustreDeVelas, SALAO_DA_ABOBORA, cascaDoSalao, doceDaFesta, mesaDeDoces, naParede, noSalao,
-  raioDaParede, texturaDaPista, vaoDaPorta, type Doce,
+  ALTO_DO_TETO, LustreDeVelas, PALQUINHO, SALAO_DA_ABOBORA, cascaDoSalao, doceDaFesta, mesaDeDoces, naParede, noSalao,
+  palquinho, plaquinhaDeVoto, raioDaParede, texturaDaPista, vaoDaPorta, type Doce,
 } from '../../world/halloween/salaoDaAbobora';
 import { Particulas } from '../../world/particulas';
 import { pocaDeLuz } from '../../world/furniture';
 import { assoalhoDeMadeira } from '../../world/texturasDeChao';
 import { fantasiarQuemEstaAqui } from './fantasiados';
 import { fixas, zoomDaConversa, type Convidado, type Fala, type Tomada } from './conversaComZoom';
+import { avancarFase } from './fase';
 
 /*
  * O SALÃO DA ABÓBORA (`docs/HALLOWEEN.md`, §7.1, E — a parte 6c): a porta
@@ -50,6 +54,17 @@ import { fixas, zoomDaConversa, type Convidado, type Fala, type Tomada } from '.
  * doces com o caldeirão de balas, e o Walter múmia garçom fazendo a ronda com
  * a bandeja: "Pegar um doce" na mesa faz ele vir servir, e o doce é comido ali.
  *
+ * O CONCURSO E A FOTO (a parte 6d, §7.1 F): quando a dupla quiser (a
+ * Estella pergunta na conversa dela), a Estella sobe no PALQUINHO do fundo,
+ * embaixo da cara recortada, e chama todo mundo; a turma vem para a frente
+ * do tablado, levanta as PLAQUINHAS DE VOTO (abóborinhas num palito), ela
+ * conta — todas para os dois — e chama a dupla lá em cima: a COROA DE RAINHA
+ * no Ari e a DE REI no Renan (as duas vão para o guarda-roupa dos dois, e a
+ * fala dela repara na fantasia que cada um está usando). Depois, A FOTO DE
+ * TODOS: cada um no seu lugar em volta do palco, "Xiiis!", o flash, e a
+ * festa continua. A foto fica marcada no save (a etapa 7 a pinta no quadro), e
+ * o evento passa para a fase `depois`.
+ *
  * O relógio de tudo é o do jogo (`w.onUpdate`), e não o `g.wait` de parede:
  * as luzes, o confete e a câmera chegam juntos em qualquer celular.
  */
@@ -57,6 +72,10 @@ import { fixas, zoomDaConversa, type Convidado, type Fala, type Tomada } from '.
 export const CENA_DO_SALAO = 'casinha-da-abobora-salao';
 /** a surpresa já aconteceu: o salão é festa, aceso, de toda volta */
 export const FLAG_DA_SURPRESA = 'halloween:salao:surpresa';
+/** o concurso de fantasias já aconteceu (as coroas foram dadas) */
+export const FLAG_DO_CONCURSO = 'halloween:salao:concurso';
+/** a foto de todos foi tirada (a etapa 7 a pinta no quadro de memórias) */
+export const FLAG_DA_FOTO = 'halloween:foto-da-festa';
 
 const S = SALAO_DA_ABOBORA;
 /** onde a dupla chega (pela porta da cozinha) */
@@ -92,6 +111,45 @@ const PALCO = { x: 4.5, z: 4.5 };
 /** as coelhinhas em fila, no meio da pista (a câmera as vê lado a lado) */
 const FILA = { x: -1.0, z: -1.0, passo: 1.3 };
 
+/**
+ * O PALQUINHO DO CONCURSO, no fundo, embaixo da cara recortada (o sorriso da
+ * abóbora é o pano de fundo do palco), com a frente para o meio do salão
+ */
+const TABLADO = noSalao(S.cara, 4.3);
+const FRENTE_DO_TABLADO = Math.atan2(-TABLADO.z, -TABLADO.x);
+const GIRO_DO_TABLADO = Math.atan2(-TABLADO.x, -TABLADO.z);
+/** um ponto em volta do palco: a `r` do meio dele, `graus` para o lado da frente (positivo para a direita de quem olha o palco) */
+const doTablado = (r: number, graus = 0): { x: number; z: number } => {
+  const a = FRENTE_DO_TABLADO - THREE.MathUtils.degToRad(graus);
+  return { x: TABLADO.x + Math.cos(a) * r, z: TABLADO.z + Math.sin(a) * r };
+};
+/** a altura do chão debaixo de cada um: o tampo do palco, e os degraus na frente dele */
+const alturaNoSalao = (x: number, z: number): number => {
+  const d = Math.hypot(x - TABLADO.x, z - TABLADO.z);
+  if (d <= PALQUINHO.raio) return PALQUINHO.alto;
+  const frente = ((x - TABLADO.x) * Math.cos(FRENTE_DO_TABLADO) + (z - TABLADO.z) * Math.sin(FRENTE_DO_TABLADO)) / Math.max(d, 1e-6);
+  if (frente > 0.92 && d < PALQUINHO.raio + 0.6) return PALQUINHO.alto * (1 - (d - PALQUINHO.raio) / 0.6);
+  return 0;
+};
+
+/**
+ * ONDE CADA UM FICA no concurso (a plateia, na frente do palco, virada para
+ * ele) e na foto (em volta do palco, virado para a câmera): `[r, graus]` do
+ * `doTablado`. Os pequenos na frente, os altos atrás e nos lados.
+ */
+const NO_CONCURSO: Record<string, readonly [number, number]> = {
+  mano: [2.6, -55], gatito: [2.6, 55],
+  luna: [3.1, -33], sol: [3.1, 33], estrella: [3.1, 0],
+  'jean-luc': [3.4, -72], 'garcom-canino': [3.4, 72],
+  noel: [3.9, -52], josefina: [3.9, 52], flynn: [3.9, -18], capy: [3.9, 18],
+  girafa: [4.6, -64], cookie: [4.6, 64],
+};
+const NA_FOTO: Record<string, readonly [number, number]> = {
+  'garcom-canino': [2.85, 0], mano: [2.1, -25], gatito: [2.1, 25], 'jean-luc': [2.5, -13], estrella: [2.5, 13],
+  luna: [2.4, -47], sol: [2.4, 47], noel: [2.65, -67], josefina: [2.75, 67],
+  flynn: [2.0, -82], capy: [2.05, 82], girafa: [2.15, -103], cookie: [2.35, 103],
+};
+
 /** o lugar de cada um na festa */
 const LUGARES: Record<string, { x: number; z: number }> = {
   estella: { x: 2.2, z: -2.2 },
@@ -100,7 +158,8 @@ const LUGARES: Record<string, { x: number; z: number }> = {
   cookie: { x: -1.3, z: -4.75 },
   'jean-luc': { x: -1.6, z: 2.4 },
   girafa: { x: -4.6, z: -0.9 },
-  capy: { x: -3.4, z: -2.4 },
+  // (do lado do palquinho)
+  capy: { x: -4.9, z: -2.3 },
   noel: { x: -3.6, z: 0.6 },
   josefina: { x: -2.6, z: 3.4 },
   gatito: { x: 2.0, z: -0.4 },
@@ -137,6 +196,10 @@ interface Dancarino {
   falando: boolean;
   /** voltando para o lugar depois de uma conversa */
   voltando: boolean;
+  /** o lugar e o ponto de olhar enquanto o concurso manda (a plateia, a foto) */
+  posto: { x: number; z: number; olhar: { x: number; z: number } } | null;
+  /** a altura do bicho (a plaquinha de voto sobe acima dela) */
+  alto: number;
 }
 
 /** quem joga diz `@eu`, quem acompanha diz `@par` */
@@ -280,6 +343,17 @@ export function montarOSalao(w: WorldBuilder): void {
     // o caldeirão, do lado direito da mesa (o `+x` dela)
     const lx = mesa.largura / 2 + 0.55;
     w.blockCircle(MESA.x + Math.cos(GIRO_DA_MESA) * lx + Math.sin(GIRO_DA_MESA) * 0.15, MESA.z - Math.sin(GIRO_DA_MESA) * lx + Math.cos(GIRO_DA_MESA) * 0.15, 0.48);
+  }
+
+  // ------------------------------------------------------------ o palquinho
+  w.add(w.place(palquinho(), TABLADO.x, 0, TABLADO.z, GIRO_DO_TABLADO));
+  // sobe-se no tablado pelos degraus da frente (o chão de cada um, um de cada vez)
+  g0.relevo(alturaNoSalao);
+  // a placa dos fundos fica no caminho de ninguém, mas os postes têm colisor
+  for (const lado of [-1, 1]) {
+    const a = FRENTE_DO_TABLADO + Math.PI;
+    const p = { x: TABLADO.x + Math.cos(a) * (PALQUINHO.raio - 0.25), z: TABLADO.z + Math.sin(a) * (PALQUINHO.raio - 0.25) };
+    w.blockCircle(p.x - Math.sin(a) * lado * 0.7, p.z + Math.cos(a) * lado * 0.7, 0.12);
   }
 
   // ------------------------------------------------------------ o confete
@@ -494,6 +568,8 @@ export function montarOSalao(w: WorldBuilder): void {
   };
   convidados.push(convidadoWalter);
 
+  /** a dupla disse "pode começar" na conversa da Estella: o concurso vem depois dela */
+  let pediuOConcurso = false;
   /** a conversa de festa de cada um: a primeira vez a apresentação, depois uma curta */
   const conversar = (api: GameAPI, c: Convidado): Promise<void> => zoom.conversar(api, c, async () => {
     const peca = c.bicho.group.userData.peca as string;
@@ -502,6 +578,11 @@ export function montarOSalao(w: WorldBuilder): void {
     const falas = c.falas(api, primeira, primeira ? 0 : api.bump(`halloween:salao-conversas:${peca}`));
     api.setFlag(flag);
     for (const [quem, texto] of falas) await api.say([texto], quem);
+    // a Estella, enquanto o concurso não aconteceu: ela pergunta (a dupla escolhe a hora)
+    if (c.bicho === estella && !api.flag(FLAG_DO_CONCURSO)) {
+      await api.say(['Quando quiserem, a gente começa o concurso de fantasias. Eu tô doida pra subir naquele palquinho.'], E);
+      pediuOConcurso = (await api.ask('Começar o concurso de fantasias?', ['Pode começar!', 'Daqui a pouco'])) === 0;
+    }
   });
 
   // ------------------------------------------------------------ a dança de cada um
@@ -549,6 +630,11 @@ export function montarOSalao(w: WorldBuilder): void {
       giroAgora: c.bicho.group.rotation.y,
       falando: false,
       voltando: false,
+      posto: null,
+      alto: (() => {
+        const caixa = new THREE.Box3().setFromObject(c.bicho.group);
+        return caixa.max.y - Math.max(0, caixa.min.y);
+      })(),
     };
   });
   // as coelhinhas: a coreografia inteira da torcida, de novo e de novo (as três no mesmo quadro)
@@ -569,6 +655,41 @@ export function montarOSalao(w: WorldBuilder): void {
 
   /** a festa está rolando (depois da surpresa) */
   let festa = jaFoi;
+  /** o concurso (e a foto) está acontecendo: a turma vai para os postos dele */
+  let noConcurso = false;
+  let postoDoWalter: { x: number; z: number; olhar: { x: number; z: number } } | null = null;
+  /**
+   * as plaquinhas de voto, uma por quem vota: todo mundo menos a Estella, que
+   * conta — os doze que dançam e o Walter (que faz a ronda, e não está entre
+   * os dançarinos: sem ele, ela contava treze e subiam doze)
+   */
+  const altoDoWalter = (() => {
+    const caixa = new THREE.Box3().setFromObject(walter.group);
+    return caixa.max.y - Math.max(0, caixa.min.y);
+  })();
+  const plaquinhas = [
+    ...dancarinos.filter((d) => d.c.bicho !== estella).map((de) => ({ bicho: de.c.bicho, alto: de.alto, de: de as Dancarino | null })),
+    { bicho: walter as Bicho, alto: altoDoWalter, de: null as Dancarino | null },
+  ].map((quem) => {
+    const peca = plaquinhaDeVoto();
+    peca.visible = false;
+    w.add(peca);
+    return { ...quem, peca, sobe: 0 };
+  });
+  /** o flash da foto: o quadrado branco colado na frente da câmera de cena */
+  const flash = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), flashDaFoto(P.flashDaFoto));
+  flash.name = 'flash-da-foto';
+  flash.renderOrder = 999;
+  flash.frustumCulled = false;
+  flash.visible = false;
+  w.add(flash);
+  let flashTempo = 0;
+  /**
+   * para onde o parceiro olha enquanto o concurso manda: re-afirmado a cada
+   * quadro (parado e sem ordem nova, ele se vira para quem joga, e de costas
+   * para a câmera no palco)
+   */
+  let olharDoParceiro: { x: number; z: number } | null = null;
   /** quanto as luzes estão acesas (0 a 1) e a última aplicada */
   let luz = jaFoi ? 1 : 0;
   let luzAplicada = -1;
@@ -593,7 +714,7 @@ export function montarOSalao(w: WorldBuilder): void {
     highlight: mesa.group,
     priority: 2,
     onInteract: async (api) => {
-      if (!festa || servindo || zoom.falando) return;
+      if (!festa || servindo || noConcurso || zoom.falando) return;
       servindo = true;
       api.lockPlayer(true);
       try {
@@ -651,12 +772,16 @@ export function montarOSalao(w: WorldBuilder): void {
         if (!festa || servindo) return Promise.resolve();
         // a coelhinha para a coreografia para conversar
         if (coelhinhas.includes(c.bicho as CoelhaDaTorcida)) (c.bicho as CoelhaDaTorcida).pararAFesta();
-        return conversar(api, c);
+        return conversar(api, c).then(() => {
+          if (!pediuOConcurso) return;
+          pediuOConcurso = false;
+          return concurso(api);
+        });
       },
     });
     w.onUpdate(() => {
       ponto.moveTo(c.bicho.x, c.bicho.z);
-      ponto.enabled = festa && !servindo && !(c.bicho === walter && servirEm);
+      ponto.enabled = festa && !servindo && !noConcurso && !(c.bicho === walter && servirEm);
     });
   }
 
@@ -716,8 +841,11 @@ export function montarOSalao(w: WorldBuilder): void {
     confete.update(dt);
     for (const b of todos) b.update(dt);
 
-    // o Walter: servindo, na conversa (a conversa o segura), ou na ronda
-    if (zoom.falando?.c.bicho !== walter) {
+    // o Walter: no concurso, servindo, na conversa (a conversa o segura), ou na ronda
+    if (noConcurso && postoDoWalter) {
+      if (Math.hypot(walter.x - postoDoWalter.x, walter.z - postoDoWalter.z) > 0.1) walter.seguir(postoDoWalter.x, postoDoWalter.z, 1.2);
+      else walter.encarar(postoDoWalter.olhar.x, postoDoWalter.olhar.z);
+    } else if (zoom.falando?.c.bicho !== walter) {
       if (servirEm) walter.seguir(servirEm.x, servirEm.z, 1.4);
       else if (festa) {
         const alvo = RONDA[iRonda];
@@ -728,14 +856,17 @@ export function montarOSalao(w: WorldBuilder): void {
         } else walter.seguir(alvo.x, alvo.z, 0.9);
       }
     }
+    walter.group.position.y = alturaNoSalao(walter.x, walter.z);
+    if (olharDoParceiro) g0.holdCompanion(olharDoParceiro.x, olharDoParceiro.z);
 
     // a dança de cada um
     for (const d of dancarinos) {
       const b = d.c.bicho;
+      const chao = alturaNoSalao(b.x, b.z);
       const agora = zoom.falando?.c === d.c;
       if (agora) {
         d.falando = true;
-        b.group.position.y = 0;
+        b.group.position.y = chao;
         b.group.rotation.z = 0;
         continue;
       }
@@ -746,9 +877,35 @@ export function montarOSalao(w: WorldBuilder): void {
         d.giroAgora = b.group.rotation.y;
         d.voltando = Math.hypot(b.x - d.casa.x, b.z - d.casa.z) > 0.15;
       }
+      // o concurso manda: cada um no seu posto (a plateia, a foto), virado para onde ele diz
+      if (d.posto) {
+        b.group.rotation.z = 0;
+        if (Math.hypot(b.x - d.posto.x, b.z - d.posto.z) > 0.1) {
+          b.seguir(d.posto.x, d.posto.z, 1.2);
+          b.group.position.y = chao;
+          d.giroAgora = b.group.rotation.y;
+          continue;
+        }
+        const olha = Math.atan2(d.posto.olhar.x - b.x, d.posto.olhar.z - b.z);
+        let dif = olha - d.giroAgora;
+        while (dif > Math.PI) dif -= Math.PI * 2;
+        while (dif < -Math.PI) dif += Math.PI * 2;
+        d.giroAgora += dif * Math.min(1, dt * 5);
+        b.group.rotation.y = d.giroAgora;
+        let y = 0;
+        if (d.pulo >= 0) {
+          d.pulo += dt;
+          y = Math.sin(Math.min(1, d.pulo / 0.55) * Math.PI) * 0.28;
+          if (d.pulo > 0.55) d.pulo = -1;
+        }
+        b.group.position.y = chao + y;
+        continue;
+      }
       if (d.voltando) {
         if (Math.hypot(b.x - d.casa.x, b.z - d.casa.z) > 0.1) {
           b.seguir(d.casa.x, d.casa.z);
+          b.group.position.y = chao;
+          b.group.rotation.z = 0;
           d.giroAgora = b.group.rotation.y;
           continue;
         }
@@ -756,11 +913,13 @@ export function montarOSalao(w: WorldBuilder): void {
       }
       if (!festa) {
         // antes da festa: parados, virados para a dupla; o pulinho do "SURPRESA!" só
+        let y = 0;
         if (d.pulo >= 0) {
           d.pulo += dt;
-          b.group.position.y = Math.sin(Math.min(1, d.pulo / 0.55) * Math.PI) * 0.28;
+          y = Math.sin(Math.min(1, d.pulo / 0.55) * Math.PI) * 0.28;
           if (d.pulo > 0.55) d.pulo = -1;
         }
+        b.group.position.y = chao + y;
         continue;
       }
       if (coelhinhas.includes(b as CoelhaDaTorcida)) continue;
@@ -780,10 +939,30 @@ export function montarOSalao(w: WorldBuilder): void {
         y += Math.sin(Math.min(1, d.pulo / 0.55) * Math.PI) * 0.28;
         if (d.pulo > 0.55) d.pulo = -1;
       }
-      b.group.position.y = y;
+      b.group.position.y = chao + y;
       b.group.rotation.z = p.rz;
     }
-    if (festa) dancarATorcida(dt);
+    // as plaquinhas de voto: em cima da cabeça de quem votou, subindo e balançando
+    plaquinhas.forEach((pl, i) => {
+      if (!pl.peca.visible) return;
+      const b = pl.bicho;
+      pl.sobe = Math.min(1, pl.sobe + dt * 3);
+      const k = pl.sobe * pl.sobe * (3 - 2 * pl.sobe);
+      const frente = b.group.rotation.y;
+      pl.peca.position.set(
+        b.x + Math.sin(frente) * 0.12,
+        b.group.position.y + pl.alto * 0.62 + k * 0.42 + Math.sin(tempo * 5 + i) * 0.04,
+        b.z + Math.cos(frente) * 0.12,
+      );
+      pl.peca.rotation.set(0, frente, Math.sin(tempo * 4 + i * 1.3) * 0.18);
+    });
+    // o flash da foto
+    if (flash.visible) {
+      flashTempo += dt;
+      flashDaFoto(P.flashDaFoto).opacity = Math.max(0, 1 - flashTempo / 0.7);
+      if (flashTempo > 0.7) flash.visible = false;
+    }
+    if (festa && !noConcurso) dancarATorcida(dt);
   });
 
   // ------------------------------------------------------------ a surpresa
@@ -887,6 +1066,181 @@ export function montarOSalao(w: WorldBuilder): void {
     });
   }
 
+  // ------------------------------------------------------------ o concurso e a foto
+  /** a fantasia que cada um está usando, pelo que veste (a Estella repara) */
+  const ELOGIOS: ReadonlyArray<readonly [readonly string[], string]> = [
+    [['capa-de-vampiro', 'colete-de-vampiro'], 'o vampiro mais elegante da noite'],
+    [['moletom-de-morcego', 'tiara-de-morcego', 'asinhas-de-morcego'], 'o morceguinho mais fofo da noite'],
+    [[ITENS.macacaoDeAbobora.id, ITENS.chapeuDeAbobora.id], 'a abóbora mais redondinha do canteiro'],
+    [[ITENS.camisaDePirata.id, ITENS.tricornio.id], 'o pirata mais charmoso dos sete mares'],
+    [[ITENS.moletomDeGato.id, ITENS.orelhasDeGato.id], 'o gatinho preto mais dengoso do telhado'],
+    [[ITENS.camisaXadrez.id, ITENS.chapeuDePalhaAmassado.id], 'o espantalho que nenhum corvo tem coragem de assustar'],
+    [[ITENS.tunicaDeBruxo.id, ITENS.chapeuDeBruxo.id], 'o bruxinho mais encantado'],
+  ];
+  const elogioDe = (api: GameAPI, quem: string): string => {
+    const vestido = new Set(api.wearables(quem).filter(Boolean).map((p) => p?.id));
+    return ELOGIOS.find(([ids]) => ids.some((id) => vestido.has(id)))?.[1] ?? 'quem mais brilhou na festa';
+  };
+  /** põe a coroa na cabeça de quem ganhou (tirando o que estiver lá para o guarda-roupa) */
+  const coroar = (api: GameAPI, quem: string, coroa: ItemDef): void => {
+    api.ganharPeca(coroa);
+    if (api.wearables(quem)[0]?.id === coroa.id) return;
+    if (api.wearables(quem)[0]) api.unequipWearable(0, quem);
+    api.equipWearable(coroa, quem);
+  };
+  const esperarChegarem = async (limite: number): Promise<void> => {
+    let t = 0;
+    const longe = (): boolean => dancarinos.some((d) => d.posto && Math.hypot(d.c.bicho.x - d.posto.x, d.c.bicho.z - d.posto.z) > 0.12)
+      || (!!postoDoWalter && Math.hypot(walter.x - postoDoWalter.x, walter.z - postoDoWalter.z) > 0.12);
+    while (longe() && t < limite) {
+      await esperar(0.1);
+      t += 0.1;
+    }
+  };
+  /** manda cada um para um posto da tabela, olhando para `olhar` (ou para fora do palco) */
+  const postos = (tabela: Record<string, readonly [number, number]>, olhar: ((x: number, z: number) => { x: number; z: number })): void => {
+    for (const d of dancarinos) {
+      const peca = d.c.bicho.group.userData.peca as string;
+      const lugar = tabela[peca];
+      if (!lugar) continue;
+      const p = doTablado(lugar[0], lugar[1]);
+      d.posto = { ...p, olhar: olhar(p.x, p.z) };
+      d.voltando = false;
+      if (coelhinhas.includes(d.c.bicho as CoelhaDaTorcida)) (d.c.bicho as CoelhaDaTorcida).pararAFesta();
+    }
+    const lw = tabela['garcom-canino'];
+    if (lw) {
+      const p = doTablado(lw[0], lw[1]);
+      postoDoWalter = { ...p, olhar: olhar(p.x, p.z) };
+    }
+  };
+  const tomada = (deR: number, deY: number, paraR: number, paraY: number, graus = 0): Tomada => {
+    const de = doTablado(deR, graus);
+    const para = doTablado(paraR, 0);
+    return { de: new THREE.Vector3(de.x, deY, de.z), para: new THREE.Vector3(para.x, paraY, para.z) };
+  };
+  const concurso = async (api: GameAPI): Promise<void> => {
+    if (noConcurso || api.flag(FLAG_DO_CONCURSO)) return;
+    noConcurso = true;
+    api.lockPlayer(true);
+    const dEstella = dancarinos.find((d) => d.c.bicho === estella);
+    const meioDoPalco = { x: TABLADO.x, z: TABLADO.z };
+    const praFrente = doTablado(8);
+    try {
+      // a Estella sobe no palco, e a turma vem para a plateia, virada para ele
+      if (dEstella) dEstella.posto = { ...doTablado(0.45, 180), olhar: praFrente };
+      postos(NO_CONCURSO, () => meioDoPalco);
+      const pEu = doTablado(2.2, -12);
+      const pPar = doTablado(2.2, 12);
+      api.releasePlayer(pEu.x, pEu.z, Math.atan2(TABLADO.x - pEu.x, TABLADO.z - pEu.z));
+      api.releaseCompanion(pPar.x, pPar.z, Math.atan2(TABLADO.x - pPar.x, TABLADO.z - pPar.z));
+      // (o `releasePlayer` destrava quem joga)
+      api.lockPlayer(true);
+      olharDoParceiro = meioDoPalco;
+      zoom.cortarPara(api, zoom.tomadaDaIsometrica(api));
+      await zoom.deslizar(tomada(5.6, 3.1, 0.2, 1.2, 8), 1.4);
+      await esperarChegarem(10);
+      await api.say(['Atenção, atenção! Todo mundo aqui na frente!'], E);
+      await api.say(['Chegou a hora do CONCURSO DE FANTASIAS da Casinha da Abóbora!'], E);
+      await api.say(['É assim: cada um levanta a plaquinha pra fantasia mais bonita da festa. Valendo!'], E);
+      // as plaquinhas sobem, uma de cada vez
+      for (const pl of plaquinhas) {
+        pl.sobe = 0;
+        pl.peca.visible = true;
+        if (pl.de) pl.de.pulo = 0;
+        api.som('clique');
+        await esperar(0.16);
+      }
+      await esperar(0.6);
+      await api.say(['Uma, duas, três… treze! Treze plaquinhas!'], E);
+      await api.say(['E as treze apontando pro mesmo lugar. Por unanimidade, ganharam…'], E);
+      await api.say(['…os dois! Sobe, sobe, venham aqui pra cima!'], E);
+      for (const pl of plaquinhas) pl.peca.visible = false;
+      todoMundoComemora();
+      api.som('surpresa');
+      // a dupla no palco, na frente da Estella, virada para a plateia
+      const giroDoPalco = Math.atan2(praFrente.x - TABLADO.x, praFrente.z - TABLADO.z);
+      const ari = doTablado(0.4, -22);
+      const renan = doTablado(0.4, 22);
+      const [eu, par] = api.playerId() === ARI.id ? [ari, renan] : [renan, ari];
+      api.releasePlayer(eu.x, eu.z, giroDoPalco);
+      api.releaseCompanion(par.x, par.z, giroDoPalco);
+      api.lockPlayer(true);
+      olharDoParceiro = praFrente;
+      // a Estella do lado do Ari, virada para os dois (atrás deles, ela sumia)
+      if (dEstella) dEstella.posto = { ...doTablado(0.95, -60), olhar: doTablado(0.4, 0) };
+      zoom.cortarPara(api, tomada(3.4, 2.15, 0, 1.65, 4));
+      await esperar(0.6);
+      // a coroa de rainha no Ari, a de rei no Renan, e a fala repara na fantasia
+      await api.say(['E a coroa de rainha vai para…'], E);
+      await api.say([`…${elogioDe(api, ARI.id)}: o ${ARI.name}!`], E);
+      coroar(api, ARI.id, ITENS.coroaDeRainha);
+      api.som('memoria');
+      api.soltarCoracoes(3);
+      await api.say(['Uma coroa de rainha… com abóborinha e tudo! Eu amei!'], ARI.name);
+      await api.say(['E a coroa de rei vai para…'], E);
+      await api.say([`…${elogioDe(api, RENAN.id)}: o ${RENAN.name}!`], E);
+      coroar(api, RENAN.id, ITENS.coroaDeRei);
+      api.som('memoria');
+      soltarConfete();
+      todoMundoComemora();
+      await api.say(['E a minha tem um morceguinho. Combinou com tudo.'], RENAN.name);
+      await api.say(['A rainha e o rei da festa! Palmas!'], E);
+      api.setFlag(FLAG_DO_CONCURSO);
+      // A FOTO DE TODOS: cada um no seu lugar em volta do palco, virado para a câmera
+      await api.say(['Agora, a foto! Todo mundo junto, em volta deles!'], E);
+      const daCamera = doTablado(6.3);
+      postos(NA_FOTO, () => daCamera);
+      // a Estella no palco, do lado do Ari (atrás deles, ela sumia)
+      if (dEstella) dEstella.posto = { ...doTablado(0.95, -58), olhar: daCamera };
+      olharDoParceiro = daCamera;
+      const naFoto = tomada(6.3, 2.05, 1.0, 1.05);
+      await zoom.deslizar(naFoto, 1.2);
+      await esperarChegarem(10);
+      await esperar(0.5);
+      await api.say(['Todo mundo pertinho… Um, dois, três…'], E);
+      await api.say(['Xiiis!'], 'Todo mundo');
+      // o flash: o clique, o branco na frente da câmera, e todo mundo de pose
+      api.som('fotoFlash');
+      await esperar(0.38);
+      const dir = naFoto.para.clone().sub(naFoto.de).normalize();
+      flash.position.copy(naFoto.de).addScaledVector(dir, 0.35);
+      flash.lookAt(naFoto.de);
+      flash.visible = true;
+      flashTempo = 0;
+      flashDaFoto(P.flashDaFoto).opacity = 1;
+      api.setFlag(FLAG_DA_FOTO);
+      await esperar(1.0);
+      await api.say(['Ficou perfeita. Essa vai pro álbum da festa… e pra sempre.'], E);
+      todoMundoComemora();
+      avancarFase(api, 'depois');
+      api.unlock({
+        id: 'rainha-e-rei-da-festa',
+        title: 'A rainha e o rei da festa',
+        place: 'Casinha da Abóbora',
+        note: 'No palquinho embaixo do sorriso da abóbora, todo mundo levantou a plaquinha pra gente. A Estella pôs a coroa de rainha no Ari e a de rei no Renan, e depois veio a foto de todos: "Xiiis!", o flash, e a festa continuou.',
+        icon: '👑',
+      });
+      await zoom.deslizar(zoom.tomadaDaIsometrica(api), 0.9);
+    } finally {
+      olharDoParceiro = null;
+      api.setCameraOmbro(null);
+      api.freeCompanion();
+      api.lockPlayer(false);
+      for (const pl of plaquinhas) pl.peca.visible = false;
+      // e a festa continua: cada um volta para o lugar dele
+      for (const d of dancarinos) {
+        if (!d.posto) continue;
+        d.posto = null;
+        d.giroAgora = d.c.bicho.group.rotation.y;
+        d.voltando = true;
+      }
+      postoDoWalter = null;
+      walter.pararDeEncarar();
+      noConcurso = false;
+    }
+  };
+
   // o gancho do teste: em que pé a festa está, e quem está onde
   casca.group.userData.salao = {
     festa: () => festa,
@@ -894,6 +1248,10 @@ export function montarOSalao(w: WorldBuilder): void {
     porta: () => abertura,
     lustre: () => lustre.acesas,
     walter: () => ({ x: walter.x, z: walter.z, ronda: iRonda, servindo }),
+    concurso: () => ({ rolando: noConcurso, plaquinhas: plaquinhas.filter((p) => p.peca.visible).length, flash: flash.visible }),
+    palco: () => ({ x: TABLADO.x, z: TABLADO.z, alto: PALQUINHO.alto }),
+    /** o teste chama o concurso direto (a pergunta da Estella é medida à parte) */
+    concursoAgora: () => concurso(g0),
     convidados: () => todos.map((b) => ({ peca: b.group.userData.peca as string, x: b.x, z: b.z, y: b.group.position.y, giro: b.group.rotation.y })),
   };
 }
