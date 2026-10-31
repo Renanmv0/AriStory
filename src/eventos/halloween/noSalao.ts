@@ -658,12 +658,23 @@ export function montarOSalao(w: WorldBuilder): void {
   /** o concurso (e a foto) está acontecendo: a turma vai para os postos dele */
   let noConcurso = false;
   let postoDoWalter: { x: number; z: number; olhar: { x: number; z: number } } | null = null;
-  /** as plaquinhas de voto, uma por quem vota (todo mundo menos a Estella, que conta) */
-  const plaquinhas = dancarinos.filter((d) => d.c.bicho !== estella).map((de) => {
+  /**
+   * as plaquinhas de voto, uma por quem vota: todo mundo menos a Estella, que
+   * conta — os doze que dançam e o Walter (que faz a ronda, e não está entre
+   * os dançarinos: sem ele, ela contava treze e subiam doze)
+   */
+  const altoDoWalter = (() => {
+    const caixa = new THREE.Box3().setFromObject(walter.group);
+    return caixa.max.y - Math.max(0, caixa.min.y);
+  })();
+  const plaquinhas = [
+    ...dancarinos.filter((d) => d.c.bicho !== estella).map((de) => ({ bicho: de.c.bicho, alto: de.alto, de: de as Dancarino | null })),
+    { bicho: walter as Bicho, alto: altoDoWalter, de: null as Dancarino | null },
+  ].map((quem) => {
     const peca = plaquinhaDeVoto();
     peca.visible = false;
     w.add(peca);
-    return { de, peca, sobe: 0 };
+    return { ...quem, peca, sobe: 0 };
   });
   /** o flash da foto: o quadrado branco colado na frente da câmera de cena */
   const flash = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), flashDaFoto(P.flashDaFoto));
@@ -934,14 +945,13 @@ export function montarOSalao(w: WorldBuilder): void {
     // as plaquinhas de voto: em cima da cabeça de quem votou, subindo e balançando
     plaquinhas.forEach((pl, i) => {
       if (!pl.peca.visible) return;
-      const d = pl.de;
-      const b = d.c.bicho;
+      const b = pl.bicho;
       pl.sobe = Math.min(1, pl.sobe + dt * 3);
       const k = pl.sobe * pl.sobe * (3 - 2 * pl.sobe);
       const frente = b.group.rotation.y;
       pl.peca.position.set(
         b.x + Math.sin(frente) * 0.12,
-        b.group.position.y + d.alto * 0.62 + k * 0.42 + Math.sin(tempo * 5 + i) * 0.04,
+        b.group.position.y + pl.alto * 0.62 + k * 0.42 + Math.sin(tempo * 5 + i) * 0.04,
         b.z + Math.cos(frente) * 0.12,
       );
       pl.peca.rotation.set(0, frente, Math.sin(tempo * 4 + i * 1.3) * 0.18);
@@ -1137,7 +1147,7 @@ export function montarOSalao(w: WorldBuilder): void {
       for (const pl of plaquinhas) {
         pl.sobe = 0;
         pl.peca.visible = true;
-        pl.de.pulo = 0;
+        if (pl.de) pl.de.pulo = 0;
         api.som('clique');
         await esperar(0.16);
       }
