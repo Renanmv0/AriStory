@@ -68,6 +68,28 @@ export interface PistasDoMapinha {
 /** quantas paradas a caça tem (§6) */
 const PARADAS = PARADAS_DA_CACA.length;
 
+/**
+ * ONDE CADA PARADA FICA NO DESENHO (na ordem de `PARADAS_DA_CACA`), em
+ * fração do quadro do parque: o X da próxima parada e o ✓ das já feitas
+ * (pedido do Renan: o X e a trilha andam a cada pista). Medido no parque da
+ * festa e encaixado nos marcos do desenho — a roda no alto, a sorveteria
+ * embaixo à direita, o lago à esquerda, o campinho e o ponto à direita.
+ */
+const NO_MAPA: ReadonlyArray<readonly [number, number]> = [
+  [0.7, 0.62], // Mano, na sorveteria da praça de gelo
+  [0.63, 0.22], // Cookie, na bilheteria do lado da roda
+  [0.77, 0.335], // Flynn, no campinho
+  [0.21, 0.64], // Jean-Luc, cantando no lago (embaixo do "lago", para não tapar a palavra)
+  [0.43, 0.66], // Capy, do lado do trapiche
+  [0.34, 0.16], // Luna, Sol e Estrella, no piquenique pertinho da roda
+  [0.25, 0.22], // Gatito, do lado da toalha
+  [0.38, 0.27], // Josefina, no canteiro de abóboras do gramado
+  [0.92, 0.47], // Gina, no ponto de ônibus
+  [0.44, 0.27], // Noel, com o carrinho de poções do lado da roda
+];
+/** a porta laranja da Casinha da Abóbora: atrás da roda, onde a cerca fecha o mato */
+const PORTAO_NO_MAPA: readonly [number, number] = [0.36, 0.08];
+
 const ROXO = '#6a2f8c';
 const TINTA = '#4a2a3a';
 const ESCURO = '#3a2147';
@@ -171,6 +193,13 @@ export function mapinhaDaEstella(pistas: PistasDoMapinha = { achados: [], proxim
       c.font = fonte(3.6 * u);
       c.fillStyle = '#ffffff';
       c.fillText('lago', X(0.27), Y(0.59));
+      // o TRAPICHE, uma tabuinha saindo da beira (a pista do Capy fala dele)
+      c.strokeStyle = 'rgba(140,100,70,0.85)';
+      c.lineWidth = 1.6 * u;
+      c.beginPath();
+      c.moveTo(X(0.35), Y(0.62));
+      c.lineTo(X(0.39), Y(0.66));
+      c.stroke();
       // a RODA GIGANTE no alto, girando devagar
       const rx = X(0.5);
       const ry = Y(0.13);
@@ -230,9 +259,12 @@ export function mapinhaDaEstella(pistas: PistasDoMapinha = { achados: [], proxim
       c.lineTo(bx + 6 * u, by - 2 * u);
       c.closePath();
       c.fill();
-      c.fillStyle = TINTA;
-      c.font = fonte(3.6 * u);
-      c.fillText('vocês estão aqui ♥', bx + 3 * u, by + 9 * u);
+      const feitas = pistas.achados.length;
+      if (feitas === 0) {
+        c.fillStyle = TINTA;
+        c.font = fonte(3.6 * u);
+        c.fillText('vocês estão aqui ♥', bx + 3 * u, by + 9 * u);
+      }
       // a aranhinha da Estella pendurada no telhado, balançando
       const ax = bx + 4 * u + Math.sin(t * 1.6) * 0.8 * u;
       const ay = by - 6 * u + 7 * u;
@@ -246,24 +278,68 @@ export function mapinhaDaEstella(pistas: PistasDoMapinha = { achados: [], proxim
       c.beginPath();
       c.arc(ax, ay + 0.8 * u, 1.2 * u, 0, Math.PI * 2);
       c.fill();
-      // a TRILHA de pontinhos da boutique até a sorveteria, e o X da parada 1
-      c.strokeStyle = 'rgba(232,121,43,0.9)';
-      c.lineWidth = 0.7 * u;
-      c.setLineDash([1.2 * u, 1.4 * u]);
-      c.beginPath();
-      c.moveTo(bx + 5 * u, by + 3 * u);
-      c.quadraticCurveTo(X(0.45), Y(0.4), X(0.5), Y(0.55));
-      c.quadraticCurveTo(X(0.58), Y(0.68), X(0.68), Y(0.72));
-      c.stroke();
-      c.setLineDash([]);
-      const pulsa = 1 + 0.12 * Math.sin(t * 4);
-      c.strokeStyle = '#d0283f';
-      c.lineWidth = 0.9 * u * pulsa;
-      for (const s of [-1, 1]) {
+      // A CAÇA NO DESENHO, andando a cada pista: um ✓ em cada lugar já
+      // visitado, a TRILHA de pontinhos saindo do último achado (no começo,
+      // da boutique) e o X na próxima parada — no fim, no portão laranja
+      c.font = fonte(4.6 * u);
+      c.fillStyle = '#d06a1e';
+      for (let i = 0; i < Math.min(feitas, PARADAS); i++) {
+        const [mx, my] = NO_MAPA[i];
+        c.fillText('✓', X(mx), Y(my) + 1.6 * u);
+      }
+      const final = feitas >= PARADAS;
+      if (final && pistas.final) {
+        // a porta laranja da Casinha, desenhada só quando a pista do final chega
+        const [gx, gy] = PORTAO_NO_MAPA;
+        c.fillStyle = '#e8792b';
         c.beginPath();
-        c.moveTo(X(0.7) - 2.6 * u * pulsa, Y(0.66) - 4 * u + s * 2.6 * u * pulsa);
-        c.lineTo(X(0.7) + 2.6 * u * pulsa, Y(0.66) - 4 * u - s * 2.6 * u * pulsa);
+        c.roundRect(X(gx) - 2.2 * u, Y(gy) - 1.4 * u, 4.4 * u, 5 * u, [2.2 * u, 2.2 * u, 0, 0]);
+        c.fill();
+        c.fillStyle = '#7a3a12';
+        c.beginPath();
+        c.arc(X(gx) + 1.1 * u, Y(gy) + 1.4 * u, 0.4 * u, 0, Math.PI * 2);
+        c.fill();
+      }
+      const destino = !final ? NO_MAPA[feitas] : pistas.final ? PORTAO_NO_MAPA : null;
+      if (destino) {
+        const ox = feitas === 0 ? bx + 5 * u : X(NO_MAPA[feitas - 1][0]);
+        const oy = feitas === 0 ? by + 3 * u : Y(NO_MAPA[feitas - 1][1]);
+        const dx = X(destino[0]);
+        const dy = Y(destino[1]);
+        // a curva de quem desenha à mão: o meio puxado para o lado
+        const mx = (ox + dx) / 2 - (dy - oy) * 0.22;
+        const my = (oy + dy) / 2 + (dx - ox) * 0.22;
+        c.strokeStyle = 'rgba(232,121,43,0.9)';
+        c.lineWidth = 0.7 * u;
+        c.setLineDash([1.2 * u, 1.4 * u]);
+        c.beginPath();
+        c.moveTo(ox, oy);
+        c.quadraticCurveTo(mx, my, dx, dy);
         c.stroke();
+        c.setLineDash([]);
+        if (feitas > 0) {
+          // de onde eles saem agora: um coraçãozinho no último achado
+          c.fillStyle = '#d0283f';
+          c.font = fonte(3.6 * u);
+          c.fillText('♥', ox, oy - 2.2 * u);
+        }
+        const pulsa = 1 + 0.12 * Math.sin(t * 4);
+        c.strokeStyle = '#d0283f';
+        c.lineWidth = 0.9 * u * pulsa;
+        if (destino === PORTAO_NO_MAPA) {
+          // no final, o alvo é a porta laranja: um círculo de caneta em volta
+          // dela (o X por cima tapava a porta)
+          c.beginPath();
+          c.ellipse(dx, dy + 1 * u, 4.4 * u * pulsa, 4.2 * u * pulsa, 0, 0, Math.PI * 2);
+          c.stroke();
+        } else {
+          for (const s of [-1, 1]) {
+            c.beginPath();
+            c.moveTo(dx - 2.6 * u * pulsa, dy + s * 2.6 * u * pulsa);
+            c.lineTo(dx + 2.6 * u * pulsa, dy - s * 2.6 * u * pulsa);
+            c.stroke();
+          }
+        }
       }
 
       // ------------------------------------------------- o PERGAMINHO das pistas
