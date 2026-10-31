@@ -55,6 +55,9 @@ export interface HalloweenNaCasa {
   assistirFilme(g: GameAPI): Promise<void>;
 }
 
+/** o aviso do sofá já apareceu (uma vez por save) */
+const FLAG_DO_AVISO = 'halloween:aviso-do-sofa';
+
 const SEM_EVENTO: HalloweenNaCasa = { temFilme: () => false, assistirFilme: async () => {} };
 
 /**
@@ -102,6 +105,18 @@ export function montarHalloweenNaCasa(w: WorldBuilder, pecas: PecasDaCasa): Hall
   // o filme, o balde e a carta só existem ANTES da carta lida: depois dela a
   // casa não monta nada do começo do evento (e, no fim, é a casa de sempre)
   if (faseDoHalloween(g0) !== 'antes') return SEM_EVENTO;
+  // A PORTA DE ENTRADA DO EVENTO, para quem joga pelo link de sempre (a etapa
+  // 8): um aviso só, uns segundos depois de a casa abrir, apontando o sofá
+  if (!g0.flag(FLAG_DO_AVISO)) {
+    let ate = 3.2;
+    w.onUpdate((dt) => {
+      if (ate <= 0) return;
+      ate -= dt;
+      if (ate > 0 || g0.flag(FLAG_DO_AVISO)) return;
+      g0.setFlag(FLAG_DO_AVISO);
+      g0.toast('Especial de Halloween: tem filme de terror passando… no sofá!', '🎃');
+    });
+  }
   const A = ARI.name;
   const R = RENAN.name;
   const conversa = async (falas: Array<readonly [string, string]>): Promise<void> => {

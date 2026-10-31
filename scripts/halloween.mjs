@@ -58,7 +58,9 @@
  *   SO=dormir a noite de sono (a etapa 7): a casa e o quarto de madrugada, o
  *             "Dormir depois da festa", a manhã do fim com a roupa de antes, e
  *             cada cena com as malhas de antes do evento
- *   SO=volta  a CAMADA: sem o `?halloween` o jogo é o de antes do evento — o
+ *   SO=aberto o evento no link de sempre (etapa 8): o aviso do sofá uma vez, o
+ *             filme no sofá e o save de verdade com a marca da edição
+ *   SO=volta  a CAMADA: com o `?semHalloween` o jogo é o de antes do evento — o
  *             sofá com as duas opções de sempre, nenhuma peça do evento, e a
  *             casa, o parque, o clube, a escola, a estufa, o Mania e o quarto
  *             com o mesmo número de malhas que tinham antes dele
@@ -161,7 +163,7 @@ const flag = (f) => j((f) => window.jogo.flag(f), f);
 // ===================================================================== volta
 if (roda('volta')) {
   console.log('\nvolta: sem o ?halloween, a casa é a de antes do evento');
-  await limpo('cena=casa');
+  await limpo('cena=casa&semHalloween');
   const pecas = await pecasDoEvento();
   ok(pecas.length === 0, `nenhuma peça do evento na casa (${JSON.stringify(pecas)})`);
   const malhas = await malhasNaCena();
@@ -172,7 +174,7 @@ if (roda('volta')) {
   await espera(400);
   // as cenas da etapa 2, sem o `?halloween`: nada do enfeite, nada de recado
   for (const [cena, antes] of Object.entries(MALHAS_ANTES)) {
-    await limpo(`cena=${cena}`);
+    await limpo(`cena=${cena}&semHalloween`);
     const n = await malhasNaCena();
     const camada = await j(() => {
       let achou = false;
@@ -185,6 +187,29 @@ if (roda('volta')) {
     });
     ok(n === antes && !camada, `${cena}: as mesmas malhas de antes do evento (${n} = ${antes}), sem nada do evento`);
   }
+}
+
+// ===================================================================== aberto
+if (roda('aberto')) {
+  console.log('\naberto: o evento no link de sempre (a etapa 8), sem data, até o Renan mandar tirar');
+  await limpo('cena=casa');
+  // o aviso aparece uma vez, uns segundos (do relógio do jogo) depois de a
+  // casa abrir — no navegador do teste a casa anda a ~1/15 da velocidade
+  await page.waitForFunction(() => [...document.querySelectorAll('.toasts .toast')].some((t) => /Halloween/.test(t.textContent)), null, { timeout: 180000 }).catch(() => {});
+  const aviso = await j(() => [...document.querySelectorAll('.toasts .toast')].map((t) => t.textContent).find((t) => /Halloween/.test(t)) ?? '');
+  await page.screenshot({ path: `${OUT}-aberto-aviso.png` });
+  ok(/filme de terror/.test(aviso), `no link de sempre, o aviso do sofá (${aviso})`);
+  await espera(4000);
+  const opcoes = await abrirOSofa();
+  ok(opcoes.some((t) => /terror/i.test(t)), `e o sofá oferece o filme de terror (${opcoes.join(' | ')})`);
+  await page.keyboard.press('Escape');
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(5000);
+  const deNovo = await j(() => [...document.querySelectorAll('.toasts .toast')].some((t) => /Halloween/.test(t.textContent)));
+  ok(!deNovo, 'recarregando, o aviso não volta');
+  const salvo = await j(() => ({ edicao: window.jogo.flag('halloween:edicao-2026'), noSaveDeVerdade: (localStorage.getItem('aristory.save.v1') ?? '').includes('halloween:aviso-do-sofa') }));
+  ok(salvo.edicao && salvo.noSaveDeVerdade, `o evento joga no save de verdade (${JSON.stringify(salvo)})`);
 }
 
 // ===================================================================== parque
@@ -512,18 +537,22 @@ if (roda('filme')) {
   await page.goto(`${BASE}/?cena=casa`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
   await espera(1200);
+  // (a marca da edição e o aviso do sofá são do save de verdade, não do teste)
   const deVerdade = await j(() => ({
-    flags: Object.keys(window.jogo.save.data.flags).filter((f) => f.startsWith('halloween')),
+    flags: Object.keys(window.jogo.save.data.flags).filter((f) => f.startsWith('halloween') && !/edicao|aviso-do-sofa/.test(f)),
     memoria: window.jogo.save.memories.some((m) => m.id.startsWith('halloween-')),
-    noNavegador: (localStorage.getItem('aristory.save.v1') ?? '').includes('halloween'),
+    noNavegador: (localStorage.getItem('aristory.save.v1') ?? '').includes('halloween:convite'),
+    edicao: window.jogo.flag('halloween:edicao-2026'),
     teste: (localStorage.getItem('aristory.save.v1.halloween') ?? '').includes('halloween:convite'),
   }));
-  ok(deVerdade.flags.length === 0 && !deVerdade.memoria && !deVerdade.noNavegador,
-    `o save de verdade não tem nada do evento (${JSON.stringify(deVerdade)})`);
+  ok(deVerdade.flags.length === 0 && !deVerdade.memoria && !deVerdade.noNavegador && deVerdade.edicao,
+    `o save de verdade não tem nada do que o teste jogou, e tem a marca da edição (${JSON.stringify(deVerdade)})`);
   ok(deVerdade.teste, 'o save de teste guardou a fase do evento');
-  // e o rastro antigo (de antes do save de teste) é limpo do save de verdade
+  // e o rastro antigo (de antes do save de teste, sem a marca da edição) é
+  // limpo do save de verdade
   await j(() => {
     const s = JSON.parse(localStorage.getItem('aristory.save.v1'));
+    delete s.flags['halloween:edicao-2026'];
     s.flags['halloween:convite'] = true;
     s.memories.push({ id: 'halloween-convite', title: 'x', place: 'x', note: 'x', icon: 'x', at: 1 });
     localStorage.setItem('aristory.save.v1', JSON.stringify(s));
@@ -533,6 +562,13 @@ if (roda('filme')) {
   await espera(1200);
   const limpo2 = await j(() => !window.jogo.flag('halloween:convite') && !window.jogo.save.memories.some((m) => m.id === 'halloween-convite'));
   ok(limpo2, 'o rastro antigo do teste some do save de verdade');
+  // e com a marca da edição, o que se jogou no save de verdade FICA (o evento
+  // está aberto: recarregar não pode apagar a fase de quem joga)
+  await j(() => window.jogo.setFlag('halloween:convite'));
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  await espera(1200);
+  ok(await flag('halloween:convite'), 'no save de verdade, a fase jogada fica depois de recarregar');
 }
 
 // ==================================================================== boutique
