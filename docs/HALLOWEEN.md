@@ -1373,7 +1373,12 @@ dele (a dancinha do Mano, o six seven do Gatito, a torcida das coelhinhas…).
 **A pista** é um versinho que aponta o próximo sem dizer o nome, e vai para
 o **mapinha**: o pergaminho mostra quem já foi achado com um tique, a pista
 da próxima parada por extenso (marcada de laranja) e as que faltam com "? ? ?";
-a última parada dá a **pista do final** num quadrinho embaixo. A próxima
+a última parada dá a **pista do final** num quadrinho embaixo. O
+**desenho do parque anda junto** (pedido do Renan): o X vai para a próxima
+parada, a trilha de pontinhos sai do último achado (no começo, da boutique,
+com o "vocês estão aqui"), cada lugar visitado ganha um ✓, e no fim o
+portão laranja aparece atrás da roda, circulado (`NO_MAPA` em
+`world/halloween/mapinha.ts`). A próxima
 parada também fica marcada no parque com **uma abóbora acesa flutuando em
 cima da cabeça** de quem é — ninguém fica perdido. Quem chega antes da vez
 ouve uma fala pedindo para seguir o mapinha. O save guarda as paradas
