@@ -66,8 +66,11 @@ dois descansarem, a casa e o quarto de madrugada (`casaDeNoite.ts`), o
 "Dormir depois da festa" na cama (`noQuarto.ts`) e a manhã do fim — a roupa
 de antes de volta (`roupaDeAntes.ts`), as fantasias e as coroas no
 guarda-roupa, o Pelusa em casa, e cada cena com as mesmas malhas de antes do
-evento; o teste é o `SO=dormir`. Falta a **etapa 8**: abrir o evento para
-quem joga.
+evento; o teste é o `SO=dormir`. E a **etapa 8**: o evento está **aberto
+para quem joga**, pelo link de sempre e no save de verdade, **sem data**,
+até o Renan mandar tirar (§9.2). A chave e o mapa do que fica guardado
+moram em **`src/eventos/Halloween.ts`**: `HALLOWEEN_NO_JOGO = false` tira o
+evento do jogo sem apagar nada.
 
 **Onde moram as fantasias da caça (5b):** as trinta peças em
 `world/fantasiasDaCaca.ts` (o kit vem do `world/fantasias.ts` e da
@@ -1833,7 +1836,7 @@ aprovar antes da próxima.
 | **5** ✅ | **doces ou travessuras** *(construída, escondida)* | **5a**: as dez paradas (§6), as balas na cesta e as abóboras escondidas (§5.3); **5b**: as outras cinco fantasias (§5.2) | `cenario`, `roupa` + `geometry`, `textures`, `interaction`, `animation` |
 | **6** | **a Casinha da Abóbora** *(construída, escondida; §7.1)* | o portão das 25 balas, a clareira, o corredor, a cozinha, o salão-abóbora com a festa surpresa, o concurso com as coroas e a foto (§7.1) | `cenario`, `prop`, `bicho` + `geometry`, `textures`, `lighting`, `animation` |
 | **7** ✅ | **o fechamento** *(construída, escondida; §9.1)* | a foto da festa virando memória no quadro, **dormir na cama do quarto do Ari** encerrando o evento, a **volta ao normal** medida (§8.3), o teste completo no celular | `memoria`, `cenario`, `testar` |
-| **8** | **abrir o evento** | ligar o calendário para quem joga (até aqui, só o `?halloween` mostra o evento), e tirar a limpeza do rastro de teste do save de verdade | `testar` |
+| **8** ✅ | **abrir o evento** *(construída: aberto)* | o evento ligado para quem joga, sem calendário (§9.2), a chave em `eventos/Halloween.ts`, o aviso do sofá, e a edição do save no lugar da limpeza do rastro de teste | `testar` |
 
 ### 9.1 A etapa 7 em detalhe (fechada com o Renan, e construída)
 
@@ -1868,6 +1871,32 @@ Pelusa acordando eles).
   ginásio, a estufa, o Mania, o quarto, a boutique e a casa têm **as mesmas
   malhas de antes do evento** e nenhuma peça dele — medido no `SO=dormir`.
 - As falas da noite e da manhã são **rascunho** (o Renan troca o que quiser).
+
+### 9.2 A etapa 8: o evento aberto (decisão do Renan)
+
+**Sem as datas de 15/10 a 2/11**: o evento fica no jogo **até o Renan
+mandar tirar, nesta conversa**. E o jeito que o parque fica e as fantasias
+ficam **guardados num arquivo** para usar outra vez: `src/eventos/Halloween.ts`.
+
+- **A chave**: `HALLOWEEN_NO_JOGO` (hoje `true`). Para tirar, `false` — o
+  parque, o clube, a escola e a casa voltam a ser os de sempre (o evento é
+  uma camada, §8.3), e nada se apaga: o arquivo diz onde mora cada coisa (o
+  parque enfeitado, a festa, a boutique, a casa, as fantasias dos
+  personagens e as da dupla), e o commit do ponto de volta. As fantasias e
+  as coroas que a dupla ganhou ficam no guarda-roupa, e as memórias no
+  quadro e no diário.
+- **O save de verdade**: o evento joga nele, pelo link de sempre. A limpeza
+  que tirava dele as flags `halloween:*` virou a **edição**
+  (`EDICAO_DO_HALLOWEEN = '2026'`): na primeira vez que o jogo abre na
+  edição, o save esquece o rastro de antes (o do tempo em que o evento era
+  construído escondido) e anota a edição; daí em diante, o que se joga fica.
+  Para jogar a história de novo noutro ano, troca-se a edição.
+- **Como quem joga acha o evento**: uns segundos depois de a casa abrir, um
+  aviso só (uma vez por save): "Especial de Halloween: tem filme de terror
+  passando… no sofá!" — e o sofá oferece o "Assistir um filme de terror".
+- **Os testes**: o `?halloween` continua ligando o evento num save à parte
+  (o de teste), e o `?semHalloween` desliga — é por ele que o `SO=volta`
+  mede o jogo de antes do evento. O `SO=aberto` mede o link de sempre.
 
 **Uma por vez, e escondida.** Cada etapa começa com uma conversa com o Renan
 sobre os ajustes dela (registrados aqui), depois é construída e testada com

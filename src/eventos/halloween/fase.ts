@@ -1,4 +1,5 @@
 import type { GameAPI } from '../../core/types';
+import { halloweenNestaPagina } from '../Halloween';
 
 /*
  * AS FASES DO ESPECIAL DE HALLOWEEN (`docs/HALLOWEEN.md`, §1).
@@ -13,10 +14,9 @@ import type { GameAPI } from '../../core/types';
  * - `depois`: a festa na Casinha da Abóbora acabou;
  * - `fim`: a dupla dormiu na cama do quarto do Ari — tudo volta ao normal.
  *
- * NADA APARECE NO JOGO ATÉ TUDO ESTAR PRONTO (decisão do Renan): enquanto o
- * evento não for aberto (etapa 8 do plano), só o `?halloween` na URL liga
- * qualquer coisa dele. Sem ele, `eventoLiberado()` é falso e toda cena se
- * monta exatamente como antes do evento.
+ * QUEM LIGA E DESLIGA é o `eventos/Halloween.ts` (a etapa 8: aberto para quem
+ * joga, sem data, até o Renan mandar tirar). Desligado, `eventoLiberado()` é
+ * falso e toda cena se monta exatamente como antes do evento.
  *
  * O evento é uma CAMADA (§8.3): quem pergunta a fase só acrescenta ou esconde
  * por cima do original, e nunca o edita.
@@ -46,11 +46,11 @@ export const FLAG_DO_ONIBUS = 'halloween:onibus-chegou';
 export const FLAG_DO_PRESENTE = 'halloween:presente';
 
 /**
- * O evento existe neste jogo? Hoje, só com `?halloween` na URL — é o que
- * esconde tudo de quem joga até o Renan aprovar. A etapa 8 liga o calendário.
+ * O evento existe neste jogo? É a chave do `eventos/Halloween.ts` (e o
+ * `?halloween` / `?semHalloween` dos testes).
  */
 export function eventoLiberado(): boolean {
-  return typeof location !== 'undefined' && new URLSearchParams(location.search).has('halloween');
+  return halloweenNestaPagina();
 }
 
 /** A fase em que o evento está (`antes` também quando ele não está liberado). */

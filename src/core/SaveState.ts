@@ -21,6 +21,7 @@ function normalizarVagaLumesSoltos(bruto: unknown): VagaLumesSoltosNoSave[] {
 import { SLOTS_ROUPA, type Coleta, type DecoracaoNoSave, type ItemDef, type Loadout, type SlotRoupa, type Vaga } from './types';
 
 import { fichaDoItem } from '../world/itens';
+import { EDICAO_DO_HALLOWEEN, HALLOWEEN_NO_JOGO } from '../eventos/Halloween';
 import type { ParteDaTinta, TintaDaPeca } from '../world/tintas';
 
 /**
@@ -362,28 +363,37 @@ function normalizar(
 /** o save de verdade, o de quem joga pelo link de sempre */
 const KEY_DO_JOGO = 'aristory.save.v1';
 /**
- * O SAVE DE TESTE DO HALLOWEEN (`docs/HALLOWEEN.md`). Enquanto o evento é
- * construído escondido, quem abre o jogo com `?halloween` joga num save à
- * parte: ele NASCE como cópia do save de verdade (para testar com o
- * progresso de sempre), e tudo o que acontece ali fica só ali — nada do
- * evento vaza para o jogo de verdade. Quando o evento abrir (etapa 8), o
- * Renan joga ele no save de verdade, pelo link de sempre.
+ * O SAVE DE TESTE DO HALLOWEEN (`docs/HALLOWEEN.md`). Quem abre o jogo com
+ * `?halloween` joga num save à parte: ele NASCE como cópia do save de
+ * verdade (para testar com o progresso de sempre), e tudo o que acontece ali
+ * fica só ali. Desde a etapa 8 o evento está aberto para quem joga, no save
+ * de verdade, pelo link de sempre — o `?halloween` ficou para os testes.
  */
 const KEY_DO_TESTE = 'aristory.save.v1.halloween';
 const NO_TESTE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('halloween');
 const KEY = NO_TESTE ? KEY_DO_TESTE : KEY_DO_JOGO;
 
 /**
- * Tira do save de verdade o que só o teste do Halloween pode ter gravado:
- * antes do save de teste existir, a etapa 1 jogada com `?halloween` gravava
- * no save de sempre (as flags `halloween:*` e a memória do convite). Vale até
- * o evento abrir para quem joga — a etapa 8 tira esta limpeza.
+ * A EDIÇÃO DO HALLOWEEN no save de verdade (`eventos/Halloween.ts`).
+ *
+ * Na primeira vez que o jogo abre numa edição, o save esquece as fases de
+ * antes dela (as flags `halloween:*`) e anota a edição. Na de 2026 isso é o
+ * que tira o rastro do tempo em que o evento era construído escondido (antes
+ * do save de teste, a etapa 1 jogada com `?halloween` gravava aqui — as
+ * flags e a memória do convite); numa edição nova, é o que deixa a dupla
+ * jogar a história de novo. As fantasias, as coroas e as outras memórias
+ * ficam. Com o evento desligado, o save não é tocado: religado na mesma
+ * edição, cada um continua de onde parou.
  */
-function limparRastroDoTeste(dados: SaveData): void {
+function abrirEdicaoDoHalloween(dados: SaveData): void {
+  if (!HALLOWEEN_NO_JOGO) return;
+  const marca = `halloween:edicao-${EDICAO_DO_HALLOWEEN}`;
+  if (dados.flags[marca]) return;
   for (const flag of Object.keys(dados.flags)) {
     if (flag.startsWith('halloween:')) delete dados.flags[flag];
   }
-  dados.memories = dados.memories.filter((m) => !m.id.startsWith('halloween-'));
+  if (EDICAO_DO_HALLOWEEN === '2026') dados.memories = dados.memories.filter((m) => !m.id.startsWith('halloween-'));
+  dados.flags[marca] = true;
 }
 
 /**
@@ -451,6 +461,9 @@ export class SaveState {
 
   constructor() {
     this.data = SaveState.read();
+    // a edição do Halloween também num save que acabou de nascer: sem a marca,
+    // o próximo carregamento esqueceria as fases que ele já tiver jogado
+    if (!NO_TESTE) abrirEdicaoDoHalloween(this.data);
   }
 
   private static read(): SaveData {
@@ -500,7 +513,6 @@ export class SaveState {
         tintas: normalizarTintas(parsed.tintas),
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
-      if (!NO_TESTE) limparRastroDoTeste(dados);
       return dados;
     } catch {
       return structuredClone(EMPTY);
@@ -1013,6 +1025,7 @@ export class SaveState {
 
   reset(): void {
     this.data = structuredClone(EMPTY);
+    if (!NO_TESTE) abrirEdicaoDoHalloween(this.data);
     this.persist();
   }
 }
