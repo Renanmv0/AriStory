@@ -14,7 +14,7 @@ import {
   caminhoDePedrinhas, cerquinhaTorta, galho, matoDenso,
 } from '../../world/halloween/casinhaDaAbobora';
 import { CHAVE_DA_CACA, PARADAS_DA_CACA } from '../../world/halloween/mapinha';
-import { BALAS_DA_PORTA, CHAVE_DAS_BALAS } from './caca';
+import { BALAS_DA_PORTA, CHAVE_DAS_BALAS, aboborasQueFaltam } from './caca';
 import { faseDoHalloween } from './fase';
 import { NOITE_DA_FESTA } from './ceu';
 import { CENA_DE_DENTRO } from './dentroDaCasinha';
@@ -139,13 +139,31 @@ export function montarOPortaoLaranja(w: WorldBuilder): PortaoLaranja {
         return;
       }
       const n = balas(api);
-      if (n < BALAS_DA_PORTA) {
+      if (n < BALAS_DA_PORTA && aboborasQueFaltam(api) > 0) {
         api.som('clique');
         await conversa(api, [
           ['@eu', `A fechadura nem se mexe. ${n} balas na cesta…`],
           ['@par', `E a porta pede ${BALAS_DA_PORTA}. Faltam ${BALAS_DA_PORTA - n}: tem abóbora escondida pelo parque ainda.`],
         ]);
         return;
+      }
+      if (n < BALAS_DA_PORTA) {
+        /*
+         * A REDE DE SEGURANÇA (pedido do Renan): a caça inteira feita, as dez
+         * abóboras achadas e mesmo assim a cesta curta (travessura errada
+         * demais) — a porta nunca abriria. O Walter, que some por este
+         * portão, está do outro lado: ele late e passa por baixo as balas
+         * que faltam.
+         */
+        api.som('clique');
+        await conversa(api, [['@eu', `A fechadura nem se mexe. ${n} balas na cesta… e não sobrou abóbora nenhuma.`]]);
+        api.som('latido');
+        await api.say(['Au! Au!'], 'Walter');
+        await conversa(api, [['@par', 'É o Walter, do outro lado do portão! Ele tá passando balas por baixo!']]);
+        api.bump(CHAVE_DAS_BALAS, BALAS_DA_PORTA - n);
+        api.mostrarCesta({ balas: balas(api), meta: BALAS_DA_PORTA });
+        api.som('pegar');
+        await conversa(api, [['@eu', `${BALAS_DA_PORTA} balas! Valeu, Walter!`]]);
       }
       await conversa(api, [
         ['@par', 'A abóbora da fechadura acendeu!'],

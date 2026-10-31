@@ -53,6 +53,10 @@ const CHAVE_DOCES = 'halloween:doces';
 const CHAVE_TRAVESSURAS = 'halloween:travessuras';
 const BALAS_DO_DOCE = 3;
 const flagDaAbobora = (i: number): string => `halloween:abobora-escondida:${i}`;
+/** quantas abóboras escondidas ainda estão pelo parque (a rede de segurança da porta lê isto) */
+export function aboborasQueFaltam(api: Pick<GameAPI, 'flag'>): number {
+  return ESCONDIDAS.filter((_, i) => !api.flag(flagDaAbobora(i))).length;
+}
 
 /** quem fala: um nome, ou a dupla (`@eu` é quem joga, `@par` quem acompanha) */
 type Fala = readonly [string, string];
