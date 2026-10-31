@@ -21,8 +21,11 @@ page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
 // ------------------------------------------------------------------- sofá
 await page.goto(`${BASE}/?cena=casa`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(2600);
+// anda para o sofá até o prompt dele aparecer: um tempo fixo de relógio
+// dava 4 ou 5 quadros no navegador do teste, e a distância variava com o
+// primeiro carregamento (o save novo)
 await page.keyboard.down('KeyW');
-await page.waitForTimeout(950);
+await page.waitForFunction(() => /sofá/.test(document.querySelector('.prompt.show .label')?.textContent ?? ''), null, { timeout: 30000 }).catch(() => {});
 await page.keyboard.up('KeyW');
 await page.waitForTimeout(900);
 
