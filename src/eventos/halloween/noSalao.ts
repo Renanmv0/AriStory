@@ -1194,8 +1194,10 @@ export function montarOSalao(w: WorldBuilder): void {
       await api.say(['Agora, a foto! Todo mundo junto, em volta deles!'], E);
       const daCamera = doTablado(6.3);
       postos(NA_FOTO, () => daCamera);
-      // a Estella no palco, do lado do Ari (atrás deles, ela sumia)
-      if (dEstella) dEstella.posto = { ...doTablado(0.95, -58), olhar: daCamera };
+      // a Estella no palco, do lado do Ari: bem para o lado e um tico ATRÁS da
+      // linha dos dois (atrás deles ela sumia; um passo à frente, com as
+      // patinhas de aranha abertas, tapava o Ari na tela do celular)
+      if (dEstella) dEstella.posto = { ...doTablado(1.15, -78), olhar: daCamera };
       olharDoParceiro = daCamera;
       const naFoto = tomada(6.3, 2.05, 1.0, 1.05);
       await zoom.deslizar(naFoto, 1.2);
