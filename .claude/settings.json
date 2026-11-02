@@ -30,6 +30,17 @@
             "command": "cd \"$CLAUDE_PROJECT_DIR\" && [ -d node_modules ] || npm install --no-audit --no-fund >/dev/null 2>&1 || true"
           }
         ]
+      },
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/sincronizar.mjs\" --hook",
+            "timeout": 40,
+            "statusMessage": "Conferindo o GitHub..."
+          }
+        ]
       }
     ],
     "PreToolUse": [
