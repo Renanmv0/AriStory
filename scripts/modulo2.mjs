@@ -11,7 +11,7 @@
  *    fotografada, nada vazando para o lado, e o quanto cada página rola;
  * 4. TROCAR DE APOSTILA pelo sumário (o Módulo 1 de dentro do livro do 2, e
  *    volta), e o FIM de cada livro: o do 1 promete o Módulo 2, o do 2 diz
- *    "em breve: Módulo 3";
+ *    "agora vem o Módulo 3" (o Módulo 3 existe desde as lições 13 a 18);
  * 5. O CELULAR: as páginas do Módulo 2 uma a uma, sem vazar para o lado.
  *
  *   node scripts/modulo2.mjs /tmp/m2        (SO=livro, SO=celular… roda uma parte)
@@ -228,7 +228,7 @@ if (parte('livro')) {
   await p.evaluate((u) => window.jogo.ui.apostila.irPara(u), ultima2);
   await p.waitForTimeout(1400);
   const fim2 = await p.evaluate(() => document.querySelector('.apostila .fim-do-modulo')?.textContent ?? '');
-  conferir(/Módulo 2 concluído/.test(fim2) && /Em breve: Módulo 3/.test(fim2), 'o fim do Módulo 2 diz "em breve: Módulo 3"', fim2.replace(/\s+/g, ' ').trim());
+  conferir(/Módulo 2 concluído/.test(fim2) && /Agora vem o Módulo 3/.test(fim2), 'o fim do Módulo 2 diz que agora vem o Módulo 3', fim2.replace(/\s+/g, ' ').trim());
   await p.screenshot({ path: `${OUT}-fim-m2.png` });
   await ctx.close();
 }

@@ -102,6 +102,36 @@ const m2ruim = structuredClone(M2);
 m2ruim.licoes[0].numero = 1;
 ok(A.conferirModulo(m2ruim).some((e) => e.includes('número')), 'o conferidor cobra a numeração continuada');
 
+// ---------------------------------------------------------- 1c. o Módulo 3
+console.log('\n1c. o Módulo 3');
+const M3 = A.MODULO_3;
+const problemas3 = A.conferirModulo(M3);
+for (const p of problemas3) console.log(`      · ${p}`);
+ok(problemas3.length === 0, `o Módulo 3 sem problemas (${problemas3.length})`);
+ok(M3.licoes.length === 6 && M3.licoes.map((l) => l.numero).join() === '13,14,15,16,17,18',
+  `seis lições, numeradas de 13 a 18 — a numeração continua (${M3.licoes.map((l) => l.numero).join()})`);
+for (const l of M3.licoes) {
+  const tipos = new Set(l.exercicios.map((e) => e.tipo));
+  console.log(`      ${l.numero}. ${l.titulo} — ${l.explicacao.length} de explicação, ${A.paginasDeExercicio(l).length} de exercício, ${l.exercicios.length} exercícios, ${tipos.size} tipos, ${A.itensDaLicao(l)} itens`);
+}
+ok(new Set(M3.licoes.flatMap((l) => l.exercicios.map((e) => e.tipo))).size === 10, 'os dez tipos de exercício aparecem no Módulo 3');
+ok(new Set(todasAsLicoes.map((l) => l.titulo)).size === todasAsLicoes.length, 'cada lição do curso com um título diferente');
+ok(M3.licoes.every((l) => l.aula.chama === 'qualquer'), 'no Módulo 3, qualquer uma das três chama a aula');
+ok(A.licoesAntesDe(M3) === 12 && A.MODULOS.length === 3, 'o Módulo 3 começa depois das doze do 1 e do 2');
+ok(M2.seguinte.pronto && M2.seguinte.nome === 'Módulo 3' && !M3.seguinte.pronto, 'o fim do 2 já promete o 3, e o do 3 diz "em breve"');
+// cada lição: explicação de verdade (a "Para começar" e pelo menos uma de regra) e o "agora eu consigo"
+for (const l of M3.licoes) {
+  ok(l.explicacao.length >= 2 && l.consigo.length >= 3, `lição ${l.numero}: explicação em ${l.explicacao.length} páginas e ${l.consigo.length} "consigo"`);
+}
+// o conferidor pega número fora de ordem também no Módulo 3
+const m3ruim = structuredClone(M3);
+m3ruim.licoes[0].numero = 7;
+ok(A.conferirModulo(m3ruim).some((e) => e.includes('número')), 'o conferidor cobra a numeração continuada no Módulo 3');
+// rato nunca (a fobia do Ari é de verdade): nenhum texto do Módulo 3 tem o bicho
+// (a lição 2, do Módulo 1, ainda tem o falso amigo "rato" — fica de fora desta checagem até o Renan decidir)
+const textoDoTres = JSON.stringify(M3);
+ok(!/\b(rato|ratos|ratinho|ratazana|camundongo)\b|[\u{1F400}\u{1F401}\u{1F42D}]/iu.test(textoDoTres), 'nenhum rato em nenhuma lição do Módulo 3');
+
 // ------------------------------------------------------------- 2. a nota
 console.log('\n2. a nota');
 ok(A.estrelasPor(0, 25) === 1, 'terminar com tudo errado ainda vale uma estrela');
@@ -142,12 +172,18 @@ const ids2 = M2.licoes.map((l) => l.id);
 ok(A.licaoDaVezNoCurso(feita).id === ids[1], 'no curso, com o Módulo 1 pela metade, a aula da vez é dele');
 ok(A.licaoDaVezNoCurso(tudo).id === ids2[0], 'com o Módulo 1 inteiro, a aula da vez é a lição 7');
 ok(A.moduloConcluido(M, tudo) && !A.moduloConcluido(M2, tudo), 'o Módulo 1 concluído, o 2 não');
-const tudoTudo = { estrelas: Object.fromEntries([...ids, ...ids2].map((id) => [id, 3])), abertas: [...ids, ...ids2] };
+const ids3 = M3.licoes.map((l) => l.id);
+const tudoDoisModulos = { estrelas: Object.fromEntries([...ids, ...ids2].map((id) => [id, 3])), abertas: [...ids, ...ids2] };
+ok(A.licaoDaVezNoCurso(tudoDoisModulos).id === ids3[0], 'com os Módulos 1 e 2 inteiros, a aula da vez é a lição 13');
+ok(A.moduloConcluido(M2, tudoDoisModulos) && !A.moduloConcluido(M3, tudoDoisModulos), 'o Módulo 2 concluído, o 3 não');
+const tudoTudo = { estrelas: Object.fromEntries([...ids, ...ids2, ...ids3].map((id) => [id, 3])), abertas: [...ids, ...ids2, ...ids3] };
 ok(A.licaoDaVezNoCurso(tudoTudo) === null, 'o curso inteiro terminado: não tem aula da vez');
-ok(A.moduloAtual(tudo).id === 'modulo-1' && A.moduloAtual({ ...tudo, abertas: [...ids, ids2[0]] }).id === 'modulo-2',
+ok(A.moduloAtual(tudo).id === 'modulo-1' && A.moduloAtual({ ...tudo, abertas: [...ids, ids2[0]] }).id === 'modulo-2'
+  && A.moduloAtual({ ...tudoDoisModulos, abertas: [...ids, ...ids2, ids3[0]] }).id === 'modulo-3',
   'fora da aula, o livro é o do módulo da última lição dada');
-ok(A.moduloDaLicao(ids2[3])?.id === 'modulo-2' && A.moduloDaLicao(ids[0])?.id === 'modulo-1', 'cada lição sabe o seu módulo');
-ok(A.licoesConcluidasNoCurso(tudoTudo) === 12, 'doze lições no curso');
+ok(A.moduloDaLicao(ids2[3])?.id === 'modulo-2' && A.moduloDaLicao(ids[0])?.id === 'modulo-1' && A.moduloDaLicao(ids3[5])?.id === 'modulo-3',
+  'cada lição sabe o seu módulo');
+ok(A.licoesConcluidasNoCurso(tudoTudo) === 18, 'dezoito lições no curso');
 
 // ------------------------------------------------------------ 5. o livro
 console.log('\n5. o livro');
@@ -171,6 +207,9 @@ const conferirLicao = (m, pgs, i) => {
 const paginas2 = A.paginasDoModulo(M2);
 ok(paginas2.length % 2 === 0 && M2.licoes.every((_, i) => conferirLicao(M2, paginas2, i)),
   `o livro do Módulo 2: ${paginas2.length} páginas, toda lição começando na esquerda da dupla`);
+const paginas3 = A.paginasDoModulo(M3);
+ok(paginas3.length % 2 === 0 && M3.licoes.every((_, i) => conferirLicao(M3, paginas3, i)),
+  `o livro do Módulo 3: ${paginas3.length} páginas, toda lição começando na esquerda da dupla`);
 M.licoes.forEach((l, i) => {
   ok(conferirLicao(M, paginas, i), `lição ${i + 1}: começa na esquerda da dupla (p. ${A.primeiraPaginaDa(M, i) + 1}), ${l.explicacao.length} de explicação, exercícios e fechamento`);
 });

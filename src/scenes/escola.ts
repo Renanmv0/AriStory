@@ -125,8 +125,8 @@ const FALAS_DO_GATITO = [
 
 /** com lição para dar, ele lembra quem sabe o horário (a missão da aula: `escolaGinasio.ts`) */
 const DICA_DA_AULA = 'A próxima aula está quase na hora! Quem sabe o horário de tudo é a Luna: ela vive no ginásio.';
-/** e com o curso inteiro feito (os dois módulos) */
-const DEPOIS_DO_MODULO = 'O Módulo 3 ainda está no forno. Enquanto isso, revisem a apostila: tem estrelinha pra melhorar.';
+/** e com o curso inteiro feito (os três módulos) */
+const DEPOIS_DO_MODULO = 'O Módulo 4 ainda está no forno. Enquanto isso, revisem a apostila: tem estrelinha pra melhorar.';
 
 
 export const escola: SceneDef = {

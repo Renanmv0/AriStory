@@ -11,6 +11,12 @@ import { LICAO_9 } from './licoes/licao9';
 import { LICAO_10 } from './licoes/licao10';
 import { LICAO_11 } from './licoes/licao11';
 import { LICAO_12 } from './licoes/licao12';
+import { LICAO_13 } from './licoes/licao13';
+import { LICAO_14 } from './licoes/licao14';
+import { LICAO_15 } from './licoes/licao15';
+import { LICAO_16 } from './licoes/licao16';
+import { LICAO_17 } from './licoes/licao17';
+import { LICAO_18 } from './licoes/licao18';
 
 /**
  * ======================================= A APOSTILA DO GATITO — as regras
@@ -56,13 +62,33 @@ export const MODULO_2: Modulo = {
   numero: 2,
   titulo: 'Português com o Gatito',
   subtitulo: 'Módulo 2 · Indo mais longe',
-  seguinte: { nome: 'Módulo 3', pronto: false },
+  seguinte: { nome: 'Módulo 3', pronto: true },
   parabens: 'Doze lições no curso — da rotina ao cartão-postal — e um professor que já não cabe de orgulho.',
   licoes: [LICAO_7, LICAO_8, LICAO_9, LICAO_10, LICAO_11, LICAO_12],
 };
 
+/**
+ * O MÓDULO 3 — "Soltando a língua" (pedido do Renan: mais aulas de português,
+ * criativas e abordando mais tópicos). É o A2 para o B1 dos cursos para
+ * hispanofalantes: depois da rotina, do corpo, da viagem e das compras, a
+ * língua que se fala de verdade — de quem é cada coisa, a receita, o caminho,
+ * a lembrança, o grupo da turma e o exagero. Cada tema com a pegadinha
+ * previsível de quem fala espanhol (o "su" que vira dele/dela, o "mezcla"
+ * que vira mexa, o "doblar", o "iba", o "jajaja", o "más bueno"). A
+ * numeração continua: lições 13 a 18.
+ */
+export const MODULO_3: Modulo = {
+  id: 'modulo-3',
+  numero: 3,
+  titulo: 'Português com o Gatito',
+  subtitulo: 'Módulo 3 · Soltando a língua',
+  seguinte: { nome: 'Módulo 4', pronto: false },
+  parabens: 'Dezoito lições no curso — de "de quem é isso?" ao "lindíssimo" — e um professor que já ensaia o discurso de formatura.',
+  licoes: [LICAO_13, LICAO_14, LICAO_15, LICAO_16, LICAO_17, LICAO_18],
+};
+
 /** O CURSO INTEIRO, na ordem: um módulo só abre depois do anterior terminado. */
-export const MODULOS: readonly Modulo[] = [MODULO_1, MODULO_2];
+export const MODULOS: readonly Modulo[] = [MODULO_1, MODULO_2, MODULO_3];
 
 /** o módulo de uma lição (pelo id), ou `null` */
 export function moduloDaLicao(id: string): Modulo | null {

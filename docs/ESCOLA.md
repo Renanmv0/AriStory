@@ -32,7 +32,8 @@ Sala 1, e a lição é uma **apostila de verdade**, de folhear — o Módulo 1, 
 lições (`minigames/aula/`, `ui/apostila.ts`, `scenes/escolaAula.ts`; como
 escrever lição nova: a skill `aristory-apostila`). Terminar o módulo leva à
 **festa da torcida** no ginásio, com a roupa de cheerleader de prêmio (§7),
-e abre o **Módulo 2**, "Indo mais longe" — lições 7 a 12 (§6.5). No
+e abre o **Módulo 2**, "Indo mais longe" — lições 7 a 12 (§6.5) — e, depois
+dele, o **Módulo 3**, "Soltando a língua" — lições 13 a 18 (§6.6). No
 refeitório mora o **Flynn**, a raposa presidente da atlética (§16) — e,
 quando o Módulo 2 começa, ele muda para o ginásio e treina no meio da
 quadra, e as coelhinhas vão para a lateral.
@@ -618,6 +619,50 @@ que agora vem o Módulo 2. Fora da aula, a carteira abre o livro do módulo da
 apostila** (rever o Módulo 1 de dentro do 2). O fim do livro do 1 promete o
 2; o do 2 diz "em breve: Módulo 3". Terminar o Módulo 2 dá a memória "O
 Módulo 2 completinho". Teste: `scripts/modulo2.mjs`.
+
+### 6.6 O Módulo 3 — "Soltando a língua" (CONSTRUÍDO)
+
+Pedido do Renan: mais aulas de português, criativas e abordando mais tópicos.
+Seis lições novas (13 a 18), liberadas só depois do Módulo 2, cada uma com um
+lugar do jogo que as lições 1 a 12 ainda não usaram e a pegadinha previsível
+de quem fala espanhol. Todas são chamadas por `'qualquer'` uma das três, e só
+falam os que já têm rosto na apostila (Gatito, as três irmãs, Walter,
+Josefina, o Ari e o Renan) — o Flynn e a Estella, por exemplo, só são citados.
+
+| # | lição | a situação | a língua |
+|---|---|---|---|
+| 13 | **De quem é isso?** | a caixa de achados e perdidos do saguão (as três presilhas das irmãs) | o "su" que vira dele/dela/de vocês; este/esse/aquele; neste, nisso, daquele; "Seu João" |
+| 14 | **Mexa, misture, prove!** | o brigadeiro do Walter na cozinha do Mania (a Josefina lê a receita, ele late) | o imperativo (misture, mexa, ponha, faça) e o "não mexa"; medidas; os falsos amigos tirar e pronto |
+| 15 | **Vira à esquerda, Sol!** | perdidos a caminho da piscina do clube, com o mapa de cabeça pra baixo | direções; virar (e não girar); a crase de "à direita"; ordinais (não existe "primer"); quarteirão; o "logo ali" |
+| 16 | **Antigamente era assim** | a caixa de fotos antigas do depósito da escola | o imperfeito (era, tinha, fazia); -aba vira -ava; só o "nós" leva acento; costumava; imperfeito × perfeito |
+| 17 | **Beleza? Valeu!** | o grupo da turma no celular | o português falado (tá, tô, pra, né, bora); o internetês (vc, pq, blz, vlw); kkkk e nunca jajaja ("já já já") |
+| 18 | **Maior, melhor, lindíssimo!** | o campeonato de pedrinhas no lago, com a Sol exagerando | comparativos (mais… do que, tão… quanto); melhor/pior (nunca "mais bom"); "mais de dez"; -íssimo com dois s; ótimo e péssimo |
+
+Cuidados que valem para o módulo, para a próxima leva de lições:
+
+- **Rato nunca**, nem como falso amigo ("un rato" = um pouquinho) nem como
+  emoji: o `scripts/apostila.mjs` reprova o Módulo 3 se achar. *(A lição 2 do
+  Módulo 1 ainda tem o falso amigo "rato" com 🐭 — fica de fora da checagem
+  até o Renan decidir se troca.)*
+- **A infância do Ari e do Renan não se inventa**: a lição 16 conta o passado
+  do Gatito e das irmãs; os dois só perguntam.
+- Resposta ambígua é o maior risco de qualidade: `ordenar` aceita uma ordem só,
+  `digitar` só perdoa acento, e `lacunas` não pode ter palavra que caiba em
+  duas lacunas.
+
+Como o curso passa do 2 ao 3: `MODULOS` ganhou o `MODULO_3`; a aula da vez
+continua sendo a primeira lição sem estrela do curso inteiro; o fim do livro
+do 2 agora promete "Agora vem o Módulo 3" e o do 3 diz "Em breve: Módulo 4".
+Terminar o Módulo 3 dá a memória "O Módulo 3 completinho", e com o curso todo
+feito o Gatito diz no saguão que o Módulo 4 ainda está no forno. Teste:
+`scripts/modulo3.mjs` (a aula da 13, o livro de 13 a 18 no computador e no
+celular, o sumário com os outros dois módulos e o fim do livro).
+
+**Ideias para o Módulo 4**, se o Renan quiser seguir: os quatro "porquês" (por
+que / por quê / porque / porquê) num programa de auditório do Gatito; o
+clima e o gerúndio ("tá chovendo"); a colocação do pronome ("me dá", "te vi",
+"vi ele"); a grafia que muda (ñ → nh, ll → lh, -ción → -ção, -dad → -dade); e
+as expressões que não se traduzem ("cair a ficha", "pagar mico").
 
 ---
 

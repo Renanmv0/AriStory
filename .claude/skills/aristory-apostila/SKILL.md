@@ -1,6 +1,6 @@
 ---
 name: aristory-apostila
-description: Escrever ou ajustar uma lição da apostila de português do Gatito (a aula da Sala 1 da escola) — a situação, a explicação, os exercícios, as falas da aula — ou mexer no livro que desenha as lições. Use quando a tarefa for "lição nova", "mais exercícios", "mudar a explicação de X", "o Ari erra Y, põe na aula", "Módulo 2".
+description: Escrever ou ajustar uma lição da apostila de português do Gatito (a aula da Sala 1 da escola) — a situação, a explicação, os exercícios, as falas da aula — ou mexer no livro que desenha as lições. Use quando a tarefa for "lição nova", "mais exercícios", "mudar a explicação de X", "o Ari erra Y, põe na aula", "Módulo 2", "Módulo 3".
 ---
 
 # A apostila do Gatito
@@ -15,7 +15,7 @@ contrastar**.
 |---|---|
 | `src/minigames/aula/tipos.ts` | os tipos: `Licao`, `Bloco`, `Exercicio`, `Fala` — leia os comentários |
 | `src/minigames/aula/licoes/licaoN.ts` | **uma lição por arquivo**: todo o conteúdo |
-| `src/minigames/aula/apostila.ts` | os módulos (`MODULO_1`, `MODULO_2`, e `MODULOS`, o curso), a nota, a trava, o conferidor |
+| `src/minigames/aula/apostila.ts` | os módulos (`MODULO_1`, `MODULO_2`, `MODULO_3`, e `MODULOS`, o curso), a nota, a trava, o conferidor |
 | `src/ui/apostila.ts` + `style.css` (fim do arquivo) | o livro: páginas, espiral, exercícios, folhear |
 | `src/scenes/escolaAula.ts` | a aula na Sala 1: o Gatito na mesa, as três irmãs nas carteiras, abrir o livro |
 | `src/scenes/escolaGinasio.ts` (`montarAsIrmas`) | o ginásio: quem treina, quem chama a aula, o salto e a estrelinha |
@@ -61,8 +61,11 @@ antes da regra, a regra com exemplo, prática variada, e a autoavaliação em
 ## Os módulos
 
 O curso é a lista `MODULOS` (`apostila.ts`), um livro por módulo:
-**Módulo 1 · Primeiros passos** (lições 1 a 6) e **Módulo 2 · Indo mais
-longe** (7 a 12). O que vale para módulo novo:
+**Módulo 1 · Primeiros passos** (lições 1 a 6), **Módulo 2 · Indo mais
+longe** (7 a 12) e **Módulo 3 · Soltando a língua** (13 a 18: os donos e o
+"su", a receita e o imperativo, as direções, o imperfeito, o grupo do
+celular, os comparativos — o quadro está em `docs/ESCOLA.md` §6.6). O que vale
+para módulo novo:
 
 - **a numeração CONTINUA** (o 2 começa na 7, como no Novo Avenida Brasil): o
   `numero` é o da lição no curso, e o conferidor cobra (`conferirModulo` sabe
@@ -80,6 +83,29 @@ longe** (7 a 12). O que vale para módulo novo:
 
 Módulo novo = os arquivos `licoes/licaoN.ts`, o `MODULO_N` com eles, uma
 entrada em `MODULOS`, e o `seguinte` do anterior passando a `pronto: true`.
+O que mais muda junto (foi assim no Módulo 3): a memória do módulo completo em
+`scenes/escolaAula.ts` (`modulo-N-do-gatito`), a fala do saguão para o curso
+todo feito (`DEPOIS_DO_MODULO` em `scenes/escola.ts`), a checagem do
+`scripts/apostila.mjs` (bloco "1c", os totais do curso) e o "Agora vem…" do
+`scripts/modulo2.mjs`; e um `scripts/moduloN.mjs` copiado do `modulo3.mjs`.
+
+**Cuidados de conteúdo, que já custaram revisão:**
+
+- **Rato nunca**, nem como falso amigo ("un rato") nem como emoji — a fobia do
+  Ari é de verdade. O `apostila.mjs` reprova o Módulo 3 se achar um. (A lição 2
+  ainda tem o "rato" com 🐭: está anotado no §6.6 do `docs/ESCOLA.md`.)
+- **Só fala quem tem rosto na apostila**: `Falante` (Gatito, Luna, Sol,
+  Estrella, Ari, Renan, Walter, Josefina). Flynn, Estella e os outros podem ser
+  citados, mas falar pede o retrato no `ui/apostila.ts`.
+- **Não invente a vida do Ari e do Renan**: lição de passado conta o do
+  Gatito e das irmãs; os dois perguntam.
+- **Resposta ambígua é o maior risco**: `ordenar` só aceita uma ordem (nada de
+  advérbio que muda de lugar), `digitar` só perdoa acento (liste toda variante
+  natural: tá/está, quadra/quarteirão), `lacunas` não pode ter palavra que
+  caiba em duas lacunas nem distrator que também faça sentido, e `erro` tem
+  UM pedaço errado. Não use um distrator que o brasileiro de fato diz (o
+  "mexe" da receita, o "mais que" sem o "do").
+- **`*` solto vira itálico** — o conferidor só confere os `**`.
 
 ## Escrever uma lição nova
 
@@ -212,6 +238,7 @@ node scripts/apostila.mjs            # as lições e as regras, sem navegador
 npm run build && npx vite preview --port 4173 &
 node scripts/aula.mjs /tmp/au        # a aula inteira e o livro, no computador e no celular
 node scripts/modulo2.mjs /tmp/m2     # o Módulo 2: a aula da lição 7, as seis lições folheadas, trocar de apostila e o fim de cada livro
+node scripts/modulo3.mjs /tmp/m3     # o Módulo 3: a aula da lição 13, as seis lições folheadas (nenhuma página rola mais de 4 alturas), o sumário com os outros dois módulos, o fim do livro e o celular (SO=aula|livro|fim|celular roda uma parte)
 node scripts/paginas.mjs /tmp/pag    # o livro flexível: lição com mais páginas de explicação e de exercício, e a de anotações
 node scripts/irmas.mjs /tmp/ir       # as três no piquenique, quem treina e quem chama cada aula, o salto e a estrelinha
 ```

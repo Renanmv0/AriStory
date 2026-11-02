@@ -5,7 +5,7 @@ import { Gatito } from '../entities/bichos/Gatito';
 import { CoelhaDaTorcida, Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 import { ARI, RENAN } from '../characters/cast';
 import {
-  MODULOS, MODULO_1, MODULO_2, concluida, irmasNoGinasio, licaoDaVezNoCurso, licoesConcluidasNoCurso, moduloConcluido,
+  MODULOS, MODULO_1, MODULO_2, MODULO_3, concluida, irmasNoGinasio, licaoDaVezNoCurso, licoesConcluidasNoCurso, moduloConcluido,
   type Irma,
 } from '../minigames/aula/apostila';
 import type { Fala, Falante, Licao } from '../minigames/aula/tipos';
@@ -447,6 +447,15 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
         place: 'Escola do Gatito',
         note: 'Doze lições! A rotina do Gatito, o basquete no ginásio, o tombo na pista de gelo, a viagem pra praia e o cartão-postal do Rio — e as compras na lojinha da Josefina. Você já vai longe em português.',
         icon: '🎒',
+      });
+    }
+    if (moduloConcluido(MODULO_3, g.progressoDaApostila())) {
+      g.unlock({
+        id: 'modulo-3-do-gatito',
+        title: 'O Módulo 3 completinho',
+        place: 'Escola do Gatito',
+        note: 'Dezoito lições! A caixa de achados e perdidos, o brigadeiro do Walter, o caminho da piscina, a caixa de fotos antigas, o grupo da turma no celular e o campeonato de pedrinhas no lago — com a Sol exagerando em tudo. Agora você solta a língua.',
+        icon: '💬',
       });
     }
     levantar(g);
