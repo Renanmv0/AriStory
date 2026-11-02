@@ -1,4 +1,26 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npm run typecheck)",
+      "Bash(npm run build)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(node scripts/*)",
+      "Bash(npx vite preview*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git fetch*)",
+      "PowerShell(npm run typecheck)",
+      "PowerShell(npm run build)",
+      "PowerShell(node scripts/*)",
+      "PowerShell(git status*)",
+      "PowerShell(git diff*)",
+      "PowerShell(git log*)",
+      "PowerShell(git branch*)",
+      "PowerShell(git fetch*)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -6,6 +28,19 @@
           {
             "type": "command",
             "command": "cd \"$CLAUDE_PROJECT_DIR\" && [ -d node_modules ] || npm install --no-audit --no-fund >/dev/null 2>&1 || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guarda-invariantes.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Conferindo as invariantes do AriStory..."
           }
         ]
       }
