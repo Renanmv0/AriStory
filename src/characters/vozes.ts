@@ -12,6 +12,7 @@ import { JeanLuc } from '../entities/bichos/JeanLuc';
 import { Gatito } from '../entities/bichos/Gatito';
 import { Flynn } from '../entities/bichos/Flynn';
 import { Pelusa } from '../entities/bichos/Pelusa';
+import { Valentina } from '../entities/bichos/Valentina';
 import { FICHA_DA_LUNA, FICHA_DA_SOL, FICHA_DA_ESTRELLA } from '../entities/bichos/CoelhaDaTorcida';
 
 /**
@@ -39,6 +40,7 @@ export const VOZES: ReadonlyArray<VozDaFala> = [
   Gatito.voz,
   Flynn.voz,
   Pelusa.voz,
+  Valentina.voz,
   FICHA_DA_LUNA.voz,
   FICHA_DA_SOL.voz,
   FICHA_DA_ESTRELLA.voz,

@@ -193,6 +193,10 @@ const PECAS = [
   ['armarios-de-escola', 'escola'],
   ['escadaria', 'escola'],
   ['vitrine-de-trofeus', 'escola'],
+  // o banner de marketing da Valentina, no canto da entrada do saguão
+  ['banner-dos-gatitos', 'escola'],
+  // a Valentina (bicho): o caçador mede as caixas retas dela (os botões, o bolso, a haste dos óculos)
+  ['valentina', 'escola'],
   ['mesa-de-refeitorio', 'escola'],
   ['balcao-de-refeitorio', 'escola'],
   ['maquina-de-lanches', 'escola'],

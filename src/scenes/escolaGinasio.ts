@@ -1,4 +1,5 @@
 import { ausentarNaCena, quemFoiSeArrumar } from '../eventos/halloween/ausentes';
+import { faltaConhecerAValentina } from './escolaMarketing';
 import { RECADOS_DA_ESCOLA, RECADOS_DO_PARQUE } from '../eventos/halloween/recados';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
@@ -20,7 +21,7 @@ import type { Irma } from '../minigames/aula/apostila';
 import type { WorldBuilder } from '../world/WorldBuilder';
 import { flynnNoGinasio, montarOTreinoDoFlynn } from './escolaAtletica';
 import {
-  NOME_DA_IRMA, aulaDaVez, chamarAula, emAula, irmasNoGinasioAgora, moduloUmConcluido, novaIrma, podeChamarAula,
+  AULA_CHAMADA, NOME_DA_IRMA, aulaDaVez, chamarAula, emAula, irmasNoGinasioAgora, moduloUmConcluido, novaIrma, podeChamarAula,
 } from './escolaAula';
 
 /**
@@ -547,6 +548,12 @@ function montarAsIrmas(w: WorldBuilder): void {
     sol: '¡YA VA! Vocês nem conheceram o professor Gatito? ¡Vayan! Ele fica passeando pelo saguão!',
     estrella: 'Vocês já conheceram o professor Gatito? Ele fica no saguão. É um amor.',
   };
+  /** do Módulo 3 em diante a Valentina é da turma: sem conhecê-la, a aula não começa */
+  const CONHECAM_A_VALENTINA: Record<Irma, string> = {
+    luna: 'Panas, antes do Módulo 3: vocês já conheceram a Valentina? Ela vai fazer as aulas com a gente! Fica no saguão, perto da entrada, do lado do banner.',
+    sol: '¡ATENCIÓN! Tem aluna nova no Módulo 3: a VALENTINA! Ela fica no saguão. Vão lá, mas vão bem vestidos, ¡que ella repara en todo!',
+    estrella: 'Vocês já conheceram a Valentina, do marketing? Ela vai estudar com a gente agora. Fica no saguão. Ela vai comentar a roupa de vocês, mas é carinho, tá?',
+  };
 
   const esperar = async (g: GameAPI, ate: () => boolean): Promise<void> => {
     for (let i = 0; i < 80 && !ate(); i++) await g.wait(0.1);
@@ -661,6 +668,9 @@ function montarAsIrmas(w: WorldBuilder): void {
             } else if (achar(dona)) {
               await conversa(g, [[NOME_DA_IRMA[quem.id], MANDA_PARA[quem.id][dona]]]);
             }
+          } else if (licao && g.flag('gatito-conhecido') && !g.flag(AULA_CHAMADA) && faltaConhecerAValentina(g)) {
+            // o Módulo 3 tem aluna nova: conheçam a Valentina antes
+            await conversa(g, [[NOME_DA_IRMA[quem.id], CONHECAM_A_VALENTINA[quem.id]]]);
           } else if (licao && !g.flag('gatito-conhecido')) {
             // a aula é do Gatito: sem conhecer o professor, ela manda conhecer primeiro
             await conversa(g, [[NOME_DA_IRMA[quem.id], CONHECAM_O_GATITO[quem.id]]]);

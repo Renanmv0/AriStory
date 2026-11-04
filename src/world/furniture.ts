@@ -2356,6 +2356,111 @@ export function cartazDeParede(
 }
 
 /**
+ * O BANNER DE MARKETING DOS GATITOS, de chão (o "roll-up" de feira): o
+ * cassete de alumínio com os pezinhos, o mastro atrás, a barra de cima e o
+ * banner pintado em canvas — o fundo azul em degradê, o emblema com as
+ * orelhinhas, "GATITOS" grande, o slogan, o que a escola oferece e, na faixa
+ * rosa de baixo, a assinatura de quem fez (a Valentina, do marketing). As
+ * costas são um painel azul liso, para quem olha por trás não ver o avesso.
+ * Olha para `+Z`; a base no chão.
+ */
+export function bannerDosGatitos(
+  linhas: readonly string[] = ['Português · Espanhol', 'Atlética · Torcida', 'Matrículas abertas!'],
+  slogan = 'aprender com estilo',
+  assinatura = 'marketing · Valentina',
+  largura = 0.84, altura = 1.9,
+): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'banner-dos-gatitos';
+  const alu = toon(P.metalGrey);
+  const BASE = 0.085;
+  const cassete = new THREE.Mesh(new RoundedBoxGeometry(largura + 0.08, BASE, 0.17, 3, 0.03), alu);
+  cassete.position.y = BASE / 2 + 0.012;
+  g.add(cassete);
+  for (const s of [-1, 1] as const) {
+    const pe = new THREE.Mesh(new RoundedBoxGeometry(0.07, 0.024, 0.34, 2, 0.01), toon(P.gatitosAzulEscuro));
+    pe.position.set(s * (largura / 2 - 0.02), 0.012, 0);
+    g.add(pe);
+  }
+  // o mastro atrás do banner, e a barra de cima que segura a lona
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, altura, 8), alu);
+  mastro.position.set(0, BASE + altura / 2, -0.045);
+  g.add(mastro);
+  const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, largura + 0.03, 10), alu);
+  barra.rotation.z = Math.PI / 2;
+  barra.position.set(0, BASE + altura + 0.004, -0.012);
+  g.add(barra);
+  // as costas da lona: um painel liso azul
+  const costas = new THREE.Mesh(new THREE.BoxGeometry(largura, altura, 0.008), toon(P.gatitosAzul));
+  costas.position.set(0, BASE + altura / 2, -0.016);
+  g.add(costas);
+  const lona = pinturaEmCanvas(largura, altura, (ctx, w, h) => {
+    const fundo = ctx.createLinearGradient(0, 0, 0, h);
+    fundo.addColorStop(0, '#4b7fd6');
+    fundo.addColorStop(0.62, '#3f6fc6');
+    fundo.addColorStop(1, '#243f78');
+    ctx.fillStyle = fundo;
+    ctx.fillRect(0, 0, w, h);
+    // as penas rosa no canto de cima: três arcos macios (a marca de quem fez)
+    ctx.lineCap = 'round';
+    for (const [r, cor, lw] of [[w * 0.55, 'rgba(246,163,182,0.55)', w * 0.05], [w * 0.42, 'rgba(238,120,150,0.5)', w * 0.035], [w * 0.3, 'rgba(252,213,221,0.6)', w * 0.025]] as const) {
+      ctx.strokeStyle = cor;
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      ctx.arc(w * 1.02, -h * 0.02, r, Math.PI * 0.55, Math.PI * 0.98);
+      ctx.stroke();
+    }
+    // o EMBLEMA: o disco amarelo, as orelhinhas, o aro e o G azuis
+    const cx = w / 2;
+    const cy = h * 0.2;
+    const R = w * 0.19;
+    ctx.fillStyle = '#f2c14a';
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(cx + s * R * 0.35, cy - R * 0.85);
+      ctx.lineTo(cx + s * R * 0.78, cy - R * 1.42);
+      ctx.lineTo(cx + s * R * 0.92, cy - R * 0.45);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#3f6fc6';
+    ctx.lineWidth = R * 0.11;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.86, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = '#3f6fc6';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = fonteRedonda(R * 1.15);
+    ctx.fillText('G', cx, cy + R * 0.06);
+    // o nome e o slogan
+    ctx.fillStyle = '#ffffff';
+    escreverCabendo(ctx, 'GATITOS', cx, h * 0.39, w * 0.86, w * 0.2);
+    ctx.fillStyle = '#ffe39a';
+    escreverCabendo(ctx, slogan, cx, h * 0.455, w * 0.84, w * 0.085, false);
+    ctx.strokeStyle = '#e2b54a';
+    ctx.lineWidth = Math.max(3, w * 0.008);
+    ctx.beginPath();
+    ctx.moveTo(w * 0.28, h * 0.505);
+    ctx.lineTo(w * 0.72, h * 0.505);
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    linhas.forEach((l, i) => escreverCabendo(ctx, l, cx, h * (0.575 + i * 0.075), w * 0.84, w * 0.075, i === linhas.length - 1));
+    // a faixa rosa da assinatura
+    ctx.fillStyle = '#f6a3b6';
+    ctx.fillRect(0, h * 0.86, w, h * 0.09);
+    ctx.fillStyle = '#243f78';
+    escreverCabendo(ctx, assinatura, cx, h * 0.905, w * 0.8, w * 0.06);
+  });
+  lona.position.set(0, BASE + altura / 2, -0.01);
+  g.add(lona);
+  return g;
+}
+
+/**
  * PLACA DE PORTA, bilíngue: o nome da sala em português, grande, e em
  * espanhol embaixo, pequeno. A escola ensina só de andar por ela.
  */

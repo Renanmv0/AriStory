@@ -312,6 +312,42 @@ dupla. E o rabo de raposa é a cadeia de gomos de sempre, com o primeiro
 apontando para trás e para baixo e os outros dobrando para cima: um "J"
 deitado, gordo no meio e com a ponta branca.
 
+## Bicho que não é gente, e bicho com guarda-roupa (a Valentina)
+
+A Valentina, a flamingo do marketing (`entities/bichos/Valentina.ts`),
+nasceu no molde em pé do Flynn — cabeção redondo, tronco de gente, braços — e
+o Renan reprovou: "não precisa basear o modelo dela igual dos outros da
+escola, ela não ficou parecendo um flamingo, ficou bem feia". **O molde em pé
+serve a bicho que se lê de pé** (coelha, raposa de atlética); ave pede o
+corpo da ave. O que a fez virar flamingo:
+
+- **a silhueta primeiro**: o ovo deitado, o pescoço em S, as pernas
+  compridas com o joelho para trás, a cabeça pequena com o bico dobrado. O
+  fofo entra por cima (cabeça 1,22×, olho colado, blush), sem trocar a
+  silhueta;
+- **pescoço vivo é UMA malha**: um tubo que afina (`tuboAfinado`), refeito a
+  cada quadro por `moldarTubo` a partir dos ângulos de quatro gomos — curva
+  sem emenda e dobra para examinar, posar e andar. Ele vai com nome (a
+  `fundir` não o junta) e `frustumCulled = false`;
+- **tubo feito à mão do avesso some por dentro**: com os triângulos na ordem
+  errada, de frente via-se ATRAVÉS do pescoço — parecia um buraco no peito.
+  A ordem que vira para fora é `a, a+1, b / b, a+1, b+1`;
+- **roupa de ave é de ave**: blazer inteiro no ovo, de cima, virava um
+  feijão azul — virou **bolero** (o peito e os ombros, as costas rosa e as
+  asas à mostra). A saia é um **tutu** curtinho em volta da barriga (aberta
+  demais, num corpo comprido, era abajur). O lenço vai no pescoço, um palmo
+  acima da base;
+- **o rosto vai na vaga do crânio**, não na ponta do pescoço: os óculos
+  presos no grupo da cabeça (deslocado do crânio) sumiam dentro dele.
+
+**A ROUPA POR FICHA** (o pedido: "fácil criar novas roupas"): o corpo não
+tem roupa nenhuma; `world/looksDaValentina.ts` tem as medidas, as vagas
+(`tronco`, `saia`, `pescoco`, `cabeca`, `asa`, `pe`, cada uma com o seu
+referencial na tabela do arquivo), as peças e os looks. `vestir(look)`
+troca em jogo: tira a peça velha de cada vaga, pendura a nova no pai certo,
+junta, liga a sombra, acha quem balança (`userData.balanca`) e esconde o pé
+pelado se houver sapato. Look novo é uma ficha nova no `LOOKS_DA_VALENTINA`.
+
 ## Bicho que treina com uma bola (o Flynn no ginásio)
 
 O treino do Flynn (`montarOTreinoDoFlynn`, `scenes/escolaAtletica.ts`) é o
