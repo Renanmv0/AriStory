@@ -11,6 +11,10 @@ import {
 import type { Fala, Falante, Licao } from '../minigames/aula/tipos';
 import { conversa, sentarOsDois } from './escolaComum';
 import { PREMIOS_DA_APOSTILA } from '../world/itens';
+import { Valentina } from '../entities/bichos/Valentina';
+import {
+  NOME_DA_VALENTINA, VALENTINA_NA_CARTEIRA, VALENTINA_NO_FIM_DA_AULA, faltaConhecerAValentina, valentinaNaAula,
+} from './escolaMarketing';
 
 /**
  * ============================================== A AULA DO GATITO, NA SALA 1
@@ -111,7 +115,7 @@ export function emAula(g: GameAPI): boolean {
 
 /** a Luna pode chamar a aula: o Gatito já convidou, e tem lição para dar */
 export function podeChamarAula(g: GameAPI): boolean {
-  return g.flag('gatito-conhecido') && !g.flag(AULA_CHAMADA) && aulaDaVez(g) !== null;
+  return g.flag('gatito-conhecido') && !g.flag(AULA_CHAMADA) && aulaDaVez(g) !== null && !faltaConhecerAValentina(g);
 }
 
 /** a última lição que o Gatito deu (para a lousa lembrar dela) */
@@ -170,6 +174,8 @@ export interface SalaDaAula {
    * Estrella na segunda, atrás dela e atrás de quem joga
    */
   lugares: Record<Irma, { x: number; z: number }>;
+  /** a carteira da Valentina (do Módulo 3 em diante): a da segunda fila, atrás do parceiro */
+  lugarDaValentina: { x: number; z: number };
   /** o tampo da mesa do professor: é ali que o Gatito senta */
   mesa: { x: number; y: number; z: number };
   /** a porta da sala, por onde os dois vão embora no fim */
@@ -201,6 +207,7 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
   let gatito: Gatito | null = null;
   /** as três, sentadas, com a aula chamada */
   const irmas: Array<{ id: Irma; bicho: CoelhaDaTorcida }> = [];
+  let valentina: Valentina | null = null;
   if (naAula) {
     gatito = new Gatito(parado(s.mesa.x, s.mesa.z));
     gatito.usarOculos(true);
@@ -217,8 +224,16 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
       bicho.group.userData.teste = { [id]: bicho };
       irmas.push({ id, bicho });
     }
+    // A VALENTINA, colega de turma do Módulo 3 em diante (`escolaMarketing.ts`)
+    if (valentinaNaAula(g0)) {
+      const lugar = s.lugarDaValentina;
+      valentina = new Valentina(parado(lugar.x, lugar.z));
+      valentina.sentarEm(lugar.x, lugar.z, Math.PI, ASSENTO);
+      w.add(valentina.group);
+      valentina.group.userData.teste = { valentina };
+    }
     /** gancho de teste: o `scripts/aula.mjs` mede todo mundo na sala */
-    gatito.group.userData.teste = { gatito, irmas: Object.fromEntries(irmas.map((i) => [i.id, i.bicho])) };
+    gatito.group.userData.teste = { gatito, irmas: Object.fromEntries(irmas.map((i) => [i.id, i.bicho])), valentina };
   }
   /**
    * O PULO PARA O CHÃO: o Gatito desce da mesa para a FRENTE dela, e a Luna
@@ -226,14 +241,16 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
    * debaixo do tampo e a coelha dentro da cadeira. Um arco curto, com um
    * tico de subida antes de cair.
    */
-  const pulando: Array<{ quem: Gatito | CoelhaDaTorcida; de: THREE.Vector3; para: THREE.Vector3; t: number; pronto: () => void }> = [];
-  const pular = (quem: Gatito | CoelhaDaTorcida, x: number, z: number): Promise<void> =>
+  type Aluno = Gatito | CoelhaDaTorcida | Valentina;
+  const pulando: Array<{ quem: Aluno; de: THREE.Vector3; para: THREE.Vector3; t: number; pronto: () => void }> = [];
+  const pular = (quem: Aluno, x: number, z: number): Promise<void> =>
     new Promise((pronto) => {
       pulando.push({ quem, de: quem.group.position.clone(), para: new THREE.Vector3(x, 0, z), t: 0, pronto });
     });
   w.onUpdate((dt) => {
     gatito?.update(dt);
     for (const i of irmas) i.bicho.update(dt);
+    valentina?.update(dt);
     for (let i = pulando.length - 1; i >= 0; i--) {
       const p = pulando[i];
       p.t = Math.min(1, p.t + dt * 2.6);
@@ -277,9 +294,22 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
       await conversa(g, NA_CARTEIRA[id]);
     },
   }));
+  const falarComValentina = valentina
+    ? w.interact({
+      id: `${s.id}:valentina`,
+      x: s.lugarDaValentina.x + 0.2, z: s.lugarDaValentina.z + 0.75, radius: 0.8,
+      label: 'Falar com a Valentina', icon: '🦩',
+      highlight: valentina.group,
+      onInteract: async (g) => {
+        valentina?.posar(2.6);
+        await conversa(g, VALENTINA_NA_CARTEIRA.map(([q, t]) => [q, t] as const));
+      },
+    })
+    : null;
   const ligarConversas = (sim: boolean): void => {
     if (falarComGatito) falarComGatito.enabled = sim;
     for (const i of falarComIrmas) i.enabled = sim;
+    if (falarComValentina) falarComValentina.enabled = sim;
   };
 
   /** no fim da aula, todo mundo desce e vai embora pela porta */
@@ -317,6 +347,20 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
         bicho.group.visible = false;
       })());
     });
+    // a Valentina por último, pelo mesmo caminho delas, desfilando
+    if (valentina) {
+      const v = valentina;
+      const lugar = s.lugarDaValentina;
+      v.levantar();
+      saem.push((async () => {
+        await g0.wait(0.6 + irmas.length * 0.6);
+        await pular(v, lugar.x - 0.5, lugar.z);
+        await v.irPara(lugar.x - 0.5, s.vaoDasFileiras, 1.2);
+        await v.irPara(s.corredor, s.vaoDasFileiras, 1.2);
+        await v.irPara(s.porta.x, s.porta.z, 1.2);
+        v.group.visible = false;
+      })());
+    }
     await Promise.all(saem);
   };
 
@@ -402,9 +446,16 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
     }
     if (feita.estrelas === 3) gatito?.sixSeven();
     for (const i of irmas) i.bicho.torcer(2.2);
+    valentina?.encantar(2.2);
     g.som('sacudida');
     await conversa(g, [[G, DAS_ESTRELAS[feita.estrelas].replace('{aluno}', ARI.name)]]);
     await conversa(g, falasDaAula(licao.aula.encerramento));
+    if (valentina) {
+      // o elogio dela, um por aula
+      const vez = g.bump('valentina.aulas');
+      valentina.posar(2.4);
+      await conversa(g, [[NOME_DA_VALENTINA, VALENTINA_NO_FIM_DA_AULA[(vez - 1) % VALENTINA_NO_FIM_DA_AULA.length]]]);
+    }
     await entregarPremio(g, licao);
     g.setFlag(AULA_CHAMADA, false);
     if (primeira) {

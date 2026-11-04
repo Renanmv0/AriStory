@@ -187,7 +187,11 @@ e na de cenário. Para VEÍCULO, o ônibus da cidade (`world/onibusDaCidade.ts`)
 a carroceria é o perfil de lado extrudado com bisel (as caixas de roda
 recortadas), as faixas dão a volta e param nas portas, o letreiro de LED em
 canvas, as rodas num lote que gira, e a porta, o farol e o pisca com comando
-para a cena — ver "O ônibus da cidade" na skill de peça.
+para a cena — ver "O ônibus da cidade" na skill de peça. Para BICHO QUE
+NÃO É GENTE, a Valentina (`entities/bichos/Valentina.ts`): flamingo de
+verdade, com o pescoço vivo (um tubo refeito a cada quadro) e a ROUPA POR
+FICHA num kit à parte (`world/looksDaValentina.ts`) — look novo é uma
+ficha nova; ver "Bicho com guarda-roupa" na skill de bicho.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em
@@ -385,6 +389,7 @@ node scripts/irmas.mjs   /tmp/ir    # a Luna, a Sol e a Estrella: as três no pi
 node scripts/uniforme.mjs /tmp/un   # o uniforme dos Gatitos: as sete pecas nos dois (frente, costas, andando, sentados e de perto), o tenis no lugar do pe, o boneco do painel, o Gatito entregando no fim da licao 3, o save antigo, e o vestiario do ginasio (a aba dos uniformes: trancada, vestir e tirar num clique, no computador e no celular)
 node scripts/aula.mjs    /tmp/au    # a aula inteira: a Luna chama no ginasio, o Gatito na mesa da Sala 1, a apostila respondida pela tela (com erro de proposito), o fim da aula, e o livro no celular
 node scripts/flynn.mjs   /tmp/fl    # o Flynn no refeitorio: o passeio entre as mesas (o ponto de conversa e o colisor junto), os pes no chao, a altura, os acessorios, o aceno e a comemoracao medidos, a apresentacao com o apito e a memoria, e fotos de perto de todos os lados
+node scripts/valentina.mjs /tmp/va  # a Valentina, flamingo do marketing: o modelo (pés no chão, cada peça do look no pai certo, num pé só, posar, examinar, encantar, fotos de perto), trocar de look, o desfile no canto do saguão, a conversa com o juízo da roupa de verdade (nada, Gatitos, peça pelo nome) e a trava do Módulo 3 com ela sentada na Sala 1. SO=modelo|look|passeio|conversa|aula|rosto roda uma parte
 node scripts/treino.mjs  /tmp/tr    # o Flynn no ginasio do Modulo 2 em diante: sai do refeitorio, corre de ponta a ponta mais rapido que a dupla, pega a bola, arremessa e ela volta pro lugar, espera a dupla sair da raia, conversa e volta a treinar; as coelhinhas na lateral
 node scripts/laboratorio.mjs /tmp/lab # o mundo dentro do computador do Ari: entrar pela tela do quarto (sugados), a chegada no pouso, os dez filtros de tela (passes conferidos), o mouse no cristal (dica e som), arrastar a bola, clicar na agua, o presente, o arame, o holofote, o dia passando, o drone e sair pelo portal de volta pra frente da escrivaninha
 node scripts/festa.mjs   /tmp/fe    # a festa da torcida no fim do modulo: o convite na licao 6, a danca medida (o salto da Sol, as duas estrelinhas da Estrella, o giro da Luna, o confete), as tres cabendo no celular, a roupa de cheerleader nos dois (frente, costas, andando, sentados e de perto) e no vestiario  (SO=danca, SO=roupa… roda uma parte)

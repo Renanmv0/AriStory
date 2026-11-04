@@ -14,6 +14,7 @@ import { ARI, RENAN } from '../characters/cast';
 import { Gatito } from '../entities/bichos/Gatito';
 import { aulaDaVez, emAula } from './escolaAula';
 import { montarOFlynn } from './escolaAtletica';
+import { montarAValentina } from './escolaMarketing';
 import { Luna } from '../entities/bichos/CoelhaDaTorcida';
 import {
   ESCOLA, LUZ_DA_ESCOLA, conversa, maquinaQueEntrega, paredeComVaos, pontoNoMundo, posicionarParaConversar,
@@ -500,6 +501,10 @@ export const escola: SceneDef = {
     // no dia do Halloween ele foi se arrumar para a festa do parque
     if (!quemFoiSeArrumar(w.game)) montarOFlynn(w, REFEITORIO);
 
+    // ======================================= A VALENTINA, NO CANTO DA ENTRADA
+    // a flamingo do marketing dos Gatitos, com o banner dela (`escolaMarketing.ts`)
+    montarAValentina(w);
+
     // =============================================================== GATITO
     // Ele nasce na ÚLTIMA parada da fila (a lição da Estella: nascendo fora
     // dela, a primeira caminhada é a única que ninguém mediu).
@@ -726,8 +731,9 @@ export const escola: SceneDef = {
      * dele no saguão.
      */
     ausentarNaCena(w, {
-      etiquetas: ['gatito'],
-      interacoes: ['escola:gatito'],
+      // a Valentina chegou depois da festa: no dia dela, a escola só fica vazia
+      etiquetas: ['gatito', 'valentina'],
+      interacoes: ['escola:gatito', 'escola:valentina'],
       recados: [{ recados: [RECADOS_DA_ESCOLA.gatito], autor: 'Gatito', x: INICIO.x - 1.2, z: INICIO.z + 1.4, giro: Math.PI / 4 }],
     });
   },

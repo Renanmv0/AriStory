@@ -1642,6 +1642,26 @@ export const PALETTE = {
   flynnApito: 0xc9d1d9,
   flynnTenisFaixa: 0xf26b4a,
 
+  // A VALENTINA, a flamingo italiana do marketing dos Gatitos: o rosa de
+  // flamingo (mais claro no rosto e no topete, coral forte nas asas, a ponta
+  // das penas de voo quase preta), a perna rosa-salmão, o bico claro com a
+  // ponta preta, o olho cor de mel e o delineado. E as joias: o dourado dos
+  // botões, da armação e do fecho, a lente esfumada e a pérola
+  valentinaPena: 0xf6a3b6,
+  valentinaPenaClara: 0xfcd5dd,
+  valentinaPenaForte: 0xee7896,
+  valentinaPenaPonta: 0x3a2934,
+  valentinaPerna: 0xf08aa2,
+  valentinaBico: 0xf5d3d2,
+  valentinaBicoPonta: 0x2b2229,
+  valentinaOlho: 0xc98a3e,
+  valentinaPupila: 0x2a2027,
+  valentinaDelineado: 0x231a21,
+  valentinaBochecha: 0xf27896,
+  valentinaOuro: 0xe2b54a,
+  valentinaLente: 0x4b2b3e,
+  valentinaPerola: 0xfbf3ea,
+
   // OS LANCHES DA MÁQUINA da escola: o pacote de biscoito, o chocolatinho, o
   // suco de caixinha e o salgadinho — cada um com a cor de embalagem que se
   // reconhece de longe no corredor
@@ -2014,6 +2034,7 @@ export const PALETTE = {
   falaSol: 0xff9a2c, // o laranja da presilha de sol
   falaEstrella: 0x2fb3a6, // o turquesa (a estrela já é amarela como a Gina)
   falaFlynn: 0xc4562a, // a ferrugem da raposa
+  falaValentina: 0xd2337a, // o fúcsia de flamingo (mais forte que o rosa do Ari)
   falaPelusa: 0xc9b8a6, // o bege-acinzentado do pelo
 
   /*

@@ -45,7 +45,8 @@ const conferir = (ok, oque, detalhe = '') => {
 const M1 = ['oi-tudo-bem', 'jantar-das-confusoes', 'cade-o-novelo', 'horta-da-josefina', 'fica-a-dica', 'tudo-acaba-em-inho'];
 const M2 = ['um-dia-de-gatito', 'bola-pra-frente', 'ai-que-dor', 'partiu-praia', 'cartao-postal-do-rio', 'quanto-custa'];
 const M3 = ['de-quem-e-isso', 'mexa-misture-prove', 'vira-a-esquerda', 'antigamente-era-assim', 'beleza-valeu', 'maior-melhor-lindissimo'];
-const FLAGS = ['escola-aberta', 'luna-na-escola', 'gatito-conhecido', 'jean-luc-batido', 'escola-visitada', 'festa-da-torcida'];
+// a Valentina já conhecida: do Módulo 3 em diante, sem ela a aula não é chamada (`escolaMarketing.ts`)
+const FLAGS = ['escola-aberta', 'luna-na-escola', 'gatito-conhecido', 'jean-luc-batido', 'escola-visitada', 'festa-da-torcida', 'valentina-conhecida'];
 
 /** uma página com um save de teste: as estrelas e as aulas dadas, e as flags */
 const abrir = async (contexto, cena, apostila, em = '') => {

@@ -36,7 +36,10 @@ e abre o **Módulo 2**, "Indo mais longe" — lições 7 a 12 (§6.5) — e, dep
 dele, o **Módulo 3**, "Soltando a língua" — lições 13 a 18 (§6.6). No
 refeitório mora o **Flynn**, a raposa presidente da atlética (§16) — e,
 quando o Módulo 2 começa, ele muda para o ginásio e treina no meio da
-quadra, e as coelhinhas vão para a lateral.
+quadra, e as coelhinhas vão para a lateral. No canto da entrada do saguão
+mora a **Valentina**, a flamingo italiana do marketing dos Gatitos (§17) —
+colega de turma do Módulo 3 em diante, e a aula 13 só é chamada depois de
+conhecê-la.
 As etiquetas (§5) e a formatura (§7) ainda não existem. Para testar sem jogar a missão,
 `?cena=escola` continua valendo.
 
@@ -1068,3 +1071,81 @@ arremesso, para, e na primeira vez conta do treino; depois volta de onde
 parou. **As coelhinhas** cedem o meio da quadra e ensaiam na **lateral**,
 fora da quadra, na faixa da frente (em fila no `x`, de frente para a
 câmera). Teste: `scripts/treino.mjs`.
+
+---
+
+## 17. A Valentina — a flamingo do marketing (CONSTRUÍDA)
+
+Pedido do Renan: uma personagem nova para a escola, **bem vaidosa, bem
+vaidosa mesmo, como uma boss girl** — julga a roupa dos outros, "porém ela
+não é má: mesmo julgando, ela tenta dar um jeito de elogiar as pessoas".
+Escolhida com ele: **flamingo**, nome **Valentina**, **italiana, de Milão**.
+Ela é do time dos Gatitos e **trabalha no marketing** deles, e **faz a aula
+de português junto com a dupla**. Como nenhum dos dois fala italiano, só
+**algumas expressões** (ciao, allora, mamma mia, perfetto, andiamo, brava,
+cara mia) — o teste conta: de duas a quatro falas na apresentação.
+
+**O modelo** (`entities/bichos/Valentina.ts`): **não** é o molde em pé das
+coelhinhas e do Flynn — a primeira versão era, e o Renan reprovou ("ela não
+ficou parecendo um flamingo, ficou bem feia"). É um **flamingo de verdade**,
+fofo: o corpo em **ovo deitado** com a frente um tico mais alta; o
+**pescoço comprido em S** (uma malha só, um tubo que afina refeito a cada
+quadro pelos ângulos de quatro gomos — curva, estica e abaixa sem emenda); a
+cabeça pequena (1,22× a de verdade, que é ela que segura o fofo) com o
+**bico grosso dobrado para baixo, claro com a ponta preta**; as **asas
+dobradas** coral nos flancos com as primárias pretas por cima da cauda; e as
+**pernas compridas** com o "joelho" que dobra para trás. Parada um tempinho,
+ela fica **num pé só** (o "Z": a coxa para a frente e a canela dobrada rente
+a ela, o pé escondido debaixo do tutu). O vaidoso: o olho colado na cara
+com **delineado gatinho** e cílios, o blush, os **óculos de sol** empurrados
+para o alto da cabeça e os **brincos de pérola**. Cresce 1,15 no fim: o alto
+da cabeça chega perto do da dupla — modelo é alta.
+
+**A roupa é FICHA** (`world/looksDaValentina.ts`, o pedido: "um modelo no
+qual seja fácil criar novas roupas, bem detalhadas e bonitas"): um look é
+uma ficha com uma função por vaga (`tronco`, `saia`, `pescoco`, `cabeca`,
+`asa`, `pe`), cada uma recebendo as medidas e devolvendo a peça; o corpo
+pendura cada uma no pai certo, junta os pedaços (`fundir`), liga a sombra,
+balança o que pedir (`userData.balanca`) e esconde o pé de flamingo quando
+há sapato. `valentina.vestir(look)` troca na hora. O kit tem a casca do ovo
+(`Ovo`: o ponto e a normal em qualquer direção, o peito, a volta numa
+altura, a geometria com decote em V e cortada atrás), a fita e o cordão
+colados no peito (lapela, vivo), o anel e os arcos elípticos (barra, cós) e
+o `colarComCima` (estampa em superfície deitada). **O look de sempre, "Gatitos
+chique"**: o **blazer azul cortado em bolero** (veste o peito e os ombros e
+para no meio das costas — de blazer inteiro, de cima, ela virava um feijão
+azul) com o decote em V e a blusa branca, a lapela marinho com o vivo
+amarelo, o abotoamento duplo dourado, o broche dos Gatitos e o lencinho no
+bolso; o **tutu plissado** marinho com as duas listras amarelas; o **lenço de
+seda** amarelo de bolinha e patinha amarrado no pescoço, com as pontas
+balançando; o punho do blazer nas asas e a **bolsinha** amarela e azul na
+asa esquerda; e o **scarpin** marinho de laço amarelo. O dourado das joias é
+o único toque fora das cores do time.
+
+**O posto** (`scenes/escolaMarketing.ts`): o canto da frente à direita do
+saguão, perto da entrada, com o **banner de marketing dos Gatitos**
+(`bannerDosGatitos`, `world/furniture.ts`: o roll-up com o emblema, o slogan
+"aprender com estilo" e a assinatura dela). Ela desfila devagar ali e faz
+pose em cada canto, e é sólida para a dupla.
+
+**A conversa**: ela **repara na roupa de verdade** (`juizoDaRoupa`, pelo
+`g.wearables` dos dois): o uniforme dos Gatitos nos dois, só num, os dois
+combinando, roupa demais, nada, ou a peça mais ousada pelo nome — a crítica
+primeiro e o elogio no fim, sempre. Na primeira vez, a apresentação (Milão,
+o marketing, o banner que o Gatito não deixou ter glitter, e que vai fazer a
+aula com eles) e a memória **"A diva do marketing"**; depois, o juízo da
+roupa e uma conversa por vez. Os gestos: **examinar** (o pescoço desce e a
+cabeça varre a roupa, o olho apertado), **posar** (o pescoço alto, a asa
+aberta em leque, num pé só) e **encantar-se** (as asas batendo, o olho
+fechado). **As falas são rascunho meu**, no jeito que o Renan descreveu.
+
+**A aula**: do Módulo 3 em diante ela é da turma — sentada na carteira da
+segunda fila, atrás do Renan (as pernas dobradas debaixo do corpo, como
+flamingo deitado), com uma fala na carteira e um elogio no fim de cada aula.
+**A aula 13 só é chamada depois de conhecê-la**: sem isso, a coelhinha do
+ginásio manda ir ao saguão. Com a aula chamada, o saguão fica sem ela. No
+Halloween (as fases em que a escola está vazia) ela some junto com os
+outros. Teste: `scripts/valentina.mjs` (`SO=modelo|look|passeio|conversa|aula`).
+
+**Peso**: com a roupa, ela desenha 67 vezes por quadro (com a sombra) e
+31 mil triângulos; sem juntar (`?semFundir`), 150.
