@@ -226,8 +226,9 @@ function salaDeAula(f: FichaDaSala): SceneDef {
             estrella: { x: COLUNAS[1], z: FILEIRAS[1] + 0.38 },
           },
           // a Valentina (do Módulo 3 em diante) na segunda fila, atrás do parceiro
-          // (8 cm para a frente do assento: a saia rodada não cabe encostada no encosto)
-          lugarDaValentina: { x: COLUNAS[2], z: FILEIRAS[1] + 0.3 },
+          // (4 cm para a frente do meio do assento: o corpo comprido dela fica
+          // entre o encosto e o tampo da carteira da frente)
+          lugarDaValentina: { x: COLUNAS[2], z: FILEIRAS[1] + 0.34 },
           mesa: { x: -0.1, y: 0.79, z: -2.8 },
           porta: { x: SALA.portaX, z: SALA.fundo / 2 - 0.8 },
           corredor: 3.3,

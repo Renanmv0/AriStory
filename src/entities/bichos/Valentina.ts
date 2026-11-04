@@ -650,7 +650,10 @@ export class Valentina extends Bicho {
     this.corpo.position.y = respiro + doPasso + pulinho - sentada * (M.ovo.y - M.ovo.ry) * ESCALA;
     // o ovo balança com o passo, e inclina de leve para a perna que ficou
     this.ovo.rotation.z = (andando ? Math.sin(fase) * 0.05 : 0) + umPe * 0.05;
-    this.ovo.rotation.x = M.ovo.inclina + (andando ? Math.sin(fase * 2) * 0.02 : 0) - pose * 0.05;
+    // sentada, o corpo empina (a frente sobe e a cauda desce): deitado, a ponta
+    // das asas atravessava o encosto da carteira; assim ela passa pelo vão
+    // entre o assento e o encosto
+    this.ovo.rotation.x = M.ovo.inclina + (andando ? Math.sin(fase * 2) * 0.02 : 0) - pose * 0.05 - sentada * 0.32;
 
     // ---------------------------------------------------------------- as asas
     for (const [i, asa] of this.asas.entries()) {
