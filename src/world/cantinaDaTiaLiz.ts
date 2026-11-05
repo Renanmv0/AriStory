@@ -777,11 +777,13 @@ export function balcaoDaCantina(largura = 7.4): THREE.Group {
     const P0 = 0.42;
     const A = 0.08;
     const e = 0.012;
-    por(c, new THREE.BoxGeometry(L, 0.012, P0), inoxEscuro, 0, 0.006, 0);
-    por(c, new THREE.BoxGeometry(L, A, e), inox, 0, A / 2, P0 / 2 - e / 2);
-    por(c, new THREE.BoxGeometry(L, A, e), inox, 0, A / 2, -P0 / 2 + e / 2);
-    por(c, new THREE.BoxGeometry(e, A, P0 - 2 * e), inox, L / 2 - e / 2, A / 2, 0);
-    por(c, new THREE.BoxGeometry(e, A, P0 - 2 * e), inox, -L / 2 + e / 2, A / 2, 0);
+    // o fundo por DENTRO das paredes, e as paredes um tico acima do tampo: sem
+    // isso cada face de fora encostava numa do fundo (o serrilhado)
+    por(c, new THREE.BoxGeometry(L - 2 * e, 0.012, P0 - 2 * e), inoxEscuro, 0, 0.006, 0);
+    por(c, new THREE.BoxGeometry(L, A - 0.002, e), inox, 0, A / 2 + 0.001, P0 / 2 - e / 2);
+    por(c, new THREE.BoxGeometry(L, A - 0.002, e), inox, 0, A / 2 + 0.001, -P0 / 2 + e / 2);
+    por(c, new THREE.BoxGeometry(e, A - 0.004, P0 - 2 * e), inox, L / 2 - e / 2 - 0.002, A / 2 + 0.001, 0);
+    por(c, new THREE.BoxGeometry(e, A - 0.004, P0 - 2 * e), inox, -L / 2 + e / 2 + 0.002, A / 2 + 0.001, 0);
     // a aba virada por cima da parede (a borda da cuba), mais larga que ela
     por(c, new THREE.BoxGeometry(L + 0.02, 0.006, 0.016), inox, 0, A + 0.003, P0 / 2 + 0.002);
     por(c, new THREE.BoxGeometry(L + 0.02, 0.006, 0.016), inox, 0, A + 0.003, -P0 / 2 - 0.002);
@@ -1015,29 +1017,38 @@ export function janelaDaCantina(fundo = 2): THREE.Group {
   const inoxEscuro = toon(P.churrascoInoxEscuro);
   const parede = toon(P.escolaParede);
   const azulejo = texturaDoAzulejo();
-  // embaixo da janela: o azulejo (o UV em metros, cada azulejo com 15 cm)
-  const baixoGeo = new THREE.BoxGeometry(J.largura, J.peitoril - 0.1, E);
+  /*
+   * As peças da frente ficam ENTRE as paredes de volta (que cobrem os cantos),
+   * e nenhuma face encosta numa face do mesmo lado de outra: a faixa de cima
+   * cobre o topo dos pilares e da verga, a moldura começa 1 cm para dentro
+   * do vão. É o que o `scripts/zfighting.mjs` cobra.
+   */
+  const IW = J.largura / 2 - E;
+  const FAIXA = 0.12;
+  // embaixo da janela: o azulejo (o UV em metros, cada azulejo com 15 cm) e o rodapé
+  const baixoGeo = new THREE.BoxGeometry(2 * IW, J.peitoril - 0.1, E);
   uvEmMetros(baixoGeo);
   por(g, baixoGeo, toon(0xffffff, { mapa: azulejo }), 0, 0.1 + (J.peitoril - 0.1) / 2, 0);
-  por(g, new THREE.BoxGeometry(J.largura + 0.02, 0.1, E + 0.03), toon(P.escolaRodape), 0, 0.05, 0);
-  // os dois pilares dos lados do vão, e a verga em cima
-  const lado = (J.largura - J.vao) / 2;
+  por(g, new THREE.BoxGeometry(2 * IW, 0.1, E + 0.03), toon(P.escolaRodape), 0, 0.05, 0);
+  // os dois pilares dos lados do vão, e a verga em cima (até a faixa)
+  const lado = IW - J.vao / 2;
+  const topo = J.alto - FAIXA;
   for (const s of [-1, 1]) {
-    por(g, new THREE.BoxGeometry(lado, J.alto - J.peitoril, E), parede, s * (J.vao / 2 + lado / 2), J.peitoril + (J.alto - J.peitoril) / 2, 0);
+    por(g, new THREE.BoxGeometry(lado, topo - J.peitoril, E), parede, s * (J.vao / 2 + lado / 2), J.peitoril + (topo - J.peitoril) / 2, 0);
   }
-  por(g, new THREE.BoxGeometry(J.vao, J.alto - J.verga, E), parede, 0, J.verga + (J.alto - J.verga) / 2, 0);
-  // a faixa azul da escola no alto da parede, e o capeamento
-  por(g, new THREE.BoxGeometry(J.largura + 0.02, 0.12, E + 0.02), toon(P.escolaBarra), 0, J.alto - 0.06, 0);
+  por(g, new THREE.BoxGeometry(J.vao, topo - J.verga, E), parede, 0, J.verga + (topo - J.verga) / 2, 0);
+  // a faixa azul da escola no alto da parede
+  por(g, new THREE.BoxGeometry(2 * IW, FAIXA, E + 0.02), toon(P.escolaBarra), 0, J.alto - FAIXA / 2, 0);
   // a MOLDURA de inox do vão: os batentes e a verga, saindo um tico da parede
   const M = 0.07;
   for (const s of [-1, 1]) {
-    por(g, new THREE.BoxGeometry(M, J.verga - J.peitoril + M, E + 0.04), inox, s * (J.vao / 2 + M / 2), (J.verga + J.peitoril) / 2, 0);
+    por(g, new THREE.BoxGeometry(M, J.verga - J.peitoril + M, E + 0.04), inox, s * (J.vao / 2 + M / 2 - 0.012), (J.verga + J.peitoril) / 2, 0);
   }
-  por(g, new THREE.BoxGeometry(J.vao + 2 * M, M, E + 0.04), inox, 0, J.verga + M / 2, 0);
+  por(g, new THREE.BoxGeometry(J.vao + 2 * M, M, E + 0.05), inox, 0, J.verga + M / 2 - 0.012, 0);
   // o PARAPEITO: a chapa de inox por onde sai a bandeja, para fora da parede, com a quina boleada
   const PROF = 0.42;
-  por(g, new THREE.BoxGeometry(J.vao + 2 * M, 0.05, PROF), inox, 0, J.peitoril + 0.025, PROF / 2 - E / 2);
-  const quina = por(g, new THREE.CylinderGeometry(0.025, 0.025, J.vao + 2 * M, 12), inox, 0, J.peitoril + 0.025, PROF - E / 2);
+  por(g, new THREE.BoxGeometry(J.vao + 2 * M - 0.03, 0.05, PROF - 0.01), inox, 0, J.peitoril + 0.029, PROF / 2 - E / 2 + 0.005);
+  const quina = por(g, new THREE.CylinderGeometry(0.025, 0.025, J.vao + 2 * M - 0.03, 12), inox, 0, J.peitoril + 0.029, PROF - E / 2);
   quina.rotation.z = Math.PI / 2;
   // as mãos-francesas embaixo do parapeito
   for (const x of [-J.vao / 2 + 0.3, -J.vao / 6, J.vao / 6, J.vao / 2 - 0.3]) {
@@ -1060,10 +1071,15 @@ export function janelaDaCantina(fundo = 2): THREE.Group {
     por(g, new THREE.BoxGeometry(0.035, 0.035, 0.24), inoxEscuro, x, J.peitoril - 0.055, PROF - E / 2 + 0.1);
   }
   // as paredes de volta, da frente até o fundo da cozinha
+  // (da face da frente até o fundo, cobrindo os cantos; um tico mais baixas
+  // que a faixa da frente, para os topos não ficarem no mesmo plano)
+  const prof = fundo + E / 2;
+  const zMeio = E / 2 - prof / 2;
   for (const s of [-1, 1]) {
-    por(g, new THREE.BoxGeometry(E, J.alto, fundo), parede, s * (J.largura / 2 - E / 2), J.alto / 2, -fundo / 2);
-    por(g, new THREE.BoxGeometry(E + 0.02, 0.12, fundo), toon(P.escolaBarra), s * (J.largura / 2 - E / 2), J.alto - 0.06, -fundo / 2);
-    por(g, new THREE.BoxGeometry(E + 0.03, 0.1, fundo), toon(P.escolaRodape), s * (J.largura / 2 - E / 2), 0.05, -fundo / 2);
+    const x = s * (J.largura / 2 - E / 2);
+    por(g, new THREE.BoxGeometry(E, J.alto - FAIXA, prof), parede, x, (J.alto - FAIXA) / 2, zMeio);
+    por(g, new THREE.BoxGeometry(E, FAIXA - 0.004, prof), toon(P.escolaBarra), x, J.alto - FAIXA + (FAIXA - 0.004) / 2, zMeio);
+    por(g, new THREE.BoxGeometry(E + 0.03, 0.094, prof - 0.02), toon(P.escolaRodape), x, 0.049, zMeio + 0.004);
   }
   return fundir(g);
 }
