@@ -1662,6 +1662,85 @@ export const PALETTE = {
   valentinaLente: 0x4b2b3e,
   valentinaPerola: 0xfbf3ea,
 
+  // A TIA LIZ, a ursa venezuelana da cantina da escola: o pelo caramelo
+  // quente (o tom de pele da referência), o focinho claro, o nariz de
+  // chocolate, a bochecha rosada; os cachos loiro-dourados com a raiz mais
+  // escura e as trancinhas um tom abaixo; a blusa verde-oliva da foto, a
+  // calça jeans, o avental creme e o tamanco lilás; o ouro do colar, do anel
+  // e do relógio, e as unhas lilás. E as três cores da bandeira da
+  // Venezuela, na barra do avental
+  lizPelo: 0xc98a52,
+  lizFocinho: 0xf2d6b0,
+  lizNariz: 0x4b2e22,
+  lizBoca: 0x6b2f2c,
+  lizLingua: 0xef8f8a,
+  lizBrilho: 0xfffaf2,
+  lizOlho: 0x3a2318,
+  lizBochecha: 0xf2958a,
+  lizOrelhaDentro: 0xe9b39a,
+  lizCabelo: 0xe9b54c,
+  lizCabeloLuz: 0xf6d27a,
+  lizCabeloRaiz: 0x8c6032,
+  lizTranca: 0xc9933a,
+  lizBlusa: 0x76813a,
+  lizBlusaSombra: 0x5d6830,
+  lizBotao: 0xe7dcc0,
+  lizCalca: 0x3f4e6e,
+  lizCalcaBarra: 0x33405c,
+  lizAvental: 0xfbf0da,
+  lizAventalBolso: 0xf3e2c0,
+  lizTamanco: 0xc0a4e2,
+  lizTamancoSola: 0xf3eefb,
+  lizUnha: 0xb995e6,
+  lizOuro: 0xe2b448,
+  lizRelogio: 0xf7f1e0,
+  venezuelaAmarelo: 0xf6c431,
+  venezuelaAzul: 0x2a56a8,
+  venezuelaVermelho: 0xd2373b,
+
+  // A COMIDA DA TIA LIZ (a cantina da escola): a sopita de caldo dourado com
+  // cenoura, batata, milho, abóbora e coentro; a pasta com almôndegas e o
+  // molho de tomate; o fororo cremoso com a canela e os tostadinhos; o
+  // pabellón (arroz branco, feijão preto, carne desfiada e as tajadas de
+  // banana-da-terra fritas); e a torta tres leches com o chantilly, a canela,
+  // o morango e a poça de leite. E a louça dela: a tigela creme de faixa
+  // lilás, a caneca do fororo, o azulejo do balcão e o vaso de coentro
+  sopaCaldo: 0xeab45a,
+  sopaCenoura: 0xf08a2c,
+  sopaBatata: 0xf4e2a4,
+  sopaMilho: 0xf6cf3c,
+  sopaAbobora: 0xf2a23c,
+  sopaCoentro: 0x4f9a3a,
+  massaEspaguete: 0xf2d68a,
+  molhoDeTomate: 0xc8392b,
+  almondega: 0x7c4229,
+  queijoRalado: 0xfbf4d8,
+  manjericao: 0x3d8a3a,
+  fororoCreme: 0xe9d0a2,
+  fororoTostado: 0xae7a3e,
+  canela: 0x8a5229,
+  arrozBranco: 0xfbf8ee,
+  feijaoPreto: 0x30242a,
+  feijaoBrilho: 0x5a4549,
+  carneMechada: 0x9a4e30,
+  carneMechadaLuz: 0xbb683f,
+  tajada: 0xeaa53c,
+  tajadaTostada: 0xb5651f,
+  tresLechesMassa: 0xf6e3b2,
+  tresLechesChantilly: 0xfffaf0,
+  tresLechesLeite: 0xf8efd9,
+  morangoFruta: 0xd8323f,
+  morangoMiolo: 0xf7c1bb,
+  morangoFolha: 0x4f9a3a,
+  loucaCreme: 0xf6efe2,
+  loucaFaixa: 0xb995e6,
+  canecaDoFororo: 0xf2e7d4,
+  canecaDoFororoFaixa: 0x2a56a8,
+  azulejoDaCantina: 0xfbf6ea,
+  azulejoDaCantinaRejunte: 0xd9d2c4,
+  azulejoDaCantinaDesenho: 0x2a56a8,
+  azulejoDaCantinaMiolo: 0xf6c431,
+
   // OS LANCHES DA MÁQUINA da escola: o pacote de biscoito, o chocolatinho, o
   // suco de caixinha e o salgadinho — cada um com a cor de embalagem que se
   // reconhece de longe no corredor
@@ -2035,6 +2114,7 @@ export const PALETTE = {
   falaEstrella: 0x2fb3a6, // o turquesa (a estrela já é amarela como a Gina)
   falaFlynn: 0xc4562a, // a ferrugem da raposa
   falaValentina: 0xd2337a, // o fúcsia de flamingo (mais forte que o rosa do Ari)
+  falaLiz: 0x7d8a2e, // o verde-oliva da blusa dela
   falaPelusa: 0xc9b8a6, // o bege-acinzentado do pelo
 
   /*
