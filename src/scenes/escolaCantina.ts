@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import type { GameAPI } from '../core/types';
 import type { WorldBuilder } from '../world/WorldBuilder';
-import { quadroDeGiz } from '../world/furniture';
-import { animarVapor } from '../world/moveisDoMania';
+import { logoDaEscola, quadroDeGiz } from '../world/furniture';
+import { animarVapor, fogaoDoMania, geladeiraDoMania, prateleiraDaCozinha } from '../world/moveisDoMania';
 import {
-  PRATOS_DA_LIZ, SOPA_NO_BALCAO, balcaoDaCantina, bandejaComPrato, type PratoDaLiz,
+  JANELA_DA_CANTINA, PRATOS_DA_LIZ, SOPA_NO_BALCAO, balcaoDaCantina, bandejaComPrato, janelaDaCantina, type PratoDaLiz,
 } from '../world/cantinaDaTiaLiz';
 import { ARI, RENAN } from '../characters/cast';
 import { TiaLiz } from '../entities/bichos/TiaLiz';
@@ -20,9 +20,12 @@ import { VALENTINA_CONHECIDA } from './escolaMarketing';
  * referência dela fazia em casa: sopita, pasta com almôndegas, pabellón,
  * fororo e a torta tres leches (`world/cantinaDaTiaLiz.ts`).
  *
- * O POSTO é atrás do balcão do refeitório, mexendo a sopita no caldeirão.
- * O balcão saiu da parede (antes ficava colado nela) para caber ela atrás; o
- * colisor fecha da parede até o trilho de bandeja, e ninguém dá a volta.
+ * O POSTO é a COZINHA da Lanchonete dos Gatitos, no fundo do refeitório: um
+ * cômodo próprio, com a JANELA DE SERVIR larga na parede da frente (a
+ * cantina de escola americana — pedido do Renan) e a placa da Lanchonete
+ * dos Gatitos em cima. Ela trabalha lá dentro, mexendo a sopita no caldeirão do balcão que
+ * encosta na janela; a bandeja sai pelo parapeito de inox. E ela AMA o que
+ * faz: cantarola mexendo a panela, e fala da cozinha como quem fala de casa.
  *
  * A CONVERSA: na primeira vez, a apresentação (a pergunta das mãos lavadas
  * antes do oi) e a memória; nas outras, um assunto da vez. E sempre o
@@ -71,6 +74,7 @@ const APRESENTACAO: readonly Fala[] = [
   [L, 'Vim da Venezuela com a minha panela debaixo do braço. Aqui é comida de casa: sopita, pasta con albóndigas, pabellón, fororo... e torta tres leches pra quem raspa o prato.'],
   [R, 'Pabellón de verdade? Igual ao da Venezuela?'],
   [L, 'Igualzinho. Arroz, caraotas negras, carne mechada e tajada. Sem tajada não é pabellón, é tristeza.'],
+  [L, 'Cozinhar é o que eu mais amo nessa vida. Cada prato que sai por essa janelinha leva um pedacinho do meu coração.', 'acena'],
   [A, 'E a gente pode comer?'],
   [L, 'Ay, mi amor, claro que pode. É pra isso que eu tô aqui. Escolhe que eu sirvo.', 'acena'],
 ];
@@ -103,6 +107,16 @@ function assuntos(g: GameAPI): ReadonlyArray<readonly Fala[]> {
       [L, 'Eu sempre corto o pedaço maior. Não conta pra ninguém.'],
     ],
   ];
+  lista.push(
+    [
+      [L, 'Sabe o barulho que eu mais gosto? Colher raspando o prato. Quer dizer que ficou bom.', 'acena'],
+      [L, 'Eu acordo antes do sol pra fazer o fororo. E acordo cantando. Pergunta pro Gatito.'],
+    ],
+    [
+      [L, 'Tem gente que acha que cantina é só trabalho. Pra mim é a melhor janela da escola.'],
+      [L, 'Daqui eu vejo todo mundo chegar com fome e sair feliz. Não tem aula que ensine isso.', 'acena'],
+    ],
+  );
   if (g.flag(VALENTINA_CONHECIDA)) {
     lista.push([
       [L, 'A Valentina só quer salada. Salada! Ontem eu escondi uma almôndega debaixo da alface.'],
@@ -195,16 +209,35 @@ export function montarACantina(
   c: CantinaNoMundo,
   mesas: ReadonlyArray<readonly [number, number]>,
 ): TiaLiz {
-  // o balcão SAIU da parede: ela cabe atrás, entre o azulejo e o fundo
-  const BZ = c.parede + 1.6;
-  const balcao = w.add(w.place(balcaoDaCantina(8), c.x, 0, BZ));
-  // o colisor vai da parede até o fim do trilho de bandeja: ninguém dá a volta
-  const frente = BZ + 0.85 / 2 + 0.36;
-  w.blockBox(c.x, (c.parede + frente) / 2, 4.05, (frente - c.parede) / 2);
+  /*
+   * A COZINHA É UM CÔMODO: a parede da frente com a JANELA DE SERVIR fica
+   * 2 m à frente da parede do fundo, e ela trabalha lá dentro (a cantina de
+   * escola americana, pedido do Renan). O balcão de dentro encosta na
+   * janela: a comida aparece pelo vão, e a bandeja sai pelo parapeito.
+   */
+  const J = JANELA_DA_CANTINA;
+  const FUNDO = 2;
+  const W = c.parede + FUNDO;
+  w.add(w.place(janelaDaCantina(FUNDO), c.x, 0, W));
+  const BZ = W - J.espessura / 2 - 0.85 / 2 - 0.02;
+  const balcao = w.add(w.place(balcaoDaCantina(J.vao + 0.4), c.x, 0, BZ));
+  // o colisor vai da parede do fundo até o trilho de bandeja: ninguém entra na cozinha
+  const frente = W + 0.62;
+  w.blockBox(c.x, (c.parede + frente) / 2, J.largura / 2 + 0.05, (frente - c.parede) / 2);
+  // a placa da lanchonete na verga da janela, e o cardápio no fundo da
+  // cozinha (alto: aparece por cima da parede da frente)
+  w.add(w.place(logoDaEscola('Lanchonete dos Gatitos', 3.6, 0.5), c.x, J.verga + 0.32, W + J.espessura / 2 + 0.04));
   w.add(w.place(
-    quadroDeGiz(['Cantina da Tia Liz', 'sopita · pasta con albóndigas', 'pabellón criollo · fororo', 'torta tres leches', '¡buen provecho!'], 3.4, 1.7),
-    c.x, 2.75, c.parede + 0.18,
+    quadroDeGiz(['Cardápio da Tia Liz', 'sopita · pasta con albóndigas', 'pabellón criollo · fororo', 'torta tres leches', '¡buen provecho!'], 3.4, 1.5),
+    c.x, 3.6, c.parede + 0.18,
   ));
+  // a cozinha por dentro: o fogão numa ponta, a geladeira na outra e a
+  // prateleira de panelas no fundo, acima da cabeça dela
+  w.add(w.place(fogaoDoMania(1.0), c.x - J.vao / 2 - 0.45, 0, c.parede + 0.55));
+  w.add(w.place(geladeiraDoMania(), c.x + J.vao / 2 + 0.65, 0, c.parede + 0.5));
+  for (const dx of [-2.2, 2.2]) {
+    w.add(w.place(prateleiraDaCozinha(1.6), c.x + dx, 1.95, c.parede + 0.02));
+  }
 
   /**
    * ELA FICA ATRÁS DO CALDEIRÃO, com a pata direita (a da concha) em cima
@@ -253,7 +286,7 @@ export function montarACantina(
     onInteract: async (g) => {
       g.lockPlayer(true);
       liz.mexerAPanela(false);
-      // a dupla para na frente do balcão (a diagonal da conversa daria no balcão)
+      // a dupla para na frente da janela (a diagonal da conversa daria na parede)
       const eu = { x: posto.x + 0.35, z: frente + 0.6 };
       const par = { x: posto.x + 1.15, z: frente + 0.7 };
       g.releasePlayer(eu.x, eu.z, Math.atan2(posto.x - eu.x, posto.z - eu.z));
@@ -292,7 +325,7 @@ export function montarACantina(
           return;
         }
         comeu = true;
-        await servirEComer(w, g, liz, prato.id, { posto, frente, mesas, falar, bz: BZ });
+        await servirEComer(w, g, liz, prato.id, { posto, frente, mesas, falar, parapeito: W + 0.12 });
       } finally {
         if (!comeu) {
           g.focusCamera(null);
@@ -322,16 +355,17 @@ async function servirEComer(
   o: {
     posto: { x: number; z: number };
     frente: number;
-    bz: number;
+    /** o meio do parapeito da janela, onde a bandeja sai */
+    parapeito: number;
     mesas: ReadonlyArray<readonly [number, number]>;
     falar: (g: GameAPI, falas: readonly Fala[]) => Promise<void>;
   },
 ): Promise<void> {
   const fala = PRATOS[id];
-  // as duas bandejas aparecem no tampo, na frente dela (o prato do servir)
+  // as duas bandejas saem pelo parapeito da janela, na frente dela
   const noBalcao = [bandejaComPrato(id), bandejaComPrato(id)];
   noBalcao.forEach((b, i) => {
-    b.position.set(o.posto.x + 0.1 + i * 0.5, 0.93, o.bz + 0.25);
+    b.position.set(o.posto.x + 0.05 + i * 0.5, JANELA_DA_CANTINA.peitoril + 0.05, o.parapeito);
     w.root.add(b);
   });
   g.som('louca');

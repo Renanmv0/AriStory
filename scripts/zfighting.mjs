@@ -199,6 +199,7 @@ const PECAS = [
   ['valentina', 'escola'],
   // a cantina da Tia Liz: o balcão de azulejo com a comida, e ela (bicho)
   ['balcao-da-cantina', 'escola'],
+  ['janela-da-cantina', 'escola'],
   ['tia-liz', 'escola'],
   ['mesa-de-refeitorio', 'escola'],
   ['balcao-de-refeitorio', 'escola'],

@@ -369,6 +369,10 @@ ursa em pé ATRÁS de um balcão. O que custou medida:
   `fundir`, então é um desenho só por material.
 - **Vapor na frente do rosto**: o caldeirão fica logo abaixo da cara dela;
   o vapor é fininho e some enquanto ela conversa.
+- **Bicho atrás de uma JANELA** (a cozinha da Lanchonete dos Gatitos): com a
+  câmera a 34°, quem está a 0,6 m atrás da parede aparece ~0,7 m MAIS ALTO no
+  vão. A verga vai a 2,85 (com 2,55 a placa cortava os cachos), e nada fica
+  pendurado na frente do vão — um toldinho tapou o rosto inteiro.
 
 ## Bicho que treina com uma bola (o Flynn no ginásio)
 

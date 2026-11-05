@@ -39,8 +39,9 @@ quando o Módulo 2 começa, ele muda para o ginásio e treina no meio da
 quadra, e as coelhinhas vão para a lateral. No canto da entrada do saguão
 mora a **Valentina**, a flamingo italiana do marketing dos Gatitos (§17) —
 colega de turma do Módulo 3 em diante, e a aula 13 só é chamada depois de
-conhecê-la. Atrás do balcão do refeitório mora a **Tia Liz**, a ursa
-venezuelana da cantina (§18), que serve os cinco pratos de casa.
+conhecê-la. Na cozinha da Lanchonete dos Gatitos, no fundo do refeitório, mora a
+**Tia Liz**, a ursa venezuelana da cantina (§18), que serve os cinco pratos
+de casa pela janela.
 As etiquetas (§5) e a formatura (§7) ainda não existem. Para testar sem jogar a missão,
 `?cena=escola` continua valendo.
 
@@ -1187,19 +1188,29 @@ caldeirão), **servir**, **mãos na cintura** (a tia brava: a sobrancelha
 franze e a boca aperta) e **acenar**.
 
 **A cantina** (`scenes/escolaCantina.ts`, peças em
-`world/cantinaDaTiaLiz.ts`): o balcão saiu da parede para caber ela atrás —
-azulejo de florzinha azul, tampo de inox, trilho de bandeja, as cubas
-abertas com arroz, feijão preto, carne desfiada, tajadas e pasta com
-almôndegas, o caldeirão da sopita embutido (com o vapor, que some quando ela
-conversa), a panelinha de fororo com as canecas, o refratário da tres leches
-cortado em quadrados, as pilhas e o vasinho de coentro. O quadro de giz
-virou "Cantina da Tia Liz". O colisor fecha da parede ao trilho.
+`world/cantinaDaTiaLiz.ts`): a **Lanchonete dos Gatitos** — pedido do Renan,
+"igual às cantinas de escolas americanas": a cozinha é um cômodo próprio no
+fundo do refeitório (2 m de fundo), e ela serve por uma **janela larga** na
+parede da frente (`janelaDaCantina`): azulejo de florzinha azul embaixo,
+moldura de inox, o **parapeito** de inox por onde sai a bandeja, o **trilho
+de bandeja** na frente e a placa "Lanchonete dos Gatitos" na verga. A
+janela vai até 2,85 porque a câmera olha de cima: quem está atrás da parede
+aparece mais alto no vão (com 2,55 a placa cortava os cachos), e nada fica
+pendurado na frente dela (um toldinho listrado tapava o rosto inteiro). Lá
+dentro, o balcão encostado na janela com as cubas abertas (arroz, feijão
+preto, carne desfiada, tajadas, pasta com almôndegas), o caldeirão da sopita
+embutido (o vapor some quando ela conversa), a panelinha de fororo com as
+canecas, o refratário da tres leches cortado em quadrados; e o fogão, a
+geladeira, as prateleiras de potes e o quadro "Cardápio da Tia Liz" no
+fundo, alto, aparecendo por cima da parede. **Ela ama o que faz**: cantarola
+mexendo a panela, e fala da cozinha como quem fala de casa. O colisor fecha
+a cozinha inteira.
 
 **A conversa**: na primeira, a apresentação (pergunta se lavaram as mãos
 antes do oi) e a memória **"A tia da cantina"**; depois, um assunto por vez
 (o Flynn e os três pratos, o Gatito de oculinhos, "buen provecho", a
 Valentina e a almôndega escondida — só depois de conhecê-la…). Sempre o
-**cardápio** no fim: ela serve o prato (as duas bandejas no balcão), a tela
+**cardápio** no fim: ela serve o prato (as duas bandejas no parapeito), a tela
 escurece e a dupla aparece sentada na mesa mais perto, lado a lado no banco
 do fundo (de frente para a câmera), cada um com a sua
 bandeja (prato, guardanapo e suco); a comida **encolhe a cada garfada** e

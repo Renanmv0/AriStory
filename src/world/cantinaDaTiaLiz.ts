@@ -727,9 +727,10 @@ export function bandejaComPrato(id: PratoDaLiz): THREE.Group {
 // ================================================================= o balcão
 
 /**
- * O BALCÃO DA CANTINA: o corpo de azulejo (a florzinha azul de miolo
- * amarelo), o rodapé, o tampo de inox com a quina boleada, o trilho de
- * bandeja na frente e, em cima, a comida da Tia Liz exposta:
+ * O BALCÃO DA CANTINA, o de DENTRO da cozinha, encostado na janela de
+ * servir (`janelaDaCantina`): o corpo de azulejo (a florzinha azul de miolo
+ * amarelo), o rodapé, o tampo de inox com a quina boleada e, em cima, a
+ * comida da Tia Liz exposta — é o que se vê pela janela:
  *
  *  - as CUBAS ABERTAS de inox (quatro paredes, a comida um tico abaixo da
  *    boca): o arroz, o feijão preto, a carne desfiada, as tajadas e a pasta
@@ -741,11 +742,12 @@ export function bandejaComPrato(id: PratoDaLiz): THREE.Group {
  *  - a pilha de pratos, de tigelas e de bandejas, e o vasinho de coentro.
  *
  * A frente olha para `+Z`. `SOPA_NO_BALCAO` diz onde fica o caldeirão (a
- * cena põe a Tia Liz atrás dele).
+ * cena põe a Tia Liz atrás dele). O trilho de bandeja mora do lado de FORA,
+ * no parapeito da janela.
  */
 export const SOPA_NO_BALCAO = { x: 0, z: -0.24, boca: 1.01 } as const;
 
-export function balcaoDaCantina(largura = 8): THREE.Group {
+export function balcaoDaCantina(largura = 7.4): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'balcao-da-cantina';
   const F = 0.85;
@@ -765,14 +767,6 @@ export function balcaoDaCantina(largura = 8): THREE.Group {
   const quina = por(g, new THREE.CylinderGeometry(0.025, 0.025, largura + 0.06, 12), inox, 0, 0.905, F / 2 + 0.01);
   quina.rotation.z = Math.PI / 2;
 
-  // o trilho de bandeja: três tubos na frente, em mãos-francesas
-  for (let k = 0; k < 3; k++) {
-    const tubo3 = por(g, new THREE.CylinderGeometry(0.016, 0.016, largura - 0.3, 8), inox, 0, 0.84, F / 2 + 0.12 + k * 0.1);
-    tubo3.rotation.z = Math.PI / 2;
-  }
-  for (const x of [-largura / 2 + 0.3, -largura / 6, largura / 6, largura / 2 - 0.3]) {
-    por(g, new THREE.BoxGeometry(0.04, 0.04, 0.34), inoxEscuro, x, 0.82, F / 2 + 0.17);
-  }
 
   const TOPO = 0.93;
   /** uma cuba aberta de inox, com a comida (o que `encher` puser) um tico abaixo da boca */
@@ -981,6 +975,95 @@ export function balcaoDaCantina(largura = 8): THREE.Group {
       f.rotation.set(-Math.PI / 2 + 0.6, a, 0);
     }
     g.add(vaso);
+  }
+  return fundir(g);
+}
+
+/**
+ * A JANELA DE SERVIR da Lanchonete dos Gatitos — a cantina como as de
+ * escola americana (pedido do Renan): a cozinha é um cômodo próprio, e a
+ * Tia Liz serve por uma janela larga na parede da frente.
+ *
+ * A PEÇA é a parede da frente da cozinha e as duas paredes de volta até o
+ * fundo: embaixo da janela, o azulejo da cantina com o rodapé; em volta, a
+ * parede da escola; o VÃO largo com a moldura de inox; o PARAPEITO de inox
+ * (por onde sai a bandeja) com a quina boleada e, na frente dele, o TRILHO
+ * de bandeja em mãos-francesas. A placa da lanchonete vai na verga (a cena
+ * põe).
+ *
+ * NADA PENDURADO NA FRENTE DO VÃO: a primeira versão tinha um toldinho
+ * listrado em cima da janela, e com a câmera olhando de cima ele tapava o
+ * rosto dela inteiro — o que sobra para fora acima do vão cobre exatamente
+ * quem está lá dentro.
+ *
+ * A CONTA DA CÂMERA decide a altura do vão: a câmera olha em 34°, e quem
+ * está 0,6 m atrás da parede aparece na janela 0,7 m mais alto do que está.
+ * Com o vão até 2,85, os cachos dela (1,7) cabem inteiros; com a verga a
+ * 2,55, a placa cortava o alto do cabelo.
+ *
+ * A origem é o chão no meio da parede da frente; a frente olha para `+Z` e
+ * a cozinha fica no `-Z`, com `fundo` de profundidade.
+ */
+export const JANELA_DA_CANTINA = { largura: 10.4, vao: 7.0, peitoril: 0.9, verga: 2.85, alto: 3.5, espessura: 0.16 } as const;
+
+export function janelaDaCantina(fundo = 2): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'janela-da-cantina';
+  const J = JANELA_DA_CANTINA;
+  const E = J.espessura;
+  const inox = toon(P.churrascoInox);
+  const inoxEscuro = toon(P.churrascoInoxEscuro);
+  const parede = toon(P.escolaParede);
+  const azulejo = texturaDoAzulejo();
+  // embaixo da janela: o azulejo (o UV em metros, cada azulejo com 15 cm)
+  const baixoGeo = new THREE.BoxGeometry(J.largura, J.peitoril - 0.1, E);
+  uvEmMetros(baixoGeo);
+  por(g, baixoGeo, toon(0xffffff, { mapa: azulejo }), 0, 0.1 + (J.peitoril - 0.1) / 2, 0);
+  por(g, new THREE.BoxGeometry(J.largura + 0.02, 0.1, E + 0.03), toon(P.escolaRodape), 0, 0.05, 0);
+  // os dois pilares dos lados do vão, e a verga em cima
+  const lado = (J.largura - J.vao) / 2;
+  for (const s of [-1, 1]) {
+    por(g, new THREE.BoxGeometry(lado, J.alto - J.peitoril, E), parede, s * (J.vao / 2 + lado / 2), J.peitoril + (J.alto - J.peitoril) / 2, 0);
+  }
+  por(g, new THREE.BoxGeometry(J.vao, J.alto - J.verga, E), parede, 0, J.verga + (J.alto - J.verga) / 2, 0);
+  // a faixa azul da escola no alto da parede, e o capeamento
+  por(g, new THREE.BoxGeometry(J.largura + 0.02, 0.12, E + 0.02), toon(P.escolaBarra), 0, J.alto - 0.06, 0);
+  // a MOLDURA de inox do vão: os batentes e a verga, saindo um tico da parede
+  const M = 0.07;
+  for (const s of [-1, 1]) {
+    por(g, new THREE.BoxGeometry(M, J.verga - J.peitoril + M, E + 0.04), inox, s * (J.vao / 2 + M / 2), (J.verga + J.peitoril) / 2, 0);
+  }
+  por(g, new THREE.BoxGeometry(J.vao + 2 * M, M, E + 0.04), inox, 0, J.verga + M / 2, 0);
+  // o PARAPEITO: a chapa de inox por onde sai a bandeja, para fora da parede, com a quina boleada
+  const PROF = 0.42;
+  por(g, new THREE.BoxGeometry(J.vao + 2 * M, 0.05, PROF), inox, 0, J.peitoril + 0.025, PROF / 2 - E / 2);
+  const quina = por(g, new THREE.CylinderGeometry(0.025, 0.025, J.vao + 2 * M, 12), inox, 0, J.peitoril + 0.025, PROF - E / 2);
+  quina.rotation.z = Math.PI / 2;
+  // as mãos-francesas embaixo do parapeito
+  for (const x of [-J.vao / 2 + 0.3, -J.vao / 6, J.vao / 6, J.vao / 2 - 0.3]) {
+    const mao = new THREE.Shape();
+    mao.moveTo(0, 0);
+    mao.lineTo(0.3, 0);
+    mao.lineTo(0, -0.24);
+    mao.lineTo(0, 0);
+    const geo = new THREE.ExtrudeGeometry(mao, { depth: 0.03, bevelEnabled: false });
+    geo.rotateY(-Math.PI / 2);
+    por(g, geo, inoxEscuro, x + 0.015, J.peitoril, E / 2);
+  }
+  // o TRILHO de bandeja: dois tubos na frente do parapeito, nas mãos-francesas
+  for (let k = 0; k < 2; k++) {
+    const z = PROF - E / 2 + 0.1 + k * 0.1;
+    const t = por(g, new THREE.CylinderGeometry(0.016, 0.016, J.vao - 0.2, 8), inox, 0, J.peitoril - 0.04, z);
+    t.rotation.z = Math.PI / 2;
+  }
+  for (const x of [-J.vao / 2 + 0.3, 0, J.vao / 2 - 0.3]) {
+    por(g, new THREE.BoxGeometry(0.035, 0.035, 0.24), inoxEscuro, x, J.peitoril - 0.055, PROF - E / 2 + 0.1);
+  }
+  // as paredes de volta, da frente até o fundo da cozinha
+  for (const s of [-1, 1]) {
+    por(g, new THREE.BoxGeometry(E, J.alto, fundo), parede, s * (J.largura / 2 - E / 2), J.alto / 2, -fundo / 2);
+    por(g, new THREE.BoxGeometry(E + 0.02, 0.12, fundo), toon(P.escolaBarra), s * (J.largura / 2 - E / 2), J.alto - 0.06, -fundo / 2);
+    por(g, new THREE.BoxGeometry(E + 0.03, 0.1, fundo), toon(P.escolaRodape), s * (J.largura / 2 - E / 2), 0.05, -fundo / 2);
   }
   return fundir(g);
 }
