@@ -66,7 +66,7 @@ export function retratoDe(chave: string, monta: () => THREE.Object3D, giro = -0.
  * terço de cima da caixa.
  */
 export function retratoDoRosto(
-  chave: string, monta: () => THREE.Object3D, o: { cabeca?: string; giro?: number } = {},
+  chave: string, monta: () => THREE.Object3D, o: { cabeca?: string; giro?: number; aproxima?: number } = {},
 ): string {
   const pronto = cache.get(chave);
   if (pronto) return pronto;
@@ -80,7 +80,8 @@ export function retratoDoRosto(
   // pouco acima da largura da cabeça, e a ponta da orelha sai do círculo
   const largura = Math.max(caixa.max.x - caixa.min.x, caixa.max.z - caixa.min.z);
   caixa.max.y = Math.min(caixa.max.y, caixa.min.y + largura * 1.15);
-  const url = fotografar(peca, caixa, 0.7, 0.1, 0.995);
+  // `aproxima` > 1 fecha o quadro (a cabeça pequena de quem tem pescoço comprido)
+  const url = fotografar(peca, caixa, 0.7 / (o.aproxima ?? 1), 0.1, 0.995);
   cache.set(chave, url);
   return url;
 }

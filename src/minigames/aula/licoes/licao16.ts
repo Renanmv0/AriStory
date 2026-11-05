@@ -46,6 +46,7 @@ export const LICAO_16: Licao = {
           { quem: 'luna', texto: 'Eu corria o dia inteiro, pana. Não parava nunca.' },
           { quem: 'estrella', texto: 'Eu era bem tímida quando cheguei... Ainda sou. Mas falava ainda mais baixinho.' },
           { quem: 'sol', texto: '¡E eu GRITAVA! ...Quer dizer: eu grito!' },
+          { quem: 'valentina', texto: 'E eu, antigamente, não tinha óculos de sol. Era uma época muito difícil.' },
           { quem: 'gatito', texto: 'Um dia, eu dormia na caixa quando o sino tocou pela primeira vez... e eu pulei de susto!' },
           { quem: 'renan', texto: 'Ari, repara: "dormia" é o cenário. "Tocou" é o que aconteceu.' },
         ],
@@ -309,6 +310,7 @@ export const LICAO_16: Licao = {
       { quem: 'gatito', texto: 'Boa tarde, turma! Fui ao depósito e achei uma caixa de fotos antigas.' },
       { quem: 'gatito', texto: 'Antigamente esta escola era bem diferente. Quem quer ver?' },
       { quem: 'sol', texto: '¡EU! ¡EU! ¡EU!' },
+      { quem: 'valentina', texto: 'Profe, tem foto minha aí? Eu sempre saía bem nas fotos. Sempre.' },
       { quem: 'gatito', texto: 'Então abram na lição 16: "Antigamente era assim".' },
     ],
     encerramento: [
@@ -316,6 +318,7 @@ export const LICAO_16: Licao = {
       { quem: 'renan', texto: 'Dormia, tocou, pulou. Cenário e fato.' },
       { quem: 'gatito', texto: 'Isso! E a caixa de papelão eu vou guardar de lembrança.' },
       { quem: 'luna', texto: '¡Qué nota! ¡Quero ver mais fotos!' },
+      { quem: 'valentina', texto: 'Antigamente eu achava o português difícil. Agora eu acho só... quase difícil.' },
     ],
   },
 };

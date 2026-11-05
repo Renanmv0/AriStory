@@ -95,8 +95,11 @@ todo feito (`DEPOIS_DO_MODULO` em `scenes/escola.ts`), a checagem do
   Ari é de verdade. O `apostila.mjs` reprova o Módulo 3 se achar um. (A lição 2
   ainda tem o "rato" com 🐭: está anotado no §6.6 do `docs/ESCOLA.md`.)
 - **Só fala quem tem rosto na apostila**: `Falante` (Gatito, Luna, Sol,
-  Estrella, Ari, Renan, Walter, Josefina). Flynn, Estella e os outros podem ser
-  citados, mas falar pede o retrato no `ui/apostila.ts`.
+  Estrella, Ari, Renan, Walter, Josefina e, do Módulo 3 em diante, a
+  Valentina). Flynn, Estella e os outros podem ser citados, mas falar pede o
+  retrato (`world/retratoDoElenco.ts`, e o nome no `abrirApostila` do
+  `core/Game.ts`). Quem tem pescoço comprido pede `aproxima` no retrato: a
+  cabeça da Valentina saía pequena no círculo.
 - **Não invente a vida do Ari e do Renan**: lição de passado conta o do
   Gatito e das irmãs; os dois perguntam.
 - **Resposta ambígua é o maior risco**: `ordenar` só aceita uma ordem (nada de
@@ -175,6 +178,14 @@ uma estrela, 65% duas, 90% três; o save guarda a **melhor** vez, e o
   e sempre preocupada com as duas ("Beberam água?", "Sem correr, Sol.").
 - **Walter**: o cachorro garçom **só late** ("Au!", "Au?!").
 - **Josefina**: a tartaruga jardineira, devagar e carinhosa ("meu bem").
+- **Valentina**: a flamingo italiana do marketing dos Gatitos, colega de
+  turma do Módulo 3 em diante (pedido do Renan). Vaidosa, "boss girl":
+  puxa a conversa para a roupa, o estilo e ela mesma, e sempre termina
+  elogiando alguém. Italiano só de vez em quando, numa palavra (perfetto,
+  bravo, allora) — ninguém da dupla fala italiano. Ela fala na `abertura` e
+  no `encerramento` de TODA aula do Módulo 3 em diante, e numa fala da cena
+  quando a cena tem a turma (o `apostila.mjs` cobra a aula). Ela não está no
+  ginásio: a `chamada` continua das irmãs.
 - **Ari** erra do jeito de quem fala espanhol; **Renan** já sabe português e
   ajuda, sem apelido de casal inventado (isso é do Renan).
 - Fala que o Renan escrever entra **literal**.

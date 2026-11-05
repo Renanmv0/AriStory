@@ -45,6 +45,7 @@ export const LICAO_13: Licao = {
           { quem: 'ari', texto: 'E este caderno? É seu, Estrella?' },
           { quem: 'estrella', texto: 'O meu é cor-de-rosa... Esse deve ser do Renan.' },
           { quem: 'renan', texto: 'É meu, sim. Olha, Ari: o "seu" é traiçoeiro. Por isso a gente diz "dele" e "dela".' },
+          { quem: 'valentina', texto: 'E este lenço de seda é MEU. Dá pra ver de longe: é a coisa mais chique da caixa.' },
           { quem: 'sol', texto: '¡E AQUELE guarda-chuva lá no fundo é do Flynn!' },
           { quem: 'gatito', texto: 'E aquela almofada ali? Ah, é a minha, da soneca! Achei você!' },
         ],
@@ -330,6 +331,7 @@ export const LICAO_13: Licao = {
       { quem: 'gatito', texto: 'Hoje a aula é na caixa de achados e perdidos do saguão. Todo ano ela enche de coisa sem dono.' },
       { quem: 'ari', texto: 'Esse guarda-chuva é seu, profe?' },
       { quem: 'gatito', texto: 'Meu? Não, aquele é de... bom, a lição é justamente sobre isso.' },
+      { quem: 'valentina', texto: 'Profe, se tiver alguma coisa elegante nessa caixa, provavelmente é minha.' },
       { quem: 'gatito', texto: 'Abram na lição 13: "De quem é isso?".' },
     ],
     encerramento: [
@@ -337,6 +339,7 @@ export const LICAO_13: Licao = {
       { quem: 'renan', texto: 'Pro dono DELE e pra dona DELA.' },
       { quem: 'gatito', texto: 'Isso! E a almofada da soneca é minha, claro. A mais macia do saguão.' },
       { quem: 'luna', texto: '¡Qué nota! Minha presilha voltou pra mim!' },
+      { quem: 'valentina', texto: 'E o meu lenço voltou pra mim. Não é dele nem dela: é MEU. Bravo, Ari!' },
     ],
   },
 };

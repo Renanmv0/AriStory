@@ -50,6 +50,7 @@ export const LICAO_14: Licao = {
           { quem: 'josefina', texto: 'Mexa, sim. Mexa sem parar, até desgrudar do fundo.' },
           { quem: 'sol', texto: '¿Posso provar?' },
           { quem: 'josefina', texto: 'Espere esfriar, Sol. Depois, faça as bolinhas e passe no granulado.' },
+          { quem: 'valentina', texto: 'Deixem a decoração comigo: granulado dourado em cada bolinha. Perfetto.' },
           { quem: 'renan', texto: 'Pra conversar a gente diz "mexe" e "põe". Na receita é "mexa" e "ponha".' },
           { quem: 'walter', texto: 'Au!' },
         ],
@@ -311,6 +312,7 @@ export const LICAO_14: Licao = {
       { quem: 'gatito', texto: 'Boa tarde, turma! Hoje a aula tem cheiro de chocolate.' },
       { quem: 'gatito', texto: 'Estamos na cozinha do Mania — de mentirinha, na apostila. O chef é o Walter.' },
       { quem: 'walter', texto: 'Au!' },
+      { quem: 'valentina', texto: 'Eu trouxe meu avental de cetim. Cozinhar também é moda, profe.' },
       { quem: 'gatito', texto: 'Ele disse que ninguém prova antes da hora. Abram na lição 14: "Mexa, misture, prove!".' },
     ],
     encerramento: [
@@ -318,6 +320,7 @@ export const LICAO_14: Licao = {
       { quem: 'renan', texto: 'Mexa, Ari, mexa!' },
       { quem: 'walter', texto: 'Au! Au!' },
       { quem: 'gatito', texto: 'Ele aprovou. E guardou a panela pra lamber sozinho.' },
+      { quem: 'valentina', texto: 'Mexa, misture, prove... e tire uma foto bem bonita antes de comer!' },
     ],
   },
 };

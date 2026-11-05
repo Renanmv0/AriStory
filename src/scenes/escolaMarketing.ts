@@ -199,14 +199,6 @@ export const VALENTINA_NA_CARTEIRA: readonly Fala[] = [
   [V, 'Ciao, colegas! Guardei a minha carteira bem atrás de vocês: daqui eu vejo a lousa e as roupas de vocês. As duas coisas são importantes.'],
 ];
 
-/** o elogio do fim da aula, um por aula (a Sala 1 lê daqui) */
-export const VALENTINA_NO_FIM_DA_AULA: readonly string[] = [
-  'Brava, Ari! Você responde bonito. Quase tão bonito quanto eu anoto.',
-  'Bellissimo! Hoje eu aprendi uma palavra nova e um jeito novo de prender o cabelo. Dia produtivo.',
-  'Perfetto. Vocês dois juntos estudando é muito fofo. Fofo e chique, que é a combinação mais difícil.',
-  'Allora, até a próxima aula! E venham bem vestidos: aqui também é passarela.',
-];
-
 /** a voz dela no balão, para quem monta a aula ler sem importar a classe */
 export const NOME_DA_VALENTINA = V;
 

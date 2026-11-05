@@ -13,7 +13,7 @@ import { conversa, sentarOsDois } from './escolaComum';
 import { PREMIOS_DA_APOSTILA } from '../world/itens';
 import { Valentina } from '../entities/bichos/Valentina';
 import {
-  NOME_DA_VALENTINA, VALENTINA_NA_CARTEIRA, VALENTINA_NO_FIM_DA_AULA, faltaConhecerAValentina, valentinaNaAula,
+  VALENTINA_NA_CARTEIRA, faltaConhecerAValentina, valentinaNaAula,
 } from './escolaMarketing';
 
 /**
@@ -64,6 +64,7 @@ const NOMES: Record<Falante, string> = {
   renan: RENAN.name,
   walter: 'Walter',
   josefina: 'Josefina',
+  valentina: 'Valentina',
 };
 
 const G = NOMES.gatito;
@@ -450,12 +451,8 @@ export function montarAulaDoGatito(w: WorldBuilder, s: SalaDaAula): void {
     g.som('sacudida');
     await conversa(g, [[G, DAS_ESTRELAS[feita.estrelas].replace('{aluno}', ARI.name)]]);
     await conversa(g, falasDaAula(licao.aula.encerramento));
-    if (valentina) {
-      // o elogio dela, um por aula
-      const vez = g.bump('valentina.aulas');
-      valentina.posar(2.4);
-      await conversa(g, [[NOME_DA_VALENTINA, VALENTINA_NO_FIM_DA_AULA[(vez - 1) % VALENTINA_NO_FIM_DA_AULA.length]]]);
-    }
+    // (a Valentina fala no encerramento das lições do Módulo 3; aqui ela só faz pose)
+    valentina?.posar(2.4);
     await entregarPremio(g, licao);
     g.setFlag(AULA_CHAMADA, false);
     if (primeira) {
