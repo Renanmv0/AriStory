@@ -348,6 +348,32 @@ troca em jogo: tira a peça velha de cada vaga, pendura a nova no pai certo,
 junta, liga a sombra, acha quem balança (`userData.balanca`) e esconde o pé
 pelado se houver sapato. Look novo é uma ficha nova no `LOOKS_DA_VALENTINA`.
 
+## Bicho de balcão que mexe a panela (a Tia Liz da cantina)
+
+A Tia Liz (`entities/bichos/TiaLiz.ts`, cena em `scenes/escolaCantina.ts`) é
+ursa em pé ATRÁS de um balcão. O que custou medida:
+
+- **O braço tem cotovelo** (`braco` → `antebraco`, cada um com nome): mão
+  na cintura e mexer panela não saem de braço reto. Com braço de chibi
+  (0,32 de alcance) a mão na cintura é a pata pousando NO LADO da barriga.
+- **A concha mora no antebraço e fica em pé**: a cada quadro ela gira ao
+  contrário do braço (`concha.rotation = −(braço + antebraço)`), e a cuia
+  afunda na sopa. A cena põe ela atrás do caldeirão por conta (a pata fica
+  0,26 à direita e 0,35 à frente do meio dela), e o `scripts/tiaLiz.mjs`
+  MEDE a cuia dentro da panela — no navegador do teste a pose demora a
+  assentar (espere a `misturaMexe` chegar perto de 1 antes de medir).
+- **Cabelo cacheado** é calota de raiz + ~250 icosaedros miúdos girados ao
+  acaso (bolota grande vira couve-flor), uma FRANJA de cachinhos na beira da
+  calota (sem ela a raiz lê como faixa na testa) e molinhas em hélice
+  (`TubeGeometry` numa espiral) caindo até o ombro. Tudo se junta no
+  `fundir`, então é um desenho só por material.
+- **Vapor na frente do rosto**: o caldeirão fica logo abaixo da cara dela;
+  o vapor é fininho e some enquanto ela conversa.
+- **Bicho atrás de uma JANELA** (a cozinha da Lanchonete dos Gatitos): com a
+  câmera a 34°, quem está a 0,6 m atrás da parede aparece ~0,7 m MAIS ALTO no
+  vão. A verga vai a 2,85 (com 2,55 a placa cortava os cachos), e nada fica
+  pendurado na frente do vão — um toldinho tapou o rosto inteiro.
+
 ## Bicho que treina com uma bola (o Flynn no ginásio)
 
 O treino do Flynn (`montarOTreinoDoFlynn`, `scenes/escolaAtletica.ts`) é o

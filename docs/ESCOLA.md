@@ -39,7 +39,9 @@ quando o Módulo 2 começa, ele muda para o ginásio e treina no meio da
 quadra, e as coelhinhas vão para a lateral. No canto da entrada do saguão
 mora a **Valentina**, a flamingo italiana do marketing dos Gatitos (§17) —
 colega de turma do Módulo 3 em diante, e a aula 13 só é chamada depois de
-conhecê-la.
+conhecê-la. Na cozinha da Lanchonete dos Gatitos, no fundo do refeitório, mora a
+**Tia Liz**, a ursa venezuelana da cantina (§18), que serve os cinco pratos
+de casa pela janela.
 As etiquetas (§5) e a formatura (§7) ainda não existem. Para testar sem jogar a missão,
 `?cena=escola` continua valendo.
 
@@ -1157,3 +1159,65 @@ outros. Teste: `scripts/valentina.mjs` (`SO=modelo|look|passeio|conversa|aula`).
 
 **Peso**: com a roupa, ela desenha 67 vezes por quadro (com a sombra) e
 31 mil triângulos; sem juntar (`?semFundir`), 150.
+
+## 18. A Tia Liz — a ursa da cantina (CONSTRUÍDA)
+
+O pedido do Renan: uma **tia da cantina**, chamada **Liz** — uma referência à
+mãe do Ari, a Lizbeth (ele mandou uma foto dela). "Uma ursa fofa, mas faça de
+forma fofa para ela não achar ofensivo; ela pode ser rígida às vezes, mas no
+fim das contas é carinhosa com os alunos." **Venezuelana**, com vibe
+acolhedora de mãe. E a comida é a que a mãe fazia para o Ari, com as fotos:
+**sopita, pasta com almôndegas, fororo, pabellón e torta tres leches**.
+Dentro do jogo a homenagem **não é dita** (o Renan não respondeu se é
+surpresa): ela é só a Tia Liz.
+
+**O modelo** (`entities/bichos/TiaLiz.ts`): ursinha em pé, cabeça grande,
+orelhas redondas saindo do cabelo, focinho claro, nariz de chocolate,
+bochecha rosada, cílios e o **sorrisão de boca aberta** da foto. Da foto
+também: os **cachos loiro-dourados** com a raiz escura (uma calota de raiz,
+~250 cachinhos facetados por cima, a franja tapando a borda e as molinhas em
+espiral de verdade caindo até o ombro), as **trancinhas rentes** do lado
+esquerdo de quem olha terminando numa trança, a **blusa verde-oliva** de
+manguinha bufante, gola padre e o **recorte em gota** com o botãozinho, o
+**colar da Torre Eiffel** dourada (o arco é furo de verdade), o **anel**, o
+**relógio** e as **unhas lilás**. Da cantina: o **avental** creme com a
+barra nas três cores da bandeira da Venezuela e um coração no bolso, a
+calça jeans e o tamanco lilás. Altura 1,70 (adulta, sem passar da dupla).
+Gestos: **mexer a panela** (o jeito dela parada, a concha em pé dentro do
+caldeirão), **servir**, **mãos na cintura** (a tia brava: a sobrancelha
+franze e a boca aperta) e **acenar**.
+
+**A cantina** (`scenes/escolaCantina.ts`, peças em
+`world/cantinaDaTiaLiz.ts`): a **Lanchonete dos Gatitos** — pedido do Renan,
+"igual às cantinas de escolas americanas": a cozinha é um cômodo próprio no
+fundo do refeitório (2 m de fundo), e ela serve por uma **janela larga** na
+parede da frente (`janelaDaCantina`): azulejo de florzinha azul embaixo,
+moldura de inox, o **parapeito** de inox por onde sai a bandeja, o **trilho
+de bandeja** na frente e a placa "Lanchonete dos Gatitos" na verga. A
+janela vai até 2,85 porque a câmera olha de cima: quem está atrás da parede
+aparece mais alto no vão (com 2,55 a placa cortava os cachos), e nada fica
+pendurado na frente dela (um toldinho listrado tapava o rosto inteiro). Lá
+dentro, o balcão encostado na janela com as cubas abertas (arroz, feijão
+preto, carne desfiada, tajadas, pasta com almôndegas), o caldeirão da sopita
+embutido (o vapor some quando ela conversa), a panelinha de fororo com as
+canecas, o refratário da tres leches cortado em quadrados; e o fogão, a
+geladeira, as prateleiras de potes e o quadro "Cardápio da Tia Liz" no
+fundo, alto, aparecendo por cima da parede. **Ela ama o que faz**: cantarola
+mexendo a panela, e fala da cozinha como quem fala de casa. O colisor fecha
+a cozinha inteira.
+
+**A conversa**: na primeira, a apresentação (pergunta se lavaram as mãos
+antes do oi) e a memória **"A tia da cantina"**; depois, um assunto por vez
+(o Flynn e os três pratos, o Gatito de oculinhos, "buen provecho", a
+Valentina e a almôndega escondida — só depois de conhecê-la…). Sempre o
+**cardápio** no fim: ela serve o prato (as duas bandejas no parapeito), a tela
+escurece e a dupla aparece sentada na mesa mais perto, lado a lado no banco
+do fundo (de frente para a câmera), cada um com a sua
+bandeja (prato, guardanapo e suco); a comida **encolhe a cada garfada** e
+eles comentam. A tres leches antes do almoço leva bronca — e sai do mesmo
+jeito. **Provar os cinco** dá a memória **"Comida de casa"**. As falas são
+rascunho meu, no jeito que o Renan descreveu; espanhol só o de casa (épale,
+mi amor, mijo, ¡eso!, caraotas, tajada, jojoto, auyama).
+
+No Halloween (a escola vazia) ela some junto com os outros. Teste:
+`scripts/tiaLiz.mjs` (`SO=modelo|posto|pratos|conversa`).

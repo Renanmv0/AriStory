@@ -197,6 +197,10 @@ const PECAS = [
   ['banner-dos-gatitos', 'escola'],
   // a Valentina (bicho): o caçador mede as caixas retas dela (os botões, o bolso, a haste dos óculos)
   ['valentina', 'escola'],
+  // a cantina da Tia Liz: o balcão de azulejo com a comida, e ela (bicho)
+  ['balcao-da-cantina', 'escola'],
+  ['janela-da-cantina', 'escola'],
+  ['tia-liz', 'escola'],
   ['mesa-de-refeitorio', 'escola'],
   ['balcao-de-refeitorio', 'escola'],
   ['maquina-de-lanches', 'escola'],

@@ -4,8 +4,8 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
 import {
-  armariosDeEscola, balcaoDeRefeitorio, cartazDeParede, escadariaDoSaguao, interiorDoor, logoDaEscola,
-  maquinaDeLanches, mesaDeRefeitorio, placaDePorta, pottedPlant, quadroDeGiz, relogioDeParede,
+  armariosDeEscola, cartazDeParede, escadariaDoSaguao, interiorDoor, logoDaEscola,
+  maquinaDeLanches, mesaDeRefeitorio, placaDePorta, pottedPlant, relogioDeParede,
   vitrineDeTrofeus, windowFrame,
 } from '../world/furniture';
 import { bin, mesaDePatio, waterFountain } from '../world/props';
@@ -15,6 +15,7 @@ import { Gatito } from '../entities/bichos/Gatito';
 import { aulaDaVez, emAula } from './escolaAula';
 import { montarOFlynn } from './escolaAtletica';
 import { montarAValentina } from './escolaMarketing';
+import { montarACantina } from './escolaCantina';
 import { Luna } from '../entities/bichos/CoelhaDaTorcida';
 import {
   ESCOLA, LUZ_DA_ESCOLA, conversa, maquinaQueEntrega, paredeComVaos, pontoNoMundo, posicionarParaConversar,
@@ -293,12 +294,8 @@ export const escola: SceneDef = {
     ));
 
     // ========================================================== REFEITÓRIO
-    const balcao = w.add(w.place(balcaoDeRefeitorio(8), -27, 0, REFEITORIO.z0 + 0.65));
-    w.blockBox(-27, REFEITORIO.z0 + 0.8, 4.05, 0.65);
-    w.add(w.place(
-      quadroDeGiz(['Cardápio do dia', 'arroz · feijão · frango', 'macarrão · salada', 'sobremesa: brigadeiro', 'sexta: dia de arepa'], 3.4, 1.7),
-      -27, 2.75, REFEITORIO.z0 + 0.18,
-    ));
+    // a cantina da Tia Liz: o balcão, o quadro do cardápio e ela (`escolaCantina.ts`)
+    montarACantina(w, { x: -27, parede: REFEITORIO.z0 }, MESAS_DO_REFEITORIO);
     w.add(w.place(
       cartazDeParede('Refeitório', ['Comedor'], 2.8, 1.05, '#3d68ad', '#ffffff'), -19.2, 3.05, REFEITORIO.z0 + 0.17,
     ));
@@ -329,7 +326,7 @@ export const escola: SceneDef = {
     const FALAS_DA_MESA: ReadonlyArray<ReadonlyArray<readonly [boolean, string]>> = [
       [[false, 'Guardei lugar pra você.'], [true, 'Mesa de refeitório de filme.']],
       [[true, 'Aqui cabe a turma inteira.'], [false, 'Mas hoje é só a gente.']],
-      [[false, 'Quando tiver alguém no balcão, a gente almoça aqui.'], [true, 'Combinado.']],
+      [[false, 'Daqui dá pra sentir o cheiro da sopita.'], [true, 'Já tô com fome de novo.']],
     ];
     let vezDaMesa = 0;
     MESAS_DO_REFEITORIO.forEach(([x, z], i) => {
@@ -474,19 +471,6 @@ export const escola: SceneDef = {
       },
     });
 
-    w.interact({
-      id: 'escola:balcao',
-      x: -27, z: REFEITORIO.z0 + 2.1, radius: 1.6,
-      label: 'Ver o cardápio', icon: '📋',
-      highlight: balcao,
-      onInteract: (g) =>
-        conversa(g, [
-          [A, 'Arroz, feijão, frango, macarrão e salada. E brigadeiro.'],
-          [R, 'E sexta é dia de arepa.'],
-          [A, 'Mas não tem ninguém servindo.'],
-          [R, 'Deve estar no intervalo. Depois a gente volta.'],
-        ]),
-    });
 
     // comprar, ver o lanche cair na gaveta e pegar (ver `maquinaQueEntrega`)
     maquinas.forEach((m, i) => {
@@ -731,9 +715,9 @@ export const escola: SceneDef = {
      * dele no saguão.
      */
     ausentarNaCena(w, {
-      // a Valentina chegou depois da festa: no dia dela, a escola só fica vazia
-      etiquetas: ['gatito', 'valentina'],
-      interacoes: ['escola:gatito', 'escola:valentina'],
+      // a Valentina e a Tia Liz chegaram depois da festa: no dia dela, a escola só fica vazia
+      etiquetas: ['gatito', 'valentina', 'tia-liz'],
+      interacoes: ['escola:gatito', 'escola:valentina', 'escola:tia-liz'],
       recados: [{ recados: [RECADOS_DA_ESCOLA.gatito], autor: 'Gatito', x: INICIO.x - 1.2, z: INICIO.z + 1.4, giro: Math.PI / 4 }],
     });
   },
