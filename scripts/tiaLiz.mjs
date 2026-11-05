@@ -166,7 +166,10 @@ const temPergunta = async (p, texto) => (await opcoes(p)).some((o) => o.includes
 
 /** a dupla na frente do balcão, com o prompt da Tia Liz na tela */
 const chegarPerto = async (p) => {
-  const pt = await p.evaluate(() => window.jogo.current.world.interactables.find((i) => i.id === 'escola:tia-liz'));
+  const pt = await p.evaluate(() => {
+    const i = window.jogo.current.world.interactables.find((i) => i.id === 'escola:tia-liz');
+    return { x: i.x, z: i.z };
+  });
   await p.evaluate(({ x, z }) => window.jogo.debugPlace(x, z + 0.3, Math.PI), pt);
   for (let i = 0; i < 20; i++) {
     if (/Tia Liz/.test(await p.evaluate(() => document.querySelector('.prompt.show .label')?.textContent ?? ''))) return true;
