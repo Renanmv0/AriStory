@@ -131,6 +131,12 @@ ok(A.conferirModulo(m3ruim).some((e) => e.includes('número')), 'o conferidor co
 // (a lição 2, do Módulo 1, ainda tem o falso amigo "rato" — fica de fora desta checagem até o Renan decidir)
 const textoDoTres = JSON.stringify(M3);
 ok(!/\b(rato|ratos|ratinho|ratazana|camundongo)\b|[\u{1F400}\u{1F401}\u{1F42D}]/iu.test(textoDoTres), 'nenhum rato em nenhuma lição do Módulo 3');
+// a Valentina, a flamingo do marketing, entra na turma no Módulo 3 (pedido do Renan): ela fala
+// na abertura e no encerramento de TODA aula do 3, e em nenhuma lição dos módulos 1 e 2
+const falaNa = (l, parte) => l.aula[parte].some((f) => f.quem === 'valentina');
+ok(M3.licoes.every((l) => falaNa(l, 'abertura') && falaNa(l, 'encerramento')),
+  'a Valentina fala na abertura e no encerramento de toda aula do Módulo 3');
+ok(!/"quem":"valentina"/.test(JSON.stringify([M, M2])), 'e não fala em nenhuma lição dos Módulos 1 e 2 (ela chegou no 3)');
 
 // ------------------------------------------------------------- 2. a nota
 console.log('\n2. a nota');

@@ -45,6 +45,7 @@ export const LICAO_15: Licao = {
           { quem: 'josefina', texto: 'Depois vire à direita, na primeira esquina, e atravesse o jardim.' },
           { quem: 'ari', texto: 'Na primeira ou na segunda?' },
           { quem: 'josefina', texto: 'Na primeira. A piscina fica bem em frente, ao lado do deque.' },
+          { quem: 'valentina', texto: 'Viu, Sol? Na primeira à direita. Eu já sabia: é onde fica o deque mais bonito do clube.' },
           { quem: 'sol', texto: '¡EU FALEI! ...Mais ou menos.' },
           { quem: 'renan', texto: 'Ari, em português a gente não "gira" na esquina: a gente vira.' },
           { quem: 'estrella', texto: 'Vira à DIREITA, Sol. Não... a outra direita.' },
@@ -316,6 +317,7 @@ export const LICAO_15: Licao = {
       { quem: 'gatito', texto: 'Boa tarde, turma! Hoje vamos passear pelo clube — de mentirinha, na apostila.' },
       { quem: 'gatito', texto: 'Alguém sabe me dizer onde fica a Sala 1?' },
       { quem: 'ari', texto: 'Reto, depois à direita... O senhor mora aqui, profe!' },
+      { quem: 'valentina', texto: 'Eu nunca me perco, profe. É só seguir a passarela mais bonita.' },
       { quem: 'gatito', texto: 'Moro, mas já me perdi duas vezes esta semana. Abram na lição 15: "Vira à esquerda, Sol!".' },
     ],
     encerramento: [
@@ -323,6 +325,7 @@ export const LICAO_15: Licao = {
       { quem: 'renan', texto: 'Nunca mais é exagero.' },
       { quem: 'gatito', texto: 'Tem razão. Mas pelo menos você sabe perguntar o caminho.' },
       { quem: 'sol', texto: '¡Pra esquerda! ...Não, a outra!' },
+      { quem: 'valentina', texto: 'Agora você sabe virar à direita, Ari. E com elegância, que é o mais importante.' },
     ],
   },
 };

@@ -5,6 +5,7 @@ import { Gatito } from '../entities/bichos/Gatito';
 import { Josefina } from '../entities/bichos/Josefina';
 import { Estrella, Luna, Sol } from '../entities/bichos/CoelhaDaTorcida';
 import { Walter } from '../entities/bichos/Walter';
+import { Valentina } from '../entities/bichos/Valentina';
 import type { Falante } from '../minigames/aula/tipos';
 import { retratoDoRosto } from './retrato';
 
@@ -18,7 +19,7 @@ import { retratoDoRosto } from './retrato';
 /** o bicho não passeia no estúdio: a área dele é um ponto */
 const PARADO = { minX: 0, maxX: 0, minZ: 0, maxZ: 0 };
 
-const MONTA: Record<Falante, { monta: () => THREE.Object3D; cabeca?: string }> = {
+const MONTA: Record<Falante, { monta: () => THREE.Object3D; cabeca?: string; aproxima?: number }> = {
   ari: { monta: () => new CharacterRig(ARI).group },
   renan: { monta: () => new CharacterRig(RENAN).group },
   gatito: {
@@ -33,9 +34,11 @@ const MONTA: Record<Falante, { monta: () => THREE.Object3D; cabeca?: string }> =
   estrella: { monta: () => new Estrella(PARADO).group, cabeca: 'cabeca-da-estrella' },
   walter: { monta: () => new Walter(PARADO).group },
   josefina: { monta: () => new Josefina(PARADO).group },
+  // o crânio (com o bico e os óculos), e não a ponta do pescoço comprido
+  valentina: { monta: () => new Valentina(PARADO).group, cabeca: 'cranio-da-valentina', aproxima: 1.7 },
 };
 
 export function retratoDoFalante(quem: Falante): string {
   const m = MONTA[quem];
-  return m ? retratoDoRosto(`rosto:${quem}`, m.monta, { cabeca: m.cabeca }) : '';
+  return m ? retratoDoRosto(`rosto:${quem}`, m.monta, { cabeca: m.cabeca, aproxima: m.aproxima }) : '';
 }

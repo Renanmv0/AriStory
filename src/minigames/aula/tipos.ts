@@ -26,7 +26,7 @@
  */
 
 /** quem fala nos quadrinhos da apostila e nas falas da aula */
-export type Falante = 'gatito' | 'luna' | 'sol' | 'estrella' | 'ari' | 'renan' | 'walter' | 'josefina';
+export type Falante = 'gatito' | 'luna' | 'sol' | 'estrella' | 'ari' | 'renan' | 'walter' | 'josefina' | 'valentina';
 
 export interface Fala {
   quem: Falante;

@@ -43,6 +43,7 @@ export const LICAO_18: Licao = {
           { quem: 'estrella', texto: 'Sol, a maior não é a melhor. A boa é a mais lisa e a mais achatada.' },
           { quem: 'ari', texto: 'Esta daqui é mais leve do que a sua, Sol.' },
           { quem: 'luna', texto: 'E tão lisa quanto a da Estrella, pana!' },
+          { quem: 'valentina', texto: 'A minha pedrinha é a mais elegante do lago. Não quica tanto quanto a sua, Luna... mas é muito mais bonita.' },
           { quem: 'renan', texto: 'Ari, repara: em português a gente não diz "mais bom". Diz "melhor".' },
           { quem: 'sol', texto: '¡Meu arremesso foi o melhor! ...O pior? ...Foi o mais barulhento!' },
           { quem: 'estrella', texto: 'A pedra da Sol afundou rapidíssimo.' },
@@ -305,6 +306,7 @@ export const LICAO_18: Licao = {
       { quem: 'gatito', texto: 'Boa tarde, turma! Última lição do Módulo 3. Hoje a aula é à beira do lago — de mentirinha, na apostila.' },
       { quem: 'gatito', texto: 'Vamos comparar tudo: a maior pedra, a pedra mais lisa, o melhor arremesso.' },
       { quem: 'sol', texto: '¡O MELHOR É O MEU!' },
+      { quem: 'valentina', texto: 'Comparar é facílimo, profe: eu sou a mais estilosa da escola. Pronto, acabou a aula.' },
       { quem: 'gatito', texto: 'Veremos. Abram na lição 18: "Maior, melhor, lindíssimo!".' },
     ],
     encerramento: [
@@ -312,6 +314,7 @@ export const LICAO_18: Licao = {
       { quem: 'luna', texto: '¡Qué nota! Dezoito lições, pana!' },
       { quem: 'renan', texto: 'Seu português está cada dia melhor.' },
       { quem: 'sol', texto: '¡LINDÍSSIMO! ¡O MAIOR MÓDULO DO MUNDO!' },
+      { quem: 'valentina', texto: 'Você foi o melhor hoje, Ari. Quase tão bom quanto eu... Tá bom: melhor que eu.' },
       { quem: 'gatito', texto: 'E o professor mais orgulhoso do universo.' },
     ],
   },

@@ -630,7 +630,8 @@ Seis lições novas (13 a 18), liberadas só depois do Módulo 2, cada uma com u
 lugar do jogo que as lições 1 a 12 ainda não usaram e a pegadinha previsível
 de quem fala espanhol. Todas são chamadas por `'qualquer'` uma das três, e só
 falam os que já têm rosto na apostila (Gatito, as três irmãs, Walter,
-Josefina, o Ari e o Renan) — o Flynn e a Estella, por exemplo, só são citados.
+Josefina, o Ari e o Renan, e a **Valentina**, que entrou na turma depois: §17)
+— o Flynn e a Estella, por exemplo, só são citados.
 
 | # | lição | a situação | a língua |
 |---|---|---|---|
@@ -1139,9 +1140,16 @@ cabeça varre a roupa, o olho apertado), **posar** (o pescoço alto, a asa
 aberta em leque, num pé só) e **encantar-se** (as asas batendo, o olho
 fechado). **As falas são rascunho meu**, no jeito que o Renan descreveu.
 
-**A aula**: do Módulo 3 em diante ela é da turma — sentada na carteira da
-segunda fila, atrás do Renan (as pernas dobradas debaixo do corpo, como
-flamingo deitado), com uma fala na carteira e um elogio no fim de cada aula.
+**A aula**: do Módulo 3 em diante ela é da turma, junto da dupla e das
+coelhinhas (pedido do Renan: "quero que ela participe das aulas junto de nós
+e as coelhinhas") — sentada na carteira da segunda fila, atrás do Renan (as
+pernas dobradas debaixo do corpo, como flamingo deitado), com uma fala na
+carteira, e ela FALA NAS LIÇÕES: na abertura e no encerramento de cada aula
+(13 a 18) e numa fala da cena de cada uma, no assunto da lição (o lenço que
+é MEU na 13, o granulado dourado do brigadeiro na 14, o internetês no grupo
+da turma na 17, a pedrinha "mais elegante" na 18). No livro ela tem o
+retrato dela (`world/retratoDoElenco.ts`, o crânio aproximado — o pescoço
+comprido deixava a cabeça pequena no círculo).
 **A aula 13 só é chamada depois de conhecê-la**: sem isso, a coelhinha do
 ginásio manda ir ao saguão. Com a aula chamada, o saguão fica sem ela. No
 Halloween (as fases em que a escola está vazia) ela some junto com os

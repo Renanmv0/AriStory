@@ -1963,7 +1963,7 @@ export class Game implements GameAPI {
       licao: o.licao,
       nomes: {
         ari: ARI.name, renan: RENAN.name, gatito: 'Gatito', luna: 'Luna', sol: 'Sol', estrella: 'Estrella',
-        walter: 'Walter', josefina: 'Josefina',
+        walter: 'Walter', josefina: 'Josefina', valentina: 'Valentina',
       },
       retrato: retratoDoFalante,
       aoConcluir: (id, estrelas) => {
