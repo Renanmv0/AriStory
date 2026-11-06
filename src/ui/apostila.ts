@@ -7,6 +7,7 @@ import type {
   Bloco, Exercicio, Falante, Figura, ItemDeEscolha, Licao, Modulo, ProgressoDaApostila, ResultadoDaApostila,
 } from '../minigames/aula/tipos';
 import { escapar } from './telaDeCartas';
+import { TETO_DE_ANOTACOES } from '../core/SaveState';
 
 /**
  * ==================================================== A APOSTILA DO GATITO
@@ -47,6 +48,10 @@ export interface PedidoDaApostila {
   retrato?: (quem: Falante) => string;
   /** salva na hora: a lição concluída e as estrelas desta vez */
   aoConcluir: (id: string, estrelas: number) => void;
+  /** o que já está escrito na página de anotações de cada lição */
+  anotacoes: Readonly<Record<string, string>>;
+  /** salva o texto da página de anotações de uma lição (o livro manda com um respiro) */
+  aoAnotar: (id: string, texto: string) => void;
 }
 
 /** a resposta de um item: saiu certa de primeira? e o que foi respondido */
@@ -122,6 +127,10 @@ export class Apostila {
   private resultado: ResultadoDaApostila = { concluidas: [] };
   private resolver: ((r: ResultadoDaApostila) => void) | null = null;
   private avisoTimer = 0;
+  /** as anotações de cada lição, como estão na tela agora, e o que ainda falta mandar para o save */
+  private anotacoesDe: Record<string, string> = {};
+  private anotando = new Set<string>();
+  private anotarTimer = 0;
   private dedo: { x: number; y: number; t: number } | null = null;
   som: ((nome: SomNome) => void) | null = null;
 
@@ -163,7 +172,16 @@ export class Apostila {
       const chave = campo.dataset.dig;
       const l = this.licaoDoCampo(campo);
       if (chave && l) this.estado(l).rascunho.set(chave, campo.value);
+      // a página de anotações: o texto vai para o save um respiro depois da última letra
+      const nota = (e.target as HTMLElement).dataset?.anotacao;
+      if (nota) {
+        this.anotacoesDe[nota] = (e.target as HTMLTextAreaElement).value;
+        this.anotando.add(nota);
+        window.clearTimeout(this.anotarTimer);
+        this.anotarTimer = window.setTimeout(() => this.guardarAnotacoes(), 400);
+      }
     });
+    window.addEventListener('pagehide', () => this.guardarAnotacoes());
     this.folhas.addEventListener('keydown', (e) => {
       const campo = e.target as HTMLInputElement;
       if (e.key === 'Enter' && campo.dataset.dig) {
@@ -178,7 +196,7 @@ export class Apostila {
     this.folhas.addEventListener('pointerup', (e) => {
       const d = this.dedo;
       this.dedo = null;
-      if (!d || (e.target as HTMLElement).closest('input')) return;
+      if (!d || (e.target as HTMLElement).closest('input, textarea')) return;
       const dx = e.clientX - d.x;
       const dy = e.clientY - d.y;
       if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && performance.now() - d.t < 700) {
@@ -211,6 +229,8 @@ export class Apostila {
       this.pedido = pedido;
       this.paginas = paginasDoModulo(pedido.modulo);
       this.estrelasDe = { ...pedido.progresso.estrelas };
+      this.anotacoesDe = { ...pedido.anotacoes };
+      this.anotando.clear();
       this.resultado = { concluidas: [] };
       this.medirTela();
       const i = pedido.licao ? pedido.modulo.licoes.findIndex((l) => l.id === pedido.licao) : -1;
@@ -229,6 +249,7 @@ export class Apostila {
 
   fechar(): void {
     if (!this.aberto) return;
+    this.guardarAnotacoes();
     this.raiz.classList.remove('show');
     if (this.pedido) this.ultimaDe.set(this.pedido.modulo.id, this.pagina);
     this.som?.('menu');
@@ -485,7 +506,7 @@ export class Apostila {
     } else if (pg.tipo === 'exercicios') {
       miolo = this.paginaDeExercicios(l, pg.de, pg.ate, pg.parte === 0);
     } else if (pg.tipo === 'anotacoes') {
-      miolo = this.anotacoes();
+      miolo = this.anotacoes(l);
     } else {
       miolo = this.fechamento(l, pg.licao);
     }
@@ -728,13 +749,28 @@ export class Apostila {
     return html;
   }
 
-  /** a página pautada do fim de uma lição de páginas ímpares: é do aluno */
-  private anotacoes(): string {
+  /**
+   * A página pautada do fim de uma lição de páginas ímpares: é do aluno, e dá
+   * para ESCREVER nela (pedido do Renan: anotações escritas, não desenhadas).
+   * É um campo de texto sobre as linhas — o `line-height` é o mesmo espaço
+   * das linhas, então cada linha escrita assenta em cima de uma pauta — e o
+   * texto fica no save, por lição.
+   */
+  private anotacoes(l: Licao): string {
     return `
       <div class="anotacoes">
-        <p class="bilhete-das-anotacoes">🐾 Este espaço é seu: as palavras novas, as dúvidas, um desenho do professor…</p>
-        <div class="pauta" aria-hidden="true"></div>
+        <p class="bilhete-das-anotacoes">🐾 Este espaço é seu: escreva as palavras novas, as dúvidas, o que o professor mostrar na lousa…</p>
+        <textarea class="pauta" data-anotacao="${escapar(l.id)}" maxlength="${TETO_DE_ANOTACOES}"
+          placeholder="Escreva aqui…" aria-label="Anotações da lição ${l.numero}"
+          autocomplete="off" autocapitalize="sentences" spellcheck="false">${escapar(this.anotacoesDe[l.id] ?? '')}</textarea>
       </div>`;
+  }
+
+  /** manda para o save as anotações mexidas desde a última vez (e ao fechar o livro) */
+  private guardarAnotacoes(): void {
+    window.clearTimeout(this.anotarTimer);
+    for (const id of this.anotando) this.pedido?.aoAnotar(id, this.anotacoesDe[id] ?? '');
+    this.anotando.clear();
   }
 
   private exercicio(l: Licao, k: number): string {

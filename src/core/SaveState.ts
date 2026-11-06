@@ -420,7 +420,12 @@ function normalizarDecoracoes(bruto: unknown): DecoracaoNoSave[] {
 interface ApostilaNoSave {
   estrelas: Record<string, number>;
   abertas: string[];
+  /** o que a dupla escreveu na página de ANOTAÇÕES de cada lição (só texto, por `id` de lição) */
+  anotacoes: Record<string, string>;
 }
+
+/** o tamanho máximo de uma página de anotações: uma folha pautada cheia, e sobra */
+export const TETO_DE_ANOTACOES = 2000;
 
 /** Save antigo não tem apostila; estrela fora de 1–3 ou id que não é texto somem. */
 function normalizarApostila(bruto: unknown): ApostilaNoSave {
@@ -433,7 +438,14 @@ function normalizarApostila(bruto: unknown): ApostilaNoSave {
     }
   }
   const abertas = Array.isArray(a.abertas) ? a.abertas.filter((id): id is string => typeof id === 'string') : [];
-  return { estrelas, abertas };
+  // save de antes das anotações: nenhuma; texto que não é texto ou em branco some
+  const anotacoes: Record<string, string> = {};
+  if (a.anotacoes && typeof a.anotacoes === 'object') {
+    for (const [id, t] of Object.entries(a.anotacoes)) {
+      if (typeof t === 'string' && t.trim()) anotacoes[id] = t.slice(0, TETO_DE_ANOTACOES);
+    }
+  }
+  return { estrelas, abertas, anotacoes };
 }
 
 const EMPTY: SaveData = {
@@ -447,7 +459,7 @@ const EMPTY: SaveData = {
   premios: [],
   livro: [],
   decoracoes: [],
-  apostila: { estrelas: {}, abertas: [] },
+  apostila: { estrelas: {}, abertas: [], anotacoes: {} },
   bebitoBook: { comecadoEm: null, quemComecou: null, marcador: null, folhas: {} },
   vagaLumesSoltos: [],
   retomadas: {},
@@ -644,8 +656,20 @@ export class SaveState {
   // ------------------------------------------------ a apostila do Gatito
 
   /** as estrelas de cada lição concluída e as lições já dadas numa aula */
-  get apostila(): { estrelas: Readonly<Record<string, number>>; abertas: readonly string[] } {
+  get apostila(): {
+    estrelas: Readonly<Record<string, number>>;
+    abertas: readonly string[];
+    anotacoes: Readonly<Record<string, string>>;
+  } {
     return this.data.apostila;
+  }
+
+  /** O texto da página de anotações de uma lição (em branco apaga). Guardado na hora. */
+  anotarLicao(id: string, texto: string): void {
+    const t = texto.slice(0, TETO_DE_ANOTACOES);
+    if (t.trim()) this.data.apostila.anotacoes[id] = t;
+    else delete this.data.apostila.anotacoes[id];
+    this.persist();
   }
 
   /** O Gatito deu a lição numa aula: a partir daqui o livro deixa ler. */

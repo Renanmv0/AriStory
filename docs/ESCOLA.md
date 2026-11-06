@@ -544,7 +544,7 @@ uma página por vez. As seis do Módulo 1 têm quatro:
 | 📐 **Como funciona** (uma ou mais) | a regra: texto, tabelas, 🇻🇪 × 🇧🇷, exemplos, ⚠️ Fique de olho!, 🐾 Dica do Gatito, 🇧🇷 Cantinho do Brasil |
 | ✏️ **Mãos à obra!** (uma ou mais; `novaPagina` quebra) | os exercícios, de tipos variados |
 | ✅ **Agora eu consigo…** | a autoavaliação ("can do"), as estrelas, o carimbo e o bilhete do Gatito |
-| 📝 **Anotações** (só se a conta der ímpar) | a página pautada que fecha a dupla, para a lição seguinte começar na esquerda |
+| 📝 **Anotações** (só se a conta der ímpar) | a página pautada que fecha a dupla, para a lição seguinte começar na esquerda — e que dá para ESCREVER (pedido do Renan: só texto, sem desenho; o texto fica no save, por lição) |
 
 **Os dez tipos de exercício**: múltipla escolha (com o desenho do "onde
 está?"), bate-papo de celular, verdadeiro ou falso, ligar colunas, texto com

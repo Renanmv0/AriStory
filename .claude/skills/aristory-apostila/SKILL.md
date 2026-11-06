@@ -42,7 +42,11 @@ o tópico"). O que não muda é a ORDEM:
 4. **✅ Agora eu consigo…** — sai sozinha do `consigo` da lição, com as
    estrelas e o bilhete do Gatito;
 5. **📝 Anotações** — o livro põe sozinho quando a conta dá ímpar, para a
-   lição seguinte começar na página da esquerda da dupla. Não escreva.
+   lição seguinte começar na página da esquerda da dupla. Não escreva o
+   conteúdo: a página é do ALUNO, e dá para ESCREVER nela (só texto, nada de
+   desenho — pedido do Renan): um `<textarea class="pauta">` sobre as linhas,
+   com o texto no save por lição (`apostila.anotacoes`, até 2000 letras),
+   mandado um respiro depois da última letra e ao fechar o livro.
 
 As seis lições do Módulo 1 têm duas de explicação e uma de exercícios (quatro
 páginas); as do Módulo 2, três de explicação e duas de exercícios (seis) —
@@ -251,6 +255,7 @@ node scripts/aula.mjs /tmp/au        # a aula inteira e o livro, no computador e
 node scripts/modulo2.mjs /tmp/m2     # o Módulo 2: a aula da lição 7, as seis lições folheadas, trocar de apostila e o fim de cada livro
 node scripts/modulo3.mjs /tmp/m3     # o Módulo 3: a aula da lição 13, as seis lições folheadas (nenhuma página rola mais de 4 alturas), o sumário com os outros dois módulos, o fim do livro e o celular (SO=aula|livro|fim|celular roda uma parte)
 node scripts/paginas.mjs /tmp/pag    # o livro flexível: lição com mais páginas de explicação e de exercício, e a de anotações
+node scripts/anotacoes.mjs /tmp/an   # a página de anotações da lição 15: escrever (as teclas do jogo quietas), o texto ficar ao virar, fechar, reabrir e recarregar, o limite, o save antigo e o celular
 node scripts/irmas.mjs /tmp/ir       # as três no piquenique, quem treina e quem chama cada aula, o salto e a estrelinha
 ```
 

@@ -5975,7 +5975,7 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
 .livro-apostila .pagina-trancada.leve { min-height: 0; margin-top: 18px; }
 .livro-apostila .pagina-trancada.leve .icone { font-size: 30px; }
 
-/* a página de ANOTAÇÕES: pautada, para completar a dupla quando a lição dá ímpar */
+/* a página de ANOTAÇÕES: pautada, para escrever (e completa a dupla quando a lição dá ímpar) */
 .livro-apostila .anotacoes { display: flex; flex-direction: column; min-height: 100%; }
 .livro-apostila .bilhete-das-anotacoes {
   margin: 2px 0 10px;
@@ -5983,14 +5983,37 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
   font-style: italic;
   font-size: 14px;
 }
+/*
+ * O CAMPO É A PAUTA: as linhas são o fundo do próprio campo (`local`: rolam
+ * junto com o texto) e o `line-height` é o espaço entre elas — cada linha
+ * escrita assenta em cima de uma linha azul. O `user-select: text` é do
+ * jogo inteiro ser `none` (sem ele o Safari do iPhone não deixa digitar).
+ */
 .livro-apostila .anotacoes .pauta {
   flex: 1;
   min-height: 260px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 6px 0 10px;
+  border: 0;
+  border-left: 2px solid rgba(214, 96, 96, 0.35);
+  border-radius: 0;
+  resize: none;
+  font: inherit;
+  font-size: 17px;
+  line-height: 30px;
+  color: var(--tinta);
   background: repeating-linear-gradient(
     to bottom, transparent 0 29px, rgba(70, 105, 170, 0.28) 29px 30px
   );
-  border-left: 2px solid rgba(214, 96, 96, 0.35);
+  background-attachment: local;
+  -webkit-user-select: text;
+  user-select: text;
+  outline: none;
 }
+.livro-apostila .anotacoes .pauta::placeholder { color: var(--tinta-suave); opacity: 0.55; font-style: italic; }
+.livro-apostila .anotacoes .pauta:focus { border-left-color: rgba(214, 96, 96, 0.7); }
 
 /* ------------------------------------ a folha de rosto, o sumário e o fim */
 .livro-apostila .pagina.folha-de-rosto .miolo { text-align: center; }
