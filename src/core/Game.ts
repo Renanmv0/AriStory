@@ -1969,6 +1969,8 @@ export class Game implements GameAPI {
       aoConcluir: (id, estrelas) => {
         this.save.concluirLicao(id, estrelas);
       },
+      anotacoes: { ...this.save.apostila.anotacoes },
+      aoAnotar: (id, texto) => this.save.anotarLicao(id, texto),
     });
   }
 
