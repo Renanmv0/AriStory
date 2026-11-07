@@ -201,6 +201,13 @@ const PECAS = [
   ['balcao-da-cantina', 'escola'],
   ['janela-da-cantina', 'escola'],
   ['tia-liz', 'escola'],
+  // a cozinha dela: o fogão de esmalte, a bancada de preparo, a tábua, o
+  // refratário da tres leches e os potinhos da pitada no passe
+  ['fogao-da-liz', 'escola'],
+  ['bancada-de-preparo', 'escola'],
+  ['tabua-de-corte', 'escola'],
+  ['refratario-da-tres-leches', 'escola'],
+  ['potinho-de-tempero', 'escola'],
   ['mesa-de-refeitorio', 'escola'],
   ['balcao-de-refeitorio', 'escola'],
   ['maquina-de-lanches', 'escola'],

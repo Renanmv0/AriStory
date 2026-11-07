@@ -374,6 +374,41 @@ ursa em pé ATRÁS de um balcão. O que custou medida:
   vão. A verga vai a 2,85 (com 2,55 a placa cortava os cachos), e nada fica
   pendurado na frente do vão — um toldinho tapou o rosto inteiro.
 
+## Bicho que TRABALHA com as patas (a cozinha viva da Tia Liz)
+
+A rotina da Tia Liz (fogão, tábua, caldeirão, passeio) e os cinco preparos
+(`scenes/cozinhaDaLiz.ts`) são o molde de um bicho que pega coisas, usa e
+devolve. O que vale para o próximo:
+
+- **A pata vai a um PONTO, e a IK acha o braço.** `TiaLiz.maoPara(lado,
+  ponto)` resolve ombro e cotovelo numa IK de dois ossos fechada (a
+  distância dá o cotovelo, o `x` dá a abertura, o resto é um giro no plano);
+  o alvo fora do alcance é puxado para a borda. `orientarMao` diz a pose do
+  que a mão segura em relação ao CORPO (a faca de lâmina para a frente, a
+  forminha virada), seja qual for o ângulo do braço. `inclinar` debruça o
+  tronco e `olharPara` abaixa e vira a cabeça para o serviço.
+- **Com ferramenta, o alvo é a PONTA**: a cena sabe onde fica a lâmina, a
+  concha, o bico (no quadro da mão) e pede a pata em `ponta − giro·desloc`.
+- **Cada utensílio tem CASA.** Pegar é a pata ir até ele, ele passar para a
+  mão com `attach` (guarda o mundo) e assentar de pé; largar é o caminho de
+  volta. Cancelar a rotina devolve tudo para casa na hora.
+- **O relógio é o do JOGO e a coreografia é cancelável** (`Roteiro`): cada
+  passo espera `durante(s, tick)`; quem chega para pedir comida faz todas
+  as esperas falharem e ela larga a faca no ar. `g.wait` é de parede e não
+  serve. O teste acelera tudo pelo `cozinha.vezes`.
+- **O alcance desenha a planta**: a pata chega ~36 cm do ombro, então tudo o
+  que ela usa mora na faixa de trás de cada móvel, e o PASSE (o pedaço livre
+  ao lado do fogão) segura o prato enquanto as duas patas estão na
+  frigideira. Ela anda entre os postos.
+- **O cabeção tapa o peito**: visto de cima, tudo o que fica bem na frente
+  dela some embaixo da cabeça. O prato anda DO LADO e vai para a frente,
+  além do focinho, só para receber a comida.
+- **A janela desenha a fila**: com a câmera em diagonal, quem está a 1,2 m
+  atrás da parede aparece 1,2 m mais à direita no vão — os postos das pontas
+  ficam dentro do que a janela mostra (o vão foi para 7,8 m).
+- **Ao atender, ela acena** antes da primeira fala, e o aceno ganha da IK
+  na pata direita (ela acena até de faca na mão).
+
 ## Bicho que treina com uma bola (o Flynn no ginásio)
 
 O treino do Flynn (`montarOTreinoDoFlynn`, `scenes/escolaAtletica.ts`) é o

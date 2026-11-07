@@ -420,7 +420,7 @@ if (parte('conversa')) {
     await p.keyboard.press('KeyE');
     await conversar(p, () => temPergunta(p, nome));
     await escolher(p, nome);
-    await conversar(p, () => temPergunta(p, 'Levantar'), 60);
+    await conversar(p, () => temPergunta(p, 'Levantar'), 400);
     if (nome === 'tres leches') await p.screenshot({ path: `${OUT}-tres-leches-na-mesa.png` });
     await escolher(p, 'Levantar');
     await p.waitForTimeout(1200);
