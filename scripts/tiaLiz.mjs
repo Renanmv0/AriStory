@@ -14,11 +14,21 @@
  *    e de perto) com ela;
  * 3. OS PRATOS (`SO=pratos`): os cinco, cada um com a comida no grupo
  *    `comida` e foto de perto na bandeja;
- * 4. A CONVERSA (`SO=conversa`): a apresentação, a flag e a memória, o
- *    cardápio com os cinco e o "Agora não", servir (as bandejas no balcão), a
- *    dupla sentada na mesa mais perto com uma bandeja na frente de cada um,
- *    a comida encolhendo, levantar e a louça sumir; e os cinco provados dão a
- *    memória "Comida de casa".
+ * 4. A CONVERSA (`SO=conversa`): ela larga o que fazia, vem até a janela e
+ *    ACENA; a apresentação, a flag e a memória, o cardápio com os cinco e o
+ *    "Agora não", servir (ela prepara, e os dois pratos montados chegam às
+ *    bandejas do parapeito), a dupla sentada na mesa mais perto com uma
+ *    bandeja na frente de cada um, a comida encolhendo, levantar e a louça
+ *    sumir; e os cinco provados dão a memória "Comida de casa".
+ * 5. A COZINHA (`SO=cozinha`): a rotina alterna sozinha entre o fogão (o fogo
+ *    aceso e a frigideira sacudida), a tábua (o legume picado rodela por
+ *    rodela), o caldeirão e o passeio, e uma foto de cada posto.
+ * 6. OS PREPAROS (`SO=preparos`, `PRATOS=sopita,pasta` escolhe): cada prato
+ *    com a sua coreografia — uma foto por passo (a louça, a concha, o
+ *    espaguete, as almôndegas, as tajadas virando, a forminha, o fororo
+ *    despejado, o corte da torta, o leite...), e no fim os dois pratos na
+ *    bandeja com TODAS as partes da comida e o talher, e a cozinha de volta
+ *    ao lugar (o pedaço da torta reposto, o refogado na frigideira).
  *
  *   node scripts/tiaLiz.mjs /tmp/tl      (SO=modelo,posto… roda uma parte)
  */
@@ -227,8 +237,11 @@ if (parte('modelo')) {
 if (parte('posto')) {
   console.log('\n2. o posto');
   const p = await abrir('escola', { em: '-27,-6' });
-  // o navegador do teste anda devagar: espera a pose de mexer assentar
-  await p.waitForFunction((achar) => eval(achar).liz.misturaMexe > 0.985, achar, { timeout: 60000 });
+  // ela está na rotina: acelera a cozinha e espera ela chegar no caldeirão
+  // (o navegador do teste anda devagar: espera a pose de mexer assentar)
+  await p.evaluate((achar) => { eval(achar).cozinha.vezes = 4; }, achar);
+  await p.waitForFunction((achar) => { const t = eval(achar); return t.cozinha.estacao === 'sopa' && t.liz.misturaMexe > 0.985; }, achar, { timeout: 240000 });
+  await p.evaluate((achar) => { eval(achar).cozinha.vezes = 0.05; }, achar);
   const r = await p.evaluate((achar) => {
     const { liz, sopa, posto, balcao } = eval(achar);
     const V = liz.group.position.constructor;
@@ -306,8 +319,20 @@ if (parte('pratos')) {
 if (parte('conversa')) {
   console.log('\n4. a conversa');
   const p = await abrir('escola', { em: '-27,-7' });
+  await p.evaluate((achar) => { eval(achar).cozinha.vezes = 3; }, achar);
   conferir(await chegarPerto(p), 'o prompt "Falar com a Tia Liz" na frente do balcão');
   await p.keyboard.press('KeyE');
+  // ela larga o que fazia, vem até a janela e ACENA antes da primeira fala
+  let acenou = false;
+  for (let i = 0; i < 60 && !acenou; i++) {
+    acenou = await p.evaluate((achar) => eval(achar).liz.estaAcenando, achar);
+    if (!acenou) await p.waitForTimeout(150);
+  }
+  const naJanela = await p.evaluate((achar) => { const t = eval(achar); return { x: t.liz.x, z: t.liz.z, posto: t.posto, rot: t.liz.group.rotation.y }; }, achar);
+  conferir(acenou, 'ela acena ao vir atender');
+  conferir(Math.hypot(naJanela.x - naJanela.posto.x, naJanela.z - naJanela.posto.z) < 0.15, `ela atende na janela do caldeirão (${naJanela.x.toFixed(2)}, ${naJanela.z.toFixed(2)})`);
+  await p.waitForTimeout(500);
+  await p.screenshot({ path: `${OUT}-aceno.png` });
   const falas = await conversar(p, () => temPergunta(p, 'Sopita'));
   console.log(falas.map((f) => `      ${f}`).join('\n'));
   conferir(falas.some((f) => f.startsWith('Tia Liz: ¡Épale!')), 'a apresentação começa pelas mãos lavadas');
@@ -320,14 +345,34 @@ if (parte('conversa')) {
 
   // pede o pabellón
   await escolher(p, 'Pabellón');
-  const servindo = await conversar(p, () => p.evaluate(() => window.jogo.player.sitting ?? window.jogo.player.rig?.sentado ?? false), 4);
-  console.log(servindo.map((f) => `      ${f}`).join('\n'));
+  // ela PREPARA na frente da dupla (as falas do prato saem cozinhando)
+  let viuPreparo = false;
+  const servindo = [];
+  for (let i = 0; i < 400; i++) {
+    const est = await p.evaluate((achar) => ({ passo: eval(achar).cozinha.passo, sentado: !!(window.jogo.player.sitting ?? window.jogo.player.rig?.sentado) }), achar);
+    if (est.sentado) break;
+    if (est.passo && !viuPreparo) {
+      viuPreparo = true;
+      await p.screenshot({ path: `${OUT}-preparando.png` });
+    }
+    if (await p.locator('.dialogue.show').count()) servindo.push(...(await conversar(p, async () => false, 1)));
+    else await p.waitForTimeout(300);
+  }
+  console.log([...new Set(servindo)].map((f) => `      ${f}`).join('\n'));
+  conferir(viuPreparo, 'ela prepara o prato na cozinha');
   const noBalcao = await p.evaluate(() => {
     let n = 0;
-    window.jogo.current.world.root.traverse((o) => { if (o.userData?.peca === 'bandeja-da-cantina') n++; });
-    return n;
+    let montados = 0;
+    window.jogo.current.world.root.traverse((o) => {
+      if (o.userData?.peca !== 'bandeja-da-cantina') return;
+      n++;
+      const pr = o.userData.prato;
+      const partes = pr?.getObjectByName('comida')?.children ?? [];
+      if (partes.length && partes.every((c) => c.visible) && pr.getObjectByName('talher')?.visible) montados++;
+    });
+    return { n, montados };
   });
-  conferir(noBalcao === 2, `as duas bandejas servidas (${noBalcao})`);
+  conferir(noBalcao.n === 2 && noBalcao.montados === 2, `as duas bandejas servidas com o prato montado (${noBalcao.montados}/${noBalcao.n})`);
   // passa as falas até a pergunta de ficar
   const comendo = [];
   let fotoComendo = false;
@@ -394,6 +439,103 @@ if (parte('conversa')) {
   const tchau = await conversar(p, async () => false, 6);
   conferir(tchau.some((f) => f.includes('barriga vazia')), 'o "Agora não" com a bronca carinhosa');
   await p.close();
+}
+
+// ============================================================= 5. a cozinha
+if (parte('cozinha')) {
+  console.log('\n5. a cozinha');
+  const p = await abrir('escola', { em: '-27,-6' });
+  await p.evaluate((achar) => {
+    const t = eval(achar);
+    t.cozinha.vezes = 4;
+    const f = new t.liz.group.constructor();
+    f.position.y = 1.0;
+    t.liz.group.add(f);
+    window.jogo.focusCamera(f);
+    window.jogo.setZoom(2.6);
+  }, achar);
+  const vistos = new Set();
+  let picou = 0;
+  let fogo = false;
+  let sacudiu = 0;
+  for (let i = 0; i < 260 && vistos.size < 4; i++) {
+    const e = await p.evaluate((achar) => {
+      const t = eval(achar);
+      const c = t.cozinha;
+      const V = t.liz.group.position.constructor;
+      const casa = c.casas.get(c.frigideira);
+      const agora = c.frigideira.getWorldPosition(new V());
+      const deCasa = casa ? agora.distanceTo(casa.pai.localToWorld(casa.pos.clone())) : 0;
+      return { est: c.estacao, tabua: c.tabua.naTabua, fogo: c.chamas.some((x) => x), deCasa, mexe: t.liz.estaMexendo };
+    }, achar);
+    picou = Math.max(picou, e.tabua);
+    fogo ||= e.fogo;
+    sacudiu = Math.max(sacudiu, e.deCasa);
+    const pronto = e.est === 'tabua' ? e.tabua >= 3 : e.est === 'fogao' ? e.fogo : e.est === 'sopa' ? e.mexe : e.est === 'passeio';
+    if (pronto && !vistos.has(e.est)) {
+      vistos.add(e.est);
+      await p.waitForTimeout(400);
+      await p.screenshot({ path: `${OUT}-rotina-${e.est}.png`, clip: { x: 270, y: 180, width: 560, height: 440 } });
+    }
+    await p.waitForTimeout(300);
+  }
+  console.log(`      postos: ${[...vistos].join(', ')} · rodelas na tábua até ${picou} · fogo ${fogo} · frigideira saiu ${(sacudiu * 100).toFixed(0)} cm de casa`);
+  conferir(['fogao', 'tabua', 'sopa', 'passeio'].every((x) => vistos.has(x)), 'a rotina passa pelo fogão, pela tábua, pelo caldeirão e pelo passeio');
+  conferir(picou >= 5, `ela pica o legume rodela por rodela (${picou})`);
+  conferir(fogo, 'o fogo acende no fogão');
+  conferir(sacudiu > 0.02, `ela levanta e sacode a frigideira (${(sacudiu * 100).toFixed(0)} cm)`);
+  await p.close();
+}
+
+// ============================================================ 6. os preparos
+if (parte('preparos')) {
+  console.log('\n6. os preparos');
+  const ids = (process.env.PRATOS ?? 'sopita,pasta,pabellon,fororo,tres-leches').split(',');
+  for (const id of ids) {
+    const p = await abrir('escola', { em: '-27,-6' });
+    await p.evaluate(([achar, id]) => {
+      const t = eval(achar);
+      t.cozinha.vezes = 3;
+      const G = t.liz.group.constructor;
+      const bandejas = [t.bandejaComPrato(id, new G()), t.bandejaComPrato(id, new G())];
+      bandejas.forEach((b, i) => { b.position.set(t.posto.x + 0.05 + i * 0.5, 0.95, -9.96); window.jogo.current.world.root.add(b); });
+      window.__bandejas = bandejas;
+      window.__fim = false;
+      t.cozinha.preparar(id, bandejas).then(() => { window.__fim = true; }, (e) => { window.__fim = 'erro: ' + e.message; });
+      const f = new G();
+      f.position.y = 1.0;
+      t.liz.group.add(f);
+      window.jogo.focusCamera(f);
+      window.jogo.setZoom(2.4);
+    }, [achar, id]);
+    const passos = [];
+    for (let i = 0; i < 500; i++) {
+      const e = await p.evaluate((achar) => ({ passo: eval(achar).cozinha.passo, fim: window.__fim }), achar);
+      if (e.fim) break;
+      if (e.passo && !passos.includes(e.passo)) {
+        passos.push(e.passo);
+        await p.waitForTimeout(900);
+        await p.screenshot({ path: `${OUT}-preparo-${id}-${passos.length}-${e.passo}.png`, clip: { x: 270, y: 180, width: 560, height: 440 } });
+      }
+      await p.waitForTimeout(250);
+    }
+    const r = await p.evaluate((achar) => {
+      const t = eval(achar);
+      const c = t.cozinha;
+      const pratos = window.__bandejas.map((b) => {
+        const pr = b.userData.prato;
+        const partes = pr?.getObjectByName('comida')?.children ?? [];
+        return { partes: partes.length, visiveis: partes.filter((x) => x.visible).length, talher: !!pr?.getObjectByName('talher')?.visible, naBandeja: pr?.parent === b };
+      });
+      return { fim: window.__fim, pratos, pedaco: c.refratario.pedaco.visible && c.refratario.pedaco.parent === c.refratario.group, refogado: c.frigideira.getObjectByName('refogado').visible, maos: t.liz.maos.map((m) => m.children.length) };
+    }, achar);
+    console.log(`      ${id}: ${passos.join(' → ')}`);
+    conferir(r.fim === true, `${id}: a preparação chega ao fim`, String(r.fim));
+    conferir(r.pratos.every((x) => x.naBandeja && x.partes > 0 && x.visiveis === x.partes && x.talher), `${id}: os dois pratos montados na bandeja`, JSON.stringify(r.pratos));
+    conferir(r.pedaco && r.refogado && r.maos.every((n) => n === 0), `${id}: a cozinha de volta ao lugar (o pedaço da torta, o refogado, as patas vazias)`);
+    await dePerto(p, 1.0, `preparo-${id}-pronto`, 420, 300, 1.0, [-27.13, -9.96]);
+    await p.close();
+  }
 }
 
 console.log(erros.length ? `\nERROS DE CONSOLE:\n${erros.join('\n')}` : '\nsem erro de console');

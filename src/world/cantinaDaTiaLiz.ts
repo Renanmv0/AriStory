@@ -5,6 +5,7 @@ import { PALETTE as P } from '../palette';
 import { fundir } from './fundir';
 import { uvEmMetros } from './acabamento';
 import { vaporDePrato } from './moveisDoMania';
+import { potinhoDeTempero } from './cozinhaDaTiaLiz';
 
 /**
  * ================================================ A CANTINA DA TIA LIZ
@@ -801,7 +802,34 @@ function potinhoDeCoentroNoBalcao(): THREE.Group {
  * cena põe a Tia Liz atrás dele). O trilho de bandeja mora do lado de FORA,
  * no parapeito da janela.
  */
-export const SOPA_NO_BALCAO = { x: 0.33, z: -0.24, boca: 1.01 } as const;
+export const SOPA_NO_BALCAO = { x: 0.93, z: -0.24, boca: 1.01 } as const;
+
+/**
+ * ONDE FICA CADA COISA NO BALCÃO (referencial dele; a frente é `+Z`, ela
+ * trabalha no `−Z`). As cubas vão na ordem do serviço, da esquerda (o
+ * fogão) para a direita: a pasta, o arroz, o feijão e a carne, o caldeirão
+ * da sopita, e as tajadas. O PASSE é o pedaço livre da ponta esquerda,
+ * colado no fogão: o prato espera ali enquanto ela usa as duas patas na
+ * frigideira, e a pilha de louça mora na metade da janela dele. A faixa de
+ * trás (`z` −0,335) guarda o que ela usa: os potinhos da pitada.
+ */
+export const LUGARES_DO_BALCAO = {
+  cubas: { pasta: -1.45, arroz: -0.87, feijao: -0.29, carne: 0.29, tajadas: 1.51 },
+  /** o meio das cubas no `z`, e a altura da comida dentro delas */
+  cubaZ: -0.03,
+  comidaY: 0.992,
+  /** o lugar do prato no passe, e a pilha de louça atrás dele */
+  passe: { x: -2.02, z: -0.2 },
+  pilha: { x: -2.02, z: 0.15, topo: 0.93 + 4 * 0.016 },
+  /** a faixa de trás: os potinhos da pitada */
+  tras: -0.335,
+  queijo: -1.74,
+  manjericao: -1.63,
+  tostadinho: -1.52,
+  coentro: SOPA_NO_BALCAO.x + 0.3,
+} as const;
+/** quanto o passe acrescenta à esquerda do balcão */
+export const PASSE = 0.45;
 
 export function balcaoDaCantina(largura = 3.6): THREE.Group {
   const g = new THREE.Group();
@@ -809,19 +837,34 @@ export function balcaoDaCantina(largura = 3.6): THREE.Group {
   const F = 0.85;
   const inox = toon(P.churrascoInox);
   const inoxEscuro = toon(P.churrascoInoxEscuro);
+  const LB = LUGARES_DO_BALCAO;
 
-  // o corpo de azulejo, e o rodapé escuro recuado
-  const corpoGeo = new THREE.BoxGeometry(largura, 0.78, F);
+  // o corpo de azulejo, e o rodapé escuro recuado (o passe alonga a esquerda)
+  const total = largura + PASSE;
+  const meio = -PASSE / 2;
+  const corpoGeo = new THREE.BoxGeometry(total, 0.78, F);
   uvEmMetros(corpoGeo);
   // a textura tem 2 × 2 azulejos: com o UV em metros, cada um sai com 15 cm
   const azulejo = texturaDoAzulejo();
   azulejo.repeat.set(1 / 0.3, 1 / 0.3);
-  por(g, corpoGeo, toon(0xffffff, { mapa: azulejo }), 0, 0.49, 0);
-  por(g, new THREE.BoxGeometry(largura - 0.04, 0.1, F - 0.06), toon(P.escolaParedeAzul), 0, 0.05, 0);
+  por(g, corpoGeo, toon(0xffffff, { mapa: azulejo }), meio, 0.49, 0);
+  por(g, new THREE.BoxGeometry(total - 0.04, 0.1, F - 0.06), toon(P.escolaParedeAzul), meio, 0.05, 0);
   // o tampo de inox, mais largo que o corpo, com a quina da frente boleada
-  por(g, new THREE.BoxGeometry(largura + 0.06, 0.05, F + 0.04), inox, 0, 0.905, -0.01);
-  const quina = por(g, new THREE.CylinderGeometry(0.025, 0.025, largura + 0.06, 12), inox, 0, 0.905, F / 2 + 0.01);
+  por(g, new THREE.BoxGeometry(total + 0.06, 0.05, F + 0.04), inox, meio, 0.905, -0.01);
+  const quina = por(g, new THREE.CylinderGeometry(0.025, 0.025, total + 0.06, 12), inox, meio, 0.905, F / 2 + 0.01);
   quina.rotation.z = Math.PI / 2;
+  // a PILHA DE LOUÇA no passe, do lado da janela: os pratos que ela pega
+  for (let k = 0; k < 4; k++) {
+    const pr = pratoRaso(0.16);
+    pr.position.set(LB.pilha.x, 0.93 + k * 0.016, LB.pilha.z);
+    g.add(pr);
+  }
+  // os potinhos da pitada na faixa de trás: queijo, manjericão e tostadinho
+  for (const [x, cor, folha] of [[LB.queijo, P.queijoRalado, false], [LB.manjericao, P.manjericao, true], [LB.tostadinho, P.fororoTostado, false]] as const) {
+    const pot = potinhoDeTempero(cor, folha);
+    pot.position.set(x, 0.93, LB.tras);
+    g.add(pot);
+  }
 
 
   const TOPO = 0.93;
@@ -857,14 +900,14 @@ export function balcaoDaCantina(largura = 3.6): THREE.Group {
   };
   const r = sorteio(53);
   // o ARROZ, com o montinho no meio
-  cuba(-1.45, (d) => {
+  cuba(LB.cubas.arroz, (d) => {
     superficie(d, texturaDoArroz(), 1.6);
     const monte = new THREE.Mesh(new THREE.SphereGeometry(1, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2), toon(0xffffff, { mapa: texturaDoArroz() }));
     monte.scale.set(0.17, 0.035, 0.13);
     d.add(monte);
   });
   // o FEIJÃO, com uns grãos por cima
-  cuba(-0.87, (d) => {
+  cuba(LB.cubas.feijao, (d) => {
     superficie(d, texturaDoFeijao(), 1.4);
     for (let i = 0; i < 26; i++) {
       const grao = por(d, new THREE.SphereGeometry(1, 8, 6), toon(P.feijaoPreto), (r() - 0.5) * 0.4, 0.004, (r() - 0.5) * 0.32);
@@ -873,7 +916,7 @@ export function balcaoDaCantina(largura = 3.6): THREE.Group {
     }
   });
   // a CARNE DESFIADA, com os fiapos soltos
-  cuba(-0.29, (d) => {
+  cuba(LB.cubas.carne, (d) => {
     superficie(d, texturaDaCarne(), 1.3);
     for (let i = 0; i < 22; i++) {
       const giro = r() * Math.PI;
@@ -885,7 +928,7 @@ export function balcaoDaCantina(largura = 3.6): THREE.Group {
     }
   });
   // as TAJADAS, deitadas em fileira
-  cuba(0.93, (d) => {
+  cuba(LB.cubas.tajadas, (d) => {
     por(d, new THREE.PlaneGeometry(0.476, 0.396).rotateX(-Math.PI / 2), toon(P.tajadaTostada));
     const fatia = new THREE.Shape();
     fatia.moveTo(-0.075, 0);
@@ -899,7 +942,7 @@ export function balcaoDaCantina(largura = 3.6): THREE.Group {
     }
   });
   // a PASTA COM ALMÔNDEGAS: o espaguete em fios, o molho e as almôndegas
-  cuba(1.51, (d) => {
+  cuba(LB.cubas.pasta, (d) => {
     por(d, new THREE.PlaneGeometry(0.476, 0.396).rotateX(-Math.PI / 2), toon(0xffffff, { mapa: texturaDoMolho() }));
     const massa = toon(P.massaEspaguete);
     for (let f = 0; f < 9; f++) {
@@ -958,7 +1001,7 @@ export function balcaoDaCantina(largura = 3.6): THREE.Group {
   // o potinho de coentro picado, do lado do caldeirão (é dele que ela pega)
   {
     const pot = potinhoDeCoentroNoBalcao();
-    pot.position.set(SOPA_NO_BALCAO.x + 0.3, TOPO, -0.33);
+    pot.position.set(LB.coentro, TOPO, LB.tras);
     g.add(pot);
   }
   return fundir(g);
@@ -989,7 +1032,7 @@ export function balcaoDaCantina(largura = 3.6): THREE.Group {
  * A origem é o chão no meio da parede da frente; a frente olha para `+Z` e
  * a cozinha fica no `-Z`, com `fundo` de profundidade.
  */
-export const JANELA_DA_CANTINA = { largura: 10.4, vao: 7.0, peitoril: 0.9, verga: 2.85, alto: 3.5, espessura: 0.16 } as const;
+export const JANELA_DA_CANTINA = { largura: 10.4, vao: 7.8, peitoril: 0.9, verga: 2.85, alto: 3.5, espessura: 0.16 } as const;
 
 export function janelaDaCantina(fundo = 2): THREE.Group {
   const g = new THREE.Group();

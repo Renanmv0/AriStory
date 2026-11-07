@@ -3,7 +3,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { toon } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { fundir } from './fundir';
-import { pratoRaso, tigela, texturaDoFororo, texturaDoChantilly, texturaDoPaoDeLo } from './cantinaDaTiaLiz';
+import { tigela, texturaDoFororo, texturaDoChantilly, texturaDoPaoDeLo } from './cantinaDaTiaLiz';
 
 /**
  * ================================================ A COZINHA DA TIA LIZ
@@ -465,6 +465,29 @@ export function forminha(): THREE.Group {
   return g;
 }
 
+/**
+ * UM POTINHO DE TEMPERO para a pitada: o queijo ralado, o manjericão, os
+ * tostadinhos do fororo. Folha (`folha`) é disquinho; o resto, cisco.
+ */
+export function potinhoDeTempero(cor: number = P.queijoRalado, folha = false): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'potinho-de-tempero';
+  por(g, torneado([[0.001, 0], [0.035, 0], [0.045, 0.035], [0.042, 0.036], [0.033, 0.006], [0.001, 0.006]], 18), toon(P.loucaCreme));
+  const mat = toon(cor, { doubleSide: folha });
+  for (let i = 0; i < 16; i++) {
+    const a = i * 2.4;
+    const d = (i % 4) * 0.009;
+    if (folha) {
+      const f = por(g, new THREE.CircleGeometry(0.009, 5), mat, Math.cos(a) * d, 0.03 + (i % 3) * 0.003, Math.sin(a) * d);
+      f.rotation.set(-Math.PI / 2 + (i % 2) * 0.3, a, 0);
+    } else {
+      const c = por(g, new THREE.IcosahedronGeometry(0.006, 0), mat, Math.cos(a) * d, 0.027 + (i % 3) * 0.003, Math.sin(a) * d);
+      c.rotation.set(a, a * 0.7, 0);
+    }
+  }
+  return g;
+}
+
 /** o potinho de coentro picado ao lado do caldeirão (enfeite) */
 export function potinhoDeCoentro(): THREE.Group {
   const g = new THREE.Group();
@@ -505,8 +528,25 @@ export function morangoInteiro(): THREE.Group {
  * do lado de trás (`−Z`).
  */
 export const BANCADA = { fundo: 0.85, topo: 0.93 } as const;
+/**
+ * ONDE FICA CADA COISA NA BANCADA (no referencial dela, a origem no meio do
+ * chão). O ALCANCE manda: a pata dela chega ~40 cm à frente da beira de
+ * trás, então tudo o que ela usa mora na faixa de trás (`z` de −0,42 a
+ * −0,05). A faixa da janela é de enfeite (tigelas, canecas, o pote de
+ * utensílios): é o que se vê pela janela.
+ */
+export const LUGARES_DA_BANCADA = {
+  /** o refratário da tres leches, e a espátula dele deitada na frente */
+  refratario: { x: -0.48, z: -0.16 },
+  espatula: { x: -0.48, z: -0.385 },
+  /** a jarrinha dos três leites (a pega é a alça) e o polvilhador de canela */
+  jarrinha: { x: -0.08, z: -0.33 },
+  polvilhador: { x: 0.04, z: -0.31 },
+  morangos: { x: 0.03, z: -0.13 },
+  tabua: { x: 0.38, z: -0.25 },
+} as const;
 
-export function bancadaDePreparo(largura = 2.1): THREE.Group {
+export function bancadaDePreparo(largura = 1.7): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'bancada-de-preparo';
   const F = BANCADA.fundo;
@@ -525,25 +565,20 @@ export function bancadaDePreparo(largura = 2.1): THREE.Group {
   por(g, macia(largura + 0.04, 0.05, F + 0.04, 0.012), toon(P.bancadaDaLizTampo), 0, BANCADA.topo - 0.025, 0);
 
   const T = BANCADA.topo;
-  // a pilha de pratos rasos e a de tigelas, no canto de trás da direita
-  for (let k = 0; k < 5; k++) {
-    const p = pratoRaso(0.13);
-    p.position.set(largura / 2 - 0.2, T + k * 0.018, 0.16);
-    g.add(p);
-  }
+  // a pilha de tigelas e as canecas do fororo de boca para baixo, no fundo
+  // (o lado da janela): é a louça que se vê de fora
   for (let k = 0; k < 3; k++) {
     const t = tigela(0.1, 0.06);
-    t.position.set(largura / 2 - 0.2, T + 0.1 + k * 0.03, 0.16);
+    t.position.set(-largura / 2 + 0.2, T + k * 0.03, 0.22);
     g.add(t);
   }
-  // as canecas do fororo, viradas de boca para baixo
   for (let i = 0; i < 3; i++) {
-    por(g, torneado([[0.001, 0.09], [0.044, 0.09], [0.05, 0.002], [0.044, 0], [0.001, 0.02]], 18), toon(P.canecaDoFororo), largura / 2 - 0.46 + i * 0.11, T, 0.27);
+    por(g, torneado([[0.001, 0.09], [0.044, 0.09], [0.05, 0.002], [0.044, 0], [0.001, 0.02]], 18), toon(P.canecaDoFororo), -largura / 2 + 0.46 + i * 0.11, T, 0.27);
   }
   // o pote de utensílios: cabos de madeira e uma escumadeira
   {
-    const x = -largura / 2 + 0.16;
-    const z = 0.22;
+    const x = largura / 2 - 0.22;
+    const z = 0.24;
     por(g, torneado([[0.001, 0], [0.06, 0], [0.064, 0.16], [0.058, 0.16], [0.054, 0.01], [0.001, 0.01]], 18), toon(P.panelinhaDeEsmalte), x, T, z);
     const madeira = toon(P.caboDeMadeira);
     for (let i = 0; i < 4; i++) {
@@ -553,10 +588,9 @@ export function bancadaDePreparo(largura = 2.1): THREE.Group {
     const escumadeira = por(g, new THREE.CylinderGeometry(0.035, 0.035, 0.006, 16), toon(P.churrascoInox), x + 0.04, T + 0.35, z);
     escumadeira.rotation.z = 0.5;
   }
-  // o potinho de morangos (os da cena saem DELE; estes ficam)
+  // o potinho de morangos (os da cena saem DELE; estes ficam), do lado do refratário
   {
-    const x = 0.1;
-    const z = 0.22;
+    const { x, z } = LUGARES_DA_BANCADA.morangos;
     por(g, torneado([[0.001, 0], [0.05, 0], [0.064, 0.05], [0.06, 0.052], [0.046, 0.006], [0.001, 0.006]], 18), toon(P.loucaCreme), x, T, z);
     for (let i = 0; i < 5; i++) {
       const m = morangoInteiro();
@@ -676,11 +710,11 @@ export class TabuaDeCorte {
 
     // a tigela dos picados, ao lado da tábua (do lado de fora da faca)
     const tg = tigela(0.075, 0.05);
-    tg.position.set(0.3, -0.002, -0.02);
+    tg.position.set(0.27, -0.002, -0.02);
     this.group.add(tg);
     this.enchimento = new THREE.Mesh(new THREE.CircleGeometry(0.06, 18).rotateX(-Math.PI / 2), toon(P.sopaCenoura));
     this.enchimento.name = 'picados-na-tigela';
-    this.enchimento.position.set(0.3, 0.015, -0.02);
+    this.enchimento.position.set(0.27, 0.015, -0.02);
     this.enchimento.scale.setScalar(0.4);
     this.group.add(this.enchimento);
   }
@@ -745,7 +779,7 @@ export class TabuaDeCorte {
 
   /** a tigela dos picados, no mundo */
   tigelaNoMundo(out = new THREE.Vector3()): THREE.Vector3 {
-    return this.group.localToWorld(out.set(0.3, 0.05, -0.02));
+    return this.group.localToWorld(out.set(0.27, 0.05, -0.02));
   }
 }
 
