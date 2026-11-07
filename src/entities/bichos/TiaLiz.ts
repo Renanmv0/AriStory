@@ -76,6 +76,13 @@ function naCasca(
   return { p, n };
 }
 
+/** o ângulo levado para (−π, π] */
+function normalizar(a: number): number {
+  while (a > Math.PI) a -= Math.PI * 2;
+  while (a <= -Math.PI) a += Math.PI * 2;
+  return a;
+}
+
 /** vira `o` para a normal `n` (o +Z local passa a apontar para fora) */
 function virarPara(o: THREE.Object3D, n: THREE.Vector3): void {
   o.lookAt(o.position.clone().add(n));
@@ -172,6 +179,26 @@ export class TiaLiz extends Bicho {
    */
   readonly bandeja = new THREE.Object3D();
 
+  /**
+   * AS MÃOS: onde a cena pendura o que ela segura ([esquerda, direita]). Cada
+   * uma mora no antebraço, no meio da pata, com a escala do corpo desfeita —
+   * o que entra aqui fica do tamanho de verdade — e é GIRADA a cada quadro
+   * para manter a orientação que a cena pediu em relação ao CORPO dela
+   * (`orientarMao`), seja qual for o ângulo do braço: a faca continua de
+   * lâmina para a frente, a tigela continua em pé.
+   */
+  readonly maos: THREE.Object3D[] = [];
+  /** para onde cada pata vai (`maoPara`): no mundo, ou no referencial do grupo dela */
+  private readonly alvoDaMao: Array<{ p: THREE.Vector3; local: boolean } | null> = [null, null];
+  private readonly pesoDaMao = [0, 0];
+  private readonly orientDaMao = [new THREE.Quaternion(), new THREE.Quaternion()];
+  private olhar: THREE.Vector3 | null = null;
+  private pesoDoOlhar = 0;
+  private inclinacao = 0;
+  private inclinacaoAgora = 0;
+  private conchaNaMao = false;
+  private inclinacaoDaConcha = 0;
+
   private relogio = 0;
   private passada = 0;
   private mexendo = false;
@@ -222,6 +249,69 @@ export class TiaLiz extends Bicho {
   /** a pata direita no alto, abanando */
   acenar(segundos = 1.8): void {
     this.acenando = Math.max(this.acenando, segundos);
+  }
+
+  // ------------------------------------------------- as mãos na cena (a IK)
+
+  /**
+   * MANDA A PATA A UM PONTO: `lado` 0 é a esquerda, 1 a direita. O ponto é do
+   * MUNDO (a alça da frigideira, a beira da tigela), ou do referencial do
+   * grupo dela com `local` (carregar na frente da barriga enquanto anda: o
+   * alvo anda com ela). O braço resolve sozinho o ombro e o cotovelo — uma
+   * IK de dois ossos fechada (ver `resolverBraco`) — e larga a pose de gesto
+   * enquanto houver alvo. `null` devolve a pata ao corpo, sem estalo.
+   */
+  maoPara(lado: 0 | 1, alvo: THREE.Vector3 | null, local = false): void {
+    this.alvoDaMao[lado] = alvo ? { p: alvo.clone(), local } : null;
+  }
+
+  /** a orientação do que a mão segura, em relação ao corpo dela (padrão: em pé, olhando para a frente) */
+  orientarMao(lado: 0 | 1, giro: THREE.Euler | null): void {
+    if (giro) this.orientDaMao[lado].setFromEuler(giro);
+    else this.orientDaMao[lado].identity();
+  }
+
+  /** pendura `obj` na mão (a origem dele é a pega: o cabo, a beira) */
+  segurar(obj: THREE.Object3D, lado: 0 | 1): void {
+    obj.removeFromParent();
+    obj.position.set(0, 0, 0);
+    obj.quaternion.identity();
+    obj.scale.setScalar(1);
+    this.maos[lado].add(obj);
+  }
+
+  /** larga na pata tudo o que a cena pendurou */
+  largarTudo(): void {
+    for (const m of this.maos) for (const c of [...m.children]) c.removeFromParent();
+  }
+
+  /** a cabeça vira e abaixa para olhar um ponto do mundo (`null`: olha para a frente) */
+  olharPara(p: THREE.Vector3 | null): void {
+    this.olhar = p ? p.clone() : null;
+  }
+
+  /** o tronco inclina para a frente (rad, de 0 a ~0,35): debruçar sobre a bancada */
+  inclinar(rad: number): void {
+    this.inclinacao = rad;
+  }
+
+  /** a concha de sopa na pata direita fora do gesto de mexer (servir a sopita) */
+  segurarConcha(sim: boolean): void {
+    this.conchaNaMao = sim;
+  }
+
+  /** inclina a concha para a frente (rad): é assim que ela despeja */
+  inclinarConcha(rad: number): void {
+    this.inclinacaoDaConcha = rad;
+  }
+
+  /** onde a pata está de verdade agora, no mundo (o teste mede) */
+  pataNoMundo(lado: 0 | 1, out = new THREE.Vector3()): THREE.Vector3 {
+    return this.maos[lado].getWorldPosition(out);
+  }
+  /** o quanto a pata está entregue ao alvo da cena (0 a 1) */
+  pesoDaPata(lado: 0 | 1): number {
+    return this.pesoDaMao[lado];
   }
 
   /** o teste pergunta isto */
@@ -550,6 +640,13 @@ export class TiaLiz extends Bicho {
         antebraco.add(pedra);
         antebraco.add(this.fazerConcha());
       }
+      // a mão: o ponto onde a cena pendura o que ela segura
+      const mao = new THREE.Object3D();
+      mao.name = lado < 0 ? 'mao-esquerda-da-liz' : 'mao-direita-da-liz';
+      mao.position.y = -BRACO.antebraco;
+      mao.scale.setScalar(1 / ESCALA);
+      antebraco.add(mao);
+      this.maos.push(mao);
       braco.add(antebraco);
       braco.rotation.z = lado * 0.16;
       this.corpo.add(braco);
@@ -892,6 +989,66 @@ export class TiaLiz extends Bicho {
 
   // ------------------------------------------------------------------- pose
 
+  // ------------------------------------------------------------------ a IK
+
+  private readonly qConcha = new THREE.Quaternion();
+  private readonly eConcha = new THREE.Euler();
+  private readonly vOlhar = new THREE.Vector3();
+  private pitchDoOlhar = 0;
+  private yawDoOlhar = 0;
+  private readonly vIk = new THREE.Vector3();
+  private readonly qA = new THREE.Quaternion();
+  private readonly qB = new THREE.Quaternion();
+
+  /**
+   * A IK DE DOIS OSSOS, fechada. O braço é `Rx(ox)·Rz(oz)` no ombro e
+   * `Rx(cx)` no cotovelo (a ordem XYZ do three: o `Rz` age primeiro). Com o
+   * cotovelo dobrando só em volta do x do braço, a pata no referencial do
+   * ombro é `Rx(ox)·Rz(oz)·v`, com `v = (0, −L1 − L2·cos cx, −L2·sen cx)` —
+   * e o comprimento de `v` só depende de `cx`. Então:
+   *
+   *  1. a DISTÂNCIA até o alvo dá o cotovelo (lei dos cossenos), dobrando
+   *     para a frente (`cx` negativo);
+   *  2. o `x` do alvo dá o `oz` (o quanto o braço abre para o lado);
+   *  3. o que sobra é uma rotação no plano y-z, que dá o `ox`.
+   *
+   * O alvo fora do alcance é puxado para a borda do alcance (o braço estica
+   * na direção dele), e perto demais do ombro, para a borda de dentro.
+   */
+  private resolverBraco(i: number, alvo: { p: THREE.Vector3; local: boolean }): { ox: number; oz: number; cx: number } {
+    const L1 = BRACO.cima;
+    const L2 = BRACO.antebraco;
+    const v = this.vIk.copy(alvo.p);
+    if (alvo.local) this.group.localToWorld(v);
+    this.group.updateMatrixWorld(true);
+    this.corpo.worldToLocal(v);
+    v.sub(this.bracos[i].position);
+    const max = L1 + L2 - 0.004;
+    const min = Math.abs(L1 - L2) + 0.06;
+    let D = v.length();
+    if (D > max) { v.multiplyScalar(max / D); D = max; }
+    if (D < min) { v.multiplyScalar(min / Math.max(D, 1e-4)); D = min; }
+    const cosC = THREE.MathUtils.clamp((D * D - L1 * L1 - L2 * L2) / (2 * L1 * L2), -1, 1);
+    const cx = -Math.acos(cosC);
+    const vy = -L1 - L2 * Math.cos(cx);
+    const vz = -L2 * Math.sin(cx);
+    const oz = Math.asin(THREE.MathUtils.clamp(-v.x / vy, -1, 1));
+    const a = vy * Math.cos(oz);
+    const ox = Math.atan2(v.z, v.y) - Math.atan2(vz, a);
+    return { ox: normalizar(ox), oz, cx };
+  }
+
+  /** gira `obj` (filho do antebraço `i`) para ter a orientação `q` em relação ao grupo dela */
+  private nivelar(obj: THREE.Object3D, i: number, q: THREE.Quaternion): void {
+    const pai = obj.parent;
+    if (!pai) return;
+    pai.updateWorldMatrix(true, false);
+    pai.getWorldQuaternion(this.qA).invert();
+    this.group.getWorldQuaternion(this.qB).multiply(q);
+    obj.quaternion.copy(this.qA.multiply(this.qB));
+    void i;
+  }
+
   protected animar(dt: number, { andando, carinho }: PoseDoBicho): void {
     this.relogio += dt;
     const t = this.relogio;
@@ -909,7 +1066,7 @@ export class TiaLiz extends Bicho {
     const serve = this.misturaServe;
     const brava = this.misturaBrava;
     const aceno = this.misturaAceno;
-    this.concha.visible = mexe > 0.25;
+    this.concha.visible = mexe > 0.25 || this.conchaNaMao;
 
     // ------------------------------------------------------- pernas e passo
     if (andando) this.passada += dt * 8;
@@ -923,6 +1080,9 @@ export class TiaLiz extends Bicho {
     // mexendo, o corpo acompanha a colher num balancinho de quem cozinha cantarolando
     this.corpo.rotation.y = mexe * Math.sin(t * 2.2) * 0.05 + brava * 0.12;
     this.corpo.rotation.z = Math.sin(t * 1.1) * 0.012 + mexe * Math.sin(t * 2.2) * 0.02;
+    // debruçada sobre a bancada: o tronco inclina inteiro, a partir do pé
+    this.inclinacaoAgora += (this.inclinacao - this.inclinacaoAgora) * Math.min(1, dt * 5);
+    this.corpo.rotation.x = this.inclinacaoAgora;
 
     // ------------------------------------------------------------ os braços
     /**
@@ -978,20 +1138,54 @@ export class TiaLiz extends Bicho {
         cx += (0 - cx) * aceno;
         cz += (lado * (0.35 + Math.sin(t * 12) * 0.35) - cz) * aceno;
       }
-      const k = Math.min(1, dt * 10);
+      /*
+       * A PATA NO ALVO DA CENA: a IK dá ombro e cotovelo, e ela ganha da pose
+       * de gesto pelo peso (que sobe e desce macio). O aceno ganha da IK na
+       * direita: ao atender, ela acena mesmo com a mão ocupada.
+       */
+      const alvo = this.alvoDaMao[i];
+      this.pesoDaMao[i] += ((alvo ? 1 : 0) - this.pesoDaMao[i]) * Math.min(1, dt * 7);
+      let pesoIk = this.pesoDaMao[i] * (lado > 0 ? 1 - aceno : 1);
+      if (alvo && pesoIk > 0.001) {
+        const r = this.resolverBraco(i, alvo);
+        ox += (r.ox - ox) * pesoIk;
+        oz += (r.oz - oz) * pesoIk;
+        cx += (r.cx - cx) * pesoIk;
+        cz += (0 - cz) * pesoIk;
+      } else if (!alvo && pesoIk < 0.001) {
+        pesoIk = 0;
+      }
+      // com alvo o braço acompanha firme (o picar e o sacudir são rápidos)
+      const k = Math.min(1, dt * (pesoIk > 0.5 ? 26 : 10));
       braco.rotation.x += (ox - braco.rotation.x) * k;
       braco.rotation.z += (oz - braco.rotation.z) * k;
       ante.rotation.x += (cx - ante.rotation.x) * k;
       ante.rotation.z += (cz - ante.rotation.z) * k;
     }
-    // a concha fica em pé: gira ao contrário do braço e do antebraço direitos
-    this.concha.rotation.x = -(this.bracos[1].rotation.x + this.antebracos[1].rotation.x);
-    this.concha.rotation.z = -(this.bracos[1].rotation.z + this.antebracos[1].rotation.z);
+    // a concha fica em pé (e inclina para despejar), e as mãos mantêm a
+    // orientação que a cena pediu, seja qual for o ângulo do braço
+    this.nivelar(this.concha, 1, this.qConcha.setFromEuler(this.eConcha.set(this.inclinacaoDaConcha, 0, 0)));
+    for (const i of [0, 1] as const) this.nivelar(this.maos[i], i, this.orientDaMao[i]);
 
     // -------------------------------------------------------------- a cabeça
     // mexendo, ela olha a panela (cabeça baixa) e cantarola balançando
     this.cabeca.rotation.x = Math.sin(t * 0.9) * 0.02 + mexe * 0.22 - serve * 0.05 + brava * 0.06;
     this.cabeca.rotation.z = Math.sin(t * 1.3) * 0.03 + mexe * Math.sin(t * 2.2) * 0.06 - brava * 0.12 + aceno * 0.1;
+    /*
+     * OLHAR O SERVIÇO: a cabeça abaixa e vira para o ponto que a cena deu (a
+     * tábua, a frigideira, a tigela enchendo), descontada a inclinação do
+     * tronco. É o que faz o gesto parecer feito por ela, e não por um boneco.
+     */
+    this.pesoDoOlhar += ((this.olhar ? 1 : 0) - this.pesoDoOlhar) * Math.min(1, dt * 5);
+    if (this.olhar) {
+      const p = this.group.worldToLocal(this.vOlhar.copy(this.olhar));
+      const y0 = 1.2 * ESCALA + this.corpo.position.y;
+      const horiz = Math.max(0.05, Math.hypot(p.x, p.z));
+      this.pitchDoOlhar = THREE.MathUtils.clamp(Math.atan2(y0 - p.y, horiz) - this.inclinacaoAgora, -0.2, 0.75);
+      this.yawDoOlhar = THREE.MathUtils.clamp(Math.atan2(p.x, p.z), -0.8, 0.8);
+    }
+    this.cabeca.rotation.x += (this.pitchDoOlhar * 0.85 - this.cabeca.rotation.x) * this.pesoDoOlhar;
+    this.cabeca.rotation.y = this.yawDoOlhar * 0.7 * this.pesoDoOlhar;
     // a sobrancelha: franzida (ponta de dentro para baixo) na tia brava
     for (const [i, s] of this.sobrancelhas.entries()) {
       const lado = i === 0 ? -1 : 1;

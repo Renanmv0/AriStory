@@ -1219,5 +1219,54 @@ jeito. **Provar os cinco** dá a memória **"Comida de casa"**. As falas são
 rascunho meu, no jeito que o Renan descreveu; espanhol só o de casa (épale,
 mi amor, mijo, ¡eso!, caraotas, tajada, jojoto, auyama).
 
-No Halloween (a escola vazia) ela some junto com os outros. Teste:
-`scripts/tiaLiz.mjs` (`SO=modelo|posto|pratos|conversa`).
+**A cozinha viva** (pedido do Renan: "enquanto ela está na cozinha, que
+fique alternando entre andar pela cozinha, cozinhar no fogão e cortar
+legumes numa tabuazinha; e cada prato pedido com uma animação específica,
+bem detalhada; e quando for atender a gente, que acene"). O corpo de baile
+mora em `scenes/cozinhaDaLiz.ts`, e as peças em `world/cozinhaDaTiaLiz.ts`:
+
+- **A fila da cozinha**, da parede da esquerda para a direita: o **fogão
+  dela** (esmalte creme de quatro bocas, girado: os botões para ela, as
+  chamas acendendo de verdade), o **passe** (a ponta livre do balcão, com a
+  pilha de pratos e os potinhos de queijo, manjericão e tostadinho), as
+  cubas na ordem do serviço (pasta, arroz, feijão, carne), o caldeirão da
+  sopita no meio (onde ela atende), as tajadas, e a **bancada de preparo**
+  (tampo de madeira, a tábua de corte, o refratário da tres leches, a
+  jarrinha, o polvilhador e os morangos). A janela foi para 7,8 m de vão: a
+  câmera olha em diagonal, e quem está a 1,2 m atrás da parede aparece 1,2 m
+  mais à direita — a fila cabe inteira no que a janela mostra.
+- **A rotina**, sem parar: o **fogão** (acende a boca, segura a frigideira
+  do refogado, sacode — o refogado pula e o óleo espirra — e mexe com a
+  espátula; ou dá voltas no fororo da panelinha com a colher de pau), o
+  **passeio** (espiar o refeitório pela janela, o cardápio, a geladeira, as
+  panelas da prateleira), a **tábua** (segura o legume, pica rodela por
+  rodela com a faca, varre para a tigela, e o próximo é o pimentão) e o
+  **caldeirão** (mexer a sopita cantarolando). O som da cozinha só toca com
+  a dupla perto da janela.
+- **Atender**: ela larga o que estava fazendo (cada utensílio volta para a
+  casa dele), vem ligeira até a janela do caldeirão e **acena** antes da
+  primeira fala.
+- **Os cinco preparos** (dois pratos de cada vez, o segundo mais ligeiro;
+  ela diz as falas do prato cozinhando, e cada prato pronto desliza pela
+  janela até a bandeja que espera no parapeito):
+  - **sopita**: a tigela da pilha; a concha mergulha, dá a volta e sobe;
+    por cima da tigela ela inclina e o caldo cai num fio (duas conchadas, o
+    caldo subindo); a pitada de coentro e a colher;
+  - **pasta**: o prato no passe; o pegador torce o espaguete na cuba e deita
+    o ninho; no fogo, a frigideira do molho, sacudida (as almôndegas pulam);
+    ela leva a frigideira até o prato e põe almôndega por almôndega e o
+    molho; a pitada de queijo e a folha de manjericão;
+  - **pabellón**: as tajadas viram uma por uma na frigideira (sobem, dão
+    meia volta no ar e caem douradas) e vão para o prato; depois a linha: a
+    forminha enche de arroz e vira no prato (o domo), a colher do feijão, o
+    pegador da carne desfiada;
+  - **fororo**: a caneca no passe; a colher de pau no creme, o vapor; ela
+    levanta a panelinha pelo cabo e despeja num fio grosso; a pitada de
+    tostadinho e o polvilhador de canela sacudindo;
+  - **tres leches**: a espátula risca o quadrado do canto do refratário,
+    entra por baixo e levanta o pedaço; a jarrinha dá a volta derramando os
+    três leites; três morangos do potinho; a canela.
+
+No Halloween (a escola vazia) ela some junto com os outros, e a cozinha
+para quieta. Teste: `scripts/tiaLiz.mjs`
+(`SO=modelo|posto|pratos|conversa|cozinha|preparos`).

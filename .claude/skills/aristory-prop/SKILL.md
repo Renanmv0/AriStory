@@ -1252,6 +1252,38 @@ Da 6d, no mesmo arquivo:
   branco colado na frente da câmera de cena, sem profundidade, que apaga em
   0,7 s; um material só no jogo, e a cena mexe na opacidade.
 
+## A cozinha da Tia Liz (`world/cozinhaDaTiaLiz.ts`)
+
+A cozinha atrás da janela da cantina é o molde de PEÇA QUE ALGUÉM USA com as
+patas (a coreografia mora em `scenes/cozinhaDaLiz.ts`):
+
+- **Utensílio nasce com a ORIGEM NA PEGA** (o cabo da faca, a alça da
+  jarrinha, o meio do cabo da colher de pau) e DE PÉ, como fica na mão: a
+  cena pendura na mão sem conta e só gira para deitar na casa. A ponta (a
+  lâmina, a concha, o bico) é um deslocamento conhecido a partir da pega.
+- **Panela com a origem no CABO** (`FRIGIDEIRA.centro`, `PANELINHA.centro`
+  dizem onde fica o meio): segurar pelo cabo e sacudir é mexer a origem.
+- **O que muda enquanto ela trabalha é classe ou grupo com nome**: a
+  `TabuaDeCorte` (o legume encolhe da ponta e as rodelas aparecem num lote,
+  `cortar`/`varrer`/`proximo`), o `RefratarioDaTresLeches` (o pedaço do
+  canto é um grupo, os riscos aparecem, `repor`), as chamas `chama-0..3` do
+  fogão (`chamaDoFogao`), o que frita na frigideira (`refogado`, `molho`
+  com as almôndegas, `tajadas` com a face `crua` e a `dourada`) e as partes
+  de cada prato (`caldo`, `macarrao`, `arroz`, `tajada-0`… — a comida
+  aparece no prato parte por parte).
+- **Líquido e farelo são lotes da cena**: `FioDeLiquido` (o caldo, o creme,
+  os três leites caindo num fio esticado entre dois pontos) e `Farelos` (a
+  canela, o queijo, o coentro, o óleo espirrando — um `InstancedMesh` com
+  gravidade, uma cor por pedacinho).
+- **O alcance desenha a peça**: tudo o que ela usa fica na faixa de trás
+  (`LUGARES_DA_BANCADA`, `LUGARES_DO_BALCAO`); a faixa da janela é enfeite.
+- **O fogão vai GIRADO** na fila (os botões para ela, as bocas para a
+  janela), e o balcão térmico ganhou o PASSE (`balcaoDaCantina` tem 45 cm
+  livres na ponta, com a pilha de pratos e os potinhos da pitada).
+- A tábua e o refratário passam pela `fundir()` na cena (o legume, o pedaço
+  e os riscos têm nome e ficam soltos): a vista da cantina caiu de 395 para
+  333 desenhos por quadro, a mesma imagem.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

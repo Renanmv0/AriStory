@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import type { GameAPI } from '../core/types';
 import type { WorldBuilder } from '../world/WorldBuilder';
 import { logoDaEscola, quadroDeGiz } from '../world/furniture';
-import { animarVapor, fogaoDoMania, geladeiraDoMania, prateleiraDaCozinha } from '../world/moveisDoMania';
+import { animarVapor, geladeiraDoMania, prateleiraDaCozinha } from '../world/moveisDoMania';
 import {
   JANELA_DA_CANTINA, PRATOS_DA_LIZ, SOPA_NO_BALCAO, balcaoDaCantina, bandejaComPrato, janelaDaCantina, type PratoDaLiz,
 } from '../world/cantinaDaTiaLiz';
+import { bancadaDePreparo, fogaoDaLiz } from '../world/cozinhaDaTiaLiz';
+import { CozinhaDaLiz, LINHA } from './cozinhaDaLiz';
 import { ARI, RENAN } from '../characters/cast';
 import { TiaLiz } from '../entities/bichos/TiaLiz';
 import { conversa, soltarDaConversa, pontoNoMundo } from './escolaComum';
@@ -220,7 +222,15 @@ export function montarACantina(
   const W = c.parede + FUNDO;
   w.add(w.place(janelaDaCantina(FUNDO), c.x, 0, W));
   const BZ = W - J.espessura / 2 - 0.85 / 2 - 0.02;
-  const balcao = w.add(w.place(balcaoDaCantina(J.vao + 0.4), c.x, 0, BZ));
+  /*
+   * A FILA DA COZINHA (`cozinhaDaLiz.ts`): o fogão dela na ponta da
+   * esquerda, girado (os botões e o forno para ela, as bocas para a janela),
+   * o balcão térmico com o passe e as cubas, e a bancada de preparo com a
+   * tábua e a tres leches. Tudo encostado na janela, na mesma linha.
+   */
+  const fogao = w.add(w.place(fogaoDaLiz(), c.x + LINHA.fogao, 0, BZ + 0.02, Math.PI));
+  const balcao = w.add(w.place(balcaoDaCantina(), c.x + LINHA.termico, 0, BZ));
+  w.add(w.place(bancadaDePreparo(), c.x + LINHA.bancada, 0, BZ));
   // o colisor vai da parede do fundo até o trilho de bandeja: ninguém entra na cozinha
   const frente = W + 0.62;
   w.blockBox(c.x, (c.parede + frente) / 2, J.largura / 2 + 0.05, (frente - c.parede) / 2);
@@ -231,46 +241,52 @@ export function montarACantina(
     quadroDeGiz(['Cardápio da Tia Liz', 'sopita · pasta con albóndigas', 'pabellón criollo · fororo', 'torta tres leches', '¡buen provecho!'], 3.4, 1.5),
     c.x, 3.6, c.parede + 0.18,
   ));
-  // a cozinha por dentro: o fogão numa ponta, a geladeira na outra e a
-  // prateleira de panelas no fundo, acima da cabeça dela
-  w.add(w.place(fogaoDoMania(1.0), c.x - J.vao / 2 - 0.45, 0, c.parede + 0.55));
-  w.add(w.place(geladeiraDoMania(), c.x + J.vao / 2 + 0.65, 0, c.parede + 0.5));
+  // a geladeira na ponta da direita, e a prateleira de panelas no fundo,
+  // acima da cabeça dela
+  w.add(w.place(geladeiraDoMania(), c.x + 3.6, 0, c.parede + 0.48));
   for (const dx of [-2.2, 2.2]) {
     w.add(w.place(prateleiraDaCozinha(1.6), c.x + dx, 1.95, c.parede + 0.02));
   }
 
   /**
-   * ELA FICA ATRÁS DO CALDEIRÃO, com a pata direita (a da concha) em cima
-   * dele: a pata, mexendo, para 0,26 à direita e 0,35 à frente do meio
-   * dela (`scripts/tiaLiz.mjs` mede a concha dentro da panela).
+   * O POSTO DE ATENDER é atrás do caldeirão, no meio da janela, com a pata
+   * direita (a da concha) em cima dele: mexendo, a pata para 0,26 à direita
+   * e 0,35 à frente do meio dela (`scripts/tiaLiz.mjs` mede a concha dentro
+   * da panela). Dali ela sai para a rotina da cozinha.
    */
-  const sopa = { x: c.x + SOPA_NO_BALCAO.x, z: BZ + SOPA_NO_BALCAO.z };
+  const sopa = { x: c.x + LINHA.termico + SOPA_NO_BALCAO.x, z: BZ + SOPA_NO_BALCAO.z };
   const posto = { x: sopa.x - 0.26, z: sopa.z - 0.35 };
   const liz = new TiaLiz({ minX: posto.x, maxX: posto.x, minZ: posto.z, maxZ: posto.z });
   liz.group.position.set(posto.x, 0, posto.z);
   liz.entrarEmServico();
   liz.encarar(posto.x, posto.z + 5);
-  liz.mexerAPanela(true);
   w.add(liz.group);
   liz.aoSoar = () => w.game.som('cantarolar');
-  /** gancho de teste: o `scripts/tiaLiz.mjs` mede ela, a concha e a panela */
-  liz.group.userData.teste = { liz, sopa, posto, balcao, bandejaComPrato };
+  /** o som da cozinha só toca com a dupla no refeitório, perto da janela */
+  const perto = (): boolean => {
+    const p = w.game.playerPosition();
+    return liz.group.visible && Math.hypot(p.x - c.x, p.z - W) < 9;
+  };
+  const cozinha = new CozinhaDaLiz(w, liz, { cx: c.x, bz: BZ, fogao, perto });
+  cozinha.comecarRotina();
+  /** gancho de teste: o `scripts/tiaLiz.mjs` mede ela, a concha, a panela e a cozinha */
+  liz.group.userData.teste = { liz, sopa, posto, balcao, bandejaComPrato, cozinha };
 
   const vapor = balcao.getObjectByName('vapor-da-sopita');
   let relogio = 0;
   let calor = 0.38;
   w.onUpdate((dt) => {
     relogio += dt;
-    liz.update(dt);
+    cozinha.update(dt);
     // o vapor é fininho (o caldeirão fica bem embaixo do rosto dela) e some
     // enquanto ela conversa, para não tapar a cara de quem fala
-    calor += ((liz.estaMexendo ? 0.38 : 0) - calor) * Math.min(1, dt * 2);
+    calor += ((liz.estaMexendo ? 0.38 : 0.12) - calor) * Math.min(1, dt * 2);
     if (vapor) animarVapor(vapor, relogio, calor);
   });
 
-  const falar = async (g: GameAPI, falas: readonly Fala[]): Promise<void> => {
+  const falar = async (g: GameAPI, falas: readonly Fala[], semGesto = false): Promise<void> => {
     for (const [quem, texto, gesto] of falas) {
-      if (gesto === 'brava') liz.maosNaCintura(2.6);
+      if (semGesto) { /* com as patas ocupadas na panela, ela só fala */ } else if (gesto === 'brava') liz.maosNaCintura(2.6);
       else if (gesto === 'acena') liz.acenar(1.8);
       else if (gesto === 'serve') liz.servir(2.4);
       await conversa(g, [[quem, texto]]);
@@ -279,22 +295,29 @@ export function montarACantina(
 
   w.interact({
     id: 'escola:tia-liz',
-    x: c.x, z: frente + 0.55, radius: 1.5,
+    x: posto.x, z: frente + 0.55, radius: 1.5,
     priority: 1,
     label: 'Falar com a Tia Liz', icon: '🍲',
     highlight: liz.group,
     onInteract: async (g) => {
       g.lockPlayer(true);
-      liz.mexerAPanela(false);
       // a dupla para na frente da janela (a diagonal da conversa daria na parede)
       const eu = { x: posto.x + 0.35, z: frente + 0.6 };
       const par = { x: posto.x + 1.15, z: frente + 0.7 };
       g.releasePlayer(eu.x, eu.z, Math.atan2(posto.x - eu.x, posto.z - eu.z));
       g.releaseCompanion(par.x, par.z, Math.atan2(posto.x - par.x, posto.z - par.z));
       g.holdCompanion(posto.x, posto.z);
-      liz.encarar((eu.x + par.x) / 2, (eu.z + par.z) / 2);
       g.focusCamera(liz.group);
       g.setZoom(8);
+      /*
+       * ELA LARGA O QUE ESTAVA FAZENDO (a faca volta para a tábua, a
+       * frigideira para o fogo) e vem ligeira até a janela — e ACENA para a
+       * dupla antes da primeira palavra (pedido do Renan).
+       */
+      await cozinha.atender({ x: (eu.x + par.x) / 2, z: (eu.z + par.z) / 2 });
+      liz.acenar(2.2);
+      g.som('cantarolar');
+      await g.wait(1.1);
       let comeu = false;
       try {
         if (!g.flag(TIA_LIZ_CONHECIDA)) {
@@ -325,15 +348,14 @@ export function montarACantina(
           return;
         }
         comeu = true;
-        await servirEComer(w, g, liz, prato.id, { posto, frente, mesas, falar, parapeito: W + 0.12 });
+        await servirEComer(w, g, liz, cozinha, prato.id, { posto, frente, mesas, falar, parapeito: W + 0.12 });
       } finally {
         if (!comeu) {
           g.focusCamera(null);
           g.setZoom(13);
           soltarDaConversa(g);
         }
-        liz.encarar(posto.x, posto.z + 5);
-        liz.mexerAPanela(true);
+        cozinha.garantirRotina();
       }
     },
   });
@@ -351,6 +373,7 @@ async function servirEComer(
   w: WorldBuilder,
   g: GameAPI,
   liz: TiaLiz,
+  cozinha: CozinhaDaLiz,
   id: PratoDaLiz,
   o: {
     posto: { x: number; z: number };
@@ -358,18 +381,32 @@ async function servirEComer(
     /** o meio do parapeito da janela, onde a bandeja sai */
     parapeito: number;
     mesas: ReadonlyArray<readonly [number, number]>;
-    falar: (g: GameAPI, falas: readonly Fala[]) => Promise<void>;
+    falar: (g: GameAPI, falas: readonly Fala[], semGesto?: boolean) => Promise<void>;
   },
 ): Promise<void> {
   const fala = PRATOS[id];
-  // as duas bandejas saem pelo parapeito da janela, na frente dela
-  const noBalcao = [bandejaComPrato(id), bandejaComPrato(id)];
+  /*
+   * AS BANDEJAS ESPERAM NO PARAPEITO, vazias (o guardanapo e o suco), e ela
+   * PREPARA o prato na frente da dupla (`CozinhaDaLiz.preparar`): cada prato
+   * tem a sua coreografia, e o pronto desliza pela janela para a bandeja.
+   * A primeira fala do prato vem antes (com o gesto dela); as outras, ela
+   * diz cozinhando.
+   */
+  const noBalcao = [bandejaComPrato(id, new THREE.Group()), bandejaComPrato(id, new THREE.Group())];
   noBalcao.forEach((b, i) => {
     b.position.set(o.posto.x + 0.05 + i * 0.5, JANELA_DA_CANTINA.peitoril + 0.05, o.parapeito);
     w.root.add(b);
   });
   g.som('louca');
-  await o.falar(g, fala.serve);
+  const [primeira, ...resto] = fala.serve;
+  await o.falar(g, [primeira[2] === 'serve' ? [primeira[0], primeira[1], 'acena'] : primeira]);
+  g.setZoom(6.2);
+  const preparo = cozinha.preparar(id, noBalcao);
+  await o.falar(g, resto, true);
+  await preparo;
+  // os pratos foram: ela volta para a cozinha enquanto a dupla come
+  cozinha.comecarRotina();
+  g.setZoom(8);
 
   // a mesa mais perto de quem joga
   const eu = g.playerPosition();
