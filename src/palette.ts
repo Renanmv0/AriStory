@@ -1741,6 +1741,29 @@ export const PALETTE = {
   azulejoDaCantinaDesenho: 0x2a56a8,
   azulejoDaCantinaMiolo: 0xf6c431,
 
+  // A COZINHA DA TIA LIZ por dentro: o fogão de esmalte creme (retrô, de
+  // casa), as trempes escuras e o forno aceso; a bancada de preparo com o
+  // tampo de madeira e as portinhas creme de puxador azul; a tábua de corte
+  // clara; a frigideira de ferro com cabo de madeira, a panelinha de
+  // esmalte vermelho do fororo; o pimentão; o queijo do ralador; o óleo
+  // espirrando; o vidro do polvilhador e a forminha do arroz
+  fogaoDaLiz: 0xf3ead8,
+  fogaoDaLizFrente: 0xe8dcc4,
+  fogaoDaLizTrempe: 0x34302e,
+  fogaoDaLizForno: 0xf2913c,
+  bancadaDaLizTampo: 0xc98d55,
+  bancadaDaLizPorta: 0xf3ece0,
+  bancadaDaLizPuxador: 0x2a56a8,
+  tabuaDeCorte: 0xdcb072,
+  frigideiraDeFerro: 0x35302d,
+  panelinhaDeEsmalte: 0xc9473c,
+  pimentaoVermelho: 0xd8382f,
+  pimentaoMiolo: 0xf2cfa4,
+  queijoEmBloco: 0xf6dc86,
+  oleoQuente: 0xf7d870,
+  vidroDoPolvilhador: 0xe7e9e2,
+  forminhaDoArroz: 0xb995e6,
+
   // OS LANCHES DA MÁQUINA da escola: o pacote de biscoito, o chocolatinho, o
   // suco de caixinha e o salgadinho — cada um com a cor de embalagem que se
   // reconhece de longe no corredor
