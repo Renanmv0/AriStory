@@ -363,16 +363,18 @@ if (parte('conversa')) {
   const noBalcao = await p.evaluate(() => {
     let n = 0;
     let montados = 0;
+    const det = [];
     window.jogo.current.world.root.traverse((o) => {
       if (o.userData?.peca !== 'bandeja-da-cantina') return;
       n++;
       const pr = o.userData.prato;
       const partes = pr?.getObjectByName('comida')?.children ?? [];
+      det.push(partes.map((c) => `${c.name}:${c.visible ? 1 : 0}`).join(',') + ` talher:${pr?.getObjectByName('talher')?.visible ? 1 : 0}`);
       if (partes.length && partes.every((c) => c.visible) && pr.getObjectByName('talher')?.visible) montados++;
     });
-    return { n, montados };
+    return { n, montados, det };
   });
-  conferir(noBalcao.n === 2 && noBalcao.montados === 2, `as duas bandejas servidas com o prato montado (${noBalcao.montados}/${noBalcao.n})`);
+  conferir(noBalcao.n === 2 && noBalcao.montados === 2, `as duas bandejas servidas com o prato montado (${noBalcao.montados}/${noBalcao.n})`, noBalcao.det.join(' | '));
   // passa as falas até a pergunta de ficar
   const comendo = [];
   let fotoComendo = false;
@@ -421,6 +423,7 @@ if (parte('conversa')) {
     await conversar(p, () => temPergunta(p, nome));
     await escolher(p, nome);
     await conversar(p, () => temPergunta(p, 'Levantar'), 400);
+    console.log(`      ${nome}: ${await temPergunta(p, 'Levantar') ? 'comeu' : 'NÃO chegou a comer'} (passo ${await p.evaluate((achar) => eval(achar).cozinha.passo, achar)})`);
     if (nome === 'tres leches') await p.screenshot({ path: `${OUT}-tres-leches-na-mesa.png` });
     await escolher(p, 'Levantar');
     await p.waitForTimeout(1200);
