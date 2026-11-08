@@ -88,7 +88,7 @@ const MALHAS_DA_CASA_ANTES = 346;
 const MALHAS_ANTES = {
   // (o parque e o clube −33: o ônibus do ponto virou o ônibus da cidade em
   // todo lugar, pedido do Renan — 66 malhas soltas do velho, 33 do novo)
-  'villa-lobos': 5794, clube: 2775, escola: 1360, 'escola-ginasio': 353, estufa: 3360, 'mania-de-churrasco': 642, quarto: 367,
+  'villa-lobos': 5794, clube: 2775, escola: 1704, 'escola-ginasio': 353, estufa: 3360, 'mania-de-churrasco': 642, quarto: 367,
   // a boutique da Estella (a etapa 3)
   lojinha: 629,
 };

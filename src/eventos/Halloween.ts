@@ -4,18 +4,24 @@
  * Este é o arquivo do evento. Ele diz se o Halloween está no jogo e onde
  * mora cada coisa dele, para usar outra vez quando o Renan quiser.
  *
- * LIGADO ATÉ O RENAN MANDAR TIRAR (decisão dele): sem calendário, sem data.
- * Quem joga pelo link de sempre encontra o evento no save de verdade — ele
- * começa no sofá da casa do Ari ("Assistir um filme de terror").
+ * ESTADO ATUAL: DESLIGADO (o Renan mandou tirar em 2026-11-08). Foi um evento
+ * sem calendário, ligado até ele pedir; o jogo de sempre voltou a ser o de
+ * antes, e tudo abaixo continua guardado aqui para usar outra vez.
  *
- * PARA TIRAR DO JOGO: `HALLOWEEN_NO_JOGO = false`. Nada é apagado: o parque,
+ * Quando estava ligado, quem jogava pelo link de sempre encontrava o evento
+ * no save de verdade — ele começava no sofá da casa do Ari ("Assistir um
+ * filme de terror").
+ *
+ * PARA TIRAR DO JOGO (já feito): `HALLOWEEN_NO_JOGO = false`. Nada é apagado: o parque,
  * o clube, a escola e a casa voltam a ser os de sempre (o evento é uma
  * CAMADA por cima deles, `docs/HALLOWEEN.md` §8.3), e o código do evento
  * continua todo aqui, guardado. As fantasias e as coroas que a dupla já
  * ganhou continuam no guarda-roupa dos dois, e as memórias no quadro e no
  * diário — o evento acaba, o que eles ganharam fica.
  *
- * PARA USAR OUTRA VEZ: `HALLOWEEN_NO_JOGO = true`. Para a dupla jogar a
+ * PARA USAR OUTRA VEZ: `HALLOWEEN_NO_JOGO = true`. Com o evento desligado o
+ * save não é tocado (as fases `halloween:*` ficam), então religar na mesma
+ * edição continua de onde cada um parou. Para a dupla jogar a
  * história de novo do começo (num outro ano), troque também a
  * `EDICAO_DO_HALLOWEEN`: na primeira vez que o jogo abre numa edição nova, o
  * save esquece as fases da edição de antes (as flags `halloween:*`) e o
@@ -53,7 +59,7 @@
  */
 
 /** O Halloween está no jogo? Desligar é trocar para `false` — nada se apaga. */
-export const HALLOWEEN_NO_JOGO = true;
+export const HALLOWEEN_NO_JOGO = false;
 
 /**
  * A edição do evento. Trocar (para jogar a história de novo noutro ano) faz o

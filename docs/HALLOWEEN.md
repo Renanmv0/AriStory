@@ -1884,11 +1884,17 @@ Pelusa acordando eles).
 
 ### 9.2 A etapa 8: o evento aberto (decisão do Renan)
 
+> **ATUALIZAÇÃO 2026-11-08: o Renan mandou tirar o evento do jogo.**
+> `HALLOWEEN_NO_JOGO = false`; o código, as peças, as falas e as fantasias
+> continuam guardados (ver `src/eventos/Halloween.ts`). O texto abaixo
+> descreve o evento enquanto esteve aberto, e vale para religar.
+
 **Sem as datas de 15/10 a 2/11**: o evento fica no jogo **até o Renan
 mandar tirar, nesta conversa**. E o jeito que o parque fica e as fantasias
 ficam **guardados num arquivo** para usar outra vez: `src/eventos/Halloween.ts`.
 
-- **A chave**: `HALLOWEEN_NO_JOGO` (hoje `true`). Para tirar, `false` — o
+- **A chave**: `HALLOWEEN_NO_JOGO` (**hoje `false`: o Renan mandou tirar em
+  2026-11-08**; para religar, `true`). Para tirar, `false` — o
   parque, o clube, a escola e a casa voltam a ser os de sempre (o evento é
   uma camada, §8.3), e nada se apaga: o arquivo diz onde mora cada coisa (o
   parque enfeitado, a festa, a boutique, a casa, as fantasias dos

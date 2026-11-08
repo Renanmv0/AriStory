@@ -222,12 +222,16 @@ já está respondido ali. `ARQUITETURA.md` é o motor por dentro.
 `CONTEXTO-INTEGRAL.md` e `ROADMAP.md` são um retrato do projeto e do que
 falta — **úteis para se situar rápido, mas podem estar desatualizados**; o
 `git log` é a fonte da verdade para o que mudou por último.
-**O Halloween está NO JOGO, aberto para quem joga, sem data, até o Renan
-mandar tirar nesta conversa.** A chave e o mapa do que fica guardado (o
-parque enfeitado, a festa, as fantasias) moram em `src/eventos/Halloween.ts`:
-quando ele pedir para tirar, é `HALLOWEEN_NO_JOGO = false` — nada se apaga,
-para usar outra vez. Os testes: `?halloween` liga o evento num save à parte,
-`?semHalloween` mostra o jogo sem ele.
+**O Halloween está FORA DO JOGO desde 2026-11-08 (o Renan mandou tirar),
+guardado inteiro para usar outra vez.** A chave e o mapa do que fica guardado
+(o parque enfeitado, a festa, a boutique, a casa, as fantasias) moram em
+`src/eventos/Halloween.ts`: `HALLOWEEN_NO_JOGO = false` hoje; para religar é
+`true` (e trocar `EDICAO_DO_HALLOWEEN` se for jogar a história de novo noutro
+ano) — nada foi apagado. As fantasias e coroas já ganhas ficam no guarda-roupa
+e as memórias no quadro. O plano e as falas estão em `docs/HALLOWEEN.md`. Os
+testes: `?halloween` liga o evento num save à parte; `?semHalloween` mostra o
+jogo sem ele. O `SO=aberto` do `scripts/halloween.mjs` pressupõe a chave
+ligada (`true`); os demais usam `?halloween` e continuam valendo.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,
