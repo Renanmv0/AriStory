@@ -991,9 +991,36 @@ nem redonda em planta, então a lataria do carro é uma superfície própria:
   e mede a folga.
 - **O vidro de trás não acompanha a queda do teto**: acompanhando, o alto
   dele ficava caído no meio, como uma rede. Na tampa ele é uma linha reta.
-- **Banco entre as caixas de roda**: o banco de trás da largura da cabine
-  entrava nas caixas e aparecia pela boca do para-lama. Ele cabe ENTRE elas
-  (`CABINE.entreRodas`), e as corcovas ficam à vista dos lados, de carpete.
+- **Banco e caixa de roda não ocupam o mesmo lugar**: o banco de trás da
+  largura da cabine, em cima das caixas de roda, entrava nelas e aparecia
+  pela boca do para-lama. O carro ganhou 40 cm no MEIO (as estações da pele
+  são todas relativas às constantes: esticar foi mudar `A` e meia dúzia de
+  números), e o banco inteiriço fica À FRENTE das caixas de trás.
+- **A caixa de roda acompanha a planta**: um meio cano reto, da largura do
+  carro no eixo, saía pela lataria nas pontas do arco (onde o carro já
+  estreitou) e aparecia como uma aba escura embaixo do para-choque. A beira
+  de fora dele segue `meiaLargura(z)`.
+- **Linha em cima de superfície curva é FILETE, não tubo** (`friso()`): o
+  `TubeGeometry` gira o próprio corte ao longo da curva (o quadro de Frenet)
+  e, com poucos lados, o traço engrossa e afina; a curva que passa pelos
+  pontos estufa nas quinas, cada uma de um jeito, e a amostragem por
+  comprimento não cai nelas. O Renan viu: "as janelas parecem desalinhadas,
+  o traço meio wobbly". O filete recebe o ponto E A NORMAL da lataria, monta
+  o corte (meia-cana) no quadro tangente × normal, e arredonda as quinas
+  ANDANDO pela linha, todas com o mesmo raio (medir pelo ponto vizinho dava
+  um raio em cada quina, porque perto das caixas de roda os pontos são
+  miúdos). Raio de quina ≤ 2,5 × a meia largura do filete: a ponta viva do
+  vidro fica debaixo dele. E a janela acaba onde o vidro ainda tem um palmo
+  de altura — terminando numa lasca, a borracha se embolava na ponta. Tubo
+  continua valendo para o que está NO AR (para-choque, bagageiro, antena).
+- **Encosto que deita**: a origem do grupo é o PÉ do encosto (a dobradiça,
+  na beira de trás do assento, meia grossura abaixo do topo). Em pé ele sobe
+  inclinado; deitado (`rotation.x = −π/2`) a face da frente vira colchão,
+  rente ao assento — e o comprimento dele é o vão até o banco de trás. Com
+  os dois bancos inteiriços, deitar os encostos da frente dá uma cama da
+  largura da cabine (`deitarEncostos`), e a âncora de deitar (`carro.cama`)
+  segue o padrão da cama do quarto: `−π/2` em X, os pés no `+Z`, a altura do
+  colchão mais meio corpo.
 - **A ficha** (`ficha.ts`, sem three: o save a importa): a pintura, a placa
   e as VAGAS — cada vaga com os seus lugares, cada lugar um encaixe com nome
   no modelo (`vaga:painel:0`). O catálogo dá o id, a vaga e a ORIGEM de cada
@@ -1012,10 +1039,9 @@ nem redonda em planta, então a lataria do carro é uma superfície própria:
   painel (pato branco, camisa azul, chapéu azul) parecia outro pato famoso.
   O do jogo tem a boina larga tombada, a camisa creme de gola vermelha, a
   bandeirinha e a raquete — com elas, é ele.
-- **Tubo é o que pesa**: a borracha dos vidros com 5 lados e 2 gomos por
-  ponto eram 5 mil triângulos; com 4 lados e 1,3 gomo, metade, e a mesma
-  foto. O carro inteiro: 275 malhas → 36 depois da `fundir()` e da
-  `juntarPorCor`, ~35,5 mil triângulos.
+- **O peso**: a borracha dos vidros em tubo eram 5 mil triângulos; em
+  filete, menos da metade, e mais bonita. O carro inteiro: 274 malhas → 43
+  depois da `fundir()` e da `juntarPorCor`, ~35,5 mil triângulos.
 - **Face coplanar em caixa de quina redonda**: o `SO=coplanar` do teste mede
   a caixa envolvente de cada `quina()` não girada, com `?semFundir` (achou a
   borda da mantinha no plano da dobra de cima).

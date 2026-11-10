@@ -32,8 +32,13 @@ import * as THREE from 'three';
  */
 
 export const CARRO = {
-  /** meio comprimento e meia largura (a planta) */
-  A: 2.1,
+  /**
+   * meio comprimento e meia largura (a planta). O carro nasceu com 4,2 e
+   * ganhou 40 cm NO MEIO (o Renan pediu mais banco de trás): o nariz e a
+   * traseira são os mesmos, e o que cresceu foi a cabine — o banco de trás
+   * inteiro cabe À FRENTE das caixas de roda de trás, na largura toda do carro
+   */
+  A: 2.3,
   W: 1.04,
   /** o expoente da superelipse da planta: 2 é elipse, 8 é quase retângulo */
   expo: 4.4,
@@ -45,23 +50,25 @@ export const CARRO = {
   /** o capô: a altura na ponta e no pé do para-brisa, e onde ficam o pé e o alto do para-brisa */
   capo: 1.02,
   cowl: 1.13,
-  zCowl: 1.22,
-  zTeto: 0.52,
+  zCowl: 1.42,
+  zTeto: 0.72,
   /** o raio do arredondado do nariz e da queda de trás */
   nariz: 0.16,
   rabo: 0.16,
   /** as rodas: o raio, a largura, o raio da caixa, a meia bitola e os eixos (frente, trás) */
-  roda: { raio: 0.34, largura: 0.25, caixa: 0.425, x: 0.84 },
-  eixos: [1.27, -1.25] as readonly number[],
+  roda: { raio: 0.34, largura: 0.25, caixa: 0.425, x: 0.81 },
+  eixos: [1.47, -1.47] as readonly number[],
   /** quanto a estufa recua na cintura (o ombro) e quanto fecha até o teto, em fração da largura */
   ombro: 0.035,
   fecha: 0.15,
-  /** as janelas do lado, de trás para a frente: a de trás, a da porta de trás e a da porta da frente */
-  janelas: [[-1.72, -0.88], [-0.76, -0.02], [0.08, 1.16]] as ReadonlyArray<readonly [number, number]>,
+  /** as janelas do lado, de trás para a frente: a de trás, a da porta de correr e a da porta da frente */
+  // (a da frente acaba onde o vidro ainda tem um palmo de altura: indo até o pé do para-brisa ela
+  // terminava numa lasca de milímetros, e a borracha se embolava na ponta)
+  janelas: [[-1.92, -0.98], [-0.86, 0.13], [0.28, 1.26]] as ReadonlyArray<readonly [number, number]>,
   /** o quebra-vento divide a janela da frente aqui (e é onde a porta da frente acaba) */
-  quebraVento: 0.8,
-  /** as bordas das portas (a de trás acaba antes da caixa de roda) */
-  portas: { tras: -0.78, meio: 0.03, frente: 0.8 },
+  quebraVento: 1.0,
+  /** as bordas das portas: a da frente e a de CORRER, comprida (acaba antes da caixa de roda de trás) */
+  portas: { tras: -0.92, meio: 0.205, frente: 1.0 },
   /** o vidro de trás vai até esta fração da meia largura */
   vidroDeTras: 0.66,
   /** o para-brisa: quanto de teto fica em cima dele (a testeira) e de capô embaixo */
@@ -86,7 +93,7 @@ export function zDaLargura(w: number): number {
 }
 
 /** a linha do teto longe das pontas: quase reta, com um tico de barriga */
-const tetoReto = (z: number): number => CARRO.teto - 0.03 * ((z + 0.55) / 1.1) ** 2;
+const tetoReto = (z: number): number => CARRO.teto - 0.03 * ((z + 0.6) / 1.25) ** 2;
 
 /** O PERFIL DE CIMA: a altura do meio do carro em cada `z` (o desenho de lado) */
 export function topoEm(z: number): number {
@@ -195,8 +202,8 @@ export function secao(z: number): Secao {
  * Tudo o que mora NA lataria passa por aqui (os ajudantes abaixo já passam).
  */
 export function deformar<T extends THREE.Vector3>(p: T): T {
-  const tras = smooth(-p.z, 1.0, 2.0) * 0.17 * smooth(p.y, 0.95, CARRO.teto);
-  const frente = smooth(p.z, 1.6, 2.05) * 0.05 * smooth(p.y, 0.5, 1.0);
+  const tras = smooth(-p.z, A - 1.1, A - 0.1) * 0.17 * smooth(p.y, 0.95, CARRO.teto);
+  const frente = smooth(p.z, A - 0.5, A - 0.05) * 0.05 * smooth(p.y, 0.5, 1.0);
   p.z += tras - frente;
   return p;
 }

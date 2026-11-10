@@ -65,32 +65,62 @@ O save: `SaveState.fichaDoBebitoMobile()` / `salvarFichaDoBebitoMobile()`
 
 ## 2. O modelo (etapa A — feita)
 
-Uma **vanzinha-bolha**: alta, redonda, de nariz curto, com os faróis redondos
-de olho, a grade num sorriso e um coração de emblema. 4,6 m × 2,3 m × 2,3 m —
-maior que um carro de verdade ao lado de uma pessoa, porque a cabeça do corpo
-chibi tem 60 cm (75 com os cachos) e duas delas têm que caber lado a lado.
+Uma **vanzinha-bolha**, com jeito de kombi: alta, redonda, de nariz curto, com
+os faróis redondos de olho, a grade num sorriso e um coração de emblema.
+5,1 m × 2,3 m × 2,3 m — maior que um carro de verdade ao lado de uma pessoa,
+porque a cabeça do corpo chibi tem 60 cm (75 com os cachos) e duas delas têm
+que caber lado a lado.
 
 - **A lataria é uma superfície própria**, de fatias (`pele.ts`), e não uma
   caixa extrudada: a planta é uma superelipse, o perfil é o desenho de lado e
   a traseira deita um pouco. Ela é OCA de verdade: os vidros são
   transparentes e a cabine existe.
+- **Três janelas de cada lado**: a da porta da frente (com o quebra-vento), a
+  da porta de CORRER, comprida, e a de trás. A borracha de cada vidro é um
+  filete que segue a lataria, de largura constante, com as quinas todas no
+  mesmo raio.
 - **A cabine**: o painel de lata pintada com o tampo estofado, o rádio e os
-  relógios (canvas), o volante de baquelite que gira, a alavanca, dois bancos
-  na frente e o inteiriço atrás (matelassê), o tampão do porta-malas.
+  relógios (canvas), o volante de baquelite que gira, a alavanca de câmbio na
+  coluna, **dois bancos inteiriços** de matelassê (o da frente com dois
+  encostos, o de trás com um) e o tampão do porta-malas.
 - **O teto sai** (`mostrarTeto(false)`), como o da barraca da clareira: é a
   casinha de boneca para uma cena de dentro.
 - **O contrato**: a base em `y = 0`, o **nariz no `+Z`**, o **motorista no
   `+X`** (carro brasileiro). As medidas da cena em `BEBITO_MOBILE`.
 - **Os comandos** que a cena usa: `rodar(distância)`, `estercar(ângulo)`,
   `acenderFarois`, `frear`, `pisca('esquerda' | 'direita' | 'alerta' | null)`,
-  `mostrarTeto`, `andando(0..1)`, `solavanco(força)`, `empurrar(arfa, rola)`
-  e `update(dt)`.
-- **Os lugares de sentar**: `carro.assentos.motorista`, `.passageiro` e
-  `.tras[0..1]` — âncoras na altura do assento, olhando para a frente. A
-  cena monta a dupla com `g.ridePlayer(ancora, new Vector3(0, -0.47, 0), 1, 0)`
+  `mostrarTeto`, `andando(0..1)`, `solavanco(força)`, `empurrar(arfa, rola)`,
+  `deitarEncostos(quanto, qual?, naHora?)`, `mostrarCargaDoBanco(sim)` e
+  `update(dt)`.
+- **Os lugares de sentar** (seis): `carro.assentos.motorista`, `.passageiro`,
+  `.frenteMeio` (entre os dois: só bicho pequeno) e `.tras[0..2]` (esquerda,
+  meio e direita) — âncoras na altura do assento, olhando para a frente. A
+  cena monta quem senta com `g.ridePlayer(ancora, new Vector3(0, -0.47, 0), 1, 0)`
   (o quadril do rig fica 0,47 acima da origem dele: a conta do banco de praça).
-- **O peso**: 36 malhas à vista (275 antes da `fundir()`/`juntarPorCor`) e
+- **A cama** (pedido do Renan, 2026-11-10): `deitarEncostos(1)` deita os dois
+  encostos da frente para trás, e eles ficam rentes aos assentos — os dois
+  bancos viram um colchão só, de **1,90 × 2,05 m**, com o encosto de trás de
+  cabeceira. Quem deita usa `carro.cama`, a âncora no padrão da cama do
+  quarto e da barraca (`g.ridePlayer(carro.cama, new Vector3(∓0.4, 0, 0), 1, 0)`
+  e `g.setLying(true)`), com os pés para a frente do carro. O que vai em cima
+  do banco de trás (o Bebito book, a mantinha) sai com
+  `mostrarCargaDoBanco(false)`. O teste senta a dupla atrás, deita os
+  encostos e deita os dois, e mede.
+- **O peso**: 43 malhas à vista (274 antes da `fundir()`/`juntarPorCor`) e
   ~35,5 mil triângulos — a régua do ônibus da cidade (~34 mil).
+
+### O que mudou depois da primeira foto (2026-11-10, a pedido do Renan)
+
+- **Mais banco de trás.** O carro ganhou 40 cm no meio (4,6 → 5,1 m): o banco
+  de trás agora é inteiriço, da largura da cabine (cabem três), e fica À
+  FRENTE das caixas de roda de trás. O da frente também virou inteiriço (a
+  alavanca foi para a coluna), para os dois deitarem numa cama só.
+- **As janelas "wobbly".** A borracha era um tubo (`TubeGeometry`), que torce
+  o próprio corte ao longo da curva e estufa nas quinas: o traço engrossava e
+  afinava, e cada quina saía de um jeito. Virou um filete orientado pela
+  normal da lataria (`friso()`), com as quinas arredondadas todas iguais. O
+  friso de cromo da cintura, o corte das portas e o aro das caixas de roda
+  passaram para o mesmo filete.
 
 ## 3. A ficha e as vagas (pronto para a edição futura)
 
@@ -111,7 +141,7 @@ O carro é montado lendo `FichaDoBebitoMobile`:
 | `chave` | 1 | peça | o chaveiro, na ignição | Pelusa |
 | `teto` | 1 | peça | no bagageiro | — (vazio) |
 | `portaMalas` | 2 | peça | no tampão de trás | frisbee e raquetes, — |
-| `bancoDeTras` | 2 | peça | em cima do banco de trás | Bebito book e livros, mantinha |
+| `bancoDeTras` | 2 | peça | em cima do banco de trás, nas duas pontas (a cena guarda com `mostrarCargaDoBanco(false)`) | Bebito book e livros, mantinha |
 | `vidroTraseiro` | 2 | adesivo | nos cantos do vidro de trás | emblema dos Gatitos, 67 |
 | `paraChoque` | 3 | adesivo | na tampa de trás | roda gigante, Mania, Mano |
 | `rodas` | 1 | calota | as quatro rodas | calota clássica |
@@ -194,6 +224,11 @@ Ideias de partida (a detalhar quando a etapa chegar):
 - **O som**: motor, buzina, pisca, e o rádio do carro (a skill `aristory-som`).
 - **De dentro**: a cabine cabe uma cena (o teto sai); fica para quando houver
   uma atividade para fazer ali.
+- **Levar gente para passear**: os três lugares de trás já existem
+  (`assentos.tras`); falta decidir quem pode ir e como se convida.
+- **Deitar na cama do carro**: o modelo já deita os encostos e tem a âncora
+  (`carro.cama`); falta a cena (onde se estaciona para isso, a câmera de
+  cima, o que os dois fazem deitados).
 - **As rotas**: Casa ↔ Villa Lobos primeiro; depois parque ↔ clube ↔ escola,
   no lugar (ou ao lado) do ônibus.
 

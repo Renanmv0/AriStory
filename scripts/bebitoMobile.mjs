@@ -282,8 +282,42 @@ if (roda('comandos')) {
     carro.andando(1);
     const andando = amplitude();
     carro.andando(0);
-    const assentos = [carro.assentos.motorista, carro.assentos.passageiro, ...carro.assentos.tras].map((a) => ({ nome: a.name, x: +a.position.x.toFixed(2), y: +a.position.y.toFixed(2), z: +a.position.z.toFixed(2) }));
-    return { giro, frenteVirou, trasFicou, volanteGirou, semTeto, farois, freio, esq, dir, pico, assentou, parado, andando, assentos };
+    const assentos = [carro.assentos.motorista, carro.assentos.passageiro, carro.assentos.frenteMeio, ...carro.assentos.tras].map((a) => ({ nome: a.name, x: +a.position.x.toFixed(2), y: +a.position.y.toFixed(2), z: +a.position.z.toFixed(2) }));
+    // A CAMA: os encostos da frente deitam para trás e ficam rentes aos assentos
+    const medirEncosto = () => {
+      const e = g.getObjectByName('encosto:motorista');
+      e.updateWorldMatrix(true, true);
+      const inv = g.matrixWorld.clone().invert();
+      const b = { minY: 1e9, maxY: -1e9, minZ: 1e9, maxZ: -1e9 };
+      const v = g.position.clone();
+      e.traverse((o) => {
+        if (!o.isMesh) return;
+        const pos = o.geometry.attributes.position;
+        const m = inv.clone().multiply(o.matrixWorld);
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(m);
+          b.minY = Math.min(b.minY, v.y); b.maxY = Math.max(b.maxY, v.y);
+          b.minZ = Math.min(b.minZ, v.z); b.maxZ = Math.max(b.maxZ, v.z);
+        }
+      });
+      return b;
+    };
+    const emPe = medirEncosto();
+    carro.deitarEncostos(1);
+    const logo = carro.camaFeita;
+    for (let i = 0; i < 90; i++) carro.update(1 / 30);
+    const feita = carro.camaFeita;
+    const deitado = medirEncosto();
+    carro.deitarEncostos(0, 'os-dois', true);
+    const dePe = carro.camaFeita;
+    carro.mostrarCargaDoBanco(false);
+    const semCarga = g.getObjectByName('carga-do-banco-de-tras').visible === false;
+    carro.mostrarCargaDoBanco(true);
+    const k = window.aristoryBebitoMobile.BEBITO_MOBILE;
+    return {
+      giro, frenteVirou, trasFicou, volanteGirou, semTeto, farois, freio, esq, dir, pico, assentou, parado, andando, assentos,
+      emPe, deitado, logo, feita, dePe, semCarga, cama: k.cama, alturaDoAssento: k.assento, temCama: carro.cama?.name === 'cama',
+    };
   });
   confere(c.giro, 'rodar() gira as rodas');
   confere(c.frenteVirou && c.volanteGirou, 'estercar() vira as rodas da frente e o volante junto');
@@ -293,7 +327,13 @@ if (roda('comandos')) {
   confere(c.esq > 15 && c.esq < 50 && c.dir === 0, `o pisca da esquerda pisca sozinho (${c.esq} de 60 quadros aceso, o da direita ${c.dir})`);
   confere(c.pico > 0.01 && c.assentou, `o solavanco sobe (${(c.pico * 100).toFixed(1)} cm) e assenta`);
   confere(c.andando > c.parado * 2, `a estrela balança mais andando (${c.parado.toFixed(3)} → ${c.andando.toFixed(3)} rad)`);
-  confere(c.assentos.length === 4 && c.assentos[0].x > 0 && c.assentos[1].x < 0, `quatro lugares de sentar, o motorista no +X (${c.assentos.map((a) => a.nome.slice(8)).join(', ')})`);
+  confere(c.assentos.length === 6 && c.assentos[0].x > 0 && c.assentos[1].x < 0, `seis lugares de sentar (dois na frente, o do meio para bicho pequeno, e três atrás), o motorista no +X (${c.assentos.map((a) => a.nome.slice(8)).join(', ')})`);
+  confere(c.emPe.maxY > c.alturaDoAssento + 0.5, `em pé, o encosto da frente sobe ${(c.emPe.maxY - c.alturaDoAssento).toFixed(2)} m acima do assento`);
+  confere(c.logo < 0.2 && c.feita > 0.999, 'deitarEncostos(1) deita devagar (o update é quem leva) e chega ao fim');
+  confere(Math.abs(c.deitado.maxY - c.alturaDoAssento) < 0.012, `deitado, o encosto fica rente ao assento (${c.deitado.maxY.toFixed(3)} × ${c.alturaDoAssento.toFixed(3)})`);
+  confere(c.dePe === 0, 'deitarEncostos(0, …, naHora) levanta na hora');
+  confere(c.cama.comprimento > 1.85 && c.cama.largura > 1.9, `a cama feita tem ${c.cama.comprimento.toFixed(2)} × ${c.cama.largura.toFixed(2)} m (cabem os dois deitados, de 1,72 e 1,78)`);
+  confere(c.temCama && c.semCarga, 'tem a âncora da cama, e mostrarCargaDoBanco(false) guarda o que vai no banco de trás');
 }
 
 // ==================================================================== o peso
@@ -340,16 +380,18 @@ if (roda('fotos')) {
   // de perto, em volta
   const VOLTA = [
     ['frente-34', [4.4, 2.5, 5.4], [0, 0.95, 0.1]],
-    ['frente', [0, 1.35, 6.6], [0, 0.95, 0]],
-    ['lado-do-motorista', [6.8, 1.5, 0], [0, 1.0, 0]],
-    ['lado-do-passageiro', [-6.8, 1.5, 0], [0, 1.0, 0]],
+    ['frente', [0, 1.35, 6.9], [0, 0.95, 0]],
+    ['lado-do-motorista', [7.4, 1.5, 0], [0, 1.0, 0]],
+    ['lado-do-passageiro', [-7.4, 1.5, 0], [0, 1.0, 0]],
     ['tras-34', [-4.2, 2.5, -5.6], [0, 0.95, -0.1]],
-    ['tras', [0, 1.3, -6.4], [0, 0.95, 0]],
-    ['de-cima', [0.01, 8.2, 0.4], [0, 0, 0]],
-    ['adesivos', [0.5, 1.15, -3.9], [0, 0.95, -2.0]],
-    ['cara', [0.9, 1.0, 4.1], [0, 0.75, 2.0]],
-    ['pelo-para-brisa', [0.5, 2.5, 3.1], [0, 1.2, 0.8]],
-    ['roda', [2.7, 0.65, 2.7], [0.95, 0.42, 1.27]],
+    ['tras', [0, 1.3, -6.8], [0, 0.95, 0]],
+    ['de-cima', [0.01, 8.8, 0.4], [0, 0, 0]],
+    ['adesivos', [0.5, 1.15, -4.1], [0, 0.95, -2.2]],
+    ['cara', [0.9, 1.0, 4.3], [0, 0.75, 2.2]],
+    ['pelo-para-brisa', [0.5, 2.5, 3.3], [0, 1.2, 1.0]],
+    ['roda', [2.9, 0.65, 2.9], [0.95, 0.42, 1.47]],
+    ['janelas', [3.6, 1.9, 0.6], [1.0, 1.4, 0.2]],
+    ['janelas-de-tras', [-3.4, 2.0, -2.6], [-0.9, 1.4, -1.2]],
   ];
   for (const [nome, de, para] of VOLTA) {
     await cena(de, para);
@@ -379,9 +421,9 @@ if (roda('fotos')) {
   for (const [nome, de, para] of [
     ['sem-teto', [2.6, 4.6, 3.0], [0, 0.7, -0.1]],
     ['sem-teto-de-cima', [0.01, 6.2, 0.2], [0, 0.5, 0]],
-    ['painel', [-0.15, 2.05, -0.5], [0.05, 1.0, 1.05]],
-    ['banco-de-tras', [0.1, 2.3, 0.75], [0, 0.75, -1.1]],
-    ['chaveiro', [0.05, 1.25, 0.25], [0.2, 0.86, 0.9]],
+    ['painel', [-0.15, 2.05, -0.3], [0.05, 1.0, 1.25]],
+    ['banco-de-tras', [0.1, 2.4, 0.6], [0, 0.75, -1.2]],
+    ['chaveiro', [0.05, 1.25, 0.45], [0.2, 0.86, 1.1]],
   ]) {
     await cena(de, para);
     await foto(nome);
@@ -521,9 +563,9 @@ if (roda('lugares')) {
   confere(mo.maxX < k.largura / 2 - 0.08 && pa.minX > -k.largura / 2 + 0.08, 'ninguém atravessa a porta');
   confere(mo.minX > pa.maxX - 0.12, `os dois não se atravessam no meio (sobra ${(mo.minX - pa.maxX).toFixed(2)})`);
   for (const [nome, de, para] of [
-    ['sentados-frente', [0.6, 1.9, 4.6], [0, 1.3, 0.6]],
+    ['sentados-frente', [0.6, 1.9, 4.8], [0, 1.3, 0.8]],
     ['sentados-34', [4.4, 2.5, 5.4], [0, 0.95, 0.1]],
-    ['sentados-lado', [6.4, 1.6, 0.3], [0, 1.15, 0.2]],
+    ['sentados-lado', [6.6, 1.6, 0.5], [0, 1.15, 0.4]],
   ]) {
     await cena(de, para);
     await foto(nome);
@@ -534,6 +576,80 @@ if (roda('lugares')) {
   await page.evaluate(() => window.bebitoMobile.mostrarTeto(true));
   await isometrica(7.5);
   await foto('sentados-iso');
+
+  // NO BANCO DE TRÁS (o que vai em cima dele é guardado): a dupla em dois dos três lugares
+  await page.evaluate(() => {
+    const j = window.jogo;
+    const c = window.bebitoMobile;
+    const V = j.scene.position.constructor;
+    c.mostrarCargaDoBanco(false);
+    j.ridePlayer(c.assentos.tras[0], new V(0, -0.47, 0), 1, 0);
+    j.rideCompanion(c.assentos.tras[2], new V(0, -0.47, 0), 1, 0);
+    j.setSitting(true);
+  });
+  await page.waitForTimeout(1000);
+  await cena([6.4, 1.7, -0.6], [0, 1.15, -0.5]);
+  await foto('atras-lado');
+  await page.evaluate(() => window.bebitoMobile.mostrarTeto(false));
+  await cena([2.8, 4.8, 2.6], [0, 0.7, -0.3]);
+  await foto('atras-sem-teto');
+
+  // A CAMA: os encostos da frente deitados, e os dois deitados lado a lado, com os pés para a frente
+  await page.evaluate(() => {
+    const j = window.jogo;
+    const c = window.bebitoMobile;
+    const V = j.scene.position.constructor;
+    j.setSitting(false);
+    c.deitarEncostos(1, 'os-dois', true);
+    j.ridePlayer(c.cama, new V(-0.4, 0, 0), 1, 0);
+    j.rideCompanion(c.cama, new V(0.4, 0, 0), 1, 0);
+    j.setLying(true);
+  });
+  await page.waitForTimeout(1200);
+  const naCama = await page.evaluate(() => {
+    const c = window.bebitoMobile;
+    const k = window.aristoryBebitoMobile.BEBITO_MOBILE;
+    const V = window.jogo.scene.position.constructor;
+    const inv = c.group.matrixWorld.clone().invert();
+    const b = { minX: 1e9, maxX: -1e9, minY: 1e9, maxY: -1e9, minZ: 1e9, maxZ: -1e9 };
+    const v = new V();
+    c.cama.updateWorldMatrix(true, true);
+    c.cama.traverse((o) => {
+      if (!o.isMesh || !o.geometry?.attributes?.position || o.material?.transparent) return;
+      for (let p = o; p && p !== c.cama; p = p.parent) if (!p.visible) return;
+      const pos = o.geometry.attributes.position;
+      const m = inv.clone().multiply(o.matrixWorld);
+      for (let i = 0; i < pos.count; i += 2) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(m);
+        b.minX = Math.min(b.minX, v.x); b.maxX = Math.max(b.maxX, v.x);
+        b.minY = Math.min(b.minY, v.y); b.maxY = Math.max(b.maxY, v.y);
+        b.minZ = Math.min(b.minZ, v.z); b.maxZ = Math.max(b.maxZ, v.z);
+      }
+    });
+    return { b, k };
+  });
+  {
+    const { b, k } = naCama;
+    console.log(`   deitados: x ${b.minX.toFixed(2)}…${b.maxX.toFixed(2)} · y ${b.minY.toFixed(2)}…${b.maxY.toFixed(2)} · z ${b.minZ.toFixed(2)}…${b.maxZ.toFixed(2)}`);
+    // (a âncora fica meio corpo acima do colchão, como na cama do quarto: só a nuca e os cachos afundam, como num travesseiro)
+    confere(b.minY > k.cama.altura - 0.3, `deitados, só a nuca afunda no colchão (${b.minY.toFixed(2)} × ${k.cama.altura.toFixed(2)})`);
+    confere(b.maxX < k.largura / 2 - 0.06 && b.minX > -k.largura / 2 + 0.06, 'deitados, os dois cabem entre as portas');
+    confere(b.maxY < k.altura - 0.3, `deitados, sobra teto (${b.maxY.toFixed(2)} de ${k.altura.toFixed(2)})`);
+  }
+  await cena([2.8, 4.8, 2.6], [0, 0.7, -0.3]);
+  await foto('cama-sem-teto');
+  await cena([0.01, 6.4, 0.0], [0, 0.6, -0.1]);
+  await foto('cama-de-cima');
+  await page.evaluate(() => window.bebitoMobile.mostrarTeto(true));
+  await cena([6.4, 1.9, 0.2], [0, 1.1, -0.1]);
+  await foto('cama-lado');
+  await page.evaluate(() => {
+    const j = window.jogo;
+    const c = window.bebitoMobile;
+    j.setLying(false);
+    c.deitarEncostos(0, 'os-dois', true);
+    c.mostrarCargaDoBanco(true);
+  });
 }
 
 console.log(erros.length ? 'ERROS:\n' + erros.join('\n') : 'sem erros de console');

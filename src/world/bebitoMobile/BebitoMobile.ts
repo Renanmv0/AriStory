@@ -31,10 +31,14 @@ import { PECAS_DO_CARRO, type Balanca } from './acessorios';
  *  - a LATARIA é a pele de fatias de `pele.ts` (planta de superelipse, perfil
  *    de lado e a fatia de cada `z`), partida em três malhas pela grade: a
  *    lataria (a cor da ficha), a capota (o teto e as colunas) e os vidros —
- *    transparentes de verdade, com a cabine por trás;
+ *    transparentes de verdade, com a cabine por trás. O que é linha em cima
+ *    dela (a borracha dos vidros, o cromo da cintura, o corte das portas) é
+ *    um filete que segue a normal da lataria (`friso`), e não um tubo;
  *  - a CABINE existe: o assoalho, o forro das portas, o painel com o rádio e
- *    os relógios, o volante que gira, a alavanca, dois bancos na frente e o
- *    banco inteiriço atrás (matelassê), e o tampão do porta-malas;
+ *    os relógios, o volante que gira, a alavanca na coluna, DOIS BANCOS
+ *    INTEIRIÇOS de matelassê (atrás cabem três) e o tampão do porta-malas;
+ *  - os ENCOSTOS DA FRENTE DEITAM (`deitarEncostos`): rentes aos assentos,
+ *    eles fazem dos dois bancos uma cama só, com a âncora de deitar (`cama`);
  *  - o TETO SAI (`mostrarTeto(false)`), como o da barraca da clareira: tudo
  *    da cintura para cima mora no grupo `teto`, e o corte cai na cintura,
  *    que já é uma emenda (o friso de cromo). É a casinha de boneca para uma
@@ -67,19 +71,33 @@ const CABINE = {
   /** o piso e a altura do assento (o quadril de quem senta) */
   piso: 0.36,
   assento: 0.6,
-  /** os bancos da frente e o de trás: a meia distância entre os dois lugares e o `z` do quadril */
-  frente: { x: 0.47, z: 0.27 },
-  tras: { x: 0.46, z: -0.78 },
+  /**
+   * OS DOIS BANCOS SÃO INTEIRIÇOS, da largura da cabine (o Renan pediu banco
+   * de trás para levar mais gente, e os da frente deitando para virar cama):
+   * o `z` do quadril de cada fileira e a meia distância entre os lugares. Na
+   * frente sentam dois (e cabe um bicho pequeno no meio); atrás, três.
+   */
+  frente: { x: 0.47, z: 0.47 },
+  tras: { x: 0.62, z: -0.72 },
+  /** o banco: a meia largura, a fundura e a grossura do assento; a altura e a grossura do encosto, e quanto ele deita para trás em pé */
+  banco: { meia: 0.93, fundo: 0.54, grosso: 0.17, encosto: 0.65, grossoDoEncosto: 0.15, inclinado: 0.14 },
   /** o painel: de onde a onde, e a altura do tampo */
-  painel: { z0: 0.9, z1: 1.21, topo: 1.115 },
-  /** o tampão do porta-malas */
-  tampao: { y: 1.0, z0: -1.2 },
+  painel: { z0: 1.1, z1: 1.41, topo: 1.115 },
+  /** o tampão do porta-malas (atrás do encosto de trás) */
+  tampao: { y: 1.0, z0: -1.17 },
   /** a grossura da porta (a lataria até o forro) */
   forro: 0.045,
-  volante: { y: 1.0, z: 0.74, raio: 0.2, deita: 0.42 },
-  /** a meia largura livre entre as caixas de roda (a parede de dentro delas): o banco de trás cabe aí */
+  volante: { y: 1.0, z: 0.94, raio: 0.2, deita: 0.42 },
+  /** a meia largura livre entre as caixas de roda (a parede de dentro delas) */
   entreRodas: 0.67,
 } as const;
+
+/** a cama: os assentos dos dois bancos e, no meio, os encostos da frente deitados */
+const CAMA = {
+  /** de onde a onde, no comprimento (a beira da frente do banco da frente até o pé do encosto de trás) */
+  z0: CABINE.tras.z - CABINE.banco.fundo / 2,
+  z1: CABINE.frente.z + CABINE.banco.fundo / 2,
+};
 
 /** as medidas que a cena usa */
 export const BEBITO_MOBILE = {
@@ -96,8 +114,17 @@ export const BEBITO_MOBILE = {
   lugares: {
     motorista: { x: CABINE.frente.x * ESCALA, z: CABINE.frente.z * ESCALA },
     passageiro: { x: -CABINE.frente.x * ESCALA, z: CABINE.frente.z * ESCALA },
+    /** entre os dois da frente: só cabe bicho pequeno (o Pelusa) */
+    frenteMeio: { x: 0, z: CABINE.frente.z * ESCALA },
     trasEsquerda: { x: CABINE.tras.x * ESCALA, z: CABINE.tras.z * ESCALA },
+    trasMeio: { x: 0, z: CABINE.tras.z * ESCALA },
     trasDireita: { x: -CABINE.tras.x * ESCALA, z: CABINE.tras.z * ESCALA },
+  },
+  /** a cama (com os encostos da frente deitados): o comprimento, a largura e a altura do colchão, no mundo */
+  cama: {
+    comprimento: (CAMA.z1 - CAMA.z0) * ESCALA,
+    largura: CABINE.banco.meia * 2 * ESCALA,
+    altura: CABINE.assento * ESCALA,
   },
 } as const;
 
@@ -123,6 +150,124 @@ function tubo(pts: THREE.Vector3[], raio: number, fechado = false, lados = 6, po
   if (fechado && limpos.length > 2 && limpos[0].distanceToSquared(limpos[limpos.length - 1]) < 1e-7) limpos.pop();
   const curva = new THREE.CatmullRomCurve3(limpos, fechado, 'centripetal');
   return new THREE.TubeGeometry(curva, Math.max(3, Math.round(limpos.length * porPonto)), raio, lados, fechado);
+}
+
+/**
+ * UM FRISO NA LATARIA: um filete (meia-cana) que segue uma linha de pontos da
+ * pele, deitado nela. Cada ponto traz a NORMAL da lataria, e é ela que
+ * orienta o filete — a largura é a mesma do começo ao fim, e ele não torce.
+ *
+ * Nasceu no lugar do tubo (`TubeGeometry`) das borrachas dos vidros: o tubo
+ * gira o próprio corte ao longo da curva (o quadro de Frenet), e com poucos
+ * lados isso aparecia como um traço que engrossa e afina; e a curva que passa
+ * pelos pontos estufava nas quinas, cada uma de um jeito. O Renan viu: "as
+ * janelas parecem desalinhadas, com um traço meio wobbly". Aqui as quinas
+ * são arredondadas TODAS com o mesmo raio (`quina`), andando pela linha.
+ */
+function friso(linha: NaPele[], meia: number, alto: number, fechado: boolean, quina = 0, gomos = 4): THREE.BufferGeometry {
+  let pts = linha.filter((q, i) => i === 0 || q.p.distanceToSquared(linha[i - 1].p) > 1e-7);
+  if (fechado && pts.length > 2 && pts[0].p.distanceToSquared(pts[pts.length - 1].p) < 1e-7) pts = pts.slice(0, -1);
+  if (fechado && quina > 0) pts = arredondarQuinas(pts, quina);
+  const n = pts.length;
+  // o corte: meia elipse, com as duas beiras 3 mm para dentro da lataria (sem fresta)
+  const corte: Array<[number, number, number, number]> = [];
+  for (let k = 0; k <= gomos; k++) {
+    const a = Math.PI * (1 - k / gomos);
+    const nb = Math.cos(a) / meia;
+    const nn = Math.sin(a) / alto;
+    const c = Math.hypot(nb, nn);
+    corte.push([Math.cos(a) * meia, Math.sin(a) * alto - 0.003, nb / c, nn / c]);
+  }
+  const pos: number[] = [];
+  const nor: number[] = [];
+  const idx: number[] = [];
+  const T = new THREE.Vector3();
+  const N = new THREE.Vector3();
+  const B = new THREE.Vector3();
+  for (let i = 0; i < n; i++) {
+    const antes = pts[fechado ? (i - 1 + n) % n : Math.max(0, i - 1)].p;
+    const depois = pts[fechado ? (i + 1) % n : Math.min(n - 1, i + 1)].p;
+    T.subVectors(depois, antes).normalize();
+    N.copy(pts[i].n).addScaledVector(T, -T.dot(pts[i].n)).normalize();
+    B.crossVectors(T, N);
+    for (const [b, h, nb, nn] of corte) {
+      pos.push(pts[i].p.x + B.x * b + N.x * h, pts[i].p.y + B.y * b + N.y * h, pts[i].p.z + B.z * b + N.z * h);
+      nor.push(B.x * nb + N.x * nn, B.y * nb + N.y * nn, B.z * nb + N.z * nn);
+    }
+  }
+  const anel = gomos + 1;
+  const trechos = fechado ? n : n - 1;
+  for (let i = 0; i < trechos; i++) {
+    const a0 = i * anel;
+    const b0 = ((i + 1) % n) * anel;
+    for (let k = 0; k < gomos; k++) idx.push(a0 + k, a0 + k + 1, b0 + k, b0 + k, a0 + k + 1, b0 + k + 1);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  geo.setIndex(idx);
+  return geo;
+}
+
+/**
+ * Arredonda as quinas de um contorno FECHADO, todas com o mesmo raio: onde a
+ * linha vira mais de ~35°, sai o que está a menos de `raio` da quina (andando
+ * pela linha, e não em linha reta: perto das caixas de roda os pontos são
+ * miúdos, e medir pelo vizinho dava um raio em cada quina) e entra um arco.
+ */
+function arredondarQuinas(pts: NaPele[], raio: number): NaPele[] {
+  const n = pts.length;
+  if (n < 4) return pts;
+  const trecho = (i: number): number => pts[i].p.distanceTo(pts[(i + 1) % n].p);
+  const rumo = (a: number, b: number): THREE.Vector3 => pts[b].p.clone().sub(pts[a].p).normalize();
+  const quinas: number[] = [];
+  for (let i = 0; i < n; i++) if (rumo((i - 1 + n) % n, i).dot(rumo(i, (i + 1) % n)) < Math.cos(0.6)) quinas.push(i);
+  if (!quinas.length) return pts;
+  /** o ponto a `d` da quina `i`, andando pela linha para a frente (+1) ou para trás (−1), e o último ponto por que passou */
+  const andar = (i: number, sentido: 1 | -1, d: number): { em: NaPele; passou: number } => {
+    let j = i;
+    let resto = d;
+    for (let guarda = 0; guarda < n; guarda++) {
+      const prox = (j + sentido + n) % n;
+      const comp = sentido > 0 ? trecho(j) : trecho(prox);
+      if (comp >= resto) {
+        const t = resto / comp;
+        return { em: { p: pts[j].p.clone().lerp(pts[prox].p, t), n: pts[j].n.clone().lerp(pts[prox].n, t).normalize() }, passou: j };
+      }
+      resto -= comp;
+      j = prox;
+    }
+    return { em: pts[i], passou: i };
+  };
+  /** a distância pela linha de uma quina à seguinte */
+  const ate = (de: number, para: number): number => {
+    let d = 0;
+    for (let j = de; j !== para; j = (j + 1) % n) d += trecho(j);
+    return d;
+  };
+  const fora: NaPele[] = [];
+  quinas.forEach((c, k) => {
+    const seguinte = quinas[(k + 1) % quinas.length];
+    const anterior = quinas[(k - 1 + quinas.length) % quinas.length];
+    const livre = quinas.length > 1 ? Math.min(ate(anterior, c), ate(c, seguinte)) : Infinity;
+    const r = Math.min(raio, livre * 0.45);
+    const entrada = andar(c, -1, r);
+    const saida = andar(c, 1, r);
+    // o arco: uma curva de três pontos, da entrada à saída, puxada pela quina
+    for (let q = 0; q <= 5; q++) {
+      const t = q / 5;
+      const u = 1 - t;
+      const p = entrada.em.p.clone().multiplyScalar(u * u).addScaledVector(pts[c].p, 2 * u * t).addScaledVector(saida.em.p, t * t);
+      const nn = entrada.em.n.clone().multiplyScalar(u * u).addScaledVector(pts[c].n, 2 * u * t).addScaledVector(saida.em.n, t * t).normalize();
+      fora.push({ p, n: nn });
+    }
+    // e o trecho reto até a entrada da quina seguinte
+    const rSeguinte = Math.min(raio, (quinas.length > 1 ? Math.min(ate(c, seguinte), ate(seguinte, quinas[(k + 2) % quinas.length])) : Infinity) * 0.45);
+    const fim = andar(seguinte, -1, rSeguinte).passou;
+    // (o `passou` da saída é o ponto ANTES dela; o da entrada seguinte, o ponto DEPOIS dela)
+    for (let j = (saida.passou + 1) % n, guarda = 0; j !== fim && guarda < n; j = (j + 1) % n, guarda++) fora.push(pts[j]);
+  });
+  return fora;
 }
 
 /** uma fita entre duas linhas de pontos, com a face virada para `cima` */
@@ -190,13 +335,32 @@ export class BebitoMobile {
    * para a frente. São filhas da carroceria (quem senta balança com ela). A
    * cena monta a dupla aqui com `g.ridePlayer(ancora, …)`.
    */
-  readonly assentos: { motorista: THREE.Object3D; passageiro: THREE.Object3D; tras: THREE.Object3D[] };
+  readonly assentos: {
+    motorista: THREE.Object3D;
+    passageiro: THREE.Object3D;
+    /** entre os dois da frente: só cabe bicho pequeno */
+    frenteMeio: THREE.Object3D;
+    /** os três de trás: esquerda (atrás do motorista), meio e direita */
+    tras: THREE.Object3D[];
+  };
+  /**
+   * ONDE SE DEITA, com a cama feita (`deitarEncostos(1)`): a âncora no padrão
+   * da cama do quarto (`g.ridePlayer(carro.cama, new Vector3(∓0.36, 0, 0), 1, 0)`
+   * e `g.setLying(true)`), com os pés para a frente do carro.
+   */
+  readonly cama = new THREE.Object3D();
   /** OS ENCAIXES de cada vaga (um por lugar), com nome: `vaga:painel:0`… */
   readonly encaixes = {} as Record<VagaDoCarro, THREE.Object3D[]>;
 
   private readonly carroceria = new THREE.Group();
   private readonly teto = new THREE.Group();
   private readonly volante = new THREE.Group();
+  /** os dois encostos da frente (cada um deita sozinho) e quanto cada um está deitado, de 0 a 1 */
+  private readonly encostos = {} as Record<'motorista' | 'passageiro', THREE.Group>;
+  private readonly deitado = { motorista: 0, passageiro: 0 };
+  private readonly alvoDoEncosto = { motorista: 0, passageiro: 0 };
+  /** o que está em cima do banco de trás (o Bebito book, a mantinha): um grupo, para a cena guardar */
+  private readonly cargaDoBanco = new THREE.Group();
   private readonly atlas: AtlasDeImpressos;
   private rodas!: THREE.InstancedMesh;
   private readonly lugaresDasRodas: Array<{ x: number; z: number; lado: 1 | -1; frente: boolean }> = [];
@@ -333,29 +497,40 @@ export class BebitoMobile {
     piso.translate(0, CABINE.piso - 0.05, 0);
     c.add(new THREE.Mesh(piso, toon(P.bebitoCarpete)));
 
-    por(c, new THREE.Mesh(quina(1.16, 0.15, 3.3, 0.06), toon(P.bebitoChassi)), 0, 0.245, 0);
+    por(c, new THREE.Mesh(quina(1.16, 0.15, A * 2 - 0.9, 0.06), toon(P.bebitoChassi)), 0, 0.245, 0);
     const escuro = toon(P.bebitoChassi, { doubleSide: true });
     const rc = CARRO.roda.caixa - 0.006;
     for (const e of CARRO.eixos) {
       const eixo = por(c, new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, CARRO.roda.x * 2, 8), toon(P.bebitoChassi)), 0, CARRO.roda.raio, e);
       eixo.rotation.z = Math.PI / 2;
-      const x1 = meiaLargura(e) - 0.014;
-      const comp = x1 - dentroDaRoda;
+      /**
+       * A CAIXA DE RODA: meio cano por cima da roda, da parede de dentro até a
+       * lataria. A beira de fora ACOMPANHA a planta do carro: um cano reto,
+       * da largura do carro no eixo, saía pela lataria nas pontas do arco
+       * (onde o carro já estreitou) e aparecia como uma aba escura embaixo do
+       * para-choque.
+       */
+      const meioCano = (raio: number): THREE.BufferGeometry[] => [-1, 1].map((lado) => {
+        const dentro: THREE.Vector3[] = [];
+        const fora: THREE.Vector3[] = [];
+        for (let k = 0; k <= 18; k++) {
+          const a = (k / 18) * Math.PI;
+          const z = e + raio * Math.cos(a);
+          const y = CARRO.roda.raio + raio * Math.sin(a);
+          dentro.push(new THREE.Vector3(lado * dentroDaRoda, y, z));
+          fora.push(new THREE.Vector3(lado * (meiaLargura(z) * 0.985 - 0.012), y, z));
+        }
+        return fita(dentro, fora, new THREE.Vector3(0, 1, 0));
+      });
+      // por fora (a boca da caixa de roda): a casca escura e a parede do fundo
+      for (const casca of meioCano(rc)) c.add(new THREE.Mesh(casca, escuro));
+      // por dentro (a corcova na cabine): a mesma casca, um fio maior, de carpete
+      for (const corcova of meioCano(rc + 0.02)) c.add(new THREE.Mesh(corcova, toon(P.bebitoCarpete)));
       for (const lado of [-1, 1]) {
-        // por fora (a boca da caixa de roda): a casca escura e a parede do fundo
-        const casca = new THREE.CylinderGeometry(rc, rc, comp, 18, 1, true, 0, Math.PI);
-        casca.rotateZ(Math.PI / 2);
-        casca.translate(lado * (dentroDaRoda + comp / 2), CARRO.roda.raio, e);
-        c.add(new THREE.Mesh(casca, escuro));
         const fundo = new THREE.CircleGeometry(rc, 18, 0, Math.PI);
         fundo.rotateY(Math.PI / 2);
         fundo.translate(lado * dentroDaRoda, CARRO.roda.raio, e);
         c.add(new THREE.Mesh(fundo, escuro));
-        // por dentro (a corcova na cabine): a mesma casca, um fio maior, de carpete
-        const corcova = new THREE.CylinderGeometry(rc + 0.02, rc + 0.02, comp, 14, 1, true, 0, Math.PI);
-        corcova.rotateZ(Math.PI / 2);
-        corcova.translate(lado * (dentroDaRoda + comp / 2), CARRO.roda.raio, e);
-        c.add(new THREE.Mesh(corcova, toon(P.bebitoCarpete)));
         const parede = new THREE.CircleGeometry(rc + 0.02, 14, 0, Math.PI);
         parede.rotateY(-lado * Math.PI / 2);
         parede.translate(lado * (dentroDaRoda - 0.02), CARRO.roda.raio, e);
@@ -365,50 +540,49 @@ export class BebitoMobile {
   }
 
   // ---------------------------------------------------------------- os frisos
-  /** tudo o que é linha em cima da lataria: o cromo da cintura, a borracha dos vidros, o corte das portas e o aro das caixas de roda */
+  /** tudo o que é linha em cima da lataria: o cromo da cintura, a borracha dos vidros, o corte das portas, o trilho da porta de correr e o aro das caixas de roda */
   private montarFrisos(): void {
     const p = pele();
     const ni = p.zs.length;
     const esq = (k: number): number => k;
     const dir = (k: number): number => PONTOS - 1 - k;
-    const em = (i: number, j: number, folga: number): THREE.Vector3 => p.pontos[i][j].clone().addScaledVector(p.normais[i][j], folga);
+    const em = (i: number, j: number): NaPele => ({ p: p.pontos[i][j], n: p.normais[i][j] });
     const cromo = toon(P.bebitoCromo);
     const borracha = toon(P.bebitoBorracha);
 
-    // o FRISO DA CINTURA: um fio de cromo dando a volta no carro inteiro, na linha do ombro
-    const volta: THREE.Vector3[] = [];
-    for (let i = ni - 1; i >= 0; i--) volta.push(em(i, esq(NO.cintura), 0.007));
-    for (let i = 1; i < ni - 1; i++) volta.push(em(i, dir(NO.cintura), 0.007));
-    this.carroceria.add(new THREE.Mesh(tubo(volta, 0.013, true, 5, 1), cromo));
+    // o FRISO DA CINTURA: um filete de cromo dando a volta no carro inteiro, na linha do ombro
+    const volta: NaPele[] = [];
+    for (let i = ni - 1; i >= 0; i--) volta.push(em(i, esq(NO.cintura)));
+    for (let i = 1; i < ni - 1; i++) volta.push(em(i, dir(NO.cintura)));
+    this.carroceria.add(new THREE.Mesh(friso(volta, 0.015, 0.012, true, 0.05, 3), cromo));
 
-    // a BORRACHA dos vidros: um tubo pelo contorno de cada um
-    const moldura = (pts: THREE.Vector3[]): void => {
-      // (quatro lados e pouco mais de um gomo por ponto: a 1,7 cm de raio é o que se vê, e eram 5 mil triângulos só de borracha)
-      this.teto.add(new THREE.Mesh(tubo(pts, 0.017, true, 4, 1.3), borracha));
+    // a BORRACHA dos vidros: um filete pelo contorno de cada um, as quinas todas com o mesmo raio
+    const moldura = (pts: NaPele[]): void => {
+      this.teto.add(new THREE.Mesh(friso(pts, BORRACHA.meia, BORRACHA.alto, true, BORRACHA.quina), borracha));
     };
     for (const [a, b] of CARRO.janelas) {
       const ia = p.estacaoEm(a);
       const ib = p.estacaoEm(b);
       for (const lado of [esq, dir]) {
-        const pts: THREE.Vector3[] = [];
-        for (let i = ia; i <= ib; i++) pts.push(em(i, lado(NO.vidroBaixo), 0.004));
-        for (let i = ib; i >= ia; i--) pts.push(em(i, lado(NO.vidroAlto), 0.004));
+        const pts: NaPele[] = [];
+        for (let i = ia; i <= ib; i++) pts.push(em(i, lado(NO.vidroBaixo)));
+        for (let i = ib; i >= ia; i--) pts.push(em(i, lado(NO.vidroAlto)));
         moldura(pts);
       }
     }
     // o quebra-vento: a divisória da janela da frente
     const iq = p.estacaoEm(CARRO.quebraVento);
     for (const lado of [esq, dir]) {
-      this.teto.add(new THREE.Mesh(tubo([em(iq, lado(NO.vidroBaixo), 0.004), em(iq, lado(NO.vidroAlto), 0.004)], 0.012, false, 5, 1), borracha));
+      this.teto.add(new THREE.Mesh(friso([em(iq, lado(NO.vidroBaixo)), em(iq, lado(NO.vidroAlto))], 0.013, 0.01, false, 0, 3), borracha));
     }
     // o vidro de trás: as duas metades se encontram na ponta
     {
       const it = p.estacaoEm(-zDaLargura(CARRO.vidroDeTras * W));
-      const pts: THREE.Vector3[] = [];
-      for (let i = it; i >= 0; i--) pts.push(em(i, esq(NO.vidroBaixo), 0.004));
-      for (let i = 1; i <= it; i++) pts.push(em(i, dir(NO.vidroBaixo), 0.004));
-      for (let i = it; i >= 0; i--) pts.push(em(i, dir(NO.vidroAlto), 0.004));
-      for (let i = 1; i <= it; i++) pts.push(em(i, esq(NO.vidroAlto), 0.004));
+      const pts: NaPele[] = [];
+      for (let i = it; i >= 0; i--) pts.push(em(i, esq(NO.vidroBaixo)));
+      for (let i = 1; i <= it; i++) pts.push(em(i, dir(NO.vidroBaixo)));
+      for (let i = it; i >= 0; i--) pts.push(em(i, dir(NO.vidroAlto)));
+      for (let i = 1; i <= it; i++) pts.push(em(i, esq(NO.vidroAlto)));
       moldura(pts);
     }
     // o para-brisa
@@ -417,11 +591,11 @@ export class BebitoMobile {
       const ib = p.estacaoEm(CARRO.zCowl - CARRO.peDoParaBrisa);
       const ja = esq(NO.paraBrisa);
       const jb = dir(NO.paraBrisa);
-      const pts: THREE.Vector3[] = [];
-      for (let j = ja; j <= jb; j++) pts.push(em(ib, j, 0.004));
-      for (let i = ib - 1; i >= ia; i--) pts.push(em(i, jb, 0.004));
-      for (let j = jb - 1; j >= ja; j--) pts.push(em(ia, j, 0.004));
-      for (let i = ia + 1; i < ib; i++) pts.push(em(i, ja, 0.004));
+      const pts: NaPele[] = [];
+      for (let j = ja; j <= jb; j++) pts.push(em(ib, j));
+      for (let i = ib - 1; i >= ia; i--) pts.push(em(i, jb));
+      for (let j = jb - 1; j >= ja; j--) pts.push(em(ia, j));
+      for (let i = ia + 1; i < ib; i++) pts.push(em(i, ja));
       moldura(pts);
     }
 
@@ -429,18 +603,24 @@ export class BebitoMobile {
     for (const z of Object.values(CARRO.portas)) {
       const i = p.estacaoEm(z);
       for (const lado of [esq, dir]) {
-        const pts: THREE.Vector3[] = [];
-        for (let k = NO.pe; k <= NO.cintura; k++) pts.push(em(i, lado(k), 0.001));
-        this.carroceria.add(new THREE.Mesh(tubo(pts, 0.007, false, 4, 1.2), borracha));
+        const pts: NaPele[] = [];
+        for (let k = NO.pe; k <= NO.cintura; k++) pts.push(em(i, lado(k)));
+        this.carroceria.add(new THREE.Mesh(friso(pts, 0.008, 0.005, false, 0, 2), borracha));
       }
+    }
+    // o TRILHO da porta de correr: da beira de trás da porta até quase o fim do carro, logo abaixo da cintura
+    for (const lado of [-1, 1] as const) {
+      const pts: NaPele[] = [];
+      for (let k = 0; k <= 10; k++) pts.push(noLado(CARRO.portas.tras + (TRILHO.fim - CARRO.portas.tras) * (k / 10), TRILHO.y, lado));
+      this.carroceria.add(new THREE.Mesh(friso(pts, 0.011, 0.006, false, 0, 2), borracha));
     }
 
     // o ARO das caixas de roda
     for (const e of CARRO.eixos) {
       for (const lado of [esq, dir]) {
-        const pts: THREE.Vector3[] = [];
-        for (let i = 0; i < ni; i++) if (Math.abs(p.zs[i] - e) <= CARRO.roda.caixa + 0.002) pts.push(em(i, lado(NO.pe), 0.003));
-        this.carroceria.add(new THREE.Mesh(tubo(pts, 0.017, false, 5, 1.2), cromo));
+        const pts: NaPele[] = [];
+        for (let i = 0; i < ni; i++) if (Math.abs(p.zs[i] - e) <= CARRO.roda.caixa + 0.002) pts.push(em(i, lado(NO.pe)));
+        this.carroceria.add(new THREE.Mesh(friso(pts, 0.02, 0.016, false, 0, 3), cromo));
       }
     }
   }
@@ -519,7 +699,7 @@ export class BebitoMobile {
     }
 
     // a antena, no para-lama do lado do passageiro, com a bolinha na ponta
-    const pe = porCima(-0.74, 1.5, 0);
+    const pe = porCima(-0.74, CARRO.zCowl + 0.28, 0);
     const antena = por(c, new THREE.Group(), pe.p.x, pe.p.y, pe.p.z);
     antena.rotation.x = -0.18;
     por(antena, new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.026, 0.03, 8), cromo), 0, 0.012, 0);
@@ -564,14 +744,15 @@ export class BebitoMobile {
     const c = this.carroceria;
     const cromo = toon(P.bebitoCromo);
     for (const lado of [-1, 1] as const) {
-      for (const z of [CARRO.portas.meio + 0.15, CARRO.portas.tras + 0.15]) {
+      // a maçaneta da porta da frente perto da beira de trás dela; a da porta de correr, perto da beira da frente
+      for (const z of [CARRO.portas.meio + 0.15, CARRO.portas.meio - 0.15]) {
         const macaneta = new THREE.CapsuleGeometry(0.015, 0.1, 3, 8);
         macaneta.rotateZ(Math.PI / 2);
         pregar(c, new THREE.Mesh(macaneta, cromo), noLado(z, 0.99, lado), 0.024);
         pregar(c, new THREE.Mesh(quina(0.15, 0.05, 0.012, 0.006), cromo), noLado(z, 0.99, lado), 0.004);
       }
       // o retrovisor: o braço saindo da porta e o espelho redondo olhando para trás
-      const base = noLado(0.98, 1.04, lado);
+      const base = noLado(CARRO.quebraVento + 0.18, 1.04, lado);
       const braco: THREE.Vector3[] = [
         base.p.clone(),
         base.p.clone().addScaledVector(base.n, 0.09).add(new THREE.Vector3(0, 0.07, 0)),
@@ -589,7 +770,7 @@ export class BebitoMobile {
       espelho.add(face);
     }
     // a tampa do tanque, no para-lama de trás do lado do passageiro
-    const noTanque = noLado(-1.78, 0.99, -1);
+    const noTanque = noLado(-A + 0.3, 0.86, -1);
     pregar(c, new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.007, 5, 18), toon(P.bebitoBorracha)), noTanque, 0.002);
     pregar(c, new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 5), cromo), noTanque, 0.004);
   }
@@ -681,34 +862,45 @@ export class BebitoMobile {
     // a chave, no painel, à direita da coluna
     this.encaixe('chave', 0, c, new THREE.Vector3(CABINE.frente.x - 0.27, pn.topo - 0.21, frente), Math.PI);
 
-    // a alavanca de câmbio, no assoalho, com a bola creme
-    const alavanca = por(c, new THREE.Group(), 0, CABINE.piso, 0.56);
-    alavanca.rotation.x = -0.22;
-    por(alavanca, new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), toon(P.bebitoBorracha)));
-    por(alavanca, new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.012, 0.36, 6), cromo), 0, 0.2, 0);
-    por(alavanca, new THREE.Mesh(new THREE.SphereGeometry(0.036, 10, 8), creme), 0, 0.39, 0);
+    // a alavanca de câmbio NA COLUNA (com os bancos inteiriços, o assoalho fica livre), com a bolinha creme
+    const alavanca = por(c, new THREE.Group(), CABINE.frente.x - 0.04, v.y - 0.075, v.z + 0.15);
+    alavanca.rotation.set(0.35, 0, 0.95);
+    por(alavanca, new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.009, 0.24, 6), cromo), 0, 0.12, 0);
+    por(alavanca, new THREE.Mesh(new THREE.SphereGeometry(0.028, 10, 8), creme), 0, 0.25, 0);
 
-    // OS BANCOS: dois na frente e o inteiriço atrás, de matelassê
+    // OS BANCOS: dois INTEIRIÇOS, de matelassê, da largura da cabine. O de trás cabe três; os dois
+    // encostos da frente DEITAM para trás e, com os dois assentos, viram uma cama (`deitarEncostos`).
+    const b = CABINE.banco;
     const bancos = new THREE.Group();
     c.add(bancos);
     const estofado = toon(cor.estofado);
-    const banco = (x: number, z: number, largura: number): void => {
-      por(bancos, new THREE.Mesh(quina(largura, 0.17, 0.52, 0.07), estofado), x, CABINE.assento - 0.085, z + 0.01);
-      const encosto = por(bancos, new THREE.Mesh(quina(largura, 0.66, 0.15, 0.07), estofado), x, CABINE.assento + 0.27, z - 0.345);
-      encosto.rotation.x = -0.14;
-      por(c, new THREE.Mesh(quina(largura - 0.12, 0.13, 0.42, 0.03), toon(P.bebitoChassi)), x, CABINE.piso + 0.06, z);
-    };
-    banco(CABINE.frente.x, CABINE.frente.z, 0.6);
-    banco(-CABINE.frente.x, CABINE.frente.z, 0.6);
-    // (o de trás cabe ENTRE as caixas de roda: mais largo, ele entrava nelas e aparecia pela boca do para-lama)
-    banco(0, CABINE.tras.z, CABINE.entreRodas * 2 - 0.02);
-    acabar(bancos, [[cor.estofado, matelasse(0.26)]]);
-    // o vivo creme no alto de cada encosto
     const vivo = toon(P.bebitoEstofadoVivo);
-    for (const [x, z, l] of [[CABINE.frente.x, CABINE.frente.z, 0.5], [-CABINE.frente.x, CABINE.frente.z, 0.5], [0, CABINE.tras.z, CABINE.entreRodas * 2 - 0.14]] as const) {
-      const faixa = por(c, new THREE.Mesh(quina(l, 0.05, 0.158, 0.02), vivo), x, CABINE.assento + 0.5, z - 0.378);
-      faixa.rotation.x = -0.14;
+    /**
+     * UM ENCOSTO: a origem é o PÉ dele (a dobradiça, na beira de trás do
+     * assento, meia grossura abaixo do topo). Em pé ele sobe, um pouco
+     * inclinado; deitado ele vai para trás, e a face da frente vira o colchão,
+     * rente ao assento.
+     */
+    const encosto = (nome: string, x: number, z: number, largura: number): THREE.Group => {
+      const g = new THREE.Group();
+      g.name = nome;
+      g.position.set(x, CABINE.assento - b.grossoDoEncosto / 2, z);
+      g.rotation.x = -b.inclinado;
+      por(g, new THREE.Mesh(quina(largura, b.encosto, b.grossoDoEncosto, 0.07), estofado), 0, b.encosto / 2, 0);
+      // o vivo creme, uma cinta perto do alto
+      por(g, new THREE.Mesh(quina(largura - 0.1, 0.05, b.grossoDoEncosto + 0.008, 0.02), vivo), 0, b.encosto - 0.11, 0);
+      bancos.add(g);
+      return g;
+    };
+    for (const z of [CABINE.frente.z, CABINE.tras.z]) {
+      por(bancos, new THREE.Mesh(quina(b.meia * 2, b.grosso, b.fundo, 0.07), estofado), 0, CABINE.assento - b.grosso / 2, z);
+      por(c, new THREE.Mesh(quina(b.meia * 2 - 0.14, 0.13, b.fundo - 0.14, 0.03), toon(P.bebitoChassi)), 0, CABINE.piso + 0.06, z);
     }
+    const peDaFrente = CABINE.frente.z - b.fundo / 2;
+    this.encostos.motorista = encosto('encosto:motorista', b.meia / 2, peDaFrente, b.meia - 0.01);
+    this.encostos.passageiro = encosto('encosto:passageiro', -b.meia / 2, peDaFrente, b.meia - 0.01);
+    encosto('encosto:tras', 0, CABINE.tras.z - b.fundo / 2, b.meia * 2);
+    acabar(bancos, [[cor.estofado, matelasse(0.26)]]);
 
     // o TAMPÃO do porta-malas: a prateleira atrás do banco, no desenho da planta
     const tp = CABINE.tampao;
@@ -730,11 +922,15 @@ export class BebitoMobile {
     for (const [lugar, x] of [[0, -CABINE.frente.x - 0.05], [1, -0.02], [2, CABINE.frente.x + 0.38]] as const) {
       this.encaixe('painel', lugar, c, new THREE.Vector3(x, pn.topo, meioZ + 0.02), Math.PI);
     }
-    for (const [lugar, x] of [[0, -0.36], [1, 0.46]] as const) {
-      this.encaixe('portaMalas', lugar, c, new THREE.Vector3(x, tp.y, -1.55), Math.PI);
+    // (longe das paredes: a cabine estreita para trás, e o frisbee encostado na da esquerda saía pela lataria)
+    for (const [lugar, x] of [[0, -0.18], [1, 0.56]] as const) {
+      this.encaixe('portaMalas', lugar, c, new THREE.Vector3(x, tp.y, (tp.z0 - A) / 2 + 0.04), Math.PI);
     }
-    for (const [lugar, x] of [[0, -0.34], [1, 0.34]] as const) {
-      this.encaixe('bancoDeTras', lugar, c, new THREE.Vector3(x, CABINE.assento, CABINE.tras.z + 0.04), 0);
+    // (o que vai no banco de trás mora num grupo só: com gente sentada ali, ou com a cama feita, a cena o guarda)
+    this.cargaDoBanco.name = 'carga-do-banco-de-tras';
+    c.add(this.cargaDoBanco);
+    for (const [lugar, x] of [[0, -0.52], [1, 0.52]] as const) {
+      this.encaixe('bancoDeTras', lugar, this.cargaDoBanco, new THREE.Vector3(x, CABINE.assento, CABINE.tras.z + 0.04), 0);
     }
     // os adesivos: três na tampa de trás e dois nos cantos do vidro
     ADESIVOS_DA_TAMPA.forEach(([x, y], lugar) => {
@@ -759,10 +955,23 @@ export class BebitoMobile {
       c.add(o);
       return o;
     };
+    // ONDE SE DEITA: a âncora da cama, do jeito da cama do quarto e da barraca — girada −π/2 em X, os
+    // dois lado a lado no X dela, os PÉS no `+Z` (a frente do carro) e a cabeça para o encosto de trás.
+    // A altura é a do colchão mais meio corpo (o rig nasce com os pés em `y = 0`).
+    this.cama.name = 'cama';
+    this.cama.position.set(0, CABINE.assento + 0.18 / ESCALA, CAMA.z1 - 0.02);
+    this.cama.rotation.x = -Math.PI / 2;
+    this.cama.scale.setScalar(1 / ESCALA);
+    c.add(this.cama);
     return {
       motorista: lugar('motorista', CABINE.frente.x, CABINE.frente.z),
       passageiro: lugar('passageiro', -CABINE.frente.x, CABINE.frente.z),
-      tras: [lugar('tras-esquerda', CABINE.tras.x, CABINE.tras.z), lugar('tras-direita', -CABINE.tras.x, CABINE.tras.z)],
+      frenteMeio: lugar('frente-meio', 0, CABINE.frente.z),
+      tras: [
+        lugar('tras-esquerda', CABINE.tras.x, CABINE.tras.z),
+        lugar('tras-meio', 0, CABINE.tras.z),
+        lugar('tras-direita', -CABINE.tras.x, CABINE.tras.z),
+      ],
     };
   }
 
@@ -947,6 +1156,41 @@ export class BebitoMobile {
     this.teto.visible = sim;
   }
 
+  /**
+   * A CAMA: os encostos da frente deitam para trás (`quanto` de 0, em pé, a 1,
+   * deitados) e, com os assentos dos dois bancos, viram um colchão só, da
+   * largura da cabine — a âncora de deitar é `carro.cama`. `qual` deita um
+   * lado só; `naHora` pula a animação (o `update` é quem deita devagar).
+   */
+  deitarEncostos(quanto: number, qual: 'os-dois' | 'motorista' | 'passageiro' = 'os-dois', naHora = false): void {
+    const k = THREE.MathUtils.clamp(quanto, 0, 1);
+    for (const lado of ['motorista', 'passageiro'] as const) {
+      if (qual !== 'os-dois' && qual !== lado) continue;
+      this.alvoDoEncosto[lado] = k;
+      if (naHora) this.deitado[lado] = k;
+    }
+    if (naHora) this.poseDosEncostos();
+  }
+
+  /** quanto os encostos da frente estão deitados agora (0 em pé, 1 cama feita): o menor dos dois */
+  get camaFeita(): number {
+    return Math.min(this.deitado.motorista, this.deitado.passageiro);
+  }
+
+  /** guarda (ou devolve) o que vai em cima do banco de trás: para sentar gente ali, ou para deitar */
+  mostrarCargaDoBanco(sim: boolean): void {
+    this.cargaDoBanco.visible = sim;
+  }
+
+  private poseDosEncostos(): void {
+    const { inclinado } = CABINE.banco;
+    for (const lado of ['motorista', 'passageiro'] as const) {
+      const t = this.deitado[lado];
+      const suave = t * t * (3 - 2 * t);
+      this.encostos[lado].rotation.x = -inclinado + (-Math.PI / 2 + inclinado) * suave;
+    }
+  }
+
   /** quanto o carro está andando (0 parado, 1 na estrada): é o que faz os penduricalhos balançarem mais */
   andando(quanto: number): void {
     this.movimento = THREE.MathUtils.clamp(quanto, 0, 1);
@@ -968,6 +1212,15 @@ export class BebitoMobile {
 
   update(dt: number): void {
     this.tempo += dt;
+    // os encostos deitando (ou levantando), sem pressa
+    let mexeu = false;
+    for (const lado of ['motorista', 'passageiro'] as const) {
+      const falta = this.alvoDoEncosto[lado] - this.deitado[lado];
+      if (Math.abs(falta) < 1e-4) continue;
+      this.deitado[lado] += Math.sign(falta) * Math.min(Math.abs(falta), dt / 1.1);
+      mexeu = true;
+    }
+    if (mexeu) this.poseDosEncostos();
     if (this.modoDoPisca) {
       this.relogioDoPisca += dt;
       const aceso = this.relogioDoPisca % 0.7 < 0.38;
@@ -1002,8 +1255,12 @@ const FAROL = { x: 0.6, y: 0.69, raio: 0.15 };
 const PISCA_DA_FRENTE = { x: 0.86, y: 0.56 };
 const LANTERNA = { x: 0.74, y: 0.92 };
 const PLACA_DE_TRAS = { y: 0.64 };
-const BAGAGEIRO = { x: 0.5, z0: -1.25, z1: 0.15 };
-const RETROVISOR = { y: 1.8, z: 0.6 };
+const BAGAGEIRO = { x: 0.5, z0: -1.45, z1: 0.35 };
+const RETROVISOR = { y: 1.8, z: CARRO.zTeto + 0.08 };
+/** a borracha dos vidros: a meia largura e a altura do filete, e o raio das quinas (o mesmo em todo vidro) */
+const BORRACHA = { meia: 0.022, alto: 0.013, quina: 0.055 };
+/** o trilho da porta de correr: a altura e onde ele acaba */
+const TRILHO = { y: 1.0, fim: -A + 0.42 };
 /** os três adesivos da tampa de trás (à esquerda da placa, em cima dela e à direita) e os dois do vidro */
 const ADESIVOS_DA_TAMPA: ReadonlyArray<readonly [number, number]> = [[-0.5, 0.67], [0.18, 0.93], [0.5, 0.67]];
 const ADESIVOS_DO_VIDRO: ReadonlyArray<readonly [number, number]> = [[-0.4, 1.32], [0.4, 1.3]];
