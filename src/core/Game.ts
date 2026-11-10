@@ -63,6 +63,7 @@ import { INSCRITOS } from '../world/adversariosData';
 import { CHAVE, MELHORIAS, ROSTO_DO_CLIENTE, TURNOS, comprarMelhoria, turnoAberto } from '../minigames/turnosDoMania';
 import type { ConteudoDaEscala, TurnoNaEscala } from '../ui/escalaDoWalter';
 import type { CharacterSpec } from '../characters/spec';
+import type { FichaDoBebitoMobile } from '../world/bebitoMobile/ficha';
 import type { JeitoDeSentar } from '../characters/CharacterRig';
 
 interface LoadedScene {
@@ -1980,6 +1981,14 @@ export class Game implements GameAPI {
    * é gravado inteiro um tiquinho depois de cada letra (`aoSalvar`), então
    * fechar a aba no meio de uma frase não perde a frase.
    */
+  fichaDoBebitoMobile(): FichaDoBebitoMobile {
+    return this.save.fichaDoBebitoMobile();
+  }
+
+  salvarFichaDoBebitoMobile(ficha: FichaDoBebitoMobile): void {
+    this.save.salvarFichaDoBebitoMobile(ficha);
+  }
+
   vagaLumesSoltos(): ReadonlyArray<{ x: number; z: number; n: number }> {
     return this.save.vagaLumesSoltos.filter((p) => p.cena === this.idDaCena);
   }

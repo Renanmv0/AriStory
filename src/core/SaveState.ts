@@ -23,6 +23,7 @@ import { SLOTS_ROUPA, type Coleta, type DecoracaoNoSave, type ItemDef, type Load
 import { fichaDoItem } from '../world/itens';
 import { EDICAO_DO_HALLOWEEN, HALLOWEEN_NO_JOGO } from '../eventos/Halloween';
 import type { ParteDaTinta, TintaDaPeca } from '../world/tintas';
+import { copiarFicha, normalizarFicha, type FichaDoBebitoMobile } from '../world/bebitoMobile/ficha';
 
 /**
  * Vagas da mochila (o que se carrega na mao).
@@ -199,6 +200,14 @@ interface SaveData {
    * só a cor muda, e só no corpo de quem pintou. Ver `world/tintas.ts`.
    */
   tintas: Record<string, Record<string, TintaDaPeca>>;
+  /**
+   * A FICHA DO BEBITO MOBILE, o carro do casal (um só para os dois, como a
+   * carteira): a pintura, a placa e o que vai em cada vaga. O modelo se
+   * monta lendo isto (`world/bebitoMobile/`). Se os dois JÁ GANHARAM o carro
+   * é uma flag da quest, e não mora aqui: a ficha existe desde sempre, de
+   * fábrica, e é o que a edição futura vai mexer.
+   */
+  bebitoMobile: FichaDoBebitoMobile;
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -464,6 +473,7 @@ const EMPTY: SaveData = {
   vagaLumesSoltos: [],
   retomadas: {},
   tintas: {},
+  bebitoMobile: normalizarFicha(undefined),
   inventarios: {},
 };
 
@@ -523,6 +533,8 @@ export class SaveState {
           : {},
         // save de antes do ateliê de tinta: nada pintado
         tintas: normalizarTintas(parsed.tintas),
+        // save de antes do carro: a ficha de fábrica; vaga ou detalhe que mudou depois é consertado na leitura
+        bebitoMobile: normalizarFicha(parsed.bebitoMobile),
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
       return dados;
@@ -554,6 +566,19 @@ export class SaveState {
 
   setFlag(key: string, value = true): void {
     this.data.flags[key] = value;
+    this.persist();
+  }
+
+  // ------------------------------------------------------- o Bebito Mobile
+
+  /** A ficha do carro (uma cópia: quem quer mudar passa por `salvarFichaDoBebitoMobile`). */
+  fichaDoBebitoMobile(): FichaDoBebitoMobile {
+    return copiarFicha(this.data.bebitoMobile);
+  }
+
+  /** Guarda a ficha do carro, já conferida (cor, placa e detalhe tortos voltam ao padrão). */
+  salvarFichaDoBebitoMobile(ficha: FichaDoBebitoMobile): void {
+    this.data.bebitoMobile = normalizarFicha(ficha);
     this.persist();
   }
 

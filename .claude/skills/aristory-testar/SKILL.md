@@ -49,6 +49,7 @@ Outros parâmetros de depuração:
 | `?zoom=4.5` | aproxima a câmera |
 | `?em=12,20.8` | põe a dupla nesse ponto do mundo |
 | `?olhar=3.14` | ângulo que eles encaram |
+| `?carro=38.4,-9` | estaciona o Bebito Mobile nesse ponto da cena (o carro só chega ao jogo pela quest); `&semTeto` tira o teto e `&farois` acende as luzes |
 
 ## Ambiente
 

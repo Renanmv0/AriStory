@@ -58,6 +58,11 @@ const PECAS = [
   ['casca-do-salao', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
   // o palquinho do concurso (a 6d)
   ['palquinho', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
+  // o Bebito Mobile (`world/bebitoMobile/`): ele ainda não mora em cena nenhuma,
+  // e o atalho `?carro=x,z` o estaciona na rua do parque. As caixas dele são de
+  // quina redonda (`quina`), que este caçador não mede: quem confere as faces
+  // coplanares do carro é o `SO=coplanar` do `scripts/bebitoMobile.mjs`
+  ['bebito-mobile', 'villa-lobos&carro=38.4,-9'],
   ['quiosque', 'clube'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],

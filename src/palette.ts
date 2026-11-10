@@ -2793,6 +2793,52 @@ export const PALETTE = {
   noiteEmCasaLuar: 0xa9bcff,
   vidroDeNoite: 0x27305e,
   luarNaJanela: 0x9fb4ff,
+  /**
+   * O BEBITO MOBILE (`world/bebitoMobile/`), o carro que o Renan dá de presente
+   * para o Ari. As três primeiras são a PINTURA DE FÁBRICA da ficha (a lataria
+   * azul-céu que os dois escolheram, o teto creme e o estofado caramelo) — a
+   * edição futura troca essas três pela ficha, e o resto é do carro: o cromo,
+   * a borracha, o pneu com a banda branca, as luzes, o carpete, o painel e o
+   * volante de baquelite creme.
+   */
+  bebitoAzulCeu: 0x86c8f2,
+  bebitoCreme: 0xfbf2de,
+  bebitoEstofado: 0xe2b184,
+  bebitoEstofadoVivo: 0xfbf2de,
+  bebitoCromo: 0xdfe5ea,
+  bebitoBorracha: 0x262a31,
+  bebitoPneu: 0x2d3037,
+  bebitoBandaBranca: 0xf6f3ea,
+  bebitoFarol: 0xfff4cf,
+  bebitoPisca: 0xf5a93a,
+  bebitoLanterna: 0xdc3f3a,
+  bebitoRe: 0xf6f3e8,
+  bebitoCarpete: 0x6e7f96,
+  bebitoChassi: 0x30353d,
+  bebitoPainel: 0x8a6a4c,
+  bebitoVolante: 0xf7efdc,
+  bebitoMostrador: 0xfdf8ea,
+  /** as miudezas de dentro: o vaso de barro do girassol, a folha, o laço rosa da Josefina, a mola do Jean-Luc */
+  bebitoVasinho: 0xc8774a,
+  bebitoFolha: 0x5aa24e,
+  bebitoLacoRosa: 0xf48fb1,
+  bebitoMola: 0xb9c2ca,
+  /** a estrela do retrovisor: a MESMA cor da presilha de estrela do cabelo do Ari (`CharacterRig`) */
+  estrelaDoAri: 0xf2e6cf,
+  bebitoCordao: 0xfaf6ee,
+  /** a carga: a capa de pano do Bebito book, os dois livros, a mantinha de lã da Estella e o pote de biscoitos */
+  bebitoBookCapa: 0xd98a6a,
+  bebitoBookElastico: 0x7a3f2e,
+  bebitoBookEtiqueta: 0xfdf6e6,
+  livroDoAri: 0x2f7f9a,
+  livroDoAriFaixa: 0xf2c14a,
+  livroDoRenan: 0xd9652f,
+  livroDoRenanFaixa: 0x2a1d1a,
+  livroMiolo: 0xf7f0de,
+  mantinhaLa: 0xfaf3e6,
+  mantinhaListra: 0xf2a7b8,
+  mantinhaEtiqueta: 0xc9a25e,
+  poteTampa: 0xf2a7b8,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

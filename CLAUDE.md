@@ -191,7 +191,14 @@ para a cena — ver "O ônibus da cidade" na skill de peça. Para BICHO QUE
 NÃO É GENTE, a Valentina (`entities/bichos/Valentina.ts`): flamingo de
 verdade, com o pescoço vivo (um tubo refeito a cada quadro) e a ROUPA POR
 FICHA num kit à parte (`world/looksDaValentina.ts`) — look novo é uma
-ficha nova; ver "Bicho com guarda-roupa" na skill de bicho.
+ficha nova; ver "Bicho com guarda-roupa" na skill de bicho. Para CARRO (veículo
+OCO, com cabine de verdade e montado por FICHA DE DADOS), o Bebito Mobile
+(`world/bebitoMobile/`): a lataria é uma pele de fatias (planta de
+superelipse, perfil de lado, a grade alinhada às janelas), os vidros são
+transparentes, o teto sai, e a pintura, a placa e o que vai em cada vaga
+(painel, retrovisor, chave, teto, porta-malas, banco de trás, vidro,
+para-choque, rodas) saem da ficha do save — ver "O Bebito Mobile" na skill
+de peça.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em
@@ -232,6 +239,10 @@ e as memórias no quadro. O plano e as falas estão em `docs/HALLOWEEN.md`. Os
 testes: `?halloween` liga o evento num save à parte; `?semHalloween` mostra o
 jogo sem ele. O `SO=aberto` do `scripts/halloween.mjs` pressupõe a chave
 ligada (`true`); os demais usam `?halloween` e continuam valendo.
+`BEBITO-MOBILE.md` é o plano do carro do casal e das viagens de carro (o
+presente do Renan para o Ari, a ficha e as vagas do carro, e as etapas: o
+modelo, a quest, a primeira viagem e as demais rotas), também aberto por um
+"COMECE AQUI" e com as perguntas ao Renan da próxima etapa.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,
@@ -380,6 +391,7 @@ node scripts/marcos.mjs  /tmp/mc    # os premios da estufa: reais e girassois de
 node scripts/armas.mjs  /tmp/ar    # as ferramentas da estufa: a parede, o painel por ferramenta (meta e cartas de cada uma), destrancar com 15 ondas somadas, a rodada de mangueira (esguicho, mangueira no chao, agua infinita, presa na estufa e as cartas dela) e a de pistola (pistola na mao, tiro de bolinhas, coice, Rajada e Balao d'agua), cada uma com o seu som (jorro e piu), e as cartas so do regador agindo (a espuma na alca, as petalas do Crivo de flor, a Chuveirada, o Transbordou e o Regador gigante crescendo na mao)
 node scripts/borrifador.mjs /tmp/bf # o borrifador: destranca pela pistola, o frasco pelo gargalo, o gatilho, o "psst", a nevoa molhando o bando inteiro, e as 14 cartas so dele agindo
 node scripts/fantasias.mjs /tmp/fa  # as cinco fantasias da caça do Halloween (abóbora, pirata, gato preto, espantalho, bruxinho) nos dois: cada peça no pai certo, o pé sumindo no calçado, nada abaixo do chão, de frente, costas, lado, andando, sentados e de perto, o rabo, o papagaio e o corvinho mexendo, e o boneco e o filtro 🎃 do guarda-roupa. FANTASIA=pirata roda uma
+node scripts/bebitoMobile.mjs /tmp/bm # o Bebito Mobile (docs/BEBITO-MOBILE.md), estacionado pelo atalho ?carro=x,z: o modelo medido (a base, o tamanho, as malhas e os triângulos), a ficha e as vagas (cada encaixe com nome, cada detalhe da ficha no carro, todo id do catálogo com modelo, outra ficha dando outro carro), o save (ficha torta consertada, save antigo com a de fábrica, gravar e recarregar), os comandos (rodas, volante, teto, faróis, freio, pisca, solavanco, penduricalhos), as faces coplanares das caixas de quina redonda, a dupla sentada na frente (cabe sob o teto e entre as portas) e as fotos de todos os lados, por dentro e sem teto. SO=modelo|ficha|comandos|peso|fotos|coplanar|lugares roda uma parte; SEM_FUNDIR=1 mede antes da junção
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha); SO=armario,estante roda so essas (peca de evento, como o carrinho-de-pocoes, abre a cena na fase dela); SEM_FUNDIR=1 mede antes da juncao (depois dela nao sobra caixa para medir)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso

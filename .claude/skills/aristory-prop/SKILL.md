@@ -949,6 +949,77 @@ letreiro (`trocarDestino`). O molde de VEÍCULO:
   velho, e 469 mil → 502 mil triângulos (~34 mil o ônibus); as cenas do
   parque e do clube têm 33 malhas a menos (66 soltas do velho, 33 do novo).
 
+## O Bebito Mobile (`world/bebitoMobile/`)
+
+O carro do casal (`docs/BEBITO-MOBILE.md`). É o molde de **veículo OCO** (com
+cabine de verdade, que se vê pelos vidros) e de **peça montada por FICHA DE
+DADOS**. O ônibus da cidade é caixa extrudada com bisel; caixa não fica oca
+nem redonda em planta, então a lataria do carro é uma superfície própria:
+
+- **A pele de fatias** (`pele.ts`): a PLANTA é uma superelipse
+  (`meiaLargura(z)`: a largura vai a zero nas pontas, e a frente e a traseira
+  fecham sozinhas); o PERFIL de cima é o desenho de lado (`topoEm(z)`); e cada
+  FATIA (`secao(z)`) é um arco de 25 pontos com NOME (o pé, a cintura, o pé e
+  o alto do vidro, a quina, o teto). Onde tem roda, a soleira sobe pelo arco
+  da caixa de roda: a boca é a própria borda da lataria.
+- **A grade cai nas bordas** (`estacoesFixas`): janela, coluna, porta e
+  para-brisa são linhas da grade, então lataria, capota e vidro são só uma
+  escolha de quadradinho (`regiaoDaCelula`) com a borda reta. A borracha do
+  vidro é um tubo pelo contorno do mesmo retângulo de índices; o friso de
+  cromo, o corte da porta e o aro da caixa de roda, idem.
+- **Estação "grudada" é perto em `z` E em largura.** Na ponta o carro fecha
+  em milímetros de `z`; tirando por `z` só, a cara do carro ficava sem
+  colunas (as estações da ponta são amostradas pela LARGURA).
+- **A normal vem da vizinhança da grade** (alargando a janela onde os nós
+  coincidem), e as três malhas a dividem: a luz não quebra na emenda entre a
+  lataria, a capota e o vidro.
+- **Pregar coisa na lataria**: `naPonta(x, y, frente)`, `noLado(z, y, lado)`
+  e `porCima(x, z)` devolvem o ponto e a normal (já com a deitada da
+  traseira, `deformar`), e `pregar()` assenta a peça com o `+Z` na normal.
+  Farol, lanterna, placa, adesivo, maçaneta: tudo passa por aí. O `naPonta`
+  vale só na parte EM PÉ da cara (abaixo da quina): acima, a lataria já
+  curvou para dentro e a peça boia.
+- **O teto sai** (`mostrarTeto(false)`): tudo da cintura para cima mora no
+  grupo `teto`, e o corte cai na cintura, que já é uma emenda (o friso). O
+  que dá grossura à porta com o teto fora é o FORRO (a mesma pele, 4,5 cm
+  para dentro e do avesso) e a pestana entre os dois.
+- **O carro cresce 10% no fim, e quem senta não.** Perto do corpo chibi (a
+  cabeça tem 60 cm, 75 com os cachos) o carro do tamanho de verdade era de
+  brinquedo, e os dois sentados encostavam a cabeça um no outro. A
+  carroceria e o lote das rodas ganham a escala; as âncoras de sentar levam
+  a escala inversa. `scripts/bebitoMobile.mjs` (`SO=lugares`) senta a dupla
+  e mede a folga.
+- **O vidro de trás não acompanha a queda do teto**: acompanhando, o alto
+  dele ficava caído no meio, como uma rede. Na tampa ele é uma linha reta.
+- **Banco entre as caixas de roda**: o banco de trás da largura da cabine
+  entrava nas caixas e aparecia pela boca do para-lama. Ele cabe ENTRE elas
+  (`CABINE.entreRodas`), e as corcovas ficam à vista dos lados, de carpete.
+- **A ficha** (`ficha.ts`, sem three: o save a importa): a pintura, a placa
+  e as VAGAS — cada vaga com os seus lugares, cada lugar um encaixe com nome
+  no modelo (`vaga:painel:0`). O catálogo dá o id, a vaga e a ORIGEM de cada
+  detalhe; `normalizarFicha` conserta o que vem do save. Detalhe novo é uma
+  entrada no catálogo e um modelo (`acessorios.ts`) ou um desenho
+  (`impressos.ts`) — o teste cobra que todo id monte.
+- **Os impressos são UM atlas** (`impressos.ts`): a placa, os adesivos, o
+  rádio e os relógios pintados num canvas só, e cada um é uma plaquinha com
+  o UV no pedaço dele. O adesivo entra como IRMÃO do encaixe (sem nome), e
+  a `fundir()` junta todos numa malha; o encaixe continua lá, com nome.
+- **O que balança diz que balança**: grupo com nome e
+  `userData.balanca = { x: [amplitude, velocidade], z: […] }` (a cabeça de
+  mola do Jean-Luc, o girassol, a estrela, o pompom, o chaveiro). O carro os
+  acha sozinho e balança mais andando e no solavanco.
+- **Miniatura de personagem copia as PEÇAS dele**: o primeiro Jean-Luc de
+  painel (pato branco, camisa azul, chapéu azul) parecia outro pato famoso.
+  O do jogo tem a boina larga tombada, a camisa creme de gola vermelha, a
+  bandeirinha e a raquete — com elas, é ele.
+- **Tubo é o que pesa**: a borracha dos vidros com 5 lados e 2 gomos por
+  ponto eram 5 mil triângulos; com 4 lados e 1,3 gomo, metade, e a mesma
+  foto. O carro inteiro: 275 malhas → 36 depois da `fundir()` e da
+  `juntarPorCor`, ~35,5 mil triângulos.
+- **Face coplanar em caixa de quina redonda**: o `SO=coplanar` do teste mede
+  a caixa envolvente de cada `quina()` não girada, com `?semFundir` (achou a
+  borda da mantinha no plano da dobra de cima).
+
 ## O kit do Halloween (`world/halloween/`)
 
 As peças do parque enfeitado (`docs/HALLOWEEN.md`, §4.1). Moram fora do

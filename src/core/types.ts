@@ -12,6 +12,7 @@ import type {
 } from '../minigames/jardim/tela';
 import type { EstiloDeRegador } from '../world/regador';
 import type { MemoriaPintada } from '../world/memoriasData';
+import type { FichaDoBebitoMobile } from '../world/bebitoMobile/ficha';
 import type { ProgressoDaApostila, ResultadoDaApostila } from '../minigames/aula/tipos';
 
 export interface CircleCollider {
@@ -845,6 +846,14 @@ export interface GameAPI {
    * abriram, se escreveram e quantas perguntas têm resposta (antes e agora).
    */
   abrirBebitoBook(): Promise<ResultadoDoBebitoBook>;
+  /**
+   * A FICHA DO BEBITO MOBILE (do save): a pintura, a placa e o que vai em
+   * cada vaga do carro. A cena monta o carro com ela
+   * (`new BebitoMobile(g.fichaDoBebitoMobile())`). Devolve uma cópia.
+   */
+  fichaDoBebitoMobile(): FichaDoBebitoMobile;
+  /** guarda a ficha do carro (a edição futura): o save confere tudo ao gravar */
+  salvarFichaDoBebitoMobile(ficha: FichaDoBebitoMobile): void;
   /** os vaga-lumes já soltos pela dupla NESTA cena (do save): onde e quantos */
   vagaLumesSoltos(): ReadonlyArray<{ x: number; z: number; n: number }>;
   /** guarda no save mais um ponto de vaga-lumes soltos, nesta cena */
