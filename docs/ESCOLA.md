@@ -1267,6 +1267,14 @@ mora em `scenes/cozinhaDaLiz.ts`, e as peças em `world/cozinhaDaTiaLiz.ts`:
     entra por baixo e levanta o pedaço; a jarrinha dá a volta derramando os
     três leites; três morangos do potinho; a canela.
 
+**O que ficou para depois na cozinha** (a escolha é do Renan):
+- em alguns passos o cabeção dela, visto de cima, tapa o que está nas patas
+  (o prato já anda do lado e só vem para a frente para receber a comida);
+- no fororo, a panelinha passa perto do focinho dela na hora de despejar;
+- cada pedido leva uns 30 a 40 s de cena (dois pratos, o segundo 1,7× mais
+  ligeiro): dá para encurtar o segundo prato se ficar comprido;
+- ideia em aberto: ela reagir a quem passa perto da janela enquanto trabalha.
+
 No Halloween (a escola vazia) ela some junto com os outros, e a cozinha
 para quieta. Teste: `scripts/tiaLiz.mjs`
 (`SO=modelo|posto|pratos|conversa|cozinha|preparos`).
