@@ -1048,34 +1048,98 @@ nem redonda em planta, então a lataria do carro é uma superfície própria:
 
 ## A frente da casa do Ari (`world/frenteDaCasa.ts`)
 
-A casa por fora, a garagem e a cerca do jardim — nasceram com o Bebito Mobile
-e só aparecem com a chave dele (`eventos/BebitoMobile.ts`).
+A casa por fora, o muro, os portões e a garagem — nasceram com o Bebito
+Mobile e só aparecem com a chave dele (`eventos/BebitoMobile.ts`). A segunda
+versão veio de um pedido do Renan depois da primeira foto: a casa mais funda
+("parece minúscula"), muro com planta verde no lugar da cerquinha branca,
+portão moderno na garagem.
 
-- **`fachadaDaCasa(cores?)`** — a casa térrea de telhado de duas águas. A
-  parede da frente é uma forma com o RECORTE da porta (ela toca o chão) e os
-  FUROS das janelas, extrudada (o kit de prédio de rua da lojinha); reboco em
-  canvas; a porta é a MESMA `portaDaRua` de dentro; janela com caixilho
-  branco, cortina por trás, peitoril, duas venezianas abertas com palhetas e
-  floreira; telha em fiadas desenhada em canvas (`telhas()`), cumeeira,
-  oitões e chaminé. A face de fora em `z = 0`, a porta em `x = 0`, a casa
-  para o `−Z`. Medidas em `FACHADA`.
-- **As cores são parâmetro** (`CoresDaFachada`: parede, telhado, veneziana,
-  porta), e `vizinha: true` dá a VERSÃO LEVE do mesmo molde para casa de
-  fundo: porta lisa (a de verdade tem 6 mil triângulos), sem lampião e
-  palheta em caixa reta — 5,7 mil triângulos contra 15 mil. É assim que a
-  rua tem oito casinhas de cores diferentes (`P.vizinha*`).
+- **`fachadaDaCasa(cores?)`** — a casa térrea de telhado de duas águas, com
+  8,2 m de fundo. Cada parede é um QUADRO (a face de fora em `z = 0` dele): a
+  da frente tem o RECORTE da porta (ela toca o chão) e os furos das janelas;
+  as duas laterais são quadros girados com dois furos cada. A janela é uma
+  função (`janelaEm`) que serve aos três: caixilho branco dentro do vão,
+  cruz, vidro, cortina, peitoril, venezianas e, na frente, a floreira. A
+  porta é a MESMA `portaDaRua` de dentro; telha em fiadas em canvas, testeira
+  no beiral, oitões com o óculo redondo do sótão, chaminé. Medidas em
+  `FACHADA`.
+- **Casa funda pede telhado mais deitado**: com a inclinação da casa rasa, a
+  cumeeira dobrava a altura da casa. E a lateral, que na casa funda é a
+  maior parede à vista da câmera, lisa parecia um muro — por isso as janelas.
+- **Caixilho: o montante é inteiro, mais alto e mais grosso; a travessa fica
+  ENTRE os dois.** Com a mesma medida, as faces da frente e de cima
+  coincidiam nas quatro quinas (o `zfighting.mjs` só viu quando a vizinha
+  passou a usar caixa reta — a `quina()` ele não mede).
+- **As cores são parâmetro** (`CoresDaFachada`), e `vizinha: true` dá a
+  VERSÃO LEVE do mesmo molde para casa de fundo: porta lisa, sem lampião,
+  caixilho e palheta em caixa reta, lateral sem veneziana — ~7 mil
+  triângulos contra 25 mil.
 - **`pergoladoDaGaragem()`** — garagem de câmera isométrica NÃO tem telhado
-  fechado (esconderia o carro): pilares, duas vigas, ripas espaçadas,
-  trepadeira florida nos cantos e a prateleira com o regador. O `alto`
-  (`GARAGEM.alto`) deixa passar o carro com o laço no teto — a primeira
-  versão, de 2,55, era furada pelo laço. As paredes são da cena (colisor).
-- **`cercaBranca(comprimento)`** — as ripas de ponta redonda num
-  `InstancedMesh`, duas réguas e os mourões com bolinha;
-  **`portaozinho(largura)`** — a folha num grupo com nome
-  (`folha-do-portao`, em `userData.folha`): a cena gira para abrir;
-  **`caixaDeCorreio()`**.
-- Caixa de quina (`quina`) casada com furo de parede briga pelo pixel: o
-  caixilho entra 1 cm no reboco.
+  fechado (esconderia o carro): duas vigas de aço grafite, três pilaretes e o
+  ripado de madeira por cima, a cada 46 cm (a 36 ele já tapava o carro). O
+  `alto` deixa passar o carro com o laço no teto.
+- **`muroDoJardim(comprimento, alto)`** e **`pilarDoMuro(alto, luz)`** — o
+  pano de reboco, a faixa de pedra no pé e o capeamento de grafite, cada um
+  de uma largura (nenhuma face no plano da outra). A arandela do pilar é
+  luz pintada: a face de baixo acesa e um leque fraco na parede (forte, o
+  pilar virava um borrão branco).
+- **`portaoSocial()`** — quadro de aço e ripado deitado (`ripado()`), a folha
+  no grupo `folha-do-portao` com a dobradiça na ponta; a cena gira.
+- **`portaoDeCorrer()`** e **`trilhoDoPortao()`** — o portão da garagem. A
+  folha (`folha-do-portao-da-garagem`) é centrada e a cena anda o
+  `position.x` dela; o trilho, o motor e o guia de cima são a peça parada.
+  **Portão de correr não tem verga**: o Bebito Mobile é mais alto que o
+  portão (o carro é grande perto do corpo chibi), e com basculante o laço
+  batia. Ele corre por DENTRO do muro vizinho, então esse muro precisa ter o
+  comprimento do portão, e nada pode morar na faixa do trilho.
+- **`painelDoPortao()`** — o interfone e a boca de cartas, chumbados no pilar.
+
+## As plantas do jardim (`world/plantasDeJardim.ts`)
+
+O Renan achou os canteiros redondos de tijolo "sem graça" e pediu plantas
+novas e bem feitas. Este é o molde de PLANTA DE JARDIM, e serve a qualquer
+cenário:
+
+- **Cada espécie é UM LOTE para o jardim inteiro.** A função recebe a lista
+  dos pés (`{ x, z, escala, semente, cor }`, no mundo) e devolve um grupo com
+  um a três `InstancedMesh`: `hortensias`, `lavandas`, `capins`, `agaves`,
+  `margaridas`, `costelasDeAdao`, `heraNosMuros`. Seis hortênsias são três
+  desenhos. O `buxinhoNoVaso()` é peça única (vai na `fundir`).
+- **A folha é a `fita()`**: nasce em pé, de altura 1, arqueando para o `+Z`,
+  DOBRADA EM V na nervura — dobrada ela pega luz de um lado e sombra do
+  outro. A lâmina do capim, a agulha da lavanda, a haste da flor, a folha
+  larga da hortênsia e o talo da costela-de-adão são a mesma função com
+  outra largura e outro arco. Quem aponta cada cópia é `apontar(p, frente,
+  cima, escala)` (o `+Z` da peça em `frente`, o `+Y` o mais perto de `cima`).
+- **Duas matérias na mesma geometria, pela cor do vértice**: a haste verde e
+  a espiga roxa da lavanda, o talo e a pluma do capim (`trianguloDoFuso`: uma
+  fila de anéis ao longo do mesmo arco da haste), a borda clara e o espinho
+  escuro do agave. A cor por cópia multiplica por cima.
+- **Vento** (`core/shaders.ts`): o que é fino e alto balança — capim,
+  lavanda, margarida. A geometria tem altura 1 e a cópia escala (o peso do
+  vento é a altura LOCAL); a flor nasce já na ponta da haste e divide a
+  matriz com ela (o truque da taboa). Planta de vento é `semSombra`.
+- **Hortênsia**: um domo de folhas largas pela espiral de Fibonacci (cada
+  uma apontando para fora, caindo mais quanto mais embaixo) e as bolas de
+  flor: um miolo escuro coberto de florzinhas de quatro pétalas, cada bola
+  puxando um tanto para o lilás.
+- **Costela-de-adão**: a folha é um leque do talo até a borda amostrado nas
+  alturas dos RASGOS (o começo, o meio e o fim de cada um) — é o rasgo que
+  diz o nome da planta.
+- **Hera no muro** (`heraNosMuros(muros)`): maciços por cima do capeamento,
+  caindo pelos dois lados, mais fundo no meio de cada maciço, com fios que
+  descem mais que o resto; as folhas da camada de baixo são mais escuras. O
+  lado de FORA (o que ganha mais folha) é o da esquerda de quem vai de `a`
+  para `b`.
+- **O que a foto de perto corrigiu**: a pluma do capim gorda e em gomos
+  fortes lia como CRISTAL (ficou fina, comprida, com a cintura ondulando de
+  leve); a folhinha do buxinho em pé virava OURIÇO (topiaria é aparada: a
+  folha deita na bola); a florzinha de ponta muito funda deixava a bola de
+  hortênsia espinhuda.
+- **Chão de canteiro** é conta de distância (`world/caminhos.ts`:
+  `caixaRedonda`, `capsula`, `uniaoSuave`, `beiraTorta`, `mancha` com passo
+  de 12 cm) pintada com `cascaDePinus()` ou `pedrisco()` — canteiro não tem
+  beira de régua.
 
 ## O kit do Halloween (`world/halloween/`)
 

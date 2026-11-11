@@ -65,15 +65,19 @@ const PECAS = [
   ['bebito-mobile', 'villa-lobos&carro=38.4,-9'],
   // a frente da casa do Ari (`world/frenteDaCasa.ts`), que só existe com a chave
   // do carro: a casa por fora, a vizinha (o mesmo molde, mais leve), o
-  // pergolado da garagem, a cerquinha, o portãozinho e a caixa de correio.
+  // pergolado da garagem, o muro e os pilares, os dois portões, o trilho e o painel.
   // Rode com SEM_FUNDIR=1: o jardim e a vizinhança são juntados como FUNDO
   // (`fundirComoFundo`), que apaga o nome das peças de dentro
   ['casa-do-ari-por-fora', 'frente-da-casa&bebito'],
   ['casa-vizinha', 'frente-da-casa&bebito'],
   ['garagem-do-bebito', 'frente-da-casa&bebito'],
-  ['cerca-do-jardim', 'frente-da-casa&bebito'],
+  ['muro-do-jardim', 'frente-da-casa&bebito'],
+  ['pilar-do-muro', 'frente-da-casa&bebito'],
   ['portao-do-jardim', 'frente-da-casa&bebito'],
-  ['caixa-de-correio', 'frente-da-casa&bebito'],
+  ['portao-da-garagem', 'frente-da-casa&bebito'],
+  ['trilho-do-portao', 'frente-da-casa&bebito'],
+  ['painel-do-portao', 'frente-da-casa&bebito'],
+  ['buxinho-no-vaso', 'frente-da-casa&bebito'],
   ['quiosque', 'clube'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],

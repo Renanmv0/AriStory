@@ -240,40 +240,66 @@ Com a chave ligada, a porta da rua da casa ("Sair pro jardim") sai AQUI, e é
 a calçada que leva ao parque ("Ir pro parque"); o "Voltar pra casa" do
 parque chega pela calçada.
 
+**A segunda versão (2026-11-11, depois da primeira foto).** O Renan pediu:
+a casa **maior, mais comprida para trás** ("parece minúscula, olhando de
+fora"); na garagem, **um portão, mais moderno**; no lugar da cerquinha
+branca, **um muro um pouco mais alto, decorado com plantas somente verdes**
+("dê uma modernizada"); e **plantas novas e bem feitas** no jardim — "os
+canteiros redondos são sem graça; a árvore pode deixar". É o que está aqui:
+
 - **A casa por fora**: as cores da casa por dentro (a parede creme da sala,
-  a porta de madeira escura — a MESMA peça da porta de dentro), duas
-  janelas com veneziana verde e floreira, o lampião, o degrau com o capacho
-  e o telhado de duas águas de telha (canvas) com chaminé.
-- **O jardim**, florido e fechado dos dois lados: de um lado a **mureta**
-  com moitas floridas em cima (e uma passagem para a garagem); do outro, a
-  **cerquinha branca**, que continua na frente com o **portãozinho** (abre
-  sozinho quando alguém chega) e a caixa de correio. Dentro: quatro
-  canteiros, moitas floridas encostadas na casa, flores soltas, o caminho de
-  pedrinha e uma árvore florida.
-- **A garagem**, ao lado: o piso de placas, as paredes do fundo e do lado, e
-  um **pergolado** de madeira com trepadeira florida (a câmera olha de cima:
-  telhado fechado esconderia o carro), com uma prateleira e o regador. O
-  carro mora ali de nariz para a rua.
+  a porta de madeira escura — a MESMA peça da porta de dentro), agora com
+  **8,2 m de fundo** (eram 3,6), duas janelas em cada lateral, o óculo
+  redondo do sótão no oitão, a testeira branca no beiral e o telhado de
+  duas águas mais deitado. Na frente continuam as duas janelas com veneziana
+  verde e floreira, o lampião e o degrau com o capacho.
+- **O muro**: reboco claro, faixa de pedra no pé e capeamento de grafite,
+  com 1,35 m (a cerca tinha 0,92), na frente e no lado direito do jardim;
+  pilares mais altos nos portões, com arandela, interfone e boca de cartas.
+  Por cima dele, **hera** (só verde) em maciços, caindo pelos dois lados.
+- **O portão social**: quadro de aço grafite com ripado de madeira e puxador
+  de inox; abre sozinho quando alguém chega.
+- **A garagem**: o **portão de correr** — o mesmo ripado, num quadro de aço,
+  com trilho, motor e guia —, automático: abre quando alguém chega perto da
+  boca (ou quando o carro chega, na quest), correndo por dentro do muro, e
+  fecha quando todos se afastam. Não tem verga: o carro, que é mais alto
+  que ele, passa de laço e tudo. Por cima, o **pergolado** de vigas de aço e
+  ripas de madeira (a câmera olha de cima: telhado fechado esconderia o
+  carro), e a hera descendo da parede do fundo.
+- **O jardim**, fechado dos dois lados (a mureta do lado da garagem, com a
+  passagem; o muro do outro): o caminho de **lajes com grama entre elas**, da
+  porta ao portão e até a passagem da garagem; **hortênsias** azuis, lilases
+  e rosa ao pé da casa; uma fileira de **lavanda** ao longo da mureta; uma
+  ilha de pedrisco branco com **agaves** e uma pedra; uma ilha de casca de
+  pínus com lavanda, capim e **margaridas**; **costela-de-adão** no canto e
+  ao pé da árvore; **capim ornamental** de pluma junto aos muros; dois
+  **buxinhos** em vaso de cimento ao lado da porta; e margaridas soltas na
+  grama. A árvore florida ficou. O capim, a lavanda e as margaridas balançam
+  no vento.
 - **A rua**: calçada de pedrinha, guia, asfalto com faixa — e a
   **vizinhança**: oito casinhas do mesmo molde, cada uma de uma cor (quatro
   deste lado, quatro do outro, de frente para cá), sebe na frente dos
-  quintais, árvores atrás e nas pontas, e nuvens. Sem ela a casa ficava num
-  gramado sem fim, e a chegada do carro (que é filmada de perto, com
-  horizonte) mostrava o vazio.
+  quintais, árvores atrás e nas pontas, e nuvens.
 
 **Inventado por mim, a conferir com o Renan**: como é a casa por fora (cor,
-telhado, janelas), a cerca branca, o pergolado e a vizinhança. O pedido dizia
-só "jardinzinho florido, fechado dos dois lados, e uma garagem ao lado"; o
-resto é proposta — se a casa de verdade for diferente, é só dizer.
+telhado, janelas), o desenho do muro e dos portões, a escolha das plantas e
+a vizinhança. O pedido dava o rumo; os detalhes são proposta — se a casa de
+verdade for diferente, é só dizer.
 
-**O peso** (a vista de entrada, medido com `renderer.info.render`): a
-primeira versão desenhava **933 objetos por quadro**; ficou em **339** (o
-parque faz 425) com a mesma imagem. O que cortou: o jardim e cada pedaço da
-vizinhança viraram grupos juntados por material (`fundirComoFundo`, em
-`world/fundir.ts` — cada canteiro eram cem bolinhas soltas), a casa vizinha
-é o mesmo molde com porta lisa e sem lampião (5,7 mil triângulos contra 15
-mil), e a faixa tracejada da rua virou uma malha só. Triângulos: 189 mil
-(o parque: 152 mil; a estufa: 190 mil).
+**As peças**: `world/frenteDaCasa.ts` (a casa, o pergolado, `muroDoJardim`,
+`pilarDoMuro`, `portaoSocial`, `portaoDeCorrer`, `trilhoDoPortao`,
+`painelDoPortao`) e `world/plantasDeJardim.ts` (`hortensias`, `lavandas`,
+`capins`, `agaves`, `margaridas`, `costelasDeAdao`, `buxinhoNoVaso`,
+`heraNosMuros`, e as texturas `cascaDePinus` e `pedrisco`). Cada espécie é
+um lote para o jardim inteiro.
+
+**O peso** (a vista de entrada, `renderer.info.render`): a primeira montagem
+desenhava **933 objetos por quadro**; juntando o jardim e a vizinhança como
+fundo (`fundirComoFundo`) ficou em 339; e a segunda versão, com a casa
+maior e as plantas novas, está em **306 desenhos e 188 mil triângulos** (o
+parque: 425 e 152 mil; a estufa: 1.325 e 190 mil). O jardim novo é mais leve
+que o primeiro: os quatro canteiros redondos e as dez moitas somavam ~70 mil
+triângulos e ~40 desenhos; as plantas novas, ~63 mil e 15.
 
 ### A quest
 
@@ -282,7 +308,7 @@ mil), e a faixa tracejada da rua virou uma malha só. Triângulos: 189 mil
 | 0 | — | a lição 10 da apostila do Gatito (`partiu-praia`) concluída libera a quest. Nada avisa: é surpresa |
 | 1 | quarto | "Deitar um pouco?" na cama vira DORMIR: os dois deitam, o Ari pega no sono, a tela escurece, amanhece; o Renan pergunta **"Quer ver uma surpresa?"** (flag `bebito:surpresa`) |
 | 2 | sala | cutscene: os dois na sala; o Renan diz que já volta, anda até a porta da rua e sai (flag `bebito:renan-saiu`); o Ari, confuso, vai atrás |
-| 3 | frente da casa | cutscene em quatro tomadas: (A) o Ari na porta procura o Renan; a buzina; (B) por cima do ombro dele, o carro vem pela rua, de laço no teto, com o Renan dirigindo; (C) da rua, o carro engata a ré e entra na garagem; (D) de perto, os dois na frente do carro. Corações, a memória "O Bebito Mobile" no diário (flag `bebito:ganhou`) |
+| 3 | frente da casa | cutscene em quatro tomadas: (A) o Ari na porta procura o Renan; a buzina; (B) por cima do ombro dele, o carro vem pela rua, de laço no teto, com o Renan dirigindo; (C) da rua, o portão da garagem abre, o carro engata a ré e entra; (D) de perto, os dois na frente do carro. Corações, a memória "O Bebito Mobile" no diário (flag `bebito:ganhou`) |
 | depois | frente da casa | o carro mora na garagem (o laço sai), com o "Olhar o Bebito Mobile" (três conversas que se revezam) |
 
 - **Na quest quem se controla é o Ari** (o presente é para ele): se quem
@@ -296,7 +322,8 @@ mil), e a faixa tracejada da rua virou uma malha só. Triângulos: 189 mil
   acompanham o giro. E `g.setCompanionVisible(false)` para o parceiro "sair
   pela porta".
 - **Os sons** novos: `buzinaDoBebito` (o bi-bi), `motorDoBebito` (o pó-pó-pó,
-  em fila enquanto anda) e `portaDoBebito`.
+  em fila enquanto anda), `portaDoBebito` e `portaoEletrico` (o portão de
+  correr da garagem).
 
 ### As falas — PARA O RENAN APROVAR
 
@@ -351,8 +378,9 @@ o nosso nome na placa, estacionado de ré na garagem."
 
 1. **As falas**: aprova como estão, ou reescreve? E qual das três do Ari (ou
    uma dele)?
-2. **A casa por fora** parece com a de verdade? (cor, telhado, cerca, a
-   garagem de pergolado.)
+2. **A casa por fora** está no rumo certo agora? (o tamanho, o muro com
+   hera, os portões, as plantas.) Alguma planta de que o Ari gosta e que
+   devia estar no jardim?
 3. **Um aviso de que a quest existe?** Hoje nada avisa depois da lição 10 — o
    Ari só descobre quando for deitar. Dá para o Gatito soltar uma dica no fim
    da aula, ou o Renan dizer "tô com sono" ao entrar no quarto.

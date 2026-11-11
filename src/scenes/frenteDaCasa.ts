@@ -1,16 +1,25 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import type { SceneDef } from '../core/types';
+import type { Collider, SceneDef } from '../core/types';
 import { PALETTE as P } from '../palette';
 import { ARI, RENAN } from '../characters/cast';
-import { canteiro, cloud, flowers, lamp, meioFio, sebe, tree } from '../world/props';
-import { arbustoFlorido } from '../world/acampamento';
+import { cloud, flowers, lamp, meioFio, rock, sebe, tree } from '../world/props';
 import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
 import { reboco } from '../world/texturasDeFachada';
 import { toon } from '../core/materials';
 import { uvDeParede } from '../world/acabamento';
 import { fundir, fundirComoFundo } from '../world/fundir';
-import { FACHADA, GARAGEM, caixaDeCorreio, cercaBranca, fachadaDaCasa, pergoladoDaGaragem, portaozinho, type CoresDaFachada } from '../world/frenteDaCasa';
+import {
+  FACHADA, GARAGEM, MURO, PORTAO_DA_GARAGEM, fachadaDaCasa, muroDoJardim, painelDoPortao, pergoladoDaGaragem,
+  pilarDoMuro, portaoDeCorrer, portaoSocial, trilhoDoPortao, type CoresDaFachada,
+} from '../world/frenteDaCasa';
+import {
+  agaves, buxinhoNoVaso, capins, cascaDePinus, costelasDeAdao, heraNosMuros, hortensias, lavandas, margaridas,
+  pedrisco, type MuroComHera,
+} from '../world/plantasDeJardim';
+import { beiraTorta, caixaRedonda, capsula, mancha, uniaoSuave } from '../world/caminhos';
+import { Vento } from '../core/shaders';
+import { quina } from '../world/lojaDeRoupas';
 import { BEBITO_MOBILE, BebitoMobile } from '../world/bebitoMobile/BebitoMobile';
 import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/bebitoMobile/presente';
 
@@ -19,37 +28,47 @@ import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/beb
  *
  * Nasceu com o Bebito Mobile (`docs/BEBITO-MOBILE.md`), e só existe no jogo
  * com a chave dele ligada (`eventos/BebitoMobile.ts`): aí a porta da rua da
- * casa sai AQUI, e é o portãozinho do jardim que leva ao parque. O pedido do
- * Renan: "ao sair tem um jardinzinho e ao lado uma garagem onde fica o carro;
- * o jardim é florido e fechado dos dois lados".
+ * casa sai AQUI, e é a calçada que leva ao parque. O pedido do Renan: "ao
+ * sair tem um jardinzinho e ao lado uma garagem onde fica o carro; o jardim é
+ * florido e fechado dos dois lados". Depois da primeira foto ele pediu a casa
+ * mais funda, um MURO com plantas verdes no lugar da cerquinha branca, um
+ * PORTÃO moderno na garagem e plantas novas no lugar dos canteiros redondos.
  *
  * A PLANTA (a câmera vem do `+X/+Z`; o que é alto fica no `−X` e no `−Z`):
  *
  *        −Z  ┌──────────────┬─────────────────────────────┐
- *            │   garagem    │        a casa (fachada)     │
+ *            │   garagem    │        a casa (funda)       │
  *            │  (pergolado) │   janela   PORTA   janela   │
- *            │              ├─────────────────────────────┤
- *            │   o carro    │  canteiros   │    canteiros │
- *            │  de nariz    m    o JARDIM  caminho        cerca
- *            │  para a rua  u              │              │
- *            │              ·  passagem    │              │
- *            └── a boca ────┴── cerca ── portão ── cerca ─┘
+ *            │              ├─ hortênsias ─┬─ hortênsias ─┤
+ *            │   o carro    m   lavanda    │    a árvore  │
+ *            │  de nariz    u   agaves   lajes  canteiro  muro
+ *            │  para a rua  ·  passagem    │              │
+ *            │              │  capim       │      capim   │
+ *            └ portão de correr ┴ muro ─ portão ─ muro ───┘
  *               ════════════  a calçada  ═════════════════
  *               ════════════     a rua    ════════════════   +Z
  *
- * O jardim é fechado dos dois lados: do lado da garagem, por uma mureta com
- * flor em cima (e uma passagem, para ir do carro à porta); do outro, pela
- * cerquinha branca — baixa, porque é o lado da câmera.
+ * O jardim é fechado dos dois lados: do lado da garagem, pela mureta (com a
+ * passagem, para ir do carro à porta); do outro e na frente, pelo muro.
+ *
+ * O QUE É BAIXO FICA LONGE DO MURO DA FRENTE E DO DA DIREITA: os dois estão
+ * do lado da câmera, e 1,35 m de muro escondem tudo o que tem menos de um
+ * metro e está a menos de um metro e meio atrás dele. Junto a eles vai só
+ * capim alto, no pedrisco; as flores ficam para o lado da casa e da mureta.
  */
 
 const CASA = { x: 2, z: -5 };
 const JARDIM = { x0: -2.9, x1: 6.7, z0: CASA.z, z1: 3 };
 const VAGA = { x: -5.6, z: -1.2 };
-const GAR = { x0: VAGA.x - GARAGEM.largura / 2, x1: VAGA.x + GARAGEM.largura / 2, z0: CASA.z, z1: CASA.z + GARAGEM.fundo };
+const GAR = { x0: VAGA.x - GARAGEM.largura / 2, x1: VAGA.x + GARAGEM.largura / 2, z0: CASA.z, z1: JARDIM.z1 };
 const PORTAO = { x: CASA.x, largura: 1.3 };
 const CALCADA = { z0: 3.2, z1: 5.7 };
 const RUA = { z0: 5.7, z1: 13.7, faixa: 7.9, comprimento: 90 };
 const PASSAGEM = { z0: 0.3, z1: 1.7 };
+/** o portão de correr: o meio dele fechado, e a linha do trilho (por dentro do muro da frente) */
+const CORRER = { x: -5.7, z: JARDIM.z1 - 0.24 };
+/** o pilar da boca da garagem (do lado do jardim) */
+const X_DO_PILAR_DA_GARAGEM = CORRER.x + PORTAO_DA_GARAGEM.largura / 2 + MURO.ladoDoPilar / 2 - 0.1;
 
 export const frenteDaCasa: SceneDef = {
   id: 'frente-da-casa',
@@ -91,82 +110,218 @@ export const frenteDaCasa: SceneDef = {
     for (let x = -RUA.comprimento / 2 + 2; x <= RUA.comprimento / 2 - 2; x += 5) tracos.push(new THREE.PlaneGeometry(2, 0.22).translate(x, 0, 0));
     w.patch(0, (RUA.z0 + RUA.z1) / 2, 2, 0.22, P.metalWhite, 0, 0.022).geometry = mergeGeometries(tracos);
     w.add(w.place(meioFio(RUA.comprimento), 0, 0, RUA.z0, Math.PI / 2));
-    // o piso da garagem e a rampinha até a rua; o caminho de pedrinha da porta ao portão
+    // o piso da garagem e a rampinha até a rua
     w.patch(VAGA.x, (GAR.z0 + CALCADA.z0) / 2, GARAGEM.largura - 0.1, CALCADA.z0 - GAR.z0, P.concrete, 0, 0.016, pisoDePlacas(1.4));
-    w.patch(CASA.x, (JARDIM.z0 + CALCADA.z0) / 2 + 0.2, 1.5, CALCADA.z0 - JARDIM.z0 - 0.4, P.sand, 0, 0.016, calcadaDePedrinha(1.6, 4));
-    // a passagem da garagem para o jardim
-    w.patch((GAR.x1 + CASA.x) / 2 - 0.4, (PASSAGEM.z0 + PASSAGEM.z1) / 2, CASA.x - GAR.x1 + 0.4, 1.1, P.sand, 0, 0.016, calcadaDePedrinha(1.6, 4));
 
     // ------------------------------------------------------------------ a casa
     w.add(fundir(w.place(fachadaDaCasa(), CASA.x, 0, CASA.z)));
     w.blockBox(CASA.x, CASA.z - FACHADA.fundo / 2, FACHADA.largura / 2 + 0.1, FACHADA.fundo / 2 + 0.12);
 
     // ---------------------------------------------------------------- a garagem
-    // as paredes do fundo e do lado (altas: ficam no −Z e no −X), de reboco, com o capeamento
+    // as paredes do fundo e do lado (altas: ficam no −Z e no −X), de reboco
     const parede = (x1: number, z1: number, x2: number, z2: number, alto: number): void => {
       const m = w.wall(x1, z1, x2, z2, alto, P.wallCream, 0.24);
       m.geometry = uvDeParede(m.geometry, m.position.x, m.position.y, m.position.z);
       m.material = toon(P.wallCream, { mapa: reboco() });
     };
-    parede(GAR.x0, GAR.z0, GAR.x1 + 0.2, GAR.z0, GARAGEM.alto + 0.1);
-    parede(GAR.x0, GAR.z0, GAR.x0, GAR.z1, GARAGEM.alto + 0.1);
+    const altoDaGaragem = GARAGEM.alto + 0.1;
+    parede(GAR.x0, GAR.z0, CASA.x - FACHADA.largura / 2 - 0.05, GAR.z0, altoDaGaragem);
+    parede(GAR.x0, GAR.z0, GAR.x0, GAR.z1 + 0.12, altoDaGaragem);
     w.add(fundir(w.place(pergoladoDaGaragem(), VAGA.x, 0, (GAR.z0 + GAR.z1) / 2)));
-    for (const x of [GAR.x0 + 0.16, GAR.x1 - 0.16]) {
-      for (const z of [GAR.z1 - 0.25, (GAR.z0 + GAR.z1) / 2 - 0.4]) w.blockCircle(x, z, 0.13);
-    }
-    // a MURETA entre a garagem e o jardim, com flor em cima, e a passagem
-    const xMureta = JARDIM.x0;
-    w.wall(xMureta, JARDIM.z0, xMureta, PASSAGEM.z0, 0.8, P.wallCream, 0.22);
-    w.wall(xMureta, PASSAGEM.z1, xMureta, JARDIM.z1, 0.8, P.wallCream, 0.22);
+    for (const z of [GAR.z0 + 0.5, (GAR.z0 + GAR.z1) / 2 - 0.2, GAR.z1 - 0.6]) w.blockCircle(GAR.x1 - 0.12, z, 0.1);
+
     /*
-     * O JARDIM É UM GRUPO SÓ, juntado por material (`fundirComoFundo`): as
-     * moitas, os canteiros, as flores e a cerca são enfeite parado — soltos,
-     * cada canteiro eram cem bolinhas, cem desenhos.
+     * O JARDIM É UM GRUPO SÓ, juntado por material (`fundirComoFundo`): o muro,
+     * os pilares, as lajes e os vasos são enfeite parado. As plantas já são
+     * lote (uma espécie, um ou dois desenhos para o jardim inteiro).
      */
     const jardim = new THREE.Group();
     jardim.userData.peca = 'jardim-da-casa';
-    for (const [z, escala, semente] of [[-4.2, 0.7, 3], [-3.0, 0.62, 4], [-1.8, 0.7, 5], [-0.6, 0.6, 6], [2.35, 0.62, 7]] as const) {
-      jardim.add(w.place(arbustoFlorido(escala, semente, [P.florDoArbusto, P.flowerYellow, P.florDoArbustoBranca]), xMureta + 0.02, 0.62, z));
-    }
+    const E = MURO.espessura;
+    /** um trecho de muro entre dois pontos (em `x` ou em `z`), com o colisor; devolve a ficha dele para a hera */
+    const muro = (x1: number, z1: number, x2: number, z2: number, alto: number = MURO.alto, hera?: Partial<MuroComHera>): void => {
+      const comprimento = Math.hypot(x2 - x1, z2 - z1);
+      const giro = Math.atan2(-(z2 - z1), x2 - x1);
+      jardim.add(w.place(muroDoJardim(comprimento, alto), (x1 + x2) / 2, 0, (z1 + z2) / 2, giro));
+      w.blockBox((x1 + x2) / 2, (z1 + z2) / 2, comprimento / 2, E / 2 + 0.02, -giro);
+      if (hera) muros.push({ a: [x1, z1], b: [x2, z2], altura: alto, espessura: E + 0.1, ...hera });
+    };
+    const muros: MuroComHera[] = [];
+    const pilar = (x: number, z: number, alto: number = MURO.pilar, luz = false): void => {
+      jardim.add(w.place(pilarDoMuro(alto, luz), x, 0, z));
+      w.blockBox(x, z, MURO.ladoDoPilar / 2, MURO.ladoDoPilar / 2);
+    };
 
-    // ----------------------------------------------------------------- o jardim
-    // a cerquinha branca: o lado da direita (o da câmera) e a frente, com o portãozinho no meio
-    const zLado = (JARDIM.z0 + 0.2 + JARDIM.z1) / 2;
-    const cLado = JARDIM.z1 - JARDIM.z0 - 0.2;
-    jardim.add(w.place(cercaBranca(cLado), JARDIM.x1, 0, zLado, Math.PI / 2));
-    w.blockBox(JARDIM.x1, zLado, 0.1, cLado / 2);
-    const trechos: Array<[number, number]> = [[xMureta + 0.1, PORTAO.x - PORTAO.largura / 2 - 0.08], [PORTAO.x + PORTAO.largura / 2 + 0.08, JARDIM.x1]];
-    for (const [a, b] of trechos) {
-      jardim.add(w.place(cercaBranca(b - a), (a + b) / 2, 0, JARDIM.z1));
-      w.blockBox((a + b) / 2, JARDIM.z1, (b - a) / 2, 0.1);
-    }
-    const portao = w.add(w.place(portaozinho(PORTAO.largura), PORTAO.x, 0, JARDIM.z1));
+    // a MURETA entre a garagem e o jardim, com a passagem (ela para antes do trilho do portão de correr)
+    const xMureta = JARDIM.x0;
+    muro(xMureta, PASSAGEM.z0, xMureta, JARDIM.z0 + 0.12, 0.8, { cobre: 0.55, queda: 0.5, semente: 31 });
+    muro(xMureta, PASSAGEM.z1, xMureta, JARDIM.z1 - 0.62, 0.8);
+
+    // --------------------------------------------- o muro da frente e os portões
+    const zMuro = JARDIM.z1;
+    const meioPilar = MURO.ladoDoPilar / 2;
+    const xPilarE = PORTAO.x - PORTAO.largura / 2 - meioPilar;
+    const xPilarD = PORTAO.x + PORTAO.largura / 2 + meioPilar;
+    // (a hera vai de `a` para `b` com o lado de FORA à esquerda: o da rua na frente, o do vizinho no lado)
+    muro(X_DO_PILAR_DA_GARAGEM + meioPilar, zMuro, xPilarE - meioPilar, zMuro, MURO.alto, { cobre: 0.62, queda: 0.85, semente: 11 });
+    muro(xPilarD + meioPilar, zMuro, JARDIM.x1 - meioPilar, zMuro, MURO.alto, { cobre: 0.6, queda: 0.8, semente: 12 });
+    muro(JARDIM.x1, zMuro - meioPilar, JARDIM.x1, JARDIM.z0 + 0.14, MURO.alto, { cobre: 0.5, queda: 0.8, semente: 13 });
+    pilar(X_DO_PILAR_DA_GARAGEM, zMuro, PORTAO_DA_GARAGEM.alto + 0.2);
+    pilar(xPilarE, zMuro, MURO.pilar, true);
+    pilar(xPilarD, zMuro, MURO.pilar, true);
+    pilar(JARDIM.x1, zMuro);
+    // (por dentro do muro da frente corre o portão da garagem quando abre: ninguém anda nessa faixa)
+    w.blockBox((X_DO_PILAR_DA_GARAGEM + xPilarE) / 2, zMuro - 0.28, (xPilarE - X_DO_PILAR_DA_GARAGEM) / 2, 0.14);
+    // o interfone e a boca de cartas, no pilar da direita do portão
+    jardim.add(w.place(painelDoPortao(), xPilarD, 1.22, zMuro + meioPilar + 0.001));
+    // a hera também desce da parede do fundo da garagem, por cima do carro
+    muros.push({ a: [GAR.x0 + 0.3, GAR.z0], b: [GAR.x1 - 0.3, GAR.z0], altura: altoDaGaragem, espessura: 0.26, cobre: 0.55, queda: 1.1, semente: 14 });
+
+    // o portão social: abre sozinho quando alguém chega perto, para dentro do jardim
+    const portao = w.add(fundir(w.place(portaoSocial(PORTAO.largura), PORTAO.x, 0, zMuro)));
     const folha = portao.userData.folha as THREE.Object3D;
     let aberto = 0;
     w.onUpdate((dt) => {
-      // o portãozinho abre sozinho quando alguém chega perto, para dentro do jardim
       const p = g.playerPosition();
-      const perto = Math.hypot(p.x - PORTAO.x, p.z - JARDIM.z1) < 2.2;
+      const perto = Math.hypot(p.x - PORTAO.x, p.z - zMuro) < 2.2;
       aberto += ((perto ? 1 : 0) - aberto) * Math.min(1, dt * 4);
       folha.rotation.y = aberto * 1.75;
     });
-    jardim.add(w.place(caixaDeCorreio(), PORTAO.x + PORTAO.largura / 2 + 0.55, 0, JARDIM.z1 + 0.32, -0.2));
-    w.blockCircle(PORTAO.x + PORTAO.largura / 2 + 0.55, JARDIM.z1 + 0.32, 0.2);
 
-    // os canteiros e as moitas floridas: encostados na casa e dos dois lados do caminho
-    const coresDoJardim = [P.flowerPink, P.flowerYellow, 0xffffff, P.florDoArbusto];
-    for (const [x, z, raio, semente] of [[-0.9, -0.6, 1.15, 0.2], [5.0, -0.9, 1.2, 0.6], [4.7, 1.7, 0.85, 0.9], [0.1, 1.9, 0.8, 0.4]] as const) {
-      jardim.add(w.place(canteiro(raio, coresDoJardim, semente), x, 0, z));
-      w.blockCircle(x, z, raio * 0.82);
+    /*
+     * O PORTÃO DE CORRER DA GARAGEM: fechado, é colisor; abre sozinho (é
+     * automático) quando alguém chega perto da boca, ou quando a cena manda
+     * (a chegada do carro). A folha corre para o `+X`, por dentro do muro.
+     */
+    w.add(fundir(w.place(trilhoDoPortao(), CORRER.x, 0, CORRER.z)));
+    const correr = w.add(fundir(w.place(portaoDeCorrer(), CORRER.x, 0, CORRER.z)));
+    const folhaDaGaragem = correr.userData.folha as THREE.Object3D;
+    const colisorDoPortao: Collider = { kind: 'box', x: CORRER.x, z: CORRER.z, hw: PORTAO_DA_GARAGEM.largura / 2, hd: 0.12, rot: 0 };
+    w.colliders.push(colisorDoPortao);
+    const garagem = { aberto: 0, mandado: false, querAberto: false };
+    w.onUpdate((dt) => {
+      const p = g.playerPosition();
+      const perto = Math.abs(p.x - VAGA.x) < 3.6 && Math.abs(p.z - CORRER.z) < 3.2;
+      const quer = garagem.mandado || perto;
+      if (quer !== garagem.querAberto) {
+        garagem.querAberto = quer;
+        g.som('portaoEletrico');
+      }
+      const antes = garagem.aberto;
+      garagem.aberto = Math.max(0, Math.min(1, garagem.aberto + (quer ? 1 : -1) * dt * 0.55));
+      // (sai devagar e chega devagar, como motor de portão)
+      const k = garagem.aberto * garagem.aberto * (3 - 2 * garagem.aberto);
+      folhaDaGaragem.position.x = k * PORTAO_DA_GARAGEM.corre;
+      const fechado = garagem.aberto < 0.12;
+      const estava = w.colliders.includes(colisorDoPortao);
+      if (fechado && !estava) w.colliders.push(colisorDoPortao);
+      if (!fechado && estava) w.colliders.splice(w.colliders.indexOf(colisorDoPortao), 1);
+      if (antes < 1 && garagem.aberto >= 1) g.som('portaDoBebito');
+    });
+
+    // ----------------------------------------------------------------- o jardim
+    /*
+     * O CHÃO DOS CANTEIROS é pintado por conta de distância (`world/caminhos.ts`),
+     * com a beira torta — canteiro de jardim não tem beira de régua: a casca
+     * de pínus ao pé da casa e da mureta, e o pedrisco branco da ilha dos
+     * agaves e das faixas junto aos muros.
+     */
+    const CAIXA = { x0: JARDIM.x0, z0: JARDIM.z0, x1: JARDIM.x1, z1: JARDIM.z1 };
+    const pintar = (decal: THREE.Mesh, geo: THREE.BufferGeometry): void => {
+      decal.geometry.dispose();
+      decal.geometry = geo;
+    };
+    const casca = beiraTorta(uniaoSuave(0.5,
+      // ao pé da casa, dos dois lados da porta
+      caixaRedonda(-0.95, -4.35, 1.75, 0.82, 0.5),
+      caixaRedonda(4.75, -4.3, 1.85, 0.86, 0.5),
+      // a faixa da lavanda, ao longo da mureta, e o canto da costela-de-adão
+      caixaRedonda(-2.2, -1.5, 0.52, 1.7, 0.4),
+      // a ilha da direita do caminho
+      capsula(3.75, -1.15, 4.9, -0.2, 0.8),
+      // o pé da árvore
+      caixaRedonda(5.55, -2.85, 0.8, 0.8, 0.6),
+    ), 4411, 0.16, 0.05);
+    const pedras = beiraTorta(uniaoSuave(0.4,
+      // a ilha dos agaves, à esquerda do caminho
+      capsula(-0.95, -1.9, 0.2, -1.2, 0.72),
+      // as faixas junto ao muro da frente (dos dois lados do portão) e ao da direita
+      caixaRedonda(-0.85, 2.3, 1.95, 0.6, 0.3),
+      caixaRedonda(4.75, 2.3, 1.85, 0.6, 0.3),
+      caixaRedonda(6.15, 0.75, 0.45, 2.0, 0.3),
+    ), 5522, 0.12, 0.04);
+    pintar(w.patch(0, 0, 1, 1, P.cascaDePinus, 0, 0.012, cascaDePinus()), mancha(casca, CAIXA, 0.125));
+    pintar(w.patch(0, 0, 1, 1, P.pedriscoBranco, 0, 0.014, pedrisco()), mancha(pedras, CAIXA, 0.125));
+
+    // O CAMINHO DE LAJES, com a grama entre elas: da porta ao portão, e o ramal até a passagem da garagem
+    const laje = toon(P.casaLaje, { mapa: reboco(1.1) });
+    const lajes: Array<[number, number, number, number]> = [];
+    for (let k = 0; k < 7; k++) lajes.push([CASA.x, -3.78 + k * 1.03, 1.5, 0.82]);
+    for (let k = 0; k < 4; k++) lajes.push([0.72 - k * 1.03, (PASSAGEM.z0 + PASSAGEM.z1) / 2, 0.82, 1.15]);
+    for (const [x, z, lx, lz] of lajes) {
+      const geo = uvDeParede(quina(lx, 0.06, lz, 0.02), x, 0, z);
+      jardim.add(w.place(new THREE.Mesh(geo, laje), x, 0.012, z));
     }
-    for (const [x, z, escala, semente] of [[-1.9, -4.2, 0.95, 21], [-0.2, -4.3, 0.8, 22], [4.2, -4.3, 0.85, 23], [5.9, -4.1, 1.0, 24], [-2.2, -2.3, 0.75, 25]] as const) {
-      jardim.add(w.place(arbustoFlorido(escala, semente), x, 0, z));
-      w.blockCircle(x, z, 0.45 * escala);
+
+    // os dois buxinhos em vaso de cimento, um de cada lado do degrau da porta
+    for (const [lado, semente] of [[-1, 1], [1, 2]] as const) {
+      jardim.add(w.place(buxinhoNoVaso(0.3, semente), CASA.x + lado * 1.28, 0, CASA.z + 0.5, semente));
+      w.blockCircle(CASA.x + lado * 1.28, CASA.z + 0.5, 0.3);
     }
-    for (const [x, z] of [[1.0, -2.6], [3.1, -2.2], [0.9, 0.3], [3.2, 0.6], [5.6, 0.5], [-1.6, 0.9]] as const) {
-      jardim.add(w.place(flowers(7, 0.55, coresDoJardim), x, 0, z));
-    }
+    // a pedra da ilha dos agaves
+    jardim.add(w.place(rock(0.62, 0.3, P.casaMuroBase), -0.2, 0, -1.95, 0.8));
     w.add(fundirComoFundo(jardim));
+
+    // AS PLANTAS: cada espécie um lote para o jardim inteiro (as finas, no vento)
+    const vento = new Vento({ forca: 0.055, altura: 1, direcao: [0.86, 0.5] });
+    w.onUpdate((dt) => vento.tique(dt));
+    const pesDeHortensia = [
+      { x: -2.05, z: -4.12, escala: 0.95, semente: 1, cor: P.hortensiaAzul },
+      { x: -0.85, z: -4.2, escala: 1.05, semente: 2, cor: P.hortensiaAzul },
+      { x: 0.3, z: -4.1, escala: 0.9, semente: 3, cor: P.hortensiaLilas },
+      { x: 3.7, z: -4.1, escala: 0.92, semente: 4, cor: P.hortensiaRosa },
+      { x: 4.85, z: -4.18, escala: 1.05, semente: 5, cor: P.hortensiaRosa },
+      { x: 5.95, z: -4.2, escala: 0.88, semente: 6, cor: P.hortensiaLilas },
+    ];
+    w.add(hortensias(pesDeHortensia));
+    for (const pe of pesDeHortensia) w.blockCircle(pe.x, pe.z, 0.34 * pe.escala);
+    w.add(lavandas([
+      { x: -2.28, z: -2.35, semente: 1 }, { x: -2.1, z: -1.82, escala: 1.1, semente: 2 }, { x: -2.3, z: -1.25, semente: 3 },
+      { x: -2.12, z: -0.7, escala: 1.08, semente: 4 }, { x: -2.28, z: -0.15, escala: 0.95, semente: 5 },
+      { x: 3.65, z: -1.25, semente: 6 }, { x: 4.25, z: -0.7, escala: 1.1, semente: 7 }, { x: 4.95, z: -0.15, semente: 8 },
+      { x: 5.0, z: -2.3, escala: 0.9, semente: 9 },
+    ], vento));
+    const pesDeAgave = [
+      { x: -0.85, z: -1.85, escala: 1.15, semente: 1 }, { x: 0.18, z: -1.22, escala: 0.85, semente: 2 },
+      { x: -0.3, z: -1.05, escala: 0.55, semente: 3 },
+    ];
+    w.add(agaves(pesDeAgave));
+    for (const pe of pesDeAgave) if (pe.escala > 0.7) w.blockCircle(pe.x, pe.z, 0.3 * pe.escala);
+    const pesDeCapim = [
+      // junto ao muro da frente e ao da direita (alto: aparece por cima do muro)
+      { x: -2.1, z: 2.2, escala: 1.1, semente: 1 }, { x: -0.9, z: 2.3, escala: 0.95, semente: 2 }, { x: 0.35, z: 2.2, escala: 1.05, semente: 3 },
+      { x: 3.55, z: 2.25, escala: 1.0, semente: 4 }, { x: 4.8, z: 2.3, escala: 1.12, semente: 5 }, { x: 6.05, z: 2.1, escala: 1.0, semente: 6 },
+      { x: 6.1, z: 0.85, escala: 1.1, semente: 7 }, { x: 6.12, z: -0.5, escala: 0.95, semente: 8 },
+      // e um na ilha da direita
+      { x: 4.75, z: -1.05, escala: 0.8, semente: 9 },
+    ];
+    w.add(capins(pesDeCapim, vento));
+    for (const pe of pesDeCapim) w.blockCircle(pe.x, pe.z, 0.18);
+    const pesDeCostela = [{ x: -2.2, z: -3.2, escala: 1.0, semente: 1 }, { x: 4.75, z: -3.0, escala: 0.85, semente: 2 }];
+    w.add(costelasDeAdao(pesDeCostela));
+    for (const pe of pesDeCostela) w.blockCircle(pe.x, pe.z, 0.25);
+    const brancas = [P.margaridaBranca, P.margaridaBranca, P.flowerYellow];
+    const rosadas = [P.margaridaBranca, P.flowerPink, P.hortensiaRosa];
+    w.add(margaridas([
+      // na beira dos canteiros da casa
+      { x: -1.45, z: -3.42, quantas: 7, raio: 0.42, cores: brancas, semente: 1 }, { x: -0.1, z: -3.4, quantas: 6, raio: 0.38, cores: brancas, semente: 2 },
+      { x: 3.3, z: -3.35, quantas: 6, raio: 0.38, cores: rosadas, semente: 3 }, { x: 4.3, z: -3.5, quantas: 5, raio: 0.32, cores: rosadas, semente: 4 },
+      // na ilha da direita e soltas na grama
+      { x: 4.45, z: -1.45, quantas: 8, raio: 0.45, cores: rosadas, semente: 5 }, { x: 3.95, z: -0.15, quantas: 7, raio: 0.4, cores: brancas, semente: 6 },
+      { x: 0.55, z: 0.1, quantas: 6, raio: 0.4, cores: brancas, semente: 7 }, { x: 3.4, z: 1.0, quantas: 7, raio: 0.45, cores: rosadas, semente: 8 },
+      { x: -1.3, z: -0.2, quantas: 5, raio: 0.35, cores: brancas, semente: 9 },
+    ], vento));
+    w.add(heraNosMuros(muros));
     // a árvore florida no canto de trás da direita (alta: encostada na casa, não tapa nada)
     w.add(w.place(tree('florida', 0.9, 0.37), 5.6, 0, -2.8));
     w.blockCircle(5.6, -2.8, 0.4);
@@ -191,6 +346,7 @@ export const frenteDaCasa: SceneDef = {
       grupo.userData.peca = nome;
       return grupo;
     };
+    const coresDoJardim = [P.flowerPink, P.flowerYellow, 0xffffff, P.florDoArbusto];
     const doLado = [quadra('vizinhas-do-lado'), quadra('vizinhas-do-lado')];
     const deLa = [quadra('vizinhas-de-la'), quadra('vizinhas-de-la')];
     const lado = (x: number): number => (x < CASA.x ? 0 : 1);
@@ -243,7 +399,7 @@ export const frenteDaCasa: SceneDef = {
     for (const x of [GAR.x0 - 3.6, GAR.x0 - 17.5, JARDIM.x1 + 4.6, JARDIM.x1 + 17.6]) plantar(x, 0.6, 0.95);
     // (do outro lado: entre as casas e atrás delas)
     for (const x of [-27.5, -13.5, 0.5, 14.5, 28.5]) plantar(x, zDeLa + 6.5, 1.25);
-    for (let x = -40; x <= 40; x += 8.8) plantar(x + w.range(-1.5, 1.5), zDeLa + 13 + w.range(1.5, 6), w.range(1.5, 2.0));
+    for (let x = -40; x <= 40; x += 8.8) plantar(x + w.range(-1.5, 1.5), zDeLa + 7.6 + FACHADA.fundo + w.range(3, 7.5), w.range(1.5, 2.0));
     // (as pontas da rua: ela some atrás das copas)
     for (const lado of [-1, 1]) {
       for (const z of [CALCADA.z0 - 1.2, zDeLa + 1.6]) plantar(lado * 36, z, 1.5);
@@ -311,6 +467,7 @@ export const frenteDaCasa: SceneDef = {
           rua: { z: RUA.faixa, deLonge: 30 },
           porta: { x: CASA.x, z: CASA.z + 1.6 },
           aoEstacionar: estacionar,
+          portao: (sim) => { garagem.mandado = sim; },
         });
       } else estacionar();
     }

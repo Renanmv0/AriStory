@@ -208,7 +208,12 @@ encostos da frente deitam e viram cama com o banco de trás, e a pintura, a
 placa e o que vai em cada vaga
 (painel, retrovisor, chave, teto, porta-malas, banco de trás, vidro,
 para-choque, rodas) saem da ficha do save — ver "O Bebito Mobile" na skill
-de peça.
+de peça. Para PLANTA DE JARDIM, o jardim da frente da casa do Ari
+(`world/plantasDeJardim.ts`): cada espécie é um lote para o jardim inteiro
+(hortênsia, lavanda, capim de pluma, agave, margarida, costela-de-adão, hera
+no muro), a folha é uma fita dobrada na nervura, a haste e a flor dividem a
+geometria pela cor do vértice, e o que é fino balança no `Vento` — ver "As
+plantas do jardim" na skill de peça.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em
@@ -260,7 +265,9 @@ nova do carro (cena, quest, viagem) fica atrás de `bebitoMobileNestaPagina()`;
 `?bebito` liga tudo num save à parte, para os testes e para o Renan ver, e
 `?semBebito` força desligado. A frente da casa do Ari (`frente-da-casa`: o
 jardim, a garagem e a rua de casinhas) e a quest do presente já existem,
-escondidas. Ligar a chave é a ÚLTIMA coisa, e só com o aval do Renan.
+escondidas (a frente da casa já está na segunda versão: casa funda, muro
+com hera, portão de correr na garagem e plantas novas). Ligar a chave é a
+ÚLTIMA coisa, e só com o aval do Renan.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,

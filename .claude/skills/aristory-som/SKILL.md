@@ -161,9 +161,14 @@ e não ônibus: tudo mais agudo e mais curto que a família do ônibus.
 - `portaDoBebito`: o "clec" do trinco e o "tum" abafado da lata (`n` par
   abre, ímpar bate).
 
-Picos no `.wav`: `buzinaDoBebito` 0,13, `motorDoBebito` 0,05 (é fundo) e
-`portaDoBebito` ~0,09 (a primeira versão saiu com 0,047, metade da porta de
-casa, e foi dobrada).
+- `portaoEletrico`: o portão de correr da garagem — o "clac" do contator e
+  o zumbido grave do motorzinho (dente-de-serra abafado), com a roldana no
+  trilho por cima; toca quando ele começa a abrir ou a fechar.
+
+Picos no `.wav`: `buzinaDoBebito` 0,13, `motorDoBebito` 0,05 (é fundo),
+`portaoEletrico` 0,06 (é fundo) e `portaDoBebito` 0,08 abrindo e ~0,11
+batendo (a primeira versão saiu com 0,047, metade da porta de casa; dobrada,
+a batida passou da buzina e voltou um pouco).
 
 **O salão da abóbora** (a festa surpresa, `eventos/halloween/noSalao.ts`):
 dois climas e dois sons. `'abobora-no-escuro'` é o suspense de desenho de

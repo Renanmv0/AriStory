@@ -898,8 +898,9 @@ do jogo o que já existiu; aqui ela segura o que ainda não estreou):
 
 ### Fundo de cena: uma vizinhança leve
 
-A rua da casa do Ari tem oito casas vizinhas, sebes, canteiros e cinquenta
-árvores. Solta, a cena desenhava 933 objetos por quadro; ficou em 339:
+A rua da casa do Ari tem oito casas vizinhas, sebes e cinquenta árvores.
+Solta, a cena desenhava 933 objetos por quadro; ficou em 339 (e em 306
+depois que as plantas do jardim viraram lotes por espécie):
 
 - o que é enfeite parado entra num `THREE.Group` e passa por
   **`fundirComoFundo(grupo)`** (`world/fundir.ts`), que apaga as fronteiras
@@ -912,6 +913,26 @@ A rua da casa do Ari tem oito casas vizinhas, sebes, canteiros e cinquenta
 - tracinho repetido no chão (a faixa da rua) é UM `w.patch` com a geometria
   trocada por um `mergeGeometries` dos tracinhos — decalque não entra no
   `fundir`.
+
+### Muro do lado da câmera, e portão que abre sozinho
+
+A frente da casa do Ari tem um muro de 1,35 m na frente e no lado direito —
+os dois lados DA CÂMERA. O que isso cobra:
+
+- **o que é baixo fica longe dele**: o muro esconde tudo o que tem menos de
+  um metro e está a menos de ~1,5 m atrás dele. Junto ao muro vai só o que é
+  alto (capim de pluma, que aparece por cima); flor baixa fica do lado da
+  casa e da mureta;
+- **a face que se vê é a de FORA** (a da rua e a do vizinho): é nela que a
+  hera cai mais;
+- **portão automático** (o social gira, o da garagem corre): a cena compara a
+  distância de quem joga no `w.onUpdate` e interpola. O que fecha passagem
+  tem COLISOR QUE LIGA E DESLIGA — um `Collider` guardado, posto e tirado de
+  `w.colliders` conforme a folha (o da garagem só vale com ela quase
+  fechada, e ela só fecha com todos longe: ninguém fica preso no vão);
+- **cutscene manda no portão por um comando da cena** (`portao(true)` no
+  palco da chegada do carro), e devolve no fim — a cutscene não conhece a
+  folha nem o colisor.
 
 ## Regras da casa
 

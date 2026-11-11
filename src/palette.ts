@@ -2849,8 +2849,6 @@ export const PALETTE = {
   casaVeneziana: 0x7ab8a1,
   casaRodape: 0xd9c4a6,
   casaCortina: 0xf6d9c9,
-  casaCorreio: 0xe2604f,
-  casaPergola: 0xa9744a,
   // as casas VIZINHAS da rua do Ari (`scenes/frenteDaCasa.ts`): o mesmo molde
   // da casa dele, cada uma de uma cor de casinha de bairro
   vizinhaAmarela: 0xf6dfa0,
@@ -2863,6 +2861,40 @@ export const PALETTE = {
   vizinhaVenezianaAzul: 0x6a97c4,
   vizinhaVenezianaVinho: 0xb5665f,
   vizinhaVenezianaMostarda: 0xd9a84e,
+  // a casa do Ari por fora, modernizada (`world/frenteDaCasa.ts`): o muro
+  // claro de reboco com o capeamento e a ferragem de grafite, o ripado de
+  // madeira dos portões e do pergolado, e a laje do caminho
+  casaMuro: 0xf2ede3,
+  casaMuroBase: 0xbfb8ab,
+  casaGrafite: 0x3d4046,
+  casaRipa: 0xbd8a58,
+  casaLaje: 0xddd9d0,
+  casaLuzDoMuro: 0xfff0c8,
+  // as plantas do jardim (`world/plantasDeJardim.ts`)
+  capimVerde: 0x86b85a,
+  capimPalha: 0xcfc27a,
+  capimPluma: 0xf2dfc6,
+  lavandaFolha: 0x9fb89d,
+  lavandaEspiga: 0x8f7fd9,
+  lavandaEspigaClara: 0xcbbcf5,
+  hortensiaFolha: 0x3f8f47,
+  hortensiaAzul: 0x7fa8ec,
+  hortensiaLilas: 0xb99cea,
+  hortensiaRosa: 0xf3a5c7,
+  agaveFolha: 0x7fb09e,
+  agaveBorda: 0xbcdcc8,
+  agaveEspinho: 0x6b4a3a,
+  margaridaBranca: 0xfffdf6,
+  margaridaMiolo: 0xffc93a,
+  costelaFolha: 0x2f8a45,
+  costelaTalo: 0x6f8f4a,
+  buxinho: 0x3a8a3c,
+  vasoDeCimento: 0xc9c6bf,
+  heraEscura: 0x2a6e34,
+  heraMedia: 0x3f9544,
+  heraClara: 0x7cc45a,
+  cascaDePinus: 0x8a6244,
+  pedriscoBranco: 0xf0ede6,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

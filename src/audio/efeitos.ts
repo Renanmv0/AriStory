@@ -128,6 +128,7 @@ export type SomNome =
   | 'buzinaDoBebito'
   | 'motorDoBebito'
   | 'portaDoBebito'
+  | 'portaoEletrico'
   | 'luzesAcendendo'
   | 'surpresa'
   | 'fotoFlash'
@@ -1264,11 +1265,19 @@ export const EFEITOS: Record<SomNome, Receita> = {
     chiado(ctx, destino, { quando: t, dur: 0.26, vol: 0.03, freq: 240, glide: 170, q: 0.8, tipo: 'lowpass', sustenta: 0.5 });
   },
 
+  // o portão de correr da garagem: o "clac" do contator e o zumbido do motorzinho, com a roldana no trilho por cima
+  portaoEletrico: ({ ctx, destino, t }) => {
+    chiado(ctx, destino, { quando: t, dur: 0.03, vol: 0.16, freq: 1900, q: 2 });
+    tom(ctx, destino, { freq: nota(DO - 24), glide: nota(DO - 22), quando: t + 0.04, dur: 0.75, vol: 0.05, ataque: 0.08, tipo: 'sawtooth', abafo: 520 });
+    tom(ctx, destino, { freq: nota(DO - 12), quando: t + 0.04, dur: 0.7, vol: 0.016, ataque: 0.1, tipo: 'square', abafo: 900 });
+    chiado(ctx, destino, { quando: t + 0.06, dur: 0.7, vol: 0.03, freq: 700, glide: 900, sustenta: 0.6 });
+  },
+
   // a porta do carro: o "clec" do trinco e o "tum" abafado de lata (`n` par abre, ímpar bate)
   portaDoBebito: ({ ctx, destino, t, n }) => {
     const abre = n % 2 === 0;
     chiado(ctx, destino, { quando: t, dur: 0.035, vol: 0.2, freq: 2600, q: 2.2 });
-    tom(ctx, destino, { freq: abre ? 190 : 140, glide: abre ? 150 : 82, quando: t + (abre ? 0.03 : 0.05), dur: abre ? 0.08 : 0.15, vol: abre ? 0.09 : 0.15, ataque: 0.004, tipo: 'sine' });
+    tom(ctx, destino, { freq: abre ? 190 : 140, glide: abre ? 150 : 82, quando: t + (abre ? 0.03 : 0.05), dur: abre ? 0.08 : 0.15, vol: abre ? 0.09 : 0.11, ataque: 0.004, tipo: 'sine' });
   },
 
   // ------------------------------------------- a festa surpresa (o salão da abóbora)

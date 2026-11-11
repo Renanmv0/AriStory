@@ -200,6 +200,8 @@ export interface PalcoDaChegada {
   porta: { x: number; z: number };
   /** chamada quando o carro parou de vez (a cena liga o colisor e o que mais for dela) */
   aoEstacionar: () => void;
+  /** manda o portão da garagem abrir (e, com `false`, devolve o comando ao portão: ele fecha sozinho quando todos se afastam) */
+  portao: (aberto: boolean) => void;
 }
 
 /** o raio da curva de ré para dentro da garagem */
@@ -307,7 +309,7 @@ export function chegadaDoBebito(w: WorldBuilder, palco: PalcoDaChegada): void {
       camera = true;
     };
     // A. o Ari na porta
-    corte(porta.x + 2.4, 2.2, porta.z + 6.4, porta.x, 1.2, porta.z);
+    corte(porta.x + 1.9, 2.1, porta.z + 5.0, porta.x, 1.2, porta.z);
     await esperar(0.8);
     await conversa(g, [[A, `${g.companionName()}?`]]);
     // ele olha para um lado, para o outro…
@@ -341,7 +343,7 @@ export function chegadaDoBebito(w: WorldBuilder, palco: PalcoDaChegada): void {
     carro.frear(true);
     carro.empurrar(0.35);
     carro.andando(0.2);
-    await esperar(0.6);
+    await esperar(0.5);
 
     // C. da rua: a ré — um quarto de volta para dentro da garagem, o volante todo virado
     porOAri(g, vaga.x + 3.5, vaga.z + 2.2, -Math.PI / 2);
@@ -353,10 +355,13 @@ export function chegadaDoBebito(w: WorldBuilder, palco: PalcoDaChegada): void {
     const olhoDaRe = new V(vaga.x + 7.6, 3.4, rua.z + 2.0).sub(miraDaRe).multiplyScalar(recuo).add(miraDaRe);
     corte(olhoDaRe.x, olhoDaRe.y, olhoDaRe.z, miraDaRe.x, miraDaRe.y, miraDaRe.z);
     const cz = rua.z - RAIO_DA_RE;
+    // o portão da garagem abre (é automático), e só então ele engata a ré
+    palco.portao(true);
+    await esperar(2.0);
     carro.frear(false);
     carro.estercar(0.5);
     g.poseNoCarro('parceiro', 'dirigindo', -1.3);
-    await esperar(0.5);
+    await esperar(0.4);
     await andar(3.4, suave, (k) => {
       const a = k * (Math.PI / 2);
       return { x: xPassa + RAIO_DA_RE * Math.sin(a), z: cz + RAIO_DA_RE * Math.cos(a), nariz: Math.atan2(-Math.cos(a), Math.sin(a)) };
@@ -383,8 +388,8 @@ export function chegadaDoBebito(w: WorldBuilder, palco: PalcoDaChegada): void {
     const frente = vaga.z + BEBITO_MOBILE.comprimento / 2;
     // (um de frente para o outro, mas ABERTOS para a câmera, como em palco: de perfil puro o
     // cabelo do Renan tapava o rosto dele; o carro fica atrás dos dois)
-    const ele = { x: vaga.x + 1.0, z: frente + 0.6 };
-    const ari = { x: vaga.x - 0.2, z: frente + 1.6 };
+    const ele = { x: vaga.x + 1.0, z: frente + 0.35 };
+    const ari = { x: vaga.x - 0.2, z: frente + 1.2 };
     const ABRE = 0.6;
     const rumoDele = Math.atan2(ari.x - ele.x, ari.z - ele.z) + ABRE;
     const rumoDoAri = Math.atan2(ele.x - ari.x, ele.z - ari.z) - ABRE;
@@ -392,7 +397,8 @@ export function chegadaDoBebito(w: WorldBuilder, palco: PalcoDaChegada): void {
     porOAri(g, ari.x, ari.z, rumoDoAri);
     g.holdCompanion(ele.x + Math.sin(rumoDele) * 3, ele.z + Math.cos(rumoDele) * 3);
     g.som('portaDoBebito');
-    corte(vaga.x + 4.6, 2.2, frente + 5.6, vaga.x + 0.5, 1.2, frente + 0.6);
+    // (a câmera fica na rua, de frente para a boca da garagem: de lado, o pilar e o muro tapavam os dois)
+    corte(vaga.x + 3.3, 2.2, frente + 5.8, vaga.x + 0.4, 1.2, frente + 0.5);
     await esperar(1.0);
 
     await conversa(g, [
@@ -415,6 +421,7 @@ export function chegadaDoBebito(w: WorldBuilder, palco: PalcoDaChegada): void {
     });
     await esperar(0.6);
     camera = false;
+    palco.portao(false);
     g.setCameraOmbro(null);
     g.freeCompanion();
     g.lockPlayer(false);
