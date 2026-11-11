@@ -14,7 +14,7 @@
  *   bichos (que atravessam INTEIROS na frente do carro parado), para no sinal,
  *   desvia da obra e dos buracos, passa a lombada devagar e ultrapassa o
  *   ônibus —, com foto de cada evento, três estrelas, e a chegada no parque
- *   com o carro estacionado na rua do ônibus;
+ *   com o carro na vaga dele, no estacionamento do outro lado da rua do ônibus;
  * - DISTRAÍDO: sem ninguém no manche, o carro freia SOZINHO antes da faixa
  *   (o susto) e nunca passa por cima de um bicho;
  * - MANCHE: as teclas de verdade — virar muda de faixa, frear para, acelerar
@@ -24,7 +24,12 @@
  * - PERTO: fotos de perto dos bichos atravessando e das peças da pista.
  *
  * Uso: node scripts/viagem.mjs /caminho/prefixo
- *      SO=rota|partida|bom|distraido|manche|volta|perto roda uma parte
+ * - ESTACIONAMENTO: sem a chave ele não existe; com ela, o lote do outro
+ *   lado da rua, o carro na vaga do coração, o caminho a pé da vaga até o
+ *   portão do parque sem nada no meio (pela faixa atrás do ônibus), a cancela
+ *   subindo, e as fotos (de longe, girando, e de perto);
+ *
+ *      SO=rota|partida|bom|distraido|manche|volta|estacionamento|perto roda uma parte
  *      CEL=1 roda no celular em pé; SEMENTE=7 escolhe a rota do BOM
  */
 import { chromium } from 'playwright';
@@ -246,7 +251,7 @@ if (roda('bom')) {
       travado: j.player.locked, cameraDeCena: !!j.cameraDeCena(), painel: document.querySelector('.painel-da-viagem')?.classList.contains('show'),
     };
   });
-  confere(noParque && parque.carro && parque.flag, `chegaram no Villa Lobos e o carro está estacionado na rua do ônibus (${parque.onde})`);
+  confere(noParque && parque.carro && parque.flag && Math.abs(parque.onde[0] - 51.9) < 0.1 && Math.abs(parque.onde[1] - 5.5) < 0.1, `chegaram no Villa Lobos e o carro está na vaga dele, no estacionamento (${parque.onde})`);
   confere(parque.livre && !parque.travado && !parque.cameraDeCena && !parque.painel, `a dupla desce na calçada, solta, com a câmera e a tela de sempre (${parque.dupla})`);
   confere(parque.memoria, 'a primeira viagem virou memória no diário');
   confere(parque.rotulos.includes('Voltar pra casa de carro'), 'o carro oferece "Voltar pra casa de carro"');
@@ -358,7 +363,7 @@ if (roda('volta')) {
       rotulos: j.current.world.interactables.filter((i) => i.enabled).map((i) => `${i.id}|${i.label}`),
     };
   });
-  confere(parque.carro, 'o carro está na rua do ônibus');
+  confere(parque.carro, 'o carro está no estacionamento');
   confere(parque.rotulos.includes('parque:de-carro|Voltar pra casa') && !parque.rotulos.some((r) => r.startsWith('door:frente-da-casa')), 'o "Voltar pra casa" do portão virou lembrete: quem veio de carro volta de carro');
   await page.evaluate(() => window.jogo.setZoom(12));
   await page.waitForTimeout(800);
@@ -389,6 +394,116 @@ if (roda('volta')) {
   await page.evaluate(() => window.jogo.setZoom(13));
   await page.waitForTimeout(900);
   await page.screenshot({ path: `${OUT}-volta-3-em-casa.png` });
+  await page.context().close();
+}
+
+// ============================================================= estacionamento
+if (roda('estacionamento')) {
+  console.log('— o estacionamento do outro lado da rua do ônibus');
+  const page = await pagina();
+  // sem a chave, o parque é o de sempre
+  await abrir(page, 'cena=villa-lobos');
+  const semChave = await page.evaluate(() => ({
+    lote: (() => { let tem = false; window.jogo.current.world.root.traverse((o) => { if (o.userData.peca === 'estacionamento') tem = true; }); return tem; })(),
+    limite: window.jogo.current.world.bounds.maxX,
+  }));
+  confere(!semChave.lote && semChave.limite === 44, `sem a chave do carro não há estacionamento, e o parque acaba na rua (x ${semChave.limite})`);
+  // com a chave e o carro em casa: o lote com a vaga do coração vazia
+  await abrir(page, 'bebito&cena=villa-lobos');
+  await comOCarro(page);
+  await abrir(page, 'bebito&cena=villa-lobos&em=50.6,1.6&olhar=2.4');
+  const vazio = await page.evaluate(() => {
+    const j = window.jogo;
+    let lote = false;
+    j.current.world.root.traverse((o) => { if (o.userData.peca === 'estacionamento') lote = true; });
+    return { lote, carro: !!j.scene.getObjectByName('bebito-mobile'), limite: j.current.world.bounds.maxX };
+  });
+  confere(vazio.lote && !vazio.carro && vazio.limite > 60, `com a chave, o estacionamento existe (até x ${vazio.limite}), e com o carro em casa a vaga dele está vazia`);
+  await page.evaluate(() => window.jogo.setZoom(9));
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${OUT}-estacionamento-1-vaga-vazia.png` });
+  // com o carro no parque
+  await page.evaluate(() => window.jogo.setFlag('bebito:carro-no-parque', true));
+  await abrir(page, 'bebito&cena=villa-lobos&entrada=do-carro');
+  const lote = await page.evaluate(() => {
+    const j = window.jogo;
+    const c = j.scene.getObjectByName('bebito-mobile');
+    const colisores = j.current.world.colliders;
+    const bate = (x, z, r = 0.42) => colisores.some((k) => (k.kind === 'circle'
+      ? Math.hypot(x - k.x, z - k.z) < k.r + r
+      : (() => {
+        // (caixa girada: o giro do colisor tem o sinal contrário ao do `rotation.y`)
+        const c0 = Math.cos(k.rot ?? 0);
+        const s0 = Math.sin(k.rot ?? 0);
+        const dx = x - k.x;
+        const dz = z - k.z;
+        const lx = dx * c0 - dz * s0;
+        const lz = dx * s0 + dz * c0;
+        return Math.abs(lx) < k.hw + r && Math.abs(lz) < k.hd + r;
+      })()));
+    // o caminho a pé: da descida, pela passagem da cerca viva, a faixa atrás do ônibus, a calçada do parque e o vão
+    const pontos = [[51.2, 3.0], [47.0, 3.0], [41.0, 3.0], [35.6, 3.0], [35.6, 9.0], [35.4, 13.0], [32.5, 13.0]];
+    const ruins = [];
+    for (let i = 0; i < pontos.length - 1; i++) {
+      const [ax, az] = pontos[i];
+      const [bx, bz] = pontos[i + 1];
+      const n = Math.ceil(Math.hypot(bx - ax, bz - az) / 0.2);
+      for (let k = 0; k <= n; k++) {
+        const x = ax + ((bx - ax) * k) / n;
+        const z = az + ((bz - az) * k) / n;
+        if (bate(x, z)) { ruins.push([+x.toFixed(1), +z.toFixed(1)]); break; }
+      }
+    }
+    const p = j.player.position;
+    return {
+      onde: c ? [+c.position.x.toFixed(2), +c.position.z.toFixed(2), +c.rotation.y.toFixed(2)] : null,
+      descida: [+p.x.toFixed(1), +p.z.toFixed(1)], descidaLivre: !bate(p.x, p.z, 0.4),
+      ruins,
+      // a cerca viva fecha o lote: de fora da passagem e da entrada não se entra
+      fechado: bate(48.65, -20) && bate(48.65, 0) && bate(48.65, 20) && bate(56, 13.05) && bate(56, -13.05),
+      rotulos: j.current.world.interactables.filter((i) => i.enabled).map((i) => i.label),
+    };
+  });
+  confere(lote.onde && Math.abs(lote.onde[0] - 51.9) < 0.05 && Math.abs(lote.onde[1] - 5.5) < 0.05 && Math.abs(lote.onde[2] + 1.57) < 0.02,
+    `o carro está na vaga do coração, de nariz para a rua (${lote.onde})`);
+  confere(lote.descidaLivre, `a dupla desce na passagem, fora de qualquer colisor (${lote.descida})`);
+  confere(lote.ruins.length === 0, `da vaga ao portão do parque, a pé, nada no caminho${lote.ruins.length ? ' — bate em ' + JSON.stringify(lote.ruins) : ''}`);
+  confere(lote.fechado, 'a cerca viva fecha o lote: só se entra pela passagem e pela entrada da cancela');
+  confere(lote.rotulos.includes('Voltar pra casa de carro'), 'na passagem, o carro oferece "Voltar pra casa de carro"');
+  // as fotos: a vista de sempre, girando, e de cima
+  await page.evaluate(() => window.jogo.setZoom(14));
+  await page.waitForTimeout(1000);
+  await page.screenshot({ path: `${OUT}-estacionamento-2-chegada.png` });
+  await page.keyboard.press('KeyQ');
+  await page.waitForTimeout(1400);
+  await page.screenshot({ path: `${OUT}-estacionamento-3-girado.png` });
+  await page.keyboard.press('KeyR');
+  await page.waitForTimeout(1400);
+  const tomada = async (nome, de, para) => {
+    await page.evaluate(([d, p]) => { const V = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new V(...d), new V(...p)); }, [de, para]);
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: `${OUT}-estacionamento-${nome}.png` });
+  };
+  await tomada('4-de-cima', [56.5, 30, 14], [52, 0, 0]);
+  await tomada('5-do-ponto', [35.4, 2.6, 0.2], [52, 1, 4]);
+  await tomada('6-o-bebito', [57.8, 2.6, 3.0], [51.9, 1.1, 5.4]);
+  await tomada('7-carros', [56.4, 2.4, -11.2], [61, 0.8, -2]);
+  await page.evaluate(() => window.jogo.setCameraOmbro(null));
+  // a cancela sobe quando alguém chega perto da entrada
+  await abrir(page, 'bebito&cena=villa-lobos&em=46.4,-10.8&olhar=1.57');
+  const anguloDoBraco = () => { let r = 0; window.jogo.scene.traverse((o) => { if (o.name === 'braco-da-cancela') r = o.rotation.z; }); return r; };
+  await page.waitForFunction(anguloDoBraco, null, { timeout: 1 }).catch(() => {});
+  await page.waitForFunction(`(${anguloDoBraco.toString()})() > 1.0`, null, { timeout: 30000 }).catch(() => {});
+  const braco = await page.evaluate(anguloDoBraco);
+  confere(braco > 1.0, `a cancela sobe com a dupla na entrada (${braco.toFixed(2)} rad)`);
+  await page.evaluate(() => window.jogo.setZoom(9));
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${OUT}-estacionamento-8-cancela.png` });
+  // o peso da vista da chegada
+  await abrir(page, 'bebito&cena=villa-lobos&entrada=do-carro');
+  await page.waitForTimeout(1500);
+  const peso = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
+  console.log(`   peso na chegada de carro: ${peso.calls} desenhos, ${peso.triangles} triângulos`);
   await page.context().close();
 }
 

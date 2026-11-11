@@ -19,6 +19,7 @@ import {
   type DesenhoDaPlaca, type NaPista,
 } from '../world/estrada';
 import { TravessiaDeBichos } from '../eventos/bebitoMobile/travessia';
+import { placaDeEstacionamento } from '../world/estacionamento';
 import {
   PISTA, biomaEm, eixoDaRota, estrelasDaViagem, gerarRota, pedidoDeViagem, type EventoDaRota, type PedidoDeViagem,
   type Rota,
@@ -293,6 +294,11 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       grade.rotation.y = rumoEm(s) + Math.PI / 2;
       chegada.add(grade);
     }
+    // do outro lado, a placa do estacionamento: é lá que o carro para (`eventos/bebitoMobile/noParque.ts`)
+    const pe = placaDeEstacionamento();
+    pe.position.copy(naBeira(rota.chegada - 4, -1, 0.5));
+    pe.rotation.y = rumoEm(rota.chegada) + Math.PI;
+    chegada.add(pe);
     const portal = signBoard(P.wood, P.metalWhite);
     portal.position.copy(naBeira(rota.chegada + 9, 1, 0.9));
     portal.rotation.y = paraAPista(rota.chegada + 9, 1) + 0.5;
@@ -984,7 +990,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         id: 'primeira-viagem',
         title: 'A primeira viagem',
         place: 'Na estrada',
-        note: 'A primeira vez que a gente saiu de casa de Bebito Mobile. Teve bicho na faixa de pedestres, lombada, poça e um ônibus devagar na frente — e a roda gigante aparecendo lá no fim da rua.',
+        note: 'A primeira vez que a gente saiu de casa de Bebito Mobile. Teve bicho na faixa de pedestres, lombada, poça e um ônibus devagar na frente — e a roda gigante aparecendo lá no fim da rua. Paramos na nossa vaga, a do coração, no estacionamento em frente ao ponto.',
         icon: '🚙',
       });
     }

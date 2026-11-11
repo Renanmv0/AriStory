@@ -2906,6 +2906,18 @@ export const PALETTE = {
   buracoBeira: 0x8a8d92,
   buracoFundo: 0x3d3f45,
   patoPe: 0xf2a23a,
+  // o estacionamento do Villa Lobos (`world/estacionamento.ts`): os carros dos
+  // outros (cores de carrinho de brinquedo, que não brigam com o azul-céu do
+  // Bebito), o vidro, o pneu, a cancela e o rosa da vaga deles
+  carroVermelho: 0xe0645a,
+  carroAmarelo: 0xf2c94c,
+  carroMenta: 0x8fd3b8,
+  carroLilas: 0xb9a3e3,
+  carroVidro: 0x6f97b3,
+  carroParaChoque: 0xc9ccd1,
+  pneu: 0x34363c,
+  cancelaAmarela: 0xf2c431,
+  vagaRosa: 0xff8fae,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

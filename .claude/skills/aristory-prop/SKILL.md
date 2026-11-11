@@ -1176,6 +1176,29 @@ entrega `naPista(s, l, y)` e as peças longas são costuradas por ela:
   fim da estrada (o aro duplo, os raios, as gôndolas brancas, os cavaletes),
   com o `aro` girando — a de verdade tem centenas de milhares de triângulos.
 
+## O estacionamento (`world/estacionamento.ts`)
+
+O estacionamento do Villa Lobos, onde o Bebito Mobile para (montado pela
+camada `eventos/bebitoMobile/noParque.ts`):
+
+- **`carroEstacionado(cor)`**: o carro dos OUTROS — um hatch pequeno de quina
+  macia (a caixa de baixo, o capô, a cabine de vidro com as colunas, o teto,
+  rodas de calota, faróis redondos, lanternas e para-choques). É a "versão
+  leve" de carro para FUNDO: o Bebito Mobile tem ~35 mil triângulos e uma
+  cabine de verdade; este tem poucos pedaços e entra no `fundirComoFundo` do
+  lote. Menor que o Bebito (que é uma vanzinha), em cores de carrinho de
+  brinquedo (`P.carro*`) que não brigam com o azul-céu dele.
+- **`Cancela`**: a caixa com a faixa amarela e o braço listrado (canvas com o
+  UV em metros), no grupo `braco-da-cancela`, que sobe sozinho com
+  `update(dt, perto)`.
+- **`totemDePagamento()`**, **`placaDeEstacionamento()`** (o "P" azul) e
+  **`plaquinhaDaVaga()`** (a rosa, "BEBITO MOBILE", com o coração), e o
+  **`geoCoracaoNoChao()`** pintado na vaga.
+- A pintura do lote (divisas, setas, zebra) é da camada: decalques com a
+  geometria juntada (`mergeGeometries`) — retângulos deitados no quadro do
+  `w.patch` (o `y` dele é o `−z` do mundo). Forma espelhada para virar uma
+  seta precisa do índice refeito ao contrário, senão a face olha para baixo.
+
 ## O kit do Halloween (`world/halloween/`)
 
 As peças do parque enfeitado (`docs/HALLOWEEN.md`, §4.1). Moram fora do

@@ -81,7 +81,8 @@ E o que a etapa C trouxe:
 | `src/eventos/bebitoMobile/rota.ts` | a ROTA de cada viagem, sorteada por semente: a curva, os trechos de paisagem, os oito eventos, os corações e a nota. Sem three |
 | `src/eventos/bebitoMobile/partida.ts` | "Ir de carro?" e "Quem dirige dessa vez?", e a partida para a estrada |
 | `src/eventos/bebitoMobile/travessia.ts` | os bichos do lago atravessando a faixa: a pata com os patinhos (com as patinhas, em terra) e os tigres-d'água |
-| `src/eventos/bebitoMobile/noParque.ts` | o carro estacionado na rua do ônibus do Villa Lobos, e a volta para casa |
+| `src/eventos/bebitoMobile/noParque.ts` | o estacionamento do Villa Lobos (do outro lado da rua do ônibus), o carro na vaga dele e a volta para casa |
+| `src/world/estacionamento.ts` | as peças do estacionamento: o carro dos outros, a cancela, o totem, a placa do P e a plaquinha da vaga |
 | `src/scenes/viagemDeCarro.ts` | a cena `viagem-de-carro`: a estrada montada pela rota, o carro dirigido, os eventos, a câmera, o painel e a chegada |
 | `src/world/estrada.ts` | as peças da estrada: o asfalto em trechos curvos, a faixa de pedestres, as placas, os cones, o cavalete, a lombada, o buraco, a poça, o semáforo, os corações e a roda gigante ao longe |
 
@@ -414,11 +415,45 @@ qualquer ideia que julgue que será boa para essa mecânica."
   Renan). Quem foi escolhido senta no lugar do motorista, de mãos no volante,
   seja quem for que o jogador controla; o outro vai de carona.
 - **A estrada** é uma cena própria (`viagem-de-carro`), de ~640 m.
-- **No parque**, o carro fica estacionado na rua do ônibus, atrás do ônibus
-  do ponto, e a dupla desce na calçada. O "Voltar pra casa" do portão vira
-  lembrete ("A pé? A gente veio de Bebito Mobile.") e quem leva de volta é o
-  carro ("Voltar pra casa de carro"). Em casa, o carro volta para a garagem.
-  Enquanto ele está no parque, a garagem fica vazia.
+- **No parque**, o carro fica no **estacionamento** do outro lado da rua do
+  ônibus (pedido do Renan, 2026-11-12), na vaga dele — rosa, com o coração
+  pintado no chão e a plaquinha "BEBITO MOBILE" —, de nariz para a rua, e a
+  dupla desce na passagem de pedestres ao lado. Para chegar ao parque: a
+  faixa de pedestres atrás do ônibus e o vão da cerca. O "Voltar pra casa"
+  do portão vira lembrete ("A pé? A gente veio de Bebito Mobile.") e quem
+  leva de volta é o carro ("Voltar pra casa de carro"). Em casa, o carro
+  volta para a garagem. Enquanto ele está no parque, a garagem fica vazia —
+  e com ele em casa, a vaga do coração fica vazia no estacionamento.
+
+### O estacionamento do Villa Lobos
+
+Uma camada do parque (`eventos/bebitoMobile/noParque.ts`, peças em
+`world/estacionamento.ts`), atrás da mesma chave: sem ela, o parque acaba na
+rua, como sempre. Com ela:
+
+- a **calçada do outro lado da rua** e uma **cerca viva** correndo na linha
+  dela, com duas aberturas: a **passagem de pedestres** (de frente para a
+  faixa que cruza a rua atrás do ônibus) e a **entrada dos carros**, com a
+  **cancela** que sobe quando alguém chega perto;
+- o **lote**: duas filas de vagas de frente uma para a outra, com o corredor
+  no meio (setas pintadas: mão única, de quem entra pela cancela), batentes
+  de concreto na cabeça das vagas, a zebra da passagem atravessando a fila,
+  dois postes, o **totem de pagamento** e a **placa azul do "P"**;
+- **quatro carros dos outros** (hatches pequenos, vermelho, amarelo, menta e
+  lilás — uma peça leve e de fundo) para o lugar ler como estacionamento;
+- o que é alto (árvores) fica no fundo e nos canteiros da calçada longe do
+  ponto: do lado da câmera, só cerca viva baixa, e nada tapa o ônibus.
+
+**Inventado por mim, a conferir com o Renan**: o desenho do lote, os carros
+dos outros, a vaga rosa com o coração e a plaquinha. Se o estacionamento de
+verdade do Villa Lobos for diferente (é de terra? tem árvore no meio das
+vagas? fica de outro jeito?), é só dizer.
+
+**O peso**: a vista da chegada de carro (a passagem do estacionamento, com o
+ponto do ônibus na tela) desenha ~276 objetos e ~204 mil triângulos — o
+parque na entrada de sempre faz ~425 e ~152 mil. O lote inteiro (cerca viva,
+carros, batentes, árvores, postes e placas) é um grupo juntado como fundo; a
+pintura são três decalques.
 
 ### Como se dirige (uma mão só basta)
 
@@ -526,7 +561,7 @@ node scripts/viagem.mjs /tmp/vg               # a viagem inteira
 SO=bom CEL=1 node scripts/viagem.mjs /tmp/vg  # a viagem no celular em pé
 ```
 
-`SO=rota|partida|bom|distraido|manche|volta|perto` roda uma parte; `SEMENTE=7`
+`SO=rota|partida|bom|distraido|manche|volta|estacionamento|perto` roda uma parte; `SEMENTE=7`
 escolhe a rota. O teste confere as regras em trezentas rotas sorteadas, sai
 de carro pela garagem (os dois casos do "quem dirige"), dirige a viagem
 inteira com um piloto de teste (`aristoryBebitoMobile.viagem.piloto = 'bom'`,
