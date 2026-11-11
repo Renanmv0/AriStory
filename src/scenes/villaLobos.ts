@@ -8,6 +8,7 @@ import { Cookie } from '../entities/bichos/Cookie';
 import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { fundir } from '../world/fundir';
 import { OnibusDaCidade } from '../world/onibusDaCidade';
+import { bebitoMobileNestaPagina } from '../eventos/BebitoMobile';
 import { mesaDeSorveteria, sorveteriaDoMano, SORVETERIA_DO_MANO } from '../world/sorveteriaDoMano';
 import { bonecoDeNeve, bordaDeGelo, cristalDeGelo, posteDeGelo } from '../world/pracaDeGelo';
 import { Frisbee } from '../entities/Frisbee';
@@ -4886,9 +4887,10 @@ export const villaLobos: SceneDef = {
       pegarOOnibus.label = g.flag('escola-aberta') ? 'Pegar o ônibus' : 'Pegar o ônibus pro clube';
     });
 
+    // (com o Bebito Mobile no jogo, quem volta do parque chega pela calçada da frente da casa)
     w.door({
       x: 0, z: 27,
-      to: 'casa', entry: 'da-rua',
+      to: bebitoMobileNestaPagina() ? 'frente-da-casa' : 'casa', entry: 'da-rua',
       label: 'Voltar pra casa', icon: '🏠',
       highlight: portao,
       radius: 2.2,

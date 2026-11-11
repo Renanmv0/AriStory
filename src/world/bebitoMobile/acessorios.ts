@@ -349,6 +349,39 @@ function mantinhaDaEstella(): THREE.Group {
   return g;
 }
 
+// ======================================================================= o teto
+
+/**
+ * O LAÇO DE PRESENTE: o laço grande do dia da entrega, em cima do teto — as
+ * duas alças gordas, o nó, as duas pontas caindo com o corte em V, e a fita
+ * que atravessa o teto por baixo dele. Balança um tico com o carro andando.
+ */
+function lacoDePresente(): THREE.Group {
+  const g = new THREE.Group();
+  const fita = toon(P.heart);
+  // a fita deitada no teto, de um lado ao outro
+  por(g, new THREE.Mesh(quina(1.5, 0.016, 0.16, 0.006), fita), 0, 0.0, 0);
+  const laco = por(g, queBalanca('laco-de-presente', { z: [0.05, 2.1], x: [0.04, 1.7] }), 0, 0.02, 0);
+  for (const lado of [-1, 1]) {
+    // a alça: um toro achatado, em pé e aberto para fora
+    const alca = por(laco, new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.075, 8, 18), fita), lado * 0.24, 0.2, 0);
+    alca.scale.set(1.15, 0.8, 0.9);
+    alca.rotation.set(0, 0, lado * 0.35);
+    // a ponta caindo, com o corte em V
+    const ponta = new THREE.Shape();
+    ponta.moveTo(-0.07, 0);
+    ponta.lineTo(0.07, 0);
+    ponta.lineTo(0.09, -0.36);
+    ponta.lineTo(0, -0.29);
+    ponta.lineTo(-0.09, -0.36);
+    ponta.lineTo(-0.07, 0);
+    const cauda = por(laco, new THREE.Mesh(new THREE.ExtrudeGeometry(ponta, { depth: 0.02, bevelEnabled: false }), toon(P.heart, { doubleSide: true })), lado * 0.1, 0.14, 0.06);
+    cauda.rotation.set(1.05, 0, lado * 0.6);
+  }
+  por(laco, esfera(0.1, fita, 1.05, 0.9, 0.95, 10), 0, 0.17, 0);
+  return g;
+}
+
 // =============================================================== o vidro de trás
 
 /** O EMBLEMA DOS GATITOS: o escudo de verdade (o disco amarelo, o G e as orelhinhas), colado no vidro */
@@ -365,6 +398,7 @@ export const PECAS_DO_CARRO: Readonly<Record<string, () => THREE.Group>> = {
   'estrela-do-ari': estrelaDoAri,
   'pompom-dos-gatitos': pompomDosGatitos,
   'chaveiro-do-pelusa': chaveiroDoPelusa,
+  'laco-de-presente': lacoDePresente,
   'frisbee-e-raquetes': frisbeeERaquetes,
   'bebito-book-e-livros': bebitoBookELivros,
   'mantinha-da-estella': mantinhaDaEstella,

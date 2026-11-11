@@ -1098,6 +1098,19 @@ export interface GameAPI {
   releaseCompanion(x: number, z: number, facing?: number): void;
   /** troca quem o jogador controla */
   swapCharacters(): void;
+  /**
+   * Esconde (ou mostra) o PARCEIRO. É para a cutscene em que um dos dois sai
+   * de cena por um instante (o Renan vai buscar o Bebito Mobile); a regra de
+   * sempre continua — são dois em cena —, e quem escondeu devolve.
+   */
+  setCompanionVisible(visible: boolean): void;
+  /**
+   * A POSE DE CARRO de um dos dois (`null` desfaz): quem dirige leva as mãos
+   * ao volante, o passageiro descansa as mãos no colo. É por pessoa, ao
+   * contrário do `setSitting`: um dirige enquanto o outro espera de pé.
+   * `volante` é o giro do volante agora, para as mãos acompanharem.
+   */
+  poseNoCarro(quem: 'jogador' | 'parceiro', pose: 'dirigindo' | 'passageiro' | null, volante?: number): void;
 
   /**
    * Os dois levam a boca, de vez em quando, o que estiverem segurando.

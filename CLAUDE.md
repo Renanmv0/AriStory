@@ -115,6 +115,14 @@ Cuidados ao juntar, para não quebrar nada:
 - Depois de juntar: foto de antes e depois lado a lado, os testes da peça, e
   o `scripts/zfighting.mjs` (malha juntada não pode criar face coplanar nova).
 
+**O que é só FUNDO** (casas vizinhas, canteiros, sebes, moitas e flores que
+ninguém procura pelo nome, ninguém mexe e ninguém toca) usa
+`fundirComoFundo(grupo)`: ela apaga os nomes de dentro e junta o grupo
+INTEIRO por material — dez canteiros de mesmas cores viram os desenhos de
+um. A frente da casa do Ari caiu de 933 para 339 desenhos por quadro assim.
+Agrupe por vizinhança (um grupo por pedaço do mapa), para o que está fora da
+tela não ser desenhado.
+
 **Efeitos pesados** (filtros de tela do `threejs-postprocessing`, shader
 animado, sombra extra, luz de verdade): entram quando melhoram o que se vê, e
 sempre medidos no celular — o laboratório, que usa todos ao mesmo tempo, é o
@@ -245,6 +253,14 @@ ligada (`true`); os demais usam `?halloween` e continuam valendo.
 presente do Renan para o Ari, a ficha e as vagas do carro, e as etapas: o
 modelo, a quest, a primeira viagem e as demais rotas), também aberto por um
 "COMECE AQUI" e com as perguntas ao Renan da próxima etapa.
+**O Bebito Mobile está ESCONDIDO atrás de uma chave** (o Renan pediu,
+2026-11-11: nada do carro aparece no jogo até TUDO estar pronto):
+`BEBITO_MOBILE_NO_JOGO = false` em `src/eventos/BebitoMobile.ts`. Toda etapa
+nova do carro (cena, quest, viagem) fica atrás de `bebitoMobileNestaPagina()`;
+`?bebito` liga tudo num save à parte, para os testes e para o Renan ver, e
+`?semBebito` força desligado. A frente da casa do Ari (`frente-da-casa`: o
+jardim, a garagem e a rua de casinhas) e a quest do presente já existem,
+escondidas. Ligar a chave é a ÚLTIMA coisa, e só com o aval do Renan.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,
@@ -394,6 +410,7 @@ node scripts/armas.mjs  /tmp/ar    # as ferramentas da estufa: a parede, o paine
 node scripts/borrifador.mjs /tmp/bf # o borrifador: destranca pela pistola, o frasco pelo gargalo, o gatilho, o "psst", a nevoa molhando o bando inteiro, e as 14 cartas so dele agindo
 node scripts/fantasias.mjs /tmp/fa  # as cinco fantasias da caça do Halloween (abóbora, pirata, gato preto, espantalho, bruxinho) nos dois: cada peça no pai certo, o pé sumindo no calçado, nada abaixo do chão, de frente, costas, lado, andando, sentados e de perto, o rabo, o papagaio e o corvinho mexendo, e o boneco e o filtro 🎃 do guarda-roupa. FANTASIA=pirata roda uma
 node scripts/bebitoMobile.mjs /tmp/bm # o Bebito Mobile (docs/BEBITO-MOBILE.md), estacionado pelo atalho ?carro=x,z: o modelo medido (a base, o tamanho, as malhas e os triângulos), a ficha e as vagas (cada encaixe com nome, cada detalhe da ficha no carro, todo id do catálogo com modelo, outra ficha dando outro carro), o save (ficha torta consertada, save antigo com a de fábrica, gravar e recarregar), os comandos (rodas, volante, teto, faróis, freio, pisca, solavanco, penduricalhos), as faces coplanares das caixas de quina redonda, os lugares (a dupla sentada na frente — cabe sob o teto e entre as portas —, sentada no banco de trás, e deitada na cama com os encostos da frente deitados) e as fotos de todos os lados, das janelas de perto, por dentro e sem teto. SO=modelo|ficha|comandos|peso|fotos|coplanar|lugares roda uma parte; SEM_FUNDIR=1 mede antes da junção
+node scripts/presente.mjs /tmp/pr  # a quest do presente do Bebito Mobile e a frente da casa do Ari (docs/BEBITO-MOBILE.md), só com ?bebito: ESCONDIDO (sem a chave a porta da casa sai no parque, a cama é a de sempre e o save não ganha flag), o JARDIM (a porta sai no jardim, a garagem vazia, da porta ao portão sem esbarrar, o parque voltando pela calçada, fotos) e a QUEST (dormir depois da lição 10, a pergunta da surpresa, o Renan saindo pela porta da sala, o Ari atrás, a buzina, o carro vindo pela rua com o Renan dirigindo e o laço no teto, a ré para dentro da garagem, a conversa, a memória, o save de verdade intacto, e depois o carro morando na garagem). SO=escondido|jardim|quest roda uma parte; CEL=1 roda no celular em pé
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha); SO=armario,estante roda so essas (peca de evento, como o carrinho-de-pocoes, abre a cena na fase dela); SEM_FUNDIR=1 mede antes da juncao (depois dela nao sobra caixa para medir)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso

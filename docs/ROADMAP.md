@@ -41,6 +41,11 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] **O Bebito Mobile, etapa A**: o modelo do carro do casal no kit, montado
   por ficha de dados (pintura, placa e vagas) e pronto para a edição futura —
   o plano e as etapas seguintes estão em `docs/BEBITO-MOBILE.md`
+- [x] **O Bebito Mobile, etapa B** (ESCONDIDA atrás da chave
+  `BEBITO_MOBILE_NO_JOGO`, só visível com `?bebito`): a frente da casa do Ari
+  (o jardim florido, a garagem e a rua de casinhas) e a quest do presente —
+  dormir depois da lição 10, a surpresa, o Renan saindo pela porta e
+  chegando de carro
 
 > Este roadmap parou de ser atualizado item a item: muita coisa entrou depois
 > (boutique, Mania de Churrasco, xadrez, bichos do clube…). O `git log` e os
@@ -69,9 +74,9 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [ ] O restaurante/bar de sempre
 - [ ] A praia daquela viagem
 - [ ] **O Bebito Mobile e as viagens de carro** (`docs/BEBITO-MOBILE.md`): a
-  quest do presente na frente da casa do Ari (etapa B), a primeira viagem
-  Casa → Villa Lobos com "quem dirige dessa vez?" e a paisagem procedural
-  (etapa C), e as demais rotas (etapa D)
+  primeira viagem Casa → Villa Lobos com "quem dirige dessa vez?" e a
+  paisagem procedural (etapa C), as demais rotas (etapa D) e, no fim, ligar
+  a chave `BEBITO_MOBILE_NO_JOGO`
 - [ ] O caminho entre as casas (rua, ônibus, metrô)
 - [ ] Um cenário de data especial (primeiro encontro?)
 

@@ -63,6 +63,17 @@ const PECAS = [
   // quina redonda (`quina`), que este caçador não mede: quem confere as faces
   // coplanares do carro é o `SO=coplanar` do `scripts/bebitoMobile.mjs`
   ['bebito-mobile', 'villa-lobos&carro=38.4,-9'],
+  // a frente da casa do Ari (`world/frenteDaCasa.ts`), que só existe com a chave
+  // do carro: a casa por fora, a vizinha (o mesmo molde, mais leve), o
+  // pergolado da garagem, a cerquinha, o portãozinho e a caixa de correio.
+  // Rode com SEM_FUNDIR=1: o jardim e a vizinhança são juntados como FUNDO
+  // (`fundirComoFundo`), que apaga o nome das peças de dentro
+  ['casa-do-ari-por-fora', 'frente-da-casa&bebito'],
+  ['casa-vizinha', 'frente-da-casa&bebito'],
+  ['garagem-do-bebito', 'frente-da-casa&bebito'],
+  ['cerca-do-jardim', 'frente-da-casa&bebito'],
+  ['portao-do-jardim', 'frente-da-casa&bebito'],
+  ['caixa-de-correio', 'frente-da-casa&bebito'],
   ['quiosque', 'clube'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],

@@ -2839,6 +2839,30 @@ export const PALETTE = {
   mantinhaListra: 0xf2a7b8,
   mantinhaEtiqueta: 0xc9a25e,
   poteTampa: 0xf2a7b8,
+  /**
+   * A FRENTE DA CASA DO ARI (`world/frenteDaCasa.ts`): a parede é a `wallCream`
+   * da sala (é a mesma casa) e a porta, a `woodDark` de dentro. Aqui moram o
+   * que só existe do lado de fora: a madeira branca das janelas e da cerca,
+   * a veneziana menta, o rodapé e a caixa de correio.
+   */
+  casaBranco: 0xfbf8f1,
+  casaVeneziana: 0x7ab8a1,
+  casaRodape: 0xd9c4a6,
+  casaCortina: 0xf6d9c9,
+  casaCorreio: 0xe2604f,
+  casaPergola: 0xa9744a,
+  // as casas VIZINHAS da rua do Ari (`scenes/frenteDaCasa.ts`): o mesmo molde
+  // da casa dele, cada uma de uma cor de casinha de bairro
+  vizinhaAmarela: 0xf6dfa0,
+  vizinhaRosa: 0xf3c9c2,
+  vizinhaAzul: 0xc3dcea,
+  vizinhaVerde: 0xd3e4c4,
+  vizinhaLilas: 0xddd0ea,
+  vizinhaTelhaEscura: 0x97564a,
+  vizinhaTelhaCinza: 0x7c8090,
+  vizinhaVenezianaAzul: 0x6a97c4,
+  vizinhaVenezianaVinho: 0xb5665f,
+  vizinhaVenezianaMostarda: 0xd9a84e,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

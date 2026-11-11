@@ -2455,6 +2455,14 @@ export class Game implements GameAPI {
     this.parceiro.riding = true;
   }
 
+  setCompanionVisible(visible: boolean): void {
+    this.parceiro.setVisible(visible);
+  }
+
+  poseNoCarro(quem: 'jogador' | 'parceiro', pose: 'dirigindo' | 'passageiro' | null, volante = 0): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.setNoCarro(pose, volante);
+  }
+
   commandCompanion(x: number, z: number): void {
     this.parceiro.goTo(x, z);
   }

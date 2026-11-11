@@ -380,7 +380,15 @@ const KEY_DO_JOGO = 'aristory.save.v1';
  */
 const KEY_DO_TESTE = 'aristory.save.v1.halloween';
 const NO_TESTE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('halloween');
-const KEY = NO_TESTE ? KEY_DO_TESTE : KEY_DO_JOGO;
+/**
+ * O SAVE DE TESTE DO BEBITO MOBILE (`eventos/BebitoMobile.ts`): com `?bebito`
+ * o carro, a quest e as viagens aparecem antes da hora, num save à parte que
+ * nasce como cópia do de verdade — dá para jogar a surpresa inteira sem
+ * gastá-la no save do jogo.
+ */
+const KEY_DO_BEBITO = 'aristory.save.v1.bebito';
+const NO_BEBITO = !NO_TESTE && typeof location !== 'undefined' && new URLSearchParams(location.search).has('bebito');
+const KEY = NO_TESTE ? KEY_DO_TESTE : NO_BEBITO ? KEY_DO_BEBITO : KEY_DO_JOGO;
 
 /**
  * A EDIÇÃO DO HALLOWEEN no save de verdade (`eventos/Halloween.ts`).
@@ -491,7 +499,7 @@ export class SaveState {
   private static read(): SaveData {
     try {
       // o save de teste começa do progresso de verdade, na primeira vez
-      const raw = localStorage.getItem(KEY) ?? (NO_TESTE ? localStorage.getItem(KEY_DO_JOGO) : null);
+      const raw = localStorage.getItem(KEY) ?? (NO_TESTE || NO_BEBITO ? localStorage.getItem(KEY_DO_JOGO) : null);
       if (!raw) return structuredClone(EMPTY);
       const parsed = JSON.parse(raw) as Partial<SaveData>;
       // `loadouts` era o guarda-roupa paralelo; hoje ele so serve de entrada

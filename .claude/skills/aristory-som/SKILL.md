@@ -151,6 +151,20 @@ grasnado, quando a garça levanta voo).
 Picos no `.wav`: `buzina` 0,11, `motorDoOnibus` 0,08, `freioDoOnibus`
 0,08 e `portaDoOnibus` 0,08.
 
+**O Bebito Mobile** (`eventos/bebitoMobile/presente.ts`) — carro pequeno,
+e não ônibus: tudo mais agudo e mais curto que a família do ônibus.
+
+- `buzinaDoBebito`: o "bi-bi" de carrinho antigo, duas buzinadas curtas;
+- `motorDoBebito`: o "pó-pó-pó" de motorzinho; a cena toca em fila (a cada
+  ~0,34 s) enquanto o carro anda, e o `n` alterna o timbre para não virar
+  metrônomo;
+- `portaDoBebito`: o "clec" do trinco e o "tum" abafado da lata (`n` par
+  abre, ímpar bate).
+
+Picos no `.wav`: `buzinaDoBebito` 0,13, `motorDoBebito` 0,05 (é fundo) e
+`portaDoBebito` ~0,09 (a primeira versão saiu com 0,047, metade da porta de
+casa, e foi dobrada).
+
 **O salão da abóbora** (a festa surpresa, `eventos/halloween/noSalao.ts`):
 dois climas e dois sons. `'abobora-no-escuro'` é o suspense de desenho de
 antes da surpresa (58 bpm em mi menor, o acorde comprido, a marimba

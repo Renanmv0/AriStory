@@ -73,6 +73,7 @@ export const CATALOGO_DO_CARRO: readonly DetalheDoCarro[] = [
   { id: 'estrela-do-ari', nome: 'Estrela do Ari', vaga: 'retrovisor', origem: 'a presilha de estrela do cabelo do Ari' },
   { id: 'pompom-dos-gatitos', nome: 'Pompom dos Gatitos', vaga: 'retrovisor', origem: 'o pompom azul e amarelo da Luna, da Sol e da Estrella' },
   { id: 'chaveiro-do-pelusa', nome: 'Chaveiro do Pelusa', vaga: 'chave', origem: 'o gato do Ari, branco e cinza' },
+  { id: 'laco-de-presente', nome: 'Laço de presente', vaga: 'teto', origem: 'o laço do dia em que o Renan chegou dirigindo e entregou o carro' },
   { id: 'frisbee-e-raquetes', nome: 'Frisbee e raquetes', vaga: 'portaMalas', origem: 'o frisbee de sábado e as raquetes da mesa de ping pong do parque' },
   { id: 'bebito-book-e-livros', nome: 'Bebito book e os dois livros', vaga: 'bancoDeTras', origem: 'o caderninho da barraca, o Aristóteles e Dante do Ari e A Toca das Raposas do Renan' },
   { id: 'mantinha-da-estella', nome: 'Mantinha da Estella', vaga: 'bancoDeTras', origem: 'uma manta de lã costurada pela Estella, com o pote de biscoitinhos' },

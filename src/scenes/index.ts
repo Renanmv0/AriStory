@@ -7,6 +7,7 @@ import { escola } from './escola';
 import { escolaGinasio } from './escolaGinasio';
 import { escolaDescanso, escolaProfessores, escolaSala1, escolaSala2 } from './escolaSalas';
 import { estufa } from './estufa';
+import { frenteDaCasa } from './frenteDaCasa';
 import { laboratorio } from './laboratorio';
 import { maniaDeChurrasco } from './maniaDeChurrasco';
 import { quarto } from './quarto';
@@ -22,6 +23,9 @@ export const SCENES: Record<string, SceneDef> = {
   [casa.id]: casa,
   [quarto.id]: quarto,
   [villaLobos.id]: villaLobos,
+  // a frente da casa do Ari (o jardim e a garagem do Bebito Mobile). Só se chega com a
+  // chave do carro ligada (`eventos/BebitoMobile.ts`): sem ela, a porta da casa sai no parque
+  [frenteDaCasa.id]: frenteDaCasa,
   [clube.id]: clube,
   [estufa.id]: estufa,
   [maniaDeChurrasco.id]: maniaDeChurrasco,

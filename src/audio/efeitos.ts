@@ -125,6 +125,9 @@ export type SomNome =
   | 'motorDoOnibus'
   | 'freioDoOnibus'
   | 'portaDoOnibus'
+  | 'buzinaDoBebito'
+  | 'motorDoBebito'
+  | 'portaDoBebito'
   | 'luzesAcendendo'
   | 'surpresa'
   | 'fotoFlash'
@@ -1234,6 +1237,38 @@ export const EFEITOS: Record<SomNome, Receita> = {
     const abre = n % 2 === 0;
     chiado(ctx, destino, { quando: t, dur: 0.34, vol: 0.06, freq: abre ? 2600 : 3200, glide: abre ? 3600 : 2200, q: 0.7, sustenta: 0.3 });
     tom(ctx, destino, { freq: abre ? 240 : 200, glide: 110, quando: t + 0.3, dur: 0.08, vol: 0.07, ataque: 0.003, tipo: 'square', abafo: 700 });
+  },
+
+  // --------------------------------------------------------- o Bebito Mobile
+  /*
+   * A BUZINA do carrinho: o "bi-bi!" agudo e alegre de carro pequeno (o
+   * ônibus faz "fon-fon", grave). Duas notas de terça uma oitava e meia
+   * acima das do ônibus, em quadrado abafado (a cornetinha), curtas e
+   * iguais — duas buzinadinhas de quem chegou.
+   */
+  buzinaDoBebito: ({ ctx, destino, t }) => {
+    for (const atraso of [0, 0.19]) {
+      for (const grau of [4, 7]) {
+        tom(ctx, destino, { freq: nota(DO + grau), quando: t + atraso, dur: 0.12, vol: 0.05, ataque: 0.008, tipo: 'square', abafo: 2200, detune: grau === 4 ? -5 : 5 });
+        tom(ctx, destino, { freq: nota(DO + grau) * 2, quando: t + atraso, dur: 0.12, vol: 0.012, ataque: 0.008, tipo: 'triangle' });
+      }
+    }
+  },
+
+  // o motorzinho: um "pó-pó-pó" macio de carro pequeno (três estalinhos graves por toque; a cena toca em fila)
+  motorDoBebito: ({ ctx, destino, t, n }) => {
+    const f = n % 2 ? 98 : 92;
+    for (let i = 0; i < 3; i++) {
+      tom(ctx, destino, { freq: f, glide: f * 0.78, quando: t + i * 0.085, dur: 0.075, vol: 0.06, ataque: 0.006, tipo: 'triangle', abafo: 420 });
+    }
+    chiado(ctx, destino, { quando: t, dur: 0.26, vol: 0.03, freq: 240, glide: 170, q: 0.8, tipo: 'lowpass', sustenta: 0.5 });
+  },
+
+  // a porta do carro: o "clec" do trinco e o "tum" abafado de lata (`n` par abre, ímpar bate)
+  portaDoBebito: ({ ctx, destino, t, n }) => {
+    const abre = n % 2 === 0;
+    chiado(ctx, destino, { quando: t, dur: 0.035, vol: 0.2, freq: 2600, q: 2.2 });
+    tom(ctx, destino, { freq: abre ? 190 : 140, glide: abre ? 150 : 82, quando: t + (abre ? 0.03 : 0.05), dur: abre ? 0.08 : 0.15, vol: abre ? 0.09 : 0.15, ataque: 0.004, tipo: 'sine' });
   },
 
   // ------------------------------------------- a festa surpresa (o salão da abóbora)

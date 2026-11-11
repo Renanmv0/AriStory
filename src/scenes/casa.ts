@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { SceneDef } from '../core/types';
+import { bebitoMobileNestaPagina } from '../eventos/BebitoMobile';
+import { surpresaNaSala } from '../eventos/bebitoMobile/presente';
 import {
   claridadeDaJanela, haloDeLampada, interiorDoor, mug, pictureFrame, pocaDeLuz, tapete,
   windowFrame,
@@ -476,13 +478,18 @@ export const casa: SceneDef = {
       },
     });
 
+    // Com o Bebito Mobile no jogo (`eventos/BebitoMobile.ts`), a porta da rua sai no jardim
+    // da frente, e é o portão de lá que leva ao parque; sem ele, sai direto no parque, como sempre.
+    const comJardim = bebitoMobileNestaPagina();
     w.door({
       x: 3.4, z: D / 2 - 1.2,
-      to: 'villa-lobos', entry: 'portao',
-      label: 'Sair — ir pro parque', icon: '🚪',
+      to: comJardim ? 'frente-da-casa' : 'villa-lobos', entry: comJardim ? 'da-casa' : 'portao',
+      label: comJardim ? 'Sair pro jardim' : 'Sair — ir pro parque', icon: '🚪',
       highlight: porta,
       radius: 1.7,
     });
+    // a quest do presente: o Renan diz que já volta e sai por esta porta
+    surpresaNaSala(w, { porta: { x: PORTA_DA_RUA.x, z: zPorta } });
 
     // -------------------------------------------------------------- ambiente
     // a roupa rodando atrás do vidro enquanto a máquina está ligada

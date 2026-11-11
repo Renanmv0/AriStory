@@ -1046,6 +1046,37 @@ nem redonda em planta, então a lataria do carro é uma superfície própria:
   a caixa envolvente de cada `quina()` não girada, com `?semFundir` (achou a
   borda da mantinha no plano da dobra de cima).
 
+## A frente da casa do Ari (`world/frenteDaCasa.ts`)
+
+A casa por fora, a garagem e a cerca do jardim — nasceram com o Bebito Mobile
+e só aparecem com a chave dele (`eventos/BebitoMobile.ts`).
+
+- **`fachadaDaCasa(cores?)`** — a casa térrea de telhado de duas águas. A
+  parede da frente é uma forma com o RECORTE da porta (ela toca o chão) e os
+  FUROS das janelas, extrudada (o kit de prédio de rua da lojinha); reboco em
+  canvas; a porta é a MESMA `portaDaRua` de dentro; janela com caixilho
+  branco, cortina por trás, peitoril, duas venezianas abertas com palhetas e
+  floreira; telha em fiadas desenhada em canvas (`telhas()`), cumeeira,
+  oitões e chaminé. A face de fora em `z = 0`, a porta em `x = 0`, a casa
+  para o `−Z`. Medidas em `FACHADA`.
+- **As cores são parâmetro** (`CoresDaFachada`: parede, telhado, veneziana,
+  porta), e `vizinha: true` dá a VERSÃO LEVE do mesmo molde para casa de
+  fundo: porta lisa (a de verdade tem 6 mil triângulos), sem lampião e
+  palheta em caixa reta — 5,7 mil triângulos contra 15 mil. É assim que a
+  rua tem oito casinhas de cores diferentes (`P.vizinha*`).
+- **`pergoladoDaGaragem()`** — garagem de câmera isométrica NÃO tem telhado
+  fechado (esconderia o carro): pilares, duas vigas, ripas espaçadas,
+  trepadeira florida nos cantos e a prateleira com o regador. O `alto`
+  (`GARAGEM.alto`) deixa passar o carro com o laço no teto — a primeira
+  versão, de 2,55, era furada pelo laço. As paredes são da cena (colisor).
+- **`cercaBranca(comprimento)`** — as ripas de ponta redonda num
+  `InstancedMesh`, duas réguas e os mourões com bolinha;
+  **`portaozinho(largura)`** — a folha num grupo com nome
+  (`folha-do-portao`, em `userData.folha`): a cena gira para abrir;
+  **`caixaDeCorreio()`**.
+- Caixa de quina (`quina`) casada com furo de parede briga pelo pixel: o
+  caixilho entra 1 cm no reboco.
+
 ## O kit do Halloween (`world/halloween/`)
 
 As peças do parque enfeitado (`docs/HALLOWEEN.md`, §4.1). Moram fora do

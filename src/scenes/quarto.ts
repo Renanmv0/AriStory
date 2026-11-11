@@ -2,6 +2,7 @@ import { montarHalloweenNoQuarto } from '../eventos/halloween/noQuarto';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, SceneDef } from '../core/types';
+import { presenteDisponivel, sonoDaSurpresa } from '../eventos/bebitoMobile/presente';
 import {
   armario, bed, chair, claridadeDaJanela, desk, espelho, estanteDeLivros, haloDeLampada,
   muralDeMemorias, nightstand, pictureFrame, plantaDeEspada, pocaDeLuz, tapete, wallShelf,
@@ -473,6 +474,12 @@ export const quarto: SceneDef = {
       label: 'Deitar na cama', icon: '🛏️',
       highlight: cama,
       onInteract: async (g) => {
+        // a quest do presente (o Bebito Mobile): depois da lição 10 do Gatito, deitar aqui vira dormir
+        if (presenteDisponivel(g)) {
+          const dormir = await g.ask('Deitar um pouco?', ['Deitar', 'Agora não']);
+          if (dormir === 0) await sonoDaSurpresa(g, { deitar: deitarOsDois, levantar: levantarOsDois });
+          return;
+        }
         const quer = await g.ask('Deitar um pouco?', ['Deitar', 'Agora não']);
         if (quer !== 0) {
           await conversa([

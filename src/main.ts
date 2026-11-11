@@ -23,6 +23,8 @@ import {
   CATALOGO_DO_CARRO, DEF_DAS_VAGAS, FICHA_DE_FABRICA, VAGAS_DO_CARRO, copiarFicha, normalizarFicha,
 } from './world/bebitoMobile/ficha';
 import { fundir } from './world/fundir';
+import { FASES_DO_PRESENTE, bebitoMobileNestaPagina } from './eventos/BebitoMobile';
+import { ritmoDoPresente } from './eventos/bebitoMobile/presente';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
@@ -145,6 +147,8 @@ if (carro && carro.length >= 2 && carro.slice(0, 2).every(Number.isFinite)) {
 (window as unknown as { aristoryBebitoMobile: unknown }).aristoryBebitoMobile = {
   BebitoMobile, BEBITO_MOBILE, FICHA_DE_FABRICA, CATALOGO_DO_CARRO, DEF_DAS_VAGAS, VAGAS_DO_CARRO,
   copiarFicha, normalizarFicha, fundir,
+  // a quest do presente: as fases (flags) e o ritmo das cutscenes, que o teste acelera
+  FASES_DO_PRESENTE, ritmoDoPresente, bebitoMobileNestaPagina,
 };
 // o baralho do jardim JÁ NO FORMATO DA TELA, para o `scripts/gotas.mjs` montar
 // uma mesa de cada raridade: o sorteio de verdade não garante uma lendária na

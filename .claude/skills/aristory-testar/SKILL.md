@@ -50,6 +50,7 @@ Outros parâmetros de depuração:
 | `?em=12,20.8` | põe a dupla nesse ponto do mundo |
 | `?olhar=3.14` | ângulo que eles encaram |
 | `?carro=38.4,-9` | estaciona o Bebito Mobile nesse ponto da cena (o carro só chega ao jogo pela quest); `&semTeto` tira o teto e `&farois` acende as luzes |
+| `?bebito` | liga o Bebito Mobile (a frente da casa, a quest do presente) num SAVE À PARTE — a chave dele está desligada no jogo (`eventos/BebitoMobile.ts`). `?semBebito` força desligado. A quest pede a lição 10: `jogo.save.concluirLicao('partiu-praia', 3)` no console e recarregar |
 
 ## Ambiente
 
@@ -107,6 +108,20 @@ ruído. Qualquer outro erro de console é erro de verdade.
   padrão). Para perguntar "qual é o prompt agora?", num laço, isso vira 30 s
   por volta quando não há prompt — o `aula.mjs` ficou doze minutos parado
   assim. Leia com `page.evaluate(() => document.querySelector(sel)?.textContent)`.
+
+- **Cutscene que reposiciona o jogador destrava o `E`** (`releasePlayer`
+  solta a trava): o teste que avança fala apertando `E` abria a porta da casa
+  no meio da cena e trocava de cena — o sintoma era "o objeto sumiu"
+  (`getObjectByName` dando `undefined`). Ver a skill de cenário.
+- **Cutscene longa no Chromium sem placa**: o relógio anda a um quinto. A
+  cutscene expõe um multiplicador de ritmo (`ritmoDoPresente.vezes`), e o
+  teste espera por ESTADO (a flag, a posição do carro), nunca por tempo.
+- **`Som.contagem` é um `Map`**: `jogo.audio.contagem.get('buzinaDoBebito')`,
+  e não `.contagem.buzinaDoBebito`.
+- **Peso de cena nova**: `window.jogo.renderer.info.render` na vista de
+  entrada, e a conta por peça (percorrer `jogo.current.world.root.children`
+  somando malhas e triângulos por `userData.peca`) diz de onde vem. A frente
+  da casa do Ari tinha 1.341 malhas em peças sem nome — eram os canteiros.
 
 ## Checklist antes de fechar
 

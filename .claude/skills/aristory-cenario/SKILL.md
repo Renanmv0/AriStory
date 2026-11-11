@@ -838,6 +838,81 @@ de camada GRANDE, que enfeita uma cena inteira:
   commit de antes do evento num `git worktree`, as mesmas cenas com o save
   zerado dão as mesmas malhas (`MALHAS_ANTES` no `halloween.mjs`).
 
+## Coisa grande escondida até ficar pronta: a CHAVE (o Bebito Mobile)
+
+O Renan pediu que o carro, a quest e as viagens só apareçam no jogo quando
+TUDO estiver pronto. O molde é o do Halloween, ao contrário (lá a chave tira
+do jogo o que já existiu; aqui ela segura o que ainda não estreou):
+
+- **Um arquivo de chave** em `src/eventos/` (`BebitoMobile.ts`): a constante
+  (`BEBITO_MOBILE_NO_JOGO = false`), a função que a cena consulta
+  (`bebitoMobileNestaPagina()`: a chave, ou `?bebito` no endereço, e
+  `?semBebito` para forçar desligado) e as FASES da quest (as flags do save).
+- **`?bebito` usa um SAVE À PARTE** (`SaveState`: `aristory.save.v1.bebito`,
+  que nasce como cópia do de verdade): dá para jogar a quest inteira sem
+  gastar a surpresa nem sujar o save do jogo. O teste confere que o save de
+  verdade não ganhou flag nenhuma.
+- **Cada cena chama o evento em UMA linha**, atrás da chave: a casa troca o
+  destino da porta e chama `surpresaNaSala(w, …)`; o quarto pergunta
+  `presenteDisponivel(g)` antes do deitar de sempre; o parque troca o destino
+  do "Voltar pra casa". Com a chave desligada, nada muda — e o teste abre o
+  jogo SEM `?bebito` e confere isso (porta, cama, save).
+- **A cena nova** (`frente-da-casa`) é registrada sempre, mas só se chega
+  nela pela porta que a chave troca.
+
+### O que a quest do presente ensinou sobre cutscene
+
+- **`g.releasePlayer()` DESTRAVA o jogador.** Numa cutscene que reposiciona o
+  jogador, o `E` voltava a valer no meio da cena e abria a porta da casa.
+  Trave de novo depois de cada um (`porOAri` em
+  `eventos/bebitoMobile/presente.ts`).
+- **O motor não tem "andar até" para o JOGADOR** (só `commandCompanion` para o
+  parceiro). Por isso quem anda sozinho numa cutscene é o parceiro (o Renan
+  indo até a porta), e o jogador muda de lugar NO CORTE da câmera — a troca
+  de tomada esconde o salto. Para virar parado, um giro suave quadro a quadro
+  (o `teleport` gira de estalo).
+- **Cutscene no relógio do JOGO** (`relogioDaCena(w)`: `esperar` e
+  `aCadaQuadro` em cima do `w.onUpdate`), nunca `setTimeout`: o menu pausa de
+  verdade, e o teste acelera por um multiplicador
+  (`ritmoDoPresente.vezes`) — o Chromium sem placa anda a um quinto do
+  relógio.
+- **Câmera de cena (`g.setCameraOmbro`) tem HORIZONTE.** A isométrica nunca
+  mostra o fim do mundo; a de perto mostra — e a rua da casa num gramado
+  vazio parecia maquete. Cena filmada de perto pede fundo: casas, sebe,
+  árvores fechando as pontas da rua, nuvens.
+- **Tomada por cima do ombro**: a câmera atrás e acima de quem olha, mirando
+  o que ele vê (o carro passando na rua). Confira que nenhuma copa de árvore
+  fica entre a câmera e o assunto.
+- **Dois conversando, de perto**: de perfil puro o cabelo tapa o rosto. Vire
+  cada um ~0,6 rad PARA A CÂMERA a partir do "de frente um pro outro" (o
+  jeito de palco), e mande o parceiro olhar para um ponto nessa direção
+  (`holdCompanion`).
+- **Celular em pé**: a câmera de cena vê pouco para os lados. A tomada de um
+  assunto largo (o carro manobrando) recua pela mesma linha quando
+  `innerWidth / innerHeight < 0.8`. Rode o teste com `CEL=1` e olhe.
+- **O parceiro "sai pela porta"** com `g.setCompanionVisible(false)`; a troca
+  de cena o traz de volta sozinho.
+- **Sentado num carro**: `g.ridePlayer(carro.assentos.motorista, new Vector3(0, -0.47, 0), 1, 0)`
+  e `g.poseNoCarro('jogador' | 'parceiro', 'dirigindo' | 'passageiro', volante)`
+  — as mãos acompanham o giro do volante. `null` devolve a pose de sempre.
+
+### Fundo de cena: uma vizinhança leve
+
+A rua da casa do Ari tem oito casas vizinhas, sebes, canteiros e cinquenta
+árvores. Solta, a cena desenhava 933 objetos por quadro; ficou em 339:
+
+- o que é enfeite parado entra num `THREE.Group` e passa por
+  **`fundirComoFundo(grupo)`** (`world/fundir.ts`), que apaga as fronteiras
+  de dentro e junta tudo por material. Um `canteiro()` solto são cem
+  bolinhas, cem desenhos; dez canteiros no mesmo grupo viram meia dúzia;
+- **um grupo por pedaço do mapa** (o jardim; cada lado da rua, à esquerda e
+  à direita): grupo único nunca sai da tela, e é desenhado sempre;
+- a peça repetida de fundo tem uma **versão leve do mesmo molde**
+  (`fachadaDaCasa({ …cores, vizinha: true })`: porta lisa, sem lampião);
+- tracinho repetido no chão (a faixa da rua) é UM `w.patch` com a geometria
+  trocada por um `mergeGeometries` dos tracinhos — decalque não entra no
+  `fundir`.
+
 ## Regras da casa
 
 1. **Cor sempre da paleta** (`src/palette.ts`). Se falta uma cor, adicione lá.

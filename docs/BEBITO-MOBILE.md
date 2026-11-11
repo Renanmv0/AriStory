@@ -12,25 +12,47 @@ presente para o Ari numa quest curta; depois disso, toda viagem pergunta
 **quem vai dirigir dessa vez**, e o trajeto é um cenário procedural que passa
 pela janela.
 
-**Estado (2026-11-10).**
+**Estado (2026-11-11).**
 
 | etapa | o quê | estado |
 |---|---|---|
 | **A** | o modelo do Bebito Mobile no kit, por ficha de dados, com fotos de todos os lados | ✅ **feita** |
-| **B** | a quest do presente e a entrega, na frente da casa do Ari | ⏳ a próxima (tem perguntas em aberto, §5) |
-| **C** | uma viagem completa: Casa do Ari → Villa Lobos, com "quem dirige?" e o cenário procedural | ⬜ |
+| **B** | a frente da casa do Ari (o jardim e a garagem) e a quest do presente | ✅ **feita, ESCONDIDA** — faltam o aval do Renan nas falas e a escolha da fala do Ari (§5) |
+| **C** | uma viagem completa: Casa do Ari → Villa Lobos, com "quem dirige?" e o cenário procedural | ⬜ a próxima |
 | **D** | as demais rotas (parque ↔ clube ↔ escola) e o acabamento | ⬜ |
+| no fim | LIGAR A CHAVE: `BEBITO_MOBILE_NO_JOGO = true` | ⬜ só quando tudo estiver pronto |
 | depois | a EDIÇÃO do carro pelos dois (a ficha já está pronta para ela, §3) | ⬜ não fazer ainda |
 
-**O carro ainda NÃO aparece no jogo**: ele chega pela quest (etapa B). Para
-ver o modelo antes dela, o atalho de depuração `?carro=x,z` estaciona o carro
-numa cena:
+### 🔑 A chave: nada disso aparece no jogo até tudo estar pronto
+
+Pedido do Renan (2026-11-11): o carro, a quest, as viagens e tudo o que vem
+junto **só aparecem no jogo quando tudo estiver pronto**. Por isso existe uma
+chave, em `src/eventos/BebitoMobile.ts`:
+
+```ts
+export const BEBITO_MOBILE_NO_JOGO = false;   // ligar é trocar para true. Só isso.
+```
+
+Com ela em `false`, quem joga pelo link de sempre encontra o jogo exatamente
+como era: a porta da casa sai direto no parque, a cama do quarto é a de
+sempre, e o save não ganha flag nenhuma do carro (o `scripts/presente.mjs`
+confere isso). **Toda etapa nova fica atrás desta chave**
+(`bebitoMobileNestaPagina()`).
+
+**Para ver antes da hora** (os testes e o Renan): `?bebito` no endereço liga
+tudo NUM SAVE À PARTE (`aristory.save.v1.bebito`, que nasce como cópia do de
+verdade), então dá para jogar a quest sem gastar a surpresa. `?semBebito`
+força desligado, para quando a chave estiver ligada.
 
 ```
-…/?cena=villa-lobos&carro=38.4,-9&em=41,-6         # na rua do parque
+…/?bebito                              # o jogo com o carro, no save de teste
+…/?bebito&cena=frente-da-casa          # direto no jardim
+…/?cena=villa-lobos&carro=38.4,-9&em=41,-6          # só o modelo, na rua do parque
 …/?cena=villa-lobos&carro=38.4,-9&em=41,-6&semTeto  # a casinha de boneca
-…/?cena=villa-lobos&carro=38.4,-9&em=41,-6&farois   # de farol aceso
 ```
+
+(A quest pede a lição 10 da apostila concluída; no save de teste, pelo
+console: `jogo.save.concluirLicao('partiu-praia', 3)` e recarregar.)
 
 **Mapa do código** (`src/world/bebitoMobile/`):
 
@@ -42,8 +64,18 @@ numa cena:
 | `acessorios.ts` | o modelo 3D de cada detalhe (um por id do catálogo) |
 | `impressos.ts` | o que é desenho em canvas: placa, adesivos, rádio e relógios, num atlas só |
 
+E o que a etapa B trouxe:
+
+| arquivo | o que mora ali |
+|---|---|
+| `src/eventos/BebitoMobile.ts` | A CHAVE, a lição que libera a quest e as fases (flags) dela |
+| `src/eventos/bebitoMobile/presente.ts` | a quest: o sono no quarto, a cena da sala e a chegada do carro (as quatro tomadas) |
+| `src/scenes/frenteDaCasa.ts` | a cena `frente-da-casa`: o jardim, a garagem, a rua e a vizinhança |
+| `src/world/frenteDaCasa.ts` | as peças: a casa por fora (e a vizinha, do mesmo molde), o pergolado, a cerquinha, o portãozinho e a caixa de correio |
+
 O save: `SaveState.fichaDoBebitoMobile()` / `salvarFichaDoBebitoMobile()`
-(na cena, `g.fichaDoBebitoMobile()`). O teste: `scripts/bebitoMobile.mjs`.
+(na cena, `g.fichaDoBebitoMobile()`). Os testes: `scripts/bebitoMobile.mjs`
+(o modelo) e `scripts/presente.mjs` (a chave, o jardim e a quest).
 
 ## 1. As decisões do Renan e do Ari (2026-11-10)
 
@@ -62,6 +94,18 @@ O save: `SaveState.fichaDoBebitoMobile()` / `salvarFichaDoBebitoMobile()`
 - **A fala do Ari ao ver o carro**: eu proponho opções na etapa B e o Renan
   escolhe (se ele escrever uma, ela entra literal).
 - **A primeira viagem**: Casa do Ari → Villa Lobos.
+
+E em 2026-11-11, o roteiro da etapa B (palavras do Renan):
+
+- **Só aparece no jogo quando tudo estiver pronto** (a chave, acima).
+- **A casa**: "ao sair tem um jardinzinho e ao lado uma garagem onde fica o
+  carro; o jardim é florido e fechado dos dois lados".
+- **Quando**: a quest aparece depois de terminar a **aula 10** da apostila do
+  Gatito, e **começa quando os dois dormem na cama** do quarto do Ari.
+- **O roteiro**: ao acordar, o Renan pergunta se o Ari quer ver uma surpresa;
+  na sala, o Renan diz que já volta e sai pela porta; logo depois sai o Ari,
+  ainda confuso; do lado de fora o Renan não está mais; passados uns
+  segundos, ele chega dirigindo o carro e estaciona na garagem.
 
 ## 2. O modelo (etapa A — feita)
 
@@ -188,26 +232,132 @@ com mais de um jogo de calotas, e remontar o carro quando a ficha muda
 Ficaram de fora de propósito: o Halloween (está fora do jogo) e a Hello Kitty
 do arraiá (personagem de marca).
 
-## 5. Etapa B — a quest do presente (a próxima)
+## 5. Etapa B — a frente da casa e a quest do presente (feita, escondida)
 
-O que já está decidido: o Renan entrega o carro **na frente da casa do Ari**;
-a cutscene carrega os dois; o diálogo que cita nome usa `g.companionName()`;
-e a fala do Ari ao ver o carro é escolhida pelo Renan entre as opções que eu
-propuser (ou a que ele escrever, literal).
+### A frente da casa (`frente-da-casa`)
 
-**Perguntas em aberto, para o Renan:**
+Com a chave ligada, a porta da rua da casa ("Sair pro jardim") sai AQUI, e é
+a calçada que leva ao parque ("Ir pro parque"); o "Voltar pra casa" do
+parque chega pela calçada.
 
-1. **Como é a frente da casa do Ari de verdade?** Hoje a porta da rua da casa
-   leva direto ao portão do Villa Lobos: a rua da casa não existe no jogo. É
-   casa com portão, prédio, tem garagem, calçada, árvore, muro? De que cor?
-   (O valor do jogo é ser parecido com a vida real: prefiro perguntar a
-   inventar.)
-2. **Quando a quest aparece?** Desde o começo do jogo, ou depois de alguma
-   coisa (uma memória, um número de memórias, o ônibus já usado uma vez)?
-3. **Como o Renan chama o Ari para ver?** Uma buzina lá fora, "fecha o olho",
-   uma chave numa caixinha na mesa…
-4. **A fala do Ari** (eu mando as opções junto com o roteiro da cutscene).
-5. **O laço**: um laço gigante no capô, ou no teto?
+- **A casa por fora**: as cores da casa por dentro (a parede creme da sala,
+  a porta de madeira escura — a MESMA peça da porta de dentro), duas
+  janelas com veneziana verde e floreira, o lampião, o degrau com o capacho
+  e o telhado de duas águas de telha (canvas) com chaminé.
+- **O jardim**, florido e fechado dos dois lados: de um lado a **mureta**
+  com moitas floridas em cima (e uma passagem para a garagem); do outro, a
+  **cerquinha branca**, que continua na frente com o **portãozinho** (abre
+  sozinho quando alguém chega) e a caixa de correio. Dentro: quatro
+  canteiros, moitas floridas encostadas na casa, flores soltas, o caminho de
+  pedrinha e uma árvore florida.
+- **A garagem**, ao lado: o piso de placas, as paredes do fundo e do lado, e
+  um **pergolado** de madeira com trepadeira florida (a câmera olha de cima:
+  telhado fechado esconderia o carro), com uma prateleira e o regador. O
+  carro mora ali de nariz para a rua.
+- **A rua**: calçada de pedrinha, guia, asfalto com faixa — e a
+  **vizinhança**: oito casinhas do mesmo molde, cada uma de uma cor (quatro
+  deste lado, quatro do outro, de frente para cá), sebe na frente dos
+  quintais, árvores atrás e nas pontas, e nuvens. Sem ela a casa ficava num
+  gramado sem fim, e a chegada do carro (que é filmada de perto, com
+  horizonte) mostrava o vazio.
+
+**Inventado por mim, a conferir com o Renan**: como é a casa por fora (cor,
+telhado, janelas), a cerca branca, o pergolado e a vizinhança. O pedido dizia
+só "jardinzinho florido, fechado dos dois lados, e uma garagem ao lado"; o
+resto é proposta — se a casa de verdade for diferente, é só dizer.
+
+**O peso** (a vista de entrada, medido com `renderer.info.render`): a
+primeira versão desenhava **933 objetos por quadro**; ficou em **339** (o
+parque faz 425) com a mesma imagem. O que cortou: o jardim e cada pedaço da
+vizinhança viraram grupos juntados por material (`fundirComoFundo`, em
+`world/fundir.ts` — cada canteiro eram cem bolinhas soltas), a casa vizinha
+é o mesmo molde com porta lisa e sem lampião (5,7 mil triângulos contra 15
+mil), e a faixa tracejada da rua virou uma malha só. Triângulos: 189 mil
+(o parque: 152 mil; a estufa: 190 mil).
+
+### A quest
+
+| passo | onde | o que acontece |
+|---|---|---|
+| 0 | — | a lição 10 da apostila do Gatito (`partiu-praia`) concluída libera a quest. Nada avisa: é surpresa |
+| 1 | quarto | "Deitar um pouco?" na cama vira DORMIR: os dois deitam, o Ari pega no sono, a tela escurece, amanhece; o Renan pergunta **"Quer ver uma surpresa?"** (flag `bebito:surpresa`) |
+| 2 | sala | cutscene: os dois na sala; o Renan diz que já volta, anda até a porta da rua e sai (flag `bebito:renan-saiu`); o Ari, confuso, vai atrás |
+| 3 | frente da casa | cutscene em quatro tomadas: (A) o Ari na porta procura o Renan; a buzina; (B) por cima do ombro dele, o carro vem pela rua, de laço no teto, com o Renan dirigindo; (C) da rua, o carro engata a ré e entra na garagem; (D) de perto, os dois na frente do carro. Corações, a memória "O Bebito Mobile" no diário (flag `bebito:ganhou`) |
+| depois | frente da casa | o carro mora na garagem (o laço sai), com o "Olhar o Bebito Mobile" (três conversas que se revezam) |
+
+- **Na quest quem se controla é o Ari** (o presente é para ele): se quem
+  joga estava com o Renan, os dois trocam antes de dormir.
+- **Se a página recarregar no meio**, a quest retoma do passo em que parou
+  (cada passo é uma flag).
+- **O laço** é um detalhe do catálogo (`laco-de-presente`, na vaga `teto`):
+  a cena põe na ficha só na chegada, e ele não vai para o save.
+- **As poses** novas do `CharacterRig`: `setNoCarro('dirigindo' | 'passageiro', volante)`
+  (na cena, `g.poseNoCarro(quem, pose, volante)`) — as mãos no volante
+  acompanham o giro. E `g.setCompanionVisible(false)` para o parceiro "sair
+  pela porta".
+- **Os sons** novos: `buzinaDoBebito` (o bi-bi), `motorDoBebito` (o pó-pó-pó,
+  em fila enquanto anda) e `portaDoBebito`.
+
+### As falas — PARA O RENAN APROVAR
+
+O roteiro é do Renan; **as palavras abaixo fui eu que escrevi**. Fala que ele
+reescrever entra literal.
+
+**No quarto**
+> **Ari**: Me deu um sono…
+> **Renan**: Dorme um pouco. Eu fico aqui.
+> *(a tela escurece e amanhece)*
+> **Renan**: Bom dia, bebito.
+> **Ari**: Bom dia… Eu dormi muito?
+> **Renan**: Quer ver uma surpresa? — *[Quero!] [Que surpresa?]*
+> **Ari**: Quero! O que é? *(ou "Que surpresa?")*
+> **Renan**: Se eu contar, não é surpresa. Vem pra sala.
+
+**Na sala**
+> **Ari**: Pronto, tô na sala. Cadê a surpresa?
+> **Renan**: Fica aqui. Eu já volto.
+> **Ari**: Como assim, já volta? Renan!
+> *(ele sai pela porta)*
+> **Ari**: …Ele saiu mesmo.
+> **Ari**: Eu vou lá ver.
+
+**Na frente da casa**
+> **Ari**: Renan?
+> **Ari**: Ué. Cadê ele?
+> *(a buzina)*
+> **Ari**: Isso foi uma buzina?
+> *(o carro chega e estaciona)*
+> **Renan**: Surpresa!
+> **Ari**: *(a fala a escolher, abaixo)*
+> **Renan**: É nosso. O Bebito Mobile.
+> **Ari**: Bebito Mobile… Tá escrito na placa!
+> **Renan**: E tem a sua estrela no retrovisor, o Pelusa no chaveiro e o Jean-Luc no painel.
+> **Ari**: Então a gente não precisa mais correr atrás de ônibus?
+> **Renan**: Só se você quiser. E cada viagem a gente decide quem dirige.
+
+**A fala do Ari ao ver o carro** — três propostas (hoje está a 1; ela mora em
+`FALA_DO_ARI_AO_VER_O_CARRO`):
+
+1. "Mentira… Isso é pra gente? Você é doido. Eu amei."
+2. "Para. Para tudo. Esse carro é nosso?!"
+3. "Ai, bebito… é a coisa mais fofa que eu já vi."
+
+**A memória do diário** ("O Bebito Mobile", escrita na voz do Renan): "Eu
+disse que já voltava e saí pela porta. Você veio atrás, sem entender nada, e
+eu cheguei buzinando: um carrinho azul de teto creme, com um laço no teto e
+o nosso nome na placa, estacionado de ré na garagem."
+
+### Perguntas em aberto, para o Renan
+
+1. **As falas**: aprova como estão, ou reescreve? E qual das três do Ari (ou
+   uma dele)?
+2. **A casa por fora** parece com a de verdade? (cor, telhado, cerca, a
+   garagem de pergolado.)
+3. **Um aviso de que a quest existe?** Hoje nada avisa depois da lição 10 — o
+   Ari só descobre quando for deitar. Dá para o Gatito soltar uma dica no fim
+   da aula, ou o Renan dizer "tô com sono" ao entrar no quarto.
+4. **O laço fica onde?** Hoje some depois da entrega. Ele pode virar um
+   enfeite guardado (pendurado na garagem, ou no retrovisor).
 
 ## 6. Etapas C e D — as viagens
 
@@ -242,3 +392,12 @@ SO=fotos node scripts/bebitoMobile.mjs /tmp/bm
 
 `SO=modelo|ficha|comandos|peso|fotos|coplanar|lugares` roda uma parte;
 `SEM_FUNDIR=1` mede antes da junção; `CEL=1` fotografa também no celular.
+
+```bash
+node scripts/presente.mjs /tmp/pr             # a chave, o jardim e a quest inteira
+SO=quest CEL=1 node scripts/presente.mjs /tmp/pr   # a quest no celular em pé
+```
+
+`SO=escondido|jardim|quest` roda uma parte. O teste joga a quest pelo
+`?bebito` (save à parte), acelera o relógio das cutscenes por
+`aristoryBebitoMobile.ritmoDoPresente.vezes` e fotografa cada passo.
