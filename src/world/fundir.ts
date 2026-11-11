@@ -63,7 +63,8 @@ export function fundirComoFundo<T extends THREE.Object3D>(peca: T): T {
   peca.traverse((o) => {
     if (o === peca) return;
     o.name = '';
-    o.userData = {};
+    // (o que não faz sombra continua sem fazer: luz pintada, planta de vento)
+    o.userData = o.userData.semSombra ? { semSombra: true } : {};
   });
   return fundir(peca);
 }

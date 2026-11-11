@@ -1141,6 +1141,41 @@ cenário:
   de 12 cm) pintada com `cascaDePinus()` ou `pedrisco()` — canteiro não tem
   beira de régua.
 
+## A estrada (`world/estrada.ts`)
+
+As peças da viagem de carro do Bebito Mobile. A pista é CURVA, então a cena
+entrega `naPista(s, l, y)` e as peças longas são costuradas por ela:
+
+- **`trechoDeEstrada(naPista, s0, s1)`**: o asfalto de guia a guia, as duas
+  calçadas um degrau acima (`ALTO_DA_CALCADA`), o espelho da guia e a pintura
+  (as linhas de bordo e o tracejado, juntados numa malha de decalque) — três
+  malhas por trecho, o UV em metros (`l`, `s`), então o asfalto e a pedrinha
+  ficam do tamanho de sempre. O espelho da guia olha para a pista: da guia da
+  direita para a esquerda e vice-versa (com a ordem dos triângulos trocada).
+- **`faixaDePedestres(naPista, s)`**: as barras e a linha de retenção
+  (`LINHA_DE_PARADA` antes do meio), uma malha de decalque.
+- **`placaDeTransito(desenho)`**: o losango amarelo de advertência num poste,
+  com o desenho em canvas (patos, tartaruga, lombada, obra, semáforo,
+  buracos) — o quadrado é pendurado de ponta e o desenho é feito girado 45°
+  no canvas para ficar em pé. **`placaDeDestino(texto, distância)`**: a verde.
+- **`Cones`**: os cones de uma viagem inteira num lote, a cor nos vértices
+  (laranja, a faixa branca, a base grafite). O que o carro derruba voa num
+  arco, rodando, quica e fica deitado.
+- **`cavaleteDeObra()`**: as tábuas listradas (canvas com o UV em metros) e a
+  luz âmbar em DUAS malhas (`luz-acesa`, `luz-apagada`) que a cena alterna.
+- **`lombada()`** (o perfil extrudado com as listras), **`buraco()`** e
+  **`poca()`** (contornos tortos em decalque, a beira por baixo e o fundo por
+  cima), **`Respingos`** (o lote de gotas da poça e da poeira do buraco).
+- **`Semaforo`**: poste, braço e a caixa com três lentes, cada uma com a
+  malha acesa e a apagada (`acender(cor)` troca qual aparece); a pala por
+  cima de cada lente.
+- **`Coracoes`**: o coração de pegar, gordinho (forma extrudada com bisel),
+  num lote; giram e flutuam só os que estão perto do carro, e o pego cresce
+  e some.
+- **`rodaAoLonge()`**: a silhueta leve da roda gigante do Villa Lobos para o
+  fim da estrada (o aro duplo, os raios, as gôndolas brancas, os cavaletes),
+  com o `aro` girando — a de verdade tem centenas de milhares de triângulos.
+
 ## O kit do Halloween (`world/halloween/`)
 
 As peças do parque enfeitado (`docs/HALLOWEEN.md`, §4.1). Moram fora do

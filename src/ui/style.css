@@ -976,6 +976,87 @@ body.touch-device .hints .toque { display: block; }
   100% { transform: translate(-50%, 0) scale(1); }
 }
 
+/* ------------------------------------ o painel da viagem de carro (Bebito Mobile) */
+.painel-da-viagem {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translate(-50%, -8px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 12px;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  font-weight: 800;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.painel-da-viagem.show { opacity: 1; transform: translate(-50%, 0); }
+.painel-da-viagem .cor { font-size: 17px; color: #ff6b8b; }
+.painel-da-viagem .nums { font-size: 18px; color: #e0486c; min-width: 1.3em; }
+.painel-da-viagem .trilho {
+  position: relative;
+  width: min(34vw, 190px);
+  height: 8px;
+  margin: 0 12px 0 8px;
+  border-radius: 999px;
+  background: rgba(60, 40, 60, 0.14);
+}
+.painel-da-viagem .feito {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  border-radius: 999px;
+  background: #7fc6ee;
+}
+.painel-da-viagem .carrinho {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  font-size: 19px;
+  /* (o emoji do carro olha para a esquerda: espelhado, ele anda para a direita) */
+  transform: translate(-50%, -58%) scaleX(-1);
+}
+.painel-da-viagem .destino { font-size: 19px; }
+.painel-da-viagem.pulo .cor { animation: viagem-pulo 0.4s ease; }
+@keyframes viagem-pulo {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.5); }
+  100% { transform: scale(1); }
+}
+.aviso-da-viagem {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translate(-50%, -6px) scale(0.96);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 88vw;
+  padding: 8px 18px 8px 14px;
+  border-radius: 999px;
+  background: #fff6d6;
+  border: 3px solid #f2c443;
+  box-shadow: var(--shadow);
+  font-weight: 800;
+  font-size: 17px;
+  color: #5a4310;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.aviso-da-viagem.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.aviso-da-viagem .icone { font-size: 22px; }
+.aviso-da-viagem[data-tom='pare'] { background: #ffe1dc; border-color: #f0553f; color: #7a1f14; animation: viagem-pare 0.7s ease-in-out infinite; }
+.aviso-da-viagem[data-tom='bom'] { background: #dff7e4; border-color: #4fc070; color: #1d5a2f; }
+@keyframes viagem-pare {
+  0%, 100% { transform: translate(-50%, 0) scale(1); }
+  50% { transform: translate(-50%, 0) scale(1.06); }
+}
+
 /* -------------------------------------- a hora certa (as travessuras) */
 .dialogue .hora-certa {
   position: relative;

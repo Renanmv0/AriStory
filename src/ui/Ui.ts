@@ -1,5 +1,5 @@
 import type { SavedMemory } from '../core/SaveState';
-import { SLOTS_ROUPA, type ItemDef, type SlotRoupa, type Vaga, type VozDaFala } from '../core/types';
+import { SLOTS_ROUPA, type DadosDaViagem, type ItemDef, type SlotRoupa, type Vaga, type VozDaFala } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import { TelaDeCartas, escapar } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
@@ -114,6 +114,8 @@ export class Ui {
   private readonly menu: HTMLDivElement;
   private readonly placar: HTMLDivElement;
   private readonly cesta: HTMLDivElement;
+  private readonly viagem: HTMLDivElement;
+  private readonly avisoDaViagem: HTMLDivElement;
   private readonly horaCertaEl: HTMLDivElement;
   private readonly turno: HTMLDivElement;
   private readonly mochila: HTMLDivElement;
@@ -238,6 +240,8 @@ export class Ui {
       <div class="carga"><div class="barra"></div><i class="zona"></i><i class="alvo"></i></div>
       <div class="placar"><b class="eu"></b><span class="nums"></span><b class="ele"></b></div>
       <div class="cesta-de-balas"><span class="icone">🎃</span><span class="bala">🍬</span><b class="nums">0</b><span class="meta">/25</span></div>
+      <div class="painel-da-viagem"><span class="cor">❤</span><b class="nums">0</b><div class="trilho"><i class="feito"></i><span class="carrinho">🚙</span></div><span class="destino">🌳</span></div>
+      <div class="aviso-da-viagem"><span class="icone"></span><b class="texto"></b></div>
       <div class="turno">
         <div class="linha">
           <span class="relogio">3:00</span>
@@ -459,6 +463,8 @@ export class Ui {
     this.menu = ui.querySelector('.menu')!;
     this.placar = ui.querySelector('.placar')!;
     this.cesta = ui.querySelector('.cesta-de-balas')!;
+    this.viagem = ui.querySelector('.painel-da-viagem')!;
+    this.avisoDaViagem = ui.querySelector('.aviso-da-viagem')!;
     this.horaCertaEl = ui.querySelector('.dialogue .hora-certa')!;
     this.turno = ui.querySelector('.turno')!;
     this.mochila = ui.querySelector('.mochila')!;
@@ -878,6 +884,43 @@ export class Ui {
   }
 
   /**
+   * O PAINEL DA VIAGEM DE CARRO: no alto, os corações pegos e o carrinho
+   * andando no trilho até o destino; no meio da tela, o aviso do que a pista
+   * pede agora (some quando o texto vem vazio). O coração dá um pulinho
+   * quando o número sobe. `null` esconde os dois.
+   */
+  painelDaViagem(dados: DadosDaViagem | null): void {
+    if (!dados) {
+      this.viagem.classList.remove('show');
+      this.avisoDaViagem.classList.remove('show');
+      return;
+    }
+    const nums = this.viagem.querySelector('.nums') as HTMLElement;
+    const antes = Number(nums.textContent ?? '0');
+    if (antes !== dados.coracoes) nums.textContent = String(dados.coracoes);
+    const k = Math.max(0, Math.min(1, dados.progresso));
+    (this.viagem.querySelector('.feito') as HTMLElement).style.width = `${(k * 100).toFixed(1)}%`;
+    (this.viagem.querySelector('.carrinho') as HTMLElement).style.left = `${(k * 100).toFixed(1)}%`;
+    const destino = this.viagem.querySelector('.destino') as HTMLElement;
+    if (destino.textContent !== dados.destino) destino.textContent = dados.destino;
+    this.viagem.classList.add('show');
+    if (dados.coracoes > antes) {
+      this.viagem.classList.remove('pulo');
+      void this.viagem.offsetWidth;
+      this.viagem.classList.add('pulo');
+    }
+    const aviso = dados.aviso ?? '';
+    const texto = this.avisoDaViagem.querySelector('.texto') as HTMLElement;
+    if (aviso) {
+      if (texto.textContent !== aviso) texto.textContent = aviso;
+      const icone = this.avisoDaViagem.querySelector('.icone') as HTMLElement;
+      if (icone.textContent !== (dados.icone ?? '')) icone.textContent = dados.icone ?? '';
+      this.avisoDaViagem.dataset.tom = dados.tom ?? 'atencao';
+    }
+    this.avisoDaViagem.classList.toggle('show', aviso !== '');
+  }
+
+  /**
    * A HORA CERTA: o mini-jogo de reflexo das travessuras (o Halloween). A
    * fala fica na caixa de sempre, e embaixo dela uma barra com a faixa certa
    * e uma agulha que vai e volta; quem joga aperta E (ou toca a caixa) para
@@ -1181,7 +1224,18 @@ export class Ui {
         const botao = document.createElement('button');
         botao.type = 'button';
         botao.textContent = texto;
-        botao.addEventListener('click', () => this.escolher?.(i));
+        botao.addEventListener('click', (e) => {
+          /*
+           * O clique PARA AQUI. Escolher limpa os botões e resolve a pergunta; se a
+           * cena faz OUTRA pergunta logo em seguida (o "Vamos!" e depois o "Quem
+           * dirige dessa vez?" do Bebito Mobile), o mesmo clique, ainda subindo,
+           * chegava à caixa da fala com o botão já fora da página — o teste do
+           * `.closest('.escolhas')` lá embaixo não reconhecia mais — e respondia a
+           * pergunta nova sozinho, com a primeira opção.
+           */
+          e.stopPropagation();
+          this.escolher?.(i);
+        });
         this.escolhas.appendChild(botao);
       });
       this.escolhas.classList.add('show');

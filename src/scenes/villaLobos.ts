@@ -9,6 +9,7 @@ import { lojaDeRoupas } from '../world/lojaDeRoupas';
 import { fundir } from '../world/fundir';
 import { OnibusDaCidade } from '../world/onibusDaCidade';
 import { bebitoMobileNestaPagina } from '../eventos/BebitoMobile';
+import { DESCIDA_NO_PARQUE, montarBebitoNoParque } from '../eventos/bebitoMobile/noParque';
 import { mesaDeSorveteria, sorveteriaDoMano, SORVETERIA_DO_MANO } from '../world/sorveteriaDoMano';
 import { bonecoDeNeve, bordaDeGelo, cristalDeGelo, posteDeGelo } from '../world/pracaDeGelo';
 import { Frisbee } from '../entities/Frisbee';
@@ -99,6 +100,8 @@ export const villaLobos: SceneDef = {
     'da-lojinha': { x: -33.6, z: -16.5, facing: Math.PI / 2 },
     // voltando da Casinha da Abóbora (Halloween): na frente do portão laranja, de costas para ele
     'do-portao-laranja': { x: -11.3, z: -25.6, facing: Math.PI / 4 },
+    // descendo do Bebito Mobile, na calçada da rua do ônibus
+    'do-carro': DESCIDA_NO_PARQUE,
   },
 
   build(w) {
@@ -4888,13 +4891,15 @@ export const villaLobos: SceneDef = {
     });
 
     // (com o Bebito Mobile no jogo, quem volta do parque chega pela calçada da frente da casa)
-    w.door({
+    const voltarPraCasa = w.door({
       x: 0, z: 27,
       to: bebitoMobileNestaPagina() ? 'frente-da-casa' : 'casa', entry: 'da-rua',
       label: 'Voltar pra casa', icon: '🏠',
       highlight: portao,
       radius: 2.2,
     });
+    // o carro estacionado na rua do ônibus, quando eles vieram de carro (`eventos/bebitoMobile/noParque.ts`)
+    montarBebitoNoParque(w, { voltarPraCasa });
 
     // ------------------------------------------------------------- frisbee
     const disco = new Frisbee(P.frisbee);

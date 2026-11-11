@@ -213,7 +213,11 @@ de peça. Para PLANTA DE JARDIM, o jardim da frente da casa do Ari
 (hortênsia, lavanda, capim de pluma, agave, margarida, costela-de-adão, hera
 no muro), a folha é uma fita dobrada na nervura, a haste e a flor dividem a
 geometria pela cor do vértice, e o que é fino balança no `Vento` — ver "As
-plantas do jardim" na skill de peça.
+plantas do jardim" na skill de peça. Para CENA QUE SE DIRIGE, a estrada do Bebito Mobile
+(`scenes/viagemDeCarro.ts`, peças em `world/estrada.ts`): o mundo posto por
+uma conta (`naPista(s, l)`) numa pista curva sorteada por semente, a câmera
+de perseguição, o freio que nunca deixa atropelar e o piloto automático do
+teste — ver "Uma cena que se DIRIGE" na skill de cenário.
 
 **O laboratório é a vitrine viva delas.** O computador do quarto do Ari abre
 a pasta `AriStory_teste`, um mundo de teste (`scenes/laboratorio.ts`, peças em
@@ -266,7 +270,10 @@ nova do carro (cena, quest, viagem) fica atrás de `bebitoMobileNestaPagina()`;
 `?semBebito` força desligado. A frente da casa do Ari (`frente-da-casa`: o
 jardim, a garagem e a rua de casinhas) e a quest do presente já existem,
 escondidas (a frente da casa já está na segunda versão: casa funda, muro
-com hera, portão de correr na garagem e plantas novas). Ligar a chave é a
+com hera, portão de correr na garagem e plantas novas), e a VIAGEM DE CARRO
+também (`viagem-de-carro`: a estrada até o Villa Lobos, dirigida por quem
+joga, com bichos na faixa de pedestres, obra, semáforo, buracos, lombada,
+poça, ônibus e corações). Ligar a chave é a
 ÚLTIMA coisa, e só com o aval do Renan.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
@@ -418,6 +425,7 @@ node scripts/borrifador.mjs /tmp/bf # o borrifador: destranca pela pistola, o fr
 node scripts/fantasias.mjs /tmp/fa  # as cinco fantasias da caça do Halloween (abóbora, pirata, gato preto, espantalho, bruxinho) nos dois: cada peça no pai certo, o pé sumindo no calçado, nada abaixo do chão, de frente, costas, lado, andando, sentados e de perto, o rabo, o papagaio e o corvinho mexendo, e o boneco e o filtro 🎃 do guarda-roupa. FANTASIA=pirata roda uma
 node scripts/bebitoMobile.mjs /tmp/bm # o Bebito Mobile (docs/BEBITO-MOBILE.md), estacionado pelo atalho ?carro=x,z: o modelo medido (a base, o tamanho, as malhas e os triângulos), a ficha e as vagas (cada encaixe com nome, cada detalhe da ficha no carro, todo id do catálogo com modelo, outra ficha dando outro carro), o save (ficha torta consertada, save antigo com a de fábrica, gravar e recarregar), os comandos (rodas, volante, teto, faróis, freio, pisca, solavanco, penduricalhos), as faces coplanares das caixas de quina redonda, os lugares (a dupla sentada na frente — cabe sob o teto e entre as portas —, sentada no banco de trás, e deitada na cama com os encostos da frente deitados) e as fotos de todos os lados, das janelas de perto, por dentro e sem teto. SO=modelo|ficha|comandos|peso|fotos|coplanar|lugares roda uma parte; SEM_FUNDIR=1 mede antes da junção
 node scripts/presente.mjs /tmp/pr  # a quest do presente do Bebito Mobile e a frente da casa do Ari (docs/BEBITO-MOBILE.md), só com ?bebito: ESCONDIDO (sem a chave a porta da casa sai no parque, a cama é a de sempre e o save não ganha flag), o JARDIM (a porta sai no jardim, a garagem vazia, da porta ao portão sem esbarrar, o parque voltando pela calçada, fotos) e a QUEST (dormir depois da lição 10, a pergunta da surpresa, o Renan saindo pela porta da sala, o Ari atrás, a buzina, o carro vindo pela rua com o Renan dirigindo e o laço no teto, a ré para dentro da garagem, a conversa, a memória, o save de verdade intacto, e depois o carro morando na garagem). SO=escondido|jardim|quest roda uma parte; CEL=1 roda no celular em pé
+node scripts/viagem.mjs  /tmp/vg    # a viagem de carro do Bebito Mobile (docs/BEBITO-MOBILE.md §6), só com ?bebito: a ROTA (300 rotas sorteadas obedecem as regras: oito eventos, as duas travessias nunca seguidas, os vãos, os corações na faixa livre, a curva mansa, a semente), a PARTIDA (o "Sair de carro" na garagem, "Quem dirige dessa vez?" e quem foi escolhido ao volante nos dois casos), a viagem INTEIRA com o piloto de teste (parar para os bichos e no sinal, desviar da obra e dos buracos, a lombada devagar, ultrapassar o ônibus, três estrelas, a memória, e o carro estacionado na rua do ônibus do parque), o DISTRAÍDO (sem frear, o carro para sozinho antes da faixa e ninguém é atropelado), o MANCHE de verdade (virar, frear, acelerar, buzinar), a VOLTA (o portão vira lembrete, o carro leva para casa e volta à garagem) e as fotos de PERTO dos bichos e das peças. SO=rota|partida|bom|distraido|manche|volta|perto roda uma parte; CEL=1 no celular em pé; SEMENTE=7 escolhe a rota
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha); SO=armario,estante roda so essas (peca de evento, como o carrinho-de-pocoes, abre a cena na fase dela); SEM_FUNDIR=1 mede antes da juncao (depois dela nao sobra caixa para medir)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso

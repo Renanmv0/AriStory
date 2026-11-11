@@ -896,6 +896,54 @@ do jogo o que já existiu; aqui ela segura o que ainda não estreou):
   e `g.poseNoCarro('jogador' | 'parceiro', 'dirigindo' | 'passageiro', volante)`
   — as mãos acompanham o giro do volante. `null` devolve a pose de sempre.
 
+### Uma cena que se DIRIGE (a viagem de carro)
+
+A estrada do Bebito Mobile (`scenes/viagemDeCarro.ts`) é o molde de cena em
+que quem joga não anda: pilota. O que ela ensinou:
+
+- **O mundo sai de uma CONTA, e não de coordenadas**: a pista é uma curva
+  (`eixoDaRota`, duas ondas de seno com as pontas retas) e tudo o que mora
+  nela é posto por `naPista(s, l)` — `s` o quanto se andou, `l` o lado. Peça
+  de pista curva é FITA costurada por essa função (`world/estrada.ts`), e não
+  caixa comprida. O carro guarda só `s`, `l` e a velocidade.
+- **A rota é sorteada por SEMENTE, num arquivo sem three**
+  (`eventos/bebitoMobile/rota.ts`): o teste confere as regras em trezentas
+  rotas sem abrir navegador para cada uma, e uma viagem reprovada se repete
+  pela semente (`?viagem=ida,renan,7`).
+- **O manche de quem dirige é o `g.olharLivre()`** (o manche cru: chega com
+  o jogador travado) e a buzina é o `g.acaoCrua()` (o E cru, que cala com
+  fala na tela). O jogador fica travado e sentado o tempo todo.
+- **Os dois sentam no PRIMEIRO QUADRO, não no `build`**: o motor põe a dupla
+  no ponto de chegada DEPOIS de montar a cena e desfaz qualquer carona — quem
+  sentasse no `build` aparecia em pé no meio da estrada.
+- **Câmera de perseguição**: o `setCameraOmbro` atrás e acima do carro, o
+  olho alcançando o alvo com `1 − e^(−7·dt)` (sem tranco nas curvas) e o
+  olhar mirando a pista 8 m à frente — a curva aparece antes de chegar. No
+  celular em pé ela recua e sobe.
+- **Ninguém é atropelado nunca**: o que fecha a pista (bicho na faixa,
+  vermelho, cavalete, traseira do ônibus) vira um LIMITE em `s` que a frente
+  do carro não passa; se a freada que falta passa de ~12 m/s², o carro freia
+  SOZINHO e conta um "susto". O jogo é passeio: nada volta para o começo.
+- **Os avisos são do painel** (`g.painelDaViagem`, no alto: os corações, o
+  carrinho no trilho até o destino e o aviso do momento) e os comentários da
+  carona vão no `g.toast` — a fala de verdade (`g.say`) pararia o carro.
+- **O mundo só desenha o que está perto**: trechos de 40 m, cada um um grupo
+  juntado como fundo; a cena liga o `visible` dos que estão de 22 m para trás
+  a 160 m para a frente (a névoa fecha em 165).
+- **A cena guarda um gancho para o teste** (`depuracaoDaViagem`: a pressa do
+  relógio, o piloto automático, a câmera e o `naPista`) — o piloto
+  automático segue os corações, freia na lombada e para nas faixas, e é com
+  ele que o `scripts/viagem.mjs` atravessa a viagem inteira.
+
+### Duas perguntas seguidas
+
+`g.ask` atrás de `g.ask` ("Ir de carro?" e logo "Quem dirige dessa vez?")
+respondia a segunda sozinha: o clique no botão da primeira ainda subia até a
+caixa da fala depois que a segunda já tinha aberto, e com o botão fora da
+página o filtro do `.closest('.escolhas')` não reconhecia mais o clique.
+Hoje o botão de escolha para o clique (`stopPropagation`, `ui/Ui.ts`); se
+aparecer de novo em outra caixa de escolha, é esse o caminho.
+
 ### Fundo de cena: uma vizinhança leve
 
 A rua da casa do Ari tem oito casas vizinhas, sebes e cinquenta árvores.

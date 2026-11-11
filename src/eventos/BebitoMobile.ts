@@ -25,7 +25,9 @@
  * - a quest do presente (`eventos/bebitoMobile/presente.ts`): depois da lição
  *   10 da apostila do Gatito, dormir na cama do quarto do Ari começa a
  *   surpresa;
- * - o carro estacionado na garagem, depois do presente.
+ * - o carro estacionado na garagem, depois do presente;
+ * - a VIAGEM DE CARRO (`scenes/viagemDeCarro.ts`, `eventos/bebitoMobile/rota.ts`):
+ *   sair de carro pela garagem, dirigir até o Villa Lobos e voltar.
  * O modelo do carro (`world/bebitoMobile/`) e a ficha no save existem sempre:
  * são kit e dado, e não aparecem sozinhos.
  */
@@ -59,3 +61,9 @@ export const FASES_DO_PRESENTE = {
   saiu: 'bebito:renan-saiu',
   ganhou: 'bebito:ganhou',
 } as const;
+
+/**
+ * ONDE O CARRO ESTÁ: em casa (na garagem) ou no parque (na rua do ônibus).
+ * Quem muda é a chegada de cada viagem (`scenes/viagemDeCarro.ts`).
+ */
+export const FLAG_DO_CARRO_NO_PARQUE = 'bebito:carro-no-parque';

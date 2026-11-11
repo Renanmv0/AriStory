@@ -161,6 +161,12 @@ e não ônibus: tudo mais agudo e mais curto que a família do ônibus.
 - `portaDoBebito`: o "clec" do trinco e o "tum" abafado da lata (`n` par
   abre, ímpar bate).
 
+- `freadaDoBebito`: o pneu cantando curtinho (dois apitos de borracha
+  descendo, com o chiado) e o tranco no fim — na freada forte e na freada
+  sozinha da faixa de pedestres;
+- o clima **`'viagem-de-carro'`** (a estrada): música de janela aberta — a
+  família do parque, maior, 112 bpm, com bumbo e chocalho; sem tensão, o que
+  avisa do perigo é a pista. A cena escolhe pelo id, sozinha;
 - `portaoEletrico`: o portão de correr da garagem — o "clac" do contator e
   o zumbido grave do motorzinho (dente-de-serra abafado), com a roldana no
   trilho por cima; toca quando ele começa a abrir ou a fechar.

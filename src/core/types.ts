@@ -36,6 +36,19 @@ export interface BoxCollider {
 
 export type Collider = CircleCollider | BoxCollider;
 
+/** o que o painel da viagem de carro mostra (`GameAPI.painelDaViagem`) */
+export interface DadosDaViagem {
+  coracoes: number;
+  /** de 0 (a partida) a 1 (a chegada) */
+  progresso: number;
+  /** o emoji do destino, na ponta do trilho */
+  destino: string;
+  /** o aviso do meio da tela (vazio esconde), o emoji dele e o tom */
+  aviso?: string;
+  icone?: string;
+  tom?: 'atencao' | 'pare' | 'bom';
+}
+
 /**
  * UM ENFEITE DA ESTUFA NO SAVE (a lojinha da Josefina vende, a dupla põe onde
  * quiser). Cada compra é uma UNIDADE com número próprio: dois anões são dois
@@ -571,6 +584,13 @@ export interface GameAPI {
   /** a cesta de balas da caça de Halloween (🎃 🍬 7/25, no alto); null esconde */
   mostrarCesta(dados: { balas: number; meta: number } | null): void;
   /**
+   * O PAINEL DA VIAGEM DE CARRO (o Bebito Mobile): os corações pegos, o
+   * carrinho andando no trilho da casa ao destino, e — no meio da tela — o
+   * AVISO do que a pista pede agora ("Pare na faixa!", "Freie: lombada").
+   * `null` esconde tudo.
+   */
+  painelDaViagem(dados: DadosDaViagem | null): void;
+  /**
    * A hora certa (as travessuras do Halloween): a fala e uma barra com a
    * agulha indo e voltando; quem joga aperta E (ou toca) para parar.
    * Resolve com o acerto, de 1 (no meio da faixa) a 0.
@@ -1005,6 +1025,12 @@ export interface GameAPI {
    * roda gigante: la a cutscene tira o andar e devolve o olhar.
    */
   olharLivre(): { x: number; y: number };
+  /**
+   * A tecla de AÇÃO crua (E, espaço ou o botão do celular), que chega mesmo
+   * com o jogador travado: é a BUZINA do carro, na viagem. Cala com uma fala
+   * na tela (ali o E avança a fala).
+   */
+  acaoCrua(): boolean;
   /**
    * Barra de forca no HUD; 0..1, ou null para esconder. `alvo` marca um ponto
    * da barra (a forca que acerta o parceiro) e `zona` e a largura da faixa de

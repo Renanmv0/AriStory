@@ -12,14 +12,14 @@ presente para o Ari numa quest curta; depois disso, toda viagem pergunta
 **quem vai dirigir dessa vez**, e o trajeto é um cenário procedural que passa
 pela janela.
 
-**Estado (2026-11-11).**
+**Estado (2026-11-12).**
 
 | etapa | o quê | estado |
 |---|---|---|
 | **A** | o modelo do Bebito Mobile no kit, por ficha de dados, com fotos de todos os lados | ✅ **feita** |
 | **B** | a frente da casa do Ari (o jardim e a garagem) e a quest do presente | ✅ **feita, ESCONDIDA** — faltam o aval do Renan nas falas e a escolha da fala do Ari (§5) |
-| **C** | uma viagem completa: Casa do Ari → Villa Lobos, com "quem dirige?" e o cenário procedural | ⬜ a próxima |
-| **D** | as demais rotas (parque ↔ clube ↔ escola) e o acabamento | ⬜ |
+| **C** | a viagem de carro Casa do Ari ↔ Villa Lobos, DIRIGIDA por quem joga, com "quem dirige?", obstáculos e bichos na faixa | ✅ **feita, ESCONDIDA** — as falas da carona esperam o aval do Renan (§6) |
+| **D** | as demais rotas (parque ↔ clube ↔ escola) e o acabamento | ⬜ a próxima |
 | no fim | LIGAR A CHAVE: `BEBITO_MOBILE_NO_JOGO = true` | ⬜ só quando tudo estiver pronto |
 | depois | a EDIÇÃO do carro pelos dois (a ficha já está pronta para ela, §3) | ⬜ não fazer ainda |
 
@@ -47,6 +47,7 @@ força desligado, para quando a chave estiver ligada.
 ```
 …/?bebito                              # o jogo com o carro, no save de teste
 …/?bebito&cena=frente-da-casa          # direto no jardim
+…/?bebito&cena=viagem-de-carro&viagem=ida,renan,7  # direto na estrada: o sentido, quem dirige e a semente
 …/?cena=villa-lobos&carro=38.4,-9&em=41,-6          # só o modelo, na rua do parque
 …/?cena=villa-lobos&carro=38.4,-9&em=41,-6&semTeto  # a casinha de boneca
 ```
@@ -73,9 +74,21 @@ E o que a etapa B trouxe:
 | `src/scenes/frenteDaCasa.ts` | a cena `frente-da-casa`: o jardim, a garagem, a rua e a vizinhança |
 | `src/world/frenteDaCasa.ts` | as peças: a casa por fora (e a vizinha, do mesmo molde), o pergolado, a cerquinha, o portãozinho e a caixa de correio |
 
+E o que a etapa C trouxe:
+
+| arquivo | o que mora ali |
+|---|---|
+| `src/eventos/bebitoMobile/rota.ts` | a ROTA de cada viagem, sorteada por semente: a curva, os trechos de paisagem, os oito eventos, os corações e a nota. Sem three |
+| `src/eventos/bebitoMobile/partida.ts` | "Ir de carro?" e "Quem dirige dessa vez?", e a partida para a estrada |
+| `src/eventos/bebitoMobile/travessia.ts` | os bichos do lago atravessando a faixa: a pata com os patinhos (com as patinhas, em terra) e os tigres-d'água |
+| `src/eventos/bebitoMobile/noParque.ts` | o carro estacionado na rua do ônibus do Villa Lobos, e a volta para casa |
+| `src/scenes/viagemDeCarro.ts` | a cena `viagem-de-carro`: a estrada montada pela rota, o carro dirigido, os eventos, a câmera, o painel e a chegada |
+| `src/world/estrada.ts` | as peças da estrada: o asfalto em trechos curvos, a faixa de pedestres, as placas, os cones, o cavalete, a lombada, o buraco, a poça, o semáforo, os corações e a roda gigante ao longe |
+
 O save: `SaveState.fichaDoBebitoMobile()` / `salvarFichaDoBebitoMobile()`
 (na cena, `g.fichaDoBebitoMobile()`). Os testes: `scripts/bebitoMobile.mjs`
-(o modelo) e `scripts/presente.mjs` (a chave, o jardim e a quest).
+(o modelo), `scripts/presente.mjs` (a chave, o jardim e a quest) e
+`scripts/viagem.mjs` (a viagem).
 
 ## 1. As decisões do Renan e do Ari (2026-11-10)
 
@@ -387,28 +400,106 @@ o nosso nome na placa, estacionado de ré na garagem."
 4. **O laço fica onde?** Hoje some depois da entrega. Ele pode virar um
    enfeite guardado (pendurado na garagem, ou no retrovisor).
 
-## 6. Etapas C e D — as viagens
+## 6. Etapa C — a viagem de carro (feita, escondida)
 
-Ideias de partida (a detalhar quando a etapa chegar):
+O pedido do Renan (2026-11-12): "a viagem até o Villa Lobos com a gente
+podendo controlar o carro; quero que deixe essa mecânica intuitiva e
+divertida. Com obstáculos, ou faixas para pararmos para animais passarem, e
+qualquer ideia que julgue que será boa para essa mecânica."
 
-- **"Quem dirige dessa vez?"** — sempre perguntado; muda quem senta em cada
-  lugar, a pose (mãos no volante × passageiro) e as falas. As poses novas
-  entram no `CharacterRig` (cuidado: perna e braço esquerdos nascem em `x`
-  negativo).
-- **O caminho**: uma cena própria, com a estrada e a paisagem geradas em
-  código (trechos que mudam: bairro, avenida, beira de parque…), variando com
-  uma semente por viagem; o céu e a luz conforme o horário (`world/noite.ts`
-  já tem os momentos do dia).
-- **O som**: motor, buzina, pisca, e o rádio do carro (a skill `aristory-som`).
-- **De dentro**: a cabine cabe uma cena (o teto sai); fica para quando houver
-  uma atividade para fazer ali.
-- **Levar gente para passear**: os três lugares de trás já existem
-  (`assentos.tras`); falta decidir quem pode ir e como se convida.
-- **Deitar na cama do carro**: o modelo já deita os encostos e tem a âncora
-  (`carro.cama`); falta a cena (onde se estaciona para isso, a câmera de
-  cima, o que os dois fazem deitados).
-- **As rotas**: Casa ↔ Villa Lobos primeiro; depois parque ↔ clube ↔ escola,
-  no lugar (ou ao lado) do ônibus.
+### Como se sai e como se chega
+
+- **Na garagem**, com o carro em casa: "Sair de carro" (a porta do motorista)
+  → "Ir de carro pro Villa Lobos?" → **"Quem dirige dessa vez?"** (Ari ou
+  Renan). Quem foi escolhido senta no lugar do motorista, de mãos no volante,
+  seja quem for que o jogador controla; o outro vai de carona.
+- **A estrada** é uma cena própria (`viagem-de-carro`), de ~640 m.
+- **No parque**, o carro fica estacionado na rua do ônibus, atrás do ônibus
+  do ponto, e a dupla desce na calçada. O "Voltar pra casa" do portão vira
+  lembrete ("A pé? A gente veio de Bebito Mobile.") e quem leva de volta é o
+  carro ("Voltar pra casa de carro"). Em casa, o carro volta para a garagem.
+  Enquanto ele está no parque, a garagem fica vazia.
+
+### Como se dirige (uma mão só basta)
+
+- **O carro anda sozinho** na velocidade de passeio — ninguém precisa segurar
+  nada para ir em frente;
+- **o manche** (setas, WASD ou o joystick do celular): para os lados troca de
+  faixa; **para baixo freia** (segurando, ele fica parado); **para cima
+  acelera** além do passeio;
+- **E, espaço ou o botão de ação: a BUZINA**;
+- nos primeiros segundos, o painel ensina os comandos.
+
+### O que tem na pista (sorteado a cada viagem)
+
+Cada viagem é uma ROTA nova (a semente é o número da viagem): a curva da
+estrada, a ordem dos eventos, de que lado cada um vem. São oito por viagem:
+
+| evento | o que pede | o que acontece |
+|---|---|---|
+| **faixa de pedestres com bichos** (duas por viagem: a pata com os patinhos, e os tigres-d'água) | PARAR antes da linha e esperar todos passarem | parou: +3 corações e a carona agradece. Não freou: o carro freia SOZINHO, em cima da linha — ninguém é atropelado nunca —, os bichos dão um pulinho de susto e a carona reclama. **A buzina** apressa a pata (ela reclama e corre) e faz o tigre-d'água se esconder no casco e parar — buzinar para tartaruga só atrasa |
+| **semáforo** | parar no vermelho | ele fecha quando o carro chega; parado na linha, abre em ~3 s (+2 corações). Furar o vermelho é um tropeço |
+| **obra** | trocar de faixa | cones e dois cavaletes com a luz piscando fecham uma faixa. Bater derruba os cones, que saem voando e rolando |
+| **buracos** | desviar | três buracos espalhados; a roda que cai dá um tranco e o carro perde velocidade |
+| **lombada** | passar devagar | devagar: +1. Rápido: o carro PULA, e a carona reclama |
+| **poça** | (é de graça) | passar por ela espirra água das rodas (+1) |
+| **ônibus da cidade** | ultrapassar pela outra faixa | ele anda devagar numa faixa; atrás dele o carro só acompanha. Passar: +2. Mais adiante ele encosta e liga o pisca |
+
+E **corações** pela pista: uma fileira mostra a faixa livre antes de cada
+obstáculo (seguir os corações é o jeito de aprender sem ler nada), e outras
+fazem ondas nos trechos calmos. Placas amarelas de advertência (patos,
+tartaruga, lombada, obra, semáforo, buracos) avisam ~35 m antes, e o painel
+no alto diz o que fazer ("Pare na faixa!", "Obra na pista: troque de
+faixa").
+
+**É um passeio, não uma prova**: nada machuca, nada volta para o começo, a
+viagem sempre chega. No fim, a nota (de uma a três estrelas: três é não ter
+esbarrado em nada nem assustado ninguém) e os corações. A primeira viagem vira
+a memória "A primeira viagem". O save guarda o número de viagens e o recorde
+de corações (`bebito:viagens-feitas`, `bebito:recorde-de-coracoes`) — ainda
+sem uso; servem para um prêmio, se o Renan quiser.
+
+### A paisagem
+
+Três trechos, cada um de ~210 m: o **bairro** (as casinhas do mesmo molde da
+vizinhança da casa do Ari, sebes, hortênsias e postes), a **avenida**
+(alameda de palmeiras, bancos de praça, lavanda e capim) e a **beira do
+parque** (bosque dos dois lados). Na ida a ordem é casa → bairro → avenida →
+parque, e a **roda gigante do Villa Lobos** aparece lá no fim da rua, girando;
+a chegada tem o gradil e o portal do parque. Na volta a ordem se inverte e a
+casa do Ari (com o muro de hera) espera no fim. Uma viagem em cada três é de
+**tarde**, com a luz dourada e os faróis acesos. A música é de estrada (o
+clima `viagem-de-carro`: maior, 112 bpm, bumbo e chocalho).
+
+### As falas — PARA O RENAN APROVAR
+
+Quem vai de **carona** comenta o que acontece, num balãozinho de canto (sem
+parar o carro). As falas são minhas e estão em `FALAS`, no começo de
+`scenes/viagemDeCarro.ts` — duas listas, uma para o Ari de carona e outra
+para o Renan. Exemplos: o Ari, na faixa: "Olha os patinhos! Para, para,
+para!"; na lombada rápida: "Aaai! A lombada, bebito!"; o Renan, na buzina
+para a tartaruga: "Buzinar não ajuda: ela se escondeu.". Na partida:
+"Eu dirijo!" (quem dirige) e "Então eu escolho a música." / "Então eu vou
+olhando a paisagem." (a carona). Na chegada, uma conversa curta por nota.
+
+### O que ficou para a etapa D (e ideias)
+
+- **As outras rotas**: parque ↔ clube ↔ escola, ao lado do ônibus (a rota já
+  aceita outros trechos de paisagem; falta a cena de cada ponta);
+- **o rádio do carro** (trocar a música pela tela, como o radinho da
+  clareira);
+- **levar alguém no banco de trás** (os três lugares já existem) e **deitar
+  na cama do carro** (os encostos já deitam);
+- um **prêmio pelo recorde de corações** (um detalhe novo para o carro?);
+- **de noite**, com os postes acesos.
+
+**O peso** (`renderer.info.render`, a câmera de dirigir): no bairro, o
+trecho mais cheio, ~520 desenhos e ~340 mil triângulos; na avenida ~340 e
+~280 mil — a régua da clareira (~430–480 e ~355–380 mil). Deles, ~190
+desenhos são o carro com a dupla dentro (o mesmo em qualquer cena). A estrada
+é feita em trechos de 40 m, cada um um grupo juntado como fundo
+(`fundirComoFundo`), e só os trechos de 22 m para trás a 160 m para a frente
+são desenhados; cones, corações e respingos são um lote cada.
 
 ## 7. Como testar
 
@@ -429,3 +520,16 @@ SO=quest CEL=1 node scripts/presente.mjs /tmp/pr   # a quest no celular em pé
 `SO=escondido|jardim|quest` roda uma parte. O teste joga a quest pelo
 `?bebito` (save à parte), acelera o relógio das cutscenes por
 `aristoryBebitoMobile.ritmoDoPresente.vezes` e fotografa cada passo.
+
+```bash
+node scripts/viagem.mjs /tmp/vg               # a viagem inteira
+SO=bom CEL=1 node scripts/viagem.mjs /tmp/vg  # a viagem no celular em pé
+```
+
+`SO=rota|partida|bom|distraido|manche|volta|perto` roda uma parte; `SEMENTE=7`
+escolhe a rota. O teste confere as regras em trezentas rotas sorteadas, sai
+de carro pela garagem (os dois casos do "quem dirige"), dirige a viagem
+inteira com um piloto de teste (`aristoryBebitoMobile.viagem.piloto = 'bom'`,
+o relógio acelerado por `.vezes`), solta o manche para ver o carro frear
+sozinho na faixa, aperta as teclas de verdade, faz a volta e fotografa os
+bichos e as peças de perto (`.camera`).

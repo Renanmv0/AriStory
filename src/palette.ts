@@ -2895,6 +2895,17 @@ export const PALETTE = {
   heraClara: 0x7cc45a,
   cascaDePinus: 0x8a6244,
   pedriscoBranco: 0xf0ede6,
+  // a estrada da viagem de carro (`world/estrada.ts`)
+  placaVerso: 0x8d949c,
+  coneLaranja: 0xf28a2e,
+  semaforoCaixa: 0x34373d,
+  semaforoVermelho: 0xf0553f,
+  semaforoAmarelo: 0xffc53a,
+  semaforoVerde: 0x4fd07a,
+  lombadaAsfalto: 0xe9e4d6,
+  buracoBeira: 0x8a8d92,
+  buracoFundo: 0x3d3f45,
+  patoPe: 0xf2a23a,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

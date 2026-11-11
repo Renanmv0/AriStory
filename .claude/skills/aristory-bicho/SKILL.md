@@ -501,6 +501,26 @@ pontos de pesca ficam nos vãos da beira (longe de ninféia, pedra e tronco).
 estados própria (sol, pulando, nadando só com a cabeça de fora, subindo). O
 casco é canvas visto de cima, com o UV projetado de cima também.
 
+## Bicho de água em TERRA (a travessia da viagem de carro)
+
+Os patos e os tigres-d'água do lago atravessam a faixa de pedestres da
+estrada do Bebito Mobile (`eventos/bebitoMobile/travessia.ts`). A classe é a
+mesma do lago; o que a terra pediu:
+
+- **o pato do lago nasce com a barriga debaixo d'água** (o chão esconde): em
+  terra ele SOBE (a caixa dele mede quanto) e ganha o que a água escondia —
+  duas patinhas laranja penduradas num pivô na linha d'água, que batem no
+  passo, e o gingado de lado (`rotation.z`);
+- **a fila**: cada um anda o mesmo caminho, um tanto atrás do da frente
+  (`atras`), um tico para o lado (`desvio`) — a mãe na frente;
+- **a guia**: na calçada eles estão um degrau acima do asfalto, e descem e
+  sobem a guia num passo;
+- **de longe eles somem**: no tamanho do lago, vistos de trás do carro, os
+  patinhos eram pontinhos — em terra vão a 1,55× (a pata), 1,7× (os
+  patinhos) e 2,8× (os tigres-d'água);
+- **cada um reage do seu jeito à buzina**: a pata apressa o passo e reclama;
+  o tigre-d'água se esconde no casco e para — é a piada.
+
 ## Fantasia de EVENTO, por fora da classe (a Estella de aranha)
 
 Evento é camada: a classe do bicho não muda. A fantasia é uma função que

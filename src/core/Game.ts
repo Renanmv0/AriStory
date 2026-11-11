@@ -24,6 +24,7 @@ import type { Interactable } from '../world/Interactable';
 import {
   SLOTS_ROUPA,
   type Coleta,
+  type DadosDaViagem,
   type DecoracaoNoSave,
   type GameAPI,
   type HoldPose,
@@ -418,6 +419,7 @@ export class Game implements GameAPI {
     this.ui.showPlacar(null);
     this.ui.showTurno(null);
     this.ui.mostrarCesta(null);
+    this.ui.painelDaViagem(null);
     this.parceiro.clearOrder();
     this.setSitting(false);
     // nenhuma pose de cutscene atravessa uma troca de cena: sair da praca de
@@ -988,6 +990,15 @@ export class Game implements GameAPI {
 
   mostrarCesta(dados: { balas: number; meta: number } | null): void {
     this.ui.mostrarCesta(dados);
+  }
+
+  painelDaViagem(dados: DadosDaViagem | null): void {
+    this.ui.painelDaViagem(dados);
+  }
+
+  acaoCrua(): boolean {
+    if (this.telaDeLeitura || this.ui.dialogueOpen) return false;
+    return this.input.justPressed('KeyE') || this.input.justPressed('Space');
   }
 
   horaCerta(texto: string, speaker?: string, opts?: { periodo?: number; zona?: number }): Promise<number> {

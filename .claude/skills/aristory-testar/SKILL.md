@@ -51,6 +51,7 @@ Outros parâmetros de depuração:
 | `?olhar=3.14` | ângulo que eles encaram |
 | `?carro=38.4,-9` | estaciona o Bebito Mobile nesse ponto da cena (o carro só chega ao jogo pela quest); `&semTeto` tira o teto e `&farois` acende as luzes |
 | `?bebito` | liga o Bebito Mobile (a frente da casa, a quest do presente) num SAVE À PARTE — a chave dele está desligada no jogo (`eventos/BebitoMobile.ts`). `?semBebito` força desligado. A quest pede a lição 10: `jogo.save.concluirLicao('partiu-praia', 3)` no console e recarregar |
+| `?viagem=ida,renan,7` | com `&cena=viagem-de-carro`: abre a estrada do Bebito Mobile direto, com o sentido (`ida`/`volta`), quem dirige e a semente da rota. No console, `aristoryBebitoMobile.viagem` tem o estado, a rota, o piloto automático (`piloto = 'bom'`) e a pressa (`vezes`) |
 
 ## Ambiente
 
@@ -122,6 +123,13 @@ ruído. Qualquer outro erro de console é erro de verdade.
   entrada, e a conta por peça (percorrer `jogo.current.world.root.children`
   somando malhas e triângulos por `userData.peca`) diz de onde vem. A frente
   da casa do Ari tinha 1.341 malhas em peças sem nome — eram os canteiros.
+
+- **Jogo de dirigir se testa com um PILOTO na cena**, e não com teclas no
+  tempo: o Chromium sem placa roda a poucos quadros, e segurar uma seta por
+  meio segundo vira um metro ou dez. O `scripts/viagem.mjs` liga o piloto
+  automático da viagem (que segue os corações e para nas faixas) e espera
+  por ESTADO; as teclas de verdade são conferidas à parte, cada uma até o
+  efeito acontecer (`waitForFunction`).
 
 ## Checklist antes de fechar
 

@@ -129,6 +129,7 @@ export type SomNome =
   | 'motorDoBebito'
   | 'portaDoBebito'
   | 'portaoEletrico'
+  | 'freadaDoBebito'
   | 'luzesAcendendo'
   | 'surpresa'
   | 'fotoFlash'
@@ -1263,6 +1264,14 @@ export const EFEITOS: Record<SomNome, Receita> = {
       tom(ctx, destino, { freq: f, glide: f * 0.78, quando: t + i * 0.085, dur: 0.075, vol: 0.06, ataque: 0.006, tipo: 'triangle', abafo: 420 });
     }
     chiado(ctx, destino, { quando: t, dur: 0.26, vol: 0.03, freq: 240, glide: 170, q: 0.8, tipo: 'lowpass', sustenta: 0.5 });
+  },
+
+  // a freada do carrinho: o pneu cantando curtinho (dois apitos de borracha descendo) e o tranco no fim
+  freadaDoBebito: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: 1150, glide: 760, quando: t, dur: 0.22, vol: 0.05, ataque: 0.01, tipo: 'sawtooth', abafo: 2600 });
+    tom(ctx, destino, { freq: 1420, glide: 900, quando: t + 0.02, dur: 0.2, vol: 0.03, ataque: 0.01, tipo: 'square', abafo: 2400 });
+    chiado(ctx, destino, { quando: t, dur: 0.26, vol: 0.07, freq: 1700, glide: 900, q: 1.2, sustenta: 0.5 });
+    tom(ctx, destino, { freq: 120, glide: 70, quando: t + 0.24, dur: 0.1, vol: 0.07, ataque: 0.004, tipo: 'sine' });
   },
 
   // o portão de correr da garagem: o "clac" do contator e o zumbido do motorzinho, com a roldana no trilho por cima

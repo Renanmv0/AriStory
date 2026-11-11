@@ -22,6 +22,8 @@ import { Vento } from '../core/shaders';
 import { quina } from '../world/lojaDeRoupas';
 import { BEBITO_MOBILE, BebitoMobile } from '../world/bebitoMobile/BebitoMobile';
 import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/bebitoMobile/presente';
+import { sairDeCarro } from '../eventos/bebitoMobile/partida';
+import { FLAG_DO_CARRO_NO_PARQUE } from '../eventos/BebitoMobile';
 
 /**
  * A FRENTE DA CASA DO ARI: o jardim e a garagem.
@@ -89,6 +91,8 @@ export const frenteDaCasa: SceneDef = {
   entries: {
     'da-casa': { x: CASA.x, z: CASA.z + 1.5, facing: 0 },
     'da-rua': { x: PORTAO.x + 3.2, z: (CALCADA.z0 + CALCADA.z1) / 2, facing: -Math.PI / 2 },
+    // chegando de carro: na boca da garagem, na frente do carro estacionado
+    'do-carro': { x: VAGA.x + 0.4, z: VAGA.z + BEBITO_MOBILE.comprimento / 2 + 0.95, facing: 0 },
   },
 
   build(w) {
@@ -436,7 +440,9 @@ export const frenteDaCasa: SceneDef = {
      * chegada o traz (`eventos/bebitoMobile/presente.ts`).
      */
     const chegando = renanFoiBuscar(g);
-    if (chegando || temBebitoMobile(g)) {
+    // (quando a dupla foi de carro para o parque, a garagem fica vazia até eles voltarem)
+    const carroNoParque = g.flag(FLAG_DO_CARRO_NO_PARQUE);
+    if (chegando || (temBebitoMobile(g) && !carroNoParque)) {
       const ficha = g.fichaDoBebitoMobile();
       if (chegando) ficha.vagas.teto = ['laco-de-presente'];
       const carro = new BebitoMobile(ficha);
@@ -457,6 +463,17 @@ export const frenteDaCasa: SceneDef = {
               [[A, 'Cabe todo mundo no banco de trás.'], [R, 'Cabe até a gente deitado.']],
             ];
             await conversa(olhadas[vez]);
+          },
+        });
+        // a porta do motorista: é por ela que se sai de carro (`eventos/bebitoMobile/partida.ts`)
+        w.interact({
+          id: 'frente:sair-de-carro',
+          x: VAGA.x + BEBITO_MOBILE.largura / 2 + 0.55, z: VAGA.z + 0.5, radius: 1.5,
+          label: 'Sair de carro', icon: '🚙',
+          highlight: carro.group,
+          priority: 2,
+          onInteract: async () => {
+            await sairDeCarro(g, 'ida');
           },
         });
       };

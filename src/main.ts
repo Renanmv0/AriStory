@@ -25,6 +25,8 @@ import {
 import { fundir } from './world/fundir';
 import { FASES_DO_PRESENTE, bebitoMobileNestaPagina } from './eventos/BebitoMobile';
 import { ritmoDoPresente } from './eventos/bebitoMobile/presente';
+import { eixoDaRota, gerarRota, pedirViagem, type Sentido } from './eventos/bebitoMobile/rota';
+import { depuracaoDaViagem } from './scenes/viagemDeCarro';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
@@ -34,6 +36,14 @@ const game = new Game(root, SCENES, DUPLA, CENA_INICIAL);
 // ?cena=villa-lobos&entrada=roda abre direto num ponto do cenario, util pra testar
 const params = new URLSearchParams(location.search);
 const pedida = params.get('cena') ?? undefined;
+// ?cena=viagem-de-carro&viagem=ida,renan,7 abre a estrada direto: o sentido
+// (ida ou volta), quem dirige e a semente da rota. É depuração: no jogo quem
+// faz o pedido é a porta do carro (`eventos/bebitoMobile/partida.ts`).
+const viagem = params.get('viagem')?.split(',');
+if (viagem) {
+  const sentido: Sentido = viagem[0] === 'volta' ? 'volta' : 'ida';
+  pedirViagem({ sentido, motorista: viagem[1] === 'renan' ? 'renan' : 'ari', semente: Number(viagem[2]) || 1 });
+}
 const entrada = params.get('entrada') ?? undefined;
 // sem cena pedida o jogo continua de onde parou; sem progresso, começa na casa
 const comecou = game.start(pedida, entrada);
@@ -149,6 +159,8 @@ if (carro && carro.length >= 2 && carro.slice(0, 2).every(Number.isFinite)) {
   copiarFicha, normalizarFicha, fundir,
   // a quest do presente: as fases (flags) e o ritmo das cutscenes, que o teste acelera
   FASES_DO_PRESENTE, ritmoDoPresente, bebitoMobileNestaPagina,
+  // a viagem de carro: o sorteio da rota, o pedido, e o que o teste mexe (a pressa e o piloto automático)
+  gerarRota, eixoDaRota, pedirViagem, viagem: depuracaoDaViagem,
 };
 // o baralho do jardim JÁ NO FORMATO DA TELA, para o `scripts/gotas.mjs` montar
 // uma mesa de cada raridade: o sorteio de verdade não garante uma lendária na
