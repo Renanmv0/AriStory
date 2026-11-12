@@ -97,6 +97,7 @@ export class TravessiaDeBichos {
         const pato = new PatoDoLago(longe, { ...(mae ? (semente % 2 ? PATO_BRANCO : PATO_CREME) : PATINHO), semente: semente * 7 + i });
         pato.entrarEmServico();
         pato.aoSoar = null;
+        pato.gestosDeAgua = false;
         const escala = (mae ? ESCALA.pato : ESCALA.patinho) * pato.escala;
         pato.group.scale.setScalar(escala);
         // o pato do lago nasce com a barriga debaixo d'água: em terra ele sobe até ela sair do chão
