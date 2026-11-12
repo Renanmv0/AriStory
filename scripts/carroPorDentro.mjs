@@ -384,7 +384,7 @@ if (roda('piloto')) {
   const t0 = Date.now();
   while (Date.now() - t0 < 900000) {
     const e = await viagemEstado(page);
-    if (e.fase === 'fim') { fim = e; break; }
+    if (e.fase === 'fim') { fim = e; fim.vistos = await page.evaluate(() => ({ ...window.aristoryBebitoMobile.viagem.estado.vistos })); break; }
     if (e.v < 0.3 && e.s > 20 && fotos < 4) {
       await page.screenshot({ path: `${OUT}-q${fotos++}-parado-no-piloto.png` });
     }
@@ -392,7 +392,7 @@ if (roda('piloto')) {
   }
   confere(!!fim, 'o piloto chegou ao fim da viagem sozinho');
   if (fim) {
-    console.log(`   no fim: ${JSON.stringify({ tropecos: fim.tropecos, sustos: fim.sustos, gentilezas: fim.gentilezas, coracoes: fim.coracoes })}`);
+    console.log(`   no fim: ${JSON.stringify({ tropecos: fim.tropecos, sustos: fim.sustos, gentilezas: fim.gentilezas, coracoes: fim.coracoes, vistos: fim.vistos })}`);
     confere(fim.tropecos === 0 && fim.sustos === 0, `nenhum tropeço nem susto (${fim.tropecos}, ${fim.sustos})`);
     confere(fim.gentilezas >= 3, `parou para as duas travessias e no sinal (${fim.gentilezas} gentilezas)`);
   }

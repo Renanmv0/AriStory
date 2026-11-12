@@ -536,9 +536,11 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     const deJogo = estado.piloto && depuracaoDaViagem.piloto !== 'bom';
     if (depuracaoDaViagem.piloto !== 'bom' && !estado.piloto) return { x: 0, y: 0, buzina: false };
     /*
-     * O PILOTO DE JOGO é gentil (a visão do passageiro): fica na faixa dele e NÃO persegue os
-     * corações (os da viagem são de quem dirige, e a carona não os ganha), olha mais longe e
-     * freia mais cedo e mais suave que o do teste. O de TESTE (`bom`) é o de sempre.
+     * O PILOTO DE JOGO (a visão do passageiro): fica na faixa dele e NÃO persegue os corações
+     * (os da viagem são de quem dirige) — e por isso olha as obras e os buracos de mais longe,
+     * porque são os corações que mostram a faixa livre. A freada na faixa e no sinal é a do de
+     * TESTE (`bom`), que já é provada: a primeira versão "mais suave" ficava se arrastando e
+     * acelerando de novo (o manche só freia abaixo de −0,25) e furava o vermelho.
      */
     let alvoL = deJogo ? PISTA.meios[1] : estado.l;
     let y = 0;
@@ -557,21 +559,22 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       const e = vivo.e;
       const d = e.s - estado.s;
       const outra = PISTA.meios[e.faixa === 0 ? 1 : 0];
-      if (e.tipo === 'obra' && d < 22 && d > -22) alvoL = outra;
+      if (e.tipo === 'obra' && d < (deJogo ? 30 : 22) && d > -22) alvoL = outra;
       if (vivo.onibus && !vivo.onibus.passou && vivo.onibus.s - estado.s < 30 && vivo.onibus.s - estado.s > -12) alvoL = outra;
-      if (e.tipo === 'lombada' && d > 0 && d < (deJogo ? 24 : 16) && estado.v > (deJogo ? 4 : 5)) y = -0.8;
+      if (e.tipo === 'lombada' && d > 0 && d < 16 && estado.v > 5) y = -0.8;
       if (e.tipo === 'buracos' && e.buracos) {
         for (const b of e.buracos) {
           const db = e.s + b.ds - estado.s;
-          if (db > 0 && db < 11 && Math.abs(alvoL - b.l) < 1.9) alvoL = b.l > 0 ? b.l - 2.1 : b.l + 2.1;
+          // (o piloto de jogo não tem os corações para mostrar a faixa livre: olha o buraco de mais longe)
+          if (db > 0 && db < (deJogo ? 20 : 11) && Math.abs(alvoL - b.l) < 1.9) alvoL = b.l > 0 ? b.l - 2.1 : b.l + 2.1;
         }
       }
       const parar = (vivo.travessia && vivo.travessia.estado !== 'feito') || (vivo.semaforo && vivo.semaforo.cor !== 'verde');
       const ateALinha = e.s - LINHA_DE_PARADA - 2.9 - estado.s;
-      if (parar && ateALinha > -1 && ateALinha < (deJogo ? 42 : 26)) {
+      if (parar && ateALinha > -1 && ateALinha < 26) {
         const precisa = (estado.v * estado.v) / (2 * Math.max(0.5, ateALinha));
-        if (precisa > (deJogo ? 3 : 5) || ateALinha < (deJogo ? 2 : 1.2)) y = -1;
-        else if (estado.v > (deJogo ? 3.5 : 4)) y = -(deJogo ? 0.55 : 0.4);
+        if (precisa > 5 || ateALinha < 1.2) y = -1;
+        else if (estado.v > 4) y = -0.4;
       }
     }
     const x = Math.max(-1, Math.min(1, (alvoL - estado.l) * 1.4));
