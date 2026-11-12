@@ -75,7 +75,7 @@ export function renanFoiBuscar(g: GameAPI): boolean {
 export const ritmoDoPresente = { vezes: 1 };
 
 /** o relógio da cutscene, no tempo do JOGO (um `w.onUpdate`): esperas e coisas que andam a cada quadro */
-function relogioDaCena(w: WorldBuilder): { esperar: (s: number) => Promise<void>; aCadaQuadro: (f: (dt: number) => boolean) => void } {
+export function relogioDaCena(w: WorldBuilder): { esperar: (s: number) => Promise<void>; aCadaQuadro: (f: (dt: number) => boolean) => void } {
   const esperas: Array<{ falta: number; pronto: () => void }> = [];
   const tiques: Array<(dt: number) => boolean> = [];
   w.onUpdate((quadro) => {

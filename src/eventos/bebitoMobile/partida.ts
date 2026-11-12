@@ -10,12 +10,15 @@ import { pedirViagem, type Sentido } from './rota';
  *
  * Devolve `false` se eles desistiram na pergunta.
  */
-export async function sairDeCarro(g: GameAPI, sentido: Sentido): Promise<boolean> {
-  const vai = await g.ask(
-    sentido === 'ida' ? 'Ir de carro pro Villa Lobos?' : 'Voltar pra casa de carro?',
-    ['Vamos!', 'Agora não'],
-  );
-  if (vai !== 0) return false;
+export async function sairDeCarro(g: GameAPI, sentido: Sentido, jaDecidiu = false): Promise<boolean> {
+  // (de dentro do carro, quem escolheu "Viajar" no menu já decidiu: a primeira pergunta é pulada)
+  if (!jaDecidiu) {
+    const vai = await g.ask(
+      sentido === 'ida' ? 'Ir de carro pro Villa Lobos?' : 'Voltar pra casa de carro?',
+      ['Vamos!', 'Agora não'],
+    );
+    if (vai !== 0) return false;
+  }
   const quem = await g.ask('Quem dirige dessa vez?', [ARI.name, RENAN.name]);
   const motorista = quem === 0 ? ARI : RENAN;
   const carona = quem === 0 ? RENAN : ARI;

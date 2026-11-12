@@ -25,6 +25,7 @@ import {
 import { fundir } from './world/fundir';
 import { FASES_DO_PRESENTE, bebitoMobileNestaPagina } from './eventos/BebitoMobile';
 import { ritmoDoPresente } from './eventos/bebitoMobile/presente';
+import { depuracaoDoCarroPorDentro } from './eventos/bebitoMobile/entradaNoCarro';
 import { eixoDaRota, gerarRota, pedirViagem, type Sentido } from './eventos/bebitoMobile/rota';
 import { depuracaoDaViagem } from './scenes/viagemDeCarro';
 
@@ -175,7 +176,7 @@ if (carro && carro.length >= 2 && carro.slice(0, 2).every(Number.isFinite)) {
   BebitoMobile, BEBITO_MOBILE, FICHA_DE_FABRICA, CATALOGO_DO_CARRO, DEF_DAS_VAGAS, VAGAS_DO_CARRO,
   copiarFicha, normalizarFicha, fundir,
   // a quest do presente: as fases (flags) e o ritmo das cutscenes, que o teste acelera
-  FASES_DO_PRESENTE, ritmoDoPresente, bebitoMobileNestaPagina,
+  FASES_DO_PRESENTE, ritmoDoPresente, bebitoMobileNestaPagina, depuracaoDoCarroPorDentro,
   // a viagem de carro: o sorteio da rota, o pedido, e o que o teste mexe (a pressa e o piloto automático)
   gerarRota, eixoDaRota, pedirViagem, viagem: depuracaoDaViagem,
 };

@@ -18,7 +18,8 @@ import { buxinhoNoVaso, heraNosMuros, type MuroComHera } from '../world/plantasD
 import { BEBITO_MOBILE, BebitoMobile } from '../world/bebitoMobile/BebitoMobile';
 import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/bebitoMobile/presente';
 import { sairDeCarro } from '../eventos/bebitoMobile/partida';
-import { FLAG_DO_CARRO_NO_PARQUE } from '../eventos/BebitoMobile';
+import { FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
+import { prepararOCarroPorDentro } from '../eventos/bebitoMobile/entradaNoCarro';
 import { Decorador, type Cofre, type RegrasDoLugar, type Superficie } from '../world/decorador';
 import type { FichaDeDecoracao } from '../world/decoracoes';
 import { VENTO_DO_QUINTAL } from '../world/decoracoesDoQuintal';
@@ -718,15 +719,20 @@ export const frenteDaCasa: SceneDef = {
             await conversa(olhadas[vez]);
           },
         });
-        // a porta do motorista: é por ela que se sai de carro (`eventos/bebitoMobile/partida.ts`)
+        // a porta do motorista: é por ela que se sai de carro (`eventos/bebitoMobile/partida.ts`) e, com o carro
+        // por dentro (`docs/BEBITO-MOBILE-DENTRO.md`), que se ENTRA nele
+        const porDentro = carroPorDentroNestaPagina()
+          ? prepararOCarroPorDentro(w, { carro, vaga: VAGA, aoViajar: () => sairDeCarro(g, 'ida', true) })
+          : null;
         w.interact({
           id: 'frente:sair-de-carro',
           x: VAGA.x + BEBITO_MOBILE.largura / 2 + 0.55, z: VAGA.z + 0.5, radius: 1.5,
-          label: 'Sair de carro', icon: '🚙',
+          label: porDentro ? 'Entrar no Bebito Mobile' : 'Sair de carro', icon: '🚙',
           highlight: carro.group,
           priority: 2,
           onInteract: async () => {
-            await sairDeCarro(g, 'ida');
+            if (porDentro) await porDentro.entrar();
+            else await sairDeCarro(g, 'ida');
           },
         });
       };

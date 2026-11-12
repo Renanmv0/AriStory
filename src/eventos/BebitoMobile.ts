@@ -73,3 +73,26 @@ export const FASES_DO_PRESENTE = {
  * Quem muda é a chegada de cada viagem (`scenes/viagemDeCarro.ts`).
  */
 export const FLAG_DO_CARRO_NO_PARQUE = 'bebito:carro-no-parque';
+
+/**
+ * O CARRO POR DENTRO (`docs/BEBITO-MOBILE-DENTRO.md`): entrar no carro na
+ * garagem (a porta que gira, a câmera dentro dele), descansar com os bancos
+ * deitados e a visão do passageiro na viagem, com o piloto automático.
+ *
+ * Tem a PRÓPRIA chave, e não a do carro: a chave do carro está ligada desde
+ * 2026-11-12 (o Ari já joga com ele), então tudo o que se acrescenta por cima
+ * entra desligado até o Renan olhar. `?carroPorDentro` liga só para ver e
+ * testar (use junto de `?bebito`, o save de teste); `?semCarroPorDentro`
+ * força desligado.
+ */
+export const CARRO_POR_DENTRO_NO_JOGO = false;
+
+/** o carro por dentro existe nesta página? (o carro ligado, e a chave dele ou `?carroPorDentro`) */
+export function carroPorDentroNestaPagina(): boolean {
+  if (!bebitoMobileNestaPagina()) return false;
+  if (typeof location === 'undefined') return CARRO_POR_DENTRO_NO_JOGO;
+  const params = new URLSearchParams(location.search);
+  if (params.has('semCarroPorDentro')) return false;
+  if (params.has('carroPorDentro')) return true;
+  return CARRO_POR_DENTRO_NO_JOGO;
+}
