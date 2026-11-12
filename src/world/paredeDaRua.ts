@@ -21,9 +21,9 @@ import { PALETTE as P } from '../palette';
  *   Renan cortou isso): é a PEÇA que é feita assim, sempre igual;
  * - o caixilho e a cruz ficam, de qualquer lado: são o que faz o furo ler
  *   "janela" visto de trás;
- * - o vão embaixo do peitoril (1 m) esconde só 1,5 m de chão atrás da parede,
- *   e o do cabeçalho (acima de 2,25) só uma faixa estreita: pela janela dá
- *   para ver o miolo da sala.
+ * - a parede é BAIXA nas asas (1,7 m) e a janela fica nela com o cabeçalho de
+ *   20 cm por cima: o peitoril a 65 cm esconde só 1 m de chão atrás dela, e
+ *   pela janela dá para ver o miolo da sala. Alta (2,4 m) só em volta da porta.
  *
  * Origem: o meio da parede em `x = 0`, o eixo da parede em `z = 0`, a frente da
  * sala (a face de dentro) olhando para `−Z`.
@@ -39,9 +39,17 @@ export interface JanelaDaSala {
 }
 
 export interface ParedeDaRua {
-  /** meia largura da parede alta */
+  /** meia largura da parede inteira */
   readonly meia: number;
-  readonly alto: number;
+  /**
+   * A parede é ESCALONADA: alta no meio, em volta da porta (`altoCentro`, até
+   * `meiaCentro` de cada lado), e mais baixa nas asas, onde moram as janelas
+   * (`altoAsa`). Pedido do Renan: a parede mais baixa, mas ainda dando para ver
+   * um pouco das janelas.
+   */
+  readonly altoCentro: number;
+  readonly altoAsa: number;
+  readonly meiaCentro: number;
   readonly espessura: number;
   /** o vão da porta: aberto até o chão */
   readonly vao: { readonly x0: number; readonly x1: number; readonly alto: number };
@@ -85,15 +93,15 @@ function janelaDeDentro(j: JanelaDaSala, espessura: number): THREE.Group {
   const cortina = toon(P.cortinaDaSala);
   const zc = -(espessura / 2 + 0.06);
   const varao = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, L + 0.5, 8).rotateZ(Math.PI / 2), toon(P.metalGrey));
-  varao.position.set(j.x, j.y0 + A + 0.16, zc);
+  varao.position.set(j.x, j.y0 + A + 0.07, zc);
   g.add(varao);
   for (const lado of [-1, 1]) {
-    const pano = new THREE.Mesh(new THREE.BoxGeometry(0.32, A + 0.3, 0.07), cortina);
-    pano.position.set(j.x + lado * (L / 2 + 0.06), j.y0 + A / 2 + 0.06, zc);
+    const pano = new THREE.Mesh(new THREE.BoxGeometry(0.32, A + 0.1, 0.07), cortina);
+    pano.position.set(j.x + lado * (L / 2 + 0.06), j.y0 + A / 2 + 0.01, zc);
     g.add(pano);
     // as pregas: três varetas de pano mais claras na frente do pano
     for (let k = -1; k <= 1; k++) {
-      const prega = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, A + 0.28, 6), cortina);
+      const prega = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, A + 0.08, 6), cortina);
       prega.position.set(pano.position.x + k * 0.1, pano.position.y, zc - 0.045);
       g.add(prega);
     }
@@ -119,8 +127,12 @@ export function paredeDaRuaPorDentro(p: ParedeDaRua): THREE.Group {
   forma.lineTo(p.vao.x1, p.vao.alto);
   forma.lineTo(p.vao.x1, 0);
   forma.lineTo(p.meia, 0);
-  forma.lineTo(p.meia, p.alto);
-  forma.lineTo(-p.meia, p.alto);
+  forma.lineTo(p.meia, p.altoAsa);
+  forma.lineTo(p.meiaCentro, p.altoAsa);
+  forma.lineTo(p.meiaCentro, p.altoCentro);
+  forma.lineTo(-p.meiaCentro, p.altoCentro);
+  forma.lineTo(-p.meiaCentro, p.altoAsa);
+  forma.lineTo(-p.meia, p.altoAsa);
   forma.closePath();
   for (const j of p.janelas) {
     const furo = new THREE.Path();

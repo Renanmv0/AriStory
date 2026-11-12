@@ -110,7 +110,8 @@ export const casa: SceneDef = {
     // dali para fora, a mureta de sempre.
     const PORTA_DA_RUA = { x: 0, largura: 0.95 };
     const vaoDaRua = PORTA_DA_RUA.largura / 2 + 0.1;
-    const FACHADA_DA_SALA = { meia: 4.7, alto: 2.6 };
+    // (escalonada: alta em volta da porta, baixa onde moram as janelas)
+    const FACHADA_DA_SALA = { meia: 4.7, altoCentro: 2.4, altoAsa: 1.7, meiaCentro: 1.4 };
     w.wall(x0, D / 2, -FACHADA_DA_SALA.meia, D / 2, 0.45, P.wallCream);
     w.wall(FACHADA_DA_SALA.meia, D / 2, W / 2, D / 2, 0.45, P.wallCream);
     w.wall(W / 2, z0, W / 2, D / 2, 0.45, P.wallCream);
@@ -240,10 +241,11 @@ export const casa: SceneDef = {
     // atravessava a soleira): ela acaba onde a parede alta começa.
     const zPorta = D / 2;
     const ESPESSURA = 0.3;
-    const JANELAS_DA_RUA = [-2.75, 2.75].map((x) => ({ x, largura: 1.5, y0: 1.0, alto: 1.25 }));
+    const JANELAS_DA_RUA = [-2.75, 2.75].map((x) => ({ x, largura: 1.5, y0: 0.65, alto: 0.85 }));
     w.add(w.place(
       paredeDaRuaPorDentro({
-        meia: FACHADA_DA_SALA.meia, alto: FACHADA_DA_SALA.alto, espessura: ESPESSURA,
+        meia: FACHADA_DA_SALA.meia, altoCentro: FACHADA_DA_SALA.altoCentro, altoAsa: FACHADA_DA_SALA.altoAsa,
+        meiaCentro: FACHADA_DA_SALA.meiaCentro, espessura: ESPESSURA,
         vao: { x0: PORTA_DA_RUA.x - vaoDaRua, x1: PORTA_DA_RUA.x + vaoDaRua, alto: 2.2 },
         janelas: JANELAS_DA_RUA,
       }),
