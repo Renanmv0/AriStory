@@ -958,7 +958,7 @@ export class Game implements GameAPI {
    * longe — em ortográfica a bolinha do outro lado da mesa tem exatamente o
    * mesmo tamanho da que está no seu nariz.
    */
-  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3): void {
+  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3, campoDeVisao = 58): void {
     if (!de) {
       this.camOmbro = null;
       return;
@@ -966,6 +966,7 @@ export class Game implements GameAPI {
     if (!this.camOmbro) {
       this.camOmbro = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 400);
     }
+    this.camOmbro.fov = campoDeVisao;
     this.camOmbro.aspect = window.innerWidth / window.innerHeight;
     this.camOmbro.position.copy(de);
     if (para) this.camOmbro.lookAt(para);
@@ -2499,6 +2500,10 @@ export class Game implements GameAPI {
 
   cabecaDe(quem: 'jogador' | 'parceiro'): THREE.Vector3 {
     return (quem === 'jogador' ? this.player : this.parceiro).rig.cabecaNoMundo(new THREE.Vector3());
+  }
+
+  encostarNoCarro(quem: 'jogador' | 'parceiro', quanto: number): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.encostarNoCarro(quanto);
   }
 
   mostrarCabeca(quem: 'jogador' | 'parceiro', sim: boolean): void {

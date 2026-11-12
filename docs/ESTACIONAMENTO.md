@@ -6,6 +6,15 @@
 > `docs/BEBITO-MOBILE.md` (o estacionamento já existe, §6) e vem DEPOIS do
 > `docs/BEBITO-MOBILE-DENTRO.md`.
 
+## Atualização da chegada (2026-11-12)
+
+Renan pediu antecipar **só a animação de chegada**, sem o guarda: aproximar,
+parar, abrir a cancela, entrar e estacionar. Em implementação/validação em
+`eventos/bebitoMobile/chegadaNoParque.ts`; a viagem agenda a animação apenas em
+memória, sem criar uma flag persistente que a repetiria ao recarregar.
+O personagem, a avaliação e a loja continuam para depois das novas rotas.
+**Viagens com piloto automático também valem para desbloquear recompensas.**
+
 ## COMECE AQUI
 
 **O pedido** (Renan, 2026-11-12): "criar um personagem que vai cuidar do

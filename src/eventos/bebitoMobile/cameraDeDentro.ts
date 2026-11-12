@@ -43,7 +43,7 @@ export class CameraDeDentro {
   /** o pescoço: 0 é a frente do carro, positivo vira para a esquerda do carro, negativo para a direita */
   giro = 0;
   altura = -0.05;
-  /** sentado (o pescoço de cabine) ou deitado (olhando o teto) */
+  /** sentado (primeira pessoa) ou deitado (tomada dos dois de cima) */
   postura: Postura = 'sentado';
   private ligada = false;
   /** 0 é a tomada de fora, 1 é o olho */
@@ -61,10 +61,17 @@ export class CameraDeDentro {
   private readonly paraFora = new THREE.Vector3();
   private readonly q = new THREE.Quaternion();
 
-  /** encostar no ombro do outro (0 a 1) e para que lado (`+1` é a esquerda do carro, o lado do motorista visto do passageiro) */
+  /** encostar no ombro de quem dirige (0 a 1), com tomada dos dois de frente */
   encostar = 0;
   private encostado = 0;
-  ladoDoOmbro = 1;
+  private especial = 0;
+  private tomadaEspecial: 'ombro' | 'descanso' = 'ombro';
+  private readonly olhoFinal = new THREE.Vector3();
+  private readonly miraFinal = new THREE.Vector3();
+  /** a tomada temporária: a primeira pessoa continua sendo o repouso */
+  get enquadramento(): 'olhos' | 'ombro' | 'descanso' {
+    return this.postura === 'deitado' ? 'descanso' : this.encostar > 0 || this.encostado > 0.01 ? 'ombro' : 'olhos';
+  }
   /** uma peça que acompanha a câmera (o celular na mão): onde fica, em relação a ela */
   private anexo: { obj: THREE.Object3D; direita: number; baixo: number; frente: number } | null = null;
   private readonly cima = new THREE.Vector3(0, 1, 0);
@@ -125,6 +132,9 @@ export class CameraDeDentro {
     if (!this.ligada) return;
     this.ligada = false;
     this.mistura = 1;
+    this.encostar = this.encostado = this.especial = 0;
+    this.carro.mostrarTeto(true);
+    this.g.encostarNoCarro(this.quem, 0);
     this.g.mostrarCabeca(this.quem, true);
     this.anexar(null);
     if (this.devolverIsometrica) this.g.setCameraOmbro(null);
@@ -141,6 +151,7 @@ export class CameraDeDentro {
 
   /** o olhar de um quadro: o manche gira o pescoço (o `g.olharLivre()`), com limite */
   olhar(dt: number): void {
+    if (this.enquadramento !== 'olhos' || this.especial > 0.01) return;
     const m = this.g.olharLivre();
     const p = this.postura === 'deitado' ? PESCOCO_DEITADO : PESCOCO;
     this.giro = THREE.MathUtils.clamp(this.giro - m.x * 1.5 * dt, -p.giro, p.giro);
@@ -162,13 +173,9 @@ export class CameraDeDentro {
     this.dir.set(Math.sin(this.giro) * cosA, Math.sin(this.altura), Math.cos(this.giro) * cosA).applyQuaternion(this.q);
     const alvoDoOlho = this.cabeca.clone().addScaledVector(this.dir, 0.1);
     alvoDoOlho.y += 0.05;
-    // encostar no ombro do outro: o olho vai um tanto para o lado dele (e desce um tico), e o olhar acompanha
+    // O gesto existe no corpo: a tomada de frente permite ver os dois.
     this.encostado += (this.encostar - this.encostado) * (1 - Math.exp(-5 * dt));
-    if (this.encostado > 0.001) {
-      const direitaDoCarro = new THREE.Vector3(1, 0, 0).applyQuaternion(this.q);
-      alvoDoOlho.addScaledVector(direitaDoCarro, this.ladoDoOmbro * 0.3 * this.encostado);
-      alvoDoOlho.y -= 0.06 * this.encostado;
-    }
+    this.g.encostarNoCarro(this.quem, this.encostado);
     if (!this.lido) {
       this.olho.copy(alvoDoOlho);
       this.lido = true;
@@ -177,19 +184,49 @@ export class CameraDeDentro {
     }
     this.mira.copy(this.olho).addScaledVector(this.dir, 5);
 
+    // Tomadas no referencial do carro: acompanham as curvas e as molas.
+    const alvoEspecial = this.postura === 'deitado' || this.encostar > 0 ? 1 : 0;
+    if (alvoEspecial) this.tomadaEspecial = this.postura === 'deitado' ? 'descanso' : 'ombro';
+    const descanso = this.tomadaEspecial === 'descanso';
+    this.especial += Math.sign(alvoEspecial - this.especial) * Math.min(Math.abs(alvoEspecial - this.especial), dt / 1.1);
+    const kEspecial = suave(this.especial);
+    this.olhoFinal.copy(this.olho);
+    this.miraFinal.copy(this.mira);
+    let campoDeVisao = 58;
+    if (this.especial > 0) {
+      const aspecto = typeof window === 'undefined' ? 1.5 : window.innerWidth / window.innerHeight;
+      const para = descanso
+        ? this.carro.cama.localToWorld(new THREE.Vector3(0, 0.8, 0))
+        : this.g.cabecaDe('jogador').add(this.g.cabecaDe('parceiro')).multiplyScalar(0.5);
+      // A tomada fica abaixo do pergolado. A lente abre para caberem os dois no celular.
+      const distancia = descanso ? 2 : Math.max(2.45, 1.45 / aspecto);
+      if (descanso) {
+        const lente = THREE.MathUtils.radToDeg(2 * Math.atan(Math.max(1.5, 1.2 / aspecto) / distancia));
+        campoDeVisao += (lente - 58) * kEspecial * suave(this.mistura);
+      }
+      const deslocamento = descanso
+        ? new THREE.Vector3(0, distancia, 0.35)
+        : new THREE.Vector3(0, 0.22, distancia);
+      deslocamento.applyQuaternion(this.q);
+      this.olhoFinal.lerp(para.clone().add(deslocamento), kEspecial);
+      this.miraFinal.lerp(para, kEspecial);
+    }
+    // Como na barraca: corte visual do teto durante a tomada de cima, sem abrir uma capota.
+    this.carro.mostrarTeto(!(descanso && this.especial > 0.05));
+
     const k = suave(this.mistura);
     const fora = this.fora ? (typeof this.fora === 'function' ? this.fora() : this.fora) : null;
     if (fora && k < 1) {
-      this.deFora.copy(fora.de).lerp(this.olho, k);
-      this.paraFora.copy(fora.para).lerp(this.mira, k);
-      this.g.setCameraOmbro(this.deFora, this.paraFora);
+      this.deFora.copy(fora.de).lerp(this.olhoFinal, k);
+      this.paraFora.copy(fora.para).lerp(this.miraFinal, k);
+      this.g.setCameraOmbro(this.deFora, this.paraFora, campoDeVisao);
     } else {
-      this.g.setCameraOmbro(this.olho, this.mira);
+      this.g.setCameraOmbro(this.olhoFinal, this.miraFinal, campoDeVisao);
     }
     // o que acompanha a câmera (o celular na mão): na frente dela, um pouco abaixo e para o lado
     if (this.anexo) {
-      const cam = k < 1 && fora ? this.deFora : this.olho;
-      const alvo = k < 1 && fora ? this.paraFora : this.mira;
+      const cam = k < 1 && fora ? this.deFora : this.olhoFinal;
+      const alvo = k < 1 && fora ? this.paraFora : this.miraFinal;
       const frente = new THREE.Vector3().subVectors(alvo, cam).normalize();
       this.direitaCam.crossVectors(frente, this.cima).normalize();
       this.cimaCam.crossVectors(this.direitaCam, frente).normalize();
@@ -198,7 +235,7 @@ export class CameraDeDentro {
       obj.lookAt(cam);
     }
     // a cabeça some quando a câmera já está quase dentro dela, e volta quando ela sai
-    this.g.mostrarCabeca(this.quem, this.mistura < 0.8);
+    this.g.mostrarCabeca(this.quem, this.mistura < 0.8 || this.especial > 0.3);
 
     if (this.mistura === this.alvoDaMistura && this.fim) {
       const fim = this.fim;

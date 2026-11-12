@@ -27,6 +27,7 @@ import {
 import { FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
 import { CameraDeDentro } from '../eventos/bebitoMobile/cameraDeDentro';
 import { menuDoPassageiro } from '../eventos/bebitoMobile/passageiro';
+import { agendarChegadaNoParque } from '../eventos/bebitoMobile/chegadaNoParque';
 import { relogioDaCena } from '../eventos/bebitoMobile/presente';
 import { CelularDeJogo } from '../world/celularDeJogo';
 
@@ -660,7 +661,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     const bloqueado = g.emDialogo() || menuAberto || trocando;
     if (acao && !acaoAntes && !bloqueado && estado.visao === 'dentro' && camDentro.ativa && camDentro.dentro >= 0.99 && estado.fase === 'dirigindo') {
       menuAberto = true;
-      void menuDoPassageiro({ g, camera: camDentro, celular, esperar: esperarDaCena }).then(() => { menuAberto = false; });
+      void menuDoPassageiro({ g, camera: camDentro, celular, esperar: esperarDaCena, terminou: () => estado.fase === 'fim' }).finally(() => { menuAberto = false; });
     }
     // (com uma fala aberta o E avança a fala: só conta um E novo depois que ela fechar)
     acaoAntes = acao || bloqueado;
@@ -1096,7 +1097,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       aviso: estado.fase === 'fim' ? '' : aviso, icone, tom,
     });
 
-    if (estado.fase === 'fim' && !terminou) {
+    // A fala da chegada espera a interação corrente; nunca sobrescreve um ask/say pendente.
+    if (estado.fase === 'fim' && !terminou && !menuAberto && !trocando) {
       terminou = true;
       void chegar();
     }
@@ -1129,6 +1131,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       });
     }
     g.setFlag(FLAG_DO_CARRO_NO_PARQUE, ida);
+    if (ida) agendarChegadaNoParque(jogadorDirige ? g.playerId() : (g.playerId() === ARI.id ? RENAN.id : ARI.id));
     g.painelDaViagem(null);
     g.botaoDaViagem(null);
     camDentro.cortar();

@@ -2,8 +2,8 @@
  * O CARRO POR DENTRO (`docs/BEBITO-MOBILE-DENTRO.md`, etapa D parte 1). Tudo atrás
  * da chave própria (`?carroPorDentro`, junto de `?bebito`: o save de teste).
  *
- * - ESCONDIDO: sem `?carroPorDentro` a porta da garagem continua "Sair de carro"
- *   (a chave do carro por dentro está desligada no jogo);
+ * - ESCONDIDO: com `?semCarroPorDentro` a porta da garagem continua "Sair de carro"
+ *   (a chave do carro por dentro está ligada no jogo);
  * - ENTRAR: da garagem, "Entrar no Bebito Mobile": a câmera vai até a porta, a porta
  *   abre de verdade, quem o jogador controla senta no banco do motorista e a câmera
  *   chega aos olhos dele (a cabeça some); a porta fecha, o outro está sentado ao
@@ -11,17 +11,16 @@
  * - DESCER: a câmera volta, a porta abre e fecha, e os dois ficam em pé FORA do carro,
  *   com a pose de carro desfeita, a cabeça de volta e o jogador destravado
  *   (a lição do bug da pose que ficou grudada);
- * - DESCANSAR: os encostos deitam e viram a cama, os dois deitam lado a lado (a câmera olha o
- *   teto, que fica FECHADO), a conversa curta, e o menu "Cochilar / Sair do carro"; o cochilo é
+ * - DESCANSAR: os encostos deitam e viram a cama, os dois deitam lado a lado (a câmera mostra os dois
+ *   de cima, com corte visual do teto), a conversa curta, e o menu "Cochilar / Sair do carro"; o cochilo é
  *   um fade com ronco; sair desfaz tudo (levantar e descer); a memória e o contador no save;
  * - VIAJAR: de dentro, "Viajar pro Villa Lobos" leva à pergunta de quem dirige e à estrada (testado
  *   com cada resposta: o motorista certo ao volante, nenhuma pose nem cabeça escondida sobrando);
- * - SEMCHAVE: na estrada, sem `?carroPorDentro`, não existe o 👀 nem o V faz nada;
+ * - SEMCHAVE: na estrada, com `?semCarroPorDentro`, não existe o 👀 nem o V faz nada;
  * - PASSAGEIRO: na viagem, o 👀 (sempre na tela) liga a visão do passageiro: o carro vai no
  *   PILOTO AUTOMÁTICO, quem dirigia vai para o banco da carona e o outro assume o volante,
  *   a câmera entra nos olhos de quem joga, o menu "O que fazer?" é o de cada um (o Ari: cantarolar
- *   Dança Kuduro; o Renan: jogar Brawl Stars), encostar no ombro leva o olho para o lado do
- *   motorista, e voltar devolve o volante;
+ *   Dança Kuduro; o Renan: jogar Brawl Stars), encostar no ombro mostra os dois de frente, com o gesto no corpo, e voltar devolve o volante;
  * - PILOTO: a viagem inteira no piloto automático de jogo (nenhum tropeço nem susto, para nas
  *   faixas e no sinal, sem perseguir os corações) e a chegada com tudo desfeito.
  *
@@ -32,6 +31,7 @@ import { chromium } from 'playwright';
 
 const OUT = process.argv[2] ?? './dentro';
 const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4173';
+if (new URL(BASE).hostname === 'renanmv0.github.io') throw new Error('Use somente o preview separado do jogo oficial.');
 const CHROME = process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const SO = process.env.SO ? process.env.SO.split(',') : null;
 const roda = (parte) => !SO || SO.includes(parte);
@@ -108,7 +108,7 @@ if (roda('escondido')) {
   const page = await pagina();
   await abrir(page, 'bebito&cena=casa');
   await comOCarro(page);
-  await abrir(page, 'bebito&cena=frente-da-casa');
+  await abrir(page, 'bebito&semCarroPorDentro&cena=frente-da-casa');
   const r = await rotulos(page);
   confere(r.includes('Sair de carro') && !r.includes('Entrar no Bebito Mobile'), 'a porta do motorista é a de sempre (Sair de carro)');
   await page.context().close();
@@ -116,15 +116,16 @@ if (roda('escondido')) {
 
 // ===================================================================== entrar
 let ficou = null;
-if (roda('entrar') || roda('descer')) {
+if (roda('entrar') || roda('descer') || roda('descansar')) {
   console.log('— entrar no carro pela garagem (e descer)');
   const page = await pagina();
   await abrir(page, 'bebito&cena=casa');
   await comOCarro(page);
   await abrir(page, 'bebito&carroPorDentro&cena=frente-da-casa');
+  if (process.env.JOGADOR === 'renan') await page.evaluate(() => window.jogo.swapCharacters());
   const r = await rotulos(page);
   confere(r.includes('Entrar no Bebito Mobile') && !r.includes('Sair de carro'), 'a porta do motorista vira "Entrar no Bebito Mobile"');
-  await page.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 2; });
+  await page.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 5; });
   const antes = await estado(page);
   await disparar(page, 'frente:sair-de-carro');
   // a câmera vai até a porta e a porta abre
@@ -180,6 +181,7 @@ if (roda('entrar') || roda('descer')) {
     });
     confere(fora.eu && fora.ele, 'os dois ficaram FORA dos colisores (nenhum preso dentro do carro)');
     confere(fora.cam, 'a câmera isométrica voltou');
+    confere(await page.evaluate(() => window.jogo.scene.getObjectByName('bebito-mobile').getObjectByName('teto').visible), 'o teto voltou ao sair');
     confere(fora.encostos < 0.01, `os encostos voltaram para cima (${fora.encostos.toFixed(2)})`);
   };
 
@@ -201,7 +203,7 @@ if (roda('entrar') || roda('descer')) {
     await page.locator('.escolhas.show button').nth(1).click();
     await page.waitForFunction(() => window.jogo.scene.getObjectByName('bebito-mobile').userData.carro.camaFeita > 0.99, null, { timeout: 120000 });
     await page.waitForFunction(() => window.jogo.player.rig.deitado === true, null, { timeout: 60000 }).catch(() => {});
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => window.aristoryBebitoMobile.depuracaoDoCarroPorDentro.atual.camera.especial === 1, null, { timeout: 60000 });
     const dd = await page.evaluate(() => {
       const j = window.jogo;
       const cam = j.camOmbro;
@@ -213,6 +215,8 @@ if (roda('entrar') || roda('descer')) {
         ancora: j.player.object.parent?.name,
         camaFeita: carro.camaFeita,
         olhaPraCima: dir.y,
+        alturaDaCamera: cam.position.y,
+        peso: { ...j.renderer.info.render },
         musica: j.audio?.clima ?? null,
         tetoFechado: carro.group.getObjectByName('teto').visible,
         cabecaSumiu: j.player.rig.head.visible === false,
@@ -220,10 +224,11 @@ if (roda('entrar') || roda('descer')) {
     });
     console.log(`   deitados: ${JSON.stringify(dd)}`);
     confere(dd.camaFeita > 0.99 && dd.deitados && dd.montados && dd.ancora === 'cama', 'os encostos deitaram e os dois estão deitados na cama do carro');
-    confere(dd.olhaPraCima > 0.6, `a câmera olha o teto (inclinação ${dd.olhaPraCima.toFixed(2)})`);
-    confere(dd.tetoFechado, 'o teto continua fechado (a garagem é coberta: sem céu)');
-    confere(dd.cabecaSumiu, 'a cabeça de quem olha continua escondida');
-    await page.screenshot({ path: `${OUT}-7-deitados-olhando-o-teto.png` });
+    confere(dd.olhaPraCima < -0.85, `a câmera mostra os dois de cima (inclinação ${dd.olhaPraCima.toFixed(2)})`);
+    confere(dd.alturaDaCamera < 3.0, 'a câmera fica abaixo das vigas da garagem');
+    confere(!dd.tetoFechado, 'o corte visual do teto permite ver os dois, como na barraca');
+    confere(!dd.cabecaSumiu, 'a cabeça de quem joga está visível na tomada de cima');
+    await page.screenshot({ path: `${OUT}-7-descanso-vista-de-cima.png` });
     // a conversa curta, e o menu
     let menu2 = [];
     for (let i = 0; i < 40 && !menu2.length; i++) {
@@ -233,7 +238,7 @@ if (roda('entrar') || roda('descer')) {
     confere(menu2.join('|') === 'Cochilar um pouquinho|Sair do carro', `depois da conversa, o menu (${menu2.join(', ')})`);
     await page.evaluate(() => { window.aristoryBebitoMobile.depuracaoDoCarroPorDentro.atual.camera.giro = -1.2; window.aristoryBebitoMobile.depuracaoDoCarroPorDentro.atual.camera.altura = 0.5; });
     await page.waitForTimeout(800);
-    await page.screenshot({ path: `${OUT}-8-deitados-olhando-o-outro.png` });
+    await page.screenshot({ path: `${OUT}-8-descanso-menu.png` });
     await page.evaluate(() => { window.aristoryBebitoMobile.depuracaoDoCarroPorDentro.atual.camera.giro = 0; window.aristoryBebitoMobile.depuracaoDoCarroPorDentro.atual.camera.altura = 1.1; });
     const guardado = await page.evaluate(() => ({
       memoria: (JSON.parse(localStorage.getItem('aristory.save.v1.bebito') ?? '{}').memories ?? []).some((m) => m.id === 'descansamos-no-bebito-mobile'),
@@ -289,6 +294,7 @@ if (roda('viajar')) {
     await abrir(page, 'bebito&cena=casa');
     await comOCarro(page);
     await abrir(page, 'bebito&carroPorDentro&cena=frente-da-casa');
+  if (process.env.JOGADOR === 'renan') await page.evaluate(() => window.jogo.swapCharacters());
     await page.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 3; });
     await disparar(page, 'frente:sair-de-carro');
     await page.waitForFunction(() => window.aristoryBebitoMobile.depuracaoDoCarroPorDentro.atual?.dentro === true, null, { timeout: 120000 });
@@ -332,7 +338,7 @@ if (roda('semChave')) {
   const page = await pagina();
   await abrir(page, 'bebito&cena=casa');
   await comOCarro(page);
-  await abrir(page, 'bebito&cena=viagem-de-carro&viagem=ida,ari,3');
+  await abrir(page, 'bebito&semCarroPorDentro&cena=viagem-de-carro&viagem=ida,ari,3');
   await naEstrada(page);
   await dirigindo(page);
   await page.keyboard.press('KeyV');
@@ -381,15 +387,13 @@ if (roda('passageiro')) {
   await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.passageiro.camera.encostar === 1, null, { timeout: 30000 });
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${OUT}-p4-no-ombro.png` });
-  const lado = await page.evaluate(() => {
+  const frente = await page.evaluate(() => {
     const j = window.jogo;
-    const cam = j.camOmbro;
     const carro = j.scene.getObjectByName('bebito-mobile');
-    const loc = carro.worldToLocal(cam.position.clone());
-    return { x: loc.x };
+    const cam = carro.worldToLocal(j.camOmbro.position.clone());
+    return { z: cam.z, cabecas: j.player.rig.head.visible && j.parceiro.rig.head.visible, inclina: j.player.rig.body.rotation.z };
   });
-  console.log(`   olho (x do carro) no ombro: ${lado.x.toFixed(2)}`);
-  confere(lado.x > -0.25, `encostando no ombro, o olho foi para o lado do motorista (x ${lado.x.toFixed(2)}, antes ≈ −0,47)`);
+  confere(frente.z > 2 && frente.cabecas && frente.inclina < -0.2, 'o carinho é visto de frente, com as duas cabeças visíveis e o passageiro inclinado');
   // as falas, e voltar ao menu
   confere(await ateOsBotoes(page), 'depois do ombro, o menu volta');
   // cantarolar Dança Kuduro
@@ -398,32 +402,7 @@ if (roda('passageiro')) {
   await page.waitForFunction((n) => (window.jogo.audio.contagem.get('cantarolarKuduro') ?? 0) > n, cant0, { timeout: 30000 });
   confere(true, 'o Ari cantarola Dança Kuduro (o som tocou)');
   confere(await ateOsBotoes(page), 'depois do canto, o menu volta');
-  // o outro caminho do menu: o do Renan de carona (o `playerId` trocado só para ver as opções e o celular)
-  await page.locator('.escolhas.show button').nth(3).click();
-  await page.waitForTimeout(500);
-  await page.evaluate(() => { window.jogo.playerId = () => 'renan'; });
-  await page.keyboard.press('KeyE');
-  await page.waitForFunction(() => document.querySelectorAll('.escolhas.show button').length > 0, null, { timeout: 30000 });
-  const menuR = await viagemEstado(page);
-  confere(menuR.botoes[0] === 'Jogar Brawl Stars no celular', `o menu do Renan de carona começa por jogar no celular (${menuR.botoes[0]})`);
-  await page.locator('.escolhas.show button').nth(0).click();
-  await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.passageiro.celular.group.visible, null, { timeout: 60000 }).catch(() => {});
-  // (as falas antes do celular aparecer)
-  for (let i = 0; i < 40; i++) {
-    const vis = await page.evaluate(() => window.aristoryBebitoMobile.viagem.passageiro.celular.group.visible);
-    if (vis) break;
-    await aperta(page, 1);
-  }
-  await page.waitForTimeout(900);
-  const cel = await page.evaluate(() => {
-    const j = window.jogo;
-    const c = window.aristoryBebitoMobile.viagem.passageiro.celular.group;
-    const cam = j.camOmbro;
-    return { visivel: c.visible, dist: c.position.distanceTo(cam.position) };
-  });
-  confere(cel.visivel && cel.dist > 0.2 && cel.dist < 0.5, `o celular aparece na frente dos olhos (a ${cel.dist.toFixed(2)} m)`);
-  await page.screenshot({ path: `${OUT}-p5-celular.png` });
-  await page.evaluate(() => { delete window.jogo.playerId; });
+  // O Renan de verdade (troca de personagem, câmera e gesto) é conferido em carroCamerasEChegada.mjs.
   // o carro andou todo esse tempo, sozinho
   const s1 = (await viagemEstado(page)).s;
   confere(s1 > s0 + 5, `o carro seguiu sozinho durante o menu e as falas (${s0.toFixed(0)} → ${s1.toFixed(0)} m)`);
@@ -466,7 +445,7 @@ if (roda('piloto')) {
     if (e.cena === 'villa-lobos') break;
     await aperta(page, 1);
   }
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(() => window.jogo.idDaCena === 'villa-lobos' && !window.jogo.player.locked && window.jogo.scene.getObjectByName('bebito-mobile')?.userData.chegada?.fase === 'concluida', null, { timeout: 180000 });
   const chegou = await page.evaluate(() => ({
     cena: window.jogo.idDaCena, poseEu: window.jogo.player.rig.noCarro, poseEle: window.jogo.parceiro.rig.noCarro,
     cabeca: window.jogo.player.rig.head.visible, travado: window.jogo.player.locked,

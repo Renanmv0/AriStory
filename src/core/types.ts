@@ -599,9 +599,10 @@ export interface GameAPI {
   /**
    * Camera "por cima do ombro": perspectiva colocada em `de` olhando para
    * `para`. Passar `null` devolve a isometrica de sempre. E o que o ping pong
-   * usa para virar uma falsa primeira pessoa.
+   * usa para virar uma falsa primeira pessoa. O campo de visão é vertical, em
+   * graus (58 por padrão); tomadas de cima podem abrir a lente no celular.
    */
-  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3): void;
+  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3, campoDeVisao?: number): void;
   /** posicao do ponteiro (mouse ou dedo) em -1..1, y para cima */
   pointer(): { x: number; y: number };
   /** placar do minigame; null esconde */
@@ -1172,6 +1173,8 @@ export interface GameAPI {
    * `volante` é o giro do volante agora, para as mãos acompanharem.
    */
   poseNoCarro(quem: 'jogador' | 'parceiro', pose: 'dirigindo' | 'passageiro' | null, volante?: number): void;
+  /** inclina o passageiro para o ombro do motorista; zero devolve a pose normal */
+  encostarNoCarro(quem: 'jogador' | 'parceiro', quanto: number): void;
   /** o centro da cabeça de um dos dois, no mundo (o olho da câmera de dentro do carro) */
   cabecaDe(quem: 'jogador' | 'parceiro'): THREE.Vector3;
   /** esconde (ou mostra) a cabeça de um dos dois: na primeira pessoa a câmera nasce dentro dela */

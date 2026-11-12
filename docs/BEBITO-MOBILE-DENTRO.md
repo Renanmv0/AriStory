@@ -5,6 +5,30 @@
 > `docs/BEBITO-MOBILE.md` (o carro, a quest e a viagem); **as próximas rotas
 > (parque ↔ clube ↔ escola) ficam para o plano seguinte, de propósito.**
 
+## Atualização em validação — câmeras e chegada (Renan, 2026-11-12)
+
+- A primeira pessoa continua sendo a visão normal. **Encostar no ombro** mostra os
+  dois de frente, com o passageiro inclinando o corpo; ao acabar, volta aos olhos.
+- **Descansar** mostra os dois de cima, como na barraca. O teto recebe um corte
+  apenas visual durante essa tomada e volta ao levantar; não é abrir a capota
+  para olhar o céu. Conversa, cochilo e despertar usam a tomada dos dois.
+- Ao chegar ao Villa Lobos, o carro se aproxima da cancela, espera abrir, entra,
+  faz a curva até a vaga do coração e devolve a dupla e o controle. O motorista
+  que estava ao volante na estrada é preservado. Recarregar não repete a cena.
+- **O piloto automático conta para a nota e para desbloquear recompensas**,
+  decisão do Renan nesta atualização. A carteira e a loja do guarda continuam
+  no plano futuro; aqui continuam valendo a pontuação e o recorde existentes.
+- Toda validação e foto acontece num preview de origem diferente do site oficial
+  (`https://renanmv0.github.io/AriStory/`), com contexto de navegador e save de teste.
+  Somente a versão validada pode ir para `main`, que publica automaticamente.
+
+Testes: `scripts/carroPorDentro.mjs` (incluindo `SO=viajar,semChave` e
+`SO=descansar`) e `scripts/carroCamerasEChegada.mjs` (os dois personagens reais,
+carinho, retorno à primeira pessoa, chegada manual/automática e recarga do save).
+`CEL=1` confere o celular em pé; `CHROME_PATH` escolhe o Chromium instalado.
+Resultados e fotos ficam fora do repositório. Esta seção prevalece sobre as
+propostas antigas de câmera abaixo; a implementação ainda precisa da validação.
+
 ## COMECE AQUI
 
 **O pedido** (Renan, 2026-11-12): duas coisas, e só elas por enquanto.
