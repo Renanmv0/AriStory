@@ -24,7 +24,11 @@ import {
   PISTA, biomaEm, eixoDaRota, estrelasDaViagem, gerarRota, pedidoDeViagem, type EventoDaRota, type PedidoDeViagem,
   type Rota,
 } from '../eventos/bebitoMobile/rota';
-import { FLAG_DO_CARRO_NO_PARQUE } from '../eventos/BebitoMobile';
+import { FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
+import { CameraDeDentro } from '../eventos/bebitoMobile/cameraDeDentro';
+import { menuDoPassageiro } from '../eventos/bebitoMobile/passageiro';
+import { relogioDaCena } from '../eventos/bebitoMobile/presente';
+import { CelularDeJogo } from '../world/celularDeJogo';
 
 /**
  * ==================================================== A VIAGEM DE CARRO
@@ -65,7 +69,9 @@ export const depuracaoDaViagem: {
   camera: { de: [number, number, number]; para: [number, number, number] } | null;
   /** o ponto do mundo em `s` (ao longo) e `l` (para a direita): o teste acha os bichos e as peças por ele */
   naPista: ((s: number, l: number) => { x: number; z: number }) | null;
-} = { vezes: 1, piloto: 'nenhum', estado: null, rota: null, camera: null, naPista: null };
+  /** a visão do passageiro: o teste liga e desliga, e olha a câmera e o celular */
+  passageiro: { trocar: () => Promise<void>; camera: CameraDeDentro; celular: CelularDeJogo } | null;
+} = { vezes: 1, piloto: 'nenhum', estado: null, rota: null, camera: null, naPista: null, passageiro: null };
 
 export interface EstadoDaViagem {
   s: number;
@@ -79,6 +85,10 @@ export interface EstadoDaViagem {
   /** o que já aconteceu, por tipo (o teste confere) */
   vistos: Record<string, number>;
   aviso: string;
+  /** a visão: de fora (a perseguição, quem joga dirige) ou de dentro (a de quem joga de carona, o carro no piloto automático) */
+  visao: 'fora' | 'dentro';
+  /** o piloto automático de JOGO (o carro dirige sozinho: a visão do passageiro) — o de teste é `depuracaoDaViagem.piloto` */
+  piloto: boolean;
 }
 
 const V = THREE.Vector3;
@@ -439,7 +449,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   w.add(fundir(carro.group));
   const estado: EstadoDaViagem = {
     s: 6, l: PISTA.meios[1], v: 0, fase: 'partida',
-    coracoes: 0, tropecos: 0, sustos: 0, gentilezas: 0, vistos: {}, aviso: '',
+    coracoes: 0, tropecos: 0, sustos: 0, gentilezas: 0, vistos: {}, aviso: '', visao: 'fora', piloto: false,
   };
   depuracaoDaViagem.estado = estado;
   depuracaoDaViagem.rota = rota;
@@ -456,7 +466,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const marca = (tipo: string): void => { estado.vistos[tipo] = (estado.vistos[tipo] ?? 0) + 1; };
 
   // quem dirige senta no lugar do motorista, seja quem for que o jogador controla
-  const jogadorDirige = g.playerId() === pedido.motorista;
+  // (e muda no meio da viagem: na visão do passageiro, quem joga vai para o banco do carona e o outro assume o volante)
+  let jogadorDirige = g.playerId() === pedido.motorista;
   const acima = new V(0, -0.47, 0);
   /*
    * OS DOIS SENTAM NO PRIMEIRO QUADRO, e não aqui: o motor põe a dupla no
@@ -474,14 +485,16 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   };
   const carona = pedido.motorista === ARI.id ? RENAN : ARI;
   const motorista = pedido.motorista === ARI.id ? ARI : RENAN;
-  const falasDaCarona = FALAS[carona.id === ARI.id ? 'ari' : 'renan'];
   let ultimaFala = -9;
+  /** quem é a carona agora: na visão do passageiro, é quem joga; senão, o outro de quem foi escolhido para dirigir */
+  const caronaAgora = (): typeof ARI => (estado.visao === 'dentro' ? (g.playerId() === ARI.id ? ARI : RENAN) : carona);
   /** a carona comenta num aviso de canto, sem parar o carro (e sem atropelar o comentário anterior) */
   const comentar = (momento: Momento, sempre = false): void => {
     if (!sempre && relogio - ultimaFala < 3.2) return;
     ultimaFala = relogio;
-    const opcoes = falasDaCarona[momento];
-    g.toast(`${carona.name}: ${opcoes[Math.floor(rnd() * opcoes.length)]}`, '💬');
+    const c = caronaAgora();
+    const opcoes = FALAS[c.id === ARI.id ? 'ari' : 'renan'][momento];
+    g.toast(`${c.name}: ${opcoes[Math.floor(rnd() * opcoes.length)]}`, '💬');
   };
   if (rota.momento === 'tarde') carro.acenderFarois(true);
 
@@ -491,7 +504,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const alvoDoOlho = new V();
   const frente = new V();
   let cameraPosta = false;
-  const filmar = (dt: number): void => {
+  const filmar = (dt: number, aplicar = true): void => {
     const emPe = typeof window !== 'undefined' && window.innerWidth / window.innerHeight < 0.8;
     const p = carro.group.position;
     // (a câmera olha para onde a pista VAI, um pouco à frente: a curva aparece antes de chegar)
@@ -504,33 +517,49 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       cameraPosta = true;
     } else olho.lerp(alvoDoOlho, 1 - Math.exp(-dt * 7));
     olhar.set(p.x + frente.x * 8, 1.1, p.z + frente.z * 8);
+    if (!aplicar) return;
     const doTeste = depuracaoDaViagem.camera;
     if (doTeste) g.setCameraOmbro(new V(...doTeste.de), new V(...doTeste.para));
     else g.setCameraOmbro(olho, olhar);
   };
 
+  // ---------------------------------------------------- a visão do passageiro (o carro por dentro)
+  const comPassageiro = carroPorDentroNestaPagina();
+  const camDentro = new CameraDeDentro(g, carro, 'jogador', false);
+  const celular = new CelularDeJogo();
+  if (comPassageiro) w.add(celular.group);
+  const { esperar: esperarDaCena } = relogioDaCena(w);
+
   // ------------------------------------------------------------ o piloto do teste
   /** o manche que o piloto automático daria agora (o teste liga; `distraido` não mexe em nada) */
   const piloto = (): { x: number; y: number; buzina: boolean } => {
-    if (depuracaoDaViagem.piloto !== 'bom') return { x: 0, y: 0, buzina: false };
-    let alvoL = estado.l;
+    const deJogo = estado.piloto && depuracaoDaViagem.piloto !== 'bom';
+    if (depuracaoDaViagem.piloto !== 'bom' && !estado.piloto) return { x: 0, y: 0, buzina: false };
+    /*
+     * O PILOTO DE JOGO é gentil (a visão do passageiro): fica na faixa dele e NÃO persegue os
+     * corações (os da viagem são de quem dirige, e a carona não os ganha), olha mais longe e
+     * freia mais cedo e mais suave que o do teste. O de TESTE (`bom`) é o de sempre.
+     */
+    let alvoL = deJogo ? PISTA.meios[1] : estado.l;
     let y = 0;
-    // os corações mostram a faixa livre: segue o próximo
     let melhor = 1e9;
-    rota.coracoes.forEach((c, i) => {
-      const d = c.s - estado.s;
-      if (!coracoes.pego(i) && d > 1 && d < 16 && d < melhor) {
-        melhor = d;
-        alvoL = c.l;
-      }
-    });
+    if (!deJogo) {
+      // os corações mostram a faixa livre: segue o próximo
+      rota.coracoes.forEach((c, i) => {
+        const d = c.s - estado.s;
+        if (!coracoes.pego(i) && d > 1 && d < 16 && d < melhor) {
+          melhor = d;
+          alvoL = c.l;
+        }
+      });
+    }
     for (const vivo of vivos) {
       const e = vivo.e;
       const d = e.s - estado.s;
       const outra = PISTA.meios[e.faixa === 0 ? 1 : 0];
       if (e.tipo === 'obra' && d < 22 && d > -22) alvoL = outra;
       if (vivo.onibus && !vivo.onibus.passou && vivo.onibus.s - estado.s < 30 && vivo.onibus.s - estado.s > -12) alvoL = outra;
-      if (e.tipo === 'lombada' && d > 0 && d < 16 && estado.v > 5) y = -0.8;
+      if (e.tipo === 'lombada' && d > 0 && d < (deJogo ? 24 : 16) && estado.v > (deJogo ? 4 : 5)) y = -0.8;
       if (e.tipo === 'buracos' && e.buracos) {
         for (const b of e.buracos) {
           const db = e.s + b.ds - estado.s;
@@ -539,14 +568,67 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       }
       const parar = (vivo.travessia && vivo.travessia.estado !== 'feito') || (vivo.semaforo && vivo.semaforo.cor !== 'verde');
       const ateALinha = e.s - LINHA_DE_PARADA - 2.9 - estado.s;
-      if (parar && ateALinha > -1 && ateALinha < 26) {
+      if (parar && ateALinha > -1 && ateALinha < (deJogo ? 42 : 26)) {
         const precisa = (estado.v * estado.v) / (2 * Math.max(0.5, ateALinha));
-        if (precisa > 5 || ateALinha < 1.2) y = -1;
-        else if (estado.v > 4) y = -0.4;
+        if (precisa > (deJogo ? 3 : 5) || ateALinha < (deJogo ? 2 : 1.2)) y = -1;
+        else if (estado.v > (deJogo ? 3.5 : 4)) y = -(deJogo ? 0.55 : 0.4);
       }
     }
     const x = Math.max(-1, Math.min(1, (alvoL - estado.l) * 1.4));
     return { x, y, buzina: false };
+  };
+
+  // ------------------------------------------------ trocar de visão e o que fazer de carona
+  let trocando = false;
+  let menuAberto = false;
+  let acaoAntes = false;
+  /**
+   * 👀 (ou V): liga a visão do passageiro — o carro assume o PILOTO AUTOMÁTICO e a câmera entra nos olhos
+   * de quem joga, que vai para o banco da carona (se dirigia, o outro assume o volante: "deixa que eu
+   * dirijo um pouco"). De novo: a câmera volta, o volante volta e cada um ao seu banco.
+   */
+  const trocarDeVisao = async (): Promise<void> => {
+    if (trocando || g.emDialogo() || estado.fase === 'fim') return;
+    trocando = true;
+    if (estado.visao === 'fora') {
+      estado.piloto = true;
+      if (jogadorDirige) {
+        jogadorDirige = false;
+        sentar();
+        g.toast(`${g.companionName()}: Deixa que eu dirijo um pouco.`, '🚙');
+      } else g.toast('O Bebito dirige sozinho', '🚙');
+      estado.visao = 'dentro';
+      camDentro.deitar(false);
+      await camDentro.ligar(() => ({ de: olho, para: olhar }), 1.3);
+    } else {
+      await camDentro.desligar(() => ({ de: olho, para: olhar }), 1.0);
+      estado.visao = 'fora';
+      estado.piloto = false;
+      jogadorDirige = g.playerId() === pedido.motorista;
+      sentar();
+      g.toast('Você pegou o volante', '🚙');
+    }
+    trocando = false;
+  };
+  depuracaoDaViagem.passageiro = { trocar: trocarDeVisao, camera: camDentro, celular };
+  /** o botão sempre na tela, a tecla V, e o E (ação) que abre o menu do passageiro */
+  const vigiarOPassageiro = (): void => {
+    const noAr = estado.fase === 'dirigindo' || estado.fase === 'chegando';
+    g.botaoDaViagem(
+      noAr
+        ? { icone: estado.visao === 'dentro' ? '🚙' : '👀', rotulo: estado.visao === 'dentro' ? 'Pegar o volante' : 'Ver da janela do passageiro', ativo: estado.visao === 'dentro' }
+        : null,
+      () => { void trocarDeVisao(); },
+    );
+    if (noAr && g.keyPressed('KeyV')) void trocarDeVisao();
+    const acao = g.acaoCrua();
+    const bloqueado = g.emDialogo() || menuAberto || trocando;
+    if (acao && !acaoAntes && !bloqueado && estado.visao === 'dentro' && camDentro.ativa && camDentro.dentro >= 0.99 && estado.fase === 'dirigindo') {
+      menuAberto = true;
+      void menuDoPassageiro({ g, camera: camDentro, celular, esperar: esperarDaCena }).then(() => { menuAberto = false; });
+    }
+    // (com uma fala aberta o E avança a fala: só conta um E novo depois que ela fechar)
+    acaoAntes = acao || bloqueado;
   };
 
   // ---------------------------------------------------------------- o quadro
@@ -561,10 +643,12 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     respingos.update(dt);
     if (aro) aro.rotation.z += dt * 0.12;
 
-    // o manche: virar, acelerar e frear (com fala na tela, ou chegando, ninguém mexe)
+    // o manche: virar, acelerar e frear (com fala na tela, ou chegando, ninguém mexe). O PILOTO AUTOMÁTICO
+    // dirige mesmo com uma fala ou o menu do passageiro na tela: o carro não pode parar de frear na faixa
+    // só porque alguém abriu um balão
     const livre = estado.fase === 'dirigindo' && !g.emDialogo();
-    const automatico = depuracaoDaViagem.piloto !== 'nenhum';
-    const manche = !livre ? { x: 0, y: 0 } : automatico ? piloto() : g.olharLivre();
+    const automatico = depuracaoDaViagem.piloto !== 'nenhum' || estado.piloto;
+    const manche = estado.fase !== 'dirigindo' ? { x: 0, y: 0 } : automatico ? piloto() : livre ? g.olharLivre() : { x: 0, y: 0 };
     const buzinou = livre && !automatico && g.acaoCrua();
 
     // ---- os eventos que mexem com o que o carro pode fazer
@@ -950,13 +1034,26 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
 
     // ---- o que se vê: só os trechos de perto
     for (const t of trechos) t.grupo.visible = t.s1 > estado.s - 22 && t.s0 < estado.s + 160;
-    filmar(dt);
+    // a câmera: a de perseguição, ou (visão do passageiro) a de dentro do carro, que desliza de uma para a outra
+    if (estado.visao === 'dentro' && camDentro.ativa) {
+      filmar(dt, false);
+      if (camDentro.dentro >= 0.99 && !g.emDialogo()) camDentro.olhar(dt);
+      camDentro.update(dt);
+    } else filmar(dt);
+    celular.update(dt);
+    if (comPassageiro) vigiarOPassageiro();
 
     // ---- o painel
     if (!aviso && estado.fase === 'dirigindo' && relogio < 9) {
       const toque = typeof window !== 'undefined' && 'ontouchstart' in window;
       aviso = toque ? 'Manche: vira e freia · botão: buzina' : '← → vira · ↓ freia · ↑ acelera · E buzina';
       icone = '🚙';
+    }
+    if (estado.piloto && aviso) aviso = tom === 'pare' ? 'O Bebito está parando…' : 'O Bebito está de olho na pista…';
+    if (!aviso && estado.visao === 'dentro' && camDentro.dentro >= 0.99 && estado.fase === 'dirigindo') {
+      const toque = typeof window !== 'undefined' && 'ontouchstart' in window;
+      aviso = toque ? '✨ escolhe o que fazer · 🚙 pega o volante' : 'E: o que fazer · V: pegar o volante';
+      icone = '👀';
     }
     estado.aviso = aviso;
     g.painelDaViagem({
@@ -998,6 +1095,9 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     }
     g.setFlag(FLAG_DO_CARRO_NO_PARQUE, ida);
     g.painelDaViagem(null);
+    g.botaoDaViagem(null);
+    camDentro.cortar();
+    estado.piloto = false;
     g.poseNoCarro('jogador', null);
     g.poseNoCarro('parceiro', null);
     g.setCameraOmbro(null);

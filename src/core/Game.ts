@@ -427,6 +427,7 @@ export class Game implements GameAPI {
     this.ui.showTurno(null);
     this.ui.mostrarCesta(null);
     this.ui.painelDaViagem(null);
+    this.ui.mostrarBotaoDaViagem(null);
     this.parceiro.clearOrder();
     this.setSitting(false);
     // nenhuma pose de cutscene atravessa uma troca de cena: sair da praca de
@@ -1004,6 +1005,10 @@ export class Game implements GameAPI {
 
   painelDaViagem(dados: DadosDaViagem | null): void {
     this.ui.painelDaViagem(dados);
+  }
+
+  botaoDaViagem(dados: { icone: string; rotulo: string; ativo: boolean } | null, aoTocar?: () => void): void {
+    this.ui.mostrarBotaoDaViagem(dados, aoTocar);
   }
 
   acaoCrua(): boolean {

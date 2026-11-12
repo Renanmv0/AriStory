@@ -14,10 +14,17 @@
  * - DESCANSAR: os encostos deitam e viram a cama, os dois deitam lado a lado (a câmera olha o
  *   teto, que fica FECHADO), a conversa curta, e o menu "Cochilar / Sair do carro"; o cochilo é
  *   um fade com ronco; sair desfaz tudo (levantar e descer); a memória e o contador no save;
- * - VIAJAR: de dentro, "Viajar pro Villa Lobos" leva à pergunta de quem dirige e à estrada.
+ * - VIAJAR: de dentro, "Viajar pro Villa Lobos" leva à pergunta de quem dirige e à estrada;
+ * - PASSAGEIRO: na viagem, o 👀 (sempre na tela) liga a visão do passageiro: o carro vai no
+ *   PILOTO AUTOMÁTICO, quem dirigia vai para o banco da carona e o outro assume o volante,
+ *   a câmera entra nos olhos de quem joga, o menu "O que fazer?" é o de cada um (o Ari: cantarolar
+ *   Dança Kuduro; o Renan: jogar Brawl Stars), encostar no ombro leva o olho para o lado do
+ *   motorista, e voltar devolve o volante;
+ * - PILOTO: a viagem inteira no piloto automático de jogo (nenhum tropeço nem susto, para nas
+ *   faixas e no sinal, sem perseguir os corações) e a chegada com tudo desfeito.
  *
  * Uso: node scripts/carroPorDentro.mjs /caminho/prefixo
- *      SO=escondido|entrar|descansar|descer roda uma parte (descansar e descer partem de entrar); CEL=1 no celular em pé
+ *      SO=escondido|entrar|descansar|descer|passageiro|piloto roda uma parte (descansar e descer partem de entrar); CEL=1 no celular em pé
  */
 import { chromium } from 'playwright';
 
@@ -236,6 +243,177 @@ if (roda('entrar') || roda('descer')) {
     await page.locator('.escolhas.show button').nth(1).click();
     await confereDesceu(page, '9');
   }
+  await page.context().close();
+}
+
+// ================================================================= passageiro
+const viagemDe = (quem = 'ari', semente = 3) => `bebito&carroPorDentro&cena=viagem-de-carro&viagem=ida,${quem},${semente}`;
+const naEstrada = (page) => page.waitForFunction(() => window.jogo.idDaCena === 'viagem-de-carro' && !!window.aristoryBebitoMobile.viagem.estado, null, { timeout: 60000 });
+const dirigindo = (page) => page.waitForFunction(() => window.aristoryBebitoMobile.viagem.estado.fase === 'dirigindo', null, { timeout: 120000 });
+const viagemEstado = (page) => page.evaluate(() => {
+  const j = window.jogo;
+  const v = window.aristoryBebitoMobile.viagem;
+  const cam = j.camOmbro;
+  const cabeca = j.player.rig.cabecaNoMundo(new j.scene.position.constructor());
+  const botao = document.querySelector('.botao-da-viagem');
+  return {
+    s: v.estado.s, v: v.estado.v, fase: v.estado.fase, visao: v.estado.visao, piloto: v.estado.piloto,
+    tropecos: v.estado.tropecos, sustos: v.estado.sustos, gentilezas: v.estado.gentilezas, coracoes: v.estado.coracoes,
+    mistura: v.passageiro?.camera.dentro, ativa: v.passageiro?.camera.ativa,
+    poseEu: j.player.rig.noCarro, poseEle: j.parceiro.rig.noCarro,
+    cabeca: j.player.rig.head.visible,
+    distanciaDoOlho: cam ? Math.hypot(cam.position.x - cabeca.x, cam.position.y - cabeca.y, cam.position.z - cabeca.z) : null,
+    botao: botao ? { visivel: botao.classList.contains('show'), ativo: botao.classList.contains('ativo'), icone: botao.textContent } : null,
+    botoes: [...document.querySelectorAll('.escolhas.show button')].map((b) => b.textContent),
+    cena: j.idDaCena,
+  };
+});
+
+if (roda('passageiro')) {
+  console.log('— a visão do passageiro (o carro no piloto automático)');
+  const page = await pagina();
+  await abrir(page, 'bebito&cena=casa');
+  await comOCarro(page);
+  await abrir(page, viagemDe('ari'));
+  await naEstrada(page);
+  await page.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 2; window.aristoryBebitoMobile.viagem.vezes = 2; });
+  await dirigindo(page);
+  const antes = await viagemEstado(page);
+  confere(antes.botao?.visivel && antes.botao.icone === '👀' && antes.visao === 'fora', `o 👀 está sempre na tela durante a viagem (${antes.botao?.icone})`);
+  confere(antes.poseEu === 'dirigindo' && antes.poseEle === 'passageiro', 'quem joga (o Ari) dirige e o outro vai de passageiro');
+  await page.screenshot({ path: `${OUT}-p1-de-fora.png` });
+  // liga a visão do passageiro tocando o botão
+  await page.locator('.botao-da-viagem').click();
+  await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.passageiro.camera.dentro >= 0.99, null, { timeout: 120000 });
+  await page.waitForTimeout(800);
+  const d1 = await viagemEstado(page);
+  console.log(`   dentro: ${JSON.stringify({ visao: d1.visao, piloto: d1.piloto, mistura: d1.mistura, eu: d1.poseEu, ele: d1.poseEle, cabeca: d1.cabeca, dist: d1.distanciaDoOlho })}`);
+  confere(d1.visao === 'dentro' && d1.piloto === true, 'a visão de dentro está ligada e o carro no piloto automático');
+  confere(d1.poseEu === 'passageiro' && d1.poseEle === 'dirigindo', 'quem dirigia foi para o banco da carona e o outro assumiu o volante');
+  confere(d1.cabeca === false && d1.distanciaDoOlho < 0.3, `a câmera está nos olhos de quem joga (a ${d1.distanciaDoOlho?.toFixed(3)} m), a cabeça dele some`);
+  confere(d1.botao?.ativo && d1.botao.icone === '🚙', 'o botão fica marcado (🚙: pegar o volante)');
+  await page.screenshot({ path: `${OUT}-p2-dentro-olhando-a-estrada.png` });
+  // o carro continua andando sozinho (mesmo com o menu e as falas abertas)
+  const s0 = (await viagemEstado(page)).s;
+  // o E abre o menu do passageiro
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => document.querySelectorAll('.escolhas.show button').length > 0, null, { timeout: 30000 });
+  const menu = await viagemEstado(page);
+  confere(menu.botoes.join('|') === 'Cantarolar Dança Kuduro|Elogiar Renan|Encostar no ombro de Renan|Só olhar a paisagem', `o menu do Ari de carona (${menu.botoes.join(', ')})`);
+  await page.screenshot({ path: `${OUT}-p3-menu.png` });
+  const camAntes = await page.evaluate(() => ({ x: window.jogo.camOmbro.position.x, z: window.jogo.camOmbro.position.z }));
+  // encostar no ombro: o olho vai para o lado do motorista
+  await page.locator('.escolhas.show button').nth(2).click();
+  await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.passageiro.camera.encostar === 1, null, { timeout: 30000 });
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: `${OUT}-p4-no-ombro.png` });
+  const lado = await page.evaluate(() => {
+    const j = window.jogo;
+    const cam = j.camOmbro;
+    const carro = j.scene.getObjectByName('bebito-mobile');
+    const loc = carro.worldToLocal(cam.position.clone());
+    return { x: loc.x };
+  });
+  console.log(`   olho (x do carro) no ombro: ${lado.x.toFixed(2)}`);
+  confere(lado.x > -0.25, `encostando no ombro, o olho foi para o lado do motorista (x ${lado.x.toFixed(2)}, antes ≈ −0,47)`);
+  // as falas, e voltar ao menu
+  for (let i = 0; i < 30; i++) {
+    const e = await viagemEstado(page);
+    if (e.botoes.length) break;
+    await aperta(page, 1);
+  }
+  // cantarolar Dança Kuduro
+  const cant0 = await page.evaluate(() => window.jogo.audio.contagem.get('cantarolarKuduro') ?? 0);
+  await page.locator('.escolhas.show button').nth(0).click();
+  await page.waitForFunction((n) => (window.jogo.audio.contagem.get('cantarolarKuduro') ?? 0) > n, cant0, { timeout: 30000 });
+  confere(true, 'o Ari cantarola Dança Kuduro (o som tocou)');
+  for (let i = 0; i < 30; i++) {
+    const e = await viagemEstado(page);
+    if (e.botoes.length) break;
+    await aperta(page, 1);
+  }
+  // o outro caminho do menu: o do Renan de carona (o `playerId` trocado só para ver as opções e o celular)
+  await page.locator('.escolhas.show button').nth(3).click();
+  await page.waitForTimeout(500);
+  await page.evaluate(() => { window.jogo.playerId = () => 'renan'; });
+  await page.keyboard.press('KeyE');
+  await page.waitForFunction(() => document.querySelectorAll('.escolhas.show button').length > 0, null, { timeout: 30000 });
+  const menuR = await viagemEstado(page);
+  confere(menuR.botoes[0] === 'Jogar Brawl Stars no celular', `o menu do Renan de carona começa por jogar no celular (${menuR.botoes[0]})`);
+  await page.locator('.escolhas.show button').nth(0).click();
+  await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.passageiro.celular.group.visible, null, { timeout: 60000 }).catch(() => {});
+  // (as falas antes do celular aparecer)
+  for (let i = 0; i < 12; i++) {
+    const vis = await page.evaluate(() => window.aristoryBebitoMobile.viagem.passageiro.celular.group.visible);
+    if (vis) break;
+    await aperta(page, 1);
+  }
+  await page.waitForTimeout(900);
+  const cel = await page.evaluate(() => {
+    const j = window.jogo;
+    const c = window.aristoryBebitoMobile.viagem.passageiro.celular.group;
+    const cam = j.camOmbro;
+    return { visivel: c.visible, dist: c.position.distanceTo(cam.position) };
+  });
+  confere(cel.visivel && cel.dist > 0.2 && cel.dist < 0.5, `o celular aparece na frente dos olhos (a ${cel.dist.toFixed(2)} m)`);
+  await page.screenshot({ path: `${OUT}-p5-celular.png` });
+  await page.evaluate(() => { delete window.jogo.playerId; });
+  // o carro andou todo esse tempo, sozinho
+  for (let i = 0; i < 40; i++) {
+    const e = await viagemEstado(page);
+    if (e.botoes.length || !(await page.evaluate(() => window.jogo.emDialogo()))) break;
+    await aperta(page, 1);
+  }
+  const s1 = (await viagemEstado(page)).s;
+  confere(s1 > s0 + 5, `o carro seguiu sozinho durante o menu e as falas (${s0.toFixed(0)} → ${s1.toFixed(0)} m)`);
+  await page.context().close();
+}
+
+// ===================================================================== piloto
+if (roda('piloto')) {
+  console.log('— a viagem inteira no piloto automático de jogo (visão do passageiro)');
+  const page = await pagina();
+  await abrir(page, 'bebito&cena=casa');
+  await comOCarro(page);
+  await abrir(page, viagemDe('ari'));
+  await naEstrada(page);
+  await page.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 3; window.aristoryBebitoMobile.viagem.vezes = 3; });
+  await dirigindo(page);
+  await page.locator('.botao-da-viagem').click();
+  await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.passageiro.camera.dentro >= 0.99, null, { timeout: 120000 });
+  // (cada evento da pista, uma foto de dentro: o carro parando na faixa sozinho)
+  let fotos = 0;
+  let fim = null;
+  const t0 = Date.now();
+  while (Date.now() - t0 < 900000) {
+    const e = await viagemEstado(page);
+    if (e.fase === 'fim') { fim = e; break; }
+    if (e.v < 0.3 && e.s > 20 && fotos < 4) {
+      await page.screenshot({ path: `${OUT}-q${fotos++}-parado-no-piloto.png` });
+    }
+    await page.waitForTimeout(1500);
+  }
+  confere(!!fim, 'o piloto chegou ao fim da viagem sozinho');
+  if (fim) {
+    console.log(`   no fim: ${JSON.stringify({ tropecos: fim.tropecos, sustos: fim.sustos, gentilezas: fim.gentilezas, coracoes: fim.coracoes })}`);
+    confere(fim.tropecos === 0 && fim.sustos === 0, `nenhum tropeço nem susto (${fim.tropecos}, ${fim.sustos})`);
+    confere(fim.gentilezas >= 3, `parou para as duas travessias e no sinal (${fim.gentilezas} gentilezas)`);
+  }
+  // a chegada: as falas, e o parque, com tudo desfeito
+  for (let i = 0; i < 80; i++) {
+    const e = await viagemEstado(page);
+    if (e.cena === 'villa-lobos') break;
+    await aperta(page, 1);
+  }
+  await page.waitForTimeout(1500);
+  const chegou = await page.evaluate(() => ({
+    cena: window.jogo.idDaCena, poseEu: window.jogo.player.rig.noCarro, poseEle: window.jogo.parceiro.rig.noCarro,
+    cabeca: window.jogo.player.rig.head.visible, travado: window.jogo.player.locked,
+    botao: document.querySelector('.botao-da-viagem')?.classList.contains('show'),
+    cam: window.jogo.camOmbro == null,
+  }));
+  confere(chegou.cena === 'villa-lobos' && chegou.poseEu === null && chegou.poseEle === null && chegou.cabeca === true, 'chegaram ao parque em pé, sem pose de carro e com a cabeça de volta');
+  confere(!chegou.travado && !chegou.botao && chegou.cam, 'destravados, sem o botão da viagem e com a câmera de sempre');
   await page.context().close();
 }
 

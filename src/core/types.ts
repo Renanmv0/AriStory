@@ -615,6 +615,8 @@ export interface GameAPI {
    * `null` esconde tudo.
    */
   painelDaViagem(dados: DadosDaViagem | null): void;
+  /** o botão da viagem, sempre na tela (o 👀 da visão do passageiro); `null` esconde, `ativo` o deixa marcado */
+  botaoDaViagem(dados: { icone: string; rotulo: string; ativo: boolean } | null, aoTocar?: () => void): void;
   /**
    * A hora certa (as travessuras do Halloween): a fala e uma barra com a
    * agulha indo e voltando; quem joga aperta E (ou toca) para parar.

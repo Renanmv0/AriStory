@@ -129,6 +129,7 @@ export type SomNome =
   | 'motorDoBebito'
   | 'portaDoBebito'
   | 'roncoNoCarro'
+  | 'cantarolarKuduro'
   | 'portaoEletrico'
   | 'freadaDoBebito'
   | 'luzesAcendendo'
@@ -1298,6 +1299,23 @@ export const EFEITOS: Record<SomNome, Receita> = {
     tom(ctx, destino, { freq: 52, glide: 66, quando: t, dur: 0.95, vol: 0.035 * fraco, ataque: 0.25, tipo: 'sawtooth', abafo: 260 });
     chiado(ctx, destino, { quando: t + 1.15, dur: 1.05, vol: 0.045 * fraco, freq: 300, glide: 160, q: 0.9, tipo: 'lowpass', sustenta: 0.4 });
     tom(ctx, destino, { freq: 66, glide: 42, quando: t + 1.15, dur: 1.05, vol: 0.03 * fraco, ataque: 0.2, tipo: 'sawtooth', abafo: 240 });
+  },
+
+  // o Ari cantarolando "Dança Kuduro" no banco do passageiro: não é a música — é como ela soa na cabeça de quem canta
+  // baixinho no carro: um "lá-lá-lá" sincopado em oito notas, na pentatônica menor, com o suingue da batida (130 bpm)
+  cantarolarKuduro: ({ ctx, destino, t }) => {
+    const passo = 60 / 130 / 2;
+    const notas: Array<[number, number, number]> = [
+      [0, 0, 0.7], [1, 0, 0.45], [3, 3, 0.7], [4, 5, 0.45], [5.5, 3, 0.45], [6, 0, 0.8], [8, -2, 0.45], [9, 0, 0.9],
+    ];
+    for (const [pos, grau, dur] of notas) {
+      const quando = t + pos * passo;
+      const f = nota(57 + grau);
+      // a vogal: uma onda macia com o filtro abrindo (o "lá"), e um chiadinho de ar por cima
+      tom(ctx, destino, { freq: f, glide: f * 1.012, quando, dur: dur * 0.5, vol: 0.05, ataque: 0.03, tipo: 'triangle', abafo: 1500 });
+      tom(ctx, destino, { freq: f * 2, quando, dur: dur * 0.3, vol: 0.012, ataque: 0.03, tipo: 'sine' });
+      chiado(ctx, destino, { quando, dur: 0.08, vol: 0.012, freq: 3200, q: 1.5 });
+    }
   },
 
   // ------------------------------------------- a festa surpresa (o salão da abóbora)

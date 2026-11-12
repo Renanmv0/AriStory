@@ -117,6 +117,8 @@ export class Ui {
   private readonly cesta: HTMLDivElement;
   private readonly viagem: HTMLDivElement;
   private readonly avisoDaViagem: HTMLDivElement;
+  private readonly botaoDaViagemEl: HTMLButtonElement;
+  private aoTocarNoBotaoDaViagem: (() => void) | null = null;
   private readonly horaCertaEl: HTMLDivElement;
   private readonly turno: HTMLDivElement;
   private readonly mochila: HTMLDivElement;
@@ -244,6 +246,7 @@ export class Ui {
       <div class="cesta-de-balas"><span class="icone">🎃</span><span class="bala">🍬</span><b class="nums">0</b><span class="meta">/25</span></div>
       <div class="painel-da-viagem"><span class="cor">❤</span><b class="nums">0</b><div class="trilho"><i class="feito"></i><span class="carrinho">🚙</span></div><span class="destino">🌳</span></div>
       <div class="aviso-da-viagem"><span class="icone"></span><b class="texto"></b></div>
+      <button class="botao-da-viagem" aria-label="Trocar de visão"><span class="icone"></span></button>
       <div class="turno">
         <div class="linha">
           <span class="relogio">3:00</span>
@@ -468,6 +471,13 @@ export class Ui {
     this.cesta = ui.querySelector('.cesta-de-balas')!;
     this.viagem = ui.querySelector('.painel-da-viagem')!;
     this.avisoDaViagem = ui.querySelector('.aviso-da-viagem')!;
+    this.botaoDaViagemEl = ui.querySelector('.botao-da-viagem')!;
+    // (o toque no botão não vira joystick nem clique no mundo)
+    for (const ev of ['pointerdown', 'touchstart', 'mousedown']) this.botaoDaViagemEl.addEventListener(ev, (e) => e.stopPropagation());
+    this.botaoDaViagemEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.aoTocarNoBotaoDaViagem?.();
+    });
     this.horaCertaEl = ui.querySelector('.dialogue .hora-certa')!;
     this.turno = ui.querySelector('.turno')!;
     this.mochila = ui.querySelector('.mochila')!;
@@ -923,6 +933,23 @@ export class Ui {
       this.avisoDaViagem.dataset.tom = dados.tom ?? 'atencao';
     }
     this.avisoDaViagem.classList.toggle('show', aviso !== '');
+  }
+
+  /**
+   * O BOTÃO DA VIAGEM (o 👀 da visão do passageiro, sempre na tela durante a
+   * viagem): `null` esconde. `ativo` o deixa marcado (a visão de dentro está ligada).
+   */
+  mostrarBotaoDaViagem(dados: { icone: string; rotulo: string; ativo: boolean } | null, aoTocar?: () => void): void {
+    this.aoTocarNoBotaoDaViagem = aoTocar ?? null;
+    if (!dados) {
+      this.botaoDaViagemEl.classList.remove('show');
+      return;
+    }
+    (this.botaoDaViagemEl.querySelector('.icone') as HTMLElement).textContent = dados.icone;
+    this.botaoDaViagemEl.setAttribute('aria-label', dados.rotulo);
+    this.botaoDaViagemEl.title = dados.rotulo;
+    this.botaoDaViagemEl.classList.toggle('ativo', dados.ativo);
+    this.botaoDaViagemEl.classList.add('show');
   }
 
   /**
