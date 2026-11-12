@@ -464,6 +464,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   let buzinaEm = -9;
   let ultimoCoracao = -9;
   const marca = (tipo: string): void => { estado.vistos[tipo] = (estado.vistos[tipo] ?? 0) + 1; };
+  /** um tropeço (nota da viagem), com o motivo guardado em `vistos` (o teste diz qual foi) */
+  const tropecar = (motivo: string): void => { estado.tropecos += 1; marca(`tropeço:${motivo}`); };
 
   // quem dirige senta no lugar do motorista, seja quem for que o jogador controla
   // (e muda no meio da viagem: na visão do passageiro, quem joga vai para o banco do carona e o outro assume o volante)
@@ -730,7 +732,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
           } else if (!vivo.bateu && estado.s + 2.6 > linha + 0.6 && estado.s < e.s + 6) {
             // furou o vermelho
             vivo.bateu = true;
-            estado.tropecos += 1;
+            tropecar('sinal');
             marca('furou');
             comentar('furou', true);
           }
@@ -831,7 +833,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
             vPulo = 2.6 + estado.v * 0.12;
             carro.solavanco(1.7);
             g.som('tranco');
-            estado.tropecos += 1;
+            tropecar('lombada');
             comentar('lombadaForte', true);
           } else {
             carro.solavanco(0.5);
@@ -861,7 +863,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
               respingos.espirrar(naPista(sb, b.l), P.buracoBeira, 7, 0.7);
               if (!vivo.bateu) {
                 vivo.bateu = true;
-                estado.tropecos += 1;
+                tropecar('buraco');
               }
               comentar('buraco', true);
             }
@@ -933,7 +935,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         if (estado.v > 2.5 && dono?.cavaletes && !dono.bateu) {
           // bateu no cavalete: tranco, e o carro para
           dono.bateu = true;
-          estado.tropecos += 1;
+          tropecar('cavalete');
           carro.solavanco(1.3);
           g.som('tranco');
           comentar('cone', true);
@@ -1029,7 +1031,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         const obra = vivos[donoDoCone[i]];
         if (!obra.bateu) {
           obra.bateu = true;
-          estado.tropecos += 1;
+          tropecar('cone');
           comentar('cone', true);
         }
       }
