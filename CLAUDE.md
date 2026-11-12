@@ -279,6 +279,10 @@ poça, ônibus e corações), com o ESTACIONAMENTO do Villa Lobos do outro
 lado da rua do ônibus, onde o carro para (a área de andar do parque só
 passa da rua com a chave ligada). Ligar a chave é a
 ÚLTIMA coisa, e só com o aval do Renan.
+`BEBITO-MOBILE-DENTRO.md` é o plano da etapa D, parte 1: o carro POR DENTRO — entrar
+na garagem com uma animação na visão de um dos dois, descansar com os bancos
+deitados e a visão do passageiro na viagem com o piloto automático (aberto por
+um "COMECE AQUI" e com as perguntas ao Renan; só plano, nada no jogo ainda).
 `QUINTAL.md` é o plano de DECORAR o quintal da casa do Ari — o decorador da
 estufa ensinado a pôr enfeite no chão, no piso, na parede, em cima, pendurado
 e de ponta a ponta —, aberto por um "COMECE AQUI" com as decisões do Renan.

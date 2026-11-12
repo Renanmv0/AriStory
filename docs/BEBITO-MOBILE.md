@@ -19,7 +19,7 @@ pela janela.
 | **A** | o modelo do Bebito Mobile no kit, por ficha de dados, com fotos de todos os lados | ✅ **feita** |
 | **B** | a frente da casa do Ari (o jardim e a garagem) e a quest do presente | ✅ **feita, ESCONDIDA** — faltam o aval do Renan nas falas e a escolha da fala do Ari (§5) |
 | **C** | a viagem de carro Casa do Ari ↔ Villa Lobos, DIRIGIDA por quem joga, com "quem dirige?", obstáculos e bichos na faixa | ✅ **feita, ESCONDIDA** — as falas da carona esperam o aval do Renan (§6) |
-| **D** | as demais rotas (parque ↔ clube ↔ escola) e o acabamento | ⬜ a próxima |
+| **D** | o acabamento do carro. **Primeiro: o carro POR DENTRO** — entrar na garagem (animação na visão de um dos dois), descansar com os bancos deitados e a visão do passageiro na viagem, com o carro no piloto automático: plano em `docs/BEBITO-MOBILE-DENTRO.md`. **Depois**: as demais rotas (parque ↔ clube ↔ escola) | ⬜ a próxima (plano escrito, esperando as respostas do Renan) |
 | no fim | LIGAR A CHAVE: `BEBITO_MOBILE_NO_JOGO = true` | ⬜ só quando tudo estiver pronto |
 | depois | a EDIÇÃO do carro pelos dois (a ficha já está pronta para ela, §3) | ⬜ não fazer ainda |
 
