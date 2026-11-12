@@ -61,7 +61,8 @@ const pagina = async () => {
     ? { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true }
     : { viewport: { width: 1200, height: 800 } });
   const page = await ctx.newPage();
-  page.on('pageerror', (e) => erros.push('PAGEERROR: ' + e.message));
+  // (um erro que se repete a cada quadro não pode encher a memória do próprio teste: guarda só os primeiros)
+  page.on('pageerror', (e) => { if (erros.length < 40) erros.push('PAGEERROR: ' + e.message); });
   return page;
 };
 const abrir = async (page, query) => {
