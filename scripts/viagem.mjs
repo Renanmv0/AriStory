@@ -29,7 +29,12 @@
  *   portão do parque sem nada no meio (pela faixa atrás do ônibus), a cancela
  *   subindo, e as fotos (de longe, girando, e de perto);
  *
- *      SO=rota|partida|bom|distraido|manche|volta|estacionamento|perto roda uma parte
+ * - BICHOS: os que atravessam, medidos e fotografados de perto — o patinho
+ *   MENOR que a mãe (a metade, mais ou menos) e do tamanho de um bicho, o pé de
+ *   todos no chão, a tartaruga nova (casco em relevo, quatro pernas, cabeça,
+ *   rabo) andando, e escondida no casco quando buzinam;
+ *
+ *      SO=rota|partida|bom|distraido|manche|volta|estacionamento|perto|bichos roda uma parte
  *      CEL=1 roda no celular em pé; SEMENTE=7 escolhe a rota do BOM
  */
 import { chromium } from 'playwright';
@@ -249,8 +254,12 @@ if (roda('bom')) {
       rotulos: j.current.world.interactables.filter((i) => i.enabled).map((i) => i.label),
       memoria: JSON.parse(localStorage.getItem('aristory.save.v1.bebito') ?? '{}').memories?.some((m) => m.id === 'primeira-viagem') ?? false,
       travado: j.player.locked, cameraDeCena: !!j.cameraDeCena(), painel: document.querySelector('.painel-da-viagem')?.classList.contains('show'),
+      // a pose de carro e as pernas dos dois (o bug do Renan: saíam do carro de volante na mão)
+      poses: [j.player.rig, j.parceiro.rig].map((r) => ({ noCarro: r.noCarro, perna: r.legL.rotation.x, braco: r.armL.rotation.x })),
     };
   });
+  confere(parque.poses.every((q) => q.noCarro === null && Math.abs(q.perna) < 0.3 && Math.abs(q.braco) < 0.3),
+    `ao sair do carro os dois voltam à pose de pé (nenhum de volante na mão): ${JSON.stringify(parque.poses.map((q) => [q.noCarro, +q.perna.toFixed(2), +q.braco.toFixed(2)]))}`);
   confere(noParque && parque.carro && parque.flag && Math.abs(parque.onde[0] - 51.9) < 0.1 && Math.abs(parque.onde[1] - 5.5) < 0.1, `chegaram no Villa Lobos e o carro está na vaga dele, no estacionamento (${parque.onde})`);
   confere(parque.livre && !parque.travado && !parque.cameraDeCena && !parque.painel, `a dupla desce na calçada, solta, com a câmera e a tela de sempre (${parque.dupla})`);
   confere(parque.memoria, 'a primeira viagem virou memória no diário');
@@ -504,6 +513,91 @@ if (roda('estacionamento')) {
   await page.waitForTimeout(1500);
   const peso = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
   console.log(`   peso na chegada de carro: ${peso.calls} desenhos, ${peso.triangles} triângulos`);
+  await page.context().close();
+}
+
+// ====================================================================== bichos
+if (roda('bichos')) {
+  console.log('— os bichos da travessia: tamanho, pés no chão, e a tartaruga andando e escondida');
+  const page = await pagina();
+  await abrir(page, 'bebito&cena=casa');
+  await comOCarro(page);
+  await abrir(page, `bebito&cena=viagem-de-carro&viagem=ida,ari,${SEMENTE}`);
+  await naEstrada(page);
+  await viagem(page, { piloto: 'bom', vezes: 3 });
+  const rota = await page.evaluate(() => window.aristoryBebitoMobile.viagem.rota);
+  const ponto = (s, l) => page.evaluate(([a, b]) => window.aristoryBebitoMobile.viagem.naPista(a, b), [s, l]);
+  const fotoEm = async (nome, sOlho, lOlho, alto, sAlvo, lAlvo, altoDoAlvo = 0.5) => {
+    const de = await ponto(sOlho, lOlho);
+    const para = await ponto(sAlvo, lAlvo);
+    await viagem(page, { camera: { de: [de.x, alto, de.z], para: [para.x, altoDoAlvo, para.z] } });
+    await page.waitForTimeout(700);
+    await page.screenshot({ path: `${OUT}-bichos-${nome}.png` });
+    await viagem(page, { camera: null });
+  };
+  // a caixa de cada andante, no mundo: [largura, altura, comprimento] e o ponto mais baixo
+  const medir = (mx, mz) => page.evaluate(([mx, mz]) => {
+    // o grupo cuja fila está perto da faixa deste evento
+    let T = null;
+    let menor = 1e9;
+    window.jogo.scene.traverse((o) => {
+      if (o.userData.peca !== 'travessia-de-bichos') return;
+      const d = Math.hypot(o.children[0].position.x - mx, o.children[0].position.z - mz);
+      if (d < menor) { menor = d; T = o; }
+    });
+    if (!T) return [];
+    const B = window.jogo.scene.position.constructor;
+    return T.children.map((c) => {
+      let minY = 1e9, maxY = -1e9;
+      const v = new B();
+      c.updateMatrixWorld(true);
+      c.traverse((o) => {
+        if (!o.isMesh || !o.geometry.attributes.position) return;
+        const p = o.geometry.attributes.position;
+        for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); minY = Math.min(minY, v.y); maxY = Math.max(maxY, v.y); }
+      });
+      return { peca: c.userData.peca ?? c.name, alto: maxY - minY, chao: minY, y: c.position.y };
+    });
+  }, [mx, mz]);
+  for (const e of rota.eventos.filter((x) => x.tipo === 'travessia')) {
+    await page.waitForFunction((s) => window.aristoryBebitoMobile.viagem.estado.s > s - 14, e.s, { timeout: 240000 }).catch(() => {});
+    await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.estado.v < 0.3, null, { timeout: 60000 }).catch(() => {});
+    await viagem(page, { vezes: 0.6 });
+    const lado = e.lado ?? 1;
+    // espera a mãe (ou a primeira tartaruga) chegar no meio da faixa, e segura o relógio quase parado
+    const meio = await ponto(e.s, 0);
+    const chegou = await page.waitForFunction(([mx, mz]) => {
+      const grupos = [];
+      window.jogo.scene.traverse((o) => { if (o.userData.peca === 'travessia-de-bichos') grupos.push(o); });
+      return grupos.some((T) => { const f = T.children[0]; return Math.hypot(f.position.x - mx, f.position.z - mz) < 1.0; });
+    }, [meio.x, meio.z], { timeout: 120000, polling: 100 }).then(() => true).catch(() => false);
+    await viagem(page, { vezes: 0.02 });
+    confere(chegou, `${e.bichos}: o primeiro chegou ao meio da faixa`);
+    // a vista do jogo (a câmera de perseguição), como no celular do Renan
+    await page.screenshot({ path: `${OUT}-bichos-${e.bichos}-jogo.png` });
+    const caixas = await medir(meio.x, meio.z);
+    if (e.bichos === 'patos') {
+      const [mae, ...filhotes] = caixas;
+      console.log(`   mãe ${mae.alto.toFixed(2)} m de altura; patinhos ${filhotes.map((f) => f.alto.toFixed(2)).join(', ')}`);
+      confere(filhotes.length >= 2 && filhotes.every((f) => f.alto < mae.alto * 0.7), 'cada patinho é bem menor que a mãe (menos de 70% dela)');
+      confere(mae.alto < 1.0, `a pata não passa de 1 m de altura (${mae.alto.toFixed(2)} m)`);
+      confere(caixas.every((c) => c.chao > -0.05), 'nenhum pato afundou no chão');
+      await fotoEm('patos-3-4', e.s + 3.2, lado * 2.6, 0.8, e.s - 0.2, 0, 0.3);
+      await fotoEm('patos-de-lado', e.s + 0.4, -4.2 * lado, 0.55, e.s, 0, 0.25);
+    } else {
+      const t = caixas[0];
+      console.log(`   tartaruga ${t.alto.toFixed(2)} m de altura, ponto mais baixo ${t.chao.toFixed(3)}`);
+      confere(t.chao > -0.03, 'a tartaruga não afunda no asfalto');
+      await fotoEm('tigres-3-4', e.s + 3.0, lado * 2.4, 0.85, e.s - 0.2, 0, 0.3);
+      await fotoEm('tigres-de-lado', e.s + 0.5, -3.8 * lado, 0.5, e.s, 0, 0.3);
+      await fotoEm('tigres-de-frente', e.s - 4.2, 0.4 * lado, 0.55, e.s - 0.2, 0, 0.3);
+      // a buzina: ela se esconde no casco
+      await page.keyboard.press('KeyE');
+      await page.waitForTimeout(1500);
+      await fotoEm('tigres-escondida', e.s + 3.0, lado * 2.4, 0.85, e.s - 0.2, 0, 0.3);
+    }
+    await viagem(page, { vezes: 3 });
+  }
   await page.context().close();
 }
 

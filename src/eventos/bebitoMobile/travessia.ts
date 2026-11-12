@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../../palette';
 import { toon } from '../../core/materials';
 import { PATINHO, PATO_BRANCO, PATO_CREME, PatoDoLago } from '../../entities/bichos/PatoDoLago';
-import { TigreDagua } from '../../entities/bichos/TigreDagua';
+import { TartarugaDeEstrada } from '../../entities/bichos/TartarugaDeEstrada';
 import type { BichosDaTravessia } from './rota';
 
 /**
@@ -28,8 +28,14 @@ import type { BichosDaTravessia } from './rota';
 
 const V = THREE.Vector3;
 
-/** o tamanho em terra: do tamanho de verdade, de dentro do carro, eles somem */
-const ESCALA = { pato: 1.55, patinho: 1.7, tigre: 2.8 } as const;
+/**
+ * o tamanho em terra, POR CIMA da ficha do pato do lago (a pata nasce 1,15 e o
+ * patinho 0,52): de dentro do carro eles somem no tamanho do lago, então
+ * crescem — a pata 1,35× e o patinho 1,45× (ficha 0,52 → 0,75, metade da mãe).
+ * A primeira versão trocava a escala toda por 1,7 e o patinho ficava MAIOR que
+ * a mãe (3,3× o do lago): o Renan reparou no celular.
+ */
+const ESCALA = { pato: 1.35, patinho: 1.45, tigre: 2.8 } as const;
 
 interface Andante {
   grupo: THREE.Object3D;
@@ -41,7 +47,7 @@ interface Andante {
   desvio: number;
   pato?: PatoDoLago;
   pes?: THREE.Object3D[];
-  tigre?: TigreDagua;
+  tartaruga?: TartarugaDeEstrada;
   alto: number;
   fase: number;
 }
@@ -91,7 +97,7 @@ export class TravessiaDeBichos {
         const pato = new PatoDoLago(longe, { ...(mae ? (semente % 2 ? PATO_BRANCO : PATO_CREME) : PATINHO), semente: semente * 7 + i });
         pato.entrarEmServico();
         pato.aoSoar = null;
-        const escala = mae ? ESCALA.pato : ESCALA.patinho;
+        const escala = (mae ? ESCALA.pato : ESCALA.patinho) * pato.escala;
         pato.group.scale.setScalar(escala);
         // o pato do lago nasce com a barriga debaixo d'água: em terra ele sobe até ela sair do chão
         const caixa = new THREE.Box3().setFromObject(pato.group);
@@ -108,10 +114,10 @@ export class TravessiaDeBichos {
       }
     } else {
       for (let i = 0; i < quantos; i++) {
-        const tigre = new TigreDagua({ x: 0, y: 0, z: 0, olhando }, { x: 0, z: 0 }, semente * 5 + i * 3);
-        tigre.group.scale.setScalar(ESCALA.tigre * (i === 0 ? 1 : 0.82));
-        this.group.add(tigre.group);
-        this.andantes.push({ grupo: tigre.group, tigre, alto: 0, u: 0, fase: i * 2.3, atras: i * 1.15, desvio: (i % 2 ? 1 : -1) * 0.1 });
+        const tartaruga = new TartarugaDeEstrada(semente * 5 + i * 3);
+        tartaruga.group.scale.setScalar(ESCALA.tigre * (i === 0 ? 1 : 0.82));
+        this.group.add(tartaruga.group);
+        this.andantes.push({ grupo: tartaruga.group, tartaruga, alto: 0, u: 0, fase: i * 2.3, atras: i * 1.15, desvio: (i % 2 ? 1 : -1) * 0.1 });
       }
     }
     for (const a of this.andantes) this.colocar(a);
@@ -214,14 +220,10 @@ export class TravessiaDeBichos {
           pe.rotation.x = andando ? Math.sin(passo + i * Math.PI) * 0.75 : pe.rotation.x * 0.8;
         });
       }
-      if (a.tigre) {
-        a.tigre.update(dt);
-        const passo = this.relogio * 6.5 + a.fase;
-        a.grupo.rotation.z = andando ? Math.sin(passo) * 0.07 : 0;
-        // escondido no casco: ele abaixa e encolhe para dentro (o casco fica, o resto some por baixo)
-        const dentro = Math.min(1, this.escondido * 3);
-        a.grupo.position.y -= dentro * 0.05 * ESCALA.tigre;
-        a.grupo.rotation.x = andando ? Math.sin(passo * 0.5) * 0.03 : 0;
+      if (a.tartaruga) {
+        // o passo é por DISTÂNCIA andada (a pata não escorrega no asfalto); escondida, ela para
+        const passo = (a.u / (0.2 * ESCALA.tigre)) * 2.4 + a.fase;
+        a.tartaruga.update(dt, { andando, passo, esconder: this.escondido > 0 ? 1 : 0 });
       }
     }
     if (this.estado === 'atravessando') {
