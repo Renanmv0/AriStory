@@ -547,25 +547,35 @@ export class BebitoMobile {
     {
       const lado = (k: number): number => PONTOS - 1 - k;
       const ate = NO.quina;
-      const fita4 = (pts: Array<[number, number]>): void => {
-        const fora = pts.map(([i, j]) => pontos[i][j].clone());
+      const fita4 = (pts: Array<[number, number]>, pai: THREE.Object3D): void => {
+        // (a borda de fora fica 4 mm DENTRO da pele: rente, a ponta da fita brigava com a lataria e pontilhava a quina)
+        const fora = pts.map(([i, j]) => pontos[i][j].clone().addScaledVector(normais[i][j], -0.004));
         const dentro = pts.map(([i, j]) => pontos[i][j].clone().addScaledVector(normais[i][j], -CABINE.forro));
-        const m = new THREE.Mesh(fita(fora, dentro, new THREE.Vector3(0, 1, 0)), toon(P.bebitoBorracha, { doubleSide: true }));
-        this.carroceria.add(m);
+        pai.add(new THREE.Mesh(fita(fora, dentro, new THREE.Vector3(0, 1, 0)), toon(P.bebitoBorracha, { doubleSide: true })));
       };
+      // da cintura para cima o batente é do TETO (sai junto com ele: sem teto, ficava um poste no ar)
       const soleira: Array<[number, number]> = [];
       const testeira: Array<[number, number]> = [];
       for (let i = ia; i <= ib; i++) {
         soleira.push([i, lado(NO.pe)]);
         testeira.push([i, lado(ate)]);
       }
-      const frente: Array<[number, number]> = [];
-      const tras: Array<[number, number]> = [];
-      for (let k = NO.pe; k <= ate; k++) {
-        frente.push([ib, lado(k)]);
-        tras.push([ia, lado(k)]);
-      }
-      for (const trecho of [soleira, testeira, frente, tras]) fita4(trecho);
+      const embaixo = (i: number): Array<[number, number]> => {
+        const l: Array<[number, number]> = [];
+        for (let k = NO.pe; k <= NO.cintura; k++) l.push([i, lado(k)]);
+        return l;
+      };
+      const emCima = (i: number): Array<[number, number]> => {
+        const l: Array<[number, number]> = [];
+        for (let k = NO.cintura; k <= ate; k++) l.push([i, lado(k)]);
+        return l;
+      };
+      fita4(soleira, this.carroceria);
+      fita4(embaixo(ib), this.carroceria);
+      fita4(embaixo(ia), this.carroceria);
+      fita4(testeira, this.teto);
+      fita4(emCima(ib), this.teto);
+      fita4(emCima(ia), this.teto);
     }
   }
 

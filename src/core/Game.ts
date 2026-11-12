@@ -389,6 +389,9 @@ export class Game implements GameAPI {
     // a pose de carro morre com a cena (rede de segurança: nenhum dos dois sai de volante na mão)
     this.player.rig.setNoCarro(null);
     this.parceiro.rig.setNoCarro(null);
+    // e a cabeça (a câmera de dentro do carro a esconde): nenhum dos dois entra em outra cena sem rosto
+    this.player.rig.mostrarCabeca(true);
+    this.parceiro.rig.mostrarCabeca(true);
     this.player.setVisible(true);
     // o que a rodada do jardim liga morre com a cena
     this.player.mira = null;
@@ -2487,6 +2490,14 @@ export class Game implements GameAPI {
 
   poseNoCarro(quem: 'jogador' | 'parceiro', pose: 'dirigindo' | 'passageiro' | null, volante = 0): void {
     (quem === 'jogador' ? this.player : this.parceiro).rig.setNoCarro(pose, volante);
+  }
+
+  cabecaDe(quem: 'jogador' | 'parceiro'): THREE.Vector3 {
+    return (quem === 'jogador' ? this.player : this.parceiro).rig.cabecaNoMundo(new THREE.Vector3());
+  }
+
+  mostrarCabeca(quem: 'jogador' | 'parceiro', sim: boolean): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.mostrarCabeca(sim);
   }
 
   commandCompanion(x: number, z: number): void {

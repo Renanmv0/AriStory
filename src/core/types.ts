@@ -1170,6 +1170,10 @@ export interface GameAPI {
    * `volante` é o giro do volante agora, para as mãos acompanharem.
    */
   poseNoCarro(quem: 'jogador' | 'parceiro', pose: 'dirigindo' | 'passageiro' | null, volante?: number): void;
+  /** o centro da cabeça de um dos dois, no mundo (o olho da câmera de dentro do carro) */
+  cabecaDe(quem: 'jogador' | 'parceiro'): THREE.Vector3;
+  /** esconde (ou mostra) a cabeça de um dos dois: na primeira pessoa a câmera nasce dentro dela */
+  mostrarCabeca(quem: 'jogador' | 'parceiro', sim: boolean): void;
 
   /**
    * Os dois levam a boca, de vez em quando, o que estiverem segurando.

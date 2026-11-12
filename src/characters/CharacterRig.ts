@@ -1734,6 +1734,11 @@ export class CharacterRig {
    * volante agora, em radianos (o do `BebitoMobile.estercar`): as mãos de
    * quem dirige sobem e descem com ele.
    */
+  /** esconde (ou mostra) a cabeça inteira: o cabelo, o rosto, o chapéu. A primeira pessoa não pode nascer dentro da própria cabeça */
+  mostrarCabeca(sim: boolean): void {
+    this.head.visible = sim;
+  }
+
   setNoCarro(pose: PoseNoCarro | null, volante = 0): void {
     const saiu = this.noCarro !== null && pose === null;
     this.noCarro = pose;

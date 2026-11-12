@@ -557,7 +557,7 @@ if (roda('porta')) {
   const fechada = await medir();
   confere(fechada.existe && fechada.malhas >= 4, `a porta existe e tem malhas (${fechada.malhas})`);
   confere(fechada.rot === 0 && fechada.aberta === 0, 'nasce fechada');
-  confere(fechada.xMax <= fechada.larguraDoCarro / 2 + 0.03, `fechada, a porta cabe dentro da largura do carro (x máx ${fechada.xMax.toFixed(3)} · metade ${(fechada.larguraDoCarro / 2).toFixed(3)})`);
+  confere(fechada.xMax <= fechada.larguraDoCarro / 2 + 0.06, `fechada, a porta (com a maçaneta) cabe na largura do carro (x máx ${fechada.xMax.toFixed(3)} · metade ${(fechada.larguraDoCarro / 2).toFixed(3)})`);
   await isometrica(5);
   await page.screenshot({ path: `${OUT}-porta-fechada-iso.png` });
   await cena([3.2, 1.35, 1.3], [0.9, 0.85, 0.45]);
