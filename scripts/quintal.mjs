@@ -108,7 +108,8 @@ if (roda('computador')) {
   await page.screenshot({ path: `${OUT}-papita-plantas.png` });
   await page.locator('.painel-do-quintal [data-acao="aba"][data-id="moveis"]').click();
   await page.waitForTimeout(600);
-  confere(await page.locator('.painel-do-quintal .produto').count() === 4, 'a de móveis: 4 peças');
+  const moveis = await page.locator('.painel-do-quintal .produto').count();
+  confere(moveis === 7, `a de móveis: banco, mesinha, espreguiçadeira, guarda-sol, balanço, rede e casinha (${moveis})`);
   await page.screenshot({ path: `${OUT}-papita-moveis.png` });
   await page.locator('.painel-do-quintal [data-acao="aba"][data-id="casa"]').click();
   await page.waitForTimeout(300);
