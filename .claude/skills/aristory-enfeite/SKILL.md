@@ -229,6 +229,17 @@ Mobile). O que mudou, e que vale para enfeite novo:
   partes pelo `userData`. Peça que se mexe e quer ser leve: marque o pivô com
   NOME (`fundir` respeita grupo com nome) — mas aí a `anima` precisa ser
   testada com a peça fundida.
+- **PISO** (`piso: true`, `world/pisosDoQuintal.ts`): o decorador não dá
+  colisor, deixa enfeite por cima e piso cruzando piso, e o posto por último
+  pinta por cima (ele troca o `renderOrder` de tudo que for `>= 4` na peça
+  para `10 + n`). O chão do piso é decalque com `renderOrder` 4; o que tem
+  altura (tábua, seixo, guia) é geometria rente. Piso só esbarra no que é do
+  mundo (parede, casa, muro) e nas regras da cena (o caminho).
+- **Caminho** (`caminho: '<jeito>'` na ficha do Papita) não é enfeite: não se
+  põe pelo decorador. Ele é de vocês ou não é, e o baú troca o caminho da
+  casa (`world/caminhosDoQuintal.ts`, traçado por TRECHOS retos).
+- **A árvore da casa** é uma ficha do quintal fora da loja (`naLoja: false`):
+  a cena a planta no save na primeira visita.
 - `RegrasDoLugar.proibido(x, z, raio, ficha)` recebe a ficha (para a
   altura), e `ondeGuardar` muda o fim do toast de guardar ("pelas
   ferramentas da garagem").

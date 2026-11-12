@@ -37,7 +37,7 @@ caixa no portão, e se põe e se arruma pelas ferramentas da garagem.
 |---|---|---|
 | **0** | limpar o jardim | ✅ feita (2026-11-12) |
 | **1** | o primeiro ciclo inteiro, no CHÃO: a área de trabalho do computador (o laboratório e o **Papita Delivery**), o catálogo em reais (as plantas do kit e alguns móveis), a encomenda chegando no portão, as ferramentas da garagem (pôr e arrumar), e o save sabendo EM QUE LUGAR está cada enfeite | ✅ feita (2026-11-12) |
-| **2** | os PISOS e os CAMINHOS de lajes novos (deck, pedras, pedrisco, canteiro de desenhar); tirar e pôr de volta a ÁRVORE e a HERA | ⬜ |
+| **2** | os PISOS e os CAMINHOS de lajes novos (deck, pedras, pedrisco, canteiro de desenhar); tirar e pôr de volta a ÁRVORE e a HERA | ✅ feita (2026-11-12) |
 | **3** | PAREDE (o Ari escolhe a altura), EM CIMA, PENDURADO e de PONTA A PONTA | ⬜ |
 | **4** | os MÓVEIS que fazem alguma coisa (sentar no banco, balanço, rede, mesa, piscininha, casinha do Pelusa) e REGAR (opcional) | ⬜ |
 | **5** | a aba "Para casa" do Papita Delivery (decorar a casa por dentro) | ⬜ só quando o Renan pedir |
@@ -91,6 +91,37 @@ projeto faz).
   colchonete (R$ 110) e o guarda-sol de gomos com babado (R$ 90). Por
   enquanto os móveis são de olhar; sentar e deitar neles é a etapa 4.
 - **O teste**: `scripts/quintal.mjs` (ver §8).
+
+## O que a etapa 2 pôs no jogo (com `?bebito`)
+
+- **A prateleira 🪨 Chão do Papita**: seis PISOS e quatro CAMINHOS.
+- **Os pisos** (`world/pisosDoQuintal.ts`, ficha com `piso: true`): o deck de
+  madeira (tábuas com veio e o vão escuro, emendas desencontradas), o
+  canteiro de casca redondo com a borda de seixos, o canteiro de terra oval
+  com a serrilha de tijolinho, o pedrisco branco com a guia de cimento, o
+  tapete de área externa listrado com franja, e o gramado de florzinhas (um
+  lote de 150). O chão deles é decalque; o decorador não dá colisor ao piso,
+  deixa enfeite EM CIMA (a mesinha no deck, a hortênsia no canteiro) e piso
+  cruzando piso — o posto por último pinta por cima (`renderOrder` por peça).
+  Piso também respeita o caminho, o portão e as paredes.
+- **Os caminhos** (`world/caminhosDoQuintal.ts`): o caminho da casa (da porta
+  ao portão e o ramal da garagem) em cinco jeitos — as lajes de sempre, as
+  pedras de passar (tortas, de bisel macio, aos pares), o tijolinho em fiadas
+  com a guia de tijolo em pé, os dormentes de madeira no pedrisco, e a pedra
+  portuguesa com a guia escura. O caminho se compra UMA vez (o cartão vira
+  "✓ é de vocês"); o baú das ferramentas tem a linha "🛤️ O caminho da casa"
+  para trocar. O traçado é sempre o mesmo. Save: as flags
+  `quintal:caminho:<jeito>`.
+- **A árvore** virou peça do quintal: na primeira visita ela entra no save no
+  lugar de sempre (`plantarAArvoreDaCasa`), e daí em diante se guarda e se
+  planta onde quiser, como enfeite (a pegada é o tronco).
+- **A hera**: "Tirar a hera" / "Pôr a hera de volta" no baú
+  (`quintal:sem-hera`).
+- **A regra do alto** ficou mais justa: o muro da direita só tapa da metade
+  do jardim para a frente; no fundo, encostado na casa, coisa alta pode (é
+  onde a árvore nasceu).
+- Peso: o quintal com a árvore mudada, os seis pisos, a mesinha e a
+  hortênsia, 312 desenhos por quadro e 150 mil triângulos na vista de sempre.
 
 ## 1. O que já existe (e se reaproveita inteiro)
 
@@ -354,6 +385,6 @@ AQUI). Abertas para as próximas etapas:
 2. **Os móveis da §4.4** que fazem alguma coisa: quais entram primeiro (o
    balanço e a rede são cutscene de casal: eu escrevo as falas e mando para
    aprovar)?
-3. **O Papita Delivery**: o nome está como ele escreveu; o ícone e a cor do
-   app (hoje uma batatinha 🥔 sorrindo, em amarelo e verde) podem mudar se o
-   Papita for alguém ou alguma coisa de verdade.
+
+(Respondida: "Papita é um jeito fofo que nos chamamos, e significa batatinha
+mesmo" — a etiqueta da batatinha fica.)

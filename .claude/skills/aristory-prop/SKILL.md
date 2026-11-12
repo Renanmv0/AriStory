@@ -1571,6 +1571,24 @@ enfeite), em `world/decoracoesDoQuintal.ts`:
   alternada POR VÉRTICE (`toNonIndexed` e a cor pelo ângulo do triângulo),
   numa malha só; o babado é uma meia-lua por gomo; as varetas são tubos.
 
+### Os caminhos e os pisos do quintal (etapa 2)
+
+- `caminhoDoQuintal(jeito, trechos)` (`world/caminhosDoQuintal.ts`): o
+  caminho por TRECHOS retos em `x` ou em `z`, já no lugar; a cena junta como
+  fundo e troca inteiro. As lajes reproduzem o caminho de nascença (82 cm de
+  1,03 em 1,03); as pedras são `ExtrudeGeometry` de um círculo torto com
+  bisel; o tijolinho e a pedra portuguesa são DECALQUE com a textura em
+  canvas e a guia em pé (`uvDeParede`); os dormentes, quina com veio no
+  pedrisco. `amostraDeCaminho(jeito)` é o retrato do cartão.
+- **Tijolinho em canvas**: a primeira versão era espinha de peixe e de perto
+  virou xadrez torto. O que lê é FIADA desencontrada com a junta marcada
+  (`tijolosEmFiada`).
+- Os pisos (`world/pisosDoQuintal.ts`): `decalque(pontos, mat)` faz o chão de
+  qualquer contorno (UV em metros, `renderOrder` 4), `contornoTorto` a beira
+  mole de canteiro, `retanguloRedondo` a de deck e tapete, e `borda` espalha
+  seixo ou tijolo pelo contorno (a serrilha do canteiro de terra é o tijolo
+  de quina deitado em 0,6 rad).
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de
