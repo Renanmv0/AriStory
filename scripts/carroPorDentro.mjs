@@ -88,6 +88,16 @@ const estado = (page) => page.evaluate(() => {
     botoes: [...document.querySelectorAll('.escolhas.show button')].map((b) => b.textContent),
   };
 });
+/** aperta E (avança as falas) até aparecerem botões de escolha, com teto de tempo */
+const ateOsBotoes = async (page, teto = 120000) => {
+  const t0 = Date.now();
+  while (Date.now() - t0 < teto) {
+    if (await page.evaluate(() => document.querySelectorAll('.escolhas.show button').length > 0)) return true;
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(450);
+  }
+  return false;
+};
 const aperta = async (page, n = 1) => { for (let i = 0; i < n; i++) { await page.keyboard.press('KeyE'); await page.waitForTimeout(380); } };
 
 // ================================================================== escondido
@@ -317,21 +327,13 @@ if (roda('passageiro')) {
   console.log(`   olho (x do carro) no ombro: ${lado.x.toFixed(2)}`);
   confere(lado.x > -0.25, `encostando no ombro, o olho foi para o lado do motorista (x ${lado.x.toFixed(2)}, antes ≈ −0,47)`);
   // as falas, e voltar ao menu
-  for (let i = 0; i < 30; i++) {
-    const e = await viagemEstado(page);
-    if (e.botoes.length) break;
-    await aperta(page, 1);
-  }
+  confere(await ateOsBotoes(page), 'depois do ombro, o menu volta');
   // cantarolar Dança Kuduro
   const cant0 = await page.evaluate(() => window.jogo.audio.contagem.get('cantarolarKuduro') ?? 0);
   await page.locator('.escolhas.show button').nth(0).click();
   await page.waitForFunction((n) => (window.jogo.audio.contagem.get('cantarolarKuduro') ?? 0) > n, cant0, { timeout: 30000 });
   confere(true, 'o Ari cantarola Dança Kuduro (o som tocou)');
-  for (let i = 0; i < 30; i++) {
-    const e = await viagemEstado(page);
-    if (e.botoes.length) break;
-    await aperta(page, 1);
-  }
+  confere(await ateOsBotoes(page), 'depois do canto, o menu volta');
   // o outro caminho do menu: o do Renan de carona (o `playerId` trocado só para ver as opções e o celular)
   await page.locator('.escolhas.show button').nth(3).click();
   await page.waitForTimeout(500);
@@ -343,7 +345,7 @@ if (roda('passageiro')) {
   await page.locator('.escolhas.show button').nth(0).click();
   await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.passageiro.celular.group.visible, null, { timeout: 60000 }).catch(() => {});
   // (as falas antes do celular aparecer)
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 40; i++) {
     const vis = await page.evaluate(() => window.aristoryBebitoMobile.viagem.passageiro.celular.group.visible);
     if (vis) break;
     await aperta(page, 1);
@@ -359,11 +361,6 @@ if (roda('passageiro')) {
   await page.screenshot({ path: `${OUT}-p5-celular.png` });
   await page.evaluate(() => { delete window.jogo.playerId; });
   // o carro andou todo esse tempo, sozinho
-  for (let i = 0; i < 40; i++) {
-    const e = await viagemEstado(page);
-    if (e.botoes.length || !(await page.evaluate(() => window.jogo.emDialogo()))) break;
-    await aperta(page, 1);
-  }
   const s1 = (await viagemEstado(page)).s;
   confere(s1 > s0 + 5, `o carro seguiu sozinho durante o menu e as falas (${s0.toFixed(0)} → ${s1.toFixed(0)} m)`);
   await page.context().close();
