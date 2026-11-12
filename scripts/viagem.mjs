@@ -560,9 +560,9 @@ if (roda('bichos')) {
     });
   }, [mx, mz]);
   for (const e of rota.eventos.filter((x) => x.tipo === 'travessia')) {
-    await page.waitForFunction((s) => window.aristoryBebitoMobile.viagem.estado.s > s - 14, e.s, { timeout: 240000 }).catch(() => {});
-    await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.estado.v < 0.3, null, { timeout: 60000 }).catch(() => {});
-    await viagem(page, { vezes: 0.6 });
+    // os bichos começam a atravessar quando o carro chega perto: devagar desde antes, para pegar a mãe no meio da faixa
+    await page.waitForFunction((s) => window.aristoryBebitoMobile.viagem.estado.s > s - 30, e.s, { timeout: 240000 }).catch(() => {});
+    await viagem(page, { vezes: 0.5 });
     const lado = e.lado ?? 1;
     // espera a mãe (ou a primeira tartaruga) chegar no meio da faixa, e segura o relógio quase parado
     const meio = await ponto(e.s, 0);
