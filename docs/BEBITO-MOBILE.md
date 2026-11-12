@@ -139,7 +139,7 @@ E o que a etapa C trouxe:
 |---|---|
 | `src/eventos/bebitoMobile/rota.ts` | a ROTA de cada viagem, sorteada por semente: a curva, os trechos de paisagem, os oito eventos, os corações e a nota. Sem three |
 | `src/eventos/bebitoMobile/partida.ts` | "Ir de carro?" e "Quem dirige dessa vez?", e a partida para a estrada |
-| `src/eventos/bebitoMobile/travessia.ts` | os bichos do lago atravessando a faixa: a pata com os patinhos (com as patinhas, em terra) e os tigres-d'água |
+| `src/eventos/bebitoMobile/travessia.ts` | os bichos atravessando a faixa: a pata do lago com os patinhos (com as patinhas, em terra; o patinho é a metade da mãe) e a `TartarugaDeEstrada` (`entities/bichos/`: casco em relevo, quatro pernas, cabeça fofa, esconde no casco) |
 | `src/eventos/bebitoMobile/noParque.ts` | o estacionamento do Villa Lobos (do outro lado da rua do ônibus), o carro na vaga dele e a volta para casa |
 | `src/world/estacionamento.ts` | as peças do estacionamento: o carro dos outros, a cancela, o totem, a placa do P e a plaquinha da vaga |
 | `src/scenes/viagemDeCarro.ts` | a cena `viagem-de-carro`: a estrada montada pela rota, o carro dirigido, os eventos, a câmera, o painel e a chegada |
