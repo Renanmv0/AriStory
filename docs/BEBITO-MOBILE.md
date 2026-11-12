@@ -320,7 +320,7 @@ triângulos e ~40 desenhos; as plantas novas, ~63 mil e 15.
 |---|---|---|
 | 0 | — | a lição 10 da apostila do Gatito (`partiu-praia`) concluída libera a quest. Nada avisa: é surpresa |
 | 1 | quarto | "Deitar um pouco?" na cama vira DORMIR: os dois deitam, o Ari pega no sono, a tela escurece, amanhece; o Renan pergunta **"Quer ver uma surpresa?"** (flag `bebito:surpresa`) |
-| 2 | sala | cutscene: os dois na sala; o Renan diz que já volta, anda até a porta da rua e sai (flag `bebito:renan-saiu`); o Ari, confuso, vai atrás |
+| 2 | sala | cutscene: os dois na sala (junto da ponta do sofá, `ficam: 0,8; 1,6`); o Renan diz que já volta, anda até a porta da rua (agora NO MEIO da parede da frente, `x = 0`) e sai (flag `bebito:renan-saiu`); o Ari, confuso, vai atrás |
 | 3 | frente da casa | cutscene em quatro tomadas: (A) o Ari na porta procura o Renan; a buzina; (B) por cima do ombro dele, o carro vem pela rua, de laço no teto, com o Renan dirigindo; (C) da rua, o portão da garagem abre, o carro engata a ré e entra; (D) de perto, os dois na frente do carro. Corações, a memória "O Bebito Mobile" no diário (flag `bebito:ganhou`) |
 | depois | frente da casa | o carro mora na garagem (o laço sai), com o "Olhar o Bebito Mobile" (três conversas que se revezam) |
 

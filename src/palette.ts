@@ -2932,6 +2932,7 @@ export const PALETTE = {
   suculentaRosada: 0xe8a7b8, // …e a rosada
   gatinhoDeCeramica: 0x9aa0aa, // o gatinho de cerâmica cinza
   placaSolar: 0x2f3a5c, // a plaquinha solar da lanterninha
+  cortinaDaSala: 0xf1c9d6, // as cortinas das janelas da frente da sala do Ari, rosa-claro
   sinoDeVento: 0xc9d3dc, // os tubos do sino de vento
   lanternaDePapel: 0xffc98a, // a lanterna de papel acesa, pêssego
   // os móveis de usar (`world/moveisDeUsar.ts`)

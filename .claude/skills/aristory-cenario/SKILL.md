@@ -1029,9 +1029,30 @@ os dois lados DA CÂMERA. O que isso cobra:
 12. **Porta em mureta: o vão vai até o chão, e a parede fecha em cima.** A
    porta da rua da casa do Ari ficou com a mureta baixa da frente correndo
    POR BAIXO dela (um degrau de 45 cm atravessando a soleira, visto girando a
-   câmera) e sem nada acima do batente. O certo: a mureta em dois trechos, dois
-   pedaços de parede alta ladeando o vão, e um bloco só de malha (sem colisor)
-   em cima da porta. Ver a porta da rua em `scenes/casa.ts`.
+   câmera) e sem nada acima do batente. O certo: a mureta acaba onde a parede
+   alta começa, e a parede alta é UMA forma só com o vão da porta recortado até
+   o chão. Ver `world/paredeDaRua.ts`.
+13. **A casa de dentro é a de fora (a porta da rua no MEIO e as duas janelas).**
+   Pedido do Renan: a fachada de `frenteDaCasa` tem a porta no meio e uma
+   janela de cada lado (`±2,75`), e a sala tinha a porta num canto e uma janela
+   só. A parede da frente da sala (`paredeDaRuaPorDentro`, 9,4 m, a mesma
+   largura da fachada) é uma forma com o vão da porta e os dois FUROS de
+   janela, com caixilho, cruz, peitoril e cortina. É a parede que fica do lado
+   da câmera, vista DE TRÁS: o vidro é de UMA FACE SÓ, virada para dentro
+   (`flat` de lado único, o plano girado meia volta). Visto da câmera ele não
+   existe e o furo fica aberto; visto de dentro (Q/R) ele aparece como um véu.
+   **Isso não é a "peça translúcida" descartada acima**: aquela desbotava pela
+   posição da dupla; esta é a peça que nasce assim, sempre igual. O peitoril a
+   1 m esconde só 1,5 m de chão atrás da parede, e o cabeçalho (2,25 a 2,6) só
+   uma faixa estreita: pela janela dá para ver o miolo da sala. Quando uma
+   parede alta fica do lado da câmera, o furo de janela com vidro de uma face é
+   o jeito de ela não fechar a sala. A porta foi de `x = 3,4` para `0`: o que
+   dependia dela (a entrada `da-rua`, a saída, o capacho, o abajur que ficava
+   na linha da porta, a cutscene do Renan saindo) foi junto.
+
+   Dependência de posição de porta em cutscene: `surpresaNaSala` aceita `ficam`
+   (onde o Ari espera) para a cena de dentro não depender de uma conta a partir
+   da porta.
 
 ## Depurar posição
 

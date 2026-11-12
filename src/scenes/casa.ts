@@ -16,6 +16,7 @@ import { heart } from '../world/props';
 import { toon } from '../core/materials';
 import { acabar } from '../world/acabamento';
 import { fundir } from '../world/fundir';
+import { paredeDaRuaPorDentro } from '../world/paredeDaRua';
 import { assoalhoDeMadeira } from '../world/texturasDeChao';
 import { granito, tramaDeTecido, veioDeMadeira } from '../world/texturasDeCasa';
 import { ARI, RENAN } from '../characters/cast';
@@ -48,7 +49,8 @@ export const casa: SceneDef = {
   },
   spawn: { x: 1.4, z: 2.4, facing: Math.PI },
   entries: {
-    'da-rua': { x: 3.4, z: 3.1, facing: Math.PI },
+    // (a porta da rua no meio da parede da frente: o `x` é o dela)
+    'da-rua': { x: 0, z: 3.1, facing: Math.PI },
     // sai da porta virado para dentro da sala (+X)
     'do-quarto': { x: -5.05, z: -1.2, facing: Math.PI / 2 },
   },
@@ -102,10 +104,15 @@ export const casa: SceneDef = {
     w.wall(x0, zDoAri + vaoAri / 2, x0, D / 2, H, P.wallMint);
     // a mureta da frente vem em dois trechos: o vão da porta da rua (ver lá
     // embaixo) fica ABERTO até o chão
-    const PORTA_DA_RUA = { x: 3.4, largura: 0.95 };
+    // A PORTA NO MEIO DA PAREDE e as duas janelas, como a fachada que se vê de
+    // fora (`world/frenteDaCasa.ts`: a porta no meio, janelas em ±2,75): a casa
+    // de dentro e a de fora são a mesma. A parede alta tem a largura da fachada;
+    // dali para fora, a mureta de sempre.
+    const PORTA_DA_RUA = { x: 0, largura: 0.95 };
     const vaoDaRua = PORTA_DA_RUA.largura / 2 + 0.1;
-    w.wall(x0, D / 2, 2.0, D / 2, 0.45, P.wallCream);
-    w.wall(4.9, D / 2, W / 2, D / 2, 0.45, P.wallCream);
+    const FACHADA_DA_SALA = { meia: 4.7, alto: 2.6 };
+    w.wall(x0, D / 2, -FACHADA_DA_SALA.meia, D / 2, 0.45, P.wallCream);
+    w.wall(FACHADA_DA_SALA.meia, D / 2, W / 2, D / 2, 0.45, P.wallCream);
     w.wall(W / 2, z0, W / 2, D / 2, 0.45, P.wallCream);
 
     // ------------------------------- parede do fundo: a Rubi e o banheiro
@@ -183,11 +190,11 @@ export const casa: SceneDef = {
     w.blockBox(-2.4, 0.6, 0.38, 0.62);
     const caneca = w.add(w.place(mug(0xfff2e0), -2.4, 0.5, 0.9));
 
-    const abajur = w.add(envernizar(w.place(abajurDePe(true), -0.4, 0, 2.3)));
-    w.blockCircle(-0.4, 2.3, 0.3);
+    const abajur = w.add(envernizar(w.place(abajurDePe(true), -1.0, 0, 2.3)));
+    w.blockCircle(-1.0, 2.3, 0.3);
     // a luz que se vê (ver o quarto): a poça morna no chão e o halo da cúpula
-    const poca = w.add(w.place(pocaDeLuz(1.05, P.luzDeAbajur, 0.4), -0.4, 0.006, 2.3));
-    const halo = w.add(w.place(haloDeLampada(0.95), -0.4, 1.68, 2.3));
+    const poca = w.add(w.place(pocaDeLuz(1.05, P.luzDeAbajur, 0.4), -1.0, 0.006, 2.3));
+    const halo = w.add(w.place(haloDeLampada(0.95), -1.0, 1.68, 2.3));
     // acende e apaga com um clique (ou um toque) no abajur, como o do quarto
     const cupula = abajur.getObjectByName('cupula') as THREE.Mesh;
     let abajurAceso = true;
@@ -224,30 +231,38 @@ export const casa: SceneDef = {
     w.add(coracao);
 
     // ---------------------------------------------------------- porta da rua
-    // Um trecho de parede alta na mureta da frente, só para a porta ter onde
-    // morar: os dois lados do vão e a parede EM CIMA da porta.
-    //
-    // Antes a mureta baixa corria inteira por baixo da porta (um degrau de
-    // 45 cm atravessando a soleira, que aparecia girando a câmera) e não havia
-    // nada acima do batente — o buraco ia até o alto da parede. Agora o vão
-    // tem exatamente a largura da porta com os batentes, aberto até o chão.
+    // A PAREDE DA RUA POR DENTRO (`world/paredeDaRua.ts`): uma parede só, com o
+    // vão da porta no MEIO (aberto até o chão, com a parede em cima dele) e uma
+    // janela de cada lado — os furos de verdade, com caixilho, peitoril e
+    // cortina. O VIDRO tem uma face só, virada para a sala: visto de trás (a
+    // câmera) ele some, e o furo fica aberto para a isométrica não ficar
+    // fechada. A mureta baixa não corre por baixo da porta (um degrau de 45 cm
+    // atravessava a soleira): ela acaba onde a parede alta começa.
     const zPorta = D / 2;
-    const ALTO = 2.6;
-    const xa = PORTA_DA_RUA.x - vaoDaRua;
-    const xb = PORTA_DA_RUA.x + vaoDaRua;
-    w.wall(2.0, zPorta, xa, zPorta, ALTO, P.wallCream);
-    w.wall(xb, zPorta, 4.9, zPorta, ALTO, P.wallCream);
-    // a parede de cima da porta: só malha, sem colisor (ninguém passa ali)
-    const ALTURA_DO_VAO = 2.2;
-    const acima = new THREE.Mesh(
-      new THREE.BoxGeometry(xb - xa + 0.02, ALTO - ALTURA_DO_VAO, 0.3),
-      toon(P.wallCream),
-    );
-    acima.position.set(PORTA_DA_RUA.x, (ALTO + ALTURA_DO_VAO) / 2, zPorta);
-    w.add(acima);
+    const ESPESSURA = 0.3;
+    const JANELAS_DA_RUA = [-2.75, 2.75].map((x) => ({ x, largura: 1.5, y0: 1.0, alto: 1.25 }));
+    w.add(w.place(
+      paredeDaRuaPorDentro({
+        meia: FACHADA_DA_SALA.meia, alto: FACHADA_DA_SALA.alto, espessura: ESPESSURA,
+        vao: { x0: PORTA_DA_RUA.x - vaoDaRua, x1: PORTA_DA_RUA.x + vaoDaRua, alto: 2.2 },
+        janelas: JANELAS_DA_RUA,
+      }),
+      0, 0, zPorta,
+    ));
+    // os dois pedaços cheios da parede (o vão da porta fica livre; as janelas não: o peitoril fecha)
+    const xaVao = PORTA_DA_RUA.x - vaoDaRua;
+    const xbVao = PORTA_DA_RUA.x + vaoDaRua;
+    const pedacoE = (-FACHADA_DA_SALA.meia + xaVao) / 2;
+    const pedacoD = (xbVao + FACHADA_DA_SALA.meia) / 2;
+    w.blockBox(pedacoE, zPorta, (xaVao + FACHADA_DA_SALA.meia) / 2, ESPESSURA / 2);
+    w.blockBox(pedacoD, zPorta, (FACHADA_DA_SALA.meia - xbVao) / 2, ESPESSURA / 2);
+    // a claridade do dia que cada janela joga no chão da sala (para dentro: `−Z`, o giro é meia volta)
+    for (const j of JANELAS_DA_RUA) {
+      w.add(w.place(claridadeDaJanela(j.largura, j.alto, j.y0 + j.alto / 2), j.x, 0, zPorta - ESPESSURA / 2 - 0.01, Math.PI));
+    }
     const porta = w.add(envernizar(w.place(portaDaRua(P.woodDark, PORTA_DA_RUA.largura, 2.1), PORTA_DA_RUA.x, 0, zPorta, Math.PI)));
     w.blockBox(PORTA_DA_RUA.x, zPorta, vaoDaRua, 0.15);
-    w.add(fundir(w.place(tapete(1.4, 0.8, P.capacho, 'capacho'), 3.4, 0, D / 2 - 1.0)));
+    w.add(fundir(w.place(tapete(1.4, 0.8, P.capacho, 'capacho'), PORTA_DA_RUA.x, 0, D / 2 - 1.0)));
 
     // ----------------------------------------------- âncoras da cena do sofá
     // o "assento" carrega os dois durante a cutscene; a rotação mora nele,
@@ -482,14 +497,15 @@ export const casa: SceneDef = {
     // da frente, e é o portão de lá que leva ao parque; sem ele, sai direto no parque, como sempre.
     const comJardim = bebitoMobileNestaPagina();
     w.door({
-      x: 3.4, z: D / 2 - 1.2,
+      x: PORTA_DA_RUA.x, z: D / 2 - 1.2,
       to: comJardim ? 'frente-da-casa' : 'villa-lobos', entry: comJardim ? 'da-casa' : 'portao',
       label: comJardim ? 'Sair pro jardim' : 'Sair — ir pro parque', icon: '🚪',
       highlight: porta,
       radius: 1.7,
     });
     // a quest do presente: o Renan diz que já volta e sai por esta porta
-    surpresaNaSala(w, { porta: { x: PORTA_DA_RUA.x, z: zPorta } });
+    // (os dois ficam onde ficavam antes de a porta ir para o meio: junto da ponta do sofá)
+    surpresaNaSala(w, { porta: { x: PORTA_DA_RUA.x, z: zPorta }, ficam: { x: 0.8, z: 1.6 } });
 
     // -------------------------------------------------------------- ambiente
     // a roupa rodando atrás do vidro enquanto a máquina está ligada

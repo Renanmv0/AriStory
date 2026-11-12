@@ -130,7 +130,10 @@ export async function sonoDaSurpresa(
  * rua e sai; o Ari fica sem entender e vai atrás. `porta` é onde fica a
  * porta da rua (o ponto em que ele some).
  */
-export function surpresaNaSala(w: WorldBuilder, sala: { porta: { x: number; z: number } }): void {
+export function surpresaNaSala(
+  w: WorldBuilder,
+  sala: { porta: { x: number; z: number }; /** onde o Ari espera na sala (o Renan, 1,4 ao lado); sem isso, a partir da porta */ ficam?: { x: number; z: number } },
+): void {
   const g = w.game;
   if (!bebitoMobileNestaPagina() || !g.flag(FASES_DO_PRESENTE.surpresa) || g.flag(FASES_DO_PRESENTE.ganhou)) return;
   const { esperar, aCadaQuadro } = relogioDaCena(w);
@@ -145,11 +148,12 @@ export function surpresaNaSala(w: WorldBuilder, sala: { porta: { x: number; z: n
     g.lockPlayer(true);
     if (g.playerId() !== ARI.id) g.swapCharacters();
     const { porta } = sala;
+    const ari = sala.ficam ?? { x: porta.x - 2.6, z: porta.z - 2.9 };
     if (!g.flag(FASES_DO_PRESENTE.saiu)) {
       // os dois no meio da sala, de frente um para o outro
-      porOAri(g, porta.x - 2.6, porta.z - 2.9, Math.PI / 2);
-      g.releaseCompanion(porta.x - 1.2, porta.z - 2.9, -Math.PI / 2);
-      g.holdCompanion(porta.x - 2.6, porta.z - 2.9);
+      porOAri(g, ari.x, ari.z, Math.PI / 2);
+      g.releaseCompanion(ari.x + 1.4, ari.z, -Math.PI / 2);
+      g.holdCompanion(ari.x, ari.z);
       await esperar(0.5);
       await conversa(g, [
         [A, 'Pronto, tô na sala. Cadê a surpresa?'],
@@ -175,7 +179,7 @@ export function surpresaNaSala(w: WorldBuilder, sala: { porta: { x: number; z: n
       await esperar(0.9);
     } else {
       // (a página recarregou com ele já do lado de fora: o Ari está sozinho na sala)
-      porOAri(g, porta.x - 2.6, porta.z - 2.9, Math.PI / 2);
+      porOAri(g, ari.x, ari.z, Math.PI / 2);
       g.setCompanionVisible(false);
       await esperar(0.4);
     }
