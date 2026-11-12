@@ -904,7 +904,9 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     // (o nariz aponta um pouco para onde ele vai de lado: mais que isso, parecia derrapar)
     carro.group.rotation.y = rumoEm(estado.s) + Math.atan2(vl, Math.max(estado.v, 5)) * -0.55;
     const giroDoVolante = Math.max(-1.3, Math.min(1.3, -vl * 0.45));
-    g.poseNoCarro(jogadorDirige ? 'jogador' : 'parceiro', 'dirigindo', giroDoVolante);
+    // (depois da chegada a pose já foi desfeita: o quadro continua rodando durante a troca de cena,
+    // e pôr "dirigindo" de novo aqui deixava os dois de volante na mão ao sair do carro)
+    if (!terminou) g.poseNoCarro(jogadorDirige ? 'jogador' : 'parceiro', 'dirigindo', giroDoVolante);
 
     // ---- o motor
     ronco -= dt;

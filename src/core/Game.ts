@@ -386,6 +386,9 @@ export class Game implements GameAPI {
     this.player.teleport(spawn.x, spawn.z, spawn.facing ?? 0);
     this.player.locked = false;
     this.player.riding = false;
+    // a pose de carro morre com a cena (rede de segurança: nenhum dos dois sai de volante na mão)
+    this.player.rig.setNoCarro(null);
+    this.parceiro.rig.setNoCarro(null);
     this.player.setVisible(true);
     // o que a rodada do jardim liga morre com a cena
     this.player.mira = null;
