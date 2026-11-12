@@ -47,6 +47,8 @@ export class CelularDeJogo {
     tela.userData.semSombra = true;
     this.group.add(tela);
     this.group.traverse((o) => { o.castShadow = false; });
+    // (a câmera de dentro o põe a ~40 cm dos olhos: deste tamanho ele fica na mão, e não vira uma bandeja)
+    this.group.scale.setScalar(0.72);
   }
 
   mostrar(sim: boolean): void {

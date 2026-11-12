@@ -944,6 +944,30 @@ página o filtro do `.closest('.escolhas')` não reconhecia mais o clique.
 Hoje o botão de escolha para o clique (`stopPropagation`, `ui/Ui.ts`); se
 aparecer de novo em outra caixa de escolha, é esse o caminho.
 
+### Primeira pessoa DENTRO do carro (`eventos/bebitoMobile/cameraDeDentro.ts`)
+
+O carro por dentro (`docs/BEBITO-MOBILE-DENTRO.md`) é o molde de câmera de primeira
+pessoa que anda junto com uma peça:
+
+- **O olho é a CABEÇA de quem joga** (`g.cabecaDe`, um passo à frente): acompanha o
+  banco, as molas e a escala do carro sem conta nenhuma, e o filtro de ~14/s tira o
+  solavanco sem tirar o balanço. A cabeça dele some (`g.mostrarCabeca`: o cabelo, o rosto
+  e o chapéu — o corpo e as mãos ficam) e volta ao desligar e em toda troca de cena.
+- **O olhar é um ÂNGULO ACUMULADO** com limite (o pescoço da roda gigante): `giro` e
+  `altura`; deitado de barriga para cima o repouso é olhando o teto.
+- **A câmera DESLIZA**: `ligar(tomadaDeFora, seg)` mistura da tomada de fora (fixa, ou uma
+  função que se refaz a cada quadro, como a perseguição da estrada) até o olho, e
+  `desligar` volta. Começar pelo enquadramento da isométrica evita o corte seco.
+- **Quem entra, entra DESLIZANDO**: `g.ridePlayer(âncora, local, 1, facing)` a cada quadro
+  com o `local` interpolado (da porta para o banco, sentando no meio) — o jogador "entra" no
+  carro sem animação nova no rig.
+- **O que acompanha a câmera** (o celular na mão): `anexar(obj, { frente, baixo, direita })`.
+- **Cena que se DIRIGE ganha uma visão de passageiro** (`scenes/viagemDeCarro.ts`): o
+  piloto automático de jogo (gentil: na faixa dele, sem perseguir os corações) tem que
+  rodar MESMO com uma fala ou um menu na tela — o `livre` (sem fala) só vale para o manche
+  de quem joga —, e a troca de banco é refazer o `ride` e a pose dos dois (o `jogadorDirige`
+  é uma variável, e a pose do volante por quadro lê ela).
+
 ### Fundo de cena: uma vizinhança leve
 
 A rua da casa do Ari tem oito casas vizinhas, sebes e cinquenta árvores.

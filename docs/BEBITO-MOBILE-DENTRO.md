@@ -16,11 +16,17 @@
    **interações fofas**, olhando de um lado para o outro **enquanto o carro
    dirige sozinho**.
 
-**Estado:** ⬜ plano com as decisões do Renan (§7); a construção ainda não
-começou. O carro que já existe (a quest, a viagem, o estacionamento) está NO
-JOGO desde 2026-11-12 (a chave `BEBITO_MOBILE_NO_JOGO` foi ligada a pedido
-dele); o que este plano acrescentar entra por cima, atrás de
-`bebitoMobileNestaPagina()`.
+**Estado (2026-11-12): D1 a D5 FEITAS, atrás de uma chave PRÓPRIA, DESLIGADA.**
+
+A chave do carro está ligada desde 2026-11-12 (o Ari já joga com ele), então o
+carro por dentro NÃO entra de surpresa no save de verdade: tem a própria chave,
+`CARRO_POR_DENTRO_NO_JOGO = false` em `src/eventos/BebitoMobile.ts`. Para ver:
+**`?bebito&carroPorDentro&licoes=10`** (o save de teste, com a quest já feita).
+Para pôr no jogo do Ari: trocar a chave para `true` — só com o aval do Renan.
+
+O que a porta nova mudou NO MODELO vale para todos (a porta do motorista é um
+grupo à parte), mas fechada é a mesma imagem de antes: conferido por foto de
+antes e depois, e o teste do carro (`scripts/bebitoMobile.mjs`, parte `porta`).
 
 **A ideia numa frase:** o Bebito Mobile deixa de ser só uma coisa que se
 dirige e vira um LUGAR dos dois — onde se entra, se deita para conversar e se
@@ -30,12 +36,12 @@ vai de carona olhando a paisagem passar.
 
 | etapa | o quê | depende de |
 |---|---|---|
-| **D1** | a câmera de DENTRO (perspectiva, pescoço que gira) e a porta que abre | — |
-| **D2** | **entrar no carro** na garagem: a animação, o interior visto de dentro e o menu "o que a gente faz?" | D1 |
-| **D3** | **descansar no carro**: os bancos deitam, os dois deitam, o que se faz lá, levantar | D2 |
-| **D4** | o **piloto automático** de verdade (hoje só existe como piloto de TESTE) | — (pode ir em paralelo à D1) |
-| **D5** | a **visão do passageiro** na viagem: trocar de visão, olhar em volta, as interações fofas | D1 + D4 |
-| **D6** | acabamento: memória, save, sons, celular, peso, testes e docs | todas |
+| **D1** | a câmera de DENTRO (perspectiva, pescoço que gira) e a porta que abre | ✅ feita |
+| **D2** | **entrar no carro** na garagem: a animação, o interior visto de dentro e o menu "o que a gente faz?" | ✅ feita |
+| **D3** | **descansar no carro**: os bancos deitam, os dois deitam, a conversa, o cochilo, levantar | ✅ feita |
+| **D4** | o **piloto automático** de verdade (gentil, de jogo), que roda até com fala ou menu na tela | ✅ feita |
+| **D5** | a **visão do passageiro** na viagem: o 👀, olhar em volta e as interações do Ari e do Renan | ✅ feita |
+| **D6** | acabamento: o que ficou de fora (§6.1), o celular em pé, e a decisão de ligar a chave | ⬜ falta o Renan olhar |
 
 Ordem que recomendo: **D1 → D2 → D3** (a entrada e o descanso, que são o
 primeiro pedido) e depois **D4 → D5 → D6**. A D4 pode vir antes se o Renan
@@ -274,6 +280,42 @@ Fotos de cada passo, no computador e no celular em pé (`CEL=1`), **olhadas** �
 o interior pede foto de perto de tudo (painel, rádio, banco, o outro de
 lado). O peso medido por `renderer.info.render`, antes e depois, no commit.
 O `scripts/zfighting.mjs` na porta nova.
+
+## 6.1 O que ficou feito (o mapa do código) e as escolhas minhas
+
+| peça | onde |
+|---|---|
+| a PORTA do motorista (grupo `porta-do-motorista`, pivô na dobradiça da frente; `carro.abrirPorta(sim)` e `portaAberta`; ~66°) | `world/bebitoMobile/BebitoMobile.ts` |
+| a câmera de dentro (olho na cabeça de quem joga, pescoço, encostar no ombro, o celular na mão, desliza de e para uma tomada de fora) | `eventos/bebitoMobile/cameraDeDentro.ts` |
+| entrar, o menu de dentro, descansar, cochilar e descer | `eventos/bebitoMobile/entradaNoCarro.ts` (a garagem: `scenes/frenteDaCasa.ts`) |
+| o 👀 (botão) e o piloto automático de jogo, a troca de assento | `scenes/viagemDeCarro.ts`, `ui/Ui.ts` (`botaoDaViagem`) |
+| o menu do passageiro (cantarolar, celular, elogiar, ombro) | `eventos/bebitoMobile/passageiro.ts`, `world/celularDeJogo.ts` |
+| a chave própria | `eventos/BebitoMobile.ts` (`carroPorDentroNestaPagina`) |
+| o teste | `scripts/carroPorDentro.mjs` (e a parte `porta` de `scripts/bebitoMobile.mjs`) |
+
+**As escolhas que o Renan não fez e que eu fiz** (dizer se quer diferente):
+
+- **Quem joga na entrada é quem está sentado no banco do MOTORISTA**, e o outro
+  no do passageiro. A pergunta "Quem dirige dessa vez?" vem depois, ao escolher
+  "Viajar", como sempre: se o outro for dirigir, eles trocam de banco na estrada.
+- **Descansar**: os dois deitam lado a lado (quem joga do lado do motorista), de
+  barriga para cima; o rádio baixinho é a música de dançar da clareira
+  (`'danca-lenta'`, o rádio de verdade fica para depois); a conversa curta e o
+  cochilo (fade, três roncos, acordar) têm falas minhas, provisórias. A primeira
+  vez vira a memória "Descansamos no Bebito Mobile".
+- **A visão do passageiro**: o 👀 liga o piloto automático e a câmera nos olhos
+  de quem joga, que vai para o banco da carona — se dirigia, o outro assume o
+  volante ("Deixa que eu dirijo um pouco") e na volta cada um ao seu banco.
+  A tecla é **V**; o **E** (ou o ✨ no celular) abre o menu "O que fazer?".
+- **O piloto de jogo** fica na faixa da direita, NÃO persegue os corações (os da
+  viagem são de quem dirige), olha mais longe e freia mais cedo que o de teste, e
+  roda mesmo com uma fala ou o menu na tela.
+- **O Ari cantarola Dança Kuduro** com um "lá-lá-lá" sintetizado no ritmo da
+  música (nada de áudio gravado nem letra); **o Renan joga Brawl Stars** num
+  celular com uma arena desenhada por mim, sem arte nem logotipo do jogo.
+- **Aberto**: o piloto automático conta para a NOTA da viagem (as 3 estrelas)?
+  Hoje conta: ele nunca bate. Se o Renan quiser que "dirigir bem" seja só de
+  quem dirige, é uma linha.
 
 ## 7. As decisões do Renan (2026-11-12) e o que ainda está aberto
 

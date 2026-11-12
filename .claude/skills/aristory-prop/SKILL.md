@@ -1039,6 +1039,19 @@ nem redonda em planta, então a lataria do carro é uma superfície própria:
   painel (pato branco, camisa azul, chapéu azul) parecia outro pato famoso.
   O do jogo tem a boina larga tombada, a camisa creme de gola vermelha, a
   bandeirinha e a raquete — com elas, é ele.
+- **A PORTA que gira** (`carro.abrirPorta(sim)`, `portaAberta`): a porta do
+  motorista (a da frente, do lado `+X`) NÃO é uma peça colada: ela sai da PRÓPRIA
+  pele. As células da grade (os nós 0 a 5 da soleira à testeira, entre as beiras da
+  porta) viram um grupo à parte (`porta-do-motorista`) com o pivô na dobradiça da
+  frente — a lataria, o forro, a maçaneta e o friso da cintura na `folha`, e a janela
+  com a borracha e a testeira num subgrupo com nome (`porta-cima`) que some com o
+  teto. Fechada é a MESMA pele (as normais vêm da mesma grade; o que se parte, como a
+  moldura da janela da frente no quebra-vento, usa as mesmas linhas). Aberta, a borda
+  do buraco é uma fita de borracha da lataria até 4,5 cm para dentro (a pele é uma
+  superfície só), 4 mm DENTRO da pele — rente, a ponta brigava com a lataria e
+  pontilhava a quina — e **da cintura para cima o batente é do `teto`**: sem teto,
+  sobrava um poste no ar. Abre pelo `rotation.y` NEGATIVO (≈ −1,15 rad); o teste mede
+  que a beira de trás vai para fora, e não a foto.
 - **O peso**: a borracha dos vidros em tubo eram 5 mil triângulos; em
   filete, menos da metade, e mais bonita. O carro inteiro: 274 malhas → 43
   depois da `fundir()` e da `juntarPorCor`, ~35,5 mil triângulos.

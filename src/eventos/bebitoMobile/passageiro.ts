@@ -82,7 +82,7 @@ async function jogarNoCelular(p: PalcoDoPassageiro): Promise<void> {
   const { g, camera, celular, esperar } = p;
   await g.say(['Calma, só mais uma partida de Brawl Stars…'], g.playerName());
   celular.mostrar(true);
-  camera.anexar(celular.group);
+  camera.anexar(celular.group, { direita: 0, baixo: 0.17, frente: 0.4 });
   celular.placar = 0;
   // o olhar desce para o celular (o pescoço volta para o repouso)
   camera.giro = 0;

@@ -135,6 +135,14 @@ Picos medidos no `.wav`: `tibum` 0,20 (o mais alto, de propósito), `garca`
 0,06, `moeda` 0,05, `piado` 0,03 e `asas` 0,02 (é fundo: toca junto do
 grasnado, quando a garça levanta voo).
 
+**O carro por dentro** (`docs/BEBITO-MOBILE-DENTRO.md`): `roncoNoCarro` (um ciclo de
+respiração: puxa o ar — um chiado grave que sobe, com o motorzinho da garganta embaixo — e
+solta devagar; o cochilo toca três em fila, o `n` alterna a força) e `cantarolarKuduro` (o
+"lá-lá-lá" do Ari cantarolando Dança Kuduro: oito notas sincopadas na pentatônica menor a 130
+bpm, uma onda triangular macia com o "ar" por cima — como a música soa na cabeça de quem canta
+baixinho; NÃO é a melodia nem a letra). A porta usa o `portaDoBebito` que já existia (o `n`
+alterna abrir e bater).
+
 **O ônibus da festa de Halloween** (`eventos/halloween/chegadaDoOnibus.ts`):
 
 - `buzina`: o "fon-fon" simpático de ônibus de bairro, não sirene — duas

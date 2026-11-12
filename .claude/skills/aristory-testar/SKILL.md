@@ -51,6 +51,7 @@ Outros parâmetros de depuração:
 | `?olhar=3.14` | ângulo que eles encaram |
 | `?carro=38.4,-9` | estaciona o Bebito Mobile nesse ponto da cena (o carro só chega ao jogo pela quest); `&semTeto` tira o teto e `&farois` acende as luzes |
 | `?bebito` | liga o Bebito Mobile (a frente da casa, a quest do presente) num SAVE À PARTE — a chave dele está desligada no jogo (`eventos/BebitoMobile.ts`). `?semBebito` força desligado. A quest pede a lição 10: `jogo.save.concluirLicao('partiu-praia', 3)` no console e recarregar |
+| `?carroPorDentro` | liga o carro por dentro (a porta que gira, a câmera de dentro, descansar, a visão do passageiro) — use junto de `?bebito` (o save de teste); a chave própria é `CARRO_POR_DENTRO_NO_JOGO`. `?semCarroPorDentro` força desligado. O teste é `scripts/carroPorDentro.mjs` |
 | `?viagem=ida,renan,7` | com `&cena=viagem-de-carro`: abre a estrada do Bebito Mobile direto, com o sentido (`ida`/`volta`), quem dirige e a semente da rota. No console, `aristoryBebitoMobile.viagem` tem o estado, a rota, o piloto automático (`piloto = 'bom'`) e a pressa (`vezes`) |
 
 ## Ambiente
