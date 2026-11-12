@@ -20,6 +20,7 @@ pela janela.
 | **B** | a frente da casa do Ari (o jardim e a garagem) e a quest do presente | ✅ **feita e NO JOGO** (chave ligada em 2026-11-12) — falas aprovadas, e o grito do Ari é do Renan |
 | **C** | a viagem de carro Casa do Ari ↔ Villa Lobos, DIRIGIDA por quem joga, com "quem dirige?", obstáculos e bichos na faixa | ✅ **feita e NO JOGO** (chave ligada em 2026-11-12) |
 | **D** | o acabamento do carro. **Primeiro: o carro POR DENTRO** — entrar na garagem (animação na visão de um dos dois), descansar com os bancos deitados e a visão do passageiro na viagem, com o carro no piloto automático: plano em `docs/BEBITO-MOBILE-DENTRO.md`. **Depois**: as demais rotas (parque ↔ clube ↔ escola) | ⬜ a próxima (plano escrito, esperando as respostas do Renan) |
+| **plano anotado** | **o guarda do estacionamento** (a cancela com animação, o julgamento de quem dirige e as recompensas que custam corações): `docs/ESTACIONAMENTO.md` — só anotado, o Renan pediu para não fazer agora | ⬜ depois do carro por dentro |
 | a chave | `BEBITO_MOBILE_NO_JOGO = true` | ✅ **LIGADA em 2026-11-12**, a pedido do Renan ("coloque o que já temos no jogo mesmo"): o Ari já vê no link principal. A etapa D entra por cima. `?semBebito` mostra o jogo de antes |
 | depois | a EDIÇÃO do carro pelos dois (a ficha já está pronta para ela, §3) | ⬜ não fazer ainda |
 

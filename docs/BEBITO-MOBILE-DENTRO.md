@@ -309,20 +309,31 @@ acima onde mudou):
 ### 7.1 O que cada um faz de carona (a escolha é do jogador)
 
 Quem está no banco do passageiro abre um **menu "O que fazer?"** e escolhe.
-O Renan descreveu o que cada um faz:
+O Renan descreveu o que cada um faz — e agora está tudo decidido:
 
 **O Ari de passageiro:**
-- **cantarolar uma música famosa em espanhol** (uma canção conhecida — ver a
-  pergunta abaixo sobre qual; é cantarolada por sons sintetizados, sem letra
-  gravada, ou com a letra escrita no balão de fala se for o caso);
-- **elogiar o Renan** (falas curtas, dele, provisórias minhas);
+- **cantarolar "Dança Kuduro"** (a música é a escolhida pelo Renan). O
+  cantarolar é um **"lá-lá-lá" sintetizado** no ritmo da música, em sons do
+  jogo (nada de áudio gravado e nenhuma letra escrita: o Ari só cantarola,
+  como a música soa na cabeça de quem canta baixinho no carro). Vale a regra
+  do som do jogo: a receita nova entra em `src/audio/efeitos.ts` e é ouvida em
+  `.wav` antes de ser dada como pronta;
+- **elogiar o Renan** (falas curtas, minhas, provisórias);
 - **encostar no ombro dele**.
 
 **O Renan de passageiro:**
-- **jogar um joguinho no celular** (um minijogo pequeno na mão, ver a pergunta
-  abaixo);
+- **jogar Brawl Stars no celular** (decidido pelo Renan: "fica jogando Brawl
+  Stars"). Ele fica de cabeça baixa com o celular na mão, os dedões mexendo, e
+  a tela do celular mostra uma **arenazinha estilizada** desenhada em canvas
+  (uma silhueta de personagem andando e tiros de bolinha), sem copiar arte,
+  personagem nem logotipo do jogo: o nome só aparece nas falas ("Calma, deixa
+  eu terminar essa partida…"). Ele para quando o Ari chama;
 - **elogiar o Ari**;
 - **encostar no ombro dele**.
+
+**O Cochilar** (decidido): **só um fade, o ronco baixinho e acordar** no mesmo
+lugar — um cochilo mesmo, sem passar tempo e sem dia e noite. O ronco é um som
+sintetizado novo (baixinho, medido em `.wav`).
 
 (A lista de ideias da §3.2 que não entrou na escolha do Renan — acenar para os
 bichos, passar a mão no Jean-Luc, o vidro embaçado, o beijinho… — fica de
@@ -330,23 +341,13 @@ reserva, para entrar depois se ele quiser.)
 
 ### 7.2 O que ainda está aberto
 
-1. **A recompensa dos corações** (o Renan pediu para eu confirmar): hoje os
-   corações da viagem **não dão nada além de pontos** — são a pontuação que
-   aparece na tela, que fecha a viagem ("⭐⭐⭐ · 71 corações na viagem") e que
-   vira o **recorde de corações** (`bebito:recorde-de-coracoes`). Eles NÃO dão
-   dinheiro, item nem desbloqueio. A ideia que já estava anotada é "um prêmio
-   pelo recorde de corações (um detalhe novo para o carro)". **O que o Renan
-   quer que eles dêem?** (um detalhe para o carro a cada marco? dinheiro da
-   carteira? uma memória?).
-2. **Qual música em espanhol o Ari cantarola?** (eu não sei o gosto dele; sem a
-   resposta eu não invento — se for uma canção específica, preciso do nome; as
-   notas são sintetizadas, e a letra só entra se o Renan a escrever.)
-3. **O joguinho do celular do Renan**: qual? (um jogo de tocar, de pontinhos,
-   algo que o Renan joga de verdade? Se ele não disser, faço um bem simples —
-   ele toca em bolinhas que sobem — e ele troca.)
-4. **O "Cochilar"**: o que acontece? (o fade, o ronco baixinho e acordar no
-   mesmo lugar? Ou passa o tempo do dia? Hoje a garagem não tem dia e noite, então
-   eu proponho só o fade e acordar.)
+1. **A recompensa dos corações** (continua aberta): hoje os corações da viagem
+   **não dão nada além de pontos** (a pontuação da viagem e o recorde de
+   corações). **Novidade do Renan (2026-11-12): vai haver um guarda do
+   estacionamento que dá recompensas por dirigir bem, que custam corações**
+   (plano separado, só anotado: `docs/ESTACIONAMENTO.md`). Isso responde ao
+   "o que os corações dão" — eles viram a moeda dessas recompensas —, mas só
+   quando aquele plano for feito; até lá, nada muda aqui.
 
 **O que eu proponho como primeiro passo:** a **D1 + D2** (a porta que gira, a
 câmera de dentro e a entrada, com o interior visto de dentro e o menu), com

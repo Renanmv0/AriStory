@@ -283,7 +283,11 @@ passa da rua com a chave ligada).
 `BEBITO-MOBILE-DENTRO.md` é o plano da etapa D, parte 1: o carro POR DENTRO — entrar
 na garagem com uma animação na visão de um dos dois, descansar com os bancos
 deitados e a visão do passageiro na viagem com o piloto automático (aberto por
-um "COMECE AQUI" e com as perguntas ao Renan; só plano, nada no jogo ainda).
+um "COMECE AQUI", com as decisões do Renan já registradas; só plano, nada no jogo ainda).
+`ESTACIONAMENTO.md` é o plano (só ANOTADO, o Renan pediu para não fazer agora) do
+guarda do estacionamento do Villa Lobos: a cancela com animação de entrada, o
+fiscal que se preocupa se a gente é bom motorista e as recompensas para o carro
+que custam corações.
 `QUINTAL.md` é o plano de DECORAR o quintal da casa do Ari — o decorador da
 estufa ensinado a pôr enfeite no chão, no piso, na parede, em cima, pendurado
 e de ponta a ponta —, aberto por um "COMECE AQUI" com as decisões do Renan.
