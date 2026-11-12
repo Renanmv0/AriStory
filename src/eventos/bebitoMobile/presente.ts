@@ -25,16 +25,20 @@ import { FASES_DO_PRESENTE, LICAO_QUE_LIBERA_O_PRESENTE, bebitoMobileNestaPagina
  * sempre o PARCEIRO aqui — é ele que anda até a porta, some e dirige.
  *
  * AS FALAS: o roteiro (quem diz o quê, e quando) é do Renan; as palavras
- * foram escritas por mim e esperam o aval dele. A fala do Ari ao ver o carro
- * (`FALA_DO_ARI_AO_VER_O_CARRO`) é a que ele escolher entre as propostas em
- * `docs/BEBITO-MOBILE.md` — se ele escrever uma, ela entra literal.
+ * foram escritas por mim e o Renan deixou como estão (2026-11-12: "de resto
+ * pode deixar como fez"). O grito do Ari ao ver o carro
+ * (`FALA_DO_ARI_AO_VER_O_CARRO`) é dele, literal.
  */
 
 const A = ARI.name;
 const R = RENAN.name;
 
-/** A ESCOLHER PELO RENAN (está a primeira das três propostas do plano) */
-export const FALA_DO_ARI_AO_VER_O_CARRO = 'Mentira… Isso é pra gente? Você é doido. Eu amei.';
+/**
+ * O PRIMEIRO GRITO DO ARI ao ver o carro: do Renan, LITERAL (2026-11-12: "quero
+ * falas bem surpresas, tipo 'BEBITOOOO UM CARRO???' e coisas do tipo"). As
+ * outras reações em volta (`REACOES_DO_ARI`) são minhas, no mesmo tom.
+ */
+export const FALA_DO_ARI_AO_VER_O_CARRO = 'BEBITOOOO UM CARRO???';
 
 type Falas = Array<readonly [string, string]>;
 /**
@@ -408,8 +412,10 @@ export function chegadaDoBebito(w: WorldBuilder, palco: PalcoDaChegada): void {
     await conversa(g, [
       [R, 'Surpresa!'],
       [A, FALA_DO_ARI_AO_VER_O_CARRO],
+      [A, 'ESPERA! Isso é pra gente?! Para! PARA TUDO!'],
       [R, 'É nosso. O Bebito Mobile.'],
-      [A, 'Bebito Mobile… Tá escrito na placa!'],
+      [A, 'NOSSO?! UM CARRO NOSSO?! Eu vou chorar, bebito!'],
+      [A, 'Bebito Mobile… TÁ ESCRITO NA PLACA!'],
       [R, 'E tem a sua estrela no retrovisor, o Pelusa no chaveiro e o Jean-Luc no painel.'],
       [A, 'Então a gente não precisa mais correr atrás de ônibus?'],
       [R, 'Só se você quiser. E cada viagem a gente decide quem dirige.'],

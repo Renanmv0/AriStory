@@ -72,13 +72,13 @@ const jogarAte = async (page, pronto, teto = 120000, aCada = 350) => {
 
 // ================================================================== escondido
 if (roda('escondido')) {
-  console.log('— escondido: sem ?bebito o jogo é o de sempre');
+  console.log('— escondido: com ?semBebito o jogo é o de antes do carro (a chave está ligada)');
   const page = await pagina();
-  await abrir(page, 'cena=casa');
+  await abrir(page, 'semBebito&cena=casa');
   const r = await rotulos(page);
   confere(r.includes('Sair — ir pro parque') && !r.includes('Sair pro jardim'), 'a porta da casa sai direto no parque');
   await comLicao(page);
-  await abrir(page, 'cena=quarto');
+  await abrir(page, 'semBebito&cena=quarto');
   await page.evaluate(() => { void window.jogo.current.world.interactables.find((i) => i.id === 'quarto:cama').trigger(window.jogo); });
   await page.waitForTimeout(600);
   for (let i = 0; i < 14; i++) {
@@ -90,7 +90,7 @@ if (roda('escondido')) {
     cena: window.jogo.idDaCena,
   }));
   confere(depois.flags.length === 0 && depois.cena === 'quarto', 'com a lição 10 concluída, a cama continua a de sempre (nenhuma flag do carro no save)');
-  await abrir(page, 'cena=villa-lobos');
+  await abrir(page, 'semBebito&cena=villa-lobos');
   const volta = await page.evaluate(() => window.jogo.current.world.interactables.find((i) => i.label === 'Voltar pra casa')?.id ?? '');
   confere(volta === 'door:casa:da-rua', `o parque volta direto para a casa (${volta})`);
   await page.context().close();

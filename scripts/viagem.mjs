@@ -410,8 +410,8 @@ if (roda('volta')) {
 if (roda('estacionamento')) {
   console.log('— o estacionamento do outro lado da rua do ônibus');
   const page = await pagina();
-  // sem a chave, o parque é o de sempre
-  await abrir(page, 'cena=villa-lobos');
+  // sem a chave (?semBebito, agora que ela está ligada), o parque é o de sempre
+  await abrir(page, 'semBebito&cena=villa-lobos');
   const semChave = await page.evaluate(() => ({
     lote: (() => { let tem = false; window.jogo.current.world.root.traverse((o) => { if (o.userData.peca === 'estacionamento') tem = true; }); return tem; })(),
     limite: window.jogo.current.world.bounds.maxX,

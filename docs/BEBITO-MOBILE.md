@@ -17,10 +17,10 @@ pela janela.
 | etapa | o quê | estado |
 |---|---|---|
 | **A** | o modelo do Bebito Mobile no kit, por ficha de dados, com fotos de todos os lados | ✅ **feita** |
-| **B** | a frente da casa do Ari (o jardim e a garagem) e a quest do presente | ✅ **feita, ESCONDIDA** — faltam o aval do Renan nas falas e a escolha da fala do Ari (§5) |
-| **C** | a viagem de carro Casa do Ari ↔ Villa Lobos, DIRIGIDA por quem joga, com "quem dirige?", obstáculos e bichos na faixa | ✅ **feita, ESCONDIDA** — as falas da carona esperam o aval do Renan (§6) |
+| **B** | a frente da casa do Ari (o jardim e a garagem) e a quest do presente | ✅ **feita e NO JOGO** (chave ligada em 2026-11-12) — falas aprovadas, e o grito do Ari é do Renan |
+| **C** | a viagem de carro Casa do Ari ↔ Villa Lobos, DIRIGIDA por quem joga, com "quem dirige?", obstáculos e bichos na faixa | ✅ **feita e NO JOGO** (chave ligada em 2026-11-12) |
 | **D** | o acabamento do carro. **Primeiro: o carro POR DENTRO** — entrar na garagem (animação na visão de um dos dois), descansar com os bancos deitados e a visão do passageiro na viagem, com o carro no piloto automático: plano em `docs/BEBITO-MOBILE-DENTRO.md`. **Depois**: as demais rotas (parque ↔ clube ↔ escola) | ⬜ a próxima (plano escrito, esperando as respostas do Renan) |
-| no fim | LIGAR A CHAVE: `BEBITO_MOBILE_NO_JOGO = true` | ⬜ só quando tudo estiver pronto |
+| a chave | `BEBITO_MOBILE_NO_JOGO = true` | ✅ **LIGADA em 2026-11-12**, a pedido do Renan ("coloque o que já temos no jogo mesmo"): o Ari já vê no link principal. A etapa D entra por cima. `?semBebito` mostra o jogo de antes |
 | depois | a EDIÇÃO do carro pelos dois (a ficha já está pronta para ela, §3) | ⬜ não fazer ainda |
 
 ### O que ainda FALTA antes de ligar a chave (2026-11-12)
@@ -81,14 +81,20 @@ age nele: o save de verdade nunca é tocado. Depois é só ir ao quarto do Ari e
 deitar na cama. Para recomeçar do zero o save de teste, no console do
 navegador: `localStorage.removeItem('aristory.save.v1.bebito')` e recarregar.
 
-### 🔑 A chave: nada disso aparece no jogo até tudo estar pronto
+### 🔑 A chave: LIGADA em 2026-11-12
 
-Pedido do Renan (2026-11-11): o carro, a quest, as viagens e tudo o que vem
-junto **só aparecem no jogo quando tudo estiver pronto**. Por isso existe uma
-chave, em `src/eventos/BebitoMobile.ts`:
+Pedido do Renan (2026-11-11): o carro, a quest e as viagens só apareceriam
+quando tudo estivesse pronto, e por isso existe uma chave. **Em 2026-11-12,
+depois de testar a viagem no celular, ele mandou ligar** ("coloque o que já
+temos no jogo mesmo, no link principal, para o Ari já ver no jogo dele"): o
+que existe (a quest, a frente da casa, a viagem, o estacionamento e o quintal
+decorado) está no jogo. **Toda etapa nova continua entrando atrás
+de `bebitoMobileNestaPagina()`**, que hoje vale `true` em todo lugar;
+`?semBebito` mostra o jogo de antes. Para tirar do jogo é trocar a chave.
+O texto abaixo é o de quando ela estava desligada:
 
 ```ts
-export const BEBITO_MOBILE_NO_JOGO = false;   // ligar é trocar para true. Só isso.
+export const BEBITO_MOBILE_NO_JOGO = true;   // (foi false até 2026-11-12)
 ```
 
 Com ela em `false`, quem joga pelo link de sempre encontra o jogo exatamente
@@ -305,7 +311,7 @@ com mais de um jogo de calotas, e remontar o carro quando a ficha muda
 Ficaram de fora de propósito: o Halloween (está fora do jogo) e a Hello Kitty
 do arraiá (personagem de marca).
 
-## 5. Etapa B — a frente da casa e a quest do presente (feita, escondida)
+## 5. Etapa B — a frente da casa e a quest do presente (feita, no jogo)
 
 ### A frente da casa (`frente-da-casa`)
 
@@ -434,12 +440,19 @@ reescrever entra literal.
 > **Ari**: Então a gente não precisa mais correr atrás de ônibus?
 > **Renan**: Só se você quiser. E cada viagem a gente decide quem dirige.
 
-**A fala do Ari ao ver o carro** — três propostas (hoje está a 1; ela mora em
-`FALA_DO_ARI_AO_VER_O_CARRO`):
+**A fala do Ari ao ver o carro — DECIDIDA pelo Renan (2026-11-12):** ele quer
+falas bem surpresas, "tipo 'BEBITOOOO UM CARRO???' e coisas do tipo". O grito
+é dele, literal (`FALA_DO_ARI_AO_VER_O_CARRO`), e as reações em volta são
+minhas no mesmo tom:
 
-1. "Mentira… Isso é pra gente? Você é doido. Eu amei."
-2. "Para. Para tudo. Esse carro é nosso?!"
-3. "Ai, bebito… é a coisa mais fofa que eu já vi."
+> **Renan**: Surpresa!
+> **Ari**: BEBITOOOO UM CARRO???
+> **Ari**: ESPERA! Isso é pra gente?! Para! PARA TUDO!
+> **Renan**: É nosso. O Bebito Mobile.
+> **Ari**: NOSSO?! UM CARRO NOSSO?! Eu vou chorar, bebito!
+> **Ari**: Bebito Mobile… TÁ ESCRITO NA PLACA!
+
+(O resto das falas o Renan deixou como estão: "de resto pode deixar como fez".)
 
 **A memória do diário** ("O Bebito Mobile", escrita na voz do Renan): "Eu
 disse que já voltava e saí pela porta. Você veio atrás, sem entender nada, e
@@ -459,7 +472,7 @@ o nosso nome na placa, estacionado de ré na garagem."
 4. **O laço fica onde?** Hoje some depois da entrega. Ele pode virar um
    enfeite guardado (pendurado na garagem, ou no retrovisor).
 
-## 6. Etapa C — a viagem de carro (feita, escondida)
+## 6. Etapa C — a viagem de carro (feita, no jogo)
 
 O pedido do Renan (2026-11-12): "a viagem até o Villa Lobos com a gente
 podendo controlar o carro; quero que deixe essa mecânica intuitiva e

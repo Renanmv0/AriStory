@@ -5,18 +5,24 @@
  * frente da casa do Ari (o jardim e a garagem), a quest do presente e as
  * viagens de carro.
  *
- * ESTADO: DESLIGADO. O Renan pediu (2026-11-11) que NADA disso apareça no jogo
- * até tudo estar pronto — a quest, as viagens e o acabamento. Enquanto esta
- * chave estiver em `false`, quem joga pelo link de sempre encontra o jogo
- * exatamente como era: a porta da casa leva direto ao parque, a cama do
- * quarto é a de sempre, e o save não ganha flag nenhuma do carro.
+ * ESTADO: LIGADO (2026-11-12). O Renan pediu (2026-11-11) que nada disso
+ * aparecesse até estar pronto, e no dia seguinte, depois de testar a viagem
+ * no celular, mandou pôr no jogo o que já existe, para o Ari ver no link
+ * principal: "coloque o que já temos no jogo mesmo". Com a chave em `true`,
+ * a porta da casa sai no jardim, a cama do quarto (depois da lição 10) começa
+ * a surpresa, o carro mora na garagem e as viagens funcionam. O que ainda
+ * falta (o carro por dentro, as outras rotas…) entra por cima, atrás de
+ * `bebitoMobileNestaPagina()` como sempre — ver `docs/BEBITO-MOBILE-DENTRO.md`.
+ *
+ * Para ver o jogo SEM nada disso (os testes do "escondido"): `?semBebito`.
  *
  * PARA VER ANTES DA HORA (os testes e o Renan): `?bebito` no endereço liga
  * tudo NUM SAVE À PARTE (`aristory.save.v1.bebito`, que nasce como cópia do
  * de verdade): dá para jogar a quest inteira sem gastar a surpresa no save
- * do jogo. `?semBebito` força desligado, para quando a chave estiver ligada.
+ * do jogo. `?semBebito` força desligado (é o que os testes do "escondido"
+ * usam agora que a chave está ligada).
  *
- * PARA PÔR NO JOGO, no fim: `BEBITO_MOBILE_NO_JOGO = true`. Só isso.
+ * PARA TIRAR DO JOGO outra vez: `BEBITO_MOBILE_NO_JOGO = false`. Só isso.
  *
  * O QUE A CHAVE ESCONDE, E ONDE MORA:
  * - a cena `frente-da-casa` (`scenes/frenteDaCasa.ts`, peças em
@@ -32,8 +38,8 @@
  * são kit e dado, e não aparecem sozinhos.
  */
 
-/** O Bebito Mobile está no jogo? Ligar é trocar para `true`, quando tudo estiver pronto. */
-export const BEBITO_MOBILE_NO_JOGO = false;
+/** O Bebito Mobile está no jogo? Ligado em 2026-11-12, a pedido do Renan. */
+export const BEBITO_MOBILE_NO_JOGO = true;
 
 /** O carro e a quest existem nesta página? (a chave, ou `?bebito` nos testes) */
 export function bebitoMobileNestaPagina(): boolean {

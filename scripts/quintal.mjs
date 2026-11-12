@@ -71,14 +71,14 @@ const peso = () => page.evaluate(async () => {
 
 // ================================================================== escondido
 if (roda('escondido')) {
-  console.log('— escondido: sem ?bebito o computador é o de sempre');
-  await abrir('cena=quarto');
+  console.log('— escondido: com ?semBebito o computador é o de sempre (a chave está ligada)');
+  await abrir('semBebito&cena=quarto');
   await page.evaluate(() => window.jogo.setFlag('lab:pasta-vista'));
   await disparar('quarto:mesa');
   await page.waitForTimeout(2500);
   const pergunta = await page.evaluate(() => document.querySelector('.dialogue')?.textContent ?? document.body.innerText);
   confere(/Abrir a pasta/.test(pergunta) && await page.locator('.painel-do-quintal.show').count() === 0,
-    'sem a chave, "Usar o computador" pergunta da pasta (sem área de trabalho)');
+    'com ?semBebito, "Usar o computador" pergunta da pasta (sem área de trabalho)');
   await page.keyboard.press('Escape');
 }
 

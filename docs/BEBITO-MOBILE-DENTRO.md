@@ -16,12 +16,15 @@
    **interações fofas**, olhando de um lado para o outro **enquanto o carro
    dirige sozinho**.
 
-**Estado:** ⬜ só o plano. Nada disto está no jogo, e tudo fica atrás da chave
-`BEBITO_MOBILE_NO_JOGO` (`?bebito` para testar), como o resto do carro.
+**Estado:** ⬜ plano com as decisões do Renan (§7); a construção ainda não
+começou. O carro que já existe (a quest, a viagem, o estacionamento) está NO
+JOGO desde 2026-11-12 (a chave `BEBITO_MOBILE_NO_JOGO` foi ligada a pedido
+dele); o que este plano acrescentar entra por cima, atrás de
+`bebitoMobileNestaPagina()`.
 
 **A ideia numa frase:** o Bebito Mobile deixa de ser só uma coisa que se
-dirige e vira um LUGAR dos dois — onde se entra, se mexe no rádio, se deita
-para olhar o céu e se vai de carona olhando a paisagem passar.
+dirige e vira um LUGAR dos dois — onde se entra, se deita para conversar e se
+vai de carona olhando a paisagem passar.
 
 ### As etapas
 
@@ -105,28 +108,26 @@ ser vista de dentro" (`world/bebitoMobile/BebitoMobile.ts`).
    - **Ir de carro pro Villa Lobos** — segue o fluxo de hoje ("Quem dirige
      dessa vez?"), agora saindo de dentro do carro;
    - **Descansar no carro** — a D3;
-   - **Mexer no rádio** — ver §3.2 (ideia);
    - **Descer** — a câmera volta e a porta fecha.
 
 **Descansar no carro (D3):**
 
 - os dois encostos da frente deitam (`deitarEncostos`) e viram a cama de
   verdade; os dois deitam lado a lado (o padrão da cama do quarto), de
-  barriga para cima, com a câmera na visão de um deles olhando para cima;
-- **dá para abrir o teto** (`mostrarTeto(false)`) e ver o céu: de dia,
-  nuvens passando; de noite, as estrelas da clareira (o céu e a estrela
-  cadente já existem). Com o teto fechado: a chuvinha no teto como ideia (§5);
-- o que dá para fazer lá (a escolher, ver as perguntas): papo de
-  travesseiro (o que o Bebito book é na barraca), o rádio baixinho, olhar o
-  céu, **cochilar** (um fade, o ronco, acordar com o sol mais baixo);
+  barriga para cima, com a câmera na visão de um deles;
+- **o teto fica FECHADO** (a garagem é coberta: não há céu para ver — decisão
+  do Renan). O que se faz lá é só o **bate-papo** (uma conversa curta sobre
+  aonde viajar com o Bebito Mobile) e o **rádio baixinho** de fundo;
+- depois da conversa, o menu: **Sair do carro** ou **Cochilar** (um fade, o
+  ronco baixinho e acordar no mesmo lugar);
 - **levantar**: os encostos voltam e a câmera desce para a visão de sentado;
 - **a memória**: a primeira vez que descansam ganha uma memória no diário,
   como o resto ("Descansamos no Bebito Mobile").
 
 ### 3.2 A visão do passageiro (D5)
 
-**Como se troca:** durante a viagem, um botão (**👀** no celular, uma tecla no
-computador — a decidir) passa para a visão de dentro, do banco do passageiro.
+**Como se troca:** durante a viagem, um botão **sempre na tela** (**👀**; no
+computador também uma tecla — a decidir) passa para a visão de dentro, do banco do passageiro.
 Ao trocar, o carro **assume o piloto automático** (a D4): ele continua pela
 estrada, para nas faixas e no sinal e desvia sozinho. O mesmo botão (ou "pegar
 o volante") devolve o manche, com o carro soltando o controle suave, sem
@@ -197,9 +198,9 @@ dão "corações de carona").
 
 - A dupla sentada vira a dupla deitada na âncora `carro.cama` (os dois
   padrões já existem e são testados: `scripts/bebitoMobile.mjs`, `lugares`).
-- O céu pelo teto aberto e as estrelas reusam o que a clareira já pintou (a
-  noite, a estrela cadente). Atenção ao peso: a câmera de dentro vê pouco
-  mundo, então dá para mostrar menos.
+- Sem céu: o teto fica fechado. O rádio baixinho é um fundo musical suave (uma
+  música que já existe, em volume baixo, ligada enquanto dura o descanso); a
+  conversa usa o `g.say` de sempre.
 - **Sair do descanso desfaz tudo** (encostos, teto, pose, câmera) — a lição
   do bug de hoje (a pose de carro que ficou grudada ao sair): a pose de
   carro agora é desfeita em toda troca de cena, mas o descanso tem que
@@ -244,10 +245,8 @@ dão "corações de carona").
 
 ## 5. Ideias que cabem depois (não fazem parte deste plano)
 
-- A viagem **de noite**, com os postes acesos e o descanso sob as estrelas na
-  estrada (liga o descanso com a noite da clareira).
-- **A chuvinha no teto** (som + gotas no vidro, só quando chove) como parte do
-  descanso.
+- A viagem **de noite**, com os postes acesos.
+- **A chuvinha no teto** (som + gotas no vidro) como parte do descanso.
 - O **banco de trás** (a dupla ou convidados), que já tem os três lugares.
 - **Passeio sem destino**: ficar rodando de piloto automático só pelo prazer
   de olhar.
@@ -276,35 +275,79 @@ o interior pede foto de perto de tudo (painel, rádio, banco, o outro de
 lado). O peso medido por `renderer.info.render`, antes e depois, no commit.
 O `scripts/zfighting.mjs` na porta nova.
 
-## 7. As perguntas para o Renan
+## 7. As decisões do Renan (2026-11-12) e o que ainda está aberto
 
-Escolhas que mudam o que eu construo (as minhas sugestões vão primeiro):
+O Renan respondeu o plano. **O que ficou decidido** (e já ajustei no texto
+acima onde mudou):
 
-1. **A porta**: uma porta que **gira de verdade** (recomendo) ou a câmera só
-   **atravessa o vidro** com um fade?
-2. **Quem é o "personagem da visão"**: o que o jogador controla na hora
-   (recomendo), ou sempre o Ari (ou sempre o Renan)?
-3. **Descansar**: teto **aberto para ver o céu** (de dia, nuvens; de noite,
-   estrelas) ou fechado? E queremos **cochilar de verdade** (fade, ronco,
-   acordar com a luz do fim de tarde) ou só ficar deitados conversando?
-4. **O que se faz deitado**, entre: o rádio baixinho, o papo de travesseiro
-   (o Bebito book, que já existe na barraca, poderia vir junto), olhar o céu,
-   brincar de achar formas nas nuvens, uma conversa da dupla. Quais?
-5. **Como se troca para a visão do passageiro**: um botão **👀** sempre na
-   tela durante a viagem, ou só quando a viagem está tranquila (sem bicho na
-   faixa)?
-6. **Os corações no piloto automático**: o carro pega os corações sozinho
-   (e a carona ganha também) ou os corações são só de quem dirige, e a
-   carona tem **outra recompensa** pelas interações?
-7. **As interações fofas do passageiro**: da lista da §3.2, quais entram
-   primeiro? (Minha escolha para começar: acenar para os bichos, passar a mão
-   no Jean-Luc, mexer no rádio e a cabeça no ombro.) Tem alguma que só vocês
-   dois conhecem — uma piada, um gesto, uma música — que tem que estar?
-8. **O rádio**: queremos mexer no rádio já aqui (três estações) ou deixar para
-   a parte do rádio da etapa D?
-9. **As falas**: as da carona e as do descanso são minhas e provisórias — a
-   fala que o Renan escrever vai literal.
+| pergunta | decisão |
+|---|---|
+| 1. A porta | **gira de verdade** |
+| 2. A visão de quem | **de quem o jogador controla** na hora |
+| 3. Descansar | **deitados, com uma curta conversa sobre aonde viajar com o Bebito Mobile**; depois dá para escolher **sair do carro** ou **cochilar** |
+| 4. O céu | **sem céu**: a garagem é coberta, então o teto NÃO abre para ver estrelas ou nuvens. Só o **bate-papo e o rádio baixinho** |
+| 5. O botão da visão do passageiro | **sempre na tela** durante a viagem |
+| 6. Os corações no piloto automático | **vão sempre para o motorista** (a carona não ganha corações; ver a pergunta aberta sobre a recompensa) |
+| 7. As interações do passageiro | **a escolha é do jogador, num menu** (ver §7.1) |
+| 8. O rádio | **fica para depois** (a parte do rádio da etapa D) |
+| 9. As falas | as do primeiro encontro com o carro estão no jogo (o grito do Ari é do Renan, literal); **de resto, as minhas ficam como estão** |
 
-**O que eu proponho como primeiro passo, se for tudo certo:** a **D1 + D2** (a
-porta e a entrada, com o interior visto de dentro e o menu), com fotos para
-o Renan olhar antes de seguir para o descanso.
+**O que isso muda no plano:**
+
+- **D3 (descansar)**: o teto fica fechado e o descanso é só a conversa e o
+  rádio baixinho. A conversa é curta, sobre **onde viajar com o Bebito Mobile**
+  (as falas são minhas, e provisórias); ao terminar, o menu pergunta **"Sair do
+  carro"** ou **"Cochilar"**. O céu e as estrelas saem do plano, e o rádio
+  baixinho é só um fundo (uma música suave, não a tela de escolher estação,
+  que é a parte do rádio, depois).
+- **D5**: o botão **👀** fica sempre na tela durante a viagem (a bússola da
+  troca de visão), e os corações continuam sendo só do motorista — quem está de
+  carona vê a viagem, escolhe o que fazer, mas não pega corações.
+- **O rádio** sai das etapas D1 a D6. A ideia "mexer no rádio" do menu da
+  entrada fica fora até a parte do rádio.
+
+### 7.1 O que cada um faz de carona (a escolha é do jogador)
+
+Quem está no banco do passageiro abre um **menu "O que fazer?"** e escolhe.
+O Renan descreveu o que cada um faz:
+
+**O Ari de passageiro:**
+- **cantarolar uma música famosa em espanhol** (uma canção conhecida — ver a
+  pergunta abaixo sobre qual; é cantarolada por sons sintetizados, sem letra
+  gravada, ou com a letra escrita no balão de fala se for o caso);
+- **elogiar o Renan** (falas curtas, dele, provisórias minhas);
+- **encostar no ombro dele**.
+
+**O Renan de passageiro:**
+- **jogar um joguinho no celular** (um minijogo pequeno na mão, ver a pergunta
+  abaixo);
+- **elogiar o Ari**;
+- **encostar no ombro dele**.
+
+(A lista de ideias da §3.2 que não entrou na escolha do Renan — acenar para os
+bichos, passar a mão no Jean-Luc, o vidro embaçado, o beijinho… — fica de
+reserva, para entrar depois se ele quiser.)
+
+### 7.2 O que ainda está aberto
+
+1. **A recompensa dos corações** (o Renan pediu para eu confirmar): hoje os
+   corações da viagem **não dão nada além de pontos** — são a pontuação que
+   aparece na tela, que fecha a viagem ("⭐⭐⭐ · 71 corações na viagem") e que
+   vira o **recorde de corações** (`bebito:recorde-de-coracoes`). Eles NÃO dão
+   dinheiro, item nem desbloqueio. A ideia que já estava anotada é "um prêmio
+   pelo recorde de corações (um detalhe novo para o carro)". **O que o Renan
+   quer que eles dêem?** (um detalhe para o carro a cada marco? dinheiro da
+   carteira? uma memória?).
+2. **Qual música em espanhol o Ari cantarola?** (eu não sei o gosto dele; sem a
+   resposta eu não invento — se for uma canção específica, preciso do nome; as
+   notas são sintetizadas, e a letra só entra se o Renan a escrever.)
+3. **O joguinho do celular do Renan**: qual? (um jogo de tocar, de pontinhos,
+   algo que o Renan joga de verdade? Se ele não disser, faço um bem simples —
+   ele toca em bolinhas que sobem — e ele troca.)
+4. **O "Cochilar"**: o que acontece? (o fade, o ronco baixinho e acordar no
+   mesmo lugar? Ou passa o tempo do dia? Hoje a garagem não tem dia e noite, então
+   eu proponho só o fade e acordar.)
+
+**O que eu proponho como primeiro passo:** a **D1 + D2** (a porta que gira, a
+câmera de dentro e a entrada, com o interior visto de dentro e o menu), com
+fotos para o Renan olhar antes de seguir para o descanso (D3).
