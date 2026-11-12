@@ -84,7 +84,7 @@ function janelaDeDentro(j: JanelaDaSala, espessura: number): THREE.Group {
   // a cortina: o varão e dois panos recolhidos nos lados, na face de dentro
   const cortina = toon(P.cortinaDaSala);
   const zc = -(espessura / 2 + 0.06);
-  const varao = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, L + 0.5, 8).rotateZ(Math.PI / 2), toon(P.woodDark));
+  const varao = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, L + 0.5, 8).rotateZ(Math.PI / 2), toon(P.metalGrey));
   varao.position.set(j.x, j.y0 + A + 0.16, zc);
   g.add(varao);
   for (const lado of [-1, 1]) {
@@ -97,7 +97,7 @@ function janelaDeDentro(j: JanelaDaSala, espessura: number): THREE.Group {
       prega.position.set(pano.position.x + k * 0.1, pano.position.y, zc - 0.045);
       g.add(prega);
     }
-    const laco = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.05, 0.12), toon(P.woodDark));
+    const laco = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.05, 0.12), toon(P.metalGrey));
     laco.position.set(pano.position.x, j.y0 + A * 0.35, zc - 0.02);
     g.add(laco);
   }
