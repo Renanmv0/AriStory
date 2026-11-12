@@ -77,6 +77,10 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [ ] Casa do Renan
 - [ ] O restaurante/bar de sempre
 - [ ] A praia daquela viagem
+- [ ] **Decorar o quintal da casa do Ari** (`docs/QUINTAL.md`): o decorador da
+  estufa com mais lugares de pôr (chão, piso, parede, em cima, pendurado, de
+  ponta a ponta), o catálogo do quintal, os móveis que fazem alguma coisa e a
+  loja — por enquanto só o plano, e o jardim limpo esperando
 - [ ] **O Bebito Mobile e as viagens de carro** (`docs/BEBITO-MOBILE.md`): as
   demais rotas (etapa D) e, no fim, ligar a chave `BEBITO_MOBILE_NO_JOGO`
 - [ ] O caminho entre as casas (rua, ônibus, metrô)

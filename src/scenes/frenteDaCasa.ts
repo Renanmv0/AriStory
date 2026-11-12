@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { Collider, SceneDef } from '../core/types';
 import { PALETTE as P } from '../palette';
 import { ARI, RENAN } from '../characters/cast';
-import { cloud, flowers, lamp, meioFio, rock, sebe, tree } from '../world/props';
+import { cloud, flowers, lamp, meioFio, sebe, tree } from '../world/props';
 import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
 import { reboco } from '../world/texturasDeFachada';
 import { toon } from '../core/materials';
@@ -13,12 +13,7 @@ import {
   FACHADA, GARAGEM, MURO, PORTAO_DA_GARAGEM, fachadaDaCasa, muroDoJardim, painelDoPortao, pergoladoDaGaragem,
   pilarDoMuro, portaoDeCorrer, portaoSocial, trilhoDoPortao, type CoresDaFachada,
 } from '../world/frenteDaCasa';
-import {
-  agaves, buxinhoNoVaso, capins, cascaDePinus, costelasDeAdao, heraNosMuros, hortensias, lavandas, margaridas,
-  pedrisco, type MuroComHera,
-} from '../world/plantasDeJardim';
-import { beiraTorta, caixaRedonda, capsula, mancha, uniaoSuave } from '../world/caminhos';
-import { Vento } from '../core/shaders';
+import { buxinhoNoVaso, heraNosMuros, type MuroComHera } from '../world/plantasDeJardim';
 import { quina } from '../world/lojaDeRoupas';
 import { BEBITO_MOBILE, BebitoMobile } from '../world/bebitoMobile/BebitoMobile';
 import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/bebitoMobile/presente';
@@ -34,18 +29,20 @@ import { FLAG_DO_CARRO_NO_PARQUE } from '../eventos/BebitoMobile';
  * sair tem um jardinzinho e ao lado uma garagem onde fica o carro; o jardim é
  * florido e fechado dos dois lados". Depois da primeira foto ele pediu a casa
  * mais funda, um MURO com plantas verdes no lugar da cerquinha branca, um
- * PORTÃO moderno na garagem e plantas novas no lugar dos canteiros redondos.
+ * PORTÃO moderno na garagem e plantas novas no lugar dos canteiros redondos;
+ * e depois, que o chão do jardim ficasse LIMPO: o Ari vai decorar o quintal
+ * (o plano está em `docs/QUINTAL.md`).
  *
  * A PLANTA (a câmera vem do `+X/+Z`; o que é alto fica no `−X` e no `−Z`):
  *
  *        −Z  ┌──────────────┬─────────────────────────────┐
  *            │   garagem    │        a casa (funda)       │
  *            │  (pergolado) │   janela   PORTA   janela   │
- *            │              ├─ hortênsias ─┬─ hortênsias ─┤
- *            │   o carro    m   lavanda    │    a árvore  │
- *            │  de nariz    u   agaves   lajes  canteiro  muro
+ *            │              ├──── buxinho ┬ buxinho ──────┤
+ *            │   o carro    m              │    a árvore  │
+ *            │  de nariz    u   (grama)  lajes  (grama)  muro
  *            │  para a rua  ·  passagem    │              │
- *            │              │  capim       │      capim   │
+ *            │              │              │              │
  *            └ portão de correr ┴ muro ─ portão ─ muro ───┘
  *               ════════════  a calçada  ═════════════════
  *               ════════════     a rua    ════════════════   +Z
@@ -55,8 +52,8 @@ import { FLAG_DO_CARRO_NO_PARQUE } from '../eventos/BebitoMobile';
  *
  * O QUE É BAIXO FICA LONGE DO MURO DA FRENTE E DO DA DIREITA: os dois estão
  * do lado da câmera, e 1,35 m de muro escondem tudo o que tem menos de um
- * metro e está a menos de um metro e meio atrás dele. Junto a eles vai só
- * capim alto, no pedrisco; as flores ficam para o lado da casa e da mureta.
+ * metro e está a menos de um metro e meio atrás dele. É a regra que o quintal
+ * decorado vai seguir (`docs/QUINTAL.md` §3.1).
  */
 
 const CASA = { x: 2, z: -5 };
@@ -225,38 +222,14 @@ export const frenteDaCasa: SceneDef = {
 
     // ----------------------------------------------------------------- o jardim
     /*
-     * O CHÃO DOS CANTEIROS é pintado por conta de distância (`world/caminhos.ts`),
-     * com a beira torta — canteiro de jardim não tem beira de régua: a casca
-     * de pínus ao pé da casa e da mureta, e o pedrisco branco da ilha dos
-     * agaves e das faixas junto aos muros.
+     * O JARDIM É GRAMA LIMPA de propósito (pedido do Renan, 2026-11-12): os
+     * canteiros de casca e de pedrisco, com as hortênsias, a lavanda, os
+     * agaves, o capim, a costela-de-adão e as margaridas, saíram — o quintal
+     * vai ser DECORADO pelos dois, e o plano disso mora em `docs/QUINTAL.md`.
+     * Ficaram o caminho de lajes, os dois buxinhos da porta, a árvore florida
+     * e a hera dos muros. As plantas continuam no kit
+     * (`world/plantasDeJardim.ts`): é delas que sai o catálogo do quintal.
      */
-    const CAIXA = { x0: JARDIM.x0, z0: JARDIM.z0, x1: JARDIM.x1, z1: JARDIM.z1 };
-    const pintar = (decal: THREE.Mesh, geo: THREE.BufferGeometry): void => {
-      decal.geometry.dispose();
-      decal.geometry = geo;
-    };
-    const casca = beiraTorta(uniaoSuave(0.5,
-      // ao pé da casa, dos dois lados da porta
-      caixaRedonda(-0.95, -4.35, 1.75, 0.82, 0.5),
-      caixaRedonda(4.75, -4.3, 1.85, 0.86, 0.5),
-      // a faixa da lavanda, ao longo da mureta, e o canto da costela-de-adão
-      caixaRedonda(-2.2, -1.5, 0.52, 1.7, 0.4),
-      // a ilha da direita do caminho
-      capsula(3.75, -1.15, 4.9, -0.2, 0.8),
-      // o pé da árvore
-      caixaRedonda(5.55, -2.85, 0.8, 0.8, 0.6),
-    ), 4411, 0.16, 0.05);
-    const pedras = beiraTorta(uniaoSuave(0.4,
-      // a ilha dos agaves, à esquerda do caminho
-      capsula(-0.95, -1.9, 0.2, -1.2, 0.72),
-      // as faixas junto ao muro da frente (dos dois lados do portão) e ao da direita
-      caixaRedonda(-0.85, 2.3, 1.95, 0.6, 0.3),
-      caixaRedonda(4.75, 2.3, 1.85, 0.6, 0.3),
-      caixaRedonda(6.15, 0.75, 0.45, 2.0, 0.3),
-    ), 5522, 0.12, 0.04);
-    pintar(w.patch(0, 0, 1, 1, P.cascaDePinus, 0, 0.012, cascaDePinus()), mancha(casca, CAIXA, 0.125));
-    pintar(w.patch(0, 0, 1, 1, P.pedriscoBranco, 0, 0.014, pedrisco()), mancha(pedras, CAIXA, 0.125));
-
     // O CAMINHO DE LAJES, com a grama entre elas: da porta ao portão, e o ramal até a passagem da garagem
     const laje = toon(P.casaLaje, { mapa: reboco(1.1) });
     const lajes: Array<[number, number, number, number]> = [];
@@ -272,59 +245,8 @@ export const frenteDaCasa: SceneDef = {
       jardim.add(w.place(buxinhoNoVaso(0.3, semente), CASA.x + lado * 1.28, 0, CASA.z + 0.5, semente));
       w.blockCircle(CASA.x + lado * 1.28, CASA.z + 0.5, 0.3);
     }
-    // a pedra da ilha dos agaves
-    jardim.add(w.place(rock(0.62, 0.3, P.casaMuroBase), -0.2, 0, -1.95, 0.8));
     w.add(fundirComoFundo(jardim));
 
-    // AS PLANTAS: cada espécie um lote para o jardim inteiro (as finas, no vento)
-    const vento = new Vento({ forca: 0.055, altura: 1, direcao: [0.86, 0.5] });
-    w.onUpdate((dt) => vento.tique(dt));
-    const pesDeHortensia = [
-      { x: -2.05, z: -4.12, escala: 0.95, semente: 1, cor: P.hortensiaAzul },
-      { x: -0.85, z: -4.2, escala: 1.05, semente: 2, cor: P.hortensiaAzul },
-      { x: 0.3, z: -4.1, escala: 0.9, semente: 3, cor: P.hortensiaLilas },
-      { x: 3.7, z: -4.1, escala: 0.92, semente: 4, cor: P.hortensiaRosa },
-      { x: 4.85, z: -4.18, escala: 1.05, semente: 5, cor: P.hortensiaRosa },
-      { x: 5.95, z: -4.2, escala: 0.88, semente: 6, cor: P.hortensiaLilas },
-    ];
-    w.add(hortensias(pesDeHortensia));
-    for (const pe of pesDeHortensia) w.blockCircle(pe.x, pe.z, 0.34 * pe.escala);
-    w.add(lavandas([
-      { x: -2.28, z: -2.35, semente: 1 }, { x: -2.1, z: -1.82, escala: 1.1, semente: 2 }, { x: -2.3, z: -1.25, semente: 3 },
-      { x: -2.12, z: -0.7, escala: 1.08, semente: 4 }, { x: -2.28, z: -0.15, escala: 0.95, semente: 5 },
-      { x: 3.65, z: -1.25, semente: 6 }, { x: 4.25, z: -0.7, escala: 1.1, semente: 7 }, { x: 4.95, z: -0.15, semente: 8 },
-      { x: 5.0, z: -2.3, escala: 0.9, semente: 9 },
-    ], vento));
-    const pesDeAgave = [
-      { x: -0.85, z: -1.85, escala: 1.15, semente: 1 }, { x: 0.18, z: -1.22, escala: 0.85, semente: 2 },
-      { x: -0.3, z: -1.05, escala: 0.55, semente: 3 },
-    ];
-    w.add(agaves(pesDeAgave));
-    for (const pe of pesDeAgave) if (pe.escala > 0.7) w.blockCircle(pe.x, pe.z, 0.3 * pe.escala);
-    const pesDeCapim = [
-      // junto ao muro da frente e ao da direita (alto: aparece por cima do muro)
-      { x: -2.1, z: 2.2, escala: 1.1, semente: 1 }, { x: -0.9, z: 2.3, escala: 0.95, semente: 2 }, { x: 0.35, z: 2.2, escala: 1.05, semente: 3 },
-      { x: 3.55, z: 2.25, escala: 1.0, semente: 4 }, { x: 4.8, z: 2.3, escala: 1.12, semente: 5 }, { x: 6.05, z: 2.1, escala: 1.0, semente: 6 },
-      { x: 6.1, z: 0.85, escala: 1.1, semente: 7 }, { x: 6.12, z: -0.5, escala: 0.95, semente: 8 },
-      // e um na ilha da direita
-      { x: 4.75, z: -1.05, escala: 0.8, semente: 9 },
-    ];
-    w.add(capins(pesDeCapim, vento));
-    for (const pe of pesDeCapim) w.blockCircle(pe.x, pe.z, 0.18);
-    const pesDeCostela = [{ x: -2.2, z: -3.2, escala: 1.0, semente: 1 }, { x: 4.75, z: -3.0, escala: 0.85, semente: 2 }];
-    w.add(costelasDeAdao(pesDeCostela));
-    for (const pe of pesDeCostela) w.blockCircle(pe.x, pe.z, 0.25);
-    const brancas = [P.margaridaBranca, P.margaridaBranca, P.flowerYellow];
-    const rosadas = [P.margaridaBranca, P.flowerPink, P.hortensiaRosa];
-    w.add(margaridas([
-      // na beira dos canteiros da casa
-      { x: -1.45, z: -3.42, quantas: 7, raio: 0.42, cores: brancas, semente: 1 }, { x: -0.1, z: -3.4, quantas: 6, raio: 0.38, cores: brancas, semente: 2 },
-      { x: 3.3, z: -3.35, quantas: 6, raio: 0.38, cores: rosadas, semente: 3 }, { x: 4.3, z: -3.5, quantas: 5, raio: 0.32, cores: rosadas, semente: 4 },
-      // na ilha da direita e soltas na grama
-      { x: 4.45, z: -1.45, quantas: 8, raio: 0.45, cores: rosadas, semente: 5 }, { x: 3.95, z: -0.15, quantas: 7, raio: 0.4, cores: brancas, semente: 6 },
-      { x: 0.55, z: 0.1, quantas: 6, raio: 0.4, cores: brancas, semente: 7 }, { x: 3.4, z: 1.0, quantas: 7, raio: 0.45, cores: rosadas, semente: 8 },
-      { x: -1.3, z: -0.2, quantas: 5, raio: 0.35, cores: brancas, semente: 9 },
-    ], vento));
     w.add(heraNosMuros(muros));
     // a árvore florida no canto de trás da direita (alta: encostada na casa, não tapa nada)
     w.add(w.place(tree('florida', 0.9, 0.37), 5.6, 0, -2.8));

@@ -1096,6 +1096,11 @@ portão moderno na garagem.
 
 ## As plantas do jardim (`world/plantasDeJardim.ts`)
 
+(Desde 2026-11-12 elas não estão mais plantadas no jardim da casa — o chão
+ficou limpo para o Ari decorar, `docs/QUINTAL.md`. O kit continua: é dele
+que sai o catálogo de plantas do quintal. Para ver as peças, o histórico do
+`scenes/frenteDaCasa.ts` no commit `149cecd` tem o jardim montado.)
+
 O Renan achou os canteiros redondos de tijolo "sem graça" e pediu plantas
 novas e bem feitas. Este é o molde de PLANTA DE JARDIM, e serve a qualquer
 cenário:

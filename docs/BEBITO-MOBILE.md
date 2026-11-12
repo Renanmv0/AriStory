@@ -282,14 +282,11 @@ canteiros redondos são sem graça; a árvore pode deixar". É o que está aqui:
   carro), e a hera descendo da parede do fundo.
 - **O jardim**, fechado dos dois lados (a mureta do lado da garagem, com a
   passagem; o muro do outro): o caminho de **lajes com grama entre elas**, da
-  porta ao portão e até a passagem da garagem; **hortênsias** azuis, lilases
-  e rosa ao pé da casa; uma fileira de **lavanda** ao longo da mureta; uma
-  ilha de pedrisco branco com **agaves** e uma pedra; uma ilha de casca de
-  pínus com lavanda, capim e **margaridas**; **costela-de-adão** no canto e
-  ao pé da árvore; **capim ornamental** de pluma junto aos muros; dois
-  **buxinhos** em vaso de cimento ao lado da porta; e margaridas soltas na
-  grama. A árvore florida ficou. O capim, a lavanda e as margaridas balançam
-  no vento.
+  porta ao portão e até a passagem da garagem, dois **buxinhos** em vaso de
+  cimento ao lado da porta e a árvore florida. **O chão é grama limpa**
+  (2026-11-12, pedido do Renan): os canteiros de casca e de pedrisco e as
+  plantas deles saíram, porque o Ari vai DECORAR o quintal — o plano é
+  `docs/QUINTAL.md`. As plantas continuam no kit (`world/plantasDeJardim.ts`).
 - **A rua**: calçada de pedrinha, guia, asfalto com faixa — e a
   **vizinhança**: oito casinhas do mesmo molde, cada uma de uma cor (quatro
   deste lado, quatro do outro, de frente para cá), sebe na frente dos
