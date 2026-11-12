@@ -2938,6 +2938,21 @@ export const PALETTE = {
   redeListraA: 0xe9876f, // a rede: a listra terracota…
   redeListraB: 0x6fb3c9, // …e a azul-piscina (a terceira é a lona crua)
   casinhaDoPelusa: 0xf3c6d4, // a casinha do Pelusa, rosinha
+  // a piscininha (`world/moveisDeUsar.ts`): a água, o fundo, a marolinha e o patinho
+  piscininhaAgua: 0x86d4ea,
+  piscininhaFundo: 0x9fd0e0,
+  piscininhaOnda: 0xeefcff,
+  // o fogo de chão: as pedras em três tons, a tora, o toquinho de sentar, a cinza e o fogo
+  fogueiraPedra: 0x8f8a82,
+  fogueiraPedraClara: 0xb2aca2,
+  fogueiraPedraEscura: 0x6f6a64,
+  fogueiraTora: 0x6b4a33,
+  fogueiraBanco: 0xb98255,
+  fogueiraBancoTopo: 0xd9b07a,
+  fogueiraCinza: 0x3a3532,
+  fogueiraBrasa: 0xff6a2a,
+  fogueiraChama: 0xffa63a,
+  fogueiraChamaClara: 0xffe08a,
   // a estrada da viagem de carro (`world/estrada.ts`)
   placaVerso: 0x8d949c,
   coneLaranja: 0xf28a2e,

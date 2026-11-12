@@ -1573,6 +1573,23 @@ enfeite), em `world/decoracoesDoQuintal.ts`:
 
 ### Os móveis de usar (etapa 4, `world/moveisDeUsar.ts`)
 
+- **A piscininha** (`piscininhaDePlastico`): o anel inflável é um
+  `TorusGeometry` deitado, `toNonIndexed` e pintado em gomos pela cor do
+  vértice (o ângulo do centro de cada triângulo; 48 segmentos / 12 gomos casa
+  com a emenda); dois anéis empilhados (o de cima desce `topo − tubo`, e os dois
+  se cruzam: nenhuma face coplanar). A água é um disco translúcido (não entra na
+  `fundir()`), com a textura em canvas correndo pelo `offset`. As marolinhas são
+  um `InstancedMesh` de oito anéis (`RingGeometry` deitado) a 1,8 cm acima da
+  água, escala zero até alguém chutar. Quem senta fica com o quadril 0,47
+  abaixo do topo do tubo (`setSitting(true, 'beirada')`).
+- **O fogo de chão** (`fogueiraDeChao`): pedras em dois andares num lote com cor
+  por cópia; toras como cilindros apoiados (a ponta de cima no meio),
+  orientados por `setFromUnitVectors`; o fogo é `flat(0xffffff)` com
+  `instanceColor` (material sem luz multiplica a cor por cópia: um desenho para
+  três cores — o `toon` com `glow` NÃO serve, o emissivo é uma cor só);
+  faíscas num lote que nasce e some pelo tempo; halo e poça pintados (a poça
+  laranja em cima do verde da grama sai LIMÃO: força baixa, 0,3).
+
 - O que BALANÇA é um grupo com NOME dentro da peça (`balanco` no pivô da
   viga, `rede` na linha dos ganchos): a `fundir()` junta o que está dentro e
   o deixa existir, e o uso embala o grupo e leva a âncora dos dois junto.

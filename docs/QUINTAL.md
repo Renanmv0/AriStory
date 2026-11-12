@@ -39,7 +39,7 @@ caixa no portão, e se põe e se arruma pelas ferramentas da garagem.
 | **1** | o primeiro ciclo inteiro, no CHÃO: a área de trabalho do computador (o laboratório e o **Papita Delivery**), o catálogo em reais (as plantas do kit e alguns móveis), a encomenda chegando no portão, as ferramentas da garagem (pôr e arrumar), e o save sabendo EM QUE LUGAR está cada enfeite | ✅ feita (2026-11-12) |
 | **2** | os PISOS e os CAMINHOS de lajes novos (deck, pedras, pedrisco, canteiro de desenhar); tirar e pôr de volta a ÁRVORE e a HERA | ✅ feita (2026-11-12) |
 | **3** | PAREDE (o Ari escolhe a altura), EM CIMA, PENDURADO e de PONTA A PONTA | ✅ feita (2026-11-12) |
-| **4** | os MÓVEIS que fazem alguma coisa (sentar no banco, balanço, rede, mesa, piscininha, casinha do Pelusa) e REGAR (opcional) | ✅ feita (2026-11-12) — sem a piscininha e o fogo de chão, que ficam para quando o Renan pedir |
+| **4** | os MÓVEIS que fazem alguma coisa (sentar no banco, balanço, rede, mesa, piscininha, casinha do Pelusa) e REGAR (opcional) | ✅ feita (2026-11-12), e a piscininha e o fogo de chão no mesmo dia (4b) |
 | **5** | a aba "Para casa" do Papita Delivery (decorar a casa por dentro) | ⬜ só quando o Renan pedir |
 
 Uma etapa por vez, parando ao fim de cada uma para o Renan escolher (como o
@@ -182,6 +182,35 @@ projeto faz).
   canteiros) aparece "Regar a …": o arco de gotas do bico até a planta, ela
   balança de contente e agradece. "Plantas não PRECISAM ser regadas, mas
   podem": nada murcha sem ele. O save conta as regadas (`quintal:regadas`).
+- **A piscininha e o fogo de chão (4b)** — o Renan pediu os dois que tinham
+  ficado de fora (`world/moveisDeUsar.ts`, os dois com `fundirComAnima`):
+  - **Piscininha** (R$ 75): dois anéis infláveis em gomos (azul e creme,
+    terracota e creme, pela cor do vértice), o fundo, a água translúcida com a
+    luz correndo (o `offset` da textura) e um **patinho de borracha** que boia
+    e passeia. "Pôr o pé na água": os dois sentam na beirada (o mesmo
+    `setSitting(true, 'beirada')` do trapiche do lago), o pé dentro d'água, e
+    **cada chute faz uma marolinha** (um lote de oito anéis que crescem e somem)
+    com o `respingo`. As marolinhas e o patinho são da `anima`, então seguem
+    vivos com a pergunta "Ficar mais um pouco?" na tela.
+  - **Fogo de chão** (R$ 120): o anel de pedras em dois andares (um lote, três
+    tons), a cinza, cinco toras encostadas, e dois toquinhos para sentar
+    frente a frente. O fogo é o grupo `fogo`: nove línguas (um lote, cor por
+    cópia: brasa, laranja e a clarinha) que tremem, dez faíscas que sobem e
+    somem, o halo e a poça de luz pintados — **nenhuma luz de verdade**.
+    "Chegar perto do fogo" pergunta: sentar em volta, **apagar** ou **acender**
+    (usa os sons `chamaApaga` e `chamaAcende` que já existiam). Ele nasce
+    ACESO (é o que o retrato e o fantasma mostram); apagar não é guardado no
+    save, e recarregar o acende de novo.
+  - **Leves apesar de se mexerem**: a ficha ganhou `fundirComAnima`. A regra: o
+    que a `anima` mexe é malha de água, lote (`InstancedMesh`) ou grupo com
+    NOME (`patinho`, `fogo`), todos guardados em `userData` da raiz — a
+    `fundir()` os deixa quietos e junta o resto (cada peça ficou com 6
+    malhas). Na vista de sempre, as duas juntas custam 298 → 313 desenhos.
+  - As falas novas são minhas ([provisório], para o Renan aprovar): na
+    piscininha "Cabe só o pé, mas o pé já tá feliz." / "O patinho tá olhando
+    pra gente."; no fogo "Tá quentinho aqui." / "É o fogo ou é você?".
+  - Ainda não tem som de estalo de lenha; fica para quando o Renan pedir (o
+    jogo tem as regras de som na skill `aristory-som`).
 - A régua do ALTO perto do muro passou a 1,45 m (a rede, de 1,35, cabe no
   canto da direita; o balanço e o guarda-sol continuam longe dos muros).
 - **As falas novas são minhas, para o Renan aprovar ou trocar** (fala dele

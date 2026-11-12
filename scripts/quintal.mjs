@@ -25,7 +25,7 @@
  * - SAVE: enfeite sem `cena` é da estufa, e o `aCaminho` sobrevive.
  *
  * Uso: node scripts/quintal.mjs /caminho/prefixo
- *      SO=escondido|computador|encomenda|colocar|arrumar|chao|alto|moveis|save roda uma parte
+ *      SO=escondido|computador|encomenda|colocar|arrumar|chao|alto|moveis|brincar|save roda uma parte
  *      (computador, encomenda, colocar e arrumar dependem uma da outra, em fila)
  *      CEL=1 roda no celular em pé
  */
@@ -109,7 +109,7 @@ if (roda('computador')) {
   await page.locator('.painel-do-quintal [data-acao="aba"][data-id="moveis"]').click();
   await page.waitForTimeout(600);
   const moveis = await page.locator('.painel-do-quintal .produto').count();
-  confere(moveis === 7, `a de móveis: banco, mesinha, espreguiçadeira, guarda-sol, balanço, rede e casinha (${moveis})`);
+  confere(moveis === 9, `a de móveis: banco, mesinha, espreguiçadeira, guarda-sol, balanço, rede, casinha, piscininha e fogo (${moveis})`);
   await page.screenshot({ path: `${OUT}-papita-moveis.png` });
   await page.locator('.painel-do-quintal [data-acao="aba"][data-id="casa"]').click();
   await page.waitForTimeout(300);
@@ -828,6 +828,143 @@ if (roda('moveis')) {
   for (const [nome, x, z, f] of [['balanco', -0.4, -1.6, -Math.PI * 0.8], ['rede', 3.2, 0.6, Math.PI * 0.75]]) {
     await page.evaluate(([x, z, f]) => { window.jogo.debugPlace(x, z, f); window.jogo.setZoom(5.5); }, [x, z, f]);
     await page.waitForTimeout(900);
+    await page.screenshot({ path: `${OUT}-perto-${nome}.png` });
+  }
+}
+
+// ======================================== a piscininha e o fogo de chão (a etapa 4b)
+if (roda('brincar')) {
+  console.log('— etapa 4b: a piscininha e o fogo de chão');
+  await abrir('bebito&cena=quarto');
+  await page.evaluate(() => localStorage.removeItem('aristory.save.v1.bebito'));
+  await abrir('bebito&cena=frente-da-casa');
+  await page.evaluate(() => {
+    const ids = ['quintal-piscininha', 'quintal-fogueira'];
+    const lista = window.jogo.decoracoes();
+    let uid = lista.reduce((m, d) => Math.max(m, d.uid), 0);
+    window.jogo.salvarDecoracoes([...lista, ...ids.map((id) => ({ uid: ++uid, id, posta: null }))]);
+  });
+  await abrir('bebito&cena=frente-da-casa');
+  // as duas na prateleira de móveis do Papita
+  await page.evaluate(() => { window.jogo.setFlag('lab:pasta-vista'); });
+  const naLoja = await page.evaluate(() => {
+    const ids = [];
+    return ids;
+  });
+  void naLoja;
+  const por = (id, x, z, f) => page.evaluate(async ([id, x, z, f, chave]) => {
+    const d = eval(chave);
+    const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+    if (!d.decorando) d.colocar(id);
+    const raio = d.modo?.ficha.raio ?? 0.4;
+    window.jogo.debugPlace(x - Math.sin(f) * (0.85 + raio), z - Math.cos(f) * (0.85 + raio), f);
+    await espera(450);
+    const motivo = document.querySelector('.posicionador .nao-pode')?.textContent?.trim() ?? null;
+    document.querySelector('.posicionador button.colocar')?.click();
+    await espera(250);
+    if (d.decorando) {
+      document.querySelector('.posicionador [data-botao="cancelar"]')?.click();
+      await espera(150);
+    }
+    return { id, motivo, ficou: d.postas(id) === 1 };
+  }, [id, x, z, f, decorador]);
+  const r1 = await por('quintal-piscininha', -1.0, -1.6, Math.PI);
+  const r2 = await por('quintal-fogueira', 4.9, -1.1, Math.PI / 2);
+  confere(r1.ficou && r2.ficou, `a piscininha e o fogo no quintal (${JSON.stringify([r1.motivo, r2.motivo])})`);
+  const info = (id) => page.evaluate(([id, chave]) => {
+    const p = eval(chave).pecas().find((k) => k.ficha.id === id);
+    if (!p) return null;
+    let malhas = 0;
+    p.peca.traverse((o) => { if (o.isMesh && !o.isInstancedMesh) malhas++; });
+    return { uid: p.uid, malhas, x: p.x, z: p.z };
+  }, [id, decorador]);
+  const ip = await info('quintal-piscininha');
+  const ifo = await info('quintal-fogueira');
+  confere(ip && ip.malhas <= 10 && ifo && ifo.malhas <= 10, `as duas passam pela fundir() mesmo mexendo (${ip?.malhas} e ${ifo?.malhas} malhas)`);
+  // o fogo treme e a água corre, mesmo depois de fundidas
+  const amostra = () => page.evaluate((chave) => {
+    const d = eval(chave);
+    const f = d.pecas().find((k) => k.ficha.id === 'quintal-fogueira').peca;
+    const pi = d.pecas().find((k) => k.ficha.id === 'quintal-piscininha').peca;
+    return {
+      lingua: f.userData.linguas.instanceMatrix.array.slice(0, 16).join(','),
+      visivel: f.userData.fogo.visible,
+      patinho: pi.userData.patinho.position.x.toFixed(3),
+      agua: pi.userData.agua.material.map.offset.x.toFixed(4),
+    };
+  }, decorador);
+  const a0 = await amostra();
+  await page.waitForTimeout(700);
+  const a1 = await amostra();
+  confere(a0.lingua !== a1.lingua && a0.visivel && a0.patinho !== a1.patinho && a0.agua !== a1.agua,
+    'o fogo treme, o patinho passeia e a água corre');
+  await page.evaluate(() => { window.jogo.debugPlace(2.0, 1.6, Math.PI / 4); window.jogo.setZoom(13); });
+  await page.waitForTimeout(1200);
+  const pf = await peso();
+  console.log(`       peso da vista com a piscininha e o fogo: ${pf.calls} desenhos / ${pf.tris} triângulos`);
+  await page.screenshot({ path: `${OUT}-brincar.png` });
+  const escolher = async (i) => {
+    await page.locator('.dialogue.show .escolhas button').nth(i).click();
+    await page.waitForTimeout(500);
+  };
+  const esperarPergunta = async (texto) => {
+    for (let i = 0; i < 300; i++) {
+      await page.waitForTimeout(400);
+      const { t, n } = await page.evaluate(() => ({
+        t: document.querySelector('.dialogue.show')?.textContent ?? '',
+        n: document.querySelectorAll('.dialogue.show .escolhas button').length,
+      }));
+      if (n >= 2 && texto.test(t)) return true;
+      if (n < 2 && t) await page.keyboard.press('KeyE');
+    }
+    return false;
+  };
+  const dispararUso = (uid) => page.evaluate((uid) => { void window.jogo.current.world.interactables.find((i) => i.id === `usar:${uid}`).trigger(window.jogo); }, uid);
+  const solto = () => page.waitForFunction(() => !window.jogo.player.locked, null, { timeout: 40000 }).then(() => true, () => false);
+  // o fogo: apagar e acender, e depois sentar
+  await dispararUso(ifo.uid);
+  confere(await esperarPergunta(/O fogo/), 'chegando perto, o fogo pergunta o que fazer');
+  await escolher(1);
+  confere(!(await amostra()).visivel, '"Apagar o fogo" some com as chamas');
+  await page.screenshot({ path: `${OUT}-fogo-apagado.png` });
+  await dispararUso(ifo.uid);
+  await esperarPergunta(/O fogo/);
+  await escolher(0);
+  confere((await amostra()).visivel, '"Acender o fogo" traz as chamas de volta');
+  await dispararUso(ifo.uid);
+  await esperarPergunta(/O fogo/);
+  await escolher(0);
+  confere(await esperarPergunta(/Ficar mais um pouco/) && await page.evaluate(() => window.jogo.player.locked), 'sentados em volta, os dois, com a pergunta de ficar');
+  await page.screenshot({ path: `${OUT}-fogo-sentados.png` });
+  await page.evaluate(() => window.jogo.setZoom(3.6));
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: `${OUT}-fogo-sentados-perto.png` });
+  await page.evaluate(() => window.jogo.setZoom(13));
+  await escolher(1);
+  confere(await solto(), 'levantar solta os dois');
+  // a piscininha: o pé na água, as marolinhas, levantar
+  await dispararUso(ip.uid);
+  confere(await esperarPergunta(/Ficar mais um pouco/) && await page.evaluate(() => window.jogo.player.locked), 'sentados na beirada da piscininha, com a pergunta de ficar');
+  await page.waitForTimeout(1500);
+  const ondas = await page.evaluate((chave) => {
+    const pi = eval(chave).pecas().find((k) => k.ficha.id === 'quintal-piscininha').peca;
+    const a = pi.userData.ondas.instanceMatrix.array;
+    let vivas = 0;
+    for (let i = 0; i < 8; i++) if (a[i * 16] > 0.06) vivas++;
+    return { vivas, chutando: pi.userData.chutando };
+  }, decorador);
+  confere(ondas.chutando === true && ondas.vivas >= 1, `os chutes fazem marolinha (${ondas.vivas} vivas)`);
+  await page.screenshot({ path: `${OUT}-piscininha-sentados.png` });
+  await page.evaluate(() => window.jogo.setZoom(3.6));
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: `${OUT}-piscininha-sentados-perto.png` });
+  await page.evaluate(() => window.jogo.setZoom(13));
+  await escolher(1);
+  confere(await solto(), 'levantar solta os dois');
+  confere(await page.evaluate((chave) => eval(chave).pecas().find((k) => k.ficha.id === 'quintal-piscininha').peca.userData.chutando === false, decorador), 'e para de chutar');
+  for (const [nome, x, z, f] of [['piscininha', 0.0, 0.0, -Math.PI * 0.75], ['fogueira', 3.2, 0.4, Math.PI * 0.55]]) {
+    await page.evaluate(([x, z, f]) => { window.jogo.debugPlace(x, z, f); window.jogo.setZoom(4.5); }, [x, z, f]);
+    await page.waitForTimeout(1000);
     await page.screenshot({ path: `${OUT}-perto-${nome}.png` });
   }
 }

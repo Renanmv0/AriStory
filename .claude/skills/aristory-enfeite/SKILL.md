@@ -249,6 +249,15 @@ Mobile). O que mudou, e que vale para enfeite novo:
   normal, os buracos) e as `amarras`. A peça de parede não pode ser mais alta
   que a faixa da parede. Peça que mexe pendurada: o sino de vento
   (`balancarSino`, pelo tempo).
+- **`fundirComAnima: true`** (a piscininha e o fogo de chão): enfeite que se
+  mexe E passa pela `fundir()`. Sem o campo, o decorador não funde o que tem
+  `anima`. Vale só quando tudo que a `anima` mexe é malha de água, lote
+  (`InstancedMesh`) ou grupo com NOME, e a anima guarda as referências em
+  `userData` da raiz (a água em `userData.agua`, o fogo em `userData.fogo`...).
+  A `anima` recebe `t` do decorador: peça que reage a uma interação (o chute
+  na água, o fogo apagado) lê um sinal em `userData` que o `uso` escreve
+  (`chutando`, `aceso`) — e não depende de o `uso` estar rodando, que ele
+  para enquanto a pergunta está na tela.
 - **MÓVEL DE USAR** (etapa 4, `uso` na ficha: `label`, `icon` e
   `usar(u)`): o decorador cria o ponto `usar:<uid>` na peça, que descansa nos
   modos de colocar e de editar. O `usar` (`world/moveisDeUsar.ts`) monta a

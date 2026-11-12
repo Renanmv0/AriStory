@@ -90,6 +90,14 @@ export interface FichaDeDecoracao {
   readonly alturaPadrao?: number;
   readonly montaEntre?: (a: THREE.Vector3, b: THREE.Vector3) => THREE.Group;
   /**
+   * PEÇA QUE SE MEXE E TAMBÉM É FUNDIDA: sem isto o decorador não passa pela
+   * `fundir()` o enfeite que tem `anima` (a anima acha as partes pelo
+   * `userData`). Com ele, vale a regra do kit: tudo o que a `anima` mexe é
+   * grupo com NOME ou `InstancedMesh` (a `fundir()` deixa os dois quietos), e
+   * a anima os guarda em `userData` da raiz.
+   */
+  readonly fundirComAnima?: boolean;
+  /**
    * O MÓVEL DE USAR (`docs/QUINTAL.md` §4.4, etapa 4): o banco de sentar, o
    * balanço de balançar, a rede de deitar. O decorador põe um ponto de
    * interação na peça (que dorme no modo de colocar e no de edição) e chama

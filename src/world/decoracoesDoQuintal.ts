@@ -19,7 +19,10 @@ import {
   gatinhoDeCeramica, lanternaDePapel, lanterninhaSolar, sinoDeVento, trelicaComTrepadeira, trioDeVasinhos, varalDeLuzinhasEntre,
   vasinhoDeSuculentas, vasoDeMacrame, vasoDeParede,
 } from './decoracoesDeParede';
-import { balancar, balancoDeJardim, casinhaDoPelusa, deitarAoSol, deitarNaRede, redeComSuporte, sentarAMesinha, sentarNoBanco } from './moveisDeUsar';
+import {
+  animarFogueira, animarPiscininha, balancar, balancoDeJardim, casinhaDoPelusa, deitarAoSol, deitarNaRede, fogueiraDeChao,
+  piscininhaDePlastico, redeComSuporte, sentarAMesinha, sentarNaPiscininha, sentarNoBanco, usarFogueira,
+} from './moveisDeUsar';
 import { canteiroDeCasca, canteiroDeTerra, deckDeMadeira, gramadoDeFlores, manchaDePedrisco, tapeteDeFora } from './pisosDoQuintal';
 
 /**
@@ -498,6 +501,18 @@ export const DECORACOES_DO_QUINTAL: readonly FichaDoQuintal[] = ([
     id: 'quintal-casinha-do-pelusa', nome: 'Casinha do Pelusa', icone: '🐈', categoria: 'moveis', reais: 70, artigo: 'a', raio: 0.45,
     descricao: 'Rosinha, com a plaquinha do nome e a almofada. Com ela no quintal, o Pelusa vem morar aqui fora também.',
     monta: casinhaDoPelusa,
+  },
+  {
+    id: 'quintal-piscininha', nome: 'Piscininha', icone: '🛟', categoria: 'moveis', reais: 75, artigo: 'a', raio: 1.0,
+    descricao: 'De plástico inflável, com um patinho de borracha boiando. Dá para sentar na beirada com o pé na água.',
+    monta: piscininhaDePlastico, anima: animarPiscininha, fundirComAnima: true,
+    uso: { label: 'Pôr o pé na água', icon: '💦', usar: sentarNaPiscininha },
+  },
+  {
+    id: 'quintal-fogueira', nome: 'Fogo de chão', icone: '🔥', categoria: 'moveis', reais: 120, artigo: 'o', raio: 1.1,
+    descricao: 'Anel de pedras, toras encostadas e dois toquinhos para sentar frente a frente. Aceso, solta faíscas.',
+    monta: fogueiraDeChao, anima: animarFogueira, fundirComAnima: true,
+    uso: { label: 'Chegar perto do fogo', icon: '🔥', usar: usarFogueira },
   },
   // --- o chão: os pisos (põe-se onde quiser) e os caminhos (troca-se o da casa)
   {

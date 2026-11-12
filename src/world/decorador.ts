@@ -711,7 +711,7 @@ export class Decorador {
         // (o "Mexer no…" fica no chão, do lado de quem põe)
         if (e !== 'pendurado') chao = { x: onde.x + sup.normal[0] * 0.7, z: onde.z + sup.normal[1] * 0.7 };
       }
-      peca = this.w.add(ficha.anima ? montada : fundir(montada));
+      peca = this.w.add(ficha.anima && !ficha.fundirComAnima ? montada : fundir(montada));
     }
     const colisor: Collider | null = ficha.piso || e !== 'chao' ? null : { kind: 'circle', x: onde.x, z: onde.z, r: ficha.raio * 0.75 };
     if (colisor && !this.semCorpo) this.w.colliders.push(colisor);
