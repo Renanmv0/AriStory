@@ -25,7 +25,7 @@
  * - SAVE: enfeite sem `cena` é da estufa, e o `aCaminho` sobrevive.
  *
  * Uso: node scripts/quintal.mjs /caminho/prefixo
- *      SO=escondido|computador|encomenda|colocar|arrumar|chao|save roda uma parte
+ *      SO=escondido|computador|encomenda|colocar|arrumar|chao|alto|save roda uma parte
  *      (computador, encomenda, colocar e arrumar dependem uma da outra, em fila)
  *      CEL=1 roda no celular em pé
  */
@@ -527,6 +527,163 @@ if (roda('chao')) {
   await page.locator('.painel-do-quintal [data-acao="hera"]').click();
   await page.waitForTimeout(400);
   confere(await page.evaluate(() => window.jogo.current.world.root.children.some((o) => o.userData?.peca === 'hera-do-muro')), 'e a hera volta para os muros');
+}
+
+// ======================================================= no alto (a etapa 3)
+if (roda('alto')) {
+  console.log('— etapa 3: na parede, em cima do muro, pendurado e de ponta a ponta');
+  await abrir('bebito&cena=quarto');
+  await page.evaluate(() => localStorage.removeItem('aristory.save.v1.bebito'));
+  await abrir('bebito&cena=quarto');
+  await page.evaluate(() => { window.jogo.setFlag('lab:pasta-vista'); window.jogo.ganhar(2000); });
+  await disparar('quarto:mesa');
+  await page.waitForSelector('.painel-do-quintal.show', { timeout: 8000 });
+  await page.locator('.painel-do-quintal [data-acao="papita"]').click();
+  await page.locator('.painel-do-quintal [data-acao="aba"][data-id="alto"]').click();
+  await page.waitForTimeout(900);
+  const ids = await page.locator('.painel-do-quintal .produto').evaluateAll((els) => els.map((e) => e.dataset.id));
+  confere(ids.length === 15, `a prateleira "No alto": ${ids.length} peças`);
+  await page.screenshot({ path: `${OUT}-papita-alto.png` });
+  for (const id of ids) await page.locator(`.painel-do-quintal [data-acao="pedir"][data-id="${id}"]`).click();
+  await page.locator('.painel-do-quintal [data-acao="fechar"]').click();
+  await abrir('bebito&cena=frente-da-casa');
+  await disparar('frente:encomenda');
+  for (let i = 0; i < 12; i++) {
+    await page.waitForTimeout(400);
+    if (!(await page.evaluate(() => document.querySelector('.dialogue.show') !== null))) break;
+    await page.keyboard.press('KeyE');
+  }
+  /** entra com a peça na mão (se ainda não), põe quem joga em (x, z) olhando para `f`, e devolve o que a barra diz */
+  const mirar = (id, x, z, f) => page.evaluate(async ([id, x, z, f, chave]) => {
+    const d = eval(chave);
+    if (!d.decorando) d.colocar(id);
+    window.jogo.debugPlace(x, z, f);
+    await new Promise((r) => setTimeout(r, 450));
+    return {
+      motivo: document.querySelector('.posicionador .nao-pode')?.textContent?.trim() ?? null,
+      altura: document.querySelector('.posicionador .altura')?.textContent ?? null,
+      ponta: document.querySelector('.posicionador .ponta')?.textContent ?? null,
+    };
+  }, [id, x, z, f, decorador]);
+  const clicar = (botao) => page.evaluate(async (b) => {
+    document.querySelector(`.posicionador [data-botao="${b}"]`)?.click();
+    await new Promise((r) => setTimeout(r, 250));
+  }, botao);
+  const salvo = (id) => page.evaluate((id) => window.jogo.decoracoes().find((d) => d.id === id && d.posta)?.posta ?? null, id);
+  const decorando = () => page.evaluate(`${decorador}.decorando`);
+  // a PAREDE: a arandela na frente da porta não; ao lado, sim, e o ▲ sobe
+  let r = await mirar('quintal-arandela', 2.0, -3.6, Math.PI);
+  confere(/porta/.test(r.motivo ?? ''), `na frente da porta não dá ("${r.motivo}")`);
+  r = await mirar('quintal-arandela', 0.9, -3.6, Math.PI);
+  const antes = r.altura;
+  await clicar('subir'); await clicar('subir'); await clicar('subir');
+  r = await mirar('quintal-arandela', 0.9, -3.6, Math.PI);
+  confere(!r.motivo && antes && r.altura && r.altura !== antes, `ao lado da porta dá, e o ▲ sobe (${antes} → ${r.altura})`);
+  await page.screenshot({ path: `${OUT}-mirando-parede.png` });
+  await clicar('colocar');
+  const ar = await salvo('quintal-arandela');
+  confere(ar?.encaixe === 'parede' && ar.sup === 'fachada' && Math.abs(ar.y - 2.2) < 0.06, `a arandela fica na fachada, a 2,2 m (${JSON.stringify(ar)})`);
+  // a treliça é alta demais para o muro, e cabe na parede da garagem
+  r = await mirar('quintal-trelica', 7.9, 0.0, -Math.PI / 2);
+  const ondeEstou = await page.evaluate((chave) => { const d = eval(chave); const p = window.jogo.playerPosition(); return { p: [p.x.toFixed(2), p.z.toFixed(2)], sup: d.modo?.sup?.id, y: d.modo?.y }; }, decorador);
+  confere(/alto demais/.test(r.motivo ?? ''), `a treliça no muro não cabe ("${r.motivo}", ${JSON.stringify(ondeEstou)})`);
+  await clicar('cancelar');
+  const PAREDE = [
+    ['quintal-casinha-de-passarinho', 6.3, -3.6, Math.PI],
+    ['quintal-vaso-de-parede', -6.9, 0.6, -Math.PI / 2],
+    ['quintal-trelica', -6.9, -2.4, -Math.PI / 2],
+    ['quintal-espelho', 4.8, 4.3, Math.PI],
+  ];
+  // EM CIMA do muro e da mureta
+  const EM_CIMA = [
+    ['quintal-suculentas', 4.0, 2.0, 0], ['quintal-gatinho', 5.4, 2.0, 0],
+    ['quintal-lanterninha-solar', -1.8, -3.0, -Math.PI / 2], ['quintal-trio-de-vasinhos', 5.6, -0.4, Math.PI / 2],
+  ];
+  // PENDURADO na viga do pergolado e no beiral
+  const PENDURADO = [
+    ['quintal-macrame', -4.0, -2.2, Math.PI / 2], ['quintal-sino-de-vento', -4.0, 0.6, Math.PI / 2],
+    ['quintal-lanterna-de-papel', 4.2, -3.6, Math.PI],
+  ];
+  const res = [];
+  for (const [id, x, z, f] of [...PAREDE, ...EM_CIMA, ...PENDURADO]) {
+    const m = await mirar(id, x, z, f);
+    await clicar('colocar');
+    const p = await salvo(id);
+    if (await decorando()) await clicar('cancelar');
+    res.push({ id, ficou: !!p, encaixe: p?.encaixe, sup: p?.sup, motivo: m.motivo });
+  }
+  const nao = res.filter((k) => !k.ficou);
+  confere(nao.length === 0, `parede, em cima e pendurado: ${res.length - nao.length} de ${res.length}${nao.length ? ' — ' + JSON.stringify(nao) : ''}`);
+  console.log('       ' + res.map((k) => `${k.id.replace('quintal-', '')}@${k.sup}`).join(' · '));
+  // DE PONTA A PONTA: o primeiro E marca a ponta, o X desfaz, o segundo põe
+  r = await mirar('quintal-varal-de-luzinhas', 3.6, -3.2, Math.PI);
+  confere(/primeira/.test(r.ponta ?? '') && !r.motivo, `o varal pede a primeira ponta ("${r.ponta}")`);
+  await clicar('colocar');
+  r = await mirar('quintal-varal-de-luzinhas', 2.8, 1.8, 0);
+  confere(/segunda/.test(r.ponta ?? ''), `e depois a segunda ("${r.ponta}", ${r.motivo ?? 'ok'})`);
+  await page.screenshot({ path: `${OUT}-mirando-varal.png` });
+  await clicar('cancelar');
+  r = await mirar('quintal-varal-de-luzinhas', 3.6, -3.2, Math.PI);
+  confere(/primeira/.test(r.ponta ?? '') && await decorando(), 'o X desfaz a primeira ponta (sem sair)');
+  await clicar('colocar');
+  await mirar('quintal-varal-de-luzinhas', 2.8, 1.8, 0);
+  await clicar('colocar');
+  const varal = await salvo('quintal-varal-de-luzinhas');
+  confere(varal?.encaixe === 'pontaAPonta' && !!varal.ate, `o varal fica entre o beiral e o pilar (${JSON.stringify(varal)})`);
+  for (const [id, a, b] of [
+    ['quintal-bandeirinhas', [0.4, -3.2, Math.PI], [-2.0, -1.2, -Math.PI / 2]],
+    ['quintal-cordao-de-lanternas', [6.2, -3.2, Math.PI], [6.0, 1.8, 0]],
+  ]) {
+    await mirar(id, ...a);
+    await clicar('colocar');
+    const m = await mirar(id, ...b);
+    await clicar('colocar');
+    const p = await salvo(id);
+    if (await decorando()) await clicar('cancelar');
+    confere(!!p?.ate, `${id} de ponta a ponta (${m.motivo ?? 'ok'})`);
+  }
+  // as fotos: o quintal inteiro, a fachada, a garagem e a rua
+  for (const [nome, x, z, f, zoom] of [
+    ['alto-quintal', 2.0, 1.6, Math.PI / 4, 13], ['alto-fachada', 3.0, -2.2, Math.PI * 0.85, 6],
+    ['alto-garagem', -4.0, -0.4, -Math.PI * 0.6, 6], ['alto-muro', 4.8, 4.4, Math.PI, 6], ['alto-varais', 1.0, -0.5, Math.PI * 0.8, 9],
+  ]) {
+    await page.evaluate(([x, z, f, zoom]) => { window.jogo.debugPlace(x, z, f); window.jogo.setZoom(zoom); }, [x, z, f, zoom]);
+    await page.waitForTimeout(1100);
+    await page.screenshot({ path: `${OUT}-${nome}.png` });
+  }
+  const pesoAlto = await (async () => {
+    await page.evaluate(() => { window.jogo.debugPlace(2.0, 1.6, Math.PI / 4); window.jogo.setZoom(13); });
+    await page.waitForTimeout(900);
+    return peso();
+  })();
+  console.log(`       peso da vista com as 15 peças no alto: ${pesoAlto.calls} desenhos / ${pesoAlto.tris} triângulos`);
+  // recarregar: tudo no lugar; e o modo de edição acha cada um pelo chão
+  await abrir('bebito&cena=frente-da-casa');
+  const montadas = await page.evaluate(`${decorador}.noChao`);
+  const postas = await page.evaluate(() => window.jogo.decoracoes().filter((d) => d.posta?.cena === 'quintal').length);
+  confere(montadas === postas && postas >= 16, `recarregando, as ${postas} peças voltam (${montadas})`);
+  const sino = await page.evaluate(() => {
+    let r0 = null;
+    window.jogo.current.world.root.traverse((o) => { if (o.userData?.peca === 'quintal-sino-de-vento') r0 = o; });
+    return r0 ? r0.userData.balanco?.rotation.z ?? null : null;
+  });
+  await page.waitForTimeout(600);
+  const sino2 = await page.evaluate(() => {
+    let r0 = null;
+    window.jogo.current.world.root.traverse((o) => { if (o.userData?.peca === 'quintal-sino-de-vento') r0 = o; });
+    return r0 ? r0.userData.balanco?.rotation.z ?? null : null;
+  });
+  confere(sino !== null && sino !== sino2, `o sino de vento balança (${sino?.toFixed?.(3)} → ${sino2?.toFixed?.(3)})`);
+  await page.evaluate(() => window.jogo.debugPlace(-3.95, -4.0, Math.PI));
+  await disparar('frente:ferramentas');
+  await page.waitForSelector('.painel-do-quintal.show', { timeout: 6000 });
+  await page.locator('.painel-do-quintal [data-acao="editar"]').click();
+  await page.waitForTimeout(400);
+  const pontos = await page.evaluate(() => window.jogo.current.world.interactables.filter((i) => i.id.startsWith('decoracao:') && i.enabled).map((i) => [i.x, i.z]));
+  const noQuintal = pontos.every(([x, z]) => x > -8.2 && x < 7.8 && z > -5 && z < 4.2);
+  confere(pontos.length === postas && noQuintal, `no modo de edição, o "Mexer no…" de cada peça fica no chão, perto dela (${pontos.length})`);
+  await page.screenshot({ path: `${OUT}-alto-arrumando.png` });
+  await page.keyboard.press('KeyX');
 }
 
 // ======================================================================== save

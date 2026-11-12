@@ -22,7 +22,7 @@ export interface ItemDoPapita {
   readonly nome: string;
   readonly icone: string;
   readonly descricao: string;
-  readonly categoria: 'plantas' | 'moveis' | 'chao';
+  readonly categoria: 'plantas' | 'moveis' | 'chao' | 'alto';
   readonly reais: number;
   readonly aCaminho: number;
   readonly noBau: number;
@@ -77,8 +77,8 @@ export type SaidaDoBau =
   /** tirar a hera dos muros, ou pôr de volta */
   | { readonly tipo: 'hera' };
 
-type Aba = 'plantas' | 'moveis' | 'chao' | 'casa';
-const ABAS: ReadonlyArray<readonly [Aba, string]> = [['plantas', '🌿 Plantas'], ['moveis', '🪑 Móveis'], ['chao', '🪨 Chão'], ['casa', '🏠 Para casa']];
+type Aba = 'plantas' | 'moveis' | 'chao' | 'alto' | 'casa';
+const ABAS: ReadonlyArray<readonly [Aba, string]> = [['plantas', '🌿 Plantas'], ['moveis', '🪑 Móveis'], ['chao', '🪨 Chão'], ['alto', '🖼️ No alto'], ['casa', '🏠 Para casa']];
 
 export class PainelDoQuintal {
   private readonly raiz: HTMLDivElement;

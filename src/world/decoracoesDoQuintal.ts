@@ -14,6 +14,11 @@ import { tramaDeTecido, veioDeMadeira } from './texturasDeCasa';
 import { sorteio } from './texturasDeChao';
 import { tree } from './props';
 import { amostraDeCaminho, type EstiloDeCaminho } from './caminhosDoQuintal';
+import {
+  amostraEntre, arandela, balancarSino, bandeirinhasEntre, casinhaDePassarinho, cordaoDeLanternasEntre, espelhoDeJardim,
+  gatinhoDeCeramica, lanternaDePapel, lanterninhaSolar, sinoDeVento, trelicaComTrepadeira, trioDeVasinhos, varalDeLuzinhasEntre,
+  vasinhoDeSuculentas, vasoDeMacrame, vasoDeParede,
+} from './decoracoesDeParede';
 import { canteiroDeCasca, canteiroDeTerra, deckDeMadeira, gramadoDeFlores, manchaDePedrisco, tapeteDeFora } from './pisosDoQuintal';
 
 /**
@@ -36,7 +41,7 @@ import { canteiroDeCasca, canteiroDeTerra, deckDeMadeira, gramadoDeFlores, manch
  * tempo": peça nova é uma função e uma entrada em `DECORACOES_DO_QUINTAL`.
  */
 
-export type CategoriaDoQuintal = 'plantas' | 'moveis' | 'chao';
+export type CategoriaDoQuintal = 'plantas' | 'moveis' | 'chao' | 'alto';
 
 export interface FichaDoQuintal extends FichaDeDecoracao {
   readonly reais: number;
@@ -520,6 +525,98 @@ export const DECORACOES_DO_QUINTAL: readonly FichaDoQuintal[] = ([
     id: 'quintal-caminho-lajes', nome: 'Caminho de lajes', icone: '⬛', categoria: 'chao', reais: 0, artigo: 'o', raio: 1, caminho: 'lajes', naLoja: false,
     descricao: 'As placas de cimento de sempre, com a grama entre elas.',
     monta: () => amostraDeCaminho('lajes'),
+  },
+  // --- no alto: na parede (o Ari escolhe a altura), em cima do muro, pendurado e de ponta a ponta
+  {
+    id: 'quintal-arandela', nome: 'Arandela', icone: '🏮', categoria: 'alto', reais: 70, artigo: 'a', raio: 0.12,
+    encaixe: 'parede', alturaPadrao: 1.9,
+    descricao: 'Lanterninha de ferro na parede, acesa, com o leque de luz em volta.',
+    monta: arandela,
+  },
+  {
+    id: 'quintal-vaso-de-parede', nome: 'Vaso de parede', icone: '🪴', categoria: 'alto', reais: 45, artigo: 'o', raio: 0.2,
+    encaixe: 'parede', alturaPadrao: 1.6,
+    descricao: 'Meio vaso de barro preso na parede, com a samambaia caindo.',
+    monta: vasoDeParede,
+  },
+  {
+    id: 'quintal-casinha-de-passarinho', nome: 'Casinha de passarinho', icone: '🐦', categoria: 'alto', reais: 40, artigo: 'a', raio: 0.13,
+    encaixe: 'parede', alturaPadrao: 1.8,
+    descricao: 'Azul-céu, de telhadinho de madeira, poleiro e um coraçãozinho pintado.',
+    monta: casinhaDePassarinho,
+  },
+  {
+    id: 'quintal-espelho', nome: 'Espelho de jardim', icone: '🪞', categoria: 'alto', reais: 85, artigo: 'o', raio: 0.3,
+    encaixe: 'parede', alturaPadrao: 1.4,
+    descricao: 'Em arco, de moldura de ferro verde e voluta. Reflete o céu.',
+    monta: espelhoDeJardim,
+  },
+  {
+    id: 'quintal-trelica', nome: 'Treliça com trepadeira', icone: '🌺', categoria: 'alto', reais: 75, artigo: 'a', raio: 0.38,
+    encaixe: 'parede', alturaPadrao: 1.0,
+    descricao: 'Ripas brancas em losango e a trepadeira subindo, de florzinha rosa.',
+    monta: trelicaComTrepadeira,
+  },
+  {
+    id: 'quintal-suculentas', nome: 'Vasinho de suculentas', icone: '🌵', categoria: 'alto', reais: 20, artigo: 'o', raio: 0.1,
+    encaixe: 'emCima',
+    descricao: 'Três rosetas num vaso de cimento baixinho. Para o alto do muro.',
+    monta: vasinhoDeSuculentas,
+  },
+  {
+    id: 'quintal-gatinho', nome: 'Gatinho de cerâmica', icone: '🐈', categoria: 'alto', reais: 35, artigo: 'o', raio: 0.1,
+    encaixe: 'emCima',
+    descricao: 'Sentado em cima do muro, de rabo enrolado, olhando a rua.',
+    monta: gatinhoDeCeramica,
+  },
+  {
+    id: 'quintal-lanterninha-solar', nome: 'Lanterninha solar', icone: '🔆', categoria: 'alto', reais: 30, artigo: 'a', raio: 0.08,
+    encaixe: 'emCima',
+    descricao: 'Com a plaquinha solar em cima, acesa. Fica bem no pilar e no muro.',
+    monta: lanterninhaSolar,
+  },
+  {
+    id: 'quintal-trio-de-vasinhos', nome: 'Trio de vasinhos', icone: '🌷', categoria: 'alto', reais: 30, artigo: 'o', raio: 0.17,
+    encaixe: 'emCima',
+    descricao: 'Três vasinhos de barro em fila, com florzinhas.',
+    monta: trioDeVasinhos,
+  },
+  {
+    id: 'quintal-macrame', nome: 'Vaso de macramê', icone: '🧶', categoria: 'alto', reais: 55, artigo: 'o', raio: 0.2,
+    encaixe: 'pendurado',
+    descricao: 'Pendurado na viga, nas cordas trançadas, com a samambaia caindo.',
+    monta: vasoDeMacrame,
+  },
+  {
+    id: 'quintal-sino-de-vento', nome: 'Sino de vento', icone: '🎐', categoria: 'alto', reais: 40, artigo: 'o', raio: 0.1,
+    encaixe: 'pendurado',
+    descricao: 'Tubinhos de metal balançando. (Ainda sem o tlim-tlim.)',
+    monta: sinoDeVento,
+    anima: balancarSino,
+  },
+  {
+    id: 'quintal-lanterna-de-papel', nome: 'Lanterna de papel', icone: '🏮', categoria: 'alto', reais: 35, artigo: 'a', raio: 0.16,
+    encaixe: 'pendurado',
+    descricao: 'Um globo de papel pêssego, aceso, pendurado no beiral ou na viga.',
+    monta: () => lanternaDePapel(),
+  },
+  {
+    id: 'quintal-varal-de-luzinhas', nome: 'Varal de luzinhas', icone: '✨', categoria: 'alto', reais: 90, artigo: 'o', raio: 0.2,
+    encaixe: 'pontaAPonta',
+    descricao: 'De um ponto a outro: do pilar ao beiral, da viga ao muro. Lampadinhas acesas.',
+    monta: amostraEntre(varalDeLuzinhasEntre), montaEntre: varalDeLuzinhasEntre,
+  },
+  {
+    id: 'quintal-bandeirinhas', nome: 'Bandeirinhas', icone: '🎏', categoria: 'alto', reais: 50, artigo: 'a', raio: 0.2,
+    encaixe: 'pontaAPonta',
+    descricao: 'De um ponto a outro, bandeirinhas de papel de todas as cores.',
+    monta: amostraEntre(bandeirinhasEntre), montaEntre: bandeirinhasEntre,
+  },
+  {
+    id: 'quintal-cordao-de-lanternas', nome: 'Cordão de lanternas', icone: '🏮', categoria: 'alto', reais: 80, artigo: 'o', raio: 0.2,
+    encaixe: 'pontaAPonta',
+    descricao: 'Lanterninhas de papel redondas, acesas, num barbante de ponta a ponta.',
+    monta: amostraEntre(cordaoDeLanternasEntre), montaEntre: cordaoDeLanternasEntre,
   },
   // --- o que já veio com a casa
   {

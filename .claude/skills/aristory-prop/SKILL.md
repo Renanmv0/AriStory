@@ -1571,6 +1571,19 @@ enfeite), em `world/decoracoesDoQuintal.ts`:
   alternada POR VÉRTICE (`toNonIndexed` e a cor pelo ângulo do triângulo),
   numa malha só; o babado é uma meia-lua por gomo; as varetas são tubos.
 
+### As peças do alto (etapa 3, `world/decoracoesDeParede.ts`)
+
+- `samambaia(n, comprido, semente, pendente)`: o lote de folhas — uma fita de
+  contorno em dentinhos, ARQUEADA nos vértices (sobe e cai), girada em roda;
+  serve ao vaso de parede e ao macramê.
+- `catenaria(a, b)`: os pontos entre duas pontas com a barriga proporcional
+  ao vão; o varal, as bandeirinhas e o cordão de lanternas andam por ela
+  (lâmpada e bandeirinha em lote, um halo a cada três lâmpadas).
+- A treliça recorta cada ripa diagonal pelo quadro (a conta da reta contra o
+  retângulo), e não por escala — a ripa escalada passava da moldura.
+- Meio vaso de parede: `LatheGeometry` de meia volta (`phiLength = PI`) com as
+  costas num plano.
+
 ### Os caminhos e os pisos do quintal (etapa 2)
 
 - `caminhoDoQuintal(jeito, trechos)` (`world/caminhosDoQuintal.ts`): o

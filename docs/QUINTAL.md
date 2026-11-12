@@ -38,7 +38,7 @@ caixa no portão, e se põe e se arruma pelas ferramentas da garagem.
 | **0** | limpar o jardim | ✅ feita (2026-11-12) |
 | **1** | o primeiro ciclo inteiro, no CHÃO: a área de trabalho do computador (o laboratório e o **Papita Delivery**), o catálogo em reais (as plantas do kit e alguns móveis), a encomenda chegando no portão, as ferramentas da garagem (pôr e arrumar), e o save sabendo EM QUE LUGAR está cada enfeite | ✅ feita (2026-11-12) |
 | **2** | os PISOS e os CAMINHOS de lajes novos (deck, pedras, pedrisco, canteiro de desenhar); tirar e pôr de volta a ÁRVORE e a HERA | ✅ feita (2026-11-12) |
-| **3** | PAREDE (o Ari escolhe a altura), EM CIMA, PENDURADO e de PONTA A PONTA | ⬜ |
+| **3** | PAREDE (o Ari escolhe a altura), EM CIMA, PENDURADO e de PONTA A PONTA | ✅ feita (2026-11-12) |
 | **4** | os MÓVEIS que fazem alguma coisa (sentar no banco, balanço, rede, mesa, piscininha, casinha do Pelusa) e REGAR (opcional) | ⬜ |
 | **5** | a aba "Para casa" do Papita Delivery (decorar a casa por dentro) | ⬜ só quando o Renan pedir |
 
@@ -122,6 +122,41 @@ projeto faz).
   onde a árvore nasceu).
 - Peso: o quintal com a árvore mudada, os seis pisos, a mesinha e a
   hortênsia, 312 desenhos por quadro e 150 mil triângulos na vista de sempre.
+
+## O que a etapa 3 pôs no jogo (com `?bebito`)
+
+- **A prateleira 🖼️ No alto do Papita**, com 15 peças
+  (`world/decoracoesDeParede.ts`):
+  - na PAREDE: a arandela acesa (com o leque de luz na parede), o vaso de
+    parede com a samambaia caindo, a casinha de passarinho azul-céu, o
+    espelho de jardim em arco e a treliça com a trepadeira florida;
+  - EM CIMA do muro e da mureta: o vasinho de suculentas, o gatinho de
+    cerâmica, a lanterninha solar acesa e o trio de vasinhos de barro;
+  - PENDURADO na viga do pergolado e no beiral: o vaso de macramê, o sino de
+    vento (que balança; o som fica para depois) e a lanterna de papel acesa;
+  - de PONTA A PONTA: o varal de luzinhas, as bandeirinhas e o cordão de
+    lanternas, pela catenária entre os dois pontos.
+- **O decorador** ganhou os encaixes (`Superficie` e `amarras` nas
+  `RegrasDoLugar`): o fantasma GRUDA na parede (só de frente para ela), no
+  tampo ou na viga mais perto à frente de quem joga; na parede, **▲ ▼ (ou + e
+  −) escolhem a altura** — "O Ari escolhe a altura no muro" —, e a barra
+  mostra os metros; a peça não tapa porta, janela, lampião, as ferramentas e
+  a prateleira, não passa da ponta, não fica em cima de outra, e a mais alta
+  que a parede não entra ("alto demais para o muro"). De ponta a ponta: o
+  primeiro E marca a primeira ponta, o X desfaz, o segundo E põe; as pontas
+  são o alto dos pilares, os postes do pergolado e quatro ganchos do beiral,
+  de 1,2 a 9,5 m.
+- **As superfícies do quintal** (`scenes/frenteDaCasa.ts`): a fachada, as
+  duas paredes da garagem por dentro, a face de fora do muro (a da rua e a
+  do lado), a mureta; o alto do muro e da mureta; a viga do pergolado e o
+  beiral. Só as que a câmera vê.
+- **O save**: `posta.encaixe`, `y`, `sup` e `ate` (a segunda ponta). Peça
+  presa numa superfície que a cena não tem mais volta ao baú.
+- **No modo de edição** o "Mexer no…" de cada peça fica no chão, na frente
+  dela; a da parede e a de ponta a ponta não giram ("Esse fica sempre de
+  frente").
+- Peso: as 15 peças no alto, a vista de sempre com 393 desenhos e 151 mil
+  triângulos (os halos das luzinhas são um desenho cada).
 
 ## 1. O que já existe (e se reaproveita inteiro)
 

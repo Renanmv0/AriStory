@@ -2925,6 +2925,15 @@ export const PALETTE = {
   deckDoQuintal: 0xc79363, // a tábua do deck
   deckDoQuintalVao: 0x4d3a2a, // o escuro do vão entre as tábuas
   gramadoDeFlores: 0x5fae4f, // a grama mais funda embaixo das florzinhas
+  // as peças de parede, de cima do muro, penduradas e de ponta a ponta (`world/decoracoesDeParede.ts`)
+  casinhaDePassaro: 0x8fc7d9, // a casinha de passarinho, azul-céu
+  espelhoDeJardim: 0xbfe0f2, // o espelho refletindo o céu
+  suculenta: 0x8cc49a, // as rosetas: o verde-água…
+  suculentaRosada: 0xe8a7b8, // …e a rosada
+  gatinhoDeCeramica: 0x9aa0aa, // o gatinho de cerâmica cinza
+  placaSolar: 0x2f3a5c, // a plaquinha solar da lanterninha
+  sinoDeVento: 0xc9d3dc, // os tubos do sino de vento
+  lanternaDePapel: 0xffc98a, // a lanterna de papel acesa, pêssego
   // a estrada da viagem de carro (`world/estrada.ts`)
   placaVerso: 0x8d949c,
   coneLaranja: 0xf28a2e,

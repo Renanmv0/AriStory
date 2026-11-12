@@ -77,6 +77,14 @@ export interface PostaNoSave {
   readonly giro: number;
   /** em que lugar o enfeite está; save antigo não tem, e é a estufa */
   readonly cena?: CenaDeDecorar;
+  /** como ele está preso (`docs/QUINTAL.md` §3): sem o campo, no chão */
+  readonly encaixe?: 'parede' | 'emCima' | 'pendurado' | 'pontaAPonta';
+  /** a altura: na parede, o meio da peça; em cima, o tampo; pendurado, a viga */
+  readonly y?: number;
+  /** a superfície da cena onde ele está (o id da parede, do muro, da viga) */
+  readonly sup?: string;
+  /** de ponta a ponta: a segunda ponta (a primeira é `x`, `y`, `z`) */
+  readonly ate?: { readonly x: number; readonly y: number; readonly z: number };
 }
 
 export interface Bounds {

@@ -19,7 +19,7 @@ import { BEBITO_MOBILE, BebitoMobile } from '../world/bebitoMobile/BebitoMobile'
 import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/bebitoMobile/presente';
 import { sairDeCarro } from '../eventos/bebitoMobile/partida';
 import { FLAG_DO_CARRO_NO_PARQUE } from '../eventos/BebitoMobile';
-import { Decorador, type Cofre, type RegrasDoLugar } from '../world/decorador';
+import { Decorador, type Cofre, type RegrasDoLugar, type Superficie } from '../world/decorador';
 import type { FichaDeDecoracao } from '../world/decoracoes';
 import { VENTO_DO_QUINTAL } from '../world/decoracoesDoQuintal';
 import { caixaDeEncomenda, painelDeFerramentas } from '../world/quintal';
@@ -390,8 +390,67 @@ export const frenteDaCasa: SceneDef = {
     };
     const dentro = (x: number, z: number, r: number, x0: number, x1: number, z0: number, z1: number): boolean =>
       x - r >= x0 && x + r <= x1 && z - r >= z0 && z + r <= z1;
+    /*
+     * AS SUPERFÍCIES DO QUINTAL (etapa 3): onde se prende o que não vai no
+     * chão. Só as paredes que a câmera VÊ (a câmera vem do `+X/+Z`): a fachada,
+     * as duas paredes da garagem por dentro, a face de fora do muro (a da rua
+     * e a do lado), e a mureta do lado do jardim. Os tampos são o alto do muro
+     * e da mureta; as vigas, a do pergolado do lado do jardim e o beiral.
+     */
+    const xCasa0 = CASA.x - FACHADA.largura / 2;
+    const xCasa1 = CASA.x + FACHADA.largura / 2;
+    const jx = FACHADA.janela.x;
+    const meiaJanela = FACHADA.janela.largura / 2 + 0.5; // (com as venezianas abertas)
+    const buracoX = (x0: number, x1: number, y0: number, y1: number, nome: string, a = xCasa0 + 0.1) =>
+      ({ s0: x0 - a, s1: x1 - a, y0, y1, nome });
+    const yTopoDoMuro = MURO.alto + 0.02;
+    const fora = zMuro + E / 2 + 0.002;
+    const SUPERFICIES: Superficie[] = [
+      {
+        id: 'fachada', tipo: 'parede', nome: 'a fachada', a: [xCasa0 + 0.1, CASA.z], b: [xCasa1 - 0.1, CASA.z], y0: 0.3, y1: 2.95, normal: [0, 1],
+        buracos: [
+          buracoX(CASA.x - 0.7, CASA.x + 0.7, 0, 2.35, 'da porta'),
+          buracoX(CASA.x + 0.72, CASA.x + 1.32, 1.55, 2.5, 'do lampião'),
+          buracoX(CASA.x - jx - meiaJanela, CASA.x - jx + meiaJanela, 0.62, 2.45, 'da janela'),
+          buracoX(CASA.x + jx - meiaJanela, CASA.x + jx + meiaJanela, 0.62, 2.45, 'da janela'),
+        ],
+      },
+      {
+        id: 'garagem-fundo', tipo: 'parede', nome: 'a parede da garagem', a: [GAR.x0 + 0.2, GAR.z0 + 0.12], b: [GAR.x1 - 0.25, GAR.z0 + 0.12],
+        y0: 0.4, y1: 2.15, normal: [0, 1],
+        buracos: [
+          { s0: FERRAMENTAS.x - 0.7 - (GAR.x0 + 0.2), s1: FERRAMENTAS.x + 0.7 - (GAR.x0 + 0.2), y0: 0.7, y1: 2.0, nome: 'das ferramentas' },
+          { s0: VAGA.x - 1.6 - (GAR.x0 + 0.2), s1: VAGA.x - 0.2 - (GAR.x0 + 0.2), y0: 0.95, y1: 1.65, nome: 'da prateleira' },
+        ],
+      },
+      { id: 'garagem-lado', tipo: 'parede', nome: 'a parede da garagem', a: [GAR.x0 + 0.12, GAR.z0 + 0.2], b: [GAR.x0 + 0.12, GAR.z1 - 0.3], y0: 0.4, y1: 2.6, normal: [1, 0] },
+      { id: 'muro-rua-1', tipo: 'parede', nome: 'o muro', a: [X_DO_PILAR_DA_GARAGEM + meioPilar, fora], b: [xPilarE - meioPilar, fora], y0: 0.2, y1: 1.3, normal: [0, 1] },
+      { id: 'muro-rua-2', tipo: 'parede', nome: 'o muro', a: [xPilarD + meioPilar, fora], b: [JARDIM.x1 - meioPilar, fora], y0: 0.2, y1: 1.3, normal: [0, 1] },
+      { id: 'muro-lado', tipo: 'parede', nome: 'o muro', a: [JARDIM.x1 + E / 2 + 0.002, JARDIM.z0 + 0.2], b: [JARDIM.x1 + E / 2 + 0.002, zMuro - meioPilar], y0: 0.2, y1: 1.3, normal: [1, 0] },
+      { id: 'mureta-1', tipo: 'parede', nome: 'a mureta', a: [JARDIM.x0 + E / 2 + 0.002, JARDIM.z0 + 0.2], b: [JARDIM.x0 + E / 2 + 0.002, PASSAGEM.z0], y0: 0.1, y1: 0.75, normal: [1, 0] },
+      // os tampos: o alto do muro da frente, do muro do lado e da mureta (de onde se põe: do jardim)
+      { id: 'topo-rua-1', tipo: 'emCima', nome: 'o muro', a: [X_DO_PILAR_DA_GARAGEM + meioPilar, zMuro], b: [xPilarE - meioPilar, zMuro], y0: yTopoDoMuro, normal: [0, -1] },
+      { id: 'topo-rua-2', tipo: 'emCima', nome: 'o muro', a: [xPilarD + meioPilar, zMuro], b: [JARDIM.x1 - meioPilar, zMuro], y0: yTopoDoMuro, normal: [0, -1] },
+      { id: 'topo-lado', tipo: 'emCima', nome: 'o muro', a: [JARDIM.x1, JARDIM.z0 + 0.2], b: [JARDIM.x1, zMuro - meioPilar], y0: yTopoDoMuro, normal: [-1, 0] },
+      { id: 'topo-mureta-1', tipo: 'emCima', nome: 'a mureta', a: [JARDIM.x0, JARDIM.z0 + 0.2], b: [JARDIM.x0, PASSAGEM.z0], y0: 0.82, normal: [1, 0] },
+      { id: 'topo-mureta-2', tipo: 'emCima', nome: 'a mureta', a: [JARDIM.x0, PASSAGEM.z1], b: [JARDIM.x0, zMuro - 0.62], y0: 0.82, normal: [1, 0] },
+      // as vigas: a do pergolado do lado do jardim e o beiral da casa
+      { id: 'viga-pergolado', tipo: 'pendurado', nome: 'a viga do pergolado', a: [GAR.x1 - 0.12, GAR.z0 + 0.3], b: [GAR.x1 - 0.12, GAR.z1 - 0.4], y0: GARAGEM.alto - 0.08, normal: [0, 0] },
+      { id: 'beiral', tipo: 'pendurado', nome: 'o beiral', a: [xCasa0 - 0.2, CASA.z + 0.42], b: [xCasa1 + 0.2, CASA.z + 0.42], y0: FACHADA.alto - 0.12, normal: [0, 0] },
+    ];
+    // os pontos de amarrar o de ponta a ponta: o alto dos pilares, os postes do pergolado e o beiral
+    const AMARRAS = [
+      { x: X_DO_PILAR_DA_GARAGEM, y: PORTAO_DA_GARAGEM.alto + 0.2, z: zMuro },
+      { x: xPilarE, y: MURO.pilar, z: zMuro },
+      { x: xPilarD, y: MURO.pilar, z: zMuro },
+      { x: JARDIM.x1, y: MURO.pilar, z: zMuro },
+      ...[GAR.z0 + 0.5, (GAR.z0 + GAR.z1) / 2 - 0.2, GAR.z1 - 0.6].map((z) => ({ x: GAR.x1 - 0.12, y: GARAGEM.alto - 0.05, z })),
+      ...[xCasa0 + 0.3, CASA.x - 1.6, CASA.x + 1.6, xCasa1 - 0.3].map((x) => ({ x, y: FACHADA.alto - 0.15, z: CASA.z + 0.42 })),
+    ];
     const regrasDoQuintal: RegrasDoLugar = {
       ondeGuardar: 'pelas ferramentas da garagem',
+      superficies: SUPERFICIES,
+      amarras: AMARRAS,
       proibido: (x, z, r, ficha) => {
         const noJardim = dentro(x, z, r, JARDIM.x0 + E / 2 + 0.04, JARDIM.x1 - E / 2 - 0.04, CASA.z + 0.08, zMuro - E / 2 - 0.04);
         // o fundo da garagem, atrás do carro e fora do corredor das ferramentas

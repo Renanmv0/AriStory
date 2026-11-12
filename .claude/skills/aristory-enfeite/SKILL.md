@@ -240,6 +240,15 @@ Mobile). O que mudou, e que vale para enfeite novo:
   casa (`world/caminhosDoQuintal.ts`, traçado por TRECHOS retos).
 - **A árvore da casa** é uma ficha do quintal fora da loja (`naLoja: false`):
   a cena a planta no save na primeira visita.
+- **ENCAIXE** (etapa 3, `encaixe` na ficha): `parede` (costas em `z = 0`, o
+  MEIO da peça em `y = 0`, e `alturaPadrao` é onde ela começa na mão — o Ari
+  muda com ▲ ▼), `emCima` (base em `y = 0`, pequena: o tampo do muro tem 22
+  cm), `pendurado` (a origem é o GANCHO, desce para `−Y`) e `pontaAPonta`
+  (`montaEntre(a, b)` no mundo, `monta()` é o retrato — `amostraEntre`). A
+  cena declara as superfícies (`Superficie`: uma linha no chão, a altura, a
+  normal, os buracos) e as `amarras`. A peça de parede não pode ser mais alta
+  que a faixa da parede. Peça que mexe pendurada: o sino de vento
+  (`balancarSino`, pelo tempo).
 - `RegrasDoLugar.proibido(x, z, raio, ficha)` recebe a ficha (para a
   altura), e `ondeGuardar` muda o fim do toast de guardar ("pelas
   ferramentas da garagem").

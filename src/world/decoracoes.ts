@@ -74,6 +74,20 @@ export interface FichaDeDecoracao {
    * piso.
    */
   readonly piso?: boolean;
+  /**
+   * COMO ELE SE PRENDE (`docs/QUINTAL.md` §3, etapa 3). Sem o campo, no chão.
+   * O contrato muda com o encaixe:
+   * - `parede`: as costas em `z = 0` (encostadas na parede), a frente `+Z`, e
+   *   o MEIO da peça em `y = 0` — a altura escolhida é a do meio;
+   * - `emCima`: como no chão (base em `y = 0`), pousado no tampo;
+   * - `pendurado`: a origem é o GANCHO, e a peça desce para `−Y`;
+   * - `pontaAPonta`: `montaEntre(a, b)` faz a peça entre as duas pontas, no
+   *   mundo (o grupo fica na origem); `monta()` é o retrato.
+   */
+  readonly encaixe?: 'parede' | 'emCima' | 'pendurado' | 'pontaAPonta';
+  /** na parede: a altura do meio quando ela vai para a mão (o Ari muda com ▲ ▼) */
+  readonly alturaPadrao?: number;
+  readonly montaEntre?: (a: THREE.Vector3, b: THREE.Vector3) => THREE.Group;
 }
 
 /** se este enfeite pode ser posto neste lugar */

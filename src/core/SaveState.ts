@@ -431,9 +431,19 @@ function normalizarDecoracoes(bruto: unknown): DecoracaoNoSave[] {
     // (enfeite sem `cena` é de antes do quintal: estava na estufa)
     const cena = p?.cena === 'quintal' ? 'quintal' : 'estufa';
     const aCaminho = !ok && d.aCaminho === true;
+    // (preso em parede, em cima, pendurado ou de ponta a ponta: o resto do lugar)
+    const ENCAIXES = ['parede', 'emCima', 'pendurado', 'pontaAPonta'] as const;
+    const encaixe = ENCAIXES.find((e) => e === p?.encaixe);
+    const num = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
+    const ate = p?.ate && num(p.ate.x) && num(p.ate.y) && num(p.ate.z) ? { x: p.ate.x, y: p.ate.y, z: p.ate.z } : undefined;
+    const presa = encaixe && num(p?.y) && (encaixe !== 'pontaAPonta' || ate)
+      ? { encaixe, y: p!.y, ...(typeof p?.sup === 'string' ? { sup: p.sup } : {}), ...(ate ? { ate } : {}) }
+      : null;
+    // (encaixe estragado: volta ao baú, nunca some)
+    const fica = ok && (!encaixe || presa);
     lista.push({
       uid: d.uid, id: d.id,
-      posta: ok ? { x: p!.x, z: p!.z, giro: p!.giro, cena } : null,
+      posta: fica ? { x: p!.x, z: p!.z, giro: p!.giro, cena, ...(presa ?? {}) } : null,
       ...(aCaminho ? { aCaminho } : {}),
     });
   }

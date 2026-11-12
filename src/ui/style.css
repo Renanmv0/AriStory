@@ -5166,6 +5166,9 @@ body.touch-device .ajuda-do-par kbd { display: none; }
 .posicionador .enfeite { display: flex; align-items: center; gap: 6px; padding-right: 4px; }
 .posicionador .enfeite .icone { font-size: 24px; }
 .posicionador .enfeite small { display: block; font-size: 12px; font-weight: 800; }
+/* a altura na parede (o quintal decorado): o número entre o nome e o ▲ ▼ */
+.posicionador .altura { font-weight: 900; font-size: 15px; padding: 0 2px; white-space: nowrap; }
+.posicionador .enfeite small.ponta { display: inline; color: #4f8fd0; }
 .posicionador .enfeite small.pode { color: #3c8a3c; }
 .posicionador .enfeite small.nao-pode { color: #c0392b; }
 .posicionador button {

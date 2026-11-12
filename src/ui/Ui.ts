@@ -1428,10 +1428,17 @@ export class Ui {
         <button data-botao="pronto" class="colocar">✓ pronto <kbd>X</kbd></button>`;
     } else {
       const aviso = estado.valido ? '✓ aqui dá' : `✗ ${escapar(estado.motivo ?? 'aqui não dá')}`;
+      // a parede ganha ▲ e ▼ (o Ari escolhe a altura); a ponta a ponta diz qual ponta é
+      const altura = estado.altura === undefined ? '' : `
+        <span class="altura">${estado.altura.toFixed(2).replace('.', ',')} m</span>
+        <button data-botao="subir">▲ <kbd>+</kbd></button>
+        <button data-botao="descer">▼ <kbd>−</kbd></button>`;
+      const ponta = estado.ponta ? ` <small class="ponta">· ${escapar(estado.ponta)}</small>` : '';
       html = `
-        <span class="enfeite"><span class="icone">${estado.icone}</span><b>${escapar(estado.nome)}</b>
+        <span class="enfeite"><span class="icone">${estado.icone}</span><b>${escapar(estado.nome)}</b>${ponta}
           <small class="${estado.valido ? 'pode' : 'nao-pode'}">${aviso}</small></span>
-        <button data-botao="girar">↻ girar <kbd>G</kbd></button>
+        ${altura}
+        ${estado.giravel === false ? '' : '<button data-botao="girar">↻ girar <kbd>G</kbd></button>'}
         <button data-botao="colocar" class="colocar" ${estado.valido ? '' : 'disabled'}>✓ colocar <kbd>E</kbd></button>
         <button data-botao="cancelar">✕ <kbd>X</kbd></button>`;
     }
