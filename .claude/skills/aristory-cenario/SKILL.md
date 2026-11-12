@@ -1047,8 +1047,11 @@ os dois lados DA CÂMERA. O que isso cobra:
    uma faixa estreita: pela janela dá para ver o miolo da sala. **Depois o Renan
    pediu a parede mais BAIXA** (e ainda com as janelas à vista): ela é
    ESCALONADA — alta (2,4 m) só em volta da porta (±1,4), baixa (1,7 m) nas
-   asas, onde a janela vai de 65 cm a 1,5 m com o cabeçalho de 20 cm. O
-   peitoril esconde 1 m de chão atrás dela, e não 1,5. Quando uma
+   asas, onde a janela é um ENTALHE aberto em cima (do peitoril, a 65 cm, até o
+   topo da parede, 1,7 m): sem parede por cima da janela — o vidro e o caixilho
+   de cima são a última coisa (o Renan: "tire a parede de cima da janela e
+   continue a janela até a mesma altura de onde estava a parede"). O peitoril
+   esconde 1 m de chão atrás dela, e não 1,5. Quando uma
    parede alta fica do lado da câmera, o furo de janela com vidro de uma face é
    o jeito de ela não fechar a sala. A porta foi de `x = 3,4` para `0`: o que
    dependia dela (a entrada `da-rua`, a saída, o capacho, o abajur que ficava

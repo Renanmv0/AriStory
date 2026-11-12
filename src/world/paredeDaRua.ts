@@ -21,9 +21,11 @@ import { PALETTE as P } from '../palette';
  *   Renan cortou isso): é a PEÇA que é feita assim, sempre igual;
  * - o caixilho e a cruz ficam, de qualquer lado: são o que faz o furo ler
  *   "janela" visto de trás;
- * - a parede é BAIXA nas asas (1,7 m) e a janela fica nela com o cabeçalho de
- *   20 cm por cima: o peitoril a 65 cm esconde só 1 m de chão atrás dela, e
- *   pela janela dá para ver o miolo da sala. Alta (2,4 m) só em volta da porta.
+ * - a parede é BAIXA nas asas (1,7 m) e a janela é um ENTALHE nela, do peitoril
+ *   (65 cm) até o topo: sem parede em cima da janela — o vidro é a última coisa
+ *   (o caixilho de cima fecha na altura da parede). O peitoril esconde só 1 m de
+ *   chão atrás dela, e pela janela dá para ver o miolo da sala. Alta (2,4 m) só
+ *   em volta da porta.
  *
  * Origem: o meio da parede em `x = 0`, o eixo da parede em `z = 0`, a frente da
  * sala (a face de dentro) olhando para `−Z`.
@@ -35,6 +37,7 @@ export interface JanelaDaSala {
   readonly largura: number;
   /** a altura do peitoril */
   readonly y0: number;
+  /** a janela vai do peitoril até o TOPO da parede baixa: `altoAsa − y0` */
   readonly alto: number;
 }
 
@@ -93,15 +96,15 @@ function janelaDeDentro(j: JanelaDaSala, espessura: number): THREE.Group {
   const cortina = toon(P.cortinaDaSala);
   const zc = -(espessura / 2 + 0.06);
   const varao = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, L + 0.5, 8).rotateZ(Math.PI / 2), toon(P.metalGrey));
-  varao.position.set(j.x, j.y0 + A + 0.07, zc);
+  varao.position.set(j.x, j.y0 + A - 0.08, zc);
   g.add(varao);
   for (const lado of [-1, 1]) {
-    const pano = new THREE.Mesh(new THREE.BoxGeometry(0.32, A + 0.1, 0.07), cortina);
-    pano.position.set(j.x + lado * (L / 2 + 0.06), j.y0 + A / 2 + 0.01, zc);
+    const pano = new THREE.Mesh(new THREE.BoxGeometry(0.32, A - 0.08, 0.07), cortina);
+    pano.position.set(j.x + lado * (L / 2 + 0.06), j.y0 + (A - 0.08) / 2 - 0.02, zc);
     g.add(pano);
     // as pregas: três varetas de pano mais claras na frente do pano
     for (let k = -1; k <= 1; k++) {
-      const prega = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, A + 0.08, 6), cortina);
+      const prega = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, A - 0.1, 6), cortina);
       prega.position.set(pano.position.x + k * 0.1, pano.position.y, zc - 0.045);
       g.add(prega);
     }
@@ -120,6 +123,14 @@ function janelaDeDentro(j: JanelaDaSala, espessura: number): THREE.Group {
 export function paredeDaRuaPorDentro(p: ParedeDaRua): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'parede-da-rua';
+  /*
+   * O CONTORNO, SEM FURO: as janelas vão até o TOPO da parede baixa (pedido do
+   * Renan: "tire a parede de cima da janela e continue a janela até a mesma
+   * altura de onde estava a parede"), então cada uma é um ENTALHE aberto em
+   * cima, e o vidro e o caixilho fecham o vão até a altura da parede. O contorno
+   * sai pela base, sobe pela direita e volta pelo topo, da direita para a
+   * esquerda, entalhando cada janela e fazendo o degrau do meio.
+   */
   const forma = new THREE.Shape();
   forma.moveTo(-p.meia, 0);
   forma.lineTo(p.vao.x0, 0);
@@ -128,21 +139,25 @@ export function paredeDaRuaPorDentro(p: ParedeDaRua): THREE.Group {
   forma.lineTo(p.vao.x1, 0);
   forma.lineTo(p.meia, 0);
   forma.lineTo(p.meia, p.altoAsa);
-  forma.lineTo(p.meiaCentro, p.altoAsa);
-  forma.lineTo(p.meiaCentro, p.altoCentro);
-  forma.lineTo(-p.meiaCentro, p.altoCentro);
-  forma.lineTo(-p.meiaCentro, p.altoAsa);
+  const daDireitaParaEsquerda = [...p.janelas].sort((a, b) => b.x - a.x);
+  let passouDoMeio = false;
+  const degrau = (): void => {
+    forma.lineTo(p.meiaCentro, p.altoAsa);
+    forma.lineTo(p.meiaCentro, p.altoCentro);
+    forma.lineTo(-p.meiaCentro, p.altoCentro);
+    forma.lineTo(-p.meiaCentro, p.altoAsa);
+    passouDoMeio = true;
+  };
+  for (const j of daDireitaParaEsquerda) {
+    if (!passouDoMeio && j.x < 0) degrau();
+    forma.lineTo(j.x + j.largura / 2, p.altoAsa);
+    forma.lineTo(j.x + j.largura / 2, j.y0);
+    forma.lineTo(j.x - j.largura / 2, j.y0);
+    forma.lineTo(j.x - j.largura / 2, p.altoAsa);
+  }
+  if (!passouDoMeio) degrau();
   forma.lineTo(-p.meia, p.altoAsa);
   forma.closePath();
-  for (const j of p.janelas) {
-    const furo = new THREE.Path();
-    furo.moveTo(j.x - j.largura / 2, j.y0);
-    furo.lineTo(j.x + j.largura / 2, j.y0);
-    furo.lineTo(j.x + j.largura / 2, j.y0 + j.alto);
-    furo.lineTo(j.x - j.largura / 2, j.y0 + j.alto);
-    furo.closePath();
-    forma.holes.push(furo);
-  }
   const geo = new THREE.ExtrudeGeometry(forma, { depth: p.espessura, bevelEnabled: false });
   geo.translate(0, 0, -p.espessura / 2);
   g.add(new THREE.Mesh(geo, toon(P.wallCream)));

@@ -241,7 +241,7 @@ export const casa: SceneDef = {
     // atravessava a soleira): ela acaba onde a parede alta começa.
     const zPorta = D / 2;
     const ESPESSURA = 0.3;
-    const JANELAS_DA_RUA = [-2.75, 2.75].map((x) => ({ x, largura: 1.5, y0: 0.65, alto: 0.85 }));
+    const JANELAS_DA_RUA = [-2.75, 2.75].map((x) => ({ x, largura: 1.5, y0: 0.65, alto: FACHADA_DA_SALA.altoAsa - 0.65 }));
     w.add(w.place(
       paredeDaRuaPorDentro({
         meia: FACHADA_DA_SALA.meia, altoCentro: FACHADA_DA_SALA.altoCentro, altoAsa: FACHADA_DA_SALA.altoAsa,
