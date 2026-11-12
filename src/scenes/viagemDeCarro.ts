@@ -557,6 +557,33 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         }
       });
     }
+    if (deJogo) {
+      /*
+       * OS BURACOS: sem os corações para mostrar a faixa livre, o piloto de jogo PLANEJA. Os buracos que
+       * vêm nos próximos 24 m (os de uma fileira são vários, de lados diferentes) viram uma conta só: ele
+       * escolhe a posição, de um lado a outro da pista, em que NENHUMA das duas rodas pega neles, perto
+       * da faixa dele e da posição de agora. (Desviar de um de cada vez, o desvio do segundo jogava a
+       * roda no primeiro.)
+       */
+      const ls: number[] = [];
+      for (const vivo of vivos) {
+        if (vivo.e.tipo !== 'buracos' || !vivo.e.buracos) continue;
+        for (const b of vivo.e.buracos) {
+          const db = vivo.e.s + b.ds - estado.s;
+          if (db > -2 && db < 24) ls.push(b.l);
+        }
+      }
+      if (ls.length) {
+        let melhorC = alvoL;
+        let menor = Infinity;
+        for (let c = -2.2; c <= 2.2 + 1e-6; c += 0.05) {
+          let custo = Math.abs(c - alvoL) + Math.abs(c - estado.l) * 0.3;
+          for (const bl of ls) if ([-0.9, 0.9].some((roda) => Math.abs(c + roda - bl) < RAIO_DO_BURACO * 0.95 + 0.2)) custo += 1000;
+          if (custo < menor) { menor = custo; melhorC = c; }
+        }
+        alvoL = melhorC;
+      }
+    }
     for (const vivo of vivos) {
       const e = vivo.e;
       const d = e.s - estado.s;
@@ -564,11 +591,10 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       if (e.tipo === 'obra' && d < (deJogo ? 30 : 22) && d > -22) alvoL = outra;
       if (vivo.onibus && !vivo.onibus.passou && vivo.onibus.s - estado.s < 30 && vivo.onibus.s - estado.s > -12) alvoL = outra;
       if (e.tipo === 'lombada' && d > 0 && d < 16 && estado.v > 5) y = -0.8;
-      if (e.tipo === 'buracos' && e.buracos) {
+      if (e.tipo === 'buracos' && e.buracos && !deJogo) {
         for (const b of e.buracos) {
           const db = e.s + b.ds - estado.s;
-          // (o piloto de jogo não tem os corações para mostrar a faixa livre: olha o buraco de mais longe)
-          if (db > 0 && db < (deJogo ? 20 : 11) && Math.abs(alvoL - b.l) < 1.9) alvoL = b.l > 0 ? b.l - 2.1 : b.l + 2.1;
+          if (db > 0 && db < 11 && Math.abs(alvoL - b.l) < 1.9) alvoL = b.l > 0 ? b.l - 2.1 : b.l + 2.1;
         }
       }
       const parar = (vivo.travessia && vivo.travessia.estado !== 'feito') || (vivo.semaforo && vivo.semaforo.cor !== 'verde');
