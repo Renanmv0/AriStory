@@ -351,7 +351,7 @@ export class TartarugaDeEstrada {
   }
 
   /** o casco fica a esta altura do chão (as pernas aguentam ele) */
-  static readonly ALTURA_DO_CORPO = 0.062;
+  static readonly ALTURA_DO_CORPO = 0.066;
 
   /** um quadro: relógio de piscar e a pose do passo */
   update(dt: number, p: PoseDaTartaruga): void {
@@ -377,8 +377,8 @@ export class TartarugaDeEstrada {
     const y = TartarugaDeEstrada.ALTURA_DO_CORPO - 0.044 * k;
     this.corpo.position.y = y + Math.abs(Math.sin(passo)) * 0.0035 * b + Math.sin(this.relogio * 1.6) * 0.0012 * (1 - b);
     // o casco balança de lado com o passo (e roda um tico em volta de si)
-    this.corpo.rotation.z = Math.sin(passo) * 0.06 * b;
-    this.corpo.rotation.y = Math.sin(passo + Math.PI / 2) * 0.045 * b;
+    this.corpo.rotation.z = Math.sin(passo) * 0.04 * b;
+    this.corpo.rotation.y = Math.sin(passo + Math.PI / 2) * 0.04 * b;
     this.corpo.rotation.x = Math.sin(passo * 2) * 0.012 * b;
 
     // as pernas: diagonal, e recolhem (encolhem e sobem para dentro)

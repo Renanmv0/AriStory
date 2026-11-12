@@ -581,6 +581,7 @@ if (roda('bichos')) {
       console.log(`   mãe ${mae.alto.toFixed(2)} m de altura; patinhos ${filhotes.map((f) => f.alto.toFixed(2)).join(', ')}`);
       confere(filhotes.length >= 2 && filhotes.every((f) => f.alto < mae.alto * 0.7), 'cada patinho é bem menor que a mãe (menos de 70% dela)');
       confere(mae.alto < 1.0, `a pata não passa de 1 m de altura (${mae.alto.toFixed(2)} m)`);
+      console.log(`   pés mais baixos: ${caixas.map((c) => c.chao.toFixed(3)).join(', ')}`);
       confere(caixas.every((c) => c.chao > -0.05), 'nenhum pato afundou no chão');
       await fotoEm('patos-3-4', e.s + 3.2, lado * 2.6, 0.8, e.s - 0.2, 0, 0.3);
       await fotoEm('patos-de-lado', e.s + 0.4, -4.2 * lado, 0.55, e.s, 0, 0.25);
@@ -592,8 +593,10 @@ if (roda('bichos')) {
       await fotoEm('tigres-de-lado', e.s + 0.5, -3.8 * lado, 0.5, e.s, 0, 0.3);
       await fotoEm('tigres-de-frente', e.s - 4.2, 0.4 * lado, 0.55, e.s - 0.2, 0, 0.3);
       // a buzina: ela se esconde no casco
+      await viagem(page, { vezes: 1 });
       await page.keyboard.press('KeyE');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(1300);
+      await viagem(page, { vezes: 0.02 });
       await fotoEm('tigres-escondida', e.s + 3.0, lado * 2.4, 0.85, e.s - 0.2, 0, 0.3);
     }
     await viagem(page, { vezes: 3 });

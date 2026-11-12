@@ -31,11 +31,11 @@ const V = THREE.Vector3;
 /**
  * o tamanho em terra, POR CIMA da ficha do pato do lago (a pata nasce 1,15 e o
  * patinho 0,52): de dentro do carro eles somem no tamanho do lago, então
- * crescem — a pata 1,35× e o patinho 1,45× (ficha 0,52 → 0,75, metade da mãe).
+ * crescem — a pata 1,35× e o patinho 1,6× (ficha 0,52 → 0,83, pouco mais da metade da mãe).
  * A primeira versão trocava a escala toda por 1,7 e o patinho ficava MAIOR que
  * a mãe (3,3× o do lago): o Renan reparou no celular.
  */
-const ESCALA = { pato: 1.35, patinho: 1.45, tigre: 2.8 } as const;
+const ESCALA = { pato: 1.35, patinho: 1.6, tigre: 2.8 } as const;
 
 interface Andante {
   grupo: THREE.Object3D;
