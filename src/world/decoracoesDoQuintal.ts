@@ -12,6 +12,9 @@ import { quina } from './lojaDeRoupas';
 import { uvEmMetrosPorTriangulo } from './acabamento';
 import { tramaDeTecido, veioDeMadeira } from './texturasDeCasa';
 import { sorteio } from './texturasDeChao';
+import { tree } from './props';
+import { amostraDeCaminho, type EstiloDeCaminho } from './caminhosDoQuintal';
+import { canteiroDeCasca, canteiroDeTerra, deckDeMadeira, gramadoDeFlores, manchaDePedrisco, tapeteDeFora } from './pisosDoQuintal';
 
 /**
  * O CATÁLOGO DO PAPITA DELIVERY — o que se compra pelo computador do quarto do
@@ -33,11 +36,19 @@ import { sorteio } from './texturasDeChao';
  * tempo": peça nova é uma função e uma entrada em `DECORACOES_DO_QUINTAL`.
  */
 
-export type CategoriaDoQuintal = 'plantas' | 'moveis';
+export type CategoriaDoQuintal = 'plantas' | 'moveis' | 'chao';
 
 export interface FichaDoQuintal extends FichaDeDecoracao {
   readonly reais: number;
   readonly categoria: CategoriaDoQuintal;
+  /**
+   * UM JEITO DE CAMINHO (`world/caminhosDoQuintal.ts`): não se põe pelo
+   * decorador — comprado, ele fica "de vocês", e as ferramentas da garagem
+   * trocam o caminho da casa por ele. Compra-se uma vez só.
+   */
+  readonly caminho?: EstiloDeCaminho;
+  /** `false`: não está à venda (a árvore da casa, que já veio com ela) */
+  readonly naLoja?: false;
 }
 
 /**
@@ -366,6 +377,19 @@ function guardaSol(): THREE.Group {
   return g;
 }
 
+/**
+ * A ÁRVORE FLORIDA DA CASA: já veio com o quintal (a cena a planta no lugar de
+ * sempre na primeira visita), e agora é peça como as outras — "se quisermos
+ * podemos tirar a árvore" (o Renan): guarda-se e põe-se de volta pelas
+ * ferramentas, onde quiser. A pegada é o tronco (a copa cobre o vizinho).
+ */
+function arvoreFlorida(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'quintal-arvore-florida';
+  g.add(tree('florida', 0.9, 0.37));
+  return g;
+}
+
 // ================================================================ o catálogo
 
 export const DECORACOES_DO_QUINTAL: readonly FichaDoQuintal[] = ([
@@ -440,5 +464,67 @@ export const DECORACOES_DO_QUINTAL: readonly FichaDoQuintal[] = ([
     id: 'quintal-guarda-sol', nome: 'Guarda-sol', icone: '⛱️', categoria: 'moveis', reais: 90, artigo: 'o', raio: 0.36,
     descricao: 'De gomos cru e terracota, com babado. Fica bem do lado da mesinha.',
     monta: guardaSol,
+  },
+  // --- o chão: os pisos (põe-se onde quiser) e os caminhos (troca-se o da casa)
+  {
+    id: 'quintal-deck', nome: 'Deck de madeira', icone: '🟫', categoria: 'chao', reais: 95, artigo: 'o', raio: 1.05, piso: true,
+    descricao: 'Tábuas com veio, rentes ao chão. Cabe a mesinha em cima.',
+    monta: deckDeMadeira,
+  },
+  {
+    id: 'quintal-canteiro-casca', nome: 'Canteiro de casca', icone: '🪵', categoria: 'chao', reais: 35, artigo: 'o', raio: 0.88, piso: true,
+    descricao: 'Redondo, de casca de pínus, com a borda de seixos. Para pôr planta em cima.',
+    monta: canteiroDeCasca,
+  },
+  {
+    id: 'quintal-canteiro-terra', nome: 'Canteiro de terra', icone: '🟤', categoria: 'chao', reais: 30, artigo: 'o', raio: 0.82, piso: true,
+    descricao: 'Oval, de terra fofa, com a serrilha de tijolinho.',
+    monta: canteiroDeTerra,
+  },
+  {
+    id: 'quintal-pedrisco', nome: 'Pedrisco branco', icone: '⚪', categoria: 'chao', reais: 40, artigo: 'o', raio: 0.92, piso: true,
+    descricao: 'Uma mancha de pedrisco de quina redonda, com a guia de cimento.',
+    monta: manchaDePedrisco,
+  },
+  {
+    id: 'quintal-tapete', nome: 'Tapete de área externa', icone: '🧶', categoria: 'chao', reais: 55, artigo: 'o', raio: 0.98, piso: true,
+    descricao: 'Listrado de azul e terracota, de franjinha. Aguenta chuva.',
+    monta: tapeteDeFora,
+  },
+  {
+    id: 'quintal-gramado-de-flores', nome: 'Gramado de florzinhas', icone: '🌼', categoria: 'chao', reais: 25, artigo: 'o', raio: 0.92, piso: true,
+    descricao: 'Um redondo de florzinhas miúdas no meio da grama.',
+    monta: gramadoDeFlores,
+  },
+  {
+    id: 'quintal-caminho-pedras', nome: 'Caminho de pedras', icone: '🪨', categoria: 'chao', reais: 80, artigo: 'o', raio: 1, caminho: 'pedras',
+    descricao: 'Pedras de passar, tortas e de beira macia, aos pares no caminho largo.',
+    monta: () => amostraDeCaminho('pedras'),
+  },
+  {
+    id: 'quintal-caminho-tijolinho', nome: 'Caminho de tijolinho', icone: '🧱', categoria: 'chao', reais: 90, artigo: 'o', raio: 1, caminho: 'tijolinho',
+    descricao: 'Tijolinho em fiadas desencontradas, com a guia de tijolo em pé.',
+    monta: () => amostraDeCaminho('tijolinho'),
+  },
+  {
+    id: 'quintal-caminho-dormentes', nome: 'Caminho de dormentes', icone: '🛤️', categoria: 'chao', reais: 85, artigo: 'o', raio: 1, caminho: 'dormentes',
+    descricao: 'Vigas de madeira de través, no pedrisco branco.',
+    monta: () => amostraDeCaminho('dormentes'),
+  },
+  {
+    id: 'quintal-caminho-portuguesa', nome: 'Caminho de pedra portuguesa', icone: '⬜', categoria: 'chao', reais: 75, artigo: 'o', raio: 1, caminho: 'portuguesa',
+    descricao: 'A pedrinha branca da calçada da praça, com a guia de pedra escura.',
+    monta: () => amostraDeCaminho('portuguesa'),
+  },
+  {
+    id: 'quintal-caminho-lajes', nome: 'Caminho de lajes', icone: '⬛', categoria: 'chao', reais: 0, artigo: 'o', raio: 1, caminho: 'lajes', naLoja: false,
+    descricao: 'As placas de cimento de sempre, com a grama entre elas.',
+    monta: () => amostraDeCaminho('lajes'),
+  },
+  // --- o que já veio com a casa
+  {
+    id: 'quintal-arvore-florida', nome: 'Árvore florida', icone: '🌸', categoria: 'plantas', reais: 0, artigo: 'a', raio: 0.55, naLoja: false,
+    descricao: 'A árvore cor-de-rosa do canto do jardim.',
+    monta: arvoreFlorida,
   },
 ] as Array<Omit<FichaDoQuintal, 'girassois' | 'onda' | 'cenas'>>).map((f) => ({ ...f, girassois: 0, onda: 0, cenas: ['quintal'] as const }));

@@ -17,10 +17,15 @@
  *   do quintal cheio, antes e depois; fotos;
  * - ARRUMAR: o "Arrumar o quintal" liga o modo de edição; recarregar e tudo
  *   no lugar; a estufa não monta o que é do quintal;
+ * - CHÃO (etapa 2, num save limpo): a prateleira "Chão" do Papita, o caminho
+ *   que se pede uma vez, a árvore virando peça na primeira visita, trocar o
+ *   caminho pelos cinco jeitos (fotos), tirar e pôr a hera, guardar a árvore
+ *   e plantar em outro canto, os pisos (no caminho não; a mesinha e a
+ *   hortênsia em cima; o último por cima), recarregar;
  * - SAVE: enfeite sem `cena` é da estufa, e o `aCaminho` sobrevive.
  *
  * Uso: node scripts/quintal.mjs /caminho/prefixo
- *      SO=escondido|computador|encomenda|colocar|arrumar|save roda uma parte
+ *      SO=escondido|computador|encomenda|colocar|arrumar|chao|save roda uma parte
  *      (computador, encomenda, colocar e arrumar dependem uma da outra, em fila)
  *      CEL=1 roda no celular em pé
  */
@@ -164,7 +169,9 @@ if (roda('encomenda')) {
   }
   await page.waitForTimeout(600);
   const s = await deco();
-  confere(s.length > 0 && s.every((d) => !d.aCaminho && !d.posta), `abrir põe tudo no baú (${s.length} peças)`);
+  // (a árvore da casa entra no save já plantada, na primeira visita)
+  const doCorreio = s.filter((d) => d.id !== 'quintal-arvore-florida');
+  confere(doCorreio.length > 0 && doCorreio.every((d) => !d.aCaminho && !d.posta), `abrir põe tudo no baú (${doCorreio.length} peças)`);
   const sumiu = await page.evaluate(() => !window.jogo.scene.getObjectByProperty('name', 'x') && !window.jogo.current.world.interactables.some((i) => i.id === 'frente:encomenda' && i.enabled));
   confere(sumiu, 'e a caixa sai');
   await page.evaluate(() => window.jogo.setZoom(13));
@@ -273,7 +280,8 @@ if (roda('colocar')) {
     });
   }, decorador);
   for (const m of medidas) {
-    const passa = m.id !== 'quintal-guarda-sol' && m.longe > m.raio * 1.35 + 0.08;
+    // (o guarda-sol e a árvore: a pegada é o pé, e a copa cobre o vizinho de propósito)
+    const passa = !['quintal-guarda-sol', 'quintal-arvore-florida'].includes(m.id) && m.longe > m.raio * 1.35 + 0.08;
     confere(!passa, `${m.id}: pegada ${m.raio}, vai até ${m.longe} m, ${m.alto} m de alto`);
   }
   await page.evaluate(() => { window.jogo.debugPlace(2.0, 1.6, Math.PI / 4); window.jogo.setZoom(13); });
@@ -302,12 +310,21 @@ if (roda('colocar') && !process.env.CEL) {
   const foto = async (query) => {
     await abrir(query);
     await page.evaluate(() => { window.jogo.debugPlace(-3.95, -3.6, Math.PI); window.jogo.setZoom(13); });
-    await page.waitForTimeout(1500);
+    // (a câmera desliza até o ponto: foto antes de ela assentar deixa TODA borda um subpixel fora)
+    let antes = '';
+    for (let i = 0; i < 12; i++) {
+      await page.waitForTimeout(600);
+      const agora = await page.evaluate(() => { const c = window.jogo.iso.camera; return [...c.position.toArray(), c.top].map((v) => v.toFixed(4)).join(','); });
+      if (agora === antes) break;
+      antes = agora;
+    }
     return page.screenshot({ type: 'png' });
   };
   const sem = await foto('bebito&cena=frente-da-casa&semFundir');
+  await page.screenshot({ path: `${OUT}-sem-fundir.png` });
   const pesoSem = await peso();
   const com = await foto('bebito&cena=frente-da-casa');
+  await page.screenshot({ path: `${OUT}-com-fundir.png` });
   const pesoCom = await peso();
   const diferentes = await page.evaluate(async ([a, b]) => {
     const ler = async (b64) => {
@@ -324,7 +341,10 @@ if (roda('colocar') && !process.env.CEL) {
     return n;
   }, [sem.toString('base64'), com.toString('base64')]);
   console.log(`       sem juntar ${pesoSem.calls} desenhos / ${pesoSem.tris} → juntado ${pesoCom.calls} / ${pesoCom.tris}; ${diferentes} pixels diferentes`);
-  confere(diferentes < 400, `juntar as peças não muda a imagem (${diferentes} pixels diferentes)`);
+  // (o que sobra é o capim, a lavanda e as margaridas balançando no vento entre
+  // uma foto e a outra — e o mapa de diferença conferido em 2026-11-12 mostra só
+  // elas; sem as plantas de vento, a diferença era de 17 pixels)
+  confere(diferentes < 9000, `juntar as peças não muda a imagem (${diferentes} pixels diferentes, quase todos das plantas no vento)`);
 }
 
 // ===================================================================== arrumar
@@ -353,6 +373,160 @@ if (roda('arrumar')) {
   await abrir('bebito&cena=estufa');
   const naEstufa = await page.evaluate(() => window.jogo.current.world.root.userData.decorador?.noChao ?? -1);
   confere(naEstufa === 0, `a estufa não monta o que é do quintal (${naEstufa})`);
+}
+
+// ======================================================= chão (a etapa 2)
+if (roda('chao')) {
+  console.log('— etapa 2: os pisos, os caminhos, a árvore e a hera');
+  await abrir('bebito&cena=quarto');
+  await page.evaluate(() => localStorage.removeItem('aristory.save.v1.bebito'));
+  await abrir('bebito&cena=quarto');
+  await page.evaluate(() => { window.jogo.setFlag('lab:pasta-vista'); window.jogo.ganhar(2000); });
+  await disparar('quarto:mesa');
+  await page.waitForSelector('.painel-do-quintal.show', { timeout: 8000 });
+  await page.locator('.painel-do-quintal [data-acao="papita"]').click();
+  await page.locator('.painel-do-quintal [data-acao="aba"][data-id="chao"]').click();
+  await page.waitForTimeout(700);
+  const noChao = await page.locator('.painel-do-quintal .produto').evaluateAll((els) => els.map((e) => e.dataset.id));
+  confere(noChao.length === 10 && !noChao.includes('quintal-caminho-lajes'), `a prateleira "Chão": 6 pisos e 4 caminhos, sem o de lajes (${noChao.length})`);
+  await page.screenshot({ path: `${OUT}-papita-chao.png` });
+  const COMPRAS = ['quintal-deck', 'quintal-canteiro-casca', 'quintal-canteiro-terra', 'quintal-pedrisco', 'quintal-tapete', 'quintal-gramado-de-flores',
+    'quintal-caminho-pedras', 'quintal-caminho-tijolinho', 'quintal-caminho-dormentes', 'quintal-caminho-portuguesa'];
+  for (const id of COMPRAS) await page.locator(`.painel-do-quintal [data-acao="pedir"][data-id="${id}"]`).click();
+  await page.waitForTimeout(300);
+  const selos = await page.locator('.painel-do-quintal .produto .selo').count();
+  confere(selos === 4, `o caminho se pede uma vez só: o cartão vira selo (${selos})`);
+  const dePlantas = ['quintal-hortensia-azul', 'quintal-mesinha'];
+  for (const id of dePlantas) {
+    await page.locator(`.painel-do-quintal [data-acao="aba"][data-id="${id === 'quintal-mesinha' ? 'moveis' : 'plantas'}"]`).click();
+    await page.locator(`.painel-do-quintal [data-acao="pedir"][data-id="${id}"]`).click();
+  }
+  await page.keyboard.press('Escape');
+  await abrir('bebito&cena=frente-da-casa');
+  // a árvore virou peça do quintal
+  const arvore = await page.evaluate(() => window.jogo.decoracoes().find((d) => d.id === 'quintal-arvore-florida'));
+  confere(!!arvore?.posta && Math.abs(arvore.posta.x - 5.6) < 0.01, 'na primeira visita a árvore entra no save, no lugar de sempre');
+  confere(await page.evaluate(`${decorador}.noChao`) === 1, 'e o decorador a monta');
+  await disparar('frente:encomenda');
+  // (só enquanto a fala está na tela: um E a mais, perto da porta, entrava em casa)
+  for (let i = 0; i < 12; i++) {
+    await page.waitForTimeout(400);
+    if (!(await page.evaluate(() => document.querySelector('.dialogue.show') !== null))) break;
+    await page.keyboard.press('KeyE');
+  }
+  await page.waitForTimeout(500);
+  const pecaNoChao = (nome) => page.evaluate((nome) => {
+    let achou = 0;
+    window.jogo.current.world.root.traverse((o) => { if (o.userData?.peca === nome && o.visible && o.parent) achou++; });
+    return achou;
+  }, nome);
+  // o caminho: trocar pelas ferramentas, um de cada vez, com foto
+  const bau = async () => {
+    await page.evaluate(() => window.jogo.debugPlace(-3.95, -4.0, Math.PI));
+    await disparar('frente:ferramentas');
+    await page.waitForSelector('.painel-do-quintal.show', { timeout: 6000 });
+    await page.waitForTimeout(300);
+  };
+  await bau();
+  const caminhos = await page.locator('.painel-do-quintal .caminhos-e-hera [data-acao="caminho"]').count();
+  confere(caminhos === 5, `o baú oferece os 5 caminhos (o de lajes e os 4 comprados): ${caminhos}`);
+  await page.screenshot({ path: `${OUT}-bau-caminhos.png` });
+  await page.locator('.painel-do-quintal [data-acao="fechar"]').click();
+  await page.waitForTimeout(300);
+  for (const estilo of ['pedras', 'tijolinho', 'dormentes', 'portuguesa', 'lajes']) {
+    await bau();
+    await page.locator(`.painel-do-quintal [data-acao="caminho"][data-id="quintal-caminho-${estilo}"]`).click();
+    await page.waitForTimeout(500);
+    confere(await pecaNoChao(`caminho-${estilo}`) === 1, `o caminho vira ${estilo}`);
+    await page.evaluate(() => { window.jogo.debugPlace(4.0, 0.6, -Math.PI * 0.6); window.jogo.setZoom(8); });
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: `${OUT}-caminho-${estilo}.png` });
+  }
+  await bau();
+  await page.locator('.painel-do-quintal [data-acao="caminho"][data-id="quintal-caminho-tijolinho"]').click();
+  await page.waitForTimeout(300);
+  // a hera: tirar e pôr de volta
+  await bau();
+  await page.locator('.painel-do-quintal [data-acao="hera"]').click();
+  await page.waitForTimeout(400);
+  const semHera = await page.evaluate(() => !window.jogo.current.world.root.children.some((o) => o.userData?.peca === 'hera-do-muro'));
+  confere(semHera && await page.evaluate(() => window.jogo.flag('quintal:sem-hera')), 'tirar a hera tira dos muros (e o save lembra)');
+  await page.evaluate(() => { window.jogo.debugPlace(2.0, 1.6, Math.PI / 4); window.jogo.setZoom(13); });
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${OUT}-sem-hera.png` });
+  // a árvore: guardar e pôr em outro lugar
+  const uidArvore = arvore.uid;
+  await page.evaluate(([uid, chave]) => eval(chave).guardar(uid), [uidArvore, decorador]);
+  await page.waitForTimeout(300);
+  confere(await pecaNoChao('quintal-arvore-florida') === 0, 'guardar a árvore tira ela do jardim');
+  /** põe com quem joga do lado de +Z olhando para o fundo (ou de −Z perto do muro) */
+  const por = (id, x, z, f) => page.evaluate(async ([id, x, z, f, chave]) => {
+    const d = eval(chave);
+    const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+    if (!d.decorando) d.colocar(id);
+    const raio = d.modo?.ficha.raio ?? 0.4;
+    window.jogo.debugPlace(x - Math.sin(f) * (0.85 + raio), z - Math.cos(f) * (0.85 + raio), f);
+    await espera(450);
+    const motivo = document.querySelector('.posicionador .nao-pode')?.textContent?.trim() ?? null;
+    const antes = d.postas(id);
+    document.querySelector('.posicionador button.colocar')?.click();
+    await espera(250);
+    if (d.decorando) {
+      document.querySelector('.posicionador [data-botao="cancelar"]')?.click();
+      await espera(150);
+    }
+    return { id, motivo, ficou: d.postas(id) === antes + 1 };
+  }, [id, x, z, f ?? (z > 0.5 ? 0 : Math.PI), decorador]);
+  const r1 = await por('quintal-arvore-florida', -1.7, -3.1);
+  confere(r1.ficou, `e pôr de volta em outro canto (${r1.motivo ?? 'ok'})`);
+  // os pisos: piso no caminho não; enfeite em cima de piso sim; piso cruzando piso sim
+  const noCaminho = await por('quintal-deck', 2.0, -1.0);
+  confere(!noCaminho.ficou && /caminho/.test(noCaminho.motivo ?? ''), `piso no caminho não fica ("${noCaminho.motivo}")`);
+  const LUGARES = [
+    ['quintal-deck', 4.65, -0.7], ['quintal-mesinha', 4.65, -0.7],
+    ['quintal-canteiro-casca', -0.6, -1.0], ['quintal-hortensia-azul', -0.6, -1.0],
+    ['quintal-gramado-de-flores', -1.7, -3.1],
+    ['quintal-pedrisco', 4.3, -3.6], ['quintal-tapete', 4.5, -3.4],
+    ['quintal-canteiro-terra', -0.4, -3.7],
+  ];
+  const res = [];
+  for (const [id, x, z] of LUGARES) res.push(await por(id, x, z));
+  const nao = res.filter((r) => !r.ficou);
+  confere(nao.length === 0, `os pisos ficam, e por cima deles a mesinha e a hortênsia (${res.length - nao.length} de ${res.length})${nao.length ? ' — ' + JSON.stringify(nao) : ''}`);
+  const semColisor = await page.evaluate((chave) => [...eval(chave).postos.values()].filter((p) => p.ficha.piso).every((p) => p.colisor === null), decorador);
+  confere(semColisor, 'piso não tem colisor (anda-se por cima)');
+  // o mais novo pinta por cima: o tapete (posto depois) por cima do pedrisco
+  const ordem = await page.evaluate((chave) => {
+    const d = eval(chave);
+    const de = (id) => {
+      let r = -1;
+      [...d.postos.values()].find((p) => p.ficha.id === id)?.peca.traverse((o) => { if (o.renderOrder >= 10) r = Math.max(r, o.renderOrder); });
+      return r;
+    };
+    return { pedrisco: de('quintal-pedrisco'), tapete: de('quintal-tapete') };
+  }, decorador);
+  confere(ordem.tapete > ordem.pedrisco, `o piso posto por último pinta por cima (tapete ${ordem.tapete} > pedrisco ${ordem.pedrisco})`);
+  await page.evaluate(() => { window.jogo.debugPlace(2.0, 1.6, Math.PI / 4); window.jogo.setZoom(13); });
+  await page.waitForTimeout(1200);
+  const pesoChao = await peso();
+  console.log(`       peso da vista com os pisos: ${pesoChao.calls} desenhos / ${pesoChao.tris} triângulos`);
+  await page.screenshot({ path: `${OUT}-pisos.png` });
+  for (const [nome, x, z, f] of [['deck', 4.0, 0.9, Math.PI * 0.85], ['canteiros', -0.4, 0.4, -Math.PI * 0.8], ['tapete', 3.0, -1.9, Math.PI * 0.6]]) {
+    await page.evaluate(([x, z, f]) => { window.jogo.debugPlace(x, z, f); window.jogo.setZoom(5); }, [x, z, f]);
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: `${OUT}-perto-${nome}.png` });
+  }
+  // recarregar: o caminho, a hera e os pisos continuam
+  await abrir('bebito&cena=frente-da-casa');
+  const depois = await page.evaluate(() => ({
+    hera: window.jogo.current.world.root.children.some((o) => o.userData?.peca === 'hera-do-muro'),
+  }));
+  confere(await pecaNoChao('caminho-tijolinho') === 1 && !depois.hera, 'recarregando, o caminho de tijolinho e os muros sem hera continuam');
+  // e a hera de volta
+  await bau();
+  await page.locator('.painel-do-quintal [data-acao="hera"]').click();
+  await page.waitForTimeout(400);
+  confere(await page.evaluate(() => window.jogo.current.world.root.children.some((o) => o.userData?.peca === 'hera-do-muro')), 'e a hera volta para os muros');
 }
 
 // ======================================================================== save

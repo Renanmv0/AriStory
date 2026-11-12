@@ -7273,6 +7273,41 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
   box-shadow: 0 3px 0 #33689e;
 }
 .painel-do-quintal .editar:disabled { cursor: default; opacity: 0.5; }
+/* o selo do caminho que já é da dupla, e a linha do caminho e da hera no baú */
+.painel-do-quintal .selo {
+  flex: 1 1 100%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  color: #2f7a46;
+  background: #e5f3df;
+}
+.painel-do-quintal .caminhos-e-hera {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #efe3c6;
+}
+.painel-do-quintal .caminhos-e-hera .linha { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.painel-do-quintal .caminhos-e-hera b { flex: 0 0 100%; font-size: 14px; color: #4a3a22; }
+.painel-do-quintal .caminhos-e-hera button {
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  color: #4a3a22;
+  background: #fffaf0;
+  box-shadow: inset 0 0 0 2px rgba(120, 90, 50, 0.25);
+}
+.painel-do-quintal .caminhos-e-hera button.ativo { cursor: default; color: #fff; background: #5f9a4a; box-shadow: 0 3px 0 #3f7432; }
 @media (max-width: 640px) {
   .painel-do-quintal { padding: 8px; }
   .painel-do-quintal .monitor { padding: 6px 6px 0; height: 100%; }

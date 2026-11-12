@@ -22,11 +22,13 @@ export interface ItemDoPapita {
   readonly nome: string;
   readonly icone: string;
   readonly descricao: string;
-  readonly categoria: 'plantas' | 'moveis';
+  readonly categoria: 'plantas' | 'moveis' | 'chao';
   readonly reais: number;
   readonly aCaminho: number;
   readonly noBau: number;
   readonly noQuintal: number;
+  /** um jeito de caminho: compra-se uma vez só, e não vai para o chão pelo baú */
+  readonly caminho?: boolean;
 }
 
 export interface ConteudoDoComputador {
@@ -46,18 +48,37 @@ export interface ItemNoBau {
   readonly guardadas: number;
 }
 
+/** um jeito de caminho que é da dupla, e se é o que está no chão agora */
+export interface CaminhoNoBau {
+  readonly id: string;
+  readonly nome: string;
+  readonly icone: string;
+  readonly ativo: boolean;
+}
+
 export interface ConteudoDoBau {
   readonly itens: readonly ItemNoBau[];
+  /** os caminhos que são da dupla (o de lajes sempre) */
+  readonly caminhos: readonly CaminhoNoBau[];
+  /** a hera está nos muros? */
+  readonly hera: boolean;
   /** quantos enfeites estão no chão do quintal */
   readonly noQuintal: number;
   /** quantos ainda estão no correio */
   readonly aCaminho: number;
 }
 
-export type SaidaDoBau = null | { readonly tipo: 'colocar'; readonly id: string } | { readonly tipo: 'editar' };
+export type SaidaDoBau =
+  | null
+  | { readonly tipo: 'colocar'; readonly id: string }
+  | { readonly tipo: 'editar' }
+  /** trocar o caminho da casa por este */
+  | { readonly tipo: 'caminho'; readonly id: string }
+  /** tirar a hera dos muros, ou pôr de volta */
+  | { readonly tipo: 'hera' };
 
-type Aba = 'plantas' | 'moveis' | 'casa';
-const ABAS: ReadonlyArray<readonly [Aba, string]> = [['plantas', '🌿 Plantas'], ['moveis', '🪑 Móveis'], ['casa', '🏠 Para casa']];
+type Aba = 'plantas' | 'moveis' | 'chao' | 'casa';
+const ABAS: ReadonlyArray<readonly [Aba, string]> = [['plantas', '🌿 Plantas'], ['moveis', '🪑 Móveis'], ['chao', '🪨 Chão'], ['casa', '🏠 Para casa']];
 
 export class PainelDoQuintal {
   private readonly raiz: HTMLDivElement;
@@ -97,6 +118,8 @@ export class PainelDoQuintal {
         this.pintar();
       } else if (acao === 'colocar') this.sair({ tipo: 'colocar', id });
       else if (acao === 'editar') this.sair({ tipo: 'editar' });
+      else if (acao === 'caminho') this.sair({ tipo: 'caminho', id });
+      else if (acao === 'hera') this.sair({ tipo: 'hera' });
     });
   }
 
@@ -186,6 +209,15 @@ export class PainelDoQuintal {
         it.noQuintal ? `🏡 ${it.noQuintal} no quintal` : '',
       ].filter(Boolean).join(' · ');
       const pode = c.saldo >= it.reais;
+      // o caminho se compra uma vez: depois o cartão diz que é de vocês
+      if (it.caminho && (it.aCaminho || it.noBau)) {
+        return `
+        <div class="produto" data-id="${escapar(it.id)}">
+          <div class="foto">${foto ? `<img src="${foto}" alt="${escapar(it.nome)}">` : it.icone}</div>
+          <div class="texto"><h4>${escapar(it.nome)}</h4><p>${escapar(it.descricao)}</p></div>
+          <span class="selo">${it.aCaminho ? '📦 a caminho' : '✓ é de vocês — troca-se nas ferramentas da garagem'}</span>
+        </div>`;
+      }
       return `
         <div class="produto" data-id="${escapar(it.id)}">
           <div class="foto">${foto ? `<img src="${foto}" alt="${escapar(it.nome)}">` : it.icone}</div>
@@ -248,6 +280,14 @@ export class PainelDoQuintal {
             <small>${c.noQuintal
               ? `mudar de lugar, girar ou guardar ${c.noQuintal === 1 ? 'o que está' : `os ${c.noQuintal} que estão`} no quintal`
               : 'quando tiver coisa no quintal, é por aqui que se mexe nela'}</small>
+          </div>
+          <div class="caminhos-e-hera">
+            <div class="linha"><b>🛤️ O caminho da casa</b>
+              ${c.caminhos.map((k) => `<button class="${k.ativo ? 'ativo' : ''}" data-acao="caminho" data-id="${escapar(k.id)}" ${k.ativo ? 'disabled' : ''}>${k.icone} ${escapar(k.nome.replace(/^Caminho de /, ''))}${k.ativo ? ' ✓' : ''}</button>`).join('')}
+            </div>
+            <div class="linha"><b>🌿 A hera dos muros</b>
+              <button data-acao="hera">${c.hera ? 'Tirar a hera' : 'Pôr a hera de volta'}</button>
+            </div>
           </div>
           ${c.itens.length
             ? `<div class="grade-produtos">${c.itens.map(cartao).join('')}</div>`

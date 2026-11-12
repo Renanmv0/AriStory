@@ -2914,6 +2914,17 @@ export const PALETTE = {
   ferramentaMetal: 0x9aa3ab,
   ferramentaVerde: 0x5fae6e, // o cabo de plástico verde da tesoura e da pazinha
   painelDeFuros: 0xd9c9a8, // o painel de furinhos das ferramentas
+  // os caminhos do quintal (`world/caminhosDoQuintal.ts`) e os pisos (`world/pisosDoQuintal.ts`)
+  pedraDoCaminho: 0xc9c2b5, // a pedra de passar: o cinza-areia…
+  pedraDoCaminhoClara: 0xddd6c8, // …o claro…
+  pedraDoCaminhoEscura: 0x9c968c, // …e o escuro (também a guia da pedra portuguesa)
+  tijolinhoDoCaminho: 0xd98a62, // o tijolinho da espinha de peixe
+  tijolinhoGuia: 0xb8674a, // e o tijolo em pé da guia (e da serrilha do canteiro)
+  dormenteMadeira: 0x8a6142, // o dormente de madeira escura
+  pedraPortuguesa: 0xf1ede5, // a pedrinha branca da calçada portuguesa
+  deckDoQuintal: 0xc79363, // a tábua do deck
+  deckDoQuintalVao: 0x4d3a2a, // o escuro do vão entre as tábuas
+  gramadoDeFlores: 0x5fae4f, // a grama mais funda embaixo das florzinhas
   // a estrada da viagem de carro (`world/estrada.ts`)
   placaVerso: 0x8d949c,
   coneLaranja: 0xf28a2e,

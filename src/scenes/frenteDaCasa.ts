@@ -4,6 +4,7 @@ import type { Collider, SceneDef } from '../core/types';
 import { PALETTE as P } from '../palette';
 import { ARI, RENAN } from '../characters/cast';
 import { cloud, flowers, lamp, meioFio, sebe, tree } from '../world/props';
+import { caminhoDoQuintal, type TrechoDeCaminho } from '../world/caminhosDoQuintal';
 import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
 import { reboco } from '../world/texturasDeFachada';
 import { toon } from '../core/materials';
@@ -14,7 +15,6 @@ import {
   pilarDoMuro, portaoDeCorrer, portaoSocial, trilhoDoPortao, type CoresDaFachada,
 } from '../world/frenteDaCasa';
 import { buxinhoNoVaso, heraNosMuros, type MuroComHera } from '../world/plantasDeJardim';
-import { quina } from '../world/lojaDeRoupas';
 import { BEBITO_MOBILE, BebitoMobile } from '../world/bebitoMobile/BebitoMobile';
 import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/bebitoMobile/presente';
 import { sairDeCarro } from '../eventos/bebitoMobile/partida';
@@ -23,7 +23,9 @@ import { Decorador, type Cofre, type RegrasDoLugar } from '../world/decorador';
 import type { FichaDeDecoracao } from '../world/decoracoes';
 import { VENTO_DO_QUINTAL } from '../world/decoracoesDoQuintal';
 import { caixaDeEncomenda, painelDeFerramentas } from '../world/quintal';
-import { abrirAEncomenda, conteudoDoBau, encomendasACaminho } from '../eventos/quintal';
+import {
+  FLAG_SEM_HERA, abrirAEncomenda, caminhoAtivo, conteudoDoBau, encomendasACaminho, plantarAArvoreDaCasa, trocarHera, usarCaminho,
+} from '../eventos/quintal';
 
 /**
  * A FRENTE DA CASA DO ARI: o jardim e a garagem.
@@ -235,15 +237,25 @@ export const frenteDaCasa: SceneDef = {
      * e a hera dos muros. As plantas continuam no kit
      * (`world/plantasDeJardim.ts`): é delas que sai o catálogo do quintal.
      */
-    // O CAMINHO DE LAJES, com a grama entre elas: da porta ao portão, e o ramal até a passagem da garagem
-    const laje = toon(P.casaLaje, { mapa: reboco(1.1) });
-    const lajes: Array<[number, number, number, number]> = [];
-    for (let k = 0; k < 7; k++) lajes.push([CASA.x, -3.78 + k * 1.03, 1.5, 0.82]);
-    for (let k = 0; k < 4; k++) lajes.push([0.72 - k * 1.03, (PASSAGEM.z0 + PASSAGEM.z1) / 2, 0.82, 1.15]);
-    for (const [x, z, lx, lz] of lajes) {
-      const geo = uvDeParede(quina(lx, 0.06, lz, 0.02), x, 0, z);
-      jardim.add(w.place(new THREE.Mesh(geo, laje), x, 0.012, z));
-    }
+    /*
+     * O CAMINHO DA CASA: da porta ao portão, e o ramal até a passagem da
+     * garagem. Nasceu de lajes com a grama entre elas; o Papita vende outros
+     * jeitos, e as ferramentas da garagem trocam (`world/caminhosDoQuintal.ts`).
+     * O TRAÇADO é sempre esse — é ele que a regra do quintal deixa livre.
+     */
+    const TRECHOS: TrechoDeCaminho[] = [
+      { a: [CASA.x, -4.19], b: [CASA.x, 2.89], largura: 1.5 },
+      { a: [1.13, (PASSAGEM.z0 + PASSAGEM.z1) / 2], b: [-2.68, (PASSAGEM.z0 + PASSAGEM.z1) / 2], largura: 1.15 },
+    ];
+    let caminho: THREE.Object3D | null = null;
+    const montarCaminho = (): void => {
+      if (caminho) {
+        w.root.remove(caminho);
+        caminho.traverse((o) => (o as THREE.Mesh).geometry?.dispose());
+      }
+      caminho = w.add(fundirComoFundo(caminhoDoQuintal(caminhoAtivo(g), TRECHOS)));
+    };
+    montarCaminho();
 
     // os dois buxinhos em vaso de cimento, um de cada lado do degrau da porta
     for (const [lado, semente] of [[-1, 1], [1, 2]] as const) {
@@ -252,10 +264,16 @@ export const frenteDaCasa: SceneDef = {
     }
     w.add(fundirComoFundo(jardim));
 
-    w.add(heraNosMuros(muros));
-    // a árvore florida no canto de trás da direita (alta: encostada na casa, não tapa nada)
-    w.add(w.place(tree('florida', 0.9, 0.37), 5.6, 0, -2.8));
-    w.blockCircle(5.6, -2.8, 0.4);
+    // a HERA dos muros: dá para tirar (e pôr de volta) pelas ferramentas da garagem
+    const hera = heraNosMuros(muros);
+    if (!g.flag(FLAG_SEM_HERA)) w.add(hera);
+    /*
+     * A ÁRVORE FLORIDA do canto de trás da direita é PEÇA DO QUINTAL desde a
+     * etapa 2 (`docs/QUINTAL.md`): na primeira visita ela entra no save no
+     * lugar de sempre, e o decorador a monta (com o colisor do tronco) — e
+     * guarda e muda de lugar, como qualquer enfeite.
+     */
+    plantarAArvoreDaCasa(g, { x: 5.6, z: -2.8 });
 
     // o poste da calçada
     w.add(w.place(lamp(), 8.6, 0, CALCADA.z0 + 0.5));
@@ -385,7 +403,8 @@ export const frenteDaCasa: SceneDef = {
           if (x < CASA.x && Math.abs(z - (PASSAGEM.z0 + PASSAGEM.z1) / 2) < 0.6 + r) return 'no caminho da garagem';
           if (Math.hypot(x - PORTAO.x, z - zMuro) < 1.5 + r) return 'na frente do portão';
           // o que é ALTO fica longe dos muros do lado da câmera: senão tapa o quintal
-          if (ficha && altoDe(ficha) > 1.3 && (zMuro - z < 2.3 || JARDIM.x1 - x < 2.3)) return 'alto demais perto do muro';
+          // (o muro da direita só tapa da metade do jardim para a frente: no fundo, encostado na casa, pode — é onde a árvore nasceu)
+          if (ficha && altoDe(ficha) > 1.3 && (zMuro - z < 2.3 || (JARDIM.x1 - x < 2.3 && z > CASA.z + 2.6))) return 'alto demais perto do muro';
         }
         return null;
       },
@@ -414,6 +433,17 @@ export const frenteDaCasa: SceneDef = {
         const saida = await g.abrirBauDoQuintal(conteudoDoBau(g));
         if (saida?.tipo === 'colocar') decorador.colocar(saida.id);
         else if (saida?.tipo === 'editar') decorador.editar();
+        else if (saida?.tipo === 'caminho' && usarCaminho(g, saida.id)) {
+          montarCaminho();
+          g.som('brotar');
+          g.toast('Caminho novo da porta ao portão', '🛤️');
+        } else if (saida?.tipo === 'hera') {
+          const ficou = trocarHera(g);
+          if (ficou) w.add(hera);
+          else w.root.remove(hera);
+          g.som(ficou ? 'brotar' : 'menu');
+          g.toast(ficou ? 'A hera voltou para os muros' : 'Os muros sem hera', '🌿');
+        }
       },
     });
 

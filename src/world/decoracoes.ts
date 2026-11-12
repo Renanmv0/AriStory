@@ -68,6 +68,12 @@ export interface FichaDeDecoracao {
   readonly cenas?: readonly CenaDeDecorar[];
   /** o preço em REAIS (o Papita Delivery); o da Josefina é em girassóis */
   readonly reais?: number;
+  /**
+   * PISO (`world/pisosDoQuintal.ts`): cobre o chão e deixa coisa por cima — o
+   * decorador não dá colisor a ele, e ele não briga com enfeite nem com outro
+   * piso.
+   */
+  readonly piso?: boolean;
 }
 
 /** se este enfeite pode ser posto neste lugar */

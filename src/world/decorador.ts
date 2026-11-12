@@ -75,7 +75,8 @@ interface Posto {
   readonly uid: number;
   readonly ficha: FichaDeDecoracao;
   readonly peca: THREE.Object3D;
-  readonly colisor: Collider;
+  /** piso não tem colisor (anda-se por cima dele) */
+  readonly colisor: Collider | null;
   readonly ponto: Interactable;
 }
 
@@ -112,6 +113,8 @@ export class Decorador {
   private perguntando = false;
   /** sem colisor para a dupla (a cena liga na rodada) */
   private semCorpo = false;
+  /** quantos pisos já foram postos (a ordem de pintura de cada um) */
+  private pisos = 0;
   /** a cena é avisada quando um enfeite entra, sai ou muda (quem passeia desvia) */
   aoMudar: (() => void) | null = null;
 
@@ -162,6 +165,7 @@ export class Decorador {
     if (sim === this.semCorpo) return;
     this.semCorpo = sim;
     for (const p of this.postos.values()) {
+      if (!p.colisor) continue;
       const i = this.w.colliders.indexOf(p.colisor);
       if (sim && i >= 0) this.w.colliders.splice(i, 1);
       else if (!sim && i < 0) this.w.colliders.push(p.colisor);
@@ -235,7 +239,8 @@ export class Decorador {
 
   /** os enfeites no chão, em círculos — para quem passeia pela cena desviar */
   circulos(): Array<{ x: number; z: number; r: number }> {
-    return [...this.postos.values()].map((p) => ({ x: p.peca.position.x, z: p.peca.position.z, r: p.ficha.raio + 0.25 }));
+    return [...this.postos.values()].filter((p) => !p.ficha.piso)
+      .map((p) => ({ x: p.peca.position.x, z: p.peca.position.z, r: p.ficha.raio + 0.25 }));
   }
 
   // ------------------------------------------------------------ comprar
@@ -399,7 +404,19 @@ export class Decorador {
   porQueNao(x: number, z: number, raio: number, ficha?: FichaDeDecoracao): string | null {
     const daCena = this.regras.proibido(x, z, raio, ficha);
     if (daCena) return daCena;
+    /*
+     * O PISO É CHÃO: ele não briga com enfeite nem com outro piso (a mesinha
+     * fica EM CIMA do deck, a hortênsia no canteiro), e só esbarra no que é
+     * do mundo — a parede, a casa, o muro. Enfeite, por sua vez, não olha
+     * para piso nenhum.
+     */
+    if (ficha?.piso) {
+      const dosEnfeites = new Set([...this.postos.values()].map((p) => p.colisor));
+      if (circuloEncosta(x, z, raio, this.w.colliders.filter((c) => !dosEnfeites.has(c)))) return 'encostado em outra coisa';
+      return null;
+    }
     for (const p of this.postos.values()) {
+      if (p.ficha.piso) continue;
       if (Math.hypot(x - p.peca.position.x, z - p.peca.position.z) < raio + p.ficha.raio) return 'em cima de outro enfeite';
     }
     if (circuloEncosta(x, z, raio, this.w.colliders)) return 'encostado em outra coisa';
@@ -417,8 +434,16 @@ export class Decorador {
     // partes dele pelo `userData`)
     const montada = this.w.place(ficha.monta(), onde.x, 0, onde.z, onde.giro);
     const peca = this.w.add(ficha.anima ? montada : fundir(montada));
-    const colisor: Collider = { kind: 'circle', x: onde.x, z: onde.z, r: ficha.raio * 0.75 };
-    if (!this.semCorpo) this.w.colliders.push(colisor);
+    const colisor: Collider | null = ficha.piso ? null : { kind: 'circle', x: onde.x, z: onde.z, r: ficha.raio * 0.75 };
+    if (colisor && !this.semCorpo) this.w.colliders.push(colisor);
+    // o piso posto por último pinta por cima dos outros (o chão é decalque: quem
+    // decide é a ordem de pintura)
+    if (ficha.piso) {
+      const ordem = 10 + this.pisos++;
+      peca.traverse((o) => {
+        if (o.renderOrder >= 4) o.renderOrder = ordem;
+      });
+    }
     const de = ficha.artigo === 'a' ? 'na' : 'no';
     const ponto = this.w.interact({
       id: `decoracao:${uid}`,
@@ -463,7 +488,7 @@ export class Decorador {
     p.peca.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).geometry.dispose();
     });
-    const i = this.w.colliders.indexOf(p.colisor);
+    const i = p.colisor ? this.w.colliders.indexOf(p.colisor) : -1;
     if (i >= 0) this.w.colliders.splice(i, 1);
     const j = this.w.interactables.indexOf(p.ponto);
     if (j >= 0) this.w.interactables.splice(j, 1);
