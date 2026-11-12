@@ -68,7 +68,7 @@ export function abrirAEncomenda(g: GameAPI): string[] {
  * O BAÚ DO QUINTAL: o que está guardado E pode ir para o quintal — o do
  * Papita e os enfeites da Josefina (o baú é um só para os dois lugares).
  */
-export function conteudoDoBau(g: GameAPI): ConteudoDoBau {
+export function conteudoDoBau(g: GameAPI, comRegador = false): ConteudoDoBau {
   const lista = g.decoracoes();
   const guardados = lista.filter((d) => !d.posta && !d.aCaminho);
   const fichas = [...DECORACOES_DO_QUINTAL.filter((f) => !f.caminho), ...DECORACOES].filter((f) => podeIrPara(f, 'quintal'));
@@ -78,6 +78,7 @@ export function conteudoDoBau(g: GameAPI): ConteudoDoBau {
       .filter((f) => f.caminho && (f.caminho === 'lajes' || guardados.some((d) => d.id === f.id)))
       .map((f) => ({ id: f.id, nome: f.nome, icone: f.icone, ativo: f.caminho === ativo })),
     hera: !g.flag(FLAG_SEM_HERA),
+    comRegador,
     itens: fichas
       .map((f) => ({ id: f.id, nome: f.nome, icone: f.icone, descricao: f.descricao, guardadas: guardados.filter((d) => d.id === f.id).length }))
       .filter((it) => it.guardadas > 0),

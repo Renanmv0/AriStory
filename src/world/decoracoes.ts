@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { brilhoDeLuz, luzNoChao, toon } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { retratoDe } from './retrato';
-import type { CenaDeDecorar } from '../core/types';
+import type { CenaDeDecorar, GameAPI } from '../core/types';
+import type { WorldBuilder } from './WorldBuilder';
 import { DECORACOES_DO_QUINTAL } from './decoracoesDoQuintal';
 
 /**
@@ -88,6 +89,27 @@ export interface FichaDeDecoracao {
   /** na parede: a altura do meio quando ela vai para a mão (o Ari muda com ▲ ▼) */
   readonly alturaPadrao?: number;
   readonly montaEntre?: (a: THREE.Vector3, b: THREE.Vector3) => THREE.Group;
+  /**
+   * O MÓVEL DE USAR (`docs/QUINTAL.md` §4.4, etapa 4): o banco de sentar, o
+   * balanço de balançar, a rede de deitar. O decorador põe um ponto de
+   * interação na peça (que dorme no modo de colocar e no de edição) e chama
+   * `usar` com a peça montada e onde ela está.
+   */
+  readonly uso?: {
+    readonly label: string;
+    readonly icon: string;
+    readonly usar: (u: UsoDoMovel) => Promise<void>;
+  };
+}
+
+/** o que o `uso` de um móvel recebe: o mundo, a API e a peça no lugar */
+export interface UsoDoMovel {
+  readonly g: GameAPI;
+  readonly w: WorldBuilder;
+  readonly peca: THREE.Object3D;
+  readonly x: number;
+  readonly z: number;
+  readonly giro: number;
 }
 
 /** se este enfeite pode ser posto neste lugar */

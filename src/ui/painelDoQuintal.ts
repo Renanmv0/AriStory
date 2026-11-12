@@ -62,6 +62,8 @@ export interface ConteudoDoBau {
   readonly caminhos: readonly CaminhoNoBau[];
   /** a hera está nos muros? */
   readonly hera: boolean;
+  /** o regador está na mão de quem joga? */
+  readonly comRegador: boolean;
   /** quantos enfeites estão no chão do quintal */
   readonly noQuintal: number;
   /** quantos ainda estão no correio */
@@ -75,7 +77,9 @@ export type SaidaDoBau =
   /** trocar o caminho da casa por este */
   | { readonly tipo: 'caminho'; readonly id: string }
   /** tirar a hera dos muros, ou pôr de volta */
-  | { readonly tipo: 'hera' };
+  | { readonly tipo: 'hera' }
+  /** pegar o regador da prateleira (ou devolver) */
+  | { readonly tipo: 'regador' };
 
 type Aba = 'plantas' | 'moveis' | 'chao' | 'alto' | 'casa';
 const ABAS: ReadonlyArray<readonly [Aba, string]> = [['plantas', '🌿 Plantas'], ['moveis', '🪑 Móveis'], ['chao', '🪨 Chão'], ['alto', '🖼️ No alto'], ['casa', '🏠 Para casa']];
@@ -120,6 +124,7 @@ export class PainelDoQuintal {
       else if (acao === 'editar') this.sair({ tipo: 'editar' });
       else if (acao === 'caminho') this.sair({ tipo: 'caminho', id });
       else if (acao === 'hera') this.sair({ tipo: 'hera' });
+      else if (acao === 'regador') this.sair({ tipo: 'regador' });
     });
   }
 
@@ -287,6 +292,9 @@ export class PainelDoQuintal {
             </div>
             <div class="linha"><b>🌿 A hera dos muros</b>
               <button data-acao="hera">${c.hera ? 'Tirar a hera' : 'Pôr a hera de volta'}</button>
+            </div>
+            <div class="linha"><b>💧 O regador (as plantas não precisam, mas gostam)</b>
+              <button data-acao="regador">${c.comRegador ? 'Guardar o regador' : 'Pegar o regador'}</button>
             </div>
           </div>
           ${c.itens.length

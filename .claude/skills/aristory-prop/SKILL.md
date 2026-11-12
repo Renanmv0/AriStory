@@ -1571,6 +1571,20 @@ enfeite), em `world/decoracoesDoQuintal.ts`:
   alternada POR VÉRTICE (`toNonIndexed` e a cor pelo ângulo do triângulo),
   numa malha só; o babado é uma meia-lua por gomo; as varetas são tubos.
 
+### Os móveis de usar (etapa 4, `world/moveisDeUsar.ts`)
+
+- O que BALANÇA é um grupo com NOME dentro da peça (`balanco` no pivô da
+  viga, `rede` na linha dos ganchos): a `fundir()` junta o que está dentro e
+  o deixa existir, e o uso embala o grupo e leva a âncora dos dois junto.
+- A lona da rede é um `PlaneGeometry` dobrado nos vértices: pende no meio
+  (seno no comprimento), fecha nas bordas (a rede abraça), junta nos punhos,
+  e as listras vão pela COR DO VÉRTICE.
+- Deitados numa peça que não está alinhada com o mundo: uma âncora girada no
+  `y` (a cabeça para onde a peça quer) e, dentro dela, a de deitar com
+  `rotation.x = -PI/2` — a mesma conta da cama do quarto.
+- A casinha do Pelusa: a parede da frente é uma `Shape` com a porta em arco
+  como FURO (`holes`), extrudada.
+
 ### As peças do alto (etapa 3, `world/decoracoesDeParede.ts`)
 
 - `samambaia(n, comprido, semente, pendente)`: o lote de folhas — uma fita de

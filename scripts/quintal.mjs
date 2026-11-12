@@ -25,7 +25,7 @@
  * - SAVE: enfeite sem `cena` é da estufa, e o `aCaminho` sobrevive.
  *
  * Uso: node scripts/quintal.mjs /caminho/prefixo
- *      SO=escondido|computador|encomenda|colocar|arrumar|chao|alto|save roda uma parte
+ *      SO=escondido|computador|encomenda|colocar|arrumar|chao|alto|moveis|save roda uma parte
  *      (computador, encomenda, colocar e arrumar dependem uma da outra, em fila)
  *      CEL=1 roda no celular em pé
  */
@@ -684,6 +684,151 @@ if (roda('alto')) {
   confere(pontos.length === postas && noQuintal, `no modo de edição, o "Mexer no…" de cada peça fica no chão, perto dela (${pontos.length})`);
   await page.screenshot({ path: `${OUT}-alto-arrumando.png` });
   await page.keyboard.press('KeyX');
+}
+
+// ===================================================== os móveis (a etapa 4)
+if (roda('moveis')) {
+  console.log('— etapa 4: os móveis de usar, o Pelusa e o regador');
+  await abrir('bebito&cena=quarto');
+  await page.evaluate(() => localStorage.removeItem('aristory.save.v1.bebito'));
+  await abrir('bebito&cena=frente-da-casa');
+  // (as peças direto no baú: a compra e a encomenda já têm teste)
+  await page.evaluate(() => {
+    const ids = ['quintal-balanco', 'quintal-rede', 'quintal-casinha-do-pelusa', 'quintal-mesinha', 'quintal-espreguicadeira', 'quintal-banco', 'quintal-hortensia-rosa'];
+    const lista = window.jogo.decoracoes();
+    let uid = lista.reduce((m, d) => Math.max(m, d.uid), 0);
+    window.jogo.salvarDecoracoes([...lista, ...ids.map((id) => ({ uid: ++uid, id, posta: null }))]);
+  });
+  await abrir('bebito&cena=frente-da-casa');
+  const por = (id, x, z, f) => page.evaluate(async ([id, x, z, f, chave]) => {
+    const d = eval(chave);
+    const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+    if (!d.decorando) d.colocar(id);
+    const raio = d.modo?.ficha.raio ?? 0.4;
+    window.jogo.debugPlace(x - Math.sin(f) * (0.85 + raio), z - Math.cos(f) * (0.85 + raio), f);
+    await espera(450);
+    const motivo = document.querySelector('.posicionador .nao-pode')?.textContent?.trim() ?? null;
+    document.querySelector('.posicionador button.colocar')?.click();
+    await espera(250);
+    if (d.decorando) {
+      document.querySelector('.posicionador [data-botao="cancelar"]')?.click();
+      await espera(150);
+    }
+    return { id, motivo, ficou: d.postas(id) === 1 };
+  }, [id, x, z, f ?? Math.PI, decorador]);
+  const LUGARES = [
+    ['quintal-balanco', -1.3, -3.3], ['quintal-mesinha', 0.1, -1.2], ['quintal-hortensia-rosa', -1.6, -0.4],
+    ['quintal-rede', 4.45, -0.9], ['quintal-espreguicadeira', 5.0, 1.6, Math.PI / 2], ['quintal-casinha-do-pelusa', -2.1, -1.4, Math.PI],
+  ];
+  const res = [];
+  for (const [id, x, z, f] of LUGARES) res.push(await por(id, x, z, f));
+  const nao = res.filter((r) => !r.ficou);
+  confere(nao.length === 0, `os móveis no quintal (${res.length - nao.length} de ${res.length})${nao.length ? ' — ' + JSON.stringify(nao) : ''}`);
+  const uidDe = (id) => page.evaluate(([id, chave]) => eval(chave).pecas().find((p) => p.ficha.id === id)?.uid, [id, decorador]);
+  /** dispara o uso do móvel e vai apertando E nas falas até a pergunta "Ficar mais um pouco?" */
+  const usar = async (id, foto) => {
+    const uid = await uidDe(id);
+    const ponto = await page.evaluate((uid) => {
+      const p = window.jogo.current.world.interactables.find((i) => i.id === `usar:${uid}`);
+      return p ? { label: p.label, enabled: p.enabled } : null;
+    }, uid);
+    await page.evaluate((uid) => { void window.jogo.current.world.interactables.find((i) => i.id === `usar:${uid}`).trigger(window.jogo); }, uid);
+    // (o E só avança FALA: na pergunta ele escolheria "Ficar", e o balanço embalaria de novo)
+    let chegou = false;
+    for (let i = 0; i < 300 && !chegou; i++) {
+      await page.waitForTimeout(500);
+      const { texto, escolhas } = await page.evaluate(() => ({
+        texto: document.querySelector('.dialogue.show')?.textContent ?? '',
+        escolhas: document.querySelectorAll('.dialogue.show .escolhas button').length,
+      }));
+      if (escolhas >= 2 || /Fic/.test(texto)) {
+        if (escolhas >= 2 && /Ficar mais um pouco/.test(texto)) chegou = true;
+      } else if (texto) await page.keyboard.press('KeyE');
+    }
+    const estado = await page.evaluate(() => ({ preso: window.jogo.player.locked }));
+    await page.screenshot({ path: `${OUT}-${foto}.png` });
+    return { ponto, chegou, ...estado };
+  };
+  const levantar = async () => {
+    await page.locator('.escolhas button').nth(1).click();
+    await page.waitForFunction(() => !window.jogo.player.locked, null, { timeout: 30000 }).catch(() => {});
+    await page.waitForTimeout(400);
+    return page.evaluate(() => !window.jogo.player.locked);
+  };
+  for (const [id, foto, rotulo] of [['quintal-mesinha', 'usando-mesinha', /mesinha/], ['quintal-rede', 'usando-rede', /rede/]]) {
+    const u = await usar(id, foto);
+    confere(u.ponto && rotulo.test(u.ponto.label) && u.chegou && u.preso, `${id}: "${u.ponto?.label}", os dois no lugar e a pergunta de ficar`);
+    confere(await levantar(), `${id}: levantar solta os dois`);
+  }
+  // o balanço embala enquanto ficam
+  const ub = await usar('quintal-balanco', 'usando-balanco');
+  const giros = await page.evaluate(([chave]) => {
+    const d = eval(chave);
+    const p = d.pecas().find((k) => k.ficha.id === 'quintal-balanco');
+    return p.peca.getObjectByName('balanco')?.rotation.x ?? null;
+  }, [decorador]);
+  confere(ub.chegou && ub.ponto && /Balançar/.test(ub.ponto.label) && giros !== null && Math.abs(giros) > 0.02, `o balanço embala com os dois (${giros?.toFixed?.(3)} rad, ${JSON.stringify(ub)})`);
+  confere(await levantar(), 'e para, e solta os dois');
+  // o Pelusa na casinha
+  const pelusa = await page.evaluate(() => window.jogo.current.world.interactables.find((i) => i.id === 'frente:pelusa'));
+  confere(!!pelusa, 'com a casinha no quintal, o Pelusa está nela');
+  const miados0 = await page.evaluate(() => window.jogo.audio?.contagem?.get?.('miado') ?? 0);
+  await disparar('frente:pelusa');
+  for (let i = 0; i < 8; i++) {
+    await page.waitForTimeout(400);
+    if (!(await page.evaluate(() => document.querySelector('.dialogue.show') !== null))) break;
+    await page.keyboard.press('KeyE');
+  }
+  // (a dupla sai da frente, e a câmera olha para o Pelusa)
+  await page.evaluate(() => {
+    window.jogo.debugPlace(4.5, 1.2, 0);
+    const gato = window.jogo.current.world.interactables.find((i) => i.id === 'frente:pelusa')?.highlight ?? null;
+    window.jogo.focusCamera(gato);
+    // (a hortênsia do teste ficou bem na frente da porta da casinha: some só para a foto)
+    const h = window.jogo.current.world.root.userData.decorador.pecas().find((p) => p.ficha.id === 'quintal-hortensia-rosa');
+    if (h) h.peca.visible = false;
+    window.jogo.setZoom(3.2);
+  });
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${OUT}-pelusa.png` });
+  await page.evaluate(() => {
+    window.jogo.focusCamera(null);
+    const h = window.jogo.current.world.root.userData.decorador.pecas().find((p) => p.ficha.id === 'quintal-hortensia-rosa');
+    if (h) h.peca.visible = true;
+  });
+  confere(await page.evaluate(() => window.jogo.flag('quintal:pelusa-na-casinha')), 'o carinho no Pelusa da casinha');
+  void miados0;
+  // o regador: pegar nas ferramentas e regar a hortênsia
+  await page.evaluate(() => window.jogo.debugPlace(-3.95, -4.0, Math.PI));
+  await disparar('frente:ferramentas');
+  await page.waitForSelector('.painel-do-quintal.show', { timeout: 6000 });
+  await page.locator('.painel-do-quintal [data-acao="regador"]').click();
+  await page.waitForTimeout(400);
+  await page.evaluate(() => window.jogo.debugPlace(-1.6, 0.9, Math.PI));
+  await page.waitForTimeout(700);
+  const rega = await page.evaluate(() => {
+    const p = window.jogo.current.world.interactables.find((i) => i.id === 'frente:regar');
+    return p ? { enabled: p.enabled, label: p.label } : null;
+  });
+  confere(rega?.enabled && /hortênsia/.test(rega.label), `com o regador, perto da hortênsia: "${rega?.label}"`);
+  await disparar('frente:regar');
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => window.jogo.setZoom(5));
+  await page.screenshot({ path: `${OUT}-regando.png` });
+  await page.waitForFunction(() => window.jogo.stat?.('quintal:regadas') >= 1 || (window.jogo.save?.data?.stats?.['quintal:regadas'] ?? 0) >= 1, null, { timeout: 30000 }).catch(() => {});
+  const regadas = await page.evaluate(() => window.jogo.stat ? window.jogo.stat('quintal:regadas') : -1);
+  confere(regadas >= 1, `regou (${regadas})`);
+  // as fotos do quintal mobiliado
+  await page.evaluate(() => { window.jogo.debugPlace(2.0, 1.6, Math.PI / 4); window.jogo.setZoom(13); });
+  await page.waitForTimeout(1200);
+  const pesoMoveis = await peso();
+  console.log(`       peso da vista com os móveis: ${pesoMoveis.calls} desenhos / ${pesoMoveis.tris} triângulos`);
+  await page.screenshot({ path: `${OUT}-moveis.png` });
+  for (const [nome, x, z, f] of [['balanco', -0.4, -1.6, -Math.PI * 0.8], ['rede', 3.2, 0.6, Math.PI * 0.75]]) {
+    await page.evaluate(([x, z, f]) => { window.jogo.debugPlace(x, z, f); window.jogo.setZoom(5.5); }, [x, z, f]);
+    await page.waitForTimeout(900);
+    await page.screenshot({ path: `${OUT}-perto-${nome}.png` });
+  }
 }
 
 // ======================================================================== save

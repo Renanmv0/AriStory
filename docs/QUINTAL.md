@@ -39,7 +39,7 @@ caixa no portão, e se põe e se arruma pelas ferramentas da garagem.
 | **1** | o primeiro ciclo inteiro, no CHÃO: a área de trabalho do computador (o laboratório e o **Papita Delivery**), o catálogo em reais (as plantas do kit e alguns móveis), a encomenda chegando no portão, as ferramentas da garagem (pôr e arrumar), e o save sabendo EM QUE LUGAR está cada enfeite | ✅ feita (2026-11-12) |
 | **2** | os PISOS e os CAMINHOS de lajes novos (deck, pedras, pedrisco, canteiro de desenhar); tirar e pôr de volta a ÁRVORE e a HERA | ✅ feita (2026-11-12) |
 | **3** | PAREDE (o Ari escolhe a altura), EM CIMA, PENDURADO e de PONTA A PONTA | ✅ feita (2026-11-12) |
-| **4** | os MÓVEIS que fazem alguma coisa (sentar no banco, balanço, rede, mesa, piscininha, casinha do Pelusa) e REGAR (opcional) | ⬜ |
+| **4** | os MÓVEIS que fazem alguma coisa (sentar no banco, balanço, rede, mesa, piscininha, casinha do Pelusa) e REGAR (opcional) | ✅ feita (2026-11-12) — sem a piscininha e o fogo de chão, que ficam para quando o Renan pedir |
 | **5** | a aba "Para casa" do Papita Delivery (decorar a casa por dentro) | ⬜ só quando o Renan pedir |
 
 Uma etapa por vez, parando ao fim de cada uma para o Renan escolher (como o
@@ -70,8 +70,8 @@ projeto faz).
 - **O chão do quintal**: as regras de onde pode (`RegrasDoQuintal`, na cena):
   o jardim e o fundo da garagem; o caminho de lajes, a frente da porta, o arco
   do portão, a vaga e a manobra do carro ficam livres; o que é ALTO (mais de
-  1,3 m) fica longe do muro da frente e do da direita, que são os do lado da
-  câmera.
+  1,45 m desde a etapa 4) fica longe do muro da frente e do da direita, que
+  são os do lado da câmera.
 - **O save**: `posta.cena` (`'estufa'` quando falta: save antigo) e
   `aCaminho` (comprado, ainda no correio). O baú é um só: o que a Josefina
   vende também pode ir para o quintal (é enfeite de jardim: a ficha sem
@@ -157,6 +157,41 @@ projeto faz).
   frente").
 - Peso: as 15 peças no alto, a vista de sempre com 393 desenhos e 151 mil
   triângulos (os halos das luzinhas são um desenho cada).
+
+## O que a etapa 4 pôs no jogo (com `?bebito`)
+
+- **O móvel de usar** (`uso` na ficha, `world/moveisDeUsar.ts`): o decorador
+  põe o ponto de usar junto da peça (descansa nos modos de colocar e de
+  editar). Os dois sempre juntos, e no fim "Ficar mais um pouco?":
+  - **Banco de jardim** — "Sentar no banco", lado a lado (as falas de
+    sempre do banco de praça: "Senta aqui um pouco." / "Só um pouquinho.");
+  - **Mesinha bistrô** — "Sentar à mesinha", de frente um para o outro;
+  - **Espreguiçadeira** — "Deitar ao sol" (o momento curto, como a do clube);
+  - **Balanço de jardim** (novo, R$ 180) — estrutura em A de madeira, o
+    banco de dois lugares nas correntes; os dois sentam e ele EMBALA
+    enquanto ficam, e para devagar;
+  - **Rede com suporte** (nova, R$ 160) — o suporte de madeira em arco e a
+    rede listrada; os dois deitam juntos, a câmera vai para cima (como a
+    cama do quarto), e a rede embala de leve.
+- **A casinha do Pelusa** (nova, R$ 70): rosinha, de telhadinho, a
+  plaquinha com o nome, a almofada e a tigelinha. Com ela no quintal, o
+  Pelusa vem morar aqui fora também: cochila na porta dela e aceita carinho.
+- **O regador**: "Pegar o regador" no baú das ferramentas; ele vai na mão de
+  quem joga, e perto de cada planta (e das peças com planta: o vaso de
+  parede, o macramê, as suculentas, a treliça, o gramado de flores e os
+  canteiros) aparece "Regar a …": o arco de gotas do bico até a planta, ela
+  balança de contente e agradece. "Plantas não PRECISAM ser regadas, mas
+  podem": nada murcha sem ele. O save conta as regadas (`quintal:regadas`).
+- A régua do ALTO perto do muro passou a 1,45 m (a rede, de 1,35, cabe no
+  canto da direita; o balanço e o guarda-sol continuam longe dos muros).
+- **As falas novas são minhas, para o Renan aprovar ou trocar** (fala dele
+  vai literal): na mesinha "Um café aqui fora?" / "Com você, sempre."; no
+  balanço "Segura firme." / "Tô segurando você."; na rede "Cabe nós dois?" /
+  "Sempre cabe."; ao sol "Sol na cara e ninguém com pressa." / "Mais dez
+  minutinhos, …"; no Pelusa "Ele gostou da casinha." / "Ele gostou foi da
+  almofada.".
+- Peso: o quintal com os seis móveis e a hortênsia, 347 desenhos e 140 mil
+  triângulos na vista de sempre.
 
 ## 1. O que já existe (e se reaproveita inteiro)
 

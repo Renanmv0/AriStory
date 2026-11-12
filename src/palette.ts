@@ -2934,6 +2934,10 @@ export const PALETTE = {
   placaSolar: 0x2f3a5c, // a plaquinha solar da lanterninha
   sinoDeVento: 0xc9d3dc, // os tubos do sino de vento
   lanternaDePapel: 0xffc98a, // a lanterna de papel acesa, pêssego
+  // os móveis de usar (`world/moveisDeUsar.ts`)
+  redeListraA: 0xe9876f, // a rede: a listra terracota…
+  redeListraB: 0x6fb3c9, // …e a azul-piscina (a terceira é a lona crua)
+  casinhaDoPelusa: 0xf3c6d4, // a casinha do Pelusa, rosinha
   // a estrada da viagem de carro (`world/estrada.ts`)
   placaVerso: 0x8d949c,
   coneLaranja: 0xf28a2e,

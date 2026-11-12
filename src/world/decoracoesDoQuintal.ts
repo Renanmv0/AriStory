@@ -19,6 +19,7 @@ import {
   gatinhoDeCeramica, lanternaDePapel, lanterninhaSolar, sinoDeVento, trelicaComTrepadeira, trioDeVasinhos, varalDeLuzinhasEntre,
   vasinhoDeSuculentas, vasoDeMacrame, vasoDeParede,
 } from './decoracoesDeParede';
+import { balancar, balancoDeJardim, casinhaDoPelusa, deitarAoSol, deitarNaRede, redeComSuporte, sentarAMesinha, sentarNoBanco } from './moveisDeUsar';
 import { canteiroDeCasca, canteiroDeTerra, deckDeMadeira, gramadoDeFlores, manchaDePedrisco, tapeteDeFora } from './pisosDoQuintal';
 
 /**
@@ -54,6 +55,8 @@ export interface FichaDoQuintal extends FichaDeDecoracao {
   readonly caminho?: EstiloDeCaminho;
   /** `false`: não está à venda (a árvore da casa, que já veio com ela) */
   readonly naLoja?: false;
+  /** dá para regar (as plantas, e as peças com planta: o vaso de parede, o macramê, as suculentas…) */
+  readonly regavel?: boolean;
 }
 
 /**
@@ -397,6 +400,12 @@ function arvoreFlorida(): THREE.Group {
 
 // ================================================================ o catálogo
 
+/** as peças com planta, que também se regam */
+const COM_PLANTA = new Set([
+  'quintal-vaso-de-parede', 'quintal-macrame', 'quintal-suculentas', 'quintal-trio-de-vasinhos', 'quintal-trelica',
+  'quintal-gramado-de-flores', 'quintal-canteiro-terra', 'quintal-canteiro-casca',
+]);
+
 export const DECORACOES_DO_QUINTAL: readonly FichaDoQuintal[] = ([
   // --- as plantas
   {
@@ -452,23 +461,43 @@ export const DECORACOES_DO_QUINTAL: readonly FichaDoQuintal[] = ([
   // --- os móveis
   {
     id: 'quintal-banco', nome: 'Banco de jardim', icone: '🪑', categoria: 'moveis', reais: 120, artigo: 'o', raio: 0.95,
-    descricao: 'O banco de ripas e ferro, igual aos do parque.',
+    descricao: 'O banco de ripas e ferro, igual aos do parque. Dá para sentar os dois.',
     monta: bancoDeJardim,
+    uso: { label: 'Sentar no banco', icon: '🪑', usar: sentarNoBanco },
   },
   {
     id: 'quintal-mesinha', nome: 'Mesinha bistrô', icone: '☕', categoria: 'moveis', reais: 140, artigo: 'a', raio: 0.85,
     descricao: 'Mesa de ferro verde com duas cadeirinhas de almofada, uma de frente para a outra.',
     monta: mesinhaBistro,
+    uso: { label: 'Sentar à mesinha', icon: '☕', usar: sentarAMesinha },
   },
   {
     id: 'quintal-espreguicadeira', nome: 'Espreguiçadeira', icone: '🏖️', categoria: 'moveis', reais: 110, artigo: 'a', raio: 0.92,
     descricao: 'De ripas de madeira, com rodinhas e colchonete listrado.',
     monta: espreguicadeira,
+    uso: { label: 'Deitar ao sol', icon: '🌞', usar: deitarAoSol },
   },
   {
     id: 'quintal-guarda-sol', nome: 'Guarda-sol', icone: '⛱️', categoria: 'moveis', reais: 90, artigo: 'o', raio: 0.36,
     descricao: 'De gomos cru e terracota, com babado. Fica bem do lado da mesinha.',
     monta: guardaSol,
+  },
+  {
+    id: 'quintal-balanco', nome: 'Balanço de jardim', icone: '🪢', categoria: 'moveis', reais: 180, artigo: 'o', raio: 1.3,
+    descricao: 'De madeira, com o banco de dois lugares pendurado. Balança de verdade.',
+    monta: balancoDeJardim,
+    uso: { label: 'Balançar', icon: '🪢', usar: balancar },
+  },
+  {
+    id: 'quintal-rede', nome: 'Rede com suporte', icone: '🏝️', categoria: 'moveis', reais: 160, artigo: 'a', raio: 1.25,
+    descricao: 'Listrada, no suporte de madeira em arco. Cabem os dois deitados.',
+    monta: redeComSuporte,
+    uso: { label: 'Deitar na rede', icon: '🏝️', usar: deitarNaRede },
+  },
+  {
+    id: 'quintal-casinha-do-pelusa', nome: 'Casinha do Pelusa', icone: '🐈', categoria: 'moveis', reais: 70, artigo: 'a', raio: 0.45,
+    descricao: 'Rosinha, com a plaquinha do nome e a almofada. Com ela no quintal, o Pelusa vem morar aqui fora também.',
+    monta: casinhaDoPelusa,
   },
   // --- o chão: os pisos (põe-se onde quiser) e os caminhos (troca-se o da casa)
   {
@@ -590,7 +619,7 @@ export const DECORACOES_DO_QUINTAL: readonly FichaDoQuintal[] = ([
   {
     id: 'quintal-sino-de-vento', nome: 'Sino de vento', icone: '🎐', categoria: 'alto', reais: 40, artigo: 'o', raio: 0.1,
     encaixe: 'pendurado',
-    descricao: 'Tubinhos de metal balançando. (Ainda sem o tlim-tlim.)',
+    descricao: 'Tubinhos de metal pendurados, balançando com o vento.',
     monta: sinoDeVento,
     anima: balancarSino,
   },
@@ -624,4 +653,7 @@ export const DECORACOES_DO_QUINTAL: readonly FichaDoQuintal[] = ([
     descricao: 'A árvore cor-de-rosa do canto do jardim.',
     monta: arvoreFlorida,
   },
-] as Array<Omit<FichaDoQuintal, 'girassois' | 'onda' | 'cenas'>>).map((f) => ({ ...f, girassois: 0, onda: 0, cenas: ['quintal'] as const }));
+] as Array<Omit<FichaDoQuintal, 'girassois' | 'onda' | 'cenas'>>).map((f) => ({
+  ...f, girassois: 0, onda: 0, cenas: ['quintal'] as const,
+  regavel: f.categoria === 'plantas' || COM_PLANTA.has(f.id),
+}));

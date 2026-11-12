@@ -110,6 +110,8 @@ interface Posto {
   /** piso e o que não está no chão não têm colisor */
   readonly colisor: Collider | null;
   readonly ponto: Interactable;
+  /** o ponto de USAR o móvel (sentar, balançar), quando a ficha tem `uso` */
+  readonly usar: Interactable | null;
   /** onde ele está guardado no save (é o que o "mudar de lugar" devolve no cancelar) */
   readonly onde: Onde;
   /** onde fica o anel e o "Mexer no…", no chão (a frente da parede, o pé do muro) */
@@ -313,6 +315,11 @@ export class Decorador {
   /** no lugar, DESTE lugar */
   postas(id: string): number {
     return this.g.decoracoes().filter((d) => d.id === id && (d.posta?.cena ?? 'estufa') === this.cena && d.posta).length;
+  }
+
+  /** as peças no lugar, para a cena olhar (a casinha do Pelusa, as plantas de regar) */
+  pecas(): Array<{ uid: number; ficha: FichaDeDecoracao; peca: THREE.Object3D; x: number; z: number; giro: number }> {
+    return [...this.postos.values()].map((p) => ({ uid: p.uid, ficha: p.ficha, peca: p.peca, x: p.onde.x, z: p.onde.z, giro: p.onde.giro }));
   }
 
   /** os enfeites no chão, em círculos — para quem passeia pela cena desviar */
@@ -748,7 +755,30 @@ export class Decorador {
     ponto.enabled = false;
     if (this.modo && this.edicao) this.modo.suspensas.push(ponto);
     else if (this.edicao) ponto.enabled = true;
-    this.postos.set(uid, { uid, ficha, peca, colisor, ponto, onde, chao });
+    // O MÓVEL DE USAR: o ponto dele é da cena (descansa no modo de colocar e no
+    // de edição, e volta com os outros)
+    let usar: Interactable | null = null;
+    const uso = ficha.uso;
+    if (uso) {
+      usar = this.w.interact({
+        id: `usar:${uid}`,
+        x: onde.x, z: onde.z, radius: ficha.raio + 1.0,
+        label: uso.label, icon: uso.icon,
+        highlight: peca,
+        onInteract: async (g) => {
+          if (this.ocupado) return;
+          await uso.usar({ g, w: this.w, peca, x: onde.x, z: onde.z, giro: onde.giro });
+        },
+      });
+      if (this.modo) {
+        usar.enabled = false;
+        this.modo.suspensas.push(usar);
+      } else if (this.edicao) {
+        usar.enabled = false;
+        this.edicao.suspensas.push(usar);
+      }
+    }
+    this.postos.set(uid, { uid, ficha, peca, colisor, ponto, usar, onde, chao });
     if (this.edicao) this.pintarAnel(uid);
     this.aoMudar?.();
     return true;
@@ -765,6 +795,13 @@ export class Decorador {
     if (i >= 0) this.w.colliders.splice(i, 1);
     const j = this.w.interactables.indexOf(p.ponto);
     if (j >= 0) this.w.interactables.splice(j, 1);
+    const k = p.usar ? this.w.interactables.indexOf(p.usar) : -1;
+    if (k >= 0) this.w.interactables.splice(k, 1);
+    // (some também das listas de quem descansa, para não voltar a acordar)
+    for (const lista of [this.modo?.suspensas, this.edicao?.suspensas]) {
+      const i2 = p.usar && lista ? lista.indexOf(p.usar) : -1;
+      if (i2 >= 0) lista!.splice(i2, 1);
+    }
     this.apagarAnel(uid);
     this.postos.delete(uid);
     this.aoMudar?.();

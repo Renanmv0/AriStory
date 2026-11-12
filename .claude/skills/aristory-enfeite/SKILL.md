@@ -249,6 +249,13 @@ Mobile). O que mudou, e que vale para enfeite novo:
   normal, os buracos) e as `amarras`. A peça de parede não pode ser mais alta
   que a faixa da parede. Peça que mexe pendurada: o sino de vento
   (`balancarSino`, pelo tempo).
+- **MÓVEL DE USAR** (etapa 4, `uso` na ficha: `label`, `icon` e
+  `usar(u)`): o decorador cria o ponto `usar:<uid>` na peça, que descansa nos
+  modos de colocar e de editar. O `usar` (`world/moveisDeUsar.ts`) monta a
+  âncora DENTRO da peça (ou do grupo com nome que balança — `balanco`,
+  `rede`: a `fundir()` respeita grupo com nome), senta ou deita os dois,
+  pergunta "Ficar mais um pouco?" e solta os dois na frente. A cena acha as
+  peças por `decorador.pecas()` (a casinha do Pelusa, o que é `regavel`).
 - `RegrasDoLugar.proibido(x, z, raio, ficha)` recebe a ficha (para a
   altura), e `ondeGuardar` muda o fim do toast de guardar ("pelas
   ferramentas da garagem").

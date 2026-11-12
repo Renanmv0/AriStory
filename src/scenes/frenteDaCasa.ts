@@ -23,6 +23,9 @@ import { Decorador, type Cofre, type RegrasDoLugar, type Superficie } from '../w
 import type { FichaDeDecoracao } from '../world/decoracoes';
 import { VENTO_DO_QUINTAL } from '../world/decoracoesDoQuintal';
 import { caixaDeEncomenda, painelDeFerramentas } from '../world/quintal';
+import { regadorDeJardim } from '../world/regador';
+import { Pelusa } from '../entities/bichos/Pelusa';
+import type { Interactable } from '../world/Interactable';
 import {
   FLAG_SEM_HERA, abrirAEncomenda, caminhoAtivo, conteudoDoBau, encomendasACaminho, plantarAArvoreDaCasa, trocarHera, usarCaminho,
 } from '../eventos/quintal';
@@ -463,7 +466,7 @@ export const frenteDaCasa: SceneDef = {
           if (Math.hypot(x - PORTAO.x, z - zMuro) < 1.5 + r) return 'na frente do portão';
           // o que é ALTO fica longe dos muros do lado da câmera: senão tapa o quintal
           // (o muro da direita só tapa da metade do jardim para a frente: no fundo, encostado na casa, pode — é onde a árvore nasceu)
-          if (ficha && altoDe(ficha) > 1.3 && (zMuro - z < 2.3 || (JARDIM.x1 - x < 2.3 && z > CASA.z + 2.6))) return 'alto demais perto do muro';
+          if (ficha && altoDe(ficha) > 1.45 && (zMuro - z < 2.3 || (JARDIM.x1 - x < 2.3 && z > CASA.z + 2.6))) return 'alto demais perto do muro';
         }
         return null;
       },
@@ -477,6 +480,139 @@ export const frenteDaCasa: SceneDef = {
     const decorador = new Decorador(w, regrasDoQuintal, reais, 'quintal');
     // (os testes acham o decorador por aqui, como na estufa)
     w.root.userData.decorador = decorador;
+
+    /*
+     * O PELUSA NO QUINTAL (etapa 4): com a casinha dele posta, ele vem morar
+     * aqui fora também — tira um cochilo na porta da casinha, metade dentro,
+     * metade fora, e aceita carinho. Guardou a casinha, ele volta para dentro.
+     */
+    let pelusa: Pelusa | null = null;
+    let carinhoNoPelusa: Interactable | null = null;
+    const verOPelusa = (): void => {
+      const casinha = decorador.pecas().find((p) => p.ficha.id === 'quintal-casinha-do-pelusa');
+      if (casinha && !pelusa) {
+        const f = casinha.giro;
+        const px = casinha.x + Math.sin(f) * 0.24;
+        const pz = casinha.z + Math.cos(f) * 0.24;
+        pelusa = new Pelusa({ minX: px - 0.1, maxX: px + 0.1, minZ: pz - 0.1, maxZ: pz + 0.1 });
+        pelusa.sentarEm(px, pz, f, 0.04);
+        pelusa.deitar(true);
+        pelusa.aoSoar = () => g.som('miado');
+        w.add(pelusa.group);
+        const gato = pelusa;
+        carinhoNoPelusa = w.interact({
+          id: 'frente:pelusa',
+          x: px + Math.sin(f) * 0.5, z: pz + Math.cos(f) * 0.5, radius: 1.2,
+          label: 'Fazer carinho no Pelusa', icon: '🐈',
+          highlight: gato.group,
+          onInteract: async () => {
+            gato.receberCarinho();
+            g.som('miado');
+            if (!g.flag('quintal:pelusa-na-casinha')) {
+              g.setFlag('quintal:pelusa-na-casinha');
+              await g.say(['Ele gostou da casinha.'], g.companionName());
+              await g.say(['Ele gostou foi da almofada.'], g.playerName());
+            }
+          },
+        });
+        if (decorador.ocupado) carinhoNoPelusa.enabled = false;
+      } else if (!casinha && pelusa) {
+        w.root.remove(pelusa.group);
+        const i = carinhoNoPelusa ? w.interactables.indexOf(carinhoNoPelusa) : -1;
+        if (i >= 0) w.interactables.splice(i, 1);
+        pelusa = null;
+        carinhoNoPelusa = null;
+      }
+    };
+    decorador.aoMudar = verOPelusa;
+    verOPelusa();
+    w.onUpdate((dt) => pelusa?.update(dt));
+
+    /*
+     * O REGADOR (etapa 4): "Plantas não PRECISAM ser regadas, mas podem." Ele
+     * mora na prateleira das ferramentas; pego, vai na mão de quem joga, e
+     * perto de cada planta aparece o "Regar…": a água sai em arco do bico, a
+     * planta dá uma balançadinha de contente. Nada murcha sem ele.
+     */
+    let comRegador = false;
+    const pegarRegador = (sim: boolean): void => {
+      comRegador = sim;
+      g.segurarNaCena(g.playerId(), sim ? regadorDeJardim() : null, 'regando');
+      g.toast(sim ? 'Regador na mão: chegue perto de uma planta' : 'Regador de volta na prateleira', '💧');
+    };
+    const gotas = new THREE.InstancedMesh(new THREE.SphereGeometry(0.03, 6, 4).scale(1, 1.4, 1), toon(P.jatoAgua, { opacity: 0.85 }), 18);
+    gotas.visible = false;
+    gotas.frustumCulled = false;
+    w.root.add(gotas);
+    /** a planta que o "Regar…" está mirando agora */
+    let plantaNaMira: number | null = null;
+    const regar = w.interact({
+      id: 'frente:regar',
+      x: 0, z: 0, radius: 1.6,
+      label: 'Regar', icon: '💧',
+      priority: 1,
+      onInteract: async () => {
+        const alvo = decorador.pecas().find((p) => p.uid === plantaNaMira);
+        if (!alvo) return;
+        g.lockPlayer(true);
+        const eu = g.playerPosition();
+        const f = Math.atan2(alvo.x - eu.x, alvo.z - eu.z);
+        g.releasePlayer(eu.x, eu.z, f);
+        g.lockPlayer(true);
+        // o arco de gotas, do bico até a planta
+        const bico = new THREE.Vector3(eu.x + Math.sin(f) * 0.55, 0.95, eu.z + Math.cos(f) * 0.55);
+        const fim = new THREE.Vector3(alvo.x, 0.35, alvo.z);
+        const m = new THREE.Matrix4();
+        gotas.visible = true;
+        for (let k = 0; k < 42; k++) {
+          if (k % 14 === 0) g.som('jato');
+          for (let i = 0; i < gotas.count; i++) {
+            const t = ((k / 42) * 3 + i / gotas.count) % 1;
+            const p = bico.clone().lerp(fim, t);
+            p.y += Math.sin(t * Math.PI) * 0.25 - t * 0.1;
+            p.x += Math.sin(i * 7.3) * 0.05 * t;
+            p.z += Math.cos(i * 5.1) * 0.05 * t;
+            m.makeTranslation(p.x, p.y, p.z);
+            gotas.setMatrixAt(i, m);
+          }
+          gotas.instanceMatrix.needsUpdate = true;
+          // a planta balança de contente
+          alvo.peca.scale.setScalar(1 + Math.sin(k * 0.45) * 0.025);
+          await g.wait(1 / 30);
+        }
+        gotas.visible = false;
+        alvo.peca.scale.setScalar(1);
+        g.som('brotar');
+        g.bump('quintal:regadas');
+        const nome = alvo.ficha.nome.charAt(0).toLowerCase() + alvo.ficha.nome.slice(1);
+        g.toast(`${alvo.ficha.artigo === 'a' ? 'A' : 'O'} ${nome} agradece`, '💧');
+        g.lockPlayer(false);
+      },
+    });
+    regar.enabled = false;
+    w.onUpdate(() => {
+      if (!comRegador || decorador.ocupado) {
+        regar.enabled = false;
+        return;
+      }
+      const eu = g.playerPosition();
+      let melhor: ReturnType<typeof decorador.pecas>[number] | null = null;
+      let d = 1.9;
+      for (const p of decorador.pecas()) {
+        if (!(p.ficha as { regavel?: boolean }).regavel) continue;
+        const dd = Math.hypot(p.x - eu.x, p.z - eu.z);
+        if (dd < d) {
+          d = dd;
+          melhor = p;
+        }
+      }
+      regar.enabled = !!melhor;
+      if (melhor) {
+        regar.moveTo(melhor.x, melhor.z);
+        plantaNaMira = melhor.uid;
+        regar.label = `Regar ${melhor.ficha.artigo} ${melhor.ficha.nome.charAt(0).toLowerCase()}${melhor.ficha.nome.slice(1)}`;
+      }
+    });
     w.onUpdate((dt) => VENTO_DO_QUINTAL.tique(dt));
 
     // AS FERRAMENTAS DA GARAGEM: o painel na parede do fundo, ao lado do carro
@@ -489,13 +625,15 @@ export const frenteDaCasa: SceneDef = {
       highlight: painel,
       onInteract: async () => {
         if (decorador.ocupado) return;
-        const saida = await g.abrirBauDoQuintal(conteudoDoBau(g));
+        const saida = await g.abrirBauDoQuintal(conteudoDoBau(g, comRegador));
         if (saida?.tipo === 'colocar') decorador.colocar(saida.id);
         else if (saida?.tipo === 'editar') decorador.editar();
         else if (saida?.tipo === 'caminho' && usarCaminho(g, saida.id)) {
           montarCaminho();
           g.som('brotar');
           g.toast('Caminho novo da porta ao portão', '🛤️');
+        } else if (saida?.tipo === 'regador') {
+          pegarRegador(!comRegador);
         } else if (saida?.tipo === 'hera') {
           const ficou = trocarHera(g);
           if (ficou) w.add(hera);
