@@ -593,13 +593,16 @@ if (roda('bichos')) {
       await fotoEm('tigres-de-lado', e.s + 0.5, -3.8 * lado, 0.5, e.s, 0, 0.3);
       await fotoEm('tigres-de-frente', e.s - 4.2, 0.4 * lado, 0.55, e.s - 0.2, 0, 0.3);
       // a buzina: ela se esconde no casco
-      await viagem(page, { vezes: 1 });
-      await page.keyboard.press('KeyE');
-      await page.waitForTimeout(1300);
+      // (com o piloto de teste ligado a buzina é ignorada: o manche é de verdade só para este botão)
+      await viagem(page, { vezes: 1, piloto: 'nenhum' });
+      await page.keyboard.down('KeyE');
+      await page.waitForTimeout(900);
+      await page.keyboard.up('KeyE');
+      await page.waitForTimeout(600);
       await viagem(page, { vezes: 0.02 });
       await fotoEm('tigres-escondida', e.s + 3.0, lado * 2.4, 0.85, e.s - 0.2, 0, 0.3);
     }
-    await viagem(page, { vezes: 3 });
+    await viagem(page, { vezes: 3, piloto: 'bom' });
   }
   await page.context().close();
 }
