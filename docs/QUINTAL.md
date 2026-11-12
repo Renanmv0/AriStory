@@ -1,48 +1,96 @@
 # Decorar o quintal da casa do Ari
 
-> Plano. NADA disto está construído: só o jardim foi limpo para receber os
-> enfeites. Cada etapa marca aqui o que entrou no jogo; o `git log` é a fonte
-> da verdade do que mudou por último.
+> Plano em construção. Cada etapa marca aqui o que entrou no jogo; o `git log`
+> é a fonte da verdade do que mudou por último.
 
 ## COMECE AQUI
 
 **O pedido do Renan (2026-11-12)**: "No quintal da casa, o Ari vai adorar poder
 decorar, então tire os canteiros do chão e monte somente o plano de um sistema
 para decorar o quintal, parecido com o da estufa da Josefina, mas com mais
-opções de lugares para colocar. Não faça ainda, monte um plano disso. Os
-arbustos com o chão de outra cor já pode tirar mesmo."
+opções de lugares para colocar."
 
-**Estado**: o jardim da frente da casa (`scenes/frenteDaCasa.ts`) é grama limpa
-— saíram os canteiros de casca e de pedrisco e as plantas deles (hortênsias,
-lavanda, agaves, capim de pluma, costela-de-adão e margaridas). Ficaram o
-caminho de lajes, os dois buxinhos em vaso da porta, a árvore florida e a hera
-dos muros. As plantas continuam no kit (`world/plantasDeJardim.ts`): é delas
-que sai boa parte do catálogo do quintal.
+**As respostas dele ao plano (2026-11-12)** — valem acima de qualquer proposta
+mais abaixo:
+
+| pergunta | a decisão do Renan |
+|---|---|
+| quando entra | "O quintal entra só quando o carro ficar pronto" — tudo atrás da chave do Bebito Mobile (`bebitoMobileNestaPagina()`); `?bebito` para ver |
+| a loja | "um catálogo de itens pelo correio": no COMPUTADOR do quarto do Ari, que "ao invés de ir direto para o laboratório de testes, abriria um tipo de área de trabalho onde escolheríamos onde abrir", e um dos ícones é o serviço **"Papita Delivery"**, "onde poderíamos comprar itens para casa e para o quintal (inicialmente só para o quintal)" |
+| a moeda | "usa o dinheiro nosso mesmo" — os reais da carteira do casal |
+| os lugares | "Vale decorar tudo na parte de fora!" (o jardim, a garagem, as paredes e os muros) |
+| o que é fixo | "Podemos comprar novos tipos de caminhos de lajes também! E se quisermos podemos tirar a árvore e a hera." |
+| por onde se decora | "pelas ferramentas na garagem para editar as decorações" |
+| parede | "O Ari escolhe a altura no muro." |
+| planta | "Plantas não PRECISAM ser regadas, mas podem." |
+| móveis | "Coloque alguns móveis, vamos adicionando mais com o tempo." |
 
 **A ideia em uma frase**: o MESMO decorador da estufa (`world/decorador.ts`),
-ensinado a pôr enfeite em cinco tipos de lugar em vez de um — no chão, no piso
-(cobrindo o chão), na parede, em cima (do muro, da janela, da prateleira) e
-pendurado (no pergolado, no beiral, no galho) —, mais os que se amarram de um
-ponto a outro (varal de luzinhas, bandeirinhas, rede).
+ensinado a pôr enfeite em mais tipos de lugar — no chão, no piso (cobrindo o
+chão), na parede (na altura que o Ari escolher), em cima (do muro, da janela,
+da prateleira) e pendurado (no pergolado, no beiral, no galho) —, mais os que
+se amarram de um ponto a outro (varal de luzinhas, bandeirinhas, rede). O que
+se põe é COMPRADO no Papita Delivery, pelo computador do quarto, chega numa
+caixa no portão, e se põe e se arruma pelas ferramentas da garagem.
 
 | etapa | o quê | estado |
 |---|---|---|
 | **0** | limpar o jardim | ✅ feita (2026-11-12) |
-| **1** | o motor: o save sabe EM QUE LUGAR está cada enfeite; o quintal com o catálogo de hoje, no chão; o baú e o "Decorar o quintal" | ⬜ |
-| **2** | os PISOS (deck, caminho, canteiro de desenhar) e as PLANTAS do kit como enfeite | ⬜ |
-| **3** | PAREDE, EM CIMA, PENDURADO e de PONTA A PONTA | ⬜ |
-| **4** | os MÓVEIS que fazem alguma coisa (banco, balanço, rede, mesa, piscininha, casinha do Pelusa) | ⬜ |
-| **5** | a LOJA do quintal e a moeda | ⬜ |
+| **1** | o primeiro ciclo inteiro, no CHÃO: a área de trabalho do computador (o laboratório e o **Papita Delivery**), o catálogo em reais (as plantas do kit e alguns móveis), a encomenda chegando no portão, as ferramentas da garagem (pôr e arrumar), e o save sabendo EM QUE LUGAR está cada enfeite | ✅ feita (2026-11-12) |
+| **2** | os PISOS e os CAMINHOS de lajes novos (deck, pedras, pedrisco, canteiro de desenhar); tirar e pôr de volta a ÁRVORE e a HERA | ⬜ |
+| **3** | PAREDE (o Ari escolhe a altura), EM CIMA, PENDURADO e de PONTA A PONTA | ⬜ |
+| **4** | os MÓVEIS que fazem alguma coisa (sentar no banco, balanço, rede, mesa, piscininha, casinha do Pelusa) e REGAR (opcional) | ⬜ |
+| **5** | a aba "Para casa" do Papita Delivery (decorar a casa por dentro) | ⬜ só quando o Renan pedir |
 
 Uma etapa por vez, parando ao fim de cada uma para o Renan escolher (como o
-projeto faz). **As perguntas da §9 vêm antes da etapa 1** — a 1 e a 2 mudam o
-desenho do motor.
-
-O quintal mora na frente da casa, que hoje só existe com a chave do Bebito
-Mobile ligada (`eventos/BebitoMobile.ts`): enquanto ela estiver desligada, o
-quintal decorado também fica escondido (`?bebito` para ver). Ver a pergunta 1.
+projeto faz).
 
 ---
+
+## O que a etapa 1 pôs no jogo (com `?bebito`)
+
+- **A área de trabalho** (`ui/computadorDoAri.ts`): "Usar o computador" no
+  quarto abre a tela do computador por cima do jogo, com os ícones. A pasta
+  `AriStory_teste` leva ao laboratório pelo caminho de sempre (a câmera, o
+  redemoinho, sugados); o **Papita Delivery** abre o app de compras. Sem a
+  chave do Bebito, o computador é o de antes (direto na pergunta da pasta).
+- **O Papita Delivery**: o catálogo do quintal (`world/decoracoesDoQuintal.ts`)
+  em duas prateleiras, 🌿 Plantas e 🪑 Móveis (a aba 🏠 "Para casa" aparece
+  como "em breve"); o preço em reais, da carteira do casal; o botão "Pedir"
+  paga e põe uma unidade A CAMINHO; o cartão conta o que está a caminho, no
+  baú e no quintal.
+- **A encomenda**: chegando no quintal com algo a caminho, uma caixa de
+  papelão do Papita (fita adesiva e a etiqueta da batatinha) espera no chão,
+  ao lado do caminho de lajes, logo depois do portão — ao pé do pilar o muro
+  a escondia da câmera. "Abrir a encomenda" põe tudo no baú.
+- **As ferramentas da garagem**: o painel de ferramentas de jardim na parede
+  do fundo da garagem. "Decorar o quintal" abre o baú (o que está guardado, com
+  "Colocar"), e "Arrumar o quintal" liga o modo de edição do decorador (mudar
+  de lugar, girar, guardar).
+- **O chão do quintal**: as regras de onde pode (`RegrasDoQuintal`, na cena):
+  o jardim e o fundo da garagem; o caminho de lajes, a frente da porta, o arco
+  do portão, a vaga e a manobra do carro ficam livres; o que é ALTO (mais de
+  1,3 m) fica longe do muro da frente e do da direita, que são os do lado da
+  câmera.
+- **O save**: `posta.cena` (`'estufa'` quando falta: save antigo) e
+  `aCaminho` (comprado, ainda no correio). O baú é um só: o que a Josefina
+  vende também pode ir para o quintal (é enfeite de jardim: a ficha sem
+  `cenas` vai aos dois lugares), e o do Papita só vai para o quintal
+  (`cenas: ['quintal']`).
+- **Leve**: o decorador agora passa todo enfeite PARADO pela `fundir()` (na
+  estufa também; o que tem `anima` fica inteiro). O quintal cheio (as 14
+  peças) custa 298 → 337 desenhos por quadro e 127 mil → 156 mil triângulos
+  na vista de sempre; a mesma vista com e sem `?semFundir` difere em 17
+  pixels (sem juntar seriam ~600 desenhos a mais na cena toda).
+- **O catálogo** (`world/decoracoesDoQuintal.ts`): as plantas do kit, cada uma
+  num canteirinho de casca de beira torta (hortênsia azul, rosa e lilás,
+  lavanda, margaridas, capim de pluma, agave, costela-de-adão, buxinho no vaso
+  e a espada-de-são-jorge do quarto), de R$ 18 a R$ 32; e os móveis — o banco
+  de praça do kit (R$ 120) e três peças novas: a mesinha bistrô de ferro com
+  as duas cadeirinhas (R$ 140), a espreguiçadeira de ripas com rodinhas e
+  colchonete (R$ 110) e o guarda-sol de gomos com babado (R$ 90). Por
+  enquanto os móveis são de olhar; sentar e deitar neles é a etapa 4.
+- **O teste**: `scripts/quintal.mjs` (ver §8).
 
 ## 1. O que já existe (e se reaproveita inteiro)
 
@@ -106,8 +154,8 @@ gramado de flores, tapete de área externa. **É o "canteiro" que saiu, devolvid
   mesa no deck, a hortênsia no canteiro); dois pisos podem se cruzar, e o que
   foi posto por último fica por cima (a ordem de pintura do chão, skill de
   cenário);
-- o caminho de lajes da casa é um piso também — pergunta 4: fica fixo ou o Ari
-  pode mexer?
+- o caminho de lajes da casa é um piso também, e o Ari pode trocar: o
+  Papita vende caminhos de lajes de outros tipos (decisão do Renan).
 
 ### 3.3 PAREDE — o que se pendura na parede
 
@@ -121,7 +169,7 @@ frente e do da direita não**: ela olha para longe da câmera e ninguém a veria
   janelas, lampião, interfone);
 - o fantasma anda grudado na parede mais perto à frente de quem joga: andar ao
   longo dela move o enfeite de lado; para cima e para baixo, dois botões na
-  barra (ou a altura vem pronta da ficha — mais simples; pergunta 6);
+  barra — **o Ari escolhe a altura** (decisão do Renan);
 - a pegada é um retângulo na parede, e o anel vira uma moldura verde/vermelha.
 
 Peças: vaso de parede, arandela, quadrinho, a plaquinha com o nome da casa,
@@ -180,9 +228,9 @@ samambaia, espada-de-são-jorge (a do quarto do Ari), suculentas, uma hortinha
 quintal inteiro (é assim que foram feitas), então cem margaridas pesam como
 uma.
 
-*Ideia a decidir* (pergunta 7): a planta posta CRESCE — muda pequena no dia em
-que se põe, e grande depois de umas visitas; e o regador da prateleira da
-garagem rega.
+**Decidido**: "Plantas não PRECISAM ser regadas, mas podem." Regar é um
+carinho, não uma obrigação — a planta nunca murcha; regada, ela brilha um
+pouco, solta umas gotinhas e quem sabe abre mais flor (etapa 4).
 
 ### 4.2 Pisos
 
@@ -220,27 +268,23 @@ o quadrinho de uma memória do quadro do quarto pendurado na parede de fora…
 
 ## 5. O save
 
-`DecoracaoNoSave` (`core/types.ts`) hoje é `{ uid, id, posta: { x, z, giro } }` —
-ele não diz em que CENA o enfeite está. Passa a ser:
+`DecoracaoNoSave` (`core/types.ts`), desde a etapa 1:
 
 ```ts
 {
   uid, id,
-  posta: null | {
-    cena: 'estufa' | 'quintal',          // ausente no save de hoje → 'estufa'
-    encaixe: 'chao' | 'piso' | 'parede' | 'emCima' | 'pendurado' | 'pontaAPonta',
-    x, z, giro,                          // chão, piso, em cima
-    y?,                                  // parede, pendurado: a altura
-    superficie?,                         // o id da parede, do tampo, da viga
-    ate?: { x, y, z },                   // ponta a ponta: a segunda ponta
-  }
+  posta: null | { x, z, giro, cena: 'estufa' | 'quintal' },  // sem `cena` → 'estufa'
+  aCaminho?: true,                                            // comprado, no correio
 }
 ```
 
-`normalizarDecoracoes` conserta na leitura, como sempre: save de antes vira
-`cena: 'estufa', encaixe: 'chao'`, e superfície que não existe mais devolve o
-enfeite ao baú (nunca some). O **baú é um só** para o casal: o que está
-guardado aparece nos dois lugares, e cada ficha diz onde pode ir.
+Nas etapas 3 em diante a `posta` ganha o resto: `encaixe` ('chao' | 'piso' |
+'parede' | 'emCima' | 'pendurado' | 'pontaAPonta'), `y` (parede e pendurado:
+a altura), `superficie` (o id da parede, do tampo, da viga) e `ate` (ponta a
+ponta: a segunda ponta). `normalizarDecoracoes` conserta na leitura, como
+sempre: o que não tiver encaixe é chão, e superfície que não existe mais
+devolve o enfeite ao baú (nunca some). O **baú é um só** para o casal: o que
+está guardado aparece nos dois lugares, e cada ficha diz onde pode ir.
 
 ---
 
@@ -256,7 +300,8 @@ guardado aparece nos dois lugares, e cada ficha diz onde pode ir.
 - **A cena do quintal** declara as regras e as superfícies, monta o
   `Decorador` e o ponto de entrada: **"Decorar o quintal"** — proposta: uma
   caixa de ferramentas de jardinagem na prateleira da garagem, que abre o baú
-  (o que tem guardado, e "Arrumar o quintal" para o modo de edição). Pergunta 5.
+  (o que tem guardado, e "Arrumar o quintal" para o modo de edição) — feito
+  assim na etapa 1, como o Renan escolheu.
 - **Leveza** (a regra de ouro do projeto): cada enfeite passa pela `fundir()`;
   enfeite repetido (dez vasinhos iguais) e planta viram LOTE; piso é decalque
   com a geometria juntada por material. Medir a vista do quintal cheio (umas
@@ -264,60 +309,51 @@ guardado aparece nos dois lugares, e cada ficha diz onde pode ir.
 
 ---
 
-## 7. A loja e a moeda (etapa 5 — pergunta 2)
+## 7. A loja e a moeda — DECIDIDO
 
-Três caminhos, e eu recomendo o primeiro:
-
-1. **O catálogo pelo correio**: a revista de jardim na mesinha da sala (ou no
-   celular de alguém); o que se compra CHEGA numa caixa na caixa de correio do
-   portão na visita seguinte, e abrir a caixa põe no baú. Paga com os **reais
-   da carteira do casal** (os do Mania, do clube…). Fica tudo em casa, e a
-   caixa de correio ganha um uso.
-2. **Uma aba "Para casa" na lojinha da Josefina**, em girassóis — junta o
-   quintal ao minigame do jardim (a Josefina é jardineira; faz sentido ela
-   vender as plantas).
-3. **Uma loja de jardinagem nova**, uma parada da viagem de carro (liga com a
-   etapa D do Bebito Mobile).
-
-Dá para misturar: as plantas na Josefina (girassóis) e o resto pelo catálogo
-(reais).
+O **Papita Delivery**, no computador do quarto, em reais da carteira do casal
+(a resposta do Renan, no COMECE AQUI). O que se compra chega pelo correio: uma
+caixa no portão, que se abre e vai para o baú. Começa só com o quintal; a aba
+"Para casa" fica para quando ele pedir.
 
 ---
 
-## 8. Como testar (quando for feito)
+## 8. Como testar
 
-- `scripts/quintal.mjs` (novo): pôr e tirar um enfeite de cada tipo de lugar
-  pelo modo de verdade; as regras (o caminho, a porta, o portão e a garagem
-  recusam); a altura perto dos muros; o save com o lugar e a superfície,
-  recarregar e tudo no lugar; o save antigo (sem `cena`) vira estufa; a estufa
-  de sempre igual; o peso do quintal cheio; o celular.
-- `scripts/enfeite.mjs` e `scripts/decorar.mjs` continuam passando.
+`scripts/quintal.mjs` (com `?bebito`, num save à parte):
+
+- **escondido**: sem a chave, o computador é o de sempre (a pergunta da pasta);
+- **computador**: a área de trabalho, o Papita (as duas prateleiras com
+  retrato, pedir paga e põe no correio, sem dinheiro não compra e o botão
+  apaga, "Para casa" em breve), voltar, e a pasta do laboratório levando ao
+  laboratório;
+- **encomenda**: a caixa no portão, abrir põe tudo no baú, e ela sai;
+- **colocar**: o baú pelas ferramentas, as regras (o caminho, o ramal, o
+  portão, o trilho do portão de correr, fora do quintal, o alto perto do
+  muro), as 14 peças no quintal e uma no fundo da garagem, a pegada e a altura
+  de cada uma medidas no mundo, o peso antes e depois, a mesma imagem com e
+  sem `?semFundir`, e fotos;
+- **arrumar**: recarregar e tudo no lugar, o "Arrumar o quintal", guardar, o
+  X, e a estufa sem nada do quintal;
+- **save**: enfeite sem `cena` é da estufa, e o `aCaminho` sobrevive.
+
+`CEL=1` roda no celular em pé. O `scripts/decorar.mjs` e o
+`scripts/enfeite.mjs` (a estufa) continuam passando, e o
+`scripts/zfighting.mjs` mede o `painel-de-ferramentas`.
 
 ---
 
-## 9. Perguntas ao Renan (antes da etapa 1)
+## 9. Perguntas ao Renan
 
-1. **Quando o quintal entra no jogo?** Ele é a frente da casa, que hoje só
-   existe com a chave do Bebito Mobile (escondida até o carro estar pronto).
-   O quintal espera o carro, ou a frente da casa (sem o carro e sem a garagem
-   em uso) entra antes, só para decorar?
-2. **A moeda e a loja**: o catálogo pelo correio em reais (o que eu
-   recomendo), a aba na lojinha da Josefina em girassóis, uma loja nova, ou
-   misturado (§7)?
-3. **Os lugares**: os cinco tipos (chão, piso, parede, em cima, pendurado) e o
-   ponta a ponta — algum sobra, algum falta? Vale decorar a GARAGEM (o fundo e
-   a parede) e o lado de fora do muro (a rua)?
-4. **O que é fixo**: o caminho de lajes, os dois buxinhos da porta, a árvore
-   florida e a hera dos muros ficam como estão, ou viram enfeites que o Ari
-   também pode mexer e guardar?
-5. **Por onde se decora**: a caixa de ferramentas na prateleira da garagem
-   (o que eu proponho), um caderninho de ideias, ou a própria caixa de correio?
-6. **Parede**: escolher a altura do enfeite na hora (dois botões a mais na
-   barra) ou cada enfeite já vem na altura certa (mais simples)?
-7. **Planta que cresce e que se rega** (§4.1): entra, ou planta já vem
-   pronta?
-8. **O que é DELES** (§4.5): tem alguma coisa do quintal ou da vida dos dois
+As nove da primeira versão do plano foram respondidas (a tabela do COMECE
+AQUI). Abertas para as próximas etapas:
+
+1. **O que é DELES** (§4.5): tem alguma coisa do quintal ou da vida dos dois
    que tem que estar lá (o nome da casa, um objeto, uma planta que o Ari
    ama)? E as plantas e os enfeites que o Ari mais gosta, para o catálogo.
-9. **Os móveis da §4.4**: quais entram (e o balanço e a rede, que são
-   cutscene de casal, eu escrevo as falas e mando para aprovar)?
+2. **Os móveis da §4.4** que fazem alguma coisa: quais entram primeiro (o
+   balanço e a rede são cutscene de casal: eu escrevo as falas e mando para
+   aprovar)?
+3. **O Papita Delivery**: o nome está como ele escreveu; o ícone e a cor do
+   app (hoje uma batatinha 🥔 sorrindo, em amarelo e verde) podem mudar se o
+   Papita for alguém ou alguma coisa de verdade.

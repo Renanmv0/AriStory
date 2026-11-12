@@ -75,6 +75,8 @@ const PECAS = [
   ['pilar-do-muro', 'frente-da-casa&bebito'],
   ['portao-do-jardim', 'frente-da-casa&bebito'],
   ['portao-da-garagem', 'frente-da-casa&bebito'],
+  // o quintal decorado (`docs/QUINTAL.md`): o painel das ferramentas na garagem
+  ['painel-de-ferramentas', 'frente-da-casa&bebito'],
   ['trilho-do-portao', 'frente-da-casa&bebito'],
   ['painel-do-portao', 'frente-da-casa&bebito'],
   ['buxinho-no-vaso', 'frente-da-casa&bebito'],

@@ -209,8 +209,8 @@ placa e o que vai em cada vaga
 (painel, retrovisor, chave, teto, porta-malas, banco de trás, vidro,
 para-choque, rodas) saem da ficha do save — ver "O Bebito Mobile" na skill
 de peça. Para PLANTA DE JARDIM, o kit das plantas do quintal do Ari
-(`world/plantasDeJardim.ts`; hoje fora da cena, à espera do quintal
-decorado): cada espécie é um lote para o jardim inteiro
+(`world/plantasDeJardim.ts`; hoje é o Papita Delivery que as vende, uma a
+uma, para o quintal decorado): cada espécie é um lote para o jardim inteiro
 (hortênsia, lavanda, capim de pluma, agave, margarida, costela-de-adão, hera
 no muro), a folha é uma fita dobrada na nervura, a haste e a flor dividem a
 geometria pela cor do vértice, e o que é fino balança no `Vento` — ver "As
@@ -278,11 +278,17 @@ poça, ônibus e corações), com o ESTACIONAMENTO do Villa Lobos do outro
 lado da rua do ônibus, onde o carro para (a área de andar do parque só
 passa da rua com a chave ligada). Ligar a chave é a
 ÚLTIMA coisa, e só com o aval do Renan.
-`QUINTAL.md` é o plano (ainda só plano) de DECORAR o quintal da casa do
-Ari — o decorador da estufa ensinado a pôr enfeite no chão, no piso, na
-parede, em cima, pendurado e de ponta a ponta —, aberto por um "COMECE AQUI"
-e com as perguntas ao Renan antes da primeira etapa; o jardim da frente já
-está de grama limpa esperando por ele.
+`QUINTAL.md` é o plano de DECORAR o quintal da casa do Ari — o decorador da
+estufa ensinado a pôr enfeite no chão, no piso, na parede, em cima, pendurado
+e de ponta a ponta —, aberto por um "COMECE AQUI" com as decisões do Renan.
+A etapa 1 está no jogo, ESCONDIDA atrás da mesma chave do Bebito Mobile ("o
+quintal entra só quando o carro ficar pronto"): com a chave, o computador do
+quarto abre uma ÁREA DE TRABALHO (`ui/painelDoQuintal.ts`) com a pasta do
+laboratório e o **Papita Delivery**, o app que vende as plantas e os móveis
+do quintal em reais (`world/decoracoesDoQuintal.ts`); o pedido chega numa
+caixa no portão, e se põe no chão pelas ferramentas da garagem
+(`eventos/quintal.ts`, a cena `frente-da-casa`). Sem a chave, o computador é
+o de sempre.
 `MINIGAME-RESTAURANTE.md` e `MINIGAME-JARDIM.md` são planos de minigame — o
 turno do Mania de Churrasco e o roguelite da estufa da Josefina. **O do jardim
 abre com um "COMECE AQUI" de uma página** (estado, mapa do código, números,
@@ -434,6 +440,7 @@ node scripts/fantasias.mjs /tmp/fa  # as cinco fantasias da caça do Halloween (
 node scripts/bebitoMobile.mjs /tmp/bm # o Bebito Mobile (docs/BEBITO-MOBILE.md), estacionado pelo atalho ?carro=x,z: o modelo medido (a base, o tamanho, as malhas e os triângulos), a ficha e as vagas (cada encaixe com nome, cada detalhe da ficha no carro, todo id do catálogo com modelo, outra ficha dando outro carro), o save (ficha torta consertada, save antigo com a de fábrica, gravar e recarregar), os comandos (rodas, volante, teto, faróis, freio, pisca, solavanco, penduricalhos), as faces coplanares das caixas de quina redonda, os lugares (a dupla sentada na frente — cabe sob o teto e entre as portas —, sentada no banco de trás, e deitada na cama com os encostos da frente deitados) e as fotos de todos os lados, das janelas de perto, por dentro e sem teto. SO=modelo|ficha|comandos|peso|fotos|coplanar|lugares roda uma parte; SEM_FUNDIR=1 mede antes da junção
 node scripts/presente.mjs /tmp/pr  # a quest do presente do Bebito Mobile e a frente da casa do Ari (docs/BEBITO-MOBILE.md), só com ?bebito: ESCONDIDO (sem a chave a porta da casa sai no parque, a cama é a de sempre e o save não ganha flag), o JARDIM (a porta sai no jardim, a garagem vazia, da porta ao portão sem esbarrar, o parque voltando pela calçada, fotos) e a QUEST (dormir depois da lição 10, a pergunta da surpresa, o Renan saindo pela porta da sala, o Ari atrás, a buzina, o carro vindo pela rua com o Renan dirigindo e o laço no teto, a ré para dentro da garagem, a conversa, a memória, o save de verdade intacto, e depois o carro morando na garagem). SO=escondido|jardim|quest roda uma parte; CEL=1 roda no celular em pé
 node scripts/viagem.mjs  /tmp/vg    # a viagem de carro do Bebito Mobile (docs/BEBITO-MOBILE.md §6), só com ?bebito: a ROTA (300 rotas sorteadas obedecem as regras: oito eventos, as duas travessias nunca seguidas, os vãos, os corações na faixa livre, a curva mansa, a semente), a PARTIDA (o "Sair de carro" na garagem, "Quem dirige dessa vez?" e quem foi escolhido ao volante nos dois casos), a viagem INTEIRA com o piloto de teste (parar para os bichos e no sinal, desviar da obra e dos buracos, a lombada devagar, ultrapassar o ônibus, três estrelas, a memória, e o carro estacionado na rua do ônibus do parque), o DISTRAÍDO (sem frear, o carro para sozinho antes da faixa e ninguém é atropelado), o MANCHE de verdade (virar, frear, acelerar, buzinar), a VOLTA (o portão vira lembrete, o carro leva para casa e volta à garagem), o ESTACIONAMENTO (escondido sem a chave; com ela o lote do outro lado da rua, o carro na vaga do coração, o caminho a pé da vaga ao portão do parque sem nada no meio, a cerca viva fechando o lote, a cancela subindo, fotos e o peso) e as fotos de PERTO dos bichos e das peças. SO=rota|partida|bom|distraido|manche|volta|estacionamento|perto roda uma parte; CEL=1 no celular em pé; SEMENTE=7 escolhe a rota
+node scripts/quintal.mjs /tmp/qt    # o quintal decorado, etapa 1 (docs/QUINTAL.md), só com ?bebito: ESCONDIDO (sem a chave, o computador de sempre), o COMPUTADOR (a área de trabalho, o Papita Delivery com as duas prateleiras e o retrato de cada peça, pedir paga da carteira e vai para o correio, sem dinheiro não compra, a pasta do laboratório levando ao laboratório), a ENCOMENDA (a caixa no portão, abrir põe no baú), COLOCAR (as ferramentas da garagem, as regras do quintal, as 14 peças e o fundo da garagem, a pegada e a altura medidas, o peso, a mesma imagem com e sem ?semFundir), ARRUMAR (recarregar, o modo de edição, guardar, a estufa sem nada do quintal) e o SAVE (sem cena é estufa, o a caminho sobrevive). SO=escondido|computador|encomenda|colocar|arrumar|save roda uma parte (computador→encomenda→colocar→arrumar em fila); CEL=1 no celular em pé
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha); SO=armario,estante roda so essas (peca de evento, como o carrinho-de-pocoes, abre a cena na fase dela); SEM_FUNDIR=1 mede antes da juncao (depois dela nao sobra caixa para medir)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso

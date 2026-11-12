@@ -286,7 +286,9 @@ canteiros redondos são sem graça; a árvore pode deixar". É o que está aqui:
   cimento ao lado da porta e a árvore florida. **O chão é grama limpa**
   (2026-11-12, pedido do Renan): os canteiros de casca e de pedrisco e as
   plantas deles saíram, porque o Ari vai DECORAR o quintal — o plano é
-  `docs/QUINTAL.md`. As plantas continuam no kit (`world/plantasDeJardim.ts`).
+  `docs/QUINTAL.md`, e a etapa 1 dele (o Papita Delivery no computador do
+  quarto e pôr no chão pelas ferramentas da garagem) já está atrás da mesma
+  chave. As plantas continuam no kit (`world/plantasDeJardim.ts`).
 - **A rua**: calçada de pedrinha, guia, asfalto com faixa — e a
   **vizinhança**: oito casinhas do mesmo molde, cada uma de uma cor (quatro
   deste lado, quatro do outro, de frente para cá), sebe na frente dos

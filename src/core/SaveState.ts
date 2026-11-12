@@ -428,7 +428,14 @@ function normalizarDecoracoes(bruto: unknown): DecoracaoNoSave[] {
     vistos.add(d.uid);
     const p = d.posta;
     const ok = p && [p.x, p.z, p.giro].every((n) => typeof n === 'number' && Number.isFinite(n));
-    lista.push({ uid: d.uid, id: d.id, posta: ok ? { x: p!.x, z: p!.z, giro: p!.giro } : null });
+    // (enfeite sem `cena` é de antes do quintal: estava na estufa)
+    const cena = p?.cena === 'quintal' ? 'quintal' : 'estufa';
+    const aCaminho = !ok && d.aCaminho === true;
+    lista.push({
+      uid: d.uid, id: d.id,
+      posta: ok ? { x: p!.x, z: p!.z, giro: p!.giro, cena } : null,
+      ...(aCaminho ? { aCaminho } : {}),
+    });
   }
   return lista;
 }

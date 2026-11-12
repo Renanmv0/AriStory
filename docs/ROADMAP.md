@@ -80,7 +80,10 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [ ] **Decorar o quintal da casa do Ari** (`docs/QUINTAL.md`): o decorador da
   estufa com mais lugares de pôr (chão, piso, parede, em cima, pendurado, de
   ponta a ponta), o catálogo do quintal, os móveis que fazem alguma coisa e a
-  loja — por enquanto só o plano, e o jardim limpo esperando
+  loja. Etapa 1 feita (escondida com o carro): a área de trabalho do
+  computador, o Papita Delivery, a encomenda no portão, as ferramentas da
+  garagem e o chão do quintal; faltam os pisos e caminhos, a árvore e a hera
+  móveis, a parede e o resto dos lugares, e os móveis de usar
 - [ ] **O Bebito Mobile e as viagens de carro** (`docs/BEBITO-MOBILE.md`): as
   demais rotas (etapa D) e, no fim, ligar a chave `BEBITO_MOBILE_NO_JOGO`
 - [ ] O caminho entre as casas (rua, ônibus, metrô)

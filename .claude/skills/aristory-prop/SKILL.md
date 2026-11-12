@@ -1539,6 +1539,38 @@ patas (a coreografia mora em `scenes/cozinhaDaLiz.ts`):
   e os riscos têm nome e ficam soltos): a vista da cantina caiu de 395 para
   333 desenhos por quadro, a mesma imagem.
 
+## O quintal decorado (`world/quintal.ts`, `world/decoracoesDoQuintal.ts`)
+
+A etapa 1 do `docs/QUINTAL.md`. Peças fixas da cena, no kit `world/quintal.ts`:
+
+- `caixaDeEncomenda(tamanho)` — a caixa do Papita Delivery: papelão de
+  quina macia, a junta das abas, a fita adesiva descendo pelas pontas e a
+  ETIQUETA em canvas (a batatinha sorrindo e o nome), na frente e no lado
+  `+X`. Mora AO LADO DO CAMINHO de lajes, a 2 m do muro: ao pé do pilar o
+  muro a escondia (a régua da câmera: 1,35 m de muro escondem 40 cm de caixa
+  até um metro e meio atrás dele).
+- `painelDeFerramentas()` — a placa de furinhos (eucatex) em canvas com
+  moldura de madeira com veio, a pá e a pazinha de lâmina extrudada, o
+  ancinho de dentes inclinados, a tesoura de poda abertinha, os ganchos, e a
+  prateleira de mão-francesa com o regador de lata torneado, os vasinhos de
+  barro empilhados e o barbante. Costas em `z = 0`. (A mão-francesa já
+  serrilhou: o braço é mais estreito que o montante, senão as duas faces de
+  lado coincidem — o `zfighting.mjs` mede a peça.)
+
+E os móveis do Papita (enfeites, pelo decorador — contrato da skill de
+enfeite), em `world/decoracoesDoQuintal.ts`:
+
+- `mesinhaBistro()` — o tampo e a coluna são TORNO (`LatheGeometry`: aba,
+  bojo, lábio, os anéis da coluna), os três pés em S e o arco do encosto são
+  TUBO por curva (`ferro()`), e o encosto tem duas volutas espirais; a
+  almofadinha é uma esfera achatada de trama;
+- `espreguicadeira()` — ripas de quina com veio (`uvEmMetrosPorTriangulo`),
+  o encosto inclinado num grupo próprio, as rodinhas na cabeceira, e o
+  colchonete com a listra (uma quina um fio maior por cima, sem face comum);
+- `guardaSol()` — a lona é um torno de perfil curvo, em gomos de cor
+  alternada POR VÉRTICE (`toNonIndexed` e a cor pelo ângulo do triângulo),
+  numa malha só; o babado é uma meia-lua por gomo; as varetas são tubos.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

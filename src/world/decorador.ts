@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { flat, translucido } from '../core/materials';
 import { PALETTE as P } from '../palette';
-import type { Collider, DecoracaoNoSave, GameAPI } from '../core/types';
+import type { CenaDeDecorar, Collider, DecoracaoNoSave, GameAPI } from '../core/types';
 import type { BotaoDoPosicionador } from '../minigames/jardim/tela';
 import type { WorldBuilder } from './WorldBuilder';
 import type { Interactable } from './Interactable';
 import { circuloEncosta } from './collision';
+import { fundir } from './fundir';
 import { decoracaoPorId, type FichaDeDecoracao } from './decoracoes';
 
 /**
@@ -59,8 +60,14 @@ export interface Cofre {
 }
 
 export interface RegrasDoLugar {
-  /** por que NÃO dá para pôr um enfeite de `raio` ali (a zona da cena), ou `null` */
-  proibido: (x: number, z: number, raio: number) => string | null;
+  /**
+   * por que NÃO dá para pôr um enfeite de `raio` ali (a zona da cena), ou
+   * `null`. A `ficha` vem junto para a cena que olha a ALTURA (o quintal: o
+   * que é alto não vai perto do muro do lado da câmera).
+   */
+  proibido: (x: number, z: number, raio: number, ficha?: FichaDeDecoracao) => string | null;
+  /** onde se pega de novo um enfeite guardado, para o toast ("pela lojinha") */
+  readonly ondeGuardar?: string;
 }
 
 /** um enfeite no chão, com o que o mundo sabe dele */
@@ -112,9 +119,11 @@ export class Decorador {
     private readonly w: WorldBuilder,
     private readonly regras: RegrasDoLugar,
     private readonly cofre: Cofre,
+    /** o lugar deste decorador: ele só monta (e só grava) os enfeites daqui */
+    readonly cena: CenaDeDecorar = 'estufa',
   ) {
     this.g = w.game;
-    for (const d of this.g.decoracoes()) if (d.posta) this.por(d.uid, decoracaoPorId(d.id), d.posta);
+    for (const d of this.g.decoracoes()) if (d.posta && (d.posta.cena ?? 'estufa') === cena) this.por(d.uid, decoracaoPorId(d.id), d.posta);
     w.onUpdate((dt) => {
       this.t += dt;
       // o que se mexe continua se mexendo — no chão e na mão
@@ -214,12 +223,14 @@ export class Decorador {
     this.aneis.delete(uid);
   }
 
+  /** no baú: comprados, já entregues e sem lugar (o baú é um só para os dois lugares) */
   guardadas(id: string): number {
-    return this.g.decoracoes().filter((d) => d.id === id && !d.posta).length;
+    return this.g.decoracoes().filter((d) => d.id === id && !d.posta && !d.aCaminho).length;
   }
 
+  /** no chão DESTE lugar */
   postas(id: string): number {
-    return this.g.decoracoes().filter((d) => d.id === id && d.posta).length;
+    return this.g.decoracoes().filter((d) => d.id === id && (d.posta?.cena ?? 'estufa') === this.cena && d.posta).length;
   }
 
   /** os enfeites no chão, em círculos — para quem passeia pela cena desviar */
@@ -249,7 +260,7 @@ export class Decorador {
 
   /** Entra no modo com um enfeite GUARDADO daquele tipo na mão. */
   colocar(id: string): boolean {
-    const d = this.g.decoracoes().find((k) => k.id === id && !k.posta);
+    const d = this.g.decoracoes().find((k) => k.id === id && !k.posta && !k.aCaminho);
     const ficha = decoracaoPorId(id);
     if (!d || !ficha || this.modo) return false;
     this.entrar(d.uid, ficha, null);
@@ -281,7 +292,7 @@ export class Decorador {
     this.tirar(uid);
     this.gravar(uid, null);
     this.g.som('menu');
-    this.g.toast(`${p.ficha.nome} ${p.ficha.artigo === 'a' ? 'guardada' : 'guardado'} — dá para pôr de novo pela lojinha`, p.ficha.icone);
+    this.g.toast(`${p.ficha.nome} ${p.ficha.artigo === 'a' ? 'guardada' : 'guardado'} — dá para pôr de novo ${this.regras.ondeGuardar ?? 'pela lojinha'}`, p.ficha.icone);
     // guardou o último: não sobra nada para arrumar
     if (this.edicao && this.postos.size === 0) this.pararDeEditar();
   }
@@ -357,7 +368,7 @@ export class Decorador {
     const longe = NA_FRENTE + m.ficha.raio;
     m.x = eu.x + Math.sin(f) * longe;
     m.z = eu.z + Math.cos(f) * longe;
-    m.motivo = this.porQueNao(m.x, m.z, m.ficha.raio);
+    m.motivo = this.porQueNao(m.x, m.z, m.ficha.raio, m.ficha);
     m.fantasma.position.set(m.x, 0, m.z);
     m.fantasma.rotation.y = m.giro;
     m.anel.position.set(m.x, 0.02, m.z);
@@ -385,8 +396,8 @@ export class Decorador {
   }
 
   /** `null` se cabe; senão, o porquê, em palavras de gente */
-  porQueNao(x: number, z: number, raio: number): string | null {
-    const daCena = this.regras.proibido(x, z, raio);
+  porQueNao(x: number, z: number, raio: number, ficha?: FichaDeDecoracao): string | null {
+    const daCena = this.regras.proibido(x, z, raio, ficha);
     if (daCena) return daCena;
     for (const p of this.postos.values()) {
       if (Math.hypot(x - p.peca.position.x, z - p.peca.position.z) < raio + p.ficha.raio) return 'em cima de outro enfeite';
@@ -401,7 +412,11 @@ export class Decorador {
 
   private por(uid: number, ficha: FichaDeDecoracao | undefined, onde: { x: number; z: number; giro: number }): void {
     if (!ficha) return;
-    const peca = this.w.add(this.w.place(ficha.monta(), onde.x, 0, onde.z, onde.giro));
+    // (o enfeite parado vira poucas malhas, uma por material — a mesma imagem
+    // com menos desenho; o que se mexe fica inteiro, porque a `anima` acha as
+    // partes dele pelo `userData`)
+    const montada = this.w.place(ficha.monta(), onde.x, 0, onde.z, onde.giro);
+    const peca = this.w.add(ficha.anima ? montada : fundir(montada));
     const colisor: Collider = { kind: 'circle', x: onde.x, z: onde.z, r: ficha.raio * 0.75 };
     if (!this.semCorpo) this.w.colliders.push(colisor);
     const de = ficha.artigo === 'a' ? 'na' : 'no';
@@ -457,7 +472,8 @@ export class Decorador {
     this.aoMudar?.();
   }
 
-  private gravar(uid: number, posta: DecoracaoNoSave['posta']): void {
+  private gravar(uid: number, onde: { x: number; z: number; giro: number } | null): void {
+    const posta: DecoracaoNoSave['posta'] = onde ? { x: onde.x, z: onde.z, giro: onde.giro, cena: this.cena } : null;
     this.g.salvarDecoracoes(this.g.decoracoes().map((d) => (d.uid === uid ? { ...d, posta } : d)));
   }
 }

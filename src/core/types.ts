@@ -10,6 +10,7 @@ import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
   EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
+import type { ConteudoDoBau, ConteudoDoComputador, SaidaDoBau, SaidaDoComputador } from '../ui/painelDoQuintal';
 import type { EstiloDeRegador } from '../world/regador';
 import type { MemoriaPintada } from '../world/memoriasData';
 import type { FichaDoBebitoMobile } from '../world/bebitoMobile/ficha';
@@ -59,7 +60,23 @@ export interface DecoracaoNoSave {
   readonly uid: number;
   /** o id da ficha em `world/decoracoes.ts` */
   readonly id: string;
-  readonly posta: { readonly x: number; readonly z: number; readonly giro: number } | null;
+  readonly posta: PostaNoSave | null;
+  /**
+   * COMPRADO E AINDA NO CORREIO (o Papita Delivery, `docs/QUINTAL.md`): não
+   * está no baú nem no chão até a dupla abrir a encomenda no portão.
+   */
+  readonly aCaminho?: boolean;
+}
+
+/** os lugares que se decoram: a estufa da Josefina e o quintal da casa do Ari */
+export type CenaDeDecorar = 'estufa' | 'quintal';
+
+export interface PostaNoSave {
+  readonly x: number;
+  readonly z: number;
+  readonly giro: number;
+  /** em que lugar o enfeite está; save antigo não tem, e é a estufa */
+  readonly cena?: CenaDeDecorar;
 }
 
 export interface Bounds {
@@ -687,6 +704,14 @@ export interface GameAPI {
    * quando fecha, dizendo se a dupla foi provar roupa ou colocar um enfeite.
    */
   abrirLojaDaJosefina(conteudo: ConteudoDaLoja, agir: (a: AcaoNaLoja) => ConteudoDaLoja): Promise<SaidaDaLoja>;
+  /**
+   * A TELA DO COMPUTADOR DO QUARTO (`docs/QUINTAL.md`): a área de trabalho com
+   * a pasta do laboratório e o Papita Delivery. `pedir` compra uma unidade e
+   * devolve o conteúdo novo; resolve quando ela fecha (ou abre o laboratório).
+   */
+  abrirComputador(conteudo: ConteudoDoComputador, pedir: (id: string) => ConteudoDoComputador): Promise<SaidaDoComputador>;
+  /** O baú das ferramentas da garagem: colocar um enfeite guardado ou arrumar o quintal. */
+  abrirBauDoQuintal(conteudo: ConteudoDoBau): Promise<SaidaDoBau>;
   /**
    * A barra do modo de decorar (o enfeite na mão, se cabe, e os botões de
    * girar, colocar e cancelar). `null` esconde. A cena chama todo quadro.

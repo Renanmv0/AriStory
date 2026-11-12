@@ -19,6 +19,11 @@ import { BEBITO_MOBILE, BebitoMobile } from '../world/bebitoMobile/BebitoMobile'
 import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/bebitoMobile/presente';
 import { sairDeCarro } from '../eventos/bebitoMobile/partida';
 import { FLAG_DO_CARRO_NO_PARQUE } from '../eventos/BebitoMobile';
+import { Decorador, type Cofre, type RegrasDoLugar } from '../world/decorador';
+import type { FichaDeDecoracao } from '../world/decoracoes';
+import { VENTO_DO_QUINTAL } from '../world/decoracoesDoQuintal';
+import { caixaDeEncomenda, painelDeFerramentas } from '../world/quintal';
+import { abrirAEncomenda, conteudoDoBau, encomendasACaminho } from '../eventos/quintal';
 
 /**
  * A FRENTE DA CASA DO ARI: o jardim e a garagem.
@@ -340,6 +345,105 @@ export const frenteDaCasa: SceneDef = {
       w.onUpdate((dt) => {
         c.position.x += vento * dt;
         if (c.position.x > 62) c.position.x = -62;
+      });
+    }
+
+    // ------------------------------------------------------ o quintal decorado
+    /*
+     * O QUINTAL DECORADO (`docs/QUINTAL.md`): o MESMO decorador da estufa, com
+     * as regras daqui. O que se põe vem do baú, e o baú enche pelo correio (o
+     * Papita Delivery, no computador do quarto). Pôr e arrumar é pelas
+     * ferramentas da garagem — "pelas ferramentas na garagem para editar as
+     * decorações", o Renan.
+     */
+    const traseiraDoCarro = VAGA.z - BEBITO_MOBILE.comprimento / 2;
+    const FERRAMENTAS = { x: -3.95, z: GAR.z0 + 0.13 };
+    const alturas = new Map<string, number>();
+    /** a altura de um enfeite, medida do modelo uma vez só */
+    const altoDe = (ficha: FichaDeDecoracao): number => {
+      let alto = alturas.get(ficha.id);
+      if (alto === undefined) {
+        const peca = ficha.monta();
+        alto = new THREE.Box3().setFromObject(peca).max.y;
+        peca.traverse((o) => (o as THREE.Mesh).geometry?.dispose());
+        alturas.set(ficha.id, alto);
+      }
+      return alto;
+    };
+    const dentro = (x: number, z: number, r: number, x0: number, x1: number, z0: number, z1: number): boolean =>
+      x - r >= x0 && x + r <= x1 && z - r >= z0 && z + r <= z1;
+    const regrasDoQuintal: RegrasDoLugar = {
+      ondeGuardar: 'pelas ferramentas da garagem',
+      proibido: (x, z, r, ficha) => {
+        const noJardim = dentro(x, z, r, JARDIM.x0 + E / 2 + 0.04, JARDIM.x1 - E / 2 - 0.04, CASA.z + 0.08, zMuro - E / 2 - 0.04);
+        // o fundo da garagem, atrás do carro e fora do corredor das ferramentas
+        const naGaragem = dentro(x, z, r, GAR.x0 + 0.16, FERRAMENTAS.x - 0.75, GAR.z0 + 0.16, traseiraDoCarro - 0.3);
+        if (!noJardim && !naGaragem) return 'fora do quintal';
+        if (noJardim) {
+          // o caminho de lajes (da porta ao portão) e o ramal até a passagem da mureta
+          if (Math.abs(x - CASA.x) < 0.75 + r + 0.06) return 'no caminho de lajes';
+          if (x < CASA.x && Math.abs(z - (PASSAGEM.z0 + PASSAGEM.z1) / 2) < 0.6 + r) return 'no caminho da garagem';
+          if (Math.hypot(x - PORTAO.x, z - zMuro) < 1.5 + r) return 'na frente do portão';
+          // o que é ALTO fica longe dos muros do lado da câmera: senão tapa o quintal
+          if (ficha && altoDe(ficha) > 1.3 && (zMuro - z < 2.3 || JARDIM.x1 - x < 2.3)) return 'alto demais perto do muro';
+        }
+        return null;
+      },
+    };
+    const reais: Cofre = {
+      saldo: () => g.carteira(),
+      gastar: (n) => g.gastar(n),
+      escrever: (n) => `R$ ${n}`,
+      icone: '💰',
+    };
+    const decorador = new Decorador(w, regrasDoQuintal, reais, 'quintal');
+    // (os testes acham o decorador por aqui, como na estufa)
+    w.root.userData.decorador = decorador;
+    w.onUpdate((dt) => VENTO_DO_QUINTAL.tique(dt));
+
+    // AS FERRAMENTAS DA GARAGEM: o painel na parede do fundo, ao lado do carro
+    const painel = w.add(fundir(w.place(painelDeFerramentas(), FERRAMENTAS.x, 0, FERRAMENTAS.z)));
+    w.blockBox(FERRAMENTAS.x, FERRAMENTAS.z + 0.18, 0.66, 0.2);
+    w.interact({
+      id: 'frente:ferramentas',
+      x: FERRAMENTAS.x, z: FERRAMENTAS.z + 0.95, radius: 1.3,
+      label: 'Decorar o quintal', icon: '🧰',
+      highlight: painel,
+      onInteract: async () => {
+        if (decorador.ocupado) return;
+        const saida = await g.abrirBauDoQuintal(conteudoDoBau(g));
+        if (saida?.tipo === 'colocar') decorador.colocar(saida.id);
+        else if (saida?.tipo === 'editar') decorador.editar();
+      },
+    });
+
+    /*
+     * A ENCOMENDA DO PAPITA: o que foi pedido no computador espera numa caixa
+     * de papelão ao lado do caminho de lajes, logo depois do portão. (Ao pé do
+     * pilar ela sumia: 1,35 m de muro do lado da câmera escondem uma caixa de
+     * 40 cm até um metro e meio atrás dele.) Abrir põe tudo no baú.
+     */
+    if (encomendasACaminho(g) > 0) {
+      const quantas = encomendasACaminho(g);
+      const ENCOMENDA = { x: CASA.x + 1.2, z: zMuro - 2.0 };
+      const caixa = w.add(fundir(w.place(caixaDeEncomenda(quantas > 3 ? 1.25 : 1), ENCOMENDA.x, 0, ENCOMENDA.z, -0.35)));
+      const colisor: Collider = { kind: 'circle', x: ENCOMENDA.x, z: ENCOMENDA.z, r: 0.36 };
+      w.colliders.push(colisor);
+      const ponto = w.interact({
+        id: 'frente:encomenda',
+        x: ENCOMENDA.x, z: ENCOMENDA.z, radius: 1.4,
+        label: 'Abrir a encomenda', icon: '📦',
+        highlight: caixa,
+        priority: 2,
+        onInteract: async () => {
+          const chegou = abrirAEncomenda(g);
+          g.som('pegar');
+          w.root.remove(caixa);
+          w.colliders.splice(w.colliders.indexOf(colisor), 1);
+          ponto.enabled = false;
+          const lista = chegou.length > 3 ? `${chegou.slice(0, 3).join(', ')} e mais ${chegou.length - 3}` : chegou.join(', ');
+          await g.say([`Chegou do Papita Delivery: ${lista}.`, 'Foi tudo para as ferramentas da garagem.'], g.companionName());
+        },
       });
     }
 

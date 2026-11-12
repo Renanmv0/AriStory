@@ -43,6 +43,7 @@ import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
   EstadoDoPosicionador, FimDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
+import type { ConteudoDoBau, ConteudoDoComputador, SaidaDoBau, SaidaDoComputador } from '../ui/painelDoQuintal';
 import { Oclusao, type VigiaDaOclusao } from './Oclusao';
 import { PosProcessamento, type EfeitosDeTela } from './posProcessamento';
 import { Apontador } from './Apontador';
@@ -541,6 +542,7 @@ export class Game implements GameAPI {
       this.ui.livroOpen ||
       this.ui.fimOpen ||
       this.ui.lojaJosefinaOpen ||
+      this.ui.quintalOpen ||
       this.ui.apostilaOpen ||
       this.ui.bebitoOpen ||
       this.transitioning;
@@ -581,6 +583,8 @@ export class Game implements GameAPI {
     if (this.ui.fimOpen && this.input.justPressed('Escape')) this.ui.fecharFim();
     // a banca da Josefina trava o movimento como a arara, e sai pela mesma tecla
     if (this.ui.lojaJosefinaOpen && this.input.justPressed('Escape')) this.ui.fecharLojaDaJosefina();
+    // o computador do quarto e o baú da garagem também
+    if (this.ui.quintalOpen && this.input.justPressed('Escape')) this.ui.fecharQuintal();
     // a apostila é leitura e exercício: o Escape fecha, e quem esperava por ela (a aula) segue
     if (this.ui.apostilaOpen && this.input.justPressed('Escape')) this.ui.fecharApostila();
     // o caderninho da barraca também: o Escape fecha a capa, e a cena segue
@@ -733,7 +737,7 @@ export class Game implements GameAPI {
       this.ui.dialogueOpen || this.ui.journalOpen || this.ui.mochilaOpen || this.ui.armarioOpen ||
       this.ui.memoriasOpen || this.ui.cardapioOpen || this.ui.quadroOpen || this.ui.lojaOpen ||
       this.ui.cartasOpen || this.ui.livroOpen || this.ui.fimOpen || this.ui.lojaJosefinaOpen ||
-      this.ui.apostilaOpen || this.ui.xadrezOpen || this.ui.bebitoOpen;
+      this.ui.apostilaOpen || this.ui.xadrezOpen || this.ui.bebitoOpen || this.ui.quintalOpen;
     this.apontador.atualizar(camera, world.clicaveis, ocupado);
 
     if (this.pos?.ativo) this.pos.desenhar(camera, dt);
@@ -1897,6 +1901,14 @@ export class Game implements GameAPI {
   abrirLojaDaJosefina(conteudo: ConteudoDaLoja, agir: (a: AcaoNaLoja) => ConteudoDaLoja): Promise<SaidaDaLoja> {
     // o retrato de cada enfeite é o próprio modelo, fotografado na hora (e guardado)
     return this.ui.abrirLojaDaJosefina(conteudo, retratoDaDecoracao, agir);
+  }
+
+  abrirComputador(conteudo: ConteudoDoComputador, pedir: (id: string) => ConteudoDoComputador): Promise<SaidaDoComputador> {
+    return this.ui.abrirComputador(conteudo, retratoDaDecoracao, pedir);
+  }
+
+  abrirBauDoQuintal(conteudo: ConteudoDoBau): Promise<SaidaDoBau> {
+    return this.ui.abrirBauDoQuintal(conteudo, retratoDaDecoracao);
   }
 
   posicionador(estado: EstadoDoPosicionador | null, aoBotao?: (b: BotaoDoPosicionador) => void): void {

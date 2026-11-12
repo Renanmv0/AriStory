@@ -2895,6 +2895,25 @@ export const PALETTE = {
   heraClara: 0x7cc45a,
   cascaDePinus: 0x8a6244,
   pedriscoBranco: 0xf0ede6,
+  // O QUINTAL DECORADO (`docs/QUINTAL.md`): os móveis do Papita Delivery
+  // (`world/decoracoesDoQuintal.ts`) e as peças do correio e da garagem
+  quintalFerro: 0x4f7a62, // o ferro pintado de verde-sálvia da mesinha bistrô
+  quintalAlmofadaBistro: 0xf6d77a, // a almofadinha amarela das cadeiras
+  quintalMadeira: 0xc98d55, // a madeira clara da espreguiçadeira (o veio vem do canvas)
+  quintalAlmofada: 0xf3eadb, // o colchonete de lona cru
+  quintalAlmofadaListra: 0x6fb3c9, // e a listra azul-piscina dele
+  quintalLona: 0xf7f1e3, // o guarda-sol: os gomos claros…
+  quintalLonaListra: 0xe9876f, // …e os de terracota, alternados
+  quintalBaseDoGuardaSol: 0xb9b3a8,
+  papelao: 0xc9a06a, // a caixa da encomenda
+  papelaoEscuro: 0xa57d4c,
+  fitaAdesiva: 0xe8d9a8,
+  papitaAmarelo: 0xffd25a, // a etiqueta do Papita Delivery
+  papitaVerde: 0x4fae6a,
+  ferramentaCabo: 0xb7834e, // os cabos de madeira das ferramentas da garagem
+  ferramentaMetal: 0x9aa3ab,
+  ferramentaVerde: 0x5fae6e, // o cabo de plástico verde da tesoura e da pazinha
+  painelDeFuros: 0xd9c9a8, // o painel de furinhos das ferramentas
   // a estrada da viagem de carro (`world/estrada.ts`)
   placaVerso: 0x8d949c,
   coneLaranja: 0xf28a2e,

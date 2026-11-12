@@ -198,6 +198,45 @@ Os PRÊMIOS da estufa (a plaquinha das 5 ondas, o regador de ouro das 30) não
 são enfeites de loja: são peças do kit (`props.ts`) que a cena monta por
 flag. Enfeite de loja se compra, se põe e se guarda; prêmio fica no lugar dele.
 
+## O quintal da casa do Ari (o mesmo decorador, outro lugar)
+
+Desde a etapa 1 do `docs/QUINTAL.md`, o decorador mora em DOIS lugares: a
+estufa e o quintal (`frente-da-casa`, escondido atrás da chave do Bebito
+Mobile). O que mudou, e que vale para enfeite novo:
+
+- `new Decorador(w, regras, cofre, cena)` — o 4º argumento é o lugar
+  (`'estufa'` se faltar). Ele só monta e só grava os enfeites dali; o save
+  guarda `posta.cena` (sem ela, é estufa: save antigo).
+- **A ficha diz onde pode ir** (`cenas`): sem o campo, vai aos dois — o que
+  a Josefina vende é enfeite de jardim, e cabe no quintal também. O do
+  quintal diz `cenas: ['quintal']`.
+- **O que se vende para o quintal é do Papita Delivery**, em REAIS, e mora
+  em `world/decoracoesDoQuintal.ts` (`DECORACOES_DO_QUINTAL`, com `reais` e
+  `categoria: 'plantas' | 'moveis'`), não em `DECORACOES`. O contrato da peça
+  é o mesmo daqui. `decoracaoPorId` acha nos dois catálogos. Peça nova do
+  quintal: uma função e uma entrada lá; o app do computador, o baú das
+  ferramentas, o retrato e o save leem tudo de lá.
+- **Planta do quintal** sai do kit (`world/plantasDeJardim.ts`), num lote de
+  um pé só, dentro do `canteirinho()` de casca (decalque de beira torta,
+  `renderOrder` 3 — o `quintal.mjs` não conta o decalque na pegada). A que
+  balança usa o `VENTO_DO_QUINTAL`, que a cena faz andar.
+- **O quintal olha a ALTURA**: o que passa de 1,3 m não vai a menos de
+  2,3 m do muro da frente nem do da direita (os do lado da câmera). O
+  guarda-sol é a exceção da pegada: `raio` é o pé (a lona cobre o vizinho de
+  propósito — a mesinha embaixo dele).
+- **O enfeite parado passa pela `fundir()`** quando o decorador o põe no
+  chão (nos dois lugares); o que tem `anima` fica inteiro, porque ela acha as
+  partes pelo `userData`. Peça que se mexe e quer ser leve: marque o pivô com
+  NOME (`fundir` respeita grupo com nome) — mas aí a `anima` precisa ser
+  testada com a peça fundida.
+- `RegrasDoLugar.proibido(x, z, raio, ficha)` recebe a ficha (para a
+  altura), e `ondeGuardar` muda o fim do toast de guardar ("pelas
+  ferramentas da garagem").
+
+Validar o do quintal: `node scripts/quintal.mjs /tmp/qt` (a pegada e a altura
+de cada peça medidas no mundo, as regras, o peso e a mesma imagem com e sem
+`?semFundir`).
+
 ## Validar
 
 ```bash

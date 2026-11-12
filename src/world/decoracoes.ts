@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { brilhoDeLuz, luzNoChao, toon } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { retratoDe } from './retrato';
+import type { CenaDeDecorar } from '../core/types';
+import { DECORACOES_DO_QUINTAL } from './decoracoesDoQuintal';
 
 /**
  * OS ENFEITES DA ESTUFA — o que a lojinha da Josefina vende na aba de
@@ -58,6 +60,19 @@ export interface FichaDeDecoracao {
    * partes que giram em `userData`, e é por lá que a função as acha.
    */
   readonly anima?: (peca: THREE.Object3D, t: number) => void;
+  /**
+   * ONDE ELE PODE IR (`docs/QUINTAL.md`). Sem o campo, os dois lugares: o que
+   * a Josefina vende é enfeite de jardim e vai também para o quintal. O que o
+   * Papita Delivery vende diz `['quintal']`.
+   */
+  readonly cenas?: readonly CenaDeDecorar[];
+  /** o preço em REAIS (o Papita Delivery); o da Josefina é em girassóis */
+  readonly reais?: number;
+}
+
+/** se este enfeite pode ser posto neste lugar */
+export function podeIrPara(ficha: FichaDeDecoracao, cena: CenaDeDecorar): boolean {
+  return (ficha.cenas ?? ['estufa', 'quintal']).includes(cena);
 }
 
 // ------------------------------------------------------------ a luz
@@ -1062,8 +1077,9 @@ export const DECORACOES: readonly FichaDeDecoracao[] = ([
   },
 ] as FichaDeDecoracao[]).sort((a, b) => a.onda - b.onda || a.girassois - b.girassois);
 
+/** a ficha de qualquer enfeite, da Josefina ou do Papita Delivery */
 export function decoracaoPorId(id: string): FichaDeDecoracao | undefined {
-  return DECORACOES.find((d) => d.id === id);
+  return DECORACOES.find((d) => d.id === id) ?? DECORACOES_DO_QUINTAL.find((d) => d.id === id);
 }
 
 /** o retrato do enfeite para o cartão da loja (o próprio modelo, fotografado e guardado) */

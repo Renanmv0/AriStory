@@ -131,6 +131,18 @@ ruído. Qualquer outro erro de console é erro de verdade.
   por ESTADO; as teclas de verdade são conferidas à parte, cada uma até o
   efeito acontecer (`waitForFunction`).
 
+- **Medir peça de enfeite instanciada**: a pegada lida da geometria pura
+  sai errada no lote de planta (`InstancedMesh`): cada cópia vale pela
+  matriz dela (`getMatrixAt` e depois a `matrixWorld`). O `quintal.mjs` faz
+  assim; a primeira versão mediu a hortênsia com 1 m e o agave com 10 cm.
+- **A regra de ouro, medida**: a mesma vista com e sem `?semFundir`,
+  fotografada e comparada pixel a pixel NO navegador (`createImageBitmap` e
+  `getImageData` sobre os dois PNG) — ver a parte `colocar` do `quintal.mjs`.
+  Só no computador: no celular o joystick e as dicas mudam de uma carga para
+  outra.
+- **Painel de HTML com texto digitado** (a fala, a pergunta): o texto vem
+  letra a letra; espere ~2 s ou espere pelo texto inteiro antes de ler.
+
 ## Checklist antes de fechar
 
 - [ ] `npm run typecheck` limpo

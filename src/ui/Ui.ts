@@ -6,6 +6,7 @@ import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
 import { Arsenal } from './arsenal';
 import { EscalaDoWalter, type ConteudoDaEscala } from './escalaDoWalter';
 import { LojaDaJosefina } from './lojaDaJosefina';
+import { PainelDoQuintal, type ConteudoDoBau, type ConteudoDoComputador, type SaidaDoBau, type SaidaDoComputador } from './painelDoQuintal';
 import { Apostila, type PedidoDaApostila } from './apostila';
 import { BebitoBook, type PedidoDoBebitoBook, type ResultadoDoBebitoBook } from './bebitoBook';
 import type { ResultadoDaApostila } from '../minigames/aula/tipos';
@@ -157,6 +158,7 @@ export class Ui {
   private readonly escala: EscalaDoWalter;
   private readonly telaDoFim: TelaDoFim;
   private readonly lojaDaJosefina: LojaDaJosefina;
+  private readonly painelDoQuintal: PainelDoQuintal;
   /** a apostila da aula do Gatito: o livro de folhear (`apostila.ts`) */
   private readonly apostila: Apostila;
   /** o caderninho dos planos da barraca (`bebitoBook.ts`) */
@@ -414,6 +416,7 @@ export class Ui {
       <div class="livro-de-cartas arsenal"></div>
       <div class="fim-do-jardim"></div>
       <div class="loja-da-josefina"></div>
+      <div class="painel-do-quintal"></div>
       <div class="apostila"></div>
       <div class="bebito-book"></div>
       <div class="posicionador" role="toolbar"></div>
@@ -501,6 +504,8 @@ export class Ui {
     this.telaDoFim.som = (nome) => this.som?.(nome);
     this.lojaDaJosefina = new LojaDaJosefina(ui.querySelector('.loja-da-josefina')!);
     this.lojaDaJosefina.som = (nome) => this.som?.(nome);
+    this.painelDoQuintal = new PainelDoQuintal(ui.querySelector('.painel-do-quintal')!);
+    this.painelDoQuintal.som = (nome) => this.som?.(nome);
     this.apostila = new Apostila(ui.querySelector('.apostila')!);
     this.apostila.som = (nome) => this.som?.(nome);
     this.bebitoBook = new BebitoBook(ui.querySelector('.bebito-book')!);
@@ -765,7 +770,7 @@ export class Ui {
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
       this.memoriasOpen || this.cardapioOpen || this.xadrezOpen ||
       this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen ||
-      this.lojaJosefinaOpen || this.apostilaOpen || this.bebitoOpen,
+      this.lojaJosefinaOpen || this.apostilaOpen || this.bebitoOpen || this.quintalOpen,
     );
   }
 
@@ -1370,6 +1375,36 @@ export class Ui {
 
   fecharLojaDaJosefina(): void {
     this.lojaDaJosefina.fechar();
+  }
+
+  // ---------------------- o computador do quarto e o baú da garagem (o quintal)
+
+  get quintalOpen(): boolean {
+    return this.painelDoQuintal.aberto;
+  }
+
+  abrirComputador(
+    conteudo: ConteudoDoComputador, retrato: (id: string) => string, pedir: (id: string) => ConteudoDoComputador,
+  ): Promise<SaidaDoComputador> {
+    const pedido = this.painelDoQuintal.abrirComputador(conteudo, retrato, pedir);
+    this.marcarTelaAberta();
+    return pedido.then((saida) => {
+      this.marcarTelaAberta();
+      return saida;
+    });
+  }
+
+  abrirBauDoQuintal(conteudo: ConteudoDoBau, retrato: (id: string) => string): Promise<SaidaDoBau> {
+    const pedido = this.painelDoQuintal.abrirBau(conteudo, retrato);
+    this.marcarTelaAberta();
+    return pedido.then((saida) => {
+      this.marcarTelaAberta();
+      return saida;
+    });
+  }
+
+  fecharQuintal(): void {
+    this.painelDoQuintal.fechar();
   }
 
   /**
