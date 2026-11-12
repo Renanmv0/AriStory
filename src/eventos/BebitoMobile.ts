@@ -80,12 +80,13 @@ export const FLAG_DO_CARRO_NO_PARQUE = 'bebito:carro-no-parque';
  * deitados e a visão do passageiro na viagem, com o piloto automático.
  *
  * Tem a PRÓPRIA chave, e não a do carro: a chave do carro está ligada desde
- * 2026-11-12 (o Ari já joga com ele), então tudo o que se acrescenta por cima
- * entra desligado até o Renan olhar. `?carroPorDentro` liga só para ver e
- * testar (use junto de `?bebito`, o save de teste); `?semCarroPorDentro`
- * força desligado.
+ * 2026-11-12 (o Ari já joga com ele), então o que se acrescenta por cima nasceu
+ * desligado. LIGADA em 2026-11-12 a pedido do Renan ("quero as mudanças no jogo"),
+ * antes de rodar as últimas checagens (a de "Viajar" de dentro do carro e a da
+ * estrada sem a chave). `?carroPorDentro` liga na marra e `?semCarroPorDentro`
+ * força desligado (para os testes do "escondido").
  */
-export const CARRO_POR_DENTRO_NO_JOGO = false;
+export const CARRO_POR_DENTRO_NO_JOGO = true;
 
 /** o carro por dentro existe nesta página? (o carro ligado, e a chave dele ou `?carroPorDentro`) */
 export function carroPorDentroNestaPagina(): boolean {

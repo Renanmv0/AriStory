@@ -282,9 +282,9 @@ lado da rua do ônibus, onde o carro para (a área de andar do parque só
 passa da rua com a chave ligada).
 `BEBITO-MOBILE-DENTRO.md` é o plano (e o mapa do que foi feito) da etapa D, parte 1:
 o carro POR DENTRO — entrar na garagem pela porta que gira, descansar com os bancos
-deitados e a visão do passageiro na viagem com o piloto automático. Está FEITO, atrás
-da chave PRÓPRIA `CARRO_POR_DENTRO_NO_JOGO = false` (a do carro está ligada; esta só
-liga com o aval do Renan): `?bebito&carroPorDentro` mostra, `?semCarroPorDentro` desliga.
+deitados e a visão do passageiro na viagem com o piloto automático. Está FEITO e NO JOGO
+(chave PRÓPRIA `CARRO_POR_DENTRO_NO_JOGO = true`, ligada em 2026-11-12 a pedido do Renan):
+`?semCarroPorDentro` desliga para comparar; `?carroPorDentro` liga na marra.
 `ESTACIONAMENTO.md` é o plano (só ANOTADO, o Renan pediu para não fazer agora) do
 guarda do estacionamento do Villa Lobos: a cancela com animação de entrada, o
 fiscal que se preocupa se a gente é bom motorista e as recompensas para o carro

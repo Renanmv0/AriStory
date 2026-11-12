@@ -16,13 +16,16 @@
    **interações fofas**, olhando de um lado para o outro **enquanto o carro
    dirige sozinho**.
 
-**Estado (2026-11-12): D1 a D5 FEITAS, atrás de uma chave PRÓPRIA, DESLIGADA.**
+**Estado (2026-11-12): D1 a D5 FEITAS e NO JOGO (a chave própria foi LIGADA a pedido do Renan).**
 
-A chave do carro está ligada desde 2026-11-12 (o Ari já joga com ele), então o
-carro por dentro NÃO entra de surpresa no save de verdade: tem a própria chave,
-`CARRO_POR_DENTRO_NO_JOGO = false` em `src/eventos/BebitoMobile.ts`. Para ver:
+O carro por dentro tem a própria chave, `CARRO_POR_DENTRO_NO_JOGO` em
+`src/eventos/BebitoMobile.ts`, nascida desligada e **ligada em 2026-11-12** (o Renan:
+"quero as mudanças no jogo"), SEM rodar antes duas checagens que ficaram faltando: o
+"Viajar" de dentro do carro com cada resposta de "Quem dirige?" (`SO=viajar` de
+`scripts/carroPorDentro.mjs`) e a estrada sem a chave (`SO=semChave`) — rode-as. Para ver
+no save de teste (ou desligar para comparar): `?semCarroPorDentro`. Antes, para ver:
 **`?bebito&carroPorDentro`** (o save de teste do carro: ele já tem o carro na garagem se a quest do presente foi jogada ali; num save de teste novo, `&licoes=10` conclui as lições e é só dormir na cama para começar a quest).
-Para pôr no jogo do Ari: trocar a chave para `true` — só com o aval do Renan.
+Para tirar do jogo: trocar a chave para `false`.
 
 O que a porta nova mudou NO MODELO vale para todos (a porta do motorista é um
 grupo à parte), mas fechada é a mesma imagem de antes: conferido por foto de
