@@ -72,7 +72,7 @@ const abrir = async (page, query) => {
 };
 const naEstrada = (page) => page.waitForFunction(() => window.jogo.idDaCena === 'viagem-de-carro' && !!window.aristoryBebitoMobile.viagem.estado, null, { timeout: 60000 });
 const estado = (page) => page.evaluate(() => ({ ...window.aristoryBebitoMobile.viagem.estado }));
-const viagem = (page, mexe) => page.evaluate((m) => Object.assign(window.aristoryBebitoMobile.viagem, m), mexe);
+const viagem = (page, mexe) => page.evaluate((m) => { Object.assign(window.aristoryBebitoMobile.viagem, m); }, mexe); // (sem devolver o objeto: ele guarda a câmera de dentro, e serializar o jogo inteiro estoura a memória do teste)
 const comOCarro = (page) => page.evaluate(() => {
   for (const f of ['bebito:surpresa', 'bebito:renan-saiu', 'bebito:ganhou']) window.jogo.setFlag(f);
 });

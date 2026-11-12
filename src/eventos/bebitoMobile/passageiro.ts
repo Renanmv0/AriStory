@@ -82,7 +82,10 @@ async function jogarNoCelular(p: PalcoDoPassageiro): Promise<void> {
   const { g, camera, celular, esperar } = p;
   await g.say(['Calma, só mais uma partida de Brawl Stars…'], g.playerName());
   celular.mostrar(true);
-  camera.anexar(celular.group, { direita: 0, baixo: 0.17, frente: 0.4 });
+  // (no celular em pé o campo de visão na horizontal é estreito: o celular, deitado, cabe se for menor)
+  const emPe = typeof window !== 'undefined' && window.innerWidth / window.innerHeight < 0.8;
+  celular.group.scale.setScalar(emPe ? 0.48 : 0.72);
+  camera.anexar(celular.group, { direita: 0, baixo: emPe ? 0.2 : 0.17, frente: 0.4 });
   celular.placar = 0;
   // o olhar desce para o celular (o pescoço volta para o repouso)
   camera.giro = 0;
