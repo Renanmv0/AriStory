@@ -192,12 +192,104 @@ export function prepararOCarroPorDentro(w: WorldBuilder, palco: PalcoDoCarro): C
         continue;
       }
       if (i === 1) {
-        // o descanso (a D3) entra aqui
+        // o descanso: só volta aqui se ficou no carro (descer acaba tudo)
+        const desceu = await descansar();
+        if (desceu) return;
         continue;
       }
       await descer();
       return;
     }
+  };
+
+  // ============================================================== descansar
+  /** os dois no banco (sentados), como antes de deitar */
+  const sentarOsDois = (): void => {
+    g.setLying(false);
+    g.ridePlayer(carro.assentos.motorista, ACIMA, 1, 0);
+    g.rideCompanion(carro.assentos.passageiro, ACIMA, 1, 0);
+    g.poseNoCarro('jogador', 'dirigindo', 0);
+    g.poseNoCarro('parceiro', 'passageiro');
+  };
+
+  /**
+   * DESCANSAR (a D3): os encostos da frente deitam e viram a cama, os dois
+   * deitam lado a lado de barriga para cima (a câmera é a de quem joga, olhando o
+   * teto), com o rádio baixinho; uma conversa curta sobre aonde levar o
+   * Bebito Mobile; e depois o menu: cochilar, ou sair do carro. O teto fica
+   * FECHADO (a garagem é coberta, e o Renan quis só o bate-papo e o rádio).
+   * Devolve `true` se saíram do carro, `false` se voltaram ao banco.
+   */
+  const descansar = async (): Promise<boolean> => {
+    const nome = g.playerName();
+    const outro = g.companionName();
+    olhandoEmVolta = false;
+    g.som('portaDoBebito');
+    // 1. os encostos deitam, com eles ainda sentados (o encosto cai para trás, para longe deles)
+    carro.deitarEncostos(1);
+    await esperar(1.5);
+    // 2. e deitam: lado a lado na cama (o jogador do lado do motorista, `+X`)
+    g.poseNoCarro('jogador', null);
+    g.poseNoCarro('parceiro', null);
+    g.ridePlayer(carro.cama, new V(0.4, 0, 0), 1, 0);
+    g.rideCompanion(carro.cama, new V(-0.4, 0, 0), 1, 0);
+    g.setLying(true);
+    camera.deitar(true);
+    g.trocarMusica('danca-lenta');
+    await esperar(1.0);
+    olhandoEmVolta = true;
+
+    // 3. a conversa curta: aonde viajar com o Bebito Mobile (as palavras são minhas, provisórias)
+    const primeira = !g.flag('bebito:descansou-no-carro');
+    await g.say(['Bebito… pra onde a gente leva o Bebito Mobile primeiro?'], nome);
+    await g.say(['Pro Villa Lobos! Tem a roda gigante, o lago… e o Mano de sorvete.'], outro);
+    await g.say(['E depois o clube. E a escola do Gatito!'], nome);
+    await g.say(['A gente vai em todo lugar. Esse carro é a nossa casinha com rodas.'], outro);
+    if (primeira) {
+      g.setFlag('bebito:descansou-no-carro');
+      g.unlock({
+        id: 'descansamos-no-bebito-mobile',
+        title: 'Descansamos no Bebito Mobile',
+        place: 'Garagem de casa',
+        note: 'Deitamos os bancos do Bebito Mobile ainda na garagem, com o rádio baixinho, e ficamos conversando de pra onde a gente ia levar ele primeiro. Esse carro já é a nossa casinha com rodas.',
+        icon: '🚙',
+      });
+    }
+    g.bump('bebito:descansos');
+
+    // 4. cochilar quantas vezes quiser, ou sair do carro
+    for (;;) {
+      const i = await g.ask('E agora?', ['Cochilar um pouquinho', 'Sair do carro']);
+      if (i === 0) {
+        olhandoEmVolta = false;
+        await cochilar();
+        olhandoEmVolta = true;
+        continue;
+      }
+      break;
+    }
+    // 5. levantar: os encostos voltam e eles sentam de novo, e daí é descer
+    olhandoEmVolta = false;
+    g.trocarMusica(null);
+    g.setLying(false);
+    carro.deitarEncostos(0);
+    camera.deitar(false);
+    sentarOsDois();
+    await esperar(1.3);
+    await descer();
+    return true;
+  };
+
+  /** o cochilo: só um fade, o ronco baixinho e acordar no mesmo lugar */
+  const cochilar = async (): Promise<void> => {
+    await g.escurecerTela(true, 'sono');
+    for (let i = 0; i < 3; i++) {
+      g.som('roncoNoCarro');
+      await esperar(2.4);
+    }
+    await g.escurecerTela(false, 'sono');
+    await g.say(['Hmm… eu dormi?'], g.playerName());
+    await g.say(['Um cochilinho. Você roncou baixinho.'], g.companionName());
   };
 
   const descer = async (): Promise<void> => {
@@ -220,6 +312,8 @@ export function prepararOCarroPorDentro(w: WorldBuilder, palco: PalcoDoCarro): C
     carro.abrirPorta(false);
     g.som('portaDoBebito');
     g.mostrarCabeca('jogador', true);
+    // (a porta termina de fechar com o jogo ainda travado: ninguém anda em cima dela)
+    await esperar(1.0);
     dentro = false;
     g.lockPlayer(false);
   };

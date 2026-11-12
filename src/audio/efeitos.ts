@@ -128,6 +128,7 @@ export type SomNome =
   | 'buzinaDoBebito'
   | 'motorDoBebito'
   | 'portaDoBebito'
+  | 'roncoNoCarro'
   | 'portaoEletrico'
   | 'freadaDoBebito'
   | 'luzesAcendendo'
@@ -1287,6 +1288,16 @@ export const EFEITOS: Record<SomNome, Receita> = {
     const abre = n % 2 === 0;
     chiado(ctx, destino, { quando: t, dur: 0.035, vol: 0.2, freq: 2600, q: 2.2 });
     tom(ctx, destino, { freq: abre ? 190 : 140, glide: abre ? 150 : 82, quando: t + (abre ? 0.03 : 0.05), dur: abre ? 0.08 : 0.15, vol: abre ? 0.09 : 0.11, ataque: 0.004, tipo: 'sine' });
+  },
+
+  // o ronco baixinho de quem cochila no carro: um ciclo de respiração — puxa o ar (um chiado grave que sobe, com
+  // o motorzinho da garganta embaixo) e solta devagar (desce). Dois por ronco, o segundo um tico mais fraco
+  roncoNoCarro: ({ ctx, destino, t, n }) => {
+    const fraco = n % 2 === 0 ? 1 : 0.8;
+    chiado(ctx, destino, { quando: t, dur: 0.95, vol: 0.05 * fraco, freq: 330, glide: 520, q: 0.9, tipo: 'lowpass', sustenta: 0.5 });
+    tom(ctx, destino, { freq: 52, glide: 66, quando: t, dur: 0.95, vol: 0.035 * fraco, ataque: 0.25, tipo: 'sawtooth', abafo: 260 });
+    chiado(ctx, destino, { quando: t + 1.15, dur: 1.05, vol: 0.045 * fraco, freq: 300, glide: 160, q: 0.9, tipo: 'lowpass', sustenta: 0.4 });
+    tom(ctx, destino, { freq: 66, glide: 42, quando: t + 1.15, dur: 1.05, vol: 0.03 * fraco, ataque: 0.2, tipo: 'sawtooth', abafo: 240 });
   },
 
   // ------------------------------------------- a festa surpresa (o salão da abóbora)

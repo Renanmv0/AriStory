@@ -31,11 +31,17 @@ const suave = (t: number): number => t * t * (3 - 2 * t);
 
 /** o pescoço: quanto se vira para cada lado, e quanto se olha para cima e para baixo */
 export const PESCOCO = { giro: 2.2, cima: 0.62, baixo: -0.75 } as const;
+/** deitado de barriga para cima: olha o teto, e vira um pouco para o lado do outro */
+export const PESCOCO_DEITADO = { giro: 1.4, cima: 1.5, baixo: 0.2 } as const;
+
+export type Postura = 'sentado' | 'deitado';
 
 export class CameraDeDentro {
   /** o pescoço: 0 é a frente do carro, positivo vira para a esquerda do carro, negativo para a direita */
   giro = 0;
   altura = -0.05;
+  /** sentado (o pescoço de cabine) ou deitado (olhando o teto) */
+  postura: Postura = 'sentado';
   private ligada = false;
   /** 0 é a tomada de fora, 1 é o olho */
   private mistura = 1;
@@ -102,11 +108,19 @@ export class CameraDeDentro {
     this.fim = null;
   }
 
+  /** muda a postura (sentado ou deitado): o pescoço ganha os limites dela e o olhar vai para o repouso dela */
+  deitar(deitado: boolean): void {
+    this.postura = deitado ? 'deitado' : 'sentado';
+    this.giro = 0;
+    this.altura = deitado ? 1.1 : -0.05;
+  }
+
   /** o olhar de um quadro: o manche gira o pescoço (o `g.olharLivre()`), com limite */
   olhar(dt: number): void {
     const m = this.g.olharLivre();
-    this.giro = THREE.MathUtils.clamp(this.giro - m.x * 1.5 * dt, -PESCOCO.giro, PESCOCO.giro);
-    this.altura = THREE.MathUtils.clamp(this.altura + m.y * 0.9 * dt, PESCOCO.baixo, PESCOCO.cima);
+    const p = this.postura === 'deitado' ? PESCOCO_DEITADO : PESCOCO;
+    this.giro = THREE.MathUtils.clamp(this.giro - m.x * 1.5 * dt, -p.giro, p.giro);
+    this.altura = THREE.MathUtils.clamp(this.altura + m.y * 0.9 * dt, p.baixo, p.cima);
   }
 
   /** um quadro: o olho segue a cabeça e a câmera é posta. `dt` é do jogo */
