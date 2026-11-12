@@ -574,12 +574,16 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         }
       }
       if (ls.length) {
+        // (com folga primeiro; se uma fileira fechada não deixa folga, a folga mínima)
         let melhorC = alvoL;
-        let menor = Infinity;
-        for (let c = -2.2; c <= 2.2 + 1e-6; c += 0.05) {
-          let custo = Math.abs(c - alvoL) + Math.abs(c - estado.l) * 0.3;
-          for (const bl of ls) if ([-0.9, 0.9].some((roda) => Math.abs(c + roda - bl) < RAIO_DO_BURACO * 0.95 + 0.2)) custo += 1000;
-          if (custo < menor) { menor = custo; melhorC = c; }
+        for (const folga of [0.12, 0.02]) {
+          let menor = Infinity;
+          for (let c = -2.2; c <= 2.2 + 1e-6; c += 0.02) {
+            let custo = Math.abs(c - alvoL) + Math.abs(c - estado.l) * 0.3;
+            for (const bl of ls) if ([-0.9, 0.9].some((roda) => Math.abs(c + roda - bl) < RAIO_DO_BURACO * 0.95 + folga)) custo += 1000;
+            if (custo < menor) { menor = custo; melhorC = c; }
+          }
+          if (menor < 1000) break;
         }
         alvoL = melhorC;
       }
