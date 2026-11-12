@@ -507,6 +507,91 @@ if (roda('coplanar')) {
   await abrir();
 }
 
+// ==================================================================== a porta
+/*
+ * A PORTA DO MOTORISTA GIRA DE VERDADE (`carro.abrirPorta`, docs/BEBITO-MOBILE-DENTRO.md):
+ * o pedaço da pele da porta (a lataria, a janela, o forro e a maçaneta) é um grupo à
+ * parte com o pivô na dobradiça da frente. O teste confere que fechada ela é a mesma
+ * pele de antes (as malhas e a caixa), que aberta a beira de trás vai PARA FORA, que
+ * fecha de volta, que o teto fora leva a janela dela junto, e fotografa fechada e aberta.
+ */
+if (roda('porta')) {
+  console.log('— a porta do motorista (gira de verdade)');
+  const medir = () => page.evaluate(() => {
+    const carro = window.bebitoMobile;
+    const g = carro.group;
+    const pivo = g.getObjectByName('porta-do-motorista');
+    g.updateWorldMatrix(true, true);
+    const V = g.position.constructor;
+    const B = (o) => {
+      const mins = [1e9, 1e9, 1e9];
+      const maxs = [-1e9, -1e9, -1e9];
+      const v = new V();
+      o.updateWorldMatrix(true, true);
+      o.traverse((m) => {
+        if (!m.isMesh || !m.visible) return;
+        const p = m.geometry.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+          v.fromBufferAttribute(p, i).applyMatrix4(m.matrixWorld);
+          for (let k = 0; k < 3; k++) { mins[k] = Math.min(mins[k], v.getComponent(k)); maxs[k] = Math.max(maxs[k], v.getComponent(k)); }
+        }
+      });
+      return { min: mins, max: maxs };
+    };
+    // no referencial do carro (a posição dele no mundo sai da conta): o x do carro é o do mundo, porque ele não gira
+    const c = g.position;
+    const cx = c.x;
+    const caixa = B(pivo);
+    const cima = pivo.getObjectByName('porta-cima');
+    return {
+      existe: !!pivo,
+      rot: pivo.rotation.y,
+      aberta: carro.portaAberta,
+      malhas: (() => { let n = 0; pivo.traverse((o) => { if (o.isMesh) n++; }); return n; })(),
+      xMax: caixa.max[0] - cx,
+      xMin: caixa.min[0] - cx,
+      cimaVisivel: cima ? cima.visible : null,
+      larguraDoCarro: window.aristoryBebitoMobile.BEBITO_MOBILE.largura,
+    };
+  });
+  const fechada = await medir();
+  confere(fechada.existe && fechada.malhas >= 4, `a porta existe e tem malhas (${fechada.malhas})`);
+  confere(fechada.rot === 0 && fechada.aberta === 0, 'nasce fechada');
+  confere(fechada.xMax <= fechada.larguraDoCarro / 2 + 0.03, `fechada, a porta cabe dentro da largura do carro (x máx ${fechada.xMax.toFixed(3)} · metade ${(fechada.larguraDoCarro / 2).toFixed(3)})`);
+  await isometrica(5);
+  await page.screenshot({ path: `${OUT}-porta-fechada-iso.png` });
+  await cena([3.2, 1.35, 1.3], [0.9, 0.85, 0.45]);
+  await page.screenshot({ path: `${OUT}-porta-fechada-lado.png` });
+  await page.evaluate(() => window.bebitoMobile.abrirPorta(true));
+  await page.waitForFunction(() => window.bebitoMobile.portaAberta > 0.99, null, { timeout: 60000 });
+  const aberta = await medir();
+  confere(aberta.rot < -0.9, `aberta, ela gira para fora (rotation.y ${aberta.rot.toFixed(2)})`);
+  confere(aberta.xMax > fechada.xMax + 0.45, `a beira de trás da porta vai PARA FORA do carro (x máx ${fechada.xMax.toFixed(2)} → ${aberta.xMax.toFixed(2)})`);
+  await cena([3.2, 1.35, 1.3], [0.9, 0.85, 0.45]);
+  await page.screenshot({ path: `${OUT}-porta-aberta-lado.png` });
+  await cena([2.6, 1.6, -0.9], [0.3, 0.7, 0.35]);
+  await page.screenshot({ path: `${OUT}-porta-aberta-de-tras.png` });
+  await cena([1.6, 1.5, 3.0], [0.3, 0.8, 0.3]);
+  await page.screenshot({ path: `${OUT}-porta-aberta-frente.png` });
+  await isometrica(5);
+  await page.screenshot({ path: `${OUT}-porta-aberta-iso.png` });
+  // o teto fora leva a janela da porta junto
+  await page.evaluate(() => window.bebitoMobile.mostrarTeto(false));
+  const semTeto = await medir();
+  confere(semTeto.cimaVisivel === false, 'sem teto, a janela da porta some junto');
+  await cena([3.0, 2.2, 0.8], [0.3, 0.7, 0.35]);
+  await page.screenshot({ path: `${OUT}-porta-aberta-sem-teto.png` });
+  await page.evaluate(() => window.bebitoMobile.mostrarTeto(true));
+  await page.evaluate(() => window.bebitoMobile.abrirPorta(false));
+  await page.waitForFunction(() => window.bebitoMobile.portaAberta < 0.01, null, { timeout: 60000 });
+  const fechou = await medir();
+  confere(fechou.rot === 0 && Math.abs(fechou.xMax - fechada.xMax) < 1e-3, 'fecha de volta no mesmo lugar');
+  await page.evaluate(() => window.bebitoMobile.abrirPorta(true, true));
+  const peso = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
+  console.log(`   peso com a porta aberta: ${peso.calls} desenhos, ${peso.triangles} triângulos`);
+  await page.evaluate(() => window.bebitoMobile.abrirPorta(false, true));
+}
+
 // =================================================================== os lugares
 /*
  * A CABINE CABE A DUPLA? O pedido foi um carro fofo MAS espaçoso por dentro. As

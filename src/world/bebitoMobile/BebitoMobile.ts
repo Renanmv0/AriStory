@@ -354,6 +354,21 @@ export class BebitoMobile {
 
   private readonly carroceria = new THREE.Group();
   private readonly teto = new THREE.Group();
+  /**
+   * A PORTA DO MOTORISTA (a da frente, do lado `+X`): um grupo à parte, com o
+   * pivô na dobradiça da frente. A `folha` leva a lataria, o forro e a
+   * maçaneta; a `cima` (a janela, o friso do vidro e a testeira) é um grupo com
+   * nome e some junto com o teto. Fechada, é a MESMA pele de antes — as
+   * células da grade só mudaram de malha.
+   */
+  private readonly porta = {
+    pivo: new THREE.Group(),
+    folha: new THREE.Group(),
+    cima: new THREE.Group(),
+    /** onde ela está (0 fechada, 1 aberta de todo) e para onde vai */
+    k: 0,
+    alvo: 0,
+  };
   private readonly volante = new THREE.Group();
   /** os dois encostos da frente (cada um deita sozinho) e quanto cada um está deitado, de 0 a 1 */
   private readonly encostos = {} as Record<'motorista' | 'passageiro', THREE.Group>;
@@ -391,6 +406,11 @@ export class BebitoMobile {
     this.teto.name = 'teto';
     g.add(this.carroceria);
     this.carroceria.add(this.teto);
+    this.porta.pivo.name = 'porta-do-motorista';
+    this.porta.cima.name = 'porta-cima';
+    this.porta.folha.add(this.porta.cima);
+    this.porta.pivo.add(this.porta.folha);
+    this.carroceria.add(this.porta.pivo);
 
     const f = this.ficha;
     this.atlas = atlasDeImpressos(f.placa, [...f.vagas.vidroTraseiro, ...f.vagas.paraChoque].filter((id): id is string => !!id));
@@ -407,6 +427,7 @@ export class BebitoMobile {
     this.montarLuzes();
     // o que é de cor lisa vira uma malha por grupo (antes dos detalhes, que se enxugam sozinhos)
     juntarPorCor(this.carroceria);
+    juntarPorCor(this.porta.pivo);
     juntarPorCor(this.teto);
     juntarPorCor(this.volante);
     this.vestirVagas();
@@ -425,52 +446,126 @@ export class BebitoMobile {
   /** as três malhas da pele (lataria, capota, vidros), o forro das portas e a pestana da cintura */
   private montarLataria(): void {
     const cor = this.ficha.pintura;
+    /*
+     * A PORTA SAI DA PELE: as células do lado `+X`, da soleira à testeira (os
+     * nós 0 a 5) e entre a beira de trás e a da frente da porta, viram um
+     * pedaço à parte (`this.porta`) com o pivô na dobradiça da frente. O resto
+     * da pele é o de sempre, então com a porta fechada a imagem é a mesma.
+     */
+    const J_DA_PORTA = PONTOS - 2 - NO.vidroAlto;
+    const daPorta = (zm: number, j: number): boolean => j >= J_DA_PORTA && zm > CARRO.portas.meio && zm < CARRO.portas.frente;
+    const { pivo, folha, cima } = this.porta;
+    {
+      // a dobradiça: na beira da frente da porta, na altura da cintura (o eixo é em pé)
+      const m0 = pele();
+      const dobradica = m0.pontos[m0.estacaoEm(CARRO.portas.frente)][PONTOS - 1 - 2];
+      pivo.position.set(dobradica.x, 0, dobradica.z);
+      folha.position.set(-dobradica.x, 0, -dobradica.z);
+    }
+
     const lataria = new THREE.Mesh(
-      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'lataria'),
+      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'lataria' && !daPorta(zm, j)),
       toon(cor.lataria, { doubleSide: true }),
     );
     lataria.name = 'lataria';
     this.carroceria.add(lataria);
+    folha.add(new THREE.Mesh(
+      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'lataria' && daPorta(zm, j)),
+      toon(cor.lataria, { doubleSide: true }),
+    ));
 
     const capota = new THREE.Mesh(
-      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'capota'),
+      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'capota' && !daPorta(zm, j)),
       toon(cor.teto, { doubleSide: true }),
     );
     capota.name = 'capota';
     this.teto.add(capota);
+    cima.add(new THREE.Mesh(
+      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'capota' && daPorta(zm, j)),
+      toon(cor.teto, { doubleSide: true }),
+    ));
 
     // os vidros: uma malha só, transparente, sem sombra (o sol entra na cabine)
     const vidros = new THREE.Mesh(
-      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'vidro'),
+      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'vidro' && !daPorta(zm, j)),
       toon(P.glass, { opacity: 0.36 }),
     );
     vidros.name = 'vidros';
     vidros.userData.semSombra = true;
     vidros.renderOrder = 4;
     this.teto.add(vidros);
+    const vidroDaPorta = new THREE.Mesh(
+      geometriaDaPele((_i, j, zm, wm) => regiaoDaCelula(zm, wm, j) === 'vidro' && daPorta(zm, j)),
+      toon(P.glass, { opacity: 0.36 }),
+    );
+    vidroDaPorta.userData.semSombra = true;
+    vidroDaPorta.renderOrder = 4;
+    cima.add(vidroDaPorta);
 
     // o FORRO das portas: a mesma pele, 4,5 cm para dentro e virada do avesso, da ponta de trás ao painel
     const naCabine = (zm: number, j: number): boolean => zm < CARRO.zCowl - CARRO.peDoParaBrisa && noDaCelula(j) < NO.cintura;
+    const forroEmCima = (zm: number, j: number): boolean => naCabine(zm, j) && noDaCelula(j) >= 1;
+    const forroEmBaixo = (zm: number, j: number): boolean => naCabine(zm, j) && noDaCelula(j) === 0;
     this.carroceria.add(new THREE.Mesh(
-      geometriaDaPele((_i, j, zm) => naCabine(zm, j) && noDaCelula(j) >= 1, -CABINE.forro, true),
+      geometriaDaPele((_i, j, zm) => forroEmCima(zm, j) && !daPorta(zm, j), -CABINE.forro, true),
       toon(cor.teto),
     ));
     this.carroceria.add(new THREE.Mesh(
-      geometriaDaPele((_i, j, zm) => naCabine(zm, j) && noDaCelula(j) === 0, -CABINE.forro, true),
+      geometriaDaPele((_i, j, zm) => forroEmBaixo(zm, j) && !daPorta(zm, j), -CABINE.forro, true),
       toon(P.bebitoCarpete),
     ));
+    folha.add(new THREE.Mesh(geometriaDaPele((_i, j, zm) => forroEmCima(zm, j) && daPorta(zm, j), -CABINE.forro, true), toon(cor.teto)));
+    folha.add(new THREE.Mesh(geometriaDaPele((_i, j, zm) => forroEmBaixo(zm, j) && daPorta(zm, j), -CABINE.forro, true), toon(P.bebitoCarpete)));
 
     // a PESTANA: o alto da porta, entre a lataria e o forro (é o que dá grossura à porta com o teto fora)
-    const { zs, pontos, normais } = pele();
-    const fim = pele().estacaoEm(CARRO.zCowl - CARRO.peDoParaBrisa);
-    for (const j of [NO.cintura, PONTOS - 1 - NO.cintura]) {
+    const { zs, pontos, normais, estacaoEm } = pele();
+    const fim = estacaoEm(CARRO.zCowl - CARRO.peDoParaBrisa);
+    const ia = estacaoEm(CARRO.portas.meio);
+    const ib = estacaoEm(CARRO.portas.frente);
+    const borracha = toon(P.bebitoBorracha);
+    const pestana = (j: number, de: number, ate: number): THREE.BufferGeometry => {
       const fora: THREE.Vector3[] = [];
       const dentro: THREE.Vector3[] = [];
-      for (let i = 0; i <= fim && i < zs.length; i++) {
+      for (let i = de; i <= ate && i < zs.length; i++) {
         fora.push(pontos[i][j]);
         dentro.push(pontos[i][j].clone().addScaledVector(normais[i][j], -CABINE.forro));
       }
-      this.carroceria.add(new THREE.Mesh(fita(fora, dentro, new THREE.Vector3(0, 1, 0)), toon(P.bebitoBorracha)));
+      return fita(fora, dentro, new THREE.Vector3(0, 1, 0));
+    };
+    this.carroceria.add(new THREE.Mesh(pestana(NO.cintura, 0, fim), borracha));
+    // (do lado do motorista ela se parte em três: o que fica no corpo antes e depois da porta, e o da porta)
+    this.carroceria.add(new THREE.Mesh(pestana(PONTOS - 1 - NO.cintura, 0, ia), borracha));
+    this.carroceria.add(new THREE.Mesh(pestana(PONTOS - 1 - NO.cintura, ib, fim), borracha));
+    folha.add(new THREE.Mesh(pestana(PONTOS - 1 - NO.cintura, ia, ib), borracha));
+
+    /*
+     * O BATENTE: o vão que a porta deixa quando abre. A pele é fina (uma
+     * superfície só), então a borda do buraco ganha uma fita de borracha da
+     * lataria até 4,5 cm para dentro — a soleira, as duas beiras e a testeira.
+     * Fechada, a fita fica atrás da porta e não se vê.
+     */
+    {
+      const lado = (k: number): number => PONTOS - 1 - k;
+      const ate = NO.quina;
+      const fita4 = (pts: Array<[number, number]>): void => {
+        const fora = pts.map(([i, j]) => pontos[i][j].clone());
+        const dentro = pts.map(([i, j]) => pontos[i][j].clone().addScaledVector(normais[i][j], -CABINE.forro));
+        const m = new THREE.Mesh(fita(fora, dentro, new THREE.Vector3(0, 1, 0)), toon(P.bebitoBorracha, { doubleSide: true }));
+        this.carroceria.add(m);
+      };
+      const soleira: Array<[number, number]> = [];
+      const testeira: Array<[number, number]> = [];
+      for (let i = ia; i <= ib; i++) {
+        soleira.push([i, lado(NO.pe)]);
+        testeira.push([i, lado(ate)]);
+      }
+      const frente: Array<[number, number]> = [];
+      const tras: Array<[number, number]> = [];
+      for (let k = NO.pe; k <= ate; k++) {
+        frente.push([ib, lado(k)]);
+        tras.push([ia, lado(k)]);
+      }
+      for (const trecho of [soleira, testeira, frente, tras]) fita4(trecho);
     }
   }
 
@@ -550,30 +645,40 @@ export class BebitoMobile {
     const cromo = toon(P.bebitoCromo);
     const borracha = toon(P.bebitoBorracha);
 
-    // o FRISO DA CINTURA: um filete de cromo dando a volta no carro inteiro, na linha do ombro
+    // o FRISO DA CINTURA: um filete de cromo dando a volta no carro, na linha do ombro. No lado do motorista
+    // ele para nas duas beiras da porta (o pedaço do meio vai com a porta, e abre junto com ela)
+    const iaPorta = p.estacaoEm(CARRO.portas.meio);
+    const ibPorta = p.estacaoEm(CARRO.portas.frente);
     const volta: NaPele[] = [];
+    for (let i = ibPorta; i < ni - 1; i++) volta.push(em(i, dir(NO.cintura)));
     for (let i = ni - 1; i >= 0; i--) volta.push(em(i, esq(NO.cintura)));
-    for (let i = 1; i < ni - 1; i++) volta.push(em(i, dir(NO.cintura)));
-    this.carroceria.add(new THREE.Mesh(friso(volta, 0.015, 0.012, true, 0.05, 3), cromo));
+    for (let i = 1; i <= iaPorta; i++) volta.push(em(i, dir(NO.cintura)));
+    this.carroceria.add(new THREE.Mesh(friso(volta, 0.015, 0.012, false, 0, 3), cromo));
+    const cintoDaPorta: NaPele[] = [];
+    for (let i = iaPorta; i <= ibPorta; i++) cintoDaPorta.push(em(i, dir(NO.cintura)));
+    this.porta.folha.add(new THREE.Mesh(friso(cintoDaPorta, 0.015, 0.012, false, 0, 3), cromo));
 
     // a BORRACHA dos vidros: um filete pelo contorno de cada um, as quinas todas com o mesmo raio
-    const moldura = (pts: NaPele[]): void => {
-      this.teto.add(new THREE.Mesh(friso(pts, BORRACHA.meia, BORRACHA.alto, true, BORRACHA.quina), borracha));
+    const moldura = (pts: NaPele[], pai: THREE.Object3D = this.teto): void => {
+      pai.add(new THREE.Mesh(friso(pts, BORRACHA.meia, BORRACHA.alto, true, BORRACHA.quina), borracha));
     };
+    const iq = p.estacaoEm(CARRO.quebraVento);
     for (const [a, b] of CARRO.janelas) {
       const ia = p.estacaoEm(a);
       const ib = p.estacaoEm(b);
       for (const lado of [esq, dir]) {
-        const pts: NaPele[] = [];
-        for (let i = ia; i <= ib; i++) pts.push(em(i, lado(NO.vidroBaixo)));
-        for (let i = ib; i >= ia; i--) pts.push(em(i, lado(NO.vidroAlto)));
-        moldura(pts);
+        // a janela da frente se parte no quebra-vento (a divisória): a metade de trás é a janela da PORTA (do lado
+        // do motorista, abre com ela) e a da frente é o vidrinho fixo. As duas beiras da divisória são a mesma linha
+        const partes: Array<[number, number, THREE.Object3D]> = ia < iq && iq < ib
+          ? [[ia, iq, lado === dir ? this.porta.cima : this.teto], [iq, ib, this.teto]]
+          : [[ia, ib, this.teto]];
+        for (const [de, ate, pai] of partes) {
+          const pts: NaPele[] = [];
+          for (let i = de; i <= ate; i++) pts.push(em(i, lado(NO.vidroBaixo)));
+          for (let i = ate; i >= de; i--) pts.push(em(i, lado(NO.vidroAlto)));
+          moldura(pts, pai);
+        }
       }
-    }
-    // o quebra-vento: a divisória da janela da frente
-    const iq = p.estacaoEm(CARRO.quebraVento);
-    for (const lado of [esq, dir]) {
-      this.teto.add(new THREE.Mesh(friso([em(iq, lado(NO.vidroBaixo)), em(iq, lado(NO.vidroAlto))], 0.013, 0.01, false, 0, 3), borracha));
     }
     // o vidro de trás: as duas metades se encontram na ponta
     {
@@ -748,8 +853,10 @@ export class BebitoMobile {
       for (const z of [CARRO.portas.meio + 0.15, CARRO.portas.meio - 0.15]) {
         const macaneta = new THREE.CapsuleGeometry(0.015, 0.1, 3, 8);
         macaneta.rotateZ(Math.PI / 2);
-        pregar(c, new THREE.Mesh(macaneta, cromo), noLado(z, 0.99, lado), 0.024);
-        pregar(c, new THREE.Mesh(quina(0.15, 0.05, 0.012, 0.006), cromo), noLado(z, 0.99, lado), 0.004);
+        // (a da porta do motorista é a da dobradiça: gira com ela)
+        const pai = lado === 1 && z > CARRO.portas.meio ? this.porta.folha : c;
+        pregar(pai, new THREE.Mesh(macaneta, cromo), noLado(z, 0.99, lado), 0.024);
+        pregar(pai, new THREE.Mesh(quina(0.15, 0.05, 0.012, 0.006), cromo), noLado(z, 0.99, lado), 0.004);
       }
       // o retrovisor: o braço saindo da porta e o espelho redondo olhando para trás
       const base = noLado(CARRO.quebraVento + 0.18, 1.04, lado);
@@ -1154,6 +1261,34 @@ export class BebitoMobile {
   /** o TETO SAI (tudo da cintura para cima): a casinha de boneca, para uma cena de dentro */
   mostrarTeto(sim: boolean): void {
     this.teto.visible = sim;
+    // (a janela da porta é da porta, mas é "da cintura para cima": sai junto)
+    this.porta.cima.visible = sim;
+  }
+
+  /**
+   * A PORTA DO MOTORISTA: `sim` abre (a dobradiça é a da frente, ela gira para
+   * fora), `naHora` pula a animação. `portaAberta` diz quanto ela já abriu
+   * (0 fechada, 1 de todo).
+   */
+  abrirPorta(sim: boolean, naHora = false): void {
+    this.porta.alvo = sim ? 1 : 0;
+    if (naHora) {
+      this.porta.k = this.porta.alvo;
+      this.poseDaPorta();
+    }
+  }
+
+  get portaAberta(): number {
+    return this.porta.k;
+  }
+
+  /** o quanto a porta abre de todo: ~66° (a dobradiça é a da frente, e ela gira para fora: `rotation.y` negativo) */
+  static readonly ANGULO_DA_PORTA = 1.15;
+
+  private poseDaPorta(): void {
+    const t = this.porta.k;
+    const suave = t * t * (3 - 2 * t);
+    this.porta.pivo.rotation.y = -BebitoMobile.ANGULO_DA_PORTA * suave;
   }
 
   /**
@@ -1221,6 +1356,12 @@ export class BebitoMobile {
       mexeu = true;
     }
     if (mexeu) this.poseDosEncostos();
+    // a porta abrindo (ou fechando), um pouco mais depressa que os encostos
+    if (this.porta.k !== this.porta.alvo) {
+      const falta = this.porta.alvo - this.porta.k;
+      this.porta.k += Math.sign(falta) * Math.min(Math.abs(falta), dt / 0.8);
+      this.poseDaPorta();
+    }
     if (this.modoDoPisca) {
       this.relogioDoPisca += dt;
       const aceso = this.relogioDoPisca % 0.7 < 0.38;
