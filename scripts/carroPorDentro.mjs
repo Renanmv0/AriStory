@@ -14,7 +14,9 @@
  * - DESCANSAR: os encostos deitam e viram a cama, os dois deitam lado a lado (a câmera olha o
  *   teto, que fica FECHADO), a conversa curta, e o menu "Cochilar / Sair do carro"; o cochilo é
  *   um fade com ronco; sair desfaz tudo (levantar e descer); a memória e o contador no save;
- * - VIAJAR: de dentro, "Viajar pro Villa Lobos" leva à pergunta de quem dirige e à estrada;
+ * - VIAJAR: de dentro, "Viajar pro Villa Lobos" leva à pergunta de quem dirige e à estrada (testado
+ *   com cada resposta: o motorista certo ao volante, nenhuma pose nem cabeça escondida sobrando);
+ * - SEMCHAVE: na estrada, sem `?carroPorDentro`, não existe o 👀 nem o V faz nada;
  * - PASSAGEIRO: na viagem, o 👀 (sempre na tela) liga a visão do passageiro: o carro vai no
  *   PILOTO AUTOMÁTICO, quem dirigia vai para o banco da carona e o outro assume o volante,
  *   a câmera entra nos olhos de quem joga, o menu "O que fazer?" é o de cada um (o Ari: cantarolar
@@ -24,7 +26,7 @@
  *   faixas e no sinal, sem perseguir os corações) e a chegada com tudo desfeito.
  *
  * Uso: node scripts/carroPorDentro.mjs /caminho/prefixo
- *      SO=escondido|entrar|descansar|descer|passageiro|piloto roda uma parte (descansar e descer partem de entrar); CEL=1 no celular em pé
+ *      SO=escondido|semChave|entrar|descansar|descer|viajar|passageiro|piloto roda uma parte (descansar e descer partem de entrar); CEL=1 no celular em pé
  */
 import { chromium } from 'playwright';
 
@@ -278,6 +280,68 @@ const viagemEstado = (page) => page.evaluate(() => {
     cena: j.idDaCena,
   };
 });
+
+// ===================================================================== viajar
+if (roda('viajar')) {
+  console.log('— viajar de dentro do carro (cada resposta de "Quem dirige dessa vez?")');
+  for (const [indice, quem] of [[0, 'Ari'], [1, 'Renan']]) {
+    const page = await pagina();
+    await abrir(page, 'bebito&cena=casa');
+    await comOCarro(page);
+    await abrir(page, 'bebito&carroPorDentro&cena=frente-da-casa');
+    await page.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 3; });
+    await disparar(page, 'frente:sair-de-carro');
+    await page.waitForFunction(() => window.aristoryBebitoMobile.depuracaoDoCarroPorDentro.atual?.dentro === true, null, { timeout: 120000 });
+    await ateOsBotoes(page);
+    await page.locator('.escolhas.show button').nth(0).click();
+    // "Quem dirige dessa vez?" (a pergunta da primeira volta é pulada: já escolheram Viajar)
+    await page.waitForFunction(() => [...document.querySelectorAll('.escolhas.show button')].some((b) => b.textContent === 'Renan'), null, { timeout: 30000 });
+    await page.locator('.escolhas.show button').nth(indice).click();
+    for (let i = 0; i < 30; i++) {
+      if (await page.evaluate(() => window.jogo.idDaCena === 'viagem-de-carro' && !!window.aristoryBebitoMobile.viagem.estado)) break;
+      await page.keyboard.press('KeyE');
+      await page.waitForTimeout(500);
+    }
+    await page.waitForFunction(() => window.jogo.idDaCena === 'viagem-de-carro' && window.aristoryBebitoMobile.viagem.estado.fase === 'dirigindo', null, { timeout: 120000 }).catch(() => {});
+    await page.waitForTimeout(800);
+    const e = await page.evaluate(() => {
+      const j = window.jogo;
+      const motorista = window.aristoryBebitoMobile.viagem.estado;
+      return {
+        cena: j.idDaCena, fase: motorista.fase,
+        poseEu: j.player.rig.noCarro, poseEle: j.parceiro.rig.noCarro,
+        cabeca: j.player.rig.head.visible, cabecaDele: j.parceiro.rig.head.visible,
+        eu: j.player.rig.spec.name, travado: j.player.locked,
+        porta: document.querySelector('.botao-da-viagem')?.classList.contains('show'),
+      };
+    });
+    console.log(`   ${quem} ao volante: ${JSON.stringify(e)}`);
+    confere(e.cena === 'viagem-de-carro' && e.fase === 'dirigindo', `${quem}: saiu da garagem e a viagem começou (${e.cena}, ${e.fase})`);
+    const esperadoEu = e.eu === quem ? 'dirigindo' : 'passageiro';
+    confere(e.poseEu === esperadoEu && e.poseEle === (esperadoEu === 'dirigindo' ? 'passageiro' : 'dirigindo'), `${quem} dirige: quem joga (${e.eu}) está de ${e.poseEu} e o outro de ${e.poseEle}`);
+    confere(e.cabeca === true && e.cabecaDele === true, 'nenhuma cabeça ficou escondida na viagem');
+    confere(e.travado === true, 'quem joga está travado ao volante, como em toda viagem');
+    await page.screenshot({ path: `${OUT}-v${indice}-na-estrada.png` });
+    await page.context().close();
+  }
+}
+
+// =================================================================== semChave
+if (roda('semChave')) {
+  console.log('— na estrada, sem ?carroPorDentro: nada novo aparece');
+  const page = await pagina();
+  await abrir(page, 'bebito&cena=casa');
+  await comOCarro(page);
+  await abrir(page, 'bebito&cena=viagem-de-carro&viagem=ida,ari,3');
+  await naEstrada(page);
+  await dirigindo(page);
+  await page.keyboard.press('KeyV');
+  await page.waitForTimeout(1200);
+  const e = await viagemEstado(page);
+  confere(!e.botao?.visivel, 'sem a chave não há botão 👀 na tela');
+  confere(e.visao === 'fora' && e.piloto === false && e.poseEu === 'dirigindo', 'a tecla V não faz nada (quem joga continua dirigindo, sem piloto)');
+  await page.context().close();
+}
 
 if (roda('passageiro')) {
   console.log('— a visão do passageiro (o carro no piloto automático)');

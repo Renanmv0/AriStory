@@ -21,7 +21,7 @@
 A chave do carro está ligada desde 2026-11-12 (o Ari já joga com ele), então o
 carro por dentro NÃO entra de surpresa no save de verdade: tem a própria chave,
 `CARRO_POR_DENTRO_NO_JOGO = false` em `src/eventos/BebitoMobile.ts`. Para ver:
-**`?bebito&carroPorDentro&licoes=10`** (o save de teste, com a quest já feita).
+**`?bebito&carroPorDentro`** (o save de teste do carro: ele já tem o carro na garagem se a quest do presente foi jogada ali; num save de teste novo, `&licoes=10` conclui as lições e é só dormir na cama para começar a quest).
 Para pôr no jogo do Ari: trocar a chave para `true` — só com o aval do Renan.
 
 O que a porta nova mudou NO MODELO vale para todos (a porta do motorista é um
