@@ -33,6 +33,23 @@ if (!root) throw new Error('#app nao encontrado');
 
 const game = new Game(root, SCENES, DUPLA, CENA_INICIAL);
 
+// ?bebito&licoes=10 conclui as lições 1 a 10 da apostila (3 estrelas) NO SAVE DE
+// TESTE do Bebito Mobile (o `?bebito` usa um save à parte, `aristory.save.v1.bebito`):
+// é o jeito de testar a quest do presente sem jogar as dez lições. Sem `?bebito`
+// isto não faz nada, então o save de verdade nunca é tocado.
+const LICOES_EM_ORDEM = [
+  'oi-tudo-bem', 'jantar-das-confusoes', 'cade-o-novelo', 'horta-da-josefina', 'fica-a-dica', 'tudo-acaba-em-inho',
+  'um-dia-de-gatito', 'bola-pra-frente', 'ai-que-dor', 'partiu-praia', 'cartao-postal-do-rio', 'quanto-custa',
+  'de-quem-e-isso', 'mexa-misture-prove', 'vira-a-esquerda', 'antigamente-era-assim', 'beleza-valeu', 'maior-melhor-lindissimo',
+];
+{
+  const licoes = Math.floor(Number(new URLSearchParams(location.search).get('licoes')));
+  if (new URLSearchParams(location.search).has('bebito') && licoes > 0) {
+    const save = (game as unknown as { save: { concluirLicao(id: string, estrelas: number): boolean } }).save;
+    for (const id of LICOES_EM_ORDEM.slice(0, licoes)) save.concluirLicao(id, 3);
+  }
+}
+
 // ?cena=villa-lobos&entrada=roda abre direto num ponto do cenario, util pra testar
 const params = new URLSearchParams(location.search);
 const pedida = params.get('cena') ?? undefined;

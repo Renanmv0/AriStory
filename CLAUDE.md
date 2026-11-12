@@ -267,7 +267,8 @@ modelo, a quest, a primeira viagem e as demais rotas), também aberto por um
 2026-11-11: nada do carro aparece no jogo até TUDO estar pronto):
 `BEBITO_MOBILE_NO_JOGO = false` em `src/eventos/BebitoMobile.ts`. Toda etapa
 nova do carro (cena, quest, viagem) fica atrás de `bebitoMobileNestaPagina()`;
-`?bebito` liga tudo num save à parte, para os testes e para o Renan ver, e
+`?bebito` liga tudo num save à parte, para os testes e para o Renan ver (e
+`?bebito&licoes=10` já com as lições 1 a 10 concluídas, só nesse save), e
 `?semBebito` força desligado. A frente da casa do Ari (`frente-da-casa`: o
 jardim, a garagem e a rua de casinhas) e a quest do presente já existem,
 escondidas (a frente da casa já está na segunda versão: casa funda, muro

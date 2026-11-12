@@ -23,6 +23,64 @@ pela janela.
 | no fim | LIGAR A CHAVE: `BEBITO_MOBILE_NO_JOGO = true` | ⬜ só quando tudo estiver pronto |
 | depois | a EDIÇÃO do carro pelos dois (a ficha já está pronta para ela, §3) | ⬜ não fazer ainda |
 
+### O que ainda FALTA antes de ligar a chave (2026-11-12)
+
+O que existe já funciona de ponta a ponta (a quest, a frente da casa, a viagem
+Casa ↔ Villa Lobos, o estacionamento e o quintal decorado). O que falta não
+impede de jogar; é o que melhora a atualização antes de ela ir para o save de
+verdade. Em ordem de importância:
+
+**Decisões do Renan (travam a chave):**
+
+1. **Aprovar ou trocar as falas.** As da quest (§5) e as da carona (§6) são
+   minhas, e a fala do Ari ao ver o carro tem três opções para escolher. Também
+   são minhas, e provisórias, as da piscininha, do fogo de chão, da mesinha, do
+   balanço, da rede, do banco, da espreguiçadeira e do Pelusa na casinha
+   (`docs/QUINTAL.md`). Fala que o Renan escrever vai literal.
+2. **Um aviso de que a quest existe.** Hoje, depois da lição 10, nada avisa: o
+   Ari só descobre quando for deitar. Dá para o Gatito soltar uma dica no fim
+   da aula, ou o Renan dizer "tô com sono" ao entrar no quarto (§5, pergunta 3).
+3. **O laço do presente.** Hoje some depois da entrega; pode virar um enfeite
+   guardado (pendurado na garagem ou no retrovisor) (§5, pergunta 4).
+4. **A casa por fora e a de dentro estão no rumo certo?** A porta da rua foi
+   para o MEIO da parede da frente da sala, com uma janela de cada lado (a
+   parede é baixa nas laterais, com a janela até o topo), para combinar com a
+   fachada. Falta o Renan ver jogando.
+5. **Alguma planta ou objeto da vida dos dois** que tem que estar no quintal
+   (o nome da casa, uma planta que o Ari ama) — `docs/QUINTAL.md` §9.
+
+**Etapa D — o que ainda não existe (não impede de jogar):**
+
+- **As outras rotas**: parque ↔ clube ↔ escola, ao lado do ônibus. Hoje a
+  viagem de carro só vai da casa ao Villa Lobos e volta; clube e escola
+  continuam pelo ônibus.
+- **O rádio do carro** (trocar a música pela tela, como o radinho da
+  clareira).
+- **Passageiro no banco de trás** (os três lugares já existem) e **deitar na
+  cama do carro** (os encostos já deitam).
+- **Viagem de noite**, com os postes acesos.
+- **Um prêmio pelo recorde de corações** (um detalhe novo para o carro).
+- **A edição do carro pelos dois** (a ficha já está pronta, §3): só depois.
+
+**Quintal (`docs/QUINTAL.md`):**
+
+- **Sons**: o estalo da lenha do fogo de chão, o tlim-tlim do sino de vento e o
+  bater de água da piscininha (hoje só tem o respingo que já existia).
+- **A aba "🏠 Para casa" do Papita Delivery** (decorar a casa por dentro): só
+  quando o Renan pedir.
+- O fogo apagado não é guardado no save (recarregar o acende de novo).
+
+**Como testar antes de ligar a chave sem jogar as dez lições:**
+
+```
+…/?bebito&licoes=10        # conclui as lições 1 a 10 NO SAVE DE TESTE e abre o jogo
+```
+
+`?bebito` usa um save à parte (`aristory.save.v1.bebito`), e o `&licoes=N` só
+age nele: o save de verdade nunca é tocado. Depois é só ir ao quarto do Ari e
+deitar na cama. Para recomeçar do zero o save de teste, no console do
+navegador: `localStorage.removeItem('aristory.save.v1.bebito')` e recarregar.
+
 ### 🔑 A chave: nada disso aparece no jogo até tudo estar pronto
 
 Pedido do Renan (2026-11-11): o carro, a quest, as viagens e tudo o que vem
@@ -46,6 +104,7 @@ força desligado, para quando a chave estiver ligada.
 
 ```
 …/?bebito                              # o jogo com o carro, no save de teste
+…/?bebito&licoes=10                   # o mesmo, já com as lições 1 a 10 concluídas (para a quest do presente)
 …/?bebito&cena=frente-da-casa          # direto no jardim
 …/?bebito&cena=viagem-de-carro&viagem=ida,renan,7  # direto na estrada: o sentido, quem dirige e a semente
 …/?cena=villa-lobos&carro=38.4,-9&em=41,-6          # só o modelo, na rua do parque
