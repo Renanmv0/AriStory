@@ -79,3 +79,8 @@ Fotos conferidas no computador e no celular. Tomadas finais: Noel conversando
 395/260843; chegada estacionada 232/69278. Nenhuma luz real nova. O verificador
 do carro do Noel mediu oito caixas antes da fundição e encontrou zero pares
 coplanares; a carroceria arredondada e o personagem também foram vistos nas fotos.
+
+A tomada da conversa recebeu um ajuste final: a câmera fica sobre a pista,
+evitando os postes da calçada na frente dos carros. Novas fotos conferidas no
+computador e celular, sem erros e com o motorista preservado. As medições acima
+registram o enquadramento da primeira validação completa.
