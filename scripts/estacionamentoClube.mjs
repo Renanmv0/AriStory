@@ -35,11 +35,20 @@ try{
  const ctx=await browser.newContext({viewport:{width:1200,height:900}}),p=await ctx.newPage();p.on('pageerror',e=>erros.push(e.message));
  await p.goto(`${BASE}/?bebito&semHalloween&cena=clube`);await espera(p,()=>!!window.jogo?.current?.world.root.userData.estacionamentoDoClube);
  await desenho(p,false);
+ assert.deepEqual(await p.evaluate(()=>window.jogo.current.world.root.userData.estacionamentoDoClube.carros),[]);
+ for(const personagem of ['noel','josefina']){
+  await p.evaluate(personagem=>window.jogo.save.addMemory({id:`${personagem}-na-estrada`,title:'Encontro de teste',place:'Estrada',icon:'🚙',note:'Save isolado.'}),personagem);
+  await p.reload();await espera(p,()=>!!window.jogo?.current?.world.root.userData.estacionamentoDoClube&&!window.jogo.transitioning);await desenho(p,false);
+  assert.deepEqual(await p.evaluate(()=>window.jogo.current.world.root.userData.estacionamentoDoClube.carros.map(c=>c.personagem)),personagem==='noel'?['noel']:['noel','josefina']);
+ }
+ console.log('Carros ocultos até o primeiro encontro, liberados separadamente e persistidos na recarga.');
  const inicial=await p.evaluate(()=>{const g=window.jogo,w=g.current.world;return{limite:w.bounds.minX,onibus:w.colliders.some(c=>c.kind==='box'&&c.x===-31.9&&c.z===9),saida:w.interactables.some(i=>i.id==='door:villa-lobos:clube'),vaga:w.root.userData.estacionamentoDoClube.vaga,cena:g.idDaCena};});
  assert.ok(inicial.limite<-62);assert.ok(inicial.onibus&&inicial.saida);assert.equal(inicial.cena,'clube');assert.equal(inicial.vaga.x,-58.2);
  await p.evaluate(()=>window.jogo.debugPlace(-57.4,7,Math.PI/2));
- await foto(p,'computador-geral',-43,3,40);
- await foto(p,'computador-vagas',-52,1.8,29);
+ const carros=await p.evaluate(()=>{const w=window.jogo.current.world;return w.root.userData.estacionamentoDoClube.carros.map(v=>{const c=w.root.children.find(o=>o.userData.peca===`carro-${v.personagem==='noel'?'do-noel':'da-josefina'}`);return{...v,presente:!!c,pos:c?.position.toArray()};});});
+ assert.equal(carros.length,2);for(const c of carros){assert.ok(c.presente);assert.deepEqual(c.pos,[c.x,0,c.z]);}assert.ok(inicial.limite<-74);
+ await foto(p,'computador-geral',-53,3,51);
+ await foto(p,'computador-vagas',-59,1.8,38);
  // A pé: vaga → passagem → faixa fora do ônibus → portão → interior do clube.
  await andar(p,'x',-39);await andar(p,'z',1.8);await andar(p,'x',-27.4);await andar(p,'z',7);await andar(p,'x',-21.5);
  assert.equal(await p.evaluate(()=>window.jogo.idDaCena),'clube');
@@ -59,12 +68,14 @@ try{
  assert.equal(await p.evaluate(()=>{const w=window.jogo.current.world;return w.colliders.includes(w.root.userData.estacionamentoDoClube.barreira);}),true);
  assert.equal(await p.evaluate(()=>localStorage.getItem('aristory.save.v1')),null);
  console.log('Cancela, barreira física, ônibus e save isolado passaram.');
- await ctx.close();
- const cel=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),m=await cel.newPage();m.on('pageerror',e=>erros.push(e.message));
+ const storageState=await ctx.storageState();await ctx.close();
+ const cel=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,storageState}),m=await cel.newPage();m.on('pageerror',e=>erros.push(e.message));
  await m.goto(`${BASE}/?bebito&semHalloween&cena=clube&entrada=do-estacionamento`);await espera(m,()=>!!window.jogo?.current?.world.root.userData.estacionamentoDoClube);
  await desenho(m,false);
  assert.ok(await m.evaluate(()=>window.jogo.player.position.x)<-55);
  await foto(m,'celular-vaga',-56.5,4.5,16);
+ await foto(m,'celular-noel',-70.2,3,15);
+ await foto(m,'celular-josefina',-46.2,-5,15);
  await m.evaluate(()=>window.jogo.debugPlace(-39,7,-Math.PI/2));
  await foto(m,'celular-acesso',-41.2,8,19);
  assert.equal(await m.evaluate(()=>localStorage.getItem('aristory.save.v1')),null);

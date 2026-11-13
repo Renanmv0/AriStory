@@ -43,7 +43,7 @@ export class CarroDoNoel {
   private readonly rodas: THREE.Object3D[] = [];
   private readonly balcao = new THREE.Group();
   private abertura = 0;
-  constructor() {
+  constructor(estacionado = false) {
     this.group.userData.peca = 'carro-do-noel';
     const carro = carroEstacionado(P.laranjaCasca, true);
     // Rodas separadas do corpo estático para poderem girar de verdade.
@@ -61,7 +61,7 @@ export class CarroDoNoel {
     // O bicho conserva as próprias poses: não fundir suas asas, pescoço e leque.
     this.noel.entrarEmServico();
     this.noel.group.position.set(-0.4, 0.89, 0.4);
-    this.group.add(this.noel.group);
+    if (!estacionado) this.group.add(this.noel.group);
     const volante = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.025, 6, 14), toon(P.pneu));
     volante.position.set(-0.4, 1.13, 0.9); volante.rotation.x = -0.7; this.group.add(volante);
     const venda = new THREE.Group(); venda.userData.peca = 'loja-de-sucos-do-noel';

@@ -62,6 +62,43 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
   carro.group.rotation.y = 0;
   entrada.comandar(false);
 
+  const pular = document.createElement('button');
+  pular.type = 'button'; pular.className = 'pular-estacionamento';
+  pular.textContent = 'Pular'; pular.setAttribute('aria-label', 'Pular animação de estacionar');
+  pular.hidden = true; document.body.append(pular);
+  w.aoDesmontar(() => pular.remove());
+  let desceram = false;
+  const descer = (): void => {
+    if (desceram) return;
+    desceram = true;
+    g.poseNoCarro('jogador', null); g.poseNoCarro('parceiro', null);
+    g.releasePlayer(p.descida.x, p.descida.z, p.descida.facing);
+    g.releaseCompanion(p.descida.x + 1.3, p.descida.z, p.descida.facing);
+    g.lockPlayer(true);
+    g.holdCompanion(p.descida.x - 2, p.descida.z);
+    g.mostrarCabeca('jogador', true); g.mostrarCabeca('parceiro', true);
+    carro.abrirPorta(false); carro.frear(false); carro.pisca(null);
+    p.aoEstacionar();
+  };
+  const concluir = (): void => {
+    estado.fase = 'concluida';
+    entrada.comandar(null);
+    g.setCameraOmbro(null); g.freeCompanion(); g.lockPlayer(false);
+    pular.remove();
+  };
+  pular.addEventListener('pointerdown', e => e.stopPropagation());
+  pular.addEventListener('click', e => {
+    e.stopPropagation();
+    if (!iniciou || estado.fase === 'concluida') return;
+    const curva = caminho[caminho.length - 1], tangente = curva.getTangentAt(1);
+    carro.group.position.copy(curva.getPointAt(1));
+    carro.group.rotation.y = Math.atan2(tangente.x, tangente.z);
+    estado.trecho = caminho.length - 1; estado.progresso = 1;
+    carro.andando(0); carro.estercar(0);
+    descer(); carro.abrirPorta(false, true);
+    concluir();
+  });
+
   const filmar = (dt: number): void => {
     const emPe = window.innerWidth / window.innerHeight < 0.8;
     const tomada = p.tomada?.(carro.group.position, estado.fase, estado.trecho, emPe);
@@ -84,6 +121,7 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
       g.poseNoCarro('jogador', jogadorDirige ? 'dirigindo' : 'passageiro');
       g.poseNoCarro('parceiro', jogadorDirige ? 'passageiro' : 'dirigindo');
       carro.pisca('direita');
+      pular.hidden = false;
     }
     tempo += dt;
     if (estado.fase === 'apresentando') {
@@ -106,17 +144,10 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
       }
     } else if (estado.fase === 'descendo') {
       if (tempo >= 1.1 && carro.portaAberta >= 0.99) {
-        g.poseNoCarro('jogador', null); g.poseNoCarro('parceiro', null);
-        g.releasePlayer(p.descida.x, p.descida.z, p.descida.facing);
-        g.releaseCompanion(p.descida.x + 1.3, p.descida.z, p.descida.facing);
-        g.lockPlayer(true);
-        g.holdCompanion(p.descida.x - 2, p.descida.z);
-        g.mostrarCabeca('jogador', true); g.mostrarCabeca('parceiro', true);
-        carro.abrirPorta(false); carro.frear(false); carro.pisca(null);
+        descer();
         g.som('portaDoBebito');
         estado.fase = 'devolvendo'; tempo = 0;
         cameraFinal = { de: olho.clone(), para: mira.clone() };
-        p.aoEstacionar();
       }
     } else if (estado.fase === 'devolvendo') {
       const k = suave(Math.min(1, tempo / 1.4));
@@ -125,9 +156,7 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
       const de = alvo.clone().add(new V(Math.sin(giro) * 10.5, 7.1, Math.cos(giro) * 10.5));
       g.setCameraOmbro(cameraFinal!.de.clone().lerp(de, k), cameraFinal!.para.clone().lerp(alvo, k));
       if (k >= 1 && carro.portaAberta === 0) {
-        estado.fase = 'concluida';
-        entrada.comandar(null);
-        g.setCameraOmbro(null); g.freeCompanion(); g.lockPlayer(false);
+        concluir();
       }
       return;
     } else {

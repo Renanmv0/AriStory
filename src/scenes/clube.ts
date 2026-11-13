@@ -1627,7 +1627,7 @@ export const clube: SceneDef = {
     for (const [x, z] of [
       // As duas da rua agora enquadram o fundo do estacionamento, sem nascer
       // nas vagas nem tapar a passagem de pedestres do lado da câmera.
-      [-64.5, -8], [-64.5, 4],
+      [-76.5, -8], [-76.5, 4],
       [bordaX, 4], [bordaX, -8], [bordaX, -20],
       [-9, -bordaZ + DECK.z], [11, -bordaZ + DECK.z], [26, -bordaZ + DECK.z],
       [-4, bordaZ + DECK.z], [18, bordaZ + DECK.z],
