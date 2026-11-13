@@ -450,7 +450,13 @@ if (roda('piloto')) {
     if (e.cena === 'villa-lobos') break;
     await aperta(page, 1);
   }
+  try {
   await page.waitForFunction(() => window.jogo.idDaCena === 'villa-lobos' && !window.jogo.player.locked && window.jogo.scene.getObjectByName('bebito-mobile')?.userData.chegada?.fase === 'concluida', null, { timeout: 360000 });
+  } catch (erro) {
+    console.log('diagnóstico da chegada:', await page.evaluate(() => ({ cena: window.jogo.idDaCena, travado: window.jogo.player.locked, chegada: window.jogo.scene.getObjectByName('bebito-mobile')?.userData.chegada, dialogo: document.querySelector('.dialogue.show')?.textContent })));
+    await page.screenshot({ path: `${OUT}-falha-na-chegada.png` });
+    throw erro;
+  }
   const chegou = await page.evaluate(() => ({
     cena: window.jogo.idDaCena, poseEu: window.jogo.player.rig.noCarro, poseEle: window.jogo.parceiro.rig.noCarro,
     cabeca: window.jogo.player.rig.head.visible, travado: window.jogo.player.locked,
