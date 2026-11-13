@@ -69,10 +69,16 @@ export const FASES_DO_PRESENTE = {
 } as const;
 
 /**
- * ONDE O CARRO ESTÁ: em casa (na garagem) ou no parque (na rua do ônibus).
+ * ONDE O CARRO ESTÁ: em casa, no parque ou no estacionamento do clube.
  * Quem muda é a chegada de cada viagem (`scenes/viagemDeCarro.ts`).
  */
 export const FLAG_DO_CARRO_NO_PARQUE = 'bebito:carro-no-parque';
+export const FLAG_DO_CARRO_NO_CLUBE = 'bebito:carro-no-clube';
+
+/** Mantém os saves antigos: sem as flags, o carro continua na garagem. */
+export function localDoBebito(g: { flag: (chave: string) => boolean }): 'casa' | 'parque' | 'clube' {
+  return g.flag(FLAG_DO_CARRO_NO_CLUBE) ? 'clube' : g.flag(FLAG_DO_CARRO_NO_PARQUE) ? 'parque' : 'casa';
+}
 
 /**
  * O CARRO POR DENTRO (`docs/BEBITO-MOBILE-DENTRO.md`): entrar no carro na

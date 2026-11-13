@@ -143,7 +143,7 @@ export function faixaDePedestres(naPista: NaPista, s: number): THREE.Mesh {
 
 // ===================================================================== placas
 
-export type DesenhoDaPlaca = 'patos' | 'tigres' | 'lombada' | 'obra' | 'semaforo' | 'buracos';
+export type DesenhoDaPlaca = 'patos' | 'tigres' | 'lombada' | 'obra' | 'semaforo' | 'buracos' | 'rega';
 
 /** a placa de advertência: o losango amarelo de borda preta, com o desenho no meio */
 function texturaDaPlaca(desenho: DesenhoDaPlaca): THREE.CanvasTexture {
@@ -215,6 +215,12 @@ function texturaDaPlaca(desenho: DesenhoDaPlaca): THREE.CanvasTexture {
         ctx.fillStyle = cor;
         elipse(0, y, 6.5, 6.5);
       }
+    } else if (desenho === 'rega') {
+      // Gota e ondulações: água da rega na pista.
+      ctx.beginPath(); ctx.moveTo(0, -27 * u);
+      ctx.bezierCurveTo(-34 * u, 9 * u, -15 * u, 23 * u, 0, 23 * u);
+      ctx.bezierCurveTo(15 * u, 23 * u, 34 * u, 9 * u, 0, -27 * u); ctx.fill();
+      ctx.fillRect(-29 * u, 29 * u, 58 * u, 3 * u);
     } else {
       // buracos: a pista com dois furos
       ctx.fillRect(-30 * u, 8 * u, 60 * u, 5 * u);

@@ -85,6 +85,7 @@ const PECAS = [
   ['jardineira-do-estacionamento-do-clube', 'clube'],
   ['poste-do-estacionamento-do-clube', 'clube'],
   ['totem-do-estacionamento-do-clube', 'clube'],
+  ['carro-do-noel', 'viagem-de-carro&bebito&viagem=parque-clube,ari,7'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],
   ['loja-de-roupas', 'villa-lobos'],

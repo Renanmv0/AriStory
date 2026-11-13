@@ -4,7 +4,7 @@ import type { WorldBuilder } from '../world/WorldBuilder';
 import { PALETTE as P } from '../palette';
 import { ARI, RENAN } from '../characters/cast';
 import { Vento } from '../core/shaders';
-import { fence, lamp, sebe, signBoard, tree } from '../world/props';
+import { fence, lamp, muroDoClube, poolWater, portaoDoClube, sebe, signBoard, tree } from '../world/props';
 import { bancoDePraca } from '../world/bancoDePraca';
 import { tapeteDeGrama } from '../world/texturasDeChao';
 import { fundir, fundirComoFundo } from '../world/fundir';
@@ -21,15 +21,21 @@ import {
 import { TravessiaDeBichos } from '../eventos/bebitoMobile/travessia';
 import { placaDeEstacionamento } from '../world/estacionamento';
 import {
-  PISTA, biomaEm, eixoDaRota, estrelasDaViagem, gerarRota, pedidoDeViagem, type EventoDaRota, type PedidoDeViagem,
+  PISTA, biomaEm, destinoDaRota, eixoDaRota, estrelasDaViagem, gerarRota, pedidoDeViagem, rotaDoClube, type EventoDaRota, type PedidoDeViagem,
   type Rota,
 } from '../eventos/bebitoMobile/rota';
-import { FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
+import { FLAG_DO_CARRO_NO_CLUBE, FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
 import { CameraDeDentro } from '../eventos/bebitoMobile/cameraDeDentro';
 import { menuDoPassageiro } from '../eventos/bebitoMobile/passageiro';
 import { agendarChegadaNoParque } from '../eventos/bebitoMobile/chegadaNoParque';
 import { relogioDaCena } from '../eventos/bebitoMobile/presente';
 import { CelularDeJogo } from '../world/celularDeJogo';
+import { hortaDaAlameda, pomarDaAlameda, quadraNaAlameda } from '../world/paisagemDaRotaDoClube';
+import { coberturaDoEstacionamento, jardineiraDoEstacionamento, posteDoEstacionamento } from '../world/estacionamentoDoClube';
+import { NoelNaEstrada } from '../eventos/bebitoMobile/noelNaEstrada';
+import { OndaVerde, RegaNaAlameda } from '../eventos/bebitoMobile/novidadesDoClube';
+import { agendarChegadaNoClube } from '../eventos/bebitoMobile/chegadaNoClube';
+import { pedidoSalvo } from '../eventos/bebitoMobile/pedidoSalvo';
 
 /**
  * ==================================================== A VIAGEM DE CARRO
@@ -169,7 +175,7 @@ export const viagemDeCarro: SceneDef = {
   },
   spawn: { x: 0, z: 0, facing: Math.PI },
   build(w) {
-    montarAViagem(w, pedidoDeViagem() ?? { sentido: 'ida', motorista: ARI.id, semente: 1 });
+    montarAViagem(w, pedidoDeViagem() ?? pedidoSalvo(w.game) ?? { sentido: 'ida', motorista: ARI.id, semente: 1 });
   },
 };
 
@@ -177,7 +183,10 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const g: GameAPI = w.game;
   const rota = gerarRota(pedido.semente, pedido.sentido);
   const L = rota.comprimento;
-  const ida = rota.sentido === 'ida';
+  const destino = destinoDaRota(rota.sentido);
+  const ida = destino === 'parque';
+  const paraClube = destino === 'clube';
+  const novaRota = rotaDoClube(rota.sentido);
   const rnd = (): number => w.rng();
 
   // ------------------------------------------------------------ a conta da pista
@@ -266,6 +275,19 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         for (let k = 0; k < 2; k++) moitas.push({ ...xz(naBeira(s0 + 6 + k * 19 + rnd() * 4, lado, 3.6 + rnd() * 2)), escala: 1 + rnd() * 0.2, semente: indice * 3 + k });
       }
       for (const s of [s0 + 8, s0 + 28]) por(lamp(), naPista(s, PISTA.meia + PISTA.calcada - 0.45, ALTO_DA_CALCADA), 0);
+    } else if (bioma === 'hortas') {
+      por(hortaDaAlameda(indice * 0.17), naBeira(s0 + 17, 1, 10), paraAPista(s0 + 17, 1));
+      por(pomarDaAlameda(indice), naBeira(s0 + 20, -1, 5.5), rumoEm(s0 + 20));
+      for (const lado of [-1, 1]) {
+        por(tree('florida', 1.05, indice), naBeira(s0 + 3, lado, 4.5), 0);
+        moitas.push({ ...xz(naBeira(s0 + 27, lado, 1.1)), escala: 1, semente: indice });
+      }
+      por(lamp(), naPista(s0 + 8, 5.5, ALTO_DA_CALCADA), 0);
+    } else if (bioma === 'esportivo') {
+      por(quadraNaAlameda(), naBeira(s0 + 20, 1, 11), rumoEm(s0 + 20));
+      por(jardineiraDoEstacionamento(), naBeira(s0 + 9, -1, 0.9), rumoEm(s0 + 9));
+      por(posteDoEstacionamento(), naBeira(s0 + 28, 1, 0.4), rumoEm(s0 + 28));
+      for (const lado of [-1, 1]) for (const ds of [4, 30]) por(tree('palmeira', 1.05, indice + ds), naBeira(s0 + ds, lado, 2.1), 0);
     } else {
       // a beira do parque: bosque dos dois lados, mais fechado, com capim e hortênsia na borda
       for (const lado of [-1, 1]) {
@@ -291,7 +313,16 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const chegada = new THREE.Group();
   chegada.userData.peca = 'chegada-da-viagem';
   let aro: THREE.Object3D | null = null;
-  if (ida) {
+  if (paraClube) {
+    const s = rota.chegada + 4;
+    const portal = portaoDoClube(7);
+    portal.position.copy(naBeira(s, 1, 1)); portal.rotation.y = paraAPista(s, 1); chegada.add(portal);
+    for (const ds of [-10, 10]) {
+      const muro = muroDoClube(12); muro.position.copy(naBeira(s + ds, 1, 1)); muro.rotation.y = rumoEm(s + ds) + Math.PI / 2; chegada.add(muro);
+    }
+    const piscina = poolWater(10, 7); piscina.position.copy(naBeira(s + 4, 1, 16, 0.03)); chegada.add(piscina);
+    const cobertura = coberturaDoEstacionamento(); cobertura.position.copy(naBeira(s + 8, -1, 6)); cobertura.rotation.y = rumoEm(s); chegada.add(cobertura);
+  } else if (ida) {
     const roda = rodaAoLonge(13);
     roda.position.copy(naPista(L + 62, 20));
     roda.rotation.y = rumoEm(L) + Math.PI + 0.5;
@@ -331,7 +362,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     muro.rotation.y = rumoEm(s) + Math.PI / 2;
     chegada.add(muro);
   }
-  const placa = placaDeDestino(ida ? 'VILLA LOBOS' : 'CASA', '300 m');
+  const placa = placaDeDestino(paraClube ? 'CLUBE' : ida ? 'VILLA LOBOS' : 'CASA', '300 m');
   placa.position.copy(naPista(L - 300, PISTA.meia + PISTA.calcada + 0.6));
   placa.rotation.y = rumoEm(L - 300) + Math.PI;
   chegada.add(placa);
@@ -360,6 +391,9 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     cavaletes?: Array<{ s: number; l: number; peca: THREE.Group }>;
     passou: boolean;
     avisou: boolean;
+    rega?: RegaNaAlameda;
+    onda?: OndaVerde;
+    limiteOnda?: number;
   }
   const vivos: Vivo[] = [];
   const placaEm = (desenho: DesenhoDaPlaca, s: number): void => {
@@ -430,7 +464,12 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       peca.position.copy(naPista(e.s, lFaixa));
       peca.rotation.y = rumoEm(e.s);
       w.add(peca);
-    } else {
+    } else if (e.tipo === 'rega') {
+      vivo.rega = new RegaNaAlameda(naPista, e.s, rumoEm(e.s)); w.add(vivo.rega.group);
+      placaEm('rega', e.s - 30);
+    } else if (e.tipo === 'onda-verde') {
+      vivo.onda = new OndaVerde(e.s, naPista, rumoEm); w.add(vivo.onda.group);
+    } else if (e.tipo === 'onibus') {
       const peca = new OnibusDaCidade({ destino: ida ? 'Villa Lobos' : 'Clube' });
       w.add(fundir(peca.group));
       // ele anda até um pouco antes do evento seguinte e ENCOSTA na calçada (não atravessa faixa nem obra)
@@ -488,6 +527,11 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   };
   const carona = pedido.motorista === ARI.id ? RENAN : ARI;
   const motorista = pedido.motorista === ARI.id ? ARI : RENAN;
+  const eventoNoel = rota.eventos.find(e => e.tipo === 'noel');
+  const noel = eventoNoel ? new NoelNaEstrada(g, eventoNoel.s, naPista, rumoEm, carona.name) : null;
+  if (noel) w.add(noel.carro.group);
+  w.root.userData.novidadesDaViagem = { noel, rega: vivos.find(v => v.rega)?.rega, onda: vivos.find(v => v.onda)?.onda };
+  let visaoAntesDoNoel = false;
   let ultimaFala = -9;
   /** a carona é sempre o outro de quem foi escolhido para dirigir */
   const caronaAgora = (): typeof ARI => carona;
@@ -596,7 +640,13 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       const outra = PISTA.meios[e.faixa === 0 ? 1 : 0];
       if (e.tipo === 'obra' && d < (deJogo ? 30 : 22) && d > -22) alvoL = outra;
       if (vivo.onibus && !vivo.onibus.passou && vivo.onibus.s - estado.s < 30 && vivo.onibus.s - estado.s > -12) alvoL = outra;
-      if (e.tipo === 'lombada' && d > 0 && d < 16 && estado.v > 5) y = -0.8;
+      if (e.tipo === 'lombada' && d > 0 && d < (novaRota ? 22 : 16) && estado.v > (novaRota ? 4.6 : 5)) y = -0.8;
+      if (e.tipo === 'rega' && d > 0 && d < 23 && estado.v > 4.6) y = -0.8;
+      if (vivo.onda && d < 72 && d > -30) {
+        if (vivo.onda.tempo < 8.3) y = 1;
+        const falta = (vivo.limiteOnda ?? Infinity) - 2.9 - estado.s;
+        if (falta < 30 && falta > -1) y = estado.v * estado.v / (2 * Math.max(0.5, falta)) > 4 || falta < 1.2 ? -1 : -0.4;
+      }
       if (e.tipo === 'buracos' && e.buracos && !deJogo) {
         for (const b of e.buracos) {
           const db = e.s + b.ds - estado.s;
@@ -625,7 +675,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
    * De novo: volta à câmera externa e desliga o piloto automático.
    */
   const trocarDeVisao = async (): Promise<void> => {
-    if (trocando || g.emDialogo() || estado.fase === 'fim') return;
+    if (trocando || g.emDialogo() || estado.fase === 'fim' || noel?.ativo) return;
     trocando = true;
     if (estado.visao === 'fora') {
       estado.piloto = true;
@@ -644,7 +694,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   depuracaoDaViagem.passageiro = { trocar: trocarDeVisao, camera: camDentro, celular };
   /** o botão sempre na tela, a tecla V, e o E (ação) que abre o menu do passageiro */
   const vigiarOPassageiro = (): void => {
-    const noAr = estado.fase === 'dirigindo' || estado.fase === 'chegando';
+    const noAr = !noel?.ativo && (estado.fase === 'dirigindo' || estado.fase === 'chegando');
     g.botaoDaViagem(
       noAr
         ? { icone: estado.visao === 'dentro' ? '🚙' : '👀', rotulo: estado.visao === 'dentro' ? 'Voltar à visão externa' : 'Ver da janela do passageiro', ativo: estado.visao === 'dentro' }
@@ -673,11 +723,23 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     cones.update(dt);
     respingos.update(dt);
     if (aro) aro.rotation.z += dt * 0.12;
+    const noelEstavaAtivo = noel?.ativo;
+    const podeReceberNoel = estado.fase === 'dirigindo' && !g.emDialogo() && !menuAberto && !trocando;
+    noel?.update(dt, estado, podeReceberNoel);
+    if (noel?.ativo && !noelEstavaAtivo) {
+      visaoAntesDoNoel = estado.visao === 'dentro';
+      if (visaoAntesDoNoel) { camDentro.cortar(); estado.visao = 'fora'; }
+    }
+    if (noelEstavaAtivo && noel && !noel.ativo) {
+      marca('noel');
+      g.unlock({ id: 'noel-na-estrada', title: 'O suco não espera', place: 'Na estrada pro clube', icon: '🦃', note: 'O Noel passou de carro, parou do nosso lado e lembrou que tinha comprado laranja… mas esquecido o gelo.' });
+      if (visaoAntesDoNoel) { estado.visao = 'dentro'; void camDentro.ligar(() => ({ de: olho, para: olhar }), 1.1); }
+    }
 
     // o manche: virar, acelerar e frear (com fala na tela, ou chegando, ninguém mexe). O PILOTO AUTOMÁTICO
     // dirige mesmo com uma fala ou o menu do passageiro na tela: o carro não pode parar de frear na faixa
     // só porque alguém abriu um balão
-    const livre = estado.fase === 'dirigindo' && !g.emDialogo();
+    const livre = estado.fase === 'dirigindo' && !g.emDialogo() && !noel?.ativo;
     const automatico = depuracaoDaViagem.piloto !== 'nenhum' || estado.piloto;
     const manche = estado.fase !== 'dirigindo' ? { x: 0, y: 0 } : automatico ? piloto() : livre ? g.olharLivre() : { x: 0, y: 0 };
     const buzinou = livre && !automatico && g.acaoCrua();
@@ -685,6 +747,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     // ---- os eventos que mexem com o que o carro pode fazer
     /** o `s` que a FRENTE do carro não pode passar agora, e por quê */
     let limite = Infinity;
+    if (noel && noel.parada !== null && (noel.estado.fase === 'freando' || noel.estado.fase === 'falando')) limite = noel.parada + 2.6;
     let dono: Vivo | null = null;
     let aviso = '';
     let icone = '';
@@ -692,6 +755,21 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     for (const vivo of vivos) {
       const e = vivo.e;
       const d = e.s - estado.s;
+      if (vivo.rega) {
+        vivo.rega.update(dt, d < 110 && d > -45);
+        if (d > 0 && d < 45) { aviso = 'Rega na alameda: passe devagar'; icone = '💦'; }
+        if (!vivo.passou && d <= 0) {
+          vivo.passou = true; marca('rega'); g.som('respingo');
+          if (estado.v > 6.2) { tropecar('rega'); carro.solavanco(0.7); estado.v *= 0.75; g.toast(`${carona.name}: A Josefina regou até o Bebito!`, '💦'); }
+          else { estado.coracoes += 2; estado.gentilezas += 1; g.som('coracao'); g.toast('Josefina: Obrigada por passar devagar, meus amores.', '🐢'); }
+        }
+      }
+      if (vivo.onda) {
+        vivo.limiteOnda = vivo.onda.update(dt, estado);
+        limite = Math.min(limite, vivo.limiteOnda);
+        if (d < 72 && d > -32) { aviso = Number.isFinite(vivo.limiteOnda) ? 'Sinal fechou: espere a próxima onda' : 'Onda verde: acelere no trecho livre'; icone = '🚦'; tom = Number.isFinite(vivo.limiteOnda) ? 'pare' : 'bom'; }
+        if (!vivo.passou && d < -32) { vivo.passou = true; marca('onda-verde'); if (vivo.onda.verdeAproveitado) { marca('onda-aproveitada'); estado.coracoes += 3; g.som('coracao'); } }
+      }
       if (vivo.travessia) {
         const t = vivo.travessia;
         if (t.estado === 'esperando' && d < 46 && d > 0) {
@@ -930,10 +1008,12 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     if (estado.fase === 'partida') {
       if (relogio > 1.1 && !g.emDialogo()) {
         estado.fase = 'dirigindo';
-        comentar('partida', true);
+        if (novaRota) g.toast(`${carona.name}: Cinto colocado. Partiu ${paraClube ? 'clube' : 'parque'}!`, '🚙');
+        else comentar('partida', true);
       }
     } else if (estado.fase === 'dirigindo') {
-      if (manche.y < -0.25) estado.v = Math.max(0, estado.v + manche.y * 17 * dt);
+      if (noel?.ativo) estado.v += THREE.MathUtils.clamp(noel.velocidade(estado.s) - estado.v, -7 * dt, 4 * dt);
+      else if (manche.y < -0.25) estado.v = Math.max(0, estado.v + manche.y * 17 * dt);
       else {
         const alvo = manche.y > 0.3 ? MAXIMA : CRUZEIRO;
         estado.v += Math.max(-3.5 * dt, Math.min(5 * dt, alvo - estado.v));
@@ -948,10 +1028,13 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         estado.v = 0;
         estado.fase = 'fim';
       }
-      aviso = ida ? 'Chegando no Villa Lobos!' : 'Chegando em casa!';
-      icone = ida ? '🌳' : '🏠';
+      aviso = paraClube ? 'Chegando no clube!' : ida ? 'Chegando no Villa Lobos!' : 'Chegando em casa!';
+      icone = paraClube ? '🏊' : ida ? '🌳' : '🏠';
       tom = 'bom';
     } else estado.v = 0;
+    if (noel?.estado.fase === 'esperando' && !podeReceberNoel && estado.s > noel.s - 65) {
+      estado.v = Math.min(estado.v, Math.sqrt(8 * Math.max(0, noel.s - 55 - estado.s)));
+    }
 
     // o que não dá para atravessar: o carro freia a tempo, sozinho, e com susto se foi em cima
     const frenteDoCarro = estado.s + 2.6;
@@ -994,7 +1077,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     carro.frear(freando);
 
     // ---- o lado
-    const querLado = estado.fase === 'chegando' ? Math.max(-1, Math.min(1, (PISTA.meios[1] - estado.l) * 1.2)) : manche.x;
+    const querLado = noel?.ativo ? THREE.MathUtils.clamp((PISTA.meios[1] - estado.l) * 1.8, -1, 1)
+      : estado.fase === 'chegando' ? Math.max(-1, Math.min(1, (PISTA.meios[1] - estado.l) * 1.2)) : manche.x;
     const alvoVl = querLado * 4.2 * Math.max(0.2, Math.min(1, estado.v / 5));
     vl += (alvoVl - vl) * Math.min(1, dt * 9);
     estado.l = Math.max(-PISTA.limite, Math.min(PISTA.limite, estado.l + vl * dt));
@@ -1064,9 +1148,13 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     }
 
     // ---- o que se vê: só os trechos de perto
-    for (const t of trechos) t.grupo.visible = t.s1 > estado.s - 22 && t.s0 < estado.s + 160;
+    // A tomada de frente do Noel olha também para trás: não cortar o asfalto no fundo.
+    for (const t of trechos) t.grupo.visible = t.s1 > estado.s - (noel?.ativo ? 200 : 22) && t.s0 < estado.s + 160;
     // a câmera: a de perseguição, ou (visão do passageiro) a de dentro do carro, que desliza de uma para a outra
-    if (estado.visao === 'dentro' && camDentro.ativa) {
+    if (noel?.ativo) {
+      filmar(dt, false);
+      const tomada = noel.camera(estado); g.setCameraOmbro(tomada.de, tomada.para);
+    } else if (estado.visao === 'dentro' && camDentro.ativa) {
       filmar(dt, false);
       if (camDentro.dentro >= 0.99 && !g.emDialogo()) camDentro.olhar(dt);
       camDentro.update(dt);
@@ -1075,12 +1163,13 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     if (comPassageiro) vigiarOPassageiro();
 
     // ---- o painel
+    if (noel?.ativo) { aviso = noel.estado.fase === 'falando' ? 'O Noel lembrou de uma coisa…' : 'Dando passagem ao Noel'; icone = '🦃'; }
     if (!aviso && estado.fase === 'dirigindo' && relogio < 9) {
       const toque = typeof window !== 'undefined' && 'ontouchstart' in window;
       aviso = toque ? 'Manche: vira e freia · botão: buzina' : '← → vira · ↓ freia · ↑ acelera · E buzina';
       icone = '🚙';
     }
-    if (estado.piloto && aviso) aviso = tom === 'pare' ? 'O Bebito está parando…' : 'O Bebito está de olho na pista…';
+    if (estado.piloto && aviso && !noel?.ativo) aviso = tom === 'pare' ? 'O Bebito está parando…' : 'O Bebito está de olho na pista…';
     if (!aviso && estado.visao === 'dentro' && camDentro.dentro >= 0.99 && estado.fase === 'dirigindo') {
       const toque = typeof window !== 'undefined' && 'ontouchstart' in window;
       aviso = toque ? '✨ escolhe o que fazer · 🚙 visão externa' : 'E: o que fazer · V: visão externa';
@@ -1088,7 +1177,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     }
     estado.aviso = aviso;
     g.painelDaViagem({
-      coracoes: estado.coracoes, progresso: estado.s / rota.chegada, destino: ida ? '🌳' : '🏠',
+      coracoes: estado.coracoes, progresso: estado.s / rota.chegada, destino: paraClube ? '🏊' : ida ? '🌳' : '🏠',
       aviso: estado.fase === 'fim' ? '' : aviso, icone, tom,
     });
 
@@ -1116,7 +1205,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     g.toast(`${'⭐'.repeat(estrelas)} · ${estado.coracoes} corações na viagem`, '🚙');
     const viagens = g.bump('bebito:viagens-feitas');
     if (estado.coracoes > g.stat('bebito:recorde-de-coracoes')) g.bump('bebito:recorde-de-coracoes', estado.coracoes - g.stat('bebito:recorde-de-coracoes'));
-    if (viagens === 1) {
+    if (viagens === 1 && !novaRota) {
       g.unlock({
         id: 'primeira-viagem',
         title: 'A primeira viagem',
@@ -1125,7 +1214,13 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         icon: '🚙',
       });
     }
-    g.setFlag(FLAG_DO_CARRO_NO_PARQUE, ida);
+    g.setFlag(FLAG_DO_CARRO_NO_PARQUE, destino === 'parque');
+    g.setFlag(FLAG_DO_CARRO_NO_CLUBE, destino === 'clube');
+    g.setFlag('bebito:viagem-em-andamento', false);
+    if (paraClube) {
+      agendarChegadaNoClube(pedido.motorista);
+      g.unlock({ id: 'de-bebito-ao-clube', title: 'De Bebito ao clube', place: 'Clube', icon: '🏊', note: 'A alameda, a Josefina regando, a pressa do Noel e a nossa vaga no estacionamento do clube.' });
+    }
     if (ida) agendarChegadaNoParque(pedido.motorista);
     g.painelDaViagem(null);
     g.botaoDaViagem(null);
@@ -1135,7 +1230,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     g.poseNoCarro('parceiro', null);
     g.setCameraOmbro(null);
     g.lockPlayer(false);
-    g.goTo(ida ? 'villa-lobos' : 'frente-da-casa', 'do-carro');
+    g.goTo(paraClube ? 'clube' : ida ? 'villa-lobos' : 'frente-da-casa', paraClube ? 'do-estacionamento' : 'do-carro');
   };
 }
 

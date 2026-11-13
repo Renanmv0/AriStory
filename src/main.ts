@@ -59,7 +59,7 @@ const pedida = params.get('cena') ?? undefined;
 // faz o pedido é a porta do carro (`eventos/bebitoMobile/partida.ts`).
 const viagem = params.get('viagem')?.split(',');
 if (viagem) {
-  const sentido: Sentido = viagem[0] === 'volta' ? 'volta' : 'ida';
+  const sentido: Sentido = viagem[0] === 'parque-clube' || viagem[0] === 'clube-parque' || viagem[0] === 'volta' ? viagem[0] : 'ida';
   pedirViagem({ sentido, motorista: viagem[1] === 'renan' ? 'renan' : 'ari', semente: Number(viagem[2]) || 1 });
 }
 const entrada = params.get('entrada') ?? undefined;

@@ -23,7 +23,7 @@ import {
 import { fundir } from '../world/fundir';
 import { OnibusDaCidade } from '../world/onibusDaCidade';
 import {
-  DESCIDA_NO_CLUBE, FAIXA_DO_CLUBE, montarEstacionamentoDoClube, naAreaDoEstacionamentoDoClube,
+  DESCIDA_NO_CLUBE, FAIXA_DO_CLUBE, montarBebitoNoClube, montarEstacionamentoDoClube, naAreaDoEstacionamentoDoClube,
 } from '../eventos/bebitoMobile/noClube';
 import { Gina } from '../entities/bichos/Gina';
 import { Capy } from '../entities/bichos/Capy';
@@ -308,7 +308,7 @@ export const clube: SceneDef = {
      * Assim se atravessa a rua a pé, sem parar no antigo limite do ônibus.
      */
     w.setBounds(-30, BORDA.fundo + 0.9, BORDA.leste - 0.9, BORDA.frente - 0.9);
-    montarEstacionamentoDoClube(w, {
+    const entradaDoEstacionamento = montarEstacionamentoDoClube(w, {
       beira: RUA.asfalto - RUA.larguraAsfalto / 2, comprimento: RUA.comprimento,
     });
 
@@ -1688,6 +1688,7 @@ export const clube: SceneDef = {
     w.onUpdate(() => {
       pegarOOnibus.label = g.flag('escola-aberta') ? 'Pegar o ônibus' : 'Pegar o ônibus pro parque';
     });
+    montarBebitoNoClube(w, entradaDoEstacionamento, pegarOOnibus);
 
     // -------------------------------------------------------------- respingos
     interface Respingo {
