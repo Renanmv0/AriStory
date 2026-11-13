@@ -77,7 +77,6 @@ export class Capy extends Bicho {
   private montar(): void {
     const pelo = toon(P.capivaraPelo);
     const escuro = toon(P.capivaraEscuro);
-    const claro = toon(P.capivaraClaro);
     const vermelho = toon(P.salvaVidasVermelho);
 
     /**
@@ -137,17 +136,14 @@ export class Capy extends Bicho {
     const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.09, 0.115), pelo);
     focinho.position.set(0, -0.032, 0.145);
     this.cabeca.add(focinho);
-    const beico = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.045, 0.04), claro);
-    beico.position.set(0, -0.058, 0.19);
-    this.cabeca.add(beico);
     const narina = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.028, 0.026), toon(P.capivaraFocinho));
     narina.position.set(0, 0.002, 0.2);
     this.cabeca.add(narina);
 
     /**
      * A BOCA EM "Y" de capivara de desenho (escolha do Renan): um risquinho
-     * desce da narina pela frente do focinho, passa pela quina do beico e abre
-     * em dois bracinhos curvos na frente dele. Tudo traço fino da cor da
+     * desce da narina pela frente do focinho e abre em dois bracinhos curvos
+     * (o beico claro saiu: com a boca desenhada, ele lia como placa colada). Tudo traço fino da cor da
      * narina, juntado numa malha so.
      */
     const riscos: THREE.BufferGeometry[] = [];
@@ -158,11 +154,10 @@ export class Capy extends Bicho {
       geo.translate((x0 + x1) / 2, (y0 + y1) / 2, z);
       riscos.push(geo);
     };
-    risco(0, -0.014, 0, -0.035, 0.2045);                 // o cabinho, na frente do focinho
-    riscos.push(new THREE.BoxGeometry(0.0075, 0.003, 0.009).translate(0, -0.0345, 0.207)); // a quina do beico
+    risco(0, -0.014, 0, -0.038, 0.2045);                 // o cabinho, na frente do focinho
     for (const lado of [-1, 1] as const) {
-      risco(0, -0.038, lado * 0.012, -0.049, 0.2115);    // o bracinho desce...
-      risco(lado * 0.012, -0.049, lado * 0.025, -0.053, 0.2115); // ...e curva para fora
+      risco(0, -0.038, lado * 0.012, -0.049, 0.2045);    // o bracinho desce...
+      risco(lado * 0.012, -0.049, lado * 0.025, -0.053, 0.2045); // ...e curva para fora
     }
     const boca = new THREE.Mesh(juntar(riscos), toon(P.capivaraFocinho));
     boca.name = 'boca-do-capy';
