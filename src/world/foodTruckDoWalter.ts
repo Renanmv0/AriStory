@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Walter } from '../entities/bichos/Walter';
 import { PALETTE as P } from '../palette';
 import { toon } from '../core/materials';
-import { fundir, fundirComoFundo } from './fundir';
+import { fundir, fundirComoFundo, juntarPorCor } from './fundir';
 import { quina } from './lojaDeRoupas';
 import { canvasComLetra } from './halloween/carrinhoDePocoes';
 import {
@@ -402,7 +402,7 @@ export class FoodTruckDoWalter {
       this.franja.add(gomo);
     }
     this.toldo.add(this.franja);
-    this.group.add(this.toldo);
+    this.group.add(fundir(this.toldo));
     // a bancada: dobra para baixo andando e abre na horizontal parada
     this.bancada.name = 'bancada-do-walter';
     this.bancada.position.set(x - 0.06, J.baixo - 0.07, J.z);
@@ -413,9 +413,10 @@ export class FoodTruckDoWalter {
       mao.position.set(-0.17, -0.03, s * (J.largura / 2 - 0.15)); mao.rotation.z = -0.55; this.bancada.add(mao);
     }
     this.montarBancada();
+    this.naBancada.name = 'na-bancada';
     this.naBancada.position.set(-0.2, 0.05, 0);
     this.bancada.add(this.naBancada);
-    this.group.add(this.bancada);
+    this.group.add(fundir(this.bancada));
     // no lado +X, o painel pintado fixo
     const doOutroLado = new THREE.Mesh(new THREE.PlaneGeometry(J.largura, altoJ), toon(P.metalWhite, { mapa: painelPintado() }));
     doOutroLado.position.set(W + 0.006, meioY, J.z); doOutroLado.rotation.y = Math.PI / 2; lata.add(doOutroLado);
@@ -449,12 +450,15 @@ export class FoodTruckDoWalter {
     for (const z of [-1.5, 0.4]) {
       por(new THREE.CylinderGeometry(0.06, 0.08, 0.3, 10), P.churrascoInox, 0, F.teto + 0.1, z);
     }
+    // as dezenas de miudezas de cor lisa viram uma malha de cor por vértice (a mesma imagem)
+    juntarPorCor(lata);
     this.group.add(fundir(lata));
     this.luzinhas();
 
     // ----------------------------------------------------- as rodas (giram)
     for (const z of [F.eixoDaFrente, F.eixoDeTras]) for (const lado of [-1, 1]) {
       const r = roda(lado); r.position.set(lado * F.bitola, F.roda, z);
+      juntarPorCor(r);
       this.rodas.push(r); this.group.add(fundir(r));
     }
 
@@ -493,6 +497,7 @@ export class FoodTruckDoWalter {
     sino.position.set(0.04, 0.0, -0.88); b.add(sino);
     const botao = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 6), toon(P.churrascoInox));
     botao.position.set(0.04, 0.055, -0.88); b.add(botao);
+    juntarPorCor(b);
     fundir(b);
   }
 
