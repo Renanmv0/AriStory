@@ -18,8 +18,8 @@
  *   com cada resposta: o motorista certo ao volante, nenhuma pose nem cabeça escondida sobrando);
  * - SEMCHAVE: na estrada, com `?semCarroPorDentro`, não existe o 👀 nem o V faz nada;
  * - PASSAGEIRO: na viagem, o 👀 (sempre na tela) liga a visão do passageiro: o carro vai no
- *   PILOTO AUTOMÁTICO, quem dirigia vai para o banco da carona e o outro assume o volante,
- *   a câmera entra nos olhos de quem joga, o menu "O que fazer?" é o de cada um (o Ari: cantarolar
+ *   PILOTO AUTOMÁTICO, o motorista escolhido e o passageiro continuam nos mesmos bancos,
+ *   a câmera entra nos olhos do passageiro, o menu "O que fazer?" é o de cada um (o Ari: cantarolar
  *   Danza Kuduro; o Renan: jogar Brawl Stars), encostar no ombro mostra os dois de frente, com o gesto no corpo, e voltar devolve o volante;
  * - PILOTO: a viagem inteira no piloto automático de jogo (nenhum tropeço nem susto, para nas
  *   faixas e no sinal, sem perseguir os corações) e a chegada com tudo desfeito.
@@ -359,13 +359,13 @@ if (roda('passageiro')) {
   const page = await pagina();
   await abrir(page, 'bebito&cena=casa');
   await comOCarro(page);
-  await abrir(page, viagemDe('ari'));
+  await abrir(page, viagemDe('renan'));
   await naEstrada(page);
   await page.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 2; window.aristoryBebitoMobile.viagem.vezes = 2; });
   await dirigindo(page);
   const antes = await viagemEstado(page);
   confere(antes.botao?.visivel && antes.botao.icone === '👀' && antes.visao === 'fora', `o 👀 está sempre na tela durante a viagem (${antes.botao?.icone})`);
-  confere(antes.poseEu === 'dirigindo' && antes.poseEle === 'passageiro', 'quem joga (o Ari) dirige e o outro vai de passageiro');
+  confere(antes.poseEu === 'passageiro' && antes.poseEle === 'dirigindo', 'Renan dirige e Ari é o passageiro');
   await page.screenshot({ path: `${OUT}-p1-de-fora.png` });
   // liga a visão do passageiro tocando o botão
   await page.locator('.botao-da-viagem').click();
@@ -374,9 +374,9 @@ if (roda('passageiro')) {
   const d1 = await viagemEstado(page);
   console.log(`   dentro: ${JSON.stringify({ visao: d1.visao, piloto: d1.piloto, mistura: d1.mistura, eu: d1.poseEu, ele: d1.poseEle, cabeca: d1.cabeca, dist: d1.distanciaDoOlho })}`);
   confere(d1.visao === 'dentro' && d1.piloto === true, 'a visão de dentro está ligada e o carro no piloto automático');
-  confere(d1.poseEu === 'passageiro' && d1.poseEle === 'dirigindo', 'quem dirigia foi para o banco da carona e o outro assumiu o volante');
+  confere(d1.poseEu === 'passageiro' && d1.poseEle === 'dirigindo', 'o motorista e o passageiro continuam nos mesmos bancos');
   confere(d1.cabeca === false && d1.distanciaDoOlho < 0.3, `a câmera está nos olhos de quem joga (a ${d1.distanciaDoOlho?.toFixed(3)} m), a cabeça dele some`);
-  confere(d1.botao?.ativo && d1.botao.icone === '🚙', 'o botão fica marcado (🚙: pegar o volante)');
+  confere(d1.botao?.ativo && d1.botao.icone === '🚙', 'o botão fica marcado (🚙: visão externa)');
   await page.screenshot({ path: `${OUT}-p2-dentro-olhando-a-estrada.png` });
   // o carro continua andando sozinho (mesmo com o menu e as falas abertas)
   const s0 = (await viagemEstado(page)).s;

@@ -7,21 +7,23 @@ import type { CelularDeJogo } from '../../world/celularDeJogo';
  * ============================================ O QUE SE FAZ DE CARONA
  *
  * A visão do passageiro na viagem (`docs/BEBITO-MOBILE-DENTRO.md`, D5): com o carro no
- * piloto automático, quem joga é o passageiro e escolhe, num menu, o que fazer — cada um
- * o seu (a escolha do Renan):
+ * piloto automático, a câmera acompanha quem está no banco do passageiro. O menu
+ * oferece as ações desse personagem (a escolha do Renan):
  *
  *  - o ARI: cantarolar "Danza Kuduro", elogiar o Renan, encostar no ombro dele;
  *  - o RENAN: jogar Brawl Stars no celular, elogiar o Ari, encostar no ombro dele.
  *
  * As palavras são MINHAS e provisórias (o Renan reescreve: a fala dele entra literal). O
- * que se vê normalmente é a câmera de quem joga; encostar no ombro mostra os dois de frente;
+ * que se vê normalmente é a câmera do passageiro; encostar no ombro mostra os dois de frente;
  * jogar no celular põe o celular na frente dos olhos, com a tela do joguinho andando. Os
- * corações saem da cabeça de quem joga (`g.soltarCoracoes`) — os da VIAGEM continuam sendo
+ * corações saem da cabeça do passageiro (`g.soltarCoracoes`) — os da VIAGEM continuam sendo
  * só de quem dirige.
  */
 
 export interface PalcoDoPassageiro {
   g: GameAPI;
+  /** quem ocupa o banco do passageiro, independentemente de quem o jogador controla */
+  quem: 'jogador' | 'parceiro';
   camera: CameraDeDentro;
   celular: CelularDeJogo;
   /** espera no relógio do jogo (o teste acelera) */
@@ -29,6 +31,9 @@ export interface PalcoDoPassageiro {
   /** ao chegar, termina a interação corrente antes de abrir as falas da chegada */
   terminou: () => boolean;
 }
+
+const nomeDoPassageiro = (p: PalcoDoPassageiro): string => p.quem === 'jogador' ? p.g.playerName() : p.g.companionName();
+const nomeDoMotorista = (p: PalcoDoPassageiro): string => p.quem === 'jogador' ? p.g.companionName() : p.g.playerName();
 
 const vezes: Record<string, number> = {};
 /** a próxima fala de uma lista (cada vez, uma diferente) */
@@ -56,8 +61,8 @@ export async function menuDoPassageiro(p: PalcoDoPassageiro): Promise<void> {
   const { g } = p;
   for (;;) {
     if (p.terminou()) return;
-    const euAri = g.playerId() === ARI.id;
-    const outro = g.companionName();
+    const euAri = (g.playerId() === ARI.id) === (p.quem === 'jogador');
+    const outro = nomeDoMotorista(p);
     const opcoes = euAri
       ? ['Cantarolar Danza Kuduro', `Elogiar ${outro}`, `Encostar no ombro de ${outro}`, 'Só olhar a paisagem']
       : ['Jogar Brawl Stars no celular', `Elogiar ${outro}`, `Encostar no ombro de ${outro}`, 'Só olhar a paisagem'];
@@ -75,15 +80,15 @@ async function cantarolar(p: PalcoDoPassageiro): Promise<void> {
   g.som('cantarolarKuduro');
   g.toast('🎵 Danza Kuduro', '🎶');
   await esperar(2.8);
-  g.soltarCoracoes(2);
-  await g.say(['🎵 La mano arriba, cintura sola, da media vuelta, Danza Kuduro.'], g.playerName());
-  await g.say(['Eu conheço essa! Não faz isso que eu quero cantar junto.'], g.companionName());
+  g.soltarCoracoes(2, p.quem);
+  await g.say(['🎵 La mano arriba, cintura sola, da media vuelta, Danza Kuduro.'], nomeDoPassageiro(p));
+  await g.say(['Eu conheço essa! Não faz isso que eu quero cantar junto.'], nomeDoMotorista(p));
 }
 
 /** o Renan joga no celular: o celular vem para a frente dos olhos, a tela anda, e o Ari, que dirige, reclama */
 async function jogarNoCelular(p: PalcoDoPassageiro): Promise<void> {
   const { g, camera, celular, esperar } = p;
-  await g.say(['Calma, só mais uma partida de Brawl Stars…'], g.playerName());
+  await g.say(['Calma, só mais uma partida de Brawl Stars…'], nomeDoPassageiro(p));
   celular.mostrar(true);
   // (no celular em pé o campo de visão na horizontal é estreito: o celular, deitado, cabe se for menor)
   const emPe = typeof window !== 'undefined' && window.innerWidth / window.innerHeight < 0.8;
@@ -100,17 +105,17 @@ async function jogarNoCelular(p: PalcoDoPassageiro): Promise<void> {
   celular.mostrar(false);
   camera.anexar(null);
   camera.altura = -0.05;
-  g.soltarCoracoes(1);
-  await g.say(['Ganhei! Pronto, agora eu olho a paisagem com você.'], g.playerName());
-  await g.say(['Enfim. Olha a roda gigante lá no fundo.'], g.companionName());
+  g.soltarCoracoes(1, p.quem);
+  await g.say(['Ganhei! Pronto, agora eu olho a paisagem com você.'], nomeDoPassageiro(p));
+  await g.say(['Enfim. Olha a roda gigante lá no fundo.'], nomeDoMotorista(p));
 }
 
 /** elogiar quem dirige: uma fala diferente a cada vez, e a resposta dele */
 async function elogiar(p: PalcoDoPassageiro, euAri: boolean): Promise<void> {
   const { g } = p;
-  await g.say([euAri ? proxima('elogio-ari', ELOGIOS_DO_ARI) : proxima('elogio-renan', ELOGIOS_DO_RENAN)], g.playerName());
-  g.soltarCoracoes(2);
-  await g.say([proxima('resposta', RESPOSTAS)], g.companionName());
+  await g.say([euAri ? proxima('elogio-ari', ELOGIOS_DO_ARI) : proxima('elogio-renan', ELOGIOS_DO_RENAN)], nomeDoPassageiro(p));
+  g.soltarCoracoes(2, p.quem);
+  await g.say([proxima('resposta', RESPOSTAS)], nomeDoMotorista(p));
 }
 
 /** encostar no ombro dele: os dois vistos de frente, acompanhando o carro */
@@ -119,9 +124,9 @@ async function encostarNoOmbro(p: PalcoDoPassageiro): Promise<void> {
   camera.encostar = 1;
   camera.giro = 0;
   await esperar(1.6);
-  g.soltarCoracoes(3);
-  await g.say([proxima('soneca', SONECA)], g.companionName());
-  await g.say(['Só quero ficar assim um pouquinho.'], g.playerName());
+  g.soltarCoracoes(3, p.quem);
+  await g.say([proxima('soneca', SONECA)], nomeDoMotorista(p));
+  await g.say(['Só quero ficar assim um pouquinho.'], nomeDoPassageiro(p));
   await esperar(1.2);
   camera.encostar = 0;
   camera.giro = 0;

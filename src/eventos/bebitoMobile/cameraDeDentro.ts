@@ -5,7 +5,7 @@ import type { BebitoMobile } from '../../world/bebitoMobile/BebitoMobile';
 /**
  * ============================================ A CÂMERA DE DENTRO DO CARRO
  *
- * Primeira pessoa no banco de quem o jogador controla (`docs/BEBITO-MOBILE-DENTRO.md`).
+ * Primeira pessoa no banco de quem a cena indica (`docs/BEBITO-MOBILE-DENTRO.md`).
  * O molde é o olhar em volta da cabine da roda gigante (`scenes/villaLobos.ts`):
  * o olhar é um ângulo ACUMULADO (o manche gira o pescoço), com limite, e a
  * câmera é recolocada do zero a cada quadro — só que aqui o olho é a CABEÇA de

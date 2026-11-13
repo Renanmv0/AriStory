@@ -5,6 +5,17 @@
 > `docs/BEBITO-MOBILE.md` (o carro, a quest e a viagem); **as próximas rotas
 > (parque ↔ clube ↔ escola) ficam para o plano seguinte, de propósito.**
 
+## Correção da visão do passageiro (Renan, 2026-11-13)
+
+O botão 👀 e a tecla V mudam apenas a câmera para o passageiro de verdade.
+O motorista escolhido na partida e os bancos ficam iguais durante toda a viagem.
+Com Ari dirigindo, vemos o Renan (celular, elogio e carinho); com Renan dirigindo,
+vemos o Ari (cantarolar, elogio e carinho). Isso independe de quem estava sendo
+controlado fora do carro. As falas, cabeças, gesto e corações usam esse passageiro.
+O piloto automático continua ativo durante a visão interna. Voltar à visão externa
+devolve o comando do carro sem trocar o motorista. Esta correção substitui as
+propostas antigas de trocar os bancos nas seções abaixo.
+
 ## Atualização validada no preview — câmeras e chegada (Renan, 2026-11-12)
 
 - A primeira pessoa continua sendo a visão normal. **Encostar no ombro** mostra os

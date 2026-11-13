@@ -33,7 +33,7 @@ async function novaViagem(jogador) {
     for (const f of ['bebito:surpresa', 'bebito:renan-saiu', 'bebito:ganhou']) g.setFlag(f);
     if (g.playerId() !== jogador) g.swapCharacters();
     b.ritmoDoPresente.vezes = 5;
-    b.pedirViagem({ sentido: 'ida', motorista: jogador, semente: 3 });
+    b.pedirViagem({ sentido: 'ida', motorista: jogador === 'ari' ? 'renan' : 'ari', semente: 3 });
     g.goTo('viagem-de-carro');
   }, jogador);
   await espera(page, () => window.jogo.idDaCena === 'viagem-de-carro' && window.aristoryBebitoMobile.viagem.estado?.fase === 'dirigindo');
@@ -87,7 +87,7 @@ try {
       await page.locator('.botao-da-viagem').click();
       console.log('botão de visão acionado');
       await espera(page, () => window.aristoryBebitoMobile.viagem.estado.visao === 'fora');
-      verifica(await page.evaluate(() => window.jogo.player.rig.noCarro === 'dirigindo' && window.jogo.player.rig.head.visible && !window.aristoryBebitoMobile.viagem.estado.piloto), 'retomou o volante, a pose e a câmera externa');
+      verifica(await page.evaluate(() => window.jogo.player.rig.noCarro === 'passageiro' && window.jogo.parceiro.rig.noCarro === 'dirigindo' && window.jogo.player.rig.head.visible && !window.aristoryBebitoMobile.viagem.estado.piloto), 'voltou à câmera externa mantendo o motorista e os bancos');
     }
     if (!SO || SO === 'chegada') {
       // A integração final é exercitada pela conclusão real da cena, abreviando só a distância da estrada.
