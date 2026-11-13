@@ -3,6 +3,20 @@
 > Plano em construção. Cada etapa marca aqui o que entrou no jogo; o `git log`
 > é a fonte da verdade do que mudou por último.
 
+## Colocação livre e giros seguidos (Renan, 2026-11-13)
+
+Os caminhos de lajes e seus outros estilos podem receber móveis e decorações.
+Peças altas, incluindo o balanço, podem ficar próximas dos muros quando a pegada
+cabe: foram retiradas as faixas artificiais de proteção do caminho e de altura.
+Pisos continuam sem cobrir o traçado fixo do caminho, que é trocado pelas ferramentas.
+Permanecem os limites do quintal/garagem, a área livre da porta/portão e as colisões
+com casa, muros, outras peças e a dupla.
+
+Ao escolher Girar na edição, o menu continua na mesma peça. Cada clique gira
+mais 45° e salva; Deixar assim fecha o menu. Mudar de lugar e Guardar continuam
+na mesma seleção. O uso do móvel lê sua orientação atual após os giros.
+Esta atualização substitui as restrições antigas de caminho/altura abaixo.
+
 ## COMECE AQUI
 
 **O pedido do Renan (2026-11-12)**: "No quintal da casa, o Ari vai adorar poder
@@ -67,11 +81,9 @@ projeto faz).
   do fundo da garagem. "Decorar o quintal" abre o baú (o que está guardado, com
   "Colocar"), e "Arrumar o quintal" liga o modo de edição do decorador (mudar
   de lugar, girar, guardar).
-- **O chão do quintal**: as regras de onde pode (`RegrasDoQuintal`, na cena):
-  o jardim e o fundo da garagem; o caminho de lajes, a frente da porta, o arco
-  do portão, a vaga e a manobra do carro ficam livres; o que é ALTO (mais de
-  1,45 m desde a etapa 4) fica longe do muro da frente e do da direita, que
-  são os do lado da câmera.
+- **O chão do quintal**: móveis e enfeites podem ir sobre o caminho e perto
+  do muro quando a pegada cabe. Pisos respeitam o traçado fixo; a área do
+  portão, a vaga/manobra do carro, limites e colisões continuam protegidos.
 - **O save**: `posta.cena` (`'estufa'` quando falta: save antigo) e
   `aCaminho` (comprado, ainda no correio). O baú é um só: o que a Josefina
   vende também pode ir para o quintal (é enfeite de jardim: a ficha sem
@@ -117,9 +129,8 @@ projeto faz).
   planta onde quiser, como enfeite (a pegada é o tronco).
 - **A hera**: "Tirar a hera" / "Pôr a hera de volta" no baú
   (`quintal:sem-hera`).
-- **A regra do alto** ficou mais justa: o muro da direita só tapa da metade
-  do jardim para a frente; no fundo, encostado na casa, coisa alta pode (é
-  onde a árvore nasceu).
+- **A antiga faixa de altura** junto ao muro foi removida a pedido do Renan
+  em 2026-11-13; vale o espaço físico ocupado pela peça.
 - Peso: o quintal com a árvore mudada, os seis pisos, a mesinha e a
   hortênsia, 312 desenhos por quadro e 150 mil triângulos na vista de sempre.
 

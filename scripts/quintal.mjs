@@ -12,8 +12,8 @@
  *   laboratório levando ao laboratório;
  * - ENCOMENDA: a caixa no portão, abrir põe tudo no baú, e ela some;
  * - COLOCAR: as ferramentas da garagem abrem o baú; colocar pelo modo de
- *   verdade; as regras (o caminho, o portão, fora do quintal, o alto perto do
- *   muro); o fundo da garagem pode; a pegada e a altura de cada peça; o peso
+ *   verdade; as regras (o portão, fora do quintal e colisões físicas);
+ *   o fundo da garagem pode; a pegada e a altura de cada peça; o peso
  *   do quintal cheio, antes e depois; fotos;
  * - ARRUMAR: o "Arrumar o quintal" liga o modo de edição; recarregar e tudo
  *   no lugar; a estufa não monta o que é do quintal;
@@ -218,11 +218,8 @@ if (roda('colocar')) {
   }, [id, x, z, f, decorador]);
   // as regras: não pode
   const recusas = [
-    ['quintal-hortensia-azul', 2.0, 0.0, 'caminho'],
     ['quintal-hortensia-azul', 3.4, 2.0, 'portão'],
     ['quintal-lavanda', -1.0, 2.4, 'encostado'],
-    ['quintal-hortensia-azul', 0.0, 1.0, 'caminho'],
-    ['quintal-guarda-sol', 5.0, 1.6, 'alto'],
     ['quintal-hortensia-azul', 2.0, 4.6, 'fora'],
     ['quintal-hortensia-azul', -5.6, -1.2, 'fora'],
   ];

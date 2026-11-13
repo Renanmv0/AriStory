@@ -220,10 +220,12 @@ Mobile). O que mudou, e que vale para enfeite novo:
   um pé só, dentro do `canteirinho()` de casca (decalque de beira torta,
   `renderOrder` 3 — o `quintal.mjs` não conta o decalque na pegada). A que
   balança usa o `VENTO_DO_QUINTAL`, que a cena faz andar.
-- **O quintal olha a ALTURA**: o que passa de 1,3 m não vai a menos de
-  2,3 m do muro da frente nem do da direita (os do lado da câmera). O
-  guarda-sol é a exceção da pegada: `raio` é o pé (a lona cobre o vizinho de
-  propósito — a mesinha embaixo dele).
+- **O quintal usa a pegada e os colisores**: em 2026-11-13, Renan pediu
+  o balanço perto do muro e em cima do caminho. Móveis e enfeites podem ocupar
+  os caminhos, e não existe mais a faixa de 2,3 m para peças altas. Permanecem
+  os limites físicos e a frente da porta e do portão. Pisos continuam respeitando o
+  traçado fixo do caminho (trocado pelas ferramentas). O guarda-sol usa o raio
+  do pé: a lona pode cobrir a mesinha de propósito.
 - **O enfeite parado passa pela `fundir()`** quando o decorador o põe no
   chão (nos dois lugares); o que tem `anima` fica inteiro, porque ela acha as
   partes pelo `userData`. Peça que se mexe e quer ser leve: marque o pivô com
