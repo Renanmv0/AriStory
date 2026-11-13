@@ -4,6 +4,13 @@
 > É projeto: cada etapa marca aqui o que já está no jogo. O `git log` é a
 > fonte da verdade do que mudou por último.
 
+## Estacionamento do clube (2026-11-13)
+
+Renan antecipou a construção do estacionamento do clube, do outro lado da rua,
+com visual mais moderno: `docs/ESTACIONAMENTO-CLUBE.md`. O local já é visitável
+a pé; a rota até o clube continua sendo a próxima etapa. A vaga e o ponto de
+descida estão definidos, sem mover o carro do casal nem alterar seu save.
+
 ## COMECE AQUI
 
 **O que é.** Em vez do ônibus, a viagem entre os lugares passa a ser de carro

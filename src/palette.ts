@@ -2977,6 +2977,11 @@ export const PALETTE = {
   pneu: 0x34363c,
   cancelaAmarela: 0xf2c431,
   vagaRosa: 0xff8fae,
+  // o estacionamento do clube: concreto frio, piso cinza e metal acetinado;
+  // os detalhes verdes reaproveitam o portão do próprio clube.
+  clubeEstacionamentoPiso: 0x647175,
+  clubeEstacionamentoConcreto: 0xd5dedb,
+  clubeEstacionamentoMetal: 0x42555b,
 } as const;
 
 export type PaletteKey = keyof typeof PALETTE;

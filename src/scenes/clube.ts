@@ -22,6 +22,9 @@ import {
 } from '../world/restauranteDoClube';
 import { fundir } from '../world/fundir';
 import { OnibusDaCidade } from '../world/onibusDaCidade';
+import {
+  DESCIDA_NO_CLUBE, FAIXA_DO_CLUBE, montarEstacionamentoDoClube, naAreaDoEstacionamentoDoClube,
+} from '../eventos/bebitoMobile/noClube';
 import { Gina } from '../entities/bichos/Gina';
 import { Capy } from '../entities/bichos/Capy';
 import { Noel } from '../entities/bichos/Noel';
@@ -183,6 +186,7 @@ export const clube: SceneDef = {
   entries: {
     portaria: { x: EMBARQUE.x, z: EMBARQUE.z, facing: Math.PI / 2 },
     beira: { x: 0, z: 3.5, facing: Math.PI },
+    'do-estacionamento': DESCIDA_NO_CLUBE,
     // quem volta do Mania de Churrasco sai pela porta de serviço, atrás do
     // prédio: um passo para fora dela, já de costas para a parede
     'dos-fundos-do-restaurante': { x: -14.6, z: -18.9, facing: Math.PI },
@@ -214,7 +218,7 @@ export const clube: SceneDef = {
     // tom nem custar uma malha a mais. Antes o clube era duas cores chapadas,
     // e de longe parecia papel colorido.
     w.groundWithHoles({
-      width: 160, depth: 160, color: P.grass, holes: [buraco],
+      width: 240, depth: 200, color: P.grass, holes: [buraco],
       textura: tapeteDeGrama(9),
     });
     // O furo do `groundWithHoles` é LOCAL à malha: ele acaba em
@@ -252,9 +256,13 @@ export const clube: SceneDef = {
     w.patch(RUA.calcada, RUA.z, RUA.larguraCalcada, RUA.comprimento, P.concrete, 0, 0.02, calcadaDePedrinha());
     w.patch(RUA.asfalto, RUA.z, RUA.larguraAsfalto, RUA.comprimento, P.asphalt, 0, 0.024, asfalto());
     for (let z = RUA.z - RUA.comprimento / 2 + 2; z <= RUA.z + RUA.comprimento / 2 - 2; z += 5) {
+      if (Math.abs(z - FAIXA_DO_CLUBE.z) < FAIXA_DO_CLUBE.largura / 2 + 1) continue;
       w.patch(RUA.asfalto, z, 0.22, 2, P.metalWhite, 0, 0.028);
     }
-    w.add(w.place(meioFio(RUA.comprimento), RUA.guia, 0, RUA.z));
+    for (const [a, b] of [[-RUA.comprimento / 2, FAIXA_DO_CLUBE.z - FAIXA_DO_CLUBE.largura / 2],
+      [FAIXA_DO_CLUBE.z + FAIXA_DO_CLUBE.largura / 2, RUA.comprimento / 2]]) {
+      w.add(w.place(meioFio(b - a), RUA.guia, 0, (a + b) / 2));
+    }
 
     // A GUIA NÃO TEM COLISÃO. Ela já foi parede com um vão na frente da parada,
     // e na prática só atrapalhava: um degrau de 14 cm parando a dupla no meio
@@ -296,10 +304,13 @@ export const clube: SceneDef = {
      * lados. Agora ele para na sebe, e a área jogável passa de 52×35 para
      * 62×45.
      *
-     * Na esquerda ele continua indo até a beira do asfalto (`-30`), senão
-     * ninguém alcança a porta do ônibus, que para do lado de fora do clube.
+     * A montagem do estacionamento amplia o lado oeste até o muro do lote.
+     * Assim se atravessa a rua a pé, sem parar no antigo limite do ônibus.
      */
     w.setBounds(-30, BORDA.fundo + 0.9, BORDA.leste - 0.9, BORDA.frente - 0.9);
+    montarEstacionamentoDoClube(w, {
+      beira: RUA.asfalto - RUA.larguraAsfalto / 2, comprimento: RUA.comprimento,
+    });
 
     // --------------------------------------------------- o muro e o portão
     /**
@@ -1614,9 +1625,9 @@ export const clube: SceneDef = {
     const bordaX = DECK.x + DECK.largura / 2 + 1.5;
     const bordaZ = DECK.profundidade / 2 + 1.5;
     for (const [x, z] of [
-      // as duas da esquerda atravessaram a rua: em `-25,5` elas nasciam dentro
-      // da calçada, e do outro lado do asfalto viram o fundo verde da parada
-      [-41, -8], [-41, 4],
+      // As duas da rua agora enquadram o fundo do estacionamento, sem nascer
+      // nas vagas nem tapar a passagem de pedestres do lado da câmera.
+      [-64.5, -8], [-64.5, 4],
       [bordaX, 4], [bordaX, -8], [bordaX, -20],
       [-9, -bordaZ + DECK.z], [11, -bordaZ + DECK.z], [26, -bordaZ + DECK.z],
       [-4, bordaZ + DECK.z], [18, bordaZ + DECK.z],
@@ -1633,6 +1644,7 @@ export const clube: SceneDef = {
       // nem na rua: ela atravessa o cenário inteiro, do outro lado do asfalto
       // até a faixa de grama que separa a calçada do piso do clube
       if (x > -38 && x < -23.5) continue;
+      if (naAreaDoEstacionamentoDoClube(x, z)) continue;
       w.add(w.place(i % 2 ? bush(w.range(0.7, 1.1)) : flowers(6, 1.1), x, 0, z));
     }
     for (let i = 0; i < 6; i++) {
