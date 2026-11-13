@@ -20,7 +20,7 @@
  * - PASSAGEIRO: na viagem, o 👀 (sempre na tela) liga a visão do passageiro: o carro vai no
  *   PILOTO AUTOMÁTICO, quem dirigia vai para o banco da carona e o outro assume o volante,
  *   a câmera entra nos olhos de quem joga, o menu "O que fazer?" é o de cada um (o Ari: cantarolar
- *   Dança Kuduro; o Renan: jogar Brawl Stars), encostar no ombro mostra os dois de frente, com o gesto no corpo, e voltar devolve o volante;
+ *   Danza Kuduro; o Renan: jogar Brawl Stars), encostar no ombro mostra os dois de frente, com o gesto no corpo, e voltar devolve o volante;
  * - PILOTO: a viagem inteira no piloto automático de jogo (nenhum tropeço nem susto, para nas
  *   faixas e no sinal, sem perseguir os corações) e a chegada com tudo desfeito.
  *
@@ -384,7 +384,7 @@ if (roda('passageiro')) {
   await page.keyboard.press('KeyE');
   await page.waitForFunction(() => document.querySelectorAll('.escolhas.show button').length > 0, null, { timeout: 30000 });
   const menu = await viagemEstado(page);
-  confere(menu.botoes.join('|') === 'Cantarolar Dança Kuduro|Elogiar Renan|Encostar no ombro de Renan|Só olhar a paisagem', `o menu do Ari de carona (${menu.botoes.join(', ')})`);
+  confere(menu.botoes.join('|') === 'Cantarolar Danza Kuduro|Elogiar Renan|Encostar no ombro de Renan|Só olhar a paisagem', `o menu do Ari de carona (${menu.botoes.join(', ')})`);
   await page.screenshot({ path: `${OUT}-p3-menu.png` });
   const camAntes = await page.evaluate(() => ({ x: window.jogo.camOmbro.position.x, z: window.jogo.camOmbro.position.z }));
   // encostar no ombro: o olho vai para o lado do motorista
@@ -401,11 +401,11 @@ if (roda('passageiro')) {
   confere(frente.z > 2 && frente.cabecas && frente.inclina < -0.2, 'o carinho é visto de frente, com as duas cabeças visíveis e o passageiro inclinado');
   // as falas, e voltar ao menu
   confere(await ateOsBotoes(page), 'depois do ombro, o menu volta');
-  // cantarolar Dança Kuduro
+  // cantarolar Danza Kuduro
   const cant0 = await page.evaluate(() => window.jogo.audio.contagem.get('cantarolarKuduro') ?? 0);
   await page.locator('.escolhas.show button').nth(0).click();
   await page.waitForFunction((n) => (window.jogo.audio.contagem.get('cantarolarKuduro') ?? 0) > n, cant0, { timeout: 30000 });
-  confere(true, 'o Ari cantarola Dança Kuduro (o som tocou)');
+  confere(true, 'o Ari cantarola Danza Kuduro (o som tocou)');
   confere(await ateOsBotoes(page), 'depois do canto, o menu volta');
   // O Renan de verdade (troca de personagem, câmera e gesto) é conferido em carroCamerasEChegada.mjs.
   // o carro andou todo esse tempo, sozinho

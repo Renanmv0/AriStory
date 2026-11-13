@@ -355,8 +355,9 @@ O `scripts/zfighting.mjs` na porta nova.
 - **O piloto de jogo** fica na faixa da direita, NÃO persegue os corações (os da
   viagem são de quem dirige), olha mais longe e freia mais cedo que o de teste, e
   roda mesmo com uma fala ou o menu na tela.
-- **O Ari cantarola Dança Kuduro** com um "lá-lá-lá" sintetizado no ritmo da
-  música (nada de áudio gravado nem letra); **o Renan joga Brawl Stars** num
+- **O Ari cantarola Danza Kuduro**: desde 2026-11-13, um trecho curto da letra
+  aparece somente no balão (pedido do Renan). O som sintetizado continua igual,
+  sem gravação nem voz cantada; **o Renan joga Brawl Stars** num
   celular com uma arena desenhada por mim, sem arte nem logotipo do jogo.
 - **Aberto**: o piloto automático conta para a NOTA da viagem (as 3 estrelas)?
   Hoje conta: ele nunca bate. Se o Renan quiser que "dirigir bem" seja só de
@@ -399,10 +400,10 @@ Quem está no banco do passageiro abre um **menu "O que fazer?"** e escolhe.
 O Renan descreveu o que cada um faz — e agora está tudo decidido:
 
 **O Ari de passageiro:**
-- **cantarolar "Dança Kuduro"** (a música é a escolhida pelo Renan). O
-  cantarolar é um **"lá-lá-lá" sintetizado** no ritmo da música, em sons do
-  jogo (nada de áudio gravado e nenhuma letra escrita: o Ari só cantarola,
-  como a música soa na cabeça de quem canta baixinho no carro). Vale a regra
+- **cantarolar "Danza Kuduro"** (a música é a escolhida pelo Renan). O
+  cantarolar mantém o **"lá-lá-lá" sintetizado** em sons do jogo. A atualização
+  de 2026-11-13 põe um trecho curto da letra real somente no balão de fala,
+  conforme o Renan confirmou; não adiciona gravação nem voz cantada. Vale a regra
   do som do jogo: a receita nova entra em `src/audio/efeitos.ts` e é ouvida em
   `.wav` antes de ser dada como pronta;
 - **elogiar o Renan** (falas curtas, minhas, provisórias);
