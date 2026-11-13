@@ -24,14 +24,21 @@ export const destinoDaRota = (sentido: Sentido): DestinoDeCarro =>
 export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube');
 export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter';
 /**
- * Uma chance por partida: 20% cada um (Noel, Josefina, Capy e Walter) e 20% sem
- * encontro. O Walter entrou por último e ocupa DUAS faixas de 10% (o fim da do
- * Noel e o fim da da Josefina): assim as sementes de antes continuam quase
- * todas com o mesmo personagem, e as viagens dos testes não trocam de encontro.
+ * TODA viagem tem um encontro na pista (decisão do Renan: "sempre deve ter um
+ * encontro"), 25% para cada um: Noel, Josefina, Capy e Walter. As faixas vêm de
+ * camadas: a do Walter (0,2–0,3 e 0,5–0,6) entrou no meio das antigas, e o
+ * pedaço que era "sem encontro" (0,8–1) foi repartido em quatro de 5%. Assim as
+ * sementes de antes continuam com o mesmo personagem, e só as que não tinham
+ * encontro ganharam um.
  */
-export function sortearEncontro(semente: number, sentido: Sentido): PersonagemNaEstrada | null {
+export function sortearEncontro(semente: number, sentido: Sentido): PersonagemNaEstrada {
   const valor = sorteio(semente * 97 + SENTIDOS.indexOf(sentido) * 131 + 43)();
-  return valor < 0.2 ? 'noel' : valor < 0.3 ? 'walter' : valor < 0.5 ? 'josefina' : valor < 0.6 ? 'walter' : valor < 0.8 ? 'capy' : null;
+  if (valor < 0.2) return 'noel';
+  if (valor < 0.3) return 'walter';
+  if (valor < 0.5) return 'josefina';
+  if (valor < 0.6) return 'walter';
+  if (valor < 0.8) return 'capy';
+  return (['noel', 'josefina', 'capy', 'walter'] as const)[Math.min(3, Math.floor((valor - 0.8) / 0.05))];
 }
 
 /** o pedido que a cena de partida deixa para a cena da viagem */

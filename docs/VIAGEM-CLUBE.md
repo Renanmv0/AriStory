@@ -54,8 +54,10 @@ e segue viagem. Mantém o modelo e as poses originais; os carros compartilham
 a coreografia, reserva de faixa, câmera e retorno da visão do passageiro.
 Quando ela passa de carro, não aparece também regando a calçada.
 
-No caminho antigo casa ↔ parque, um encontro acrescenta um corredor de
-240 m antes dos obstáculos; sem encontro, mantém os 640 m originais. Assim o
+No caminho antigo casa ↔ parque, o encontro acrescenta um corredor de
+240 m antes dos obstáculos (desde 2026-11-13 TODA viagem tem um encontro na
+pista — Noel, Josefina, Capy ou Walter, 25% cada —, então o corredor existe
+sempre). Assim o
 novo carro não disputa espaço com o ônibus ou com os bichos da travessia.
 Os oito obstáculos e suas regras permanecem. Outros personagens e veículos
 podem entrar no catálogo de encontros em uma próxima etapa.

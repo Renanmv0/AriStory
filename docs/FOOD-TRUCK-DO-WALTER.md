@@ -3,9 +3,10 @@
 Pedido do Renan (2026-11-13): "um modelo detalhado, bonito e grande, para o food
 truck do Walter, todo estilizado e fofo", e cruzar com ele na estrada indo para o
 clube. Decisões do Renan: vende **cachorro-quente** (a mesma identidade da
-barraquinha do Halloween), entra no sorteio dos encontros com **20%** (como Noel,
-Josefina e Capy, e 20% sem encontro) e, depois do primeiro encontro, **fica
-estacionado no clube**, como a moto do Capy.
+barraquinha do Halloween), **o Walter não fala — só late, em "au" de jeitos
+diferentes**, **toda viagem tem um encontro na pista** (25% para cada um: Noel,
+Josefina, Capy e Walter) e, depois do primeiro encontro, ele **fica estacionado
+no clube**, como a moto do Capy.
 
 ## O modelo (`src/world/foodTruckDoWalter.ts`)
 
@@ -38,17 +39,17 @@ estacionado no clube**, como a moto do Capy.
 
 O mesmo roteiro dos outros: o truck passa pela esquerda, freia adiante e para do
 lado do Bebito. Na conversa, o Walter vira para a janela do lado do Bebito (o
-focinho sai pela janela) e a janela de venda abre. Falas (provisórias, do Claude —
-a do Renan entra literal):
+focinho sai pela janela) e a janela de venda abre. **Ele só late** (cada fala dele
+é "au" de um jeito, com o som do latido); quem está de carona entende o recado.
+As falas da carona são provisórias, do Claude (a do Renan entra literal):
 
 - toast: "Cheirinho de cachorro-quente no retrovisor… é o Walter!"
-- Walter: "Au! Bebitos! Estreando o food truck novo: cachorro-quente quentinho pelo
-  caminho inteiro!"
-- carona: "Walter?! Você não trabalha no Mania?"
-- Walter: "De dia eu sirvo churrasco, de tarde sirvo cachorro-quente. Garçom de
-  verdade nunca desliga a bandeja!"
-- Walter: "Vou estacionar no clube. Passem lá que eu guardo dois completos pra
-  vocês. Au au!"
+- Walter: "Au! Au au! Auuu!"
+- carona: "Walter?! Um food truck de cachorro-quente? E o Mania?"
+- Walter: "Au au… Au! Au, au au!"
+- carona: "Acho que de dia é churrasco e de tarde é cachorro-quente. Ele não
+  desliga a bandeja nunca."
+- Walter: "Auuuu! Au! 🐾"
 - saída: "Garçom de verdade não desliga a bandeja."
 
 A memória é `walter-na-estrada` ("Cachorro-quente sobre rodas"); com ela, o truck
@@ -57,12 +58,17 @@ batente).
 
 ## O sorteio
 
-`sortearEncontro` (`rota.ts`): Noel até 0,2, Walter de 0,2 a 0,3, Josefina de 0,3
-a 0,5, Walter de 0,5 a 0,6, Capy de 0,6 a 0,8, e nada acima. O Walter ocupa duas
-faixas de 10% para as sementes antigas trocarem o mínimo de personagem. Das
-sementes usadas nos testes, mudaram `ida,…,1` (era Noel), `ida,…,3` e
-`clube-casa,…,1` (eram Josefina) — o `casaClube.mjs` agora espera o Walter na
-volta clube → casa.
+TODA viagem tem encontro (o Renan: "não quero que tenha chance de não cruzar com
+ninguém, sempre deve ter um encontro na pista"). `sortearEncontro` (`rota.ts`)
+dá 25% a cada um, em faixas que vieram em camadas para as sementes antigas não
+trocarem de personagem: Noel até 0,2, Walter de 0,2 a 0,3, Josefina de 0,3 a
+0,5, Walter de 0,5 a 0,6, Capy de 0,6 a 0,8, e o pedaço que era "sem encontro"
+(0,8 a 1) repartido em quatro de 5% (Noel, Josefina, Capy, Walter). Só as
+sementes que não tinham encontro ganharam um. Das usadas nos testes, mudaram
+`ida,…,1` (era Noel), `ida,…,3` e `clube-casa,…,1` (eram Josefina), que agora são
+o Walter, e `ida,…,6` e `ida,…,7`, que não tinham encontro. O teste do carro
+distraído (`viagem.mjs`, `SO=distraido`) agora tira o encontro de cena antes de
+começar, porque ele mede a faixa de pedestres.
 
 ## Validação
 

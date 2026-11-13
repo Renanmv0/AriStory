@@ -88,11 +88,16 @@ export class EncontroNaEstrada {
       return;
     }
     if (this.personagem === 'walter') {
+      // o Walter NÃO fala: é cachorro, só late, em "au" de jeitos diferentes (decisão
+      // do Renan). Quem entende o recado é quem está de carona.
       g.som('latido');
-      await g.say(['Au! Bebitos! Estreando o food truck novo: cachorro-quente quentinho pelo caminho inteiro!'], 'Walter');
-      await g.say(['Walter?! Você não trabalha no Mania?'], this.carona);
-      await g.say(['De dia eu sirvo churrasco, de tarde sirvo cachorro-quente. Garçom de verdade nunca desliga a bandeja!'], 'Walter');
-      await g.say(['Vou estacionar no clube. Passem lá que eu guardo dois completos pra vocês. Au au!'], 'Walter');
+      await g.say(['Au! Au au! Auuu!'], 'Walter');
+      await g.say(['Walter?! Um food truck de cachorro-quente? E o Mania?'], this.carona);
+      g.som('latido');
+      await g.say(['Au au… Au! Au, au au!'], 'Walter');
+      await g.say(['Acho que de dia é churrasco e de tarde é cachorro-quente. Ele não desliga a bandeja nunca.'], this.carona);
+      g.som('latido');
+      await g.say(['Auuuu! Au! 🐾'], 'Walter');
       return;
     }
     if (this.personagem === 'josefina') {

@@ -25,8 +25,9 @@ for (const sentido of SENTIDOS) {
     if (sentido === 'casa-clube') assert.deepEqual(r.trechos.map(t => t.bioma), ['bairro', 'avenida', 'hortas', 'esportivo']);
     if (sentido === 'clube-casa') assert.deepEqual(r.trechos.map(t => t.bioma), ['esportivo', 'hortas', 'avenida', 'bairro']);
   }
-  // 20% cada um: Noel, Josefina, Capy, Walter e sem encontro
-  for (const quem of ['noel', 'josefina', 'capy', 'walter', 'nenhum']) assert.ok(contagem[quem] > 65 && contagem[quem] < 135, quem);
+  // sempre um encontro, 25% cada um: Noel, Josefina, Capy e Walter
+  assert.equal(contagem.nenhum, 0, 'toda viagem tem encontro');
+  for (const quem of ['noel', 'josefina', 'capy', 'walter']) assert.ok(contagem[quem] > 85 && contagem[quem] < 165, quem);
   console.log(sentido, '500 rotas deterministas e encontros variados', contagem);
 }
 const a = gerarRota(7, 'casa-clube'), b = gerarRota(7, 'parque-clube'), c = gerarRota(7, 'clube-casa');
@@ -147,7 +148,7 @@ try {
     const q = await novaPagina(mobile); await abrir(q, `cena=viagem-de-carro&viagem=${sentido},ari,${seed}`);
     await q.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.estado.s = v.rota.encontro.s - 61; v.vezes = 4; v.piloto = 'bom'; });
     await ate(q, () => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase === 'falando');
-    await espera(q, personagem => document.querySelector('.dialogue.show')?.textContent.includes(personagem === 'noel' ? 'GELO' : personagem === 'walter' ? 'food truck' : 'cantinho com sol'), personagem);
+    await espera(q, personagem => document.querySelector('.dialogue.show')?.textContent.includes(personagem === 'noel' ? 'GELO' : personagem === 'walter' ? 'Auuu' : 'cantinho com sol'), personagem);
     await pose(q, 'ari'); await foto(q, (mobile ? 'celular-legado-' : 'computador-') + personagem); assert.ok(await larguraDoCarro(q) < 3.5);
     await ate(q, () => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase === 'feito');
     await pose(q, 'ari'); await q.context().close();

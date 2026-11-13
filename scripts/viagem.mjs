@@ -285,12 +285,17 @@ if (roda('distraido')) {
     for (let s = 1; s < 200; s++) {
       const tipos = window.aristoryBebitoMobile.gerarRota(s, 'ida').eventos.map((e) => e.tipo);
       const i = tipos.indexOf('travessia');
-      if (!window.aristoryBebitoMobile.gerarRota(s, 'ida').encontro && i <= 2 && !tipos.slice(0, i).some((t) => t === 'obra' || t === 'onibus')) return s;
+      if (i <= 2 && !tipos.slice(0, i).some((t) => t === 'obra' || t === 'onibus')) return s;
     }
     return 1;
   });
   await abrir(page, `bebito&cena=viagem-de-carro&viagem=ida,ari,${semente}`);
   await naEstrada(page);
+  // toda viagem tem encontro agora; este teste é sobre a faixa, então o encontro fica de fora
+  await page.evaluate(() => {
+    const n = window.jogo.current.world.root.userData.novidadesDaViagem;
+    if (n.encontro) { n.encontro.estado.fase = 'feito'; n.encontro.carro.group.visible = false; }
+  });
   await viagem(page, { piloto: 'distraido', vezes: 2.5 });
   const travessia = await page.evaluate(() => window.aristoryBebitoMobile.viagem.rota.eventos.find((e) => e.tipo === 'travessia'));
   // acompanha o carro até ele parar na faixa: a frente dele nunca passa da linha com bicho na pista

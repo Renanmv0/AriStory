@@ -12,8 +12,9 @@ e tiras. A pose não altera o Capy salva-vidas que continua no clube.
 Ele entra no mesmo sistema de encontro seguro: Bebito dá passagem, os dois
 param, conversam e seguem. O humor é sobre segurança: nada de mergulhar nas
 curvas, vermelho combina com o apito e o seguro não cobre capivara voadora.
-Há 20% de chance por partida, como cada um dos outros (Noel, Josefina e o
-food truck do Walter, `docs/FOOD-TRUCK-DO-WALTER.md`), e 20% ficam sem encontro.
+Toda viagem tem um encontro na pista (decisão do Renan), e o Capy tem 25% de
+chance, como cada um dos outros (Noel, Josefina e o food truck do Walter,
+`docs/FOOD-TRUCK-DO-WALTER.md`).
 
 Concluir o encontro guarda a memória `capy-na-estrada`; só depois disso a moto
 vazia aparece em uma vaga do clube. A liberação persiste ao recarregar.
