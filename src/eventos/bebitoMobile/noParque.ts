@@ -16,6 +16,8 @@ import {
 } from '../../world/estacionamento';
 import { FASES_DO_PRESENTE, FLAG_DO_CARRO_NO_PARQUE, bebitoMobileNestaPagina } from '../BebitoMobile';
 import { sairDeCarro } from './partida';
+import { animarChegadaNoParque, consumirChegadaNoParque, type ComandoDaCancela } from './chegadaNoParque';
+import { ritmoDoPresente } from './presente';
 
 /**
  * ================================== O ESTACIONAMENTO DO VILLA LOBOS (e o carro nele)
@@ -75,7 +77,7 @@ export function estacionamentoNoParque(): boolean {
  * MONTA O ESTACIONAMENTO do outro lado da rua. A cena chama no fim do
  * `build`, depois de pôr a rua.
  */
-export function montarEstacionamento(w: WorldBuilder): void {
+export function montarEstacionamento(w: WorldBuilder): ComandoDaCancela | undefined {
   if (!estacionamentoNoParque()) return;
   const g = w.game;
   w.setBounds(w.bounds.minX, w.bounds.minZ, LIMITE_LESTE, w.bounds.maxZ);
@@ -95,7 +97,10 @@ export function montarEstacionamento(w: WorldBuilder): void {
     new THREE.PlaneGeometry(x1 - x0, z1 - z0).translate((x0 + x1) / 2, -(z0 + z1) / 2, 0);
   const COMPRIMENTO_DA_RUA = 80;
   w.patch((CALCADA_DE_LA.x0 + CALCADA_DE_LA.x1) / 2, 0, CALCADA_DE_LA.x1 - CALCADA_DE_LA.x0, COMPRIMENTO_DA_RUA, P.concrete, 0, 0.014, calcadaDePedrinha());
-  w.add(w.place(meioFio(COMPRIMENTO_DA_RUA), CALCADA_DE_LA.x0, 0, 0));
+  // A entrada tem o meio-fio rebaixado: a animação não sobe num degrau.
+  for (const [z0, z1] of [[-COMPRIMENTO_DA_RUA / 2, ENTRADA.z0], [ENTRADA.z1, COMPRIMENTO_DA_RUA / 2]]) {
+    w.add(w.place(meioFio(z1 - z0), CALCADA_DE_LA.x0, 0, (z0 + z1) / 2));
+  }
   w.patch((LOTE.x0 + LOTE.x1) / 2, (LOTE.z0 + LOTE.z1) / 2, LOTE.x1 - LOTE.x0, LOTE.z1 - LOTE.z0, P.asphalt, 0, 0.016, asfalto());
   // a entrada dos carros atravessa a calçada
   w.patch((CALCADA_DE_LA.x0 + CALCADA_DE_LA.x1) / 2 + 0.3, (ENTRADA.z0 + ENTRADA.z1) / 2, CALCADA_DE_LA.x1 - CALCADA_DE_LA.x0 + 0.6, ENTRADA.z1 - ENTRADA.z0, P.asphalt, 0, 0.02, asfalto());
@@ -218,10 +223,13 @@ export function montarEstacionamento(w: WorldBuilder): void {
   cancela.group.rotation.y = -Math.PI / 2;
   w.add(fundir(cancela.group));
   w.blockCircle(X_DA_SEBE, ENTRADA.z0 + 0.25, 0.25);
+  let comando: boolean | null = null;
   w.onUpdate((dt) => {
     const p = g.playerPosition();
-    cancela.update(dt, Math.abs(p.x - X_DA_SEBE) < 3.2 && p.z > ENTRADA.z0 - 1.5 && p.z < ENTRADA.z1 + 1.5);
+    const perto = Math.abs(p.x - X_DA_SEBE) < 3.2 && p.z > ENTRADA.z0 - 1.5 && p.z < ENTRADA.z1 + 1.5;
+    cancela.update(dt * ritmoDoPresente.vezes, comando ?? perto);
   });
+  return { cancela, comandar: (aberta) => { comando = aberta; } };
 }
 
 /**
@@ -230,7 +238,7 @@ export function montarEstacionamento(w: WorldBuilder): void {
  * pra casa" do portão vira lembrete (quem veio de carro não volta a pé e
  * deixa o carro). Sem a chave, ou com o carro em casa, isto não monta nada.
  */
-export function montarBebitoNoParque(w: WorldBuilder, cena: { voltarPraCasa: Interactable }): void {
+export function montarBebitoNoParque(w: WorldBuilder, cena: { voltarPraCasa: Interactable; entrada?: ComandoDaCancela }): void {
   const g = w.game;
   if (!bebitoMobileNestaPagina() || !g.flag(FASES_DO_PRESENTE.ganhou) || !g.flag(FLAG_DO_CARRO_NO_PARQUE)) return;
   const A = ARI.name;
@@ -240,7 +248,7 @@ export function montarBebitoNoParque(w: WorldBuilder, cena: { voltarPraCasa: Int
   w.onUpdate((dt) => carro.update(dt));
   // (deitado ao longo do `x`: o comprimento vai no `hw`)
   w.blockBox(VAGA_NO_PARQUE.x, VAGA_NO_PARQUE.z, BEBITO_MOBILE.comprimento / 2 - 0.1, BEBITO_MOBILE.largura / 2 - 0.08);
-  w.interact({
+  const voltar = w.interact({
     id: 'parque:bebito-mobile',
     x: VAGA_NO_PARQUE.x + 0.3, z: PASSAGEM.z0 + 1.0, radius: 1.9,
     label: 'Voltar pra casa de carro', icon: '🚙',
@@ -250,6 +258,14 @@ export function montarBebitoNoParque(w: WorldBuilder, cena: { voltarPraCasa: Int
       await sairDeCarro(g, 'volta');
     },
   });
+  const motorista = consumirChegadaNoParque();
+  if (motorista && cena.entrada) {
+    voltar.enabled = false;
+    animarChegadaNoParque(w, {
+      carro, motorista, entrada: cena.entrada, descida: DESCIDA_NO_PARQUE,
+      aoEstacionar: () => { voltar.enabled = true; },
+    });
+  }
   // o portão de sempre vira lembrete: o carro ficou no estacionamento
   cena.voltarPraCasa.enabled = false;
   w.interact({

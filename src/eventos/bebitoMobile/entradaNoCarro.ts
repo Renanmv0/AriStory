@@ -214,10 +214,10 @@ export function prepararOCarroPorDentro(w: WorldBuilder, palco: PalcoDoCarro): C
 
   /**
    * DESCANSAR (a D3): os encostos da frente deitam e viram a cama, os dois
-   * deitam lado a lado de barriga para cima (a câmera é a de quem joga, olhando o
-   * teto), com o rádio baixinho; uma conversa curta sobre aonde levar o
-   * Bebito Mobile; e depois o menu: cochilar, ou sair do carro. O teto fica
-   * FECHADO (a garagem é coberta, e o Renan quis só o bate-papo e o rádio).
+   * deitam lado a lado de barriga para cima (a câmera mostra os dois de cima,
+   * como na barraca), com o rádio baixinho; uma conversa curta sobre aonde levar o
+   * Bebito Mobile; e depois o menu: cochilar, ou sair do carro. O teto tem um
+   * corte VISUAL durante a tomada e volta ao levantar; não há abertura para olhar o céu.
    * Devolve `true` se saíram do carro, `false` se voltaram ao banco.
    */
   const descansar = async (): Promise<boolean> => {
@@ -236,8 +236,9 @@ export function prepararOCarroPorDentro(w: WorldBuilder, palco: PalcoDoCarro): C
     g.setLying(true);
     camera.deitar(true);
     g.trocarMusica('danca-lenta');
-    await esperar(1.0);
-    olhandoEmVolta = true;
+    await esperar(1.3);
+    // No descanso, a tomada mostra os dois de cima (como a barraca).
+    olhandoEmVolta = false;
 
     // 3. a conversa curta: aonde viajar com o Bebito Mobile (as palavras são minhas, provisórias)
     const primeira = !g.flag('bebito:descansou-no-carro');
@@ -263,7 +264,7 @@ export function prepararOCarroPorDentro(w: WorldBuilder, palco: PalcoDoCarro): C
       if (i === 0) {
         olhandoEmVolta = false;
         await cochilar();
-        olhandoEmVolta = true;
+        olhandoEmVolta = false;
         continue;
       }
       break;
@@ -307,13 +308,20 @@ export function prepararOCarroPorDentro(w: WorldBuilder, palco: PalcoDoCarro): C
     // os dois saem pela porta e ficam ao lado dela, FORA do colisor do carro (e a porta fecha por último)
     g.releasePlayer(s.eu.x, s.eu.z, s.eu.olhando);
     g.releaseCompanion(s.ele.x, s.ele.z, s.ele.olhando);
+    g.lockPlayer(true);
     g.freeCompanion();
     await esperar(0.4);
     carro.abrirPorta(false);
     g.som('portaDoBebito');
     g.mostrarCabeca('jogador', true);
     // (a porta termina de fechar com o jogo ainda travado: ninguém anda em cima dela)
-    await esperar(1.0);
+    await new Promise<void>((pronto) => {
+      aCadaQuadro(() => {
+        if (carro.portaAberta > 0) return false;
+        pronto();
+        return true;
+      });
+    });
     dentro = false;
     g.lockPlayer(false);
   };

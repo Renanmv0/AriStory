@@ -4900,8 +4900,8 @@ export const villaLobos: SceneDef = {
     });
     // o estacionamento do outro lado da rua do ônibus, e o carro nele quando eles vieram de carro
     // (`eventos/bebitoMobile/noParque.ts`; só com a chave do Bebito Mobile)
-    montarEstacionamento(w);
-    montarBebitoNoParque(w, { voltarPraCasa });
+    const entradaDoEstacionamento = montarEstacionamento(w);
+    montarBebitoNoParque(w, { voltarPraCasa, entrada: entradaDoEstacionamento });
 
     // ------------------------------------------------------------- frisbee
     const disco = new Frisbee(P.frisbee);

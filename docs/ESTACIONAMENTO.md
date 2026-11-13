@@ -1,10 +1,19 @@
 # O guarda do estacionamento do Villa Lobos — plano
 
-> Documento de PROJETO, **só anotado: não vamos fazer agora** (pedido do Renan,
-> 2026-11-12). Nada daqui está no jogo; cada etapa marca na tabela quando
-> entrar, e o `git log` é a fonte da verdade. Continua o
+> Documento de PROJETO: **o guarda e a loja continuam para depois**. Renan
+> antecipou apenas a chegada animada em 2026-11-12 (ver atualização abaixo).
+> O `git log` é a fonte da verdade para o que foi publicado. Continua o
 > `docs/BEBITO-MOBILE.md` (o estacionamento já existe, §6) e vem DEPOIS do
 > `docs/BEBITO-MOBILE-DENTRO.md`.
+
+## Atualização da chegada (2026-11-12)
+
+Renan pediu antecipar **só a animação de chegada**, sem o guarda: aproximar,
+parar, abrir a cancela, entrar e estacionar. Implementada e validada em preview em
+`eventos/bebitoMobile/chegadaNoParque.ts`; a viagem agenda a animação apenas em
+memória, sem criar uma flag persistente que a repetiria ao recarregar.
+O personagem, a avaliação e a loja continuam para depois das novas rotas.
+**Viagens com piloto automático também valem para desbloquear recompensas.**
 
 ## COMECE AQUI
 
@@ -14,8 +23,8 @@ quando formos entrar lá**, e um personagem que **se preocupa muito se as
 pessoas são bom motoristas ou não**, então ele dará **recompensas por dirigir
 bem, que custarão corações**."
 
-**Estado:** ⬜ só o plano, com as perguntas ao Renan na §7. Ele mesmo disse
-para deixar anotado e não fazer agora.
+**Estado:** guarda e recompensas ainda em planejamento, com as perguntas da §7.
+A entrada animada foi separada da E2 e antecipada, sem personagem, nesta atualização.
 
 **A ideia numa frase:** quem toma conta do estacionamento é um fiscal
 preocupadíssimo com o jeito que a gente dirige — ele recebe o carro na
@@ -28,7 +37,7 @@ para o carro** de quem dirige bem.
 | etapa | o quê | depende de |
 |---|---|---|
 | **E1** | o personagem (modelo, jeito, a guarita) e as falas de apresentação | as respostas da §7 (espécie, nome, jeito) |
-| **E2** | a **cancela com animação**: o carro chega, ele olha o carro, a cancela sobe, o carro entra e estaciona; e a saída | E1 |
+| **E2** | entrada automática antecipada, sem guarda; a recepção pelo personagem e a saída ficam para depois | E1 apenas para a recepção pelo guarda |
 | **E3** | **o julgamento**: ele comenta a viagem que acabou, pelo que ela de fato teve (§3.3) | E1 |
 | **E4** | **os corações viram moeda** (carteira de corações) e a **loja de recompensas** dele | E3 + decisões da §7 |
 | **E5** | acabamento: sons, celular, memória, save, peso e testes | todas |
@@ -41,7 +50,7 @@ para o carro** de quem dirige bem.
 |---|---|---|
 | **o estacionamento** | `eventos/bebitoMobile/noParque.ts`, `world/estacionamento.ts` | o lote do outro lado da rua do ônibus, as duas filas de vagas, a vaga rosa com o coração e a plaquinha "BEBITO MOBILE", o **totem de pagamento**, a placa azul do "P", quatro carros dos outros |
 | **a cancela** | `Cancela` (`world/estacionamento.ts`), ligada em `noParque.ts` | a barra que **sobe quando alguém chega perto** (a pé ou de carro), na entrada dos carros, na ponta de baixo (`−Z`) do lote. Hoje é automática: não tem ninguém por trás dela |
-| **a chegada de carro** | `scenes/viagemDeCarro.ts` (`chegar`) | o fim da viagem: as falas da carona, as estrelas, o toast "⭐⭐⭐ · 71 corações na viagem", a memória "A primeira viagem" e a ida ao parque (`goTo('villa-lobos', 'do-carro')`), com o carro já na vaga |
+| **a chegada de carro** | `scenes/viagemDeCarro.ts` e `eventos/bebitoMobile/chegadaNoParque.ts` | avaliação da viagem, chegada à cancela, abertura, entrada e manobra até a vaga; ao recarregar, o carro já está estacionado |
 | **a nota da viagem** | `estrelasDaViagem(tropecos, sustos)` (`rota.ts`) | 3 estrelas se ninguém tropeçou nem levou susto, 2 até 3 pontos, 1 depois disso (susto vale 2) |
 | **o que a viagem conta** | `estado` da cena: `tropecos`, `sustos`, `gentilezas` (parou na faixa e no sinal), `coracoes`, `vistos` | é o material de que o julgamento (§3.3) fala |
 | **os corações** | `estado.coracoes` + `bebito:recorde-de-coracoes` | **hoje só são pontos**: aparecem na tela, fecham a viagem e viram o recorde. **Não dão nada** e **não acumulam** (cada viagem recomeça do zero) |
@@ -203,11 +212,12 @@ vaga dela) em vez de ficar numa lista para escolher — pergunta 5.
 
 Fotos de cada passo, no computador e no celular em pé (`CEL=1`), olhadas.
 
-## 6. A ordem que recomendo, quando o Renan mandar
+## 6. Ordem acordada
 
-**E1 → E2 → E3 → E4 → E5.** A E1 e a E2 (o personagem e a cancela com a
-animação) já dão uma cena bonita sozinhas; a E3 dá graça a cada viagem; e a E4
-(a carteira e a loja) é a que mexe no save, e só entra com tudo decidido.
+Primeiro, validar o interior e a chegada automática. Depois, novas rotas
+Villa Lobos ↔ clube e clube ↔ escola. Só então o guarda: E1 → complemento
+da E2 (recepção e saída) → E3 → E4 → E5. A carteira e a loja mexem no save
+e dependem das respostas sobre as recompensas.
 
 ## 7. As perguntas para o Renan (para quando formos fazer)
 

@@ -5,6 +5,47 @@
 > `docs/BEBITO-MOBILE.md` (o carro, a quest e a viagem); **as próximas rotas
 > (parque ↔ clube ↔ escola) ficam para o plano seguinte, de propósito.**
 
+## Atualização validada no preview — câmeras e chegada (Renan, 2026-11-12)
+
+- A primeira pessoa continua sendo a visão normal. **Encostar no ombro** mostra os
+  dois de frente, com o passageiro inclinando o corpo; ao acabar, volta aos olhos.
+- **Descansar** mostra os dois de cima, como na barraca. O teto recebe um corte
+  apenas visual durante essa tomada e volta ao levantar; não é abrir a capota
+  para olhar o céu. Conversa, cochilo e despertar usam a tomada dos dois.
+- Ao chegar ao Villa Lobos, o carro se aproxima da cancela, espera abrir, entra,
+  faz a curva até a vaga do coração e devolve a dupla e o controle. O motorista
+  que estava ao volante na estrada é preservado. Recarregar não repete a cena.
+- **O piloto automático conta para a nota e para desbloquear recompensas**,
+  decisão do Renan nesta atualização. A carteira e a loja do guarda continuam
+  no plano futuro; aqui continuam valendo a pontuação e o recorde existentes.
+- Toda validação e foto acontece num preview de origem diferente do site oficial
+  (`https://renanmv0.github.io/AriStory/`), com contexto de navegador e save de teste.
+  Somente a versão validada pode ir para `main`, que publica automaticamente.
+
+Testes: `scripts/carroPorDentro.mjs` (incluindo `SO=viajar,semChave` e
+`SO=descansar`) e `scripts/carroCamerasEChegada.mjs` (os dois personagens reais,
+carinho, retorno à primeira pessoa, chegada manual/automática e recarga do save).
+`CEL=1` confere o celular em pé; `CHROME_PATH` escolhe o Chromium instalado.
+`RAPIDO=1 SO=piloto` reduz apenas a resolução de desenho do teste funcional,
+sem mudar o relógio ou as regras; as prévias são capturadas em resolução normal.
+A espera única da chegada permite até seis minutos no Chromium sem placa.
+Resultados e fotos ficam fora do repositório. Esta seção prevalece sobre as
+propostas antigas de câmera abaixo.
+
+Validações desta atualização (2026-11-13): entrada/descanso/cochilo/saída no
+computador e no celular; carinho com Ari e Renan reais, retorno à primeira
+pessoa e celular do Renan; viagem saindo do interior com cada motorista;
+interior desativado; chegada manual/automática, cancela, colisões e recarga.
+O percurso completo do piloto terminou com 0 tropeços, 0 sustos, 3 gentilezas
+(duas travessias e um sinal), 42 corações e todos os tipos de evento vistos.
+As fotos foram olhadas, incluindo o ajuste que deixa a câmera sob as vigas
+e o ângulo frontal que impede o bonequinho de cobrir o rosto.
+
+Peso nas tomadas finais (`calls`/triângulos): carinho 255/132095 no computador
+e 245/131501 no celular; descanso no celular 228/89574; chegada 285/204587
+no computador e 259/152427 no celular. São enquadramentos diferentes, não uma
+comparação de desempenho com a câmera antiga. Nenhum modelo ou luz nova foi adicionado.
+
 ## COMECE AQUI
 
 **O pedido** (Renan, 2026-11-12): duas coisas, e só elas por enquanto.
@@ -20,9 +61,10 @@
 
 O carro por dentro tem a própria chave, `CARRO_POR_DENTRO_NO_JOGO` em
 `src/eventos/BebitoMobile.ts`, nascida desligada e **ligada em 2026-11-12** (o Renan:
-"quero as mudanças no jogo"), SEM rodar antes duas checagens que ficaram faltando: o
-"Viajar" de dentro do carro com cada resposta de "Quem dirige?" (`SO=viajar` de
-`scripts/carroPorDentro.mjs`) e a estrada sem a chave (`SO=semChave`) — rode-as. Para ver
+"quero as mudanças no jogo"). Na publicação original faltaram duas checagens:
+"Viajar" de dentro com cada resposta de "Quem dirige?" (`SO=viajar`) e a estrada
+sem a chave (`SO=semChave`). Ambas passaram no preview isolado nesta atualização,
+com o motorista correto, as cabeças visíveis e a tecla V sem efeito com a chave desligada. Para ver
 no save de teste (ou desligar para comparar): `?semCarroPorDentro`. Antes, para ver:
 **`?bebito&carroPorDentro`** (o save de teste do carro: ele já tem o carro na garagem se a quest do presente foi jogada ali; num save de teste novo, `&licoes=10` conclui as lições e é só dormir na cama para começar a quest).
 Para tirar do jogo: trocar a chave para `false`.

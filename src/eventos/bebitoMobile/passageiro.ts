@@ -14,7 +14,7 @@ import type { CelularDeJogo } from '../../world/celularDeJogo';
  *  - o RENAN: jogar Brawl Stars no celular, elogiar o Ari, encostar no ombro dele.
  *
  * As palavras são MINHAS e provisórias (o Renan reescreve: a fala dele entra literal). O
- * que se vê é a câmera de quem joga: encostar no ombro leva o olho para o lado do motorista;
+ * que se vê normalmente é a câmera de quem joga; encostar no ombro mostra os dois de frente;
  * jogar no celular põe o celular na frente dos olhos, com a tela do joguinho andando. Os
  * corações saem da cabeça de quem joga (`g.soltarCoracoes`) — os da VIAGEM continuam sendo
  * só de quem dirige.
@@ -26,6 +26,8 @@ export interface PalcoDoPassageiro {
   celular: CelularDeJogo;
   /** espera no relógio do jogo (o teste acelera) */
   esperar: (s: number) => Promise<void>;
+  /** ao chegar, termina a interação corrente antes de abrir as falas da chegada */
+  terminou: () => boolean;
 }
 
 const vezes: Record<string, number> = {};
@@ -53,6 +55,7 @@ const SONECA = ['Tá com sono?', 'Cansou de olhar a janela?'] as const;
 export async function menuDoPassageiro(p: PalcoDoPassageiro): Promise<void> {
   const { g } = p;
   for (;;) {
+    if (p.terminou()) return;
     const euAri = g.playerId() === ARI.id;
     const outro = g.companionName();
     const opcoes = euAri
@@ -110,13 +113,11 @@ async function elogiar(p: PalcoDoPassageiro, euAri: boolean): Promise<void> {
   await g.say([proxima('resposta', RESPOSTAS)], g.companionName());
 }
 
-/** encostar no ombro dele: o olho vai para o lado do motorista, e ficam assim um pouquinho */
+/** encostar no ombro dele: os dois vistos de frente, acompanhando o carro */
 async function encostarNoOmbro(p: PalcoDoPassageiro): Promise<void> {
   const { g, camera, esperar } = p;
-  camera.ladoDoOmbro = 1;
   camera.encostar = 1;
-  // (o pescoço vira um tico para ele, sem perder a estrada de vista)
-  camera.giro = 0.5;
+  camera.giro = 0;
   await esperar(1.6);
   g.soltarCoracoes(3);
   await g.say([proxima('soneca', SONECA)], g.companionName());
@@ -124,6 +125,7 @@ async function encostarNoOmbro(p: PalcoDoPassageiro): Promise<void> {
   await esperar(1.2);
   camera.encostar = 0;
   camera.giro = 0;
+  await esperar(1.2);
 }
 
 /** o nome do Renan e o do Ari, para quem precisar saber quem é quem sem importar o elenco */

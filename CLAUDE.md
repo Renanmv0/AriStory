@@ -285,10 +285,17 @@ o carro POR DENTRO — entrar na garagem pela porta que gira, descansar com os b
 deitados e a visão do passageiro na viagem com o piloto automático. Está FEITO e NO JOGO
 (chave PRÓPRIA `CARRO_POR_DENTRO_NO_JOGO = true`, ligada em 2026-11-12 a pedido do Renan):
 `?semCarroPorDentro` desliga para comparar; `?carroPorDentro` liga na marra.
-`ESTACIONAMENTO.md` é o plano (só ANOTADO, o Renan pediu para não fazer agora) do
-guarda do estacionamento do Villa Lobos: a cancela com animação de entrada, o
-fiscal que se preocupa se a gente é bom motorista e as recompensas para o carro
-que custam corações.
+A atualização de câmeras e chegada foi implementada e validada em preview: carinho com os dois
+vistos de frente, descanso visto de cima (sob o pergolado, com corte visual do teto)
+e a entrada animada pela cancela até a vaga do coração. O documento do interior
+abre com os resultados da validação. O site oficial e seu save são
+`https://renanmv0.github.io/AriStory/`: testes e fotos só em preview de outra
+origem, antes de publicar em `main`.
+`ESTACIONAMENTO.md` continua guardando o plano do futuro fiscal e das recompensas.
+Só a chegada animada foi autorizada nesta etapa. O piloto automático também
+conta para a nota e para os futuros desbloqueios por boa direção (decisão do Renan).
+Depois da validação do interior, a prioridade é criar as rotas parque ↔ clube
+e clube ↔ escola, antes do fiscal. Não implementar essas próximas etapas junto.
 `QUINTAL.md` é o plano de DECORAR o quintal da casa do Ari — o decorador da
 estufa ensinado a pôr enfeite no chão, no piso, na parede, em cima, pendurado
 e de ponta a ponta —, aberto por um "COMECE AQUI" com as decisões do Renan.

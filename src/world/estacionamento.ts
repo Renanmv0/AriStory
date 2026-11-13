@@ -95,6 +95,8 @@ export class Cancela {
   readonly group = new THREE.Group();
   private readonly braco = new THREE.Group();
   private aberta = 0;
+  /** a entrada espera o braço subir antes de deixar o carro passar */
+  get abertura(): number { return this.aberta; }
 
   constructor(readonly comprimento = 3.4) {
     this.group.userData.peca = 'cancela';

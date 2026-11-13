@@ -199,6 +199,7 @@ export class CharacterRig {
    */
   private noCarro: PoseNoCarro | null = null;
   private volante = 0;
+  private carinhoNoCarro = 0;
   /** o arremesso de lado (a pedrinha no lago): o relógio, em segundos; 0 = parado */
   private arremesso = 0;
   private deitado = false;
@@ -1743,6 +1744,7 @@ export class CharacterRig {
     const saiu = this.noCarro !== null && pose === null;
     this.noCarro = pose;
     this.volante = volante;
+    if (pose !== 'passageiro') this.encostarNoCarro(0);
     if (saiu) {
       this.poeAltura(0);
       this.legL.rotation.x = 0;
@@ -1750,6 +1752,14 @@ export class CharacterRig {
       this.armL.rotation.set(0, 0, -BRACO_SOLTO);
       this.armR.rotation.set(0, 0, BRACO_SOLTO);
       this.body.rotation.x = 0;
+    }
+  }
+
+  encostarNoCarro(quanto: number): void {
+    this.carinhoNoCarro = THREE.MathUtils.clamp(quanto, 0, 1);
+    if (this.carinhoNoCarro === 0) {
+      this.body.rotation.z = 0;
+      this.head.rotation.z = 0;
     }
   }
 
@@ -2189,7 +2199,10 @@ export class CharacterRig {
       }
       this.poeAltura(Math.sin(this.phase) * 0.008);
       this.head.rotation.x = Math.sin(this.phase * 0.7) * 0.03;
-      this.head.rotation.z *= 1 - Math.min(1, dt * 8);
+      // O passageiro fica em −X: inclinar em Z negativo aproxima do motorista.
+      const carinho = this.noCarro === 'passageiro' ? this.carinhoNoCarro : 0;
+      this.body.rotation.z = -0.29 * carinho;
+      this.head.rotation.z = -0.13 * carinho;
       return;
     }
 
