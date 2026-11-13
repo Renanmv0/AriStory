@@ -144,7 +144,7 @@ try {
   await percorrer(m, 'casa-clube', 'renan', null, 'celular-ida'); await m.context().close();
   }
   // Encontros na rota antiga também reservam a pista e devolvem a visão interna.
-  for (const [mobile, sentido, seed, personagem] of [[false, 'clube-casa', 1, 'josefina'], [true, 'ida', 2, 'josefina'], [true, 'volta', 1, 'noel']]) {
+  for (const [mobile, sentido, seed, personagem] of [[false, 'volta', 1, 'noel'], [false, 'clube-casa', 1, 'josefina'], [true, 'ida', 2, 'josefina'], [true, 'volta', 1, 'noel']]) {
     const q = await novaPagina(mobile); await abrir(q, `cena=viagem-de-carro&viagem=${sentido},ari,${seed}`);
     await q.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.estado.s = v.rota.encontro.s - 61; v.vezes = 4; v.piloto = 'bom'; });
     await ate(q, () => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase === 'falando');

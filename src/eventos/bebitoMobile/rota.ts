@@ -87,6 +87,8 @@ export interface EventoDaRota {
   s: number;
   /** a faixa em que o evento está (0 esquerda, 1 direita); os de pista inteira ignoram */
   faixa: 0 | 1;
+  /** Brincadeira opcional junto à poça, nas viagens para o parque. */
+  bolhasDoCookie?: boolean;
   /** só da travessia: quem atravessa, de que lado vem (−1 esquerda, 1 direita) e quantos */
   bichos?: BichosDaTravessia;
   lado?: -1 | 1;
@@ -255,6 +257,7 @@ export function gerarRota(semente: number, sentido: Sentido): Rota {
     for (const c of rota.coracoes) c.s = deslocar(c.s);
     rota.encontro = { personagem, s: 130 };
   }
+  decorarCaminhoDoParque(rota);
   return rota;
 }
 
@@ -288,9 +291,18 @@ function gerarRotaDoClube(semente: number, sentido: Sentido): Rota {
     const l = s > obra.s - 35 && s < obra.s + 24 ? PISTA.meios[obra.faixa === 0 ? 1 : 0] : Math.sin(s * 0.045) * 1.55;
     coracoes.push({ s, l });
   }
-  return { ...base, sentido, comprimento, chegada: comprimento - 16, eventos, coracoes, encontro,
+  const rota: Rota = { ...base, sentido, comprimento, chegada: comprimento - 16, eventos, coracoes, encontro,
     trechos: indo ? trechos : trechos.map(t => ({ bioma: t.bioma, de: comprimento - t.ate, ate: comprimento - t.de })).reverse(),
   };
+  decorarCaminhoDoParque(rota);
+  return rota;
+}
+
+/** O Cookie pode aparecer na poça, sem sobrepor travessias ou a cena dos carros. */
+function decorarCaminhoDoParque(rota: Rota): void {
+  if (destinoDaRota(rota.sentido) !== 'parque' || sorteio(rota.semente * 71 + 503)() >= .35) return;
+  const poca = rota.eventos.find(e => e.tipo === 'poca');
+  if (poca) poca.bolhasDoCookie = true;
 }
 
 /** o trecho de paisagem em `s` */
