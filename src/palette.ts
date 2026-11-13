@@ -476,6 +476,10 @@ export const PALETTE = {
   salvaVidasVermelho: 0xd8382f,
   salvaVidasBranco: 0xf7f2e8,
   cadeiraDeGuarda: 0xe8d9b8,
+  // o oculos esportivo do Capy: a lente fume que da a volta na cara e o reflexo
+  // espelhado azulado por cima dela (preto puro some no toon)
+  oculosEsportivoLente: 0x262a35,
+  oculosEsportivoReflexo: 0x6f9cc4,
 
   // o Noel, o peru do bar de sucos. A pena e marrom-escuro com brilho de
   // bronze; o leque da cauda alterna essa base com a barra clara da ponta, que

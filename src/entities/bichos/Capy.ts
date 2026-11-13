@@ -1,8 +1,17 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
 import type { VozDaFala } from '../../core/types';
+
+/** caixa de quina redonda (o mesmo `quina` do kit, sem puxar o kit da fachada) */
+const quinaRedonda = (l: number, a: number, p: number, r: number): THREE.BufferGeometry =>
+  new RoundedBoxGeometry(l, a, p, 1, Math.min(r, l / 2 - 0.001, a / 2 - 0.001, p / 2 - 0.001));
+/** junta pedacos de geometria de tipos diferentes (com e sem indice) numa so */
+const juntar = (geos: THREE.BufferGeometry[]): THREE.BufferGeometry =>
+  mergeGeometries(geos.map((g) => (g.index ? g.toNonIndexed() : g)))!;
 
 /**
  * O CAPY, a capivara salva-vidas da piscina do clube. O nome e do Renan.
@@ -135,6 +144,30 @@ export class Capy extends Bicho {
     narina.position.set(0, 0.002, 0.2);
     this.cabeca.add(narina);
 
+    /**
+     * A BOCA EM "Y" de capivara de desenho (escolha do Renan): um risquinho
+     * desce da narina pela frente do focinho, passa pela quina do beico e abre
+     * em dois bracinhos curvos na frente dele. Tudo traço fino da cor da
+     * narina, juntado numa malha so.
+     */
+    const riscos: THREE.BufferGeometry[] = [];
+    const risco = (x0: number, y0: number, x1: number, y1: number, z: number): void => {
+      const dx = x1 - x0, dy = y1 - y0;
+      const geo = new THREE.BoxGeometry(0.0075, Math.hypot(dx, dy) + 0.0065, 0.004);
+      geo.rotateZ(Math.atan2(-dx, dy));
+      geo.translate((x0 + x1) / 2, (y0 + y1) / 2, z);
+      riscos.push(geo);
+    };
+    risco(0, -0.014, 0, -0.035, 0.2045);                 // o cabinho, na frente do focinho
+    riscos.push(new THREE.BoxGeometry(0.0075, 0.003, 0.009).translate(0, -0.0345, 0.207)); // a quina do beico
+    for (const lado of [-1, 1] as const) {
+      risco(0, -0.038, lado * 0.012, -0.049, 0.2115);    // o bracinho desce...
+      risco(lado * 0.012, -0.049, lado * 0.025, -0.053, 0.2115); // ...e curva para fora
+    }
+    const boca = new THREE.Mesh(juntar(riscos), toon(P.capivaraFocinho));
+    boca.name = 'boca-do-capy';
+    this.cabeca.add(boca);
+
     for (const lado of [-1, 1] as const) {
       // OLHO NO ALTO: capivara enxerga com o resto do corpo dentro d'agua
       const olho = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 6), toon(0x2b2a33));
@@ -164,14 +197,7 @@ export class Capy extends Bicho {
      * aparecerem. Bicho de oculos escuro nao consegue fazer cara de contente.
      */
     this.oculos.name = 'oculos-do-capy';
-    const lente = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.038, 0.028), toon(0x2b2a33));
-    lente.position.set(0, 0.064, 0.118);
-    this.oculos.add(lente);
-    for (const lado of [-1, 1] as const) {
-      const haste = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.014, 0.11), toon(0x2b2a33));
-      haste.position.set(lado * 0.09, 0.066, 0.06);
-      this.oculos.add(haste);
-    }
+    this.montarOculos();
     this.cabeca.add(this.oculos);
     this.corpo.add(this.cabeca);
 
@@ -214,6 +240,60 @@ export class Capy extends Bicho {
     this.corpo.add(apito);
 
     this.group.add(this.corpo);
+  }
+
+  /**
+   * O OCULOS ESCURO ESPORTIVO (pedido do Renan: "aqueles compridos, que
+   * continuam retos"): UMA lente so, que da a volta na cara como uma faixa — um
+   * pedaco de cilindro em elipse em volta do cranio, reto em cima e embaixo —
+   * e as hastes seguem RETAS dali ate a orelha. Por cima, a armacao branca de
+   * salva-vidas (um filete na beira de cima) e um reflexo espelhado azulado
+   * na metade de cima da lente, que e o que faz ela ler como lente de sol e
+   * nao como faixa preta.
+   */
+  private montarOculos(): void {
+    const Y = 0.066, AX = 0.142, AZ = 0.15, TETA = 1.12, ALTURA = 0.04;
+    // a lente: theta 0 do cilindro e a frente (+Z)
+    const lente = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 1, ALTURA, 32, 1, true, -TETA, 2 * TETA),
+      toon(P.oculosEsportivoLente, { doubleSide: true }),
+    );
+    lente.scale.set(AX, 1, AZ);
+    lente.position.y = Y;
+    this.oculos.add(lente);
+    // o reflexo espelhado: uma faixa mais estreita, um fio por fora da lente
+    const reflexo = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 1, ALTURA * 0.3, 32, 1, true, -TETA * 0.9, 2 * TETA * 0.9),
+      toon(P.oculosEsportivoReflexo),
+    );
+    reflexo.scale.set(AX + 0.0025, 1, AZ + 0.0025);
+    reflexo.position.y = Y + ALTURA * 0.27;
+    this.oculos.add(reflexo);
+
+    // dois brilhos riscados na lente da esquerda, deitados na curva dela
+    for (const [teta, dy, largura] of [[-0.5, -0.004, 0.026], [-0.36, -0.002, 0.012]] as const) {
+      const brilho = new THREE.Mesh(quinaRedonda(largura, 0.006, 0.003, 0.0015), toon(P.salvaVidasBranco));
+      brilho.position.set((AX + 0.004) * Math.sin(teta), Y + dy, (AZ + 0.004) * Math.cos(teta));
+      brilho.rotation.set(0, teta, 0.55);
+      this.oculos.add(brilho);
+    }
+
+    // a armacao: o filete de cima, a ponte no meio e as hastes retas
+    const armacao: THREE.BufferGeometry[] = [];
+    const filete = new THREE.CylinderGeometry(1, 1, 0.009, 32, 1, true, -TETA - 0.02, 2 * TETA + 0.04);
+    filete.scale(AX + 0.004, 1, AZ + 0.004);
+    filete.translate(0, Y + ALTURA / 2, 0);
+    armacao.push(filete);
+    const ponta = { x: AX * Math.sin(TETA), z: AZ * Math.cos(TETA) };
+    for (const lado of [-1, 1] as const) {
+      // a dobradica na ponta da lente e a haste seguindo reta para tras
+      armacao.push(quinaRedonda(0.014, ALTURA * 0.9, 0.022, 0.005).translate(lado * (ponta.x + 0.002), Y, ponta.z - 0.004));
+      const comprimento = 0.11;
+      armacao.push(quinaRedonda(0.011, 0.014, comprimento, 0.004)
+        .translate(lado * (ponta.x + 0.002), Y + 0.006, ponta.z - 0.012 - comprimento / 2));
+    }
+    const armado = new THREE.Mesh(juntar(armacao), toon(P.salvaVidasBranco));
+    this.oculos.add(armado);
   }
 
   // ------------------------------------------------------------------ pose
