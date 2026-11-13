@@ -9,7 +9,7 @@ const OUT = process.argv[2] ?? '/tmp/casa-clube';
 const codigo = ts.transpileModule(await readFile(new URL('../src/eventos/bebitoMobile/rota.ts', import.meta.url), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
 const { SENTIDOS, gerarRota, destinoDaRota } = await import('data:text/javascript;base64,' + Buffer.from(codigo).toString('base64'));
 for (const sentido of SENTIDOS) {
-  const contagem = { noel: 0, josefina: 0, nenhum: 0 };
+  const contagem = { noel: 0, josefina: 0, capy: 0, nenhum: 0 };
   for (let seed = 1; seed <= 500; seed++) {
     const r = gerarRota(seed, sentido), n = r.encontro;
     contagem[n?.personagem ?? 'nenhum']++;
@@ -27,7 +27,8 @@ for (const sentido of SENTIDOS) {
   }
   assert.ok(contagem.noel > 110 && contagem.noel < 190);
   assert.ok(contagem.josefina > 110 && contagem.josefina < 190);
-  assert.ok(contagem.nenhum > 160 && contagem.nenhum < 240);
+  assert.ok(contagem.capy > 65 && contagem.capy < 135);
+  assert.ok(contagem.nenhum > 65 && contagem.nenhum < 135);
   console.log(sentido, '500 rotas deterministas e encontros variados', contagem);
 }
 const a = gerarRota(7, 'casa-clube'), b = gerarRota(7, 'parque-clube'), c = gerarRota(7, 'clube-casa');
@@ -141,7 +142,7 @@ try {
   await p.context().close();
   const m = await novaPagina(true); await emCasa(m, 1); await foto(m, 'celular-destinos');
   await escolher(m, 'Clube'); await escolher(m, 'Renan'); await ate(m, () => window.jogo.idDaCena === 'viagem-de-carro');
-  await percorrer(m, 'casa-clube', 'renan', null, 'celular-ida'); await m.context().close();
+  await percorrer(m, 'casa-clube', 'renan', 'capy', 'celular-ida'); await m.context().close();
   }
   // Encontros na rota antiga também reservam a pista e devolvem a visão interna.
   for (const [mobile, sentido, seed, personagem] of [[false, 'volta', 1, 'noel'], [false, 'clube-casa', 1, 'josefina'], [true, 'ida', 2, 'josefina'], [true, 'volta', 1, 'noel']]) {

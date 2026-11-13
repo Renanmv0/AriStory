@@ -42,6 +42,9 @@ export class Capy extends Bicho {
   private readonly olhos: THREE.Mesh[] = [];
   private readonly patas: THREE.Group[] = [];
   private readonly oculos = new THREE.Group();
+  pilotando = false;
+  olharNaMoto = 0;
+  get apoioDoCapacete(): THREE.Group { return this.cabeca; }
 
   constructor(area: AreaDoBicho) {
     super(area, {
@@ -221,6 +224,18 @@ export class Capy extends Bicho {
    * devagar. Bicho de guarda parado de cabeca fixa lê como estatua.
    */
   protected animar(dt: number, { andando, sentado, carinho, fase }: PoseDoBicho): void {
+    if (this.pilotando) {
+      this.corpo.position.y = Math.sin(fase * 1.5) * .003;
+      this.corpo.rotation.set(-.48, 0, 0);
+      this.cabeca.rotation.set(0, this.olharNaMoto, 0);
+      for (let i = 0; i < 4; i++) {
+        const frente = i < 2, lado = i % 2 ? 1 : -1;
+        this.patas[i].position.set(lado * (frente ? .13 : .18), frente ? .21 : .185, frente ? .23 : -.155);
+        this.patas[i].rotation.set(frente ? -1.65 : -1.1, 0, 0);
+      }
+      for (const orelha of this.orelhas) orelha.visible = false;
+      return;
+    }
     if (andando) {
       const t = fase * 8;
       const passo = Math.sin(t) * 0.42;

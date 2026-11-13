@@ -18,6 +18,7 @@ import { meioFio } from '../../world/props';
 import { Cancela, carroEstacionado, geoCoracaoNoChao } from '../../world/estacionamento';
 import { CarroDoNoel } from '../../world/carroDoNoel';
 import { CarroDaJosefina } from '../../world/carroDaJosefina';
+import { MotoDoCapy } from '../../world/motoDoCapy';
 import {
   coberturaDoEstacionamento, jardineiraDoEstacionamento, posteDoEstacionamento, totemDoEstacionamentoDoClube,
 } from '../../world/estacionamentoDoClube';
@@ -28,6 +29,7 @@ const FILEIRAS = [-70.2, -58.2, -46.2];
 export const CARROS_DOS_PERSONAGENS = [
   { personagem: 'noel', x: -70.2, z: 3, giro: Math.PI / 2 },
   { personagem: 'josefina', x: -46.2, z: -5, giro: -Math.PI / 2 },
+  { personagem: 'capy', x: -70.2, z: -5, giro: Math.PI / 2 },
 ] as const;
 export const FAIXA_DO_CLUBE = { z: 1.8, largura: 2.4 } as const;
 export const ENTRADA_DO_ESTACIONAMENTO_DO_CLUBE = { x: -41.6, z: 12.5, largura: 5.2 } as const;
@@ -126,9 +128,9 @@ export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: numbe
   // Os donos já estão no clube: carros vazios, sem duplicar os personagens.
   const carros = CARROS_DOS_PERSONAGENS.filter(vaga => w.game.temMemoria(`${vaga.personagem}-na-estrada`));
   for (const vaga of carros) {
-    const carro = vaga.personagem === 'noel' ? new CarroDoNoel(true) : new CarroDaJosefina(true);
+    const carro = vaga.personagem === 'noel' ? new CarroDoNoel(true) : vaga.personagem === 'capy' ? new MotoDoCapy(true) : new CarroDaJosefina(true);
     w.add(fundirComoFundo(w.place(carro.group, vaga.x, 0, vaga.z, vaga.giro)));
-    w.blockBox(vaga.x, vaga.z, 2.4, 1.5);
+    w.blockBox(vaga.x, vaga.z, vaga.personagem === 'capy' ? 1.6 : 2.4, vaga.personagem === 'capy' ? .6 : 1.5);
   }
   // A cobertura é só sobre as vagas do fundo; a vaga do Bebito e a passagem ficam a céu aberto.
   peca(coberturaDoEstacionamento(), -58.2, -7);

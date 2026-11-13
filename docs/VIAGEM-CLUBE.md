@@ -41,7 +41,7 @@ Além de lombada, travessia, obra, semáforo e poça:
 ## Viagens com encontros diferentes
 
 Cada partida, em qualquer um dos seis sentidos, sorteia uma possibilidade:
-30% de Noel, 30% de Josefina ou 40% de nenhum encontro. É no máximo um carro
+30% de Noel, 30% de Josefina, 20% do Capy de moto ou 20% de nenhum encontro. É no máximo um veículo
 de personagem por viagem; não há alternância obrigatória e uma repetição é
 possível. O sorteio usa a semente salva do pedido, então recarregar conserva
 inclusive o resultado "ninguém". Não há percentual ou controle de depuração
@@ -87,7 +87,7 @@ o carro nos destinos. O ônibus do clube lembra de buscar o carro quando ele est
 O pedido de viagem guarda sentido, motorista e semente. Recarregar na estrada
 reinicia o percurso com a mesma escolha; não troca destino nem quem dirige.
 Recarregar depois de chegar encontra o carro estacionado e não repete a animação.
-As memórias novas são a primeira chegada ao clube e os encontros com Noel e Josefina.
+As memórias novas são a primeira chegada ao clube e os encontros com Noel, Josefina e Capy.
 
 ## Validar e ver
 
