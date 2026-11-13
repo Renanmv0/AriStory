@@ -8,7 +8,9 @@ const browser=await chromium.launch({executablePath:process.env.CHROME_PATH??'/u
 const erros=[];
 const espera=(p,f,a)=>p.waitForFunction(f,a,{timeout:360000});
 async function menu(p){for(let i=0;i<200;i++){if(await p.locator('.escolhas.show button').count())return;await p.evaluate(()=>{if(!document.querySelector('.escolhas.show button'))document.querySelector('.dialogue.show')?.click();});await p.waitForTimeout(100);}throw Error('Menu não voltou');}
-async function foto(p,path){await p.evaluate(()=>window.jogo.renderer.setPixelRatio(1));await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await p.screenshot({path});await p.evaluate(()=>window.jogo.renderer.setPixelRatio(0.6));}
+// No modo rápido só as capturas usam GPU; a simulação e as matrizes seguem normais.
+async function desenhar(p,ativo){if(!process.env.RAPIDO)return;await p.evaluate(ativo=>{const r=window.jogo.renderer;window.desenhoNormalDoTeste??=r.render.bind(r);r.render=ativo?window.desenhoNormalDoTeste:(cena,camera)=>{cena.updateMatrixWorld();camera.updateMatrixWorld();};},ativo);}
+async function foto(p,path){await desenhar(p,true);await p.evaluate(()=>window.jogo.renderer.setPixelRatio(1));await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await p.screenshot({path});await p.evaluate(()=>window.jogo.renderer.setPixelRatio(0.6));await desenhar(p,false);}
 async function conferir(p,controle,motorista,dentro){
  const e=await p.evaluate(()=>{const g=window.jogo,c=window.aristoryBebitoMobile.viagem.passageiro.camera;return{jogador:g.playerId(),motorista:g.player.rig.noCarro==='dirigindo'?g.playerId():g.companionId(),poses:[g.player.rig.noCarro,g.parceiro.rig.noCarro],quem:c.quem,dist:g.camOmbro?.position.distanceTo(g.cabecaDe(c.quem)),cabecas:[g.player.rig.head.visible,g.parceiro.rig.head.visible]};});
  const quem=controle===motorista?'parceiro':'jogador';
@@ -22,7 +24,7 @@ try{
   const mobile=controle==='renan';
   const ctx=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1200,height:800},isMobile:mobile,hasTouch:mobile});
   const p=await ctx.newPage();p.on('pageerror',e=>erros.push(e.message));
-  await p.goto(`${BASE}/?bebito&carroPorDentro&cena=casa`);await espera(p,()=>!!window.jogo?.current);
+  await p.goto(`${BASE}/?bebito&carroPorDentro&cena=casa`);await espera(p,()=>!!window.jogo?.current);await desenhar(p,false);
   await p.evaluate(({controle,motorista})=>{const g=window.jogo,b=window.aristoryBebitoMobile;for(const f of ['bebito:surpresa','bebito:renan-saiu','bebito:ganhou'])g.setFlag(f);if(g.playerId()!==controle)g.swapCharacters();g.renderer.setPixelRatio(0.6);b.ritmoDoPresente.vezes=5;b.pedirViagem({sentido:'ida',motorista,semente:3});g.goTo('viagem-de-carro');},{controle,motorista});
   await espera(p,()=>window.jogo.idDaCena==='viagem-de-carro'&&window.aristoryBebitoMobile.viagem.estado.fase==='dirigindo');
   console.log(`${controle} controlado, ${motorista} dirigindo: início`);

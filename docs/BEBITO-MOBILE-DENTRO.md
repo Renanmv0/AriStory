@@ -16,6 +16,12 @@ O piloto automático continua ativo durante a visão interna. Voltar à visão e
 devolve o comando do carro sem trocar o motorista. Esta correção substitui as
 propostas antigas de trocar os bancos nas seções abaixo.
 
+A regressão está em `scripts/motoristaPreservado.mjs`: cruza Ari/Renan controlado
+com Ari/Renan ao volante e confere câmera, menu, falas, gesto, retorno por V e chegada.
+`RAPIDO=1` mantém a simulação e as matrizes e desenha os quadros das capturas
+normalmente, evitando gasto de GPU entre as fotos. O celular foi enquadrado acima
+do corpo para a tela continuar visível na primeira pessoa do Renan.
+
 ## Atualização validada no preview — câmeras e chegada (Renan, 2026-11-12)
 
 - A primeira pessoa continua sendo a visão normal. **Encostar no ombro** mostra os
