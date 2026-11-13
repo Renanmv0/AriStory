@@ -362,7 +362,8 @@ function bebedouroDePassarinho(): THREE.Group {
   aba.position.y = 0.7;
   g.add(aba);
   const agua = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 0.01, 16), toon(P.enfeiteAguaRasa, { glow: 0.15 }));
-  agua.position.y = 0.69;
+  // Acima do topo sólido da taça (0,70), mas abaixo da borda (0,725).
+  agua.position.y = 0.705;
   g.add(agua);
   // o passarinho, empoleirado na borda de trás, olhando para dentro
   const ave = new THREE.Group();
