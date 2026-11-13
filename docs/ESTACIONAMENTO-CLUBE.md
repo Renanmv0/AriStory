@@ -4,6 +4,32 @@ Atualização: a viagem ao clube e a chegada de carro foram construídas depois
 do estacionamento. Ver `VIAGEM-CLUBE.md`; o texto abaixo registra a construção
 inicial do lote, quando ainda era visitável apenas a pé.
 
+## Chegada animada — apresentação e manobra
+
+A chegada tem uma tomada própria do clube: apresenta o lote, acompanha o carro
+na rua, espera a cancela abrir, entra, percorre o corredor e faz a curva até a
+vaga do coração. A última manobra é mais lenta e a câmera enquadra carro e vaga
+juntos, inclusive no celular. Só depois ele abre a porta, a dupla desce e o
+controle volta. O motorista escolhido na viagem permanece ao volante.
+
+O motor de animação é compartilhado com o Villa Lobos; apresentação, duração
+dos trechos e tomadas são parâmetros específicos do clube. Recarregar depois
+da chegada mantém o carro estacionado sem reproduzir a entrada.
+
+Personagem do estacionamento e sua relação com o outro responsável ficam
+anotados para depois, conforme pedido do Renan. Esta etapa é só a animação.
+
+Validação focada: `scripts/chegadaClube.mjs` percorre a chegada pelo fluxo da
+viagem, com Ari/Renan ao volante no computador e celular. Confere fases,
+abertura antes de atravessar a cancela, manobra sem atravessar carros/muros,
+descida, retorno do controle, recarga e a chegada original do parque.
+
+Resultado no preview (2026-11-13): as quatro combinações de tela/motorista
+passaram, sem colisões ou erros de página. A cancela abriu antes da passagem,
+o controle voltou após a descida e recarregar não repetiu a chegada. A chegada
+do Villa Lobos também passou. Fotos conferidas no computador e no celular;
+nenhuma geometria, material ou luz foi acrescentada nesta etapa.
+
 Pedido do Renan (2026-11-13): construir primeiro o estacionamento, do outro lado
 da rua do clube, com uma aparência mais moderna que o estacionamento do Villa
 Lobos. A viagem até ele fica para a próxima etapa.
