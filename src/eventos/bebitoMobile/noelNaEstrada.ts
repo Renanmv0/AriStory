@@ -78,6 +78,7 @@ export class NoelNaEstrada {
   camera(viagem: { s: number }): { de: THREE.Vector3; para: THREE.Vector3 } {
     const longe = window.innerWidth / window.innerHeight < 0.8 ? 1.65 : 1;
     const alvo = this.naPista(viagem.s + 1, 0, 1.25);
-    return { de: this.naPista(viagem.s + 10 * longe, 7 * longe, 4.8 * longe), para: alvo };
+    // A tomada fica sobre a pista, sem um poste da calçada entre a lente e os carros.
+    return { de: this.naPista(viagem.s + 10 * longe, 3.5 * longe, 4.8 * longe), para: alvo };
   }
 }
