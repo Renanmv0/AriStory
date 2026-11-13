@@ -1,3 +1,4 @@
+import { BolhasDoCookie } from '../eventos/bebitoMobile/bolhasDoCookie';
 import * as THREE from 'three';
 import type { GameAPI, SceneDef } from '../core/types';
 import type { WorldBuilder } from '../world/WorldBuilder';
@@ -391,6 +392,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     cavaletes?: Array<{ s: number; l: number; peca: THREE.Group }>;
     passou: boolean;
     avisou: boolean;
+    cookie?: BolhasDoCookie;
     rega?: RegaNaAlameda;
     onda?: OndaVerde;
     limiteOnda?: number;
@@ -405,6 +407,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   rota.eventos.forEach((e, indice) => {
     const vivo: Vivo = { e, indice, relogio: 0, assustou: false, parou: false, contou: false, bateu: false, passou: false, avisou: false };
     const lFaixa = PISTA.meios[e.faixa];
+    if (e.bolhasDoCookie) { vivo.cookie = new BolhasDoCookie(naPista, e.s, rumoEm(e.s)); w.add(vivo.cookie.group); }
     if (e.tipo === 'travessia') {
       w.add(faixaDePedestres(naPista, e.s));
       placaEm(e.bichos === 'patos' ? 'patos' : 'tigres', e.s - 34);
@@ -529,7 +532,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const motorista = pedido.motorista === ARI.id ? ARI : RENAN;
   const encontro = rota.encontro ? new EncontroNaEstrada(g, rota.encontro.s, naPista, rumoEm, carona.name, rota.encontro.personagem) : null;
   if (encontro) w.add(encontro.carro.group);
-  w.root.userData.novidadesDaViagem = { encontro, noel: encontro?.personagem === 'noel' ? encontro : null, rega: vivos.find(v => v.rega)?.rega, onda: vivos.find(v => v.onda)?.onda };
+  w.root.userData.novidadesDaViagem = { cookie: vivos.find(v => v.cookie)?.cookie, encontro, noel: encontro?.personagem === 'noel' ? encontro : null, rega: vivos.find(v => v.rega)?.rega, onda: vivos.find(v => v.onda)?.onda };
   let visaoAntesDoEncontro = false;
   let ultimaFala = -9;
   /** a carona é sempre o outro de quem foi escolhido para dirigir */
@@ -640,6 +643,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       if (e.tipo === 'obra' && d < (deJogo ? 30 : 22) && d > -22) alvoL = outra;
       if (vivo.onibus && !vivo.onibus.passou && vivo.onibus.s - estado.s < 30 && vivo.onibus.s - estado.s > -12) alvoL = outra;
       if (e.tipo === 'lombada' && d > 0 && d < (novaRota ? 22 : 16) && estado.v > (novaRota ? 4.6 : 5)) y = -0.8;
+      if (e.bolhasDoCookie && d > 0 && d < 25 && estado.v > 4.6) y = -0.8;
       if (e.tipo === 'rega' && d > 0 && d < 23 && estado.v > 4.6) y = -0.8;
       if (vivo.onda && d < 72 && d > -30) {
         if (vivo.onda.tempo < 8.3) y = 1;
@@ -755,6 +759,16 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     for (const vivo of vivos) {
       const e = vivo.e;
       const d = e.s - estado.s;
+      if (vivo.cookie) {
+        vivo.cookie.update(dt, d < 100 && d > -45);
+        if (d > 0 && d < 42) { aviso = 'Bolhas do Cookie: passe devagar'; icone = '🫧'; }
+        if (!vivo.avisou && d <= 0) {
+          vivo.avisou = true; marca('bolhas-cookie'); const rapido = estado.v > 6.2;
+          vivo.cookie.passar(rapido);
+          if (rapido) g.toast('Cookie: Puf! Essa era do tamanho da roda gigante… Vou fazer outra!', '🐘');
+          else { estado.coracoes += 2; estado.gentilezas++; g.som('coracao'); g.toast('Cookie: Obrigado! Olha só… nessa bolha eu até caibo!', '🐘'); }
+        }
+      }
       if (vivo.rega) {
         vivo.rega.update(dt, d < 110 && d > -45);
         if (d > 0 && d < 45) { aviso = 'Rega na alameda: passe devagar'; icone = '💦'; }

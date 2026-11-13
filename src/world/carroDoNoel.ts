@@ -1,3 +1,4 @@
+import { acabamentoDosCarros } from './acabamentoDosCarros';
 import * as THREE from 'three';
 import { Noel } from '../entities/bichos/Noel';
 import { PALETTE as P } from '../palette';
@@ -54,6 +55,7 @@ export class CarroDoNoel {
       }
     }
     this.group.add(fundir(carro));
+    this.group.add(acabamentoDosCarros(false));
     const banco = new THREE.Mesh(quina(0.55, 0.12, 0.55, 0.04), toon(P.portaoMetal));
     banco.position.set(-0.4, 0.85, 0.4); this.group.add(banco);
     // O bicho conserva as próprias poses: não fundir suas asas, pescoço e leque.

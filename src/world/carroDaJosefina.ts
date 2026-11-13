@@ -1,3 +1,4 @@
+import { acabamentoDosCarros } from './acabamentoDosCarros';
 import * as THREE from 'three';
 import { Josefina } from '../entities/bichos/Josefina';
 import { PALETTE as P } from '../palette';
@@ -25,6 +26,7 @@ export class CarroDaJosefina {
       }
     }
     this.group.add(fundir(carro));
+    this.group.add(acabamentoDosCarros(true));
     const acabamento = new THREE.Group();
     const por = (l: number, a: number, p: number, x: number, y: number, z: number, cor: number): void => {
       const m = new THREE.Mesh(quina(l, a, p, .025), toon(cor)); m.position.set(x, y, z); acabamento.add(m);
