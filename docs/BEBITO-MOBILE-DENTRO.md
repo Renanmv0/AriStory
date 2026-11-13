@@ -26,6 +26,9 @@ Testes: `scripts/carroPorDentro.mjs` (incluindo `SO=viajar,semChave` e
 `SO=descansar`) e `scripts/carroCamerasEChegada.mjs` (os dois personagens reais,
 carinho, retorno à primeira pessoa, chegada manual/automática e recarga do save).
 `CEL=1` confere o celular em pé; `CHROME_PATH` escolhe o Chromium instalado.
+`RAPIDO=1 SO=piloto` reduz apenas a resolução de desenho do teste funcional,
+sem mudar o relógio ou as regras; as prévias são capturadas em resolução normal.
+A espera única da chegada permite até seis minutos no Chromium sem placa.
 Resultados e fotos ficam fora do repositório. Esta seção prevalece sobre as
 propostas antigas de câmera abaixo.
 

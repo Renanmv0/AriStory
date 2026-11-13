@@ -57,6 +57,7 @@ const pagina = async () => {
 const abrir = async (page, query) => {
   await page.goto(`${BASE}/?${query}`, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.jogo?.current, null, { timeout: 30000 });
+  if (process.env.RAPIDO) await page.evaluate(() => window.jogo.renderer.setPixelRatio(0.5));
   await page.waitForTimeout(1200);
 };
 const comOCarro = (page) => page.evaluate(() => {
@@ -449,7 +450,7 @@ if (roda('piloto')) {
     if (e.cena === 'villa-lobos') break;
     await aperta(page, 1);
   }
-  await page.waitForFunction(() => window.jogo.idDaCena === 'villa-lobos' && !window.jogo.player.locked && window.jogo.scene.getObjectByName('bebito-mobile')?.userData.chegada?.fase === 'concluida', null, { timeout: 180000 });
+  await page.waitForFunction(() => window.jogo.idDaCena === 'villa-lobos' && !window.jogo.player.locked && window.jogo.scene.getObjectByName('bebito-mobile')?.userData.chegada?.fase === 'concluida', null, { timeout: 360000 });
   const chegou = await page.evaluate(() => ({
     cena: window.jogo.idDaCena, poseEu: window.jogo.player.rig.noCarro, poseEle: window.jogo.parceiro.rig.noCarro,
     cabeca: window.jogo.player.rig.head.visible, travado: window.jogo.player.locked,

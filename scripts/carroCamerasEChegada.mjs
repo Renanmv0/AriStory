@@ -92,7 +92,7 @@ try {
     if (!SO || SO === 'chegada') {
       // A integração final é exercitada pela conclusão real da cena, abreviando só a distância da estrada.
       // O percurso inteiro do piloto é conferido separadamente por carroPorDentro.mjs (SO=piloto).
-      if (jogador === 'renan') {
+      if (jogador === 'renan' || process.env.AUTO) {
         await page.locator('.botao-da-viagem').click();
       console.log('botão de visão acionado');
         await espera(page, () => window.aristoryBebitoMobile.viagem.passageiro.camera.dentro === 1);
@@ -100,12 +100,12 @@ try {
         await page.keyboard.down('KeyE');
         await espera(page, () => document.querySelectorAll('.escolhas.show button').length > 0);
         await page.keyboard.up('KeyE');
-        await botao(page, 'Encostar no ombro de Ari').click();
+        await botao(page, `Encostar no ombro de ${jogador === 'ari' ? 'Renan' : 'Ari'}`).click();
         await espera(page, () => window.aristoryBebitoMobile.viagem.passageiro.camera.especial === 1 && window.jogo.emDialogo());
       }
       const motorista = await page.evaluate(() => window.jogo.player.rig.noCarro === 'dirigindo' ? window.jogo.playerId() : (window.jogo.playerId() === 'ari' ? 'renan' : 'ari'));
       await page.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.estado.s = v.rota.chegada + 2; v.estado.v = 0; v.estado.fase = 'fim'; });
-      if (jogador === 'renan') {
+      if (jogador === 'renan' || process.env.AUTO) {
         await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
         verifica(await page.evaluate(() => window.jogo.idDaCena === 'viagem-de-carro' && window.aristoryBebitoMobile.viagem.passageiro.camera.encostar === 1 && window.jogo.emDialogo()), 'a chegada espera o carinho terminar sem sobrescrever a conversa');
       }
