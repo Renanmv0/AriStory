@@ -66,7 +66,7 @@ export async function menuDoPassageiro(p: PalcoDoPassageiro): Promise<void> {
     const opcoes = euAri
       ? ['Cantarolar Danza Kuduro', `Elogiar ${outro}`, `Encostar no ombro de ${outro}`, 'Só olhar a paisagem']
       : ['Jogar Brawl Stars no celular', `Elogiar ${outro}`, `Encostar no ombro de ${outro}`, 'Só olhar a paisagem'];
-    const i = await g.ask('O que fazer?', opcoes);
+    const i = await g.ask('O que fazer?', opcoes, nomeDoPassageiro(p));
     if (i === 3 || i < 0) return;
     if (i === 0) await (euAri ? cantarolar(p) : jogarNoCelular(p));
     else if (i === 1) await elogiar(p, euAri);

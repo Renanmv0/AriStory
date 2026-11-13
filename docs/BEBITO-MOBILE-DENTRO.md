@@ -360,8 +360,8 @@ O `scripts/zfighting.mjs` na porta nova.
   cochilo (fade, três roncos, acordar) têm falas minhas, provisórias. A primeira
   vez vira a memória "Descansamos no Bebito Mobile".
 - **A visão do passageiro**: o 👀 liga o piloto automático e a câmera nos olhos
-  de quem joga, que vai para o banco da carona — se dirigia, o outro assume o
-  volante ("Deixa que eu dirijo um pouco") e na volta cada um ao seu banco.
+  de quem já está no banco da carona, sem mudar o motorista ou os bancos.
+  O menu e as falas passam a ser os desse passageiro.
   A tecla é **V**; o **E** (ou o ✨ no celular) abre o menu "O que fazer?".
 - **O piloto de jogo** fica na faixa da direita, NÃO persegue os corações (os da
   viagem são de quem dirige), olha mais longe e freia mais cedo que o de teste, e

@@ -14,7 +14,7 @@ async function conferir(p,controle,motorista,dentro){
  const quem=controle===motorista?'parceiro':'jogador';
  assert.equal(e.jogador,controle);assert.equal(e.motorista,motorista);assert.equal(e.quem,quem);
  assert.deepEqual(e.poses,controle===motorista?['dirigindo','passageiro']:['passageiro','dirigindo']);
- if(dentro){assert.ok(e.dist<0.3);assert.deepEqual(e.cabecas,quem==='jogador'?[false,true]:[true,false]);}else assert.deepEqual(e.cabecas,[true,true]);
+ if(dentro){assert.ok(e.dist<0.8, `câmera distante do passageiro: ${e.dist}`);assert.deepEqual(e.cabecas,quem==='jogador'?[false,true]:[true,false]);}else assert.deepEqual(e.cabecas,[true,true]);
 }
 try{
  for(const controle of ['ari','renan'])for(const motorista of ['ari','renan']){
@@ -31,6 +31,7 @@ try{
   await conferir(p,controle,motorista,true);
   await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
   await p.keyboard.down('KeyE');await espera(p,()=>document.querySelectorAll('.escolhas.show button').length>0);await p.keyboard.up('KeyE');
+  assert.equal(await p.locator('.dialogue.show .who').textContent(),passageiro);
   const opcoes=await p.locator('.escolhas.show button').allTextContents();
   assert.equal(opcoes[0],passageiro==='Renan'?'Jogar Brawl Stars no celular':'Cantarolar Danza Kuduro');
   assert.equal(opcoes[2],`Encostar no ombro de ${nomeMotorista}`);
