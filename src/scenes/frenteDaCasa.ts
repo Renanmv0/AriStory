@@ -21,7 +21,6 @@ import { sairDeCarro } from '../eventos/bebitoMobile/partida';
 import { FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
 import { prepararOCarroPorDentro } from '../eventos/bebitoMobile/entradaNoCarro';
 import { Decorador, type Cofre, type RegrasDoLugar, type Superficie } from '../world/decorador';
-import type { FichaDeDecoracao } from '../world/decoracoes';
 import { VENTO_DO_QUINTAL } from '../world/decoracoesDoQuintal';
 import { caixaDeEncomenda, painelDeFerramentas } from '../world/quintal';
 import { regadorDeJardim } from '../world/regador';
@@ -61,10 +60,8 @@ import {
  * O jardim é fechado dos dois lados: do lado da garagem, pela mureta (com a
  * passagem, para ir do carro à porta); do outro e na frente, pelo muro.
  *
- * O QUE É BAIXO FICA LONGE DO MURO DA FRENTE E DO DA DIREITA: os dois estão
- * do lado da câmera, e 1,35 m de muro escondem tudo o que tem menos de um
- * metro e está a menos de um metro e meio atrás dele. É a regra que o quintal
- * decorado vai seguir (`docs/QUINTAL.md` §3.1).
+ * Móveis e enfeites podem ocupar o caminho e ficar próximos dos muros quando
+ * a pegada cabe. Porta, portão e limites físicos continuam protegidos.
  */
 
 const CASA = { x: 2, z: -5 };
@@ -380,18 +377,6 @@ export const frenteDaCasa: SceneDef = {
      */
     const traseiraDoCarro = VAGA.z - BEBITO_MOBILE.comprimento / 2;
     const FERRAMENTAS = { x: -3.95, z: GAR.z0 + 0.13 };
-    const alturas = new Map<string, number>();
-    /** a altura de um enfeite, medida do modelo uma vez só */
-    const altoDe = (ficha: FichaDeDecoracao): number => {
-      let alto = alturas.get(ficha.id);
-      if (alto === undefined) {
-        const peca = ficha.monta();
-        alto = new THREE.Box3().setFromObject(peca).max.y;
-        peca.traverse((o) => (o as THREE.Mesh).geometry?.dispose());
-        alturas.set(ficha.id, alto);
-      }
-      return alto;
-    };
     const dentro = (x: number, z: number, r: number, x0: number, x1: number, z0: number, z1: number): boolean =>
       x - r >= x0 && x + r <= x1 && z - r >= z0 && z + r <= z1;
     /*
@@ -461,13 +446,15 @@ export const frenteDaCasa: SceneDef = {
         const naGaragem = dentro(x, z, r, GAR.x0 + 0.16, FERRAMENTAS.x - 0.75, GAR.z0 + 0.16, traseiraDoCarro - 0.3);
         if (!noJardim && !naGaragem) return 'fora do quintal';
         if (noJardim) {
-          // o caminho de lajes (da porta ao portão) e o ramal até a passagem da mureta
-          if (Math.abs(x - CASA.x) < 0.75 + r + 0.06) return 'no caminho de lajes';
-          if (x < CASA.x && Math.abs(z - (PASSAGEM.z0 + PASSAGEM.z1) / 2) < 0.6 + r) return 'no caminho da garagem';
+          // Móveis/enfeites podem usar o caminho. Pisos não cobrem o traçado fixo,
+          // que é trocado pelas ferramentas. Altura não cria uma faixa proibida.
+          if (ficha?.piso) {
+            if (Math.abs(x - CASA.x) < 0.75 + r + 0.06) return 'no caminho de lajes';
+            if (x < CASA.x && Math.abs(z - (PASSAGEM.z0 + PASSAGEM.z1) / 2) < 0.6 + r) return 'no caminho da garagem';
+          }
           if (Math.hypot(x - PORTAO.x, z - zMuro) < 1.5 + r) return 'na frente do portão';
-          // o que é ALTO fica longe dos muros do lado da câmera: senão tapa o quintal
-          // (o muro da direita só tapa da metade do jardim para a frente: no fundo, encostado na casa, pode — é onde a árvore nasceu)
-          if (ficha && altoDe(ficha) > 1.45 && (zMuro - z < 2.3 || (JARDIM.x1 - x < 2.3 && z > CASA.z + 2.6))) return 'alto demais perto do muro';
+          // Só a entrada da casa fica livre, sem bloquear o restante das lajes.
+          if (Math.hypot(x - CASA.x, z - (CASA.z + 0.9)) < 0.65 + r) return 'na frente da porta';
         }
         return null;
       },

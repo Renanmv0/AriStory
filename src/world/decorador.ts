@@ -87,8 +87,7 @@ export interface Superficie {
 export interface RegrasDoLugar {
   /**
    * por que NÃO dá para pôr um enfeite de `raio` ali (a zona da cena), ou
-   * `null`. A `ficha` vem junto para a cena que olha a ALTURA (o quintal: o
-   * que é alto não vai perto do muro do lado da câmera).
+   * `null`. A ficha vem junto para regras específicas da peça, quando necessário.
    */
   proibido: (x: number, z: number, raio: number, ficha?: FichaDeDecoracao) => string | null;
   /** onde se pega de novo um enfeite guardado, para o toast ("pela lojinha") */
@@ -736,14 +735,18 @@ export class Decorador {
         this.perguntando = true;
         let qual: number;
         try {
-          qual = await g.ask(`O que fazer com ${ficha.artigo} ${ficha.nome.toLowerCase()}?`, [
-            'Mudar de lugar', 'Girar', 'Guardar', 'Deixar assim',
-          ]);
+          do {
+            qual = await g.ask(`O que fazer com ${ficha.artigo} ${ficha.nome.toLowerCase()}?`, [
+              'Mudar de lugar', 'Girar', 'Guardar', 'Deixar assim',
+            ]);
+            if (qual === 1) this.girar(uid);
+            // Continua com a mesma peça selecionada, para girar várias vezes.
+          } while (qual === 1 && !!this.edicao && this.postos.has(uid)
+            && e !== 'parede' && e !== 'pontaAPonta');
         } finally {
           this.perguntando = false;
         }
         if (qual === 0) this.mover(uid);
-        else if (qual === 1) this.girar(uid);
         else if (qual === 2) this.guardar(uid);
       },
     });
@@ -766,8 +769,9 @@ export class Decorador {
         label: uso.label, icon: uso.icon,
         highlight: peca,
         onInteract: async (g) => {
-          if (this.ocupado) return;
-          await uso.usar({ g, w: this.w, peca, x: onde.x, z: onde.z, giro: onde.giro });
+          const atual = this.postos.get(uid);
+          if (this.ocupado || !atual) return;
+          await uso.usar({ g, w: this.w, peca: atual.peca, x: atual.onde.x, z: atual.onde.z, giro: atual.onde.giro });
         },
       });
       if (this.modo) {
