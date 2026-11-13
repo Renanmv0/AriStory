@@ -46,6 +46,10 @@ clube. O carro entra pela guia rebaixada, espera a cancela, faz a curva e
 estaciona em `VAGA_NO_CLUBE`; a dupla desce perto da passagem de pedestres.
 O motorista escolhido é preservado até sair do carro.
 
+A chegada recebeu apresentação e tomadas próprias para mostrar a cancela e
+a manobra inteira, com a vaga junto do carro na imagem. Detalhes em
+`ESTACIONAMENTO-CLUBE.md`; o teste focado é `scripts/chegadaClube.mjs`.
+
 A localização usa as flags compatíveis `bebito:carro-no-parque` e
 `bebito:carro-no-clube`. A flag do clube tem prioridade em saves inconsistentes;
 sem ambas, o carro fica na garagem. A chegada define as duas, evitando duplicar

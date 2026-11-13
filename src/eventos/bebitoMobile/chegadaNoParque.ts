@@ -40,10 +40,13 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
   aoEstacionar: () => void;
   /** Outro estacionamento pode reutilizar a entrada, as poses e a descida. */
   trajeto?: THREE.Curve<THREE.Vector3>[];
+  apresentacao?: number;
+  duracoes?: readonly number[];
+  tomada?: (posicao: THREE.Vector3, fase: string, trecho: number, emPe: boolean) => { de: THREE.Vector3; para: THREE.Vector3 };
 }): void {
   const g = w.game;
   const { carro, entrada } = p;
-  const estado = { fase: 'aproximando', trecho: 0, progresso: 0, motorista: p.motorista };
+  const estado = { fase: p.apresentacao ? 'apresentando' : 'aproximando', trecho: 0, progresso: 0, motorista: p.motorista };
   carro.group.userData.chegada = estado;
   let iniciou = false;
   let tempo = 0;
@@ -53,7 +56,7 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
   const mira = new V();
   let cameraPosta = false;
   let cameraFinal: { de: THREE.Vector3; para: THREE.Vector3 } | null = null;
-  const duracoes = [4.5, 3.4, 2.8, 3.4, 3.6];
+  const duracoes = p.duracoes ?? [4.5, 3.4, 2.8, 3.4, 3.6];
   const jogadorDirige = g.playerId() === p.motorista;
   carro.group.position.copy(anterior);
   carro.group.rotation.y = 0;
@@ -61,8 +64,9 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
 
   const filmar = (dt: number): void => {
     const emPe = window.innerWidth / window.innerHeight < 0.8;
-    const alvo = carro.group.position.clone().add(new V(0, 0.7, 0));
-    const de = alvo.clone().add(new V(7.8, 7.4, 9.2).multiplyScalar(emPe ? 1.5 : 1));
+    const tomada = p.tomada?.(carro.group.position, estado.fase, estado.trecho, emPe);
+    const alvo = tomada?.para ?? carro.group.position.clone().add(new V(0, 0.7, 0));
+    const de = tomada?.de ?? alvo.clone().add(new V(7.8, 7.4, 9.2).multiplyScalar(emPe ? 1.5 : 1));
     if (!cameraPosta) { olho.copy(de); mira.copy(alvo); cameraPosta = true; }
     olho.lerp(de, 1 - Math.exp(-3 * dt));
     mira.lerp(alvo, 1 - Math.exp(-3 * dt));
@@ -82,6 +86,12 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
       carro.pisca('direita');
     }
     tempo += dt;
+    if (estado.fase === 'apresentando') {
+      carro.andando(0); carro.frear(true);
+      if (tempo >= p.apresentacao!) { estado.fase = 'aproximando'; tempo = 0; carro.frear(false); }
+      filmar(dt);
+      return;
+    }
     if (estado.fase === 'abrindo') {
       entrada.comandar(true);
       if (entrada.cancela.abertura >= 0.99 && tempo >= 1.4) {
