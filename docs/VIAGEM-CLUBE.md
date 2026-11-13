@@ -31,9 +31,13 @@ Além de lombada, travessia, obra, semáforo e poça:
   na visão interna volta para ela depois; o controle manual também é devolvido.
   Se houver outra conversa/menu aberto, o carro espera antes do trecho da cena.
 
-O Noel usa o modelo e as poses originais, no hatch do estacionamento aberto,
-com volante e caixa de laranjas. Rodas giram, cabeça vira para o Bebito e ele
-continua inquieto. Falas novas são texto original; áudio reutiliza o kit existente.
+O Noel usa o modelo e as poses originais, numa caminhonete de venda de sucos.
+O chassi reaproveita o hatch; a cabine é aberta para enxergar o motorista e a
+caçamba tem janela de atendimento de verdade, toldo listrado, letreiro "Sucos
+do Noel", gomo de laranja no teto, sabores, jarras e copos do próprio bar.
+A carroceria laranja/verde combina com seu avental. O balcão fecha em movimento
+e abre quando ele para para conversar. Rodas giram, cabeça vira para o Bebito e
+ele continua inquieto. Falas novas são texto original; áudio reutiliza o kit existente.
 
 ## Chegada e save
 
@@ -84,3 +88,8 @@ A tomada da conversa recebeu um ajuste final: a câmera fica sobre a pista,
 evitando os postes da calçada na frente dos carros. Novas fotos conferidas no
 computador e celular, sem erros e com o motorista preservado. As medições acima
 registram o enquadramento da primeira validação completa.
+
+Carro de sucos (pedido seguinte do Renan): build e fotos no computador/celular
+aprovados, balcão aberto na conversa e motorista preservado. Largura medida
+de 2,47 m, incluindo o toldo/balcão, dentro da faixa de 3,5 m; altura 3,29 m.
+Verificador do modelo novamente sem pares coplanares ou erros de página.
