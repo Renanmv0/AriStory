@@ -9,7 +9,7 @@ const OUT = process.argv[2] ?? '/tmp/casa-clube';
 const codigo = ts.transpileModule(await readFile(new URL('../src/eventos/bebitoMobile/rota.ts', import.meta.url), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
 const { SENTIDOS, gerarRota, destinoDaRota } = await import('data:text/javascript;base64,' + Buffer.from(codigo).toString('base64'));
 for (const sentido of SENTIDOS) {
-  const contagem = { noel: 0, josefina: 0, capy: 0, nenhum: 0 };
+  const contagem = { noel: 0, josefina: 0, capy: 0, walter: 0, nenhum: 0 };
   for (let seed = 1; seed <= 500; seed++) {
     const r = gerarRota(seed, sentido), n = r.encontro;
     contagem[n?.personagem ?? 'nenhum']++;
@@ -25,10 +25,8 @@ for (const sentido of SENTIDOS) {
     if (sentido === 'casa-clube') assert.deepEqual(r.trechos.map(t => t.bioma), ['bairro', 'avenida', 'hortas', 'esportivo']);
     if (sentido === 'clube-casa') assert.deepEqual(r.trechos.map(t => t.bioma), ['esportivo', 'hortas', 'avenida', 'bairro']);
   }
-  assert.ok(contagem.noel > 110 && contagem.noel < 190);
-  assert.ok(contagem.josefina > 110 && contagem.josefina < 190);
-  assert.ok(contagem.capy > 65 && contagem.capy < 135);
-  assert.ok(contagem.nenhum > 65 && contagem.nenhum < 135);
+  // 20% cada um: Noel, Josefina, Capy, Walter e sem encontro
+  for (const quem of ['noel', 'josefina', 'capy', 'walter', 'nenhum']) assert.ok(contagem[quem] > 65 && contagem[quem] < 135, quem);
   console.log(sentido, '500 rotas deterministas e encontros variados', contagem);
 }
 const a = gerarRota(7, 'casa-clube'), b = gerarRota(7, 'parque-clube'), c = gerarRota(7, 'clube-casa');
@@ -133,7 +131,7 @@ try {
   await disparar(p, 'clube:bebito-mobile'); await foto(p, 'computador-clube-destinos');
   assert.ok(await p.getByRole('button', { name: 'Parque Villa Lobos', exact: true }).count());
   await escolher(p, 'Casa do Ari'); await escolher(p, 'Renan'); await ate(p, () => window.jogo.idDaCena === 'viagem-de-carro');
-  await percorrer(p, 'clube-casa', 'renan', 'josefina', 'computador-volta');
+  await percorrer(p, 'clube-casa', 'renan', 'walter', 'computador-volta');
   // O carro fica só em casa depois da volta.
   for (const cena of ['clube', 'villa-lobos']) {
     await p.evaluate(c => window.jogo.goTo(c), cena); await espera(p, c => window.jogo.idDaCena === c && !window.jogo.transitioning, cena);
@@ -145,11 +143,11 @@ try {
   await percorrer(m, 'casa-clube', 'renan', 'capy', 'celular-ida'); await m.context().close();
   }
   // Encontros na rota antiga também reservam a pista e devolvem a visão interna.
-  for (const [mobile, sentido, seed, personagem] of [[false, 'volta', 1, 'noel'], [false, 'clube-casa', 1, 'josefina'], [true, 'ida', 2, 'josefina'], [true, 'volta', 1, 'noel']]) {
+  for (const [mobile, sentido, seed, personagem] of [[false, 'volta', 1, 'noel'], [false, 'clube-casa', 1, 'walter'], [true, 'ida', 2, 'josefina'], [true, 'volta', 1, 'noel']]) {
     const q = await novaPagina(mobile); await abrir(q, `cena=viagem-de-carro&viagem=${sentido},ari,${seed}`);
     await q.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.estado.s = v.rota.encontro.s - 61; v.vezes = 4; v.piloto = 'bom'; });
     await ate(q, () => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase === 'falando');
-    await espera(q, personagem => document.querySelector('.dialogue.show')?.textContent.includes(personagem === 'noel' ? 'GELO' : 'cantinho com sol'), personagem);
+    await espera(q, personagem => document.querySelector('.dialogue.show')?.textContent.includes(personagem === 'noel' ? 'GELO' : personagem === 'walter' ? 'food truck' : 'cantinho com sol'), personagem);
     await pose(q, 'ari'); await foto(q, (mobile ? 'celular-legado-' : 'computador-') + personagem); assert.ok(await larguraDoCarro(q) < 3.5);
     await ate(q, () => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase === 'feito');
     await pose(q, 'ari'); await q.context().close();

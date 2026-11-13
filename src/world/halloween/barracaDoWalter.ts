@@ -68,8 +68,8 @@ function por(pai: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material
   return m;
 }
 
-const FONTE_FORMA = '"Kalam", "Segoe Print", "Comic Sans MS", cursive';
-const FONTE_REDONDA = '"Caveat", "Segoe Print", "Bradley Hand", cursive';
+export const FONTE_FORMA = '"Kalam", "Segoe Print", "Comic Sans MS", cursive';
+export const FONTE_REDONDA = '"Caveat", "Segoe Print", "Bradley Hand", cursive';
 
 // ================================================================ as texturas
 
@@ -104,7 +104,7 @@ function tabuasVermelhas(): THREE.CanvasTexture {
 
 /** a lona listrada do toldo: vermelho e creme, com a costura e a dobra */
 let lona: THREE.CanvasTexture | null = null;
-function lonaListrada(): THREE.CanvasTexture {
+export function lonaListrada(): THREE.CanvasTexture {
   if (lona) return lona;
   const cv = document.createElement('canvas');
   cv.width = 512;
@@ -133,7 +133,7 @@ function lonaListrada(): THREE.CanvasTexture {
 }
 
 /** um cachorro-quente desenhado (o painel e a lousa): o pão, a salsicha e a mostarda em zigue-zague */
-function desenharCachorroQuente(c: CanvasRenderingContext2D, x: number, y: number, l: number, contorno: string, comCara = false): void {
+export function desenharCachorroQuente(c: CanvasRenderingContext2D, x: number, y: number, l: number, contorno: string, comCara = false): void {
   const a = l * 0.32;
   c.lineWidth = Math.max(3, l * 0.03);
   c.strokeStyle = contorno;
@@ -172,7 +172,7 @@ function desenharCachorroQuente(c: CanvasRenderingContext2D, x: number, y: numbe
 }
 
 /** a patinha (o Walter assina com ela) */
-function desenharPata(c: CanvasRenderingContext2D, x: number, y: number, r: number, cor: string): void {
+export function desenharPata(c: CanvasRenderingContext2D, x: number, y: number, r: number, cor: string): void {
   c.fillStyle = cor;
   c.beginPath();
   c.ellipse(x, y + r * 0.35, r * 0.62, r * 0.5, 0, 0, Math.PI * 2);
@@ -185,7 +185,7 @@ function desenharPata(c: CanvasRenderingContext2D, x: number, y: number, r: numb
 }
 
 /** o painel da frente: a placa creme de canto redondo, o título, o cachorro-quente e as patinhas */
-function painelDoWalter(): THREE.CanvasTexture {
+export function painelDoWalter(): THREE.CanvasTexture {
   const L = 760;
   const A = 300;
   return canvasComLetra(L, A, (c) => {
@@ -285,7 +285,7 @@ function lousaDoCardapio(): THREE.CanvasTexture {
 // ============================================================ as peças miúdas
 
 /** a casca do pão, de cima: meio cilindro deitado com as pontas arredondadas (`x` é o comprimento) */
-function geoMeioPao(comprimento: number, raio: number): THREE.BufferGeometry {
+export function geoMeioPao(comprimento: number, raio: number): THREE.BufferGeometry {
   const g = new THREE.CapsuleGeometry(raio, comprimento - raio * 2, 4, 10);
   g.rotateZ(Math.PI / 2);
   g.scale(1, 0.85, 0.62);
@@ -293,14 +293,14 @@ function geoMeioPao(comprimento: number, raio: number): THREE.BufferGeometry {
 }
 
 /** a salsicha deitada (`x` é o comprimento) */
-function geoSalsicha(comprimento: number, raio: number): THREE.BufferGeometry {
+export function geoSalsicha(comprimento: number, raio: number): THREE.BufferGeometry {
   const g = new THREE.CapsuleGeometry(raio, comprimento - raio * 2, 4, 8);
   g.rotateZ(Math.PI / 2);
   return g;
 }
 
 /** um zigue-zague de molho por cima de um cachorro-quente, de `x0` a `x1` */
-function zigueZague(x0: number, x1: number, y: number, z: number, amplitude: number, voltas: number, raio: number): THREE.BufferGeometry {
+export function zigueZague(x0: number, x1: number, y: number, z: number, amplitude: number, voltas: number, raio: number): THREE.BufferGeometry {
   const pts: THREE.Vector3[] = [];
   for (let i = 0; i <= voltas * 2; i++) {
     pts.push(new THREE.Vector3(x0 + ((x1 - x0) * i) / (voltas * 2), y, z + (i % 2 ? amplitude : -amplitude)));
@@ -309,7 +309,7 @@ function zigueZague(x0: number, x1: number, y: number, z: number, amplitude: num
 }
 
 /** o ossinho de biscoito: o palito e as quatro bolinhas das pontas */
-function geoOssinho(): THREE.BufferGeometry[] {
+export function geoOssinho(): THREE.BufferGeometry[] {
   const partes: THREE.BufferGeometry[] = [new THREE.CylinderGeometry(0.007, 0.007, 0.045, 6).rotateZ(Math.PI / 2)];
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) partes.push(new THREE.SphereGeometry(0.009, 6, 4).translate(sx * 0.024, 0, sz * 0.006));
   return partes;
@@ -320,7 +320,7 @@ function geoOssinho(): THREE.BufferGeometry[] {
  * a mostarda e o ketchup, e a batata palha por cima. Origem no fundo da
  * barquinha, o comprimento em `x`.
  */
-function cachorroQuentePronto(): THREE.Group {
+export function cachorroQuentePronto(): THREE.Group {
   const g = new THREE.Group();
   const papel = toon(0xffffff, { mapa: toalhaXadrez(0.05, P.barracaVermelho), doubleSide: true });
   // a barquinha: o fundo e as quatro abas abrindo para fora

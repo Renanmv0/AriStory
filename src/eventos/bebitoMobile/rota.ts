@@ -22,11 +22,16 @@ export type DestinoDeCarro = 'casa' | 'parque' | 'clube';
 export const destinoDaRota = (sentido: Sentido): DestinoDeCarro =>
   sentido === 'ida' || sentido === 'clube-parque' ? 'parque' : sentido === 'parque-clube' || sentido === 'casa-clube' ? 'clube' : 'casa';
 export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube');
-export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy';
-/** Uma chance por partida: 30% Noel, 30% Josefina, 20% Capy, 20% sem encontro. */
+export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter';
+/**
+ * Uma chance por partida: 20% cada um (Noel, Josefina, Capy e Walter) e 20% sem
+ * encontro. O Walter entrou por último e ocupa DUAS faixas de 10% (o fim da do
+ * Noel e o fim da da Josefina): assim as sementes de antes continuam quase
+ * todas com o mesmo personagem, e as viagens dos testes não trocam de encontro.
+ */
 export function sortearEncontro(semente: number, sentido: Sentido): PersonagemNaEstrada | null {
   const valor = sorteio(semente * 97 + SENTIDOS.indexOf(sentido) * 131 + 43)();
-  return valor < 0.3 ? 'noel' : valor < 0.6 ? 'josefina' : valor < 0.8 ? 'capy' : null;
+  return valor < 0.2 ? 'noel' : valor < 0.3 ? 'walter' : valor < 0.5 ? 'josefina' : valor < 0.6 ? 'walter' : valor < 0.8 ? 'capy' : null;
 }
 
 /** o pedido que a cena de partida deixa para a cena da viagem */
