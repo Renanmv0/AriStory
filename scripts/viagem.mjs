@@ -201,6 +201,9 @@ if (roda('bom')) {
   console.log('   ' + rota.eventos.map((e) => `${e.tipo}@${e.s.toFixed(0)}`).join('  '));
   await page.waitForTimeout(1500);
   await page.screenshot({ path: `${OUT}-bom-0-partida.png` });
+  // Os encontros do caminho antigo vêm antes dos oito obstáculos. Avançar
+  // a conversa evita que o teste espere uma distância com um balão aberto.
+  if (rota.encontro) confere(await jogarAte(page, () => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase === 'feito', 240000, 150), 'o encontro sorteado terminou');
   let n = 1;
   let pesoMaximo = { calls: 0, triangles: 0 };
   let bichoNaFrenteDoCarroAndando = false;
@@ -264,7 +267,7 @@ if (roda('bom')) {
   confere(noParque && parque.carro && parque.flag && Math.abs(parque.onde[0] - 51.9) < 0.1 && Math.abs(parque.onde[1] - 5.5) < 0.1, `chegaram no Villa Lobos e o carro está na vaga dele, no estacionamento (${parque.onde})`);
   confere(parque.livre && !parque.travado && !parque.cameraDeCena && !parque.painel, `a dupla desce na calçada, solta, com a câmera e a tela de sempre (${parque.dupla})`);
   confere(parque.memoria, 'a primeira viagem virou memória no diário');
-  confere(parque.rotulos.includes('Voltar pra casa de carro'), 'o carro oferece "Voltar pra casa de carro"');
+  confere(parque.rotulos.includes('Viajar de Bebito Mobile'), 'o carro oferece a escolha do próximo destino');
   await page.evaluate(() => window.jogo.setZoom(13));
   await page.waitForTimeout(900);
   await page.screenshot({ path: `${OUT}-bom-11-no-parque.png` });
@@ -282,7 +285,7 @@ if (roda('distraido')) {
     for (let s = 1; s < 200; s++) {
       const tipos = window.aristoryBebitoMobile.gerarRota(s, 'ida').eventos.map((e) => e.tipo);
       const i = tipos.indexOf('travessia');
-      if (i <= 2 && !tipos.slice(0, i).some((t) => t === 'obra' || t === 'onibus')) return s;
+      if (!window.aristoryBebitoMobile.gerarRota(s, 'ida').encontro && i <= 2 && !tipos.slice(0, i).some((t) => t === 'obra' || t === 'onibus')) return s;
     }
     return 1;
   });
@@ -388,6 +391,7 @@ if (roda('volta')) {
   const rota = await page.evaluate(() => ({ sentido: window.aristoryBebitoMobile.viagem.rota.sentido, biomas: window.aristoryBebitoMobile.viagem.rota.trechos.map((t) => t.bioma).join(' → ') }));
   confere(rota.sentido === 'volta' && rota.biomas === 'parque → avenida → bairro', `a volta sai da beira do parque e chega no bairro (${rota.biomas})`);
   await viagem(page, { piloto: 'bom', vezes: 3.5 });
+  if (await page.evaluate(() => !!window.aristoryBebitoMobile.viagem.rota.encontro)) confere(await jogarAte(page, () => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase === 'feito', 240000, 150), 'o encontro da volta terminou');
   await page.waitForFunction(() => window.aristoryBebitoMobile.viagem.estado.fase === 'chegando', null, { timeout: 400000 }).catch(() => {});
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${OUT}-volta-2-chegando-em-casa.png` });

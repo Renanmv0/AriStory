@@ -1,7 +1,19 @@
 import type { GameAPI } from '../../core/types';
 import { ARI, RENAN } from '../../characters/cast';
-import { destinoDaRota, pedirViagem, type Sentido } from './rota';
+import { destinoDaRota, pedirViagem, type DestinoDeCarro, type Sentido } from './rota';
 import { guardarPedido } from './pedidoSalvo';
+
+/** O mesmo menu em casa e nos estacionamentos: só oferece os outros lugares. */
+export async function escolherDestinoDeCarro(g: GameAPI, origem: DestinoDeCarro): Promise<boolean> {
+  const opcoes: Record<DestinoDeCarro, Array<{ nome: string; sentido: Sentido }>> = {
+    casa: [{ nome: 'Parque Villa Lobos', sentido: 'ida' }, { nome: 'Clube', sentido: 'casa-clube' }],
+    parque: [{ nome: 'Casa do Ari', sentido: 'volta' }, { nome: 'Clube', sentido: 'parque-clube' }],
+    clube: [{ nome: 'Casa do Ari', sentido: 'clube-casa' }, { nome: 'Parque Villa Lobos', sentido: 'clube-parque' }],
+  };
+  const destinos = opcoes[origem];
+  const escolha = await g.ask('Pra onde vamos de Bebito?', [...destinos.map(d => d.nome), 'Agora não']);
+  return destinos[escolha] ? sairDeCarro(g, destinos[escolha].sentido, true) : false;
+}
 
 /**
  * SAIR DE CARRO: a pergunta que toda viagem faz — "quem dirige dessa vez?" —
