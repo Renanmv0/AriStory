@@ -651,7 +651,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         : null,
       () => { void trocarDeVisao(); },
     );
-    if (noAr && g.keyPressed('KeyV')) void trocarDeVisao();
+    if (noAr && g.keyPressed('KeyV', true)) void trocarDeVisao();
     const acao = g.acaoCrua();
     const bloqueado = g.emDialogo() || menuAberto || trocando;
     if (acao && !acaoAntes && !bloqueado && estado.visao === 'dentro' && camDentro.ativa && camDentro.dentro >= 0.99 && estado.fase === 'dirigindo') {

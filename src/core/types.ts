@@ -1051,8 +1051,8 @@ export interface GameAPI {
   cameraLivre(alvo: THREE.Vector3 | null): void;
 
   wait(seconds: number): Promise<void>;
-  /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */
-  keyPressed(code: string): boolean;
+  /** Só no frame em que a tecla desceu; diálogo/diário bloqueiam. Cutscene pode permitir durante a trava. */
+  keyPressed(code: string, mesmoTravado?: boolean): boolean;
   /** true enquanto a tecla estiver segurada; ignorada durante dialogo/diario */
   keyDown(code: string): boolean;
   /**

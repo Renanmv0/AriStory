@@ -7,8 +7,8 @@ const OUT=process.argv[2]??'/tmp/motorista';
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH??'/usr/bin/chromium',args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
 const erros=[];
 const espera=(p,f,a)=>p.waitForFunction(f,a,{timeout:360000});
-async function menu(p){for(let i=0;i<200;i++){if(await p.locator('.escolhas.show button').count())return;await p.evaluate(()=>document.querySelector('.dialogue.show')?.click());await p.waitForTimeout(100);}throw Error('Menu não voltou');}
-async function foto(p,path){await p.evaluate(()=>window.jogo.renderer.setPixelRatio(1));await p.screenshot({path});await p.evaluate(()=>window.jogo.renderer.setPixelRatio(0.6));}
+async function menu(p){for(let i=0;i<200;i++){if(await p.locator('.escolhas.show button').count())return;await p.evaluate(()=>{if(!document.querySelector('.escolhas.show button'))document.querySelector('.dialogue.show')?.click();});await p.waitForTimeout(100);}throw Error('Menu não voltou');}
+async function foto(p,path){await p.evaluate(()=>window.jogo.renderer.setPixelRatio(1));await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await p.screenshot({path});await p.evaluate(()=>window.jogo.renderer.setPixelRatio(0.6));}
 async function conferir(p,controle,motorista,dentro){
  const e=await p.evaluate(()=>{const g=window.jogo,c=window.aristoryBebitoMobile.viagem.passageiro.camera;return{jogador:g.playerId(),motorista:g.player.rig.noCarro==='dirigindo'?g.playerId():g.companionId(),poses:[g.player.rig.noCarro,g.parceiro.rig.noCarro],quem:c.quem,dist:g.camOmbro?.position.distanceTo(g.cabecaDe(c.quem)),cabecas:[g.player.rig.head.visible,g.parceiro.rig.head.visible]};});
  const quem=controle===motorista?'parceiro':'jogador';
@@ -38,7 +38,7 @@ try{
   await p.getByRole('button',{name:opcoes[0],exact:true}).click();
   await espera(p,n=>document.querySelector('.dialogue.show .who')?.textContent===n,passageiro);
   if(passageiro==='Renan'){
-   for(let i=0;i<100;i++){if(await p.evaluate(()=>window.aristoryBebitoMobile.viagem.passageiro.celular.group.visible))break;await p.evaluate(()=>document.querySelector('.dialogue.show')?.click());await p.waitForTimeout(100);}
+   for(let i=0;i<100;i++){if(await p.evaluate(()=>window.aristoryBebitoMobile.viagem.passageiro.celular.group.visible))break;await p.evaluate(()=>{if(!document.querySelector('.escolhas.show button'))document.querySelector('.dialogue.show')?.click();});await p.waitForTimeout(100);}
    await espera(p,()=>window.aristoryBebitoMobile.viagem.passageiro.celular.group.visible);
    await p.evaluate(()=>{window.aristoryBebitoMobile.ritmoDoPresente.vezes=0;});
   }else await espera(p,()=>document.querySelector('.dialogue.show .text')?.textContent.includes('Danza Kuduro'));

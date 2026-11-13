@@ -2359,8 +2359,8 @@ export class Game implements GameAPI {
     );
   }
 
-  keyPressed(code: string): boolean {
-    if (this.telaDeLeitura || this.player.locked) return false;
+  keyPressed(code: string, mesmoTravado = false): boolean {
+    if (this.telaDeLeitura || (this.player.locked && !mesmoTravado)) return false;
     return this.input.justPressed(code);
   }
 
