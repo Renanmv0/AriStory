@@ -138,27 +138,15 @@ export class Capy extends Bicho {
     const focinho = new THREE.Mesh(quinaRedonda(0.125, 0.09, 0.115, 0.018), pelo);
     focinho.position.set(0, -0.032, 0.145);
     this.cabeca.add(focinho);
-    /**
-     * AS DUAS NARINAS, separadas, no alto da frente do focinho: capivara nao
-     * tem "nariz" de bolota, tem duas fendinhas inclinadas com a ponta de fora
-     * mais alta. Antes era uma barra escura so atravessando o focinho, que lia
-     * como bigode. Cada uma e um ovalzinho afundado pela metade na quina.
-     */
-    const narinas: THREE.BufferGeometry[] = [];
-    for (const lado of [-1, 1] as const) {
-      const narina = new THREE.SphereGeometry(1, 10, 6);
-      narina.scale(0.0115, 0.0065, 0.006);
-      narina.rotateZ(lado * 0.45);
-      narina.translate(lado * 0.023, -0.005, 0.2015);
-      narinas.push(narina);
-    }
-    const narina = new THREE.Mesh(juntar(narinas), toon(P.capivaraFocinho));
-    narina.name = 'narinas-do-capy';
+    // o nariz e um bloco so (o Renan preferiu assim, e nao duas narinas separadas), com as
+    // quinas arredondadas bem de leve
+    const narina = new THREE.Mesh(quinaRedonda(0.07, 0.028, 0.026, 0.006), toon(P.capivaraFocinho));
+    narina.position.set(0, 0.002, 0.2);
     this.cabeca.add(narina);
 
     /**
      * A BOCA EM "Y" de capivara de desenho (escolha do Renan): um risquinho
-     * desce do meio das narinas pela frente do focinho e abre em dois bracinhos curvos
+     * desce do nariz pela frente do focinho e abre em dois bracinhos curvos
      * (o beico claro saiu: com a boca desenhada, ele lia como placa colada). Tudo traço fino da cor da
      * narina, juntado numa malha so.
      */
@@ -170,7 +158,7 @@ export class Capy extends Bicho {
       geo.translate((x0 + x1) / 2, (y0 + y1) / 2, z);
       riscos.push(geo);
     };
-    risco(0, -0.015, 0, -0.038, 0.2045);                 // o cabinho, entre as narinas
+    risco(0, -0.013, 0, -0.038, 0.2045);                 // o cabinho, embaixo do nariz
     for (const lado of [-1, 1] as const) {
       risco(0, -0.038, lado * 0.012, -0.049, 0.2045);    // o bracinho desce...
       risco(lado * 0.012, -0.049, lado * 0.025, -0.053, 0.2045); // ...e curva para fora
