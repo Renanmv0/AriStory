@@ -269,16 +269,14 @@ export class Capy extends Bicho {
     reflexo.position.y = Y + ALTURA * 0.27;
     this.oculos.add(reflexo);
 
-    // dois brilhos riscados na lente da esquerda, deitados na curva dela
-    for (const [teta, dy, largura] of [[-0.5, -0.004, 0.026], [-0.36, -0.002, 0.012]] as const) {
-      const brilho = new THREE.Mesh(quinaRedonda(largura, 0.006, 0.003, 0.0015), toon(P.salvaVidasBranco));
-      brilho.position.set((AX + 0.004) * Math.sin(teta), Y + dy, (AZ + 0.004) * Math.cos(teta));
-      brilho.rotation.set(0, teta, 0.55);
-      this.oculos.add(brilho);
-    }
-
     // a armacao: o filete de cima, a ponte no meio e as hastes retas
     const armacao: THREE.BufferGeometry[] = [];
+    // dois brilhos riscados na lente da esquerda, deitados na curva dela (do
+    // mesmo branco da armacao, entao vao na mesma malha)
+    for (const [teta, dy, largura] of [[-0.5, -0.004, 0.026], [-0.36, -0.002, 0.012]] as const) {
+      armacao.push(quinaRedonda(largura, 0.006, 0.003, 0.0015).rotateZ(0.55).rotateY(teta)
+        .translate((AX + 0.004) * Math.sin(teta), Y + dy, (AZ + 0.004) * Math.cos(teta)));
+    }
     const filete = new THREE.CylinderGeometry(1, 1, 0.009, 32, 1, true, -TETA - 0.02, 2 * TETA + 0.04);
     filete.scale(AX + 0.004, 1, AZ + 0.004);
     filete.translate(0, Y + ALTURA / 2, 0);
