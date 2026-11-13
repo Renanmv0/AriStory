@@ -291,10 +291,13 @@ if (roda('distraido')) {
   });
   await abrir(page, `bebito&cena=viagem-de-carro&viagem=ida,ari,${semente}`);
   await naEstrada(page);
-  // toda viagem tem encontro agora; este teste é sobre a faixa, então o encontro fica de fora
+  // toda viagem tem encontro agora (e o corredor de 240 m dele antes dos obstáculos); este
+  // teste é sobre a faixa, então o encontro sai de cena e o carro começa perto da travessia
   await page.evaluate(() => {
-    const n = window.jogo.current.world.root.userData.novidadesDaViagem;
+    const v = window.aristoryBebitoMobile.viagem, n = window.jogo.current.world.root.userData.novidadesDaViagem;
     if (n.encontro) { n.encontro.estado.fase = 'feito'; n.encontro.carro.group.visible = false; }
+    const travessia = v.rota.eventos.find((e) => e.tipo === 'travessia');
+    v.estado.s = Math.max(v.estado.s, travessia.s - 90);
   });
   await viagem(page, { piloto: 'distraido', vezes: 2.5 });
   const travessia = await page.evaluate(() => window.aristoryBebitoMobile.viagem.rota.eventos.find((e) => e.tipo === 'travessia'));
