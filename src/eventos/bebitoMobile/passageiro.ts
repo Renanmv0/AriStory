@@ -10,7 +10,7 @@ import type { CelularDeJogo } from '../../world/celularDeJogo';
  * piloto automático, quem joga é o passageiro e escolhe, num menu, o que fazer — cada um
  * o seu (a escolha do Renan):
  *
- *  - o ARI: cantarolar "Dança Kuduro", elogiar o Renan, encostar no ombro dele;
+ *  - o ARI: cantarolar "Danza Kuduro", elogiar o Renan, encostar no ombro dele;
  *  - o RENAN: jogar Brawl Stars no celular, elogiar o Ari, encostar no ombro dele.
  *
  * As palavras são MINHAS e provisórias (o Renan reescreve: a fala dele entra literal). O
@@ -59,7 +59,7 @@ export async function menuDoPassageiro(p: PalcoDoPassageiro): Promise<void> {
     const euAri = g.playerId() === ARI.id;
     const outro = g.companionName();
     const opcoes = euAri
-      ? ['Cantarolar Dança Kuduro', `Elogiar ${outro}`, `Encostar no ombro de ${outro}`, 'Só olhar a paisagem']
+      ? ['Cantarolar Danza Kuduro', `Elogiar ${outro}`, `Encostar no ombro de ${outro}`, 'Só olhar a paisagem']
       : ['Jogar Brawl Stars no celular', `Elogiar ${outro}`, `Encostar no ombro de ${outro}`, 'Só olhar a paisagem'];
     const i = await g.ask('O que fazer?', opcoes);
     if (i === 3 || i < 0) return;
@@ -69,14 +69,14 @@ export async function menuDoPassageiro(p: PalcoDoPassageiro): Promise<void> {
   }
 }
 
-/** o Ari cantarola Dança Kuduro (o "lá-lá-lá" sintetizado) e o Renan, que dirige, reage */
+/** o Ari mostra um trecho curto da letra no balão; o som sintetizado continua o mesmo */
 async function cantarolar(p: PalcoDoPassageiro): Promise<void> {
   const { g, esperar } = p;
   g.som('cantarolarKuduro');
-  g.toast('🎵 Lá-lá-lá… Dança Kuduro', '🎶');
+  g.toast('🎵 Danza Kuduro', '🎶');
   await esperar(2.8);
   g.soltarCoracoes(2);
-  await g.say(['🎵 Lá-lá-lá-lá-lá… Dança Kuduro…'], g.playerName());
+  await g.say(['🎵 La mano arriba, cintura sola, da media vuelta, Danza Kuduro.'], g.playerName());
   await g.say(['Eu conheço essa! Não faz isso que eu quero cantar junto.'], g.companionName());
 }
 
