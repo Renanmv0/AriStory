@@ -29,7 +29,7 @@ export const CARRO_ESTACIONADO = { comprimento: 4.4, largura: 2.0, alto: 1.75 } 
  * calota, os faróis redondos, as lanternas e os para-choques. O nariz no
  * `+Z`, a base no chão. Peça de fundo: nada aqui se mexe nem tem nome.
  */
-export function carroEstacionado(cor: number = P.carroVermelho): THREE.Group {
+export function carroEstacionado(cor: number = P.carroVermelho, aberto = false): THREE.Group {
   const g = new THREE.Group();
   g.userData.peca = 'carro-estacionado';
   const { comprimento: L, largura: W } = CARRO_ESTACIONADO;
@@ -45,16 +45,17 @@ export function carroEstacionado(cor: number = P.carroVermelho): THREE.Group {
   por(macia(W - 0.06, 0.16, L * 0.32, 0.07), lata, 0, 0.9, L * 0.31);
   // a cabine: o vidro (um fio para dentro), as quatro colunas e o teto
   const cabine = { l: L * 0.56, z: -L * 0.08, y0: 0.86, alto: 0.6 };
-  por(macia(W - 0.24, cabine.alto, cabine.l, 0.12), toon(P.carroVidro), 0, cabine.y0 + cabine.alto / 2, cabine.z);
+  if (!aberto) por(macia(W - 0.24, cabine.alto, cabine.l, 0.12), toon(P.carroVidro), 0, cabine.y0 + cabine.alto / 2, cabine.z);
+  else por(macia(W - 0.25, 0.3, 0.06, 0.025), toon(P.carroVidro), 0, 1.14, cabine.z + cabine.l / 2);
   for (const x of [-1, 1]) {
     for (const z of [-1, 1]) {
       const coluna = por(quina(0.09, cabine.alto, 0.1, 0.02), lata, x * (W / 2 - 0.15), cabine.y0 + cabine.alto / 2, cabine.z + z * (cabine.l / 2 - 0.08));
       coluna.rotation.x = z * -0.18;
     }
     // a coluna do meio
-    por(quina(0.08, cabine.alto, 0.12, 0.02), lata, x * (W / 2 - 0.14), cabine.y0 + cabine.alto / 2, cabine.z - 0.05);
+    if (!aberto) por(quina(0.08, cabine.alto, 0.12, 0.02), lata, x * (W / 2 - 0.14), cabine.y0 + cabine.alto / 2, cabine.z - 0.05);
   }
-  por(macia(W - 0.16, 0.11, cabine.l + 0.06, 0.05), lata, 0, cabine.y0 + cabine.alto + 0.03, cabine.z);
+  if (!aberto) por(macia(W - 0.16, 0.11, cabine.l + 0.06, 0.05), lata, 0, cabine.y0 + cabine.alto + 0.03, cabine.z);
   // as rodas: o pneu e a calota, um fio para fora da lataria
   const pneu = new THREE.CylinderGeometry(0.34, 0.34, 0.24, 14).rotateZ(Math.PI / 2);
   const calota = new THREE.CylinderGeometry(0.17, 0.17, 0.05, 12).rotateZ(Math.PI / 2);

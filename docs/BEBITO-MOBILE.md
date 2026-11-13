@@ -7,9 +7,10 @@
 ## Estacionamento do clube (2026-11-13)
 
 Renan antecipou a construção do estacionamento do clube, do outro lado da rua,
-com visual mais moderno: `docs/ESTACIONAMENTO-CLUBE.md`. O local já é visitável
-a pé; a rota até o clube continua sendo a próxima etapa. A vaga e o ponto de
-descida estão definidos, sem mover o carro do casal nem alterar seu save.
+com visual mais moderno: `docs/ESTACIONAMENTO-CLUBE.md`. A viagem Villa Lobos ↔
+clube foi construída na sequência: `docs/VIAGEM-CLUBE.md`, incluindo a cena do
+Noel, as hortas/quadras da alameda, a rega e a onda verde. O carro conserva
+sua localização entre garagem, parque e clube. A rota da escola continua futura.
 
 ## COMECE AQUI
 

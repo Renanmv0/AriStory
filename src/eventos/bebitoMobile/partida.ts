@@ -1,6 +1,7 @@
 import type { GameAPI } from '../../core/types';
 import { ARI, RENAN } from '../../characters/cast';
-import { pedirViagem, type Sentido } from './rota';
+import { destinoDaRota, pedirViagem, type Sentido } from './rota';
+import { guardarPedido } from './pedidoSalvo';
 
 /**
  * SAIR DE CARRO: a pergunta que toda viagem faz — "quem dirige dessa vez?" —
@@ -14,7 +15,7 @@ export async function sairDeCarro(g: GameAPI, sentido: Sentido, jaDecidiu = fals
   // (de dentro do carro, quem escolheu "Viajar" no menu já decidiu: a primeira pergunta é pulada)
   if (!jaDecidiu) {
     const vai = await g.ask(
-      sentido === 'ida' ? 'Ir de carro pro Villa Lobos?' : 'Voltar pra casa de carro?',
+      destinoDaRota(sentido) === 'clube' ? 'Ir de carro pro clube?' : destinoDaRota(sentido) === 'parque' ? 'Ir de carro pro Villa Lobos?' : 'Voltar pra casa de carro?',
       ['Vamos!', 'Agora não'],
     );
     if (vai !== 0) return false;
@@ -24,7 +25,8 @@ export async function sairDeCarro(g: GameAPI, sentido: Sentido, jaDecidiu = fals
   const carona = quem === 0 ? RENAN : ARI;
   await g.say(['Eu dirijo!'], motorista.name);
   await g.say([quem === 0 ? 'Então eu escolho a música.' : 'Então eu vou olhando a paisagem.'], carona.name);
-  pedirViagem({ sentido, motorista: motorista.id, semente: g.bump('bebito:viagens') });
+  const pedido = { sentido, motorista: motorista.id, semente: g.bump('bebito:viagens') };
+  guardarPedido(g, pedido); pedirViagem(pedido);
   g.som('portaDoBebito');
   g.goTo('viagem-de-carro');
   return true;

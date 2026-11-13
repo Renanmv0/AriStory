@@ -2,6 +2,13 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { Collider } from '../../core/types';
 import type { WorldBuilder } from '../../world/WorldBuilder';
+import type { Interactable } from '../../world/Interactable';
+import type { ComandoDaCancela } from './chegadaNoParque';
+import { ritmoDoPresente, temBebitoMobile } from './presente';
+import { localDoBebito } from '../BebitoMobile';
+import { BebitoMobile, BEBITO_MOBILE } from '../../world/bebitoMobile/BebitoMobile';
+import { consumirChegadaNoClube, animarChegadaNoClube } from './chegadaNoClube';
+import { sairDeCarro } from './partida';
 import { PALETTE as P } from '../../palette';
 import { toon } from '../../core/materials';
 import { fundir, fundirComoFundo } from '../../world/fundir';
@@ -18,7 +25,7 @@ export const LOTE_DO_CLUBE = { x0: -63, x1: -40.4, z0: -12, z1: 18 } as const;
 export const FAIXA_DO_CLUBE = { z: 1.8, largura: 2.4 } as const;
 export const ENTRADA_DO_ESTACIONAMENTO_DO_CLUBE = { x: -41.6, z: 12.5, largura: 5.2 } as const;
 /** Reservada para a futura viagem; construir o estacionamento não desloca o carro do save. */
-export const VAGA_NO_CLUBE = { x: -58.2, z: 3, giro: Math.PI / 2 } as const;
+export const VAGA_NO_CLUBE = { x: -58.2, z: 3, giro: -Math.PI / 2 } as const;
 export const DESCIDA_NO_CLUBE = { x: -57.4, z: 6.3, facing: Math.PI / 2 } as const;
 
 /** Paisagismo e limites usam a mesma planta: nada pode nascer dentro do lote. */
@@ -27,7 +34,7 @@ export function naAreaDoEstacionamentoDoClube(x: number, z: number): boolean {
 }
 
 /** Construção já visitável a pé. A rota e o carro neste destino entram depois. */
-export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: number; comprimento: number }): void {
+export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: number; comprimento: number }): ComandoDaCancela {
   const { x0, x1, z0, z1 } = LOTE_DO_CLUBE;
   w.setBounds(x0 + 0.65, w.bounds.minZ, w.bounds.maxX, w.bounds.maxZ);
   const meioX = (x0 + x1) / 2, meioZ = (z0 + z1) / 2;
@@ -101,8 +108,9 @@ export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: numbe
   // Batentes baixos: não invadem os seis metros livres de corredor.
   const batente = quina(0.22, 0.13, 1.65, 0.035);
   for (const x of [-55.7, -48.7]) for (const z of vagas) {
-    const m = new THREE.Mesh(batente, toon(P.clubeEstacionamentoMetal)); m.position.set(x, 0.065, z); fundo.add(m);
-    w.blockBox(x, z, 0.11, 0.825);
+    const bx = x === -55.7 && z === VAGA_NO_CLUBE.z ? -60.6 : x;
+    const m = new THREE.Mesh(batente, toon(P.clubeEstacionamentoMetal)); m.position.set(bx, 0.065, z); fundo.add(m);
+    w.blockBox(bx, z, 0.11, 0.825);
   }
   for (const [x, z, giro, cor] of [
     [-58.2, -9, Math.PI / 2, P.carroLilas], [-58.2, -1, Math.PI / 2, P.carroAmarelo],
@@ -128,14 +136,40 @@ export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: numbe
   w.colliders.push(barreira);
   w.blockBox(entrada.x, entrada.z - entrada.largura / 2, 0.22, 0.22);
   w.blockCircle(entrada.x, entrada.z + entrada.largura / 2 - 0.4, 0.1);
+  let comando: boolean | null = null;
   w.onUpdate((dt) => {
     const p = w.game.playerPosition(), c = w.game.companionPosition();
     const perto = [p, c].some(k => Math.abs(k.x - entrada.x) < 5 && Math.abs(k.z - entrada.z) < 4.2);
-    cancela.update(dt, perto);
+    cancela.update(dt * ritmoDoPresente.vezes, comando ?? perto);
     const indice = w.colliders.indexOf(barreira);
     if (cancela.abertura > 0.8 && indice >= 0) w.colliders.splice(indice, 1);
     else if (cancela.abertura <= 0.8 && indice < 0) w.colliders.push(barreira);
   });
   // Só geometria/estado transitório: nenhum destino de viagem ou flag persistente novo.
   w.root.userData.estacionamentoDoClube = { cancela, barreira, vaga: VAGA_NO_CLUBE, descida: DESCIDA_NO_CLUBE };
+  return { cancela, comandar: aberta => { comando = aberta; } };
+}
+
+/** Um único carro no destino salvo; recarregar não repete a chegada. */
+export function montarBebitoNoClube(w: WorldBuilder, entrada: ComandoDaCancela, onibus: Interactable): void {
+  const g = w.game;
+  if (!temBebitoMobile(g) || localDoBebito(g) !== 'clube') return;
+  const carro = new BebitoMobile(g.fichaDoBebitoMobile());
+  w.add(fundir(w.place(carro.group, VAGA_NO_CLUBE.x, 0, VAGA_NO_CLUBE.z, VAGA_NO_CLUBE.giro)));
+  w.onUpdate(dt => carro.update(dt * ritmoDoPresente.vezes));
+  w.blockBox(VAGA_NO_CLUBE.x, VAGA_NO_CLUBE.z, BEBITO_MOBILE.comprimento / 2 - 0.1, BEBITO_MOBILE.largura / 2 - 0.08);
+  const viajar = w.interact({ id: 'clube:bebito-mobile', x: DESCIDA_NO_CLUBE.x, z: DESCIDA_NO_CLUBE.z, radius: 2,
+    label: 'Voltar ao parque de carro', icon: '🚙', highlight: carro.group, priority: 2,
+    onInteract: async () => { await sairDeCarro(g, 'clube-parque'); },
+  });
+  const motorista = consumirChegadaNoClube();
+  if (motorista) {
+    viajar.enabled = false;
+    animarChegadaNoClube(w, { carro, motorista, entrada, descida: DESCIDA_NO_CLUBE, aoEstacionar: () => { viajar.enabled = true; } });
+  }
+  onibus.enabled = false;
+  w.interact({ id: 'clube:buscar-carro', x: onibus.x, z: onibus.z, radius: 2.4,
+    label: 'Buscar o Bebito no estacionamento', icon: '🚙',
+    onInteract: async () => { await g.say(['A gente veio de Bebito. Ele está na nossa vaga do outro lado da rua.'], g.companionName()); },
+  });
 }

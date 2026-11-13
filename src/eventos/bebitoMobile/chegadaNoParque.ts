@@ -38,6 +38,8 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
   entrada: ComandoDaCancela;
   descida: { x: number; z: number; facing: number };
   aoEstacionar: () => void;
+  /** Outro estacionamento pode reutilizar a entrada, as poses e a descida. */
+  trajeto?: THREE.Curve<THREE.Vector3>[];
 }): void {
   const g = w.game;
   const { carro, entrada } = p;
@@ -45,7 +47,8 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
   carro.group.userData.chegada = estado;
   let iniciou = false;
   let tempo = 0;
-  let anterior = CAMINHO_DA_CHEGADA[0].getPoint(0);
+  const caminho = p.trajeto ?? CAMINHO_DA_CHEGADA;
+  let anterior = caminho[0].getPoint(0);
   const olho = new V();
   const mira = new V();
   let cameraPosta = false;
@@ -118,7 +121,7 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
       }
       return;
     } else {
-      const curva = CAMINHO_DA_CHEGADA[estado.trecho];
+      const curva = caminho[estado.trecho];
       const t = Math.min(1, tempo / duracoes[estado.trecho]);
       const k = estado.trecho === 0 || estado.trecho === 4 ? suave(t) : t;
       const posicao = curva.getPointAt(k);

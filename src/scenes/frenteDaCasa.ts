@@ -18,7 +18,7 @@ import { buxinhoNoVaso, heraNosMuros, type MuroComHera } from '../world/plantasD
 import { BEBITO_MOBILE, BebitoMobile } from '../world/bebitoMobile/BebitoMobile';
 import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/bebitoMobile/presente';
 import { sairDeCarro } from '../eventos/bebitoMobile/partida';
-import { FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
+import { localDoBebito, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
 import { prepararOCarroPorDentro } from '../eventos/bebitoMobile/entradaNoCarro';
 import { Decorador, type Cofre, type RegrasDoLugar, type Superficie } from '../world/decorador';
 import { VENTO_DO_QUINTAL } from '../world/decoracoesDoQuintal';
@@ -682,7 +682,7 @@ export const frenteDaCasa: SceneDef = {
      */
     const chegando = renanFoiBuscar(g);
     // (quando a dupla foi de carro para o parque, a garagem fica vazia até eles voltarem)
-    const carroNoParque = g.flag(FLAG_DO_CARRO_NO_PARQUE);
+    const carroNoParque = localDoBebito(g) !== 'casa';
     if (chegando || (temBebitoMobile(g) && !carroNoParque)) {
       const ficha = g.fichaDoBebitoMobile();
       if (chegando) ficha.vagas.teto = ['laco-de-presente'];

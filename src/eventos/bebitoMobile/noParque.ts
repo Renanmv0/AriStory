@@ -14,7 +14,7 @@ import {
   CARRO_ESTACIONADO, Cancela, carroEstacionado, geoCoracaoNoChao, placaDeEstacionamento, plaquinhaDaVaga,
   totemDePagamento,
 } from '../../world/estacionamento';
-import { FASES_DO_PRESENTE, FLAG_DO_CARRO_NO_PARQUE, bebitoMobileNestaPagina } from '../BebitoMobile';
+import { FASES_DO_PRESENTE, localDoBebito, bebitoMobileNestaPagina } from '../BebitoMobile';
 import { sairDeCarro } from './partida';
 import { animarChegadaNoParque, consumirChegadaNoParque, type ComandoDaCancela } from './chegadaNoParque';
 import { ritmoDoPresente } from './presente';
@@ -240,7 +240,7 @@ export function montarEstacionamento(w: WorldBuilder): ComandoDaCancela | undefi
  */
 export function montarBebitoNoParque(w: WorldBuilder, cena: { voltarPraCasa: Interactable; entrada?: ComandoDaCancela }): void {
   const g = w.game;
-  if (!bebitoMobileNestaPagina() || !g.flag(FASES_DO_PRESENTE.ganhou) || !g.flag(FLAG_DO_CARRO_NO_PARQUE)) return;
+  if (!bebitoMobileNestaPagina() || !g.flag(FASES_DO_PRESENTE.ganhou) || localDoBebito(g) !== 'parque') return;
   const A = ARI.name;
   const R = RENAN.name;
   const carro = new BebitoMobile(g.fichaDoBebitoMobile());
@@ -251,11 +251,13 @@ export function montarBebitoNoParque(w: WorldBuilder, cena: { voltarPraCasa: Int
   const voltar = w.interact({
     id: 'parque:bebito-mobile',
     x: VAGA_NO_PARQUE.x + 0.3, z: PASSAGEM.z0 + 1.0, radius: 1.9,
-    label: 'Voltar pra casa de carro', icon: '🚙',
+    label: 'Viajar de Bebito Mobile', icon: '🚙',
     highlight: carro.group,
     priority: 2,
     onInteract: async () => {
-      await sairDeCarro(g, 'volta');
+      const destino = await g.ask('Pra onde vamos de Bebito?', ['Casa do Ari', 'Clube', 'Ficar no parque']);
+      if (destino === 0) await sairDeCarro(g, 'volta', true);
+      else if (destino === 1) await sairDeCarro(g, 'parque-clube', true);
     },
   });
   const motorista = consumirChegadaNoParque();

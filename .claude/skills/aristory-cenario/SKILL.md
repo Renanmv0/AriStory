@@ -965,8 +965,15 @@ pessoa que anda junto com uma peça:
 - **Cena que se DIRIGE ganha uma visão de passageiro** (`scenes/viagemDeCarro.ts`): o
   piloto automático de jogo (gentil: na faixa dele, sem perseguir os corações) tem que
   rodar MESMO com uma fala ou um menu na tela — o `livre` (sem fala) só vale para o manche
-  de quem joga —, e a troca de banco é refazer o `ride` e a pose dos dois (o `jogadorDirige`
-  é uma variável, e a pose do volante por quadro lê ela).
+  de quem joga. **O 👀 muda apenas a câmera, nunca o motorista ou os bancos**:
+  `jogadorDirige` é constante e a câmera aponta para a carona real. A cena do Noel
+  na rota do clube também preserva os dois assentos e restaura a visão anterior.
+- **Viagens ao clube** (`docs/VIAGEM-CLUBE.md`): a pista, o piloto e a chegada
+  são compartilhados com a rota casa/parque. Use `destinoDaRota` para o destino
+  e `localDoBebito` para onde o carro está (garagem/parque/clube); não teste só
+  a flag antiga do parque, senão o carro aparece também na garagem quando está
+  no clube. Noel, rega e onda verde têm módulos próprios. A chegada transitória
+  não repete ao recarregar; o pedido salvo conserva motorista/destino na estrada.
 
 ### Fundo de cena: uma vizinhança leve
 

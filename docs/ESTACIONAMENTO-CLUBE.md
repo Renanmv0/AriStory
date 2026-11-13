@@ -1,5 +1,9 @@
 # Estacionamento do clube
 
+Atualização: a viagem ao clube e a chegada de carro foram construídas depois
+do estacionamento. Ver `VIAGEM-CLUBE.md`; o texto abaixo registra a construção
+inicial do lote, quando ainda era visitável apenas a pé.
+
 Pedido do Renan (2026-11-13): construir primeiro o estacionamento, do outro lado
 da rua do clube, com uma aparência mais moderna que o estacionamento do Villa
 Lobos. A viagem até ele fica para a próxima etapa.

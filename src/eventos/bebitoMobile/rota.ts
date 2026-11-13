@@ -16,7 +16,11 @@
  * DIREITA de quem dirige). A pista é de mão única, com duas faixas.
  */
 
-export type Sentido = 'ida' | 'volta';
+export type Sentido = 'ida' | 'volta' | 'parque-clube' | 'clube-parque';
+export type DestinoDeCarro = 'casa' | 'parque' | 'clube';
+export const destinoDaRota = (sentido: Sentido): DestinoDeCarro =>
+  sentido === 'ida' || sentido === 'clube-parque' ? 'parque' : sentido === 'parque-clube' ? 'clube' : 'casa';
+export const rotaDoClube = (sentido: Sentido): boolean => sentido === 'parque-clube' || sentido === 'clube-parque';
 
 /** o pedido que a cena de partida deixa para a cena da viagem */
 export interface PedidoDeViagem {
@@ -50,7 +54,7 @@ export const PISTA = {
 } as const;
 
 /** os trechos de paisagem */
-export type Bioma = 'bairro' | 'avenida' | 'parque';
+export type Bioma = 'bairro' | 'avenida' | 'parque' | 'hortas' | 'esportivo';
 export interface Trecho {
   bioma: Bioma;
   de: number;
@@ -68,7 +72,7 @@ export interface Trecho {
  * - `poca`: uma poça numa faixa — só espirra (é de graça, e é divertido);
  * - `onibus`: o ônibus da cidade andando devagar numa faixa — ultrapassar.
  */
-export type TipoDeEvento = 'travessia' | 'semaforo' | 'obra' | 'buracos' | 'lombada' | 'poca' | 'onibus';
+export type TipoDeEvento = 'travessia' | 'semaforo' | 'obra' | 'buracos' | 'lombada' | 'poca' | 'onibus' | 'rega' | 'onda-verde' | 'noel';
 export type BichosDaTravessia = 'patos' | 'tigres';
 
 export interface EventoDaRota {
@@ -148,6 +152,7 @@ export function eixoDaRota(rota: Pick<Rota, 'curva' | 'comprimento'>, s: number)
  * - os corações levam o olho para a faixa livre antes de cada obstáculo.
  */
 export function gerarRota(semente: number, sentido: Sentido): Rota {
+  if (rotaDoClube(sentido)) return gerarRotaDoClube(semente, sentido);
   const rnd = sorteio(semente * 31 + (sentido === 'ida' ? 7 : 19));
   const comprimento = COMPRIMENTO_DA_ROTA;
   const curva = {
@@ -230,6 +235,35 @@ export function gerarRota(semente: number, sentido: Sentido): Rota {
     sentido, semente, comprimento, chegada: comprimento - 16,
     trechos, eventos, coracoes, curva,
     momento: rnd() < 0.3 ? 'tarde' : 'dia',
+  };
+}
+
+/** Outra região da cidade, usando a mesma pista, curva, controles e eventos do carro. */
+function gerarRotaDoClube(semente: number, sentido: Sentido): Rota {
+  const base = gerarRota(semente, sentido === 'parque-clube' ? 'ida' : 'volta');
+  const rnd = sorteio(semente * 53 + (sentido === 'parque-clube' ? 101 : 211));
+  const comprimento = 1000;
+  const ordem: Bioma[] = sentido === 'parque-clube' ? ['parque', 'hortas', 'esportivo'] : ['esportivo', 'hortas', 'parque'];
+  const cortes = [0, 255, 650, comprimento];
+  const tipos: Array<[TipoDeEvento, number]> = [
+    ['lombada', 80], ['travessia', 175], ['rega', 285], ['noel', 430],
+    ['obra', 565], ['onda-verde', 685], ['semaforo', 820], ['poca', 900],
+  ];
+  const eventos = tipos.map(([tipo, s]): EventoDaRota => ({
+    tipo, s: s + (rnd() - 0.5) * 6, faixa: rnd() < 0.5 ? 0 : 1,
+    ...(tipo === 'travessia' ? { bichos: sentido === 'parque-clube' ? 'patos' as const : 'tigres' as const, lado: 1 as const, quantos: 3 } : {}),
+  }));
+  const noel = eventos.find(e => e.tipo === 'noel')!;
+  const obra = eventos.find(e => e.tipo === 'obra')!;
+  const coracoes: Coracao[] = [];
+  for (let s = 32; s < comprimento - 90; s += 7) {
+    // A cena do Noel fica livre: não há obstáculos nem fileiras para perseguir.
+    if (s > noel.s - 80 && s < noel.s + 95) continue;
+    const l = s > obra.s - 35 && s < obra.s + 24 ? PISTA.meios[obra.faixa === 0 ? 1 : 0] : Math.sin(s * 0.045) * 1.55;
+    coracoes.push({ s, l });
+  }
+  return { ...base, sentido, comprimento, chegada: comprimento - 16, eventos, coracoes,
+    trechos: ordem.map((bioma, i) => ({ bioma, de: cortes[i], ate: cortes[i + 1] })),
   };
 }
 
