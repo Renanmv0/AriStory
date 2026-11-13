@@ -129,10 +129,14 @@ if (roda('entrar') || roda('descer') || roda('descansar')) {
   const antes = await estado(page);
   await disparar(page, 'frente:sair-de-carro');
   // a câmera vai até a porta e a porta abre
-  await page.waitForFunction(() => window.jogo.scene.getObjectByName('bebito-mobile').userData.carro.portaAberta > 0.5, null, { timeout: 120000 }).catch(() => {});
+  const abriu = await page.waitForFunction(() => {
+    const abertura = window.jogo.scene.getObjectByName('bebito-mobile').userData.carro.portaAberta;
+    return abertura > 0.5 ? abertura : false;
+  }, null, { timeout: 120000 });
+  const aberturaMedida = await abriu.jsonValue();
+  confere(aberturaMedida > 0.5, `a porta abre de verdade (${aberturaMedida.toFixed(2)})`);
+  // A foto demora no Chromium: a medida é a da abertura, antes de ela começar a fechar.
   await page.screenshot({ path: `${OUT}-1-porta-abrindo.png` });
-  const p1 = await estado(page);
-  confere(p1.porta > 0.5, `a porta abre de verdade (${p1.porta.toFixed(2)})`);
   // quem joga entra e a câmera chega aos olhos dele
   await page.waitForFunction(() => window.jogo.player.riding, null, { timeout: 120000 }).catch(() => {});
   await page.waitForTimeout(500);

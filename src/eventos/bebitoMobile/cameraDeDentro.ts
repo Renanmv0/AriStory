@@ -204,9 +204,10 @@ export class CameraDeDentro {
         const lente = THREE.MathUtils.radToDeg(2 * Math.atan(Math.max(1.5, 1.2 / aspecto) / distancia));
         campoDeVisao += (lente - 58) * kEspecial * suave(this.mistura);
       }
+      // Um pequeno deslocamento frontal evita que o Jean-Luc do painel tape o rosto do passageiro.
       const deslocamento = descanso
         ? new THREE.Vector3(0, distancia, 0.35)
-        : new THREE.Vector3(0, 0.22, distancia);
+        : new THREE.Vector3(-0.75, 0.75, distancia);
       deslocamento.applyQuaternion(this.q);
       this.olhoFinal.lerp(para.clone().add(deslocamento), kEspecial);
       this.miraFinal.lerp(para, kEspecial);

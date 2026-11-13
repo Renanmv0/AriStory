@@ -44,9 +44,10 @@ propostas antigas de câmera abaixo; a implementação ainda precisa da validaç
 
 O carro por dentro tem a própria chave, `CARRO_POR_DENTRO_NO_JOGO` em
 `src/eventos/BebitoMobile.ts`, nascida desligada e **ligada em 2026-11-12** (o Renan:
-"quero as mudanças no jogo"), SEM rodar antes duas checagens que ficaram faltando: o
-"Viajar" de dentro do carro com cada resposta de "Quem dirige?" (`SO=viajar` de
-`scripts/carroPorDentro.mjs`) e a estrada sem a chave (`SO=semChave`) — rode-as. Para ver
+"quero as mudanças no jogo"). Na publicação original faltaram duas checagens:
+"Viajar" de dentro com cada resposta de "Quem dirige?" (`SO=viajar`) e a estrada
+sem a chave (`SO=semChave`). Ambas passaram no preview isolado nesta atualização,
+com o motorista correto, as cabeças visíveis e a tecla V sem efeito com a chave desligada. Para ver
 no save de teste (ou desligar para comparar): `?semCarroPorDentro`. Antes, para ver:
 **`?bebito&carroPorDentro`** (o save de teste do carro: ele já tem o carro na garagem se a quest do presente foi jogada ali; num save de teste novo, `&licoes=10` conclui as lições e é só dormir na cama para começar a quest).
 Para tirar do jogo: trocar a chave para `false`.

@@ -16,7 +16,9 @@ const botao = (page, texto) => page.getByRole('button', { name: texto, exact: tr
 async function escolhas(page) {
   for (let i = 0; i < 100; i++) {
     if (await page.locator('.escolhas.show button').count()) return;
-    await page.keyboard.press('KeyE'); await page.waitForTimeout(200);
+    // Clique síncrono: um E enfileirado no quadro seguinte podia selecionar a primeira opção do menu recém-aberto.
+    await page.evaluate(() => { if (!document.querySelector('.escolhas.show button')) document.querySelector('.dialogue.show')?.click(); });
+    await page.waitForTimeout(200);
   }
   throw new Error('O menu não abriu');
 }
@@ -169,4 +171,10 @@ try {
     await page.context().close();
   }
   verifica(erros.length === 0, `sem erros de página: ${erros.join('; ')}`);
+} catch (erro) {
+  for (const ctx of browser.contexts()) for (const page of ctx.pages()) {
+    console.log('estado na falha:', await page.evaluate(() => ({ cena: window.jogo?.idDaCena, estado: window.aristoryBebitoMobile?.viagem.estado, botoes: [...document.querySelectorAll('.escolhas.show button')].map(b => b.textContent), fala: document.querySelector('.dialogue.show .text')?.textContent })).catch(() => null));
+    await page.screenshot({ path: `${OUT}-falha.png` }).catch(() => {});
+  }
+  throw erro;
 } finally { await browser.close(); }
