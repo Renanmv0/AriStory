@@ -5,6 +5,15 @@
 > `docs/BEBITO-MOBILE.md` (o carro, a quest e a viagem); **as próximas rotas
 > (parque ↔ clube ↔ escola) ficam para o plano seguinte, de propósito.**
 
+## Câmera presa ao carro em movimento (2026-11-13)
+
+A suavização do olho é feita no espaço local do carro. Assim, avanço, aceleração,
+freada e curvas carregam a câmera no mesmo quadro; só o balanço da cabeça e do banco
+é amortecido. O filtro anterior em coordenadas do mundo podia deixar o olho mais de
+um metro atrás do passageiro em velocidade alta. A regressão
+`scripts/cameraPresaAoCarro.mjs` reproduz a falha antiga e verifica movimento,
+curvas, freada, suavização local e restauração para ambos os alvos em 20/60/120 fps.
+
 ## Correção da visão do passageiro (Renan, 2026-11-13)
 
 O botão 👀 e a tecla V mudam apenas a câmera para o passageiro de verdade.
