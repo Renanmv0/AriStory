@@ -735,7 +735,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     }
     if (encontroEstavaAtivo && encontro && !encontro.ativo) {
       marca(encontro.personagem);
-      if (encontro.personagem === 'josefina') g.unlock({ id: 'josefina-na-estrada', title: 'As plantinhas também passeiam', place: 'Na estrada', icon: '🐢', note: 'A Josefina passou com o carro cheio de mudinhas, levando cada uma com todo o cuidado até seu cantinho de sol.' });
+      if (encontro.personagem === 'capy') g.unlock({ id: 'capy-na-estrada', title: 'Salva-vidas até no asfalto', place: 'Na estrada', icon: '🛵', note: 'O Capy apareceu de moto vermelha, capacete afivelado e um lembrete: nada de mergulhar nas curvas.' });
+      else if (encontro.personagem === 'josefina') g.unlock({ id: 'josefina-na-estrada', title: 'As plantinhas também passeiam', place: 'Na estrada', icon: '🐢', note: 'A Josefina passou com o carro cheio de mudinhas, levando cada uma com todo o cuidado até seu cantinho de sol.' });
       else g.unlock({ id: 'noel-na-estrada', title: 'O suco não espera', place: 'Na estrada', icon: '🦃', note: 'O Noel passou de carro, parou do nosso lado e lembrou que tinha comprado laranja… mas esquecido o gelo.' });
       if (visaoAntesDoEncontro) { estado.visao = 'dentro'; void camDentro.ligar(() => ({ de: olho, para: olhar }), 1.1); }
     }

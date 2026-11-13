@@ -3,6 +3,7 @@ import type { GameAPI } from '../../core/types';
 import { CarroDaJosefina } from '../../world/carroDaJosefina';
 import type { PersonagemNaEstrada } from './rota';
 import { CarroDoNoel } from '../../world/carroDoNoel';
+import { MotoDoCapy } from '../../world/motoDoCapy';
 import type { NaPista } from '../../world/estrada';
 
 type Fase = 'esperando' | 'alinhando' | 'ultrapassando' | 'freando' | 'falando' | 'saindo' | 'feito';
@@ -10,16 +11,16 @@ const suave = (t: number): number => { const k = Math.max(0, Math.min(1, t)); re
 
 /** Uma cena no relógio da viagem, isolada dos obstáculos e com as faixas reservadas. */
 export class EncontroNaEstrada {
-  readonly carro: CarroDoNoel | CarroDaJosefina;
-  get nome(): string { return this.personagem === 'noel' ? 'Noel' : 'Josefina'; }
-  get icone(): string { return this.personagem === 'noel' ? '🦃' : '🐢'; }
+  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy;
+  get nome(): string { return this.personagem === 'noel' ? 'Noel' : this.personagem === 'capy' ? 'Capy' : 'Josefina'; }
+  get icone(): string { return this.personagem === 'noel' ? '🦃' : this.personagem === 'capy' ? '🛵' : '🐢'; }
   readonly estado = { fase: 'esperando' as Fase, relativo: -28, tempo: 0, s: 0 };
   private falas = false;
   private anterior: THREE.Vector3 | null = null;
   private inicioDaFreada = 0;
   parada: number | null = null;
   constructor(private readonly g: GameAPI, readonly s: number, private readonly naPista: NaPista, private readonly rumo: (s: number) => number, private readonly carona: string, readonly personagem: PersonagemNaEstrada = 'noel') {
-    this.carro = personagem === 'noel' ? new CarroDoNoel() : new CarroDaJosefina();
+    this.carro = personagem === 'noel' ? new CarroDoNoel() : personagem === 'capy' ? new MotoDoCapy() : new CarroDaJosefina();
     this.carro.group.visible = false;
   }
   get ativo(): boolean { return this.estado.fase !== 'esperando' && this.estado.fase !== 'feito'; }
@@ -29,7 +30,7 @@ export class EncontroNaEstrada {
     if (e.fase === 'esperando') {
       if (viagem.s < this.s - 60 || !podeComecar) return;
       e.fase = 'alinhando'; e.tempo = 0;
-      this.g.toast(this.personagem === 'noel' ? 'Uma buzinadinha atrás… é o Noel!' : 'Olha quem veio com as plantinhas: a Josefina!', this.icone); this.g.som('buzinaDoBebito');
+      this.g.toast(this.personagem === 'noel' ? 'Uma buzinadinha atrás… é o Noel!' : this.personagem === 'capy' ? 'Capacete vermelho no retrovisor… é o Capy!' : 'Olha quem veio com as plantinhas: a Josefina!', this.icone); this.g.som('buzinaDoBebito');
     }
     if (e.fase === 'feito') return;
     e.tempo += dt;
@@ -37,7 +38,7 @@ export class EncontroNaEstrada {
       e.fase = 'ultrapassando'; e.tempo = 0;
     }
     if (e.fase === 'ultrapassando') {
-      const duracao = this.personagem === 'noel' ? 2.7 : 5;
+      const duracao = this.personagem === 'noel' ? 2.7 : this.personagem === 'capy' ? 4 : 5;
       e.relativo = -28 + 42 * suave(e.tempo / duracao);
       if (e.tempo >= duracao) {
         e.fase = 'freando'; e.tempo = 0;
@@ -57,7 +58,7 @@ export class EncontroNaEstrada {
       e.relativo = 4 * e.tempo + 3.5 * e.tempo * e.tempo;
       if (e.relativo > 65) {
         e.fase = 'feito'; this.carro.group.visible = false;
-        this.g.toast(this.personagem === 'noel' ? 'Ele tem mais pressa que o liquidificador.' : 'Cada mudinha tem seu cinto de segurança.', this.icone);
+        this.g.toast(this.personagem === 'noel' ? 'Ele tem mais pressa que o liquidificador.' : this.personagem === 'capy' ? 'Salva-vidas até no asfalto.' : 'Cada mudinha tem seu cinto de segurança.', this.icone);
       }
     }
     e.s = viagem.s + e.relativo;
@@ -75,6 +76,13 @@ export class EncontroNaEstrada {
   }
   private async conversar(): Promise<void> {
     const g = this.g;
+    if (this.personagem === 'capy') {
+      await g.say(['Capacete afivelado, distância segura… e nada de mergulhar nas curvas!'], 'Capy');
+      await g.say(['Você fiscaliza a rua também?'], this.carona);
+      await g.say(['Segurança não tira folga. A moto é vermelha pra combinar com o apito, não pra correr!'], 'Capy');
+      await g.say(['Agora vou nessa. Devagar, porque meu seguro não cobre capivara voadora.'], 'Capy');
+      return;
+    }
     if (this.personagem === 'josefina') {
       await g.say(['Bom dia, meus amores! Estou levando estas mudinhas para o jardim. Cada uma vai ganhar um cantinho com sol.'], 'Josefina');
       await g.say(['As plantinhas também saíram para passear?'], this.carona);
