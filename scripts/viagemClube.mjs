@@ -8,13 +8,14 @@ if(new URL(BASE).hostname==='renanmv0.github.io')throw Error('Use o preview isol
 const OUT=process.argv[2]??'/tmp/viagem-clube';
 const codigo=ts.transpileModule(await readFile(new URL('../src/eventos/bebitoMobile/rota.ts',import.meta.url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
 const {gerarRota}=await import('data:text/javascript;base64,'+Buffer.from(codigo).toString('base64'));
-for(let seed=1;seed<=150;seed++)for(const sentido of ['ida','volta','parque-clube','clube-parque']){
- const r=gerarRota(seed,sentido);assert.deepEqual(r,gerarRota(seed,sentido));assert.equal(r.eventos.length,8);
+for(let seed=1;seed<=150;seed++)for(const sentido of ['ida','volta','parque-clube','clube-parque','casa-clube','clube-casa']){
+ const r=gerarRota(seed,sentido);assert.deepEqual(r,gerarRota(seed,sentido));
  assert.ok(r.coracoes.every(c=>Math.abs(c.l)<=2.3&&c.s<r.chegada));
- if(sentido.includes('clube')){const n=r.eventos.find(e=>e.tipo==='noel');assert.ok(n);assert.ok(r.eventos.filter(e=>e!==n).every(e=>Math.abs(e.s-n.s)>120));assert.ok(r.eventos.some(e=>e.tipo==='rega')&&r.eventos.some(e=>e.tipo==='onda-verde'));}
- else{assert.equal(r.comprimento,640);assert.equal(r.eventos.filter(e=>e.tipo==='travessia').length,2);assert.ok(!r.eventos.some(e=>['noel','rega','onda-verde'].includes(e.tipo)));}
+ if(r.encontro)assert.ok(r.eventos.every(e=>Math.abs(e.s-r.encontro.s)>120));
+ if(sentido.includes('clube')){assert.equal(r.eventos.length,r.encontro?.personagem==='josefina'?6:7);assert.ok(r.eventos.some(e=>e.tipo==='onda-verde'));}
+ else{assert.equal(r.comprimento,r.encontro?880:640);assert.equal(r.eventos.length,8);assert.equal(r.eventos.filter(e=>e.tipo==='travessia').length,2);}
 }
-console.log('600 rotas: determinismo, legado, novos eventos e espaço da cena do Noel passaram.');
+console.log('900 rotas: determinismo, legado, encontros opcionais e espaço livre passaram.');
 const browser=await chromium.launch({executablePath:process.env.CHROME_PATH??'/usr/bin/chromium',args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
 const erros=[];const espera=(p,f,a)=>p.waitForFunction(f,a,{timeout:120000});
 async function desenho(p,ligado){await p.evaluate(ligado=>{const r=window.jogo.renderer;window.renderNormal??=r.render.bind(r);r.render=ligado?window.renderNormal:(s,c)=>{s.updateMatrixWorld();c.updateMatrixWorld();};},ligado);}
@@ -75,7 +76,7 @@ try{
  await p.goto(`${BASE}/?bebito&semHalloween`);await espera(p,()=>window.jogo?.idDaCena==='clube');await desenho(p,false);
  assert.equal(await p.evaluate(()=>window.jogo.scene.getObjectByName('bebito-mobile')?.userData.chegada),undefined);
  await p.evaluate(()=>{void window.jogo.current.world.interactables.find(i=>i.id==='clube:bebito-mobile').trigger(window.jogo);});
- await escolher(p,'Vamos!');await escolher(p,'Renan');await ate(p,()=>window.jogo.idDaCena==='viagem-de-carro');
+ await p.evaluate(()=>{const g=window.jogo;g.bump('bebito:viagens',3-g.stat('bebito:viagens'));});await escolher(p,'Parque Villa Lobos');await escolher(p,'Renan');await ate(p,()=>window.jogo.idDaCena==='viagem-de-carro');
  await percorrer(p,'clube-parque','renan',null);
  // O carro não duplica na garagem nem no clube quando está no parque.
  await mudarCena(p,'frente-da-casa');assert.equal(await p.evaluate(()=>!!window.jogo.scene.getObjectByName('bebito-mobile')),false);
@@ -92,7 +93,7 @@ try{
  assert.equal(await p.evaluate(()=>localStorage.getItem('aristory.save.v1')),null);await ctx.close();
  // Celular: Noel vindo por trás, faixa automática contra o manche e conversa parada.
  const cel=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true}),m=await cel.newPage();m.on('pageerror',e=>erros.push(e.message));
- await m.goto(`${BASE}/?bebito&semHalloween&cena=viagem-de-carro&viagem=parque-clube,renan,7`);await espera(m,()=>window.jogo?.current.world.root.userData.novidadesDaViagem?.noel);await desenho(m,false);
+ await m.goto(`${BASE}/?bebito&semHalloween&cena=viagem-de-carro&viagem=parque-clube,renan,1`);await espera(m,()=>window.jogo?.current.world.root.userData.novidadesDaViagem?.noel);await desenho(m,false);
  await m.evaluate(()=>{const v=window.aristoryBebitoMobile.viagem,n=window.jogo.current.world.root.userData.novidadesDaViagem.noel;v.estado.s=n.s-61;v.estado.l=-1.75;v.estado.v=14;v.vezes=2;});
  await m.keyboard.down('ArrowLeft');await espera(m,()=>window.jogo.current.world.root.userData.novidadesDaViagem.noel.estado.fase==='falando');await m.keyboard.up('ArrowLeft');
  await espera(m,()=>document.querySelector('.dialogue.show')?.textContent.includes('GELO'));await pose(m,'renan');await foto(m,'celular-noel-conversa');

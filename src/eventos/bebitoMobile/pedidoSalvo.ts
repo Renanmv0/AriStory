@@ -1,7 +1,5 @@
 import type { GameAPI } from '../../core/types';
-import type { PedidoDeViagem, Sentido } from './rota';
-
-const SENTIDOS: Sentido[] = ['ida', 'volta', 'parque-clube', 'clube-parque'];
+import { SENTIDOS, type PedidoDeViagem } from './rota';
 /** Reabrir a estrada mantém o destino e o motorista; o percurso reinicia. */
 export function guardarPedido(g: GameAPI, p: PedidoDeViagem): void {
   for (const sentido of SENTIDOS) g.setFlag(`bebito:rota-${sentido}`, sentido === p.sentido);

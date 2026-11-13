@@ -8,7 +8,7 @@ import { ritmoDoPresente, temBebitoMobile } from './presente';
 import { localDoBebito } from '../BebitoMobile';
 import { BebitoMobile, BEBITO_MOBILE } from '../../world/bebitoMobile/BebitoMobile';
 import { consumirChegadaNoClube, animarChegadaNoClube } from './chegadaNoClube';
-import { sairDeCarro } from './partida';
+import { escolherDestinoDeCarro } from './partida';
 import { PALETTE as P } from '../../palette';
 import { toon } from '../../core/materials';
 import { fundir, fundirComoFundo } from '../../world/fundir';
@@ -159,8 +159,8 @@ export function montarBebitoNoClube(w: WorldBuilder, entrada: ComandoDaCancela, 
   w.onUpdate(dt => carro.update(dt * ritmoDoPresente.vezes));
   w.blockBox(VAGA_NO_CLUBE.x, VAGA_NO_CLUBE.z, BEBITO_MOBILE.comprimento / 2 - 0.1, BEBITO_MOBILE.largura / 2 - 0.08);
   const viajar = w.interact({ id: 'clube:bebito-mobile', x: DESCIDA_NO_CLUBE.x, z: DESCIDA_NO_CLUBE.z, radius: 2,
-    label: 'Voltar ao parque de carro', icon: '🚙', highlight: carro.group, priority: 2,
-    onInteract: async () => { await sairDeCarro(g, 'clube-parque'); },
+    label: 'Viajar de Bebito Mobile', icon: '🚙', highlight: carro.group, priority: 2,
+    onInteract: async () => { await escolherDestinoDeCarro(g, 'clube'); },
   });
   const motorista = consumirChegadaNoClube();
   if (motorista) {

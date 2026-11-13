@@ -15,7 +15,7 @@ import {
   totemDePagamento,
 } from '../../world/estacionamento';
 import { FASES_DO_PRESENTE, localDoBebito, bebitoMobileNestaPagina } from '../BebitoMobile';
-import { sairDeCarro } from './partida';
+import { escolherDestinoDeCarro } from './partida';
 import { animarChegadaNoParque, consumirChegadaNoParque, type ComandoDaCancela } from './chegadaNoParque';
 import { ritmoDoPresente } from './presente';
 
@@ -255,9 +255,7 @@ export function montarBebitoNoParque(w: WorldBuilder, cena: { voltarPraCasa: Int
     highlight: carro.group,
     priority: 2,
     onInteract: async () => {
-      const destino = await g.ask('Pra onde vamos de Bebito?', ['Casa do Ari', 'Clube', 'Ficar no parque']);
-      if (destino === 0) await sairDeCarro(g, 'volta', true);
-      else if (destino === 1) await sairDeCarro(g, 'parque-clube', true);
+      await escolherDestinoDeCarro(g, 'parque');
     },
   });
   const motorista = consumirChegadaNoParque();

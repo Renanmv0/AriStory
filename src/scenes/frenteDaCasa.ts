@@ -17,7 +17,7 @@ import {
 import { buxinhoNoVaso, heraNosMuros, type MuroComHera } from '../world/plantasDeJardim';
 import { BEBITO_MOBILE, BebitoMobile } from '../world/bebitoMobile/BebitoMobile';
 import { chegadaDoBebito, renanFoiBuscar, temBebitoMobile } from '../eventos/bebitoMobile/presente';
-import { sairDeCarro } from '../eventos/bebitoMobile/partida';
+import { escolherDestinoDeCarro } from '../eventos/bebitoMobile/partida';
 import { localDoBebito, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
 import { prepararOCarroPorDentro } from '../eventos/bebitoMobile/entradaNoCarro';
 import { Decorador, type Cofre, type RegrasDoLugar, type Superficie } from '../world/decorador';
@@ -709,7 +709,7 @@ export const frenteDaCasa: SceneDef = {
         // a porta do motorista: é por ela que se sai de carro (`eventos/bebitoMobile/partida.ts`) e, com o carro
         // por dentro (`docs/BEBITO-MOBILE-DENTRO.md`), que se ENTRA nele
         const porDentro = carroPorDentroNestaPagina()
-          ? prepararOCarroPorDentro(w, { carro, vaga: VAGA, aoViajar: () => sairDeCarro(g, 'ida', true) })
+          ? prepararOCarroPorDentro(w, { carro, vaga: VAGA, aoViajar: () => escolherDestinoDeCarro(g, 'casa') })
           : null;
         w.interact({
           id: 'frente:sair-de-carro',
@@ -719,7 +719,7 @@ export const frenteDaCasa: SceneDef = {
           priority: 2,
           onInteract: async () => {
             if (porDentro) await porDentro.entrar();
-            else await sairDeCarro(g, 'ida');
+            else await escolherDestinoDeCarro(g, 'casa');
           },
         });
       };

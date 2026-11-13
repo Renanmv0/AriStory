@@ -1,19 +1,26 @@
-# A viagem Villa Lobos ↔ clube
+# As viagens de Bebito: casa, Villa Lobos e clube
 
 Pedido do Renan (2026-11-13): reaproveitar a viagem da casa ao parque, com outra
 paisagem, novos motivos para frear/acelerar e uma cena engraçada do Noel de carro.
 
 ## O percurso
 
-O carro no parque oferece Casa do Ari ou Clube. No clube, o carro da vaga do
-coração oferece a volta ao parque. Toda partida conserva a escolha de quem
+Em casa, "Escolher destino" no menu de dentro do Bebito oferece Parque Villa
+Lobos ou Clube. No parque, o carro oferece Casa do Ari ou Clube. No clube,
+a vaga do coração oferece Casa do Ari ou Parque Villa Lobos. "Agora não"
+cancela sem iniciar uma viagem. Toda partida conserva a escolha de quem
 dirige; a câmera do passageiro continua no outro personagem.
 
 A mesma pista curva, direção, piloto, corações, sons, obstáculos e nota da
 viagem antiga são reutilizados. Os sentidos novos são `parque-clube` e
-`clube-parque`; os antigos `ida` e `volta` continuam sendo casa ↔ parque.
+`clube-parque`, além de `casa-clube` e `clube-casa`; os antigos `ida` e
+`volta` continuam sendo casa ↔ parque.
 
-A rota nova tem 1000 m e passa pelo bosque do parque, hortas/estufas e pomares,
+Casa ↔ clube usa os mesmos componentes do bairro e da avenida da saída de
+casa e os trechos de hortas e alameda esportiva do caminho parque ↔ clube.
+A volta inverte os trechos. Não há parada ou troca de cena no parque.
+
+A rota do clube tem 1000 m e passa pelo acesso de casa ou do parque, hortas/estufas e pomares,
 depois pela alameda de palmeiras e quadras esportivas. Na volta a paisagem se
 inverte. Cenário em trechos, fundido por material; frutas e gotas em lote.
 
@@ -24,12 +31,34 @@ Além de lombada, travessia, obra, semáforo e poça:
 - **Onda verde:** dois sinais coordenados. Acelerar no trecho livre permite
   aproveitar ambos; quem perde a janela para e espera o próximo verde. Não
   existe prazo que obrigue a furar sinal ou reiniciar a viagem.
-- **Noel:** um trecho reservado, sem obstáculo junto da cena. O Bebito se
+- **Encontro sorteado:** um trecho reservado, sem obstáculo junto da cena. O Bebito se
   alinha na direita, o Noel passa depressa pela esquerda, freia e para ao lado.
   Fala que comprou laranja e esqueceu o gelo, responde à carona e vai embora.
   A câmera mostra os dois carros, sem trocar motorista ou assentos. Quem estava
   na visão interna volta para ela depois; o controle manual também é devolvido.
   Se houver outra conversa/menu aberto, o carro espera antes do trecho da cena.
+
+## Viagens com encontros diferentes
+
+Cada partida, em qualquer um dos seis sentidos, sorteia uma possibilidade:
+30% de Noel, 30% de Josefina ou 40% de nenhum encontro. É no máximo um carro
+de personagem por viagem; não há alternância obrigatória e uma repetição é
+possível. O sorteio usa a semente salva do pedido, então recarregar conserva
+inclusive o resultado "ninguém". Não há percentual ou controle de depuração
+no fluxo do jogador.
+
+A Josefina dirige uma caminhonete verde de jardinagem com caçamba aberta,
+vasinhos, folhas, lavandas, regador e o letreiro incorporado à lateral.
+Passa com mais calma, comenta sobre levar as mudinhas para um cantinho de sol
+e segue viagem. Mantém o modelo e as poses originais; os carros compartilham
+a coreografia, reserva de faixa, câmera e retorno da visão do passageiro.
+Quando ela passa de carro, não aparece também regando a calçada.
+
+No caminho antigo casa ↔ parque, um encontro acrescenta um corredor de
+240 m antes dos obstáculos; sem encontro, mantém os 640 m originais. Assim o
+novo carro não disputa espaço com o ônibus ou com os bichos da travessia.
+Os oito obstáculos e suas regras permanecem. Outros personagens e veículos
+podem entrar no catálogo de encontros em uma próxima etapa.
 
 O Noel usa o modelo e as poses originais, numa caminhonete de venda de sucos.
 O chassi reaproveita o hatch; a cabine é aberta para enxergar o motorista e a
@@ -58,21 +87,43 @@ o carro nos destinos. O ônibus do clube lembra de buscar o carro quando ele est
 O pedido de viagem guarda sentido, motorista e semente. Recarregar na estrada
 reinicia o percurso com a mesma escolha; não troca destino nem quem dirige.
 Recarregar depois de chegar encontra o carro estacionado e não repete a animação.
-As memórias novas são a primeira chegada ao clube e o encontro com o Noel.
+As memórias novas são a primeira chegada ao clube e os encontros com Noel e Josefina.
 
 ## Validar e ver
 
-`scripts/viagemClube.mjs`: 600 rotas, ida e volta completas com os dois motoristas,
+`scripts/casaClube.mjs`: 3000 rotas nos seis sentidos, distribuição dos encontros,
+trechos compartilhados/invertidos e corredor livre. No navegador, menu de dentro
+do carro, cancelar, viagens diretas de ida/volta, Noel, Josefina e ninguém,
+motoristas, câmera interna, recarga e localização única do carro, computador e
+celular. `SO=rotas` roda só a parte determinista, sem navegador.
+
+`scripts/viagemClube.mjs`: 900 rotas, ida e volta completas com os dois motoristas,
 câmera interna antes do Noel, alinhamento contra o manche, diálogos, eventos,
 onda aproveitada/perdida, chegada, recarga e carro sem duplicação. Inclui a
 volta antiga para casa. Fotos no computador e no celular, sempre em preview
 de origem diferente do site oficial, com `?bebito` e save isolado.
 
 Atalho: `?bebito&cena=viagem-de-carro&viagem=parque-clube,ari,7` (ou
-`clube-parque,renan,7`). O teste acelera apenas o relógio de depuração; restaura
+`clube-parque,renan,3`, `casa-clube,ari,4`, `casa-clube,ari,6` ou
+`clube-casa,renan,1`). O teste acelera apenas o relógio de depuração; restaura
 a renderização normal para capturar as fotos.
 
-Validação final (2026-11-13): as duas rotas completas passaram com zero
+Validação da viagem direta e dos encontros (2026-11-13): 3000 rotas passaram
+nas regras de distribuição, repetição da semente, continuidade dos trechos e
+corredor livre. Casa → clube com Ari/Noel, clube → casa com Renan/Josefina e
+casa → clube com Renan/ninguém no celular terminaram sem tropeços ou sustos.
+Menu interno, cancelar, escolha de destino/motorista, recarga da estrada,
+retorno da visão interna, descida, garagem e localização única do carro
+passaram. Os encontros no caminho antigo também passaram no celular.
+
+Fotos finais conferidas em 1200×850 e 390×844. A Josefina usa assento elevado
+e se vira parcialmente na conversa para o rosto aparecer; a carga e o carro
+cabem na faixa. Tomada dela: 470 desenhos/195079 triângulos no computador e
+413/225215 no celular. Não foi acrescentada luz real. TypeScript/build aprovados.
+O verificador antes da fundição mediu oito caixas no Noel e cinco na
+Josefina, com zero pares coplanares e sem erros de página.
+
+Registro da primeira versão, antes dos encontros por chance (2026-11-13): as duas rotas completas passaram com zero
 tropeços e zero sustos, todos os oito eventos vistos e as duas ondas verdes
 aproveitadas. Ari e Renan chegaram dirigindo como escolhidos; as chegadas
 devolveram o controle e o carro ficou apenas no destino. Recarregar a estrada

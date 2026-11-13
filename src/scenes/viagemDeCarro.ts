@@ -32,7 +32,7 @@ import { relogioDaCena } from '../eventos/bebitoMobile/presente';
 import { CelularDeJogo } from '../world/celularDeJogo';
 import { hortaDaAlameda, pomarDaAlameda, quadraNaAlameda } from '../world/paisagemDaRotaDoClube';
 import { coberturaDoEstacionamento, jardineiraDoEstacionamento, posteDoEstacionamento } from '../world/estacionamentoDoClube';
-import { NoelNaEstrada } from '../eventos/bebitoMobile/noelNaEstrada';
+import { EncontroNaEstrada } from '../eventos/bebitoMobile/encontroNaEstrada';
 import { OndaVerde, RegaNaAlameda } from '../eventos/bebitoMobile/novidadesDoClube';
 import { agendarChegadaNoClube } from '../eventos/bebitoMobile/chegadaNoClube';
 import { pedidoSalvo } from '../eventos/bebitoMobile/pedidoSalvo';
@@ -138,7 +138,7 @@ const FALAS: Record<'ari' | 'renan', Record<Momento, string[]>> = {
   },
   // o Renan de carona (o Ari dirige)
   renan: {
-    partida: ['Cinto colocado. Pode ir, bebito.', 'Sem pressa. O parque não sai do lugar.'],
+    partida: ['Cinto colocado. Pode ir, bebito.', 'Sem pressa. A gente já chega.'],
     patos: ['Patinhos na faixa. Freia, bebito.', 'Tem pato atravessando ali na frente.'],
     tigres: ['Tigre-d\'água na faixa. Vai demorar.', 'Tartaruga atravessando. Paciência.'],
     obrigado: ['Família educada.', 'Passaram todos. Pode ir.'],
@@ -527,11 +527,10 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   };
   const carona = pedido.motorista === ARI.id ? RENAN : ARI;
   const motorista = pedido.motorista === ARI.id ? ARI : RENAN;
-  const eventoNoel = rota.eventos.find(e => e.tipo === 'noel');
-  const noel = eventoNoel ? new NoelNaEstrada(g, eventoNoel.s, naPista, rumoEm, carona.name) : null;
-  if (noel) w.add(noel.carro.group);
-  w.root.userData.novidadesDaViagem = { noel, rega: vivos.find(v => v.rega)?.rega, onda: vivos.find(v => v.onda)?.onda };
-  let visaoAntesDoNoel = false;
+  const encontro = rota.encontro ? new EncontroNaEstrada(g, rota.encontro.s, naPista, rumoEm, carona.name, rota.encontro.personagem) : null;
+  if (encontro) w.add(encontro.carro.group);
+  w.root.userData.novidadesDaViagem = { encontro, noel: encontro?.personagem === 'noel' ? encontro : null, rega: vivos.find(v => v.rega)?.rega, onda: vivos.find(v => v.onda)?.onda };
+  let visaoAntesDoEncontro = false;
   let ultimaFala = -9;
   /** a carona é sempre o outro de quem foi escolhido para dirigir */
   const caronaAgora = (): typeof ARI => carona;
@@ -675,7 +674,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
    * De novo: volta à câmera externa e desliga o piloto automático.
    */
   const trocarDeVisao = async (): Promise<void> => {
-    if (trocando || g.emDialogo() || estado.fase === 'fim' || noel?.ativo) return;
+    if (trocando || g.emDialogo() || estado.fase === 'fim' || encontro?.ativo) return;
     trocando = true;
     if (estado.visao === 'fora') {
       estado.piloto = true;
@@ -694,7 +693,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   depuracaoDaViagem.passageiro = { trocar: trocarDeVisao, camera: camDentro, celular };
   /** o botão sempre na tela, a tecla V, e o E (ação) que abre o menu do passageiro */
   const vigiarOPassageiro = (): void => {
-    const noAr = !noel?.ativo && (estado.fase === 'dirigindo' || estado.fase === 'chegando');
+    const noAr = !encontro?.ativo && (estado.fase === 'dirigindo' || estado.fase === 'chegando');
     g.botaoDaViagem(
       noAr
         ? { icone: estado.visao === 'dentro' ? '🚙' : '👀', rotulo: estado.visao === 'dentro' ? 'Voltar à visão externa' : 'Ver da janela do passageiro', ativo: estado.visao === 'dentro' }
@@ -723,23 +722,24 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     cones.update(dt);
     respingos.update(dt);
     if (aro) aro.rotation.z += dt * 0.12;
-    const noelEstavaAtivo = noel?.ativo;
-    const podeReceberNoel = estado.fase === 'dirigindo' && !g.emDialogo() && !menuAberto && !trocando;
-    noel?.update(dt, estado, podeReceberNoel);
-    if (noel?.ativo && !noelEstavaAtivo) {
-      visaoAntesDoNoel = estado.visao === 'dentro';
-      if (visaoAntesDoNoel) { camDentro.cortar(); estado.visao = 'fora'; }
+    const encontroEstavaAtivo = encontro?.ativo;
+    const podeReceberEncontro = estado.fase === 'dirigindo' && !g.emDialogo() && !menuAberto && !trocando;
+    encontro?.update(dt, estado, podeReceberEncontro);
+    if (encontro?.ativo && !encontroEstavaAtivo) {
+      visaoAntesDoEncontro = estado.visao === 'dentro';
+      if (visaoAntesDoEncontro) { camDentro.cortar(); estado.visao = 'fora'; }
     }
-    if (noelEstavaAtivo && noel && !noel.ativo) {
-      marca('noel');
-      g.unlock({ id: 'noel-na-estrada', title: 'O suco não espera', place: 'Na estrada pro clube', icon: '🦃', note: 'O Noel passou de carro, parou do nosso lado e lembrou que tinha comprado laranja… mas esquecido o gelo.' });
-      if (visaoAntesDoNoel) { estado.visao = 'dentro'; void camDentro.ligar(() => ({ de: olho, para: olhar }), 1.1); }
+    if (encontroEstavaAtivo && encontro && !encontro.ativo) {
+      marca(encontro.personagem);
+      if (encontro.personagem === 'josefina') g.unlock({ id: 'josefina-na-estrada', title: 'As plantinhas também passeiam', place: 'Na estrada', icon: '🐢', note: 'A Josefina passou com o carro cheio de mudinhas, levando cada uma com todo o cuidado até seu cantinho de sol.' });
+      else g.unlock({ id: 'noel-na-estrada', title: 'O suco não espera', place: 'Na estrada', icon: '🦃', note: 'O Noel passou de carro, parou do nosso lado e lembrou que tinha comprado laranja… mas esquecido o gelo.' });
+      if (visaoAntesDoEncontro) { estado.visao = 'dentro'; void camDentro.ligar(() => ({ de: olho, para: olhar }), 1.1); }
     }
 
     // o manche: virar, acelerar e frear (com fala na tela, ou chegando, ninguém mexe). O PILOTO AUTOMÁTICO
     // dirige mesmo com uma fala ou o menu do passageiro na tela: o carro não pode parar de frear na faixa
     // só porque alguém abriu um balão
-    const livre = estado.fase === 'dirigindo' && !g.emDialogo() && !noel?.ativo;
+    const livre = estado.fase === 'dirigindo' && !g.emDialogo() && !encontro?.ativo;
     const automatico = depuracaoDaViagem.piloto !== 'nenhum' || estado.piloto;
     const manche = estado.fase !== 'dirigindo' ? { x: 0, y: 0 } : automatico ? piloto() : livre ? g.olharLivre() : { x: 0, y: 0 };
     const buzinou = livre && !automatico && g.acaoCrua();
@@ -747,7 +747,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     // ---- os eventos que mexem com o que o carro pode fazer
     /** o `s` que a FRENTE do carro não pode passar agora, e por quê */
     let limite = Infinity;
-    if (noel && noel.parada !== null && (noel.estado.fase === 'freando' || noel.estado.fase === 'falando')) limite = noel.parada + 2.6;
+    if (encontro && encontro.parada !== null && (encontro.estado.fase === 'freando' || encontro.estado.fase === 'falando')) limite = encontro.parada + 2.6;
     let dono: Vivo | null = null;
     let aviso = '';
     let icone = '';
@@ -1008,11 +1008,11 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     if (estado.fase === 'partida') {
       if (relogio > 1.1 && !g.emDialogo()) {
         estado.fase = 'dirigindo';
-        if (novaRota) g.toast(`${carona.name}: Cinto colocado. Partiu ${paraClube ? 'clube' : 'parque'}!`, '🚙');
+        if (novaRota) g.toast(`${carona.name}: Cinto colocado. Partiu ${paraClube ? 'clube' : ida ? 'parque' : 'casa'}!`, '🚙');
         else comentar('partida', true);
       }
     } else if (estado.fase === 'dirigindo') {
-      if (noel?.ativo) estado.v += THREE.MathUtils.clamp(noel.velocidade(estado.s) - estado.v, -7 * dt, 4 * dt);
+      if (encontro?.ativo) estado.v += THREE.MathUtils.clamp(encontro.velocidade(estado.s) - estado.v, -7 * dt, 4 * dt);
       else if (manche.y < -0.25) estado.v = Math.max(0, estado.v + manche.y * 17 * dt);
       else {
         const alvo = manche.y > 0.3 ? MAXIMA : CRUZEIRO;
@@ -1032,8 +1032,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       icone = paraClube ? '🏊' : ida ? '🌳' : '🏠';
       tom = 'bom';
     } else estado.v = 0;
-    if (noel?.estado.fase === 'esperando' && !podeReceberNoel && estado.s > noel.s - 65) {
-      estado.v = Math.min(estado.v, Math.sqrt(8 * Math.max(0, noel.s - 55 - estado.s)));
+    if (encontro?.estado.fase === 'esperando' && !podeReceberEncontro && estado.s > encontro.s - 65) {
+      estado.v = Math.min(estado.v, Math.sqrt(8 * Math.max(0, encontro.s - 55 - estado.s)));
     }
 
     // o que não dá para atravessar: o carro freia a tempo, sozinho, e com susto se foi em cima
@@ -1077,7 +1077,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     carro.frear(freando);
 
     // ---- o lado
-    const querLado = noel?.ativo ? THREE.MathUtils.clamp((PISTA.meios[1] - estado.l) * 1.8, -1, 1)
+    const querLado = encontro?.ativo ? THREE.MathUtils.clamp((PISTA.meios[1] - estado.l) * 1.8, -1, 1)
       : estado.fase === 'chegando' ? Math.max(-1, Math.min(1, (PISTA.meios[1] - estado.l) * 1.2)) : manche.x;
     const alvoVl = querLado * 4.2 * Math.max(0.2, Math.min(1, estado.v / 5));
     vl += (alvoVl - vl) * Math.min(1, dt * 9);
@@ -1148,12 +1148,12 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     }
 
     // ---- o que se vê: só os trechos de perto
-    // A tomada de frente do Noel olha também para trás: não cortar o asfalto no fundo.
-    for (const t of trechos) t.grupo.visible = t.s1 > estado.s - (noel?.ativo ? 200 : 22) && t.s0 < estado.s + 160;
+    // A tomada do encontro olha também para trás: não cortar o asfalto no fundo.
+    for (const t of trechos) t.grupo.visible = t.s1 > estado.s - (encontro?.ativo ? 200 : 22) && t.s0 < estado.s + 160;
     // a câmera: a de perseguição, ou (visão do passageiro) a de dentro do carro, que desliza de uma para a outra
-    if (noel?.ativo) {
+    if (encontro?.ativo) {
       filmar(dt, false);
-      const tomada = noel.camera(estado); g.setCameraOmbro(tomada.de, tomada.para);
+      const tomada = encontro.camera(estado); g.setCameraOmbro(tomada.de, tomada.para);
     } else if (estado.visao === 'dentro' && camDentro.ativa) {
       filmar(dt, false);
       if (camDentro.dentro >= 0.99 && !g.emDialogo()) camDentro.olhar(dt);
@@ -1163,13 +1163,13 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     if (comPassageiro) vigiarOPassageiro();
 
     // ---- o painel
-    if (noel?.ativo) { aviso = noel.estado.fase === 'falando' ? 'O Noel lembrou de uma coisa…' : 'Dando passagem ao Noel'; icone = '🦃'; }
+    if (encontro?.ativo) { aviso = encontro.estado.fase === 'falando' ? `${encontro.nome} parou para conversar…` : `Dando passagem a ${encontro.nome}`; icone = encontro.icone; }
     if (!aviso && estado.fase === 'dirigindo' && relogio < 9) {
       const toque = typeof window !== 'undefined' && 'ontouchstart' in window;
       aviso = toque ? 'Manche: vira e freia · botão: buzina' : '← → vira · ↓ freia · ↑ acelera · E buzina';
       icone = '🚙';
     }
-    if (estado.piloto && aviso && !noel?.ativo) aviso = tom === 'pare' ? 'O Bebito está parando…' : 'O Bebito está de olho na pista…';
+    if (estado.piloto && aviso && !encontro?.ativo) aviso = tom === 'pare' ? 'O Bebito está parando…' : 'O Bebito está de olho na pista…';
     if (!aviso && estado.visao === 'dentro' && camDentro.dentro >= 0.99 && estado.fase === 'dirigindo') {
       const toque = typeof window !== 'undefined' && 'ontouchstart' in window;
       aviso = toque ? '✨ escolhe o que fazer · 🚙 visão externa' : 'E: o que fazer · V: visão externa';
@@ -1219,7 +1219,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     g.setFlag('bebito:viagem-em-andamento', false);
     if (paraClube) {
       agendarChegadaNoClube(pedido.motorista);
-      g.unlock({ id: 'de-bebito-ao-clube', title: 'De Bebito ao clube', place: 'Clube', icon: '🏊', note: 'A alameda, a Josefina regando, a pressa do Noel e a nossa vaga no estacionamento do clube.' });
+      g.unlock({ id: 'de-bebito-ao-clube', title: 'De Bebito ao clube', place: 'Clube', icon: '🏊', note: 'De Bebito pela alameda até a nossa vaga no estacionamento do clube. Mais um lugar para visitar juntos, saindo direto de onde estivermos.' });
     }
     if (ida) agendarChegadaNoParque(pedido.motorista);
     g.painelDaViagem(null);

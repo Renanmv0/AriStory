@@ -2,8 +2,15 @@
 
 > Documento de PROJETO. Cada etapa marca aqui, na tabela de etapas, quando entra no jogo, e o
 > `git log` é a fonte da verdade do que de fato existe. Continua o
-> `docs/BEBITO-MOBILE.md` (o carro, a quest e a viagem); **as próximas rotas
-> (parque ↔ clube ↔ escola) ficam para o plano seguinte, de propósito.**
+> `docs/BEBITO-MOBILE.md` (o carro, a quest e a viagem). As rotas de casa e do
+> parque ao clube já estão em `docs/VIAGEM-CLUBE.md`; a escola fica para depois.
+
+## Escolher destino de dentro do carro (2026-11-13)
+
+O primeiro botão do menu passou a ser "Escolher destino". Na garagem, ele
+oferece Parque Villa Lobos e Clube; "Agora não" volta ao menu interno sem
+iniciar viagem. Depois do destino vem a escolha de motorista. Casa ↔ clube
+é direta, com bairro/avenida e alameda compartilhados, sem passar pelo parque.
 
 ## Câmera presa ao carro em movimento (2026-11-13)
 

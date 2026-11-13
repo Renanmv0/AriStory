@@ -183,7 +183,7 @@ export function prepararOCarroPorDentro(w: WorldBuilder, palco: PalcoDoCarro): C
   /** "O que a gente faz?": viajar, descansar ou descer */
   const menuDeDentro = async (): Promise<void> => {
     for (;;) {
-      const i = await g.ask('O que a gente faz?', ['Viajar pro Villa Lobos', 'Descansar no carro', 'Descer do carro']);
+      const i = await g.ask('O que a gente faz?', ['Escolher destino', 'Descansar no carro', 'Descer do carro']);
       if (i === 0) {
         olhandoEmVolta = false;
         const foi = await palco.aoViajar();

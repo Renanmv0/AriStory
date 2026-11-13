@@ -14,7 +14,7 @@
  * - DESCANSAR: os encostos deitam e viram a cama, os dois deitam lado a lado (a câmera mostra os dois
  *   de cima, com corte visual do teto), a conversa curta, e o menu "Cochilar / Sair do carro"; o cochilo é
  *   um fade com ronco; sair desfaz tudo (levantar e descer); a memória e o contador no save;
- * - VIAJAR: de dentro, "Viajar pro Villa Lobos" leva à pergunta de quem dirige e à estrada (testado
+ * - VIAJAR: de dentro, "Escolher destino" leva à pergunta de quem dirige e à estrada (testado
  *   com cada resposta: o motorista certo ao volante, nenhuma pose nem cabeça escondida sobrando);
  * - SEMCHAVE: na estrada, com `?semCarroPorDentro`, não existe o 👀 nem o V faz nada;
  * - PASSAGEIRO: na viagem, o 👀 (sempre na tela) liga a visão do passageiro: o carro vai no
@@ -162,7 +162,7 @@ if (roda('entrar') || roda('descer') || roda('descansar')) {
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${OUT}-3-dentro-menu.png` });
   const menu = await estado(page);
-  confere(menu.botoes.join('|') === 'Viajar pro Villa Lobos|Descansar no carro|Descer do carro', `o menu "O que a gente faz?" (${menu.botoes.join(', ')})`);
+  confere(menu.botoes.join('|') === 'Escolher destino|Descansar no carro|Descer do carro', `o menu "O que a gente faz?" (${menu.botoes.join(', ')})`);
   ficou = page;
 
   /** o que tem que estar desfeito quando os dois voltam para fora do carro */

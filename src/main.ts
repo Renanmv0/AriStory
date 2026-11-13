@@ -26,7 +26,7 @@ import { fundir } from './world/fundir';
 import { FASES_DO_PRESENTE, bebitoMobileNestaPagina } from './eventos/BebitoMobile';
 import { ritmoDoPresente } from './eventos/bebitoMobile/presente';
 import { depuracaoDoCarroPorDentro } from './eventos/bebitoMobile/entradaNoCarro';
-import { eixoDaRota, gerarRota, pedirViagem, type Sentido } from './eventos/bebitoMobile/rota';
+import { SENTIDOS, eixoDaRota, gerarRota, pedirViagem, type Sentido } from './eventos/bebitoMobile/rota';
 import { depuracaoDaViagem } from './scenes/viagemDeCarro';
 
 const root = document.getElementById('app');
@@ -59,7 +59,7 @@ const pedida = params.get('cena') ?? undefined;
 // faz o pedido é a porta do carro (`eventos/bebitoMobile/partida.ts`).
 const viagem = params.get('viagem')?.split(',');
 if (viagem) {
-  const sentido: Sentido = viagem[0] === 'parque-clube' || viagem[0] === 'clube-parque' || viagem[0] === 'volta' ? viagem[0] : 'ida';
+  const sentido: Sentido = SENTIDOS.find(s => s === viagem[0]) ?? 'ida';
   pedirViagem({ sentido, motorista: viagem[1] === 'renan' ? 'renan' : 'ari', semente: Number(viagem[2]) || 1 });
 }
 const entrada = params.get('entrada') ?? undefined;

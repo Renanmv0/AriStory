@@ -16,11 +16,18 @@
  * DIREITA de quem dirige). A pista é de mão única, com duas faixas.
  */
 
-export type Sentido = 'ida' | 'volta' | 'parque-clube' | 'clube-parque';
+export const SENTIDOS = ['ida', 'volta', 'parque-clube', 'clube-parque', 'casa-clube', 'clube-casa'] as const;
+export type Sentido = typeof SENTIDOS[number];
 export type DestinoDeCarro = 'casa' | 'parque' | 'clube';
 export const destinoDaRota = (sentido: Sentido): DestinoDeCarro =>
-  sentido === 'ida' || sentido === 'clube-parque' ? 'parque' : sentido === 'parque-clube' ? 'clube' : 'casa';
-export const rotaDoClube = (sentido: Sentido): boolean => sentido === 'parque-clube' || sentido === 'clube-parque';
+  sentido === 'ida' || sentido === 'clube-parque' ? 'parque' : sentido === 'parque-clube' || sentido === 'casa-clube' ? 'clube' : 'casa';
+export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube');
+export type PersonagemNaEstrada = 'noel' | 'josefina';
+/** Uma chance por partida: 30% Noel, 30% Josefina, 40% passeio sem encontro. */
+export function sortearEncontro(semente: number, sentido: Sentido): PersonagemNaEstrada | null {
+  const valor = sorteio(semente * 97 + SENTIDOS.indexOf(sentido) * 131 + 43)();
+  return valor < 0.3 ? 'noel' : valor < 0.6 ? 'josefina' : null;
+}
 
 /** o pedido que a cena de partida deixa para a cena da viagem */
 export interface PedidoDeViagem {
@@ -72,7 +79,7 @@ export interface Trecho {
  * - `poca`: uma poça numa faixa — só espirra (é de graça, e é divertido);
  * - `onibus`: o ônibus da cidade andando devagar numa faixa — ultrapassar.
  */
-export type TipoDeEvento = 'travessia' | 'semaforo' | 'obra' | 'buracos' | 'lombada' | 'poca' | 'onibus' | 'rega' | 'onda-verde' | 'noel';
+export type TipoDeEvento = 'travessia' | 'semaforo' | 'obra' | 'buracos' | 'lombada' | 'poca' | 'onibus' | 'rega' | 'onda-verde';
 export type BichosDaTravessia = 'patos' | 'tigres';
 
 export interface EventoDaRota {
@@ -101,6 +108,7 @@ export interface Rota {
   chegada: number;
   trechos: Trecho[];
   eventos: EventoDaRota[];
+  encontro?: { personagem: PersonagemNaEstrada; s: number };
   coracoes: Coracao[];
   /** a luz da viagem */
   momento: 'dia' | 'tarde';
@@ -231,39 +239,57 @@ export function gerarRota(semente: number, sentido: Sentido): Rota {
   }
   fileira(34, 0, PISTA.meios[rnd() < 0.5 ? 0 : 1], 5);
 
-  return {
+  const rota: Rota = {
     sentido, semente, comprimento, chegada: comprimento - 16,
     trechos, eventos, coracoes, curva,
     momento: rnd() < 0.3 ? 'tarde' : 'dia',
   };
+  const personagem = sortearEncontro(semente, sentido);
+  if (personagem) {
+    // Uma saída tranquila antes dos obstáculos: ninguém disputa a faixa com
+    // o ônibus ou os bichos. A paisagem e os obstáculos de sempre são mantidos.
+    const deslocar = (s: number): number => s < 60 ? s : s + 240;
+    rota.comprimento += 240; rota.chegada += 240;
+    for (const t of rota.trechos) { t.de = deslocar(t.de); t.ate = deslocar(t.ate); }
+    for (const e of rota.eventos) e.s = deslocar(e.s);
+    for (const c of rota.coracoes) c.s = deslocar(c.s);
+    rota.encontro = { personagem, s: 130 };
+  }
+  return rota;
 }
 
 /** Outra região da cidade, usando a mesma pista, curva, controles e eventos do carro. */
 function gerarRotaDoClube(semente: number, sentido: Sentido): Rota {
-  const base = gerarRota(semente, sentido === 'parque-clube' ? 'ida' : 'volta');
-  const rnd = sorteio(semente * 53 + (sentido === 'parque-clube' ? 101 : 211));
+  const indo = destinoDaRota(sentido) === 'clube';
+  const base = gerarRota(semente, indo ? 'ida' : 'volta');
+  const rnd = sorteio(semente * 53 + (indo ? 101 : 211));
   const comprimento = 1000;
-  const ordem: Bioma[] = sentido === 'parque-clube' ? ['parque', 'hortas', 'esportivo'] : ['esportivo', 'hortas', 'parque'];
-  const cortes = [0, 255, 650, comprimento];
+  // O bairro e a avenida são os mesmos da saída de casa; hortas e alameda
+  // esportiva são compartilhadas com o caminho do parque. A volta os inverte.
+  const acessos: Trecho[] = sentido === 'casa-clube' || sentido === 'clube-casa'
+    ? [{ bioma: 'bairro', de: 0, ate: 220 }, { bioma: 'avenida', de: 220, ate: 350 }]
+    : [{ bioma: 'parque', de: 0, ate: 350 }];
+  const trechos: Trecho[] = [...acessos, { bioma: 'hortas', de: 350, ate: 650 }, { bioma: 'esportivo', de: 650, ate: comprimento }];
+  const personagem = sortearEncontro(semente, sentido);
+  const encontro = personagem ? { personagem, s: 430 + (rnd() - 0.5) * 6 } : undefined;
   const tipos: Array<[TipoDeEvento, number]> = [
-    ['lombada', 80], ['travessia', 175], ['rega', 285], ['noel', 430],
+    ['lombada', 80], ['travessia', 175], ['rega', 285],
     ['obra', 565], ['onda-verde', 685], ['semaforo', 820], ['poca', 900],
   ];
-  const eventos = tipos.map(([tipo, s]): EventoDaRota => ({
+  const eventos = tipos.filter(([tipo]) => tipo !== 'rega' || personagem !== 'josefina').map(([tipo, s]): EventoDaRota => ({
     tipo, s: s + (rnd() - 0.5) * 6, faixa: rnd() < 0.5 ? 0 : 1,
-    ...(tipo === 'travessia' ? { bichos: sentido === 'parque-clube' ? 'patos' as const : 'tigres' as const, lado: 1 as const, quantos: 3 } : {}),
+    ...(tipo === 'travessia' ? { bichos: indo ? 'patos' as const : 'tigres' as const, lado: 1 as const, quantos: 3 } : {}),
   }));
-  const noel = eventos.find(e => e.tipo === 'noel')!;
   const obra = eventos.find(e => e.tipo === 'obra')!;
   const coracoes: Coracao[] = [];
   for (let s = 32; s < comprimento - 90; s += 7) {
-    // A cena do Noel fica livre: não há obstáculos nem fileiras para perseguir.
-    if (s > noel.s - 80 && s < noel.s + 95) continue;
+    // Só reserva o corredor quando um personagem foi sorteado.
+    if (encontro && s > encontro.s - 80 && s < encontro.s + 95) continue;
     const l = s > obra.s - 35 && s < obra.s + 24 ? PISTA.meios[obra.faixa === 0 ? 1 : 0] : Math.sin(s * 0.045) * 1.55;
     coracoes.push({ s, l });
   }
-  return { ...base, sentido, comprimento, chegada: comprimento - 16, eventos, coracoes,
-    trechos: ordem.map((bioma, i) => ({ bioma, de: cortes[i], ate: cortes[i + 1] })),
+  return { ...base, sentido, comprimento, chegada: comprimento - 16, eventos, coracoes, encontro,
+    trechos: indo ? trechos : trechos.map(t => ({ bioma: t.bioma, de: comprimento - t.ate, ate: comprimento - t.de })).reverse(),
   };
 }
 
