@@ -16,7 +16,7 @@ async function conferir(p,controle,motorista,dentro){
  const quem=controle===motorista?'parceiro':'jogador';
  assert.equal(e.jogador,controle);assert.equal(e.motorista,motorista);assert.equal(e.quem,quem);
  assert.deepEqual(e.poses,controle===motorista?['dirigindo','passageiro']:['passageiro','dirigindo']);
- if(dentro){assert.ok(e.dist<0.8, `câmera distante do passageiro: ${e.dist}`);assert.deepEqual(e.cabecas,quem==='jogador'?[false,true]:[true,false]);}else assert.deepEqual(e.cabecas,[true,true]);
+ if(dentro){assert.ok(e.dist<0.2, `câmera distante do passageiro: ${e.dist}`);assert.deepEqual(e.cabecas,quem==='jogador'?[false,true]:[true,false]);}else assert.deepEqual(e.cabecas,[true,true]);
 }
 try{
  for(const controle of ['ari','renan'])for(const motorista of ['ari','renan']){

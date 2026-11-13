@@ -13,9 +13,9 @@ import type { BebitoMobile } from '../../world/bebitoMobile/BebitoMobile';
  * sem conta nenhuma. A cabeça de quem olha some (senão a câmera nasce dentro
  * do crânio dela) e volta ao desligar.
  *
- * O balanço do carro entra na imagem, mas SUAVIZADO: o olho persegue a cabeça
- * (um filtro de ~14/s), que tira o solavanco da lombada sem tirar o balanço de
- * quem está num carro de verdade.
+ * O balanço do banco entra suavizado (~14/s), no espaço LOCAL do carro.
+ * Avanço e curvas carregam o olho no mesmo quadro: filtrar a posição no mundo
+ * deixava a câmera para trás do passageiro ao acelerar.
  *
  * A câmera entra e sai DESLIZANDO: `ligar(de)` mistura de uma tomada de fora
  * (no mundo) até o olho, e `desligar(para)` volta. Quem chama espera a
@@ -53,6 +53,8 @@ export class CameraDeDentro {
   private fora: DeFora | null = null;
   private fim: (() => void) | null = null;
   private readonly olho = new THREE.Vector3();
+  private readonly olhoLocal = new THREE.Vector3();
+  private readonly alvoLocal = new THREE.Vector3();
   private readonly mira = new THREE.Vector3();
   private lido = false;
   private readonly cabeca = new THREE.Vector3();
@@ -176,12 +178,18 @@ export class CameraDeDentro {
     // O gesto existe no corpo: a tomada de frente permite ver os dois.
     this.encostado += (this.encostar - this.encostado) * (1 - Math.exp(-5 * dt));
     this.g.encostarNoCarro(this.quem, this.encostado);
+    // O filtro só amortece o movimento da cabeça/banco dentro do carro.
+    // A transformação atual do carro entra inteira, sem atraso de avanço ou curva.
+    this.alvoLocal.copy(alvoDoOlho);
+    this.carro.group.worldToLocal(this.alvoLocal);
     if (!this.lido) {
-      this.olho.copy(alvoDoOlho);
+      this.olhoLocal.copy(this.alvoLocal);
       this.lido = true;
     } else {
-      this.olho.lerp(alvoDoOlho, 1 - Math.exp(-14 * dt));
+      this.olhoLocal.lerp(this.alvoLocal, 1 - Math.exp(-14 * dt));
     }
+    this.olho.copy(this.olhoLocal);
+    this.carro.group.localToWorld(this.olho);
     this.mira.copy(this.olho).addScaledVector(this.dir, 5);
 
     // Tomadas no referencial do carro: acompanham as curvas e as molas.
