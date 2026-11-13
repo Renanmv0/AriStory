@@ -9,7 +9,7 @@
 ## Atualização da chegada (2026-11-12)
 
 Renan pediu antecipar **só a animação de chegada**, sem o guarda: aproximar,
-parar, abrir a cancela, entrar e estacionar. Em implementação/validação em
+parar, abrir a cancela, entrar e estacionar. Implementada e validada em preview em
 `eventos/bebitoMobile/chegadaNoParque.ts`; a viagem agenda a animação apenas em
 memória, sem criar uma flag persistente que a repetiria ao recarregar.
 O personagem, a avaliação e a loja continuam para depois das novas rotas.

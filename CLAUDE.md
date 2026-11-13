@@ -285,10 +285,10 @@ o carro POR DENTRO — entrar na garagem pela porta que gira, descansar com os b
 deitados e a visão do passageiro na viagem com o piloto automático. Está FEITO e NO JOGO
 (chave PRÓPRIA `CARRO_POR_DENTRO_NO_JOGO = true`, ligada em 2026-11-12 a pedido do Renan):
 `?semCarroPorDentro` desliga para comparar; `?carroPorDentro` liga na marra.
-A atualização de câmeras e chegada está na branch da tarefa: carinho com os dois
+A atualização de câmeras e chegada foi implementada e validada em preview: carinho com os dois
 vistos de frente, descanso visto de cima (sob o pergolado, com corte visual do teto)
 e a entrada animada pela cancela até a vaga do coração. O documento do interior
-abre com o estado da validação. O site oficial e seu save são
+abre com os resultados da validação. O site oficial e seu save são
 `https://renanmv0.github.io/AriStory/`: testes e fotos só em preview de outra
 origem, antes de publicar em `main`.
 `ESTACIONAMENTO.md` continua guardando o plano do futuro fiscal e das recompensas.

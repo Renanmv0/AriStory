@@ -5,7 +5,7 @@
 > `docs/BEBITO-MOBILE.md` (o carro, a quest e a viagem); **as próximas rotas
 > (parque ↔ clube ↔ escola) ficam para o plano seguinte, de propósito.**
 
-## Atualização em validação — câmeras e chegada (Renan, 2026-11-12)
+## Atualização validada no preview — câmeras e chegada (Renan, 2026-11-12)
 
 - A primeira pessoa continua sendo a visão normal. **Encostar no ombro** mostra os
   dois de frente, com o passageiro inclinando o corpo; ao acabar, volta aos olhos.
@@ -27,7 +27,21 @@ Testes: `scripts/carroPorDentro.mjs` (incluindo `SO=viajar,semChave` e
 carinho, retorno à primeira pessoa, chegada manual/automática e recarga do save).
 `CEL=1` confere o celular em pé; `CHROME_PATH` escolhe o Chromium instalado.
 Resultados e fotos ficam fora do repositório. Esta seção prevalece sobre as
-propostas antigas de câmera abaixo; a implementação ainda precisa da validação.
+propostas antigas de câmera abaixo.
+
+Validações desta atualização (2026-11-13): entrada/descanso/cochilo/saída no
+computador e no celular; carinho com Ari e Renan reais, retorno à primeira
+pessoa e celular do Renan; viagem saindo do interior com cada motorista;
+interior desativado; chegada manual/automática, cancela, colisões e recarga.
+O percurso completo do piloto terminou com 0 tropeços, 0 sustos, 3 gentilezas
+(duas travessias e um sinal), 42 corações e todos os tipos de evento vistos.
+As fotos foram olhadas, incluindo o ajuste que deixa a câmera sob as vigas
+e o ângulo frontal que impede o bonequinho de cobrir o rosto.
+
+Peso nas tomadas finais (`calls`/triângulos): carinho 255/132095 no computador
+e 245/131501 no celular; descanso no celular 228/89574; chegada 285/204587
+no computador e 259/152427 no celular. São enquadramentos diferentes, não uma
+comparação de desempenho com a câmera antiga. Nenhum modelo ou luz nova foi adicionado.
 
 ## COMECE AQUI
 
