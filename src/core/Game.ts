@@ -2112,7 +2112,7 @@ export class Game implements GameAPI {
     this.trocaBloqueada = bloqueado;
   }
 
-  soltarCoracoes(quantos = 3): void {
+  soltarCoracoes(quantos = 3, quem: 'jogador' | 'parceiro' = 'jogador'): void {
     /*
      * Em cima da CABEÇA, no mundo — e não do `player.position`. Montado numa
      * âncora (deitado na barraca, sentado no banco), a posição do corpo é
@@ -2120,7 +2120,7 @@ export class Game implements GameAPI {
      * meio do mapa, longe de tudo. E a altura sai da cabeça, para valer de pé
      * (a mesma de antes, ~1,7), deitado ou num andar de cima.
      */
-    const p = this.player.rig.cabecaNoMundo(new THREE.Vector3());
+    const p = this.cabecaDe(quem);
     for (let i = 0; i < quantos; i++) {
       const a = (i / Math.max(1, quantos)) * Math.PI * 2 + Math.random() * 0.6;
       this.coracoes.soltar(p, Math.cos(a) * 0.35, Math.sin(a) * 0.35, p.y + 0.4 + i * 0.12);
@@ -2359,8 +2359,8 @@ export class Game implements GameAPI {
     );
   }
 
-  keyPressed(code: string): boolean {
-    if (this.telaDeLeitura || this.player.locked) return false;
+  keyPressed(code: string, mesmoTravado = false): boolean {
+    if (this.telaDeLeitura || (this.player.locked && !mesmoTravado)) return false;
     return this.input.justPressed(code);
   }
 

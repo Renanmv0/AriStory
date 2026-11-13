@@ -5,6 +5,23 @@
 > `docs/BEBITO-MOBILE.md` (o carro, a quest e a viagem); **as próximas rotas
 > (parque ↔ clube ↔ escola) ficam para o plano seguinte, de propósito.**
 
+## Correção da visão do passageiro (Renan, 2026-11-13)
+
+O botão 👀 e a tecla V mudam apenas a câmera para o passageiro de verdade.
+O motorista escolhido na partida e os bancos ficam iguais durante toda a viagem.
+Com Ari dirigindo, vemos o Renan (celular, elogio e carinho); com Renan dirigindo,
+vemos o Ari (cantarolar, elogio e carinho). Isso independe de quem estava sendo
+controlado fora do carro. As falas, cabeças, gesto e corações usam esse passageiro.
+O piloto automático continua ativo durante a visão interna. Voltar à visão externa
+devolve o comando do carro sem trocar o motorista. Esta correção substitui as
+propostas antigas de trocar os bancos nas seções abaixo.
+
+A regressão está em `scripts/motoristaPreservado.mjs`: cruza Ari/Renan controlado
+com Ari/Renan ao volante e confere câmera, menu, falas, gesto, retorno por V e chegada.
+`RAPIDO=1` mantém a simulação e as matrizes e desenha os quadros das capturas
+normalmente, evitando gasto de GPU entre as fotos. O celular foi enquadrado acima
+do corpo para a tela continuar visível na primeira pessoa do Renan.
+
 ## Atualização validada no preview — câmeras e chegada (Renan, 2026-11-12)
 
 - A primeira pessoa continua sendo a visão normal. **Encostar no ombro** mostra os
@@ -349,8 +366,8 @@ O `scripts/zfighting.mjs` na porta nova.
   cochilo (fade, três roncos, acordar) têm falas minhas, provisórias. A primeira
   vez vira a memória "Descansamos no Bebito Mobile".
 - **A visão do passageiro**: o 👀 liga o piloto automático e a câmera nos olhos
-  de quem joga, que vai para o banco da carona — se dirigia, o outro assume o
-  volante ("Deixa que eu dirijo um pouco") e na volta cada um ao seu banco.
+  de quem já está no banco da carona, sem mudar o motorista ou os bancos.
+  O menu e as falas passam a ser os desse passageiro.
   A tecla é **V**; o **E** (ou o ✨ no celular) abre o menu "O que fazer?".
 - **O piloto de jogo** fica na faixa da direita, NÃO persegue os corações (os da
   viagem são de quem dirige), olha mais longe e freia mais cedo que o de teste, e

@@ -987,8 +987,8 @@ export interface GameAPI {
    * atrás fica atrás, e só a carta Troca de turno destrava.
    */
   bloquearTroca(bloqueado: boolean): void;
-  /** Solta `quantos` corações subindo da dupla — o mesmo coração do beijo. */
-  soltarCoracoes(quantos?: number): void;
+  /** Solta corações da cabeça indicada; sem `quem`, usa o jogador como antes. */
+  soltarCoracoes(quantos?: number, quem?: 'jogador' | 'parceiro'): void;
   /**
    * Abre a mesa de xadrez em DOM e resolve quando a PARTIDA acaba (por mate,
    * empate ou desistencia). Trava o movimento enquanto estiver aberta.
@@ -1051,8 +1051,8 @@ export interface GameAPI {
   cameraLivre(alvo: THREE.Vector3 | null): void;
 
   wait(seconds: number): Promise<void>;
-  /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */
-  keyPressed(code: string): boolean;
+  /** Só no frame em que a tecla desceu; diálogo/diário bloqueiam. Cutscene pode permitir durante a trava. */
+  keyPressed(code: string, mesmoTravado?: boolean): boolean;
   /** true enquanto a tecla estiver segurada; ignorada durante dialogo/diario */
   keyDown(code: string): boolean;
   /**
