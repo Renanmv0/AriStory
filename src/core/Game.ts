@@ -2328,6 +2328,8 @@ export class Game implements GameAPI {
     this.parceiro.position.y = altura;
   }
 
+  temMemoria(id: string): boolean { return this.save.hasMemory(id); }
+
   unlock(memory: Memory): void {
     if (this.save.addMemory(memory)) {
       this.audio.play('memoria');

@@ -671,6 +671,8 @@ export interface GameAPI {
   stat(key: string): number;
   /** desbloqueia uma memoria no diario */
   unlock(memory: Memory): void;
+  /** Consulta uma lembrança já guardada no diário. */
+  temMemoria(id: string): boolean;
 
   // --------------------------------------------------------- mochila
   // Cada personagem tem a SUA mochila. `quem` e o id da ficha ('ari',

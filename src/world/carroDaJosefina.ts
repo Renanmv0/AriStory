@@ -16,7 +16,7 @@ export class CarroDaJosefina {
   private readonly rodas: THREE.Object3D[] = [];
   private readonly carga = new THREE.Group();
   private tempo = 0;
-  constructor() {
+  constructor(estacionado = false) {
     this.group.userData.peca = 'carro-da-josefina';
     const carro = carroEstacionado(P.carroMenta, true);
     for (const o of carro.children) {
@@ -55,7 +55,7 @@ export class CarroDaJosefina {
     const r = regador(); r.scale.setScalar(.6); r.position.set(.48, .92, .3); acabamento.add(r);
     this.group.add(fundir(acabamento));
     this.josefina.entrarEmServico(); this.josefina.group.scale.setScalar(1.7);
-    this.josefina.group.position.set(-.4, 1.28, .35); this.group.add(this.josefina.group);
+    this.josefina.group.position.set(-.4, 1.28, .35); if (!estacionado) this.group.add(this.josefina.group);
     for (let k = 0; k < 4; k++) {
       const vaso = vasoDePlanta(k < 2 ? 'lavanda' : 'samambaia', .3, k * .23);
       vaso.scale.setScalar(.78); vaso.position.set(k % 2 ? .46 : -.46, 1.02, k < 2 ? -1.68 : -.94); this.carga.add(vaso);

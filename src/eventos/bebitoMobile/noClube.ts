@@ -16,12 +16,19 @@ import { quina } from '../../world/lojaDeRoupas';
 import { asfalto, pisoDePlacas } from '../../world/texturasDeChao';
 import { meioFio } from '../../world/props';
 import { Cancela, carroEstacionado, geoCoracaoNoChao } from '../../world/estacionamento';
+import { CarroDoNoel } from '../../world/carroDoNoel';
+import { CarroDaJosefina } from '../../world/carroDaJosefina';
 import {
   coberturaDoEstacionamento, jardineiraDoEstacionamento, posteDoEstacionamento, totemDoEstacionamentoDoClube,
 } from '../../world/estacionamentoDoClube';
 
 /** A rua fica no +X do lote; o clube está do outro lado dela. */
-export const LOTE_DO_CLUBE = { x0: -63, x1: -40.4, z0: -12, z1: 18 } as const;
+export const LOTE_DO_CLUBE = { x0: -75, x1: -40.4, z0: -12, z1: 18 } as const;
+const FILEIRAS = [-70.2, -58.2, -46.2];
+export const CARROS_DOS_PERSONAGENS = [
+  { personagem: 'noel', x: -70.2, z: 3, giro: Math.PI / 2 },
+  { personagem: 'josefina', x: -46.2, z: -5, giro: -Math.PI / 2 },
+] as const;
 export const FAIXA_DO_CLUBE = { z: 1.8, largura: 2.4 } as const;
 export const ENTRADA_DO_ESTACIONAMENTO_DO_CLUBE = { x: -41.6, z: 12.5, largura: 5.2 } as const;
 /** Reservada para a futura viagem; construir o estacionamento não desloca o carro do save. */
@@ -52,7 +59,7 @@ export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: numbe
   w.patch(cal, 4.4, 1.7, 5.3, P.clubeEstacionamentoConcreto, 0, 0.029, pisoDePlacas(1));
 
   const vagas = [-9, -5, -1, 3];
-  for (const x of [VAGA_NO_CLUBE.x, -46.2]) {
+  for (const x of FILEIRAS) {
     w.patch(x, -3, 5.6, 16, P.clubeEstacionamentoConcreto, 0, 0.03, pisoDePlacas(2));
   }
   w.patch(VAGA_NO_CLUBE.x, VAGA_NO_CLUBE.z, 5.45, 3.25, P.carroMenta, 0, 0.032, pisoDePlacas(2));
@@ -62,17 +69,17 @@ export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: numbe
   const ret = (a: number, b: number, l: number, p: number): void => {
     tinta.push(new THREE.PlaneGeometry(l, p).translate(a, -b, 0).toNonIndexed());
   };
-  for (const x of [VAGA_NO_CLUBE.x, -46.2]) {
+  for (const x of FILEIRAS) {
     for (const z of [-11, -7, -3, 1, 5]) ret(x, z, 5.6, 0.12);
-    ret(x + (x < meioX ? -2.75 : 2.75), -3, 0.1, 16);
+    ret(x + (x === -46.2 ? 2.75 : -2.75), -3, 0.1, 16);
   }
   for (let x = rua.beira + 0.15; x < -28.8; x += 0.95) ret(x + 0.25, FAIXA_DO_CLUBE.z, 0.5, FAIXA_DO_CLUBE.largura);
-  for (const z of [-7, 0, 12.5]) {
+  for (const x of [-64.2, -52.2]) for (const z of [-7, 0, 12.5]) {
     // Seta para o fundo do corredor (-Z); pintura no quadro XY do decalque.
     const forma = new THREE.Shape();
     forma.moveTo(-0.15, -0.8); forma.lineTo(0.15, -0.8); forma.lineTo(0.15, 0.2);
     forma.lineTo(0.55, 0.2); forma.lineTo(0, 0.85); forma.lineTo(-0.55, 0.2); forma.lineTo(-0.15, 0.2); forma.closePath();
-    tinta.push(new THREE.ShapeGeometry(forma).translate(-52.2, -z, 0).toNonIndexed());
+    tinta.push(new THREE.ShapeGeometry(forma).translate(x, -z, 0).toNonIndexed());
   }
   const pintura = w.patch(0, 0, 1, 1, P.metalWhite, 0, 0.034);
   pintura.geometry.dispose(); pintura.geometry = mergeGeometries(tinta);
@@ -107,22 +114,29 @@ export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: numbe
   for (const [a, b] of [[z0, 5.8], [8.2, 9.7], [15.3, z1]]) mureta(x1 - 0.15, (a + b) / 2, 0.3, b - a);
   // Batentes baixos: não invadem os seis metros livres de corredor.
   const batente = quina(0.22, 0.13, 1.65, 0.035);
-  for (const x of [-55.7, -48.7]) for (const z of vagas) {
+  for (const x of [-67.7, -55.7, -48.7]) for (const z of vagas) {
     const bx = x === -55.7 && z === VAGA_NO_CLUBE.z ? -60.6 : x;
     const m = new THREE.Mesh(batente, toon(P.clubeEstacionamentoMetal)); m.position.set(bx, 0.065, z); fundo.add(m);
     w.blockBox(bx, z, 0.11, 0.825);
   }
   for (const [x, z, giro, cor] of [
     [-58.2, -9, Math.PI / 2, P.carroLilas], [-58.2, -1, Math.PI / 2, P.carroAmarelo],
-    [-46.2, -9, -Math.PI / 2, P.carroMenta], [-46.2, -5, -Math.PI / 2, P.metalWhite],
+    [-46.2, -9, -Math.PI / 2, P.carroMenta], [-70.2, -9, Math.PI / 2, P.metalWhite],
   ]) { por(carroEstacionado(cor), x, z, giro); w.blockBox(x, z, 2.2, 1); }
+  // Os donos já estão no clube: carros vazios, sem duplicar os personagens.
+  const carros = CARROS_DOS_PERSONAGENS.filter(vaga => w.game.temMemoria(`${vaga.personagem}-na-estrada`));
+  for (const vaga of carros) {
+    const carro = vaga.personagem === 'noel' ? new CarroDoNoel(true) : new CarroDaJosefina(true);
+    w.add(fundirComoFundo(w.place(carro.group, vaga.x, 0, vaga.z, vaga.giro)));
+    w.blockBox(vaga.x, vaga.z, 2.4, 1.5);
+  }
   // A cobertura é só sobre as vagas do fundo; a vaga do Bebito e a passagem ficam a céu aberto.
   peca(coberturaDoEstacionamento(), -58.2, -7);
   for (const z of [-10.3, -3.7]) w.blockBox(-60.8, z, 0.15, 0.15);
-  for (const [x, z] of [[-58.5, 16.5], [-45.3, 17], [-45.5, -11.2]]) {
+  for (const [x, z] of [[-70, 16.5], [-58.5, 16.5], [-45.3, 17], [-45.5, -11.2]]) {
     peca(jardineiraDoEstacionamento(), x, z); w.blockBox(x, z, 1.7, 0.5);
   }
-  for (const [x, z] of [[-53.7, -11], [-43, 16.8]]) { peca(posteDoEstacionamento(), x, z); w.blockCircle(x, z, 0.2); }
+  for (const [x, z] of [[-65.7, -11], [-53.7, -11], [-43, 16.8]]) { peca(posteDoEstacionamento(), x, z); w.blockCircle(x, z, 0.2); }
   peca(totemDoEstacionamentoDoClube(), -41.1, 16, Math.PI / 2); w.blockBox(-41.1, 16, 0.25, 0.43);
   for (const z of [5.8, 8.2]) {
     const b = new THREE.Mesh(quina(0.14, 0.8, 0.14, 0.03), toon(P.portaoMetal)); b.position.set(-40.7, 0.4, z); fundo.add(b);
@@ -146,7 +160,7 @@ export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: numbe
     else if (cancela.abertura <= 0.8 && indice < 0) w.colliders.push(barreira);
   });
   // Só geometria/estado transitório: nenhum destino de viagem ou flag persistente novo.
-  w.root.userData.estacionamentoDoClube = { cancela, barreira, vaga: VAGA_NO_CLUBE, descida: DESCIDA_NO_CLUBE };
+  w.root.userData.estacionamentoDoClube = { cancela, barreira, vaga: VAGA_NO_CLUBE, descida: DESCIDA_NO_CLUBE, carros };
   return { cancela, comandar: aberta => { comando = aberta; } };
 }
 

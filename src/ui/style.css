@@ -7347,3 +7347,23 @@ body.touch-device :has(> .posicionador.editando.show) > .prompt.show { pointer-e
   .painel-do-quintal .produto .foto img { width: 64px; height: 64px; }
   .painel-do-quintal .caixa-de-ferramentas { height: 100%; }
 }
+/* Disponível apenas durante a chegada de carro, longe do menu e do joystick. */
+.pular-estacionamento {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 30;
+  min-height: 44px;
+  padding: 10px 22px;
+  border: 2px solid #e2cc8e;
+  border-radius: 24px;
+  background: #fff6dc;
+  color: #59451f;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.pular-estacionamento[hidden] { display: none; }
+.pular-estacionamento:focus-visible { outline: 3px solid #59451f; outline-offset: 3px; }

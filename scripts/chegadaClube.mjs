@@ -45,7 +45,23 @@ async function instrumentar(p){
  });
 }
 try{
- for(const mobile of [false,true])for(const motorista of ['ari','renan']){
+ if(process.env.SO==='pular'){
+  for(const mobile of [false,true])for(const parque of [false,true]){
+   const ctx=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1200,height:850},hasTouch:mobile,isMobile:mobile}),p=await ctx.newPage();p.on('pageerror',e=>erros.push(e.message));
+   await preparar(p,mobile?'renan':'ari',mobile?'ari':'renan',parque);
+   if(mobile||parque){
+    await p.evaluate(()=>{window.aristoryBebitoMobile.ritmoDoPresente.vezes=4;});
+    await espera(p,()=>{const e=window.jogo.scene.getObjectByName('bebito-mobile').userData.chegada;return innerWidth<600?e.fase==='devolvendo':e.fase==='abrindo';});
+   }
+   const nome=`pular-${parque?'parque':'clube'}-${mobile?'celular':'computador'}`;
+   await foto(p,nome);await p.getByRole('button',{name:'Pular animação de estacionar'}).click();
+   const fim=await p.evaluate(()=>{const g=window.jogo,c=g.scene.getObjectByName('bebito-mobile');return{fase:c.userData.chegada.fase,pos:c.position.toArray(),livre:!g.player.locked&&!g.player.riding&&!g.parceiro.riding,camera:g.camOmbro===null,porta:c.userData.chegada&&c.getObjectByName('porta-do-motorista')?.rotation.y,botao:!!document.querySelector('.pular-estacionamento'),interagir:g.current.world.interactables.find(i=>i.id==='clube:bebito-mobile')?.enabled};});
+   assert.equal(fim.fase,'concluida');assert.ok(fim.livre&&fim.camera);assert.equal(fim.botao,false);assert.deepEqual(fim.pos,parque?[51.9,0,5.5]:[-58.2,0,3]);if(!parque)assert.ok(fim.interagir);
+   await p.goto(`${BASE}/?bebito&semHalloween`);await espera(p,()=>!!window.jogo?.current&&!window.jogo.transitioning);assert.equal(await p.locator('.pular-estacionamento').count(),0);assert.equal(await p.evaluate(()=>localStorage.getItem('aristory.save.v1')),null);
+   console.log(nome,'posição, controle, câmera e recarga passaram');await ctx.close();
+  }
+ }else{
+ for(const mobile of process.env.SO==='natural'?[false]:[false,true])for(const motorista of process.env.SO==='natural'?['ari']:['ari','renan']){
   const controle=mobile?motorista:(motorista==='ari'?'renan':'ari');
   const ctx=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1200,height:850},hasTouch:mobile,isMobile:mobile}),p=await ctx.newPage();p.on('pageerror',e=>erros.push(e.message));
   await preparar(p,motorista,controle);
@@ -74,5 +90,6 @@ try{
  assert.notEqual(await p.evaluate(()=>window.jogo.scene.getObjectByName('bebito-mobile').userData.chegada.fase),'apresentando');
  await p.evaluate(()=>{window.aristoryBebitoMobile.ritmoDoPresente.vezes=4;});await espera(p,()=>window.jogo.scene.getObjectByName('bebito-mobile').userData.chegada.fase==='concluida');
  assert.equal(await p.evaluate(()=>window.jogo.scene.getObjectByName('bebito-mobile').userData.chegada.motorista),'renan');await ctx.close();
- assert.deepEqual(erros,[]);console.log('Clube em computador/celular e chegada do parque validados sem erros.');
+ }
+ assert.deepEqual(erros,[]);console.log('Chegadas validadas sem erros.');
 }catch(e){for(const c of browser.contexts())for(const p of c.pages()){console.log('falha',await p.evaluate(()=>({cena:window.jogo?.idDaCena,chegada:window.jogo?.scene.getObjectByName('bebito-mobile')?.userData.chegada,teste:window.chegadaTeste})).catch(()=>null));await desenho(p,true).catch(()=>{});await p.screenshot({path:`${OUT}-falha.png`}).catch(()=>{});}throw e;}finally{await browser.close();}
