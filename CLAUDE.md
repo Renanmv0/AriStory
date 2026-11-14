@@ -300,7 +300,7 @@ e clube ↔ escola, antes do fiscal. Não implementar essas próximas etapas jun
 foto do Renan, e o pátio), o primeiro passo da rota de carro até a escola: a etapa 1 (o pátio, a portaria e o
 estacionamento) e a 2 (o ônibus para na rua da portaria, e a porta da rua do saguão sai no pátio)
 estão no jogo desde 2026-11-14. `VIAGEM-ESCOLA.md` é a VIAGEM DE CARRO até a escola (de casa, do parque e do
-clube, e de volta), feita em 2026-11-14 e esperando o Renan olhar: a zona escolar, a turma da escola na
+clube, e de volta), NO JOGO desde 2026-11-14: a zona escolar, a turma da escola na
 estrada (o radar, a torcida com o Gatito de guarda, o ensaio da Valentina e a bola do Flynn, peças em
 `eventos/bebitoMobile/escolaNaEstrada.ts`) e a chegada animada até a vaga do coração do estacionamento
 (`eventos/bebitoMobile/naEscola.ts`). O próximo passo, pedido pelo Renan, são os carros dos personagens

@@ -7,9 +7,9 @@ de estacionar, faça tudo bem detalhado e bonito. e crie novas interações no
 meio do caminho com os personagens da escola, o próximo passo serão os carros
 dos personagens da escola".
 
-**O estado:** feita, **esperando o Renan olhar**, na branch de
-desenvolvimento. Ela entra no jogo pela mesma chave do Bebito Mobile (que já
-está ligada), então subir para `main` põe a viagem no link do Ari.
+**O estado:** feita e **NO JOGO desde 2026-11-14** (o Renan mandou subir:
+"Pode subir! Não precisa esperar mais para subir"). Ela entra pela mesma chave
+do Bebito Mobile, que já está ligada.
 
 | o quê | estado |
 |---|---|
