@@ -125,6 +125,26 @@ Bebito Mobile inteiro.
   Que carro tem a cara de cada um? E eles aparecem na estrada como os carros
   do Noel e da Josefina, ou ficam estacionados no lote da escola?
 
+## O que foi testado (2026-11-14)
+
+- **Passaram**: `viagemEscola.mjs` inteiro (as rotas, o menu, a ida, a
+  chegada, a recarga, a volta e a pressa), a chegada no celular em pé (as oito
+  fases), `viagem.mjs SO=bom` e `SO=volta`, `patio.mjs`, `casaClube.mjs`,
+  `luna.mjs` e `onibus.mjs`.
+- **Já falhavam antes desta etapa** (rodados também sobre o código de antes,
+  o f7f6a0a, com a mesma falha): o `viagemClube.mjs` ("encontro inteiro
+  aconteceu", o teste é do encontro antigo do Noel) e o
+  `carroCamerasEChegada.mjs` (ele espera parado na conversa do Walter,
+  "Au! Au au! Auuu!"). Os dois vêm das mudanças dos encontros
+  ("toda viagem tem um encontro"), não da escola. A parte `partida` do
+  `viagem.mjs` procura o "Sair de carro" na garagem, que virou "Entrar no
+  Bebito Mobile" com o carro por dentro.
+- **O z-fighting**: as peças novas (o radar, a placa de PARE, o tripé, o aro e
+  o fundo infinito) são de cilindro, quina e plano. O `zfighting.mjs` só mede
+  caixa reta, então elas saem com "0 caixas". As frestas foram conferidas à
+  mão: a cara da placa de PARE fica a 5 mm da borda, e a placa e o LED do
+  radar a 6 mm da peça de trás.
+
 ## Validar
 
 ```bash
