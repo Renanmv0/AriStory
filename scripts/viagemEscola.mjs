@@ -367,14 +367,18 @@ try {
     const evento = (tipo) => p.evaluate((tipo) => window.aristoryBebitoMobile.viagem.rota.eventos.find((e) => e.tipo === tipo), tipo);
     const pecaNaCena = (peca) => p.evaluate((peca) => { let tem = false; window.jogo.scene.traverse((o) => { if (o.userData.peca === peca) tem = true; }); return tem; }, peca);
     const st = () => p.evaluate(() => { const v = window.aristoryBebitoMobile.viagem.estado; return { s: v.s, v: v.v, vistos: { ...v.vistos }, tropecos: v.tropecos, sustos: v.sustos, gentilezas: v.gentilezas }; });
-    /** dirige distraído até passar `s`, e conta se o carro passou da linha com alguém na faixa */
-    const distraidoAte = async (s, linha) => {
+    /** dirige distraído até passar `s`, e conta se a frente do carro passou da linha com alguém NA PISTA */
+    const distraidoAte = async (s, peca, linha) => {
       await p.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.piloto = 'distraido'; v.vezes = 2.5; });
       let passou = false;
       const t0 = Date.now();
       while (Date.now() - t0 < 300000) {
-        const e = await p.evaluate((linha) => ({ s: window.aristoryBebitoMobile.viagem.estado.s, naPista: window.aristoryBebitoMobile.viagem.naPista?.() ?? null }), linha);
-        if (linha !== null && e.s + 2.6 > linha + 0.25 && e.s < linha + 6 && (await st()).sustos === 0) passou = true;
+        const e = await p.evaluate((peca) => {
+          let naPista = false;
+          window.jogo.scene.traverse((o) => { if (o.userData.peca === peca && o.userData.naPista) naPista = true; });
+          return { s: window.aristoryBebitoMobile.viagem.estado.s, naPista };
+        }, peca);
+        if (e.naPista && e.s + 2.6 > linha + 0.25) passou = true;
         if (e.s > s) break;
         await avancar(p);
         await p.waitForTimeout(90);
@@ -396,7 +400,7 @@ try {
     const radar = await evento('radar-escolar');
     const torcida = await evento('torcida');
     await p.evaluate((s) => { const v = window.aristoryBebitoMobile.viagem.estado; v.s = s; v.v = 11; }, radar.s - 70);
-    const passouNaFaixa = await distraidoAte(torcida.s + 10, torcida.s - 3.4);
+    const passouNaFaixa = await distraidoAte(torcida.s + 10, 'travessia-da-torcida', torcida.s - 3.4);
     const a = await st();
     console.log('  ', JSON.stringify({ tropecos: a.tropecos, sustos: a.sustos, vistos: a.vistos }));
     assert.ok(a.vistos['tropeço:radar'], 'o radar a toda velocidade é tropeço');
@@ -414,7 +418,7 @@ try {
     const ensaio = await evento('ensaio-da-valentina');
     const bola = await evento('bola-do-flynn');
     await p.evaluate((s) => { const v = window.aristoryBebitoMobile.viagem.estado; v.s = s; v.v = 11; }, ensaio.s - 60);
-    const passouNaBola = await distraidoAte(bola.s + 10, bola.s - 3.4);
+    const passouNaBola = await distraidoAte(bola.s + 10, 'bola-do-flynn', bola.s - 3.4);
     const b = await st();
     console.log('  ', JSON.stringify({ tropecos: b.tropecos, sustos: b.sustos, vistos: b.vistos }));
     assert.ok(await p.evaluate(() => window.toasts.some((t) => t.includes('saiu tremida'))), 'correndo pelo ensaio: "saiu tremida"');

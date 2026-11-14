@@ -256,8 +256,9 @@ export class TravessiaDaTorcida implements Atravessando {
 
   update(dt: number): void {
     this.relogio += dt;
-    // (o teste lê a fase: com a fila andando, o Gatito já está no posto)
+    // (o teste lê a fase — com a fila andando, o Gatito já está no posto — e se tem alguém na pista)
     this.group.userData.fase = this.fase;
+    this.group.userData.naPista = this.naPista;
     for (const c of this.coelhas) {
       c.update(dt);
       c.group.position.y = this.caminho.chao(this.caminho.u(c.group.position.z));
@@ -383,6 +384,7 @@ export class BolaDoFlynn implements Atravessando {
   update(dt: number): void {
     this.relogio += dt;
     this.relogioDaFase += dt;
+    this.group.userData.naPista = this.naPista;
     this.flynn.update(dt);
     const f = this.flynn.group.position;
     f.y = this.caminho.chao(this.caminho.u(f.z));
