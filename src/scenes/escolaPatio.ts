@@ -82,7 +82,9 @@ export const escolaPatio: SceneDef = {
 
     // ------------------------------------------------------------------ o chão
     w.ground({ width: 150, depth: 110, color: P.grass, textura: tapeteDeGrama(9) });
-    w.setBounds(-34, PORTA.z - 1, 34, CALCADA.z1 - 0.3);
+    // (o limite do fundo é a frente das alas: os colisores do prédio e dos canteiros é que param a dupla —
+    // com o limite na linha da porta, sobrava uma parede invisível no meio do gramado da frente de cada ala)
+    w.setBounds(-34, PREDIO.z + PREDIO_DA_ESCOLA.ala.z1 - 0.3, 34, CALCADA.z1 - 0.3);
     // a calçada da rua e a rua (de ponta a ponta: some nas duas pontas)
     w.patch(0, (CALCADA.z0 + CALCADA.z1) / 2, RUA.comprimento, CALCADA.z1 - CALCADA.z0, P.concrete, 0, 0.014, calcadaDePedrinha());
     w.patch(0, (RUA.z0 + RUA.z1) / 2, RUA.comprimento, RUA.z1 - RUA.z0, P.asphalt, 0, 0.018, asfalto());
@@ -242,16 +244,14 @@ export const escolaPatio: SceneDef = {
     // as plaquinhas no poste (as da foto, na beira do caminho)
     const aviso = w.add(w.place(plaquinhaNoPoste(['DEVAGAR', 'GATITOS', 'ATRAVESSANDO'], 'pata'), 4.5, 0, CALCADA.z0 - 0.4));
     fundir(aviso);
-    const visita = w.add(w.place(plaquinhaNoPoste(['VISITANTES:', 'PASSEM NA', 'SECRETARIA'], undefined), -5.4, 0, TRAVESSA.z - TRAVESSA.meia - 0.5));
+    const visita = w.add(w.place(plaquinhaNoPoste(['VISITANTES:', 'PASSEM NA', 'SECRETARIA'], undefined), -9.6, 0, TRAVESSA.z - TRAVESSA.meia - 0.5));
     fundir(visita);
-    for (const [x, z] of [[4.5, CALCADA.z0 - 0.4], [-5.4, TRAVESSA.z - TRAVESSA.meia - 0.5]] as const) w.blockCircle(x, z, 0.15);
+    for (const [x, z] of [[4.5, CALCADA.z0 - 0.4], [-9.6, TRAVESSA.z - TRAVESSA.meia - 0.5]] as const) w.blockCircle(x, z, 0.15);
     // o bicicletário, numa laje de concreto ao lado do calçadão
     w.patch(9.2, 13.4, 5.2, 1.8, P.concrete, 0, 0.016, placas);
     w.add(fundir(w.place(bicicletario(6), 9.2, 0, 13.4)));
     w.blockBox(9.2, 13.4, 1.95, 0.2);
-    const placaDaBici = w.add(w.place(plaquinhaNoPoste(['BICICLETAS'], 'bicicleta'), 12.3, 0, 13.4));
-    fundir(placaDaBici);
-    w.blockCircle(12.3, 13.4, 0.15);
+    // (sem a plaquinha "BICICLETAS": placa que só diz o que o lugar é o Renan tirou do jogo inteiro)
 
     // ---------------------------------------------------------------- as árvores
     // grandes, nos gramados das pontas (e nunca entre a câmera e o caminho)

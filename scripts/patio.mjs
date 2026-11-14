@@ -62,11 +62,15 @@ try {
         if (preso(x, z)) { travas.push([+x.toFixed(1), +z.toFixed(1)]); break; }
       }
     }
+    // o gramado da frente das alas é andável até a beira do canteiro (sem parede invisível)
+    const b = j.current.world.bounds;
+    const gramado = [[20, -14.9], [-20, -14.9], [30, -14.9], [-12, -14.9]].filter(([x, z]) => preso(x, z) || z < b.minZ + 0.42);
     const portas = j.current.world.interactables.filter((i) => i.enabled).map((i) => i.label);
     const p = j.player.position;
-    return { travas, portas, nasce: [p.x, p.z], nascePreso: preso(p.x, p.z), entradaPresa: preso(0, -20 + 8.32 + 1.6) };
+    return { travas, gramado, portas, nasce: [p.x, p.z], nascePreso: preso(p.x, p.z), entradaPresa: preso(0, -20 + 8.32 + 1.6) };
   });
   ok(r.travas.length === 0, `da calçada até a porta, o caminho está livre (dando a volta na ilha do mastro)${r.travas.length ? ' ' + JSON.stringify(r.travas) : ''}`);
+  ok(r.gramado.length === 0, `o gramado na frente das alas é andável até a beira dos canteiros${r.gramado.length ? ' ' + JSON.stringify(r.gramado) : ''}`);
   ok(!r.nascePreso && !r.entradaPresa, 'o nascimento e a entrada de quem sai do saguão caem fora dos colisores');
   ok(r.portas.includes('Entrar na escola'), `a porta da escola está lá (${r.portas.filter((l) => !/banco/i.test(l)).join(', ')})`);
   ok(r.portas.filter((l) => /banco/i.test(l)).length >= 10, `os bancos dão para sentar (${r.portas.filter((l) => /banco/i.test(l)).length})`);

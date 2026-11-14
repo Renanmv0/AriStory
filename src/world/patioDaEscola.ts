@@ -214,6 +214,8 @@ export class MastroComBandeira {
     this.base = Float32Array.from(geo.getAttribute('position').array as Float32Array);
     this.pano = new THREE.Mesh(geo, toon(0xffffff, { mapa: panoDaBandeira(qual), doubleSide: true }));
     this.pano.name = 'pano-da-bandeira';
+    // o pano muda de forma a cada quadro: a esfera envolvente de nascença não vale mais
+    this.pano.frustumCulled = false;
     this.pano.position.y = 0.5 + alto - 0.25 - H / 2;
     this.group.add(this.pano);
     this.update(0);

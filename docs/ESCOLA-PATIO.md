@@ -68,7 +68,7 @@ tem a entrada `do-saguao` para a volta.
     ondulado.
   - **Placas**: a placa de tijolo da entrada, com o painel dos Gatitos e o
     quadro de recados de letrinhas, e as plaquinhas no poste ("Devagar,
-    Gatitos atravessando", "Visitantes: passem na secretaria", "Bicicletas").
+    Gatitos atravessando" e "Visitantes: passem na secretaria").
 - **O peso**: no pior giro da câmera, 263 desenhos e ~148 mil triângulos
   (225 e ~133 mil no celular em pé). O prédio sai da `fundir()`, e o que é só
   fundo (guias, árvores) sai da `fundirComoFundo()`, um grupo de cada lado.
@@ -88,9 +88,27 @@ tem a entrada `do-saguao` para a volta.
 4. **Ninguém mora no pátio ainda.** Dá para pôr alguém depois (a Valentina
    desfilando, uma das coelhinhas, o Flynn de passagem).
 
+## O que a câmera faz aqui (para o Renan saber antes de jogar)
+
+- **Girando a câmera para trás do prédio** (3 dos 8 giros, quando ela vem do
+  lado da escola), o prédio de 21 m tapa quem está na porta, na praça e na
+  calçada que atravessa o pátio. É o ponto cego de qualquer prédio alto (a
+  regra do jogo é não deixá-lo translúcido): nos outros 5 giros, e no de
+  sempre, tudo aparece.
+- **O enquadramento** é 18 (o de sempre lá fora é 14). Chegando pela
+  calçada da rua, o prédio fica fora da tela até a dupla andar um pouco; as
+  fotos de "cartão-postal" (a câmera na altura de quem chega, como a foto do
+  Renan) são de uma câmera que o jogo ainda não tem. Para a etapa 2: uma
+  tomada de chegada mostrando a escola, ou o zoom abrindo perto da rua.
+- **O peso**: com a `fundir()`, a mesma vista cai de 746 para 267 desenhos
+  por quadro, com a mesma imagem (com a câmera parada, só 0,17% dos pixels
+  mudam, e são as bandeiras balançando).
+
 ## Perguntas ao Renan
 
 - O prédio e o pátio estão no rumo? (tamanho, cor do tijolo, a cúpula, a lanterninha)
+- As plaquinhas no poste ("Devagar, Gatitos atravessando" e "Visitantes: passem na secretaria") ficam? Estão lá porque a foto tem; a de "Bicicletas" saiu, como as outras de nome de lugar.
+- A chegada: uma tomada mostrando a escola, ou o zoom abrindo perto da rua?
 - As bandeiras: Gatitos, Brasil e Venezuela, ou outras?
 - Os textos das placas e do quadro de recados.
 - A chegada da etapa 2: na rua da frente, a pé até a porta?
