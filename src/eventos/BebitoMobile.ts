@@ -74,10 +74,11 @@ export const FASES_DO_PRESENTE = {
  */
 export const FLAG_DO_CARRO_NO_PARQUE = 'bebito:carro-no-parque';
 export const FLAG_DO_CARRO_NO_CLUBE = 'bebito:carro-no-clube';
+export const FLAG_DO_CARRO_NA_ESCOLA = 'bebito:carro-na-escola';
 
 /** Mantém os saves antigos: sem as flags, o carro continua na garagem. */
-export function localDoBebito(g: { flag: (chave: string) => boolean }): 'casa' | 'parque' | 'clube' {
-  return g.flag(FLAG_DO_CARRO_NO_CLUBE) ? 'clube' : g.flag(FLAG_DO_CARRO_NO_PARQUE) ? 'parque' : 'casa';
+export function localDoBebito(g: { flag: (chave: string) => boolean }): 'casa' | 'parque' | 'clube' | 'escola' {
+  return g.flag(FLAG_DO_CARRO_NA_ESCOLA) ? 'escola' : g.flag(FLAG_DO_CARRO_NO_CLUBE) ? 'clube' : g.flag(FLAG_DO_CARRO_NO_PARQUE) ? 'parque' : 'casa';
 }
 
 /**

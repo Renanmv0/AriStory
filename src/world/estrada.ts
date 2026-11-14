@@ -143,7 +143,9 @@ export function faixaDePedestres(naPista: NaPista, s: number): THREE.Mesh {
 
 // ===================================================================== placas
 
-export type DesenhoDaPlaca = 'patos' | 'tigres' | 'lombada' | 'obra' | 'semaforo' | 'buracos' | 'rega';
+export type DesenhoDaPlaca = 'patos' | 'tigres' | 'lombada' | 'obra' | 'semaforo' | 'buracos' | 'rega'
+  // (a zona escolar da rota da escola: as crianças andando, a bola, a câmera de foto e o velocímetro)
+  | 'escola' | 'bola' | 'foto' | 'radar';
 
 /** a placa de advertência: o losango amarelo de borda preta, com o desenho no meio */
 function texturaDaPlaca(desenho: DesenhoDaPlaca): THREE.CanvasTexture {
@@ -221,6 +223,48 @@ function texturaDaPlaca(desenho: DesenhoDaPlaca): THREE.CanvasTexture {
       ctx.bezierCurveTo(-34 * u, 9 * u, -15 * u, 23 * u, 0, 23 * u);
       ctx.bezierCurveTo(15 * u, 23 * u, 34 * u, 9 * u, 0, -27 * u); ctx.fill();
       ctx.fillRect(-29 * u, 29 * u, 58 * u, 3 * u);
+    } else if (desenho === 'escola') {
+      // as duas crianças de mochila andando (a placa de escola de sempre)
+      for (const [x, k] of [[-11, 1], [12, 0.82]] as const) {
+        elipse(x, -19 * k, 5.5 * k, 5.5 * k);
+        ctx.beginPath();
+        ctx.moveTo((x - 5 * k) * u, -12 * k * u); ctx.lineTo((x + 5 * k) * u, -12 * k * u);
+        ctx.lineTo((x + 4 * k) * u, 8 * k * u); ctx.lineTo((x - 4 * k) * u, 8 * k * u); ctx.fill();
+        ctx.fillRect((x + 4 * k) * u, -10 * k * u, 5 * k * u, 11 * k * u); // a mochila
+        ctx.lineWidth = 4 * k * u; ctx.strokeStyle = '#2a2a2e';
+        ctx.beginPath(); ctx.moveTo((x - 2 * k) * u, 8 * k * u); ctx.lineTo((x - 7 * k) * u, 24 * k * u);
+        ctx.moveTo((x + 2 * k) * u, 8 * k * u); ctx.lineTo((x + 6 * k) * u, 24 * k * u); ctx.stroke();
+      }
+      ctx.fillRect(-30 * u, 26 * u, 60 * u, 3 * u);
+    } else if (desenho === 'bola') {
+      // a bola de basquete quicando, com as costuras
+      elipse(0, -4, 17, 17);
+      ctx.strokeStyle = '#f7c531'; ctx.lineWidth = 2.5 * u;
+      ctx.beginPath(); ctx.moveTo(-17 * u, -4 * u); ctx.lineTo(17 * u, -4 * u);
+      ctx.moveTo(0, -21 * u); ctx.lineTo(0, 13 * u); ctx.stroke();
+      ctx.beginPath(); ctx.arc(-24 * u, -4 * u, 15 * u, -0.8, 0.8); ctx.stroke();
+      ctx.beginPath(); ctx.arc(24 * u, -4 * u, 15 * u, Math.PI - 0.8, Math.PI + 0.8); ctx.stroke();
+      ctx.fillRect(-26 * u, 24 * u, 52 * u, 3 * u);
+      for (const x of [-20, 20]) elipse(x, 19, 2.5, 2.5);
+    } else if (desenho === 'foto') {
+      // a câmera de foto com o flash
+      ctx.beginPath(); ctx.roundRect(-24 * u, -12 * u, 48 * u, 32 * u, 5 * u); ctx.fill();
+      ctx.fillRect(-9 * u, -19 * u, 18 * u, 8 * u);
+      ctx.fillStyle = '#f7c531'; elipse(0, 4, 10, 10);
+      ctx.fillStyle = '#2a2a2e'; elipse(0, 4, 6, 6);
+      ctx.fillStyle = '#f7c531'; elipse(16, -6, 3, 3);
+    } else if (desenho === 'radar') {
+      // o velocímetro: o arco, os tracinhos e o ponteiro
+      ctx.lineWidth = 5 * u;
+      ctx.beginPath(); ctx.arc(0, 8 * u, 24 * u, Math.PI, 0); ctx.stroke();
+      ctx.lineWidth = 3 * u;
+      for (let k = 0; k <= 6; k++) {
+        const a = Math.PI + (k / 6) * Math.PI;
+        ctx.beginPath(); ctx.moveTo(Math.cos(a) * 18 * u, 8 * u + Math.sin(a) * 18 * u); ctx.lineTo(Math.cos(a) * 24 * u, 8 * u + Math.sin(a) * 24 * u); ctx.stroke();
+      }
+      ctx.lineWidth = 4 * u;
+      ctx.beginPath(); ctx.moveTo(0, 8 * u); ctx.lineTo(-12 * u, -6 * u); ctx.stroke();
+      elipse(0, 8, 4, 4);
     } else {
       // buracos: a pista com dois furos
       ctx.fillRect(-30 * u, 8 * u, 60 * u, 5 * u);

@@ -20,12 +20,17 @@ import {
   type DesenhoDaPlaca, type NaPista,
 } from '../world/estrada';
 import { TravessiaDeBichos } from '../eventos/bebitoMobile/travessia';
-import { placaDeEstacionamento } from '../world/estacionamento';
+import { carroEstacionado, placaDeEstacionamento } from '../world/estacionamento';
+import { predioDaEscola } from '../world/escolaPorFora';
+import { PORTAO_DA_ESCOLA, gradeDaEscola, portaoDaEscola } from '../world/portariaDaEscola';
+import { MastroComBandeira, bicicletario } from '../world/patioDaEscola';
+import { posteDoEstacionamento as posteDaEscola } from '../world/estacionamentoDaEscola';
 import {
-  PISTA, biomaEm, destinoDaRota, eixoDaRota, estrelasDaViagem, gerarRota, pedidoDeViagem, rotaDoClube, type EventoDaRota, type PedidoDeViagem,
+  PISTA, biomaEm, destinoDaRota, eixoDaRota, estrelasDaViagem, gerarRota, pedidoDeViagem, rotaNova, type DestinoDeCarro, type EventoDaRota, type PedidoDeViagem,
   type Rota,
 } from '../eventos/bebitoMobile/rota';
-import { FLAG_DO_CARRO_NO_CLUBE, FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
+import { FLAG_DO_CARRO_NA_ESCOLA, FLAG_DO_CARRO_NO_CLUBE, FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
+import { agendarChegadaNaEscola } from '../eventos/bebitoMobile/naEscola';
 import { CameraDeDentro } from '../eventos/bebitoMobile/cameraDeDentro';
 import { menuDoPassageiro } from '../eventos/bebitoMobile/passageiro';
 import { agendarChegadaNoParque } from '../eventos/bebitoMobile/chegadaNoParque';
@@ -180,6 +185,9 @@ export const viagemDeCarro: SceneDef = {
   },
 };
 
+/** o ícone do destino no painel da viagem */
+const ICONE_DO_DESTINO: Record<DestinoDeCarro, string> = { clube: '🏊', parque: '🌳', casa: '🏠', escola: '🏫' };
+
 function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const g: GameAPI = w.game;
   const rota = gerarRota(pedido.semente, pedido.sentido);
@@ -187,7 +195,9 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const destino = destinoDaRota(rota.sentido);
   const ida = destino === 'parque';
   const paraClube = destino === 'clube';
-  const novaRota = rotaDoClube(rota.sentido);
+  const paraEscola = destino === 'escola';
+  // (as rotas de 1000 m, a do clube e a da escola: a primeira viagem que vira memória é a do parque)
+  const novaRota = rotaNova(rota.sentido);
   const rnd = (): number => w.rng();
 
   // ------------------------------------------------------------ a conta da pista
@@ -289,6 +299,27 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       por(jardineiraDoEstacionamento(), naBeira(s0 + 9, -1, 0.9), rumoEm(s0 + 9));
       por(posteDoEstacionamento(), naBeira(s0 + 28, 1, 0.4), rumoEm(s0 + 28));
       for (const lado of [-1, 1]) for (const ds of [4, 30]) por(tree('palmeira', 1.05, indice + ds), naBeira(s0 + ds, lado, 2.1), 0);
+    } else if (bioma === 'escolar') {
+      /*
+       * A ZONA ESCOLAR (a rota da escola): do lado direito, o muro de tijolo com
+       * a grade de lanças da escola (em dois pedaços por trecho: a pista é curva,
+       * e um pedaço reto de 38 m sairia da calçada), o gramado e as árvores
+       * atrás; do lado esquerdo, a praça do bairro da escola — os bancos bordô,
+       * o bicicletário, os canteiros de hortênsia. Os postes altos com as
+       * bandeirolas dos Gatitos, dos dois lados.
+       */
+      for (const [a, b] of [[s0 + 1, s0 + 20], [s0 + 20.5, s1 - 0.5]] as const) {
+        por(gradeDaEscola(b - a), naBeira(b, 1, 0.55), paraAPista(b, 1));
+      }
+      for (let k = 0; k < 4; k++) por(tree(w.pick(['redonda', 'redonda', 'florida'] as const), 1.1 + rnd() * 0.4, rnd()), naBeira(s0 + 5 + k * 10, 1, 5 + rnd() * 6), rnd() * 6.28);
+      for (const lado of [-1, 1]) por(posteDaEscola(), naBeira(s0 + (lado > 0 ? 10 : 30), lado, -0.4), rumoEm(s0 + 10));
+      const sBanco = s0 + 14;
+      por(bancoDePraca(P.escolaBanco, P.escolaBancoFerro), naBeira(sBanco, -1, 1.1), paraAPista(sBanco, -1));
+      por(bicicletario(4), naBeira(s0 + 25, -1, 1.2), paraAPista(s0 + 25, -1));
+      por(tree(w.pick(['florida', 'redonda'] as const), 1.05 + rnd() * 0.3, rnd()), naBeira(s0 + 4, -1, 4 + rnd() * 3), rnd() * 6.28);
+      por(tree('redonda', 1.3 + rnd() * 0.3, rnd()), naBeira(s0 + 33, -1, 7 + rnd() * 4), rnd() * 6.28);
+      for (let k = 0; k < 3; k++) flores.push({ ...xz(naBeira(s0 + 17.5 + k * 0.9, -1, 1.3)), escala: 0.85, semente: indice * 9 + k, cor: w.pick([P.hortensiaAzul, P.hortensiaLilas]) });
+      moitas.push({ ...xz(naBeira(s0 + 8, -1, 1.0)), escala: 1, semente: indice * 4 });
     } else {
       // a beira do parque: bosque dos dois lados, mais fechado, com capim e hortênsia na borda
       for (const lado of [-1, 1]) {
@@ -323,6 +354,59 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     }
     const piscina = poolWater(10, 7); piscina.position.copy(naBeira(s + 4, 1, 16, 0.03)); chegada.add(piscina);
     const cobertura = coberturaDoEstacionamento(); cobertura.position.copy(naBeira(s + 8, -1, 6)); cobertura.rotation.y = rumoEm(s); chegada.add(cobertura);
+  } else if (paraEscola) {
+    /*
+     * A ESCOLA NO FIM DA RUA: do lado direito, a grade de lanças com o PORTÃO
+     * de ferro no meio, o calçadão até o prédio de tijolinho (a rotunda com a
+     * cúpula e a lanterninha aparecem de longe) e os três mastros balançando;
+     * do lado esquerdo, o estacionamento, para onde o carro vai. As peças são
+     * as do pátio (`world/escolaPorFora.ts`, `portariaDaEscola.ts`,
+     * `patioDaEscola.ts`), uma vez só, no grupo da chegada.
+     */
+    const sPortao = rota.chegada + 2;
+    const predio = predioDaEscola();
+    predio.position.copy(naBeira(sPortao, 1, 26));
+    predio.rotation.y = paraAPista(sPortao, 1);
+    w.add(fundir(predio));
+    const portao = portaoDaEscola();
+    portao.position.copy(naBeira(sPortao, 1, 0.55));
+    portao.rotation.y = paraAPista(sPortao, 1);
+    chegada.add(portao);
+    // a grade nasce com o +X para trás na pista (o giro de "dar a frente para a pista" do lado direito)
+    const { meiaVao, pilar } = PORTAO_DA_ESCOLA;
+    for (const [inicio, comprimento] of [[sPortao - meiaVao - pilar, 34], [sPortao + meiaVao + pilar + 34, 34]] as const) {
+      const grade = gradeDaEscola(comprimento);
+      grade.position.copy(naBeira(inicio, 1, 0.55));
+      grade.rotation.y = paraAPista(inicio, 1);
+      chegada.add(grade);
+    }
+    // o calçadão do portão ao prédio (a pista é reta no fim: dá para pôr o retângulo deitado no mundo)
+    const meioDoCalcadao = naBeira(sPortao, 1, 9);
+    w.patch(meioDoCalcadao.x, meioDoCalcadao.z, 17, 6.8, P.concrete, rumoEm(sPortao) + Math.PI / 2, 0.02);
+    const mastros = [
+      new MastroComBandeira('gatitos', 10.5, 2.6, 0),
+      new MastroComBandeira('brasil', 8.6, 2.1, 1.3),
+      new MastroComBandeira('venezuela', 8.6, 2.1, 2.7),
+    ];
+    mastros[0].group.position.copy(naBeira(sPortao, 1, 9));
+    mastros[1].group.position.copy(naBeira(sPortao - 12, 1, 15));
+    mastros[2].group.position.copy(naBeira(sPortao + 12, 1, 15));
+    for (const m of mastros) w.add(m.group);
+    w.onUpdate((dt) => { if (estado.s > rota.chegada - 170) for (const m of mastros) m.update(dt); });
+    // do outro lado, o estacionamento: o asfalto, os carros e a placa do "P"
+    const meioDoLote = naBeira(sPortao + 4, -1, 9);
+    w.patch(meioDoLote.x, meioDoLote.z, 14, 24, P.asphalt, rumoEm(sPortao) + Math.PI / 2, 0.02);
+    const cores = [P.carroVermelho, P.carroMenta, P.carroAmarelo, P.carroLilas];
+    cores.forEach((cor, k) => {
+      const c = carroEstacionado(cor);
+      c.position.copy(naBeira(sPortao - 6 + k * 3.4, -1, 6.5));
+      c.rotation.y = paraAPista(sPortao, -1) + Math.PI;
+      chegada.add(c);
+    });
+    const pe = placaDeEstacionamento();
+    pe.position.copy(naBeira(rota.chegada - 6, -1, 0.5));
+    pe.rotation.y = rumoEm(rota.chegada) + Math.PI;
+    chegada.add(pe);
   } else if (ida) {
     const roda = rodaAoLonge(13);
     roda.position.copy(naPista(L + 62, 20));
@@ -363,7 +447,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     muro.rotation.y = rumoEm(s) + Math.PI / 2;
     chegada.add(muro);
   }
-  const placa = placaDeDestino(paraClube ? 'CLUBE' : ida ? 'VILLA LOBOS' : 'CASA', '300 m');
+  const NOME_NA_PLACA: Record<DestinoDeCarro, string> = { clube: 'CLUBE', parque: 'VILLA LOBOS', casa: 'CASA', escola: 'ESCOLA' };
+  const placa = placaDeDestino(NOME_NA_PLACA[destino], '300 m');
   placa.position.copy(naPista(L - 300, PISTA.meia + PISTA.calcada + 0.6));
   placa.rotation.y = rumoEm(L - 300) + Math.PI;
   chegada.add(placa);
@@ -1020,7 +1105,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     if (estado.fase === 'partida') {
       if (relogio > 1.1 && !g.emDialogo()) {
         estado.fase = 'dirigindo';
-        if (novaRota) g.toast(`${carona.name}: Cinto colocado. Partiu ${paraClube ? 'clube' : ida ? 'parque' : 'casa'}!`, '🚙');
+        if (novaRota) g.toast(`${carona.name}: Cinto colocado. Partiu ${({ clube: 'clube', parque: 'parque', casa: 'casa', escola: 'escola' } as const)[destino]}!`, '🚙');
         else comentar('partida', true);
       }
     } else if (estado.fase === 'dirigindo') {
@@ -1040,8 +1125,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         estado.v = 0;
         estado.fase = 'fim';
       }
-      aviso = paraClube ? 'Chegando no clube!' : ida ? 'Chegando no Villa Lobos!' : 'Chegando em casa!';
-      icone = paraClube ? '🏊' : ida ? '🌳' : '🏠';
+      aviso = ({ clube: 'Chegando no clube!', parque: 'Chegando no Villa Lobos!', casa: 'Chegando em casa!', escola: 'Chegando na escola!' } as const)[destino];
+      icone = ICONE_DO_DESTINO[destino];
       tom = 'bom';
     } else estado.v = 0;
     if (encontro?.estado.fase === 'esperando' && !podeReceberEncontro && estado.s > encontro.s - 65) {
@@ -1189,7 +1274,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     }
     estado.aviso = aviso;
     g.painelDaViagem({
-      coracoes: estado.coracoes, progresso: estado.s / rota.chegada, destino: paraClube ? '🏊' : ida ? '🌳' : '🏠',
+      coracoes: estado.coracoes, progresso: estado.s / rota.chegada, destino: ICONE_DO_DESTINO[destino],
       aviso: estado.fase === 'fim' ? '' : aviso, icone, tom,
     });
 
@@ -1228,12 +1313,17 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     }
     g.setFlag(FLAG_DO_CARRO_NO_PARQUE, destino === 'parque');
     g.setFlag(FLAG_DO_CARRO_NO_CLUBE, destino === 'clube');
+    g.setFlag(FLAG_DO_CARRO_NA_ESCOLA, destino === 'escola');
     g.setFlag('bebito:viagem-em-andamento', false);
     if (paraClube) {
       agendarChegadaNoClube(pedido.motorista);
       g.unlock({ id: 'de-bebito-ao-clube', title: 'De Bebito ao clube', place: 'Clube', icon: '🏊', note: 'De Bebito pela alameda até a nossa vaga no estacionamento do clube. Mais um lugar para visitar juntos, saindo direto de onde estivermos.' });
     }
     if (ida) agendarChegadaNoParque(pedido.motorista);
+    if (paraEscola) {
+      agendarChegadaNaEscola(pedido.motorista);
+      g.unlock({ id: 'de-bebito-a-escola', title: 'De Bebito à escola', place: 'Escola do Gatito', icon: '🏫', note: 'De Bebito pela zona escolar até a nossa vaga do coração, do outro lado da rua da escola. No caminho, a turma do Gatito inteira na pista.' });
+    }
     g.painelDaViagem(null);
     g.botaoDaViagem(null);
     camDentro.cortar();
@@ -1242,7 +1332,10 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     g.poseNoCarro('parceiro', null);
     g.setCameraOmbro(null);
     g.lockPlayer(false);
-    g.goTo(paraClube ? 'clube' : ida ? 'villa-lobos' : 'frente-da-casa', paraClube ? 'do-estacionamento' : 'do-carro');
+    const CHEGADA: Record<DestinoDeCarro, [string, string]> = {
+      clube: ['clube', 'do-estacionamento'], parque: ['villa-lobos', 'do-carro'], casa: ['frente-da-casa', 'do-carro'], escola: ['escola-patio', 'do-estacionamento'],
+    };
+    g.goTo(...CHEGADA[destino]);
   };
 }
 

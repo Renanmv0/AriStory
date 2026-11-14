@@ -15,10 +15,13 @@ import { fundir, fundirComoFundo } from '../world/fundir';
 import { BeiraDoCaminho, caixaRedonda, capsula, disco, mancha, uniaoSuave, type Caixa } from '../world/caminhos';
 import { PORTAO_DA_ESCOLA, GUARITA_DA_ESCOLA, balizadores, gradeDaEscola, guaritaDaEscola, portaoDaEscola } from '../world/portariaDaEscola';
 import {
-  batentesDeRoda, geoSeta, ilhaDoEstacionamento, posteDoEstacionamento, simboloDeAcessivel,
+  PLANTA_DO_ESTACIONAMENTO, batentesDeRoda, geoSeta, ilhaDoEstacionamento, posteDoEstacionamento, simboloDeAcessivel,
 } from '../world/estacionamentoDaEscola';
 import { CARRO_ESTACIONADO, Cancela, carroEstacionado, geoCoracaoNoChao, placaDeEstacionamento, plaquinhaDaVaga } from '../world/estacionamento';
 import { sorteio } from '../world/texturasDeChao';
+import { montarBebitoNaEscola } from '../eventos/bebitoMobile/naEscola';
+import { ritmoDoPresente } from '../eventos/bebitoMobile/presente';
+import type { ComandoDaCancela } from '../eventos/bebitoMobile/chegadaNoParque';
 import { PREDIO_DA_ESCOLA, predioDaEscola } from '../world/escolaPorFora';
 import { ESCOLA } from './escolaComum';
 
@@ -70,14 +73,8 @@ const PLACA = { x: -10.5, z: 15.2 };
 /** a linha da grade da frente (a face da rua da mureta), e a guarita ao lado do portão */
 const GRADE_Z = 18.55;
 const GUARITA = { x: 7.7, z: 17.9 };
-/** a calçada do outro lado da rua, e o estacionamento atrás dela */
-const CALCADA_DE_LA = { z0: RUA.z1, z1: 32.6 };
-const LOTE = { x0: -29, x1: 29, z0: 33.8, z1: 54.2 };
-/** as duas filas de vagas (2,6 × 5,2), o corredor entre elas, e a pista de entrada */
-const FILA_1 = { z0: 34.6, z1: 39.8 };
-const FILA_2 = { z0: 46.4, z1: 51.6 };
-const VAGA = 2.6;
-const ENTRADA = { x0: 14.3, x1: 19.5 };
+/** a calçada de lá, o estacionamento, as filas e a pista de entrada: a planta do kit (a chegada do carro lê a mesma) */
+const { calcadaDeLa: CALCADA_DE_LA, lote: LOTE, fila1: FILA_1, fila2: FILA_2, vaga: VAGA, entrada: ENTRADA } = PLANTA_DO_ESTACIONAMENTO;
 /*
  * O PONTO DO ÔNIBUS, na faixa da calçada da escola, à esquerda do portão: o
  * ônibus vai para o −X (o nariz no −X, as portas no −Z, para a calçada). A
@@ -107,6 +104,8 @@ export const escolaPatio: SceneDef = {
   entries: {
     'da-rua': { x: 0, z: CALCADA.z0 - 1.2, facing: Math.PI },
     'do-saguao': { x: PORTA.x, z: PORTA.z + 1.6, facing: 0 },
+    // descendo do Bebito Mobile, na vaga do coração do estacionamento de lá
+    'do-estacionamento': { x: PLANTA_DO_ESTACIONAMENTO.descida.x, z: PLANTA_DO_ESTACIONAMENTO.descida.z, facing: PLANTA_DO_ESTACIONAMENTO.descida.facing },
     // descendo do ônibus, na calçada, olhando para o portão
     'do-onibus': { x: DESCIDA.x, z: DESCIDA.z, facing: Math.atan2(-DESCIDA.x, GRADE_Z - DESCIDA.z) },
   },
@@ -389,7 +388,7 @@ export const escolaPatio: SceneDef = {
     w.add(fundir(w.place(busStop(), DESCIDA.x - 3.6, 0, CALCADA.z0 + 1.3)));
     w.blockBox(DESCIDA.x - 3.6, CALCADA.z0 + 0.65, 2.35, 0.3);
     // o mesmo "Pegar o ônibus" do parque e do clube: daqui ele volta para um dos dois
-    w.interact({
+    const pegarOOnibus = w.interact({
       id: 'door:villa-lobos:clube',
       x: DESCIDA.x + 0.6, z: DESCIDA.z + 0.4, radius: 2.4,
       label: 'Pegar o ônibus', icon: '🚌',
@@ -401,6 +400,7 @@ export const escolaPatio: SceneDef = {
       },
     });
 
+    let entradaDoLote: ComandoDaCancela | null = null;
     // ---------------------------------------------------------- o estacionamento
     /*
      * O ESTACIONAMENTO, do outro lado da rua (`world/estacionamentoDaEscola.ts`):
@@ -457,7 +457,7 @@ export const escolaPatio: SceneDef = {
       w.patch(xc, (FILA_1.z0 + FILA_1.z1) / 2, VAGA - 0.2, FILA_1.z1 - FILA_1.z0 - 0.25, P.vagaAcessivel, 0, 0.025);
       w.patch(xc, FILA_1.z0 + 1.6, 1.4, 1.4, P.metalWhite, 0, 0.027, acessivel);
     }
-    const VAGA_DO_CORACAO = { x: 2.6, z: (FILA_1.z0 + FILA_1.z1) / 2 };
+    const VAGA_DO_CORACAO = PLANTA_DO_ESTACIONAMENTO.vagaDoCoracao;
     const coracao = w.patch(VAGA_DO_CORACAO.x, VAGA_DO_CORACAO.z, 1, 1, P.vagaRosa, 0, 0.027);
     coracao.geometry.dispose();
     coracao.geometry = geoCoracaoNoChao(1.7).rotateX(Math.PI / 2).rotateZ(Math.PI);
@@ -503,10 +503,14 @@ export const escolaPatio: SceneDef = {
     const cancela = new Cancela(ENTRADA.x1 - ENTRADA.x0 - 0.35);
     w.add(w.place(cancela.group, ENTRADA.x1 + 0.05, 0, LOTE.z0 + 0.4, Math.PI));
     w.blockBox(ENTRADA.x1 + 0.05, LOTE.z0 + 0.4, 0.22, 0.22);
+    // a cancela abre para quem chega perto (a pé), ou quando a chegada do carro manda (`comando`); anda no
+    // relógio do presente, que o teste acelera
+    let comandoDaCancela: boolean | null = null;
     w.onUpdate((dt) => {
-      const p = g.playerPosition();
-      cancela.update(dt, Math.abs(p.x - (ENTRADA.x0 + ENTRADA.x1) / 2) < 4 && Math.abs(p.z - LOTE.z0) < 4);
+      const perto = [g.playerPosition(), g.companionPosition()].some((p) => Math.abs(p.x - (ENTRADA.x0 + ENTRADA.x1) / 2) < 4 && Math.abs(p.z - LOTE.z0) < 4);
+      cancela.update(dt * ritmoDoPresente.vezes, comandoDaCancela ?? perto);
     });
+    entradaDoLote = { cancela, comandar: (aberta) => { comandoDaCancela = aberta; } };
     doLote(VAGA_DO_CORACAO.x).add(w.place(plaquinhaDaVaga(), VAGA_DO_CORACAO.x, 0, LOTE.z0 + 0.25));
     w.blockCircle(VAGA_DO_CORACAO.x, LOTE.z0 + 0.25, 0.15);
     // os carros dos outros: sorteados nas vagas livres (nem a do coração, nem as de cadeira de rodas)
@@ -529,6 +533,8 @@ export const escolaPatio: SceneDef = {
       doLote(x).add(w.place(tree(w.pick(['redonda', 'redonda', 'pinheiro', 'florida'] as const), w.range(1.3, 1.8), w.rng()), x + w.range(-1.5, 1.5), 0, z, w.range(0, 6.28)));
     }
     for (const f of fundosDoLote) w.add(fundirComoFundo(f));
+    // o Bebito Mobile, se ele estiver aqui (e a chegada animada, se a viagem acabou de chegar)
+    if (entradaDoLote) montarBebitoNaEscola(w, entradaDoLote, pegarOOnibus);
 
     // o céu: nuvens bem altas, acima da câmera (a lição da frente da casa)
     for (let i = 0; i < 6; i++) {

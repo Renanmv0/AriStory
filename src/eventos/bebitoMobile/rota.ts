@@ -16,12 +16,24 @@
  * DIREITA de quem dirige). A pista é de mão única, com duas faixas.
  */
 
-export const SENTIDOS = ['ida', 'volta', 'parque-clube', 'clube-parque', 'casa-clube', 'clube-casa'] as const;
+// (os sentidos novos entram sempre NO FIM: o sorteio do encontro usa o lugar de cada um na lista)
+export const SENTIDOS = [
+  'ida', 'volta', 'parque-clube', 'clube-parque', 'casa-clube', 'clube-casa',
+  'casa-escola', 'escola-casa', 'parque-escola', 'escola-parque', 'clube-escola', 'escola-clube',
+] as const;
 export type Sentido = typeof SENTIDOS[number];
-export type DestinoDeCarro = 'casa' | 'parque' | 'clube';
-export const destinoDaRota = (sentido: Sentido): DestinoDeCarro =>
-  sentido === 'ida' || sentido === 'clube-parque' ? 'parque' : sentido === 'parque-clube' || sentido === 'casa-clube' ? 'clube' : 'casa';
-export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube');
+export type DestinoDeCarro = 'casa' | 'parque' | 'clube' | 'escola';
+/** onde cada viagem termina (um `Record`: destino novo que esquecer um sentido não compila) */
+const DESTINO: Record<Sentido, DestinoDeCarro> = {
+  'ida': 'parque', 'volta': 'casa', 'parque-clube': 'clube', 'clube-parque': 'parque', 'casa-clube': 'clube', 'clube-casa': 'casa',
+  'casa-escola': 'escola', 'escola-casa': 'casa', 'parque-escola': 'escola', 'escola-parque': 'parque', 'clube-escola': 'escola', 'escola-clube': 'clube',
+};
+export const destinoDaRota = (sentido: Sentido): DestinoDeCarro => DESTINO[sentido];
+/** a rota da Escola do Gatito (`docs/VIAGEM-ESCOLA.md`): ela vem ANTES da do clube, que também tem "clube" no nome */
+export const rotaDaEscola = (sentido: Sentido): boolean => sentido.includes('escola');
+export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube') && !rotaDaEscola(sentido);
+/** as rotas novas (clube e escola), com a pista de 1000 m e os eventos postos à mão */
+export const rotaNova = (sentido: Sentido): boolean => rotaDoClube(sentido) || rotaDaEscola(sentido);
 export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter';
 /**
  * TODA viagem tem um encontro na pista (decisão do Renan: "sempre deve ter um
@@ -73,7 +85,7 @@ export const PISTA = {
 } as const;
 
 /** os trechos de paisagem */
-export type Bioma = 'bairro' | 'avenida' | 'parque' | 'hortas' | 'esportivo';
+export type Bioma = 'bairro' | 'avenida' | 'parque' | 'hortas' | 'esportivo' | 'escolar';
 export interface Trecho {
   bioma: Bioma;
   de: number;
@@ -90,8 +102,20 @@ export interface Trecho {
  * - `lombada`: de um lado a outro — passar devagar;
  * - `poca`: uma poça numa faixa — só espirra (é de graça, e é divertido);
  * - `onibus`: o ônibus da cidade andando devagar numa faixa — ultrapassar.
+ *
+ * Só na zona escolar (a rota da escola), com a turma do Gatito:
+ * - `torcida`: as três coelhinhas atravessando na faixa, com o Gatito de
+ *   guarda de trânsito e a placa de PARE — tem que PARAR;
+ * - `bola-do-flynn`: o Flynn treinando na calçada e a bola escapando para a
+ *   pista — tem que PARAR até ela passar;
+ * - `ensaio-da-valentina`: a sessão de fotos da Valentina na calçada — passar
+ *   DEVAGAR (ela posa e o flash dispara);
+ * - `radar-escolar`: a placa que mostra a velocidade — passar DEVAGAR (ela sorri).
  */
-export type TipoDeEvento = 'travessia' | 'semaforo' | 'obra' | 'buracos' | 'lombada' | 'poca' | 'onibus' | 'rega' | 'onda-verde';
+export type TipoDeEvento = 'travessia' | 'semaforo' | 'obra' | 'buracos' | 'lombada' | 'poca' | 'onibus' | 'rega' | 'onda-verde'
+  | 'torcida' | 'bola-do-flynn' | 'ensaio-da-valentina' | 'radar-escolar';
+/** os eventos de PASSAR DEVAGAR (o piloto automático tira o pé antes deles) */
+export const EVENTOS_DE_DEVAGAR: readonly TipoDeEvento[] = ['rega', 'ensaio-da-valentina', 'radar-escolar'];
 export type BichosDaTravessia = 'patos' | 'tigres';
 
 export interface EventoDaRota {
@@ -174,6 +198,7 @@ export function eixoDaRota(rota: Pick<Rota, 'curva' | 'comprimento'>, s: number)
  * - os corações levam o olho para a faixa livre antes de cada obstáculo.
  */
 export function gerarRota(semente: number, sentido: Sentido): Rota {
+  if (rotaDaEscola(sentido)) return gerarRotaDaEscola(semente, sentido);
   if (rotaDoClube(sentido)) return gerarRotaDoClube(semente, sentido);
   const rnd = sorteio(semente * 31 + (sentido === 'ida' ? 7 : 19));
   const comprimento = COMPRIMENTO_DA_ROTA;
@@ -308,6 +333,57 @@ function gerarRotaDoClube(semente: number, sentido: Sentido): Rota {
   };
   decorarCaminhoDoParque(rota);
   return rota;
+}
+
+/**
+ * A ROTA DA ESCOLA DO GATITO (`docs/VIAGEM-ESCOLA.md`): a mesma pista de 1000 m
+ * do clube. O começo é o bairro de quem sai (a casa, o parque ou o clube), o
+ * meio é a avenida de palmeiras, e o fim é a ZONA ESCOLAR — o muro de tijolo
+ * com a grade de lanças, os postes com as bandeirolas dos Gatitos — com a
+ * turma da escola na pista: o radar que sorri, as coelhinhas atravessando
+ * com o Gatito de guarda, a sessão de fotos da Valentina e a bola do Flynn.
+ * Voltando, a zona escolar vem primeiro.
+ *
+ * As regras de sempre: o encontro (Noel, Josefina, Capy ou Walter) em 430,
+ * com 120 m livres de cada lado; nada fecha as duas faixas; os eventos da
+ * escola a ~70 m um do outro, dentro da zona escolar.
+ */
+function gerarRotaDaEscola(semente: number, sentido: Sentido): Rota {
+  const indo = destinoDaRota(sentido) === 'escola';
+  const base = gerarRota(semente, indo ? 'ida' : 'volta');
+  const rnd = sorteio(semente * 59 + (indo ? 307 : 409));
+  const comprimento = 1000;
+  const origem = indo ? sentido.split('-')[0] : sentido.split('-')[1];
+  const acessos: Trecho[] = origem === 'casa'
+    ? [{ bioma: 'bairro', de: 0, ate: 220 }, { bioma: 'avenida', de: 220, ate: 350 }]
+    : origem === 'clube'
+      ? [{ bioma: 'esportivo', de: 0, ate: 170 }, { bioma: 'hortas', de: 170, ate: 350 }]
+      : [{ bioma: 'parque', de: 0, ate: 350 }];
+  const trechos: Trecho[] = [...acessos, { bioma: 'avenida', de: 350, ate: 600 }, { bioma: 'escolar', de: 600, ate: comprimento }];
+  const personagem = sortearEncontro(semente, sentido);
+  const encontro = { personagem, s: 430 + (rnd() - 0.5) * 6 };
+  // indo, a zona escolar é o fim; voltando, é o começo (e os eventos dela vêm primeiro)
+  const tipos: Array<[TipoDeEvento, number]> = indo
+    ? [['lombada', 80], ['travessia', 175], ['semaforo', 270], ['obra', 590],
+      ['radar-escolar', 665], ['torcida', 738], ['ensaio-da-valentina', 812], ['bola-do-flynn', 886]]
+    : [['bola-do-flynn', 96], ['ensaio-da-valentina', 168], ['torcida', 238], ['radar-escolar', 300],
+      ['obra', 590], ['semaforo', 680], ['travessia', 790], ['lombada', 900]];
+  const eventos = tipos.map(([tipo, s]): EventoDaRota => ({
+    tipo, s: s + (rnd() - 0.5) * 6, faixa: rnd() < 0.5 ? 0 : 1,
+    ...(tipo === 'travessia' ? { bichos: indo ? 'patos' as const : 'tigres' as const, lado: 1 as const, quantos: 3 } : {}),
+    ...(tipo === 'torcida' ? { lado: (rnd() < 0.5 ? -1 : 1) as -1 | 1, quantos: 3 } : {}),
+  }));
+  const obra = eventos.find(e => e.tipo === 'obra')!;
+  const coracoes: Coracao[] = [];
+  for (let s = 32; s < comprimento - 90; s += 7) {
+    if (s > encontro.s - 80 && s < encontro.s + 95) continue;
+    const l = s > obra.s - 35 && s < obra.s + 24 ? PISTA.meios[obra.faixa === 0 ? 1 : 0] : Math.sin(s * 0.045) * 1.55;
+    coracoes.push({ s, l });
+  }
+  return {
+    ...base, sentido, comprimento, chegada: comprimento - 16, eventos, coracoes, encontro,
+    trechos: indo ? trechos : trechos.map(t => ({ bioma: t.bioma, de: comprimento - t.ate, ate: comprimento - t.de })).reverse(),
+  };
 }
 
 /** O Cookie pode aparecer na poça, sem sobrepor travessias ou a cena dos carros. */

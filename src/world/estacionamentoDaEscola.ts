@@ -18,6 +18,28 @@ import { novaTextura, tapeteDeGrama } from './texturasDeChao';
  * coração da vaga do Bebito são da cena (decalques juntados).
  */
 
+/**
+ * A PLANTA DO ESTACIONAMENTO, do outro lado da rua do pátio (as medidas que a
+ * cena do pátio e a chegada do Bebito Mobile dividem): a rua corre em `x`, a
+ * escola fica no `−Z` dela e o lote no `+Z`. As vagas são de 2,6 × 5,2.
+ */
+export const PLANTA_DO_ESTACIONAMENTO = {
+  rua: { z0: 22, z1: 30 },
+  calcadaDeLa: { z0: 30, z1: 32.6 },
+  lote: { x0: -29, x1: 29, z0: 33.8, z1: 54.2 },
+  fila1: { z0: 34.6, z1: 39.8 },
+  fila2: { z0: 46.4, z1: 51.6 },
+  /** o meio do corredor entre as duas filas */
+  corredor: 43.1,
+  vaga: 2.6,
+  /** a pista de entrada, do meio-fio até o corredor (as duas vagas dali não existem) */
+  entrada: { x0: 14.3, x1: 19.5 },
+  /** a VAGA DO CORAÇÃO do Bebito Mobile: a primeira da direita na fila 1, de nariz para a rua */
+  vagaDoCoracao: { x: 2.6, z: 37.3, giro: Math.PI },
+  /** onde a dupla desce do carro: na passagem de pedestres pintada, do lado do motorista */
+  descida: { x: 0.25, z: 37.6, facing: Math.PI },
+} as const;
+
 // ================================================================ o poste
 
 /**
