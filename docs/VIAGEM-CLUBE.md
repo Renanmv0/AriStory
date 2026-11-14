@@ -40,11 +40,11 @@ Além de lombada, travessia, obra, semáforo e poça:
 
 ## Viagens com encontros diferentes
 
-Cada partida, em qualquer um dos seis sentidos, sorteia uma possibilidade:
-30% de Noel, 30% de Josefina, 20% do Capy de moto ou 20% de nenhum encontro. É no máximo um veículo
-de personagem por viagem; não há alternância obrigatória e uma repetição é
-possível. O sorteio usa a semente salva do pedido, então recarregar conserva
-inclusive o resultado "ninguém". Não há percentual ou controle de depuração
+Cada partida, em qualquer um dos seis sentidos, sorteia um encontro — desde
+2026-11-13 SEMPRE há um (pedido do Renan): 25% de Noel, 25% de Josefina, 25% do
+Capy de moto e 25% do Walter no food truck. É um veículo de personagem por
+viagem; não há alternância obrigatória e uma repetição é possível. O sorteio
+usa a semente salva do pedido, então recarregar conserva o mesmo encontro. Não há percentual ou controle de depuração
 no fluxo do jogador.
 
 A Josefina dirige uma caminhonete verde de jardinagem com caçamba aberta,
