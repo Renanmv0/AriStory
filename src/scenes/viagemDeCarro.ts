@@ -605,9 +605,11 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         }
       });
     }
-    if (deJogo) {
+    {
       /*
-       * OS BURACOS: sem os corações para mostrar a faixa livre, o piloto de jogo PLANEJA. Os buracos que
+       * OS BURACOS: sem os corações para mostrar a faixa livre, o piloto de jogo PLANEJA (e o de
+       * teste também: ele ia atrás do coração e só desviava a 11 m, tarde demais numa fileira
+       * fechada — tropeçava na rota 3; aqui o coração entra só como a faixa preferida). Os buracos que
        * vêm nos próximos 24 m (os de uma fileira são vários, de lados diferentes) viram uma conta só: ele
        * escolhe a posição, de um lado a outro da pista, em que NENHUMA das duas rodas pega neles, perto
        * da faixa dele e da posição de agora. (Desviar de um de cada vez, o desvio do segundo jogava a
@@ -649,12 +651,6 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         if (vivo.onda.tempo < 8.3) y = 1;
         const falta = (vivo.limiteOnda ?? Infinity) - 2.9 - estado.s;
         if (falta < 30 && falta > -1) y = estado.v * estado.v / (2 * Math.max(0.5, falta)) > 4 || falta < 1.2 ? -1 : -0.4;
-      }
-      if (e.tipo === 'buracos' && e.buracos && !deJogo) {
-        for (const b of e.buracos) {
-          const db = e.s + b.ds - estado.s;
-          if (db > 0 && db < 11 && Math.abs(alvoL - b.l) < 1.9) alvoL = b.l > 0 ? b.l - 2.1 : b.l + 2.1;
-        }
       }
       const parar = (vivo.travessia && vivo.travessia.estado !== 'feito') || (vivo.semaforo && vivo.semaforo.cor !== 'verde');
       const ateALinha = e.s - LINHA_DE_PARADA - 2.9 - estado.s;

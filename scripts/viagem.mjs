@@ -244,6 +244,15 @@ if (roda('bom')) {
   await page.waitForTimeout(1200);
   await page.screenshot({ path: `${OUT}-bom-10-chegou.png` });
   const noParque = await jogarAte(page, () => window.jogo.idDaCena === 'villa-lobos' && !!window.jogo.current, 60000, 400);
+  // a chegada animada (a cancela, a curva até a vaga, a descida) leva uns 18 s:
+  // o que se confere aqui é o fim dela, com o carro na vaga e a dupla a pé
+  // (acelerada como no carroCamerasEChegada.mjs, que confere a chegada por fase)
+  await page.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 5; });
+  await page.waitForFunction(() => {
+    const c = window.jogo.scene.getObjectByName('bebito-mobile');
+    return !c?.userData.chegada || c.userData.chegada.fase === 'concluida';
+  }, null, { timeout: 120000 }).catch(() => {});
+  await page.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 1; });
   await page.waitForTimeout(1500);
   const parque = await page.evaluate(() => {
     const j = window.jogo;
