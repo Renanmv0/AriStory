@@ -17,9 +17,16 @@
  *             chegada, o "Viajar de Bebito Mobile" na porta e o ônibus virando
  *             lembrete
  *   VOLTA     da escola para casa: o carro sai da escola e volta à garagem
+ *   PRESSA    os caminhos de quem NÃO dirige direito, e o save que ainda não
+ *             conhece a turma: só com a escola aberta, o radar a 40 km/h é
+ *             tropeço, a torcida atravessa sem o Gatito e o carro freia
+ *             sozinho na faixa (o susto), sem Valentina e sem Flynn na pista;
+ *             com todos apresentados, passar correndo pelo ensaio é o "saiu
+ *             tremida", e a bola do Flynn sem frear também é susto — e as duas
+ *             viagens chegam à escola
  *
  * Uso: node scripts/viagemEscola.mjs /tmp/ve
- *      SO=rotas|menu|ida|recarga|volta  roda uma parte (recarga e volta
+ *      SO=rotas|menu|ida|recarga|volta|pressa  roda uma parte (recarga e volta
  *      precisam do carro na escola: rodam a IDA antes se ela não rodou)
  */
 import { chromium } from 'playwright';
@@ -63,7 +70,7 @@ if (parte('rotas')) {
   console.log('ROTAS: 1800 rotas da escola (determinismo, a zona escolar, o encontro livre e as faixas sem coração).');
 }
 
-if (!parte('menu') && !parte('ida') && !parte('recarga') && !parte('volta')) process.exit(0);
+if (!['menu', 'ida', 'recarga', 'volta', 'pressa'].some(parte)) process.exit(0);
 
 // ------------------------------------------------------------------ o navegador
 const browser = await chromium.launch({
@@ -337,6 +344,86 @@ try {
     const casa = await p.evaluate(() => ({ carro: !!window.jogo.scene.getObjectByName('bebito-mobile'), escola: window.jogo.flag('bebito:carro-na-escola') }));
     assert.ok(casa.carro && !casa.escola, 'o carro volta à garagem e sai da escola');
     console.log('  o carro voltou para a garagem.');
+  }
+
+  // ---------------------------------------------------------------- com pressa, e sem a turma conhecida
+  if (parte('pressa')) {
+    /** abre uma viagem direto na estrada, com as flags dadas, o encontro fora de cena e o relógio dos toasts */
+    const naEstrada = async (flags, semente) => {
+      if (ctx) await ctx.close();
+      await abrir();
+      await p.evaluate((flags) => { for (const f of ['bebito:surpresa', 'bebito:renan-saiu', 'bebito:ganhou', ...flags]) window.jogo.setFlag(f); }, flags);
+      await p.goto(`${BASE}/?bebito&carroPorDentro&semHalloween&cena=viagem-de-carro&viagem=parque-escola,ari,${semente}`);
+      await espera(p, () => window.jogo?.idDaCena === 'viagem-de-carro' && !window.jogo.transitioning && window.aristoryBebitoMobile.viagem.estado);
+      await desenho(p, false);
+      await p.evaluate(() => {
+        window.toasts = [];
+        new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) if (n.classList?.contains('toast')) window.toasts.push(n.textContent); })
+          .observe(document.body, { childList: true, subtree: true });
+        const n = window.jogo.current.world.root.userData.novidadesDaViagem;
+        if (n?.encontro) { n.encontro.estado.fase = 'feito'; n.encontro.carro.group.visible = false; }
+      });
+    };
+    const evento = (tipo) => p.evaluate((tipo) => window.aristoryBebitoMobile.viagem.rota.eventos.find((e) => e.tipo === tipo), tipo);
+    const pecaNaCena = (peca) => p.evaluate((peca) => { let tem = false; window.jogo.scene.traverse((o) => { if (o.userData.peca === peca) tem = true; }); return tem; }, peca);
+    const st = () => p.evaluate(() => { const v = window.aristoryBebitoMobile.viagem.estado; return { s: v.s, v: v.v, vistos: { ...v.vistos }, tropecos: v.tropecos, sustos: v.sustos, gentilezas: v.gentilezas }; });
+    /** dirige distraído até passar `s`, e conta se o carro passou da linha com alguém na faixa */
+    const distraidoAte = async (s, linha) => {
+      await p.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.piloto = 'distraido'; v.vezes = 2.5; });
+      let passou = false;
+      const t0 = Date.now();
+      while (Date.now() - t0 < 300000) {
+        const e = await p.evaluate((linha) => ({ s: window.aristoryBebitoMobile.viagem.estado.s, naPista: window.aristoryBebitoMobile.viagem.naPista?.() ?? null }), linha);
+        if (linha !== null && e.s + 2.6 > linha + 0.25 && e.s < linha + 6 && (await st()).sustos === 0) passou = true;
+        if (e.s > s) break;
+        await avancar(p);
+        await p.waitForTimeout(90);
+      }
+      return passou;
+    };
+    const chegarNaEscola = async () => {
+      await p.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.piloto = 'bom'; v.vezes = 5; window.aristoryBebitoMobile.ritmoDoPresente.vezes = 5; });
+      await ate(p, () => window.jogo.idDaCena === 'escola-patio' && window.jogo.scene.getObjectByName('bebito-mobile')?.userData.chegada?.fase === 'concluida', 400000);
+    };
+
+    // A: só a escola aberta — ninguém da turma foi apresentado ainda
+    console.log('PRESSA, só com a escola aberta:');
+    await naEstrada(['escola-aberta'], 5);
+    assert.equal(await pecaNaCena('ensaio-da-valentina'), false, 'sem a Valentina apresentada, nada de ensaio');
+    assert.equal(await pecaNaCena('bola-do-flynn'), false, 'sem o Flynn apresentado, nada de bola');
+    const semGatito = await p.evaluate(() => { let n = null; window.jogo.scene.traverse((o) => { if (o.userData.peca === 'travessia-da-torcida') n = o.children[0].children.filter((c) => c.scale.x > 1.5).length; }); return n; });
+    assert.equal(semGatito, 0, 'a torcida atravessa sem o Gatito');
+    const radar = await evento('radar-escolar');
+    const torcida = await evento('torcida');
+    await p.evaluate((s) => { const v = window.aristoryBebitoMobile.viagem.estado; v.s = s; v.v = 11; }, radar.s - 70);
+    const passouNaFaixa = await distraidoAte(torcida.s + 10, torcida.s - 3.4);
+    const a = await st();
+    console.log('  ', JSON.stringify({ tropecos: a.tropecos, sustos: a.sustos, vistos: a.vistos }));
+    assert.ok(a.vistos['tropeço:radar'], 'o radar a toda velocidade é tropeço');
+    assert.ok(await p.evaluate(() => window.toasts.some((t) => t.includes('O radar ficou sério'))), 'e a carona reclama do radar');
+    assert.ok(!passouNaFaixa, 'sem frear, o carro não passa da linha com a torcida na faixa');
+    assert.equal(a.sustos, 1, 'a torcida leva o susto');
+    assert.ok(a.vistos.torcida, 'e atravessa até o fim, e o carro segue');
+    await foto(p, 'pressa-depois-da-torcida');
+    await chegarNaEscola();
+    console.log('   chegou na escola.');
+
+    // B: todos apresentados — passar correndo pelo ensaio, e a bola sem frear
+    console.log('PRESSA, com a turma toda:');
+    await naEstrada(FLAGS_DA_ESCOLA, 6);
+    const ensaio = await evento('ensaio-da-valentina');
+    const bola = await evento('bola-do-flynn');
+    await p.evaluate((s) => { const v = window.aristoryBebitoMobile.viagem.estado; v.s = s; v.v = 11; }, ensaio.s - 60);
+    const passouNaBola = await distraidoAte(bola.s + 10, bola.s - 3.4);
+    const b = await st();
+    console.log('  ', JSON.stringify({ tropecos: b.tropecos, sustos: b.sustos, vistos: b.vistos }));
+    assert.ok(await p.evaluate(() => window.toasts.some((t) => t.includes('saiu tremida'))), 'correndo pelo ensaio: "saiu tremida"');
+    assert.ok(b.vistos['ensaio-da-valentina'], 'o ensaio conta como visto');
+    assert.ok(!passouNaBola, 'sem frear, o carro não passa por cima do Flynn');
+    assert.equal(b.sustos, 1, 'o Flynn leva o susto');
+    assert.ok(b.vistos['bola-do-flynn'], 'ele busca a bola, e o carro segue');
+    await chegarNaEscola();
+    console.log('   chegou na escola.');
   }
 
   if (p) assert.equal(await p.evaluate(() => localStorage.getItem('aristory.save.v1')), null, 'o save de verdade fica intacto');

@@ -637,6 +637,8 @@ export class RadarEscolar {
     this.textura = new THREE.CanvasTexture(this.canvas);
     this.textura.colorSpace = THREE.SRGBColorSpace;
     // o LED é luz própria: material chapado com o mapa (como o letreiro do ônibus)
+    // (o LED acende sozinho, sem sombra do toon: material básico com o mapa próprio, como os
+    // letreiros acesos do Mania em `world/restauranteDoClube.ts`; o `flat()` é cacheado e não leva mapa)
     const led = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.55), new THREE.MeshBasicMaterial({ map: this.textura }));
     led.name = 'led-do-radar';
     led.position.set(0, 2.02, 0.156);

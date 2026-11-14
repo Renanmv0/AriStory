@@ -72,8 +72,9 @@ caminho e as tomadas da escola:
 3. **entrando**: ele sobe até o corredor e vira à direita;
 4. ele anda pelo corredor e vira à direita, para dentro da **vaga do coração**,
    de nariz para a rua;
-5. **descendo**: a dupla desce na faixa de pedestres pintada, do lado do
-   motorista, e dali é atravessar a rua até o portão.
+5. **descendo**: a dupla desce na vaga vazia ao lado (a reservada, do lado da
+   câmera: do lado do motorista o carro tapava os dois), e dali é a passagem
+   de pedestres pintada e a rua até o portão.
 
 Recarregar a página no pátio não repete a chegada: o carro já está na vaga. Com
 o carro na escola, o ponto de ônibus vira um lembrete: "A gente veio de Bebito.
@@ -82,10 +83,13 @@ Ele está na nossa vaga, no estacionamento do outro lado da rua."
 ## O peso
 
 Com a câmera de perseguição na zona escolar, o pior ponto é a torcida: ~820
-desenhos e ~520 mil triângulos. No Villa Lobos o pior ponto fica em ~500
-desenhos. O que pesa são os quatro personagens da torcida, cerca de 300 malhas,
-porque as juntas deles mexem cada uma por conta própria; nas cenas da escola é
-igual.
+desenhos e ~520 mil triângulos (no computador; **não foi medido no celular**).
+Na viagem da casa ao Villa Lobos, o `scripts/viagem.mjs` mede o pior ponto em
+565 desenhos e ~385 mil triângulos. O que pesa são os quatro personagens da
+torcida, cerca de 300 malhas, porque as juntas deles mexem cada uma por conta
+própria; nas cenas da escola é igual. Se pesar no celular, o próximo passo é
+fundir cada parte que mexe junto (a `fundir()` dentro de cada junta do Flynn
+e das coelhinhas), conferindo foto a foto que nada muda.
 
 O que deu para cortar sem mudar a imagem foi feito. A turma só é desenhada
 entre 165 m à frente (onde a névoa já apagou tudo) e 40 m atrás da câmera, e

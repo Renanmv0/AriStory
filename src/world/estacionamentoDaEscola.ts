@@ -36,8 +36,11 @@ export const PLANTA_DO_ESTACIONAMENTO = {
   entrada: { x0: 14.3, x1: 19.5 },
   /** a VAGA DO CORAÇÃO do Bebito Mobile: a primeira da direita na fila 1, de nariz para a rua */
   vagaDoCoracao: { x: 2.6, z: 37.3, giro: Math.PI },
-  /** onde a dupla desce do carro: na passagem de pedestres pintada, do lado do motorista */
-  descida: { x: 0.25, z: 37.6, facing: Math.PI },
+  /**
+   * onde a dupla desce do carro: na vaga vazia do lado da CÂMERA (a 5,2, reservada). Do lado do
+   * motorista, na passagem de pedestres, o carro tapava os dois (só aparecia o topo do cabelo)
+   */
+  descida: { x: 4.55, z: 38.1, facing: Math.PI },
 } as const;
 
 // ================================================================ o poste

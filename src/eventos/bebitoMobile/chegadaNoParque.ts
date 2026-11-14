@@ -43,6 +43,8 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
   apresentacao?: number;
   duracoes?: readonly number[];
   tomada?: (posicao: THREE.Vector3, fase: string, trecho: number, emPe: boolean) => { de: THREE.Vector3; para: THREE.Vector3 };
+  /** onde o parceiro desce e espera, a partir da descida (o de sempre: 1,3 m para o +X, e espera 2 m para o −X) */
+  parceiro?: { solto: readonly [number, number]; espera: readonly [number, number] };
 }): void {
   const g = w.game;
   const { carro, entrada } = p;
@@ -73,9 +75,10 @@ export function animarChegadaNoParque(w: WorldBuilder, p: {
     desceram = true;
     g.poseNoCarro('jogador', null); g.poseNoCarro('parceiro', null);
     g.releasePlayer(p.descida.x, p.descida.z, p.descida.facing);
-    g.releaseCompanion(p.descida.x + 1.3, p.descida.z, p.descida.facing);
+    const parceiro = p.parceiro ?? { solto: [1.3, 0], espera: [-2, 0] };
+    g.releaseCompanion(p.descida.x + parceiro.solto[0], p.descida.z + parceiro.solto[1], p.descida.facing);
     g.lockPlayer(true);
-    g.holdCompanion(p.descida.x - 2, p.descida.z);
+    g.holdCompanion(p.descida.x + parceiro.espera[0], p.descida.z + parceiro.espera[1]);
     g.mostrarCabeca('jogador', true); g.mostrarCabeca('parceiro', true);
     carro.abrirPorta(false); carro.frear(false); carro.pisca(null);
     p.aoEstacionar();

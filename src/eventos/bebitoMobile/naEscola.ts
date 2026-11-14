@@ -23,8 +23,9 @@ import { localDoBebito } from '../BebitoMobile';
  *   direita → o corredor → a curva à direita para dentro da vaga, de nariz
  *   para a rua.
  *
- * A dupla desce na passagem de pedestres pintada (do lado do motorista), e
- * dali é atravessar a rua até o portão da escola.
+ * A dupla desce na vaga vazia do lado da câmera (a do lado do motorista
+ * ficava atrás do carro), e dali é a passagem de pedestres pintada e a rua
+ * até o portão da escola.
  */
 
 let motoristaDaChegada: string | null = null;
@@ -108,7 +109,8 @@ export function montarBebitoNaEscola(w: WorldBuilder, entrada: ComandoDaCancela,
   const motorista = consumirChegadaNaEscola();
   if (motorista) {
     viajar.enabled = false;
-    animarChegadaNaEscola(w, { carro, motorista, entrada, descida: DESCIDA, aoEstacionar: () => { viajar.enabled = true; } });
+    // (o parceiro desce do lado, ainda na vaga vazia: nem dentro do carro, nem na vaga dos outros)
+    animarChegadaNaEscola(w, { carro, motorista, entrada, descida: DESCIDA, parceiro: { solto: [1.2, -0.4], espera: [1.1, -0.6] }, aoEstacionar: () => { viajar.enabled = true; } });
   }
   onibus.enabled = false;
   w.interact({

@@ -773,7 +773,9 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       if (e.tipo === 'lombada' && d > 0 && d < (novaRota ? 22 : 16) && estado.v > (novaRota ? 4.6 : 5)) y = -0.8;
       if (e.bolhasDoCookie && d > 0 && d < 25 && estado.v > 4.6) y = -0.8;
       // (os de PASSAR DEVAGAR: a rega da Josefina, o ensaio da Valentina e o radar da zona escolar)
-      if (EVENTOS_DE_DEVAGAR.includes(e.tipo) && d > 0 && d < 23 && estado.v > 4.6) y = -0.8;
+      // (o ensaio só pede devagar se a Valentina estiver lá: antes de apresentada, ela não aparece)
+      const temQuem = e.tipo !== 'ensaio-da-valentina' || !!vivo.ensaio;
+      if (EVENTOS_DE_DEVAGAR.includes(e.tipo) && temQuem && d > 0 && d < 23 && estado.v > 4.6) y = -0.8;
       if (vivo.onda && d < 72 && d > -30) {
         if (vivo.onda.tempo < 8.3) y = 1;
         const falta = (vivo.limiteOnda ?? Infinity) - 2.9 - estado.s;
