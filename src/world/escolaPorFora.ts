@@ -238,7 +238,9 @@ export function predioDaEscola(): THREE.Group {
   const luzDaLanterna = toon(P.luzDoPoste, { glow: 0.85 });
 
   // ------------------------------------------------------------- os lotes
-  const caixa = new THREE.BoxGeometry(1, 1, 1);
+  // (sem índice: a caixa do lote é a mesma para as três, e o `zfighting.mjs` leria as três como caixas
+  // coplanares na origem — o que ele mede é a caixa da GEOMETRIA, e não as cópias)
+  const caixa = new THREE.BoxGeometry(1, 1, 1).toNonIndexed();
   /** a madeira branca dos caixilhos: cada barra é uma cópia */
   const caixilhos = new Lote(caixa, caixilhoMat);
   /** peitoril, lintel e chave do arco: a pedra das janelas */
@@ -574,7 +576,7 @@ function portalDaEntrada(g: THREE.Group, c: CoisasDoPortal): void {
   for (const s of [-1, 1]) c.pedraEm(q, s * (AR + 0.16), PERNAS - 0.08, 0.06, 0.56, 0.22, 0.18);
   // a placa do friso, a cornija e o plinto do portal
   const letreiro = letreiroDoArco('ESCOLA DO GATITO', 3.9, 0.62);
-  letreiro.position.set(0, 4.62, 0.035);
+  letreiro.position.set(0, 4.62, 0.05);
   q.add(letreiro);
   c.pedraEm(q, 0, 4.62, 0.01, 4.1, 0.78, 0.06);
   const cornija: Perfil = [
@@ -582,15 +584,17 @@ function portalDaEntrada(g: THREE.Group, c: CoisasDoPortal): void {
     ...cavetinho([0.16, TOPO - 0.3], [0.34, TOPO - 0.06]),
     [0.34, TOPO + 0.1], [0, TOPO + 0.1],
   ];
-  const corn = new THREE.Mesh(contorno(cornija, MEIA, FUNDO / 2 + 0.15), c.pedra);
-  corn.position.set(0, 0, -FUNDO / 2 + 0.15);
+  // (o bloco vai da frente, `z = 0`, até 30 cm dentro da rotunda)
+  const MEIO_DO_BLOCO = -(FUNDO + 0.3) / 2;
+  const corn = new THREE.Mesh(contorno(cornija, MEIA, (FUNDO + 0.3) / 2), c.pedra);
+  corn.position.set(0, 0, MEIO_DO_BLOCO);
   q.add(corn);
   // o alto do portal: a tampa de pedra e uma platibandinha
-  c.peca(q, new THREE.BoxGeometry(MEIA * 2 + 0.5, 0.12, FUNDO + 0.3 + 0.5), c.pedraEscura, 0, TOPO + 0.16, -FUNDO / 2 + 0.1);
-  const plinto = new THREE.Mesh(contorno([[0, 0], [0.12, 0], [0.12, PLINTO - 0.05], [0.05, PLINTO], [0, PLINTO]], MEIA, FUNDO / 2 + 0.15, [
+  c.peca(q, new THREE.BoxGeometry(MEIA * 2 + 0.56, 0.12, FUNDO + 0.6), c.pedraEscura, 0, TOPO + 0.15, MEIO_DO_BLOCO + 0.15);
+  const plinto = new THREE.Mesh(contorno([[0, 0], [0.12, 0], [0.12, PLINTO - 0.05], [0.05, PLINTO], [0, PLINTO]], MEIA, (FUNDO + 0.3) / 2, [
     { lado: 'frente', de: -AR - 0.02, ate: AR + 0.02 },
   ]), c.pedra);
-  plinto.position.set(0, 0, -FUNDO / 2 + 0.15);
+  plinto.position.set(0, 0, MEIO_DO_BLOCO);
   q.add(plinto);
 
   // ------------------------------------------------- a porta, no fundo do arco
@@ -749,8 +753,9 @@ function cupula(g: THREE.Group, c: CoisasDaCupula): void {
   const PE = L0 + 0.9;
   const ALTO_COLUNA = 2.35;
   const TOPO_COL = PE + ALTO_COLUNA;
-  // o miolo escuro lá dentro (o que se vê entre as colunas) e o sino
-  g.add(new THREE.Mesh(tornoOitavado([[1.15, PE - 0.02], [1.15, TOPO_COL + 0.02], [0.01, TOPO_COL + 0.02]]), c.escuro));
+  // a lanterna é ABERTA, como a da foto: entre as colunas se vê o céu e o sino.
+  // Por baixo da cupulazinha, o forro (a mesma casca, do avesso, mais escura)
+  g.add(new THREE.Mesh(tornoOitavado([[0.01, TOPO_COL + 0.04], [2.25, TOPO_COL + 0.04]]), c.pedra));
   for (let k = 0; k < 8; k++) {
     const a = OITAVO + (k * Math.PI) / 4;
     const r = 2.05;
@@ -783,7 +788,10 @@ function cupula(g: THREE.Group, c: CoisasDaCupula): void {
   ], 16), c.dourado);
   sino.position.y = PE + 0.75;
   g.add(sino);
-  const trave = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.12, 0.14), c.escuro);
+  const trave = new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.14, 0.16), c.branco);
   trave.position.y = PE + 1.82;
   g.add(trave);
+  const argola = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.025, 6, 12), c.dourado);
+  argola.position.y = PE + 1.72;
+  g.add(argola);
 }

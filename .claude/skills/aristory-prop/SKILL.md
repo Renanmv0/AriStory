@@ -1646,6 +1646,38 @@ enfeite), em `world/decoracoesDoQuintal.ts`:
   seixo ou tijolo pelo contorno (a serrilha do canteiro de terra é o tijolo
   de quina deitado em 0,6 rad).
 
+## A escola por fora (`world/escolaPorFora.ts`, `world/patioDaEscola.ts`)
+
+O prédio de tijolinho da foto do Renan ("escola chique dos Estados Unidos,
+de filme") e as peças do pátio (`docs/ESCOLA-PATIO.md`). O molde de PRÉDIO
+GRANDE de vários corpos:
+
+- **Rotunda octogonal**: oito quadros (o meio de cada face em `APOTEMA`,
+  girado `k·π/4`), e as molduras com o `contornoPoligonal()`
+  (`world/molduras.ts`, o `contorno()` para qualquer polígono, com a quina em
+  meia-esquadria). A cúpula e a lanterninha são `LatheGeometry` de 8 gomos com
+  `phiStart = π/8`, para a quina do torno cair na quina da rotunda, e sem
+  índice, para sair facetada. As costuras do metal são um lote de caixas em
+  pé na chapa (base destra: `x = dir × normal`, senão o quatérnio sai torto).
+- **Ala que encosta na rotunda vai até o MEIO**: começando na face da
+  rotunda, sobrava um buraco atrás dela, visto de cima.
+- **A janela é uma função** que devolve o furo e põe no lote as barras do
+  caixilho (1 cm dentro do tijolo), o peitoril (1 cm abaixo do chão do vão) e
+  o lintel com a chave (1 cm acima do teto): rentes, eles brigam com o vão. O
+  vidro de todas é uma malha opaca, com o reflexo pintado nos vértices.
+- **Lote de caixa de 1 m sem índice**: com três lotes usando a mesma
+  `BoxGeometry` na origem, o `zfighting.mjs` acusa 18 pares que não existem
+  (ele mede a geometria, e não as cópias).
+- **Colisor de octógono é uma caixa por face**: o círculo deixava as quinas
+  do plinto de fora, e o `scripts/patio.mjs` mede vértice por vértice.
+- **A placa por trás do emoldurado**: o letreiro do portal nasceu 5 mm
+  dentro da pedra que o emoldura e sumiu. Plano de texto vai na frente da
+  face da caixa dele.
+- **A bandeira** (`MastroComBandeira`): um plano 16 × 8 refeito a cada quadro,
+  com a onda crescendo do mastro para a ponta e a normal recalculada.
+- **O banco do pátio** é o de praça com o ferro bordô: `w.banco(…, cor,
+  'praca', corFerro)`.
+
 ## Depois de criar
 
 Use a peça em pelo menos uma cena e rode o smoke test para ver como ela fica de

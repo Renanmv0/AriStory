@@ -240,6 +240,12 @@ const PECAS = [
   ['potinho-de-tempero', 'escola'],
   ['mesa-de-refeitorio', 'escola'],
   ['balcao-de-refeitorio', 'escola'],
+  // o pátio da frente da escola
+  ['predio-da-escola', 'escola-patio'],
+  ['placa-da-escola', 'escola-patio'],
+  ['mastro', 'escola-patio'],
+  ['plaquinha-no-poste', 'escola-patio'],
+  ['bicicletario', 'escola-patio'],
   ['maquina-de-lanches', 'escola'],
   ['cartaz', 'escola'],
   ['placa-de-porta', 'escola'],
