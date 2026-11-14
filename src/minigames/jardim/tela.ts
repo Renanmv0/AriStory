@@ -263,9 +263,15 @@ export type EstadoDoPosicionador =
     readonly valido: boolean;
     /** por que não dá, quando não dá ("em cima do canteiro", "no vão do portão") */
     readonly motivo?: string;
+    /** na parede: a altura escolhida, em metros (a barra ganha ▲ e ▼) */
+    readonly altura?: number;
+    /** de ponta a ponta: o que está escolhendo ("a primeira ponta", "a segunda ponta") */
+    readonly ponta?: string;
+    /** `false`: o enfeite não gira (o da parede olha sempre para fora dela) */
+    readonly giravel?: boolean;
   }
   | { readonly tipo: 'editar'; readonly postos: number };
-export type BotaoDoPosicionador = 'girar' | 'colocar' | 'cancelar' | 'pronto';
+export type BotaoDoPosicionador = 'girar' | 'colocar' | 'cancelar' | 'pronto' | 'subir' | 'descer';
 
 /**
  * O PAINEL DA RODADA no alto da tela, e o BOTÃO DA AJUDA DO PAR: a onda, a

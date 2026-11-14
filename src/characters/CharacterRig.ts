@@ -30,6 +30,9 @@ const ABRE_MAO = 0.75;
  * tronco. 0,17 é só o bastante para a mão sair da cápsula do corpo: a de
  * patins (0,34) e a do provador (0,36) abrem bem mais.
  */
+/** no carro: quem dirige (as mãos no volante) ou quem vai de passageiro (as mãos no colo) */
+export type PoseNoCarro = 'dirigindo' | 'passageiro';
+
 /** sentado no banco (as pernas para a frente) ou na beirada (penduradas) */
 export type JeitoDeSentar = 'banco' | 'beirada';
 /** a duração do arremesso de lado, e o instante (fração) em que a pedra sai da mão */
@@ -188,6 +191,15 @@ export class CharacterRig {
    * com o pé dentro d'água, balançando mais — é o chutinho na água.
    */
   private jeitoDeSentar: JeitoDeSentar = 'banco';
+  /**
+   * NO CARRO (o Bebito Mobile): sentado no banco, mas cada um do seu jeito —
+   * quem DIRIGE leva as duas mãos ao volante (e elas acompanham o giro dele),
+   * e o PASSAGEIRO descansa as mãos no colo. Diferente do `sitting`, é por
+   * pessoa: um dirige enquanto o outro espera de pé no jardim.
+   */
+  private noCarro: PoseNoCarro | null = null;
+  private volante = 0;
+  private carinhoNoCarro = 0;
   /** o arremesso de lado (a pedrinha no lago): o relógio, em segundos; 0 = parado */
   private arremesso = 0;
   private deitado = false;
@@ -1718,6 +1730,39 @@ export class CharacterRig {
 
   // --- fim guarda-roupa -----------------------------------------------------
 
+  /**
+   * A pose de carro desta pessoa (`null` desfaz). `volante` é o giro do
+   * volante agora, em radianos (o do `BebitoMobile.estercar`): as mãos de
+   * quem dirige sobem e descem com ele.
+   */
+  /** esconde (ou mostra) a cabeça inteira: o cabelo, o rosto, o chapéu. A primeira pessoa não pode nascer dentro da própria cabeça */
+  mostrarCabeca(sim: boolean): void {
+    this.head.visible = sim;
+  }
+
+  setNoCarro(pose: PoseNoCarro | null, volante = 0): void {
+    const saiu = this.noCarro !== null && pose === null;
+    this.noCarro = pose;
+    this.volante = volante;
+    if (pose !== 'passageiro') this.encostarNoCarro(0);
+    if (saiu) {
+      this.poeAltura(0);
+      this.legL.rotation.x = 0;
+      this.legR.rotation.x = 0;
+      this.armL.rotation.set(0, 0, -BRACO_SOLTO);
+      this.armR.rotation.set(0, 0, BRACO_SOLTO);
+      this.body.rotation.x = 0;
+    }
+  }
+
+  encostarNoCarro(quanto: number): void {
+    this.carinhoNoCarro = THREE.MathUtils.clamp(quanto, 0, 1);
+    if (this.carinhoNoCarro === 0) {
+      this.body.rotation.z = 0;
+      this.head.rotation.z = 0;
+    }
+  }
+
   /** Sentado: pernas para a frente e corpo mais baixo. */
   setSitting(v: boolean, jeito: JeitoDeSentar = 'banco'): void {
     this.sitting = v;
@@ -2125,6 +2170,39 @@ export class CharacterRig {
       // os olhos fecham no beijo (achatados viram um risquinho)
       const fecha = this.deLado > 0.001 ? this.beijo : 0;
       for (const olho of this.olhos) olho.scale.y = 1.25 * (1 - 0.86 * fecha);
+      return;
+    }
+
+    if (this.noCarro) {
+      this.phase += dt * 0.9;
+      // as pernas para a frente, quietas (no carro não se balança o pé): o joelho de quem dirige um tico mais aberto
+      this.legL.rotation.x = -Math.PI / 2 + 0.05;
+      this.legR.rotation.x = -Math.PI / 2 + (this.noCarro === 'dirigindo' ? 0.12 : 0.03);
+      if (this.noCarro === 'dirigindo') {
+        /*
+         * AS MÃOS NO VOLANTE: os dois braços para a frente, quase na
+         * horizontal, e fechando um pouco para DENTRO (as mãos pegam o aro
+         * às dez e dez). A pegadinha de sempre: o braço esquerdo nasce em
+         * `-X`, e nele `rotation.z` POSITIVO é que vai para dentro; no
+         * direito, negativo. Com o volante girando, uma mão sobe e a outra
+         * desce.
+         */
+        const gira = THREE.MathUtils.clamp(this.volante, -1.4, 1.4) * 0.22;
+        this.armL.rotation.set(-1.32 + gira, 0, 0.1);
+        this.armR.rotation.set(-1.32 - gira, 0, -0.1);
+        this.body.rotation.x = 0.03;
+      } else {
+        // o passageiro: as mãos no colo, os braços soltos e um tico para a frente
+        this.armL.rotation.set(-0.5, 0, 0.12);
+        this.armR.rotation.set(-0.5, 0, -0.12);
+        this.body.rotation.x = -0.04;
+      }
+      this.poeAltura(Math.sin(this.phase) * 0.008);
+      this.head.rotation.x = Math.sin(this.phase * 0.7) * 0.03;
+      // O passageiro fica em −X: inclinar em Z negativo aproxima do motorista.
+      const carinho = this.noCarro === 'passageiro' ? this.carinhoNoCarro : 0;
+      this.body.rotation.z = -0.29 * carinho;
+      this.head.rotation.z = -0.13 * carinho;
       return;
     }
 

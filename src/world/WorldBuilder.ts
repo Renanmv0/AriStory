@@ -410,10 +410,11 @@ export class WorldBuilder {
    *
    * @param rot para onde o banco olha. 0 = encosto no -Z, assento para +Z.
    */
-  banco(x: number, z: number, rot = 0, cor?: number, modelo: 'praca' | 'reto' = 'praca'): THREE.Group {
+  banco(x: number, z: number, rot = 0, cor?: number, modelo: 'praca' | 'reto' = 'praca', corFerro?: number): THREE.Group {
     // o de praça (ferro fundido e ripa) é o de parque e clube; o reto, o de
-    // vestiário da escola. Os dois têm o assento em 0,53 e 1,9 de comprido
-    const peca = this.add(fundir(this.place(modelo === 'praca' ? bancoDePraca(cor) : bench(cor), x, 0, z, rot)));
+    // vestiário da escola. Os dois têm o assento em 0,53 e 1,9 de comprido.
+    // `corFerro` pinta o ferro do de praça (o bordô do pátio da escola)
+    const peca = this.add(fundir(this.place(modelo === 'praca' ? bancoDePraca(cor, corFerro) : bench(cor), x, 0, z, rot)));
     this.blockBox(x, z, 0.95, 0.35, rot);
 
     /**

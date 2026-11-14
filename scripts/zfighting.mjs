@@ -58,7 +58,37 @@ const PECAS = [
   ['casca-do-salao', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
   // o palquinho do concurso (a 6d)
   ['palquinho', 'casinha-da-abobora-salao', [...FESTA, 'halloween:salao:surpresa']],
+  // o Bebito Mobile (`world/bebitoMobile/`): ele ainda não mora em cena nenhuma,
+  // e o atalho `?carro=x,z` o estaciona na rua do parque. As caixas dele são de
+  // quina redonda (`quina`), que este caçador não mede: quem confere as faces
+  // coplanares do carro é o `SO=coplanar` do `scripts/bebitoMobile.mjs`
+  ['bebito-mobile', 'villa-lobos&carro=38.4,-9'],
+  // a frente da casa do Ari (`world/frenteDaCasa.ts`), que só existe com a chave
+  // do carro: a casa por fora, a vizinha (o mesmo molde, mais leve), o
+  // pergolado da garagem, o muro e os pilares, os dois portões, o trilho e o painel.
+  // Rode com SEM_FUNDIR=1: o jardim e a vizinhança são juntados como FUNDO
+  // (`fundirComoFundo`), que apaga o nome das peças de dentro
+  ['casa-do-ari-por-fora', 'frente-da-casa&bebito'],
+  ['casa-vizinha', 'frente-da-casa&bebito'],
+  ['garagem-do-bebito', 'frente-da-casa&bebito'],
+  ['muro-do-jardim', 'frente-da-casa&bebito'],
+  ['pilar-do-muro', 'frente-da-casa&bebito'],
+  ['portao-do-jardim', 'frente-da-casa&bebito'],
+  ['portao-da-garagem', 'frente-da-casa&bebito'],
+  // o quintal decorado (`docs/QUINTAL.md`): o painel das ferramentas na garagem
+  ['painel-de-ferramentas', 'frente-da-casa&bebito'],
+  ['trilho-do-portao', 'frente-da-casa&bebito'],
+  ['painel-do-portao', 'frente-da-casa&bebito'],
+  ['buxinho-no-vaso', 'frente-da-casa&bebito'],
   ['quiosque', 'clube'],
+  ['cobertura-do-estacionamento-do-clube', 'clube'],
+  ['jardineira-do-estacionamento-do-clube', 'clube'],
+  ['poste-do-estacionamento-do-clube', 'clube'],
+  ['totem-do-estacionamento-do-clube', 'clube'],
+  ['carro-do-noel', 'viagem-de-carro&bebito&viagem=parque-clube,ari,1'],
+  ['moto-do-capy', 'viagem-de-carro&bebito&viagem=casa-clube,ari,1'],
+  ['bolhas-do-cookie', 'viagem-de-carro&bebito&viagem=ida,ari,2'],
+  ['carro-da-josefina', 'viagem-de-carro&bebito&viagem=casa-clube,ari,6'],
   ['sorveteria', 'villa-lobos'],
   ['bilheteria', 'villa-lobos'],
   ['loja-de-roupas', 'villa-lobos'],
@@ -210,6 +240,17 @@ const PECAS = [
   ['potinho-de-tempero', 'escola'],
   ['mesa-de-refeitorio', 'escola'],
   ['balcao-de-refeitorio', 'escola'],
+  // o pátio da frente da escola
+  ['predio-da-escola', 'escola-patio'],
+  ['placa-da-escola', 'escola-patio'],
+  ['mastro', 'escola-patio'],
+  ['plaquinha-no-poste', 'escola-patio'],
+  ['bicicletario', 'escola-patio'],
+  ['portao-da-escola', 'escola-patio'],
+  ['grade-da-escola', 'escola-patio'],
+  ['guarita-da-escola', 'escola-patio'],
+  ['poste-do-estacionamento', 'escola-patio'],
+  ['ilha-do-estacionamento', 'escola-patio'],
   ['maquina-de-lanches', 'escola'],
   ['cartaz', 'escola'],
   ['placa-de-porta', 'escola'],

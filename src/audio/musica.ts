@@ -104,6 +104,21 @@ export const CLIMAS: Record<string, Clima> = {
     escala: PENTA,
   },
   /**
+   * A VIAGEM DE CARRO (o Bebito Mobile): música de estrada, de janela aberta —
+   * a família do parque (maior, marimba, sétimas), mais andada (112), com o
+   * bumbo macio e o chocalho marcando a roda girando. Sem tensão nenhuma: o
+   * que avisa do perigo é a pista, não a música.
+   */
+  'viagem-de-carro': {
+    bpm: 112,
+    tonica: 41, // fá
+    giro: [maj7(0), maj6(5), m7(2), dom7(7)],
+    melodia: 0.86,
+    chocalho: true,
+    escala: PENTA,
+    bumbo: true,
+  },
+  /**
    * A DEFESA DA ESTUFA — pedido do Renan: "ainda fofa, mas com tensão". Ela
    * não é de cena nenhuma: a rodada do jardim liga ao começar e desliga no
    * fim (`g.trocarMusica`). É a MESMA família dos outros climas (marimba,

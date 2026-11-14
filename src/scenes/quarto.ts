@@ -2,6 +2,9 @@ import { montarHalloweenNoQuarto } from '../eventos/halloween/noQuarto';
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { GameAPI, SceneDef } from '../core/types';
+import { presenteDisponivel, sonoDaSurpresa } from '../eventos/bebitoMobile/presente';
+import { bebitoMobileNestaPagina } from '../eventos/BebitoMobile';
+import { conteudoDoComputador, pedirNoPapita } from '../eventos/quintal';
 import {
   armario, bed, chair, claridadeDaJanela, desk, espelho, estanteDeLivros, haloDeLampada,
   muralDeMemorias, nightstand, pictureFrame, plantaDeEspada, pocaDeLuz, tapete, wallShelf,
@@ -214,7 +217,7 @@ export const quarto: SceneDef = {
     // A TELA DE VERDADE do computador, 1,5 cm à frente do plano azul do kit:
     // a área de trabalho com a pasta `AriStory_teste`, que é a porta do
     // laboratório. Filha da escrivaninha, então gira com ela.
-    const tela = telaDoComputador();
+    const tela = telaDoComputador(undefined, undefined, bebitoMobileNestaPagina());
     tela.grupo.position.set(0, 1.08, -0.125);
     escrivaninha.add(tela.grupo);
     ajustarSombras(escrivaninha);
@@ -473,6 +476,12 @@ export const quarto: SceneDef = {
       label: 'Deitar na cama', icon: '🛏️',
       highlight: cama,
       onInteract: async (g) => {
+        // a quest do presente (o Bebito Mobile): depois da lição 10 do Gatito, deitar aqui vira dormir
+        if (presenteDisponivel(g)) {
+          const dormir = await g.ask('Deitar um pouco?', ['Deitar', 'Agora não']);
+          if (dormir === 0) await sonoDaSurpresa(g, { deitar: deitarOsDois, levantar: levantarOsDois });
+          return;
+        }
         const quer = await g.ask('Deitar um pouco?', ['Deitar', 'Agora não']);
         if (quer !== 0) {
           await conversa([
@@ -538,8 +547,19 @@ export const quarto: SceneDef = {
           ]);
           g.setFlag('lab:pasta-vista');
         }
-        const abrir = await g.ask('Abrir a pasta AriStory_teste?', ['Abrir', 'Agora não']);
-        if (abrir !== 0) return;
+        /*
+         * A ÁREA DE TRABALHO (`docs/QUINTAL.md`): com a chave do Bebito Mobile,
+         * o computador abre a tela inteira, com a pasta do laboratório e o
+         * Papita Delivery (as compras do quintal). Sem a chave, o de sempre: a
+         * pergunta da pasta.
+         */
+        if (bebitoMobileNestaPagina()) {
+          const saida = await g.abrirComputador(conteudoDoComputador(g), (id) => pedirNoPapita(g, id));
+          if (saida?.tipo !== 'laboratorio') return;
+        } else {
+          const abrir = await g.ask('Abrir a pasta AriStory_teste?', ['Abrir', 'Agora não']);
+          if (abrir !== 0) return;
+        }
 
         // os dois em frente à tela, um de cada lado dela, olhando para ela; a
         // câmera atrás e acima, no meio dos dois — é o vão entre as duas

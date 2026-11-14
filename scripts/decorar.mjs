@@ -260,8 +260,7 @@ await page.waitForTimeout(500);
 const giro = (await salvas()).find((d) => d.id === 'anao-de-jardim')?.posta?.giro ?? 0;
 ok(Math.abs(giro - Math.PI / 4) < 0.01, `girar vira 45° e grava (${giro.toFixed(2)})`);
 ok(await deco(() => window.jogo.current.world.root.userData.decorador.editando), 'e continua no modo, para mexer no próximo');
-// mudar de lugar DENTRO do modo: pega, põe, e volta a editar
-await page.keyboard.press('KeyE');
+// O menu permanece na peça após girar; mudar de lugar usa a mesma seleção.
 await page.waitForSelector('.escolhas.show button', { timeout: 5000 });
 await page.locator('.escolhas.show button').nth(0).click(); // mudar de lugar
 await page.waitForTimeout(400);

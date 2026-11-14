@@ -198,6 +198,83 @@ Os PRÊMIOS da estufa (a plaquinha das 5 ondas, o regador de ouro das 30) não
 são enfeites de loja: são peças do kit (`props.ts`) que a cena monta por
 flag. Enfeite de loja se compra, se põe e se guarda; prêmio fica no lugar dele.
 
+## O quintal da casa do Ari (o mesmo decorador, outro lugar)
+
+Desde a etapa 1 do `docs/QUINTAL.md`, o decorador mora em DOIS lugares: a
+estufa e o quintal (`frente-da-casa`, escondido atrás da chave do Bebito
+Mobile). O que mudou, e que vale para enfeite novo:
+
+- `new Decorador(w, regras, cofre, cena)` — o 4º argumento é o lugar
+  (`'estufa'` se faltar). Ele só monta e só grava os enfeites dali; o save
+  guarda `posta.cena` (sem ela, é estufa: save antigo).
+- **A ficha diz onde pode ir** (`cenas`): sem o campo, vai aos dois — o que
+  a Josefina vende é enfeite de jardim, e cabe no quintal também. O do
+  quintal diz `cenas: ['quintal']`.
+- **O que se vende para o quintal é do Papita Delivery**, em REAIS, e mora
+  em `world/decoracoesDoQuintal.ts` (`DECORACOES_DO_QUINTAL`, com `reais` e
+  `categoria: 'plantas' | 'moveis'`), não em `DECORACOES`. O contrato da peça
+  é o mesmo daqui. `decoracaoPorId` acha nos dois catálogos. Peça nova do
+  quintal: uma função e uma entrada lá; o app do computador, o baú das
+  ferramentas, o retrato e o save leem tudo de lá.
+- **Planta do quintal** sai do kit (`world/plantasDeJardim.ts`), num lote de
+  um pé só, dentro do `canteirinho()` de casca (decalque de beira torta,
+  `renderOrder` 3 — o `quintal.mjs` não conta o decalque na pegada). A que
+  balança usa o `VENTO_DO_QUINTAL`, que a cena faz andar.
+- **O quintal usa a pegada e os colisores**: em 2026-11-13, Renan pediu
+  o balanço perto do muro e em cima do caminho. Móveis e enfeites podem ocupar
+  os caminhos, e não existe mais a faixa de 2,3 m para peças altas. Permanecem
+  os limites físicos e a frente da porta e do portão. Pisos continuam respeitando o
+  traçado fixo do caminho (trocado pelas ferramentas). O guarda-sol usa o raio
+  do pé: a lona pode cobrir a mesinha de propósito.
+- **O enfeite parado passa pela `fundir()`** quando o decorador o põe no
+  chão (nos dois lugares); o que tem `anima` fica inteiro, porque ela acha as
+  partes pelo `userData`. Peça que se mexe e quer ser leve: marque o pivô com
+  NOME (`fundir` respeita grupo com nome) — mas aí a `anima` precisa ser
+  testada com a peça fundida.
+- **PISO** (`piso: true`, `world/pisosDoQuintal.ts`): o decorador não dá
+  colisor, deixa enfeite por cima e piso cruzando piso, e o posto por último
+  pinta por cima (ele troca o `renderOrder` de tudo que for `>= 4` na peça
+  para `10 + n`). O chão do piso é decalque com `renderOrder` 4; o que tem
+  altura (tábua, seixo, guia) é geometria rente. Piso só esbarra no que é do
+  mundo (parede, casa, muro) e nas regras da cena (o caminho).
+- **Caminho** (`caminho: '<jeito>'` na ficha do Papita) não é enfeite: não se
+  põe pelo decorador. Ele é de vocês ou não é, e o baú troca o caminho da
+  casa (`world/caminhosDoQuintal.ts`, traçado por TRECHOS retos).
+- **A árvore da casa** é uma ficha do quintal fora da loja (`naLoja: false`):
+  a cena a planta no save na primeira visita.
+- **ENCAIXE** (etapa 3, `encaixe` na ficha): `parede` (costas em `z = 0`, o
+  MEIO da peça em `y = 0`, e `alturaPadrao` é onde ela começa na mão — o Ari
+  muda com ▲ ▼), `emCima` (base em `y = 0`, pequena: o tampo do muro tem 22
+  cm), `pendurado` (a origem é o GANCHO, desce para `−Y`) e `pontaAPonta`
+  (`montaEntre(a, b)` no mundo, `monta()` é o retrato — `amostraEntre`). A
+  cena declara as superfícies (`Superficie`: uma linha no chão, a altura, a
+  normal, os buracos) e as `amarras`. A peça de parede não pode ser mais alta
+  que a faixa da parede. Peça que mexe pendurada: o sino de vento
+  (`balancarSino`, pelo tempo).
+- **`fundirComAnima: true`** (a piscininha e o fogo de chão): enfeite que se
+  mexe E passa pela `fundir()`. Sem o campo, o decorador não funde o que tem
+  `anima`. Vale só quando tudo que a `anima` mexe é malha de água, lote
+  (`InstancedMesh`) ou grupo com NOME, e a anima guarda as referências em
+  `userData` da raiz (a água em `userData.agua`, o fogo em `userData.fogo`...).
+  A `anima` recebe `t` do decorador: peça que reage a uma interação (o chute
+  na água, o fogo apagado) lê um sinal em `userData` que o `uso` escreve
+  (`chutando`, `aceso`) — e não depende de o `uso` estar rodando, que ele
+  para enquanto a pergunta está na tela.
+- **MÓVEL DE USAR** (etapa 4, `uso` na ficha: `label`, `icon` e
+  `usar(u)`): o decorador cria o ponto `usar:<uid>` na peça, que descansa nos
+  modos de colocar e de editar. O `usar` (`world/moveisDeUsar.ts`) monta a
+  âncora DENTRO da peça (ou do grupo com nome que balança — `balanco`,
+  `rede`: a `fundir()` respeita grupo com nome), senta ou deita os dois,
+  pergunta "Ficar mais um pouco?" e solta os dois na frente. A cena acha as
+  peças por `decorador.pecas()` (a casinha do Pelusa, o que é `regavel`).
+- `RegrasDoLugar.proibido(x, z, raio, ficha)` recebe a ficha (para a
+  altura), e `ondeGuardar` muda o fim do toast de guardar ("pelas
+  ferramentas da garagem").
+
+Validar o do quintal: `node scripts/quintal.mjs /tmp/qt` (a pegada e a altura
+de cada peça medidas no mundo, as regras, o peso e a mesma imagem com e sem
+`?semFundir`).
+
 ## Validar
 
 ```bash

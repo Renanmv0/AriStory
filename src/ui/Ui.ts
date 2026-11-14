@@ -1,11 +1,12 @@
 import type { SavedMemory } from '../core/SaveState';
-import { SLOTS_ROUPA, type ItemDef, type SlotRoupa, type Vaga, type VozDaFala } from '../core/types';
+import { SLOTS_ROUPA, type DadosDaViagem, type ItemDef, type SlotRoupa, type Vaga, type VozDaFala } from '../core/types';
 import type { SomNome } from '../audio/efeitos';
 import { TelaDeCartas, escapar } from './telaDeCartas';
 import { LivroDeCartas, TelaDoFim } from './livroDeCartas';
 import { Arsenal } from './arsenal';
 import { EscalaDoWalter, type ConteudoDaEscala } from './escalaDoWalter';
 import { LojaDaJosefina } from './lojaDaJosefina';
+import { PainelDoQuintal, type ConteudoDoBau, type ConteudoDoComputador, type SaidaDoBau, type SaidaDoComputador } from './painelDoQuintal';
 import { Apostila, type PedidoDaApostila } from './apostila';
 import { BebitoBook, type PedidoDoBebitoBook, type ResultadoDoBebitoBook } from './bebitoBook';
 import type { ResultadoDaApostila } from '../minigames/aula/tipos';
@@ -114,6 +115,10 @@ export class Ui {
   private readonly menu: HTMLDivElement;
   private readonly placar: HTMLDivElement;
   private readonly cesta: HTMLDivElement;
+  private readonly viagem: HTMLDivElement;
+  private readonly avisoDaViagem: HTMLDivElement;
+  private readonly botaoDaViagemEl: HTMLButtonElement;
+  private aoTocarNoBotaoDaViagem: (() => void) | null = null;
   private readonly horaCertaEl: HTMLDivElement;
   private readonly turno: HTMLDivElement;
   private readonly mochila: HTMLDivElement;
@@ -155,6 +160,7 @@ export class Ui {
   private readonly escala: EscalaDoWalter;
   private readonly telaDoFim: TelaDoFim;
   private readonly lojaDaJosefina: LojaDaJosefina;
+  private readonly painelDoQuintal: PainelDoQuintal;
   /** a apostila da aula do Gatito: o livro de folhear (`apostila.ts`) */
   private readonly apostila: Apostila;
   /** o caderninho dos planos da barraca (`bebitoBook.ts`) */
@@ -238,6 +244,9 @@ export class Ui {
       <div class="carga"><div class="barra"></div><i class="zona"></i><i class="alvo"></i></div>
       <div class="placar"><b class="eu"></b><span class="nums"></span><b class="ele"></b></div>
       <div class="cesta-de-balas"><span class="icone">🎃</span><span class="bala">🍬</span><b class="nums">0</b><span class="meta">/25</span></div>
+      <div class="painel-da-viagem"><span class="cor">❤</span><b class="nums">0</b><div class="trilho"><i class="feito"></i><span class="carrinho">🚙</span></div><span class="destino">🌳</span></div>
+      <div class="aviso-da-viagem"><span class="icone"></span><b class="texto"></b></div>
+      <button class="botao-da-viagem" aria-label="Trocar de visão"><span class="icone"></span></button>
       <div class="turno">
         <div class="linha">
           <span class="relogio">3:00</span>
@@ -410,6 +419,7 @@ export class Ui {
       <div class="livro-de-cartas arsenal"></div>
       <div class="fim-do-jardim"></div>
       <div class="loja-da-josefina"></div>
+      <div class="painel-do-quintal"></div>
       <div class="apostila"></div>
       <div class="bebito-book"></div>
       <div class="posicionador" role="toolbar"></div>
@@ -459,6 +469,15 @@ export class Ui {
     this.menu = ui.querySelector('.menu')!;
     this.placar = ui.querySelector('.placar')!;
     this.cesta = ui.querySelector('.cesta-de-balas')!;
+    this.viagem = ui.querySelector('.painel-da-viagem')!;
+    this.avisoDaViagem = ui.querySelector('.aviso-da-viagem')!;
+    this.botaoDaViagemEl = ui.querySelector('.botao-da-viagem')!;
+    // (o toque no botão não vira joystick nem clique no mundo)
+    for (const ev of ['pointerdown', 'touchstart', 'mousedown']) this.botaoDaViagemEl.addEventListener(ev, (e) => e.stopPropagation());
+    this.botaoDaViagemEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.aoTocarNoBotaoDaViagem?.();
+    });
     this.horaCertaEl = ui.querySelector('.dialogue .hora-certa')!;
     this.turno = ui.querySelector('.turno')!;
     this.mochila = ui.querySelector('.mochila')!;
@@ -495,6 +514,8 @@ export class Ui {
     this.telaDoFim.som = (nome) => this.som?.(nome);
     this.lojaDaJosefina = new LojaDaJosefina(ui.querySelector('.loja-da-josefina')!);
     this.lojaDaJosefina.som = (nome) => this.som?.(nome);
+    this.painelDoQuintal = new PainelDoQuintal(ui.querySelector('.painel-do-quintal')!);
+    this.painelDoQuintal.som = (nome) => this.som?.(nome);
     this.apostila = new Apostila(ui.querySelector('.apostila')!);
     this.apostila.som = (nome) => this.som?.(nome);
     this.bebitoBook = new BebitoBook(ui.querySelector('.bebito-book')!);
@@ -759,7 +780,7 @@ export class Ui {
       this.menuOpen || this.journalOpen || this.mochilaOpen || this.armarioOpen ||
       this.memoriasOpen || this.cardapioOpen || this.xadrezOpen ||
       this.lojaOpen || this.quadroOpen || this.cartasOpen || this.livroOpen || this.fimOpen ||
-      this.lojaJosefinaOpen || this.apostilaOpen || this.bebitoOpen,
+      this.lojaJosefinaOpen || this.apostilaOpen || this.bebitoOpen || this.quintalOpen,
     );
   }
 
@@ -875,6 +896,60 @@ export class Ui {
       void this.cesta.offsetWidth;
       this.cesta.classList.add('pulo');
     }
+  }
+
+  /**
+   * O PAINEL DA VIAGEM DE CARRO: no alto, os corações pegos e o carrinho
+   * andando no trilho até o destino; no meio da tela, o aviso do que a pista
+   * pede agora (some quando o texto vem vazio). O coração dá um pulinho
+   * quando o número sobe. `null` esconde os dois.
+   */
+  painelDaViagem(dados: DadosDaViagem | null): void {
+    if (!dados) {
+      this.viagem.classList.remove('show');
+      this.avisoDaViagem.classList.remove('show');
+      return;
+    }
+    const nums = this.viagem.querySelector('.nums') as HTMLElement;
+    const antes = Number(nums.textContent ?? '0');
+    if (antes !== dados.coracoes) nums.textContent = String(dados.coracoes);
+    const k = Math.max(0, Math.min(1, dados.progresso));
+    (this.viagem.querySelector('.feito') as HTMLElement).style.width = `${(k * 100).toFixed(1)}%`;
+    (this.viagem.querySelector('.carrinho') as HTMLElement).style.left = `${(k * 100).toFixed(1)}%`;
+    const destino = this.viagem.querySelector('.destino') as HTMLElement;
+    if (destino.textContent !== dados.destino) destino.textContent = dados.destino;
+    this.viagem.classList.add('show');
+    if (dados.coracoes > antes) {
+      this.viagem.classList.remove('pulo');
+      void this.viagem.offsetWidth;
+      this.viagem.classList.add('pulo');
+    }
+    const aviso = dados.aviso ?? '';
+    const texto = this.avisoDaViagem.querySelector('.texto') as HTMLElement;
+    if (aviso) {
+      if (texto.textContent !== aviso) texto.textContent = aviso;
+      const icone = this.avisoDaViagem.querySelector('.icone') as HTMLElement;
+      if (icone.textContent !== (dados.icone ?? '')) icone.textContent = dados.icone ?? '';
+      this.avisoDaViagem.dataset.tom = dados.tom ?? 'atencao';
+    }
+    this.avisoDaViagem.classList.toggle('show', aviso !== '');
+  }
+
+  /**
+   * O BOTÃO DA VIAGEM (o 👀 da visão do passageiro, sempre na tela durante a
+   * viagem): `null` esconde. `ativo` o deixa marcado (a visão de dentro está ligada).
+   */
+  mostrarBotaoDaViagem(dados: { icone: string; rotulo: string; ativo: boolean } | null, aoTocar?: () => void): void {
+    this.aoTocarNoBotaoDaViagem = aoTocar ?? null;
+    if (!dados) {
+      this.botaoDaViagemEl.classList.remove('show');
+      return;
+    }
+    (this.botaoDaViagemEl.querySelector('.icone') as HTMLElement).textContent = dados.icone;
+    this.botaoDaViagemEl.setAttribute('aria-label', dados.rotulo);
+    this.botaoDaViagemEl.title = dados.rotulo;
+    this.botaoDaViagemEl.classList.toggle('ativo', dados.ativo);
+    this.botaoDaViagemEl.classList.add('show');
   }
 
   /**
@@ -1181,7 +1256,18 @@ export class Ui {
         const botao = document.createElement('button');
         botao.type = 'button';
         botao.textContent = texto;
-        botao.addEventListener('click', () => this.escolher?.(i));
+        botao.addEventListener('click', (e) => {
+          /*
+           * O clique PARA AQUI. Escolher limpa os botões e resolve a pergunta; se a
+           * cena faz OUTRA pergunta logo em seguida (o "Vamos!" e depois o "Quem
+           * dirige dessa vez?" do Bebito Mobile), o mesmo clique, ainda subindo,
+           * chegava à caixa da fala com o botão já fora da página — o teste do
+           * `.closest('.escolhas')` lá embaixo não reconhecia mais — e respondia a
+           * pergunta nova sozinho, com a primeira opção.
+           */
+          e.stopPropagation();
+          this.escolher?.(i);
+        });
         this.escolhas.appendChild(botao);
       });
       this.escolhas.classList.add('show');
@@ -1318,6 +1404,36 @@ export class Ui {
     this.lojaDaJosefina.fechar();
   }
 
+  // ---------------------- o computador do quarto e o baú da garagem (o quintal)
+
+  get quintalOpen(): boolean {
+    return this.painelDoQuintal.aberto;
+  }
+
+  abrirComputador(
+    conteudo: ConteudoDoComputador, retrato: (id: string) => string, pedir: (id: string) => ConteudoDoComputador,
+  ): Promise<SaidaDoComputador> {
+    const pedido = this.painelDoQuintal.abrirComputador(conteudo, retrato, pedir);
+    this.marcarTelaAberta();
+    return pedido.then((saida) => {
+      this.marcarTelaAberta();
+      return saida;
+    });
+  }
+
+  abrirBauDoQuintal(conteudo: ConteudoDoBau, retrato: (id: string) => string): Promise<SaidaDoBau> {
+    const pedido = this.painelDoQuintal.abrirBau(conteudo, retrato);
+    this.marcarTelaAberta();
+    return pedido.then((saida) => {
+      this.marcarTelaAberta();
+      return saida;
+    });
+  }
+
+  fecharQuintal(): void {
+    this.painelDoQuintal.fechar();
+  }
+
   /**
    * A BARRA DO DECORADOR, embaixo da tela — a de colocar um enfeite e a do
    * modo de edição. Não é painel: a dupla anda com ela aberta (é andando que se
@@ -1339,10 +1455,17 @@ export class Ui {
         <button data-botao="pronto" class="colocar">✓ pronto <kbd>X</kbd></button>`;
     } else {
       const aviso = estado.valido ? '✓ aqui dá' : `✗ ${escapar(estado.motivo ?? 'aqui não dá')}`;
+      // a parede ganha ▲ e ▼ (o Ari escolhe a altura); a ponta a ponta diz qual ponta é
+      const altura = estado.altura === undefined ? '' : `
+        <span class="altura">${estado.altura.toFixed(2).replace('.', ',')} m</span>
+        <button data-botao="subir">▲ <kbd>+</kbd></button>
+        <button data-botao="descer">▼ <kbd>−</kbd></button>`;
+      const ponta = estado.ponta ? ` <small class="ponta">· ${escapar(estado.ponta)}</small>` : '';
       html = `
-        <span class="enfeite"><span class="icone">${estado.icone}</span><b>${escapar(estado.nome)}</b>
+        <span class="enfeite"><span class="icone">${estado.icone}</span><b>${escapar(estado.nome)}</b>${ponta}
           <small class="${estado.valido ? 'pode' : 'nao-pode'}">${aviso}</small></span>
-        <button data-botao="girar">↻ girar <kbd>G</kbd></button>
+        ${altura}
+        ${estado.giravel === false ? '' : '<button data-botao="girar">↻ girar <kbd>G</kbd></button>'}
         <button data-botao="colocar" class="colocar" ${estado.valido ? '' : 'disabled'}>✓ colocar <kbd>E</kbd></button>
         <button data-botao="cancelar">✕ <kbd>X</kbd></button>`;
     }

@@ -24,6 +24,7 @@ import type { Interactable } from '../world/Interactable';
 import {
   SLOTS_ROUPA,
   type Coleta,
+  type DadosDaViagem,
   type DecoracaoNoSave,
   type GameAPI,
   type HoldPose,
@@ -42,6 +43,7 @@ import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
   EstadoDoPosicionador, FimDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
+import type { ConteudoDoBau, ConteudoDoComputador, SaidaDoBau, SaidaDoComputador } from '../ui/painelDoQuintal';
 import { Oclusao, type VigiaDaOclusao } from './Oclusao';
 import { PosProcessamento, type EfeitosDeTela } from './posProcessamento';
 import { Apontador } from './Apontador';
@@ -63,6 +65,7 @@ import { INSCRITOS } from '../world/adversariosData';
 import { CHAVE, MELHORIAS, ROSTO_DO_CLIENTE, TURNOS, comprarMelhoria, turnoAberto } from '../minigames/turnosDoMania';
 import type { ConteudoDaEscala, TurnoNaEscala } from '../ui/escalaDoWalter';
 import type { CharacterSpec } from '../characters/spec';
+import type { FichaDoBebitoMobile } from '../world/bebitoMobile/ficha';
 import type { JeitoDeSentar } from '../characters/CharacterRig';
 
 interface LoadedScene {
@@ -383,6 +386,12 @@ export class Game implements GameAPI {
     this.player.teleport(spawn.x, spawn.z, spawn.facing ?? 0);
     this.player.locked = false;
     this.player.riding = false;
+    // a pose de carro morre com a cena (rede de segurança: nenhum dos dois sai de volante na mão)
+    this.player.rig.setNoCarro(null);
+    this.parceiro.rig.setNoCarro(null);
+    // e a cabeça (a câmera de dentro do carro a esconde): nenhum dos dois entra em outra cena sem rosto
+    this.player.rig.mostrarCabeca(true);
+    this.parceiro.rig.mostrarCabeca(true);
     this.player.setVisible(true);
     // o que a rodada do jardim liga morre com a cena
     this.player.mira = null;
@@ -417,6 +426,8 @@ export class Game implements GameAPI {
     this.ui.showPlacar(null);
     this.ui.showTurno(null);
     this.ui.mostrarCesta(null);
+    this.ui.painelDaViagem(null);
+    this.ui.mostrarBotaoDaViagem(null);
     this.parceiro.clearOrder();
     this.setSitting(false);
     // nenhuma pose de cutscene atravessa uma troca de cena: sair da praca de
@@ -538,6 +549,7 @@ export class Game implements GameAPI {
       this.ui.livroOpen ||
       this.ui.fimOpen ||
       this.ui.lojaJosefinaOpen ||
+      this.ui.quintalOpen ||
       this.ui.apostilaOpen ||
       this.ui.bebitoOpen ||
       this.transitioning;
@@ -578,6 +590,8 @@ export class Game implements GameAPI {
     if (this.ui.fimOpen && this.input.justPressed('Escape')) this.ui.fecharFim();
     // a banca da Josefina trava o movimento como a arara, e sai pela mesma tecla
     if (this.ui.lojaJosefinaOpen && this.input.justPressed('Escape')) this.ui.fecharLojaDaJosefina();
+    // o computador do quarto e o baú da garagem também
+    if (this.ui.quintalOpen && this.input.justPressed('Escape')) this.ui.fecharQuintal();
     // a apostila é leitura e exercício: o Escape fecha, e quem esperava por ela (a aula) segue
     if (this.ui.apostilaOpen && this.input.justPressed('Escape')) this.ui.fecharApostila();
     // o caderninho da barraca também: o Escape fecha a capa, e a cena segue
@@ -730,7 +744,7 @@ export class Game implements GameAPI {
       this.ui.dialogueOpen || this.ui.journalOpen || this.ui.mochilaOpen || this.ui.armarioOpen ||
       this.ui.memoriasOpen || this.ui.cardapioOpen || this.ui.quadroOpen || this.ui.lojaOpen ||
       this.ui.cartasOpen || this.ui.livroOpen || this.ui.fimOpen || this.ui.lojaJosefinaOpen ||
-      this.ui.apostilaOpen || this.ui.xadrezOpen || this.ui.bebitoOpen;
+      this.ui.apostilaOpen || this.ui.xadrezOpen || this.ui.bebitoOpen || this.ui.quintalOpen;
     this.apontador.atualizar(camera, world.clicaveis, ocupado);
 
     if (this.pos?.ativo) this.pos.desenhar(camera, dt);
@@ -944,7 +958,7 @@ export class Game implements GameAPI {
    * longe — em ortográfica a bolinha do outro lado da mesa tem exatamente o
    * mesmo tamanho da que está no seu nariz.
    */
-  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3): void {
+  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3, campoDeVisao = 58): void {
     if (!de) {
       this.camOmbro = null;
       return;
@@ -952,6 +966,7 @@ export class Game implements GameAPI {
     if (!this.camOmbro) {
       this.camOmbro = new THREE.PerspectiveCamera(58, window.innerWidth / window.innerHeight, 0.1, 400);
     }
+    this.camOmbro.fov = campoDeVisao;
     this.camOmbro.aspect = window.innerWidth / window.innerHeight;
     this.camOmbro.position.copy(de);
     if (para) this.camOmbro.lookAt(para);
@@ -987,6 +1002,19 @@ export class Game implements GameAPI {
 
   mostrarCesta(dados: { balas: number; meta: number } | null): void {
     this.ui.mostrarCesta(dados);
+  }
+
+  painelDaViagem(dados: DadosDaViagem | null): void {
+    this.ui.painelDaViagem(dados);
+  }
+
+  botaoDaViagem(dados: { icone: string; rotulo: string; ativo: boolean } | null, aoTocar?: () => void): void {
+    this.ui.mostrarBotaoDaViagem(dados, aoTocar);
+  }
+
+  acaoCrua(): boolean {
+    if (this.telaDeLeitura || this.ui.dialogueOpen) return false;
+    return this.input.justPressed('KeyE') || this.input.justPressed('Space');
   }
 
   horaCerta(texto: string, speaker?: string, opts?: { periodo?: number; zona?: number }): Promise<number> {
@@ -1887,6 +1915,14 @@ export class Game implements GameAPI {
     return this.ui.abrirLojaDaJosefina(conteudo, retratoDaDecoracao, agir);
   }
 
+  abrirComputador(conteudo: ConteudoDoComputador, pedir: (id: string) => ConteudoDoComputador): Promise<SaidaDoComputador> {
+    return this.ui.abrirComputador(conteudo, retratoDaDecoracao, pedir);
+  }
+
+  abrirBauDoQuintal(conteudo: ConteudoDoBau): Promise<SaidaDoBau> {
+    return this.ui.abrirBauDoQuintal(conteudo, retratoDaDecoracao);
+  }
+
   posicionador(estado: EstadoDoPosicionador | null, aoBotao?: (b: BotaoDoPosicionador) => void): void {
     this.ui.mostrarPosicionador(estado, aoBotao ?? null);
   }
@@ -1980,6 +2016,14 @@ export class Game implements GameAPI {
    * é gravado inteiro um tiquinho depois de cada letra (`aoSalvar`), então
    * fechar a aba no meio de uma frase não perde a frase.
    */
+  fichaDoBebitoMobile(): FichaDoBebitoMobile {
+    return this.save.fichaDoBebitoMobile();
+  }
+
+  salvarFichaDoBebitoMobile(ficha: FichaDoBebitoMobile): void {
+    this.save.salvarFichaDoBebitoMobile(ficha);
+  }
+
   vagaLumesSoltos(): ReadonlyArray<{ x: number; z: number; n: number }> {
     return this.save.vagaLumesSoltos.filter((p) => p.cena === this.idDaCena);
   }
@@ -2068,7 +2112,7 @@ export class Game implements GameAPI {
     this.trocaBloqueada = bloqueado;
   }
 
-  soltarCoracoes(quantos = 3): void {
+  soltarCoracoes(quantos = 3, quem: 'jogador' | 'parceiro' = 'jogador'): void {
     /*
      * Em cima da CABEÇA, no mundo — e não do `player.position`. Montado numa
      * âncora (deitado na barraca, sentado no banco), a posição do corpo é
@@ -2076,7 +2120,7 @@ export class Game implements GameAPI {
      * meio do mapa, longe de tudo. E a altura sai da cabeça, para valer de pé
      * (a mesma de antes, ~1,7), deitado ou num andar de cima.
      */
-    const p = this.player.rig.cabecaNoMundo(new THREE.Vector3());
+    const p = this.cabecaDe(quem);
     for (let i = 0; i < quantos; i++) {
       const a = (i / Math.max(1, quantos)) * Math.PI * 2 + Math.random() * 0.6;
       this.coracoes.soltar(p, Math.cos(a) * 0.35, Math.sin(a) * 0.35, p.y + 0.4 + i * 0.12);
@@ -2284,6 +2328,8 @@ export class Game implements GameAPI {
     this.parceiro.position.y = altura;
   }
 
+  temMemoria(id: string): boolean { return this.save.hasMemory(id); }
+
   unlock(memory: Memory): void {
     if (this.save.addMemory(memory)) {
       this.audio.play('memoria');
@@ -2315,8 +2361,8 @@ export class Game implements GameAPI {
     );
   }
 
-  keyPressed(code: string): boolean {
-    if (this.telaDeLeitura || this.player.locked) return false;
+  keyPressed(code: string, mesmoTravado = false): boolean {
+    if (this.telaDeLeitura || (this.player.locked && !mesmoTravado)) return false;
     return this.input.justPressed(code);
   }
 
@@ -2444,6 +2490,26 @@ export class Game implements GameAPI {
     this.parceiro.rig.group.rotation.y = facing;
     this.parceiro.rig.setFacing(facing);
     this.parceiro.riding = true;
+  }
+
+  setCompanionVisible(visible: boolean): void {
+    this.parceiro.setVisible(visible);
+  }
+
+  poseNoCarro(quem: 'jogador' | 'parceiro', pose: 'dirigindo' | 'passageiro' | null, volante = 0): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.setNoCarro(pose, volante);
+  }
+
+  cabecaDe(quem: 'jogador' | 'parceiro'): THREE.Vector3 {
+    return (quem === 'jogador' ? this.player : this.parceiro).rig.cabecaNoMundo(new THREE.Vector3());
+  }
+
+  encostarNoCarro(quem: 'jogador' | 'parceiro', quanto: number): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.encostarNoCarro(quanto);
+  }
+
+  mostrarCabeca(quem: 'jogador' | 'parceiro', sim: boolean): void {
+    (quem === 'jogador' ? this.player : this.parceiro).rig.mostrarCabeca(sim);
   }
 
   commandCompanion(x: number, z: number): void {

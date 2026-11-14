@@ -10,8 +10,10 @@ import type {
   AcaoNaLoja, BotaoDoPosicionador, CartaNaTela, ConteudoDaLoja, ConteudoDoArsenal, ConteudoDoLivro, ContextoDaEscolha,
   EstadoDoPosicionador, FimDoJardim, PainelDoJardim, SaidaDaLoja,
 } from '../minigames/jardim/tela';
+import type { ConteudoDoBau, ConteudoDoComputador, SaidaDoBau, SaidaDoComputador } from '../ui/painelDoQuintal';
 import type { EstiloDeRegador } from '../world/regador';
 import type { MemoriaPintada } from '../world/memoriasData';
+import type { FichaDoBebitoMobile } from '../world/bebitoMobile/ficha';
 import type { ProgressoDaApostila, ResultadoDaApostila } from '../minigames/aula/tipos';
 
 export interface CircleCollider {
@@ -35,6 +37,19 @@ export interface BoxCollider {
 
 export type Collider = CircleCollider | BoxCollider;
 
+/** o que o painel da viagem de carro mostra (`GameAPI.painelDaViagem`) */
+export interface DadosDaViagem {
+  coracoes: number;
+  /** de 0 (a partida) a 1 (a chegada) */
+  progresso: number;
+  /** o emoji do destino, na ponta do trilho */
+  destino: string;
+  /** o aviso do meio da tela (vazio esconde), o emoji dele e o tom */
+  aviso?: string;
+  icone?: string;
+  tom?: 'atencao' | 'pare' | 'bom';
+}
+
 /**
  * UM ENFEITE DA ESTUFA NO SAVE (a lojinha da Josefina vende, a dupla põe onde
  * quiser). Cada compra é uma UNIDADE com número próprio: dois anões são dois
@@ -45,7 +60,31 @@ export interface DecoracaoNoSave {
   readonly uid: number;
   /** o id da ficha em `world/decoracoes.ts` */
   readonly id: string;
-  readonly posta: { readonly x: number; readonly z: number; readonly giro: number } | null;
+  readonly posta: PostaNoSave | null;
+  /**
+   * COMPRADO E AINDA NO CORREIO (o Papita Delivery, `docs/QUINTAL.md`): não
+   * está no baú nem no chão até a dupla abrir a encomenda no portão.
+   */
+  readonly aCaminho?: boolean;
+}
+
+/** os lugares que se decoram: a estufa da Josefina e o quintal da casa do Ari */
+export type CenaDeDecorar = 'estufa' | 'quintal';
+
+export interface PostaNoSave {
+  readonly x: number;
+  readonly z: number;
+  readonly giro: number;
+  /** em que lugar o enfeite está; save antigo não tem, e é a estufa */
+  readonly cena?: CenaDeDecorar;
+  /** como ele está preso (`docs/QUINTAL.md` §3): sem o campo, no chão */
+  readonly encaixe?: 'parede' | 'emCima' | 'pendurado' | 'pontaAPonta';
+  /** a altura: na parede, o meio da peça; em cima, o tampo; pendurado, a viga */
+  readonly y?: number;
+  /** a superfície da cena onde ele está (o id da parede, do muro, da viga) */
+  readonly sup?: string;
+  /** de ponta a ponta: a segunda ponta (a primeira é `x`, `y`, `z`) */
+  readonly ate?: { readonly x: number; readonly y: number; readonly z: number };
 }
 
 export interface Bounds {
@@ -560,15 +599,25 @@ export interface GameAPI {
   /**
    * Camera "por cima do ombro": perspectiva colocada em `de` olhando para
    * `para`. Passar `null` devolve a isometrica de sempre. E o que o ping pong
-   * usa para virar uma falsa primeira pessoa.
+   * usa para virar uma falsa primeira pessoa. O campo de visão é vertical, em
+   * graus (58 por padrão); tomadas de cima podem abrir a lente no celular.
    */
-  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3): void;
+  setCameraOmbro(de: THREE.Vector3 | null, para?: THREE.Vector3, campoDeVisao?: number): void;
   /** posicao do ponteiro (mouse ou dedo) em -1..1, y para cima */
   pointer(): { x: number; y: number };
   /** placar do minigame; null esconde */
   showPlacar(dados: { eu: string; ele: string; meus: number; dele: number } | null): void;
   /** a cesta de balas da caça de Halloween (🎃 🍬 7/25, no alto); null esconde */
   mostrarCesta(dados: { balas: number; meta: number } | null): void;
+  /**
+   * O PAINEL DA VIAGEM DE CARRO (o Bebito Mobile): os corações pegos, o
+   * carrinho andando no trilho da casa ao destino, e — no meio da tela — o
+   * AVISO do que a pista pede agora ("Pare na faixa!", "Freie: lombada").
+   * `null` esconde tudo.
+   */
+  painelDaViagem(dados: DadosDaViagem | null): void;
+  /** o botão da viagem, sempre na tela (o 👀 da visão do passageiro); `null` esconde, `ativo` o deixa marcado */
+  botaoDaViagem(dados: { icone: string; rotulo: string; ativo: boolean } | null, aoTocar?: () => void): void;
   /**
    * A hora certa (as travessuras do Halloween): a fala e uma barra com a
    * agulha indo e voltando; quem joga aperta E (ou toca) para parar.
@@ -622,6 +671,8 @@ export interface GameAPI {
   stat(key: string): number;
   /** desbloqueia uma memoria no diario */
   unlock(memory: Memory): void;
+  /** Consulta uma lembrança já guardada no diário. */
+  temMemoria(id: string): boolean;
 
   // --------------------------------------------------------- mochila
   // Cada personagem tem a SUA mochila. `quem` e o id da ficha ('ari',
@@ -666,6 +717,14 @@ export interface GameAPI {
    * quando fecha, dizendo se a dupla foi provar roupa ou colocar um enfeite.
    */
   abrirLojaDaJosefina(conteudo: ConteudoDaLoja, agir: (a: AcaoNaLoja) => ConteudoDaLoja): Promise<SaidaDaLoja>;
+  /**
+   * A TELA DO COMPUTADOR DO QUARTO (`docs/QUINTAL.md`): a área de trabalho com
+   * a pasta do laboratório e o Papita Delivery. `pedir` compra uma unidade e
+   * devolve o conteúdo novo; resolve quando ela fecha (ou abre o laboratório).
+   */
+  abrirComputador(conteudo: ConteudoDoComputador, pedir: (id: string) => ConteudoDoComputador): Promise<SaidaDoComputador>;
+  /** O baú das ferramentas da garagem: colocar um enfeite guardado ou arrumar o quintal. */
+  abrirBauDoQuintal(conteudo: ConteudoDoBau): Promise<SaidaDoBau>;
   /**
    * A barra do modo de decorar (o enfeite na mão, se cabe, e os botões de
    * girar, colocar e cancelar). `null` esconde. A cena chama todo quadro.
@@ -845,6 +904,14 @@ export interface GameAPI {
    * abriram, se escreveram e quantas perguntas têm resposta (antes e agora).
    */
   abrirBebitoBook(): Promise<ResultadoDoBebitoBook>;
+  /**
+   * A FICHA DO BEBITO MOBILE (do save): a pintura, a placa e o que vai em
+   * cada vaga do carro. A cena monta o carro com ela
+   * (`new BebitoMobile(g.fichaDoBebitoMobile())`). Devolve uma cópia.
+   */
+  fichaDoBebitoMobile(): FichaDoBebitoMobile;
+  /** guarda a ficha do carro (a edição futura): o save confere tudo ao gravar */
+  salvarFichaDoBebitoMobile(ficha: FichaDoBebitoMobile): void;
   /** os vaga-lumes já soltos pela dupla NESTA cena (do save): onde e quantos */
   vagaLumesSoltos(): ReadonlyArray<{ x: number; z: number; n: number }>;
   /** guarda no save mais um ponto de vaga-lumes soltos, nesta cena */
@@ -922,8 +989,8 @@ export interface GameAPI {
    * atrás fica atrás, e só a carta Troca de turno destrava.
    */
   bloquearTroca(bloqueado: boolean): void;
-  /** Solta `quantos` corações subindo da dupla — o mesmo coração do beijo. */
-  soltarCoracoes(quantos?: number): void;
+  /** Solta corações da cabeça indicada; sem `quem`, usa o jogador como antes. */
+  soltarCoracoes(quantos?: number, quem?: 'jogador' | 'parceiro'): void;
   /**
    * Abre a mesa de xadrez em DOM e resolve quando a PARTIDA acaba (por mate,
    * empate ou desistencia). Trava o movimento enquanto estiver aberta.
@@ -986,8 +1053,8 @@ export interface GameAPI {
   cameraLivre(alvo: THREE.Vector3 | null): void;
 
   wait(seconds: number): Promise<void>;
-  /** true so no frame em que a tecla desceu; ignorada durante dialogo/diario */
-  keyPressed(code: string): boolean;
+  /** Só no frame em que a tecla desceu; diálogo/diário bloqueiam. Cutscene pode permitir durante a trava. */
+  keyPressed(code: string, mesmoTravado?: boolean): boolean;
   /** true enquanto a tecla estiver segurada; ignorada durante dialogo/diario */
   keyDown(code: string): boolean;
   /**
@@ -996,6 +1063,12 @@ export interface GameAPI {
    * roda gigante: la a cutscene tira o andar e devolve o olhar.
    */
   olharLivre(): { x: number; y: number };
+  /**
+   * A tecla de AÇÃO crua (E, espaço ou o botão do celular), que chega mesmo
+   * com o jogador travado: é a BUZINA do carro, na viagem. Cala com uma fala
+   * na tela (ali o E avança a fala).
+   */
+  acaoCrua(): boolean;
   /**
    * Barra de forca no HUD; 0..1, ou null para esconder. `alvo` marca um ponto
    * da barra (a forca que acerta o parceiro) e `zona` e a largura da faixa de
@@ -1089,6 +1162,25 @@ export interface GameAPI {
   releaseCompanion(x: number, z: number, facing?: number): void;
   /** troca quem o jogador controla */
   swapCharacters(): void;
+  /**
+   * Esconde (ou mostra) o PARCEIRO. É para a cutscene em que um dos dois sai
+   * de cena por um instante (o Renan vai buscar o Bebito Mobile); a regra de
+   * sempre continua — são dois em cena —, e quem escondeu devolve.
+   */
+  setCompanionVisible(visible: boolean): void;
+  /**
+   * A POSE DE CARRO de um dos dois (`null` desfaz): quem dirige leva as mãos
+   * ao volante, o passageiro descansa as mãos no colo. É por pessoa, ao
+   * contrário do `setSitting`: um dirige enquanto o outro espera de pé.
+   * `volante` é o giro do volante agora, para as mãos acompanharem.
+   */
+  poseNoCarro(quem: 'jogador' | 'parceiro', pose: 'dirigindo' | 'passageiro' | null, volante?: number): void;
+  /** inclina o passageiro para o ombro do motorista; zero devolve a pose normal */
+  encostarNoCarro(quem: 'jogador' | 'parceiro', quanto: number): void;
+  /** o centro da cabeça de um dos dois, no mundo (o olho da câmera de dentro do carro) */
+  cabecaDe(quem: 'jogador' | 'parceiro'): THREE.Vector3;
+  /** esconde (ou mostra) a cabeça de um dos dois: na primeira pessoa a câmera nasce dentro dela */
+  mostrarCabeca(quem: 'jogador' | 'parceiro', sim: boolean): void;
 
   /**
    * Os dois levam a boca, de vez em quando, o que estiverem segurando.

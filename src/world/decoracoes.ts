@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { brilhoDeLuz, luzNoChao, toon } from '../core/materials';
 import { PALETTE as P } from '../palette';
 import { retratoDe } from './retrato';
+import type { CenaDeDecorar, GameAPI } from '../core/types';
+import type { WorldBuilder } from './WorldBuilder';
+import { DECORACOES_DO_QUINTAL } from './decoracoesDoQuintal';
 
 /**
  * OS ENFEITES DA ESTUFA — o que a lojinha da Josefina vende na aba de
@@ -58,6 +61,68 @@ export interface FichaDeDecoracao {
    * partes que giram em `userData`, e é por lá que a função as acha.
    */
   readonly anima?: (peca: THREE.Object3D, t: number) => void;
+  /**
+   * ONDE ELE PODE IR (`docs/QUINTAL.md`). Sem o campo, os dois lugares: o que
+   * a Josefina vende é enfeite de jardim e vai também para o quintal. O que o
+   * Papita Delivery vende diz `['quintal']`.
+   */
+  readonly cenas?: readonly CenaDeDecorar[];
+  /** o preço em REAIS (o Papita Delivery); o da Josefina é em girassóis */
+  readonly reais?: number;
+  /**
+   * PISO (`world/pisosDoQuintal.ts`): cobre o chão e deixa coisa por cima — o
+   * decorador não dá colisor a ele, e ele não briga com enfeite nem com outro
+   * piso.
+   */
+  readonly piso?: boolean;
+  /**
+   * COMO ELE SE PRENDE (`docs/QUINTAL.md` §3, etapa 3). Sem o campo, no chão.
+   * O contrato muda com o encaixe:
+   * - `parede`: as costas em `z = 0` (encostadas na parede), a frente `+Z`, e
+   *   o MEIO da peça em `y = 0` — a altura escolhida é a do meio;
+   * - `emCima`: como no chão (base em `y = 0`), pousado no tampo;
+   * - `pendurado`: a origem é o GANCHO, e a peça desce para `−Y`;
+   * - `pontaAPonta`: `montaEntre(a, b)` faz a peça entre as duas pontas, no
+   *   mundo (o grupo fica na origem); `monta()` é o retrato.
+   */
+  readonly encaixe?: 'parede' | 'emCima' | 'pendurado' | 'pontaAPonta';
+  /** na parede: a altura do meio quando ela vai para a mão (o Ari muda com ▲ ▼) */
+  readonly alturaPadrao?: number;
+  readonly montaEntre?: (a: THREE.Vector3, b: THREE.Vector3) => THREE.Group;
+  /**
+   * PEÇA QUE SE MEXE E TAMBÉM É FUNDIDA: sem isto o decorador não passa pela
+   * `fundir()` o enfeite que tem `anima` (a anima acha as partes pelo
+   * `userData`). Com ele, vale a regra do kit: tudo o que a `anima` mexe é
+   * grupo com NOME ou `InstancedMesh` (a `fundir()` deixa os dois quietos), e
+   * a anima os guarda em `userData` da raiz.
+   */
+  readonly fundirComAnima?: boolean;
+  /**
+   * O MÓVEL DE USAR (`docs/QUINTAL.md` §4.4, etapa 4): o banco de sentar, o
+   * balanço de balançar, a rede de deitar. O decorador põe um ponto de
+   * interação na peça (que dorme no modo de colocar e no de edição) e chama
+   * `usar` com a peça montada e onde ela está.
+   */
+  readonly uso?: {
+    readonly label: string;
+    readonly icon: string;
+    readonly usar: (u: UsoDoMovel) => Promise<void>;
+  };
+}
+
+/** o que o `uso` de um móvel recebe: o mundo, a API e a peça no lugar */
+export interface UsoDoMovel {
+  readonly g: GameAPI;
+  readonly w: WorldBuilder;
+  readonly peca: THREE.Object3D;
+  readonly x: number;
+  readonly z: number;
+  readonly giro: number;
+}
+
+/** se este enfeite pode ser posto neste lugar */
+export function podeIrPara(ficha: FichaDeDecoracao, cena: CenaDeDecorar): boolean {
+  return (ficha.cenas ?? ['estufa', 'quintal']).includes(cena);
 }
 
 // ------------------------------------------------------------ a luz
@@ -297,7 +362,8 @@ function bebedouroDePassarinho(): THREE.Group {
   aba.position.y = 0.7;
   g.add(aba);
   const agua = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.29, 0.01, 16), toon(P.enfeiteAguaRasa, { glow: 0.15 }));
-  agua.position.y = 0.69;
+  // Acima do topo sólido da taça (0,70), mas abaixo da borda (0,725).
+  agua.position.y = 0.705;
   g.add(agua);
   // o passarinho, empoleirado na borda de trás, olhando para dentro
   const ave = new THREE.Group();
@@ -1062,8 +1128,9 @@ export const DECORACOES: readonly FichaDeDecoracao[] = ([
   },
 ] as FichaDeDecoracao[]).sort((a, b) => a.onda - b.onda || a.girassois - b.girassois);
 
+/** a ficha de qualquer enfeite, da Josefina ou do Papita Delivery */
 export function decoracaoPorId(id: string): FichaDeDecoracao | undefined {
-  return DECORACOES.find((d) => d.id === id);
+  return DECORACOES.find((d) => d.id === id) ?? DECORACOES_DO_QUINTAL.find((d) => d.id === id);
 }
 
 /** o retrato do enfeite para o cartão da loja (o próprio modelo, fotografado e guardado) */

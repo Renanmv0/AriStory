@@ -46,7 +46,28 @@ function pasta(ctx: CanvasRenderingContext2D, x: number, y: number, nome: string
   ctx.textAlign = 'start';
 }
 
-export function telaDoComputador(largura = 0.72, altura = 0.42): TelaDoComputador {
+/** o ícone do Papita Delivery (o app de compras do quintal, `docs/QUINTAL.md`): a batatinha */
+function papita(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  ctx.fillStyle = css(P.papitaAmarelo);
+  ctx.beginPath();
+  ctx.roundRect(x, y, 34, 30, 7);
+  ctx.fill();
+  ctx.fillStyle = '#c99358';
+  ctx.beginPath();
+  ctx.ellipse(x + 17, y + 15, 9, 11, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#3a2614';
+  ctx.fillRect(x + 13, y + 12, 2, 2);
+  ctx.fillRect(x + 19, y + 12, 2, 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `700 9px ${FONTE}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Papita Delivery', x + 17, y + 40);
+  ctx.textAlign = 'start';
+}
+
+/** `comPapita`: a área de trabalho tem o ícone do Papita Delivery (só com a chave do Bebito Mobile) */
+export function telaDoComputador(largura = 0.72, altura = 0.42, comPapita = false): TelaDoComputador {
   const grupo = new THREE.Group();
   grupo.userData.peca = 'tela-do-computador';
   const canvas = document.createElement('canvas');
@@ -86,6 +107,7 @@ export function telaDoComputador(largura = 0.72, altura = 0.42): TelaDoComputado
       pasta(ctx, 14, 12, 'fotos', false);
       pasta(ctx, 14, 62, 'músicas', false);
       pasta(ctx, 14, 112, 'AriStory_teste', true);
+      if (comPapita) papita(ctx, 84, 12);
       // a pasta nova pisca uma estrelinha
       if (Math.floor(tempo * 2) % 2 === 0) {
         ctx.fillStyle = css(P.labAmarelo);

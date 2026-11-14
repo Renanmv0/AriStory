@@ -1,8 +1,17 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { toon } from '../../core/materials';
 import { PALETTE as P } from '../../palette';
 import { Bicho, type AreaDoBicho, type PoseDoBicho } from './Bicho';
 import type { VozDaFala } from '../../core/types';
+
+/** caixa de quina redonda (o mesmo `quina` do kit, sem puxar o kit da fachada) */
+const quinaRedonda = (l: number, a: number, p: number, r: number): THREE.BufferGeometry =>
+  new RoundedBoxGeometry(l, a, p, 1, Math.min(r, l / 2 - 0.001, a / 2 - 0.001, p / 2 - 0.001));
+/** junta pedacos de geometria de tipos diferentes (com e sem indice) numa so */
+const juntar = (geos: THREE.BufferGeometry[]): THREE.BufferGeometry =>
+  mergeGeometries(geos.map((g) => (g.index ? g.toNonIndexed() : g)))!;
 
 /**
  * O CAPY, a capivara salva-vidas da piscina do clube. O nome e do Renan.
@@ -42,6 +51,9 @@ export class Capy extends Bicho {
   private readonly olhos: THREE.Mesh[] = [];
   private readonly patas: THREE.Group[] = [];
   private readonly oculos = new THREE.Group();
+  pilotando = false;
+  olharNaMoto = 0;
+  get apoioDoCapacete(): THREE.Group { return this.cabeca; }
 
   constructor(area: AreaDoBicho) {
     super(area, {
@@ -65,7 +77,6 @@ export class Capy extends Bicho {
   private montar(): void {
     const pelo = toon(P.capivaraPelo);
     const escuro = toon(P.capivaraEscuro);
-    const claro = toon(P.capivaraClaro);
     const vermelho = toon(P.salvaVidasVermelho);
 
     /**
@@ -122,15 +133,39 @@ export class Capy extends Bicho {
      * reta da cabeca, sem afinar e sem arredondar. Focinho em cone vira
      * roedor pequeno; em esfera, vira urso.
      */
-    const focinho = new THREE.Mesh(new THREE.BoxGeometry(0.125, 0.09, 0.115), pelo);
+    // as quinas vao arredondadas (pedido do Renan), mas pouco: com raio grande
+    // o focinho vira bola e a capivara vira urso. O que le e a caixa reta.
+    const focinho = new THREE.Mesh(quinaRedonda(0.125, 0.09, 0.115, 0.018), pelo);
     focinho.position.set(0, -0.032, 0.145);
     this.cabeca.add(focinho);
-    const beico = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.045, 0.04), claro);
-    beico.position.set(0, -0.058, 0.19);
-    this.cabeca.add(beico);
-    const narina = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.028, 0.026), toon(P.capivaraFocinho));
+    // o nariz e um bloco so (o Renan preferiu assim, e nao duas narinas separadas), com as
+    // quinas arredondadas bem de leve
+    const narina = new THREE.Mesh(quinaRedonda(0.07, 0.028, 0.026, 0.006), toon(P.capivaraFocinho));
     narina.position.set(0, 0.002, 0.2);
     this.cabeca.add(narina);
+
+    /**
+     * A BOCA EM "Y" de capivara de desenho (escolha do Renan): um risquinho
+     * desce do nariz pela frente do focinho e abre em dois bracinhos curvos
+     * (o beico claro saiu: com a boca desenhada, ele lia como placa colada). Tudo traço fino da cor da
+     * narina, juntado numa malha so.
+     */
+    const riscos: THREE.BufferGeometry[] = [];
+    const risco = (x0: number, y0: number, x1: number, y1: number, z: number): void => {
+      const dx = x1 - x0, dy = y1 - y0;
+      const geo = new THREE.BoxGeometry(0.0075, Math.hypot(dx, dy) + 0.0065, 0.004);
+      geo.rotateZ(Math.atan2(-dx, dy));
+      geo.translate((x0 + x1) / 2, (y0 + y1) / 2, z);
+      riscos.push(geo);
+    };
+    risco(0, -0.013, 0, -0.038, 0.2045);                 // o cabinho, embaixo do nariz
+    for (const lado of [-1, 1] as const) {
+      risco(0, -0.038, lado * 0.012, -0.049, 0.2045);    // o bracinho desce...
+      risco(lado * 0.012, -0.049, lado * 0.025, -0.053, 0.2045); // ...e curva para fora
+    }
+    const boca = new THREE.Mesh(juntar(riscos), toon(P.capivaraFocinho));
+    boca.name = 'boca-do-capy';
+    this.cabeca.add(boca);
 
     for (const lado of [-1, 1] as const) {
       // OLHO NO ALTO: capivara enxerga com o resto do corpo dentro d'agua
@@ -161,14 +196,7 @@ export class Capy extends Bicho {
      * aparecerem. Bicho de oculos escuro nao consegue fazer cara de contente.
      */
     this.oculos.name = 'oculos-do-capy';
-    const lente = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.038, 0.028), toon(0x2b2a33));
-    lente.position.set(0, 0.064, 0.118);
-    this.oculos.add(lente);
-    for (const lado of [-1, 1] as const) {
-      const haste = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.014, 0.11), toon(0x2b2a33));
-      haste.position.set(lado * 0.09, 0.066, 0.06);
-      this.oculos.add(haste);
-    }
+    this.montarOculos();
     this.cabeca.add(this.oculos);
     this.corpo.add(this.cabeca);
 
@@ -213,6 +241,58 @@ export class Capy extends Bicho {
     this.group.add(this.corpo);
   }
 
+  /**
+   * O OCULOS ESCURO ESPORTIVO (pedido do Renan: "aqueles compridos, que
+   * continuam retos"): UMA lente so, que da a volta na cara como uma faixa — um
+   * pedaco de cilindro em elipse em volta do cranio, reto em cima e embaixo —
+   * e as hastes seguem RETAS dali ate a orelha. Por cima, a armacao branca de
+   * salva-vidas (um filete na beira de cima) e um reflexo espelhado azulado
+   * na metade de cima da lente, que e o que faz ela ler como lente de sol e
+   * nao como faixa preta.
+   */
+  private montarOculos(): void {
+    const Y = 0.066, AX = 0.142, AZ = 0.15, TETA = 1.12, ALTURA = 0.04;
+    // a lente: theta 0 do cilindro e a frente (+Z)
+    const lente = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 1, ALTURA, 32, 1, true, -TETA, 2 * TETA),
+      toon(P.oculosEsportivoLente, { doubleSide: true }),
+    );
+    lente.scale.set(AX, 1, AZ);
+    lente.position.y = Y;
+    this.oculos.add(lente);
+    // o reflexo espelhado: uma faixa mais estreita, um fio por fora da lente
+    const reflexo = new THREE.Mesh(
+      new THREE.CylinderGeometry(1, 1, ALTURA * 0.3, 32, 1, true, -TETA * 0.9, 2 * TETA * 0.9),
+      toon(P.oculosEsportivoReflexo),
+    );
+    reflexo.scale.set(AX + 0.0025, 1, AZ + 0.0025);
+    reflexo.position.y = Y + ALTURA * 0.27;
+    this.oculos.add(reflexo);
+
+    // a armacao: o filete de cima, a ponte no meio e as hastes retas
+    const armacao: THREE.BufferGeometry[] = [];
+    // dois brilhos riscados na lente da esquerda, deitados na curva dela (do
+    // mesmo branco da armacao, entao vao na mesma malha)
+    for (const [teta, dy, largura] of [[-0.5, -0.004, 0.026], [-0.36, -0.002, 0.012]] as const) {
+      armacao.push(quinaRedonda(largura, 0.006, 0.003, 0.0015).rotateZ(0.55).rotateY(teta)
+        .translate((AX + 0.004) * Math.sin(teta), Y + dy, (AZ + 0.004) * Math.cos(teta)));
+    }
+    const filete = new THREE.CylinderGeometry(1, 1, 0.009, 32, 1, true, -TETA - 0.02, 2 * TETA + 0.04);
+    filete.scale(AX + 0.004, 1, AZ + 0.004);
+    filete.translate(0, Y + ALTURA / 2, 0);
+    armacao.push(filete);
+    const ponta = { x: AX * Math.sin(TETA), z: AZ * Math.cos(TETA) };
+    for (const lado of [-1, 1] as const) {
+      // a dobradica na ponta da lente e a haste seguindo reta para tras
+      armacao.push(quinaRedonda(0.014, ALTURA * 0.9, 0.022, 0.005).translate(lado * (ponta.x + 0.002), Y, ponta.z - 0.004));
+      const comprimento = 0.11;
+      armacao.push(quinaRedonda(0.011, 0.014, comprimento, 0.004)
+        .translate(lado * (ponta.x + 0.002), Y + 0.006, ponta.z - 0.012 - comprimento / 2));
+    }
+    const armado = new THREE.Mesh(juntar(armacao), toon(P.salvaVidasBranco));
+    this.oculos.add(armado);
+  }
+
   // ------------------------------------------------------------------ pose
 
   /**
@@ -221,6 +301,18 @@ export class Capy extends Bicho {
    * devagar. Bicho de guarda parado de cabeca fixa lê como estatua.
    */
   protected animar(dt: number, { andando, sentado, carinho, fase }: PoseDoBicho): void {
+    if (this.pilotando) {
+      this.corpo.position.y = Math.sin(fase * 1.5) * .003;
+      this.corpo.rotation.set(-.48, 0, 0);
+      this.cabeca.rotation.set(0, this.olharNaMoto, 0);
+      for (let i = 0; i < 4; i++) {
+        const frente = i < 2, lado = i % 2 ? 1 : -1;
+        this.patas[i].position.set(lado * (frente ? .13 : .18), frente ? .21 : .185, frente ? .23 : -.155);
+        this.patas[i].rotation.set(frente ? -1.65 : -1.1, 0, 0);
+      }
+      for (const orelha of this.orelhas) orelha.visible = false;
+      return;
+    }
     if (andando) {
       const t = fase * 8;
       const passo = Math.sin(t) * 0.42;

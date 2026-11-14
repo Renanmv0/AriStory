@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type { WorldBuilder } from './world/WorldBuilder';
 import './ui/style.css';
 import { Game } from './core/Game';
 import { SCENES, CENA_INICIAL } from './scenes';
@@ -17,15 +18,50 @@ import { cartaNaTela } from './minigames/jardim/tela';
 import { ordemDoLivro } from './ui/livroDeCartas';
 import { KIT_DO_HALLOWEEN } from './world/halloween/kit';
 import { CARTELA_DE_TINTAS, FLAG_DO_ATELIE, PRECO_DO_ATELIE, podeTingir, temDetalhe } from './world/tintas';
+import { BEBITO_MOBILE, BebitoMobile } from './world/bebitoMobile/BebitoMobile';
+import {
+  CATALOGO_DO_CARRO, DEF_DAS_VAGAS, FICHA_DE_FABRICA, VAGAS_DO_CARRO, copiarFicha, normalizarFicha,
+} from './world/bebitoMobile/ficha';
+import { fundir } from './world/fundir';
+import { FASES_DO_PRESENTE, bebitoMobileNestaPagina } from './eventos/BebitoMobile';
+import { ritmoDoPresente } from './eventos/bebitoMobile/presente';
+import { depuracaoDoCarroPorDentro } from './eventos/bebitoMobile/entradaNoCarro';
+import { SENTIDOS, eixoDaRota, gerarRota, pedirViagem, type Sentido } from './eventos/bebitoMobile/rota';
+import { depuracaoDaViagem } from './scenes/viagemDeCarro';
 
 const root = document.getElementById('app');
 if (!root) throw new Error('#app nao encontrado');
 
 const game = new Game(root, SCENES, DUPLA, CENA_INICIAL);
 
+// ?bebito&licoes=10 conclui as lições 1 a 10 da apostila (3 estrelas) NO SAVE DE
+// TESTE do Bebito Mobile (o `?bebito` usa um save à parte, `aristory.save.v1.bebito`):
+// é o jeito de testar a quest do presente sem jogar as dez lições. Sem `?bebito`
+// isto não faz nada, então o save de verdade nunca é tocado.
+const LICOES_EM_ORDEM = [
+  'oi-tudo-bem', 'jantar-das-confusoes', 'cade-o-novelo', 'horta-da-josefina', 'fica-a-dica', 'tudo-acaba-em-inho',
+  'um-dia-de-gatito', 'bola-pra-frente', 'ai-que-dor', 'partiu-praia', 'cartao-postal-do-rio', 'quanto-custa',
+  'de-quem-e-isso', 'mexa-misture-prove', 'vira-a-esquerda', 'antigamente-era-assim', 'beleza-valeu', 'maior-melhor-lindissimo',
+];
+{
+  const licoes = Math.floor(Number(new URLSearchParams(location.search).get('licoes')));
+  if (new URLSearchParams(location.search).has('bebito') && licoes > 0) {
+    const save = (game as unknown as { save: { concluirLicao(id: string, estrelas: number): boolean } }).save;
+    for (const id of LICOES_EM_ORDEM.slice(0, licoes)) save.concluirLicao(id, 3);
+  }
+}
+
 // ?cena=villa-lobos&entrada=roda abre direto num ponto do cenario, util pra testar
 const params = new URLSearchParams(location.search);
 const pedida = params.get('cena') ?? undefined;
+// ?cena=viagem-de-carro&viagem=ida,renan,7 abre a estrada direto: o sentido
+// (ida ou volta), quem dirige e a semente da rota. É depuração: no jogo quem
+// faz o pedido é a porta do carro (`eventos/bebitoMobile/partida.ts`).
+const viagem = params.get('viagem')?.split(',');
+if (viagem) {
+  const sentido: Sentido = SENTIDOS.find(s => s === viagem[0]) ?? 'ida';
+  pedirViagem({ sentido, motorista: viagem[1] === 'renan' ? 'renan' : 'ari', semente: Number(viagem[2]) || 1 });
+}
 const entrada = params.get('entrada') ?? undefined;
 // sem cena pedida o jogo continua de onde parou; sem progresso, começa na casa
 const comecou = game.start(pedida, entrada);
@@ -66,6 +102,27 @@ const em = params.get('em')?.split(',').map(Number);
 if (em && em.length === 2 && em.every(Number.isFinite)) {
   const olhar = Number(params.get('olhar'));
   game.debugPlace(em[0], em[1], Number.isFinite(olhar) ? olhar : Math.PI / 4);
+}
+
+// ?carro=38.2,-8 (e opcionalmente o giro, em radianos) estaciona o Bebito
+// Mobile nesse ponto da cena, montado com a ficha do save. O carro só chega ao
+// jogo pela quest do presente; este é o jeito de VER o modelo antes dela (e o
+// de `scripts/zfighting.mjs` e `scripts/bebitoMobile.mjs` o acharem numa cena).
+// `&semTeto` tira o teto (a casinha de boneca) e `&farois` acende as luzes.
+const carro = params.get('carro')?.split(',').map(Number);
+if (carro && carro.length >= 2 && carro.slice(0, 2).every(Number.isFinite)) {
+  void comecou.then(() => {
+    const mundo = (game as unknown as { current?: { world: WorldBuilder } }).current?.world;
+    if (!mundo) return;
+    const bebito = new BebitoMobile(game.fichaDoBebitoMobile());
+    const giro = Number.isFinite(carro[2]) ? carro[2] : 0;
+    mundo.add(fundir(mundo.place(bebito.group, carro[0], 0, carro[1], giro)));
+    mundo.blockBox(carro[0], carro[1], BEBITO_MOBILE.largura / 2 - 0.1, BEBITO_MOBILE.comprimento / 2 - 0.15, -giro);
+    mundo.onUpdate((dt) => bebito.update(dt));
+    if (params.has('semTeto')) bebito.mostrarTeto(false);
+    if (params.has('farois')) bebito.acenderFarois(true);
+    (window as unknown as { bebitoMobile: BebitoMobile }).bebitoMobile = bebito;
+  });
 }
 
 // atalhos de depuracao no console do navegador. O `aristoryAudio` existe para
@@ -112,6 +169,17 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 // o kit do Halloween, pelo mesmo motivo: as peças do parque enfeitado montadas
 // uma a uma, de perto, longe do resto do parque
 (window as unknown as { aristoryHalloween: unknown }).aristoryHalloween = KIT_DO_HALLOWEEN;
+// o Bebito Mobile, para o `scripts/bebitoMobile.mjs`: o carro ainda não está em
+// cena nenhuma (ele chega pela quest do presente), e o teste o monta num
+// lugar vazio para fotografar de todos os lados, medir e conferir a ficha
+(window as unknown as { aristoryBebitoMobile: unknown }).aristoryBebitoMobile = {
+  BebitoMobile, BEBITO_MOBILE, FICHA_DE_FABRICA, CATALOGO_DO_CARRO, DEF_DAS_VAGAS, VAGAS_DO_CARRO,
+  copiarFicha, normalizarFicha, fundir,
+  // a quest do presente: as fases (flags) e o ritmo das cutscenes, que o teste acelera
+  FASES_DO_PRESENTE, ritmoDoPresente, bebitoMobileNestaPagina, depuracaoDoCarroPorDentro,
+  // a viagem de carro: o sorteio da rota, o pedido, e o que o teste mexe (a pressa e o piloto automático)
+  gerarRota, eixoDaRota, pedirViagem, viagem: depuracaoDaViagem,
+};
 // o baralho do jardim JÁ NO FORMATO DA TELA, para o `scripts/gotas.mjs` montar
 // uma mesa de cada raridade: o sorteio de verdade não garante uma lendária na
 // tela, e uma moldura que ninguém vê é uma moldura que ninguém conferiu

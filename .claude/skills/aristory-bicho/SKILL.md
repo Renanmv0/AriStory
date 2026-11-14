@@ -501,6 +501,56 @@ pontos de pesca ficam nos vãos da beira (longe de ninféia, pedra e tronco).
 estados própria (sol, pulando, nadando só com a cabeça de fora, subindo). O
 casco é canvas visto de cima, com o UV projetado de cima também.
 
+## Bicho de água em TERRA (a travessia da viagem de carro)
+
+Os patos e os tigres-d'água do lago atravessam a faixa de pedestres da
+estrada do Bebito Mobile (`eventos/bebitoMobile/travessia.ts`). A classe é a
+mesma do lago; o que a terra pediu:
+
+- **o pato do lago nasce com a barriga debaixo d'água** (o chão esconde): em
+  terra ele SOBE (a caixa dele mede quanto) e ganha o que a água escondia —
+  duas patinhas laranja penduradas num pivô na linha d'água, que batem no
+  passo, e o gingado de lado (`rotation.z`);
+- **a fila**: cada um anda o mesmo caminho, um tanto atrás do da frente
+  (`atras`), um tico para o lado (`desvio`) — a mãe na frente;
+- **a guia**: na calçada eles estão um degrau acima do asfalto, e descem e
+  sobem a guia num passo;
+- **de longe eles somem**: no tamanho do lago, vistos de trás do carro, os
+  patinhos eram pontinhos — em terra eles crescem, mas a escala é um FATOR
+  POR CIMA da ficha (`ficha.escala × fator`: a pata 1,35×, o patinho 1,6×;
+  `pato.escala`), e nunca um número cravado por cima dela. A primeira versão
+  trocava a escala por 1,55 e 1,7 e o patinho (ficha 0,52) ficava MAIOR que a
+  mãe, a 3,3× do lago — o Renan reparou no celular. O teste
+  (`SO=bichos` do `scripts/viagem.mjs`) exige o patinho com menos de 70% da
+  altura da mãe;
+- **sem os gestos de água**: o pato do lago, parado, mergulha o bico, bica a
+  asa e bate as asas. Na calçada isso enfiava o bico no asfalto, então a cena
+  desliga com `pato.gestosDeAgua = false`;
+- **cada um reage do seu jeito à buzina**: a pata apressa o passo e reclama;
+  a tartaruga se esconde no casco e para — é a piada. (Com o piloto de teste
+  ligado a buzina é IGNORADA: o teste solta o piloto para apertar a tecla.)
+
+**A tartaruga da estrada NÃO é o `TigreDagua`.** O do lago é um bicho de
+tronco (toma sol, pula, nada); o que anda na faixa é a
+`TartarugaDeEstrada` (`entities/bichos/TartarugaDeEstrada.ts`), e o do lago
+ficou como estava. O que ela tem:
+
+- **casco em relevo, tinta e relevo da MESMA conta**: a lista `PLACAS` pinta
+  o canvas (claro no meio, junta escura, risco amarelo) e levanta a cúpula
+  (cada placa uma bossa, cada junta um vale) — nunca se desencontram. A
+  emenda da esfera é soldada (`mergeVertices`) antes das normais, senão
+  sobra um risco de luz; a cúpula é uma só para todas as tartarugas;
+- **quatro pernas de verdade**, cada uma num pivô no quadril, andando em
+  diagonal; o passo vai por DISTÂNCIA andada (o pé não escorrega) e o corpo
+  balança de lado (`rotation.z` só 0,04: com 0,06 um lado do casco descia
+  1 cm do chão — a medida pegou, a foto não);
+- **cabeça grande e fofa**, olho pousado no crânio (oval escuro com brilho,
+  piscando), sorrisinho, mancha laranja atrás do olho e riscos amarelos no
+  pescoço — o "tigre" do nome;
+- **esconder no casco** (`esconder` de 0 a 1): cabeça, pescoço e pernas
+  recolhem e o casco desce até o chão; vai rápido para dentro e devagar para
+  fora.
+
 ## Fantasia de EVENTO, por fora da classe (a Estella de aranha)
 
 Evento é camada: a classe do bicho não muda. A fantasia é uma função que

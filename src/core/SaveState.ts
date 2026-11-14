@@ -23,6 +23,7 @@ import { SLOTS_ROUPA, type Coleta, type DecoracaoNoSave, type ItemDef, type Load
 import { fichaDoItem } from '../world/itens';
 import { EDICAO_DO_HALLOWEEN, HALLOWEEN_NO_JOGO } from '../eventos/Halloween';
 import type { ParteDaTinta, TintaDaPeca } from '../world/tintas';
+import { copiarFicha, normalizarFicha, type FichaDoBebitoMobile } from '../world/bebitoMobile/ficha';
 
 /**
  * Vagas da mochila (o que se carrega na mao).
@@ -199,6 +200,14 @@ interface SaveData {
    * só a cor muda, e só no corpo de quem pintou. Ver `world/tintas.ts`.
    */
   tintas: Record<string, Record<string, TintaDaPeca>>;
+  /**
+   * A FICHA DO BEBITO MOBILE, o carro do casal (um só para os dois, como a
+   * carteira): a pintura, a placa e o que vai em cada vaga. O modelo se
+   * monta lendo isto (`world/bebitoMobile/`). Se os dois JÁ GANHARAM o carro
+   * é uma flag da quest, e não mora aqui: a ficha existe desde sempre, de
+   * fábrica, e é o que a edição futura vai mexer.
+   */
+  bebitoMobile: FichaDoBebitoMobile;
   /** uma mochila POR PESSOA, chaveada pelo id da ficha ('ari', 'renan') */
   inventarios: Record<string, SaveInventario>;
 }
@@ -371,7 +380,15 @@ const KEY_DO_JOGO = 'aristory.save.v1';
  */
 const KEY_DO_TESTE = 'aristory.save.v1.halloween';
 const NO_TESTE = typeof location !== 'undefined' && new URLSearchParams(location.search).has('halloween');
-const KEY = NO_TESTE ? KEY_DO_TESTE : KEY_DO_JOGO;
+/**
+ * O SAVE DE TESTE DO BEBITO MOBILE (`eventos/BebitoMobile.ts`): com `?bebito`
+ * o carro, a quest e as viagens aparecem antes da hora, num save à parte que
+ * nasce como cópia do de verdade — dá para jogar a surpresa inteira sem
+ * gastá-la no save do jogo.
+ */
+const KEY_DO_BEBITO = 'aristory.save.v1.bebito';
+const NO_BEBITO = !NO_TESTE && typeof location !== 'undefined' && new URLSearchParams(location.search).has('bebito');
+const KEY = NO_TESTE ? KEY_DO_TESTE : NO_BEBITO ? KEY_DO_BEBITO : KEY_DO_JOGO;
 
 /**
  * A EDIÇÃO DO HALLOWEEN no save de verdade (`eventos/Halloween.ts`).
@@ -411,7 +428,24 @@ function normalizarDecoracoes(bruto: unknown): DecoracaoNoSave[] {
     vistos.add(d.uid);
     const p = d.posta;
     const ok = p && [p.x, p.z, p.giro].every((n) => typeof n === 'number' && Number.isFinite(n));
-    lista.push({ uid: d.uid, id: d.id, posta: ok ? { x: p!.x, z: p!.z, giro: p!.giro } : null });
+    // (enfeite sem `cena` é de antes do quintal: estava na estufa)
+    const cena = p?.cena === 'quintal' ? 'quintal' : 'estufa';
+    const aCaminho = !ok && d.aCaminho === true;
+    // (preso em parede, em cima, pendurado ou de ponta a ponta: o resto do lugar)
+    const ENCAIXES = ['parede', 'emCima', 'pendurado', 'pontaAPonta'] as const;
+    const encaixe = ENCAIXES.find((e) => e === p?.encaixe);
+    const num = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
+    const ate = p?.ate && num(p.ate.x) && num(p.ate.y) && num(p.ate.z) ? { x: p.ate.x, y: p.ate.y, z: p.ate.z } : undefined;
+    const presa = encaixe && num(p?.y) && (encaixe !== 'pontaAPonta' || ate)
+      ? { encaixe, y: p!.y, ...(typeof p?.sup === 'string' ? { sup: p.sup } : {}), ...(ate ? { ate } : {}) }
+      : null;
+    // (encaixe estragado: volta ao baú, nunca some)
+    const fica = ok && (!encaixe || presa);
+    lista.push({
+      uid: d.uid, id: d.id,
+      posta: fica ? { x: p!.x, z: p!.z, giro: p!.giro, cena, ...(presa ?? {}) } : null,
+      ...(aCaminho ? { aCaminho } : {}),
+    });
   }
   return lista;
 }
@@ -464,6 +498,7 @@ const EMPTY: SaveData = {
   vagaLumesSoltos: [],
   retomadas: {},
   tintas: {},
+  bebitoMobile: normalizarFicha(undefined),
   inventarios: {},
 };
 
@@ -481,7 +516,7 @@ export class SaveState {
   private static read(): SaveData {
     try {
       // o save de teste começa do progresso de verdade, na primeira vez
-      const raw = localStorage.getItem(KEY) ?? (NO_TESTE ? localStorage.getItem(KEY_DO_JOGO) : null);
+      const raw = localStorage.getItem(KEY) ?? (NO_TESTE || NO_BEBITO ? localStorage.getItem(KEY_DO_JOGO) : null);
       if (!raw) return structuredClone(EMPTY);
       const parsed = JSON.parse(raw) as Partial<SaveData>;
       // `loadouts` era o guarda-roupa paralelo; hoje ele so serve de entrada
@@ -523,6 +558,8 @@ export class SaveState {
           : {},
         // save de antes do ateliê de tinta: nada pintado
         tintas: normalizarTintas(parsed.tintas),
+        // save de antes do carro: a ficha de fábrica; vaga ou detalhe que mudou depois é consertado na leitura
+        bebitoMobile: normalizarFicha(parsed.bebitoMobile),
         inventarios: normalizarTodos(parsed.inventarios, antigos),
       };
       return dados;
@@ -554,6 +591,19 @@ export class SaveState {
 
   setFlag(key: string, value = true): void {
     this.data.flags[key] = value;
+    this.persist();
+  }
+
+  // ------------------------------------------------------- o Bebito Mobile
+
+  /** A ficha do carro (uma cópia: quem quer mudar passa por `salvarFichaDoBebitoMobile`). */
+  fichaDoBebitoMobile(): FichaDoBebitoMobile {
+    return copiarFicha(this.data.bebitoMobile);
+  }
+
+  /** Guarda a ficha do carro, já conferida (cor, placa e detalhe tortos voltam ao padrão). */
+  salvarFichaDoBebitoMobile(ficha: FichaDoBebitoMobile): void {
+    this.data.bebitoMobile = normalizarFicha(ficha);
     this.persist();
   }
 

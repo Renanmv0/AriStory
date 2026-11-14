@@ -38,6 +38,19 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [x] O Pelusa, o gato do Ari: passeia pelo quarto, mia sozinho e aceita carinho
 - [x] **A estufa da Josefina**: a quest do adubo e o minigame do jardim (roguelite de 30 ondas, 93 cartas, livro das cartas) — o estado está no "COMECE AQUI" de `docs/MINIGAME-JARDIM.md`
 
+- [x] **O Bebito Mobile, etapa A**: o modelo do carro do casal no kit, montado
+  por ficha de dados (pintura, placa e vagas) e pronto para a edição futura —
+  o plano e as etapas seguintes estão em `docs/BEBITO-MOBILE.md`
+- [x] **O Bebito Mobile, etapa B** (ESCONDIDA atrás da chave
+  `BEBITO_MOBILE_NO_JOGO`, só visível com `?bebito`): a frente da casa do Ari
+  (o jardim florido, a garagem e a rua de casinhas) e a quest do presente —
+  dormir depois da lição 10, a surpresa, o Renan saindo pela porta e
+  chegando de carro
+- [x] **O Bebito Mobile, etapa C** (escondida, `?bebito`): a viagem de carro
+  Casa ↔ Villa Lobos dirigida por quem joga — "quem dirige dessa vez?", os
+  bichos do lago na faixa de pedestres, semáforo, obra, buracos, lombada,
+  poça, o ônibus para ultrapassar e os corações pela pista
+
 > Este roadmap parou de ser atualizado item a item: muita coisa entrou depois
 > (boutique, Mania de Churrasco, xadrez, bichos do clube…). O `git log` e os
 > planos de minigame em `docs/` são a fonte do que existe.
@@ -64,6 +77,15 @@ Ordem sugerida, não contrato. A graça é ir escolhendo o próximo pedaço junt
 - [ ] Casa do Renan
 - [ ] O restaurante/bar de sempre
 - [ ] A praia daquela viagem
+- [ ] **Decorar o quintal da casa do Ari** (`docs/QUINTAL.md`): o decorador da
+  estufa com mais lugares de pôr (chão, piso, parede, em cima, pendurado, de
+  ponta a ponta), o catálogo do quintal, os móveis que fazem alguma coisa e a
+  loja. Etapa 1 feita (escondida com o carro): a área de trabalho do
+  computador, o Papita Delivery, a encomenda no portão, as ferramentas da
+  garagem e o chão do quintal; faltam os pisos e caminhos, a árvore e a hera
+  móveis, a parede e o resto dos lugares, e os móveis de usar
+- [ ] **O Bebito Mobile e as viagens de carro** (`docs/BEBITO-MOBILE.md`): as
+  demais rotas (etapa D) e, no fim, ligar a chave `BEBITO_MOBILE_NO_JOGO`
 - [ ] O caminho entre as casas (rua, ônibus, metrô)
 - [ ] Um cenário de data especial (primeiro encontro?)
 

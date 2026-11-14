@@ -838,6 +838,197 @@ de camada GRANDE, que enfeita uma cena inteira:
   commit de antes do evento num `git worktree`, as mesmas cenas com o save
   zerado dão as mesmas malhas (`MALHAS_ANTES` no `halloween.mjs`).
 
+## Coisa grande escondida até ficar pronta: a CHAVE (o Bebito Mobile)
+
+O Renan pediu que o carro, a quest e as viagens só apareçam no jogo quando
+TUDO estiver pronto. O molde é o do Halloween, ao contrário (lá a chave tira
+do jogo o que já existiu; aqui ela segura o que ainda não estreou):
+
+- **Um arquivo de chave** em `src/eventos/` (`BebitoMobile.ts`): a constante
+  (`BEBITO_MOBILE_NO_JOGO = false`), a função que a cena consulta
+  (`bebitoMobileNestaPagina()`: a chave, ou `?bebito` no endereço, e
+  `?semBebito` para forçar desligado) e as FASES da quest (as flags do save).
+- **`?bebito` usa um SAVE À PARTE** (`SaveState`: `aristory.save.v1.bebito`,
+  que nasce como cópia do de verdade): dá para jogar a quest inteira sem
+  gastar a surpresa nem sujar o save do jogo. O teste confere que o save de
+  verdade não ganhou flag nenhuma.
+- **Cada cena chama o evento em UMA linha**, atrás da chave: a casa troca o
+  destino da porta e chama `surpresaNaSala(w, …)`; o quarto pergunta
+  `presenteDisponivel(g)` antes do deitar de sempre; o parque troca o destino
+  do "Voltar pra casa". Com a chave desligada, nada muda — e o teste abre o
+  jogo SEM `?bebito` e confere isso (porta, cama, save).
+- **A cena nova** (`frente-da-casa`) é registrada sempre, mas só se chega
+  nela pela porta que a chave troca.
+
+### O que a quest do presente ensinou sobre cutscene
+
+- **`g.releasePlayer()` DESTRAVA o jogador.** Numa cutscene que reposiciona o
+  jogador, o `E` voltava a valer no meio da cena e abria a porta da casa.
+  Trave de novo depois de cada um (`porOAri` em
+  `eventos/bebitoMobile/presente.ts`).
+- **O motor não tem "andar até" para o JOGADOR** (só `commandCompanion` para o
+  parceiro). Por isso quem anda sozinho numa cutscene é o parceiro (o Renan
+  indo até a porta), e o jogador muda de lugar NO CORTE da câmera — a troca
+  de tomada esconde o salto. Para virar parado, um giro suave quadro a quadro
+  (o `teleport` gira de estalo).
+- **Cutscene no relógio do JOGO** (`relogioDaCena(w)`: `esperar` e
+  `aCadaQuadro` em cima do `w.onUpdate`), nunca `setTimeout`: o menu pausa de
+  verdade, e o teste acelera por um multiplicador
+  (`ritmoDoPresente.vezes`) — o Chromium sem placa anda a um quinto do
+  relógio.
+- **Câmera de cena (`g.setCameraOmbro`) tem HORIZONTE.** A isométrica nunca
+  mostra o fim do mundo; a de perto mostra — e a rua da casa num gramado
+  vazio parecia maquete. Cena filmada de perto pede fundo: casas, sebe,
+  árvores fechando as pontas da rua, nuvens.
+- **Tomada por cima do ombro**: a câmera atrás e acima de quem olha, mirando
+  o que ele vê (o carro passando na rua). Confira que nenhuma copa de árvore
+  fica entre a câmera e o assunto.
+- **Dois conversando, de perto**: de perfil puro o cabelo tapa o rosto. Vire
+  cada um ~0,6 rad PARA A CÂMERA a partir do "de frente um pro outro" (o
+  jeito de palco), e mande o parceiro olhar para um ponto nessa direção
+  (`holdCompanion`).
+- **Celular em pé**: a câmera de cena vê pouco para os lados. A tomada de um
+  assunto largo (o carro manobrando) recua pela mesma linha quando
+  `innerWidth / innerHeight < 0.8`. Rode o teste com `CEL=1` e olhe.
+- **O parceiro "sai pela porta"** com `g.setCompanionVisible(false)`; a troca
+  de cena o traz de volta sozinho.
+- **Sentado num carro**: `g.ridePlayer(carro.assentos.motorista, new Vector3(0, -0.47, 0), 1, 0)`
+  e `g.poseNoCarro('jogador' | 'parceiro', 'dirigindo' | 'passageiro', volante)`
+  — as mãos acompanham o giro do volante. `null` devolve a pose de sempre.
+
+### Uma cena que se DIRIGE (a viagem de carro)
+
+A estrada do Bebito Mobile (`scenes/viagemDeCarro.ts`) é o molde de cena em
+que quem joga não anda: pilota. O que ela ensinou:
+
+- **O mundo sai de uma CONTA, e não de coordenadas**: a pista é uma curva
+  (`eixoDaRota`, duas ondas de seno com as pontas retas) e tudo o que mora
+  nela é posto por `naPista(s, l)` — `s` o quanto se andou, `l` o lado. Peça
+  de pista curva é FITA costurada por essa função (`world/estrada.ts`), e não
+  caixa comprida. O carro guarda só `s`, `l` e a velocidade.
+- **A rota é sorteada por SEMENTE, num arquivo sem three**
+  (`eventos/bebitoMobile/rota.ts`): o teste confere as regras em trezentas
+  rotas sem abrir navegador para cada uma, e uma viagem reprovada se repete
+  pela semente (`?viagem=ida,renan,7`).
+- **O manche de quem dirige é o `g.olharLivre()`** (o manche cru: chega com
+  o jogador travado) e a buzina é o `g.acaoCrua()` (o E cru, que cala com
+  fala na tela). O jogador fica travado e sentado o tempo todo.
+- **Os dois sentam no PRIMEIRO QUADRO, não no `build`**: o motor põe a dupla
+  no ponto de chegada DEPOIS de montar a cena e desfaz qualquer carona — quem
+  sentasse no `build` aparecia em pé no meio da estrada.
+- **Câmera de perseguição**: o `setCameraOmbro` atrás e acima do carro, o
+  olho alcançando o alvo com `1 − e^(−7·dt)` (sem tranco nas curvas) e o
+  olhar mirando a pista 8 m à frente — a curva aparece antes de chegar. No
+  celular em pé ela recua e sobe.
+- **Ninguém é atropelado nunca**: o que fecha a pista (bicho na faixa,
+  vermelho, cavalete, traseira do ônibus) vira um LIMITE em `s` que a frente
+  do carro não passa; se a freada que falta passa de ~12 m/s², o carro freia
+  SOZINHO e conta um "susto". O jogo é passeio: nada volta para o começo.
+- **Os avisos são do painel** (`g.painelDaViagem`, no alto: os corações, o
+  carrinho no trilho até o destino e o aviso do momento) e os comentários da
+  carona vão no `g.toast` — a fala de verdade (`g.say`) pararia o carro.
+- **O mundo só desenha o que está perto**: trechos de 40 m, cada um um grupo
+  juntado como fundo; a cena liga o `visible` dos que estão de 22 m para trás
+  a 160 m para a frente (a névoa fecha em 165).
+- **A cena guarda um gancho para o teste** (`depuracaoDaViagem`: a pressa do
+  relógio, o piloto automático, a câmera e o `naPista`) — o piloto
+  automático segue os corações, freia na lombada e para nas faixas, e é com
+  ele que o `scripts/viagem.mjs` atravessa a viagem inteira.
+- **Gente conhecida na estrada** (a turma da escola, `eventos/bebitoMobile/escolaNaEstrada.ts`,
+  `docs/VIAGEM-ESCOLA.md`): o personagem é o de sempre (a classe dele, de
+  serviço, com `irPara`), dentro de um QUADRO que atravessa a pista (`+Z` de
+  uma calçada à outra, o `+X × lado` virado para o carro). Cinco lições:
+  - **na estrada, cresça o bicho**: com a câmera de perseguição, no tamanho
+    da escola a pelúcia some (o Gatito vai com 1,6×, a Valentina com 1,3×);
+  - **"chegou" é a promessa do `irPara` resolvida**, nunca "parou de
+    andar": o Gatito pula, e entre um pulo e outro ele fica parado — a fila
+    saía com ele ainda no meio do caminho;
+  - **quem guarda a faixa fica na faixa da DIREITA** (a de quem dirige) e
+    do lado de onde o carro vem; a fila passa atrás dele;
+  - **personagem não fundido pesa** (as juntas mexem cada uma por si):
+    desenhe a turma só entre 165 m à frente (a névoa já apagou) e 40 m atrás
+    — some sem ninguém ver. Com 110 m o ensaio "nascia" no meio da névoa;
+  - do lado da escola tem muro e grade: o que precisa ser visto (o estúdio
+    da Valentina) vai para o lado aberto da pista.
+
+### Duas perguntas seguidas
+
+`g.ask` atrás de `g.ask` ("Ir de carro?" e logo "Quem dirige dessa vez?")
+respondia a segunda sozinha: o clique no botão da primeira ainda subia até a
+caixa da fala depois que a segunda já tinha aberto, e com o botão fora da
+página o filtro do `.closest('.escolhas')` não reconhecia mais o clique.
+Hoje o botão de escolha para o clique (`stopPropagation`, `ui/Ui.ts`); se
+aparecer de novo em outra caixa de escolha, é esse o caminho.
+
+### Primeira pessoa DENTRO do carro (`eventos/bebitoMobile/cameraDeDentro.ts`)
+
+O carro por dentro (`docs/BEBITO-MOBILE-DENTRO.md`) é o molde de câmera de primeira
+pessoa que anda junto com uma peça:
+
+- **O olho é a CABEÇA de quem joga** (`g.cabecaDe`, um passo à frente): acompanha o
+  banco, as molas e a escala do carro sem conta nenhuma, e o filtro de ~14/s tira o
+  solavanco sem tirar o balanço. A cabeça dele some (`g.mostrarCabeca`: o cabelo, o rosto
+  e o chapéu — o corpo e as mãos ficam) e volta ao desligar e em toda troca de cena.
+- **O olhar é um ÂNGULO ACUMULADO** com limite (o pescoço da roda gigante): `giro` e
+  `altura`; deitado de barriga para cima o repouso é olhando o teto.
+- **A câmera DESLIZA**: `ligar(tomadaDeFora, seg)` mistura da tomada de fora (fixa, ou uma
+  função que se refaz a cada quadro, como a perseguição da estrada) até o olho, e
+  `desligar` volta. Começar pelo enquadramento da isométrica evita o corte seco.
+- **Quem entra, entra DESLIZANDO**: `g.ridePlayer(âncora, local, 1, facing)` a cada quadro
+  com o `local` interpolado (da porta para o banco, sentando no meio) — o jogador "entra" no
+  carro sem animação nova no rig.
+- **O que acompanha a câmera** (o celular na mão): `anexar(obj, { frente, baixo, direita })`.
+- **Cena que se DIRIGE ganha uma visão de passageiro** (`scenes/viagemDeCarro.ts`): o
+  piloto automático de jogo (gentil: na faixa dele, sem perseguir os corações) tem que
+  rodar MESMO com uma fala ou um menu na tela — o `livre` (sem fala) só vale para o manche
+  de quem joga. **O 👀 muda apenas a câmera, nunca o motorista ou os bancos**:
+  `jogadorDirige` é constante e a câmera aponta para a carona real. A cena do Noel
+  na rota do clube também preserva os dois assentos e restaura a visão anterior.
+- **Viagens ao clube** (`docs/VIAGEM-CLUBE.md`): a pista, o piloto e a chegada
+  são compartilhados com a rota casa/parque. Use `destinoDaRota` para o destino
+  e `localDoBebito` para onde o carro está (garagem/parque/clube); não teste só
+  a flag antiga do parque, senão o carro aparece também na garagem quando está
+  no clube. Noel, rega e onda verde têm módulos próprios. A chegada transitória
+  não repete ao recarregar; o pedido salvo conserva motorista/destino na estrada.
+
+### Fundo de cena: uma vizinhança leve
+
+A rua da casa do Ari tem oito casas vizinhas, sebes e cinquenta árvores.
+Solta, a cena desenhava 933 objetos por quadro; ficou em 339 (e em 306
+depois que as plantas do jardim viraram lotes por espécie):
+
+- o que é enfeite parado entra num `THREE.Group` e passa por
+  **`fundirComoFundo(grupo)`** (`world/fundir.ts`), que apaga as fronteiras
+  de dentro e junta tudo por material. Um `canteiro()` solto são cem
+  bolinhas, cem desenhos; dez canteiros no mesmo grupo viram meia dúzia;
+- **um grupo por pedaço do mapa** (o jardim; cada lado da rua, à esquerda e
+  à direita): grupo único nunca sai da tela, e é desenhado sempre;
+- a peça repetida de fundo tem uma **versão leve do mesmo molde**
+  (`fachadaDaCasa({ …cores, vizinha: true })`: porta lisa, sem lampião);
+- tracinho repetido no chão (a faixa da rua) é UM `w.patch` com a geometria
+  trocada por um `mergeGeometries` dos tracinhos — decalque não entra no
+  `fundir`.
+
+### Muro do lado da câmera, e portão que abre sozinho
+
+A frente da casa do Ari tem um muro de 1,35 m na frente e no lado direito —
+os dois lados DA CÂMERA. O que isso cobra:
+
+- **o que é baixo fica longe dele**: o muro esconde tudo o que tem menos de
+  um metro e está a menos de ~1,5 m atrás dele. Junto ao muro vai só o que é
+  alto (capim de pluma, que aparece por cima); flor baixa fica do lado da
+  casa e da mureta;
+- **a face que se vê é a de FORA** (a da rua e a do vizinho): é nela que a
+  hera cai mais;
+- **portão automático** (o social gira, o da garagem corre): a cena compara a
+  distância de quem joga no `w.onUpdate` e interpola. O que fecha passagem
+  tem COLISOR QUE LIGA E DESLIGA — um `Collider` guardado, posto e tirado de
+  `w.colliders` conforme a folha (o da garagem só vale com ela quase
+  fechada, e ela só fecha com todos longe: ninguém fica preso no vão);
+- **cutscene manda no portão por um comando da cena** (`portao(true)` no
+  palco da chegada do carro), e devolve no fim — a cutscene não conhece a
+  folha nem o colisor.
+
 ## Regras da casa
 
 1. **Cor sempre da paleta** (`src/palette.ts`). Se falta uma cor, adicione lá.
@@ -885,9 +1076,37 @@ de camada GRANDE, que enfeita uma cena inteira:
 12. **Porta em mureta: o vão vai até o chão, e a parede fecha em cima.** A
    porta da rua da casa do Ari ficou com a mureta baixa da frente correndo
    POR BAIXO dela (um degrau de 45 cm atravessando a soleira, visto girando a
-   câmera) e sem nada acima do batente. O certo: a mureta em dois trechos, dois
-   pedaços de parede alta ladeando o vão, e um bloco só de malha (sem colisor)
-   em cima da porta. Ver a porta da rua em `scenes/casa.ts`.
+   câmera) e sem nada acima do batente. O certo: a mureta acaba onde a parede
+   alta começa, e a parede alta é UMA forma só com o vão da porta recortado até
+   o chão. Ver `world/paredeDaRua.ts`.
+13. **A casa de dentro é a de fora (a porta da rua no MEIO e as duas janelas).**
+   Pedido do Renan: a fachada de `frenteDaCasa` tem a porta no meio e uma
+   janela de cada lado (`±2,75`), e a sala tinha a porta num canto e uma janela
+   só. A parede da frente da sala (`paredeDaRuaPorDentro`, 9,4 m, a mesma
+   largura da fachada) é uma forma com o vão da porta e os dois FUROS de
+   janela, com caixilho, cruz, peitoril e cortina. É a parede que fica do lado
+   da câmera, vista DE TRÁS: o vidro é de UMA FACE SÓ, virada para dentro
+   (`flat` de lado único, o plano girado meia volta). Visto da câmera ele não
+   existe e o furo fica aberto; visto de dentro (Q/R) ele aparece como um véu.
+   **Isso não é a "peça translúcida" descartada acima**: aquela desbotava pela
+   posição da dupla; esta é a peça que nasce assim, sempre igual. O peitoril a
+   1 m esconde só 1,5 m de chão atrás da parede, e o cabeçalho (2,25 a 2,6) só
+   uma faixa estreita: pela janela dá para ver o miolo da sala. **Depois o Renan
+   pediu a parede mais BAIXA** (e ainda com as janelas à vista): ela é
+   ESCALONADA — alta (2,4 m) só em volta da porta (±1,4), baixa (1,7 m) nas
+   asas, onde a janela é um ENTALHE aberto em cima (do peitoril, a 65 cm, até o
+   topo da parede, 1,7 m): sem parede por cima da janela — o vidro e o caixilho
+   de cima são a última coisa (o Renan: "tire a parede de cima da janela e
+   continue a janela até a mesma altura de onde estava a parede"). O peitoril
+   esconde 1 m de chão atrás dela, e não 1,5. Quando uma
+   parede alta fica do lado da câmera, o furo de janela com vidro de uma face é
+   o jeito de ela não fechar a sala. A porta foi de `x = 3,4` para `0`: o que
+   dependia dela (a entrada `da-rua`, a saída, o capacho, o abajur que ficava
+   na linha da porta, a cutscene do Renan saindo) foi junto.
+
+   Dependência de posição de porta em cutscene: `surpresaNaSala` aceita `ficam`
+   (onde o Ari espera) para a cena de dentro não depender de uma conta a partir
+   da porta.
 
 ## Depurar posição
 

@@ -135,6 +135,14 @@ Picos medidos no `.wav`: `tibum` 0,20 (o mais alto, de propósito), `garca`
 0,06, `moeda` 0,05, `piado` 0,03 e `asas` 0,02 (é fundo: toca junto do
 grasnado, quando a garça levanta voo).
 
+**O carro por dentro** (`docs/BEBITO-MOBILE-DENTRO.md`): `roncoNoCarro` (um ciclo de
+respiração: puxa o ar — um chiado grave que sobe, com o motorzinho da garganta embaixo — e
+solta devagar; o cochilo toca três em fila, o `n` alterna a força) e `cantarolarKuduro` (o
+"lá-lá-lá" do Ari cantarolando Dança Kuduro: oito notas sincopadas na pentatônica menor a 130
+bpm, uma onda triangular macia com o "ar" por cima — como a música soa na cabeça de quem canta
+baixinho; NÃO é a melodia nem a letra). A porta usa o `portaDoBebito` que já existia (o `n`
+alterna abrir e bater).
+
 **O ônibus da festa de Halloween** (`eventos/halloween/chegadaDoOnibus.ts`):
 
 - `buzina`: o "fon-fon" simpático de ônibus de bairro, não sirene — duas
@@ -150,6 +158,31 @@ grasnado, quando a garça levanta voo).
 
 Picos no `.wav`: `buzina` 0,11, `motorDoOnibus` 0,08, `freioDoOnibus`
 0,08 e `portaDoOnibus` 0,08.
+
+**O Bebito Mobile** (`eventos/bebitoMobile/presente.ts`) — carro pequeno,
+e não ônibus: tudo mais agudo e mais curto que a família do ônibus.
+
+- `buzinaDoBebito`: o "bi-bi" de carrinho antigo, duas buzinadas curtas;
+- `motorDoBebito`: o "pó-pó-pó" de motorzinho; a cena toca em fila (a cada
+  ~0,34 s) enquanto o carro anda, e o `n` alterna o timbre para não virar
+  metrônomo;
+- `portaDoBebito`: o "clec" do trinco e o "tum" abafado da lata (`n` par
+  abre, ímpar bate).
+
+- `freadaDoBebito`: o pneu cantando curtinho (dois apitos de borracha
+  descendo, com o chiado) e o tranco no fim — na freada forte e na freada
+  sozinha da faixa de pedestres;
+- o clima **`'viagem-de-carro'`** (a estrada): música de janela aberta — a
+  família do parque, maior, 112 bpm, com bumbo e chocalho; sem tensão, o que
+  avisa do perigo é a pista. A cena escolhe pelo id, sozinha;
+- `portaoEletrico`: o portão de correr da garagem — o "clac" do contator e
+  o zumbido grave do motorzinho (dente-de-serra abafado), com a roldana no
+  trilho por cima; toca quando ele começa a abrir ou a fechar.
+
+Picos no `.wav`: `buzinaDoBebito` 0,13, `motorDoBebito` 0,05 (é fundo),
+`portaoEletrico` 0,06 (é fundo) e `portaDoBebito` 0,08 abrindo e ~0,11
+batendo (a primeira versão saiu com 0,047, metade da porta de casa; dobrada,
+a batida passou da buzina e voltou um pouco).
 
 **O salão da abóbora** (a festa surpresa, `eventos/halloween/noSalao.ts`):
 dois climas e dois sons. `'abobora-no-escuro'` é o suspense de desenho de
