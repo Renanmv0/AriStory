@@ -1582,6 +1582,11 @@ export const PALETTE = {
   escolaBanco: 0x8e2b35,
   escolaBancoFerro: 0x5e1c25,
   escolaMastro: 0xdfe3e6,
+  // a portaria e o estacionamento: o ferro batido do portão e da grade, o
+  // granito da guia que contorna o concreto, e o azul da vaga de cadeira de rodas
+  escolaFerro: 0x272b31,
+  escolaGranito: 0xb3ada2,
+  vagaAcessivel: 0x2f6db3,
   // as três bandeiras do pátio: a dos Gatitos no meio, e as do Brasil e da
   // Venezuela dos lados (as duas casas do Ari e do Renan)
   bandeiraGatitosAzul: 0x2f5596,

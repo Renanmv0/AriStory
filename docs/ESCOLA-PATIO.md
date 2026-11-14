@@ -19,9 +19,9 @@ concreto, os gramados com os canteiros, os bancos bordô e três mastros.
 
 | etapa | o quê | estado |
 |---|---|---|
-| **1** | o pátio da frente (o prédio por fora e o pátio), cena à parte | ✅ feita, **para o Renan olhar** (`?cena=escola-patio`) |
+| **1** | o pátio da frente (o prédio por fora e o pátio), cena à parte; e a segunda leva: a junção da pedra com a grama, a portaria e o estacionamento | ✅ feita, **para o Renan olhar** (`?cena=escola-patio`) |
 | **2** | ligar o pátio no jogo: o ônibus e o carro chegam na rua do pátio, a porta leva ao saguão e a porta da rua do saguão sai no pátio | ⬜ depois da aprovação das fotos |
-| **3** | o estacionamento da escola (com a vaga do coração e a chegada animada) | ⬜ |
+| **3** | o estacionamento da escola (com a vaga do coração e a chegada animada) | 🟡 o estacionamento está feito, do outro lado da rua (2026-11-14); falta a chegada animada do carro |
 | **4** | as rotas de carro de qualquer lugar até a escola (`docs/VIAGEM-CLUBE.md`) | ⬜ |
 
 **Hoje o pátio não está no caminho do jogo**: o ônibus (`villaLobos.ts`,
@@ -73,6 +73,50 @@ tem a entrada `do-saguao` para a volta.
   (225 e ~133 mil no celular em pé). O prédio sai da `fundir()`, e o que é só
   fundo (guias, árvores) sai da `fundirComoFundo()`, um grupo de cada lado.
 
+## A segunda leva (2026-11-14): a junção, a portaria e o estacionamento
+
+O Renan gostou e pediu: "quero que dê mais detalhes nas junções entre pedra e
+gramado. E é uma escola, então deve ter uma portaria chique, e do outro lado
+da rua deve ter um estacionamento, faça ambos bonitos detalhados".
+
+- **A junção da pedra com a grama.** O concreto do pátio virou UMA conta
+  (`uniaoSuave` de `world/caminhos.ts`): a praça do portal, o calçadão, a
+  travessa de pontas redondas, a pracinha do mastro, a laje do bicicletário
+  e o caminhozinho da guarita. As junções saem com a quina arredondada, sem o
+  "T" de régua. Em volta corre uma guia de granito (a mesma conta, 16 cm para
+  fora, em blocos de 60 cm). Na beira da grama ficam os tufos de capim e as
+  pedrinhas (`BeiraDoCaminho`, duas passadas). Na beira da travessa, entre
+  os bancos, e em volta da pracinha, há balizadores de luz baixos.
+- **A portaria** (`world/portariaDaEscola.ts`):
+  - **O portão:** de ferro batido no eixo do calçadão, com dois pilares de
+    tijolo com lanterna acesa em cima e o arco com a placa "ESCOLA DO
+    GATITO" e o medalhão do Gatito com os raios de sol. As duas folhas de
+    lanças douradas ficam abertas para dentro, com a faixa de argolas e as
+    volutas.
+  - **A grade:** a mureta de tijolo com o capeamento de pedra, os pilares
+    com a bola de pedra e a grade de lanças, de ponta a ponta. Ela fecha o
+    pátio: a rua só se alcança pelo portão.
+  - **A guarita:** octogonal, irmã pequena da rotunda, com a cupulazinha, o
+    pináculo, o vidro de verdade (a mesa com a tela acesa lá dentro) e o
+    guichê com o balcão de pedra virado para o portão.
+- **O estacionamento** (`world/estacionamentoDaEscola.ts`), do outro lado
+  da rua:
+  - **O chão:** o asfalto com a guia de concreto e a boca da entrada, a
+    calçada de lá com a sebe baixa, e a faixa de pedestres saindo do portão,
+    atravessando a rua e seguindo pintada pelo meio da fila 1.
+  - **As vagas:** duas filas de 2,6 × 5,2 com batente de roda, o corredor
+    com as setas, e a pista de entrada com a cancela (ela abre quando a
+    dupla chega perto) e a placa do "P". Há duas vagas de cadeira de rodas
+    e a VAGA DO CORAÇÃO do Bebito Mobile, com a plaquinha, já esperando a
+    etapa do carro.
+  - **Ilhas e postes:** ilhas de grama elevadas com guia, e os postes altos
+    de duas luminárias com as bandeirolas dos Gatitos.
+  - **O resto:** dezesseis carros dos outros, sorteados, e uma fileira de
+    árvores longe, atrás do lote.
+- **O peso:** no pior giro, 311 desenhos e ~300 mil triângulos (o Villa
+  Lobos tem ~385 mil). Com a `fundir()`, a vista da portaria cai de 1102
+  para 368 desenhos, com a mesma imagem.
+
 ## O que é provisório (decidido por mim, para o Renan trocar)
 
 1. **As bandeiras**: a dos Gatitos no mastro do meio e as do **Brasil** e da
@@ -112,7 +156,7 @@ tem a entrada `do-saguao` para a volta.
 - As bandeiras: Gatitos, Brasil e Venezuela, ou outras?
 - Os textos das placas e do quadro de recados.
 - A chegada da etapa 2: na rua da frente, a pé até a porta?
-- O estacionamento: de que lado do pátio (direita, esquerda, do outro lado da rua)?
+- A guarita: alguém trabalha nela? (hoje ela está vazia, com a tela acesa)
 - Alguém fica no pátio?
 
 ## Validar

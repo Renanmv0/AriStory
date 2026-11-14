@@ -1677,6 +1677,22 @@ GRANDE de vários corpos:
   com a onda crescendo do mastro para a ponta e a normal recalculada.
 - **O banco do pátio** é o de praça com o ferro bordô: `w.banco(…, cor,
   'praca', corFerro)`.
+- **A portaria** (`world/portariaDaEscola.ts`): portão de ferro batido (o
+  arco em dois tubos, as volutas em espiral `voluta()`, a placa e o
+  medalhão, as folhas com nome e a dobradiça no pilar, abertas por
+  `rotation.y = −s · abertura`), a GRADE (mureta, pilares e as lanças em
+  LOTE: centenas de barras em dois desenhos) e a guarita octogonal (o mesmo
+  molde da rotunda em miniatura, com vidro transparente para se ver a mesa).
+  A mureta afunda 2 cm e as travessas do caixilho são um tico mais rasas que
+  os montantes: o `zfighting.mjs` pegou os dois.
+- **O estacionamento** (`world/estacionamentoDaEscola.ts`): o poste alto com
+  as bandeirolas (o pano já recortado em V por `ShapeGeometry`, com o UV
+  refeito), a ilha elevada com guia, os batentes em lote, a seta pintada (a
+  forma espelhada precisa do índice invertido) e o símbolo da vaga
+  acessível. A pintura das vagas é UM decalque de riscos juntados.
+- **A junção pedra-grama** é a conta do pavimento (`uniaoSuave` + `mancha`)
+  pintada duas vezes — a guia 16 cm maior por baixo, o concreto por cima — e
+  a `BeiraDoCaminho` na linha de fora da guia.
 
 ## Depois de criar
 

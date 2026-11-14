@@ -54,6 +54,17 @@ try {
     // a rota a pé: a calçada, o calçadão, a volta na ilha do mastro, a praça e a porta
     const rota = [[0, 17.8], [0, 11], [3.2, 7], [3.2, 1], [0, -3], [0, -8], [0, -11.2]];
     const travas = [];
+    // e a outra: do portão, pela faixa de pedestres, até o meio do estacionamento do outro lado da rua
+    const travessia = [[0, 17.8], [0, 21], [0, 31], [0, 36], [0, 43]];
+    const travasDaRua = [];
+    for (let i = 0; i < travessia.length - 1; i++) {
+      const [x0, z0] = travessia[i], [x1, z1] = travessia[i + 1];
+      const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 0.2);
+      for (let k = 0; k <= n; k++) {
+        const x = x0 + ((x1 - x0) * k) / n, z = z0 + ((z1 - z0) * k) / n;
+        if (preso(x, z) || z > j.current.world.bounds.maxZ - 0.42) { travasDaRua.push([+x.toFixed(1), +z.toFixed(1)]); break; }
+      }
+    }
     for (let i = 0; i < rota.length - 1; i++) {
       const [x0, z0] = rota[i], [x1, z1] = rota[i + 1];
       const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 0.2);
@@ -67,9 +78,10 @@ try {
     const gramado = [[20, -14.9], [-20, -14.9], [30, -14.9], [-12, -14.9]].filter(([x, z]) => preso(x, z) || z < b.minZ + 0.42);
     const portas = j.current.world.interactables.filter((i) => i.enabled).map((i) => i.label);
     const p = j.player.position;
-    return { travas, gramado, portas, nasce: [p.x, p.z], nascePreso: preso(p.x, p.z), entradaPresa: preso(0, -20 + 8.32 + 1.6) };
+    return { travas, travasDaRua, gramado, portas, nasce: [p.x, p.z], nascePreso: preso(p.x, p.z), entradaPresa: preso(0, -20 + 8.32 + 1.6) };
   });
   ok(r.travas.length === 0, `da calçada até a porta, o caminho está livre (dando a volta na ilha do mastro)${r.travas.length ? ' ' + JSON.stringify(r.travas) : ''}`);
+  ok(r.travasDaRua.length === 0, `do portão, pela faixa de pedestres, até o meio do estacionamento, o caminho está livre${r.travasDaRua.length ? ' ' + JSON.stringify(r.travasDaRua) : ''}`);
   ok(r.gramado.length === 0, `o gramado na frente das alas é andável até a beira dos canteiros${r.gramado.length ? ' ' + JSON.stringify(r.gramado) : ''}`);
   ok(!r.nascePreso && !r.entradaPresa, 'o nascimento e a entrada de quem sai do saguão caem fora dos colisores');
   ok(r.portas.includes('Entrar na escola'), `a porta da escola está lá (${r.portas.filter((l) => !/banco/i.test(l)).join(', ')})`);
@@ -78,10 +90,9 @@ try {
   // ------------------------------------------------------------- o prédio
   const predio = await page.evaluate(() => {
     const j = window.jogo;
-    let raiz = null;
-    j.scene.traverse((o) => { if (!raiz && o.userData.peca === 'predio-da-escola') raiz = o; });
-    if (!raiz) return { achou: false };
-    raiz.updateMatrixWorld(true);
+    const raizes = [];
+    j.scene.traverse((o) => { if (['predio-da-escola', 'portao-da-escola', 'grade-da-escola', 'guarita-da-escola'].includes(o.userData.peca)) raizes.push(o); });
+    if (raizes.length < 6) return { achou: false, raizes: raizes.length };
     const cols = j.current.world.colliders;
     const dentro = (x, z) => cols.some((k) => (k.kind === 'circle'
       ? Math.hypot(x - k.x, z - k.z) <= k.r + 0.02
@@ -96,7 +107,8 @@ try {
     const m = new M();
     const fora = [];
     let medidos = 0;
-    raiz.traverse((o) => {
+    for (const raiz of raizes) raiz.updateMatrixWorld(true);
+    for (const raiz of raizes) raiz.traverse((o) => {
       if (!o.isMesh) return;
       const pos = o.geometry.getAttribute('position');
       const copias = o.isInstancedMesh ? o.count : 1;
@@ -111,10 +123,28 @@ try {
         }
       }
     });
-    return { achou: true, medidos, fora };
+    return { achou: true, medidos, fora, raizes: raizes.length };
   });
   ok(predio.achou && predio.medidos > 1000 && predio.fora.length === 0,
-    `todo o prédio na altura do corpo cabe nos colisores (${predio.medidos} vértices${predio.fora.length ? ', fora: ' + JSON.stringify(predio.fora) : ''})`);
+    `o prédio, o portão, a grade e a guarita, na altura do corpo, cabem nos colisores (${predio.raizes} peças, ${predio.medidos} vértices${predio.fora.length ? ', fora: ' + JSON.stringify(predio.fora) : ''})`);
+
+  // ------------------------------------------------------- a cancela
+  const cancela = async () => page.evaluate(() => {
+    let braco = null;
+    window.jogo.scene.traverse((o) => { if (o.name === 'braco-da-cancela') braco = o; });
+    return braco ? braco.rotation.z : null;
+  });
+  const fechada = await cancela();
+  await page.evaluate(() => window.jogo.player.object.position.set(16.9, 0, 33.2));
+  // (o navegador do teste anda a poucos quadros por segundo: espera o braço subir, em vez de um tempo fixo)
+  await page.waitForFunction(() => {
+    let b = null;
+    window.jogo.scene.traverse((o) => { if (o.name === 'braco-da-cancela') b = o; });
+    return b && b.rotation.z > 0.6;
+  }, null, { timeout: 30000 }).catch(() => {});
+  const aberta = await cancela();
+  await page.evaluate(() => window.jogo.player.object.position.set(0, 0, 17.8));
+  ok(fechada !== null && fechada < 0.05 && aberta > 0.6, `a cancela do estacionamento abre quando a dupla chega (${fechada?.toFixed(2)} → ${aberta?.toFixed(2)})`);
 
   // ------------------------------------------------------- as bandeiras
   const pano = async () => page.evaluate(() => {
@@ -123,7 +153,12 @@ try {
     return ps;
   });
   const antes = await pano();
-  await page.waitForTimeout(700);
+  // (espera o pano mudar, e não um tempo fixo: com o navegador lento, 0,7 s às vezes não tinha nem um quadro)
+  await page.waitForFunction((antes) => {
+    const ps = [];
+    window.jogo.scene.traverse((o) => { if (o.name === 'pano-da-bandeira') ps.push(o.geometry.getAttribute('position').getZ(40)); });
+    return ps.length === antes.length && ps.every((z, i) => Math.abs(z - antes[i]) > 1e-4);
+  }, antes, { timeout: 20000 }).catch(() => {});
   const depois = await pano();
   ok(antes.length === 3 && antes.every((z, i) => Math.abs(z - depois[i]) > 1e-4), `as três bandeiras balançam (${antes.length})`);
 

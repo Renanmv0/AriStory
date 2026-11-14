@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { SceneDef } from '../core/types';
 import { PALETTE as P } from '../palette';
-import { cloud, lamp, meioFio, tree } from '../world/props';
+import { cloud, lamp, meioFio, sebe, tree } from '../world/props';
 import { Vento } from '../core/shaders';
 import { toon } from '../core/materials';
 import { cascaDePinus, hortensias, margaridas, type MoitaDeMargaridas, type PeDePlanta } from '../world/plantasDeJardim';
@@ -11,6 +11,13 @@ import {
 } from '../world/patioDaEscola';
 import { asfalto, calcadaDePedrinha, pisoDePlacas, tapeteDeGrama } from '../world/texturasDeChao';
 import { fundir, fundirComoFundo } from '../world/fundir';
+import { BeiraDoCaminho, caixaRedonda, capsula, disco, mancha, uniaoSuave, type Caixa } from '../world/caminhos';
+import { PORTAO_DA_ESCOLA, GUARITA_DA_ESCOLA, balizadores, gradeDaEscola, guaritaDaEscola, portaoDaEscola } from '../world/portariaDaEscola';
+import {
+  batentesDeRoda, geoSeta, ilhaDoEstacionamento, posteDoEstacionamento, simboloDeAcessivel,
+} from '../world/estacionamentoDaEscola';
+import { CARRO_ESTACIONADO, Cancela, carroEstacionado, geoCoracaoNoChao, placaDeEstacionamento, plaquinhaDaVaga } from '../world/estacionamento';
+import { sorteio } from '../world/texturasDeChao';
 import { PREDIO_DA_ESCOLA, predioDaEscola } from '../world/escolaPorFora';
 import { ESCOLA } from './escolaComum';
 
@@ -34,8 +41,11 @@ import { ESCOLA } from './escolaComum';
  *       │   gramado              │ mastro do │              gramado   │
  *       │            árvore      │   meio    │      árvore            │
  *       │                        │ calçadão  │                        │
- *   +Z  └═════════════ a calçada da rua ═════════════════════════════┘
- *       ═══════════════════════ a rua ═══════════════════════════════
+ *       ╪══ grade ══╪══ grade ══╡ PORTÃO ╞ guarita ╪══ grade ══╪══ grade ══╪
+ *   +Z  ══════════════════════ a calçada da rua ════════════════════════════
+ *       ═══════════════════════ a rua ═══ (faixa) ═══════════════════════════
+ *       ════════════════════ a calçada de lá · a sebe ══════════════════════
+ *       │ ESTACIONAMENTO: fila 1 · corredor · fila 2 (ilhas, postes, cancela) │
  *
  * POR ENQUANTO ela é uma cena à parte (`?cena=escola-patio`): o ônibus e a
  * porta da rua do saguão continuam como sempre até o Renan aprovar o pátio.
@@ -55,6 +65,17 @@ const PRACINHA = { x: 0, z: 4, raio: 5.6, ilha: 1.7 };
 /** os mastros do lado, nos gramados da frente das alas */
 const MASTROS_DO_LADO = [{ x: -12.5, z: -11.6 }, { x: 12.5, z: -11.6 }];
 const PLACA = { x: -10.5, z: 15.2 };
+/** a linha da grade da frente (a face da rua da mureta), e a guarita ao lado do portão */
+const GRADE_Z = 18.55;
+const GUARITA = { x: 7.7, z: 17.9 };
+/** a calçada do outro lado da rua, e o estacionamento atrás dela */
+const CALCADA_DE_LA = { z0: RUA.z1, z1: 32.6 };
+const LOTE = { x0: -29, x1: 29, z0: 33.8, z1: 54.2 };
+/** as duas filas de vagas (2,6 × 5,2), o corredor entre elas, e a pista de entrada */
+const FILA_1 = { z0: 34.6, z1: 39.8 };
+const FILA_2 = { z0: 46.4, z1: 51.6 };
+const VAGA = 2.6;
+const ENTRADA = { x0: 14.3, x1: 19.5 };
 
 export const escolaPatio: SceneDef = {
   id: ESCOLA.patio,
@@ -81,10 +102,11 @@ export const escolaPatio: SceneDef = {
     const g = w.game;
 
     // ------------------------------------------------------------------ o chão
-    w.ground({ width: 150, depth: 110, color: P.grass, textura: tapeteDeGrama(9) });
+    // (o chão vai bem além do estacionamento: visto de cima, a cena não pode acabar atrás dele)
+    w.ground({ width: 170, depth: 170, z: 10, color: P.grass, textura: tapeteDeGrama(9) });
     // (o limite do fundo é a frente das alas: os colisores do prédio e dos canteiros é que param a dupla —
     // com o limite na linha da porta, sobrava uma parede invisível no meio do gramado da frente de cada ala)
-    w.setBounds(-34, PREDIO.z + PREDIO_DA_ESCOLA.ala.z1 - 0.3, 34, CALCADA.z1 - 0.3);
+    w.setBounds(-34, PREDIO.z + PREDIO_DA_ESCOLA.ala.z1 - 0.3, 34, LOTE.z1 + 2.2);
     // a calçada da rua e a rua (de ponta a ponta: some nas duas pontas)
     w.patch(0, (CALCADA.z0 + CALCADA.z1) / 2, RUA.comprimento, CALCADA.z1 - CALCADA.z0, P.concrete, 0, 0.014, calcadaDePedrinha());
     w.patch(0, (RUA.z0 + RUA.z1) / 2, RUA.comprimento, RUA.z1 - RUA.z0, P.asphalt, 0, 0.018, asfalto());
@@ -92,16 +114,44 @@ export const escolaPatio: SceneDef = {
     for (let x = -RUA.comprimento / 2 + 2; x <= RUA.comprimento / 2 - 2; x += 5) if (Math.abs(x) > 5) tracos.push(new THREE.PlaneGeometry(2, 0.22).translate(x, 0, 0));
     w.patch(0, (RUA.z0 + RUA.z1) / 2, 2, 0.22, P.metalWhite, 0, 0.022).geometry = mergeGeometries(tracos);
     w.add(w.place(meioFio(RUA.comprimento), 0, 0, RUA.z0, Math.PI / 2));
-    // o concreto: a praça na frente do portal, o calçadão e a travessa (placas de 1,5 m)
+    // a calçada de lá, a guia do outro lado da rua (com a boca da entrada do estacionamento) e a rampa da entrada
+    w.patch(0, (CALCADA_DE_LA.z0 + CALCADA_DE_LA.z1) / 2, RUA.comprimento, CALCADA_DE_LA.z1 - CALCADA_DE_LA.z0, P.concrete, 0, 0.014, calcadaDePedrinha());
+    for (const [x0, x1] of [[-RUA.comprimento / 2, ENTRADA.x0 - 0.3], [ENTRADA.x1 + 0.3, RUA.comprimento / 2]] as const) {
+      w.add(w.place(meioFio(x1 - x0), (x0 + x1) / 2, 0, RUA.z1, Math.PI / 2));
+    }
+    /*
+     * O CONCRETO DO PÁTIO É UMA CONTA (`world/caminhos.ts`): a praça do portal, o
+     * calçadão, a travessa de pontas redondas, a pracinha do mastro, a laje do
+     * bicicletário e o caminhozinho da guarita, numa UNIÃO SUAVE — as junções saem
+     * com a quina arredondada, sem o "T" de régua. Em volta dele corre a GUIA DE
+     * GRANITO (a mesma conta, 16 cm para fora, em blocos de 60 cm) e, na beira da
+     * grama, os tufos e as pedrinhas (`BeiraDoCaminho`). É a junção da pedra com a
+     * grama que o Renan pediu com mais detalhe.
+     */
+    const PAVIMENTO = uniaoSuave(0.9,
+      caixaRedonda(0, (PORTA.z - 0.6 + TRAVESSA.z) / 2, 9, (TRAVESSA.z - PORTA.z + 0.6) / 2, 0.4),
+      caixaRedonda(0, (TRAVESSA.z + CALCADA.z0) / 2, CALCADAO.meia, (CALCADA.z0 - TRAVESSA.z) / 2, 0.05),
+      caixaRedonda(0, TRAVESSA.z, (TRAVESSA.x1 - TRAVESSA.x0) / 2, TRAVESSA.meia, TRAVESSA.meia),
+      disco(PRACINHA.x, PRACINHA.z, PRACINHA.raio),
+      capsula(CALCADAO.meia, 15.6, GUARITA.x - 1.25, GUARITA.z - 1.3, 0.62),
+    );
+    const LAJE_DA_BICI = caixaRedonda(9.2, 13.4, 2.6, 0.9, 0.3);
+    const CAIXA_DO_PATIO: Caixa = { x0: -33, z0: PORTA.z - 1.2, x1: 33, z1: CALCADA.z0 + 0.4 };
+    const pintarCom = (decal: THREE.Mesh, geo: THREE.BufferGeometry): void => {
+      decal.geometry.dispose();
+      decal.geometry = geo;
+    };
     const placas = pisoDePlacas(1.5);
-    w.patch(0, (PORTA.z - 0.6 + TRAVESSA.z) / 2, 18, TRAVESSA.z - PORTA.z + 0.6, P.concrete, 0, 0.016, placas);
-    w.patch(0, (TRAVESSA.z + CALCADAO.z1) / 2, CALCADAO.meia * 2, CALCADAO.z1 - TRAVESSA.z, P.concrete, 0, 0.016, placas);
-    w.patch(0, TRAVESSA.z, TRAVESSA.x1 - TRAVESSA.x0, TRAVESSA.meia * 2, P.concrete, 0, 0.016, placas);
-    w.disc(PRACINHA.x, PRACINHA.z, PRACINHA.raio, P.concrete, 0.016, placas);
+    const granito = pisoDePlacas(0.6);
+    const comGuia = (x: number, z: number): number => Math.min(PAVIMENTO(x, z), LAJE_DA_BICI(x, z)) - 0.16;
+    pintarCom(w.patch(0, 0, 1, 1, P.escolaGranito, 0, 0.015, granito), mancha(comGuia, CAIXA_DO_PATIO, 0.2));
+    pintarCom(w.patch(0, 0, 1, 1, P.concrete, 0, 0.016, placas), mancha((x, z) => Math.min(PAVIMENTO(x, z), LAJE_DA_BICI(x, z)), CAIXA_DO_PATIO, 0.2));
     // a faixa de pedestres na frente do calçadão
     const zebra: THREE.BufferGeometry[] = [];
     for (let x = -3; x <= 3.01; x += 0.75) zebra.push(new THREE.PlaneGeometry(0.42, RUA.z1 - RUA.z0 - 1.2).translate(x, 0, 0));
     w.patch(0, (RUA.z0 + RUA.z1) / 2, 1, 1, P.metalWhite, 0, 0.024).geometry = mergeGeometries(zebra);
+    // a soleira de granito do portão
+    w.patch(0, GRADE_Z, PORTAO_DA_ESCOLA.meiaVao * 2 + 0.1, 0.8, P.escolaGranito, 0, 0.025, granito);
 
     // ---------------------------------------------------------------- o prédio
     w.add(fundir(w.place(predioDaEscola(), PREDIO.x, 0, PREDIO.z)));
@@ -242,13 +292,12 @@ export const escolaPatio: SceneDef = {
     w.add(fundir(w.place(placaDaEscola(), PLACA.x, 0, PLACA.z)));
     w.blockBox(PLACA.x, PLACA.z, 3.05, 0.5);
     // as plaquinhas no poste (as da foto, na beira do caminho)
-    const aviso = w.add(w.place(plaquinhaNoPoste(['DEVAGAR', 'GATITOS', 'ATRAVESSANDO'], 'pata'), 4.5, 0, CALCADA.z0 - 0.4));
+    const aviso = w.add(w.place(plaquinhaNoPoste(['DEVAGAR', 'GATITOS', 'ATRAVESSANDO'], 'pata'), 4.9, 0, CALCADA.z1 - 0.45));
     fundir(aviso);
     const visita = w.add(w.place(plaquinhaNoPoste(['VISITANTES:', 'PASSEM NA', 'SECRETARIA'], undefined), -9.6, 0, TRAVESSA.z - TRAVESSA.meia - 0.5));
     fundir(visita);
-    for (const [x, z] of [[4.5, CALCADA.z0 - 0.4], [-9.6, TRAVESSA.z - TRAVESSA.meia - 0.5]] as const) w.blockCircle(x, z, 0.15);
-    // o bicicletário, numa laje de concreto ao lado do calçadão
-    w.patch(9.2, 13.4, 5.2, 1.8, P.concrete, 0, 0.016, placas);
+    for (const [x, z] of [[4.9, CALCADA.z1 - 0.45], [-9.6, TRAVESSA.z - TRAVESSA.meia - 0.5]] as const) w.blockCircle(x, z, 0.15);
+    // o bicicletário, na laje de concreto ao lado do calçadão (a laje é do pavimento, lá em cima)
     w.add(fundir(w.place(bicicletario(6), 9.2, 0, 13.4)));
     w.blockBox(9.2, 13.4, 1.95, 0.2);
     // (sem a plaquinha "BICICLETAS": placa que só diz o que o lugar é o Renan tirou do jogo inteiro)
@@ -263,6 +312,191 @@ export const escolaPatio: SceneDef = {
       w.blockCircle(x, z, 0.5);
     }
     for (const f of fundos) w.add(fundirComoFundo(f));
+
+    // --------------------------------------------- a beira do concreto e os balizadores
+    // (fora dos canteiros, do prédio, da grade e da guarita: ali o chão já tem dono)
+    const livre = (x: number, z: number): boolean => {
+      if (z < PREDIO.z + A.z1 + 3.1 && Math.abs(x) > 7.8) return false; // os canteiros do pé das alas
+      if (Math.hypot(x - PREDIO.x, z - PREDIO.z) < PREDIO_DA_ESCOLA.raio + 0.9) return false;
+      if (Math.abs(Math.abs(x) - 6.1) < 2.5 && Math.abs(z - (PREDIO.z + A.z1 + 1.6)) < 1.6) return false;
+      if (MASTROS_DO_LADO.some((m) => Math.hypot(x - m.x, z - m.z) < 2.0)) return false;
+      if (Math.abs(x - PLACA.x) < 3.6 && Math.abs(z - PLACA.z - 0.2) < 1.3) return false;
+      if (z > GRADE_Z - 0.6) return false;
+      if (Math.hypot(x - GUARITA.x, z - GUARITA.z) < GUARITA_DA_ESCOLA.raio + 0.5) return false;
+      return true;
+    };
+    // (duas passadas, com sementes diferentes: uma só deixava a beira rala)
+    for (const semente of [2211, 2297]) w.add(new BeiraDoCaminho(comGuia, CAIXA_DO_PATIO, vento, livre, semente).grupo);
+    // os balizadores de luz: em volta da pracinha (fora da boca do calçadão) e na beira da travessa, entre os bancos
+    const pontosDeLuz: Array<[number, number]> = [];
+    for (const graus of [-28, 0, 28, 152, 180, 208]) {
+      const a = (graus * Math.PI) / 180;
+      pontosDeLuz.push([PRACINHA.x + Math.cos(a) * (PRACINHA.raio + 0.45), PRACINHA.z + Math.sin(a) * (PRACINHA.raio + 0.45)]);
+    }
+    for (const x of [12, 20, 28]) {
+      for (const lado of [-1, 1]) {
+        for (const z of [TRAVESSA.z - TRAVESSA.meia - 0.45, TRAVESSA.z + TRAVESSA.meia + 0.45]) pontosDeLuz.push([lado * x, z]);
+      }
+    }
+    for (const z of [12.9, 14.6]) for (const lado of [-1, 1]) pontosDeLuz.push([lado * (CALCADAO.meia + 0.45), z]);
+    w.add(balizadores(pontosDeLuz));
+    for (const [x, z] of pontosDeLuz) w.blockCircle(x, z, 0.14);
+
+    // -------------------------------------------------------------- a portaria
+    /*
+     * A PORTARIA (`world/portariaDaEscola.ts`): o portão de ferro batido no eixo
+     * do calçadão (as folhas abertas para dentro, na beira dele), a grade de
+     * lanças com a mureta de tijolo de ponta a ponta, e a guarita octogonal do
+     * lado direito, com o guichê virado para o portão. A grade fecha o pátio: a
+     * rua só se alcança pelo portão.
+     */
+    const { meiaVao: MV, pilar: PL, folha: FOLHA } = PORTAO_DA_ESCOLA;
+    w.add(fundir(w.place(portaoDaEscola(), 0, 0, GRADE_Z)));
+    for (const lado of [-1, 1]) {
+      w.blockBox(lado * (MV + PL / 2), GRADE_Z, PL / 2 + 0.1, PL / 2 + 0.1);
+      // a folha aberta, encostada na beira do calçadão
+      // (aberta 92°, a ponta da folha passa 10 cm para fora da dobradiça)
+      w.blockBox(lado * (MV + 0.05), GRADE_Z - FOLHA / 2 - 0.05, 0.13, FOLHA / 2 + 0.08);
+    }
+    const guarita = w.add(fundir(w.place(guaritaDaEscola(), GUARITA.x, 0, GUARITA.z)));
+    void guarita;
+    // (até a ponta do balcão do guichê, que avança 40 cm da parede)
+    w.blockCircle(GUARITA.x, GUARITA.z, GUARITA_DA_ESCOLA.raio + 0.35);
+    // a grade: da ponta esquerda ao portão, do portão à guarita, e da guarita à ponta direita
+    const apGuarita = GUARITA_DA_ESCOLA.raio * Math.cos(Math.PI / 8);
+    for (const [x0, x1] of [[-34, -(MV + PL)], [MV + PL, GUARITA.x - apGuarita + 0.08], [GUARITA.x + apGuarita - 0.08, 34]] as const) {
+      w.add(fundir(w.place(gradeDaEscola(x1 - x0), x0, 0, GRADE_Z)));
+      w.blockBox((x0 + x1) / 2, GRADE_Z, (x1 - x0) / 2, 0.32);
+    }
+
+    // ---------------------------------------------------------- o estacionamento
+    /*
+     * O ESTACIONAMENTO, do outro lado da rua (`world/estacionamentoDaEscola.ts`):
+     * o asfalto com a guia de concreto em volta e a boca da entrada, duas filas de
+     * vagas de 2,6 × 5,2 com o corredor no meio, a pista de entrada com a
+     * cancela, as ilhas de grama nas pontas e no meio com os postes altos (e as
+     * bandeirolas dos Gatitos), a sebe baixa do lado da calçada, a passagem de
+     * pedestres pintada no eixo do portão, as duas vagas de cadeira de rodas, a
+     * VAGA DO CORAÇÃO do Bebito Mobile (para quando o carro chegar aqui) e os
+     * carros dos outros.
+     */
+    const CENTRO_DO_LOTE = { x: (LOTE.x0 + LOTE.x1) / 2, z: (LOTE.z0 + LOTE.z1) / 2 };
+    const ASFALTO = uniaoSuave(0.8,
+      caixaRedonda(CENTRO_DO_LOTE.x, CENTRO_DO_LOTE.z, (LOTE.x1 - LOTE.x0) / 2, (LOTE.z1 - LOTE.z0) / 2, 1.6),
+      caixaRedonda((ENTRADA.x0 + ENTRADA.x1) / 2, (CALCADA_DE_LA.z0 + LOTE.z0) / 2 + 0.6, (ENTRADA.x1 - ENTRADA.x0) / 2, (LOTE.z0 - CALCADA_DE_LA.z0) / 2 + 0.6, 0.1),
+    );
+    const CAIXA_DO_LOTE: Caixa = { x0: LOTE.x0 - 1.5, z0: CALCADA_DE_LA.z0 - 0.2, x1: LOTE.x1 + 1.5, z1: LOTE.z1 + 1.5 };
+    pintarCom(w.patch(0, 0, 1, 1, P.concrete, 0, 0.02, granito), mancha((x, z) => ASFALTO(x, z) - 0.22, CAIXA_DO_LOTE, 0.2));
+    pintarCom(w.patch(0, 0, 1, 1, P.asphalt, 0, 0.021, asfalto()), mancha(ASFALTO, CAIXA_DO_LOTE, 0.2));
+    // a pintura: os riscos das vagas, as setas e a passagem de pedestres, num decalque só
+    const risco = (x0: number, z0: number, x1: number, z1: number): THREE.BufferGeometry =>
+      new THREE.PlaneGeometry(Math.abs(x1 - x0), Math.abs(z1 - z0)).translate((x0 + x1) / 2, -(z0 + z1) / 2, 0);
+    const riscos: THREE.BufferGeometry[] = [];
+    /** as vagas de uma fila: `[x0, x1]` de cada uma, sem o meio (a passagem) nem a pista de entrada */
+    const vagas = (semEntrada: boolean): Array<[number, number]> => {
+      const lista: Array<[number, number]> = [];
+      for (const lado of [-1, 1]) {
+        for (let i = 0; i < 10; i++) {
+          const a = lado * (1.3 + i * VAGA);
+          const b = lado * (1.3 + (i + 1) * VAGA);
+          const [x0, x1] = a < b ? [a, b] : [b, a];
+          if (semEntrada && x0 > ENTRADA.x0 - 0.05 && x1 < ENTRADA.x1 + 0.05) continue;
+          lista.push([x0, x1]);
+        }
+      }
+      return lista;
+    };
+    const VAGAS_1 = vagas(true);
+    const VAGAS_2 = vagas(false);
+    for (const [lista, fila, cabeca] of [[VAGAS_1, FILA_1, FILA_1.z0], [VAGAS_2, FILA_2, FILA_2.z1]] as const) {
+      for (const [x0, x1] of lista) {
+        for (const x of [x0, x1]) riscos.push(risco(x - 0.06, fila.z0, x + 0.06, fila.z1));
+        riscos.push(risco(x0 - 0.06, cabeca - 0.06, x1 + 0.06, cabeca + 0.06));
+      }
+    }
+    riscos.push(geoSeta(-9, 43.1, -1), geoSeta(9, 43.1, -1), geoSeta(-21, 43.1, -1), geoSeta(21, 43.1, -1));
+    riscos.push(geoSeta(0, 0, 1).rotateZ(Math.PI / 2).translate((ENTRADA.x0 + ENTRADA.x1) / 2, -36.6, 0));
+    // a passagem de pedestres: da calçada de lá, pelo meio da fila 1, atravessando o corredor
+    for (let z = LOTE.z0 + 0.3; z < FILA_2.z0 - 0.3; z += 0.75) riscos.push(risco(-1.15, z, 1.15, z + 0.42));
+    w.patch(0, 0, 1, 1, P.metalWhite, 0, 0.026).geometry = mergeGeometries(riscos.map((r) => (r.index ? r.toNonIndexed() : r)));
+    // as vagas de cadeira de rodas (as duas primeiras da esquerda na fila 1) e a vaga do coração (a primeira da direita)
+    const acessivel = simboloDeAcessivel();
+    for (const xc of [-2.6, -5.2]) {
+      w.patch(xc, (FILA_1.z0 + FILA_1.z1) / 2, VAGA - 0.2, FILA_1.z1 - FILA_1.z0 - 0.25, P.vagaAcessivel, 0, 0.025);
+      w.patch(xc, FILA_1.z0 + 1.6, 1.4, 1.4, P.metalWhite, 0, 0.027, acessivel);
+    }
+    const VAGA_DO_CORACAO = { x: 2.6, z: (FILA_1.z0 + FILA_1.z1) / 2 };
+    const coracao = w.patch(VAGA_DO_CORACAO.x, VAGA_DO_CORACAO.z, 1, 1, P.vagaRosa, 0, 0.027);
+    coracao.geometry.dispose();
+    coracao.geometry = geoCoracaoNoChao(1.7).rotateX(Math.PI / 2).rotateZ(Math.PI);
+    // os batentes de roda: na cabeça de cada vaga
+    const batentes: Array<[number, number, number]> = [];
+    for (const [x0, x1] of VAGAS_1) batentes.push([(x0 + x1) / 2, FILA_1.z0 + 0.42, 0]);
+    for (const [x0, x1] of VAGAS_2) batentes.push([(x0 + x1) / 2, FILA_2.z1 - 0.42, 0]);
+    w.add(batentesDeRoda(batentes));
+
+    // as peças paradas do estacionamento: um grupo de fundo de cada lado
+    const fundosDoLote = [new THREE.Group(), new THREE.Group()];
+    const doLote = (x: number): THREE.Group => fundosDoLote[x < 0 ? 0 : 1];
+    // a sebe baixa entre a calçada de lá e o asfalto, com as bocas da passagem e da entrada
+    for (const [x0, x1] of [[LOTE.x0 + 0.6, -1.7], [1.7, ENTRADA.x0 - 0.7], [ENTRADA.x1 + 0.7, LOTE.x1 - 0.6]] as const) {
+      doLote((x0 + x1) / 2).add(w.place(sebe(x1 - x0, 0.75), (x0 + x1) / 2, 0, CALCADA_DE_LA.z1 + 0.62));
+      w.blockBox((x0 + x1) / 2, CALCADA_DE_LA.z1 + 0.62, (x1 - x0) / 2, 0.5);
+    }
+    // as ilhas: nas pontas das duas filas e no meio da fila 2, com os postes
+    const ilhas: Array<[number, number, number, number]> = [
+      [LOTE.x0 + 0.85 + 0.05, (FILA_1.z0 + FILA_1.z1) / 2, 1.5, FILA_1.z1 - FILA_1.z0],
+      [LOTE.x1 - 0.85 - 0.05, (FILA_1.z0 + FILA_1.z1) / 2, 1.5, FILA_1.z1 - FILA_1.z0],
+      [LOTE.x0 + 0.85 + 0.05, (FILA_2.z0 + FILA_2.z1) / 2, 1.5, FILA_2.z1 - FILA_2.z0],
+      [LOTE.x1 - 0.85 - 0.05, (FILA_2.z0 + FILA_2.z1) / 2, 1.5, FILA_2.z1 - FILA_2.z0],
+      [0, (FILA_2.z0 + FILA_2.z1) / 2, 2.4, FILA_2.z1 - FILA_2.z0],
+    ];
+    const arbustosDoLote: PeDeArbusto[] = [];
+    ilhas.forEach(([x, z, larg, fundo], i) => {
+      doLote(x).add(w.place(ilhaDoEstacionamento(larg, fundo), x, 0, z));
+      w.blockBox(x, z, larg / 2, fundo / 2);
+      w.add(fundir(w.place(posteDoEstacionamento(), x, 0.12, z)));
+      for (const dz of [-1.6, 1.6]) arbustosDoLote.push({ x, z: z + dz, escala: 0.7, semente: 500 + i * 3 + dz, forma: 'almofada' });
+    });
+    // atrás do estacionamento, um gramado com arbustos e duas árvores floridas nas pontas (baixas: o lote fica do lado da câmera)
+    for (let x = LOTE.x0 + 2; x <= LOTE.x1 - 2; x += 3.2) arbustosDoLote.push({ x, z: LOTE.z1 + 1.3, escala: 0.95, semente: 600 + x, forma: x % 2 ? 'bola' : 'almofada' });
+    w.add(arbustosAparados(arbustosDoLote));
+    for (const x of [LOTE.x0 - 1.5, LOTE.x1 + 1.5]) {
+      doLote(x).add(w.place(tree('florida', 0.95, w.rng()), x, 0, LOTE.z1 + 0.5));
+      w.blockCircle(x, LOTE.z1 + 0.5, 0.5);
+    }
+    // a placa do "P" na boca da entrada, a cancela e a plaquinha da vaga do Bebito
+    doLote(ENTRADA.x0).add(w.place(placaDeEstacionamento(), ENTRADA.x0 - 0.9, 0, CALCADA_DE_LA.z1 + 0.3));
+    w.blockCircle(ENTRADA.x0 - 0.9, CALCADA_DE_LA.z1 + 0.3, 0.15);
+    const cancela = new Cancela(ENTRADA.x1 - ENTRADA.x0 - 0.35);
+    w.add(w.place(cancela.group, ENTRADA.x1 + 0.05, 0, LOTE.z0 + 0.4, Math.PI));
+    w.blockBox(ENTRADA.x1 + 0.05, LOTE.z0 + 0.4, 0.22, 0.22);
+    w.onUpdate((dt) => {
+      const p = g.playerPosition();
+      cancela.update(dt, Math.abs(p.x - (ENTRADA.x0 + ENTRADA.x1) / 2) < 4 && Math.abs(p.z - LOTE.z0) < 4);
+    });
+    doLote(VAGA_DO_CORACAO.x).add(w.place(plaquinhaDaVaga(), VAGA_DO_CORACAO.x, 0, LOTE.z0 + 0.25));
+    w.blockCircle(VAGA_DO_CORACAO.x, LOTE.z0 + 0.25, 0.15);
+    // os carros dos outros: sorteados nas vagas livres (nem a do coração, nem as de cadeira de rodas)
+    const sorte = sorteio(4242);
+    const cores = [P.carroVermelho, P.carroAmarelo, P.carroMenta, P.carroLilas, P.escolaCaixilho, P.escolaFerro];
+    // (a vizinha da vaga do coração também fica livre: com um carro ali, a câmera de sempre via o coração pela metade)
+    const reservadas = (xc: number, fila: number): boolean => fila === 1 && [2.6, 5.2, -2.6, -5.2].some((r) => Math.abs(xc - r) < 0.1);
+    for (const [lista, fila, giro, n] of [[VAGAS_1, 1, Math.PI, 7], [VAGAS_2, 2, 0, 9]] as const) {
+      const livres = lista.map(([x0, x1]) => (x0 + x1) / 2).filter((xc) => !reservadas(xc, fila));
+      for (let k = 0; k < n && livres.length; k++) {
+        const xc = livres.splice(Math.floor(sorte() * livres.length), 1)[0];
+        const zc = fila === 1 ? (FILA_1.z0 + FILA_1.z1) / 2 + 0.1 : (FILA_2.z0 + FILA_2.z1) / 2 - 0.1;
+        doLote(xc).add(w.place(carroEstacionado(cores[Math.floor(sorte() * cores.length)]), xc, 0, zc, giro));
+        w.blockBox(xc, zc, CARRO_ESTACIONADO.largura / 2 + 0.05, CARRO_ESTACIONADO.comprimento / 2 + 0.05);
+      }
+    }
+    // o fundo de lá do estacionamento: uma fileira de árvores LONGE (perto, elas tapariam as vagas — o lote fica do lado da câmera)
+    for (let x = -60; x <= 60; x += 7.5) {
+      const z = LOTE.z1 + 10 + w.range(0, 5);
+      doLote(x).add(w.place(tree(w.pick(['redonda', 'redonda', 'pinheiro', 'florida'] as const), w.range(1.3, 1.8), w.rng()), x + w.range(-1.5, 1.5), 0, z, w.range(0, 6.28)));
+    }
+    for (const f of fundosDoLote) w.add(fundirComoFundo(f));
 
     // o céu: nuvens bem altas, acima da câmera (a lição da frente da casa)
     for (let i = 0; i < 6; i++) {
