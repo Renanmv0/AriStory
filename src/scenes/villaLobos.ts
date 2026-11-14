@@ -4883,7 +4883,7 @@ export const villaLobos: SceneDef = {
         }
         const destino = await api.ask('Pra onde a gente vai?', ['Clube', 'Escola do Gatito', 'Ficar no parque']);
         if (destino === 0) api.goTo('clube', 'portaria');
-        else if (destino === 1) api.goTo('escola', 'da-rua');
+        else if (destino === 1) api.goTo('escola-patio', 'do-onibus'); // o ônibus para na rua da portaria
       },
     });
     w.onUpdate(() => {

@@ -78,12 +78,14 @@ try {
     const gramado = [[20, -14.9], [-20, -14.9], [30, -14.9], [-12, -14.9]].filter(([x, z]) => preso(x, z) || z < b.minZ + 0.42);
     const portas = j.current.world.interactables.filter((i) => i.enabled).map((i) => i.label);
     const p = j.player.position;
-    return { travas, travasDaRua, gramado, portas, nasce: [p.x, p.z], nascePreso: preso(p.x, p.z), entradaPresa: preso(0, -20 + 8.32 + 1.6) };
+    const descida = j.current.def.entries['do-onibus'];
+    return { travas, travasDaRua, gramado, portas, descida: descida && !preso(descida.x, descida.z), nasce: [p.x, p.z], nascePreso: preso(p.x, p.z), entradaPresa: preso(0, -20 + 8.32 + 1.6) };
   });
   ok(r.travas.length === 0, `da calçada até a porta, o caminho está livre (dando a volta na ilha do mastro)${r.travas.length ? ' ' + JSON.stringify(r.travas) : ''}`);
   ok(r.travasDaRua.length === 0, `do portão, pela faixa de pedestres, até o meio do estacionamento, o caminho está livre${r.travasDaRua.length ? ' ' + JSON.stringify(r.travasDaRua) : ''}`);
   ok(r.gramado.length === 0, `o gramado na frente das alas é andável até a beira dos canteiros${r.gramado.length ? ' ' + JSON.stringify(r.gramado) : ''}`);
   ok(!r.nascePreso && !r.entradaPresa, 'o nascimento e a entrada de quem sai do saguão caem fora dos colisores');
+  ok(r.portas.includes('Pegar o ônibus') && r.descida, 'o ponto do ônibus está na rua da portaria, e quem desce cai fora dos colisores');
   ok(r.portas.includes('Entrar na escola'), `a porta da escola está lá (${r.portas.filter((l) => !/banco/i.test(l)).join(', ')})`);
   ok(r.portas.filter((l) => /banco/i.test(l)).length >= 10, `os bancos dão para sentar (${r.portas.filter((l) => /banco/i.test(l)).length})`);
 
@@ -196,6 +198,25 @@ try {
   });
   const entrou = await page.waitForFunction(() => window.jogo.idDaCena === 'escola' && !window.jogo.transitioning, null, { timeout: 60000 }).then(() => true, () => false);
   ok(entrou, 'o "Entrar na escola" leva ao saguão');
+  // e a porta da rua do saguão devolve ao pátio, na frente do portal
+  await page.waitForTimeout(800);
+  await page.evaluate(() => {
+    const j = window.jogo;
+    j.current.world.interactables.find((i) => i.label === 'Sair para o pátio').trigger(j);
+  });
+  const saiu = await page.waitForFunction(() => window.jogo.idDaCena === 'escola-patio' && !window.jogo.transitioning, null, { timeout: 60000 }).then(() => true, () => false);
+  const ondeSaiu = await page.evaluate(() => [+window.jogo.player.position.x.toFixed(1), +window.jogo.player.position.z.toFixed(1)]);
+  ok(saiu && Math.abs(ondeSaiu[0]) < 0.5 && ondeSaiu[1] > -11.5 && ondeSaiu[1] < -8.5, `a porta da rua do saguão sai no pátio, na frente do portal (${ondeSaiu})`);
+  // o ônibus: "Pegar o ônibus" no ponto pergunta para onde, e leva ao clube
+  await page.evaluate(() => {
+    const j = window.jogo;
+    j.current.world.interactables.find((i) => i.label === 'Pegar o ônibus').trigger(j);
+  });
+  for (let i = 0; i < 40 && !(await page.locator('.escolhas.show button').count()); i++) await page.waitForTimeout(250);
+  const opcoes = await page.locator('.escolhas.show button').allTextContents();
+  await page.locator('.escolhas.show button').filter({ hasText: 'Clube' }).first().click().catch(() => {});
+  const noClube = await page.waitForFunction(() => window.jogo.idDaCena === 'clube' && !window.jogo.transitioning, null, { timeout: 60000 }).then(() => true, () => false);
+  ok(opcoes.includes('Parque') && opcoes.includes('Clube') && noClube, `o ônibus do ponto vai ao parque ou ao clube (${opcoes.join(' / ')})`);
   ok(erros.length === 0, `sem erros de console${erros.length ? ' ' + erros.join(' | ') : ''}`);
 } finally {
   await b.close();

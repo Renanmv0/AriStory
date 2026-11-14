@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { SceneDef } from '../core/types';
 import { PALETTE as P } from '../palette';
-import { cloud, lamp, meioFio, sebe, tree } from '../world/props';
+import { busStop, cloud, lamp, meioFio, sebe, tree } from '../world/props';
+import { OnibusDaCidade } from '../world/onibusDaCidade';
 import { Vento } from '../core/shaders';
 import { toon } from '../core/materials';
 import { cascaDePinus, hortensias, margaridas, type MoitaDeMargaridas, type PeDePlanta } from '../world/plantasDeJardim';
@@ -47,8 +48,9 @@ import { ESCOLA } from './escolaComum';
  *       ════════════════════ a calçada de lá · a sebe ══════════════════════
  *       │ ESTACIONAMENTO: fila 1 · corredor · fila 2 (ilhas, postes, cancela) │
  *
- * POR ENQUANTO ela é uma cena à parte (`?cena=escola-patio`): o ônibus e a
- * porta da rua do saguão continuam como sempre até o Renan aprovar o pátio.
+ * DESDE 2026-11-14 o ônibus do parque e do clube para AQUI, na rua da
+ * portaria (o ponto à esquerda do portão), e a porta da rua do saguão sai no
+ * pátio. O "Pegar o ônibus" do ponto leva de volta ao parque ou ao clube.
  */
 
 /** o prédio no mundo: o meio da rotunda */
@@ -76,6 +78,15 @@ const FILA_1 = { z0: 34.6, z1: 39.8 };
 const FILA_2 = { z0: 46.4, z1: 51.6 };
 const VAGA = 2.6;
 const ENTRADA = { x0: 14.3, x1: 19.5 };
+/*
+ * O PONTO DO ÔNIBUS, na faixa da calçada da escola, à esquerda do portão: o
+ * ônibus vai para o −X (o nariz no −X, as portas no −Z, para a calçada). A
+ * câmera vem do +X/+Z, do lado da rua: quem desce ATRÁS do ônibus some atrás
+ * dele (o parque é assim). Por isso a dupla desce na frente do NARIZ, e o
+ * abrigo fica do lado de lá dela.
+ */
+const ONIBUS = { x: -13, z: RUA.z0 + 0.3 + 1.28 };
+const DESCIDA = { x: ONIBUS.x - 4.5 - 1.6, z: CALCADA.z0 + 1.55 };
 
 export const escolaPatio: SceneDef = {
   id: ESCOLA.patio,
@@ -96,6 +107,8 @@ export const escolaPatio: SceneDef = {
   entries: {
     'da-rua': { x: 0, z: CALCADA.z0 - 1.2, facing: Math.PI },
     'do-saguao': { x: PORTA.x, z: PORTA.z + 1.6, facing: 0 },
+    // descendo do ônibus, na calçada, olhando para o portão
+    'do-onibus': { x: DESCIDA.x, z: DESCIDA.z, facing: Math.atan2(-DESCIDA.x, GRADE_Z - DESCIDA.z) },
   },
 
   build(w) {
@@ -368,6 +381,25 @@ export const escolaPatio: SceneDef = {
       w.add(fundir(w.place(gradeDaEscola(x1 - x0), x0, 0, GRADE_Z)));
       w.blockBox((x0 + x1) / 2, GRADE_Z, (x1 - x0) / 2, 0.32);
     }
+
+    // ---------------------------------------------------------- o ponto do ônibus
+    const onibus = w.add(fundir(w.place(new OnibusDaCidade({ destino: 'Parque' }).group, ONIBUS.x, 0, ONIBUS.z, Math.PI)));
+    w.blockBox(ONIBUS.x, ONIBUS.z, 4.5, 1.35);
+    // o abrigo, com a boca para a rua, do lado de lá de onde a dupla desce
+    w.add(fundir(w.place(busStop(), DESCIDA.x - 3.6, 0, CALCADA.z0 + 1.3)));
+    w.blockBox(DESCIDA.x - 3.6, CALCADA.z0 + 0.65, 2.35, 0.3);
+    // o mesmo "Pegar o ônibus" do parque e do clube: daqui ele volta para um dos dois
+    w.interact({
+      id: 'door:villa-lobos:clube',
+      x: DESCIDA.x + 0.6, z: DESCIDA.z + 0.4, radius: 2.4,
+      label: 'Pegar o ônibus', icon: '🚌',
+      highlight: onibus,
+      onInteract: async (api) => {
+        const destino = await api.ask('Pra onde a gente vai?', ['Parque', 'Clube', 'Ficar na escola']);
+        if (destino === 0) api.goTo('villa-lobos', 'clube');
+        else if (destino === 1) api.goTo('clube', 'portaria');
+      },
+    });
 
     // ---------------------------------------------------------- o estacionamento
     /*

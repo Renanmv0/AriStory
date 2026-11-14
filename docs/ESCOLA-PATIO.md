@@ -20,15 +20,20 @@ concreto, os gramados com os canteiros, os bancos bordô e três mastros.
 | etapa | o quê | estado |
 |---|---|---|
 | **1** | o pátio da frente (o prédio por fora e o pátio), cena à parte; e a segunda leva: a junção da pedra com a grama, a portaria e o estacionamento | ✅ feita, **para o Renan olhar** (`?cena=escola-patio`) |
-| **2** | ligar o pátio no jogo: o ônibus e o carro chegam na rua do pátio, a porta leva ao saguão e a porta da rua do saguão sai no pátio | ⬜ depois da aprovação das fotos |
+| **2** | ligar o pátio no jogo: o ônibus chega na rua do pátio, a porta leva ao saguão e a porta da rua do saguão sai no pátio | ✅ **no jogo** desde 2026-11-14 ("Faça o ônibus nos trazer para a portaria da escola"); falta o carro |
 | **3** | o estacionamento da escola (com a vaga do coração e a chegada animada) | 🟡 o estacionamento está feito, do outro lado da rua (2026-11-14); falta a chegada animada do carro |
 | **4** | as rotas de carro de qualquer lugar até a escola (`docs/VIAGEM-CLUBE.md`) | ⬜ |
 
-**Hoje o pátio não está no caminho do jogo**: o ônibus (`villaLobos.ts`,
-`clube.ts`) continua levando direto para o saguão (`goTo('escola', 'da-rua')`),
-e a porta da rua do saguão continua sendo o ponto do ônibus
-(`door:villa-lobos:clube`). A porta do pátio já leva ao saguão, e o pátio já
-tem a entrada `do-saguao` para a volta.
+**O pátio está no caminho do jogo desde 2026-11-14**: o ônibus do parque e o
+do clube (`villaLobos.ts`, `clube.ts`) deixam a dupla na rua da portaria
+(`goTo('escola-patio', 'do-onibus')`). O ponto fica à esquerda do portão: o
+ônibus parado na faixa da calçada da escola, com o nariz no `−X` e as portas
+para a calçada, e o abrigo. A dupla desce na frente do NARIZ, porque a câmera
+vem do lado da rua e quem desce atrás do ônibus some atrás dele. O "Pegar o
+ônibus" do ponto (o mesmo id `door:villa-lobos:clube` do clube) leva ao parque
+ou ao clube. A porta da frente leva ao saguão (`da-rua`, onde a Luna faz o
+tour na primeira vez), e a porta da rua do saguão, "Sair para o pátio", devolve
+a dupla na frente do portal (`do-saguao`).
 
 ## O que foi feito (etapa 1)
 
