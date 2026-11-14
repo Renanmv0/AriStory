@@ -356,9 +356,18 @@ export const frenteDaCasa: SceneDef = {
       plantar(lado * 43, (RUA.z0 + RUA.z1) / 2 + lado * 1.5, 2.0);
     }
     // o céu: nuvens paradas no alto, longe
+    //
+    // ACIMA DA CÂMERA, e não na altura dela. A câmera isométrica fica a 60 da
+    // dupla e ~34 acima, olhando para baixo: uma nuvem entre 26 e 36 de altura
+    // ficava bem na linha entre a câmera e a dupla, e ao girar a câmera uma
+    // delas tapava o meio da tela (a reclamação do Ari). Acima de ~48 nenhuma
+    // entra no quadro da isométrica em nenhum giro nem com o zoom todo aberto
+    // (`scripts/nuvens.mjs` mede); nas câmeras baixas das cutscenes elas
+    // continuam sendo céu.
     for (let i = 0; i < 7; i++) {
       const c = cloud(w.range(1.8, 3));
-      c.position.set(w.range(-60, 60), w.range(26, 36), i % 2 ? w.range(-55, -30) : w.range(34, 58));
+      c.name = 'nuvem';
+      c.position.set(w.range(-60, 60), w.range(54, 62), i % 2 ? w.range(-55, -30) : w.range(34, 58));
       w.root.add(c);
       const vento = w.range(0.2, 0.5);
       w.onUpdate((dt) => {
