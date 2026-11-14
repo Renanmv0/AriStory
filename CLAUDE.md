@@ -299,7 +299,12 @@ e clube ↔ escola, antes do fiscal. Não implementar essas próximas etapas jun
 `ESCOLA-PATIO.md` é o plano do PÁTIO DA FRENTE da escola (o prédio de tijolinho por fora, da
 foto do Renan, e o pátio), o primeiro passo da rota de carro até a escola: a etapa 1 (o pátio, a portaria e o
 estacionamento) e a 2 (o ônibus para na rua da portaria, e a porta da rua do saguão sai no pátio)
-estão no jogo desde 2026-11-14; o carro chegando no estacionamento da escola é a próxima.
+estão no jogo desde 2026-11-14. `VIAGEM-ESCOLA.md` é a VIAGEM DE CARRO até a escola (de casa, do parque e do
+clube, e de volta), feita em 2026-11-14 e esperando o Renan olhar: a zona escolar, a turma da escola na
+estrada (o radar, a torcida com o Gatito de guarda, o ensaio da Valentina e a bola do Flynn, peças em
+`eventos/bebitoMobile/escolaNaEstrada.ts`) e a chegada animada até a vaga do coração do estacionamento
+(`eventos/bebitoMobile/naEscola.ts`). O próximo passo, pedido pelo Renan, são os carros dos personagens
+da escola (não fazer junto).
 `QUINTAL.md` é o plano de DECORAR o quintal da casa do Ari — o decorador da
 estufa ensinado a pôr enfeite no chão, no piso, na parede, em cima, pendurado
 e de ponta a ponta —, aberto por um "COMECE AQUI" com as decisões do Renan.
@@ -466,6 +471,7 @@ node scripts/quintal.mjs /tmp/qt    # o quintal decorado, etapa 1 (docs/QUINTAL.
 node scripts/carroPorDentro.mjs /tmp/cd # o carro por dentro (docs/BEBITO-MOBILE-DENTRO.md), com ?bebito&carroPorDentro: ESCONDIDO (sem a chave a porta da garagem e "Sair de carro"), ENTRAR (a porta gira, quem joga senta e a camera chega aos olhos dele, a cabeca some, o menu), DESCANSAR (os encostos deitam, os dois deitados olhando o teto fechado, a conversa, a memoria, o cochilo com ronco) e DESCER (tudo desfeito: pose, cabeca, porta, encostos, camera, fora dos colisores), PASSAGEIRO (o 👀, o piloto automatico, a troca de banco, o menu de cada um, encostar no ombro, o celular) e PILOTO (a viagem inteira sozinho, sem tropeco nem susto, e a chegada). SO=escondido|entrar|descansar|descer|passageiro|piloto roda uma parte; CEL=1 no celular em pe
 node scripts/nuvens.mjs /tmp/nv      # as nuvens da frente da casa do Ari nunca entram no quadro da isometrica (8 giros, zoom fechado e aberto, varios pontos do jardim e da rua) e as fotos dos 8 giros; CEL=1 no celular em pe
 node scripts/patio.mjs  /tmp/pt      # o patio da frente da Escola do Gatito (docs/ESCOLA-PATIO.md, ?cena=escola-patio): o ponto do onibus e quem desce fora dos colisores, a porta da rua do saguao saindo no patio, o onibus do ponto indo ao clube, o caminho livre da rua ate a porta e do portao, pela faixa, ate o estacionamento, o predio, o portao, a grade e a guarita na altura do corpo dentro dos colisores, a cancela abrindo, a porta levando ao saguao, as tres bandeiras balancando, os 8 giros, o cartao-postal, o portal e o alto, e o peso; CEL=1 no celular em pe
+node scripts/viagemEscola.mjs /tmp/ve # a viagem de carro ate a escola (docs/VIAGEM-ESCOLA.md), com ?bebito: as 1800 rotas da escola (sem navegador: a zona escolar, o encontro livre, nenhum coracao em cima de faixa de parar), a escola no menu do carro so depois de aberta, a IDA do parque com o piloto de teste (o radar, a torcida com o Gatito na faixa da direita, o ensaio da Valentina, a bola do Flynn, fotos de longe e de perto, sem tropeco nem susto, as memorias), a CHEGADA animada fase por fase ate a vaga do coracao, RECARREGAR sem repetir a chegada (e o carro em nenhum outro lugar) e a VOLTA para a garagem. SO=rotas|menu|ida|recarga|volta roda uma parte
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha); SO=armario,estante roda so essas (peca de evento, como o carrinho-de-pocoes, abre a cena na fase dela); SEM_FUNDIR=1 mede antes da juncao (depois dela nao sobra caixa para medir)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso

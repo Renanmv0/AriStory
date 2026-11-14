@@ -21,8 +21,8 @@ concreto, os gramados com os canteiros, os bancos bordô e três mastros.
 |---|---|---|
 | **1** | o pátio da frente (o prédio por fora e o pátio), cena à parte; e a segunda leva: a junção da pedra com a grama, a portaria e o estacionamento | ✅ feita, **para o Renan olhar** (`?cena=escola-patio`) |
 | **2** | ligar o pátio no jogo: o ônibus chega na rua do pátio, a porta leva ao saguão e a porta da rua do saguão sai no pátio | ✅ **no jogo** desde 2026-11-14 ("Faça o ônibus nos trazer para a portaria da escola"); falta o carro |
-| **3** | o estacionamento da escola (com a vaga do coração e a chegada animada) | 🟡 o estacionamento está feito, do outro lado da rua (2026-11-14); falta a chegada animada do carro |
-| **4** | as rotas de carro de qualquer lugar até a escola (`docs/VIAGEM-CLUBE.md`) | ⬜ |
+| **3** | o estacionamento da escola (com a vaga do coração e a chegada animada) | ✅ o estacionamento do outro lado da rua, e a chegada animada até a vaga do coração (2026-11-14) |
+| **4** | as rotas de carro de qualquer lugar até a escola | ✅ feita, **para o Renan olhar**: `docs/VIAGEM-ESCOLA.md` |
 
 **O pátio está no caminho do jogo desde 2026-11-14**: o ônibus do parque e o
 do clube (`villaLobos.ts`, `clube.ts`) deixam a dupla na rua da portaria

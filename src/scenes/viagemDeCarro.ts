@@ -20,13 +20,15 @@ import {
   type DesenhoDaPlaca, type NaPista,
 } from '../world/estrada';
 import { TravessiaDeBichos } from '../eventos/bebitoMobile/travessia';
+import { BolaDoFlynn, EnsaioDaValentina, RadarEscolar, TravessiaDaTorcida, type Atravessando } from '../eventos/bebitoMobile/escolaNaEstrada';
+import { VALENTINA_CONHECIDA } from './escolaMarketing';
 import { carroEstacionado, placaDeEstacionamento } from '../world/estacionamento';
 import { predioDaEscola } from '../world/escolaPorFora';
 import { PORTAO_DA_ESCOLA, gradeDaEscola, portaoDaEscola } from '../world/portariaDaEscola';
 import { MastroComBandeira, bicicletario } from '../world/patioDaEscola';
 import { posteDoEstacionamento as posteDaEscola } from '../world/estacionamentoDaEscola';
 import {
-  PISTA, biomaEm, destinoDaRota, eixoDaRota, estrelasDaViagem, gerarRota, pedidoDeViagem, rotaNova, type DestinoDeCarro, type EventoDaRota, type PedidoDeViagem,
+  EVENTOS_DE_DEVAGAR, PISTA, biomaEm, destinoDaRota, eixoDaRota, estrelasDaViagem, gerarRota, pedidoDeViagem, rotaNova, type DestinoDeCarro, type EventoDaRota, type PedidoDeViagem,
   type Rota,
 } from '../eventos/bebitoMobile/rota';
 import { FLAG_DO_CARRO_NA_ESCOLA, FLAG_DO_CARRO_NO_CLUBE, FLAG_DO_CARRO_NO_PARQUE, carroPorDentroNestaPagina } from '../eventos/BebitoMobile';
@@ -308,18 +310,27 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
        * o bicicletário, os canteiros de hortênsia. Os postes altos com as
        * bandeirolas dos Gatitos, dos dois lados.
        */
+      // (a praça abre espaço para o ensaio da Valentina, que monta o estúdio no gramado dela)
+      const doEnsaio = (s: number, folga: number): boolean => rota.eventos.some((e) => e.tipo === 'ensaio-da-valentina' && Math.abs(e.s - s) < folga);
       for (const [a, b] of [[s0 + 1, s0 + 20], [s0 + 20.5, s1 - 0.5]] as const) {
         por(gradeDaEscola(b - a), naBeira(b, 1, 0.55), paraAPista(b, 1));
       }
       for (let k = 0; k < 4; k++) por(tree(w.pick(['redonda', 'redonda', 'florida'] as const), 1.1 + rnd() * 0.4, rnd()), naBeira(s0 + 5 + k * 10, 1, 5 + rnd() * 6), rnd() * 6.28);
-      for (const lado of [-1, 1]) por(posteDaEscola(), naBeira(s0 + (lado > 0 ? 10 : 30), lado, -0.4), rumoEm(s0 + 10));
+      for (const lado of [-1, 1]) {
+        const sPoste = s0 + (lado > 0 ? 10 : 30);
+        if (lado < 0 && doEnsaio(sPoste, 3.5)) continue;
+        por(posteDaEscola(), naBeira(sPoste, lado, -0.4), rumoEm(s0 + 10));
+      }
       const sBanco = s0 + 14;
-      por(bancoDePraca(P.escolaBanco, P.escolaBancoFerro), naBeira(sBanco, -1, 1.1), paraAPista(sBanco, -1));
-      por(bicicletario(4), naBeira(s0 + 25, -1, 1.2), paraAPista(s0 + 25, -1));
-      por(tree(w.pick(['florida', 'redonda'] as const), 1.05 + rnd() * 0.3, rnd()), naBeira(s0 + 4, -1, 4 + rnd() * 3), rnd() * 6.28);
-      por(tree('redonda', 1.3 + rnd() * 0.3, rnd()), naBeira(s0 + 33, -1, 7 + rnd() * 4), rnd() * 6.28);
-      for (let k = 0; k < 3; k++) flores.push({ ...xz(naBeira(s0 + 17.5 + k * 0.9, -1, 1.3)), escala: 0.85, semente: indice * 9 + k, cor: w.pick([P.hortensiaAzul, P.hortensiaLilas]) });
-      moitas.push({ ...xz(naBeira(s0 + 8, -1, 1.0)), escala: 1, semente: indice * 4 });
+      const arvore1 = w.pick(['florida', 'redonda'] as const), escala1 = 1.05 + rnd() * 0.3, sem1 = rnd(), afasta1 = 4 + rnd() * 3, giro1 = rnd() * 6.28;
+      const escala2 = 1.3 + rnd() * 0.3, sem2 = rnd(), afasta2 = 7 + rnd() * 4, giro2 = rnd() * 6.28;
+      const coresDasFlores = [0, 1, 2].map(() => w.pick([P.hortensiaAzul, P.hortensiaLilas]));
+      if (!doEnsaio(sBanco, 4)) por(bancoDePraca(P.escolaBanco, P.escolaBancoFerro), naBeira(sBanco, -1, 1.1), paraAPista(sBanco, -1));
+      if (!doEnsaio(s0 + 25, 4)) por(bicicletario(4), naBeira(s0 + 25, -1, 1.2), paraAPista(s0 + 25, -1));
+      if (!doEnsaio(s0 + 4, 5)) por(tree(arvore1, escala1, sem1), naBeira(s0 + 4, -1, afasta1), giro1);
+      if (!doEnsaio(s0 + 33, 5)) por(tree('redonda', escala2, sem2), naBeira(s0 + 33, -1, afasta2), giro2);
+      for (let k = 0; k < 3; k++) if (!doEnsaio(s0 + 17.5 + k * 0.9, 4)) flores.push({ ...xz(naBeira(s0 + 17.5 + k * 0.9, -1, 1.3)), escala: 0.85, semente: indice * 9 + k, cor: coresDasFlores[k] });
+      if (!doEnsaio(s0 + 8, 4)) moitas.push({ ...xz(naBeira(s0 + 8, -1, 1.0)), escala: 1, semente: indice * 4 });
     } else {
       // a beira do parque: bosque dos dois lados, mais fechado, com capim e hortênsia na borda
       for (const lado of [-1, 1]) {
@@ -463,7 +474,10 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   interface Vivo {
     e: EventoDaRota;
     indice: number;
-    travessia?: TravessiaDeBichos;
+    /** quem atravessa e fecha a pista: os bichos, a torcida do Gatito ou a bola do Flynn */
+    travessia?: Atravessando;
+    ensaio?: EnsaioDaValentina;
+    radar?: RadarEscolar;
     semaforo?: Semaforo;
     relogio: number;
     /** o carro freou sozinho aqui (o susto) */
@@ -555,6 +569,33 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     } else if (e.tipo === 'rega') {
       vivo.rega = new RegaNaAlameda(naPista, e.s, rumoEm(e.s)); w.add(vivo.rega.group);
       placaEm('rega', e.s - 30);
+    } else if (e.tipo === 'torcida') {
+      // as coelhinhas na faixa; o Gatito de guarda só depois de conhecido na escola
+      w.add(faixaDePedestres(naPista, e.s));
+      placaEm('escola', e.s - 34);
+      const torcida = new TravessiaDaTorcida(naPista, e.s, e.lado ?? 1, ALTO_DA_CALCADA, g.flag('gatito-conhecido'));
+      torcida.aoSoar = (som) => g.som(som);
+      w.add(torcida.group);
+      vivo.travessia = torcida;
+    } else if (e.tipo === 'bola-do-flynn') {
+      // (o Flynn só aparece na estrada depois de conhecido no refeitório)
+      if (g.flag('flynn-conhecido')) {
+        placaEm('bola', e.s - 34);
+        const bola = new BolaDoFlynn(naPista, e.s, 1, ALTO_DA_CALCADA);
+        bola.aoSoar = (som) => g.som(som);
+        w.add(bola.group);
+        vivo.travessia = bola;
+      }
+    } else if (e.tipo === 'ensaio-da-valentina') {
+      if (g.flag(VALENTINA_CONHECIDA)) {
+        placaEm('foto', e.s - 34);
+        vivo.ensaio = new EnsaioDaValentina(naPista, e.s, rumoEm(e.s));
+        w.add(vivo.ensaio.group);
+      }
+    } else if (e.tipo === 'radar-escolar') {
+      placaEm('radar', e.s - 38);
+      vivo.radar = new RadarEscolar(naPista, e.s, rumoEm(e.s));
+      w.add(fundir(vivo.radar.group));
     } else if (e.tipo === 'onda-verde') {
       vivo.onda = new OndaVerde(e.s, naPista, rumoEm); w.add(vivo.onda.group);
     } else if (e.tipo === 'onibus') {
@@ -731,7 +772,8 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       if (vivo.onibus && !vivo.onibus.passou && vivo.onibus.s - estado.s < 30 && vivo.onibus.s - estado.s > -12) alvoL = outra;
       if (e.tipo === 'lombada' && d > 0 && d < (novaRota ? 22 : 16) && estado.v > (novaRota ? 4.6 : 5)) y = -0.8;
       if (e.bolhasDoCookie && d > 0 && d < 25 && estado.v > 4.6) y = -0.8;
-      if (e.tipo === 'rega' && d > 0 && d < 23 && estado.v > 4.6) y = -0.8;
+      // (os de PASSAR DEVAGAR: a rega da Josefina, o ensaio da Valentina e o radar da zona escolar)
+      if (EVENTOS_DE_DEVAGAR.includes(e.tipo) && d > 0 && d < 23 && estado.v > 4.6) y = -0.8;
       if (vivo.onda && d < 72 && d > -30) {
         if (vivo.onda.tempo < 8.3) y = 1;
         const falta = (vivo.limiteOnda ?? Infinity) - 2.9 - estado.s;
@@ -861,6 +903,33 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
           else { estado.coracoes += 2; estado.gentilezas += 1; g.som('coracao'); g.toast('Josefina: Obrigada por passar devagar, meus amores.', '🐢'); }
         }
       }
+      if (vivo.ensaio) {
+        // (some só onde a névoa já apagou: 165 m à frente, ou atrás da câmera)
+        vivo.ensaio.update(dt, d < 165 && d > -45);
+        if (d > 0 && d < 45) { aviso = 'Sessão de fotos da Valentina: passe devagar'; icone = '📸'; }
+        if (!vivo.passou && d <= 0) {
+          vivo.passou = true; marca('ensaio-da-valentina');
+          const devagar = estado.v <= 6.2;
+          vivo.ensaio.passou(devagar, carro.group.position);
+          if (devagar) {
+            estado.coracoes += 2; estado.gentilezas += 1; g.som('fotoFlash');
+            g.toast('Valentina: Perfetto! O carro mais fotogênico da zona escolar.', '🦩');
+          } else g.toast('Valentina: Mamma mia, saiu tremida! Na próxima, mais devagar, cara mia.', '🦩');
+        }
+      }
+      if (vivo.radar) {
+        vivo.radar.update(estado.v, d < 95 && d > -30);
+        if (d > 0 && d < 45) { aviso = `Zona escolar: até ${RadarEscolar.LIMITE} km/h`; icone = '🏫'; }
+        if (!vivo.passou && d <= 0) {
+          vivo.passou = true; marca('radar-escolar');
+          if (estado.v * 3.6 <= RadarEscolar.LIMITE + 0.5) {
+            estado.coracoes += 2; estado.gentilezas += 1; g.som('coracao');
+            g.toast(`${carona.name}: O radar sorriu pra gente!`, '🙂');
+          } else {
+            tropecar('radar'); g.toast(`${carona.name}: Zona escolar, devagar! O radar ficou sério.`, '🏫');
+          }
+        }
+      }
       if (vivo.onda) {
         vivo.limiteOnda = vivo.onda.update(dt, estado);
         limite = Math.min(limite, vivo.limiteOnda);
@@ -871,8 +940,12 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
         const t = vivo.travessia;
         if (t.estado === 'esperando' && d < 46 && d > 0) {
           t.comecar();
-          comentar(e.bichos === 'patos' ? 'patos' : 'tigres', true);
+          if (e.tipo === 'torcida') g.toast(`${carona.name}: Olha a torcida atravessando! E o Gatito de guarda!`, '🐰');
+          else if (e.tipo === 'bola-do-flynn') g.toast(`${carona.name}: Olha a bola!`, '🏀');
+          else comentar(e.bichos === 'patos' ? 'patos' : 'tigres', true);
         }
+        // a turma desenhada só onde se vê: até a névoa apagar (165 m) e até sair por trás da câmera
+        t.group.visible = d < 165 && d > -40;
         if (d < 80 && d > -30) t.update(dt);
         if (t.estado === 'atravessando' && d > -2) {
           const linha = e.s - LINHA_DE_PARADA;
@@ -883,14 +956,14 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
           if (d < 46) {
             const parado = estado.v < 0.4;
             if (parado) vivo.parou = true;
-            aviso = parado ? 'Esperando eles passarem…' : 'Pare na faixa!';
-            icone = e.bichos === 'patos' ? '🦆' : '🐢';
+            aviso = parado ? 'Esperando eles passarem…' : e.tipo === 'bola-do-flynn' ? 'Pare: a bola do Flynn!' : 'Pare na faixa!';
+            icone = e.tipo === 'torcida' ? '🐰' : e.tipo === 'bola-do-flynn' ? '🏀' : e.bichos === 'patos' ? '🦆' : '🐢';
             tom = parado ? 'bom' : 'pare';
           }
         }
         if (t.estado === 'feito' && !vivo.contou) {
           vivo.contou = true;
-          marca('travessia');
+          marca(e.tipo === 'travessia' ? 'travessia' : e.tipo);
           if (vivo.assustou) {
             estado.sustos += 1;
           } else if (vivo.parou) {
@@ -898,7 +971,13 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
             estado.gentilezas += 1;
             estado.coracoes += 3;
             g.som('coracao');
-            comentar('obrigado', true);
+            if (e.tipo === 'torcida') {
+              g.toast('Sol: VALEU, BEBITOS! VAI, GATITOS!', '🐰');
+              if (g.flag('gatito-conhecido')) g.toast('Gatito: Parou certinho. Nota dez em trânsito.', '🐱');
+              g.unlock({ id: 'torcida-na-faixa', title: 'A torcida atravessa', place: 'Na zona escolar', icon: '🐰', note: 'A Luna, a Sol e a Estrella atravessando na faixa da escola, de pompom e tudo, e a gente parado esperando. Do outro lado, teve torcida para o Bebito.' });
+            } else if (e.tipo === 'bola-do-flynn') {
+              g.toast('Flynn: Valeu por parar! Foi mal pela bola.', '🦊');
+            } else comentar('obrigado', true);
           }
         }
       }

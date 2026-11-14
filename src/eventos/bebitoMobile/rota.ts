@@ -375,8 +375,11 @@ function gerarRotaDaEscola(semente: number, sentido: Sentido): Rota {
   }));
   const obra = eventos.find(e => e.tipo === 'obra')!;
   const coracoes: Coracao[] = [];
+  // (nada de coração boiando em cima da faixa onde o carro tem que PARAR: a torcida, a bola e os bichos)
+  const deParar = eventos.filter((e) => e.tipo === 'torcida' || e.tipo === 'bola-do-flynn' || e.tipo === 'travessia');
   for (let s = 32; s < comprimento - 90; s += 7) {
     if (s > encontro.s - 80 && s < encontro.s + 95) continue;
+    if (deParar.some((e) => s > e.s - 16 && s < e.s + 6)) continue;
     const l = s > obra.s - 35 && s < obra.s + 24 ? PISTA.meios[obra.faixa === 0 ? 1 : 0] : Math.sin(s * 0.045) * 1.55;
     coracoes.push({ s, l });
   }

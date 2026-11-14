@@ -10,7 +10,9 @@ Renan antecipou a construção do estacionamento do clube, do outro lado da rua,
 com visual mais moderno: `docs/ESTACIONAMENTO-CLUBE.md`. A viagem Villa Lobos ↔
 clube foi construída na sequência: `docs/VIAGEM-CLUBE.md`, incluindo a cena do
 Noel, as hortas/quadras da alameda, a rega e a onda verde. O carro conserva
-sua localização entre garagem, parque e clube. A rota da escola continua futura.
+sua localização entre garagem, parque e clube. A rota da escola (de casa, do
+parque e do clube) veio em 2026-11-14, com a zona escolar, a turma da escola na
+estrada e a chegada animada no estacionamento dela: `docs/VIAGEM-ESCOLA.md`.
 
 ## COMECE AQUI
 
@@ -60,9 +62,8 @@ verdade. Em ordem de importância:
 
 **Etapa D — o que ainda não existe (não impede de jogar):**
 
-- **As outras rotas**: parque ↔ clube ↔ escola, ao lado do ônibus. Hoje a
-  viagem de carro só vai da casa ao Villa Lobos e volta; clube e escola
-  continuam pelo ônibus.
+- ~~**As outras rotas**~~: feitas — parque ↔ clube (`docs/VIAGEM-CLUBE.md`) e
+  casa, parque e clube ↔ escola (`docs/VIAGEM-ESCOLA.md`).
 - **O rádio do carro** (trocar a música pela tela, como o radinho da
   clareira).
 - **Passageiro no banco de trás** (os três lugares já existem) e **deitar na
@@ -599,8 +600,8 @@ olhando a paisagem." (a carona). Na chegada, uma conversa curta por nota.
 
 ### O que ficou para a etapa D (e ideias)
 
-- **As outras rotas**: parque ↔ clube ↔ escola, ao lado do ônibus (a rota já
-  aceita outros trechos de paisagem; falta a cena de cada ponta);
+- ~~**As outras rotas**~~: feitas (`docs/VIAGEM-CLUBE.md` e
+  `docs/VIAGEM-ESCOLA.md`);
 - **o rádio do carro** (trocar a música pela tela, como o radinho da
   clareira);
 - **levar alguém no banco de trás** (os três lugares já existem) e **deitar

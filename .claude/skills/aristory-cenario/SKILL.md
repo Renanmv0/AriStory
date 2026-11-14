@@ -934,6 +934,22 @@ que quem joga não anda: pilota. O que ela ensinou:
   relógio, o piloto automático, a câmera e o `naPista`) — o piloto
   automático segue os corações, freia na lombada e para nas faixas, e é com
   ele que o `scripts/viagem.mjs` atravessa a viagem inteira.
+- **Gente conhecida na estrada** (a turma da escola, `eventos/bebitoMobile/escolaNaEstrada.ts`,
+  `docs/VIAGEM-ESCOLA.md`): o personagem é o de sempre (a classe dele, de
+  serviço, com `irPara`), dentro de um QUADRO que atravessa a pista (`+Z` de
+  uma calçada à outra, o `+X × lado` virado para o carro). Cinco lições:
+  - **na estrada, cresça o bicho**: com a câmera de perseguição, no tamanho
+    da escola a pelúcia some (o Gatito vai com 1,6×, a Valentina com 1,3×);
+  - **"chegou" é a promessa do `irPara` resolvida**, nunca "parou de
+    andar": o Gatito pula, e entre um pulo e outro ele fica parado — a fila
+    saía com ele ainda no meio do caminho;
+  - **quem guarda a faixa fica na faixa da DIREITA** (a de quem dirige) e
+    do lado de onde o carro vem; a fila passa atrás dele;
+  - **personagem não fundido pesa** (as juntas mexem cada uma por si):
+    desenhe a turma só entre 165 m à frente (a névoa já apagou) e 40 m atrás
+    — some sem ninguém ver. Com 110 m o ensaio "nascia" no meio da névoa;
+  - do lado da escola tem muro e grade: o que precisa ser visto (o estúdio
+    da Valentina) vai para o lado aberto da pista.
 
 ### Duas perguntas seguidas
 

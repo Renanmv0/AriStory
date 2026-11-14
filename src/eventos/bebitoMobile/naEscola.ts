@@ -71,6 +71,11 @@ function animarChegadaNaEscola(w: WorldBuilder, p: Omit<Parameters<typeof animar
         para.y = 0.8;
         return { para, de: para.clone().add(new THREE.Vector3(8, 8.5, 10).multiplyScalar(emPe ? 1.6 : 1)) };
       }
+      if (fase === 'abrindo') {
+        // esperando a cancela: a câmera vai para o lado, e o braço subindo fica NA FRENTE do nariz, sem cruzar o carro
+        const para = posicao.clone().add(new THREE.Vector3(0, 0.9, 1.2));
+        return { para, de: para.clone().add(new THREE.Vector3(9, 6.2, 3).multiplyScalar(emPe ? 1.5 : 1)) };
+      }
       // a perseguição vem do lado do lote (o +Z): a câmera não olha pelo meio dos carros parados
       const para = posicao.clone().add(new THREE.Vector3(0, 0.7, 0));
       return { para, de: para.clone().add(new THREE.Vector3(6.5, 7.6, 10).multiplyScalar(emPe ? 1.5 : 1)) };

@@ -3,7 +3,8 @@
 > Documento de PROJETO. Cada etapa marca aqui, na tabela de etapas, quando entra no jogo, e o
 > `git log` é a fonte da verdade do que de fato existe. Continua o
 > `docs/BEBITO-MOBILE.md` (o carro, a quest e a viagem). As rotas de casa e do
-> parque ao clube já estão em `docs/VIAGEM-CLUBE.md`; a escola fica para depois.
+> parque ao clube já estão em `docs/VIAGEM-CLUBE.md`, e as da escola em
+> `docs/VIAGEM-ESCOLA.md`.
 
 ## Escolher destino de dentro do carro (2026-11-13)
 

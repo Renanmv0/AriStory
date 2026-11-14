@@ -2820,6 +2820,8 @@ export const PALETTE = {
   palquinhoBarra: 0xf39a3c,
   plaquinhaDeVoto: 0xf5861f,
   flashDaFoto: 0xffffff,
+  // as placas pintadas em canvas da estrada da escola: o branco que deixa o desenho com as cores dele
+  placaPintada: 0xffffff,
   /**
    * a casa do Ari de madrugada, depois da festa (etapa 7): o céu e a luz azul
    * de dentro, o sol virando luar, o vidro escuro da janela com o reflexo, e
