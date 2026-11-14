@@ -1561,6 +1561,34 @@ export const PALETTE = {
   escolaCarteira: 0xd9a869,
   escolaCarteiraPe: 0x5d6770,
   escolaFaixa: 0xd9483f,
+  // A ESCOLA POR FORA (o pátio da frente): o prédio de tijolinho de escola
+  // de filme americana, da foto do Renan — o tijolo vermelho com o rejunte
+  // creme, a pedra clara das faixas e da cornija, o caixilho branco, o vidro
+  // escuro, a cúpula de metal cinza e a lanterninha branca no alto
+  escolaTijoloFora: 0xa9483a,
+  escolaRejunte: 0xeee4d3,
+  escolaPedra: 0xe7dcc3,
+  escolaPedraSombra: 0xcdbfa1,
+  escolaCaixilho: 0xf7f5ef,
+  escolaVidroFora: 0x34495a,
+  escolaVidroBrilho: 0x9bbcd3,
+  escolaCupula: 0xc3c9cf,
+  escolaCupulaFriso: 0xe2e6ea,
+  escolaLanterna: 0xf8f7f2,
+  escolaLaje: 0x9ea2a6,
+  escolaMaquinaDoTeto: 0xb9bec2,
+  escolaLetra: 0x6a2f2a,
+  // o banco do pátio, no bordô da foto (o ferro e a ripa da mesma cor)
+  escolaBanco: 0x8e2b35,
+  escolaBancoFerro: 0x5e1c25,
+  escolaMastro: 0xdfe3e6,
+  // as três bandeiras do pátio: a dos Gatitos no meio, e as do Brasil e da
+  // Venezuela dos lados (as duas casas do Ari e do Renan)
+  bandeiraGatitosAzul: 0x2f5596,
+  brasilVerde: 0x2a9a4a,
+  brasilAmarelo: 0xf6d02d,
+  brasilAzul: 0x24418f,
+  // (as da Venezuela já moram aqui, nas cores da Tia Liz: `venezuelaAmarelo`…)
   escolaQuadra: 0xd8a466,
   escolaQuadraLinha: 0xf7f3ea,
   escolaQuadraGarrafao: 0x4677c9,

@@ -4,6 +4,7 @@ import { casinhaDaAbobora, casinhaDaAboboraDentro, casinhaDaAboboraSalao } from 
 import { lojinha } from './lojinha';
 import { clube } from './clube';
 import { escola } from './escola';
+import { escolaPatio } from './escolaPatio';
 import { escolaGinasio } from './escolaGinasio';
 import { escolaDescanso, escolaProfessores, escolaSala1, escolaSala2 } from './escolaSalas';
 import { estufa } from './estufa';
@@ -34,6 +35,7 @@ export const SCENES: Record<string, SceneDef> = {
   // a Escola do Gatito: o saguão e as salas atrás de cada porta. Chega-se de
   // ônibus, depois de conhecer a Luna no Villa Lobos (ver docs/ESCOLA.md)
   [escola.id]: escola,
+  [escolaPatio.id]: escolaPatio,
   [escolaSala1.id]: escolaSala1,
   [escolaSala2.id]: escolaSala2,
   [escolaDescanso.id]: escolaDescanso,

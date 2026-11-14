@@ -176,3 +176,50 @@ export function cavetinho(de: readonly [number, number], ate: readonly [number, 
   }
   return pts;
 }
+
+/**
+ * A MOLDURA EM VOLTA DE UM POLÍGONO (a rotunda octogonal da escola): o mesmo
+ * perfil `[saída, y]` do `contorno()`, varrido em volta de um polígono
+ * FECHADO qualquer, dado no chão (`x`, `z`) e percorrido com a parte de fora
+ * à DIREITA de quem anda (o mesmo sentido do `contorno`: a frente `+z`
+ * correndo em `+x`).
+ *
+ * A quina é em meia-esquadria: o vértice anda pela bissetriz o quanto for
+ * preciso para as duas faces vizinhas recuarem exatamente `saída` (a conta é
+ * `(n1 + n2) / (1 + n1·n2)`). Cada face do polígono é uma faixa plana, então
+ * a moldura sai FACETADA como a rotunda — e a normal é a da face, sem índice.
+ */
+export function contornoPoligonal(perfil: Perfil, poligono: ReadonlyArray<THREE.Vector2>): THREE.BufferGeometry {
+  const n = poligono.length;
+  // a normal de fora de cada lado (a direita de quem vai de a para b)
+  const normais = poligono.map((a, i) => {
+    const b = poligono[(i + 1) % n];
+    const d = new THREE.Vector2(b.x - a.x, b.y - a.y).normalize();
+    return new THREE.Vector2(-d.y, d.x);
+  });
+  const anel = (o: number): THREE.Vector2[] => poligono.map((p, i) => {
+    const n1 = normais[(i - 1 + n) % n];
+    const n2 = normais[i];
+    const m = n1.clone().add(n2).multiplyScalar(o / (1 + n1.dot(n2)));
+    return p.clone().add(m);
+  });
+  const aneis = perfil.map(([o]) => anel(o));
+  const pos: number[] = [];
+  for (let k = 0; k < perfil.length - 1; k++) {
+    const y0 = perfil[k][1];
+    const y1 = perfil[k + 1][1];
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      const a = aneis[k][i];
+      const b = aneis[k][j];
+      const c = aneis[k + 1][j];
+      const d = aneis[k + 1][i];
+      pos.push(a.x, y0, a.y, b.x, y0, b.y, c.x, y1, c.y);
+      pos.push(a.x, y0, a.y, c.x, y1, c.y, d.x, y1, d.y);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.computeVertexNormals();
+  return geo;
+}
