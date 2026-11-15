@@ -2834,6 +2834,13 @@ export const PALETTE = {
   oculosDeAviador: 0x8a5a32,
   oculosDeAviadorLente: 0xbfe4f2,
   cordaDaPilha: 0xd8b98a,
+  // a Kombi de sorvete do Mano: chocolate embaixo (com o granulado pintado), creme em cima,
+  // o V creme no nariz, a neve escorrendo do teto e a geada que o ar do freezer deixa no para-brisa
+  kombiChocolate: 0x6e4129,
+  kombiChocolateEscuro: 0x4e2c1b,
+  kombiCreme: 0xfbefdc,
+  kombiVidro: 0x2f4a5a,
+  geadaDoParaBrisa: 0xeef8ff,
   /**
    * a casa do Ari de madrugada, depois da festa (etapa 7): o céu e a luz azul
    * de dentro, o sol virando luar, o vidro escuro da janela com o reflexo, e

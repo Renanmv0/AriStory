@@ -49,6 +49,12 @@ const PERFIL = (() => {
   }
   return { zs, ss };
 })();
+/** quantos metros do perfil, contando da frente, até o `z` (sem escala) */
+export function sNoPerfil(z: number): number {
+  const { zs, ss } = PERFIL;
+  for (let i = 1; i < zs.length; i++) if (zs[i] <= z) return THREE.MathUtils.lerp(ss[i - 1], ss[i], (zs[i - 1] - z) / (zs[i - 1] - zs[i]));
+  return ss[ss.length - 1];
+}
 /** o `z` (sem escala) a `s` metros pelo perfil, contando da frente */
 function zNoPerfil(s: number): number {
   const { zs, ss } = PERFIL;
@@ -57,14 +63,14 @@ function zNoPerfil(s: number): number {
   return zs[zs.length - 1];
 }
 /** quanto do perfil fica na frente do pé do para-brisa (é onde a beira da frente do pano pousa) */
-const S_DO_PE = (() => { const { zs, ss } = PERFIL; let i = 0; while (zs[i] > 1.45) i++; return ss[i]; })();
+export const S_DO_PE = (() => { const { zs, ss } = PERFIL; let i = 0; while (zs[i] > 1.45) i++; return ss[i]; })();
 
 /**
  * Um ponto da pele do carro, por cima: `u` de −1 a 1 de lado a lado (em
  * metros pela curva da fatia, a partir do meio) e `s` metros pelo perfil.
  * Devolve o ponto já no referencial do carro, um fio para fora da pele.
  */
-function naPele(lado: number, s: number, fora: number, alvo: THREE.Vector3): THREE.Vector3 {
+export function naPele(lado: number, s: number, fora: number, alvo: THREE.Vector3): THREE.Vector3 {
   const z = zNoPerfil(s);
   const sec = secao(z);
   // a curva de cima da fatia, do meio para fora e descendo (os nós 12, 11, … 4)

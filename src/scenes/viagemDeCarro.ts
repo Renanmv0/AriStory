@@ -43,6 +43,8 @@ import { coberturaDoEstacionamento, jardineiraDoEstacionamento, posteDoEstaciona
 import { EncontroNaEstrada } from '../eventos/bebitoMobile/encontroNaEstrada';
 import { PanoNoParaBrisa } from '../eventos/bebitoMobile/panoNoParaBrisa';
 import type { LambretaDaEstella } from '../world/lambretaDaEstella';
+import { GeadaNoParaBrisa } from '../eventos/bebitoMobile/geadaNoParaBrisa';
+import type { KombiDoMano } from '../world/kombiDoMano';
 import { OndaVerde, RegaNaAlameda } from '../eventos/bebitoMobile/novidadesDoClube';
 import { agendarChegadaNoClube } from '../eventos/bebitoMobile/chegadaNoClube';
 import { pedidoSalvo } from '../eventos/bebitoMobile/pedidoSalvo';
@@ -667,7 +669,15 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     pano.aoGrudar = () => { g.som('sacudida'); g.toast(`${carona.name}: Ei! Um pano no para-brisa!`, '🧣'); };
     pano.aoSair = () => g.toast('…e lá se foi o pano. A Estella nem percebeu.', '🧣');
   }
-  w.root.userData.novidadesDaViagem = { pano, cookie: vivos.find(v => v.cookie)?.cookie, encontro, noel: encontro?.personagem === 'noel' ? encontro : null, rega: vivos.find(v => v.rega)?.rega, onda: vivos.find(v => v.onda)?.onda };
+  // o Mano: quando a Kombi passa do lado, o ar do freezer embaça o nosso para-brisa (`docs/KOMBI-DO-MANO.md`)
+  let geada: GeadaNoParaBrisa | null = null;
+  if (encontro?.personagem === 'mano') {
+    const doSopro = new THREE.Group();
+    w.add(doSopro);
+    geada = new GeadaNoParaBrisa(carro.group, doSopro);
+    geada.aoEmbacar = () => g.toast(`${carona.name}: Brrr! O Mano embaçou nosso para-brisa!`, '❄️');
+  }
+  w.root.userData.novidadesDaViagem = { pano, geada, cookie: vivos.find(v => v.cookie)?.cookie, encontro, noel: encontro?.personagem === 'noel' ? encontro : null, rega: vivos.find(v => v.rega)?.rega, onda: vivos.find(v => v.onda)?.onda };
   let visaoAntesDoEncontro = false;
   let ultimaFala = -9;
   /** a carona é sempre o outro de quem foi escolhido para dirigir */
@@ -869,6 +879,14 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       }
       pano.update(dt);
     }
+    if (geada && encontro) {
+      // quando a Kombi emparelha (a grade do freezer na altura do nosso para-brisa), sai o sopro
+      if (geada.momento === 'guardada' && encontro.estado.fase === 'ultrapassando' && encontro.estado.relativo > -1.2) {
+        const kombi = encontro.carro as KombiDoMano;
+        geada.soprar(() => kombi.pontoDoArGelado());
+      }
+      geada.update(dt);
+    }
     if (encontro?.ativo && !encontroEstavaAtivo) {
       visaoAntesDoEncontro = estado.visao === 'dentro';
       if (visaoAntesDoEncontro) { camDentro.cortar(); estado.visao = 'fora'; }
@@ -877,6 +895,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       marca(encontro.personagem);
       if (encontro.personagem === 'capy') g.unlock({ id: 'capy-na-estrada', title: 'Salva-vidas até no asfalto', place: 'Na estrada', icon: '🛵', note: 'O Capy apareceu de moto vermelha, capacete afivelado e um lembrete: nada de mergulhar nas curvas.' });
       else if (encontro.personagem === 'walter') g.unlock({ id: 'walter-na-estrada', title: 'Cachorro-quente sobre rodas', place: 'Na estrada', icon: '🌭', note: 'O Walter passou com o food truck vermelho, a salsicha gigante sorrindo no teto, abriu a janelinha do lado do Bebito e latiu um "au au" que, pelo jeito, queria dizer: passem no clube.' });
+      else if (encontro.personagem === 'mano') g.unlock({ id: 'mano-na-estrada', title: 'A Kombi gelada', place: 'Na estrada', icon: '🍦', note: 'O Mano passou de Kombi de sorvete, com a casquinha gigante de três bolas no teto e a musiquinha tocando. O ar do freezer embaçou o nosso para-brisa, e ele pediu desculpas com uma casquinha pra cada um e uma dancinha.' });
       else if (encontro.personagem === 'estella') g.unlock({ id: 'estella-na-estrada', title: 'A torre de roupas', place: 'Na estrada', icon: '🧵', note: 'A Estella passou de lambreta, de capacete rosa e óculos de aviador, com o sidecar levando uma pilha de roupas mais alta que o Bebito. Balançou a viagem inteira e não caiu nem um pé de meia.' });
       else if (encontro.personagem === 'josefina') g.unlock({ id: 'josefina-na-estrada', title: 'As plantinhas também passeiam', place: 'Na estrada', icon: '🐢', note: 'A Josefina passou com o carro cheio de mudinhas, levando cada uma com todo o cuidado até seu cantinho de sol.' });
       else g.unlock({ id: 'noel-na-estrada', title: 'O suco não espera', place: 'Na estrada', icon: '🦃', note: 'O Noel passou de carro, parou do nosso lado e lembrou que tinha comprado laranja… mas esquecido o gelo.' });

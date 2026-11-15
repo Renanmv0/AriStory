@@ -135,6 +135,7 @@ export type SomNome =
   | 'luzesAcendendo'
   | 'surpresa'
   | 'fotoFlash'
+  | 'musiquinhaDoSorvete'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -1346,6 +1347,27 @@ export const EFEITOS: Record<SomNome, Receita> = {
   },
 
   // a foto de todos: o "clic-clac" do obturador e o zumbido do flash carregando, subindo
+  // ------------------------------------------------- a Kombi de sorvete do Mano
+  // A MUSIQUINHA DE SORVETEIRO, de caixinha de música: uma frase alegre na
+  // pentatônica (sobe, dá a voltinha e desce para a tônica), em colcheias com
+  // uma nota comprida no fim de cada metade. O timbre é o "plim" de caixinha
+  // (seno com o harmônico de oitava curtinho), agudo e baixinho: é um carro
+  // passando, não a trilha. Toca quando a Kombi chega e quando ela vai embora.
+  musiquinhaDoSorvete: ({ ctx, destino, t }) => {
+    const passo = 0.15;
+    const frase: Array<[number, number]> = [
+      [0, 1], [4, 1], [7, 1], [12, 1], [9, 1], [7, 1], [4, 2],
+      [2, 1], [4, 1], [7, 1], [9, 1], [7, 1], [4, 1], [0, 3],
+    ];
+    let quando = t;
+    for (const [grau, dura] of frase) {
+      const f = nota(DO + 7 + grau);
+      tom(ctx, destino, { freq: f, quando, dur: 0.22 + dura * 0.1, vol: 0.05, ataque: 0.004, tipo: 'sine' });
+      tom(ctx, destino, { freq: f * 2, quando, dur: 0.1, vol: 0.016, ataque: 0.003, tipo: 'sine' });
+      quando += passo * dura;
+    }
+  },
+
   fotoFlash: ({ ctx, destino, t }) => {
     tom(ctx, destino, { freq: 2400, glide: 5200, quando: t, dur: 0.35, vol: 0.018, ataque: 0.02, tipo: 'sine' });
     chiado(ctx, destino, { quando: t + 0.36, dur: 0.03, vol: 0.14, freq: 3200, q: 2.5 });

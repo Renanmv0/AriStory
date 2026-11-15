@@ -6,6 +6,9 @@ import { CarroDoNoel } from '../../world/carroDoNoel';
 import { MotoDoCapy } from '../../world/motoDoCapy';
 import { FoodTruckDoWalter } from '../../world/foodTruckDoWalter';
 import { LambretaDaEstella } from '../../world/lambretaDaEstella';
+import { KombiDoMano } from '../../world/kombiDoMano';
+import { ITENS } from '../../world/itens';
+import { ARI, RENAN } from '../../characters/cast';
 import type { NaPista } from '../../world/estrada';
 
 type Fase = 'esperando' | 'alinhando' | 'ultrapassando' | 'freando' | 'falando' | 'saindo' | 'feito';
@@ -13,9 +16,9 @@ const suave = (t: number): number => { const k = Math.max(0, Math.min(1, t)); re
 
 /** Uma cena no relógio da viagem, isolada dos obstáculos e com as faixas reservadas. */
 export class EncontroNaEstrada {
-  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella;
-  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella' } as const)[this.personagem]; }
-  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵' } as const)[this.personagem]; }
+  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano;
+  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano' } as const)[this.personagem]; }
+  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦' } as const)[this.personagem]; }
   readonly estado = { fase: 'esperando' as Fase, relativo: -28, tempo: 0, s: 0 };
   private falas = false;
   private anterior: THREE.Vector3 | null = null;
@@ -23,7 +26,8 @@ export class EncontroNaEstrada {
   parada: number | null = null;
   constructor(private readonly g: GameAPI, readonly s: number, private readonly naPista: NaPista, private readonly rumo: (s: number) => number, private readonly carona: string, readonly personagem: PersonagemNaEstrada = 'noel') {
     this.carro = personagem === 'noel' ? new CarroDoNoel() : personagem === 'capy' ? new MotoDoCapy()
-      : personagem === 'walter' ? new FoodTruckDoWalter() : personagem === 'estella' ? new LambretaDaEstella() : new CarroDaJosefina();
+      : personagem === 'walter' ? new FoodTruckDoWalter() : personagem === 'estella' ? new LambretaDaEstella()
+        : personagem === 'mano' ? new KombiDoMano() : new CarroDaJosefina();
     this.carro.group.visible = false;
   }
   get ativo(): boolean { return this.estado.fase !== 'esperando' && this.estado.fase !== 'feito'; }
@@ -39,7 +43,10 @@ export class EncontroNaEstrada {
         walter: 'Cheirinho de cachorro-quente no retrovisor… é o Walter!',
         josefina: 'Olha quem veio com as plantinhas: a Josefina!',
         estella: 'Uma TORRE de roupas no retrovisor… é a Estella!',
-      } as const)[this.personagem], this.icone); this.g.som('buzinaDoBebito');
+        mano: 'Uma musiquinha de sorveteiro chegando… é o Mano de Kombi!',
+      } as const)[this.personagem], this.icone);
+      // (o Mano chega tocando a musiquinha da Kombi, e não buzinando)
+      this.g.som(this.personagem === 'mano' ? 'musiquinhaDoSorvete' : 'buzinaDoBebito');
     }
     if (e.fase === 'feito') return;
     e.tempo += dt;
@@ -47,7 +54,7 @@ export class EncontroNaEstrada {
       e.fase = 'ultrapassando'; e.tempo = 0;
     }
     if (e.fase === 'ultrapassando') {
-      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4 } as const)[this.personagem];
+      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8 } as const)[this.personagem];
       e.relativo = -28 + 42 * suave(e.tempo / duracao);
       if (e.tempo >= duracao) {
         e.fase = 'freando'; e.tempo = 0;
@@ -62,7 +69,10 @@ export class EncontroNaEstrada {
       if (e.tempo >= 2.5 && viagem.v < 0.1 && Math.abs(viagem.s - this.parada!) < 0.2) { e.fase = 'falando'; e.tempo = 0; }
     } else if (e.fase === 'falando' && !this.falas) {
       this.falas = true;
-      void this.conversar().then(() => { e.fase = 'saindo'; e.tempo = 0; });
+      void this.conversar().then(() => {
+        e.fase = 'saindo'; e.tempo = 0;
+        if (this.personagem === 'mano') this.g.som('musiquinhaDoSorvete');
+      });
     } else if (e.fase === 'saindo') {
       e.relativo = 4 * e.tempo + 3.5 * e.tempo * e.tempo;
       if (e.relativo > 65) {
@@ -73,6 +83,7 @@ export class EncontroNaEstrada {
           walter: 'Garçom de verdade não desliga a bandeja.',
           josefina: 'Cada mudinha tem seu cinto de segurança.',
           estella: 'A pilha balançou… mas não caiu nem um pé de meia.',
+          mano: 'E lá vai a Kombi, tocando a musiquinha até sumir.',
         } as const)[this.personagem], this.icone);
       }
     }
@@ -109,6 +120,23 @@ export class EncontroNaEstrada {
       await g.say(['Acho que de dia é churrasco e de tarde é cachorro-quente. Ele não desliga a bandeja nunca.'], this.carona);
       g.som('latido');
       await g.say(['Auuuu! Au! 🐾'], 'Walter');
+      return;
+    }
+    if (this.personagem === 'mano') {
+      const kombi = this.carro as KombiDoMano;
+      g.som('pinguim');
+      await g.say(['Bebitooos! Sentiram o friozinho? É o ar do freezer, sai de presente!'], 'Mano');
+      await g.say(['Mano, você embaçou nosso para-brisa inteirinho!'], this.carona);
+      await g.say(['Desembaça rapidinho, prometo! Pra compensar… uma casquinha pra cada um!'], 'Mano');
+      // as duas casquinhas da bancada: a de morango é do Ari e a de maracujá do Renan (as do quiosque)
+      kombi.entregarCasquinhas();
+      const doAri = g.storeItem(ITENS.sorveteMorango, ARI.id), doRenan = g.storeItem(ITENS.sorveteMaracuja, RENAN.id);
+      g.som('sorvete');
+      g.toast(doAri === 'cheio' || doRenan === 'cheio'
+        ? 'A mochila está cheia: a casquinha que não coube, o Mano guarda pra próxima.'
+        : 'Uma casquinha de morango pro Ari e uma de maracujá pro Renan, na mochila!', '🍦');
+      kombi.mano.dancar(3.2);
+      await g.say(['E a dancinha de despedida, que sorvete sem dancinha não vale!'], 'Mano');
       return;
     }
     if (this.personagem === 'estella') {
