@@ -235,7 +235,7 @@ if (roda('bom')) {
   const v = st.vistos;
   confere(v.travessia === 2 && v.semaforo === 1 && v.obra === 1 && v.buracos === 1 && v.lombada === 1 && v.poca === 1 && v.onibus === 1,
     `passou pelos oito eventos (${JSON.stringify(v)})`);
-  confere(st.tropecos === 0 && st.sustos === 0, `dirigindo direito, nenhum tropeço e nenhum susto (${st.tropecos}, ${st.sustos})`);
+  confere(st.tropecos === 0 && st.sustos === 0, `dirigindo direito, nenhum tropeço e nenhum susto (${st.tropecos}, ${st.sustos}${Object.keys(v).filter((k) => k.startsWith('tropeço')).map((k) => ' ' + k).join('')})`);
   confere(st.gentilezas === 3, `parou para as duas travessias e no sinal (${st.gentilezas} gentilezas)`);
   confere(st.coracoes >= 30, `pegou corações pelo caminho (${st.coracoes})`);
   console.log(`   peso no pior ponto: ${pesoMaximo.calls} desenhos, ${pesoMaximo.triangles} triângulos`);
