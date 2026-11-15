@@ -1185,6 +1185,38 @@ molde de veículo que CARREGA alguma coisa de cômico:
   cena, para `scripts/lambreta.mjs` fotografar de perto. Na estrada, a câmera
   da conversa manda e a do teste é ignorada.
 
+## A Kombi de sorvete do Mano (`world/kombiDoMano.ts`)
+
+O segundo veículo do PARQUE (`docs/KOMBI-DO-MANO.md`), e o molde de veículo
+de CAIXA com um personagem ao volante e uma janela que abre:
+
+- **Kombi é um PERFIL extrudado com bisel**, não caixa: o de lado (com a
+  frente redonda e o recorte da cabine) em duas cores, a saia de baixo e a
+  parte de cima, e o V do nariz como uma geometria própria por cima. A saia
+  é chocolate COM GRANULADO numa textura de canvas — é o granulado que diz
+  "sorvete" de longe.
+- **Faróis são olhos**: farol redondo, blush embaixo, emblema no meio. Num
+  carro de bicho, a cara do carro lê antes do motorista.
+- **O que se abre é um grupo com pivô na dobradiça** (o toldo, a franja e a
+  bancada), e uma `abertura` de 0 a 1 que o `update` persegue — fechada na
+  estrada, aberta na conversa. O que está em cima da bancada só aparece com
+  ela quase aberta.
+- **Neve que escorre é um lote**: a tampa fofa e as gotas como cápsulas de
+  comprimento sorteado (com semente), curtas em cima da janela onde o toldo
+  abre.
+- **Motorista alto numa cabine baixa**: o chapéu de casquinha do Mano passava
+  45 cm do teto. A saída não foi encolher o Mano até sumir: ele ganhou
+  `mostrarChapeu(false)` e, ao volante, vai de quepe de papel de sorveteiro
+  (baixinho) pendurado no `apoioDoChapeu`. Confira a cabeça NO MEIO do
+  para-brisa, com foto de frente e de perto.
+- **Efeito que vai de um veículo ao outro** (o ar gelado): a geada é filha do
+  BEBITO (anda com ele) e os flocos são do MUNDO (saem da Kombi, que anda
+  separada), com o ponto de saída passado como função (`pontoDoArGelado`),
+  porque ele anda. A geada cobre o vidro de coluna a coluna: a largura por
+  linha sai da própria pele (o arco do nó 12 ao 7), e não de uma constante —
+  com uma meia largura fixa ela era um retângulo colado no meio do vidro.
+- **Atalho de teste** `?kombi=x,z,giro` (e `&conversando`, a janela aberta).
+
 ## A estrada (`world/estrada.ts`)
 
 As peças da viagem de carro do Bebito Mobile. A pista é CURVA, então a cena

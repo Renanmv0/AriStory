@@ -143,6 +143,8 @@ try {
         conversa = true;
         await page.waitForTimeout(1500);
         await page.screenshot({ path: `${OUT}-conversa.png` });
+        const r = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
+        console.log(`  peso na conversa: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos`);
       }
       const fala = await page.evaluate(() => document.querySelector('.dialogue.show')?.textContent ?? '');
       if (fala.includes('dancinha') && !dancou) {

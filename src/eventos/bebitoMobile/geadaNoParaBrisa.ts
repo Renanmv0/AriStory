@@ -3,7 +3,8 @@ import { PALETTE as P } from '../../palette';
 import { toon } from '../../core/materials';
 import { novaTextura } from '../../world/texturasDeChao';
 import { CARRO } from '../../world/bebitoMobile/pele';
-import { naPele, sNoPerfil } from './panoNoParaBrisa';
+import { naPele, sNoPerfil, zNoPerfil } from './panoNoParaBrisa';
+import { NO, secao } from '../../world/bebitoMobile/pele';
 
 /**
  * ==================================================== A GEADA NO PARA-BRISA
@@ -29,7 +30,14 @@ const suave = (a: number, b: number, x: number): number => THREE.MathUtils.smoot
 /** o vidro da frente, no perfil: do pé do para-brisa até a testeira (sem escala) */
 const S0 = sNoPerfil(CARRO.zCowl - CARRO.peDoParaBrisa) + 0.01;
 const S1 = sNoPerfil(CARRO.zTeto + CARRO.testeira) - 0.02;
-const MEIA_LARGURA = 0.66;
+
+/** a meia largura do VIDRO nesta altura do perfil: o arco do meio do teto (nó 12) até a coluna (nó 7) */
+function meiaLarguraDoVidro(s: number): number {
+  const { nos } = secao(zNoPerfil(s));
+  let l = 0;
+  for (let k = NO.meio; k > NO.paraBrisa; k--) l += Math.hypot(nos[k][0] - nos[k - 1][0], nos[k][1] - nos[k - 1][1]);
+  return l - 0.02;
+}
 
 /**
  * A GEADA: um canvas transparente com os cristais em samambaia saindo das
@@ -108,8 +116,9 @@ export class GeadaNoParaBrisa {
     const pos = geo.attributes.position;
     const p = new V();
     for (let j = 0; j < LINHAS; j++) for (let i = 0; i < COLUNAS; i++) {
-      const u = (i / (COLUNAS - 1) - 0.5) * 2 * MEIA_LARGURA;
+      // de coluna a coluna: o vidro inteiro embaça, sem sobrar beirada limpa
       const s = S0 + (j / (LINHAS - 1)) * (S1 - S0);
+      const u = (i / (COLUNAS - 1) - 0.5) * 2 * meiaLarguraDoVidro(s);
       naPele(u, s, 0.012, p);
       pos.setXYZ(j * COLUNAS + i, p.x, p.y, p.z);
     }

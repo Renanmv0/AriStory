@@ -56,7 +56,7 @@ export function sNoPerfil(z: number): number {
   return ss[ss.length - 1];
 }
 /** o `z` (sem escala) a `s` metros pelo perfil, contando da frente */
-function zNoPerfil(s: number): number {
+export function zNoPerfil(s: number): number {
   const { zs, ss } = PERFIL;
   if (s <= 0) return zs[0];
   for (let i = 1; i < ss.length; i++) if (ss[i] >= s) return THREE.MathUtils.lerp(zs[i - 1], zs[i], (s - ss[i - 1]) / (ss[i] - ss[i - 1]));

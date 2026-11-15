@@ -20,24 +20,25 @@ Jean-Luc) estão nas ideias, no fim.
 
 ## Quem aparece em cada rota (`candidatosAoEncontro`, em `eventos/bebitoMobile/rota.ts`)
 
-Cada personagem mora num lugar (`MORADORES`): a Estella no parque; o Noel, a
+Cada personagem mora num lugar (`MORADORES`): a Estella e o Mano (a Kombi de
+sorvete, `docs/KOMBI-DO-MANO.md`) no parque; o Noel, a
 Josefina, o Capy e o Walter no clube; ninguém na casa nem na escola.
 
-- Vale o **destino**: indo ao parque, a Estella; indo ao clube, o pessoal do clube.
+- Vale o **destino**: indo ao parque, a Estella ou o Mano; indo ao clube, o pessoal do clube.
 - Se o destino não tem ninguém (a casa, a escola), vale a **origem**: do clube
-  para casa, o pessoal do clube; do parque para a escola, a Estella.
+  para casa, o pessoal do clube; do parque para a escola, a Estella ou o Mano.
 - Se as **duas pontas** têm gente (parque ↔ clube, nos dois sentidos), sorteia
-  entre **todos** os cinco.
+  entre **todos** os seis.
 - Casa ↔ escola fica **sem encontro**. A turma da escola continua na zona escolar.
 - O sorteio é por igual entre os candidatos, pela semente da viagem: recarregar
   conserva o mesmo encontro.
 
 | rota | quem pode aparecer |
 |---|---|
-| casa ↔ parque | Estella |
-| parque ↔ escola | Estella |
+| casa ↔ parque | Estella, Mano |
+| parque ↔ escola | Estella, Mano |
 | casa ↔ clube, clube ↔ escola | Noel, Josefina, Capy, Walter |
-| parque ↔ clube | os cinco |
+| parque ↔ clube | os seis |
 | casa ↔ escola | ninguém |
 
 Isso substitui o "25% para cada um em toda viagem" de 2026-11-13
@@ -135,8 +136,8 @@ desenhos e ~350 mil triângulos (o do Walter, noutra rota, ~390 desenhos).
 
 ## Ideias que ficam para depois
 
-- **Os outros do parque**: o Mano (a Kombi de sorvete ou o triciclo-freezer), o
-  Cookie (o carrinho pequenininho ou o trenzinho) e o Jean-Luc (o carrinho
+- **Os outros do parque**: o Mano já veio, de Kombi de sorvete
+  (`docs/KOMBI-DO-MANO.md`); faltam o Cookie (o carrinho pequenininho ou o trenzinho) e o Jean-Luc (o carrinho
   francês ou o pedalinho com rodas).
 
 ## O que foi testado (2026-11-15)

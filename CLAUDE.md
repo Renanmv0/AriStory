@@ -309,7 +309,12 @@ da escola (não fazer junto).
 sidecar levando uma pilha de roupas de quase 4 m, de capacete e óculos de aviador (`world/lambretaDaEstella.ts`),
 no jogo desde 2026-11-15 — e, depois do primeiro encontro, ESTACIONADA no Villa Lobos ao lado da vaga do Bebito; e quando
 ela arranca, o lenço da pilha voa e gruda no para-brisa do Bebito, escorrega pelo teto e vai embora
-(`eventos/bebitoMobile/panoNoParaBrisa.ts`). E a REGRA DE QUEM APARECE na estrada (`candidatosAoEncontro`, em `rota.ts`): cada
+(`eventos/bebitoMobile/panoNoParaBrisa.ts`). `KOMBI-DO-MANO.md` é o segundo: o Mano de Kombi de
+sorvete creme e chocolate com granulado, a casquinha de três bolas girando no teto e a neve escorrendo
+(`world/kombiDoMano.ts`), no jogo desde 2026-11-15 — chega tocando a musiquinha de sorveteiro, o ar do
+freezer EMBAÇA o para-brisa do Bebito uns segundos (`eventos/bebitoMobile/geadaNoParaBrisa.ts`), e
+parados lado a lado ele passa uma casquinha para cada um pela janela de venda, direto para a mochila.
+E a REGRA DE QUEM APARECE na estrada (`candidatosAoEncontro`, em `rota.ts`): cada
 um só aparece nas rotas do lugar onde mora (o destino; se o destino não tem ninguém, a origem; nas duas
 pontas com gente, todos), e casa ↔ escola fica sem encontro.
 `QUINTAL.md` é o plano de DECORAR o quintal da casa do Ari — o decorador da
@@ -480,6 +485,7 @@ node scripts/nuvens.mjs /tmp/nv      # as nuvens da frente da casa do Ari nunca 
 node scripts/patio.mjs  /tmp/pt      # o patio da frente da Escola do Gatito (docs/ESCOLA-PATIO.md, ?cena=escola-patio): o ponto do onibus e quem desce fora dos colisores, a porta da rua do saguao saindo no patio, o onibus do ponto indo ao clube, o caminho livre da rua ate a porta e do portao, pela faixa, ate o estacionamento, o predio, o portao, a grade e a guarita na altura do corpo dentro dos colisores, a cancela abrindo, a porta levando ao saguao, as tres bandeiras balancando, os 8 giros, o cartao-postal, o portal e o alto, e o peso; CEL=1 no celular em pe
 node scripts/viagemEscola.mjs /tmp/ve # a viagem de carro ate a escola (docs/VIAGEM-ESCOLA.md), com ?bebito: as 1800 rotas da escola (sem navegador: a zona escolar, o encontro livre, nenhum coracao em cima de faixa de parar), a escola no menu do carro so depois de aberta, a IDA do parque com o piloto de teste (o radar, a torcida com o Gatito na faixa da direita, o ensaio da Valentina, a bola do Flynn, fotos de longe e de perto, sem tropeco nem susto, as memorias), a CHEGADA animada fase por fase ate a vaga do coracao, RECARREGAR sem repetir a chegada (e o carro em nenhum outro lugar) e a VOLTA para a garagem. SO=rotas|menu|ida|recarga|volta roda uma parte
 node scripts/lambreta.mjs /tmp/lb  # a lambreta da Estella (docs/LAMBRETA-DA-ESTELLA.md): o MODELO parado no Villa Lobos pelo atalho ?lambreta=x,z,giro, com ela montada (nada abaixo do chao, a pilha de cinco blocos, a largura cabendo na faixa, fotos de perto de todos os lados, o rosto com o capacete e os oculos de aviador); ESTACIONADA no estacionamento do parque so depois da memoria do encontro, na vaga vizinha da do Bebito; e o PANO no para-brisa (voando, grudado, escorregando, saindo e foi, com foto de cada momento). SO=modelo|parque|pano roda uma parte
+node scripts/kombi.mjs /tmp/km     # a Kombi de sorvete do Mano (docs/KOMBI-DO-MANO.md): o MODELO parado no Villa Lobos pelo atalho ?kombi=x,z,giro[&conversando] (nada abaixo do chao, a largura na faixa, fotos de todos os lados, o Mano ao volante de quepe, a janela de venda aberta com as duas casquinhas) e a ESTRADA (a rota com o Mano: a musiquinha na chegada e na saida, o sopro de flocos, a geada no para-brisa soprando, embacado, desembacando e foi, a conversa, as duas casquinhas na mochila, a dancinha, a memoria e o save de verdade intacto). SO=modelo|estrada roda uma parte
 node scripts/zfighting.mjs         # caca faces coplanares nas pecas do kit (o que serrilha); SO=armario,estante roda so essas (peca de evento, como o carrinho-de-pocoes, abre a cena na fase dela); SEM_FUNDIR=1 mede antes da juncao (depois dela nao sobra caixa para medir)
 node scripts/matriz.mjs  /tmp/mt    # a matriz so e refeita quando mexe: compara com o calculo do zero, andando
 node scripts/escola.mjs  /tmp/es    # a Escola do Gatito: as seis cenas, as portas nos dois sentidos, a cara do Gatito medida, o six seven e o arremesso
