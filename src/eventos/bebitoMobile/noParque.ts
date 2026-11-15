@@ -18,6 +18,7 @@ import { FASES_DO_PRESENTE, localDoBebito, bebitoMobileNestaPagina } from '../Be
 import { escolherDestinoDeCarro } from './partida';
 import { animarChegadaNoParque, consumirChegadaNoParque, type ComandoDaCancela } from './chegadaNoParque';
 import { ritmoDoPresente } from './presente';
+import { LambretaDaEstella, ESCALA_DA_LAMBRETA } from '../../world/lambretaDaEstella';
 
 /**
  * ================================== O ESTACIONAMENTO DO VILLA LOBOS (e o carro nele)
@@ -65,6 +66,8 @@ const X_DA_SEBE = 48.65;
 /** onde o Bebito estaciona — de nariz para a rua, de frente para o parque — e onde a dupla desce */
 export const VAGA_NO_PARQUE = { x: (FILA_A.x0 + FILA_A.x1) / 2, z: 5.5, giro: -Math.PI / 2 } as const;
 export const DESCIDA_NO_PARQUE = { x: 51.2, z: 3.0, facing: -Math.PI / 2 } as const;
+/** a vaga da lambreta da Estella: a da fila A logo depois da do Bebito (de 7 a 9,8), com o sidecar para o `+Z` */
+export const LAMBRETA_NO_PARQUE = { x: 51.4, z: 7.76, giro: -Math.PI / 2 } as const;
 /** a área de andar do parque com o estacionamento (a de sempre acaba na rua, em `x = 44`) */
 const LIMITE_LESTE = LOTE.x1;
 
@@ -195,6 +198,18 @@ export function montarEstacionamento(w: WorldBuilder): ComandoDaCancela | undefi
   for (const [x, z, giro, cor] of CARROS) {
     por(carroEstacionado(cor), x, z, giro);
     w.blockBox(x, z, CARRO_ESTACIONADO.comprimento / 2 - 0.1, CARRO_ESTACIONADO.largura / 2 - 0.05);
+  }
+  // A LAMBRETA DA ESTELLA, depois do primeiro encontro na estrada (`docs/LAMBRETA-DA-ESTELLA.md`):
+  // vizinha da vaga do Bebito, de nariz para a rua como ele, vazia (a dona está na boutique)
+  // e com a pilha de roupas ainda no sidecar
+  if (g.temMemoria('estella-na-estrada')) {
+    const { x, z, giro } = LAMBRETA_NO_PARQUE;
+    por(new LambretaDaEstella(true).group, x, z, giro);
+    // (o fundo é juntado inteiro e perde as etiquetas: o teste acha a lambreta por aqui)
+    w.root.userData.lambretaNoParque = { x, z };
+    // a pegada: a lambreta e o sidecar (de lado, o sidecar vai para o +Z do mundo)
+    const e = ESCALA_DA_LAMBRETA;
+    w.blockBox(x + 0.07 * e, z + 0.42 * e, 0.86 * e, 0.8 * e);
   }
   // as árvores: no fundo (`−Z`), atrás da cerca viva de baixo, e nos canteiros da calçada longe do ponto
   for (const [x, z, k] of [[51, -15.8, 1.25], [56.5, -16.6, 1.5], [62, -15.4, 1.2], [58.7, -20, 1.6]] as const) por(tree('redonda', k, x * 0.13), x, z, x);

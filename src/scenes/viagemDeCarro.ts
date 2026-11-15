@@ -41,6 +41,8 @@ import { CelularDeJogo } from '../world/celularDeJogo';
 import { hortaDaAlameda, pomarDaAlameda, quadraNaAlameda } from '../world/paisagemDaRotaDoClube';
 import { coberturaDoEstacionamento, jardineiraDoEstacionamento, posteDoEstacionamento } from '../world/estacionamentoDoClube';
 import { EncontroNaEstrada } from '../eventos/bebitoMobile/encontroNaEstrada';
+import { PanoNoParaBrisa } from '../eventos/bebitoMobile/panoNoParaBrisa';
+import type { LambretaDaEstella } from '../world/lambretaDaEstella';
 import { OndaVerde, RegaNaAlameda } from '../eventos/bebitoMobile/novidadesDoClube';
 import { agendarChegadaNoClube } from '../eventos/bebitoMobile/chegadaNoClube';
 import { pedidoSalvo } from '../eventos/bebitoMobile/pedidoSalvo';
@@ -658,7 +660,14 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const motorista = pedido.motorista === ARI.id ? ARI : RENAN;
   const encontro = rota.encontro ? new EncontroNaEstrada(g, rota.encontro.s, naPista, rumoEm, carona.name, rota.encontro.personagem) : null;
   if (encontro) w.add(encontro.carro.group);
-  w.root.userData.novidadesDaViagem = { cookie: vivos.find(v => v.cookie)?.cookie, encontro, noel: encontro?.personagem === 'noel' ? encontro : null, rega: vivos.find(v => v.rega)?.rega, onda: vivos.find(v => v.onda)?.onda };
+  // a Estella: quando ela arranca, o lenço do alto da pilha voa e gruda no nosso para-brisa
+  // (`docs/LAMBRETA-DA-ESTELLA.md`), e depois escorrega aos pouquinhos e vai embora
+  const pano = encontro?.personagem === 'estella' ? new PanoNoParaBrisa(carro.group) : null;
+  if (pano) {
+    pano.aoGrudar = () => { g.som('sacudida'); g.toast(`${carona.name}: Ei! Um pano no para-brisa!`, '🧣'); };
+    pano.aoSair = () => g.toast('…e lá se foi o pano. A Estella nem percebeu.', '🧣');
+  }
+  w.root.userData.novidadesDaViagem = { pano, cookie: vivos.find(v => v.cookie)?.cookie, encontro, noel: encontro?.personagem === 'noel' ? encontro : null, rega: vivos.find(v => v.rega)?.rega, onda: vivos.find(v => v.onda)?.onda };
   let visaoAntesDoEncontro = false;
   let ultimaFala = -9;
   /** a carona é sempre o outro de quem foi escolhido para dirigir */
@@ -854,6 +863,12 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     const encontroEstavaAtivo = encontro?.ativo;
     const podeReceberEncontro = estado.fase === 'dirigindo' && !g.emDialogo() && !menuAberto && !trocando;
     encontro?.update(dt, estado, podeReceberEncontro);
+    if (pano && encontro) {
+      if (pano.momento === 'guardado' && encontro.estado.fase === 'saindo' && encontro.estado.tempo > 0.25) {
+        pano.lancar((encontro.carro as LambretaDaEstella).soltarPano());
+      }
+      pano.update(dt);
+    }
     if (encontro?.ativo && !encontroEstavaAtivo) {
       visaoAntesDoEncontro = estado.visao === 'dentro';
       if (visaoAntesDoEncontro) { camDentro.cortar(); estado.visao = 'fora'; }

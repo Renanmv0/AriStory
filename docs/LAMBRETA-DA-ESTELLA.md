@@ -93,6 +93,38 @@ lado, conversa e segue. As falas são **minhas, provisórias**:
 - saída: "A pilha balançou… mas não caiu nem um pé de meia."
 - memória: "A torre de roupas" (`estella-na-estrada`).
 
+## A lambreta estacionada no Villa Lobos (2026-11-15)
+
+Pedido do Renan: "faça agora que a lambreta fica no estacionamento do Villa Lobos
+depois do primeiro encontro". Ela mora na vaga da fila A logo depois da vaga do
+coração do Bebito (`LAMBRETA_NO_PARQUE`, em `eventos/bebitoMobile/noParque.ts`):
+de nariz para a rua, como ele, vazia (a dona está na boutique) e com a pilha
+ainda no sidecar, já torta. Só aparece com a memória `estella-na-estrada`. É uma
+peça de fundo, juntada com o estacionamento (`fundirComoFundo`), com colisor na
+pegada da lambreta e do sidecar. A torre de 4 m fica do lado da câmera, mas não
+tapa a vaga do Bebito nem a descida da dupla (conferido na foto).
+
+## O pano no para-brisa (2026-11-15)
+
+Pedido do Renan: "quando a Estella acelera, um dos panos sai voando e cai no nosso
+para-brisa. Depois ele sai aos pouquinhos." (`eventos/bebitoMobile/panoNoParaBrisa.ts`)
+
+- Uns 0,25 s depois de ela arrancar, o **lenço do alto da pilha** some da pilha
+  (`soltarPano()`) e um pano rosa de bolinhas, com a barra dourada, sai voando
+  dali: um arco por cima, dando cambalhota e ondulando.
+- Ele **gruda no para-brisa**. Cada ponto do pano vai para a pele do carro pela
+  mesma conta da carroceria (`secao(z)`, os nós de cima da fatia, e `deformar`),
+  medido pelo comprimento do perfil, para não esticar no vidro em pé. As pontas
+  tremulam no vento. A carona: "Ei! Um pano no para-brisa!"
+- **Escorrega aos pouquinhos**: o vento o empurra pelo vidro e pelo teto, por
+  cima do bagageiro, e um tico para o lado (3 s).
+- **Descola** na traseira e voa para trás, rodando, até sumir. "…e lá se foi o
+  pano. A Estella nem percebeu."
+- A câmera da conversa (de frente) ainda está valendo quando ele gruda; quando
+  ela some, a de perseguição (de trás e de cima) vê ele escorregar pelo teto e
+  sair voando na direção dela.
+- As falas são minhas, provisórias.
+
 ## O peso
 
 A lambreta inteira tem 68 malhas e ~44 mil triângulos (a carroceria e as rodas
@@ -103,10 +135,6 @@ desenhos e ~350 mil triângulos (o do Walter, noutra rota, ~390 desenhos).
 
 ## Ideias que ficam para depois
 
-- **A lambreta estacionada** no Villa Lobos depois do primeiro encontro, como o
-  carro do Walter e a moto do Capy no clube (a classe já tem `estacionada`).
-- **Um pano voando** da pilha e grudando no para-brisa do Bebito, e ela voltando
-  para buscar.
 - **Os outros do parque**: o Mano (a Kombi de sorvete ou o triciclo-freezer), o
   Cookie (o carrinho pequenininho ou o trenzinho) e o Jean-Luc (o carrinho
   francês ou o pedalinho com rodas).
@@ -126,6 +154,6 @@ desenhos e ~350 mil triângulos (o do Walter, noutra rota, ~390 desenhos).
 ## Validar
 
 ```bash
-node scripts/lambreta.mjs /tmp/lb        # a lambreta parada no parque (?lambreta=x,z,giro): as medidas e as fotos de perto de todos os lados
+node scripts/lambreta.mjs /tmp/lb        # o modelo parado no parque (?lambreta=x,z,giro, medidas e fotos de perto), a lambreta ESTACIONADA depois do encontro e o PANO no para-brisa; SO=modelo|parque|pano
 SO=rotas node scripts/casaClube.mjs      # quem aparece em cada rota (sem navegador)
 ```

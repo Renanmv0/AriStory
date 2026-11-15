@@ -82,10 +82,25 @@ export class LambretaDaEstella {
       this.estella.group.scale.setScalar(0.92);
       this.estella.apoioDoCapacete.add(capaceteDaEstella());
       this.veiculo.add(this.estella.group);
+      this.update(0, 0, false);
     } else {
+      // ESTACIONADA (no Villa Lobos, depois do primeiro encontro): sem ninguém, a pilha já
+      // torta (o `update` dá o tombo de cada bloco) e tudo junto como fundo — ninguém a mexe
+      this.update(0, 0, false);
       fundirComoFundo(this.group);
     }
-    this.update(0, 0, false);
+  }
+
+  /**
+   * O LENÇO DO ALTO SAI VOANDO (quando ela arranca): ele some da pilha, e a cena
+   * lança o pano no lugar dele (`eventos/bebitoMobile/panoNoParaBrisa.ts`).
+   * Devolve onde ele estava, no mundo.
+   */
+  soltarPano(): THREE.Vector3 {
+    const onde = new THREE.Vector3();
+    this.lenco[0].getWorldPosition(onde);
+    this.lenco[0].visible = false;
+    return onde;
   }
 
   // ------------------------------------------------------------------ as rodas
