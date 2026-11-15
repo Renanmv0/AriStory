@@ -7,9 +7,9 @@ const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4177';
 if (new URL(BASE).hostname === 'renanmv0.github.io') throw Error('Use o preview isolado.');
 const OUT = process.argv[2] ?? '/tmp/casa-clube';
 const codigo = ts.transpileModule(await readFile(new URL('../src/eventos/bebitoMobile/rota.ts', import.meta.url), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
-const { SENTIDOS, gerarRota, destinoDaRota } = await import('data:text/javascript;base64,' + Buffer.from(codigo).toString('base64'));
+const { SENTIDOS, gerarRota, destinoDaRota, candidatosAoEncontro } = await import('data:text/javascript;base64,' + Buffer.from(codigo).toString('base64'));
 for (const sentido of SENTIDOS) {
-  const contagem = { noel: 0, josefina: 0, capy: 0, walter: 0, nenhum: 0 };
+  const contagem = { noel: 0, josefina: 0, capy: 0, walter: 0, estella: 0, nenhum: 0 };
   for (let seed = 1; seed <= 500; seed++) {
     const r = gerarRota(seed, sentido), n = r.encontro;
     contagem[n?.personagem ?? 'nenhum']++;
@@ -25,9 +25,17 @@ for (const sentido of SENTIDOS) {
     if (sentido === 'casa-clube') assert.deepEqual(r.trechos.map(t => t.bioma), ['bairro', 'avenida', 'hortas', 'esportivo']);
     if (sentido === 'clube-casa') assert.deepEqual(r.trechos.map(t => t.bioma), ['esportivo', 'hortas', 'avenida', 'bairro']);
   }
-  // sempre um encontro, 25% cada um: Noel, Josefina, Capy e Walter
-  assert.equal(contagem.nenhum, 0, 'toda viagem tem encontro');
-  for (const quem of ['noel', 'josefina', 'capy', 'walter']) assert.ok(contagem[quem] > 85 && contagem[quem] < 165, quem);
+  // cada um só aparece nas rotas do lugar dele (decisão do Renan, 2026-11-15): o destino,
+  // ou a origem se o destino não tem ninguém, ou todos se as duas pontas têm; por igual
+  const candidatos = candidatosAoEncontro(sentido);
+  if (!candidatos.length) assert.equal(contagem.nenhum, 500, `${sentido}: sem ninguém, sem encontro`);
+  else {
+    assert.equal(contagem.nenhum, 0, `${sentido}: toda viagem com candidato tem encontro`);
+    for (const quem of Object.keys(contagem).filter((k) => k !== 'nenhum')) {
+      if (candidatos.includes(quem)) assert.ok(Math.abs(contagem[quem] - 500 / candidatos.length) < 500 / candidatos.length * 0.4, `${sentido}: ${quem} por igual (${contagem[quem]})`);
+      else assert.equal(contagem[quem], 0, `${sentido}: ${quem} não mora em nenhuma das pontas`);
+    }
+  }
   console.log(sentido, '500 rotas deterministas e encontros variados', contagem);
 }
 const a = gerarRota(7, 'casa-clube'), b = gerarRota(7, 'parque-clube'), c = gerarRota(7, 'clube-casa');

@@ -40,6 +40,10 @@ Além de lombada, travessia, obra, semáforo e poça:
 
 ## Viagens com encontros diferentes
 
+> **Atualizado em 2026-11-15**: o sorteio de "25% para cada um" foi trocado. Agora
+> cada personagem só aparece nas rotas do lugar onde mora, e a Estella entrou de
+> lambreta. A regra está em `docs/LAMBRETA-DA-ESTELLA.md`.
+
 Cada partida, em qualquer um dos seis sentidos, sorteia um encontro — desde
 2026-11-13 SEMPRE há um (pedido do Renan): 25% de Noel, 25% de Josefina, 25% do
 Capy de moto e 25% do Walter no food truck. É um veículo de personagem por

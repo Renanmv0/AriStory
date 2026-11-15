@@ -19,6 +19,7 @@ import { ordemDoLivro } from './ui/livroDeCartas';
 import { KIT_DO_HALLOWEEN } from './world/halloween/kit';
 import { CARTELA_DE_TINTAS, FLAG_DO_ATELIE, PRECO_DO_ATELIE, podeTingir, temDetalhe } from './world/tintas';
 import { BEBITO_MOBILE, BebitoMobile } from './world/bebitoMobile/BebitoMobile';
+import { LambretaDaEstella } from './world/lambretaDaEstella';
 import {
   CATALOGO_DO_CARRO, DEF_DAS_VAGAS, FICHA_DE_FABRICA, VAGAS_DO_CARRO, copiarFicha, normalizarFicha,
 } from './world/bebitoMobile/ficha';
@@ -109,6 +110,21 @@ if (em && em.length === 2 && em.every(Number.isFinite)) {
 // jogo pela quest do presente; este é o jeito de VER o modelo antes dela (e o
 // de `scripts/zfighting.mjs` e `scripts/bebitoMobile.mjs` o acharem numa cena).
 // `&semTeto` tira o teto (a casinha de boneca) e `&farois` acende as luzes.
+// `?lambreta=x,z,giro`: a lambreta da Estella (com ela montada, de capacete) parada
+// nesse ponto da cena, para o `scripts/lambreta.mjs` fotografar de todos os lados.
+// Na estrada ela só aparece no encontro, e lá a câmera da conversa manda.
+const lambreta = params.get('lambreta')?.split(',').map(Number);
+if (lambreta && lambreta.length >= 2 && lambreta.slice(0, 2).every(Number.isFinite)) {
+  void comecou.then(() => {
+    const mundo = (game as unknown as { current?: { world: WorldBuilder } }).current?.world;
+    if (!mundo) return;
+    const veiculo = new LambretaDaEstella();
+    mundo.add(mundo.place(veiculo.group, lambreta[0], 0, lambreta[1], Number.isFinite(lambreta[2]) ? lambreta[2] : 0));
+    // parada, mas com a pilha balançando como na estrada (`distancia` 0: as rodas não giram)
+    mundo.onUpdate((dt) => veiculo.update(dt, 0, params.has('conversando')));
+    (window as unknown as { lambreta: LambretaDaEstella }).lambreta = veiculo;
+  });
+}
 const carro = params.get('carro')?.split(',').map(Number);
 if (carro && carro.length >= 2 && carro.slice(0, 2).every(Number.isFinite)) {
   void comecou.then(() => {

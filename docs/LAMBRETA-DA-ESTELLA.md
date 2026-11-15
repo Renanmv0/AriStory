@@ -1,0 +1,119 @@
+# A lambreta da Estella e quem aparece em cada rota
+
+## COMECE AQUI
+
+**O pedido** (Renan, 2026-11-15): "Vamos começar com a lambreta com sidecar da
+Estella, quero ela com aquele capacete com óculos grande enquanto ela dirige, no
+sidecar quero que tenha uma pilha comicamente grande de roupas, bastante mesmo.
+E outra mudança: os personagens só aparecem nas interações de carro nas rotas
+que vão para o lugar que eles ficam. Então a Estella só apareceria nas rotas que
+vão ao Parque Villa Lobos, e os personagens do clube só nas rotas que vão ao
+clube. Rotas que têm personagens nos dois pontos, tanto na ida quanto na volta,
+ficam aleatórias entre todos os personagens."
+
+E a resposta dele sobre as rotas que vão a um lugar sem personagem (a casa e a
+escola): **vale quem mora no lugar de onde a viagem sai**.
+
+**O estado:** feita e no jogo (o Renan autorizou subir sem esperar). É o
+primeiro veículo dos personagens do PARQUE; os outros (o Mano, o Cookie, o
+Jean-Luc) estão nas ideias, no fim.
+
+## Quem aparece em cada rota (`candidatosAoEncontro`, em `eventos/bebitoMobile/rota.ts`)
+
+Cada personagem mora num lugar (`MORADORES`): a Estella no parque; o Noel, a
+Josefina, o Capy e o Walter no clube; ninguém na casa nem na escola.
+
+- Vale o **destino**: indo ao parque, a Estella; indo ao clube, o pessoal do clube.
+- Se o destino não tem ninguém (a casa, a escola), vale a **origem**: do clube
+  para casa, o pessoal do clube; do parque para a escola, a Estella.
+- Se as **duas pontas** têm gente (parque ↔ clube, nos dois sentidos), sorteia
+  entre **todos** os cinco.
+- Casa ↔ escola fica **sem encontro**. A turma da escola continua na zona escolar.
+- O sorteio é por igual entre os candidatos, pela semente da viagem: recarregar
+  conserva o mesmo encontro.
+
+| rota | quem pode aparecer |
+|---|---|
+| casa ↔ parque | Estella |
+| parque ↔ escola | Estella |
+| casa ↔ clube, clube ↔ escola | Noel, Josefina, Capy, Walter |
+| parque ↔ clube | os cinco |
+| casa ↔ escola | ninguém |
+
+Isso substitui o "25% para cada um em toda viagem" de 2026-11-13
+(`docs/FOOD-TRUCK-DO-WALTER.md`).
+
+## A lambreta (`world/lambretaDaEstella.ts`)
+
+- **A lambreta italiana**, em menta pastel e creme:
+  - a barriga redonda atrás, com as bochechas, o friso cromado e as grelhas;
+  - o assoalho de ripas de borracha e o escudo curvo com o emblema da tesoura;
+  - a cabeça do guidão com o farol redondo, os retrovisores redondos de haste
+    e as lanterninhas de pisca;
+  - as rodinhas de aro creme e o banco de couro caramelo com a costura;
+  - o bagageiro cromado com a frasqueira de chapéu.
+- **O sidecar** é um torpedo menta com a beira creme, o farolete na proa, o
+  chassi cromado e a plaquinha "ATELIÊ ESTELLA". Ele vai do lado de **fora da
+  pista**, à esquerda dela. Assim, parada ao lado do Bebito para conversar, ela
+  fica na frente da pilha e não atrás dela.
+- **A pilha de roupas** tem quase 4 m, bem mais alta que o Bebito. São 23 peças
+  dobradas em cinco blocos encadeados, e cada bloco balança um tico depois do
+  de baixo. Ela já nasce torta e chacoalha com o vento, a aceleração e a
+  freada.
+  - As peças são almofadinhas de pano (a beira fofa), nas cores do catálogo da
+    boutique.
+  - Em todo bloco caem pontas pelas beiradas: perna de calça, manga, saia e
+    toalha.
+  - No alto vão o chapéu de aba larga com a meia equilibrada e o lenço voando.
+    Pela pilha ficam o vestido lilás pendurado atrás, o cabide com uma blusa,
+    a manga escapando e as duas cordas que claramente não seguram nada.
+- **A Estella pilotando**:
+  - sentada no banco, de peito em pé, com as patas da frente nas manoplas e as
+    de trás no assoalho;
+  - o **capacete** é um coquinho rosa, com a faixa creme e a beira de couro;
+    as orelhas saem por baixo, abanando no vento;
+  - os **óculos grandes de aviador** têm o aro de couro e o cromo, a lente
+    clara e a tira;
+  - os óculos de costureira e o laço saem enquanto ela pilota, e voltam depois;
+  - na conversa, ela vira a cabeça para o Bebito.
+- O grupo cresce 1,55 vez no fim, como os outros veículos: no tamanho de
+  verdade ela sumia na câmera de perseguição.
+
+## O encontro (`eventos/bebitoMobile/encontroNaEstrada.ts`)
+
+O mesmo roteiro dos outros: ela passa pela esquerda, freia adiante, para do
+lado, conversa e segue. As falas são **minhas, provisórias**:
+
+- entrada: "Uma TORRE de roupas no retrovisor… é a Estella!"
+- Estella: "Bebitos! A coleção nova ficou pronta, e eu resolvi levar TUDO pra
+  loja de uma vez só!"
+- carona: "Estella… isso tudo cabe na loja?"
+- Estella: "Caber, não cabe. Mas está tudo alinhavado, querida, não cai nem um botão."
+- Estella: "Passem na loja depois, que eu separo uma peça com a cara de vocês!"
+- saída: "A pilha balançou… mas não caiu nem um pé de meia."
+- memória: "A torre de roupas" (`estella-na-estrada`).
+
+## O peso
+
+A lambreta inteira tem 68 malhas e ~44 mil triângulos (a carroceria e as rodas
+pela `fundir()`, cada bloco da pilha num lote de peças). A Estella tem 104
+malhas, as mesmas da boutique e do parque: bicho é articulado, e a `fundir()`
+passaria por cima das patas. No encontro, com a câmera da conversa: ~590
+desenhos e ~350 mil triângulos (o do Walter, noutra rota, ~390 desenhos).
+
+## Ideias que ficam para depois
+
+- **A lambreta estacionada** no Villa Lobos depois do primeiro encontro, como o
+  carro do Walter e a moto do Capy no clube (a classe já tem `estacionada`).
+- **Um pano voando** da pilha e grudando no para-brisa do Bebito, e ela voltando
+  para buscar.
+- **Os outros do parque**: o Mano (a Kombi de sorvete ou o triciclo-freezer), o
+  Cookie (o carrinho pequenininho ou o trenzinho) e o Jean-Luc (o carrinho
+  francês ou o pedalinho com rodas).
+
+## Validar
+
+```bash
+node scripts/lambreta.mjs /tmp/lb        # a lambreta parada no parque (?lambreta=x,z,giro): as medidas e as fotos de perto de todos os lados
+SO=rotas node scripts/casaClube.mjs      # quem aparece em cada rota (sem navegador)
+```

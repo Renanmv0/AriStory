@@ -58,6 +58,10 @@ batente).
 
 ## O sorteio
 
+> **Atualizado em 2026-11-15**: o sorteio de "25% para cada um" foi trocado. Agora
+> cada personagem só aparece nas rotas do lugar onde mora, e a Estella entrou de
+> lambreta. A regra está em `docs/LAMBRETA-DA-ESTELLA.md`.
+
 TODA viagem tem encontro (o Renan: "não quero que tenha chance de não cruzar com
 ninguém, sempre deve ter um encontro na pista"). `sortearEncontro` (`rota.ts`)
 dá 25% a cada um, em faixas que vieram em camadas para as sementes antigas não

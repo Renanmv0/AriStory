@@ -2822,6 +2822,18 @@ export const PALETTE = {
   flashDaFoto: 0xffffff,
   // as placas pintadas em canvas da estrada da escola: o branco que deixa o desenho com as cores dele
   placaPintada: 0xffffff,
+  // a lambreta da Estella (a moto com sidecar e a pilha de roupas): menta pastel com creme,
+  // o banco de couro caramelo, e o capacete rosa com os óculos grandes de aviador
+  lambretaMenta: 0x9fd8c4,
+  lambretaMentaSombra: 0x78bba6,
+  lambretaCreme: 0xf6eedb,
+  lambretaBanco: 0x9b5a3c,
+  lambretaBorracha: 0x3a3a40,
+  capaceteDaEstella: 0xf2a7b6,
+  capaceteDaEstellaFaixa: 0xfff4ea,
+  oculosDeAviador: 0x8a5a32,
+  oculosDeAviadorLente: 0xbfe4f2,
+  cordaDaPilha: 0xd8b98a,
   /**
    * a casa do Ari de madrugada, depois da festa (etapa 7): o céu e a luz azul
    * de dentro, o sol virando luar, o vidro escuro da janela com o reflexo, e

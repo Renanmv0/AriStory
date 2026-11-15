@@ -1159,6 +1159,32 @@ cenário:
   de 12 cm) pintada com `cascaDePinus()` ou `pedrisco()` — canteiro não tem
   beira de régua.
 
+## A lambreta da Estella (`world/lambretaDaEstella.ts`)
+
+O primeiro veículo de personagem do PARQUE (`docs/LAMBRETA-DA-ESTELLA.md`), e o
+molde de veículo que CARREGA alguma coisa de cômico:
+
+- **Quem pilota é o bicho, quem senta é o veículo**: a Estella ganhou a pose
+  `pilotando` (o contrato da moto do Capy: corpo inclinado para trás, patas da
+  frente nas manoplas, a cabeça descontando a inclinação) e `apoioDoCapacete`
+  (a cabeça). O capacete e os óculos de aviador são do veículo, pendurados
+  nela; os óculos de costura e o laço saem enquanto ela pilota.
+- **Carga que balança é uma CADEIA de blocos** (cada um filho do de baixo,
+  como os gomos de um rabo), cada bloco um lote com a cor por cópia: a torre
+  ginga e o topo chega depois. A inércia é uma mola que o tranco da
+  aceleração empurra (`update` calcula a velocidade pela distância).
+- **Roupa dobrada não é caixa**: a primeira pilha, de lâminas retas e cores
+  escuras, lia como estante de livros. O que leu como roupa foi a almofadinha
+  (contorno de quina redonda extrudado com bisel GORDO), a base larga
+  transbordando, pontas de pano caindo pelas beiradas (uma malha de cor por
+  vértice por bloco) e as cores claras do catálogo.
+- **O lado da carga decide a foto**: o sidecar vai do lado de FORA da pista.
+  A câmera da conversa vem do lado do Bebito, e a dona fica na frente da
+  pilha; do outro lado, a torre a tapava.
+- **Atalho de teste** `?lambreta=x,z,giro` (como o `?carro=`): parada numa
+  cena, para `scripts/lambreta.mjs` fotografar de perto. Na estrada, a câmera
+  da conversa manda e a do teste é ignorada.
+
 ## A estrada (`world/estrada.ts`)
 
 As peças da viagem de carro do Bebito Mobile. A pista é CURVA, então a cena

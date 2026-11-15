@@ -34,23 +34,39 @@ export const rotaDaEscola = (sentido: Sentido): boolean => sentido.includes('esc
 export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube') && !rotaDaEscola(sentido);
 /** as rotas novas (clube e escola), com a pista de 1000 m e os eventos postos à mão */
 export const rotaNova = (sentido: Sentido): boolean => rotaDoClube(sentido) || rotaDaEscola(sentido);
-export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter';
+export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella';
+/** onde cada viagem COMEÇA (o par do `DESTINO`) */
+const ORIGEM: Record<Sentido, DestinoDeCarro> = {
+  'ida': 'casa', 'volta': 'parque', 'parque-clube': 'parque', 'clube-parque': 'clube', 'casa-clube': 'casa', 'clube-casa': 'clube',
+  'casa-escola': 'casa', 'escola-casa': 'escola', 'parque-escola': 'parque', 'escola-parque': 'escola', 'clube-escola': 'clube', 'escola-clube': 'escola',
+};
+export const origemDaRota = (sentido: Sentido): DestinoDeCarro => ORIGEM[sentido];
+/** quem MORA em cada lugar e tem veículo para cruzar o Bebito na pista */
+export const MORADORES: Record<DestinoDeCarro, readonly PersonagemNaEstrada[]> = {
+  parque: ['estella'],
+  clube: ['noel', 'josefina', 'capy', 'walter'],
+  casa: [],
+  escola: [],
+};
 /**
- * TODA viagem tem um encontro na pista (decisão do Renan: "sempre deve ter um
- * encontro"), 25% para cada um: Noel, Josefina, Capy e Walter. As faixas vêm de
- * camadas: a do Walter (0,2–0,3 e 0,5–0,6) entrou no meio das antigas, e o
- * pedaço que era "sem encontro" (0,8–1) foi repartido em quatro de 5%. Assim as
- * sementes de antes continuam com o mesmo personagem, e só as que não tinham
- * encontro ganharam um.
+ * QUEM PODE APARECER numa viagem (decisão do Renan, 2026-11-15): cada um só
+ * aparece nas rotas do lugar onde mora. Vale o DESTINO (indo ao parque, a
+ * Estella; indo ao clube, o pessoal do clube); se as duas pontas têm gente
+ * (parque ↔ clube, nos dois sentidos), sorteia entre todos; se o destino não
+ * tem ninguém (a casa, a escola), vale quem mora de onde a viagem SAI. Casa ↔
+ * escola fica sem encontro.
  */
-export function sortearEncontro(semente: number, sentido: Sentido): PersonagemNaEstrada {
+export function candidatosAoEncontro(sentido: Sentido): readonly PersonagemNaEstrada[] {
+  const destino = MORADORES[DESTINO[sentido]], origem = MORADORES[ORIGEM[sentido]];
+  if (destino.length && origem.length) return [...destino, ...origem];
+  return destino.length ? destino : origem;
+}
+/** o encontro da viagem: um dos candidatos, por igual, pela semente (ou nenhum, se não há candidato) */
+export function sortearEncontro(semente: number, sentido: Sentido): PersonagemNaEstrada | null {
+  const candidatos = candidatosAoEncontro(sentido);
+  if (!candidatos.length) return null;
   const valor = sorteio(semente * 97 + SENTIDOS.indexOf(sentido) * 131 + 43)();
-  if (valor < 0.2) return 'noel';
-  if (valor < 0.3) return 'walter';
-  if (valor < 0.5) return 'josefina';
-  if (valor < 0.6) return 'walter';
-  if (valor < 0.8) return 'capy';
-  return (['noel', 'josefina', 'capy', 'walter'] as const)[Math.min(3, Math.floor((valor - 0.8) / 0.05))];
+  return candidatos[Math.min(candidatos.length - 1, Math.floor(valor * candidatos.length))];
 }
 
 /** o pedido que a cena de partida deixa para a cena da viagem */
@@ -361,7 +377,8 @@ function gerarRotaDaEscola(semente: number, sentido: Sentido): Rota {
       : [{ bioma: 'parque', de: 0, ate: 350 }];
   const trechos: Trecho[] = [...acessos, { bioma: 'avenida', de: 350, ate: 600 }, { bioma: 'escolar', de: 600, ate: comprimento }];
   const personagem = sortearEncontro(semente, sentido);
-  const encontro = { personagem, s: 430 + (rnd() - 0.5) * 6 };
+  // (casa ↔ escola não tem encontro: ninguém mora na casa nem tem carro na escola)
+  const encontro = personagem ? { personagem, s: 430 + (rnd() - 0.5) * 6 } : undefined;
   // indo, a zona escolar é o fim; voltando, é o começo (e os eventos dela vêm primeiro)
   const tipos: Array<[TipoDeEvento, number]> = indo
     ? [['lombada', 80], ['travessia', 175], ['semaforo', 270], ['obra', 590],
@@ -378,7 +395,7 @@ function gerarRotaDaEscola(semente: number, sentido: Sentido): Rota {
   // (nada de coração boiando em cima da faixa onde o carro tem que PARAR: a torcida, a bola e os bichos)
   const deParar = eventos.filter((e) => e.tipo === 'torcida' || e.tipo === 'bola-do-flynn' || e.tipo === 'travessia');
   for (let s = 32; s < comprimento - 90; s += 7) {
-    if (s > encontro.s - 80 && s < encontro.s + 95) continue;
+    if (encontro && s > encontro.s - 80 && s < encontro.s + 95) continue;
     if (deParar.some((e) => s > e.s - 16 && s < e.s + 6)) continue;
     const l = s > obra.s - 35 && s < obra.s + 24 ? PISTA.meios[obra.faixa === 0 ? 1 : 0] : Math.sin(s * 0.045) * 1.55;
     coracoes.push({ s, l });

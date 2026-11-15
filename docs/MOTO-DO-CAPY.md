@@ -12,7 +12,8 @@ e tiras. A pose não altera o Capy salva-vidas que continua no clube.
 Ele entra no mesmo sistema de encontro seguro: Bebito dá passagem, os dois
 param, conversam e seguem. O humor é sobre segurança: nada de mergulhar nas
 curvas, vermelho combina com o apito e o seguro não cobre capivara voadora.
-Toda viagem tem um encontro na pista (decisão do Renan), e o Capy tem 25% de
+(Atualizado em 2026-11-15: hoje o Capy só aparece nas rotas do clube, por igual com
+o Noel, a Josefina e o Walter — `docs/LAMBRETA-DA-ESTELLA.md`.) Toda viagem tinha um encontro na pista (decisão do Renan), e o Capy tinha 25% de
 chance, como cada um dos outros (Noel, Josefina e o food truck do Walter,
 `docs/FOOD-TRUCK-DO-WALTER.md`).
 
