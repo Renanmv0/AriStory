@@ -761,11 +761,14 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
        * roda no primeiro.)
        */
       const ls: number[] = [];
+      // os buracos logo ali na frente: atravessar a pista agora arrastaria a roda por cima deles
+      const pertinho: number[] = [];
       for (const vivo of vivos) {
         if (vivo.e.tipo !== 'buracos' || !vivo.e.buracos) continue;
         for (const b of vivo.e.buracos) {
           const db = vivo.e.s + b.ds - estado.s;
           if (db > -2 && db < 24) ls.push(b.l);
+          if (db > -0.5 && db < 6) pertinho.push(b.l);
         }
       }
       if (ls.length) {
@@ -776,6 +779,19 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
           for (let c = -2.2; c <= 2.2 + 1e-6; c += 0.02) {
             let custo = Math.abs(c - alvoL) + Math.abs(c - estado.l) * 0.3;
             for (const bl of ls) if ([-0.9, 0.9].some((roda) => Math.abs(c + roda - bl) < RAIO_DO_BURACO * 0.95 + folga)) custo += 1000;
+            /*
+             * E o CAMINHO até lá: com um buraco a menos de 6 m, a roda que passa por cima dele no
+             * meio do desvio cai nele (a posição final livre não basta: na rota 3, ir de um lado ao
+             * outro da pista entre o segundo e o terceiro buraco arrastava a roda da esquerda pelo
+             * terceiro, e cair ou não dependia do quadro). Se a roda está livre agora, ele não cruza.
+             */
+            for (const bl of pertinho) {
+              for (const roda of [-0.9, 0.9]) {
+                const agora = estado.l + roda - bl, la = c + roda - bl;
+                const raio = RAIO_DO_BURACO * 0.95 + 0.02;
+                if (Math.abs(agora) >= raio && (Math.sign(agora) !== Math.sign(la) || Math.abs(la) < raio)) custo += 1000;
+              }
+            }
             if (custo < menor) { menor = custo; melhorC = c; }
           }
           if (menor < 1000) break;
