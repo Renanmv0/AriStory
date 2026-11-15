@@ -84,6 +84,16 @@ retrovisores, 4,59 m de altura até a cereja.
   musiquinha na chegada e na saída, a conversa, a dancinha, as duas casquinhas
   no save de teste, a memória e o save de verdade intacto).
 - `musica.mjs`: a musiquinha sem estalo no começo, ~0,06 de pico por nota.
+- `casaClube.mjs` inteiro (o Mano entrou na contagem por igual), `mano.mjs`,
+  `lambreta.mjs`, `viagemEscola.mjs SO=ida` e `viagem.mjs SO=bom` (duas vezes).
+  O `SO=bom` pegou um defeito do PILOTO AUTOMÁTICO, que o Mano só revelou: com
+  ele na rota 3, o piloto caía no terceiro buraco da fileira. Ele escolhia uma
+  posição livre e, para chegar lá, arrastava a roda por cima de um buraco logo à
+  frente; cair ou não dependia do quadro. Agora, com um buraco a menos de 6 m, ele
+  não cruza (`viagemDeCarro.ts`, os buracos do `piloto`). Vale também para o
+  piloto de jogo, o da visão do passageiro.
+- Peso na conversa com a Kombi: ~500 desenhos e ~345 mil triângulos (com a
+  lambreta, ~590 desenhos e ~350 mil).
 - O z-fighting: as peças da Kombi são de perfil extrudado, esfera, toro e
   cilindro, e o `zfighting.mjs` só mede caixa reta.
 
