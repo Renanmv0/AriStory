@@ -75,10 +75,16 @@ async function emCasa(p, seed) {
   await ate(p, () => [...document.querySelectorAll('.escolhas.show button')].some(b => b.textContent === 'Escolher destino'));
   await escolher(p, 'Escolher destino');
 }
-async function percorrer(p, sentido, motorista, personagem, prefixo) {
+/** a fala que diz que a conversa de cada um começou */
+const FALA = { noel: 'GELO', walter: 'Auuu', josefina: 'cantinho com sol', capy: 'mergulhar', estella: 'TUDO pra loja' };
+async function percorrer(p, sentido, motorista, _antigo, prefixo) {
   await espera(p, () => window.jogo.idDaCena === 'viagem-de-carro' && !window.jogo.transitioning);
   const r = await p.evaluate(() => window.aristoryBebitoMobile.viagem.rota);
-  assert.equal(r.sentido, sentido); assert.equal(r.encontro?.personagem ?? null, personagem); await pose(p, motorista);
+  // quem aparece sai da semente da viagem (a mesma conta do jogo) e tem de ser um dos candidatos da rota
+  const personagem = gerarRota(r.semente, sentido).encontro?.personagem ?? null;
+  assert.equal(r.sentido, sentido); assert.equal(r.encontro?.personagem ?? null, personagem);
+  assert.ok(personagem === null ? !candidatosAoEncontro(sentido).length : candidatosAoEncontro(sentido).includes(personagem), `${sentido}: ${personagem} mora numa das pontas`);
+  await pose(p, motorista);
   // A recarga preserva destino, motorista e sorteio, inclusive o resultado "ninguém".
   await abrir(p); assert.deepEqual(await p.evaluate(() => window.aristoryBebitoMobile.viagem.rota), r); await pose(p, motorista);
   await p.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.vezes = 5; v.piloto = 'bom'; window.aristoryBebitoMobile.ritmoDoPresente.vezes = 5; });
@@ -152,11 +158,12 @@ try {
   await percorrer(m, 'casa-clube', 'renan', 'capy', 'celular-ida'); await m.context().close();
   }
   // Encontros na rota antiga também reservam a pista e devolvem a visão interna.
-  for (const [mobile, sentido, seed, personagem] of [[false, 'volta', 1, 'noel'], [false, 'clube-casa', 1, 'walter'], [true, 'ida', 2, 'josefina'], [true, 'volta', 1, 'noel']]) {
+  for (const [mobile, sentido, seed] of [[false, 'volta', 1], [false, 'clube-casa', 1], [true, 'ida', 2], [true, 'parque-clube', 1]]) {
+    const personagem = gerarRota(seed, sentido).encontro.personagem;
     const q = await novaPagina(mobile); await abrir(q, `cena=viagem-de-carro&viagem=${sentido},ari,${seed}`);
     await q.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.estado.s = v.rota.encontro.s - 61; v.vezes = 4; v.piloto = 'bom'; });
     await ate(q, () => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase === 'falando');
-    await espera(q, personagem => document.querySelector('.dialogue.show')?.textContent.includes(personagem === 'noel' ? 'GELO' : personagem === 'walter' ? 'Auuu' : 'cantinho com sol'), personagem);
+    await espera(q, (fala) => document.querySelector('.dialogue.show')?.textContent.includes(fala), FALA[personagem]);
     await pose(q, 'ari'); await foto(q, (mobile ? 'celular-legado-' : 'computador-') + personagem); assert.ok(await larguraDoCarro(q) < 3.5);
     await ate(q, () => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase === 'feito');
     await pose(q, 'ari'); await q.context().close();
