@@ -151,6 +151,15 @@ desenhos e ~350 mil triângulos (o do Walter, noutra rota, ~390 desenhos).
   o `zfighting.mjs` só mede caixa reta. As placas e o emblema ficam 6 a 10 mm
   fora da superfície em que estão.
 
+### Testado (o estacionamento e o pano)
+
+Passaram: `lambreta.mjs` inteiro (o modelo, a lambreta estacionada só depois da
+memória e o pano nos cinco momentos), `viagem.mjs SO=bom` (a viagem casa → parque
+com a Estella e o pano no caminho), `casaClube.mjs` e `parque.mjs`. O
+`viagem.mjs SO=estacionamento` tem uma falha antiga: ele procura o botão "Voltar pra
+casa de carro", que virou "Viajar de Bebito Mobile" no commit da viagem ao clube
+(`497718c`), antes da lambreta.
+
 ## Validar
 
 ```bash
