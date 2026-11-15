@@ -111,6 +111,18 @@ desenhos e ~350 mil triângulos (o do Walter, noutra rota, ~390 desenhos).
   Cookie (o carrinho pequenininho ou o trenzinho) e o Jean-Luc (o carrinho
   francês ou o pedalinho com rodas).
 
+## O que foi testado (2026-11-15)
+
+- **Passaram**: `lambreta.mjs`, `casaClube.mjs` inteiro (com a Estella no
+  computador e no celular), `viagem.mjs SO=bom` e `SO=volta`, `viagemEscola.mjs`
+  inteiro e `estella.mjs` (a classe dela ganhou a pose de pilotar).
+- **Já falhava antes**: o `carroPorDentro.mjs SO=piloto` para logo no começo,
+  numa fala da visão do passageiro que o teste não avança. Rodado sobre o código
+  de antes da escola (f7f6a0a), ele falha igual.
+- **O z-fighting**: as peças da lambreta são de esfera, toro, cilindro e plano, e
+  o `zfighting.mjs` só mede caixa reta. As placas e o emblema ficam 6 a 10 mm
+  fora da superfície em que estão.
+
 ## Validar
 
 ```bash
