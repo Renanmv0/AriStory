@@ -9,7 +9,7 @@ const OUT = process.argv[2] ?? '/tmp/casa-clube';
 const codigo = ts.transpileModule(await readFile(new URL('../src/eventos/bebitoMobile/rota.ts', import.meta.url), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText;
 const { SENTIDOS, gerarRota, destinoDaRota, candidatosAoEncontro } = await import('data:text/javascript;base64,' + Buffer.from(codigo).toString('base64'));
 for (const sentido of SENTIDOS) {
-  const contagem = { noel: 0, josefina: 0, capy: 0, walter: 0, estella: 0, nenhum: 0 };
+  const contagem = { noel: 0, josefina: 0, capy: 0, walter: 0, estella: 0, mano: 0, nenhum: 0 };
   for (let seed = 1; seed <= 500; seed++) {
     const r = gerarRota(seed, sentido), n = r.encontro;
     contagem[n?.personagem ?? 'nenhum']++;
