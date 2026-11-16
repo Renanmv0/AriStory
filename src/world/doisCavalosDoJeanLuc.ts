@@ -878,7 +878,7 @@ export class DoisCavalosDoJeanLuc {
       this.jeanLuc = pato;
       // a bolinha do ponto de ping pong (só aparece na hora)
       const bola = bolinhaPingPong();
-      bola.scale.setScalar(1.5);
+      bola.scale.setScalar(2.6);
       bola.visible = false;
       this.group.add(bola);
       this.bola = bola;

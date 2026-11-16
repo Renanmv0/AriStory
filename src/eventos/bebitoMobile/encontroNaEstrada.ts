@@ -180,7 +180,7 @@ export class EncontroNaEstrada {
       // o ponto de ping pong pela janela: ele saca, a bolinha para no ar perto do Bebito, e quem joga rebate na hora certa
       doisCavalos.raqueteNaJanela(true);
       await g.say(['Já que paramos… un petit point de ping pong? Pela janela. Eu saco.'], 'Jean-Luc');
-      doisCavalos.sacar(this.naPista(this.parada ?? this.estado.s, 0.7, 1.55));
+      doisCavalos.sacar(this.naPista(this.parada ?? this.estado.s, 0.15, 1.8));
       g.som('quicar');
       await g.wait(0.8);
       const acertou = (await g.horaCerta('Rebater na hora certa!', undefined, { periodo: 1.1 })) >= 0.75;
