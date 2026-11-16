@@ -1265,6 +1265,43 @@ veículo MIÚDO de pele própria com um bicho GRANDE dentro:
 - **Atalho de teste** `?carrinho=x,z,giro` (`&conversando`, `&oferecendo`,
   `&andando=7`, `&vazio`).
 
+## O 2CV do Jean-Luc (`world/doisCavalosDoJeanLuc.ts`)
+
+O quarto veículo do PARQUE (`docs/DOIS-CAVALOS-DO-JEAN-LUC.md`), e o molde de
+carro com ESTUFA (vidro de lado, colunas e calhas) em cima da pele de fatias:
+
+- **A pele de baixo para na cintura** (o buraco da cabine é do tamanho dela,
+  com um peitoril estreito), e a estufa são malhas à parte que acompanham a
+  lata: cada vidro é um `PlaneGeometry` dobrado por uma função `(u, v)`
+  (`noParaBrisa`, `noVidroDeLado`, `noVidroDeTras`), e as colunas e calhas são
+  tubos pelas MESMAS funções nas beiras (`u = ±1`, `v = 1`) — o vidro e a
+  moldura não se desencontram.
+- **Nariz chato é o expoente da superelipse**: a planta usa 4,2 na frente e 2,7
+  atrás; com o nariz redondo, a grade boiava na frente das quinas.
+- **Para-lama solto é meio cano em arco** (`geoDoParalama`): a beira de dentro
+  entra 3 cm na lata, a de fora passa da roda, as pontas afinam para o cano
+  sumir na lata em vez de acabar em degrau; o de trás tem a SAIA (um nó a mais
+  por estação, descendo em pé). A face se acerta sozinha (o alto do arco aponta
+  para cima).
+- **O que vai no teto tapa quem dirige**: a mesa de ping pong nasceu no teto,
+  e de cima ela escondia o Jean-Luc e os óculos — foi para o bagageiro de trás.
+- **Bicho pequeno ao volante vai EM PÉ e um tico maior** (1,35×), em cima de um
+  caixote, com a cabeça passando da testeira do para-brisa: o que importa nele
+  (os óculos escuros) fica no ar, e não atrás de vidro tingido. O teste mede a
+  altura da cabeça contra a testeira.
+- **Acessório no rosto de bicho mora na cabeça dele, e o vão é medido**: os
+  óculos (`oculosEscuros()`) têm as lentes na frente das pupilas, acima do bico
+  e abaixo da aba da boina — o `scripts/doisCavalos.mjs` mede as três.
+- **A pose de veículo mora no `animar` do bicho**, como no Cookie e no Mano
+  (`aoVolante`, nascendo `null`, e toda escrita dentro do `if`). O objeto que
+  muda de mão (a raquete) é reapontado UMA vez (`raqueteNaJanela`), só no
+  bicho do carro.
+- **Bolinha que voa entre dois veículos** anda no referencial do carro (parado
+  na conversa) até um alvo dado no mundo, e PARA NO AR enquanto a hora certa
+  corre (câmera lenta), em vez de tentar casar o voo com o dedo de quem joga.
+- **Atalho de teste** `?doisCavalos=x,z,giro` (`&conversando`, `&raquete`,
+  `&andando=7`, `&vazio`).
+
 ## A estrada (`world/estrada.ts`)
 
 As peças da viagem de carro do Bebito Mobile. A pista é CURVA, então a cena

@@ -144,7 +144,7 @@ lambreta, Kombi.
 
 - **O Cookie entrando e saindo**: ele indo da bilheteria até o carrinho, e a
   mola afundando quando ele senta.
-- **O Jean-Luc**, o que falta do parque, e os carros da turma da escola.
+- **O Jean-Luc** já veio, de 2CV (`docs/DOIS-CAVALOS-DO-JEAN-LUC.md`); faltam os carros da turma da escola.
 
 ## Validar
 
