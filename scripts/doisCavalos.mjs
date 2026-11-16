@@ -225,7 +225,7 @@ try {
     assert.equal(e0.quem, 'jeanluc');
     await page.mouse.click(tela.width - 20, tela.height - 20); // (o som só acorda depois de um toque na página)
     await page.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.vezes = 3; v.piloto = 'bom'; });
-    let buzinaNaChegada = 0, conversa = false, raquete = false, bola = false, agulha = false, ultrapassando = false;
+    let dePerto = false, buzinaNaChegada = 0, conversa = false, raquete = false, bola = false, agulha = false, ultrapassando = false;
     const t0 = Date.now();
     while (Date.now() - t0 < 400000) {
       const e = await estado();
@@ -245,6 +245,11 @@ try {
         await page.screenshot({ path: `${OUT}-estrada-2-conversa${process.env.CEL ? '-celular' : ''}.png` });
         const r = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
         console.log(`  peso na conversa: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos`);
+      }
+      if (!dePerto && await page.evaluate(() => document.querySelector('.dialogue.show')?.textContent.includes('óculos escuros?!'))) {
+        dePerto = true;
+        await page.waitForTimeout(1600);
+        await page.screenshot({ path: `${OUT}-estrada-2b-oculos-de-perto${process.env.CEL ? '-celular' : ''}.png` });
       }
       if (e.raquete && !raquete) {
         raquete = true;
@@ -275,6 +280,7 @@ try {
     assert.ok(fim.buzina >= 2, 'e de novo quando ele vai embora');
     assert.ok(conversa && raquete && agulha && bola, `a conversa, a raquete na janela, a hora certa e a bolinha no ar (${conversa}, ${raquete}, ${agulha}, ${bola})`);
     assert.ok(fim.raquetadas >= 1, 'a raquete bateu na bolinha');
+    assert.ok(dePerto, 'a tomada de perto dos óculos');
     assert.ok(fim.memoria, 'a memória "O pato de óculos escuros"');
     assert.equal(await page.evaluate(() => localStorage.getItem('aristory.save.v1')), null, 'o save de verdade fica intacto');
     await page.context().close();

@@ -26,6 +26,8 @@ export class EncontroNaEstrada {
   private anterior: THREE.Vector3 | null = null;
   private inicioDaFreada = 0;
   parada: number | null = null;
+  /** a tomada de perto do rosto do Jean-Luc (as falas dos óculos escuros) */
+  private dePerto = false;
   constructor(private readonly g: GameAPI, readonly s: number, private readonly naPista: NaPista, private readonly rumo: (s: number) => number, private readonly carona: string, readonly personagem: PersonagemNaEstrada = 'noel') {
     this.carro = personagem === 'noel' ? new CarroDoNoel() : personagem === 'capy' ? new MotoDoCapy()
       : personagem === 'walter' ? new FoodTruckDoWalter() : personagem === 'estella' ? new LambretaDaEstella()
@@ -175,8 +177,11 @@ export class EncontroNaEstrada {
     if (this.personagem === 'jeanluc') {
       const doisCavalos = this.carro as DoisCavalosDoJeanLuc;
       await g.say(['Bonjour, mes amis! Gostaram? É um deux chevaux. Dois cavalos. Eu nunca vi os cavalos.'], 'Jean-Luc');
+      // (as duas falas dos óculos ganham a tomada de perto: no celular em pé, de longe, eles viram três pixels)
+      this.dePerto = true;
       await g.say(['Jean-Luc… de óculos escuros?!'], this.carona);
       await g.say(['Pour la route. Na estrada, um pato tem que ter estilo. E o caixote, eu trago sempre: hoje eu precisei.'], 'Jean-Luc');
+      this.dePerto = false;
       // o ponto de ping pong pela janela: ele saca, a bolinha para no ar perto do Bebito, e quem joga rebate na hora certa
       doisCavalos.raqueteNaJanela(true);
       await g.say(['Já que paramos… un petit point de ping pong? Pela janela. Eu saco.'], 'Jean-Luc');
@@ -218,6 +223,16 @@ export class EncontroNaEstrada {
   }
   /** Vista frontal dos dois carros; também funciona no celular em pé. */
   camera(viagem: { s: number }): { de: THREE.Vector3; para: THREE.Vector3 } {
+    if (this.dePerto && this.carro instanceof DoisCavalosDoJeanLuc && this.carro.jeanLuc) {
+      // de frente e um tico do lado do Bebito, na altura dos óculos
+      const grupo = this.carro.group;
+      grupo.updateMatrixWorld(true);
+      const rosto = this.carro.jeanLuc.cabecaDoPato.getWorldPosition(new THREE.Vector3());
+      const perto = window.innerWidth / window.innerHeight < 0.8 ? 2.5 : 1.9;
+      const de = grupo.localToWorld(new THREE.Vector3(-0.33 - 0.55 * perto, 0, -0.1 + 0.85 * perto));
+      de.y = rosto.y + 0.35;
+      return { de, para: rosto.add(new THREE.Vector3(0, -0.1, 0)) };
+    }
     // (o carrinho do Cookie é miúdo, e os óculos do Jean-Luc também: com a tela deitada a tomada chega mais perto, para ele não virar um
     // pontinho ao lado do Bebito; no celular em pé fica a de sempre, que é a que cabe os dois)
     const emPe = window.innerWidth / window.innerHeight < 0.8;

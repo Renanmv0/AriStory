@@ -662,7 +662,7 @@ function bancoDeRede(largura: number): THREE.Group {
   encosto.position.set(0, 0.02, -0.22); encosto.rotation.x = -0.22;
   const pano = new THREE.Mesh(quina(largura, 0.5, 0.06, 0.03), toon(P.doisCavalosLona)); pano.position.y = 0.26; encosto.add(pano);
   for (const x of [-largura * 0.3, 0, largura * 0.3]) {
-    const listra = new THREE.Mesh(quina(0.07, 0.5, 0.064, 0.02), toon(P.doisCavalosLonaListra)); listra.position.set(x, 0.26, 0); encosto.add(listra);
+    const listra = new THREE.Mesh(quina(0.07, 0.508, 0.064, 0.02), toon(P.doisCavalosLonaListra)); listra.position.set(x, 0.26, 0); encosto.add(listra);
   }
   g.add(encosto);
   for (const s of [-1, 1]) g.add(tubo([new V(s * (largura / 2 + 0.01), -0.27, 0.2), new V(s * (largura / 2 + 0.01), 0, 0.22), new V(s * (largura / 2 + 0.01), 0.02, -0.2)], 0.014, P.churrascoInoxEscuro, false, 5));
@@ -919,7 +919,7 @@ export class DoisCavalosDoJeanLuc {
     if (!b) return;
     const de = b.position.clone();
     if (acertou) this.bolaNoAr = { t: 0, dur: 0.7, de, para: this.pontaDaRaquete(), alto: 0.7, depois: 'sumir' };
-    else this.bolaNoAr = { t: 0, dur: 0.45, de, para: new V(de.x + 0.5, 0.06, de.z - 0.4), alto: 0.15, depois: 'quicar' };
+    else this.bolaNoAr = { t: 0, dur: 0.45, de, para: new V(de.x - 0.15, 0.06, de.z - 0.5), alto: 0.15, depois: 'quicar' };
   }
 
   /** a bolinha está voando ou quicando? */
@@ -964,7 +964,8 @@ export class DoisCavalosDoJeanLuc {
         if (voo.t >= 1) {
           this.bolaNoAr = null;
           if (voo.depois === 'sumir') { this.golpe = 0; this.raquetadas++; b.visible = false; }
-          else if (voo.depois === 'quicar') this.quicando = { t: 0, de: b.position.clone(), vx: 1.2, vz: -1.6 };
+          // (perdida, ela rola para TRÁS na pista, entre os dois carros, e não para baixo do 2CV)
+          else if (voo.depois === 'quicar') this.quicando = { t: 0, de: b.position.clone(), vx: -0.25, vz: -2.4 };
           else b.userData.parada = b.position.clone();
         }
       } else if (this.quicando) {
