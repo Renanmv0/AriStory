@@ -2841,6 +2841,15 @@ export const PALETTE = {
   kombiCreme: 0xfbefdc,
   kombiVidro: 0x2f4a5a,
   geadaDoParaBrisa: 0xeef8ff,
+  // o carrinho do Cookie: um microcarro rosa-bebê em que ele vai espremido, com as orelhas para
+  // fora; o debrum e o forro creme, a borracha do furo da tromba e o brigadeirinho que ele dá
+  carrinhoRosa: 0xf9c0d0,
+  carrinhoRosaEscuro: 0xe790ac,
+  carrinhoForro: 0xfff3e2,
+  carrinhoBorracha: 0x3a3440,
+  carrinhoLatao: 0xe9b949,
+  docinhoForminha: 0xf7a8c4,
+  docinhoGranulado: 0x3d2416,
   /**
    * a casa do Ari de madrugada, depois da festa (etapa 7): o céu e a luz azul
    * de dentro, o sol virando luar, o vidro escuro da janela com o reflexo, e

@@ -21,6 +21,7 @@ import { CARTELA_DE_TINTAS, FLAG_DO_ATELIE, PRECO_DO_ATELIE, podeTingir, temDeta
 import { BEBITO_MOBILE, BebitoMobile } from './world/bebitoMobile/BebitoMobile';
 import { LambretaDaEstella } from './world/lambretaDaEstella';
 import { KombiDoMano } from './world/kombiDoMano';
+import { CarrinhoDoCookie } from './world/carrinhoDoCookie';
 import {
   CATALOGO_DO_CARRO, DEF_DAS_VAGAS, FICHA_DE_FABRICA, VAGAS_DO_CARRO, copiarFicha, normalizarFicha,
 } from './world/bebitoMobile/ficha';
@@ -137,6 +138,23 @@ if (kombi && kombi.length >= 2 && kombi.slice(0, 2).every(Number.isFinite)) {
     mundo.add(mundo.place(veiculo.group, kombi[0], 0, kombi[1], Number.isFinite(kombi[2]) ? kombi[2] : 0));
     mundo.onUpdate((dt) => veiculo.update(dt, 0, params.has('conversando')));
     (window as unknown as { kombi: KombiDoMano }).kombi = veiculo;
+  });
+}
+// `?carrinho=x,z,giro`: o carrinho do Cookie parado nesse ponto, com ele espremido lá dentro, para o
+// `scripts/carrinho.mjs` fotografar (`&conversando` tomba para o lado; `&oferecendo` estende a caixinha;
+// `&andando=7` faz de conta que ele está a 7 m/s: as orelhas no vento, o catavento e a fumacinha;
+// `&vazio` é o do estacionamento)
+const carrinho = params.get('carrinho')?.split(',').map(Number);
+if (carrinho && carrinho.length >= 2 && carrinho.slice(0, 2).every(Number.isFinite)) {
+  void comecou.then(() => {
+    const mundo = (game as unknown as { current?: { world: WorldBuilder } }).current?.world;
+    if (!mundo) return;
+    const veiculo = new CarrinhoDoCookie(params.has('vazio'));
+    mundo.add(mundo.place(veiculo.group, carrinho[0], 0, carrinho[1], Number.isFinite(carrinho[2]) ? carrinho[2] : 0));
+    const andando = Number(params.get('andando') ?? 0);
+    if (params.has('oferecendo')) veiculo.oferecer(true);
+    if (!params.has('vazio')) mundo.onUpdate((dt) => veiculo.update(dt, andando * dt, params.has('conversando')));
+    (window as unknown as { carrinho: CarrinhoDoCookie }).carrinho = veiculo;
   });
 }
 const carro = params.get('carro')?.split(',').map(Number);

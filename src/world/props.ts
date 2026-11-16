@@ -3821,6 +3821,53 @@ export function biscoitoDaEstella(): THREE.Group {
   return g;
 }
 
+/**
+ * O BRIGADEIRINHO DO COOKIE (`docs/CARRINHO-DO-COOKIE.md`): doce pequenininho,
+ * do jeito que ele gosta. A bolinha de chocolate, o granulado em volta (um
+ * lote) e a FORMINHA DE PAPEL pregueada — é a forminha rosa que diz
+ * "docinho de festa" de longe. Base em `y = 0`.
+ */
+export function docinhoDoCookie(): THREE.Group {
+  const g = new THREE.Group();
+  g.userData.peca = 'docinho-do-cookie';
+  // a forminha: um copinho raso com a borda em pregas (os vértices de cima, um sim e um não, abrem)
+  const PREGAS = 14;
+  const forminha = new THREE.CylinderGeometry(0.036, 0.022, 0.022, PREGAS * 2, 1, true);
+  const pf = forminha.attributes.position;
+  for (let i = 0; i < pf.count; i++) {
+    if (pf.getY(i) < 0) continue;
+    const a = Math.atan2(pf.getZ(i), pf.getX(i));
+    const k = Math.round((a / (Math.PI * 2)) * PREGAS * 2);
+    const r = k % 2 === 0 ? 1.12 : 0.9;
+    pf.setXYZ(i, pf.getX(i) * r, pf.getY(i), pf.getZ(i) * r);
+  }
+  forminha.computeVertexNormals();
+  const papel = new THREE.Mesh(forminha, toon(P.docinhoForminha, { doubleSide: true }));
+  papel.position.y = 0.011;
+  g.add(papel);
+  const fundo = new THREE.Mesh(new THREE.CircleGeometry(0.022, 12).rotateX(-Math.PI / 2), toon(P.docinhoForminha));
+  fundo.position.y = 0.001;
+  g.add(fundo);
+  const bola = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 10), toon(P.chocolate));
+  bola.position.y = 0.036;
+  g.add(bola);
+  // o granulado: tracinhos deitados na bola, pela espiral de Fibonacci (só da metade para cima)
+  const N = 22;
+  const grao = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.0028, 0.007, 2, 5), toon(P.docinhoGranulado), N);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), pos = new THREE.Vector3(), n = new THREE.Vector3(), e = new THREE.Euler();
+  for (let i = 0; i < N; i++) {
+    const y = 1 - (i / (N - 1)) * 1.15, r = Math.sqrt(Math.max(0, 1 - y * y)), a = i * 2.39996;
+    n.set(Math.cos(a) * r, y, Math.sin(a) * r).normalize();
+    pos.copy(n).multiplyScalar(0.0305).add(new THREE.Vector3(0, 0.036, 0));
+    q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n).multiply(new THREE.Quaternion().setFromEuler(e.set(0, 0, i * 1.7)));
+    m.compose(pos, q, new THREE.Vector3(1, 1, 1));
+    grao.setMatrixAt(i, m);
+  }
+  grao.userData.semSombra = true;
+  g.add(grao);
+  return g;
+}
+
 export type LancheDaMaquina = 'biscoito' | 'chocolate' | 'suco' | 'salgadinho';
 
 /**
