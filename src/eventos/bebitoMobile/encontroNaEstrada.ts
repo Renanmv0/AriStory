@@ -8,6 +8,7 @@ import { FoodTruckDoWalter } from '../../world/foodTruckDoWalter';
 import { LambretaDaEstella } from '../../world/lambretaDaEstella';
 import { KombiDoMano } from '../../world/kombiDoMano';
 import { CarrinhoDoCookie } from '../../world/carrinhoDoCookie';
+import { DoisCavalosDoJeanLuc } from '../../world/doisCavalosDoJeanLuc';
 import { ITENS } from '../../world/itens';
 import { ARI, RENAN } from '../../characters/cast';
 import type { NaPista } from '../../world/estrada';
@@ -17,9 +18,9 @@ const suave = (t: number): number => { const k = Math.max(0, Math.min(1, t)); re
 
 /** Uma cena no relógio da viagem, isolada dos obstáculos e com as faixas reservadas. */
 export class EncontroNaEstrada {
-  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie;
-  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie' } as const)[this.personagem]; }
-  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘' } as const)[this.personagem]; }
+  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie | DoisCavalosDoJeanLuc;
+  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie', jeanluc: 'Jean-Luc' } as const)[this.personagem]; }
+  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘', jeanluc: '🦆' } as const)[this.personagem]; }
   readonly estado = { fase: 'esperando' as Fase, relativo: -28, tempo: 0, s: 0 };
   private falas = false;
   private anterior: THREE.Vector3 | null = null;
@@ -28,7 +29,8 @@ export class EncontroNaEstrada {
   constructor(private readonly g: GameAPI, readonly s: number, private readonly naPista: NaPista, private readonly rumo: (s: number) => number, private readonly carona: string, readonly personagem: PersonagemNaEstrada = 'noel') {
     this.carro = personagem === 'noel' ? new CarroDoNoel() : personagem === 'capy' ? new MotoDoCapy()
       : personagem === 'walter' ? new FoodTruckDoWalter() : personagem === 'estella' ? new LambretaDaEstella()
-        : personagem === 'mano' ? new KombiDoMano() : personagem === 'cookie' ? new CarrinhoDoCookie() : new CarroDaJosefina();
+        : personagem === 'mano' ? new KombiDoMano() : personagem === 'cookie' ? new CarrinhoDoCookie()
+          : personagem === 'jeanluc' ? new DoisCavalosDoJeanLuc() : new CarroDaJosefina();
     this.carro.group.visible = false;
   }
   get ativo(): boolean { return this.estado.fase !== 'esperando' && this.estado.fase !== 'feito'; }
@@ -46,9 +48,11 @@ export class EncontroNaEstrada {
         estella: 'Uma TORRE de roupas no retrovisor… é a Estella!',
         mano: 'Uma musiquinha de sorveteiro chegando… é o Mano de Kombi!',
         cookie: 'Um carrinho cor-de-rosa com duas orelhas pra fora… é o Cookie!',
+        jeanluc: 'Um 2CV azul, uma boina e um par de óculos escuros… é o Jean-Luc!',
       } as const)[this.personagem], this.icone);
       // (o Mano chega tocando a musiquinha da Kombi, e o Cookie apertando a corneta com a tromba)
-      this.g.som(this.personagem === 'mano' ? 'musiquinhaDoSorvete' : this.personagem === 'cookie' ? 'cornetaDoCookie' : 'buzinaDoBebito');
+      this.g.som(this.personagem === 'mano' ? 'musiquinhaDoSorvete' : this.personagem === 'cookie' ? 'cornetaDoCookie'
+        : this.personagem === 'jeanluc' ? 'buzinaDoJeanLuc' : 'buzinaDoBebito');
       if (this.carro instanceof CarrinhoDoCookie) this.carro.buzinar();
     }
     if (e.fase === 'feito') return;
@@ -57,7 +61,7 @@ export class EncontroNaEstrada {
       e.fase = 'ultrapassando'; e.tempo = 0;
     }
     if (e.fase === 'ultrapassando') {
-      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2 } as const)[this.personagem];
+      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2, jeanluc: 4.6 } as const)[this.personagem];
       e.relativo = -28 + 42 * suave(e.tempo / duracao);
       if (e.tempo >= duracao) {
         e.fase = 'freando'; e.tempo = 0;
@@ -76,6 +80,7 @@ export class EncontroNaEstrada {
         e.fase = 'saindo'; e.tempo = 0;
         if (this.personagem === 'mano') this.g.som('musiquinhaDoSorvete');
         if (this.carro instanceof CarrinhoDoCookie) { this.g.som('cornetaDoCookie'); this.carro.buzinar(); }
+        if (this.personagem === 'jeanluc') this.g.som('buzinaDoJeanLuc');
       });
     } else if (e.fase === 'saindo') {
       e.relativo = 4 * e.tempo + 3.5 * e.tempo * e.tempo;
@@ -89,6 +94,7 @@ export class EncontroNaEstrada {
           estella: 'A pilha balançou… mas não caiu nem um pé de meia.',
           mano: 'E lá vai a Kombi, tocando a musiquinha até sumir.',
           cookie: 'O carrinho foi embora quicando, com as orelhas dando tchau.',
+          jeanluc: 'Lá vai o 2CV, chacoalhando, com a boina no vento e os óculos brilhando.',
         } as const)[this.personagem], this.icone);
       }
     }
@@ -164,6 +170,32 @@ export class EncontroNaEstrada {
           ? 'Vocês ainda têm o brigadeirinho de antes na mochila. O Cookie achou isso muito educado.'
           : 'Um brigadeirinho do Cookie pra cada um, na mochila!', '🍫');
       await g.say(['Agora eu vou devagarinho. Na lombada eu até prendo a respiração.'], 'Cookie');
+      return;
+    }
+    if (this.personagem === 'jeanluc') {
+      const doisCavalos = this.carro as DoisCavalosDoJeanLuc;
+      await g.say(['Bonjour, mes amis! Gostaram? É um deux chevaux. Dois cavalos. Eu nunca vi os cavalos.'], 'Jean-Luc');
+      await g.say(['Jean-Luc… de óculos escuros?!'], this.carona);
+      await g.say(['Pour la route. Na estrada, um pato tem que ter estilo. E o caixote, eu trago sempre: hoje eu precisei.'], 'Jean-Luc');
+      // o ponto de ping pong pela janela: ele saca, a bolinha para no ar perto do Bebito, e quem joga rebate na hora certa
+      doisCavalos.raqueteNaJanela(true);
+      await g.say(['Já que paramos… un petit point de ping pong? Pela janela. Eu saco.'], 'Jean-Luc');
+      doisCavalos.sacar(this.naPista(this.parada ?? this.estado.s, 0.7, 1.55));
+      g.som('quicar');
+      await g.wait(0.8);
+      const acertou = (await g.horaCerta('Rebater na hora certa!', undefined, { periodo: 1.1 })) >= 0.75;
+      doisCavalos.devolver(acertou);
+      g.som('quicar');
+      await g.wait(0.8);
+      if (acertou) {
+        g.som('quicar');
+        g.soltarCoracoes();
+        await g.say(['Magnifique! De dentro do carro! Ce point est pour vous, mes amis.'], 'Jean-Luc');
+      } else {
+        await g.say(['Hon hon. A janela é difícil. Revanche na próxima estrada.'], 'Jean-Luc');
+      }
+      doisCavalos.raqueteNaJanela(false);
+      await g.say(['Au revoir! Eu vou na frente, que o caixote escorrega na curva.'], 'Jean-Luc');
       return;
     }
     if (this.personagem === 'estella') {

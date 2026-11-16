@@ -21,6 +21,7 @@ import { ritmoDoPresente } from './presente';
 import { LambretaDaEstella, ESCALA_DA_LAMBRETA } from '../../world/lambretaDaEstella';
 import { KombiDoMano, KOMBI } from '../../world/kombiDoMano';
 import { CarrinhoDoCookie, CARRINHO } from '../../world/carrinhoDoCookie';
+import { DoisCavalosDoJeanLuc } from '../../world/doisCavalosDoJeanLuc';
 
 /**
  * ================================== O ESTACIONAMENTO DO VILLA LOBOS (e o carro nele)
@@ -81,6 +82,12 @@ export const LAMBRETA_NO_PARQUE = { x: 51.4, z: 7.76, giro: -Math.PI / 2 } as co
  * Kombi, com a carinha para o corredor. O carrinho é tão pequeno que sobra vaga dos dois lados
  */
 export const CARRINHO_NO_PARQUE = { x: (FILA_A.x0 + FILA_A.x1) / 2 + 0.5, z: 0.62, giro: Math.PI / 2 } as const;
+/**
+ * a vaga do 2CV do Jean-Luc: a vizinha da do carrinho do Cookie (de −3,5 a −0,75), de ré como os outros,
+ * com a cara (a grade e os faróis de sapo) para o corredor e a mesa de ping pong do bagageiro para a sebe;
+ * o caixote fica encostado na porta do motorista, do lado do carrinho
+ */
+export const DOIS_CAVALOS_NO_PARQUE = { x: (FILA_A.x0 + FILA_A.x1) / 2 + 0.2, z: -2.12, giro: Math.PI / 2 } as const;
 export const KOMBI_NO_PARQUE = { x: (FILA_A.x0 + FILA_A.x1) / 2, z: 11.2, giro: Math.PI / 2 } as const;
 /** a área de andar do parque com o estacionamento (a de sempre acaba na rua, em `x = 44`) */
 const LIMITE_LESTE = LOTE.x1;
@@ -242,6 +249,16 @@ export function montarEstacionamento(w: WorldBuilder): ComandoDaCancela | undefi
     por(new CarrinhoDoCookie(true).group, x, z, giro);
     w.root.userData.carrinhoNoParque = { x, z };
     w.blockBox(x, z, CARRINHO.meio - 0.02, CARRINHO.meiaLargura - 0.04);
+  }
+  // O 2CV DO JEAN-LUC, depois do primeiro encontro na estrada (`docs/DOIS-CAVALOS-DO-JEAN-LUC.md`): na vaga
+  // vizinha à do carrinho, vazio (o dono está no lago), com a lona enrolada, a mesa de ping pong no bagageiro
+  // e o caixote encostado na porta, do lado de fora
+  if (g.temMemoria('jeanluc-na-estrada')) {
+    const { x, z, giro } = DOIS_CAVALOS_NO_PARQUE;
+    por(new DoisCavalosDoJeanLuc(true).group, x, z, giro);
+    w.root.userData.doisCavalosNoParque = { x, z };
+    // a pegada: do bagageiro de trás (para a sebe) ao para-choque da frente, e dos para-lamas ao caixote
+    w.blockBox(x - 0.2, z + 0.17, 1.93, 1.12);
   }
   // as árvores: no fundo (`−Z`), atrás da cerca viva de baixo, e nos canteiros da calçada longe do ponto
   for (const [x, z, k] of [[51, -15.8, 1.25], [56.5, -16.6, 1.5], [62, -15.4, 1.2], [58.7, -20, 1.6]] as const) por(tree('redonda', k, x * 0.13), x, z, x);

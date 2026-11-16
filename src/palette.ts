@@ -2850,6 +2850,18 @@ export const PALETTE = {
   carrinhoLatao: 0xe9b949,
   docinhoForminha: 0xf7a8c4,
   docinhoGranulado: 0x3d2416,
+  // o 2CV do Jean-Luc: o azul de carro francês (mais claro que a boina, para o pato não sumir na
+  // lata), o vinco das nervuras, a lona creme da capota enrolada e do banco de rede, o couro das
+  // cintas, e os óculos escuros (a armação de tartaruga escura e a lente fumê)
+  doisCavalosAzul: 0x3a6fb3,
+  doisCavalosAzulEscuro: 0x28548e,
+  doisCavalosLona: 0xece3cc,
+  doisCavalosLonaListra: 0xd9534b,
+  doisCavalosCouro: 0x7a4a2a,
+  oculosEscurosArmacao: 0x1d1a1f,
+  oculosEscurosLente: 0x2b3448,
+  baguete: 0xd9a35a,
+  bagueteCasca: 0xb97a36,
   /**
    * a casa do Ari de madrugada, depois da festa (etapa 7): o céu e a luz azul
    * de dentro, o sol virando luar, o vidro escuro da janela com o reflexo, e

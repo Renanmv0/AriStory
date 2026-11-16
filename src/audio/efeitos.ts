@@ -137,6 +137,7 @@ export type SomNome =
   | 'fotoFlash'
   | 'musiquinhaDoSorvete'
   | 'cornetaDoCookie'
+  | 'buzinaDoJeanLuc'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -1381,6 +1382,21 @@ export const EFEITOS: Record<SomNome, Receita> = {
       tom(ctx, destino, { freq: f * 1.04, glide: f * 0.94, quando: t + atraso, dur, vol: 0.062, ataque: 0.012, tipo: 'square', abafo: 1500 });
       tom(ctx, destino, { freq: f * 2.08, glide: f * 1.88, quando: t + atraso, dur: dur * 0.8, vol: 0.018, ataque: 0.012, tipo: 'triangle' });
       chiado(ctx, destino, { quando: t + atraso, dur: dur * 0.9, vol: 0.03, freq: 900, glide: 600, q: 1.2 });
+    }
+  },
+
+  /**
+   * A buzina do 2CV do Jean-Luc: o "pin-pon" das sirenes francesas, em duas
+   * notas da pentatônica (lá e mi, descendo), fanhoso e de lata — um quadrado
+   * abafado com o dente-de-serra baixinho uma oitava acima (a lata) e um
+   * chiadinho de ar. Não é sirene: é curto, uma vez só.
+   */
+  buzinaDoJeanLuc: ({ ctx, destino, t }) => {
+    for (const [atraso, grau, dur] of [[0, 9, 0.17], [0.21, 4, 0.24]] as const) {
+      const f = nota(DO - 12 + grau);
+      tom(ctx, destino, { freq: f, glide: f * 0.985, quando: t + atraso, dur, vol: 0.056, ataque: 0.01, tipo: 'square', abafo: 1900 });
+      tom(ctx, destino, { freq: f * 2, glide: f * 1.97, quando: t + atraso, dur: dur * 0.85, vol: 0.016, ataque: 0.01, tipo: 'sawtooth', abafo: 2600 });
+      chiado(ctx, destino, { quando: t + atraso, dur: dur * 0.7, vol: 0.02, freq: 1300, glide: 900, q: 1.4 });
     }
   },
 
