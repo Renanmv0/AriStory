@@ -90,7 +90,9 @@ passa do ponto).
    francesas, curto e fanhoso, de lata.
 2. **A conversa** (falas minhas, provisórias, esperando as do Renan):
    - Jean-Luc: "Bonjour, mes amis! Gostaram? É um deux chevaux. Dois cavalos. Eu nunca vi os cavalos."
-   - quem vai de carona: "Jean-Luc… de óculos escuros?!"
+   - quem vai de carona: "Jean-Luc… de óculos escuros?!" (esta fala e a de baixo
+     ganham a TOMADA DE PERTO do rosto dele, de frente e do lado do Bebito: de
+     longe, no celular em pé, os óculos viravam três pixels)
    - Jean-Luc: "Pour la route. Na estrada, um pato tem que ter estilo. E o caixote, eu trago sempre: hoje eu precisei."
    - (a raquete sai pela janela) Jean-Luc: "Já que paramos… un petit point de ping pong? Pela janela. Eu saco."
 3. **O ponto de ping pong**: ele saca, a bolinha voa até a janela do Bebito e
@@ -127,8 +129,16 @@ lambreta, Kombi.
   chegada e na saída, a conversa, a raquete na janela, a bolinha no ar com a
   hora certa, a memória, o save de verdade intacto), com a tela deitada e no
   celular em pé (`CEL=1`).
-- A câmera da conversa chega mais perto com a tela deitada (a mesma do Cookie):
-  na de sempre, os óculos viravam um risquinho.
+- A câmera da conversa chega mais perto com a tela deitada (a mesma do Cookie),
+  e as duas falas dos óculos têm a tomada de perto do rosto (fotografada com a
+  tela deitada e no celular em pé).
+- As duas saídas do ponto, pelo atalho `?doisCavalos=…&conversando&raquete`
+  (`sacar` e `devolver`): rebatida, a bolinha volta à raquete e ela bate de
+  novo (as raquetadas vão a 2); perdida, ela cai do lado do 2CV e rola para
+  TRÁS na pista (a primeira versão rolava para baixo do carro).
+- As peças são de pele, tubo, esfera e quina: o `zfighting.mjs` só mede caixa
+  reta. As quinas foram conferidas à mão (a listra do encosto do banco tinha a
+  altura da lona e passou a ter 8 mm a mais).
 - `musica.mjs`: a buzina sem estalo; no `.wav`, ~0,45 s e pico de 0,061 (a
   corneta do Cookie tem 0,073, a buzina do Bebito 0,054).
 - Regressão: `jeanluc.mjs` e `duelo.mjs` (o Jean-Luc do lago não muda: a pose
