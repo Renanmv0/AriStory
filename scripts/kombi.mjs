@@ -6,6 +6,10 @@
  *          fotos de perto de todos os lados (a cara com o V e o emblema, o teto
  *          com a neve e a casquinha de três bolas, a janela de venda fechada e
  *          aberta com as duas casquinhas, a traseira e o Mano ao volante).
+ * PARQUE   ESTACIONADA no estacionamento do Villa Lobos só depois da memória
+ *          do encontro, na última vaga da fila A (depois da da lambreta), de ré,
+ *          com a cara para o corredor; o caminho da vaga do Bebito à passagem
+ *          continua livre; fotos e o peso.
  * ESTRADA  o encontro (rota casa → parque, semente com o Mano): a musiquinha
  *          tocando na chegada, o sopro do freezer e a GEADA no para-brisa
  *          (soprando, embaçado, desembaçando, foi, com foto), a conversa, as
@@ -13,7 +17,7 @@
  *          dancinha, a musiquinha de novo na saída e a memória.
  *
  * Uso: node scripts/kombi.mjs /tmp/km
- *      SO=modelo|estrada roda uma parte
+ *      SO=modelo|parque|estrada roda uma parte
  */
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
@@ -94,6 +98,56 @@ try {
       }
       await page.context().close();
     }
+  }
+
+  // ------------------------------------------------------------------ estacionada no parque
+  if (parte('parque')) {
+    const page = await (await browser.newContext({ viewport: { width: 1100, height: 760 } })).newPage();
+    page.on('pageerror', (e) => erros.push(e.message));
+    const abrirParque = async (memorias) => {
+      await page.goto(`${BASE}/?bebito&semHalloween&cena=casa`);
+      await page.waitForFunction(() => window.jogo?.current && !window.jogo.transitioning, null, { timeout: 120000 });
+      await page.evaluate((memorias) => {
+        const g = window.jogo;
+        for (const f of ['bebito:surpresa', 'bebito:renan-saiu', 'bebito:ganhou', 'bebito:carro-no-parque']) g.setFlag(f);
+        for (const id of memorias) g.unlock({ id, title: id, place: 'Na estrada', icon: '🍦', note: 'teste' });
+        g.goTo('villa-lobos', 'do-carro');
+      }, memorias);
+      await page.waitForFunction(() => window.jogo.idDaCena === 'villa-lobos' && !window.jogo.transitioning, null, { timeout: 120000 });
+      await page.waitForTimeout(1200);
+      return page.evaluate(() => {
+        const k = window.jogo.current.world.root.userData.kombiNoParque;
+        return k ? [+k.x.toFixed(2), +k.z.toFixed(2)] : null;
+      });
+    };
+    const antes = await abrirParque([]);
+    assert.equal(antes, null, 'antes do encontro, nada de Kombi no estacionamento');
+    const depois = await abrirParque(['mano-na-estrada', 'estella-na-estrada']);
+    console.log('PARQUE: a Kombi estacionada em', JSON.stringify(depois));
+    assert.ok(depois && Math.abs(depois[0] - 51.9) < 0.1 && Math.abs(depois[1] - 11.2) < 0.1, 'na última vaga da fila A');
+    // o caminho a pé da vaga do Bebito até a passagem da cerca viva continua livre
+    const livre = await page.evaluate(() => {
+      const c = window.jogo.current.world.colliders;
+      const bate = (x, z) => c.some((k) => (k.kind === 'circle' ? Math.hypot(x - k.x, z - k.z) < k.r + 0.42 : Math.abs(x - k.x) < k.hw + 0.42 && Math.abs(z - k.z) < k.hd + 0.42));
+      const ruins = [];
+      for (let x = 49.6; x <= 54.4; x += 0.2) if (bate(x, 3.0)) ruins.push(+x.toFixed(1));
+      return ruins;
+    });
+    assert.deepEqual(livre, [], 'a passagem de pedestres continua livre');
+    await page.screenshot({ path: `${OUT}-parque-isometrica.png` });
+    await page.evaluate(() => { window.jogo.setZoom(1.6); });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: `${OUT}-parque-de-perto.png` });
+    const r = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
+    console.log(`  peso de perto: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos`);
+    await page.evaluate(() => { const V = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new V(59, 4.2, 17), new V(52, 1.6, 10.5)); });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: `${OUT}-parque-kombi.png` });
+    await page.evaluate(() => { const V = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new V(60, 6.5, 0), new V(51.8, 1.2, 8)); });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: `${OUT}-parque-as-tres-vagas.png` });
+    await page.evaluate(() => window.jogo.setCameraOmbro(null));
+    await page.context().close();
   }
 
   // ------------------------------------------------------------------ na estrada

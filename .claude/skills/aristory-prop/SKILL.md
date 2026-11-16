@@ -1216,6 +1216,11 @@ de CAIXA com um personagem ao volante e uma janela que abre:
   linha sai da própria pele (o arco do nó 12 ao 7), e não de uma constante —
   com uma meia largura fixa ela era um retângulo colado no meio do vidro.
 - **Atalho de teste** `?kombi=x,z,giro` (e `&conversando`, a janela aberta).
+- **Estacionada, o lado que importa vira para a câmera**: no estacionamento do
+  Villa Lobos ela entra de RÉ (`KOMBI_NO_PARQUE`, giro `+π/2`), e não de nariz
+  para a rua como os vizinhos — a câmera vem do `+X/+Z`, e é assim que se veem
+  a cara e a janela de venda. Veículo parado é fundo: `KombiDoMano(true)`
+  junta tudo e não monta o Mano.
 
 ## A estrada (`world/estrada.ts`)
 

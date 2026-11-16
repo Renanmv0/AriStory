@@ -76,6 +76,25 @@ retrovisores, 4,59 m de altura até a cereja.
    musiquinha até sumir."
 6. **A memória** "A Kombi gelada" (`mano-na-estrada`).
 
+## Estacionada no Villa Lobos (2026-11-16)
+
+O pedido: "faça a kombi estacionada depois do primeiro encontro!". Como a
+lambreta da Estella, ela fica no estacionamento do parque
+(`eventos/bebitoMobile/noParque.ts`, `KOMBI_NO_PARQUE`) só depois da memória
+"A Kombi gelada" (`mano-na-estrada`):
+
+- na **última vaga da fila A** (de 9,8 a 12,6), depois da da lambreta, que
+  vem depois da do Bebito: os três de amigos, um do lado do outro;
+- **de ré**, com a cara virada para o corredor. A câmera vem do `+X/+Z`, então
+  assim se veem os faróis de olho e o lado da janela de venda, com o toldo. De
+  nariz para a rua, como o Bebito, ela mostraria só a traseira e o lado liso;
+- **vazia e de janela fechada** (o Mano está no quiosque da praça de gelo),
+  com a casquinha gigante no teto e a neve escorrendo; juntada com o fundo do
+  estacionamento (`KombiDoMano(true)`), e a pegada é a lataria.
+
+Medido de perto (o Bebito, a lambreta e a Kombi na tela): 250 desenhos e
+~185 mil triângulos.
+
 ## O que foi testado (2026-11-15)
 
 - `kombi.mjs` inteiro: o modelo (nada abaixo do chão, a largura na faixa, as
@@ -99,12 +118,12 @@ retrovisores, 4,59 m de altura até a cereja.
 
 ## Ideias que ficam para depois
 
-- **A Kombi estacionada no Villa Lobos** depois do primeiro encontro, como a
-  lambreta (com a janela aberta vendendo?).
+- **A Kombi vendendo**: o Mano indo até ela de vez em quando, abrindo a
+  janela e vendendo casquinha no estacionamento.
 - **Os outros do parque**: o Cookie e o Jean-Luc.
 
 ## Validar
 
 ```bash
-node scripts/kombi.mjs /tmp/km        # o modelo parado no parque (?kombi=x,z,giro[&conversando]) e o encontro na estrada; SO=modelo|estrada
+node scripts/kombi.mjs /tmp/km        # o modelo parado no parque (?kombi=x,z,giro[&conversando]), ESTACIONADA depois do encontro e o encontro na estrada; SO=modelo|parque|estrada
 ```
