@@ -233,10 +233,10 @@ function geoDoForro(): THREE.BufferGeometry {
     const xh = meiaCabine(z), top = altoDaTampa(z);
     const abre = Math.sqrt(preso(xh / xhMax));
     // (onde tem roda, o forro fica para dentro da caixa de roda: por fora dela ele aparecia pela boca do para-lama)
-    const naRoda = [C.eixo, -C.eixo].some((e) => Math.abs(z - e) < ARCO + 0.05);
+    const naRoda = [C.eixo, -C.eixo].some((e) => Math.abs(z - e) < ARCO + 0.16);
     const dentro = (y: number, folga: number): number => Math.min(
       xDaPele(z, y) - 0.05, xh + folga * abre,
-      naRoda && y < C.roda + ARCO + 0.04 ? meiaLargura(z) - 0.3 : Infinity);
+      naRoda && y < C.roda + ARCO + 0.04 ? meiaLargura(z) - 0.36 : Infinity);
     return [
       [xh, yDaTampa(z, xh)],
       [xh, top - 0.05],

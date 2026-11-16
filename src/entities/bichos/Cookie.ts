@@ -544,8 +544,9 @@ export class Cookie extends Bicho {
     if (this.sonhando > 0) this.sonhando = Math.max(0, this.sonhando - dt);
     const sonho = this.sonhando > 0 ? 1 : 0;
     const carro = this.noCarrinho;
-    // no carrinho as patas somem dentro da lataria (ele vai espremido lá dentro)
-    for (const perna of this.patas) perna.visible = !carro;
+    // no carrinho as patas somem dentro da lataria (ele vai espremido lá dentro). Fora dele, nada disto
+    // é tocado: o Cookie do carrinho é outro, só dele, e o de sempre continua como sempre foi
+    if (carro) for (const perna of this.patas) perna.visible = false;
 
     /**
      * O PASSO. Patas em diagonal (dianteira esquerda com traseira direita), num
@@ -599,8 +600,8 @@ export class Cookie extends Bicho {
         this.orelhas[i].scale.set(1, 1, 1.7);
         continue;
       }
-      this.orelhas[i].scale.set(1, 1, 1);
-      this.orelhas[i].rotation.set(0, lado * (-0.5 - carinho * 0.35) + venta * lado, lado * (0.16 + carinho * 0.1));
+      this.orelhas[i].rotation.y = lado * (-0.5 - carinho * 0.35) + venta * lado;
+      this.orelhas[i].rotation.z = lado * (0.16 + carinho * 0.1);
     }
 
     /**
@@ -633,7 +634,7 @@ export class Cookie extends Bicho {
     const alvoCabeca = -sonho * 0.5 - carinho * 0.14 + Math.sin(fase * 1.1) * 0.02;
     this.cabeca.rotation.x += (alvoCabeca - this.cabeca.rotation.x) * Math.min(1, dt * 4);
     // (no carrinho ele vira a cabeça para quem parou do lado)
-    this.cabeca.rotation.y += ((carro?.olhar ?? 0) - this.cabeca.rotation.y) * Math.min(1, dt * 4);
+    if (carro) this.cabeca.rotation.y += (carro.olhar - this.cabeca.rotation.y) * Math.min(1, dt * 4);
 
     // olho fechando no carinho — e o que faz o bicho parecer que gostou
     const abertura = 1 - carinho * 0.8;

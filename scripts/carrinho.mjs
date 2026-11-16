@@ -16,8 +16,11 @@
  *          a memória, o save de verdade intacto — e nada de Cookie soprando
  *          bolhas na calçada na mesma viagem.
  *
+ * DOCINHO  o brigadeirinho do Cookie na mão (foto de perto) e comido (sai da
+ *          mochila).
+ *
  * Uso: node scripts/carrinho.mjs /tmp/cc
- *      SO=modelo|parque|estrada roda uma parte
+ *      SO=modelo|parque|estrada|docinho roda uma parte
  */
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
@@ -163,7 +166,9 @@ try {
         return k ? [+k.x.toFixed(2), +k.z.toFixed(2)] : null;
       });
     };
-    assert.equal(await abrirParque([]), null, 'antes do encontro, nada de carrinho no estacionamento');
+    assert.equal(await abrirParque(['mano-na-estrada', 'estella-na-estrada']), null, 'antes do encontro, nada de carrinho no estacionamento');
+    const antes = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
+    console.log(`  peso do estacionamento sem o carrinho: ${antes.calls} desenhos, ${Math.round(antes.triangles / 1000)} mil triângulos`);
     const depois = await abrirParque(['cookie-na-estrada', 'mano-na-estrada', 'estella-na-estrada']);
     console.log('PARQUE: o carrinho estacionado em', JSON.stringify(depois));
     assert.ok(depois && Math.abs(depois[1] - 0.62) < 0.1, 'na vaga do outro lado da passagem');
@@ -177,7 +182,7 @@ try {
     assert.deepEqual(livre, [], 'a passagem de pedestres continua livre');
     await page.screenshot({ path: `${OUT}-parque-isometrica.png` });
     const r = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
-    console.log(`  peso na vista do estacionamento: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos`);
+    console.log(`  peso do estacionamento com o carrinho: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos`);
     await page.evaluate(() => { const V = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new V(58.5, 3.4, 5.2), new V(52.4, 0.8, 0.6)); });
     await page.waitForTimeout(800);
     await page.screenshot({ path: `${OUT}-parque-carrinho.png` });
@@ -262,6 +267,34 @@ try {
     assert.ok(fim.docinhos >= 2, 'um brigadeirinho para cada um, na mochila');
     assert.ok(fim.memoria, 'a memória "O carrinho que serve certinho"');
     assert.equal(await page.evaluate(() => localStorage.getItem('aristory.save.v1')), null, 'o save de verdade fica intacto');
+    await page.context().close();
+  }
+  // ------------------------------------------------------------------ o brigadeirinho na mão
+  if (parte('docinho')) {
+    const page = await (await browser.newContext({ viewport: { width: 1100, height: 760 } })).newPage();
+    page.on('pageerror', (e) => erros.push(e.message));
+    await page.goto(`${BASE}/?bebito&semHalloween&cena=villa-lobos&em=-6,34&olhar=0.785`);
+    await page.waitForFunction(() => window.jogo?.current && !window.jogo.transitioning, null, { timeout: 120000 });
+    const naMao = await page.evaluate(() => {
+      const g = window.jogo;
+      g.storeItem(window.aristoryItens['docinho-cookie']);
+      const i = g.handItems().findIndex((x) => x?.id === 'docinho-cookie');
+      if (i >= 0) g.setActiveHandSlot(i);
+      g.focusCamera(g.player.object); g.setZoom(2.6);
+      return g.getActiveHandItem()?.id ?? null;
+    });
+    assert.equal(naMao, 'docinho-cookie', 'o brigadeirinho vai para a mão');
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: `${OUT}-docinho-na-mao.png` });
+    const rotulo = await page.evaluate(() => document.querySelector('.prompt.show')?.textContent ?? '');
+    console.log('DOCINHO: na mão, o prompt é', JSON.stringify(rotulo.trim()));
+    assert.match(rotulo, /Comer/, 'com ele na mão, dá para comer');
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `${OUT}-docinho-comendo.png` });
+    let comeu = false;
+    for (let i = 0; i < 60 && !comeu; i++) { await page.waitForTimeout(250); comeu = !(await page.evaluate(() => window.jogo.hasItem('docinho-cookie'))); }
+    assert.ok(comeu, 'comido, ele sai da mochila');
     await page.context().close();
   }
   assert.deepEqual(erros, []);
