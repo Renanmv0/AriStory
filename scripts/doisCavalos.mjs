@@ -254,8 +254,8 @@ try {
       if (e.agulha && !agulha) {
         agulha = true;
         bola = bola || e.bola;
-        await page.waitForTimeout(500);
         await page.screenshot({ path: `${OUT}-estrada-4-bola-no-ar.png` });
+        continue;
       }
       if (e.fase === 'feito') break;
       await page.evaluate(() => { if (!document.querySelector('.escolhas.show button')) document.querySelector('.dialogue.show')?.click(); });
