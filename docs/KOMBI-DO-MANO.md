@@ -120,7 +120,7 @@ Medido de perto (o Bebito, a lambreta e a Kombi na tela): 250 desenhos e
 
 - **A Kombi vendendo**: o Mano indo até ela de vez em quando, abrindo a
   janela e vendendo casquinha no estacionamento.
-- **Os outros do parque**: o Cookie e o Jean-Luc.
+- **Os outros do parque**: o Cookie já veio (`docs/CARRINHO-DO-COOKIE.md`); falta o Jean-Luc.
 
 ## Validar
 

@@ -20,25 +20,26 @@ Jean-Luc) estão nas ideias, no fim.
 
 ## Quem aparece em cada rota (`candidatosAoEncontro`, em `eventos/bebitoMobile/rota.ts`)
 
-Cada personagem mora num lugar (`MORADORES`): a Estella e o Mano (a Kombi de
-sorvete, `docs/KOMBI-DO-MANO.md`) no parque; o Noel, a
+Cada personagem mora num lugar (`MORADORES`): a Estella, o Mano (a Kombi de
+sorvete, `docs/KOMBI-DO-MANO.md`) e o Cookie (o carrinho,
+`docs/CARRINHO-DO-COOKIE.md`) no parque; o Noel, a
 Josefina, o Capy e o Walter no clube; ninguém na casa nem na escola.
 
-- Vale o **destino**: indo ao parque, a Estella ou o Mano; indo ao clube, o pessoal do clube.
+- Vale o **destino**: indo ao parque, a Estella, o Mano ou o Cookie; indo ao clube, o pessoal do clube.
 - Se o destino não tem ninguém (a casa, a escola), vale a **origem**: do clube
-  para casa, o pessoal do clube; do parque para a escola, a Estella ou o Mano.
+  para casa, o pessoal do clube; do parque para a escola, um dos três do parque.
 - Se as **duas pontas** têm gente (parque ↔ clube, nos dois sentidos), sorteia
-  entre **todos** os seis.
+  entre **todos** os sete.
 - Casa ↔ escola fica **sem encontro**. A turma da escola continua na zona escolar.
 - O sorteio é por igual entre os candidatos, pela semente da viagem: recarregar
   conserva o mesmo encontro.
 
 | rota | quem pode aparecer |
 |---|---|
-| casa ↔ parque | Estella, Mano |
-| parque ↔ escola | Estella, Mano |
+| casa ↔ parque | Estella, Mano, Cookie |
+| parque ↔ escola | Estella, Mano, Cookie |
 | casa ↔ clube, clube ↔ escola | Noel, Josefina, Capy, Walter |
-| parque ↔ clube | os seis |
+| parque ↔ clube | os sete |
 | casa ↔ escola | ninguém |
 
 Isso substitui o "25% para cada um em toda viagem" de 2026-11-13
@@ -137,7 +138,8 @@ desenhos e ~350 mil triângulos (o do Walter, noutra rota, ~390 desenhos).
 ## Ideias que ficam para depois
 
 - **Os outros do parque**: o Mano já veio, de Kombi de sorvete
-  (`docs/KOMBI-DO-MANO.md`); faltam o Cookie (o carrinho pequenininho ou o trenzinho) e o Jean-Luc (o carrinho
+  (`docs/KOMBI-DO-MANO.md`); o Cookie também, de carrinho pequenininho
+  (`docs/CARRINHO-DO-COOKIE.md`); falta o Jean-Luc (o carrinho
   francês ou o pedalinho com rodas).
 
 ## O que foi testado (2026-11-15)

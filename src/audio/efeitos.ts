@@ -1378,7 +1378,7 @@ export const EFEITOS: Record<SomNome, Receita> = {
   cornetaDoCookie: ({ ctx, destino, t }) => {
     for (const [atraso, grau, dur] of [[0, 4, 0.13], [0.2, 7, 0.22]] as const) {
       const f = nota(DO - 12 + grau);
-      tom(ctx, destino, { freq: f * 1.04, glide: f * 0.94, quando: t + atraso, dur, vol: 0.075, ataque: 0.012, tipo: 'square', abafo: 1500 });
+      tom(ctx, destino, { freq: f * 1.04, glide: f * 0.94, quando: t + atraso, dur, vol: 0.062, ataque: 0.012, tipo: 'square', abafo: 1500 });
       tom(ctx, destino, { freq: f * 2.08, glide: f * 1.88, quando: t + atraso, dur: dur * 0.8, vol: 0.018, ataque: 0.012, tipo: 'triangle' });
       chiado(ctx, destino, { quando: t + atraso, dur: dur * 0.9, vol: 0.03, freq: 900, glide: 600, q: 1.2 });
     }

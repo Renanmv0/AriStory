@@ -1222,6 +1222,49 @@ de CAIXA com um personagem ao volante e uma janela que abre:
   a cara e a janela de venda. Veículo parado é fundo: `KombiDoMano(true)`
   junta tudo e não monta o Mano.
 
+## O carrinho do Cookie (`world/carrinhoDoCookie.ts`)
+
+O terceiro veículo do PARQUE (`docs/CARRINHO-DO-COOKIE.md`), e o molde de
+veículo MIÚDO de pele própria com um bicho GRANDE dentro:
+
+- **A graça é a escala, então não se encolhe o bicho.** O Cookie vai do
+  tamanho de sempre e o carro é medido EM VOLTA dele: a barriga no piso, as
+  patas escondidas (`visible = false` na pose), o lombo e o quepe por cima. O
+  carro é conversível justamente porque nada caberia embaixo de um teto.
+- **A pose de veículo mora no `animar` do bicho**, num campo que nasce
+  desligado (`noCarrinho: PoseNoCarrinho | null`): o `animar` reescreve a
+  orelha e a tromba a cada quadro, e o que o veículo mexesse por fora seria
+  desfeito. O veículo só preenche a pose (o vento, a tromba, o olhar).
+- **Orelha para fora é conta**: o leque do Cookie alcança 0,78 do meio,
+  aberto; o corpo dele tem 0,6 de meia largura. Para a orelha PASSAR da
+  lataria ela estica no comprimento (1,7×) e a ponta cai por cima da porta
+  (a rotação em ordem `'ZYX'`: primeiro abre, depois cai). O teste mede
+  quanto ela passa da lataria.
+- **A pele de fatias, em miniatura**: planta de superelipse (`meiaLargura`),
+  perfil de lado (`altoDaTampa`), a fatia em três nós de baixo, cinco de
+  ombro e três de tampa, até a beira do buraco da cabine (`meiaCabine`).
+  Onde não tem buraco as duas beiras são o mesmo ponto: a normal delas é a
+  média (sem isso o capô ganha uma costura no meio). A pele saiu DO AVESSO
+  na primeira foto (via-se o forro creme no lugar do rosa): confira o
+  sentido dos triângulos pela cor.
+- **Caixa de roda acompanha a planta**: o meio cano reto, da largura do
+  carro no eixo, saía pela lataria nas pontas do arco (duas barbatanas
+  pretas). Ela é uma fita da boca do para-lama para dentro, ponto a ponto
+  pela pele. E o forro da cabine recua onde tem roda.
+- **Adesivo em lata curva é malha assentada** (`adesivoNaLateral`): um disco
+  em anéis com cada vértice posto na pele, 8 mm para fora. Plano reto em
+  cima de bolha fica com a beira boiando.
+- **Furo num vidro não precisa ser furo**: o vidro é transparente, e o anel
+  de borracha em volta de onde a tromba atravessa é o que diz "furo".
+- **A mola conta a história**: com ele dentro a traseira afunda, as rodas
+  abrem e o carro tomba para o lado de quem conversa; vazio, no
+  estacionamento, o mesmo carro fica nivelado.
+- **O que se entrega voa**: a tromba não alcança o Bebito (são 2,5 m). Ele
+  estende a caixinha, e os docinhos voam num arco no referencial do carro
+  (que está parado na conversa) até um alvo dado no mundo.
+- **Atalho de teste** `?carrinho=x,z,giro` (`&conversando`, `&oferecendo`,
+  `&andando=7`, `&vazio`).
+
 ## A estrada (`world/estrada.ts`)
 
 As peças da viagem de carro do Bebito Mobile. A pista é CURVA, então a cena
