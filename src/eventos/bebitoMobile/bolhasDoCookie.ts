@@ -5,7 +5,7 @@ import { toon } from '../../core/materials';
 import { fundir } from '../../world/fundir';
 import type { NaPista } from '../../world/estrada';
 
-/** Cookie fica na calçada; só as bolhas flutuam sobre a pista. */
+/** Cookie fica na calçada, soprando pela tromba no aro fincado à frente dele; só as bolhas flutuam sobre a pista. */
 export class BolhasDoCookie {
   readonly group = new THREE.Group();
   readonly cookie = new Cookie({ minX: -1, maxX: 1, minZ: -1, maxZ: 1 });
@@ -21,8 +21,8 @@ export class BolhasDoCookie {
     const kit = new THREE.Group();
     const balde = new THREE.Mesh(new THREE.CylinderGeometry(.35, .26, .46, 16, 1, true), toon(P.carroLilas)); balde.position.copy(naPista(s + 1, 4.9, .37)); kit.add(balde);
     const agua = new THREE.Mesh(new THREE.CircleGeometry(.32, 16), toon(P.aguaRasa)); agua.rotation.x = -Math.PI / 2; agua.position.copy(naPista(s + 1, 4.9, .5)); kit.add(agua);
-    const aro = new THREE.Mesh(new THREE.TorusGeometry(.35, .045, 8, 20), toon(P.laranjaCasca)); aro.position.copy(naPista(s, 4.35, 1.22)); aro.rotation.y = rumo + Math.PI / 2; kit.add(aro);
-    const cabo = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .72, 8), toon(P.wood)); cabo.position.copy(naPista(s, 4.35, .62)); kit.add(cabo);
+    const aro = new THREE.Mesh(new THREE.TorusGeometry(.35, .045, 8, 20), toon(P.laranjaCasca)); aro.position.copy(naPista(s, 3.62, 1.02)); aro.rotation.y = rumo + Math.PI / 2; kit.add(aro);
+    const cabo = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .58, 8), toon(P.wood)); cabo.position.copy(naPista(s, 3.62, .4)); kit.add(cabo);
     this.group.add(fundir(kit), this.bolhas, this.brilhos);
   }
   passar(rapido: boolean): void { this.estouro = rapido; if (!rapido) this.cookie.receberCarinho(); }
@@ -33,7 +33,7 @@ export class BolhasDoCookie {
     const m = new THREE.Matrix4();
     for (let i = 0; i < 12; i++) {
       const t = (this.tempo * .11 + i / 12) % 1, raio = .2 + (i % 4) * .12;
-      const p = this.naPista(this.s + Math.sin(i * 2.1) * 3, 4.3 - t * 9, 1.3 + t * 2.5);
+      const p = this.naPista(this.s + Math.sin(i * 2.1) * 3, 3.6 - t * 9, 1.05 + t * 2.5);
       m.makeScale(raio, raio, raio).setPosition(p); this.bolhas.setMatrixAt(i, m);
       p.y += raio * .55; m.makeScale(1, 1, 1).setPosition(p); this.brilhos.setMatrixAt(i, m);
     }
