@@ -36,6 +36,15 @@ const codigo = ts.transpileModule(await readFile(new URL('../src/eventos/bebitoM
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
 }).outputText;
 const { gerarRota } = await import('data:text/javascript;base64,' + Buffer.from(codigo).toString('base64'));
+let SEMENTE = 1;
+while (gerarRota(SEMENTE, 'ida').encontro?.personagem !== 'cookie') SEMENTE++;
+// o mesmo Cookie não passa de carrinho e sopra bolhas na calçada na mesma viagem
+for (const sentido of ['ida', 'volta', 'clube-parque', 'parque-clube', 'escola-parque', 'parque-escola']) {
+  for (let s = 1; s <= 400; s++) {
+    const r = gerarRota(s, sentido);
+    if (r.encontro?.personagem === 'cookie') assert.ok(!r.eventos.some((e) => e.bolhasDoCookie), `${sentido} ${s}: Cookie de carrinho E na calçada`);
+  }
+}
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium',
@@ -133,6 +142,127 @@ try {
       await foto([-2.2, 3.6, -2.6], [0, 0.6, 0], 'vazio-por-dentro');
       await page.context().close();
     }
+  }
+  // ------------------------------------------------------------------ estacionado no parque
+  if (parte('parque')) {
+    const page = await (await browser.newContext({ viewport: { width: 1100, height: 760 } })).newPage();
+    page.on('pageerror', (e) => erros.push(e.message));
+    const abrirParque = async (memorias) => {
+      await page.goto(`${BASE}/?bebito&semHalloween&cena=casa`);
+      await page.waitForFunction(() => window.jogo?.current && !window.jogo.transitioning, null, { timeout: 120000 });
+      await page.evaluate((memorias) => {
+        const g = window.jogo;
+        for (const f of ['bebito:surpresa', 'bebito:renan-saiu', 'bebito:ganhou', 'bebito:carro-no-parque']) g.setFlag(f);
+        for (const id of memorias) g.unlock({ id, title: id, place: 'Na estrada', icon: '🐘', note: 'teste' });
+        g.goTo('villa-lobos', 'do-carro');
+      }, memorias);
+      await page.waitForFunction(() => window.jogo.idDaCena === 'villa-lobos' && !window.jogo.transitioning, null, { timeout: 120000 });
+      await page.waitForTimeout(1200);
+      return page.evaluate(() => {
+        const k = window.jogo.current.world.root.userData.carrinhoNoParque;
+        return k ? [+k.x.toFixed(2), +k.z.toFixed(2)] : null;
+      });
+    };
+    assert.equal(await abrirParque([]), null, 'antes do encontro, nada de carrinho no estacionamento');
+    const depois = await abrirParque(['cookie-na-estrada', 'mano-na-estrada', 'estella-na-estrada']);
+    console.log('PARQUE: o carrinho estacionado em', JSON.stringify(depois));
+    assert.ok(depois && Math.abs(depois[1] - 0.62) < 0.1, 'na vaga do outro lado da passagem');
+    const livre = await page.evaluate(() => {
+      const c = window.jogo.current.world.colliders;
+      const bate = (x, z) => c.some((k) => (k.kind === 'circle' ? Math.hypot(x - k.x, z - k.z) < k.r + 0.42 : Math.abs(x - k.x) < k.hw + 0.42 && Math.abs(z - k.z) < k.hd + 0.42));
+      const ruins = [];
+      for (let x = 49.6; x <= 54.4; x += 0.2) if (bate(x, 3.0)) ruins.push(+x.toFixed(1));
+      return ruins;
+    });
+    assert.deepEqual(livre, [], 'a passagem de pedestres continua livre');
+    await page.screenshot({ path: `${OUT}-parque-isometrica.png` });
+    const r = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
+    console.log(`  peso na vista do estacionamento: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos`);
+    await page.evaluate(() => { const V = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new V(58.5, 3.4, 5.2), new V(52.4, 0.8, 0.6)); });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: `${OUT}-parque-carrinho.png` });
+    await page.evaluate(() => { const V = window.jogo.scene.position.constructor; window.jogo.setCameraOmbro(new V(62, 8.5, 6), new V(52, 1.0, 6)); });
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: `${OUT}-parque-os-quatro.png` });
+    await page.evaluate(() => window.jogo.setCameraOmbro(null));
+    await page.context().close();
+  }
+
+  // ------------------------------------------------------------------ na estrada
+  if (parte('estrada')) {
+    const page = await (await browser.newContext({ viewport: { width: 1100, height: 760 } })).newPage();
+    page.on('pageerror', (e) => erros.push(e.message));
+    await page.goto(`${BASE}/?bebito&semHalloween&cena=casa`);
+    await page.waitForFunction(() => window.jogo?.current && !window.jogo.transitioning, null, { timeout: 120000 });
+    await page.evaluate(() => { for (const f of ['bebito:surpresa', 'bebito:renan-saiu', 'bebito:ganhou']) window.jogo.setFlag(f); });
+    await page.goto(`${BASE}/?bebito&semHalloween&cena=viagem-de-carro&viagem=ida,ari,${SEMENTE}`);
+    await page.waitForFunction(() => window.jogo?.current?.world.root.userData.novidadesDaViagem?.encontro, null, { timeout: 120000 });
+    const estado = () => page.evaluate(() => {
+      const n = window.jogo.current.world.root.userData.novidadesDaViagem;
+      const c = n.encontro.carro;
+      return {
+        quem: n.encontro.personagem, fase: n.encontro.estado.fase, bolhas: !!n.cookie,
+        corneta: window.jogo.audio.contagem.get('cornetaDoCookie') ?? 0,
+        caixinha: !!c.caixinha?.visible, voando: c.voando?.length ?? 0,
+      };
+    });
+    const e0 = await estado();
+    console.log(`ESTRADA: semente ${SEMENTE}, encontro com ${e0.quem}`);
+    assert.equal(e0.quem, 'cookie');
+    assert.equal(e0.bolhas, false, 'sem Cookie soprando bolhas na calçada nesta viagem');
+    await page.mouse.click(1080, 740); // (o som só acorda depois de um toque na página)
+    await page.evaluate(() => { const v = window.aristoryBebitoMobile.viagem; v.vezes = 3; v.piloto = 'bom'; });
+    let cornetaNaChegada = 0, conversa = false, ofereceu = false, voou = false, ultrapassando = false;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 400000) {
+      const e = await estado();
+      if (e.fase === 'alinhando' && !cornetaNaChegada) cornetaNaChegada = e.corneta;
+      if (e.fase === 'ultrapassando' && !ultrapassando) {
+        ultrapassando = true;
+        await page.evaluate(() => { window.aristoryBebitoMobile.viagem.vezes = 1; });
+        await page.waitForFunction(() => window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.relativo > -7, null, { timeout: 60000 }).catch(() => {});
+        await page.evaluate(() => { window.aristoryBebitoMobile.viagem.vezes = 0; });
+        await page.waitForTimeout(400);
+        await page.screenshot({ path: `${OUT}-estrada-1-ultrapassando.png` });
+        await page.evaluate(() => { window.aristoryBebitoMobile.viagem.vezes = 3; });
+      }
+      if (e.fase === 'falando' && !conversa) {
+        conversa = true;
+        await page.waitForTimeout(1500);
+        await page.screenshot({ path: `${OUT}-estrada-2-conversa.png` });
+        const r = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
+        console.log(`  peso na conversa: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos`);
+      }
+      if (e.caixinha && !ofereceu) {
+        ofereceu = true;
+        await page.waitForTimeout(1300);
+        await page.screenshot({ path: `${OUT}-estrada-3-oferecendo.png` });
+      }
+      if (e.voando > 0 && !voou) {
+        voou = true;
+        await page.screenshot({ path: `${OUT}-estrada-4-docinhos-voando.png` });
+      }
+      if (e.fase === 'feito') break;
+      // (a fala em que ele estende a caixinha fica um instante na tela, para a foto; as outras, o teste avança)
+      if (!(e.caixinha && !ofereceu)) await page.evaluate(() => { if (!document.querySelector('.escolhas.show button')) document.querySelector('.dialogue.show')?.click(); });
+      await page.waitForTimeout(90);
+    }
+    const fim = await page.evaluate(() => {
+      const save = JSON.parse(localStorage.getItem('aristory.save.v1.bebito') ?? '{}');
+      return {
+        corneta: window.jogo.audio.contagem.get('cornetaDoCookie') ?? 0,
+        memoria: (save.memories ?? []).some((m) => m.id === 'cookie-na-estrada'),
+        docinhos: (JSON.stringify(save).match(/docinho-cookie/g) ?? []).length,
+      };
+    });
+    console.log(`  corneta ${fim.corneta} vezes | brigadeirinhos no save ${fim.docinhos} | memória ${fim.memoria}`);
+    assert.ok(cornetaNaChegada >= 1, 'a corneta toca quando o carrinho chega');
+    assert.ok(fim.corneta >= 2, 'e de novo quando ele vai embora');
+    assert.ok(conversa && ofereceu && voou, `a conversa, a caixinha estendida e os docinhos voando (${conversa}, ${ofereceu}, ${voou})`);
+    assert.ok(fim.docinhos >= 2, 'um brigadeirinho para cada um, na mochila');
+    assert.ok(fim.memoria, 'a memória "O carrinho que serve certinho"');
+    assert.equal(await page.evaluate(() => localStorage.getItem('aristory.save.v1')), null, 'o save de verdade fica intacto');
+    await page.context().close();
   }
   assert.deepEqual(erros, []);
   console.log('O carrinho do Cookie está de pé.');

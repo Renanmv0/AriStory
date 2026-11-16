@@ -34,7 +34,7 @@ export const rotaDaEscola = (sentido: Sentido): boolean => sentido.includes('esc
 export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube') && !rotaDaEscola(sentido);
 /** as rotas novas (clube e escola), com a pista de 1000 m e os eventos postos à mão */
 export const rotaNova = (sentido: Sentido): boolean => rotaDoClube(sentido) || rotaDaEscola(sentido);
-export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano';
+export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano' | 'cookie';
 /** onde cada viagem COMEÇA (o par do `DESTINO`) */
 const ORIGEM: Record<Sentido, DestinoDeCarro> = {
   'ida': 'casa', 'volta': 'parque', 'parque-clube': 'parque', 'clube-parque': 'clube', 'casa-clube': 'casa', 'clube-casa': 'clube',
@@ -43,7 +43,7 @@ const ORIGEM: Record<Sentido, DestinoDeCarro> = {
 export const origemDaRota = (sentido: Sentido): DestinoDeCarro => ORIGEM[sentido];
 /** quem MORA em cada lugar e tem veículo para cruzar o Bebito na pista */
 export const MORADORES: Record<DestinoDeCarro, readonly PersonagemNaEstrada[]> = {
-  parque: ['estella', 'mano'],
+  parque: ['estella', 'mano', 'cookie'],
   clube: ['noel', 'josefina', 'capy', 'walter'],
   casa: [],
   escola: [],
@@ -406,8 +406,13 @@ function gerarRotaDaEscola(semente: number, sentido: Sentido): Rota {
   };
 }
 
-/** O Cookie pode aparecer na poça, sem sobrepor travessias ou a cena dos carros. */
+/**
+ * O Cookie pode aparecer na poça, sem sobrepor travessias ou a cena dos carros.
+ * Menos na viagem em que ele já vem de carrinho (`docs/CARRINHO-DO-COOKIE.md`):
+ * o mesmo Cookie não pode passar dirigindo e estar na calçada soprando bolhas.
+ */
 function decorarCaminhoDoParque(rota: Rota): void {
+  if (rota.encontro?.personagem === 'cookie') return;
   if (destinoDaRota(rota.sentido) !== 'parque' || sorteio(rota.semente * 71 + 503)() >= .35) return;
   const poca = rota.eventos.find(e => e.tipo === 'poca');
   if (poca) poca.bolhasDoCookie = true;

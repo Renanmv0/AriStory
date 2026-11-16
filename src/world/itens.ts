@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { HoldPose, ItemDef } from '../core/types';
-import { biscoitoDaEstella, copoDeSuco, frisbee, iceCream, lancheDaMaquina, osso, type LancheDaMaquina } from './props';
+import { biscoitoDaEstella, copoDeSuco, docinhoDoCookie, frisbee, iceCream, lancheDaMaquina, osso, type LancheDaMaquina } from './props';
 import { borrifadorDeJardim, esguichoDeMangueira, pistolaDagua, regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
   bermudaListrada, bermudaDeBolinhas, bermudaHavaiana, bermudaDeAbacaxi, bermudaDeMelancia, bermudaDeOndinhas,
@@ -132,6 +132,20 @@ export const ITENS = {
     tipo: 'mao',
     nota: 'do Renan',
     holdPose: 'upright',
+  },
+  /**
+   * O BRIGADEIRINHO DO COOKIE: o docinho pequenininho que ele passa com a
+   * tromba quando cruza o Bebito de carrinho (`docs/CARRINHO-DO-COOKIE.md`).
+   * Um para cada um, como o biscoitinho da Estella.
+   */
+  docinhoDoCookie: {
+    id: 'docinho-cookie',
+    nome: 'Brigadeirinho do Cookie',
+    icone: '🍫',
+    tipo: 'mao',
+    nota: 'do Cookie · pequenininho, do jeito que ele gosta',
+    holdPose: 'upright',
+    comivel: 'comer',
   },
   /**
    * O BRINDE DA ESTELLA. Ela nao vende doce — ela DA, junto com a roupa, e foi
@@ -2438,6 +2452,8 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'cesta-de-abobora': () => cestaDeAbobora(),
   'mapinha-da-estella': () => mapinhaEnrolado(),
   'biscoito-estella': () => biscoitoDaEstella(),
+  // (na mão ele vai maior que o de verdade: do tamanho real, some entre os dedos)
+  'docinho-cookie': () => { const d = docinhoDoCookie(); d.scale.setScalar(1.7); return d; },
   'lanche-biscoito': () => lancheDaMaquina('biscoito'),
   'lanche-chocolate': () => lancheDaMaquina('chocolate'),
   'lanche-suco': () => lancheDaMaquina('suco'),

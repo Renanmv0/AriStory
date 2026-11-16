@@ -20,6 +20,7 @@ import { animarChegadaNoParque, consumirChegadaNoParque, type ComandoDaCancela }
 import { ritmoDoPresente } from './presente';
 import { LambretaDaEstella, ESCALA_DA_LAMBRETA } from '../../world/lambretaDaEstella';
 import { KombiDoMano, KOMBI } from '../../world/kombiDoMano';
+import { CarrinhoDoCookie, CARRINHO } from '../../world/carrinhoDoCookie';
 
 /**
  * ================================== O ESTACIONAMENTO DO VILLA LOBOS (e o carro nele)
@@ -75,6 +76,11 @@ export const LAMBRETA_NO_PARQUE = { x: 51.4, z: 7.76, giro: -Math.PI / 2 } as co
  * olho e o lado da janela de venda, com o toldo — de nariz para a rua, ela mostraria a traseira
  * e o lado liso
  */
+/**
+ * a vaga do carrinho do Cookie: a do OUTRO lado da passagem de pedestres (de −0,75 a 2), de ré como a
+ * Kombi, com a carinha para o corredor. O carrinho é tão pequeno que sobra vaga dos dois lados
+ */
+export const CARRINHO_NO_PARQUE = { x: (FILA_A.x0 + FILA_A.x1) / 2 + 0.5, z: 0.62, giro: Math.PI / 2 } as const;
 export const KOMBI_NO_PARQUE = { x: (FILA_A.x0 + FILA_A.x1) / 2, z: 11.2, giro: Math.PI / 2 } as const;
 /** a área de andar do parque com o estacionamento (a de sempre acaba na rua, em `x = 44`) */
 const LIMITE_LESTE = LOTE.x1;
@@ -228,6 +234,14 @@ export function montarEstacionamento(w: WorldBuilder): ComandoDaCancela | undefi
     w.root.userData.kombiNoParque = { x, z };
     // a pegada: a lataria (de lado, o comprimento vai no X do mundo); os retrovisores ficam fora
     w.blockBox(x, z, (KOMBI.frente - KOMBI.tras) / 2 - 0.05, KOMBI.meiaLargura + 0.02);
+  }
+  // O CARRINHO DO COOKIE, depois do primeiro encontro na estrada (`docs/CARRINHO-DO-COOKIE.md`): do outro
+  // lado da passagem, vazio (o dono está na bilheteria da roda) e NIVELADO — sem ele dentro, a mola levanta
+  if (g.temMemoria('cookie-na-estrada')) {
+    const { x, z, giro } = CARRINHO_NO_PARQUE;
+    por(new CarrinhoDoCookie(true).group, x, z, giro);
+    w.root.userData.carrinhoNoParque = { x, z };
+    w.blockBox(x, z, CARRINHO.meio - 0.02, CARRINHO.meiaLargura - 0.04);
   }
   // as árvores: no fundo (`−Z`), atrás da cerca viva de baixo, e nos canteiros da calçada longe do ponto
   for (const [x, z, k] of [[51, -15.8, 1.25], [56.5, -16.6, 1.5], [62, -15.4, 1.2], [58.7, -20, 1.6]] as const) por(tree('redonda', k, x * 0.13), x, z, x);

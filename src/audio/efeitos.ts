@@ -136,6 +136,7 @@ export type SomNome =
   | 'surpresa'
   | 'fotoFlash'
   | 'musiquinhaDoSorvete'
+  | 'cornetaDoCookie'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -1365,6 +1366,21 @@ export const EFEITOS: Record<SomNome, Receita> = {
       tom(ctx, destino, { freq: f, quando, dur: 0.22 + dura * 0.1, vol: 0.05, ataque: 0.004, tipo: 'sine' });
       tom(ctx, destino, { freq: f * 2, quando, dur: 0.1, vol: 0.016, ataque: 0.003, tipo: 'sine' });
       quando += passo * dura;
+    }
+  },
+
+  /**
+   * A CORNETA DO CARRINHO DO COOKIE (`world/carrinhoDoCookie.ts`): a buzina de
+   * pera que a tromba dele aperta — "fon-FON", duas notas de palhacinho, a
+   * segunda mais alta e mais comprida. Cada uma é um quadrado abafado que cai
+   * um tico de tom no fim (a pera murchando), com o sopro de ar por baixo.
+   */
+  cornetaDoCookie: ({ ctx, destino, t }) => {
+    for (const [atraso, grau, dur] of [[0, 4, 0.13], [0.2, 7, 0.22]] as const) {
+      const f = nota(DO - 12 + grau);
+      tom(ctx, destino, { freq: f * 1.04, glide: f * 0.94, quando: t + atraso, dur, vol: 0.075, ataque: 0.012, tipo: 'square', abafo: 1500 });
+      tom(ctx, destino, { freq: f * 2.08, glide: f * 1.88, quando: t + atraso, dur: dur * 0.8, vol: 0.018, ataque: 0.012, tipo: 'triangle' });
+      chiado(ctx, destino, { quando: t + atraso, dur: dur * 0.9, vol: 0.03, freq: 900, glide: 600, q: 1.2 });
     }
   },
 

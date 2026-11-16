@@ -19,7 +19,17 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 
+import { readFile } from 'node:fs/promises';
+import ts from 'typescript';
+
 const BASE = process.env.SMOKE_URL ?? 'http://127.0.0.1:4177';
+// a semente da viagem com a Estella (a mesma conta do jogo: quem aparece muda quando o parque ganha morador)
+const codigo = ts.transpileModule(await readFile(new URL('../src/eventos/bebitoMobile/rota.ts', import.meta.url), 'utf8'), {
+  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
+}).outputText;
+const { gerarRota } = await import('data:text/javascript;base64,' + Buffer.from(codigo).toString('base64'));
+let SEMENTE_DA_ESTELLA = 1;
+while (gerarRota(SEMENTE_DA_ESTELLA, 'ida').encontro?.personagem !== 'estella') SEMENTE_DA_ESTELLA++;
 const OUT = process.argv[2] ?? '/tmp/lambreta';
 const PONTO = { x: -6, z: 30 };
 const SO = process.env.SO ?? '';
@@ -137,7 +147,7 @@ try {
     await page.goto(`${BASE}/?bebito&semHalloween&cena=casa`);
     await page.waitForFunction(() => window.jogo?.current && !window.jogo.transitioning, null, { timeout: 120000 });
     await page.evaluate(() => { for (const f of ['bebito:surpresa', 'bebito:renan-saiu', 'bebito:ganhou']) window.jogo.setFlag(f); });
-    await page.goto(`${BASE}/?bebito&semHalloween&cena=viagem-de-carro&viagem=ida,ari,1`);
+    await page.goto(`${BASE}/?bebito&semHalloween&cena=viagem-de-carro&viagem=ida,ari,${SEMENTE_DA_ESTELLA}`);
     await page.waitForFunction(() => window.jogo?.current?.world.root.userData.novidadesDaViagem?.encontro, null, { timeout: 120000 });
     const novidade = () => page.evaluate(() => { const n = window.jogo.current.world.root.userData.novidadesDaViagem; return { fase: n.encontro.estado.fase, pano: n.pano?.momento ?? null }; });
     assert.equal((await novidade()).pano, 'guardado', 'o pano espera guardado na pilha');

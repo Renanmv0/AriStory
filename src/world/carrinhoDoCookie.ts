@@ -193,6 +193,33 @@ function geoDoFundo(): THREE.BufferGeometry {
 }
 
 /**
+ * A CAIXA DE RODA: uma fita escura que entra da boca do para-lama para dentro
+ * e a tampa do fundo. A beira de fora ACOMPANHA A PLANTA (o carro estreita
+ * para as pontas): um meio cano reto, da largura do carro no eixo, saía pela
+ * lataria nas duas pontas do arco, como duas barbatanas pretas.
+ */
+function geoDaCaixaDeRoda(eixo: number, lado: number): THREE.BufferGeometry {
+  const pos: number[] = [], idx: number[] = [];
+  const N = 14, FUNDO = 0.27;
+  for (let i = 0; i <= N; i++) {
+    const a = (i / N) * Math.PI;
+    const z = eixo + Math.cos(a) * (ARCO - 0.004), y = Math.max(soleiraLisa(z) + 0.012, C.roda + Math.sin(a) * (ARCO - 0.004));
+    const x = xDaPele(z, y) - 0.008;
+    pos.push(lado * x, y, z, lado * (x - FUNDO), y, z);
+    if (i > 0) { const k = (i - 1) * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+  }
+  // a tampa do fundo: um leque das beiras de dentro até o meio
+  const meio = pos.length / 3;
+  pos.push(lado * (xDaPele(eixo, C.roda + 0.2) - FUNDO), C.roda, eixo);
+  for (let i = 0; i < N; i++) idx.push(meio, i * 2 + 1, i * 2 + 3);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+/**
  * O FORRO da cabine: da beira do buraco para baixo, abrindo por dentro da
  * porta (a cabine é mais larga que a boca) até o piso. É ele que dá grossura
  * à porta e fundo ao buraco — sem ele, de cima via-se o chão por dentro.
@@ -525,12 +552,7 @@ export class CarrinhoDoCookie {
     casco.add(tubo(voltaDaCabine(), 0.024, P.carrinhoForro, true));
     casco.add(new THREE.Mesh(geoDoFundo(), toon(P.onibusPainel, { doubleSide: true })));
     // por dentro de cada arco de roda, a caixa escura (sem ela via-se o forro pela boca do para-lama)
-    for (const z of [C.eixo, -C.eixo]) for (const lado of [-1, 1]) {
-      const caixa = new THREE.Mesh(new THREE.CylinderGeometry(ARCO - 0.012, ARCO - 0.012, 0.26, 14, 1, true, Math.PI / 2, Math.PI).rotateX(Math.PI / 2).rotateY(Math.PI / 2), toon(P.onibusPainel, { doubleSide: true }));
-      por(caixa, lado * (meiaLargura(z) - 0.15), C.roda, z);
-      const fundo = new THREE.Mesh(new THREE.CircleGeometry(ARCO - 0.012, 14, 0, Math.PI).rotateY(lado * -Math.PI / 2), toon(P.onibusPainel, { doubleSide: true }));
-      por(fundo, lado * (meiaLargura(z) - 0.278), C.roda, z);
-    }
+    for (const z of [C.eixo, -C.eixo]) for (const lado of [-1, 1]) casco.add(new THREE.Mesh(geoDaCaixaDeRoda(z, lado), toon(P.onibusPainel, { doubleSide: true })));
 
     // ------------------------------------------------------- a cara: os faróis de sapinho, o sorriso, o blush e o para-choque
     for (const lado of [-1, 1]) {
@@ -723,7 +745,7 @@ export class CarrinhoDoCookie {
       this.cookie = cookie;
       // a caixinha que ele estende com a ponta da tromba (só aparece na hora)
       this.caixinha = caixinhaDeDocinhos();
-      this.caixinha.position.y = -0.3; this.caixinha.rotation.x = Math.PI;
+      this.caixinha.position.y = -0.33; this.caixinha.rotation.x = Math.PI; this.caixinha.scale.setScalar(1.45);
       this.caixinha.visible = false;
       cookie.pontaDaTromba.add(this.caixinha);
       // a fumacinha do escapamento: "puf, puf", do esforço
@@ -756,7 +778,7 @@ export class CarrinhoDoCookie {
     const para = this.group.worldToLocal(alvo.clone());
     for (let i = 0; i < 2; i++) {
       const doce = docinhoDoCookie();
-      doce.scale.setScalar(2.4); doce.visible = false;
+      doce.scale.setScalar(3.4); doce.visible = false;
       this.group.add(doce);
       this.voando.push({ doce, t: -i * 0.28, de, para: para.clone().add(new V(0, 0, i ? -0.25 : 0.25)) });
     }

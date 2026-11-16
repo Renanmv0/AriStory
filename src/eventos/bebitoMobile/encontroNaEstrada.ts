@@ -7,6 +7,7 @@ import { MotoDoCapy } from '../../world/motoDoCapy';
 import { FoodTruckDoWalter } from '../../world/foodTruckDoWalter';
 import { LambretaDaEstella } from '../../world/lambretaDaEstella';
 import { KombiDoMano } from '../../world/kombiDoMano';
+import { CarrinhoDoCookie } from '../../world/carrinhoDoCookie';
 import { ITENS } from '../../world/itens';
 import { ARI, RENAN } from '../../characters/cast';
 import type { NaPista } from '../../world/estrada';
@@ -16,9 +17,9 @@ const suave = (t: number): number => { const k = Math.max(0, Math.min(1, t)); re
 
 /** Uma cena no relógio da viagem, isolada dos obstáculos e com as faixas reservadas. */
 export class EncontroNaEstrada {
-  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano;
-  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano' } as const)[this.personagem]; }
-  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦' } as const)[this.personagem]; }
+  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie;
+  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie' } as const)[this.personagem]; }
+  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘' } as const)[this.personagem]; }
   readonly estado = { fase: 'esperando' as Fase, relativo: -28, tempo: 0, s: 0 };
   private falas = false;
   private anterior: THREE.Vector3 | null = null;
@@ -27,7 +28,7 @@ export class EncontroNaEstrada {
   constructor(private readonly g: GameAPI, readonly s: number, private readonly naPista: NaPista, private readonly rumo: (s: number) => number, private readonly carona: string, readonly personagem: PersonagemNaEstrada = 'noel') {
     this.carro = personagem === 'noel' ? new CarroDoNoel() : personagem === 'capy' ? new MotoDoCapy()
       : personagem === 'walter' ? new FoodTruckDoWalter() : personagem === 'estella' ? new LambretaDaEstella()
-        : personagem === 'mano' ? new KombiDoMano() : new CarroDaJosefina();
+        : personagem === 'mano' ? new KombiDoMano() : personagem === 'cookie' ? new CarrinhoDoCookie() : new CarroDaJosefina();
     this.carro.group.visible = false;
   }
   get ativo(): boolean { return this.estado.fase !== 'esperando' && this.estado.fase !== 'feito'; }
@@ -44,9 +45,11 @@ export class EncontroNaEstrada {
         josefina: 'Olha quem veio com as plantinhas: a Josefina!',
         estella: 'Uma TORRE de roupas no retrovisor… é a Estella!',
         mano: 'Uma musiquinha de sorveteiro chegando… é o Mano de Kombi!',
+        cookie: 'Um carrinho cor-de-rosa com duas orelhas pra fora… é o Cookie!',
       } as const)[this.personagem], this.icone);
-      // (o Mano chega tocando a musiquinha da Kombi, e não buzinando)
-      this.g.som(this.personagem === 'mano' ? 'musiquinhaDoSorvete' : 'buzinaDoBebito');
+      // (o Mano chega tocando a musiquinha da Kombi, e o Cookie apertando a corneta com a tromba)
+      this.g.som(this.personagem === 'mano' ? 'musiquinhaDoSorvete' : this.personagem === 'cookie' ? 'cornetaDoCookie' : 'buzinaDoBebito');
+      if (this.carro instanceof CarrinhoDoCookie) this.carro.buzinar();
     }
     if (e.fase === 'feito') return;
     e.tempo += dt;
@@ -54,7 +57,7 @@ export class EncontroNaEstrada {
       e.fase = 'ultrapassando'; e.tempo = 0;
     }
     if (e.fase === 'ultrapassando') {
-      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8 } as const)[this.personagem];
+      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2 } as const)[this.personagem];
       e.relativo = -28 + 42 * suave(e.tempo / duracao);
       if (e.tempo >= duracao) {
         e.fase = 'freando'; e.tempo = 0;
@@ -72,6 +75,7 @@ export class EncontroNaEstrada {
       void this.conversar().then(() => {
         e.fase = 'saindo'; e.tempo = 0;
         if (this.personagem === 'mano') this.g.som('musiquinhaDoSorvete');
+        if (this.carro instanceof CarrinhoDoCookie) { this.g.som('cornetaDoCookie'); this.carro.buzinar(); }
       });
     } else if (e.fase === 'saindo') {
       e.relativo = 4 * e.tempo + 3.5 * e.tempo * e.tempo;
@@ -84,6 +88,7 @@ export class EncontroNaEstrada {
           josefina: 'Cada mudinha tem seu cinto de segurança.',
           estella: 'A pilha balançou… mas não caiu nem um pé de meia.',
           mano: 'E lá vai a Kombi, tocando a musiquinha até sumir.',
+          cookie: 'O carrinho foi embora quicando, com as orelhas dando tchau.',
         } as const)[this.personagem], this.icone);
       }
     }
@@ -139,6 +144,28 @@ export class EncontroNaEstrada {
       await g.say(['E a dancinha de despedida, que sorvete sem dancinha não vale!'], 'Mano');
       return;
     }
+    if (this.personagem === 'cookie') {
+      const carrinho = this.carro as CarrinhoDoCookie;
+      await g.say(['Oi, bebitos… Não se assustem, sou só eu. E o meu carrinho.'], 'Cookie');
+      await g.say(['Cookie! Como é que você coube aí dentro?!'], this.carona);
+      await g.say(['Cabendo. As orelhas vão pra fora, a tromba sai pelo furinho… Só não posso suspirar, que a porta abre.'], 'Cookie');
+      carrinho.oferecer(true);
+      await g.say(['Eu trouxe uma coisa pra vocês. É pequenininha, que é o melhor tamanho que existe.'], 'Cookie');
+      // os dois brigadeirinhos saem da caixinha e voam até a janela do Bebito (um para cada um)
+      carrinho.jogarDocinhos(this.naPista(this.parada ?? this.estado.s, 0.85, 1.35));
+      g.som('lancar');
+      await g.wait(0.95);
+      const doAri = g.storeItem(ITENS.docinhoDoCookie, ARI.id), doRenan = g.storeItem(ITENS.docinhoDoCookie, RENAN.id);
+      g.som('pegar');
+      g.soltarCoracoes();
+      g.toast(doAri === 'cheio' || doRenan === 'cheio'
+        ? 'A mochila está cheia: o brigadeirinho que não coube, o Cookie guarda pra próxima.'
+        : doAri === 'repetido' && doRenan === 'repetido'
+          ? 'Vocês ainda têm o brigadeirinho de antes na mochila. O Cookie achou isso muito educado.'
+          : 'Um brigadeirinho do Cookie pra cada um, na mochila!', '🍫');
+      await g.say(['Agora eu vou devagarinho. Na lombada eu até prendo a respiração.'], 'Cookie');
+      return;
+    }
     if (this.personagem === 'estella') {
       await g.say(['Bebitos! A coleção nova ficou pronta, e eu resolvi levar TUDO pra loja de uma vez só!'], 'Estella');
       await g.say(['Estella… isso tudo cabe na loja?'], this.carona);
@@ -159,7 +186,8 @@ export class EncontroNaEstrada {
   }
   /** Vista frontal dos dois carros; também funciona no celular em pé. */
   camera(viagem: { s: number }): { de: THREE.Vector3; para: THREE.Vector3 } {
-    const longe = window.innerWidth / window.innerHeight < 0.8 ? 1.65 : 1;
+    // (o carrinho do Cookie é miúdo: a tomada chega mais perto, para ele não virar um pontinho ao lado do Bebito)
+    const longe = (window.innerWidth / window.innerHeight < 0.8 ? 1.65 : 1) * (this.personagem === 'cookie' ? 0.8 : 1);
     const alvo = this.naPista(viagem.s + 1, 0, 1.25);
     // A tomada fica sobre a pista, sem um poste da calçada entre a lente e os carros.
     return { de: this.naPista(viagem.s + 10 * longe, 3.5 * longe, 4.8 * longe), para: alvo };
