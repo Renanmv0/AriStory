@@ -115,9 +115,32 @@ enrolada, a baguete no banco de trás e o CAIXOTE encostado na porta do
 motorista, do lado de fora. A fila agora é: 2CV, carrinho, passagem, Bebito,
 lambreta, Kombi.
 
-## O que foi testado
+## O que foi testado (2026-11-16)
 
-(ver o fim do arquivo, preenchido depois da validação)
+- `doisCavalos.mjs` inteiro: o modelo (nada abaixo do chão, 3,4 m de lata e
+  1,9 m de largura nos para-lamas, a cabeça dele a 1,62 m — por cima da
+  testeira do para-brisa, em 1,58 —, as lentes dos óculos na frente das
+  pupilas e entre o bico e a boina, a raquete guardada dirigindo e na janela no
+  ponto; fotos de todos os lados, do rosto, dos óculos de perto, da câmera do
+  encontro, de perseguição e vazio), o estacionamento (só depois da memória, na
+  vaga vizinha à do carrinho, a passagem livre) e a estrada (o pin-pon na
+  chegada e na saída, a conversa, a raquete na janela, a bolinha no ar com a
+  hora certa, a memória, o save de verdade intacto), com a tela deitada e no
+  celular em pé (`CEL=1`).
+- A câmera da conversa chega mais perto com a tela deitada (a mesma do Cookie):
+  na de sempre, os óculos viravam um risquinho.
+- `musica.mjs`: a buzina sem estalo; no `.wav`, ~0,45 s e pico de 0,061 (a
+  corneta do Cookie tem 0,073, a buzina do Bebito 0,054).
+- Regressão: `jeanluc.mjs` e `duelo.mjs` (o Jean-Luc do lago não muda: a pose
+  do carro só vale com `aoVolante`), `casaClube.mjs` (as rotas, com o quarto
+  morador por igual, e os encontros), `kombi.mjs`, `lambreta.mjs`,
+  `carrinho.mjs` (as três procuram a semente, que mudou com o quarto morador),
+  `viagem.mjs SO=bom` na rota 5 (a do Jean-Luc: o piloto de teste passa pela
+  hora certa, sem tropeço nem susto) e `viagemEscola.mjs SO=ida`.
+- **O peso**: o 2CV com ele dentro, 84 malhas e ~41 mil triângulos. Na conversa
+  da estrada, ~500 desenhos e ~350 mil triângulos (com o carrinho do Cookie,
+  512 e ~346 mil). No estacionamento, com os vizinhos: 365 → 381 desenhos e
+  ~290 → ~325 mil triângulos com o 2CV.
 
 ## Ideias que ficam para depois
 
