@@ -126,7 +126,17 @@ lambreta, Kombi.
   depois da memória, a passagem livre) e a estrada (a corneta na chegada e na
   saída, a caixinha, os docinhos voando, os dois no save de teste, a memória, o
   save de verdade intacto, sem bolhas na mesma viagem).
+- O brigadeirinho na mão (foto de perto) e comido: sai da mochila.
 - `musica.mjs`: a corneta sem estalo.
+- Regressão: `cookie.mjs` (o Cookie da bilheteria não muda: fora do carrinho a
+  pose não toca em nada dele), `kombi.mjs`, `lambreta.mjs` (o pano passou a
+  procurar a semente da Estella, que mudou com o terceiro morador),
+  `casaClube.mjs` inteiro, `itens.mjs`, `parque.mjs`, `viagemEscola.mjs SO=ida`
+  e `viagem.mjs SO=bom` na rota 3 (o Mano) e na 5 (o Cookie), as duas sem
+  tropeço nem susto.
+- **O peso**: na conversa da estrada, 512 desenhos e ~346 mil triângulos (com
+  a Kombi, 485 e ~343 mil). No estacionamento, com os três veículos dos
+  vizinhos: 346 → 365 desenhos e ~260 → ~290 mil triângulos com o carrinho.
 - As peças do carrinho são de pele, esfera, toro e tubo: o `zfighting.mjs` só
   mede caixa reta. Os adesivos ficam 8 mm fora da lata, assentados na curva.
 
