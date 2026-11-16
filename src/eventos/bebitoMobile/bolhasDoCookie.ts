@@ -17,7 +17,7 @@ export class BolhasDoCookie {
     this.group.userData.peca = 'bolhas-do-cookie';
     // As instâncias atravessam a pista; a distância já controla o grupo inteiro.
     this.bolhas.frustumCulled = this.brilhos.frustumCulled = false;
-    this.cookie.entrarEmServico(); this.cookie.group.position.copy(naPista(s, 5.3, .14)); this.cookie.group.rotation.y = rumo - Math.PI / 2; this.group.add(this.cookie.group);
+    this.cookie.entrarEmServico(); this.cookie.group.position.copy(naPista(s, 5.3, .14)); this.cookie.group.rotation.y = rumo + Math.PI / 2; this.group.add(this.cookie.group);
     const kit = new THREE.Group();
     const balde = new THREE.Mesh(new THREE.CylinderGeometry(.35, .26, .46, 16, 1, true), toon(P.carroLilas)); balde.position.copy(naPista(s + 1, 4.9, .37)); kit.add(balde);
     const agua = new THREE.Mesh(new THREE.CircleGeometry(.32, 16), toon(P.aguaRasa)); agua.rotation.x = -Math.PI / 2; agua.position.copy(naPista(s + 1, 4.9, .5)); kit.add(agua);
