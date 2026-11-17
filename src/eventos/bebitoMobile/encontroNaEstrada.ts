@@ -10,6 +10,7 @@ import { KombiDoMano } from '../../world/kombiDoMano';
 import { CarrinhoDoCookie } from '../../world/carrinhoDoCookie';
 import { DoisCavalosDoJeanLuc } from '../../world/doisCavalosDoJeanLuc';
 import { CarrinhoDeGolfeDaGina } from '../../world/carrinhoDeGolfeDaGina';
+import { ConversivelDaTiaLiz } from '../../world/conversivelDaTiaLiz';
 import { ITENS } from '../../world/itens';
 import { ARI, RENAN } from '../../characters/cast';
 import type { NaPista } from '../../world/estrada';
@@ -19,9 +20,9 @@ const suave = (t: number): number => { const k = Math.max(0, Math.min(1, t)); re
 
 /** Uma cena no relógio da viagem, isolada dos obstáculos e com as faixas reservadas. */
 export class EncontroNaEstrada {
-  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie | DoisCavalosDoJeanLuc | CarrinhoDeGolfeDaGina;
-  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie', jeanluc: 'Jean-Luc', gina: 'Gina' } as const)[this.personagem]; }
-  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘', jeanluc: '🦆', gina: '🦒' } as const)[this.personagem]; }
+  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie | DoisCavalosDoJeanLuc | CarrinhoDeGolfeDaGina | ConversivelDaTiaLiz;
+  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie', jeanluc: 'Jean-Luc', gina: 'Gina', tializ: 'Tia Liz' } as const)[this.personagem]; }
+  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘', jeanluc: '🦆', gina: '🦒', tializ: '🐻' } as const)[this.personagem]; }
   readonly estado = { fase: 'esperando' as Fase, relativo: -28, tempo: 0, s: 0 };
   private falas = false;
   private anterior: THREE.Vector3 | null = null;
@@ -43,7 +44,7 @@ export class EncontroNaEstrada {
       : personagem === 'walter' ? new FoodTruckDoWalter() : personagem === 'estella' ? new LambretaDaEstella()
         : personagem === 'mano' ? new KombiDoMano() : personagem === 'cookie' ? new CarrinhoDoCookie()
           : personagem === 'jeanluc' ? new DoisCavalosDoJeanLuc() : personagem === 'gina' ? new CarrinhoDeGolfeDaGina()
-            : new CarroDaJosefina();
+            : personagem === 'tializ' ? new ConversivelDaTiaLiz() : new CarroDaJosefina();
     this.carro.group.visible = false;
   }
   get ativo(): boolean { return this.estado.fase !== 'esperando' && this.estado.fase !== 'feito'; }
@@ -63,10 +64,12 @@ export class EncontroNaEstrada {
         cookie: 'Um carrinho cor-de-rosa com duas orelhas pra fora… é o Cookie!',
         jeanluc: 'Um 2CV azul, uma boina e um par de óculos escuros… é o Jean-Luc!',
         gina: 'Um apito, um giroflex e um pescoço saindo pelo toldo… é a Gina de carrinho de golfe!',
+        tializ: 'Um conversível azul e amarelo cheio de pompom… é a Tia Liz com as meninas!',
       } as const)[this.personagem], this.icone);
       // (o Mano chega tocando a musiquinha da Kombi, e o Cookie apertando a corneta com a tromba)
       this.g.som(this.personagem === 'mano' ? 'musiquinhaDoSorvete' : this.personagem === 'cookie' ? 'cornetaDoCookie'
-        : this.personagem === 'jeanluc' ? 'buzinaDoJeanLuc' : this.personagem === 'gina' ? 'apito' : 'buzinaDoBebito');
+        : this.personagem === 'jeanluc' ? 'buzinaDoJeanLuc' : this.personagem === 'gina' ? 'apito'
+          : this.personagem === 'tializ' ? 'buzinaDaTiaLiz' : 'buzinaDoBebito');
       if (this.carro instanceof CarrinhoDoCookie) this.carro.buzinar();
     }
     if (e.fase === 'feito') return;
@@ -75,7 +78,7 @@ export class EncontroNaEstrada {
       e.fase = 'ultrapassando'; e.tempo = 0;
     }
     if (e.fase === 'ultrapassando') {
-      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2, jeanluc: 4.6, gina: 5.0 } as const)[this.personagem];
+      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2, jeanluc: 4.6, gina: 5.0, tializ: 5.4 } as const)[this.personagem];
       e.relativo = -28 + 42 * suave(e.tempo / duracao);
       if (e.tempo >= duracao) {
         e.fase = 'freando'; e.tempo = 0;
@@ -98,6 +101,7 @@ export class EncontroNaEstrada {
         if (this.carro instanceof CarrinhoDoCookie) { this.g.som('cornetaDoCookie'); this.carro.buzinar(); }
         if (this.personagem === 'jeanluc') this.g.som('buzinaDoJeanLuc');
         if (this.personagem === 'gina') this.g.som('apito');
+        if (this.personagem === 'tializ') this.g.som('buzinaDaTiaLiz');
       });
     } else if (e.fase === 'saindo') {
       e.relativo = 4 * e.tempo + 3.5 * e.tempo * e.tempo;
@@ -113,6 +117,7 @@ export class EncontroNaEstrada {
           cookie: 'O carrinho foi embora quicando, com as orelhas dando tchau.',
           jeanluc: 'Lá vai o 2CV, chacoalhando, com a boina no vento e os óculos brilhando.',
           gina: 'Lá vai a Gina de volta pra guarita, apitando, com o pescoço acima de todo mundo.',
+          tializ: 'Lá se vai o conversível, com os pompons balançando e a bandeirinha no vento.',
         } as const)[this.personagem], this.icone);
       }
     }
@@ -262,6 +267,46 @@ export class EncontroNaEstrada {
       }
       g.som('apito');
       await g.say(['Agora eu volto pra guarita, que portaria não fica sozinha muito tempo. Aproveitem o dia, viu?'], 'Gina');
+      return;
+    }
+    if (this.personagem === 'tializ') {
+      const conversivel = this.carro as ConversivelDaTiaLiz;
+      // a história das quatro (o que o Renan contou) só na primeira vez; depois, um oi e a merenda
+      const primeira = !g.temMemoria('tializ-na-estrada');
+      g.som('buzinaDaTiaLiz');
+      await g.say(['¡Mis niños! Encostem aí, que eu trouxe merenda.'], 'Tia Liz');
+      await g.say(['OI, BEBITOS! A GENTE TÁ INDO PRA ESCOLA!'], 'Sol');
+      if (primeira) {
+        await g.say(['Tia Liz! As três juntas no carro com você?'], this.carona);
+        await g.say(['Sempre juntas. Lá na Venezuela eu trabalhava numa escola, e elas eram pequenininhas.'], 'Tia Liz');
+        await g.say(['E o sonho de nós quatro era se mudar. A gente falava disso todo dia.'], 'Estrella');
+        await g.say(['Então a gente fez a mala e veio. E aqui eu cuido delas.'], 'Tia Liz');
+        conversivel.ficarTimidas();
+        await g.say(['…e ela cuida muito bem.'], 'Luna');
+      } else {
+        await g.say(['Vocês de novo! A estrada da escola é nossa!'], 'Estrella');
+      }
+      // as palmas da torcida: na hora certa, o confete sobe do banco de trás
+      await g.say(['AGORA A TORCIDA! BATE PALMA COM A GENTE!'], 'Sol');
+      const acertou = (await g.horaCerta('Bater palma na hora certa!', undefined, { periodo: 1.2 })) >= 0.75;
+      conversivel.comemorar();
+      g.som(acertou ? 'surpresa' : 'confirma');
+      if (acertou) g.soltarCoracoes();
+      await g.say([acertou ? 'ISSO! NO TEMPO CERTINHO! VAI, BEBITOS!' : 'QUASE! MAS VALEU A PALMA! VAI, BEBITOS!'], 'Sol');
+      // a merenda: duas arepitas da cesta, pela janela
+      conversivel.acenar();
+      await g.say(['E pra viagem, uma arepita pra cada um. Feita hoje cedo.'], 'Tia Liz');
+      conversivel.jogarArepitas(this.naPista(this.parada ?? this.estado.s, 0.85, 1.35));
+      g.som('lancar');
+      await g.wait(1.0);
+      const doAri = g.storeItem(ITENS.arepitaDaTiaLiz, ARI.id), doRenan = g.storeItem(ITENS.arepitaDaTiaLiz, RENAN.id);
+      g.som('pegar');
+      g.toast(doAri === 'cheio' || doRenan === 'cheio'
+        ? 'A mochila está cheia: a arepita que não coube, a Tia Liz guarda pra próxima.'
+        : doAri === 'repetido' && doRenan === 'repetido'
+          ? 'Vocês ainda têm a arepita de antes na mochila. A Tia Liz manda comer.'
+          : 'Uma arepita da Tia Liz pra cada um, na mochila!', '🫓');
+      await g.say(['Juízo na estrada, ¿oíste? Nos vemos na escola.'], 'Tia Liz');
       return;
     }
     if (this.personagem === 'estella') {

@@ -22,6 +22,7 @@ import {
 import { TravessiaDeBichos } from '../eventos/bebitoMobile/travessia';
 import { BolaDoFlynn, EnsaioDaValentina, RadarEscolar, TravessiaDaTorcida, type Atravessando } from '../eventos/bebitoMobile/escolaNaEstrada';
 import { VALENTINA_CONHECIDA } from './escolaMarketing';
+import { TIA_LIZ_CONHECIDA } from './escolaCantina';
 import { carroEstacionado, placaDeEstacionamento } from '../world/estacionamento';
 import { predioDaEscola } from '../world/escolaPorFora';
 import { PORTAO_DA_ESCOLA, gradeDaEscola, portaoDaEscola } from '../world/portariaDaEscola';
@@ -197,6 +198,11 @@ const ICONE_DO_DESTINO: Record<DestinoDeCarro, string> = { clube: '🏊', parque
 function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   const g: GameAPI = w.game;
   const rota = gerarRota(pedido.semente, pedido.sentido);
+  // a Tia Liz e as irmãs só passam de conversível depois de a Tia Liz ser conhecida na cantina: antes, a viagem
+  // segue sem encontro; e na viagem em que elas passam de carro, a torcida não atravessa a faixa (as mesmas três
+  // não estão em dois lugares — decisão do Renan)
+  const encontroDaRota = rota.encontro?.personagem === 'tializ' && !g.flag(TIA_LIZ_CONHECIDA) ? undefined : rota.encontro;
+  const semTorcida = encontroDaRota?.personagem === 'tializ';
   const L = rota.comprimento;
   const destino = destinoDaRota(rota.sentido);
   const ida = destino === 'parque';
@@ -508,6 +514,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
     w.add(fundir(p));
   };
   rota.eventos.forEach((e, indice) => {
+    if (semTorcida && e.tipo === 'torcida') return;
     const vivo: Vivo = { e, indice, relogio: 0, assustou: false, parou: false, contou: false, bateu: false, passou: false, avisou: false };
     const lFaixa = PISTA.meios[e.faixa];
     if (e.bolhasDoCookie) { vivo.cookie = new BolhasDoCookie(naPista, e.s, rumoEm(e.s)); w.add(vivo.cookie.group); }
@@ -660,7 +667,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
   };
   const carona = pedido.motorista === ARI.id ? RENAN : ARI;
   const motorista = pedido.motorista === ARI.id ? ARI : RENAN;
-  const encontro = rota.encontro ? new EncontroNaEstrada(g, rota.encontro.s, naPista, rumoEm, carona.name, rota.encontro.personagem) : null;
+  const encontro = encontroDaRota ? new EncontroNaEstrada(g, encontroDaRota.s, naPista, rumoEm, carona.name, encontroDaRota.personagem) : null;
   if (encontro) w.add(encontro.carro.group);
   // a Gina: o selo de sócio que ela carimba fica colado no NOSSO para-brisa na hora (`docs/CARRINHO-DE-GOLFE-DA-GINA.md`)
   if (encontro?.personagem === 'gina') encontro.aoCarimbar = () => carro.colarAdesivo('paraBrisa', 0, 'selo-socio-do-clube');
@@ -915,6 +922,7 @@ function montarAViagem(w: WorldBuilder, pedido: PedidoDeViagem): void {
       else if (encontro.personagem === 'walter') g.unlock({ id: 'walter-na-estrada', title: 'Cachorro-quente sobre rodas', place: 'Na estrada', icon: '🌭', note: 'O Walter passou com o food truck vermelho, a salsicha gigante sorrindo no teto, abriu a janelinha do lado do Bebito e latiu um "au au" que, pelo jeito, queria dizer: passem no clube.' });
       else if (encontro.personagem === 'mano') g.unlock({ id: 'mano-na-estrada', title: 'A Kombi gelada', place: 'Na estrada', icon: '🍦', note: 'O Mano passou de Kombi de sorvete, com a casquinha gigante de três bolas no teto e a musiquinha tocando. O ar do freezer embaçou o nosso para-brisa, e ele pediu desculpas com uma casquinha pra cada um e uma dancinha.' });
       else if (encontro.personagem === 'cookie') g.unlock({ id: 'cookie-na-estrada', title: 'O carrinho que serve certinho', place: 'Na estrada', icon: '🐘', note: 'O Cookie passou num carrinho cor-de-rosa do tamanho de uma bolha, espremido lá dentro: as orelhas pra fora, a tromba saindo por um furinho no para-brisa. Apertou a corneta, estendeu uma caixinha e jogou um brigadeirinho pra cada um.' });
+      else if (encontro.personagem === 'tializ') g.unlock({ id: 'tializ-na-estrada', title: 'As quatro que vieram juntas', place: 'Na estrada', icon: '🐻', note: 'A Tia Liz passou de conversível azul e amarelo, com as estrelinhas da Venezuela no capô e uma mala de viagem atrás, levando a Luna, a Sol e a Estrella. Lá na Venezuela ela trabalhava numa escola quando elas eram pequenas; o sonho das quatro era se mudar, e vieram juntas. Teve torcida, confete e uma arepita pra cada um.' });
       else if (encontro.personagem === 'gina') g.unlock({ id: 'gina-na-estrada', title: 'A portaria sobre rodas', place: 'Na estrada', icon: '🦒', note: 'A Gina passou no carrinho de golfe do clube, com o giroflex girando e o pescoço saindo pelo toldo. Mandou a gente encostar, pediu a carteirinha que a gente não tinha, esticou o pescoço até o para-brisa e carimbou: agora o Bebito é sócio do clube.' });
       else if (encontro.personagem === 'jeanluc') g.unlock({ id: 'jeanluc-na-estrada', title: 'O pato de óculos escuros', place: 'Na estrada', icon: '🦆', note: 'O Jean-Luc passou de 2CV azul, com a faixa da França no capô, em pé no caixote para enxergar por cima do para-brisa, de boina e óculos escuros. Parou do lado, tirou a raquete pela janela e sacou um ponto de ping pong na estrada.' });
       else if (encontro.personagem === 'estella') g.unlock({ id: 'estella-na-estrada', title: 'A torre de roupas', place: 'Na estrada', icon: '🧵', note: 'A Estella passou de lambreta, de capacete rosa e óculos de aviador, com o sidecar levando uma pilha de roupas mais alta que o Bebito. Balançou a viagem inteira e não caiu nem um pé de meia.' });

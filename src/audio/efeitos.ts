@@ -139,6 +139,7 @@ export type SomNome =
   | 'cornetaDoCookie'
   | 'buzinaDoJeanLuc'
   | 'carimbo'
+  | 'buzinaDaTiaLiz'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -1412,6 +1413,20 @@ export const EFEITOS: Record<SomNome, Receita> = {
     tom(ctx, destino, { freq: nota(DO + 7), quando: t + 0.006, dur: 0.035, vol: 0.03, ataque: 0.002, tipo: 'square', abafo: 2200 });
     tom(ctx, destino, { freq: nota(DO + 12), quando: t + 0.2, dur: 0.12, vol: 0.05, ataque: 0.01, tipo: 'triangle' });
     tom(ctx, destino, { freq: nota(DO + 16), quando: t + 0.29, dur: 0.18, vol: 0.05, ataque: 0.01, tipo: 'triangle' });
+  },
+
+  /**
+   * A buzina do conversível da Tia Liz: de carrão antigo, em três notas
+   * subindo na pentatônica (dó, mi, sol), redonda — um dente-de-serra bem
+   * abafado com o seno uma oitava abaixo (o "fom" grave de buzina de carro
+   * grande) —, e a última nota mais comprida, de festa.
+   */
+  buzinaDaTiaLiz: ({ ctx, destino, t }) => {
+    for (const [atraso, grau, dur] of [[0, 0, 0.11], [0.13, 4, 0.11], [0.26, 7, 0.26]] as const) {
+      const f = nota(DO - 12 + grau);
+      tom(ctx, destino, { freq: f, glide: f * 0.99, quando: t + atraso, dur, vol: 0.05, ataque: 0.01, tipo: 'sawtooth', abafo: 1400 });
+      tom(ctx, destino, { freq: f / 2, quando: t + atraso, dur, vol: 0.04, ataque: 0.01, tipo: 'sine' });
+    }
   },
 
   fotoFlash: ({ ctx, destino, t }) => {

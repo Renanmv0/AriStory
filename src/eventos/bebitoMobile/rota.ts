@@ -34,7 +34,7 @@ export const rotaDaEscola = (sentido: Sentido): boolean => sentido.includes('esc
 export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube') && !rotaDaEscola(sentido);
 /** as rotas novas (clube e escola), com a pista de 1000 m e os eventos postos à mão */
 export const rotaNova = (sentido: Sentido): boolean => rotaDoClube(sentido) || rotaDaEscola(sentido);
-export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano' | 'cookie' | 'jeanluc' | 'gina';
+export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano' | 'cookie' | 'jeanluc' | 'gina' | 'tializ';
 /** onde cada viagem COMEÇA (o par do `DESTINO`) */
 const ORIGEM: Record<Sentido, DestinoDeCarro> = {
   'ida': 'casa', 'volta': 'parque', 'parque-clube': 'parque', 'clube-parque': 'clube', 'casa-clube': 'casa', 'clube-casa': 'clube',
@@ -46,15 +46,19 @@ export const MORADORES: Record<DestinoDeCarro, readonly PersonagemNaEstrada[]> =
   parque: ['estella', 'mano', 'cookie', 'jeanluc'],
   clube: ['noel', 'josefina', 'capy', 'walter', 'gina'],
   casa: [],
-  escola: [],
+  // a Tia Liz e as três irmãs, no conversível (`docs/CARROS-DA-ESCOLA.md` §2); na cena, só depois de a Tia Liz
+  // ser conhecida na cantina (antes disso, a viagem segue sem encontro)
+  escola: ['tializ'],
 };
 /**
  * QUEM PODE APARECER numa viagem (decisão do Renan, 2026-11-15): cada um só
  * aparece nas rotas do lugar onde mora. Vale o DESTINO (indo ao parque, a
  * Estella; indo ao clube, o pessoal do clube); se as duas pontas têm gente
  * (parque ↔ clube, nos dois sentidos), sorteia entre todos; se o destino não
- * tem ninguém (a casa, a escola), vale quem mora de onde a viagem SAI. Casa ↔
- * escola fica sem encontro.
+ * tem ninguém (a casa), vale quem mora de onde a viagem SAI. Desde que a Tia
+ * Liz e as irmãs passaram a morar na escola (2026-11-17), casa ↔ escola tem
+ * encontro (só elas), e clube ↔ escola e parque ↔ escola sorteiam entre as duas
+ * pontas — o pedido do Renan.
  */
 export function candidatosAoEncontro(sentido: Sentido): readonly PersonagemNaEstrada[] {
   const destino = MORADORES[DESTINO[sentido]], origem = MORADORES[ORIGEM[sentido]];
@@ -377,7 +381,7 @@ function gerarRotaDaEscola(semente: number, sentido: Sentido): Rota {
       : [{ bioma: 'parque', de: 0, ate: 350 }];
   const trechos: Trecho[] = [...acessos, { bioma: 'avenida', de: 350, ate: 600 }, { bioma: 'escolar', de: 600, ate: comprimento }];
   const personagem = sortearEncontro(semente, sentido);
-  // (casa ↔ escola não tem encontro: ninguém mora na casa nem tem carro na escola)
+  // (casa ↔ escola: só quem mora na escola — a Tia Liz e as irmãs)
   const encontro = personagem ? { personagem, s: 430 + (rnd() - 0.5) * 6 } : undefined;
   // indo, a zona escolar é o fim; voltando, é o começo (e os eventos dela vêm primeiro)
   const tipos: Array<[TipoDeEvento, number]> = indo

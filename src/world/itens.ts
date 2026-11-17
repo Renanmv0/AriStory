@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PALETTE as P } from '../palette';
 import type { HoldPose, ItemDef } from '../core/types';
 import { biscoitoDaEstella, copoDeSuco, docinhoDoCookie, frisbee, iceCream, lancheDaMaquina, osso, type LancheDaMaquina } from './props';
+import { miniArepa } from './cozinhaDeAcampamento';
 import { borrifadorDeJardim, esguichoDeMangueira, pistolaDagua, regadorDeJardim, type EstiloDeRegador } from './regador';
 import {
   bermudaListrada, bermudaDeBolinhas, bermudaHavaiana, bermudaDeAbacaxi, bermudaDeMelancia, bermudaDeOndinhas,
@@ -138,6 +139,20 @@ export const ITENS = {
    * tromba quando cruza o Bebito de carrinho (`docs/CARRINHO-DO-COOKIE.md`).
    * Um para cada um, como o biscoitinho da Estella.
    */
+  /**
+   * A AREPITA DA TIA LIZ: a que ela passa pela janela do conversível na
+   * estrada, uma para cada um (`docs/CARROS-DA-ESCOLA.md` §2). É a mini arepa
+   * do budare da clareira, no tamanho de mão.
+   */
+  arepitaDaTiaLiz: {
+    id: 'arepita-tia-liz',
+    nome: 'Arepita da Tia Liz',
+    icone: '🫓',
+    tipo: 'mao',
+    nota: 'da Tia Liz · feita de manhã, ainda morninha',
+    holdPose: 'upright',
+    comivel: 'comer',
+  },
   docinhoDoCookie: {
     id: 'docinho-cookie',
     nome: 'Brigadeirinho do Cookie',
@@ -2454,6 +2469,7 @@ const MODELOS: Record<string, () => THREE.Object3D> = {
   'biscoito-estella': () => biscoitoDaEstella(),
   // (na mão ele vai maior que o de verdade: do tamanho real, some entre os dedos)
   'docinho-cookie': () => { const d = docinhoDoCookie(); d.scale.setScalar(1.7); return d; },
+  'arepita-tia-liz': () => { const a = miniArepa(); a.scale.setScalar(3.6); a.rotation.x = 0.9; return a; },
   'lanche-biscoito': () => lancheDaMaquina('biscoito'),
   'lanche-chocolate': () => lancheDaMaquina('chocolate'),
   'lanche-suco': () => lancheDaMaquina('suco'),

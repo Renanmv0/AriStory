@@ -4,6 +4,7 @@ import type { SceneDef } from '../core/types';
 import { PALETTE as P } from '../palette';
 import { busStop, cloud, lamp, meioFio, sebe, tree } from '../world/props';
 import { OnibusDaCidade } from '../world/onibusDaCidade';
+import { ConversivelDaTiaLiz, CONVERSIVEL } from '../world/conversivelDaTiaLiz';
 import { Vento } from '../core/shaders';
 import { toon } from '../core/materials';
 import { cascaDePinus, hortensias, margaridas, type MoitaDeMargaridas, type PeDePlanta } from '../world/plantasDeJardim';
@@ -517,7 +518,17 @@ export const escolaPatio: SceneDef = {
     const sorte = sorteio(4242);
     const cores = [P.carroVermelho, P.carroAmarelo, P.carroMenta, P.carroLilas, P.escolaCaixilho, P.escolaFerro];
     // (a vizinha da vaga do coração também fica livre: com um carro ali, a câmera de sempre via o coração pela metade)
-    const reservadas = (xc: number, fila: number): boolean => fila === 1 && [2.6, 5.2, -2.6, -5.2].some((r) => Math.abs(xc - r) < 0.1);
+    // O CONVERSÍVEL DA TIA LIZ, depois do primeiro encontro na estrada (`docs/CARROS-DA-ESCOLA.md` §2): na vaga
+    // da fila 1 depois da reservada da descida (a 7,8), vazio (as quatro estão na escola), de ré, com o arco das
+    // estrelas e a cara para o corredor — é de lá que a câmera olha
+    const conversivelAqui = g.temMemoria('tializ-na-estrada');
+    const VAGA_DO_CONVERSIVEL = { x: 7.8, z: (FILA_1.z0 + FILA_1.z1) / 2 + 0.1 };
+    if (conversivelAqui) {
+      doLote(VAGA_DO_CONVERSIVEL.x).add(w.place(new ConversivelDaTiaLiz(true).group, VAGA_DO_CONVERSIVEL.x, 0, VAGA_DO_CONVERSIVEL.z, 0));
+      w.blockBox(VAGA_DO_CONVERSIVEL.x, VAGA_DO_CONVERSIVEL.z, CONVERSIVEL.meiaLargura + 0.02, CONVERSIVEL.meio - 0.05);
+      w.root.userData.conversivelNaEscola = VAGA_DO_CONVERSIVEL;
+    }
+    const reservadas = (xc: number, fila: number): boolean => fila === 1 && [2.6, 5.2, -2.6, -5.2, ...(conversivelAqui ? [VAGA_DO_CONVERSIVEL.x] : [])].some((r) => Math.abs(xc - r) < 0.1);
     for (const [lista, fila, giro, n] of [[VAGAS_1, 1, Math.PI, 7], [VAGAS_2, 2, 0, 9]] as const) {
       const livres = lista.map(([x0, x1]) => (x0 + x1) / 2).filter((xc) => !reservadas(xc, fila));
       for (let k = 0; k < n && livres.length; k++) {

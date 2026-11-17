@@ -514,6 +514,13 @@ export class ConversivelDaTiaLiz {
   private relogio = 0;
   private velocidade = 0;
   private proximaTorcida = 1.5;
+  private conversa = false;
+  /** o confete da torcida: um lote de papeizinhos que sobe do banco de trás e cai em volta dos dois carros */
+  private readonly confete: THREE.InstancedMesh | null = null;
+  private readonly papeis: Array<{ p: THREE.Vector3; v: THREE.Vector3; giro: THREE.Vector3; idade: number }> = [];
+  private readonly voando: Array<{ peca: THREE.Object3D; t: number; de: THREE.Vector3; para: THREE.Vector3 }> = [];
+  /** quantos confetes já subiram (o teste confere) */
+  confetes = 0;
 
   constructor(estacionado = false) {
     this.group.userData.peca = 'conversivel-da-tia-liz';
@@ -732,14 +739,67 @@ export class ConversivelDaTiaLiz {
         this.lata.add(b.group);
       }
       this.irmas.push(luna, sol, estrella);
+      // o confete: 90 papeizinhos nas cores dos Gatitos e da Venezuela (cor por cópia), parados fora de vista
+      const conf = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.06, 0.035), toon(0xffffff, { doubleSide: true }), 90);
+      conf.name = 'confete'; conf.frustumCulled = false; conf.userData.semSombra = true;
+      const cores = [AMARELO, AZUL, P.venezuelaVermelho, P.gatitosBranco];
+      const zero = new THREE.Matrix4().makeScale(0, 0, 0), cor = new THREE.Color();
+      for (let i = 0; i < 90; i++) { conf.setMatrixAt(i, zero); conf.setColorAt(i, cor.setHex(cores[i % cores.length])); }
+      this.group.add(conf);
+      this.confete = conf;
       this.update(0, 0, false);
     } else {
       fundirComoFundo(this.group);
     }
   }
 
+  /** a Sol e a Estrella torcem pulando e a Luna acena, tímida; o confete sobe do banco de trás */
+  comemorar(): void {
+    if (this.irmas.length < 3) return;
+    this.irmas[0].ficarTimida(2.4);
+    this.irmas[1].torcer(3);
+    this.irmas[1].saltar();
+    this.irmas[2].torcer(3);
+    this.tiaLiz?.acenar(2);
+    for (let i = 0; i < 90; i++) {
+      const a = Math.random() * Math.PI * 2, f = 1.4 + Math.random() * 1.8;
+      // (sobe do banco de trás e voa para o lado do Bebito, o −X)
+      this.papeis[i] = {
+        p: new V((Math.random() - 0.5) * 0.6, 1.2, C.bancoDeTras + (Math.random() - 0.5) * 0.6),
+        v: new V(-1.4 + Math.cos(a) * f * 0.6, 3.2 + Math.random() * 1.6, Math.sin(a) * f * 0.6),
+        giro: new V(Math.random() * 8, Math.random() * 8, Math.random() * 8), idade: 0,
+      };
+    }
+    this.confetes += 90;
+  }
+
+  /** as três se encolhem de vergonha (a Luna mais) */
+  ficarTimidas(): void { for (const b of this.irmas) b.ficarTimida(2.2); }
+
+  /** a Tia Liz acena */
+  acenar(): void { this.tiaLiz?.acenar(2); }
+
+  /**
+   * as duas arepitas saem da cesta e voam, uma atrás da outra, até `alvo` (no
+   * mundo: a janela do Bebito) — o mesmo voo dos brigadeirinhos do Cookie
+   */
+  jogarArepitas(alvo: THREE.Vector3): void {
+    this.group.updateMatrixWorld(true);
+    const de = new V(0.02, C.banco + 0.3, C.bancoDaFrente + 0.06);
+    const para = this.group.worldToLocal(alvo.clone());
+    for (let i = 0; i < 2; i++) {
+      const a = miniArepa(); a.scale.setScalar(4); a.visible = false;
+      this.group.add(a);
+      this.voando.push({ peca: a, t: -i * 0.3, de: de.clone(), para: para.clone().add(new V(0, 0, i ? -0.25 : 0.25)) });
+    }
+  }
+
+  /** quantas arepitas estão no ar (o teste confere) */
+  get arepitasNoAr(): number { return this.voando.length; }
+
   update(dt: number, distancia: number, conversando: boolean): void {
     this.relogio += dt;
+    this.conversa = conversando;
     const v = dt > 0 ? distancia / dt : 0;
     this.velocidade += (v - this.velocidade) * Math.min(1, dt * 4);
     const anda = preso(this.velocidade / 7);
@@ -767,6 +827,42 @@ export class ConversivelDaTiaLiz {
       }
       for (const b of this.irmas) b.update(dt);
     }
-    this.tiaLiz?.update(dt);
+    // conversando, a Tia Liz vira a cabeça para quem parou do lado (o −X do carro)
+    if (this.tiaLiz) {
+      if (this.conversa) {
+        this.group.updateMatrixWorld(true);
+        this.tiaLiz.olharPara(this.group.localToWorld(new V(-3.2, 1.5, 0.3)));
+      } else this.tiaLiz.olharPara(null);
+      this.tiaLiz.update(dt);
+    }
+
+    // o confete: sobe, abre, e cai devagar girando (o ar segura o papel)
+    if (this.confete) {
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), um = new V(1, 1, 1);
+      for (let i = 0; i < 90; i++) {
+        const c = this.papeis[i];
+        if (!c || c.idade > 3.2 || c.p.y < 0.02) { m.makeScale(0, 0, 0); this.confete.setMatrixAt(i, m); continue; }
+        c.idade += dt;
+        c.v.y -= 6.5 * dt; c.v.multiplyScalar(1 - Math.min(1, dt * 1.6));
+        if (c.v.y < -0.9) c.v.y = -0.9;
+        c.p.addScaledVector(c.v, dt);
+        q.setFromEuler(e.set(c.giro.x * c.idade, c.giro.y * c.idade, c.giro.z * c.idade));
+        m.compose(c.p, q, um);
+        this.confete.setMatrixAt(i, m);
+      }
+      this.confete.instanceMatrix.needsUpdate = true;
+    }
+
+    // as arepitas voando: o arco até a janela do Bebito, girando
+    for (let i = this.voando.length - 1; i >= 0; i--) {
+      const d = this.voando[i];
+      d.t += dt / 0.85;
+      if (d.t < 0) continue;
+      if (d.t >= 1) { this.group.remove(d.peca); this.voando.splice(i, 1); continue; }
+      d.peca.visible = true;
+      d.peca.position.lerpVectors(d.de, d.para, d.t);
+      d.peca.position.y += Math.sin(d.t * Math.PI) * 1.0;
+      d.peca.rotation.set(d.t * 6, d.t * 3, 0);
+    }
   }
 }
