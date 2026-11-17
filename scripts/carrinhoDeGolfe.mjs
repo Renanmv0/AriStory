@@ -2,7 +2,7 @@
  * O CARRINHO DE GOLFE DA GINA (docs/CARRINHO-DE-GOLFE-DA-GINA.md).
  *
  * MODELO   parado no Villa Lobos pelo atalho `?golfe=x,z,giro`, com ela deitada no
- *          banco: nada abaixo do chão, menor que o Bebito, as pernas escondidas,
+ *          banco: nada abaixo do chão, menor que o Bebito, as pernas DOBRADAS no banco,
  *          o PESCOÇO SAINDO DO TOLDO (a cabeça acima dele) dirigindo, e esticada
  *          (`&esticando`) a cabeça POR BAIXO do toldo e para fora da lateral, na
  *          altura de uma janela, com o carimbo na boca; fotos de todos os lados,
@@ -83,10 +83,13 @@ try {
         const dentro = (x) => { for (let o = x; o; o = o.parent) if (o === gina) return true; return false; };
         const cabeca = c.gina ? c.group.worldToLocal(c.gina.cabecaDaGina.getWorldPosition(new V())).toArray().map((v) => +v.toFixed(3)) : null;
         const carimbo = c.gina ? c.group.worldToLocal(c.pontaDoCarimbo()).toArray().map((v) => +v.toFixed(3)) : null;
-        // as pernas: as malhas do corpo dela abaixo do banco que ainda aparecem
+        // as pernas: nenhuma malha do corpo dela abaixo do banco (elas DOBRAM em cima dele, e não atravessam o carrinho)
         let pernasAVista = 0;
         if (gina) gina.traverse((x) => { if (!x.isMesh) return; let vis = true; for (let o = x; o; o = o.parent) if (!o.visible) vis = false; if (vis && c.group.worldToLocal(x.getWorldPosition(new V())).y < 0.6) pernasAVista++; });
-        return { tudo: caixa(c.group), lata: caixa(c.group, (x) => !dentro(x)), cabeca, carimbo, pernasAVista, malhas, triangulos: Math.round(tri) };
+        // e os cascos dobrados (a malha escura do casco, deitada) aparecem na altura do banco
+        const cascos = [];
+        if (gina) gina.traverse((x) => { if (x.isMesh && x.geometry.type === 'CylinderGeometry' && x.geometry.parameters.height === 0.11 && x.visible) cascos.push(+c.group.worldToLocal(x.getWorldPosition(new V())).y.toFixed(2)); });
+        return { tudo: caixa(c.group), lata: caixa(c.group, (x) => !dentro(x)), cabeca, carimbo, pernasAVista, cascos, malhas, triangulos: Math.round(tri) };
       });
       return { page, foto, medir };
     };
@@ -98,7 +101,8 @@ try {
       assert.ok(m.tudo.min[1] > -0.03, 'nada abaixo do chão');
       const comprido = m.lata.max[2] - m.lata.min[2], largo = m.lata.max[0] - m.lata.min[0];
       assert.ok(comprido < 3.6 && largo < 1.7, `menor que o Bebito (${comprido.toFixed(2)} × ${largo.toFixed(2)})`);
-      assert.equal(m.pernasAVista, 0, 'as pernas dela somem embaixo do corpo');
+      assert.equal(m.pernasAVista, 0, 'nada dela atravessa o banco para baixo');
+      assert.ok(m.cascos.length === 4 && m.cascos.every((y) => y > 0.8 && y < 1.0), `as quatro pernas dobradas em cima do banco, com os cascos à vista (${m.cascos})`);
       assert.ok(m.cabeca[1] > TOLDO + 0.4, `dirigindo, o pescoço sai pelo toldo (a cabeça em ${m.cabeca[1]})`);
       await foto([-5.25, 4.8, 10], [-1.75, 1.6, 1], 'camera-do-encontro');
       await foto([2.8, 2.4, 5], [0, 1.2, 0.3], 'frente-diagonal');
@@ -109,6 +113,8 @@ try {
       await foto([-0.5, 7, 1.4], [0, 1, -0.2], 'de-cima');
       await foto([-1.6, 2.9, 2.4], [-0.2, 2.4, 0.3], 'rosto');
       await foto([0.9, 1.75, 1.6], [0.1, 1.15, 0.55], 'painel');
+      await foto([-2.6, 1.7, 0.2], [-0.24, 0.95, -0.42], 'pernas-dobradas');
+      await foto([2.4, 1.9, -1.2], [-0.24, 0.95, -0.42], 'pernas-dobradas-do-outro-lado');
       await page.evaluate(() => { window.jogo.setCameraOmbro(null); window.jogo.focusCamera(window.golfe.group); window.jogo.setZoom(2.6); });
       await page.waitForTimeout(900);
       await page.screenshot({ path: `${OUT}-isometrica.png` });

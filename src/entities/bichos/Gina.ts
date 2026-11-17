@@ -55,7 +55,7 @@ export class Gina extends Bicho {
   private readonly olhos: THREE.Mesh[] = [];
   private readonly patas: THREE.Mesh[] = [];
   private readonly gomosDoRabo: THREE.Group[] = [];
-  /** as pernas inteiras (a perna, o joelho e o casco): no carrinho elas somem embaixo do corpo */
+  /** as pernas inteiras (a perna, o joelho e o casco, de três em três): no carrinho elas dobram embaixo do corpo */
   private readonly pernasInteiras: THREE.Mesh[] = [];
 
   /** a pose no carrinho de golfe; `null` (o de sempre) é a Gina da guarita */
@@ -459,7 +459,7 @@ export class Gina extends Bicho {
 
     /**
      * NO CARRINHO (só com a pose ligada; a Gina da guarita nunca entra aqui):
-     * sentada no banco comprido, as pernas somem embaixo do corpo, e o pescoço
+     * deitada no banco comprido, as pernas DOBRADAS embaixo do corpo, e o pescoço
      * sai pelo furo do toldo. Para carimbar, ele INCLINA PARA A ESQUERDA (o lado
      * do Bebito) e desce — `rotation.z` positivo leva o `+Y` do gomo para o `−X`
      * —, mais nos gomos de cima, que já estão acima do toldo; a cabeça vira para
@@ -468,7 +468,19 @@ export class Gina extends Bicho {
      */
     const carro = this.noCarrinho;
     if (carro) {
-      for (const p of this.pernasInteiras) p.visible = false;
+      // as pernas DOBRADAS embaixo do corpo, como girafa deitada: cada uma deita no comprimento, encurtada,
+      // rente à beira da barriga, com o joelho na frente e o casco atrás aparecendo na beirada do banco
+      for (let i = 0; i < 4; i++) {
+        const [perna, joelho, cascoM] = this.pernasInteiras.slice(i * 3, i * 3 + 3);
+        const lado = i % 2 === 0 ? -1 : 1, frente = i < 2 ? 1 : -1;
+        const x = lado * 0.22, y = 1.1, z = frente * 0.26;
+        perna.position.set(x, y, z);
+        perna.rotation.set(Math.PI / 2, 0, 0);
+        perna.scale.set(1, 0.38, 1);
+        joelho.position.set(x, y + 0.01, z + 0.26);
+        cascoM.position.set(lado * 0.25, y - 0.01, z - 0.27);
+        cascoM.rotation.set(Math.PI / 2, 0, lado * 0.25);
+      }
       this.corpo.position.y = Math.sin(fase * 1.1) * 0.01;
       const k = carro.esticar;
       for (let i = 0; i < this.gomos.length; i++) {

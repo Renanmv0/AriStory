@@ -39,8 +39,10 @@ lado do Bebito é o `−X`.
 ### A Gina no carrinho (`PoseDaGinaNoCarrinho`, em `entities/bichos/Gina.ts`)
 
 Ela vai do tamanho de sempre, deitada no banco comprido (um tico para o lado do
-Bebito), as pernas sumidas embaixo do corpo, e o pescoço sai pelo recorte do
-toldo, com a cabeça e o quepe lá em cima.
+Bebito), com as PERNAS DOBRADAS embaixo do corpo, como girafa deitada (pedido
+do Renan: primeiro elas sumiam): cada uma deita no comprimento, rente à beira da
+barriga, com o joelho na frente e o casco atrás à vista na beirada do banco. O
+pescoço sai pelo recorte do toldo, com a cabeça e o quepe lá em cima.
 
 - **Esticar até a janela** (`esticarAteAJanela`): o gomo de baixo DEITA o
   pescoço para o lado, por baixo do toldo e pelo recorte, e os outros descem de
@@ -103,7 +105,7 @@ fundo, e o toldo dele não caberia embaixo dela.
 ## O que foi testado (2026-11-17)
 
 - `carrinhoDeGolfe.mjs` inteiro: o modelo (nada abaixo do chão, 3,3 × 1,5 m,
-  as pernas escondidas, a cabeça a 2,4 m dirigindo — o pescoço passa do toldo,
+  as pernas dobradas em cima do banco (os quatro cascos à vista), a cabeça a 2,4 m dirigindo — o pescoço passa do toldo,
   em 1,78 —, e esticada a cabeça por baixo do toldo e o carimbo a 1,4 m de
   altura, 1,6 m para o lado; fotos de todos os lados, de cima, do rosto, do
   painel, esticada e vazio), o lote do clube (só depois da memória, a faixa de

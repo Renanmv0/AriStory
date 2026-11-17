@@ -1321,8 +1321,11 @@ molde de veículo ABERTO dos lados com um bicho de PESCOÇO que não cabe em tet
 - **Cabeça em cadeia girada**: com o pescoço tombado 1,8 rad para o lado, girar
   a cabeça em `XYZ` misturava tudo. No carrinho ela usa a ordem `ZYX` (levanta
   o nariz, vira para a janela, desfaz o tombo), só dentro do `if` da pose.
-- **Pernas que somem são TODAS as malhas da perna** (a perna, o joelho, o
-  casco): a lista `patas` do bicho só tinha a perna.
+- **Bicho grande deitado num banco dobra as pernas**, em vez de sumir com elas
+  (o Renan perguntou: "e as perninhas dela?"): cada perna deita no comprimento,
+  encurtada, com o joelho na frente e o casco atrás à vista. E a pose mexe em
+  TODAS as malhas da perna (a perna, o joelho, o casco): a lista `patas` do
+  bicho só tinha a perna.
 - **Painel que conta o ofício**: rádio comunicador, garrafa térmica e a
   prancheta de sócios em canvas — é o que diz "portaria" de perto.
 - **O presente que muda o Bebito**: a ficha ganhou uma vaga nova
