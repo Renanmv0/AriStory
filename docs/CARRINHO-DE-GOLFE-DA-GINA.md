@@ -100,9 +100,33 @@ da fileira da Josefina (`x = −46,2`, `z = −1`), vazio (a dona está na guari
 com o quepe reserva esquecido no banco. A cobertura do lote fica nas vagas do
 fundo, e o toldo dele não caberia embaixo dela.
 
-## O que foi testado
+## O que foi testado (2026-11-17)
 
-(preenchido depois da validação)
+- `carrinhoDeGolfe.mjs` inteiro: o modelo (nada abaixo do chão, 3,3 × 1,5 m,
+  as pernas escondidas, a cabeça a 2,4 m dirigindo — o pescoço passa do toldo,
+  em 1,78 —, e esticada a cabeça por baixo do toldo e o carimbo a 1,4 m de
+  altura, 1,6 m para o lado; fotos de todos os lados, de cima, do rosto, do
+  painel, esticada e vazio), o lote do clube (só depois da memória, a faixa de
+  pedestres livre) e a estrada em duas viagens (na primeira o carimbo chega a
+  0,5 m do selo, o selo fica no vidro do Bebito da cena e na ficha do save, a
+  memória, o save de verdade intacto; na segunda, já sócios, sem carimbo novo e
+  com a fala do "já é sócio"), com a tela deitada e no celular em pé.
+- A vaga nova na ficha do Bebito: `bebitoMobile.mjs SO=ficha` (o encaixe com
+  nome, o selo montando numa ficha só com ele, o save antigo recebendo a de
+  fábrica).
+- `musica.mjs`: o carimbo sem estalo (o "tum" com pico de 0,108 e o plim de
+  0,049, medidos no `.wav`).
+- Regressão: `guarita.mjs` e `chamados.mjs` (a Gina da guarita e a da estufa
+  não mudam), `casaClube.mjs` (as rotas, com a Gina por igual entre os cinco do
+  clube, e os encontros), `motoCapy.mjs` (agora procura a semente do Capy, que
+  mudou; a do celular já estava velha, numa rota do parque),
+  `viagemClube.mjs` (agora só exige o Noel quando a rota sorteia ele),
+  `chegadaClube.mjs` e `estacionamentoClube.mjs`.
+- As peças são de quina, tubo e extrusão: o `zfighting.mjs` (com o carrinho na
+  lista) não acha caixa reta para medir, como na moto do Capy.
+- **O peso**: o carrinho com ela, 96 malhas e ~22 mil triângulos. Na conversa
+  da estrada, ~410 desenhos e ~336 mil triângulos. No clube, a vista de entrada
+  não muda (o lote fica fora da tela).
 
 ## Ideias que ficam para depois
 

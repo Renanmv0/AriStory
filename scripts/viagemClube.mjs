@@ -36,7 +36,7 @@ async function percorrer(p,sentido,motorista,prefixo){
  assert.equal(await p.evaluate(()=>window.aristoryBebitoMobile.viagem.rota.sentido),sentido);await pose(p,motorista);
  const fotos=new Set();let interna=false,passouNoel=false,resumo,primeiraFala=false,ultimoNoel=-Infinity;
  // (quem aparece sai do sorteio da rota; com mais moradores nas duas pontas, nem toda viagem traz o Noel)
- const comNoel=await p.evaluate(()=>window.aristoryBebitoMobile.viagem.rota.encontro?.personagem==='noel');
+ const quemVem=await p.evaluate(()=>window.aristoryBebitoMobile.viagem.rota.encontro?.personagem??null),comNoel=quemVem==='noel';
  const inicio=Date.now();
  while(Date.now()-inicio<240000){
   const e=await p.evaluate(()=>{const g=window.jogo,v=window.aristoryBebitoMobile.viagem,n=g.current.world.root.userData.novidadesDaViagem?.noel;return{cena:g.idDaCena,s:v.estado?.s,fase:v.estado?.fase,v:v.estado?.v,l:v.estado?.l,visao:v.estado?.visao,noel:n?{...n.estado}:null,vistos:{...v.estado?.vistos},tropecos:v.estado?.tropecos,sustos:v.estado?.sustos,coracoes:v.estado?.coracoes};});
@@ -56,7 +56,7 @@ async function percorrer(p,sentido,motorista,prefixo){
  }
  assert.ok(resumo,'a viagem chegou');if(comNoel)assert.ok(passouNoel&&primeiraFala,'encontro inteiro aconteceu');else console.log(sentido,'sem o Noel nesta rota: o encontro dela é conferido no casaClube e nos testes de cada veículo.');
  console.log('viagem',sentido,resumo);assert.equal(resumo.tropecos,0);assert.equal(resumo.sustos,0);
- for(const tipo of ['lombada','travessia','rega','noel','obra','onda-verde','semaforo','poca'])assert.ok(resumo.vistos[tipo],tipo+' aconteceu');
+ for(const tipo of ['lombada','travessia','rega',...(quemVem?[quemVem]:[]),'obra','onda-verde','semaforo','poca'])assert.ok(resumo.vistos[tipo],tipo+' aconteceu');
  assert.ok(resumo.vistos['onda-aproveitada'],'piloto aproveitou a aceleração da onda verde');
  await espera(p,()=>window.jogo.scene.getObjectByName('bebito-mobile')?.userData.chegada?.fase==='concluida');
  const chegada=await p.evaluate(()=>{const g=window.jogo,c=g.scene.getObjectByName('bebito-mobile');return{motorista:c.userData.chegada.motorista,x:c.position.x,z:c.position.z,livre:!g.player.locked&&!g.player.riding,clube:g.flag('bebito:carro-no-clube'),parque:g.flag('bebito:carro-no-parque')};});
