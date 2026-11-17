@@ -9,6 +9,7 @@ import { LambretaDaEstella } from '../../world/lambretaDaEstella';
 import { KombiDoMano } from '../../world/kombiDoMano';
 import { CarrinhoDoCookie } from '../../world/carrinhoDoCookie';
 import { DoisCavalosDoJeanLuc } from '../../world/doisCavalosDoJeanLuc';
+import { CarrinhoDeGolfeDaGina } from '../../world/carrinhoDeGolfeDaGina';
 import { ITENS } from '../../world/itens';
 import { ARI, RENAN } from '../../characters/cast';
 import type { NaPista } from '../../world/estrada';
@@ -18,9 +19,9 @@ const suave = (t: number): number => { const k = Math.max(0, Math.min(1, t)); re
 
 /** Uma cena no relógio da viagem, isolada dos obstáculos e com as faixas reservadas. */
 export class EncontroNaEstrada {
-  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie | DoisCavalosDoJeanLuc;
-  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie', jeanluc: 'Jean-Luc' } as const)[this.personagem]; }
-  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘', jeanluc: '🦆' } as const)[this.personagem]; }
+  readonly carro: CarroDoNoel | CarroDaJosefina | MotoDoCapy | FoodTruckDoWalter | LambretaDaEstella | KombiDoMano | CarrinhoDoCookie | DoisCavalosDoJeanLuc | CarrinhoDeGolfeDaGina;
+  get nome(): string { return ({ noel: 'Noel', capy: 'Capy', walter: 'Walter', josefina: 'Josefina', estella: 'Estella', mano: 'Mano', cookie: 'Cookie', jeanluc: 'Jean-Luc', gina: 'Gina' } as const)[this.personagem]; }
+  get icone(): string { return ({ noel: '🦃', capy: '🛵', walter: '🌭', josefina: '🐢', estella: '🧵', mano: '🍦', cookie: '🐘', jeanluc: '🦆', gina: '🦒' } as const)[this.personagem]; }
   readonly estado = { fase: 'esperando' as Fase, relativo: -28, tempo: 0, s: 0 };
   private falas = false;
   private anterior: THREE.Vector3 | null = null;
@@ -28,11 +29,21 @@ export class EncontroNaEstrada {
   parada: number | null = null;
   /** a tomada de perto do rosto do Jean-Luc (as falas dos óculos escuros) */
   private dePerto = false;
+  /** o carrinho da Gina ENCOSTA no Bebito na parada (0 na faixa dela, 1 encostado), para o pescoço alcançar a janela */
+  private encosto = 0;
+  /** a tomada do carimbo no para-brisa (a Gina) */
+  private noCarimbo = false;
+  /**
+   * cola o selo de sócio no para-brisa do Bebito da cena, na hora (a cena liga isto no carro dela);
+   * devolve `false` se o vidro já tinha selo
+   */
+  aoCarimbar: (() => boolean) | null = null;
   constructor(private readonly g: GameAPI, readonly s: number, private readonly naPista: NaPista, private readonly rumo: (s: number) => number, private readonly carona: string, readonly personagem: PersonagemNaEstrada = 'noel') {
     this.carro = personagem === 'noel' ? new CarroDoNoel() : personagem === 'capy' ? new MotoDoCapy()
       : personagem === 'walter' ? new FoodTruckDoWalter() : personagem === 'estella' ? new LambretaDaEstella()
         : personagem === 'mano' ? new KombiDoMano() : personagem === 'cookie' ? new CarrinhoDoCookie()
-          : personagem === 'jeanluc' ? new DoisCavalosDoJeanLuc() : new CarroDaJosefina();
+          : personagem === 'jeanluc' ? new DoisCavalosDoJeanLuc() : personagem === 'gina' ? new CarrinhoDeGolfeDaGina()
+            : new CarroDaJosefina();
     this.carro.group.visible = false;
   }
   get ativo(): boolean { return this.estado.fase !== 'esperando' && this.estado.fase !== 'feito'; }
@@ -51,10 +62,11 @@ export class EncontroNaEstrada {
         mano: 'Uma musiquinha de sorveteiro chegando… é o Mano de Kombi!',
         cookie: 'Um carrinho cor-de-rosa com duas orelhas pra fora… é o Cookie!',
         jeanluc: 'Um 2CV azul, uma boina e um par de óculos escuros… é o Jean-Luc!',
+        gina: 'Um apito, um giroflex e um pescoço saindo pelo toldo… é a Gina de carrinho de golfe!',
       } as const)[this.personagem], this.icone);
       // (o Mano chega tocando a musiquinha da Kombi, e o Cookie apertando a corneta com a tromba)
       this.g.som(this.personagem === 'mano' ? 'musiquinhaDoSorvete' : this.personagem === 'cookie' ? 'cornetaDoCookie'
-        : this.personagem === 'jeanluc' ? 'buzinaDoJeanLuc' : 'buzinaDoBebito');
+        : this.personagem === 'jeanluc' ? 'buzinaDoJeanLuc' : this.personagem === 'gina' ? 'apito' : 'buzinaDoBebito');
       if (this.carro instanceof CarrinhoDoCookie) this.carro.buzinar();
     }
     if (e.fase === 'feito') return;
@@ -63,12 +75,14 @@ export class EncontroNaEstrada {
       e.fase = 'ultrapassando'; e.tempo = 0;
     }
     if (e.fase === 'ultrapassando') {
-      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2, jeanluc: 4.6 } as const)[this.personagem];
+      const duracao = ({ noel: 2.7, capy: 4, walter: 4.6, josefina: 5, estella: 4.4, mano: 4.8, cookie: 5.2, jeanluc: 4.6, gina: 5.0 } as const)[this.personagem];
       e.relativo = -28 + 42 * suave(e.tempo / duracao);
       if (e.tempo >= duracao) {
         e.fase = 'freando'; e.tempo = 0;
         this.inicioDaFreada = viagem.s + e.relativo;
-        this.parada = this.inicioDaFreada + 8.75;
+        // (a Gina para um tico À FRENTE do Bebito: a cabeça dela, que sai pela lateral do carrinho, fica do lado
+        // do para-brisa dele)
+        this.parada = this.inicioDaFreada + 8.75 - (this.personagem === 'gina' ? 1.5 : 0);
       }
     } else if (e.fase === 'freando') {
       // Ele freia adiante e o Bebito alcança a parada; nunca desliza de ré
@@ -83,6 +97,7 @@ export class EncontroNaEstrada {
         if (this.personagem === 'mano') this.g.som('musiquinhaDoSorvete');
         if (this.carro instanceof CarrinhoDoCookie) { this.g.som('cornetaDoCookie'); this.carro.buzinar(); }
         if (this.personagem === 'jeanluc') this.g.som('buzinaDoJeanLuc');
+        if (this.personagem === 'gina') this.g.som('apito');
       });
     } else if (e.fase === 'saindo') {
       e.relativo = 4 * e.tempo + 3.5 * e.tempo * e.tempo;
@@ -97,12 +112,16 @@ export class EncontroNaEstrada {
           mano: 'E lá vai a Kombi, tocando a musiquinha até sumir.',
           cookie: 'O carrinho foi embora quicando, com as orelhas dando tchau.',
           jeanluc: 'Lá vai o 2CV, chacoalhando, com a boina no vento e os óculos brilhando.',
+          gina: 'Lá vai a Gina de volta pra guarita, apitando, com o pescoço acima de todo mundo.',
         } as const)[this.personagem], this.icone);
       }
     }
     e.s = viagem.s + e.relativo;
     this.carro.group.visible = e.fase !== 'feito';
-    const p = this.naPista(e.s, -1.75);
+    // (o carrinho da Gina encosta devagar no fim da freada e se afasta antes de sair)
+    const encostar = this.personagem === 'gina' && (e.fase === 'falando' || (e.fase === 'freando' && e.tempo > 1.4));
+    this.encosto += ((encostar ? 1 : 0) - this.encosto) * Math.min(1, dt * 1.6);
+    const p = this.naPista(e.s, -1.75 + 0.85 * THREE.MathUtils.smoothstep(this.encosto, 0, 1));
     this.carro.group.position.copy(p); this.carro.group.rotation.y = this.rumo(e.s);
     this.carro.update(dt, this.anterior ? this.anterior.distanceTo(p) : 0, e.fase === 'falando');
     this.anterior = p;
@@ -203,6 +222,48 @@ export class EncontroNaEstrada {
       await g.say(['Au revoir! Eu vou na frente, que o caixote escorrega na curva.'], 'Jean-Luc');
       return;
     }
+    if (this.personagem === 'gina') {
+      const golfe = this.carro as CarrinhoDeGolfeDaGina;
+      const SELO = 'selo-socio-do-clube';
+      const jaSocio = g.fichaDoBebitoMobile().vagas.paraBrisa.includes(SELO);
+      g.som('apito');
+      await g.say(['Priii! Encosta aí, bebitos. Fiscalização do clube!'], 'Gina');
+      await g.say(['Gina?! Fiscalização na estrada?'], this.carona);
+      await g.say(['Na estrada não tem guarita, então eu trouxe a portaria comigo. Carteirinha, por favor.'], 'Gina');
+      if (!jaSocio) {
+        await g.say(['Carteirinha? A gente nunca teve carteirinha…'], this.carona);
+        await g.say(['Agora vai ter.'], 'Gina');
+        // o pescoço passa por baixo do toldo e a cabeça sai pela lateral, com o carimbo na boca, até o para-brisa
+        golfe.esticarAteAJanela(true);
+        this.noCarimbo = true;
+        await g.wait(2.4);
+        golfe.carimbar();
+        g.som('carimbo');
+        await g.wait(0.25);
+        this.aoCarimbar?.();
+        const ficha = g.fichaDoBebitoMobile();
+        ficha.vagas.paraBrisa[0] = SELO;
+        g.salvarFichaDoBebitoMobile(ficha);
+        g.soltarCoracoes();
+        g.toast('O selo de SÓCIO DO CLUBE ficou colado no para-brisa do Bebito!', '🦒');
+        await g.wait(1.2);
+        golfe.esticarAteAJanela(false);
+        this.noCarimbo = false;
+        await g.say(['Pronto: sócios. Com o selo no vidro, a cancela do clube nem pergunta. Ordem da casa.'], 'Gina');
+      } else {
+        await g.say(['A gente já é sócio, olha o selo no vidro!'], this.carona);
+        // ela confere de perto, com o pescoço até o para-brisa, e volta
+        golfe.esticarAteAJanela(true);
+        this.noCarimbo = true;
+        await g.wait(2.0);
+        golfe.esticarAteAJanela(false);
+        this.noCarimbo = false;
+        await g.say(['Conferido. Selo em dia, cabelo seco: podem seguir.'], 'Gina');
+      }
+      g.som('apito');
+      await g.say(['Agora eu volto pra guarita, que portaria não fica sozinha muito tempo. Aproveitem o dia, viu?'], 'Gina');
+      return;
+    }
     if (this.personagem === 'estella') {
       await g.say(['Bebitos! A coleção nova ficou pronta, e eu resolvi levar TUDO pra loja de uma vez só!'], 'Estella');
       await g.say(['Estella… isso tudo cabe na loja?'], this.carona);
@@ -223,6 +284,14 @@ export class EncontroNaEstrada {
   }
   /** Vista frontal dos dois carros; também funciona no celular em pé. */
   camera(viagem: { s: number }): { de: THREE.Vector3; para: THREE.Vector3 } {
+    if (this.noCarimbo && this.carro instanceof CarrinhoDeGolfeDaGina && this.carro.gina) {
+      // o carimbo no para-brisa: de frente para os dois carros, perto, olhando o vão entre eles
+      const alvo = this.carro.pontaDoCarimbo();
+      const emPe = window.innerWidth / window.innerHeight < 0.8;
+      const sDoCarimbo = this.estado.s - 0.1;
+      const de = this.naPista(sDoCarimbo + (emPe ? 5.2 : 4.0), 0.6, alvo.y + (emPe ? 1.6 : 1.1));
+      return { de, para: alvo.clone().add(new THREE.Vector3(0, -0.15, 0)) };
+    }
     if (this.dePerto && this.carro instanceof DoisCavalosDoJeanLuc && this.carro.jeanLuc) {
       // de frente e um tico do lado do Bebito, na altura dos óculos
       const grupo = this.carro.group;

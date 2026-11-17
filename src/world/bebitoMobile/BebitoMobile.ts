@@ -413,7 +413,7 @@ export class BebitoMobile {
     this.carroceria.add(this.porta.pivo);
 
     const f = this.ficha;
-    this.atlas = atlasDeImpressos(f.placa, [...f.vagas.vidroTraseiro, ...f.vagas.paraChoque].filter((id): id is string => !!id));
+    this.atlas = atlasDeImpressos(f.placa, [...f.vagas.vidroTraseiro, ...f.vagas.paraChoque, ...f.vagas.paraBrisa].filter((id): id is string => !!id));
 
     this.montarLataria();
     this.montarAssoalho();
@@ -1060,6 +1060,13 @@ export class BebitoMobile {
       const e = this.encaixe('vidroTraseiro', lugar, this.teto, em.p, 0);
       e.quaternion.copy(olhandoPara(em.n));
     });
+    // o selo de sócio do clube: no canto de baixo do para-brisa, do lado do motorista (+X), no grupo do teto
+    // (é vidro: some junto com o teto)
+    {
+      const em = porCima(SELO_DO_PARA_BRISA[0], SELO_DO_PARA_BRISA[1], 0.007);
+      const e = this.encaixe('paraBrisa', 0, this.teto, em.p, 0);
+      e.quaternion.copy(olhandoPara(em.n));
+    }
     this.encaixes.rodas = [];
 
     // ONDE SE SENTA
@@ -1102,6 +1109,29 @@ export class BebitoMobile {
     pai.add(e);
     (this.encaixes[vaga] ??= [])[lugar] = e;
     return e;
+  }
+
+  /**
+   * COLA UM ADESIVO NA HORA, no carro que já está montado (o selo que a Gina
+   * carimba na estrada): gravar a ficha no save não remonta o carro da cena, e
+   * remontar no meio da conversa piscaria tudo. A plaquinha sai de um atlas só
+   * com ela e vai para o lado do encaixe, como as da montagem. Devolve `false`
+   * se o lugar já tinha adesivo.
+   */
+  colarAdesivo(vaga: VagaDoCarro, lugar: number, id: string): boolean {
+    const e = this.encaixes[vaga]?.[lugar];
+    if (!e || !e.parent || e.userData.adesivo) return false;
+    const atlas = atlasDeImpressos(this.ficha.placa, [id]);
+    const geo = atlas.plaquinha(id);
+    if (!geo) return false;
+    const adesivo = new THREE.Mesh(geo, atlas.material);
+    adesivo.name = `adesivo-colado:${id}`;
+    adesivo.position.copy(e.position);
+    adesivo.quaternion.copy(e.quaternion);
+    e.parent.add(adesivo);
+    e.userData.adesivo = id;
+    this.ficha.vagas[vaga][lugar] = id;
+    return true;
   }
 
   /** veste as vagas com o que a ficha manda: peça 3D no encaixe, adesivo de canvas colado no lugar dele */
@@ -1415,3 +1445,9 @@ const TRILHO = { y: 1.0, fim: -A + 0.42 };
 /** os três adesivos da tampa de trás (à esquerda da placa, em cima dela e à direita) e os dois do vidro */
 const ADESIVOS_DA_TAMPA: ReadonlyArray<readonly [number, number]> = [[-0.5, 0.67], [0.18, 0.93], [0.5, 0.67]];
 const ADESIVOS_DO_VIDRO: ReadonlyArray<readonly [number, number]> = [[-0.4, 1.32], [0.4, 1.3]];
+/**
+ * onde o selo de sócio vai no para-brisa (o `x` do lado do motorista e o `z`, sem escala): o vidro é a
+ * superfície de cima entre o teto (`zTeto`) e o capô (`zCowl`), e por isso o ponto sai do `porCima` — o
+ * `naPonta`, que procura a cara em pé, punha o selo no capô
+ */
+const SELO_DO_PARA_BRISA: readonly [number, number] = [0.46, CARRO.zCowl - 0.12];

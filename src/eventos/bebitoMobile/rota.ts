@@ -34,7 +34,7 @@ export const rotaDaEscola = (sentido: Sentido): boolean => sentido.includes('esc
 export const rotaDoClube = (sentido: Sentido): boolean => sentido.includes('clube') && !rotaDaEscola(sentido);
 /** as rotas novas (clube e escola), com a pista de 1000 m e os eventos postos à mão */
 export const rotaNova = (sentido: Sentido): boolean => rotaDoClube(sentido) || rotaDaEscola(sentido);
-export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano' | 'cookie' | 'jeanluc';
+export type PersonagemNaEstrada = 'noel' | 'josefina' | 'capy' | 'walter' | 'estella' | 'mano' | 'cookie' | 'jeanluc' | 'gina';
 /** onde cada viagem COMEÇA (o par do `DESTINO`) */
 const ORIGEM: Record<Sentido, DestinoDeCarro> = {
   'ida': 'casa', 'volta': 'parque', 'parque-clube': 'parque', 'clube-parque': 'clube', 'casa-clube': 'casa', 'clube-casa': 'clube',
@@ -44,7 +44,7 @@ export const origemDaRota = (sentido: Sentido): DestinoDeCarro => ORIGEM[sentido
 /** quem MORA em cada lugar e tem veículo para cruzar o Bebito na pista */
 export const MORADORES: Record<DestinoDeCarro, readonly PersonagemNaEstrada[]> = {
   parque: ['estella', 'mano', 'cookie', 'jeanluc'],
-  clube: ['noel', 'josefina', 'capy', 'walter'],
+  clube: ['noel', 'josefina', 'capy', 'walter', 'gina'],
   casa: [],
   escola: [],
 };

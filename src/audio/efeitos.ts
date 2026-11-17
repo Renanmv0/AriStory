@@ -138,6 +138,7 @@ export type SomNome =
   | 'musiquinhaDoSorvete'
   | 'cornetaDoCookie'
   | 'buzinaDoJeanLuc'
+  | 'carimbo'
   // a caça de doces ou travessuras: as balas caindo na cestinha de abóbora
   | 'balas';
 
@@ -1398,6 +1399,19 @@ export const EFEITOS: Record<SomNome, Receita> = {
       tom(ctx, destino, { freq: f * 2, glide: f * 1.97, quando: t + atraso, dur: dur * 0.85, vol: 0.016, ataque: 0.01, tipo: 'sawtooth', abafo: 2600 });
       chiado(ctx, destino, { quando: t + atraso, dur: dur * 0.7, vol: 0.02, freq: 1300, glide: 900, q: 1.4 });
     }
+  },
+
+  /**
+   * O carimbo da Gina no vidro: o "tum" grave e abafado da borracha batendo,
+   * o "tec" seco do cabo de madeira por cima e um plim de aprovado no fim,
+   * subindo na pentatônica.
+   */
+  carimbo: ({ ctx, destino, t }) => {
+    tom(ctx, destino, { freq: nota(DO - 24), glide: nota(DO - 31), quando: t, dur: 0.12, vol: 0.12, ataque: 0.004, tipo: 'sine' });
+    chiado(ctx, destino, { quando: t, dur: 0.05, vol: 0.07, freq: 1800, glide: 700, q: 1.6 });
+    tom(ctx, destino, { freq: nota(DO + 7), quando: t + 0.006, dur: 0.035, vol: 0.03, ataque: 0.002, tipo: 'square', abafo: 2200 });
+    tom(ctx, destino, { freq: nota(DO + 12), quando: t + 0.2, dur: 0.12, vol: 0.05, ataque: 0.01, tipo: 'triangle' });
+    tom(ctx, destino, { freq: nota(DO + 16), quando: t + 0.29, dur: 0.18, vol: 0.05, ataque: 0.01, tipo: 'triangle' });
   },
 
   fotoFlash: ({ ctx, destino, t }) => {

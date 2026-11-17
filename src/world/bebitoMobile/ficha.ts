@@ -28,7 +28,7 @@ import { PALETTE as P } from '../../palette';
 
 /** as vagas do carro, na ordem em que o modelo as monta */
 export const VAGAS_DO_CARRO = [
-  'painel', 'retrovisor', 'chave', 'teto', 'portaMalas', 'bancoDeTras', 'vidroTraseiro', 'paraChoque', 'rodas',
+  'painel', 'retrovisor', 'chave', 'teto', 'portaMalas', 'bancoDeTras', 'vidroTraseiro', 'paraChoque', 'paraBrisa', 'rodas',
 ] as const;
 export type VagaDoCarro = (typeof VAGAS_DO_CARRO)[number];
 
@@ -51,6 +51,9 @@ export const DEF_DAS_VAGAS: Readonly<Record<VagaDoCarro, DefDaVaga>> = {
   bancoDeTras: { nome: 'Banco de trás', lugares: 2, tipo: 'peca', onde: 'em cima do banco de trás, um de cada lado' },
   vidroTraseiro: { nome: 'Vidro de trás', lugares: 2, tipo: 'adesivo', onde: 'nos dois cantos de baixo do vidro de trás' },
   paraChoque: { nome: 'Para-choque', lugares: 3, tipo: 'adesivo', onde: 'na tampa de trás, logo acima do para-choque' },
+  // (o selo de sócio do clube vai onde selo de clube vai de verdade: no canto de baixo do para-brisa, do lado
+  // do motorista, que é o lado em que a Gina para na estrada para carimbar)
+  paraBrisa: { nome: 'Para-brisa', lugares: 1, tipo: 'adesivo', onde: 'no canto de baixo do para-brisa, do lado do motorista' },
   rodas: { nome: 'Rodas', lugares: 1, tipo: 'calota', onde: 'as quatro calotas' },
 };
 
@@ -82,6 +85,7 @@ export const CATALOGO_DO_CARRO: readonly DetalheDoCarro[] = [
   { id: 'adesivo-da-roda-gigante', nome: 'Roda gigante', vaga: 'paraChoque', origem: 'a roda branca do Villa Lobos, onde os dois subiram na mesma cabine' },
   { id: 'adesivo-do-mania', nome: 'Mania de Churrasco', vaga: 'paraChoque', origem: 'o restaurante do Walter, achado pela porta dos fundos' },
   { id: 'adesivo-do-mano', nome: 'Sorvete do Mano', vaga: 'paraChoque', origem: 'a casquinha do quiosque do Mano: morango pro Ari, maracujá pro Renan' },
+  { id: 'selo-socio-do-clube', nome: 'Sócio do clube', vaga: 'paraBrisa', origem: 'o selo que a Gina, a girafa da portaria, carimbou na estrada' },
   { id: 'calota-classica', nome: 'Calota clássica', vaga: 'rodas', origem: 'a de fábrica: roda creme, calota de cromo e pneu de banda branca' },
 ];
 
@@ -124,6 +128,8 @@ export const FICHA_DE_FABRICA: FichaDoBebitoMobile = {
     bancoDeTras: ['bebito-book-e-livros', 'mantinha-da-estella'],
     vidroTraseiro: ['emblema-dos-gatitos', 'six-seven'],
     paraChoque: ['adesivo-da-roda-gigante', 'adesivo-do-mania', 'adesivo-do-mano'],
+    // o para-brisa sai limpo: o selo de sócio é a Gina quem cola, na estrada
+    paraBrisa: [null],
     rodas: ['calota-classica'],
   },
 };

@@ -23,6 +23,7 @@ import { LambretaDaEstella } from './world/lambretaDaEstella';
 import { KombiDoMano } from './world/kombiDoMano';
 import { CarrinhoDoCookie } from './world/carrinhoDoCookie';
 import { DoisCavalosDoJeanLuc } from './world/doisCavalosDoJeanLuc';
+import { CarrinhoDeGolfeDaGina } from './world/carrinhoDeGolfeDaGina';
 import {
   CATALOGO_DO_CARRO, DEF_DAS_VAGAS, FICHA_DE_FABRICA, VAGAS_DO_CARRO, copiarFicha, normalizarFicha,
 } from './world/bebitoMobile/ficha';
@@ -172,6 +173,22 @@ if (doisCavalos && doisCavalos.length >= 2 && doisCavalos.slice(0, 2).every(Numb
     if (params.has('raquete')) veiculo.raqueteNaJanela(true);
     if (!params.has('vazio')) mundo.onUpdate((dt) => veiculo.update(dt, andando * dt, params.has('conversando')));
     (window as unknown as { doisCavalos: DoisCavalosDoJeanLuc }).doisCavalos = veiculo;
+  });
+}
+// `?golfe=x,z,giro`: o carrinho de golfe da Gina parado nesse ponto, com ela no banco e o pescoço pelo toldo, para o
+// `scripts/carrinhoDeGolfe.mjs` fotografar (`&conversando` vira a cabeça; `&esticando` estica o pescoço até a
+// janela com o carimbo na boca; `&andando=7` faz de conta que ele está a 7 m/s; `&vazio` é o do estacionamento)
+const golfe = params.get('golfe')?.split(',').map(Number);
+if (golfe && golfe.length >= 2 && golfe.slice(0, 2).every(Number.isFinite)) {
+  void comecou.then(() => {
+    const mundo = (game as unknown as { current?: { world: WorldBuilder } }).current?.world;
+    if (!mundo) return;
+    const veiculo = new CarrinhoDeGolfeDaGina(params.has('vazio'));
+    mundo.add(mundo.place(veiculo.group, golfe[0], 0, golfe[1], Number.isFinite(golfe[2]) ? golfe[2] : 0));
+    const andando = Number(params.get('andando') ?? 0);
+    if (params.has('esticando')) veiculo.esticarAteAJanela(true);
+    if (!params.has('vazio')) mundo.onUpdate((dt) => veiculo.update(dt, andando * dt, params.has('conversando')));
+    (window as unknown as { golfe: CarrinhoDeGolfeDaGina }).golfe = veiculo;
   });
 }
 const carro = params.get('carro')?.split(',').map(Number);

@@ -20,6 +20,7 @@ import { CarroDoNoel } from '../../world/carroDoNoel';
 import { CarroDaJosefina } from '../../world/carroDaJosefina';
 import { MotoDoCapy } from '../../world/motoDoCapy';
 import { FoodTruckDoWalter, FOOD_TRUCK } from '../../world/foodTruckDoWalter';
+import { CarrinhoDeGolfeDaGina, CARRINHO_DE_GOLFE } from '../../world/carrinhoDeGolfeDaGina';
 import {
   coberturaDoEstacionamento, jardineiraDoEstacionamento, posteDoEstacionamento, totemDoEstacionamentoDoClube,
 } from '../../world/estacionamentoDoClube';
@@ -33,6 +34,9 @@ export const CARROS_DOS_PERSONAGENS = [
   { personagem: 'capy', x: -70.2, z: -5, giro: Math.PI / 2 },
   // o food truck é grande: 5,5 m na vaga de 5,6, com a frente sobre o batente
   { personagem: 'walter', x: -70.2, z: -1, giro: Math.PI / 2 },
+  // o carrinho de golfe da Gina, na vaga livre da fileira da Josefina, de cara para o corredor; a cobertura
+  // fica nas vagas do fundo, e ele (com o toldo alto) não cabe embaixo dela
+  { personagem: 'gina', x: -46.2, z: -1, giro: -Math.PI / 2 },
 ] as const;
 export const FAIXA_DO_CLUBE = { z: 1.8, largura: 2.4 } as const;
 export const ENTRADA_DO_ESTACIONAMENTO_DO_CLUBE = { x: -41.6, z: 12.5, largura: 5.2 } as const;
@@ -132,9 +136,11 @@ export function montarEstacionamentoDoClube(w: WorldBuilder, rua: { beira: numbe
   const carros = CARROS_DOS_PERSONAGENS.filter(vaga => w.game.temMemoria(`${vaga.personagem}-na-estrada`));
   for (const vaga of carros) {
     const carro = vaga.personagem === 'noel' ? new CarroDoNoel(true) : vaga.personagem === 'capy' ? new MotoDoCapy(true)
-      : vaga.personagem === 'walter' ? new FoodTruckDoWalter(true) : new CarroDaJosefina(true);
+      : vaga.personagem === 'walter' ? new FoodTruckDoWalter(true) : vaga.personagem === 'gina' ? new CarrinhoDeGolfeDaGina(true)
+        : new CarroDaJosefina(true);
     w.add(fundirComoFundo(w.place(carro.group, vaga.x, 0, vaga.z, vaga.giro)));
     if (vaga.personagem === 'walter') w.blockBox(vaga.x, vaga.z, FOOD_TRUCK.frente, FOOD_TRUCK.meiaLargura + 0.05);
+    else if (vaga.personagem === 'gina') w.blockBox(vaga.x, vaga.z, CARRINHO_DE_GOLFE.meio, CARRINHO_DE_GOLFE.meiaLargura);
     else w.blockBox(vaga.x, vaga.z, vaga.personagem === 'capy' ? 1.6 : 2.4, vaga.personagem === 'capy' ? .6 : 1.5);
   }
   // A cobertura é só sobre as vagas do fundo; a vaga do Bebito e a passagem ficam a céu aberto.

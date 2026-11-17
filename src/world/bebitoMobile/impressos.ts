@@ -289,12 +289,59 @@ const mano: Impresso = {
   },
 };
 
+/**
+ * O SELO DE SÓCIO DO CLUBE, o que a Gina carimba na estrada: o verde da faixa
+ * da guarita, o creme da parede dela, a cabecinha de girafa de quepe, "SÓCIO"
+ * grandão e o CARIMBO vermelho torto por cima, de quem bateu com força.
+ */
+const seloDeSocio: Impresso = {
+  l: 240, a: 170, largura: 0.2, altura: 0.142, forma: 'quina', raio: 0.16,
+  pintar: (c, l, a) => {
+    c.fillStyle = css(P.guaritaFaixa);
+    c.fillRect(0, 0, l, a);
+    c.strokeStyle = css(P.guaritaParede);
+    c.lineWidth = 7;
+    c.strokeRect(9, 9, l - 18, a - 18);
+    // a cabecinha da girafa de quepe, à esquerda
+    const gx = 58, gy = 96;
+    c.fillStyle = css(P.girafaPelo);
+    c.beginPath(); c.ellipse(gx, gy, 26, 30, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(gx, gy + 26, 18, 13, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = css(P.girafaMancha);
+    for (const [dx, dy, r] of [[-12, -6, 5], [11, 2, 4], [-2, 12, 3.5]]) { c.beginPath(); c.arc(gx + dx, gy + dy, r, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = '#2b2721';
+    for (const dx of [-9, 9]) { c.beginPath(); c.arc(gx + dx, gy - 4, 3.6, 0, Math.PI * 2); c.fill(); }
+    // o quepe
+    c.fillStyle = css(P.guaritaParede);
+    c.fillRect(gx - 26, gy - 46, 52, 18);
+    c.fillStyle = css(P.portaoFerro);
+    c.fillRect(gx - 28, gy - 31, 56, 6);
+    c.fillStyle = css(P.gold);
+    c.beginPath(); c.arc(gx, gy - 38, 4.5, 0, Math.PI * 2); c.fill();
+    // as letras
+    c.fillStyle = css(P.guaritaParede);
+    texto(c, 'SÓCIO', 160, 74, 46, 128);
+    texto(c, 'DO CLUBE', 160, 116, 24, 120, 800);
+    // o carimbo, torto
+    c.save();
+    c.translate(166, 98);
+    c.rotate(-0.32);
+    c.strokeStyle = 'rgba(214, 64, 58, 0.92)';
+    c.lineWidth = 5;
+    c.beginPath(); c.ellipse(0, 0, 64, 34, 0, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = 'rgba(214, 64, 58, 0.92)';
+    texto(c, 'APROVADO', 0, 0, 22, 108);
+    c.restore();
+  },
+};
+
 /** os adesivos, pelo id do catálogo da ficha (`ficha.ts`) */
 export const ADESIVOS: Readonly<Record<string, Impresso>> = {
   'six-seven': sixSeven,
   'adesivo-da-roda-gigante': rodaGigante,
   'adesivo-do-mania': mania,
   'adesivo-do-mano': mano,
+  'selo-socio-do-clube': seloDeSocio,
 };
 
 // ---------------------------------------------------------- o que é do painel
