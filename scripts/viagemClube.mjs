@@ -35,6 +35,8 @@ async function percorrer(p,sentido,motorista,prefixo){
  await desenho(p,false);await p.evaluate(()=>{window.aristoryBebitoMobile.viagem.vezes=5;window.aristoryBebitoMobile.viagem.piloto='bom';window.aristoryBebitoMobile.ritmoDoPresente.vezes=5;});
  assert.equal(await p.evaluate(()=>window.aristoryBebitoMobile.viagem.rota.sentido),sentido);await pose(p,motorista);
  const fotos=new Set();let interna=false,passouNoel=false,resumo,primeiraFala=false,ultimoNoel=-Infinity;
+ // (quem aparece sai do sorteio da rota; com mais moradores nas duas pontas, nem toda viagem traz o Noel)
+ const comNoel=await p.evaluate(()=>window.aristoryBebitoMobile.viagem.rota.encontro?.personagem==='noel');
  const inicio=Date.now();
  while(Date.now()-inicio<240000){
   const e=await p.evaluate(()=>{const g=window.jogo,v=window.aristoryBebitoMobile.viagem,n=g.current.world.root.userData.novidadesDaViagem?.noel;return{cena:g.idDaCena,s:v.estado?.s,fase:v.estado?.fase,v:v.estado?.v,l:v.estado?.l,visao:v.estado?.visao,noel:n?{...n.estado}:null,vistos:{...v.estado?.vistos},tropecos:v.estado?.tropecos,sustos:v.estado?.sustos,coracoes:v.estado?.coracoes};});
@@ -52,7 +54,7 @@ async function percorrer(p,sentido,motorista,prefixo){
   if(prefixo&&e.s>845&&e.s<860&&!fotos.has('paisagem')){fotos.add('paisagem');await foto(p,prefixo+'-paisagem');}
   await avancar(p);await p.waitForTimeout(50);
  }
- assert.ok(resumo,'a viagem chegou');assert.ok(passouNoel&&primeiraFala,'encontro inteiro aconteceu');
+ assert.ok(resumo,'a viagem chegou');if(comNoel)assert.ok(passouNoel&&primeiraFala,'encontro inteiro aconteceu');else console.log(sentido,'sem o Noel nesta rota: o encontro dela é conferido no casaClube e nos testes de cada veículo.');
  console.log('viagem',sentido,resumo);assert.equal(resumo.tropecos,0);assert.equal(resumo.sustos,0);
  for(const tipo of ['lombada','travessia','rega','noel','obra','onda-verde','semaforo','poca'])assert.ok(resumo.vistos[tipo],tipo+' aconteceu');
  assert.ok(resumo.vistos['onda-aproveitada'],'piloto aproveitou a aceleração da onda verde');
