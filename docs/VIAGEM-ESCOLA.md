@@ -19,7 +19,7 @@ do Bebito Mobile, que já está ligada.
 | os quatro encontros com a turma da escola na estrada | ✅ |
 | a chegada animada no estacionamento da escola, até a vaga do coração | ✅ |
 | o carro morando na escola (a volta para casa, o parque ou o clube) | ✅ |
-| **os carros dos personagens da escola** | ⬜ **o próximo passo** (pedido do Renan; não fazer junto) |
+| **os carros dos personagens da escola** | ⬜ **o próximo passo** (pedido do Renan; não fazer junto) — as ideias estão em `docs/CARROS-DA-ESCOLA.md` |
 
 ## O percurso
 
