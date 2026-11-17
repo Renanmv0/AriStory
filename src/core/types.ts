@@ -434,6 +434,8 @@ export interface ItemDef {
    * no prompt e no aviso. Hoje só os lanches da máquina da escola.
    */
   comivel?: 'comer' | 'beber';
+  /** o artigo no "Comer o …"/"Ler o …" e no aviso (padrão "o"; a arepita da Tia Liz é "a") */
+  artigo?: 'o' | 'a';
   /**
    * DÁ PARA LER: segurando na mão (e sem nada do cenário por perto), o E vira
    * "Ler o …" e abre a página no painel do quadro de memórias. É uma função

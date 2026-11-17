@@ -840,11 +840,11 @@ export class Game implements GameAPI {
       // nada do cenário por perto: com um lanche na mão, o prompt é o de comer
       const lanche = this.comendo ? null : this.comivelNaMao();
       if (lanche) {
-        this.ui.showPrompt(lanche.icone, `${lanche.comivel === 'beber' ? 'Beber' : 'Comer'} o ${this.nomeMiudo(lanche)}`);
+        this.ui.showPrompt(lanche.icone, `${lanche.comivel === 'beber' ? 'Beber' : 'Comer'} ${lanche.artigo ?? 'o'} ${this.nomeMiudo(lanche)}`);
         this.promptDeComer = true;
       } else if (this.leituraNaMao()) {
         const papel = this.leituraNaMao()!;
-        this.ui.showPrompt(papel.icone, `Ler o ${this.nomeMiudo(papel)}`);
+        this.ui.showPrompt(papel.icone, `Ler ${papel.artigo ?? 'o'} ${this.nomeMiudo(papel)}`);
         this.promptDeComer = true;
       } else if (this.promptDeComer) {
         this.ui.hidePrompt();
@@ -875,8 +875,8 @@ export class Game implements GameAPI {
   /**
    * O GESTO DE COMER: duas mordidas, o braço levando o lanche à boca
    * (`morder`, no corpo) — e o item só sai da mochila no fim — até lá ele está na
-   * mão, que é onde a pessoa está olhando. O artigo é "o" porque todo comível
-   * de hoje é masculino (biscoito, chocolatinho, suco, salgadinho).
+   * mão, que é onde a pessoa está olhando. O artigo é "o", a não ser que o item
+   * diga outro (`artigo`: a arepita da Tia Liz é "a").
    */
   private comecarAComer(): void {
     const item = this.comivelNaMao();
@@ -902,7 +902,7 @@ export class Game implements GameAPI {
     this.removeItem(item.id);
     this.audio.play('nhac');
     const fez = item.comivel === 'beber' ? 'bebeu' : 'comeu';
-    this.ui.toast(`${this.player.name} ${fez} o ${this.nomeMiudo(item)}`, '😋');
+    this.ui.toast(`${this.player.name} ${fez} ${item.artigo ?? 'o'} ${this.nomeMiudo(item)}`, '😋');
   }
 
   // ------------------------------------------------------------- GameAPI

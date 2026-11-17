@@ -152,6 +152,7 @@ export const ITENS = {
     nota: 'da Tia Liz · feita de manhã, ainda morninha',
     holdPose: 'upright',
     comivel: 'comer',
+    artigo: 'a',
   },
   docinhoDoCookie: {
     id: 'docinho-cookie',
