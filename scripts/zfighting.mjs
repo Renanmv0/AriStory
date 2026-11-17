@@ -86,7 +86,9 @@ const PECAS = [
   ['poste-do-estacionamento-do-clube', 'clube'],
   ['totem-do-estacionamento-do-clube', 'clube'],
   ['carro-do-noel', 'viagem-de-carro&bebito&viagem=parque-clube,ari,1'],
-  ['moto-do-capy', 'viagem-de-carro&bebito&viagem=casa-clube,ari,1'],
+  // (a semente do Capy mudou quando a Gina passou a morar no clube)
+  ['moto-do-capy', 'viagem-de-carro&bebito&viagem=casa-clube,ari,7'],
+  ['carrinho-de-golfe-da-gina', 'villa-lobos&semHalloween&golfe=-6,30,0'],
   ['bolhas-do-cookie', 'viagem-de-carro&bebito&viagem=ida,ari,2'],
   ['carro-da-josefina', 'viagem-de-carro&bebito&viagem=casa-clube,ari,6'],
   ['sorveteria', 'villa-lobos'],

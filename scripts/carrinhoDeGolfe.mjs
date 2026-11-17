@@ -206,7 +206,7 @@ try {
         if (encaixe && c.gina) { const V = encaixe.position.constructor; distancia = +encaixe.getWorldPosition(new V()).distanceTo(c.pontaDoCarimbo()).toFixed(2); }
         return {
           quem: n.encontro.personagem, fase: n.encontro.estado.fase,
-          apito: window.jogo.audio.contagem.get('apito') ?? 0, carimbadas: c.carimbadas,
+          apito: window.jogo.audio.contagem.get('apito') ?? 0, carimbadas: c.carimbadas, esticado: c.esticado ?? 0,
           selo: encaixe?.userData.adesivo ?? null, distancia, dialogo: document.querySelector('.dialogue.show')?.textContent ?? '',
         };
       });
@@ -229,9 +229,8 @@ try {
           const r = await page.evaluate(() => ({ ...window.jogo.renderer.info.render }));
           console.log(`  peso na conversa: ${r.calls} desenhos, ${Math.round(r.triangles / 1000)} mil triângulos`);
         }
-        if (e.carimbadas > 0 && !fotoDoCarimbo) {
+        if (e.esticado > 0.85 && !fotoDoCarimbo) {
           fotoDoCarimbo = true;
-          await page.waitForTimeout(700);
           await page.screenshot({ path: `${OUT}-estrada-${rotulo}-2-carimbo${process.env.CEL ? '-celular' : ''}.png` });
         }
         if (e.fase === 'feito') break;
