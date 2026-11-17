@@ -277,6 +277,7 @@ O carro é montado lendo `FichaDoBebitoMobile`:
 | `bancoDeTras` | 2 | peça | em cima do banco de trás, nas duas pontas (a cena guarda com `mostrarCargaDoBanco(false)`) | Bebito book e livros, mantinha |
 | `vidroTraseiro` | 2 | adesivo | nos cantos do vidro de trás | emblema dos Gatitos, 67 |
 | `paraChoque` | 3 | adesivo | na tampa de trás | roda gigante, Mania, Mano |
+| `paraBrisa` | 1 | adesivo | no canto de baixo do para-brisa, do lado do motorista | — (vazio: o selo de sócio do clube, a Gina carimba na estrada) |
 | `rodas` | 1 | calota | as quatro rodas | calota clássica |
 
 Mais a **pintura** (lataria, teto, estofado) e a **placa** (o texto).

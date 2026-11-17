@@ -23,13 +23,13 @@ Jean-Luc) vieram depois, cada um com o seu documento.
 Cada personagem mora num lugar (`MORADORES`): a Estella, o Mano (a Kombi de
 sorvete, `docs/KOMBI-DO-MANO.md`), o Cookie (o carrinho,
 `docs/CARRINHO-DO-COOKIE.md`) e o Jean-Luc (o 2CV, `docs/DOIS-CAVALOS-DO-JEAN-LUC.md`) no parque; o Noel, a
-Josefina, o Capy e o Walter no clube; ninguém na casa nem na escola.
+Josefina, o Capy, o Walter e a Gina (o carrinho de golfe, `docs/CARRINHO-DE-GOLFE-DA-GINA.md`) no clube; ninguém na casa nem na escola.
 
 - Vale o **destino**: indo ao parque, a Estella, o Mano, o Cookie ou o Jean-Luc; indo ao clube, o pessoal do clube.
 - Se o destino não tem ninguém (a casa, a escola), vale a **origem**: do clube
   para casa, o pessoal do clube; do parque para a escola, um dos quatro do parque.
 - Se as **duas pontas** têm gente (parque ↔ clube, nos dois sentidos), sorteia
-  entre **todos** os oito.
+  entre **todos** os nove.
 - Casa ↔ escola fica **sem encontro**. A turma da escola continua na zona escolar.
 - O sorteio é por igual entre os candidatos, pela semente da viagem: recarregar
   conserva o mesmo encontro.
@@ -38,8 +38,8 @@ Josefina, o Capy e o Walter no clube; ninguém na casa nem na escola.
 |---|---|
 | casa ↔ parque | Estella, Mano, Cookie, Jean-Luc |
 | parque ↔ escola | Estella, Mano, Cookie, Jean-Luc |
-| casa ↔ clube, clube ↔ escola | Noel, Josefina, Capy, Walter |
-| parque ↔ clube | os oito |
+| casa ↔ clube, clube ↔ escola | Noel, Josefina, Capy, Walter, Gina |
+| parque ↔ clube | os nove |
 | casa ↔ escola | ninguém |
 
 Isso substitui o "25% para cada um em toda viagem" de 2026-11-13

@@ -1302,6 +1302,36 @@ carro com ESTUFA (vidro de lado, colunas e calhas) em cima da pele de fatias:
 - **Atalho de teste** `?doisCavalos=x,z,giro` (`&conversando`, `&raquete`,
   `&andando=7`, `&vazio`).
 
+## O carrinho de golfe da Gina (`world/carrinhoDeGolfeDaGina.ts`)
+
+O primeiro veículo novo do CLUBE (`docs/CARRINHO-DE-GOLFE-DA-GINA.md`), e o
+molde de veículo ABERTO dos lados com um bicho de PESCOÇO que não cabe em teto:
+
+- **O que passa pelo teto precisa de saída para o lado**: o toldo nasceu com um
+  furo oval no meio, e para o pescoço descer até a janela do Bebito ele teria
+  de atravessar a lona. Virou um RECORTE em meia-elipse aberto na beira (a
+  forma do toldo com o recorte no contorno, e não `hole`), com a gola de lona
+  em tubo dando a volta nele, e o lambrequim em dois pedaços, um de cada lado.
+- **Esticar até o vizinho é deitar o pescoço por baixo do teto**, e não por
+  cima: por cima, o pescoço ficava deitado na lona e a cabeça parava na beira.
+  O gomo de baixo deita, os outros descem de leve, e a cabeça sai pela lateral
+  aberta na altura da janela. O veículo ENCOSTA no Bebito na parada (a
+  conversa muda a faixa dele, devagar) e para um tico à frente: o alcance é
+  conta, e o teste mede a distância do carimbo até o selo.
+- **Cabeça em cadeia girada**: com o pescoço tombado 1,8 rad para o lado, girar
+  a cabeça em `XYZ` misturava tudo. No carrinho ela usa a ordem `ZYX` (levanta
+  o nariz, vira para a janela, desfaz o tombo), só dentro do `if` da pose.
+- **Pernas que somem são TODAS as malhas da perna** (a perna, o joelho, o
+  casco): a lista `patas` do bicho só tinha a perna.
+- **Painel que conta o ofício**: rádio comunicador, garrafa térmica e a
+  prancheta de sócios em canvas — é o que diz "portaria" de perto.
+- **O presente que muda o Bebito**: a ficha ganhou uma vaga nova
+  (`paraBrisa`) e o carro ganhou `colarAdesivo` (cola a plaquinha do atlas no
+  encaixe na hora, sem remontar o carro). Ponto em vidro inclinado sai do
+  `porCima` da pele, e não do `naPonta` (que acha a cara em pé e caía no capô).
+- **Atalho de teste** `?golfe=x,z,giro` (`&conversando`, `&esticando`,
+  `&andando=7`, `&vazio`).
+
 ## A estrada (`world/estrada.ts`)
 
 As peças da viagem de carro do Bebito Mobile. A pista é CURVA, então a cena

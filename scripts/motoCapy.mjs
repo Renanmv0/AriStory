@@ -1,16 +1,22 @@
 /** Moto, encontro completo e vaga desbloqueada; somente preview isolado. */
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import ts from 'typescript';
+// as sementes com o Capy (a mesma conta do jogo): o sorteio muda quando o clube ganha morador
+const codigo=ts.transpileModule(await readFile(new URL('../src/eventos/bebitoMobile/rota.ts',import.meta.url),'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const {gerarRota}=await import('data:text/javascript;base64,'+Buffer.from(codigo).toString('base64'));
+const comCapy=(sentido)=>{let s=1;while(gerarRota(s,sentido).encontro?.personagem!=='capy')s++;return s;};
 const BASE=process.env.SMOKE_URL??'http://127.0.0.1:4177',OUT=process.argv[2]??'/tmp/moto-capy';
 if(new URL(BASE).hostname==='renanmv0.github.io')throw Error('Use preview.');
-const b=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
+const b=await chromium.launch({executablePath:process.env.CHROME_PATH??'/opt/pw-browsers/chromium',args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']});
 const erros=[],espera=(p,f,a)=>p.waitForFunction(f,a,{timeout:90000});
 async function desenho(p,sim){await p.evaluate(sim=>{const r=window.jogo.renderer;window.renderNormal??=r.render.bind(r);r.render=sim?window.renderNormal:(s,c)=>{s.updateMatrixWorld();c.updateMatrixWorld();};},sim);}
 async function foto(p,nome){await desenho(p,true);await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));await p.screenshot({path:`${OUT}-${nome}.png`});await desenho(p,false);}
 try{
 for(const mobile of process.env.SO==='modelo'?[false]:[false,true]){
  const c=await b.newContext({viewport:mobile?{width:390,height:844}:{width:1200,height:850},hasTouch:mobile,isMobile:mobile}),p=await c.newPage();p.on('pageerror',e=>erros.push(e.message));
- await p.goto(BASE+`/?bebito&carroPorDentro&semHalloween&cena=viagem-de-carro&viagem=${mobile?'ida,renan,4':'casa-clube,ari,1'}`);
+ await p.goto(BASE+`/?bebito&carroPorDentro&semHalloween&cena=viagem-de-carro&viagem=${mobile?`clube-casa,renan,${comCapy('clube-casa')}`:`casa-clube,ari,${comCapy('casa-clube')}`}`);
  await espera(p,()=>window.jogo?.current.world.root.userData.novidadesDaViagem?.encontro&&!window.jogo.transitioning);await desenho(p,false);
  await p.evaluate(()=>{const v=window.aristoryBebitoMobile.viagem;v.estado.s=v.rota.encontro.s-61;v.estado.fase='dirigindo';v.piloto='bom';v.vezes=3;});
  await espera(p,()=>window.jogo.current.world.root.userData.novidadesDaViagem.encontro.estado.fase==='falando');
