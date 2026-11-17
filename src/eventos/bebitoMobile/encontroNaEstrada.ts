@@ -350,7 +350,7 @@ export class EncontroNaEstrada {
     // (o carrinho do Cookie é miúdo, e os óculos do Jean-Luc também: com a tela deitada a tomada chega mais perto, para ele não virar um
     // pontinho ao lado do Bebito; no celular em pé fica a de sempre, que é a que cabe os dois)
     const emPe = window.innerWidth / window.innerHeight < 0.8;
-    const longe = emPe ? 1.65 : this.personagem === 'cookie' || this.personagem === 'jeanluc' ? 0.8 : 1;
+    const longe = emPe ? 1.65 : this.personagem === 'cookie' || this.personagem === 'jeanluc' || this.personagem === 'tializ' ? 0.8 : 1;
     const alvo = this.naPista(viagem.s + 1, 0, 1.25);
     // A tomada fica sobre a pista, sem um poste da calçada entre a lente e os carros.
     return { de: this.naPista(viagem.s + 10 * longe, 3.5 * longe, 4.8 * longe), para: alvo };

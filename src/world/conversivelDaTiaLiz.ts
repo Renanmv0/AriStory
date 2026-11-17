@@ -740,7 +740,7 @@ export class ConversivelDaTiaLiz {
       }
       this.irmas.push(luna, sol, estrella);
       // o confete: 90 papeizinhos nas cores dos Gatitos e da Venezuela (cor por cópia), parados fora de vista
-      const conf = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.06, 0.035), toon(0xffffff, { doubleSide: true }), 90);
+      const conf = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.15, 0.09), toon(0xffffff, { doubleSide: true }), 90);
       conf.name = 'confete'; conf.frustumCulled = false; conf.userData.semSombra = true;
       const cores = [AMARELO, AZUL, P.venezuelaVermelho, P.gatitosBranco];
       const zero = new THREE.Matrix4().makeScale(0, 0, 0), cor = new THREE.Color();
