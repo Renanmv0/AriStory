@@ -6,10 +6,9 @@
 para os carros da escola". É o próximo passo que já estava marcado em
 `docs/VIAGEM-ESCOLA.md` ("os carros dos personagens da escola").
 
-**O estado:** o **conversível da Tia Liz e das irmãs** (§2) tem o CARRO pronto
-(2026-11-17, `world/conversivelDaTiaLiz.ts`); a interação na estrada e o
-estacionado vêm na etapa seguinte, a pedido do Renan ("foque no carro, mas
-depois vamos fazer a interação na estrada"). Os outros são só ideias. Este documento é o cardápio para o
+**O estado:** o **conversível da Tia Liz e das irmãs** (§2) está FEITO e no
+jogo (2026-11-17): o carro, a interação na estrada e o estacionado na escola.
+Os outros (o Gatito, o Flynn e a Valentina) são só ideias. Este documento é o cardápio para o
 Renan escolher, personagem por personagem: o carro, o que acontece na estrada,
 o presente e o estacionado. Como nos outros, a ordem é **um de cada vez**.
 
@@ -33,10 +32,9 @@ encontro em `eventos/bebitoMobile/encontroNaEstrada.ts`, a memória em
 
 ## As decisões que valem para todos (perguntas ao Renan)
 
-1. **Onde eles aparecem.** Hoje a escola não tem moradores na regra de quem
-   aparece (`MORADORES.escola = []`), e casa ↔ escola fica sem encontro. Com a
-   turma morando lá:
-   - casa ↔ escola passa a ter encontro (um da turma);
+1. **Onde eles aparecem** (decidido pelo Renan em 2026-11-17): a turma mora na
+   escola (`MORADORES.escola`, hoje com a Tia Liz e as irmãs):
+   - casa ↔ escola tem encontro (um da turma);
    - parque ↔ escola e clube ↔ escola sorteiam entre os das duas pontas.
 2. **Um de cada por viagem.** Quem vem de carro não pode estar também na faixa
    ou na calçada na mesma viagem. É a mesma regra do Cookie: de carrinho, ele
@@ -134,7 +132,55 @@ fazer e um encontro mais cheio.
 - Atalho de teste `?conversivel=x,z,giro` (`&conversando`, `&andando=7`,
   `&vazio`); teste `scripts/conversivel.mjs`.
 
-### O plano (o que ainda falta: a estrada e o estacionado)
+### A estrada e o estacionado (2026-11-17)
+
+**As decisões do Renan:**
+- elas aparecem nas viagens casa ↔ escola, e como mais uma opção em qualquer
+  viagem que vai à escola: de clube ↔ escola e parque ↔ escola, o sorteio é
+  entre quem mora nas duas pontas (`MORADORES.escola = ['tializ']`). Em casa ↔
+  escola elas são as únicas, então aparecem em toda viagem;
+- **a história**: a Tia Liz trabalhava numa escola na Venezuela quando elas eram
+  pequenas; o sonho das quatro era se mudar do país; vieram para o Brasil, e a
+  Tia Liz cuida delas aqui. Ela é DITA na conversa (só na primeira vez);
+- na viagem em que elas vêm de carro, **a torcida não atravessa a faixa** (as
+  mesmas três não estão em dois lugares; o Gatito com a placa sai junto, nessa
+  viagem).
+
+**A trava**: o conversível só passa depois de a Tia Liz ser conhecida na
+cantina (`tia-liz-conhecida`); antes, a viagem segue sem encontro e com a
+torcida, como sempre (o sorteio da rota não muda; quem decide é a cena).
+
+**O encontro** (`eventos/bebitoMobile/encontroNaEstrada.ts`), falas minhas e
+provisórias, esperando as do Renan:
+1. a chegada: "Um conversível azul e amarelo cheio de pompom… é a Tia Liz com
+   as meninas!", e a buzina de carrão antigo (`buzinaDaTiaLiz`, dó-mi-sol);
+2. Tia Liz: "¡Mis niños! Encostem aí, que eu trouxe merenda." — Sol: "OI,
+   BEBITOS! A GENTE TÁ INDO PRA ESCOLA!";
+3. **só na primeira vez, a história**: quem vai de carona: "Tia Liz! As três
+   juntas no carro com você?" — Tia Liz: "Sempre juntas. Lá na Venezuela eu
+   trabalhava numa escola, e elas eram pequenininhas." — Estrella: "E o sonho
+   de nós quatro era se mudar. A gente falava disso todo dia." — Tia Liz:
+   "Então a gente fez a mala e veio. E aqui eu cuido delas." — (as três ficam
+   tímidas) Luna: "…e ela cuida muito bem."; **nas outras**, Estrella: "Vocês de
+   novo! A estrada da escola é nossa!";
+4. **as palmas**: Sol: "AGORA A TORCIDA! BATE PALMA COM A GENTE!", e a hora
+   certa ("Bater palma na hora certa!"); de qualquer jeito o CONFETE sobe do
+   banco de trás (90 papeizinhos nas cores dos Gatitos e da Venezuela), a Sol
+   salta, a Estrella torce, a Luna fica tímida e a Tia Liz acena; acertando,
+   sobem corações — "ISSO! NO TEMPO CERTINHO! VAI, BEBITOS!" (ou "QUASE! MAS
+   VALEU A PALMA! VAI, BEBITOS!");
+5. **a merenda**: Tia Liz: "E pra viagem, uma arepita pra cada um. Feita hoje
+   cedo.", e as duas arepitas voam da cesta até a janela: uma para cada um, na
+   mochila (`ITENS.arepitaDaTiaLiz`, de comer — "Comer a arepita da Tia Liz");
+6. Tia Liz: "Juízo na estrada, ¿oíste? Nos vemos na escola.", a buzina, e "Lá
+   se vai o conversível, com os pompons balançando e a bandeirinha no vento.";
+7. a memória "As quatro que vieram juntas" (`tializ-na-estrada`).
+
+**Estacionado**: depois da memória, o conversível fica vazio no lote da escola,
+na vaga da fila 1 a 7,8 (depois da reservada da descida do Bebito), de ré, com o
+arco das estrelas para o corredor.
+
+### O plano original (como foi pensado)
 
 **O carro**
 - Um conversível grande e antigo, de banco inteiriço, com o **azul e o amarelo
