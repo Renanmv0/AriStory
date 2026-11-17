@@ -180,6 +180,26 @@ provisórias, esperando as do Renan:
 na vaga da fila 1 a 7,8 (depois da reservada da descida do Bebito), de ré, com o
 arco das estrelas para o corredor.
 
+### O que foi testado (2026-11-17)
+
+- `conversivel.mjs` inteiro: o modelo; a estrada (antes de conhecer a Tia Liz,
+  nada de conversível e a torcida atravessa; depois, a buzina na chegada, na
+  conversa e na saída, a história só na primeira vez, as palmas na hora certa,
+  o confete, as duas arepitas voando e na mochila, a memória, nenhuma torcida
+  na mesma viagem, o save de verdade intacto; e a segunda viagem com o oi),
+  com a tela deitada e no celular em pé; o estacionado no lote da escola; e a
+  arepita na mão ("Comer a arepita da Tia Liz", com o artigo novo do item) e
+  comida.
+- Regressão: `casaClube.mjs SO=rotas` (as rotas da escola com a Tia Liz por
+  igual), `viagemEscola.mjs` inteiro, `patio.mjs`, `tiaLiz.mjs SO=modelo,posto`,
+  `irmas.mjs` e `musica.mjs` (a buzina sem estalo; medida no `.wav`, não
+  ouvida).
+- **O peso**: na conversa da estrada, ~710 desenhos e ~475 mil triângulos (o
+  carrinho do Cookie dava ~512 e ~346 mil): são quatro bichos articulados, e a
+  Tia Liz sozinha tem os cachos e as molinhas; no celular em pé, ~630 e ~350
+  mil. No pátio da escola, com o conversível estacionado: 321 → 321 desenhos e
+  332 → 370 mil triângulos.
+
 ### O plano original (como foi pensado)
 
 **O carro**
