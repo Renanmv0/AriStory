@@ -1335,6 +1335,31 @@ molde de veículo ABERTO dos lados com um bicho de PESCOÇO que não cabe em tet
 - **Atalho de teste** `?golfe=x,z,giro` (`&conversando`, `&esticando`,
   `&andando=7`, `&vazio`).
 
+## O conversível da Tia Liz e das irmãs (`world/conversivelDaTiaLiz.ts`)
+
+O primeiro carro da turma da ESCOLA (`docs/CARROS-DA-ESCOLA.md` §2), e o molde
+de carro ANTIGO com QUATRO bichos dentro:
+
+- **Carrão de rabo de peixe na pele de fatias**: a planta comprida
+  (superelipse 3,4 na frente, 3,0 atrás), o capô reto e longo, a cintura baixa
+  e a cabine aberta; os rabos de peixe são um perfil extrudado com bisel por
+  cima do para-lama, com a lanterna de foguete na ponta. Faixa pintada na
+  lateral (a lança amarela, a faixa de pano) é uma FITA ASSENTADA na pele
+  (`geoNaLateral`), e não plano reto.
+- **Bandeira em peça, e não em adesivo**: o arco das oito estrelas é de
+  estrelas extrudadas deitadas no capô, abrindo para o nariz (o arco certo é o
+  que se lê DE FRENTE para o carro); o vermelho entra como filete, e o azul e o
+  amarelo já são as cores do carro.
+- **Quatro bichos, quatro poses**: cada um pela ferramenta que ele já tinha —
+  a coelha sentada pelo `sentarEm` do `Bicho` (numa almofadinha, para enxergar
+  por cima da porta), as de trás em pé com o `torcer` delas, e a Tia Liz com
+  um campo novo que nasce desligado (`sentadaNoCarro`, as pernas para a frente)
+  e as patas no volante pelo `maoPara` dela (o alvo no referencial dela).
+- **Acessório na cabeça de outro bicho** (os óculos da Luna) vai pelo getter da
+  cabeça (`cabecaDaCoelha`), sem mexer no `animar` dela.
+- **O peso** é dos bichos (371 malhas com as quatro, 19 o carro vazio): os
+  articulados não se juntam.
+
 ## A estrada (`world/estrada.ts`)
 
 As peças da viagem de carro do Bebito Mobile. A pista é CURVA, então a cena

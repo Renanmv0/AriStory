@@ -6,7 +6,10 @@
 para os carros da escola". É o próximo passo que já estava marcado em
 `docs/VIAGEM-ESCOLA.md` ("os carros dos personagens da escola").
 
-**O estado:** só ideias; nada construído. Este documento é o cardápio para o
+**O estado:** o **conversível da Tia Liz e das irmãs** (§2) tem o CARRO pronto
+(2026-11-17, `world/conversivelDaTiaLiz.ts`); a interação na estrada e o
+estacionado vêm na etapa seguinte, a pedido do Renan ("foque no carro, mas
+depois vamos fazer a interação na estrada"). Os outros são só ideias. Este documento é o cardápio para o
 Renan escolher, personagem por personagem: o carro, o que acontece na estrada,
 o presente e o estacionado. Como nos outros, a ordem é **um de cada vez**.
 
@@ -91,6 +94,47 @@ detalhes da Venezuela, e na história elas quatro vieram juntas da Venezuela."
 Junta duas entradas da lista (o conversível da torcida e o carro da Tia Liz)
 num carro só, e dá a elas uma história em comum. Fica um veículo a menos para
 fazer e um encontro mais cheio.
+
+### O que foi feito (o carro, 2026-11-17)
+
+`world/conversivelDaTiaLiz.ts` (`ConversivelDaTiaLiz`, medidas em
+`CONVERSIVEL`), no molde de pele de fatias do 2CV do Jean-Luc:
+
+- **A lata**: um carrão dos anos 50, de 4,7 m, comprido e baixo, azul dos
+  Gatitos, com a **lança amarela** dos dois lados entre dois **filetes
+  vermelhos** (as três cores da bandeira), o friso de cromo na cintura e os
+  **rabos de peixe** atrás com as lanternas de foguete acesas.
+- **A cara**: a grade oval de cromo com as lâminas, os faróis grandões de
+  viseira, o para-choque de cromo com as duas "balas", a estrela de cromo no
+  nariz e a placa "GATITOS".
+- **O ARCO DAS OITO ESTRELAS** brancas no capô, como na bandeira, de frente para
+  quem olha o carro.
+- **A cabine aberta**: o para-brisa panorâmico baixinho, os dois bancos
+  inteiriços creme de rolinhos com o vivo azul, o volante grandão de três raios
+  e a **concha** da Tia Liz pendurada no retrovisor.
+- **A viagem**: a **mala antiga** de couro no bagageiro de cromo, com as
+  quinas de latão, as cintas e os adesivos "VENEZUELA" e "BRASIL" ligados por
+  um aviãozinho, amarrada com cordão vermelho; a **bandeirinha** da Venezuela
+  na antena, tremulando; o **cuatro** de través no banco de trás; a **cesta**
+  de arepinhas e a garrafa de café no banco da frente.
+- **A torcida**: a faixa de pano "VAI, GATITOS!" amarrada nas portas, com os
+  pompons pintados.
+- **As quatro dentro**:
+  - a **Tia Liz** ao volante, sentada, as patas no aro (a pose de sentar,
+    `sentadaNoCarro`, nasce desligada: na cantina ela não muda);
+  - a **Luna** do outro lado, sentada numa almofadinha amarela, com os
+    **óculos de sol enormes** de aro amarelo;
+  - a **Sol** e a **Estrella** em pé no banco de trás, de pompom, torcendo de
+    tempos em tempos.
+- **Vazio** (`new ConversivelDaTiaLiz(true)`, a versão estacionada): o carro
+  com a mala, o cuatro, a cesta e os bancos, juntado como fundo.
+- **O peso**: com as quatro, 371 malhas e ~109 mil triângulos (elas são
+  articuladas e não se juntam; a Tia Liz sozinha tem os cachos); vazio, 19
+  malhas e ~41 mil.
+- Atalho de teste `?conversivel=x,z,giro` (`&conversando`, `&andando=7`,
+  `&vazio`); teste `scripts/conversivel.mjs`.
+
+### O plano (o que ainda falta: a estrada e o estacionado)
 
 **O carro**
 - Um conversível grande e antigo, de banco inteiriço, com o **azul e o amarelo
