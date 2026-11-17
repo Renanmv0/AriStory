@@ -24,6 +24,7 @@ import { KombiDoMano } from './world/kombiDoMano';
 import { CarrinhoDoCookie } from './world/carrinhoDoCookie';
 import { DoisCavalosDoJeanLuc } from './world/doisCavalosDoJeanLuc';
 import { CarrinhoDeGolfeDaGina } from './world/carrinhoDeGolfeDaGina';
+import { ConversivelDaTiaLiz } from './world/conversivelDaTiaLiz';
 import {
   CATALOGO_DO_CARRO, DEF_DAS_VAGAS, FICHA_DE_FABRICA, VAGAS_DO_CARRO, copiarFicha, normalizarFicha,
 } from './world/bebitoMobile/ficha';
@@ -189,6 +190,21 @@ if (golfe && golfe.length >= 2 && golfe.slice(0, 2).every(Number.isFinite)) {
     if (params.has('esticando')) veiculo.esticarAteAJanela(true);
     if (!params.has('vazio')) mundo.onUpdate((dt) => veiculo.update(dt, andando * dt, params.has('conversando')));
     (window as unknown as { golfe: CarrinhoDeGolfeDaGina }).golfe = veiculo;
+  });
+}
+// `?conversivel=x,z,giro`: o conversível da Tia Liz parado nesse ponto, com ela ao volante e as três irmãs, para o
+// `scripts/conversivel.mjs` fotografar (`&conversando` torce mais; `&andando=7` faz de conta que ele está a 7 m/s;
+// `&vazio` é a versão estacionada)
+const conversivel = params.get('conversivel')?.split(',').map(Number);
+if (conversivel && conversivel.length >= 2 && conversivel.slice(0, 2).every(Number.isFinite)) {
+  void comecou.then(() => {
+    const mundo = (game as unknown as { current?: { world: WorldBuilder } }).current?.world;
+    if (!mundo) return;
+    const veiculo = new ConversivelDaTiaLiz(params.has('vazio'));
+    mundo.add(mundo.place(veiculo.group, conversivel[0], 0, conversivel[1], Number.isFinite(conversivel[2]) ? conversivel[2] : 0));
+    const andando = Number(params.get('andando') ?? 0);
+    if (!params.has('vazio')) mundo.onUpdate((dt) => veiculo.update(dt, andando * dt, params.has('conversando')));
+    (window as unknown as { conversivel: ConversivelDaTiaLiz }).conversivel = veiculo;
   });
 }
 const carro = params.get('carro')?.split(',').map(Number);

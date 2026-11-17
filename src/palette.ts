@@ -1734,6 +1734,9 @@ export const PALETTE = {
   venezuelaAmarelo: 0xf6c431,
   venezuelaAzul: 0x2a56a8,
   venezuelaVermelho: 0xd2373b,
+  // o conversível da Tia Liz e das irmãs: o couro da mala antiga de viagem e o vime da cesta de arepinhas
+  tiaLizMalaCouro: 0x9a5b34,
+  vimeCesta: 0xd2a560,
 
   // A COMIDA DA TIA LIZ (a cantina da escola): a sopita de caldo dourado com
   // cenoura, batata, milho, abóbora e coentro; a pasta com almôndegas e o
