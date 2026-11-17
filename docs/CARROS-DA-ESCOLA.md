@@ -26,7 +26,7 @@ encontro em `eventos/bebitoMobile/encontroNaEstrada.ts`, a memória em
 | a **Luna**, a **Sol** e a **Estrella** | as três coelhinhas da torcida dos Gatitos (lua, sol e estrela; a Luna tímida, a Sol que salta, a Estrella da estrelinha) | atravessam a faixa de uniforme e pompom |
 | o **Flynn** | a raposa atleta, de regata, apito e bola | quica a bola na calçada, ela escapa e ele vai buscar |
 | a **Valentina** | a flamingo do marketing, de look por ficha, que fala italiano ("Perfetto!") | o ensaio de fotos na beira da pista |
-| a **Tia Liz** | a ursa venezuelana da cantina (sopita, pasta, pabellón, fororo, tres leches) | ainda não aparece na estrada |
+| a **Tia Liz** | a ursa venezuelana da cantina (sopita, pasta, pabellón, fororo, tres leches) | ainda não aparece na estrada; vai dirigir o carro das três irmãs (§2) |
 
 ## As decisões que valem para todos (perguntas ao Renan)
 
@@ -82,34 +82,59 @@ recolhido.
 
 ---
 
-## 2. A Luna, a Sol e a Estrella (as três num carro só)
+## 2. A Tia Liz e as três irmãs: o conversível que veio da Venezuela
 
-**⭐ A. O conversível da torcida** (recomendado)
-- Um conversível azul e amarelo, as cores dos Gatitos, todo enfeitado de
-  pompons, com a faixa "VAI, GATITOS!" na lateral e fitas no para-choque.
-- As três em pé no banco de trás. A Luna dirige, tímida, de óculos de sol
-  enormes.
-- Orelhas de coelho de pelúcia em cima do para-brisa, de enfeite.
+**A ideia do Renan** (2026-11-17): "e se a Tia Liz levasse as três irmãs no
+conversível? Daí o conversível seria da cor dos Gatitos, mas com alguns
+detalhes da Venezuela, e na história elas quatro vieram juntas da Venezuela."
 
-**B. O triciclo de três lugares**: uma bicicleta tripla, as três pedalando em
-fila, com fitas nos guidões e uma cestinha de pompons.
+Junta duas entradas da lista (o conversível da torcida e o carro da Tia Liz)
+num carro só, e dá a elas uma história em comum. Fica um veículo a menos para
+fazer e um encontro mais cheio.
 
-**C. A minivan com orelhas**: uma minivan com duas orelhas de coelho no teto e
-uma cauda de pompom atrás.
+**O carro**
+- Um conversível grande e antigo, de banco inteiriço, com o **azul e o amarelo
+  dos Gatitos**. Já são duas das três cores da bandeira da Venezuela, então os
+  detalhes venezuelanos encaixam sem brigar.
+- **Os detalhes da Venezuela**:
+  - o arco das **oito estrelinhas brancas** no capô, como na bandeira;
+  - um **filete vermelho** dando a volta na cintura (a terceira cor);
+  - a **mala antiga** amarrada no porta-malas, com adesivos de viagem, que é o
+    que conta "a gente veio de longe";
+  - um **cuatro** (o violãozinho venezuelano) no banco, para uma das irmãs
+    tocar;
+  - a cesta de comida da Tia Liz no colo de alguém.
+- **Quem vai onde**: a Tia Liz dirige, de avental e com a concha pendurada no
+  retrovisor. A Luna vai do lado dela, tímida, de óculos de sol enormes. A Sol
+  e a Estrella vão em pé no banco de trás, de pompom, com as orelhas e os
+  cachos da Tia Liz voando no vento.
+- Os pompons e a faixa "VAI, GATITOS!" na lateral continuam: é o carro da
+  torcida também.
 
-**Na estrada**
-- **A coreografia do lado do Bebito** ⭐: parados lado a lado, a Sol salta, a
-  Estrella dá a estrelinha em cima do capô e a Luna acena, tímida. Quem joga
-  bate palma na hora certa (`g.horaCerta`, a mesma barra do ponto do
-  Jean-Luc); acertando, elas soltam confete que cobre o para-brisa um
-  pouquinho, como a geada do Mano.
-- A buzina é um "VAI, GATITOS!" gritado pelas três.
+**Na estrada** (juntando as duas interações)
+1. **A coreografia**: parados do lado do Bebito, a Sol salta, a Estrella faz a
+   estrelinha no capô e a Luna acena. Quem joga bate palma na hora certa, e
+   acertando cai confete no para-brisa.
+2. **A merenda**: a Tia Liz passa dois pratinhos embrulhados pela janela, um
+   para cada um, direto para a mochila. Podem ser arepas ou um dos pratos dela.
+3. A buzina é uma corneta de feira, e as três gritam "VAI, GATITOS!".
 
-**O presente**: um megafone de torcida na mochila, ou o pompom delas
-pendurado no teto. O pompom do retrovisor já é delas.
+**O presente**: a comida na mochila. Se quiser algo que fique no Bebito, uma
+bandeirinha de antena com as oito estrelas.
 
-**Estacionado**: o conversível com a faixa e os pompons, e os três pares de
-tênis enfileirados ao lado.
+**Estacionado**: o conversível no lote da escola, com a mala no porta-malas, o
+cuatro no banco e os pompons em cima do painel.
+
+**O que muda numa regra que já existe**: hoje está escrito (ESCOLA.md §14 e
+§15) que a origem venezuelana das irmãs e da Luna é **contexto, não assunto**:
+ninguém fala disso no jogo. A história "vieram juntas" mudaria isso, ou
+continuaria só mostrada (a mala, as estrelas, o cuatro), sem ninguém dizer em
+voz alta. **É decisão do Renan** (ver as perguntas).
+
+**As versões de antes** (se o Renan preferir separar): o conversível só da
+torcida (A), o triciclo de três lugares (B) ou a minivan com orelhas (C) para
+as irmãs; e o jipe venezuelano, a caminhonete da feira ou o "carrito por
+puesto" para a Tia Liz.
 
 ---
 
@@ -168,46 +193,15 @@ porta.
 
 ---
 
-## 5. A Tia Liz
-
-**⭐ A. O jipe clássico venezuelano** (recomendado, mas ver a pergunta)
-- Um jipe quadradão e robusto, daqueles que na Venezuela são uma instituição,
-  com o estepe na traseira.
-- O caldeirão amarrado na capota, fumegando, e as estrelinhas amarelas, azuis
-  e vermelhas na porta.
-- Ela dirige de avental e touca, com a concha pendurada no retrovisor.
-
-**B. A caminhonete da feira**: uma caminhonete antiga com a caçamba cheia de
-sacos de farinha, cachos de banana-da-terra e a panela de sopa.
-
-**C. Um "carrito por puesto"**: um carrão antigo de lotação, desses que levam
-gente pela cidade, com a plaquinha da rota no para-brisa.
-
-**Na estrada**
-- **A merenda pela janela** ⭐: ela passa dois pratinhos embrulhados pela
-  janela, um para cada um, direto para a mochila, como as casquinhas do Mano.
-  Podem ser duas arepas ou tequeños, ou um dos cinco pratos dela.
-- A buzina é uma corneta de feira, e ela grita "¡Mis niños!".
-
-**O presente**: a comida na mochila (de comer), ou um ímã de arepa no painel
-do Bebito.
-
-**Estacionado**: o jipe atrás da cantina, com o caldeirão no teto.
-
-**Pergunta específica**: o carro da Tia Liz tem que ter a cara de quem é. Você
-conhece algum carro, comida ou costume venezuelano que combine mais com ela?
-Prefiro perguntar a inventar.
-
----
-
 ## A ordem sugerida
 
 1. **O Gatito**: o professor e a cara da escola. O ônibus amarelinho com o
    braço do PARE e a prova surpresa usam o que já existe (a placa, a apostila).
-2. **As coelhinhas**: o primeiro veículo com três bichos.
+2. **A Tia Liz e as três irmãs**: o primeiro veículo com quatro bichos, e o da
+   história da Venezuela (ideia do Renan). Pode vir primeiro, se o Renan
+   preferir.
 3. **O Flynn**: o arremesso pela janela.
 4. **A Valentina**: a polaroid no painel.
-5. **A Tia Liz**: depois da resposta sobre a Venezuela.
 
 ## As perguntas, juntas
 
@@ -217,4 +211,7 @@ Prefiro perguntar a inventar.
    Cookie)?
 4. Os presentes que ficam no Bebito (a estrelinha do Gatito, a polaroid da
    Valentina) estão bons, ou preferem coisas na mochila?
-5. A Tia Liz: alguma referência venezuelana de verdade para o carro dela?
+5. A Tia Liz e as irmãs: a história de que vieram juntas da Venezuela é dita
+   na conversa, ou fica só mostrada pelos detalhes (até hoje, ninguém da escola
+   fala disso)? E o que a Tia Liz é delas: tia de verdade, ou a "tia" da
+   cantina que veio junto?
