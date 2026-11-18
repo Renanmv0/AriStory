@@ -21,12 +21,15 @@ import {
  *  5. A PEGADINHA: o jato escorrega e acerta o Gatito em cheio — ele mia, reclama, e dá a SACUDIDA de gato molhado,
  *     que respinga em quem está do lado; os dois riem;
  *  6. O FINAL: o Gatito pede a mangueira para o céu, a água cai em chuva fininha e um ARCO-ÍRIS se desenha por cima
- *     do ônibus; o six seven, os pulinhos, a lataria piscando de limpa e a memória "Banho de mangueira";
+ *     do ônibus; o six seven, os pulinhos, a lataria piscando de limpa, a RECOMPENSA (R$ 200 na carteira do casal,
+ *     TODA vez que ajudam — pedido do Renan) e a memória "Banho de mangueira" (essa, só na primeira);
  *  7. a tela pisca de novo e tudo volta: a esponja no balde, a mangueira no chão, o Gatito esfregando.
  *
  * As falas são PROVISÓRIAS (minhas): quando o Renan mandar as dele, entram aqui literais.
  */
 export const MEMORIA_DO_MUTIRAO = 'mutirao-da-lavagem';
+/** a recompensa do Gatito, toda vez que a dupla ajuda a lavar o ônibus (pedido do Renan: "200 moedas"), em reais da carteira */
+export const RECOMPENSA_DO_MUTIRAO = 200;
 
 const G = 'Gatito';
 const A = ARI.name;
@@ -63,6 +66,8 @@ export const depuracaoDoMutirao: {
   pistola?: THREE.Object3D;
   mancha?: THREE.Object3D;
   quemNaMangueira?: string;
+  /** quanto o Gatito já pagou nesta página (o teste confere com a carteira) */
+  pagou?: number;
 } = { fase: 'parado' };
 
 const suave = (t: number): number => t * t * (3 - 2 * t);
@@ -340,6 +345,13 @@ export async function mutiraoDaLavagem(g: GameAPI, c: CenaDaLavagem): Promise<vo
   await dizer(S, 'Um arco-íris em cima do ônibus dos Gatitos!');
   await dizer(H, 'Agora sim: brilhando de verdade.');
   await dizer(G, 'Melhor mutirão que essa escola já teve. Obrigado, ajudantes!');
+  // A RECOMPENSA, toda vez (pedido do Renan): o Gatito paga o serviço, direto na carteira do casal
+  await dizer(G, `E serviço bem feito se paga: ${RECOMPENSA_DO_MUTIRAO} de recompensa pros dois!`);
+  g.ganhar(RECOMPENSA_DO_MUTIRAO);
+  g.bump('mutirao.lavagens');
+  g.som('caixa');
+  g.toast(`R$ ${RECOMPENSA_DO_MUTIRAO} — a recompensa do Gatito`, '💰');
+  depuracaoDoMutirao.pagou = (depuracaoDoMutirao.pagou ?? 0) + RECOMPENSA_DO_MUTIRAO;
   if (!g.temMemoria(MEMORIA_DO_MUTIRAO)) {
     g.unlock({
       id: MEMORIA_DO_MUTIRAO,

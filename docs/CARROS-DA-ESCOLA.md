@@ -94,7 +94,8 @@ dupla) e a espuma crescendo; o da mangueira ENXAGUANDO — a mangueira verde est
 (o fio, as gotas e o respingo na lataria), a espuma sumindo e a lataria piscando de limpa; a PEGADINHA: o jato
 escorrega e pega o Gatito em cheio ("MIAU! Ei! Eu sou gato, não ônibus!"), ele dá a SACUDIDA de gato molhado em cima de
 quem está do lado e os dois riem; e o FINAL: mangueira para o céu, a chuva fininha e um ARCO-ÍRIS desenhando-se por
-cima do ônibus, o six seven, os pulinhos e a memória "Banho de mangueira". Depois tudo volta (a esponja no balde, a
+cima do ônibus, o six seven, os pulinhos, a RECOMPENSA do Gatito (R$ 200 na carteira do casal, TODA vez que ajudam — pedido
+do Renan: "o Gatito dá 200 moedas cada vez que lavarmos") e a memória "Banho de mangueira" (só na primeira). Depois tudo volta (a esponja no balde, a
 mangueira enrolada no chão, o Gatito esfregando). Dá para repetir quando quiser. As falas são PROVISÓRIAS (minhas).
 
 **As ideias de antes** (ficam para referência):

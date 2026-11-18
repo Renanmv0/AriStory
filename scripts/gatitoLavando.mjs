@@ -183,6 +183,7 @@ conferir(segunda.filter((f) => f.startsWith('Gatito:')).length === 2 && !segunda
 // ============================================================ 4. o mutirão
 console.log('\n4. o mutirão: Renan na mangueira, Ari na esponja');
 await p.evaluate(() => { window.aristoryBebitoMobile.ritmoDoPresente.vezes = 2; });
+const carteiraAntes = await p.evaluate(() => window.jogo.carteira());
 conferir(await chegarPerto(), 'o prompt de novo');
 await p.keyboard.press('KeyE');
 await p.waitForTimeout(800);
@@ -272,6 +273,9 @@ conferir(viuSacudida, 'a sacudida de gato molhado');
 conferir(maiorArco >= 64 * 36, `o arco-íris se desenha inteiro (${maiorArco} índices)`);
 conferir(falasDoMutirao.some((f) => /Renan: A mangueira é minha/.test(f)) && falasDoMutirao.some((f) => /Ari: Então eu fico com a esponja/.test(f)), 'quem escolhemos pega a mangueira, e o outro a esponja');
 conferir(fim.memoria, 'a memória "Banho de mangueira"');
+const carteiraDepois = await p.evaluate(() => window.jogo.carteira());
+conferir(carteiraDepois - carteiraAntes === 200, `a recompensa do Gatito: R$ 200 na carteira (${carteiraAntes} → ${carteiraDepois})`);
+conferir(falasDoMutirao.some((f) => /^Gatito: E serviço bem feito se paga/.test(f)), 'e ele fala da recompensa');
 conferir(!fim.mao.ari && !fim.mao.renan, 'no fim as mãos vazias (a esponja e a pistola voltaram)');
 await p.waitForTimeout(1500);
 const depoisDoMutirao = await medir();
